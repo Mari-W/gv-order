@@ -1,0 +1,10 @@
+-R theories LRGV
+-arg -w -arg -notation-overridden
+
+theories/Syntax.v
+theories/Semantics.v
+theories/Processes.v
+theories/Types.v
+theories/Typing.v
+theories/LogRel.v
+theories/Examples.v

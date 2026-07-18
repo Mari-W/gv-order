@@ -1,0 +1,199 @@
+(** * Syntax of GV♯ (Fig. 1)
+
+    Terms use de Bruijn indices for variables; channels are names.
+    Values are the sub-language carved out by [is_val] (single inductive
+    [expr], heap_lang style), so that ⟨v,v⟩ and ⟨e,e⟩ need not be
+    distinguished syntactically. *)
+
+From stdpp Require Import base strings gmap countable.
+
+Definition chan := string.
+
+(** Constants for the concurrency primitives. *)
+Inductive konst := KFork | KRecv | KSend | KClos.
+
+Inductive expr :=
+  | Var (x : nat)
+  | EUnit                          (* the unit value ∗ *)
+  | Konst (k : konst)
+  | Chan (c : chan)
+  | Lam (e : expr)                 (* λa.e — binds 1 *)
+  | App (e1 e2 : expr)
+  | Pair (e1 e2 : expr)            (* ⟨e1,e2⟩ *)
+  | LetU (e1 e2 : expr)            (* let ∗ = e1 in e2 *)
+  | LetP (e1 e2 : expr).           (* let ⟨a,b⟩ = e1 in e2 — binds 2 in e2:
+                                      index 1 = a, index 0 = b *)
+
+Notation EFork := (Konst KFork).
+Notation ERecv := (Konst KRecv).
+Notation ESend := (Konst KSend).
+Notation EClos := (Konst KClos).
+
+(** ** Values *)
+
+Fixpoint is_val (e : expr) : bool :=
+  match e with
+  | EUnit | Konst _ | Chan _ | Lam _ => true
+  | Pair e1 e2 => is_val e1 && is_val e2
+  | _ => false
+  end.
+
+(** ** Decidable equality and countability
+
+    [Countable expr] is needed to form multisets of terms
+    ([gmultiset expr]) for the process semantics. *)
+
+Global Instance konst_eq_dec : EqDecision konst.
+Proof. solve_decision. Defined.
+
+Global Instance konst_countable : Countable konst.
+Proof.
+  apply (inj_countable'
+    (λ k, match k with KFork => 0 | KRecv => 1 | KSend => 2 | KClos => 3 end)
+    (λ n, match n with 0 => KFork | 1 => KRecv | 2 => KSend | _ => KClos end)).
+  by intros [].
+Qed.
+
+Global Instance expr_eq_dec : EqDecision expr.
+Proof. solve_decision. Defined.
+
+Global Instance expr_countable : Countable expr.
+Proof.
+  set (enc := fix go e : gen_tree (nat + konst + chan) :=
+    match e with
+    | Var x => GenLeaf (inl (inl x))
+    | EUnit => GenNode 0 []
+    | Konst k => GenLeaf (inl (inr k))
+    | Chan c => GenLeaf (inr c)
+    | Lam e => GenNode 1 [go e]
+    | App e1 e2 => GenNode 2 [go e1; go e2]
+    | Pair e1 e2 => GenNode 3 [go e1; go e2]
+    | LetU e1 e2 => GenNode 4 [go e1; go e2]
+    | LetP e1 e2 => GenNode 5 [go e1; go e2]
+    end).
+  set (dec := fix go t : expr :=
+    match t with
+    | GenLeaf (inl (inl x)) => Var x
+    | GenNode 0 [] => EUnit
+    | GenLeaf (inl (inr k)) => Konst k
+    | GenLeaf (inr c) => Chan c
+    | GenNode 1 [t] => Lam (go t)
+    | GenNode 2 [t1; t2] => App (go t1) (go t2)
+    | GenNode 3 [t1; t2] => Pair (go t1) (go t2)
+    | GenNode 4 [t1; t2] => LetU (go t1) (go t2)
+    | GenNode 5 [t1; t2] => LetP (go t1) (go t2)
+    | _ => EUnit
+    end).
+  apply (inj_countable' enc dec).
+  intros e; induction e; simpl; congruence.
+Qed.
+
+(** ** Renaming and parallel substitution *)
+
+Definition scons {A} (a : A) (σ : nat → A) : nat → A :=
+  λ x, match x with 0 => a | S x' => σ x' end.
+Infix ".:" := scons (at level 55, right associativity).
+
+Definition upren (r : nat → nat) : nat → nat := 0 .: (S ∘ r).
+
+Fixpoint rename (r : nat → nat) (e : expr) : expr :=
+  match e with
+  | Var x => Var (r x)
+  | EUnit | Konst _ | Chan _ => e
+  | Lam e => Lam (rename (upren r) e)
+  | App e1 e2 => App (rename r e1) (rename r e2)
+  | Pair e1 e2 => Pair (rename r e1) (rename r e2)
+  | LetU e1 e2 => LetU (rename r e1) (rename r e2)
+  | LetP e1 e2 => LetP (rename r e1) (rename (upren (upren r)) e2)
+  end.
+
+Definition up (σ : nat → expr) : nat → expr := Var 0 .: (rename S ∘ σ).
+
+Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
+  match e with
+  | Var x => σ x
+  | EUnit | Konst _ | Chan _ => e
+  | Lam e => Lam (subst (up σ) e)
+  | App e1 e2 => App (subst σ e1) (subst σ e2)
+  | Pair e1 e2 => Pair (subst σ e1) (subst σ e2)
+  | LetU e1 e2 => LetU (subst σ e1) (subst σ e2)
+  | LetP e1 e2 => LetP (subst σ e1) (subst (up (up σ)) e2)
+  end.
+
+(** β-substitutions: [subst1 v e] is e[v/a] for a Lam-bound a;
+    [subst2 u v e] instantiates the two binders of LetP with the pair
+    components, i.e. e[u/a][v/b]. *)
+Definition subst1 (v : expr) (e : expr) : expr := subst (v .: Var) e.
+Definition subst2 (u v : expr) (e : expr) : expr := subst (v .: u .: Var) e.
+
+(** ** Closedness and free channels *)
+
+Fixpoint closed_at (n : nat) (e : expr) : bool :=
+  match e with
+  | Var x => bool_decide (x < n)
+  | EUnit | Konst _ | Chan _ => true
+  | Lam e => closed_at (S n) e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => closed_at n e1 && closed_at n e2
+  | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
+  end.
+
+Definition closed (e : expr) : bool := closed_at 0 e.
+
+(** All channels in a term are considered free (terms only bind variables). *)
+Fixpoint fchans (e : expr) : gset chan :=
+  match e with
+  | Var _ | EUnit | Konst _ => ∅
+  | Chan c => {[c]}
+  | Lam e => fchans e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fchans e1 ∪ fchans e2
+  end.
+
+(** ** Basic lemmas about substitution *)
+
+Lemma upren_ext r r' : (∀ x, r x = r' x) → ∀ x, upren r x = upren r' x.
+Proof. intros H [|x]; simpl; [done|]. unfold compose. by rewrite H. Qed.
+
+Lemma rename_ext e : ∀ r r', (∀ x, r x = r' x) → rename r e = rename r' e.
+Proof.
+  induction e; intros r r' H; simpl; f_equal; eauto using upren_ext.
+Qed.
+
+Lemma up_ext σ σ' : (∀ x, σ x = σ' x) → ∀ x, up σ x = up σ' x.
+Proof. intros H [|x]; simpl; [done|]. unfold compose. by rewrite H. Qed.
+
+Lemma subst_ext e : ∀ σ σ', (∀ x, σ x = σ' x) → subst σ e = subst σ' e.
+Proof.
+  induction e; intros σ σ' H; simpl; f_equal; eauto using up_ext.
+Qed.
+
+Lemma subst_ids e : subst Var e = e.
+Proof.
+  induction e; simpl; f_equal; auto.
+  - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
+  - rewrite (subst_ext _ (up (up Var)) Var); [done|].
+    intros [|[|x]]; done.
+Qed.
+
+(** Substitutions agreeing below the closedness bound act identically. *)
+Lemma subst_closed_at_ext e : ∀ n σ σ',
+  closed_at n e → (∀ x, x < n → σ x = σ' x) → subst σ e = subst σ' e.
+Proof.
+  induction e; intros n σ σ' Hcl Hag; simpl in *; f_equal;
+    repeat match goal with
+    | H : Is_true (_ && _) |- _ => apply andb_True in H as [? ?]
+    end; eauto.
+  - apply bool_decide_unpack in Hcl. by apply Hag.
+  - eapply IHe; [done|]. intros [|x] Hx; simpl; [done|].
+    unfold compose. rewrite Hag; [done|lia].
+  - eapply IHe2; [done|]. intros [|[|x]] Hx; simpl; [done..|].
+    unfold compose. rewrite Hag; [done|lia].
+Qed.
+
+Lemma subst_closed e σ : closed e → subst σ e = e.
+Proof.
+  intros Hcl. rewrite (subst_closed_at_ext e 0 σ Var); [|done|lia].
+  apply subst_ids.
+Qed.
+
+Lemma subst1_closed e v : closed e → subst1 v e = e.
+Proof. apply subst_closed. Qed.

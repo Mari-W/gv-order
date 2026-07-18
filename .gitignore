@@ -1,0 +1,14 @@
+_build/
+*.vo
+*.vok
+*.vos
+*.glob
+*.aux
+.*.aux
+.lia.cache
+Makefile.coq*
+.Makefile.coq*.d
+.Makefile.d
+Makefile.conf
+.coqdeps.d
+.claude/
