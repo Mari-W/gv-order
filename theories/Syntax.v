@@ -197,3 +197,157 @@ Qed.
 
 Lemma subst1_closed e v : closed e → subst1 v e = e.
 Proof. apply subst_closed. Qed.
+
+(** ** Composition laws for renaming and substitution *)
+
+Lemma rename_rename e : ∀ r r',
+  rename r (rename r' e) = rename (λ x, r (r' x)) e.
+Proof.
+  induction e; intros r r'; simpl; f_equal; auto.
+  - rewrite IHe. apply rename_ext. by intros [|x].
+  - rewrite IHe2. apply rename_ext. by intros [|[|x]].
+Qed.
+
+Lemma subst_rename e : ∀ σ r,
+  subst σ (rename r e) = subst (λ x, σ (r x)) e.
+Proof.
+  induction e; intros σ r; simpl; f_equal; auto.
+  - rewrite IHe. apply subst_ext. by intros [|x].
+  - rewrite IHe2. apply subst_ext. by intros [|[|x]].
+Qed.
+
+Lemma rename_subst e : ∀ r σ,
+  rename r (subst σ e) = subst (λ x, rename r (σ x)) e.
+Proof.
+  induction e; intros r σ; simpl; f_equal; auto.
+  - rewrite IHe. apply subst_ext. intros [|x]; simpl; [done|].
+    unfold compose. by rewrite !rename_rename.
+  - rewrite IHe2. apply subst_ext. intros [|[|x]]; simpl; [done..|].
+    unfold compose. by rewrite !rename_rename.
+Qed.
+
+Lemma subst_subst e : ∀ σ τ,
+  subst σ (subst τ e) = subst (λ x, subst σ (τ x)) e.
+Proof.
+  induction e; intros σ τ; simpl; f_equal; auto.
+  - rewrite IHe. apply subst_ext. intros [|x]; simpl; [done|].
+    unfold compose. rewrite subst_rename, rename_subst.
+    apply subst_ext. by intros y.
+  - rewrite IHe2. apply subst_ext. intros [|[|x]]; simpl; [done..|].
+    unfold compose. rewrite !subst_rename, !rename_subst.
+    apply subst_ext. by intros y.
+Qed.
+
+(** β-substitution after substitution under one/two binders. *)
+Lemma subst1_subst w γ e : subst1 w (subst (up γ) e) = subst (w .: γ) e.
+Proof.
+  unfold subst1. rewrite subst_subst. apply subst_ext.
+  intros [|x]; simpl; [done|]. unfold compose. rewrite subst_rename.
+  etrans; [apply subst_ext; by intros y|]. apply subst_ids.
+Qed.
+
+Lemma subst2_subst u w γ e :
+  subst2 u w (subst (up (up γ)) e) = subst (w .: u .: γ) e.
+Proof.
+  unfold subst2. rewrite subst_subst. apply subst_ext.
+  intros [|[|x]]; simpl; [done..|]. unfold compose.
+  rewrite !subst_rename.
+  etrans; [apply subst_ext; by intros y|]. apply subst_ids.
+Qed.
+
+(** ** Free-variable predicates
+
+    [allfv P e] states that every free variable of e satisfies P;
+    binders lift P by [upP]. *)
+
+Definition upP (P : nat → Prop) : nat → Prop :=
+  λ x, match x with 0 => True | S x' => P x' end.
+
+Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
+  match e with
+  | Var x => P x
+  | EUnit | Konst _ | Chan _ => True
+  | Lam e => allfv (upP P) e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
+  | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
+  end.
+
+Lemma upP_mono (P Q : nat → Prop) :
+  (∀ x, P x → Q x) → ∀ x, upP P x → upP Q x.
+Proof. intros H [|x]; simpl; auto. Qed.
+
+Lemma allfv_mono e : ∀ (P Q : nat → Prop),
+  (∀ x, P x → Q x) → allfv P e → allfv Q e.
+Proof.
+  induction e; simpl; intros P Q H HP; auto.
+  - eapply IHe; [|done]. by apply upP_mono.
+  - destruct HP; eauto.
+  - destruct HP; eauto.
+  - destruct HP; eauto.
+  - destruct HP; split; [by eapply IHe1|].
+    eapply IHe2; [|done]. by apply upP_mono, upP_mono.
+Qed.
+
+(** ** Closedness under renaming and substitution *)
+
+Lemma closed_at_rename e : ∀ r m m',
+  (∀ x, x < m → r x < m') → closed_at m e → closed_at m' (rename r e).
+Proof.
+  induction e; simpl; intros r m m' Hr Hcl;
+    repeat match goal with
+    | H : Is_true (_ && _) |- _ => apply andb_True in H as [? ?]
+    end; try (apply andb_True; split); eauto.
+  - apply bool_decide_unpack in Hcl. case_bool_decide; [done|]. exfalso; auto with lia.
+  - eapply IHe; [|done]. intros [|x] Hx; simpl; [lia|].
+    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
+  - eapply IHe2; [|done]. intros [|[|x]] Hx; simpl; [lia|lia|].
+    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
+Qed.
+
+Lemma closed_at_subst e : ∀ m γ,
+  allfv (λ x, closed_at m (γ x)) e → closed_at m (subst γ e).
+Proof.
+  induction e; simpl; intros m γ HP;
+    try (destruct HP; apply andb_True; split); eauto.
+  - apply IHe. eapply allfv_mono; [|done]. intros [|x]; simpl.
+    + intros _. done.
+    + intros Hc. unfold compose. eapply closed_at_rename; [|done].
+      intros; lia.
+  - apply IHe2. eapply allfv_mono; [|done]. intros [|[|x]]; simpl.
+    + intros _. done.
+    + intros _. done.
+    + intros Hc. unfold compose.
+      eapply (closed_at_rename _ S (S m)); [intros; lia|].
+      eapply (closed_at_rename _ S m); [intros; lia|done].
+Qed.
+
+(** ** Channels under renaming and substitution *)
+
+Lemma fchans_rename e : ∀ r, fchans (rename r e) = fchans e.
+Proof.
+  induction e; intros r; simpl; auto.
+  all: by rewrite IHe1, IHe2.
+Qed.
+
+Lemma fchans_subst e : ∀ γ (D : gset chan),
+  allfv (λ x, fchans (γ x) ⊆ D) e →
+  fchans (subst γ e) ⊆ fchans e ∪ D.
+Proof.
+  induction e; simpl; intros γ D HP;
+    try (destruct HP as [H1 H2];
+         specialize (IHe1 _ _ H1); specialize (IHe2 _ _ H2); set_solver);
+    try set_solver.
+  - (* Lam *)
+    apply (IHe (up γ) D). eapply allfv_mono; [|done]. intros [|x]; simpl.
+    + intros _. set_solver.
+    + intros Hc. unfold compose. by rewrite fchans_rename.
+  - (* LetP *)
+    destruct HP as [H1 H2].
+    specialize (IHe1 _ _ H1).
+    assert (allfv (λ x, fchans (up (up γ) x) ⊆ D) e2) as H2'.
+    { eapply allfv_mono; [|done]. intros [|[|x]]; simpl.
+      - intros _. set_solver.
+      - intros _. set_solver.
+      - intros Hc. unfold compose. by rewrite !fchans_rename. }
+    specialize (IHe2 _ _ H2'). set_solver.
+Qed.

@@ -33,14 +33,18 @@ Record level := Level {
 
 (** Value relation at level n, given the family [below] of levels < n.
     Recursive on the type; lower levels are accessed through [below]
-    (the ∀ j < n quantification in the ⊸ case). *)
+    (the ∀ j < n quantification in the ⊸ case). The ⊸ case also
+    requires the abstraction's channels to be covered by Σ — for all
+    other value forms this holds by construction ([Vrel_fchans]), and
+    compositionality needs it: a value sent to the environment must
+    not mention channels restricted by an independent component. *)
 Fixpoint Vdef (below : nat → level) (n : nat)
     (Σ : senv) (T : ty) (v : expr) {struct T} : Prop :=
   match T with
   | TUnit => Σ = ∅ ∧ v = EUnit
   | TSess s => ∃ c, v = Chan c ∧ Σ = {[c := s]}
   | TLolli T1 U =>
-      (∃ eb, v = Lam eb ∧
+      (∃ eb, v = Lam eb ∧ fchans eb ⊆ dom Σ ∧
          ∀ j Σ' w, j < n → Σ' ##ₘ Σ →
            lV (below j) Σ' T1 w →
            lE (below j) (Σ ∪ Σ') U (subst1 w eb))
@@ -75,7 +79,7 @@ Definition Edef (below : nat → level) (Vn : senv → ty → expr → Prop)
         | LSess (SRecv c w) =>                         (* case 3 *)
             ∃ Σ1 U s,
               Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ j Σ2, j < n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
+              ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
                 lV (below j) Σ2 U w →
                 lE (below j) (<[c := s]> (Σ1 ∪ Σ2)) T e'
         | LSess (SSend c w) =>                         (* case 4 *)
@@ -162,7 +166,7 @@ Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
         | PSess (SRecv c w) =>                         (* case 2 *)
             ∃ Σ1 U s,
               Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ j Σ2, j < n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
+              ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
                 lV (below j) Σ2 U w →
                 lP (below j) (<[c := s]> (Σ1 ∪ Σ2)) T p'
         | PSess (SSend c w) =>                         (* case 3, iterated *)
@@ -229,7 +233,7 @@ Lemma Vdef_val below n Σ T v : Vdef below n Σ T v → is_val v.
 Proof.
   induction T in Σ, v |- *; simpl.
   - by intros [_ ->].
-  - by intros [(eb & -> & _)|(k & -> & _)].
+  - by intros [(eb & -> & _ & _)|(k & -> & _)].
   - intros (v1 & v2 & Σ1 & Σ2 & -> & _ & H1 & H2).
     simpl. apply andb_True. eauto.
   - by intros (c & -> & _).
@@ -237,6 +241,35 @@ Qed.
 
 Lemma Vrel_val n Σ T v : Vrel n Σ T v → is_val v.
 Proof. unfold Vrel. rewrite lvl_eq. apply Vdef_val. Qed.
+
+(** Values in the relation only mention channels covered by Σ. *)
+Lemma Vdef_fchans below n Σ T v :
+  Vdef below n Σ T v → fchans v ⊆ dom Σ.
+Proof.
+  induction T in Σ, v |- *; simpl.
+  - intros [-> ->]. set_solver.
+  - intros [(eb & -> & Hsup & _)|(k & -> & -> & _)]; simpl; set_solver.
+  - intros (v1 & v2 & Σ1 & Σ2 & -> & [-> Hd] & H1 & H2). simpl.
+    specialize (IHT1 _ _ H1). specialize (IHT2 _ _ H2). set_solver.
+  - intros (c & -> & ->). simpl. set_solver.
+Qed.
+
+Lemma Vrel_fchans n Σ T v : Vrel n Σ T v → fchans v ⊆ dom Σ.
+Proof. unfold Vrel. rewrite lvl_eq. apply Vdef_fchans. Qed.
+
+(** Values of primitive type own no channels. *)
+Lemma Vdef_prim_empty below n Σ T v :
+  prim T → Vdef below n Σ T v → Σ = ∅.
+Proof.
+  intros Hp. revert Σ v. induction Hp; simpl.
+  - by intros ? ? [-> _].
+  - intros Σ v (v1 & v2 & Σ1 & Σ2 & -> & [-> Hd] & H1 & H2).
+    rewrite (IHHp1 _ _ H1), (IHHp2 _ _ H2).
+    apply (left_id ∅ (∪)).
+Qed.
+
+Lemma Vrel_prim_empty n Σ T v : prim T → Vrel n Σ T v → Σ = ∅.
+Proof. unfold Vrel. rewrite lvl_eq. apply Vdef_prim_empty. Qed.
 
 (** TLR-VAL: values in V are in E. *)
 Lemma Vrel_Erel n Σ T v : Vrel n Σ T v → Erel n Σ T v.
@@ -308,14 +341,14 @@ Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_lolli_iff n Σ T U v :
   Vrel n Σ (TLolli T U) v ↔
-  (∃ eb, v = Lam eb ∧
+  (∃ eb, v = Lam eb ∧ fchans eb ⊆ dom Σ ∧
      ∀ j Σ' w, j < n → Σ' ##ₘ Σ →
        Vrel j Σ' T w → Erel j (Σ ∪ Σ') U (subst1 w eb))
   ∨ (∃ k, v = Konst k ∧ Σ = ∅ ∧ konst_ty k (TLolli T U)).
 Proof.
   unfold Vrel, Erel. rewrite (lvl_eq n). cbn [mk_level lV Vdef].
   apply or_iff_compat_r.
-  split; intros (eb & -> & H); exists eb; (split; [done|]);
+  split; intros (eb & -> & Hsup & H); exists eb; (split_and!; [done..|]);
     intros j Σ' w Hj Hd HV.
   - rewrite <-(fam_lvl n j Hj). apply H; auto.
     rewrite (fam_lvl n j Hj). exact HV.
@@ -338,7 +371,7 @@ Definition Ecase (n' : nat) (Σ : senv) (T : ty) (α : tlabel) (e' : expr)
   | LSess (SRecv c w) =>
       ∃ Σ1 U s,
         Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ j Σ2, j < n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
+        ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
           Vrel j Σ2 U w →
           Erel j (<[c := s]> (Σ1 ∪ Σ2)) T e'
   | LSess (SSend c w) =>
@@ -388,7 +421,7 @@ Definition Pcase (n' : nat) (Σ : senv) (T : ty) (p : proc) (π : plabel)
   | PSess (SRecv c w) =>
       ∃ Σ1 U s,
         Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ j Σ2, j < n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
+        ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
           Vrel j Σ2 U w →
           Prel j (<[c := s]> (Σ1 ∪ Σ2)) T p'
   | PSess (SSend c w) =>
@@ -468,12 +501,26 @@ Fixpoint grounding (n : nat) (Σ : senv) (Δ : lenv) (γ : nat → expr) : Prop 
                grounding n Σ2 Δ' (γ ∘ S)
   end.
 
+(** Free variables available in Δ: x is bound to a [Some] entry. *)
+Definition lenv_avail (Δ : lenv) (x : nat) : Prop :=
+  ∃ T, Δ !! x = Some (Some T).
+
 (** Σ; Δ ⊨ e : T.  The channels of e itself are covered by Σ; the
     grounding substitution brings its own (disjoint) Σ'. (Def. 3.3;
     the draft's phrasing conflates the two environments — this is the
     reading under which the rules of Fig. 4, e.g. E-Ch, are
-    non-vacuous.) *)
+    non-vacuous.)
+
+    The judgment additionally records two pieces of syntactic
+    well-formedness that the paper leaves implicit but that Fig. 4's
+    rules maintain and the ⊸-case of V requires: the channels of e are
+    covered by Σ and the free variables of e by the available entries
+    of Δ. Without them the E-Abs rule (Thm 3.11) is false: a λ-body
+    could mention channels or spent variables that no grounding
+    controls. *)
 Definition sem_typed (Σ : senv) (Δ : lenv) (e : expr) (T : ty) : Prop :=
+  fchans e ⊆ dom Σ ∧
+  allfv (lenv_avail Δ) e ∧
   ∀ n Σ' γ, Σ' ##ₘ Σ → grounding n Σ' Δ γ →
     Erel n (Σ ∪ Σ') T (subst γ e).
 
@@ -520,8 +567,8 @@ Proof.
   intros Hle. induction T in Σ, v |- *.
   - rewrite !Vrel_unit_iff. done.
   - rewrite !Vrel_lolli_iff.
-    intros [(eb & -> & H)|Hk]; [left|by right].
-    exists eb. split; [done|]. intros j Σ' w Hj Hd HV.
+    intros [(eb & -> & Hsup & H)|Hk]; [left|by right].
+    exists eb. split_and!; [done..|]. intros j Σ' w Hj Hd HV.
     apply H; auto. lia.
   - rewrite !Vrel_prod_iff.
     intros (v1 & v2 & Σ1 & Σ2 & -> & Hsp & H1 & H2).
@@ -617,10 +664,55 @@ Proof.
     split; [lia|done].
 Qed.
 
+(** Grounding substitutions are downward closed, split along splits of
+    Δ, and assign channel-bounded values to available variables. *)
+Lemma grounding_down m n Σ Δ γ :
+  m ≤ n → grounding n Σ Δ γ → grounding m Σ Δ γ.
+Proof.
+  intros Hm. induction Δ as [|[T|] Δ' IH] in Σ, γ |- *; simpl; [done| |].
+  - intros (Σ1 & Σ2 & Hsp & HV & Hg).
+    exists Σ1, Σ2. eauto using Vrel_down.
+  - apply IH.
+Qed.
+
+Lemma grounding_split n Σ Δ Δ1 Δ2 γ :
+  lenv_split Δ Δ1 Δ2 → grounding n Σ Δ γ →
+  ∃ Σ1 Σ2, senv_split Σ Σ1 Σ2 ∧ grounding n Σ1 Δ1 γ ∧ grounding n Σ2 Δ2 γ.
+Proof.
+  intros Hs. revert Σ γ. induction Hs; intros Σ γ Hg; simpl in *.
+  - exists ∅, ∅. subst. split_and!; try done.
+  - destruct (IHHs _ _ Hg) as (Σ1 & Σ2 & ? & ? & ?). eauto 6.
+  - destruct Hg as (Σa & Σb & [-> Hd] & HV & Hg).
+    destruct (IHHs _ _ Hg) as (Σ1 & Σ2 & [-> Hd2] & Hg1 & Hg2).
+    exists (Σa ∪ Σ1), Σ2. split_and!; [| |done].
+    + split; [by senv_perm|senv_disj].
+    + exists Σa, Σ1. split_and!; try done. split; [done|senv_disj].
+  - destruct Hg as (Σa & Σb & [-> Hd] & HV & Hg).
+    destruct (IHHs _ _ Hg) as (Σ1 & Σ2 & [-> Hd2] & Hg1 & Hg2).
+    exists Σ1, (Σa ∪ Σ2). split_and!; [|done|].
+    + split; [by senv_perm|senv_disj].
+    + exists Σa, Σ2. split_and!; try done. split; [done|senv_disj].
+Qed.
+
+Lemma grounding_fchans n Σ Δ γ x T :
+  grounding n Σ Δ γ → Δ !! x = Some (Some T) → fchans (γ x) ⊆ dom Σ.
+Proof.
+  induction Δ as [|[T0|] Δ' IH] in Σ, γ, x |- *; intros Hg Hx;
+    simpl in *; simplify_eq.
+  - destruct x as [|x']; simpl in Hx; simplify_eq.
+    + destruct Hg as (Σ1 & Σ2 & [-> _] & HV & _).
+      pose proof (Vrel_fchans _ _ _ _ HV). senv_dom.
+    + destruct Hg as (Σ1 & Σ2 & [-> _] & _ & Hg).
+      specialize (IH _ _ _ Hg Hx). senv_dom.
+  - destruct x as [|x']; simpl in Hx; simplify_eq.
+    exact (IH _ _ _ Hg Hx).
+Qed.
+
 (** E-Unit *)
 Lemma sem_typed_unit Δ : lenv_empty Δ → sem_typed ∅ Δ EUnit TUnit.
 Proof.
-  intros HΔ n Σ' γ Hdisj Hg.
+  intros HΔ. split_and!; simpl; [set_solver|done|].
+  intros n Σ' γ Hdisj Hg.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
   apply Vrel_Erel. unfold Vrel. rewrite lvl_eq. simpl. done.
@@ -630,7 +722,8 @@ Qed.
 Lemma sem_typed_konst Δ k T :
   lenv_empty Δ → konst_ty k T → sem_typed ∅ Δ (Konst k) T.
 Proof.
-  intros HΔ Hk n Σ' γ Hdisj Hg.
+  intros HΔ Hk. split_and!; simpl; [set_solver|done|].
+  intros n Σ' γ Hdisj Hg.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
   apply Vrel_Erel. unfold Vrel. rewrite lvl_eq.
@@ -640,7 +733,9 @@ Qed.
 (** E-LVar *)
 Lemma sem_typed_var Δ x T : lenv_only Δ x T → sem_typed ∅ Δ (Var x) T.
 Proof.
-  intros Ho n Σ' γ Hdisj Hg. simpl.
+  intros Ho. split_and!; simpl; [set_solver| |].
+  { destruct Ho as [Hlk _]. by exists T. }
+  intros n Σ' γ Hdisj Hg. simpl.
   rewrite (left_id ∅ (∪)).
   apply Vrel_Erel. eauto using grounding_only.
 Qed.
@@ -649,39 +744,377 @@ Qed.
 Lemma sem_typed_chan Δ c s :
   lenv_empty Δ → sem_typed {[c := s]} Δ (Chan c) (TSess s).
 Proof.
-  intros HΔ n Σ' γ Hdisj Hg.
+  intros HΔ. split_and!; simpl; [senv_dom|done|].
+  intros n Σ' γ Hdisj Hg.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
   apply Vrel_Erel. unfold Vrel. rewrite lvl_eq. simpl.
   exists c. auto.
 Qed.
 
+(** ** Canonical values *)
+
+Lemma Vrel_unit n : Vrel n ∅ TUnit EUnit.
+Proof. by apply Vrel_unit_iff. Qed.
+
+Lemma Vrel_chan n c s : Vrel n {[c := s]} (TSess s) (Chan c).
+Proof. apply Vrel_sess_iff. eauto. Qed.
+
+Lemma Vrel_pair n Σ1 Σ2 T U v1 v2 :
+  Σ1 ##ₘ Σ2 → Vrel n Σ1 T v1 → Vrel n Σ2 U v2 →
+  Vrel n (Σ1 ∪ Σ2) (TProd T U) (Pair v1 v2).
+Proof.
+  intros. apply Vrel_prod_iff. exists v1, v2, Σ1, Σ2.
+  split_and!; auto. by split.
+Qed.
+
+(** ** Closure under evaluation frames
+
+    [Erel_bind]: to run [fill_frame f e], run e — while e is not a
+    value the composite's transitions are exactly e's, with the
+    frame's environment Σf inert — and hand over to the continuation
+    once e has become a value (at any index and any environment the
+    hole may have evolved to). *)
+Lemma Erel_bind n f Σh Σf Th T eh :
+  frame_val f → Σh ##ₘ Σf →
+  Erel n Σh Th eh →
+  (∀ j Σh' v, j ≤ n → Σh' ##ₘ Σf → Vrel j Σh' Th v →
+     Erel j (Σh' ∪ Σf) T (fill_frame f v)) →
+  Erel n (Σh ∪ Σf) T (fill_frame f eh).
+Proof.
+  revert f Σh Σf Th T eh.
+  induction n as [n IHn] using lt_wf_ind.
+  intros f Σh Σf Th T eh Hf Hd HE HK.
+  destruct (is_val eh) eqn:Hval.
+  { assert (is_val eh) as Hv by (by rewrite Hval).
+    destruct n as [|n']; [apply Erel_0|].
+    apply HK; [lia|done|].
+    apply Erel_S_iff in HE as [H1 _]. auto using val_irred. }
+  assert (¬ is_val eh) as Hv by (rewrite Hval; intros []).
+  destruct n as [|n']; [apply Erel_0|].
+  apply Erel_S_iff. split.
+  { intros Hirr. exfalso. apply Hv.
+    assert (irred eh) as Hirr1.
+    { intros α eh' Hst. eapply Hirr. by eapply tstep_fill. }
+    apply Erel_S_iff in HE as [H1 _]. eauto using Vrel_val. }
+  intros α E' Hst.
+  apply tstep_fill_inv in Hst as (eh' & Hst & ->); [|done|done].
+  pose proof (Erel_S_step _ _ _ _ _ _ HE Hst) as Hc.
+  destruct α as [|[c w|c w|c]|c w]; simpl in Hc |- *.
+  - (* β *)
+    eapply (IHn n'); [lia|done|done|done|].
+    intros j Σh' v ? ? ?. apply HK; [lia|done|done].
+  - (* recv *)
+    destruct Hc as (Σh1 & U0 & s & -> & Hcd & Hc).
+    apply map_disjoint_insert_l in Hd as [Hcf Hd].
+    exists (Σh1 ∪ Σf), U0, s. split_and!.
+    { by rewrite insert_union_l. }
+    { apply not_elem_of_dom in Hcd. apply not_elem_of_dom.
+      by rewrite lookup_union, Hcd, Hcf. }
+    intros j Σn Hj Hdn Hcn HV.
+    assert (Σn ##ₘ Σh1) by senv_disj.
+    assert (Σn ##ₘ Σf) by senv_disj.
+    specialize (Hc j Σn Hj ltac:(done) Hcn HV).
+    replace (<[c:=s]> (Σh1 ∪ Σf ∪ Σn)) with (<[c:=s]> (Σh1 ∪ Σn) ∪ Σf)
+      by senv_perm.
+    eapply (IHn j); [lia|done|senv_disj|done|].
+    intros j' Σh' v ? ? ?. apply HK; [lia|done|done].
+  - (* send *)
+    destruct Hc as (Σh1 & Σh2 & U0 & s & -> & Hd12 & Hc1 & Hc2 & HV & HE').
+    apply map_disjoint_insert_l in Hd as [Hcf Hd].
+    assert (Σh1 ##ₘ Σf) by senv_disj.
+    assert (Σh2 ##ₘ Σf) by senv_disj.
+    exists (Σh1 ∪ Σf), Σh2, U0, s. split_and!.
+    { senv_perm. }
+    { senv_disj. }
+    { apply not_elem_of_dom in Hc1. apply not_elem_of_dom.
+      by rewrite lookup_union, Hc1, Hcf. }
+    { done. }
+    { done. }
+    replace (<[c:=s]> (Σh1 ∪ Σf)) with (<[c:=s]> Σh1 ∪ Σf)
+      by (by rewrite insert_union_l).
+    eapply (IHn n'); [lia|done|senv_disj|done|].
+    intros j' Σh' v ? ? ?. apply HK; [lia|done|done].
+  - (* close *)
+    destruct Hc as (Σh1 & -> & Hcd & HE').
+    apply map_disjoint_insert_l in Hd as [Hcf Hd].
+    exists (Σh1 ∪ Σf). split_and!.
+    { by rewrite insert_union_l. }
+    { apply not_elem_of_dom in Hcd. apply not_elem_of_dom.
+      by rewrite lookup_union, Hcd, Hcf. }
+    eapply (IHn n'); [lia|done|done|done|].
+    intros j' Σh' v ? ? ?. apply HK; [lia|done|done].
+  - (* fork *)
+    intros Hcdom. rewrite dom_union_L in Hcdom.
+    assert (c ∉ dom Σh) as Hch by set_solver.
+    assert (c ∉ dom Σf) as Hcf by set_solver.
+    destruct (Hc Hch) as (Σa & Σb & s & [-> Hdab] & HV & HE').
+    exists Σa, (Σb ∪ Σf), s. split_and!.
+    { split; [by rewrite (assoc_L (∪))|senv_disj]. }
+    { done. }
+    replace (<[c:=dual s]> (Σb ∪ Σf)) with (<[c:=dual s]> Σb ∪ Σf)
+      by (by rewrite insert_union_l).
+    eapply (IHn n'); [lia|done|senv_disj|done|].
+    intros j' Σh' v ? ? ?. apply HK; [lia|done|done].
+Qed.
+
+(** ** Semantic head reductions *)
+
+(** Applying a related function to a related argument. *)
+Lemma Vrel_app_head n Σ1 Σ2 T U v1 v2 :
+  Σ1 ##ₘ Σ2 →
+  Vrel n Σ1 (TLolli T U) v1 → Vrel n Σ2 T v2 →
+  Erel n (Σ1 ∪ Σ2) U (App v1 v2).
+Proof.
+  intros Hd HV1 HV2.
+  pose proof (Vrel_val _ _ _ _ HV1) as Hv1.
+  pose proof (Vrel_val _ _ _ _ HV2) as Hv2.
+  destruct n as [|n']; [apply Erel_0|].
+  apply Erel_S_iff. split.
+  { (* an application of a related function is never stuck *)
+    intros Hirr. exfalso.
+    apply Vrel_lolli_iff in HV1
+      as [(eb & -> & Hsup & HL)|(k & -> & -> & Hk)].
+    { eapply (Hirr LBeta). apply TStepHead. by apply HeadApp. }
+    inversion Hk; subst.
+    - eapply (Hirr (LFork (fresh (∅ : gset chan)) v2)).
+      apply TStepHead. by apply HeadFork.
+    - apply Vrel_sess_iff in HV2 as (c & -> & ->).
+      eapply (Hirr (LSess (SRecv c EUnit))). apply TStepHead.
+      by apply HeadRecv.
+    - apply Vrel_prod_iff in HV2
+        as (w & vc & Σa & Σb & -> & Hsp & HVw & HVc).
+      apply Vrel_sess_iff in HVc as (c & -> & ->).
+      eapply (Hirr (LSess (SSend c w))). apply TStepHead.
+      apply HeadSend. eauto using Vrel_val.
+    - apply Vrel_sess_iff in HV2 as (c & -> & ->).
+      eapply (Hirr (LSess (SClos c))). apply TStepHead. by apply HeadClos. }
+  intros α e'' Hst.
+  apply tstep_app_inv in Hst
+    as [(e1' & Hst1 & ->)|[(_ & e2' & Hst2 & ->)|(_ & _ & Hhd)]].
+  { exfalso. eauto using val_no_tstep. }
+  { exfalso. eauto using val_no_tstep. }
+  inversion Hhd; subst; simpl.
+  - (* HeadApp *)
+    apply Vrel_lolli_iff in HV1
+      as [(eb & Heq & Hsup & HL)|(k & Heq & _)]; simplify_eq.
+    apply HL; [lia|senv_disj|]. eapply Vrel_down; [|done]. lia.
+  - (* HeadFork *)
+    apply Vrel_lolli_iff in HV1
+      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    inversion Hk; subst.
+    intros Hcdom.
+    match type of HV2 with Vrel _ _ (TLolli (TSess ?s) TUnit) _ =>
+      exists Σ2, ∅, s end.
+    refine (conj _ (conj HV2 _)).
+    { split; [senv_perm|apply map_disjoint_empty_r]. }
+    apply Vrel_Erel. rewrite insert_empty. apply Vrel_chan.
+  - (* HeadRecv *)
+    apply Vrel_lolli_iff in HV1
+      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    inversion Hk; subst.
+    apply Vrel_sess_iff in HV2 as (c' & Heqc & Heqs). simplify_eq.
+    match goal with |- context [SRcv ?t ?s] => exists ∅, t, s end.
+    refine (conj _ (conj _ _)).
+    { senv_perm. }
+    { set_solver. }
+    intros j Σn Hj _ Hcn HVw.
+    rewrite (left_id ∅ (∪)).
+    rewrite insert_as_union; [|done].
+    apply Vrel_Erel, Vrel_pair; [|done|apply Vrel_chan].
+    by apply map_disjoint_singleton_r, not_elem_of_dom.
+  - (* HeadSend *)
+    apply Vrel_lolli_iff in HV1
+      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    inversion Hk; subst.
+    apply Vrel_prod_iff in HV2
+      as (w' & vc & Σa & Σb & Heqp & [-> Hdab] & HVw & HVc).
+    simplify_eq.
+    apply Vrel_sess_iff in HVc as (c' & Heqc & ->). simplify_eq.
+    assert (Σa !! c' = None) as Hca.
+    { by apply map_disjoint_singleton_r in Hdab. }
+    match goal with |- context [SSnd ?t ?s] => exists ∅, Σa, t, s end.
+    refine (conj _ (conj _ (conj _ (conj _ (conj HVw _))))).
+    { senv_perm. }
+    { apply map_disjoint_empty_l. }
+    { set_solver. }
+    { by apply not_elem_of_dom. }
+    apply Vrel_Erel. rewrite insert_empty. apply Vrel_chan.
+  - (* HeadClos *)
+    apply Vrel_lolli_iff in HV1
+      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    inversion Hk; subst.
+    apply Vrel_sess_iff in HV2 as (c' & Heqc & Heqs). simplify_eq.
+    exists ∅. refine (conj _ (conj _ _)).
+    { senv_perm. }
+    { set_solver. }
+    apply Vrel_Erel, Vrel_unit.
+Qed.
+
+(** Reducing a let-unit / let-pair redex. *)
+Lemma Erel_letu_val n Σ T e2 : Erel n Σ T e2 → Erel n Σ T (LetU EUnit e2).
+Proof.
+  destruct n as [|n']; [intros; apply Erel_0|].
+  intros HE. apply Erel_S_iff. split.
+  { intros Hirr. exfalso. eapply (Hirr LBeta).
+    apply TStepHead, HeadLetU. }
+  intros α e' Hst.
+  apply tstep_letu_inv in Hst as [(e1' & Hst1 & _)|(_ & -> & ->)].
+  { exfalso. eapply val_no_tstep; [exact Hst1|done]. }
+  simpl. eapply Erel_down; [|done]. lia.
+Qed.
+
+Lemma Erel_letp_val n Σ T u v f :
+  is_val u → is_val v →
+  (∀ j, j < n → Erel j Σ T (subst2 u v f)) →
+  Erel n Σ T (LetP (Pair u v) f).
+Proof.
+  destruct n as [|n']; [intros; apply Erel_0|].
+  intros Hu Hv HK. apply Erel_S_iff. split.
+  { intros Hirr. exfalso. eapply (Hirr LBeta).
+    apply TStepHead. by apply HeadLetP. }
+  intros α e' Hst.
+  apply tstep_letp_inv in Hst
+    as [(e1' & Hst1 & _)|(u' & v' & Heq & _ & _ & -> & ->)].
+  { exfalso. eapply val_no_tstep; [exact Hst1|]. simpl.
+    by apply andb_True. }
+  simplify_eq. simpl. apply HK. lia.
+Qed.
+
 (** E-Abs *)
 Lemma sem_typed_lam Σ Δ e T U :
   sem_typed Σ (Some T :: Δ) e U →
   sem_typed Σ Δ (Lam e) (TLolli T U).
-Proof. Admitted.
+Proof.
+  intros (Hfc & Hfv & He). split_and!; [done| |].
+  { simpl. eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
+    - intros _. done.
+    - intros (T' & HT'). by exists T'. }
+  intros n Σ' γ Hdisj Hg. simpl.
+  apply Vrel_Erel. apply Vrel_lolli_iff. left.
+  exists (subst (up γ) e). split_and!; [done| |].
+  { (* channels of the substituted body are covered *)
+    etrans; [apply (fchans_subst _ (up γ) (dom Σ'))|].
+    - eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
+      + intros _. set_solver.
+      + intros (T' & HT'). unfold compose. rewrite fchans_rename.
+        eapply grounding_fchans; eauto.
+    - rewrite dom_union_L. set_solver. }
+  intros j Σn w Hj Hdn HVw.
+  rewrite subst1_subst.
+  replace (Σ ∪ Σ' ∪ Σn) with (Σ ∪ (Σn ∪ Σ')) by senv_perm.
+  apply He.
+  - senv_disj.
+  - simpl. exists Σn, Σ'. split_and!.
+    + split; [done|senv_disj].
+    + exact HVw.
+    + eapply grounding_down; [|exact Hg]. lia.
+Qed.
 
 (** E-App *)
 Lemma sem_typed_app Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 T U :
   senv_split Σ Σ1 Σ2 → lenv_split Δ Δ1 Δ2 →
   sem_typed Σ1 Δ1 e1 (TLolli T U) → sem_typed Σ2 Δ2 e2 T →
   sem_typed Σ Δ (App e1 e2) U.
-Proof. Admitted.
+Proof.
+  intros [-> HdΣ] HΔ (Hfc1 & Hfv1 & He1) (Hfc2 & Hfv2 & He2).
+  split_and!.
+  { simpl. rewrite dom_union_L. set_solver. }
+  { simpl. split.
+    - eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
+      exists T'. eauto using lenv_split_lookup_l.
+    - eapply allfv_mono; [|exact Hfv2]. intros x (T' & ?).
+      exists T'. eauto using lenv_split_lookup_r. }
+  intros n Σ' γ Hdisj Hg. simpl.
+  destruct (grounding_split _ _ _ _ _ _ HΔ Hg)
+    as (Σ'1 & Σ'2 & [-> Hd'] & Hg1 & Hg2).
+  replace (Σ1 ∪ Σ2 ∪ (Σ'1 ∪ Σ'2)) with ((Σ1 ∪ Σ'1) ∪ (Σ2 ∪ Σ'2))
+    by senv_perm.
+  apply (Erel_bind n (FAppL (subst γ e2)) _ _ (TLolli T U)); simpl.
+  - done.
+  - senv_disj.
+  - apply He1; [senv_disj|done].
+  - intros j Σh' v1 Hj Hdh HV1.
+    replace (Σh' ∪ (Σ2 ∪ Σ'2)) with ((Σ2 ∪ Σ'2) ∪ Σh')
+      by (apply map_union_comm; senv_disj).
+    apply (Erel_bind j (FAppR v1) _ _ T); simpl.
+    + eauto using Vrel_val.
+    + senv_disj.
+    + eapply Erel_down; [|apply He2; [senv_disj|done]]. lia.
+    + intros j' Σf' v2 Hj' Hdf HV2.
+      replace (Σf' ∪ Σh') with (Σh' ∪ Σf')
+        by (apply map_union_comm; senv_disj).
+      eapply Vrel_app_head; [senv_disj|..].
+      * eapply Vrel_down; [|exact HV1]. lia.
+      * exact HV2.
+Qed.
 
 (** E-Pair *)
 Lemma sem_typed_pair Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 T U :
   senv_split Σ Σ1 Σ2 → lenv_split Δ Δ1 Δ2 →
   sem_typed Σ1 Δ1 e1 T → sem_typed Σ2 Δ2 e2 U →
   sem_typed Σ Δ (Pair e1 e2) (TProd T U).
-Proof. Admitted.
+Proof.
+  intros [-> HdΣ] HΔ (Hfc1 & Hfv1 & He1) (Hfc2 & Hfv2 & He2).
+  split_and!.
+  { simpl. rewrite dom_union_L. set_solver. }
+  { simpl. split.
+    - eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
+      exists T'. eauto using lenv_split_lookup_l.
+    - eapply allfv_mono; [|exact Hfv2]. intros x (T' & ?).
+      exists T'. eauto using lenv_split_lookup_r. }
+  intros n Σ' γ Hdisj Hg. simpl.
+  destruct (grounding_split _ _ _ _ _ _ HΔ Hg)
+    as (Σ'1 & Σ'2 & [-> Hd'] & Hg1 & Hg2).
+  replace (Σ1 ∪ Σ2 ∪ (Σ'1 ∪ Σ'2)) with ((Σ1 ∪ Σ'1) ∪ (Σ2 ∪ Σ'2))
+    by senv_perm.
+  apply (Erel_bind n (FPairL (subst γ e2)) _ _ T); simpl.
+  - done.
+  - senv_disj.
+  - apply He1; [senv_disj|done].
+  - intros j Σh' v1 Hj Hdh HV1.
+    replace (Σh' ∪ (Σ2 ∪ Σ'2)) with ((Σ2 ∪ Σ'2) ∪ Σh')
+      by (apply map_union_comm; senv_disj).
+    apply (Erel_bind j (FPairR v1) _ _ U); simpl.
+    + eauto using Vrel_val.
+    + senv_disj.
+    + eapply Erel_down; [|apply He2; [senv_disj|done]]. lia.
+    + intros j' Σf' v2 Hj' Hdf HV2.
+      replace (Σf' ∪ Σh') with (Σh' ∪ Σf')
+        by (apply map_union_comm; senv_disj).
+      apply Vrel_Erel, Vrel_pair; [senv_disj| |done].
+      eapply Vrel_down; [|exact HV1]. lia.
+Qed.
 
 (** E-Let* *)
 Lemma sem_typed_letu Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 T :
   senv_split Σ Σ1 Σ2 → lenv_split Δ Δ1 Δ2 →
   sem_typed Σ1 Δ1 e1 TUnit → sem_typed Σ2 Δ2 e2 T →
   sem_typed Σ Δ (LetU e1 e2) T.
-Proof. Admitted.
+Proof.
+  intros [-> HdΣ] HΔ (Hfc1 & Hfv1 & He1) (Hfc2 & Hfv2 & He2).
+  split_and!.
+  { simpl. rewrite dom_union_L. set_solver. }
+  { simpl. split.
+    - eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
+      exists T'. eauto using lenv_split_lookup_l.
+    - eapply allfv_mono; [|exact Hfv2]. intros x (T' & ?).
+      exists T'. eauto using lenv_split_lookup_r. }
+  intros n Σ' γ Hdisj Hg. simpl.
+  destruct (grounding_split _ _ _ _ _ _ HΔ Hg)
+    as (Σ'1 & Σ'2 & [-> Hd'] & Hg1 & Hg2).
+  replace (Σ1 ∪ Σ2 ∪ (Σ'1 ∪ Σ'2)) with ((Σ1 ∪ Σ'1) ∪ (Σ2 ∪ Σ'2))
+    by senv_perm.
+  apply (Erel_bind n (FLetU (subst γ e2)) _ _ TUnit); simpl.
+  - done.
+  - senv_disj.
+  - apply He1; [senv_disj|done].
+  - intros j Σh' v1 Hj Hdh HV1.
+    apply Vrel_unit_iff in HV1 as [-> ->].
+    rewrite (left_id ∅ (∪)).
+    apply Erel_letu_val.
+    eapply Erel_down; [|apply He2; [senv_disj|done]]. lia.
+Qed.
 
 (** E-LetPair *)
 Lemma sem_typed_letp Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 U V T :
@@ -689,7 +1122,45 @@ Lemma sem_typed_letp Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 U V T :
   sem_typed Σ1 Δ1 e1 (TProd U V) →
   sem_typed Σ2 (Some V :: Some U :: Δ2) e2 T →
   sem_typed Σ Δ (LetP e1 e2) T.
-Proof. Admitted.
+Proof.
+  intros [-> HdΣ] HΔ (Hfc1 & Hfv1 & He1) (Hfc2 & Hfv2 & He2).
+  split_and!.
+  { simpl. rewrite dom_union_L. set_solver. }
+  { simpl. split.
+    - eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
+      exists T'. eauto using lenv_split_lookup_l.
+    - eapply allfv_mono; [|exact Hfv2]. intros [|[|x]]; simpl.
+      + intros _. done.
+      + intros _. done.
+      + intros (T' & ?). exists T'. eauto using lenv_split_lookup_r. }
+  intros n Σ' γ Hdisj Hg. simpl.
+  destruct (grounding_split _ _ _ _ _ _ HΔ Hg)
+    as (Σ'1 & Σ'2 & [-> Hd'] & Hg1 & Hg2).
+  replace (Σ1 ∪ Σ2 ∪ (Σ'1 ∪ Σ'2)) with ((Σ1 ∪ Σ'1) ∪ (Σ2 ∪ Σ'2))
+    by senv_perm.
+  apply (Erel_bind n (FLetP (subst (up (up γ)) e2)) _ _ (TProd U V));
+    simpl.
+  - done.
+  - senv_disj.
+  - apply He1; [senv_disj|done].
+  - intros j Σh' w Hj Hdh HVw.
+    apply Vrel_prod_iff in HVw
+      as (u & v & Σa & Σb & -> & [-> Hdab] & HVu & HVv).
+    apply Erel_letp_val; eauto using Vrel_val.
+    intros j' Hj'.
+    rewrite subst2_subst.
+    replace (Σa ∪ Σb ∪ (Σ2 ∪ Σ'2)) with (Σ2 ∪ (Σb ∪ (Σa ∪ Σ'2)))
+      by senv_perm.
+    apply He2.
+    { senv_disj. }
+    simpl. exists Σb, (Σa ∪ Σ'2). split_and!.
+    { split; [done|senv_disj]. }
+    { eapply Vrel_down; [|exact HVv]. lia. }
+    exists Σa, Σ'2. split_and!.
+    { split; [done|senv_disj]. }
+    { eapply Vrel_down; [|exact HVu]. lia. }
+    eapply grounding_down; [|exact Hg2]. lia.
+Qed.
 
 (** ** The fundamental property for terms (Theorem 3.13, term half;
     the process half lives in Compositionality.v) *)

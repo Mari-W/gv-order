@@ -34,6 +34,21 @@ Inductive lenv_split : lenv → lenv → lenv → Prop :=
       lenv_split Δ Δ1 Δ2 →
       lenv_split (Some T :: Δ) (None :: Δ1) (Some T :: Δ2).
 
+Lemma lenv_split_lookup_l Δ Δ1 Δ2 x T :
+  lenv_split Δ Δ1 Δ2 → Δ1 !! x = Some (Some T) → Δ !! x = Some (Some T).
+Proof.
+  intros Hs. revert x. induction Hs; intros [|x] Hx; simpl in *;
+    simplify_eq; auto.
+Qed.
+
+Lemma lenv_split_comm Δ Δ1 Δ2 :
+  lenv_split Δ Δ1 Δ2 → lenv_split Δ Δ2 Δ1.
+Proof. induction 1; constructor; auto. Qed.
+
+Lemma lenv_split_lookup_r Δ Δ1 Δ2 x T :
+  lenv_split Δ Δ1 Δ2 → Δ2 !! x = Some (Some T) → Δ !! x = Some (Some T).
+Proof. eauto using lenv_split_lookup_l, lenv_split_comm. Qed.
+
 (** ** Typing rules for terms: Σ; Δ ⊢ e : T *)
 
 Inductive typed : senv → lenv → expr → ty → Prop :=
@@ -101,3 +116,15 @@ Inductive ptyped : senv → proc → ty → Prop :=
     enforces it and the composition rules preserve it). *)
 Lemma ptyped_prim Σ p T : ptyped Σ p T → prim T.
 Proof. induction 1; auto. Qed.
+
+(** A typed process's restricted channels never overlap its session
+    environment (the paper's implicit well-formedness of Σ ⊢ (C,E)). *)
+Lemma ptyped_chan_disj Σ p T : ptyped Σ p T → p.1 ## dom Σ.
+Proof.
+  induction 1; simpl in *;
+    repeat match goal with
+    | H : senv_split _ _ _ |- _ => destruct H as [-> _]
+    | H : _ ## dom (<[_ := _]> _) |- _ => rewrite dom_insert_L in H
+    end;
+    rewrite ?dom_union_L; set_solver.
+Qed.
