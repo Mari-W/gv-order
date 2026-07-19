@@ -90,12 +90,62 @@ Definition Edef (below : nat → level) (Vn : senv → ty → expr → Prop)
         end)
   end.
 
-(** Process relation at level n. The output case (case 3, the
-    ⌈updated⌉ one in Fig. 5) sends value w to the environment: the
-    restricted channels occurring in w (dom Σs = fchans w ∩ C) escape,
-    typed by some session types Σs; the residual process splits into
-    two independent parts, one connected to c, one to the escaped
-    channels, with return types {T1,T2} = {T,∗}. *)
+(** Type bookkeeping for splitting a process into pieces: of the two
+    return types, at most one is not ∗ and it determines the total. *)
+Definition ty_one_of (A B C : ty) : Prop :=
+  (A = C ∧ B = TUnit) ∨ (A = TUnit ∧ B = C).
+
+(** Iterated decomposition into escaped-channel owners.
+
+    [Powners P σ Σ T p]: the process p decomposes into a family of
+    pairwise independent processes, exactly one per channel d ∈ dom σ,
+    where the piece for d is in the (parameter) process relation P at
+    environment Σd, d : σ(d) — it owns the residual end of d. Σ
+    accumulates the Σd's (without the d's themselves) and T the return
+    types (at most one ≠ ∗). The base case is the degenerate empty
+    process: for no escaped channels, nothing needs to remain.
+
+    This is the iterated form of Fig. 5's ⌈updated⌉ case 3: instead of
+    one process owning all escaped channels, one process per escaped
+    channel. A single piece owning two escaped channels would create a
+    potential cyclic dependency through the environment, so the finer
+    decomposition is the semantically meaningful invariant, and it is
+    what the compositionality proofs need when a communication
+    transfers several restricted channels at once: each transferred
+    channel is reconnected to its own owner piece separately. *)
+Inductive Powners (P : senv → ty → proc → Prop)
+    : gmap chan sty → senv → ty → proc → Prop :=
+  | Powners_nil : Powners P ∅ ∅ TUnit (∅, ∅)
+  | Powners_cons σ d s Σd Σr Td Tr Tt Cd Ed Cr Er :
+      σ !! d = None →
+      d ∉ dom Σd → d ∉ dom Σr → d ∉ Cd → d ∉ Cr →
+      dom σ ## dom Σd → dom σ ## Cd →
+      Σd ##ₘ Σr → Cd ## Cr → Cd ## dom Σr → Cr ## dom Σd →
+      P (<[d := s]> Σd) Td (Cd, Ed) →
+      Powners P σ Σr Tr (Cr, Er) →
+      ty_one_of Td Tr Tt →
+      Powners P (<[d := s]> σ) (Σd ∪ Σr) Tt (Cd ∪ Cr, Ed ⊎ Er).
+
+Lemma Powners_mono (P Q : senv → ty → proc → Prop) σ Σ T p :
+  (∀ Σ' T' p', P Σ' T' p' → Q Σ' T' p') →
+  Powners P σ Σ T p → Powners Q σ Σ T p.
+Proof. induction 2; econstructor; eauto. Qed.
+
+(** Process relation at level n. Differences from the term relation:
+
+    - τ obligations are guarded by [p'.1 ## dom Σ]: a fork picks a
+      globally fresh channel, and only names fresh for Σ as well are
+      constrained (the paper's implicit "Σ and C do not share
+      channels" well-formedness).
+    - the input case additionally assumes the received channels are
+      fresh for the restricted set ([dom Σ2 ## p.1]), for the same
+      reason.
+    - the output case (case 3, the ⌈updated⌉ one in Fig. 5) is the
+      iterated form: sending w on c leaks the restricted channels
+      dom σe = fchans w ∩ C; the residual splits into a continuation
+      piece for c and one independent owner piece per escaped channel
+      ([Powners]), with the value typed against the duals of the
+      owners' types. *)
 Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
     (n : nat) (Σ : senv) (T : ty) (p : proc) : Prop :=
   match n with
@@ -107,26 +157,27 @@ Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
       (∀ π p', proc_step p π p' →
         match π with
         | PTau =>                                      (* case 1 *)
+            p'.1 ## dom Σ →
             lP (below n') Σ T p'
         | PSess (SRecv c w) =>                         (* case 2 *)
             ∃ Σ1 U s,
               Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ j Σ2, j < n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
+              ∀ j Σ2, j < n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
                 lV (below j) Σ2 U w →
                 lP (below j) (<[c := s]> (Σ1 ∪ Σ2)) T p'
-        | PSess (SSend c w) =>                         (* case 3 *)
-            ∃ Σ1 Σ2 Σ3 U s (Σs : senv) C1' C2' E1' E2' T1 T2,
-              Σ = <[c := SSnd U s]> (Σ1 ∪ Σ2 ∪ Σ3) ∧
-              Σ1 ##ₘ Σ2 ∧ Σ1 ##ₘ Σ3 ∧ Σ2 ##ₘ Σ3 ∧
-              c ∉ dom Σ1 ∧ c ∉ dom Σ2 ∧ c ∉ dom Σ3 ∧
-              dom Σs = fchans w ∩ p.1 ∧
-              Σs ##ₘ Σ2 ∧ Σs ##ₘ Σ3 ∧ c ∉ dom Σs ∧
-              p'.1 = C1' ∪ C2' ∧ C1' ## C2' ∧
-              p'.2 = E1' ⊎ E2' ∧
-              Vn (Σ3 ∪ (dual <$> Σs)) U w ∧
-              lP (below n') (<[c := s]> Σ1) T1 (C1', E1') ∧
-              lP (below n') (Σ2 ∪ Σs) T2 (C2', E2') ∧
-              ((T1 = T ∧ T2 = TUnit) ∨ (T1 = TUnit ∧ T2 = T))
+        | PSess (SSend c w) =>                         (* case 3, iterated *)
+            ∃ Σ0 Σv U s (σe : gmap chan sty) Σw C0 E0 Cw Ew T0 Tw,
+              Σ = <[c := SSnd U s]> (Σ0 ∪ Σv ∪ Σw) ∧
+              Σ0 ##ₘ Σv ∧ Σ0 ##ₘ Σw ∧ Σv ##ₘ Σw ∧
+              c ∉ dom Σ0 ∧ c ∉ dom Σv ∧ c ∉ dom Σw ∧
+              dom σe = fchans w ∩ p.1 ∧
+              dom σe ## dom Σ ∧ c ∉ dom σe ∧
+              p'.1 = C0 ∪ Cw ∧ C0 ## Cw ∧
+              p'.2 = E0 ⊎ Ew ∧
+              Vn (Σv ∪ (dual <$> σe)) U w ∧
+              lP (below n') (<[c := s]> Σ0) T0 (C0, E0) ∧
+              Powners (lP (below n')) σe Σw Tw (Cw, Ew) ∧
+              ty_one_of T0 Tw T
         | PSess (SClos c) =>                           (* case 4 *)
             ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧
               lP (below n') Σ1 T p'
@@ -207,12 +258,14 @@ Proof.
   intros [H1 _] Hirr. exact (H1 Hirr).
 Qed.
 
-(** τ steps decrease the index by one. *)
+(** τ steps decrease the index by one (for τ successors whose
+    restricted channels stay clear of Σ — always true for Σ = ∅). *)
 Lemma Prel_S_tau n Σ T p p' :
-  Prel (S n) Σ T p → preduction p p' → Prel n Σ T p'.
+  Prel (S n) Σ T p → preduction p p' → p'.1 ## dom Σ → Prel n Σ T p'.
 Proof.
   unfold Prel at 1. rewrite lvl_eq. simpl.
-  intros [_ Hstep] Hred. specialize (Hstep _ _ Hred). simpl in Hstep.
+  intros [_ Hstep] Hred Hdisj.
+  specialize (Hstep _ _ Hred). simpl in Hstep. specialize (Hstep Hdisj).
   destruct (decide (n < n)); [lia|].
   unfold Prel. rewrite lvl_eq. exact Hstep.
 Qed.
@@ -232,6 +285,174 @@ Proof.
   - destruct Hstep as (Σ1 & Heq & _).
     exact (insert_non_empty _ _ _ (eq_sym Heq)).
 Qed.
+
+(** ** Characteristic equations
+
+    Encoding-free unfoldings of the three relations: [Vrel_*_iff] per
+    type constructor, [Erel_S_iff] / [Prel_S_iff] per positive step
+    index (via the case predicates [Ecase] / [Pcase]). All later
+    proofs go through these and never touch [fam]/[lvl]. *)
+
+Lemma Vrel_unit_iff n Σ v : Vrel n Σ TUnit v ↔ Σ = ∅ ∧ v = EUnit.
+Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
+
+Lemma Vrel_sess_iff n Σ s v :
+  Vrel n Σ (TSess s) v ↔ ∃ c, v = Chan c ∧ Σ = {[c := s]}.
+Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
+
+Lemma Vrel_prod_iff n Σ T U v :
+  Vrel n Σ (TProd T U) v ↔
+  ∃ v1 v2 Σ1 Σ2, v = Pair v1 v2 ∧ senv_split Σ Σ1 Σ2 ∧
+    Vrel n Σ1 T v1 ∧ Vrel n Σ2 U v2.
+Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
+
+Lemma Vrel_lolli_iff n Σ T U v :
+  Vrel n Σ (TLolli T U) v ↔
+  (∃ eb, v = Lam eb ∧
+     ∀ j Σ' w, j < n → Σ' ##ₘ Σ →
+       Vrel j Σ' T w → Erel j (Σ ∪ Σ') U (subst1 w eb))
+  ∨ (∃ k, v = Konst k ∧ Σ = ∅ ∧ konst_ty k (TLolli T U)).
+Proof.
+  unfold Vrel, Erel. rewrite (lvl_eq n). cbn [mk_level lV Vdef].
+  apply or_iff_compat_r.
+  split; intros (eb & -> & H); exists eb; (split; [done|]);
+    intros j Σ' w Hj Hd HV.
+  - rewrite <-(fam_lvl n j Hj). apply H; auto.
+    rewrite (fam_lvl n j Hj). exact HV.
+  - rewrite (fam_lvl n j Hj). apply H; auto.
+    rewrite <-(fam_lvl n j Hj). exact HV.
+Qed.
+
+(** The step-clause cases of the term relation at index S n'. *)
+Definition Ecase (n' : nat) (Σ : senv) (T : ty) (α : tlabel) (e' : expr)
+    : Prop :=
+  match α with
+  | LBeta =>
+      Erel n' Σ T e'
+  | LFork c w =>
+      c ∉ dom Σ →
+      ∃ Σ1 Σ2 s,
+        senv_split Σ Σ1 Σ2 ∧
+        Vrel (S n') Σ1 (TLolli (TSess s) TUnit) w ∧
+        Erel n' (<[c := dual s]> Σ2) T e'
+  | LSess (SRecv c w) =>
+      ∃ Σ1 U s,
+        Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
+        ∀ j Σ2, j < n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
+          Vrel j Σ2 U w →
+          Erel j (<[c := s]> (Σ1 ∪ Σ2)) T e'
+  | LSess (SSend c w) =>
+      ∃ Σ1 Σ2 U s,
+        Σ = <[c := SSnd U s]> (Σ1 ∪ Σ2) ∧
+        Σ1 ##ₘ Σ2 ∧ c ∉ dom Σ1 ∧ c ∉ dom Σ2 ∧
+        Vrel (S n') Σ2 U w ∧
+        Erel n' (<[c := s]> Σ1) T e'
+  | LSess (SClos c) =>
+      ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧ Erel n' Σ1 T e'
+  end.
+
+Lemma Erel_S_iff n Σ T e :
+  Erel (S n) Σ T e ↔
+    (irred e → Vrel (S n) Σ T e) ∧
+    (∀ α e', tstep e α e' → Ecase n Σ T α e').
+Proof.
+  unfold Ecase, Erel, Vrel. rewrite (lvl_eq (S n)).
+  cbn [mk_level lV lE Edef].
+  rewrite (fam_lvl (S n) n (Nat.lt_succ_diag_r n)).
+  apply and_iff_compat_l.
+  split; intros H α e' Hst; specialize (H α e' Hst);
+    destruct α as [|[c w|c w|c]|c w]; try exact H.
+  - (* recv, → *)
+    destruct H as (Σ1 & U & s & HΣ & Hc & H).
+    exists Σ1, U, s. split_and!; [done|done|].
+    intros j Σ2 Hj Hd Hcd HV.
+    rewrite <-(fam_lvl (S n) j) in HV by lia.
+    specialize (H j Σ2 Hj Hd Hcd HV).
+    rewrite (fam_lvl (S n) j) in H by lia. exact H.
+  - (* recv, ← *)
+    destruct H as (Σ1 & U & s & HΣ & Hc & H).
+    exists Σ1, U, s. split_and!; [done|done|].
+    intros j Σ2 Hj Hd Hcd HV.
+    rewrite (fam_lvl (S n) j) in HV by lia.
+    specialize (H j Σ2 Hj Hd Hcd HV).
+    rewrite <-(fam_lvl (S n) j) in H by lia. exact H.
+Qed.
+
+(** The step-clause cases of the process relation at index S n'. *)
+Definition Pcase (n' : nat) (Σ : senv) (T : ty) (p : proc) (π : plabel)
+    (p' : proc) : Prop :=
+  match π with
+  | PTau =>
+      p'.1 ## dom Σ →
+      Prel n' Σ T p'
+  | PSess (SRecv c w) =>
+      ∃ Σ1 U s,
+        Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
+        ∀ j Σ2, j < n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
+          Vrel j Σ2 U w →
+          Prel j (<[c := s]> (Σ1 ∪ Σ2)) T p'
+  | PSess (SSend c w) =>
+      ∃ Σ0 Σv U s (σe : gmap chan sty) Σw C0 E0 Cw Ew T0 Tw,
+        Σ = <[c := SSnd U s]> (Σ0 ∪ Σv ∪ Σw) ∧
+        Σ0 ##ₘ Σv ∧ Σ0 ##ₘ Σw ∧ Σv ##ₘ Σw ∧
+        c ∉ dom Σ0 ∧ c ∉ dom Σv ∧ c ∉ dom Σw ∧
+        dom σe = fchans w ∩ p.1 ∧
+        dom σe ## dom Σ ∧ c ∉ dom σe ∧
+        p'.1 = C0 ∪ Cw ∧ C0 ## Cw ∧
+        p'.2 = E0 ⊎ Ew ∧
+        Vrel (S n') (Σv ∪ (dual <$> σe)) U w ∧
+        Prel n' (<[c := s]> Σ0) T0 (C0, E0) ∧
+        Powners (Prel n') σe Σw Tw (Cw, Ew) ∧
+        ty_one_of T0 Tw T
+  | PSess (SClos c) =>
+      ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' Σ1 T p'
+  end.
+
+Lemma Prel_S_iff n Σ T p :
+  Prel (S n) Σ T p ↔
+    (pirred p →
+      ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) Σ T v ∧
+             (∀ e, e ∈ E → e = EUnit)) ∧
+    (∀ π p', proc_step p π p' → Pcase n Σ T p π p').
+Proof.
+  unfold Pcase, Prel, Vrel. rewrite (lvl_eq (S n)).
+  cbn [mk_level lV lP Pdef].
+  rewrite (fam_lvl (S n) n (Nat.lt_succ_diag_r n)).
+  apply and_iff_compat_l.
+  split; intros H π p' Hst; specialize (H π p' Hst);
+    destruct π as [|[c w|c w|c]]; try exact H.
+  - (* recv, → *)
+    destruct H as (Σ1 & U & s & HΣ & Hc & H).
+    exists Σ1, U, s. split_and!; [done|done|].
+    intros j Σ2 Hj Hd Hcd Hfr HV.
+    rewrite <-(fam_lvl (S n) j) in HV by lia.
+    specialize (H j Σ2 Hj Hd Hcd Hfr HV).
+    rewrite (fam_lvl (S n) j) in H by lia. exact H.
+  - (* recv, ← *)
+    destruct H as (Σ1 & U & s & HΣ & Hc & H).
+    exists Σ1, U, s. split_and!; [done|done|].
+    intros j Σ2 Hj Hd Hcd Hfr HV.
+    rewrite (fam_lvl (S n) j) in HV by lia.
+    specialize (H j Σ2 Hj Hd Hcd Hfr HV).
+    rewrite <-(fam_lvl (S n) j) in H by lia. exact H.
+Qed.
+
+(** Convenient corollaries of the characteristic equations. *)
+Lemma Prel_S_intro n Σ T p :
+  (pirred p →
+    ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) Σ T v ∧
+           (∀ e, e ∈ E → e = EUnit)) →
+  (∀ π p', proc_step p π p' → Pcase n Σ T p π p') →
+  Prel (S n) Σ T p.
+Proof. intros. apply Prel_S_iff. done. Qed.
+
+Lemma Prel_S_step n Σ T p π p' :
+  Prel (S n) Σ T p → proc_step p π p' → Pcase n Σ T p π p'.
+Proof. intros HP Hst. apply Prel_S_iff in HP as [_ H]. auto. Qed.
+
+Lemma Erel_S_step n Σ T e α e' :
+  Erel (S n) Σ T e → tstep e α e' → Ecase n Σ T α e'.
+Proof. intros HE Hst. apply Erel_S_iff in HE as [_ H]. auto. Qed.
 
 (** ** Semantic judgments (Defs. 3.2 and 3.3) *)
 
@@ -262,12 +483,13 @@ Definition sem_ptyped (Σ : senv) (p : proc) (T : ty) : Prop :=
 
 (** ** The adequacy chain (Lemmas 3.4, 3.5 and Theorem 3.6) *)
 
-(** Lemma 3.4 *)
-Lemma Prel_steps m n Σ T p p' :
-  nsteps preduction m p p' → Prel (m + n) Σ T p → Prel n Σ T p'.
+(** Lemma 3.4 (for the closed environment, which is what adequacy
+    needs; the τ-guard is trivially satisfied at Σ = ∅). *)
+Lemma Prel_steps m n T p p' :
+  nsteps preduction m p p' → Prel (m + n) ∅ T p → Prel n ∅ T p'.
 Proof.
   induction 1 as [|m' x y z Hxy Hyz IH]; simpl; [done|].
-  intros HP. apply IH. by eapply Prel_S_tau.
+  intros HP. apply IH. eapply Prel_S_tau; [done..|]. set_solver.
 Qed.
 
 (** Lemma 3.5 *)
@@ -294,39 +516,69 @@ Qed.
 (** ** Downward closure (Lemma 3.7) *)
 
 Lemma Vrel_down n m Σ T v : m ≤ n → Vrel n Σ T v → Vrel m Σ T v.
-Proof. Admitted.
+Proof.
+  intros Hle. induction T in Σ, v |- *.
+  - rewrite !Vrel_unit_iff. done.
+  - rewrite !Vrel_lolli_iff.
+    intros [(eb & -> & H)|Hk]; [left|by right].
+    exists eb. split; [done|]. intros j Σ' w Hj Hd HV.
+    apply H; auto. lia.
+  - rewrite !Vrel_prod_iff.
+    intros (v1 & v2 & Σ1 & Σ2 & -> & Hsp & H1 & H2).
+    eexists _, _, _, _. split_and!; eauto.
+  - rewrite !Vrel_sess_iff. done.
+Qed.
 
 Lemma Erel_down n m Σ T e : m ≤ n → Erel n Σ T e → Erel m Σ T e.
-Proof. Admitted.
+Proof.
+  revert n Σ T e. induction m as [|m' IH]; intros n Σ T e Hle HE;
+    [apply Erel_0|].
+  destruct n as [|n']; [lia|].
+  apply Erel_S_iff in HE as [H1 H2]. apply Erel_S_iff. split.
+  - intros He. eapply Vrel_down; [|by apply H1]. lia.
+  - intros α e' Hst. specialize (H2 α e' Hst).
+    destruct α as [|[c w|c w|c]|c w]; simpl in H2 |- *.
+    + eapply IH; [|exact H2]. lia.
+    + destruct H2 as (Σ1 & U & s & -> & Hc & H2).
+      eexists _, _, _. split_and!; [done|done|].
+      intros j Σ2 Hj Hd Hcd HV. apply H2; auto. lia.
+    + destruct H2 as (Σ1 & Σ2 & U & s & -> & ? & ? & ? & HV & HE').
+      eexists _, _, _, _. split_and!; eauto.
+      * eapply Vrel_down; [|exact HV]. lia.
+      * eapply IH; [|exact HE']. lia.
+    + destruct H2 as (Σ1 & -> & ? & HE').
+      eexists. split_and!; eauto. eapply IH; [|done]. lia.
+    + intros Hc. destruct (H2 Hc) as (Σ1 & Σ2 & s & ? & HV & HE').
+      eexists _, _, _. split_and!; eauto.
+      * eapply Vrel_down; [|exact HV]. lia.
+      * eapply IH; [|done]. lia.
+Qed.
 
 Lemma Prel_down n m Σ T p : m ≤ n → Prel n Σ T p → Prel m Σ T p.
-Proof. Admitted.
-
-(** ** Compositionality for processes (Lemmas 3.8–3.10) *)
-
-(** Lemma 3.8 (Compositionality: TERM) *)
-Lemma Prel_term n Σ T e :
-  prim T → Erel n Σ T e → Prel n Σ T (∅, {[+ e +]}).
-Proof. Admitted.
-
-(** Lemma 3.9 (Compositionality: INDEPENDENT) *)
-Lemma Prel_independent n Σ Σ1 Σ2 C1 E1 C2 E2 T :
-  prim T → senv_split Σ Σ1 Σ2 →
-  C1 ## C2 → C1 ## dom Σ2 → C2 ## dom Σ1 →
-  Prel n Σ1 T (C1, E1) → Prel n Σ2 TUnit (C2, E2) →
-  Prel n Σ T (C1 ∪ C2, E1 ⊎ E2).
-Proof. Admitted.
-
-(** Lemma 3.10 (Compositionality: CONNECT) *)
-Lemma Prel_connect n Σ Σ1 Σ2 c s C1 E1 C2 E2 T :
-  prim T → senv_split Σ Σ1 Σ2 →
-  c ∉ dom Σ1 → c ∉ dom Σ2 →
-  C1 ## C2 → c ∉ C1 → c ∉ C2 →
-  C1 ## dom Σ2 → C2 ## dom Σ1 →
-  Prel n (<[c := s]> Σ1) T (C1, E1) →
-  Prel n (<[c := dual s]> Σ2) TUnit (C2, E2) →
-  Prel n Σ T (C1 ∪ C2 ∪ {[c]}, E1 ⊎ E2).
-Proof. Admitted.
+Proof.
+  revert n Σ T p. induction m as [|m' IH]; intros n Σ T p Hle HP;
+    [apply Prel_0|].
+  destruct n as [|n']; [lia|].
+  apply Prel_S_iff in HP as [H1 H2]. apply Prel_S_iff. split.
+  - intros Hirr. destruct (H1 Hirr) as (v & E & -> & ? & HV & ?).
+    eexists _, _. split_and!; eauto. eapply Vrel_down; [|exact HV]. lia.
+  - intros π p' Hst. specialize (H2 π p' Hst).
+    destruct π as [|[c w|c w|c]]; simpl in H2 |- *.
+    + intros Hd. eapply IH; [|by apply H2]. lia.
+    + destruct H2 as (Σ1 & U & s & -> & Hc & H2).
+      eexists _, _, _. split_and!; [done|done|].
+      intros j Σ2 Hj Hd Hcd Hfr HV. apply H2; auto. lia.
+    + destruct H2 as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew &
+                      T0 & Tw & -> & ? & ? & ? & ? & ? & ? & ? & ? & ? &
+                      ? & ? & ? & HV & HP0 & HPw & ?).
+      eexists _, _, _, _, _, _, _, _, _, _, _, _. split_and!; eauto.
+      * eapply Vrel_down; [|exact HV]. lia.
+      * eapply IH; [|exact HP0]. lia.
+      * eapply Powners_mono; [|exact HPw].
+        intros ? ? ? ?. eapply IH; [|eauto]. lia.
+    + destruct H2 as (Σ1 & -> & ? & HP').
+      eexists. split_and!; eauto. eapply IH; [|done]. lia.
+Qed.
 
 (** ** Compositionality for terms (Theorem 3.11)
 
@@ -439,37 +691,8 @@ Lemma sem_typed_letp Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 U V T :
   sem_typed Σ Δ (LetP e1 e2) T.
 Proof. Admitted.
 
-(** ** Compositionality for processes, judgment form (Theorem 3.12) *)
-
-(** P-Term *)
-Lemma sem_ptyped_term Σ e T :
-  prim T → sem_typed Σ [] e T → sem_ptyped Σ (∅, {[+ e +]}) T.
-Proof.
-  intros Hp He n. apply Prel_term; [done|].
-  specialize (He n ∅ Var (map_disjoint_empty_l _) eq_refl).
-  by rewrite (right_id ∅ (∪)), subst_ids in He.
-Qed.
-
-(** P-Independent *)
-Lemma sem_ptyped_independent Σ Σ1 Σ2 C1 E1 C2 E2 T :
-  prim T → senv_split Σ Σ1 Σ2 →
-  C1 ## C2 → C1 ## dom Σ2 → C2 ## dom Σ1 →
-  sem_ptyped Σ1 (C1, E1) T → sem_ptyped Σ2 (C2, E2) TUnit →
-  sem_ptyped Σ (C1 ∪ C2, E1 ⊎ E2) T.
-Proof. intros. intro n. by eapply Prel_independent. Qed.
-
-(** P-Connect *)
-Lemma sem_ptyped_connect Σ Σ1 Σ2 c s C1 E1 C2 E2 T :
-  prim T → senv_split Σ Σ1 Σ2 →
-  c ∉ dom Σ1 → c ∉ dom Σ2 →
-  C1 ## C2 → c ∉ C1 → c ∉ C2 →
-  C1 ## dom Σ2 → C2 ## dom Σ1 →
-  sem_ptyped (<[c := s]> Σ1) (C1, E1) T →
-  sem_ptyped (<[c := dual s]> Σ2) (C2, E2) TUnit →
-  sem_ptyped Σ (C1 ∪ C2 ∪ {[c]}, E1 ⊎ E2) T.
-Proof. intros. intro n. by eapply Prel_connect. Qed.
-
-(** ** The fundamental property (Theorem 3.13) *)
+(** ** The fundamental property for terms (Theorem 3.13, term half;
+    the process half lives in Compositionality.v) *)
 
 Theorem fundamental_term Σ Δ e T : typed Σ Δ e T → sem_typed Σ Δ e T.
 Proof.
@@ -484,15 +707,3 @@ Proof.
   - by eapply sem_typed_letu.
   - by eapply sem_typed_letp.
 Qed.
-
-Theorem fundamental_proc Σ p T : ptyped Σ p T → sem_ptyped Σ p T.
-Proof.
-  induction 1.
-  - apply sem_ptyped_term; auto using fundamental_term.
-  - eapply sem_ptyped_independent; eauto using ptyped_prim.
-  - eapply sem_ptyped_connect; eauto using ptyped_prim.
-Qed.
-
-(** Corollary: syntactically typed closed processes are deadlock free. *)
-Corollary typed_deadlock_free p T : ptyped ∅ p T → deadlock_free p.
-Proof. eauto using adequacy, fundamental_proc. Qed.

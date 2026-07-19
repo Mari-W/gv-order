@@ -7,4 +7,5 @@ theories/Processes.v
 theories/Types.v
 theories/Typing.v
 theories/LogRel.v
+theories/Compositionality.v
 theories/Examples.v

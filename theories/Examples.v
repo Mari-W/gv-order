@@ -6,7 +6,7 @@
       to be irreducible and unsafe. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Import LogRel.
+From LRGV Require Import LogRel Compositionality.
 
 Local Open Scope string_scope.
 
