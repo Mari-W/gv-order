@@ -30,10 +30,10 @@ Qed.
 Lemma elem_of_echans x E : x ∈ echans E ↔ ∃ e, e ∈ E ∧ x ∈ fchans e.
 Proof.
   unfold echans. rewrite elem_of_union_list. split.
-  - intros (X & HX & Hx). apply elem_of_list_fmap in HX as (e & -> & He).
+  - intros (X & HX & Hx). apply list_elem_of_fmap in HX as (e & -> & He).
     exists e. split; [|done]. by apply gmultiset_elem_of_elements.
   - intros (e & He & Hx). exists (fchans e). split; [|done].
-    apply elem_of_list_fmap. exists e. split; [done|].
+    apply list_elem_of_fmap. exists e. split; [done|].
     by apply gmultiset_elem_of_elements.
 Qed.
 
@@ -966,7 +966,7 @@ Proof.
       assert (c ∉ dom Σrest) as Hcrest.
       { apply map_disjoint_dom in Hd7. set_solver. }
       assert (<[d:=sd]> Σd = <[c := sc]> (<[d:=sd]> (delete c Σd))) as Heqp.
-      { rewrite insert_commute; [|done]. f_equal. by rewrite insert_delete. }
+      { rewrite insert_insert_ne; [|done]. f_equal. by rewrite insert_delete_id. }
       assert (d ∉ dom Σg) as Hdng by set_solver.
       assert (c ∉ dom (<[d:=sd]> (delete c Σd))) as Hcout.
       { rewrite dom_insert_L, dom_delete_L. set_solver. }
@@ -981,7 +981,7 @@ Proof.
         Powners (Prel n) (<[d:=sd]> σ') (delete c (Σd ∪ Σrest) ∪ Σg) Tt
           (Cd ∪ Crest ∪ Cg ∪ {[c]}, (Ed ⊎ Erest) ⊎ Eg)) as Hcons.
       { intros T2 Hty2 HP2.
-        rewrite delete_union, (delete_notin Σrest c);
+        rewrite delete_union, (delete_id Σrest c);
           [|by apply not_elem_of_dom].
         replace (delete c Σd ∪ Σrest ∪ Σg)
           with ((delete c Σd ∪ Σg) ∪ Σrest) by senv_perm.
@@ -1026,7 +1026,7 @@ Proof.
         Powners (Prel n) (<[d:=sd]> σ') (delete c (Σd ∪ Σrest) ∪ Σg) Tt
           (Cd ∪ Crest ∪ Cg ∪ {[c]}, (Ed ⊎ Erest) ⊎ Eg)) as Hcons.
       { intros T3 Hty3 HPrest'.
-        rewrite delete_union, (delete_notin Σd c);
+        rewrite delete_union, (delete_id Σd c);
           [|by apply not_elem_of_dom].
         replace (Σd ∪ delete c Σrest ∪ Σg)
           with (Σd ∪ (delete c Σrest ∪ Σg)) by (by rewrite (assoc_L (∪))).

@@ -739,15 +739,15 @@ Proof.
       assert (Σ1 !! d = Some (SRcv U u)) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_ne in Hl; [|done].
-        by rewrite lookup_insert in Hl. }
+        by rewrite lookup_insert_eq in Hl. }
       assert (Σ1x = <[c:=s]> (delete d Σ1)) as HΣ1x.
       { pose proof (f_equal (delete d) HeqΣ) as Hl.
         rewrite delete_insert_ne in Hl; [|done].
-        rewrite delete_insert in Hl; [|by apply not_elem_of_dom].
+        rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         by rewrite <-Hl. }
       subst Σ1x.
       assert (Σ1 = <[d:=SRcv U u]> (delete d Σ1)) as HΣ1d
-        by (by rewrite insert_delete).
+        by (by rewrite insert_delete_id).
       assert (d ∈ dom Σ1) as Hddom by (by apply elem_of_dom).
       assert (d ∉ dom Σ2) as Hd2' by (apply map_disjoint_dom in Hdd; set_solver).
       exists (delete d Σ1 ∪ Σ2), U, u. split_and!.
@@ -760,7 +760,7 @@ Proof.
       specialize (Hcont j Σn Hj ltac:(dom_disj) Hcn
                     ltac:(simpl; set_solver) HVw).
       replace (C1 ∖ ∅) with C1 in Hcont by set_prune.
-      rewrite <-insert_union_l, (insert_commute _ d c) in Hcont; [|done].
+      rewrite <-insert_union_l, (insert_insert_ne _ d c) in Hcont; [|done].
       replace ((C1 ∪ C2 ∪ {[c]}) ∖ ∅) with (C1 ∪ C2 ∪ {[c]}) by set_prune.
       replace ((F1 ⊎ E2) ⊎ {[+ e' +]}) with ((F1 ⊎ {[+ e' +]}) ⊎ E2)
         by multiset_solver.
@@ -776,11 +776,11 @@ Proof.
       simpl in HpC, HpE, Hdome.
       assert ((Σ0 ∪ Σv ∪ Σw) !! c = Some s) as Hlkc.
       { pose proof (f_equal (λ m, m !! c) HeqΣ) as Hl. cbv beta in Hl.
-        rewrite lookup_insert in Hl.
+        rewrite lookup_insert_eq in Hl.
         by rewrite lookup_insert_ne in Hl. }
       assert (Σ1 = <[d:=SSnd U u]> (delete c (Σ0 ∪ Σv ∪ Σw))) as HΣ1.
       { pose proof (f_equal (delete c) HeqΣ) as Hl.
-        rewrite delete_insert in Hl; [|by apply not_elem_of_dom].
+        rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         rewrite Hl. by rewrite delete_insert_ne. }
       pose proof (Vrel_fchans _ _ _ _ HVw) as Hfw.
       rewrite dom_union_L, dom_fmap_L in Hfw.
@@ -807,10 +807,10 @@ Proof.
         assert (c ∉ dom Σv) as Hcvd by set_prune.
         assert (c ∉ dom Σw) as Hcwd by set_prune.
         assert (fchans w ## C2 ∪ {[c]}) as Hwc2 by (rewrite Hfw; set_solver).
-        rewrite !delete_union, (delete_notin Σv c), (delete_notin Σw c)
+        rewrite !delete_union, (delete_id Σv c), (delete_id Σw c)
           in HΣ1; [|by apply not_elem_of_dom..].
-        rewrite <-(insert_delete Σ0 c s Hlk0) in HP0.
-        rewrite (insert_commute _ d c) in HP0; [|done].
+        rewrite <-(insert_delete_id Σ0 c s Hlk0) in HP0.
+        rewrite (insert_insert_ne _ d c) in HP0; [|done].
         assert (Prel n (<[d:=u]> (delete c Σ0) ∪ Σ2) T0
                   (C0 ∪ C2 ∪ {[c]}, E0 ⊎ E2)) as HPmid.
         { eapply (IHc _ _ c s); connect_prem. }
@@ -844,7 +844,7 @@ Proof.
         assert (c ∉ dom Σw) as Hcwd by set_prune.
         assert (σe !! c = None) as HσeN
           by (apply not_elem_of_dom; set_solver).
-        rewrite !delete_union, (delete_notin Σ0 c), (delete_notin Σw c)
+        rewrite !delete_union, (delete_id Σ0 c), (delete_id Σw c)
           in HΣ1; [|by apply not_elem_of_dom..].
         assert (Powners (Prel n) (<[c := dual s]> σe) (Σ2 ∪ Σw) Tw
                   (C2 ∪ Cw, E2 ⊎ Ew)) as HPw'.
@@ -852,8 +852,8 @@ Proof.
         assert (delete c Σv ∪ (dual <$> <[c := dual s]> σe)
                 = Σv ∪ (dual <$> σe)) as Hvenv.
         { rewrite fmap_insert, dual_involutive.
-          rewrite <-insert_union_r; [|apply lookup_delete].
-          rewrite insert_union_l. by rewrite insert_delete. }
+          rewrite <-insert_union_r; [|apply lookup_delete_eq].
+          rewrite insert_union_l. by rewrite insert_delete_id. }
         eexists Σ0, (delete c Σv), U, u, (<[c := dual s]> σe), (Σ2 ∪ Σw),
           C0, E0, (C2 ∪ Cw), (E2 ⊎ Ew), T0, Tw.
         split_and!.
@@ -880,7 +880,7 @@ Proof.
         assert (c ∈ dom Σw) as Hcw by (apply elem_of_dom; eauto).
         assert (c ∉ dom Σ0) as Hc0d by (by apply not_elem_of_dom).
         assert (c ∉ dom Σv) as Hcvd by (by apply not_elem_of_dom).
-        rewrite !delete_union, (delete_notin Σ0 c), (delete_notin Σv c)
+        rewrite !delete_union, (delete_id Σ0 c), (delete_id Σv c)
           in HΣ1; [|by apply not_elem_of_dom..].
         assert (Powners (Prel n) σe (delete c Σw ∪ Σ2) Tw
                   (Cw ∪ C2 ∪ {[c]}, Ew ⊎ E2)) as HPw'.
@@ -912,15 +912,15 @@ Proof.
       assert (Σ1 !! d = Some SEnd) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_ne in Hl; [|done].
-        by rewrite lookup_insert in Hl. }
+        by rewrite lookup_insert_eq in Hl. }
       assert (Σ1x = <[c:=s]> (delete d Σ1)) as HΣ1x.
       { pose proof (f_equal (delete d) HeqΣ) as Hl.
         rewrite delete_insert_ne in Hl; [|done].
-        rewrite delete_insert in Hl; [|by apply not_elem_of_dom].
+        rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         by rewrite <-Hl. }
       subst Σ1x.
       assert (Σ1 = <[d:=SEnd]> (delete d Σ1)) as HΣ1d
-        by (by rewrite insert_delete).
+        by (by rewrite insert_delete_id).
       assert (d ∈ dom Σ1) as Hddom by (by apply elem_of_dom).
       assert (d ∉ dom Σ2) as Hd2'
         by (apply map_disjoint_dom in Hdd; set_solver).
@@ -945,15 +945,15 @@ Proof.
       assert (Σ2 !! d = Some (SRcv U u)) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_ne in Hl; [|done].
-        by rewrite lookup_insert in Hl. }
+        by rewrite lookup_insert_eq in Hl. }
       assert (Σ2x = <[c:=dual s]> (delete d Σ2)) as HΣ2x.
       { pose proof (f_equal (delete d) HeqΣ) as Hl.
         rewrite delete_insert_ne in Hl; [|done].
-        rewrite delete_insert in Hl; [|by apply not_elem_of_dom].
+        rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         by rewrite <-Hl. }
       subst Σ2x.
       assert (Σ2 = <[d:=SRcv U u]> (delete d Σ2)) as HΣ2d
-        by (by rewrite insert_delete).
+        by (by rewrite insert_delete_id).
       assert (d ∈ dom Σ2) as Hddom by (by apply elem_of_dom).
       assert (d ∉ dom Σ1) as Hd1'
         by (apply map_disjoint_dom in Hdd; set_solver).
@@ -968,7 +968,7 @@ Proof.
       specialize (Hcont j Σn Hj ltac:(dom_disj) Hcn
                     ltac:(simpl; set_solver) HVw).
       replace (C2 ∖ ∅) with C2 in Hcont by set_prune.
-      rewrite <-insert_union_l, (insert_commute _ d c) in Hcont; [|done].
+      rewrite <-insert_union_l, (insert_insert_ne _ d c) in Hcont; [|done].
       replace ((C1 ∪ C2 ∪ {[c]}) ∖ ∅) with (C1 ∪ C2 ∪ {[c]}) by set_prune.
       replace ((E1 ⊎ F2) ⊎ {[+ e' +]}) with (E1 ⊎ (F2 ⊎ {[+ e' +]}))
         by multiset_solver.
@@ -985,11 +985,11 @@ Proof.
       apply ty_one_of_unit_inv in Hty as [-> ->].
       assert ((Σ0 ∪ Σv ∪ Σw) !! c = Some (dual s)) as Hlkc.
       { pose proof (f_equal (λ m, m !! c) HeqΣ) as Hl. cbv beta in Hl.
-        rewrite lookup_insert in Hl.
+        rewrite lookup_insert_eq in Hl.
         by rewrite lookup_insert_ne in Hl. }
       assert (Σ2 = <[d:=SSnd U u]> (delete c (Σ0 ∪ Σv ∪ Σw))) as HΣ2.
       { pose proof (f_equal (delete c) HeqΣ) as Hl.
-        rewrite delete_insert in Hl; [|by apply not_elem_of_dom].
+        rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         rewrite Hl. by rewrite delete_insert_ne. }
       pose proof (Vrel_fchans _ _ _ _ HVw) as Hfw.
       rewrite dom_union_L, dom_fmap_L in Hfw.
@@ -1015,10 +1015,10 @@ Proof.
         assert (c ∉ dom Σv) as Hcvd by set_prune.
         assert (c ∉ dom Σw) as Hcwd by set_prune.
         assert (fchans w ## C1 ∪ {[c]}) as Hwc1 by (rewrite Hfw; set_solver).
-        rewrite !delete_union, (delete_notin Σv c), (delete_notin Σw c)
+        rewrite !delete_union, (delete_id Σv c), (delete_id Σw c)
           in HΣ2; [|by apply not_elem_of_dom..].
-        rewrite <-(insert_delete Σ0 c (dual s) Hlk0) in HP0.
-        rewrite (insert_commute _ d c) in HP0; [|done].
+        rewrite <-(insert_delete_id Σ0 c (dual s) Hlk0) in HP0.
+        rewrite (insert_insert_ne _ d c) in HP0; [|done].
         assert (Prel n (Σ1 ∪ <[d:=u]> (delete c Σ0)) T
                   (C1 ∪ C0 ∪ {[c]}, E1 ⊎ E0)) as HPmid.
         { eapply (IHc _ _ c s); connect_prem. }
@@ -1051,7 +1051,7 @@ Proof.
         assert (c ∉ dom Σw) as Hcwd by set_prune.
         assert (σe !! c = None) as HσeN
           by (apply not_elem_of_dom; set_solver).
-        rewrite !delete_union, (delete_notin Σ0 c), (delete_notin Σw c)
+        rewrite !delete_union, (delete_id Σ0 c), (delete_id Σw c)
           in HΣ2; [|by apply not_elem_of_dom..].
         assert (Powners (Prel n) (<[c := s]> σe) (Σ1 ∪ Σw) T
                   (C1 ∪ Cw, E1 ⊎ Ew)) as HPw'.
@@ -1059,8 +1059,8 @@ Proof.
         assert (delete c Σv ∪ (dual <$> <[c := s]> σe)
                 = Σv ∪ (dual <$> σe)) as Hvenv.
         { rewrite fmap_insert.
-          rewrite <-insert_union_r; [|apply lookup_delete].
-          rewrite insert_union_l. by rewrite insert_delete. }
+          rewrite <-insert_union_r; [|apply lookup_delete_eq].
+          rewrite insert_union_l. by rewrite insert_delete_id. }
         eexists Σ0, (delete c Σv), U, u, (<[c := s]> σe), (Σ1 ∪ Σw),
           C0, E0, (C1 ∪ Cw), (E1 ⊎ Ew), TUnit, T.
         split_and!.
@@ -1089,7 +1089,7 @@ Proof.
         assert (c ∈ dom Σw) as Hcw by (apply elem_of_dom; eauto).
         assert (c ∉ dom Σ0) as Hc0d by (by apply not_elem_of_dom).
         assert (c ∉ dom Σv) as Hcvd by (by apply not_elem_of_dom).
-        rewrite !delete_union, (delete_notin Σ0 c), (delete_notin Σv c)
+        rewrite !delete_union, (delete_id Σ0 c), (delete_id Σv c)
           in HΣ2; [|by apply not_elem_of_dom..].
         assert (Prel n (<[c:=dual (dual s)]> Σ1) T (C1, E1)) as HP1'.
         { rewrite dual_involutive. eauto using Prel_down1. }
@@ -1126,15 +1126,15 @@ Proof.
       assert (Σ2 !! d = Some SEnd) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_ne in Hl; [|done].
-        by rewrite lookup_insert in Hl. }
+        by rewrite lookup_insert_eq in Hl. }
       assert (Σ2x = <[c:=dual s]> (delete d Σ2)) as HΣ2x.
       { pose proof (f_equal (delete d) HeqΣ) as Hl.
         rewrite delete_insert_ne in Hl; [|done].
-        rewrite delete_insert in Hl; [|by apply not_elem_of_dom].
+        rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         by rewrite <-Hl. }
       subst Σ2x.
       assert (Σ2 = <[d:=SEnd]> (delete d Σ2)) as HΣ2d
-        by (by rewrite insert_delete).
+        by (by rewrite insert_delete_id).
       assert (d ∈ dom Σ2) as Hddom by (by apply elem_of_dom).
       assert (d ∉ dom Σ1) as Hd1'
         by (apply map_disjoint_dom in Hdd; set_solver).

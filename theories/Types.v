@@ -76,7 +76,7 @@ Proof.
   apply not_elem_of_dom in Hc1, Hc2.
   assert (s1 = s2).
   { pose proof (f_equal (λ m, m !! c) Heq) as Hl. cbv beta in Hl.
-    rewrite !lookup_insert in Hl. by simplify_eq. }
+    rewrite !lookup_insert_eq in Hl. by simplify_eq. }
   split; [done|]. apply map_eq. intros i.
   destruct (decide (i = c)) as [->|Hi]; [congruence|].
   pose proof (f_equal (λ m, m !! i) Heq) as Hl. cbv beta in Hl.

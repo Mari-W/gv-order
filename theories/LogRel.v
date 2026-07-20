@@ -563,7 +563,7 @@ Qed.
 (** Theorem 3.6 (Adequacy) *)
 Theorem adequacy T p : sem_ptyped ∅ p T → deadlock_free p.
 Proof.
-  intros HP p' Hsteps. apply rtc_nsteps in Hsteps as [m Hm].
+  intros HP p' Hsteps. apply rtc_nsteps_1 in Hsteps as [m Hm].
   eapply (Prel_safe 0). eapply Prel_steps; [exact Hm|]. exact (HP (m + 1)).
 Qed.
 
@@ -660,7 +660,7 @@ Proof.
     assert (Σ2 = ∅) as ->.
     { eapply grounding_lenv_empty; [done|]. intros o Ho.
       destruct o as [T'|]; [exfalso|done].
-      apply elem_of_list_lookup in Ho as [y Hy].
+      apply list_elem_of_lookup in Ho as [y Hy].
       by destruct (Huniq (S y) T'). }
     rewrite (right_id ∅ (∪)). exact HV.
   - (* head available, x = S x': contradicts uniqueness *)
@@ -733,7 +733,7 @@ Qed.
 
 Lemma lenv_empty_no_avail Δ x : lenv_empty Δ → ¬ lenv_avail Δ x.
 Proof.
-  intros HΔ (T & Hx). apply elem_of_list_lookup_2 in Hx.
+  intros HΔ (T & Hx). apply list_elem_of_lookup_2 in Hx.
   apply HΔ in Hx. done.
 Qed.
 

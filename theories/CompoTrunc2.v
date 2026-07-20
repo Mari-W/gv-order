@@ -30,10 +30,10 @@ Qed.
 Lemma elem_of_echans x E : x ∈ echans E ↔ ∃ e, e ∈ E ∧ x ∈ fchans e.
 Proof.
   unfold echans. rewrite elem_of_union_list. split.
-  - intros (X & HX & Hx). apply elem_of_list_fmap in HX as (e & -> & He).
+  - intros (X & HX & Hx). apply list_elem_of_fmap in HX as (e & -> & He).
     exists e. split; [|done]. by apply gmultiset_elem_of_elements.
   - intros (e & He & Hx). exists (fchans e). split; [|done].
-    apply elem_of_list_fmap. exists e. split; [done|].
+    apply list_elem_of_fmap. exists e. split; [done|].
     by apply gmultiset_elem_of_elements.
 Qed.
 
