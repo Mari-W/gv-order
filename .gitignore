@@ -12,3 +12,4 @@ Makefile.coq*
 Makefile.conf
 .coqdeps.d
 .claude/
+.DS_Store

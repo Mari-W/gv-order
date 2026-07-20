@@ -45,6 +45,14 @@ Lemma lenv_split_comm Δ Δ1 Δ2 :
   lenv_split Δ Δ1 Δ2 → lenv_split Δ Δ2 Δ1.
 Proof. induction 1; constructor; auto. Qed.
 
+Lemma lenv_split_lookup_inv Δ Δ1 Δ2 x T :
+  lenv_split Δ Δ1 Δ2 → Δ !! x = Some (Some T) →
+  Δ1 !! x = Some (Some T) ∨ Δ2 !! x = Some (Some T).
+Proof.
+  intros Hs. revert x. induction Hs; intros [|x] Hx; simpl in *;
+    simplify_eq; auto.
+Qed.
+
 Lemma lenv_split_lookup_r Δ Δ1 Δ2 x T :
   lenv_split Δ Δ1 Δ2 → Δ2 !! x = Some (Some T) → Δ !! x = Some (Some T).
 Proof. eauto using lenv_split_lookup_l, lenv_split_comm. Qed.

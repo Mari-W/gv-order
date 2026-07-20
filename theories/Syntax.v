@@ -288,6 +288,16 @@ Proof.
     eapply IHe2; [|done]. by apply upP_mono, upP_mono.
 Qed.
 
+(** Occurrence of a free variable (the dual of [allfv]). *)
+Fixpoint freevar (x : nat) (e : expr) : Prop :=
+  match e with
+  | Var y => x = y
+  | EUnit | Konst _ | Chan _ => False
+  | Lam e => freevar (S x) e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
+  | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
+  end.
+
 (** ** Closedness under renaming and substitution *)
 
 Lemma closed_at_rename e : ∀ r m m',
@@ -327,6 +337,30 @@ Lemma fchans_rename e : ∀ r, fchans (rename r e) = fchans e.
 Proof.
   induction e; intros r; simpl; auto.
   all: by rewrite IHe1, IHe2.
+Qed.
+
+(** Substitution can only add channels... *)
+Lemma fchans_subst_super e : ∀ γ, fchans e ⊆ fchans (subst γ e).
+Proof. induction e; intros γ; simpl; set_solver. Qed.
+
+(** ... and the channels of values substituted for occurring variables
+    all appear in the result. *)
+Lemma fchans_subst_free e : ∀ y γ,
+  freevar y e → fchans (γ y) ⊆ fchans (subst γ e).
+Proof.
+  induction e; simpl; intros y γ Hf; try done.
+  - by subst.
+  - specialize (IHe (S y) (up γ) Hf). simpl in IHe.
+    unfold compose in IHe. rewrite fchans_rename in IHe. exact IHe.
+  - destruct Hf as [Hf|Hf];
+      [specialize (IHe1 _ γ Hf)|specialize (IHe2 _ γ Hf)]; set_solver.
+  - destruct Hf as [Hf|Hf];
+      [specialize (IHe1 _ γ Hf)|specialize (IHe2 _ γ Hf)]; set_solver.
+  - destruct Hf as [Hf|Hf];
+      [specialize (IHe1 _ γ Hf)|specialize (IHe2 _ γ Hf)]; set_solver.
+  - destruct Hf as [Hf|Hf]; [specialize (IHe1 _ γ Hf); set_solver|].
+    specialize (IHe2 _ (up (up γ)) Hf). simpl in IHe2.
+    unfold compose in IHe2. rewrite !fchans_rename in IHe2. set_solver.
 Qed.
 
 Lemma fchans_subst e : ∀ γ (D : gset chan),
