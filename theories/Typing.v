@@ -92,7 +92,20 @@ Inductive typed : senv → lenv → expr → ty → Prop :=
       typed Σ1 Δ1 e1 (TProd U V) →
       (* let ⟨a,b⟩ = e1 in e2: in e2, index 1 = a : U, index 0 = b : V *)
       typed Σ2 (Some V :: Some U :: Δ2) e2 T →
-      typed Σ Δ (LetP e1 e2) T.
+      typed Σ Δ (LetP e1 e2) T
+  | typed_inj1 Σ Δ e T U :                             (* E-Inl *)
+      typed Σ Δ e T →
+      typed Σ Δ (Inj1 e) (TSum T U)
+  | typed_inj2 Σ Δ e T U :                             (* E-Inr *)
+      typed Σ Δ e U →
+      typed Σ Δ (Inj2 e) (TSum T U)
+  | typed_case Σ Σ1 Σ2 Δ Δ1 Δ2 e e1 e2 U V T :        (* E-Case *)
+      senv_split Σ Σ1 Σ2 → lenv_split Δ Δ1 Δ2 →
+      typed Σ1 Δ1 e (TSum U V) →
+      (* each branch binds its payload at index 0 *)
+      typed Σ2 (Some U :: Δ2) e1 T →
+      typed Σ2 (Some V :: Δ2) e2 T →
+      typed Σ Δ (Case e e1 e2) T.
 
 (** ** Typing rules for processes: Σ ⊢ (C, E) : T
 

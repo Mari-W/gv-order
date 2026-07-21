@@ -59,7 +59,13 @@ Inductive head_step : expr → tlabel → expr → Prop :=
       is_val v →
       head_step (App ESend (Pair v (Chan c))) (LSess (SSend c v)) (Chan c)
   | HeadClos c :                                        (* T-Act-Close *)
-      head_step (App EClos (Chan c)) (LSess (SClos c)) EUnit.
+      head_step (App EClos (Chan c)) (LSess (SClos c)) EUnit
+  | HeadCase1 v e1 e2 :                                 (* T-Act-Case-Inl *)
+      is_val v →
+      head_step (Case (Inj1 v) e1 e2) LBeta (subst1 v e1)
+  | HeadCase2 v e1 e2 :                                 (* T-Act-Case-Inr *)
+      is_val v →
+      head_step (Case (Inj2 v) e1 e2) LBeta (subst1 v e2).
 
 (** ** Context closure (T-Act-Ctx)
 
@@ -82,7 +88,13 @@ Inductive tstep : expr → tlabel → expr → Prop :=
   | TStepLetU e1 α e1' e2 :
       tstep e1 α e1' → tstep (LetU e1 e2) α (LetU e1' e2)
   | TStepLetP e1 α e1' e2 :
-      tstep e1 α e1' → tstep (LetP e1 e2) α (LetP e1' e2).
+      tstep e1 α e1' → tstep (LetP e1 e2) α (LetP e1' e2)
+  | TStepInj1 e α e' :
+      tstep e α e' → tstep (Inj1 e) α (Inj1 e')
+  | TStepInj2 e α e' :
+      tstep e α e' → tstep (Inj2 e) α (Inj2 e')
+  | TStepCase e α e' e1 e2 :
+      tstep e α e' → tstep (Case e e1 e2) α (Case e' e1 e2).
 
 (** GV-style term reduction: just the pure steps. *)
 Definition reduction (e e' : expr) : Prop := tstep e LBeta e'.
@@ -145,6 +157,30 @@ Proof.
   inversion H0; simplify_eq; eauto 10.
 Qed.
 
+Lemma tstep_inj1_inv e α e' :
+  tstep (Inj1 e) α e' → ∃ e'', tstep e α e'' ∧ e' = Inj1 e''.
+Proof.
+  intros H. inversion H; simplify_eq; eauto.
+  inversion H0.
+Qed.
+
+Lemma tstep_inj2_inv e α e' :
+  tstep (Inj2 e) α e' → ∃ e'', tstep e α e'' ∧ e' = Inj2 e''.
+Proof.
+  intros H. inversion H; simplify_eq; eauto.
+  inversion H0.
+Qed.
+
+Lemma tstep_case_inv e e1 e2 α e' :
+  tstep (Case e e1 e2) α e' →
+  (∃ e'', tstep e α e'' ∧ e' = Case e'' e1 e2)
+  ∨ (∃ v, e = Inj1 v ∧ is_val v ∧ α = LBeta ∧ e' = subst1 v e1)
+  ∨ (∃ v, e = Inj2 v ∧ is_val v ∧ α = LBeta ∧ e' = subst1 v e2).
+Proof.
+  intros H. inversion H; simplify_eq; eauto 10.
+  inversion H0; simplify_eq; eauto 10.
+Qed.
+
 (** ** Evaluation frames
 
     One-level evaluation contexts, used to state closure of the
@@ -156,7 +192,10 @@ Inductive frame :=
   | FPairL (e2 : expr)
   | FPairR (v1 : expr)
   | FLetU (e2 : expr)
-  | FLetP (e2 : expr).
+  | FLetP (e2 : expr)
+  | FInj1
+  | FInj2
+  | FCase (e1 e2 : expr).
 
 Definition fill_frame (f : frame) (e : expr) : expr :=
   match f with
@@ -166,6 +205,9 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
   | FPairR v1 => Pair v1 e
   | FLetU e2 => LetU e e2
   | FLetP e2 => LetP e e2
+  | FInj1 => Inj1 e
+  | FInj2 => Inj2 e
+  | FCase e1 e2 => Case e e1 e2
   end.
 
 (** Right-of-value frames require the value side condition. *)
@@ -199,6 +241,11 @@ Proof.
   - apply tstep_letp_inv in Hst
       as [(e' & ? & ->)|(u & v & -> & Hu & Hv' & _)]; eauto.
     exfalso. apply Hv. simpl. by apply andb_True.
+  - apply tstep_inj1_inv in Hst as (e' & ? & ->); eauto.
+  - apply tstep_inj2_inv in Hst as (e' & ? & ->); eauto.
+  - apply tstep_case_inv in Hst
+      as [(e' & ? & ->)|[(v & -> & Hv' & _)|(v & -> & Hv' & _)]]; eauto.
+    all: by destruct (Hv Hv').
 Qed.
 
 (** Values carried by communication labels are values. *)
@@ -237,4 +284,7 @@ Proof.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepPairR.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepLetU.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepLetP.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj1.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj2.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepCase.
 Qed.

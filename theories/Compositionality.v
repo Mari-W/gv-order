@@ -25,6 +25,9 @@ Proof.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepPairR.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepLetU.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepLetP.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj1.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj2.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepCase.
 Qed.
 
 Lemma elem_of_echans x E : x ∈ echans E ↔ ∃ e, e ∈ E ∧ x ∈ fchans e.

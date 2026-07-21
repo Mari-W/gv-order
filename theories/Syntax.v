@@ -21,8 +21,12 @@ Inductive expr :=
   | App (e1 e2 : expr)
   | Pair (e1 e2 : expr)            (* ⟨e1,e2⟩ *)
   | LetU (e1 e2 : expr)            (* let ∗ = e1 in e2 *)
-  | LetP (e1 e2 : expr).           (* let ⟨a,b⟩ = e1 in e2 — binds 2 in e2:
+  | LetP (e1 e2 : expr)            (* let ⟨a,b⟩ = e1 in e2 — binds 2 in e2:
                                       index 1 = a, index 0 = b *)
+  | Inj1 (e : expr)                (* left injection *)
+  | Inj2 (e : expr)                (* right injection *)
+  | Case (e e1 e2 : expr).         (* case e (a.e1) (a.e2) — each branch
+                                      binds 1: index 0 = the payload *)
 
 Notation EFork := (Konst KFork).
 Notation ERecv := (Konst KRecv).
@@ -35,6 +39,7 @@ Fixpoint is_val (e : expr) : bool :=
   match e with
   | EUnit | Konst _ | Chan _ | Lam _ => true
   | Pair e1 e2 => is_val e1 && is_val e2
+  | Inj1 e | Inj2 e => is_val e
   | _ => false
   end.
 
@@ -70,6 +75,9 @@ Proof.
     | Pair e1 e2 => GenNode 3 [go e1; go e2]
     | LetU e1 e2 => GenNode 4 [go e1; go e2]
     | LetP e1 e2 => GenNode 5 [go e1; go e2]
+    | Inj1 e => GenNode 6 [go e]
+    | Inj2 e => GenNode 7 [go e]
+    | Case e e1 e2 => GenNode 8 [go e; go e1; go e2]
     end).
   set (dec := fix go t : expr :=
     match t with
@@ -82,6 +90,9 @@ Proof.
     | GenNode 3 [t1; t2] => Pair (go t1) (go t2)
     | GenNode 4 [t1; t2] => LetU (go t1) (go t2)
     | GenNode 5 [t1; t2] => LetP (go t1) (go t2)
+    | GenNode 6 [t] => Inj1 (go t)
+    | GenNode 7 [t] => Inj2 (go t)
+    | GenNode 8 [t; t1; t2] => Case (go t) (go t1) (go t2)
     | _ => EUnit
     end).
   apply (inj_countable' enc dec).
@@ -105,6 +116,10 @@ Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   | Pair e1 e2 => Pair (rename r e1) (rename r e2)
   | LetU e1 e2 => LetU (rename r e1) (rename r e2)
   | LetP e1 e2 => LetP (rename r e1) (rename (upren (upren r)) e2)
+  | Inj1 e => Inj1 (rename r e)
+  | Inj2 e => Inj2 (rename r e)
+  | Case e e1 e2 =>
+      Case (rename r e) (rename (upren r) e1) (rename (upren r) e2)
   end.
 
 Definition up (σ : nat → expr) : nat → expr := Var 0 .: (rename S ∘ σ).
@@ -118,6 +133,9 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   | Pair e1 e2 => Pair (subst σ e1) (subst σ e2)
   | LetU e1 e2 => LetU (subst σ e1) (subst σ e2)
   | LetP e1 e2 => LetP (subst σ e1) (subst (up (up σ)) e2)
+  | Inj1 e => Inj1 (subst σ e)
+  | Inj2 e => Inj2 (subst σ e)
+  | Case e e1 e2 => Case (subst σ e) (subst (up σ) e1) (subst (up σ) e2)
   end.
 
 (** β-substitutions: [subst1 v e] is e[v/a] for a Lam-bound a;
@@ -135,6 +153,8 @@ Fixpoint closed_at (n : nat) (e : expr) : bool :=
   | Lam e => closed_at (S n) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => closed_at n e1 && closed_at n e2
   | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
+  | Inj1 e | Inj2 e => closed_at n e
+  | Case e e1 e2 => closed_at n e && closed_at (S n) e1 && closed_at (S n) e2
   end.
 
 Definition closed (e : expr) : bool := closed_at 0 e.
@@ -144,8 +164,9 @@ Fixpoint fchans (e : expr) : gset chan :=
   match e with
   | Var _ | EUnit | Konst _ => ∅
   | Chan c => {[c]}
-  | Lam e => fchans e
+  | Lam e | Inj1 e | Inj2 e => fchans e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fchans e1 ∪ fchans e2
+  | Case e e1 e2 => fchans e ∪ fchans e1 ∪ fchans e2
   end.
 
 (** ** Basic lemmas about substitution *)
@@ -172,6 +193,8 @@ Proof.
   - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
   - rewrite (subst_ext _ (up (up Var)) Var); [done|].
     intros [|[|x]]; done.
+  - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
+  - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
 Qed.
 
 (** Substitutions agreeing below the closedness bound act identically. *)
@@ -186,6 +209,10 @@ Proof.
   - eapply IHe; [done|]. intros [|x] Hx; simpl; [done|].
     unfold compose. rewrite Hag; [done|lia].
   - eapply IHe2; [done|]. intros [|[|x]] Hx; simpl; [done..|].
+    unfold compose. rewrite Hag; [done|lia].
+  - eapply IHe2; [done|]. intros [|x] Hx; simpl; [done|].
+    unfold compose. rewrite Hag; [done|lia].
+  - eapply IHe3; [done|]. intros [|x] Hx; simpl; [done|].
     unfold compose. rewrite Hag; [done|lia].
 Qed.
 
@@ -206,6 +233,8 @@ Proof.
   induction e; intros r r'; simpl; f_equal; auto.
   - rewrite IHe. apply rename_ext. by intros [|x].
   - rewrite IHe2. apply rename_ext. by intros [|[|x]].
+  - rewrite IHe2. apply rename_ext. by intros [|x].
+  - rewrite IHe3. apply rename_ext. by intros [|x].
 Qed.
 
 Lemma subst_rename e : ∀ σ r,
@@ -214,6 +243,8 @@ Proof.
   induction e; intros σ r; simpl; f_equal; auto.
   - rewrite IHe. apply subst_ext. by intros [|x].
   - rewrite IHe2. apply subst_ext. by intros [|[|x]].
+  - rewrite IHe2. apply subst_ext. by intros [|x].
+  - rewrite IHe3. apply subst_ext. by intros [|x].
 Qed.
 
 Lemma rename_subst e : ∀ r σ,
@@ -223,6 +254,10 @@ Proof.
   - rewrite IHe. apply subst_ext. intros [|x]; simpl; [done|].
     unfold compose. by rewrite !rename_rename.
   - rewrite IHe2. apply subst_ext. intros [|[|x]]; simpl; [done..|].
+    unfold compose. by rewrite !rename_rename.
+  - rewrite IHe2. apply subst_ext. intros [|x]; simpl; [done|].
+    unfold compose. by rewrite !rename_rename.
+  - rewrite IHe3. apply subst_ext. intros [|x]; simpl; [done|].
     unfold compose. by rewrite !rename_rename.
 Qed.
 
@@ -235,6 +270,12 @@ Proof.
     apply subst_ext. by intros y.
   - rewrite IHe2. apply subst_ext. intros [|[|x]]; simpl; [done..|].
     unfold compose. rewrite !subst_rename, !rename_subst.
+    apply subst_ext. by intros y.
+  - rewrite IHe2. apply subst_ext. intros [|x]; simpl; [done|].
+    unfold compose. rewrite subst_rename, rename_subst.
+    apply subst_ext. by intros y.
+  - rewrite IHe3. apply subst_ext. intros [|x]; simpl; [done|].
+    unfold compose. rewrite subst_rename, rename_subst.
     apply subst_ext. by intros y.
 Qed.
 
@@ -270,6 +311,8 @@ Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   | Lam e => allfv (upP P) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
+  | Inj1 e | Inj2 e => allfv P e
+  | Case e e1 e2 => allfv P e ∧ allfv (upP P) e1 ∧ allfv (upP P) e2
   end.
 
 Lemma upP_mono (P Q : nat → Prop) :
@@ -286,6 +329,11 @@ Proof.
   - destruct HP; eauto.
   - destruct HP; split; [by eapply IHe1|].
     eapply IHe2; [|done]. by apply upP_mono, upP_mono.
+  - eauto.
+  - eauto.
+  - destruct HP as (?&?&?). split; [by eapply IHe1|]. split.
+    + eapply IHe2; [|done]. by apply upP_mono.
+    + eapply IHe3; [|done]. by apply upP_mono.
 Qed.
 
 (** Occurrence of a free variable (the dual of [allfv]). *)
@@ -296,6 +344,8 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | Lam e => freevar (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
+  | Inj1 e | Inj2 e => freevar x e
+  | Case e e1 e2 => freevar x e ∨ freevar (S x) e1 ∨ freevar (S x) e2
   end.
 
 (** ** Closedness under renaming and substitution *)
@@ -311,6 +361,11 @@ Proof.
   - eapply IHe; [|done]. intros [|x] Hx; simpl; [lia|].
     unfold compose. assert (r x < m') by (apply Hr; lia). lia.
   - eapply IHe2; [|done]. intros [|[|x]] Hx; simpl; [lia|lia|].
+    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
+  - apply andb_True; split; [eauto|].
+    eapply IHe2; [|done]. intros [|x] Hx; simpl; [lia|].
+    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
+  - eapply IHe3; [|done]. intros [|x] Hx; simpl; [lia|].
     unfold compose. assert (r x < m') by (apply Hr; lia). lia.
 Qed.
 
@@ -329,6 +384,16 @@ Proof.
     + intros Hc. unfold compose.
       eapply (closed_at_rename _ S (S m)); [intros; lia|].
       eapply (closed_at_rename _ S m); [intros; lia|done].
+  - destruct H0 as [H1 H2]. apply andb_True; split; [by apply IHe1|].
+    apply IHe2. eapply allfv_mono; [|exact H1]. intros [|x]; simpl.
+    + intros _. done.
+    + intros Hc. unfold compose. eapply closed_at_rename; [|done].
+      intros; lia.
+  - destruct H0 as [H1 H2].
+    apply IHe3. eapply allfv_mono; [|exact H2]. intros [|x]; simpl.
+    + intros _. done.
+    + intros Hc. unfold compose. eapply closed_at_rename; [|done].
+      intros; lia.
 Qed.
 
 (** ** Channels under renaming and substitution *)
@@ -336,7 +401,8 @@ Qed.
 Lemma fchans_rename e : ∀ r, fchans (rename r e) = fchans e.
 Proof.
   induction e; intros r; simpl; auto.
-  all: by rewrite IHe1, IHe2.
+  all: try by rewrite IHe1, IHe2.
+  by rewrite IHe1, IHe2, IHe3.
 Qed.
 
 (** Substitution can only add channels... *)
@@ -361,6 +427,14 @@ Proof.
   - destruct Hf as [Hf|Hf]; [specialize (IHe1 _ γ Hf); set_solver|].
     specialize (IHe2 _ (up (up γ)) Hf). simpl in IHe2.
     unfold compose in IHe2. rewrite !fchans_rename in IHe2. set_solver.
+  - by specialize (IHe _ γ Hf).
+  - by specialize (IHe _ γ Hf).
+  - destruct Hf as [Hf|[Hf|Hf]].
+    + specialize (IHe1 _ γ Hf). set_solver.
+    + specialize (IHe2 (S y) (up γ) Hf). simpl in IHe2.
+      unfold compose in IHe2. rewrite fchans_rename in IHe2. set_solver.
+    + specialize (IHe3 (S y) (up γ) Hf). simpl in IHe3.
+      unfold compose in IHe3. rewrite fchans_rename in IHe3. set_solver.
 Qed.
 
 Lemma fchans_subst e : ∀ γ (D : gset chan),
@@ -384,4 +458,16 @@ Proof.
       - intros _. set_solver.
       - intros Hc. unfold compose. by rewrite !fchans_rename. }
     specialize (IHe2 _ _ H2'). set_solver.
+  - (* Case *)
+    destruct HP as (H0 & H1 & H2).
+    specialize (IHe1 _ _ H0).
+    assert (allfv (λ x, fchans (up γ x) ⊆ D) e2) as H1'.
+    { eapply allfv_mono; [|exact H1]. intros [|x]; simpl.
+      - intros _. set_solver.
+      - intros Hc. unfold compose. by rewrite fchans_rename. }
+    assert (allfv (λ x, fchans (up γ x) ⊆ D) e3) as H2'.
+    { eapply allfv_mono; [|exact H2]. intros [|x]; simpl.
+      - intros _. set_solver.
+      - intros Hc. unfold compose. by rewrite fchans_rename. }
+    specialize (IHe2 _ _ H1'). specialize (IHe3 _ _ H2'). set_solver.
 Qed.

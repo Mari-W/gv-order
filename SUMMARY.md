@@ -12,6 +12,12 @@ Statements only; proofs are in the files.
 `Print Assumptions typed_deadlock_free` = `Classical_Prop.classic` only
 (used in Lemma 3.5 / `Prel_safe` and in `connect_progress`).
 
+**Extension (branch `sums`)**: binary sums `T ⊕ U` with `Inj1`/`Inj2`/`Case`
+(one-binder branches) through every layer — syntax, β-rule `T-Act-Case`,
+`E-Inl`/`E-Inr`/`E-Case` typing, the `TSum` case of `V` (a same-index
+structural disjunction), and the fundamental theorem. No new labels, so the
+process layer and the compositionality proofs are untouched.
+
 | File | Paper content |
 |---|---|
 | `theories/Syntax.v` | Fig. 1 syntax, substitution, closedness, free channels |
@@ -45,13 +51,18 @@ Inductive expr :=
   | App (e1 e2 : expr)
   | Pair (e1 e2 : expr)            (* ⟨e1,e2⟩ *)
   | LetU (e1 e2 : expr)            (* let ∗ = e1 in e2 *)
-  | LetP (e1 e2 : expr).           (* let ⟨a,b⟩ = e1 in e2 — binds 2 in e2:
+  | LetP (e1 e2 : expr)            (* let ⟨a,b⟩ = e1 in e2 — binds 2 in e2:
                                       index 1 = a, index 0 = b *)
+  | Inj1 (e : expr)                (* left injection *)
+  | Inj2 (e : expr)                (* right injection *)
+  | Case (e e1 e2 : expr).         (* case e (a.e1) (a.e2) — each branch
+                                      binds 1: index 0 = the payload *)
 
 Fixpoint is_val (e : expr) : bool :=
   match e with
   | EUnit | Konst _ | Chan _ | Lam _ => true
   | Pair e1 e2 => is_val e1 && is_val e2
+  | Inj1 e | Inj2 e => is_val e
   | _ => false
   end.
 ```
@@ -64,8 +75,9 @@ Fixpoint fchans (e : expr) : gset chan :=
   match e with
   | Var _ | EUnit | Konst _ => ∅
   | Chan c => {[c]}
-  | Lam e => fchans e
+  | Lam e | Inj1 e | Inj2 e => fchans e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fchans e1 ∪ fchans e2
+  | Case e e1 e2 => fchans e ∪ fchans e1 ∪ fchans e2
   end.
 ```
 
@@ -117,13 +129,19 @@ Inductive head_step : expr → tlabel → expr → Prop :=
       is_val v →
       head_step (App ESend (Pair v (Chan c))) (LSess (SSend c v)) (Chan c)
   | HeadClos c :                                        (* T-Act-Close *)
-      head_step (App EClos (Chan c)) (LSess (SClos c)) EUnit.
+      head_step (App EClos (Chan c)) (LSess (SClos c)) EUnit
+  | HeadCase1 v e1 e2 :                                 (* T-Act-Case-Inl *)
+      is_val v →
+      head_step (Case (Inj1 v) e1 e2) LBeta (subst1 v e1)
+  | HeadCase2 v e1 e2 :                                 (* T-Act-Case-Inr *)
+      is_val v →
+      head_step (Case (Inj2 v) e1 e2) LBeta (subst1 v e2).
 ```
 
 Context closure (T-Act-Ctx) is by congruence rules rather than explicit
-evaluation contexts (`tstep`, 7 rules: `TStepHead`, `TStepAppL/R`,
-`TStepPairL/R`, `TStepLetU`, `TStepLetP`, with `is_val` side conditions for
-the right-of-value frames). A separate one-frame presentation
+evaluation contexts (`tstep`, 10 rules: `TStepHead`, `TStepAppL/R`,
+`TStepPairL/R`, `TStepLetU`, `TStepLetP`, `TStepInj1/2`, `TStepCase`,
+with `is_val` side conditions for the right-of-value frames). A separate one-frame presentation
 (`frame`/`fill_frame`) with `tstep_fill`/`tstep_fill_inv` is derived for the
 bind lemma.
 
@@ -204,6 +222,7 @@ Inductive ty :=
   | TUnit                          (* ∗ *)
   | TLolli (T U : ty)              (* T ⊸ U *)
   | TProd (T U : ty)               (* T ⊗ U *)
+  | TSum (T U : ty)                (* T ⊕ U *)
   | TSess (S : sty)
 with sty :=
   | SRcv (T : ty) (S : sty)        (* ?T.S *)
@@ -221,7 +240,8 @@ Lemma dual_involutive s : dual (dual s) = s.
 
 Inductive prim : ty → Prop :=
   | prim_unit : prim TUnit
-  | prim_prod U V : prim U → prim V → prim (TProd U V).
+  | prim_prod U V : prim U → prim V → prim (TProd U V)
+  | prim_sum U V : prim U → prim V → prim (TSum U V).
 
 Notation senv := (gmap chan sty).
 
@@ -280,7 +300,19 @@ Inductive typed : senv → lenv → expr → ty → Prop :=
       senv_split Σ Σ1 Σ2 → lenv_split Δ Δ1 Δ2 →
       typed Σ1 Δ1 e1 (TProd U V) →
       typed Σ2 (Some V :: Some U :: Δ2) e2 T →
-      typed Σ Δ (LetP e1 e2) T.
+      typed Σ Δ (LetP e1 e2) T
+  | typed_inj1 Σ Δ e T U :                             (* E-Inl *)
+      typed Σ Δ e T →
+      typed Σ Δ (Inj1 e) (TSum T U)
+  | typed_inj2 Σ Δ e T U :                             (* E-Inr *)
+      typed Σ Δ e U →
+      typed Σ Δ (Inj2 e) (TSum T U)
+  | typed_case Σ Σ1 Σ2 Δ Δ1 Δ2 e e1 e2 U V T :        (* E-Case *)
+      senv_split Σ Σ1 Σ2 → lenv_split Δ Δ1 Δ2 →
+      typed Σ1 Δ1 e (TSum U V) →
+      typed Σ2 (Some U :: Δ2) e1 T →
+      typed Σ2 (Some V :: Δ2) e2 T →
+      typed Σ Δ (Case e e1 e2) T.
 ```
 
 Process typing. **[Δ]** P-Independent and P-Connect carry the paper's
@@ -379,6 +411,9 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TProd T1 U =>
       ∃ v1 v2 Σ1 Σ2, v = Pair v1 v2 ∧ senv_split Σ Σ1 Σ2 ∧
         Vdef below n Σ1 T1 v1 ∧ Vdef below n Σ2 U v2
+  | TSum T1 U =>
+      (∃ v', v = Inj1 v' ∧ Vdef below n Σ T1 v')
+      ∨ (∃ v', v = Inj2 v' ∧ Vdef below n Σ U v')
   end.
 ```
 
@@ -649,6 +684,9 @@ Lemma sem_typed_app Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 T U :
 Lemma sem_typed_pair Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 T U : (* … analogous … *)
 Lemma sem_typed_letu Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 T :  (* … analogous … *)
 Lemma sem_typed_letp Σ Σ1 Σ2 Δ Δ1 Δ2 e1 e2 U V T : (* … analogous … *)
+Lemma sem_typed_inj1 Σ Δ e T U :  (* … and sem_typed_inj2 … *)
+  sem_typed Σ Δ e T → sem_typed Σ Δ (Inj1 e) (TSum T U).
+Lemma sem_typed_case Σ Σ1 Σ2 Δ Δ1 Δ2 e e1 e2 U V T : (* … as E-Case … *)
 
 Theorem fundamental_term Σ Δ e T : typed Σ Δ e T → sem_typed Σ Δ e T.
 ```
