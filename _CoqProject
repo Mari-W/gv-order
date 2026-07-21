@@ -8,4 +8,5 @@ theories/Types.v
 theories/Typing.v
 theories/LogRel.v
 theories/Compositionality.v
+theories/Method.v
 theories/Examples.v
