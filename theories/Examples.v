@@ -613,6 +613,50 @@ Qed.
 Corollary blocked_not_sem_ptyped Σ T : ¬ sem_ptyped Σ blocked T.
 Proof. intros H. exact (blocked_not_Prel Σ T 0 (H 1)). Qed.
 
+(** ** publish: delegation of a private channel
+
+    Two threads share the private channels c and d cyclically (the
+    untypable topology of [cycle_proc]), but after the synchronization
+    on c the first thread sends its end of d to the environment over
+    the external channel e and closes e; the second thread then serves
+    d externally.
+
+      t1 := let ∗ = clos c in let e' = send ⟨d, e⟩ in clos e'
+      t2 := let ∗ = clos c in let ⟨m,d'⟩ = recv d in let ∗ = m in clos d'
+
+    The process belongs to the logical relation at
+    e : !(Sess (!∗.Close)).Close: at the moment of the send, the proof
+    commits d — on the fly, with no syntactic annotation — to the
+    protocol ?∗.Close, sending the escaped end at the dual type and
+    exhibiting t2 as the singleton owner family for d (the σe of
+    Fig. 5, case 3).  This is the first example exercising the send
+    case with σe ≠ ∅. *)
+
+Definition pubT1 : expr :=
+  LetU (App EClos (Chan "c"))
+    (App (Lam (App EClos (Var 0)))
+         (App ESend (Pair (Chan "d") (Chan "e")))).
+
+Definition pubT2 : expr :=
+  LetU (App EClos (Chan "c"))
+    (LetP (App ERecv (Chan "d"))
+       (LetU (Var 1) (App EClos (Var 0)))).
+
+Definition publish_proc : proc :=
+  ({["c"; "d"]}, {[+ pubT1 +]} ⊎ {[+ pubT2 +]}).
+
+(** The environment interface of publish: e delivers one delegated
+    channel, typed with the dual of the committed protocol, and is
+    then closed. *)
+Definition Spub : sty := SSnd (TSess (SSnd TUnit SEnd)) SEnd.
+
+(** publish is untypable (two threads sharing two restricted channels
+    admit no P-Connect tree) yet semantically well-typed.  The direct
+    proof is deferred to the planned invariant-based proof method for
+    LR membership. *)
+Example publish_sem_ptyped : sem_ptyped {["e" := Spub]} publish_proc TUnit.
+Admitted.
+
 Print Assumptions adequacy.
 Print Assumptions sync_reduces.
 Print Assumptions sync_deadlock_free.
