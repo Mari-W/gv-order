@@ -29,6 +29,7 @@ process layer and the compositionality proofs are untouched.
 | `theories/Compositionality.v` | Lemmas 3.8–3.10, Thms 3.12/3.13, deadlock-freedom corollary |
 | `theories/Examples.v` | Ex. 2.1 (`sync`), Ex. 2.8 (`blocked`), Ex. 2.11 (typing of `sync`) |
 | `theories/Leader.v` | §4.1 leader election: untypable racing process in the LR, typed client, P-Connect composite deadlock free |
+| `theories/LbLR.v` | Ex. 3.15 (`lb`): untypable fork/delegation server in the LR (invariant method), typed client `q`, composite deadlock free |
 
 Deviations from the draft are marked **[Δ]** inline and collected in the
 [last section](#deviations-from-the-draft).
@@ -720,6 +721,29 @@ Corollary typed_deadlock_free p T : ptyped ∅ p T → deadlock_free p.
   `blocked_not_deadlock_free`.
 - Ex. 2.11: `sync_typed : ptyped ∅ sync_proc TUnit`, hence
   `sync_deadlock_free` by `typed_deadlock_free`.
+
+## 12a. Example 3.15 (lb) — `LbLR.v`
+
+The paper's lb: a server that forks two workers, hands each a private
+channel, receives a trigger on c (`Slb = ?∗.!∗.!∗.Close`), relays one
+unit to each worker, and closes everything; each worker sends its unit
+directly on c. Both workers and the server use c — untypable — and w1,
+w2 cross thread boundaries. Membership in the LR is proved with the
+invariant method: `lbI` follows the fork pre-phase (LIp0–LIp3) and
+then the server stage s ∈ {0..11} with worker counters (LImain,
+validity `lbvalid`), with the external receive obligation at s = 0 and
+the two external worker sends advancing `lbsty`.
+
+```coq
+Theorem lb_sem_ptyped :
+  sem_ptyped {["c" := Slb]} (∅, {[+ lb +]}) TUnit.   (* axiom-free *)
+
+Lemma q_typed :                                       (* the typed client *)
+  ptyped {["c" := dual Slb]} (∅, {[+ q +]}) TUnit.
+
+Theorem lb_deadlock_free :                            (* ({c}, ⟨lb, q⟩) *)
+  deadlock_free (∅ ∪ ∅ ∪ {["c"]}, {[+ lb +]} ⊎ {[+ q +]}).
+```
 
 ## 12b. Leader election (§4.1) — `Leader.v`
 
