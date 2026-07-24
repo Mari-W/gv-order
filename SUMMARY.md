@@ -30,6 +30,7 @@ process layer and the compositionality proofs are untouched.
 | `theories/Examples.v` | Ex. 2.1 (`sync`), Ex. 2.8 (`blocked`), Ex. 2.11 (typing of `sync`) |
 | `theories/Leader.v` | §4.1 leader election: untypable racing process in the LR, typed client, P-Connect composite deadlock free |
 | `theories/LbLR.v` | Ex. 3.15 (`lb`): untypable fork/delegation server in the LR (invariant method), typed client `q`, composite deadlock free |
+| `theories/Harmony.v` | Harmony: label-free reduction semantics on soups ↔ the τ-fragment of the process LTS (axiom-free) |
 
 Deviations from the draft are marked **[Δ]** inline and collected in the
 [last section](#deviations-from-the-draft).
@@ -775,6 +776,32 @@ transitions are environment-facing, so c ∉ C until the client is
 connected), and the transmitted choice is the boolean token `inj_i ∗`
 (the appendix trace has no fork, so the sent value cannot carry a
 fresh channel end; `Close ⊕ Close` denotes `!(∗+∗).Close`).
+
+## 13. Harmony — `Harmony.v`
+
+A standard, label-free reduction semantics for soups `(C, E)` —
+multi-frame evaluation contexts `ectx := list frame` (with the
+right-of-value conditions `ectx_val`), the pure reduction
+`head_red`/`vred` (the five β-redexes closed under contexts, stated
+without reference to `tstep`), and four soup rules `RedLift`,
+`RedFork`, `RedCom`, `RedClose` — proved to coincide exactly with the
+τ-fragment of the process LTS:
+
+```coq
+Theorem harmony p p' : red p p' ↔ preduction p p'.   (* axiom-free *)
+```
+
+via the context/label bridge (`fill_tstep`, `tstep_fill_decomp`) and
+`vred_reduction : vred e e' ↔ reduction e e'`.
+
+**[Δ]** w.r.t. the harmony notes' soup semantics (COM/FORK/LIFTV
+only): a `[CLOSE]` rule is required (P-Act-Close is a τ-step —
+without it the backward direction fails); COM/CLOSE carry the
+`c ∈ C` premise the LTS demands (the notes leave it to the ambient
+invariant `fc(E) ⊆ C`, which raw processes do not carry — with the
+premise, harmony holds unconditionally); FORK carries P-Act-Fork's
+full three-part freshness (channels are free names, no α); the
+communicated value and fork argument carry `is_val`.
 
 ---
 

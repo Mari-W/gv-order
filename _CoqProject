@@ -12,3 +12,4 @@ theories/Method.v
 theories/Examples.v
 theories/Leader.v
 theories/LbLR.v
+theories/Harmony.v
