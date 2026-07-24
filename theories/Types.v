@@ -11,6 +11,7 @@ Inductive ty :=
   | TLolli (T U : ty)              (* T ⊸ U *)
   | TProd (T U : ty)               (* T ⊗ U *)
   | TSum (T U : ty)                (* T ⊕ U *)
+  | TBang (T : ty)                 (* □T — unlimited (replicable) values *)
   | TSess (S : sty)
 with sty :=
   | SRcv (T : ty) (S : sty)        (* ?T.S *)
@@ -38,7 +39,8 @@ Proof. induction s; simpl; congruence. Qed.
 Inductive prim : ty → Prop :=
   | prim_unit : prim TUnit
   | prim_prod U V : prim U → prim V → prim (TProd U V)
-  | prim_sum U V : prim U → prim V → prim (TSum U V).
+  | prim_sum U V : prim U → prim V → prim (TSum U V)
+  | prim_bang U : prim U → prim (TBang U).
 
 (** ** Session environments: finite maps from channels to session types.
 

@@ -65,7 +65,11 @@ Inductive head_step : expr → tlabel → expr → Prop :=
       head_step (Case (Inj1 v) e1 e2) LBeta (subst1 v e1)
   | HeadCase2 v e1 e2 :                                 (* T-Act-Case-Inr *)
       is_val v →
-      head_step (Case (Inj2 v) e1 e2) LBeta (subst1 v e2).
+      head_step (Case (Inj2 v) e1 e2) LBeta (subst1 v e2)
+  | HeadForce e :                                       (* T-Act-Force *)
+      (* the thunk's body resumes unevaluated (call-by-name):
+         replication of a !-value re-runs the suspended computation *)
+      head_step (Force (EBang e)) LBeta e.
 
 (** ** Context closure (T-Act-Ctx)
 
@@ -94,7 +98,10 @@ Inductive tstep : expr → tlabel → expr → Prop :=
   | TStepInj2 e α e' :
       tstep e α e' → tstep (Inj2 e) α (Inj2 e')
   | TStepCase e α e' e1 e2 :
-      tstep e α e' → tstep (Case e e1 e2) α (Case e' e1 e2).
+      tstep e α e' → tstep (Case e e1 e2) α (Case e' e1 e2)
+  | TStepForce e α e' :
+      (* no congruence under EBang: a bang suspends evaluation *)
+      tstep e α e' → tstep (Force e) α (Force e').
 
 (** GV-style term reduction: just the pure steps. *)
 Definition reduction (e e' : expr) : Prop := tstep e LBeta e'.
@@ -171,6 +178,15 @@ Proof.
   inversion H0.
 Qed.
 
+Lemma tstep_force_inv e α e' :
+  tstep (Force e) α e' →
+  (∃ e'', tstep e α e'' ∧ e' = Force e'')
+  ∨ (∃ eb, e = EBang eb ∧ α = LBeta ∧ e' = eb).
+Proof.
+  intros H. inversion H; simplify_eq; eauto 10.
+  inversion H0; simplify_eq; eauto 10.
+Qed.
+
 Lemma tstep_case_inv e e1 e2 α e' :
   tstep (Case e e1 e2) α e' →
   (∃ e'', tstep e α e'' ∧ e' = Case e'' e1 e2)
@@ -195,7 +211,8 @@ Inductive frame :=
   | FLetP (e2 : expr)
   | FInj1
   | FInj2
-  | FCase (e1 e2 : expr).
+  | FCase (e1 e2 : expr)
+  | FForce.
 
 Definition fill_frame (f : frame) (e : expr) : expr :=
   match f with
@@ -208,6 +225,7 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
   | FInj1 => Inj1 e
   | FInj2 => Inj2 e
   | FCase e1 e2 => Case e e1 e2
+  | FForce => Force e
   end.
 
 (** Right-of-value frames require the value side condition. *)
@@ -246,6 +264,8 @@ Proof.
   - apply tstep_case_inv in Hst
       as [(e' & ? & ->)|[(v & -> & Hv' & _)|(v & -> & Hv' & _)]]; eauto.
     all: by destruct (Hv Hv').
+  - apply tstep_force_inv in Hst as [(e' & ? & ->)|(eb & -> & _)]; eauto.
+    by destruct Hv.
 Qed.
 
 (** Values carried by communication labels are values. *)
@@ -287,4 +307,5 @@ Proof.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj1.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj2.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepCase.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepForce.
 Qed.

@@ -25,8 +25,11 @@ Inductive expr :=
                                       index 1 = a, index 0 = b *)
   | Inj1 (e : expr)                (* left injection *)
   | Inj2 (e : expr)                (* right injection *)
-  | Case (e e1 e2 : expr).         (* case e (a.e1) (a.e2) — each branch
+  | Case (e e1 e2 : expr)          (* case e (a.e1) (a.e2) — each branch
                                       binds 1: index 0 = the payload *)
+  | EBang (e : expr)               (* !e — a thunk value (suspends e) *)
+  | Force (e : expr).              (* force e — unwraps a thunk:
+                                      force (!e) —β→ e *)
 
 Notation EFork := (Konst KFork).
 Notation ERecv := (Konst KRecv).
@@ -37,7 +40,7 @@ Notation EClos := (Konst KClos).
 
 Fixpoint is_val (e : expr) : bool :=
   match e with
-  | EUnit | Konst _ | Chan _ | Lam _ => true
+  | EUnit | Konst _ | Chan _ | Lam _ | EBang _ => true
   | Pair e1 e2 => is_val e1 && is_val e2
   | Inj1 e | Inj2 e => is_val e
   | _ => false
@@ -78,6 +81,8 @@ Proof.
     | Inj1 e => GenNode 6 [go e]
     | Inj2 e => GenNode 7 [go e]
     | Case e e1 e2 => GenNode 8 [go e; go e1; go e2]
+    | EBang e => GenNode 9 [go e]
+    | Force e => GenNode 10 [go e]
     end).
   set (dec := fix go t : expr :=
     match t with
@@ -93,6 +98,8 @@ Proof.
     | GenNode 6 [t] => Inj1 (go t)
     | GenNode 7 [t] => Inj2 (go t)
     | GenNode 8 [t; t1; t2] => Case (go t) (go t1) (go t2)
+    | GenNode 9 [t] => EBang (go t)
+    | GenNode 10 [t] => Force (go t)
     | _ => EUnit
     end).
   apply (inj_countable' enc dec).
@@ -120,6 +127,8 @@ Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   | Inj2 e => Inj2 (rename r e)
   | Case e e1 e2 =>
       Case (rename r e) (rename (upren r) e1) (rename (upren r) e2)
+  | EBang e => EBang (rename r e)
+  | Force e => Force (rename r e)
   end.
 
 Definition up (σ : nat → expr) : nat → expr := Var 0 .: (rename S ∘ σ).
@@ -136,6 +145,8 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   | Inj1 e => Inj1 (subst σ e)
   | Inj2 e => Inj2 (subst σ e)
   | Case e e1 e2 => Case (subst σ e) (subst (up σ) e1) (subst (up σ) e2)
+  | EBang e => EBang (subst σ e)
+  | Force e => Force (subst σ e)
   end.
 
 (** β-substitutions: [subst1 v e] is e[v/a] for a Lam-bound a;
@@ -153,7 +164,7 @@ Fixpoint closed_at (n : nat) (e : expr) : bool :=
   | Lam e => closed_at (S n) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => closed_at n e1 && closed_at n e2
   | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
-  | Inj1 e | Inj2 e => closed_at n e
+  | Inj1 e | Inj2 e | EBang e | Force e => closed_at n e
   | Case e e1 e2 => closed_at n e && closed_at (S n) e1 && closed_at (S n) e2
   end.
 
@@ -164,7 +175,7 @@ Fixpoint fchans (e : expr) : gset chan :=
   match e with
   | Var _ | EUnit | Konst _ => ∅
   | Chan c => {[c]}
-  | Lam e | Inj1 e | Inj2 e => fchans e
+  | Lam e | Inj1 e | Inj2 e | EBang e | Force e => fchans e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fchans e1 ∪ fchans e2
   | Case e e1 e2 => fchans e ∪ fchans e1 ∪ fchans e2
   end.
@@ -311,7 +322,7 @@ Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   | Lam e => allfv (upP P) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
-  | Inj1 e | Inj2 e => allfv P e
+  | Inj1 e | Inj2 e | EBang e | Force e => allfv P e
   | Case e e1 e2 => allfv P e ∧ allfv (upP P) e1 ∧ allfv (upP P) e2
   end.
 
@@ -334,6 +345,8 @@ Proof.
   - destruct HP as (?&?&?). split; [by eapply IHe1|]. split.
     + eapply IHe2; [|done]. by apply upP_mono.
     + eapply IHe3; [|done]. by apply upP_mono.
+  - eauto.
+  - eauto.
 Qed.
 
 (** Occurrence of a free variable (the dual of [allfv]). *)
@@ -344,7 +357,7 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | Lam e => freevar (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
-  | Inj1 e | Inj2 e => freevar x e
+  | Inj1 e | Inj2 e | EBang e | Force e => freevar x e
   | Case e e1 e2 => freevar x e ∨ freevar (S x) e1 ∨ freevar (S x) e2
   end.
 
@@ -435,6 +448,8 @@ Proof.
       unfold compose in IHe2. rewrite fchans_rename in IHe2. set_solver.
     + specialize (IHe3 (S y) (up γ) Hf). simpl in IHe3.
       unfold compose in IHe3. rewrite fchans_rename in IHe3. set_solver.
+  - by specialize (IHe _ γ Hf).
+  - by specialize (IHe _ γ Hf).
 Qed.
 
 Lemma fchans_subst e : ∀ γ (D : gset chan),

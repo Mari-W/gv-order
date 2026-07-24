@@ -18,6 +18,16 @@ Statements only; proofs are in the files.
 structural disjunction), and the fundamental theorem. No new labels, so the
 process layer and the compositionality proofs are untouched.
 
+**Extension (branch `bang`)**: unlimited types `□T` after Lindley–Morris
+ESOP'15 §4.2, in comonadic (CBPV thunk/force) presentation: `!e` is an
+unconditional value suspending `e`, `force (!e) −→β e` resumes it
+unevaluated; contraction is a duplicating context split (`lsplit_bang`),
+weakening a structural rule (`typed_wk`/`lenv_wk`); `!e` types only in an
+all-□ context with `Σ = ∅`. `V⟦□T⟧` requires `Σ = ∅`, syntactic
+channel-freeness of the body (tightness), and membership in `E⟦∅ ⊢ T⟧` at
+all lower indices (stratified like ⊸). Again no new labels: the process
+layer and compositionality untouched. See §12c and the **[Δ]** notes.
+
 | File | Paper content |
 |---|---|
 | `theories/Syntax.v` | Fig. 1 syntax, substitution, closedness, free channels |
@@ -31,6 +41,7 @@ process layer and the compositionality proofs are untouched.
 | `theories/Leader.v` | §4.1 leader election: untypable racing process in the LR, typed client, P-Connect composite deadlock free |
 | `theories/LbLR.v` | Ex. 3.15 (`lb`): untypable fork/delegation server in the LR (invariant method), typed client `q`, composite deadlock free |
 | `theories/Harmony.v` | Harmony: label-free reduction semantics on soups ↔ the τ-fragment of the process LTS (axiom-free) |
+| `theories/Replication.v` | □-extension in action: a banged session factory contracted across two uses; □-weakening |
 
 Deviations from the draft are marked **[Δ]** inline and collected in the
 [last section](#deviations-from-the-draft).
@@ -776,6 +787,48 @@ transitions are environment-facing, so c ∉ C until the client is
 connected), and the transmitted choice is the boolean token `inj_i ∗`
 (the appendix trace has no fork, so the sent value cannot carry a
 fresh channel end; `Close ⊕ Close` denotes `!(∗+∗).Close`).
+
+## 12c. Unlimited types (□T, branch `bang`) — across the layers
+
+Syntax: `EBang e` (a value for any `e` — a thunk) and the non-binding
+eliminator `Force e`, with `Force (EBang e) −→β e` (call-by-name: each
+replica re-runs the suspended computation; no evaluation under `!`).
+Types: `TBang T` with `prim_bang`. Typing:
+
+```coq
+  | typed_bang Δ e T :                                 (* E-Bang *)
+      lenv_bang Δ → typed ∅ Δ e T → typed ∅ Δ (EBang e) (TBang T)
+  | typed_force Σ Δ e T :                              (* E-Force *)
+      typed Σ Δ e (TBang T) → typed Σ Δ (Force e) T
+  | typed_wk Σ Δ' Δ e T :                              (* □-weakening *)
+      typed Σ Δ' e T → lenv_wk Δ' Δ → typed Σ Δ e T
+```
+
+plus contraction as a splitting constructor (`lsplit_bang`: a
+`Some (TBang U)` entry goes to both sides). The value relation:
+
+```coq
+  | TBang T1 =>
+      Σ = ∅ ∧ ∃ eb, v = EBang eb ∧ fchans eb = ∅ ∧
+        ∀ j, j < n → lE (below j) ∅ T1 eb
+```
+
+`sem_typed`'s relevance conjunct now constrains only linearly-available
+(non-□) variables (`lenv_avail_lin`). Example (`Replication.v`): the
+session factory `!(fork ff) : □(?∗.Close)` bound once and used twice by
+contraction — each `force` forks a fresh worker session — plus a
+discarded factory via `typed_wk`; both deadlock-free by the fundamental
+property.
+
+**[Δ]** w.r.t. LM15 Fig. 13: the elimination is the comonadic
+`force` (CBPV thunk/force, the counit presentation) instead of
+`let !x = M in N` with its term substitution `N{M/x}` — the let-form is
+recovered by binding the thunk with λ and forcing at use sites,
+preserving LM15's behavior occurrence-by-occurrence (one administrative
+β per use), including re-suspension under binders. The `V⟦□T⟧` clause
+adds syntactic channel-freeness of the body (`fchans eb = ∅`) — forced
+by tightness (`Vrel_fchans`), and satisfied by every syntactically
+typed bang.
 
 ## 13. Harmony — `Harmony.v`
 
