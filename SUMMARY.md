@@ -28,6 +28,7 @@ process layer and the compositionality proofs are untouched.
 | `theories/LogRel.v` | Fig. 5 logical relation, Defs. 3.1–3.3, Lemmas 3.4/3.5/3.7, Thm 3.6, Thm 3.11 |
 | `theories/Compositionality.v` | Lemmas 3.8–3.10, Thms 3.12/3.13, deadlock-freedom corollary |
 | `theories/Examples.v` | Ex. 2.1 (`sync`), Ex. 2.8 (`blocked`), Ex. 2.11 (typing of `sync`) |
+| `theories/Leader.v` | §4.1 leader election: untypable racing process in the LR, typed client, P-Connect composite deadlock free |
 
 Deviations from the draft are marked **[Δ]** inline and collected in the
 [last section](#deviations-from-the-draft).
@@ -719,6 +720,37 @@ Corollary typed_deadlock_free p T : ptyped ∅ p T → deadlock_free p.
   `blocked_not_deadlock_free`.
 - Ex. 2.11: `sync_typed : ptyped ∅ sync_proc TUnit`, hence
   `sync_deadlock_free` by `typed_deadlock_free`.
+
+## 12b. Leader election (§4.1) — `Leader.v`
+
+The paper's election process: `ld0` sends false then true on the shared
+channel d and closes it; `ld1`/`ld2` race to receive one boolean each,
+synchronize by closing cs, and the true-holder announces the result on
+the interface c by the simulated select (send a token of type ∗ ⊕ ∗,
+then close — `Slead := SSnd TBool SEnd`, i.e. Close ⊕ Close under the
+branch/choice encoding). d has three users and c two potential users,
+so the process is untypable; membership in the LR is proved with the
+invariant method (`leadI`, six constructor groups following the race).
+
+```coq
+Theorem leader_sem_ptyped :
+  sem_ptyped {["c" := Slead]} leader_proc TUnit.       (* axiom-free *)
+
+Lemma qclient_typed :                                   (* the typed client *)
+  ptyped {["c" := SRcv TBool SEnd]} (∅, {[+ qclient +]}) TUnit.
+
+Theorem leader_election_deadlock_free :                 (* the paper's p0 *)
+  deadlock_free
+    ({["cs"; "d"]} ∪ ∅ ∪ {["c"]},
+     ({[+ ld0 +]} ⊎ {[+ ld1 +]} ⊎ {[+ ld2 +]}) ⊎ {[+ qclient +]}).
+```
+
+**[Δ]** Two repairs w.r.t. the paper's §4.1/Appendix A presentation:
+the interface channel c is *not* in the restricted set of p0 (its final
+transitions are environment-facing, so c ∉ C until the client is
+connected), and the transmitted choice is the boolean token `inj_i ∗`
+(the appendix trace has no fork, so the sent value cannot carry a
+fresh channel end; `Close ⊕ Close` denotes `!(∗+∗).Close`).
 
 ---
 

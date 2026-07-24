@@ -10,3 +10,4 @@ theories/LogRel.v
 theories/Compositionality.v
 theories/Method.v
 theories/Examples.v
+theories/Leader.v
