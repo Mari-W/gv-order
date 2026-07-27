@@ -14,14 +14,13 @@
     "Σ = Σ1, c : S" from the paper is rendered as
     Σ = <[c := S]> Σ1 together with c ∉ dom Σ1.
 
-    Proofs of Lemma 3.5 use classical logic (the paper's argument "if p
-    is not irreducible then it has some transition"); the alternative
-    would be proving decidability of reducibility, which the paper's
-    Agda mechanization also lists as tedious. *)
+    Lemma 3.5 needs the paper's argument "if p is not irreducible then
+    it has some transition". That is [proc_progress], proved by
+    deciding reducibility rather than by excluded middle, so the
+    development is closed under the global context. *)
 
-From Coq Require Import Classical.
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Processes Types Typing.
+From LRGV Require Export Processes Progress Types Typing.
 
 (** ** The three relations, level by level *)
 
@@ -600,13 +599,10 @@ Qed.
 (** Lemma 3.5 *)
 Lemma Prel_safe n T p : Prel (S n) ∅ T p → safe p.
 Proof.
-  intros HP. destruct (classic (pirred p)) as [Hirr|Hnirr].
+  intros HP. destruct (proc_progress p) as [Hirr|(π & p' & Hst)].
   - left. destruct (Prel_S_irred _ _ _ _ HP Hirr) as (v & E & -> & Hv & _ & HE).
     exists v, E. auto.
-  - right. apply not_all_ex_not in Hnirr as [π Hπ].
-    apply not_all_ex_not in Hπ as [p' Hp'].
-    apply NNPP in Hp'.
-    destruct π as [|σ].
+  - right. destruct π as [|σ].
     + by exists p'.
     + exfalso. by eapply Prel_S_empty_no_sess.
 Qed.

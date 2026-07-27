@@ -4,6 +4,7 @@
 theories/Syntax.v
 theories/Semantics.v
 theories/Processes.v
+theories/Progress.v
 theories/Types.v
 theories/Typing.v
 theories/LogRel.v

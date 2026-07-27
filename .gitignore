@@ -14,3 +14,4 @@ Makefile.conf
 .claude/
 .DS_Store
 /_opam
+.vscode

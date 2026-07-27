@@ -22,7 +22,6 @@
     lemmas for the common term shapes, used to enumerate the
     transitions of concrete processes. *)
 
-From Coq Require Import Classical.
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export Compositionality.
 

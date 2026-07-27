@@ -5,7 +5,6 @@
     the judgment-level versions (Theorem 3.12) and the fundamental
     property for processes (Theorem 3.13). *)
 
-From Coq Require Import Classical.
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export LogRel.
 
@@ -1216,9 +1215,8 @@ Proof.
         as (v & F & _ & _ & HV & _).
       pose proof (Vrel_prim_empty _ _ _ _ Hprim HV) as HΣ.
       exact (insert_non_empty _ _ _ HΣ). }
-    apply not_all_ex_not in Hn1 as [π1 Hπ1].
-    apply not_all_ex_not in Hπ1 as [p1' Hst1].
-    apply NNPP in Hst1.
+    destruct (proc_progress (C1, E1)) as [Hi1|(π1 & p1' & Hst1)];
+      [by destruct (Hn1 Hi1)|].
     destruct π1 as [|σ1].
     { exfalso. eapply Hlift1; [done|]. by intros ? [=]. }
     destruct (decide (subj σ1 = c)) as [?|Hne]; [eauto|].
@@ -1233,9 +1231,8 @@ Proof.
         as (v & F & _ & _ & HV & _).
       apply Vrel_unit_iff in HV as [HΣ _].
       exact (insert_non_empty _ _ _ HΣ). }
-    apply not_all_ex_not in Hn2 as [π2 Hπ2].
-    apply not_all_ex_not in Hπ2 as [p2' Hst2].
-    apply NNPP in Hst2.
+    destruct (proc_progress (C2, E2)) as [Hi2|(π2 & p2' & Hst2)];
+      [by destruct (Hn2 Hi2)|].
     destruct π2 as [|σ2].
     { exfalso. eapply Hlift2; [done|]. by intros ? [=]. }
     destruct (decide (subj σ2 = c)) as [?|Hne]; [eauto|].
