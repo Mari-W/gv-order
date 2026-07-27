@@ -27,9 +27,11 @@ Inductive expr :=
   | Inj2 (e : expr)                (* right injection *)
   | Case (e e1 e2 : expr)          (* case e (a.e1) (a.e2) — each branch
                                       binds 1: index 0 = the payload *)
-  | EBang (e : expr)               (* !e — a thunk value (suspends e) *)
-  | Force (e : expr).              (* force e — unwraps a thunk:
-                                      force (!e) —β→ e *)
+  | EBang (e : expr)               (* !e — a recursively defined thunk
+                                      value (suspends e); binds 1:
+                                      index 0 = the thunk itself *)
+  | Force (e : expr).              (* force e — unrolls a thunk:
+                                      force (!e) —β→ e[!e/x] *)
 
 Notation EFork := (Konst KFork).
 Notation ERecv := (Konst KRecv).
@@ -127,7 +129,7 @@ Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   | Inj2 e => Inj2 (rename r e)
   | Case e e1 e2 =>
       Case (rename r e) (rename (upren r) e1) (rename (upren r) e2)
-  | EBang e => EBang (rename r e)
+  | EBang e => EBang (rename (upren r) e)
   | Force e => Force (rename r e)
   end.
 
@@ -145,7 +147,7 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   | Inj1 e => Inj1 (subst σ e)
   | Inj2 e => Inj2 (subst σ e)
   | Case e e1 e2 => Case (subst σ e) (subst (up σ) e1) (subst (up σ) e2)
-  | EBang e => EBang (subst σ e)
+  | EBang e => EBang (subst (up σ) e)
   | Force e => Force (subst σ e)
   end.
 
@@ -164,8 +166,9 @@ Fixpoint closed_at (n : nat) (e : expr) : bool :=
   | Lam e => closed_at (S n) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => closed_at n e1 && closed_at n e2
   | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
-  | Inj1 e | Inj2 e | EBang e | Force e => closed_at n e
+  | Inj1 e | Inj2 e | Force e => closed_at n e
   | Case e e1 e2 => closed_at n e && closed_at (S n) e1 && closed_at (S n) e2
+  | EBang e => closed_at (S n) e
   end.
 
 Definition closed (e : expr) : bool := closed_at 0 e.
@@ -206,6 +209,7 @@ Proof.
     intros [|[|x]]; done.
   - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
   - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
+  - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
 Qed.
 
 (** Substitutions agreeing below the closedness bound act identically. *)
@@ -224,6 +228,8 @@ Proof.
   - eapply IHe2; [done|]. intros [|x] Hx; simpl; [done|].
     unfold compose. rewrite Hag; [done|lia].
   - eapply IHe3; [done|]. intros [|x] Hx; simpl; [done|].
+    unfold compose. rewrite Hag; [done|lia].
+  - eapply IHe; [done|]. intros [|x] Hx; simpl; [done|].
     unfold compose. rewrite Hag; [done|lia].
 Qed.
 
@@ -246,6 +252,7 @@ Proof.
   - rewrite IHe2. apply rename_ext. by intros [|[|x]].
   - rewrite IHe2. apply rename_ext. by intros [|x].
   - rewrite IHe3. apply rename_ext. by intros [|x].
+  - rewrite IHe. apply rename_ext. by intros [|x].
 Qed.
 
 Lemma subst_rename e : ∀ σ r,
@@ -256,6 +263,7 @@ Proof.
   - rewrite IHe2. apply subst_ext. by intros [|[|x]].
   - rewrite IHe2. apply subst_ext. by intros [|x].
   - rewrite IHe3. apply subst_ext. by intros [|x].
+  - rewrite IHe. apply subst_ext. by intros [|x].
 Qed.
 
 Lemma rename_subst e : ∀ r σ,
@@ -269,6 +277,8 @@ Proof.
   - rewrite IHe2. apply subst_ext. intros [|x]; simpl; [done|].
     unfold compose. by rewrite !rename_rename.
   - rewrite IHe3. apply subst_ext. intros [|x]; simpl; [done|].
+    unfold compose. by rewrite !rename_rename.
+  - rewrite IHe. apply subst_ext. intros [|x]; simpl; [done|].
     unfold compose. by rewrite !rename_rename.
 Qed.
 
@@ -286,6 +296,9 @@ Proof.
     unfold compose. rewrite subst_rename, rename_subst.
     apply subst_ext. by intros y.
   - rewrite IHe3. apply subst_ext. intros [|x]; simpl; [done|].
+    unfold compose. rewrite subst_rename, rename_subst.
+    apply subst_ext. by intros y.
+  - rewrite IHe. apply subst_ext. intros [|x]; simpl; [done|].
     unfold compose. rewrite subst_rename, rename_subst.
     apply subst_ext. by intros y.
 Qed.
@@ -322,8 +335,9 @@ Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   | Lam e => allfv (upP P) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
-  | Inj1 e | Inj2 e | EBang e | Force e => allfv P e
+  | Inj1 e | Inj2 e | Force e => allfv P e
   | Case e e1 e2 => allfv P e ∧ allfv (upP P) e1 ∧ allfv (upP P) e2
+  | EBang e => allfv (upP P) e
   end.
 
 Lemma upP_mono (P Q : nat → Prop) :
@@ -345,7 +359,7 @@ Proof.
   - destruct HP as (?&?&?). split; [by eapply IHe1|]. split.
     + eapply IHe2; [|done]. by apply upP_mono.
     + eapply IHe3; [|done]. by apply upP_mono.
-  - eauto.
+  - eapply IHe; [|done]. by apply upP_mono.
   - eauto.
 Qed.
 
@@ -357,8 +371,9 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | Lam e => freevar (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
-  | Inj1 e | Inj2 e | EBang e | Force e => freevar x e
+  | Inj1 e | Inj2 e | Force e => freevar x e
   | Case e e1 e2 => freevar x e ∨ freevar (S x) e1 ∨ freevar (S x) e2
+  | EBang e => freevar (S x) e
   end.
 
 (** ** Closedness under renaming and substitution *)
@@ -379,6 +394,8 @@ Proof.
     eapply IHe2; [|done]. intros [|x] Hx; simpl; [lia|].
     unfold compose. assert (r x < m') by (apply Hr; lia). lia.
   - eapply IHe3; [|done]. intros [|x] Hx; simpl; [lia|].
+    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
+  - eapply IHe; [|done]. intros [|x] Hx; simpl; [lia|].
     unfold compose. assert (r x < m') by (apply Hr; lia). lia.
 Qed.
 
@@ -404,6 +421,10 @@ Proof.
       intros; lia.
   - destruct H0 as [H1 H2].
     apply IHe3. eapply allfv_mono; [|exact H2]. intros [|x]; simpl.
+    + intros _. done.
+    + intros Hc. unfold compose. eapply closed_at_rename; [|done].
+      intros; lia.
+  - apply IHe. eapply allfv_mono; [|done]. intros [|x]; simpl.
     + intros _. done.
     + intros Hc. unfold compose. eapply closed_at_rename; [|done].
       intros; lia.
@@ -448,7 +469,8 @@ Proof.
       unfold compose in IHe2. rewrite fchans_rename in IHe2. set_solver.
     + specialize (IHe3 (S y) (up γ) Hf). simpl in IHe3.
       unfold compose in IHe3. rewrite fchans_rename in IHe3. set_solver.
-  - by specialize (IHe _ γ Hf).
+  - specialize (IHe (S y) (up γ) Hf). simpl in IHe.
+    unfold compose in IHe. rewrite fchans_rename in IHe. exact IHe.
   - by specialize (IHe _ γ Hf).
 Qed.
 
@@ -485,4 +507,8 @@ Proof.
       - intros _. set_solver.
       - intros Hc. unfold compose. by rewrite fchans_rename. }
     specialize (IHe2 _ _ H1'). specialize (IHe3 _ _ H2'). set_solver.
+  - (* EBang *)
+    apply (IHe (up γ) D). eapply allfv_mono; [|done]. intros [|x]; simpl.
+    + intros _. set_solver.
+    + intros Hc. unfold compose. by rewrite fchans_rename.
 Qed.

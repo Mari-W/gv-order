@@ -2,10 +2,14 @@
 
     The □ extension in action. [factory] is a banged fork — a
     replicable recipe for a fresh session. It is bound once and used
-    twice (contraction at the □ type, [lsplit_bang]); each [Force]
+    twice (contraction at the □ type, [lsplit_unl]); each [Force]
     re-runs the suspended fork, so the two uses obtain two distinct
     private sessions served by two independent workers. A discarded
-    factory ([typed_wk]) closes the weakening side. *)
+    factory ([typed_wk]) closes the weakening side.
+
+    Since [EBang] binds its own occurrence (index 0 of the body is the
+    thunk itself), a recipe that does not call itself simply weakens
+    that binding away — [factory_typed] below. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Import LogRel Compositionality Examples.
@@ -52,13 +56,37 @@ Proof.
       * apply typed_var, lenv_only_1.
 Qed.
 
+(** [ff] under one (unused) extra binding — the slot the recursive
+    occurrence of a bang occupies. *)
+Lemma ff_typed_none : typed ∅ [None] ff (TLolli (TSess Sff) TUnit).
+Proof.
+  apply typed_lam.
+  eapply (typed_app _ ∅ ∅ _ [None; None] [Some (TSess Sff); None]
+            _ _ (TSess SEnd));
+    [apply senv_split_empty_l|repeat constructor| |].
+  - apply typed_konst; [auto using lenv_empty_nil, lenv_empty_cons|].
+    apply KTClos.
+  - eapply (typed_app _ ∅ ∅ _ [None; None] [Some (TSess Sff); None]
+              _ _ (TProd TUnit (TSess Sff)));
+      [apply senv_split_empty_l|repeat constructor| |].
+    + apply typed_konst; [auto using lenv_empty_nil, lenv_empty_cons|].
+      apply (KTSend TUnit SEnd).
+    + eapply (typed_pair _ ∅ ∅ _ [None; None] [Some (TSess Sff); None]);
+        [apply senv_split_empty_l|repeat constructor| |].
+      * apply typed_unit. auto using lenv_empty_nil, lenv_empty_cons.
+      * apply typed_var, lenv_only_20.
+Qed.
+
 Lemma factory_typed : typed ∅ [] factory (TBang (TSess Srv)).
 Proof.
   apply typed_bang; [intros o Ho; by apply elem_of_nil in Ho|].
-  eapply (typed_app _ ∅ ∅ _ [] [] _ _ (TLolli (TSess Sff) TUnit));
-    [apply senv_split_empty_l|constructor| |].
-  - apply typed_konst; [apply lenv_empty_nil|]. apply (KTFork Sff).
-  - apply ff_typed.
+  (* the recipe never calls itself, so weaken the recursive binding away *)
+  eapply typed_wk; [|apply lwk_drop; [done|apply lwk_nil]].
+  eapply (typed_app _ ∅ ∅ _ [None] [None] _ _ (TLolli (TSess Sff) TUnit));
+    [apply senv_split_empty_l|repeat constructor| |].
+  - apply typed_konst; [auto using lenv_empty_nil, lenv_empty_cons|].
+    apply (KTFork Sff).
+  - apply ff_typed_none.
 Qed.
 
 Lemma useb_typed :
@@ -123,3 +151,16 @@ Qed.
 Corollary discard_deadlock_free :
   deadlock_free (∅, {[+ App (Lam EUnit) factory +]}).
 Proof. eapply typed_deadlock_free, discard_typed. Qed.
+
+(** ** The thunk really is recursive
+
+    [!e] binds its own occurrence, so forcing unrolls one step rather
+    than merely resuming a suspension: the canonical diverging term
+    steps to itself. This is what makes [fix x.e ≔ force (!e)] work,
+    and it is why the □ fragment is no longer normalizing — harmless
+    here, since deadlock freedom only ever asks whether a process
+    *can* step. *)
+Definition omega : expr := Force (EBang (Force (Var 0))).
+
+Lemma omega_loops : tstep omega LBeta omega.
+Proof. apply TStepHead, (HeadForce (Force (Var 0))). Qed.

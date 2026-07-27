@@ -56,10 +56,15 @@ Fixpoint Vdef (below : nat → level) (n : nat)
       ∨ (∃ v', v = Inj2 v' ∧ Vdef below n Σ U v')
   | TBang T1 =>
       (* a replicable thunk owns no channels — syntactically, so that
-         tightness ([Vrel_fchans]) survives — and its body is a good
-         term at every lower index *)
+         tightness ([Vrel_fchans]) survives — and its unrolling is a
+         good term at every lower index. This is Fig. 8's
+         V⟦□T⟧ = {!e | fix x.e ∈ E⟦T⟧} with fix x.e = e[!e/x]: [Vdef]
+         at level n is built before [Edef] at level n, but forcing
+         always takes a β step, so only lower indices are ever
+         constrained and [Vrel_bang_iff] recovers the paper's
+         same-index statement *)
       Σ = ∅ ∧ ∃ eb, v = EBang eb ∧ fchans eb = ∅ ∧
-        ∀ j, j < n → lE (below j) ∅ T1 eb
+        ∀ j, j < n → lE (below j) ∅ T1 (subst1 (EBang eb) eb)
   end.
 
 (** Term relation at level n (n = S n' in the non-trivial case),
@@ -369,7 +374,7 @@ Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
 Lemma Vrel_bang_iff n Σ T v :
   Vrel n Σ (TBang T) v ↔
   Σ = ∅ ∧ ∃ eb, v = EBang eb ∧ fchans eb = ∅ ∧
-    ∀ j, j < n → Erel j ∅ T eb.
+    ∀ j, j < n → Erel j ∅ T (subst1 (EBang eb) eb).
 Proof.
   unfold Vrel, Erel. rewrite (lvl_eq n). cbn [mk_level lV Vdef].
   apply and_iff_compat_l.
@@ -939,7 +944,8 @@ Lemma Vrel_inj2 n Σ T U v :
 Proof. intros. apply Vrel_sum_iff. right. eauto. Qed.
 
 Lemma Vrel_bang n T eb :
-  fchans eb = ∅ → (∀ j, j < n → Erel j ∅ T eb) →
+  fchans eb = ∅ →
+  (∀ j, j < n → Erel j ∅ T (subst1 (EBang eb) eb)) →
   Vrel n ∅ (TBang T) (EBang eb).
 Proof. intros. apply Vrel_bang_iff. eauto. Qed.
 
@@ -1191,9 +1197,10 @@ Proof.
   simpl. apply HK. lia.
 Qed.
 
-(** Forcing a thunk value: β to the suspended body. *)
+(** Forcing a thunk value: β to the suspended body, with the thunk
+    substituted for its own recursive occurrence. *)
 Lemma Erel_force_val n T eb :
-  (∀ j, j < n → Erel j ∅ T eb) →
+  (∀ j, j < n → Erel j ∅ T (subst1 (EBang eb) eb)) →
   Erel n ∅ T (Force (EBang eb)).
 Proof.
   destruct n as [|n']; [intros; apply Erel_0|].
@@ -1508,25 +1515,42 @@ Qed.
 (** E-Bang *)
 Lemma sem_typed_bang Δ e T :
   lenv_unl Δ →
-  sem_typed ∅ Δ e T →
+  sem_typed ∅ (Some (TBang T) :: Δ) e T →
   sem_typed ∅ Δ (EBang e) (TBang T).
 Proof.
-  intros HΔ (Hfc & Hfv & Hrv & He). split_and!; simpl; [done|done|done|].
+  intros HΔ (Hfc & Hfv & Hrv & He). split_and!; simpl; [done| | |].
+  { eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
+    - intros _. done.
+    - intros (T' & HT'). by exists T'. }
+  { intros x (T' & Hx & Hnb). apply (Hrv (S x)). exists T'. auto. }
   intros n Σ' γ Hd Hg.
   pose proof (grounding_unl_empty _ _ _ _ Hg HΔ) as ->.
   rewrite (right_id ∅ (∪)). simpl.
-  apply Vrel_Erel, Vrel_bang.
-  - (* the substituted body owns no channels *)
-    apply (anti_symm (⊆)); [|set_solver].
-    etrans; [apply (fchans_subst _ γ ∅)|].
-    + eapply allfv_mono; [|exact Hfv]. intros x (T' & Hx').
-      etrans; [eapply grounding_fchans; eauto|]. by rewrite dom_empty_L.
-    + rewrite Hfc. rewrite dom_empty_L. set_solver.
-  - intros j Hj.
+  (* the substituted body owns no channels: index 0 is the thunk, which
+     is channel-free, and every other free variable is grounded at ∅ *)
+  assert (fchans (subst (up γ) e) = ∅) as Hfce.
+  { apply (anti_symm (⊆)); [|set_solver].
+    etrans; [apply (fchans_subst _ (up γ) ∅)|].
+    - eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
+      + intros _. set_solver.
+      + intros (T' & HT'). unfold compose. rewrite fchans_rename.
+        etrans; [eapply grounding_fchans; eauto|]. by rewrite dom_empty_L.
+    - rewrite Hfc, dom_empty_L. set_solver. }
+  (* Lemma 4.3: forcing unrolls one step, so the thunk's membership at
+     index m only ever appeals to its membership strictly below m —
+     strong induction closes the loop. *)
+  assert (∀ m, m ≤ n → Vrel m ∅ (TBang T) (EBang (subst (up γ) e))) as Hall.
+  { intros m. induction m as [m IHm] using lt_wf_ind. intros Hm.
+    apply Vrel_bang; [done|]. intros j Hj.
+    rewrite subst1_subst.
     replace (∅ : senv) with (∅ ∪ ∅ : senv)
       by (by rewrite (left_id ∅ (∪))).
     apply He; [apply map_disjoint_empty_l|].
-    eapply grounding_down; [|exact Hg]. lia.
+    simpl. exists ∅, ∅. split_and!.
+    - apply senv_split_empty_l.
+    - apply IHm; lia.
+    - eapply grounding_down; [|exact Hg]. lia. }
+  apply Vrel_Erel, Hall. lia.
 Qed.
 
 (** E-Force *)

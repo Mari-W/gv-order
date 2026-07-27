@@ -129,9 +129,11 @@ Inductive typed : senv → lenv → expr → ty → Prop :=
       typed Σ Δ (Case e e1 e2) T
   | typed_bang Δ e T :                                 (* E-Bang *)
       (* a replicable thunk owns no channels and captures only
-         unlimited variables *)
+         unlimited variables; index 0 of the body is the thunk itself,
+         at □T — which is unlimited, so the recursive occurrence
+         inherits contraction and weakening with no extra bookkeeping *)
       lenv_unl Δ →
-      typed ∅ Δ e T →
+      typed ∅ (Some (TBang T) :: Δ) e T →
       typed ∅ Δ (EBang e) (TBang T)
   | typed_force Σ Δ e T :                              (* E-Force *)
       typed Σ Δ e (TBang T) →

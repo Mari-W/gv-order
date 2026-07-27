@@ -67,9 +67,11 @@ Inductive head_step : expr → tlabel → expr → Prop :=
       is_val v →
       head_step (Case (Inj2 v) e1 e2) LBeta (subst1 v e2)
   | HeadForce e :                                       (* T-Act-Force *)
-      (* the thunk's body resumes unevaluated (call-by-name):
-         replication of a !-value re-runs the suspended computation *)
-      head_step (Force (EBang e)) LBeta e.
+      (* the thunk's body resumes unevaluated (call-by-name), with the
+         thunk substituted for its own bound occurrence: forcing
+         unrolls one step of the recursion, so !e is Lily's fix
+         (§4.2) and replicating it re-runs the suspended computation *)
+      head_step (Force (EBang e)) LBeta (subst1 (EBang e) e).
 
 (** ** Context closure (T-Act-Ctx)
 
@@ -181,7 +183,7 @@ Qed.
 Lemma tstep_force_inv e α e' :
   tstep (Force e) α e' →
   (∃ e'', tstep e α e'' ∧ e' = Force e'')
-  ∨ (∃ eb, e = EBang eb ∧ α = LBeta ∧ e' = eb).
+  ∨ (∃ eb, e = EBang eb ∧ α = LBeta ∧ e' = subst1 (EBang eb) eb).
 Proof.
   intros H. inversion H; simplify_eq; eauto 10.
   inversion H0; simplify_eq; eauto 10.
