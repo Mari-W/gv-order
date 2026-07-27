@@ -42,6 +42,20 @@ Inductive prim : ty → Prop :=
   | prim_sum U V : prim U → prim V → prim (TSum U V)
   | prim_bang U : prim U → prim (TBang U).
 
+(** ** Unlimited types
+
+    The types whose variables admit contraction and weakening. The
+    structural rules of Fig. 4 ([lsplit_unl], [lwk_drop]) and the
+    relevance conjunct of semantic typing are stated against this
+    predicate rather than against a single modality, so that adding
+    one is a matter of extending the match below. *)
+
+Definition unlimited (T : ty) : Prop :=
+  match T with TBang _ => True | _ => False end.
+
+Lemma unlimited_bang T : unlimited (TBang T).
+Proof. done. Qed.
+
 (** ** Session environments: finite maps from channels to session types.
 
     Splitting Σ = Σ1, Σ2 is disjoint union of the underlying maps. *)

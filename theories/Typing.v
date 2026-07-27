@@ -33,10 +33,10 @@ Inductive lenv_split : lenv → lenv → lenv → Prop :=
   | lsplit_r T Δ Δ1 Δ2 :
       lenv_split Δ Δ1 Δ2 →
       lenv_split (Some T :: Δ) (None :: Δ1) (Some T :: Δ2)
-  | lsplit_bang U Δ Δ1 Δ2 :                (* contraction at □ types *)
+  | lsplit_unl U Δ Δ1 Δ2 :                 (* contraction at unlimited types *)
+      unlimited U →
       lenv_split Δ Δ1 Δ2 →
-      lenv_split (Some (TBang U) :: Δ)
-                 (Some (TBang U) :: Δ1) (Some (TBang U) :: Δ2).
+      lenv_split (Some U :: Δ) (Some U :: Δ1) (Some U :: Δ2).
 
 Lemma lenv_split_lookup_l Δ Δ1 Δ2 x T :
   lenv_split Δ Δ1 Δ2 → Δ1 !! x = Some (Some T) → Δ !! x = Some (Some T).
@@ -61,9 +61,9 @@ Lemma lenv_split_lookup_r Δ Δ1 Δ2 x T :
   lenv_split Δ Δ1 Δ2 → Δ2 !! x = Some (Some T) → Δ !! x = Some (Some T).
 Proof. eauto using lenv_split_lookup_l, lenv_split_comm. Qed.
 
-(** ** □-weakening: erasing unlimited entries from the context.
+(** ** Weakening: erasing unlimited entries from the context.
 
-    [lenv_wk Δ' Δ] : Δ' is Δ with some □-typed entries dropped (to
+    [lenv_wk Δ' Δ] : Δ' is Δ with some unlimited entries dropped (to
     None); the weakening rule below moves a judgment from Δ' to Δ. *)
 
 Inductive lenv_wk : lenv → lenv → Prop :=
@@ -71,11 +71,12 @@ Inductive lenv_wk : lenv → lenv → Prop :=
   | lwk_cons o Δ' Δ :
       lenv_wk Δ' Δ → lenv_wk (o :: Δ') (o :: Δ)
   | lwk_drop U Δ' Δ :
-      lenv_wk Δ' Δ → lenv_wk (None :: Δ') (Some (TBang U) :: Δ).
+      unlimited U →
+      lenv_wk Δ' Δ → lenv_wk (None :: Δ') (Some U :: Δ).
 
 (** All available entries are unlimited (the □Γ side condition). *)
-Definition lenv_bang (Δ : lenv) : Prop :=
-  ∀ o, o ∈ Δ → o = None ∨ ∃ U, o = Some (TBang U).
+Definition lenv_unl (Δ : lenv) : Prop :=
+  ∀ o, o ∈ Δ → o = None ∨ ∃ U, o = Some U ∧ unlimited U.
 
 (** ** Typing rules for terms: Σ; Δ ⊢ e : T *)
 
@@ -129,7 +130,7 @@ Inductive typed : senv → lenv → expr → ty → Prop :=
   | typed_bang Δ e T :                                 (* E-Bang *)
       (* a replicable thunk owns no channels and captures only
          unlimited variables *)
-      lenv_bang Δ →
+      lenv_unl Δ →
       typed ∅ Δ e T →
       typed ∅ Δ (EBang e) (TBang T)
   | typed_force Σ Δ e T :                              (* E-Force *)

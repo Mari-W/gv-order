@@ -382,6 +382,11 @@ Qed.
 Lemma Vrel_bang_empty n Σ T v : Vrel n Σ (TBang T) v → Σ = ∅.
 Proof. intros [-> _]%Vrel_bang_iff. done. Qed.
 
+(** Values at an unlimited type own no channels. One case per
+    modality; the structural rules only ever need this much. *)
+Lemma Vrel_unl_empty n Σ T v : unlimited T → Vrel n Σ T v → Σ = ∅.
+Proof. destruct T; try done. intros _. apply Vrel_bang_empty. Qed.
+
 Lemma Vrel_lolli_iff n Σ T U v :
   Vrel n Σ (TLolli T U) v ↔
   (∃ eb, v = Lam eb ∧ fchans eb = dom Σ ∧
@@ -548,14 +553,11 @@ Fixpoint grounding (n : nat) (Σ : senv) (Δ : lenv) (γ : nat → expr) : Prop 
 Definition lenv_avail (Δ : lenv) (x : nat) : Prop :=
   ∃ T, Δ !! x = Some (Some T).
 
-Definition not_bang (T : ty) : Prop :=
-  match T with TBang _ => False | _ => True end.
-
-(** Availability at a linear (non-□) type: the variables constrained
-    by relevance — □-typed variables may be discarded (weakening), so
-    only linear availability forces occurrence. *)
+(** Availability at a linear (non-unlimited) type: the variables
+    constrained by relevance — unlimited variables may be discarded
+    (weakening), so only linear availability forces occurrence. *)
 Definition lenv_avail_lin (Δ : lenv) (x : nat) : Prop :=
-  ∃ T, Δ !! x = Some (Some T) ∧ not_bang T.
+  ∃ T, Δ !! x = Some (Some T) ∧ ¬ unlimited T.
 
 Lemma lenv_avail_lin_avail Δ x :
   lenv_avail_lin Δ x → lenv_avail Δ x.
@@ -751,9 +753,9 @@ Proof.
     exists Σ1, (Σa ∪ Σ2). split_and!; [|done|].
     + split; [by senv_perm|senv_disj].
     + exists Σa, Σ2. split_and!; try done. split; [done|senv_disj].
-  - (* lsplit_bang: the (channel-free) entry goes to both sides *)
+  - (* lsplit_unl: the (channel-free) entry goes to both sides *)
     destruct Hg as (Σa & Σb & [-> Hd] & HV & Hg).
-    pose proof (Vrel_bang_empty _ _ _ _ HV) as ->.
+    pose proof (Vrel_unl_empty _ _ _ _ ltac:(eassumption) HV) as ->.
     destruct (IHHs _ _ Hg) as (Σ1 & Σ2 & [-> Hd2] & Hg1 & Hg2).
     replace (∅ ∪ (Σ1 ∪ Σ2)) with (Σ1 ∪ Σ2)
       by (by rewrite (left_id (∅ : senv) (∪))).
@@ -780,16 +782,15 @@ Qed.
     the value assigned to some available variable (tightness of V). *)
 Lemma grounding_dom n Σ Δ γ ch :
   grounding n Σ Δ γ → ch ∈ dom Σ →
-  ∃ x T, Δ !! x = Some (Some T) ∧ not_bang T ∧ ch ∈ fchans (γ x).
+  ∃ x T, Δ !! x = Some (Some T) ∧ ¬ unlimited T ∧ ch ∈ fchans (γ x).
 Proof.
   induction Δ as [|[T0|] Δ' IH] in Σ, γ |- *; simpl; intros Hg Hch.
   - subst. rewrite dom_empty_L in Hch. set_solver.
   - destruct Hg as (Σ1 & Σ2 & [-> _] & HV & Hg).
     rewrite dom_union_L in Hch. apply elem_of_union in Hch as [Hch|Hch].
     + exists 0, T0. split_and!; [done| |].
-      * (* a □-typed entry owns no channels, so ch cannot be here *)
-        destruct T0; try done.
-        rewrite (Vrel_bang_empty _ _ _ _ HV) in Hch.
+      * (* an unlimited entry owns no channels, so ch cannot be here *)
+        intros Hu. rewrite (Vrel_unl_empty _ _ _ _ Hu HV) in Hch.
         rewrite dom_empty_L in Hch. set_solver.
       * rewrite (Vrel_fchans _ _ _ _ HV). done.
     + destruct (IH _ _ Hg Hch) as (x & T & ? & ? & ?). by exists (S x), T.
@@ -798,15 +799,15 @@ Qed.
 
 (** Groundings of all-□ contexts carry no channels, and are preserved
     by □-weakening (the dropped entries own nothing). *)
-Lemma grounding_bang_empty n Σ Δ γ :
-  grounding n Σ Δ γ → lenv_bang Δ → Σ = ∅.
+Lemma grounding_unl_empty n Σ Δ γ :
+  grounding n Σ Δ γ → lenv_unl Δ → Σ = ∅.
 Proof.
   induction Δ as [|o Δ' IH] in Σ, γ |- *; simpl; intros Hg HΔ; [done|].
   destruct o as [T|].
-  - destruct (HΔ (Some T) ltac:(constructor)) as [?|(U & HU)]; [done|].
+  - destruct (HΔ (Some T) ltac:(constructor)) as [?|(U & HU & Hu)]; [done|].
     simplify_eq.
     destruct Hg as (Σ1 & Σ2 & [-> Hd] & HV & Hg').
-    rewrite (Vrel_bang_empty _ _ _ _ HV).
+    rewrite (Vrel_unl_empty _ _ _ _ Hu HV).
     rewrite (IH _ _ Hg'); [by rewrite (left_id ∅ (∪))|].
     intros o Ho. apply HΔ. rewrite elem_of_cons. auto.
   - apply (IH _ (γ ∘ S)); [done|].
@@ -816,12 +817,12 @@ Qed.
 Lemma grounding_wk n Σ Δ' Δ γ :
   lenv_wk Δ' Δ → grounding n Σ Δ γ → grounding n Σ Δ' γ.
 Proof.
-  intros Hwk. revert Σ γ. induction Hwk as [|o Δ' Δ Hwk IH|U Δ' Δ Hwk IH];
+  intros Hwk. revert Σ γ. induction Hwk as [|o Δ' Δ Hwk IH|U Δ' Δ Hu Hwk IH];
     intros Σ γ Hg; simpl in *; [done| |].
   - destruct o as [T|]; [|by eauto].
     destruct Hg as (Σ1 & Σ2 & ? & ? & ?). exists Σ1, Σ2. eauto.
   - destruct Hg as (Σ1 & Σ2 & [-> Hd] & HV & Hg').
-    rewrite (Vrel_bang_empty _ _ _ _ HV).
+    rewrite (Vrel_unl_empty _ _ _ _ Hu HV).
     rewrite (left_id ∅ (∪)). eauto.
 Qed.
 
@@ -830,7 +831,7 @@ Lemma lenv_wk_avail Δ' Δ x :
   lenv_wk Δ' Δ → lenv_avail Δ' x → lenv_avail Δ x.
 Proof.
   intros Hwk. revert x.
-  induction Hwk as [|o Δ' Δ Hwk IH|U Δ' Δ Hwk IH];
+  induction Hwk as [|o Δ' Δ Hwk IH|U Δ' Δ Hu Hwk IH];
     intros x (T & Hx); [by exists T| |].
   - destruct x as [|x']; simpl in *; simplify_eq/=; [by exists T|].
     destruct (IH x') as (T' & ?); [by exists T|]. by exists T'.
@@ -842,12 +843,12 @@ Lemma lenv_wk_avail_lin Δ' Δ x :
   lenv_wk Δ' Δ → lenv_avail_lin Δ x → lenv_avail_lin Δ' x.
 Proof.
   intros Hwk. revert x.
-  induction Hwk as [|o Δ' Δ Hwk IH|U Δ' Δ Hwk IH];
+  induction Hwk as [|o Δ' Δ Hwk IH|U Δ' Δ Hu Hwk IH];
     intros x (T & Hx & Hnb); [by exists T| |].
   - destruct x as [|x']; simpl in *; simplify_eq/=.
     + exists T. auto.
     + destruct (IH x') as (T' & ? & ?); [exists T; auto|]. exists T'. auto.
-  - destruct x as [|x']; simpl in *; simplify_eq/=; [by destruct Hnb|].
+  - destruct x as [|x']; simpl in *; simplify_eq/=; [by destruct (Hnb Hu)|].
     destruct (IH x') as (T' & ? & ?); [exists T; auto|]. exists T'. auto.
 Qed.
 
@@ -1506,13 +1507,13 @@ Qed.
 
 (** E-Bang *)
 Lemma sem_typed_bang Δ e T :
-  lenv_bang Δ →
+  lenv_unl Δ →
   sem_typed ∅ Δ e T →
   sem_typed ∅ Δ (EBang e) (TBang T).
 Proof.
   intros HΔ (Hfc & Hfv & Hrv & He). split_and!; simpl; [done|done|done|].
   intros n Σ' γ Hd Hg.
-  pose proof (grounding_bang_empty _ _ _ _ Hg HΔ) as ->.
+  pose proof (grounding_unl_empty _ _ _ _ Hg HΔ) as ->.
   rewrite (right_id ∅ (∪)). simpl.
   apply Vrel_Erel, Vrel_bang.
   - (* the substituted body owns no channels *)

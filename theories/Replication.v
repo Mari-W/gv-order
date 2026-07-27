@@ -97,7 +97,7 @@ Proof.
   - apply typed_lam.
     eapply (typed_letu _ ∅ ∅ _ [Some (TBang (TSess Srv))]
               [Some (TBang (TSess Srv))]);
-      [apply senv_split_empty_l|apply lsplit_bang, lsplit_nil| |];
+      [apply senv_split_empty_l|apply lsplit_unl; [done|apply lsplit_nil]| |];
       apply useb_typed.
   - apply factory_typed.
 Qed.
@@ -116,7 +116,7 @@ Proof.
     eapply typed_wk.
     + apply (typed_unit [None]).
       auto using lenv_empty_nil, lenv_empty_cons.
-    + apply lwk_drop, lwk_nil.
+    + apply lwk_drop; [done|apply lwk_nil].
   - apply factory_typed.
 Qed.
 
