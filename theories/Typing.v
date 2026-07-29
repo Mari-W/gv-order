@@ -141,7 +141,13 @@ Inductive typed : senv → lenv → expr → ty → Prop :=
   | typed_wk Σ Δ' Δ e T :                              (* □-weakening *)
       typed Σ Δ' e T →
       lenv_wk Δ' Δ →
-      typed Σ Δ e T.
+      typed Σ Δ e T
+  | typed_conv Σ Δ e s s' :                            (* E-Conv: µα.S = S[µα.S/α] *)
+      (* equi-recursive conversion at session type, up to unfolding;
+         for the head-normal cases the premise is [reflexivity] *)
+      unfoldS s = unfoldS s' →
+      typed Σ Δ e (TSess s) →
+      typed Σ Δ e (TSess s').
 
 (** ** Typing rules for processes: Σ ⊢ (C, E) : T
 
