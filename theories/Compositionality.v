@@ -115,9 +115,12 @@ Lemma Prel_sess_subj n Σ T p σ p' :
 Proof.
   intros HP Hst. pose proof (Prel_S_step _ _ _ _ _ _ HP Hst) as Hc.
   destruct σ as [c w|c w|c]; simpl in Hc |- *.
-  - destruct Hc as (Σ1 & U & s & -> & _). set_solver.
-  - destruct Hc as (?&?&?&?&?&?&?&?&?&?&?&?&Heq&_). rewrite Heq. set_solver.
-  - destruct Hc as (Σ1 & Heq & _). rewrite Heq. set_solver.
+  - destruct Hc as (Σ1 & U & s & Hhd & _).
+    rewrite (senv_hd_dom _ _ _ _ Hhd). set_solver.
+  - destruct Hc as (?&?&?&?&?&?&?&?&?&?&?&?&Hhd&_).
+    rewrite (senv_hd_dom _ _ _ _ Hhd). set_solver.
+  - destruct Hc as (Σ1 & Hhd & _).
+    rewrite (senv_hd_dom _ _ _ _ Hhd). set_solver.
 Qed.
 
 (** A component's transition yields a transition of the composition
@@ -490,11 +493,12 @@ Proof.
     pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hc.
     destruct σ as [c w|c w|c]; simpl in Hc |- *.
     + (* recv *)
-      destruct Hc as (Σ1a & U & s & HeqΣ & Hca & Hcont). subst Σ1.
+      destruct Hc as (Σ1a & U & s & (s0 & HeqΣ & Hu) & Hca & Hcont).
+      subst Σ1.
       assert (c ∉ dom Σ2) as Hc2.
       { apply map_disjoint_dom in Hdd. set_solver. }
       exists (Σ1a ∪ Σ2), U, s. split_and!.
-      { senv_perm. }
+      { eapply senv_hd_intro; [done|senv_perm]. }
       { senv_dom. }
       intros j Σn Hj Hdn Hcn Hfr HVw.
       assert (Σn ##ₘ Σ1a) by senv_disj.
@@ -510,7 +514,7 @@ Proof.
         |set_solver|exact Hcont|eapply Prel_down; [|exact HP2]; lia].
     + (* send *)
       destruct Hc as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew & T0 & Tw
-                      & HeqΣ & Hd0v & Hd0w & Hdvw & Hc0 & Hcv & Hcw
+                      & (s0 & HeqΣ & Hu) & Hd0v & Hd0w & Hdvw & Hc0 & Hcv & Hcw
                       & Hdome & Hσed & Hcσe & HpC & HC0w & HpE & HVw & HP0
                       & HPw & Hty).
       simpl in HpC, HpE, Hdome. subst Σ1.
@@ -524,7 +528,7 @@ Proof.
       { apply map_disjoint_dom in Hdd. set_solver. }
       exists (Σ0 ∪ Σ2), Σv, U, s, σe, Σw, (C0 ∪ C2), (E0 ⊎ E2), Cw, Ew, T0, Tw.
       split_and!.
-      { senv_perm. }
+      { eapply senv_hd_intro; [done|senv_perm]. }
       { senv_disj. }
       { senv_disj. }
       { done. }
@@ -545,11 +549,11 @@ Proof.
       { exact HPw. }
       { exact Hty. }
     + (* close *)
-      destruct Hc as (Σ1a & HeqΣ & Hca & Hcont). subst Σ1.
+      destruct Hc as (Σ1a & (s0 & HeqΣ & Hu) & Hca & Hcont). subst Σ1.
       assert (c ∉ dom Σ2) as Hc2.
       { apply map_disjoint_dom in Hdd. set_solver. }
       exists (Σ1a ∪ Σ2). split_and!.
-      { senv_perm. }
+      { eapply senv_hd_intro; [done|senv_perm]. }
       { senv_dom. }
       replace ((C1 ∪ C2) ∖ ∅) with (C1 ∪ C2) by set_solver.
       replace (C1 ∖ ∅) with C1 in Hcont by set_solver.
@@ -565,11 +569,12 @@ Proof.
     pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hc.
     destruct σ as [c w|c w|c]; simpl in Hc |- *.
     + (* recv *)
-      destruct Hc as (Σ2a & U & s & HeqΣ & Hca & Hcont). subst Σ2.
+      destruct Hc as (Σ2a & U & s & (s0 & HeqΣ & Hu) & Hca & Hcont).
+      subst Σ2.
       assert (c ∉ dom Σ1) as Hc1.
       { apply map_disjoint_dom in Hdd. set_solver. }
       exists (Σ1 ∪ Σ2a), U, s. split_and!.
-      { senv_perm. }
+      { eapply senv_hd_intro; [done|senv_perm]. }
       { senv_dom. }
       intros j Σn Hj Hdn Hcn Hfr HVw.
       assert (Σn ##ₘ Σ2a) by senv_disj.
@@ -585,7 +590,7 @@ Proof.
         |set_solver|eapply Prel_down; [|exact HP1]; lia|exact Hcont].
     + (* send *)
       destruct Hc as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew & T0 & Tw
-                      & HeqΣ & Hd0v & Hd0w & Hdvw & Hc0 & Hcv & Hcw
+                      & (s0 & HeqΣ & Hu) & Hd0v & Hd0w & Hdvw & Hc0 & Hcv & Hcw
                       & Hdome & Hσed & Hcσe & HpC & HC0w & HpE & HVw & HP0
                       & HPw & Hty).
       simpl in HpC, HpE, Hdome. subst Σ2.
@@ -600,7 +605,7 @@ Proof.
       exists (Σ0 ∪ Σ1), Σv, U, s, σe, Σw, (C0 ∪ C1), (E0 ⊎ E1), Cw, Ew,
         T, TUnit.
       split_and!.
-      { senv_perm. }
+      { eapply senv_hd_intro; [done|senv_perm]. }
       { senv_disj. }
       { senv_disj. }
       { done. }
@@ -623,11 +628,11 @@ Proof.
       { exact HPw. }
       { by left. }
     + (* close *)
-      destruct Hc as (Σ2a & HeqΣ & Hca & Hcont). subst Σ2.
+      destruct Hc as (Σ2a & (s0 & HeqΣ & Hu) & Hca & Hcont). subst Σ2.
       assert (c ∉ dom Σ1) as Hc1.
       { apply map_disjoint_dom in Hdd. set_solver. }
       exists (Σ1 ∪ Σ2a). split_and!.
-      { senv_perm. }
+      { eapply senv_hd_intro; [done|senv_perm]. }
       { senv_dom. }
       replace ((C1 ∪ C2) ∖ ∅) with (C1 ∪ C2) by set_solver.
       replace (C2 ∖ ∅) with C2 in Hcont by set_solver.
@@ -749,7 +754,7 @@ Proof.
       pose proof (Erel_S_step _ _ _ _ _ _ HE He0) as Hc.
       destruct σ as [c w|c w|c]; simpl in Hc |- *.
       * (* recv *)
-        destruct Hc as (Σ1 & U & s & -> & Hca & Hcont).
+        destruct Hc as (Σ1 & U & s & Hhd & Hca & Hcont).
         exists Σ1, U, s. split_and!; [done|done|].
         intros j Σn Hj Hdn Hcn _ HVw.
         specialize (Hcont j Σn Hj Hdn Hcn HVw).
@@ -759,10 +764,11 @@ Proof.
         apply (IHt j); [lia|done|done].
       * (* send: no restricted channels escape from a channel-free
            process *)
-        destruct Hc as (Σ0 & Σv & U & s & -> & Hd0v & Hc0 & Hcv & HVw & HE').
+        destruct Hc as (Σ0 & Σv & U & s & (s0 & -> & Hu) & Hd0v & Hc0 & Hcv
+                        & HVw & HE').
         exists Σ0, Σv, U, s, ∅, ∅, ∅, {[+ e0' +]}, ∅, ∅, T, TUnit.
         split_and!.
-        { senv_perm. }
+        { eapply senv_hd_intro; [done|senv_perm]. }
         { done. }
         { apply map_disjoint_empty_r. }
         { apply map_disjoint_empty_r. }
@@ -780,7 +786,7 @@ Proof.
         { constructor. }
         { by left. }
       * (* close *)
-        destruct Hc as (Σ1 & -> & Hca & HE').
+        destruct Hc as (Σ1 & Hhd & Hca & HE').
         exists Σ1. split_and!; [done|done|].
         replace ((∅ : gset chan) ∖ ∅) with (∅ : gset chan) by set_solver.
         replace ((∅ : gmultiset expr) ⊎ {[+ e0' +]}) with ({[+ e0' +]} : gmultiset expr)
@@ -796,21 +802,21 @@ Lemma Prel_cstep_shape n Σ T C E c s σ p' :
   Prel (S n) (<[c := s]> Σ) T (C, E) → c ∉ dom Σ →
   proc_step (C, E) (PSess σ) p' → subj σ = c →
   match σ with
-  | SRecv _ _ => ∃ U u, s = SRcv U u
-  | SSend _ _ => ∃ U u, s = SSnd U u
-  | SClos _ => s = SEnd
+  | SRecv _ _ => ∃ U u, unfoldS s = SRcv U u
+  | SSend _ _ => ∃ U u, unfoldS s = SSnd U u
+  | SClos _ => unfoldS s = SEnd
   end.
 Proof.
   intros HP Hcd Hst Hsubj.
   pose proof (Prel_S_step _ _ _ _ _ _ HP Hst) as Hc.
   destruct σ as [c' w|c' w|c']; simpl in Hsubj, Hc; subst c'.
-  - destruct Hc as (Σ' & U & u & Heq & Hc' & _).
-    apply insert_fresh_inv in Heq as [-> _]; eauto.
+  - destruct Hc as (Σ' & U & u & Hhd & Hc' & _).
+    apply senv_hd_insert_inv in Hhd as [Hu _]; eauto.
   - destruct Hc as (Σ0 & Σv & U & u & σe & Σw & ? & ? & ? & ? & ? & ? &
-                    Heq & ? & ? & ? & Hb0 & Hbv & Hbw & _).
-    apply insert_fresh_inv in Heq as [-> _]; [eauto|done|senv_dom].
-  - destruct Hc as (Σ' & Heq & Hc' & _).
-    apply insert_fresh_inv in Heq as [-> _]; eauto.
+                    Hhd & ? & ? & ? & Hb0 & Hbv & Hbw & _).
+    apply senv_hd_insert_inv in Hhd as [Hu _]; [eauto|done|senv_dom].
+  - destruct Hc as (Σ' & Hhd & Hc' & _).
+    apply senv_hd_insert_inv in Hhd as [Hu _]; eauto.
 Qed.
 
 (** Iterated CONNECT: a process holding the dual ends of a family of
@@ -1247,8 +1253,8 @@ Proof.
   apply proc_step_sess_inv in Hst2 as (F2 & f2 & f2' & -> & Hf2 & _ & _).
   destruct σ1 as [c1 w1|c1 w1|c1], σ2 as [c2 w2|c2 w2|c2];
     simpl in Hsub1c, Hsub2c; subst c1 c2.
-  - destruct Hsh1 as (U1 & u1 & ->). destruct Hsh2 as (U2 & u2 & Hd').
-    simpl in Hd'. discriminate.
+  - destruct Hsh1 as (U1 & u1 & Hu1). destruct Hsh2 as (U2 & u2 & Hd').
+    rewrite (unfoldS_dual_rcv _ _ _ Hu1) in Hd'. discriminate.
   - (* comp1 receives, comp2 sends *)
     pose proof (tstep_send_val _ _ _ _ Hf2) as Hw2.
     destruct (recv_retarget _ _ _ _ w2 He1 Hw2) as [e1'' He1''].
@@ -1256,7 +1262,8 @@ Proof.
     replace ((F1 ⊎ {[+ e1 +]}) ⊎ (F2 ⊎ {[+ f2 +]}))
       with (((F1 ⊎ F2) ⊎ {[+ f2 +]}) ⊎ {[+ e1 +]}) by multiset_solver.
     eapply PStepMsg; [exact Hf2|exact He1''|set_solver].
-  - destruct Hsh1 as (U1 & u1 & ->). simpl in Hsh2. discriminate.
+  - destruct Hsh1 as (U1 & u1 & Hu1).
+    rewrite (unfoldS_dual_rcv _ _ _ Hu1) in Hsh2. discriminate.
   - (* comp1 sends, comp2 receives *)
     pose proof (tstep_send_val _ _ _ _ He1) as Hw1.
     destruct (recv_retarget _ _ _ _ w1 Hf2 Hw1) as [f2'' Hf2''].
@@ -1264,11 +1271,14 @@ Proof.
     replace ((F1 ⊎ {[+ e1 +]}) ⊎ (F2 ⊎ {[+ f2 +]}))
       with (((F1 ⊎ F2) ⊎ {[+ e1 +]}) ⊎ {[+ f2 +]}) by multiset_solver.
     eapply PStepMsg; [exact He1|exact Hf2''|set_solver].
-  - destruct Hsh1 as (U1 & u1 & ->). destruct Hsh2 as (U2 & u2 & Hd').
-    simpl in Hd'. discriminate.
-  - destruct Hsh1 as (U1 & u1 & ->). simpl in Hsh2. discriminate.
-  - subst. destruct Hsh2 as (U2 & u2 & Hd'). simpl in Hd'. discriminate.
-  - subst. destruct Hsh2 as (U2 & u2 & Hd'). simpl in Hd'. discriminate.
+  - destruct Hsh1 as (U1 & u1 & Hu1). destruct Hsh2 as (U2 & u2 & Hd').
+    rewrite (unfoldS_dual_snd _ _ _ Hu1) in Hd'. discriminate.
+  - destruct Hsh1 as (U1 & u1 & Hu1).
+    rewrite (unfoldS_dual_snd _ _ _ Hu1) in Hsh2. discriminate.
+  - destruct Hsh2 as (U2 & u2 & Hd').
+    rewrite (unfoldS_dual_end _ Hsh1) in Hd'. discriminate.
+  - destruct Hsh2 as (U2 & u2 & Hd').
+    rewrite (unfoldS_dual_end _ Hsh1) in Hd'. discriminate.
   - (* both close *)
     eapply (Hirr PTau).
     replace ((F1 ⊎ {[+ e1 +]}) ⊎ (F2 ⊎ {[+ f2 +]}))
@@ -1416,15 +1426,15 @@ Proof.
                         & T0 & Tw & HeqΣ & Hd0v & Hd0w & Hdvw & Hc0 & Hcv
                         & Hcw & Hdome & Hσed & Hcσe & HpC & HC0w & HpE
                         & HVw & HP0 & HPw & Hty).
-        apply insert_fresh_inv in HeqΣ as [-> HeqΣ1]; [|done|senv_dom].
+        apply senv_hd_insert_inv in HeqΣ as [Hus HeqΣ1]; [|done|senv_dom].
         subst Σ1.
         assert (proc_step (C2, F2 ⊎ {[+ f +]}) (PSess (SRecv c v))
                   (C2 ∖ sentc (SRecv c v), F2 ⊎ {[+ f' +]})) as Hsr
           by (eapply PStepSession; [done|set_solver]).
         pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hsr) as Hc2. simpl in Hc2.
         destruct Hc2 as (Σ2' & U' & u' & HeqΣ2 & Hcs2 & Hcont2).
-        apply insert_fresh_inv in HeqΣ2 as [Hdual HeqΣ2']; [|done|done].
-        simpl in Hdual. simplify_eq.
+        apply senv_hd_insert_inv in HeqΣ2 as [Hdual HeqΣ2']; [|done|done].
+        rewrite (unfoldS_dual_snd _ _ _ Hus) in Hdual. simplify_eq.
         (* feed the sent value's environment to the receiver *)
         assert (dom σe ⊆ C1) as Hσe1 by (rewrite Hdome; set_solver).
         rewrite dom_insert_L, !dom_union_L in Hσed.
@@ -1505,7 +1515,7 @@ Proof.
                         & T0 & Tw & HeqΣ & Hd0v & Hd0w & Hdvw & Hc0 & Hcv
                         & Hcw & Hdome & Hσed & Hcσe & HpC & HC0w & HpE
                         & HVw & HP0 & HPw & Hty).
-        apply insert_fresh_inv in HeqΣ as [Hduals HeqΣ2]; [|done|senv_dom].
+        apply senv_hd_insert_inv in HeqΣ as [Hduals HeqΣ2]; [|done|senv_dom].
         subst Σ2.
         apply ty_one_of_unit_inv in Hty as [-> ->].
         assert (proc_step (C1, F1 ⊎ {[+ f +]}) (PSess (SRecv c v))
@@ -1513,9 +1523,9 @@ Proof.
           by (eapply PStepSession; [done|set_solver]).
         pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hsr) as Hc1. simpl in Hc1.
         destruct Hc1 as (Σ1' & U' & u' & HeqΣ1 & Hcs1 & Hcont1).
-        apply insert_fresh_inv in HeqΣ1 as [Hseq HeqΣ1']; [|done|done].
+        apply senv_hd_insert_inv in HeqΣ1 as [Hseq HeqΣ1']; [|done|done].
         subst Σ1'.
-        rewrite Hseq in Hduals. simpl in Hduals. simplify_eq.
+        rewrite (unfoldS_dual_rcv _ _ _ Hseq) in Hduals. simplify_eq.
         (* feed the sent value's environment to the receiver (comp1) *)
         assert (dom σe ⊆ C2) as Hσe2 by (rewrite Hdome; set_solver).
         rewrite dom_insert_L, !dom_union_L in Hσed.
@@ -1605,7 +1615,7 @@ Proof.
            pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hs1') as Hc1.
            simpl in Hc1.
            destruct Hc1 as (Σ1x & HeqΣ1 & Hcx & HPmid).
-           apply insert_fresh_inv in HeqΣ1 as [-> HeqΣ1x]; [|done|done].
+           apply senv_hd_insert_inv in HeqΣ1 as [_ HeqΣ1x]; [|done|done].
            subst Σ1x.
            replace (C1 ∖ ∅) with C1 in HPmid by set_prune.
            assert (proc_step (C1, (F1 ⊎ {[+ f +]}) ⊎ {[+ e' +]})
@@ -1619,7 +1629,8 @@ Proof.
            pose proof (Prel_S_step _ _ _ _ _ _ HPmid Hs2') as Hc2.
            simpl in Hc2.
            destruct Hc2 as (Σ1y & HeqΣ1y & _).
-           assert (c ∈ dom Σ1) as Hcin by (rewrite HeqΣ1y; senv_dom).
+           assert (c ∈ dom Σ1) as Hcin
+             by (rewrite (senv_hd_dom _ _ _ _ HeqΣ1y); set_solver).
            done.
         -- exfalso.
            assert (d ∈ C2) as HdC2 by set_prune.
@@ -1659,7 +1670,7 @@ Proof.
            pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hs1') as Hc1.
            simpl in Hc1.
            destruct Hc1 as (Σ2x & HeqΣ2 & Hcx & HPmid).
-           apply insert_fresh_inv in HeqΣ2 as [Hdd' HeqΣ2x]; [|done|done].
+           apply senv_hd_insert_inv in HeqΣ2 as [Hdd' HeqΣ2x]; [|done|done].
            subst Σ2x.
            replace (C2 ∖ ∅) with C2 in HPmid by set_prune.
            assert (proc_step (C2, (F2 ⊎ {[+ f +]}) ⊎ {[+ e' +]})
@@ -1673,7 +1684,8 @@ Proof.
            pose proof (Prel_S_step _ _ _ _ _ _ HPmid Hs2') as Hc2.
            simpl in Hc2.
            destruct Hc2 as (Σ2y & HeqΣ2y & _).
-           assert (c ∈ dom Σ2) as Hcin by (rewrite HeqΣ2y; senv_dom).
+           assert (c ∈ dom Σ2) as Hcin
+             by (rewrite (senv_hd_dom _ _ _ _ HeqΣ2y); set_solver).
            done.
         -- exfalso.
            assert (d ∈ C1) as HdC1 by set_prune.
@@ -1694,14 +1706,14 @@ Proof.
           by (eapply PStepSession; [done|set_solver]).
         pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hs1') as Hc1. simpl in Hc1.
         destruct Hc1 as (Σ1x & HeqΣ1 & Hcx & HP1').
-        apply insert_fresh_inv in HeqΣ1 as [-> HeqΣ1x]; [|done|done].
+        apply senv_hd_insert_inv in HeqΣ1 as [_ HeqΣ1x]; [|done|done].
         subst Σ1x.
         assert (proc_step (C2, F2 ⊎ {[+ f +]}) (PSess (SClos c))
                   (C2 ∖ sentc (SClos c), F2 ⊎ {[+ f' +]})) as Hs2'
           by (eapply PStepSession; [done|set_solver]).
         pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hs2') as Hc2. simpl in Hc2.
         destruct Hc2 as (Σ2x & HeqΣ2 & Hcy & HP2').
-        apply insert_fresh_inv in HeqΣ2 as [_ HeqΣ2x]; [|done|done].
+        apply senv_hd_insert_inv in HeqΣ2 as [_ HeqΣ2x]; [|done|done].
         subst Σ2x.
         replace (C1 ∖ ∅) with C1 in HP1' by set_prune.
         replace (C2 ∖ ∅) with C2 in HP2' by set_prune.
@@ -1728,14 +1740,14 @@ Proof.
           by (eapply PStepSession; [done|set_solver]).
         pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hs1') as Hc1. simpl in Hc1.
         destruct Hc1 as (Σ1x & HeqΣ1 & Hcx & HP1').
-        apply insert_fresh_inv in HeqΣ1 as [-> HeqΣ1x]; [|done|done].
+        apply senv_hd_insert_inv in HeqΣ1 as [_ HeqΣ1x]; [|done|done].
         subst Σ1x.
         assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess (SClos c))
                   (C2 ∖ sentc (SClos c), F2 ⊎ {[+ e' +]})) as Hs2'
           by (eapply PStepSession; [done|set_solver]).
         pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hs2') as Hc2. simpl in Hc2.
         destruct Hc2 as (Σ2x & HeqΣ2 & Hcy & HP2').
-        apply insert_fresh_inv in HeqΣ2 as [_ HeqΣ2x]; [|done|done].
+        apply senv_hd_insert_inv in HeqΣ2 as [_ HeqΣ2x]; [|done|done].
         subst Σ2x.
         replace (C1 ∖ ∅) with C1 in HP1' by set_prune.
         replace (C2 ∖ ∅) with C2 in HP2' by set_prune.
@@ -1785,8 +1797,8 @@ Proof.
     pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hc1.
     destruct σ as [d w|d w|d]; simpl in Hc1, Hsc |- *.
     + (* external receive on d by comp1 *)
-      destruct Hc1 as (Σ1x & U & u & HeqΣ & Hcd' & Hcont).
-      assert (Σ1 !! d = Some (SRcv U u)) as Hlkd.
+      destruct Hc1 as (Σ1x & U & u & (s1 & HeqΣ & Hu1) & Hcd' & Hcont).
+      assert (Σ1 !! d = Some s1) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_ne in Hl; [|done].
         by rewrite lookup_insert_eq in Hl. }
@@ -1796,12 +1808,13 @@ Proof.
         rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         by rewrite <-Hl. }
       subst Σ1x.
-      assert (Σ1 = <[d:=SRcv U u]> (delete d Σ1)) as HΣ1d
+      assert (Σ1 = <[d:=s1]> (delete d Σ1)) as HΣ1d
         by (by rewrite insert_delete_id).
       assert (d ∈ dom Σ1) as Hddom by (by apply elem_of_dom).
       assert (d ∉ dom Σ2) as Hd2' by (apply map_disjoint_dom in Hdd; set_solver).
       exists (delete d Σ1 ∪ Σ2), U, u. split_and!.
-      { rewrite HΣ1d at 1. by rewrite insert_union_l. }
+      { eapply senv_hd_intro; [exact Hu1|].
+        rewrite HΣ1d at 1. by rewrite insert_union_l. }
       { rewrite dom_union_L, dom_delete_L. set_prune. }
       intros j Σn Hj Hdn Hcn Hfr HVw. simpl in Hfr.
       apply map_disjoint_dom in Hdn.
@@ -1820,15 +1833,15 @@ Proof.
       eapply Prel_down; [|exact HP2]. lia.
     + (* external send on d by comp1 *)
       destruct Hc1 as (Σ0 & Σv & U & u & σe & Σw & C0 & E0 & Cw & Ew
-                      & T0 & Tw & HeqΣ & Hd0v & Hd0w & Hdvw & Hn0 & Hnv
-                      & Hnw & Hdome & Hσed & Hdσe & HpC & HC0w & HpE
-                      & HVw & HP0 & HPw & Hty).
+                      & T0 & Tw & (s1 & HeqΣ & Hu1) & Hd0v & Hd0w & Hdvw
+                      & Hn0 & Hnv & Hnw & Hdome & Hσed & Hdσe & HpC & HC0w
+                      & HpE & HVw & HP0 & HPw & Hty).
       simpl in HpC, HpE, Hdome.
       assert ((Σ0 ∪ Σv ∪ Σw) !! c = Some s) as Hlkc.
       { pose proof (f_equal (λ m, m !! c) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_eq in Hl.
         by rewrite lookup_insert_ne in Hl. }
-      assert (Σ1 = <[d:=SSnd U u]> (delete c (Σ0 ∪ Σv ∪ Σw))) as HΣ1.
+      assert (Σ1 = <[d:=s1]> (delete c (Σ0 ∪ Σv ∪ Σw))) as HΣ1.
       { pose proof (f_equal (delete c) HeqΣ) as Hl.
         rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         rewrite Hl. by rewrite delete_insert_ne. }
@@ -1869,7 +1882,8 @@ Proof.
         eexists (delete c Σ0 ∪ Σ2), Σv, U, u, σe, Σw,
           (C0 ∪ C2 ∪ {[c]}), (E0 ⊎ E2), Cw, Ew, T0, Tw.
         split_and!.
-        { rewrite HΣ1, <-insert_union_l. f_equal.
+        { eapply senv_hd_intro; [exact Hu1|].
+          rewrite HΣ1, <-insert_union_l. f_equal.
           rewrite (map_union_swap _ Σw Σ2); [|dom_disj].
           rewrite (map_union_swap _ Σv Σ2); [|dom_disj].
           done. }
@@ -1908,7 +1922,8 @@ Proof.
         eexists Σ0, (delete c Σv), U, u, (<[c := dual s]> σe), (Σ2 ∪ Σw),
           C0, E0, (C2 ∪ Cw), (E2 ⊎ Ew), T0, Tw.
         split_and!.
-        { rewrite HΣ1, <-insert_union_l. f_equal.
+        { eapply senv_hd_intro; [exact Hu1|].
+          rewrite HΣ1, <-insert_union_l. f_equal.
           rewrite <-(assoc_L (∪) (Σ0 ∪ delete c Σv)).
           rewrite (map_union_comm Σw Σ2); [done|dom_disj]. }
         { by apply map_disjoint_delete_r. }
@@ -1942,7 +1957,8 @@ Proof.
         eexists Σ0, Σv, U, u, σe, (delete c Σw ∪ Σ2),
           C0, E0, (Cw ∪ C2 ∪ {[c]}), (Ew ⊎ E2), T0, Tw.
         split_and!.
-        { rewrite HΣ1, <-insert_union_l. f_equal.
+        { eapply senv_hd_intro; [exact Hu1|].
+          rewrite HΣ1, <-insert_union_l. f_equal.
           by rewrite <-(assoc_L (∪) (Σ0 ∪ Σv)). }
         { done. }
         { apply map_disjoint_dom_2. rewrite dom_union_L, dom_delete_L.
@@ -1963,8 +1979,8 @@ Proof.
         { exact HPw'. }
         { exact Hty. }
     + (* external close on d by comp1 *)
-      destruct Hc1 as (Σ1x & HeqΣ & Hcd' & Hcont).
-      assert (Σ1 !! d = Some SEnd) as Hlkd.
+      destruct Hc1 as (Σ1x & (s1 & HeqΣ & Hu1) & Hcd' & Hcont).
+      assert (Σ1 !! d = Some s1) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_ne in Hl; [|done].
         by rewrite lookup_insert_eq in Hl. }
@@ -1974,13 +1990,14 @@ Proof.
         rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         by rewrite <-Hl. }
       subst Σ1x.
-      assert (Σ1 = <[d:=SEnd]> (delete d Σ1)) as HΣ1d
+      assert (Σ1 = <[d:=s1]> (delete d Σ1)) as HΣ1d
         by (by rewrite insert_delete_id).
       assert (d ∈ dom Σ1) as Hddom by (by apply elem_of_dom).
       assert (d ∉ dom Σ2) as Hd2'
         by dom_solve.
       exists (delete d Σ1 ∪ Σ2). split_and!.
-      { rewrite HΣ1d at 1. by rewrite insert_union_l. }
+      { eapply senv_hd_intro; [exact Hu1|].
+        rewrite HΣ1d at 1. by rewrite insert_union_l. }
       { rewrite dom_union_L, dom_delete_L. dom_solve. }
       replace (C1 ∖ ∅) with C1 in Hcont by set_pure.
       replace ((C1 ∪ C2 ∪ {[c]}) ∖ ∅) with (C1 ∪ C2 ∪ {[c]}) by set_pure.
@@ -1995,8 +2012,8 @@ Proof.
     pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hc2.
     destruct σ as [d w|d w|d]; simpl in Hc2, Hsc |- *.
     + (* external receive on d by comp2 *)
-      destruct Hc2 as (Σ2x & U & u & HeqΣ & Hcd' & Hcont).
-      assert (Σ2 !! d = Some (SRcv U u)) as Hlkd.
+      destruct Hc2 as (Σ2x & U & u & (s1 & HeqΣ & Hu1) & Hcd' & Hcont).
+      assert (Σ2 !! d = Some s1) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_ne in Hl; [|done].
         by rewrite lookup_insert_eq in Hl. }
@@ -2006,14 +2023,15 @@ Proof.
         rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         by rewrite <-Hl. }
       subst Σ2x.
-      assert (Σ2 = <[d:=SRcv U u]> (delete d Σ2)) as HΣ2d
+      assert (Σ2 = <[d:=s1]> (delete d Σ2)) as HΣ2d
         by (by rewrite insert_delete_id).
       assert (d ∈ dom Σ2) as Hddom by (by apply elem_of_dom).
       assert (d ∉ dom Σ1) as Hd1'
         by dom_solve.
       assert (dom Σ1 ## dom Σ2) as Hdds by (by apply map_disjoint_dom).
       exists (Σ1 ∪ delete d Σ2), U, u. split_and!.
-      { rewrite HΣ2d at 1.
+      { eapply senv_hd_intro; [exact Hu1|].
+        rewrite HΣ2d at 1.
         rewrite <-insert_union_r; [done|by apply not_elem_of_dom]. }
       { dom_solve. }
       intros j Σn Hj Hdn Hcn Hfr HVw. simpl in Hfr.
@@ -2032,16 +2050,16 @@ Proof.
       eapply Prel_down; [|exact HP1]. lia.
     + (* external send on d by comp2 *)
       destruct Hc2 as (Σ0 & Σv & U & u & σe & Σw & C0 & E0 & Cw & Ew
-                      & T0 & Tw & HeqΣ & Hd0v & Hd0w & Hdvw & Hn0 & Hnv
-                      & Hnw & Hdome & Hσed & Hdσe & HpC & HC0w & HpE
-                      & HVw & HP0 & HPw & Hty).
+                      & T0 & Tw & (s1 & HeqΣ & Hu1) & Hd0v & Hd0w & Hdvw
+                      & Hn0 & Hnv & Hnw & Hdome & Hσed & Hdσe & HpC & HC0w
+                      & HpE & HVw & HP0 & HPw & Hty).
       simpl in HpC, HpE, Hdome.
       apply ty_one_of_unit_inv in Hty as [-> ->].
       assert ((Σ0 ∪ Σv ∪ Σw) !! c = Some (dual s)) as Hlkc.
       { pose proof (f_equal (λ m, m !! c) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_eq in Hl.
         by rewrite lookup_insert_ne in Hl. }
-      assert (Σ2 = <[d:=SSnd U u]> (delete c (Σ0 ∪ Σv ∪ Σw))) as HΣ2.
+      assert (Σ2 = <[d:=s1]> (delete c (Σ0 ∪ Σv ∪ Σw))) as HΣ2.
       { pose proof (f_equal (delete c) HeqΣ) as Hl.
         rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         rewrite Hl. by rewrite delete_insert_ne. }
@@ -2081,7 +2099,8 @@ Proof.
         eexists (Σ1 ∪ delete c Σ0), Σv, U, u, σe, Σw,
           (C1 ∪ C0 ∪ {[c]}), (E1 ⊎ E0), Cw, Ew, T, TUnit.
         split_and!.
-        { rewrite HΣ2.
+        { eapply senv_hd_intro; [exact Hu1|].
+          rewrite HΣ2.
           rewrite <-insert_union_r; [|by apply not_elem_of_dom].
           by rewrite !(assoc_L (∪)). }
         { apply map_disjoint_dom_2. rewrite dom_union_L, dom_delete_L.
@@ -2121,7 +2140,8 @@ Proof.
         eexists Σ0, (delete c Σv), U, u, (<[c := s]> σe), (Σ1 ∪ Σw),
           C0, E0, (C1 ∪ Cw), (E1 ⊎ Ew), TUnit, T.
         split_and!.
-        { rewrite HΣ2.
+        { eapply senv_hd_intro; [exact Hu1|].
+          rewrite HΣ2.
           rewrite <-insert_union_r; [|by apply not_elem_of_dom].
           rewrite !(assoc_L (∪)). f_equal.
           rewrite (map_union_swap Σ0 (delete c Σv) Σ1); [|dom_disj].
@@ -2160,7 +2180,8 @@ Proof.
         eexists Σ0, Σv, U, u, σe, (delete c Σw ∪ Σ1),
           C0, E0, (Cw ∪ C1 ∪ {[c]}), (Ew ⊎ E1), TUnit, T.
         split_and!.
-        { rewrite HΣ2.
+        { eapply senv_hd_intro; [exact Hu1|].
+          rewrite HΣ2.
           rewrite <-insert_union_r; [|by apply not_elem_of_dom].
           f_equal.
           rewrite (map_union_comm Σ1);
@@ -2186,8 +2207,8 @@ Proof.
         { exact HPw'. }
         { by right. }
     + (* external close on d by comp2 *)
-      destruct Hc2 as (Σ2x & HeqΣ & Hcd' & Hcont).
-      assert (Σ2 !! d = Some SEnd) as Hlkd.
+      destruct Hc2 as (Σ2x & (s1 & HeqΣ & Hu1) & Hcd' & Hcont).
+      assert (Σ2 !! d = Some s1) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
         rewrite lookup_insert_ne in Hl; [|done].
         by rewrite lookup_insert_eq in Hl. }
@@ -2197,14 +2218,15 @@ Proof.
         rewrite delete_insert_id in Hl; [|by apply not_elem_of_dom].
         by rewrite <-Hl. }
       subst Σ2x.
-      assert (Σ2 = <[d:=SEnd]> (delete d Σ2)) as HΣ2d
+      assert (Σ2 = <[d:=s1]> (delete d Σ2)) as HΣ2d
         by (by rewrite insert_delete_id).
       assert (d ∈ dom Σ2) as Hddom by (by apply elem_of_dom).
       assert (d ∉ dom Σ1) as Hd1'
         by dom_solve.
       assert (dom Σ1 ## dom Σ2) as Hdds by (by apply map_disjoint_dom).
       exists (Σ1 ∪ delete d Σ2). split_and!.
-      { rewrite HΣ2d at 1.
+      { eapply senv_hd_intro; [exact Hu1|].
+        rewrite HΣ2d at 1.
         rewrite <-insert_union_r; [done|by apply not_elem_of_dom]. }
       { dom_solve. }
       replace (C2 ∖ ∅) with C2 in Hcont by set_pure.

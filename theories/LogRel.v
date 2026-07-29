@@ -91,18 +91,18 @@ Definition Edef (below : nat → level) (Vn : senv → ty → expr → Prop)
               lE (below n') (<[c := dual s]> Σ2) T e'
         | LSess (SRecv c w) =>                         (* case 3 *)
             ∃ Σ1 U s,
-              Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
+              senv_hd Σ c (SRcv U s) Σ1 ∧ c ∉ dom Σ1 ∧
               ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
                 lV (below j) Σ2 U w →
                 lE (below j) (<[c := s]> (Σ1 ∪ Σ2)) T e'
         | LSess (SSend c w) =>                         (* case 4 *)
             ∃ Σ1 Σ2 U s,
-              Σ = <[c := SSnd U s]> (Σ1 ∪ Σ2) ∧
+              senv_hd Σ c (SSnd U s) (Σ1 ∪ Σ2) ∧
               Σ1 ##ₘ Σ2 ∧ c ∉ dom Σ1 ∧ c ∉ dom Σ2 ∧
               Vn Σ2 U w ∧
               lE (below n') (<[c := s]> Σ1) T e'
         | LSess (SClos c) =>                           (* case 5 *)
-            ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧
+            ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧
               lE (below n') Σ1 T e'
         end)
   end.
@@ -178,13 +178,13 @@ Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
             lP (below n') Σ T p'
         | PSess (SRecv c w) =>                         (* case 2 *)
             ∃ Σ1 U s,
-              Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
+              senv_hd Σ c (SRcv U s) Σ1 ∧ c ∉ dom Σ1 ∧
               ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
                 lV (below j) Σ2 U w →
                 lP (below j) (<[c := s]> (Σ1 ∪ Σ2)) T p'
         | PSess (SSend c w) =>                         (* case 3, iterated *)
             ∃ Σ0 Σv U s (σe : gmap chan sty) Σw C0 E0 Cw Ew T0 Tw,
-              Σ = <[c := SSnd U s]> (Σ0 ∪ Σv ∪ Σw) ∧
+              senv_hd Σ c (SSnd U s) (Σ0 ∪ Σv ∪ Σw) ∧
               Σ0 ##ₘ Σv ∧ Σ0 ##ₘ Σw ∧ Σv ##ₘ Σw ∧
               c ∉ dom Σ0 ∧ c ∉ dom Σv ∧ c ∉ dom Σw ∧
               dom σe = fchans w ∩ p.1 ∧
@@ -196,7 +196,7 @@ Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
               Powners (lP (below n')) σe Σw Tw (Cw, Ew) ∧
               ty_one_of T0 Tw T
         | PSess (SClos c) =>                           (* case 4 *)
-            ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧
+            ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧
               lP (below n') Σ1 T p'
         end)
   end.
@@ -338,11 +338,11 @@ Proof.
   intros [_ Hstep] Hp. specialize (Hstep _ _ Hp).
   destruct σ as [c w|c w|c]; simpl in Hstep.
   - destruct Hstep as (Σ1 & U & s & Heq & _).
-    exact (insert_non_empty _ _ _ (eq_sym Heq)).
+    exact (senv_hd_not_empty _ _ _ Heq).
   - destruct Hstep as (?&?&?&?&?&?&?&?&?&?&?&?&Heq&_).
-    exact (insert_non_empty _ _ _ (eq_sym Heq)).
+    exact (senv_hd_not_empty _ _ _ Heq).
   - destruct Hstep as (Σ1 & Heq & _).
-    exact (insert_non_empty _ _ _ (eq_sym Heq)).
+    exact (senv_hd_not_empty _ _ _ Heq).
 Qed.
 
 (** ** Characteristic equations
@@ -423,18 +423,18 @@ Definition Ecase (n' : nat) (Σ : senv) (T : ty) (α : tlabel) (e' : expr)
         Erel n' (<[c := dual s]> Σ2) T e'
   | LSess (SRecv c w) =>
       ∃ Σ1 U s,
-        Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
+        senv_hd Σ c (SRcv U s) Σ1 ∧ c ∉ dom Σ1 ∧
         ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
           Vrel j Σ2 U w →
           Erel j (<[c := s]> (Σ1 ∪ Σ2)) T e'
   | LSess (SSend c w) =>
       ∃ Σ1 Σ2 U s,
-        Σ = <[c := SSnd U s]> (Σ1 ∪ Σ2) ∧
+        senv_hd Σ c (SSnd U s) (Σ1 ∪ Σ2) ∧
         Σ1 ##ₘ Σ2 ∧ c ∉ dom Σ1 ∧ c ∉ dom Σ2 ∧
         Vrel (S n') Σ2 U w ∧
         Erel n' (<[c := s]> Σ1) T e'
   | LSess (SClos c) =>
-      ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧ Erel n' Σ1 T e'
+      ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧ Erel n' Σ1 T e'
   end.
 
 Lemma Erel_S_iff n Σ T e :
@@ -473,13 +473,13 @@ Definition Pcase (n' : nat) (Σ : senv) (T : ty) (p : proc) (π : plabel)
       Prel n' Σ T p'
   | PSess (SRecv c w) =>
       ∃ Σ1 U s,
-        Σ = <[c := SRcv U s]> Σ1 ∧ c ∉ dom Σ1 ∧
+        senv_hd Σ c (SRcv U s) Σ1 ∧ c ∉ dom Σ1 ∧
         ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
           Vrel j Σ2 U w →
           Prel j (<[c := s]> (Σ1 ∪ Σ2)) T p'
   | PSess (SSend c w) =>
       ∃ Σ0 Σv U s (σe : gmap chan sty) Σw C0 E0 Cw Ew T0 Tw,
-        Σ = <[c := SSnd U s]> (Σ0 ∪ Σv ∪ Σw) ∧
+        senv_hd Σ c (SSnd U s) (Σ0 ∪ Σv ∪ Σw) ∧
         Σ0 ##ₘ Σv ∧ Σ0 ##ₘ Σw ∧ Σv ##ₘ Σw ∧
         c ∉ dom Σ0 ∧ c ∉ dom Σv ∧ c ∉ dom Σw ∧
         dom σe = fchans w ∩ p.1 ∧
@@ -491,7 +491,7 @@ Definition Pcase (n' : nat) (Σ : senv) (T : ty) (p : proc) (π : plabel)
         Powners (Prel n') σe Σw Tw (Cw, Ew) ∧
         ty_one_of T0 Tw T
   | PSess (SClos c) =>
-      ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' Σ1 T p'
+      ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' Σ1 T p'
   end.
 
 Lemma Prel_S_iff n Σ T p :
@@ -652,14 +652,14 @@ Proof.
   - intros α e' Hst. specialize (H2 α e' Hst).
     destruct α as [|[c w|c w|c]|c w]; simpl in H2 |- *.
     + eapply IH; [|exact H2]. lia.
-    + destruct H2 as (Σ1 & U & s & -> & Hc & H2).
+    + destruct H2 as (Σ1 & U & s & Hhd & Hc & H2).
       eexists _, _, _. split_and!; [done|done|].
       intros j Σ2 Hj Hd Hcd HV. apply H2; auto. lia.
-    + destruct H2 as (Σ1 & Σ2 & U & s & -> & ? & ? & ? & HV & HE').
+    + destruct H2 as (Σ1 & Σ2 & U & s & Hhd & ? & ? & ? & HV & HE').
       eexists _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HE']. lia.
-    + destruct H2 as (Σ1 & -> & ? & HE').
+    + destruct H2 as (Σ1 & Hhd & ? & HE').
       eexists. split_and!; eauto. eapply IH; [|done]. lia.
     + intros Hc. destruct (H2 Hc) as (Σ1 & Σ2 & s & ? & HV & HE').
       eexists _, _, _. split_and!; eauto.
@@ -678,18 +678,18 @@ Proof.
   - intros π p' Hst. specialize (H2 π p' Hst).
     destruct π as [|[c w|c w|c]]; simpl in H2 |- *.
     + intros Hd. eapply IH; [|by apply H2]. lia.
-    + destruct H2 as (Σ1 & U & s & -> & Hc & H2).
+    + destruct H2 as (Σ1 & U & s & Hhd & Hc & H2).
       eexists _, _, _. split_and!; [done|done|].
       intros j Σ2 Hj Hd Hcd Hfr HV. apply H2; auto. lia.
     + destruct H2 as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew &
-                      T0 & Tw & -> & ? & ? & ? & ? & ? & ? & ? & ? & ? &
+                      T0 & Tw & Hhd & ? & ? & ? & ? & ? & ? & ? & ? & ? &
                       ? & ? & ? & HV & HP0 & HPw & ?).
       eexists _, _, _, _, _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HP0]. lia.
       * eapply Powners_mono; [|exact HPw].
         intros ? ? ? ?. eapply IH; [|eauto]. lia.
-    + destruct H2 as (Σ1 & -> & ? & HP').
+    + destruct H2 as (Σ1 & Hhd & ? & HP').
       eexists. split_and!; eauto. eapply IH; [|done]. lia.
 Qed.
 
@@ -986,10 +986,10 @@ Proof.
     eapply (IHn n'); [lia|done|done|done|].
     intros j Σh' v ? ? ?. apply HK; [lia|done|done].
   - (* recv *)
-    destruct Hc as (Σh1 & U0 & s & -> & Hcd & Hc).
+    destruct Hc as (Σh1 & U0 & s & (s0 & -> & Hunf) & Hcd & Hc).
     apply map_disjoint_insert_l in Hd as [Hcf Hd].
     exists (Σh1 ∪ Σf), U0, s. split_and!.
-    { by rewrite insert_union_l. }
+    { exists s0. split; [by rewrite insert_union_l|done]. }
     { apply not_elem_of_dom in Hcd. apply not_elem_of_dom.
       by rewrite lookup_union, Hcd, Hcf. }
     intros j Σn Hj Hdn Hcn HV.
@@ -1001,12 +1001,13 @@ Proof.
     eapply (IHn j); [lia|done|senv_disj|done|].
     intros j' Σh' v ? ? ?. apply HK; [lia|done|done].
   - (* send *)
-    destruct Hc as (Σh1 & Σh2 & U0 & s & -> & Hd12 & Hc1 & Hc2 & HV & HE').
+    destruct Hc as (Σh1 & Σh2 & U0 & s &
+                    (s0 & -> & Hunf) & Hd12 & Hc1 & Hc2 & HV & HE').
     apply map_disjoint_insert_l in Hd as [Hcf Hd].
     assert (Σh1 ##ₘ Σf) by senv_disj.
     assert (Σh2 ##ₘ Σf) by senv_disj.
     exists (Σh1 ∪ Σf), Σh2, U0, s. split_and!.
-    { senv_perm. }
+    { exists s0. split; [senv_perm|done]. }
     { senv_disj. }
     { apply not_elem_of_dom in Hc1. apply not_elem_of_dom.
       by rewrite lookup_union, Hc1, Hcf. }
@@ -1017,10 +1018,10 @@ Proof.
     eapply (IHn n'); [lia|done|senv_disj|done|].
     intros j' Σh' v ? ? ?. apply HK; [lia|done|done].
   - (* close *)
-    destruct Hc as (Σh1 & -> & Hcd & HE').
+    destruct Hc as (Σh1 & (s0 & -> & Hunf) & Hcd & HE').
     apply map_disjoint_insert_l in Hd as [Hcf Hd].
     exists (Σh1 ∪ Σf). split_and!.
-    { by rewrite insert_union_l. }
+    { exists s0. split; [by rewrite insert_union_l|done]. }
     { apply not_elem_of_dom in Hcd. apply not_elem_of_dom.
       by rewrite lookup_union, Hcd, Hcf. }
     eapply (IHn n'); [lia|done|done|done|].
@@ -1097,7 +1098,7 @@ Proof.
     apply Vrel_sess_iff in HV2 as (c' & Heqc & Heqs). simplify_eq.
     match goal with |- context [SRcv ?t ?s] => exists ∅, t, s end.
     refine (conj _ (conj _ _)).
-    { senv_perm. }
+    { apply senv_hd_nf; [done|senv_perm]. }
     { set_solver. }
     intros j Σn Hj _ Hcn HVw.
     rewrite (left_id ∅ (∪)).
@@ -1116,7 +1117,7 @@ Proof.
     { by apply map_disjoint_singleton_r in Hdab. }
     match goal with |- context [SSnd ?t ?s] => exists ∅, Σa, t, s end.
     refine (conj _ (conj _ (conj _ (conj _ (conj HVw _))))).
-    { senv_perm. }
+    { apply senv_hd_nf; [done|senv_perm]. }
     { apply map_disjoint_empty_l. }
     { set_solver. }
     { by apply not_elem_of_dom. }
@@ -1127,7 +1128,7 @@ Proof.
     inversion Hk; subst.
     apply Vrel_sess_iff in HV2 as (c' & Heqc & Heqs). simplify_eq.
     exists ∅. refine (conj _ (conj _ _)).
-    { senv_perm. }
+    { apply senv_hd_nf; [done|senv_perm]. }
     { set_solver. }
     apply Vrel_Erel, Vrel_unit.
 Qed.
