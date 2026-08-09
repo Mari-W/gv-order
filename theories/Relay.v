@@ -29,13 +29,19 @@
     second relay became the stuck [link ⟨b,b⟩] — a non-unit thread that
     could not step, i.e. a deadlock manufactured by retargeting.  This
     example is the configuration that used to be the counterexample to
-    compositionality ([poison] in SelfLink.v), read as a program rather
-    than as a wedge. *)
+    compositionality, read as a program rather than as a wedge. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Import LogRel Compositionality Method SelfLink.
+From LRGV Require Import LogRel Compositionality Method.
 
 Local Open Scope string_scope.
+
+(** [link ⟨c,d⟩] as a term. *)
+Definition fwd (c d : chan) : expr := App ELink (Pair (Chan c) (Chan d)).
+
+Lemma fwd_step c d :
+  tstep (fwd c d) (LSess (SLink {[c; d]})) EUnit.
+Proof. apply TStepHead, HeadLink. Qed.
 
 Definition ra : chan := "a".
 Definition rb : chan := "b".

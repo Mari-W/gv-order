@@ -367,9 +367,6 @@ Proof.
     exact (insert_non_empty _ _ _ (eq_sym Heq)).
 Qed.
 
-Lemma Prel_S_empty_no_link n T p cd p' :
-  Prel (S n) ∅ T p → proc_step p (PSess (SLink cd)) p' → False.
-Proof. apply Prel_S_empty_no_sess. Qed.
 
 (** ** Characteristic equations
 

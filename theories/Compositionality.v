@@ -87,63 +87,6 @@ Proof.
     inversion Hh; simplify_eq; simpl; set_solver end.
 Qed.
 
-(** Channels of a process label, for the step-evolution bound. *)
-Definition pchans (π : plabel) : gset chan :=
-  match π with
-  | PTau => ∅
-  | PSess (SRecv c w) => {[c]} ∪ fchans w
-  | PSess (SSend c w) => {[c]} ∪ fchans w
-  | PSess (SClos c) => {[c]}
-  | PSess (SLink cd) => cd
-  end.
-
-(** Steps do not invent channels: the continuation's soup mentions only
-    the source's channels, the continuation's restricted names (a fresh
-    fork channel), and the label's names (a received value). *)
-Lemma proc_step_echans C E π C' E' :
-  proc_step (C, E) π (C', E') →
-  echans E' ⊆ echans E ∪ C' ∪ pchans π.
-Proof.
-  intros Hst. inversion Hst; simplify_eq; simpl.
-  - (* session offer *)
-    match goal with H : tstep _ _ _ |- _ =>
-      pose proof (tstep_fchans _ _ _ H) as Hb end.
-    rewrite !echans_disj_union, !echans_singleton.
-    destruct σ as [c w|c w|c|cd]; simpl in *; set_solver.
-  - (* β *)
-    match goal with H : tstep _ _ _ |- _ =>
-      pose proof (tstep_fchans _ _ _ H) as Hb end.
-    simpl in Hb.
-    rewrite !echans_disj_union, !echans_singleton. set_solver.
-  - (* fork *)
-    match goal with H : tstep _ _ _ |- _ =>
-      pose proof (tstep_fchans _ _ _ H) as Hb;
-      pose proof (tstep_fork_val_fchans _ _ _ _ H) as Hv end.
-    simpl in Hb.
-    rewrite !echans_disj_union, !echans_singleton. simpl. set_solver.
-  - (* msg *)
-    match goal with H : tstep _ (LSess (SSend _ _)) _ |- _ =>
-      pose proof (tstep_fchans _ _ _ H) as Hb1;
-      pose proof (tstep_send_val_fchans _ _ _ _ H) as Hv end.
-    match goal with H : tstep _ (LSess (SRecv _ _)) _ |- _ =>
-      pose proof (tstep_fchans _ _ _ H) as Hb2 end.
-    simpl in Hb1, Hb2.
-    rewrite !echans_disj_union, !echans_singleton. set_solver.
-  - (* close *)
-    repeat match goal with H : tstep _ _ _ |- _ =>
-      pose proof (tstep_fchans _ _ _ H);
-      pose proof (tstep_subj_occ _ _ _ H); clear H end.
-    simpl in *.
-    rewrite !echans_disj_union, !echans_singleton. set_solver.
-  - (* link, inclusive substitution *)
-    match goal with H : tstep _ _ _ |- _ =>
-      pose proof (tstep_fchans _ _ _ H) as Hb;
-      pose proof (tstep_link_subj _ _ _ H) as Hs end.
-    simpl in Hb.
-    etrans; [apply echans_echsubst_sub|].
-    rewrite !echans_disj_union, !echans_singleton. set_solver.
-Qed.
-
 (** Locating a distinguished occurrence in a split multiset. *)
 Lemma gmultiset_split_elem_of (E1 E2 F : gmultiset expr) (e : expr) :
   E1 ⊎ E2 = F ⊎ {[+ e +]} →
@@ -201,11 +144,6 @@ Proof.
     destruct Hc as (c & d & Σ1 & sc & sd & -> & Hcd & -> & _).
     rewrite !dom_insert_L. set_solver.
 Qed.
-
-(** Likewise, a forwarding offer names two channels of Σ. *)
-Lemma Prel_link_subj n Σ T p cd p' :
-  Prel (S n) Σ T p → proc_step p (PSess (SLink cd)) p' → cd ⊆ dom Σ.
-Proof. apply Prel_sess_subj. Qed.
 
 (** A component's transition yields a transition of the composition
     (retargeting forks to globally fresh names). *)
