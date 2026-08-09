@@ -1,0 +1,55 @@
+% rocqrefs.sty -- cite the mechanization from the paper, by name.
+%
+%   \rocq{fundamental_proc}      typesets the name and links to it
+%   \rocqas{Theorem 3.13}{fundamental_proc}   custom link text
+%
+% Every reference resolves through paper/rocqrefs.tex, which
+% paper/rocqrefs.py regenerates from theories/*.v.  A reference to a
+% declaration that no longer exists is a build error, not a dead link.
+%
+% ANONYMITY.  \rocqbase is the only place the artifact's location
+% appears.  For submission point it at the Anonymous GitHub mirror
+% (https://anonymous.4open.science/r/<id>/); for the camera-ready swap
+% in the real repository.  Nothing else in the paper changes.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{rocqrefs}[2026/08/09 links from the paper to the Rocq sources]
+
+\RequirePackage{hyperref}
+\RequirePackage{xcolor}
+
+% Default: no link target, names typeset but inert.  Redefine in the
+% preamble with \renewcommand{\rocqbase}{...} once the mirror exists.
+\providecommand{\rocqbase}{}
+
+\definecolor{rocqlink}{rgb}{0.10,0.35,0.60}
+
+% \rocqdef{name}{file}{line} -- emitted by rocqrefs.py, one per
+% declaration.  Stores the location under a control sequence.
+\newcommand{\rocqdef}[3]{%
+  \expandafter\gdef\csname rocq@loc@#1\endcsname{#2\#L#3}%
+}
+
+\newcommand{\rocq@fail}[1]{%
+  \PackageError{rocqrefs}{No mechanized declaration named `#1'}%
+    {Run `python3 paper/rocqrefs.py gen' after changing theories/.}%
+}
+
+% \rocqas{text}{name}
+\newcommand{\rocqas}[2]{%
+  \expandafter\ifx\csname rocq@loc@#2\endcsname\relax
+    \rocq@fail{#2}%
+  \else
+    \ifx\rocqbase\empty
+      \texttt{#1}%
+    \else
+      \href{\rocqbase\csname rocq@loc@#2\endcsname}{%
+        \textcolor{rocqlink}{\texttt{#1}}}%
+    \fi
+  \fi
+}
+
+% \rocq{name} -- link text is the name itself, underscores escaped.
+\newcommand{\rocq}[1]{\rocqas{\detokenize{#1}}{#1}}
+
+\endinput
