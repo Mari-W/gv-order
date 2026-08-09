@@ -1,0 +1,184 @@
+
+\section{Introduction}
+\label{sec:introduction}
+
+Session types~\cite{DBLP:conf/concur/Honda93,DBLP:conf/parle/TakeuchiHK94} provide a typing framework for structured communication
+among concurrent processes.
+The idea is to specify, for each communication channel,
+the protocol that processes are expected to follow on it.
+In this paper we focus on \emph{binary} session types,
+where each channel is expected to be used by exactly two processes
+following a common protocol.
+A number of type systems have been proposed to verify that
+processes do in fact respect the protocols.
+These systems aim to provide two main properties:
+\emph{session fidelity}
+  (that actions observed at each channel do follow the protocol),
+and
+\emph{deadlock freedom}
+  (that there is always some process able to take the next action).
+While very important for applications, deadlock freedom is especially challenging
+to achieve in a compositional way.
+The classic issue is that processes can introduce potentially circular dependencies in the way different channels are used, and such dependencies
+are not reflected in the types of single channels.
+Historically, there have been two main approaches to solve this issue:
+one based on priorities, and one based on Curry-Howard.
+
+The priority-based approach, introduced in Kobayashi's seminal paper \cite{Kobayashi97}
+and developed in a series of other works, \eg \cite{Padovani14,DardhaG18},
+essentially adds information to the cross-session dependencies in the types
+and requires some global, non-compositional, analysis
+to detect if the dependencies are circular.
+
+In this paper, we focus on the Curry-Howard-based approach,
+pioneered by~\citet{DBLP:conf/concur/CairesP10,DBLP:journals/jfp/Wadler14},
+which established a connection between linear logic and session types.
+The promise of the approach is to obtain guarantees on the behaviour
+of the processes from the consistency of the logic.
+%
+The main idea which supports deadlock freedom is that the logical
+correspondence imposes some constraints on the communication topology
+of the system, which
+\begin{enumerate*}[(1)]
+  \item can be enforced compositionally, and
+  \item make circular dependencies impossible to construct.
+\end{enumerate*}
+\citet{DBLP:conf/concur/CairesP10,DBLP:journals/mscs/CairesPT16}
+derive a typed \picalc\ from \emph{dual intuitionistic linear logic},
+which is shown to ensure session fidelity and absence of deadlocks.
+\citet{DBLP:journals/jfp/Wadler14} proposed CP, a concurrent calculus
+derived from \emph{classical linear logic},
+which enjoys deadlock freedom;
+\citet{DBLP:journals/jfp/Wadler14} further connects CP with ``standard'' session
+types systems by showing that CP can embed GV,
+a variation of the calculus previously proposed in \citet{DBLP:journals/jfp/GayV10}, which enriches a concurrent \lcalc\ with
+linear types and session-typed primitives
+(but that originally admitted deadlocks).
+Subsequently, \citet{conf/esop/LindleyM15} completed the picture by
+providing an elementary proof of deadlock freedom for CP, and translations from and to GV.
+
+While these type systems satisfy the goal of \emph{compositionality},
+% (and can be automated)
+they only promise behavioral guarantees, like deadlock freedom,
+for \emph{closed} programs;
+the meaning of general typing judgments in terms of the component's behavior
+is left completely implicit.
+The technique of \emph{logical relations} has been developed with the
+specific goal of filling this gap (\citet{TimanyKDB24} provide a modern discussion).
+Logical relations are predicates over the behavior of a program,
+indexed over types and type environments, which make it possible to define
+a \emph{semantic} counterpart $\fType{\Sigma \proves \fProc{p} : T}$
+to the \emph{syntactic} judgment $\fType{\Sigma \types \fProc{p} : T}$.
+While the syntactic judgment can, by definition, only be established by
+using the syntactic type derivations,
+the semantic judgment can be proven to hold by any means necessary,
+by reasoning directly at the level of the possible behaviors of the component.
+This approach enables the safe composition of typable components,
+with components which respect the interface specified by the types,
+but that the type system would reject.
+
+Consider, for example, a (typable) process~$\fProc{p}$ expecting to receive
+a choice between~$\fType{A}$ and~$\fType{B}$
+on some channel~$\fType{\fFunc{c} : A \echoice B}$;
+we might want to compose it with a component~$\fProc{elect}$
+that makes the choice by internally running a leader-election protocol
+and letting the leader pronounce their choice on~$\fFunc{c}$.
+Such election protocol might require violating the strict invariants
+imposed by the syntactic type system, like acyclicity of topology or absence of races; yet, if this behavior is handled correctly internally,
+it should be safe to compose in on $\fFunc{c}$ with a safe context.
+If a logical relation encoding the safe behavior expected on $\fFunc{c}$
+was available, one could prove
+$\fType{\fFunc{c}:A \echoice B \types \fProc{p} : T}$ syntactically,
+and
+$\fType{\fFunc{c}:A \ichoice B \proves \fProc{elect} : \tUnit}$ semantically,
+and conclude that their composition over $\fFunc{c}$ is deadlock-free.
+The objective of this paper is identifying such a logical relation.
+
+\citet{DBLP:conf/esop/PerezCPT12,DBLP:journals/iandc/PerezCPT14} were
+the first to apply logical relations to session types,
+where they are used to investigate strong normalization, confluence, and behavioral equality.
+\citet{conf/esop/RochaC23} prove strong termination and correct use of
+shared state using logical relations for
+an extended calculus with session types and shared references.
+In all these works~\cite{DBLP:conf/esop/PerezCPT12,DBLP:journals/iandc/PerezCPT14,conf/esop/RochaC23}, logical relations are formulated as means to prove further properties \emph{on top of} subject reduction and deadlock freedom,
+which are proven syntactically.
+As a result, the logical relations are not strong enough to justify the type system's soundness (and deadlock-freedom),
+and only apply to typed processes,
+making it impossible to use them as a semantic typing judgment.
+
+A series of works~\cite{DBLP:journals/lmcs/HinrichsenBK22,DBLP:conf/cpp/HinrichsenLKB21,DBLP:journals/pacmpl/HinrichsenBK20}
+introduced Actris,
+a program logic based on the Iris framework~\cite{JungKJBBD18},
+which integrates a (dependent) session type style assertion language
+with separation logic resources to support expressive manual reasoning
+for a language mixing advanced features (\eg higher order, heap) and
+message passing.
+The approach is genuinely semantic, allowing the safe composition
+of untypable-but-safe components.
+For our purposes, the main limitation of the Actris approach is
+that it is only able to prove safety of programs, not deadlock freedom.
+The work that comes closest to our goals is LinearActris~\cite{JacobsHK24},
+which uses a linear instantiation of Iris to prove deadlock freedom
+for a language using a fragment of Actris' protocols
+(\ie without impredicative invariants).
+The approach is semantic, but relies on imposing rather strict
+constraints on the communication topology as a global invariant
+of every program, using connectivity graphs~%
+\cite{DBLP:journals/pacmpl/JacobsBK22,DBLP:journals/pacmpl/JacobsB23}.
+While sufficient to justify Curry-Howard-based typing,
+LinearActris would rule out our leader election example (and many others)
+which is deadlock-free and safe to compose,
+but violates these topological invariants.
+
+\paragraph{Contributions}
+In this paper we consider a variation of GV (dubbed~\OurLang)
+and propose a new logical relation which is:
+\begin{enumerate}
+  \item \textbf{Compositional:}
+        it validates all the rules of a standard Curry-Howard-based
+        session type system;
+  \item \textbf{Semantic:}
+        it expresses the meaning of a judgment entirely as constraints
+        on the behavior of untyped processes;
+        and
+  \item \textbf{Liberal:}
+        it does not constrain the communication topology of components,
+        as long as they are well-behaved on their external interface.
+\end{enumerate}
+
+\ed{We can add refs to relevant sections in the para below once the structure is settled}
+We articulate our main technical ideas on
+a concurrent \lcalc\ enriched with
+core session typed communication primitives:
+we define a semantic judgment $\fType{\Sigma \proves \fProc{p} : T}$
+through our logical relation, and prove that it satisfies
+all the rules of a standard GV-like type system.
+We further prove that the semantic judgment implies
+safety and deadlock-freedom of closed processes.
+
+What these results show, is that while previous work correctly identified
+topological invariants imposed by Curry-Howard-based syntactic type systems,
+they are not \emph{necessary} to establish correctness of typing,
+and a much weaker invariant is in fact sufficient.
+\ed{too bold? Explains a wider lesson\ldots}
+
+To evaluate the approach, we extend the core calculus with
+branching, recursion, unrestricted channels and linking,
+showing that the approach scales to more complex features.
+We also provide examples which would not be admissible in
+systems based on constraining the communication topology,
+but satisfy our logical relation.
+Our mechanization of the
+core calculus in Agda currently encompasses all but one of the
+important lemmas and it postulates some minor auxiliary results, e.g.,
+about sets.
+The current state of the mechanization is available as supplemental
+material along with an explanation of the postulates. It also contains
+detailed manual proof sketches of our results. The full and final
+version of the mechanization will be submitted as an artifact.
+\ed{Make sure we follow through or change text accordingly}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

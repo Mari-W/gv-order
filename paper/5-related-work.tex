@@ -1,0 +1,93 @@
+\section{Related Work and Future Directions}
+\label{sec:relatedWork}
+
+
+In this paper, we presented the first logical relation for session types
+which supports GV-style rules, can prove deadlock freedom, and
+admits safe processes which do not comply with communication topology
+constraints imposed by the syntactic type system.
+In this section we review the literature in view of the technical development
+and sketch potential future developments.
+
+\citet{DBLP:journals/iandc/PerezCPT14} were the first to investigate
+session types using logical relations.
+Their starting point is the logical account of session types \cite{DBLP:conf/concur/CairesP10}; their process calculus includes a (non-recursive)
+treatment of the exponential, and uses the logical relation to prove
+strong normalization, confluence, and behavioral equality.
+More recent work by \citet{conf/esop/RochaC23} uses a logical relation that specifies
+strong normalization and safe handling of state for message-passing
+processes using linear session types
+(based on an extension of ILL~\cite{conf/tapsoft/GirardL87}).
+In both \cite{DBLP:journals/iandc/PerezCPT14,conf/esop/RochaC23},
+the logical relation is defined only for syntactically typed processes.
+Deadlock freedom is established by proving subject reduction and progress
+on the syntactic derivations, and the proofs of the logical relation
+rely on having externally established deadlock freedom.
+In contrast, we establish all the behavioral guarantees of the type system
+as a consequence of the semantic logical relation.
+
+An interesting direction for further work would be to establish
+compositional and liberal logical relations for properties beyond
+deadlock freedom.
+For example,
+\citet{conf/esop/Atkey17} defines an operational semantics for
+Wadler's ``processes as CLL proofs''~\cite{conf/icfp/Wadler12} and
+uses a logical relation to prove adequacy
+of the operational semantics and a type-based
+denotational semantics with the goal
+of establishing observational equivalences.
+\citet{DBLP:conf/lics/DerakhshanBJ21} study noninterference for
+information flow control.
+Van den Heuvel et al.~\cite{DBLP:conf/ecoop/0001DB24} extend the
+work to cyclic processes.
+\citet{DBLP:journals/pacmpl/YaoICBZ25} consider timed
+message passing for IoT systems via session types defined by a logical relation.
+
+The logical-relations approach also offers a nice opportunity
+when extending the language of types to support polymorphism,
+as it would allow the derivation of parametricity theorems from polymorphic types.
+
+
+Another direction would be to extend the features of the programming model.
+For example, LinearActris~\cite{JacobsHK24} supports mutable heaps
+in addition to message passing primitives.
+It would be interesting to try and embed our logical relation into
+a separation logic, allowing a more flexible mix of paradigms.
+
+While this work focused on the Curry-Howard based ways of composing processes,
+approaches based on priorities, \eg \cite{Kobayashi97,Padovani14,DardhaG18},
+track dependencies between actions across sessions explicitly in the types.
+Finding a semantic logical relation capturing priority-based reasoning
+would provide powerful compositional means of proving well-behavedness of
+components that cannot be syntactically typed (like our load balancer example).
+It could also provide a semantic bridge between priority-based and Curry-Howard-based systems, in the spirit of \citet{DardhaP22}.
+
+Multiparty Session Types also shed light on global dependencies in types.
+For programs interleaving several multiparty sessions,
+establishing deadlock freedom requires additional priority-based annotations and checks.
+If one considers programs with a single session involving multiple participants,
+the Multiparty Session Type discipline ensures deadlock freedom.
+The semantic logical relation understanding of Multiparty Session Types is
+still underdeveloped.
+The Multris logic~\cite{HinrichsenJK24} made some steps in developing
+a logical relation embedded into the Iris separation logic,
+but it can only prove safe usage of channels and resources,
+not deadlock freedom.
+
+Finally, a challenging open problem is to provide a semantic
+and compositional logical relation to prove \emph{liveness} properties
+like lock freedom.
+Priority-based systems have been adapted to prove lock freedom and progress
+properties~\cite{Kobayashi02,Padovani13},
+but the soundness argument is syntactic.
+Several works in Concurrent Separation Logics 
+\cite{DOsualdoSFG21,LiangF18,LeeLYCKH25}
+explored compositional semantic characterizations of progress properties
+for shared memory concurrent programs.
+Combining those ideas with our logical relation approach
+could provide some leverage to attack the problem.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

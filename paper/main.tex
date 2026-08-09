@@ -1,0 +1,135 @@
+% See samplepaper.tex and llncsdoc.pdf.
+%%% Add the `comments` option to documentclass to enable comments
+\documentclass[envcountsame,envcountsect,comments]{llncs}
+
+% conditions for ESOP 2026:
+% There is no page limit for submissions, but authors should be aware
+% that reviewers are likely to balance the review time for all papers
+% and that camera-ready papers may not exceed 25 pages (excluding
+% bibliography) and must be formatted in Springer’s LNCS. 
+
+\usepackage[T1]{fontenc} % LNCS.
+% \PassOptionsToPackage{square,numbers}{natbib}
+% \RequirePackage{natbib}
+\usepackage[numbers,compress]{natbib} % LNCS-specific.
+\PassOptionsToPackage{inline,shortlabels}{enumitem}
+\RequirePackage{enumitem}
+\RequirePackage{comment}
+\RequirePackage{subcaption}
+
+\PassOptionsToPackage{capitalise,noabbrev}{cleveref}
+\input{preamble}
+
+% Load last for the proof environment.
+% https://tex.stackexchange.com/a/699868
+\let\proof\relax\let\endproof\relax
+\usepackage{amsthm}
+
+\RequirePackage{hyperref}
+\RequirePackage{cleveref}
+
+% Links from paper claims to the Rocq mechanization.  The table of
+% declarations is generated from theories/*.v by paper/rocqrefs.py;
+% regenerate with `make -C paper refs`.
+\RequirePackage{rocqrefs}
+\input{rocqrefs}
+
+% remove in final version:
+\hypersetup{
+  bookmarksdepth=2,% to get PDF bookmarks back!
+  bookmarksopen=true,
+  bookmarksopenlevel=1,
+}
+
+\usepackage{comments}
+% \usepackage{../agda/latex/agda}
+\usepackage{txfonts}
+\input{unicodeletters}
+% \input{../agda-generated}
+
+\title{A Logical-Relations Approach to Compositional Deadlock Freedom for Session Types}
+%% (PT: suggest alphabetical order, unsure how to deal with 'van den' and 'd')
+%% (BH: Dutch last name sorting ignores 'van den')
+%% (ED: Italian last name sorting does *not* ignore the "D'", I am always listed under D. Changed accordingly)
+% Emanuele D'Osualdo
+% Bas van den Heuvel
+% Peter Thiemann 
+% Marius Weidner
+
+% \author{%
+% Emanuele D'Osualdo\inst{1}\orcidID{0000-0002-9179-5827} \and
+% Bas van den Heuvel\inst{2}\orcidID{0000-0002-8264-7371} \and
+% Peter Thiemann\inst{3}\orcidID{0000-0002-9000-1239} \and
+% Marius Weidner\inst{3}\orcidID{0009-0008-1152-165X}
+% }
+% %
+% % \authorrunning{B. van den Heuvel et al.}
+
+% \institute{%
+% University of Konstanz, Germany
+% \email{emanuele.dosualdo@uni-konstanz.de}
+% \and
+% Karlsruhe University of Applied Sciences, Germany
+% \and
+% University of Freiburg, Germany
+% \email{\{thiemann,weidner\}@cs.uni-freiburg.de}
+% }
+
+% \NewDocumentCommand\cmnt{mm}{\{\textbf{#1:} #2\}}
+% \def\bh{\cmnt{BH}}
+% \def\pt{\cmnt{PT}}
+% \def\ed{\cmnt{EO}}
+% \def\mw{\cmnt{EO}}
+\def\OurLang{GV\ensuremath{^{\sharp}}\xspace}
+
+\begin{document}
+
+\maketitle
+\pagestyle{plain}
+
+\begin{abstract}
+  % Deadlock freedom is a fundamental correctness property of concurrent systems.
+  Due to its global nature, deadlock freedom is hard to ensure compositionally.
+  Session Types based on a Curry-Howard correspondence with Linear Logic
+  achieve compositional deadlock freedom by imposing quite stringent
+  constraints on the communication topologies that can be constructed.
+  All soundness proofs of such session type systems in the literature
+  hinge on topological constraints, making it impossible to safely compose
+  typable processes with processes that violate these constraints, but
+  which are safe nevertheless.
+  
+  In this work, we present a new account of session types
+  through a logical relation that is
+  \begin{enumerate*}[(i)]
+    \item Compositional (\ie validates all the type system rules);
+    \item Semantic (\ie expresses the meaning of a judgment entirely as constraints on the behavior of untyped processes); and
+    \item Liberal (\ie accepts arbitrary processes as long as they are well-behaved on their external interface).
+  \end{enumerate*}
+  We establish adequacy of the relation for deadlock freedom and
+  exercise it on illustrative examples.
+  To evaluate the approach, we extend the core calculus with branching, recursion, unrestricted channels and linking.
+  Most of our core results are mechanized in Agda.
+\end{abstract}
+
+\input{1-intro}
+
+\input{2-calculus}
+
+\input{3-logical-rel}
+
+\input{4-extensions}
+
+\input{4-formalization}
+
+\input{5-related-work}
+
+
+\bibliographystyle{splncs04nat} % https://github.com/tpavlic/splncs04nat
+\bibliography{main.bib}
+
+\clearpage
+\appendix
+
+\input{appendix}
+
+\end{document}

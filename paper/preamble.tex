@@ -1,0 +1,199 @@
+% LNCS-provided:
+% \RequirePackage{amsthm}
+% \newtheorem{definition}{Definition}
+% \newtheorem{theorem}{Theorem}
+% \newtheorem{lemma}{Lemma}
+
+% https://tex.stackexchange.com/a/40185
+\makeatletter
+\let\@realLabel\label
+\makeatother
+\RequirePackage{amsmath}
+\RequirePackage{mathtools}
+
+\RequirePackage{xparse}
+
+\RequirePackage{xspace}
+
+% https://tex.stackexchange.com/a/521495
+\makeatletter
+\@ifdefinable\MakeTokenFromCsname{%
+  \long\def\MakeTokenFromCsname#1#{%
+    \romannumeral0\@MakeTokenFromCsname{#1}%
+  }%
+}%
+\newcommand\@MakeTokenFromCsname[2]{%
+  \expandafter\@@@MakeTokenFromCsname\expandafter{\csname#2\endcsname}{ #1}%
+}%
+\newcommand\@@@MakeTokenFromCsname[2]{#2#1}%
+\makeatother
+
+\makeatletter
+\def\DMO#1{%
+  \MakeTokenFromCsname\DeclareMathOperator{@#1}{#1}%
+  \MakeTokenFromCsname\NewDocumentCommand{#1}{o}{\MakeTokenFromCsname{@#1}\IfValueT{##1}{_{##1}}}%
+}
+\makeatother
+
+\DeclareMathOperator{\fc}{subj}
+\DMO{dom}
+\DMO{flv}
+
+\makeatletter
+
+\newcommand{\acronym}[2]{\emph{#1}~(#2)}
+
+\def\hyph-{\mbox{-}\nobreak\hspace{0pt}}
+\def\pre#1-{$#1$\mbox{-}\nobreak\hspace{0pt}}
+% \nobreak avoids linebreaks
+% the 0-width space allows the suffix to be correctly hyphenated
+
+\newcommand{\picalc}{%
+    \texorpdfstring{\pre{\pi}-calculus}{pi-calculus}}
+\newcommand{\lcalc}{%
+    \texorpdfstring{\pre{\lambda}-calculus}{lambda-calculus}}
+
+\makeatother
+
+\newcommand{\Nat}{\mathbb{N}}
+
+\RequirePackage{myproofs}
+\RequirePackage{mathpartir}
+\RequirePackage{myprooftrees}
+
+% `\sepr` for regularly spaced, `\sepr*` for more spacing.
+\makeatletter
+\def\sepr{\@ifstar\@seprstar\@seprnostar}
+\def\@seprnostar{\mathbin{\mbox{\large{$\mid$}}}}
+\def\@seprstar{~~\@seprnostar~}
+\makeatother
+
+\def\<{\langle}
+\def\>{\rangle}
+\def\disjoint{\mathrel{\#}}
+\NewDocumentCommand\set{m}{{\{#1\}}}
+\RequirePackage{stmaryrd}
+\NewDocumentCommand\mset{m}{{\lbag#1\rbag}}
+\NewDocumentCommand\msetA{m}{{\lbag\begin{array}[t]{l} #1\rbag \end{array}}}
+\NewDocumentCommand\update{mmm}{{#1\oplus[#2 \mapsto #3]}}
+
+\let\ltxvdash\vdash
+\newcommand{\types}{\mathrel{\color{black}\ltxvdash}}
+\newcommand{\proves}{\mathrel{\color{black}\vDash}}
+
+\newcommand{\ichoice}{\oplus}
+\newcommand{\echoice}{\mathrel{\&}}
+
+\PassOptionsToPackage{dvipsnames,rgb}{xcolor}
+\RequirePackage{xcolor}
+\colorlet{cProc}{black}
+\colorlet{cType}{RoyalBlue}
+\colorlet{cFunc}{YellowOrange}
+\def\fProc#1{\textcolor{cProc}{\mathit{#1}}}
+\def\fType#1{\textcolor{cType}{\mathsf{\let\vdash\types#1}}}
+\def\fFunc#1{\textcolor{cFunc}{\mathnormal{#1}}}
+\def\fCtx#1{\mathcal{#1}}
+
+\newcommand{\var}{\mathit}
+
+\def\hole{[\cdot]}
+
+\RequirePackage{upgreek}
+\def\tOp#1{\mathinner{\mathsf{#1}}}
+\def\tFork{\tOp{fork}}
+\def\tRecv{\tOp{recv}}
+\def\tSend{\tOp{send}}
+\def\tWait{\tOp{wait}}
+\def\tTerm{\tOp{term}}
+\def\tClos{\tOp{clos}}
+\def\tLink{\tOp{link}}
+\def\tFixOp{\tOp{fix}}
+\def\tInjOp{\tOp{inj}}
+\def\tCaseOp{\tOp{case}}
+\def\tIfOp{\tOp{if}}
+\def\tUnit{\ast}
+\def\tLVA{a}
+\def\tLVB{b}
+\def\tIVX{x}
+\def\tIVY{y}
+\NewDocumentCommand\tAbs{mm}{{\uplambda #1 . #2}}
+\NewDocumentCommand\tPair{mm}{{\<#1,#2\>}}
+\NewDocumentCommand\tApp{mm}{{#1\,#2}}
+\NewDocumentCommand\tLet{soomm}{{\tOp{let}\IfBooleanTF{#1}{\tUnit}{\tPair{#2}{#3}}=#4\tOp{in}#5}}
+\NewDocumentCommand\tFix{mmm}{{\tFixOp\,\tAbs{#1}{\tAbs{#2}{#3}}}}
+\NewDocumentCommand\tSub{mmm}{{#1[#2/#3]}}
+\NewDocumentCommand\tLetI{mmm}{{\tOp{let}{\IExp{#1}}=#2\tOp{in}#3}}
+\NewDocumentCommand\tLetS{mmm}{{\tOp{let}{{#1}}=#2\tOp{in}#3}}
+\NewDocumentCommand\tFixI{mm}{{\tFixOp\,{#1}.{#2}}}
+\NewDocumentCommand\tInj{mm}{{\tInjOp_{#1} #2}}
+\NewDocumentCommand\tCase{mmmmm}{{\tCaseOp\,{#1}( #2.#3) (#4.#5)}}
+\NewDocumentCommand\tIf{mmm}{{\tIfOp\,{#1}( #2)(#3)}}
+\NewDocumentCommand\tSeq{mm}{{#1;#2}}
+
+
+
+\RequirePackage{stackengine}
+\NewDocumentCommand\trans{mo}{\mathrel{\stackon[2pt]{$\longrightarrow$}{$\scriptstyle#1$}\IfValueT{#2}{\vphantom{\longrightarrow}^{#2}}}}
+\NewDocumentCommand\redu{o}{\mathrel{\longrightarrow\IfValueT{#1}{^{#1}}}}
+\def\irred{\operatorname{irred}}
+
+\NewDocumentCommand\lRecv{mm}{{\fFunc{#1}{?}\fFunc{#2}}}
+\NewDocumentCommand\lSend{mm}{{\fFunc{#1}{!}\fFunc{#2}}}
+\NewDocumentCommand\lWait{m}{{\fFunc{#1}{?}}}
+\NewDocumentCommand\lTerm{m}{{\fFunc{#1}{!}}}
+\let\lClos\lTerm
+\NewDocumentCommand\lFork{mm}{{(\nu\fFunc{#1})\fFunc{#2}}}
+\NewDocumentCommand\lLink{mm}{{ {\leftrightarrow}\set{\fFunc{#1}, \fFunc{#2}}}}
+
+\RequirePackage{amssymb}
+\NewDocumentCommand\lFunc{mm}{{{#1}\mathrel{\multimap}{#2}}}
+\NewDocumentCommand\lPair{mm}{{{#1}\mathrel{\otimes}{#2}}}
+\NewDocumentCommand\lSum{mm}{{{#1}\mathrel{+}{#2}}}
+\NewDocumentCommand\sRecv{mm}{{{?}{#1}.{#2}}}
+\NewDocumentCommand\sSend{mm}{{{!}{#1}.{#2}}}
+% \def\sWait{\tOp{Wait}}
+% \def\sTerm{\tOp{Term}}
+\def\sWait{\tOp{Close}}
+\def\sTerm{\tOp{Close}}
+\def\tEmpty{{\cdot}}
+\NewDocumentCommand\dual{m}{{\overline{#1}}}
+\def\ptype{\operatorname{ptype}}
+\def\primitive{\operatorname{prim}}
+
+\RequirePackage{stmaryrd}
+\def\tRepl{\tOp{repl}}
+\def\tReq{\tOp{req}}
+\makeatletter
+\let\@replSymb\shortuparrow
+\let\@reqSymb\shortdownarrow
+\NewDocumentCommand\lRepl{mm}{{{\@replSymb}\lFork{#1}{#2}}}
+\NewDocumentCommand\lReq{mm}{{{\@reqSymb}\lFork{#1}{#2}}}
+\NewDocumentCommand\lUnres{m}{{{\@replSymb}#1}}
+\NewDocumentCommand\IExp{m}{{{\@replSymb}#1}}
+\makeatother
+
+\RequirePackage{stmaryrd}
+\makeatletter
+\NewDocumentCommand\@lr{mmm}{{#1}_{#2}\llbracket{#3}\rrbracket}
+\NewDocumentCommand\lrVal{mm}{\@lr{V}{#1}{#2}}
+\NewDocumentCommand\lrTerm{mm}{\@lr{E}{#1}{#2}}
+\NewDocumentCommand\lrProc{mm}{\@lr{P}{#1}{#2}}
+\NewDocumentCommand\lrGSub{mm}{\@lr{G}{#1}{#2}}
+\NewDocumentCommand\lrOwn{mm}{\@lr{O}{#1}{#2}}
+\makeatother
+
+\newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
+
+\newcommand{\ie}{i.e.,~} % comma
+\newcommand{\eg}{e.g.~}  % no comma, according to the Handbook for Scholars
+
+\newcommand{\st}{.\,}
+
+\DeclareMathOperator{\sent}{sentc}
+% \newcommand{\sent}{sentc}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

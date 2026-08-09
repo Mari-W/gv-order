@@ -56,11 +56,11 @@ def permalink_base():
 
 
 def declarations():
-    """name -> (path relative to root, basename, 1-based line)"""
+    """name -> (path relative to root, module name, 1-based line)"""
     out = {}
     for path in sorted(glob.glob(os.path.join(ROOT, 'theories', '*.v'))):
         rel = os.path.relpath(path, ROOT)
-        base = os.path.basename(path)
+        base = os.path.splitext(os.path.basename(path))[0]
         with open(path, encoding='utf-8') as f:
             for i, line in enumerate(f, start=1):
                 m = DECL.match(line)

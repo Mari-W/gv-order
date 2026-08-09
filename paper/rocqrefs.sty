@@ -39,25 +39,28 @@
 
 % ---- the mark -------------------------------------------------------
 
-\newlength{\rocqlogoheight}
-\setlength{\rocqlogoheight}{1.05ex}
-
+% The height is given in ex of the *current* font, so the mark shrinks
+% along with the citation text.
 \IfFileExists{rocq-logo.pdf}{%
   \newcommand{\rocqlogo}{%
-    \raisebox{-0.1ex}{\includegraphics[height=\rocqlogoheight]{rocq-logo.pdf}}%
-    \kern0.25em}%
+    \raisebox{-0.1ex}{\includegraphics[height=1.15ex]{rocq-logo.pdf}}%
+    \kern0.2em}%
 }{%
   \IfFileExists{rocq-logo.png}{%
     \newcommand{\rocqlogo}{%
-      \raisebox{-0.1ex}{\includegraphics[height=\rocqlogoheight]{rocq-logo.png}}%
-      \kern0.25em}%
+      \raisebox{-0.1ex}{\includegraphics[height=1.15ex]{rocq-logo.png}}%
+      \kern0.2em}%
   }{%
     % Fallback badge: a small caps "R" in a rounded rule-free box.
     \newcommand{\rocqlogo}{%
-      \raisebox{0.1ex}{\scriptsize\textcolor{rocqbadge}{\textbf{R}}}%
+      \raisebox{0.1ex}{\textcolor{rocqbadge}{\textbf{R}}}%
       \kern0.2em}%
   }%
 }
+
+% Citations are deliberately set much smaller than the surrounding
+% text: they annotate a claim, they are not part of it.
+\newcommand{\rocqstyle}{\scriptsize}
 
 % ---- the table ------------------------------------------------------
 
@@ -71,6 +74,14 @@
   \expandafter\gdef\csname rocq@file@#1\endcsname{#3}%
 }
 
+% Suppress the link border for our links only.  Done with the
+% low-level hyperref hook rather than \hypersetup, because these
+% citations appear inside captions, where keyval parsing would break.
+\newcommand{\rocq@noborder}{%
+  \def\@pdfborder{0 0 0}%
+  \def\@pdfborderstyle{}%
+}
+
 \newcommand{\rocq@fail}[1]{%
   \PackageError{rocqrefs}{No mechanized declaration named `#1'}%
     {Run `make -C paper refs' after changing theories/.}%
@@ -79,15 +90,23 @@
 % ---- the citations --------------------------------------------------
 
 % \rocqas{text}{name}
+%
+% The link is drawn without a border: the mark and the colored
+% monospace text already signal it, and 1000 boxed rules would make
+% the figures unreadable.  Scoped to this command, so the document's
+% own hyperref setup is untouched.
 \newcommand{\rocqas}[2]{%
   \expandafter\ifx\csname rocq@loc@#2\endcsname\relax
     \rocq@fail{#2}%
   \else
     \ifx\rocqbase\empty
-      \mbox{\rocqlogo\texttt{#1}}%
+      \mbox{\rocqstyle\rocqlogo\texttt{#1}}%
     \else
-      \href{\rocqbase\csname rocq@loc@#2\endcsname}{%
-        \mbox{\rocqlogo\textcolor{rocqlink}{\texttt{#1}}}}%
+      \begingroup
+        \rocq@noborder
+        \href{\rocqbase\csname rocq@loc@#2\endcsname}{%
+          \mbox{\rocqstyle\rocqlogo\textcolor{rocqlink}{\texttt{#1}}}}%
+      \endgroup
     \fi
   \fi
 }

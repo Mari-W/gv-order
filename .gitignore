@@ -16,3 +16,14 @@ Makefile.conf
 /_opam
 .vscode
 paper/rocqrefs.tex
+
+# LaTeX build products (paper/)
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+paper/main.pdf

@@ -1,0 +1,204 @@
+% \section{Safe process with payload}
+% \label{sec:safe-process-with}
+
+% The following process is safe and in $\lrProc{n}{\fType{\tEmpty} \vdash \fType{\tUnit}}$.
+
+% \begin{align*}
+%   & (\set{},\mset{ \fFunc{
+%     \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\tFork}{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+%     } })
+%   \\
+%   \redu
+%   & (\set{ \fFunc{c} },\mset{ \fFunc{
+%     \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{c})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+%     }, \fFunc{
+%     \tApp{(\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}})}{c}
+%     } })
+%   \\
+%   \redu
+%   & (\set{ \fFunc{c} },\mset{ \fFunc{
+%     \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{c})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+%     }, \fFunc{
+%     {\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{c}})}}
+%     } })
+%   \\
+%   \redu
+%   & (\set{ \fFunc{c} },\mset{ \fFunc{
+%     \tLet[\tLVB][\tLVA]{\tPair{\tUnit}{c}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+%     }, \fFunc{
+%     {\tApp{\tClos}{c}}
+%     } })
+%   \\
+%   \redu
+%   & (\set{ \fFunc{c} },\mset{ \fFunc{
+%     {\tLet*{\tUnit}{\tApp{\tClos}{c}}}
+%     }, \fFunc{
+%     {\tApp{\tClos}{c}}
+%     } })
+%   \\
+%   \redu
+%   & (\set{ \fFunc{c} },\mset{ \fFunc{
+%     {{\tApp{\tClos}{c}}}
+%     }, \fFunc{
+%     {\tApp{\tClos}{c}}
+%     } })
+%   \\
+%   \redu
+%   & (\set{ },\mset{ \fFunc{
+%     \tUnit
+%     }, \fFunc{
+%     \tUnit
+%     } })
+% \end{align*}
+
+% We have $\fFunc{
+%   \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\tFork}{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+% } \in \lrTerm{n}{\fType{\tEmpty} \vdash \fType{\tUnit}}$ because
+% $\tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{c})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+% \in \lrTerm{n}{\fFunc{c}\fType{: \sRecv{\tUnit}{\tClos}} \vdash
+%   \fType{\tUnit}}$.
+% The reduction sequence is similar to the one shown for the first
+% example in \cref{sec:safe-process}.
+
+\section{Reductions for leader election example}
+\label{sec:reduct-lead-elect}
+
+As an example, we trace the reduction sequence starting from $p_0$  where $\fFunc{e_0}$
+communicates first with $\fFunc{e_1}$
+(\rocq{leader_proc}, \rocq{leader_sem_ptyped}).
+\begin{itemize}
+\item $\tau$ transition (internal communication) to
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{d}})}}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{\tLet[\tLVB][d]{\tPair{false}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tIf{\tLVB}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\item $\tau$ transition ($\beta$ pair elimination) to
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{d}})}}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{\tLet*{\tApp{\tClos}{cs}}{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\item $\tau$ transition (internal communication) to
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tApp{\tClos}{d}}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{\tLet*{\tApp{\tClos}{cs}}{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{\tLet[\tLVB][d]{\tPair{true}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\item $\tau$ transition ($\beta$ pair elimination) to
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tApp{\tClos}{d}}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{\tLet*{\tApp{\tClos}{cs}}{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\item $\tau$ transition (internal communication, closing $\fFunc{cs}$,
+  new $C = \set{\fFunc{c}, \fFunc{d}}$)
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tApp{\tClos}{d}}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{\tLet*{\tUnit}{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{{\tLet*{\tUnit}{\tLet*{\tApp{\tClos}{d}}{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\item $\tau$ transitions (2x $\beta$ unit)
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tApp{\tClos}{d}}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{{{\tLet*{\tApp{\tClos}{d}}{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\item $\tau$ transition (internal communication, closing $\fFunc{d}$,
+  new $C = \set{\fFunc{c}}$)
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tUnit}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{{{\tLet*{\tUnit}{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\item $\tau$ transition (unit elim)
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tUnit}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{{{{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\item $\tau$ transitions (2x $\beta$ bool)
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tUnit}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{{{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{{{{{\tApp{\tClos}{(select~right~c)}}}}}}
+    \end{align*}
+  \end{small}
+\item There are two remaining labeled transitions: $\lSend{c}{right}$
+  followed by $\lTerm{c}$. The resulting process is terminated and is
+  an element of $\lrProc{n}{\fType{\tEmpty} \vdash \fType{\tUnit}}$:
+  \begin{small}
+    \begin{align*}
+      \fFunc{e_0} &=
+                    \fFunc{\tUnit}
+      \\
+      \fFunc{e_1} &=
+                    \fFunc{{{{\tUnit}}}}
+      \\
+      \fFunc{e_2} &=
+                    \fFunc{{{{{\tUnit}}}}}
+    \end{align*}
+  \end{small}
+\end{itemize}

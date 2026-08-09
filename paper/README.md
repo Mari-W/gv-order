@@ -2,6 +2,17 @@
 
 The LaTeX sources live here; the mechanization lives in `theories/`.
 
+```sh
+make -C paper          # build main.pdf (generates rocqrefs.tex first)
+make -C paper check    # fail on citations to declarations that no longer exist
+make -C paper clean
+```
+
+The logo in `rocq-logo.pdf` is the Rocq icon from
+[rocq-prover/rocq-prover.org](https://github.com/rocq-prover/rocq-prover.org)
+(`asset/logos/icon-rocq-orange.svg`), converted to PDF. Delete it and
+the citations fall back to a typeset badge.
+
 ## Citing the mechanization
 
 Write `\rocq{fundamental_proc}` in the text. It renders as

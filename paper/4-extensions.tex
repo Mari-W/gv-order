@@ -1,0 +1,586 @@
+\section{Extensions}
+\label{sec:extensions}
+
+\subsection{Sums}
+\label{sec:extension:-sums}
+
+
+\begin{figure}[tp]
+  New values, terms, evaluation contexts
+  \begin{align*}
+    \fFunc{v} &::= \dots \sepr \fFunc{\tInj{1}{v}} \sepr \fFunc{\tInj{2}{v}}
+    & \text{injections}\\
+    \fFunc{e} &::= \dots \sepr \fFunc{\tCase{e}{\tLVA}{e}{\tLVA}{e}} &
+                                                                       \text{sum elimination}\\
+    \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tInj{1}{\fCtx{E}}} \sepr \fFunc{\tInj{2}{\fCtx{E}}}
+  \end{align*}
+  New labeled transitions
+  \begin{mathpar}
+    \begin{bussproof}[T-Act-Case]
+      \bussAx{\fFunc{\tCase{(\tInj{i}{v})}{\tLVA}{e_1}{\tLVA}{e_2}} \trans{\beta} \fFunc{\tSub{e_i}{v}{\tLVA}}}
+    \end{bussproof}
+    % \and
+    % \begin{bussproof}[T-Act-Case2]
+    %   \bussAx{\fFunc{\tCase{\tInj{2}{v}}{\tLVA}{e}{\tLVA}{e}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
+    % \end{bussproof}
+  \end{mathpar}
+  New typing rules for terms
+  \begin{mathpar}
+    \begin{bussproof}[E-Inj]
+      \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T_i}}
+      \bussU{\fType{\Sigma ; \Delta \vdash \fFunc{\tInj{i}{e}} : \lSum{T_1}{T_2}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[E-Case]
+      \bussAs{\fType{\Sigma_1 ; \Delta_1 \vdash \fFunc{e} : \lSum{T_1}{T_2}}}
+      \bussAs{\fType{\Sigma_2 ; \Delta_2, \fFunc{\tLVA_1}:T_1 \vdash \fFunc{e_1} :U}}
+      \bussAs{\fType{\Sigma_2 ; \Delta_2, \fFunc{\tLVA_2}:T_2 \vdash \fFunc{e_2} :U}}
+      \bussT{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tCase{e}{\tLVA_1}{e_1}{\tLVA_2}{e_2}} : U}}
+    \end{bussproof}
+  \end{mathpar}
+  New case for the value logical relation \hfill \rocq{Vdef}
+  \begin{align*}
+    \lrVal{n}{\fType{\Sigma \vdash \lSum{T_1}{T_2}}}
+  &= \set{ \fFunc{\tInj{1}{v}}  \mid
+    \fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_1}}
+    } \cup \set{ \fFunc{\tInj{2}{v}}  \mid
+    \fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_2}}
+    }
+  \end{align*}
+  New rule for primitive types \hfill \rocq{prim}
+  \begin{mathpar}
+    \begin{bussproof}
+      \bussAs{\primitive \fType{T}}
+      \bussAs{\primitive \fType{U}}
+      \bussB{\primitive \fType{\lSum{U}{V}}}
+    \end{bussproof}
+  \end{mathpar}
+  \caption{Extensions for sum types.}
+  \label{fig:sum-types}
+\end{figure}
+
+Moving towards a more realistic calculus, we wish to support branching
+and choice in session types. It is well-known that branch and
+choice can be simulated using higher-order sessions and sum types
+\cite{DBLP:conf/ppdp/DardhaGS12,conf/esop/LindleyM15} by setting
+\begin{align*}
+  \fType{S_1 \ichoice S_2} &= \fType{\sSend{(\dual{S_1} + \dual{S_2})}{\sTerm}}
+  & \fType{S_1 \echoice S_2} &= \fType{\sRecv{(S_1 + S_2)}{\sWait}}
+\end{align*}
+Hence, we choose the simulation as directly supporting branch and choice would
+require additional labeled reductions and hence additional cases in the
+definition of all logical relations. In contrast, to support sum types
+it is sufficient to extend the value logical relation and prove the
+compositionality lemmas corresponding to the typing rules for sum
+types as shown in \cref{fig:sum-types}. Proving the compositionality
+lemmas is a standard exercise.
+
+\begin{lemma}[Compositionality: \ruleLabel{inj}, \rocq{sem_typed_inj1}, \rocq{sem_typed_inj2}]
+  \label{lem:comp:inj}
+  If
+  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T_i}}$, \\
+  then
+  $\fFunc{\tInj{i}{e}} \in \lrTerm{n}{\fType{\Sigma \vdash \lSum{T_1}{T_2}}}$.
+\end{lemma}
+
+\begin{lemma}[Compositionality: \ruleLabel{case}, \rocq{sem_typed_case}]
+  \label{lem:comp:case}
+  If
+  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \lSum{T_1}{T_2}}}$
+  and,
+  for all $\fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_1}}$,
+  $\fFunc{\tSub{e_1}{v}{\tLVA_1}} \in \lrTerm{n}{\fType{\Sigma, \Sigma_2 \vdash
+      U}}$,
+  and,
+  for all $\fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_2}}$,
+  $\fFunc{\tSub{e_2}{v}{\tLVA_2}} \in \lrTerm{n}{\fType{\Sigma, \Sigma_2 \vdash
+      U}}$,
+  then
+  $\fFunc{\tCase{e}{\tLVA_1}{e_1}{\tLVA_2}{e_2}} \in \lrTerm{n}{\fType{\Sigma_1,\Sigma_2 \vdash U}}$.
+\end{lemma}
+
+
+
+\subsubsection{A leader Election Example}
+\label{sec:leader-election}
+
+The problem of leader election can be reduced to a process that makes
+finite number of $\tau$ steps and then finishes with a $\fType{left}$
+or $\fType{right}$ step on some channel of type $\fType{\fFunc{c} : \sTerm
+  \ichoice \sTerm}$. To this end, we define the following terms making use of the sum extension. We use standard syntactic sugar for the
+encoding of the type $\fType{Bool} = \fType{\tUnit+\tUnit}$.
+%
+\begin{small}
+\begin{align*}
+  \fFunc{e_0} &=
+                \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{\tApp{\tSend}{\tPair{false}{d}}}})}}
+  \\
+  \fFunc{e_1} &=
+                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tIf{\tLVB}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+  \\
+  \fFunc{e_2} &=
+                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+\end{align*}
+\end{small}
+We consider the process $p_0 = (\set{\fFunc{c}, \fFunc{cs},
+  \fFunc{d}}, \mset{\fFunc{e_0}, \fFunc{e_1}, \fFunc{e_2}})$ and
+set out to prove that $p_0 \in \lrProc{n}{ \fFunc{c}\fType{:  \sTerm
+  \ichoice \sTerm} \vdash \fType{\tUnit}}$. This process has essentially
+two different reduction sequences due to a race condition
+(\rocq{leader_proc}, \rocq{leader_sem_ptyped}). Either $\fFunc{e_0}$
+communicates first with $\fFunc{e_1}$ and then with $\fFunc{e_2}$ or
+vice versa. Each term, $\fFunc{e_1}$ and $\fFunc{e_2}$, receives a
+boolean on channel $\fFunc{d}$, then synchronizes by closing
+$\fFunc{cs}$, $\fFunc{e_2}$ closes $\fFunc{d}$, and we are left with
+one term where the condition is $\fFunc{true}$ and another where it is
+$\fFunc{false}$. The  $\fFunc{true}$-term executes a $\fFunc{select}$
+and the $\fFunc{false}$-term does nothing.
+
+The process $p_0$ is not reachable from a single closed term because
+thread $\fFunc{e_0}$ shares $\fFunc{d}$ with both $\fFunc{e_1}$ and
+$\fFunc{e_2}$. Term $\fFunc{e_1}$ is not typable
+(cf. \cref{sec:syntacticTyping}) because it violates linearity for
+variables/channels $\fFunc{d}$ and $\fFunc{c}$. Likewise, term
+$\fFunc{e_2}$ violates linearity for channel $\fFunc{c}$.
+
+See \cref{sec:reduct-lead-elect} in the appendix for the reduction sequence.
+Composing $p_0$ over $\fFunc{c}$ with a syntactically typable client
+yields a closed, deadlock-free process
+(\rocq{leader_election_deadlock_free}).
+
+
+
+
+\subsection{Recursion}
+\label{sec:recursion}
+
+\begin{figure}[tp]
+  New values, terms, evaluation contexts
+  \begin{align*}
+    \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{(\tIVX = e)}}
+    & \text{intuitionistic variable, recursively defined thunk}\\
+    \fFunc{e} &::= \dots \sepr \fFunc{\tLetI{\tIVX}{e}{e}} & \text{thunk elimination}\\
+    \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tLetI{\tIVX}{\fCtx{E}}{e}}
+  \end{align*}
+  New labeled transition
+  \begin{mathpar}
+    \begin{bussproof}[T-Act-Exp]
+      \bussAx{\fFunc{\tLetI{\tIVX}{\IExp{(\tIVY = e)}}{e'}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
+    \end{bussproof}
+  \end{mathpar}
+  New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
+  \begin{mathpar}
+    \begin{bussproof}[E-IVar]
+      \bussAx{\fType{\tEmpty ; \Gamma, \fFunc{\tIVX}:T ; \tEmpty \vdash \fFunc{\tIVX} : T}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[E-Exp]
+      \bussAs{\fType{\tEmpty ; \Gamma , \fFunc{\tIVX}:T ; \tEmpty \vdash \fFunc{e} : T}}
+      \bussU{\fType{\tEmpty  ; \Gamma ; \tEmpty \vdash \fFunc{\IExp{(\tIVX = e)}} : \IExp{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[E-Let-Exp]
+      \bussAs{\fType{\Sigma_1 ; \Gamma ; \Delta_1 \vdash \fFunc{e_1} : \IExp{T}}}
+      \bussAs{\fType{\Sigma_2 ; \Gamma, \fFunc{\tIVX}:T ; \Delta_2 \vdash \fFunc{e_2} :U}}
+      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Gamma ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLetI{\tIVX}{e_1}{e_2}} : U}}
+    \end{bussproof}
+  \end{mathpar}
+  \caption{Extending the term language and typing
+    (\cref{fig:typeSys}) with recursive exponentials in the style of Lily.}
+  \label{fig:lily:terms}
+\end{figure}
+
+We support term recursion by adapting ideas from Lily
+\cite{DBLP:journals/entcs/BiermanPR00}, a linear lambda calculus with
+recursion. Lily is based on a term calculus for linear logic with
+exponentials where ``recursion is absorbed into terms of the
+exponential type'' \cite{DBLP:journals/entcs/BiermanPR00}. In
+consequence, we add the exponential type along
+with intuitionistic variables ($\fFunc\tIVX, \fFunc\tIVY$), Lily's introduction form, and a standard elimination form as shown in
+\cref{fig:lily:terms}. Compared to \cref{fig:typeSys}, the typing
+judgment $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$ for
+terms obtains another environment $\fType{\Gamma}$ for intuitionistic
+variables.
+
+Operationally, the thunk $\fFunc{\IExp{(\tIVX = e)}}$ is a value and
+the elimination form works in call-by-name style. The reduction rule
+we propose here is proved to be a Kleene
+equivalence by \citet{DBLP:journals/entcs/BiermanPR00} with respect to
+their big-step semantics.  We also use their abbreviations for a fixed point operator and
+non-recursive thunks:
+\begin{align*}
+  \fFunc{\tFixI{\tIVX}{e}} &:= \fFunc{\tLetI{\tIVX}{\IExp{(\tIVX = e)}}{e}}
+  & \fFunc{\IExp{e}} & := \fFunc{\IExp{(\tIVX = e)}} \quad \text{where}~\fFunc{\tIVX\notin fv (e)}
+\end{align*}
+
+We extend the value logical relation in the
+same way as \citet{DBLP:journals/entcs/BiermanPR00}.
+\begin{align*}
+  \lrVal{n}{\fType{\tEmpty \vdash \IExp{T}}}
+  &= \set{ \fFunc{\IExp{(\tIVX = e)}}  \mid
+    \fc(\fFunc{e}) = \emptyset \land
+    \fFunc{{\tFixI{\tIVX}{e}}} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}
+    }
+\end{align*}
+A replicable thunk owns no channels, which is what the side condition
+$\fc(\fFunc{e}) = \emptyset$ records; exponentials are also admitted as
+return types of a thread, so we add the rule
+$\primitive \fType{T} \implies \primitive \fType{\IExp{T}}$
+to the ones of \cref{sec:syntacticTyping:typeSys}.
+
+For the additional cases of the fundamental theorem, we propose the
+following compositionality lemmas.
+
+\begin{lemma}[Compositionality: \ruleLabel{exp}, \rocq{sem_typed_bang}]
+  \label{lem:comp:exp}
+  If,
+  for every
+  $\fFunc{e'} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
+  $\fFunc{\tSub{e}{e'}{\tIVX}} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
+  then
+  $\fFunc{\IExp{(\tIVX = e)}} \in \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
+\end{lemma}
+\begin{proof}
+  It suffices to show $\fFunc{{\tFixI{\tIVX}{e}}} \in
+  \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
+  We proceed by induction on $n$.
+
+  Case $n=0$. $\fFunc{{\tFixI{\tIVX}{e}}} \in
+  \lrTerm{0}{\fType{\tEmpty \vdash \IExp{T}}}$ is immediate.
+
+  Case $n=n'+1$.
+  $\fFunc{{\tFixI{\tIVX}{e}}}
+  = \fFunc{\tLetI{\tIVX}{\IExp{(\tIVX = e)}}{e}}
+  \trans\beta \fFunc{\tSub{e}{\tFixI{\tIVX}{e}}{\tIVX}} \in
+  \lrTerm{n'}{\fType{\tEmpty \vdash \IExp{T}}}$ by the IH and
+  assumption. Hence, $\fFunc{{\tFixI{\tIVX}{e}}} \in
+  \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
+\end{proof}
+
+\begin{lemma}[Compositionality: \ruleLabel{let-exp}, \rocq{sem_typed_force}]
+  \label{lem:comp:let-exp}
+  If
+  (1) $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$ and,
+  (2) for every
+  $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
+  $\fFunc{\tSub{e'}{e''}{\tIVX}} \in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$,
+  then
+  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
+\end{lemma}
+\begin{proof}
+  The case $n=0$ is trivial.
+  If $n= n'+1$, then there are two cases.
+  \begin{itemize}
+  \item If $\irred \fFunc{e}$, then $\fFunc{e} \in
+    \lrVal{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$, which implies
+    $\fType{\Sigma_1} = \fType{\tEmpty}$ and $\fFunc{e} = \fFunc{\IExp{(\tIVY =
+        e'')}}$ and $\fFunc{{\tFixI{\tIVY}{e''}}} \in
+    \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$. Thus,
+    $\fFunc{\tLetI{\tIVX}{\IExp{(\tIVY = e'')}}{e'}} \trans{\beta}
+    \fFunc{\tSub{e'}{\tFixI{\tIVY}{e''}}{\tIVX}}$.
+    We conclude by applying assumption (2) and monotonicity.
+  \item If $\neg\irred \fFunc{e}$, then $\fFunc{e} \redu[\lambda]
+    \fFunc{e'''}$ and
+    \begin{enumerate}
+    \item if $\lambda = \beta$, then $\fFunc{e'''} \in
+      \lrTerm{n'}{\fType{\Sigma_1 \vdash \IExp{T}}}$; by monotonicity
+      and IH we conclude $\fFunc{\tLetI{\tIVX}{e'''}{e'}} \in
+      \lrTerm{n'}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$ and hence $\fFunc{\tLetI{\tIVX}{e}{e'}} \in
+      \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
+    \item if $\lambda = \lFork{c}{v}$, then $\fType{\Sigma_1} =
+      \fType{\Sigma_1', \Sigma_2'}$ with $\fFunc{v} \in
+      \lrVal{n}{\fType{\Sigma_1' \vdash \lFunc{S}{\tUnit}}}$ and
+      $\fFunc{e'''} \in \lrTerm{n'}{\fType{\Sigma_2',
+          \fFunc{c}:\dual{S} \vdash \IExp{T}}}$;
+      by monotonicity and IH we conclude $\fFunc{\tLetI{\tIVX}{e'''}{e'}} \in
+      \lrTerm{n'}{\fType{\Sigma_2', \fFunc{c}:\dual{S}, \Sigma_2
+          \vdash {U}}}$ and hence  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in
+      \lrTerm{n}{\fType{\Sigma_2', \fFunc{c}:\dual{S}, \Sigma_2
+          \vdash {U}}}$.
+    \item if $\lambda \in \{\lRecv{c}{v}, \lSend{c}{v}, \lTerm{c} \}$
+      --- similar.
+      \qedhere
+    \end{enumerate}
+  \end{itemize}
+\end{proof}
+
+
+% \subsection{obsolete}
+% \label{sec:obsolete}
+
+% To support linear recursion, we ntroduce a new constant $\fFunc{\tFixOp}$
+% representing the fixed-point operator. \Cref{fig:linearRecursion:termsProcs}
+% introduces the fixed-point operator and provides an explicit
+% unfolding step in the operational semantics.
+% Applying a recursive function $\fFunc{\tFix{\tLVA}{\tLVB}{e}}$ to an argument
+% $\fFunc{e'}$ triggers a $\beta$-reduction that replaces the expression
+% with $\fFunc{\tApp{(\tAbs{\tLVA}{\tAbs{\tLVB}{e}})}{\tApp{(\tFix{\tLVA}{\tLVB}{e})}{e'}}}$,
+% thereby unfolding the recursive definition. The typing signature of the
+% new fixed-point operator is defined in~\cref{fig:linearRecursion:logrel}.
+
+% \begin{figure}[t]
+%   New constant:
+%   \begin{align*}
+%     \fFunc{k} &::= \ldots \sepr \fFunc{\tFixOp}
+%     \\
+%     \fFunc{v} &::= \ldots \sepr \fFunc{\tFix{\tLVA}{\tLVB}{e}}
+%   \end{align*}
+%   New labeled transition:
+%   \begin{mathpar}
+%     \begin{bussproof}[T-Act-Rec]
+%       \bussAx{\fFunc{\tApp{(\tFix{\tLVA}{\tLVB}{e})}{e'}} \trans{\beta} \fFunc{\tApp{(\tAbs{\tLVA}{\tAbs{\tLVB}{e}})}{\tApp{(\tFix{\tLVA}{\tLVB}{e})}{e'}}}}
+%     \end{bussproof}
+%   \end{mathpar}
+%   \caption{Extension of process language (\cref{fig:terms,fig:procs}) with linear recursion and
+%   a fixed-point operator}
+%   \label{fig:linearRecursion:termsProcs}
+% \end{figure}
+
+
+% \begin{figure}[t]
+%   Typing signatures for new constants:
+%   \begin{align*}
+%     \fFunc{\tFixOp} & \fType{{}:\lFunc{(\lFunc{T}{U})}{\lFunc{T}{U}}}
+%   \end{align*}
+%   \caption{Extension of logical relation (\cref{fig:logrel}) with a fixed-point operator}
+%   \label{fig:linearRecursion:logrel}
+% \end{figure}
+
+% \begin{lemma}[Compositionality: \ruleLabel{fix}]
+%   \label{lem:comp:fix}
+%   If,
+%   for every
+%   $\fFunc{f} \in \lrTerm{n}{\fType{\Sigma' \vdash \lFunc{T}{U}}}$ and
+%   $\fFunc{v} \in \lrVal{n}{\fType{\Sigma'' \vdash T}}$,
+%   $\fFunc{\tSub{\tSub{e}{f}{\tLVA}}{v}{\tLVB}} \in \lrTerm{n}{\fType{\Sigma, \Sigma', \Sigma'' \vdash U}}$,
+%   then
+%   $\fFunc{\tFix{\tLVA}{\tLVB}{e}} \in \lrVal{n}{\fType{\Sigma \vdash \lFunc{T}{U}}}$.
+% \end{lemma}
+
+% \Cref{fig:linearRecursion:typeSys} presents the typing rule for the
+% fixed-point operator.
+
+% \begin{figure}[t]
+%   Typing rules for terms $\fType{\Sigma ; \Delta \vdash \fFunc{e} : T}$:
+%   \begin{mathpar}
+%     \begin{bussproof}[E-Fix]
+%       \bussAs{\fType{\Sigma ; \Delta , \fFunc{\tLVA}:\lFunc{T}{U}, \fFunc{\tLVB}:T \vdash \fFunc{e} : U}}
+%       \bussU{\fType{\Sigma ; \Delta \vdash \fFunc{\tFix{\tLVA}{\tLVB}{e}} : \lFunc{T}{U}}}
+%     \end{bussproof}
+%   \end{mathpar}
+%   \caption{Extension of the type system with the fixed-point operator}
+%   \label{fig:linearRecursion:typeSys}
+% \end{figure}
+
+\subsection{Recursive Types}
+\label{sec:extens-recurs-ii}
+
+In the presence of recursive functions, it makes sense to extend
+session types to be recursive, too. Specifically, we adopt the traditional approach of
+equi-recursive session types, where a recursive type is always equal to its unfolding.
+\begin{align*}
+  \fType{S} &::= \dots \sepr \fType{\mu\alpha.S} \sepr \fType{\alpha}
+  & \fType{\mu\alpha.S} &= \fType{\tSub{S}{\mu\alpha.S}{\alpha}}
+\end{align*}
+As equi-recursive types have contractive definitions
+(\rocq{contractive_ty}), we can always
+determine the top-level constructor of a type in finite time
+(\rocq{unfoldS}, \rocq{unfoldS_head}). Hence,
+all our prior definitions and proofs carry over without change.
+
+\subsection{Replication}
+\label{sec:extens-repl}
+
+\begin{figure}[tp]
+  New values, terms, evaluation contexts
+  \begin{align*}
+    \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{e}}
+    & \text{intuitionistic variable, non-recursive thunk}\\
+    \fFunc{e} &::= \dots \sepr \fFunc{\tLetI{\tIVX}{e}{e}} & \text{thunk elimination}\\
+    \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tLetI{\tIVX}{\fCtx{E}}{e}}
+  \end{align*}
+  New labeled transition:
+  \begin{mathpar}
+    \begin{bussproof}[T-Act-Exp]
+      \bussAx{\fFunc{\tLetI{\tIVX}{\IExp{e}}{e'}} \trans{\beta} \fFunc{\tSub{e'}{e}{\tIVX}}}
+    \end{bussproof}
+  \end{mathpar}
+  New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
+  \begin{mathpar}
+    \begin{bussproof}[E-Exp]
+      \bussAs{\fType{\tEmpty ; \Gamma ; \tEmpty \vdash \fFunc{e} : T}}
+      \bussU{\fType{\tEmpty  ; \Gamma ; \tEmpty \vdash \fFunc{\IExp{e}} : \IExp{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[E-Let-Exp]
+      \bussAs{\fType{\Sigma_1 ; \Gamma ; \Delta_1 \vdash \fFunc{e_1} : \IExp{T}}}
+      \bussAs{\fType{\Sigma_2 ; \Gamma, \fFunc{\tIVX}:T ; \Delta_2 \vdash \fFunc{e_2} :U}}
+      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Gamma ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLetI{\tIVX}{e_1}{e_2}} : U}}
+    \end{bussproof}
+  \end{mathpar}
+
+  \caption{Extensions to the term language and typing with
+    (non-recursive) exponentials.}
+  \label{fig:replication-with-exponentials}
+\end{figure}
+
+
+\citet{conf/icfp/Wadler12,DBLP:journals/jfp/Wadler14} introduces CP, a
+process calculus based on classical linear logic,
+and a variant of GV, which is closely related to our calculus.
+Although CP includes replicative types along with weakening and
+contraction, they are omitted from GV with the statement that this
+``extension appears straightforward''.
+\citet{conf/esop/LindleyM15} discuss the exponential modality and
+replication as an extension and relate it to CP's treatment of
+replicative types by giving translations between CP and GV.
+
+
+In \cref{fig:replication-with-exponentials} we sketch an
+approach to encode replicated sessions, different from the translation
+given by \citet{conf/esop/LindleyM15}, for which
+the standard, non-recursive exponential is already
+sufficient.\footnote{Alternatively, we can rely on the recursive
+  exponential from \cref{sec:recursion}, but these extensions are
+  independent of one another.}
+We extend the value logical relation.
+\begin{align*}
+  \lrVal{n}{\fType{\tEmpty \vdash \IExp{T}}}
+  &= \set{ \fFunc{\IExp{e}}  \mid
+    \fFunc{e} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}
+    }
+\end{align*}
+
+We do not require new constants for encoding replication. Instead, we
+encode an unrestricted session carrying type $\fType{S}$ as a function
+of type $\fType{[S]} := \fType{\lUnres{(\lFunc{\tUnit}{S})}}$ and
+treat the new operators as macros as follows.
+\begin{align*}
+  \fFunc{repl} & \fType{{}:{\lFunc{\lUnres{(\lFunc{S}{\tUnit})}}{[{\dual{S}}]}}}
+  &
+    \fFunc{req} & \fType{{}:{\lFunc{[S]}{S}}} \\
+  \fFunc{repl} & := \fFunc{{\tAbs{\tLVA}{\tLetI{\tIVX}{\tLVA}{\IExp{(\tAbs{\_}{\tApp{\tFork}{\tIVX}})}}}}}
+  &
+    \fFunc{req} & := \fFunc{{\tAbs{\tLVA}{\tLetI{\tIVX}{\tLVA}{\tApp{\tIVX}{\tUnit}}}}}
+\end{align*}
+
+\begin{lemma}[Compositionality: \ruleLabel{exp}, \rocq{sem_typed_bang}]
+  \label{lem:comp:exp-nr}
+  If
+  $\fFunc{e} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
+  then
+  $\fFunc{\IExp{e}} \in \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
+\end{lemma}
+\begin{proof}
+  Immediate.
+\end{proof}
+
+\begin{lemma}[Compositionality: \ruleLabel{let-exp}, \rocq{sem_typed_force}]
+  \label{lem:comp:let-exp-nr}
+  If
+  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$ and,
+  for every
+  $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
+  $\fFunc{\tSub{e'}{e''}{\tIVX}} \in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$,
+  then
+  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
+\end{lemma}
+\begin{proof}[Sketch of proof]
+  If $\fFunc{e}$ is irreducible, it must have the form $\fFunc{e} =
+  \fFunc{\IExp{e''}}$ with $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$. In this case, $\fFunc{\tLetI{\tIVX}{e}{e'}}$
+  reduces to $\fFunc{\tSub{e'}{e''}{\tIVX}}$, which is by assumption
+  $\in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$, hence the claim holds.
+
+  If $n>0$ and $\fFunc{e}$ reduces, then
+  $\fFunc{\tLetI{\tIVX}{e}{e'}}$ reduces in the same way.
+\end{proof}
+
+\subsection{The Link Operator}
+\label{sec:extens-link-oper}
+
+\begin{figure}[tp]
+  New constant, session label
+  \begin{align*}
+    \fFunc{k} &::= \dots \sepr \fFunc{\tLink}
+    & \text{forwarding operator}
+    \\
+    \sigma &::= \dots \sepr \lLink{c}{c}
+             &\text{forwarding session label}
+  \end{align*}
+  New labeled transitions \hfill \rocq{head_step} \; \rocq{proc_step}
+  \begin{mathpar}
+    \begin{bussproof}[T-Act-Link]
+      \bussAx{\fFunc{\tApp{\tLink}{\tPair{c}{d}}} \trans{\lLink{c}{d}} \fFunc{\tUnit}}
+    \end{bussproof}
+        \and
+    \begin{bussproof}[P-Act-Link]
+      \bussAs{\fFunc{e} \trans{\lLink{c}{d}} \fFunc{e'}}
+      \bussU{\fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e}})} \trans{\tau} \fProc{(C, \tSub{(E \uplus \mset{\fFunc{e'}})}{\fFunc{d}}{\fFunc{c}})}}
+    \end{bussproof}
+  \end{mathpar}
+  Subjects and escaping channels of the new label:
+  $ \fc(\lLink{c}{d}) = \set{\fFunc{c},\fFunc{d}} $, \quad
+  $ \sent(\lLink{c}{d}) = \emptyset $
+
+  New type-indexed family of constants: \hfill \rocq{konst_ty}\\
+  $ \fType{\fFunc{\tLink} : \lFunc{\tPair{S}{\dual{S}}}{\tUnit}} $
+
+  New case for the term logical relation \hfill \rocq{Edef}
+  \begin{enumerate}[start=6]
+  \item  $\lambda = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
+    \fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}$ and $\fFunc{e'} \in \lrTerm{n'}{\fType{\Sigma_1 \vdash T}}$.
+  \end{enumerate}
+
+  New case for the process logical relation \hfill \rocq{Pdef}
+  \begin{enumerate}[start=5]
+  \item  $\pi = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
+    \fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}$ and $\fProc{p'} \in \lrProc{n'}{\fType{\Sigma_1 \vdash T}}$.
+  \end{enumerate}
+
+  \caption{Extensions for forwarding (the link operator).}
+  \label{fig:link-operator}
+\end{figure}
+
+Session type systems based on the Curry-Howard correspondence for
+classical linear logic (e.g.,
+\cite{DBLP:journals/jfp/Wadler14,conf/esop/LindleyM15}) often include
+a forwarding operator. This operator (called $\tLink$ by
+\citet{conf/esop/LindleyM15}) takes two channel ends with dual
+session types and connects them. This way, all messages on one channel
+are forwarded to the other channel, in both directions.
+
+\Cref{fig:link-operator} shows how to extend $\OurLang$ with
+forwarding. We add a new operator $\fFunc{\tLink}$ and a forwarding label
+$\lLink{\fFunc{c}}{\fFunc{d}}$ to indicate the request to forward between sessions
+$\fFunc{c}$ and $\fFunc{d}$. As forwarding is symmetric the label
+carries a \emph{set} of two channels, i.e., their order does not matter.
+The two ends are \emph{not} required to be different: a self-forwarding
+$\fFunc{\tApp{\tLink}{\tPair{c}{c}}}$ is a redex like any other and
+emits the singleton label $\lLink{c}{c} = \set{\fFunc{c}}$.
+The label is generated by a term
+reduction. The corresponding process reduction requires that one of
+the channel ends involved in forwarding is local. In this case, one
+local channel ($\fFunc{c}$) is removed and the other channel is
+substituted for $\fFunc{c}$. If no local channel is involved in the
+label, the configuration as a whole takes a labeled reduction step
+(cf. \TirName{P-Act-Session} in \cref{fig:proc-semantics}).
+The new cases for the logical relations formalize the postconditition
+of the forwarder: the two connected channel ends vanish from the
+context as a consequence of the forwarding reduction.
+Distinctness of the two ends is imposed by the logical relation, and
+only there: a configuration offering a forwarding whose two ends
+coincide names a single channel, which no instance of the case above
+matches, so such a configuration is simply not related
+(\rocq{selflink_unrelated}).
+No typed term builds one either, since $\fFunc{\tLink}$ consumes a
+session type together with its dual and linearity forbids one channel
+supplying both (\rocq{selflink_untypable}).
+On a restricted channel the substitution $\tSub{\cdot}{\fFunc{c}}{\fFunc{c}}$
+is the identity, so \ruleLabel{P-Act-Link} degenerates to releasing the
+name --- which is what a self-forwarding means: the thread held both
+ends, so the session is spent.
+
+Installing this extension, requires to update the proof of
+\ruleLabel{E-Abs}
+to cater for the new functional constant and
+all other rules to cater for the new labeled reduction.
