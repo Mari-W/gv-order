@@ -28,9 +28,10 @@
 
     Three threads on three channels is a cycle, so no P-Connect tree
     exists and the configuration is untypable.  It is deadlock free
-    because [ag0] sends before it receives: reverse those two actions
-    and the ring wedges (Dardha and Gay's Example 3, the deadlocked
-    twin of their Example 2).
+    because [ag0] sends before it receives — reverse those two actions
+    and the ring wedges, which is Dardha and Gay's Example 3 beside
+    their Example 2.  What a priority discipline tracks, and a
+    Curry-Howard type system does not, is exactly that ordering.
 
     The forwarding is what makes the topology collapse.  After [ag1]
     fires, its two channels are merged and it becomes ∗, leaving [ag0]
@@ -1345,110 +1346,4 @@ Proof.
     + unfold p11, st. f_equal. multiset_solver.
     + done.
     + intros e He. multiset_solver.
-Qed.
-
-(** * The deadlocked twin
-
-    Dardha and Gay pair their cyclic process with one that differs only
-    in the order of two actions (their Examples 2 and 3).  The pair is
-    the point: a cyclic topology is not by itself a reason to reject a
-    process, and it is not by itself a reason to accept one either.
-    What decides the matter is the order in which the two channels are
-    used, and that is exactly what a priority discipline tracks and a
-    Curry-Howard type system does not.
-
-    So swap [ag0]'s first two actions — receive before send — and keep
-    everything else, topology included.  The splice still fires; after
-    it, [ag0] is waiting on r2 for a token that [ag2] will only send
-    once it has received on the merged channel, which [ag0] will only
-    send once it has received on r2.  The ring wedges.
-
-    This is what makes the accepting result informative: the logical
-    relation is not admitting every cycle, it is admitting this one on
-    account of its ordering.  If it admitted the twin as well it would
-    be unsound, since the twin really does deadlock. *)
-
-Definition a0_bad : expr := LetU (recvclose r2) (sendclose r0).
-
-Definition sched_bad : proc :=
-  ({[r0; r1; r2]}, {[+ a0_bad +]} ⊎ {[+ ag1 +]} ⊎ {[+ ag2 +]}).
-
-(** The wedged state: both survivors are blocked on a receive, each
-    waiting for the message the other will only send afterwards. *)
-Definition stuck : proc := st {[r0; r2]} a0_bad EUnit (a2_recv r0).
-
-Lemma inv_a0_bad α e' :
-  tstep a0_bad α e' →
-  ∃ v, is_val v ∧ α = LSess (SRecv r2 v) ∧
-       e' = LetU (LetP (Pair v (Chan r2))
-                       (LetU (Var 1) (App EClos (Var 0)))) (sendclose r0).
-Proof.
-  intros H. apply inv_letu_nonunit in H as (e1' & Hs & ->); [|done].
-  apply inv_recvclose in Hs as (v & Hv & -> & ->). eauto.
-Qed.
-
-Lemma sched_bad_splice : proc_step sched_bad PTau stuck.
-Proof.
-  unfold sched_bad, stuck, st.
-  assert (({[r0; r1; r2]} : gset chan) ∖ {[r1]} = {[r0; r2]}) as <-
-    by (clear; set_solver).
-  replace ({[+ a0_bad +]} ⊎ {[+ ag1 +]} ⊎ {[+ ag2 +]})
-    with (({[+ a0_bad +]} ⊎ {[+ ag2 +]}) ⊎ {[+ ag1 +]} : gmultiset expr)
-    by multiset_solver.
-  assert (echsubst r1 r0 ({[+ a0_bad +]} ⊎ {[+ ag2 +]} ⊎ {[+ EUnit +]})
-          = {[+ a0_bad +]} ⊎ {[+ EUnit +]} ⊎ {[+ a2_recv r0 +]}) as <-.
-  { rewrite !echsubst_disj_union, !echsubst_singleton.
-    unfold a0_bad, ag2, a2_recv, sendclose, recvclose. simpl.
-    multiset_solver. }
-  apply (PStepLink _ _ _ r1 r0); [|clear; set_solver].
-  apply TStepHead. apply HeadLink.
-Qed.
-
-(** Nothing at all is enabled: both threads offer a receive, on
-    different channels, and both channels are restricted. *)
-Lemma stuck_pirred : pirred stuck.
-Proof.
-  intros π p' Hst. unfold stuck, st in Hst.
-  destruct π as [|σ].
-  - inversion Hst; subst;
-      [ split1 | split1 | split2 | split2 | split1 ];
-      repeat match goal with
-      | H : tstep EUnit _ _ |- _ => eapply val_no_tstep; [exact H|done]
-      | H : tstep a0_bad _ _ |- _ => apply inv_a0_bad in H as (? & ? & ? & ?)
-      | H : tstep (a2_recv _) _ _ |- _ =>
-          apply inv_a2_recv in H as (? & ? & ? & ?)
-      end; simplify_eq.
-  - (* an offer would need its subjects free, but both are restricted *)
-    apply proc_step_sess_inv in Hst as (E0 & e & e' & Heq & Hts & Hsub & _).
-    symmetry in Heq.
-    apply triple_inv in Heq as [[-> ->]|[[-> ->]|[-> ->]]].
-    + apply inv_a0_bad in Hts as (? & ? & Hl & ?).
-      injection Hl as Hl. rewrite Hl in Hsub.
-      simpl in Hsub. clear -Hsub. set_solver.
-    + eapply val_no_tstep; [exact Hts|done].
-    + apply inv_a2_recv in Hts as (? & ? & Hl & ?).
-      injection Hl as Hl. rewrite Hl in Hsub.
-      simpl in Hsub. clear -Hsub. set_solver.
-Qed.
-
-Lemma stuck_unsafe : ¬ safe stuck.
-Proof.
-  intros [(v & E & Heq & _ & _)|(p' & Hst)].
-  - unfold stuck, st in Heq.
-    assert (({[r0; r2]} : gset chan) = ∅) as HC by congruence.
-    clear -HC. set_solver.
-  - by eapply stuck_pirred.
-Qed.
-
-(** Same topology, one transposition, opposite outcome. *)
-Theorem sched_bad_not_deadlock_free : ¬ deadlock_free sched_bad.
-Proof.
-  intros Hdf. apply stuck_unsafe. apply Hdf.
-  eapply rtc_l; [apply sched_bad_splice|apply rtc_refl].
-Qed.
-
-(** …so the relation separates the two: it cannot contain the twin. *)
-Corollary sched_bad_not_sem_ptyped : ¬ sem_ptyped ∅ sched_bad TUnit.
-Proof.
-  intros H. apply sched_bad_not_deadlock_free. by apply adequacy in H.
 Qed.
