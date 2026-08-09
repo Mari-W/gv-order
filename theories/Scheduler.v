@@ -360,3 +360,112 @@ Proof.
     + done.
     + intros e He. multiset_solver.
 Qed.
+
+(** ** Inversion: what each thread can do
+
+    Every thread of every reachable configuration is one of the terms
+    below, and each has exactly one possible transition (a receive is
+    determined only up to the value it accepts).  These are what turn
+    the trace above into an exhaustive description of the reachable
+    set. *)
+
+Ltac kill_val :=
+  match goal with
+  | Hs : tstep ?v _ _ |- _ =>
+      exfalso; eapply val_no_tstep; [exact Hs|done]
+  end.
+
+Lemma inv_clos c α e' :
+  tstep (App EClos (Chan c)) α e' → α = LSess (SClos c) ∧ e' = EUnit.
+Proof.
+  intros H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end.
+    done.
+  - kill_val.
+  - kill_val.
+Qed.
+
+Lemma inv_sendapp c α e' :
+  tstep (App ESend (Pair EUnit (Chan c))) α e' →
+  α = LSess (SSend c EUnit) ∧ e' = Chan c.
+Proof.
+  intros H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end.
+    done.
+  - kill_val.
+  - kill_val.
+Qed.
+
+Lemma inv_sendclose c α e' :
+  tstep (sendclose c) α e' →
+  α = LSess (SSend c EUnit) ∧ e' = App EClos (Chan c).
+Proof.
+  intros H. unfold sendclose in H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh end.
+  - kill_val.
+  - match goal with Hs : tstep (App ESend _) _ _ |- _ =>
+      apply inv_sendapp in Hs as [-> ->] end. done.
+Qed.
+
+Lemma inv_recvapp c α e' :
+  tstep (App ERecv (Chan c)) α e' →
+  ∃ v, is_val v ∧ α = LSess (SRecv c v) ∧ e' = Pair v (Chan c).
+Proof.
+  intros H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end.
+    eauto.
+  - kill_val.
+  - kill_val.
+Qed.
+
+Lemma inv_letu_nonunit e1 e2 α e' :
+  e1 ≠ EUnit →
+  tstep (LetU e1 e2) α e' →
+  ∃ e1', tstep e1 α e1' ∧ e' = LetU e1' e2.
+Proof.
+  intros Hne H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end.
+    done.
+  - eauto.
+Qed.
+
+Lemma inv_letu_unit e2 α e' :
+  tstep (LetU EUnit e2) α e' → α = LBeta ∧ e' = e2.
+Proof.
+  intros H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end.
+    done.
+  - kill_val.
+Qed.
+
+Lemma inv_letp_pair u v e2 α e' :
+  is_val u → is_val v →
+  tstep (LetP (Pair u v) e2) α e' → α = LBeta ∧ e' = subst2 u v e2.
+Proof.
+  intros Hu Hv H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end.
+    done.
+  - match goal with Hs : tstep (Pair _ _) _ _ |- _ =>
+      exfalso; eapply val_no_tstep; [exact Hs|] end.
+    simpl. by rewrite (is_val_true _ Hu), (is_val_true _ Hv).
+Qed.
+
+Lemma inv_letp_recv c e2 α e' :
+  tstep (LetP (App ERecv (Chan c)) e2) α e' →
+  ∃ v, is_val v ∧ α = LSess (SRecv c v) ∧ e' = LetP (Pair v (Chan c)) e2.
+Proof.
+  intros H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh end.
+  - match goal with Hs : tstep (App ERecv _) _ _ |- _ =>
+      apply inv_recvapp in Hs as (v & Hv & -> & ->) end. eauto.
+Qed.
+
+Lemma inv_link α e' :
+  tstep ag1 α e' → α = LSess (SLink {[r1; r0]}) ∧ e' = EUnit.
+Proof.
+  intros H. unfold ag1 in H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end.
+    done.
+  - kill_val.
+  - kill_val.
+Qed.
