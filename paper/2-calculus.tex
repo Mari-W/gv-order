@@ -251,7 +251,7 @@ We write $\trans{}[*]$ for its transitive, reflexive closure.
   \label{fig:proc-semantics}
 \end{figure}
 
-\begin{example}[\rocq{sync_proc}, \rocq{sync_reduces}]
+\begin{example}[\rocq{sync_reduces}]
 \label{ex:sync}
   As a first example, consider the following sequence of reductions:
   \begin{align*}
@@ -462,7 +462,7 @@ which, by convention, is considered the value computed by the whole program.%
   the last process which is terminated.
 \end{example}
 
-\begin{example}[Deadlocked process, \rocq{blocked}, \rocq{blocked_not_deadlock_free}]
+\begin{example}[Deadlocked process, \rocq{blocked_not_deadlock_free}]
 \label{ex:deadlock}
   Consider the following process:
   \[
@@ -499,6 +499,9 @@ but does not follow the usual discipline on channels.
 
 \begin{example}[Load balancer]
 \label{ex:load-balancer}
+  \mw{claude: this is the one example in the paper with no counterpart
+    in the mechanization. Worth adding, or is it carried by the
+    scheduler of Sect. 4.5?}
   Consider an open process~$(\emptyset,\fFunc{\var{lb}})$
   which replies to requests on a channel~$\fFunc{c}$ shared with the environment,
   by delegating the two expected answers to two worker threads.

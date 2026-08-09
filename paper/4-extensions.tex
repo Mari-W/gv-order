@@ -6,7 +6,7 @@
 
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts
+  New values, terms, evaluation contexts \hfill \rocq{TSum} \; \rocq{Inj1} \; \rocq{Inj2} \; \rocq{Case}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tInj{1}{v}} \sepr \fFunc{\tInj{2}{v}}
     & \text{injections}\\
@@ -14,7 +14,7 @@
                                                                        \text{sum elimination}\\
     \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tInj{1}{\fCtx{E}}} \sepr \fFunc{\tInj{2}{\fCtx{E}}}
   \end{align*}
-  New labeled transitions
+  New labeled transitions \hfill \rocq{HeadCase1} \; \rocq{HeadCase2}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Case]
       \bussAx{\fFunc{\tCase{(\tInj{i}{v})}{\tLVA}{e_1}{\tLVA}{e_2}} \trans{\beta} \fFunc{\tSub{e_i}{v}{\tLVA}}}
@@ -24,7 +24,7 @@
     %   \bussAx{\fFunc{\tCase{\tInj{2}{v}}{\tLVA}{e}{\tLVA}{e}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
     % \end{bussproof}
   \end{mathpar}
-  New typing rules for terms
+  New typing rules for terms \hfill \rocq{typed_inj1} \; \rocq{typed_inj2} \; \rocq{typed_case}
   \begin{mathpar}
     \begin{bussproof}[E-Inj]
       \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T_i}}
@@ -47,7 +47,7 @@
     \fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_2}}
     }
   \end{align*}
-  New rule for primitive types \hfill \rocq{prim}
+  New rule for primitive types \hfill \rocq{prim_sum}
   \begin{mathpar}
     \begin{bussproof}
       \bussAs{\primitive \fType{T}}
@@ -155,20 +155,25 @@ yields a closed, deadlock-free process
 \label{sec:recursion}
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts
+  New values, terms, evaluation contexts \hfill \rocq{TBang} \; \rocq{EBang} \; \rocq{Force}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{(\tIVX = e)}}
     & \text{intuitionistic variable, recursively defined thunk}\\
     \fFunc{e} &::= \dots \sepr \fFunc{\tLetI{\tIVX}{e}{e}} & \text{thunk elimination}\\
     \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tLetI{\tIVX}{\fCtx{E}}{e}}
   \end{align*}
-  New labeled transition
+  New labeled transition \hfill \rocq{HeadForce}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Exp]
       \bussAx{\fFunc{\tLetI{\tIVX}{\IExp{(\tIVY = e)}}{e'}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
+  \hfill \rocq{typed_bang} \; \rocq{typed_force} \; \rocq{typed_wk}
+  \mw{claude: the mechanization has no separate $\Gamma$; it keeps one
+    environment in which unlimited entries admit contraction and
+    weakening (lsplit\_unl, lwk\_drop), and its eliminator is
+    force~$e$ rather than let $!x = e$ in $e'$. Reconcile?}
   \begin{mathpar}
     \begin{bussproof}[E-IVar]
       \bussAx{\fType{\tEmpty ; \Gamma, \fFunc{\tIVX}:T ; \tEmpty \vdash \fFunc{\tIVX} : T}}
@@ -392,20 +397,24 @@ all our prior definitions and proofs carry over without change.
 \label{sec:extens-repl}
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts
+  New values, terms, evaluation contexts \hfill \rocq{TBang} \; \rocq{EBang} \; \rocq{Force}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{e}}
     & \text{intuitionistic variable, non-recursive thunk}\\
     \fFunc{e} &::= \dots \sepr \fFunc{\tLetI{\tIVX}{e}{e}} & \text{thunk elimination}\\
     \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tLetI{\tIVX}{\fCtx{E}}{e}}
   \end{align*}
-  New labeled transition:
+  New labeled transition: \hfill \rocq{HeadForce}
+  \mw{claude: only the recursive exponential of Sect. 4.2 is
+    mechanized (as the footnote allows); there is no separate
+    non-recursive one. Keep both presentations?}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Exp]
       \bussAx{\fFunc{\tLetI{\tIVX}{\IExp{e}}{e'}} \trans{\beta} \fFunc{\tSub{e'}{e}{\tIVX}}}
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
+  \hfill \rocq{typed_bang} \; \rocq{typed_force}
   \begin{mathpar}
     \begin{bussproof}[E-Exp]
       \bussAs{\fType{\tEmpty ; \Gamma ; \tEmpty \vdash \fFunc{e} : T}}
@@ -499,7 +508,7 @@ treat the new operators as macros as follows.
 \label{sec:extens-link-oper}
 
 \begin{figure}[tp]
-  New constant, session label
+  New constant, session label \hfill \rocq{ELink} \; \rocq{SLink}
   \begin{align*}
     \fFunc{k} &::= \dots \sepr \fFunc{\tLink}
     & \text{forwarding operator}
@@ -507,7 +516,7 @@ treat the new operators as macros as follows.
     \sigma &::= \dots \sepr \lLink{c}{c}
              &\text{forwarding session label}
   \end{align*}
-  New labeled transitions \hfill \rocq{head_step} \; \rocq{proc_step}
+  New labeled transitions \hfill \rocq{HeadLink} \; \rocq{PStepLink}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Link]
       \bussAx{\fFunc{\tApp{\tLink}{\tPair{c}{d}}} \trans{\lLink{c}{d}} \fFunc{\tUnit}}
@@ -522,7 +531,7 @@ treat the new operators as macros as follows.
   $ \fc(\lLink{c}{d}) = \set{\fFunc{c},\fFunc{d}} $, \quad
   $ \sent(\lLink{c}{d}) = \emptyset $
 
-  New type-indexed family of constants: \hfill \rocq{konst_ty}\\
+  New type-indexed family of constants: \hfill \rocq{KTLink}\\
   $ \fType{\fFunc{\tLink} : \lFunc{\tPair{S}{\dual{S}}}{\tUnit}} $
 
   New case for the term logical relation \hfill \rocq{Edef}
@@ -536,6 +545,22 @@ treat the new operators as macros as follows.
   \item  $\pi = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
     \fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}$ and $\fProc{p'} \in \lrProc{n'}{\fType{\Sigma_1 \vdash T}}$.
   \end{enumerate}
+
+  The same two cases as obligation rules
+  (\cref{fig:logrel-rules-term,fig:logrel-rules-proc})
+  \begin{mathpar}
+    \begin{bussproof}[O-Link]
+      \bussAs{\fFunc{c} \ne \fFunc{d}}
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussB{\obl{\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}}{n}{\fFunc{e} \trans{\lLink{c}{d}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[Q-Link]
+      \bussAs{\fFunc{c} \ne \fFunc{d}}
+      \bussAs{\fProc{p'} \in \lrProc{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussB{\obl{\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}}{n}{\fProc{p} \trans{\lLink{c}{d}} \fProc{p'} : \fType{T}}}
+    \end{bussproof}
+  \end{mathpar}
 
   \caption{Extensions for forwarding (the link operator).}
   \label{fig:link-operator}
@@ -580,6 +605,11 @@ is the identity, so \ruleLabel{P-Act-Link} degenerates to releasing the
 name --- which is what a self-forwarding means: the thread held both
 ends, so the session is spent.
 
+\mw{claude: the mechanization carries a worked example for this
+  section that the paper does not have --- Milner's cyclic scheduler
+  with one agent replaced by a forwarder (Scheduler.v), closed,
+  deadlock free, and untypable in Curry-Howard systems (it is
+  Example~1 of Dardha and Gay). Add it as a subsection?}
 Installing this extension, requires to update the proof of
 \ruleLabel{E-Abs}
 to cater for the new functional constant and

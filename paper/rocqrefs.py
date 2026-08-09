@@ -28,6 +28,11 @@ DECL = re.compile(
     r'^\s*(?:Lemma|Theorem|Corollary|Definition|Example|Inductive|Fixpoint|'
     r'Instance|Record|Notation)\s+([A-Za-z_][A-Za-z0-9_\']*)')
 
+# A constructor of an inductive, so that a paper *rule* can cite the
+# rule rather than the whole relation (T-Act-Link -> HeadLink).  Only
+# recognized inside an Inductive block; see [declarations].
+CTOR = re.compile(r'^\s+\|\s*([A-Za-z_][A-Za-z0-9_\']*)')
+
 USE = re.compile(r'\\rocq(?:as)?\{[^}]*\}?\{?([A-Za-z_][A-Za-z0-9_\']*)\}?')
 USE_PLAIN = re.compile(r'\\rocq\{([^}]*)\}')
 USE_AS = re.compile(r'\\rocqas\{[^}]*\}\{([^}]*)\}')
@@ -56,14 +61,25 @@ def permalink_base():
 
 
 def declarations():
-    """name -> (path relative to root, module name, 1-based line)"""
+    """name -> (path relative to root, module name, 1-based line)
+
+    Top-level declarations, plus the constructors of every Inductive.
+    Constructors are indented and start with '|'; a non-indented line
+    ends the block, except for the 'with ...' of a mutual definition.
+    """
     out = {}
     for path in sorted(glob.glob(os.path.join(ROOT, 'theories', '*.v'))):
         rel = os.path.relpath(path, ROOT)
         base = os.path.splitext(os.path.basename(path))[0]
+        in_inductive = False
         with open(path, encoding='utf-8') as f:
             for i, line in enumerate(f, start=1):
-                m = DECL.match(line)
+                if line.strip() and not line[0].isspace():
+                    if line.startswith('Inductive '):
+                        in_inductive = True
+                    elif not line.startswith('with '):
+                        in_inductive = False
+                m = DECL.match(line) or (in_inductive and CTOR.match(line))
                 if m and m.group(1) not in out:
                     out[m.group(1)] = (rel, base, i)
     return out

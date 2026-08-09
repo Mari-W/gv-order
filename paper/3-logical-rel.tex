@@ -155,6 +155,179 @@ to the ones for terms.
 \end{figure}
 
 
+The same relations read more directly as inference rules, which is also
+how they are mechanized.
+\Cref{fig:logrel-rules-term,fig:logrel-rules-proc} give that
+presentation.
+The step index is inductive: \ruleLabel{E-Zero} and \ruleLabel{P-Zero}
+are the base case, and every premise of \ruleLabel{E-Step} and
+\ruleLabel{P-Step} mentions a relation either at a strictly smaller
+index or --- in the irreducible premise --- at the same index but on a
+value, where the only recursive use (\ruleLabel{V-Abs}) again drops the
+index.
+The obligations a transition has to discharge are factored into an
+auxiliary judgment
+$\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}$,
+read ``this transition is accounted for at $\fType{\Sigma \vdash T}$,
+with continuations at index~$n$''.
+Its rules are directed by the label, one per label shape, so the
+judgment is a definition by cases in rule clothing.
+A transition whose side condition fails carries no obligation at all.
+
+\begin{figure}[tp]
+  \textbf{Values} \rocq{Vdef}
+  \begin{mathpar}
+    \begin{bussproof}[V-Unit]
+      \bussAx{\fFunc{\tUnit} \in \lrVal{n}{\fType{\tEmpty \vdash \tUnit}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[V-Chan]
+      \bussAx{\fFunc{c} \in \lrVal{n}{\fType{\fFunc{c}:S \vdash S}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[V-Const]
+      \bussAs{\fType{\fFunc{k} : \lFunc{T}{U}}}
+      \bussU{\fFunc{k} \in \lrVal{n}{\fType{\tEmpty \vdash \lFunc{T}{U}}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[V-Pair]
+      \bussAs{\fFunc{v_1} \in \lrVal{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussAs{\fFunc{v_2} \in \lrVal{n}{\fType{\Sigma_2 \vdash U}}}
+      \bussB{\fFunc{\tPair{v_1}{v_2}} \in \lrVal{n}{\fType{\Sigma_1, \Sigma_2 \vdash \lPair{T}{U}}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[V-Abs]
+      \bussAs{\fc(\fFunc{e}) = \dom(\fType{\Sigma})}
+      \bussAs{\forall j<n , \fType{\Sigma'} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma' \vdash T}}\st
+              \fFunc{\tSub{e}{v}{\tLVA}} \in \lrTerm{j}{\fType{\Sigma, \Sigma' \vdash U}}}
+      \bussB{\fFunc{\tAbs{\tLVA}{e}} \in \lrVal{n}{\fType{\Sigma \vdash \lFunc{T}{U}}}}
+    \end{bussproof}
+  \end{mathpar}
+  \textbf{Terms} \rocq{Edef}
+  \begin{mathpar}
+    \begin{bussproof}[E-Zero]
+      \bussAx{\fFunc{e} \in \lrTerm{0}{\fType{\Sigma \vdash T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[E-Step]
+      \bussAs{\irred \fFunc{e} \implies \fFunc{e} \in \lrVal{n+1}{\fType{\Sigma \vdash T}}}
+      \bussAs{\forall \lambda, \fFunc{e'}\st \fFunc{e} \trans{\lambda} \fFunc{e'}
+              \implies \obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}}
+      \bussB{\fFunc{e} \in \lrTerm{n+1}{\fType{\Sigma \vdash T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \textbf{Obligations of a term transition}
+  $\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}$
+  \begin{mathpar}
+    \begin{bussproof}[O-Beta]
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma \vdash T}}}
+      \bussU{\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\beta} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Close]
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sTerm}}{n}{\fFunc{e} \trans{\lTerm{c}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Fork]
+      \bussAs{\fFunc{c} \not\in \dom(\fType{\Sigma_1,\Sigma_2})}
+      \bussAs{\fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_1 \vdash \lFunc{S}{\tUnit}}}}
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash T}}}
+      \bussT{\obl{\fType{\Sigma_1, \Sigma_2}}{n}{\fFunc{e} \trans{\lFork{c}{v}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Send]
+      \bussAs{\fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_2 \vdash U}}}
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1, \fFunc{c}:S \vdash T}}}
+      \bussB{\obl{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:\sSend{U}{S}}}{n}{\fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Recv]
+      \bussAs{\forall j \le n , \fType{\Sigma_2} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash U}}\st
+              \fFunc{e'} \in \lrTerm{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}}{n}{\fFunc{e} \trans{\lRecv{c}{v}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \caption{The value and term logical relations of \cref{fig:logrel},
+    as inference rules.}
+  \label{fig:logrel-rules-term}
+\end{figure}
+
+\begin{figure}[tp]
+  \textbf{Processes} \rocq{Pdef}
+  \begin{mathpar}
+    \begin{bussproof}[P-Zero]
+      \bussAx{\fProc{p} \in \lrProc{0}{\fType{\Sigma \vdash T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[P-Step]
+      \bussAs{\irred \fProc{p} \implies
+              \fProc{p} = \fProc{(\emptyset, \mset{\fFunc{v}} \uplus E)} \land
+              \fFunc{v} \in \lrVal{n+1}{\fType{\Sigma \vdash T}} \land
+              \forall \fFunc{e} \in \fProc{E}\st \fFunc{e} = \fFunc{\tUnit}}
+      \bussAs{\forall \pi, \fProc{p'}\st \fProc{p} \trans{\pi} \fProc{p'}
+              \implies \obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\pi} \fProc{p'} : \fType{T}}}
+      \bussB{\fProc{p} \in \lrProc{n+1}{\fType{\Sigma \vdash T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \textbf{Obligations of a process transition}
+  $\obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\pi} \fProc{p'} : \fType{T}}$,
+  where $\fProc{p} = \fProc{(C,E)}$ and $\fProc{p'} = \fProc{(C',E')}$
+  \begin{mathpar}
+    \begin{bussproof}[Q-Tau]
+      \bussAs{\fProc{C'} \disjoint \dom(\fType{\Sigma})}
+      \bussAs{\fProc{p'} \in \lrProc{n}{\fType{\Sigma \vdash T}}}
+      \bussB{\obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\tau} \fProc{p'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[Q-Close]
+      \bussAs{\fProc{p'} \in \lrProc{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sTerm}}{n}{\fProc{p} \trans{\lTerm{c}} \fProc{p'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[Q-Recv]
+      \bussAs{\forall j \le n , \fType{\Sigma_2} \text{ with } \dom(\fType{\Sigma_2}) \disjoint \fProc{C} ,
+              \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash U}}\st
+              \fProc{p'} \in \lrProc{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}}{n}{\fProc{p} \trans{\lRecv{c}{v}} \fProc{p'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[Q-Send]
+      \bussAs{\begin{array}{@{}l@{}}
+        \dom(\fType{\Sigma_e}) = \fc(\fFunc{v}) \cap \fProc{C}
+        \quad
+        \dom(\fType{\Sigma_e}) \disjoint \dom(\fType{\Sigma_0,\Sigma_v,\Sigma_w})
+        \quad
+        \set{\fType{T_0},\fType{T_w}} = \set{\fType{T},\tUnit}
+        \\
+        \fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_v, \dual{\Sigma_e} \vdash U}}
+        \quad
+        \fProc{(C_0,E_0)} \in \lrProc{n}{\fType{\Sigma_0, \fFunc{c}:S \vdash T_0}}
+        \quad
+        \fProc{(C_w,E_w)} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}
+      \end{array}}
+      \bussU{\obl{\fType{\Sigma_0, \Sigma_v, \Sigma_w, \fFunc{c}:\sSend{U}{S}}}{n}
+              {\fProc{p} \trans{\lSend{c}{v}} \fProc{(C_0 \cupdot C_w, E_0 \uplus E_w)} : \fType{T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \textbf{Owner families} $\fProc{p} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ \rocq{Powners}
+  \begin{mathpar}
+    \begin{bussproof}[O-Nil]
+      \bussAx{\fProc{(\emptyset,\emptyset)} \in \lrOwn{n}{\fType{\tEmpty ; \tEmpty \vdash \tUnit}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Cons]
+      \bussAs{\fProc{(C_d,E_d)} \in \lrProc{n}{\fType{\Sigma_d, \fFunc{d}:S \vdash T_d}}}
+      \bussAs{\fProc{(C_r,E_r)} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma_r \vdash T_r}}}
+      \bussAs{\set{\fType{T_d},\fType{T_r}} = \set{\fType{T},\tUnit}}
+      \bussT{\fProc{(C_d \cupdot C_r, E_d \uplus E_r)} \in \lrOwn{n}{\fType{\Sigma_e, \fFunc{d}:S ; \Sigma_d, \Sigma_r \vdash T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \caption{The process logical relation of \cref{fig:logrel} and the
+    owner family of \cref{def:owners}, as inference rules.}
+  \label{fig:logrel-rules-proc}
+\end{figure}
+
 The third case of the process relation refers to an auxiliary
 \emph{owner family} relation, which distributes the escaped channels
 over the residual process one channel at a time.
@@ -299,7 +472,7 @@ We report here the ones for the process judgment,
 and give a proof sketch of \ruleLabel{P-Connect}
 as a representative example of the arguments involved.
 
-\begin{lemma}[Downward closure, \rocq{Vrel_down}, \rocq{Erel_down}, \rocq{Prel_down}]
+\begin{lemma}[Downward closure, \rocq{Erel_down}, \rocq{Prel_down}]
   \label{lem:lr-dwdcl}
   If $ \fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T}} $,
   then $ \fFunc{e} \in \lrTerm{m}{\fType{\Sigma \vdash T}} $
@@ -548,7 +721,7 @@ Finally, we establish the expressiveness of our logical relation by
 showing that the untypable-but-safe processes of \cref{sec:calculus}
 satisfy the semantic judgment.
 
-\begin{example}[Deadlock free cycle, \rocq{cycle_sem_ptyped}, \rocq{sync_cycle_deadlock_free}]
+\begin{example}[Deadlock free cycle, \rocq{sync_cycle_deadlock_free}]
   Consider the process $\fProc{\var{cycle}}$ of \cref{ex:cyclic},
   where we spelled out the only transition sequence $p_0 \redu^* p_4$.
   It is not hard to prove that
@@ -580,6 +753,7 @@ satisfy the semantic judgment.
 \end{example}
 
 \begin{example}[Load balancer]
+  \mw{claude: not mechanized, see the mark at \cref{ex:load-balancer}.}
   Consider the process $(\emptyset,\fFunc{\var{lb}})$
   of \cref{ex:load-balancer}.
   We can prove that

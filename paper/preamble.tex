@@ -182,6 +182,10 @@
 \NewDocumentCommand\lrOwn{mm}{\@lr{O}{#1}{#2}}
 \makeatother
 
+% Σ ⊩_n (transition) : T  --  "this transition discharges its
+% obligation at Σ ⊢ T, with continuations at index n".
+\NewDocumentCommand\obl{mmm}{{#1} \mathrel{\Vdash_{#2}} {#3}}
+
 \newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
 
 \newcommand{\ie}{i.e.,~} % comma

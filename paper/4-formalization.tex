@@ -2,68 +2,15 @@
 \section{Mechanization}
 \label{sec:mechanization}
 
-This section provides some insights into our Agda mechanization of the formal system.
-The current version of this mechanization encompasses most of the material
-from Sections~\ref{sec:calculus} and~\ref{sec:logicalRelation}.
-
-The term representation is intrinsically scope safe for variables. Conceptually, it is indexed by the number $n$ of free variables, which are represented by  de Bruijn indices of type $Fin~n$. In contrast, channel names are represented by strings and constraints ensure disjointness when constructing unions of sets of names.\footnote{This design decision is likely to be revised as it leads to problems when generating fresh channel names.}
-
-We represent substitutions in a similar way like Autosubst2 using
-the $\sigma$-calculus with first-class renamings \cite{DBLP:conf/cpp/StarkSK19}, but adapted to Agda so that
-simplification of substitutions is done automatically via rewriting.
-In consequence, the implementation effort for substitutions is fairly small as composition
-lemmas for substitution come for free.
-
-Mathematically, we represent a soup of processes by a set of channel names paired with a
-multiset of terms. These abstractions are not directly supported by Agda, so we chose to represent both components by lists and represent elements by element proofs for lists. This choice results in the proof obligation that all statements about processes must be invariant under permutation. For sets, we avoid repetition because the only operation on them is disjoint union, which comes with disjointness constraints.
-
-In the formalization of typing, we avoid actually splitting typing contexts. Instead,
-we enforce linear use of bindings by maintaining resource vectors, which correspond to bit vectors that indicate whether a binding is available.
-
-Besides the major definitions, lemmas, and theorems from Sections~\ref{sec:calculus} and~\ref{sec:logicalRelation} there are a couple of notable auxiliary lemmas in the code.
-Here is a non-exhaustive list.
-\begin{itemize}
-\item Monotonicity of the logical relation with respect to  the step index.
-\item Stability of the logical relation for processes under permutation in the set and multiset
-  representations (easy, but tedious to prove).
-\item Decidability of reducibility (easy, but tedious to prove). 
-\end{itemize}
-
-The bulk of the proofs concerns the compositionality results
-\cref{lem:comp:term}, \cref{lem:comp:independent},
-\cref{lem:comp:connect}, \cref{th:term-composit}, and
-\cref{th:proc-composit}. For most of the lemmas for terms it is
-sufficient to possible a simplified form of the result that elides
-quantification over steps and closing like stated in
-\cref{lem:comp:inj}. For abstraction and pair elimination, we have to
-prove the respective case of \cref{th:term-composit} directly using
-induction on the step count. 
-
-\begin{figure}[tp]
-%  \LRTypes
-%  \LRValue
-%  \LRExpr
-%  \StabilitySEnvPerm
-  \caption{Excerpts from the Agda code.}
-  \label{fig:agda-code}
-\end{figure}
-
-\Cref{fig:agda-code} contains the top-level definitions for the logical relation on terms (cf.\
-\cref{fig:logrel}). The functions $V$ and $E$ implement the value and expression relation,
-respectively. The Agda notation is fairly close to the mathematical notation. However, values and
-terms are different types and $\uparrow$ injects values in terms. The function $V'$ is a recursive
-function that implements the $\forall i\le n$ part of $V$'s definition for function types. There is
-a ternary relation $\Sigma\leftrightsquigarrow\Sigma_1{++}\Sigma_2$ that expresses the splitting of
-$\Sigma$. In the definition of $E$, the top-level with-construction branches on the test whether $e$
-is reducible. If there is a reduction step, it delegates the analysis of this step to function
-$\hookrightarrow\!E$ (not shown). Otherwise, the term must be a value. It is crucial that  the
-definition of $V$ does not pattern match on $\Sigma$ or $v$, but rather asserts its shape by equations on the
-right hand side. This style enables reduction of calls to $V$ as soon as the type argument is known.
-This discussion should make it clear that the embedding of the
-mathematical definitions into Agda is fairly direct. 
-
-The final three signatures in \cref{fig:agda-code} correspond to the stability lemmas for the value,
-term, and process logical relations under permutation of the channel environment. 
+\mw{claude: emptied. What stood here described the Agda prototype ---
+  intrinsically scope-safe terms over $Fin~n$, Autosubst2-style
+  substitutions, soups as lists with permutation invariance, resource
+  vectors instead of context splitting --- and none of it describes the
+  current artifact, which is a Rocq development on top of stdpp
+  (\texttt{gset}/\texttt{gmultiset}, so soups really are sets and
+  multisets, and contexts really are split). It is axiom free and
+  postulates nothing. Rewrite from scratch, or drop the section and
+  fold a paragraph into the introduction?}
 
 %%% Local Variables:
 %%% mode: latex
