@@ -469,3 +469,408 @@ Proof.
   - kill_val.
   - kill_val.
 Qed.
+
+(** *** The same, phrased for the named thread states *)
+
+Lemma inv_a0_send m α e' :
+  tstep (a0_send m) α e' → α = LSess (SSend m EUnit) ∧ e' = a0_clos m.
+Proof.
+  intros H. apply inv_letu_nonunit in H as (e1' & Hs & ->); [|done].
+  apply inv_sendclose in Hs as [-> ->]. done.
+Qed.
+
+Lemma inv_a0_clos m α e' :
+  tstep (a0_clos m) α e' → α = LSess (SClos m) ∧ e' = a0_beta.
+Proof.
+  intros H. apply inv_letu_nonunit in H as (e1' & Hs & ->); [|done].
+  apply inv_clos in Hs as [-> ->]. done.
+Qed.
+
+Lemma inv_a0_beta α e' :
+  tstep a0_beta α e' → α = LBeta ∧ e' = recvclose r2.
+Proof. apply inv_letu_unit. Qed.
+
+Lemma inv_recvclose c α e' :
+  tstep (recvclose c) α e' →
+  ∃ v, is_val v ∧ α = LSess (SRecv c v) ∧
+       e' = LetP (Pair v (Chan c)) (LetU (Var 1) (App EClos (Var 0))).
+Proof. apply inv_letp_recv. Qed.
+
+Lemma inv_a0_recvd α e' :
+  tstep a0_recvd α e' → α = LBeta ∧ e' = a0_unit.
+Proof.
+  intros H. apply inv_letp_pair in H as [-> ->]; [done|done|done].
+Qed.
+
+Lemma inv_a0_unit α e' :
+  tstep a0_unit α e' → α = LBeta ∧ e' = App EClos (Chan r2).
+Proof. apply inv_letu_unit. Qed.
+
+Lemma inv_a2_recv m α e' :
+  tstep (a2_recv m) α e' →
+  ∃ v, is_val v ∧ α = LSess (SRecv m v) ∧
+       e' = LetP (Pair v (Chan m))
+              (LetU (Var 1) (LetU (App EClos (Var 0)) (sendclose r2))).
+Proof. apply inv_letp_recv. Qed.
+
+Lemma inv_a2_pair m α e' :
+  tstep (a2_pair m) α e' → α = LBeta ∧ e' = a2_unit m.
+Proof.
+  intros H. apply inv_letp_pair in H as [-> ->]; [done|done|done].
+Qed.
+
+Lemma inv_a2_unit m α e' :
+  tstep (a2_unit m) α e' → α = LBeta ∧ e' = a2_clos m.
+Proof. apply inv_letu_unit. Qed.
+
+Lemma inv_a2_clos m α e' :
+  tstep (a2_clos m) α e' → α = LSess (SClos m) ∧ e' = a2_beta.
+Proof.
+  intros H. apply inv_letu_nonunit in H as (e1' & Hs & ->); [|done].
+  apply inv_clos in Hs as [-> ->]. done.
+Qed.
+
+Lemma inv_a2_beta α e' :
+  tstep a2_beta α e' → α = LBeta ∧ e' = sendclose r2.
+Proof. apply inv_letu_unit. Qed.
+
+(** *** Locating the acting thread in a three-thread soup *)
+
+Lemma pair_inv (E : gmultiset expr) e x y :
+  E ⊎ {[+ e +]} = {[+ x +]} ⊎ {[+ y +]} →
+  (e = x ∧ E = {[+ y +]}) ∨ (e = y ∧ E = {[+ x +]}).
+Proof.
+  intros Heq.
+  assert (e ∈ ({[+ x +]} ⊎ {[+ y +]} : gmultiset expr)) as He
+    by (rewrite <-Heq; multiset_solver).
+  apply gmultiset_elem_of_disj_union in He as [He|He];
+    apply gmultiset_elem_of_singleton in He; subst;
+    [left|right]; (split; [done|multiset_solver]).
+Qed.
+
+Lemma triple_inv (E : gmultiset expr) e x y z :
+  E ⊎ {[+ e +]} = {[+ x +]} ⊎ {[+ y +]} ⊎ {[+ z +]} →
+  (e = x ∧ E = {[+ y +]} ⊎ {[+ z +]})
+  ∨ (e = y ∧ E = {[+ x +]} ⊎ {[+ z +]})
+  ∨ (e = z ∧ E = {[+ x +]} ⊎ {[+ y +]}).
+Proof.
+  intros Heq.
+  assert (e ∈ ({[+ x +]} ⊎ {[+ y +]} ⊎ {[+ z +]} : gmultiset expr)) as He
+    by (rewrite <-Heq; multiset_solver).
+  apply gmultiset_elem_of_disj_union in He as [He|He];
+    [apply gmultiset_elem_of_disj_union in He as [He|He]|];
+    apply gmultiset_elem_of_singleton in He; subst;
+    [left|right; left|right; right]; (split; [done|multiset_solver]).
+Qed.
+
+Lemma triple_inv2 (E : gmultiset expr) e f x y z :
+  E ⊎ {[+ e +]} ⊎ {[+ f +]} = {[+ x +]} ⊎ {[+ y +]} ⊎ {[+ z +]} →
+  (e = x ∧ f = y ∧ E = {[+ z +]}) ∨ (e = x ∧ f = z ∧ E = {[+ y +]})
+  ∨ (e = y ∧ f = x ∧ E = {[+ z +]}) ∨ (e = y ∧ f = z ∧ E = {[+ x +]})
+  ∨ (e = z ∧ f = x ∧ E = {[+ y +]}) ∨ (e = z ∧ f = y ∧ E = {[+ x +]}).
+Proof.
+  intros Heq.
+  assert (E ⊎ {[+ e +]} = ({[+ x +]} ⊎ {[+ y +]} ⊎ {[+ z +]}) ∖ {[+ f +]})
+    as Heq' by multiset_solver.
+  assert (f ∈ ({[+ x +]} ⊎ {[+ y +]} ⊎ {[+ z +]} : gmultiset expr)) as Hf
+    by (rewrite <-Heq; multiset_solver).
+  apply gmultiset_elem_of_disj_union in Hf as [Hf|Hf];
+    [apply gmultiset_elem_of_disj_union in Hf as [Hf|Hf]|];
+    apply gmultiset_elem_of_singleton in Hf; subst;
+    [ assert (E ⊎ {[+ e +]} = {[+ y +]} ⊎ {[+ z +]}) as He by multiset_solver
+    | assert (E ⊎ {[+ e +]} = {[+ x +]} ⊎ {[+ z +]}) as He by multiset_solver
+    | assert (E ⊎ {[+ e +]} = {[+ x +]} ⊎ {[+ y +]}) as He by multiset_solver ];
+    (apply pair_inv in He as [[-> ->]|[-> ->]]).
+  - right; right; left. done.
+  - right; right; right; right; left. done.
+  - left. done.
+  - right; right; right; right; right. done.
+  - right; left. done.
+  - right; right; right; left. done.
+Qed.
+
+(** ** Closure of the reachable set
+
+    [inv_act] reads off what the acting thread did.  Every thread of
+    every reachable configuration is one of the named states, so after
+    it fires the transition label is concrete and [simplify_eq] kills
+    the rules that cannot have applied. *)
+
+Ltac inv_act :=
+  repeat match goal with
+  | H : tstep EUnit _ _ |- _ => exfalso; eapply val_no_tstep; [exact H|done]
+  | H : tstep ag1 _ _ |- _ => apply inv_link in H as [? ?]
+  | H : tstep (a0_send _) _ _ |- _ => apply inv_a0_send in H as [? ?]
+  | H : tstep (a0_clos _) _ _ |- _ => apply inv_a0_clos in H as [? ?]
+  | H : tstep a0_beta _ _ |- _ => apply inv_a0_beta in H as [? ?]
+  | H : tstep a0_recvd _ _ |- _ => apply inv_a0_recvd in H as [? ?]
+  | H : tstep a0_unit _ _ |- _ => apply inv_a0_unit in H as [? ?]
+  | H : tstep (a2_recv _) _ _ |- _ => apply inv_a2_recv in H as (? & ? & ? & ?)
+  | H : tstep (a2_pair _) _ _ |- _ => apply inv_a2_pair in H as [? ?]
+  | H : tstep (a2_unit _) _ _ |- _ => apply inv_a2_unit in H as [? ?]
+  | H : tstep (a2_clos _) _ _ |- _ => apply inv_a2_clos in H as [? ?]
+  | H : tstep a2_beta _ _ |- _ => apply inv_a2_beta in H as [? ?]
+  | H : tstep (recvclose _) _ _ |- _ =>
+      apply inv_recvclose in H as (? & ? & ? & ?)
+  | H : tstep (sendclose _) _ _ |- _ => apply inv_sendclose in H as [? ?]
+  | H : tstep (App EClos (Chan _)) _ _ |- _ => apply inv_clos in H as [? ?]
+  end.
+
+Ltac split1 :=
+  match goal with
+  | Heq : _ ⊎ {[+ _ +]} = {[+ _ +]} ⊎ {[+ _ +]} ⊎ {[+ _ +]} |- _ =>
+      apply triple_inv in Heq as [[-> ->]|[[-> ->]|[-> ->]]]
+  end.
+
+Ltac split2 :=
+  match goal with
+  | Heq : _ ⊎ {[+ _ +]} ⊎ {[+ _ +]} = {[+ _ +]} ⊎ {[+ _ +]} ⊎ {[+ _ +]} |- _ =>
+      apply triple_inv2 in Heq
+        as [(->&->&->)|[(->&->&->)|[(->&->&->)|[(->&->&->)|[(->&->&->)|(->&->&->)]]]]]
+  end.
+
+(** A τ step of a three-thread soup is a β, a fork, a message, a close
+    or a forwarding; the shape of the equation says how many threads
+    took part. *)
+Ltac st_cases Hst :=
+  inversion Hst; subst;
+  [ split1 | split1 | split2 | split2 | split1 ];
+  inv_act; simplify_eq.
+
+(** *** One characterisation per reachable configuration *)
+
+Lemma inv_p2 m p' : preduction (p2 m) p' → p' = p3 m.
+Proof.
+  intros Hst. unfold preduction, p2, st in Hst. st_cases Hst.
+  all: unfold p3, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_p3 m p' : preduction (p3 m) p' → p' = p4 m.
+Proof.
+  intros Hst. unfold preduction, p3, st in Hst. st_cases Hst.
+  all: unfold p4, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_p6a p' : preduction p6a p' → p' = p7.
+Proof.
+  intros Hst. unfold preduction, p6a, st in Hst. st_cases Hst.
+  all: unfold p7, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_p6b p' : preduction p6b p' → p' = p7.
+Proof.
+  intros Hst. unfold preduction, p6b, st in Hst. st_cases Hst.
+  all: unfold p7, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_p8 p' : preduction p8 p' → p' = p9.
+Proof.
+  intros Hst. unfold preduction, p8, st in Hst. st_cases Hst.
+  all: unfold p9, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_p9 p' : preduction p9 p' → p' = p10.
+Proof.
+  intros Hst. unfold preduction, p9, st in Hst. st_cases Hst.
+  all: unfold p10, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_p11 p' : preduction p11 p' → False.
+Proof.
+  intros Hst. unfold preduction, p11, st in Hst. st_cases Hst.
+Qed.
+
+Lemma inv_p1 m p' : preduction (p1 m) p' → p' = p2 m.
+Proof.
+  intros Hst. unfold preduction, p1, st in Hst. st_cases Hst.
+  all: unfold p2, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_p7 p' : preduction p7 p' → p' = p8.
+Proof.
+  intros Hst. unfold preduction, p7, st in Hst. st_cases Hst.
+  all: unfold p8, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_p4 m p' : m ≠ r2 → preduction (p4 m) p' → p' = p5.
+Proof.
+  intros Hm Hst. unfold preduction, p4, st in Hst. st_cases Hst.
+  all: unfold p5, st; f_equal;
+       first [ clear -Hm; set_solver | multiset_solver ].
+Qed.
+
+Lemma inv_p10 p' : preduction p10 p' → p' = p11.
+Proof.
+  intros Hst. unfold preduction, p10, st in Hst. st_cases Hst.
+  all: unfold p11, st; f_equal;
+       first [ clear; set_solver | multiset_solver ].
+Qed.
+
+Lemma inv_p5 p' : preduction p5 p' → p' = p6a ∨ p' = p6b.
+Proof.
+  intros Hst. unfold preduction, p5, st in Hst. st_cases Hst.
+  all: first [ left; unfold p6a, st; f_equal; multiset_solver
+             | right; unfold p6b, st; f_equal; multiset_solver ].
+Qed.
+
+(** *** The splice itself
+
+    The forwarding label is unordered and both ends are restricted, so
+    P-Act-Link applies in two ways; the two results are the same
+    configuration with the roles of r0 and r1 exchanged. *)
+
+Lemma splice_eq_r0 :
+  echsubst r1 r0 ({[+ ag0 +]} ⊎ {[+ ag2 +]} ⊎ {[+ EUnit +]})
+  = {[+ a0_send r0 +]} ⊎ {[+ EUnit +]} ⊎ {[+ a2_recv r0 +]}.
+Proof.
+  rewrite !echsubst_disj_union, !echsubst_singleton.
+  unfold ag0, ag2, a0_send, a2_recv, sendclose, recvclose. simpl.
+  multiset_solver.
+Qed.
+
+Lemma splice_eq_r1 :
+  echsubst r0 r1 ({[+ ag0 +]} ⊎ {[+ ag2 +]} ⊎ {[+ EUnit +]})
+  = {[+ a0_send r1 +]} ⊎ {[+ EUnit +]} ⊎ {[+ a2_recv r1 +]}.
+Proof.
+  rewrite !echsubst_disj_union, !echsubst_singleton.
+  unfold ag0, ag2, a0_send, a2_recv, sendclose, recvclose. simpl.
+  multiset_solver.
+Qed.
+
+Ltac inv_act_sched :=
+  repeat match goal with
+  | H : tstep ag0 _ _ |- _ => apply (inv_a0_send r0) in H as [? ?]
+  | H : tstep ag1 _ _ |- _ => apply inv_link in H as [? ->]
+  | H : tstep ag2 _ _ |- _ => apply (inv_a2_recv r1) in H as (? & ? & ? & ?)
+  end.
+
+Lemma inv_sched p' : preduction sched p' → p' = p1 r0 ∨ p' = p1 r1.
+Proof.
+  intros Hst. unfold preduction, sched in Hst.
+  inversion Hst; subst.
+  - (* β: every thread's redex is a communication *)
+    exfalso. split1; inv_act_sched; simplify_eq.
+  - (* fork *)
+    exfalso. split1; inv_act_sched; simplify_eq.
+  - (* message: ag0 offers on r0 and ag2 on r1, never the same channel *)
+    exfalso. split2; inv_act_sched; simplify_eq.
+  - (* close: no thread is closing *)
+    exfalso. split2; inv_act_sched; simplify_eq.
+  - (* the splice *)
+    split1; inv_act_sched; [exfalso; simplify_eq| |exfalso; simplify_eq].
+    match goal with
+    | |- (_ ∖ {[?c]}, echsubst ?c ?d _) = _ ∨ _ =>
+        assert (({[c; d]} : gset chan) = {[r1; r0]}) as Hcd by congruence;
+        assert (c ≠ d) as Hne
+          by (intros Heq; rewrite Heq in Hcd;
+              assert (r1 ∈ ({[d; d]} : gset chan)) as Hin1
+                by (rewrite Hcd; clear; set_solver);
+              assert (r0 ∈ ({[d; d]} : gset chan)) as Hin2
+                by (rewrite Hcd; clear; set_solver);
+              clear -Hin1 Hin2; set_solver)
+    end.
+    destruct (upair_eq_inv _ _ _ _ Hcd Hne) as [[-> ->]|[-> ->]].
+    + left. unfold p1, st. rewrite splice_eq_r0.
+      f_equal; clear; set_solver.
+    + right. unfold p1, st. rewrite splice_eq_r1.
+      f_equal; clear; set_solver.
+Qed.
+
+(** ** Deadlock freedom
+
+    The reachable set.  The four states between the splice and the
+    first close are parametrised by the surviving name, since either
+    end of the forwarding may be retired. *)
+
+Definition schedI (p : proc) : Prop :=
+  p = sched
+  ∨ (∃ m, (m = r0 ∨ m = r1) ∧
+          (p = p1 m ∨ p = p2 m ∨ p = p3 m ∨ p = p4 m))
+  ∨ p = p5 ∨ p = p6a ∨ p = p6b ∨ p = p7
+  ∨ p = p8 ∨ p = p9 ∨ p = p10 ∨ p = p11.
+
+Ltac schedI_cases Hp :=
+  destruct Hp as [-> | [(m & Hm & [-> | [-> | [-> | ->]]])
+    | [-> | [-> | [-> | [-> | [-> | [-> | [-> | ->]]]]]]]]].
+
+(** Every thread mentions only restricted channels. *)
+Lemma schedI_echans p : schedI p → echans p.2 ⊆ p.1.
+Proof.
+  intros Hp. schedI_cases Hp.
+  all: unfold sched, p1, p2, p3, p4, p5, p6a, p6b, p7, p8, p9, p10, p11, st;
+       simpl; rewrite !echans_disj_union, !echans_singleton;
+       unfold ag0, ag1, ag2, a0_send, a0_clos, a0_beta, a0_recvd, a0_unit,
+              a2_recv, a2_pair, a2_unit, a2_clos, a2_beta,
+              sendclose, recvclose;
+       simpl; clear; set_solver.
+Qed.
+
+(** Only the final state is irreducible, and it has released both
+    channels and reduced every thread to ∗. *)
+Lemma schedI_irred p :
+  schedI p → pirred p → p.1 = ∅ ∧ p.2 ≠ ∅ ∧ (∀ e, e ∈ p.2 → e = EUnit).
+Proof.
+  intros Hp Hirr. schedI_cases Hp.
+  - exfalso. eapply (Hirr PTau). apply sched_splice_r0.
+  - exfalso. eapply (Hirr PTau). apply (step_p1 m).
+  - exfalso. eapply (Hirr PTau). apply (step_p2 m).
+  - exfalso. eapply (Hirr PTau). apply (step_p3 m).
+  - exfalso. eapply (Hirr PTau). apply (step_p4 m).
+    destruct Hm as [-> | ->]; done.
+  - exfalso. eapply (Hirr PTau). apply step_p5a.
+  - exfalso. eapply (Hirr PTau). apply step_p6a.
+  - exfalso. eapply (Hirr PTau). apply step_p6b.
+  - exfalso. eapply (Hirr PTau). apply step_p7.
+  - exfalso. eapply (Hirr PTau). apply step_p8.
+  - exfalso. eapply (Hirr PTau). apply step_p9.
+  - exfalso. eapply (Hirr PTau). apply step_p10.
+  - unfold p11, st. simpl. split_and!.
+    + done.
+    + multiset_solver.
+    + intros e He. multiset_solver.
+Qed.
+
+(** Membership in the reachable set, for the non-parametric states. *)
+Ltac inI := unfold schedI; repeat (first [ by left | right ]); try done.
+
+Ltac inIm m := unfold schedI; right; left; exists m; split;
+               [ first [ assumption | by left | by right ] | ];
+               repeat (first [ by left | right ]); try done.
+
+Lemma schedI_step p p' : schedI p → preduction p p' → schedI p'.
+Proof.
+  intros Hp Hst. schedI_cases Hp.
+  - apply inv_sched in Hst as [-> | ->].
+    + inIm r0.
+    + inIm r1.
+  - apply inv_p1 in Hst as ->. inIm m.
+  - apply inv_p2 in Hst as ->. inIm m.
+  - apply inv_p3 in Hst as ->. inIm m.
+  - apply inv_p4 in Hst as ->; [inI|destruct Hm as [-> | ->]; done].
+  - apply inv_p5 in Hst as [-> | ->]; inI.
+  - apply inv_p6a in Hst as ->. inI.
+  - apply inv_p6b in Hst as ->. inI.
+  - apply inv_p7 in Hst as ->. inI.
+  - apply inv_p8 in Hst as ->. inI.
+  - apply inv_p9 in Hst as ->. inI.
+  - apply inv_p10 in Hst as ->. inI.
+  - exfalso. by eapply inv_p11.
+Qed.
+
+Lemma schedI_closed : closed_invariant schedI.
+Proof.
+  intros p Hp. split_and!.
+  - by apply schedI_echans.
+  - by apply schedI_irred.
+  - intros p' Hst. by eapply schedI_step.
+Qed.
+
+(** The cyclic scheduler is deadlock free, though no P-Connect tree
+    types it. *)
+Theorem sched_deadlock_free : deadlock_free sched.
+Proof. eapply closed_deadlock_free; [exact schedI_closed|by left]. Qed.
+
+(** …and semantically well typed at the empty interface, so it can be
+    composed with syntactically typed code by the semantic P-Connect. *)
+Corollary sched_sem_ptyped : sem_ptyped ∅ sched TUnit.
+Proof. eapply sem_ptyped_closed; [exact schedI_closed|by left]. Qed.
