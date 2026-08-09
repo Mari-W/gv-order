@@ -10,7 +10,7 @@ From stdpp Require Import base strings gmap countable.
 Definition chan := string.
 
 (** Constants for the concurrency primitives. *)
-Inductive konst := KFork | KRecv | KSend | KClos.
+Inductive konst := KFork | KRecv | KSend | KClos | KLink.
 
 Inductive expr :=
   | Var (x : nat)
@@ -37,6 +37,7 @@ Notation EFork := (Konst KFork).
 Notation ERecv := (Konst KRecv).
 Notation ESend := (Konst KSend).
 Notation EClos := (Konst KClos).
+Notation ELink := (Konst KLink).
 
 (** ** Values *)
 
@@ -59,8 +60,12 @@ Proof. solve_decision. Defined.
 Global Instance konst_countable : Countable konst.
 Proof.
   apply (inj_countable'
-    (λ k, match k with KFork => 0 | KRecv => 1 | KSend => 2 | KClos => 3 end)
-    (λ n, match n with 0 => KFork | 1 => KRecv | 2 => KSend | _ => KClos end)).
+    (λ k, match k with
+          | KFork => 0 | KRecv => 1 | KSend => 2 | KClos => 3 | KLink => 4
+          end)
+    (λ n, match n with
+          | 0 => KFork | 1 => KRecv | 2 => KSend | 3 => KClos | _ => KLink
+          end)).
   by intros [].
 Qed.
 
@@ -511,4 +516,135 @@ Proof.
     apply (IHe (up γ) D). eapply allfv_mono; [|done]. intros [|x]; simpl.
     + intros _. set_solver.
     + intros Hc. unfold compose. by rewrite fchans_rename.
+Qed.
+
+(** ** Transposition of two channel names *)
+
+Definition cswap (a b c : chan) : chan :=
+  if decide (c = a) then b else if decide (c = b) then a else c.
+
+Lemma cswap_involutive a b c : cswap a b (cswap a b c) = c.
+Proof. unfold cswap. repeat case_decide; congruence. Qed.
+
+Lemma cswap_l a b : cswap a b a = b.
+Proof. unfold cswap. repeat case_decide; congruence. Qed.
+
+Lemma cswap_r a b : cswap a b b = a.
+Proof. unfold cswap. repeat case_decide; congruence. Qed.
+
+Lemma cswap_ne a b c : c ≠ a → c ≠ b → cswap a b c = c.
+Proof. unfold cswap. repeat case_decide; congruence. Qed.
+
+Lemma cswap_inj a b c c' : cswap a b c = cswap a b c' → c = c'.
+Proof. unfold cswap. repeat case_decide; congruence. Qed.
+
+Lemma cswap_comm a b c : cswap a b c = cswap b a c.
+Proof. unfold cswap. repeat case_decide; congruence. Qed.
+
+Fixpoint eswap (a b : chan) (e : expr) : expr :=
+  match e with
+  | Var x => Var x
+  | EUnit => EUnit
+  | Konst k => Konst k
+  | Chan c => Chan (cswap a b c)
+  | Lam e => Lam (eswap a b e)
+  | App e1 e2 => App (eswap a b e1) (eswap a b e2)
+  | Pair e1 e2 => Pair (eswap a b e1) (eswap a b e2)
+  | LetU e1 e2 => LetU (eswap a b e1) (eswap a b e2)
+  | LetP e1 e2 => LetP (eswap a b e1) (eswap a b e2)
+  | Inj1 e => Inj1 (eswap a b e)
+  | Inj2 e => Inj2 (eswap a b e)
+  | Case e e1 e2 => Case (eswap a b e) (eswap a b e1) (eswap a b e2)
+  | EBang e => EBang (eswap a b e)
+  | Force e => Force (eswap a b e)
+  end.
+
+Lemma eswap_involutive a b e : eswap a b (eswap a b e) = e.
+Proof.
+  induction e; simpl; f_equal; auto using cswap_involutive.
+Qed.
+
+Lemma eswap_comm a b e : eswap a b e = eswap b a e.
+Proof. induction e; simpl; f_equal; auto using cswap_comm. Qed.
+
+Lemma is_val_eswap a b e : is_val (eswap a b e) = is_val e.
+Proof. induction e; simpl; try done; by rewrite ?IHe1, ?IHe2. Qed.
+
+
+(** ** Channel substitution (§4.5)
+
+    e[d/c] — retarget every occurrence of channel c to d. Channels are
+    names, not indices, so this is a plain traversal with no binders to
+    cross; it is the term-level part of the forwarding step P-Act-Link. *)
+
+Fixpoint chsubst (c d : chan) (e : expr) : expr :=
+  match e with
+  | Var x => Var x
+  | EUnit => EUnit
+  | Konst k => Konst k
+  | Chan c' => Chan (if decide (c' = c) then d else c')
+  | Lam e => Lam (chsubst c d e)
+  | App e1 e2 => App (chsubst c d e1) (chsubst c d e2)
+  | Pair e1 e2 => Pair (chsubst c d e1) (chsubst c d e2)
+  | LetU e1 e2 => LetU (chsubst c d e1) (chsubst c d e2)
+  | LetP e1 e2 => LetP (chsubst c d e1) (chsubst c d e2)
+  | Inj1 e => Inj1 (chsubst c d e)
+  | Inj2 e => Inj2 (chsubst c d e)
+  | Case e e1 e2 => Case (chsubst c d e) (chsubst c d e1) (chsubst c d e2)
+  | EBang e => EBang (chsubst c d e)
+  | Force e => Force (chsubst c d e)
+  end.
+
+(** A universally true predicate holds of all free variables. *)
+Lemma allfv_forall (P : nat → Prop) e : (∀ x, P x) → allfv P e.
+Proof.
+  revert P. induction e; simpl; intros P HP; split_and?; auto.
+  all: first [apply IHe|apply IHe0|apply IHe1|apply IHe2|apply IHe3];
+    intros [|[|x]]; simpl; auto.
+Qed.
+
+(** Channel bounds for the β-substitutions. *)
+(** Substitution never erases channel occurrences. *)
+Lemma fchans_subst_sup e : ∀ γ, fchans e ⊆ fchans (subst γ e).
+Proof. induction e; simpl; intros γ; try set_solver. Qed.
+
+Lemma fchans_subst1_sub v e : fchans (subst1 v e) ⊆ fchans e ∪ fchans v.
+Proof.
+  apply fchans_subst. apply allfv_forall. intros [|x]; simpl; set_solver.
+Qed.
+
+Lemma fchans_subst2_sub u v e :
+  fchans (subst2 u v e) ⊆ fchans e ∪ (fchans u ∪ fchans v).
+Proof.
+  apply fchans_subst. apply allfv_forall.
+  intros [|[|x]]; simpl; set_solver.
+Qed.
+
+(** Transposing after the reverse substitution gives the substitution:
+    pointwise, both sides send b ↦ b?  No — both send a ↦ b and fix b
+    and everything else; see the case analysis in the proof. *)
+Lemma eswap_chsubst_flip a b e :
+  eswap a b (chsubst b a e) = chsubst a b e.
+Proof.
+  induction e; simpl; f_equal; auto.
+  unfold cswap. repeat case_decide; congruence.
+Qed.
+
+Lemma chsubst_id c d e : c ∉ fchans e → chsubst c d e = e.
+Proof.
+  induction e; simpl; intros Hc; f_equal; auto;
+    try (case_decide; [set_solver|done]);
+    match goal with
+    | IH : c ∉ fchans ?e0 → chsubst c d ?e0 = ?e0 |- chsubst c d ?e0 = ?e0 =>
+        apply IH; set_solver
+    end.
+Qed.
+
+Lemma is_val_chsubst c d e : is_val (chsubst c d e) = is_val e.
+Proof. induction e; simpl; try done; by rewrite ?IHe1, ?IHe2. Qed.
+
+Lemma fchans_chsubst c d e :
+  fchans (chsubst c d e) ⊆ (fchans e ∖ {[c]}) ∪ {[d]}.
+Proof.
+  induction e; simpl; try set_solver. case_decide; set_solver.
 Qed.

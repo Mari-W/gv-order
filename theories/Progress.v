@@ -26,16 +26,20 @@ Inductive action :=
   | AFork (v : expr)
   | ARecv (c : chan)
   | ASend (c : chan) (v : expr)
-  | AClos (c : chan).
+  | AClos (c : chan)
+  | ALink (c d : chan).
 
 Global Instance action_eq_dec : EqDecision action.
 Proof. solve_decision. Defined.
 
-(** The channel a communicating action acts on. *)
-Definition asubj (a : action) : option chan :=
+(** The channels a communicating action acts on — [None] for the
+    silent ones. A forwarding acts on both of its ends, which is why
+    this is set-valued (cf. [subjs]). *)
+Definition asubjs (a : action) : option (gset chan) :=
   match a with
   | ABeta | AFork _ => None
-  | ARecv c | ASend c _ | AClos c => Some c
+  | ARecv c | ASend c _ | AClos c => Some {[c]}
+  | ALink c d => Some {[c; d]}
   end.
 
 (** The redex of [e] under the evaluation contexts of Fig. 2. The
@@ -53,6 +57,7 @@ Fixpoint act (e : expr) : option action :=
           | Konst KRecv, Chan c => Some (ARecv c)
           | Konst KSend, Pair v (Chan c) => Some (ASend c v)
           | Konst KClos, Chan c => Some (AClos c)
+          | Konst KLink, Pair (Chan c) (Chan d) => Some (ALink c d)
           | _, _ => None
           end
         else act e2
@@ -81,6 +86,7 @@ Definition offers (a : action) (α : tlabel) : Prop :=
   | ARecv c, LSess (SRecv d w) => c = d ∧ is_val w
   | ASend c v, LSess (SSend d w) => c = d ∧ v = w
   | AClos c, LSess (SClos d) => c = d
+  | ALink c d, LSess (SLink cd) => cd = {[c; d]}
   | _, _ => False
   end.
 
@@ -116,6 +122,7 @@ Proof.
     + (* T-Act-Case-Inl *) by exists ABeta.
     + (* T-Act-Case-Inr *) by exists ABeta.
     + (* T-Act-Force *) by exists ABeta.
+    + (* T-Act-Link *) by exists (ALink c d).
   - destruct (is_val e1) eqn:Hb; [|done].
     exfalso. eapply val_no_tstep; [exact Hst|by rewrite Hb].
   - rewrite (is_val_true _ Hv). destruct (is_val e2) eqn:Hb; [|done].
@@ -158,24 +165,33 @@ Proof.
         exists (Chan c). apply TStepHead, HeadFork. by rewrite Hb2.
       * (* T-Act-Recv *)
         destruct e2 as [| | |c | | | | | | | | | | ]; try discriminate.
-        simplify_eq. destruct α as [|σ|]; try done.
-        destruct σ as [d w|d w|d]; try done.
+        simplify_eq. destruct α as [|σ| ]; try done.
+        destruct σ as [d w|d w|d|cd]; try done.
         destruct Hoff as [-> Hw]. exists (Pair w (Chan d)).
         by apply TStepHead, HeadRecv.
       * (* T-Act-Send *)
         destruct e2 as [| | | | | |v w | | | | | | | ]; try discriminate.
         destruct w as [| | |d | | | | | | | | | | ]; try discriminate.
-        simplify_eq. destruct α as [|σ|]; try done.
-        destruct σ as [d' w'|d' w'|d']; try done.
+        simplify_eq. destruct α as [|σ| ]; try done.
+        destruct σ as [d' w'|d' w'|d'|cd']; try done.
         destruct Hoff as [-> ->].
         pose proof (is_val_of_true _ Hb2) as Hv2. simpl in Hv2.
         apply andb_True in Hv2 as [Hv _].
         exists (Chan d'). by apply TStepHead, HeadSend.
       * (* T-Act-Close *)
         destruct e2 as [| | |c | | | | | | | | | | ]; try discriminate.
-        simplify_eq. destruct α as [|σ|]; try done.
-        destruct σ as [d w|d w|d]; try done. simpl in Hoff. simplify_eq.
+        simplify_eq. destruct α as [|σ| ]; try done.
+        destruct σ as [d w|d w|d|cd]; try done. simpl in Hoff. simplify_eq.
         exists EUnit. by apply TStepHead, HeadClos.
+      * (* T-Act-Link *)
+        destruct e2 as [| | | | | |v w | | | | | | | ]; try discriminate.
+        destruct v as [| | |c' | | | | | | | | | | ]; try discriminate.
+        destruct w as [| | |d' | | | | | | | | | | ]; try discriminate.
+        simplify_eq.
+        destruct α as [|σ| ]; try done.
+        destruct σ as [| | |cd'']; try done.
+        simpl in Hoff. subst cd''.
+        exists EUnit. by apply TStepHead, HeadLink.
     + (* T-Act-App *)
       simplify_eq. destruct α; try done.
       exists (subst1 e2 e0). apply TStepHead, HeadApp. by rewrite Hb2.
@@ -240,7 +256,7 @@ Qed.
 Lemma tstep_progress e : irred e ∨ ∃ α e', tstep e α e'.
 Proof.
   destruct (act e) as [a|] eqn:Ha; [right|left; by apply act_None_irred].
-  destruct a as [|v|c|c v|c].
+  destruct a as [|v|c|c v|c|c d].
   - destruct (act_offer _ _ LBeta Ha I) as [e' ?]. by exists LBeta, e'.
   - destruct (act_offer _ _ (LFork "" v) Ha eq_refl) as [e' ?].
     by exists (LFork "" v), e'.
@@ -252,6 +268,8 @@ Proof.
     by exists (LSess (SSend c v)), e'.
   - destruct (act_offer _ _ (LSess (SClos c)) Ha eq_refl) as [e' ?].
     by exists (LSess (SClos c)), e'.
+  - destruct (act_offer _ _ (LSess (SLink {[c; d]})) Ha eq_refl) as [e' ?].
+    by exists (LSess (SLink {[c; d]})), e'.
 Qed.
 
 (** ** Reading an action back off a label *)
@@ -271,17 +289,22 @@ Proof. destruct a; try done. by intros [-> _]. Qed.
 Lemma offers_clos a c : offers a (LSess (SClos c)) → a = AClos c.
 Proof. destruct a; try done. by intros ->. Qed.
 
-Lemma offers_asubj a σ : offers a (LSess σ) → asubj a = Some (subj σ).
+Lemma offers_link a cd :
+  offers a (LSess (SLink cd)) → ∃ c d, a = ALink c d ∧ cd = {[c; d]}.
+Proof. destruct a; try done. intros ->. eauto. Qed.
+
+Lemma offers_asubjs a σ : offers a (LSess σ) → asubjs a = Some (subjs σ).
 Proof. destruct a, σ; naive_solver. Qed.
 
-Lemma asubj_offers a c :
-  asubj a = Some c → ∃ σ, subj σ = c ∧ offers a (LSess σ).
+Lemma asubjs_offers a S :
+  asubjs a = Some S → ∃ σ, subjs σ = S ∧ offers a (LSess σ).
 Proof.
-  destruct a as [|v|d|d v|d]; simpl; intros Hs; try discriminate;
+  destruct a as [|v|d|d v|d|d d']; simpl; intros Hs; try discriminate;
     injection Hs as <-.
   - exists (SRecv d EUnit). by split.
   - exists (SSend d v). by split.
   - exists (SClos d). by split.
+  - exists (SLink {[d; d']}). by split.
 Qed.
 
 (** ** Searching a process for a transition
@@ -315,19 +338,26 @@ Defined.
 
 Global Instance act_fork_dec e : Decision (∃ v, act e = Some (AFork v)).
 Proof.
-  destruct (act e) as [[|v|c|c v|c]|] eqn:Ha;
+  destruct (act e) as [[|v|c|c v|c|c d]|] eqn:Ha;
     try (right; intros (? & ?); simplify_eq; done).
   left. by exists v.
 Defined.
 
+Global Instance act_link_dec e : Decision (∃ c d, act e = Some (ALink c d)).
+Proof.
+  destruct (act e) as [[|v|c|c v|c|c d]|] eqn:Ha;
+    try (right; intros (? & ? & ?); simplify_eq; done).
+  left. by exists c, d.
+Defined.
+
 Global Instance act_free_dec (C : gset chan) e :
-  Decision (∃ a c, act e = Some a ∧ asubj a = Some c ∧ c ∉ C).
+  Decision (∃ a S, act e = Some a ∧ asubjs a = Some S ∧ S ## C).
 Proof.
   destruct (act e) as [a|] eqn:Ha;
     [|right; intros (? & ? & ? & _); simplify_eq].
-  destruct (asubj a) as [c|] eqn:Hs;
+  destruct (asubjs a) as [S|] eqn:Hs;
     [|right; intros (? & ? & ? & ? & _); simplify_eq].
-  destruct (decide (c ∉ C)) as [Hc|Hc]; [left; by exists a, c|].
+  destruct (decide (S ## C)) as [Hc|Hc]; [left; by exists a, S|].
   right. intros (? & ? & ? & ? & ?); simplify_eq. done.
 Defined.
 
@@ -335,7 +365,7 @@ Global Instance act_msg_dec (C : gset chan) (E : gmultiset expr) e :
   Decision (∃ c v, act e = Some (ASend c v) ∧ c ∈ C
                    ∧ ∃ f, f ∈ E ∖ {[+ e +]} ∧ act f = Some (ARecv c)).
 Proof.
-  destruct (act e) as [[|v|d|d v|d]|] eqn:Ha;
+  destruct (act e) as [[|v|d|d v|d|d d']|] eqn:Ha;
     try (right; intros (? & ? & ? & _); simplify_eq; done).
   destruct (decide (d ∈ C)) as [Hd|Hd];
     [|right; intros (? & ? & ? & ? & _); simplify_eq; contradiction].
@@ -348,7 +378,7 @@ Global Instance act_clos_dec (C : gset chan) (E : gmultiset expr) e :
   Decision (∃ c, act e = Some (AClos c) ∧ c ∈ C
                  ∧ ∃ f, f ∈ E ∖ {[+ e +]} ∧ act f = Some (AClos c)).
 Proof.
-  destruct (act e) as [[|v|d|d v|d]|] eqn:Ha;
+  destruct (act e) as [[|v|d|d v|d|d d']|] eqn:Ha;
     try (right; intros (? & ? & _); simplify_eq; done).
   destruct (decide (d ∈ C)) as [Hd|Hd];
     [|right; intros (? & ? & ? & _); simplify_eq; contradiction].
@@ -390,11 +420,11 @@ Proof.
     exists PTau, (C ∪ {[c]}, E0 ⊎ {[+ e' +]} ⊎ {[+ App v (Chan c) +]}).
     apply PStepFork; [done|set_solver..]. }
   (* P-Act-Session: a communication whose subject is not restricted *)
-  destruct (decide (∃ e, e ∈ E ∧ ∃ a c,
-                      act e = Some a ∧ asubj a = Some c ∧ c ∉ C))
-    as [(e & He & a & c & Ha & Hs & Hc)|Hsess].
+  destruct (decide (∃ e, e ∈ E ∧ ∃ a S,
+                      act e = Some a ∧ asubjs a = Some S ∧ S ## C))
+    as [(e & He & a & S & Ha & Hs & Hc)|Hsess].
   { right. destruct (gmultiset_split1 _ _ He) as [E0 ->].
-    destruct (asubj_offers _ _ Hs) as (σ & Hσ & Hoff).
+    destruct (asubjs_offers _ _ Hs) as (σ & Hσ & Hoff).
     destruct (act_offer _ _ (LSess σ) Ha Hoff) as [e' Hst].
     exists (PSess σ), (C ∖ sentc σ, E0 ⊎ {[+ e' +]}).
     apply PStepSession; [done|by rewrite Hσ]. }
@@ -418,15 +448,37 @@ Proof.
     destruct (act_offer _ _ (LSess (SClos c)) Haf eq_refl) as [f' Hstf].
     exists PTau, (C ∖ {[c]}, E0 ⊎ {[+ e' +]} ⊎ {[+ f' +]}).
     by apply PStepClose. }
-  (* no rule of Fig. 3 applies *)
+  (* P-Act-Link: a forwarding redex whose offer was NOT enabled above
+     has an end in C, and that end is retired by the τ rule. A
+     forwarding with both ends free was already handled as an offer. *)
+  destruct (decide (∃ e, e ∈ E ∧ ∃ c d, act e = Some (ALink c d)))
+    as [(e & He & c & d & Ha)|Hlink].
+  { right.
+    assert (c ∈ C ∨ d ∈ C) as Hin.
+    { destruct (decide (c ∈ C)) as [|Hc]; [by left|].
+      destruct (decide (d ∈ C)) as [|Hd]; [by right|].
+      exfalso. apply Hsess.
+      exists e. split; [done|].
+      exists (ALink c d), {[c; d]}. split_and!; [done|done|].
+      clear -Hc Hd. set_solver. }
+    destruct (gmultiset_split1 _ _ He) as [E0 ->].
+    destruct (act_offer _ _ (LSess (SLink {[c; d]})) Ha eq_refl)
+      as [e' Hst].
+    destruct Hin as [Hc|Hd].
+    { exists PTau, (C ∖ {[c]}, echsubst c d (E0 ⊎ {[+ e' +]})).
+      by apply PStepLink. }
+    { rewrite upair_comm in Hst.
+      exists PTau, (C ∖ {[d]}, echsubst d c (E0 ⊎ {[+ e' +]})).
+      by apply PStepLink. } }
+  (* no rule of Fig. 3 / Fig. 10 applies *)
   left. intros π p' Hst. inversion Hst; simplify_eq.
-  - (* P-Act-Session *)
+  - (* P-Act-Session, forwarding offers included *)
     apply Hsess.
     match goal with H : tstep ?e (LSess ?σ) _ |- _ =>
       apply act_step in H as (a & Ha & Hoff);
-      exists e; split; [multiset_solver|]; exists a, (subj σ)
+      exists e; split; [multiset_solver|]; exists a, (subjs σ)
     end.
-    split_and!; [done|by apply offers_asubj|done].
+    split_and!; [done|by apply offers_asubjs|done].
   - (* P-Act-Beta *)
     apply Hbeta.
     match goal with H : tstep ?e LBeta _ |- _ =>
@@ -468,5 +520,12 @@ Proof.
       apply act_step in H as (b & Hbf & Hofff);
       apply offers_clos in Hofff as ->; exists f;
       split; [multiset_solver|done]
+    end.
+  - (* P-Act-Link *)
+    apply Hlink;
+    match goal with H : tstep ?e (LSess (SLink _)) _ |- _ =>
+      apply act_step in H as (a & Ha & Hoff);
+      apply offers_link in Hoff as (c' & d' & -> & _); exists e;
+      split; [multiset_solver|]; by eauto
     end.
 Qed.

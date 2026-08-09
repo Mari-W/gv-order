@@ -14,16 +14,45 @@ From LRGV Require Export Syntax.
 Inductive slabel :=
   | SRecv (c : chan) (v : expr)    (* c?v : receiving value v on c *)
   | SSend (c : chan) (v : expr)    (* c!v : sending value v on c *)
-  | SClos (c : chan).              (* c!  : closing c *)
+  | SClos (c : chan)               (* c!  : closing c *)
+  | SLink (cd : gset chan).        (* ↔{c,d} : request to forward the pair *)
 
-(** Term labels α ::= β | σ | (νc)v *)
+(** Term labels α ::= β | σ | (νc)v
+
+    The forwarding label (§4.5) is a session label like any other: it
+    is an offer the configuration makes on the channels it names, so
+    the same process rule (P-Act-Session) lifts it and the same
+    machinery applies. Its subject set has two elements rather than
+    one — which is why [subjs] is set-valued — and as in the paper the
+    pair is unordered. *)
 Inductive tlabel :=
   | LBeta
   | LSess (σ : slabel)
   | LFork (c : chan) (v : expr).   (* (νc)v : fork of thread v on new c *)
 
-Definition subj (σ : slabel) : chan :=
-  match σ with SRecv c _ | SSend c _ | SClos c => c end.
+(** The paper's two-element sets, and their symmetry. *)
+Lemma upair_comm (c d : chan) : ({[c; d]} : gset chan) = {[d; c]}.
+Proof. apply set_eq. set_solver. Qed.
+
+Lemma upair_eq_inv (a b c d : chan) :
+  ({[a; b]} : gset chan) = {[c; d]} → a ≠ b →
+  (a = c ∧ b = d) ∨ (a = d ∧ b = c).
+Proof.
+  intros H Hab.
+  assert (a ∈ ({[c; d]} : gset chan)) as Ha by (rewrite <-H; set_solver).
+  assert (b ∈ ({[c; d]} : gset chan)) as Hb by (rewrite <-H; set_solver).
+  assert (c ∈ ({[a; b]} : gset chan)) as Hc by (rewrite H; set_solver).
+  assert (d ∈ ({[a; b]} : gset chan)) as Hd by (rewrite H; set_solver).
+  set_solver.
+Qed.
+
+(** The subjects of a label: one channel for the point-to-point
+    actions, both ends for a forwarding offer. *)
+Definition subjs (σ : slabel) : gset chan :=
+  match σ with
+  | SRecv c _ | SSend c _ | SClos c => {[c]}
+  | SLink cd => cd
+  end.
 
 (** Channels escaping the local scope due to a communication effect:
     an output c!v leaks the channels occurring in the message v. *)
@@ -71,7 +100,23 @@ Inductive head_step : expr → tlabel → expr → Prop :=
          thunk substituted for its own bound occurrence: forcing
          unrolls one step of the recursion, so !e is Lily's fix
          (§4.2) and replicating it re-runs the suspended computation *)
-      head_step (Force (EBang e)) LBeta (subst1 (EBang e) e).
+      head_step (Force (EBang e)) LBeta (subst1 (EBang e) e)
+  | HeadLink c d :                                      (* T-Act-Link *)
+      (* the paper's ↔{c,d} carries a set of two channels; the order
+         does not matter — symmetry is in the process rules.  The ends
+         are NOT required to be distinct: a self-forwarding is a redex
+         like any other, and letting it step is what keeps it visible.
+         Were it stuck, a configuration could carry one silently and
+         no clause would ever examine it (commit 25c38d8,
+         [dead_related]) — and substitution creates exactly that
+         residue.  Stepping, it emits the singleton label {[c]}, which
+         the forwarding clause of the logical relation cannot satisfy
+         (it demands two DISTINCT ends with dual protocols), so such a
+         configuration is simply not related.  Typed terms never build
+         the redex: [link] consumes a session type and its dual, and
+         linearity forbids one channel supplying both. *)
+      head_step (App ELink (Pair (Chan c) (Chan d)))
+        (LSess (SLink {[c; d]})) EUnit.
 
 (** ** Context closure (T-Act-Ctx)
 
@@ -234,6 +279,18 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
 Definition frame_val (f : frame) : Prop :=
   match f with FAppR v1 | FPairR v1 => is_val v1 | _ => True end.
 
+(** The channels a frame contributes. *)
+Definition frame_chans (f : frame) : gset chan :=
+  match f with
+  | FAppL e | FAppR e | FPairL e | FPairR e | FLetU e | FLetP e => fchans e
+  | FCase e1 e2 => fchans e1 ∪ fchans e2
+  | FInj1 | FInj2 | FForce => ∅
+  end.
+
+Lemma fchans_fill_frame f e :
+  fchans (fill_frame f e) = frame_chans f ∪ fchans e.
+Proof. destruct f; simpl; set_solver. Qed.
+
 Lemma tstep_fill f e α e' :
   frame_val f → tstep e α e' →
   tstep (fill_frame f e) α (fill_frame f e').
@@ -290,6 +347,81 @@ Proof. induction 1; [by eapply head_step_label_val|done..]. Qed.
 Lemma tstep_send_val e c v e' :
   tstep e (LSess (SSend c v)) e' → is_val v.
 Proof. intros H. exact (tstep_label_val _ _ _ H). Qed.
+
+(** ** Channel footprint of a step
+
+    The channels a transition can introduce: a step's result mentions
+    at most the channels of the source plus those carried by the
+    label. This is the ambient invariant fc(E) ⊆ C ∪ dom Σ in motion,
+    which the composition lemmas thread explicitly (§4.5). *)
+Definition lchans (α : tlabel) : gset chan :=
+  match α with
+  | LBeta => ∅
+  | LSess (SRecv c w) => {[c]} ∪ fchans w
+  | LSess (SSend c _) => {[c]}
+  | LSess (SClos c) => {[c]}
+  | LSess (SLink cd) => cd
+  | LFork c v => {[c]} ∪ fchans v
+  end.
+
+Lemma head_step_fchans e α e' :
+  head_step e α e' → fchans e' ⊆ fchans e ∪ lchans α.
+Proof.
+  destruct 1; simpl;
+    try (etrans; [apply fchans_subst1_sub|]);
+    try (etrans; [apply fchans_subst2_sub|]);
+    set_solver.
+Qed.
+
+Lemma tstep_fchans e α e' :
+  tstep e α e' → fchans e' ⊆ fchans e ∪ lchans α.
+Proof.
+  induction 1; simpl; try set_solver.
+  by apply head_step_fchans.
+Qed.
+
+(** A forwarding label always carries a two-element set. *)
+(** A forwarding label carries a pair — possibly degenerate, when the
+    term names one channel twice; that case is what the relation
+    refutes rather than what the semantics forbids. *)
+Lemma tstep_link_shape e cd e' :
+  tstep e (LSess (SLink cd)) e' → ∃ c d, cd = {[c; d]}.
+Proof.
+  intros H. remember (LSess (SLink cd)) as α eqn:Hα.
+  induction H; subst; try (by apply IHtstep).
+  match goal with Hh : head_step _ _ _ |- _ =>
+    inversion Hh; simplify_eq; eauto end.
+Qed.
+
+(** Both ends named by a forwarding label are free in the term. *)
+Lemma tstep_link_subj e cd e' :
+  tstep e (LSess (SLink cd)) e' → cd ⊆ fchans e.
+Proof.
+  intros H. remember (LSess (SLink cd)) as α eqn:Hα.
+  induction H; subst; simpl; try (specialize (IHtstep eq_refl); set_solver).
+  match goal with Hh : head_step _ _ _ |- _ =>
+    inversion Hh; simplify_eq; simpl; set_solver end.
+Qed.
+
+(** The value carried by a fork or send label is a subterm of the
+    stepping expression, so its channels are among the expression's. *)
+Lemma tstep_fork_val_fchans e c v e' :
+  tstep e (LFork c v) e' → fchans v ⊆ fchans e.
+Proof.
+  intros H. remember (LFork c v) as α eqn:Hα.
+  induction H; subst; simpl; try (specialize (IHtstep eq_refl); set_solver).
+  match goal with Hh : head_step _ _ _ |- _ =>
+    inversion Hh; simplify_eq; simpl; set_solver end.
+Qed.
+
+Lemma tstep_send_val_fchans e c v e' :
+  tstep e (LSess (SSend c v)) e' → fchans v ⊆ fchans e.
+Proof.
+  intros H. remember (LSess (SSend c v)) as α eqn:Hα.
+  induction H; subst; simpl; try (specialize (IHtstep eq_refl); set_solver).
+  match goal with Hh : head_step _ _ _ |- _ =>
+    inversion Hh; simplify_eq; simpl; set_solver end.
+Qed.
 
 (** Receives can be retargeted to any other value: the term LTS offers
     an input transition for every value. *)

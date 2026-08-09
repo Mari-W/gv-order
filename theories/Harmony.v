@@ -102,7 +102,21 @@ Inductive red : proc → proc → Prop :=
       red (C, E ⊎ {[+ fill K (App EClos (Chan c)) +]}
              ⊎ {[+ fill K' (App EClos (Chan c)) +]})
           (C ∖ {[c]},
-           E ⊎ {[+ fill K EUnit +]} ⊎ {[+ fill K' EUnit +]}).
+           E ⊎ {[+ fill K EUnit +]} ⊎ {[+ fill K' EUnit +]})
+  | RedLinkL C E K c d :                                (* LINK *)
+      (* the paper's rule: the removed end is restricted and the whole
+         resulting configuration is substituted; the two rules are the
+         two orientations of the unordered pair over ordered syntax.
+         The ends need not differ — a self-forwarding on a restricted
+         name substitutes by the identity and releases the name, and
+         the LTS admits it, so harmony would fail if [red] did not. *)
+      ectx_val K → c ∈ C →
+      red (C, E ⊎ {[+ fill K (App ELink (Pair (Chan c) (Chan d))) +]})
+          (C ∖ {[c]}, echsubst c d (E ⊎ {[+ fill K EUnit +]}))
+  | RedLinkR C E K c d :
+      ectx_val K → d ∈ C →
+      red (C, E ⊎ {[+ fill K (App ELink (Pair (Chan c) (Chan d))) +]})
+          (C ∖ {[d]}, echsubst d c (E ⊎ {[+ fill K EUnit +]})).
 
 (** ** The context/label bridge
 
@@ -186,7 +200,8 @@ Theorem harmony_forward p p' : red p p' → preduction p p'.
 Proof.
   destruct 1 as
     [C E e e' Hv|C E K v c HK Hval Hc1 Hc2 Hc3
-    |C E K K' v c HK HK' Hval Hc|C E K K' c HK HK' Hc].
+    |C E K K' v c HK HK' Hval Hc|C E K K' c HK HK' Hc
+    |C E K c d HK Hc|C E K c d HK Hd].
   - apply PStepBeta. by apply vred_reduction.
   - apply PStepFork; [|done|done|done].
     apply fill_tstep; [done|]. apply TStepHead. by apply HeadFork.
@@ -196,11 +211,25 @@ Proof.
   - eapply PStepClose; [..|done].
     + apply fill_tstep; [done|]. apply TStepHead. apply HeadClos.
     + apply fill_tstep; [done|]. apply TStepHead. apply HeadClos.
+  - apply PStepLink; [|done].
+    apply fill_tstep; [done|]. apply TStepHead. by apply HeadLink.
+  - apply PStepLink; [|done].
+    rewrite upair_comm.
+    apply fill_tstep; [done|]. apply TStepHead. by apply HeadLink.
 Qed.
+
+(** Head inversion for forwarding, keeping the label pair abstract so
+    the unordered-set equation stays at the [gset] level (a bare
+    [inversion] would inject through the mapset record). *)
+Lemma head_step_link_inv e cd e' :
+  head_step e (LSess (SLink cd)) e' →
+  ∃ c d, e = App ELink (Pair (Chan c) (Chan d)) ∧ cd = {[c; d]} ∧
+         e' = EUnit.
+Proof. inversion 1; eauto 8. Qed.
 
 Theorem harmony_backward p p' : preduction p p' → red p p'.
 Proof.
-  intros Hst. inversion Hst; subst.
+  intros Hst; inversion Hst; subst.
   - (* P-Act-Beta *)
     apply RedLift. by apply vred_reduction.
   - (* P-Act-Fork *)
@@ -229,6 +258,29 @@ Proof.
     end.
     inversion Hh; subst. inversion Hh'; subst.
     by apply RedClose.
+  - (* P-Act-Link: recover the orientation of the pair *)
+    match goal with H : tstep _ (LSess (SLink _)) _ |- _ =>
+      apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh)
+    end.
+    apply head_step_link_inv in Hh as (c0 & d0 & -> & Hp & ->).
+    destruct (decide (c0 = d0)) as [->|Hne0].
+    + (* the term names one channel twice, so the label's two ends
+         coincide with it and the rule fires degenerately *)
+      match goal with Hc : ?c ∈ _ |- _ =>
+        assert (c = d0) as ->;
+          [assert (c ∈ ({[d0; d0]} : gset chan)) as Hin
+             by (rewrite <-Hp; clear; set_solver);
+           clear -Hin; set_solver|]
+      end.
+      assert (d = d0) as ->.
+      { assert (d ∈ ({[d0; d0]} : gset chan)) as Hin
+          by (rewrite <-Hp; clear; set_solver).
+        clear -Hin. set_solver. }
+      by apply RedLinkL.
+    + destruct (upair_eq_inv _ _ _ _ (eq_sym Hp) ltac:(congruence))
+        as [[<- <-]|[<- <-]].
+      * by apply RedLinkL.
+      * by apply RedLinkR.
 Qed.
 
 Theorem harmony p p' : red p p' ↔ preduction p p'.

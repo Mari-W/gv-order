@@ -8,6 +8,9 @@ theories/Progress.v
 theories/Types.v
 theories/Typing.v
 theories/LogRel.v
+theories/Retarget.v
+theories/Junk.v
+theories/SelfLink.v
 theories/Compositionality.v
 theories/Method.v
 theories/Examples.v
