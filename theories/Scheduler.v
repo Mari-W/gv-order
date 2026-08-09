@@ -11,7 +11,15 @@
     the redesign is impossible, because the input that ends a round
     determines the output that begins the next.
 
-    Here the ring is n = 3 and runs one round.  Agents [ag0] and [ag2]
+    Here the ring is n = 3.  [sched] runs one round and [sched2] runs
+    two, which is the case that matters: with one round an apologist
+    could split the starting agent into a sending half and a receiving
+    half and recover a tree, but with two rounds that escape closes,
+    since the second send happens after the first receive and any
+    channel added to sequence the halves puts the cycle straight back.
+    The two-round agents are the one-round agents with a round in
+    front, so once round one completes the configuration is literally
+    the one-round initial state and the development is shared.  Agents [ag0] and [ag2]
     do the work; the middle agent [ag1] is a forwarder that splices its
     predecessor directly to its successor and drops out:
 
@@ -874,3 +882,467 @@ Proof. eapply closed_deadlock_free; [exact schedI_closed|by left]. Qed.
     composed with syntactically typed code by the semantic P-Connect. *)
 Corollary sched_sem_ptyped : sem_ptyped ∅ sched TUnit.
 Proof. eapply sem_ptyped_closed; [exact schedI_closed|by left]. Qed.
+
+(** * Two rounds
+
+    One round is enough to exhibit the cycle, but Dardha and Gay's
+    decisive observation is about the SECOND round.  With one round an
+    apologist could break [ag0] into two parallel halves — one that
+    sends, one that receives — and recover a tree.  With two rounds
+    that escape closes: [ag0]'s second send happens after its first
+    receive, so the halves would have to be sequenced, and any channel
+    added to sequence them puts the cycle straight back.
+
+    The two-round agents are the one-round agents with a round in
+    front, so once round one has completed the configuration is
+    literally [p1], and the whole development above is reused. *)
+
+(** ag0 sends, waits for the token to come back, then runs the round
+    that closes the channels. *)
+Definition a02_cont (m : chan) : expr :=
+  LetP (App ERecv (Chan r2)) (a0_send m).
+Definition a02_send (m : chan) : expr :=
+  App (Lam (a02_cont m)) (App ESend (Pair EUnit (Chan m))).
+Definition a02_app (m : chan) : expr := App (Lam (a02_cont m)) (Chan m).
+Definition a02_recvd (m : chan) : expr :=
+  LetP (Pair EUnit (Chan r2)) (a0_send m).
+
+(** ag2 collects, forwards, then runs the closing round. *)
+Definition a22_cont (m : chan) : expr :=
+  App (Lam (a2_recv m)) (App ESend (Pair EUnit (Chan r2))).
+Definition a22_recv (m : chan) : expr :=
+  LetP (App ERecv (Chan m)) (a22_cont m).
+Definition a22_pair (m : chan) : expr :=
+  LetP (Pair EUnit (Chan m)) (a22_cont m).
+Definition a22_app (m : chan) : expr := App (Lam (a2_recv m)) (Chan r2).
+
+Definition ag0_2 : expr := a02_send r0.
+Definition ag2_2 : expr := a22_recv r1.
+
+Definition sched2 : proc :=
+  ({[r0; r1; r2]}, {[+ ag0_2 +]} ⊎ {[+ ag1 +]} ⊎ {[+ ag2_2 +]}).
+
+(** *** Inversion for the two new thread shapes *)
+
+Ltac kill_val' :=
+  match goal with
+  | Hs : tstep (Lam _) _ _ |- _ => exfalso; eapply val_no_tstep; [exact Hs|done]
+  | Hs : tstep (Chan _) _ _ |- _ => exfalso; eapply val_no_tstep; [exact Hs|done]
+  | Hs : tstep (Konst _) _ _ |- _ => exfalso; eapply val_no_tstep; [exact Hs|done]
+  end.
+
+Lemma inv_applam_send c k α e' :
+  tstep (App (Lam k) (App ESend (Pair EUnit (Chan c)))) α e' →
+  α = LSess (SSend c EUnit) ∧ e' = App (Lam k) (Chan c).
+Proof.
+  intros H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end. done.
+  - kill_val'.
+  - match goal with Hs : tstep (App ESend _) _ _ |- _ =>
+      apply inv_sendapp in Hs as [-> ->] end. done.
+Qed.
+
+Lemma inv_applam_chan c k α e' :
+  tstep (App (Lam k) (Chan c)) α e' → α = LBeta ∧ e' = subst1 (Chan c) k.
+Proof.
+  intros H. inversion H; subst.
+  - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end. done.
+  - kill_val'.
+  - kill_val'.
+Qed.
+
+Lemma inv_a02_send m α e' :
+  tstep (a02_send m) α e' →
+  α = LSess (SSend m EUnit) ∧ e' = a02_app m.
+Proof. apply inv_applam_send. Qed.
+
+Lemma inv_a02_app m α e' :
+  tstep (a02_app m) α e' → α = LBeta ∧ e' = a02_cont m.
+Proof.
+  intros H. apply inv_applam_chan in H as [-> ->]. done.
+Qed.
+
+Lemma inv_a02_cont m α e' :
+  tstep (a02_cont m) α e' →
+  ∃ v, is_val v ∧ α = LSess (SRecv r2 v) ∧
+       e' = LetP (Pair v (Chan r2)) (a0_send m).
+Proof. apply inv_letp_recv. Qed.
+
+Lemma inv_a02_recvd m α e' :
+  tstep (a02_recvd m) α e' → α = LBeta ∧ e' = a0_send m.
+Proof.
+  intros H. apply inv_letp_pair in H as [-> ->]; [done|done|done].
+Qed.
+
+Lemma inv_a22_recv m α e' :
+  tstep (a22_recv m) α e' →
+  ∃ v, is_val v ∧ α = LSess (SRecv m v) ∧
+       e' = LetP (Pair v (Chan m)) (a22_cont m).
+Proof. apply inv_letp_recv. Qed.
+
+Lemma inv_a22_pair m α e' :
+  tstep (a22_pair m) α e' → α = LBeta ∧ e' = a22_cont m.
+Proof.
+  intros H. apply inv_letp_pair in H as [-> ->]; [done|done|done].
+Qed.
+
+Lemma inv_a22_cont m α e' :
+  tstep (a22_cont m) α e' →
+  α = LSess (SSend r2 EUnit) ∧ e' = a22_app m.
+Proof. apply inv_applam_send. Qed.
+
+Lemma inv_a22_app m α e' :
+  tstep (a22_app m) α e' → α = LBeta ∧ e' = a2_recv m.
+Proof.
+  intros H. apply inv_applam_chan in H as [-> ->]. done.
+Qed.
+
+Lemma inv_link2 α e' :
+  tstep ag1 α e' → α = LSess (SLink {[r1; r0]}) ∧ e' = EUnit.
+Proof. apply inv_link. Qed.
+
+(** *** Round one, state by state *)
+
+Definition q1 (m : chan) : proc := st {[m; r2]} (a02_send m) EUnit (a22_recv m).
+Definition q2 (m : chan) : proc := st {[m; r2]} (a02_app m) EUnit (a22_pair m).
+Definition q3a (m : chan) : proc := st {[m; r2]} (a02_cont m) EUnit (a22_pair m).
+Definition q3b (m : chan) : proc := st {[m; r2]} (a02_app m) EUnit (a22_cont m).
+Definition q4 (m : chan) : proc := st {[m; r2]} (a02_cont m) EUnit (a22_cont m).
+Definition q5 (m : chan) : proc := st {[m; r2]} (a02_recvd m) EUnit (a22_app m).
+Definition q6a (m : chan) : proc := st {[m; r2]} (a0_send m) EUnit (a22_app m).
+Definition q6b (m : chan) : proc := st {[m; r2]} (a02_recvd m) EUnit (a2_recv m).
+
+Lemma splice2_eq_r0 :
+  echsubst r1 r0 ({[+ ag0_2 +]} ⊎ {[+ ag2_2 +]} ⊎ {[+ EUnit +]})
+  = {[+ a02_send r0 +]} ⊎ {[+ EUnit +]} ⊎ {[+ a22_recv r0 +]}.
+Proof.
+  rewrite !echsubst_disj_union, !echsubst_singleton.
+  unfold ag0_2, ag2_2, a02_send, a02_cont, a22_recv, a22_cont,
+         a0_send, a2_recv, sendclose, recvclose. simpl.
+  multiset_solver.
+Qed.
+
+Lemma splice2_eq_r1 :
+  echsubst r0 r1 ({[+ ag0_2 +]} ⊎ {[+ ag2_2 +]} ⊎ {[+ EUnit +]})
+  = {[+ a02_send r1 +]} ⊎ {[+ EUnit +]} ⊎ {[+ a22_recv r1 +]}.
+Proof.
+  rewrite !echsubst_disj_union, !echsubst_singleton.
+  unfold ag0_2, ag2_2, a02_send, a02_cont, a22_recv, a22_cont,
+         a0_send, a2_recv, sendclose, recvclose. simpl.
+  multiset_solver.
+Qed.
+
+Lemma sched2_splice_r0 : proc_step sched2 PTau (q1 r0).
+Proof.
+  unfold sched2, q1, st.
+  assert (({[r0; r1; r2]} : gset chan) ∖ {[r1]} = {[r0; r2]}) as <-
+    by (clear; set_solver).
+  replace ({[+ ag0_2 +]} ⊎ {[+ ag1 +]} ⊎ {[+ ag2_2 +]})
+    with (({[+ ag0_2 +]} ⊎ {[+ ag2_2 +]}) ⊎ {[+ ag1 +]} : gmultiset expr)
+    by multiset_solver.
+  rewrite <-splice2_eq_r0.
+  apply (PStepLink _ _ _ r1 r0); [|clear; set_solver].
+  apply TStepHead. apply HeadLink.
+Qed.
+
+Lemma sched2_splice_r1 : proc_step sched2 PTau (q1 r1).
+Proof.
+  unfold sched2, q1, st.
+  assert (({[r0; r1; r2]} : gset chan) ∖ {[r0]} = {[r1; r2]}) as <-
+    by (clear; set_solver).
+  replace ({[+ ag0_2 +]} ⊎ {[+ ag1 +]} ⊎ {[+ ag2_2 +]})
+    with (({[+ ag0_2 +]} ⊎ {[+ ag2_2 +]}) ⊎ {[+ ag1 +]} : gmultiset expr)
+    by multiset_solver.
+  rewrite <-splice2_eq_r1.
+  assert (({[r1; r0]} : gset chan) = {[r0; r1]}) as Hp by (clear; set_solver).
+  apply (PStepLink _ _ _ r0 r1); [|clear; set_solver].
+  apply TStepHead. rewrite <-Hp. apply HeadLink.
+Qed.
+
+(** *** Thread steps for round one *)
+
+Lemma a02_send_step m :
+  tstep (a02_send m) (LSess (SSend m EUnit)) (a02_app m).
+Proof.
+  apply TStepAppR; [done|]. apply TStepHead. apply (HeadSend EUnit m). done.
+Qed.
+
+Lemma a02_app_step m : tstep (a02_app m) LBeta (a02_cont m).
+Proof. apply TStepHead. apply (HeadApp (a02_cont m) (Chan m)). done. Qed.
+
+Lemma a02_cont_step m :
+  tstep (a02_cont m) (LSess (SRecv r2 EUnit)) (a02_recvd m).
+Proof. apply TStepLetP. apply TStepHead. apply (HeadRecv r2 EUnit). done. Qed.
+
+Lemma a02_recvd_step m : tstep (a02_recvd m) LBeta (a0_send m).
+Proof. apply TStepHead. apply (HeadLetP EUnit (Chan r2)); done. Qed.
+
+Lemma a22_recv_step m :
+  tstep (a22_recv m) (LSess (SRecv m EUnit)) (a22_pair m).
+Proof. apply TStepLetP. apply TStepHead. apply (HeadRecv m EUnit). done. Qed.
+
+Lemma a22_pair_step m : tstep (a22_pair m) LBeta (a22_cont m).
+Proof. apply TStepHead. apply (HeadLetP EUnit (Chan m)); done. Qed.
+
+Lemma a22_cont_step m :
+  tstep (a22_cont m) (LSess (SSend r2 EUnit)) (a22_app m).
+Proof.
+  apply TStepAppR; [done|]. apply TStepHead. apply (HeadSend EUnit r2). done.
+Qed.
+
+Lemma a22_app_step m : tstep (a22_app m) LBeta (a2_recv m).
+Proof. apply TStepHead. apply (HeadApp (a2_recv m) (Chan r2)). done. Qed.
+
+(** *** Round one, step by step *)
+
+Lemma step_q1 m : proc_step (q1 m) PTau (q2 m).
+Proof.
+  eapply st_msg;
+    [apply a02_send_step|apply a22_recv_step|clear; set_solver].
+Qed.
+
+Lemma step_q2a m : proc_step (q2 m) PTau (q3a m).
+Proof. apply st_beta1, a02_app_step. Qed.
+
+Lemma step_q2b m : proc_step (q2 m) PTau (q3b m).
+Proof. apply st_beta3, a22_pair_step. Qed.
+
+Lemma step_q3a m : proc_step (q3a m) PTau (q4 m).
+Proof. apply st_beta3, a22_pair_step. Qed.
+
+Lemma step_q3b m : proc_step (q3b m) PTau (q4 m).
+Proof. apply st_beta1, a02_app_step. Qed.
+
+Lemma step_q4 m : proc_step (q4 m) PTau (q5 m).
+Proof.
+  eapply st_msg_r;
+    [apply a22_cont_step|apply a02_cont_step|clear; set_solver].
+Qed.
+
+Lemma step_q5a m : proc_step (q5 m) PTau (q6a m).
+Proof. apply st_beta1, a02_recvd_step. Qed.
+
+Lemma step_q5b m : proc_step (q5 m) PTau (q6b m).
+Proof. apply st_beta3, a22_app_step. Qed.
+
+Lemma step_q6a m : proc_step (q6a m) PTau (p1 m).
+Proof. apply st_beta3, a22_app_step. Qed.
+
+Lemma step_q6b m : proc_step (q6b m) PTau (p1 m).
+Proof. apply st_beta1, a02_recvd_step. Qed.
+
+(** *** Closure for round one *)
+
+Ltac inv_act2 :=
+  repeat match goal with
+  | H : tstep EUnit _ _ |- _ => exfalso; eapply val_no_tstep; [exact H|done]
+  | H : tstep ag1 _ _ |- _ => apply inv_link in H as [? ->]
+  | H : tstep (a02_send _) _ _ |- _ => apply inv_a02_send in H as [? ?]
+  | H : tstep (a02_app _) _ _ |- _ => apply inv_a02_app in H as [? ?]
+  | H : tstep (a02_cont _) _ _ |- _ =>
+      apply inv_a02_cont in H as (? & ? & ? & ?)
+  | H : tstep (a02_recvd _) _ _ |- _ => apply inv_a02_recvd in H as [? ?]
+  | H : tstep (a22_recv _) _ _ |- _ =>
+      apply inv_a22_recv in H as (? & ? & ? & ?)
+  | H : tstep (a22_pair _) _ _ |- _ => apply inv_a22_pair in H as [? ?]
+  | H : tstep (a22_cont _) _ _ |- _ => apply inv_a22_cont in H as [? ?]
+  | H : tstep (a22_app _) _ _ |- _ => apply inv_a22_app in H as [? ?]
+  | H : tstep (a0_send _) _ _ |- _ => apply inv_a0_send in H as [? ?]
+  | H : tstep (a2_recv _) _ _ |- _ =>
+      apply inv_a2_recv in H as (? & ? & ? & ?)
+  end.
+
+Ltac st_cases2 Hst :=
+  inversion Hst; subst;
+  [ split1 | split1 | split2 | split2 | split1 ];
+  inv_act2; simplify_eq.
+
+Lemma inv_q1 m p' : preduction (q1 m) p' → p' = q2 m.
+Proof.
+  intros Hst. unfold preduction, q1, st in Hst. st_cases2 Hst.
+  all: unfold q2, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_q2 m p' : preduction (q2 m) p' → p' = q3a m ∨ p' = q3b m.
+Proof.
+  intros Hst. unfold preduction, q2, st in Hst. st_cases2 Hst.
+  all: first [ left; unfold q3a, st; f_equal; multiset_solver
+             | right; unfold q3b, st; f_equal; multiset_solver ].
+Qed.
+
+Lemma inv_q3a m p' : preduction (q3a m) p' → p' = q4 m.
+Proof.
+  intros Hst. unfold preduction, q3a, st in Hst. st_cases2 Hst.
+  all: unfold q4, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_q3b m p' : preduction (q3b m) p' → p' = q4 m.
+Proof.
+  intros Hst. unfold preduction, q3b, st in Hst. st_cases2 Hst.
+  all: unfold q4, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_q4 m p' : preduction (q4 m) p' → p' = q5 m.
+Proof.
+  intros Hst. unfold preduction, q4, st in Hst. st_cases2 Hst.
+  all: unfold q5, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_q5 m p' : preduction (q5 m) p' → p' = q6a m ∨ p' = q6b m.
+Proof.
+  intros Hst. unfold preduction, q5, st in Hst. st_cases2 Hst.
+  all: first [ left; unfold q6a, st; f_equal; multiset_solver
+             | right; unfold q6b, st; f_equal; multiset_solver ].
+Qed.
+
+Lemma inv_q6a m p' : preduction (q6a m) p' → p' = p1 m.
+Proof.
+  intros Hst. unfold preduction, q6a, st in Hst. st_cases2 Hst.
+  all: unfold p1, st; f_equal; multiset_solver.
+Qed.
+
+Lemma inv_q6b m p' : preduction (q6b m) p' → p' = p1 m.
+Proof.
+  intros Hst. unfold preduction, q6b, st in Hst. st_cases2 Hst.
+  all: unfold p1, st; f_equal; multiset_solver.
+Qed.
+
+Ltac inv_act_sched2 :=
+  repeat match goal with
+  | H : tstep ag0_2 _ _ |- _ => apply (inv_a02_send r0) in H as [? ?]
+  | H : tstep ag1 _ _ |- _ => apply inv_link in H as [? ->]
+  | H : tstep ag2_2 _ _ |- _ => apply (inv_a22_recv r1) in H as (? & ? & ? & ?)
+  end.
+
+Lemma inv_sched2 p' : preduction sched2 p' → p' = q1 r0 ∨ p' = q1 r1.
+Proof.
+  intros Hst. unfold preduction, sched2 in Hst.
+  inversion Hst; subst.
+  - exfalso. split1; inv_act_sched2; simplify_eq.
+  - exfalso. split1; inv_act_sched2; simplify_eq.
+  - exfalso. split2; inv_act_sched2; simplify_eq.
+  - exfalso. split2; inv_act_sched2; simplify_eq.
+  - split1; inv_act_sched2; [exfalso; simplify_eq| |exfalso; simplify_eq].
+    match goal with
+    | |- (_ ∖ {[?c]}, echsubst ?c ?d _) = _ ∨ _ =>
+        assert (({[c; d]} : gset chan) = {[r1; r0]}) as Hcd by congruence;
+        assert (c ≠ d) as Hne
+          by (intros Heq; rewrite Heq in Hcd;
+              assert (r1 ∈ ({[d; d]} : gset chan)) as Hin1
+                by (rewrite Hcd; clear; set_solver);
+              assert (r0 ∈ ({[d; d]} : gset chan)) as Hin2
+                by (rewrite Hcd; clear; set_solver);
+              clear -Hin1 Hin2; set_solver)
+    end.
+    destruct (upair_eq_inv _ _ _ _ Hcd Hne) as [[-> ->]|[-> ->]].
+    + left. unfold q1, st. rewrite splice2_eq_r0.
+      f_equal; clear; set_solver.
+    + right. unfold q1, st. rewrite splice2_eq_r1.
+      f_equal; clear; set_solver.
+Qed.
+
+(** ** Deadlock freedom for the two-round ring *)
+
+Definition schedI2 (p : proc) : Prop :=
+  p = sched2
+  ∨ (∃ m, (m = r0 ∨ m = r1) ∧
+          (p = q1 m ∨ p = q2 m ∨ p = q3a m ∨ p = q3b m ∨ p = q4 m
+           ∨ p = q5 m ∨ p = q6a m ∨ p = q6b m))
+  ∨ schedI p.
+
+Lemma schedI2_echans p : schedI2 p → echans p.2 ⊆ p.1.
+Proof.
+  intros [-> | [(m & Hm & Hq) | Hp]]; [| |by apply schedI_echans].
+  - unfold sched2; simpl.
+    rewrite !echans_disj_union, !echans_singleton.
+    unfold ag0_2, ag1, ag2_2, a02_send, a02_cont, a22_recv, a22_cont,
+           a0_send, a2_recv, sendclose, recvclose; simpl; clear; set_solver.
+  - destruct Hq as [-> | [-> | [-> | [-> | [-> | [-> | [-> | ->]]]]]]].
+    all: unfold q1, q2, q3a, q3b, q4, q5, q6a, q6b, st; simpl;
+         rewrite !echans_disj_union, !echans_singleton;
+         unfold a02_send, a02_app, a02_cont, a02_recvd,
+                a22_recv, a22_pair, a22_cont, a22_app,
+                a0_send, a2_recv, sendclose, recvclose;
+         simpl; clear; set_solver.
+Qed.
+
+Lemma schedI2_irred p :
+  schedI2 p → pirred p → p.1 = ∅ ∧ p.2 ≠ ∅ ∧ (∀ e, e ∈ p.2 → e = EUnit).
+Proof.
+  intros [-> | [(m & Hm & Hq) | Hp]] Hirr; [| |by apply schedI_irred].
+  - exfalso. eapply (Hirr PTau). apply sched2_splice_r0.
+  - exfalso. destruct Hq as [-> | [-> | [-> | [-> | [-> | [-> | [-> | ->]]]]]]].
+    + eapply (Hirr PTau). apply (step_q1 m).
+    + eapply (Hirr PTau). apply (step_q2a m).
+    + eapply (Hirr PTau). apply (step_q3a m).
+    + eapply (Hirr PTau). apply (step_q3b m).
+    + eapply (Hirr PTau). apply (step_q4 m).
+    + eapply (Hirr PTau). apply (step_q5a m).
+    + eapply (Hirr PTau). apply (step_q6a m).
+    + eapply (Hirr PTau). apply (step_q6b m).
+Qed.
+
+Ltac inQm m := unfold schedI2; right; left; exists m; split;
+               [ first [ assumption | by left | by right ] | ];
+               repeat (first [ by left | right ]); try done.
+
+Lemma schedI2_step p p' : schedI2 p → preduction p p' → schedI2 p'.
+Proof.
+  intros [-> | [(m & Hm & Hq) | Hp]] Hst.
+  - apply inv_sched2 in Hst as [-> | ->]; [inQm r0|inQm r1].
+  - destruct Hq as [-> | [-> | [-> | [-> | [-> | [-> | [-> | ->]]]]]]].
+    + apply inv_q1 in Hst as ->. inQm m.
+    + apply inv_q2 in Hst as [-> | ->]; inQm m.
+    + apply inv_q3a in Hst as ->. inQm m.
+    + apply inv_q3b in Hst as ->. inQm m.
+    + apply inv_q4 in Hst as ->. inQm m.
+    + apply inv_q5 in Hst as [-> | ->]; inQm m.
+    + apply inv_q6a in Hst as ->. right; right. inIm m.
+    + apply inv_q6b in Hst as ->. right; right. inIm m.
+  - right; right. by eapply schedI_step.
+Qed.
+
+Lemma schedI2_closed : closed_invariant schedI2.
+Proof.
+  intros p Hp. split_and!.
+  - by apply schedI2_echans.
+  - by apply schedI2_irred.
+  - intros p' Hst. by eapply schedI2_step.
+Qed.
+
+(** Two rounds of Milner's scheduler: deadlock free, and semantically
+    well typed, with no P-Connect tree in sight. *)
+Theorem sched2_deadlock_free : deadlock_free sched2.
+Proof. eapply closed_deadlock_free; [exact schedI2_closed|by left]. Qed.
+
+Corollary sched2_sem_ptyped : sem_ptyped ∅ sched2 TUnit.
+Proof. eapply sem_ptyped_closed; [exact schedI2_closed|by left]. Qed.
+
+(** The two rounds complete. *)
+Theorem sched2_terminates :
+  ∃ q, rtc preduction sched2 q ∧ terminated q.
+Proof.
+  exists p11. split.
+  - eapply rtc_l; [apply sched2_splice_r0|].
+    eapply rtc_l; [apply (step_q1 r0)|].
+    eapply rtc_l; [apply (step_q2a r0)|].
+    eapply rtc_l; [apply (step_q3a r0)|].
+    eapply rtc_l; [apply (step_q4 r0)|].
+    eapply rtc_l; [apply (step_q5a r0)|].
+    eapply rtc_l; [apply (step_q6a r0)|].
+    eapply rtc_l; [apply (step_p1 r0)|].
+    eapply rtc_l; [apply (step_p2 r0)|].
+    eapply rtc_l; [apply (step_p3 r0)|].
+    eapply rtc_l; [apply (step_p4 r0); done|].
+    eapply rtc_l; [apply step_p5a|].
+    eapply rtc_l; [apply step_p6a|].
+    eapply rtc_l; [apply step_p7|].
+    eapply rtc_l; [apply step_p8|].
+    eapply rtc_l; [apply step_p9|].
+    eapply rtc_l; [apply step_p10|].
+    apply rtc_refl.
+  - exists EUnit, ({[+ EUnit +]} ⊎ {[+ EUnit +]}). split_and!.
+    + unfold p11, st. f_equal. multiset_solver.
+    + done.
+    + intros e He. multiset_solver.
+Qed.
