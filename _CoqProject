@@ -19,5 +19,5 @@ theories/LbLR.v
 theories/Harmony.v
 theories/Replication.v
 theories/Recursion.v
-theories/Relay.v
+theories/SelfSplice.v
 theories/Scheduler.v

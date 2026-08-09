@@ -1,4 +1,9 @@
-(** * A redundant relay: splicing is idempotent (§4.5)
+(** * The degenerate self-forwarding, as a program (§4.5)
+
+    The one example that exercises a self-forwarding — a [link] whose
+    two ends have become the same channel.  Scheduler.v never produces
+    one: there the splice always joins distinct names.  Here it is
+    manufactured by retargeting, which is the only way it arises.
 
     A broker splices two sessions with the forwarding operator:
     [link ⟨a, b⟩] makes everything arriving on [a] leave on [b] and
