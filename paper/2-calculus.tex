@@ -59,6 +59,7 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
     & \text{(terms)}
   \end{align*}
   \caption{Syntax of \OurLang. \quad \rocq{expr}}
+  \Description{Grammars for the constants, values and terms of GV-sharp.}
   \label{fig:syntax}
 \end{figure}
 
@@ -124,6 +125,7 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
     \end{bussproof}
   \end{mathpar}
   \caption{Semantics of \OurLang\ terms.}
+  \Description{Grammars for evaluation contexts, session labels and term labels, and the seven axioms plus one congruence rule of the labelled term reduction relation.}
   \label{fig:term-semantics}
 \end{figure}
 
@@ -248,6 +250,7 @@ We write $\trans{}[*]$ for its transitive, reflexive closure.
     \end{bussproof}
   \end{mathpar}
   \caption{LTS semantics of \OurLang\ processes.}
+  \Description{The grammar of process labels and the five rules of the process labelled transition relation: one lifting an external offer, and one each for beta steps, forks, matched messages and matched closes.}
   \label{fig:proc-semantics}
 \end{figure}
 
@@ -607,7 +610,8 @@ a more liberal logical relation.
     \fType{\dual{\sTerm}} &= \fType{\sTerm}
   \end{align*}
 %   \caption{Types and session types for \OurLang.}
-%   \label{fig:logrel}
+%   \Description{The value logical relation given by four equations indexed by the type; the term relation given by an irreducible case and five cases indexed by the transition label; and the process relation given by an irreducible case and four cases indexed by the transition label.}
+  \label{fig:logrel}
 % \end{figure}
 %
 % \begin{figure}[tp]
@@ -695,6 +699,7 @@ a more liberal logical relation.
     \end{bussproof}
   \end{mathpar}
   \caption{Typing for terms and processes.}
+  \Description{Grammars for types, session types, session environments and linear variable environments; the definition of session duality; the type signatures of the four constants; nine typing rules for terms and three for processes.}
   \label{fig:typeSys}
 \end{figure}
 

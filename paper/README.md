@@ -8,6 +8,27 @@ make -C paper check    # fail on citations to declarations that no longer exist
 make -C paper clean
 ```
 
+## Format
+
+OOPSLA / PACMPL, per the SPLASH call for papers:
+
+```latex
+\documentclass[acmsmall,screen,review,anonymous]{acmart}
+```
+
+`review` adds line numbers, `anonymous` blanks the authors — drop
+either as needed. `acmart.cls` (v2.16) and `ACM-Reference-Format.bst`
+are vendored here so the build does not depend on the local TeX
+installation.
+
+The initial submission is capped at **23 pages** excluding references,
+the Data-Availability Statement and appendices; a revision or the
+camera-ready may run to 25. Check the body length before submitting —
+it currently ends right at the limit.
+
+The LNCS sources this was converted from are still here (`llncs.cls`,
+`splncs04nat.bst`) if we switch back.
+
 The logo in `rocq-logo.pdf` is the Rocq icon from
 [rocq-prover/rocq-prover.org](https://github.com/rocq-prover/rocq-prover.org)
 (`asset/logos/icon-rocq-orange.svg`), converted to PDF. Delete it and
