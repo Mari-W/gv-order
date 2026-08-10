@@ -5,7 +5,7 @@
     almost all the work of the development sits. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Composition.
+From LRGV Require Export Principles.
 
 (** ** CONNECT (Lemma 3.10) *)
 

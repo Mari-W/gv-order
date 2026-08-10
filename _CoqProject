@@ -10,12 +10,11 @@ theories/Relation.v
 theories/Terms.v
 theories/Renaming.v
 theories/Junk.v
-theories/Composition.v
-theories/Independence.v
-theories/Connection.v
+theories/composition/Principles.v
+theories/composition/Independence.v
+theories/composition/Connection.v
 theories/Fundamental.v
 theories/Invariant.v
-theories/Forwarding.v
 theories/Support.v
 theories/examples/Sync.v
 theories/examples/Blocked.v

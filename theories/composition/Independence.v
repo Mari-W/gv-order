@@ -5,7 +5,7 @@
     unchanged. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Composition.
+From LRGV Require Export Principles.
 
 (** The irreducible case: both components are irreducible, hence
     terminated; the unit side contributes only ∗-threads. *)
