@@ -39,24 +39,24 @@
 
 % ---- the mark -------------------------------------------------------
 
-% The height is given in ex of the *current* font, so the mark shrinks
-% along with the citation text.
+% \rocq@glyph is the bare mark, no trailing space -- used alone by
+% \rocq.  \rocqlogo adds the gap that precedes link text, for
+% \rocqas.  Heights are in ex of the *current* font, so both shrink
+% with the surrounding size.
 \IfFileExists{rocq-logo.pdf}{%
-  \newcommand{\rocqlogo}{%
-    \raisebox{-0.1ex}{\includegraphics[height=1.15ex]{rocq-logo.pdf}}%
-    \kern0.2em}%
+  \newcommand{\rocq@glyph}{%
+    \raisebox{-0.1ex}{\includegraphics[height=1.6ex]{rocq-logo.pdf}}}%
 }{%
   \IfFileExists{rocq-logo.png}{%
-    \newcommand{\rocqlogo}{%
-      \raisebox{-0.1ex}{\includegraphics[height=1.15ex]{rocq-logo.png}}%
-      \kern0.2em}%
+    \newcommand{\rocq@glyph}{%
+      \raisebox{-0.1ex}{\includegraphics[height=1.6ex]{rocq-logo.png}}}%
   }{%
-    % Fallback badge: a small caps "R" in a rounded rule-free box.
-    \newcommand{\rocqlogo}{%
-      \raisebox{0.1ex}{\textcolor{rocqbadge}{\textbf{R}}}%
-      \kern0.2em}%
+    % Fallback badge: a small caps "R", no external asset needed.
+    \newcommand{\rocq@glyph}{%
+      \raisebox{0.1ex}{\textcolor{rocqbadge}{\textbf{R}}}}%
   }%
 }
+\newcommand{\rocqlogo}{\rocq@glyph\kern0.2em}
 
 % Citations are deliberately set much smaller than the surrounding
 % text: they annotate a claim, they are not part of it.
@@ -111,12 +111,22 @@
   \fi
 }
 
-% \rocq{name} -- link text is File.v:name.
+% \rocq{name} -- the mark ALONE, hyperlinked.  The declaration's name
+% is not typeset: in a paper this dense the names cost more space than
+% they earn, and the link still carries them.  Use \rocqas when the
+% reader needs to see which declaration is meant without clicking.
 \newcommand{\rocq}[1]{%
-  \expandafter\ifx\csname rocq@file@#1\endcsname\relax
+  \expandafter\ifx\csname rocq@loc@#1\endcsname\relax
     \rocq@fail{#1}%
   \else
-    \rocqas{\csname rocq@file@#1\endcsname:\detokenize{#1}}{#1}%
+    \ifx\rocqbase\empty
+      \mbox{\rocq@glyph}%
+    \else
+      \begingroup
+        \rocq@noborder
+        \href{\rocqbase\csname rocq@loc@#1\endcsname}{\mbox{\rocq@glyph}}%
+      \endgroup
+    \fi
   \fi
 }
 

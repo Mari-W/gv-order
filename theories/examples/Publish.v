@@ -26,7 +26,7 @@ Local Open Scope string_scope.
     The process belongs to the logical relation at
     e : !(Sess (!∗.Close)).Close: at the moment of the send, the proof
     commits d — on the fly, with no syntactic annotation — to the
-    protocol ?∗.Close, sending the escaped end at the dual type and
+    protocol ?∗.Close, sending the extruded end at the dual type and
     exhibiting t2 as the singleton owner family for d (the σe of
     Fig. 5, case 3).  This is the first example exercising the send
     case with σe ≠ ∅. *)
@@ -120,7 +120,7 @@ Proof.
   - intros n. rewrite map_fmap_singleton.
     rewrite (left_id ∅ (∪)). apply Vrel_chan.
   - apply PIA3.
-  - apply topo_split_single; [set_solver|set_solver|exact HB].
+  - apply extrusion_split_single; [set_solver|set_solver|exact HB].
   - left. done.
 Qed.
 

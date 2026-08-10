@@ -224,62 +224,6 @@ Proof.
   apply HΔ in Hx. done.
 Qed.
 
-(** E-Unit *)
-Lemma sem_typed_unit Δ : lenv_empty Δ → sem_typed ∅ Δ EUnit TUnit.
-Proof.
-  intros HΔ. split_and!; simpl.
-  { by rewrite dom_empty_L. }
-  { done. }
-  { intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)). }
-  intros n Σ' γ Hdisj Hg.
-  assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
-  rewrite (right_id ∅ (∪)). simpl.
-  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq. simpl. done.
-Qed.
-
-(** E-Const *)
-Lemma sem_typed_konst Δ k T :
-  lenv_empty Δ → konst_ty k T → sem_typed ∅ Δ (Konst k) T.
-Proof.
-  intros HΔ Hk. split_and!; simpl.
-  { by rewrite dom_empty_L. }
-  { done. }
-  { intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)). }
-  intros n Σ' γ Hdisj Hg.
-  assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
-  rewrite (right_id ∅ (∪)). simpl.
-  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq.
-  destruct Hk; simpl; right; eexists; split_and!; eauto using konst_ty.
-Qed.
-
-(** E-LVar *)
-Lemma sem_typed_var Δ x T : lenv_only Δ x T → sem_typed ∅ Δ (Var x) T.
-Proof.
-  intros Ho. split_and!; simpl.
-  { by rewrite dom_empty_L. }
-  { destruct Ho as [Hlk _]. by exists T. }
-  { intros x' (T' & Hx' & _). destruct Ho as [_ Huniq].
-    by destruct (Huniq x' T' Hx') as [-> _]. }
-  intros n Σ' γ Hdisj Hg. simpl.
-  rewrite (left_id ∅ (∪)).
-  apply Vrel_Erel. eauto using grounding_only.
-Qed.
-
-(** E-Ch *)
-Lemma sem_typed_chan Δ c s :
-  lenv_empty Δ → sem_typed {[c := s]} Δ (Chan c) (TSess s).
-Proof.
-  intros HΔ. split_and!; simpl.
-  { by rewrite dom_singleton_L. }
-  { done. }
-  { intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)). }
-  intros n Σ' γ Hdisj Hg.
-  assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
-  rewrite (right_id ∅ (∪)). simpl.
-  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq. simpl.
-  exists c, s. auto.
-Qed.
-
 (** E-Conv at the value level: a channel inhabits every session type
     with the same unfolding as its stored protocol. *)
 Lemma Vrel_sess_conv n Σ s s' v :
@@ -321,15 +265,6 @@ Proof.
   - intros Hcd. specialize (Hstep Hcd) as (Σ1 & Σ2 & sf & Hsp & HV & HE').
     exists Σ1, Σ2, sf. split_and!; [done|done|].
     eapply IHn; [lia|done|done].
-Qed.
-
-(** E-Conv, judgment form. *)
-Lemma sem_typed_conv Σ Δ e s s' :
-  unfoldS s = unfoldS s' →
-  sem_typed Σ Δ e (TSess s) → sem_typed Σ Δ e (TSess s').
-Proof.
-  intros Hu (Hfc & Hfv & Hrv & He). split_and!; [done|done|done|].
-  intros n Σ' γ Hd Hg. eapply Erel_sess_conv; [done|]. by apply He.
 Qed.
 
 (** ** Canonical values *)
@@ -676,6 +611,76 @@ Proof.
   apply tstep_force_inv in Hst as [(e'' & Hst' & _)|(eb' & Heq & -> & ->)].
   { exfalso. eapply val_no_tstep; [exact Hst'|done]. }
   simplify_eq. simpl. apply HK. lia.
+Qed.
+
+(** ** One lemma per term rule of Fig. 4 (Theorem 3.11)
+
+    Kept together and in the order of the figure, so the whole
+    family reads as the theorem it adds up to. *)
+
+(** E-Unit *)
+Lemma sem_typed_unit Δ : lenv_empty Δ → sem_typed ∅ Δ EUnit TUnit.
+Proof.
+  intros HΔ. split_and!; simpl.
+  { by rewrite dom_empty_L. }
+  { done. }
+  { intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)). }
+  intros n Σ' γ Hdisj Hg.
+  assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
+  rewrite (right_id ∅ (∪)). simpl.
+  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq. simpl. done.
+Qed.
+
+(** E-Const *)
+Lemma sem_typed_konst Δ k T :
+  lenv_empty Δ → konst_ty k T → sem_typed ∅ Δ (Konst k) T.
+Proof.
+  intros HΔ Hk. split_and!; simpl.
+  { by rewrite dom_empty_L. }
+  { done. }
+  { intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)). }
+  intros n Σ' γ Hdisj Hg.
+  assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
+  rewrite (right_id ∅ (∪)). simpl.
+  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq.
+  destruct Hk; simpl; right; eexists; split_and!; eauto using konst_ty.
+Qed.
+
+(** E-LVar *)
+Lemma sem_typed_var Δ x T : lenv_only Δ x T → sem_typed ∅ Δ (Var x) T.
+Proof.
+  intros Ho. split_and!; simpl.
+  { by rewrite dom_empty_L. }
+  { destruct Ho as [Hlk _]. by exists T. }
+  { intros x' (T' & Hx' & _). destruct Ho as [_ Huniq].
+    by destruct (Huniq x' T' Hx') as [-> _]. }
+  intros n Σ' γ Hdisj Hg. simpl.
+  rewrite (left_id ∅ (∪)).
+  apply Vrel_Erel. eauto using grounding_only.
+Qed.
+
+(** E-Ch *)
+Lemma sem_typed_chan Δ c s :
+  lenv_empty Δ → sem_typed {[c := s]} Δ (Chan c) (TSess s).
+Proof.
+  intros HΔ. split_and!; simpl.
+  { by rewrite dom_singleton_L. }
+  { done. }
+  { intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)). }
+  intros n Σ' γ Hdisj Hg.
+  assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
+  rewrite (right_id ∅ (∪)). simpl.
+  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq. simpl.
+  exists c, s. auto.
+Qed.
+
+(** E-Conv, judgment form. *)
+Lemma sem_typed_conv Σ Δ e s s' :
+  unfoldS s = unfoldS s' →
+  sem_typed Σ Δ e (TSess s) → sem_typed Σ Δ e (TSess s').
+Proof.
+  intros Hu (Hfc & Hfv & Hrv & He). split_and!; [done|done|done|].
+  intros n Σ' γ Hd Hg. eapply Erel_sess_conv; [done|]. by apply He.
 Qed.
 
 (** E-Abs *)

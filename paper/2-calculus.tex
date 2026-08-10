@@ -88,7 +88,7 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
       \lFork{c}{v}
     & \text{(term labels)}
   \end{align*}
-  \textbf{Labeled reductions for terms} \hfill \rocq{head_step} \; \rocq{tstep}
+  \textbf{Labeled reductions for terms} \hfill \rocq{head_step}
   \begin{mathpar}
     \begin{bussproof}[T-Act-App]
       \bussAx{
@@ -193,7 +193,7 @@ and are thus used to communicate with the environment.
 The \ruleLabel{P-Act-Session} rule lifts communication effects~$\sigma$
 that pertain to channels linking to the environment,
 to a transition of the process labelled with~$\sigma$.
-We denote the channels that escape the internal scope due to a
+We denote the channels that are extruded from the internal scope due to a
 an communication effect~$\sigma$ by $\sent(\sigma)$:
   $\sent(\lFork{c}{v}) = \sent(\lRecv{c}{v}) = \sent(\lTerm{c}) = \emptyset$,
   $\sent(\lSend{c}{v}) = \fc(\fFunc{v})$.
@@ -334,7 +334,7 @@ will consider untyped processes and accept only well-behaved ones
 (even if they violate the above topological constraints).
 
 
-\begin{example}[Cyclic topology, \rocq{cycle_proc}]
+\begin{example}[Cyclic topology \rocq{cycle_proc}]
 \label{ex:cyclic}
   The process $\fProc{\var{cycle}}$ below consists of two threads
   sharing two channels~$\fFunc{c}$ and $\fFunc{d}$,
@@ -407,7 +407,7 @@ We can internalize this communication by putting the processes together and clos
     & \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1'' \uplus E_2'' \uplus \mset{\fFunc{e'}, \fFunc{f'}})}
   \end{align}
   Note that the channel set is left \emph{unchanged} by \ruleLabel{P-Act-Msg}:
-  the channels $\fc(\fFunc{v})$ that \ruleLabel{P-Act-Session} lets escape
+  the channels $\fc(\fFunc{v})$ that \ruleLabel{P-Act-Session} extrudes
   from $C_1$ remain in scope of the combined process, since the
   receiver is now part of it.
 \end{proof}
@@ -421,7 +421,7 @@ we however allow the initial thread to evaluate to some meaningful value,
 which, by convention, is considered the value computed by the whole program.%
 \footnote{Although this design decision is somewhat arbitrary, the rest of the development does \emph{not} fundamentally depend on it.}
 
-\begin{definition}[Terminated process, \rocq{terminated}]
+\begin{definition}[Terminated process \rocq{terminated}]
 \label{def:terminated}
   A process $\fProc{p}$ is \emph{terminated} if,
   for some~$\fFunc{v}$ and $\fProc{E}$,
@@ -443,14 +443,14 @@ which, by convention, is considered the value computed by the whole program.%
 %   We say $\fProc{p}$ is \emph{safe} if $\fProc{p}$ is $n$-safe for every $n \in \Nat$.
 % \end{definition}
 
-\begin{definition}[Safe process, \rocq{safe}]
+\begin{definition}[Safe process \rocq{safe}]
 \label{def:safe}
   A process $\fProc{p}$ is \emph{safe} if it is terminated,
   or if there is some~$\fProc{p'}$ such that
   $\fProc{p} \redu \fProc{p'}$.
 \end{definition}
 
-\begin{definition}[Deadlock Freedom, \rocq{deadlock_free}]
+\begin{definition}[Deadlock Freedom \rocq{deadlock_free}]
   \label{def:df}
   A process $\fProc{p}$ is \emph{deadlock free},
   if ${\forall p'.\,\fProc{p} \trans{}[*] \fProc{p'}}$ implies $p'$ is safe.
@@ -465,7 +465,7 @@ which, by convention, is considered the value computed by the whole program.%
   the last process which is terminated.
 \end{example}
 
-\begin{example}[Deadlocked process, \rocq{blocked_not_deadlock_free}]
+\begin{example}[Deadlocked process \rocq{blocked_not_deadlock_free}]
 \label{ex:deadlock}
   Consider the following process:
   \[
@@ -500,7 +500,7 @@ without imposing restrictive topology constraints.
 The following example shows an open process which does not run into deadlock,
 but does not follow the usual discipline on channels.
 
-\begin{example}[Load balancer, \rocq{lb}]
+\begin{example}[Load balancer \rocq{lb}]
 \label{ex:load-balancer}
   Consider an open process~$(\emptyset,\fFunc{\var{lb}})$
   which replies to requests on a channel~$\fFunc{c}$ shared with the environment,

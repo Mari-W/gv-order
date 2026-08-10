@@ -464,19 +464,19 @@ Lemma pswap_pair a b C E : pswap a b (C, E) = (gswap a b C, msswap a b E).
 Proof. done. Qed.
 
 (** Owner families transport along the swap. *)
-Lemma topo_split_pswap a b (P Q : senv → ty → proc → Prop) σ Σ T p :
+Lemma extrusion_split_pswap a b (P Q : senv → ty → proc → Prop) σ Σ T p :
   (∀ Σ' T' p', P Σ' T' p' → Q (senvswap a b Σ') T' (pswap a b p')) →
-  topo_split P σ Σ T p →
-  topo_split Q (senvswap a b σ) (senvswap a b Σ) T (pswap a b p).
+  extrusion_split P σ Σ T p →
+  extrusion_split Q (senvswap a b σ) (senvswap a b Σ) T (pswap a b p).
 Proof.
   intros HPQ Hpow.
   induction Hpow as [|σ0 d s Σd Σr Td Tr Tt Cd Ed Cr Er Hlk Hd1 Hd2 Hd3
                       Hd4 Hd5 Hd6 Hd7 Hd8 Hd9 Hd10 HP1 Hrec IH Hty].
   - rewrite senvswap_empty, pswap_pair, gswap_empty, msswap_empty.
-    apply topo_split_nil.
+    apply extrusion_split_nil.
   - rewrite senvswap_insert, senvswap_union, pswap_pair, gswap_union,
       msswap_disj_union.
-    eapply topo_split_cons.
+    eapply extrusion_split_cons.
     + by rewrite lookup_kswap.
     + rewrite dom_kswap. by rewrite elem_of_gswap.
     + rewrite dom_kswap. by rewrite elem_of_gswap.
@@ -697,7 +697,7 @@ Proof.
       { apply IHP in HP0; [|lia]. rewrite senvswap_insert in HP0.
         exact HP0. }
       { rewrite <-(pswap_pair a b Cw Ew).
-        eapply topo_split_pswap; [|exact HPw].
+        eapply extrusion_split_pswap; [|exact HPw].
         intros Σ' T' p0 HP'. apply IHP; [lia|]. exact HP'. }
       { exact Hty. }
     + (* close *)
@@ -950,18 +950,18 @@ Proof.
       * apply Hc1. by apply elem_of_dom.
 Qed.
 
-Lemma topo_split_conv (P Q : senv → ty → proc → Prop) σ Σ Σ' T p :
+Lemma extrusion_split_conv (P Q : senv → ty → proc → Prop) σ Σ Σ' T p :
   (∀ Σ1 Σ1' T' p', senv_conv Σ1 Σ1' → P Σ1 T' p' → Q Σ1' T' p') →
-  senv_conv Σ Σ' → topo_split P σ Σ T p → topo_split Q σ Σ' T p.
+  senv_conv Σ Σ' → extrusion_split P σ Σ T p → extrusion_split Q σ Σ' T p.
 Proof.
   intros HPQ Hconv Hpow. revert Σ' Hconv.
   induction Hpow as [|σ0 d s Σd Σr Td Tr Tt Cd Ed Cr Er Hlk Hd1 Hd2 Hd3
                       Hd4 Hd5 Hd6 Hd7 Hd8 Hd9 Hd10 HP1 Hrec IH Hty];
     intros Σ' Hconv.
-  - rewrite (senv_conv_empty_inv _ Hconv). apply topo_split_nil.
+  - rewrite (senv_conv_empty_inv _ Hconv). apply extrusion_split_nil.
   - destruct (senv_conv_split _ _ _ _ Hconv (conj eq_refl Hd7))
       as (Σd' & Σr' & [-> Hdisj'] & Hcd & Hcr).
-    eapply topo_split_cons;
+    eapply extrusion_split_cons;
       rewrite <-?(proj1 Hcd), <-?(proj1 Hcr); try done.
     + eapply HPQ; [|exact HP1].
       apply senv_conv_insert; [done|done].
@@ -1141,7 +1141,7 @@ Proof.
       { eapply HV; [|exact HVw].
         apply senv_conv_union; [exact Hsv|apply senv_conv_refl]. }
       { eapply IHP; [lia|apply senv_conv_insert; [exact Hs0|done]|done]. }
-      { eapply topo_split_conv; [|exact Hsw|exact HPw].
+      { eapply extrusion_split_conv; [|exact Hsw|exact HPw].
         intros ΣA ΣA' TA pA HcA HPA. eapply IHP; [lia|exact HcA|done]. }
       { done. }
     + (* close *)

@@ -6,7 +6,7 @@
 
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TSum} \; \rocq{Inj1} \; \rocq{Inj2} \; \rocq{Case}
+  New values, terms, evaluation contexts \hfill \rocq{TSum}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tInj{1}{v}} \sepr \fFunc{\tInj{2}{v}}
     & \text{injections}\\
@@ -14,7 +14,7 @@
                                                                        \text{sum elimination}\\
     \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tInj{1}{\fCtx{E}}} \sepr \fFunc{\tInj{2}{\fCtx{E}}}
   \end{align*}
-  New labeled transitions \hfill \rocq{HeadCase1} \; \rocq{HeadCase2}
+  New labeled transitions \hfill \rocq{HeadCase1}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Case]
       \bussAx{\fFunc{\tCase{(\tInj{i}{v})}{\tLVA}{e_1}{\tLVA}{e_2}} \trans{\beta} \fFunc{\tSub{e_i}{v}{\tLVA}}}
@@ -24,7 +24,7 @@
     %   \bussAx{\fFunc{\tCase{\tInj{2}{v}}{\tLVA}{e}{\tLVA}{e}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
     % \end{bussproof}
   \end{mathpar}
-  New typing rules for terms \hfill \rocq{typed_inj1} \; \rocq{typed_inj2} \; \rocq{typed_case}
+  New typing rules for terms \hfill \rocq{typed_inj1}
   \begin{mathpar}
     \begin{bussproof}[E-Inj]
       \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T_i}}
@@ -76,7 +76,7 @@ compositionality lemmas corresponding to the typing rules for sum
 types as shown in \cref{fig:sum-types}. Proving the compositionality
 lemmas is a standard exercise.
 
-\begin{lemma}[Compositionality: \ruleLabel{inj}, \rocq{sem_typed_inj1}, \rocq{sem_typed_inj2}]
+\begin{lemma}[Compositionality: \ruleLabel{inj} \rocq{sem_typed_inj1}]
   \label{lem:comp:inj}
   If
   $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T_i}}$, \\
@@ -84,7 +84,7 @@ lemmas is a standard exercise.
   $\fFunc{\tInj{i}{e}} \in \lrTerm{n}{\fType{\Sigma \vdash \lSum{T_1}{T_2}}}$.
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{case}, \rocq{sem_typed_case}]
+\begin{lemma}[Compositionality: \ruleLabel{case} \rocq{sem_typed_case}]
   \label{lem:comp:case}
   If
   $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \lSum{T_1}{T_2}}}$
@@ -128,7 +128,7 @@ We consider the process $p_0 = (\set{\fFunc{c}, \fFunc{cs},
 set out to prove that $p_0 \in \lrProc{n}{ \fFunc{c}\fType{:  \sTerm
   \ichoice \sTerm} \vdash \fType{\tUnit}}$. This process has essentially
 two different reduction sequences due to a race condition
-(\rocq{leader_proc}, \rocq{leader_sem_ptyped}). Either $\fFunc{e_0}$
+(\rocq{leader_proc}). Either $\fFunc{e_0}$
 communicates first with $\fFunc{e_1}$ and then with $\fFunc{e_2}$ or
 vice versa. Each term, $\fFunc{e_1}$ and $\fFunc{e_2}$, receives a
 boolean on channel $\fFunc{d}$, then synchronizes by closing
@@ -156,7 +156,7 @@ yields a closed, deadlock-free process
 \label{sec:recursion}
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TBang} \; \rocq{EBang} \; \rocq{Force}
+  New values, terms, evaluation contexts \hfill \rocq{TBang}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{(\tIVX = e)}}
     & \text{intuitionistic variable, recursively defined thunk}\\
@@ -170,7 +170,7 @@ yields a closed, deadlock-free process
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
-  \hfill \rocq{typed_bang} \; \rocq{typed_force} \; \rocq{typed_wk}
+  \hfill \rocq{typed_bang}
   \mw{claude: the mechanization has no separate $\Gamma$; it keeps one
     environment in which unlimited entries admit contraction and
     weakening (lsplit\_unl, lwk\_drop), and its eliminator is
@@ -243,7 +243,7 @@ following compositionality lemmas.
   session type, typed and deadlock free (examples/Pingpong.v). Add it
   as a short example, the way Sect. 4.1 has the leader election?}
 
-\begin{lemma}[Compositionality: \ruleLabel{exp}, \rocq{sem_typed_bang}]
+\begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_bang}]
   \label{lem:comp:exp}
   If,
   for every
@@ -269,7 +269,7 @@ following compositionality lemmas.
   \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
 \end{proof}
 
-\begin{lemma}[Compositionality: \ruleLabel{let-exp}, \rocq{sem_typed_force}]
+\begin{lemma}[Compositionality: \ruleLabel{let-exp} \rocq{sem_typed_force}]
   \label{lem:comp:let-exp}
   If
   (1) $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$ and,
@@ -397,14 +397,14 @@ equi-recursive session types, where a recursive type is always equal to its unfo
 As equi-recursive types have contractive definitions
 (\rocq{contractive_ty}), we can always
 determine the top-level constructor of a type in finite time
-(\rocq{unfoldS}, \rocq{unfoldS_head}). Hence,
+(\rocq{unfoldS}). Hence,
 all our prior definitions and proofs carry over without change.
 
 \subsection{Replication}
 \label{sec:extens-repl}
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TBang} \; \rocq{EBang} \; \rocq{Force}
+  New values, terms, evaluation contexts \hfill \rocq{TBang}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{e}}
     & \text{intuitionistic variable, non-recursive thunk}\\
@@ -421,7 +421,7 @@ all our prior definitions and proofs carry over without change.
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
-  \hfill \rocq{typed_bang} \; \rocq{typed_force}
+  \hfill \rocq{typed_bang}
   \begin{mathpar}
     \begin{bussproof}[E-Exp]
       \bussAs{\fType{\tEmpty ; \Gamma ; \tEmpty \vdash \fFunc{e} : T}}
@@ -487,7 +487,7 @@ treat the new operators as macros as follows.
   the evidence that the encoding of Sect. 4.4 is usable end to end.
   Add it as an example?}
 
-\begin{lemma}[Compositionality: \ruleLabel{exp}, \rocq{sem_typed_bang}]
+\begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_bang}]
   \label{lem:comp:exp-nr}
   If
   $\fFunc{e} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
@@ -498,7 +498,7 @@ treat the new operators as macros as follows.
   Immediate.
 \end{proof}
 
-\begin{lemma}[Compositionality: \ruleLabel{let-exp}, \rocq{sem_typed_force}]
+\begin{lemma}[Compositionality: \ruleLabel{let-exp} \rocq{sem_typed_force}]
   \label{lem:comp:let-exp-nr}
   If
   $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$ and,
@@ -522,7 +522,7 @@ treat the new operators as macros as follows.
 \label{sec:extens-link-oper}
 
 \begin{figure}[tp]
-  New constant, session label \hfill \rocq{ELink} \; \rocq{SLink}
+  New constant, session label \hfill \rocq{ELink}
   \begin{align*}
     \fFunc{k} &::= \dots \sepr \fFunc{\tLink}
     & \text{forwarding operator}
@@ -530,7 +530,7 @@ treat the new operators as macros as follows.
     \sigma &::= \dots \sepr \lLink{c}{c}
              &\text{forwarding session label}
   \end{align*}
-  New labeled transitions \hfill \rocq{HeadLink} \; \rocq{PStepLink}
+  New labeled transitions \hfill \rocq{HeadLink}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Link]
       \bussAx{\fFunc{\tApp{\tLink}{\tPair{c}{d}}} \trans{\lLink{c}{d}} \fFunc{\tUnit}}

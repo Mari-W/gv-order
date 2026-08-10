@@ -48,7 +48,7 @@ For technical reasons, the step index $n$ counts single reduction steps.
 The value relation constrains the terms that are irreducible to
 be values that belong to the declared type.
 
-\begin{definition}[Irreducible terms/processes, \rocq{irred}, \rocq{pirred}]
+\begin{definition}[Irreducible terms/processes \rocq{irred}]
 We write $\irred \fFunc{e}$ if there are no $\lambda,\fFunc{e'}$ such that $\fFunc{e} \trans{\lambda} \fFunc{e'}$.
 We write $\irred \fProc{p}$ if there are no $\pi,\fProc{p'}$ such that $\fProc{p} \trans{\pi} \fProc{p'}$.
 \end{definition}
@@ -132,7 +132,7 @@ to the ones for terms.
           ${\fType{\Sigma} = \fType{\Sigma_0, \Sigma_v, \Sigma_w, \fFunc{c}:\sSend{U}{S}}}$
           and there are a session environment $\fType{\Sigma_e}$ with
           $\dom(\fType{\Sigma_e}) = \fc(\fFunc{v}) \cap \fProc{C}$
-          (the restricted channels that escape with the message)
+          (the restricted channels extruded by the message)
           and $\dom(\fType{\Sigma_e}) \disjoint \dom(\fType{\Sigma})$,
           a splitting $\fProc{C'} = \fProc{C_0} \cupdot \fProc{C_w}$ and
           $\fProc{E'} = \fProc{E_0} \uplus \fProc{E_w}$,
@@ -312,7 +312,7 @@ A transition whose side condition fails carries no obligation at all.
               {\fProc{p} \trans{\lSend{c}{v}} \fProc{(C_0 \cupdot C_w, E_0 \uplus E_w)} : \fType{T}}}
     \end{bussproof}
   \end{mathpar}
-  \textbf{Interface topology} $\fProc{p} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ \rocq{topo_split}
+  \textbf{Extrusion split} $\fProc{p} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ \rocq{extrusion_split}
   \begin{mathpar}
     \begin{bussproof}[T-Nil]
       \bussAx{\fProc{(\emptyset,\emptyset)} \in \lrTopo{n}{\fType{\tEmpty ; \tEmpty \vdash \tUnit}}}
@@ -326,16 +326,16 @@ A transition whose side condition fails carries no obligation at all.
     \end{bussproof}
   \end{mathpar}
   \caption{The process logical relation of \cref{fig:logrel} and the
-    interface topology of Definition~\ref{def:topo}, as inference rules.}
-  \Description{The process relation as a base and a step rule, four obligation rules indexed by the transition label, and two rules defining the interface topology inductively.}
+    extrusion split of Definition~\ref{def:topo}, as inference rules.}
+  \Description{The process relation as a base and a step rule, four obligation rules indexed by the transition label, and two rules defining the extrusion split inductively.}
   \label{fig:logrel-rules-proc}
 \end{figure}
 
 The third case of the process relation refers to an auxiliary
-\emph{interface topology} relation, which distributes the escaped
+\emph{extrusion split} relation, which distributes the extruded
 channels over the residual process one channel at a time.
 
-\begin{definition}[Interface topology, \rocq{topo_split}]
+\begin{definition}[Extrusion split \rocq{extrusion_split}]
 \label{def:topo}
   Let $\fType{\Sigma_e}$ be a session environment.
   We write
@@ -356,9 +356,9 @@ channels over the residual process one channel at a time.
 This is the one place where the relation constrains topology, and it
 constrains it only on the \emph{outside}: internally a component may
 be as cyclic as it likes, but an output must leave the residual split
-one piece per escaped channel.  A single piece holding two escaped
+one piece per extruded channel.  A single piece holding two extruded
 ends could close a dependency cycle through the environment, and the
-compositionality proofs reconnect each transferred channel to its own
+compositionality proofs reconnect each extruded channel to its own
 piece separately.
 
 We can now define semantic counterparts to the typing judgments for terms
@@ -372,7 +372,7 @@ To bridge the gap, we introduce \emph{grounding substitutions},
 as is standard, to close an open term by substituting the free variables
 with closed terms respecting their assumed types.
 
-\begin{definition}[Grounding substitutions, \rocq{grounding}]
+\begin{definition}[Grounding substitutions \rocq{grounding}]
   % For $n\in\Nat$,
   We define $ \lrGSub{n}{\fType{\Sigma;\Delta}} $~by:
   \[
@@ -394,7 +394,7 @@ with closed terms respecting their assumed types.
   \]
 \end{definition}
 
-\begin{definition}[Semantic judgments, \rocq{sem_typed}, \rocq{sem_ptyped}]
+\begin{definition}[Semantic judgments \rocq{sem_typed}]
 \label{def:sem-judgments}
   We define:
   \begin{align*}
@@ -450,7 +450,7 @@ To prove adequacy of our logical relation, we need two auxiliary lemmas.
   Hence $p\redu p'$ and so~$p$ is safe.
 \end{proof}
 
-\begin{theorem}[Adequacy, \rocq{adequacy}]
+\begin{theorem}[Adequacy \rocq{adequacy}]
   \label{thm:adequacy}
   If $\fType{\tEmpty \proves \fProc{p} : T}$ then
   $\fProc{p}$ is deadlock free.
@@ -478,7 +478,7 @@ We report here the ones for the process judgment,
 and give a proof sketch of \ruleLabel{P-Connect}
 as a representative example of the arguments involved.
 
-\begin{lemma}[Downward closure, \rocq{Erel_down}, \rocq{Prel_down}]
+\begin{lemma}[Downward closure \rocq{Erel_down}]
   \label{lem:lr-dwdcl}
   If $ \fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T}} $,
   then $ \fFunc{e} \in \lrTerm{m}{\fType{\Sigma \vdash T}} $
@@ -544,7 +544,7 @@ as a representative example of the arguments involved.
 %   ${\fFunc{\tLet[\tLVA][\tLVB]{e_1}{e_2}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}}}$.
 % \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{term}, \rocq{Prel_term}]
+\begin{lemma}[Compositionality: \ruleLabel{term} \rocq{Prel_term}]
   \label{lem:comp:term}
   If
   $\primitive \fType{T}$
@@ -553,7 +553,7 @@ as a representative example of the arguments involved.
   then it holds that
   ${\fProc{(\emptyset, \mset{\fFunc{e}})} \in \lrProc{n}{\fType{\Sigma \vdash T}}}$.
 \end{lemma}
-\begin{lemma}[Compositionality: \ruleLabel{independent}, \rocq{Prel_independent}]
+\begin{lemma}[Compositionality: \ruleLabel{independent} \rocq{Prel_independent}]
   \label{lem:comp:independent}
   If
   $\primitive \fType{T}$
@@ -569,7 +569,7 @@ as a representative example of the arguments involved.
   $\fProc{(C_1 \cupdot C_2, E_1 \uplus E_2)} \in \lrProc{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}}$.
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{connect}, \rocq{Prel_connect}]
+\begin{lemma}[Compositionality: \ruleLabel{connect} \rocq{Prel_connect}]
   \label{lem:comp:connect}
   If
   $\primitive \fType{T}$
@@ -634,9 +634,7 @@ as a representative example of the arguments involved.
   All the term rules of \cref{fig:typeSys} hold (as implications) for the
   semantic judgment of terms.
   \\[2pt]\null\hfill
-  \rocq{sem_typed_unit}, \rocq{sem_typed_konst}, \rocq{sem_typed_var},
-  \rocq{sem_typed_chan}, \rocq{sem_typed_lam}, \rocq{sem_typed_app},
-  \rocq{sem_typed_pair}, \rocq{sem_typed_letu}, \rocq{sem_typed_letp}
+  \rocq{sem_typed_unit}
   % That is:
   % \begin{itemize}
   %   \item \ruleLabel{E-Unit:}
@@ -679,7 +677,7 @@ as a representative example of the arguments involved.
   All the process rules of \cref{fig:typeSys} hold (as implications) for the
   semantic judgment of processes.
   \\[2pt]\null\hfill
-  \rocq{sem_ptyped_term}, \rocq{sem_ptyped_independent}, \rocq{sem_ptyped_connect}
+  \rocq{sem_ptyped_term}
   % That is:
   % \begin{itemize}
   %   \item\ruleLabel{P-Term:}
@@ -697,7 +695,7 @@ as a representative example of the arguments involved.
   % \end{itemize}
 \end{theorem}
 
-\begin{theorem}[Fundamental Property, \rocq{fundamental_term}, \rocq{fundamental_proc}]
+\begin{theorem}[Fundamental Property \rocq{fundamental_term}]
 \label{th:fundamental}
   Typing implies semantic typing:
   \begin{itemize}
@@ -727,7 +725,7 @@ Finally, we establish the expressiveness of our logical relation by
 showing that the untypable-but-safe processes of \cref{sec:calculus}
 satisfy the semantic judgment.
 
-\begin{example}[Deadlock free cycle, \rocq{sync_cycle_deadlock_free}]
+\begin{example}[Deadlock free cycle \rocq{sync_cycle_deadlock_free}]
   Consider the process $\fProc{\var{cycle}}$ of Example~\ref{ex:cyclic},
   where we spelled out the only transition sequence $p_0 \redu^* p_4$.
   It is not hard to prove that
@@ -758,7 +756,7 @@ satisfy the semantic judgment.
   which, by \cref{thm:adequacy}, is deadlock free.
 \end{example}
 
-\begin{example}[Load balancer, \rocq{lb_deadlock_free}]
+\begin{example}[Load balancer \rocq{lb_deadlock_free}]
   Consider the process $(\emptyset,\fFunc{\var{lb}})$
   of Example~\ref{ex:load-balancer}.
   We can prove that
