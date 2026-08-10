@@ -6,7 +6,7 @@
     property for processes (Theorem 3.13). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export LogRel.
+From LRGV Require Export Junk.
 
 (** ** Infrastructure *)
 
@@ -46,6 +46,12 @@ Proof.
   setoid_rewrite gmultiset_elem_of_disj_union. naive_solver.
 Qed.
 
+(** Normalize echans of multiset unions everywhere, then solve. *)
+Local Ltac esolve :=
+  repeat (progress (rewrite ?echans_disj_union, ?echans_singleton in * );
+          simpl in * );
+  set_solver.
+
 (** Inversion of τ transitions by originating rule. *)
 Lemma proc_step_tau_inv C E p' :
   proc_step (C, E) PTau p' →
@@ -59,13 +65,26 @@ Lemma proc_step_tau_inv C E p' :
      c ∈ C ∧ p' = (C, F ⊎ {[+ e' +]} ⊎ {[+ f' +]}))
   ∨ (∃ F c e e' f f', E = F ⊎ {[+ e +]} ⊎ {[+ f +]} ∧
      tstep e (LSess (SClos c)) e' ∧ tstep f (LSess (SClos c)) f' ∧
-     c ∈ C ∧ p' = (C ∖ {[c]}, F ⊎ {[+ e' +]} ⊎ {[+ f' +]})).
+     c ∈ C ∧ p' = (C ∖ {[c]}, F ⊎ {[+ e' +]} ⊎ {[+ f' +]}))
+  ∨ (∃ F e c d e', E = F ⊎ {[+ e +]} ∧ tstep e (LSess (SLink {[c; d]})) e' ∧
+     c ∈ C ∧ p' = (C ∖ {[c]}, echsubst c d (F ⊎ {[+ e' +]}))).
 Proof.
   intros H. inversion H; simplify_eq.
   - left. eauto 10.
   - right; left. eauto 12.
-  - right; right; left. eauto 20.
-  - right; right; right. eauto 20.
+  - do 2 right; left. eauto 20.
+  - do 3 right; left. eauto 20.
+  - do 4 right. eauto 14.
+Qed.
+
+(** Subjects of session transitions occur free in the source. *)
+Lemma tstep_subj_occ e σ e' :
+  tstep e (LSess σ) e' → subjs σ ⊆ fchans e.
+Proof.
+  intros H. remember (LSess σ) as α eqn:Hα.
+  induction H; subst; simpl; try set_solver.
+  match goal with Hh : head_step _ _ _ |- _ =>
+    inversion Hh; simplify_eq; simpl; set_solver end.
 Qed.
 
 (** Locating a distinguished occurrence in a split multiset. *)
@@ -111,23 +130,26 @@ Qed.
 (** Any session transition allowed by the relation communicates on a
     channel of Σ. *)
 Lemma Prel_sess_subj n Σ T p σ p' :
-  Prel (S n) Σ T p → proc_step p (PSess σ) p' → subj σ ∈ dom Σ.
+  Prel (S n) Σ T p → proc_step p (PSess σ) p' → subjs σ ⊆ dom Σ.
 Proof.
   intros HP Hst. pose proof (Prel_S_step _ _ _ _ _ _ HP Hst) as Hc.
-  destruct σ as [c w|c w|c]; simpl in Hc |- *.
+  destruct σ as [c w|c w|c|cd]; simpl in Hc |- *.
   - destruct Hc as (Σ1 & U & s & Hhd & _).
     rewrite (senv_hd_dom _ _ _ _ Hhd). set_solver.
   - destruct Hc as (?&?&?&?&?&?&?&?&?&?&?&?&Hhd&_).
     rewrite (senv_hd_dom _ _ _ _ Hhd). set_solver.
   - destruct Hc as (Σ1 & Hhd & _).
     rewrite (senv_hd_dom _ _ _ _ Hhd). set_solver.
+  - (* forwarding: both ends are entries of Σ *)
+    destruct Hc as (c & d & Σ1 & sc & sd & -> & Hcd & -> & _).
+    rewrite !dom_insert_L. set_solver.
 Qed.
 
 (** A component's transition yields a transition of the composition
     (retargeting forks to globally fresh names). *)
 Lemma proc_step_frame_l C1 E1 C2 E2 π p1' :
   proc_step (C1, E1) π p1' →
-  (∀ σ, π = PSess σ → subj σ ∉ C2) →
+  (∀ σ, π = PSess σ → subjs σ ## C2) →
   ∃ π' q, proc_step (C1 ∪ C2, E1 ⊎ E2) π' q.
 Proof.
   intros Hst Hsubj. destruct π as [|σ].
@@ -135,7 +157,8 @@ Proof.
       as [(F & e & e' & -> & He & _)
          |[(F & e & c & v & e' & -> & He & Hc1 & Hce & Hcf & _)
          |[(F & c & v & e & e' & f & f' & -> & He & Hf & Hc & _)
-         |(F & c & e & e' & f & f' & -> & He & Hf & Hc & _)]]].
+         |[(F & c & e & e' & f & f' & -> & He & Hf & Hc & _)
+         |(F & e & c & d & e' & -> & He & Hc & _)]]]].
     + assert ((F ⊎ {[+ e +]}) ⊎ E2 = (F ⊎ E2) ⊎ {[+ e +]}) as ->
         by multiset_solver.
       eexists _, _. by eapply PStepBeta.
@@ -151,6 +174,9 @@ Proof.
     + assert ((F ⊎ {[+ e +]} ⊎ {[+ f +]}) ⊎ E2
               = ((F ⊎ E2) ⊎ {[+ e +]}) ⊎ {[+ f +]}) as -> by multiset_solver.
       eexists _, _. eapply PStepClose; [done|done|set_solver].
+    + assert ((F ⊎ {[+ e +]}) ⊎ E2 = (F ⊎ E2) ⊎ {[+ e +]}) as ->
+        by multiset_solver.
+      eexists _, _. eapply PStepLink; [done|set_solver].
   - apply proc_step_sess_inv in Hst as (F & e & e' & -> & He & Hsub & _).
     specialize (Hsubj σ eq_refl).
     assert ((F ⊎ {[+ e +]}) ⊎ E2 = (F ⊎ E2) ⊎ {[+ e +]}) as ->
@@ -238,9 +264,9 @@ Proof.
   intros HP1 HP2 Hd1 Hd2 Hirr.
   assert (pirred (C1, E1)) as Hirr1 by (eapply pirred_split_l; eauto).
   assert (pirred (C2, E2)) as Hirr2 by (eapply pirred_split_r; eauto).
-  apply Prel_S_iff in HP1 as [H1 _].
+  apply Prel_S_iff in HP1 as (H1 & _).
   destruct (H1 Hirr1) as (v1 & F1 & Heq1 & Hv1 & HV1 & HU1).
-  apply Prel_S_iff in HP2 as [H2 _].
+  apply Prel_S_iff in HP2 as (H2 & _).
   destruct (H2 Hirr2) as (v2 & F2 & Heq2 & Hv2 & HV2 & HU2).
   simplify_eq.
   apply Vrel_unit_iff in HV2 as [-> ->].
@@ -273,7 +299,8 @@ Proof.
     as [(F & e & e' & Heq & He & ->)
        |[(F & e & c & v & e' & Heq & He & Hc1 & Hce & Hcf & ->)
        |[(F & c & v & e & e' & f & f' & Heq & He & Hf & Hc & ->)
-       |(F & c & e & e' & f & f' & Heq & He & Hf & Hc & ->)]]];
+       |[(F & c & e & e' & f & f' & Heq & He & Hf & Hc & ->)
+       |(F & e & c & d & e' & Heq & He & Hc & ->)]]]];
     simpl in Hg.
   - (* β *)
     apply gmultiset_split_elem_of in Heq as [(F1 & -> & ->)|(F2 & -> & ->)].
@@ -285,7 +312,8 @@ Proof.
         by multiset_solver.
       eapply IH;
         [done|by split|set_solver|set_solver|set_solver|set_solver
-        |set_solver|eauto using Prel_down1|eauto using Prel_down1].
+        |set_solver
+        |eauto using Prel_down1|eauto using Prel_down1].
     + assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau (C2, F2 ⊎ {[+ e' +]}))
         as Hst2 by (by eapply PStepBeta).
       pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2. simpl in HC2.
@@ -294,7 +322,8 @@ Proof.
         by multiset_solver.
       eapply IH;
             [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver|eauto using Prel_down1|eauto using Prel_down1].
+            |set_solver
+            |eauto using Prel_down1|eauto using Prel_down1].
   - (* fork *)
     apply gmultiset_split_elem_of in Heq as [(F1 & -> & ->)|(F2 & -> & ->)].
     + rewrite echans_disj_union in Hce.
@@ -309,7 +338,8 @@ Proof.
         by multiset_solver.
       eapply IH;
             [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver|eauto using Prel_down1|eauto using Prel_down1].
+            |set_solver
+            |eauto using Prel_down1|eauto using Prel_down1].
     + rewrite echans_disj_union in Hce.
       assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau
                 (C2 ∪ {[c]}, F2 ⊎ {[+ e' +]} ⊎ {[+ App v (Chan c) +]}))
@@ -322,7 +352,8 @@ Proof.
         by multiset_solver.
       eapply IH;
             [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver|eauto using Prel_down1|eauto using Prel_down1].
+            |set_solver
+            |eauto using Prel_down1|eauto using Prel_down1].
   - (* msg *)
     apply gmultiset_split_elem_of2 in Heq
       as [(F1 & -> & ->)|[(F2 & -> & ->)
@@ -339,14 +370,15 @@ Proof.
           by multiset_solver.
         eapply IH;
             [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver|eauto using Prel_down1|eauto using Prel_down1].
+            |set_solver
+            |eauto using Prel_down1|eauto using Prel_down1].
       * exfalso.
         assert (proc_step (C1, F1 ⊎ {[+ e +]} ⊎ {[+ f +]}) (PSess (SSend c v))
                   (C1 ∖ sentc (SSend c v), (F1 ⊎ {[+ f +]}) ⊎ {[+ e' +]}))
           as Hst1.
         { assert (F1 ⊎ {[+ e +]} ⊎ {[+ f +]} = (F1 ⊎ {[+ f +]}) ⊎ {[+ e +]})
             as -> by multiset_solver.
-          by eapply PStepSession. }
+          eapply PStepSession; [done|set_solver]. }
         pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst1). simpl in *.
         set_solver.
     + (* both threads in E2 *)
@@ -361,14 +393,15 @@ Proof.
           by multiset_solver.
         eapply IH;
             [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver|eauto using Prel_down1|eauto using Prel_down1].
+            |set_solver
+            |eauto using Prel_down1|eauto using Prel_down1].
       * exfalso.
         assert (proc_step (C2, F2 ⊎ {[+ e +]} ⊎ {[+ f +]}) (PSess (SSend c v))
                   (C2 ∖ sentc (SSend c v), (F2 ⊎ {[+ f +]}) ⊎ {[+ e' +]}))
           as Hst2.
         { assert (F2 ⊎ {[+ e +]} ⊎ {[+ f +]} = (F2 ⊎ {[+ f +]}) ⊎ {[+ e +]})
             as -> by multiset_solver.
-          by eapply PStepSession. }
+          eapply PStepSession; [done|set_solver]. }
         pose proof (Prel_sess_subj _ _ _ _ _ _ HP2 Hst2). simpl in *.
         set_solver.
     + (* sender in E1, receiver in E2 *)
@@ -413,14 +446,15 @@ Proof.
           by multiset_solver.
         eapply IH;
             [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver|eauto using Prel_down1|eauto using Prel_down1].
+            |set_solver
+            |eauto using Prel_down1|eauto using Prel_down1].
       * exfalso.
         assert (proc_step (C1, F1 ⊎ {[+ e +]} ⊎ {[+ f +]}) (PSess (SClos c))
                   (C1 ∖ sentc (SClos c), (F1 ⊎ {[+ f +]}) ⊎ {[+ e' +]}))
           as Hst1.
         { assert (F1 ⊎ {[+ e +]} ⊎ {[+ f +]} = (F1 ⊎ {[+ f +]}) ⊎ {[+ e +]})
             as -> by multiset_solver.
-          by eapply PStepSession. }
+          eapply PStepSession; [done|set_solver]. }
         pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst1). simpl in *.
         set_solver.
     + destruct (decide (c ∈ C2)) as [HcC2|HcC2].
@@ -435,14 +469,15 @@ Proof.
           by multiset_solver.
         eapply IH;
             [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver|eauto using Prel_down1|eauto using Prel_down1].
+            |set_solver
+            |eauto using Prel_down1|eauto using Prel_down1].
       * exfalso.
         assert (proc_step (C2, F2 ⊎ {[+ e +]} ⊎ {[+ f +]}) (PSess (SClos c))
                   (C2 ∖ sentc (SClos c), (F2 ⊎ {[+ f +]}) ⊎ {[+ e' +]}))
           as Hst2.
         { assert (F2 ⊎ {[+ e +]} ⊎ {[+ f +]} = (F2 ⊎ {[+ f +]}) ⊎ {[+ e +]})
             as -> by multiset_solver.
-          by eapply PStepSession. }
+          eapply PStepSession; [done|set_solver]. }
         pose proof (Prel_sess_subj _ _ _ _ _ _ HP2 Hst2). simpl in *.
         set_solver.
     + exfalso. destruct (decide (c ∈ C1)) as [HcC1|HcC1].
@@ -469,6 +504,211 @@ Proof.
           by (eapply PStepSession; [done|set_solver]).
         pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst1). simpl in *.
         set_solver.
+  - (* link: attribution by cases on which side restricts the retired
+       end.  The sibling's copy of the retargeting is the junk-renaming
+       transport — the sibling neither owns nor restricts either end it
+       mentions, except possibly the survivor, which the transport now
+       tolerates.  When the actor's component restricts only the
+       SURVIVING end, the composite step is first re-oriented
+       ([Prel_link_orient]) so that the retired end is the actor's. *)
+    apply gmultiset_split_elem_of in Heq as [(F1 & -> & ->)|(F2 & -> & ->)].
+    + (* actor in E1 *)
+      destruct (decide (c = d)) as [<-|Hcd].
+      { (* degenerate self-forwarding: the substitution is the identity *)
+        destruct (decide (c ∈ C1)) as [HcC1|HcC1].
+        - (* comp1 releases its own name *)
+          assert (proc_step (C1, F1 ⊎ {[+ e +]}) PTau
+                    (C1 ∖ {[c]}, echsubst c c (F1 ⊎ {[+ e' +]}))) as Hst1
+            by (by eapply PStepLink).
+          pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1. simpl in HC1.
+          specialize (HC1 ltac:(clear -Hs1; set_solver)).
+          assert ((C1 ∪ C2) ∖ {[c]} = (C1 ∖ {[c]}) ∪ C2) as ->
+            by (clear -Hcc HcC1; set_solver).
+          assert (echsubst c c (F1 ⊎ E2 ⊎ {[+ e' +]})
+                  = echsubst c c (F1 ⊎ {[+ e' +]}) ⊎ E2) as ->
+            by (rewrite !echsubst_refl; multiset_solver).
+          eapply IH;
+            [done|by split|set_solver|set_solver|set_solver|set_solver
+            |set_solver|exact HC1|eauto using Prel_down1].
+        - (* c is the sibling's name: comp1 offers the singleton
+             forwarding, which the relation refutes *)
+          exfalso.
+          assert (proc_step (C1, F1 ⊎ {[+ e +]}) (PSess (SLink {[c; c]}))
+                    (C1 ∖ sentc (SLink {[c; c]}), F1 ⊎ {[+ e' +]})) as Hst1.
+          { eapply PStepSession; [exact He|]. simpl.
+            clear -HcC1. set_solver. }
+          pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hcl. simpl in Hcl.
+          destruct Hcl as (c1 & d1 & Σ1a & sc & sd & Hset & Hne & _).
+          apply Hne.
+          assert (c1 ∈ ({[c; c]} : gset chan)) as H1
+            by (rewrite Hset; clear; set_solver).
+          assert (d1 ∈ ({[c; c]} : gset chan)) as H2
+            by (rewrite Hset; clear; set_solver).
+          clear -H1 H2. set_solver. }
+      apply elem_of_union in Hc as [HcC1|HcC2].
+      * (* the retired end is comp1's: comp1 steps, the sibling
+           junk-renames c to d *)
+        assert (proc_step (C1, F1 ⊎ {[+ e +]}) PTau
+                  (C1 ∖ {[c]}, echsubst c d (F1 ⊎ {[+ e' +]}))) as Hst1
+          by (by eapply PStepLink).
+        pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1. simpl in HC1.
+        specialize (HC1 ltac:(clear -Hs1; set_solver)).
+        assert ((C1 ∪ C2) ∖ {[c]} = (C1 ∖ {[c]}) ∪ C2) as ->
+          by (clear -Hcc HcC1; set_solver).
+        assert (echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})
+                = echsubst c d (F1 ⊎ {[+ e' +]}) ⊎ echsubst c d E2) as ->
+          by (rewrite !echsubst_disj_union; multiset_solver).
+        assert (Prel n Σ2 TUnit (C2, echsubst c d E2)) as HP2'.
+        { apply Prel_junk_subst;
+            [clear -Hd1 HcC1; set_solver
+            |clear -Hcc HcC1; set_solver
+            |intros Hb; clear -Hs2 Hb; set_solver
+            |clear -Hcd; congruence
+            |by apply Prel_down1]. }
+        eapply IH;
+          [done|by split|set_solver|set_solver|set_solver|set_solver
+          |set_solver|exact HC1|exact HP2'].
+      * (* the retired end is the sibling's *)
+        destruct (decide (d ∈ C1)) as [HdC1|HdC1]; last first.
+        { (* both label ends are free for comp1: it offers the
+             forwarding, and the clause puts c into dom Σ1 — refuted
+             by C2 ## dom Σ1 *)
+          exfalso.
+          assert (proc_step (C1, F1 ⊎ {[+ e +]}) (PSess (SLink {[c; d]}))
+                    (C1 ∖ sentc (SLink {[c; d]}), F1 ⊎ {[+ e' +]})) as Hst1.
+          { eapply PStepSession; [exact He|]. simpl.
+            clear -Hcc HcC2 HdC1. set_solver. }
+          pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hcl. simpl in Hcl.
+          destruct Hcl as (c1 & d1 & Σ1a & sc & sd & Hset & Hne & HeqΣ & _).
+          assert (c ∈ dom Σ1) as HcΣ1.
+          { assert (c ∈ ({[c1; d1]} : gset chan)) as Hcin
+              by (rewrite <-Hset; clear; set_solver).
+            subst Σ1. rewrite !dom_insert_L. clear -Hcin. set_solver. }
+          clear -HcΣ1 Hd2 HcC2. set_solver. }
+        (* c ∈ C2 and d ∈ C1: re-orient so that comp1's end is the
+           retired one, then proceed as above with the roles of c and
+           d exchanged *)
+        apply (Prel_link_orient n (Σ1 ∪ Σ2) T (C1 ∪ C2) _ c d);
+          [done
+          |clear -HcC2; set_solver
+          |clear -HdC1; set_solver
+          |rewrite dom_union_L; clear -Hd2 Hs2 HcC2; set_solver
+          |rewrite dom_union_L; clear -Hd1 Hs1 HdC1; set_solver|].
+        assert (tstep e (LSess (SLink {[d; c]})) e') as He'
+          by (rewrite upair_comm; exact He).
+        assert (proc_step (C1, F1 ⊎ {[+ e +]}) PTau
+                  (C1 ∖ {[d]}, echsubst d c (F1 ⊎ {[+ e' +]}))) as Hst1
+          by (by eapply PStepLink).
+        pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1. simpl in HC1.
+        specialize (HC1 ltac:(clear -Hs1; set_solver)).
+        assert ((C1 ∪ C2) ∖ {[d]} = (C1 ∖ {[d]}) ∪ C2) as ->
+          by (clear -Hcc HdC1; set_solver).
+        assert (echsubst d c (F1 ⊎ E2 ⊎ {[+ e' +]})
+                = echsubst d c (F1 ⊎ {[+ e' +]}) ⊎ echsubst d c E2) as ->
+          by (rewrite !echsubst_disj_union; multiset_solver).
+        assert (Prel n Σ2 TUnit (C2, echsubst d c E2)) as HP2'.
+        { apply Prel_junk_subst;
+            [clear -Hd1 HdC1; set_solver
+            |clear -Hcc HdC1; set_solver
+            |intros Hb; clear -Hs2 Hb; set_solver
+            |exact Hcd
+            |by apply Prel_down1]. }
+        eapply IH;
+          [done|by split|set_solver|set_solver|set_solver|set_solver
+          |set_solver|exact HC1|exact HP2'].
+    + (* actor in E2, mirrored *)
+      destruct (decide (c = d)) as [<-|Hcd].
+      { destruct (decide (c ∈ C2)) as [HcC2|HcC2].
+        - assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau
+                    (C2 ∖ {[c]}, echsubst c c (F2 ⊎ {[+ e' +]}))) as Hst2
+            by (by eapply PStepLink).
+          pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2. simpl in HC2.
+          specialize (HC2 ltac:(clear -Hs2; set_solver)).
+          assert ((C1 ∪ C2) ∖ {[c]} = C1 ∪ (C2 ∖ {[c]})) as ->
+            by (clear -Hcc HcC2; set_solver).
+          assert (echsubst c c (E1 ⊎ F2 ⊎ {[+ e' +]})
+                  = E1 ⊎ echsubst c c (F2 ⊎ {[+ e' +]})) as ->
+            by (rewrite !echsubst_refl; multiset_solver).
+          eapply IH;
+            [done|by split|set_solver|set_solver|set_solver|set_solver
+            |set_solver|eauto using Prel_down1|exact HC2].
+        - exfalso.
+          assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess (SLink {[c; c]}))
+                    (C2 ∖ sentc (SLink {[c; c]}), F2 ⊎ {[+ e' +]})) as Hst2.
+          { eapply PStepSession; [exact He|]. simpl.
+            clear -HcC2. set_solver. }
+          pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hcl. simpl in Hcl.
+          destruct Hcl as (c1 & d1 & Σ2a & sc & sd & Hset & Hne & _).
+          apply Hne.
+          assert (c1 ∈ ({[c; c]} : gset chan)) as H1
+            by (rewrite Hset; clear; set_solver).
+          assert (d1 ∈ ({[c; c]} : gset chan)) as H2
+            by (rewrite Hset; clear; set_solver).
+          clear -H1 H2. set_solver. }
+      apply elem_of_union in Hc as [HcC1|HcC2].
+      * (* the retired end is the sibling's *)
+        destruct (decide (d ∈ C2)) as [HdC2|HdC2]; last first.
+        { exfalso.
+          assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess (SLink {[c; d]}))
+                    (C2 ∖ sentc (SLink {[c; d]}), F2 ⊎ {[+ e' +]})) as Hst2.
+          { eapply PStepSession; [exact He|]. simpl.
+            clear -Hcc HcC1 HdC2. set_solver. }
+          pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hcl. simpl in Hcl.
+          destruct Hcl as (c1 & d1 & Σ2a & sc & sd & Hset & Hne & HeqΣ & _).
+          assert (c ∈ dom Σ2) as HcΣ2.
+          { assert (c ∈ ({[c1; d1]} : gset chan)) as Hcin
+              by (rewrite <-Hset; clear; set_solver).
+            subst Σ2. rewrite !dom_insert_L. clear -Hcin. set_solver. }
+          clear -HcΣ2 Hd1 HcC1. set_solver. }
+        apply (Prel_link_orient n (Σ1 ∪ Σ2) T (C1 ∪ C2) _ c d);
+          [done
+          |clear -HcC1; set_solver
+          |clear -HdC2; set_solver
+          |rewrite dom_union_L; clear -Hd1 Hs1 HcC1; set_solver
+          |rewrite dom_union_L; clear -Hd2 Hs2 HdC2; set_solver|].
+        assert (tstep e (LSess (SLink {[d; c]})) e') as He'
+          by (rewrite upair_comm; exact He).
+        assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau
+                  (C2 ∖ {[d]}, echsubst d c (F2 ⊎ {[+ e' +]}))) as Hst2
+          by (by eapply PStepLink).
+        pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2. simpl in HC2.
+        specialize (HC2 ltac:(clear -Hs2; set_solver)).
+        assert ((C1 ∪ C2) ∖ {[d]} = C1 ∪ (C2 ∖ {[d]})) as ->
+          by (clear -Hcc HdC2; set_solver).
+        assert (echsubst d c (E1 ⊎ F2 ⊎ {[+ e' +]})
+                = echsubst d c E1 ⊎ echsubst d c (F2 ⊎ {[+ e' +]})) as ->
+          by (rewrite !echsubst_disj_union; multiset_solver).
+        assert (Prel n Σ1 T (C1, echsubst d c E1)) as HP1'.
+        { apply Prel_junk_subst;
+            [clear -Hd2 HdC2; set_solver
+            |clear -Hcc HdC2; set_solver
+            |intros Hb; clear -Hs1 Hb; set_solver
+            |exact Hcd
+            |by apply Prel_down1]. }
+        eapply IH;
+          [done|by split|set_solver|set_solver|set_solver|set_solver
+          |set_solver|exact HP1'|exact HC2].
+      * (* the retired end is comp2's *)
+        assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau
+                  (C2 ∖ {[c]}, echsubst c d (F2 ⊎ {[+ e' +]}))) as Hst2
+          by (by eapply PStepLink).
+        pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2. simpl in HC2.
+        specialize (HC2 ltac:(clear -Hs2; set_solver)).
+        assert ((C1 ∪ C2) ∖ {[c]} = C1 ∪ (C2 ∖ {[c]})) as ->
+          by (clear -Hcc HcC2; set_solver).
+        assert (echsubst c d (E1 ⊎ F2 ⊎ {[+ e' +]})
+                = echsubst c d E1 ⊎ echsubst c d (F2 ⊎ {[+ e' +]})) as ->
+          by (rewrite !echsubst_disj_union; multiset_solver).
+        assert (Prel n Σ1 T (C1, echsubst c d E1)) as HP1'.
+        { apply Prel_junk_subst;
+            [clear -Hd2 HcC2; set_solver
+            |clear -Hcc HcC2; set_solver
+            |intros Hb; clear -Hs1 Hb; set_solver
+            |clear -Hcd; congruence
+            |by apply Prel_down1]. }
+        eapply IH;
+          [done|by split|set_solver|set_solver|set_solver|set_solver
+          |set_solver|exact HP1'|exact HC2].
 Qed.
 
 (** ** The session cases of INDEPENDENT *)
@@ -491,7 +731,7 @@ Proof.
               (C1 ∖ sentc σ, F1 ⊎ {[+ e' +]})) as Hst1
       by (eapply PStepSession; [done|set_solver]).
     pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hc.
-    destruct σ as [c w|c w|c]; simpl in Hc |- *.
+    destruct σ as [c w|c w|c|cd]; simpl in Hc |- *.
     + (* recv *)
       destruct Hc as (Σ1a & U & s & (s0 & HeqΣ & Hu) & Hca & Hcont).
       subst Σ1.
@@ -511,12 +751,13 @@ Proof.
         by senv_perm.
       eapply (IH j Hj);
         [done|split; [done|senv_disj]|set_solver|set_solver|set_solver|set_solver
-        |set_solver|exact Hcont|eapply Prel_down; [|exact HP2]; lia].
+        |set_solver
+        |exact Hcont|eapply Prel_down; [|exact HP2]; lia].
     + (* send *)
       destruct Hc as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew & T0 & Tw
                       & (s0 & HeqΣ & Hu) & Hd0v & Hd0w & Hdvw & Hc0 & Hcv & Hcw
-                      & Hdome & Hσed & Hcσe & HpC & HC0w & HpE & HVw & HP0
-                      & HPw & Hty).
+                      & Hdome & Hσed & Hcσe & HpC & HC0w & HpE
+                      & HVw & HP0 & HPw & Hty).
       simpl in HpC, HpE, Hdome. subst Σ1.
       destruct (ty_one_of_prim _ _ _ Hty Hprim) as [HpT0 HpTw].
       assert (fchans w ⊆ dom Σv ∪ dom σe) as Hfw.
@@ -545,7 +786,8 @@ Proof.
       { replace (<[c:=s]> (Σ0 ∪ Σ2)) with (<[c:=s]> Σ0 ∪ Σ2) by senv_perm.
         eapply IHn;
           [done|split; [done|senv_disj]|set_solver|set_solver|set_solver|set_solver
-          |set_solver|exact HP0|eauto using Prel_down1]. }
+          |set_solver
+          |exact HP0|eauto using Prel_down1]. }
       { exact HPw. }
       { exact Hty. }
     + (* close *)
@@ -561,13 +803,43 @@ Proof.
         with ((F1 ⊎ {[+ e' +]}) ⊎ E2) by multiset_solver.
       eapply IHn;
         [done|split; [done|senv_disj]|set_solver|set_solver|set_solver|set_solver
-        |set_solver|exact Hcont|eauto using Prel_down1].
+        |set_solver
+        |exact Hcont|eauto using Prel_down1].
+    + (* forwarding: both ends are interface channels of the acting
+         component (by its forwarding clause), and the composite clause
+         reassembles the two inserts over the union *)
+      destruct Hc as (c & d & Σ1a & sc & sd & -> & Hne & HeqΣ & Hc1a & Hd1a
+                      & Hdu & Hcont).
+      subst Σ1.
+      assert (c ∉ dom Σ2 ∧ d ∉ dom Σ2) as [Hc2 Hd2'].
+      { apply map_disjoint_dom in Hdd. rewrite !dom_insert_L in Hdd.
+        set_solver. }
+      exists c, d, (Σ1a ∪ Σ2), sc, sd. split_and!.
+      { done. }
+      { done. }
+      { by rewrite !insert_union_l. }
+      { rewrite dom_union_L. set_solver. }
+      { rewrite dom_union_L. set_solver. }
+      { done. }
+      replace ((C1 ∪ C2) ∖ ∅) with (C1 ∪ C2) by set_solver.
+      replace (C1 ∖ ∅) with C1 in Hcont by set_solver.
+      replace (F1 ⊎ E2 ⊎ {[+ e' +]}) with ((F1 ⊎ {[+ e' +]}) ⊎ E2)
+        by multiset_solver.
+      eapply IHn;
+        [done| |set_solver| | | | 
+        |exact Hcont|eauto using Prel_down1].
+      { split; [done|]. apply map_disjoint_dom in Hdd.
+        apply map_disjoint_dom. rewrite !dom_insert_L in Hdd. set_solver. }
+      { set_solver. }
+      { rewrite !dom_insert_L in Hd2. set_solver. }
+      { rewrite !dom_insert_L in Hs1. set_solver. }
+      { set_solver. }
   - (* the acting thread is in E2 (the unit side) *)
     assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess σ)
               (C2 ∖ sentc σ, F2 ⊎ {[+ e' +]})) as Hst2
       by (eapply PStepSession; [done|set_solver]).
     pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hc.
-    destruct σ as [c w|c w|c]; simpl in Hc |- *.
+    destruct σ as [c w|c w|c|cd]; simpl in Hc |- *.
     + (* recv *)
       destruct Hc as (Σ2a & U & s & (s0 & HeqΣ & Hu) & Hca & Hcont).
       subst Σ2.
@@ -587,12 +859,13 @@ Proof.
         by senv_perm.
       eapply (IH j Hj);
         [done|split; [done|senv_disj]|set_solver|set_solver|set_solver|set_solver
-        |set_solver|eapply Prel_down; [|exact HP1]; lia|exact Hcont].
+        |set_solver
+        |eapply Prel_down; [|exact HP1]; lia|exact Hcont].
     + (* send *)
       destruct Hc as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew & T0 & Tw
                       & (s0 & HeqΣ & Hu) & Hd0v & Hd0w & Hdvw & Hc0 & Hcv & Hcw
-                      & Hdome & Hσed & Hcσe & HpC & HC0w & HpE & HVw & HP0
-                      & HPw & Hty).
+                      & Hdome & Hσed & Hcσe & HpC & HC0w & HpE
+                      & HVw & HP0 & HPw & Hty).
       simpl in HpC, HpE, Hdome. subst Σ2.
       apply ty_one_of_unit_inv in Hty as [-> ->].
       assert (fchans w ⊆ dom Σv ∪ dom σe) as Hfw.
@@ -624,7 +897,8 @@ Proof.
         replace (E0 ⊎ E1) with (E1 ⊎ E0) by multiset_solver.
         eapply IHn;
           [done|split; [done|senv_disj]|set_solver|set_solver|set_solver|set_solver
-          |set_solver|eauto using Prel_down1|exact HP0]. }
+          |set_solver
+          |eauto using Prel_down1|exact HP0]. }
       { exact HPw. }
       { by left. }
     + (* close *)
@@ -640,12 +914,41 @@ Proof.
         with (E1 ⊎ (F2 ⊎ {[+ e' +]})) by multiset_solver.
       eapply IHn;
         [done|split; [done|senv_disj]|set_solver|set_solver|set_solver|set_solver
-        |set_solver|eauto using Prel_down1|exact Hcont].
+        |set_solver
+        |eauto using Prel_down1|exact Hcont].
+    + (* forwarding, mirrored *)
+      destruct Hc as (c & d & Σ2a & sc & sd & -> & Hne & HeqΣ & Hc2a & Hd2a
+                      & Hdu & Hcont).
+      subst Σ2.
+      assert (c ∉ dom Σ1 ∧ d ∉ dom Σ1) as [Hc1' Hd1'].
+      { apply map_disjoint_dom in Hdd. rewrite !dom_insert_L in Hdd.
+        set_solver. }
+      exists c, d, (Σ1 ∪ Σ2a), sc, sd. split_and!.
+      { done. }
+      { done. }
+      { rewrite !insert_union_r; [done| |]; by apply not_elem_of_dom. }
+      { rewrite dom_union_L. set_solver. }
+      { rewrite dom_union_L. set_solver. }
+      { done. }
+      replace ((C1 ∪ C2) ∖ ∅) with (C1 ∪ C2) by set_solver.
+      replace (C2 ∖ ∅) with C2 in Hcont by set_solver.
+      replace (E1 ⊎ F2 ⊎ {[+ e' +]}) with (E1 ⊎ (F2 ⊎ {[+ e' +]}))
+        by multiset_solver.
+      eapply IHn;
+        [done| |set_solver| | | | 
+        |eauto using Prel_down1|exact Hcont].
+      { split; [done|]. apply map_disjoint_dom in Hdd.
+        apply map_disjoint_dom. rewrite !dom_insert_L in Hdd. set_solver. }
+      { rewrite !dom_insert_L in Hd1. set_solver. }
+      { set_solver. }
+      { set_solver. }
+      { rewrite !dom_insert_L in Hs2. set_solver. }
 Qed.
 
 Lemma independent_S n (IH : ∀ m, m ≤ n → comp_at m) : independent_at (S n).
 Proof.
-  intros Σ Σ1 Σ2 C1 E1 C2 E2 T Hprim [-> Hdd] Hcc Hd1 Hd2 Hs1 Hs2 HP1 HP2.
+  intros Σ Σ1 Σ2 C1 E1 C2 E2 T Hprim [-> Hdd] Hcc Hd1 Hd2 Hs1 Hs2
+    HP1 HP2.
   assert (∀ m, m ≤ n → independent_at m) as IHi.
   { intros m Hm. by destruct (IH m Hm) as (_ & ? & _). }
   apply Prel_S_intro.
@@ -699,7 +1002,7 @@ Proof.
   apply Prel_S_intro.
   - (* irreducible: the thread is an appropriate value *)
     intros Hirr. pose proof (pirred_singleton _ Hirr) as Hirr1.
-    apply Erel_S_iff in HE as [H1 _]. specialize (H1 Hirr1).
+    apply Erel_S_iff in HE as (H1 & _). specialize (H1 Hirr1).
     exists e, ∅. split_and!.
     + f_equal. multiset_solver.
     + eauto using Vrel_val.
@@ -710,7 +1013,8 @@ Proof.
         as [(F & e0 & e0' & HeqE & He0 & ->)
            |[(F & e0 & c & v & e0' & HeqE & He0 & HcC & Hce & Hcf & ->)
            |[(F & c & v & e0 & e0' & f & f' & HeqE & _)
-           |(F & c & e0 & e0' & f & f' & HeqE & _)]]].
+           |[(F & c & e0 & e0' & f & f' & HeqE & _)
+           |(F & e0 & c & d & e0' & HeqE & He0 & HcC & ->)]]]].
       * (* β *)
         symmetry in HeqE. apply gmultiset_singleton_inv in HeqE as [-> ->].
         simpl. intros Hg.
@@ -749,10 +1053,11 @@ Proof.
         -- apply Vrel_chan.
       * exfalso. symmetry in HeqE. by eapply gmultiset_two_singleton_inv.
       * exfalso. symmetry in HeqE. by eapply gmultiset_two_singleton_inv.
+      * exfalso. clear -HcC. set_solver.
     + apply proc_step_sess_inv in Hst as (F & e0 & e0' & HeqE & He0 & _ & ->).
       symmetry in HeqE. apply gmultiset_singleton_inv in HeqE as [-> ->].
       pose proof (Erel_S_step _ _ _ _ _ _ HE He0) as Hc.
-      destruct σ as [c w|c w|c]; simpl in Hc |- *.
+      destruct σ as [c w|c w|c|cd]; simpl in Hc |- *.
       * (* recv *)
         destruct Hc as (Σ1 & U & s & Hhd & Hca & Hcont).
         exists Σ1, U, s. split_and!; [done|done|].
@@ -792,31 +1097,61 @@ Proof.
         replace ((∅ : gmultiset expr) ⊎ {[+ e0' +]}) with ({[+ e0' +]} : gmultiset expr)
           by multiset_solver.
         apply (IHt n); [lia|done|done].
+      * (* forwarding: the term-level clause is the process-level
+           clause, one index below *)
+        destruct Hc as (c & d & Σ1 & sc & sd & -> & Hne & -> & Hc1 & Hd1
+                        & Hdu & HE').
+        exists c, d, Σ1, sc, sd. split_and!; [done..|].
+        replace ((∅ : gset chan) ∖ ∅) with (∅ : gset chan) by set_solver.
+        replace ((∅ : gmultiset expr) ⊎ {[+ e0' +]})
+          with ({[+ e0' +]} : gmultiset expr) by multiset_solver.
+        apply (IHt n); [lia|done|done].
 Qed.
 
 (** ** CONNECT (Lemma 3.10) *)
 
+Lemma gsingleton_inj (a b : chan) : ({[a]} : gset chan) = {[b]} → a = b.
+Proof.
+  intros H. assert (a ∈ ({[b]} : gset chan)) as Ha
+    by (rewrite <-H; clear; set_solver).
+  by apply elem_of_singleton in Ha.
+Qed.
+
 (** A transition on the distinguished channel c reveals the polarity
-    of c's session type. *)
+    of c's session type. A forwarding cannot occur here at all: its
+    label carries two subjects, so [subjs σ = {[c]}] forces the two
+    ends to coincide, and the forwarding clause demands them
+    distinct. *)
 Lemma Prel_cstep_shape n Σ T C E c s σ p' :
   Prel (S n) (<[c := s]> Σ) T (C, E) → c ∉ dom Σ →
-  proc_step (C, E) (PSess σ) p' → subj σ = c →
+  proc_step (C, E) (PSess σ) p' → subjs σ = {[c]} →
   match σ with
   | SRecv _ _ => ∃ U u, unfoldS s = SRcv U u
   | SSend _ _ => ∃ U u, unfoldS s = SSnd U u
   | SClos _ => unfoldS s = SEnd
+  | SLink _ => False
   end.
 Proof.
   intros HP Hcd Hst Hsubj.
   pose proof (Prel_S_step _ _ _ _ _ _ HP Hst) as Hc.
-  destruct σ as [c' w|c' w|c']; simpl in Hsubj, Hc; subst c'.
-  - destruct Hc as (Σ' & U & u & Hhd & Hc' & _).
+  destruct σ as [c' w|c' w|c'|cd]; simpl in Hsubj, Hc.
+  - apply gsingleton_inj in Hsubj as ->.
+    destruct Hc as (Σ' & U & u & Hhd & Hc' & _).
     apply senv_hd_insert_inv in Hhd as [Hu _]; eauto.
-  - destruct Hc as (Σ0 & Σv & U & u & σe & Σw & ? & ? & ? & ? & ? & ? &
+  - apply gsingleton_inj in Hsubj as ->.
+    destruct Hc as (Σ0 & Σv & U & u & σe & Σw & ? & ? & ? & ? & ? & ? &
                     Hhd & ? & ? & ? & Hb0 & Hbv & Hbw & _).
     apply senv_hd_insert_inv in Hhd as [Hu _]; [eauto|done|senv_dom].
-  - destruct Hc as (Σ' & Hhd & Hc' & _).
+  - apply gsingleton_inj in Hsubj as ->.
+    destruct Hc as (Σ' & Hhd & Hc' & _).
     apply senv_hd_insert_inv in Hhd as [Hu _]; eauto.
+  - destruct Hc as (c1 & d1 & Σ1 & sc & sd & -> & Hne & _). apply Hne.
+    assert (c1 ∈ ({[c]} : gset chan)) as H1
+      by (rewrite <-Hsubj; clear; set_solver).
+    assert (d1 ∈ ({[c]} : gset chan)) as H2
+      by (rewrite <-Hsubj; clear; set_solver).
+    apply elem_of_singleton in H1. apply elem_of_singleton in H2.
+    congruence.
 Qed.
 
 (** Iterated CONNECT: a process holding the dual ends of a family of
@@ -1148,7 +1483,9 @@ Ltac connect_prem :=
     | set_side
     | (rewrite dual_involutive; assumption)
     | (apply Prel_down1; assumption)
-    | (rewrite dual_involutive; apply Prel_down1; assumption) ].
+    | (rewrite dual_involutive; apply Prel_down1; assumption)
+    | (lazymatch goal with |- context [echans] => idtac end;
+       rewrite ?echans_disj_union, ?echans_singleton in * ; set_solver) ].
 
 (** As [connect_prem], but also covers the premises specific to
     [Powners_cons] / [Powners_graft]: the [ty_one_of] disjunction
@@ -1165,7 +1502,9 @@ Ltac owner_prem :=
     | (apply not_elem_of_dom; set_side)
     | (rewrite dual_involutive; assumption)
     | (apply Prel_down1; assumption)
-    | (rewrite dual_involutive; apply Prel_down1; assumption) ].
+    | (rewrite dual_involutive; apply Prel_down1; assumption)
+    | (lazymatch goal with |- context [echans] => idtac end;
+       rewrite ?echans_disj_union, ?echans_singleton in * ; set_solver) ].
 
 (** Context-independent set identity, used to reconstruct a channel set
     from its post-send residual and the escaped-channel slice without
@@ -1197,7 +1536,7 @@ Proof.
   intros Hprim Hdd Hb1 Hb2 Hcc Ha1 Ha2 Hd1 Hd2 Hs1 Hs2 HP1 HP2 Hirr.
   (* lifting component transitions to the composite *)
   assert (∀ π p1', proc_step (C1, E1) π p1' →
-          (∀ σ, π = PSess σ → subj σ ∉ C2 ∪ {[c]}) → False) as Hlift1.
+          (∀ σ, π = PSess σ → subjs σ ## C2 ∪ {[c]}) → False) as Hlift1.
   { intros π p1' Hstp Hsubj.
     edestruct (proc_step_frame_l C1 E1 (C2 ∪ {[c]}) E2 π p1')
       as (π' & q & Hq); [done|done|].
@@ -1205,7 +1544,7 @@ Proof.
     replace (C1 ∪ C2 ∪ {[c]}) with (C1 ∪ (C2 ∪ {[c]})) by set_prune.
     done. }
   assert (∀ π p2', proc_step (C2, E2) π p2' →
-          (∀ σ, π = PSess σ → subj σ ∉ C1 ∪ {[c]}) → False) as Hlift2.
+          (∀ σ, π = PSess σ → subjs σ ## C1 ∪ {[c]}) → False) as Hlift2.
   { intros π p2' Hstp Hsubj.
     edestruct (proc_step_frame_l C2 E2 (C1 ∪ {[c]}) E1 π p2')
       as (π' & q & Hq); [done|done|].
@@ -1213,8 +1552,10 @@ Proof.
     replace (C1 ∪ C2 ∪ {[c]}) with (C2 ∪ (C1 ∪ {[c]})) by set_prune.
     replace (E1 ⊎ E2) with (E2 ⊎ E1) by multiset_solver.
     done. }
-  (* each side can only move, and only on c *)
-  assert (∃ σ1 p1', proc_step (C1, E1) (PSess σ1) p1' ∧ subj σ1 = c)
+  (* each side can only move, and only on c: any other offer lifts to
+     the composite, and a forwarding that merely CONTAINS c fires as
+     the composite's internal link step *)
+  assert (∃ σ1 p1', proc_step (C1, E1) (PSess σ1) p1' ∧ subjs σ1 = {[c]})
     as (σ1 & p1' & Hst1 & Hsub1c).
   { assert (¬ pirred (C1, E1)) as Hn1.
     { intros Hi1. destruct (Prel_S_irred _ _ _ _ HP1 Hi1)
@@ -1225,12 +1566,27 @@ Proof.
       [by destruct (Hn1 Hi1)|].
     destruct π1 as [|σ1].
     { exfalso. eapply Hlift1; [done|]. by intros ? [=]. }
-    destruct (decide (subj σ1 = c)) as [?|Hne]; [eauto|].
+    destruct (decide (subjs σ1 = {[c]})) as [?|Hne]; [eauto|].
     exfalso.
     pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst1) as Hsub.
     rewrite dom_insert_L in Hsub.
-    eapply Hlift1; [done|]. intros σ' [= <-]. set_prune. }
-  assert (∃ σ2 p2', proc_step (C2, E2) (PSess σ2) p2' ∧ subj σ2 = c)
+    destruct (decide (c ∈ subjs σ1)) as [Hcin|Hcout]; last first.
+    { eapply Hlift1; [done|]. intros σ' [= <-]. set_prune. }
+    destruct σ1 as [c1 w1|c1 w1|c1|cd1]; simpl in Hcin, Hne;
+      try (apply elem_of_singleton in Hcin; congruence).
+    apply proc_step_sess_inv in Hst1 as (F1 & e1 & e1' & -> & He1 & _ & _).
+    pose proof (tstep_link_shape _ _ _ He1) as (ca & da & ->).
+    assert (∃ d', ({[c; d']} : gset chan) = {[ca; da]}) as (d' & Hpair).
+    { apply elem_of_union in Hcin as [Hc0|Hc0];
+        apply elem_of_singleton in Hc0; subst.
+      - by exists da.
+      - exists ca. apply upair_comm. }
+    eapply (Hirr PTau).
+    replace ((F1 ⊎ {[+ e1 +]}) ⊎ E2) with ((F1 ⊎ E2) ⊎ {[+ e1 +]})
+      by multiset_solver.
+    eapply (PStepLink _ _ _ c d');
+      [rewrite Hpair; exact He1|clear; set_solver]. }
+  assert (∃ σ2 p2', proc_step (C2, E2) (PSess σ2) p2' ∧ subjs σ2 = {[c]})
     as (σ2 & p2' & Hst2 & Hsub2c).
   { assert (¬ pirred (C2, E2)) as Hn2.
     { intros Hi2. destruct (Prel_S_irred _ _ _ _ HP2 Hi2)
@@ -1241,18 +1597,37 @@ Proof.
       [by destruct (Hn2 Hi2)|].
     destruct π2 as [|σ2].
     { exfalso. eapply Hlift2; [done|]. by intros ? [=]. }
-    destruct (decide (subj σ2 = c)) as [?|Hne]; [eauto|].
+    destruct (decide (subjs σ2 = {[c]})) as [?|Hne]; [eauto|].
     exfalso.
     pose proof (Prel_sess_subj _ _ _ _ _ _ HP2 Hst2) as Hsub.
     rewrite dom_insert_L in Hsub.
-    eapply Hlift2; [done|]. intros σ' [= <-]. set_prune. }
-  (* the two c-actions have matching polarity and synchronize *)
+    destruct (decide (c ∈ subjs σ2)) as [Hcin|Hcout]; last first.
+    { eapply Hlift2; [done|]. intros σ' [= <-]. set_prune. }
+    destruct σ2 as [c2 w2|c2 w2|c2|cd2]; simpl in Hcin, Hne;
+      try (apply elem_of_singleton in Hcin; congruence).
+    apply proc_step_sess_inv in Hst2 as (F2 & e2 & e2' & -> & He2 & _ & _).
+    pose proof (tstep_link_shape _ _ _ He2) as (ca & da & ->).
+    assert (∃ d', ({[c; d']} : gset chan) = {[ca; da]}) as (d' & Hpair).
+    { apply elem_of_union in Hcin as [Hc0|Hc0];
+        apply elem_of_singleton in Hc0; subst.
+      - by exists da.
+      - exists ca. apply upair_comm. }
+    eapply (Hirr PTau).
+    replace (E1 ⊎ (F2 ⊎ {[+ e2 +]})) with ((E1 ⊎ F2) ⊎ {[+ e2 +]})
+      by multiset_solver.
+    eapply (PStepLink _ _ _ c d');
+      [rewrite Hpair; exact He2|clear; set_solver]. }
+  (* the two c-actions have matching polarity and synchronize; a
+     forwarding cannot have the singleton subject set *)
   pose proof (Prel_cstep_shape _ _ _ _ _ _ _ _ _ HP1 Hb1 Hst1 Hsub1c) as Hsh1.
   pose proof (Prel_cstep_shape _ _ _ _ _ _ _ _ _ HP2 Hb2 Hst2 Hsub2c) as Hsh2.
   apply proc_step_sess_inv in Hst1 as (F1 & e1 & e1' & -> & He1 & _ & _).
   apply proc_step_sess_inv in Hst2 as (F2 & f2 & f2' & -> & Hf2 & _ & _).
-  destruct σ1 as [c1 w1|c1 w1|c1], σ2 as [c2 w2|c2 w2|c2];
-    simpl in Hsub1c, Hsub2c; subst c1 c2.
+  destruct σ1 as [c1 w1|c1 w1|c1|cd1]; [ | | |by destruct Hsh1];
+    destruct σ2 as [c2 w2|c2 w2|c2|cd2]; try (by destruct Hsh2);
+    simpl in Hsub1c, Hsub2c;
+    apply gsingleton_inj in Hsub1c; apply gsingleton_inj in Hsub2c;
+    subst c1 c2.
   - destruct Hsh1 as (U1 & u1 & Hu1). destruct Hsh2 as (U2 & u2 & Hd').
     rewrite (unfoldS_dual_rcv _ _ _ Hu1) in Hd'. discriminate.
   - (* comp1 receives, comp2 sends *)
@@ -1287,6 +1662,121 @@ Proof.
 Qed.
 
 (** ** The τ cases of CONNECT *)
+(** The CONNECT-↔ recombination when the surviving end b is an
+    interface channel of the acting component: the actor's residual
+    treats c as junk (its clause removed both ends), so the
+    retargeting is the junk transport; the passive component first
+    junk-renames its b-mentions onto c, after which the transposition
+    c ↔ b IS the retargeting ([echswap_echsubst_flip]) and entry
+    conversion finishes (docs/link-design.md). *)
+Lemma connectx_plink_tail n0 (IHi : independent_at (S n0))
+    Σr Σ2 c b (s sb : sty) C1 F1 e' C2 E2 T :
+  prim T →
+  <[b := sb]> Σr ##ₘ Σ2 →
+  c ∉ dom (<[b := sb]> Σr) → c ∉ dom Σ2 →
+  C1 ## C2 → c ∉ C1 → c ∉ C2 →
+  C1 ## dom Σ2 → C2 ## dom (<[b := sb]> Σr) →
+  C1 ## dom (<[b := sb]> Σr) → C2 ## dom Σ2 →
+  b ∉ dom Σr → b ≠ c → b ∉ dom Σ2 →
+  unfoldS sb = unfoldS (dual s) →
+  Prel (S n0) Σr T (C1, F1 ⊎ {[+ e' +]}) →
+  Prel (S (S n0)) (<[c := dual s]> Σ2) TUnit (C2, E2) →
+  Prel (S n0) (<[b := sb]> Σr ∪ Σ2) T
+    (C1 ∪ C2, echsubst c b ((F1 ⊎ {[+ e' +]}) ⊎ E2)).
+Proof.
+  intros Hprim Hdd Hb1 Hb2 Hcc Ha1 Ha2 Hd1 Hd2 Hs1 Hs2 Hbr Hbc HbΣ2
+    Hdub Hcont HP2.
+  rewrite dom_insert_L in Hb1, Hd2, Hs1.
+  rewrite echsubst_disj_union.
+  assert (Prel (S n0) Σr T (C1, echsubst c b (F1 ⊎ {[+ e' +]})))
+    as Hcont'.
+  { apply Prel_junk_subst;
+      [clear -Hb1; set_solver|exact Ha1
+      |intros Hb; clear -Hs1 Hb; set_solver|congruence|exact Hcont]. }
+  assert (Prel (S n0) (<[c := dual s]> Σ2) TUnit (C2, echsubst b c E2))
+    as HP2'.
+  { apply Prel_junk_subst;
+      [rewrite dom_insert_L; clear -Hbc HbΣ2; set_solver
+      |clear -Hd2; set_solver
+      |intros Hx; clear -Ha2 Hx; set_solver|congruence
+      |by apply Prel_down1]. }
+  pose proof (Prel_eswap c b _ _ _ _ HP2') as HQ2.
+  rewrite pswap_pair in HQ2.
+  rewrite kswap_insert, cswap_l in HQ2.
+  rewrite kswap_id in HQ2 by set_solver.
+  rewrite gswap_id in HQ2 by set_solver.
+  rewrite echswap_echsubst_flip in HQ2.
+  apply (Prel_entry_conv (S n0) Σ2 b (dual s) sb TUnit
+           (C2, echsubst c b E2)) in HQ2; [|by symmetry].
+  replace (<[b := sb]> Σr ∪ Σ2) with (Σr ∪ <[b := sb]> Σ2).
+  2:{ rewrite <-insert_union_r; [|by apply not_elem_of_dom].
+      by rewrite <-insert_union_l. }
+  eapply IHi;
+    [done| |set_solver| | | | |exact Hcont'|exact HQ2].
+  { split; [done|]. apply map_disjoint_dom in Hdd.
+    apply map_disjoint_dom. rewrite dom_insert_L in Hdd |- *.
+    set_solver. }
+  { rewrite dom_insert_L. set_solver. }
+  { set_solver. }
+  { set_solver. }
+  { rewrite dom_insert_L. set_solver. }
+Qed.
+
+(** Mirror of [connectx_plink_tail]: the actor is the unit-typed
+    component, the T-typed component is transported. *)
+Lemma connectx_plink_tail_r n0 (IHi : independent_at (S n0))
+    Σr Σ1 c b (s sb : sty) C2 F2 e' C1 E1 T :
+  prim T →
+  Σ1 ##ₘ <[b := sb]> Σr →
+  c ∉ dom Σ1 → c ∉ dom (<[b := sb]> Σr) →
+  C1 ## C2 → c ∉ C1 → c ∉ C2 →
+  C1 ## dom (<[b := sb]> Σr) → C2 ## dom Σ1 →
+  C1 ## dom Σ1 → C2 ## dom (<[b := sb]> Σr) →
+  b ∉ dom Σr → b ≠ c → b ∉ dom Σ1 →
+  unfoldS sb = unfoldS s →
+  Prel (S n0) Σr TUnit (C2, F2 ⊎ {[+ e' +]}) →
+  Prel (S (S n0)) (<[c := s]> Σ1) T (C1, E1) →
+  Prel (S n0) (Σ1 ∪ <[b := sb]> Σr) T
+    (C1 ∪ C2, echsubst c b (E1 ⊎ (F2 ⊎ {[+ e' +]}))).
+Proof.
+  intros Hprim Hdd Hb1 Hb2 Hcc Ha1 Ha2 Hd1 Hd2 Hs1 Hs2 Hbr Hbc HbΣ1
+    Hdub Hcont HP1.
+  rewrite dom_insert_L in Hb2, Hd1, Hs2.
+  rewrite echsubst_disj_union.
+  assert (Prel (S n0) Σr TUnit (C2, echsubst c b (F2 ⊎ {[+ e' +]})))
+    as Hcont'.
+  { apply Prel_junk_subst;
+      [clear -Hb2; set_solver|exact Ha2
+      |intros Hb; clear -Hs2 Hb; set_solver|congruence|exact Hcont]. }
+  assert (Prel (S n0) (<[c := s]> Σ1) T (C1, echsubst b c E1))
+    as HP1'.
+  { apply Prel_junk_subst;
+      [rewrite dom_insert_L; clear -Hbc HbΣ1; set_solver
+      |clear -Hd1; set_solver
+      |intros Hx; clear -Ha1 Hx; set_solver|congruence
+      |by apply Prel_down1]. }
+  pose proof (Prel_eswap c b _ _ _ _ HP1') as HQ1.
+  rewrite pswap_pair in HQ1.
+  rewrite kswap_insert, cswap_l in HQ1.
+  rewrite kswap_id in HQ1 by set_solver.
+  rewrite gswap_id in HQ1 by set_solver.
+  rewrite echswap_echsubst_flip in HQ1.
+  apply (Prel_entry_conv (S n0) Σ1 b s sb T
+           (C1, echsubst c b E1)) in HQ1; [|by symmetry].
+  replace (Σ1 ∪ <[b := sb]> Σr) with (<[b := sb]> Σ1 ∪ Σr).
+  2:{ rewrite <-insert_union_r; [|by apply not_elem_of_dom].
+      rewrite <-insert_union_l. done. }
+  eapply IHi;
+    [done| |set_solver| | | | |exact HQ1|exact Hcont'].
+  { split; [done|]. apply map_disjoint_dom in Hdd.
+    apply map_disjoint_dom. rewrite dom_insert_L in Hdd |- *.
+    set_solver. }
+  { set_solver. }
+  { rewrite dom_insert_L. set_solver. }
+  { rewrite dom_insert_L. set_solver. }
+  { set_solver. }
+Qed.
+
 Lemma connect_tau n (IH : ∀ m, m ≤ n → comp_at m)
     Σ1 Σ2 c s C1 E1 C2 E2 T p' :
   prim T → Σ1 ##ₘ Σ2 → c ∉ dom Σ1 → c ∉ dom Σ2 →
@@ -1307,7 +1797,8 @@ Proof.
     as [(F & e & e' & Heq & He & ->)
        |[(F & e & d & v & e' & Heq & He & HdC & Hde & Hdf & ->)
        |[(F & d & v & e & e' & f & f' & Heq & He & Hf & HdC & ->)
-       |(F & d & e & e' & f & f' & Heq & He & Hf & HdC & ->)]]];
+       |[(F & d & e & e' & f & f' & Heq & He & Hf & HdC & ->)
+       |(F & e & a & b & e' & Heq & He & HaC & ->)]]]];
     simpl in Hg.
   - (* β *)
     apply gmultiset_split_elem_of in Heq as [(F1 & -> & ->)|(F2 & -> & ->)].
@@ -1767,6 +2258,442 @@ Proof.
              by (eapply PStepSession; [done|set_solver]).
            pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hs1') as Hsub.
            simpl in Hsub. rewrite dom_insert_L in Hsub. set_prune.
+  - (* link: an internal forward of one component, a forward that
+       CONSUMES the connect channel (the ↔{c,b} case of §4.5), or a
+       forward whose retired end belongs to the sibling — re-oriented
+       first so that the actor's component retires its own end.  The
+       sibling's copy of the retargeting is the junk transport. *)
+    destruct n as [|n0]; [apply Prel_0|].
+    apply gmultiset_split_elem_of in Heq as [(F1 & -> & ->)|(F2 & -> & ->)].
+    + (* actor in E1 *)
+      destruct (decide (a = c)) as [->|Hac].
+      * (* the forward consumes the connect channel *)
+        destruct (decide (b = c)) as [->|Hbc].
+        { (* singleton ↔{c}: comp1 offers it, the clause refutes it *)
+          exfalso.
+          assert (proc_step (C1, F1 ⊎ {[+ e +]}) (PSess (SLink {[c; c]}))
+                    (C1 ∖ sentc (SLink {[c; c]}), F1 ⊎ {[+ e' +]})) as Hst1.
+          { eapply PStepSession; [exact He|]. simpl.
+            clear -Ha1. set_solver. }
+          pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hcl. simpl in Hcl.
+          destruct Hcl as (c1 & d1 & Σr & sc0 & sd0 & Hpair & Hne0 & _).
+          apply Hne0.
+          assert (c1 ∈ ({[c; c]} : gset chan)) as H1
+            by (rewrite Hpair; clear; set_solver).
+          assert (d1 ∈ ({[c; c]} : gset chan)) as H2
+            by (rewrite Hpair; clear; set_solver).
+          clear -H1 H2. set_solver. }
+        replace ((C1 ∪ C2 ∪ {[c]}) ∖ {[c]}) with (C1 ∪ C2) by set_prune.
+        replace (F1 ⊎ E2 ⊎ {[+ e' +]}) with ((F1 ⊎ {[+ e' +]}) ⊎ E2)
+          by multiset_solver.
+        destruct (decide (b ∈ C1)) as [HbC1|HbC1].
+        -- (* the surviving end is comp1-restricted: remove it on
+              comp1's side instead and transpose the recombination;
+              the sibling's b-mentions ride along by the junk
+              transport *)
+           rewrite upair_comm in He.
+           assert (proc_step (C1, F1 ⊎ {[+ e +]}) PTau
+                     (C1 ∖ {[b]}, echsubst b c (F1 ⊎ {[+ e' +]}))) as Hst1
+             by (by eapply PStepLink).
+           pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1.
+           simpl in HC1.
+           specialize (HC1 ltac:(rewrite dom_insert_L; set_solver)).
+           assert (Prel (S n0) (<[c := dual s]> Σ2) TUnit
+                     (C2, echsubst b c E2)) as HP2'.
+           { apply Prel_junk_subst;
+               [rewrite dom_insert_L; clear -Hd1 HbC1 Hbc; set_solver
+               |clear -Hcc HbC1; set_solver
+               |intros Hx; clear -Ha2 Hx; set_solver|congruence
+               |by apply Prel_down1]. }
+           assert (Prel (S n0) (Σ1 ∪ Σ2) T
+                     ((C1 ∖ {[b]}) ∪ C2 ∪ {[c]},
+                      echsubst b c (F1 ⊎ {[+ e' +]}) ⊎ echsubst b c E2))
+             as Hcomb.
+           { eapply IHc;
+               [done|done|done|done|set_solver|set_solver|done
+               |set_solver|done|set_solver|done|exact HC1|exact HP2']. }
+           pose proof (Prel_eswap c b _ _ _ _ Hcomb) as HQ.
+           rewrite pswap_pair in HQ.
+           rewrite kswap_id in HQ
+             by (rewrite dom_union_L; set_solver).
+           assert (gswap c b ((C1 ∖ {[b]}) ∪ C2 ∪ {[c]}) = C1 ∪ C2) as HgC.
+           { apply set_eq. intros y. rewrite elem_of_gswap'.
+             unfold cswap. repeat case_decide; subst; set_solver. }
+           rewrite HgC in HQ.
+           rewrite msswap_disj_union, !echswap_echsubst_flip in HQ.
+           rewrite <-echsubst_disj_union in HQ.
+           exact HQ.
+        -- destruct (decide (b ∈ dom Σ1)) as [HbΣ1|HbΣ1]; last first.
+           { (* b is foreign to comp1, yet comp1's offer clause would
+                place it in comp1's interface *)
+             exfalso.
+             assert (proc_step (C1, F1 ⊎ {[+ e +]})
+                       (PSess (SLink {[c; b]}))
+                       (C1 ∖ sentc (SLink {[c; b]}), F1 ⊎ {[+ e' +]}))
+               as Hst1.
+             { eapply PStepSession; [exact He|]. simpl.
+               clear -Ha1 HbC1. set_solver. }
+             pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hcl.
+             simpl in Hcl.
+             destruct Hcl as (c1 & d1 & Σr & sc0 & sd0 & Hpair & Hne0
+                              & HeqΣ & _).
+             assert (b ∈ dom (<[c := s]> Σ1)) as Hbin.
+             { assert (b ∈ ({[c1; d1]} : gset chan)) as Hbin'
+                 by (rewrite <-Hpair; clear; set_solver).
+               rewrite HeqΣ, !dom_insert_L. clear -Hbin'. set_solver. }
+             rewrite dom_insert_L in Hbin.
+             clear -Hbin Hbc HbΣ1. set_solver. }
+           (* the surviving end is a comp1 interface channel: comp1
+              offers the forward; comp2 is transported by the junk
+              transport and transposition *)
+           assert (b ∉ dom Σ2) as HbΣ2
+             by (apply map_disjoint_dom in Hdd; set_solver).
+           assert (proc_step (C1, F1 ⊎ {[+ e +]}) (PSess (SLink {[c; b]}))
+                     (C1 ∖ sentc (SLink {[c; b]}), F1 ⊎ {[+ e' +]}))
+             as Hst1.
+           { eapply PStepSession; [exact He|]. simpl.
+             clear -Ha1 HbC1. set_solver. }
+           pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hcl.
+           simpl in Hcl.
+           destruct Hcl as (c0 & d0 & Σr & sc0 & sd0 & Hpair & Hne0
+                            & HeqΣ & Hc0r & Hd0r & Hdu & Hcont).
+           replace (C1 ∖ ∅) with C1 in Hcont by set_prune.
+           destruct (upair_eq_inv _ _ _ _ Hpair ltac:(congruence))
+             as [[<- <-]|[<- <-]].
+           ++ (* orientation ⟨c,b⟩ *)
+              pose proof (f_equal (lookup c) HeqΣ) as Hlc.
+              rewrite !lookup_insert_eq in Hlc.
+              injection Hlc as <-.
+              apply (f_equal (delete c)) in HeqΣ.
+              rewrite delete_insert_id in HeqΣ
+                by (by apply not_elem_of_dom).
+              rewrite delete_insert_id in HeqΣ
+                by (rewrite lookup_insert_ne by congruence;
+                    by apply not_elem_of_dom).
+              subst Σ1.
+              eapply (connectx_plink_tail n0 IHi); eauto.
+           ++ (* orientation ⟨b,c⟩: normalize the duality *)
+              pose proof (f_equal (lookup c) HeqΣ) as Hlc.
+              rewrite lookup_insert_eq, lookup_insert_ne, lookup_insert_eq
+                in Hlc by congruence.
+              injection Hlc as <-.
+              apply (f_equal (delete c)) in HeqΣ.
+              rewrite delete_insert_id in HeqΣ
+                by (by apply not_elem_of_dom).
+              rewrite delete_insert_ne in HeqΣ by congruence.
+              rewrite delete_insert_id in HeqΣ
+                by (by apply not_elem_of_dom).
+              subst Σ1.
+              assert (unfoldS sc0 = unfoldS (dual s)) as Hdub.
+              { rewrite <-dual_unfoldS, Hdu, <-dual_unfoldS.
+                by rewrite dual_involutive. }
+              eapply (connectx_plink_tail n0 IHi); eauto.
+      * (* the retired end is a component's restricted name *)
+        assert (a ∈ C1 ∪ C2) as HaC'
+          by (clear -HaC Hac; set_solver).
+        apply elem_of_union in HaC' as [HaC1|HaC2].
+        -- (* comp1's own: it steps, the sibling junk-renames a to b *)
+           destruct (decide (a = b)) as [<-|Hab].
+           { (* degenerate self-forwarding: identity substitution *)
+             assert (proc_step (C1, F1 ⊎ {[+ e +]}) PTau
+                       (C1 ∖ {[a]}, echsubst a a (F1 ⊎ {[+ e' +]})))
+               as Hst1 by (by eapply PStepLink).
+             pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1.
+             simpl in HC1.
+             specialize (HC1 ltac:(rewrite dom_insert_L; set_solver)).
+             replace ((C1 ∪ C2 ∪ {[c]}) ∖ {[a]})
+               with ((C1 ∖ {[a]}) ∪ C2 ∪ {[c]}) by set_prune.
+             assert (echsubst a a (F1 ⊎ E2 ⊎ {[+ e' +]})
+                     = echsubst a a (F1 ⊎ {[+ e' +]}) ⊎ E2) as ->
+               by (rewrite !echsubst_refl; multiset_solver).
+             eapply IHc;
+               [done|done|done|done|set_solver|set_solver|done
+               |set_solver|done|set_solver|done|exact HC1
+               |eauto using Prel_down1]. }
+           assert (proc_step (C1, F1 ⊎ {[+ e +]}) PTau
+                     (C1 ∖ {[a]}, echsubst a b (F1 ⊎ {[+ e' +]}))) as Hst1
+             by (by eapply PStepLink).
+           pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1.
+           simpl in HC1.
+           specialize (HC1 ltac:(rewrite dom_insert_L; set_solver)).
+           replace ((C1 ∪ C2 ∪ {[c]}) ∖ {[a]})
+             with ((C1 ∖ {[a]}) ∪ C2 ∪ {[c]}) by set_prune.
+           assert (Prel (S n0) (<[c := dual s]> Σ2) TUnit
+                     (C2, echsubst a b E2)) as HP2'.
+           { apply Prel_junk_subst;
+               [rewrite dom_insert_L; clear -Hac Hd1 HaC1; set_solver
+               |clear -Hcc HaC1; set_solver
+               |intros Hb; rewrite dom_insert_L;
+                clear -Ha2 Hs2 Hb; set_solver
+               |congruence
+               |by apply Prel_down1]. }
+           assert (echsubst a b (F1 ⊎ E2 ⊎ {[+ e' +]})
+                   = echsubst a b (F1 ⊎ {[+ e' +]}) ⊎ echsubst a b E2)
+             as -> by (rewrite !echsubst_disj_union; multiset_solver).
+           eapply IHc;
+             [done|done|done|done|set_solver|set_solver|done
+             |set_solver|done|set_solver|done|exact HC1|exact HP2'].
+        -- (* the sibling's: re-orient so comp1's end is retired *)
+           destruct (decide (b ∈ C1)) as [HbC1|HbC1]; last first.
+           { (* comp1's offer clause would place a in comp1's
+                interface, contradicting C2 ## dom Σ1 *)
+             exfalso.
+             assert (proc_step (C1, F1 ⊎ {[+ e +]})
+                       (PSess (SLink {[a; b]}))
+                       (C1 ∖ sentc (SLink {[a; b]}), F1 ⊎ {[+ e' +]}))
+               as Hst1.
+             { eapply PStepSession; [exact He|]. simpl.
+               clear -Hcc HaC2 HbC1. set_solver. }
+             pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hcl.
+             simpl in Hcl.
+             destruct Hcl as (c1 & d1 & Σr & sc0 & sd0 & Hpair & Hne0
+                              & HeqΣ & _).
+             assert (a ∈ dom (<[c := s]> Σ1)) as Hain.
+             { assert (a ∈ ({[c1; d1]} : gset chan)) as Hain'
+                 by (rewrite <-Hpair; clear; set_solver).
+               rewrite HeqΣ, !dom_insert_L. clear -Hain'. set_solver. }
+             rewrite dom_insert_L in Hain.
+             clear -Hain Hac Hd2 HaC2. set_solver. }
+           apply (Prel_link_orient (S n0) (Σ1 ∪ Σ2) T
+                    (C1 ∪ C2 ∪ {[c]}) _ a b);
+             [clear -Hcc HaC2 HbC1; set_solver
+             |clear -HaC2; set_solver
+             |clear -HbC1; set_solver
+             |rewrite dom_union_L; clear -Hd2 Hs2 HaC2; set_solver
+             |rewrite dom_union_L; clear -Hd1 Hs1 HbC1; set_solver|].
+           rewrite upair_comm in He.
+           assert (proc_step (C1, F1 ⊎ {[+ e +]}) PTau
+                     (C1 ∖ {[b]}, echsubst b a (F1 ⊎ {[+ e' +]}))) as Hst1
+             by (by eapply PStepLink).
+           pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1.
+           simpl in HC1.
+           specialize (HC1 ltac:(rewrite dom_insert_L; set_solver)).
+           replace ((C1 ∪ C2 ∪ {[c]}) ∖ {[b]})
+             with ((C1 ∖ {[b]}) ∪ C2 ∪ {[c]}) by set_prune.
+           assert (Prel (S n0) (<[c := dual s]> Σ2) TUnit
+                     (C2, echsubst b a E2)) as HP2'.
+           { apply Prel_junk_subst;
+               [rewrite dom_insert_L; clear -Ha1 Hd1 HbC1; set_solver
+               |clear -Hcc HbC1; set_solver
+               |intros Hb; rewrite dom_insert_L;
+                clear -Ha2 Hs2 Hb; set_solver
+               |clear -Hcc HaC2 HbC1; set_solver
+               |by apply Prel_down1]. }
+           assert (echsubst b a (F1 ⊎ E2 ⊎ {[+ e' +]})
+                   = echsubst b a (F1 ⊎ {[+ e' +]}) ⊎ echsubst b a E2)
+             as -> by (rewrite !echsubst_disj_union; multiset_solver).
+           eapply IHc;
+             [done|done|done|done|set_solver|set_solver|done
+             |set_solver|done|set_solver|done|exact HC1|exact HP2'].
+    + (* actor in E2, mirrored *)
+      destruct (decide (a = c)) as [->|Hac].
+      * destruct (decide (b = c)) as [->|Hbc].
+        { exfalso.
+          assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess (SLink {[c; c]}))
+                    (C2 ∖ sentc (SLink {[c; c]}), F2 ⊎ {[+ e' +]})) as Hst2.
+          { eapply PStepSession; [exact He|]. simpl.
+            clear -Ha2. set_solver. }
+          pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hcl. simpl in Hcl.
+          destruct Hcl as (c1 & d1 & Σr & sc0 & sd0 & Hpair & Hne0 & _).
+          apply Hne0.
+          assert (c1 ∈ ({[c; c]} : gset chan)) as H1
+            by (rewrite Hpair; clear; set_solver).
+          assert (d1 ∈ ({[c; c]} : gset chan)) as H2
+            by (rewrite Hpair; clear; set_solver).
+          clear -H1 H2. set_solver. }
+        replace ((C1 ∪ C2 ∪ {[c]}) ∖ {[c]}) with (C1 ∪ C2) by set_prune.
+        replace (E1 ⊎ F2 ⊎ {[+ e' +]}) with (E1 ⊎ (F2 ⊎ {[+ e' +]}))
+          by multiset_solver.
+        destruct (decide (b ∈ C2)) as [HbC2|HbC2].
+        -- (* the surviving end is comp2-restricted: flip *)
+           rewrite upair_comm in He.
+           assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau
+                     (C2 ∖ {[b]}, echsubst b c (F2 ⊎ {[+ e' +]}))) as Hst2
+             by (by eapply PStepLink).
+           pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2.
+           simpl in HC2.
+           specialize (HC2 ltac:(rewrite dom_insert_L; set_solver)).
+           assert (Prel (S n0) (<[c := s]> Σ1) T
+                     (C1, echsubst b c E1)) as HP1'.
+           { apply Prel_junk_subst;
+               [rewrite dom_insert_L; clear -Hd2 HbC2 Hbc; set_solver
+               |clear -Hcc HbC2; set_solver
+               |intros Hx; clear -Ha1 Hx; set_solver|congruence
+               |by apply Prel_down1]. }
+           assert (Prel (S n0) (Σ1 ∪ Σ2) T
+                     (C1 ∪ (C2 ∖ {[b]}) ∪ {[c]},
+                      echsubst b c E1 ⊎ echsubst b c (F2 ⊎ {[+ e' +]})))
+             as Hcomb.
+           { eapply IHc;
+               [done|done|done|done|set_solver|done|set_solver
+               |done|set_solver|done|set_solver|exact HP1'|exact HC2]. }
+           pose proof (Prel_eswap c b _ _ _ _ Hcomb) as HQ.
+           rewrite pswap_pair in HQ.
+           rewrite kswap_id in HQ
+             by (rewrite dom_union_L; set_solver).
+           assert (gswap c b (C1 ∪ (C2 ∖ {[b]}) ∪ {[c]}) = C1 ∪ C2) as HgC.
+           { apply set_eq. intros y. rewrite elem_of_gswap'.
+             unfold cswap. repeat case_decide; subst; set_solver. }
+           rewrite HgC in HQ.
+           rewrite msswap_disj_union, !echswap_echsubst_flip in HQ.
+           rewrite <-echsubst_disj_union in HQ.
+           exact HQ.
+        -- destruct (decide (b ∈ dom Σ2)) as [HbΣ2|HbΣ2]; last first.
+           { exfalso.
+             assert (proc_step (C2, F2 ⊎ {[+ e +]})
+                       (PSess (SLink {[c; b]}))
+                       (C2 ∖ sentc (SLink {[c; b]}), F2 ⊎ {[+ e' +]}))
+               as Hst2.
+             { eapply PStepSession; [exact He|]. simpl.
+               clear -Ha2 HbC2. set_solver. }
+             pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hcl.
+             simpl in Hcl.
+             destruct Hcl as (c1 & d1 & Σr & sc0 & sd0 & Hpair & Hne0
+                              & HeqΣ & _).
+             assert (b ∈ dom (<[c := dual s]> Σ2)) as Hbin.
+             { assert (b ∈ ({[c1; d1]} : gset chan)) as Hbin'
+                 by (rewrite <-Hpair; clear; set_solver).
+               rewrite HeqΣ, !dom_insert_L. clear -Hbin'. set_solver. }
+             rewrite dom_insert_L in Hbin.
+             clear -Hbin Hbc HbΣ2. set_solver. }
+           assert (b ∉ dom Σ1) as HbΣ1
+             by (apply map_disjoint_dom in Hdd; set_solver).
+           assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess (SLink {[c; b]}))
+                     (C2 ∖ sentc (SLink {[c; b]}), F2 ⊎ {[+ e' +]}))
+             as Hst2.
+           { eapply PStepSession; [exact He|]. simpl.
+             clear -Ha2 HbC2. set_solver. }
+           pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hcl.
+           simpl in Hcl.
+           destruct Hcl as (c0 & d0 & Σr & sc0 & sd0 & Hpair & Hne0
+                            & HeqΣ & Hc0r & Hd0r & Hdu & Hcont).
+           replace (C2 ∖ ∅) with C2 in Hcont by set_prune.
+           destruct (upair_eq_inv _ _ _ _ Hpair ltac:(congruence))
+             as [[<- <-]|[<- <-]].
+           ++ (* orientation ⟨c,b⟩ *)
+              pose proof (f_equal (lookup c) HeqΣ) as Hlc.
+              rewrite !lookup_insert_eq in Hlc.
+              injection Hlc as Hlc.
+              apply (f_equal (delete c)) in HeqΣ.
+              rewrite delete_insert_id in HeqΣ
+                by (by apply not_elem_of_dom).
+              rewrite delete_insert_id in HeqΣ
+                by (rewrite lookup_insert_ne by congruence;
+                    by apply not_elem_of_dom).
+              subst Σ2.
+              assert (unfoldS sd0 = unfoldS s) as Hdub.
+              { rewrite <-Hlc, dual_involutive in Hdu. exact Hdu. }
+              eapply (connectx_plink_tail_r n0 IHi); eauto.
+           ++ (* orientation ⟨b,c⟩ *)
+              pose proof (f_equal (lookup c) HeqΣ) as Hlc.
+              rewrite lookup_insert_eq, lookup_insert_ne, lookup_insert_eq
+                in Hlc by congruence.
+              injection Hlc as Hlc.
+              apply (f_equal (delete c)) in HeqΣ.
+              rewrite delete_insert_id in HeqΣ
+                by (by apply not_elem_of_dom).
+              rewrite delete_insert_ne in HeqΣ by congruence.
+              rewrite delete_insert_id in HeqΣ
+                by (by apply not_elem_of_dom).
+              subst Σ2.
+              assert (unfoldS sc0 = unfoldS s) as Hdub.
+              { rewrite <-Hlc in Hdu. apply (f_equal dual) in Hdu.
+                rewrite !dual_unfoldS, !dual_involutive in Hdu.
+                by symmetry. }
+              eapply (connectx_plink_tail_r n0 IHi); eauto.
+      * assert (a ∈ C1 ∪ C2) as HaC'
+          by (clear -HaC Hac; set_solver).
+        apply elem_of_union in HaC' as [HaC1|HaC2].
+        -- (* the sibling's: re-orient so comp2's end is retired *)
+           destruct (decide (b ∈ C2)) as [HbC2|HbC2]; last first.
+           { exfalso.
+             assert (proc_step (C2, F2 ⊎ {[+ e +]})
+                       (PSess (SLink {[a; b]}))
+                       (C2 ∖ sentc (SLink {[a; b]}), F2 ⊎ {[+ e' +]}))
+               as Hst2.
+             { eapply PStepSession; [exact He|]. simpl.
+               clear -Hcc HaC1 HbC2. set_solver. }
+             pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hcl.
+             simpl in Hcl.
+             destruct Hcl as (c1 & d1 & Σr & sc0 & sd0 & Hpair & Hne0
+                              & HeqΣ & _).
+             assert (a ∈ dom (<[c := dual s]> Σ2)) as Hain.
+             { assert (a ∈ ({[c1; d1]} : gset chan)) as Hain'
+                 by (rewrite <-Hpair; clear; set_solver).
+               rewrite HeqΣ, !dom_insert_L. clear -Hain'. set_solver. }
+             rewrite dom_insert_L in Hain.
+             clear -Hain Hac Hd1 HaC1. set_solver. }
+           apply (Prel_link_orient (S n0) (Σ1 ∪ Σ2) T
+                    (C1 ∪ C2 ∪ {[c]}) _ a b);
+             [clear -Hcc HaC1 HbC2; set_solver
+             |clear -HaC1; set_solver
+             |clear -HbC2; set_solver
+             |rewrite dom_union_L; clear -Hd1 Hs1 HaC1; set_solver
+             |rewrite dom_union_L; clear -Hd2 Hs2 HbC2; set_solver|].
+           rewrite upair_comm in He.
+           assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau
+                     (C2 ∖ {[b]}, echsubst b a (F2 ⊎ {[+ e' +]}))) as Hst2
+             by (by eapply PStepLink).
+           pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2.
+           simpl in HC2.
+           specialize (HC2 ltac:(rewrite dom_insert_L; set_solver)).
+           replace ((C1 ∪ C2 ∪ {[c]}) ∖ {[b]})
+             with (C1 ∪ (C2 ∖ {[b]}) ∪ {[c]}) by set_prune.
+           assert (Prel (S n0) (<[c := s]> Σ1) T
+                     (C1, echsubst b a E1)) as HP1'.
+           { apply Prel_junk_subst;
+               [rewrite dom_insert_L; clear -Ha2 Hd2 HbC2; set_solver
+               |clear -Hcc HbC2; set_solver
+               |intros Hb; rewrite dom_insert_L;
+                clear -Ha1 Hs1 Hb; set_solver
+               |clear -Hcc HaC1 HbC2; set_solver
+               |by apply Prel_down1]. }
+           assert (echsubst b a (E1 ⊎ F2 ⊎ {[+ e' +]})
+                   = echsubst b a E1 ⊎ echsubst b a (F2 ⊎ {[+ e' +]}))
+             as -> by (rewrite !echsubst_disj_union; multiset_solver).
+           eapply IHc;
+             [done|done|done|done|set_solver|done|set_solver
+             |done|set_solver|done|set_solver|exact HP1'|exact HC2].
+        -- (* comp2's own: it steps, the sibling junk-renames a to b *)
+           destruct (decide (a = b)) as [<-|Hab].
+           { assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau
+                       (C2 ∖ {[a]}, echsubst a a (F2 ⊎ {[+ e' +]})))
+               as Hst2 by (by eapply PStepLink).
+             pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2.
+             simpl in HC2.
+             specialize (HC2 ltac:(rewrite dom_insert_L; set_solver)).
+             replace ((C1 ∪ C2 ∪ {[c]}) ∖ {[a]})
+               with (C1 ∪ (C2 ∖ {[a]}) ∪ {[c]}) by set_prune.
+             assert (echsubst a a (E1 ⊎ F2 ⊎ {[+ e' +]})
+                     = E1 ⊎ echsubst a a (F2 ⊎ {[+ e' +]})) as ->
+               by (rewrite !echsubst_refl; multiset_solver).
+             eapply IHc;
+               [done|done|done|done|set_solver|done|set_solver
+               |done|set_solver|done|set_solver
+               |eauto using Prel_down1|exact HC2]. }
+           assert (proc_step (C2, F2 ⊎ {[+ e +]}) PTau
+                     (C2 ∖ {[a]}, echsubst a b (F2 ⊎ {[+ e' +]}))) as Hst2
+             by (by eapply PStepLink).
+           pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2.
+           simpl in HC2.
+           specialize (HC2 ltac:(rewrite dom_insert_L; set_solver)).
+           replace ((C1 ∪ C2 ∪ {[c]}) ∖ {[a]})
+             with (C1 ∪ (C2 ∖ {[a]}) ∪ {[c]}) by set_prune.
+           assert (Prel (S n0) (<[c := s]> Σ1) T
+                     (C1, echsubst a b E1)) as HP1'.
+           { apply Prel_junk_subst;
+               [rewrite dom_insert_L; clear -Hac Hd2 HaC2; set_solver
+               |clear -Hcc HaC2; set_solver
+               |intros Hb; rewrite dom_insert_L;
+                clear -Ha1 Hs1 Hb; set_solver
+               |congruence
+               |by apply Prel_down1]. }
+           assert (echsubst a b (E1 ⊎ F2 ⊎ {[+ e' +]})
+                   = echsubst a b E1 ⊎ echsubst a b (F2 ⊎ {[+ e' +]}))
+             as -> by (rewrite !echsubst_disj_union; multiset_solver).
+           eapply IHc;
+             [done|done|done|done|set_solver|done|set_solver
+             |done|set_solver|done|set_solver|exact HP1'|exact HC2].
 Qed.
 
 (** ** The external session cases of CONNECT *)
@@ -1788,15 +2715,17 @@ Proof.
   assert (∀ m, m ≤ n → connect_at m) as IHcm
     by (intros m Hm; by destruct (IH m Hm) as (_ & _ & ?)).
   apply proc_step_sess_inv in Hst as (F & e & e' & Heq & He & Hsub & ->).
-  assert (subj σ ≠ c) as Hsc by set_prune.
+  assert (c ∉ subjs σ) as Hsc by set_prune.
   apply gmultiset_split_elem_of in Heq as [(F1 & -> & ->)|(F2 & -> & ->)].
   - (* the acting thread is in E1 *)
     assert (proc_step (C1, F1 ⊎ {[+ e +]}) (PSess σ)
               (C1 ∖ sentc σ, F1 ⊎ {[+ e' +]})) as Hst1
       by (eapply PStepSession; [done|set_solver]).
     pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as Hc1.
-    destruct σ as [d w|d w|d]; simpl in Hc1, Hsc |- *.
+    destruct σ as [d w|d w|d|cd]; simpl in Hc1, Hsc |- *.
     + (* external receive on d by comp1 *)
+      assert (c ≠ d) as Hcd1 by (clear -Hsc; set_solver).
+      assert (d ≠ c) as Hcd2 by congruence.
       destruct Hc1 as (Σ1x & U & u & (s1 & HeqΣ & Hu1) & Hcd' & Hcont).
       assert (Σ1 !! d = Some s1) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
@@ -1832,6 +2761,8 @@ Proof.
       eapply (IHcm j Hj _ _ c s); connect_prem.
       eapply Prel_down; [|exact HP2]. lia.
     + (* external send on d by comp1 *)
+      assert (c ≠ d) as Hcd1 by (clear -Hsc; set_solver).
+      assert (d ≠ c) as Hcd2 by congruence.
       destruct Hc1 as (Σ0 & Σv & U & u & σe & Σw & C0 & E0 & Cw & Ew
                       & T0 & Tw & (s1 & HeqΣ & Hu1) & Hd0v & Hd0w & Hdvw
                       & Hn0 & Hnv & Hnw & Hdome & Hσed & Hdσe & HpC & HC0w
@@ -1979,6 +2910,8 @@ Proof.
         { exact HPw'. }
         { exact Hty. }
     + (* external close on d by comp1 *)
+      assert (c ≠ d) as Hcd1 by (clear -Hsc; set_solver).
+      assert (d ≠ c) as Hcd2 by congruence.
       destruct Hc1 as (Σ1x & (s1 & HeqΣ & Hu1) & Hcd' & Hcont).
       assert (Σ1 !! d = Some s1) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
@@ -2005,13 +2938,54 @@ Proof.
         by multiset_solver.
       assert (dom Σ1 ## dom Σ2) as Hdds by (by apply map_disjoint_dom).
       eapply (IHc _ _ c s); connect_prem.
+    + (* forwarding offered by comp1: the pair misses the connect
+         channel (the composite restricts it), so both ends are
+         interface channels of comp1 beside the c-entry, and the
+         clause reassembles over the union *)
+      destruct Hc1 as (a & b & Σ1a & sa & sb & -> & Hne & HeqΣ & Ha1a
+                       & Hb1a & Hdu & Hcont).
+      assert (a ≠ c) as Hac by (clear -Hsc; set_solver).
+      assert (b ≠ c) as Hbc by (clear -Hsc; set_solver).
+      assert (Σ1a !! c = Some s) as Hlk.
+      { pose proof (f_equal (lookup c) HeqΣ) as Hlc.
+        rewrite lookup_insert_eq, !lookup_insert_ne in Hlc by congruence.
+        done. }
+      apply (f_equal (delete c)) in HeqΣ.
+      rewrite delete_insert_id in HeqΣ by (by apply not_elem_of_dom).
+      rewrite !delete_insert_ne in HeqΣ by congruence.
+      subst Σ1.
+      assert (a ∉ dom Σ2 ∧ b ∉ dom Σ2) as [HaΣ2 HbΣ2].
+      { apply map_disjoint_dom in Hdd.
+        rewrite !dom_insert_L, dom_delete_L in Hdd. set_solver. }
+      exists a, b, (delete c Σ1a ∪ Σ2), sa, sb. split_and!.
+      { done. }
+      { done. }
+      { by rewrite !insert_union_l. }
+      { rewrite dom_union_L, dom_delete_L. set_solver. }
+      { rewrite dom_union_L, dom_delete_L. set_solver. }
+      { done. }
+      replace (C1 ∖ ∅) with C1 in Hcont by set_pure.
+      replace ((C1 ∪ C2 ∪ {[c]}) ∖ ∅) with (C1 ∪ C2 ∪ {[c]}) by set_pure.
+      replace ((F1 ⊎ E2) ⊎ {[+ e' +]}) with ((F1 ⊎ {[+ e' +]}) ⊎ E2)
+        by multiset_solver.
+      rewrite <-(insert_delete_id Σ1a c s Hlk) in Hcont.
+      eapply IHc;
+        [done| | |done|done|done|done|done| | |done|exact Hcont
+        |eauto using Prel_down1].
+      { apply map_disjoint_dom in Hdd.
+        apply map_disjoint_dom. rewrite !dom_insert_L in Hdd. set_solver. }
+      { rewrite dom_delete_L. set_solver. }
+      { clear -Hd2. rewrite !dom_insert_L in Hd2. set_solver. }
+      { clear -Hs1. rewrite !dom_insert_L in Hs1. set_solver. }
   - (* the acting thread is in E2 *)
     assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess σ)
               (C2 ∖ sentc σ, F2 ⊎ {[+ e' +]})) as Hst2
       by (eapply PStepSession; [done|set_solver]).
     pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as Hc2.
-    destruct σ as [d w|d w|d]; simpl in Hc2, Hsc |- *.
+    destruct σ as [d w|d w|d|cd]; simpl in Hc2, Hsc |- *.
     + (* external receive on d by comp2 *)
+      assert (c ≠ d) as Hcd1 by (clear -Hsc; set_solver).
+      assert (d ≠ c) as Hcd2 by congruence.
       destruct Hc2 as (Σ2x & U & u & (s1 & HeqΣ & Hu1) & Hcd' & Hcont).
       assert (Σ2 !! d = Some s1) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
@@ -2049,6 +3023,8 @@ Proof.
       eapply (IHcm j Hj _ _ c s); connect_prem.
       eapply Prel_down; [|exact HP1]. lia.
     + (* external send on d by comp2 *)
+      assert (c ≠ d) as Hcd1 by (clear -Hsc; set_solver).
+      assert (d ≠ c) as Hcd2 by congruence.
       destruct Hc2 as (Σ0 & Σv & U & u & σe & Σw & C0 & E0 & Cw & Ew
                       & T0 & Tw & (s1 & HeqΣ & Hu1) & Hd0v & Hd0w & Hdvw
                       & Hn0 & Hnv & Hnw & Hdome & Hσed & Hdσe & HpC & HC0w
@@ -2207,6 +3183,8 @@ Proof.
         { exact HPw'. }
         { by right. }
     + (* external close on d by comp2 *)
+      assert (c ≠ d) as Hcd1 by (clear -Hsc; set_solver).
+      assert (d ≠ c) as Hcd2 by congruence.
       destruct Hc2 as (Σ2x & (s1 & HeqΣ & Hu1) & Hcd' & Hcont).
       assert (Σ2 !! d = Some s1) as Hlkd.
       { pose proof (f_equal (λ m, m !! d) HeqΣ) as Hl. cbv beta in Hl.
@@ -2234,6 +3212,42 @@ Proof.
       replace ((E1 ⊎ F2) ⊎ {[+ e' +]}) with (E1 ⊎ (F2 ⊎ {[+ e' +]}))
         by multiset_solver.
       eapply (IHc _ _ c s); connect_prem.
+    + (* forwarding offered by comp2, mirrored *)
+      destruct Hc2 as (a & b & Σ2a & sa & sb & -> & Hne & HeqΣ & Ha2a
+                       & Hb2a & Hdu & Hcont).
+      assert (a ≠ c) as Hac by (clear -Hsc; set_solver).
+      assert (b ≠ c) as Hbc by (clear -Hsc; set_solver).
+      assert (Σ2a !! c = Some (dual s)) as Hlk.
+      { pose proof (f_equal (lookup c) HeqΣ) as Hlc.
+        rewrite lookup_insert_eq, !lookup_insert_ne in Hlc by congruence.
+        done. }
+      apply (f_equal (delete c)) in HeqΣ.
+      rewrite delete_insert_id in HeqΣ by (by apply not_elem_of_dom).
+      rewrite !delete_insert_ne in HeqΣ by congruence.
+      subst Σ2.
+      assert (a ∉ dom Σ1 ∧ b ∉ dom Σ1) as [HaΣ1 HbΣ1].
+      { apply map_disjoint_dom in Hdd.
+        rewrite !dom_insert_L, dom_delete_L in Hdd. set_solver. }
+      exists a, b, (Σ1 ∪ delete c Σ2a), sa, sb. split_and!.
+      { done. }
+      { done. }
+      { rewrite !insert_union_r; [done| |]; by apply not_elem_of_dom. }
+      { rewrite dom_union_L, dom_delete_L. set_solver. }
+      { rewrite dom_union_L, dom_delete_L. set_solver. }
+      { done. }
+      replace (C2 ∖ ∅) with C2 in Hcont by set_pure.
+      replace ((C1 ∪ C2 ∪ {[c]}) ∖ ∅) with (C1 ∪ C2 ∪ {[c]}) by set_pure.
+      replace ((E1 ⊎ F2) ⊎ {[+ e' +]}) with (E1 ⊎ (F2 ⊎ {[+ e' +]}))
+        by multiset_solver.
+      rewrite <-(insert_delete_id Σ2a c (dual s) Hlk) in Hcont.
+      eapply IHc;
+        [done| |done| |done|done|done| |done|done| | |exact Hcont].
+      { apply map_disjoint_dom in Hdd.
+        apply map_disjoint_dom. rewrite !dom_insert_L in Hdd. set_solver. }
+      { rewrite dom_delete_L. set_solver. }
+      { clear -Hd1. rewrite !dom_insert_L in Hd1. set_solver. }
+      { clear -Hs2. rewrite !dom_insert_L in Hs2. set_solver. }
+      { eauto using Prel_down1. }
 Qed.
 
 (** ** CONNECT (Lemma 3.10) at successor index *)

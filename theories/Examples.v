@@ -160,6 +160,15 @@ Proof.
       simplify_eq;
       (* the two threads picked the same term: multiset count is off *)
       multiset_solver.
+  - (* internal forwarding: no forwarding redex *)
+    match goal with Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+      assert (e ∈ ({[+ tA +]} ⊎ {[+ tB +]} : gmultiset expr)) as Hin
+        by multiset_solver end.
+    apply gmultiset_elem_of_disj_union in Hin as [Hin|Hin];
+      apply gmultiset_elem_of_singleton in Hin; subst;
+      match goal with Hs : tstep _ (LSess (SLink _)) _ |- _ =>
+        apply tstep_blocked_inv in Hs as [Heq _] end;
+      simplify_eq.
 Qed.
 
 Example blocked_not_safe : ¬ safe blocked.
@@ -384,6 +393,13 @@ Proof.
         with ({[+ EUnit +]} ⊎ {[+ EUnit +]} : gmultiset expr)
         by multiset_solver.
       all: apply cycle_rel4.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          apply tstep_clos_inv in Hs as [Hα _]
+      end; simplify_eq.
 Qed.
 
 (** Stage p2 = ({d}, ⟨clos d, let ∗ = ∗ in clos d⟩): only the β step. *)
@@ -440,6 +456,14 @@ Proof.
           [apply tstep_letu_unit_inv in Hsf as [Hα _]
           |apply tstep_letu_unit_inv in Hse as [Hα _]]
       end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          [apply tstep_clos_inv in Hs as [Hα _]
+          |apply tstep_letu_unit_inv in Hs as [Hα _]]
+      end; simplify_eq.
 Qed.
 
 (** Stage p1 = ({d}, ⟨let ∗ = ∗ in clos d, let ∗ = ∗ in clos d⟩). *)
@@ -493,6 +517,13 @@ Proof.
         Hse : tstep ?e (LSess (SClos _)) _ |- _ =>
           apply gmultiset_pair_inv2 in Heq as [_ [[-> _]|[-> _]]];
           apply tstep_letu_unit_inv in Hse as [Hα _]
+      end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          apply tstep_letu_unit_inv in Hs as [Hα _]
       end; simplify_eq.
 Qed.
 
@@ -554,6 +585,13 @@ Proof.
         with ({[+ cycA +]} ⊎ {[+ cycA +]} : gmultiset expr)
         by multiset_solver.
       all: apply cycle_rel1.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          apply tstep_blocked_inv in Hs as [Hα _]
+      end; simplify_eq.
 Qed.
 
 (** Example 3.14: cycle satisfies the semantic judgment directly —
@@ -777,6 +815,13 @@ Proof.
           by (unfold pubA1, pubB1; multiset_solver).
         apply PI11.
   (* PI11: irreducibility refuted by β on pubB1 *)
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          apply tstep_letu_clos_inv in Hs as [Hα _]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr PTau). eapply PStepBeta.
     apply TStepHead, HeadLetU.
@@ -821,6 +866,12 @@ Proof.
           apply tstep_letu_unit_inv in Hse as [Hα _]
       end; simplify_eq.
   (* PI12: irreducibility refuted by β on pubA1 *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          apply tstep_letu_unit_inv in Hs as [Hα _]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr PTau).
     replace ({[+ pubA1 +]} ⊎ {[+ pubB2 +]})
@@ -875,6 +926,13 @@ Proof.
           |apply tstep_letp_recv_inv in Hse as (v0 & _ & Hα & _)]
       end; simplify_eq.
   (* PI21: irreducibility refuted by β on pubB1 *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          [apply tstep_letu_unit_inv in Hs as [Hα _]
+          |apply tstep_letp_recv_inv in Hs as (v0 & _ & Hα & _)]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr PTau). eapply PStepBeta.
     apply TStepHead, HeadLetU.
@@ -924,6 +982,13 @@ Proof.
           |apply tstep_letu_unit_inv in Hse as [Hα _]]
       end; simplify_eq.
   (* PI22: irreducibility refuted by the send on e *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          [apply (tstep_lam_send_inv _ (Chan "d") _ _ _ I) in Hs as [Hα _]
+          |apply tstep_letu_unit_inv in Hs as [Hα _]]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr (PSess (SSend "e" (Chan "d")))).
     replace ({[+ pubK1 +]} ⊎ {[+ pubB2 +]})
@@ -978,6 +1043,13 @@ Proof.
           |apply tstep_letp_recv_inv in Hse as (v0 & _ & Hα & _)]
       end; simplify_eq.
   (* PIA3: irreducibility refuted by β *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_pair_inv in Heq as [[-> _]|[-> _]];
+          [apply (tstep_lam_send_inv _ (Chan "d") _ _ _ I) in Hs as [Hα _]
+          |apply tstep_letp_recv_inv in Hs as (v0 & _ & Hα & _)]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr PTau).
     replace ({[+ pubA3 +]})
@@ -1013,6 +1085,13 @@ Proof.
     + exfalso. by eapply gmultiset_two_singleton_inv.
     + exfalso. by eapply gmultiset_two_singleton_inv.
   (* PIA4: irreducibility refuted by the close on e *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = {[+ _ +]},
+        Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_singleton_inv in Heq as [-> ->];
+          apply tstep_lam_chan_inv in Hs as [Hα _]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr (PSess (SClos "e"))).
     replace ({[+ pubA4 +]})
@@ -1051,6 +1130,13 @@ Proof.
     + exfalso. by eapply gmultiset_two_singleton_inv.
     + exfalso. by eapply gmultiset_two_singleton_inv.
   (* PIB1: irreducibility refuted by β *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = {[+ _ +]},
+        Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_singleton_inv in Heq as [-> ->];
+          apply tstep_clos_inv in Hs as [Hα _]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr PTau).
     replace ({[+ pubB1 +]})
@@ -1086,6 +1172,13 @@ Proof.
     + exfalso. by eapply gmultiset_two_singleton_inv.
     + exfalso. by eapply gmultiset_two_singleton_inv.
   (* PIB2: irreducibility refuted by the recv on d *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = {[+ _ +]},
+        Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_singleton_inv in Heq as [-> ->];
+          apply tstep_letu_unit_inv in Hs as [Hα _]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr (PSess (SRecv "d" EUnit))).
     replace ({[+ pubB2 +]})
@@ -1130,6 +1223,13 @@ Proof.
     + exfalso. by eapply gmultiset_two_singleton_inv.
     + exfalso. by eapply gmultiset_two_singleton_inv.
   (* PIB3: irreducibility refuted by β *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = {[+ _ +]},
+        Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_singleton_inv in Heq as [-> ->];
+          apply tstep_letp_recv_inv in Hs as (v0 & _ & Hα & _)
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr PTau).
     replace ({[+ pubB3 +]})
@@ -1168,6 +1268,14 @@ Proof.
     + exfalso. by eapply gmultiset_two_singleton_inv.
     + exfalso. by eapply gmultiset_two_singleton_inv.
   (* PIB4: irreducibility refuted by β *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = {[+ _ +]},
+        Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_singleton_inv in Heq as [-> ->];
+          apply (tstep_letp_pair_inv EUnit (Chan "d") _ _ _ I I) in Hs
+            as [Hα _]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr PTau).
     replace ({[+ pubB4 +]})
@@ -1203,6 +1311,13 @@ Proof.
     + exfalso. by eapply gmultiset_two_singleton_inv.
     + exfalso. by eapply gmultiset_two_singleton_inv.
   (* PIB5: irreducibility refuted by the close on d *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = {[+ _ +]},
+        Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_singleton_inv in Heq as [-> ->];
+          apply tstep_letu_unit_inv in Hs as [Hα _]
+      end; simplify_eq.
   - intros Hirr. exfalso.
     eapply (Hirr (PSess (SClos "d"))).
     replace ({[+ pubB5 +]})
@@ -1241,6 +1356,13 @@ Proof.
     + exfalso. by eapply gmultiset_two_singleton_inv.
     + exfalso. by eapply gmultiset_two_singleton_inv.
   (* PIunit: terminated *)
+    + (* internal forwarding: no forwarding redex *)
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = {[+ _ +]},
+        Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_singleton_inv in Heq as [-> ->];
+          apply tstep_clos_inv in Hs as [Hα _]
+      end; simplify_eq.
   - intros _.
     exists EUnit, ∅. split_and!.
     + f_equal. multiset_solver.

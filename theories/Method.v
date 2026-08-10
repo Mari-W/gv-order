@@ -28,12 +28,20 @@ From LRGV Require Export Compositionality.
 (** ** Subjects of session transitions are free channels *)
 
 Lemma tstep_sess_subj e σ e' :
-  tstep e (LSess σ) e' → subj σ ∈ fchans e.
+  tstep e (LSess σ) e' → subjs σ ⊆ fchans e.
 Proof.
   intros H. remember (LSess σ) as α eqn:Hα.
   induction H; subst; simpl; try set_solver.
   match goal with Hh : head_step _ _ _ |- _ =>
     inversion Hh; simplify_eq; simpl; set_solver end.
+Qed.
+
+(** Every session label names at least one subject — a forwarding
+    label carries a pair, degenerate or not. *)
+Lemma subjs_ne_empty e σ e' : tstep e (LSess σ) e' → subjs σ ≠ ∅.
+Proof.
+  intros H. destruct σ; simpl; try (clear; set_solver).
+  destruct (tstep_link_shape _ _ _ H) as (a & b & ->). clear. set_solver.
 Qed.
 
 (** ** The invariant rule *)
@@ -72,10 +80,20 @@ Definition inv_case (I : senv → ty → proc → Prop)
         ty_one_of T0 Tw T
   | PSess (SClos c) =>
       ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧ I Σ1 T p'
+  | PSess (SLink cd) =>
+      ∃ c d Σ1 sc sd,
+        cd = {[c; d]} ∧ c ≠ d ∧
+        Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
+        c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
+        unfoldS sd = unfoldS (dual sc) ∧
+        I Σ1 T p'
   end.
 
 (** A family is an invariant if every member satisfies the termination
-    clause and its one-step obligations stay in the family. *)
+    clause and its one-step obligations stay in the family.  There is
+    no channel-occurrence obligation: the relation constrains only
+    what a configuration DOES, so a thread may mention a channel it
+    does not own as long as it never acts on it. *)
 Definition proc_invariant (I : senv → ty → proc → Prop) : Prop :=
   ∀ Σ T p, I Σ T p →
     (pirred p →
@@ -89,12 +107,12 @@ Proof.
   intros HI HIp n. revert Σ T p HIp.
   induction n as [n IHn] using lt_wf_ind. intros Σ T p HIp.
   destruct n as [|n']; [apply Prel_0|].
-  destruct (HI Σ T p HIp) as [Hirr Hstep].
+  destruct (HI Σ T p HIp) as (Hirr & Hstep).
   apply Prel_S_intro.
   - intros Hpi.
     destruct (Hirr Hpi) as (v & E & -> & Hv & HV & HE). eauto 10.
   - intros π p' Hst. specialize (Hstep π p' Hst).
-    destruct π as [|[c w|c w|c]]; simpl in Hstep |- *.
+    destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* τ *)
       intros Hg. apply IHn; [lia|auto].
     + (* input *)
@@ -116,6 +134,9 @@ Proof.
       destruct Hstep as (Σ1 & -> & Hc & H).
       exists Σ1. split_and!; [by apply senv_hd_nf|done|].
       apply IHn; [lia|done].
+    + (* forwarding *)
+      destruct Hstep as (c & d & Σ1 & sc & sd & -> & ? & -> & ? & ? & ? & H).
+      eexists _, _, _, _, _. split_and!; [done..|]. apply IHn; [lia|done].
 Qed.
 
 (** ** Closed processes: the semantic judgment as a reachability
@@ -141,7 +162,7 @@ Proof.
   apply (Prel_by_invariant (λ Σ T q, Σ = ∅ ∧ T = TUnit ∧ P q));
     [|by auto].
   clear p HPp. intros Σ T p (-> & -> & HPp).
-  destruct (HP p HPp) as (Hech & Hirr & Hτ). split.
+  destruct (HP p HPp) as (Hech & Hirr & Hτ). split_and!.
   - intros Hpi. destruct (Hirr Hpi) as (HC & Hne & HE).
     destruct p as [C E]. simpl in *. subst C.
     assert (EUnit ∈ E) as Hin.
@@ -156,14 +177,16 @@ Proof.
   - intros π p' Hst.
     destruct π as [|σ]; simpl.
     + intros _. auto.
-    + (* no session step is enabled *)
-      exfalso. inversion Hst; subst.
-      match goal with
-      | Hts : tstep ?e (LSess σ) _, Hsub : subj σ ∉ ?C |- _ =>
-          apply tstep_sess_subj in Hts;
-          apply Hsub, Hech, elem_of_echans;
-          exists e; split; [multiset_solver|done]
-      end.
+    + (* no offer is enabled — forwarding included: some subject of
+         the label is free in the acting thread, hence restricted by
+         the closedness hypothesis, contradicting the rule's guard *)
+      exfalso. destruct p as [C E].
+      apply proc_step_sess_inv in Hst as (E0 & e0 & e0' & -> & Hts & Hsub & _).
+      pose proof (tstep_sess_subj _ _ _ Hts) as Hsu.
+      destruct (set_choose_L _ (subjs_ne_empty _ _ _ Hts)) as [x Hx].
+      apply (Hsub x); [done|].
+      apply Hech. simpl. apply elem_of_echans.
+      exists e0. split; [multiset_solver|set_solver].
 Qed.
 
 Corollary closed_deadlock_free P p :

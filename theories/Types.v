@@ -658,10 +658,12 @@ Ltac senv_perm :=
   rewrite ?lookup_singleton_Some, ?lookup_empty;
   naive_solver.
 
-(** ** Type-indexed families of type signatures for constants (Fig. 4)
+(** ** Type-indexed families of type signatures for constants
+    (Fig. 4 and Fig. 10)
 
     fork : (S ⊸ ∗) ⊸ dual S     send : (T ⊗ !T.S) ⊸ S
-    recv : ?T.S ⊸ T ⊗ S         clos : Close ⊸ ∗ *)
+    recv : ?T.S ⊸ T ⊗ S         clos : Close ⊸ ∗
+    link : ⟨S, dual S⟩ ⊸ ∗ *)
 
 Inductive konst_ty : konst → ty → Prop :=
   | KTFork S :
@@ -671,4 +673,6 @@ Inductive konst_ty : konst → ty → Prop :=
   | KTSend T S :
       konst_ty KSend (TLolli (TProd T (TSess (SSnd T S))) (TSess S))
   | KTClos :
-      konst_ty KClos (TLolli (TSess SEnd) TUnit).
+      konst_ty KClos (TLolli (TSess SEnd) TUnit)
+  | KTLink S :
+      konst_ty KLink (TLolli (TProd (TSess S) (TSess (dual S))) TUnit).

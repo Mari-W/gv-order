@@ -646,6 +646,7 @@ Proof.
     + (* fork *) lb_split; lb_kill.
     + (* msg *) lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 10: only the β step to s = 11. *)
@@ -680,6 +681,7 @@ Proof.
     + (* fork *) lb_split; lb_kill.
     + (* msg *) lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 9, k2 = 2: only worker2's β step. *)
@@ -706,6 +708,7 @@ Proof.
     + (* fork *) lb_split; lb_kill.
     + (* msg *) lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 9, k2 = 3: only worker2's β step. *)
@@ -732,6 +735,7 @@ Proof.
     + (* fork *) lb_split; lb_kill.
     + (* msg *) lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 9, k2 = 4: the external send on c; σ advances S1 → Close. *)
@@ -784,6 +788,7 @@ Proof.
     + (* msg: the send has no internal partner ("c" ∉ C) *)
       lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 9, k2 = 5: only worker2's β step. *)
@@ -810,6 +815,7 @@ Proof.
     + (* fork *) lb_split; lb_kill.
     + (* msg *) lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 9, k2 = 6: the internal close on w2, to (s, k2) = (10, 7). *)
@@ -869,6 +875,7 @@ Proof.
             : gmultiset expr) by multiset_solver.
         lb_next w1 w2 10 7 7.
       * lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 8, k2 = 2: srv's β and worker2's β. *)
@@ -902,6 +909,7 @@ Proof.
     + (* fork *) lb_split; lb_kill.
     + (* msg *) lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 8, k2 = 3: srv's β and worker2's β. *)
@@ -935,6 +943,7 @@ Proof.
     + (* fork *) lb_split; lb_kill.
     + (* msg *) lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 8, k2 = 4: srv's β, and worker2's external send on c. *)
@@ -997,6 +1006,7 @@ Proof.
     + (* msg: the send has no internal partner ("c" ∉ C) *)
       lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 8, k2 = 5: srv's β and worker2's β. *)
@@ -1030,6 +1040,7 @@ Proof.
     + (* fork *) lb_split; lb_kill.
     + (* msg *) lb_split; lb_kill.
     + (* close *) lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** s = 8, k2 = 6: only srv's β (worker2's close has no partner
@@ -1068,6 +1079,7 @@ Proof.
     + (* msg *) lb_split; lb_kill.
     + (* close: srv has no close label at s = 8 *)
       lb_split; lb_kill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** The [LImain] group obligations for the late stages s ∈ {8..11}:
@@ -1156,6 +1168,7 @@ Proof.
       end.
     + (* msg *) lb_split.
     + (* close *) lb_split.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** Pre-phase: main β-redex before the second fork; worker1 warms up. *)
@@ -1211,6 +1224,7 @@ Proof.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
+      * (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
     + (* k1 = 1 *)
       change (wstage 1 w1) with (wk1 w1) in Hst.
       inversion Hst; subst.
@@ -1231,6 +1245,7 @@ Proof.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
+      * (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** Pre-phase: main forks worker2; the fork guard supplies both
@@ -1305,6 +1320,7 @@ Proof.
         end.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
+      * (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
     + (* k1 = 1 *)
       change (wstage 1 w1) with (wk1 w1) in Hst.
       inversion Hst; subst.
@@ -1329,6 +1345,7 @@ Proof.
         end.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
+      * (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** Pre-phase: main β-redex to sv0; both workers alive. *)
@@ -1393,6 +1410,7 @@ Proof.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
+      * (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
     + (* k1 = 0, k2 = 1 *)
       change (wstage 0 w1) with (wk0 w1) in Hst.
       change (wstage 1 w2) with (wk1 w2) in Hst.
@@ -1420,6 +1438,7 @@ Proof.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
+      * (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
     + (* k1 = 1, k2 = 0 *)
       change (wstage 1 w1) with (wk1 w1) in Hst.
       change (wstage 0 w2) with (wk0 w2) in Hst.
@@ -1440,6 +1459,7 @@ Proof.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
+      * (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
     + (* k1 = 1, k2 = 1 *)
       change (wstage 1 w1) with (wk1 w1) in Hst.
       change (wstage 1 w2) with (wk1 w2) in Hst.
@@ -1457,6 +1477,7 @@ Proof.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
       * lb_split; lb_kill.
+      * (* internal forwarding: no forwarding redex *) lb_split; lb_kill.
 Qed.
 
 (** ** The [LImain] band s ∈ {4..7}
@@ -1676,6 +1697,7 @@ Proof.
     + (* fork *) lb_split; lb_wkill.
     + (* msg *) lb_split; lb_wkill.
     + (* close *) lb_split; lb_wkill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_wkill.
 Qed.
 
 (** s = 5: srv offers the send on w2; it pairs internally with
@@ -1804,6 +1826,7 @@ Proof.
         by multiset_solver.
       lb_next w1 w2 6 k1 2.
     + (* close *) lb_split; lb_wkill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_wkill.
 Qed.
 
 (** s = 6: srv β to s = 7; both workers in the mid band, so either
@@ -1923,6 +1946,7 @@ Proof.
     + (* fork *) lb_split; lb_wkill.
     + (* msg *) lb_split; lb_wkill.
     + (* close *) lb_split; lb_wkill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_wkill.
 Qed.
 
 (** s = 7: srv offers the close on w1; it pairs internally with
@@ -2085,6 +2109,7 @@ Proof.
                 ⊎ {[+ wthread k2 w2 +]} : gmultiset expr)
           by multiset_solver.
         lb_next w1 w2 8 7 k2.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_wkill.
 Qed.
 
 (** The [LImain] group obligations for the mid stages s ∈ {4..7}:
@@ -2215,6 +2240,7 @@ Proof.
     + (* fork *) lb_split; lb_wkill.
     + (* msg: nobody can send in this band *) lb_split; lb_wkill.
     + (* close *) lb_split; lb_wkill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_wkill.
 Qed.
 
 (** s = 1: srv β to s = 2; workers may warm up. *)
@@ -2271,6 +2297,7 @@ Proof.
     + (* fork *) lb_split; lb_wkill.
     + (* msg *) lb_split; lb_wkill.
     + (* close *) lb_split; lb_wkill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_wkill.
 Qed.
 
 (** s = 2: srv β to s = 3; workers may warm up. *)
@@ -2327,6 +2354,7 @@ Proof.
     + (* fork *) lb_split; lb_wkill.
     + (* msg *) lb_split; lb_wkill.
     + (* close *) lb_split; lb_wkill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_wkill.
 Qed.
 
 (** s = 3: srv offers the send on w1; it pairs internally with
@@ -2403,6 +2431,7 @@ Proof.
         by multiset_solver.
       lb_next w1 w2 4 2 k2.
     + (* close *) lb_split; lb_wkill.
+    + (* internal forwarding: no forwarding redex *) lb_split; lb_wkill.
 Qed.
 
 (** The [LImain] group obligations for the early stages s ∈ {0..3}:

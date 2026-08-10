@@ -429,6 +429,15 @@ Proof.
           |apply tstep_letp_recv_inv in Hse as (? & _ & Hα & _)
           |apply tstep_letp_recv_inv in Hse as (? & _ & Hα & _)]
       end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_ld0_inv in Hs as [Hα _]
+          |apply tstep_letp_recv_inv in Hs as (? & _ & Hα & _)
+          |apply tstep_letp_recv_inv in Hs as (? & _ & Hα & _)]
+      end; simplify_eq.
 Qed.
 
 Lemma leadI_case_1a k : (1 ≤ k ≤ 2)%nat →
@@ -529,6 +538,16 @@ Proof.
           |apply tstep_letp_recv_inv in Hse as (? & _ & Hα & _)
           |apply tstep_letp_recv_inv in Hse as (? & _ & Hα & _)]
       end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_ld0b_inv in Hs as [Hα _]
+          |apply (tstep_letp_pair_inv (bv false) (Chan "d") _ _ _
+                    (bv_val false) I) in Hs as [Hα _]
+          |apply tstep_letp_recv_inv in Hs as (? & _ & Hα & _)]
+      end; simplify_eq.
     + (* k = 2, session *)
       exfalso.
       match goal with
@@ -597,6 +616,15 @@ Proof.
            apply tstep_letp_recv_inv in Hsf as (? & _ & Hα2 & _)
           |apply tstep_letp_recv_inv in Hse as (? & _ & Hα & _)
           |apply tstep_letp_recv_inv in Hse as (? & _ & Hα & _)]
+      end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_ld0b_inv in Hs as [Hα _]
+          |apply tstep_letu_clos_inv in Hs as [Hα _]
+          |apply tstep_letp_recv_inv in Hs as (? & _ & Hα & _)]
       end; simplify_eq.
 Qed.
 
@@ -694,6 +722,16 @@ Proof.
           |apply (tstep_letp_pair_inv (bv false) (Chan "d") _ _ _
                     (bv_val false) I) in Hse as [Hα _]]
       end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_ld0b_inv in Hs as [Hα _]
+          |apply tstep_letp_recv_inv in Hs as (? & _ & Hα & _)
+          |apply (tstep_letp_pair_inv (bv false) (Chan "d") _ _ _
+                    (bv_val false) I) in Hs as [Hα _]]
+      end; simplify_eq.
     + (* m = 2, session *)
       exfalso.
       match goal with
@@ -762,6 +800,15 @@ Proof.
            apply tstep_ld0b_inv in Hsf as [Hα2 _]
           |apply tstep_letu_clos_inv in Hse as [Hα _];
            apply tstep_letp_recv_inv in Hsf as (? & _ & Hα2 & _)]
+      end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_ld0b_inv in Hs as [Hα _]
+          |apply tstep_letp_recv_inv in Hs as (? & _ & Hα & _)
+          |apply tstep_letu_clos_inv in Hs as [Hα _]]
       end; simplify_eq.
 Qed.
 
@@ -877,6 +924,17 @@ Proof.
           |apply (tstep_letp_pair_inv (bv (negb wb)) (Chan "d") _ _ _
                     (bv_val (negb wb)) I) in Hse as [Hα _]]
       end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_clos_inv in Hs as [Hα _]
+          |apply (tstep_letp_pair_inv (bv wb) (Chan "d") _ _ _
+                    (bv_val wb) I) in Hs as [Hα _]
+          |apply (tstep_letp_pair_inv (bv (negb wb)) (Chan "d") _ _ _
+                    (bv_val (negb wb)) I) in Hs as [Hα _]]
+      end; simplify_eq.
     + (* k = 1, m = 2, session *)
       exfalso.
       match goal with
@@ -952,6 +1010,16 @@ Proof.
            apply (tstep_letp_pair_inv (bv wb) (Chan "d") _ _ _
                     (bv_val wb) I) in Hsf as [Hα2 _]]
       end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_clos_inv in Hs as [Hα _]
+          |apply (tstep_letp_pair_inv (bv wb) (Chan "d") _ _ _
+                    (bv_val wb) I) in Hs as [Hα _]
+          |apply tstep_letu_clos_inv in Hs as [Hα _]]
+      end; simplify_eq.
     + (* k = 2, m = 1, session *)
       exfalso.
       match goal with
@@ -1022,6 +1090,16 @@ Proof.
                     (bv_val (negb wb)) I) in Hse as [Hα _]
           |apply (tstep_letp_pair_inv (bv (negb wb)) (Chan "d") _ _ _
                     (bv_val (negb wb)) I) in Hse as [Hα _]]
+      end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_clos_inv in Hs as [Hα _]
+          |apply tstep_letu_clos_inv in Hs as [Hα _]
+          |apply (tstep_letp_pair_inv (bv (negb wb)) (Chan "d") _ _ _
+                    (bv_val (negb wb)) I) in Hs as [Hα _]]
       end; simplify_eq.
     + (* k = 2, m = 2, session *)
       exfalso.
@@ -1110,6 +1188,15 @@ Proof.
         destruct wb.
         -- apply (LI3a 3 3 2); [lia|lia|left; split; lia].
         -- apply (LI3b 3 3 2); [lia|lia|left; split; lia].
+    + (* internal forwarding: no forwarding redex *)
+      exfalso.
+      match goal with
+      | Heq : _ ⊎ {[+ ?e +]} = _, Hs : tstep ?e (LSess (SLink _)) _ |- _ =>
+          apply gmultiset_triple_inv in Heq as [[-> _]|[[-> _]|[-> _]]];
+          [apply tstep_clos_inv in Hs as [Hα _]
+          |apply tstep_letu_clos_inv in Hs as [Hα _]
+          |apply tstep_letu_clos_inv in Hs as [Hα _]]
+      end; simplify_eq.
 Qed.
 
 (** ** Helper facts about the stage-indexed sets *)
@@ -1122,6 +1209,14 @@ Proof. done. Qed.
 
 Lemma c_not_lC s : "c" ∉ lC s.
 Proof. unfold lC. case_decide; set_solver. Qed.
+
+(** The guard of P-Act-Session for the labels on the external channel
+    "c": their subject set is the singleton {c}. *)
+Lemma c_guard_send s w : subjs (SSend "c" w) ## lC s.
+Proof. simpl. pose proof (c_not_lC s). set_solver. Qed.
+
+Lemma c_guard_clos s : subjs (SClos "c") ## lC s.
+Proof. simpl. pose proof (c_not_lC s). set_solver. Qed.
 
 (** ** Step existence for the stages k ≥ 3 / m ≥ 3 *)
 
@@ -1242,14 +1337,14 @@ Proof.
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 8 false +]} ⊎ {[+ l1k 6 true +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepSession; [exact tstep_selL_ex|exact (c_not_lC 3)].
+           eapply PStepSession; [exact tstep_selL_ex|apply c_guard_send].
         -- intros Hirr; exfalso.
            eapply (Hirr (PSess (SClos "c"))).
            replace ({[+ l0s 3 +]} ⊎ {[+ l1k 7 true +]} ⊎ {[+ l2m 8 false +]})
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 8 false +]} ⊎ {[+ l1k 7 true +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepSession; [exact tstep_closc_ex|exact (c_not_lC 3)].
+           eapply PStepSession; [exact tstep_closc_ex|apply c_guard_clos].
         -- (* k = 8: terminal configuration *)
            intros _.
            exists (l0s 3), ({[+ l1k 8 true +]} ⊎ {[+ l2m 8 false +]}).
@@ -1269,7 +1364,7 @@ Proof.
         -- match goal with Hs : tstep (l0s 2) _ _ |- _ =>
              apply tstep_clos_inv in Hs as [Hα _] end.
            simplify_eq.
-           match goal with Hn : subj _ ∉ _ |- _ =>
+           match goal with Hn : subjs _ ## _ |- _ =>
              rewrite lC2 in Hn; simpl in Hn end.
            set_solver.
         -- match goal with Hs : tstep (l0s 3) _ _ |- _ =>
@@ -1341,7 +1436,7 @@ Proof.
              apply tstep_letu_clos_inv in Hs as [Hα _] end.
            simplify_eq.
            destruct Hsm as [[-> _]|[_ ?]]; [|lia].
-           match goal with Hn : subj _ ∉ _ |- _ =>
+           match goal with Hn : subjs _ ## _ |- _ =>
              rewrite lC2 in Hn; simpl in Hn end.
            set_solver.
         -- match goal with Hs : tstep (l2m 5 false) _ _ |- _ =>
@@ -1564,6 +1659,19 @@ Proof.
           as [->|[->|[->|[->|[->| ->]]]]] by lia;
           match goal with Hs : tstep (l1k _ _) _ _ |- _ =>
             stage_inv Hs end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso. thread3.
+      * destruct Hsm as [[-> _]|[-> _]];
+          match goal with Hs : tstep (l0s _) _ _ |- _ =>
+            stage_inv Hs end; simplify_eq.
+      * assert (k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8)
+          as [->|[->|[->|[->|[->| ->]]]]] by lia;
+          match goal with Hs : tstep (l1k _ _) _ _ |- _ =>
+            stage_inv Hs end; simplify_eq.
+      * assert (m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8)
+          as [->|[->|[->|[->|[->| ->]]]]] by lia;
+          match goal with Hs : tstep (l2m _ _) _ _ |- _ =>
+            stage_inv Hs end; simplify_eq.
 Qed.
 
 (** ** Obligations for LI3b: winner ld2, stages k ∈ [3,6], m ∈ [3,10] *)
@@ -1601,10 +1709,10 @@ Proof.
         eapply (Hirr PTau), PStepBeta, (tstep_letu_unit_ex _).
       * intros Hirr; exfalso.
         eapply (Hirr (PSess (SSend "c" EFalse))).
-        eapply PStepSession; [exact tstep_selR_ex|exact (c_not_lC 3)].
+        eapply PStepSession; [exact tstep_selR_ex|apply c_guard_send].
       * intros Hirr; exfalso.
         eapply (Hirr (PSess (SClos "c"))).
-        eapply PStepSession; [exact tstep_closc_ex|exact (c_not_lC 3)].
+        eapply PStepSession; [exact tstep_closc_ex|apply c_guard_clos].
       * (* m = 10: the winner is done; the loser's stage decides *)
         assert (k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6) as [->|[->|[->| ->]]] by lia.
         -- intros Hirr; exfalso.
@@ -1647,7 +1755,7 @@ Proof.
         -- match goal with Hs : tstep (l0s 2) _ _ |- _ =>
              apply tstep_clos_inv in Hs as [Hα _] end.
            simplify_eq.
-           match goal with Hn : subj _ ∉ _ |- _ =>
+           match goal with Hn : subjs _ ## _ |- _ =>
              rewrite lC2 in Hn; simpl in Hn end.
            set_solver.
         -- match goal with Hs : tstep (l0s 3) _ _ |- _ =>
@@ -1667,7 +1775,7 @@ Proof.
              apply tstep_letu_clos_inv in Hs as [Hα _] end.
            simplify_eq.
            destruct Hsm as [[-> _]|[_ ?]]; [|lia].
-           match goal with Hn : subj _ ∉ _ |- _ =>
+           match goal with Hn : subjs _ ## _ |- _ =>
              rewrite lC2 in Hn; simpl in Hn end.
            set_solver.
         -- match goal with Hs : tstep (l2m 5 true) _ _ |- _ =>
@@ -1929,6 +2037,19 @@ Proof.
             exact (c_not_lC _ Hc) end).
         assert (k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6) as [->|[->|[->| ->]]] by lia;
           match goal with Hs : tstep (l1k _ _) _ _ |- _ =>
+            stage_inv Hs end; simplify_eq.
+    + (* internal forwarding: no forwarding redex *)
+      exfalso. thread3.
+      * destruct Hsm as [[-> _]|[-> _]];
+          match goal with Hs : tstep (l0s _) _ _ |- _ =>
+            stage_inv Hs end; simplify_eq.
+      * assert (k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6) as [->|[->|[->| ->]]] by lia;
+          match goal with Hs : tstep (l1k _ _) _ _ |- _ =>
+            stage_inv Hs end; simplify_eq.
+      * assert (m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8 ∨ m = 9
+                ∨ m = 10)
+          as [->|[->|[->|[->|[->|[->|[->| ->]]]]]]] by lia;
+          match goal with Hs : tstep (l2m _ _) _ _ |- _ =>
             stage_inv Hs end; simplify_eq.
 Qed.
 
