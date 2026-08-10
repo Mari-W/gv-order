@@ -312,7 +312,7 @@ A transition whose side condition fails carries no obligation at all.
               {\fProc{p} \trans{\lSend{c}{v}} \fProc{(C_0 \cupdot C_w, E_0 \uplus E_w)} : \fType{T}}}
     \end{bussproof}
   \end{mathpar}
-  \textbf{Owner families} $\fProc{p} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ \rocq{Powners}
+  \textbf{Owner families} $\fProc{p} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ \rocq{Owners}
   \begin{mathpar}
     \begin{bussproof}[O-Nil]
       \bussAx{\fProc{(\emptyset,\emptyset)} \in \lrOwn{n}{\fType{\tEmpty ; \tEmpty \vdash \tUnit}}}
@@ -335,7 +335,7 @@ The third case of the process relation refers to an auxiliary
 \emph{owner family} relation, which distributes the escaped channels
 over the residual process one channel at a time.
 
-\begin{definition}[Owner family, \rocq{Powners}]
+\begin{definition}[Owner family, \rocq{Owners}]
 \label{def:owners}
   Let $\fType{\Sigma_e}$ be a session environment.
   We write
