@@ -124,9 +124,9 @@ Definition Edef (below : nat → level) (Vn : senv → ty → expr → Prop)
 Definition ty_one_of (A B C : ty) : Prop :=
   (A = C ∧ B = TUnit) ∨ (A = TUnit ∧ B = C).
 
-(** Iterated decomposition into escaped-channel owners.
+(** The interface topology imposed by an output.
 
-    [Owners P σ Σ T p]: the process p decomposes into a family of
+    [topo_split P σ Σ T p]: the process p decomposes into a family of
     pairwise independent processes, exactly one per channel d ∈ dom σ,
     where the piece for d is in the (parameter) process relation P at
     environment Σd, d : σ(d) — it owns the residual end of d. Σ
@@ -134,30 +134,31 @@ Definition ty_one_of (A B C : ty) : Prop :=
     types (at most one ≠ ∗). The base case is the degenerate empty
     process: for no escaped channels, nothing needs to remain.
 
-    This is the iterated form of Fig. 5's ⌈updated⌉ case 3: instead of
-    one process owning all escaped channels, one process per escaped
-    channel. A single piece owning two escaped channels would create a
-    potential cyclic dependency through the environment, so the finer
-    decomposition is the semantically meaningful invariant, and it is
-    what the compositionality proofs need when a communication
-    transfers several restricted channels at once: each transferred
-    channel is reconnected to its own owner piece separately. *)
-Inductive Owners (P : senv → ty → proc → Prop)
+    This is where the relation constrains topology, and the only
+    place it does: internally a component may be as cyclic as it
+    likes (see examples/Cycle.v), but on its EXTERNAL interface an
+    output must leave the residual split one piece per escaped
+    channel.  A single piece holding two escaped ends could close a
+    dependency cycle through the environment, which is exactly what
+    this rules out; and it is what the compositionality proofs need
+    when one communication transfers several restricted channels at
+    once, since each is reconnected to its own piece separately. *)
+Inductive topo_split (P : senv → ty → proc → Prop)
     : gmap chan sty → senv → ty → proc → Prop :=
-  | Owners_nil : Owners P ∅ ∅ TUnit (∅, ∅)
-  | Owners_cons σ d s Σd Σr Td Tr Tt Cd Ed Cr Er :
+  | topo_split_nil : topo_split P ∅ ∅ TUnit (∅, ∅)
+  | topo_split_cons σ d s Σd Σr Td Tr Tt Cd Ed Cr Er :
       σ !! d = None →
       d ∉ dom Σd → d ∉ dom Σr → d ∉ Cd → d ∉ Cr →
       dom σ ## dom Σd → dom σ ## Cd →
       Σd ##ₘ Σr → Cd ## Cr → Cd ## dom Σr → Cr ## dom Σd →
       P (<[d := s]> Σd) Td (Cd, Ed) →
-      Owners P σ Σr Tr (Cr, Er) →
+      topo_split P σ Σr Tr (Cr, Er) →
       ty_one_of Td Tr Tt →
-      Owners P (<[d := s]> σ) (Σd ∪ Σr) Tt (Cd ∪ Cr, Ed ⊎ Er).
+      topo_split P (<[d := s]> σ) (Σd ∪ Σr) Tt (Cd ∪ Cr, Ed ⊎ Er).
 
-Lemma Owners_mono (P Q : senv → ty → proc → Prop) σ Σ T p :
+Lemma topo_split_mono (P Q : senv → ty → proc → Prop) σ Σ T p :
   (∀ Σ' T' p', P Σ' T' p' → Q Σ' T' p') →
-  Owners P σ Σ T p → Owners Q σ Σ T p.
+  topo_split P σ Σ T p → topo_split Q σ Σ T p.
 Proof. induction 2; econstructor; eauto. Qed.
 
 (** Process relation at level n. Differences from the term relation:
@@ -172,9 +173,9 @@ Proof. induction 2; econstructor; eauto. Qed.
     - the output case (case 3, the ⌈updated⌉ one in Fig. 5) is the
       iterated form: sending w on c leaks the restricted channels
       dom σe = fchans w ∩ C; the residual splits into a continuation
-      piece for c and one independent owner piece per escaped channel
-      ([Owners]), with the value typed against the duals of the
-      owners' types. *)
+      piece for c and one independent piece per escaped channel
+      ([topo_split]), with the value typed against the duals of the
+      pieces' types. *)
 Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
     (n : nat) (Σ : senv) (T : ty) (p : proc) : Prop :=
   match n with
@@ -205,7 +206,7 @@ Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
               p'.2 = E0 ⊎ Ew ∧
               Vn (Σv ∪ (dual <$> σe)) U w ∧
               lP (below n') (<[c := s]> Σ0) T0 (C0, E0) ∧
-              Owners (lP (below n')) σe Σw Tw (Cw, Ew) ∧
+              topo_split (lP (below n')) σe Σw Tw (Cw, Ew) ∧
               ty_one_of T0 Tw T
         | PSess (SClos c) =>                           (* case 4 *)
             ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧
@@ -519,7 +520,7 @@ Definition Pcase (n' : nat) (Σ : senv) (T : ty) (p : proc) (π : plabel)
         p'.2 = E0 ⊎ Ew ∧
         Vrel (S n') (Σv ∪ (dual <$> σe)) U w ∧
         Prel n' (<[c := s]> Σ0) T0 (C0, E0) ∧
-        Owners (Prel n') σe Σw Tw (Cw, Ew) ∧
+        topo_split (Prel n') σe Σw Tw (Cw, Ew) ∧
         ty_one_of T0 Tw T
   | PSess (SClos c) =>
       ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' Σ1 T p'
@@ -729,7 +730,7 @@ Proof.
       eexists _, _, _, _, _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HP0]. lia.
-      * eapply Owners_mono; [|exact HPw].
+      * eapply topo_split_mono; [|exact HPw].
         intros ? ? ? ?. eapply IH; [|eauto]. lia.
     + destruct H2 as (Σ1 & Hhd & ? & HP').
       eexists. split_and!; eauto. eapply IH; [|done]. lia.

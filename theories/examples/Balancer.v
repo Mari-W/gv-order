@@ -793,7 +793,7 @@ Proof.
       * intros n. rewrite fmap_empty.
         rewrite (left_id (∅ : senv) (∪)). apply Vrel_unit.
       * lb_next w1 w2 9 7 5.
-      * apply Owners_nil.
+      * apply topo_split_nil.
       * left; done.
     + (* beta *) lb_split; lb_kill.
     + (* fork *) lb_split; lb_kill.
@@ -1003,7 +1003,7 @@ Proof.
       * intros n. rewrite fmap_empty.
         rewrite (left_id (∅ : senv) (∪)). apply Vrel_unit.
       * lb_next w1 w2 8 7 5.
-      * apply Owners_nil.
+      * apply topo_split_nil.
       * left; done.
     + (* beta: srv advances to s = 9 *)
       lb_split; [|lb_kill..].
@@ -1674,7 +1674,7 @@ Proof.
            ++ intros n. rewrite fmap_empty.
               rewrite (left_id (∅ : senv) (∪)). apply Vrel_unit.
            ++ lb_next w1 w2 4 5 k2.
-           ++ apply Owners_nil.
+           ++ apply topo_split_nil.
            ++ left; done.
         -- (* k1 = 6: close blocked, w1 ∈ C *)
            exfalso. simpl in *. set_solver.
@@ -1796,7 +1796,7 @@ Proof.
            ++ intros n. rewrite fmap_empty.
               rewrite (left_id (∅ : senv) (∪)). apply Vrel_unit.
            ++ lb_next w1 w2 5 5 k2.
-           ++ apply Owners_nil.
+           ++ apply topo_split_nil.
            ++ left; done.
         -- (* k1 = 6: close blocked, w1 ∈ C *)
            exfalso. simpl in *. set_solver.
@@ -1896,7 +1896,7 @@ Proof.
            ++ intros n. rewrite fmap_empty.
               rewrite (left_id (∅ : senv) (∪)). apply Vrel_unit.
            ++ lb_next w1 w2 6 5 k2.
-           ++ apply Owners_nil.
+           ++ apply topo_split_nil.
            ++ left; done.
         -- (* k1 = 6: close blocked, w1 ∈ C *)
            exfalso. simpl in *. set_solver.
@@ -1925,7 +1925,7 @@ Proof.
            ++ intros n. rewrite fmap_empty.
               rewrite (left_id (∅ : senv) (∪)). apply Vrel_unit.
            ++ lb_next w1 w2 6 k1 5.
-           ++ apply Owners_nil.
+           ++ apply topo_split_nil.
            ++ left; done.
         -- (* k2 = 6: close blocked, w2 ∈ C *)
            exfalso. simpl in *. set_solver.
@@ -2038,7 +2038,7 @@ Proof.
            ++ intros n. rewrite fmap_empty.
               rewrite (left_id (∅ : senv) (∪)). apply Vrel_unit.
            ++ lb_next w1 w2 7 5 k2.
-           ++ apply Owners_nil.
+           ++ apply topo_split_nil.
            ++ left; done.
         -- (* k1 = 6: close blocked externally, w1 ∈ C *)
            exfalso. simpl in *. set_solver.
@@ -2067,7 +2067,7 @@ Proof.
            ++ intros n. rewrite fmap_empty.
               rewrite (left_id (∅ : senv) (∪)). apply Vrel_unit.
            ++ lb_next w1 w2 7 k1 5.
-           ++ apply Owners_nil.
+           ++ apply topo_split_nil.
            ++ left; done.
         -- (* k2 = 6: close blocked, w2 ∈ C *)
            exfalso. simpl in *. set_solver.

@@ -120,7 +120,7 @@ Proof.
   - intros n. rewrite map_fmap_singleton.
     rewrite (left_id ∅ (∪)). apply Vrel_chan.
   - apply PIA3.
-  - apply Owners_single; [set_solver|set_solver|exact HB].
+  - apply topo_split_single; [set_solver|set_solver|exact HB].
   - left. done.
 Qed.
 

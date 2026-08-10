@@ -179,7 +179,9 @@
 \NewDocumentCommand\lrTerm{mm}{\@lr{E}{#1}{#2}}
 \NewDocumentCommand\lrProc{mm}{\@lr{P}{#1}{#2}}
 \NewDocumentCommand\lrGSub{mm}{\@lr{G}{#1}{#2}}
-\NewDocumentCommand\lrOwn{mm}{\@lr{O}{#1}{#2}}
+% Script T, so the judgment letter does not collide with the
+% metavariable T for types.
+\NewDocumentCommand\lrTopo{mm}{\@lr{\mathcal{T}}{#1}{#2}}
 \makeatother
 
 % Σ ⊩_n (transition) : T  --  "this transition discharges its

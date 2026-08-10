@@ -58,7 +58,7 @@ Qed.
     The receiver's environment grows by each owner's environment as
     the connections are performed. *)
 Lemma connect_owners n (IHc : connect_at n) σ Σw Tw Cw Ew :
-  Owners (Prel n) σ Σw Tw (Cw, Ew) →
+  topo_split (Prel n) σ Σw Tw (Cw, Ew) →
   ∀ Σr Tr Cr Er Tt,
     Prel n (Σr ∪ (dual <$> σ)) Tr (Cr, Er) →
     ty_one_of Tr Tw Tt → prim Tt →
@@ -174,15 +174,15 @@ Ltac set_side :=
     environment contains a given channel c ∈ dom Σw. The family keeps
     its channels; the grafted piece's C, E and environment merge into
     the affected entry. *)
-Lemma Owners_graft n (IHc : connect_at n) σ Σw Tw Cw Ew :
-  Owners (Prel n) σ Σw Tw (Cw, Ew) →
+Lemma topo_split_graft n (IHc : connect_at n) σ Σw Tw Cw Ew :
+  topo_split (Prel n) σ Σw Tw (Cw, Ew) →
   ∀ c sc Σg Tg Cg Eg Tt,
     Σw !! c = Some sc →
     Prel n (<[c := dual sc]> Σg) Tg (Cg, Eg) →
     ty_one_of Tw Tg Tt → prim Tt →
     Σg ##ₘ Σw → dom σ ## dom Σg → dom σ ## Cg → c ∉ dom Σg → c ∉ Cg →
     Cw ## Cg → Cw ## dom Σg → Cg ## dom Σw → Cw ## dom Σw → Cg ## dom Σg →
-    Owners (Prel n) σ (delete c Σw ∪ Σg) Tt (Cw ∪ Cg ∪ {[c]}, Ew ⊎ Eg).
+    topo_split (Prel n) σ (delete c Σw ∪ Σg) Tt (Cw ∪ Cg ∪ {[c]}, Ew ⊎ Eg).
 Proof.
   intros HPo. remember (Cw, Ew) as pw eqn:Hpw. revert Cw Ew Hpw.
   induction HPo as [|σ' d sd Σd Σrest Td Trest Tw' Cd Ed Crest Erest
@@ -221,7 +221,7 @@ Proof.
         apply map_disjoint_dom in Hdg1. set_solver. }
       assert (∀ T2, ty_one_of T2 Trest Tt →
         Prel n (<[d:=sd]> (delete c Σd) ∪ Σg) T2 (Cd ∪ Cg ∪ {[c]}, Ed ⊎ Eg) →
-        Owners (Prel n) (<[d:=sd]> σ') (delete c (Σd ∪ Σrest) ∪ Σg) Tt
+        topo_split (Prel n) (<[d:=sd]> σ') (delete c (Σd ∪ Σrest) ∪ Σg) Tt
           (Cd ∪ Crest ∪ Cg ∪ {[c]}, (Ed ⊎ Erest) ⊎ Eg)) as Hcons.
       { intros T2 Hty2 HP2.
         rewrite delete_union, (delete_id Σrest c);
@@ -232,7 +232,7 @@ Proof.
           with ((Cd ∪ Cg ∪ {[c]}) ∪ Crest) by set_solver.
         replace ((Ed ⊎ Erest) ⊎ Eg) with ((Ed ⊎ Eg) ⊎ Erest)
           by multiset_solver.
-        eapply Owners_cons with (Td := T2); try done;
+        eapply topo_split_cons with (Td := T2); try done;
           try (by senv_disj); try set_side.
         replace (<[d:=sd]> (delete c Σd ∪ Σg))
           with (<[d:=sd]> (delete c Σd) ∪ Σg) by (by rewrite insert_union_l).
@@ -264,9 +264,9 @@ Proof.
       { apply map_disjoint_dom_2. rewrite dom_delete_L.
         apply map_disjoint_dom in Hd7. set_solver. }
       assert (∀ T3, ty_one_of Td T3 Tt →
-        Owners (Prel n) σ' (delete c Σrest ∪ Σg) T3
+        topo_split (Prel n) σ' (delete c Σrest ∪ Σg) T3
           (Crest ∪ Cg ∪ {[c]}, Erest ⊎ Eg) →
-        Owners (Prel n) (<[d:=sd]> σ') (delete c (Σd ∪ Σrest) ∪ Σg) Tt
+        topo_split (Prel n) (<[d:=sd]> σ') (delete c (Σd ∪ Σrest) ∪ Σg) Tt
           (Cd ∪ Crest ∪ Cg ∪ {[c]}, (Ed ⊎ Erest) ⊎ Eg)) as Hcons.
       { intros T3 Hty3 HPrest'.
         rewrite delete_union, (delete_id Σd c);
@@ -277,10 +277,10 @@ Proof.
           with (Cd ∪ (Crest ∪ Cg ∪ {[c]})) by set_solver.
         replace ((Ed ⊎ Erest) ⊎ Eg) with (Ed ⊎ (Erest ⊎ Eg))
           by multiset_solver.
-        eapply Owners_cons with (Td := Td); try done;
+        eapply topo_split_cons with (Td := Td); try done;
           try (by senv_disj); try set_side. }
       assert (∀ T3, prim T3 → ty_one_of Trest Tg T3 →
-        Owners (Prel n) σ' (delete c Σrest ∪ Σg) T3
+        topo_split (Prel n) σ' (delete c Σrest ∪ Σg) T3
           (Crest ∪ Cg ∪ {[c]}, Erest ⊎ Eg)) as Hrec.
       { intros T3 Hp3 Hty3.
         apply (IHrest Crest Erest eq_refl c sc Σg Tg Cg Eg T3 Hlk2 HPg);
@@ -295,7 +295,7 @@ Proof.
 Qed.
 
 (** The CONNECT proof runs [set_solver] in very large ambient contexts
-    (dozens of [Prel]/[Owners]/map/multiset hypotheses).  [set_solver]'s
+    (dozens of [Prel]/[topo_split]/map/multiset hypotheses).  [set_solver]'s
     [naive_solver] scales badly with the number of hypotheses, so before
     every set goal we prune the context to the set-shaped hypotheses that
     can actually contribute.  [prune_drop_neq] keeps membership /
@@ -387,7 +387,7 @@ Ltac connect_prem :=
        rewrite ?echans_disj_union, ?echans_singleton in * ; set_solver) ].
 
 (** As [connect_prem], but also covers the premises specific to
-    [Owners_cons] / [Owners_graft]: the [ty_one_of] disjunction
+    [topo_split_cons] / [topo_split_graft]: the [ty_one_of] disjunction
     ([by left] / [by right]) and lookup-is-[None] side-conditions
     (rephrased as [∉ dom]). *)
 Ltac owner_prem :=
@@ -1741,9 +1741,9 @@ Proof.
           by (apply not_elem_of_dom; dom_solve).
         rewrite !delete_union, (delete_id Σ0 c), (delete_id Σw c)
           in HΣ1; [|by apply not_elem_of_dom..].
-        assert (Owners (Prel n) (<[c := dual s]> σe) (Σ2 ∪ Σw) Tw
+        assert (topo_split (Prel n) (<[c := dual s]> σe) (Σ2 ∪ Σw) Tw
                   (C2 ∪ Cw, E2 ⊎ Ew)) as HPw'.
-        { eapply Owners_cons with (Td := TUnit); owner_prem. }
+        { eapply topo_split_cons with (Td := TUnit); owner_prem. }
         assert (delete c Σv ∪ (dual <$> <[c := dual s]> σe)
                 = Σv ∪ (dual <$> σe)) as Hvenv.
         { rewrite fmap_insert, dual_involutive.
@@ -1780,9 +1780,9 @@ Proof.
         assert (c ∉ dom Σv) as Hcvd by (by apply not_elem_of_dom).
         rewrite !delete_union, (delete_id Σ0 c), (delete_id Σv c)
           in HΣ1; [|by apply not_elem_of_dom..].
-        assert (Owners (Prel n) σe (delete c Σw ∪ Σ2) Tw
+        assert (topo_split (Prel n) σe (delete c Σw ∪ Σ2) Tw
                   (Cw ∪ C2 ∪ {[c]}, Ew ⊎ E2)) as HPw'.
-        { eapply (Owners_graft n IHc σe Σw Tw Cw Ew HPw c s Σ2 TUnit
+        { eapply (topo_split_graft n IHc σe Σw Tw Cw Ew HPw c s Σ2 TUnit
                     C2 E2 Tw Hlkw); owner_prem. }
         eexists Σ0, Σv, U, u, σe, (delete c Σw ∪ Σ2),
           C0, E0, (Cw ∪ C2 ∪ {[c]}), (Ew ⊎ E2), T0, Tw.
@@ -2004,9 +2004,9 @@ Proof.
           by (apply not_elem_of_dom; dom_solve).
         rewrite !delete_union, (delete_id Σ0 c), (delete_id Σw c)
           in HΣ2; [|by apply not_elem_of_dom..].
-        assert (Owners (Prel n) (<[c := s]> σe) (Σ1 ∪ Σw) T
+        assert (topo_split (Prel n) (<[c := s]> σe) (Σ1 ∪ Σw) T
                   (C1 ∪ Cw, E1 ⊎ Ew)) as HPw'.
-        { eapply Owners_cons with (Td := T); owner_prem. }
+        { eapply topo_split_cons with (Td := T); owner_prem. }
         assert (delete c Σv ∪ (dual <$> <[c := s]> σe)
                 = Σv ∪ (dual <$> σe)) as Hvenv.
         { rewrite fmap_insert.
@@ -2048,9 +2048,9 @@ Proof.
           in HΣ2; [|by apply not_elem_of_dom..].
         assert (Prel n (<[c:=dual (dual s)]> Σ1) T (C1, E1)) as HP1'.
         { rewrite dual_involutive. eauto using Prel_down1. }
-        assert (Owners (Prel n) σe (delete c Σw ∪ Σ1) T
+        assert (topo_split (Prel n) σe (delete c Σw ∪ Σ1) T
                   (Cw ∪ C1 ∪ {[c]}, Ew ⊎ E1)) as HPw'.
-        { eapply (Owners_graft n IHc σe Σw TUnit Cw Ew HPw c (dual s) Σ1 T
+        { eapply (topo_split_graft n IHc σe Σw TUnit Cw Ew HPw c (dual s) Σ1 T
                     C1 E1 T Hlkw HP1'); owner_prem. }
         eexists Σ0, Σv, U, u, σe, (delete c Σw ∪ Σ1),
           C0, E0, (Cw ∪ C1 ∪ {[c]}), (Ew ⊎ E1), TUnit, T.

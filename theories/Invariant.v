@@ -76,7 +76,7 @@ Definition inv_case (I : senv → ty → proc → Prop)
         p'.2 = E0 ⊎ Ew ∧
         (∀ n, Vrel n (Σv ∪ (dual <$> σe)) U w) ∧
         I (<[c := s]> Σ0) T0 (C0, E0) ∧
-        Owners I σe Σw Tw (Cw, Ew) ∧
+        topo_split I σe Σw Tw (Cw, Ew) ∧
         ty_one_of T0 Tw T
   | PSess (SClos c) =>
       ∃ Σ1, Σ = <[c := SEnd]> Σ1 ∧ c ∉ dom Σ1 ∧ I Σ1 T p'
@@ -128,7 +128,7 @@ Proof.
       split_and!; try done.
       * subst Σ. by apply senv_hd_nf.
       * apply IHn; [lia|done].
-      * eapply Owners_mono; [|exact HPo].
+      * eapply topo_split_mono; [|exact HPo].
         intros Σ' T' q HIq. apply IHn; [lia|done].
     + (* close *)
       destruct Hstep as (Σ1 & -> & Hc & H).
@@ -195,16 +195,16 @@ Proof. eauto using adequacy, sem_ptyped_closed. Qed.
 
 (** ** A singleton owner family *)
 
-Lemma Owners_single (P : senv → ty → proc → Prop) d s Σd Td Cd Ed :
+Lemma topo_split_single (P : senv → ty → proc → Prop) d s Σd Td Cd Ed :
   d ∉ dom Σd → d ∉ Cd →
   P (<[d := s]> Σd) Td (Cd, Ed) →
-  Owners P {[d := s]} Σd Td (Cd, Ed).
+  topo_split P {[d := s]} Σd Td (Cd, Ed).
 Proof.
   intros Hd HdC HP.
   replace Σd with (Σd ∪ ∅) by (by rewrite (right_id ∅ (∪))).
   replace Cd with (Cd ∪ ∅ : gset chan) by set_solver.
   replace Ed with (Ed ⊎ ∅) by multiset_solver.
-  eapply Owners_cons.
+  eapply topo_split_cons.
   - apply lookup_empty.
   - done.
   - set_solver.
@@ -217,7 +217,7 @@ Proof.
   - set_solver.
   - set_solver.
   - exact HP.
-  - apply Owners_nil.
+  - apply topo_split_nil.
   - left. done.
 Qed.
 

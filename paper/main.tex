@@ -50,6 +50,13 @@
 % Links from paper claims to the Rocq mechanization.  The table of
 % declarations is generated from theories/*.v by paper/rocqrefs.py;
 % regenerate with `make -C paper refs'.
+% acmart declares `definition' on the shared theorem counter, and
+% cleveref then names it "Theorem".  Pin the names explicitly.
+\crefname{definition}{Definition}{Definitions}
+\Crefname{definition}{Definition}{Definitions}
+\crefname{example}{Example}{Examples}
+\Crefname{example}{Example}{Examples}
+
 \RequirePackage{rocqrefs}
 \input{rocqrefs}
 

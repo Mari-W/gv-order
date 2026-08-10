@@ -743,14 +743,14 @@ Qed.
     restricted somewhere in the family, provided it owns no interface
     entry: each piece receives the conditional fact for its own
     environment. *)
-Lemma Owners_junk (P : senv → ty → proc → Prop) x b σ Σ T C E :
+Lemma topo_split_junk (P : senv → ty → proc → Prop) x b σ Σ T C E :
   (∀ Σ' T' C' E',
      x ∉ dom Σ' → x ∉ C' → (b ∈ C' → b ∉ dom Σ') →
      P Σ' T' (C', E') → P Σ' T' (C', echsubst x b E')) →
   x ∉ dom σ → x ∉ dom Σ → x ∉ C →
   (b ∈ C → b ∉ dom Σ ∧ b ∉ dom σ) →
-  Owners P σ Σ T (C, E) →
-  Owners P σ Σ T (C, echsubst x b E).
+  topo_split P σ Σ T (C, E) →
+  topo_split P σ Σ T (C, echsubst x b E).
 Proof.
   intros HPQ Hσ HΣ HC HbC HP.
   remember (C, E) as p eqn:Hp.
@@ -1399,7 +1399,7 @@ Proof.
              |done|done].
           rewrite dom_insert_L. rewrite !dom_union_L in Hdom1.
           rewrite Hdom1 in HxΣ. clear -HxΣ Hsx0. set_solver. }
-        { apply (Owners_junk _ x b); [ | | | | |exact HPw].
+        { apply (topo_split_junk _ x b); [ | | | | |exact HPw].
           - intros Σ' T' C' E' Hx' HxC' HbC' HPp.
             by apply (IHn n' ltac:(lia) Σ' T' C' E' x b
                         Hx' HxC' HbC' Hbx).

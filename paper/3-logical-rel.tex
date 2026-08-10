@@ -142,8 +142,8 @@ to the ones for terms.
             \item ${\fFunc{v} \in \lrVal{n}{\fType{\Sigma_v, \dual{\Sigma_e} \vdash U}}}$,
               where $\fType{\dual{\Sigma_e}}$ dualizes every type of $\fType{\Sigma_e}$;
             \item $\fProc{(C_0, E_0)} \in \lrProc{n'}{\fType{\Sigma_0, \fFunc{c}:S \vdash T_0}}$; and
-            \item $\fProc{(C_w, E_w)} \in \lrOwn{n'}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}$
-              (\cref{def:owners}).
+            \item $\fProc{(C_w, E_w)} \in \lrTopo{n'}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}$
+              (Definition~\ref{def:topo}).
           \end{enumerate*}
 
         \item If ${\pi = \lTerm{c}}$ then\\ ${\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sTerm}}$ and $\fProc{p'} \in \lrProc{n'}{\fType{\Sigma_1 \vdash T}}$.
@@ -306,40 +306,40 @@ A transition whose side condition fails carries no obligation at all.
         \quad
         \fProc{(C_0,E_0)} \in \lrProc{n}{\fType{\Sigma_0, \fFunc{c}:S \vdash T_0}}
         \quad
-        \fProc{(C_w,E_w)} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}
+        \fProc{(C_w,E_w)} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}
       \end{array}}
       \bussU{\obl{\fType{\Sigma_0, \Sigma_v, \Sigma_w, \fFunc{c}:\sSend{U}{S}}}{n}
               {\fProc{p} \trans{\lSend{c}{v}} \fProc{(C_0 \cupdot C_w, E_0 \uplus E_w)} : \fType{T}}}
     \end{bussproof}
   \end{mathpar}
-  \textbf{Owner families} $\fProc{p} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ \rocq{Owners}
+  \textbf{Interface topology} $\fProc{p} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ \rocq{topo_split}
   \begin{mathpar}
-    \begin{bussproof}[O-Nil]
-      \bussAx{\fProc{(\emptyset,\emptyset)} \in \lrOwn{n}{\fType{\tEmpty ; \tEmpty \vdash \tUnit}}}
+    \begin{bussproof}[T-Nil]
+      \bussAx{\fProc{(\emptyset,\emptyset)} \in \lrTopo{n}{\fType{\tEmpty ; \tEmpty \vdash \tUnit}}}
     \end{bussproof}
     \and
-    \begin{bussproof}[O-Cons]
+    \begin{bussproof}[T-Cons]
       \bussAs{\fProc{(C_d,E_d)} \in \lrProc{n}{\fType{\Sigma_d, \fFunc{d}:S \vdash T_d}}}
-      \bussAs{\fProc{(C_r,E_r)} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma_r \vdash T_r}}}
+      \bussAs{\fProc{(C_r,E_r)} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma_r \vdash T_r}}}
       \bussAs{\set{\fType{T_d},\fType{T_r}} = \set{\fType{T},\tUnit}}
-      \bussT{\fProc{(C_d \cupdot C_r, E_d \uplus E_r)} \in \lrOwn{n}{\fType{\Sigma_e, \fFunc{d}:S ; \Sigma_d, \Sigma_r \vdash T}}}
+      \bussT{\fProc{(C_d \cupdot C_r, E_d \uplus E_r)} \in \lrTopo{n}{\fType{\Sigma_e, \fFunc{d}:S ; \Sigma_d, \Sigma_r \vdash T}}}
     \end{bussproof}
   \end{mathpar}
   \caption{The process logical relation of \cref{fig:logrel} and the
-    owner family of \cref{def:owners}, as inference rules.}
-  \Description{The process relation as a base and a step rule, four obligation rules indexed by the transition label, and two rules defining the owner family inductively.}
+    interface topology of Definition~\ref{def:topo}, as inference rules.}
+  \Description{The process relation as a base and a step rule, four obligation rules indexed by the transition label, and two rules defining the interface topology inductively.}
   \label{fig:logrel-rules-proc}
 \end{figure}
 
 The third case of the process relation refers to an auxiliary
-\emph{owner family} relation, which distributes the escaped channels
-over the residual process one channel at a time.
+\emph{interface topology} relation, which distributes the escaped
+channels over the residual process one channel at a time.
 
-\begin{definition}[Owner family, \rocq{Owners}]
-\label{def:owners}
+\begin{definition}[Interface topology, \rocq{topo_split}]
+\label{def:topo}
   Let $\fType{\Sigma_e}$ be a session environment.
   We write
-  $\fProc{p} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$
+  $\fProc{p} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$
   if $\fProc{p} = \fProc{(\biguplus_{d} C_d, \biguplus_{d} E_d)}$
   decomposes into a family of pairwise independent processes
   $\fProc{p_d} = \fProc{(C_d,E_d)}$, one for each
@@ -353,10 +353,13 @@ over the residual process one channel at a time.
   $\fType{\Sigma} = \fType{\tEmpty}$ and $\fType{T} = \fType{\tUnit}$).
 \end{definition}
 
-Assigning each escaped channel its \emph{own} owner is what makes the
-case usable: a single piece owning two escaped channels could close a
-dependency cycle through the environment, and the compositionality
-proofs reconnect each transferred channel to its owner separately.
+This is the one place where the relation constrains topology, and it
+constrains it only on the \emph{outside}: internally a component may
+be as cyclic as it likes, but an output must leave the residual split
+one piece per escaped channel.  A single piece holding two escaped
+ends could close a dependency cycle through the environment, and the
+compositionality proofs reconnect each transferred channel to its own
+piece separately.
 
 We can now define semantic counterparts to the typing judgments for terms
 and for processes from the logical relation.
@@ -461,9 +464,9 @@ To prove adequacy of our logical relation, we need two auxiliary lemmas.
       \fProc{p} \in \lrProc{n}{\fType{\tEmpty \vdash T}}.
   $
   Pick $n = m+1$.
-  Then, by \cref{lm:lrproc-inv},
+  Then, by Lemma~\ref{lm:lrproc-inv},
   ${p' \in \lrProc{1}{\fType{\tEmpty \vdash T}}}$.
-  By \cref{lm:lrproc-safe} $p'$ is safe.
+  By Lemma~\ref{lm:lrproc-safe} $p'$ is safe.
   Thus~$p$ is deadlock free.
 \end{proof}
 
@@ -600,7 +603,7 @@ as a representative example of the arguments involved.
   The cases where only $(C_1, E_1)$ or only $(C_2, E_2)$ is inducing the transition,
   which can only happen if the label is not a send or receive on $\fFunc{c}$
   (as per \ruleLabel{P-Act-Session}),
-  are easily discharged by using \cref{lem:lr-dwdcl} and the induction hypothesis.
+  are easily discharged by using Lemma~\ref{lem:lr-dwdcl} and the induction hypothesis.
   The interesting case is when the transition arises from
   \ruleLabel{P-Act-Msg} or \ruleLabel{P-Act-Close}.
   The two cases are similar so we focus on the former.
@@ -725,7 +728,7 @@ showing that the untypable-but-safe processes of \cref{sec:calculus}
 satisfy the semantic judgment.
 
 \begin{example}[Deadlock free cycle, \rocq{sync_cycle_deadlock_free}]
-  Consider the process $\fProc{\var{cycle}}$ of \cref{ex:cyclic},
+  Consider the process $\fProc{\var{cycle}}$ of Example~\ref{ex:cyclic},
   where we spelled out the only transition sequence $p_0 \redu^* p_4$.
   It is not hard to prove that
   $ \fType{\tEmpty \proves \fProc{\var{cycle}} : \tUnit} $ holds:
@@ -741,9 +744,9 @@ satisfy the semantic judgment.
   $(\emptyset, \mset{\fFunc{\var{sync}}, \fFunc{\var{cycle}}})$
   is deadlock free,
   where $\fFunc{\var{sync}}$ is the term in the $\var{sync}$ process of
-  \cref{ex:sync},
+  Example~\ref{ex:sync},
   and $\fFunc{\var{cycle}}$ is the term in $\var{cycle}$.
-  Since we have established in \cref{ex:typing} that
+  Since we have established in Example~\ref{ex:typing} that
   $ \fType{\tEmpty \types \fProc{\var{sync}} : \tUnit} $,
   by \cref{th:fundamental} we have
   $ \fType{\tEmpty \proves \fProc{\var{sync}} : \tUnit} $;
@@ -757,7 +760,7 @@ satisfy the semantic judgment.
 
 \begin{example}[Load balancer, \rocq{lb_deadlock_free}]
   Consider the process $(\emptyset,\fFunc{\var{lb}})$
-  of \cref{ex:load-balancer}.
+  of Example~\ref{ex:load-balancer}.
   We can prove that
   $
     \fType{

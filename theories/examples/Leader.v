@@ -1408,7 +1408,7 @@ Proof.
                         ⊎ {[+ l2m m false +]} : gmultiset expr)
                 by multiset_solver.
               apply (LI3a 7 m s); [lia|lia|exact Hsm].
-           ++ exact (Owners_nil _).
+           ++ exact (topo_split_nil _).
            ++ left; done.
         -- (* k = 7: the external close on c *)
            match goal with Hs : tstep (l1k 7 true) _ _ |- _ =>
@@ -1811,7 +1811,7 @@ Proof.
            ++ apply (LI3b k 9 s);
                 [lia|lia|destruct Hsm as [[_ ?]|[-> _]];
                          [lia|right; split; lia]].
-           ++ exact (Owners_nil _).
+           ++ exact (topo_split_nil _).
            ++ left; done.
         -- (* m = 9: the external close on c *)
            match goal with Hs : tstep (l2m 9 true) _ _ |- _ =>

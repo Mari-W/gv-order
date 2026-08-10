@@ -458,7 +458,7 @@ which, by convention, is considered the value computed by the whole program.%
 
 \begin{example}[\rocq{sync_deadlock_free}]
 \label{ex:sync-fine}
-  The initial process $\fProc{p}$ of \cref{ex:sync} is
+  The initial process $\fProc{p}$ of Example~\ref{ex:sync} is
   safe and deadlock free:
   the displayed reduction sequence is the only one,
   and every reached process can take a further reduction until we reach
@@ -487,7 +487,7 @@ which, by convention, is considered the value computed by the whole program.%
 
 \begin{example}[\rocq{cycle_deadlock_free}]
 \label{ex:cyclic-df}
-  Although the topology of $p_0$ in \cref{ex:cyclic} is cyclic,
+  Although the topology of $p_0$ in Example~\ref{ex:cyclic} is cyclic,
   the process has exactly one reduction sequence $p_0 \trans{}[*] p_4$
   and~$p_4$ has gracefully terminated.
   Therefore all~$p_0,\dots,p_4$ are safe and thus deadlock free.
@@ -610,8 +610,7 @@ a more liberal logical relation.
     \fType{\dual{\sTerm}} &= \fType{\sTerm}
   \end{align*}
 %   \caption{Types and session types for \OurLang.}
-%   \Description{The value logical relation given by four equations indexed by the type; the term relation given by an irreducible case and five cases indexed by the transition label; and the process relation given by an irreducible case and four cases indexed by the transition label.}
-  \label{fig:logrel}
+%   \label{fig:types}
 % \end{figure}
 %
 % \begin{figure}[tp]
@@ -703,7 +702,7 @@ a more liberal logical relation.
   \label{fig:typeSys}
 \end{figure}
 
-\Cref{fig:logrel} defines the syntax of types $\fType{T}$ and session
+\Cref{fig:typeSys} defines the syntax of types $\fType{T}$ and session
 environments $\fType{\Sigma}$.
 Types $\fType{T}$ comprise
 the unit type ($\fType\tUnit$),
@@ -777,10 +776,10 @@ but whose connecting channel has been closed since.
 
 \begin{example}[\rocq{sync_typed}]
 \label{ex:typing}
-  The process $\fProc{\var{sync}}$ of \cref{ex:sync} is typable
+  The process $\fProc{\var{sync}}$ of Example~\ref{ex:sync} is typable
   in an empty context $\fType{\tEmpty \vdash \fProc{\var{sync}} : \tUnit}$.
   %%
-  The closed $\fProc{\var{cycle}}$ process of \cref{ex:cyclic} is harmless
+  The closed $\fProc{\var{cycle}}$ process of Example~\ref{ex:cyclic} is harmless
   but \emph{not} typable:
   as the two threads share $ \fFunc{c} $,
   we must apply \ruleLabel{P-Connect}, which forces us to partition
@@ -791,11 +790,11 @@ but whose connecting channel has been closed since.
   The same happens if one tries to apply \ruleLabel{P-Connect} on
   $\fProc{d}$ first.
   %%
-  For the same reasons, the $\fProc{\var{blocked}}$ process of \cref{ex:deadlock}
+  For the same reasons, the $\fProc{\var{blocked}}$ process of Example~\ref{ex:deadlock}
   is also not typable, although in this case, desirably so.
   %%
   The load balancer process $(\emptyset,\fFunc{\var{lb}})$
-  of \cref{ex:load-balancer} is also rejected by the type system
+  of Example~\ref{ex:load-balancer} is also rejected by the type system
   as it violates linearity of channels in several ways,
   although intuitively it could be seen as respecting
   a $ \fType{\fFunc{c} : \sRecv{\tUnit}{\sSend{\tUnit}{\sSend{\tUnit}{\sTerm}}}} $ interface.
