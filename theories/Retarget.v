@@ -61,7 +61,7 @@ Qed.
 Definition gswap (a b : chan) (C : gset chan) : gset chan :=
   set_map (cswap a b) C.
 
-Definition sswap (a b : chan) (σ : slabel) : slabel :=
+Definition slswap (a b : chan) (σ : slabel) : slabel :=
   match σ with
   | SRecv c v => SRecv (cswap a b c) (eswap a b v)
   | SSend c v => SSend (cswap a b c) (eswap a b v)
@@ -69,10 +69,10 @@ Definition sswap (a b : chan) (σ : slabel) : slabel :=
   | SLink cd => SLink (gswap a b cd)
   end.
 
-Definition lswap (a b : chan) (α : tlabel) : tlabel :=
+Definition tlswap (a b : chan) (α : tlabel) : tlabel :=
   match α with
   | LBeta => LBeta
-  | LSess σ => LSess (sswap a b σ)
+  | LSess σ => LSess (slswap a b σ)
   | LFork c v => LFork (cswap a b c) (eswap a b v)
   end.
 
@@ -84,7 +84,7 @@ Qed.
 
 Lemma head_step_eswap a b e α e' :
   head_step e α e' →
-  head_step (eswap a b e) (lswap a b α) (eswap a b e').
+  head_step (eswap a b e) (tlswap a b α) (eswap a b e').
 Proof.
   destruct 1; simpl.
   - rewrite eswap_subst1. constructor. by rewrite is_val_eswap.
@@ -101,7 +101,7 @@ Proof.
 Qed.
 
 Lemma tstep_eswap a b e α e' :
-  tstep e α e' → tstep (eswap a b e) (lswap a b α) (eswap a b e').
+  tstep e α e' → tstep (eswap a b e) (tlswap a b α) (eswap a b e').
 Proof.
   induction 1; simpl.
   - apply TStepHead. by apply head_step_eswap.
@@ -132,7 +132,7 @@ Qed.
 (** The inverse direction, by involutivity. *)
 Lemma tstep_eswap_inv a b e α' E' :
   tstep (eswap a b e) α' E' →
-  ∃ α e', tstep e α e' ∧ α' = lswap a b α ∧ E' = eswap a b e'.
+  ∃ α e', tstep e α e' ∧ α' = tlswap a b α ∧ E' = eswap a b e'.
 Proof.
   intros Hst.
   pose proof (tstep_eswap a b _ _ _ Hst) as Hst'.
@@ -147,7 +147,7 @@ Qed.
 
 Notation msswap := echswap.
 
-Definition kswap (a b : chan) (Σ : senv) : senv :=
+Definition senvswap (a b : chan) (Σ : senv) : senv :=
   kmap (cswap a b) Σ.
 
 Definition pswap (a b : chan) (p : proc) : proc :=
@@ -181,33 +181,33 @@ Lemma msswap_singleton a b e :
 Proof. apply gmultiset_map_singleton. Qed.
 
 Lemma lookup_kswap a b Σ c :
-  kswap a b Σ !! cswap a b c = Σ !! c.
+  senvswap a b Σ !! cswap a b c = Σ !! c.
 Proof. apply (lookup_kmap (cswap a b)). Qed.
 
-Lemma kswap_insert a b Σ c s :
-  kswap a b (<[c := s]> Σ) = <[cswap a b c := s]> (kswap a b Σ).
+Lemma senvswap_insert a b Σ c s :
+  senvswap a b (<[c := s]> Σ) = <[cswap a b c := s]> (senvswap a b Σ).
 Proof. apply (kmap_insert (cswap a b)). Qed.
 
-Lemma kswap_empty a b : kswap a b (∅ : senv) = ∅.
+Lemma senvswap_empty a b : senvswap a b (∅ : senv) = ∅.
 Proof. apply (kmap_empty (cswap a b)). Qed.
 
-Lemma dom_kswap a b Σ : dom (kswap a b Σ) = gswap a b (dom Σ).
+Lemma dom_kswap a b Σ : dom (senvswap a b Σ) = gswap a b (dom Σ).
 Proof. apply (dom_kmap_L (cswap a b)). Qed.
 
-Lemma kswap_involutive a b Σ : kswap a b (kswap a b Σ) = Σ.
+Lemma senvswap_involutive a b Σ : senvswap a b (senvswap a b Σ) = Σ.
 Proof.
   apply map_eq. intros c.
-  transitivity (kswap a b (kswap a b Σ) !! cswap a b (cswap a b c)).
+  transitivity (senvswap a b (senvswap a b Σ) !! cswap a b (cswap a b c)).
   { by rewrite cswap_involutive. }
   by rewrite !lookup_kswap.
 Qed.
 
-Lemma kswap_union a b Σ1 Σ2 :
-  kswap a b (Σ1 ∪ Σ2) = kswap a b Σ1 ∪ kswap a b Σ2.
+Lemma senvswap_union a b Σ1 Σ2 :
+  senvswap a b (Σ1 ∪ Σ2) = senvswap a b Σ1 ∪ senvswap a b Σ2.
 Proof. apply (kmap_union (cswap a b)). Qed.
 
-Lemma kswap_disjoint a b Σ1 Σ2 :
-  Σ1 ##ₘ Σ2 → kswap a b Σ1 ##ₘ kswap a b Σ2.
+Lemma senvswap_disjoint a b Σ1 Σ2 :
+  Σ1 ##ₘ Σ2 → senvswap a b Σ1 ##ₘ senvswap a b Σ2.
 Proof.
   intros Hd. apply map_disjoint_dom. rewrite !dom_kswap.
   apply map_disjoint_dom in Hd.
@@ -342,15 +342,15 @@ Qed.
 Definition plswap (a b : chan) (π : plabel) : plabel :=
   match π with
   | PTau => PTau
-  | PSess σ => PSess (sswap a b σ)
+  | PSess σ => PSess (slswap a b σ)
   end.
 
-Lemma subjs_sswap a b σ : subjs (sswap a b σ) = gswap a b (subjs σ).
+Lemma subjs_sswap a b σ : subjs (slswap a b σ) = gswap a b (subjs σ).
 Proof.
   destruct σ; simpl; try (by rewrite gswap_singleton). done.
 Qed.
 
-Lemma sentc_sswap a b σ : sentc (sswap a b σ) = gswap a b (sentc σ).
+Lemma sentc_sswap a b σ : sentc (slswap a b σ) = gswap a b (sentc σ).
 Proof.
   destruct σ; simpl; rewrite ?fchans_eswap, ?gswap_empty; done.
 Qed.
@@ -438,22 +438,22 @@ Qed.
 Lemma msswap_empty a b : msswap a b (∅ : gmultiset expr) = ∅.
 Proof. unfold echswap. apply gmultiset_map_empty. Qed.
 
-Lemma kswap_fmap a b (f : sty → sty) Σ :
-  kswap a b (f <$> Σ) = f <$> kswap a b Σ.
+Lemma senvswap_fmap a b (f : sty → sty) Σ :
+  senvswap a b (f <$> Σ) = f <$> senvswap a b Σ.
 Proof.
   apply map_eq. intros c.
-  transitivity (kswap a b (f <$> Σ) !! cswap a b (cswap a b c)).
+  transitivity (senvswap a b (f <$> Σ) !! cswap a b (cswap a b c)).
   { by rewrite cswap_involutive. }
   rewrite lookup_kswap, !lookup_fmap.
-  transitivity (f <$> (kswap a b Σ !! cswap a b (cswap a b c)));
+  transitivity (f <$> (senvswap a b Σ !! cswap a b (cswap a b c)));
     [|by rewrite cswap_involutive].
   by rewrite lookup_kswap.
 Qed.
 
-Lemma kswap_singleton a b c s :
-  kswap a b ({[c := s]} : senv) = {[cswap a b c := s]}.
+Lemma senvswap_singleton a b c s :
+  senvswap a b ({[c := s]} : senv) = {[cswap a b c := s]}.
 Proof.
-  rewrite <-!insert_empty. by rewrite kswap_insert, kswap_empty.
+  rewrite <-!insert_empty. by rewrite senvswap_insert, senvswap_empty.
 Qed.
 
 Lemma elem_of_msswap a b e E :
@@ -464,19 +464,19 @@ Lemma pswap_pair a b C E : pswap a b (C, E) = (gswap a b C, msswap a b E).
 Proof. done. Qed.
 
 (** Owner families transport along the swap. *)
-Lemma Powners_pswap a b (P Q : senv → ty → proc → Prop) σ Σ T p :
-  (∀ Σ' T' p', P Σ' T' p' → Q (kswap a b Σ') T' (pswap a b p')) →
-  Powners P σ Σ T p →
-  Powners Q (kswap a b σ) (kswap a b Σ) T (pswap a b p).
+Lemma Owners_pswap a b (P Q : senv → ty → proc → Prop) σ Σ T p :
+  (∀ Σ' T' p', P Σ' T' p' → Q (senvswap a b Σ') T' (pswap a b p')) →
+  Owners P σ Σ T p →
+  Owners Q (senvswap a b σ) (senvswap a b Σ) T (pswap a b p).
 Proof.
   intros HPQ Hpow.
   induction Hpow as [|σ0 d s Σd Σr Td Tr Tt Cd Ed Cr Er Hlk Hd1 Hd2 Hd3
                       Hd4 Hd5 Hd6 Hd7 Hd8 Hd9 Hd10 HP1 Hrec IH Hty].
-  - rewrite kswap_empty, pswap_pair, gswap_empty, msswap_empty.
-    apply Powners_nil.
-  - rewrite kswap_insert, kswap_union, pswap_pair, gswap_union,
+  - rewrite senvswap_empty, pswap_pair, gswap_empty, msswap_empty.
+    apply Owners_nil.
+  - rewrite senvswap_insert, senvswap_union, pswap_pair, gswap_union,
       msswap_disj_union.
-    eapply Powners_cons.
+    eapply Owners_cons.
     + by rewrite lookup_kswap.
     + rewrite dom_kswap. by rewrite elem_of_gswap.
     + rewrite dom_kswap. by rewrite elem_of_gswap.
@@ -484,11 +484,11 @@ Proof.
     + by rewrite elem_of_gswap.
     + rewrite !dom_kswap. by apply gswap_disjoint_iff.
     + rewrite dom_kswap. by apply gswap_disjoint_iff.
-    + by apply kswap_disjoint.
+    + by apply senvswap_disjoint.
     + by apply gswap_disjoint_iff.
     + rewrite dom_kswap. by apply gswap_disjoint_iff.
     + rewrite dom_kswap. by apply gswap_disjoint_iff.
-    + rewrite <-kswap_insert. exact (HPQ _ _ _ HP1).
+    + rewrite <-senvswap_insert. exact (HPQ _ _ _ HP1).
     + exact IH.
     + exact Hty.
 Qed.
@@ -499,62 +499,62 @@ Qed.
     inputs and swapping the output; involutivity cancels the round
     trip. *)
 Lemma rel_eswap a b n :
-  (∀ T Σ v, Vrel n Σ T v → Vrel n (kswap a b Σ) T (eswap a b v)) ∧
-  (∀ T Σ e, Erel n Σ T e → Erel n (kswap a b Σ) T (eswap a b e)) ∧
-  (∀ T Σ p, Prel n Σ T p → Prel n (kswap a b Σ) T (pswap a b p)).
+  (∀ T Σ v, Vrel n Σ T v → Vrel n (senvswap a b Σ) T (eswap a b v)) ∧
+  (∀ T Σ e, Erel n Σ T e → Erel n (senvswap a b Σ) T (eswap a b e)) ∧
+  (∀ T Σ p, Prel n Σ T p → Prel n (senvswap a b Σ) T (pswap a b p)).
 Proof.
   induction n as [n IHn] using lt_wf_ind.
   assert (∀ j, j < n → ∀ T Σ v, Vrel j Σ T v →
-            Vrel j (kswap a b Σ) T (eswap a b v)) as IHV
+            Vrel j (senvswap a b Σ) T (eswap a b v)) as IHV
     by (intros j Hj; apply (IHn j Hj)).
   assert (∀ j, j < n → ∀ T Σ e, Erel j Σ T e →
-            Erel j (kswap a b Σ) T (eswap a b e)) as IHE
+            Erel j (senvswap a b Σ) T (eswap a b e)) as IHE
     by (intros j Hj; apply (IHn j Hj)).
   assert (∀ j, j < n → ∀ T Σ p, Prel j Σ T p →
-            Prel j (kswap a b Σ) T (pswap a b p)) as IHP
+            Prel j (senvswap a b Σ) T (pswap a b p)) as IHP
     by (intros j Hj; apply (IHn j Hj)).
-  assert (∀ T Σ v, Vrel n Σ T v → Vrel n (kswap a b Σ) T (eswap a b v))
+  assert (∀ T Σ v, Vrel n Σ T v → Vrel n (senvswap a b Σ) T (eswap a b v))
     as HV.
   { induction T as [|T1 IH1 U1 IH2|T1 IH1 U1 IH2|T1 IH1 U1 IH2|T1 IH1|s];
       intros Σ v HVv.
     - apply Vrel_unit_iff in HVv as [-> ->].
-      apply Vrel_unit_iff. by rewrite kswap_empty.
+      apply Vrel_unit_iff. by rewrite senvswap_empty.
     - apply Vrel_lolli_iff in HVv
         as [(eb & -> & Hfc & H)|(k & -> & -> & Hk)].
       + apply Vrel_lolli_iff. left. exists (eswap a b eb).
         split_and!; [done|by rewrite fchans_eswap, dom_kswap, Hfc|].
         intros j Σ' w Hj Hd HVw.
-        apply (kswap_disjoint a b) in Hd.
-        rewrite kswap_involutive in Hd.
-        specialize (H j (kswap a b Σ') (eswap a b w) Hj Hd
+        apply (senvswap_disjoint a b) in Hd.
+        rewrite senvswap_involutive in Hd.
+        specialize (H j (senvswap a b Σ') (eswap a b w) Hj Hd
                       (IHV j Hj _ _ _ HVw)).
         apply IHE in H; [|done].
-        rewrite kswap_union, kswap_involutive in H.
+        rewrite senvswap_union, senvswap_involutive in H.
         rewrite eswap_subst1, eswap_involutive in H.
         exact H.
       + apply Vrel_lolli_iff. right. exists k.
-        split_and!; [done|by rewrite kswap_empty|done].
+        split_and!; [done|by rewrite senvswap_empty|done].
     - apply Vrel_prod_iff in HVv
         as (v1 & v2 & Σ1 & Σ2 & -> & [-> Hd] & H1 & H2).
       apply Vrel_prod_iff.
-      exists (eswap a b v1), (eswap a b v2), (kswap a b Σ1), (kswap a b Σ2).
+      exists (eswap a b v1), (eswap a b v2), (senvswap a b Σ1), (senvswap a b Σ2).
       split_and!; [done| |by apply IH1|by apply IH2].
-      split; [apply kswap_union|by apply kswap_disjoint].
+      split; [apply senvswap_union|by apply senvswap_disjoint].
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; eexists; (split; [done|]).
       + by apply IH1.
       + by apply IH2.
     - apply Vrel_bang_iff in HVv as (-> & eb & -> & Hfc & H).
-      apply Vrel_bang_iff. rewrite kswap_empty.
+      apply Vrel_bang_iff. rewrite senvswap_empty.
       split; [done|]. exists (eswap a b eb).
       split_and!; [done|by rewrite fchans_eswap, Hfc, gswap_empty|].
       intros j Hj. specialize (H j Hj).
       apply IHE in H; [|done].
-      rewrite kswap_empty, eswap_subst1 in H.
+      rewrite senvswap_empty, eswap_subst1 in H.
       exact H.
     - apply Vrel_sess_iff in HVv as (c & s0 & -> & -> & Hu).
       apply Vrel_sess_iff. exists (cswap a b c), s0.
-      split_and!; [done|apply kswap_singleton|done]. }
+      split_and!; [done|apply senvswap_singleton|done]. }
   split_and!; [exact HV| |].
   - (* term relation *)
     intros T Σ e HE.
@@ -571,43 +571,43 @@ Proof.
     + apply IHE; [lia|done].
     + (* recv *)
       destruct Hstep as (Σ1 & U & s & (s0 & -> & Hu) & Hc & H).
-      exists (kswap a b Σ1), U, s. split_and!.
-      { exists s0. split; [apply kswap_insert|done]. }
+      exists (senvswap a b Σ1), U, s. split_and!.
+      { exists s0. split; [apply senvswap_insert|done]. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       intros j Σ2 Hj Hd Hcd HVw.
-      apply (kswap_disjoint a b) in Hd. rewrite kswap_involutive in Hd.
-      assert (c ∉ dom (kswap a b Σ2)) as Hcd'.
+      apply (senvswap_disjoint a b) in Hd. rewrite senvswap_involutive in Hd.
+      assert (c ∉ dom (senvswap a b Σ2)) as Hcd'.
       { rewrite dom_kswap, elem_of_gswap'. exact Hcd. }
       apply IHV in HVw; [|lia]. rewrite eswap_involutive in HVw.
-      specialize (H j (kswap a b Σ2) Hj Hd Hcd' HVw).
+      specialize (H j (senvswap a b Σ2) Hj Hd Hcd' HVw).
       apply IHE in H; [|lia].
-      rewrite kswap_insert, kswap_union, kswap_involutive in H.
+      rewrite senvswap_insert, senvswap_union, senvswap_involutive in H.
       exact H.
     + (* send *)
       destruct Hstep as (Σ1 & Σ2 & U & s & (s0 & -> & Hu) & Hd12 & Hc1
                          & Hc2 & HVw & HE').
-      exists (kswap a b Σ1), (kswap a b Σ2), U, s. split_and!.
+      exists (senvswap a b Σ1), (senvswap a b Σ2), U, s. split_and!.
       { exists s0. split; [|done].
-        by rewrite kswap_insert, kswap_union. }
-      { by apply kswap_disjoint. }
+        by rewrite senvswap_insert, senvswap_union. }
+      { by apply senvswap_disjoint. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       { by apply HV. }
-      apply IHE in HE'; [|lia]. rewrite kswap_insert in HE'. exact HE'.
+      apply IHE in HE'; [|lia]. rewrite senvswap_insert in HE'. exact HE'.
     + (* close *)
       destruct Hstep as (Σ1 & (s0 & -> & Hu) & Hc & HE').
-      exists (kswap a b Σ1). split_and!.
-      { exists s0. split; [apply kswap_insert|done]. }
+      exists (senvswap a b Σ1). split_and!.
+      { exists s0. split; [apply senvswap_insert|done]. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       apply IHE in HE'; [|lia]. exact HE'.
     + (* link *)
       destruct Hstep as (c & d & Σ1 & sc & sd & -> & Hcd & -> & Hc1 & Hd1
                          & Hdu & HE').
-      exists (cswap a b c), (cswap a b d), (kswap a b Σ1), sc, sd.
+      exists (cswap a b c), (cswap a b d), (senvswap a b Σ1), sc, sd.
       split_and!.
       { apply gswap_upair. }
       { intros Heq. apply cswap_inj in Heq. done. }
-      { by rewrite !kswap_insert. }
+      { by rewrite !senvswap_insert. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       { done. }
@@ -617,10 +617,10 @@ Proof.
       assert (c ∉ dom Σ) as Hcd0.
       { rewrite dom_kswap in Hcd. by rewrite elem_of_gswap in Hcd. }
       destruct (Hstep Hcd0) as (Σ1 & Σ2 & s & [-> Hd] & HVw & HE').
-      exists (kswap a b Σ1), (kswap a b Σ2), s. split_and!.
-      { split; [apply kswap_union|by apply kswap_disjoint]. }
+      exists (senvswap a b Σ1), (senvswap a b Σ2), s. split_and!.
+      { split; [apply senvswap_union|by apply senvswap_disjoint]. }
       { by apply HV. }
-      apply IHE in HE'; [|lia]. rewrite kswap_insert in HE'. exact HE'.
+      apply IHE in HE'; [|lia]. rewrite senvswap_insert in HE'. exact HE'.
   - (* process relation *)
     intros T Σ p HP.
     destruct n as [|n']; [apply Prel_0|].
@@ -647,38 +647,38 @@ Proof.
       rewrite dom_kswap in Hg. by apply gswap_disjoint_iff in Hg.
     + (* recv *)
       destruct Hstep as (Σ1 & U & s & (s0 & -> & Hu) & Hc & H).
-      exists (kswap a b Σ1), U, s. split_and!.
-      { exists s0. split; [apply kswap_insert|done]. }
+      exists (senvswap a b Σ1), U, s. split_and!.
+      { exists s0. split; [apply senvswap_insert|done]. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       intros j Σ2 Hj Hd Hcd Hfr HVw.
-      apply (kswap_disjoint a b) in Hd. rewrite kswap_involutive in Hd.
-      assert (c ∉ dom (kswap a b Σ2)) as Hcd'.
+      apply (senvswap_disjoint a b) in Hd. rewrite senvswap_involutive in Hd.
+      assert (c ∉ dom (senvswap a b Σ2)) as Hcd'.
       { rewrite dom_kswap, elem_of_gswap'. exact Hcd. }
-      assert (dom (kswap a b Σ2) ## p.1) as Hfr'.
+      assert (dom (senvswap a b Σ2) ## p.1) as Hfr'.
       { destruct p as [Cp Ep]; simpl in *.
         rewrite dom_kswap. apply elem_of_disjoint; intros x H1 H2.
         apply elem_of_gswap' in H1.
         assert (cswap a b x ∈ gswap a b Cp) by (by apply elem_of_gswap).
         set_solver. }
       apply IHV in HVw; [|lia]. rewrite eswap_involutive in HVw.
-      specialize (H j (kswap a b Σ2) Hj Hd Hcd' Hfr' HVw).
+      specialize (H j (senvswap a b Σ2) Hj Hd Hcd' Hfr' HVw).
       apply IHP in H; [|lia].
-      rewrite kswap_insert, kswap_union, kswap_involutive in H.
+      rewrite senvswap_insert, senvswap_union, senvswap_involutive in H.
       exact H.
     + (* send *)
       destruct Hstep as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew
                          & T0 & Tw & (s0 & -> & Hu) & Hd0v & Hd0w & Hdvw
                          & Hc0 & Hcv & Hcw & Hdome & Hσed & Hcσe & HpC
                          & HC0w & HpE & HVw & HP0 & HPw & Hty).
-      exists (kswap a b Σ0), (kswap a b Σv), U, s, (kswap a b σe),
-        (kswap a b Σw), (gswap a b C0), (msswap a b E0), (gswap a b Cw),
+      exists (senvswap a b Σ0), (senvswap a b Σv), U, s, (senvswap a b σe),
+        (senvswap a b Σw), (gswap a b C0), (msswap a b E0), (gswap a b Cw),
         (msswap a b Ew), T0, Tw.
       split_and!.
       { exists s0. split; [|done].
-        by rewrite kswap_insert, !kswap_union. }
-      { by apply kswap_disjoint. }
-      { by apply kswap_disjoint. }
-      { by apply kswap_disjoint. }
+        by rewrite senvswap_insert, !senvswap_union. }
+      { by apply senvswap_disjoint. }
+      { by apply senvswap_disjoint. }
+      { by apply senvswap_disjoint. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
@@ -693,27 +693,27 @@ Proof.
       { destruct q as [Cq Eq]; simpl in *.
         rewrite HpE. apply msswap_disj_union. }
       { apply HV in HVw.
-        rewrite kswap_union, kswap_fmap in HVw. exact HVw. }
-      { apply IHP in HP0; [|lia]. rewrite kswap_insert in HP0.
+        rewrite senvswap_union, senvswap_fmap in HVw. exact HVw. }
+      { apply IHP in HP0; [|lia]. rewrite senvswap_insert in HP0.
         exact HP0. }
       { rewrite <-(pswap_pair a b Cw Ew).
-        eapply Powners_pswap; [|exact HPw].
+        eapply Owners_pswap; [|exact HPw].
         intros Σ' T' p0 HP'. apply IHP; [lia|]. exact HP'. }
       { exact Hty. }
     + (* close *)
       destruct Hstep as (Σ1 & (s0 & -> & Hu) & Hc & HP').
-      exists (kswap a b Σ1). split_and!.
-      { exists s0. split; [apply kswap_insert|done]. }
+      exists (senvswap a b Σ1). split_and!.
+      { exists s0. split; [apply senvswap_insert|done]. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       apply IHP in HP'; [|lia]. exact HP'.
     + (* link *)
       destruct Hstep as (c & d & Σ1 & sc & sd & -> & Hcd & -> & Hc1 & Hd1
                          & Hdu & HP').
-      exists (cswap a b c), (cswap a b d), (kswap a b Σ1), sc, sd.
+      exists (cswap a b c), (cswap a b d), (senvswap a b Σ1), sc, sd.
       split_and!.
       { apply gswap_upair. }
       { intros Heq. apply cswap_inj in Heq. done. }
-      { by rewrite !kswap_insert. }
+      { by rewrite !senvswap_insert. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       { rewrite dom_kswap. by rewrite elem_of_gswap. }
       { done. }
@@ -722,15 +722,15 @@ Qed.
 
 (** The corollaries used downstream. *)
 Lemma Vrel_eswap a b n Σ T v :
-  Vrel n Σ T v → Vrel n (kswap a b Σ) T (eswap a b v).
+  Vrel n Σ T v → Vrel n (senvswap a b Σ) T (eswap a b v).
 Proof. apply rel_eswap. Qed.
 
 Lemma Erel_eswap a b n Σ T e :
-  Erel n Σ T e → Erel n (kswap a b Σ) T (eswap a b e).
+  Erel n Σ T e → Erel n (senvswap a b Σ) T (eswap a b e).
 Proof. apply rel_eswap. Qed.
 
 Lemma Prel_eswap a b n Σ T p :
-  Prel n Σ T p → Prel n (kswap a b Σ) T (pswap a b p).
+  Prel n Σ T p → Prel n (senvswap a b Σ) T (pswap a b p).
 Proof. apply rel_eswap. Qed.
 
 (** ** Identity and paper-equivalence facts for the forwarding step *)
@@ -748,20 +748,20 @@ Proof.
     rewrite <-(cswap_ne a b c); [|done|done]. by apply elem_of_gswap.
 Qed.
 
-Lemma kswap_id a b Σ : a ∉ dom Σ → b ∉ dom Σ → kswap a b Σ = Σ.
+Lemma senvswap_id a b Σ : a ∉ dom Σ → b ∉ dom Σ → senvswap a b Σ = Σ.
 Proof.
   intros Ha Hb. apply not_elem_of_dom in Ha. apply not_elem_of_dom in Hb.
   apply map_eq; intros c.
   destruct (decide (c = a)) as [->|Hca].
-  - assert (kswap a b Σ !! a = Σ !! b) as ->.
+  - assert (senvswap a b Σ !! a = Σ !! b) as ->.
     { rewrite <-(lookup_kswap a b Σ b). f_equal. symmetry. apply cswap_r. }
     congruence.
   - destruct (decide (c = b)) as [->|Hcb].
-    + assert (kswap a b Σ !! b = Σ !! a) as ->.
+    + assert (senvswap a b Σ !! b = Σ !! a) as ->.
       { rewrite <-(lookup_kswap a b Σ a). f_equal. symmetry.
         apply cswap_l. }
       congruence.
-    + assert (kswap a b Σ !! c = Σ !! c) as -> ; [|done].
+    + assert (senvswap a b Σ !! c = Σ !! c) as -> ; [|done].
       rewrite <-(lookup_kswap a b Σ c). f_equal. symmetry.
       by apply cswap_ne.
 Qed.
@@ -950,18 +950,18 @@ Proof.
       * apply Hc1. by apply elem_of_dom.
 Qed.
 
-Lemma Powners_conv (P Q : senv → ty → proc → Prop) σ Σ Σ' T p :
+Lemma Owners_conv (P Q : senv → ty → proc → Prop) σ Σ Σ' T p :
   (∀ Σ1 Σ1' T' p', senv_conv Σ1 Σ1' → P Σ1 T' p' → Q Σ1' T' p') →
-  senv_conv Σ Σ' → Powners P σ Σ T p → Powners Q σ Σ' T p.
+  senv_conv Σ Σ' → Owners P σ Σ T p → Owners Q σ Σ' T p.
 Proof.
   intros HPQ Hconv Hpow. revert Σ' Hconv.
   induction Hpow as [|σ0 d s Σd Σr Td Tr Tt Cd Ed Cr Er Hlk Hd1 Hd2 Hd3
                       Hd4 Hd5 Hd6 Hd7 Hd8 Hd9 Hd10 HP1 Hrec IH Hty];
     intros Σ' Hconv.
-  - rewrite (senv_conv_empty_inv _ Hconv). apply Powners_nil.
+  - rewrite (senv_conv_empty_inv _ Hconv). apply Owners_nil.
   - destruct (senv_conv_split _ _ _ _ Hconv (conj eq_refl Hd7))
       as (Σd' & Σr' & [-> Hdisj'] & Hcd & Hcr).
-    eapply Powners_cons;
+    eapply Owners_cons;
       rewrite <-?(proj1 Hcd), <-?(proj1 Hcr); try done.
     + eapply HPQ; [|exact HP1].
       apply senv_conv_insert; [done|done].
@@ -1141,7 +1141,7 @@ Proof.
       { eapply HV; [|exact HVw].
         apply senv_conv_union; [exact Hsv|apply senv_conv_refl]. }
       { eapply IHP; [lia|apply senv_conv_insert; [exact Hs0|done]|done]. }
-      { eapply Powners_conv; [|exact Hsw|exact HPw].
+      { eapply Owners_conv; [|exact Hsw|exact HPw].
         intros ΣA ΣA' TA pA HcA HPA. eapply IHP; [lia|exact HcA|done]. }
       { done. }
     + (* close *)
@@ -1204,7 +1204,7 @@ Lemma Prel_link_orient n Σ T C E c d :
 Proof.
   intros Hne Hc Hd HcΣ HdΣ HP.
   pose proof (Prel_eswap c d _ _ _ _ HP) as HP'.
-  rewrite kswap_id in HP' by done.
+  rewrite senvswap_id in HP' by done.
   rewrite pswap_pair, gswap_diff_swap, echswap_echsubst_flip in HP' by done.
   exact HP'.
 Qed.

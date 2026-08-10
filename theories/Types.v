@@ -112,7 +112,7 @@ Fixpoint dual (s : sty) : sty :=
 (** Substituting under α̅ dualizes the substituend, matching its
     reading as "the dual of what α stands for". *)
 
-Definition sup (σ : nat → sty) : nat → sty := SVar 0 .: (sren S ∘ σ).
+Definition sty_up (σ : nat → sty) : nat → sty := SVar 0 .: (sren S ∘ σ).
 
 Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   match T with
@@ -128,7 +128,7 @@ with sinst (σ : nat → sty) (s : sty) : sty :=
   | SRcv T s' => SRcv (sinst_ty σ T) (sinst σ s')
   | SSnd T s' => SSnd (sinst_ty σ T) (sinst σ s')
   | SEnd => SEnd
-  | SMu s' => SMu (sinst (sup σ) s')
+  | SMu s' => SMu (sinst (sty_up σ) s')
   | SVar a => σ a
   | SVarD a => dual (σ a)
   end.
@@ -311,7 +311,7 @@ Proof.
 Qed.
 
 (** [sflip k] slides through a substitution that is the identity at k
-    and flip-invariant elsewhere — [sup]-lifted substitutions are. *)
+    and flip-invariant elsewhere — [sty_up]-lifted substitutions are. *)
 
 Lemma sflip_sinst_mut :
   (∀ T k σ, σ k = SVar k → (∀ a, a ≠ k → sflip k (σ a) = σ a) →

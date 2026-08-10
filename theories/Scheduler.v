@@ -298,18 +298,18 @@ Proof. intros Hs Hr Hc ->. by eapply st_close. Qed.
 
 (** *** The round, step by step *)
 
-Lemma step_p1 m : proc_step (p1 m) PTau (p2 m).
+Lemma p1_step m : proc_step (p1 m) PTau (p2 m).
 Proof.
   eapply st_msg; [apply send_step|apply recv_step|clear; set_solver].
 Qed.
 
-Lemma step_p2 m : proc_step (p2 m) PTau (p3 m).
+Lemma p2_step m : proc_step (p2 m) PTau (p3 m).
 Proof. apply st_beta3, a2_pair_step. Qed.
 
-Lemma step_p3 m : proc_step (p3 m) PTau (p4 m).
+Lemma p3_step m : proc_step (p3 m) PTau (p4 m).
 Proof. apply st_beta3, a2_unit_step. Qed.
 
-Lemma step_p4 m : m ≠ r2 → proc_step (p4 m) PTau p5.
+Lemma p4_step m : m ≠ r2 → proc_step (p4 m) PTau p5.
 Proof.
   intros Hm. unfold p4, p5.
   eapply st_close';
@@ -317,30 +317,30 @@ Proof.
     |clear; set_solver|clear -Hm; set_solver].
 Qed.
 
-Lemma step_p5a : proc_step p5 PTau p6a.
+Lemma p5a_step : proc_step p5 PTau p6a.
 Proof. apply st_beta1, a0_beta_step. Qed.
 
-Lemma step_p5b : proc_step p5 PTau p6b.
+Lemma p5b_step : proc_step p5 PTau p6b.
 Proof. apply st_beta3, a2_beta_step. Qed.
 
-Lemma step_p6a : proc_step p6a PTau p7.
+Lemma p6a_step : proc_step p6a PTau p7.
 Proof. apply st_beta3, a2_beta_step. Qed.
 
-Lemma step_p6b : proc_step p6b PTau p7.
+Lemma p6b_step : proc_step p6b PTau p7.
 Proof. apply st_beta1, a0_beta_step. Qed.
 
-Lemma step_p7 : proc_step p7 PTau p8.
+Lemma p7_step : proc_step p7 PTau p8.
 Proof.
   eapply st_msg_r; [apply send2_step|apply recv2_step|clear; set_solver].
 Qed.
 
-Lemma step_p8 : proc_step p8 PTau p9.
+Lemma p8_step : proc_step p8 PTau p9.
 Proof. apply st_beta1, a0_recvd_step. Qed.
 
-Lemma step_p9 : proc_step p9 PTau p10.
+Lemma p9_step : proc_step p9 PTau p10.
 Proof. apply st_beta1, a0_unit_step. Qed.
 
-Lemma step_p10 : proc_step p10 PTau p11.
+Lemma p10_step : proc_step p10 PTau p11.
 Proof.
   unfold p10, p11.
   eapply st_close';
@@ -353,16 +353,16 @@ Theorem sched_terminates :
 Proof.
   exists p11. split.
   - eapply rtc_l; [apply sched_splice_r0|].
-    eapply rtc_l; [apply (step_p1 r0)|].
-    eapply rtc_l; [apply (step_p2 r0)|].
-    eapply rtc_l; [apply (step_p3 r0)|].
-    eapply rtc_l; [apply (step_p4 r0); done|].
-    eapply rtc_l; [apply step_p5a|].
-    eapply rtc_l; [apply step_p6a|].
-    eapply rtc_l; [apply step_p7|].
-    eapply rtc_l; [apply step_p8|].
-    eapply rtc_l; [apply step_p9|].
-    eapply rtc_l; [apply step_p10|].
+    eapply rtc_l; [apply (p1_step r0)|].
+    eapply rtc_l; [apply (p2_step r0)|].
+    eapply rtc_l; [apply (p3_step r0)|].
+    eapply rtc_l; [apply (p4_step r0); done|].
+    eapply rtc_l; [apply p5a_step|].
+    eapply rtc_l; [apply p6a_step|].
+    eapply rtc_l; [apply p7_step|].
+    eapply rtc_l; [apply p8_step|].
+    eapply rtc_l; [apply p9_step|].
+    eapply rtc_l; [apply p10_step|].
     apply rtc_refl.
   - exists EUnit, ({[+ EUnit +]} ⊎ {[+ EUnit +]}). split_and!.
     + unfold p11, st. f_equal. multiset_solver.
@@ -384,7 +384,7 @@ Ltac kill_val :=
       exfalso; eapply val_no_tstep; [exact Hs|done]
   end.
 
-Lemma inv_clos c α e' :
+Lemma clos_inv c α e' :
   tstep (App EClos (Chan c)) α e' → α = LSess (SClos c) ∧ e' = EUnit.
 Proof.
   intros H. inversion H; subst.
@@ -394,7 +394,7 @@ Proof.
   - kill_val.
 Qed.
 
-Lemma inv_sendapp c α e' :
+Lemma sendapp_inv c α e' :
   tstep (App ESend (Pair EUnit (Chan c))) α e' →
   α = LSess (SSend c EUnit) ∧ e' = Chan c.
 Proof.
@@ -405,7 +405,7 @@ Proof.
   - kill_val.
 Qed.
 
-Lemma inv_sendclose c α e' :
+Lemma sendclose_inv c α e' :
   tstep (sendclose c) α e' →
   α = LSess (SSend c EUnit) ∧ e' = App EClos (Chan c).
 Proof.
@@ -413,10 +413,10 @@ Proof.
   - match goal with Hh : head_step _ _ _ |- _ => inversion Hh end.
   - kill_val.
   - match goal with Hs : tstep (App ESend _) _ _ |- _ =>
-      apply inv_sendapp in Hs as [-> ->] end. done.
+      apply sendapp_inv in Hs as [-> ->] end. done.
 Qed.
 
-Lemma inv_recvapp c α e' :
+Lemma recvapp_inv c α e' :
   tstep (App ERecv (Chan c)) α e' →
   ∃ v, is_val v ∧ α = LSess (SRecv c v) ∧ e' = Pair v (Chan c).
 Proof.
@@ -427,7 +427,7 @@ Proof.
   - kill_val.
 Qed.
 
-Lemma inv_letu_nonunit e1 e2 α e' :
+Lemma letu_nonunit_inv e1 e2 α e' :
   e1 ≠ EUnit →
   tstep (LetU e1 e2) α e' →
   ∃ e1', tstep e1 α e1' ∧ e' = LetU e1' e2.
@@ -438,7 +438,7 @@ Proof.
   - eauto.
 Qed.
 
-Lemma inv_letu_unit e2 α e' :
+Lemma letu_unit_inv e2 α e' :
   tstep (LetU EUnit e2) α e' → α = LBeta ∧ e' = e2.
 Proof.
   intros H. inversion H; subst.
@@ -447,7 +447,7 @@ Proof.
   - kill_val.
 Qed.
 
-Lemma inv_letp_pair u v e2 α e' :
+Lemma letp_pair_inv u v e2 α e' :
   is_val u → is_val v →
   tstep (LetP (Pair u v) e2) α e' → α = LBeta ∧ e' = subst2 u v e2.
 Proof.
@@ -459,17 +459,17 @@ Proof.
     simpl. by rewrite (is_val_true _ Hu), (is_val_true _ Hv).
 Qed.
 
-Lemma inv_letp_recv c e2 α e' :
+Lemma letp_recv_inv c e2 α e' :
   tstep (LetP (App ERecv (Chan c)) e2) α e' →
   ∃ v, is_val v ∧ α = LSess (SRecv c v) ∧ e' = LetP (Pair v (Chan c)) e2.
 Proof.
   intros H. inversion H; subst.
   - match goal with Hh : head_step _ _ _ |- _ => inversion Hh end.
   - match goal with Hs : tstep (App ERecv _) _ _ |- _ =>
-      apply inv_recvapp in Hs as (v & Hv & -> & ->) end. eauto.
+      apply recvapp_inv in Hs as (v & Hv & -> & ->) end. eauto.
 Qed.
 
-Lemma inv_link α e' :
+Lemma link_inv α e' :
   tstep ag1 α e' → α = LSess (SLink {[r1; r0]}) ∧ e' = EUnit.
 Proof.
   intros H. unfold ag1 in H. inversion H; subst.
@@ -481,67 +481,67 @@ Qed.
 
 (** *** The same, phrased for the named thread states *)
 
-Lemma inv_a0_send m α e' :
+Lemma a0_send_inv m α e' :
   tstep (a0_send m) α e' → α = LSess (SSend m EUnit) ∧ e' = a0_clos m.
 Proof.
-  intros H. apply inv_letu_nonunit in H as (e1' & Hs & ->); [|done].
-  apply inv_sendclose in Hs as [-> ->]. done.
+  intros H. apply letu_nonunit_inv in H as (e1' & Hs & ->); [|done].
+  apply sendclose_inv in Hs as [-> ->]. done.
 Qed.
 
-Lemma inv_a0_clos m α e' :
+Lemma a0_clos_inv m α e' :
   tstep (a0_clos m) α e' → α = LSess (SClos m) ∧ e' = a0_beta.
 Proof.
-  intros H. apply inv_letu_nonunit in H as (e1' & Hs & ->); [|done].
-  apply inv_clos in Hs as [-> ->]. done.
+  intros H. apply letu_nonunit_inv in H as (e1' & Hs & ->); [|done].
+  apply clos_inv in Hs as [-> ->]. done.
 Qed.
 
-Lemma inv_a0_beta α e' :
+Lemma a0_beta_inv α e' :
   tstep a0_beta α e' → α = LBeta ∧ e' = recvclose r2.
-Proof. apply inv_letu_unit. Qed.
+Proof. apply letu_unit_inv. Qed.
 
-Lemma inv_recvclose c α e' :
+Lemma recvclose_inv c α e' :
   tstep (recvclose c) α e' →
   ∃ v, is_val v ∧ α = LSess (SRecv c v) ∧
        e' = LetP (Pair v (Chan c)) (LetU (Var 1) (App EClos (Var 0))).
-Proof. apply inv_letp_recv. Qed.
+Proof. apply letp_recv_inv. Qed.
 
-Lemma inv_a0_recvd α e' :
+Lemma a0_recvd_inv α e' :
   tstep a0_recvd α e' → α = LBeta ∧ e' = a0_unit.
 Proof.
-  intros H. apply inv_letp_pair in H as [-> ->]; [done|done|done].
+  intros H. apply letp_pair_inv in H as [-> ->]; [done|done|done].
 Qed.
 
-Lemma inv_a0_unit α e' :
+Lemma a0_unit_inv α e' :
   tstep a0_unit α e' → α = LBeta ∧ e' = App EClos (Chan r2).
-Proof. apply inv_letu_unit. Qed.
+Proof. apply letu_unit_inv. Qed.
 
-Lemma inv_a2_recv m α e' :
+Lemma a2_recv_inv m α e' :
   tstep (a2_recv m) α e' →
   ∃ v, is_val v ∧ α = LSess (SRecv m v) ∧
        e' = LetP (Pair v (Chan m))
               (LetU (Var 1) (LetU (App EClos (Var 0)) (sendclose r2))).
-Proof. apply inv_letp_recv. Qed.
+Proof. apply letp_recv_inv. Qed.
 
-Lemma inv_a2_pair m α e' :
+Lemma a2_pair_inv m α e' :
   tstep (a2_pair m) α e' → α = LBeta ∧ e' = a2_unit m.
 Proof.
-  intros H. apply inv_letp_pair in H as [-> ->]; [done|done|done].
+  intros H. apply letp_pair_inv in H as [-> ->]; [done|done|done].
 Qed.
 
-Lemma inv_a2_unit m α e' :
+Lemma a2_unit_inv m α e' :
   tstep (a2_unit m) α e' → α = LBeta ∧ e' = a2_clos m.
-Proof. apply inv_letu_unit. Qed.
+Proof. apply letu_unit_inv. Qed.
 
-Lemma inv_a2_clos m α e' :
+Lemma a2_clos_inv m α e' :
   tstep (a2_clos m) α e' → α = LSess (SClos m) ∧ e' = a2_beta.
 Proof.
-  intros H. apply inv_letu_nonunit in H as (e1' & Hs & ->); [|done].
-  apply inv_clos in Hs as [-> ->]. done.
+  intros H. apply letu_nonunit_inv in H as (e1' & Hs & ->); [|done].
+  apply clos_inv in Hs as [-> ->]. done.
 Qed.
 
-Lemma inv_a2_beta α e' :
+Lemma a2_beta_inv α e' :
   tstep a2_beta α e' → α = LBeta ∧ e' = sendclose r2.
-Proof. apply inv_letu_unit. Qed.
+Proof. apply letu_unit_inv. Qed.
 
 (** *** Locating the acting thread in a three-thread soup *)
 
@@ -608,21 +608,21 @@ Qed.
 Ltac inv_act :=
   repeat match goal with
   | H : tstep EUnit _ _ |- _ => exfalso; eapply val_no_tstep; [exact H|done]
-  | H : tstep ag1 _ _ |- _ => apply inv_link in H as [? ?]
-  | H : tstep (a0_send _) _ _ |- _ => apply inv_a0_send in H as [? ?]
-  | H : tstep (a0_clos _) _ _ |- _ => apply inv_a0_clos in H as [? ?]
-  | H : tstep a0_beta _ _ |- _ => apply inv_a0_beta in H as [? ?]
-  | H : tstep a0_recvd _ _ |- _ => apply inv_a0_recvd in H as [? ?]
-  | H : tstep a0_unit _ _ |- _ => apply inv_a0_unit in H as [? ?]
-  | H : tstep (a2_recv _) _ _ |- _ => apply inv_a2_recv in H as (? & ? & ? & ?)
-  | H : tstep (a2_pair _) _ _ |- _ => apply inv_a2_pair in H as [? ?]
-  | H : tstep (a2_unit _) _ _ |- _ => apply inv_a2_unit in H as [? ?]
-  | H : tstep (a2_clos _) _ _ |- _ => apply inv_a2_clos in H as [? ?]
-  | H : tstep a2_beta _ _ |- _ => apply inv_a2_beta in H as [? ?]
+  | H : tstep ag1 _ _ |- _ => apply link_inv in H as [? ?]
+  | H : tstep (a0_send _) _ _ |- _ => apply a0_send_inv in H as [? ?]
+  | H : tstep (a0_clos _) _ _ |- _ => apply a0_clos_inv in H as [? ?]
+  | H : tstep a0_beta _ _ |- _ => apply a0_beta_inv in H as [? ?]
+  | H : tstep a0_recvd _ _ |- _ => apply a0_recvd_inv in H as [? ?]
+  | H : tstep a0_unit _ _ |- _ => apply a0_unit_inv in H as [? ?]
+  | H : tstep (a2_recv _) _ _ |- _ => apply a2_recv_inv in H as (? & ? & ? & ?)
+  | H : tstep (a2_pair _) _ _ |- _ => apply a2_pair_inv in H as [? ?]
+  | H : tstep (a2_unit _) _ _ |- _ => apply a2_unit_inv in H as [? ?]
+  | H : tstep (a2_clos _) _ _ |- _ => apply a2_clos_inv in H as [? ?]
+  | H : tstep a2_beta _ _ |- _ => apply a2_beta_inv in H as [? ?]
   | H : tstep (recvclose _) _ _ |- _ =>
-      apply inv_recvclose in H as (? & ? & ? & ?)
-  | H : tstep (sendclose _) _ _ |- _ => apply inv_sendclose in H as [? ?]
-  | H : tstep (App EClos (Chan _)) _ _ |- _ => apply inv_clos in H as [? ?]
+      apply recvclose_inv in H as (? & ? & ? & ?)
+  | H : tstep (sendclose _) _ _ |- _ => apply sendclose_inv in H as [? ?]
+  | H : tstep (App EClos (Chan _)) _ _ |- _ => apply clos_inv in H as [? ?]
   end.
 
 Ltac split1 :=
@@ -648,74 +648,74 @@ Ltac st_cases Hst :=
 
 (** *** One characterisation per reachable configuration *)
 
-Lemma inv_p2 m p' : preduction (p2 m) p' → p' = p3 m.
+Lemma p2_inv m p' : preduction (p2 m) p' → p' = p3 m.
 Proof.
   intros Hst. unfold preduction, p2, st in Hst. st_cases Hst.
   all: unfold p3, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_p3 m p' : preduction (p3 m) p' → p' = p4 m.
+Lemma p3_inv m p' : preduction (p3 m) p' → p' = p4 m.
 Proof.
   intros Hst. unfold preduction, p3, st in Hst. st_cases Hst.
   all: unfold p4, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_p6a p' : preduction p6a p' → p' = p7.
+Lemma p6a_inv p' : preduction p6a p' → p' = p7.
 Proof.
   intros Hst. unfold preduction, p6a, st in Hst. st_cases Hst.
   all: unfold p7, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_p6b p' : preduction p6b p' → p' = p7.
+Lemma p6b_inv p' : preduction p6b p' → p' = p7.
 Proof.
   intros Hst. unfold preduction, p6b, st in Hst. st_cases Hst.
   all: unfold p7, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_p8 p' : preduction p8 p' → p' = p9.
+Lemma p8_inv p' : preduction p8 p' → p' = p9.
 Proof.
   intros Hst. unfold preduction, p8, st in Hst. st_cases Hst.
   all: unfold p9, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_p9 p' : preduction p9 p' → p' = p10.
+Lemma p9_inv p' : preduction p9 p' → p' = p10.
 Proof.
   intros Hst. unfold preduction, p9, st in Hst. st_cases Hst.
   all: unfold p10, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_p11 p' : preduction p11 p' → False.
+Lemma p11_inv p' : preduction p11 p' → False.
 Proof.
   intros Hst. unfold preduction, p11, st in Hst. st_cases Hst.
 Qed.
 
-Lemma inv_p1 m p' : preduction (p1 m) p' → p' = p2 m.
+Lemma p1_inv m p' : preduction (p1 m) p' → p' = p2 m.
 Proof.
   intros Hst. unfold preduction, p1, st in Hst. st_cases Hst.
   all: unfold p2, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_p7 p' : preduction p7 p' → p' = p8.
+Lemma p7_inv p' : preduction p7 p' → p' = p8.
 Proof.
   intros Hst. unfold preduction, p7, st in Hst. st_cases Hst.
   all: unfold p8, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_p4 m p' : m ≠ r2 → preduction (p4 m) p' → p' = p5.
+Lemma p4_inv m p' : m ≠ r2 → preduction (p4 m) p' → p' = p5.
 Proof.
   intros Hm Hst. unfold preduction, p4, st in Hst. st_cases Hst.
   all: unfold p5, st; f_equal;
        first [ clear -Hm; set_solver | multiset_solver ].
 Qed.
 
-Lemma inv_p10 p' : preduction p10 p' → p' = p11.
+Lemma p10_inv p' : preduction p10 p' → p' = p11.
 Proof.
   intros Hst. unfold preduction, p10, st in Hst. st_cases Hst.
   all: unfold p11, st; f_equal;
        first [ clear; set_solver | multiset_solver ].
 Qed.
 
-Lemma inv_p5 p' : preduction p5 p' → p' = p6a ∨ p' = p6b.
+Lemma p5_inv p' : preduction p5 p' → p' = p6a ∨ p' = p6b.
 Proof.
   intros Hst. unfold preduction, p5, st in Hst. st_cases Hst.
   all: first [ left; unfold p6a, st; f_equal; multiset_solver
@@ -748,12 +748,12 @@ Qed.
 
 Ltac inv_act_sched :=
   repeat match goal with
-  | H : tstep ag0 _ _ |- _ => apply (inv_a0_send r0) in H as [? ?]
-  | H : tstep ag1 _ _ |- _ => apply inv_link in H as [? ->]
-  | H : tstep ag2 _ _ |- _ => apply (inv_a2_recv r1) in H as (? & ? & ? & ?)
+  | H : tstep ag0 _ _ |- _ => apply (a0_send_inv r0) in H as [? ?]
+  | H : tstep ag1 _ _ |- _ => apply link_inv in H as [? ->]
+  | H : tstep ag2 _ _ |- _ => apply (a2_recv_inv r1) in H as (? & ? & ? & ?)
   end.
 
-Lemma inv_sched p' : preduction sched p' → p' = p1 r0 ∨ p' = p1 r1.
+Lemma sched_inv p' : preduction sched p' → p' = p1 r0 ∨ p' = p1 r1.
 Proof.
   intros Hst. unfold preduction, sched in Hst.
   inversion Hst; subst.
@@ -821,18 +821,18 @@ Lemma schedI_irred p :
 Proof.
   intros Hp Hirr. schedI_cases Hp.
   - exfalso. eapply (Hirr PTau). apply sched_splice_r0.
-  - exfalso. eapply (Hirr PTau). apply (step_p1 m).
-  - exfalso. eapply (Hirr PTau). apply (step_p2 m).
-  - exfalso. eapply (Hirr PTau). apply (step_p3 m).
-  - exfalso. eapply (Hirr PTau). apply (step_p4 m).
+  - exfalso. eapply (Hirr PTau). apply (p1_step m).
+  - exfalso. eapply (Hirr PTau). apply (p2_step m).
+  - exfalso. eapply (Hirr PTau). apply (p3_step m).
+  - exfalso. eapply (Hirr PTau). apply (p4_step m).
     destruct Hm as [-> | ->]; done.
-  - exfalso. eapply (Hirr PTau). apply step_p5a.
-  - exfalso. eapply (Hirr PTau). apply step_p6a.
-  - exfalso. eapply (Hirr PTau). apply step_p6b.
-  - exfalso. eapply (Hirr PTau). apply step_p7.
-  - exfalso. eapply (Hirr PTau). apply step_p8.
-  - exfalso. eapply (Hirr PTau). apply step_p9.
-  - exfalso. eapply (Hirr PTau). apply step_p10.
+  - exfalso. eapply (Hirr PTau). apply p5a_step.
+  - exfalso. eapply (Hirr PTau). apply p6a_step.
+  - exfalso. eapply (Hirr PTau). apply p6b_step.
+  - exfalso. eapply (Hirr PTau). apply p7_step.
+  - exfalso. eapply (Hirr PTau). apply p8_step.
+  - exfalso. eapply (Hirr PTau). apply p9_step.
+  - exfalso. eapply (Hirr PTau). apply p10_step.
   - unfold p11, st. simpl. split_and!.
     + done.
     + multiset_solver.
@@ -849,21 +849,21 @@ Ltac inIm m := unfold schedI; right; left; exists m; split;
 Lemma schedI_step p p' : schedI p → preduction p p' → schedI p'.
 Proof.
   intros Hp Hst. schedI_cases Hp.
-  - apply inv_sched in Hst as [-> | ->].
+  - apply sched_inv in Hst as [-> | ->].
     + inIm r0.
     + inIm r1.
-  - apply inv_p1 in Hst as ->. inIm m.
-  - apply inv_p2 in Hst as ->. inIm m.
-  - apply inv_p3 in Hst as ->. inIm m.
-  - apply inv_p4 in Hst as ->; [inI|destruct Hm as [-> | ->]; done].
-  - apply inv_p5 in Hst as [-> | ->]; inI.
-  - apply inv_p6a in Hst as ->. inI.
-  - apply inv_p6b in Hst as ->. inI.
-  - apply inv_p7 in Hst as ->. inI.
-  - apply inv_p8 in Hst as ->. inI.
-  - apply inv_p9 in Hst as ->. inI.
-  - apply inv_p10 in Hst as ->. inI.
-  - exfalso. by eapply inv_p11.
+  - apply p1_inv in Hst as ->. inIm m.
+  - apply p2_inv in Hst as ->. inIm m.
+  - apply p3_inv in Hst as ->. inIm m.
+  - apply p4_inv in Hst as ->; [inI|destruct Hm as [-> | ->]; done].
+  - apply p5_inv in Hst as [-> | ->]; inI.
+  - apply p6a_inv in Hst as ->. inI.
+  - apply p6b_inv in Hst as ->. inI.
+  - apply p7_inv in Hst as ->. inI.
+  - apply p8_inv in Hst as ->. inI.
+  - apply p9_inv in Hst as ->. inI.
+  - apply p10_inv in Hst as ->. inI.
+  - exfalso. by eapply p11_inv.
 Qed.
 
 Lemma schedI_closed : closed_invariant schedI.
@@ -932,7 +932,7 @@ Ltac kill_val' :=
   | Hs : tstep (Konst _) _ _ |- _ => exfalso; eapply val_no_tstep; [exact Hs|done]
   end.
 
-Lemma inv_applam_send c k α e' :
+Lemma applam_send_inv c k α e' :
   tstep (App (Lam k) (App ESend (Pair EUnit (Chan c)))) α e' →
   α = LSess (SSend c EUnit) ∧ e' = App (Lam k) (Chan c).
 Proof.
@@ -940,10 +940,10 @@ Proof.
   - match goal with Hh : head_step _ _ _ |- _ => inversion Hh; subst end. done.
   - kill_val'.
   - match goal with Hs : tstep (App ESend _) _ _ |- _ =>
-      apply inv_sendapp in Hs as [-> ->] end. done.
+      apply sendapp_inv in Hs as [-> ->] end. done.
 Qed.
 
-Lemma inv_applam_chan c k α e' :
+Lemma applam_chan_inv c k α e' :
   tstep (App (Lam k) (Chan c)) α e' → α = LBeta ∧ e' = subst1 (Chan c) k.
 Proof.
   intros H. inversion H; subst.
@@ -952,55 +952,55 @@ Proof.
   - kill_val'.
 Qed.
 
-Lemma inv_a02_send m α e' :
+Lemma a02_send_inv m α e' :
   tstep (a02_send m) α e' →
   α = LSess (SSend m EUnit) ∧ e' = a02_app m.
-Proof. apply inv_applam_send. Qed.
+Proof. apply applam_send_inv. Qed.
 
-Lemma inv_a02_app m α e' :
+Lemma a02_app_inv m α e' :
   tstep (a02_app m) α e' → α = LBeta ∧ e' = a02_cont m.
 Proof.
-  intros H. apply inv_applam_chan in H as [-> ->]. done.
+  intros H. apply applam_chan_inv in H as [-> ->]. done.
 Qed.
 
-Lemma inv_a02_cont m α e' :
+Lemma a02_cont_inv m α e' :
   tstep (a02_cont m) α e' →
   ∃ v, is_val v ∧ α = LSess (SRecv r2 v) ∧
        e' = LetP (Pair v (Chan r2)) (a0_send m).
-Proof. apply inv_letp_recv. Qed.
+Proof. apply letp_recv_inv. Qed.
 
-Lemma inv_a02_recvd m α e' :
+Lemma a02_recvd_inv m α e' :
   tstep (a02_recvd m) α e' → α = LBeta ∧ e' = a0_send m.
 Proof.
-  intros H. apply inv_letp_pair in H as [-> ->]; [done|done|done].
+  intros H. apply letp_pair_inv in H as [-> ->]; [done|done|done].
 Qed.
 
-Lemma inv_a22_recv m α e' :
+Lemma a22_recv_inv m α e' :
   tstep (a22_recv m) α e' →
   ∃ v, is_val v ∧ α = LSess (SRecv m v) ∧
        e' = LetP (Pair v (Chan m)) (a22_cont m).
-Proof. apply inv_letp_recv. Qed.
+Proof. apply letp_recv_inv. Qed.
 
-Lemma inv_a22_pair m α e' :
+Lemma a22_pair_inv m α e' :
   tstep (a22_pair m) α e' → α = LBeta ∧ e' = a22_cont m.
 Proof.
-  intros H. apply inv_letp_pair in H as [-> ->]; [done|done|done].
+  intros H. apply letp_pair_inv in H as [-> ->]; [done|done|done].
 Qed.
 
-Lemma inv_a22_cont m α e' :
+Lemma a22_cont_inv m α e' :
   tstep (a22_cont m) α e' →
   α = LSess (SSend r2 EUnit) ∧ e' = a22_app m.
-Proof. apply inv_applam_send. Qed.
+Proof. apply applam_send_inv. Qed.
 
-Lemma inv_a22_app m α e' :
+Lemma a22_app_inv m α e' :
   tstep (a22_app m) α e' → α = LBeta ∧ e' = a2_recv m.
 Proof.
-  intros H. apply inv_applam_chan in H as [-> ->]. done.
+  intros H. apply applam_chan_inv in H as [-> ->]. done.
 Qed.
 
-Lemma inv_link2 α e' :
+Lemma link2_inv α e' :
   tstep ag1 α e' → α = LSess (SLink {[r1; r0]}) ∧ e' = EUnit.
-Proof. apply inv_link. Qed.
+Proof. apply link_inv. Qed.
 
 (** *** Round one, state by state *)
 
@@ -1096,40 +1096,40 @@ Proof. apply TStepHead. apply (HeadApp (a2_recv m) (Chan r2)). done. Qed.
 
 (** *** Round one, step by step *)
 
-Lemma step_q1 m : proc_step (q1 m) PTau (q2 m).
+Lemma q1_step m : proc_step (q1 m) PTau (q2 m).
 Proof.
   eapply st_msg;
     [apply a02_send_step|apply a22_recv_step|clear; set_solver].
 Qed.
 
-Lemma step_q2a m : proc_step (q2 m) PTau (q3a m).
+Lemma q2a_step m : proc_step (q2 m) PTau (q3a m).
 Proof. apply st_beta1, a02_app_step. Qed.
 
-Lemma step_q2b m : proc_step (q2 m) PTau (q3b m).
+Lemma q2b_step m : proc_step (q2 m) PTau (q3b m).
 Proof. apply st_beta3, a22_pair_step. Qed.
 
-Lemma step_q3a m : proc_step (q3a m) PTau (q4 m).
+Lemma q3a_step m : proc_step (q3a m) PTau (q4 m).
 Proof. apply st_beta3, a22_pair_step. Qed.
 
-Lemma step_q3b m : proc_step (q3b m) PTau (q4 m).
+Lemma q3b_step m : proc_step (q3b m) PTau (q4 m).
 Proof. apply st_beta1, a02_app_step. Qed.
 
-Lemma step_q4 m : proc_step (q4 m) PTau (q5 m).
+Lemma q4_step m : proc_step (q4 m) PTau (q5 m).
 Proof.
   eapply st_msg_r;
     [apply a22_cont_step|apply a02_cont_step|clear; set_solver].
 Qed.
 
-Lemma step_q5a m : proc_step (q5 m) PTau (q6a m).
+Lemma q5a_step m : proc_step (q5 m) PTau (q6a m).
 Proof. apply st_beta1, a02_recvd_step. Qed.
 
-Lemma step_q5b m : proc_step (q5 m) PTau (q6b m).
+Lemma q5b_step m : proc_step (q5 m) PTau (q6b m).
 Proof. apply st_beta3, a22_app_step. Qed.
 
-Lemma step_q6a m : proc_step (q6a m) PTau (p1 m).
+Lemma q6a_step m : proc_step (q6a m) PTau (p1 m).
 Proof. apply st_beta3, a22_app_step. Qed.
 
-Lemma step_q6b m : proc_step (q6b m) PTau (p1 m).
+Lemma q6b_step m : proc_step (q6b m) PTau (p1 m).
 Proof. apply st_beta1, a02_recvd_step. Qed.
 
 (** *** Closure for round one *)
@@ -1137,20 +1137,20 @@ Proof. apply st_beta1, a02_recvd_step. Qed.
 Ltac inv_act2 :=
   repeat match goal with
   | H : tstep EUnit _ _ |- _ => exfalso; eapply val_no_tstep; [exact H|done]
-  | H : tstep ag1 _ _ |- _ => apply inv_link in H as [? ->]
-  | H : tstep (a02_send _) _ _ |- _ => apply inv_a02_send in H as [? ?]
-  | H : tstep (a02_app _) _ _ |- _ => apply inv_a02_app in H as [? ?]
+  | H : tstep ag1 _ _ |- _ => apply link_inv in H as [? ->]
+  | H : tstep (a02_send _) _ _ |- _ => apply a02_send_inv in H as [? ?]
+  | H : tstep (a02_app _) _ _ |- _ => apply a02_app_inv in H as [? ?]
   | H : tstep (a02_cont _) _ _ |- _ =>
-      apply inv_a02_cont in H as (? & ? & ? & ?)
-  | H : tstep (a02_recvd _) _ _ |- _ => apply inv_a02_recvd in H as [? ?]
+      apply a02_cont_inv in H as (? & ? & ? & ?)
+  | H : tstep (a02_recvd _) _ _ |- _ => apply a02_recvd_inv in H as [? ?]
   | H : tstep (a22_recv _) _ _ |- _ =>
-      apply inv_a22_recv in H as (? & ? & ? & ?)
-  | H : tstep (a22_pair _) _ _ |- _ => apply inv_a22_pair in H as [? ?]
-  | H : tstep (a22_cont _) _ _ |- _ => apply inv_a22_cont in H as [? ?]
-  | H : tstep (a22_app _) _ _ |- _ => apply inv_a22_app in H as [? ?]
-  | H : tstep (a0_send _) _ _ |- _ => apply inv_a0_send in H as [? ?]
+      apply a22_recv_inv in H as (? & ? & ? & ?)
+  | H : tstep (a22_pair _) _ _ |- _ => apply a22_pair_inv in H as [? ?]
+  | H : tstep (a22_cont _) _ _ |- _ => apply a22_cont_inv in H as [? ?]
+  | H : tstep (a22_app _) _ _ |- _ => apply a22_app_inv in H as [? ?]
+  | H : tstep (a0_send _) _ _ |- _ => apply a0_send_inv in H as [? ?]
   | H : tstep (a2_recv _) _ _ |- _ =>
-      apply inv_a2_recv in H as (? & ? & ? & ?)
+      apply a2_recv_inv in H as (? & ? & ? & ?)
   end.
 
 Ltac st_cases2 Hst :=
@@ -1158,51 +1158,51 @@ Ltac st_cases2 Hst :=
   [ split1 | split1 | split2 | split2 | split1 ];
   inv_act2; simplify_eq.
 
-Lemma inv_q1 m p' : preduction (q1 m) p' → p' = q2 m.
+Lemma q1_inv m p' : preduction (q1 m) p' → p' = q2 m.
 Proof.
   intros Hst. unfold preduction, q1, st in Hst. st_cases2 Hst.
   all: unfold q2, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_q2 m p' : preduction (q2 m) p' → p' = q3a m ∨ p' = q3b m.
+Lemma q2_inv m p' : preduction (q2 m) p' → p' = q3a m ∨ p' = q3b m.
 Proof.
   intros Hst. unfold preduction, q2, st in Hst. st_cases2 Hst.
   all: first [ left; unfold q3a, st; f_equal; multiset_solver
              | right; unfold q3b, st; f_equal; multiset_solver ].
 Qed.
 
-Lemma inv_q3a m p' : preduction (q3a m) p' → p' = q4 m.
+Lemma q3a_inv m p' : preduction (q3a m) p' → p' = q4 m.
 Proof.
   intros Hst. unfold preduction, q3a, st in Hst. st_cases2 Hst.
   all: unfold q4, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_q3b m p' : preduction (q3b m) p' → p' = q4 m.
+Lemma q3b_inv m p' : preduction (q3b m) p' → p' = q4 m.
 Proof.
   intros Hst. unfold preduction, q3b, st in Hst. st_cases2 Hst.
   all: unfold q4, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_q4 m p' : preduction (q4 m) p' → p' = q5 m.
+Lemma q4_inv m p' : preduction (q4 m) p' → p' = q5 m.
 Proof.
   intros Hst. unfold preduction, q4, st in Hst. st_cases2 Hst.
   all: unfold q5, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_q5 m p' : preduction (q5 m) p' → p' = q6a m ∨ p' = q6b m.
+Lemma q5_inv m p' : preduction (q5 m) p' → p' = q6a m ∨ p' = q6b m.
 Proof.
   intros Hst. unfold preduction, q5, st in Hst. st_cases2 Hst.
   all: first [ left; unfold q6a, st; f_equal; multiset_solver
              | right; unfold q6b, st; f_equal; multiset_solver ].
 Qed.
 
-Lemma inv_q6a m p' : preduction (q6a m) p' → p' = p1 m.
+Lemma q6a_inv m p' : preduction (q6a m) p' → p' = p1 m.
 Proof.
   intros Hst. unfold preduction, q6a, st in Hst. st_cases2 Hst.
   all: unfold p1, st; f_equal; multiset_solver.
 Qed.
 
-Lemma inv_q6b m p' : preduction (q6b m) p' → p' = p1 m.
+Lemma q6b_inv m p' : preduction (q6b m) p' → p' = p1 m.
 Proof.
   intros Hst. unfold preduction, q6b, st in Hst. st_cases2 Hst.
   all: unfold p1, st; f_equal; multiset_solver.
@@ -1210,12 +1210,12 @@ Qed.
 
 Ltac inv_act_sched2 :=
   repeat match goal with
-  | H : tstep ag0_2 _ _ |- _ => apply (inv_a02_send r0) in H as [? ?]
-  | H : tstep ag1 _ _ |- _ => apply inv_link in H as [? ->]
-  | H : tstep ag2_2 _ _ |- _ => apply (inv_a22_recv r1) in H as (? & ? & ? & ?)
+  | H : tstep ag0_2 _ _ |- _ => apply (a02_send_inv r0) in H as [? ?]
+  | H : tstep ag1 _ _ |- _ => apply link_inv in H as [? ->]
+  | H : tstep ag2_2 _ _ |- _ => apply (a22_recv_inv r1) in H as (? & ? & ? & ?)
   end.
 
-Lemma inv_sched2 p' : preduction sched2 p' → p' = q1 r0 ∨ p' = q1 r1.
+Lemma sched2_inv p' : preduction sched2 p' → p' = q1 r0 ∨ p' = q1 r1.
 Proof.
   intros Hst. unfold preduction, sched2 in Hst.
   inversion Hst; subst.
@@ -1273,14 +1273,14 @@ Proof.
   intros [-> | [(m & Hm & Hq) | Hp]] Hirr; [| |by apply schedI_irred].
   - exfalso. eapply (Hirr PTau). apply sched2_splice_r0.
   - exfalso. destruct Hq as [-> | [-> | [-> | [-> | [-> | [-> | [-> | ->]]]]]]].
-    + eapply (Hirr PTau). apply (step_q1 m).
-    + eapply (Hirr PTau). apply (step_q2a m).
-    + eapply (Hirr PTau). apply (step_q3a m).
-    + eapply (Hirr PTau). apply (step_q3b m).
-    + eapply (Hirr PTau). apply (step_q4 m).
-    + eapply (Hirr PTau). apply (step_q5a m).
-    + eapply (Hirr PTau). apply (step_q6a m).
-    + eapply (Hirr PTau). apply (step_q6b m).
+    + eapply (Hirr PTau). apply (q1_step m).
+    + eapply (Hirr PTau). apply (q2a_step m).
+    + eapply (Hirr PTau). apply (q3a_step m).
+    + eapply (Hirr PTau). apply (q3b_step m).
+    + eapply (Hirr PTau). apply (q4_step m).
+    + eapply (Hirr PTau). apply (q5a_step m).
+    + eapply (Hirr PTau). apply (q6a_step m).
+    + eapply (Hirr PTau). apply (q6b_step m).
 Qed.
 
 Ltac inQm m := unfold schedI2; right; left; exists m; split;
@@ -1290,16 +1290,16 @@ Ltac inQm m := unfold schedI2; right; left; exists m; split;
 Lemma schedI2_step p p' : schedI2 p → preduction p p' → schedI2 p'.
 Proof.
   intros [-> | [(m & Hm & Hq) | Hp]] Hst.
-  - apply inv_sched2 in Hst as [-> | ->]; [inQm r0|inQm r1].
+  - apply sched2_inv in Hst as [-> | ->]; [inQm r0|inQm r1].
   - destruct Hq as [-> | [-> | [-> | [-> | [-> | [-> | [-> | ->]]]]]]].
-    + apply inv_q1 in Hst as ->. inQm m.
-    + apply inv_q2 in Hst as [-> | ->]; inQm m.
-    + apply inv_q3a in Hst as ->. inQm m.
-    + apply inv_q3b in Hst as ->. inQm m.
-    + apply inv_q4 in Hst as ->. inQm m.
-    + apply inv_q5 in Hst as [-> | ->]; inQm m.
-    + apply inv_q6a in Hst as ->. right; right. inIm m.
-    + apply inv_q6b in Hst as ->. right; right. inIm m.
+    + apply q1_inv in Hst as ->. inQm m.
+    + apply q2_inv in Hst as [-> | ->]; inQm m.
+    + apply q3a_inv in Hst as ->. inQm m.
+    + apply q3b_inv in Hst as ->. inQm m.
+    + apply q4_inv in Hst as ->. inQm m.
+    + apply q5_inv in Hst as [-> | ->]; inQm m.
+    + apply q6a_inv in Hst as ->. right; right. inIm m.
+    + apply q6b_inv in Hst as ->. right; right. inIm m.
   - right; right. by eapply schedI_step.
 Qed.
 
@@ -1325,22 +1325,22 @@ Theorem sched2_terminates :
 Proof.
   exists p11. split.
   - eapply rtc_l; [apply sched2_splice_r0|].
-    eapply rtc_l; [apply (step_q1 r0)|].
-    eapply rtc_l; [apply (step_q2a r0)|].
-    eapply rtc_l; [apply (step_q3a r0)|].
-    eapply rtc_l; [apply (step_q4 r0)|].
-    eapply rtc_l; [apply (step_q5a r0)|].
-    eapply rtc_l; [apply (step_q6a r0)|].
-    eapply rtc_l; [apply (step_p1 r0)|].
-    eapply rtc_l; [apply (step_p2 r0)|].
-    eapply rtc_l; [apply (step_p3 r0)|].
-    eapply rtc_l; [apply (step_p4 r0); done|].
-    eapply rtc_l; [apply step_p5a|].
-    eapply rtc_l; [apply step_p6a|].
-    eapply rtc_l; [apply step_p7|].
-    eapply rtc_l; [apply step_p8|].
-    eapply rtc_l; [apply step_p9|].
-    eapply rtc_l; [apply step_p10|].
+    eapply rtc_l; [apply (q1_step r0)|].
+    eapply rtc_l; [apply (q2a_step r0)|].
+    eapply rtc_l; [apply (q3a_step r0)|].
+    eapply rtc_l; [apply (q4_step r0)|].
+    eapply rtc_l; [apply (q5a_step r0)|].
+    eapply rtc_l; [apply (q6a_step r0)|].
+    eapply rtc_l; [apply (p1_step r0)|].
+    eapply rtc_l; [apply (p2_step r0)|].
+    eapply rtc_l; [apply (p3_step r0)|].
+    eapply rtc_l; [apply (p4_step r0); done|].
+    eapply rtc_l; [apply p5a_step|].
+    eapply rtc_l; [apply p6a_step|].
+    eapply rtc_l; [apply p7_step|].
+    eapply rtc_l; [apply p8_step|].
+    eapply rtc_l; [apply p9_step|].
+    eapply rtc_l; [apply p10_step|].
     apply rtc_refl.
   - exists EUnit, ({[+ EUnit +]} ⊎ {[+ EUnit +]}). split_and!.
     + unfold p11, st. f_equal. multiset_solver.

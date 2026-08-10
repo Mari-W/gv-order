@@ -732,8 +732,8 @@ Proof.
   rewrite cswap_ne in Hy1 by done. set_solver.
 Qed.
 
-Lemma kswap_disjoint_out a b Σn Σ1 :
-  a ∉ dom Σ1 → b ∉ dom Σ1 → Σn ##ₘ Σ1 → kswap a b Σn ##ₘ Σ1.
+Lemma senvswap_disjoint_out a b Σn Σ1 :
+  a ∉ dom Σ1 → b ∉ dom Σ1 → Σn ##ₘ Σ1 → senvswap a b Σn ##ₘ Σ1.
 Proof.
   intros Ha Hb Hd. apply map_disjoint_dom. rewrite dom_kswap.
   apply map_disjoint_dom in Hd. by apply gswap_disjoint_out.
@@ -743,14 +743,14 @@ Qed.
     restricted somewhere in the family, provided it owns no interface
     entry: each piece receives the conditional fact for its own
     environment. *)
-Lemma Powners_junk (P : senv → ty → proc → Prop) x b σ Σ T C E :
+Lemma Owners_junk (P : senv → ty → proc → Prop) x b σ Σ T C E :
   (∀ Σ' T' C' E',
      x ∉ dom Σ' → x ∉ C' → (b ∈ C' → b ∉ dom Σ') →
      P Σ' T' (C', E') → P Σ' T' (C', echsubst x b E')) →
   x ∉ dom σ → x ∉ dom Σ → x ∉ C →
   (b ∈ C → b ∉ dom Σ ∧ b ∉ dom σ) →
-  Powners P σ Σ T (C, E) →
-  Powners P σ Σ T (C, echsubst x b E).
+  Owners P σ Σ T (C, E) →
+  Owners P σ Σ T (C, echsubst x b E).
 Proof.
   intros HPQ Hσ HΣ HC HbC HP.
   remember (C, E) as p eqn:Hp.
@@ -972,7 +972,7 @@ Proof.
                         Hbx Hc)
             as HQ.
           apply (Prel_eswap x z) in HQ.
-          rewrite kswap_id in HQ; [|done|set_solver].
+          rewrite senvswap_id in HQ; [|done|set_solver].
           unfold pswap in HQ. simpl in HQ.
           assert (gswap x z (C ∪ {[z]}) = C ∪ {[x]}) as Hgs.
           { apply set_eq. intros y. rewrite elem_of_gswap'. unfold cswap.
@@ -1312,20 +1312,20 @@ Proof.
         assert (z ∉ dom Σ1) as HzΣ1 by set_solver.
         assert (z ∉ dom Σn) as HzΣn by set_solver.
         simpl in Hfrn.
-        specialize (Hcont j (kswap x z Σn) Hj
-                      (kswap_disjoint_out _ _ _ _ HxΣ1 HzΣ1 Hdn)).
-        assert (c ∉ dom (kswap x z Σn)) as Hckn.
+        specialize (Hcont j (senvswap x z Σn) Hj
+                      (senvswap_disjoint_out _ _ _ _ HxΣ1 HzΣ1 Hdn)).
+        assert (c ∉ dom (senvswap x z Σn)) as Hckn.
         { rewrite dom_kswap. intros Hcin.
           rewrite elem_of_gswap' in Hcin.
           rewrite cswap_ne in Hcin; [done|clear -Hsx0; set_solver|set_solver]. }
         specialize (Hcont Hckn).
-        assert (dom (kswap x z Σn) ## (C, F ⊎ {[+ f +]}).1) as Hfr'.
+        assert (dom (senvswap x z Σn) ## (C, F ⊎ {[+ f +]}).1) as Hfr'.
         { simpl. rewrite dom_kswap.
           apply gswap_disjoint_out; [done|set_solver|done]. }
         specialize (Hcont Hfr' HVw').
         assert (x ∉ gswap x z (dom Σn)) as Hxg.
         { rewrite elem_of_gswap', cswap_l. exact HzΣn. }
-        assert (b ∈ C ∖ ∅ → b ∉ dom (<[c := s]> (Σ1 ∪ kswap x z Σn)))
+        assert (b ∈ C ∖ ∅ → b ∉ dom (<[c := s]> (Σ1 ∪ senvswap x z Σn)))
           as HbC'.
         { intros Hb. specialize (HbC ltac:(clear -Hb; set_solver)).
           rewrite dom_insert_L, dom_union_L, dom_kswap.
@@ -1335,18 +1335,18 @@ Proof.
             clear -Hfrn Hb. set_solver. }
           clear -HbC Hbg Hdom1 Hb. set_solver. }
         pose proof (IHn j ltac:(lia)
-                      (<[c := s]> (Σ1 ∪ kswap x z Σn)) T (C ∖ ∅) _ x b
+                      (<[c := s]> (Σ1 ∪ senvswap x z Σn)) T (C ∖ ∅) _ x b
                       ltac:(rewrite dom_insert_L, dom_union_L, dom_kswap;
                             set_solver)
                       ltac:(set_solver) HbC' Hbx Hcont)
           as HQ.
         apply (Prel_eswap x z) in HQ.
         unfold pswap in HQ. simpl in HQ.
-        rewrite kswap_insert in HQ.
+        rewrite senvswap_insert in HQ.
         rewrite (cswap_ne x z c) in HQ; [|clear -Hsx0; set_solver|set_solver].
-        rewrite kswap_union in HQ.
-        rewrite (kswap_id x z Σ1) in HQ; [|done|done].
-        rewrite kswap_involutive in HQ.
+        rewrite senvswap_union in HQ.
+        rewrite (senvswap_id x z Σ1) in HQ; [|done|done].
+        rewrite senvswap_involutive in HQ.
         rewrite (gswap_id x z (C ∖ ∅)) in HQ; [|set_solver|set_solver].
         rewrite echsubst_disj_union, echsubst_singleton in HQ.
         rewrite msswap_disj_union, msswap_singleton in HQ.
@@ -1399,7 +1399,7 @@ Proof.
              |done|done].
           rewrite dom_insert_L. rewrite !dom_union_L in Hdom1.
           rewrite Hdom1 in HxΣ. clear -HxΣ Hsx0. set_solver. }
-        { apply (Powners_junk _ x b); [ | | | | |exact HPw].
+        { apply (Owners_junk _ x b); [ | | | | |exact HPw].
           - intros Σ' T' C' E' Hx' HxC' HbC' HPp.
             by apply (IHn n' ltac:(lia) Σ' T' C' E' x b
                         Hx' HxC' HbC' Hbx).

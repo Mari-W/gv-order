@@ -296,37 +296,37 @@ Proof. intros H. exact H. Qed.
 
 (** ** Step existence for the stage shapes *)
 
-Lemma tstep_ld0_ex : tstep ld0 (LSess (SSend "d" EFalse)) (l0s 1).
+Lemma ld0_step : tstep ld0 (LSess (SSend "d" EFalse)) (l0s 1).
 Proof.
   apply TStepAppR; [done|]. apply TStepAppR; [done|].
   apply TStepPairR; [done|]. apply TStepHead. by apply HeadSend.
 Qed.
 
-Lemma tstep_l0s1_ex : tstep (l0s 1) (LSess (SSend "d" ETrue)) (l0s 2).
+Lemma l0s1_step : tstep (l0s 1) (LSess (SSend "d" ETrue)) (l0s 2).
 Proof. apply TStepAppR; [done|]. apply TStepHead. by apply HeadSend. Qed.
 
-Lemma tstep_ld1_ex b : tstep ld1 (LSess (SRecv "d" (bv b))) (l1k 1 b).
+Lemma ld1_step b : tstep ld1 (LSess (SRecv "d" (bv b))) (l1k 1 b).
 Proof. apply TStepLetP, TStepHead. apply HeadRecv, bv_val. Qed.
 
-Lemma tstep_ld2_ex b : tstep ld2 (LSess (SRecv "d" (bv b))) (l2m 1 b).
+Lemma ld2_step b : tstep ld2 (LSess (SRecv "d" (bv b))) (l2m 1 b).
 Proof. apply TStepLetP, TStepHead. apply HeadRecv, bv_val. Qed.
 
-Lemma tstep_l1k1_ex b : tstep (l1k 1 b) LBeta (l1k 2 b).
+Lemma l1k1_step b : tstep (l1k 1 b) LBeta (l1k 2 b).
 Proof.
   rewrite <-(ld1body_subst b). apply TStepHead.
   apply HeadLetP; [apply bv_val|done].
 Qed.
 
-Lemma tstep_l2m1_ex b : tstep (l2m 1 b) LBeta (l2m 2 b).
+Lemma l2m1_step b : tstep (l2m 1 b) LBeta (l2m 2 b).
 Proof.
   rewrite <-(ld2body_subst b). apply TStepHead.
   apply HeadLetP; [apply bv_val|done].
 Qed.
 
-Lemma tstep_l1k2_ex b : tstep (l1k 2 b) (LSess (SClos "cs")) (l1k 3 b).
+Lemma l1k2_step b : tstep (l1k 2 b) (LSess (SClos "cs")) (l1k 3 b).
 Proof. apply TStepLetU, TStepHead, HeadClos. Qed.
 
-Lemma tstep_l2m2_ex b : tstep (l2m 2 b) (LSess (SClos "cs")) (l2m 3 b).
+Lemma l2m2_step b : tstep (l2m 2 b) (LSess (SClos "cs")) (l2m 3 b).
 Proof. apply TStepLetU, TStepHead, HeadClos. Qed.
 
 (** ** Obligation lemmas: one per invariant constructor
@@ -353,7 +353,7 @@ Proof.
       with (({[+ ld2 +]} ⊎ {[+ ld0 +]} ⊎ {[+ ld1 +]}) : gmultiset expr)
       by multiset_solver.
     eapply PStepMsg;
-      [exact tstep_ld0_ex|exact (tstep_ld1_ex false)|set_solver].
+      [exact ld0_step|exact (ld1_step false)|set_solver].
   - intros π p' Hst.
     inversion Hst; subst.
     + (* session: subjects cs/d are restricted *)
@@ -456,7 +456,7 @@ Proof.
             : gmultiset expr)
       by multiset_solver.
     eapply PStepMsg;
-      [exact tstep_l0s1_ex|exact (tstep_ld2_ex true)|set_solver].
+      [exact l0s1_step|exact (ld2_step true)|set_solver].
   - assert (k = 1 ∨ k = 2) as [->| ->] by lia;
       intros π p' Hst; inversion Hst; subst.
     + (* k = 1, session *)
@@ -644,7 +644,7 @@ Proof.
             : gmultiset expr)
       by multiset_solver.
     eapply PStepMsg;
-      [exact tstep_l0s1_ex|exact (tstep_ld1_ex true)|set_solver].
+      [exact l0s1_step|exact (ld1_step true)|set_solver].
   - assert (m = 1 ∨ m = 2) as [->| ->] by lia;
       intros π p' Hst; inversion Hst; subst.
     + (* m = 1, session *)
@@ -828,14 +828,14 @@ Proof.
         with (({[+ l0s 2 +]} ⊎ {[+ l2m m (negb wb) +]} ⊎ {[+ l1k 1 wb +]})
               : gmultiset expr)
         by multiset_solver.
-      eapply PStepBeta. exact (tstep_l1k1_ex wb).
+      eapply PStepBeta. exact (l1k1_step wb).
     + assert (m = 1 ∨ m = 2) as [->| ->] by lia.
       * eapply (Hirr PTau).
-        eapply PStepBeta. exact (tstep_l2m1_ex (negb wb)).
+        eapply PStepBeta. exact (l2m1_step (negb wb)).
       * eapply (Hirr PTau).
         eapply PStepClose;
-          [exact (tstep_l1k2_ex wb)
-          |exact (tstep_l2m2_ex (negb wb))
+          [exact (l1k2_step wb)
+          |exact (l2m2_step (negb wb))
           |set_solver].
   - assert (k = 1 ∨ k = 2) as [->| ->] by lia;
       assert (m = 1 ∨ m = 2) as [->| ->] by lia;
@@ -1220,32 +1220,32 @@ Proof. simpl. pose proof (c_not_lC s). set_solver. Qed.
 
 (** ** Step existence for the stages k ≥ 3 / m ≥ 3 *)
 
-Lemma tstep_letu_unit_ex e : tstep (LetU EUnit e) LBeta e.
+Lemma letu_unit_step e : tstep (LetU EUnit e) LBeta e.
 Proof. apply TStepHead, HeadLetU. Qed.
 
-Lemma tstep_l1k4_ex b : tstep (l1k 4 b) LBeta (l1k 5 b).
+Lemma l1k4_step b : tstep (l1k 4 b) LBeta (l1k 5 b).
 Proof.
   destruct b; apply TStepHead; [by apply HeadCase1|by apply HeadCase2].
 Qed.
 
-Lemma tstep_l2m6_ex b : tstep (l2m 6 b) LBeta (l2m 7 b).
+Lemma l2m6_step b : tstep (l2m 6 b) LBeta (l2m 7 b).
 Proof.
   destruct b; apply TStepHead; [by apply HeadCase1|by apply HeadCase2].
 Qed.
 
-Lemma tstep_l0s2_ex : tstep (l0s 2) (LSess (SClos "d")) (l0s 3).
+Lemma l0s2_step : tstep (l0s 2) (LSess (SClos "d")) (l0s 3).
 Proof. apply TStepHead, HeadClos. Qed.
 
-Lemma tstep_l2m4_ex b : tstep (l2m 4 b) (LSess (SClos "d")) (l2m 5 b).
+Lemma l2m4_step b : tstep (l2m 4 b) (LSess (SClos "d")) (l2m 5 b).
 Proof. apply TStepLetU, TStepHead, HeadClos. Qed.
 
-Lemma tstep_selL_ex : tstep selL (LSess (SSend "c" ETrue)) (l1k 7 true).
+Lemma selL_step : tstep selL (LSess (SSend "c" ETrue)) (l1k 7 true).
 Proof. apply TStepAppR; [done|]. apply TStepHead. by apply HeadSend. Qed.
 
-Lemma tstep_selR_ex : tstep selR (LSess (SSend "c" EFalse)) (l2m 9 true).
+Lemma selR_step : tstep selR (LSess (SSend "c" EFalse)) (l2m 9 true).
 Proof. apply TStepAppR; [done|]. apply TStepHead. by apply HeadSend. Qed.
 
-Lemma tstep_closc_ex : tstep (App EClos (Chan "c")) (LSess (SClos "c")) EUnit.
+Lemma closc_step : tstep (App EClos (Chan "c")) (LSess (SClos "c")) EUnit.
 Proof. apply TStepHead, HeadClos. Qed.
 
 (** ** Packaged inversion tactics for the high stages
@@ -1290,23 +1290,23 @@ Proof.
     + (* s = 2: the m-side always steps *)
       intros Hirr. exfalso.
       assert (m = 3 ∨ m = 4) as [->| ->] by lia.
-      * eapply (Hirr PTau), PStepBeta, (tstep_letu_unit_ex _).
+      * eapply (Hirr PTau), PStepBeta, (letu_unit_step _).
       * eapply (Hirr PTau).
         replace ({[+ l0s 2 +]} ⊎ {[+ l1k k true +]} ⊎ {[+ l2m 4 false +]})
           with ({[+ l1k k true +]} ⊎ {[+ l0s 2 +]} ⊎ {[+ l2m 4 false +]}
                 : gmultiset expr)
           by multiset_solver.
         eapply PStepClose;
-          [exact tstep_l0s2_ex|exact (tstep_l2m4_ex false)
+          [exact l0s2_step|exact (l2m4_step false)
           |rewrite lC2; set_solver].
     + (* s = 3 *)
       assert (m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8) as [->|[->|[->| ->]]] by lia.
       * intros Hirr; exfalso.
-        eapply (Hirr PTau), PStepBeta, (tstep_letu_unit_ex _).
+        eapply (Hirr PTau), PStepBeta, (letu_unit_step _).
       * intros Hirr; exfalso.
-        eapply (Hirr PTau), PStepBeta, (tstep_l2m6_ex false).
+        eapply (Hirr PTau), PStepBeta, (l2m6_step false).
       * intros Hirr; exfalso.
-        eapply (Hirr PTau), PStepBeta, (tstep_letu_unit_ex _).
+        eapply (Hirr PTau), PStepBeta, (letu_unit_step _).
       * (* m = 8: the loser is done; the winner's stage decides *)
         assert (k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8)
           as [->|[->|[->|[->|[->| ->]]]]] by lia.
@@ -1316,35 +1316,35 @@ Proof.
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 8 false +]} ⊎ {[+ l1k 3 true +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepBeta, (tstep_letu_unit_ex _).
+           eapply PStepBeta, (letu_unit_step _).
         -- intros Hirr; exfalso.
            eapply (Hirr PTau).
            replace ({[+ l0s 3 +]} ⊎ {[+ l1k 4 true +]} ⊎ {[+ l2m 8 false +]})
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 8 false +]} ⊎ {[+ l1k 4 true +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepBeta, (tstep_l1k4_ex true).
+           eapply PStepBeta, (l1k4_step true).
         -- intros Hirr; exfalso.
            eapply (Hirr PTau).
            replace ({[+ l0s 3 +]} ⊎ {[+ l1k 5 true +]} ⊎ {[+ l2m 8 false +]})
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 8 false +]} ⊎ {[+ l1k 5 true +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepBeta, (tstep_letu_unit_ex _).
+           eapply PStepBeta, (letu_unit_step _).
         -- intros Hirr; exfalso.
            eapply (Hirr (PSess (SSend "c" ETrue))).
            replace ({[+ l0s 3 +]} ⊎ {[+ l1k 6 true +]} ⊎ {[+ l2m 8 false +]})
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 8 false +]} ⊎ {[+ l1k 6 true +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepSession; [exact tstep_selL_ex|apply c_guard_send].
+           eapply PStepSession; [exact selL_step|apply c_guard_send].
         -- intros Hirr; exfalso.
            eapply (Hirr (PSess (SClos "c"))).
            replace ({[+ l0s 3 +]} ⊎ {[+ l1k 7 true +]} ⊎ {[+ l2m 8 false +]})
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 8 false +]} ⊎ {[+ l1k 7 true +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepSession; [exact tstep_closc_ex|apply c_guard_clos].
+           eapply PStepSession; [exact closc_step|apply c_guard_clos].
         -- (* k = 8: terminal configuration *)
            intros _.
            exists (l0s 3), ({[+ l1k 8 true +]} ⊎ {[+ l2m 8 false +]}).
@@ -1408,7 +1408,7 @@ Proof.
                         ⊎ {[+ l2m m false +]} : gmultiset expr)
                 by multiset_solver.
               apply (LI3a 7 m s); [lia|lia|exact Hsm].
-           ++ exact (Powners_nil _).
+           ++ exact (Owners_nil _).
            ++ left; done.
         -- (* k = 7: the external close on c *)
            match goal with Hs : tstep (l1k 7 true) _ _ |- _ =>
@@ -1689,30 +1689,30 @@ Proof.
     + (* s = 2: the m-side always steps *)
       intros Hirr. exfalso.
       assert (m = 3 ∨ m = 4) as [->| ->] by lia.
-      * eapply (Hirr PTau), PStepBeta, (tstep_letu_unit_ex _).
+      * eapply (Hirr PTau), PStepBeta, (letu_unit_step _).
       * eapply (Hirr PTau).
         replace ({[+ l0s 2 +]} ⊎ {[+ l1k k false +]} ⊎ {[+ l2m 4 true +]})
           with ({[+ l1k k false +]} ⊎ {[+ l0s 2 +]} ⊎ {[+ l2m 4 true +]}
                 : gmultiset expr)
           by multiset_solver.
         eapply PStepClose;
-          [exact tstep_l0s2_ex|exact (tstep_l2m4_ex true)
+          [exact l0s2_step|exact (l2m4_step true)
           |rewrite lC2; set_solver].
     + (* s = 3 *)
       assert (m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8 ∨ m = 9 ∨ m = 10)
         as [->|[->|[->|[->|[->| ->]]]]] by lia.
       * intros Hirr; exfalso.
-        eapply (Hirr PTau), PStepBeta, (tstep_letu_unit_ex _).
+        eapply (Hirr PTau), PStepBeta, (letu_unit_step _).
       * intros Hirr; exfalso.
-        eapply (Hirr PTau), PStepBeta, (tstep_l2m6_ex true).
+        eapply (Hirr PTau), PStepBeta, (l2m6_step true).
       * intros Hirr; exfalso.
-        eapply (Hirr PTau), PStepBeta, (tstep_letu_unit_ex _).
+        eapply (Hirr PTau), PStepBeta, (letu_unit_step _).
       * intros Hirr; exfalso.
         eapply (Hirr (PSess (SSend "c" EFalse))).
-        eapply PStepSession; [exact tstep_selR_ex|apply c_guard_send].
+        eapply PStepSession; [exact selR_step|apply c_guard_send].
       * intros Hirr; exfalso.
         eapply (Hirr (PSess (SClos "c"))).
-        eapply PStepSession; [exact tstep_closc_ex|apply c_guard_clos].
+        eapply PStepSession; [exact closc_step|apply c_guard_clos].
       * (* m = 10: the winner is done; the loser's stage decides *)
         assert (k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6) as [->|[->|[->| ->]]] by lia.
         -- intros Hirr; exfalso.
@@ -1721,21 +1721,21 @@ Proof.
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 10 true +]} ⊎ {[+ l1k 3 false +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepBeta, (tstep_letu_unit_ex _).
+           eapply PStepBeta, (letu_unit_step _).
         -- intros Hirr; exfalso.
            eapply (Hirr PTau).
            replace ({[+ l0s 3 +]} ⊎ {[+ l1k 4 false +]} ⊎ {[+ l2m 10 true +]})
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 10 true +]} ⊎ {[+ l1k 4 false +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepBeta, (tstep_l1k4_ex false).
+           eapply PStepBeta, (l1k4_step false).
         -- intros Hirr; exfalso.
            eapply (Hirr PTau).
            replace ({[+ l0s 3 +]} ⊎ {[+ l1k 5 false +]} ⊎ {[+ l2m 10 true +]})
              with ({[+ l0s 3 +]} ⊎ {[+ l2m 10 true +]} ⊎ {[+ l1k 5 false +]}
                    : gmultiset expr)
              by multiset_solver.
-           eapply PStepBeta, (tstep_letu_unit_ex _).
+           eapply PStepBeta, (letu_unit_step _).
         -- (* k = 6: terminal configuration *)
            intros _.
            exists (l0s 3), ({[+ l1k 6 false +]} ⊎ {[+ l2m 10 true +]}).
@@ -1811,7 +1811,7 @@ Proof.
            ++ apply (LI3b k 9 s);
                 [lia|lia|destruct Hsm as [[_ ?]|[-> _]];
                          [lia|right; split; lia]].
-           ++ exact (Powners_nil _).
+           ++ exact (Owners_nil _).
            ++ left; done.
         -- (* m = 9: the external close on c *)
            match goal with Hs : tstep (l2m 9 true) _ _ |- _ =>

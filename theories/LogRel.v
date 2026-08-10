@@ -6,10 +6,10 @@
       P_n⟦Σ ⊢ T⟧  processes   ([Prel])
 
     The step-index recursion is implemented by course-of-values
-    recursion on n: [fam n] is (structurally in n) the family of all
+    recursion on n: [levels n] is (structurally in n) the family of all
     levels below n, [mk_level below n] builds level n from it, and
-    [lvl n] projects the actual level n. Later proofs only use the
-    equations [lvl_eq] and [fam_lvl], never the encoding.
+    [level_at n] projects the actual level n. Later proofs only use the
+    equations [level_at_eq] and [levels_at], never the encoding.
 
     "Σ = Σ1, c : S" from the paper is rendered as
     Σ = <[c := S]> Σ1 together with c ∉ dom Σ1.
@@ -126,7 +126,7 @@ Definition ty_one_of (A B C : ty) : Prop :=
 
 (** Iterated decomposition into escaped-channel owners.
 
-    [Powners P σ Σ T p]: the process p decomposes into a family of
+    [Owners P σ Σ T p]: the process p decomposes into a family of
     pairwise independent processes, exactly one per channel d ∈ dom σ,
     where the piece for d is in the (parameter) process relation P at
     environment Σd, d : σ(d) — it owns the residual end of d. Σ
@@ -142,22 +142,22 @@ Definition ty_one_of (A B C : ty) : Prop :=
     what the compositionality proofs need when a communication
     transfers several restricted channels at once: each transferred
     channel is reconnected to its own owner piece separately. *)
-Inductive Powners (P : senv → ty → proc → Prop)
+Inductive Owners (P : senv → ty → proc → Prop)
     : gmap chan sty → senv → ty → proc → Prop :=
-  | Powners_nil : Powners P ∅ ∅ TUnit (∅, ∅)
-  | Powners_cons σ d s Σd Σr Td Tr Tt Cd Ed Cr Er :
+  | Owners_nil : Owners P ∅ ∅ TUnit (∅, ∅)
+  | Owners_cons σ d s Σd Σr Td Tr Tt Cd Ed Cr Er :
       σ !! d = None →
       d ∉ dom Σd → d ∉ dom Σr → d ∉ Cd → d ∉ Cr →
       dom σ ## dom Σd → dom σ ## Cd →
       Σd ##ₘ Σr → Cd ## Cr → Cd ## dom Σr → Cr ## dom Σd →
       P (<[d := s]> Σd) Td (Cd, Ed) →
-      Powners P σ Σr Tr (Cr, Er) →
+      Owners P σ Σr Tr (Cr, Er) →
       ty_one_of Td Tr Tt →
-      Powners P (<[d := s]> σ) (Σd ∪ Σr) Tt (Cd ∪ Cr, Ed ⊎ Er).
+      Owners P (<[d := s]> σ) (Σd ∪ Σr) Tt (Cd ∪ Cr, Ed ⊎ Er).
 
-Lemma Powners_mono (P Q : senv → ty → proc → Prop) σ Σ T p :
+Lemma Owners_mono (P Q : senv → ty → proc → Prop) σ Σ T p :
   (∀ Σ' T' p', P Σ' T' p' → Q Σ' T' p') →
-  Powners P σ Σ T p → Powners Q σ Σ T p.
+  Owners P σ Σ T p → Owners Q σ Σ T p.
 Proof. induction 2; econstructor; eauto. Qed.
 
 (** Process relation at level n. Differences from the term relation:
@@ -173,7 +173,7 @@ Proof. induction 2; econstructor; eauto. Qed.
       iterated form: sending w on c leaks the restricted channels
       dom σe = fchans w ∩ C; the residual splits into a continuation
       piece for c and one independent owner piece per escaped channel
-      ([Powners]), with the value typed against the duals of the
+      ([Owners]), with the value typed against the duals of the
       owners' types. *)
 Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
     (n : nat) (Σ : senv) (T : ty) (p : proc) : Prop :=
@@ -205,7 +205,7 @@ Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
               p'.2 = E0 ⊎ Ew ∧
               Vn (Σv ∪ (dual <$> σe)) U w ∧
               lP (below n') (<[c := s]> Σ0) T0 (C0, E0) ∧
-              Powners (lP (below n')) σe Σw Tw (Cw, Ew) ∧
+              Owners (lP (below n')) σe Σw Tw (Cw, Ew) ∧
               ty_one_of T0 Tw T
         | PSess (SClos c) =>                           (* case 4 *)
             ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧
@@ -228,37 +228,37 @@ Definition mk_level (below : nat → level) (n : nat) : level :=
 Definition dummy_level : level :=
   {| lV := λ _ _ _, False; lE := λ _ _ _, False; lP := λ _ _ _, False |}.
 
-(** [fam n j] is level j, for every j < n (garbage above). *)
-Fixpoint fam (n : nat) : nat → level :=
+(** [levels n j] is level j, for every j < n (garbage above). *)
+Fixpoint levels (n : nat) : nat → level :=
   match n with
   | 0 => λ _, dummy_level
-  | S n' => λ j, if decide (j < n') then fam n' j else mk_level (fam n') n'
+  | S n' => λ j, if decide (j < n') then levels n' j else mk_level (levels n') n'
   end.
 
-Definition lvl (n : nat) : level := fam (S n) n.
+Definition level_at (n : nat) : level := levels (S n) n.
 
-Definition Vrel (n : nat) : senv → ty → expr → Prop := lV (lvl n).
-Definition Erel (n : nat) : senv → ty → expr → Prop := lE (lvl n).
-Definition Prel (n : nat) : senv → ty → proc → Prop := lP (lvl n).
+Definition Vrel (n : nat) : senv → ty → expr → Prop := lV (level_at n).
+Definition Erel (n : nat) : senv → ty → expr → Prop := lE (level_at n).
+Definition Prel (n : nat) : senv → ty → proc → Prop := lP (level_at n).
 
 (** ** Interface to the encoding *)
 
-Lemma lvl_eq n : lvl n = mk_level (fam n) n.
-Proof. unfold lvl. simpl. by destruct (decide (n < n)); [lia|]. Qed.
+Lemma level_at_eq n : level_at n = mk_level (levels n) n.
+Proof. unfold level_at. simpl. by destruct (decide (n < n)); [lia|]. Qed.
 
-Lemma fam_lvl n j : j < n → fam n j = lvl j.
+Lemma levels_at n j : j < n → levels n j = level_at j.
 Proof.
   revert j. induction n as [|n' IH]; intros j Hj; [lia|].
   simpl. destruct (decide (j < n')) as [H|H].
   - by apply IH.
-  - assert (j = n') as -> by lia. by rewrite lvl_eq.
+  - assert (j = n') as -> by lia. by rewrite level_at_eq.
 Qed.
 
 Lemma Erel_0 Σ T e : Erel 0 Σ T e.
-Proof. unfold Erel. rewrite lvl_eq. simpl. exact I. Qed.
+Proof. unfold Erel. rewrite level_at_eq. simpl. exact I. Qed.
 
 Lemma Prel_0 Σ T p : Prel 0 Σ T p.
-Proof. unfold Prel. rewrite lvl_eq. simpl. exact I. Qed.
+Proof. unfold Prel. rewrite level_at_eq. simpl. exact I. Qed.
 
 (** Members of the value relation are values. *)
 Lemma Vdef_val below n Σ T v : Vdef below n Σ T v → is_val v.
@@ -274,7 +274,7 @@ Proof.
 Qed.
 
 Lemma Vrel_val n Σ T v : Vrel n Σ T v → is_val v.
-Proof. unfold Vrel. rewrite lvl_eq. apply Vdef_val. Qed.
+Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_val. Qed.
 
 (** Values in the relation mention exactly the channels of Σ: the
     linear discipline has no weakening, so a value owns precisely the
@@ -298,7 +298,7 @@ Proof.
 Qed.
 
 Lemma Vrel_fchans n Σ T v : Vrel n Σ T v → fchans v = dom Σ.
-Proof. unfold Vrel. rewrite lvl_eq. apply Vdef_fchans. Qed.
+Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_fchans. Qed.
 
 (** Values of primitive type own no channels. *)
 Lemma Vdef_prim_empty below n Σ T v :
@@ -314,15 +314,15 @@ Proof.
 Qed.
 
 Lemma Vrel_prim_empty n Σ T v : prim T → Vrel n Σ T v → Σ = ∅.
-Proof. unfold Vrel. rewrite lvl_eq. apply Vdef_prim_empty. Qed.
+Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_prim_empty. Qed.
 
 (** TLR-VAL: values in V are in E. *)
 Lemma Vrel_Erel n Σ T v : Vrel n Σ T v → Erel n Σ T v.
 Proof.
   intros HV. assert (is_val v) by eauto using Vrel_val.
   destruct n as [|n']; [apply Erel_0|].
-  unfold Erel. rewrite lvl_eq. simpl. split_and!.
-  - intros _. unfold Vrel in HV. rewrite lvl_eq in HV. exact HV.
+  unfold Erel. rewrite level_at_eq. simpl. split_and!.
+  - intros _. unfold Vrel in HV. rewrite level_at_eq in HV. exact HV.
   - intros α e' Hst. exfalso. eauto using val_no_tstep.
 Qed.
 
@@ -332,7 +332,7 @@ Lemma Prel_S_irred n Σ T p :
   ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) Σ T v ∧
          (∀ e, e ∈ E → e = EUnit).
 Proof.
-  unfold Prel, Vrel. rewrite lvl_eq. simpl.
+  unfold Prel, Vrel. rewrite level_at_eq. simpl.
   intros (H1 & _) Hirr. exact (H1 Hirr).
 Qed.
 
@@ -341,11 +341,11 @@ Qed.
 Lemma Prel_S_tau n Σ T p p' :
   Prel (S n) Σ T p → preduction p p' → p'.1 ## dom Σ → Prel n Σ T p'.
 Proof.
-  unfold Prel at 1. rewrite lvl_eq. simpl.
+  unfold Prel at 1. rewrite level_at_eq. simpl.
   intros (_ & Hstep) Hred Hdisj.
   specialize (Hstep _ _ Hred). simpl in Hstep. specialize (Hstep Hdisj).
   destruct (decide (n < n)); [lia|].
-  unfold Prel. rewrite lvl_eq. exact Hstep.
+  unfold Prel. rewrite level_at_eq. exact Hstep.
 Qed.
 
 (** With an empty session environment, no session-labelled transition
@@ -353,7 +353,7 @@ Qed.
 Lemma Prel_S_empty_no_sess n T p σ p' :
   Prel (S n) ∅ T p → proc_step p (PSess σ) p' → False.
 Proof.
-  unfold Prel. rewrite lvl_eq. simpl.
+  unfold Prel. rewrite level_at_eq. simpl.
   intros (_ & Hstep) Hp. specialize (Hstep _ _ Hp).
   destruct σ as [c w|c w|c|cd]; simpl in Hstep.
   - destruct Hstep as (Σ1 & U & s & Heq & _).
@@ -373,39 +373,39 @@ Qed.
     Encoding-free unfoldings of the three relations: [Vrel_*_iff] per
     type constructor, [Erel_S_iff] / [Prel_S_iff] per positive step
     index (via the case predicates [Ecase] / [Pcase]). All later
-    proofs go through these and never touch [fam]/[lvl]. *)
+    proofs go through these and never touch [levels]/[level_at]. *)
 
 Lemma Vrel_unit_iff n Σ v : Vrel n Σ TUnit v ↔ Σ = ∅ ∧ v = EUnit.
-Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
+Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_sess_iff n Σ s v :
   Vrel n Σ (TSess s) v ↔
   ∃ c s0, v = Chan c ∧ Σ = {[c := s0]} ∧ unfoldS s0 = unfoldS s.
-Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
+Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_prod_iff n Σ T U v :
   Vrel n Σ (TProd T U) v ↔
   ∃ v1 v2 Σ1 Σ2, v = Pair v1 v2 ∧ senv_split Σ Σ1 Σ2 ∧
     Vrel n Σ1 T v1 ∧ Vrel n Σ2 U v2.
-Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
+Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_sum_iff n Σ T U v :
   Vrel n Σ (TSum T U) v ↔
   (∃ v', v = Inj1 v' ∧ Vrel n Σ T v')
   ∨ (∃ v', v = Inj2 v' ∧ Vrel n Σ U v').
-Proof. unfold Vrel. rewrite (lvl_eq n). cbn [mk_level lV Vdef]. done. Qed.
+Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_bang_iff n Σ T v :
   Vrel n Σ (TBang T) v ↔
   Σ = ∅ ∧ ∃ eb, v = EBang eb ∧ fchans eb = ∅ ∧
     ∀ j, j < n → Erel j ∅ T (subst1 (EBang eb) eb).
 Proof.
-  unfold Vrel, Erel. rewrite (lvl_eq n). cbn [mk_level lV Vdef].
+  unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply and_iff_compat_l.
   split; intros (eb & -> & Hfc & H); exists eb; (split_and!; [done..|]);
     intros j Hj.
-  - rewrite <-(fam_lvl n j Hj). by apply H.
-  - rewrite (fam_lvl n j Hj). by apply H.
+  - rewrite <-(levels_at n j Hj). by apply H.
+  - rewrite (levels_at n j Hj). by apply H.
 Qed.
 
 Lemma Vrel_bang_empty n Σ T v : Vrel n Σ (TBang T) v → Σ = ∅.
@@ -423,14 +423,14 @@ Lemma Vrel_lolli_iff n Σ T U v :
        Vrel j Σ' T w → Erel j (Σ ∪ Σ') U (subst1 w eb))
   ∨ (∃ k, v = Konst k ∧ Σ = ∅ ∧ konst_ty k (TLolli T U)).
 Proof.
-  unfold Vrel, Erel. rewrite (lvl_eq n). cbn [mk_level lV Vdef].
+  unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply or_iff_compat_r.
   split; intros (eb & -> & Hsup & H); exists eb; (split_and!; [done..|]);
     intros j Σ' w Hj Hd HV.
-  - rewrite <-(fam_lvl n j Hj). apply H; auto.
-    rewrite (fam_lvl n j Hj). exact HV.
-  - rewrite (fam_lvl n j Hj). apply H; auto.
-    rewrite <-(fam_lvl n j Hj). exact HV.
+  - rewrite <-(levels_at n j Hj). apply H; auto.
+    rewrite (levels_at n j Hj). exact HV.
+  - rewrite (levels_at n j Hj). apply H; auto.
+    rewrite <-(levels_at n j Hj). exact HV.
 Qed.
 
 (** The step-clause cases of the term relation at index S n'. *)
@@ -473,9 +473,9 @@ Lemma Erel_S_iff n Σ T e :
     (irred e → Vrel (S n) Σ T e) ∧
     (∀ α e', tstep e α e' → Ecase n Σ T α e').
 Proof.
-  unfold Ecase, Erel, Vrel. rewrite (lvl_eq (S n)).
+  unfold Ecase, Erel, Vrel. rewrite (level_at_eq (S n)).
   cbn [mk_level lV lE Edef].
-  rewrite (fam_lvl (S n) n (Nat.lt_succ_diag_r n)).
+  rewrite (levels_at (S n) n (Nat.lt_succ_diag_r n)).
   apply and_iff_compat_l.
   split; intros H α e' Hst; specialize (H α e' Hst);
     destruct α as [|[c w|c w|c|cd]|c w]; try exact H.
@@ -483,16 +483,16 @@ Proof.
     destruct H as (Σ1 & U & s & HΣ & Hc & H).
     exists Σ1, U, s. split_and!; [done|done|].
     intros j Σ2 Hj Hd Hcd HV.
-    rewrite <-(fam_lvl (S n) j) in HV by lia.
+    rewrite <-(levels_at (S n) j) in HV by lia.
     specialize (H j Σ2 Hj Hd Hcd HV).
-    rewrite (fam_lvl (S n) j) in H by lia. exact H.
+    rewrite (levels_at (S n) j) in H by lia. exact H.
   - (* recv, ← *)
     destruct H as (Σ1 & U & s & HΣ & Hc & H).
     exists Σ1, U, s. split_and!; [done|done|].
     intros j Σ2 Hj Hd Hcd HV.
-    rewrite (fam_lvl (S n) j) in HV by lia.
+    rewrite (levels_at (S n) j) in HV by lia.
     specialize (H j Σ2 Hj Hd Hcd HV).
-    rewrite <-(fam_lvl (S n) j) in H by lia. exact H.
+    rewrite <-(levels_at (S n) j) in H by lia. exact H.
 Qed.
 
 (** The step-clause cases of the process relation at index S n'. *)
@@ -519,7 +519,7 @@ Definition Pcase (n' : nat) (Σ : senv) (T : ty) (p : proc) (π : plabel)
         p'.2 = E0 ⊎ Ew ∧
         Vrel (S n') (Σv ∪ (dual <$> σe)) U w ∧
         Prel n' (<[c := s]> Σ0) T0 (C0, E0) ∧
-        Powners (Prel n') σe Σw Tw (Cw, Ew) ∧
+        Owners (Prel n') σe Σw Tw (Cw, Ew) ∧
         ty_one_of T0 Tw T
   | PSess (SClos c) =>
       ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' Σ1 T p'
@@ -539,9 +539,9 @@ Lemma Prel_S_iff n Σ T p :
              (∀ e, e ∈ E → e = EUnit)) ∧
     (∀ π p', proc_step p π p' → Pcase n Σ T p π p').
 Proof.
-  unfold Pcase, Prel, Vrel. rewrite (lvl_eq (S n)).
+  unfold Pcase, Prel, Vrel. rewrite (level_at_eq (S n)).
   cbn [mk_level lV lP Pdef].
-  rewrite (fam_lvl (S n) n (Nat.lt_succ_diag_r n)).
+  rewrite (levels_at (S n) n (Nat.lt_succ_diag_r n)).
   apply and_iff_compat_l.
   split; intros H π p' Hst; specialize (H π p' Hst);
     destruct π as [|[c w|c w|c|cd]]; try exact H.
@@ -549,16 +549,16 @@ Proof.
     destruct H as (Σ1 & U & s & HΣ & Hc & H).
     exists Σ1, U, s. split_and!; [done|done|].
     intros j Σ2 Hj Hd Hcd Hfr HV.
-    rewrite <-(fam_lvl (S n) j) in HV by lia.
+    rewrite <-(levels_at (S n) j) in HV by lia.
     specialize (H j Σ2 Hj Hd Hcd Hfr HV).
-    rewrite (fam_lvl (S n) j) in H by lia. exact H.
+    rewrite (levels_at (S n) j) in H by lia. exact H.
   - (* recv, ← *)
     destruct H as (Σ1 & U & s & HΣ & Hc & H).
     exists Σ1, U, s. split_and!; [done|done|].
     intros j Σ2 Hj Hd Hcd Hfr HV.
-    rewrite (fam_lvl (S n) j) in HV by lia.
+    rewrite (levels_at (S n) j) in HV by lia.
     specialize (H j Σ2 Hj Hd Hcd Hfr HV).
-    rewrite <-(fam_lvl (S n) j) in H by lia. exact H.
+    rewrite <-(levels_at (S n) j) in H by lia. exact H.
 Qed.
 
 (** Convenient corollaries of the characteristic equations. *)
@@ -729,7 +729,7 @@ Proof.
       eexists _, _, _, _, _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HP0]. lia.
-      * eapply Powners_mono; [|exact HPw].
+      * eapply Owners_mono; [|exact HPw].
         intros ? ? ? ?. eapply IH; [|eauto]. lia.
     + destruct H2 as (Σ1 & Hhd & ? & HP').
       eexists. split_and!; eauto. eapply IH; [|done]. lia.
@@ -963,7 +963,7 @@ Proof.
   intros n Σ' γ Hdisj Hg.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
-  apply Vrel_Erel. unfold Vrel. rewrite lvl_eq. simpl. done.
+  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq. simpl. done.
 Qed.
 
 (** E-Const *)
@@ -977,7 +977,7 @@ Proof.
   intros n Σ' γ Hdisj Hg.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
-  apply Vrel_Erel. unfold Vrel. rewrite lvl_eq.
+  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq.
   destruct Hk; simpl; right; eexists; split_and!; eauto using konst_ty.
 Qed.
 
@@ -1005,7 +1005,7 @@ Proof.
   intros n Σ' γ Hdisj Hg.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
-  apply Vrel_Erel. unfold Vrel. rewrite lvl_eq. simpl.
+  apply Vrel_Erel. unfold Vrel. rewrite level_at_eq. simpl.
   exists c, s. auto.
 Qed.
 
