@@ -1,23 +1,24 @@
-(** * Progress for the term and process LTS (constructively)
+(** * What we are trying to guarantee, and that the LTS delivers it
 
-    [act e] computes the action offered at the unique evaluation
-    position of [e], or [None] when [e] is irreducible. [act_step] and
-    [act_offer] show it is sound and complete for [tstep] (Fig. 2), and
-    [proc_progress] lifts this along the five rules of Fig. 3: a
-    process either is irreducible or has a transition.
+    The correctness criteria for processes (Defs. 2.4-2.6) and the
+    progress theorem: a process that offers no action is either
+    terminated or genuinely stuck. *)
 
-    That disjunction is the paper's step "if p is not irreducible then
-    it has some transition". Deriving it here rather than from
-    excluded middle is what keeps Lemma 3.5 ([Prel_safe]) and the two
-    CONNECT cases of Lemma 3.13 free of axioms.
+From stdpp Require Import base strings gmap gmultiset relations.
+From LRGV Require Export Semantics.
 
-    A term does not determine its label: T-Act-Recv offers an input for
-    every value and T-Act-Fork a channel of every name. So [act]
-    returns the redex and [offers] relates it to the family of labels
-    that redex admits. *)
+(** ** Properties of processes (Defs. 2.4–2.6) *)
 
-From stdpp Require Import base strings gmap gmultiset.
-From LRGV Require Export Processes.
+(** A terminated process has released all channels; the main thread
+    has computed a value and all forked threads have reduced to ∗. *)
+Definition terminated (p : proc) : Prop :=
+  ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ (∀ e, e ∈ E → e = EUnit).
+
+Definition safe (p : proc) : Prop :=
+  terminated p ∨ ∃ p', preduction p p'.
+
+Definition deadlock_free (p : proc) : Prop :=
+  ∀ p', pred_star p p' → safe p'.
 
 (** ** The action offered by a term *)
 

@@ -37,7 +37,7 @@
     compositionality, read as a program rather than as a wedge. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Import LogRel Compositionality Method.
+From LRGV Require Import Terms Fundamental Invariant.
 
 Local Open Scope string_scope.
 

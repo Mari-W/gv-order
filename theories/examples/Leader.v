@@ -22,7 +22,7 @@
     simulation with both continuations trivial). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Import LogRel Compositionality Method Examples.
+From LRGV Require Import Terms Fundamental Invariant Support.
 
 Local Open Scope string_scope.
 

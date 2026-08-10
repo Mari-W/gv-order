@@ -18,7 +18,7 @@
     Sugar: [let x = e1 in e2] is [App (Lam e2) e1]. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Import LogRel Compositionality Method Examples.
+From LRGV Require Import Terms Fundamental Invariant Support.
 
 Local Open Scope string_scope.
 

@@ -21,7 +21,7 @@
     is exercised as a program in Relay.v. *)
 
 From stdpp Require Import base strings gmap gmultiset.
-From LRGV Require Import LogRel Retarget.
+From LRGV Require Import Relation Renaming.
 
 (** ** A free self-forwarding is refuted by the relation *)
 

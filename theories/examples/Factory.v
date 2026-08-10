@@ -12,7 +12,7 @@
     that binding away — [factory_typed] below. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Import LogRel Compositionality Examples.
+From LRGV Require Import Terms Fundamental Support Sync.
 
 (** The worker is Examples.v's ff = λc. clos (send ⟨∗,c⟩), offering
     Sff = !∗.Close; forking it returns a ?∗.Close end. *)

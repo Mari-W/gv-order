@@ -68,7 +68,8 @@ def declarations():
     ends the block, except for the 'with ...' of a mutual definition.
     """
     out = {}
-    for path in sorted(glob.glob(os.path.join(ROOT, 'theories', '*.v'))):
+    for path in sorted(glob.glob(os.path.join(ROOT, 'theories', '**', '*.v'),
+                                 recursive=True)):
         rel = os.path.relpath(path, ROOT)
         base = os.path.splitext(os.path.basename(path))[0]
         in_inductive = False

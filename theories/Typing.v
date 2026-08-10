@@ -9,7 +9,7 @@
     every available binding to exactly one side. *)
 
 From stdpp Require Import base strings gmap gmultiset.
-From LRGV Require Export Processes Types.
+From LRGV Require Export Semantics Types.
 
 Definition lenv := list (option ty).
 

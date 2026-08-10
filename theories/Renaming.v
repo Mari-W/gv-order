@@ -18,7 +18,7 @@
     echsubst x d E = chsubst x d (eswap x d E). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export LogRel.
+From LRGV Require Export Relation.
 
 (** eswap commutes with the de Bruijn operations (channels and
     variables live in different namespaces). *)

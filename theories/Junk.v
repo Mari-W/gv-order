@@ -21,7 +21,7 @@
     bijective transposition transport [Prel_eswap]. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Retarget.
+From LRGV Require Export Renaming.
 
 (** ** Substitution on channels, labels, and label sets *)
 

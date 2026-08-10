@@ -5,7 +5,7 @@
     [expr], heap_lang style), so that ⟨v,v⟩ and ⟨e,e⟩ need not be
     distinguished syntactically. *)
 
-From stdpp Require Import base strings gmap countable.
+From stdpp Require Import base strings gmap gmultiset countable.
 
 Definition chan := string.
 
@@ -647,4 +647,106 @@ Lemma fchans_chsubst c d e :
   fchans (chsubst c d e) ⊆ (fchans e ∖ {[c]}) ∪ {[d]}.
 Proof.
   induction e; simpl; try set_solver. case_decide; set_solver.
+Qed.
+
+(** ** Processes: soups of threads over a set of restricted channels
+
+    A process is a pair (C, E) of a finite set C of (restricted)
+    channels and a finite multiset E of closed terms running in
+    parallel. *)
+
+Definition proc : Type := gset chan * gmultiset expr.
+
+(** Channels occurring free in some thread of E. *)
+Definition echans (E : gmultiset expr) : gset chan :=
+  ⋃ (fchans <$> elements E).
+
+(** E[d/c] — retarget channel c to d in every thread. *)
+Definition echsubst (c d : chan) (E : gmultiset expr) : gmultiset expr :=
+  gmultiset_map (chsubst c d) E.
+
+(** E[c↔d] — transpose the two channel names in every thread. The
+    forwarding step uses the transposition rather than the paper's
+    one-sided substitution: on soups where the surviving end does not
+    already occur — in particular every typed configuration, by
+    channel-tightness — the two coincide ([echswap_echsubst]), and the
+    transposition keeps the rule total and the composition lemmas
+    compositional (a one-sided substitution can merge a dead ⟨d,d⟩
+    forwarding pair into a live one, which no renaming-stability lemma
+    survives; see docs/link-design.md). *)
+Definition echswap (c d : chan) (E : gmultiset expr) : gmultiset expr :=
+  gmultiset_map (eswap c d) E.
+
+Lemma elem_of_echans x E : x ∈ echans E ↔ ∃ e, e ∈ E ∧ x ∈ fchans e.
+Proof.
+  unfold echans. rewrite elem_of_union_list. split.
+  - intros (X & HX & Hx). apply list_elem_of_fmap in HX as (e & -> & He).
+    exists e. split; [|done]. by apply gmultiset_elem_of_elements.
+  - intros (e & He & Hx). exists (fchans e). split; [|done].
+    apply list_elem_of_fmap. exists e. split; [done|].
+    by apply gmultiset_elem_of_elements.
+Qed.
+
+Lemma echans_disj_union E1 E2 : echans (E1 ⊎ E2) = echans E1 ∪ echans E2.
+Proof.
+  apply set_eq. intros x. rewrite elem_of_union, !elem_of_echans.
+  setoid_rewrite gmultiset_elem_of_disj_union. naive_solver.
+Qed.
+
+Lemma echans_empty : echans ∅ = ∅.
+Proof.
+  unfold echans. by rewrite gmultiset_elements_empty.
+Qed.
+
+Lemma echans_singleton e : echans {[+ e +]} = fchans e.
+Proof.
+  unfold echans. rewrite gmultiset_elements_singleton. simpl. set_solver.
+Qed.
+
+(** Substituting a channel that occurs in no thread is the identity. *)
+Lemma echswap_comm c d E : echswap c d E = echswap d c E.
+Proof.
+  unfold echswap. induction E as [|e E IH] using gmultiset_ind.
+  - by rewrite !gmultiset_map_empty.
+  - rewrite !gmultiset_map_disj_union, !gmultiset_map_singleton, IH.
+    by rewrite eswap_comm.
+Qed.
+
+Lemma echswap_echsubst_flip a b E :
+  echswap a b (echsubst b a E) = echsubst a b E.
+Proof.
+  unfold echswap, echsubst. induction E as [|e E IH] using gmultiset_ind.
+  - by rewrite !gmultiset_map_empty.
+  - rewrite !gmultiset_map_disj_union, !gmultiset_map_singleton, IH.
+    by rewrite eswap_chsubst_flip.
+Qed.
+
+Lemma echsubst_id c d E : c ∉ echans E → echsubst c d E = E.
+Proof.
+  induction E as [|e E IH] using gmultiset_ind; intros Hc.
+  - unfold echsubst. by rewrite gmultiset_map_empty.
+  - rewrite echans_disj_union, echans_singleton in Hc.
+    unfold echsubst in *.
+    rewrite gmultiset_map_disj_union, gmultiset_map_singleton.
+    rewrite chsubst_id by set_solver. rewrite IH by set_solver. done.
+Qed.
+
+Lemma echsubst_disj_union c d E1 E2 :
+  echsubst c d (E1 ⊎ E2) = echsubst c d E1 ⊎ echsubst c d E2.
+Proof. apply gmultiset_map_disj_union. Qed.
+
+Lemma echsubst_singleton c d e :
+  echsubst c d {[+ e +]} = {[+ chsubst c d e +]}.
+Proof. apply gmultiset_map_singleton. Qed.
+
+(** The soup substitution only introduces the surviving name. *)
+Lemma echans_echsubst_sub c d E :
+  echans (echsubst c d E) ⊆ echans E ∪ {[d]}.
+Proof.
+  induction E as [|e E IH] using gmultiset_ind.
+  - unfold echsubst. rewrite gmultiset_map_empty. set_solver.
+  - unfold echsubst in *.
+    rewrite gmultiset_map_disj_union, gmultiset_map_singleton,
+      !echans_disj_union, !echans_singleton.
+    pose proof (fchans_chsubst c d e). set_solver.
 Qed.

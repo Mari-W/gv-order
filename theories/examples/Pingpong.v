@@ -12,7 +12,7 @@
     equations are closed computations of [unfoldS]. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Import LogRel Compositionality Examples Replication.
+From LRGV Require Import Terms Fundamental Support Factory.
 
 (** The client's protocol: send a unit, then start over. Its dual
     computes to µα.?(∗).α — the polarity flip cancels on a variable

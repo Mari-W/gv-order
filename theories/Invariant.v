@@ -23,7 +23,7 @@
     transitions of concrete processes. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Compositionality.
+From LRGV Require Export Fundamental.
 
 (** ** Subjects of session transitions are free channels *)
 

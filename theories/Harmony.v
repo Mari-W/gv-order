@@ -28,7 +28,7 @@
     [tstep_fill_decomp]. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Import Semantics Processes.
+From LRGV Require Import Semantics.
 
 (** ** Evaluation contexts
 
