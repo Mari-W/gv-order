@@ -99,7 +99,7 @@ Proof.
       intros Hg. apply IHn; [lia|auto].
     + (* input *)
       destruct Hstep as (Σ1 & U & s & -> & Hc & H).
-      exists Σ1, U, s. split_and!; [done|done|].
+      exists Σ1, U, s. split_and!; [by apply senv_hd_nf|done|].
       intros j Σ2 Hj Hd Hcd Hfr HV.
       apply IHn; [lia|]. eapply H; eauto.
     + (* output *)
@@ -108,12 +108,13 @@ Proof.
         & Hcσ & Hp1 & Hcw & Hp2 & HV & HI0 & HPo & Hty).
       exists Σ0, Σv, U, s, σe, Σw, C0, E0, Cw, Ew, T0, Tw.
       split_and!; try done.
+      * subst Σ. by apply senv_hd_nf.
       * apply IHn; [lia|done].
       * eapply Powners_mono; [|exact HPo].
         intros Σ' T' q HIq. apply IHn; [lia|done].
     + (* close *)
       destruct Hstep as (Σ1 & -> & Hc & H).
-      exists Σ1. split_and!; [done|done|].
+      exists Σ1. split_and!; [by apply senv_hd_nf|done|].
       apply IHn; [lia|done].
 Qed.
 

@@ -71,7 +71,7 @@ Inductive head_red : expr → expr → Prop :=
       is_val v →
       head_red (Case (Inj2 v) e1 e2) (subst1 v e2)
   | HRedForce e :
-      head_red (Force (EBang e)) e.
+      head_red (Force (EBang e)) (subst1 (EBang e) e).
 
 Definition vred (e e' : expr) : Prop :=
   ∃ K eh eh', ectx_val K ∧ e = fill K eh ∧ e' = fill K eh' ∧

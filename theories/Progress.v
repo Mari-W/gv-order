@@ -220,7 +220,7 @@ Proof.
       try (destruct (IH _ _ Ha Hoff) as [e1' Hst]; exists (Force e1');
            by apply TStepForce).
     simplify_eq. destruct α; try done.
-    exists eb. by apply TStepHead, HeadForce.
+    exists (subst1 (EBang eb) eb). by apply TStepHead, HeadForce.
 Qed.
 
 (** ** Consequences at the term level *)
