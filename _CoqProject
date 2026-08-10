@@ -10,7 +10,8 @@ theories/Relation.v
 theories/Terms.v
 theories/Renaming.v
 theories/Junk.v
-theories/composition/Principles.v
+theories/Composition.v
+theories/composition/Term.v
 theories/composition/Independence.v
 theories/composition/Connection.v
 theories/Fundamental.v

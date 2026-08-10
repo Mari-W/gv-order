@@ -238,6 +238,11 @@ to the ones of \cref{sec:syntacticTyping:typeSys}.
 For the additional cases of the fundamental theorem, we propose the
 following compositionality lemmas.
 
+\mw{claude: the mechanization has a worked example for this section
+  that the paper does not: a recursive ping/pong over an equi-recursive
+  session type, typed and deadlock free (examples/Pingpong.v). Add it
+  as a short example, the way Sect. 4.1 has the leader election?}
+
 \begin{lemma}[Compositionality: \ruleLabel{exp}, \rocq{sem_typed_bang}]
   \label{lem:comp:exp}
   If,
@@ -475,6 +480,12 @@ treat the new operators as macros as follows.
   &
     \fFunc{req} & := \fFunc{{\tAbs{\tLVA}{\tLetI{\tIVX}{\tLVA}{\tApp{\tIVX}{\tUnit}}}}}
 \end{align*}
+
+\mw{claude: likewise here --- examples/Factory.v mechanizes a
+  replicated server: one factory value serving two independent
+  clients, plus a discarded request, typed and deadlock free. It is
+  the evidence that the encoding of Sect. 4.4 is usable end to end.
+  Add it as an example?}
 
 \begin{lemma}[Compositionality: \ruleLabel{exp}, \rocq{sem_typed_bang}]
   \label{lem:comp:exp-nr}
