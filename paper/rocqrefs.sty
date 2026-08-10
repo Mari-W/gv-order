@@ -1,0 +1,123 @@
+% rocqrefs.sty -- cite the mechanization from the paper, by name.
+%
+%   \rocq{fundamental_proc}
+%       [logo] Compositionality.v:fundamental_proc     (hyperlinked)
+%   \rocqas{Theorem 3.13}{fundamental_proc}
+%       [logo] Theorem 3.13                            (hyperlinked)
+%
+% Every reference resolves through paper/rocqrefs.tex, which
+% paper/rocqrefs.py regenerates from theories/*.v.  A reference to a
+% declaration that no longer exists is a build error, not a dead link.
+%
+% PERMALINKS.  rocqrefs.py pins the base URL to the HEAD *commit*, so a
+% link keeps pointing at the code the paper described even after the
+% branch moves on.  Regenerate and the links follow the sources:
+%
+%     make -C paper refs
+%
+% ANONYMITY.  The base is the only place the artifact's location
+% appears.  For submission regenerate against an Anonymous GitHub
+% mirror; nothing else in the paper changes.
+%
+%     python3 paper/rocqrefs.py gen --base https://anonymous.4open.science/r/XXXX/
+%
+% LOGO.  Drop the official Rocq logo into paper/ as rocq-logo.pdf (or
+% .png) and it is picked up automatically.  Without it the mark falls
+% back to a small typeset badge, so the paper builds with no external
+% assets and no licensing question.  Override wholesale by redefining
+% \rocqlogo.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{rocqrefs}[2026/08/09 links from the paper to the Rocq sources]
+
+\RequirePackage{hyperref}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+
+\definecolor{rocqlink}{rgb}{0.10,0.35,0.60}
+\definecolor{rocqbadge}{rgb}{0.45,0.13,0.13}
+
+% ---- the mark -------------------------------------------------------
+
+% The height is given in ex of the *current* font, so the mark shrinks
+% along with the citation text.
+\IfFileExists{rocq-logo.pdf}{%
+  \newcommand{\rocqlogo}{%
+    \raisebox{-0.1ex}{\includegraphics[height=1.15ex]{rocq-logo.pdf}}%
+    \kern0.2em}%
+}{%
+  \IfFileExists{rocq-logo.png}{%
+    \newcommand{\rocqlogo}{%
+      \raisebox{-0.1ex}{\includegraphics[height=1.15ex]{rocq-logo.png}}%
+      \kern0.2em}%
+  }{%
+    % Fallback badge: a small caps "R" in a rounded rule-free box.
+    \newcommand{\rocqlogo}{%
+      \raisebox{0.1ex}{\textcolor{rocqbadge}{\textbf{R}}}%
+      \kern0.2em}%
+  }%
+}
+
+% Citations are deliberately set much smaller than the surrounding
+% text: they annotate a claim, they are not part of it.
+\newcommand{\rocqstyle}{\scriptsize}
+
+% ---- the table ------------------------------------------------------
+
+% Set by the generated file; empty means "typeset names, do not link".
+\providecommand{\rocqbase}{}
+\newcommand{\rocqsetbase}[1]{\renewcommand{\rocqbase}{#1}}
+
+% \rocqdef{name}{path}{basename}{line} -- one per declaration.
+\newcommand{\rocqdef}[4]{%
+  \expandafter\gdef\csname rocq@loc@#1\endcsname{#2\#L#4}%
+  \expandafter\gdef\csname rocq@file@#1\endcsname{#3}%
+}
+
+% Suppress the link border for our links only.  Done with the
+% low-level hyperref hook rather than \hypersetup, because these
+% citations appear inside captions, where keyval parsing would break.
+\newcommand{\rocq@noborder}{%
+  \def\@pdfborder{0 0 0}%
+  \def\@pdfborderstyle{}%
+}
+
+\newcommand{\rocq@fail}[1]{%
+  \PackageError{rocqrefs}{No mechanized declaration named `#1'}%
+    {Run `make -C paper refs' after changing theories/.}%
+}
+
+% ---- the citations --------------------------------------------------
+
+% \rocqas{text}{name}
+%
+% The link is drawn without a border: the mark and the colored
+% monospace text already signal it, and 1000 boxed rules would make
+% the figures unreadable.  Scoped to this command, so the document's
+% own hyperref setup is untouched.
+\newcommand{\rocqas}[2]{%
+  \expandafter\ifx\csname rocq@loc@#2\endcsname\relax
+    \rocq@fail{#2}%
+  \else
+    \ifx\rocqbase\empty
+      \mbox{\rocqstyle\rocqlogo\texttt{#1}}%
+    \else
+      \begingroup
+        \rocq@noborder
+        \href{\rocqbase\csname rocq@loc@#2\endcsname}{%
+          \mbox{\rocqstyle\rocqlogo\textcolor{rocqlink}{\texttt{#1}}}}%
+      \endgroup
+    \fi
+  \fi
+}
+
+% \rocq{name} -- link text is File.v:name.
+\newcommand{\rocq}[1]{%
+  \expandafter\ifx\csname rocq@file@#1\endcsname\relax
+    \rocq@fail{#1}%
+  \else
+    \rocqas{\csname rocq@file@#1\endcsname:\detokenize{#1}}{#1}%
+  \fi
+}
+
+\endinput

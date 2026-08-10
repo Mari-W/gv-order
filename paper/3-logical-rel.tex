@@ -1,0 +1,830 @@
+\section{Semantic Session Typing for Deadlock Freedom}
+\label{sec:logicalRelation}
+
+In this section we define a (unary) logical relation with which
+we can define a semantic typing judgment
+$\fType{\Sigma \proves \fProc{p} : T}$
+fulfilling three goals:
+\begin{enumerate}[(1)]
+  \item It ensures deadlock freedom for closed processes (``adequacy'');
+  \item
+    It validates all the rules of the syntactic type system,
+    thus proving the ``fundamental property'' that
+    $
+      \fType{\Sigma \types \fProc{p} : T}
+      \implies
+      \fType{\Sigma \proves \fProc{p} : T}
+    $;
+  \item It contains safe but untypable processes.
+\end{enumerate}
+
+By ``validating the rules'' we mean that if one replaces $\types$ with $\proves$
+and interprets the inference rule as implication in \cref{fig:typeSys},
+one gets valid statements about the semantic judgment.
+Such a collection of lemmas is useful in two ways.
+First, the property
+$
+  \fType{\Sigma \types \fProc{p} : T}
+  \implies
+  \fType{\Sigma \proves \fProc{p} : T}
+$ follows immediately from them.
+Second, as we illustrate in \cref{sec:examples},
+it allows freely mixing judgments that are proven syntactically with
+ones that are proven semantically, in the same derivation.
+
+
+\subsection{A Logical Relation for \OurLang}
+\label{sec:logicalRelation:relation}
+
+The logical relation is defined on typing judgments on pairs
+$\fType{\Sigma \vdash T}$, denoting reliance on session environment
+$\fType{\Sigma}$ to provide a value of type $\fType{T}$.
+The relation is step-indexed and consists of three parts:
+$\lrVal{n}{\fType{\Sigma \vdash T}}$ for values,
+$\lrTerm{n}{\fType{\Sigma \vdash T}}$ for terms, and
+$\lrProc{n}{\fType{\Sigma \vdash T}}$ for processes.
+For technical reasons, the step index $n$ counts single reduction steps.
+
+The value relation constrains the terms that are irreducible to
+be values that belong to the declared type.
+
+\begin{definition}[Irreducible terms/processes, \rocq{irred}, \rocq{pirred}]
+We write $\irred \fFunc{e}$ if there are no $\lambda,\fFunc{e'}$ such that $\fFunc{e} \trans{\lambda} \fFunc{e'}$.
+We write $\irred \fProc{p}$ if there are no $\pi,\fProc{p'}$ such that $\fProc{p} \trans{\pi} \fProc{p'}$.
+\end{definition}
+
+\ed{TODO time permitting: improve explanation}
+The term relation is unusual when it comes to
+non-$\beta$-labeled transitions. The labels govern the channel
+management by adjusting the session environment $\fType{\Sigma}$. When
+creating a new thread ($\lFork{c}{v}$), we split it between
+the new thread ($\fType{\Sigma_1}$) and the original thread
+($\fType{\Sigma_2}$), which gets extended by the newly introduced
+channel $\fFunc{c}$. For input ($\lRecv{c}{v}$), we might obtain
+additional channels from another thread (in $\fType{\Sigma_2}$) and
+continue in the original session environment with an updated type for
+$\fFunc{c}$ extended by $\fType{\Sigma_2}$.
+For output ($\lSend{c}{v}$), we split off $\fType{\Sigma_2}$ which
+describes the channels that we pass to another thread and update
+$\fFunc{c}$.
+For closing ($\lTerm{c}$), we drop the channels $\fFunc{c}$.
+The relation steps at \emph{every} reduction because the right-hand
+side index of the relation is not smaller than the one on the
+left-hand side.
+
+The irreducible case of the process relation requires that there is
+one ``main'' thread which determines the final outcome. All threads
+must be reduced to values, but only the main thread may have a return
+type different from $\fType{\tUnit}$. The reducible cases are similar
+to the ones for terms.
+
+\begin{figure}[tp]
+  \textbf{Value logical relation} \rocq{Vdef}: %for all $n \ge 0$,
+  \begin{align*}
+    \lrVal{n}{\fType{\tEmpty \vdash \tUnit}} &= \set{\fFunc{\tUnit}}
+    \\
+    \lrVal{n}{\fType{\fFunc{c}:S \vdash S}} &= \set{\fFunc{c}}
+    \\
+    \lrVal{n}{\fType{\Sigma \vdash \lFunc{T}{U}}} &=
+      \set{\fFunc{\tAbs{\tLVA}{e}} \mid \fc(\fFunc{e}) = \dom(\fType{\Sigma}) \land \forall j < n , \fType{\Sigma'} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma' \vdash T}} \colon \fFunc{\tSub{e}{v}{\tLVA}} \in \lrTerm{j}{\fType{\Sigma, \Sigma' \vdash U}}}
+      \\
+      & \phantom{{}={}}\mathllap{{}\cup{}}
+      \set{\fFunc{k} \mid \fType{\fFunc{k}:\lFunc{T}{U}} \land \fType{\Sigma} = \fType{\tEmpty}}
+    \span\span
+    \\
+    \lrVal{n}{\fType{\Sigma_1, \Sigma_2 \vdash \lPair{T}{U}}} &= \set{\fFunc{\tPair{v_1}{v_2}} \mid \fFunc{v_1} \in \lrVal{n}{\fType{\Sigma_1 \vdash T}} \land \fFunc{v_2} \in \lrVal{n}{\fType{\Sigma_2 \vdash U}}}
+    \span\span
+  \end{align*}
+  \textbf{Term logical relation} \rocq{Edef}: % $n \ge 0$,
+  $\fFunc{e} \in
+  \lrTerm{n}{\fType{\Sigma \vdash T}}$ if either $n=0$ or if $n=n'+1$, then
+  \begin{itemize}
+    \item $\irred \fFunc{e}$ implies $\fFunc{e} \in \lrVal{n}{\fType{\Sigma \vdash T}}$, or
+    \item $\lnot \irred \fFunc{e}$ implies, for all $\fFunc{e} \trans{\lambda} \fFunc{e'}$:
+      \begin{enumerate}
+        \item If ${\lambda = \beta}$ then ${\fFunc{e'} \in \lrTerm{n'}{\fType{\Sigma \vdash T}}}$.
+        \item If ${\lambda = \lFork{c}{v}}$ and $\fFunc{c}\not\in\dom(\fType{\Sigma})$ then\\ ${\fType{\Sigma} = \fType{\Sigma_1,\Sigma_2}}$ and ${\fFunc{v} \in \lrVal{n}{\fType{\Sigma_1 \vdash \lFunc{S}{\tUnit}}}}$ and ${\fFunc{e'} \in \lrTerm{n'}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash T}}}$.
+        \item If ${\lambda = \lRecv{c}{v}}$ then\\ $\fType{\Sigma} =
+          \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ and for all $j\le n'$,
+          for all $\fType{\Sigma_2}$ where ${\fFunc{v} \in
+                    \lrVal{j}{\fType{\Sigma_2 \vdash U}}}$,
+            it must be that
+            ${\fFunc{e'} \in \lrTerm{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}$.
+        \item If ${\lambda = \lSend{c}{v}}$ then\\ $\fType{\Sigma} = \fType{\Sigma_1, \Sigma_2, \fFunc{c}:\sSend{U}{S}}$ and ${\fFunc{v} \in \lrVal{n}{\fType{\Sigma_2 \vdash U}}}$ and ${\fFunc{e'} \in \lrTerm{n'}{\fType{\Sigma_1, \fFunc{c}:S \vdash T}}}$.
+        \item If $\lambda = \lTerm{c}$ then\\ $\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sTerm}$ and $\fFunc{e'} \in \lrTerm{n'}{\fType{\Sigma_1 \vdash T}}$.
+      \end{enumerate}
+  \end{itemize}
+  \textbf{Process logical relation} \rocq{Pdef}: %for all $n \ge 0$
+  $\fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}}$ if either $n=0$ or if
+  $n=n'+1$, then
+  \begin{itemize}
+    \item $\irred \fProc{p}$ implies $\fProc{p} = \fProc{(\emptyset, \mset{\fFunc{v}} \uplus E)}$ and $\fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T}}$ and $ \forall \fFunc{e} \in \fProc{E}\st \fFunc{e} = \fFunc{\tUnit}$, or
+    \item $\lnot \irred \fProc{p}$ implies, for all $\fProc{p} \trans{\pi} \fProc{p'}$
+      with $\fProc{p}=\fProc{(C,E)}$ and $\fProc{p'}=\fProc{(C',E')}$,
+      \begin{enumerate}
+        \item If ${\pi = \tau}$ and $\fProc{C'} \disjoint \dom(\fType{\Sigma})$ then $\fProc{p'} \in \lrProc{n'}{\fType{\Sigma \vdash T}}$.
+        \item If ${\pi = \lRecv{c}{v}}$ then\\ $\fType{\Sigma} =
+          \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ and for all
+          $j\le n'$, for all $\fType{\Sigma_2}$ with $\dom(\fType{\Sigma_2}) \disjoint \fProc{C}$ and ${\fFunc{v} \in
+                    \lrVal{j}{\fType{\Sigma_2 \vdash U}}}$ it must be that ${\fProc{p'} \in \lrProc{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}$.
+
+        \item If ${\pi = \lSend{c}{v}}$ then\\
+          ${\fType{\Sigma} = \fType{\Sigma_0, \Sigma_v, \Sigma_w, \fFunc{c}:\sSend{U}{S}}}$
+          and there are a session environment $\fType{\Sigma_e}$ with
+          $\dom(\fType{\Sigma_e}) = \fc(\fFunc{v}) \cap \fProc{C}$
+          (the restricted channels that escape with the message)
+          and $\dom(\fType{\Sigma_e}) \disjoint \dom(\fType{\Sigma})$,
+          a splitting $\fProc{C'} = \fProc{C_0} \cupdot \fProc{C_w}$ and
+          $\fProc{E'} = \fProc{E_0} \uplus \fProc{E_w}$,
+          and types $\fType{T_0},\fType{T_w}$ with $\set{\fType{T_0},\fType{T_w}} = \set{\fType{T},\tUnit}$,
+          such that
+          \begin{enumerate*}[(a)]
+            \item ${\fFunc{v} \in \lrVal{n}{\fType{\Sigma_v, \dual{\Sigma_e} \vdash U}}}$,
+              where $\fType{\dual{\Sigma_e}}$ dualizes every type of $\fType{\Sigma_e}$;
+            \item $\fProc{(C_0, E_0)} \in \lrProc{n'}{\fType{\Sigma_0, \fFunc{c}:S \vdash T_0}}$; and
+            \item $\fProc{(C_w, E_w)} \in \lrOwn{n'}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}$
+              (\cref{def:owners}).
+          \end{enumerate*}
+
+        \item If ${\pi = \lTerm{c}}$ then\\ ${\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sTerm}}$ and $\fProc{p'} \in \lrProc{n'}{\fType{\Sigma_1 \vdash T}}$.
+      \end{enumerate}
+      \ed{todo: maybe rewrite as inference rules for readability}
+  \end{itemize}
+  \caption{Value, term and process logical relations.}
+  \Description{The value logical relation given by four equations indexed by the type; the term relation given by an irreducible case and five cases indexed by the transition label; and the process relation given by an irreducible case and four cases indexed by the transition label.}
+  \label{fig:logrel}
+\end{figure}
+
+
+The same relations read more directly as inference rules, which is also
+how they are mechanized.
+\Cref{fig:logrel-rules-term,fig:logrel-rules-proc} give that
+presentation.
+The step index is inductive: \ruleLabel{E-Zero} and \ruleLabel{P-Zero}
+are the base case, and every premise of \ruleLabel{E-Step} and
+\ruleLabel{P-Step} mentions a relation either at a strictly smaller
+index or --- in the irreducible premise --- at the same index but on a
+value, where the only recursive use (\ruleLabel{V-Abs}) again drops the
+index.
+The obligations a transition has to discharge are factored into an
+auxiliary judgment
+$\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}$,
+read ``this transition is accounted for at $\fType{\Sigma \vdash T}$,
+with continuations at index~$n$''.
+Its rules are directed by the label, one per label shape, so the
+judgment is a definition by cases in rule clothing.
+A transition whose side condition fails carries no obligation at all.
+
+\begin{figure}[tp]
+  \textbf{Values} \rocq{Vdef}
+  \begin{mathpar}
+    \begin{bussproof}[V-Unit]
+      \bussAx{\fFunc{\tUnit} \in \lrVal{n}{\fType{\tEmpty \vdash \tUnit}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[V-Chan]
+      \bussAx{\fFunc{c} \in \lrVal{n}{\fType{\fFunc{c}:S \vdash S}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[V-Const]
+      \bussAs{\fType{\fFunc{k} : \lFunc{T}{U}}}
+      \bussU{\fFunc{k} \in \lrVal{n}{\fType{\tEmpty \vdash \lFunc{T}{U}}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[V-Pair]
+      \bussAs{\fFunc{v_1} \in \lrVal{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussAs{\fFunc{v_2} \in \lrVal{n}{\fType{\Sigma_2 \vdash U}}}
+      \bussB{\fFunc{\tPair{v_1}{v_2}} \in \lrVal{n}{\fType{\Sigma_1, \Sigma_2 \vdash \lPair{T}{U}}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[V-Abs]
+      \bussAs{\fc(\fFunc{e}) = \dom(\fType{\Sigma})}
+      \bussAs{\forall j<n , \fType{\Sigma'} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma' \vdash T}}\st
+              \fFunc{\tSub{e}{v}{\tLVA}} \in \lrTerm{j}{\fType{\Sigma, \Sigma' \vdash U}}}
+      \bussB{\fFunc{\tAbs{\tLVA}{e}} \in \lrVal{n}{\fType{\Sigma \vdash \lFunc{T}{U}}}}
+    \end{bussproof}
+  \end{mathpar}
+  \textbf{Terms} \rocq{Edef}
+  \begin{mathpar}
+    \begin{bussproof}[E-Zero]
+      \bussAx{\fFunc{e} \in \lrTerm{0}{\fType{\Sigma \vdash T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[E-Step]
+      \bussAs{\irred \fFunc{e} \implies \fFunc{e} \in \lrVal{n+1}{\fType{\Sigma \vdash T}}}
+      \bussAs{\forall \lambda, \fFunc{e'}\st \fFunc{e} \trans{\lambda} \fFunc{e'}
+              \implies \obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}}
+      \bussB{\fFunc{e} \in \lrTerm{n+1}{\fType{\Sigma \vdash T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \textbf{Obligations of a term transition}
+  $\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}$
+  \begin{mathpar}
+    \begin{bussproof}[O-Beta]
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma \vdash T}}}
+      \bussU{\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\beta} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Close]
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sTerm}}{n}{\fFunc{e} \trans{\lTerm{c}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Fork]
+      \bussAs{\fFunc{c} \not\in \dom(\fType{\Sigma_1,\Sigma_2})}
+      \bussAs{\fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_1 \vdash \lFunc{S}{\tUnit}}}}
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash T}}}
+      \bussT{\obl{\fType{\Sigma_1, \Sigma_2}}{n}{\fFunc{e} \trans{\lFork{c}{v}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Send]
+      \bussAs{\fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_2 \vdash U}}}
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1, \fFunc{c}:S \vdash T}}}
+      \bussB{\obl{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:\sSend{U}{S}}}{n}{\fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Recv]
+      \bussAs{\forall j \le n , \fType{\Sigma_2} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash U}}\st
+              \fFunc{e'} \in \lrTerm{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}}{n}{\fFunc{e} \trans{\lRecv{c}{v}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \caption{The value and term logical relations of \cref{fig:logrel},
+    as inference rules.}
+  \Description{The same value and term relations as inference rules: five rules for values, a base and a step rule for terms, and five rules for the obligation judgment, one per transition label.}
+  \label{fig:logrel-rules-term}
+\end{figure}
+
+\begin{figure}[tp]
+  \textbf{Processes} \rocq{Pdef}
+  \begin{mathpar}
+    \begin{bussproof}[P-Zero]
+      \bussAx{\fProc{p} \in \lrProc{0}{\fType{\Sigma \vdash T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[P-Step]
+      \bussAs{\irred \fProc{p} \implies
+              \fProc{p} = \fProc{(\emptyset, \mset{\fFunc{v}} \uplus E)} \land
+              \fFunc{v} \in \lrVal{n+1}{\fType{\Sigma \vdash T}} \land
+              \forall \fFunc{e} \in \fProc{E}\st \fFunc{e} = \fFunc{\tUnit}}
+      \bussAs{\forall \pi, \fProc{p'}\st \fProc{p} \trans{\pi} \fProc{p'}
+              \implies \obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\pi} \fProc{p'} : \fType{T}}}
+      \bussB{\fProc{p} \in \lrProc{n+1}{\fType{\Sigma \vdash T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \textbf{Obligations of a process transition}
+  $\obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\pi} \fProc{p'} : \fType{T}}$,
+  where $\fProc{p} = \fProc{(C,E)}$ and $\fProc{p'} = \fProc{(C',E')}$
+  \begin{mathpar}
+    \begin{bussproof}[Q-Tau]
+      \bussAs{\fProc{C'} \disjoint \dom(\fType{\Sigma})}
+      \bussAs{\fProc{p'} \in \lrProc{n}{\fType{\Sigma \vdash T}}}
+      \bussB{\obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\tau} \fProc{p'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[Q-Close]
+      \bussAs{\fProc{p'} \in \lrProc{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sTerm}}{n}{\fProc{p} \trans{\lTerm{c}} \fProc{p'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[Q-Recv]
+      \bussAs{\forall j \le n , \fType{\Sigma_2} \text{ with } \dom(\fType{\Sigma_2}) \disjoint \fProc{C} ,
+              \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash U}}\st
+              \fProc{p'} \in \lrProc{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}}{n}{\fProc{p} \trans{\lRecv{c}{v}} \fProc{p'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[Q-Send]
+      \bussAs{\begin{array}{@{}l@{}}
+        \dom(\fType{\Sigma_e}) = \fc(\fFunc{v}) \cap \fProc{C}
+        \quad
+        \dom(\fType{\Sigma_e}) \disjoint \dom(\fType{\Sigma_0,\Sigma_v,\Sigma_w})
+        \quad
+        \set{\fType{T_0},\fType{T_w}} = \set{\fType{T},\tUnit}
+        \\
+        \fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_v, \dual{\Sigma_e} \vdash U}}
+        \quad
+        \fProc{(C_0,E_0)} \in \lrProc{n}{\fType{\Sigma_0, \fFunc{c}:S \vdash T_0}}
+        \quad
+        \fProc{(C_w,E_w)} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}
+      \end{array}}
+      \bussU{\obl{\fType{\Sigma_0, \Sigma_v, \Sigma_w, \fFunc{c}:\sSend{U}{S}}}{n}
+              {\fProc{p} \trans{\lSend{c}{v}} \fProc{(C_0 \cupdot C_w, E_0 \uplus E_w)} : \fType{T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \textbf{Owner families} $\fProc{p} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ \rocq{Powners}
+  \begin{mathpar}
+    \begin{bussproof}[O-Nil]
+      \bussAx{\fProc{(\emptyset,\emptyset)} \in \lrOwn{n}{\fType{\tEmpty ; \tEmpty \vdash \tUnit}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Cons]
+      \bussAs{\fProc{(C_d,E_d)} \in \lrProc{n}{\fType{\Sigma_d, \fFunc{d}:S \vdash T_d}}}
+      \bussAs{\fProc{(C_r,E_r)} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma_r \vdash T_r}}}
+      \bussAs{\set{\fType{T_d},\fType{T_r}} = \set{\fType{T},\tUnit}}
+      \bussT{\fProc{(C_d \cupdot C_r, E_d \uplus E_r)} \in \lrOwn{n}{\fType{\Sigma_e, \fFunc{d}:S ; \Sigma_d, \Sigma_r \vdash T}}}
+    \end{bussproof}
+  \end{mathpar}
+  \caption{The process logical relation of \cref{fig:logrel} and the
+    owner family of \cref{def:owners}, as inference rules.}
+  \Description{The process relation as a base and a step rule, four obligation rules indexed by the transition label, and two rules defining the owner family inductively.}
+  \label{fig:logrel-rules-proc}
+\end{figure}
+
+The third case of the process relation refers to an auxiliary
+\emph{owner family} relation, which distributes the escaped channels
+over the residual process one channel at a time.
+
+\begin{definition}[Owner family, \rocq{Powners}]
+\label{def:owners}
+  Let $\fType{\Sigma_e}$ be a session environment.
+  We write
+  $\fProc{p} \in \lrOwn{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$
+  if $\fProc{p} = \fProc{(\biguplus_{d} C_d, \biguplus_{d} E_d)}$
+  decomposes into a family of pairwise independent processes
+  $\fProc{p_d} = \fProc{(C_d,E_d)}$, one for each
+  $\fFunc{d} \in \dom(\fType{\Sigma_e})$, such that
+  $ \fProc{p_d} \in \lrProc{n}{\fType{\Sigma_d , \fFunc{d}:\Sigma_e(\fFunc{d}) \vdash T_d}} $
+  where $\fType{\Sigma} = \fType{\Sigma_d}_{\fFunc{d}}$
+  and at most one of the $\fType{T_d}$ differs from $\fType{\tUnit}$,
+  that one being $\fType{T}$
+  (if $\dom(\fType{\Sigma_e}) = \emptyset$ then
+  $\fProc{p} = \fProc{(\emptyset,\emptyset)}$,
+  $\fType{\Sigma} = \fType{\tEmpty}$ and $\fType{T} = \fType{\tUnit}$).
+\end{definition}
+
+Assigning each escaped channel its \emph{own} owner is what makes the
+case usable: a single piece owning two escaped channels could close a
+dependency cycle through the environment, and the compositionality
+proofs reconnect each transferred channel to its owner separately.
+
+We can now define semantic counterparts to the typing judgments for terms
+and for processes from the logical relation.
+The typing judgment for terms applies to terms with free variables
+and, as a consequence, is parameterized by
+a variable environment~$\fType{\Delta}$ in addition to
+a session environment~$\fType{\Sigma}$.
+However our term logical relation only considers terms with no free variables.
+To bridge the gap, we introduce \emph{grounding substitutions},
+as is standard, to close an open term by substituting the free variables
+with closed terms respecting their assumed types.
+
+\begin{definition}[Grounding substitutions, \rocq{grounding}]
+  % For $n\in\Nat$,
+  We define $ \lrGSub{n}{\fType{\Sigma;\Delta}} $~by:
+  \[
+    \def\tSigma#1{\fType{\Sigma_{#1}}}
+    \def\x#1{\fFunc{x_{#1}}}
+    \def\v#1{\fFunc{v_{#1}}}
+    \def\T#1{\fType{T_{#1}}}
+    \lrGSub{n}{\tSigma{} ; \x1 : \T1, \dots, \x k : \T k} :=
+      \left\{
+        [\x 1/\v 1,\dots,\x k/\v k] \;\middle|\;
+          % \forall 1 \leq i \leq k.\,
+          \begin{matrix}
+          \tSigma{} = \tSigma1,\dots,\tSigma k
+            \\
+          \forall i.\,
+            \v i \in \lrVal{n}{\tSigma i \vdash \T i}
+          \end{matrix}
+      \right\}
+  \]
+\end{definition}
+
+\begin{definition}[Semantic judgments, \rocq{sem_typed}, \rocq{sem_ptyped}]
+\label{def:sem-judgments}
+  We define:
+  \begin{align*}
+    \fType{\Sigma;\Delta \proves \fFunc{e} : T} := {} &
+      \forall n\in\Nat.\,
+        \forall \gamma \in \lrGSub{n}{\fType{\Sigma;\Delta}}.\,
+          \fFunc{e}\gamma \in \lrTerm{n}{\fType{\Sigma \vdash T}}
+    \\
+    \fType{\Sigma \proves \fProc{p} : T} := {} &
+      \forall n\in\Nat.\,
+        \fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}}
+  \end{align*}
+\end{definition}
+
+Note how adopting an LTS semantics spared us from defining closing contexts
+to define the semantic judgment for open processes.
+
+To prove adequacy of our logical relation, we need two auxiliary lemmas.
+
+\begin{lemma}[\rocq{Prel_steps}]
+\label{lm:lrproc-inv}
+  For all $n \in \Nat$ and $m\in \Nat$,
+  if $ p \in \lrProc{n+m}{\fType{\Sigma \vdash T}} $
+  then, for all~$p'$,
+  $
+    {p \redu^n p'} $ implies $ {p' \in \lrProc{m}{\fType{\Sigma \vdash T}}}.
+  $
+\end{lemma}
+\begin{proof}
+  By a straightforward induction on~$n$.
+\end{proof}
+
+\begin{lemma}[\rocq{Prel_safe}]
+\label{lm:lrproc-safe}
+  For all $n \in \Nat$,
+  if $ p \in \lrProc{n+1}{\fType{\tEmpty \vdash T}} $
+  then $p$ is safe.
+\end{lemma}
+\begin{proof}
+  If $\irred p$ holds,
+  then by $ p \in \lrProc{n+1}{\fType{\tEmpty \vdash T}} $
+  we know $\fProc{p} = \fProc{(\emptyset, \mset{\fFunc{v}} \uplus E)}$
+  and $ \forall \fFunc{e} \in \fProc{E}\st \fFunc{e} = \fFunc{\tUnit}$,
+  which means $p$ is terminated, hence safe.
+
+  If $\irred p$ does \emph{not} hold,
+  then there is some transition~$p \trans{\pi} p'$.
+  The definition of the process logical relation
+  require a non-empty session environment
+  in all the cases where~$\pi \ne \tau$,
+  so by $ p \in \lrProc{n+1}{\fType{\tEmpty \vdash T}} $
+  we have $\pi = \tau$.
+  Hence $p\redu p'$ and so~$p$ is safe.
+\end{proof}
+
+\begin{theorem}[Adequacy, \rocq{adequacy}]
+  \label{thm:adequacy}
+  If $\fType{\tEmpty \proves \fProc{p} : T}$ then
+  $\fProc{p}$ is deadlock free.
+\end{theorem}
+
+\begin{proof}
+  Let $p \redu^m p'$.
+  From $\fType{\tEmpty \proves \fProc{p} : T}$ we know
+  $
+    \forall n\in\Nat.\,
+      \fProc{p} \in \lrProc{n}{\fType{\tEmpty \vdash T}}.
+  $
+  Pick $n = m+1$.
+  Then, by \cref{lm:lrproc-inv},
+  ${p' \in \lrProc{1}{\fType{\tEmpty \vdash T}}}$.
+  By \cref{lm:lrproc-safe} $p'$ is safe.
+  Thus~$p$ is deadlock free.
+\end{proof}
+
+We now move to the second goal of our logical relation,
+\ie proving that it validates all the rules of the type system.
+The result hinges on a series of ``compositionality'' lemmas,
+one for each rule.
+We report here the ones for the process judgment,
+and give a proof sketch of \ruleLabel{P-Connect}
+as a representative example of the arguments involved.
+
+\begin{lemma}[Downward closure, \rocq{Erel_down}, \rocq{Prel_down}]
+  \label{lem:lr-dwdcl}
+  If $ \fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T}} $,
+  then $ \fFunc{e} \in \lrTerm{m}{\fType{\Sigma \vdash T}} $
+  for every $ m \le n $.
+  %%%
+  If $ \fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}} $,
+  then $ \fProc{p} \in \lrProc{m}{\fType{\Sigma \vdash T}} $
+  for every $ m \le n $.
+\end{lemma}
+
+% \begin{lemma}[Compositionality: \ruleLabel{abs}]
+%   \label{lem:comp:abs}
+%   If
+%   $\fFunc{\tSub{e}{v}{\tLVA}} \in \lrTerm{n}{\fType{\Sigma, \Sigma'
+%       \vdash U}}$ for all $n\ge0$ and every
+%   $\fFunc{v} \in \lrVal{n}{\fType{\Sigma' \vdash T}}$,
+%   then it holds that
+%   $\fFunc{\tAbs{\tLVA}{e}} \in \lrTerm{n}{\fType{\Sigma \vdash
+%       \lFunc{T}{U}}}$, for all $n\ge0$.
+% \end{lemma}
+
+% \begin{lemma}[Compositionality: \ruleLabel{app}]
+%   \label{lem:comp:app}
+%   If
+%   $\fFunc{e_1} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \lFunc{T}{U}}}$
+%   and
+%   $\fFunc{e_2} \in \lrTerm{n}{\fType{\Sigma_2 \vdash T}}$,
+%   then
+%   $\fFunc{\tApp{e_1}{e_2}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2 \vdash U}}$.
+% \end{lemma}
+
+% \begin{lemma}[Compositionality: \ruleLabel{pair}]
+%   \label{lem:comp:pair}
+%   If
+%   $\fFunc{e_1} \in \lrTerm{n}{\fType{\Sigma_1 \vdash T}}$
+%   and
+%   $\fFunc{e_2} \in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$,
+%   then
+%   $\fFunc{\tPair{e_1}{e_2}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2 \vdash \lPair{T}{U}}}$.
+% \end{lemma}
+
+% \begin{lemma}[Compositionality: \ruleLabel{let*}]
+%   \label{lem:comp:letUnit}
+%   If
+%   $\fFunc{e_1} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \tUnit}}$
+%   and
+%   $\fFunc{e_2} \in \lrTerm{n}{\fType{\Sigma_2 \vdash T}}$,
+%   then
+%   $\fFunc{\tLet*{e_1}{e_2}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}}$.
+% \end{lemma}
+
+% \begin{lemma}[Compositionality: \ruleLabel{let}]
+%   \label{lem:comp:let}
+%   If
+%   $\fFunc{e_1} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \lPair{U}{V}}}$
+%   and
+%   $\fFunc{\tSub{\tSub{e_2}{u}{\tLVA}}{v}{\tLVB}} \in \lrTerm{n}{\fType{\Sigma_2, \Sigma_2', \Sigma_2'' \vdash T}}$
+%   for every
+%   $\fFunc{u} \in \lrVal{n}{\fType{\Sigma_2' \vdash U}}$
+%   and every
+%   $\fFunc{v} \in \lrVal{n}{\fType{\Sigma_2'' \vdash V}}$,
+%   then it holds that
+%   ${\fFunc{\tLet[\tLVA][\tLVB]{e_1}{e_2}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}}}$.
+% \end{lemma}
+
+\begin{lemma}[Compositionality: \ruleLabel{term}, \rocq{Prel_term}]
+  \label{lem:comp:term}
+  If
+  $\primitive \fType{T}$
+  and
+  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T}}$,
+  then it holds that
+  ${\fProc{(\emptyset, \mset{\fFunc{e}})} \in \lrProc{n}{\fType{\Sigma \vdash T}}}$.
+\end{lemma}
+\begin{lemma}[Compositionality: \ruleLabel{independent}, \rocq{Prel_independent}]
+  \label{lem:comp:independent}
+  If
+  $\primitive \fType{T}$
+  and
+  $\fProc{(C_1, E_1)} \in \lrProc{n}{\fType{\Sigma_1 \vdash T}}$
+  and
+  $\fProc{(C_2, E_2)} \in \lrProc{n}{\fType{\Sigma_2 \vdash \tUnit}}$
+  and
+  $\fProc{C_1} \disjoint \dom(\fType{\Sigma_2})$
+  and
+  $\fProc{C_2} \disjoint \dom(\fType{\Sigma_1})$,
+  then
+  $\fProc{(C_1 \cupdot C_2, E_1 \uplus E_2)} \in \lrProc{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}}$.
+\end{lemma}
+
+\begin{lemma}[Compositionality: \ruleLabel{connect}, \rocq{Prel_connect}]
+  \label{lem:comp:connect}
+  If
+  $\primitive \fType{T}$
+  and
+  $\fProc{(C_1, E_1)} \in \lrProc{n}{\fType{\Sigma_1, \fFunc{c}:S \vdash T}}$
+  and
+  $\fProc{(C_2, E_2)} \in \lrProc{n}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash \tUnit}}$
+  and
+  $\fProc{C_1} \disjoint \dom(\fType{\Sigma_2})$
+  and
+  $\fProc{C_2} \disjoint \dom(\fType{\Sigma_1})$,
+  then it holds that
+  $\fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1 \uplus E_2)} \in \lrProc{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}}$.
+\end{lemma}
+
+\begin{proof}
+  We proceed by induction on~$n$, generalizing over all the other variables.
+  The base case~$n=0$ is trivial as the logical relation then includes every
+  process.
+  For the induction step, we can assume the statement holds at $n-1$
+  and we need to prove
+  $\fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1 \uplus E_2)} \in \lrProc{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}}$ under the stated assumptions.
+  First we observe that both terms need to be reducible,
+  as otherwise the assumptions
+  $\fProc{(C_1, E_1)} \in \lrProc{n}{\fType{\Sigma_1, \fFunc{c}:S \vdash T}}$
+  and
+  $\fProc{(C_2, E_2)} \in \lrProc{n}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash \tUnit}}$
+  would be contradictory, as the irreducible case requires an empty
+  session environment, but they both contain a type assignment for~$\fFunc{c}$.
+  So we need to consider all possible reductions of $(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1 \uplus E_2)$.
+  The cases where only $(C_1, E_1)$ or only $(C_2, E_2)$ is inducing the transition,
+  which can only happen if the label is not a send or receive on $\fFunc{c}$
+  (as per \ruleLabel{P-Act-Session}),
+  are easily discharged by using \cref{lem:lr-dwdcl} and the induction hypothesis.
+  The interesting case is when the transition arises from
+  \ruleLabel{P-Act-Msg} or \ruleLabel{P-Act-Close}.
+  The two cases are similar so we focus on the former.
+  By \ruleLabel{P-Act-Msg}, we have one term $\fFunc{e}$
+  in $E_1 \uplus E_2$
+  making a $\fFunc{e}\trans{\lSend{c}{v}}\fFunc{e'}$ transition,
+  and another term $\fFunc{f}$ making a $\fFunc{f} \trans{\lRecv{c}{v}} \fFunc{f'}$ transition.
+  If both $\fFunc{e}$ and $\fFunc{f}$ come from the same~$E_i$ then
+  we can just invoke the induction hypothesis using the
+  assumption that $\fProc{(C_i, E_i)}$ is in the logical relation.
+  Otherwise, we can assume, w.l.o.g., that
+  $\fFunc{e} \in E_1$ and $\fFunc{f} \in E_2$.
+  Then the assumption
+  $\fProc{(C_1, E_1)} \in \lrProc{n}{\fType{\Sigma_1, \fFunc{c}:S \vdash T}}$
+  gives us
+  that $\fType{S}=\fFunc{c}:\sSend{U}{S'}$ for some $\fType{U},\fType{S'}$;
+  and that ${\fFunc{v} \in \lrVal{n}{\fType{\Sigma_4 \vdash U}}}$
+  for some $\fType{\Sigma_3}$ and $\fType{\Sigma_4}$
+  such that $ \fType{\Sigma_2} = \fType{\Sigma_3},\fType{\Sigma_4} $;
+  and that ${\fFunc{e'} \in \lrTerm{n'}{\fType{\Sigma_3, \fFunc{c}:S' \vdash T}}}$.
+  We can then feed the value to the corresponding facts that the assumption
+  $\fProc{(C_2, E_2)} \in \lrProc{n}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash \tUnit}}$
+  gives us on $\fFunc{f'}$ and invoke the induction hypothesis on the continuations.
+\end{proof}
+
+\begin{theorem}[Compositionality of $\fType{\Sigma;\Delta \proves \fFunc{e} : T}$]
+\label{th:term-composit}
+  All the term rules of \cref{fig:typeSys} hold (as implications) for the
+  semantic judgment of terms.
+  \\[2pt]\null\hfill
+  \rocq{sem_typed_unit}, \rocq{sem_typed_konst}, \rocq{sem_typed_var},
+  \rocq{sem_typed_chan}, \rocq{sem_typed_lam}, \rocq{sem_typed_app},
+  \rocq{sem_typed_pair}, \rocq{sem_typed_letu}, \rocq{sem_typed_letp}
+  % That is:
+  % \begin{itemize}
+  %   \item \ruleLabel{E-Unit:}
+  %     ${\fType{\tEmpty ; \tEmpty \proves \fFunc{\tUnit} : \tUnit}}$
+  %   \item \ruleLabel{E-Const:}
+  %     If ${\fType{\fFunc{k} : \lFunc{T}{U}}}$
+  %     then ${\fType{\tEmpty ; \tEmpty \proves \fFunc{k} : \lFunc{T}{U}}}$.
+  %   \item \ruleLabel{E-LVar:}
+  %     ${\fType{\tEmpty ; \fFunc{\tLVA}:T \proves \fFunc{\tLVA} : T}}$
+  %   \item \ruleLabel{E-Ch:}
+  %     ${\fType{\fFunc{c}:S ; \tEmpty \proves \fFunc{c} : S}}$
+  %   \item \ruleLabel{E-Abs:}
+  %     If ${\fType{\Sigma ; \Delta , \fFunc{\tLVA}:T \proves \fFunc{e} : U}}$
+  %     then ${\fType{\Sigma ; \Delta \proves \fFunc{\tAbs{\tLVA}{e}} : \lFunc{T}{U}}}$.
+  %   \item \ruleLabel{E-App:}
+  %     If ${\fType{\Sigma_1 ; \Delta_1 \proves \fFunc{e_1} : \lFunc{T}{U}}}$
+  %     and ${\fType{\Sigma_2 ; \Delta_2 \proves \fFunc{e_2} : T}}$
+  %     \\then
+  %     ${\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \proves \fFunc{\tApp{e_1}{e_2}} : U}}$
+  %   \item \ruleLabel{E-Pair:}
+  %     If ${\fType{\Sigma_1 ; \Delta_1 \proves \fFunc{e_1} : T}}$
+  %     and ${\fType{\Sigma_2 ; \Delta_2 \proves \fFunc{e_2} : U}}$
+  %     \\then
+  %     ${\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \proves \fFunc{\tPair{e_1}{e_2}} : \lPair{T}{U}}}$.
+  %   \item \ruleLabel{E-Let*:}
+  %     If ${\fType{\Sigma_1 ; \Delta_1 \proves \fFunc{e_1} : \tUnit}}$
+  %     and ${\fType{\Sigma_2 ; \Delta_2 \proves \fFunc{e_2} : T}}$
+  %     \\then
+  %     ${\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \proves \fFunc{\tLet*{e_1}{e_2}} : T}}$.
+  %   \item \ruleLabel{E-LetPair:}
+  %     If ${\fType{\Sigma_1 ; \Delta_1 \proves \fFunc{e_1} : \lPair{U}{V}}}$
+  %     and ${\fType{\Sigma_2 ; \Delta_2 , \fFunc{\tLVA}:U , \fFunc{\tLVB}:V \proves \fFunc{e_2} : T}}$
+  %     \\then
+  %     ${\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \proves \fFunc{\tLet[\tLVA][\tLVB]{e_1}{e_2}} : T}}$.
+  % \end{itemize}
+\end{theorem}
+
+\begin{theorem}[Compositionality of $\fType{\Sigma \proves \fProc{p} : T}$]
+\label{th:proc-composit}
+  All the process rules of \cref{fig:typeSys} hold (as implications) for the
+  semantic judgment of processes.
+  \\[2pt]\null\hfill
+  \rocq{sem_ptyped_term}, \rocq{sem_ptyped_independent}, \rocq{sem_ptyped_connect}
+  % That is:
+  % \begin{itemize}
+  %   \item\ruleLabel{P-Term:}
+  %     If ${\primitive \fType{T}}$
+  %     and ${\fType{\Sigma ; \tEmpty \proves \fFunc{e} : T}}$
+  %     then ${\fType{\Sigma \proves \fProc{(\emptyset , \mset{\fFunc{e}})} : T}}$.
+  %   \item\ruleLabel{P-Independent:}
+  %     If ${\fType{\Sigma_1 \proves \fProc{(C_1,E_1)} : T}}$
+  %     and ${\fType{\Sigma_2 \proves \fProc{(C_2,E_2)} : \tUnit}}$
+  %     \\then ${\fType{\Sigma_1 , \Sigma_2 \proves \fProc{(C_1 \cupdot C_2, E_1 \uplus E_2)} : T}}$.
+  %   \item\ruleLabel{P-Connect:}
+  %     If ${\fType{\Sigma_1 , \fFunc{c}:S \proves \fProc{(C_1 , E_1)} : T}}$
+  %     and ${\fType{\Sigma_2 , \fFunc{c}:\dual{S} \proves \fProc{(C_2 , E_2)} : \tUnit}}$
+  %     \\then ${\fType{\Sigma_1 , \Sigma_2 \proves \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}} , E_1 \uplus E_2)} : T}}$.
+  % \end{itemize}
+\end{theorem}
+
+\begin{theorem}[Fundamental Property, \rocq{fundamental_term}, \rocq{fundamental_proc}]
+\label{th:fundamental}
+  Typing implies semantic typing:
+  \begin{itemize}
+    \item
+      $
+        \fType{\Sigma;\Delta \types \fFunc{e} : T}
+        \implies
+        \fType{\Sigma;\Delta \proves \fFunc{e} : T}
+      $
+    \item
+      $
+        \fType{\Sigma \types \fProc{p} : T}
+        \implies
+        \fType{\Sigma \proves \fProc{p} : T}
+      $
+  \end{itemize}
+\end{theorem}
+
+\ED{
+  One option here, time permitting, is to give a proof sketch for a couple of rules just to give an idea.
+}
+
+\subsection{Examples}
+\label{sec:examples}
+
+Finally, we establish the expressiveness of our logical relation by
+showing that the untypable-but-safe processes of \cref{sec:calculus}
+satisfy the semantic judgment.
+
+\begin{example}[Deadlock free cycle, \rocq{sync_cycle_deadlock_free}]
+  Consider the process $\fProc{\var{cycle}}$ of \cref{ex:cyclic},
+  where we spelled out the only transition sequence $p_0 \redu^* p_4$.
+  It is not hard to prove that
+  $ \fType{\tEmpty \proves \fProc{\var{cycle}} : \tUnit} $ holds:
+  along $\tau$ transitions, the process relation (at $n+1$)
+  simply requires the next process to be in the relation (at $n$);
+  finally, the relation will consider~$p_4$
+  which belongs to $ \lrProc{n}{\fType{\tEmpty \vdash \tUnit}} $
+  for all $m\in\Nat$,
+  since it is irreducible and terminated.
+
+  As a simple example of composition,
+  we can prove that
+  $(\emptyset, \mset{\fFunc{\var{sync}}, \fFunc{\var{cycle}}})$
+  is deadlock free,
+  where $\fFunc{\var{sync}}$ is the term in the $\var{sync}$ process of
+  \cref{ex:sync},
+  and $\fFunc{\var{cycle}}$ is the term in $\var{cycle}$.
+  Since we have established in \cref{ex:typing} that
+  $ \fType{\tEmpty \types \fProc{\var{sync}} : \tUnit} $,
+  by \cref{th:fundamental} we have
+  $ \fType{\tEmpty \proves \fProc{\var{sync}} : \tUnit} $;
+  then by \cref{th:proc-composit} (\ruleLabel{P-Independent})
+  we obtain that
+  $
+    \fType{\tEmpty \proves \fProc{(\emptyset, \mset{\fFunc{\var{sync}}, \fFunc{\var{cycle}}})} : \tUnit}
+  $
+  which, by \cref{thm:adequacy}, is deadlock free.
+\end{example}
+
+\begin{example}[Load balancer, \rocq{lb_deadlock_free}]
+  Consider the process $(\emptyset,\fFunc{\var{lb}})$
+  of \cref{ex:load-balancer}.
+  We can prove that
+  $
+    \fType{
+      \fFunc{c} : \sRecv{\tUnit}{\sSend{\tUnit}{\sSend{\tUnit}{\sTerm}}}
+      \proves
+      \fProc{(\emptyset,\fFunc{\var{lb}})} : \tUnit}
+  $ holds.
+  Initially, the process can only take a~$\tau$ step;
+  we can safely skip ahead of any~$\tau$ step as the logical relation
+  simply considers the next process in that case.
+  The first non-$\tau$ transition that the process can take is when
+  the $ \tApp{\tRecv}{c} $ term in $ \fFunc{\var{srv}} $
+  is in evaluating position (which can only happen while the workers are still waiting for a signal on their channels).
+  Thus the relation would consider an arbitrary $\pi = \lRecv{c}{v}$;
+  it will however continue checking only the transitions where
+  $ \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash \tUnit}} $.
+  By the value relation definition,
+  $\fType{\Sigma_2}$ must be empty and $\fFunc{v} = \fFunc{\tUnit}$.
+  Thus the relation will ask us to prove that,
+  when we follow the transition labelled with $\lRecv{c}{\tUnit}$,
+  we reach a process in the relation for
+  $ \fType{\fFunc{c}:\sSend{\tUnit}{\sSend{\tUnit}{\sTerm}} \vdash \tUnit} $.
+  From here on, the environment can no longer control the potential execution,
+  as the process only makes send and close actions.
+  Since all interleavings are compatible with the assumption
+  $ \fType{\fFunc{c}:\sSend{\tUnit}{\sSend{\tUnit}{\sTerm}}} $,
+  the process is accepted by the process relation.
+
+  Since the process is not closed, we cannot infer it is deadlock free.
+  We can however compose it with the following syntactically typable term:
+  \begin{align*}
+    \fFunc{q} := {}
+      & \fFunc{\tLetS{c}{\tApp{\tSend}{\tPair{\tUnit}{c}}}{}}\\
+      & \fFunc{\tLet[m][c]{\tApp{\tRecv}{c}}{\tLet*{m}{}}}\\
+      % & \fFunc{\tLet*{m}{}} \\
+      & \fFunc{\tLet[m][c]{\tApp{\tRecv}{c}}{\tLet*{m}{\tApp{\tClos}{c}}}}
+  \end{align*}
+  It is easy to derive
+  $
+    \fType{
+      \fFunc{c} : \sSend{\tUnit}{\sRecv{\tUnit}{\sRecv{\tUnit}{\sTerm}}}
+      \types
+      \fProc{(\emptyset, \mset{\fFunc{q}}) : \tUnit}
+    }
+  $
+  in the syntactic type system.
+  Therefore, by \cref{th:fundamental} we can derive
+  $
+    \fType{
+      \fFunc{c} : \sSend{\tUnit}{\sRecv{\tUnit}{\sRecv{\tUnit}{\sTerm}}}
+      \proves
+      \fProc{(\emptyset, \mset{\fFunc{q}})} : \tUnit
+    }
+  $.
+  By \cref{th:proc-composit},
+  we can apply \ruleLabel{P-Connect} to obtain
+  $
+    \fType{
+      \tEmpty
+      \proves
+      \fProc{(\set{c}, \mset{\fFunc{q}, \fFunc{lb}})} : \tUnit
+    }.
+  $
+  By \cref{thm:adequacy}, this process is deadlock free.
+\end{example}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

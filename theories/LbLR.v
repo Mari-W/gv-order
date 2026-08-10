@@ -1,7 +1,19 @@
-(** Scratch development for Example 3.15: the load balancer lb is in
-    the logical relation at c : ?∗.!∗.!∗.Close, directly; composed
-    with the typable client q via P-Connect it is deadlock free.
-    Folded into Examples.v once complete.
+(** * The load balancer (Examples 2.10 and 3.16)
+
+    lb replies to requests on a channel c shared with the environment
+    by delegating the two expected answers to two forked workers. It
+    violates linearity in several ways at once — the server and both
+    workers hold c, and there is a genuine race on c when both workers
+    are ready to answer — so it is untypable; but every interleaving
+    is compatible with the interface, and it is in the logical
+    relation at c : ?∗.!∗.!∗.Close directly ([lb_sem_ptyped]).
+    Composed with the syntactically typable client q via semantic
+    P-Connect, the closed composite is deadlock free
+    ([lb_deadlock_free]).
+
+    This is the paper's example of liberality on the *external*
+    interface, as opposed to Scheduler.v, which is closed and makes
+    the point about cyclic topology instead.
 
     Sugar: [let x = e1 in e2] is [App (Lam e2) e1]. *)
 
@@ -2487,7 +2499,7 @@ Proof.
   - exact lbI_case_term.
 Qed.
 
-(** Example 3.15: lb inhabits the logical relation at
+(** Example 3.16: lb inhabits the logical relation at
     c : ?∗.!∗.!∗.Close, at every step index — although it is
     syntactically untypable (w1, w2 and c are each used non-linearly
     across the server and the workers). *)

@@ -1,0 +1,173 @@
+%%% OOPSLA / PACMPL submission format.
+%%%
+%%% Per the SPLASH call for papers, PACMPL(OOPSLA) submissions use
+%%%
+%%%   \documentclass[acmsmall,screen,review,anonymous]{acmart}
+%%%
+%%% double-blind, ACM-Reference-Format bibliography, and a
+%%% Data-Availability Statement just before the references.  The
+%%% initial submission is limited to 23 pages excluding references,
+%%% required statements and appendices (25 for a revision or the
+%%% camera-ready).
+%%%
+%%% Drop `review' to lose the line numbers, `anonymous' to reveal the
+%%% authors.  The LNCS sources this was converted from are still in
+%%% the repository (llncs.cls, splncs04nat.bst) if we go back.
+
+% enumitem and cleveref are loaded by, or alongside, acmart; their
+% options have to be registered before the class is read.
+\PassOptionsToPackage{inline,shortlabels}{enumitem}
+\PassOptionsToPackage{capitalise,noabbrev}{cleveref}
+% acmart loads xcolor itself, so the named-colour lists preamble.tex
+% uses (RoyalBlue, YellowOrange) have to be requested up here.
+\PassOptionsToPackage{dvipsnames,rgb}{xcolor}
+
+\documentclass[acmsmall,screen,review,anonymous]{acmart}
+
+% acmart's math font (newtxmath) already defines \Bbbk, which amssymb
+% -- loaded from preamble.tex -- then redefines.
+\let\Bbbk\relax
+
+%%% Journal metadata.  With `review' and no \acmConference, acmart
+%%% prints "Manuscript submitted to ACM", which is what a submission
+%%% wants.
+\acmJournal{PACMPL}
+\acmYear{2027}
+\acmVolume{1}
+\acmNumber{OOPSLA}
+\acmArticle{1}
+\acmMonth{4}
+\setcopyright{none}
+
+\RequirePackage{enumitem}
+\RequirePackage{comment}
+\RequirePackage{subcaption}
+
+\input{preamble}
+
+\RequirePackage{cleveref}
+
+% Links from paper claims to the Rocq mechanization.  The table of
+% declarations is generated from theories/*.v by paper/rocqrefs.py;
+% regenerate with `make -C paper refs'.
+\RequirePackage{rocqrefs}
+\input{rocqrefs}
+
+\usepackage[comments]{comments}
+\input{unicodeletters}
+
+\def\OurLang{\texorpdfstring{GV\ensuremath{^{\sharp}}}{GV-sharp}\xspace}
+
+\begin{document}
+
+\title{A Logical-Relations Approach to Compositional Deadlock Freedom for Session Types}
+
+%% (PT: suggest alphabetical order, unsure how to deal with 'van den' and 'd')
+%% (BH: Dutch last name sorting ignores 'van den')
+%% (ED: Italian last name sorting does *not* ignore the "D'", I am always listed under D. Changed accordingly)
+
+\author{Emanuele D'Osualdo}
+\orcid{0000-0002-9179-5827}
+\affiliation{%
+  \institution{University of Konstanz}
+  \country{Germany}
+}
+\email{emanuele.dosualdo@uni-konstanz.de}
+
+\author{Bas van den Heuvel}
+\orcid{0000-0002-8264-7371}
+\affiliation{%
+  \institution{Karlsruhe University of Applied Sciences}
+  \country{Germany}
+}
+
+\author{Peter Thiemann}
+\orcid{0000-0002-9000-1239}
+\affiliation{%
+  \institution{University of Freiburg}
+  \country{Germany}
+}
+\email{thiemann@cs.uni-freiburg.de}
+
+\author{Marius Weidner}
+\orcid{0009-0008-1152-165X}
+\affiliation{%
+  \institution{University of Freiburg}
+  \country{Germany}
+}
+\email{weidner@cs.uni-freiburg.de}
+
+\begin{abstract}
+  % Deadlock freedom is a fundamental correctness property of concurrent systems.
+  Due to its global nature, deadlock freedom is hard to ensure compositionally.
+  Session Types based on a Curry-Howard correspondence with Linear Logic
+  achieve compositional deadlock freedom by imposing quite stringent
+  constraints on the communication topologies that can be constructed.
+  All soundness proofs of such session type systems in the literature
+  hinge on topological constraints, making it impossible to safely compose
+  typable processes with processes that violate these constraints, but
+  which are safe nevertheless.
+
+  In this work, we present a new account of session types
+  through a logical relation that is
+  \begin{enumerate*}[(i)]
+    \item Compositional (\ie validates all the type system rules);
+    \item Semantic (\ie expresses the meaning of a judgment entirely as constraints on the behavior of untyped processes); and
+    \item Liberal (\ie accepts arbitrary processes as long as they are well-behaved on their external interface).
+  \end{enumerate*}
+  We establish adequacy of the relation for deadlock freedom and
+  exercise it on illustrative examples.
+  To evaluate the approach, we extend the core calculus with branching, recursion, unrestricted channels and linking.
+  Most of our core results are mechanized in Agda.%
+  \mw{claude: the artifact is a Rocq development (theories/), and it
+    covers rather more than ``most of the core results'' --- all of
+    Sects. 2 and 3, plus every extension of Sect. 4. The intro and
+    Sect. 5 say Agda too.}
+\end{abstract}
+
+\ccsdesc[500]{Theory of computation~Type theory}
+\ccsdesc[500]{Theory of computation~Program semantics}
+\ccsdesc[300]{Theory of computation~Process calculi}
+\ccsdesc[300]{Software and its engineering~Concurrent programming languages}
+% claude: \ccsdesc typesets the concepts, but ACM also wants the
+% machine-readable CCSXML block that its concept tool emits. Generate
+% it at dl.acm.org/ccs and paste it above these lines before
+% submitting. (Kept as a source comment rather than an \mw note: an
+% \mw before \maketitle typesets above the title.)
+
+\keywords{session types, deadlock freedom, logical relations, linear
+  types, concurrency, mechanized metatheory}
+
+\maketitle
+
+\input{1-intro}
+
+\input{2-calculus}
+
+\input{3-logical-rel}
+
+\input{4-extensions}
+
+\input{4-formalization}
+
+\input{5-related-work}
+
+\section*{Data-Availability Statement}
+
+The Rocq mechanization accompanying this paper is available as
+supplementary material; every definition, lemma and example cited in
+the text links to its counterpart in it.
+\mw{claude: for the anonymous submission, regenerate the links against
+  an Anonymous GitHub mirror --- `python3 paper/rocqrefs.py gen -{}-base
+  https://anonymous.4open.science/r/XXXX/' --- and put that URL here.
+  Nothing else in the paper changes.}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main.bib}
+
+\clearpage
+\appendix
+
+\input{appendix}
+
+\end{document}
