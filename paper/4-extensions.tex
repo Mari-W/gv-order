@@ -1,6 +1,11 @@
 \section{Extensions}
 \label{sec:extensions}
 
+In this section, we discuss some extensions which are all incorporated
+in our proved mechanization. In particular, we cover sum types, replication and
+recursion, recursive types, and the forwarding operator link. That is, all
+features of GV \cite{conf/esop/LindleyM15} are covered.
+
 \subsection{Sums}
 \label{sec:extension:-sums}
 
@@ -10,14 +15,14 @@
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tInj{1}{v}} \sepr \fFunc{\tInj{2}{v}}
     & \text{injections}\\
-    \fFunc{e} &::= \dots \sepr \fFunc{\tCase{e}{\tLVA}{e}{\tLVA}{e}} &
+    \fFunc{e} &::= \dots \sepr \fFunc{\tCase{e}{x}{e}{x}{e}} &
                                                                        \text{sum elimination}\\
     \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tInj{1}{\fCtx{E}}} \sepr \fFunc{\tInj{2}{\fCtx{E}}}
   \end{align*}
   New labeled transitions \hfill \rocq{HeadCase1}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Case]
-      \bussAx{\fFunc{\tCase{(\tInj{i}{v})}{\tLVA}{e_1}{\tLVA}{e_2}} \trans{\beta} \fFunc{\tSub{e_i}{v}{\tLVA}}}
+      \bussAx{\fFunc{\tCase{(\tInj{i}{v})}{x_1}{e_1}{x_2}{e_2}} \trans{\beta} \fFunc{\tSub{e_i}{v}{x_i}}}
     \end{bussproof}
     % \and
     % \begin{bussproof}[T-Act-Case2]
@@ -33,9 +38,9 @@
     \and
     \begin{bussproof}[E-Case]
       \bussAs{\fType{\Sigma_1 ; \Delta_1 \vdash \fFunc{e} : \lSum{T_1}{T_2}}}
-      \bussAs{\fType{\Sigma_2 ; \Delta_2, \fFunc{\tLVA_1}:T_1 \vdash \fFunc{e_1} :U}}
-      \bussAs{\fType{\Sigma_2 ; \Delta_2, \fFunc{\tLVA_2}:T_2 \vdash \fFunc{e_2} :U}}
-      \bussT{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tCase{e}{\tLVA_1}{e_1}{\tLVA_2}{e_2}} : U}}
+      \bussAsBelow{\fType{\Sigma_2 ; \Delta_2, \fFunc{x_1}:T_1 \vdash \fFunc{e_1} :U}}
+      \bussAsBelow{\fType{\Sigma_2 ; \Delta_2, \fFunc{x_2}:T_2 \vdash \fFunc{e_2} :U}}
+      \bussU{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tCase{e}{x_1}{e_1}{x_2}{e_2}} : U}}
     \end{bussproof}
   \end{mathpar}
   New case for the value logical relation \hfill \rocq{Vdef}
@@ -60,71 +65,79 @@
   \label{fig:sum-types}
 \end{figure}
 
-Moving towards a more realistic calculus, we wish to support branching
+Moving towards a realistic calculus, we wish to support branching
 and choice in session types. It is well-known that branch and
 choice can be simulated using higher-order sessions and sum types
 \cite{DBLP:conf/ppdp/DardhaGS12,conf/esop/LindleyM15} by setting
 \begin{align*}
-  \fType{S_1 \ichoice S_2} &= \fType{\sSend{(\dual{S_1} + \dual{S_2})}{\sTerm}}
-  & \fType{S_1 \echoice S_2} &= \fType{\sRecv{(S_1 + S_2)}{\sWait}}
+  \fType{S_1 \ichoice S_2} &:= \fType{\sSend{(\dual{S_1} + \dual{S_2})}{\sTerm}}
+  & \fType{S_1 \echoice S_2} &:= \fType{\sRecv{(S_1 + S_2)}{\sWait}}
 \end{align*}
-Hence, we choose the simulation as directly supporting branch and choice would
-require additional labeled reductions and hence additional cases in the
-definition of all logical relations. In contrast, to support sum types
-it is sufficient to extend the value logical relation and prove the
-compositionality lemmas corresponding to the typing rules for sum
-types as shown in \cref{fig:sum-types}. Proving the compositionality
-lemmas is a standard exercise.
+and encoding the operations to select and match on a channel as follows.
+\begin{align*}
+  \fFunc{\mathit{select}~\textit{left}~c} &:= \fFunc{\tFork (\lambda
+                                   d. \tApp{\tClos}{(\tSend{\tPair{\tInj{1}{d}}{c}})})}
+  &  \fFunc{\mathit{select}~\textit{right}~c} &:= \fFunc{\tFork (\lambda
+                                       d. \tApp{\tClos}{(\tSend{\tPair{\tInj{2}{d}}{c}})})}
+\end{align*}
+\begin{align*}
+  \fFunc{\mathit{match}~c~(x_1.e_1) (x_2.e_2)} &= \fFunc{\tLet[d][c]{\tRecv c}{\tClos{c}; \tCase{d}{x_1}{e_1}{x_2}{e_2}}}
+\end{align*}
+Directly supporting branch and choice would require additional labeled
+reductions and hence additional cases in the definition of all logical
+relations. To support the simulated branch and choice, it is sufficient to
+implement sum types. To this end, we extend the syntax, labeled reduction,
+typing, and the value logical relation in the usual way as
+shown in \cref{fig:sum-types}. We prove the following compositionality lemmas
+corresponding to the typing rules for sum types and integrate them in the proof
+of the fundamental property. 
 
 \begin{lemma}[Compositionality: \ruleLabel{inj} \rocq{sem_typed_inj1}]
   \label{lem:comp:inj}
   If
-  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T_i}}$, \\
+  $ \fType{\Sigma;\Delta \proves \fFunc{e} : T_i}$,
   then
-  $\fFunc{\tInj{i}{e}} \in \lrTerm{n}{\fType{\Sigma \vdash \lSum{T_1}{T_2}}}$.
+  $ \fType{\Sigma;\Delta \proves \fFunc{\tInj{i}{e}} : \lSum{T_1}{T_2}}$,
+  for $i\in\{1,2\}$.
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{case} \rocq{sem_typed_case}]
   \label{lem:comp:case}
-  If
-  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \lSum{T_1}{T_2}}}$
-  and,
-  for all $\fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_1}}$,
-  $\fFunc{\tSub{e_1}{v}{\tLVA_1}} \in \lrTerm{n}{\fType{\Sigma, \Sigma_2 \vdash
-      U}}$,
-  and,
-  for all $\fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_2}}$,
-  $\fFunc{\tSub{e_2}{v}{\tLVA_2}} \in \lrTerm{n}{\fType{\Sigma, \Sigma_2 \vdash
-      U}}$,
+  If  $ \fType{\Sigma_1;\Delta_1 \proves \fFunc{e} : \lSum{T_1}{T_2}}$ and
+  \begin{itemize}
+  \item for all $ \fType{\Sigma;\Delta \proves \fFunc{v_1} : {T_1}}$ implies
+    $ \fType{\Sigma,\Sigma_2;\Delta,\Delta_2 \proves \fFunc{e_1[v_1/x_1]} : U}$,
+  \item for all $ \fType{\Sigma;\Delta \proves \fFunc{v_2} : {T_2}}$ implies
+  $ \fType{\Sigma,\Sigma_2;\Delta,\Delta_2 \proves \fFunc{e_2[v_2/x_2]} : U}$,
+  \end{itemize}
   then
-  $\fFunc{\tCase{e}{\tLVA_1}{e_1}{\tLVA_2}{e_2}} \in \lrTerm{n}{\fType{\Sigma_1,\Sigma_2 \vdash U}}$.
+  $ \fType{\Sigma_1,\Sigma_2;\Delta_1,\Delta_2 \proves
+    \fFunc{\tCase{e}{x_1}{e_1}{x_2}{e_2}} : U}$. 
 \end{lemma}
 
+We exercise this extension with an example.
 
-
-\subsubsection{A leader Election Example}
-\label{sec:leader-election}
-
+\begin{example}[Leader election]
 The problem of leader election can be reduced to a process that makes
 finite number of $\tau$ steps and then finishes with a $\fType{left}$
 or $\fType{right}$ step on some channel of type $\fType{\fFunc{c} : \sTerm
-  \ichoice \sTerm}$. To this end, we define the following terms making use of the sum extension. We use standard syntactic sugar for the
-encoding of the type $\fType{Bool} = \fType{\tUnit+\tUnit}$.
+  \ichoice \sTerm}$. To this end, we define the process $p_0 = (\set{\fFunc{c}, \fFunc{cs},
+  \fFunc{d}}, \mset{\fFunc{e_0}, \fFunc{e_1}, \fFunc{e_2}})$ which consists of
+the following terms making use of the sum extension. We use standard syntactic
+sugar for the encoding of the type $\fType{Bool} = \fType{\tUnit+\tUnit}$ and
+the conditional $\fFunc{\mathit{if}}$.
 %
-\begin{small}
 \begin{align*}
   \fFunc{e_0} &=
                 \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{\tApp{\tSend}{\tPair{false}{d}}}})}}
   \\
   \fFunc{e_1} &=
-                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tIf{\tLVB}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tIf{\tLVB}{\tApp{\tClos}{(\mathit{select}~\mathit{left}~c)}}{\tUnit}}}}
   \\
   \fFunc{e_2} &=
-                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(\mathit{select}~\mathit{right}~c)}}{\tUnit}}}}}
 \end{align*}
-\end{small}
-We consider the process $p_0 = (\set{\fFunc{c}, \fFunc{cs},
-  \fFunc{d}}, \mset{\fFunc{e_0}, \fFunc{e_1}, \fFunc{e_2}})$ and
+Now we
 set out to prove that $p_0 \in \lrProc{n}{ \fFunc{c}\fType{:  \sTerm
   \ichoice \sTerm} \vdash \fType{\tUnit}}$. This process has essentially
 two different reduction sequences due to a race condition
@@ -137,7 +150,8 @@ one term where the condition is $\fFunc{true}$ and another where it is
 $\fFunc{false}$. The  $\fFunc{true}$-term executes a $\fFunc{select}$
 and the $\fFunc{false}$-term does nothing.
 
-The process $p_0$ is not reachable from a single closed term because
+The process $p_0$ is not reachable by a reduction sequence from a process of the
+form $(\set{}, \mset{e})$, for some closed $e$, because
 thread $\fFunc{e_0}$ shares $\fFunc{d}$ with both $\fFunc{e_1}$ and
 $\fFunc{e_2}$. Term $\fFunc{e_1}$ is not typable
 (cf. \cref{sec:syntacticTyping}) because it violates linearity for
@@ -148,7 +162,7 @@ See \cref{sec:reduct-lead-elect} in the appendix for the reduction sequence.
 Composing $p_0$ over $\fFunc{c}$ with a syntactically typable client
 yields a closed, deadlock-free process
 (\rocq{leader_election_deadlock_free}).
-
+\end{example}
 
 
 
