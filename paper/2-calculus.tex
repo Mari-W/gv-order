@@ -58,7 +58,7 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
       \fFunc{\tLet[\tLVA][\tLVA]{e}{e}}
     & \text{(terms)}
   \end{align*}
-  \caption{Syntax of \OurLang. \quad \rocq{expr}}
+  \caption{Syntax of \OurLang \quad \rocq{expr}}
   \Description{Grammars for the constants, values and terms of GV-sharp.}
   \label{fig:syntax}
 \end{figure}
@@ -124,7 +124,7 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
       \bussU{\fFunc{\fCtx{E}[e]} \trans{\lambda} \fFunc{\fCtx{E}[e']}}
     \end{bussproof}
   \end{mathpar}
-  \caption{Semantics of \OurLang\ terms.}
+  \caption{Semantics of \OurLang\ terms}
   \Description{Grammars for evaluation contexts, session labels and term labels, and the seven axioms plus one congruence rule of the labelled term reduction relation.}
   \label{fig:term-semantics}
 \end{figure}
@@ -249,7 +249,7 @@ We write $\trans{}[*]$ for its transitive, reflexive closure.
         \bussB{\fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e}, \fFunc{f}})} \trans{\tau} \fProc{(C, E \uplus \mset{\fFunc{e'}, \fFunc{f'}})}}
     \end{bussproof}
   \end{mathpar}
-  \caption{LTS semantics of \OurLang\ processes.}
+  \caption{LTS semantics of \OurLang\ processes}
   \Description{The grammar of process labels and the five rules of the process labelled transition relation: one lifting an external offer, and one each for beta steps, forks, matched messages and matched closes.}
   \label{fig:proc-semantics}
 \end{figure}
@@ -609,7 +609,7 @@ a more liberal logical relation.
     &
     \fType{\dual{\sTerm}} &= \fType{\sTerm}
   \end{align*}
-%   \caption{Types and session types for \OurLang.}
+%   \caption{Types and session types for \OurLang}
 %   \label{fig:types}
 % \end{figure}
 %
@@ -697,7 +697,7 @@ a more liberal logical relation.
       \bussB{\fType{\Sigma_1 , \Sigma_2 \vdash \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}} , E_1 \uplus E_2)} : T}}
     \end{bussproof}
   \end{mathpar}
-  \caption{Typing for terms and processes.}
+  \caption{Typing for terms and processes}
   \Description{Grammars for types, session types, session environments and linear variable environments; the definition of session duality; the type signatures of the four constants; nine typing rules for terms and three for processes.}
   \label{fig:typeSys}
 \end{figure}
