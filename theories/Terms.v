@@ -192,6 +192,22 @@ Proof.
     rewrite (left_id ∅ (∪)). eauto.
 Qed.
 
+(** A grounding for Δ, x:U also grounds Δ, x:U, y:U by aliasing the
+    two variables — an unlimited value owns no channels, so the copy
+    costs nothing in the Σ-split. *)
+Lemma grounding_contract n Σ Δ U γ :
+  unlimited U →
+  grounding n Σ (Some U :: Δ) γ →
+  grounding n Σ (Some U :: Some U :: Δ) (λ x, γ (pred x)).
+Proof.
+  intros Hu Hg. simpl in Hg |- *.
+  destruct Hg as (Σ1 & Σ2 & Hsp & HV & Hg').
+  pose proof (Vrel_unl_empty _ _ _ _ Hu HV) as ->.
+  destruct Hsp as [-> Hd].
+  exists ∅, Σ2. split_and!; [split; done|exact HV|].
+  exists ∅, Σ2. split_and!; [apply senv_split_empty_l|exact HV|exact Hg'].
+Qed.
+
 (** Availability across □-weakening. *)
 Lemma lenv_wk_avail Δ' Δ x :
   lenv_wk Δ' Δ → lenv_avail Δ' x → lenv_avail Δ x.
@@ -1078,6 +1094,27 @@ Proof.
   - intros x Hx. apply Hrv. eauto using lenv_wk_avail_lin.
   - intros n Σ' γ Hd Hg. apply He; [done|].
     eapply grounding_wk; eauto.
+Qed.
+
+(** □-contraction (E-Contract): a duplicated unlimited hypothesis may
+    be contracted, replacing the inner variable by the outer one
+    (e[x/y] = rename pred e: indices 0,1 ↦ 0 and n+2 ↦ n+1).  For the
+    paper's rule instantiate W := □T ([unlimited_box]). *)
+Lemma sem_typed_contract Σ Δ U W e :
+  unlimited W →
+  sem_typed Σ (Some W :: Some W :: Δ) e U →
+  sem_typed Σ (Some W :: Δ) (rename pred e) U.
+Proof.
+  intros Hu (Hfc & Hfv & Hrv & He). split_and!.
+  - by rewrite fchans_rename.
+  - apply allfv_rename. eapply allfv_mono; [|exact Hfv].
+    intros [|[|x]] Hx; [by eexists|by eexists|exact Hx].
+  - intros [|x] Hx.
+    + destruct Hx as (T' & HT' & Hl). simpl in HT'. simplify_eq. done.
+    + destruct Hx as (T' & HT' & Hl).
+      apply (freevar_rename _ (S (S x)) pred). apply Hrv. by exists T'.
+  - intros n Σ' γ Hd Hg. rewrite subst_rename.
+    apply He; [done|]. by apply grounding_contract.
 Qed.
 
 (** ** The fundamental property for terms (Theorem 3.13, term half;

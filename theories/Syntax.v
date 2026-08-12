@@ -381,6 +381,43 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | EBox e => freevar (S x) e
   end.
 
+(** Renaming and the variable predicates. *)
+
+Lemma upP_upren (P : nat → Prop) r x :
+  upP (λ y, P (r y)) x → upP P (upren r x).
+Proof. destruct x; simpl; auto. Qed.
+
+Lemma allfv_rename e : ∀ (P : nat → Prop) r,
+  allfv (λ x, P (r x)) e → allfv P (rename r e).
+Proof.
+  induction e; simpl; intros P r H; auto.
+  - apply IHe. eapply allfv_mono; [|exact H]. apply upP_upren.
+  - destruct H; split; auto.
+  - destruct H; split; auto.
+  - destruct H; split; auto.
+  - destruct H; split; [auto|]. apply IHe2.
+    eapply allfv_mono; [|done]. intros x Hx.
+    apply upP_upren. eapply upP_mono; [|exact Hx]. apply upP_upren.
+  - destruct H as (?&?&?). split_and!; [auto| |].
+    + apply IHe2. eapply allfv_mono; [|done]. apply upP_upren.
+    + apply IHe3. eapply allfv_mono; [|done]. apply upP_upren.
+  - apply IHe. eapply allfv_mono; [|exact H]. apply upP_upren.
+Qed.
+
+Lemma freevar_rename e : ∀ x r, freevar x e → freevar (r x) (rename r e).
+Proof.
+  induction e; simpl; intros y r H; auto.
+  - apply (IHe (S y) (upren r) H).
+  - destruct H; auto.
+  - destruct H; auto.
+  - destruct H; auto.
+  - destruct H; [auto|]. right. apply (IHe2 (S (S y)) (upren (upren r)) H).
+  - destruct H as [?|[?|?]]; [auto| |].
+    + right; left. apply (IHe2 (S y) (upren r) H).
+    + right; right. apply (IHe3 (S y) (upren r) H).
+  - apply (IHe (S y) (upren r) H).
+Qed.
+
 (** ** Closedness under renaming and substitution *)
 
 Lemma closed_at_rename e : ∀ r m m',
