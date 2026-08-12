@@ -96,11 +96,13 @@ Inductive head_step : expr → tlabel → expr → Prop :=
       is_val v →
       head_step (Case (Inj2 v) e1 e2) LBeta (subst1 v e2)
   | HeadForce e :                                       (* T-Act-Force *)
-      (* the thunk's body resumes unevaluated (call-by-name), with the
-         thunk substituted for its own bound occurrence: forcing
-         unrolls one step of the recursion, so !e is Lily's fix
-         (§4.2) and replicating it re-runs the suspended computation *)
-      head_step (Force (EBox e)) LBeta (subst1 (EBox e) e)
+      (* force is a konst, so forcing is ordinary application and
+         needs no evaluation context of its own.  The thunk's body
+         resumes unevaluated (call-by-name), with the thunk
+         substituted for its own bound occurrence: forcing unrolls one
+         step of the recursion, so !e is Lily's fix (§4.2) and
+         replicating it re-runs the suspended computation *)
+      head_step (App EForce (EBox e)) LBeta (subst1 (EBox e) e)
   | HeadLink c d :                                      (* T-Act-Link *)
       (* the paper's ↔{c,d} carries a set of two channels; the order
          does not matter — symmetry is in the process rules.  The ends
@@ -145,10 +147,8 @@ Inductive tstep : expr → tlabel → expr → Prop :=
   | TStepInj2 e α e' :
       tstep e α e' → tstep (Inj2 e) α (Inj2 e')
   | TStepCase e α e' e1 e2 :
-      tstep e α e' → tstep (Case e e1 e2) α (Case e' e1 e2)
-  | TStepForce e α e' :
       (* no congruence under EBox: a box suspends evaluation *)
-      tstep e α e' → tstep (Force e) α (Force e').
+      tstep e α e' → tstep (Case e e1 e2) α (Case e' e1 e2).
 
 (** GV-style term reduction: just the pure steps. *)
 Definition reduction (e e' : expr) : Prop := tstep e LBeta e'.
@@ -225,15 +225,6 @@ Proof.
   inversion H0.
 Qed.
 
-Lemma tstep_force_inv e α e' :
-  tstep (Force e) α e' →
-  (∃ e'', tstep e α e'' ∧ e' = Force e'')
-  ∨ (∃ eb, e = EBox eb ∧ α = LBeta ∧ e' = subst1 (EBox eb) eb).
-Proof.
-  intros H. inversion H; simplify_eq; eauto 10.
-  inversion H0; simplify_eq; eauto 10.
-Qed.
-
 Lemma tstep_case_inv e e1 e2 α e' :
   tstep (Case e e1 e2) α e' →
   (∃ e'', tstep e α e'' ∧ e' = Case e'' e1 e2)
@@ -258,8 +249,7 @@ Inductive frame :=
   | FLetP (e2 : expr)
   | FInj1
   | FInj2
-  | FCase (e1 e2 : expr)
-  | FForce.
+  | FCase (e1 e2 : expr).
 
 Definition fill_frame (f : frame) (e : expr) : expr :=
   match f with
@@ -272,7 +262,6 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
   | FInj1 => Inj1 e
   | FInj2 => Inj2 e
   | FCase e1 e2 => Case e e1 e2
-  | FForce => Force e
   end.
 
 (** Right-of-value frames require the value side condition. *)
@@ -284,7 +273,7 @@ Definition frame_chans (f : frame) : gset chan :=
   match f with
   | FAppL e | FAppR e | FPairL e | FPairR e | FLetU e | FLetP e => fchans e
   | FCase e1 e2 => fchans e1 ∪ fchans e2
-  | FInj1 | FInj2 | FForce => ∅
+  | FInj1 | FInj2 => ∅
   end.
 
 Lemma fchans_fill_frame f e :
@@ -323,8 +312,6 @@ Proof.
   - apply tstep_case_inv in Hst
       as [(e' & ? & ->)|[(v & -> & Hv' & _)|(v & -> & Hv' & _)]]; eauto.
     all: by destruct (Hv Hv').
-  - apply tstep_force_inv in Hst as [(e' & ? & ->)|(eb & -> & _)]; eauto.
-    by destruct Hv.
 Qed.
 
 (** Values carried by communication labels are values. *)
@@ -441,7 +428,6 @@ Proof.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj1.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj2.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepCase.
-  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepForce.
 Qed.
 
 (** Process labels π ::= τ | σ

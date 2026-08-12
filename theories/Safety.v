@@ -59,6 +59,7 @@ Fixpoint act (e : expr) : option action :=
           | Konst KSend, Pair v (Chan c) => Some (ASend c v)
           | Konst KClos, Chan c => Some (AClos c)
           | Konst KLink, Pair (Chan c) (Chan d) => Some (ALink c d)
+          | Konst KForce, EBox _ => Some ABeta
           | _, _ => None
           end
         else act e2
@@ -74,9 +75,6 @@ Fixpoint act (e : expr) : option action :=
   | Case e1 _ _ =>
       if is_val e1 then match e1 with Inj1 _ | Inj2 _ => Some ABeta | _ => None end
       else act e1
-  (* [EBox _] is unconditionally a value, so no [is_val] guard is
-     needed here: [act e1] is [None] for every other value. *)
-  | Force e1 => match e1 with EBox _ => Some ABeta | _ => act e1 end
   end.
 
 (** The labels an action admits. *)
@@ -106,8 +104,7 @@ Proof.
   induction 1 as [e α e' Hh|e1 α e1' e2 Hst IH|v e2 α e2' Hv Hst IH
                  |e1 α e1' e2 Hst IH|v e2 α e2' Hv Hst IH
                  |e1 α e1' e2 Hst IH|e1 α e1' e2 Hst IH
-                 |e α e' Hst IH|e α e' Hst IH|e α e' e1 e2 Hst IH
-                 |e α e' Hst IH]; simpl.
+                 |e α e' Hst IH|e α e' Hst IH|e α e' e1 e2 Hst IH]; simpl.
   - (* T-Act-Ctx at the hole: read the redex off the head step *)
     inversion Hh; simplify_eq; simpl;
       repeat match goal with
@@ -139,9 +136,6 @@ Proof.
   - done.
   - destruct (is_val e) eqn:Hb; [|done].
     exfalso. eapply val_no_tstep; [exact Hst|by rewrite Hb].
-  - (* force: the operand steps, so it cannot be a box *)
-    destruct e as [| | | | | | | | | | | |eb | ]; try done.
-    exfalso. eapply val_no_tstep; [exact Hst|done].
 Qed.
 
 Lemma act_offer e a α : act e = Some a → offers a α → ∃ e', tstep e α e'.
@@ -149,7 +143,7 @@ Proof.
   revert a α.
   induction e as [x| |k|c|e0 IHe|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e1 IH1 e2 IH2|e1 IH|e1 IH|e0 IH0 e1 IH1 e2 IH2
-                 |e1 IH|e1 IH];
+                 |e1 IH];
     simpl; intros a α Ha Hoff; try discriminate.
   - (* application *)
     destruct (is_val e1) eqn:Hb1;
@@ -158,21 +152,21 @@ Proof.
     destruct (is_val e2) eqn:Hb2;
       [|destruct (IH2 _ _ Ha Hoff) as [e2' Hst]; exists (App e1 e2');
         apply TStepAppR; [by rewrite Hb1|done]].
-    destruct e1 as [| |k| |e0 | | | | | | | | | ]; try discriminate.
+    destruct e1 as [| |k| |e0 | | | | | | | | ]; try discriminate.
     + (* a concurrency primitive *)
       destruct k; simplify_eq.
       * (* T-Act-Fork *)
         destruct α as [|σ|c w]; try done. simpl in Hoff. simplify_eq.
         exists (Chan c). apply TStepHead, HeadFork. by rewrite Hb2.
       * (* T-Act-Recv *)
-        destruct e2 as [| | |c | | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| ]; try done.
         destruct σ as [d w|d w|d|cd]; try done.
         destruct Hoff as [-> Hw]. exists (Pair w (Chan d)).
         by apply TStepHead, HeadRecv.
       * (* T-Act-Send *)
-        destruct e2 as [| | | | | |v w | | | | | | | ]; try discriminate.
-        destruct w as [| | |d | | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | | | | |v w | | | | | | ]; try discriminate.
+        destruct w as [| | |d | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| ]; try done.
         destruct σ as [d' w'|d' w'|d'|cd']; try done.
         destruct Hoff as [-> ->].
@@ -180,19 +174,23 @@ Proof.
         apply andb_True in Hv2 as [Hv _].
         exists (Chan d'). by apply TStepHead, HeadSend.
       * (* T-Act-Close *)
-        destruct e2 as [| | |c | | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| ]; try done.
         destruct σ as [d w|d w|d|cd]; try done. simpl in Hoff. simplify_eq.
         exists EUnit. by apply TStepHead, HeadClos.
       * (* T-Act-Link *)
-        destruct e2 as [| | | | | |v w | | | | | | | ]; try discriminate.
-        destruct v as [| | |c' | | | | | | | | | | ]; try discriminate.
-        destruct w as [| | |d' | | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | | | | |v w | | | | | | ]; try discriminate.
+        destruct v as [| | |c' | | | | | | | | | ]; try discriminate.
+        destruct w as [| | |d' | | | | | | | | | ]; try discriminate.
         simplify_eq.
         destruct α as [|σ| ]; try done.
         destruct σ as [| | |cd'']; try done.
         simpl in Hoff. subst cd''.
         exists EUnit. by apply TStepHead, HeadLink.
+      * (* T-Act-Force: [EBox _] is unconditionally a value *)
+        destruct e2 as [| | | | | | | | | | | |eb ]; try discriminate.
+        simplify_eq. destruct α; try done.
+        exists (subst1 (EBox eb) eb). by apply TStepHead, HeadForce.
     + (* T-Act-App *)
       simplify_eq. destruct α; try done.
       exists (subst1 e2 e0). apply TStepHead, HeadApp. by rewrite Hb2.
@@ -212,7 +210,7 @@ Proof.
     destruct (is_val e1) eqn:Hb1;
       [|destruct (IH1 _ _ Ha Hoff) as [e1' Hst]; exists (LetP e1' e2);
         by apply TStepLetP].
-    destruct e1 as [| | | | | |u w | | | | | | | ]; try discriminate.
+    destruct e1 as [| | | | | |u w | | | | | | ]; try discriminate.
     simplify_eq. destruct α; try done.
     pose proof (is_val_of_true _ Hb1) as Hv1. simpl in Hv1.
     apply andb_True in Hv1 as [Hu Hw].
@@ -227,17 +225,11 @@ Proof.
     destruct (is_val e0) eqn:Hb0;
       [|destruct (IH0 _ _ Ha Hoff) as [e0' Hst]; exists (Case e0' e1 e2);
         by apply TStepCase].
-    destruct e0 as [| | | | | | | | |v |w | | | ]; try discriminate.
+    destruct e0 as [| | | | | | | | |v |w | | ]; try discriminate.
     + simplify_eq. destruct α; try done. simpl in Hb0.
       exists (subst1 v e1). apply TStepHead, HeadCase1. by rewrite Hb0.
     + simplify_eq. destruct α; try done. simpl in Hb0.
       exists (subst1 w e2). apply TStepHead, HeadCase2. by rewrite Hb0.
-  - (* force (the [EBox] case above is a value, hence discriminated) *)
-    destruct e1 as [| | | | | | | | | | | |eb | ];
-      try (destruct (IH _ _ Ha Hoff) as [e1' Hst]; exists (Force e1');
-           by apply TStepForce).
-    simplify_eq. destruct α; try done.
-    exists (subst1 (EBox eb) eb). by apply TStepHead, HeadForce.
 Qed.
 
 (** ** Consequences at the term level *)

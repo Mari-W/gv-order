@@ -10,7 +10,9 @@ From stdpp Require Import base strings gmap gmultiset countable.
 Definition chan := string.
 
 (** Constants for the concurrency primitives. *)
-Inductive konst := KFork | KRecv | KSend | KClos | KLink.
+Inductive konst :=
+  | KFork | KRecv | KSend | KClos | KLink
+  | KForce.
 
 Inductive expr :=
   | Var (x : nat)
@@ -27,17 +29,18 @@ Inductive expr :=
   | Inj2 (e : expr)                (* right injection *)
   | Case (e e1 e2 : expr)          (* case e (a.e1) (a.e2) — each branch
                                       binds 1: index 0 = the payload *)
-  | EBox (e : expr)               (* !e — a recursively defined thunk
+  | EBox (e : expr).              (* !e — a recursively defined thunk
                                       value (suspends e); binds 1:
                                       index 0 = the thunk itself *)
-  | Force (e : expr).              (* force e — unrolls a thunk:
-                                      force (!e) —β→ e[!e/x] *)
 
 Notation EFork := (Konst KFork).
 Notation ERecv := (Konst KRecv).
 Notation ESend := (Konst KSend).
 Notation EClos := (Konst KClos).
 Notation ELink := (Konst KLink).
+(** force is simply a function: forcing is application, so it needs no
+    evaluation context of its own.  force (!e) —β→ e[!e/x]. *)
+Notation EForce := (Konst KForce).
 
 (** ** Values *)
 
@@ -62,9 +65,11 @@ Proof.
   apply (inj_countable'
     (λ k, match k with
           | KFork => 0 | KRecv => 1 | KSend => 2 | KClos => 3 | KLink => 4
+          | KForce => 5
           end)
     (λ n, match n with
-          | 0 => KFork | 1 => KRecv | 2 => KSend | 3 => KClos | _ => KLink
+          | 0 => KFork | 1 => KRecv | 2 => KSend | 3 => KClos | 4 => KLink
+          | _ => KForce
           end)).
   by intros [].
 Qed.
@@ -89,7 +94,6 @@ Proof.
     | Inj2 e => GenNode 7 [go e]
     | Case e e1 e2 => GenNode 8 [go e; go e1; go e2]
     | EBox e => GenNode 9 [go e]
-    | Force e => GenNode 10 [go e]
     end).
   set (dec := fix go t : expr :=
     match t with
@@ -106,7 +110,6 @@ Proof.
     | GenNode 7 [t] => Inj2 (go t)
     | GenNode 8 [t; t1; t2] => Case (go t) (go t1) (go t2)
     | GenNode 9 [t] => EBox (go t)
-    | GenNode 10 [t] => Force (go t)
     | _ => EUnit
     end).
   apply (inj_countable' enc dec).
@@ -135,7 +138,6 @@ Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   | Case e e1 e2 =>
       Case (rename r e) (rename (upren r) e1) (rename (upren r) e2)
   | EBox e => EBox (rename (upren r) e)
-  | Force e => Force (rename r e)
   end.
 
 Definition up (σ : nat → expr) : nat → expr := Var 0 .: (rename S ∘ σ).
@@ -153,7 +155,6 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   | Inj2 e => Inj2 (subst σ e)
   | Case e e1 e2 => Case (subst σ e) (subst (up σ) e1) (subst (up σ) e2)
   | EBox e => EBox (subst (up σ) e)
-  | Force e => Force (subst σ e)
   end.
 
 (** β-substitutions: [subst1 v e] is e[v/a] for a Lam-bound a;
@@ -171,7 +172,7 @@ Fixpoint closed_at (n : nat) (e : expr) : bool :=
   | Lam e => closed_at (S n) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => closed_at n e1 && closed_at n e2
   | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
-  | Inj1 e | Inj2 e | Force e => closed_at n e
+  | Inj1 e | Inj2 e => closed_at n e
   | Case e e1 e2 => closed_at n e && closed_at (S n) e1 && closed_at (S n) e2
   | EBox e => closed_at (S n) e
   end.
@@ -183,7 +184,7 @@ Fixpoint fchans (e : expr) : gset chan :=
   match e with
   | Var _ | EUnit | Konst _ => ∅
   | Chan c => {[c]}
-  | Lam e | Inj1 e | Inj2 e | EBox e | Force e => fchans e
+  | Lam e | Inj1 e | Inj2 e | EBox e => fchans e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fchans e1 ∪ fchans e2
   | Case e e1 e2 => fchans e ∪ fchans e1 ∪ fchans e2
   end.
@@ -340,7 +341,7 @@ Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   | Lam e => allfv (upP P) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
-  | Inj1 e | Inj2 e | Force e => allfv P e
+  | Inj1 e | Inj2 e => allfv P e
   | Case e e1 e2 => allfv P e ∧ allfv (upP P) e1 ∧ allfv (upP P) e2
   | EBox e => allfv (upP P) e
   end.
@@ -365,7 +366,6 @@ Proof.
     + eapply IHe2; [|done]. by apply upP_mono.
     + eapply IHe3; [|done]. by apply upP_mono.
   - eapply IHe; [|done]. by apply upP_mono.
-  - eauto.
 Qed.
 
 (** Occurrence of a free variable (the dual of [allfv]). *)
@@ -376,7 +376,7 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | Lam e => freevar (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
-  | Inj1 e | Inj2 e | Force e => freevar x e
+  | Inj1 e | Inj2 e => freevar x e
   | Case e e1 e2 => freevar x e ∨ freevar (S x) e1 ∨ freevar (S x) e2
   | EBox e => freevar (S x) e
   end.
@@ -513,7 +513,6 @@ Proof.
       unfold compose in IHe3. rewrite fchans_rename in IHe3. set_solver.
   - specialize (IHe (S y) (up γ) Hf). simpl in IHe.
     unfold compose in IHe. rewrite fchans_rename in IHe. exact IHe.
-  - by specialize (IHe _ γ Hf).
 Qed.
 
 Lemma fchans_subst e : ∀ γ (D : gset chan),
@@ -593,7 +592,6 @@ Fixpoint eswap (a b : chan) (e : expr) : expr :=
   | Inj2 e => Inj2 (eswap a b e)
   | Case e e1 e2 => Case (eswap a b e) (eswap a b e1) (eswap a b e2)
   | EBox e => EBox (eswap a b e)
-  | Force e => Force (eswap a b e)
   end.
 
 Lemma eswap_involutive a b e : eswap a b (eswap a b e) = e.
@@ -629,7 +627,6 @@ Fixpoint chsubst (c d : chan) (e : expr) : expr :=
   | Inj2 e => Inj2 (chsubst c d e)
   | Case e e1 e2 => Case (chsubst c d e) (chsubst c d e1) (chsubst c d e2)
   | EBox e => EBox (chsubst c d e)
-  | Force e => Force (chsubst c d e)
   end.
 
 (** A universally true predicate holds of all free variables. *)

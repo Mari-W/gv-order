@@ -114,7 +114,6 @@ Proof.
   - by apply TStepInj1.
   - by apply TStepInj2.
   - by apply TStepCase.
-  - by apply TStepForce.
 Qed.
 
 Lemma gswap_involutive a b C : gswap a b (gswap a b C) = C.

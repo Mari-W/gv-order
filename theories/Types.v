@@ -675,4 +675,6 @@ Inductive konst_ty : konst → ty → Prop :=
   | KTClos :
       konst_ty KClos (TLolli (TSess SEnd) TUnit)
   | KTLink S :
-      konst_ty KLink (TLolli (TProd (TSess S) (TSess (dual S))) TUnit).
+      konst_ty KLink (TLolli (TProd (TSess S) (TSess (dual S))) TUnit)
+  | KTForce T :
+      konst_ty KForce (TLolli (TBox T) T).

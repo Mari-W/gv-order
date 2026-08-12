@@ -27,12 +27,12 @@ Proof. done. Qed.
 
 (** fix f. λc. (force f) (send ⟨∗, c⟩) *)
 Definition pinger : expr :=
-  EBox (Lam (App (Force (Var 1)) (App ESend (Pair EUnit (Var 0))))).
+  EBox (Lam (App (App EForce (Var 1)) (App ESend (Pair EUnit (Var 0))))).
 
 (** fix f. λc. let ⟨u, c'⟩ = recv c in let ∗ = u in (force f) c' *)
 Definition ponger : expr :=
   EBox (Lam (LetP (App ERecv (Var 0))
-                (LetU (Var 1) (App (Force (Var 3)) (Var 0))))).
+                (LetU (Var 1) (App (App EForce (Var 3)) (Var 0))))).
 
 Definition Tping : ty := TLolli (TSess Sloop) TUnit.
 Definition Tpong : ty := TLolli (TSess (dual Sloop)) TUnit.
@@ -103,8 +103,8 @@ Proof.
 Qed.
 
 (** The two endpoints, applied to their channel. *)
-Definition ping (c : chan) : expr := App (Force pinger) (Chan c).
-Definition pong (c : chan) : expr := App (Force ponger) (Chan c).
+Definition ping (c : chan) : expr := App (App EForce pinger) (Chan c).
+Definition pong (c : chan) : expr := App (App EForce ponger) (Chan c).
 
 Lemma ping_typed c : typed {[c := Sloop]} [] (ping c) TUnit.
 Proof.

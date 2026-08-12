@@ -156,25 +156,27 @@ yields a closed, deadlock-free process
 \label{sec:recursion}
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TBox}
+  New values \hfill \rocq{TBox} \rocq{EBox} \rocq{KForce}
   \begin{align*}
-    \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{(\tIVX = e)}}
-    & \text{intuitionistic variable, recursively defined thunk}\\
-    \fFunc{e} &::= \dots \sepr \fFunc{\tLetI{\tIVX}{e}{e}} & \text{thunk elimination}\\
-    \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tLetI{\tIVX}{\fCtx{E}}{e}}
+    \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{(\tIVX = e)}} \sepr \fFunc{\tForce}
+    & \text{intuitionistic variable, recursively defined thunk, thunk elimination}
   \end{align*}
+  Since $\fFunc{\tForce}$ is a function, no new evaluation contexts
+  are needed: thunk elimination is ordinary application.
+  \smallskip
+
   New labeled transition \hfill \rocq{HeadForce}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Exp]
-      \bussAx{\fFunc{\tLetI{\tIVX}{\IExp{(\tIVY = e)}}{e'}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
+      \bussAx{\fFunc{\tApp{\tForce}{\IExp{(\tIVY = e)}}} \trans{\beta} \fFunc{\tSub{e}{\tFixI{\tIVY}{e}}{\tIVY}}}
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
-  \hfill \rocq{typed_box}
+  \hfill \rocq{typed_box} \rocq{KTForce}
   \mw{claude: the mechanization has no separate $\Gamma$; it keeps one
     environment in which unlimited entries admit contraction and
-    weakening (lsplit\_unl, lwk\_drop), and its eliminator is
-    force~$e$ rather than let $!x = e$ in $e'$. Reconcile?}
+    weakening (lsplit\_unl, lwk\_drop, sem\_typed\_contract).
+    Reconcile?}
   \begin{mathpar}
     \begin{bussproof}[E-IVar]
       \bussAx{\fType{\tEmpty ; \Gamma, \fFunc{\tIVX}:T ; \tEmpty \vdash \fFunc{\tIVX} : T}}
@@ -185,15 +187,13 @@ yields a closed, deadlock-free process
       \bussU{\fType{\tEmpty  ; \Gamma ; \tEmpty \vdash \fFunc{\IExp{(\tIVX = e)}} : \IExp{T}}}
     \end{bussproof}
     \and
-    \begin{bussproof}[E-Let-Exp]
-      \bussAs{\fType{\Sigma_1 ; \Gamma ; \Delta_1 \vdash \fFunc{e_1} : \IExp{T}}}
-      \bussAs{\fType{\Sigma_2 ; \Gamma, \fFunc{\tIVX}:T ; \Delta_2 \vdash \fFunc{e_2} :U}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Gamma ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLetI{\tIVX}{e_1}{e_2}} : U}}
+    \begin{bussproof}[E-Force]
+      \bussAx{\fType{\tEmpty ; \Gamma ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\IExp{T}}{T}}}
     \end{bussproof}
   \end{mathpar}
   \caption{Extending the term language and typing
     (\cref{fig:typeSys}) with recursive exponentials in the style of Lily.}
-  \Description{Additional values, terms and evaluation contexts for recursive exponentials; one reduction axiom; and three typing rules over a judgment carrying an extra intuitionistic environment.}
+  \Description{Additional values for recursive exponentials; one reduction axiom; and three typing rules over a judgment carrying an extra intuitionistic environment.}
   \label{fig:lily:terms}
 \end{figure}
 
@@ -216,7 +216,7 @@ equivalence by \citet{DBLP:journals/entcs/BiermanPR00} with respect to
 their big-step semantics.  We also use their abbreviations for a fixed point operator and
 non-recursive thunks:
 \begin{align*}
-  \fFunc{\tFixI{\tIVX}{e}} &:= \fFunc{\tLetI{\tIVX}{\IExp{(\tIVX = e)}}{e}}
+  \fFunc{\tFixI{\tIVX}{e}} &:= \fFunc{\tApp{\tForce}{\IExp{(\tIVX = e)}}}
   & \fFunc{\IExp{e}} & := \fFunc{\IExp{(\tIVX = e)}} \quad \text{where}~\fFunc{\tIVX\notin fv (e)}
 \end{align*}
 
@@ -262,57 +262,38 @@ following compositionality lemmas.
 
   Case $n=n'+1$.
   $\fFunc{{\tFixI{\tIVX}{e}}}
-  = \fFunc{\tLetI{\tIVX}{\IExp{(\tIVX = e)}}{e}}
+  = \fFunc{\tApp{\tForce}{\IExp{(\tIVX = e)}}}
   \trans\beta \fFunc{\tSub{e}{\tFixI{\tIVX}{e}}{\tIVX}} \in
   \lrTerm{n'}{\fType{\tEmpty \vdash \IExp{T}}}$ by the IH and
   assumption. Hence, $\fFunc{{\tFixI{\tIVX}{e}}} \in
   \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
 \end{proof}
 
-\begin{lemma}[Compositionality: \ruleLabel{let-exp} \rocq{sem_typed_force}]
+\begin{lemma}[Compositionality: \ruleLabel{force} \rocq{sem_typed_force}]
   \label{lem:comp:let-exp}
-  If
-  (1) $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$ and,
-  (2) for every
-  $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
-  $\fFunc{\tSub{e'}{e''}{\tIVX}} \in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$,
+  If $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash \IExp{T}}}$
   then
-  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
+  $\fFunc{\tApp{\tForce}{e}} \in \lrTerm{n}{\fType{\Sigma \vdash {T}}}$.
 \end{lemma}
 \begin{proof}
   The case $n=0$ is trivial.
   If $n= n'+1$, then there are two cases.
   \begin{itemize}
   \item If $\irred \fFunc{e}$, then $\fFunc{e} \in
-    \lrVal{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$, which implies
-    $\fType{\Sigma_1} = \fType{\tEmpty}$ and $\fFunc{e} = \fFunc{\IExp{(\tIVY =
+    \lrVal{n}{\fType{\Sigma \vdash \IExp{T}}}$, which implies
+    $\fType{\Sigma} = \fType{\tEmpty}$ and $\fFunc{e} = \fFunc{\IExp{(\tIVY =
         e'')}}$ and $\fFunc{{\tFixI{\tIVY}{e''}}} \in
-    \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$. Thus,
-    $\fFunc{\tLetI{\tIVX}{\IExp{(\tIVY = e'')}}{e'}} \trans{\beta}
-    \fFunc{\tSub{e'}{\tFixI{\tIVY}{e''}}{\tIVX}}$.
-    We conclude by applying assumption (2) and monotonicity.
+    \lrTerm{n}{\fType{\tEmpty \vdash T}}$.  But
+    $\fFunc{\tApp{\tForce}{e}} = \fFunc{\tFixI{\tIVY}{e''}}$ by
+    definition of the fixed-point abbreviation, so we are done.
   \item If $\neg\irred \fFunc{e}$, then $\fFunc{e} \redu[\lambda]
-    \fFunc{e'''}$ and
-    \begin{enumerate}
-    \item if $\lambda = \beta$, then $\fFunc{e'''} \in
-      \lrTerm{n'}{\fType{\Sigma_1 \vdash \IExp{T}}}$; by monotonicity
-      and IH we conclude $\fFunc{\tLetI{\tIVX}{e'''}{e'}} \in
-      \lrTerm{n'}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$ and hence $\fFunc{\tLetI{\tIVX}{e}{e'}} \in
-      \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
-    \item if $\lambda = \lFork{c}{v}$, then $\fType{\Sigma_1} =
-      \fType{\Sigma_1', \Sigma_2'}$ with $\fFunc{v} \in
-      \lrVal{n}{\fType{\Sigma_1' \vdash \lFunc{S}{\tUnit}}}$ and
-      $\fFunc{e'''} \in \lrTerm{n'}{\fType{\Sigma_2',
-          \fFunc{c}:\dual{S} \vdash \IExp{T}}}$;
-      by monotonicity and IH we conclude $\fFunc{\tLetI{\tIVX}{e'''}{e'}} \in
-      \lrTerm{n'}{\fType{\Sigma_2', \fFunc{c}:\dual{S}, \Sigma_2
-          \vdash {U}}}$ and hence  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in
-      \lrTerm{n}{\fType{\Sigma_2', \fFunc{c}:\dual{S}, \Sigma_2
-          \vdash {U}}}$.
-    \item if $\lambda \in \{\lRecv{c}{v}, \lSend{c}{v}, \lTerm{c} \}$
-      --- similar.
-      \qedhere
-    \end{enumerate}
+    \fFunc{e'''}$; for every label the corresponding clause of
+    $\lrTerm{n}{\fType{\Sigma \vdash \IExp{T}}}$ yields
+    $\fFunc{e'''}$ in the relation at $n'$ (at the adjusted
+    interface), and by IH and monotonicity
+    $\fFunc{\tApp{\tForce}{e'''}}$ is in the relation at $n'$, hence
+    $\fFunc{\tApp{\tForce}{e}}$ at $n$.
+    \qedhere
   \end{itemize}
 \end{proof}
 
@@ -404,20 +385,22 @@ all our prior definitions and proofs carry over without change.
 \label{sec:extens-repl}
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TBox}
+  New values \hfill \rocq{TBox}
   \begin{align*}
-    \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{e}}
-    & \text{intuitionistic variable, non-recursive thunk}\\
-    \fFunc{e} &::= \dots \sepr \fFunc{\tLetI{\tIVX}{e}{e}} & \text{thunk elimination}\\
-    \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tLetI{\tIVX}{\fCtx{E}}{e}}
+    \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{e}} \sepr \fFunc{\tForce}
+    & \text{intuitionistic variable, non-recursive thunk, thunk elimination}
   \end{align*}
+  As in \cref{fig:lily:terms}, $\fFunc{\tForce}$ is a function, so no
+  new evaluation contexts are needed.
+  \smallskip
+
   New labeled transition: \hfill \rocq{HeadForce}
   \mw{claude: only the recursive exponential of Sect. 4.2 is
     mechanized (as the footnote allows); there is no separate
     non-recursive one. Keep both presentations?}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Exp]
-      \bussAx{\fFunc{\tLetI{\tIVX}{\IExp{e}}{e'}} \trans{\beta} \fFunc{\tSub{e'}{e}{\tIVX}}}
+      \bussAx{\fFunc{\tApp{\tForce}{\IExp{e}}} \trans{\beta} \fFunc{e}}
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
@@ -428,16 +411,14 @@ all our prior definitions and proofs carry over without change.
       \bussU{\fType{\tEmpty  ; \Gamma ; \tEmpty \vdash \fFunc{\IExp{e}} : \IExp{T}}}
     \end{bussproof}
     \and
-    \begin{bussproof}[E-Let-Exp]
-      \bussAs{\fType{\Sigma_1 ; \Gamma ; \Delta_1 \vdash \fFunc{e_1} : \IExp{T}}}
-      \bussAs{\fType{\Sigma_2 ; \Gamma, \fFunc{\tIVX}:T ; \Delta_2 \vdash \fFunc{e_2} :U}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Gamma ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLetI{\tIVX}{e_1}{e_2}} : U}}
+    \begin{bussproof}[E-Force]
+      \bussAx{\fType{\tEmpty ; \Gamma ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\IExp{T}}{T}}}
     \end{bussproof}
   \end{mathpar}
 
   \caption{Extensions to the term language and typing with
     (non-recursive) exponentials.}
-  \Description{Additional values, terms and evaluation contexts for non-recursive exponentials; one reduction axiom; and two typing rules.}
+  \Description{Additional values for non-recursive exponentials; one reduction axiom; and two typing rules.}
   \label{fig:replication-with-exponentials}
 \end{figure}
 
@@ -476,10 +457,15 @@ treat the new operators as macros as follows.
   \fFunc{repl} & \fType{{}:{\lFunc{\lUnres{(\lFunc{S}{\tUnit})}}{[{\dual{S}}]}}}
   &
     \fFunc{req} & \fType{{}:{\lFunc{[S]}{S}}} \\
-  \fFunc{repl} & := \fFunc{{\tAbs{\tLVA}{\tLetI{\tIVX}{\tLVA}{\IExp{(\tAbs{\_}{\tApp{\tFork}{\tIVX}})}}}}}
+  \fFunc{repl} & := \fFunc{{\tAbs{\tLVA}{\IExp{(\tAbs{\_}{\tApp{\tFork}{(\tApp{\tForce}{\tLVA})}})}}}}
   &
-    \fFunc{req} & := \fFunc{{\tAbs{\tLVA}{\tLetI{\tIVX}{\tLVA}{\tApp{\tIVX}{\tUnit}}}}}
+    \fFunc{req} & := \fFunc{{\tAbs{\tLVA}{\tApp{(\tApp{\tForce}{\tLVA})}{\tUnit}}}}
 \end{align*}
+\mw{claude: with force as the only eliminator, repl places the
+  \(!\)-typed variable under a thunk; this relies on unlimited
+  variables being copyable, which the mechanization's single
+  environment provides directly (cf.\ the mark at
+  Fig.~\ref{fig:lily:terms}).}
 
 \mw{claude: likewise here --- examples/Factory.v mechanizes a
   replicated server: one factory value serving two independent
@@ -498,24 +484,21 @@ treat the new operators as macros as follows.
   Immediate.
 \end{proof}
 
-\begin{lemma}[Compositionality: \ruleLabel{let-exp} \rocq{sem_typed_force}]
+\begin{lemma}[Compositionality: \ruleLabel{force} \rocq{sem_typed_force}]
   \label{lem:comp:let-exp-nr}
   If
-  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$ and,
-  for every
-  $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
-  $\fFunc{\tSub{e'}{e''}{\tIVX}} \in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$,
+  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash \IExp{T}}}$,
   then
-  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
+  $\fFunc{\tApp{\tForce}{e}} \in \lrTerm{n}{\fType{\Sigma \vdash {T}}}$.
 \end{lemma}
 \begin{proof}[Sketch of proof]
   If $\fFunc{e}$ is irreducible, it must have the form $\fFunc{e} =
-  \fFunc{\IExp{e''}}$ with $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$. In this case, $\fFunc{\tLetI{\tIVX}{e}{e'}}$
-  reduces to $\fFunc{\tSub{e'}{e''}{\tIVX}}$, which is by assumption
-  $\in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$, hence the claim holds.
+  \fFunc{\IExp{e''}}$ with $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty
+      \vdash T}}$. In this case, $\fFunc{\tApp{\tForce}{e}}$ reduces
+  to $\fFunc{e''}$, hence the claim holds.
 
   If $n>0$ and $\fFunc{e}$ reduces, then
-  $\fFunc{\tLetI{\tIVX}{e}{e'}}$ reduces in the same way.
+  $\fFunc{\tApp{\tForce}{e}}$ reduces in the same way.
 \end{proof}
 
 \subsection{The Link Operator}

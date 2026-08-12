@@ -458,7 +458,9 @@ Proof.
       apply Vrel_sess_iff in HVd as (d & sd0 & -> & -> & _).
       assert (c ≠ d) as Hcd.
       { apply map_disjoint_dom in Hdab. set_solver. }
-      eapply (Hirr (LSess (SLink {[c; d]}))). apply TStepHead. by apply HeadLink. }
+      eapply (Hirr (LSess (SLink {[c; d]}))). apply TStepHead. by apply HeadLink.
+    - apply Vrel_box_iff in HV2 as (_ & eb' & -> & _ & _).
+      eapply (Hirr LBeta). apply TStepHead. by apply HeadForce. }
   intros α e'' Hst.
   apply tstep_app_inv in Hst
     as [(e1' & Hst1 & ->)|[(_ & e2' & Hst2 & ->)|(_ & _ & Hhd)]].
@@ -523,6 +525,13 @@ Proof.
     { eapply senv_hd_intro; [exact Hu0|senv_perm]. }
     { set_solver. }
     apply Vrel_Erel, Vrel_unit.
+  - (* HeadForce *)
+    apply Vrel_lolli_iff in HV1
+      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    inversion Hk; subst.
+    apply Vrel_box_iff in HV2 as (-> & eb' & Heqb & Hfce & HK).
+    simplify_eq.
+    rewrite (left_id ∅ (∪)). apply HK. lia.
   - (* HeadLink *)
     apply Vrel_lolli_iff in HV1
       as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
@@ -617,16 +626,18 @@ Qed.
 Lemma Erel_force_val n T eb :
   fchans eb ⊆ ∅ →
   (∀ j, j < n → Erel j ∅ T (subst1 (EBox eb) eb)) →
-  Erel n ∅ T (Force (EBox eb)).
+  Erel n ∅ T (App EForce (EBox eb)).
 Proof.
   destruct n as [|n']; [intros; apply Erel_0|].
   intros Hfc HK. apply Erel_S_iff. split_and!.
   { intros Hirr. exfalso. eapply (Hirr LBeta).
     apply TStepHead, HeadForce. }
   intros α e' Hst.
-  apply tstep_force_inv in Hst as [(e'' & Hst' & _)|(eb' & Heq & -> & ->)].
-  { exfalso. eapply val_no_tstep; [exact Hst'|done]. }
-  simplify_eq. simpl. apply HK. lia.
+  apply tstep_app_inv in Hst
+    as [(e'' & Hst' & _)|[(_ & e'' & Hst' & _)|(_ & _ & Hhd)]].
+  { exfalso. eauto using val_no_tstep. }
+  { exfalso. eauto using val_no_tstep. }
+  inversion Hhd; simplify_eq. simpl. apply HK. lia.
 Qed.
 
 (** ** One lemma per term rule of Fig. 4 (Theorem 3.11)
@@ -1065,23 +1076,28 @@ Proof.
   apply Vrel_Erel, Hall. lia.
 Qed.
 
-(** E-Force *)
+(** E-Force, derived: force is a konst, so forcing is application and
+    this is an instance of application compositionality — kept as its
+    own lemma because the paper states it as a rule. *)
 Lemma sem_typed_force Σ Δ e T :
   sem_typed Σ Δ e (TBox T) →
-  sem_typed Σ Δ (Force e) T.
+  sem_typed Σ Δ (App EForce e) T.
 Proof.
-  intros (Hfc & Hfv & Hrv & He). split_and!; simpl; [done|done|done|].
-  intros n Σ' γ Hd Hg. simpl.
-  replace (Σ ∪ Σ') with ((Σ ∪ Σ') ∪ ∅) by (by rewrite (right_id ∅ (∪))).
-  apply (Erel_bind n FForce _ _ (TBox T)); simpl.
-  - done.
-  - apply map_disjoint_empty_r.
+  intros (Hfc & Hfv & Hrv & He). split_and!; simpl.
   - set_solver.
-  - by apply He.
-  - intros j Σh' v Hj Hdh HV.
-    apply Vrel_box_iff in HV as (-> & eb & -> & Hfce & HK).
-    rewrite (left_id ∅ (∪)).
-    apply Erel_force_val; [|exact HK]. set_solver.
+  - by split.
+  - intros x Hx. right. by apply Hrv.
+  - intros n Σ' γ Hd Hg.
+    replace (Σ ∪ Σ') with ((Σ ∪ Σ') ∪ ∅) by (by rewrite (right_id ∅ (∪))).
+    apply (Erel_bind n (FAppR EForce) _ _ (TBox T)); simpl.
+    + done.
+    + apply map_disjoint_empty_r.
+    + set_solver.
+    + by apply He.
+    + intros j Σh' v Hj Hdh HV.
+      apply Vrel_box_iff in HV as (-> & eb & -> & Hfce & HK).
+      rewrite (left_id ∅ (∪)).
+      apply Erel_force_val; [|exact HK]. set_solver.
 Qed.
 
 (** □-weakening *)
@@ -1136,7 +1152,6 @@ Proof.
   - by apply sem_typed_inj2.
   - by eapply sem_typed_case.
   - by apply sem_typed_box.
-  - by apply sem_typed_force.
   - by eapply sem_typed_wk.
   - by eapply sem_typed_conv.
 Qed.
