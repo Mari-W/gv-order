@@ -170,39 +170,41 @@ yields a closed, deadlock-free process
 \label{sec:recursion}
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TBang}
+  New values, terms, types \hfill \rocq{TBang}
   \begin{align*}
-    \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{(\tIVX = e)}}
-    & \text{intuitionistic variable, recursively defined thunk}\\
-    \fFunc{e} &::= \dots \sepr \fFunc{\tLetI{\tIVX}{e}{e}} & \text{thunk elimination}\\
-    \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tLetI{\tIVX}{\fCtx{E}}{e}}
+    \fFunc{v} &::= \dots \sepr \fFunc{\IExp{(\tIVX = e)}}
+    & \text{recursively defined thunk}\\
+    \fFunc{e} &::= \dots \sepr \fFunc{\tForce} & \text{thunk elimination}\\
+    \fType{T} &::= \dots \sepr \fType{\tBox{T}}
   \end{align*}
   New labeled transition \hfill \rocq{HeadForce}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Exp]
-      \bussAx{\fFunc{\tLetI{\tIVX}{\IExp{(\tIVY = e)}}{e'}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
+      \bussAx{\fFunc{\tApp{\tForce}{\IExp{(\tIVX = e)}}}
+        \trans{\beta}
+        \fFunc{\tSub{e}{\IExp{(\tIVX = e)}}{\tIVX}}}
     \end{bussproof}
   \end{mathpar}
-  New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
+  New typing rules for terms
   \hfill \rocq{typed_bang}
-  \mw{claude: the mechanization has no separate $\Gamma$; it keeps one
-    environment in which unlimited entries admit contraction and
-    weakening (lsplit\_unl, lwk\_drop), and its eliminator is
-    force~$e$ rather than let $!x = e$ in $e'$. Reconcile?}
   \begin{mathpar}
-    \begin{bussproof}[E-IVar]
-      \bussAx{\fType{\tEmpty ; \Gamma, \fFunc{\tIVX}:T ; \tEmpty \vdash \fFunc{\tIVX} : T}}
-    \end{bussproof}
-    \and
     \begin{bussproof}[E-Exp]
-      \bussAs{\fType{\tEmpty ; \Gamma , \fFunc{\tIVX}:T ; \tEmpty \vdash \fFunc{e} : T}}
-      \bussU{\fType{\tEmpty  ; \Gamma ; \tEmpty \vdash \fFunc{\IExp{(\tIVX = e)}} : \IExp{T}}}
+      \bussAs{\fType{\tEmpty ; \tBox{\Delta} , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{e} : T}}
+      \bussU{\fType{\tEmpty  ; \tBox{\Delta} \vdash \fFunc{\IExp{(\tIVX = e)}} : \tBox{T}}}
     \end{bussproof}
     \and
-    \begin{bussproof}[E-Let-Exp]
-      \bussAs{\fType{\Sigma_1 ; \Gamma ; \Delta_1 \vdash \fFunc{e_1} : \IExp{T}}}
-      \bussAs{\fType{\Sigma_2 ; \Gamma, \fFunc{\tIVX}:T ; \Delta_2 \vdash \fFunc{e_2} :U}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Gamma ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLetI{\tIVX}{e_1}{e_2}} : U}}
+    \begin{bussproof}[E-Force]
+      \bussAs{\fType{\tEmpty ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\tBox{T}}{T}}}
+    \end{bussproof}
+    \\
+    \begin{bussproof}[E-Weak]
+      \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : U}}
+      \bussU{ \fType{\Sigma ; \Delta, \tIVX : \tBox{T} \vdash \fFunc{e} : U}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[E-Contract]
+      \bussAs{\fType{\Sigma ; \Delta, \tIVX : \tBox{T}, \tIVY : \tBox{T} \vdash \fFunc{e} : U}}
+      \bussU{ \fType{\Sigma ; \Delta, \tIVX : \tBox{T} \vdash \fFunc{\tSub{e}{\tIVX}{\tIVY}} : U}}
     \end{bussproof}
   \end{mathpar}
   \caption{Extending the term language and typing
@@ -216,28 +218,33 @@ We support term recursion by adapting ideas from Lily
 recursion. Lily is based on a term calculus for linear logic with
 exponentials where ``recursion is absorbed into terms of the
 exponential type'' \cite{DBLP:journals/entcs/BiermanPR00}. In
-consequence, we add the exponential type along
-with intuitionistic variables ($\fFunc\tIVX, \fFunc\tIVY$), Lily's introduction form, and a standard elimination form as shown in
-\cref{fig:lily:terms}. Compared to \cref{fig:typeSys}, the typing
-judgment $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$ for
-terms obtains another environment $\fType{\Gamma}$ for intuitionistic
-variables.
+consequence, we add a boxed type for duplicable values, an introduction form
+for recursively defined values ``thunks'' in the style of Lily, and a $\fFunc{\tForce}$
+operator as an eliminator for boxed types as shown in
+\cref{fig:lily:terms}. Lily's eliminator is different, but equivalent.
 
-Operationally, the thunk $\fFunc{\IExp{(\tIVX = e)}}$ is a value and
-the elimination form works in call-by-name style. The reduction rule
-we propose here is proved to be a Kleene
-equivalence by \citet{DBLP:journals/entcs/BiermanPR00} with respect to
-their big-step semantics.  We also use their abbreviations for a fixed point operator and
-non-recursive thunks:
+The typing rules are as expected. Introducing a thunk requires an environment of
+only boxed types, indicated by $\tBox{\Delta}$; forcing a thunk eliminates the
+boxed type; boxed-typed variables are subject to weakening and contraction. The
+mechanization implements the structural rules as part of environment splitting,
+rather than explicit steps in a typing derivation.
+
+Operationally, the thunk $\fFunc{\IExp{(\tIVX = e)}}$ is a recursively defined value and
+the elimination operator exposes the body by unrolling the recursion.
+% The reduction rule
+% we propose here is proved to be a Kleene
+% equivalence by \citet{DBLP:journals/entcs/BiermanPR00} with respect to
+% their big-step semantics.
+\citet{DBLP:journals/entcs/BiermanPR00} define some syntactic sugar for a fixed
+point operator and non-recursive thunks:
 \begin{align*}
-  \fFunc{\tFixI{\tIVX}{e}} &:= \fFunc{\tLetI{\tIVX}{\IExp{(\tIVX = e)}}{e}}
+  \fFunc{\tFixI{\tIVX}{e}} &:= \fFunc{\tApp{\tForce}{\IExp{(\tIVX = e)}}}
   & \fFunc{\IExp{e}} & := \fFunc{\IExp{(\tIVX = e)}} \quad \text{where}~\fFunc{\tIVX\notin fv (e)}
 \end{align*}
 
-We extend the value logical relation in the
-same way as \citet{DBLP:journals/entcs/BiermanPR00}.
+We extend the value logical relation in a similar way as \citet{DBLP:journals/entcs/BiermanPR00}.
 \begin{align*}
-  \lrVal{n}{\fType{\tEmpty \vdash \IExp{T}}}
+  \lrVal{n}{\fType{\tEmpty \vdash \tBox{T}}}
   &= \set{ \fFunc{\IExp{(\tIVX = e)}}  \mid
     \fc(\fFunc{e}) = \emptyset \land
     \fFunc{{\tFixI{\tIVX}{e}}} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}
@@ -246,157 +253,64 @@ same way as \citet{DBLP:journals/entcs/BiermanPR00}.
 A replicable thunk owns no channels, which is what the side condition
 $\fc(\fFunc{e}) = \emptyset$ records; exponentials are also admitted as
 return types of a thread, so we add the rule
-$\primitive \fType{T} \implies \primitive \fType{\IExp{T}}$
+$\primitive \fType{T} \implies \primitive \fType{\tBox{T}}$
 to the ones of \cref{sec:syntacticTyping:typeSys}.
 
-For the additional cases of the fundamental theorem, we propose the
-following compositionality lemmas.
-
-\mw{claude: the mechanization has a worked example for this section
-  that the paper does not: a recursive ping/pong over an equi-recursive
-  session type, typed and deadlock free (examples/Pingpong.v). Add it
-  as a short example, the way Sect. 4.1 has the leader election?}
+For the additional cases of the fundamental theorem, we proved the
+following compositionality lemmas, each corresponding to one of the typing rules
+in \cref{fig:lily:terms}.
 
 \begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_bang}]
   \label{lem:comp:exp}
-  If,
-  for every
-  $\fFunc{e'} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
-  $\fFunc{\tSub{e}{e'}{\tIVX}} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
-  then
-  $\fFunc{\IExp{(\tIVX = e)}} \in \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
-\end{lemma}
-\begin{proof}
-  It suffices to show $\fFunc{{\tFixI{\tIVX}{e}}} \in
-  \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
-  We proceed by induction on $n$.
-
-  Case $n=0$. $\fFunc{{\tFixI{\tIVX}{e}}} \in
-  \lrTerm{0}{\fType{\tEmpty \vdash \IExp{T}}}$ is immediate.
-
-  Case $n=n'+1$.
-  $\fFunc{{\tFixI{\tIVX}{e}}}
-  = \fFunc{\tLetI{\tIVX}{\IExp{(\tIVX = e)}}{e}}
-  \trans\beta \fFunc{\tSub{e}{\tFixI{\tIVX}{e}}{\tIVX}} \in
-  \lrTerm{n'}{\fType{\tEmpty \vdash \IExp{T}}}$ by the IH and
-  assumption. Hence, $\fFunc{{\tFixI{\tIVX}{e}}} \in
-  \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
-\end{proof}
-
-\begin{lemma}[Compositionality: \ruleLabel{let-exp} \rocq{sem_typed_force}]
-  \label{lem:comp:let-exp}
   If
-  (1) $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$ and,
-  (2) for every
-  $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
-  $\fFunc{\tSub{e'}{e''}{\tIVX}} \in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$,
+  $ \fType{\tEmpty;\tBox{\Delta}, \tBox{T} \proves \fFunc{e} : T}$,
   then
-  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
+  $ \fType{\tEmpty;\tBox{\Delta} \proves \fFunc{\IExp{(x=e)}} : T}$.
 \end{lemma}
-\begin{proof}
-  The case $n=0$ is trivial.
-  If $n= n'+1$, then there are two cases.
-  \begin{itemize}
-  \item If $\irred \fFunc{e}$, then $\fFunc{e} \in
-    \lrVal{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$, which implies
-    $\fType{\Sigma_1} = \fType{\tEmpty}$ and $\fFunc{e} = \fFunc{\IExp{(\tIVY =
-        e'')}}$ and $\fFunc{{\tFixI{\tIVY}{e''}}} \in
-    \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$. Thus,
-    $\fFunc{\tLetI{\tIVX}{\IExp{(\tIVY = e'')}}{e'}} \trans{\beta}
-    \fFunc{\tSub{e'}{\tFixI{\tIVY}{e''}}{\tIVX}}$.
-    We conclude by applying assumption (2) and monotonicity.
-  \item If $\neg\irred \fFunc{e}$, then $\fFunc{e} \redu[\lambda]
-    \fFunc{e'''}$ and
-    \begin{enumerate}
-    \item if $\lambda = \beta$, then $\fFunc{e'''} \in
-      \lrTerm{n'}{\fType{\Sigma_1 \vdash \IExp{T}}}$; by monotonicity
-      and IH we conclude $\fFunc{\tLetI{\tIVX}{e'''}{e'}} \in
-      \lrTerm{n'}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$ and hence $\fFunc{\tLetI{\tIVX}{e}{e'}} \in
-      \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
-    \item if $\lambda = \lFork{c}{v}$, then $\fType{\Sigma_1} =
-      \fType{\Sigma_1', \Sigma_2'}$ with $\fFunc{v} \in
-      \lrVal{n}{\fType{\Sigma_1' \vdash \lFunc{S}{\tUnit}}}$ and
-      $\fFunc{e'''} \in \lrTerm{n'}{\fType{\Sigma_2',
-          \fFunc{c}:\dual{S} \vdash \IExp{T}}}$;
-      by monotonicity and IH we conclude $\fFunc{\tLetI{\tIVX}{e'''}{e'}} \in
-      \lrTerm{n'}{\fType{\Sigma_2', \fFunc{c}:\dual{S}, \Sigma_2
-          \vdash {U}}}$ and hence  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in
-      \lrTerm{n}{\fType{\Sigma_2', \fFunc{c}:\dual{S}, \Sigma_2
-          \vdash {U}}}$.
-    \item if $\lambda \in \{\lRecv{c}{v}, \lSend{c}{v}, \lTerm{c} \}$
-      --- similar.
-      \qedhere
-    \end{enumerate}
-  \end{itemize}
-\end{proof}
 
+\begin{lemma}[Compositionality: \ruleLabel{force} \rocq{sem_typed_force}]
+  \label{lem:comp:force}
+  If
+  $ \fType{\Sigma; \Delta \proves \fFunc{e} : \tBox{T}}$,
+  then
+  $ \fType{\Sigma; \Delta \proves \fFunc{\tApp{\tForce}{e}} : {T}}$.
+\end{lemma}
 
-% \subsection{obsolete}
-% \label{sec:obsolete}
+\begin{lemma}[Compositionality: \ruleLabel{weak} \rocq{sem_typed_wk}]
+  If
+  $ \fType{\Sigma; \Delta \proves \fFunc{e} : U}$,
+  then
+  $ \fType{\Sigma; \Delta, x:\tBox{T} \proves \fFunc{e} : U}$.
+\end{lemma}
+\begin{lemma}[Compositionality: \ruleLabel{contract} % \rocq{sem_typed_contract}
+  ]
+  If
+  $ \fType{\Sigma; \Delta, x:\tBox{T}, y:\tBox{T} \proves \fFunc{e} : U}$,\\
+  then
+  $ \fType{\Sigma; \Delta, x:\tBox{T} \proves \fFunc{\tSub{e}{x}{y}} : U}$.
+\end{lemma}
 
-% To support linear recursion, we ntroduce a new constant $\fFunc{\tFixOp}$
-% representing the fixed-point operator. \Cref{fig:linearRecursion:termsProcs}
-% introduces the fixed-point operator and provides an explicit
-% unfolding step in the operational semantics.
-% Applying a recursive function $\fFunc{\tFix{\tLVA}{\tLVB}{e}}$ to an argument
-% $\fFunc{e'}$ triggers a $\beta$-reduction that replaces the expression
-% with $\fFunc{\tApp{(\tAbs{\tLVA}{\tAbs{\tLVB}{e}})}{\tApp{(\tFix{\tLVA}{\tLVB}{e})}{e'}}}$,
-% thereby unfolding the recursive definition. The typing signature of the
-% new fixed-point operator is defined in~\cref{fig:linearRecursion:logrel}.
+This encoding of recursion also supports replication as in CP
+\cite{conf/icfp/Wadler12,DBLP:journals/jfp/Wadler14}, the process calculus
+companion to GV \cite{conf/esop/LindleyM15}. We implement a replicable
+unrestricted session carrying type $\fType{S}$ as a function
+of type $\fType{[S]} := \fType{\tBox{(\lFunc{\tUnit}{S})}}$ and
+treat the new operators as macros as follows.
+\begin{align*}
+  \fFunc{repl} & \fType{{}:{\lFunc{\tBox{(\lFunc{S}{\tUnit})}}{[{\dual{S}}]}}}
+  &
+    \fFunc{req} & \fType{{}:{\lFunc{[S]}{S}}} \\
+  \fFunc{repl} & :=
+                 \fFunc{\tAbs{x}{\IExp{(\tAbs{\_}{\tApp{\tFork}{(\tApp{\tForce}{x})}})}}}
+  & \fFunc{req} & := \fFunc{\tAbs{x}{\tApp{(\tApp{\tForce}{x})}{\tUnit}}}
+\end{align*}
 
-% \begin{figure}[t]
-%   New constant:
-%   \begin{align*}
-%     \fFunc{k} &::= \ldots \sepr \fFunc{\tFixOp}
-%     \\
-%     \fFunc{v} &::= \ldots \sepr \fFunc{\tFix{\tLVA}{\tLVB}{e}}
-%   \end{align*}
-%   New labeled transition:
-%   \begin{mathpar}
-%     \begin{bussproof}[T-Act-Rec]
-%       \bussAx{\fFunc{\tApp{(\tFix{\tLVA}{\tLVB}{e})}{e'}} \trans{\beta} \fFunc{\tApp{(\tAbs{\tLVA}{\tAbs{\tLVB}{e}})}{\tApp{(\tFix{\tLVA}{\tLVB}{e})}{e'}}}}
-%     \end{bussproof}
-%   \end{mathpar}
-%   \caption{Extension of process language (\cref{fig:terms,fig:procs}) with linear recursion and
-%   a fixed-point operator}
-%   \label{fig:linearRecursion:termsProcs}
-% \end{figure}
-
-
-% \begin{figure}[t]
-%   Typing signatures for new constants:
-%   \begin{align*}
-%     \fFunc{\tFixOp} & \fType{{}:\lFunc{(\lFunc{T}{U})}{\lFunc{T}{U}}}
-%   \end{align*}
-%   \caption{Extension of logical relation (\cref{fig:logrel}) with a fixed-point operator}
-%   \label{fig:linearRecursion:logrel}
-% \end{figure}
-
-% \begin{lemma}[Compositionality: \ruleLabel{fix}]
-%   \label{lem:comp:fix}
-%   If,
-%   for every
-%   $\fFunc{f} \in \lrTerm{n}{\fType{\Sigma' \vdash \lFunc{T}{U}}}$ and
-%   $\fFunc{v} \in \lrVal{n}{\fType{\Sigma'' \vdash T}}$,
-%   $\fFunc{\tSub{\tSub{e}{f}{\tLVA}}{v}{\tLVB}} \in \lrTerm{n}{\fType{\Sigma, \Sigma', \Sigma'' \vdash U}}$,
-%   then
-%   $\fFunc{\tFix{\tLVA}{\tLVB}{e}} \in \lrVal{n}{\fType{\Sigma \vdash \lFunc{T}{U}}}$.
-% \end{lemma}
-
-% \Cref{fig:linearRecursion:typeSys} presents the typing rule for the
-% fixed-point operator.
-
-% \begin{figure}[t]
-%   Typing rules for terms $\fType{\Sigma ; \Delta \vdash \fFunc{e} : T}$:
-%   \begin{mathpar}
-%     \begin{bussproof}[E-Fix]
-%       \bussAs{\fType{\Sigma ; \Delta , \fFunc{\tLVA}:\lFunc{T}{U}, \fFunc{\tLVB}:T \vdash \fFunc{e} : U}}
-%       \bussU{\fType{\Sigma ; \Delta \vdash \fFunc{\tFix{\tLVA}{\tLVB}{e}} : \lFunc{T}{U}}}
-%     \end{bussproof}
-%   \end{mathpar}
-%   \caption{Extension of the type system with the fixed-point operator}
-%   \label{fig:linearRecursion:typeSys}
-% \end{figure}
+\mw{claude: likewise here --- examples/Factory.v mechanizes a
+  replicated server: one factory value serving two independent
+  clients, plus a discarded request, typed and deadlock free. It is
+  the evidence that the encoding of Sect. 4.4 is usable end to end.
+  Add it as an example?}
+\pt{Yes, add this example here}
 
 \subsection{Recursive Types}
 \label{sec:extens-recurs-ii}
@@ -412,125 +326,17 @@ As equi-recursive types have contractive definitions
 (\rocq{contractive_ty}), we can always
 determine the top-level constructor of a type in finite time
 (\rocq{unfoldS}). Hence,
-all our prior definitions and proofs carry over without change.
+all our prior definitions and proofs carry over without change. In the
+mechanization, we insert appropriate unfolding functions that expose the
+top-level constructor for inspection of the respective clause in the logical
+relation.
 
-\subsection{Replication}
-\label{sec:extens-repl}
-
-\begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TBang}
-  \begin{align*}
-    \fFunc{v} &::= \dots \sepr \fFunc{\tIVX} \sepr \fFunc{\IExp{e}}
-    & \text{intuitionistic variable, non-recursive thunk}\\
-    \fFunc{e} &::= \dots \sepr \fFunc{\tLetI{\tIVX}{e}{e}} & \text{thunk elimination}\\
-    \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tLetI{\tIVX}{\fCtx{E}}{e}}
-  \end{align*}
-  New labeled transition: \hfill \rocq{HeadForce}
-  \mw{claude: only the recursive exponential of Sect. 4.2 is
-    mechanized (as the footnote allows); there is no separate
-    non-recursive one. Keep both presentations?}
-  \begin{mathpar}
-    \begin{bussproof}[T-Act-Exp]
-      \bussAx{\fFunc{\tLetI{\tIVX}{\IExp{e}}{e'}} \trans{\beta} \fFunc{\tSub{e'}{e}{\tIVX}}}
-    \end{bussproof}
-  \end{mathpar}
-  New typing rules for terms  $\fType{\Sigma ; \Gamma ; \Delta \vdash \fFunc{e} : T}$
-  \hfill \rocq{typed_bang}
-  \begin{mathpar}
-    \begin{bussproof}[E-Exp]
-      \bussAs{\fType{\tEmpty ; \Gamma ; \tEmpty \vdash \fFunc{e} : T}}
-      \bussU{\fType{\tEmpty  ; \Gamma ; \tEmpty \vdash \fFunc{\IExp{e}} : \IExp{T}}}
-    \end{bussproof}
-    \and
-    \begin{bussproof}[E-Let-Exp]
-      \bussAs{\fType{\Sigma_1 ; \Gamma ; \Delta_1 \vdash \fFunc{e_1} : \IExp{T}}}
-      \bussAs{\fType{\Sigma_2 ; \Gamma, \fFunc{\tIVX}:T ; \Delta_2 \vdash \fFunc{e_2} :U}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Gamma ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLetI{\tIVX}{e_1}{e_2}} : U}}
-    \end{bussproof}
-  \end{mathpar}
-
-  \caption{Extensions to the term language and typing with
-    (non-recursive) exponentials}
-  \Description{Additional values, terms and evaluation contexts for non-recursive exponentials; one reduction axiom; and two typing rules.}
-  \label{fig:replication-with-exponentials}
-\end{figure}
-
-
-\citet{conf/icfp/Wadler12,DBLP:journals/jfp/Wadler14} introduces CP, a
-process calculus based on classical linear logic,
-and a variant of GV, which is closely related to our calculus.
-Although CP includes replicative types along with weakening and
-contraction, they are omitted from GV with the statement that this
-``extension appears straightforward''.
-\citet{conf/esop/LindleyM15} discuss the exponential modality and
-replication as an extension and relate it to CP's treatment of
-replicative types by giving translations between CP and GV.
-
-
-In \cref{fig:replication-with-exponentials} we sketch an
-approach to encode replicated sessions, different from the translation
-given by \citet{conf/esop/LindleyM15}, for which
-the standard, non-recursive exponential is already
-sufficient.\footnote{Alternatively, we can rely on the recursive
-  exponential from \cref{sec:recursion}, but these extensions are
-  independent of one another.}
-We extend the value logical relation.
-\begin{align*}
-  \lrVal{n}{\fType{\tEmpty \vdash \IExp{T}}}
-  &= \set{ \fFunc{\IExp{e}}  \mid
-    \fFunc{e} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}
-    }
-\end{align*}
-
-We do not require new constants for encoding replication. Instead, we
-encode an unrestricted session carrying type $\fType{S}$ as a function
-of type $\fType{[S]} := \fType{\lUnres{(\lFunc{\tUnit}{S})}}$ and
-treat the new operators as macros as follows.
-\begin{align*}
-  \fFunc{repl} & \fType{{}:{\lFunc{\lUnres{(\lFunc{S}{\tUnit})}}{[{\dual{S}}]}}}
-  &
-    \fFunc{req} & \fType{{}:{\lFunc{[S]}{S}}} \\
-  \fFunc{repl} & := \fFunc{{\tAbs{\tLVA}{\tLetI{\tIVX}{\tLVA}{\IExp{(\tAbs{\_}{\tApp{\tFork}{\tIVX}})}}}}}
-  &
-    \fFunc{req} & := \fFunc{{\tAbs{\tLVA}{\tLetI{\tIVX}{\tLVA}{\tApp{\tIVX}{\tUnit}}}}}
-\end{align*}
-
-\mw{claude: likewise here --- examples/Factory.v mechanizes a
-  replicated server: one factory value serving two independent
-  clients, plus a discarded request, typed and deadlock free. It is
-  the evidence that the encoding of Sect. 4.4 is usable end to end.
-  Add it as an example?}
-
-\begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_bang}]
-  \label{lem:comp:exp-nr}
-  If
-  $\fFunc{e} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
-  then
-  $\fFunc{\IExp{e}} \in \lrTerm{n}{\fType{\tEmpty \vdash \IExp{T}}}$.
-\end{lemma}
-\begin{proof}
-  Immediate.
-\end{proof}
-
-\begin{lemma}[Compositionality: \ruleLabel{let-exp} \rocq{sem_typed_force}]
-  \label{lem:comp:let-exp-nr}
-  If
-  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma_1 \vdash \IExp{T}}}$ and,
-  for every
-  $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$,
-  $\fFunc{\tSub{e'}{e''}{\tIVX}} \in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$,
-  then
-  $\fFunc{\tLetI{\tIVX}{e}{e'}} \in \lrTerm{n}{\fType{\Sigma_1, \Sigma_2  \vdash {U}}}$.
-\end{lemma}
-\begin{proof}[Sketch of proof]
-  If $\fFunc{e}$ is irreducible, it must have the form $\fFunc{e} =
-  \fFunc{\IExp{e''}}$ with $\fFunc{e''} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}$. In this case, $\fFunc{\tLetI{\tIVX}{e}{e'}}$
-  reduces to $\fFunc{\tSub{e'}{e''}{\tIVX}}$, which is by assumption
-  $\in \lrTerm{n}{\fType{\Sigma_2 \vdash U}}$, hence the claim holds.
-
-  If $n>0$ and $\fFunc{e}$ reduces, then
-  $\fFunc{\tLetI{\tIVX}{e}{e'}}$ reduces in the same way.
-\end{proof}
+\mw{claude: the mechanization has a worked example for this section
+  that the paper does not: a recursive ping/pong over an equi-recursive
+  session type, typed and deadlock free (examples/Pingpong.v). Add it
+  as a short example, the way Sect. 4.1 has the leader election?}
+\pt{this comment was for the previous subsection on recursion, but it makes more
+sense to add it here where we have recursive types!}
 
 \subsection{The Link Operator}
 \label{sec:extens-link-oper}

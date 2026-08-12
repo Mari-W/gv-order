@@ -10,6 +10,7 @@
 \RequirePackage{bussproofs}
 \NewDocumentCommand\bussAx{o m}{\AxiomC{}\bussRL[#1]\UnaryInfC{\ensuremath{#2}}}
 \def\bussAs#1{\AxiomC{\ensuremath{#1}}}
+\def\bussAsBelow#1{\noLine\UnaryInfC{\ensuremath{#1}}}
 \NewDocumentCommand\bussU{o m}{\bussRL[#1]\UnaryInfC{\ensuremath{#2}}}
 \NewDocumentCommand\bussB{o m}{\bussRL[#1]\BinaryInfC{\ensuremath{#2}}}
 \NewDocumentCommand\bussT{o m}{\bussRL[#1]\TrinaryInfC{\ensuremath{#2}}}
