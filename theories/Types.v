@@ -11,7 +11,7 @@ Inductive ty :=
   | TLolli (T U : ty)              (* T ⊸ U *)
   | TProd (T U : ty)               (* T ⊗ U *)
   | TSum (T U : ty)                (* T ⊕ U *)
-  | TBang (T : ty)                 (* □T — unlimited (replicable) values *)
+  | TBox (T : ty)                 (* □T — unlimited (replicable) values *)
   | TSess (S : sty)
 with sty :=
   | SRcv (T : ty) (S : sty)        (* ?T.S *)
@@ -43,7 +43,7 @@ Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   | TLolli T1 U => TLolli (sren_ty r T1) (sren_ty r U)
   | TProd T1 U => TProd (sren_ty r T1) (sren_ty r U)
   | TSum T1 U => TSum (sren_ty r T1) (sren_ty r U)
-  | TBang T1 => TBang (sren_ty r T1)
+  | TBox T1 => TBox (sren_ty r T1)
   | TSess s => TSess (sren r s)
   end
 with sren (r : nat → nat) (s : sty) : sty :=
@@ -70,7 +70,7 @@ Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   | TLolli T1 U => TLolli (sflip_ty k T1) (sflip_ty k U)
   | TProd T1 U => TProd (sflip_ty k T1) (sflip_ty k U)
   | TSum T1 U => TSum (sflip_ty k T1) (sflip_ty k U)
-  | TBang T1 => TBang (sflip_ty k T1)
+  | TBox T1 => TBox (sflip_ty k T1)
   | TSess s => TSess (sflip k s)
   end
 with sflip (k : nat) (s : sty) : sty :=
@@ -120,7 +120,7 @@ Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   | TLolli T1 U => TLolli (sinst_ty σ T1) (sinst_ty σ U)
   | TProd T1 U => TProd (sinst_ty σ T1) (sinst_ty σ U)
   | TSum T1 U => TSum (sinst_ty σ T1) (sinst_ty σ U)
-  | TBang T1 => TBang (sinst_ty σ T1)
+  | TBox T1 => TBox (sinst_ty σ T1)
   | TSess s => TSess (sinst σ s)
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
@@ -176,7 +176,7 @@ Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
   match T with
   | TUnit => True
   | TLolli T1 U | TProd T1 U | TSum T1 U => sclosed_ty k T1 ∧ sclosed_ty k U
-  | TBang T1 => sclosed_ty k T1
+  | TBox T1 => sclosed_ty k T1
   | TSess s => sclosed k s
   end
 with sclosed (k : nat) (s : sty) : Prop :=
@@ -433,7 +433,7 @@ Fixpoint contractive_ty (T : ty) : Prop :=
   | TUnit => True
   | TLolli T1 U | TProd T1 U | TSum T1 U =>
       contractive_ty T1 ∧ contractive_ty U
-  | TBang T1 => contractive_ty T1
+  | TBox T1 => contractive_ty T1
   | TSess s => contractive s
   end
 with contractive (s : sty) : Prop :=
@@ -498,7 +498,7 @@ Inductive prim : ty → Prop :=
   | prim_unit : prim TUnit
   | prim_prod U V : prim U → prim V → prim (TProd U V)
   | prim_sum U V : prim U → prim V → prim (TSum U V)
-  | prim_bang U : prim U → prim (TBang U).
+  | prim_box U : prim U → prim (TBox U).
 
 (** ** Unlimited types
 
@@ -509,9 +509,9 @@ Inductive prim : ty → Prop :=
     one is a matter of extending the match below. *)
 
 Definition unlimited (T : ty) : Prop :=
-  match T with TBang _ => True | _ => False end.
+  match T with TBox _ => True | _ => False end.
 
-Lemma unlimited_bang T : unlimited (TBang T).
+Lemma unlimited_box T : unlimited (TBox T).
 Proof. done. Qed.
 
 (** ** Session environments: finite maps from channels to session types.
