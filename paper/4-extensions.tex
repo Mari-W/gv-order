@@ -189,7 +189,7 @@ yields a closed, deadlock-free process
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms
-  \hfill \rocq{typed_box}
+  \hfill \rocq{typed_box} \rocq{KTForce}
   \begin{mathpar}
     \begin{bussproof}[E-Exp]
       \bussAs{\fType{\tEmpty ; \tBox{\Delta} , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{e} : T}}
@@ -197,12 +197,24 @@ yields a closed, deadlock-free process
     \end{bussproof}
     \and
     \begin{bussproof}[E-Force]
-      \bussAx{\fType{\tEmpty ; \Gamma ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\IExp{T}}{T}}}
+      \bussAx{\fType{\tEmpty ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\tBox{T}}{T}}}
+    \end{bussproof}
+  \end{mathpar}
+  Structural rules for boxed hypotheses \hfill \rocq{typed_wk} \rocq{typed_contract}
+  \begin{mathpar}
+    \begin{bussproof}[E-Weak]
+      \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : U}}
+      \bussU{\fType{\Sigma ; \Delta , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{e} : U}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[E-Contract]
+      \bussAs{\fType{\Sigma ; \Delta , \fFunc{\tIVX}:\tBox{T} , \fFunc{\tIVY}:\tBox{T} \vdash \fFunc{e} : U}}
+      \bussU{\fType{\Sigma ; \Delta , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{\tSub{e}{\tIVX}{\tIVY}} : U}}
     \end{bussproof}
   \end{mathpar}
   \caption{Extending the term language and typing
     (\cref{fig:typeSys}) with recursive exponentials in the style of Lily.}
-  \Description{Additional values for recursive exponentials; one reduction axiom; and three typing rules over a judgment carrying an extra intuitionistic environment.}
+  \Description{Additional values for recursive exponentials; one reduction axiom; two typing rules; and the two structural rules for boxed hypotheses.}
   \label{fig:lily:terms}
 \end{figure}
 
@@ -218,9 +230,11 @@ operator as an eliminator for boxed types as shown in
 
 The typing rules are as expected. Introducing a thunk requires an environment of
 only boxed types, indicated by $\tBox{\Delta}$; forcing a thunk eliminates the
-boxed type; boxed-typed variables are subject to weakening and contraction. The
-mechanization implements the structural rules as part of environment splitting,
-rather than explicit steps in a typing derivation.
+boxed type; boxed-typed variables are subject to weakening and contraction
+(\cref{fig:lily:terms}). In the mechanization, weakening is a rule of the
+system (\rocq{typed_wk}), while contraction is built into environment
+splitting (\rocq{lsplit_unl}) and the explicit rule \ruleLabel{E-Contract} is
+proved admissible (\rocq{typed_contract}).
 
 Operationally, the thunk $\fFunc{\IExp{(\tIVX = e)}}$ is a recursively defined value and
 the elimination operator exposes the body by unrolling the recursion.
@@ -275,8 +289,7 @@ in \cref{fig:lily:terms}.
   then
   $ \fType{\Sigma; \Delta, x:\tBox{T} \proves \fFunc{e} : U}$.
 \end{lemma}
-\begin{lemma}[Compositionality: \ruleLabel{contract} % \rocq{sem_typed_contract}
-  ]
+\begin{lemma}[Compositionality: \ruleLabel{contract} \rocq{sem_typed_contract}]
   If
   $ \fType{\Sigma; \Delta, x:\tBox{T}, y:\tBox{T} \proves \fFunc{e} : U}$,\\
   then
