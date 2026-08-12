@@ -177,9 +177,8 @@ yields a closed, deadlock-free process
     \fFunc{e} &::= \dots \sepr \fFunc{\tForce} & \text{thunk elimination}\\
     \fType{T} &::= \dots \sepr \fType{\tBox{T}}
   \end{align*}
-  Since $\fFunc{\tForce}$ is a function, no new evaluation contexts
-  are needed: thunk elimination is ordinary application.
-  \smallskip
+  % Since $\fFunc{\tForce}$ is a function, no new evaluation contexts
+  % are needed: thunk elimination is ordinary application.
 
   New labeled transition \hfill \rocq{HeadForce}
   \begin{mathpar}
