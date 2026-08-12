@@ -2,7 +2,7 @@
 
     The □ extension in action. [factory] is a boxed fork — a
     replicable recipe for a fresh session. It is bound once and used
-    twice (contraction at the □ type, [lsplit_unl]); each [Force]
+    twice (contraction at the □ type, [lsplit_unl]); each forcing
     re-runs the suspended fork, so the two uses obtain two distinct
     private sessions served by two independent workers. A discarded
     factory ([typed_wk]) closes the weakening side.
@@ -22,7 +22,7 @@ Definition factory : expr := EBox (App EFork ff).
 
 (** One use: force the factory and run the obtained session. *)
 Definition useb : expr :=
-  LetP (App ERecv (Force (Var 0)))
+  LetP (App ERecv (App EForce (Var 0)))
     (LetU (Var 1) (App EClos (Var 0))).
 
 Definition repl_main : expr :=
@@ -160,7 +160,7 @@ Proof. eapply typed_deadlock_free, discard_typed. Qed.
     and it is why the □ fragment is no longer normalizing — harmless
     here, since deadlock freedom only ever asks whether a process
     *can* step. *)
-Definition omega : expr := Force (EBox (Force (Var 0))).
+Definition omega : expr := App EForce (EBox (App EForce (Var 0))).
 
 Lemma omega_loops : tstep omega LBeta omega.
-Proof. apply TStepHead, (HeadForce (Force (Var 0))). Qed.
+Proof. apply TStepHead, (HeadForce (App EForce (Var 0))). Qed.

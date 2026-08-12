@@ -288,7 +288,6 @@ Proof.
   - apply TStepInj1. by apply IHHst.
   - apply TStepInj2. by apply IHHst.
   - apply TStepCase. by apply IHHst.
-  - apply TStepForce. by apply IHHst.
 Qed.
 
 (** ** Backward step correspondence
@@ -364,7 +363,8 @@ Proof.
       { done. }
       by rewrite chsubst_subst1.
     + (* force *)
-      destruct e0; simplify_eq/=.
+      destruct e0_1; simplify_eq/=.
+      destruct e0_2; simplify_eq/=.
       eexists LBeta, _. split_and!.
       { apply TStepHead. constructor. }
       { done. }
@@ -420,10 +420,6 @@ Proof.
     destruct (IHHst Hdet _ eq_refl) as (α0 & f & Hf & -> & ->).
     eexists _, (Case f e0_2 e0_3). split_and!; [|done|done].
     by apply TStepCase.
-  - (* Force *)
-    destruct e0; simplify_eq/=.
-    destruct (IHHst Hdet _ eq_refl) as (α0 & f & Hf & -> & ->).
-    eexists _, (Force f). split_and!; [|done|done]. by apply TStepForce.
 Qed.
 
 (** ** Backward correspondence for the receptive labels
@@ -492,9 +488,6 @@ Proof.
     destruct (IHHst eq_refl _ eq_refl) as (c0 & f & Hc0 & Hf & ->).
     eexists c0, (Case f e0_2 e0_3). split_and!; [done| |done].
     by apply TStepCase.
-  - destruct e0; simplify_eq/=.
-    destruct (IHHst eq_refl _ eq_refl) as (c0 & f & Hc0 & Hf & ->).
-    eexists c0, (Force f). split_and!; [done| |done]. by apply TStepForce.
 Qed.
 
 (** External form: the received value is arbitrary and may mention the
@@ -591,10 +584,6 @@ Proof.
     all: rewrite eswap_id;
       [done|by apply fchans_chsubst_notin|
        apply fchans_chsubst_other; [set_solver|done]].
-  - destruct e0; simplify_eq/=.
-    destruct (IHHst eq_refl _ eq_refl) as (c0 & f & Hc0 & Hf & ->);
-      [set_solver|].
-    eexists c0, (Force f). split_and!; [done|by apply TStepForce|]. done.
 Qed.
 
 (** Fork: the substituted term forks at c; the original forks at any
@@ -689,11 +678,6 @@ Proof.
     simpl. f_equal.
     all: rewrite (chsubst_id c0);
       [done|apply fchans_chsubst_other; [set_solver|done]].
-  - destruct e0; simplify_eq/=.
-    destruct (IHHst eq_refl _ eq_refl) as (v & -> & Hfam).
-    exists v. split; [done|]. intros c0 Hc0e Hc0x Hc0b.
-    destruct (Hfam c0 Hc0e Hc0x Hc0b) as (f & Hf & ->).
-    eexists (Force f). split; [by apply TStepForce|]. done.
 Qed.
 
 (** ** Auxiliary facts for the transport *)

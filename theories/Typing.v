@@ -135,9 +135,6 @@ Inductive typed : senv → lenv → expr → ty → Prop :=
       lenv_unl Δ →
       typed ∅ (Some (TBox T) :: Δ) e T →
       typed ∅ Δ (EBox e) (TBox T)
-  | typed_force Σ Δ e T :                              (* E-Force *)
-      typed Σ Δ e (TBox T) →
-      typed Σ Δ (Force e) T
   | typed_wk Σ Δ' Δ e T :                              (* □-weakening *)
       typed Σ Δ' e T →
       lenv_wk Δ' Δ →
@@ -148,6 +145,28 @@ Inductive typed : senv → lenv → expr → ty → Prop :=
       unfoldS s = unfoldS s' →
       typed Σ Δ e (TSess s) →
       typed Σ Δ e (TSess s').
+
+(** All-None environments, for typing a konst under an arbitrary Δ. *)
+Definition lenv_nones (Δ : lenv) : lenv := (λ _, None) <$> Δ.
+
+Lemma lenv_empty_nones Δ : lenv_empty (lenv_nones Δ).
+Proof. intros o (?&->&?)%list_elem_of_fmap. done. Qed.
+
+Lemma lenv_split_nones_l Δ : lenv_split Δ (lenv_nones Δ) Δ.
+Proof.
+  induction Δ as [|[T|] Δ IH]; unfold lenv_nones; simpl; constructor; auto.
+Qed.
+
+(** Derived rule E-Force: force is a konst, so forcing is ordinary
+    application ([KTForce]). *)
+Lemma typed_force Σ Δ e T :
+  typed Σ Δ e (TBox T) → typed Σ Δ (App EForce e) T.
+Proof.
+  intros H.
+  eapply (typed_app _ ∅ Σ _ (lenv_nones Δ) Δ);
+    [apply senv_split_empty_l|apply lenv_split_nones_l| |exact H].
+  apply typed_konst; [apply lenv_empty_nones|]. apply KTForce.
+Qed.
 
 (** ** Typing rules for processes: Σ ⊢ (C, E) : T
 

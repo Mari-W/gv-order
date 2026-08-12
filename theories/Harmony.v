@@ -71,7 +71,7 @@ Inductive head_red : expr → expr → Prop :=
       is_val v →
       head_red (Case (Inj2 v) e1 e2) (subst1 v e2)
   | HRedForce e :
-      head_red (Force (EBox e)) (subst1 (EBox e) e).
+      head_red (App EForce (EBox e)) (subst1 (EBox e) e).
 
 Definition vred (e e' : expr) : Prop :=
   ∃ K eh eh', ectx_val K ∧ e = fill K eh ∧ e' = fill K eh' ∧
@@ -155,8 +155,7 @@ Proof.
     |f0 β f1 g0 Hst IH|v0 g0 β g1 Hv Hst IH
     |f0 β f1 g0 Hst IH|v0 g0 β g1 Hv Hst IH
     |f0 β f1 g0 Hst IH|f0 β f1 g0 Hst IH
-    |f0 β f1 Hst IH|f0 β f1 Hst IH|f0 β f1 g0 g1 Hst IH
-    |f0 β f1 Hst IH];
+    |f0 β f1 Hst IH|f0 β f1 Hst IH|f0 β f1 g0 g1 Hst IH];
     [exists [], f0, f1; split_and!; [apply Forall_nil; done|done..]|..];
     destruct IH as (K & eh & eh' & HK & -> & -> & Hh);
     [ exists (K ++ [FAppL g0]), eh, eh'
@@ -167,8 +166,7 @@ Proof.
     | exists (K ++ [FLetP g0]), eh, eh'
     | exists (K ++ [FInj1]), eh, eh'
     | exists (K ++ [FInj2]), eh, eh'
-    | exists (K ++ [FCase g0 g1]), eh, eh'
-    | exists (K ++ [FForce]), eh, eh' ];
+    | exists (K ++ [FCase g0 g1]), eh, eh' ];
     rewrite !fill_app; simpl;
     (split_and!; [|done..]);
     (apply ectx_val_app; [done|apply ectx_val_frame; done]).

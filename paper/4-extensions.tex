@@ -177,6 +177,10 @@ yields a closed, deadlock-free process
     \fFunc{e} &::= \dots \sepr \fFunc{\tForce} & \text{thunk elimination}\\
     \fType{T} &::= \dots \sepr \fType{\tBox{T}}
   \end{align*}
+  Since $\fFunc{\tForce}$ is a function, no new evaluation contexts
+  are needed: thunk elimination is ordinary application.
+  \smallskip
+
   New labeled transition \hfill \rocq{HeadForce}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Exp]
@@ -194,22 +198,12 @@ yields a closed, deadlock-free process
     \end{bussproof}
     \and
     \begin{bussproof}[E-Force]
-      \bussAs{\fType{\tEmpty ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\tBox{T}}{T}}}
-    \end{bussproof}
-    \\
-    \begin{bussproof}[E-Weak]
-      \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : U}}
-      \bussU{ \fType{\Sigma ; \Delta, \tIVX : \tBox{T} \vdash \fFunc{e} : U}}
-    \end{bussproof}
-    \and
-    \begin{bussproof}[E-Contract]
-      \bussAs{\fType{\Sigma ; \Delta, \tIVX : \tBox{T}, \tIVY : \tBox{T} \vdash \fFunc{e} : U}}
-      \bussU{ \fType{\Sigma ; \Delta, \tIVX : \tBox{T} \vdash \fFunc{\tSub{e}{\tIVX}{\tIVY}} : U}}
+      \bussAx{\fType{\tEmpty ; \Gamma ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\IExp{T}}{T}}}
     \end{bussproof}
   \end{mathpar}
   \caption{Extending the term language and typing
-    (\cref{fig:typeSys}) with recursive exponentials in the style of Lily}
-  \Description{Additional values, terms and evaluation contexts for recursive exponentials; one reduction axiom; and three typing rules over a judgment carrying an extra intuitionistic environment.}
+    (\cref{fig:typeSys}) with recursive exponentials in the style of Lily.}
+  \Description{Additional values for recursive exponentials; one reduction axiom; and three typing rules over a judgment carrying an extra intuitionistic environment.}
   \label{fig:lily:terms}
 \end{figure}
 
@@ -330,6 +324,7 @@ all our prior definitions and proofs carry over without change. In the
 mechanization, we insert appropriate unfolding functions that expose the
 top-level constructor for inspection of the respective clause in the logical
 relation.
+
 
 \mw{claude: the mechanization has a worked example for this section
   that the paper does not: a recursive ping/pong over an equi-recursive
