@@ -1,13 +1,13 @@
 (** * Replication via unlimited types: a session factory
 
-    The □ extension in action. [factory] is a banged fork — a
+    The □ extension in action. [factory] is a boxed fork — a
     replicable recipe for a fresh session. It is bound once and used
     twice (contraction at the □ type, [lsplit_unl]); each [Force]
     re-runs the suspended fork, so the two uses obtain two distinct
     private sessions served by two independent workers. A discarded
     factory ([typed_wk]) closes the weakening side.
 
-    Since [EBang] binds its own occurrence (index 0 of the body is the
+    Since [EBox] binds its own occurrence (index 0 of the body is the
     thunk itself), a recipe that does not call itself simply weakens
     that binding away — [factory_typed] below. *)
 
@@ -18,7 +18,7 @@ From LRGV Require Import Terms Fundamental Support Sync.
     Sff = !∗.Close; forking it returns a ?∗.Close end. *)
 Definition Srv : sty := SRcv TUnit SEnd.
 
-Definition factory : expr := EBang (App EFork ff).
+Definition factory : expr := EBox (App EFork ff).
 
 (** One use: force the factory and run the obtained session. *)
 Definition useb : expr :=
@@ -57,7 +57,7 @@ Proof.
 Qed.
 
 (** [ff] under one (unused) extra binding — the slot the recursive
-    occurrence of a bang occupies. *)
+    occurrence of a box occupies. *)
 Lemma ff_typed_none : typed ∅ [None] ff (TLolli (TSess Sff) TUnit).
 Proof.
   apply typed_lam.
@@ -77,9 +77,9 @@ Proof.
       * apply typed_var, lenv_only_20.
 Qed.
 
-Lemma factory_typed : typed ∅ [] factory (TBang (TSess Srv)).
+Lemma factory_typed : typed ∅ [] factory (TBox (TSess Srv)).
 Proof.
-  apply typed_bang; [intros o Ho; by apply elem_of_nil in Ho|].
+  apply typed_box; [intros o Ho; by apply elem_of_nil in Ho|].
   (* the recipe never calls itself, so weaken the recursive binding away *)
   eapply typed_wk; [|apply lwk_drop; [done|apply lwk_nil]].
   eapply (typed_app _ ∅ ∅ _ [None] [None] _ _ (TLolli (TSess Sff) TUnit));
@@ -90,13 +90,13 @@ Proof.
 Qed.
 
 Lemma useb_typed :
-  typed ∅ [Some (TBang (TSess Srv))] useb TUnit.
+  typed ∅ [Some (TBox (TSess Srv))] useb TUnit.
 Proof.
-  eapply (typed_letp _ ∅ ∅ _ [Some (TBang (TSess Srv))] [None]
+  eapply (typed_letp _ ∅ ∅ _ [Some (TBox (TSess Srv))] [None]
             _ _ TUnit (TSess SEnd));
     [apply senv_split_empty_l|repeat constructor| |].
   - (* recv (force s) : ∗ ⊗ Close *)
-    eapply (typed_app _ ∅ ∅ _ [None] [Some (TBang (TSess Srv))]
+    eapply (typed_app _ ∅ ∅ _ [None] [Some (TBox (TSess Srv))]
               _ _ (TSess Srv));
       [apply senv_split_empty_l|repeat constructor| |].
     + apply typed_konst; [auto using lenv_empty_nil, lenv_empty_cons|].
@@ -120,11 +120,11 @@ Qed.
 Lemma repl_typed : ptyped ∅ (∅, {[+ repl_main +]}) TUnit.
 Proof.
   apply ptyped_term; [constructor|].
-  eapply (typed_app _ ∅ ∅ _ [] [] _ _ (TBang (TSess Srv)));
+  eapply (typed_app _ ∅ ∅ _ [] [] _ _ (TBox (TSess Srv)));
     [apply senv_split_empty_l|constructor| |].
   - apply typed_lam.
-    eapply (typed_letu _ ∅ ∅ _ [Some (TBang (TSess Srv))]
-              [Some (TBang (TSess Srv))]);
+    eapply (typed_letu _ ∅ ∅ _ [Some (TBox (TSess Srv))]
+              [Some (TBox (TSess Srv))]);
       [apply senv_split_empty_l|apply lsplit_unl; [done|apply lsplit_nil]| |];
       apply useb_typed.
   - apply factory_typed.
@@ -138,7 +138,7 @@ Lemma discard_typed :
   ptyped ∅ (∅, {[+ App (Lam EUnit) factory +]}) TUnit.
 Proof.
   apply ptyped_term; [constructor|].
-  eapply (typed_app _ ∅ ∅ _ [] [] _ _ (TBang (TSess Srv)));
+  eapply (typed_app _ ∅ ∅ _ [] [] _ _ (TBox (TSess Srv)));
     [apply senv_split_empty_l|constructor| |].
   - apply typed_lam.
     eapply typed_wk.
@@ -160,7 +160,7 @@ Proof. eapply typed_deadlock_free, discard_typed. Qed.
     and it is why the □ fragment is no longer normalizing — harmless
     here, since deadlock freedom only ever asks whether a process
     *can* step. *)
-Definition omega : expr := Force (EBang (Force (Var 0))).
+Definition omega : expr := Force (EBox (Force (Var 0))).
 
 Lemma omega_loops : tstep omega LBeta omega.
 Proof. apply TStepHead, (HeadForce (Force (Var 0))). Qed.

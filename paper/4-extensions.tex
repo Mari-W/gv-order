@@ -11,7 +11,7 @@ features of GV \cite{conf/esop/LindleyM15} are covered.
 
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TSum}
+  New values, terms, evaluation contexts \hfill \rocq{TSum} \rocq{Inj1} \rocq{TStepInj1}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tInj{1}{v}} \sepr \fFunc{\tInj{2}{v}}
     & \text{injections}\\
@@ -170,7 +170,7 @@ yields a closed, deadlock-free process
 \label{sec:recursion}
 
 \begin{figure}[tp]
-  New values, terms, types \hfill \rocq{TBang}
+  New values, terms, types \hfill \rocq{TBox}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\IExp{(\tIVX = e)}}
     & \text{recursively defined thunk}\\
@@ -186,7 +186,7 @@ yields a closed, deadlock-free process
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms
-  \hfill \rocq{typed_bang}
+  \hfill \rocq{typed_box}
   \begin{mathpar}
     \begin{bussproof}[E-Exp]
       \bussAs{\fType{\tEmpty ; \tBox{\Delta} , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{e} : T}}
@@ -260,7 +260,7 @@ For the additional cases of the fundamental theorem, we proved the
 following compositionality lemmas, each corresponding to one of the typing rules
 in \cref{fig:lily:terms}.
 
-\begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_bang}]
+\begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_box}]
   \label{lem:comp:exp}
   If
   $ \fType{\tEmpty;\tBox{\Delta}, \tBox{T} \proves \fFunc{e} : T}$,

@@ -27,11 +27,11 @@ Proof. done. Qed.
 
 (** fix f. λc. (force f) (send ⟨∗, c⟩) *)
 Definition pinger : expr :=
-  EBang (Lam (App (Force (Var 1)) (App ESend (Pair EUnit (Var 0))))).
+  EBox (Lam (App (Force (Var 1)) (App ESend (Pair EUnit (Var 0))))).
 
 (** fix f. λc. let ⟨u, c'⟩ = recv c in let ∗ = u in (force f) c' *)
 Definition ponger : expr :=
-  EBang (Lam (LetP (App ERecv (Var 0))
+  EBox (Lam (LetP (App ERecv (Var 0))
                 (LetU (Var 1) (App (Force (Var 3)) (Var 0))))).
 
 Definition Tping : ty := TLolli (TSess Sloop) TUnit.
@@ -52,11 +52,11 @@ Proof.
   split; [done|]. intros [|[|[|[|y]]]] T' H; simplify_eq/=; auto.
 Qed.
 
-Lemma pinger_typed : typed ∅ [] pinger (TBang Tping).
+Lemma pinger_typed : typed ∅ [] pinger (TBox Tping).
 Proof.
-  apply typed_bang; [intros o Ho; by apply elem_of_nil in Ho|].
+  apply typed_box; [intros o Ho; by apply elem_of_nil in Ho|].
   apply typed_lam.
-  eapply (typed_app _ ∅ ∅ _ [None; Some (TBang Tping)]
+  eapply (typed_app _ ∅ ∅ _ [None; Some (TBox Tping)]
             [Some (TSess Sloop); None] _ _ (TSess Sloop));
     [apply senv_split_empty_l|repeat constructor| |].
   - apply typed_force, typed_var, lenv_only_21.
@@ -73,12 +73,12 @@ Proof.
         apply typed_var, lenv_only_20.
 Qed.
 
-Lemma ponger_typed : typed ∅ [] ponger (TBang Tpong).
+Lemma ponger_typed : typed ∅ [] ponger (TBox Tpong).
 Proof.
-  apply typed_bang; [intros o Ho; by apply elem_of_nil in Ho|].
+  apply typed_box; [intros o Ho; by apply elem_of_nil in Ho|].
   apply typed_lam.
   eapply (typed_letp _ ∅ ∅ _ [Some (TSess (dual Sloop)); None]
-            [None; Some (TBang Tpong)] _ _ TUnit (TSess (dual Sloop)));
+            [None; Some (TBox Tpong)] _ _ TUnit (TSess (dual Sloop)));
     [apply senv_split_empty_l|repeat constructor| |].
   - (* recv c : ∗ ⊗ (µα.?(∗).α) *)
     eapply (typed_app _ ∅ ∅ _ [None; None]
@@ -91,10 +91,10 @@ Proof.
       apply (typed_conv _ _ _ (dual Sloop)); [done|].
       apply typed_var, lenv_only_20.
   - eapply (typed_letu _ ∅ ∅ _ [None; Some TUnit; None; None]
-              [Some (TSess (dual Sloop)); None; None; Some (TBang Tpong)]);
+              [Some (TSess (dual Sloop)); None; None; Some (TBox Tpong)]);
       [apply senv_split_empty_l|repeat constructor| |].
     + apply typed_var, lenv_only_r41.
-    + eapply (typed_app _ ∅ ∅ _ [None; None; None; Some (TBang Tpong)]
+    + eapply (typed_app _ ∅ ∅ _ [None; None; None; Some (TBox Tpong)]
                 [Some (TSess (dual Sloop)); None; None; None] _ _
                 (TSess (dual Sloop)));
         [apply senv_split_empty_l|repeat constructor| |].

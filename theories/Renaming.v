@@ -544,8 +544,8 @@ Proof.
         apply Vrel_sum_iff; [left|right]; eexists; (split; [done|]).
       + by apply IH1.
       + by apply IH2.
-    - apply Vrel_bang_iff in HVv as (-> & eb & -> & Hfc & H).
-      apply Vrel_bang_iff. rewrite senvswap_empty.
+    - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
+      apply Vrel_box_iff. rewrite senvswap_empty.
       split; [done|]. exists (eswap a b eb).
       split_and!; [done|by rewrite fchans_eswap, Hfc, gswap_empty|].
       intros j Hj. specialize (H j Hj).
@@ -1009,8 +1009,8 @@ Proof.
       split_and!; eauto.
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; eexists; (split; [done|]); eauto.
-    - apply Vrel_bang_iff in HVv as (-> & eb & -> & Hfc & H).
-      apply Vrel_bang_iff.
+    - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
+      apply Vrel_box_iff.
       rewrite (senv_conv_empty_inv _ Hconv). eauto 10.
     - apply Vrel_sess_iff in HVv as (c & s0 & -> & -> & Hu).
       assert (senv_hd ({[c := s0]} : senv) c (unfoldS s0) ∅) as Hhd.

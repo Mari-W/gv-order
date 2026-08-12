@@ -27,7 +27,7 @@ Inductive expr :=
   | Inj2 (e : expr)                (* right injection *)
   | Case (e e1 e2 : expr)          (* case e (a.e1) (a.e2) — each branch
                                       binds 1: index 0 = the payload *)
-  | EBang (e : expr)               (* !e — a recursively defined thunk
+  | EBox (e : expr)               (* !e — a recursively defined thunk
                                       value (suspends e); binds 1:
                                       index 0 = the thunk itself *)
   | Force (e : expr).              (* force e — unrolls a thunk:
@@ -43,7 +43,7 @@ Notation ELink := (Konst KLink).
 
 Fixpoint is_val (e : expr) : bool :=
   match e with
-  | EUnit | Konst _ | Chan _ | Lam _ | EBang _ => true
+  | EUnit | Konst _ | Chan _ | Lam _ | EBox _ => true
   | Pair e1 e2 => is_val e1 && is_val e2
   | Inj1 e | Inj2 e => is_val e
   | _ => false
@@ -88,7 +88,7 @@ Proof.
     | Inj1 e => GenNode 6 [go e]
     | Inj2 e => GenNode 7 [go e]
     | Case e e1 e2 => GenNode 8 [go e; go e1; go e2]
-    | EBang e => GenNode 9 [go e]
+    | EBox e => GenNode 9 [go e]
     | Force e => GenNode 10 [go e]
     end).
   set (dec := fix go t : expr :=
@@ -105,7 +105,7 @@ Proof.
     | GenNode 6 [t] => Inj1 (go t)
     | GenNode 7 [t] => Inj2 (go t)
     | GenNode 8 [t; t1; t2] => Case (go t) (go t1) (go t2)
-    | GenNode 9 [t] => EBang (go t)
+    | GenNode 9 [t] => EBox (go t)
     | GenNode 10 [t] => Force (go t)
     | _ => EUnit
     end).
@@ -134,7 +134,7 @@ Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   | Inj2 e => Inj2 (rename r e)
   | Case e e1 e2 =>
       Case (rename r e) (rename (upren r) e1) (rename (upren r) e2)
-  | EBang e => EBang (rename (upren r) e)
+  | EBox e => EBox (rename (upren r) e)
   | Force e => Force (rename r e)
   end.
 
@@ -152,7 +152,7 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   | Inj1 e => Inj1 (subst σ e)
   | Inj2 e => Inj2 (subst σ e)
   | Case e e1 e2 => Case (subst σ e) (subst (up σ) e1) (subst (up σ) e2)
-  | EBang e => EBang (subst (up σ) e)
+  | EBox e => EBox (subst (up σ) e)
   | Force e => Force (subst σ e)
   end.
 
@@ -173,7 +173,7 @@ Fixpoint closed_at (n : nat) (e : expr) : bool :=
   | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
   | Inj1 e | Inj2 e | Force e => closed_at n e
   | Case e e1 e2 => closed_at n e && closed_at (S n) e1 && closed_at (S n) e2
-  | EBang e => closed_at (S n) e
+  | EBox e => closed_at (S n) e
   end.
 
 Definition closed (e : expr) : bool := closed_at 0 e.
@@ -183,7 +183,7 @@ Fixpoint fchans (e : expr) : gset chan :=
   match e with
   | Var _ | EUnit | Konst _ => ∅
   | Chan c => {[c]}
-  | Lam e | Inj1 e | Inj2 e | EBang e | Force e => fchans e
+  | Lam e | Inj1 e | Inj2 e | EBox e | Force e => fchans e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fchans e1 ∪ fchans e2
   | Case e e1 e2 => fchans e ∪ fchans e1 ∪ fchans e2
   end.
@@ -342,7 +342,7 @@ Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
   | Inj1 e | Inj2 e | Force e => allfv P e
   | Case e e1 e2 => allfv P e ∧ allfv (upP P) e1 ∧ allfv (upP P) e2
-  | EBang e => allfv (upP P) e
+  | EBox e => allfv (upP P) e
   end.
 
 Lemma upP_mono (P Q : nat → Prop) :
@@ -378,8 +378,45 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
   | Inj1 e | Inj2 e | Force e => freevar x e
   | Case e e1 e2 => freevar x e ∨ freevar (S x) e1 ∨ freevar (S x) e2
-  | EBang e => freevar (S x) e
+  | EBox e => freevar (S x) e
   end.
+
+(** Renaming and the variable predicates. *)
+
+Lemma upP_upren (P : nat → Prop) r x :
+  upP (λ y, P (r y)) x → upP P (upren r x).
+Proof. destruct x; simpl; auto. Qed.
+
+Lemma allfv_rename e : ∀ (P : nat → Prop) r,
+  allfv (λ x, P (r x)) e → allfv P (rename r e).
+Proof.
+  induction e; simpl; intros P r H; auto.
+  - apply IHe. eapply allfv_mono; [|exact H]. apply upP_upren.
+  - destruct H; split; auto.
+  - destruct H; split; auto.
+  - destruct H; split; auto.
+  - destruct H; split; [auto|]. apply IHe2.
+    eapply allfv_mono; [|done]. intros x Hx.
+    apply upP_upren. eapply upP_mono; [|exact Hx]. apply upP_upren.
+  - destruct H as (?&?&?). split_and!; [auto| |].
+    + apply IHe2. eapply allfv_mono; [|done]. apply upP_upren.
+    + apply IHe3. eapply allfv_mono; [|done]. apply upP_upren.
+  - apply IHe. eapply allfv_mono; [|exact H]. apply upP_upren.
+Qed.
+
+Lemma freevar_rename e : ∀ x r, freevar x e → freevar (r x) (rename r e).
+Proof.
+  induction e; simpl; intros y r H; auto.
+  - apply (IHe (S y) (upren r) H).
+  - destruct H; auto.
+  - destruct H; auto.
+  - destruct H; auto.
+  - destruct H; [auto|]. right. apply (IHe2 (S (S y)) (upren (upren r)) H).
+  - destruct H as [?|[?|?]]; [auto| |].
+    + right; left. apply (IHe2 (S y) (upren r) H).
+    + right; right. apply (IHe3 (S y) (upren r) H).
+  - apply (IHe (S y) (upren r) H).
+Qed.
 
 (** ** Closedness under renaming and substitution *)
 
@@ -512,7 +549,7 @@ Proof.
       - intros _. set_solver.
       - intros Hc. unfold compose. by rewrite fchans_rename. }
     specialize (IHe2 _ _ H1'). specialize (IHe3 _ _ H2'). set_solver.
-  - (* EBang *)
+  - (* EBox *)
     apply (IHe (up γ) D). eapply allfv_mono; [|done]. intros [|x]; simpl.
     + intros _. set_solver.
     + intros Hc. unfold compose. by rewrite fchans_rename.
@@ -555,7 +592,7 @@ Fixpoint eswap (a b : chan) (e : expr) : expr :=
   | Inj1 e => Inj1 (eswap a b e)
   | Inj2 e => Inj2 (eswap a b e)
   | Case e e1 e2 => Case (eswap a b e) (eswap a b e1) (eswap a b e2)
-  | EBang e => EBang (eswap a b e)
+  | EBox e => EBox (eswap a b e)
   | Force e => Force (eswap a b e)
   end.
 
@@ -591,7 +628,7 @@ Fixpoint chsubst (c d : chan) (e : expr) : expr :=
   | Inj1 e => Inj1 (chsubst c d e)
   | Inj2 e => Inj2 (chsubst c d e)
   | Case e e1 e2 => Case (chsubst c d e) (chsubst c d e1) (chsubst c d e2)
-  | EBang e => EBang (chsubst c d e)
+  | EBox e => EBox (chsubst c d e)
   | Force e => Force (chsubst c d e)
   end.
 

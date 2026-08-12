@@ -100,7 +100,7 @@ Inductive head_step : expr → tlabel → expr → Prop :=
          thunk substituted for its own bound occurrence: forcing
          unrolls one step of the recursion, so !e is Lily's fix
          (§4.2) and replicating it re-runs the suspended computation *)
-      head_step (Force (EBang e)) LBeta (subst1 (EBang e) e)
+      head_step (Force (EBox e)) LBeta (subst1 (EBox e) e)
   | HeadLink c d :                                      (* T-Act-Link *)
       (* the paper's ↔{c,d} carries a set of two channels; the order
          does not matter — symmetry is in the process rules.  The ends
@@ -147,7 +147,7 @@ Inductive tstep : expr → tlabel → expr → Prop :=
   | TStepCase e α e' e1 e2 :
       tstep e α e' → tstep (Case e e1 e2) α (Case e' e1 e2)
   | TStepForce e α e' :
-      (* no congruence under EBang: a bang suspends evaluation *)
+      (* no congruence under EBox: a box suspends evaluation *)
       tstep e α e' → tstep (Force e) α (Force e').
 
 (** GV-style term reduction: just the pure steps. *)
@@ -228,7 +228,7 @@ Qed.
 Lemma tstep_force_inv e α e' :
   tstep (Force e) α e' →
   (∃ e'', tstep e α e'' ∧ e' = Force e'')
-  ∨ (∃ eb, e = EBang eb ∧ α = LBeta ∧ e' = subst1 (EBang eb) eb).
+  ∨ (∃ eb, e = EBox eb ∧ α = LBeta ∧ e' = subst1 (EBox eb) eb).
 Proof.
   intros H. inversion H; simplify_eq; eauto 10.
   inversion H0; simplify_eq; eauto 10.

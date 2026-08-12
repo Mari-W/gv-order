@@ -48,7 +48,7 @@ Definition asubjs (a : action) : option (gset chan) :=
     [is_val] guards below, so the position found is the unique one. *)
 Fixpoint act (e : expr) : option action :=
   match e with
-  | Var _ | EUnit | Konst _ | Chan _ | Lam _ | EBang _ => None
+  | Var _ | EUnit | Konst _ | Chan _ | Lam _ | EBox _ => None
   | App e1 e2 =>
       if is_val e1 then
         if is_val e2 then
@@ -74,9 +74,9 @@ Fixpoint act (e : expr) : option action :=
   | Case e1 _ _ =>
       if is_val e1 then match e1 with Inj1 _ | Inj2 _ => Some ABeta | _ => None end
       else act e1
-  (* [EBang _] is unconditionally a value, so no [is_val] guard is
+  (* [EBox _] is unconditionally a value, so no [is_val] guard is
      needed here: [act e1] is [None] for every other value. *)
-  | Force e1 => match e1 with EBang _ => Some ABeta | _ => act e1 end
+  | Force e1 => match e1 with EBox _ => Some ABeta | _ => act e1 end
   end.
 
 (** The labels an action admits. *)
@@ -139,7 +139,7 @@ Proof.
   - done.
   - destruct (is_val e) eqn:Hb; [|done].
     exfalso. eapply val_no_tstep; [exact Hst|by rewrite Hb].
-  - (* force: the operand steps, so it cannot be a bang *)
+  - (* force: the operand steps, so it cannot be a box *)
     destruct e as [| | | | | | | | | | | |eb | ]; try done.
     exfalso. eapply val_no_tstep; [exact Hst|done].
 Qed.
@@ -232,12 +232,12 @@ Proof.
       exists (subst1 v e1). apply TStepHead, HeadCase1. by rewrite Hb0.
     + simplify_eq. destruct α; try done. simpl in Hb0.
       exists (subst1 w e2). apply TStepHead, HeadCase2. by rewrite Hb0.
-  - (* force (the [EBang] case above is a value, hence discriminated) *)
+  - (* force (the [EBox] case above is a value, hence discriminated) *)
     destruct e1 as [| | | | | | | | | | | |eb | ];
       try (destruct (IH _ _ Ha Hoff) as [e1' Hst]; exists (Force e1');
            by apply TStepForce).
     simplify_eq. destruct α; try done.
-    exists (subst1 (EBang eb) eb). by apply TStepHead, HeadForce.
+    exists (subst1 (EBox eb) eb). by apply TStepHead, HeadForce.
 Qed.
 
 (** ** Consequences at the term level *)

@@ -192,6 +192,22 @@ Proof.
     rewrite (left_id ∅ (∪)). eauto.
 Qed.
 
+(** A grounding for Δ, x:U also grounds Δ, x:U, y:U by aliasing the
+    two variables — an unlimited value owns no channels, so the copy
+    costs nothing in the Σ-split. *)
+Lemma grounding_contract n Σ Δ U γ :
+  unlimited U →
+  grounding n Σ (Some U :: Δ) γ →
+  grounding n Σ (Some U :: Some U :: Δ) (λ x, γ (pred x)).
+Proof.
+  intros Hu Hg. simpl in Hg |- *.
+  destruct Hg as (Σ1 & Σ2 & Hsp & HV & Hg').
+  pose proof (Vrel_unl_empty _ _ _ _ Hu HV) as ->.
+  destruct Hsp as [-> Hd].
+  exists ∅, Σ2. split_and!; [split; done|exact HV|].
+  exists ∅, Σ2. split_and!; [apply senv_split_empty_l|exact HV|exact Hg'].
+Qed.
+
 (** Availability across □-weakening. *)
 Lemma lenv_wk_avail Δ' Δ x :
   lenv_wk Δ' Δ → lenv_avail Δ' x → lenv_avail Δ x.
@@ -291,11 +307,11 @@ Lemma Vrel_inj2 n Σ T U v :
   Vrel n Σ U v → Vrel n Σ (TSum T U) (Inj2 v).
 Proof. intros. apply Vrel_sum_iff. right. eauto. Qed.
 
-Lemma Vrel_bang n T eb :
+Lemma Vrel_box n T eb :
   fchans eb = ∅ →
-  (∀ j, j < n → Erel j ∅ T (subst1 (EBang eb) eb)) →
-  Vrel n ∅ (TBang T) (EBang eb).
-Proof. intros. apply Vrel_bang_iff. eauto. Qed.
+  (∀ j, j < n → Erel j ∅ T (subst1 (EBox eb) eb)) →
+  Vrel n ∅ (TBox T) (EBox eb).
+Proof. intros. apply Vrel_box_iff. eauto. Qed.
 
 (** ** Closure under evaluation frames
 
@@ -600,8 +616,8 @@ Qed.
     substituted for its own recursive occurrence. *)
 Lemma Erel_force_val n T eb :
   fchans eb ⊆ ∅ →
-  (∀ j, j < n → Erel j ∅ T (subst1 (EBang eb) eb)) →
-  Erel n ∅ T (Force (EBang eb)).
+  (∀ j, j < n → Erel j ∅ T (subst1 (EBox eb) eb)) →
+  Erel n ∅ T (Force (EBox eb)).
 Proof.
   destruct n as [|n']; [intros; apply Erel_0|].
   intros Hfc HK. apply Erel_S_iff. split_and!.
@@ -1008,11 +1024,11 @@ Proof.
       eapply grounding_down; [|exact Hg2]. lia.
 Qed.
 
-(** E-Bang *)
-Lemma sem_typed_bang Δ e T :
+(** E-Box *)
+Lemma sem_typed_box Δ e T :
   lenv_unl Δ →
-  sem_typed ∅ (Some (TBang T) :: Δ) e T →
-  sem_typed ∅ Δ (EBang e) (TBang T).
+  sem_typed ∅ (Some (TBox T) :: Δ) e T →
+  sem_typed ∅ Δ (EBox e) (TBox T).
 Proof.
   intros HΔ (Hfc & Hfv & Hrv & He). split_and!; simpl; [done| | |].
   { eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
@@ -1035,9 +1051,9 @@ Proof.
   (* Lemma 4.3: forcing unrolls one step, so the thunk's membership at
      index m only ever appeals to its membership strictly below m —
      strong induction closes the loop. *)
-  assert (∀ m, m ≤ n → Vrel m ∅ (TBang T) (EBang (subst (up γ) e))) as Hall.
+  assert (∀ m, m ≤ n → Vrel m ∅ (TBox T) (EBox (subst (up γ) e))) as Hall.
   { intros m. induction m as [m IHm] using lt_wf_ind. intros Hm.
-    apply Vrel_bang; [done|]. intros j Hj.
+    apply Vrel_box; [done|]. intros j Hj.
     rewrite subst1_subst.
     replace (∅ : senv) with (∅ ∪ ∅ : senv)
       by (by rewrite (left_id ∅ (∪))).
@@ -1051,19 +1067,19 @@ Qed.
 
 (** E-Force *)
 Lemma sem_typed_force Σ Δ e T :
-  sem_typed Σ Δ e (TBang T) →
+  sem_typed Σ Δ e (TBox T) →
   sem_typed Σ Δ (Force e) T.
 Proof.
   intros (Hfc & Hfv & Hrv & He). split_and!; simpl; [done|done|done|].
   intros n Σ' γ Hd Hg. simpl.
   replace (Σ ∪ Σ') with ((Σ ∪ Σ') ∪ ∅) by (by rewrite (right_id ∅ (∪))).
-  apply (Erel_bind n FForce _ _ (TBang T)); simpl.
+  apply (Erel_bind n FForce _ _ (TBox T)); simpl.
   - done.
   - apply map_disjoint_empty_r.
   - set_solver.
   - by apply He.
   - intros j Σh' v Hj Hdh HV.
-    apply Vrel_bang_iff in HV as (-> & eb & -> & Hfce & HK).
+    apply Vrel_box_iff in HV as (-> & eb & -> & Hfce & HK).
     rewrite (left_id ∅ (∪)).
     apply Erel_force_val; [|exact HK]. set_solver.
 Qed.
@@ -1078,6 +1094,27 @@ Proof.
   - intros x Hx. apply Hrv. eauto using lenv_wk_avail_lin.
   - intros n Σ' γ Hd Hg. apply He; [done|].
     eapply grounding_wk; eauto.
+Qed.
+
+(** □-contraction (E-Contract): a duplicated unlimited hypothesis may
+    be contracted, replacing the inner variable by the outer one
+    (e[x/y] = rename pred e: indices 0,1 ↦ 0 and n+2 ↦ n+1).  For the
+    paper's rule instantiate W := □T ([unlimited_box]). *)
+Lemma sem_typed_contract Σ Δ U W e :
+  unlimited W →
+  sem_typed Σ (Some W :: Some W :: Δ) e U →
+  sem_typed Σ (Some W :: Δ) (rename pred e) U.
+Proof.
+  intros Hu (Hfc & Hfv & Hrv & He). split_and!.
+  - by rewrite fchans_rename.
+  - apply allfv_rename. eapply allfv_mono; [|exact Hfv].
+    intros [|[|x]] Hx; [by eexists|by eexists|exact Hx].
+  - intros [|x] Hx.
+    + destruct Hx as (T' & HT' & Hl). simpl in HT'. simplify_eq. done.
+    + destruct Hx as (T' & HT' & Hl).
+      apply (freevar_rename _ (S (S x)) pred). apply Hrv. by exists T'.
+  - intros n Σ' γ Hd Hg. rewrite subst_rename.
+    apply He; [done|]. by apply grounding_contract.
 Qed.
 
 (** ** The fundamental property for terms (Theorem 3.13, term half;
@@ -1098,7 +1135,7 @@ Proof.
   - by apply sem_typed_inj1.
   - by apply sem_typed_inj2.
   - by eapply sem_typed_case.
-  - by apply sem_typed_bang.
+  - by apply sem_typed_box.
   - by apply sem_typed_force.
   - by eapply sem_typed_wk.
   - by eapply sem_typed_conv.

@@ -57,17 +57,17 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TSum T1 U =>
       (∃ v', v = Inj1 v' ∧ Vdef below n Σ T1 v')
       ∨ (∃ v', v = Inj2 v' ∧ Vdef below n Σ U v')
-  | TBang T1 =>
+  | TBox T1 =>
       (* a replicable thunk owns no channels — syntactically, so that
          tightness ([Vrel_fchans]) survives — and its unrolling is a
          good term at every lower index. This is Fig. 8's
          V⟦□T⟧ = {!e | fix x.e ∈ E⟦T⟧} with fix x.e = e[!e/x]: [Vdef]
          at level n is built before [Edef] at level n, but forcing
          always takes a β step, so only lower indices are ever
-         constrained and [Vrel_bang_iff] recovers the paper's
+         constrained and [Vrel_box_iff] recovers the paper's
          same-index statement *)
-      Σ = ∅ ∧ ∃ eb, v = EBang eb ∧ fchans eb = ∅ ∧
-        ∀ j, j < n → lE (below j) ∅ T1 (subst1 (EBang eb) eb)
+      Σ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
+        ∀ j, j < n → lE (below j) ∅ T1 (subst1 (EBox eb) eb)
   end.
 
 (** Term relation at level n (n = S n' in the non-trivial case),
@@ -397,10 +397,10 @@ Lemma Vrel_sum_iff n Σ T U v :
   ∨ (∃ v', v = Inj2 v' ∧ Vrel n Σ U v').
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-Lemma Vrel_bang_iff n Σ T v :
-  Vrel n Σ (TBang T) v ↔
-  Σ = ∅ ∧ ∃ eb, v = EBang eb ∧ fchans eb = ∅ ∧
-    ∀ j, j < n → Erel j ∅ T (subst1 (EBang eb) eb).
+Lemma Vrel_box_iff n Σ T v :
+  Vrel n Σ (TBox T) v ↔
+  Σ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
+    ∀ j, j < n → Erel j ∅ T (subst1 (EBox eb) eb).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply and_iff_compat_l.
@@ -410,13 +410,13 @@ Proof.
   - rewrite (levels_at n j Hj). by apply H.
 Qed.
 
-Lemma Vrel_bang_empty n Σ T v : Vrel n Σ (TBang T) v → Σ = ∅.
-Proof. intros [-> _]%Vrel_bang_iff. done. Qed.
+Lemma Vrel_box_empty n Σ T v : Vrel n Σ (TBox T) v → Σ = ∅.
+Proof. intros [-> _]%Vrel_box_iff. done. Qed.
 
 (** Values at an unlimited type own no channels. One case per
     modality; the structural rules only ever need this much. *)
 Lemma Vrel_unl_empty n Σ T v : unlimited T → Vrel n Σ T v → Σ = ∅.
-Proof. destruct T; try done. intros _. apply Vrel_bang_empty. Qed.
+Proof. destruct T; try done. intros _. apply Vrel_box_empty. Qed.
 
 Lemma Vrel_lolli_iff n Σ T U v :
   Vrel n Σ (TLolli T U) v ↔
@@ -676,7 +676,7 @@ Proof.
     eexists _, _, _, _. split_and!; eauto.
   - rewrite !Vrel_sum_iff.
     intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
-  - rewrite !Vrel_bang_iff.
+  - rewrite !Vrel_box_iff.
     intros (-> & eb & -> & Hfc & H). split; [done|].
     exists eb. split_and!; [done|done|]. intros j Hj. apply H. lia.
   - rewrite !Vrel_sess_iff. done.
