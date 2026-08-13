@@ -170,7 +170,7 @@ yields a closed, deadlock-free process
 \label{sec:recursion}
 
 \begin{figure}[tp]
-  New values, terms, types \hfill \rocq{TBox}
+  New values, terms, types \hfill \rocq{TBox} \rocq{EBox} \rocq{KForce}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\IExp{(\tIVX = e)}}
     & \text{recursively defined thunk}\\
@@ -200,7 +200,7 @@ yields a closed, deadlock-free process
       \bussAx{\fType{\tEmpty ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\tBox{T}}{T}}}
     \end{bussproof}
   \end{mathpar}
-  Structural rules for boxed hypotheses \hfill \rocq{typed_wk} \rocq{typed_contract}
+  Structural rules for boxed hypotheses \hfill \rocq{typed_weaken} \rocq{typed_contract}
   \begin{mathpar}
     \begin{bussproof}[E-Weak]
       \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : U}}
@@ -288,7 +288,7 @@ in \cref{fig:lily:terms}.
   $ \fType{\Sigma; \Delta \proves \fFunc{\tApp{\tForce}{e}} : {T}}$.
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{weak} \rocq{sem_typed_wk}]
+\begin{lemma}[Compositionality: \ruleLabel{weak} \rocq{sem_typed_weaken}]
   If
   $ \fType{\Sigma; \Delta \proves \fFunc{e} : U}$,
   then
