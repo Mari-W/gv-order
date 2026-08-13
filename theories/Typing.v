@@ -96,6 +96,9 @@ Inductive lenv_wk : lenv → lenv → Prop :=
       unlimited U →
       lenv_wk Δ' Δ → lenv_wk (None :: Δ') (Some U :: Δ).
 
+Lemma lenv_wk_refl Δ : lenv_wk Δ Δ.
+Proof. induction Δ; by constructor. Qed.
+
 (** Weakening is pointwise too. *)
 
 Lemma lenv_wk_app Δ1' Δ1 Δ2' Δ2 :
@@ -417,6 +420,167 @@ Proof.
   rewrite (rename_ext e pred (cren 0)); [|by intros x; rewrite cren_pred].
   by apply (typed_contract_gen Σ [] Δ (Some W) (Some W) (Some W) W);
     [|constructor|].
+Qed.
+
+(** ** Derived rule E-Weaken
+
+    A judgment survives adding a fresh unlimited binding to the
+    environment. Unlike [typed_wk], which un-spends entries in place
+    and leaves the term alone, this inserts a NEW entry, so all indices
+    of the term shift past it.
+
+    The insertion is first done at [None] — where no side condition is
+    needed at all — and the entry is then filled in with [Some W] by
+    [typed_wk]; [unlimited W] is consumed only there, by [lwk_drop].
+    Binders push the inserted entry rightward, so the induction runs
+    over an insertion at an arbitrary position [length Δ1]. *)
+
+(** The index map inserting a fresh entry at position [n]; [wren 0] is [S]. *)
+Definition wren (n x : nat) : nat := if decide (x < n) then x else S x.
+
+Lemma wren_0 x : wren 0 x = S x.
+Proof. unfold wren. case_decide; [lia|done]. Qed.
+
+Lemma wren_S_0 n : wren (S n) 0 = 0.
+Proof. unfold wren. case_decide; [done|lia]. Qed.
+
+Lemma wren_S n x : wren (S n) (S x) = S (wren n x).
+Proof. unfold wren. repeat case_decide; simpl; lia. Qed.
+
+(** Going under a binder shifts the inserted position. *)
+
+Lemma upren_wren n x : upren (wren n) x = wren (S n) x.
+Proof. destruct x; simpl; [by rewrite wren_S_0|by rewrite wren_S]. Qed.
+
+Lemma upren_upren_wren n x : upren (upren (wren n)) x = wren (S (S n)) x.
+Proof. by rewrite (upren_ext _ _ (upren_wren n)), upren_wren. Qed.
+
+(** *** Transporting the environment predicates across the insertion. *)
+
+Lemma elem_of_thin (Δ1 Δ2 : lenv) o :
+  o ∈ Δ1 ++ None :: Δ2 → o = None ∨ o ∈ Δ1 ++ Δ2.
+Proof. rewrite !elem_of_app, elem_of_cons. naive_solver. Qed.
+
+Lemma lenv_empty_thin Δ1 Δ2 :
+  lenv_empty (Δ1 ++ Δ2) → lenv_empty (Δ1 ++ None :: Δ2).
+Proof. intros H x [->|?]%elem_of_thin; auto. Qed.
+
+Lemma lenv_unl_thin Δ1 Δ2 :
+  lenv_unl (Δ1 ++ Δ2) → lenv_unl (Δ1 ++ None :: Δ2).
+Proof. intros H x [->|?]%elem_of_thin; auto. Qed.
+
+Lemma lookup_thin_fwd (Δ1 Δ2 : lenv) x T :
+  (Δ1 ++ Δ2) !! x = Some (Some T) →
+  (Δ1 ++ None :: Δ2) !! wren (length Δ1) x = Some (Some T).
+Proof.
+  revert x. induction Δ1 as [|a Δ1 IH]; intros x Hx; simpl in *.
+  - done.
+  - destruct x as [|x]; [by rewrite wren_S_0|]. rewrite wren_S. by apply IH.
+Qed.
+
+Lemma lookup_thin_bwd (Δ1 Δ2 : lenv) y T :
+  (Δ1 ++ None :: Δ2) !! y = Some (Some T) →
+  ∃ x, (Δ1 ++ Δ2) !! x = Some (Some T) ∧ wren (length Δ1) x = y.
+Proof.
+  revert y. induction Δ1 as [|a Δ1 IH]; intros y Hy; simpl in *.
+  - destruct y as [|y]; simplify_eq/=. exists y. by rewrite wren_0.
+  - destruct y as [|y]; simpl in *.
+    + exists 0. by rewrite wren_S_0.
+    + apply IH in Hy as (x & ? & <-). exists (S x). by rewrite wren_S.
+Qed.
+
+Lemma lenv_only_thin Δ1 Δ2 x T :
+  lenv_only (Δ1 ++ Δ2) x T →
+  lenv_only (Δ1 ++ None :: Δ2) (wren (length Δ1) x) T.
+Proof.
+  intros [Hx Hu]. split; [by apply lookup_thin_fwd|].
+  intros y T' (z & Hz & <-)%lookup_thin_bwd.
+  by destruct (Hu _ _ Hz) as [-> ->].
+Qed.
+
+(** *** Insertion of a [None] entry at an arbitrary position *)
+
+(** Decompose a split of the environment along the insertion point. *)
+Local Ltac thin_split H :=
+  apply lenv_split_app_inv in H
+    as (Δa1 & Δa2 & Δb1 & Δb2 & -> & -> & Hla & Hlb & Hsa & Hsb).
+
+Lemma typed_thin Σ Δ1 Δ2 U e :
+  typed Σ (Δ1 ++ Δ2) e U →
+  typed Σ (Δ1 ++ None :: Δ2) (rename (wren (length Δ1)) e) U.
+Proof.
+  intros Ht. remember (Δ1 ++ Δ2) as Δ eqn:HΔ. revert Δ1 Δ2 HΔ.
+  induction Ht; intros Ξ Δr ->; simpl.
+  - (* E-Unit *) apply typed_unit. by apply lenv_empty_thin.
+  - (* E-Const *) apply typed_konst; [by apply lenv_empty_thin|done].
+  - (* E-LVar *) apply typed_var. by apply lenv_only_thin.
+  - (* E-Ch *) apply typed_chan. by apply lenv_empty_thin.
+  - (* E-Abs *)
+    apply typed_lam. rewrite (rename_ext _ _ _ (upren_wren (length Ξ))).
+    by apply (IHHt (Some T :: Ξ) Δr).
+  - (* E-App *)
+    thin_split H0.
+    eapply typed_app; [done|by apply lenv_split_app, lsplit_none| |].
+    + rewrite <-Hla. by apply (IHHt1 Δa1 Δa2).
+    + rewrite <-Hlb. by apply (IHHt2 Δb1 Δb2).
+  - (* E-Pair *)
+    thin_split H0.
+    eapply typed_pair; [done|by apply lenv_split_app, lsplit_none| |].
+    + rewrite <-Hla. by apply (IHHt1 Δa1 Δa2).
+    + rewrite <-Hlb. by apply (IHHt2 Δb1 Δb2).
+  - (* E-Let* *)
+    thin_split H0.
+    eapply typed_letu; [done|by apply lenv_split_app, lsplit_none| |].
+    + rewrite <-Hla. by apply (IHHt1 Δa1 Δa2).
+    + rewrite <-Hlb. by apply (IHHt2 Δb1 Δb2).
+  - (* E-LetPair *)
+    thin_split H0.
+    eapply typed_letp; [done|by apply lenv_split_app, lsplit_none| |].
+    + rewrite <-Hla. by apply (IHHt1 Δa1 Δa2).
+    + rewrite (rename_ext _ _ _ (upren_upren_wren (length Ξ))), <-Hlb.
+      by apply (IHHt2 (Some V :: Some U :: Δb1) Δb2).
+  - (* E-Inl *) apply typed_inj1. by apply (IHHt Ξ Δr).
+  - (* E-Inr *) apply typed_inj2. by apply (IHHt Ξ Δr).
+  - (* E-Case *)
+    thin_split H0.
+    eapply typed_case; [done|by apply lenv_split_app, lsplit_none| | |].
+    + rewrite <-Hla. by apply (IHHt1 Δa1 Δa2).
+    + rewrite (rename_ext _ _ _ (upren_wren (length Ξ))), <-Hlb.
+      by apply (IHHt2 (Some U :: Δb1) Δb2).
+    + rewrite (rename_ext _ _ _ (upren_wren (length Ξ))), <-Hlb.
+      by apply (IHHt3 (Some V :: Δb1) Δb2).
+  - (* E-Box *)
+    apply typed_box; [by apply lenv_unl_thin|].
+    rewrite (rename_ext _ _ _ (upren_wren (length Ξ))).
+    by apply (IHHt (Some (TBox T) :: Ξ) Δr).
+  - (* □-weakening *)
+    apply lenv_wk_app_inv in H as (Ξ' & Δs & -> & Hl & Hw1 & Hw2).
+    eapply typed_wk; [|apply lenv_wk_app; [exact Hw1|by constructor]].
+    rewrite <-Hl. by apply (IHHt Ξ' Δs).
+  - (* E-Conv *)
+    eapply typed_conv; [done|]. by apply (IHHt Ξ Δr).
+Qed.
+
+(** Derived rule E-Weaken, at an arbitrary position. *)
+Lemma typed_weaken_gen Σ Δ1 Δ2 W U e :
+  unlimited W →
+  typed Σ (Δ1 ++ Δ2) e U →
+  typed Σ (Δ1 ++ Some W :: Δ2) (rename (wren (length Δ1)) e) U.
+Proof.
+  intros HW Ht. eapply typed_wk; [by apply typed_thin|].
+  apply lenv_wk_app; [apply lenv_wk_refl|].
+  apply lwk_drop; [done|apply lenv_wk_refl].
+Qed.
+
+(** Derived rule E-Weaken. *)
+Lemma typed_weaken Σ Δ W U e :
+  unlimited W →
+  typed Σ Δ e U →
+  typed Σ (Some W :: Δ) (rename S e) U.
+Proof.
+  intros HW Ht.
+  rewrite <-(rename_ext e (wren 0) S); [|apply wren_0].
+  by apply (typed_weaken_gen Σ [] Δ).
 Qed.
 
 (** ** Typing rules for processes: Σ ⊢ (C, E) : T
