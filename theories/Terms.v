@@ -1133,6 +1133,32 @@ Proof.
     apply He; [done|]. by apply grounding_contract.
 Qed.
 
+(** □-weakening in cons form (E-Weak): a fresh unlimited hypothesis
+    may be added, shifting the term — the paper's Δ ⊢ e becomes
+    Δ, x:W ⊢ e with x unused.  (Contrast [sem_typed_wk], which
+    un-spends entries positionally via [lenv_wk].) *)
+Lemma sem_typed_weaken Σ Δ W U e :
+  unlimited W →
+  sem_typed Σ Δ e U →
+  sem_typed Σ (Some W :: Δ) (rename S e) U.
+Proof.
+  intros Hu (Hfc & Hfv & Hrv & He). split_and!.
+  - by rewrite fchans_rename.
+  - apply allfv_rename. eapply allfv_mono; [|exact Hfv].
+    intros x (T' & HT'). by exists T'.
+  - intros [|x] Hx.
+    + destruct Hx as (T' & HT' & Hl). simpl in HT'. simplify_eq. done.
+    + destruct Hx as (T' & HT' & Hl).
+      apply (freevar_rename _ x S). apply Hrv. by exists T'.
+  - intros n Σ' γ Hd Hg. rewrite subst_rename.
+    simpl in Hg. destruct Hg as (Σ1 & Σ2 & Hsp & HV & Hg').
+    pose proof (Vrel_unl_empty _ _ _ _ Hu HV) as ->.
+    destruct Hsp as [-> Hd2].
+    apply map_disjoint_union_l in Hd as [_ Hd].
+    rewrite (left_id ∅ (∪)).
+    apply He; [done|exact Hg'].
+Qed.
+
 (** ** The fundamental property for terms (Theorem 3.13, term half;
     the process half lives in Compositionality.v) *)
 
