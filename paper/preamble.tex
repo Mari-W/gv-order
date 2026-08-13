@@ -168,7 +168,8 @@
 \def\tRepl{\tOp{repl}}
 \def\tReq{\tOp{req}}
 \makeatletter
-\let\@replSymb\shortuparrow
+% \let\@replSymb\shortuparrow
+\let\@replSymb!
 \let\@reqSymb\shortdownarrow
 \NewDocumentCommand\lRepl{mm}{{{\@replSymb}\lFork{#1}{#2}}}
 \NewDocumentCommand\lReq{mm}{{{\@reqSymb}\lFork{#1}{#2}}}
