@@ -25,5 +25,6 @@ theories/examples/Leader.v
 theories/examples/Balancer.v
 theories/examples/Scheduler.v
 theories/examples/Splice.v
+theories/examples/Handoff.v
 theories/examples/Pingpong.v
 theories/examples/Factory.v
