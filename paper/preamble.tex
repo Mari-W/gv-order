@@ -138,6 +138,8 @@
 \RequirePackage{stackengine}
 \NewDocumentCommand\trans{mo}{\mathrel{\stackon[2pt]{$\longrightarrow$}{$\scriptstyle#1$}\IfValueT{#2}{\vphantom{\longrightarrow}^{#2}}}}
 \NewDocumentCommand\redu{o}{\mathrel{\longrightarrow\IfValueT{#1}{^{#1}}}}
+% Step of the label-free reduction semantics (appendix on harmony).
+\newcommand{\sred}{\mathrel{\rightsquigarrow}}
 \def\irred{\operatorname{irred}}
 
 \NewDocumentCommand\lRecv{mm}{{\fFunc{#1}{?}\fFunc{#2}}}
@@ -194,6 +196,7 @@
 \NewDocumentCommand\obl{mmm}{{#1} \mathrel{\Vdash_{#2}} {#3}}
 
 \newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
+% The n-ary form of \cupdot is stmaryrd's \bigcupdot.
 
 \newcommand{\ie}{i.e.,~} % comma
 \newcommand{\eg}{e.g.~}  % no comma, according to the Handbook for Scholars

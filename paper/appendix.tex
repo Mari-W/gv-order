@@ -64,8 +64,7 @@
 \label{sec:reduct-lead-elect}
 
 As an example, we trace the reduction sequence starting from $p_0$  where $\fFunc{e_0}$
-communicates first with $\fFunc{e_1}$
-(\rocq{leader_proc}).
+communicates first with $\fFunc{e_1}$.
 \begin{itemize}
 \item $\tau$ transition (internal communication) to
   \begin{small}
@@ -202,3 +201,127 @@ communicates first with $\fFunc{e_1}$
     \end{align*}
   \end{small}
 \end{itemize}
+\section{A Reduction Semantics, and Harmony}
+\label{sec:app-harmony}
+
+Our operational semantics is a labelled transition system, and
+\emph{reduction} is defined as its $\tau$-fragment
+(\cref{sec:calculus}). This appendix shows that nothing hinges on
+that presentation choice: we define a conventional, self-contained
+reduction semantics on processes --- call-by-value evaluation
+contexts, $\beta$-redexes, and one rule per interaction, with no
+labels anywhere --- and prove that it coincides with $\tau$-reduction
+(\cref{thm:harmony}).
+
+\paragraph{Evaluation contexts}
+Multi-frame evaluation contexts extend the one-level contexts of
+\cref{fig:syntax} by nesting; they cover the full calculus including
+the extensions of \cref{sec:extensions}.
+\begin{align*}
+  \fFunc{\fCtx{E}} ::={} & \fFunc{\hole}
+  \sepr \fFunc{\tApp{\fCtx{E}}{e}}
+  \sepr \fFunc{\tApp{v}{\fCtx{E}}}
+  \sepr \fFunc{\tPair{\fCtx{E}}{e}}
+  \sepr \fFunc{\tPair{v}{\fCtx{E}}}
+  \sepr \fFunc{\tLet*{\fCtx{E}}{e}} \\
+  & \sepr \fFunc{\tLet[a][b]{\fCtx{E}}{e}}
+  \sepr \fFunc{\tInj{1}{\fCtx{E}}}
+  \sepr \fFunc{\tInj{2}{\fCtx{E}}}
+  \sepr \fFunc{\tCase{\fCtx{E}}{x_1}{e_1}{x_2}{e_2}}
+\end{align*}
+
+\paragraph{Pure reduction}
+The label-free term reduction
+$\fFunc{e} \redu[\mathsf{V}] \fFunc{e'}$ consists of the
+$\beta$-redexes, closed under evaluation contexts. It is defined
+without reference to the labelled relation
+$\fFunc{e} \trans{\lambda} \fFunc{e'}$, so the correspondence below
+is a theorem rather than a reformulation.
+\begin{align*}
+  \fFunc{\tApp{(\tAbs{x}{e})}{v}} & \redu[\mathsf{V}] \fFunc{\tSub{e}{v}{x}}
+  & \fFunc{\tLet*{\tUnit}{e}} & \redu[\mathsf{V}] \fFunc{e}
+  \\
+  \fFunc{\tLet[a][b]{\tPair{u}{v}}{e}} & \redu[\mathsf{V}] \fFunc{\tSub{\tSub{e}{u}{a}}{v}{b}}
+  & \fFunc{\tCase{(\tInj{i}{v})}{x_1}{e_1}{x_2}{e_2}} & \redu[\mathsf{V}] \fFunc{\tSub{e_i}{v}{x_i}}
+  \\
+  \fFunc{\tApp{\tForce}{\IExp{(x = e)}}} & \redu[\mathsf{V}] \fFunc{\tSub{e}{\IExp{(x = e)}}{x}}
+  & \fFunc{\fCtx{E}[e]} & \redu[\mathsf{V}] \fFunc{\fCtx{E}[e']} \quad \text{if } \fFunc{e} \redu[\mathsf{V}] \fFunc{e'}
+\end{align*}
+
+\begin{lemma}[\rocq{vred_reduction}]
+  \label{lem:vred-reduction}
+  $\fFunc{e} \redu[\mathsf{V}] \fFunc{e'}$
+  if and only if
+  $\fFunc{e} \trans{\beta} \fFunc{e'}$.
+\end{lemma}
+
+\paragraph{Reduction semantics for processes}
+\Cref{fig:red-semantics} gives the reduction semantics
+$\fProc{p} \sred \fProc{p'}$: a thread takes a pure step
+(\ruleLabel{R-Lift}); a fork spawns a thread and restricts a fresh
+channel (\ruleLabel{R-Fork}); a send and a receive on the same
+restricted channel synchronize (\ruleLabel{R-Com}); two closes on the
+same restricted channel retire it (\ruleLabel{R-Close}); and a
+forwarder fuses a restricted end with its partner by substitution
+(\ruleLabel{R-Link}, and symmetrically for the other end of the
+pair). Interactions happen under evaluation contexts in the
+participating threads, matching redex to co-redex directly --- where
+the LTS of \cref{fig:proc-semantics} lets the term transitions
+surface the interacting redexes, here the rules find them
+syntactically.
+
+\begin{figure}[tp]
+  \textbf{Reduction semantics} $\fProc{p} \sred \fProc{p'}$ \hfill \rocq{red}
+  \begin{mathpar}
+    \begin{bussproof}[R-Lift]
+      \bussAs{\fFunc{e} \redu[\mathsf{V}] \fFunc{e'}}
+      \bussU{\fProc{(C, E \uplus \mset{\fFunc{e}})} \sred \fProc{(C, E \uplus \mset{\fFunc{e'}})}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[R-Fork]
+      \bussAs{\fFunc{c} \text{ fresh}}
+      \bussU{\fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[\tApp{\tFork}{v}]}})} \sred
+             \fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{\fCtx{E}[c]}, \fFunc{\tApp{v}{c}}})}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[R-Com]
+      \bussAs{\fFunc{c} \in \fProc{C}}
+      \bussU{\fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[\tApp{\tSend}{\tPair{v}{c}}]}, \fFunc{\fCtx{E}'[\tApp{\tRecv}{c}]}})} \sred
+             \fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[c]}, \fFunc{\fCtx{E}'[\tPair{v}{c}]}})}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[R-Close]
+      \bussAs{\fFunc{c} \in \fProc{C}}
+      \bussU{\fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[\tApp{\tClos}{c}]}, \fFunc{\fCtx{E}'[\tApp{\tClos}{c}]}})} \sred
+             \fProc{(C \setminus \set{\fFunc{c}}, E \uplus \mset{\fFunc{\fCtx{E}[\tUnit]}, \fFunc{\fCtx{E}'[\tUnit]}})}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[R-Link]
+      \bussAs{\fFunc{c} \in \fProc{C}}
+      \bussU{\fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[\tApp{\tLink}{\tPair{c}{d}}]}})} \sred
+             \fProc{(C \setminus \set{\fFunc{c}}, \tSub{(E \uplus \mset{\fFunc{\fCtx{E}[\tUnit]}})}{\fFunc{d}}{\fFunc{c}})}}
+    \end{bussproof}
+  \end{mathpar}
+  \caption{The reduction semantics: pure steps, fork, communication,
+    closing, and forwarding, with no labels.}
+  \Description{Five reduction rules for process soups: lifting a pure
+    term step, forking with a fresh channel, communication between a
+    send and a receive redex, closing a channel from both ends, and
+    forwarding by substitution.}
+  \label{fig:red-semantics}
+\end{figure}
+
+\paragraph{Harmony}
+Both directions of \cref{thm:harmony} rest on the correspondence
+between the congruence closure of the labelled semantics and
+evaluation contexts: filling a labelled step into a context is a
+labelled step, and conversely every labelled step decomposes into an
+evaluation context around a head step.
+\ruleLabel{R-Lift} then matches
+\ruleLabel{P-Act-Beta} by \cref{lem:vred-reduction}, and each
+interaction rule matches the process rule that consumes the
+corresponding labels: \ruleLabel{R-Fork} with
+\ruleLabel{P-Act-Fork}, \ruleLabel{R-Com} with \ruleLabel{P-Act-Msg},
+\ruleLabel{R-Close} with \ruleLabel{P-Act-Close}, and
+\ruleLabel{R-Link} with \ruleLabel{P-Act-Link}, whose unordered label
+pair accounts for the two orientations of the rule.

@@ -11,25 +11,26 @@ features of GV \cite{conf/esop/LindleyM15} are covered.
 
 
 \begin{figure}[tp]
-  New values, terms, evaluation contexts \hfill \rocq{TSum} \rocq{Inj1} \rocq{TStepInj1}
+  New values, terms, evaluation contexts \hfill \rocq{TSum}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\tInj{1}{v}} \sepr \fFunc{\tInj{2}{v}}
     & \text{injections}\\
     \fFunc{e} &::= \dots \sepr \fFunc{\tCase{e}{x}{e}{x}{e}} &
                                                                        \text{sum elimination}\\
     \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tInj{1}{\fCtx{E}}} \sepr \fFunc{\tInj{2}{\fCtx{E}}}
+                       \sepr \fFunc{\tCase{\fCtx{E}}{x}{e}{x}{e}}
   \end{align*}
-  New labeled transitions \hfill \rocq{HeadCase1}
+  New labeled transitions
   \begin{mathpar}
     \begin{bussproof}[T-Act-Case]
       \bussAx{\fFunc{\tCase{(\tInj{i}{v})}{x_1}{e_1}{x_2}{e_2}} \trans{\beta} \fFunc{\tSub{e_i}{v}{x_i}}}
     \end{bussproof}
     % \and
     % \begin{bussproof}[T-Act-Case2]
-    %   \bussAx{\fFunc{\tCase{\tInj{2}{v}}{\tLVA}{e}{\tLVA}{e}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
+    % \bussAx{\fFunc{\tCase{\tInj{2}{v}}{\tLVA}{e}{\tLVA}{e}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
     % \end{bussproof}
   \end{mathpar}
-  New typing rules for terms \hfill \rocq{typed_inj1}
+  New typing rules for terms
   \begin{mathpar}
     \begin{bussproof}[E-Inj]
       \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T_i}}
@@ -43,20 +44,20 @@ features of GV \cite{conf/esop/LindleyM15} are covered.
       \bussU{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tCase{e}{x_1}{e_1}{x_2}{e_2}} : U}}
     \end{bussproof}
   \end{mathpar}
-  New case for the value logical relation \hfill \rocq{Vdef}
+  New case for the value logical relation
   \begin{align*}
     \lrVal{n}{\fType{\Sigma \vdash \lSum{T_1}{T_2}}}
-  &= \set{ \fFunc{\tInj{1}{v}}  \mid
+  &= \set{ \fFunc{\tInj{1}{v}} \mid
     \fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_1}}
-    } \cup \set{ \fFunc{\tInj{2}{v}}  \mid
+    } \cup \set{ \fFunc{\tInj{2}{v}} \mid
     \fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_2}}
     }
   \end{align*}
-  New rule for primitive types \hfill \rocq{prim_sum}
+  New rule for primitive types
   \begin{mathpar}
     \begin{bussproof}
-      \bussAs{\primitive \fType{T}}
       \bussAs{\primitive \fType{U}}
+      \bussAs{\primitive \fType{V}}
       \bussB{\primitive \fType{\lSum{U}{V}}}
     \end{bussproof}
   \end{mathpar}
@@ -77,7 +78,7 @@ and encoding the operations to select and match on a channel as follows.
 \begin{align*}
   \fFunc{\mathit{select}~\textit{left}~c} &:= \fFunc{\tFork (\lambda
                                    d. \tApp{\tClos}{(\tSend{\tPair{\tInj{1}{d}}{c}})})}
-  &  \fFunc{\mathit{select}~\textit{right}~c} &:= \fFunc{\tFork (\lambda
+  & \fFunc{\mathit{select}~\textit{right}~c} &:= \fFunc{\tFork (\lambda
                                        d. \tApp{\tClos}{(\tSend{\tPair{\tInj{2}{d}}{c}})})}
 \end{align*}
 \begin{align*}
@@ -90,7 +91,7 @@ implement sum types. To this end, we extend the syntax, labeled reduction,
 typing, and the value logical relation in the usual way as
 shown in \cref{fig:sum-types}. We prove the following compositionality lemmas
 corresponding to the typing rules for sum types and integrate them in the proof
-of the fundamental property. 
+of the fundamental property.
 
 \begin{lemma}[Compositionality: \ruleLabel{inj} \rocq{sem_typed_inj1}]
   \label{lem:comp:inj}
@@ -103,21 +104,20 @@ of the fundamental property.
 
 \begin{lemma}[Compositionality: \ruleLabel{case} \rocq{sem_typed_case}]
   \label{lem:comp:case}
-  If  $ \fType{\Sigma_1;\Delta_1 \proves \fFunc{e} : \lSum{T_1}{T_2}}$ and
-  \begin{itemize}
-  \item for all $ \fType{\Sigma;\Delta \proves \fFunc{v_1} : {T_1}}$ implies
-    $ \fType{\Sigma,\Sigma_2;\Delta,\Delta_2 \proves \fFunc{e_1[v_1/x_1]} : U}$,
-  \item for all $ \fType{\Sigma;\Delta \proves \fFunc{v_2} : {T_2}}$ implies
-  $ \fType{\Sigma,\Sigma_2;\Delta,\Delta_2 \proves \fFunc{e_2[v_2/x_2]} : U}$,
-  \end{itemize}
+  If
+  $ \fType{\Sigma_1;\Delta_1 \proves \fFunc{e} : \lSum{T_1}{T_2}}$
+  and
+  $ \fType{\Sigma_2;\Delta_2 , \fFunc{x_1}:T_1 \proves \fFunc{e_1} : U}$
+  and
+  $ \fType{\Sigma_2;\Delta_2 , \fFunc{x_2}:T_2 \proves \fFunc{e_2} : U}$,
   then
   $ \fType{\Sigma_1,\Sigma_2;\Delta_1,\Delta_2 \proves
-    \fFunc{\tCase{e}{x_1}{e_1}{x_2}{e_2}} : U}$. 
+    \fFunc{\tCase{e}{x_1}{e_1}{x_2}{e_2}} : U}$.
 \end{lemma}
 
 We exercise this extension with an example.
 
-\begin{example}[Leader election]
+\begin{example}[Leader election \rocq{leader_election_deadlock_free}]
 The problem of leader election can be reduced to a process that makes
 finite number of $\tau$ steps and then finishes with a $\fType{left}$
 or $\fType{right}$ step on some channel of type $\fType{\fFunc{c} : \sTerm
@@ -126,28 +126,43 @@ or $\fType{right}$ step on some channel of type $\fType{\fFunc{c} : \sTerm
 the following terms making use of the sum extension. We use standard syntactic
 sugar for the encoding of the type $\fType{Bool} = \fType{\tUnit+\tUnit}$ and
 the conditional $\fFunc{\mathit{if}}$.
+Both branches of the choice on~$\fFunc{c}$ continue with $\fType{\sTerm}$,
+so the general encoding
+$\fType{\sTerm \ichoice \sTerm} = \fType{\sSend{(\sTerm + \sTerm)}{\sTerm}}$
+specializes: a channel end that is closed immediately carries no
+information, so it suffices to transmit the choice as a $\fType{Bool}$
+token, and the interface type becomes
+$\fType{\fFunc{c} : \sSend{Bool}{\sTerm}}$.
+Selection is then a send followed by a close:
+\begin{align*}
+  \fFunc{\mathit{select}~\mathit{left}~c}
+    &:= \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{c}})}}
+  &
+  \fFunc{\mathit{select}~\mathit{right}~c}
+    &:= \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{false}{c}})}}
+\end{align*}
 %
 \begin{align*}
   \fFunc{e_0} &=
                 \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{\tApp{\tSend}{\tPair{false}{d}}}})}}
   \\
   \fFunc{e_1} &=
-                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tIf{\tLVB}{\tApp{\tClos}{(\mathit{select}~\mathit{left}~c)}}{\tUnit}}}}
+                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tIf{\tLVB}{(\mathit{select}~\mathit{left}~c)}{\tUnit}}}}
   \\
   \fFunc{e_2} &=
-                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(\mathit{select}~\mathit{right}~c)}}{\tUnit}}}}}
+                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{(\mathit{select}~\mathit{right}~c)}{\tUnit}}}}}
 \end{align*}
 Now we
-set out to prove that $p_0 \in \lrProc{n}{ \fFunc{c}\fType{:  \sTerm
-  \ichoice \sTerm} \vdash \fType{\tUnit}}$. This process has essentially
-two different reduction sequences due to a race condition
-(\rocq{leader_proc}). Either $\fFunc{e_0}$
+set out to prove that $p_0 \in \lrProc{n}{ \fFunc{c}\fType{:
+  \sSend{Bool}{\sTerm}} \vdash \fType{\tUnit}}$. This process has essentially
+two different reduction sequences due to a race condition.
+Either $\fFunc{e_0}$
 communicates first with $\fFunc{e_1}$ and then with $\fFunc{e_2}$ or
 vice versa. Each term, $\fFunc{e_1}$ and $\fFunc{e_2}$, receives a
 boolean on channel $\fFunc{d}$, then synchronizes by closing
 $\fFunc{cs}$, $\fFunc{e_2}$ closes $\fFunc{d}$, and we are left with
 one term where the condition is $\fFunc{true}$ and another where it is
-$\fFunc{false}$. The  $\fFunc{true}$-term executes a $\fFunc{select}$
+$\fFunc{false}$. The $\fFunc{true}$-term executes a $\fFunc{select}$
 and the $\fFunc{false}$-term does nothing.
 
 The process $p_0$ is not reachable by a reduction sequence from a process of the
@@ -160,8 +175,7 @@ $\fFunc{e_2}$ violates linearity for channel $\fFunc{c}$.
 
 See \cref{sec:reduct-lead-elect} in the appendix for the reduction sequence.
 Composing $p_0$ over $\fFunc{c}$ with a syntactically typable client
-yields a closed, deadlock-free process
-(\rocq{leader_election_deadlock_free}).
+yields a closed, deadlock-free process.
 \end{example}
 
 
@@ -170,7 +184,7 @@ yields a closed, deadlock-free process
 \label{sec:recursion}
 
 \begin{figure}[tp]
-  New values, terms, types \hfill \rocq{TBox} \rocq{EBox} \rocq{KForce}
+  New values, terms, types \hfill \rocq{TBox}
   \begin{align*}
     \fFunc{v} &::= \dots \sepr \fFunc{\IExp{(\tIVX = e)}}
     & \text{recursively defined thunk}\\
@@ -180,7 +194,7 @@ yields a closed, deadlock-free process
   % Since $\fFunc{\tForce}$ is a function, no new evaluation contexts
   % are needed: thunk elimination is ordinary application.
 
-  New labeled transition \hfill \rocq{HeadForce}
+  New labeled transition
   \begin{mathpar}
     \begin{bussproof}[T-Act-Exp]
       \bussAx{\fFunc{\tApp{\tForce}{\IExp{(\tIVX = e)}}}
@@ -189,18 +203,17 @@ yields a closed, deadlock-free process
     \end{bussproof}
   \end{mathpar}
   New typing rules for terms
-  \hfill \rocq{typed_box} \rocq{KTForce}
   \begin{mathpar}
     \begin{bussproof}[E-Exp]
       \bussAs{\fType{\tEmpty ; \tBox{\Delta} , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{e} : T}}
-      \bussU{\fType{\tEmpty  ; \tBox{\Delta} \vdash \fFunc{\IExp{(\tIVX = e)}} : \tBox{T}}}
+      \bussU{\fType{\tEmpty ; \tBox{\Delta} \vdash \fFunc{\IExp{(\tIVX = e)}} : \tBox{T}}}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Force]
       \bussAx{\fType{\tEmpty ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\tBox{T}}{T}}}
     \end{bussproof}
   \end{mathpar}
-  Structural rules for boxed hypotheses \hfill \rocq{typed_weaken} \rocq{typed_contract}
+  Structural rules for boxed hypotheses
   \begin{mathpar}
     \begin{bussproof}[E-Weak]
       \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : U}}
@@ -229,15 +242,15 @@ session types.} for duplicable values, an introduction form
 for recursively defined values, \emph{thunks}, in the style of Lily, and a $\fFunc{\tForce}$
 operator as an eliminator for boxed types as shown in
 \cref{fig:lily:terms}. Lily's eliminator is a let-box, which is
-equivalent. 
+equivalent.
 
 The typing rules are as expected. Introducing a thunk requires an environment of
 only boxed types, indicated by $\tBox{\Delta}$; forcing a thunk eliminates the
 boxed type; boxed-typed variables are subject to weakening and contraction
 (\cref{fig:lily:terms}). In the mechanization, weakening is a rule of the
-system (\rocq{typed_wk}), while contraction is built into environment
-splitting (\rocq{lsplit_unl}) and the explicit rule \ruleLabel{E-Contract} is
-proved admissible (\rocq{typed_contract}). \citet{conf/esop/LindleyM15} approach
+system, while contraction is built into environment
+splitting and the explicit rule \ruleLabel{E-Contract} is
+proved admissible. \citet{conf/esop/LindleyM15} approach
 replication in a similar way, but their introduction rule is not recursive
 and their elimination is via let-box.
 
@@ -254,10 +267,11 @@ point operator and non-recursive thunks:
   & \fFunc{\IExp{e}} & := \fFunc{\IExp{(\tIVX = e)}} \quad \text{where}~\fFunc{\tIVX\notin fv (e)}
 \end{align*}
 
-We extend the value logical relation in a similar way as \citet{DBLP:journals/entcs/BiermanPR00}.
+We extend the value logical relation in a similar way as
+\citet{DBLP:journals/entcs/BiermanPR00}.
 \begin{align*}
   \lrVal{n}{\fType{\tEmpty \vdash \tBox{T}}}
-  &= \set{ \fFunc{\IExp{(\tIVX = e)}}  \mid
+  &= \set{ \fFunc{\IExp{(\tIVX = e)}} \mid
     \fc(\fFunc{e}) = \emptyset \land
     \fFunc{{\tFixI{\tIVX}{e}}} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}
     }
@@ -277,7 +291,7 @@ in \cref{fig:lily:terms}.
   If
   $ \fType{\tEmpty;\tBox{\Delta}, \tBox{T} \proves \fFunc{e} : T}$,
   then
-  $ \fType{\tEmpty;\tBox{\Delta} \proves \fFunc{\IExp{(x=e)}} : T}$.
+  $ \fType{\tEmpty;\tBox{\Delta} \proves \fFunc{\IExp{(x=e)}} : \tBox{T}}$.
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{force} \rocq{sem_typed_force}]
@@ -328,19 +342,49 @@ treat the new operators as macros as follows.
 
 In the presence of recursive functions, it makes sense to extend
 session types to be recursive, too. Specifically, we adopt the traditional approach of
-equi-recursive session types, where a recursive type is always equal to its unfolding.
+equi-recursive session types, where a recursive type is always equal to its
+unfolding.
 \begin{align*}
   \fType{S} &::= \dots \sepr \fType{\mu\alpha.S} \sepr \fType{\alpha}
   & \fType{\mu\alpha.S} &= \fType{\tSub{S}{\mu\alpha.S}{\alpha}}
 \end{align*}
-As equi-recursive types have contractive definitions
-(\rocq{contractive_ty}), we can always
-determine the top-level constructor of a type in finite time
-(\rocq{unfoldS}). Hence,
-all our prior definitions and proofs carry over without change. In the
-mechanization, we insert appropriate unfolding functions that expose the
-top-level constructor for inspection in the respective clause of the logical
-relation.
+Unfolding a session type repeatedly reaches one of the head-normal forms
+$\fType{\sRecv{T}{S}}$, $\fType{\sSend{T}{S}}$ or $\fType{\sTerm}$ in
+finitely many steps, so the top-level constructor
+of a type is always available for inspection.
+Hence all our prior definitions and proofs carry over essentially
+unchanged: in the mechanization, we insert appropriate unfolding
+functions that expose the top-level constructor in the respective clause
+of the logical relation.
+The one genuine addition to the type system is a conversion rule, which
+lets a term at a session type be retyped at any type with the same
+unfolding:
+\begin{mathpar}
+  \begin{bussproof}[E-Conv]
+    \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : S}}
+    \bussAs{\fType{S} \text{ and } \fType{S'} \text{ have the same unfolding}}
+    \bussB{\fType{\Sigma ; \Delta \vdash \fFunc{e} : S'}}
+  \end{bussproof}
+\end{mathpar}
+\mw{claude: do we actually need \ruleLabel{E-Conv} as a rule? It is in
+  the mechanization (\texttt{typed\_conv}), but if every clause already
+  inspects types up to unfolding it may be admissible --- worth
+  checking before we commit to advertising it.}
+
+\mw{claude: we should say once, up front, that session types are taken
+  \emph{up to unfolding} throughout --- the mechanization matches
+  $\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ etc.\ via
+  \texttt{senv\_hd}/\texttt{unfoldS} rather than syntactically, and the
+  same applies to the link clause of \cref{sec:extens-link-oper}, where
+  the two ends are required to be dual only up to unfolding
+  (\texttt{unfoldS sd = unfoldS (dual sc)}), not syntactically dual.}
+
+\mw{claude: we need to talk about duality here. The mechanization has a
+  \emph{dualized} session variable $\fType{\dual{\alpha}}$
+  (\texttt{SVarD}) alongside $\fType{\alpha}$, because taking
+  $\fType{\dual{\alpha}} = \fType{\alpha}$ is unsound under a binder ---
+  the grammar as printed above cannot express what \texttt{dual}
+  actually produces.}
 
 
 \mw{claude: the mechanization has a worked example for this section
@@ -362,7 +406,7 @@ sense to add it here where we have recursive types!}
     \sigma &::= \dots \sepr \lLink{c}{c}
              &\text{forwarding session label}
   \end{align*}
-  New labeled transitions \hfill \rocq{HeadLink}
+  New labeled transitions
   \begin{mathpar}
     \begin{bussproof}[T-Act-Link]
       \bussAx{\fFunc{\tApp{\tLink}{\tPair{c}{d}}} \trans{\lLink{c}{d}} \fFunc{\tUnit}}
@@ -373,24 +417,24 @@ sense to add it here where we have recursive types!}
       \bussU{\fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e}})} \trans{\tau} \fProc{(C, \tSub{(E \uplus \mset{\fFunc{e'}})}{\fFunc{d}}{\fFunc{c}})}}
     \end{bussproof}
   \end{mathpar}
-  Subjects and escaping channels of the new label:
+  Subjects and escaping channels of the new label: \\
   $ \fc(\lLink{c}{d}) = \set{\fFunc{c},\fFunc{d}} $, \quad
   $ \sent(\lLink{c}{d}) = \emptyset $
 
-  New type-indexed family of constants: \hfill \rocq{KTLink}\\
+  New type-indexed family of constants: \\
   $ \fType{\fFunc{\tLink} : \lFunc{\tPair{S}{\dual{S}}}{\tUnit}} $
 
-  New case for the term logical relation \hfill \rocq{Edef}
+  New case for the term logical relation
   \begin{enumerate}[start=6]
-  \item  $\lambda = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
+  \item $\lambda = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
     \fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}$ and $\fFunc{e'} \in \lrTerm{n'}{\fType{\Sigma_1 \vdash T}}$.
   \end{enumerate}
 
-  New case for the process logical relation \hfill \rocq{Pdef}\\
+  New case for the process logical relation \\
   To establish that $\fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}}$ where
   $n=n'+1$ and $p$ reduces:
   \begin{enumerate}[start=5]
-  \item  $\pi = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
+  \item $\pi = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
     \fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}$ and $\fProc{p'} \in \lrProc{n'}{\fType{\Sigma_1 \vdash T}}$.
   \end{enumerate}
 
@@ -427,7 +471,7 @@ are forwarded to the other channel, in both directions.
 forwarding. We add a new operator $\fFunc{\tLink}$ and a forwarding label
 $\lLink{\fFunc{c}}{\fFunc{d}}$ to indicate the request to forward between sessions
 $\fFunc{c}$ and $\fFunc{d}$. The label is generated by a term
-reduction. 
+reduction.
 As forwarding is symmetric the label
 carries a \emph{set} of two channels, i.e., their order does not matter.
 The two ends are \emph{not} required to be different: a self-forwarding
@@ -443,6 +487,18 @@ label, the configuration as a whole takes a labeled reduction step
 The new cases for the logical relation formalize the postcondition
 of the forwarder: the two connected channel ends vanish from the
 context as a consequence of the forwarding reduction.
+Both ends appear in the interface $\fType{\Sigma}$ in
+\TirName{O-Link} and \TirName{Q-Link} because a forwarding label
+reaches the interface only when neither end is restricted
+(\TirName{P-Act-Session}). A forwarding between a restricted end
+$\fFunc{c}$ and an external end $\fFunc{d}$ emits no label: it is the
+$\tau$-step \TirName{P-Act-Link}, so it is governed by the reduction
+clause of the relation at an unchanged interface --- after the step
+the peer of $\fFunc{c}$, retargeted to $\fFunc{d}$ by the
+substitution, must serve the external session $\fFunc{d}$ directly.
+Establishing this clause for composite configurations is the
+forwarding case of \cref{lem:comp:connect}, which rests on the
+invariance of the relations under channel substitution.
 Distinctness of the two ends is imposed by the logical relation, and
 only there: a configuration offering a forwarding whose two ends
 coincide names a single channel, which no instance of the case above
@@ -453,7 +509,7 @@ supplying both.
 On a restricted channel the substitution $\tSub{\cdot}{\fFunc{c}}{\fFunc{c}}$
 is the identity, so \ruleLabel{P-Act-Link} degenerates to releasing the
 name --- which is what a self-forwarding means: the thread held both
-ends, so the session is terminated. 
+ends, so the session is terminated.
 
 \mw{claude: the mechanization carries a worked example for this
   section that the paper does not have --- Milner's cyclic scheduler

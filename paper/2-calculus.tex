@@ -42,19 +42,19 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
     & \text{(constants)}
     \\
     \fFunc{v} &::=
-      \fFunc{\tUnit}          \sepr
-      \fFunc{k}               \sepr
-      \fFunc{c}               \sepr
+      \fFunc{\tUnit} \sepr
+      \fFunc{k} \sepr
+      \fFunc{c} \sepr
       \fFunc{\tAbs{\tLVA}{e}} \sepr
       \fFunc{\tPair{v}{v}}
     & \text{(values)}
     \\
     \fFunc{e} &::=
-      \fFunc{\tLVA}           \sepr
-      \fFunc{v}               \sepr
-      \fFunc{\tApp{e}{e}}     \sepr
-      \fFunc{\tPair{e}{e}}    \sepr
-      \fFunc{\tLet*{e}{e}}    \sepr
+      \fFunc{\tLVA} \sepr
+      \fFunc{v} \sepr
+      \fFunc{\tApp{e}{e}} \sepr
+      \fFunc{\tPair{e}{e}} \sepr
+      \fFunc{\tLet*{e}{e}} \sepr
       \fFunc{\tLet[\tLVA][\tLVA]{e}{e}}
     & \text{(terms)}
   \end{align*}
@@ -67,12 +67,12 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
   \textbf{Evaluation contexts $\fFunc{\fCtx{E}}$, session labels $\sigma$, term labels $\lambda$}
   \begin{align*}
     \fFunc{\fCtx{E}} &::=
-      \fFunc{\hole}                 \sepr
-      \fFunc{\tApp{\fCtx{E}}{e}}    \sepr
-      \fFunc{\tApp{v}{\fCtx{E}}}    \sepr
-      \fFunc{\tPair{\fCtx{E}}{e}}   \sepr
-      \fFunc{\tPair{v}{\fCtx{E}}}   \sepr
-      \fFunc{\tLet*{\fCtx{E}}{e}}   \sepr
+      \fFunc{\hole} \sepr
+      \fFunc{\tApp{\fCtx{E}}{e}} \sepr
+      \fFunc{\tApp{v}{\fCtx{E}}} \sepr
+      \fFunc{\tPair{\fCtx{E}}{e}} \sepr
+      \fFunc{\tPair{v}{\fCtx{E}}} \sepr
+      \fFunc{\tLet*{\fCtx{E}}{e}} \sepr
       \fFunc{\tLet[\tLVA][\tLVA]{\fCtx{E}}{e}}
     & \text{(eval.\ contexts)}
     \\
@@ -83,8 +83,8 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
     & \text{(session labels)}
     \\
     \lambda &::=
-      \beta    \sepr
-      \sigma   \sepr
+      \beta \sepr
+      \sigma \sepr
       \lFork{c}{v}
     & \text{(term labels)}
   \end{align*}
@@ -163,7 +163,7 @@ The rule~\ruleLabel{T-Act-Ctx} uses standard call-by-value evaluation contexts.
 
 We define GV-style term \emph{reduction} $\fFunc{e} \redu \fFunc{e'}$ as
 the pure steps $\fFunc{e} \trans{\beta} \fFunc{e'}$
-and write  $\trans{}[*]$ for its transitive, reflexive closure.
+and write $\trans{}[*]$ for its transitive, reflexive closure.
 
 
 \paragraph{Process semantics}
@@ -195,7 +195,7 @@ that pertain to channels linking to the environment,
 to a transition of the process labelled with~$\sigma$.
 We denote the channels that are extruded from the internal scope due to a
 an communication effect~$\sigma$ by $\sent(\sigma)$:
-  $\sent(\lFork{c}{v}) = \sent(\lRecv{c}{v}) = \sent(\lTerm{c}) = \emptyset$,
+  $\sent(\lRecv{c}{v}) = \sent(\lTerm{c}) = \emptyset$,
   $\sent(\lSend{c}{v}) = \fc(\fFunc{v})$.
 Rule \ruleLabel{P-Act-Beta} lets a thread take an internal $\tau$~step
 to execute $\beta$~reductions of the term it is running.
@@ -212,12 +212,26 @@ We define \emph{reduction} for processes,
 written $\fProc{p} \redu \fProc{p'}$,
 as $\fProc{p} \trans{\tau} \fProc{p'}$.
 We write $\trans{}[*]$ for its transitive, reflexive closure.
+The move to an LTS is a matter of convenience, not substance:
+reduction coincides with a conventional, label-free reduction
+semantics.
+
+\begin{theorem}[Harmony \rocq{harmony}]
+  \label{thm:harmony}
+  $\fProc{p} \redu \fProc{p'}$
+  if and only if
+  $\fProc{p} \sred \fProc{p'}$,
+  where $\fProc{p} \sred \fProc{p'}$ is the reduction semantics of
+  \cref{sec:app-harmony} (\cref{fig:red-semantics}):
+  call-by-value evaluation contexts, $\beta$-redexes, and one
+  redex/co-redex rule per interaction, with no labels.
+\end{theorem}
 
 \begin{figure}[tp]
-  \textbf{Process labels $\pi ::= \tau \sepr \sigma$}\par\medskip
+  \textbf{Process labels $\pi ::= \tau \sepr \sigma$} \par\medskip
   % \textbf{Process labels $\pi$}
   % \begin{align*}
-  %   \pi &::= \tau \sepr \sigma
+  % \pi &::= \tau \sepr \sigma
   % \end{align*}
   \textbf{Labeled reductions for processes} \hfill \rocq{proc_step}
   \begin{mathpar}
@@ -229,7 +243,8 @@ We write $\trans{}[*]$ for its transitive, reflexive closure.
     \and
     \begin{bussproof}[P-Act-Fork]
       \bussAs{\fFunc{e} \trans{\lFork{c}{v}} \fFunc{e'}}
-      \bussU{\fProc{(C, E \uplus \mset{\fFunc{e}})} \trans{\tau} \fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e'}, \fFunc{\tApp{v}{c}}})}}
+      \bussAs{\fFunc{c}~\text{fresh}}
+      \bussB{\fProc{(C, E \uplus \mset{\fFunc{e}})} \trans{\tau} \fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e'}, \fFunc{\tApp{v}{c}}})}}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Act-Beta]
@@ -374,15 +389,14 @@ will consider untyped processes and accept only well-behaved ones
 We explain the significance of the \ruleLabel{P-Act-Session} rule with the following lemma.
 It considers the case that two disjoint processes communicate over an external channel $c$.
 We can internalize this communication by putting the processes together and close them over $c$.
-\begin{lemma}
+\begin{lemma}[\rocq{internalize_comm}]
 \label{lem:internalize}
   Suppose that
   $\fProc{(C_1, E_1)} \trans{\lSend{c}{v}} \fProc{(C_1', E_1')}$
   and
   $\fProc{(C_2, E_2)} \trans{\lRecv{c}{v}} \fProc{(C_2', E_2')}$
   with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
-  Then  $\fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1' \uplus E_2')}$.
-  \hfill\rocq{internalize_comm}
+  Then $\fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1' \uplus E_2')}$.
 \end{lemma}
 \begin{proof}
   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ruleLabel{P-Act-Session}.
@@ -394,7 +408,7 @@ We can internalize this communication by putting the processes together and clos
     C_1' & = C_1 \setminus \sent(\lSend{c}{v}) = C_1 \setminus \fc(\fFunc{v}) \\
     E_1' & = E_1'' \uplus \mset{\fFunc{e'}}
   \end{align}
-  Rule inversion on $(C_2, E_2)$ yields   
+  Rule inversion on $(C_2, E_2)$ yields
   \begin{align}
     E_2 & = E_2'' \uplus \mset{\fFunc{f}} \\
         & \fFunc{f} \trans{\lRecv{c}{v}} \fFunc{f'} \label{eq:2}\\
@@ -432,15 +446,15 @@ which, by convention, is considered the value computed by the whole program.%
 
 % \ed{Safety is unattainable for open processes: one has no control over received values}
 % \begin{definition}[Safety]
-%   \label{def:safety}
-%   Every process is \emph{\pre 0-safe}.
-%   Given $n\in\Nat$, a process $\fProc{p}$ is \emph{\pre (n+1)-safe} just if:
-%   \begin{enumerate}
-%     \item\label{def:safety:terminated} $\fProc{p}$ is terminated,
-%       or
-%     \item\label{def:safety:trans} there are $\fProc{p'},\pi$ such that $\fProc{p} \trans{\pi} \fProc{p'}$ and $\fProc{p'}$ is $n$-safe.
-%   \end{enumerate}
-%   We say $\fProc{p}$ is \emph{safe} if $\fProc{p}$ is $n$-safe for every $n \in \Nat$.
+% \label{def:safety}
+% Every process is \emph{\pre 0-safe}.
+% Given $n\in\Nat$, a process $\fProc{p}$ is \emph{\pre (n+1)-safe} just if:
+% \begin{enumerate}
+% \item\label{def:safety:terminated} $\fProc{p}$ is terminated,
+% or
+% \item\label{def:safety:trans} there are $\fProc{p'},\pi$ such that $\fProc{p} \trans{\pi} \fProc{p'}$ and $\fProc{p'}$ is $n$-safe.
+% \end{enumerate}
+% We say $\fProc{p}$ is \emph{safe} if $\fProc{p}$ is $n$-safe for every $n \in \Nat$.
 % \end{definition}
 
 \begin{definition}[Safe process \rocq{safe}]
@@ -502,7 +516,7 @@ but does not follow the usual discipline on channels.
 
 \begin{example}[Load balancer \rocq{lb}]
 \label{ex:load-balancer}
-  Consider an open process~$(\emptyset,\fFunc{\var{lb}})$
+  Consider an open process~$(\emptyset,\mset{\fFunc{\var{lb}}})$
   which replies to requests on a channel~$\fFunc{c}$ shared with the environment,
   by delegating the two expected answers to two worker threads.
   We can represent such a process in \OurLang\ as follows.
@@ -538,12 +552,14 @@ but does not follow the usual discipline on channels.
     \end{align*}
   \end{minipage}
   \end{center}
-  In two internal reductions the process
-  $p_0=(\emptyset,\fFunc{\var{lb}})$
+  In four internal reductions
+  (a fork and a $\beta$~step for each worker)
+  the process
+  $p_0=(\emptyset,\mset{\fFunc{\var{lb}}})$
   reduces to
   \[
     p_1 =
-    (\set{\fFunc{w_1},\fFunc{w_1}}, \mset{
+    (\set{\fFunc{w_1},\fFunc{w_2}}, \mset{
      \fFunc{\var{srv}},
      \fFunc{\tApp{\var{worker}}{w_1}}, \fFunc{\tApp{\var{worker}}{w_2}} })
   \]
@@ -601,7 +617,7 @@ a more liberal logical relation.
     \\
     \fType{\Sigma} &::= \fType{\tEmpty} \sepr \fType{\fFunc{c}:S} \sepr \fType{\Sigma,\Sigma}
   \end{align*}
-  \textbf{Session duality $\fType{\dual{S}}$} \hfill \rocq{dual}
+  \textbf{Session duality $\fType{\dual{S}}$}
   \begin{align*}
     \fType{\dual{\sRecv{T}{S}}} &= \fType{\sSend{T}{\dual{S}}}
     &
@@ -609,17 +625,17 @@ a more liberal logical relation.
     &
     \fType{\dual{\sTerm}} &= \fType{\sTerm}
   \end{align*}
-%   \caption{Types and session types for \OurLang}
-%   \label{fig:types}
+% \caption{Types and session types for \OurLang}
+% \label{fig:types}
 % \end{figure}
 %
 % \begin{figure}[tp]
-  \textbf{Linear variable environments} $\fType{\Delta}$ \hfill \rocq{lenv}
+  \textbf{Linear variable environments} $\fType{\Delta}$
   \begin{align*}
     \fType{\Delta} &::= \fType{\tEmpty} \sepr \fType{\fFunc{\tLVA}:T} \sepr
                      \fType{\Delta, \Delta}
   \end{align*}
-  \textbf{Type-indexed families of type signatures for constants $\fType{\fFunc{k}:T}$} \hfill \rocq{konst_ty}
+  \textbf{Type-indexed families of type signatures for constants $\fType{\fFunc{k}:T}$}
   \begin{align*}
     \fFunc{\tFork} &\fType{{}:\lFunc{(\lFunc{S}{\tUnit})}{\dual{S}}}
     &
@@ -677,7 +693,7 @@ a more liberal logical relation.
       \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLet[\tLVA][\tLVB]{e_1}{e_2}} : T}}
     \end{bussproof}
   \end{mathpar}
-  \textbf{Typing rules for processes} $\fType{\Sigma \vdash \fProc{p} : T}$ \hfill \rocq{ptyped}
+  \textbf{Typing rules for processes} $\fType{\Sigma \vdash \fProc{p} : T}$
   \begin{mathpar}
     \begin{bussproof}[P-Term]
       \bussAs{\primitive \fType{T}}
@@ -745,8 +761,7 @@ do not share channels, for readability.
 
 The \ruleLabel{P-Term} rule types a single thread by checking that the declared
 type is in fact the type of the expression it is running, and that such expression can be typed in the empty variable environment (\ie it is closed).
-Additionally, we only allow \emph{primitive} types to be return types
-(\rocq{prim}):
+Additionally, we only allow \emph{primitive} types to be return types:
 %
 \begin{mathpar}
   \begin{bussproof}
@@ -754,8 +769,8 @@ Additionally, we only allow \emph{primitive} types to be return types
   \end{bussproof}
   \and
   \begin{bussproof}
-    \bussAs{\primitive \fType{T}}
     \bussAs{\primitive \fType{U}}
+    \bussAs{\primitive \fType{V}}
     \bussB{\primitive \fType{\lPair{U}{V}}}
   \end{bussproof}
 \end{mathpar}
@@ -793,7 +808,7 @@ but whose connecting channel has been closed since.
   For the same reasons, the $\fProc{\var{blocked}}$ process of Example~\ref{ex:deadlock}
   is also not typable, although in this case, desirably so.
   %%
-  The load balancer process $(\emptyset,\fFunc{\var{lb}})$
+  The load balancer process $(\emptyset,\mset{\fFunc{\var{lb}}})$
   of Example~\ref{ex:load-balancer} is also rejected by the type system
   as it violates linearity of channels in several ways,
   although intuitively it could be seen as respecting
