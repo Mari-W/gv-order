@@ -1,36 +1,11 @@
-%%% OOPSLA / PACMPL submission format.
-%%%
-%%% Per the SPLASH call for papers, PACMPL(OOPSLA) submissions use
-%%%
-%%%   \documentclass[acmsmall,screen,review,anonymous]{acmart}
-%%%
-%%% double-blind, ACM-Reference-Format bibliography, and a
-%%% Data-Availability Statement just before the references.  The
-%%% initial submission is limited to 23 pages excluding references,
-%%% required statements and appendices (25 for a revision or the
-%%% camera-ready).
-%%%
-%%% Drop `review' to lose the line numbers, `anonymous' to reveal the
-%%% authors.  The LNCS sources this was converted from are still in
-%%% the repository (llncs.cls, splncs04nat.bst) if we go back.
-
-% enumitem and cleveref are loaded by, or alongside, acmart; their
-% options have to be registered before the class is read.
 \PassOptionsToPackage{inline,shortlabels}{enumitem}
 \PassOptionsToPackage{capitalise,noabbrev}{cleveref}
-% acmart loads xcolor itself, so the named-colour lists preamble.tex
-% uses (RoyalBlue, YellowOrange) have to be requested up here.
 \PassOptionsToPackage{dvipsnames,rgb}{xcolor}
 
 \documentclass[acmsmall,screen,review,anonymous]{acmart}
 
-% acmart's math font (newtxmath) already defines \Bbbk, which amssymb
-% -- loaded from preamble.tex -- then redefines.
 \let\Bbbk\relax
 
-%%% Journal metadata.  With `review' and no \acmConference, acmart
-%%% prints "Manuscript submitted to ACM", which is what a submission
-%%% wants.
 \acmJournal{PACMPL}
 \acmYear{2027}
 \acmVolume{1}
@@ -47,11 +22,6 @@
 
 \RequirePackage{cleveref}
 
-% Links from paper claims to the Rocq mechanization.  The table of
-% declarations is generated from theories/*.v by paper/rocqrefs.py;
-% regenerate with `make -C paper refs'.
-% acmart declares `definition' on the shared theorem counter, and
-% cleveref then names it "Theorem".  Pin the names explicitly.
 \crefname{definition}{Definition}{Definitions}
 \Crefname{definition}{Definition}{Definitions}
 \crefname{example}{Example}{Examples}
@@ -157,10 +127,9 @@
 The Rocq mechanization accompanying this paper is available as
 supplementary material; every definition, lemma and example cited in
 the text links to its counterpart in it.
-\mw{claude: for the anonymous submission, regenerate the links against
+\mw{for the anonymous submission, regenerate the links against
   an Anonymous GitHub mirror --- `python3 paper/rocqrefs.py gen -{}-base
-  https://anonymous.4open.science/r/XXXX/' --- and put that URL here.
-  Nothing else in the paper changes.}
+  https://anonymous.4open.science/r/XXXX/' --- and put that URL here.}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{main.bib}

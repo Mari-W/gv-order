@@ -30,35 +30,6 @@ Inductive tlabel :=
   | LSess (σ : slabel)
   | LFork (c : chan) (v : expr).   (* (νc)v : fork of thread v on new c *)
 
-(** The paper's two-element sets, and their symmetry. *)
-Lemma upair_comm (c d : chan) : ({[c; d]} : gset chan) = {[d; c]}.
-Proof. apply set_eq. set_solver. Qed.
-
-Lemma upair_eq_inv (a b c d : chan) :
-  ({[a; b]} : gset chan) = {[c; d]} → a ≠ b →
-  (a = c ∧ b = d) ∨ (a = d ∧ b = c).
-Proof.
-  intros H Hab.
-  assert (a ∈ ({[c; d]} : gset chan)) as Ha by (rewrite <-H; set_solver).
-  assert (b ∈ ({[c; d]} : gset chan)) as Hb by (rewrite <-H; set_solver).
-  assert (c ∈ ({[a; b]} : gset chan)) as Hc by (rewrite H; set_solver).
-  assert (d ∈ ({[a; b]} : gset chan)) as Hd by (rewrite H; set_solver).
-  set_solver.
-Qed.
-
-(** The subjects of a label: one channel for the point-to-point
-    actions, both ends for a forwarding offer. *)
-Definition subjs (σ : slabel) : gset chan :=
-  match σ with
-  | SRecv c _ | SSend c _ | SClos c => {[c]}
-  | SLink cd => cd
-  end.
-
-(** Channels escaping the local scope due to a communication effect:
-    an output c!v leaks the channels occurring in the message v. *)
-Definition sentc (σ : slabel) : gset chan :=
-  match σ with SSend _ v => fchans v | _ => ∅ end.
-
 (** ** Head steps
 
     T-Act-Recv receives any value, not only closed ones: a receive
@@ -154,8 +125,40 @@ Inductive tstep : expr → tlabel → expr → Prop :=
 Definition reduction (e e' : expr) : Prop := tstep e LBeta e'.
 Notation red_star := (rtc reduction).
 
-(** Irreducible terms (Def. 3.1). *)
-Definition irred (e : expr) : Prop := ∀ α e', ¬ tstep e α e'.
+(** ** Anatomy of a label
+
+    Read by the process rules of Fig. 3, not by Fig. 2; kept below the
+    figure so that [slabel] .. [tstep] above is exactly what Fig. 2
+    displays, in one uninterrupted stretch. *)
+
+(** The paper's two-element sets, and their symmetry. *)
+Lemma upair_comm (c d : chan) : ({[c; d]} : gset chan) = {[d; c]}.
+Proof. apply set_eq. set_solver. Qed.
+
+Lemma upair_eq_inv (a b c d : chan) :
+  ({[a; b]} : gset chan) = {[c; d]} → a ≠ b →
+  (a = c ∧ b = d) ∨ (a = d ∧ b = c).
+Proof.
+  intros H Hab.
+  assert (a ∈ ({[c; d]} : gset chan)) as Ha by (rewrite <-H; set_solver).
+  assert (b ∈ ({[c; d]} : gset chan)) as Hb by (rewrite <-H; set_solver).
+  assert (c ∈ ({[a; b]} : gset chan)) as Hc by (rewrite H; set_solver).
+  assert (d ∈ ({[a; b]} : gset chan)) as Hd by (rewrite H; set_solver).
+  set_solver.
+Qed.
+
+(** The subjects of a label: one channel for the point-to-point
+    actions, both ends for a forwarding offer. *)
+Definition subjs (σ : slabel) : gset chan :=
+  match σ with
+  | SRecv c _ | SSend c _ | SClos c => {[c]}
+  | SLink cd => cd
+  end.
+
+(** Channels escaping the local scope due to a communication effect:
+    an output c!v leaks the channels occurring in the message v. *)
+Definition sentc (σ : slabel) : gset chan :=
+  match σ with SSend _ v => fchans v | _ => ∅ end.
 
 (** ** Basic lemmas *)
 
@@ -167,9 +170,6 @@ Proof.
   induction 1; simpl; intros Hv; try done; eauto using val_head_step;
     apply andb_True in Hv as [? ?]; auto.
 Qed.
-
-Lemma val_irred v : is_val v → irred v.
-Proof. intros ? α e' ?. eauto using val_no_tstep. Qed.
 
 (** ** Step inversion by head constructor *)
 
@@ -503,8 +503,17 @@ Inductive proc_step : proc → plabel → proc → Prop :=
 Definition preduction (p p' : proc) : Prop := proc_step p PTau p'.
 Notation pred_star := (rtc preduction).
 
-(** Irreducible processes (Def. 3.1). *)
+(** Irreducible terms and processes (Def. 3.1).
+
+    [irred] is stated here rather than next to [tstep], so that the
+    two halves of the definition sit together and the paper can cite
+    the pair with a single link. *)
+Definition irred (e : expr) : Prop := ∀ α e', ¬ tstep e α e'.
+
 Definition pirred (p : proc) : Prop := ∀ π p', ¬ proc_step p π p'.
+
+Lemma val_irred v : is_val v → irred v.
+Proof. intros ? α e' ?. eauto using val_no_tstep. Qed.
 
 (** Inversion for session-labelled process transitions: only
     P-Act-Session can produce them. *)

@@ -2,15 +2,115 @@
 \section{Mechanization}
 \label{sec:mechanization}
 
-\mw{claude: emptied. What stood here described the Agda prototype ---
-  intrinsically scope-safe terms over $Fin~n$, Autosubst2-style
-  substitutions, soups as lists with permutation invariance, resource
-  vectors instead of context splitting --- and none of it describes the
-  current artifact, which is a Rocq development on top of stdpp
-  (\texttt{gset}/\texttt{gmultiset}, so soups really are sets and
-  multisets, and contexts really are split). It is axiom free and
-  postulates nothing. Rewrite from scratch, or drop the section and
-  fold a paragraph into the introduction?}
+Everything this paper states is mechanized in Rocq: the calculus of
+\cref{sec:calculus}, the logical relation of
+\cref{sec:logicalRelation}, the extensions of \cref{sec:extensions},
+and every definition, lemma, theorem and example we display along the
+way.
+The development is built on top of the \texttt{std++} library and is
+free of axioms.
+
+We used generative AI (Claude Code, Fabel 5 and Opus 4.8/5) to produce the proofs. We double-checked all definitions to make sure they match their hand written counter parts.
+
+The artifact comprises roughly $17{,}000$ lines (non-blank, non-comment)
+of Rocq across 28 files, containing about $300$ definitions and $790$
+lemmas and theorems.
+\Cref{tab:mechanization} gives the breakdown by component.
+\mw{remove table if we need space}
+\begin{table}[t]
+  \caption{Lines of Rocq by component (non-blank, non-comment).}
+  \label{tab:mechanization}
+  \begin{tabular}{lr}
+    \toprule
+    Component & LOC \\
+    \midrule
+    Syntax, types, syntactic typing (\cref{fig:syntax,fig:typeSys})   & 1,558 \\
+    Labelled semantics and harmony (\cref{fig:term-semantics,fig:proc-semantics}) & 618 \\
+    The logical relation (\cref{fig:logrel-rules-term,fig:logrel-rules-proc})     & 541 \\
+    Safety and adequacy                                               & 442 \\
+    Compositionality for terms                                        & 1,187 \\
+    Compositionality for processes                                    & 3,003 \\
+    Other                           & 2,621 \\
+    Examples                                                          & 7,025 \\
+    \midrule
+    Total                                                             & $\sim$17,000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Two entries dominate, and both are informative about where the
+difficulty of this style of result lies.
+
+The first is \ruleLabel{connect} (\cref{lem:comp:connect}), which
+alone accounts for $2{,}041$ lines.
+Connecting two components over a channel is the linear-logic cut, and
+it is the only place where the two sides of a composition can
+constrain each other: a session action offered by one component must
+be matched against every way the other component could have offered
+its dual.
+
+The remaining process-level work is \ruleLabel{independent}, which is
+comparatively cheap precisely because nothing is shared.
+
+The second is the examples, at $41\%$ of the development.
+This is not incidental: a process is admitted by the relation only if
+\emph{every} transition it can take discharges its obligation, so an
+example is a proof about a whole reachable state space rather than a
+single derivation.
+The load balancer of \cref{ex:load-balancer} takes $2{,}270$ lines and
+the leader election of \cref{sec:extension:-sums} $1{,}981$, both
+dominated by the case analysis over interleavings.
+
+\mw{TODO: explain invariant method}
+% To keep this manageable we factored the step-index recursion out into a proof method.
+% Read the obligations of \cref{fig:logrel-rules-proc} with every
+% continuation asked to lie in a family~$\mathcal{I}$ instead of in the
+% relation at a smaller index, and with the value obligations asked at
+% every index; call the result the \emph{one-step obligations of
+%   $\mathcal{I}$}.
+% 
+% \begin{lemma}[Invariant method \rocq{Prel_by_invariant}]
+%   \label{lem:invariant}
+%   Let $\mathcal{I}$ be a family of triples
+%   $(\fType{\Sigma}, \fType{T}, \fProc{p})$ such that every member
+%   satisfies the irreducible premise of \ruleLabel{P-Step}, again with
+%   its value obligation asked at every index, and, for every transition
+%   $\fProc{p} \trans{\pi} \fProc{p'}$, the one-step obligations
+%   of~$\mathcal{I}$.
+%   Then $\fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}}$ for every
+%   $n\in\Nat$ and every
+%   $(\fType{\Sigma}, \fType{T}, \fProc{p}) \in \mathcal{I}$.
+% \end{lemma}
+% 
+% The step index has disappeared from what one has to supply: an example
+% is discharged by exhibiting the family of configurations it can reach
+% and checking each of them against a single step, and the induction
+% happens once, inside the lemma.
+% For closed processes the method collapses further, to plain
+% reachability.
+% 
+% \begin{lemma}[Closed processes \rocq{sem_ptyped_closed}]
+%   \label{lem:invariant-closed}
+%   Let $\mathcal{I}$ be a set of processes such that every
+%   $\fProc{(C,E)} \in \mathcal{I}$
+%   \begin{enumerate*}[(i)]
+%     \item uses only restricted channels, \ie every channel occurring
+%       in a thread of $\fProc{E}$ belongs to $\fProc{C}$;
+%     \item is terminated if it is irreducible, with every thread
+%       equal to $\fFunc{\tUnit}$; and
+%     \item has all its $\redu$-successors in $\mathcal{I}$.
+%   \end{enumerate*}
+%   Then $\fType{\tEmpty \proves \fProc{p} : \tUnit}$ for every
+%   $\fProc{p} \in \mathcal{I}$.
+% \end{lemma}
+% 
+% With \cref{thm:adequacy}, \cref{lem:invariant-closed} says that a
+% closed process is deadlock free as soon as one exhibits a
+% reduction-closed set of states in which every irreducible state is
+% terminated --- no step index, no logical relation.
+% It is also a converse to adequacy for closed processes: for them, the
+% semantic judgment says exactly that.
+
 
 %%% Local Variables:
 %%% mode: latex

@@ -203,6 +203,7 @@ communicates first with $\fFunc{e_1}$.
 \end{itemize}
 \section{A Reduction Semantics, and Harmony}
 \label{sec:app-harmony}
+\mw{TODO: this is still completely gen ai}
 
 Our operational semantics is a labelled transition system, and
 \emph{reduction} is defined as its $\tau$-fragment
@@ -271,7 +272,7 @@ surface the interacting redexes, here the rules find them
 syntactically.
 
 \begin{figure}[tp]
-  \textbf{Reduction semantics} $\fProc{p} \sred \fProc{p'}$ \hfill \rocq{red}
+  \textbf{Reduction semantics} $\fProc{p} \sred \fProc{p'}$
   \begin{mathpar}
     \begin{bussproof}[R-Lift]
       \bussAs{\fFunc{e} \redu[\mathsf{V}] \fFunc{e'}}
@@ -303,7 +304,7 @@ syntactically.
     \end{bussproof}
   \end{mathpar}
   \caption{The reduction semantics: pure steps, fork, communication,
-    closing, and forwarding, with no labels.}
+    closing, and forwarding, with no labels \quad \rocq{red}}
   \Description{Five reduction rules for process soups: lifting a pure
     term step, forking with a fresh channel, communication between a
     send and a receive redex, closing a channel from both ends, and

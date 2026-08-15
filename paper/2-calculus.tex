@@ -88,7 +88,7 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
       \lFork{c}{v}
     & \text{(term labels)}
   \end{align*}
-  \textbf{Labeled reductions for terms} \hfill \rocq{head_step}
+  \textbf{Labelled reductions for terms}
   \begin{mathpar}
     \begin{bussproof}[T-Act-App]
       \bussAx{
@@ -124,7 +124,7 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
       \bussU{\fFunc{\fCtx{E}[e]} \trans{\lambda} \fFunc{\fCtx{E}[e']}}
     \end{bussproof}
   \end{mathpar}
-  \caption{Semantics of \OurLang\ terms}
+  \caption{Semantics of \OurLang\ terms \quad \rocq{slabel}}
   \Description{Grammars for evaluation contexts, session labels and term labels, and the seven axioms plus one congruence rule of the labelled term reduction relation.}
   \label{fig:term-semantics}
 \end{figure}
@@ -142,8 +142,10 @@ Binding and substitutions works as standard:
 we let $\flv (\fFunc{e})$ denote the free variables of a term
 and $\fFunc{\tSub{e}{v}{\tLVA}}$ the capture-avoiding
 substitution of variable $\fFunc{\tLVA}$ by (closed) $\fFunc{v}$ in $\fFunc{e}$.
-All channels in a term are considered free; terms can only bind variables.
-We define the set of free channels of a term label $\fc(\lambda)$:
+All channels in a term are considered free; terms can only bind variables,
+and we write $\fchans(\fFunc{e})$ for the set of free channels of a term.
+We define the subjects of a term label $\fc(\lambda)$, \ie the channels
+the label acts on:
   $\fc(\beta) = \fc(\lFork{c}{v}) = \emptyset$,
   $\fc(\lRecv{c}{v}) =
   \fc(\lSend{c}{v}) = %\fc(\lWait{c}) =
@@ -196,7 +198,7 @@ to a transition of the process labelled with~$\sigma$.
 We denote the channels that are extruded from the internal scope due to a
 an communication effect~$\sigma$ by $\sent(\sigma)$:
   $\sent(\lRecv{c}{v}) = \sent(\lTerm{c}) = \emptyset$,
-  $\sent(\lSend{c}{v}) = \fc(\fFunc{v})$.
+  $\sent(\lSend{c}{v}) = \fchans(\fFunc{v})$.
 Rule \ruleLabel{P-Act-Beta} lets a thread take an internal $\tau$~step
 to execute $\beta$~reductions of the term it is running.
 Rule \ruleLabel{P-Act-Fork} interprets the fork labels~$ \lFork{c}{v} $
@@ -212,19 +214,18 @@ We define \emph{reduction} for processes,
 written $\fProc{p} \redu \fProc{p'}$,
 as $\fProc{p} \trans{\tau} \fProc{p'}$.
 We write $\trans{}[*]$ for its transitive, reflexive closure.
-The move to an LTS is a matter of convenience, not substance:
+
+The move to an LTS is a matter of convenience:
 reduction coincides with a conventional, label-free reduction
 semantics.
-
+\mw{is this even the target we wanted? it just removes the labels, but doesnt related to the og gv paper}
 \begin{theorem}[Harmony \rocq{harmony}]
   \label{thm:harmony}
   $\fProc{p} \redu \fProc{p'}$
   if and only if
   $\fProc{p} \sred \fProc{p'}$,
   where $\fProc{p} \sred \fProc{p'}$ is the reduction semantics of
-  \cref{sec:app-harmony} (\cref{fig:red-semantics}):
-  call-by-value evaluation contexts, $\beta$-redexes, and one
-  redex/co-redex rule per interaction, with no labels.
+  \cref{sec:app-harmony}, \cref{fig:red-semantics}.
 \end{theorem}
 
 \begin{figure}[tp]
@@ -233,7 +234,7 @@ semantics.
   % \begin{align*}
   % \pi &::= \tau \sepr \sigma
   % \end{align*}
-  \textbf{Labeled reductions for processes} \hfill \rocq{proc_step}
+  \textbf{Labelled reductions for processes}
   \begin{mathpar}
     \begin{bussproof}[P-Act-Session]
       \bussAs{\fFunc{e} \trans{\sigma} \fFunc{e'}}
@@ -264,12 +265,12 @@ semantics.
         \bussB{\fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e}, \fFunc{f}})} \trans{\tau} \fProc{(C, E \uplus \mset{\fFunc{e'}, \fFunc{f'}})}}
     \end{bussproof}
   \end{mathpar}
-  \caption{LTS semantics of \OurLang\ processes}
+  \caption{LTS semantics of \OurLang\ processes \quad \rocq{plabel}}
   \Description{The grammar of process labels and the five rules of the process labelled transition relation: one lifting an external offer, and one each for beta steps, forks, matched messages and matched closes.}
   \label{fig:proc-semantics}
 \end{figure}
 
-\begin{example}[\rocq{sync_reduces}]
+\begin{example}[Forked exchange \rocq{sync_reduces}]
 \label{ex:sync}
   As a first example, consider the following sequence of reductions:
   \begin{align*}
@@ -389,42 +390,45 @@ will consider untyped processes and accept only well-behaved ones
 We explain the significance of the \ruleLabel{P-Act-Session} rule with the following lemma.
 It considers the case that two disjoint processes communicate over an external channel $c$.
 We can internalize this communication by putting the processes together and close them over $c$.
-\begin{lemma}[\rocq{internalize_comm}]
+\begin{lemma}[Internalizing communication \rocq{internalize_comm}]
 \label{lem:internalize}
   Suppose that
-  $\fProc{(C_1, E_1)} \trans{\lSend{c}{v}} \fProc{(C_1', E_1')}$
-  and
-  $\fProc{(C_2, E_2)} \trans{\lRecv{c}{v}} \fProc{(C_2', E_2')}$
+  \[
+    \fProc{(C_1, E_1)} \trans{\lSend{c}{v}} \fProc{(C_1', E_1')}
+    \quad\text{and}\quad
+    \fProc{(C_2, E_2)} \trans{\lRecv{c}{v}} \fProc{(C_2', E_2')}
+  \]
   with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
-  Then $\fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1' \uplus E_2')}$.
+  Then
+  \[ \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1' \uplus E_2')} \]
 \end{lemma}
-\begin{proof}
-  As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ruleLabel{P-Act-Session}.
-
-  Rule inversion on $(C_1, E_1)$ yields
-  \begin{align}
-    E_1 &= E_1'' \uplus \mset{\fFunc{e}} \\
-        & \fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'} \label{eq:1}\\
-    C_1' & = C_1 \setminus \sent(\lSend{c}{v}) = C_1 \setminus \fc(\fFunc{v}) \\
-    E_1' & = E_1'' \uplus \mset{\fFunc{e'}}
-  \end{align}
-  Rule inversion on $(C_2, E_2)$ yields
-  \begin{align}
-    E_2 & = E_2'' \uplus \mset{\fFunc{f}} \\
-        & \fFunc{f} \trans{\lRecv{c}{v}} \fFunc{f'} \label{eq:2}\\
-    C_2' & = C_2 \setminus \sent(\lRecv{c}{v}) = C_2 \setminus \emptyset \\
-    E_2' & = E_2'' \uplus \mset{\fFunc{f'}}
-  \end{align}
-  Hence we can apply \ruleLabel{P-Act-Msg} from the assumptions~(\cref{eq:1}) and~(\cref{eq:2}) to conclude
-  \begin{align}
-    \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1'' \uplus E_2'' \uplus \mset{\fFunc{e}, \fFunc{f}})}
-    & \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1'' \uplus E_2'' \uplus \mset{\fFunc{e'}, \fFunc{f'}})}
-  \end{align}
-  Note that the channel set is left \emph{unchanged} by \ruleLabel{P-Act-Msg}:
-  the channels $\fc(\fFunc{v})$ that \ruleLabel{P-Act-Session} extrudes
-  from $C_1$ remain in scope of the combined process, since the
-  receiver is now part of it.
-\end{proof}
+% \begin{proof}
+%   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ruleLabel{P-Act-Session}.
+%
+%   Rule inversion on $(C_1, E_1)$ yields
+%   \begin{align}
+%     E_1 &= E_1'' \uplus \mset{\fFunc{e}} \\
+%         & \fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'} \label{eq:1}\\
+%     C_1' & = C_1 \setminus \sent(\lSend{c}{v}) = C_1 \setminus \fchans(\fFunc{v}) \\
+%     E_1' & = E_1'' \uplus \mset{\fFunc{e'}}
+%   \end{align}
+%   Rule inversion on $(C_2, E_2)$ yields
+%   \begin{align}
+%     E_2 & = E_2'' \uplus \mset{\fFunc{f}} \\
+%         & \fFunc{f} \trans{\lRecv{c}{v}} \fFunc{f'} \label{eq:2}\\
+%     C_2' & = C_2 \setminus \sent(\lRecv{c}{v}) = C_2 \setminus \emptyset \\
+%     E_2' & = E_2'' \uplus \mset{\fFunc{f'}}
+%   \end{align}
+%   Hence we can apply \ruleLabel{P-Act-Msg} from the assumptions~(\cref{eq:1}) and~(\cref{eq:2}) to conclude
+%   \begin{align}
+%     \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1'' \uplus E_2'' \uplus \mset{\fFunc{e}, \fFunc{f}})}
+%     & \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1'' \uplus E_2'' \uplus \mset{\fFunc{e'}, \fFunc{f'}})}
+%   \end{align}
+%   Note that the channel set is left \emph{unchanged} by \ruleLabel{P-Act-Msg}:
+%   the channels $\fchans(\fFunc{v})$ that \ruleLabel{P-Act-Session} extrudes
+%   from $C_1$ remain in scope of the combined process, since the
+%   receiver is now part of it.
+% \end{proof}
 
 \paragraph{Properties of processes}
 We now formalize the notion of \emph{deadlock freedom}.
@@ -470,7 +474,7 @@ which, by convention, is considered the value computed by the whole program.%
   if ${\forall p'.\,\fProc{p} \trans{}[*] \fProc{p'}}$ implies $p'$ is safe.
 \end{definition}
 
-\begin{example}[\rocq{sync_deadlock_free}]
+\begin{example}[The forked exchange is deadlock free \rocq{sync_deadlock_free}]
 \label{ex:sync-fine}
   The initial process $\fProc{p}$ of Example~\ref{ex:sync} is
   safe and deadlock free:
@@ -499,7 +503,7 @@ which, by convention, is considered the value computed by the whole program.%
   would not be deadlock free.
 \end{example}
 
-\begin{example}[\rocq{cycle_deadlock_free}]
+\begin{example}[The cyclic topology is deadlock free \rocq{cycle_deadlock_free}]
 \label{ex:cyclic-df}
   Although the topology of $p_0$ in Example~\ref{ex:cyclic} is cyclic,
   the process has exactly one reduction sequence $p_0 \trans{}[*] p_4$
@@ -789,7 +793,7 @@ This latter rule is important to account for processes
 that were previously composed by \ruleLabel{P-Connect}
 but whose connecting channel has been closed since.
 
-\begin{example}[\rocq{sync_typed}]
+\begin{example}[Syntactic typability of the examples \rocq{sync_typed}]
 \label{ex:typing}
   The process $\fProc{\var{sync}}$ of Example~\ref{ex:sync} is typable
   in an empty context $\fType{\tEmpty \vdash \fProc{\var{sync}} : \tUnit}$.
