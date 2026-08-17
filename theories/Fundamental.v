@@ -63,7 +63,7 @@ Qed.
 Lemma sem_ptyped_term Σ e T :
   prim T → sem_typed Σ [] e T → sem_ptyped Σ (∅, {[+ e +]}) T.
 Proof.
-  intros Hp (_ & _ & _ & He) n. apply Prel_term; [done|].
+  intros Hp He n. apply Prel_term; [done|].
   specialize (He n ∅ Var (map_disjoint_empty_l _) eq_refl).
   by rewrite (right_id ∅ (∪)), subst_ids in He.
 Qed.
