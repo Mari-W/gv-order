@@ -287,10 +287,23 @@ in \cref{fig:lily:terms}.
 \begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_box}]
   \label{lem:comp:exp}
   If
-  $ \fType{\tEmpty;\tBox{\Delta}, \tBox{T} \proves \fFunc{e} : T}$,
+  $ \fType{\tEmpty;\tBox{\Delta}, \tBox{T} \proves \fFunc{e} : T}$
+  and moreover
+  \begin{enumerate*}[(i)]
+    \item $\fFunc{e}$ owns no channels, \ie
+      $\fchans(\fFunc{e}) = \emptyset$; and
+    \item every free variable of $\fFunc{e}$ is declared in
+      $\fType{\tBox{\Delta}, \tBox{T}}$,
+  \end{enumerate*}
   then
   $ \fType{\tEmpty;\tBox{\Delta} \proves \fFunc{\IExp{(x=e)}} : \tBox{T}}$.
 \end{lemma}
+
+Like \ruleLabel{abs} (\cref{lem:comp:abs}), the thunk introduction
+builds a value whose clause of $\mathcal{V}$ carries a syntactic side
+condition --- here $\fchans(\fFunc{e}) = \emptyset$ --- so the two
+syntactic facts enter as premises; relevance is not needed, since every
+hypothesis is boxed and may be weakened.
 
 \begin{lemma}[Compositionality: \ruleLabel{force} \rocq{sem_typed_force}]
   \label{lem:comp:force}
