@@ -341,12 +341,37 @@ treat the new operators as macros as follows.
   & \fFunc{req} & := \fFunc{\tAbs{x}{\tApp{(\tApp{\tForce}{x})}{\tUnit}}}
 \end{align*}
 
-\mw{claude: likewise here --- examples/Factory.v mechanizes a
-  replicated server: one factory value serving two independent
-  clients, plus a discarded request, typed and deadlock free. It is
-  the evidence that the encoding of Sect. 4.4 is usable end to end.
-  Add it as an example?}
-\pt{Yes, add this example here}
+These macros are enough to build a replicated server.
+
+\begin{example}[A session factory \rocq{repl_deadlock_free}]
+\label{ex:factory}
+Let $\fFunc{\var{ff}} :=
+\fFunc{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}}$
+be the worker forked in Example~\ref{ex:sync}; it serves a session of
+type $\fType{\sSend{\tUnit}{\sTerm}}$, so
+$\fFunc{repl}$ turns a boxed copy of it into a supply of fresh
+sessions of the dual type, one per $\fFunc{req}$.
+\begin{align*}
+  \fFunc{\var{factory}} &:= \fFunc{\tApp{repl}{(\IExp{\var{ff}})}}
+  &&\fType{{}: [\sRecv{\tUnit}{\sTerm}]}
+  \\
+  \fFunc{\var{use}~\tIVX} &:=
+    \fFunc{\tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{req}{\tIVX})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}}
+  \\
+  \fFunc{\var{main}} &:=
+    \fFunc{\tApp{(\tAbs{\tIVX}{\tLet*{\var{use}~\tIVX}{\var{use}~\tIVX}})}{\var{factory}}}
+\end{align*}
+The factory is bound once and used twice, which is legal because its
+type is boxed: the two occurrences of $\fFunc{\tIVX}$ are justified by
+contraction (\ruleLabel{E-Contract}). Each $\fFunc{req}$ re-runs the
+suspended $\fFunc{\tFork}$, so the two clients obtain two distinct
+private sessions served by two independent copies of the worker; a
+factory may also be discarded outright, by weakening
+(\rocq{discard_deadlock_free}). Hence
+$(\emptyset, \mset{\fFunc{\var{main}}})$ is closed and typable,
+$\fType{\tEmpty \types \fProc{(\emptyset, \mset{\fFunc{\var{main}}})} :
+  \tUnit}$ \rocq{repl_typed}, and therefore deadlock free.
+\end{example}
 
 \subsection{Recursive Types}
 \label{sec:extens-recurs-ii}
@@ -398,12 +423,42 @@ unfolding:
   actually produces.}
 
 
-\mw{claude: the mechanization has a worked example for this section
-  that the paper does not: a recursive ping/pong over an equi-recursive
-  session type, typed and deadlock free (examples/Pingpong.v). Add it
-  as a short example, the way Sect. 4.1 has the leader election?}
-\pt{this comment was for the previous subsection on recursion, but it makes more
-sense to add it here where we have recursive types!}
+Recursive types and recursive thunks combine into genuinely
+non-terminating, yet deadlock-free, sessions.
+
+\begin{example}[Recursive ping-pong \rocq{pingpong_deadlock_free}]
+\label{ex:pingpong}
+Consider the protocol
+$\fType{S} := \fType{\mu\alpha.\sSend{\tUnit}{\alpha}}$ of a client
+that sends a unit and starts over; its dual computes to
+$\fType{\dual{S}} = \fType{\mu\alpha.\sRecv{\tUnit}{\alpha}}$
+\rocq{Sloop_dual}, as the polarity flip cancels on a variable that
+occurs only in tail position. Two recursive thunks serve the two ends.
+\begin{align*}
+  \fFunc{\var{pinger}} &:=
+    \fFunc{\IExp{(\tIVX = \tAbs{c}{\tApp{(\tApp{\tForce}{\tIVX})}{(\tApp{\tSend}{\tPair{\tUnit}{c}})}})}}
+  &&\fType{{}: \tBox{(\lFunc{S}{\tUnit})}}
+  \\
+  \fFunc{\var{ponger}} &:=
+    \fFunc{\IExp{(\tIVY = \tAbs{c}{\tLet[\tLVB][c']{\tApp{\tRecv}{c}}{\tLet*{\tLVB}{\tApp{(\tApp{\tForce}{\tIVY})}{c'}}}})}}
+  &&\fType{{}: \tBox{(\lFunc{\dual{S}}{\tUnit})}}
+\end{align*}
+Unlike the factory of Example~\ref{ex:factory}, these thunks really use
+their self-binding: after every exchange each end forces itself again.
+The conversion rule \ruleLabel{E-Conv} enters exactly at the two
+communication operators, where $\fFunc{c} : \fType{\mu\alpha.\sSend{\tUnit}{\alpha}}$
+has to be read at its unfolding
+$\fType{\sSend{\tUnit}{\mu\alpha.\sSend{\tUnit}{\alpha}}}$, and dually
+for $\fFunc{c'}$ \rocq{typed_conv}. Connecting the two ends on a single
+channel yields the process
+$(\set{\fFunc{c}},
+\mset{\fFunc{\tApp{(\tApp{\tForce}{\var{pinger}})}{c}},
+  \fFunc{\tApp{(\tApp{\tForce}{\var{ponger}})}{c}}})$, which is typable
+\rocq{pingpong_typed} and hence deadlock free --- although it never
+terminates. Deadlock freedom asks that a process \emph{can} step, not
+that it stops, so the loss of normalization that recursion brings is
+harmless here.
+\end{example}
 
 \subsection{The Link Operator}
 \label{sec:extens-link-oper}
@@ -521,11 +576,58 @@ is the identity, so \ruleLabel{P-Act-Link} degenerates to releasing the
 name --- which is what a self-forwarding means: the thread held both
 ends, so the session is terminated.
 
-\mw{claude: the mechanization carries a worked example for this
-  section that the paper does not have --- Milner's cyclic scheduler
-  with one agent replaced by a forwarder (Scheduler.v), closed,
-  deadlock free, and untypable in Curry-Howard systems (it is
-  Example~1 of Dardha and Gay). Add it as a subsection?}
+\subsection{Example: A Cyclic Scheduler}
+\label{sec:extens-scheduler}
+
+\begin{example}[Milner's cyclic scheduler \rocq{sched_deadlock_free}]
+\label{ex:scheduler}
+\citet{DardhaG18} motivate priority-based typing with Milner's cyclic
+scheduler (their Example~1), a process that is deadlock free but that
+``is not typable in the original type systems by Caires-Pfenning and
+Wadler'' --- Wadler's system being the one \OurLang refines. We
+mechanize the ring of size three and let the middle agent forward
+instead of relay by hand.
+\begin{align*}
+  \fFunc{\var{ag}_0} &:=
+    \fFunc{\tLet*{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{r_0}})}}{\tLet[\tLVB][\tLVA]{\tApp{\tRecv}{r_2}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}}}
+  \\
+  \fFunc{\var{ag}_1} &:= \fFunc{\tApp{\tLink}{\tPair{r_1}{r_0}}}
+  \\
+  \fFunc{\var{ag}_2} &:=
+    \fFunc{\tLet[\tLVB][\tLVA]{\tApp{\tRecv}{r_1}}{\tLet*{\tLVB}{\tLet*{\tApp{\tClos}{\tLVA}}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{r_2}})}}}}}
+  \\
+  \fProc{\var{sched}} &:=
+    (\set{\fFunc{r_0}, \fFunc{r_1}, \fFunc{r_2}},
+     \mset{\fFunc{\var{ag}_0}, \fFunc{\var{ag}_1}, \fFunc{\var{ag}_2}})
+\end{align*}
+Agent $\fFunc{\var{ag}_0}$ starts a round by sending the token on
+$\fFunc{r_0}$ and then waits for it to come back on $\fFunc{r_2}$;
+$\fFunc{\var{ag}_2}$ collects it on $\fFunc{r_1}$ and passes it on to
+$\fFunc{r_2}$; and $\fFunc{\var{ag}_1}$ splices its predecessor
+directly to its successor and retires. Three threads sharing three
+channels form a cycle, so no derivation by \ruleLabel{P-Connect}
+exists and $\fProc{\var{sched}}$ is syntactically untypable. Nor does
+forwarding make the cycle go away: once $\fFunc{\var{ag}_1}$ fires,
+$\fFunc{r_0}$ and $\fFunc{r_1}$ are merged and the agent becomes
+$\fFunc{\tUnit}$, leaving two threads on two channels --- the minimal
+cyclic process. Yet the ring never wedges, because
+$\fFunc{\var{ag}_0}$ sends before it receives; reversing those two
+actions deadlocks it. The mechanization establishes deadlock freedom
+by exhibiting a closed invariant on the reachable configurations, and
+in fact $\fProc{\var{sched}}$ terminates \rocq{sched_terminates} and is
+semantically typed at the empty interface,
+$\fType{\tEmpty \proves \fProc{\var{sched}} : \tUnit}$
+\rocq{sched_sem_ptyped}, so it composes with syntactically typed code
+by \cref{lem:comp:connect}.
+
+One round on its own would still admit a rejoinder: split
+$\fFunc{\var{ag}_0}$ into a sending and a receiving half running in
+parallel and the topology becomes a tree. With two rounds that escape
+closes, since the second send happens after the first receive and any
+channel added to sequence the halves puts the cycle straight back. We
+therefore also mechanize the two-round scheduler, whose agents are the
+ones above with a round in front \rocq{sched2_deadlock_free}.
+\end{example}
 % Installing this extension, requires to update the proof of
 % \ruleLabel{E-Abs}
 % to cater for the new functional constant and
