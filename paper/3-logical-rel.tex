@@ -409,15 +409,6 @@ with closed terms respecting their assumed types.
 \begin{definition}[Semantic judgments \rocq{sem_typed}]
 \label{def:sem-judgments}
   The judgment $\fType{\Sigma;\Delta \proves \fFunc{e} : T}$ holds if
-  \begin{enumerate*}[(i)]
-    \item $\fFunc{e}$ owns exactly the channels declared by
-      $\fType{\Sigma}$, \ie $\fchans(\fFunc{e}) = \dom(\fType{\Sigma})$;
-    \item every free variable of $\fFunc{e}$ is declared in
-      $\fType{\Delta}$;
-    \item conversely, every \emph{linear} variable of $\fType{\Delta}$
-      occurs free in $\fFunc{e}$; and
-    \item the following holds:
-  \end{enumerate*}
   \[
     \forall n\in\Nat.\,
       \forall \fType{\Sigma'} \disjoint \fType{\Sigma}.\,
@@ -435,9 +426,17 @@ Note the two session environments in the term judgment: $\fType{\Sigma}$
 declares the channels $\fFunc{e}$ itself owns, while the disjoint
 $\fType{\Sigma'}$ is the one distributed over the values the grounding
 substitution supplies; the conclusion is checked at their union.
-Conditions (i)--(iii) are what make the rules of \cref{fig:typeSys}
-non-vacuous: without (i) the rule \ruleLabel{E-Abs} fails, because a
-$\lambda$-value must own exactly the channels its interface declares.
+The judgment is purely semantic --- it imposes no syntactic condition on
+$\fFunc{e}$.
+Syntactic information is needed at exactly one point: the rule
+\ruleLabel{E-Abs} (\cref{lem:comp:abs}) builds a $\lambda$-value, and a
+$\lambda$-value must own exactly the channels its interface declares ---
+the syntactic premise of \ruleLabel{V-Abs}.
+That fact cannot be read off the closure above, so it enters as three
+explicit syntactic premises of that one rule; syntactic typing maintains
+all three, so the fundamental property is unaffected.
+% TODO(mechanization): once the pure-sem-typed refactor lands on main,
+% tag the preceding sentence with \rocq{typed_term_wf}.
 
 Note how adopting an LTS semantics spared us from defining closing contexts
 to define the semantic judgment for open processes.
@@ -540,9 +539,28 @@ we state the ones for terms first, then the ones for processes.
 
 \begin{lemma}[Compositionality: \ruleLabel{abs} \rocq{sem_typed_lam}]
   \label{lem:comp:abs}
-  If $\fType{\Sigma ; \Delta , \fFunc{\tLVA}:T \proves \fFunc{e} : U}$, then
+  If $\fType{\Sigma ; \Delta , \fFunc{\tLVA}:T \proves \fFunc{e} : U}$
+  and moreover
+  \begin{enumerate*}[(i)]
+    \item $\fFunc{e}$ owns exactly the channels declared by
+      $\fType{\Sigma}$, \ie
+      $\fchans(\fFunc{e}) = \dom(\fType{\Sigma})$;
+    \item every free variable of $\fFunc{e}$ is declared in
+      $\fType{\Delta , \fFunc{\tLVA}:T}$; and
+    \item conversely, every \emph{linear} variable of
+      $\fType{\Delta , \fFunc{\tLVA}:T}$ occurs free in $\fFunc{e}$,
+  \end{enumerate*}
+  then
   \[ \fType{\Sigma ; \Delta \proves \fFunc{\tAbs{\tLVA}{e}} : \lFunc{T}{U}} \]
 \end{lemma}
+
+The three syntactic premises are consumed only by the
+$\lambda$-ownership premise of \ruleLabel{V-Abs}: (i) and (ii) bound the
+channels of the grounded body from above, and (iii) --- relevance, the
+absence of weakening for linear variables --- bounds them from below,
+since every value the grounding substitution supplies actually lands in
+the body.
+No other term rule needs syntactic information.
 
 \begin{lemma}[Compositionality: \ruleLabel{app} \rocq{sem_typed_app}]
   \label{lem:comp:app}
@@ -635,7 +653,8 @@ we state the ones for terms first, then the ones for processes.
 \begin{theorem}[Compositionality of $\fType{\Sigma;\Delta \proves \fFunc{e} : T}$]
 \label{th:term-composit}
   All the term rules of \cref{fig:typeSys} hold (as implications) for the
-  semantic judgment of terms.
+  semantic judgment of terms, with \ruleLabel{E-Abs} strengthened by the
+  syntactic premises of \cref{lem:comp:abs}.
   % That is:
   % \begin{itemize}
   % \item \ruleLabel{E-Unit:}
