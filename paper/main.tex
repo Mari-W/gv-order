@@ -27,6 +27,17 @@
 \crefname{example}{Example}{Examples}
 \Crefname{example}{Example}{Examples}
 
+\crefname{lemma}{lemma}{lemmas}
+\Crefname{lemma}{Lemma}{Lemmas}
+
+\crefname{theorem}{theorem}{theorems}
+\Crefname{theorem}{Theorem}{Theorems}
+
+\AddToHook{env/theorem/begin}{\crefalias{theorem}{theorem}}
+\AddToHook{env/lemma/begin}{\crefalias{theorem}{lemma}}
+\AddToHook{env/definition/begin}{\crefalias{theorem}{definition}}
+\AddToHook{env/example/begin}{\crefalias{theorem}{example}}
+
 \RequirePackage{rocqrefs}
 \input{rocqrefs}
 
