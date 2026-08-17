@@ -608,23 +608,37 @@ Lemma lenv_avail_lin_avail Δ x :
   lenv_avail_lin Δ x → lenv_avail Δ x.
 Proof. intros (T & ? & _). by exists T. Qed.
 
+(** Syntactic well-formedness of e against Σ; Δ: the channels of e are
+    exactly dom Σ, the free variables of e are available in Δ, and —
+    relevance, i.e. absence of weakening — every linearly available
+    variable of Δ occurs in e.
+
+    None of this is part of the semantic judgment below. It is a
+    separate, purely syntactic predicate, established once and for all
+    for syntactically typed terms ([Terms.typed_term_wf]) and consumed
+    as an explicit premise by exactly the two rules that build a
+    suspended computation, whose V-clauses demand channel ownership:
+    E-Abs needs all three (the ⊸-clause asks for [fchans eb = dom Σ],
+    ⊆ from the first two, ⊇ from relevance) and E-Box needs the first
+    two (the □-clause asks for [fchans eb = ∅]; relevance is vacuous
+    there, the environment being unlimited). The elimination rules
+    need none of it: E constrains environments, not term channels. *)
+Definition term_wf (Σ : senv) (Δ : lenv) (e : expr) : Prop :=
+  fchans e = dom Σ ∧
+  allfv (lenv_avail Δ) e ∧
+  (∀ x, lenv_avail_lin Δ x → freevar x e).
+
 (** Σ; Δ ⊨ e : T.  The channels of e itself are covered by Σ; the
     grounding substitution brings its own (disjoint) Σ'. (Def. 3.3;
     the draft's phrasing conflates the two environments — this is the
     reading under which the rules of Fig. 4, e.g. E-Ch, are
     non-vacuous.)
 
-    The judgment additionally records three pieces of syntactic
-    well-formedness that the paper leaves implicit but that Fig. 4's
-    linear rules maintain and the ⊸-case of V requires: the channels
-    of e are exactly dom Σ, the free variables of e are available in
-    Δ, and — relevance, i.e. absence of weakening — every available
-    variable of Δ occurs in e. Without them the E-Abs rule (Thm 3.11)
-    is false: a λ-value must own exactly its channels. *)
+    The judgment is purely semantic: it says nothing about the syntax
+    of e beyond what Erel says about its behaviour. The syntactic
+    side conditions live in [term_wf] and enter as premises exactly
+    where Fig. 4's proofs consume them. *)
 Definition sem_typed (Σ : senv) (Δ : lenv) (e : expr) (T : ty) : Prop :=
-  fchans e = dom Σ ∧
-  allfv (lenv_avail Δ) e ∧
-  (∀ x, lenv_avail_lin Δ x → freevar x e) ∧
   ∀ n Σ' γ, Σ' ##ₘ Σ → grounding n Σ' Δ γ →
     Erel n (Σ ∪ Σ') T (subst γ e).
 
