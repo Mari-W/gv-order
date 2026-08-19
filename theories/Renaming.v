@@ -18,7 +18,7 @@
     echsubst x d E = chsubst x d (eswap x d E). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Relation.
+From LRGV Require Export Relation Convert.
 
 (** eswap commutes with the de Bruijn operations (channels and
     variables live in different namespaces). *)
@@ -790,23 +790,26 @@ Proof.
     rewrite IH by set_solver. done.
 Qed.
 
-(** ** Environments up to unfolding
+(** ** Environments up to session equivalence
 
     The relations never read a stored session type more precisely than
-    up to session equivalence: [senv_hd] exposes only its [unfoldS],
-    the channel clause of [Vdef] stores the protocol up to [seq], and
-    the link clauses only demand [sdual]. Equal unfoldings imply [seq]
-    ([unfoldS_seq]), so replacing every entry by one with the same
-    unfolding is invisible. CONNECT's forwarding case uses this to
-    trade the retargeted peer's [dual s] entry for the [sd] entry
-    recorded by the link clause. *)
+    up to session equivalence: the channel clause of [Vdef] stores the
+    protocol up to [seq], the link clauses only demand [sdual], and
+    [senv_hd] exposes an [unfoldS] that ≈ pins down only up to its own
+    head inversion ([seq_rcv_inv] and friends). So an environment may
+    be replaced entry-for-entry by ≈-equivalent ones without any
+    relation noticing — that is [senv_conv] below. Equal unfoldings are
+    a special case ([unfoldS_seq]); the coarser relation is what
+    CONNECT's forwarding case needs, since there the retargeted peer's
+    entry is only ≈-related to the [sd] the link clause recorded, not
+    equal to it after unfolding. *)
 
 Definition senv_conv (Σ Σ' : senv) : Prop :=
   dom Σ = dom Σ' ∧
-  ∀ c s s', Σ !! c = Some s → Σ' !! c = Some s' → unfoldS s = unfoldS s'.
+  ∀ c s s', Σ !! c = Some s → Σ' !! c = Some s' → seq s s'.
 
 Lemma senv_conv_refl Σ : senv_conv Σ Σ.
-Proof. split; [done|]. intros c s s' H1 H2. by simplify_eq. Qed.
+Proof. split; [done|]. intros c s s' H1 H2. simplify_eq. apply seq_refl. Qed.
 
 Lemma senv_conv_empty_inv Σ : senv_conv ∅ Σ → Σ = ∅.
 Proof.
@@ -814,7 +817,7 @@ Proof.
 Qed.
 
 Lemma senv_conv_insert Σ Σ' c s s' :
-  senv_conv Σ Σ' → unfoldS s = unfoldS s' →
+  senv_conv Σ Σ' → seq s s' →
   senv_conv (<[c := s]> Σ) (<[c := s']> Σ').
 Proof.
   intros [Hd Hp] Hu. split.
@@ -894,17 +897,21 @@ Proof.
       by apply not_elem_of_dom.
 Qed.
 
-Lemma senv_conv_hd Σ Σ' c u Σ1 :
-  c ∉ dom Σ1 → senv_conv Σ Σ' → senv_hd Σ c u Σ1 →
-  ∃ Σ1', senv_hd Σ' c u Σ1' ∧ c ∉ dom Σ1' ∧ senv_conv Σ1 Σ1'.
+(** Peeling one distinguished entry off a [senv_conv]. The partner
+    environment has an entry at the same key, ≈-equivalent to the one
+    peeled off, and the two remainders are again [senv_conv]. Every
+    lemma that reads a single channel out of Σ goes through this. *)
+Lemma senv_conv_ins1 Σ' c s Σ1 :
+  c ∉ dom Σ1 → senv_conv (<[c := s]> Σ1) Σ' →
+  ∃ s' Σ1', Σ' = <[c := s']> Σ1' ∧ seq s s' ∧
+            c ∉ dom Σ1' ∧ senv_conv Σ1 Σ1'.
 Proof.
-  intros Hc [Hd Hp] (s0 & -> & Hu).
-  assert (is_Some (Σ' !! c)) as [s0' Hs0'].
+  intros Hc [Hd Hp].
+  assert (is_Some (Σ' !! c)) as [s' Hs'].
   { apply elem_of_dom. rewrite <-Hd, dom_insert_L. set_solver. }
-  exists (delete c Σ'). split_and!.
-  - exists s0'. split; [by rewrite insert_delete_id|].
-    rewrite <-Hu. symmetry. eapply Hp; [|exact Hs0'].
-    apply lookup_insert_eq.
+  exists s', (delete c Σ'). split_and!.
+  - by rewrite insert_delete_id.
+  - eapply Hp; [|exact Hs']. apply lookup_insert_eq.
   - rewrite dom_delete_L. set_solver.
   - split.
     + rewrite dom_delete_L, <-Hd, dom_insert_L. set_solver.
@@ -915,43 +922,69 @@ Proof.
       intros ->. apply Hc. by apply elem_of_dom.
 Qed.
 
+(** Reading a head out of a [senv_conv] partner. Under equal
+    unfoldings the partner had literally the same head; under ≈ the
+    prefix is still recovered, but its payload and continuation only up
+    to ≈ — head inversion ([seq_rcv_inv], [seq_snd_inv],
+    [seq_end_inv]) is what supplies them. Hence three lemmas instead of
+    the single [senv_conv_hd] this replaces; the orientation of [teq]
+    and [seq] follows [senv_conv]'s own, unprimed on the left. *)
+
+Lemma senv_conv_hd_rcv Σ Σ' c U s Σ1 :
+  c ∉ dom Σ1 → senv_conv Σ Σ' → senv_hd Σ c (SRcv U s) Σ1 →
+  ∃ U' s' Σ1', senv_hd Σ' c (SRcv U' s') Σ1' ∧ teq U U' ∧ seq s s' ∧
+               c ∉ dom Σ1' ∧ senv_conv Σ1 Σ1'.
+Proof.
+  intros Hc Hconv (s0 & -> & Hu).
+  apply senv_conv_ins1 in Hconv as (s0' & Σ1' & -> & Hs0 & Hc' & Hc1);
+    [|done].
+  destruct (seq_rcv_inv s0' s0 U s (seq_sym _ _ Hs0) Hu)
+    as (U' & s' & Hu' & Ht & Hs).
+  exists U', s', Σ1'. split_and!;
+    [by exists s0'|by apply teq_sym|by apply seq_sym|done|done].
+Qed.
+
+Lemma senv_conv_hd_snd Σ Σ' c U s Σ1 :
+  c ∉ dom Σ1 → senv_conv Σ Σ' → senv_hd Σ c (SSnd U s) Σ1 →
+  ∃ U' s' Σ1', senv_hd Σ' c (SSnd U' s') Σ1' ∧ teq U U' ∧ seq s s' ∧
+               c ∉ dom Σ1' ∧ senv_conv Σ1 Σ1'.
+Proof.
+  intros Hc Hconv (s0 & -> & Hu).
+  apply senv_conv_ins1 in Hconv as (s0' & Σ1' & -> & Hs0 & Hc' & Hc1);
+    [|done].
+  destruct (seq_snd_inv s0' s0 U s (seq_sym _ _ Hs0) Hu)
+    as (U' & s' & Hu' & Ht & Hs).
+  exists U', s', Σ1'. split_and!;
+    [by exists s0'|by apply teq_sym|by apply seq_sym|done|done].
+Qed.
+
+Lemma senv_conv_hd_end Σ Σ' c Σ1 :
+  c ∉ dom Σ1 → senv_conv Σ Σ' → senv_hd Σ c SEnd Σ1 →
+  ∃ Σ1', senv_hd Σ' c SEnd Σ1' ∧ c ∉ dom Σ1' ∧ senv_conv Σ1 Σ1'.
+Proof.
+  intros Hc Hconv (s0 & -> & Hu).
+  apply senv_conv_ins1 in Hconv as (s0' & Σ1' & -> & Hs0 & Hc' & Hc1);
+    [|done].
+  exists Σ1'. split_and!; [|done|done].
+  exists s0'. split; [done|].
+  eapply seq_end_inv; [by apply seq_sym|exact Hu].
+Qed.
+
 Lemma senv_conv_ins2 Σ' c sc d sd Σ1 :
   c ≠ d → c ∉ dom Σ1 → d ∉ dom Σ1 →
   senv_conv (<[c := sc]> (<[d := sd]> Σ1)) Σ' →
   ∃ sc' sd' Σ1',
     Σ' = <[c := sc']> (<[d := sd']> Σ1') ∧
-    unfoldS sc' = unfoldS sc ∧ unfoldS sd' = unfoldS sd ∧
+    seq sc sc' ∧ seq sd sd' ∧
     c ∉ dom Σ1' ∧ d ∉ dom Σ1' ∧ senv_conv Σ1 Σ1'.
 Proof.
   intros Hcd Hc1 Hd1 Hconv.
-  pose proof Hconv as [Hd Hp].
-  assert (is_Some (Σ' !! c)) as [sc' Hsc'].
-  { apply elem_of_dom. rewrite <-Hd, !dom_insert_L. set_solver. }
-  assert (is_Some (Σ' !! d)) as [sd' Hsd'].
-  { apply elem_of_dom. rewrite <-Hd, !dom_insert_L. set_solver. }
-  exists sc', sd', (delete d (delete c Σ')). split_and!.
-  - apply map_eq; intros c0.
-    destruct (decide (c0 = c)) as [->|Hne1].
-    + rewrite lookup_insert_eq. done.
-    + rewrite lookup_insert_ne by done.
-      destruct (decide (c0 = d)) as [->|Hne2].
-      * rewrite lookup_insert_eq. done.
-      * rewrite lookup_insert_ne by done.
-        rewrite !lookup_delete_ne by done. done.
-  - symmetry. eapply Hp; [|exact Hsc']. apply lookup_insert_eq.
-  - symmetry. eapply Hp; [|exact Hsd'].
-    rewrite lookup_insert_ne by done. apply lookup_insert_eq.
-  - rewrite !dom_delete_L. set_solver.
-  - rewrite !dom_delete_L. set_solver.
-  - split.
-    + rewrite !dom_delete_L, <-Hd, !dom_insert_L. set_solver.
-    + intros c0 t t' Ht Ht'.
-      apply lookup_delete_Some in Ht' as [Hne2 Ht'].
-      apply lookup_delete_Some in Ht' as [Hne1 Ht'].
-      eapply Hp; [|exact Ht'].
-      rewrite !lookup_insert_ne; [done| |]; intros ->.
-      * apply Hd1. by apply elem_of_dom.
-      * apply Hc1. by apply elem_of_dom.
+  apply senv_conv_ins1 in Hconv as (sc' & Σ2' & -> & Hsc & Hc2 & Hconv);
+    [|rewrite dom_insert_L; clear -Hcd Hc1; set_solver].
+  apply senv_conv_ins1 in Hconv as (sd' & Σ1' & -> & Hsd & Hd2 & Hc1');
+    [|done].
+  exists sc', sd', Σ1'. split_and!; [done|done|done| |done|done].
+  rewrite dom_insert_L in Hc2. clear -Hc2. set_solver.
 Qed.
 
 Lemma extrusion_split_conv (P Q : senv → ty → proc → Prop) σ Σ Σ' T p :
@@ -968,17 +1001,21 @@ Proof.
     eapply extrusion_split_cons;
       rewrite <-?(proj1 Hcd), <-?(proj1 Hcr); try done.
     + eapply HPQ; [|exact HP1].
-      apply senv_conv_insert; [done|done].
+      apply senv_conv_insert; [done|apply seq_refl].
     + by apply IH.
 Qed.
 
-(** ** The relations read Σ up to unfolding
+(** ** The relations read Σ up to session equivalence
 
     Same induction shape as [rel_eswap]; the term/process is unchanged
-    and every clause's Σ facts transport along [senv_conv]. The two
-    clauses that constrain a stored type — the channel clause's [seq]
-    and the link clauses' [sdual] — absorb the change of entry because
-    both are stable under [seq] on either side. *)
+    and every clause's Σ facts transport along [senv_conv]. The clauses
+    that constrain a stored type absorb the change of entry: the
+    channel clause's [seq] and the link clauses' [sdual] are stable
+    under [seq] on either side ([seq_trans], [sdual_seq_l/_r]), and the
+    prefix clauses recover only a ≈-variant of the payload type and the
+    continuation ([senv_conv_hd_rcv] and friends) — the payload delta
+    is absorbed by [Vrel_teq], the continuation delta by feeding the
+    [seq] to [senv_conv_insert]. *)
 Lemma rel_conv n :
   (∀ T Σ Σ' v, senv_conv Σ Σ' → Vrel n Σ T v → Vrel n Σ' T v) ∧
   (∀ T Σ Σ' e, senv_conv Σ Σ' → Erel n Σ T e → Erel n Σ' T e) ∧
@@ -1021,17 +1058,15 @@ Proof.
       apply Vrel_box_iff.
       rewrite (senv_conv_empty_inv _ Hconv). eauto 10.
     - apply Vrel_sess_iff in HVv as (c & s0 & -> & -> & Hs).
-      assert (senv_hd ({[c := s0]} : senv) c (unfoldS s0) ∅) as Hhd.
-      { by exists s0. }
-      assert (c ∉ dom (∅ : senv)) as Hce by set_solver.
-      destruct (senv_conv_hd _ _ _ _ _ Hce Hconv Hhd)
-        as (Σ1' & (s0' & -> & Hu') & _ & Hc1).
+      rewrite <-insert_empty in Hconv.
+      apply senv_conv_ins1 in Hconv as (s0' & Σ1' & -> & Hs0 & _ & Hc1);
+        [|set_solver].
       rewrite (senv_conv_empty_inv _ Hc1).
       apply Vrel_sess_iff. exists c, s0'.
-      (* the replacement entry has the same unfolding, hence is ≡ to
-         the old one, and ≡ composes with the stored [seq s0 s] *)
+      (* the replacement entry is ≈ the old one, and ≈ composes with
+         the [seq s0 s] the clause stored *)
       split_and!; [done|apply insert_empty|].
-      eapply seq_trans; [by apply unfoldS_seq|exact Hs]. }
+      eapply seq_trans; [by apply seq_sym|exact Hs]. }
   split_and!; [exact HV| |].
   - (* term relation *)
     intros T Σ Σ' e Hconv HE.
@@ -1044,34 +1079,36 @@ Proof.
     + eapply IHE; [lia|done|done].
     + (* recv *)
       destruct Hstep as (Σ1 & U & s & Hhd & Hc & H).
-      destruct (senv_conv_hd _ _ _ _ _ Hc Hconv Hhd)
-        as (Σ1' & Hhd' & Hc' & Hc1).
-      exists Σ1', U, s. split_and!; [done|done|].
+      destruct (senv_conv_hd_rcv _ _ _ _ _ _ Hc Hconv Hhd)
+        as (U' & s' & Σ1' & Hhd' & Ht & Hs & Hc' & Hc1).
+      exists Σ1', U', s'. split_and!; [done|done|].
       intros j Σ2 Hj Hd Hcd HVw.
       eapply IHE;
         [lia|apply senv_conv_insert;
-          [apply senv_conv_union; [exact Hc1|apply senv_conv_refl]|done]|].
-      apply H; auto.
-      by rewrite (senv_conv_disj _ _ Σ2 Hc1).
+          [apply senv_conv_union; [exact Hc1|apply senv_conv_refl]|exact Hs]|].
+      (* the payload arrives at the new type; convert it back *)
+      apply H; [done| |done|].
+      * by rewrite (senv_conv_disj _ _ Σ2 Hc1).
+      * eapply Vrel_teq; [by apply teq_sym|exact HVw].
     + (* send *)
       destruct Hstep as (Σ1 & Σ2 & U & s & Hhd & Hd12 & Hc1 & Hc2
                          & HVw & HE').
       assert (c ∉ dom (Σ1 ∪ Σ2)) as Hcr.
       { rewrite dom_union_L. set_solver. }
-      destruct (senv_conv_hd _ _ _ _ _ Hcr Hconv Hhd)
-        as (ΣR' & Hhd' & HcR' & HcR).
+      destruct (senv_conv_hd_snd _ _ _ _ _ _ Hcr Hconv Hhd)
+        as (U' & s' & ΣR' & Hhd' & Ht & Hs & HcR' & HcR).
       destruct (senv_conv_split _ _ _ _ HcR (conj eq_refl Hd12))
         as (Σ1' & Σ2' & [-> Hd'] & Hs1 & Hs2).
-      exists Σ1', Σ2', U, s. split_and!.
+      exists Σ1', Σ2', U', s'. split_and!.
       { done. }
       { done. }
       { by rewrite <-(proj1 Hs1). }
       { by rewrite <-(proj1 Hs2). }
-      { eapply HV; [exact Hs2|done]. }
-      eapply IHE; [lia|apply senv_conv_insert; [exact Hs1|done]|done].
+      { eapply Vrel_teq; [exact Ht|]. eapply HV; [exact Hs2|done]. }
+      eapply IHE; [lia|apply senv_conv_insert; [exact Hs1|exact Hs]|done].
     + (* close *)
       destruct Hstep as (Σ1 & Hhd & Hc & HE').
-      destruct (senv_conv_hd _ _ _ _ _ Hc Hconv Hhd)
+      destruct (senv_conv_hd_end _ _ _ _ Hc Hconv Hhd)
         as (Σ1' & Hhd' & Hc' & Hc1).
       exists Σ1'. split_and!; [done|done|].
       eapply IHE; [lia|exact Hc1|done].
@@ -1079,11 +1116,11 @@ Proof.
       destruct Hstep as (c & d & Σ1 & sc & sd & -> & Hcd & -> & Hcx & Hdx
                          & Hdu & HE').
       destruct (senv_conv_ins2 _ _ _ _ _ _ Hcd Hcx Hdx Hconv)
-        as (sc' & sd' & Σ1' & -> & Huc & Hud & Hcx' & Hdx' & Hc1).
+        as (sc' & sd' & Σ1' & -> & Hsc & Hsd & Hcx' & Hdx' & Hc1).
       exists c, d, Σ1', sc', sd'.
       split_and!; [done|done|done|done|done| |].
-      { eapply sdual_seq_l; [apply seq_sym, unfoldS_seq, Hud|].
-        eapply sdual_seq_r; [apply seq_sym, unfoldS_seq, Huc|exact Hdu]. }
+      { eapply sdual_seq_r; [exact Hsc|].
+        eapply sdual_seq_l; [exact Hsd|exact Hdu]. }
       eapply IHE; [lia|exact Hc1|done].
     + (* fork *)
       intros Hcd.
@@ -1094,7 +1131,8 @@ Proof.
       exists Σ1', Σ2', sf. split_and!.
       { done. }
       { eapply HV; [exact Hs1|done]. }
-      eapply IHE; [lia|apply senv_conv_insert; [exact Hs2|done]|done].
+      eapply IHE;
+        [lia|apply senv_conv_insert; [exact Hs2|apply seq_refl]|done].
   - (* process relation *)
     intros T Σ Σ' p Hconv HP.
     destruct n as [|n']; [apply Prel_0|].
@@ -1111,15 +1149,16 @@ Proof.
       apply Hstep. by rewrite (proj1 Hconv).
     + (* recv *)
       destruct Hstep as (Σ1 & U & s & Hhd & Hc & H).
-      destruct (senv_conv_hd _ _ _ _ _ Hc Hconv Hhd)
-        as (Σ1' & Hhd' & Hc' & Hc1).
-      exists Σ1', U, s. split_and!; [done|done|].
+      destruct (senv_conv_hd_rcv _ _ _ _ _ _ Hc Hconv Hhd)
+        as (U' & s' & Σ1' & Hhd' & Ht & Hs & Hc' & Hc1).
+      exists Σ1', U', s'. split_and!; [done|done|].
       intros j Σ2 Hj Hd Hcd Hfr HVw.
       eapply IHP;
         [lia|apply senv_conv_insert;
-          [apply senv_conv_union; [exact Hc1|apply senv_conv_refl]|done]|].
-      apply H; auto.
-      by rewrite (senv_conv_disj _ _ Σ2 Hc1).
+          [apply senv_conv_union; [exact Hc1|apply senv_conv_refl]|exact Hs]|].
+      apply H; [done| |done|done|].
+      * by rewrite (senv_conv_disj _ _ Σ2 Hc1).
+      * eapply Vrel_teq; [by apply teq_sym|exact HVw].
     + (* send *)
       destruct Hstep as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew
                          & T0 & Tw & Hhd & Hd0v & Hd0w & Hdvw & Hc0 & Hcv
@@ -1127,15 +1166,15 @@ Proof.
                          & HVw & HP0 & HPw & Hty).
       assert (c ∉ dom (Σ0 ∪ Σv ∪ Σw)) as Hcr.
       { rewrite !dom_union_L. set_solver. }
-      destruct (senv_conv_hd _ _ _ _ _ Hcr Hconv Hhd)
-        as (ΣR' & Hhd' & HcR' & HcR).
+      destruct (senv_conv_hd_snd _ _ _ _ _ _ Hcr Hconv Hhd)
+        as (U' & s' & ΣR' & Hhd' & Ht & Hs & HcR' & HcR).
       assert (Σ0 ∪ Σv ##ₘ Σw) as Hd0vw.
       { by apply map_disjoint_union_l. }
       destruct (senv_conv_split _ _ (Σ0 ∪ Σv) Σw HcR (conj eq_refl Hd0vw))
         as (Σ0v' & Σw' & [-> HdA] & Hs0v & Hsw).
       destruct (senv_conv_split _ _ Σ0 Σv Hs0v (conj eq_refl Hd0v))
         as (Σ0' & Σv' & [-> HdB] & Hs0 & Hsv).
-      exists Σ0', Σv', U, s, σe, Σw', C0, E0, Cw, Ew, T0, Tw.
+      exists Σ0', Σv', U', s', σe, Σw', C0, E0, Cw, Ew, T0, Tw.
       split_and!.
       { done. }
       { done. }
@@ -1150,15 +1189,16 @@ Proof.
       { done. }
       { done. }
       { done. }
-      { eapply HV; [|exact HVw].
+      { eapply Vrel_teq; [exact Ht|]. eapply HV; [|exact HVw].
         apply senv_conv_union; [exact Hsv|apply senv_conv_refl]. }
-      { eapply IHP; [lia|apply senv_conv_insert; [exact Hs0|done]|done]. }
+      { eapply IHP;
+          [lia|apply senv_conv_insert; [exact Hs0|exact Hs]|done]. }
       { eapply extrusion_split_conv; [|exact Hsw|exact HPw].
         intros ΣA ΣA' TA pA HcA HPA. eapply IHP; [lia|exact HcA|done]. }
       { done. }
     + (* close *)
       destruct Hstep as (Σ1 & Hhd & Hc & HP').
-      destruct (senv_conv_hd _ _ _ _ _ Hc Hconv Hhd)
+      destruct (senv_conv_hd_end _ _ _ _ Hc Hconv Hhd)
         as (Σ1' & Hhd' & Hc' & Hc1).
       exists Σ1'. split_and!; [done|done|].
       eapply IHP; [lia|exact Hc1|done].
@@ -1166,11 +1206,11 @@ Proof.
       destruct Hstep as (c & d & Σ1 & sc & sd & -> & Hcd & -> & Hcx & Hdx
                          & Hdu & HP').
       destruct (senv_conv_ins2 _ _ _ _ _ _ Hcd Hcx Hdx Hconv)
-        as (sc' & sd' & Σ1' & -> & Huc & Hud & Hcx' & Hdx' & Hc1).
+        as (sc' & sd' & Σ1' & -> & Hsc & Hsd & Hcx' & Hdx' & Hc1).
       exists c, d, Σ1', sc', sd'.
       split_and!; [done|done|done|done|done| |].
-      { eapply sdual_seq_l; [apply seq_sym, unfoldS_seq, Hud|].
-        eapply sdual_seq_r; [apply seq_sym, unfoldS_seq, Huc|exact Hdu]. }
+      { eapply sdual_seq_r; [exact Hsc|].
+        eapply sdual_seq_l; [exact Hsd|exact Hdu]. }
       eapply IHP; [lia|exact Hc1|done].
 Qed.
 
@@ -1180,7 +1220,7 @@ Proof. apply rel_conv. Qed.
 
 (** The single-entry instance used by CONNECT's forwarding case. *)
 Lemma Prel_entry_conv n Σ c t t' T p :
-  unfoldS t = unfoldS t' →
+  seq t t' →
   Prel n (<[c := t]> Σ) T p → Prel n (<[c := t']> Σ) T p.
 Proof.
   intros Hu. apply Prel_conv.
