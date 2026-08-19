@@ -394,27 +394,45 @@ of the logical relation.
 
 The express equi-recursive handling of session types in the syntactic type
 system requires a conversion rule, which
-lets a term at a session type be retyped at any type with the same
-unfolding:
+lets a term be retyped at any equivalent type:
 \begin{mathpar}
   \begin{bussproof}[E-Conv]
-    \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : S}}
-    \bussAs{\fType{S} \text{ and } \fType{S'} \text{ have the same unfolding}}
-    \bussB{\fType{\Sigma ; \Delta \vdash \fFunc{e} : S'}}
+    \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T}}
+    \bussAs{\fType{T \approx T'}}
+    \bussB{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T'}}
   \end{bussproof}
 \end{mathpar}
-\mw{claude: do we actually need \ruleLabel{E-Conv} as a rule? It is in
-  the mechanization (\texttt{typed\_conv}), but if every clause already
-  inspects types up to unfolding it may be admissible --- worth
-  checking before we commit to advertising it.}
+\mw{claude: $\approx$ is new and wants its own figure before this rule.
+  Coinductive session equivalence $\fType{S \approx R}$ observes both
+  sides through unfolding, it relates $\fType{\sRecv{T}{S}}$ with
+  $\fType{\sRecv{U}{R}}$ whenever $\fType{T \approx U}$ and
+  $\fType{S \approx R}$, likewise for $\fType{\sSend{T}{S}}$, and it
+  relates $\fType{\sTerm}$ with itself. On types it is the congruence
+  through $\lFunc{}{}$, $\lPair{}{}$, $+$ and $\tBox{}$ that hands off
+  to session equivalence at a session type. The rule set is the one of
+  Thiemann's coinductive model, where selection and branching are
+  derived because \OurLang encodes choice as a sum payload.
+  Mechanized as \texttt{seq} and \texttt{teq} in \texttt{Coequal.v}
+  (tag after merge).}
 
-\mw{claude: we should say once, up front, that session types are taken
-  \emph{up to unfolding} throughout --- the mechanization matches
-  $\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ etc.\ via
-  \texttt{senv\_hd}/\texttt{unfoldS} rather than syntactically, and the
-  same applies to the link clause of \cref{sec:extens-link-oper}, where
-  the two ends are required to be dual only up to unfolding
-  (\texttt{unfoldS sd = unfoldS (dual sc)}), not syntactically dual.}
+\mw{claude: \ruleLabel{E-Conv} stays a rule and it fires at an
+  arbitrary type, not only at a top-level session type. The old
+  version, retyping between session types with the same unfolding, is
+  the derived instance used in \cref{ex:pingpong}. Mechanized as
+  \texttt{typed\_conv\_teq}, with \texttt{typed\_conv} kept as the
+  derived lemma (tag after merge).}
+
+\mw{claude: we should say once, up front, that the logical relation is
+  quotiented by $\approx$. Rule \ruleLabel{V-Chan} lets a channel store
+  any protocol equivalent to the one demanded, and matching
+  $\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ etc.\ goes
+  through unfolding rather than through syntax. The payoff is that
+  conversion holds semantically in both directions, $\fType{T \approx
+  T'}$ implies that the value and the term relation at $\fType{T}$ and
+  at $\fType{T'}$ have the same members, and semantic typing transports
+  along $\approx$. Mechanized as \texttt{Vrel\_teq\_iff},
+  \texttt{Erel\_teq\_iff} and \texttt{sem\_typed\_teq} (tag after
+  merge).}
 
 \mw{claude: we need to talk about duality here. The mechanization has a
   \emph{dualized} session variable $\fType{\dual{\alpha}}$
@@ -450,7 +468,10 @@ The conversion rule \ruleLabel{E-Conv} enters exactly at the two
 communication operators, where $\fFunc{c} : \fType{\mu\alpha.\sSend{\tUnit}{\alpha}}$
 has to be read at its unfolding
 $\fType{\sSend{\tUnit}{\mu\alpha.\sSend{\tUnit}{\alpha}}}$, and dually
-for $\fFunc{c'}$ \rocq{typed_conv}. Connecting the two ends on a single
+for $\fFunc{c'}$ \rocq{typed_conv}.
+\mw{claude: this is the fold/unfold instance of \ruleLabel{E-Conv},
+  worth saying so once the general rule is in.}
+Connecting the two ends on a single
 channel yields the process
 $(\set{\fFunc{c}},
 \mset{\fFunc{\tApp{(\tApp{\tForce}{\var{pinger}})}{c}},
@@ -553,6 +574,15 @@ label, the configuration as a whole takes a labelled reduction step
 The new obligation rules formalize the postcondition
 of the forwarder: the two connected channel ends vanish from the
 context as a consequence of the forwarding reduction.
+\mw{claude: with recursive types the two ends are related by
+  coinductive duality rather than by the duality function, so
+  \ruleLabel{O-Link} and \ruleLabel{Q-Link} read
+  $\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:R}$ under $\fType{S \perp
+  R}$. Duality has the shape of $\approx$ with $?$ swapped against $!$
+  and payloads still equivalent, and it agrees with the function,
+  $\fType{S \perp R}$ holds exactly when $\fType{S \approx \dual{R}}$.
+  Mechanized as \texttt{sdual} in \texttt{Coequal.v} (tag after
+  merge).}
 Both ends appear in the interface $\fType{\Sigma}$ in
 \TirName{O-Link} and \TirName{Q-Link} because a forwarding label
 reaches the interface only when neither end is restricted

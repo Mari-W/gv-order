@@ -218,7 +218,6 @@ We write $\trans{}[*]$ for its transitive, reflexive closure.
 The move to an LTS is a matter of convenience:
 reduction coincides with a conventional, label-free reduction
 semantics.
-\mw{is this even the target we wanted? it just removes the labels, but doesnt related to the og gv paper}
 \begin{theorem}[Harmony \rocq{harmony}]
   \label{thm:harmony}
   $\fProc{p} \redu \fProc{p'}$
@@ -392,15 +391,8 @@ It considers the case that two disjoint processes communicate over an external c
 We can internalize this communication by putting the processes together and close them over $c$.
 \begin{lemma}[Internalizing communication \rocq{internalize_comm}]
 \label{lem:internalize}
-  Suppose that
-  \[
-    \fProc{(C_1, E_1)} \trans{\lSend{c}{v}} \fProc{(C_1', E_1')}
-    \quad\text{and}\quad
-    \fProc{(C_2, E_2)} \trans{\lRecv{c}{v}} \fProc{(C_2', E_2')}
-  \]
-  with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
-  Then
-  \[ \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1' \uplus E_2')} \]
+  Suppose that $\fProc{(C_1, E_1)} \trans{\lSend{c}{v}} \fProc{(C_1', E_1')}$ and $\fProc{(C_2, E_2)} \trans{\lRecv{c}{v}} \fProc{(C_2', E_2')}$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
+  It then holds that $\fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1' \uplus E_2')}$.
 \end{lemma}
 % \begin{proof}
 %   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ruleLabel{P-Act-Session}.
@@ -738,6 +730,8 @@ channels $\fFunc{c}$ to session types.
 We write $\dom(\fType{\Sigma})$ to denote the set of channels appearing in $\fType{\Sigma}$.
 Session duality $\fType{\dual{S}}$ swaps the direction of
 communication, as usual.
+We write $\fType{\dual{\Sigma}}$ for duality applied pointwise to every entry of
+$\fType{\Sigma}$.
 
 \Cref{fig:typeSys} also gives the typing rules for terms and processes.
 The constants are given type signatures that reflect their intended usage.
