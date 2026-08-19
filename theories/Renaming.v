@@ -519,7 +519,7 @@ Proof.
     - apply Vrel_unit_iff in HVv as [-> ->].
       apply Vrel_unit_iff. by rewrite senvswap_empty.
     - apply Vrel_lolli_iff in HVv
-        as [(eb & -> & Hfc & H)|(k & -> & -> & Hk)].
+        as [(eb & -> & Hfc & H)|(k & T0 & -> & -> & Hk & Ht)].
       + apply Vrel_lolli_iff. left. exists (eswap a b eb).
         split_and!; [done|by rewrite fchans_eswap, dom_kswap, Hfc|].
         intros j Σ' w Hj Hd HVw.
@@ -531,8 +531,8 @@ Proof.
         rewrite senvswap_union, senvswap_involutive in H.
         rewrite eswap_subst1, eswap_involutive in H.
         exact H.
-      + apply Vrel_lolli_iff. right. exists k.
-        split_and!; [done|by rewrite senvswap_empty|done].
+      + apply Vrel_lolli_iff. right. exists k, T0.
+        split_and!; [done|by rewrite senvswap_empty|done|done].
     - apply Vrel_prod_iff in HVv
         as (v1 & v2 & Σ1 & Σ2 & -> & [-> Hd] & H1 & H2).
       apply Vrel_prod_iff.
@@ -551,7 +551,9 @@ Proof.
       apply IHE in H; [|done].
       rewrite senvswap_empty, eswap_subst1 in H.
       exact H.
-    - apply Vrel_sess_iff in HVv as (c & s0 & -> & -> & Hu).
+    - (* the stored protocol is untouched by a channel transposition,
+         so its equivalence with s is re-supplied verbatim *)
+      apply Vrel_sess_iff in HVv as (c & s0 & -> & -> & Hs).
       apply Vrel_sess_iff. exists (cswap a b c), s0.
       split_and!; [done|apply senvswap_singleton|done]. }
   split_and!; [exact HV| |].

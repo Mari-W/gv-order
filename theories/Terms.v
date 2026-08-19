@@ -6,7 +6,7 @@
     system is validated rule by rule. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Relation.
+From LRGV Require Export Relation Convert.
 
 (** ** Compositionality for terms (Theorem 3.11)
 
@@ -217,48 +217,9 @@ Lemma allfv_avail_up Δ T e :
   allfv (lenv_avail (Some T :: Δ)) e → allfv (upP (lenv_avail Δ)) e.
 Proof. apply allfv_mono. by intros [|x]. Qed.
 
-(** E-Conv at the value level: a channel inhabits every session type
-    with the same unfolding as its stored protocol. *)
-Lemma Vrel_sess_conv n Σ s s' v :
-  unfoldS s = unfoldS s' →
-  Vrel n Σ (TSess s) v → Vrel n Σ (TSess s') v.
-Proof.
-  rewrite !Vrel_sess_iff. intros Hu (c & s0 & -> & -> & Hu0).
-  exists c, s0. split_and!; [done|done|congruence].
-Qed.
-
-(** E-Conv: the term relation reads a session result type up to
-    unfolding — every clause inspects Σ through [unfoldS] and the type
-    only through its head, so conversion costs no steps. *)
-Lemma Erel_sess_conv n Σ s s' e :
-  unfoldS s = unfoldS s' →
-  Erel n Σ (TSess s) e → Erel n Σ (TSess s') e.
-Proof.
-  revert Σ s s' e. induction n as [n IHn] using lt_wf_ind;
-    intros Σ s s' e Hu HE.
-  destruct n as [|n']; [apply Erel_0|].
-  apply Erel_S_iff in HE as (Hval & Hstep).
-  apply Erel_S_iff. split.
-  { intros Hirr. eapply Vrel_sess_conv; eauto. }
-  intros α e' Hst. specialize (Hstep α e' Hst).
-  destruct α as [|[c w|c w|c|cd]|c w]; simpl in Hstep |- *.
-  - eapply IHn; [lia|done|done].
-  - destruct Hstep as (Σ1 & U & u & Hhd & Hc & H).
-    exists Σ1, U, u. split_and!; [done|done|].
-    intros j Σ2 Hj Hd Hcd HV.
-    eapply IHn; [lia|done|]. by apply H.
-  - destruct Hstep as (Σ1 & Σ2 & U & u & Hhd & Hd & Hc1 & Hc2 & HV & HE').
-    exists Σ1, Σ2, U, u. split_and!; try done.
-    eapply IHn; [lia|done|done].
-  - destruct Hstep as (Σ1 & Hhd & Hc & HE').
-    exists Σ1. split_and!; [done|done|]. eapply IHn; [lia|done|done].
-  - destruct Hstep as (c & d & Σ1 & sc & sd & -> & ? & -> & ? & ? & ? & HE').
-    eexists _, _, _, _, _. split_and!; [done..|].
-    eapply IHn; [lia|done|done].
-  - intros Hcd. specialize (Hstep Hcd) as (Σ1 & Σ2 & sf & Hsp & HV & HE').
-    exists Σ1, Σ2, sf. split_and!; [done|done|].
-    eapply IHn; [lia|done|done].
-Qed.
+(** E-Conv at the value and term levels — [Vrel_sess_conv] and
+    [Erel_sess_conv] — now live in Convert.v, as the session instances
+    of the general conversion lemmas [Vrel_teq] / [Erel_teq]. *)
 
 (** ** Canonical values *)
 
@@ -266,7 +227,7 @@ Lemma Vrel_unit n : Vrel n ∅ TUnit EUnit.
 Proof. by apply Vrel_unit_iff. Qed.
 
 Lemma Vrel_chan n c s : Vrel n {[c := s]} (TSess s) (Chan c).
-Proof. apply Vrel_sess_iff. exists c, s. auto. Qed.
+Proof. apply Vrel_sess_iff. exists c, s. auto using seq_refl. Qed.
 
 Lemma Vrel_pair n Σ1 Σ2 T U v1 v2 :
   Σ1 ##ₘ Σ2 → Vrel n Σ1 T v1 → Vrel n Σ2 U v2 →
@@ -639,7 +600,8 @@ Proof.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
   apply Vrel_Erel. unfold Vrel. rewrite level_at_eq.
-  destruct Hk; simpl; right; eexists; split_and!; eauto using konst_ty.
+  destruct Hk; simpl; right; eexists _, _; split_and!;
+    eauto using konst_ty, teq_refl.
 Qed.
 
 (** E-LVar *)
@@ -658,7 +620,7 @@ Proof.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
   apply Vrel_Erel. unfold Vrel. rewrite level_at_eq. simpl.
-  exists c, s. auto.
+  exists c, s. auto using seq_refl.
 Qed.
 
 (** E-Conv, judgment form. *)

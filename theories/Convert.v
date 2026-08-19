@@ -130,6 +130,25 @@ Proof.
   intros Ht He n Σ' γ Hd Hg. eapply Erel_teq; [exact Ht|]. by apply He.
 Qed.
 
+(** ** Reading a constant back out of the ⊸ clause
+
+    [konst_ty] is not closed under ≈, so the relation types a constant
+    at its own [konst_ty] type and converts ([Relation.Vdef]). Every
+    [konst_ty] type is a ⊸, so a constant related at T ⊸ U is typed at
+    some A ⊸ B with A ≈ T and B ≈ U. Users then [inversion] the
+    [konst_ty] to fix A and B, convert the argument along [teq_sym] of
+    the first component, and convert the result along the second —
+    which is the only way the ≈-quotient shows up in the constant's
+    reduction lemmas. *)
+Lemma Vrel_konst_inv n Σ T U k :
+  Vrel n Σ (TLolli T U) (Konst k) →
+  ∃ A B, konst_ty k (TLolli A B) ∧ teq A T ∧ teq B U ∧ Σ = ∅.
+Proof.
+  intros HV. apply Vrel_lolli_iff in HV as [(eb & ? & _)|(k' & T0 & Hk' & -> & Hk & Ht)];
+    [done|simplify_eq].
+  destruct Hk; destruct Ht as [Ht1 Ht2]; eauto 10 using konst_ty.
+Qed.
+
 (** ** Conversion at a session type
 
     The special case the old E-Conv was stated at, kept under its
