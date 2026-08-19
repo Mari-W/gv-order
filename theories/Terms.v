@@ -379,9 +379,12 @@ Proof.
   { (* an application of a related function is never stuck *)
     intros Hirr. exfalso.
     apply Vrel_lolli_iff in HV1
-      as [(eb & -> & Hsup & HL)|(k & -> & -> & Hk)].
+      as [(eb & -> & Hsup & HL)|(k & T0 & -> & -> & Hk & Ht)].
     { eapply (Hirr LBeta). apply TStepHead. by apply HeadApp. }
-    inversion Hk; subst.
+    (* the constant is typed at its own domain, only ≈-related to T:
+       move the argument there before reading off its shape *)
+    inversion Hk; subst; destruct Ht as [Ht1 _];
+      apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     - eapply (Hirr (LFork (fresh (∅ : gset chan)) v2)).
       apply TStepHead. by apply HeadFork.
     - apply Vrel_sess_iff in HV2 as (c & s0 & -> & -> & _).
@@ -409,80 +412,90 @@ Proof.
   { exfalso. eauto using val_no_tstep. }
   { exfalso. eauto using val_no_tstep. }
   inversion Hhd; subst; simpl.
-  - (* HeadApp *)
+  - (* HeadApp: the λ disjunct, untouched by the ≈-quotient *)
     apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & Hsup & HL)|(k & Heq & _)]; simplify_eq.
+      as [(eb & Heq & Hsup & HL)|(k & T0 & Heq & _)]; simplify_eq.
     apply HL; [lia|senv_disj|]. eapply Vrel_down; [|done]. lia.
   - (* HeadFork *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     intros Hcdom.
     match type of HV2 with Vrel _ _ (TLolli (TSess ?s) TUnit) _ =>
       exists Σ2, ∅, s end.
     refine (conj _ (conj HV2 _)).
     { split; [senv_perm|apply map_disjoint_empty_r]. }
+    eapply Erel_teq; [exact Ht2|].
     apply Vrel_Erel. rewrite insert_empty. apply Vrel_chan.
   - (* HeadRecv *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
-    apply Vrel_sess_iff in HV2 as (c' & s0 & Heqc & Heqs & Hu0).
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
+    apply Vrel_sess_iff in HV2 as (c' & s0 & Heqc & Heqs & Hs0).
     simplify_eq.
-    match type of Hu0 with _ = unfoldS (SRcv ?t ?s) =>
-      exists ∅, t, s end.
+    (* the stored type is only ≈ the constant's, so read a head off it *)
+    destruct (seq_rcv_inv _ _ _ _ Hs0 eq_refl) as (Up & sp & Hu0 & Htp & Hsp).
+    exists ∅, Up, sp.
     refine (conj _ (conj _ _)).
     { eapply senv_hd_intro; [exact Hu0|senv_perm]. }
     { set_solver. }
     intros j Σn Hj _ Hcn HVw.
     rewrite (left_id ∅ (∪)).
     rewrite insert_as_union; [|done].
-    apply Vrel_Erel, Vrel_pair; [|done|apply Vrel_chan].
-    by apply map_disjoint_singleton_r, not_elem_of_dom.
+    eapply Erel_teq; [exact Ht2|].
+    apply Vrel_Erel, Vrel_pair.
+    + by apply map_disjoint_singleton_r, not_elem_of_dom.
+    + apply (Vrel_teq _ _ _ _ _ Htp), HVw.
+    + eapply Vrel_sess_seq; [exact Hsp|apply Vrel_chan].
   - (* HeadSend *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     apply Vrel_prod_iff in HV2
       as (w' & vc & Σa & Σb & Heqp & [-> Hdab] & HVw & HVc).
     simplify_eq.
-    apply Vrel_sess_iff in HVc as (c' & s0 & Heqc & -> & Hu0). simplify_eq.
+    apply Vrel_sess_iff in HVc as (c' & s0 & Heqc & -> & Hs0). simplify_eq.
     assert (Σa !! c' = None) as Hca.
     { by apply map_disjoint_singleton_r in Hdab. }
-    match type of Hu0 with _ = unfoldS (SSnd ?t ?s) =>
-      exists ∅, Σa, t, s end.
-    refine (conj _ (conj _ (conj _ (conj _ (conj HVw _))))).
+    destruct (seq_snd_inv _ _ _ _ Hs0 eq_refl) as (Up & sp & Hu0 & Htp & Hsp).
+    exists ∅, Σa, Up, sp.
+    refine (conj _ (conj _ (conj _ (conj _ (conj _ _))))).
     { eapply senv_hd_intro; [exact Hu0|senv_perm]. }
     { apply map_disjoint_empty_l. }
     { set_solver. }
     { by apply not_elem_of_dom. }
-    apply Vrel_Erel. rewrite insert_empty. apply Vrel_chan.
+    { apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Htp)), HVw. }
+    eapply Erel_teq; [exact Ht2|].
+    apply Vrel_Erel. rewrite insert_empty.
+    eapply Vrel_sess_seq; [exact Hsp|apply Vrel_chan].
   - (* HeadClos *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
-    apply Vrel_sess_iff in HV2 as (c' & s0 & Heqc & Heqs & Hu0).
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
+    apply Vrel_sess_iff in HV2 as (c' & s0 & Heqc & Heqs & Hs0).
     simplify_eq.
     exists ∅. refine (conj _ (conj _ _)).
-    { eapply senv_hd_intro; [exact Hu0|senv_perm]. }
+    { eapply senv_hd_intro; [|senv_perm].
+      eapply seq_end_inv; [exact Hs0|done]. }
     { set_solver. }
-    apply Vrel_Erel, Vrel_unit.
+    eapply Erel_teq; [exact Ht2|]. apply Vrel_Erel, Vrel_unit.
   - (* HeadForce *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     apply Vrel_box_iff in HV2 as (-> & eb' & Heqb & Hfce & HK).
     simplify_eq.
-    rewrite (left_id ∅ (∪)). apply HK. lia.
+    rewrite (left_id ∅ (∪)).
+    eapply Erel_teq; [exact Ht2|]. apply HK. lia.
   - (* HeadLink *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     apply Vrel_prod_iff in HV2
       as (vc & vd & Σa & Σb & Heqp & [-> Hdab] & HVc & HVd).
     simplify_eq.
-    apply Vrel_sess_iff in HVc as (c' & sc0 & Heqc & -> & Huc). simplify_eq.
-    apply Vrel_sess_iff in HVd as (d' & sd0 & Heqd & -> & Hud). simplify_eq.
+    apply Vrel_sess_iff in HVc as (c' & sc0 & Heqc & -> & Hsc). simplify_eq.
+    apply Vrel_sess_iff in HVd as (d' & sd0 & Heqd & -> & Hsd). simplify_eq.
     assert (c' ≠ d') as Hcd'.
     { apply map_disjoint_dom in Hdab. set_solver. }
     exists c', d', ∅, sc0, sd0. split_and!.
@@ -491,8 +504,10 @@ Proof.
     { senv_perm. }
     { set_solver. }
     { set_solver. }
-    { rewrite Hud, <-!dual_unfoldS, Huc. done. }
-    apply Vrel_Erel, Vrel_unit.
+    { (* duality of the stored types, transported along ≈ *)
+      apply sdual_seq_dual. eapply seq_trans; [exact Hsd|].
+      by apply seq_sym, seq_dual. }
+    eapply Erel_teq; [exact Ht2|]. apply Vrel_Erel, Vrel_unit.
 Qed.
 
 (** Reducing a let-unit / let-pair redex. *)
