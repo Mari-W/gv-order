@@ -792,11 +792,14 @@ Qed.
 
 (** ** Environments up to unfolding
 
-    The relations read stored session types only through [unfoldS]
-    (via [senv_hd] and the up-to-unfold channel clause of [Vdef]), so
-    replacing every entry by one with the same unfolding is invisible.
-    CONNECT's forwarding case uses this to trade the retargeted peer's
-    [dual s] entry for the [sd] entry recorded by the link clause. *)
+    The relations never read a stored session type more precisely than
+    up to session equivalence: [senv_hd] exposes only its [unfoldS],
+    the channel clause of [Vdef] stores the protocol up to [seq], and
+    the link clauses only demand [sdual]. Equal unfoldings imply [seq]
+    ([unfoldS_seq]), so replacing every entry by one with the same
+    unfolding is invisible. CONNECT's forwarding case uses this to
+    trade the retargeted peer's [dual s] entry for the [sd] entry
+    recorded by the link clause. *)
 
 Definition senv_conv (Σ Σ' : senv) : Prop :=
   dom Σ = dom Σ' ∧
@@ -972,7 +975,10 @@ Qed.
 (** ** The relations read Σ up to unfolding
 
     Same induction shape as [rel_eswap]; the term/process is unchanged
-    and every clause's Σ facts transport along [senv_conv]. *)
+    and every clause's Σ facts transport along [senv_conv]. The two
+    clauses that constrain a stored type — the channel clause's [seq]
+    and the link clauses' [sdual] — absorb the change of entry because
+    both are stable under [seq] on either side. *)
 Lemma rel_conv n :
   (∀ T Σ Σ' v, senv_conv Σ Σ' → Vrel n Σ T v → Vrel n Σ' T v) ∧
   (∀ T Σ Σ' e, senv_conv Σ Σ' → Erel n Σ T e → Erel n Σ' T e) ∧
@@ -992,7 +998,7 @@ Proof.
     - apply Vrel_unit_iff in HVv as [-> ->].
       apply Vrel_unit_iff. by rewrite (senv_conv_empty_inv _ Hconv).
     - apply Vrel_lolli_iff in HVv
-        as [(eb & -> & Hfc & H)|(k & -> & -> & Hk)].
+        as [(eb & -> & Hfc & H)|(k & T0 & -> & -> & Hk & Ht)].
       + apply Vrel_lolli_iff. left. exists eb.
         split_and!; [done|by rewrite Hfc, (proj1 Hconv)|].
         intros j Σ2 w Hj Hd HVw.
@@ -1000,8 +1006,9 @@ Proof.
           [lia|apply senv_conv_union; [exact Hconv|apply senv_conv_refl]|].
         apply H; [lia| |exact HVw].
         by rewrite (senv_conv_disj _ _ Σ2 Hconv).
-      + apply Vrel_lolli_iff. right. exists k.
-        split_and!; [done|by rewrite (senv_conv_empty_inv _ Hconv)|done].
+      + apply Vrel_lolli_iff. right. exists k, T0.
+        split_and!;
+          [done|by rewrite (senv_conv_empty_inv _ Hconv)|done|done].
     - apply Vrel_prod_iff in HVv
         as (v1 & v2 & Σ1 & Σ2 & -> & Hsp & H1 & H2).
       destruct (senv_conv_split _ _ _ _ Hconv Hsp)
@@ -1013,7 +1020,7 @@ Proof.
     - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
       apply Vrel_box_iff.
       rewrite (senv_conv_empty_inv _ Hconv). eauto 10.
-    - apply Vrel_sess_iff in HVv as (c & s0 & -> & -> & Hu).
+    - apply Vrel_sess_iff in HVv as (c & s0 & -> & -> & Hs).
       assert (senv_hd ({[c := s0]} : senv) c (unfoldS s0) ∅) as Hhd.
       { by exists s0. }
       assert (c ∉ dom (∅ : senv)) as Hce by set_solver.
@@ -1021,7 +1028,10 @@ Proof.
         as (Σ1' & (s0' & -> & Hu') & _ & Hc1).
       rewrite (senv_conv_empty_inv _ Hc1).
       apply Vrel_sess_iff. exists c, s0'.
-      split_and!; [done|apply insert_empty|congruence]. }
+      (* the replacement entry has the same unfolding, hence is ≡ to
+         the old one, and ≡ composes with the stored [seq s0 s] *)
+      split_and!; [done|apply insert_empty|].
+      eapply seq_trans; [by apply unfoldS_seq|exact Hs]. }
   split_and!; [exact HV| |].
   - (* term relation *)
     intros T Σ Σ' e Hconv HE.
@@ -1072,7 +1082,8 @@ Proof.
         as (sc' & sd' & Σ1' & -> & Huc & Hud & Hcx' & Hdx' & Hc1).
       exists c, d, Σ1', sc', sd'.
       split_and!; [done|done|done|done|done| |].
-      { rewrite Hud, Hdu, <-!dual_unfoldS, Huc. done. }
+      { eapply sdual_seq_l; [apply seq_sym, unfoldS_seq, Hud|].
+        eapply sdual_seq_r; [apply seq_sym, unfoldS_seq, Huc|exact Hdu]. }
       eapply IHE; [lia|exact Hc1|done].
     + (* fork *)
       intros Hcd.
@@ -1158,7 +1169,8 @@ Proof.
         as (sc' & sd' & Σ1' & -> & Huc & Hud & Hcx' & Hdx' & Hc1).
       exists c, d, Σ1', sc', sd'.
       split_and!; [done|done|done|done|done| |].
-      { rewrite Hud, Hdu, <-!dual_unfoldS, Huc. done. }
+      { eapply sdual_seq_l; [apply seq_sym, unfoldS_seq, Hud|].
+        eapply sdual_seq_r; [apply seq_sym, unfoldS_seq, Huc|exact Hdu]. }
       eapply IHP; [lia|exact Hc1|done].
 Qed.
 
