@@ -85,7 +85,7 @@ Definition inv_case (I : senv → ty → proc → Prop)
         cd = {[c; d]} ∧ c ≠ d ∧
         Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
         c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-        unfoldS sd = unfoldS (dual sc) ∧
+        sdual sd sc ∧
         I Σ1 T p'
   end.
 

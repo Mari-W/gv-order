@@ -567,7 +567,13 @@ Qed.
     retargeting is the junk transport; the passive component first
     junk-renames its b-mentions onto c, after which the transposition
     c ↔ b IS the retargeting ([echswap_echsubst_flip]) and entry
-    conversion finishes (docs/link-design.md). *)
+    conversion finishes (docs/link-design.md).
+
+    The forwarding clause records the two ends' protocols only up to
+    relational duality ([sdual]), not as equal unfoldings, so the
+    conversion that trades the passive component's [dual s] entry for
+    the recorded [sb] runs at ≈: [sdual sb s] is [seq sb (dual s)]
+    ([sdual_seq_dual]), which is what [Prel_entry_conv] consumes. *)
 Lemma connectx_plink_tail n0 (IHi : independent_at (S n0))
     Σr Σ2 c b (s sb : sty) C1 F1 e' C2 E2 T :
   prim T →
@@ -577,7 +583,7 @@ Lemma connectx_plink_tail n0 (IHi : independent_at (S n0))
   C1 ## dom Σ2 → C2 ## dom (<[b := sb]> Σr) →
   C1 ## dom (<[b := sb]> Σr) → C2 ## dom Σ2 →
   b ∉ dom Σr → b ≠ c → b ∉ dom Σ2 →
-  unfoldS sb = unfoldS (dual s) →
+  sdual sb s →
   Prel (S n0) Σr T (C1, F1 ⊎ {[+ e' +]}) →
   Prel (S (S n0)) (<[c := dual s]> Σ2) TUnit (C2, E2) →
   Prel (S n0) (<[b := sb]> Σr ∪ Σ2) T
@@ -606,7 +612,8 @@ Proof.
   rewrite gswap_id in HQ2 by set_solver.
   rewrite echswap_echsubst_flip in HQ2.
   apply (Prel_entry_conv (S n0) Σ2 b (dual s) sb TUnit
-           (C2, echsubst c b E2)) in HQ2; [|by symmetry].
+           (C2, echsubst c b E2)) in HQ2;
+    [|by apply seq_sym, sdual_seq_dual].
   replace (<[b := sb]> Σr ∪ Σ2) with (Σr ∪ <[b := sb]> Σ2).
   2:{ rewrite <-insert_union_r; [|by apply not_elem_of_dom].
       by rewrite <-insert_union_l. }
@@ -622,7 +629,9 @@ Proof.
 Qed.
 
 (** Mirror of [connectx_plink_tail]: the actor is the unit-typed
-    component, the T-typed component is transported. *)
+    component, the T-typed component is transported. Here the actor
+    holds [dual s], so the two duals cancel and the recorded protocol
+    is ≈-equal to [s] rather than dual to it. *)
 Lemma connectx_plink_tail_r n0 (IHi : independent_at (S n0))
     Σr Σ1 c b (s sb : sty) C2 F2 e' C1 E1 T :
   prim T →
@@ -632,7 +641,7 @@ Lemma connectx_plink_tail_r n0 (IHi : independent_at (S n0))
   C1 ## dom (<[b := sb]> Σr) → C2 ## dom Σ1 →
   C1 ## dom Σ1 → C2 ## dom (<[b := sb]> Σr) →
   b ∉ dom Σr → b ≠ c → b ∉ dom Σ1 →
-  unfoldS sb = unfoldS s →
+  seq sb s →
   Prel (S n0) Σr TUnit (C2, F2 ⊎ {[+ e' +]}) →
   Prel (S (S n0)) (<[c := s]> Σ1) T (C1, E1) →
   Prel (S n0) (Σ1 ∪ <[b := sb]> Σr) T
@@ -661,7 +670,7 @@ Proof.
   rewrite gswap_id in HQ1 by set_solver.
   rewrite echswap_echsubst_flip in HQ1.
   apply (Prel_entry_conv (S n0) Σ1 b s sb T
-           (C1, echsubst c b E1)) in HQ1; [|by symmetry].
+           (C1, echsubst c b E1)) in HQ1; [|by apply seq_sym].
   replace (Σ1 ∪ <[b := sb]> Σr) with (<[b := sb]> Σ1 ∪ Σr).
   2:{ rewrite <-insert_union_r; [|by apply not_elem_of_dom].
       rewrite <-insert_union_l. done. }
@@ -1283,9 +1292,7 @@ Proof.
               rewrite delete_insert_id in HeqΣ
                 by (by apply not_elem_of_dom).
               subst Σ1.
-              assert (unfoldS sc0 = unfoldS (dual s)) as Hdub.
-              { rewrite <-dual_unfoldS, Hdu, <-dual_unfoldS.
-                by rewrite dual_involutive. }
+              assert (sdual sc0 s) as Hdub by (by apply sdual_sym).
               eapply (connectx_plink_tail n0 IHi); eauto.
       * (* the retired end is a component's restricted name *)
         assert (a ∈ C1 ∪ C2) as HaC'
@@ -1480,8 +1487,9 @@ Proof.
                 by (rewrite lookup_insert_ne by congruence;
                     by apply not_elem_of_dom).
               subst Σ2.
-              assert (unfoldS sd0 = unfoldS s) as Hdub.
-              { rewrite <-Hlc, dual_involutive in Hdu. exact Hdu. }
+              assert (seq sd0 s) as Hdub.
+              { rewrite <-Hlc in Hdu. apply sdual_seq_dual in Hdu.
+                by rewrite dual_involutive in Hdu. }
               eapply (connectx_plink_tail_r n0 IHi); eauto.
            ++ (* orientation ⟨b,c⟩ *)
               pose proof (f_equal (lookup c) HeqΣ) as Hlc.
@@ -1495,10 +1503,10 @@ Proof.
               rewrite delete_insert_id in HeqΣ
                 by (by apply not_elem_of_dom).
               subst Σ2.
-              assert (unfoldS sc0 = unfoldS s) as Hdub.
-              { rewrite <-Hlc in Hdu. apply (f_equal dual) in Hdu.
-                rewrite !dual_unfoldS, !dual_involutive in Hdu.
-                by symmetry. }
+              assert (seq sc0 s) as Hdub.
+              { rewrite <-Hlc in Hdu.
+                apply sdual_sym, sdual_seq_dual in Hdu.
+                by rewrite dual_involutive in Hdu. }
               eapply (connectx_plink_tail_r n0 IHi); eauto.
       * assert (a ∈ C1 ∪ C2) as HaC'
           by (clear -HaC Hac; set_solver).

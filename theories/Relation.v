@@ -20,7 +20,7 @@
     development is closed under the global context. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Semantics Safety Types Typing.
+From LRGV Require Export Semantics Safety Types Coequal Typing.
 
 (** ** The three relations, level by level *)
 
@@ -42,15 +42,22 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   match T with
   | TUnit => Σ = ∅ ∧ v = EUnit
   | TSess s =>
-      (* a channel is read up to unfolding: the stored protocol may be
-         any type with the same unfolding — E-Conv at the value level *)
-      ∃ c s0, v = Chan c ∧ Σ = {[c := s0]} ∧ unfoldS s0 = unfoldS s
+      (* a channel is read up to session equivalence: the stored
+         protocol may be any ≈-equivalent type — E-Conv at the value
+         level. [seq] subsumes the [unfoldS]-equality this clause used
+         to demand ([unfoldS_seq]), and is what makes the relation
+         invariant under conversion at *every* position of a type
+         rather than only at its head ([Convert.Vrel_teq]). *)
+      ∃ c s0, v = Chan c ∧ Σ = {[c := s0]} ∧ seq s0 s
   | TLolli T1 U =>
       (∃ eb, v = Lam eb ∧ fchans eb = dom Σ ∧
          ∀ j Σ' w, j < n → Σ' ##ₘ Σ →
            lV (below j) Σ' T1 w →
            lE (below j) (Σ ∪ Σ') U (subst1 w eb))
-      ∨ (∃ k, v = Konst k ∧ Σ = ∅ ∧ konst_ty k (TLolli T1 U))
+      (* [konst_ty] is syntactic and not closed under ≈, so the
+         constant is typed at some T0 and converted here; without this
+         the ⊸ clause would be the one place [Vrel_teq] fails. *)
+      ∨ (∃ k T0, v = Konst k ∧ Σ = ∅ ∧ konst_ty k T0 ∧ teq T0 (TLolli T1 U))
   | TProd T1 U =>
       ∃ v1 v2 Σ1 Σ2, v = Pair v1 v2 ∧ senv_split Σ Σ1 Σ2 ∧
         Vdef below n Σ1 T1 v1 ∧ Vdef below n Σ2 U v2
@@ -114,7 +121,7 @@ Definition Edef (below : nat → level) (Vn : senv → ty → expr → Prop)
               cd = {[c; d]} ∧ c ≠ d ∧
               Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
               c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-              unfoldS sd = unfoldS (dual sc) ∧
+              sdual sd sc ∧
               lE (below n') Σ1 T e'
         end)
   end.
@@ -217,7 +224,7 @@ Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
               cd = {[c; d]} ∧ c ≠ d ∧
               Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
               c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-              unfoldS sd = unfoldS (dual sc) ∧
+              sdual sd sc ∧
               lP (below n') Σ1 T p'
         end)
   end.
@@ -267,7 +274,7 @@ Lemma Vdef_val below n Σ T v : Vdef below n Σ T v → is_val v.
 Proof.
   induction T in Σ, v |- *; simpl.
   - by intros [_ ->].
-  - by intros [(eb & -> & _ & _)|(k & -> & _)].
+  - by intros [(eb & -> & _ & _)|(k & T0 & -> & _)].
   - intros (v1 & v2 & Σ1 & Σ2 & -> & _ & H1 & H2).
     simpl. apply andb_True. eauto.
   - intros [(v' & -> & H)|(v' & -> & H)]; simpl; eauto.
@@ -289,7 +296,7 @@ Lemma Vdef_fchans below n Σ T v :
 Proof.
   induction T in Σ, v |- *; simpl.
   - intros [-> ->]. simpl. by rewrite dom_empty_L.
-  - intros [(eb & -> & Hsup & _)|(k & -> & -> & _)]; simpl;
+  - intros [(eb & -> & Hsup & _)|(k & T0 & -> & -> & _)]; simpl;
       [done|by rewrite dom_empty_L].
   - intros (v1 & v2 & Σ1 & Σ2 & -> & [-> Hd] & H1 & H2). simpl.
     rewrite (IHT1 _ _ H1), (IHT2 _ _ H2), dom_union_L. done.
@@ -382,7 +389,7 @@ Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_sess_iff n Σ s v :
   Vrel n Σ (TSess s) v ↔
-  ∃ c s0, v = Chan c ∧ Σ = {[c := s0]} ∧ unfoldS s0 = unfoldS s.
+  ∃ c s0, v = Chan c ∧ Σ = {[c := s0]} ∧ seq s0 s.
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_prod_iff n Σ T U v :
@@ -423,7 +430,7 @@ Lemma Vrel_lolli_iff n Σ T U v :
   (∃ eb, v = Lam eb ∧ fchans eb = dom Σ ∧
      ∀ j Σ' w, j < n → Σ' ##ₘ Σ →
        Vrel j Σ' T w → Erel j (Σ ∪ Σ') U (subst1 w eb))
-  ∨ (∃ k, v = Konst k ∧ Σ = ∅ ∧ konst_ty k (TLolli T U)).
+  ∨ (∃ k T0, v = Konst k ∧ Σ = ∅ ∧ konst_ty k T0 ∧ teq T0 (TLolli T U)).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply or_iff_compat_r.
@@ -466,7 +473,7 @@ Definition Ecase (n' : nat) (Σ : senv) (T : ty) (α : tlabel) (e' : expr)
         cd = {[c; d]} ∧ c ≠ d ∧
         Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
         c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-        unfoldS sd = unfoldS (dual sc) ∧
+        sdual sd sc ∧
         Erel n' Σ1 T e'
   end.
 
@@ -530,7 +537,7 @@ Definition Pcase (n' : nat) (Σ : senv) (T : ty) (p : proc) (π : plabel)
         cd = {[c; d]} ∧ c ≠ d ∧
         Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
         c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-        unfoldS sd = unfoldS (dual sc) ∧
+        sdual sd sc ∧
         Prel n' Σ1 T p'
   end.
 
