@@ -209,6 +209,7 @@ which matches a send $\lSend{c}{v}$ (over a restricted $\fFunc{c}$)
 in one thread with a receive $\lRecv{c}{v}$ of another.
 Similarly, \ruleLabel{P-Act-Close} makes two close actions on the same
 restricted channel match.
+\ed{explain why we keep close only over internal channels}
 
 We define \emph{reduction} for processes,
 written $\fProc{p} \redu \fProc{p'}$,
@@ -255,7 +256,7 @@ semantics.
     \begin{bussproof}[P-Act-Msg]
       \bussAs{\fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'}}
       \bussAs{\fFunc{f} \trans{\lRecv{c}{v}} \fFunc{f'}}
-      \bussB{\fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e}, \fFunc{f}})} \trans{\tau} \fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e'}, \fFunc{f'}})}}
+      \bussB{\fProc{(C, E \uplus \mset{\fFunc{e}, \fFunc{f}})} \trans{\tau} \fProc{(C, E \uplus \mset{\fFunc{e'}, \fFunc{f'}})}}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Act-Close]
