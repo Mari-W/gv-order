@@ -392,6 +392,14 @@ unchanged: in the mechanization, we insert appropriate unfolding
 functions that expose the top-level constructor in the respective clause
 of the logical relation.
 
+\mw{update text below, only drafted}
+
+Session types are compared up to \emph{session equivalence}
+$\fType{S \approx R}$, which is defined
+coinductively~\citneed{coinductive session equivalence}. Both sides are
+observed through unfolding, so that $\fType{\mu\alpha.S}$ and its
+unfolding are indistinguishable by construction. 
+
 The express equi-recursive handling of session types in the syntactic type
 system requires a conversion rule, which
 lets a term be retyped at any equivalent type:
@@ -402,89 +410,26 @@ lets a term be retyped at any equivalent type:
     \bussB{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T'}}
   \end{bussproof}
 \end{mathpar}
-\mw{claude: $\approx$ is new and wants its own figure before this rule.
-  Coinductive session equivalence $\fType{S \approx R}$ observes both
-  sides through unfolding, it relates $\fType{\sRecv{T}{S}}$ with
-  $\fType{\sRecv{U}{R}}$ whenever $\fType{T \approx U}$ and
-  $\fType{S \approx R}$, likewise for $\fType{\sSend{T}{S}}$, and it
-  relates $\fType{\sTerm}$ with itself. On types it is the congruence
-  through $\lFunc{}{}$, $\lPair{}{}$, $+$ and $\tBox{}$ that hands off
-  to session equivalence at a session type. The rule set is the one of
-  Thiemann's coinductive model, where selection and branching are
-  derived because \OurLang encodes choice as a sum payload.
-  Mechanized as \texttt{seq} and \texttt{teq} in \texttt{Coequal.v}
-  (tag after merge).}
+The rule fires at an arbitrary type and not only at a top-level session
+type.
 
-\mw{claude: \ruleLabel{E-Conv} stays a rule and it fires at an
-  arbitrary type, not only at a top-level session type. The old
-  version, retyping between session types with the same unfolding, is
-  the derived instance used in \cref{ex:pingpong}. Mechanized as
-  \texttt{typed\_conv\_teq}, with \texttt{typed\_conv} kept as the
-  derived lemma (tag after merge).}
+The logical relation is quotiented by $\approx$ throughout.
+\ruleLabel{V-Chan} lets a channel store any protocol equivalent to the
+one demanded, and a rule matching
+$\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ reads that
+entry through unfolding (\rocq{senv_hd}) rather than through its
+syntax. Conversion therefore holds semantically as well, and in both
+directions: if $\fType{T \approx T'}$, then the value relation and the
+term relation at $\fType{T}$ and at $\fType{T'}$ have the same members
+(\rocq{Vrel_teq_iff}, \rocq{Erel_teq_iff}), and semantic typing
+transports along $\approx$ (\rocq{sem_typed_teq}), which is the
+compositionality lemma for \ruleLabel{E-Conv}.
 
-\mw{claude: we should say once, up front, that the logical relation is
-  quotiented by $\approx$. Rule \ruleLabel{V-Chan} lets a channel store
-  any protocol equivalent to the one demanded, and matching
-  $\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ etc.\ goes
-  through unfolding rather than through syntax. The payoff is that
-  conversion holds semantically in both directions, $\fType{T \approx
-  T'}$ implies that the value and the term relation at $\fType{T}$ and
-  at $\fType{T'}$ have the same members, and semantic typing transports
-  along $\approx$. Mechanized as \texttt{Vrel\_teq\_iff},
-  \texttt{Erel\_teq\_iff} and \texttt{sem\_typed\_teq} (tag after
-  merge).}
-
-\mw{claude: we need to talk about duality here. The mechanization has a
-  \emph{dualized} session variable $\fType{\dual{\alpha}}$
-  (\texttt{SVarD}) alongside $\fType{\alpha}$, because taking
-  $\fType{\dual{\alpha}} = \fType{\alpha}$ is unsound under a binder ---
-  the grammar as printed above cannot express what \texttt{dual}
-  actually produces.}
-\mw{claude: once session types become recursive
-  (\cref{sec:extens-recurs-ii}), \ruleLabel{V-Chan} is read up to
-  session equivalence, so the channel may carry any protocol
-  equivalent to the one demanded.}
-
-
-Recursive types and recursive thunks combine into genuinely
-non-terminating, yet deadlock-free, sessions.
-
-\begin{example}[Recursive ping-pong \rocq{pingpong_deadlock_free}]
-\label{ex:pingpong}
-Consider the protocol
-$\fType{S} := \fType{\mu\alpha.\sSend{\tUnit}{\alpha}}$ of a client
-that sends a unit and starts over; its dual computes to
-$\fType{\dual{S}} = \fType{\mu\alpha.\sRecv{\tUnit}{\alpha}}$
-\rocq{Sloop_dual}, as the polarity flip cancels on a variable that
-occurs only in tail position. Two recursive thunks serve the two ends.
-\begin{align*}
-  \fFunc{\var{pinger}} &:=
-    \fFunc{\IExp{(\tIVX = \tAbs{c}{\tApp{(\tApp{\tForce}{\tIVX})}{(\tApp{\tSend}{\tPair{\tUnit}{c}})}})}}
-  &&\fType{{}: \tBox{(\lFunc{S}{\tUnit})}}
-  \\
-  \fFunc{\var{ponger}} &:=
-    \fFunc{\IExp{(\tIVY = \tAbs{c}{\tLet[\tLVB][c']{\tApp{\tRecv}{c}}{\tLet*{\tLVB}{\tApp{(\tApp{\tForce}{\tIVY})}{c'}}}})}}
-  &&\fType{{}: \tBox{(\lFunc{\dual{S}}{\tUnit})}}
-\end{align*}
-Unlike the factory of Example~\ref{ex:factory}, these thunks really use
-their self-binding: after every exchange each end forces itself again.
-The conversion rule \ruleLabel{E-Conv} enters exactly at the two
-communication operators, where $\fFunc{c} : \fType{\mu\alpha.\sSend{\tUnit}{\alpha}}$
-has to be read at its unfolding
-$\fType{\sSend{\tUnit}{\mu\alpha.\sSend{\tUnit}{\alpha}}}$, and dually
-for $\fFunc{c'}$ \rocq{typed_conv}.
-\mw{claude: this is the fold/unfold instance of \ruleLabel{E-Conv},
-  worth saying so once the general rule is in.}
-Connecting the two ends on a single
-channel yields the process
-$(\set{\fFunc{c}},
-\mset{\fFunc{\tApp{(\tApp{\tForce}{\var{pinger}})}{c}},
-  \fFunc{\tApp{(\tApp{\tForce}{\var{ponger}})}{c}}})$, which is typable
-\rocq{pingpong_typed} and hence deadlock free --- although it never
-terminates. Deadlock freedom asks that a process \emph{can} step, not
-that it stops, so the loss of normalization that recursion brings is
-harmless here.
-\end{example}
+Dualization, finally, needs one more session type former than the
+grammar above provides. Reading $\fType{\dual{\alpha}}$ as
+$\fType{\alpha}$ is unsound under a binder, so the mechanization
+carries a dualized session variable $\fType{\dual{\alpha}}$ next to $\fType{\alpha}$. It is never written in a
+source type and enters only through dualization.
 
 \subsection{The Link Operator}
 \label{sec:extens-link-oper}
