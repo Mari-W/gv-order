@@ -638,13 +638,15 @@ Proof.
   exists c, s. auto using seq_refl.
 Qed.
 
-(** E-Conv, judgment form. *)
+(** E-Conv, judgment form.
+
+    The general rule is [Convert.sem_typed_teq]: semantic typing
+    transports along ≈ at an arbitrary type. This is its session
+    instance, the shape the rule had before [teq] existed. *)
 Lemma sem_typed_conv Σ Δ e s s' :
   unfoldS s = unfoldS s' →
   sem_typed Σ Δ e (TSess s) → sem_typed Σ Δ e (TSess s').
-Proof.
-  intros Hu He n Σ' γ Hd Hg. eapply Erel_sess_conv; [done|]. by apply He.
-Qed.
+Proof. intros Hu. apply sem_typed_teq. by apply unfoldS_seq. Qed.
 
 (** E-Abs.  This is the one rule that consumes the full syntactic
     well-formedness of its body: the ⊸-clause of V demands that the
@@ -1150,5 +1152,6 @@ Proof.
   - eapply sem_typed_box; eauto using typed_allfv_up.
     etrans; [by eapply typed_fchans|]. by rewrite dom_empty_L.
   - by eapply sem_typed_wk.
-  - by eapply sem_typed_conv.
+  - (* E-Conv: exactly the compositionality lemma of Convert.v *)
+    by eapply sem_typed_teq.
 Qed.
