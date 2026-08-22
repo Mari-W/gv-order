@@ -393,14 +393,14 @@ functions that expose the top-level constructor in the respective clause
 of the logical relation.
 
 The express equi-recursive handling of session types in the syntactic type
-system requires a conversion rule, which
-lets a term at a session type be retyped at any type with the same
-unfolding:
+system requires defining type equivalence modulo unfolding of recursion and a conversion rule, which
+lets a term be retyped at any equivalent type (see \cref{sec:type-equivalence}
+for the standard definition of type equivalence):
 \begin{mathpar}
   \begin{bussproof}[E-Conv]
-    \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : S}}
-    \bussAs{\fType{S} \text{ and } \fType{S'} \text{ have the same unfolding}}
-    \bussB{\fType{\Sigma ; \Delta \vdash \fFunc{e} : S'}}
+    \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T}}
+    \bussAs{\fType{T \approx T'}}
+    \bussB{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T'}}
   \end{bussproof}
 \end{mathpar}
 \mw{claude: do we actually need \ruleLabel{E-Conv} as a rule? It is in
