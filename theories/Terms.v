@@ -6,7 +6,7 @@
     system is validated rule by rule. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Relation.
+From LRGV Require Export Relation Convert.
 
 (** ** Compositionality for terms (Theorem 3.11)
 
@@ -217,48 +217,9 @@ Lemma allfv_avail_up Δ T e :
   allfv (lenv_avail (Some T :: Δ)) e → allfv (upP (lenv_avail Δ)) e.
 Proof. apply allfv_mono. by intros [|x]. Qed.
 
-(** E-Conv at the value level: a channel inhabits every session type
-    with the same unfolding as its stored protocol. *)
-Lemma Vrel_sess_conv n Σ s s' v :
-  unfoldS s = unfoldS s' →
-  Vrel n Σ (TSess s) v → Vrel n Σ (TSess s') v.
-Proof.
-  rewrite !Vrel_sess_iff. intros Hu (c & s0 & -> & -> & Hu0).
-  exists c, s0. split_and!; [done|done|congruence].
-Qed.
-
-(** E-Conv: the term relation reads a session result type up to
-    unfolding — every clause inspects Σ through [unfoldS] and the type
-    only through its head, so conversion costs no steps. *)
-Lemma Erel_sess_conv n Σ s s' e :
-  unfoldS s = unfoldS s' →
-  Erel n Σ (TSess s) e → Erel n Σ (TSess s') e.
-Proof.
-  revert Σ s s' e. induction n as [n IHn] using lt_wf_ind;
-    intros Σ s s' e Hu HE.
-  destruct n as [|n']; [apply Erel_0|].
-  apply Erel_S_iff in HE as (Hval & Hstep).
-  apply Erel_S_iff. split.
-  { intros Hirr. eapply Vrel_sess_conv; eauto. }
-  intros α e' Hst. specialize (Hstep α e' Hst).
-  destruct α as [|[c w|c w|c|cd]|c w]; simpl in Hstep |- *.
-  - eapply IHn; [lia|done|done].
-  - destruct Hstep as (Σ1 & U & u & Hhd & Hc & H).
-    exists Σ1, U, u. split_and!; [done|done|].
-    intros j Σ2 Hj Hd Hcd HV.
-    eapply IHn; [lia|done|]. by apply H.
-  - destruct Hstep as (Σ1 & Σ2 & U & u & Hhd & Hd & Hc1 & Hc2 & HV & HE').
-    exists Σ1, Σ2, U, u. split_and!; try done.
-    eapply IHn; [lia|done|done].
-  - destruct Hstep as (Σ1 & Hhd & Hc & HE').
-    exists Σ1. split_and!; [done|done|]. eapply IHn; [lia|done|done].
-  - destruct Hstep as (c & d & Σ1 & sc & sd & -> & ? & -> & ? & ? & ? & HE').
-    eexists _, _, _, _, _. split_and!; [done..|].
-    eapply IHn; [lia|done|done].
-  - intros Hcd. specialize (Hstep Hcd) as (Σ1 & Σ2 & sf & Hsp & HV & HE').
-    exists Σ1, Σ2, sf. split_and!; [done|done|].
-    eapply IHn; [lia|done|done].
-Qed.
+(** E-Conv at the value and term levels — [Vrel_sess_conv] and
+    [Erel_sess_conv] — now live in Convert.v, as the session instances
+    of the general conversion lemmas [Vrel_teq] / [Erel_teq]. *)
 
 (** ** Canonical values *)
 
@@ -266,7 +227,7 @@ Lemma Vrel_unit n : Vrel n ∅ TUnit EUnit.
 Proof. by apply Vrel_unit_iff. Qed.
 
 Lemma Vrel_chan n c s : Vrel n {[c := s]} (TSess s) (Chan c).
-Proof. apply Vrel_sess_iff. exists c, s. auto. Qed.
+Proof. apply Vrel_sess_iff. exists c, s. auto using seq_refl. Qed.
 
 Lemma Vrel_pair n Σ1 Σ2 T U v1 v2 :
   Σ1 ##ₘ Σ2 → Vrel n Σ1 T v1 → Vrel n Σ2 U v2 →
@@ -418,9 +379,12 @@ Proof.
   { (* an application of a related function is never stuck *)
     intros Hirr. exfalso.
     apply Vrel_lolli_iff in HV1
-      as [(eb & -> & Hsup & HL)|(k & -> & -> & Hk)].
+      as [(eb & -> & Hsup & HL)|(k & T0 & -> & -> & Hk & Ht)].
     { eapply (Hirr LBeta). apply TStepHead. by apply HeadApp. }
-    inversion Hk; subst.
+    (* the constant is typed at its own domain, only ≈-related to T:
+       move the argument there before reading off its shape *)
+    inversion Hk; subst; destruct Ht as [Ht1 _];
+      apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     - eapply (Hirr (LFork (fresh (∅ : gset chan)) v2)).
       apply TStepHead. by apply HeadFork.
     - apply Vrel_sess_iff in HV2 as (c & s0 & -> & -> & _).
@@ -448,80 +412,90 @@ Proof.
   { exfalso. eauto using val_no_tstep. }
   { exfalso. eauto using val_no_tstep. }
   inversion Hhd; subst; simpl.
-  - (* HeadApp *)
+  - (* HeadApp: the λ disjunct, untouched by the ≈-quotient *)
     apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & Hsup & HL)|(k & Heq & _)]; simplify_eq.
+      as [(eb & Heq & Hsup & HL)|(k & T0 & Heq & _)]; simplify_eq.
     apply HL; [lia|senv_disj|]. eapply Vrel_down; [|done]. lia.
   - (* HeadFork *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     intros Hcdom.
     match type of HV2 with Vrel _ _ (TLolli (TSess ?s) TUnit) _ =>
       exists Σ2, ∅, s end.
     refine (conj _ (conj HV2 _)).
     { split; [senv_perm|apply map_disjoint_empty_r]. }
+    eapply Erel_teq; [exact Ht2|].
     apply Vrel_Erel. rewrite insert_empty. apply Vrel_chan.
   - (* HeadRecv *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
-    apply Vrel_sess_iff in HV2 as (c' & s0 & Heqc & Heqs & Hu0).
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
+    apply Vrel_sess_iff in HV2 as (c' & s0 & Heqc & Heqs & Hs0).
     simplify_eq.
-    match type of Hu0 with _ = unfoldS (SRcv ?t ?s) =>
-      exists ∅, t, s end.
+    (* the stored type is only ≈ the constant's, so read a head off it *)
+    destruct (seq_rcv_inv _ _ _ _ Hs0 eq_refl) as (Up & sp & Hu0 & Htp & Hsp).
+    exists ∅, Up, sp.
     refine (conj _ (conj _ _)).
     { eapply senv_hd_intro; [exact Hu0|senv_perm]. }
     { set_solver. }
     intros j Σn Hj _ Hcn HVw.
     rewrite (left_id ∅ (∪)).
     rewrite insert_as_union; [|done].
-    apply Vrel_Erel, Vrel_pair; [|done|apply Vrel_chan].
-    by apply map_disjoint_singleton_r, not_elem_of_dom.
+    eapply Erel_teq; [exact Ht2|].
+    apply Vrel_Erel, Vrel_pair.
+    + by apply map_disjoint_singleton_r, not_elem_of_dom.
+    + apply (Vrel_teq _ _ _ _ _ Htp), HVw.
+    + eapply Vrel_sess_seq; [exact Hsp|apply Vrel_chan].
   - (* HeadSend *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     apply Vrel_prod_iff in HV2
       as (w' & vc & Σa & Σb & Heqp & [-> Hdab] & HVw & HVc).
     simplify_eq.
-    apply Vrel_sess_iff in HVc as (c' & s0 & Heqc & -> & Hu0). simplify_eq.
+    apply Vrel_sess_iff in HVc as (c' & s0 & Heqc & -> & Hs0). simplify_eq.
     assert (Σa !! c' = None) as Hca.
     { by apply map_disjoint_singleton_r in Hdab. }
-    match type of Hu0 with _ = unfoldS (SSnd ?t ?s) =>
-      exists ∅, Σa, t, s end.
-    refine (conj _ (conj _ (conj _ (conj _ (conj HVw _))))).
+    destruct (seq_snd_inv _ _ _ _ Hs0 eq_refl) as (Up & sp & Hu0 & Htp & Hsp).
+    exists ∅, Σa, Up, sp.
+    refine (conj _ (conj _ (conj _ (conj _ (conj _ _))))).
     { eapply senv_hd_intro; [exact Hu0|senv_perm]. }
     { apply map_disjoint_empty_l. }
     { set_solver. }
     { by apply not_elem_of_dom. }
-    apply Vrel_Erel. rewrite insert_empty. apply Vrel_chan.
+    { apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Htp)), HVw. }
+    eapply Erel_teq; [exact Ht2|].
+    apply Vrel_Erel. rewrite insert_empty.
+    eapply Vrel_sess_seq; [exact Hsp|apply Vrel_chan].
   - (* HeadClos *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
-    apply Vrel_sess_iff in HV2 as (c' & s0 & Heqc & Heqs & Hu0).
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
+    apply Vrel_sess_iff in HV2 as (c' & s0 & Heqc & Heqs & Hs0).
     simplify_eq.
     exists ∅. refine (conj _ (conj _ _)).
-    { eapply senv_hd_intro; [exact Hu0|senv_perm]. }
+    { eapply senv_hd_intro; [|senv_perm].
+      eapply seq_end_inv; [exact Hs0|done]. }
     { set_solver. }
-    apply Vrel_Erel, Vrel_unit.
+    eapply Erel_teq; [exact Ht2|]. apply Vrel_Erel, Vrel_unit.
   - (* HeadForce *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     apply Vrel_box_iff in HV2 as (-> & eb' & Heqb & Hfce & HK).
     simplify_eq.
-    rewrite (left_id ∅ (∪)). apply HK. lia.
+    rewrite (left_id ∅ (∪)).
+    eapply Erel_teq; [exact Ht2|]. apply HK. lia.
   - (* HeadLink *)
-    apply Vrel_lolli_iff in HV1
-      as [(eb & Heq & _)|(k & Heq & -> & Hk)]; simplify_eq.
+    apply Vrel_konst_inv in HV1 as (A & B & Hk & Ht1 & Ht2 & ->).
     inversion Hk; subst.
+    apply (Vrel_teq _ _ _ _ _ (teq_sym _ _ Ht1)) in HV2.
     apply Vrel_prod_iff in HV2
       as (vc & vd & Σa & Σb & Heqp & [-> Hdab] & HVc & HVd).
     simplify_eq.
-    apply Vrel_sess_iff in HVc as (c' & sc0 & Heqc & -> & Huc). simplify_eq.
-    apply Vrel_sess_iff in HVd as (d' & sd0 & Heqd & -> & Hud). simplify_eq.
+    apply Vrel_sess_iff in HVc as (c' & sc0 & Heqc & -> & Hsc). simplify_eq.
+    apply Vrel_sess_iff in HVd as (d' & sd0 & Heqd & -> & Hsd). simplify_eq.
     assert (c' ≠ d') as Hcd'.
     { apply map_disjoint_dom in Hdab. set_solver. }
     exists c', d', ∅, sc0, sd0. split_and!.
@@ -530,8 +504,10 @@ Proof.
     { senv_perm. }
     { set_solver. }
     { set_solver. }
-    { rewrite Hud, <-!dual_unfoldS, Huc. done. }
-    apply Vrel_Erel, Vrel_unit.
+    { (* duality of the stored types, transported along ≈ *)
+      apply sdual_seq_dual. eapply seq_trans; [exact Hsd|].
+      by apply seq_sym, seq_dual. }
+    eapply Erel_teq; [exact Ht2|]. apply Vrel_Erel, Vrel_unit.
 Qed.
 
 (** Reducing a let-unit / let-pair redex. *)
@@ -639,7 +615,8 @@ Proof.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
   apply Vrel_Erel. unfold Vrel. rewrite level_at_eq.
-  destruct Hk; simpl; right; eexists; split_and!; eauto using konst_ty.
+  destruct Hk; simpl; right; eexists _, _; split_and!;
+    eauto using konst_ty, teq_refl.
 Qed.
 
 (** E-LVar *)
@@ -658,16 +635,18 @@ Proof.
   assert (Σ' = ∅) as -> by eauto using grounding_lenv_empty.
   rewrite (right_id ∅ (∪)). simpl.
   apply Vrel_Erel. unfold Vrel. rewrite level_at_eq. simpl.
-  exists c, s. auto.
+  exists c, s. auto using seq_refl.
 Qed.
 
-(** E-Conv, judgment form. *)
+(** E-Conv, judgment form.
+
+    The general rule is [Convert.sem_typed_teq]: semantic typing
+    transports along ≈ at an arbitrary type. This is its session
+    instance, the shape the rule had before [teq] existed. *)
 Lemma sem_typed_conv Σ Δ e s s' :
   unfoldS s = unfoldS s' →
   sem_typed Σ Δ e (TSess s) → sem_typed Σ Δ e (TSess s').
-Proof.
-  intros Hu He n Σ' γ Hd Hg. eapply Erel_sess_conv; [done|]. by apply He.
-Qed.
+Proof. intros Hu. apply sem_typed_teq. by apply unfoldS_seq. Qed.
 
 (** E-Abs.  This is the one rule that consumes the full syntactic
     well-formedness of its body: the ⊸-clause of V demands that the
@@ -1173,5 +1152,6 @@ Proof.
   - eapply sem_typed_box; eauto using typed_allfv_up.
     etrans; [by eapply typed_fchans|]. by rewrite dom_empty_L.
   - by eapply sem_typed_wk.
-  - by eapply sem_typed_conv.
+  - (* E-Conv: exactly the compositionality lemma of Convert.v *)
+    by eapply sem_typed_teq.
 Qed.

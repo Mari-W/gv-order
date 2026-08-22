@@ -1,4 +1,4 @@
-ter\section{Extensions}
+\section{Extensions}
 \label{sec:extensions}
 
 In this section, we discuss some extensions which are all incorporated
@@ -392,6 +392,14 @@ unchanged: in the mechanization, we insert appropriate unfolding
 functions that expose the top-level constructor in the respective clause
 of the logical relation.
 
+\mw{update text below, only drafted}
+
+Session types are compared up to \emph{session equivalence}
+$\fType{S \approx R}$, which is defined
+coinductively~\citneed{coinductive session equivalence}. Both sides are
+observed through unfolding, so that $\fType{\mu\alpha.S}$ and its
+unfolding are indistinguishable by construction. 
+
 The express equi-recursive handling of session types in the syntactic type
 system requires defining type equivalence modulo unfolding of recursion and a conversion rule, which
 lets a term be retyped at any equivalent type (see \cref{sec:type-equivalence}
@@ -403,63 +411,26 @@ for the standard definition of type equivalence):
     \bussB{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T'}}
   \end{bussproof}
 \end{mathpar}
-\mw{claude: do we actually need \ruleLabel{E-Conv} as a rule? It is in
-  the mechanization (\texttt{typed\_conv}), but if every clause already
-  inspects types up to unfolding it may be admissible --- worth
-  checking before we commit to advertising it.}
+The rule fires at an arbitrary type and not only at a top-level session
+type.
 
-\mw{claude: we should say once, up front, that session types are taken
-  \emph{up to unfolding} throughout --- the mechanization matches
-  $\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ etc.\ via
-  \texttt{senv\_hd}/\texttt{unfoldS} rather than syntactically, and the
-  same applies to the link clause of \cref{sec:extens-link-oper}, where
-  the two ends are required to be dual only up to unfolding
-  (\texttt{unfoldS sd = unfoldS (dual sc)}), not syntactically dual.}
+The logical relation is quotiented by $\approx$ throughout.
+\ruleLabel{V-Chan} lets a channel store any protocol equivalent to the
+one demanded, and a rule matching
+$\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ reads that
+entry through unfolding (\rocq{senv_hd}) rather than through its
+syntax. Conversion therefore holds semantically as well, and in both
+directions: if $\fType{T \approx T'}$, then the value relation and the
+term relation at $\fType{T}$ and at $\fType{T'}$ have the same members
+(\rocq{Vrel_teq_iff}, \rocq{Erel_teq_iff}), and semantic typing
+transports along $\approx$ (\rocq{sem_typed_teq}), which is the
+compositionality lemma for \ruleLabel{E-Conv}.
 
-\mw{claude: we need to talk about duality here. The mechanization has a
-  \emph{dualized} session variable $\fType{\dual{\alpha}}$
-  (\texttt{SVarD}) alongside $\fType{\alpha}$, because taking
-  $\fType{\dual{\alpha}} = \fType{\alpha}$ is unsound under a binder ---
-  the grammar as printed above cannot express what \texttt{dual}
-  actually produces.}
-
-
-Recursive types and recursive thunks combine into genuinely
-non-terminating, yet deadlock-free, sessions.
-
-\begin{example}[Recursive ping-pong \rocq{pingpong_deadlock_free}]
-\label{ex:pingpong}
-Consider the protocol
-$\fType{S} := \fType{\mu\alpha.\sSend{\tUnit}{\alpha}}$ of a client
-that sends a unit and starts over; its dual computes to
-$\fType{\dual{S}} = \fType{\mu\alpha.\sRecv{\tUnit}{\alpha}}$
-\rocq{Sloop_dual}, as the polarity flip cancels on a variable that
-occurs only in tail position. Two recursive thunks serve the two ends.
-\begin{align*}
-  \fFunc{\var{pinger}} &:=
-    \fFunc{\IExp{(\tIVX = \tAbs{c}{\tApp{(\tApp{\tForce}{\tIVX})}{(\tApp{\tSend}{\tPair{\tUnit}{c}})}})}}
-  &&\fType{{}: \tBox{(\lFunc{S}{\tUnit})}}
-  \\
-  \fFunc{\var{ponger}} &:=
-    \fFunc{\IExp{(\tIVY = \tAbs{c}{\tLet[\tLVB][c']{\tApp{\tRecv}{c}}{\tLet*{\tLVB}{\tApp{(\tApp{\tForce}{\tIVY})}{c'}}}})}}
-  &&\fType{{}: \tBox{(\lFunc{\dual{S}}{\tUnit})}}
-\end{align*}
-Unlike the factory of Example~\ref{ex:factory}, these thunks really use
-their self-binding: after every exchange each end forces itself again.
-The conversion rule \ruleLabel{E-Conv} enters exactly at the two
-communication operators, where $\fFunc{c} : \fType{\mu\alpha.\sSend{\tUnit}{\alpha}}$
-has to be read at its unfolding
-$\fType{\sSend{\tUnit}{\mu\alpha.\sSend{\tUnit}{\alpha}}}$, and dually
-for $\fFunc{c'}$ \rocq{typed_conv}. Connecting the two ends on a single
-channel yields the process
-$(\set{\fFunc{c}},
-\mset{\fFunc{\tApp{(\tApp{\tForce}{\var{pinger}})}{c}},
-  \fFunc{\tApp{(\tApp{\tForce}{\var{ponger}})}{c}}})$, which is typable
-\rocq{pingpong_typed} and hence deadlock free --- although it never
-terminates. Deadlock freedom asks that a process \emph{can} step, not
-that it stops, so the loss of normalization that recursion brings is
-harmless here.
-\end{example}
+Dualization, finally, needs one more session type former than the
+grammar above provides. Reading $\fType{\dual{\alpha}}$ as
+$\fType{\alpha}$ is unsound under a binder, so the mechanization
+carries a dualized session variable $\fType{\dual{\alpha}}$ next to $\fType{\alpha}$. It is never written in a
+source type and enters only through dualization.
 
 \subsection{The Link Operator}
 \label{sec:extens-link-oper}
@@ -553,6 +524,15 @@ label, the configuration as a whole takes a labelled reduction step
 The new obligation rules formalize the postcondition
 of the forwarder: the two connected channel ends vanish from the
 context as a consequence of the forwarding reduction.
+\mw{claude: with recursive types the two ends are related by
+  coinductive duality rather than by the duality function, so
+  \ruleLabel{O-Link} and \ruleLabel{Q-Link} read
+  $\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:R}$ under $\fType{S \perp
+  R}$. Duality has the shape of $\approx$ with $?$ swapped against $!$
+  and payloads still equivalent, and it agrees with the function,
+  $\fType{S \perp R}$ holds exactly when $\fType{S \approx \dual{R}}$.
+  Mechanized as \texttt{sdual} in \texttt{Coequal.v} (tag after
+  merge).}
 Both ends appear in the interface $\fType{\Sigma}$ in
 \TirName{O-Link} and \TirName{Q-Link} because a forwarding label
 reaches the interface only when neither end is restricted

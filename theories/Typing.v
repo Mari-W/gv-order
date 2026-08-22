@@ -9,7 +9,7 @@
     every available binding to exactly one side. *)
 
 From stdpp Require Import base strings gmap gmultiset.
-From LRGV Require Export Semantics Types.
+From LRGV Require Export Semantics Types Coequal.
 
 Definition lenv := list (option ty).
 
@@ -182,12 +182,29 @@ Inductive typed : senv → lenv → expr → ty → Prop :=
       typed Σ Δ' e T →
       lenv_wk Δ' Δ →
       typed Σ Δ e T
-  | typed_conv Σ Δ e s s' :                            (* E-Conv: µα.S = S[µα.S/α] *)
-      (* equi-recursive conversion at session type, up to unfolding;
-         for the head-normal cases the premise is [reflexivity] *)
-      unfoldS s = unfoldS s' →
-      typed Σ Δ e (TSess s) →
-      typed Σ Δ e (TSess s').
+  | typed_conv_teq Σ Δ e T T' :                        (* E-Conv *)
+      (* Conversion along coinductive session equivalence, at an
+         ARBITRARY type. The previous rule fired only at a top-level
+         [TSess] and only between types with syntactically identical
+         head normal forms — top-level fold/unfold, with no congruence
+         into payloads or continuations. It is the instance
+         [typed_conv] below. *)
+      teq T T' →
+      typed Σ Δ e T →
+      typed Σ Δ e T'.
+
+(** ** Derived rule E-Conv at a session type
+
+    The conversion rule as it read before [teq] existed: fold/unfold
+    at a top-level session type. Equal head normal forms agree at
+    every observation depth ([unfoldS_seq]), so this is an instance of
+    [typed_conv_teq]. Kept under its former name and signature so that
+    its users — and the examples — need not change. *)
+Lemma typed_conv Σ Δ e s s' :
+  unfoldS s = unfoldS s' →
+  typed Σ Δ e (TSess s) →
+  typed Σ Δ e (TSess s').
+Proof. intros Hu. apply typed_conv_teq. by apply unfoldS_seq. Qed.
 
 (** All-None environments, for typing a konst under an arbitrary Δ. *)
 Definition lenv_nones (Δ : lenv) : lenv := (λ _, None) <$> Δ.
@@ -407,7 +424,7 @@ Proof.
     eapply typed_wk; [|by apply lenv_wk_app].
     rewrite <-Hl. by apply (IHHt Ξ' Δs' q1 q2 q Hcq).
   - (* E-Conv *)
-    eapply typed_conv; [done|]. by apply (IHHt Ξ Δr p1 p2 p Hc).
+    eapply typed_conv_teq; [done|]. by apply (IHHt Ξ Δr p1 p2 p Hc).
 Qed.
 
 (** Derived rule E-Contract. *)
@@ -558,7 +575,7 @@ Proof.
     eapply typed_wk; [|apply lenv_wk_app; [exact Hw1|by constructor]].
     rewrite <-Hl. by apply (IHHt Ξ' Δs).
   - (* E-Conv *)
-    eapply typed_conv; [done|]. by apply (IHHt Ξ Δr).
+    eapply typed_conv_teq; [done|]. by apply (IHHt Ξ Δr).
 Qed.
 
 (** Derived rule E-Weaken, at an arbitrary position. *)

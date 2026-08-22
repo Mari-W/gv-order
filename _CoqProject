@@ -2,11 +2,13 @@
 -arg -w -arg -notation-overridden
 theories/Syntax.v
 theories/Types.v
+theories/Coequal.v
 theories/Semantics.v
 theories/Safety.v
 theories/Harmony.v
 theories/Typing.v
 theories/Relation.v
+theories/Convert.v
 theories/Terms.v
 theories/Renaming.v
 theories/Junk.v
