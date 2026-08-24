@@ -10,10 +10,10 @@ way.
 The development is built on top of the \texttt{std++} library and is
 free of axioms.
 
-We used generative AI (Claude Code, Fabel 5 and Opus 4.8/5) to produce the proofs. We double-checked all definitions to make sure they match their hand written counter parts.
+We used generative AI (Claude Code, Fable 5 orchestrating Opus 5) to produce the proofs. We double-checked all definitions to make sure they match their hand written counter parts.
 
-The artifact comprises roughly $17{,}000$ lines (non-blank, non-comment)
-of Rocq across 28 files, containing about $300$ definitions and $790$
+The artifact comprises roughly $17{,}300$ lines (non-blank, non-comment)
+of Rocq across 30 files, containing about $300$ definitions and $850$
 lemmas and theorems.
 \Cref{tab:mechanization} gives the breakdown by component.
 \mw{remove table if we need space}
@@ -24,16 +24,16 @@ lemmas and theorems.
     \toprule
     Component & LOC \\
     \midrule
-    Syntax, types, syntactic typing, substitution boilerplate (\cref{fig:syntax,fig:typeSys})   & 1,558 \\
+    Syntax, types, syntactic typing, substitution boilerplate (\cref{fig:syntax,fig:typeSys})   & 1,829 \\
     Labelled semantics and harmony (\cref{fig:term-semantics,fig:proc-semantics}) & 618 \\
-    The logical relation (\cref{fig:logrel-rules-term,fig:logrel-rules-proc})     & 541 \\
+    The logical relation (\cref{fig:logrel-rules-term,fig:logrel-rules-proc})     & 642 \\
     Safety and adequacy                                               & 442 \\
-    Compositionality for terms                                        & 1,187 \\
+    Compositionality for terms                                        & 1,117 \\
     Compositionality for processes                                    & 3,003 \\
-    Other                           & 2,621 \\
+    Other                           & 2,643 \\
     Examples                                                          & 7,025 \\
     \midrule
-    Total                                                             & $\sim$17,000 \\
+    Total                                                             & $\sim$17,300 \\
     \bottomrule
   \end{tabular}
 \end{table}

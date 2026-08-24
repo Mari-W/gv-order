@@ -235,7 +235,7 @@ ends, whose duals the environment may serve from a single thread, can
 end up in the crossed dependency of $\fProc{\var{blocked}}$
 (\cref{ex:deadlock}), even though each of the two connections is
 unobjectionable on its own. One end per piece forbids such a cycle,
-and it has to: without the semantic rule for \ruleLabel{P-Connect} (\cref{lem:comp:connect}) would not hold, as it would compose two
+and it has to, because else the semantic rule for \ruleLabel{P-Connect} (\cref{lem:comp:connect}) would not hold as stated, because we would be able to compose two
 pieces that each lie in the relation into a process that deadlocks.
 
 \begin{figure}[tp]
