@@ -429,6 +429,17 @@ compositionality lemma for \ruleLabel{E-Conv}.
 % $\fType{\alpha}$. It is never written in a 
 % source type and enters only through dualization.
 
+
+For readability, we write $\fType{\dual{S}}$ for the dual type of
+$\fType{S}$ in \cref{fig:link-operator}. However, with recursive types the two
+ends are related by coinductive duality rather than by the duality function, so
+\ruleLabel{O-Link} and \ruleLabel{Q-Link} use
+$\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:R}$ with
+$\fType{S \perp R}$. Duality has the same shape as $\approx$ with $?$ swapped
+against $!$; payloads are still equivalent. It agrees with the function, because
+$\fType{S \perp R}$ holds exactly when $\fType{S \approx \dual{R}}$.
+
+
 \subsection{The Link Operator}
 \label{sec:extens-link-oper}
 
@@ -547,17 +558,6 @@ On a restricted channel the substitution $\tSub{\cdot}{\fFunc{c}}{\fFunc{c}}$
 is the identity, so \ruleLabel{P-Act-Link} degenerates to releasing the
 name --- which is what a self-forwarding means: the thread held both
 ends, so the session ``evaporates''.
-
-For readability, we write $\fType{\dual{S}}$ for the dual type of
-$\fType{S}$ in \cref{fig:link-operator}. However, with recursive types the two
-ends are related by coinductive duality rather than by the duality function, so
-\ruleLabel{O-Link} and \ruleLabel{Q-Link} use
-$\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:R}$ with
-$\fType{S \perp R}$. Duality has the same shape as $\approx$ with $?$ swapped
-against $!$; payloads are still equivalent. It agrees with the function, because
-$\fType{S \perp R}$ holds exactly when $\fType{S \approx \dual{R}}$.
-Mechanized as \texttt{sdual} in \texttt{Coequal.v} (tag after
-  merge).
 
 \subsection{Example: A Cyclic Scheduler}
 \label{sec:extens-scheduler}
