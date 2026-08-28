@@ -201,6 +201,102 @@ communicates first with $\fFunc{e_1}$.
     \end{align*}
   \end{small}
 \end{itemize}
+\section{Duality of Recursive Session Types}
+\label{sec:app-duality}
+
+\begin{figure}[tp]
+  \textbf{Session types} $\fType{S}$, extending \cref{sec:extens-recurs-ii}
+  \begin{align*}
+    \fType{S} &::= \fType{\sRecv{T}{S}} \sepr \fType{\sSend{T}{S}} \sepr
+                   \fType{\sTerm} \sepr \fType{\mu\alpha.S} \sepr
+                   \fType{\alpha} \sepr \fType{\dual{\alpha}}
+    & \text{($\fType{\dual{\alpha}}$ never occurs in a source type)}
+  \end{align*}
+  \textbf{Duality} $\fType{\dual{S}}$
+  \begin{align*}
+    \fType{\dual{\sRecv{T}{S}}} &= \fType{\sSend{T}{\dual{S}}}
+    &
+    \fType{\dual{\sSend{T}{S}}} &= \fType{\sRecv{T}{\dual{S}}}
+    &
+    \fType{\dual{\sTerm}} &= \fType{\sTerm}
+    \\
+    \fType{\dual{\mu\alpha.S}} &= \fType{\mu\alpha.\,\sflipop_\alpha(\dual{S})}
+    \span\span\span
+  \end{align*}
+  On a variable, duality exchanges $\fType{\alpha}$ with
+  $\fType{\dual{\alpha}}$, and $\sflipop_\alpha$ does the same for the
+  one variable $\fType{\alpha}$, leaving every other variable alone.
+
+  \textbf{Relational duality} $\fType{S \isdual R}$, coinductively;
+  both sides are read through $\unf$
+  \begin{mathpar}
+    \begin{bussproof}[D-Recv]
+      \bussAs{\fType{T \approx U}}
+      \bussAs{\fType{S \isdual R}}
+      \bussB{\fType{\sRecv{T}{S}} \isdual \fType{\sSend{U}{R}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[D-Send]
+      \bussAs{\fType{T \approx U}}
+      \bussAs{\fType{S \isdual R}}
+      \bussB{\fType{\sSend{T}{S}} \isdual \fType{\sRecv{U}{R}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[D-Close]
+      \bussAx{\fType{\sTerm} \isdual \fType{\sTerm}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[D-Var]
+      \bussAx{\fType{\alpha} \isdual \fType{\dual{\alpha}}}
+    \end{bussproof}
+  \end{mathpar}
+  \ie $\fType{S \isdual R}$ holds if $\unf(\fType{S})$ and
+  $\unf(\fType{R})$ match one of the four conclusions, up to the
+  symmetry of \ruleLabel{D-Var}.
+
+  \textbf{Facts}
+  \begin{align*}
+    \fType{\dual{\dual{S}}} &= \fType{S}
+    &
+    \dual{\unf(\fType{S})} &= \unf(\fType{\dual{S}})
+    &
+    \fType{S \isdual R} &\iff \fType{S \approx \dual{R}}
+  \end{align*}
+  \caption{Duality of recursive session types
+    \quad \rocq{dual}}
+  \Description{The grammar of recursive session types with polarized
+    variables, the duality function including its case for the
+    recursive binder, the four rules of coinductive relational
+    duality, and the three facts relating the two presentations.}
+  \label{fig:duality}
+\end{figure}
+
+\mw{claude: \cref{fig:duality} collects what \cref{sec:extens-recurs-ii}
+  only alludes to. Duality is a function on types, and on a recursive
+  type it cannot simply descend into the body: under
+  $\fType{\mu\alpha.S}$ the binder comes to stand for the dual
+  protocol, so occurrences of $\fType{\alpha}$ that were meant to
+  denote the original one must change polarity. This is why the
+  grammar carries a dualized variable $\fType{\dual{\alpha}}$
+  (\rocq{SVarD}) and why the $\mu$ case applies
+  $\sflipop_\alpha$ (\rocq{sflip_ty}) to the dualized body: tail
+  occurrences, which continue as the session itself, come back as
+  $\fType{\alpha}$, while occurrences inside a payload keep the
+  polarity they were given. Taking $\fType{\dual{\alpha}} =
+  \fType{\alpha}$ instead is unsound, and the type of a channel end
+  would no longer be the dual of the type of the other end.
+  %
+  Duality also has a relational reading $\fType{S \isdual R}$, which
+  is the presentation the compositionality proofs want, since it never
+  has to compute a dual. The two agree: $\fType{S \isdual R}$ holds
+  exactly when $\fType{S \approx \dual{R}}$
+  (\rocq{sdual_seq_dual}), so the figure's last line is what lets a
+  proof move between them. The second fact, that dualization commutes
+  with unfolding (\rocq{dual_unfoldS}), is what makes this work in the
+  presence of $\mu$: the two ends of a session unfold in lockstep, so
+  a rule that inspects the head of one end may inspect the head of the
+  other.}
+
 \section{A Reduction Semantics, and Harmony}
 \label{sec:app-harmony}
 \mw{TODO: this is still completely gen ai}
