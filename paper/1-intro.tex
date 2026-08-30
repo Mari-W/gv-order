@@ -75,17 +75,17 @@ the semantic judgment can be proven to hold by any means necessary,
 by reasoning directly at the level of the possible behaviors of the component.
 This approach enables the safe composition of typable components,
 with components which respect the interface specified by the types,
-but that the type system would reject.
+even if the type system would reject them.
 
-Consider, for example, a (typable) process~$\fProc{p}$ expecting to receive
+Consider, for example, a syntactically typable process~$\fProc{p}$ expecting to receive
 a choice between~$\fType{A}$ and~$\fType{B}$
 on some channel~$\fType{\fFunc{c} : A \echoice B}$;
 we might want to compose it with a component~$\fProc{elect}$
 that makes the choice by internally running a leader-election protocol
 and letting the leader pronounce their choice on~$\fFunc{c}$.
-Such election protocol might require violating the strict invariants
+Such an election protocol might require violating the strict invariants
 imposed by the syntactic type system, like acyclicity of topology or absence of races; yet, if this behavior is handled correctly internally,
-it should be safe to compose in on $\fFunc{c}$ with a safe context.
+it should be safe to compose it on $\fFunc{c}$ with a safe context.
 If a logical relation encoding the safe behavior expected on $\fFunc{c}$
 was available, one could prove
 $\fType{\fFunc{c}:A \echoice B \types \fProc{p} : T}$ syntactically,
@@ -100,10 +100,14 @@ where they are used to investigate strong normalization, confluence, and behavio
 \citet{conf/esop/RochaC23} prove strong termination and correct use of
 shared state using logical relations for
 an extended calculus with session types and shared references.
-In all these works~\cite{DBLP:conf/esop/PerezCPT12,DBLP:journals/iandc/PerezCPT14,conf/esop/RochaC23}, logical relations are formulated as means to prove further properties \emph{on top of} subject reduction and deadlock freedom,
+In all these
+works~\cite{DBLP:conf/esop/PerezCPT12,DBLP:journals/iandc/PerezCPT14,conf/esop/RochaC23},
+logical relations are formulated as means to prove further properties \emph{on
+  top of} subject reduction and deadlock freedom (progress), 
 which are proven syntactically.
-As a result, the logical relations are not strong enough to justify the type system's soundness (and deadlock-freedom),
-and only apply to typed processes,
+As a result, the logical relations are not strong enough to justify the type
+system's soundness (and deadlock-freedom) from first principles,
+rather they only apply to typed processes,
 making it impossible to use them as a semantic typing judgment.
 
 A series of works~\cite{DBLP:journals/lmcs/HinrichsenBK22,DBLP:conf/cpp/HinrichsenLKB21,DBLP:journals/pacmpl/HinrichsenBK20}
@@ -115,12 +119,11 @@ for a language mixing advanced features (\eg higher order, heap) and
 message passing.
 The approach is genuinely semantic, allowing the safe composition
 of untypable-but-safe components.
-For our purposes, the main limitation of the Actris approach is
-that it is only able to prove safety of programs, not deadlock freedom.
+For our purposes, the Actris approach is too limited because it is only able to
+prove safety of programs, not deadlock freedom.
 The work that comes closest to our goals is LinearActris~\cite{JacobsHK24},
 which uses a linear instantiation of Iris to prove deadlock freedom
-for a language using a fragment of Actris' protocols
-(\ie without impredicative invariants).
+for a language using a fragment of Actris' protocols without impredicative invariants.
 The approach is semantic, but relies on imposing rather strict
 constraints on the communication topology as a global invariant
 of every program, using connectivity graphs~%
@@ -132,7 +135,7 @@ but violates these topological invariants.
 
 \paragraph{Contributions}
 In this paper we consider a variation of GV (dubbed~\OurLang)
-and propose a new logical relation which is:
+and propose a new logical relation for it which is:
 \begin{enumerate}
   \item \textbf{Compositional:}
         it validates all the rules of a standard Curry-Howard-based
@@ -147,7 +150,7 @@ and propose a new logical relation which is:
 \end{enumerate}
 
 \ed{We can add refs to relevant sections in the para below once the structure is settled}
-We articulate our main technical ideas on
+We articulate our main technical ideas in
 a concurrent \lcalc\ enriched with
 core session typed communication primitives:
 we define a semantic judgment $\fType{\Sigma \proves \fProc{p} : T}$
@@ -156,8 +159,9 @@ all the rules of a standard GV-like type system.
 We further prove that the semantic judgment implies
 safety and deadlock-freedom of closed processes.
 
-What these results show, is that while previous work correctly identified
+While previous work correctly identified
 topological invariants imposed by Curry-Howard-based syntactic type systems,
+our results show that
 they are not \emph{necessary} to establish correctness of typing,
 and a much weaker invariant is in fact sufficient.
 \ed{too bold? Explains a wider lesson\ldots}
