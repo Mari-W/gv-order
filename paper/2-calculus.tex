@@ -13,17 +13,17 @@ Variables and channels are ranged over by $\fFunc{\tLVA},
 \OurLang\ includes constants for the concurrency primitives:
 $\fFunc{\tApp{\tFork}{(\tAbs{\tLVA}{e})}}$
   creates a new channel~$\fFunc{c}$ and spawns a thread
-  running~$\fFunc{e}$ with~$\tLVA$ bound to~$\fFunc{c}$, and returns~$\fFunc{c}$;
+  running~$\fFunc{e}$ with~$\fFunc{\tLVA}$ bound to~$\fFunc{c}$, and returns~$\fFunc{c}$;
 $\fFunc{\tApp{\tRecv}{c}}$
   receives a message over~$\fFunc{c}$, and
   returns the pair $ \fFunc{\tPair{v}{c'}} $ of the message $\fFunc{v}$
   and the continuation channel~$\fFunc{c'}$;
 $\fFunc{\tApp{\tSend}{\tPair{v}{c}}}$
-  sends a value $v$ over the channel~$\fFunc{c}$,
+  sends a value $\fFunc{v}$ over the channel~$\fFunc{c}$,
   and returns the continuation channel;
 $\fFunc{\tApp{\tClos}{c}}$
   closes channel~$\fFunc{c}$.
-Values consist of the unit~$\fFunc{\tUnit}$, constants, abstractions and pairs.
+Values consist of the unit~$\fFunc{\tUnit}$, constants, abstractions, and pairs.
 Terms $\fFunc{e}$ are standard;
 in examples, we use the standard abbreviation
 $ \fFunc{\tLetS{a}{e_1}{e_2}} $
@@ -138,8 +138,8 @@ effects, and then lift it to an LTS semantics on processes.
 The semantics of terms is shown in \cref{fig:term-semantics},
 which defines a labelled relation
 $\fFunc{e} \trans{\lambda} \fFunc{e}$.
-Binding and substitutions works as standard:
-we let $\flv (\fFunc{e})$ denote the free variables of a term
+Bindings and substitutions work as standard:
+we let $\fv (\fFunc{e})$ denote the free variables of a term
 and $\fFunc{\tSub{e}{v}{\tLVA}}$ the capture-avoiding
 substitution of variable $\fFunc{\tLVA}$ by (closed) $\fFunc{v}$ in $\fFunc{e}$.
 All channels in a term are considered free; terms can only bind variables,
@@ -163,7 +163,7 @@ recording the new channel~$\fFunc{c}$ and
 the code to run in the forked thread~$\fFunc{v}$.
 The rule~\ruleLabel{T-Act-Ctx} uses standard call-by-value evaluation contexts.
 
-We define GV-style term \emph{reduction} $\fFunc{e} \redu \fFunc{e'}$ as
+We define GV-style \emph{term reduction} $\fFunc{e} \redu \fFunc{e'}$ as
 the pure steps $\fFunc{e} \trans{\beta} \fFunc{e'}$
 and write $\trans{}[*]$ for its transitive, reflexive closure.
 
@@ -180,8 +180,8 @@ in \cref{sec:logicalRelation}.
 Second, we describe processes using a flat ``thread pool'' representation,
 as opposed to \picalc\ terms using restriction and parallel.
 More specifically, a process $p$ consists of a pair $(C,E)$ where
-$C$ is a set of (restricted) channels
-and~$E$ is a (finite) multiset of closed terms
+$C$ is a finite set of (restricted) channels
+and~$E$ is a finite multiset of closed terms
 running in parallel.
 We write $S_1 \disjoint S_2$ and $S_1 \cupdot S_2$ to denote
 disjointness and disjoint union of sets $S_1$ and $S_2$, respectively,
@@ -190,8 +190,8 @@ and $E_1 \uplus E_2$ for multiset union.
 \Cref{fig:proc-semantics} defines the labelled transition relation
 $\fProc{(C,E)} \trans{\pi} \fProc{(C,E)}$ between processes.
 A process $(C,E)$ might represent the full network, or some sub-network of
-the global state, \eg when terms in~$E$ use channels that do not appear in~$C$,
-and are thus used to communicate with the environment.
+the global state. In the latter case, terms in~$E$ may use channels that do not
+appear in~$C$ to communicate with the environment. 
 The \ruleLabel{P-Act-Session} rule lifts communication effects~$\sigma$
 that pertain to channels linking to the environment,
 to a transition of the process labelled with~$\sigma$.
@@ -200,7 +200,7 @@ an communication effect~$\sigma$ by $\sent(\sigma)$:
   $\sent(\lRecv{c}{v}) = \sent(\lTerm{c}) = \emptyset$,
   $\sent(\lSend{c}{v}) = \fchans(\fFunc{v})$.
 Rule \ruleLabel{P-Act-Beta} lets a thread take an internal $\tau$~step
-to execute $\beta$~reductions of the term it is running.
+to execute a $\beta$~reduction of the term it is running.
 Rule \ruleLabel{P-Act-Fork} interprets the fork labels~$ \lFork{c}{v} $
 by adding a fresh name $\fFunc{c}$ to~$C$ and adding a thread
 running~$\fFunc{v}$ applied to~$\fFunc{c}$.
@@ -211,7 +211,7 @@ Similarly, \ruleLabel{P-Act-Close} makes two close actions on the same
 restricted channel match.
 \ed{explain why we keep close only over internal channels}
 
-We define \emph{reduction} for processes,
+We define \emph{process reduction},
 written $\fProc{p} \redu \fProc{p'}$,
 as $\fProc{p} \trans{\tau} \fProc{p'}$.
 We write $\trans{}[*]$ for its transitive, reflexive closure.
@@ -272,7 +272,7 @@ semantics.
 
 \begin{example}[Forked exchange \rocq{sync_reduces}]
 \label{ex:sync}
-  As a first example, consider the following sequence of reductions:
+  As a first example, consider this reduction sequence:
   \begin{align*}
     \fProc{\var{sync}} := {}
     & (\set{},\mset{ \fFunc{
@@ -334,7 +334,7 @@ semantics.
 \end{example}
 
 The $\fFunc{\tFork}$ primitive is modelled after the
-Curry-Howard correspondence with the Cut rule of Linear Logic.
+Curry-Howard correspondence implementing the Cut rule of Linear Logic.
 By design, in typed GV processes the communication topology is constrained:
 it is acyclic,
 every pair of processes can share at most one channel,
@@ -390,6 +390,7 @@ will consider untyped processes and accept only well-behaved ones
 We explain the significance of the \ruleLabel{P-Act-Session} rule with the following lemma.
 It considers the case that two disjoint processes communicate over an external channel $c$.
 We can internalize this communication by putting the processes together and close them over $c$.
+\pt{Do we have an analogous lemma for close transitions?}
 \begin{lemma}[Internalizing communication \rocq{internalize_comm}]
 \label{lem:internalize}
   Suppose that $\fProc{(C_1, E_1)} \trans{\lSend{c}{v}} \fProc{(C_1', E_1')}$ and $\fProc{(C_2, E_2)} \trans{\lRecv{c}{v}} \fProc{(C_2', E_2')}$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
@@ -430,7 +431,8 @@ successfully.
 As forked threads are never joined, we expect them to reduce to unit;
 we however allow the initial thread to evaluate to some meaningful value,
 which, by convention, is considered the value computed by the whole program.%
-\footnote{Although this design decision is somewhat arbitrary, the rest of the development does \emph{not} fundamentally depend on it.}
+\footnote{This design decision is from \citet{conf/esop/LindleyM15}. The
+  rest of the development does \emph{not} fundamentally depend on it.} 
 
 \begin{definition}[Terminated process \rocq{terminated}]
 \label{def:terminated}
@@ -472,8 +474,7 @@ which, by convention, is considered the value computed by the whole program.%
   The initial process $\fProc{p}$ of Example~\ref{ex:sync} is
   safe and deadlock free:
   the displayed reduction sequence is the only one,
-  and every reached process can take a further reduction until we reach
-  the last process which is terminated.
+  and every reachable process can either take a further reduction or it is terminated.
 \end{example}
 
 \begin{example}[Deadlocked process \rocq{blocked_not_deadlock_free}]
@@ -508,8 +509,8 @@ While deadlock freedom is our ultimate correctness criterion for closed
 processes, it is unclear, a priori, what criterion one should apply
 to open processes so that they can be composed safely, in particular
 without imposing restrictive topology constraints.
-The following example shows an open process which does not run into deadlock,
-but does not follow the usual discipline on channels.
+The next example shows an open process which does not run into deadlock,
+albeit it does not follow the usual discipline on channels.
 
 \begin{example}[Load balancer \rocq{lb}]
 \label{ex:load-balancer}
@@ -549,11 +550,11 @@ but does not follow the usual discipline on channels.
     \end{align*}
   \end{minipage}
   \end{center}
-  In four internal reductions
+  Four internal reductions
   (a fork and a $\beta$~step for each worker)
-  the process
+  reduce the process
   $p_0=(\emptyset,\mset{\fFunc{\var{lb}}})$
-  reduces to
+  to
   \[
     p_1 =
     (\set{\fFunc{w_1},\fFunc{w_2}}, \mset{
@@ -599,11 +600,11 @@ but does not follow the usual discipline on channels.
 % Another way of describing the significance of compositionality is that it provides a \emph{syntactic} angle towards safety, namely that of \emph{syntactic type checking}.
 % Indeed, from \cref{lem:comp:abs,lem:comp:app,lem:comp:pair,lem:comp:letUnit,lem:comp:let,lem:comp:term,lem:comp:independent,lem:comp:connect} we are able to extract a syntactic session-typing system that guarantees safety and deadlock freedom.
 
-In this section we present a type system for \OurLang,
+This section presents a type system for \OurLang,
 which closely resembles existing type systems for GV
 based on the Curry-Howard correspondence.
-Our goal is to then show how its rules can be justified by using
-a more liberal logical relation.
+Our goal is to demonstrate its soundness by justifying its rules with
+a more liberal logical relation in \cref{sec:logicalRelation}.
 
 \begin{figure}[tp]
   \textbf{Types $\fType{T}$, session types $\fType{S}$, session environments $\fType{\Sigma}$} \hfill \rocq{ty}
@@ -751,16 +752,16 @@ $\fType{T}$.
 
 The type judgment for processes takes the form
 $\fType{\Sigma \vdash \fProc{(C, E)} : T}$.
-Since every term in~$E$ is expected to be closed, the judgment
+As every term in~$E$ is expected to be closed, the judgment
 is only parameterized by a session environment $\fType{\Sigma}$.
-The type~$T$ is the type of the value computed by the ``main'' thread of~$E$.
-As standard,
-we implicitly assume that $\fType{\Sigma}$ and $\fProc{C}$
-do not share channels, for readability.
+The type~$\fType{T}$ is the type of the value computed by the ``main'' thread of~$E$.
+We implicitly assume that $\fType{\Sigma}$ and $\fProc{C}$
+do not share channels, as the $C$ indicates the channels restricted to $E$.
 
 The \ruleLabel{P-Term} rule types a single thread by checking that the declared
 type is in fact the type of the expression it is running, and that such expression can be typed in the empty variable environment (\ie it is closed).
-Additionally, we only allow \emph{primitive} types to be return types:
+Additionally, we ensure a thread cannot avoid closing its channels
+by just returning them: All return types must be \emph{primitive types}:
 %
 \begin{mathpar}
   \begin{bussproof}
@@ -773,9 +774,6 @@ Additionally, we only allow \emph{primitive} types to be return types:
     \bussB{\primitive \fType{\lPair{U}{V}}}
   \end{bussproof}
 \end{mathpar}
-%
-This condition ensures a thread cannot avoid eventually closing all its channels
-by just returning them.
 
 Rule \ruleLabel{P-Connect} composes two processes that interact in a dual way
 on exactly one channel,
@@ -818,8 +816,8 @@ but whose connecting channel has been closed since.
 In syntactic approaches to types, one would now turn to proving
 that deadlocks are not typable, and that typing is invariant under transitions.
 What we instead set out to do is to give a \emph{semantic} account
-of the typing judgment such that we can validate the rules
-and prove deadlock freedom follows from them.
+of the typing judgment which implies deadlock freedom. Then we can validate the
+syntactic rules against semantic typing and obtain deadlock freedom via this route.
 
 %%% Local Variables:
 %%% mode: latex
