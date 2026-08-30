@@ -201,7 +201,7 @@ communicates first with $\fFunc{e_1}$.
     \end{align*}
   \end{small}
 \end{itemize}
-\section{Duality of Recursive Session Types}
+\section{Duality and Equivalence of Recursive Session Types}
 \label{sec:app-duality}
 
 \begin{figure}[tp]
@@ -223,9 +223,9 @@ communicates first with $\fFunc{e_1}$.
     \fType{\dual{\mu\alpha.S}} &= \fType{\mu\alpha.\,\sflipop_\alpha(\dual{S})}
     \span\span\span
   \end{align*}
-  On a variable, duality exchanges $\fType{\alpha}$ with
-  $\fType{\dual{\alpha}}$, and $\sflipop_\alpha$ does the same for the
-  one variable $\fType{\alpha}$, leaving every other variable alone.
+  Duality exchanges \emph{every} variable $\fType{\alpha}$ with 
+  $\fType{\dual{\alpha}}$; $\sflipop_\alpha$ does the same swap, but only for the
+  designated variable $\fType{\alpha}$, leaving every other variable alone. 
 
   \textbf{Equivalence} $\fType{T \approx U}, \fType{S \approx R}$, coinductively
   \begin{mathpar}
@@ -341,11 +341,9 @@ $\fType{S \isdual R}$ holds iff
 $\fType{S \approx \dual{R}}$ (\rocq{sdual_seq_dual})
 \cite{DBLP:journals/corr/abs-2004-01322}. 
 
-\section{A Reduction Semantics, and Harmony}
+\section{Reduction Semantics and Harmony}
 \label{sec:app-harmony}
-\mw{TODO: this is still completely gen ai}
-\mw{TODO: mention difference to GV semantics (link; process soups)}
-Our operational semantics is a labelled transition system, and
+Our operational semantics is a labeled transition system, and
 \emph{reduction} is defined as its $\tau$-fragment
 (\cref{sec:calculus}). This appendix shows that nothing hinges on
 that presentation choice: we define a conventional, self-contained
@@ -355,9 +353,8 @@ labels anywhere --- and prove that it coincides with $\tau$-reduction
 (\cref{thm:harmony}).
 
 \paragraph{Evaluation contexts}
-Multi-frame evaluation contexts extend the one-level contexts of
-\cref{fig:syntax} by nesting; they cover the full calculus including
-the extensions of \cref{sec:extensions}.
+Evaluation contexts extend the contexts of
+\cref{fig:term-semantics} by  including all extensions of \cref{sec:extensions}.
 \begin{align*}
   \fFunc{\fCtx{E}} ::={} & \fFunc{\hole}
   \sepr \fFunc{\tApp{\fCtx{E}}{e}}
@@ -374,10 +371,8 @@ the extensions of \cref{sec:extensions}.
 \paragraph{Pure reduction}
 The label-free term reduction
 $\fFunc{e} \redu[\mathsf{V}] \fFunc{e'}$ consists of the
-$\beta$-redexes, closed under evaluation contexts. It is defined
-without reference to the labelled relation
-$\fFunc{e} \trans{\lambda} \fFunc{e'}$, so the correspondence below
-is a theorem rather than a reformulation.
+$\beta$-redexes, closed under evaluation contexts. It collects the term
+reductions of the base calculus and the extensions.
 \begin{align*}
   \fFunc{\tApp{(\tAbs{x}{e})}{v}} & \redu[\mathsf{V}] \fFunc{\tSub{e}{v}{x}}
   & \fFunc{\tLet*{\tUnit}{e}} & \redu[\mathsf{V}] \fFunc{e}
@@ -406,10 +401,16 @@ same restricted channel retire it (\ruleLabel{R-Close}); and a
 forwarder fuses a restricted end with its partner by substitution
 (\ruleLabel{R-Link}, and symmetrically for the other end of the
 pair). Interactions happen under evaluation contexts in the
-participating threads, matching redex to co-redex directly --- where
+participating threads; where
 the LTS of \cref{fig:proc-semantics} lets the term transitions
-surface the interacting redexes, here the rules find them
+surface the interacting redexes, these rules find them
 syntactically.
+
+\pt{TODO: one direction is simple; what about the converse?}
+This reduction semantics is still different from the semantics of
+\citet{conf/esop/LindleyM15}, which works on structured process terms. However,
+it is easy to relate structured process terms to a formulation based
+on a soup of processes like ours.
 
 \begin{figure}[tp]
   \textbf{Reduction semantics} $\fProc{p} \sred \fProc{p'}$
@@ -443,7 +444,7 @@ syntactically.
              \fProc{(C \setminus \set{\fFunc{c}}, \tSub{(E \uplus \mset{\fFunc{\fCtx{E}[\tUnit]}})}{\fFunc{d}}{\fFunc{c}})}}
     \end{bussproof}
   \end{mathpar}
-  \caption{The reduction semantics: pure steps, fork, communication,
+  \caption{Reduction semantics: pure steps, fork, communication,
     closing, and forwarding, with no labels \quad \rocq{red}}
   \Description{Five reduction rules for process soups: lifting a pure
     term step, forking with a fresh channel, communication between a
@@ -454,9 +455,9 @@ syntactically.
 
 \paragraph{Harmony}
 Both directions of \cref{thm:harmony} rest on the correspondence
-between the congruence closure of the labelled semantics and
-evaluation contexts: filling a labelled step into a context is a
-labelled step, and conversely every labelled step decomposes into an
+between the congruence closure of the labeled semantics and
+evaluation contexts: filling a labeled step into a context is a
+labeled step, and conversely every labeled step decomposes into an
 evaluation context around a head step.
 \ruleLabel{R-Lift} then matches
 \ruleLabel{P-Act-Beta} by \cref{lem:vred-reduction}, and each
