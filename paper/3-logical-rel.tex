@@ -1,14 +1,14 @@
 \section{Semantic Session Typing for Deadlock Freedom}
 \label{sec:logicalRelation}
 
-In this section we define a (unary) logical relation with which
+In this section we define a unary logical relation with which
 we can define a semantic typing judgment
 $\fType{\Sigma \proves \fProc{p} : T}$
 fulfilling three goals:
 \begin{enumerate}[(1)]
   \item It ensures deadlock freedom for closed processes (``adequacy'');
   \item
-    It validates all the rules of the syntactic type system,
+    It validates all rules of the syntactic type system,
     thus proving the ``fundamental property'' that
     $
       \fType{\Sigma \types \fProc{p} : T}
@@ -36,7 +36,7 @@ ones that are proven semantically, in the same derivation.
 \subsection{A Logical Relation for \OurLang}
 \label{sec:logicalRelation:relation}
 
-The logical relation is defined on typing judgments on pairs
+The logical relation is defined on pairs
 $\fType{\Sigma \vdash T}$, denoting reliance on session environment
 $\fType{\Sigma}$ to provide a value of type $\fType{T}$.
 The relation is step-indexed and consists of three parts:
@@ -55,12 +55,16 @@ We write $\irred \fProc{p}$ if there are no $\pi,\fProc{p'}$ such that $\fProc{p
 
 \ed{TODO time permitting: improve explanation}
 \Cref{fig:logrel-rules-term} shows the
-mutually defined relations for values and terms in inference rule style.
+mutually defined relations for values and terms in inference rule style. The
+relations are inductive on the lexicographic ordering on the step count $n$,
+first, and then on the size of $\fType{\Sigma \vdash T}$. 
 
 Apart from \ruleLabel{V-Abs}, the value rules do nothing but
 distribute the session environment over the structure of the value.
-\ruleLabel{V-Pair} splits $\fType{\Sigma}$ between the two components,
-and the leaves decide what is left: \ruleLabel{V-Chan} accounts for
+\ruleLabel{V-Pair} splits $\fType{\Sigma}$ between the two components, where
+$\fType{\Sigma_1, \Sigma_2}$ denotes the union of two session 
+environments with disjoint domains.
+The leaves decide what is left: \ruleLabel{V-Chan} accounts for
 exactly the one entry naming that channel, while \ruleLabel{V-Unit}
 and \ruleLabel{V-Const} demand the empty environment.
 A value is thus related at $\fType{\Sigma}$ only if its external channels are used linearly.
@@ -69,46 +73,48 @@ The first premise of
 \ruleLabel{V-Abs} is the usual step-indexed treatment of a
 function: for every argument in the value relation at a strictly
 smaller index $j<n$, the body substituted with that argument must be
-in the term relation at~$j$. Here, $\fType{\Sigma_1, \Sigma_2}$ denotes the union of two session
-environments with disjoint domains.
+in the term relation at~$j$. 
 The second premise $\fchans(\fFunc{e}) = \dom(\fType{\Sigma})$ says that a closure owns exactly the channels its
 interface declares. We need it because the semantics decides
 syntactically which channels extrude a process by looking at the channels syntactically mentioned in the sent-away value. The syntactic and
 the typed view of a value agree only if its free channels are exactly
 the ones its interface declares.
 
-The term relation is given by a step rule that asks only what a term
+The term relation is given by a step rule \ruleLabel{E-Step} that asks only what a term
 \emph{does}: either it cannot move, and then it has to be in the value relation for its declared type, or it can, and then every transition it offers has
 to discharge the obligation carried by its label.
-The relations are defined inductively \emph{on the step index}.
-\ruleLabel{E-Zero} is the base case. Read
-without that index the rules are not a valid inductive definition.
-We chose this representational style solely because it is easier to read. The obligations of a possible transition are stated
-at index $n$ and mention the value relation at $n+1$. The definition is
-still well founded because the value relation at an index appeals to
-the term relation only at strictly smaller indices.
+It is defined inductively \emph{on the step index} $n$ with base case \ruleLabel{E-Zero}.
+% Read without that index the rules are not a valid inductive definition.
+% We chose this representational style solely because it is easier to read. The obligations of a possible transition are stated
+% at index $n$ and mention the value relation at $n+1$. The definition is
+% still well founded because the value relation at an index appeals to
+% the term relation only at strictly smaller indices.
 
 The obligations of a transition are
 collected in the judgment
 $\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}$,
 which is defined by cases on the label.
+While this judgment lives at index $n$, it is really part of the definition of
+$E$ at index $n+1$. Hence, it is safe to refer to $V$ at index $n+1$ because the
+value relation refers to
+the term relation only at strictly smaller indices $j < n+1$.
 The labels govern the channel
 management by adjusting the session environment $\fType{\Sigma}$.
 A $\beta$ step leaves it unchanged (\ruleLabel{O-Beta}). When
-creating a new thread ($\lFork{c}{v}$, \ruleLabel{O-Fork}), we split it between
+creating a new thread (label $\lFork{c}{v}$, \ruleLabel{O-Fork}), we split $\fType{\Sigma}$ between
 the new thread ($\fType{\Sigma_1}$) and the original thread
 ($\fType{\Sigma_2}$), which gets extended by the newly introduced
-channel $\fFunc{c}$. For input ($\lRecv{c}{v}$, \ruleLabel{O-Recv}), we might obtain
+channel $\fFunc{c}$. For input (label $\lRecv{c}{v}$, \ruleLabel{O-Recv}), we may obtain
 additional channels from another thread (in $\fType{\Sigma_2}$) and
 continue in the original session environment with an updated type for
 $\fFunc{c}$ extended by $\fType{\Sigma_2}$.
 Here the environment chooses the message, so the obligation quantifies
 over every value in the value relation at any index $j \le n$, together
 with the interface $\fType{\Sigma_2}$ that the value brings with it.
-For output ($\lSend{c}{v}$, \ruleLabel{O-Send}), we split off $\fType{\Sigma_2}$ which
-describes the channels that we pass to another thread and update
-$\fFunc{c}$.
-For closing ($\lTerm{c}$, \ruleLabel{O-Close}), we drop the channel $\fFunc{c}$.
+For output (label $\lSend{c}{v}$, \ruleLabel{O-Send}), we split off $\fType{\Sigma_2}$ which
+describes the channels that we pass in the value $\fFunc{v}$ to another thread
+and update the type of $\fFunc{c}$.
+For closing (label $\lTerm{c}$, \ruleLabel{O-Close}), we drop the channel $\fFunc{c}$.
 
 \begin{figure}[tp]
   \textbf{Value logical relation} $\fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T}}$
@@ -160,16 +166,17 @@ For closing ($\lTerm{c}$, \ruleLabel{O-Close}), we drop the channel $\fFunc{c}$.
       \bussU{\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\beta} \fFunc{e'} : \fType{T}}}
     \end{bussproof}
     \and
-    \begin{bussproof}[O-Close]
-      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1 \vdash T}}}
-      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sTerm}}{n}{\fFunc{e} \trans{\lTerm{c}} \fFunc{e'} : \fType{T}}}
-    \end{bussproof}
-    \and
     \begin{bussproof}[O-Fork]
       \bussAs{\fFunc{c} \not\in \dom(\fType{\Sigma_1,\Sigma_2})}
       \bussAs{\fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_1 \vdash \lFunc{S}{\tUnit}}}}
       \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash T}}}
       \bussT{\obl{\fType{\Sigma_1, \Sigma_2}}{n}{\fFunc{e} \trans{\lFork{c}{v}} \fFunc{e'} : \fType{T}}}
+    \end{bussproof}
+    \and
+    \begin{bussproof}[O-Recv]
+      \bussAs{\forall j \le n , \fType{\Sigma_2} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash U}}\st
+              \fFunc{e'} \in \lrTerm{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}}{n}{\fFunc{e} \trans{\lRecv{c}{v}} \fFunc{e'} : \fType{T}}}
     \end{bussproof}
     \and
     \begin{bussproof}[O-Send]
@@ -178,10 +185,9 @@ For closing ($\lTerm{c}$, \ruleLabel{O-Close}), we drop the channel $\fFunc{c}$.
       \bussB{\obl{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:\sSend{U}{S}}}{n}{\fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'} : \fType{T}}}
     \end{bussproof}
     \and
-    \begin{bussproof}[O-Recv]
-      \bussAs{\forall j \le n , \fType{\Sigma_2} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash U}}\st
-              \fFunc{e'} \in \lrTerm{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}
-      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}}{n}{\fFunc{e} \trans{\lRecv{c}{v}} \fFunc{e'} : \fType{T}}}
+    \begin{bussproof}[O-Close]
+      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1 \vdash T}}}
+      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sTerm}}{n}{\fFunc{e} \trans{\lTerm{c}} \fFunc{e'} : \fType{T}}}
     \end{bussproof}
   \end{mathpar}
   \caption{The value and term logical relations \quad \rocq{Vdef}}
@@ -190,12 +196,13 @@ For closing ($\lTerm{c}$, \ruleLabel{O-Close}), we drop the channel $\fFunc{c}$.
 \end{figure}
 
 \Cref{fig:logrel-rules-proc} shows the process level
-relations using the inference rule style from the term level.
+relations using the same inference rule style as on the term level.
 The irreducible case of the process relation requires that there is
 one ``main'' thread which determines the final outcome. All threads
-must be reduced to values, but only the main thread may have a return
-prim type different from $\fType{\tUnit}$. The obligations of a process
-transition are similar to the ones of a term transition.
+must be reduced to values, but only the main thread may have a (primitive) return
+type different from $\fType{\tUnit}$. The obligations of a process
+transition are similar to the ones of a term transition, but with an extra twist
+for output.
 
 \ruleLabel{P-Zero} and \ruleLabel{P-Step} mirror \ruleLabel{E-Zero} and
 \ruleLabel{E-Step}, with the step index read exactly as at the term
@@ -208,35 +215,42 @@ which is what makes internal activity invisible at the interface. A
 fork is silent at the process level (\ruleLabel{P-Act-Fork}), so
 \ruleLabel{O-Fork} has no counterpart here. The environment split it
 performs has already happened inside the thread that forked.
-\ruleLabel{Q-Close} is \ruleLabel{O-Close} one level up and drops
-$\fFunc{c}$ from the environment.
-\ruleLabel{Q-Recv} is \ruleLabel{O-Recv} one level up.
+\ruleLabel{Q-Close} is \ruleLabel{O-Close}, replacing expression transition by
+process transition.  It also drops $\fFunc{c}$ from the environment.
+\ruleLabel{Q-Recv} is \ruleLabel{O-Recv} with transition replaced.
 
-Only \ruleLabel{Q-Send} says more than its term counterpart. A message
-sent to the environment may carry channels that are restricted in the
-sending process, and those channels extrude the interal scope. The premise
+Rule \ruleLabel{Q-Send} says more than its term counterpart because it has to
+deal with scope extrusion. A message
+sent to the environment may carry two kinds of channels: either they are
+external, described by $\fType{\Sigma_v}$, or they are restricted in the
+sending process, and the latter channels extrude the internal scope, described
+by $\fType{\Sigma_e}$. The premise
 $\dom(\fType{\Sigma_e}) = \fchans(\fFunc{v}) \cap \fProc{C}$ is the
-same idea as in \ruleLabel{V-Abs} one level up. Because a value in the
+same idea as in \ruleLabel{V-Abs} for expressions. Because a value in the
 relation owns exactly the channels it declares, the extruded interface
-is determined by the value sent away, and is not chosen. The message leaves with
-the dual ends $\dual{\fType{\Sigma_e}}$, and the residual process is
-taken apart by the auxiliary extrusion split
-$\fProc{p} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$ of
+is determined by the value sent away. The message leaves with
+the dual ends $\dual{\fType{\Sigma_e}}$, and the residual process is split into
+one part in the process relation that continues with $\fFunc{c}$ and another part produced by the
+auxiliary extrusion split 
+$(C_w, E_w) \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}$ of
 \ruleLabel{T-Nil} and \ruleLabel{T-Cons}, one extruded channel at a
-time. It yields one piece for every
+time. It yields one piece in the process relation for every
 $\fFunc{d} \in \dom(\fType{\Sigma_e})$. For all $\fFunc{d}$, the piece for $\fFunc{d}$ owns
 that channel and lies in the process relation on its own, and does not 
-share channels with the other pieces. 
+share channels with the other pieces. For $p$ to be in the process relation, it
+is sufficient that such a decomposition exists.
 
-This is the only place where the relation restricts the topology of a
+This rule is the only place where the relation restricts the topology of a
 process, and it does so only from the outside. What it rules out is a
 cycle running through the environment: a piece that kept two extruded
 ends, whose duals the environment may serve from a single thread, can
 end up in the crossed dependency of $\fProc{\var{blocked}}$
 (\cref{ex:deadlock}), even though each of the two connections is
-unobjectionable on its own. One end per piece forbids such a cycle,
-and it has to, because else the semantic rule for \ruleLabel{P-Connect} (\cref{lem:comp:connect}) would not hold as stated, because we would be able to compose two
-pieces that each lie in the relation into a process that deadlocks.
+unobjectionable on its own. One end per piece rules out such a cycle.
+Without the machinery of the extrusion split the semantic rule for
+\ruleLabel{P-Connect} (\cref{lem:comp:connect}) would not hold as stated, as we
+would be able to compose two pieces that each lie in the relation into a process
+that deadlocks. 
 
 \begin{figure}[tp]
   \textbf{Process logical relation} $\fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}}$
@@ -319,7 +333,7 @@ The typing judgment for terms applies to terms with free variables
 and, as a consequence, is parameterized by
 a variable environment~$\fType{\Delta}$ in addition to
 a session environment~$\fType{\Sigma}$.
-However our term logical relation only considers terms with no free variables.
+However, our term logical relation only considers terms with no free variables.
 To bridge the gap, we introduce \emph{grounding substitutions},
 as is standard, to close an open term by substituting the free variables
 with closed terms respecting their assumed types.
@@ -377,14 +391,14 @@ with closed terms respecting their assumed types.
 %all three (\rocq{typed_term_wf}), so the fundamental property is
 %unaffected.
 
-Note how adopting an LTS semantics spared us from defining closing contexts
-to define the semantic judgment for open processes.
+At this point, adopting an LTS semantics pays off. It spares us from defining
+closing contexts to define the semantic judgment for open processes.
 
 To prove adequacy of our logical relation, we need two auxiliary lemmas.
 
 \begin{lemma}[\rocq{Prel_steps}]
 \label{lm:lrproc-inv}
-  For all $n \in \Nat$ and $m\in \Nat$,
+  For all $n,m \in \Nat$,
   if $ p \in \lrProc{n+m}{\fType{\tEmpty \vdash T}} $
   then, for all~$p'$,
   $
