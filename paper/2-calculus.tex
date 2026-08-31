@@ -390,7 +390,6 @@ will consider untyped processes and accept only well-behaved ones
 We explain the significance of the \ruleLabel{P-Act-Session} rule with the following lemma.
 It considers the case that two disjoint processes communicate over an external channel $c$.
 We can internalize this communication by putting the processes together and close them over $c$.
-\pt{Do we have an analogous lemma for close transitions?}
 \begin{lemma}[Internalizing communication \rocq{internalize_comm}]
 \label{lem:internalize}
   Suppose that $\fProc{(C_1, E_1)} \trans{\lSend{c}{v}} \fProc{(C_1', E_1')}$ and $\fProc{(C_2, E_2)} \trans{\lRecv{c}{v}} \fProc{(C_2', E_2')}$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
@@ -424,7 +423,6 @@ We can internalize this communication by putting the processes together and clos
 %   receiver is now part of it.
 % \end{proof}
 
-\mw{Yes, we can.}
 The same construction applies to the other synchronizing action.
 Two processes that both offer to close the external channel $c$ can be
 put together and closed over $c$, and their offers become an internal
