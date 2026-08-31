@@ -551,3 +551,48 @@ Proof.
           = (F1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}) as -> by multiset_solver.
   eapply PStepMsg; [done|done|set_solver].
 Qed.
+
+(** ** Internalizing a close
+
+    The same construction for the other synchronising action. Two
+    disjoint processes that both offer to close the external channel c
+    can be put together and closed over c, and the offers become an
+    internal τ step.
+
+    One difference to [internalize_comm], and it is the point of the
+    lemma: the τ step CONSUMES the channel. P-Act-Close removes c from
+    the restricted set, so the combined process ends at C1 ∪ C2, not at
+    C1 ∪ C2 ∪ {[c]} — closing is the only way a name leaves scope
+    besides forwarding.
+
+    The premises' own channel sets are untouched: sentc (SClos c) = ∅,
+    so C1' = C1 and C2' = C2 (a close leaks nothing), which is why the
+    conclusion can be read off C1 and C2 alone. The freshness premises
+    c ∉ C1 and c ∉ C2 are load-bearing here (they are what makes the
+    subtraction come out as C1 ∪ C2), unlike in [internalize_comm]
+    where they are not consumed; both are anyway forced by
+    P-Act-Session's side condition subjs σ ## C on the two assumed
+    transitions. *)
+
+Lemma internalize_close C1 E1 C1' E1' C2 E2 C2' E2' c :
+  proc_step (C1, E1) (PSess (SClos c)) (C1', E1') →
+  proc_step (C2, E2) (PSess (SClos c)) (C2', E2') →
+  C1 ## C2 → c ∉ C1 → c ∉ C2 →
+  proc_step (C1 ∪ C2 ∪ {[c]}, E1 ⊎ E2) PTau
+            (C1 ∪ C2, E1' ⊎ E2').
+Proof.
+  intros H1 H2 _ Hc1 Hc2.
+  apply proc_step_sess_inv in H1 as (F1 & e & e' & -> & Hstep1 & _ & Heq1).
+  apply proc_step_sess_inv in H2 as (F2 & f & f' & -> & Hstep2 & _ & Heq2).
+  simplify_eq.
+  assert (F1 ⊎ {[+ e +]} ⊎ (F2 ⊎ {[+ f +]})
+          = (F1 ⊎ F2) ⊎ {[+ e +]} ⊎ {[+ f +]}) as -> by multiset_solver.
+  assert (F1 ⊎ {[+ e' +]} ⊎ (F2 ⊎ {[+ f' +]})
+          = (F1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}) as -> by multiset_solver.
+  (* P-Act-Close fires at the combined process and retires c; the
+     subtraction is then exactly C1 ∪ C2 because c is fresh for both. *)
+  pose proof (PStepClose (C1 ∪ C2 ∪ {[c]}) (F1 ⊎ F2) c e e' f f'
+                Hstep1 Hstep2 ltac:(set_solver)) as Hstep.
+  assert ((C1 ∪ C2 ∪ {[c]}) ∖ {[c]} = C1 ∪ C2) as Heq by set_solver.
+  by rewrite Heq in Hstep.
+Qed.
