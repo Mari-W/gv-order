@@ -424,6 +424,20 @@ We can internalize this communication by putting the processes together and clos
 %   receiver is now part of it.
 % \end{proof}
 
+\mw{Yes, we can.}
+The same construction applies to the other synchronizing action.
+Two processes that both offer to close the external channel $c$ can be
+put together and closed over $c$, and their offers become an internal
+step.
+Closing consumes the channel, so \ruleLabel{P-Act-Close} removes
+$\fFunc{c}$ from the set of internal channels and the combined process ends with the channel set
+$C_1 \cupdot C_2$.
+\begin{lemma}[Internalizing a close \rocq{internalize_close}]
+\label{lem:internalize-close}
+  Suppose that $\fProc{(C_1, E_1)} \trans{\lClos{c}} \fProc{(C_1, E_1')}$ and $\fProc{(C_2, E_2)} \trans{\lClos{c}} \fProc{(C_2, E_2')}$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
+  It then holds that $\fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2, E_1' \uplus E_2')}$.
+\end{lemma}
+
 \paragraph{Properties of processes}
 We now formalize the notion of \emph{deadlock freedom}.
 We begin by specifying which processes we consider as having terminated
