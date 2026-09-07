@@ -3,57 +3,53 @@
 \label{sec:mechanization}
 
 Everything this paper states is mechanized in Rocq: the calculus of
-\cref{sec:calculus}, the logical relation of
-\cref{sec:logicalRelation}, the extensions of \cref{sec:extensions},
-and every definition, lemma, theorem and example we display along the
-way.
-The development is built on top of the \texttt{std++} library and is
-free of axioms.
+\cref{sec:calculus}, the logical relation of \cref{sec:logicalRelation}, the
+extensions of \cref{sec:extensions}, and all examples. The development is built
+on top of the \texttt{std++} library and is free of axioms.
 
-We used generative AI (Claude Code, Fable 5 orchestrating Opus 5) to produce the proofs. We double-checked all definitions to make sure they match their hand written counter parts.
+We used generative AI (Claude Code, Fable 5 orchestrating Opus 5) to produce
+the proofs. We double-checked all definitions against their hand written
+counter parts.
 
-The artifact comprises roughly $17{,}300$ lines (non-blank, non-comment)
-of Rocq across 30 files, containing about $300$ definitions and $850$
-lemmas and theorems.
-\Cref{tab:mechanization} gives the breakdown by component.
-\mw{remove table if we need space}
+The artifact comprises roughly $17{,}300$ lines (non-blank, non-comment) of
+Rocq across 30 files, containing about $300$ definitions and $850$ lemmas and
+theorems. \Cref{tab:mechanization} shows the distribution of LOC over
+components of the formalization.
+
 \begin{table}[t]
   \caption{Lines of Rocq by component.}
   \label{tab:mechanization}
   \begin{tabular}{lr}
     \toprule
-    Component & LOC \\
+    Component                                                                                 & LOC          \\
     \midrule
-    Syntax, types, syntactic typing, substitution boilerplate (\cref{fig:syntax,fig:typeSys})   & 1,829 \\
-    Labelled semantics and harmony (\cref{fig:term-semantics,fig:proc-semantics}) & 618 \\
-    The logical relation (\cref{fig:logrel-rules-term,fig:logrel-rules-proc})     & 642 \\
-    Safety and adequacy                                               & 442 \\
-    Compositionality for terms                                        & 1,117 \\
-    Compositionality for processes                                    & 3,003 \\
-    Other                           & 2,643 \\
-    Examples                                                          & 7,025 \\
+    Syntax, types, syntactic typing, substitution boilerplate (\cref{fig:syntax,fig:typeSys}) & 1,829        \\
+    Labelled semantics and harmony (\cref{fig:term-semantics,fig:proc-semantics})             & 618          \\
+    The logical relation (\cref{fig:logrel-rules-term,fig:logrel-rules-proc})                 & 642          \\
+    Safety and adequacy                                                                       & 442          \\
+    Compositionality for terms                                                                & 1,117        \\
+    Compositionality for processes                                                            & 3,003        \\
+    Other                                                                                     & 2,643        \\
+    Examples                                                                                  & 7,025        \\
     \midrule
-    Total                                                             & $\sim$17,300 \\
+    Total                                                                                     & $\sim$17,300 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Two entries dominate, and both are informative about where the
-difficulty of this style of result lies.
+The main proof work is done in \ruleLabel{connect} (\cref{lem:comp:connect}),
+which alone accounts for $2{,}041$ lines of the $3{,}003$ for the
+compositionality theorem of processes. Connecting two processes over a channel
+is the linear-logic cut, and it is the only place where membership in the
+logical relation for the combined processis hard to maintain.
 
-The first is \ruleLabel{connect} (\cref{lem:comp:connect}), which
-alone accounts for $2{,}041$ lines of the $3{,}003$ for compositionality of processes.
-Connecting two components over a channel is the linear-logic cut, and
-it is the only place where the two sides of a composition can
-constrain each other.
-
-The second is the examples, at $41\%$ of the development.
-This is not incidental: a process is admitted by the relation only if
-every transition it can take discharges its obligation, so an
-example is a proof about a whole reachable state space.
-The load balancer of \cref{ex:load-balancer} takes $2{,}270$ lines and
-the leader election of \cref{sec:extension:-sums} $1{,}981$, both
-dominated by the case analysis over interleavings.
+We also spend a lot of code to formalize examples, nearly $41\%$ of the
+development. This is not incidental, since a process is admitted by the
+relation only if every transition it can take discharges its obligation, so an
+example is a proof about a whole reachable state space. The load balancer of
+\cref{ex:load-balancer} takes $2{,}270$ lines and the leader election of
+\cref{sec:extension:-sums} $1{,}981$ lines to conclude membership in the
+logical relation.
 
 \mw{TODO: explain invariant method @emanuele}
 
