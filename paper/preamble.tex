@@ -4,6 +4,20 @@
 % \newtheorem{theorem}{Theorem}
 % \newtheorem{lemma}{Lemma}
 
+\makeatletter
+\newcommand*\FreezeMathAlpha[1]{%
+  \@tempcnta=#1\relax
+  \ifnum\@tempcnta>"7000\relax
+    \advance\@tempcnta-"7000\relax
+    \mathchardef#1=\@tempcnta
+  \fi}
+\AtBeginDocument{%
+  \FreezeMathAlpha\Gamma  \FreezeMathAlpha\Delta   \FreezeMathAlpha\Theta
+  \FreezeMathAlpha\Lambda \FreezeMathAlpha\Xi      \FreezeMathAlpha\Pi
+  \FreezeMathAlpha\Sigma  \FreezeMathAlpha\Upsilon \FreezeMathAlpha\Phi
+  \FreezeMathAlpha\Psi    \FreezeMathAlpha\Omega}
+\makeatother
+
 % https://tex.stackexchange.com/a/40185
 \makeatletter
 \let\@realLabel\label
@@ -95,9 +109,9 @@
 \colorlet{cProc}{black}
 \colorlet{cType}{RoyalBlue}
 \colorlet{cFunc}{YellowOrange}
-\def\fProc#1{\textcolor{cProc}{\mathit{#1}}}
-\def\fType#1{\textcolor{cType}{\mathsf{\let\vdash\types#1}}}
-\def\fFunc#1{\textcolor{cFunc}{\mathnormal{#1}}}
+\def\fProc#1{{\color{cProc}\mathit{#1}}}
+\def\fType#1{{\color{cType}\mathsf{\let\vdash\types#1}}}
+\def\fFunc#1{{\color{cFunc}\mathnormal{#1}}}
 \def\fCtx#1{\mathcal{#1}}
 
 \newcommand{\var}{\mathit}
