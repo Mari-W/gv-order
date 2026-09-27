@@ -68,8 +68,8 @@ The technique of \emph{logical relations} has been developed with the
 specific goal of filling this gap (\citet{TimanyKDB24} provide a modern discussion).
 Logical relations are predicates over the behavior of a program,
 indexed over types and type environments, which make it possible to define
-a \emph{semantic} counterpart $\fType{\Sigma \proves \fProc{p} : T}$
-to the \emph{syntactic} judgment $\fType{\Sigma \types \fProc{p} : T}$.
+a \emph{semantic} counterpart $\senv \proves \proc : \ty$
+to the \emph{syntactic} judgment $\senv \types \proc : \ty$.
 While the syntactic judgment can, by definition, only be established by
 using the syntactic type derivations,
 the semantic judgment can be proven to hold by any means necessary,
@@ -78,21 +78,21 @@ This approach enables the safe composition of typable components,
 with components which respect the interface specified by the types,
 even if the type system would reject them.
 
-Consider, for example, a syntactically typable process~$\fProc{p}$ expecting to receive
-a choice between~$\fType{A}$ and~$\fType{B}$
-on some channel~$\fType{\fFunc{c} : A \echoice B}$;
-we might want to compose it with a component~$\fProc{elect}$
+Consider, for example, a syntactically typable process~$\proc$ expecting to receive
+a choice between~$\asTy{A}$ and~$\asTy{B}$
+on some channel~$\ch : \asTy{A} \echoice \asTy{B}$;
+we might want to compose it with a component~$\asPr{elect}$
 that makes the choice by internally running a leader-election protocol
-and letting the leader pronounce their choice on~$\fFunc{c}$.
+and letting the leader pronounce their choice on~$\ch$.
 Such an election protocol might require violating the strict invariants
 imposed by the syntactic type system, like acyclicity of topology or absence of races; yet, if this behavior is handled correctly internally,
-it should be safe to compose it on $\fFunc{c}$ with a safe context.
-If a logical relation encoding the safe behavior expected on $\fFunc{c}$
+it should be safe to compose it on $\ch$ with a safe context.
+If a logical relation encoding the safe behavior expected on $\ch$
 was available, one could prove
-$\fType{\fFunc{c}:A \echoice B \types \fProc{p} : T}$ syntactically,
+$\ch:\asTy{A} \echoice \asTy{B} \types \proc : \ty$ syntactically,
 and
-$\fType{\fFunc{c}:A \ichoice B \proves \fProc{elect} : \tUnit}$ semantically,
-and conclude that their composition over $\fFunc{c}$ is deadlock-free.
+$\ch:\asTy{A} \ichoice \asTy{B} \proves \asPr{elect} : \tyUnit$ semantically,
+and conclude that their composition over $\ch$ is deadlock-free.
 The objective of this paper is identifying such a logical relation.
 
 \citet{DBLP:conf/esop/PerezCPT12,DBLP:journals/iandc/PerezCPT14} were
@@ -154,7 +154,7 @@ and propose a new logical relation for it which is:
 We articulate our main technical ideas in
 a concurrent \lcalc\ enriched with
 core session typed communication primitives:
-we define a semantic judgment $\fType{\Sigma \proves \fProc{p} : T}$
+we define a semantic judgment $\senv \proves \proc : \ty$
 through our logical relation, and prove that it satisfies
 all the rules of a standard GV-like type system.
 We further prove that the semantic judgment implies

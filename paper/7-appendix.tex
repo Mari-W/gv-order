@@ -1,203 +1,203 @@
 % \section{Safe process with payload}
 % \label{sec:safe-process-with}
 
-% The following process is safe and in $\lrProc{n}{\fType{\tEmpty} \vdash \fType{\tUnit}}$.
+% The following process is safe and in $\lrProc{n}{\tEmpty \vdash \tyUnit}$.
 
 % \begin{align*}
-%   & (\set{},\mset{ \fFunc{
+%   & (\set{},\mset{ 
 %     \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\tFork}{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-%     } })
+%      })
 %   \\
 %   \redu
-%   & (\set{ \fFunc{c} },\mset{ \fFunc{
-%     \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{c})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-%     }, \fFunc{
-%     \tApp{(\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}})}{c}
-%     } })
+%   & (\set{ \ch },\mset{ 
+%     \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{\ch})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+%     , 
+%     \tApp{(\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}})}{\ch}
+%      })
 %   \\
 %   \redu
-%   & (\set{ \fFunc{c} },\mset{ \fFunc{
-%     \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{c})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-%     }, \fFunc{
-%     {\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{c}})}}
-%     } })
+%   & (\set{ \ch },\mset{ 
+%     \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{\ch})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+%     , 
+%     {\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\ch}})}}
+%      })
 %   \\
 %   \redu
-%   & (\set{ \fFunc{c} },\mset{ \fFunc{
-%     \tLet[\tLVB][\tLVA]{\tPair{\tUnit}{c}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-%     }, \fFunc{
-%     {\tApp{\tClos}{c}}
-%     } })
+%   & (\set{ \ch },\mset{ 
+%     \tLet[\tLVB][\tLVA]{\tPair{\tUnit}{\ch}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+%     , 
+%     {\tApp{\tClos}{\ch}}
+%      })
 %   \\
 %   \redu
-%   & (\set{ \fFunc{c} },\mset{ \fFunc{
-%     {\tLet*{\tUnit}{\tApp{\tClos}{c}}}
-%     }, \fFunc{
-%     {\tApp{\tClos}{c}}
-%     } })
+%   & (\set{ \ch },\mset{ 
+%     {\tLet*{\tUnit}{\tApp{\tClos}{\ch}}}
+%     , 
+%     {\tApp{\tClos}{\ch}}
+%      })
 %   \\
 %   \redu
-%   & (\set{ \fFunc{c} },\mset{ \fFunc{
-%     {{\tApp{\tClos}{c}}}
-%     }, \fFunc{
-%     {\tApp{\tClos}{c}}
-%     } })
+%   & (\set{ \ch },\mset{ 
+%     {{\tApp{\tClos}{\ch}}}
+%     , 
+%     {\tApp{\tClos}{\ch}}
+%      })
 %   \\
 %   \redu
-%   & (\set{ },\mset{ \fFunc{
+%   & (\set{ },\mset{ 
 %     \tUnit
-%     }, \fFunc{
+%     , 
 %     \tUnit
-%     } })
+%      })
 % \end{align*}
 
-% We have $\fFunc{
+% We have $
 %   \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\tFork}{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-% } \in \lrTerm{n}{\fType{\tEmpty} \vdash \fType{\tUnit}}$ because
+%  \in \lrTerm{n}{\tEmpty \vdash \tyUnit}$ because
 % $\tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{c})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-% \in \lrTerm{n}{\fFunc{c}\fType{: \sRecv{\tUnit}{\tClos}} \vdash
-%   \fType{\tUnit}}$.
+% \in \lrTerm{n}{\ch: \sRecv{\tyUnit}{\tClos} \vdash
+%   \tyUnit}$.
 % The reduction sequence is similar to the one shown for the first
 % example in \cref{sec:safe-process}.
 
 \section{Reductions for leader election example}
 \label{sec:reduct-lead-elect}
 
-As an example, we trace the reduction sequence starting from $p_0$  where $\fFunc{e_0}$
-communicates first with $\fFunc{e_1}$.
+As an example, we trace the reduction sequence starting from $p_0$  where $\tm_0$
+communicates first with $\tm_1$.
 \begin{itemize}
 \item $\tau$ transition (internal communication) to
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{d}})}}
+      \tm_0 &=
+                    \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{true}}{\chB}})}
       \\
-      \fFunc{e_1} &=
-                    \fFunc{\tLet[\tLVB][d]{\tPair{false}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tIf{\tLVB}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \tm_1 &=
+                    \tLet[\tLVB][\chB]{\tPair{\asTm{false}}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+      \tm_2 &=
+                    \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition ($\beta$ pair elimination) to
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{d}})}}
+      \tm_0 &=
+                    \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{true}}{\chB}})}
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{\tLet*{\tApp{\tClos}{cs}}{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \tm_1 &=
+                    {\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+      \tm_2 &=
+                    \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition (internal communication) to
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tApp{\tClos}{d}}
+      \tm_0 &=
+                    \tApp{\tClos}{\chB}
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{\tLet*{\tApp{\tClos}{cs}}{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \tm_1 &=
+                    {\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{\tLet[\tLVB][d]{\tPair{true}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+      \tm_2 &=
+                    \tLet[\tLVB][\chB]{\tPair{\asTm{true}}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition ($\beta$ pair elimination) to
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tApp{\tClos}{d}}
+      \tm_0 &=
+                    \tApp{\tClos}{\chB}
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{\tLet*{\tApp{\tClos}{cs}}{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \tm_1 &=
+                    {\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+      \tm_2 &=
+                    {\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
-\item $\tau$ transition (internal communication, closing $\fFunc{cs}$,
-  new $C = \set{\fFunc{c}, \fFunc{d}}$)
+\item $\tau$ transition (internal communication, closing $\asTm{cs}$,
+  new $C = \set{\ch, \chB}$)
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tApp{\tClos}{d}}
+      \tm_0 &=
+                    \tApp{\tClos}{\chB}
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{\tLet*{\tUnit}{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \tm_1 &=
+                    {\tLet*{\tUnit}{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{{\tLet*{\tUnit}{\tLet*{\tApp{\tClos}{d}}{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+      \tm_2 &=
+                    {\tLet*{\tUnit}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transitions (2x $\beta$ unit)
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tApp{\tClos}{d}}
+      \tm_0 &=
+                    \tApp{\tClos}{\chB}
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \tm_1 &=
+                    {{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{{{\tLet*{\tApp{\tClos}{d}}{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+      \tm_2 &=
+                    {{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
-\item $\tau$ transition (internal communication, closing $\fFunc{d}$,
-  new $C = \set{\fFunc{c}}$)
+\item $\tau$ transition (internal communication, closing $\chB$,
+  new $C = \set{\ch}$)
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tUnit}
+      \tm_0 &=
+                    \tUnit
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \tm_1 &=
+                    {{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{{{\tLet*{\tUnit}{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+      \tm_2 &=
+                    {{\tLet*{\tUnit}{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition (unit elim)
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tUnit}
+      \tm_0 &=
+                    \tUnit
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{{\tIf{false}{\tApp{\tClos}{(select~left~c)}}{\tUnit}}}}
+      \tm_1 &=
+                    {{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{{{{\tIf{true}{\tApp{\tClos}{(select~right~c)}}{\tUnit}}}}}
+      \tm_2 &=
+                    {{{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transitions (2x $\beta$ bool)
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tUnit}
+      \tm_0 &=
+                    \tUnit
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{{{\tUnit}}}}
+      \tm_1 &=
+                    {{{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{{{{{\tApp{\tClos}{(select~right~c)}}}}}}
+      \tm_2 &=
+                    {{{{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}}}}
     \end{align*}
   \end{small}
-\item There are two remaining labeled transitions: $\lSend{c}{right}$
-  followed by $\lTerm{c}$. The resulting process is terminated and is
-  an element of $\lrProc{n}{\fType{\tEmpty} \vdash \fType{\tUnit}}$:
+\item There are two remaining labeled transitions: $\lSend{\ch}{\asTm{right}}$
+  followed by $\lTerm{\ch}$. The resulting process is terminated and is
+  an element of $\lrProc{n}{\tEmpty \vdash \tyUnit}$:
   \begin{small}
     \begin{align*}
-      \fFunc{e_0} &=
-                    \fFunc{\tUnit}
+      \tm_0 &=
+                    \tUnit
       \\
-      \fFunc{e_1} &=
-                    \fFunc{{{{\tUnit}}}}
+      \tm_1 &=
+                    {{{\tUnit}}}
       \\
-      \fFunc{e_2} &=
-                    \fFunc{{{{{\tUnit}}}}}
+      \tm_2 &=
+                    {{{{\tUnit}}}}
     \end{align*}
   \end{small}
 \end{itemize}
@@ -205,112 +205,112 @@ communicates first with $\fFunc{e_1}$.
 \label{sec:app-duality}
 
 \begin{figure}[tp]
-  \textbf{Session types} $\fType{S}$, extending \cref{sec:extens-recurs-ii}
+  \textbf{Session types} $\sty$, extending \cref{sec:extens-recurs-ii}
   \begin{align*}
-    \fType{S} &::= \fType{\sRecv{T}{S}} \sepr \fType{\sSend{T}{S}} \sepr
-                   \fType{\sTerm} \sepr \fType{\mu\alpha.S} \sepr
-                   \fType{\alpha} \sepr \fType{\dual{\alpha}}
-    % & \text{($\fType{\dual{\alpha}}$ never occurs in a source type)}
+    \sty &::= \sRecv{\ty}{\sty} \sepr \sSend{\ty}{\sty} \sepr
+                   \sTerm \sepr \tyMu\tvar.\sty \sepr
+                   \tvar \sepr \dual{\tvar}
+    % & \text{($\dual{\tvar}$ never occurs in a source type)}
   \end{align*}
-  \textbf{Duality} $\fType{\dual{S}}$
+  \textbf{Duality} $\dual{\sty}$
   \begin{align*}
-    \fType{\dual{\sRecv{T}{S}}} &= \fType{\sSend{T}{\dual{S}}}
+    \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
     &
-    \fType{\dual{\sSend{T}{S}}} &= \fType{\sRecv{T}{\dual{S}}}
+    \dual{\sSend{\ty}{\sty}} &= \sRecv{\ty}{\dual{\sty}}
     &
-    \fType{\dual{\sTerm}} &= \fType{\sTerm}
+    \dual{\sTerm} &= \sTerm
     &
-    \fType{\dual{\mu\alpha.S}} &= \fType{\mu\alpha.\,\sflipop_\alpha(\dual{S})}
+    \dual{\tyMu\tvar.\sty} &= \tyMu\tvar.\,\sflipop_{\tvar}(\dual{\sty})
     \span\span\span
   \end{align*}
-  Duality exchanges \emph{every} variable $\fType{\alpha}$ with 
-  $\fType{\dual{\alpha}}$; $\sflipop_\alpha$ does the same swap, but only for the
-  designated variable $\fType{\alpha}$, leaving every other variable alone. 
+  Duality exchanges \emph{every} variable $\tvar$ with 
+  $\dual{\tvar}$; $\sflipop_\alpha$ does the same swap, but only for the
+  designated variable $\tvar$, leaving every other variable alone. 
 
-  \textbf{Equivalence} $\fType{T \approx U}, \fType{S \approx R}$, coinductively
+  \textbf{Equivalence} $\ty \approx \tyB, \sty \approx \styB$, coinductively
   \begin{mathpar}
     \begin{bussproof}[Eq-Unit]
-      \bussAx{\fType{\tUnit \approx \tUnit}}      
+      \bussAx{\tyUnit \approx \tyUnit}      
     \end{bussproof}
     \and
     \begin{bussproof}
-      \bussAs{\fType{T \approx T'}}
-      \bussAs{\fType{U \approx U'}}
-      \bussB{\fType{\lFunc{T}{U} \approx {\lFunc{T'}{U'}}}}
+      \bussAs{\ty \approx \ty'}
+      \bussAs{\tyB \approx \tyB'}
+      \bussB{\lFunc{\ty}{\tyB} \approx {\lFunc{\ty'}{\tyB'}}}
     \end{bussproof}
     \and
     \begin{bussproof}
-      \bussAs{\fType{T \approx T'}}
-      \bussAs{\fType{U \approx U'}}
-      \bussB{\fType{\lPair{T}{U} \approx {\lPair{T'}{U'}}}}
+      \bussAs{\ty \approx \ty'}
+      \bussAs{\tyB \approx \tyB'}
+      \bussB{\lPair{\ty}{\tyB} \approx {\lPair{\ty'}{\tyB'}}}
     \end{bussproof}
     \\
     \begin{bussproof}[Eq-Recv]
-      \bussAs{\fType{T \approx U}}
-      \bussAs{\fType{S \approx R}}
-      \bussB{\fType{\sRecv{T}{S}} \approx \fType{\sSend{U}{R}}}
+      \bussAs{\ty \approx \tyB}
+      \bussAs{\sty \approx \styB}
+      \bussB{\sRecv{\ty}{\sty} \approx \sSend{\tyB}{\styB}}
     \end{bussproof}
     \and
     \begin{bussproof}[Eq-Send]
-      \bussAs{\fType{T \approx U}}
-      \bussAs{\fType{S \approx R}}
-      \bussB{\fType{\sSend{T}{S}} \approx \fType{\sRecv{U}{R}}}
+      \bussAs{\ty \approx \tyB}
+      \bussAs{\sty \approx \styB}
+      \bussB{\sSend{\ty}{\sty} \approx \sRecv{\tyB}{\styB}}
     \end{bussproof}
     \and
     \begin{bussproof}[Eq-Close]
-      \bussAx{\fType{\sTerm} \approx \fType{\sTerm}}
+      \bussAx{\sTerm \approx \sTerm}
     \end{bussproof}
     \\
     \begin{bussproof}[Eq-MuL]
-      \bussAs{\fType{S[\mu\alpha.S/\alpha]} \approx \fType{R}}
-      \bussU{\fType{\mu\alpha.S} \approx \fType{R}}
+      \bussAs{\sty[\tyMu\tvar.\sty/\tvar] \approx \styB}
+      \bussU{\tyMu\tvar.\sty \approx \styB}
     \end{bussproof}
     \and
     \begin{bussproof}[Eq-MuR]
-      \bussAs{\fType{S} \approx \fType{R[\mu\alpha.R/\alpha]}}
-      \bussU{\fType{S} \approx \fType{\mu\alpha.R}}
+      \bussAs{\sty \approx \styB[\tyMu\tvar.\styB/\tvar]}
+      \bussU{\sty \approx \tyMu\tvar.\styB}
     \end{bussproof}
   \end{mathpar}
 
-  \textbf{Relational duality} $\fType{S \isdual R}$, coinductively
+  \textbf{Relational duality} $\sty \isdual \styB$, coinductively
   \begin{mathpar}
     \begin{bussproof}[D-Recv]
-      \bussAs{\fType{T \approx U}}
-      \bussAs{\fType{S \isdual R}}
-      \bussB{\fType{\sRecv{T}{S}} \isdual \fType{\sSend{U}{R}}}
+      \bussAs{\ty \approx \tyB}
+      \bussAs{\sty \isdual \styB}
+      \bussB{\sRecv{\ty}{\sty} \isdual \sSend{\tyB}{\styB}}
     \end{bussproof}
     \and
     \begin{bussproof}[D-Send]
-      \bussAs{\fType{T \approx U}}
-      \bussAs{\fType{S \isdual R}}
-      \bussB{\fType{\sSend{T}{S}} \isdual \fType{\sRecv{U}{R}}}
+      \bussAs{\ty \approx \tyB}
+      \bussAs{\sty \isdual \styB}
+      \bussB{\sSend{\ty}{\sty} \isdual \sRecv{\tyB}{\styB}}
     \end{bussproof}
     \and
     \begin{bussproof}[D-Close]
-      \bussAx{\fType{\sTerm} \isdual \fType{\sTerm}}
+      \bussAx{\sTerm \isdual \sTerm}
     \end{bussproof}
     \\
     \begin{bussproof}[D-MuL]
-      \bussAs{\fType{S[\mu\alpha.S/\alpha]} \isdual \fType{R}}
-      \bussU{\fType{\mu\alpha.S} \isdual \fType{R}}
+      \bussAs{\sty[\tyMu\tvar.\sty/\tvar] \isdual \styB}
+      \bussU{\tyMu\tvar.\sty \isdual \styB}
     \end{bussproof}
     \and
     \begin{bussproof}[D-MuR]
-      \bussAs{\fType{S} \isdual \fType{R[\mu\alpha.R/\alpha]}}
-      \bussU{\fType{S} \isdual \fType{\mu\alpha.R}}
+      \bussAs{\sty \isdual \styB[\tyMu\tvar.\styB/\tvar]}
+      \bussU{\sty \isdual \tyMu\tvar.\styB}
     \end{bussproof}
   \end{mathpar}
-  % \ie $\fType{S \isdual R}$ holds if $\unf(\fType{S})$ and
-  % $\unf(\fType{R})$ match one of the four conclusions, up to the
+  % \ie $\sty \isdual \styB$ holds if $\unf(\sty)$ and
+  % $\unf(\styB)$ match one of the four conclusions, up to the
   % symmetry of \ruleLabel{D-Var}.
 
   \textbf{Facts}
   \begin{align*}
-    \fType{\dual{\dual{S}}} &= \fType{S}
+    \dual{\dual{\sty}} &= \sty
     &
-    \dual{\unf(\fType{S})} &= \unf(\fType{\dual{S}})
+    \dual{\unf(\sty)} &= \unf(\dual{\sty})
     &
-    \fType{S \isdual R} &\iff \fType{S \approx \dual{R}}
+    \sty \isdual \styB &\iff \sty \approx \dual{\styB}
   \end{align*}
   \caption{Equivalence and duality of recursive session types
     \quad \rocq{dual}}
@@ -325,20 +325,20 @@ communicates first with $\fFunc{e_1}$.
 \Cref{fig:duality} provides the definitions for
 \cref{sec:extens-recurs-ii}. Duality
 \cite{LindleyM16} is a function on types, and on a recursive
-type it cannot simply descend into the body: under $\fType{\mu\alpha.S}$ the
-binder stands for the dual protocol, so occurrences of $\fType{\alpha}$
+type it cannot simply descend into the body: under $\tyMu\tvar.\sty$ the
+binder stands for the dual protocol, so occurrences of $\tvar$
 that were meant to denote the original type one must change polarity. This is why the
-grammar carries a dualized variable $\fType{\dual{\alpha}}$ (\rocq{SVarD}) and
+grammar carries a dualized variable $\dual{\tvar}$ (\rocq{SVarD}) and
 why the $\mu$ case applies $\sflipop_\alpha$ (\rocq{sflip_ty}) to the dualized
 body: tail occurrences, which continue as the session itself, come back as
-$\fType{\alpha}$, while occurrences inside a payload keep the polarity they were
-given. Taking $\fType{\dual{\alpha}} = \fType{\alpha}$ instead is unsound, and
+$\tvar$, while occurrences inside a payload keep the polarity they were
+given. Taking $\dual{\tvar} = \tvar$ instead is unsound, and
 the type of a channel end would no longer be the dual of the type of the other
 end.
 
-Duality also has a relational reading $\fType{S \isdual R}$. The two agree:
-$\fType{S \isdual R}$ holds iff
-$\fType{S \approx \dual{R}}$ (\rocq{sdual_seq_dual})
+Duality also has a relational reading $\sty \isdual \styB$. The two agree:
+$\sty \isdual \styB$ holds iff
+$\sty \approx \dual{\styB}$ (\rocq{sdual_seq_dual})
 \cite{DBLP:journals/corr/abs-2004-01322}. 
 
 \section{Reduction Semantics and Harmony}
@@ -356,44 +356,44 @@ labels anywhere --- and prove that it coincides with $\tau$-reduction
 Evaluation contexts extend the contexts of
 \cref{fig:term-semantics} by  including all extensions of \cref{sec:extensions}.
 \begin{align*}
-  \fFunc{\fCtx{E}} ::={} & \fFunc{\hole}
-  \sepr \fFunc{\tApp{\fCtx{E}}{e}}
-  \sepr \fFunc{\tApp{v}{\fCtx{E}}}
-  \sepr \fFunc{\tPair{\fCtx{E}}{e}}
-  \sepr \fFunc{\tPair{v}{\fCtx{E}}}
-  \sepr \fFunc{\tLet*{\fCtx{E}}{e}} \\
-  & \sepr \fFunc{\tLet[a][b]{\fCtx{E}}{e}}
-  \sepr \fFunc{\tInj{1}{\fCtx{E}}}
-  \sepr \fFunc{\tInj{2}{\fCtx{E}}}
-  \sepr \fFunc{\tCase{\fCtx{E}}{x_1}{e_1}{x_2}{e_2}}
+  \ectx ::={} & \hole
+  \sepr \tApp{\ectx}{\tm}
+  \sepr \tApp{\val}{\ectx}
+  \sepr \tPair{\ectx}{\tm}
+  \sepr \tPair{\val}{\ectx}
+  \sepr \tLet*{\ectx}{\tm} \\
+  & \sepr \tLet[\vr][\vrB]{\ectx}{\tm}
+  \sepr \tInj{1}{\ectx}
+  \sepr \tInj{2}{\ectx}
+  \sepr \tCase{\ectx}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2}
 \end{align*}
 
 \paragraph{Pure reduction}
 The label-free term reduction
-$\fFunc{e} \redu[\mathsf{V}] \fFunc{e'}$ consists of the
+$\tm \redu[\mathsf{V}] \tm'$ consists of the
 $\beta$-redexes, closed under evaluation contexts. It collects the term
 reductions of the base calculus and the extensions.
 \begin{align*}
-  \fFunc{\tApp{(\tAbs{x}{e})}{v}} & \redu[\mathsf{V}] \fFunc{\tSub{e}{v}{x}}
-  & \fFunc{\tLet*{\tUnit}{e}} & \redu[\mathsf{V}] \fFunc{e}
+  \tApp{(\tAbs{\ivx}{\tm})}{\val} & \redu[\mathsf{V}] \tSub{\tm}{\val}{\ivx}
+  & \tLet*{\tUnit}{\tm} & \redu[\mathsf{V}] \tm
   \\
-  \fFunc{\tLet[a][b]{\tPair{u}{v}}{e}} & \redu[\mathsf{V}] \fFunc{\tSub{\tSub{e}{u}{a}}{v}{b}}
-  & \fFunc{\tCase{(\tInj{i}{v})}{x_1}{e_1}{x_2}{e_2}} & \redu[\mathsf{V}] \fFunc{\tSub{e_i}{v}{x_i}}
+  \tLet[\vr][\vrB]{\tPair{\valB}{\val}}{\tm} & \redu[\mathsf{V}] \tSub{\tSub{\tm}{\valB}{\vr}}{\val}{\vrB}
+  & \tCase{(\tInj{\asTm{i}}{\val})}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} & \redu[\mathsf{V}] \tSub{\tm_{\asTm{i}}}{\val}{\ivx_{\asTm{i}}}
   \\
-  \fFunc{\tApp{\tForce}{\IExp{(x = e)}}} & \redu[\mathsf{V}] \fFunc{\tSub{e}{\IExp{(x = e)}}{x}}
-  & \fFunc{\fCtx{E}[e]} & \redu[\mathsf{V}] \fFunc{\fCtx{E}[e']} \quad \text{if } \fFunc{e} \redu[\mathsf{V}] \fFunc{e'}
+  \tApp{\tForce}{\IExp{(\ivx = \tm)}} & \redu[\mathsf{V}] \tSub{\tm}{\IExp{(\ivx = \tm)}}{\ivx}
+  & \ectx[\tm] & \redu[\mathsf{V}] \ectx[\tm'] \quad \text{if } \tm \redu[\mathsf{V}] \tm'
 \end{align*}
 
 \begin{lemma}[\rocq{vred_reduction}]
   \label{lem:vred-reduction}
-  $\fFunc{e} \redu[\mathsf{V}] \fFunc{e'}$
+  $\tm \redu[\mathsf{V}] \tm'$
   if and only if
-  $\fFunc{e} \trans{\beta} \fFunc{e'}$.
+  $\tm \trans{\beta} \tm'$.
 \end{lemma}
 
 \paragraph{Reduction semantics for processes}
 \Cref{fig:red-semantics} gives the reduction semantics
-$\fProc{p} \sred \fProc{p'}$: a thread takes a pure step
+$\proc \sred \proc'$: a thread takes a pure step
 (\ruleLabel{R-Lift}); a fork spawns a thread and restricts a fresh
 channel (\ruleLabel{R-Fork}); a send and a receive on the same
 restricted channel synchronize (\ruleLabel{R-Com}); two closes on the
@@ -413,35 +413,35 @@ it is easy to relate structured process terms to a formulation based
 on a soup of processes like ours.
 
 \begin{figure}[tp]
-  \textbf{Reduction semantics} $\fProc{p} \sred \fProc{p'}$
+  \textbf{Reduction semantics} $\proc \sred \proc'$
   \begin{mathpar}
     \begin{bussproof}[R-Lift]
-      \bussAs{\fFunc{e} \redu[\mathsf{V}] \fFunc{e'}}
-      \bussU{\fProc{(C, E \uplus \mset{\fFunc{e}})} \sred \fProc{(C, E \uplus \mset{\fFunc{e'}})}}
+      \bussAs{\tm \redu[\mathsf{V}] \tm'}
+      \bussU{(\chset, \pool \uplus \mset{\tm}) \sred (\chset, \pool \uplus \mset{\tm'})}
     \end{bussproof}
     \and
     \begin{bussproof}[R-Fork]
-      \bussAs{\fFunc{c} \text{ fresh}}
-      \bussU{\fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[\tApp{\tFork}{v}]}})} \sred
-             \fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{\fCtx{E}[c]}, \fFunc{\tApp{v}{c}}})}}
+      \bussAs{\ch \text{ fresh}}
+      \bussU{(\chset, \pool \uplus \mset{\ectx[\tApp{\tFork}{\val}]}) \sred
+             (\chset \cupdot \set{\ch}, \pool \uplus \mset{\ectx[\ch], \tApp{\val}{\ch}})}
     \end{bussproof}
     \and
     \begin{bussproof}[R-Com]
-      \bussAs{\fFunc{c} \in \fProc{C}}
-      \bussU{\fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[\tApp{\tSend}{\tPair{v}{c}}]}, \fFunc{\fCtx{E}'[\tApp{\tRecv}{c}]}})} \sred
-             \fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[c]}, \fFunc{\fCtx{E}'[\tPair{v}{c}]}})}}
+      \bussAs{\ch \in \chset}
+      \bussU{(\chset, \pool \uplus \mset{\ectx[\tApp{\tSend}{\tPair{\val}{\ch}}], \ectx'[\tApp{\tRecv}{\ch}]}) \sred
+             (\chset, \pool \uplus \mset{\ectx[\ch], \ectx'[\tPair{\val}{\ch}]})}
     \end{bussproof}
     \and
     \begin{bussproof}[R-Close]
-      \bussAs{\fFunc{c} \in \fProc{C}}
-      \bussU{\fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[\tApp{\tClos}{c}]}, \fFunc{\fCtx{E}'[\tApp{\tClos}{c}]}})} \sred
-             \fProc{(C \setminus \set{\fFunc{c}}, E \uplus \mset{\fFunc{\fCtx{E}[\tUnit]}, \fFunc{\fCtx{E}'[\tUnit]}})}}
+      \bussAs{\ch \in \chset}
+      \bussU{(\chset, \pool \uplus \mset{\ectx[\tApp{\tClos}{\ch}], \ectx'[\tApp{\tClos}{\ch}]}) \sred
+             (\chset \setminus \set{\ch}, \pool \uplus \mset{\ectx[\tUnit], \ectx'[\tUnit]})}
     \end{bussproof}
     \and
     \begin{bussproof}[R-Link]
-      \bussAs{\fFunc{c} \in \fProc{C}}
-      \bussU{\fProc{(C, E \uplus \mset{\fFunc{\fCtx{E}[\tApp{\tLink}{\tPair{c}{d}}]}})} \sred
-             \fProc{(C \setminus \set{\fFunc{c}}, \tSub{(E \uplus \mset{\fFunc{\fCtx{E}[\tUnit]}})}{\fFunc{d}}{\fFunc{c}})}}
+      \bussAs{\ch \in \chset}
+      \bussU{(\chset, \pool \uplus \mset{\ectx[\tApp{\tLink}{\tPair{\ch}{\chB}}]}) \sred
+             (\chset \setminus \set{\ch}, \tSub{(\pool \uplus \mset{\ectx[\tUnit]})}{\chB}{\ch})}
     \end{bussproof}
   \end{mathpar}
   \caption{Reduction semantics: pure steps, fork, communication,

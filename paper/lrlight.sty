@@ -1,0 +1,130 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{lrlight}[2026/09/28 Leaf-level semantic markup for GV-sharp]
+
+% Marking happens at the leaves: metavariables and the operators that carry
+% a colour.  Punctuation (, ; : . parentheses) is left literal, so it keeps
+% the ambient neutral colour and TeX's own atom classes.  Nothing wraps a
+% whole judgment, so no symbol has to be un-coloured after the fact.
+
+\RequirePackage{xparse}
+\RequirePackage{amsmath}
+\RequirePackage{xcolor}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 0.  Font safety
+%%
+%% Uppercase Greek is declared as a class-7 ("variable family") mathchar,
+%% so its font family follows the current math alphabet.  Under OT1
+%% Computer Modern that is harmless -- cmss carries Gamma..Omega in slots
+%% 0-10, exactly the slots the mathchars name -- which is why
+%% \mathsf{\Sigma} worked under llncs.  acmart sets \mathsf in
+%% T1/Biolinum, where slots 0-10 are accents.  Demote uppercase Greek to
+%% class 0 so that no math alphabet can move it out of the letters font.
+%%
+%% preamble.tex runs the same (idempotent) freeze.  We repeat it here
+%% because package code in the `begindocument' hook runs BEFORE code added
+%% at top level, so we cannot assume the preamble's freeze has happened
+%% when we capture the letters below.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\providecommand*\FreezeMathAlpha[1]{%
+  \@tempcnta=#1\relax
+  \ifnum\@tempcnta>"7000\relax
+    \advance\@tempcnta-"7000\relax
+    \mathchardef#1=\@tempcnta
+  \fi}
+
+%% Greek metavariables are control sequences, not characters, so each one
+%% is given a private copy taken after the freeze.
+\AtBeginDocument{%
+  \FreezeMathAlpha\Gamma  \FreezeMathAlpha\Delta   \FreezeMathAlpha\Theta
+  \FreezeMathAlpha\Lambda \FreezeMathAlpha\Xi      \FreezeMathAlpha\Pi
+  \FreezeMathAlpha\Sigma  \FreezeMathAlpha\Upsilon \FreezeMathAlpha\Phi
+  \FreezeMathAlpha\Psi    \FreezeMathAlpha\Omega
+  \let\lr@g@Sigma\Sigma \let\lr@g@Delta\Delta
+  \let\lr@g@alpha\alpha \let\lr@g@mu\mu}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 1.  Three factories
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% A marked leaf absorbs its own subscripts and primes, so the decoration
+%% is coloured with the letter and the source stays \senv_1.  The
+%% decoration is *collected first* and typeset inside the math alphabet:
+%% \mathsf{\Sigma_1} kerns its subscript, \mathsf{\Sigma}_1 does not.
+\def\lr@leaf#1#2#3{\lr@collect{#1}{#2}{#3}{}}
+\def\lr@collect#1#2#3#4{%
+  \@ifnextchar'{\lr@c@prime{#1}{#2}{#3}{#4}}%
+   {\@ifnextchar_{\lr@c@sub{#1}{#2}{#3}{#4}}%
+     {{\color{#1}#2{#3#4}}}}}
+\def\lr@c@prime#1#2#3#4'{\lr@collect{#1}{#2}{#3}{#4'}}
+\def\lr@c@sub#1#2#3#4_#5{\lr@collect{#1}{#2}{#3}{#4_{#5}}}
+
+%% \DeclareSort{<S>}{<colour>}{<alphabet>} defines
+%%   \as<S>{...}    letters: colour + math alphabet
+%%   \as<S>Op{...}  symbols: colour only
+%% A math alphabet must never see anything but letters -- that is the
+%% invariant the \mathsf/uppercase-Greek bug violated.
+\NewDocumentCommand\DeclareSort{ m m m }{%
+  \expandafter\def\csname lr@col@#1\endcsname{#2}%
+  \expandafter\def\csname lr@alph@#1\endcsname{#3}%
+  \expandafter\NewDocumentCommand\csname as#1\endcsname{ m }%
+    {\lr@leaf{#2}{#3}{##1}}%
+  \expandafter\NewDocumentCommand\csname as#1Op\endcsname{ m }%
+    {{\color{#2}##1}}}
+
+%% \DeclareMetaVar\cs{<S>}{<letters>}  ->  \cs  \cs_1  \cs'  \cs'_1
+\NewDocumentCommand\DeclareMetaVar{ m m m }{%
+  \NewDocumentCommand#1{}{%
+    \lr@leaf{\csname lr@col@#2\endcsname}{\csname lr@alph@#2\endcsname}{#3}}}
+
+%% \DeclareSortSymbol\cs{<S>}{<atom class>}{<symbol>}
+%% Leaf-level marking gives up TeX's implicit atom classes, so every
+%% marked symbol restates its own.
+\NewDocumentCommand\DeclareSortSymbol{ m m m m }{%
+  \NewDocumentCommand#1{}{#3{{\color{\csname lr@col@#2\endcsname}#4}}}}
+
+%% \DeclareSortKeyword\cs{<S>}{<letters>}  -- an operator spelled as a word
+\NewDocumentCommand\DeclareSortKeyword{ m m m }{%
+  \NewDocumentCommand#1{}{%
+    \mathinner{{\color{\csname lr@col@#2\endcsname}\mathsf{#3}}}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 2.  The sort table: the whole colour and font policy of the paper
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\colorlet{cTm}{YellowOrange}  % term level: variables, channels, values, terms
+\colorlet{cPr}{black}         % process level: processes, pools, channel sets
+\colorlet{cTy}{RoyalBlue}     % type level: types, session types, environments
+
+\DeclareSort{Tm}{cTm}{\mathnormal}
+\DeclareSort{Pr}{cPr}{\mathit}
+\DeclareSort{Ty}{cTy}{\mathsf}
+
+%% Compatibility aliases, so any call site that has not been converted
+%% still typesets (and still marks) correctly.
+\let\fFunc\asTm
+\let\fProc\asPr
+\let\fType\asTy
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 3.  The vocabulary: one line per metavariable
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DeclareMetaVar\tm    {Tm}{e}   \DeclareMetaVar\tmB  {Tm}{f}
+\DeclareMetaVar\ch    {Tm}{c}   \DeclareMetaVar\chB  {Tm}{d}
+\DeclareMetaVar\val   {Tm}{v}   \DeclareMetaVar\valB {Tm}{u}
+\DeclareMetaVar\cst   {Tm}{k}
+\DeclareMetaVar\vr    {Tm}{a}   \DeclareMetaVar\vrB  {Tm}{b}
+\DeclareMetaVar\ivx   {Tm}{x}   \DeclareMetaVar\ivy  {Tm}{y}
+\DeclareMetaVar\ectx  {Tm}{\mathcal{E}}
+
+\DeclareMetaVar\proc  {Pr}{p}   \DeclareMetaVar\chset{Pr}{C}
+\DeclareMetaVar\pool  {Pr}{E}
+
+\DeclareMetaVar\ty    {Ty}{T}   \DeclareMetaVar\tyB  {Ty}{U}
+\DeclareMetaVar\tyC   {Ty}{V}
+\DeclareMetaVar\sty   {Ty}{S}   \DeclareMetaVar\styB {Ty}{R}
+\DeclareMetaVar\senv  {Ty}{\lr@g@Sigma}
+\DeclareMetaVar\lenv  {Ty}{\lr@g@Delta}
+\DeclareMetaVar\tvar  {Ty}{\lr@g@alpha}
+\DeclareSortSymbol\tyMu{Ty}{\mathord}{\lr@g@mu}
+
+\endinput

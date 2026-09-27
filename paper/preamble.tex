@@ -101,25 +101,28 @@
 \newcommand{\types}{\mathrel{\color{black}\ltxvdash}}
 \newcommand{\proves}{\mathrel{\color{black}\vDash}}
 
-\newcommand{\ichoice}{\oplus}
-\newcommand{\echoice}{\mathrel{\&}}
+\newcommand{\ichoice}{\mathbin{{\color{cTy}\oplus}}}
+\newcommand{\echoice}{\mathrel{{\color{cTy}\&}}}
 
 \PassOptionsToPackage{dvipsnames,rgb}{xcolor}
 \RequirePackage{xcolor}
-\colorlet{cProc}{black}
-\colorlet{cType}{RoyalBlue}
-\colorlet{cFunc}{YellowOrange}
-\def\fProc#1{{\color{cProc}\mathit{#1}}}
-\def\fType#1{{\color{cType}\mathsf{\let\vdash\types#1}}}
-\def\fFunc#1{{\color{cFunc}\mathnormal{#1}}}
-\def\fCtx#1{\mathcal{#1}}
+
+% Semantic markup: sorts, metavariables and marked operators.  Everything
+% below marks leaves only; \fFunc/\fType/\fProc survive as aliases.
+\RequirePackage{lrlight}
+\colorlet{cProc}{cPr}
+\colorlet{cType}{cTy}
+\colorlet{cFunc}{cTm}
+\def\fCtx#1{{\color{cTm}\mathcal{#1}}}
 
 \newcommand{\var}{\mathit}
 
-\def\hole{[\cdot]}
+\def\hole{{\color{cTm}[\cdot]}}
 
 \RequirePackage{upgreek}
-\def\tOp#1{\mathinner{\mathsf{#1}}}
+% Term keywords carry the term colour; \tyOp is their type-level twin.
+\def\tOp#1{\mathinner{{\color{cTm}\mathsf{#1}}}}
+\def\tyOp#1{\mathinner{{\color{cTy}\mathsf{#1}}}}
 \def\tForce{\tOp{force}}
 \def\tFork{\tOp{fork}}
 \def\tRecv{\tOp{recv}}
@@ -133,18 +136,19 @@
 \def\tInjOp{\tOp{inj}}
 \def\tCaseOp{\tOp{case}}
 \def\tIfOp{\tOp{if}}
-\def\tUnit{\ast}
-\def\tLVA{a}
-\def\tLVB{b}
-\def\tIVX{x}
-\def\tIVY{y}
-\NewDocumentCommand\tAbs{mm}{{\uplambda #1 . #2}}
-\NewDocumentCommand\tPair{mm}{{\<#1,#2\>}}
-\NewDocumentCommand\tBox{m}{{\Box{#1}}}
+\def\tUnit{{\color{cTm}\ast}}
+\def\tyUnit{{\color{cTy}\ast}}
+\let\tLVA\vr
+\let\tLVB\vrB
+\let\tIVX\ivx
+\let\tIVY\ivy
+\NewDocumentCommand\tAbs{mm}{{{\color{cTm}\uplambda}#1{\color{cTm}.}#2}}
+\NewDocumentCommand\tPair{mm}{{\mathopen{{\color{cTm}\<}}#1\mathpunct{{\color{cTm},}}#2\mathclose{{\color{cTm}\>}}}}
+\NewDocumentCommand\tBox{m}{{{\color{cTy}\Box}{#1}}}
 \NewDocumentCommand\tApp{mm}{{#1\,#2}}
 \NewDocumentCommand\tLet{soomm}{{\tOp{let}\IfBooleanTF{#1}{\tUnit}{\tPair{#2}{#3}}=#4\tOp{in}#5}}
 \NewDocumentCommand\tFix{mmm}{{\tFixOp\,\tAbs{#1}{\tAbs{#2}{#3}}}}
-\NewDocumentCommand\tSub{mmm}{{#1[#2/#3]}}
+\NewDocumentCommand\tSub{mmm}{{#1\mathopen{{\color{cTm}[}}#2{\color{cTm}/}#3\mathclose{{\color{cTm}]}}}}
 \NewDocumentCommand\tLetI{mmm}{{\tOp{let}{\IExp{#1}}=#2\tOp{in}#3}}
 \NewDocumentCommand\tLetS{mmm}{{\tOp{let}{{#1}}=#2\tOp{in}#3}}
 \NewDocumentCommand\tFixI{mm}{{\tFixOp\,{#1}.{#2}}}
@@ -162,27 +166,29 @@
 \newcommand{\sred}{\mathrel{\rightsquigarrow}}
 \def\irred{\operatorname{irred}}
 
-\NewDocumentCommand\lRecv{mm}{{\fFunc{#1}{?}\fFunc{#2}}}
-\NewDocumentCommand\lSend{mm}{{\fFunc{#1}{!}\fFunc{#2}}}
-\NewDocumentCommand\lWait{m}{{\fFunc{#1}{?}}}
-\NewDocumentCommand\lTerm{m}{{\fFunc{#1}{!}}}
+% Label constructors own their own symbol only; the channels and values
+% they mention arrive already marked.
+\NewDocumentCommand\lRecv{mm}{{{#1}{?}{#2}}}
+\NewDocumentCommand\lSend{mm}{{{#1}{!}{#2}}}
+\NewDocumentCommand\lWait{m}{{{#1}{?}}}
+\NewDocumentCommand\lTerm{m}{{{#1}{!}}}
 \let\lClos\lTerm
-\NewDocumentCommand\lFork{mm}{{(\nu\fFunc{#1})\fFunc{#2}}}
-\NewDocumentCommand\lLink{mm}{{ {\leftrightarrow}\set{\fFunc{#1}, \fFunc{#2}}}}
-\NewDocumentCommand\lLinkSingle{m}{{ {\leftrightarrow}\set{\fFunc{#1}}}}
+\NewDocumentCommand\lFork{mm}{{(\nu{#1}){#2}}}
+\NewDocumentCommand\lLink{mm}{{ {\leftrightarrow}\set{{#1}, {#2}}}}
+\NewDocumentCommand\lLinkSingle{m}{{ {\leftrightarrow}\set{{#1}}}}
 
 \RequirePackage{amssymb}
-\NewDocumentCommand\lFunc{mm}{{{#1}\mathrel{\multimap}{#2}}}
-\NewDocumentCommand\lPair{mm}{{{#1}\mathrel{\otimes}{#2}}}
-\NewDocumentCommand\lSum{mm}{{{#1}\mathrel{+}{#2}}}
-\NewDocumentCommand\sRecv{mm}{{{?}{#1}.{#2}}}
-\NewDocumentCommand\sSend{mm}{{{!}{#1}.{#2}}}
+\NewDocumentCommand\lFunc{mm}{{{#1}\mathrel{{\color{cTy}\multimap}}{#2}}}
+\NewDocumentCommand\lPair{mm}{{{#1}\mathrel{{\color{cTy}\otimes}}{#2}}}
+\NewDocumentCommand\lSum{mm}{{{#1}\mathrel{{\color{cTy}+}}{#2}}}
+\NewDocumentCommand\sRecv{mm}{{{\color{cTy}?}{#1}{\color{cTy}.}{#2}}}
+\NewDocumentCommand\sSend{mm}{{{\color{cTy}!}{#1}{\color{cTy}.}{#2}}}
 % \def\sWait{\tOp{Wait}}
 % \def\sTerm{\tOp{Term}}
-\def\sWait{\tOp{Close}}
-\def\sTerm{\tOp{Close}}
-\def\tEmpty{{\cdot}}
-\NewDocumentCommand\dual{m}{{\overline{#1}}}
+\def\sWait{\tyOp{Close}}
+\def\sTerm{\tyOp{Close}}
+\def\tEmpty{{\color{cTy}\cdot}}
+\NewDocumentCommand\dual{m}{{\color{cTy}\overline{#1}}}
 \def\ptype{\operatorname{ptype}}
 \def\primitive{\operatorname{prim}}
 

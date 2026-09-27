@@ -3,7 +3,7 @@
 
 In this section we define a unary logical relation with which
 we can define a semantic typing judgment
-$\fType{\Sigma \proves \fProc{p} : T}$
+$\senv \proves \proc : \ty$
 fulfilling three goals:
 \begin{enumerate}[(1)]
   \item It ensures deadlock freedom for closed processes (``adequacy'');
@@ -11,9 +11,9 @@ fulfilling three goals:
     It validates all rules of the syntactic type system,
     thus proving the ``fundamental property'' that
     $
-      \fType{\Sigma \types \fProc{p} : T}
+      \senv \types \proc : \ty
       \implies
-      \fType{\Sigma \proves \fProc{p} : T}
+      \senv \proves \proc : \ty
     $;
   \item It contains safe but untypable processes.
 \end{enumerate}
@@ -24,9 +24,9 @@ one gets valid statements about the semantic judgment.
 Such a collection of lemmas is useful in two ways.
 First, the property
 $
-  \fType{\Sigma \types \fProc{p} : T}
+  \senv \types \proc : \ty
   \implies
-  \fType{\Sigma \proves \fProc{p} : T}
+  \senv \proves \proc : \ty
 $ follows immediately from them.
 Second, as we illustrate in \cref{sec:examples},
 it allows freely mixing judgments that are proven syntactically with
@@ -37,44 +37,44 @@ ones that are proven semantically, in the same derivation.
 \label{sec:logicalRelation:relation}
 
 The logical relation is defined on pairs
-$\fType{\Sigma \vdash T}$, denoting reliance on session environment
-$\fType{\Sigma}$ to provide a value of type $\fType{T}$.
+$\senv \types \ty$, denoting reliance on session environment
+$\senv$ to provide a value of type $\ty$.
 The relation is step-indexed and consists of three parts:
-$\lrVal{n}{\fType{\Sigma \vdash T}}$ for values,
-$\lrTerm{n}{\fType{\Sigma \vdash T}}$ for terms, and
-$\lrProc{n}{\fType{\Sigma \vdash T}}$ for processes.
+$\lrVal{n}{\senv \types \ty}$ for values,
+$\lrTerm{n}{\senv \types \ty}$ for terms, and
+$\lrProc{n}{\senv \types \ty}$ for processes.
 For technical reasons, the step index $n$ counts single reduction steps.
 
 The value relation constrains the terms that are irreducible to
 be values that belong to the declared type.
 
 \begin{definition}[Irreducible terms/processes \rocq{irred}]
-We write $\irred \fFunc{e}$ if there are no $\lambda,\fFunc{e'}$ such that $\fFunc{e} \trans{\lambda} \fFunc{e'}$.
-We write $\irred \fProc{p}$ if there are no $\pi,\fProc{p'}$ such that $\fProc{p} \trans{\pi} \fProc{p'}$.
+We write $\irred \tm$ if there are no $\lambda,\tm'$ such that $\tm \trans{\lambda} \tm'$.
+We write $\irred \proc$ if there are no $\pi,\proc'$ such that $\proc \trans{\pi} \proc'$.
 \end{definition}
 
 \ed{TODO time permitting: improve explanation}
 \Cref{fig:logrel-rules-term} shows the
 mutually defined relations for values and terms in inference rule style. The
 relations are inductive on the lexicographic ordering on the step count $n$,
-first, and then on the size of $\fType{\Sigma \vdash T}$. 
+first, and then on the size of $\senv \types \ty$. 
 
 Apart from \ruleLabel{V-Abs}, the value rules do nothing but
 distribute the session environment over the structure of the value.
-\ruleLabel{V-Pair} splits $\fType{\Sigma}$ between the two components, where
-$\fType{\Sigma_1, \Sigma_2}$ denotes the union of two session 
+\ruleLabel{V-Pair} splits $\senv$ between the two components, where
+$\senv_1, \senv_2$ denotes the union of two session 
 environments with disjoint domains.
 The leaves decide what is left: \ruleLabel{V-Chan} accounts for
 exactly the one entry naming that channel, while \ruleLabel{V-Unit}
 and \ruleLabel{V-Const} demand the empty environment.
-A value is thus related at $\fType{\Sigma}$ only if its external channels are used linearly.
+A value is thus related at $\senv$ only if its external channels are used linearly.
 
 The first premise of
 \ruleLabel{V-Abs} is the usual step-indexed treatment of a
 function: for every argument in the value relation at a strictly
 smaller index $j<n$, the body substituted with that argument must be
 in the term relation at~$j$. 
-The second premise $\fchans(\fFunc{e}) = \dom(\fType{\Sigma})$ says that a closure owns exactly the channels its
+The second premise $\fchans(\tm) = \dom(\senv)$ says that a closure owns exactly the channels its
 interface declares. We need it because the semantics decides
 syntactically which channels extrude a process by looking at the channels syntactically mentioned in the sent-away value. The syntactic and
 the typed view of a value agree only if its free channels are exactly
@@ -92,102 +92,102 @@ It is defined inductively \emph{on the step index} $n$ with base case \ruleLabel
 
 The obligations of a transition are
 collected in the judgment
-$\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}$,
+$\obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}$,
 which is defined by cases on the label.
 While this judgment lives at index $n$, it is really part of the definition of
 $E$ at index $n+1$. Hence, it is safe to refer to $V$ at index $n+1$ because the
 value relation refers to
 the term relation only at strictly smaller indices $j < n+1$.
 The labels govern the channel
-management by adjusting the session environment $\fType{\Sigma}$.
+management by adjusting the session environment $\senv$.
 A $\beta$ step leaves it unchanged (\ruleLabel{O-Beta}). When
-creating a new thread (label $\lFork{c}{v}$, \ruleLabel{O-Fork}), we split $\fType{\Sigma}$ between
-the new thread ($\fType{\Sigma_1}$) and the original thread
-($\fType{\Sigma_2}$), which gets extended by the newly introduced
-channel $\fFunc{c}$. For input (label $\lRecv{c}{v}$, \ruleLabel{O-Recv}), we may obtain
-additional channels from another thread (in $\fType{\Sigma_2}$) and
+creating a new thread (label $\lFork{\ch}{\val}$, \ruleLabel{O-Fork}), we split $\senv$ between
+the new thread ($\senv_1$) and the original thread
+($\senv_2$), which gets extended by the newly introduced
+channel $\ch$. For input (label $\lRecv{\ch}{\val}$, \ruleLabel{O-Recv}), we may obtain
+additional channels from another thread (in $\senv_2$) and
 continue in the original session environment with an updated type for
-$\fFunc{c}$ extended by $\fType{\Sigma_2}$.
+$\ch$ extended by $\senv_2$.
 Here the environment chooses the message, so the obligation quantifies
 over every value in the value relation at any index $j \le n$, together
-with the interface $\fType{\Sigma_2}$ that the value brings with it.
-For output (label $\lSend{c}{v}$, \ruleLabel{O-Send}), we split off $\fType{\Sigma_2}$ which
-describes the channels that we pass in the value $\fFunc{v}$ to another thread
-and update the type of $\fFunc{c}$.
-For closing (label $\lTerm{c}$, \ruleLabel{O-Close}), we drop the channel $\fFunc{c}$.
+with the interface $\senv_2$ that the value brings with it.
+For output (label $\lSend{\ch}{\val}$, \ruleLabel{O-Send}), we split off $\senv_2$ which
+describes the channels that we pass in the value $\val$ to another thread
+and update the type of $\ch$.
+For closing (label $\lTerm{\ch}$, \ruleLabel{O-Close}), we drop the channel $\ch$.
 
 \begin{figure}[tp]
-  \textbf{Value logical relation} $\fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T}}$
+  \textbf{Value logical relation} $\val \in \lrVal{n}{\senv \types \ty}$
   \begin{mathpar}
     \begin{bussproof}[V-Unit]
-      \bussAx{\fFunc{\tUnit} \in \lrVal{n}{\fType{\tEmpty \vdash \tUnit}}}
+      \bussAx{\tUnit \in \lrVal{n}{\tEmpty \types \tyUnit}}
     \end{bussproof}
     \and
     \begin{bussproof}[V-Chan]
-      \bussAx{\fFunc{c} \in \lrVal{n}{\fType{\fFunc{c}:S \vdash S}}}
+      \bussAx{\ch \in \lrVal{n}{\ch:\sty \types \sty}}
     \end{bussproof}
     \and
     \begin{bussproof}[V-Const]
-      \bussAs{\fType{\fFunc{k} : \lFunc{T}{U}}}
-      \bussU{\fFunc{k} \in \lrVal{n}{\fType{\tEmpty \vdash \lFunc{T}{U}}}}
+      \bussAs{\cst : \lFunc{\ty}{\tyB}}
+      \bussU{\cst \in \lrVal{n}{\tEmpty \types \lFunc{\ty}{\tyB}}}
     \end{bussproof}
     \and
     \begin{bussproof}[V-Pair]
-      \bussAs{\fFunc{v_1} \in \lrVal{n}{\fType{\Sigma_1 \vdash T}}}
-      \bussAs{\fFunc{v_2} \in \lrVal{n}{\fType{\Sigma_2 \vdash U}}}
-      \bussB{\fFunc{\tPair{v_1}{v_2}} \in \lrVal{n}{\fType{\Sigma_1, \Sigma_2 \vdash \lPair{T}{U}}}}
+      \bussAs{\val_1 \in \lrVal{n}{\senv_1 \types \ty}}
+      \bussAs{\val_2 \in \lrVal{n}{\senv_2 \types \tyB}}
+      \bussB{\tPair{\val_1}{\val_2} \in \lrVal{n}{\senv_1, \senv_2 \types \lPair{\ty}{\tyB}}}
     \end{bussproof}
     \and
     \begin{bussproof}[V-Abs]
-      \bussAs{\forall j<n , \fType{\Sigma'} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma' \vdash T}}\st
-              \fFunc{\tSub{e}{v}{\tLVA}} \in \lrTerm{j}{\fType{\Sigma, \Sigma' \vdash U}}}
-      \bussAs{\fchans(\fFunc{e}) = \dom(\fType{\Sigma})}
-      \bussB{\fFunc{\tAbs{\tLVA}{e}} \in \lrVal{n}{\fType{\Sigma \vdash \lFunc{T}{U}}}}
+      \bussAs{\forall j<n , \senv' , \val \in \lrVal{j}{\senv' \types \ty}\st
+              \tSub{\tm}{\val}{\tLVA} \in \lrTerm{j}{\senv, \senv' \types \tyB}}
+      \bussAs{\fchans(\tm) = \dom(\senv)}
+      \bussB{\tAbs{\tLVA}{\tm} \in \lrVal{n}{\senv \types \lFunc{\ty}{\tyB}}}
     \end{bussproof}
   \end{mathpar}
-  \textbf{Term logical relation} $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T}}$
+  \textbf{Term logical relation} $\tm \in \lrTerm{n}{\senv \types \ty}$
   \begin{mathpar}
     \begin{bussproof}[E-Zero]
-      \bussAx{\fFunc{e} \in \lrTerm{0}{\fType{\Sigma \vdash T}}}
+      \bussAx{\tm \in \lrTerm{0}{\senv \types \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Step]
-      \bussAs{\irred \fFunc{e} \implies \fFunc{e} \in \lrVal{n+1}{\fType{\Sigma \vdash T}}}
-      \bussAs{\forall \lambda, \fFunc{e'}\st \fFunc{e} \trans{\lambda} \fFunc{e'}
-              \implies \obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}}
-      \bussB{\fFunc{e} \in \lrTerm{n+1}{\fType{\Sigma \vdash T}}}
+      \bussAs{\irred \tm \implies \tm \in \lrVal{n+1}{\senv \types \ty}}
+      \bussAs{\forall \lambda, \tm'\st \tm \trans{\lambda} \tm'
+              \implies \obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}}
+      \bussB{\tm \in \lrTerm{n+1}{\senv \types \ty}}
     \end{bussproof}
   \end{mathpar}
   \textbf{Obligations of a term transition}
-  $\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\lambda} \fFunc{e'} : \fType{T}}$
+  $\obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}$
   \begin{mathpar}
     \begin{bussproof}[O-Beta]
-      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma \vdash T}}}
-      \bussU{\obl{\fType{\Sigma}}{n}{\fFunc{e} \trans{\beta} \fFunc{e'} : \fType{T}}}
+      \bussAs{\tm' \in \lrTerm{n}{\senv \types \ty}}
+      \bussU{\obl{\senv}{n}{\tm \trans{\beta} \tm' : \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[O-Fork]
-      \bussAs{\fFunc{c} \not\in \dom(\fType{\Sigma_1,\Sigma_2})}
-      \bussAs{\fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_1 \vdash \lFunc{S}{\tUnit}}}}
-      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash T}}}
-      \bussT{\obl{\fType{\Sigma_1, \Sigma_2}}{n}{\fFunc{e} \trans{\lFork{c}{v}} \fFunc{e'} : \fType{T}}}
+      \bussAs{\ch \not\in \dom(\senv_1,\senv_2)}
+      \bussAs{\val \in \lrVal{n+1}{\senv_1 \types \lFunc{\sty}{\tyUnit}}}
+      \bussAs{\tm' \in \lrTerm{n}{\senv_2, \ch:\dual{\sty} \types \ty}}
+      \bussT{\obl{\senv_1, \senv_2}{n}{\tm \trans{\lFork{\ch}{\val}} \tm' : \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[O-Recv]
-      \bussAs{\forall j \le n , \fType{\Sigma_2} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash U}}\st
-              \fFunc{e'} \in \lrTerm{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}
-      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}}{n}{\fFunc{e} \trans{\lRecv{c}{v}} \fFunc{e'} : \fType{T}}}
+      \bussAs{\forall j \le n , \senv_2 , \val \in \lrVal{j}{\senv_2 \types \tyB}\st
+              \tm' \in \lrTerm{j}{\senv_1, \senv_2, \ch:\sty \types \ty}}
+      \bussU{\obl{\senv_1, \ch:\sRecv{\tyB}{\sty}}{n}{\tm \trans{\lRecv{\ch}{\val}} \tm' : \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[O-Send]
-      \bussAs{\fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_2 \vdash U}}}
-      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1, \fFunc{c}:S \vdash T}}}
-      \bussB{\obl{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:\sSend{U}{S}}}{n}{\fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'} : \fType{T}}}
+      \bussAs{\val \in \lrVal{n+1}{\senv_2 \types \tyB}}
+      \bussAs{\tm' \in \lrTerm{n}{\senv_1, \ch:\sty \types \ty}}
+      \bussB{\obl{\senv_1, \senv_2, \ch:\sSend{\tyB}{\sty}}{n}{\tm \trans{\lSend{\ch}{\val}} \tm' : \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[O-Close]
-      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1 \vdash T}}}
-      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sTerm}}{n}{\fFunc{e} \trans{\lTerm{c}} \fFunc{e'} : \fType{T}}}
+      \bussAs{\tm' \in \lrTerm{n}{\senv_1 \types \ty}}
+      \bussU{\obl{\senv_1, \ch:\sTerm}{n}{\tm \trans{\lTerm{\ch}} \tm' : \ty}}
     \end{bussproof}
   \end{mathpar}
   \caption{The value and term logical relations (\rocq{Vdef})}
@@ -200,7 +200,7 @@ relations using the same inference rule style as on the term level.
 The irreducible case of the process relation requires that there is
 one ``main'' thread which determines the final outcome. All threads
 must be reduced to values, but only the main thread may have a (primitive) return
-type different from $\fType{\tUnit}$. The obligations of a process
+type different from $\tyUnit$. The obligations of a process
 transition are similar to the ones of a term transition, but with an extra twist
 for output.
 
@@ -216,26 +216,26 @@ fork is silent at the process level (\ruleLabel{P-Act-Fork}), so
 \ruleLabel{O-Fork} has no counterpart here. The environment split it
 performs has already happened inside the thread that forked.
 \ruleLabel{Q-Close} is \ruleLabel{O-Close}, replacing expression transition by
-process transition.  It also drops $\fFunc{c}$ from the environment.
+process transition.  It also drops $\ch$ from the environment.
 \ruleLabel{Q-Recv} is \ruleLabel{O-Recv} with transition replaced.
 
 Rule \ruleLabel{Q-Send} says more than its term counterpart because it has to
 deal with scope extrusion. A message
 sent to the environment may carry two kinds of channels: either they are
-external, described by $\fType{\Sigma_v}$, or they are restricted in the
+external, described by $\senv_{\asTy{v}}$, or they are restricted in the
 sending process, and the latter channels extrude the internal scope, described
-by $\fType{\Sigma_e}$. The premise
-$\dom(\fType{\Sigma_e}) = \fchans(\fFunc{v}) \cap \fProc{C}$ is the
+by $\senv_{\asTy{e}}$. The premise
+$\dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset$ is the
 same idea as in \ruleLabel{V-Abs} for expressions. Because a value in the
 relation owns exactly the channels it declares, the extruded interface
 is determined by the value sent away. The message leaves with
-the dual ends $\dual{\fType{\Sigma_e}}$, and the residual process is split into
-one part in the process relation that continues with $\fFunc{c}$ and another part produced by the
+the dual ends $\dual{\senv_{\asTy{e}}}$, and the residual process is split into
+one part in the process relation that continues with $\ch$ and another part produced by the
 auxiliary extrusion split 
-$(C_w, E_w) \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}$ of
+$(C_w, E_w) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}$ of
 \ruleLabel{T-Nil} and \ruleLabel{T-Cons}, one extruded channel at a
 time. It yields one piece in the process relation for every
-$\fFunc{d} \in \dom(\fType{\Sigma_e})$. For all $\fFunc{d}$, the piece for $\fFunc{d}$ owns
+$\chB \in \dom(\senv_{\asTy{e}})$. For all $\chB$, the piece for $\chB$ owns
 that channel and lies in the process relation on its own, and does not 
 share channels with the other pieces. For $p$ to be in the process relation, it
 is sufficient that such a decomposition exists.
@@ -244,7 +244,7 @@ This rule is the only place where the relation restricts the topology of a
 process, and it does so only from the outside. What it rules out is a
 cycle running through the environment: a piece that kept two extruded
 ends, whose duals the environment may serve from a single thread, can
-end up in the crossed dependency of $\fProc{\var{blocked}}$
+end up in the crossed dependency of $\asPrOp{\var{blocked}}$
 (\cref{ex:deadlock}), even though each of the two connections is
 unobjectionable on its own. One end per piece rules out such a cycle.
 Without the machinery of the extrusion split the semantic rule for
@@ -253,72 +253,72 @@ would be able to compose two pieces that each lie in the relation into a process
 that deadlocks. 
 
 \begin{figure}[tp]
-  \textbf{Process logical relation} $\fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}}$
+  \textbf{Process logical relation} $\proc \in \lrProc{n}{\senv \types \ty}$
   \begin{mathpar}
     \begin{bussproof}[P-Zero]
-      \bussAx{\fProc{p} \in \lrProc{0}{\fType{\Sigma \vdash T}}}
+      \bussAx{\proc \in \lrProc{0}{\senv \types \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Step]
       \bussAs{\begin{array}{@{}l@{}}
-        \irred \fProc{p} \implies
-        \fProc{p} = \fProc{(\emptyset, \mset{\fFunc{v}} \uplus E)} \land
-        \fFunc{v} \in \lrVal{n+1}{\fType{\Sigma \vdash T}} \land
-        \forall \fFunc{e} \in \fProc{E}\st \fFunc{e} = \fFunc{\tUnit}
+        \irred \proc \implies
+        \proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool) \land
+        \val \in \lrVal{n+1}{\senv \types \ty} \land
+        \forall \tm \in \pool\st \tm = \tUnit
         \\
-        \forall \pi, \fProc{p'}\st \fProc{p} \trans{\pi} \fProc{p'}
-        \implies \obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\pi} \fProc{p'} : \fType{T}}
+        \forall \pi, \proc'\st \proc \trans{\pi} \proc'
+        \implies \obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}
       \end{array}}
-      \bussU{\fProc{p} \in \lrProc{n+1}{\fType{\Sigma \vdash T}}}
+      \bussU{\proc \in \lrProc{n+1}{\senv \types \ty}}
     \end{bussproof}
   \end{mathpar}
   \textbf{Obligations of a process transition}
-  $\obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\pi} \fProc{p'} : \fType{T}}$,
-  where $\fProc{p} = \fProc{(C,E)}$ and $\fProc{p'} = \fProc{(C',E')}$
+  $\obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}$,
+  where $\proc = (\chset,\pool)$ and $\proc' = (\chset',\pool')$
   \begin{mathpar}
     \begin{bussproof}[Q-Tau]
-      \bussAs{\fProc{p'} \in \lrProc{n}{\fType{\Sigma \vdash T}}}
-      \bussU{\obl{\fType{\Sigma}}{n}{\fProc{p} \trans{\tau} \fProc{p'} : \fType{T}}}
+      \bussAs{\proc' \in \lrProc{n}{\senv \types \ty}}
+      \bussU{\obl{\senv}{n}{\proc \trans{\tau} \proc' : \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[Q-Close]
-      \bussAs{\fProc{p'} \in \lrProc{n}{\fType{\Sigma_1 \vdash T}}}
-      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sTerm}}{n}{\fProc{p} \trans{\lTerm{c}} \fProc{p'} : \fType{T}}}
+      \bussAs{\proc' \in \lrProc{n}{\senv_1 \types \ty}}
+      \bussU{\obl{\senv_1, \ch:\sTerm}{n}{\proc \trans{\lTerm{\ch}} \proc' : \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[Q-Recv]
-      \bussAs{\forall j \le n , \fType{\Sigma_2} , \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash U}}\st
-              \fProc{p'} \in \lrProc{j}{\fType{\Sigma_1, \Sigma_2, \fFunc{c}:S \vdash T}}}
-      \bussU{\obl{\fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}}{n}{\fProc{p} \trans{\lRecv{c}{v}} \fProc{p'} : \fType{T}}}
+      \bussAs{\forall j \le n , \senv_2 , \val \in \lrVal{j}{\senv_2 \types \tyB}\st
+              \proc' \in \lrProc{j}{\senv_1, \senv_2, \ch:\sty \types \ty}}
+      \bussU{\obl{\senv_1, \ch:\sRecv{\tyB}{\sty}}{n}{\proc \trans{\lRecv{\ch}{\val}} \proc' : \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[Q-Send]
       \bussAs{\begin{array}{@{}l@{}}
-        \dom(\fType{\Sigma_e}) = \fchans(\fFunc{v}) \cap \fProc{C}
+        \dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset
         \quad
-        \set{\fType{T_0},\fType{T_w}} = \set{\fType{T},\tUnit}
+        \set{\ty_0,\ty_{\asTy{w}}} = \set{\ty,\tUnit}
         \\
-        \fFunc{v} \in \lrVal{n+1}{\fType{\Sigma_v, \dual{\Sigma_e} \vdash U}}
+        \val \in \lrVal{n+1}{\senv_{\asTy{v}}, \dual{\senv_{\asTy{e}}} \types \tyB}
         \quad
-        \fProc{(C_0,E_0)} \in \lrProc{n}{\fType{\Sigma_0, \fFunc{c}:S \vdash T_0}}
+        (\chset_0,\pool_0) \in \lrProc{n}{\senv_0, \ch:\sty \types \ty_0}
         \quad
-        \fProc{(C_w,E_w)} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma_w \vdash T_w}}
+        (\chset_{\asPr{w}},\pool_{\asPr{w}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}
       \end{array}}
-      \bussU{\obl{\fType{\Sigma_0, \Sigma_v, \Sigma_w, \fFunc{c}:\sSend{U}{S}}}{n}
-              {\fProc{p} \trans{\lSend{c}{v}} \fProc{(C_0 \cupdot C_w, E_0 \uplus E_w)} : \fType{T}}}
+      \bussU{\obl{\senv_0, \senv_{\asTy{v}}, \senv_{\asTy{w}}, \ch:\sSend{\tyB}{\sty}}{n}
+              {\proc \trans{\lSend{\ch}{\val}} (\chset_0 \cupdot \chset_{\asPr{w}}, \pool_0 \uplus \pool_{\asPr{w}}) : \ty}}
     \end{bussproof}
   \end{mathpar}
-  \textbf{Extrusion split} $\fProc{p} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma \vdash T}}$
+  \textbf{Extrusion split} $\proc \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv \types \ty}$
   \begin{mathpar}
     \begin{bussproof}[T-Nil]
-      \bussAx{\fProc{(\emptyset,\emptyset)} \in \lrTopo{n}{\fType{\tEmpty ; \tEmpty \vdash \tUnit}}}
+      \bussAx{(\asPrOp{\emptyset},\asPrOp{\emptyset}) \in \lrTopo{n}{\tEmpty ; \tEmpty \types \tyUnit}}
     \end{bussproof}
     \and
     \begin{bussproof}[T-Cons]
-      \bussAs{\fProc{(C_d,E_d)} \in \lrProc{n}{\fType{\Sigma_d, \fFunc{d}:S \vdash T_d}}}
-      \bussAs{\fProc{(C_r,E_r)} \in \lrTopo{n}{\fType{\Sigma_e ; \Sigma_r \vdash T_r}}}
-      \bussAs{\set{\fType{T_d},\fType{T_r}} = \set{\fType{T},\tUnit}}
-      \bussT{\fProc{(C_d \cupdot C_r, E_d \uplus E_r)} \in \lrTopo{n}{\fType{\Sigma_e, \fFunc{d}:S ; \Sigma_d, \Sigma_r \vdash T}}}
+      \bussAs{(\chset_{\asPr{d}},\pool_{\asPr{d}}) \in \lrProc{n}{\senv_{\asTy{d}}, \chB:\sty \types \ty_{\asTy{d}}}}
+      \bussAs{(\chset_{\asPr{r}},\pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{r}} \types \ty_{\asTy{r}}}}
+      \bussAs{\set{\ty_{\asTy{d}},\ty_{\asTy{r}}} = \set{\ty,\tUnit}}
+      \bussT{(\chset_{\asPr{d}} \cupdot \chset_{\asPr{r}}, \pool_{\asPr{d}} \uplus \pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}}, \chB:\sty ; \senv_{\asTy{d}}, \senv_{\asTy{r}} \types \ty}}
     \end{bussproof}
   \end{mathpar}
   \caption{The process logical relation and the extrusion split \quad \rocq{extrusion_split}}
@@ -331,8 +331,8 @@ We can now define semantic counterparts to the typing judgments for terms
 and for processes from the logical relation.
 The typing judgment for terms applies to terms with free variables
 and, as a consequence, is parameterized by
-a variable environment~$\fType{\Delta}$ in addition to
-a session environment~$\fType{\Sigma}$.
+a variable environment~$\lenv$ in addition to
+a session environment~$\senv$.
 However, our term logical relation only considers terms with no free variables.
 To bridge the gap, we introduce \emph{grounding substitutions},
 as is standard, to close an open term by substituting the free variables
@@ -340,12 +340,12 @@ with closed terms respecting their assumed types.
 
 \begin{definition}[Grounding substitutions \rocq{grounding}]
   % For $n\in\Nat$,
-  We define $ \lrGSub{n}{\fType{\Sigma;\Delta}} $~by:
+  We define $ \lrGSub{n}{\senv;\lenv} $~by:
   \[
-    \def\tSigma#1{\fType{\Sigma_{#1}}}
-    \def\x#1{\fFunc{x_{#1}}}
-    \def\v#1{\fFunc{v_{#1}}}
-    \def\T#1{\fType{T_{#1}}}
+    \def\tSigma#1{\senv_{#1}}
+    \def\x#1{\ivx_{#1}}
+    \def\v#1{\val_{#1}}
+    \def\T#1{\ty_{#1}}
     \lrGSub{n}{\tSigma{} ; \x1 : \T1, \dots, \x k : \T k} :=
       \left\{
         [\x 1/\v 1,\dots,\x k/\v k] \;\middle|\;
@@ -362,26 +362,26 @@ with closed terms respecting their assumed types.
 
 \begin{definition}[Semantic judgments \rocq{sem_typed}]
 \label{def:sem-judgments}
-  The judgment $\fType{\Sigma;\Delta \proves \fFunc{e} : T}$ holds if
+  The judgment $\senv;\lenv \proves \tm : \ty$ holds if
   \[
     \forall n\in\Nat.\,
-      \forall \fType{\Sigma'} \disjoint \fType{\Sigma}.\,
-        \forall \gamma \in \lrGSub{n}{\fType{\Sigma';\Delta}}.\,
-          \fFunc{e}\gamma \in \lrTerm{n}{\fType{\Sigma, \Sigma' \vdash T}}
+      \forall \senv' \disjoint \senv.\,
+        \forall \gamma \in \lrGSub{n}{\senv';\lenv}.\,
+          \tm\gamma \in \lrTerm{n}{\senv, \senv' \types \ty}
   \]
-  The judgment $\fType{\Sigma \proves \fProc{p} : T}$ holds if
+  The judgment $\senv \proves \proc : \ty$ holds if
   $
     \forall n\in\Nat.\,
-      \fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}}
+      \proc \in \lrProc{n}{\senv \types \ty}
   $.
 \end{definition}
 
-%Note the two session environments in the term judgment: $\fType{\Sigma}$
-%declares the channels $\fFunc{e}$ itself owns, while the disjoint
-%$\fType{\Sigma'}$ is the one distributed over the values the grounding
+%Note the two session environments in the term judgment: $\senv$
+%declares the channels $\tm$ itself owns, while the disjoint
+%$\senv'$ is the one distributed over the values the grounding
 %substitution supplies; the conclusion is checked at their union.
 %The judgment is purely semantic --- it imposes no syntactic condition on
-%$\fFunc{e}$.
+%$\tm$.
 %Syntactic information is needed at exactly one point: the rule
 %\ruleLabel{E-Abs} (\cref{lem:comp:abs}) builds a $\lambda$-value, and a
 %$\lambda$-value must own exactly the channels its interface declares ---
@@ -399,10 +399,10 @@ To prove adequacy of our logical relation, we need two auxiliary lemmas.
 \begin{lemma}[\rocq{Prel_steps}]
 \label{lm:lrproc-inv}
   For all $n,m \in \Nat$,
-  if $ p \in \lrProc{n+m}{\fType{\tEmpty \vdash T}} $
+  if $ p \in \lrProc{n+m}{\tEmpty \types \ty} $
   then, for all~$p'$,
   $
-    {p \redu^n p'} $ implies $ {p' \in \lrProc{m}{\fType{\tEmpty \vdash T}}}.
+    {p \redu^n p'} $ implies $ {p' \in \lrProc{m}{\tEmpty \types \ty}}.
   $
 \end{lemma}
 % \begin{proof}
@@ -412,14 +412,14 @@ To prove adequacy of our logical relation, we need two auxiliary lemmas.
 \begin{lemma}[\rocq{Prel_safe}]
 \label{lm:lrproc-safe}
   For all $n \in \Nat$,
-  if $ p \in \lrProc{n+1}{\fType{\tEmpty \vdash T}} $
+  if $ p \in \lrProc{n+1}{\tEmpty \types \ty} $
   then $p$ is safe.
 \end{lemma}
 % \begin{proof}
 %   If $\irred p$ holds,
-%   then by $ p \in \lrProc{n+1}{\fType{\tEmpty \vdash T}} $
-%   we know $\fProc{p} = \fProc{(\emptyset, \mset{\fFunc{v}} \uplus E)}$
-%   and $ \forall \fFunc{e} \in \fProc{E}\st \fFunc{e} = \fFunc{\tUnit}$,
+%   then by $ p \in \lrProc{n+1}{\tEmpty \types \ty} $
+%   we know $\proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool)$
+%   and $ \forall \tm \in \pool\st \tm = \tUnit$,
 %   which means $p$ is terminated, hence safe.
 % 
 %   If $\irred p$ does \emph{not} hold,
@@ -427,27 +427,27 @@ To prove adequacy of our logical relation, we need two auxiliary lemmas.
 %   The definition of the process logical relation
 %   require a non-empty session environment
 %   in all the cases where~$\pi \ne \tau$,
-%   so by $ p \in \lrProc{n+1}{\fType{\tEmpty \vdash T}} $
+%   so by $ p \in \lrProc{n+1}{\tEmpty \types \ty} $
 %   we have $\pi = \tau$.
 %   Hence $p\redu p'$ and so~$p$ is safe.
 % \end{proof}
 
 \begin{theorem}[Adequacy \rocq{adequacy}]
   \label{thm:adequacy}
-  If $\fType{\tEmpty \proves \fProc{p} : T}$ then
-  $\fProc{p}$ is deadlock free.
+  If $\tEmpty \proves \proc : \ty$ then
+  $\proc$ is deadlock free.
 \end{theorem}
 
 \begin{proof}
   Let $p \redu^m p'$.
-  From $\fType{\tEmpty \proves \fProc{p} : T}$ we know
+  From $\tEmpty \proves \proc : \ty$ we know
   $
     \forall n\in\Nat.\,
-      \fProc{p} \in \lrProc{n}{\fType{\tEmpty \vdash T}}.
+      \proc \in \lrProc{n}{\tEmpty \types \ty}.
   $
   Pick $n = m+1$.
   Then, by Lemma~\ref{lm:lrproc-inv},
-  ${p' \in \lrProc{1}{\fType{\tEmpty \vdash T}}}$.
+  ${p' \in \lrProc{1}{\tEmpty \types \ty}}$.
   By Lemma~\ref{lm:lrproc-safe} $p'$ is safe.
   Thus~$p$ is deadlock free.
 \end{proof}
@@ -461,33 +461,33 @@ we state the ones for terms first, then the ones for processes.
 \mw{TOOD: removed the downward closure. i think its not needed for presenting the results}
 % \begin{lemma}[Downward closure \rocq{Erel_down}]
 %   \label{lem:lr-dwdcl}
-%   If $ \fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T}} $,
-%   then $ \fFunc{e} \in \lrTerm{m}{\fType{\Sigma \vdash T}} $
+%   If $ \tm \in \lrTerm{n}{\senv \types \ty} $,
+%   then $ \tm \in \lrTerm{m}{\senv \types \ty} $
 %   for every $ m \le n $.
 %   %%%
-%   If $ \fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}} $,
-%   then $ \fProc{p} \in \lrProc{m}{\fType{\Sigma \vdash T}} $
+%   If $ \proc \in \lrProc{n}{\senv \types \ty} $,
+%   then $ \proc \in \lrProc{m}{\senv \types \ty} $
 %   for every $ m \le n $.
 % \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{unit} \rocq{sem_typed_unit}]
   \label{lem:comp:unit}
-  $\fType{\tEmpty ; \tEmpty \proves \fFunc{\tUnit} : \tUnit}$.
+  $\tEmpty ; \tEmpty \proves \tUnit : \tyUnit$.
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{const} \rocq{sem_typed_konst}]
   \label{lem:comp:const}
-  If $\fType{\fFunc{k} : \lFunc{T}{U}}$, then $\fType{\tEmpty ; \tEmpty \proves \fFunc{k} : \lFunc{T}{U}}$.
+  If $\cst : \lFunc{\ty}{\tyB}$, then $\tEmpty ; \tEmpty \proves \cst : \lFunc{\ty}{\tyB}$.
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{lvar} \rocq{sem_typed_var}]
   \label{lem:comp:lvar}
-  $\fType{\tEmpty ; \fFunc{\tLVA}:T \proves \fFunc{\tLVA} : T}$.
+  $\tEmpty ; \tLVA:\ty \proves \tLVA : \ty$.
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{ch} \rocq{sem_typed_chan}]
   \label{lem:comp:ch}
-  $\fType{\fFunc{c}:S ; \tEmpty \proves \fFunc{c} : S}$.
+  $\ch:\sty ; \tEmpty \proves \ch : \sty$.
 \end{lemma}
 
 Abstraction is the only term rule that needs syntactic information,
@@ -496,42 +496,42 @@ Abstraction is the only term rule that needs syntactic information,
   fundamental property is not affected.
 \begin{lemma}[Compositionality: \ruleLabel{abs} \rocq{sem_typed_lam}]
   \label{lem:comp:abs}
-  If $\fType{\Sigma ; \Delta , \fFunc{\tLVA}:T \proves \fFunc{e} : U}$
-  and $\fchans(\fFunc{e}) = \dom(\fType{\Sigma})$
-  and $\fv(\fFunc{e}) = \dom(\fType{\Delta , \fFunc{\tLVA}:T})$,
+  If $\senv ; \lenv , \tLVA:\ty \proves \tm : \tyB$
+  and $\fchans(\tm) = \dom(\senv)$
+  and $\fv(\tm) = \dom(\lenv , \tLVA:\ty)$,
   then
-  $\fType{\Sigma ; \Delta \proves \fFunc{\tAbs{\tLVA}{e}} : \lFunc{T}{U}}$
+  $\senv ; \lenv \proves \tAbs{\tLVA}{\tm} : \lFunc{\ty}{\tyB}$
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{app} \rocq{sem_typed_app}]
   \label{lem:comp:app}
-  If $\fType{\Sigma_1 ; \Delta_1 \proves \fFunc{e_1} : \lFunc{T}{U}}$
-  and $\fType{\Sigma_2 ; \Delta_2 \proves \fFunc{e_2} : T}$, then
-  \[ \fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \proves \fFunc{\tApp{e_1}{e_2}} : U} \]
+  If $\senv_1 ; \lenv_1 \proves \tm_1 : \lFunc{\ty}{\tyB}$
+  and $\senv_2 ; \lenv_2 \proves \tm_2 : \ty$, then
+  \[ \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \proves \tApp{\tm_1}{\tm_2} : \tyB \]
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{pair} \rocq{sem_typed_pair}]
   \label{lem:comp:pair}
-  If $\fType{\Sigma_1 ; \Delta_1 \proves \fFunc{e_1} : T}$
-  and $\fType{\Sigma_2 ; \Delta_2 \proves \fFunc{e_2} : U}$, then
-  \[ \fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \proves \fFunc{\tPair{e_1}{e_2}} : \lPair{T}{U}} \]
+  If $\senv_1 ; \lenv_1 \proves \tm_1 : \ty$
+  and $\senv_2 ; \lenv_2 \proves \tm_2 : \tyB$, then
+  \[ \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \proves \tPair{\tm_1}{\tm_2} : \lPair{\ty}{\tyB} \]
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{let*} \rocq{sem_typed_letu}]
   \label{lem:comp:letUnit}
-  If $\fType{\Sigma_1 ; \Delta_1 \proves \fFunc{e_1} : \tUnit}$
-  and $\fType{\Sigma_2 ; \Delta_2 \proves \fFunc{e_2} : T}$, then
-  \[ \fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \proves \fFunc{\tLet*{e_1}{e_2}} : T} \]
+  If $\senv_1 ; \lenv_1 \proves \tm_1 : \tyUnit$
+  and $\senv_2 ; \lenv_2 \proves \tm_2 : \ty$, then
+  \[ \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \proves \tLet*{\tm_1}{\tm_2} : \ty \]
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{letpair} \rocq{sem_typed_letp}]
   \label{lem:comp:let}
-  If $\fType{\Sigma_1 ; \Delta_1 \proves \fFunc{e_1} : \lPair{U}{V}}$ and $\fType{\Sigma_2 ; \Delta_2 , \fFunc{\tLVA}:U , \fFunc{\tLVB}:V \proves \fFunc{e_2} : T}$
+  If $\senv_1 ; \lenv_1 \proves \tm_1 : \lPair{\tyB}{\tyC}$ and $\senv_2 ; \lenv_2 , \tLVA:\tyB , \tLVB:\tyC \proves \tm_2 : \ty$
   then
-  \[ \fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \proves \fFunc{\tLet[\tLVA][\tLVB]{e_1}{e_2}} : T} \]
+  \[ \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \proves \tLet[\tLVA][\tLVB]{\tm_1}{\tm_2} : \ty \]
 \end{lemma}
 
-\begin{theorem}[Compositionality of $\fType{\Sigma;\Delta \proves \fFunc{e} : T}$]
+\begin{theorem}[Compositionality of $\senv;\lenv \proves \tm : \ty$]
 \label{th:term-composit}
   All the term rules of \cref{fig:typeSys} hold (as implications) for the
   semantic judgment of terms.
@@ -542,45 +542,45 @@ We now move to the process level.
 \begin{lemma}[Compositionality: \ruleLabel{term} \rocq{Prel_term}]
   \label{lem:comp:term}
   If
-  $\primitive \fType{T}$
+  $\primitive \ty$
   and
-  $\fFunc{e} \in \lrTerm{n}{\fType{\Sigma \vdash T}}$,
+  $\tm \in \lrTerm{n}{\senv \types \ty}$,
   then
-  \[ \fProc{(\emptyset, \mset{\fFunc{e}})} \in \lrProc{n}{\fType{\Sigma \vdash T}} \]
+  \[ (\asPrOp{\emptyset}, \mset{\tm}) \in \lrProc{n}{\senv \types \ty} \]
 \end{lemma}
 \begin{lemma}[Compositionality: \ruleLabel{independent} \rocq{Prel_independent}]
   \label{lem:comp:independent}
   If
-  $\primitive \fType{T}$
+  $\primitive \ty$
   and
-  $\fProc{(C_1, E_1)} \in \lrProc{n}{\fType{\Sigma_1 \vdash T}}$
+  $(\chset_1, \pool_1) \in \lrProc{n}{\senv_1 \types \ty}$
   and
-  $\fProc{(C_2, E_2)} \in \lrProc{n}{\fType{\Sigma_2 \vdash \tUnit}}$
+  $(\chset_2, \pool_2) \in \lrProc{n}{\senv_2 \types \tyUnit}$
   and
-  $\fProc{C_1} \disjoint \dom(\fType{\Sigma_2})$
+  $\chset_1 \disjoint \dom(\senv_2)$
   and
-  $\fProc{C_2} \disjoint \dom(\fType{\Sigma_1})$,
+  $\chset_2 \disjoint \dom(\senv_1)$,
   then
-  \[ \fProc{(C_1 \cupdot C_2, E_1 \uplus E_2)} \in \lrProc{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}} \]
+  \[ (\chset_1 \cupdot \chset_2, \pool_1 \uplus \pool_2) \in \lrProc{n}{\senv_1, \senv_2 \types \ty} \]
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{connect} \rocq{Prel_connect}]
   \label{lem:comp:connect}
   If
-  $\primitive \fType{T}$
+  $\primitive \ty$
   and
-  $\fProc{(C_1, E_1)} \in \lrProc{n}{\fType{\Sigma_1, \fFunc{c}:S \vdash T}}$
+  $(\chset_1, \pool_1) \in \lrProc{n}{\senv_1, \ch:\sty \types \ty}$
   and
-  $\fProc{(C_2, E_2)} \in \lrProc{n}{\fType{\Sigma_2, \fFunc{c}:\dual{S} \vdash \tUnit}}$
+  $(\chset_2, \pool_2) \in \lrProc{n}{\senv_2, \ch:\dual{\sty} \types \tyUnit}$
   and
-  $\fProc{C_1} \disjoint \dom(\fType{\Sigma_2})$
+  $\chset_1 \disjoint \dom(\senv_2)$
   and
-  $\fProc{C_2} \disjoint \dom(\fType{\Sigma_1})$,
+  $\chset_2 \disjoint \dom(\senv_1)$,
   then
-  \[ \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1 \uplus E_2)} \in \lrProc{n}{\fType{\Sigma_1, \Sigma_2 \vdash T}} \]
+  \[ (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1 \uplus \pool_2) \in \lrProc{n}{\senv_1, \senv_2 \types \ty} \]
 \end{lemma}
 
-\begin{theorem}[Compositionality of $\fType{\Sigma \proves \fProc{p} : T}$ \rocq{sem_ptyped_term}]
+\begin{theorem}[Compositionality of $\senv \proves \proc : \ty$ \rocq{sem_ptyped_term}]
 \label{th:proc-composit}
   All the process rules of \cref{fig:typeSys} hold (as implications) for the
   semantic judgment of processes.
@@ -592,15 +592,15 @@ We now move to the process level.
   \begin{itemize}
     \item
       $
-        \fType{\Sigma;\Delta \types \fFunc{e} : T}
+        \senv;\lenv \types \tm : \ty
         \implies
-        \fType{\Sigma;\Delta \proves \fFunc{e} : T}
+        \senv;\lenv \proves \tm : \ty
       $
     \item
       $
-        \fType{\Sigma \types \fProc{p} : T}
+        \senv \types \proc : \ty
         \implies
-        \fType{\Sigma \proves \fProc{p} : T}
+        \senv \proves \proc : \ty
       $
   \end{itemize}
 \end{theorem}
@@ -617,101 +617,95 @@ showing that the untypable-but-safe processes of \cref{sec:calculus}
 satisfy the semantic judgment.
 
 \begin{example}[Semantic typing of the cyclic topology \rocq{cycle_sem_ptyped}]
-  Consider the process $\fProc{\var{cycle}}$ of Example~\ref{ex:cyclic},
+  Consider the process $\asPrOp{\var{cycle}}$ of Example~\ref{ex:cyclic},
   where we spelled out the only transition sequence $p_0 \redu^* p_4$.
   It is not hard to prove that
-  $ \fType{\tEmpty \proves \fProc{\var{cycle}} : \tUnit} $ holds:
+  $ \tEmpty \proves \asPrOp{\var{cycle}} : \tyUnit $ holds:
   along $\tau$ transitions, the process relation (at $n+1$)
   simply requires the next process to be in the relation (at $n$);
   finally, the relation will consider~$p_4$
-  which belongs to $ \lrProc{n}{\fType{\tEmpty \vdash \tUnit}} $
+  which belongs to $ \lrProc{n}{\tEmpty \types \tyUnit} $
   for all $n\in\Nat$,
   since it is irreducible and terminated.
 
   As a simple example of composition,
   we can prove that
-  $(\emptyset, \mset{\fFunc{\var{sync}}, \fFunc{\var{cycle}}})$
+  $(\emptyset, \mset{\asTmOp{\var{sync}}, \asTmOp{\var{cycle}}})$
   is deadlock free,
-  where $\fFunc{\var{sync}}$ is the term in the $\var{sync}$ process of
+  where $\asTmOp{\var{sync}}$ is the term in the $\var{sync}$ process of
   Example~\ref{ex:sync},
-  and $\fFunc{\var{cycle}}$ is the term in $\var{cycle}$.
+  and $\asTmOp{\var{cycle}}$ is the term in $\var{cycle}$.
   Since we have established in Example~\ref{ex:typing} that
-  $ \fType{\tEmpty \types \fProc{\var{sync}} : \tUnit} $,
+  $ \tEmpty \types \asPrOp{\var{sync}} : \tyUnit $,
   by \cref{th:fundamental} we have
-  $ \fType{\tEmpty \proves \fProc{\var{sync}} : \tUnit} $;
+  $ \tEmpty \proves \asPrOp{\var{sync}} : \tyUnit $;
   then by \cref{th:proc-composit} (\ruleLabel{P-Independent})
   we obtain that
   $
-    \fType{\tEmpty \proves \fProc{(\emptyset, \mset{\fFunc{\var{sync}}, \fFunc{\var{cycle}}})} : \tUnit}
+    \tEmpty \proves (\asPrOp{\emptyset}, \mset{\asTmOp{\var{sync}}, \asTmOp{\var{cycle}}}) : \tyUnit
   $
   which, by \cref{thm:adequacy}, is deadlock free.
 \end{example}
 
 \begin{example}[Semantic typing of the load balancer \rocq{lb_deadlock_free}]
-  Consider the process $(\emptyset,\mset{\fFunc{\var{lb}}})$
+  Consider the process $(\emptyset,\mset{\asTmOp{\var{lb}}})$
   of Example~\ref{ex:load-balancer}.
   We can prove that
   $
-    \fType{
-      \fFunc{c} : \sRecv{\tUnit}{\sSend{\tUnit}{\sSend{\tUnit}{\sTerm}}}
+      \ch : \sRecv{\tyUnit}{\sSend{\tyUnit}{\sSend{\tyUnit}{\sTerm}}}
       \proves
-      \fProc{(\emptyset,\mset{\fFunc{\var{lb}}})} : \tUnit}
+      (\asPrOp{\emptyset},\mset{\asTmOp{\var{lb}}}) : \tyUnit
   $ holds.
   Initially, the process can only take a~$\tau$ step;
   we can safely skip ahead of any~$\tau$ step as the logical relation
   simply considers the next process in that case.
   The first non-$\tau$ transition that the process can take is when
-  the $ \tApp{\tRecv}{c} $ term in $ \fFunc{\var{srv}} $
+  the $ \tApp{\tRecv}{c} $ term in $ \asTmOp{\var{srv}} $
   is in evaluating position (which can only happen while the workers are still waiting for a signal on their channels).
-  Thus the relation would consider an arbitrary $\pi = \lRecv{c}{v}$;
+  Thus the relation would consider an arbitrary $\pi = \lRecv{\ch}{\val}$;
   it will however continue checking only the transitions where
-  $ \fFunc{v} \in \lrVal{j}{\fType{\Sigma_2 \vdash \tUnit}} $.
+  $ \val \in \lrVal{j}{\senv_2 \types \tyUnit} $.
   By the value relation definition,
-  $\fType{\Sigma_2}$ must be empty and $\fFunc{v} = \fFunc{\tUnit}$.
+  $\senv_2$ must be empty and $\val = \tUnit$.
   Thus the relation will ask us to prove that,
-  when we follow the transition labelled with $\lRecv{c}{\tUnit}$,
+  when we follow the transition labelled with $\lRecv{\ch}{\tUnit}$,
   we reach a process in the relation for
-  $ \fType{\fFunc{c}:\sSend{\tUnit}{\sSend{\tUnit}{\sTerm}} \vdash \tUnit} $.
+  $ \ch:\sSend{\tyUnit}{\sSend{\tyUnit}{\sTerm}} \types \tyUnit $.
   From here on, the environment can no longer control the potential execution,
   as the process only makes send and close actions.
   Since all interleavings are compatible with the assumption
-  $ \fType{\fFunc{c}:\sSend{\tUnit}{\sSend{\tUnit}{\sTerm}}} $,
+  $ \ch:\sSend{\tyUnit}{\sSend{\tyUnit}{\sTerm}} $,
   the process is accepted by the process relation.
 
   Since the process is not closed, we cannot infer it is deadlock free.
   We can however compose it with the following syntactically typable term:
   \begin{align*}
-    \fFunc{q} := {}
-      & \fFunc{\tLetS{c}{\tApp{\tSend}{\tPair{\tUnit}{c}}}{}}\\
-      & \fFunc{\tLet[m][c]{\tApp{\tRecv}{c}}{\tLet*{m}{}}}\\
-      % & \fFunc{\tLet*{m}{}} \\
-      & \fFunc{\tLet[m][c]{\tApp{\tRecv}{c}}{\tLet*{m}{\tApp{\tClos}{c}}}}
+    \asTm{q} := {}
+      & \tLetS{\ch}{\tApp{\tSend}{\tPair{\tUnit}{\ch}}}{}\\
+      & \tLet[\asTm{m}][\ch]{\tApp{\tRecv}{\ch}}{\tLet*{\asTm{m}}{}}\\
+      % & \tLet*{\asTm{m}}{} \\
+      & \tLet[\asTm{m}][\ch]{\tApp{\tRecv}{\ch}}{\tLet*{\asTm{m}}{\tApp{\tClos}{\ch}}}
   \end{align*}
   It is easy to derive
   $
-    \fType{
-      \fFunc{c} : \sSend{\tUnit}{\sRecv{\tUnit}{\sRecv{\tUnit}{\sTerm}}}
+      \ch : \sSend{\tyUnit}{\sRecv{\tyUnit}{\sRecv{\tyUnit}{\sTerm}}}
       \types
-      \fProc{(\emptyset, \mset{\fFunc{q}}) : \tUnit}
-    }
+      (\asPrOp{\emptyset}, \mset{\asTm{q}}) : \tUnit
   $
   in the syntactic type system.
   Therefore, by \cref{th:fundamental} we can derive
   $
-    \fType{
-      \fFunc{c} : \sSend{\tUnit}{\sRecv{\tUnit}{\sRecv{\tUnit}{\sTerm}}}
+      \ch : \sSend{\tyUnit}{\sRecv{\tyUnit}{\sRecv{\tyUnit}{\sTerm}}}
       \proves
-      \fProc{(\emptyset, \mset{\fFunc{q}})} : \tUnit
-    }
+      (\asPrOp{\emptyset}, \mset{\asTm{q}}) : \tyUnit
   $.
   By \cref{th:proc-composit},
   we can apply \ruleLabel{P-Connect} to obtain
   $
-    \fType{
       \tEmpty
       \proves
-      \fProc{(\set{c}, \mset{\fFunc{q}, \fFunc{lb}})} : \tUnit
-    }.
+      (\set{\asPr{c}}, \mset{\asTm{q}, \asTm{lb}}) : \tyUnit
+    .
   $
   By \cref{thm:adequacy}, this process is deadlock free.
 \end{example}

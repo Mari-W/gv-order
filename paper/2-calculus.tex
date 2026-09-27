@@ -8,54 +8,54 @@ which is loosely based on the formulation of GV by \citet{conf/esop/LindleyM15}.
 synchronous message passing.
 
 The syntax of \OurLang\ is shown in \cref{fig:syntax}.
-Variables and channels are ranged over by $\fFunc{\tLVA},
-\fFunc{\tLVB}$ and $\fFunc{c}, \fFunc{d}$, respectively.
+Variables and channels are ranged over by $\tLVA,
+\tLVB$ and $\ch, \chB$, respectively.
 \OurLang\ includes constants for the concurrency primitives:
-$\fFunc{\tApp{\tFork}{(\tAbs{\tLVA}{e})}}$
-  creates a new channel~$\fFunc{c}$ and spawns a thread
-  running~$\fFunc{e}$ with~$\fFunc{\tLVA}$ bound to~$\fFunc{c}$, and returns~$\fFunc{c}$;
-$\fFunc{\tApp{\tRecv}{c}}$
-  receives a message over~$\fFunc{c}$, and
-  returns the pair $ \fFunc{\tPair{v}{c'}} $ of the message $\fFunc{v}$
-  and the continuation channel~$\fFunc{c'}$;
-$\fFunc{\tApp{\tSend}{\tPair{v}{c}}}$
-  sends a value $\fFunc{v}$ over the channel~$\fFunc{c}$,
+$\tApp{\tFork}{(\tAbs{\tLVA}{\tm})}$
+  creates a new channel~$\ch$ and spawns a thread
+  running~$\tm$ with~$\tLVA$ bound to~$\ch$, and returns~$\ch$;
+$\tApp{\tRecv}{\ch}$
+  receives a message over~$\ch$, and
+  returns the pair $ \tPair{\val}{\ch'} $ of the message $\val$
+  and the continuation channel~$\ch'$;
+$\tApp{\tSend}{\tPair{\val}{\ch}}$
+  sends a value $\val$ over the channel~$\ch$,
   and returns the continuation channel;
-$\fFunc{\tApp{\tClos}{c}}$
-  closes channel~$\fFunc{c}$.
-Values consist of the unit~$\fFunc{\tUnit}$, constants, abstractions, and pairs.
-Terms $\fFunc{e}$ are standard;
+$\tApp{\tClos}{\ch}$
+  closes channel~$\ch$.
+Values consist of the unit~$\tUnit$, constants, abstractions, and pairs.
+Terms $\tm$ are standard;
 in examples, we use the standard abbreviation
-$ \fFunc{\tLetS{a}{e_1}{e_2}} $
+$ \tLetS{\vr}{\tm_1}{\tm_2} $
 for
-$ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
+$ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
 
 
 \begin{figure}[thp]
-  % \textbf{Constants $\fFunc{k}$, values $\fFunc{v}$, terms $\fFunc{e}$, evaluation contexts $\fFunc{\fCtx{E}}$, session labels $\sigma$, term labels $\lambda$}
+  % \textbf{Constants $\cst$, values $\val$, terms $\tm$, evaluation contexts $\ectx$, session labels $\sigma$, term labels $\lambda$}
   \begin{align*}
-    \fFunc{k} &::=
-      \fFunc{\tFork} \sepr
-      \fFunc{\tRecv} \sepr
-      \fFunc{\tSend} \sepr
-      \fFunc{\tClos}
+    \cst &::=
+      \tFork \sepr
+      \tRecv \sepr
+      \tSend \sepr
+      \tClos
     & \text{(constants)}
     \\
-    \fFunc{v} &::=
-      \fFunc{\tUnit} \sepr
-      \fFunc{k} \sepr
-      \fFunc{c} \sepr
-      \fFunc{\tAbs{\tLVA}{e}} \sepr
-      \fFunc{\tPair{v}{v}}
+    \val &::=
+      \tUnit \sepr
+      \cst \sepr
+      \ch \sepr
+      \tAbs{\tLVA}{\tm} \sepr
+      \tPair{\val}{\val}
     & \text{(values)}
     \\
-    \fFunc{e} &::=
-      \fFunc{\tLVA} \sepr
-      \fFunc{v} \sepr
-      \fFunc{\tApp{e}{e}} \sepr
-      \fFunc{\tPair{e}{e}} \sepr
-      \fFunc{\tLet*{e}{e}} \sepr
-      \fFunc{\tLet[\tLVA][\tLVA]{e}{e}}
+    \tm &::=
+      \tLVA \sepr
+      \val \sepr
+      \tApp{\tm}{\tm} \sepr
+      \tPair{\tm}{\tm} \sepr
+      \tLet*{\tm}{\tm} \sepr
+      \tLet[\tLVA][\tLVA]{\tm}{\tm}
     & \text{(terms)}
   \end{align*}
   \caption{Syntax of \OurLang \rocq{expr}}
@@ -64,64 +64,64 @@ $ \fFunc{\tApp{(\tAbs{\tLVA}{e_2})}{e_1}} $.
 \end{figure}
 
 \begin{figure}[tp]
-  \textbf{Evaluation contexts $\fFunc{\fCtx{E}}$, session labels $\sigma$, term labels $\lambda$}
+  \textbf{Evaluation contexts $\ectx$, session labels $\sigma$, term labels $\lambda$}
   \begin{align*}
-    \fFunc{\fCtx{E}} &::=
-      \fFunc{\hole} \sepr
-      \fFunc{\tApp{\fCtx{E}}{e}} \sepr
-      \fFunc{\tApp{v}{\fCtx{E}}} \sepr
-      \fFunc{\tPair{\fCtx{E}}{e}} \sepr
-      \fFunc{\tPair{v}{\fCtx{E}}} \sepr
-      \fFunc{\tLet*{\fCtx{E}}{e}} \sepr
-      \fFunc{\tLet[\tLVA][\tLVA]{\fCtx{E}}{e}}
+    \ectx &::=
+      \hole \sepr
+      \tApp{\ectx}{\tm} \sepr
+      \tApp{\val}{\ectx} \sepr
+      \tPair{\ectx}{\tm} \sepr
+      \tPair{\val}{\ectx} \sepr
+      \tLet*{\ectx}{\tm} \sepr
+      \tLet[\tLVA][\tLVA]{\ectx}{\tm}
     & \text{(eval.\ contexts)}
     \\
     \sigma &::=
-      \lRecv{c}{v} \sepr
-      \lSend{c}{v} \sepr
-      \lTerm{c}
+      \lRecv{\ch}{\val} \sepr
+      \lSend{\ch}{\val} \sepr
+      \lTerm{\ch}
     & \text{(session labels)}
     \\
     \lambda &::=
       \beta \sepr
       \sigma \sepr
-      \lFork{c}{v}
+      \lFork{\ch}{\val}
     & \text{(term labels)}
   \end{align*}
   \textbf{Labelled reductions for terms}
   \begin{mathpar}
     \begin{bussproof}[T-Act-App]
       \bussAx{
-      \fFunc{\tApp{(\tAbs{\tLVA}{e})}{v}} \trans{\beta} \fFunc{\tSub{e}{v}{\tLVA}}}
+      \tApp{(\tAbs{\tLVA}{\tm})}{\val} \trans{\beta} \tSub{\tm}{\val}{\tLVA}}
     \end{bussproof}
     \and
     \begin{bussproof}[T-Act-Let*]
-      \bussAx{\fFunc{\tLet*{\tUnit}{e}} \trans{\beta} \fFunc{e}}
+      \bussAx{\tLet*{\tUnit}{\tm} \trans{\beta} \tm}
     \end{bussproof}
     \and
     \begin{bussproof}[T-Act-LetPair]
-      \bussAx{\fFunc{\tLet[\tLVA][\tLVB]{\tPair{u}{v}}{e}} \trans{\beta} \fFunc{\tSub{\tSub{e}{u}{\tLVA}}{v}{\tLVB}}}
+      \bussAx{\tLet[\tLVA][\tLVB]{\tPair{\valB}{\val}}{\tm} \trans{\beta} \tSub{\tSub{\tm}{\valB}{\tLVA}}{\val}{\tLVB}}
     \end{bussproof}
     \and
     \begin{bussproof}[T-Act-Fork]
-      \bussAx{\fFunc{\tApp{\tFork}{v}} \trans{\lFork{c}{v}} \fFunc{c}}
+      \bussAx{\tApp{\tFork}{\val} \trans{\lFork{\ch}{\val}} \ch}
     \end{bussproof}
     \\\
     \begin{bussproof}[T-Act-Recv]
-      \bussAx{\fFunc{\tApp{\tRecv}{c}} \trans{\lRecv{c}{v}} \fFunc{\tPair{v}{c}}}
+      \bussAx{\tApp{\tRecv}{\ch} \trans{\lRecv{\ch}{\val}} \tPair{\val}{\ch}}
     \end{bussproof}
     \and
     \begin{bussproof}[T-Act-Send]
-      \bussAx{\fFunc{\tApp{\tSend}{\tPair{v}{c}}} \trans{\lSend{c}{v}} \fFunc{c}}
+      \bussAx{\tApp{\tSend}{\tPair{\val}{\ch}} \trans{\lSend{\ch}{\val}} \ch}
     \end{bussproof}
     \and
     \begin{bussproof}[T-Act-Close]
-      \bussAx{\fFunc{\tApp{\tClos}{c}} \trans{\lTerm{c}} \fFunc{\tUnit}}
+      \bussAx{\tApp{\tClos}{\ch} \trans{\lTerm{\ch}} \tUnit}
     \end{bussproof}
     \and
     \begin{bussproof}[T-Act-Ctx]
-      \bussAs{\fFunc{e} \trans{\lambda} \fFunc{e'}}
-      \bussU{\fFunc{\fCtx{E}[e]} \trans{\lambda} \fFunc{\fCtx{E}[e']}}
+      \bussAs{\tm \trans{\lambda} \tm'}
+      \bussU{\ectx[\tm] \trans{\lambda} \ectx[\tm']}
     \end{bussproof}
   \end{mathpar}
   \caption{Semantics of \OurLang\ terms \rocq{slabel}}
@@ -137,34 +137,34 @@ effects, and then lift it to an LTS semantics on processes.
 \paragraph{Term semantics}
 The semantics of terms is shown in \cref{fig:term-semantics},
 which defines a labelled relation
-$\fFunc{e} \trans{\lambda} \fFunc{e}$.
+$\tm \trans{\lambda} \tm$.
 Bindings and substitutions work as standard:
-we let $\fv (\fFunc{e})$ denote the free variables of a term
-and $\fFunc{\tSub{e}{v}{\tLVA}}$ the capture-avoiding
-substitution of variable $\fFunc{\tLVA}$ by (closed) $\fFunc{v}$ in $\fFunc{e}$.
+we let $\fv (\tm)$ denote the free variables of a term
+and $\tSub{\tm}{\val}{\tLVA}$ the capture-avoiding
+substitution of variable $\tLVA$ by (closed) $\val$ in $\tm$.
 All channels in a term are considered free; terms can only bind variables,
-and we write $\fchans(\fFunc{e})$ for the set of free channels of a term.
+and we write $\fchans(\tm)$ for the set of free channels of a term.
 We define the subjects of a term label $\fc(\lambda)$, \ie the channels
 the label acts on:
-  $\fc(\beta) = \fc(\lFork{c}{v}) = \emptyset$,
-  $\fc(\lRecv{c}{v}) =
-  \fc(\lSend{c}{v}) = %\fc(\lWait{c}) =
-  \fc(\lTerm{c}) =
-  \set{\fFunc{c}}$.
+  $\fc(\beta) = \fc(\lFork{\ch}{\val}) = \emptyset$,
+  $\fc(\lRecv{\ch}{\val}) =
+  \fc(\lSend{\ch}{\val}) = %\fc(\lWait{\ch}) =
+  \fc(\lTerm{\ch}) =
+  \set{\ch}$.
 %%%
 Labels~$\lambda$ record the effect taking place.
 The label $\beta$ indicate a pure functional reduction.
 Communication effects are recorded by session labels~$\sigma$:
-$\lRecv{c}{v}$ for receiving value~$\fFunc{v}$ on~$\fFunc{c}$,
-$\lSend{c}{v}$ for sending value~$\fFunc{v}$ on~$\fFunc{c}$, and
-$\lTerm{c}$ for terminating the connection on $\fFunc{c}$.
-A fork generates a label~$\lFork{c}{v}$,
-recording the new channel~$\fFunc{c}$ and
-the code to run in the forked thread~$\fFunc{v}$.
+$\lRecv{\ch}{\val}$ for receiving value~$\val$ on~$\ch$,
+$\lSend{\ch}{\val}$ for sending value~$\val$ on~$\ch$, and
+$\lTerm{\ch}$ for terminating the connection on $\ch$.
+A fork generates a label~$\lFork{\ch}{\val}$,
+recording the new channel~$\ch$ and
+the code to run in the forked thread~$\val$.
 The rule~\ruleLabel{T-Act-Ctx} uses standard call-by-value evaluation contexts.
 
-We define GV-style \emph{term reduction} $\fFunc{e} \redu \fFunc{e'}$ as
-the pure steps $\fFunc{e} \trans{\beta} \fFunc{e'}$
+We define GV-style \emph{term reduction} $\tm \redu \tm'$ as
+the pure steps $\tm \trans{\beta} \tm'$
 and write $\trans{}[*]$ for its transitive, reflexive closure.
 
 
@@ -188,7 +188,7 @@ disjointness and disjoint union of sets $S_1$ and $S_2$, respectively,
 and $E_1 \uplus E_2$ for multiset union.
 
 \Cref{fig:proc-semantics} defines the labelled transition relation
-$\fProc{(C,E)} \trans{\pi} \fProc{(C,E)}$ between processes.
+$(\chset,\pool) \trans{\pi} (\chset,\pool)$ between processes.
 A process $(C,E)$ might represent the full network, or some sub-network of
 the global state. In the latter case, terms in~$E$ may use channels that do not
 appear in~$C$ to communicate with the environment. 
@@ -197,23 +197,23 @@ that pertain to channels linking to the environment,
 to a transition of the process labelled with~$\sigma$.
 We denote the channels that are extruded from the internal scope due to a
 an communication effect~$\sigma$ by $\sent(\sigma)$:
-  $\sent(\lRecv{c}{v}) = \sent(\lTerm{c}) = \emptyset$,
-  $\sent(\lSend{c}{v}) = \fchans(\fFunc{v})$.
+  $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
+  $\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
 Rule \ruleLabel{P-Act-Beta} lets a thread take an internal $\tau$~step
 to execute a $\beta$~reduction of the term it is running.
-Rule \ruleLabel{P-Act-Fork} interprets the fork labels~$ \lFork{c}{v} $
-by adding a fresh name $\fFunc{c}$ to~$C$ and adding a thread
-running~$\fFunc{v}$ applied to~$\fFunc{c}$.
+Rule \ruleLabel{P-Act-Fork} interprets the fork labels~$ \lFork{\ch}{\val} $
+by adding a fresh name $\ch$ to~$C$ and adding a thread
+running~$\val$ applied to~$\ch$.
 Communication labels are interpreted by the \ruleLabel{P-Act-Msg} rule,
-which matches a send $\lSend{c}{v}$ (over a restricted $\fFunc{c}$)
-in one thread with a receive $\lRecv{c}{v}$ of another.
+which matches a send $\lSend{\ch}{\val}$ (over a restricted $\ch$)
+in one thread with a receive $\lRecv{\ch}{\val}$ of another.
 Similarly, \ruleLabel{P-Act-Close} makes two close actions on the same
 restricted channel match.
 \ed{explain why we keep close only over internal channels}
 
 We define \emph{process reduction},
-written $\fProc{p} \redu \fProc{p'}$,
-as $\fProc{p} \trans{\tau} \fProc{p'}$.
+written $\proc \redu \proc'$,
+as $\proc \trans{\tau} \proc'$.
 We write $\trans{}[*]$ for its transitive, reflexive closure.
 
 The move to an LTS is a matter of convenience:
@@ -221,10 +221,10 @@ reduction coincides with a conventional, label-free reduction
 semantics.
 \begin{theorem}[Harmony \rocq{harmony}]
   \label{thm:harmony}
-  $\fProc{p} \redu \fProc{p'}$
+  $\proc \redu \proc'$
   if and only if
-  $\fProc{p} \sred \fProc{p'}$,
-  where $\fProc{p} \sred \fProc{p'}$ is the reduction semantics of
+  $\proc \sred \proc'$,
+  where $\proc \sred \proc'$ is the reduction semantics of
   \cref{sec:app-harmony}, \cref{fig:red-semantics}.
 \end{theorem}
 
@@ -237,32 +237,32 @@ semantics.
   \textbf{Labelled reductions for processes}
   \begin{mathpar}
     \begin{bussproof}[P-Act-Session]
-      \bussAs{\fFunc{e} \trans{\sigma} \fFunc{e'}}
-      \bussAs{\fc(\sigma) \disjoint \fProc{C}}
-      \bussB{\fProc{(C, E \uplus \mset{\fFunc{e}})} \trans{\sigma} \fProc{(C \setminus \sent(\sigma), E \uplus \mset{\fFunc{e'}})}}
+      \bussAs{\tm \trans{\sigma} \tm'}
+      \bussAs{\fc(\sigma) \disjoint \chset}
+      \bussB{(\chset, \pool \uplus \mset{\tm}) \trans{\sigma} (\chset \setminus \sent(\sigma), \pool \uplus \mset{\tm'})}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Act-Fork]
-      \bussAs{\fFunc{e} \trans{\lFork{c}{v}} \fFunc{e'}}
-      \bussAs{\fFunc{c}~\text{fresh}}
-      \bussB{\fProc{(C, E \uplus \mset{\fFunc{e}})} \trans{\tau} \fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e'}, \fFunc{\tApp{v}{c}}})}}
+      \bussAs{\tm \trans{\lFork{\ch}{\val}} \tm'}
+      \bussAs{\ch~\text{fresh}}
+      \bussB{(\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm', \tApp{\val}{\ch}})}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Act-Beta]
-      \bussAs{\fFunc{e} \trans{\beta} \fFunc{e'}}
-      \bussU{\fProc{(C, E \uplus \mset{\fFunc{e}})} \trans{\tau} \fProc{(C, E \uplus \mset{\fFunc{e'}})}}
+      \bussAs{\tm \trans{\beta} \tm'}
+      \bussU{(\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset, \pool \uplus \mset{\tm'})}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Act-Msg]
-      \bussAs{\fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'}}
-      \bussAs{\fFunc{f} \trans{\lRecv{c}{v}} \fFunc{f'}}
-      \bussB{\fProc{(C, E \uplus \mset{\fFunc{e}, \fFunc{f}})} \trans{\tau} \fProc{(C, E \uplus \mset{\fFunc{e'}, \fFunc{f'}})}}
+      \bussAs{\tm \trans{\lSend{\ch}{\val}} \tm'}
+      \bussAs{\tmB \trans{\lRecv{\ch}{\val}} \tmB'}
+      \bussB{(\chset, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tmB'})}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Act-Close]
-      \bussAs{\fFunc{e} \trans{\lTerm{c}} \fFunc{e'}}
-      \bussAs{\fFunc{f} \trans{\lTerm{c}} \fFunc{f'}}
-        \bussB{\fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e}, \fFunc{f}})} \trans{\tau} \fProc{(C, E \uplus \mset{\fFunc{e'}, \fFunc{f'}})}}
+      \bussAs{\tm \trans{\lTerm{\ch}} \tm'}
+      \bussAs{\tmB \trans{\lTerm{\ch}} \tmB'}
+        \bussB{(\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tmB'})}
     \end{bussproof}
   \end{mathpar}
   \caption{LTS semantics of \OurLang\ processes \rocq{plabel}}
@@ -274,66 +274,66 @@ semantics.
 \label{ex:sync}
   As a first example, consider this reduction sequence:
   \begin{align*}
-    \fProc{\var{sync}} := {}
-    & (\set{},\mset{ \fFunc{
+    \asPrOp{\var{sync}} := {}
+    & (\set{},\mset{ 
       \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\tFork}{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-      } })
+       })
     \\
     \redu {}
-    & (\set{ \fFunc{c} },\mset{ \fFunc{
-      \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{c})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-      }, \fFunc{
-      \tApp{(\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}})}{c}
-      } })
+    & (\set{ \ch },\mset{ 
+      \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{\ch})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+      , 
+      \tApp{(\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}})}{\ch}
+       })
     \\
     \redu {}
-    & (\set{ \fFunc{c} },\mset{ \fFunc{
-      \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{c})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-      }, \fFunc{
-      {\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{c}})}}
-      } })
+    & (\set{ \ch },\mset{ 
+      \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{\ch})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+      , 
+      {\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\ch}})}}
+       })
     \\
     \redu {}
-    & (\set{ \fFunc{c} },\mset{ \fFunc{
-      \tLet[\tLVB][\tLVA]{\tPair{\tUnit}{c}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-      }, \fFunc{
-      {\tApp{\tClos}{c}}
-      } })
+    & (\set{ \ch },\mset{ 
+      \tLet[\tLVB][\tLVA]{\tPair{\tUnit}{\ch}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+      , 
+      {\tApp{\tClos}{\ch}}
+       })
     \\
     \redu {}
-    & (\set{ \fFunc{c} },\mset{ \fFunc{
-      {\tLet*{\tUnit}{\tApp{\tClos}{c}}}
-      }, \fFunc{
-      {\tApp{\tClos}{c}}
-      } })
+    & (\set{ \ch },\mset{ 
+      {\tLet*{\tUnit}{\tApp{\tClos}{\ch}}}
+      , 
+      {\tApp{\tClos}{\ch}}
+       })
     \\
     \redu {}
-    & (\set{ \fFunc{c} },\mset{ \fFunc{
-      {{\tApp{\tClos}{c}}}
-      }, \fFunc{
-      {\tApp{\tClos}{c}}
-      } })
+    & (\set{ \ch },\mset{ 
+      {{\tApp{\tClos}{\ch}}}
+      , 
+      {\tApp{\tClos}{\ch}}
+       })
     \\
     \redu {}
-    & (\set{ },\mset{ \fFunc{
+    & (\set{ },\mset{ 
       \tUnit
-      }, \fFunc{
+      , 
       \tUnit
-      } })
+       })
   \end{align*}
-  The initial (closed) process $\fProc{\var{sync}}$
+  The initial (closed) process $\asPrOp{\var{sync}}$
   has a fork in evaluation position,
-  which creates a new channel~$\fFunc{c}$ and a new thread.
+  which creates a new channel~$\ch$ and a new thread.
   After a~$\beta$ reduction in the new thread,
-  the first thread has a receive on~$\fFunc{c}$ in evaluation position,
-  and the second a send on~$\fFunc{c}$.
+  the first thread has a receive on~$\ch$ in evaluation position,
+  and the second a send on~$\ch$.
   By \ruleLabel{P-Act-Msg} the two actions are matched and the message~$\tUnit$
   is exchanged.
   After deconstructing the received value, the two threads synchronously close
   the channel, bringing the whole process to a graceful termination.
 \end{example}
 
-The $\fFunc{\tFork}$ primitive is modelled after the
+The $\tFork$ primitive is modelled after the
 Curry-Howard correspondence implementing the Cut rule of Linear Logic.
 By design, in typed GV processes the communication topology is constrained:
 it is acyclic,
@@ -352,37 +352,37 @@ will consider untyped processes and accept only well-behaved ones
 
 \begin{example}[Cyclic topology \rocq{cycle_proc}]
 \label{ex:cyclic}
-  The process $\fProc{\var{cycle}}$ below consists of two threads
-  sharing two channels~$\fFunc{c}$ and $\fFunc{d}$,
+  The process $\asPrOp{\var{cycle}}$ below consists of two threads
+  sharing two channels~$\ch$ and $\chB$,
   but uses them in a safe way:
   \begin{align}
-    \fProc{\var{cycle}} := {}
-    & (\set{\fFunc{c}, \fFunc{d}} , \mset{
-      \fFunc{\tLet*{\tApp{\tClos}{c}}{\tApp{\tClos}{d}}} ,
-      \fFunc{\tLet*{\tApp{\tClos}{c}}{\tApp{\tClos}{d}}}})
+    \asPrOp{\var{cycle}} := {}
+    & (\set{\ch, \chB} , \mset{
+      \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}} ,
+      \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}})
     \tag{$p_0$}
     \\
-    \redu {}%\fProc{p_1} = &
-    & (\set{\fFunc{d}} , \mset{
-      \fFunc{\tLet*{\tUnit}{\tApp{\tClos}{d}}} ,
-      \fFunc{\tLet*{\tUnit}{\tApp{\tClos}{d}}}})
+    \redu {}%\proc_1 = &
+    & (\set{\chB} , \mset{
+      \tLet*{\tUnit}{\tApp{\tClos}{\chB}} ,
+      \tLet*{\tUnit}{\tApp{\tClos}{\chB}}})
     \tag{$p_1$}
     \\
     \redu {}
-    & (\set{\fFunc{d}} , \mset{
-      \fFunc{{\tApp{\tClos}{d}}} ,
-      \fFunc{\tLet*{\tUnit}{\tApp{\tClos}{d}}}})
+    & (\set{\chB} , \mset{
+      {\tApp{\tClos}{\chB}} ,
+      \tLet*{\tUnit}{\tApp{\tClos}{\chB}}})
     \tag{$p_2$}
     \\
     \redu {}
-    & (\set{\fFunc{d}} , \mset{
-      \fFunc{{\tApp{\tClos}{d}}} ,
-      \fFunc{{\tApp{\tClos}{d}}}})
+    & (\set{\chB} , \mset{
+      {\tApp{\tClos}{\chB}} ,
+      {\tApp{\tClos}{\chB}}})
     \tag{$p_3$}
     \\
     \redu {}
     & (\set{} , \mset{
-      \fFunc{{\tUnit}} , \fFunc{{\tUnit}}})
+      {\tUnit} , {\tUnit}})
     \tag{$p_4$}
   \end{align}
 \end{example}
@@ -392,33 +392,33 @@ It considers the case that two disjoint processes communicate over an external c
 We can internalize this communication by putting the processes together and close them over $c$.
 \begin{lemma}[Internalizing communication \rocq{internalize_comm}]
 \label{lem:internalize}
-  Suppose that $\fProc{(C_1, E_1)} \trans{\lSend{c}{v}} \fProc{(C_1', E_1')}$ and $\fProc{(C_2, E_2)} \trans{\lRecv{c}{v}} \fProc{(C_2', E_2')}$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
-  It then holds that $\fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1' \uplus E_2')}$.
+  Suppose that $(\chset_1, \pool_1) \trans{\lSend{\ch}{\val}} (\chset_1', \pool_1')$ and $(\chset_2, \pool_2) \trans{\lRecv{\ch}{\val}} (\chset_2', \pool_2')$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
+  It then holds that $(\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1' \uplus \pool_2')$.
 \end{lemma}
 % \begin{proof}
 %   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ruleLabel{P-Act-Session}.
 %
 %   Rule inversion on $(C_1, E_1)$ yields
 %   \begin{align}
-%     E_1 &= E_1'' \uplus \mset{\fFunc{e}} \\
-%         & \fFunc{e} \trans{\lSend{c}{v}} \fFunc{e'} \label{eq:1}\\
-%     C_1' & = C_1 \setminus \sent(\lSend{c}{v}) = C_1 \setminus \fchans(\fFunc{v}) \\
-%     E_1' & = E_1'' \uplus \mset{\fFunc{e'}}
+%     E_1 &= E_1'' \uplus \mset{\tm} \\
+%         & \tm \trans{\lSend{\ch}{\val}} \tm' \label{eq:1}\\
+%     C_1' & = C_1 \setminus \sent(\lSend{\ch}{\val}) = C_1 \setminus \fchans(\val) \\
+%     E_1' & = E_1'' \uplus \mset{\tm'}
 %   \end{align}
 %   Rule inversion on $(C_2, E_2)$ yields
 %   \begin{align}
-%     E_2 & = E_2'' \uplus \mset{\fFunc{f}} \\
-%         & \fFunc{f} \trans{\lRecv{c}{v}} \fFunc{f'} \label{eq:2}\\
-%     C_2' & = C_2 \setminus \sent(\lRecv{c}{v}) = C_2 \setminus \emptyset \\
-%     E_2' & = E_2'' \uplus \mset{\fFunc{f'}}
+%     E_2 & = E_2'' \uplus \mset{\tmB} \\
+%         & \tmB \trans{\lRecv{\ch}{\val}} \tmB' \label{eq:2}\\
+%     C_2' & = C_2 \setminus \sent(\lRecv{\ch}{\val}) = C_2 \setminus \emptyset \\
+%     E_2' & = E_2'' \uplus \mset{\tmB'}
 %   \end{align}
 %   Hence we can apply \ruleLabel{P-Act-Msg} from the assumptions~(\cref{eq:1}) and~(\cref{eq:2}) to conclude
 %   \begin{align}
-%     \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1'' \uplus E_2'' \uplus \mset{\fFunc{e}, \fFunc{f}})}
-%     & \trans{\tau} \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}}, E_1'' \uplus E_2'' \uplus \mset{\fFunc{e'}, \fFunc{f'}})}
+%     (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm, \tmB})
+%     & \trans{\tau} (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm', \tmB'})
 %   \end{align}
 %   Note that the channel set is left \emph{unchanged} by \ruleLabel{P-Act-Msg}:
-%   the channels $\fchans(\fFunc{v})$ that \ruleLabel{P-Act-Session} extrudes
+%   the channels $\fchans(\val)$ that \ruleLabel{P-Act-Session} extrudes
 %   from $C_1$ remain in scope of the combined process, since the
 %   receiver is now part of it.
 % \end{proof}
@@ -428,12 +428,12 @@ Two processes that both offer to close the external channel $c$ can be
 put together and closed over $c$, and their offers become an internal
 step.
 Closing consumes the channel, so \ruleLabel{P-Act-Close} removes
-$\fFunc{c}$ from the set of internal channels and the combined process ends with the channel set
+$\ch$ from the set of internal channels and the combined process ends with the channel set
 $C_1 \cupdot C_2$.
 \begin{lemma}[Internalizing a close \rocq{internalize_close}]
 \label{lem:internalize-close}
-  Suppose that $\fProc{(C_1, E_1)} \trans{\lClos{c}} \fProc{(C_1, E_1')}$ and $\fProc{(C_2, E_2)} \trans{\lClos{c}} \fProc{(C_2, E_2')}$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
-  It then holds that $\fProc{(C_1 \cupdot C_2 \cupdot \{\fFunc{c}\}, E_1 \uplus E_2)} \trans{\tau} \fProc{(C_1 \cupdot C_2, E_1' \uplus E_2')}$.
+  Suppose that $(\chset_1, \pool_1) \trans{\lClos{\ch}} (\chset_1, \pool_1')$ and $(\chset_2, \pool_2) \trans{\lClos{\ch}} (\chset_2, \pool_2')$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
+  It then holds that $(\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2, \pool_1' \uplus \pool_2')$.
 \end{lemma}
 
 \paragraph{Properties of processes}
@@ -448,42 +448,42 @@ which, by convention, is considered the value computed by the whole program.%
 
 \begin{definition}[Terminated process \rocq{terminated}]
 \label{def:terminated}
-  A process $\fProc{p}$ is \emph{terminated} if,
-  for some~$\fFunc{v}$ and $\fProc{E}$,
-  $\fProc{p} = \fProc{(\emptyset, \mset{\fFunc{v}} \uplus E)}$
+  A process $\proc$ is \emph{terminated} if,
+  for some~$\val$ and $\pool$,
+  $\proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool)$
   and
-  $\forall \fFunc{e} \in \fProc{E}.\,\fFunc{e} = \fFunc{\tUnit}$.
+  $\forall \tm \in \pool.\,\tm = \tUnit$.
 \end{definition}
 
 % \ed{Safety is unattainable for open processes: one has no control over received values}
 % \begin{definition}[Safety]
 % \label{def:safety}
 % Every process is \emph{\pre 0-safe}.
-% Given $n\in\Nat$, a process $\fProc{p}$ is \emph{\pre (n+1)-safe} just if:
+% Given $n\in\Nat$, a process $\proc$ is \emph{\pre (n+1)-safe} just if:
 % \begin{enumerate}
-% \item\label{def:safety:terminated} $\fProc{p}$ is terminated,
+% \item\label{def:safety:terminated} $\proc$ is terminated,
 % or
-% \item\label{def:safety:trans} there are $\fProc{p'},\pi$ such that $\fProc{p} \trans{\pi} \fProc{p'}$ and $\fProc{p'}$ is $n$-safe.
+% \item\label{def:safety:trans} there are $\proc',\pi$ such that $\proc \trans{\pi} \proc'$ and $\proc'$ is $n$-safe.
 % \end{enumerate}
-% We say $\fProc{p}$ is \emph{safe} if $\fProc{p}$ is $n$-safe for every $n \in \Nat$.
+% We say $\proc$ is \emph{safe} if $\proc$ is $n$-safe for every $n \in \Nat$.
 % \end{definition}
 
 \begin{definition}[Safe process \rocq{safe}]
 \label{def:safe}
-  A process $\fProc{p}$ is \emph{safe} if it is terminated,
-  or if there is some~$\fProc{p'}$ such that
-  $\fProc{p} \redu \fProc{p'}$.
+  A process $\proc$ is \emph{safe} if it is terminated,
+  or if there is some~$\proc'$ such that
+  $\proc \redu \proc'$.
 \end{definition}
 
 \begin{definition}[Deadlock Freedom \rocq{deadlock_free}]
   \label{def:df}
-  A process $\fProc{p}$ is \emph{deadlock free},
-  if ${\forall p'.\,\fProc{p} \trans{}[*] \fProc{p'}}$ implies $p'$ is safe.
+  A process $\proc$ is \emph{deadlock free},
+  if ${\forall p'.\,\proc \trans{}[*] \proc'}$ implies $p'$ is safe.
 \end{definition}
 
 \begin{example}[The forked exchange is deadlock free \rocq{sync_deadlock_free}]
 \label{ex:sync-fine}
-  The initial process $\fProc{p}$ of Example~\ref{ex:sync} is
+  The initial process $\proc$ of Example~\ref{ex:sync} is
   safe and deadlock free:
   the displayed reduction sequence is the only one,
   and every reachable process can either take a further reduction or it is terminated.
@@ -493,17 +493,17 @@ which, by convention, is considered the value computed by the whole program.%
 \label{ex:deadlock}
   Consider the following process:
   \[
-    \fProc{\var{blocked}} := (
-      \set{ \fFunc{c},\fFunc{d} },
+    \asPrOp{\var{blocked}} := (
+      \set{ \ch,\chB },
       \mset{
-        \fFunc{\tLet*{\tApp{\tClos}{c}}{\tApp{\tClos}{d}}},
-        \fFunc{\tLet*{\tApp{\tClos}{d}}{\tApp{\tClos}{c}}}
+        \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}},
+        \tLet*{\tApp{\tClos}{\chB}}{\tApp{\tClos}{\ch}}
       }
     )
   \]
-  Clearly $\fProc{\var{blocked}}$ cannot take any further steps
-  as the first thread is waiting to close~$\fFunc{c}$,
-  but the second thread wants to first close~$\fFunc{d}$,
+  Clearly $\asPrOp{\var{blocked}}$ cannot take any further steps
+  as the first thread is waiting to close~$\ch$,
+  but the second thread wants to first close~$\chB$,
   a classic example of deadlock.
   In fact this process is not safe, and thus any process leading to it
   would not be deadlock free.
@@ -526,75 +526,75 @@ albeit it does not follow the usual discipline on channels.
 
 \begin{example}[Load balancer \rocq{lb}]
 \label{ex:load-balancer}
-  Consider an open process~$(\emptyset,\mset{\fFunc{\var{lb}}})$
-  which replies to requests on a channel~$\fFunc{c}$ shared with the environment,
+  Consider an open process~$(\emptyset,\mset{\asTmOp{\var{lb}}})$
+  which replies to requests on a channel~$\ch$ shared with the environment,
   by delegating the two expected answers to two worker threads.
   We can represent such a process in \OurLang\ as follows.
   % The minipage shenanigans are there so we don't need to interleave
   % the lines of the programs in a single align* environment
   \begin{center}
   \vspace{-2\abovedisplayskip}%
-  \def\aquad{\phantom{\fFunc{\tAbs{s}{\ }}}}
+  \def\aquad{\phantom{\tAbs{\asTm{s}}{\ }}}
   \begin{minipage}[t]{0.44\textwidth}%
     \begin{align*}
-      \fFunc{\var{lb}} := {}
-        & \fFunc{\tLetS{w_1}{\tApp{\tFork}{worker}}{}}\\
-        & \fFunc{\tLetS{w_2}{\tApp{\tFork}{worker}}{\var{srv}}}
+      \asTmOp{\var{lb}} := {}
+        & \tLetS{\asTm{w}_1}{\tApp{\tFork}{\asTm{worker}}}{}\\
+        & \tLetS{\asTm{w}_2}{\tApp{\tFork}{\asTm{worker}}}{\asTmOp{\var{srv}}}
       \\
-      \fFunc{\var{worker}} := {}&
-        \fFunc{\tAbs{s}{\ }}
-                 \fFunc{\tLet[m][s]{\tApp{\tRecv}{s}}{}}\\
-        & \fFunc{\tLet*{m}{}}\\
-        & \fFunc{\tLetS{c}{\tApp{\tSend}{\tPair{\tUnit}{c}}}{}}\\
-        & \fFunc{\tApp{\tClos}{s}}
+      \asTmOp{\var{worker}} := {}&
+        \tAbs{\asTm{s}}{\ }
+                 \tLet[\asTm{m}][\asTm{s}]{\tApp{\tRecv}{\asTm{s}}}{}\\
+        & \tLet*{\asTm{m}}{}\\
+        & \tLetS{\ch}{\tApp{\tSend}{\tPair{\tUnit}{\ch}}}{}\\
+        & \tApp{\tClos}{\asTm{s}}
     \end{align*}
   \end{minipage}\hfill%
   \begin{minipage}[t]{0.44\textwidth}%
     \begin{align*}
-      \fFunc{\var{srv}} := {}
-        & \fFunc{\tLet[m][c]{\tApp{\tRecv}{c}}{}}\\
-        & \fFunc{\tLet*{m}{}}\\
-        & \fFunc{\tLetS{w_1}{\tApp{\tSend}{\tPair{\tUnit}{w_1}}}{}}\\
-        & \fFunc{\tLetS{w_2}{\tApp{\tSend}{\tPair{\tUnit}{w_2}}}{}}\\
-        & \fFunc{\tLet*{\tApp{\tClos}{w_1}}{}}\\
-        & \fFunc{\tLet*{\tApp{\tClos}{w_2}}{}}\\
-        & \fFunc{\tApp{\tClos}{c}}
+      \asTmOp{\var{srv}} := {}
+        & \tLet[\asTm{m}][\ch]{\tApp{\tRecv}{\ch}}{}\\
+        & \tLet*{\asTm{m}}{}\\
+        & \tLetS{\asTm{w}_1}{\tApp{\tSend}{\tPair{\tUnit}{\asTm{w}_1}}}{}\\
+        & \tLetS{\asTm{w}_2}{\tApp{\tSend}{\tPair{\tUnit}{\asTm{w}_2}}}{}\\
+        & \tLet*{\tApp{\tClos}{\asTm{w}_1}}{}\\
+        & \tLet*{\tApp{\tClos}{\asTm{w}_2}}{}\\
+        & \tApp{\tClos}{\ch}
     \end{align*}
   \end{minipage}
   \end{center}
   Four internal reductions
   (a fork and a $\beta$~step for each worker)
   reduce the process
-  $p_0=(\emptyset,\mset{\fFunc{\var{lb}}})$
+  $p_0=(\emptyset,\mset{\asTmOp{\var{lb}}})$
   to
   \[
     p_1 =
-    (\set{\fFunc{w_1},\fFunc{w_2}}, \mset{
-     \fFunc{\var{srv}},
-     \fFunc{\tApp{\var{worker}}{w_1}}, \fFunc{\tApp{\var{worker}}{w_2}} })
+    (\set{\asTm{w}_1,\asTm{w}_2}, \mset{
+     \asTmOp{\var{srv}},
+     \tApp{\asTmOp{\var{worker}}}{\asTm{w}_1}, \tApp{\asTmOp{\var{worker}}}{\asTm{w}_2} })
   \]
   This process violates several invariants of typable GV processes.
-  First, all three processes share channel $\fFunc{c}$ with the environment.
-  Second, there is a genuine race on $\fFunc{c}$ when both workers are ready
+  First, all three processes share channel $\ch$ with the environment.
+  Second, there is a genuine race on $\ch$ when both workers are ready
   to send their message back.
 
   Nevertheless, it is possible for the process to act safely.
   For example:
   \[
-    p_1 \trans{\lRecv{c}{\tUnit}}
+    p_1 \trans{\lRecv{\ch}{\tUnit}}
         \redu^*
-        \trans{\lSend{c}{\tUnit}}
+        \trans{\lSend{\ch}{\tUnit}}
         \redu^*
-        \trans{\lSend{c}{\tUnit}}
+        \trans{\lSend{\ch}{\tUnit}}
         \redu^*
-        \trans{\lClos{c}}
+        \trans{\lClos{\ch}}
         \redu^*
     (\emptyset, \mset{\tUnit,\tUnit,\tUnit})
   \]
   Although two distinct interleavings can generate that behavior,
   the environment would not be able to distinguish them.
   Of course, a non well-behaved environment can derail the execution of $p_1$.
-  For instance, $p_1 \trans{\lRecv{c}{\tAbs{x}{x}}} p$ leads to
+  For instance, $p_1 \trans{\lRecv{\ch}{\tAbs{\ivx}{\ivx}}} p$ leads to
   an irreducible but not terminated~$p$.
 \end{example}
 
@@ -619,108 +619,108 @@ Our goal is to demonstrate its soundness by justifying its rules with
 a more liberal logical relation in \cref{sec:logicalRelation}.
 
 \begin{figure}[tp]
-  \textbf{Types $\fType{T}$, session types $\fType{S}$, session environments $\fType{\Sigma}$} \rocq{ty}
+  \textbf{Types $\ty$, session types $\sty$, session environments $\senv$} \rocq{ty}
   \begin{align*}
-    \fType{T},\fType{U} &::= \fType{\tUnit} \sepr \fType{\lFunc{T}{U}} \sepr \fType{\lPair{T}{U}} \sepr \fType{S}
+    \ty,\tyB &::= \tyUnit \sepr \lFunc{\ty}{\tyB} \sepr \lPair{\ty}{\tyB} \sepr \sty
     \\
-    \fType{S} &::= \fType{\sRecv{T}{S}} \sepr \fType{\sSend{T}{S}} \sepr \fType{\sTerm}
+    \sty &::= \sRecv{\ty}{\sty} \sepr \sSend{\ty}{\sty} \sepr \sTerm
     \\
-    \fType{\Sigma} &::= \fType{\tEmpty} \sepr \fType{\fFunc{c}:S} \sepr \fType{\Sigma,\Sigma}
+    \senv &::= \tEmpty \sepr \ch:\sty \sepr \senv,\senv
   \end{align*}
-  \textbf{Session duality $\fType{\dual{S}}$}
+  \textbf{Session duality $\dual{\sty}$}
   \begin{align*}
-    \fType{\dual{\sRecv{T}{S}}} &= \fType{\sSend{T}{\dual{S}}}
+    \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
     &
-    \fType{\dual{\sSend{T}{S}}} &= \fType{\sRecv{T}{\dual{S}}}
+    \dual{\sSend{\ty}{\sty}} &= \sRecv{\ty}{\dual{\sty}}
     &
-    \fType{\dual{\sTerm}} &= \fType{\sTerm}
+    \dual{\sTerm} &= \sTerm
   \end{align*}
 % \caption{Types and session types for \OurLang}
 % \label{fig:types}
 % \end{figure}
 %
 % \begin{figure}[tp]
-  \textbf{Linear variable environments} $\fType{\Delta}$
+  \textbf{Linear variable environments} $\lenv$
   \begin{align*}
-    \fType{\Delta} &::= \fType{\tEmpty} \sepr \fType{\fFunc{\tLVA}:T} \sepr
-                     \fType{\Delta, \Delta}
+    \lenv &::= \tEmpty \sepr \tLVA:\ty \sepr
+                     \lenv, \lenv
   \end{align*}
-  \textbf{Type-indexed families of type signatures for constants $\fType{\fFunc{k}:T}$}
+  \textbf{Type-indexed families of type signatures for constants $\cst:\ty$}
   \begin{align*}
-    \fFunc{\tFork} &\fType{{}:\lFunc{(\lFunc{S}{\tUnit})}{\dual{S}}}
+    \tFork &{}:\lFunc{(\lFunc{\sty}{\tyUnit})}{\dual{\sty}}
     &
-    \fFunc{\tSend} &\fType{{}:\lFunc{(\lPair{T}{\sSend{T}{S}})}{S}}
+    \tSend &{}:\lFunc{(\lPair{\ty}{\sSend{\ty}{\sty}})}{\sty}
     &
-    \fFunc{\tRecv} &\fType{{}:\lFunc{\sRecv{T}{S}}{\lPair{T}{S}}}
+    \tRecv &{}:\lFunc{\sRecv{\ty}{\sty}}{\lPair{\ty}{\sty}}
     &
-    \fFunc{\tClos} &\fType{{}:\lFunc{\sTerm}{\tUnit}}
+    \tClos &{}:\lFunc{\sTerm}{\tyUnit}
   \end{align*}
-  \textbf{Typing rules for terms} $\fType{\Sigma ; \Delta \vdash \fFunc{e} : T}$ \rocq{typed}
+  \textbf{Typing rules for terms} $\senv ; \lenv \types \tm : \ty$ \rocq{typed}
   \begin{mathpar}
     \begin{bussproof}[E-Unit]
-      \bussAx{\fType{\tEmpty ; \tEmpty \vdash \fFunc{\tUnit} : \tUnit}}
+      \bussAx{\tEmpty ; \tEmpty \types \tUnit : \tyUnit}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Const]
-      \bussAs{\fType{\fFunc{k} : \lFunc{T}{U}}}
-      \bussU{\fType{\tEmpty ; \tEmpty \vdash \fFunc{k} : \lFunc{T}{U}}}
+      \bussAs{\cst : \lFunc{\ty}{\tyB}}
+      \bussU{\tEmpty ; \tEmpty \types \cst : \lFunc{\ty}{\tyB}}
     \end{bussproof}
     \and
     \begin{bussproof}[E-LVar]
-      \bussAx{\fType{\tEmpty ; \fFunc{\tLVA}:T \vdash \fFunc{\tLVA} : T}}
+      \bussAx{\tEmpty ; \tLVA:\ty \types \tLVA : \ty}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Ch]
-      \bussAx{\fType{\fFunc{c}:S ; \tEmpty \vdash \fFunc{c} : S}}
+      \bussAx{\ch:\sty ; \tEmpty \types \ch : \sty}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Abs]
-      \bussAs{\fType{\Sigma ; \Delta , \fFunc{\tLVA}:T \vdash \fFunc{e} : U}}
-      \bussU{\fType{\Sigma ; \Delta \vdash \fFunc{\tAbs{\tLVA}{e}} : \lFunc{T}{U}}}
+      \bussAs{\senv ; \lenv , \tLVA:\ty \types \tm : \tyB}
+      \bussU{\senv ; \lenv \types \tAbs{\tLVA}{\tm} : \lFunc{\ty}{\tyB}}
     \end{bussproof}
     \and
     \begin{bussproof}[E-App]
-      \bussAs{\fType{\Sigma_1 ; \Delta_1 \vdash \fFunc{e_1} : \lFunc{T}{U}}}
-      \bussAs{\fType{\Sigma_2 ; \Delta_2 \vdash \fFunc{e_2} : T}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tApp{e_1}{e_2}} : U}}
+      \bussAs{\senv_1 ; \lenv_1 \types \tm_1 : \lFunc{\ty}{\tyB}}
+      \bussAs{\senv_2 ; \lenv_2 \types \tm_2 : \ty}
+      \bussB{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tApp{\tm_1}{\tm_2} : \tyB}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Pair]
-      \bussAs{\fType{\Sigma_1 ; \Delta_1 \vdash \fFunc{e_1} : T}}
-      \bussAs{\fType{\Sigma_2 ; \Delta_2 \vdash \fFunc{e_2} : U}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tPair{e_1}{e_2}} : \lPair{T}{U}}}
+      \bussAs{\senv_1 ; \lenv_1 \types \tm_1 : \ty}
+      \bussAs{\senv_2 ; \lenv_2 \types \tm_2 : \tyB}
+      \bussB{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tPair{\tm_1}{\tm_2} : \lPair{\ty}{\tyB}}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Let*]
-      \bussAs{\fType{\Sigma_1 ; \Delta_1 \vdash \fFunc{e_1} : \tUnit}}
-      \bussAs{\fType{\Sigma_2 ; \Delta_2 \vdash \fFunc{e_2} : T}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLet*{e_1}{e_2}} : T}}
+      \bussAs{\senv_1 ; \lenv_1 \types \tm_1 : \tyUnit}
+      \bussAs{\senv_2 ; \lenv_2 \types \tm_2 : \ty}
+      \bussB{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet*{\tm_1}{\tm_2} : \ty}
     \end{bussproof}
     \and
     \begin{bussproof}[E-LetPair]
-      \bussAs{\fType{\Sigma_1 ; \Delta_1 \vdash \fFunc{e_1} : \lPair{U}{V}}}
-      \bussAs{\fType{\Sigma_2 ; \Delta_2 , \fFunc{\tLVA}:U , \fFunc{\tLVB}:V \vdash \fFunc{e_2} : T}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tLet[\tLVA][\tLVB]{e_1}{e_2}} : T}}
+      \bussAs{\senv_1 ; \lenv_1 \types \tm_1 : \lPair{\tyB}{\tyC}}
+      \bussAs{\senv_2 ; \lenv_2 , \tLVA:\tyB , \tLVB:\tyC \types \tm_2 : \ty}
+      \bussB{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet[\tLVA][\tLVB]{\tm_1}{\tm_2} : \ty}
     \end{bussproof}
   \end{mathpar}
-  \textbf{Typing rules for processes} $\fType{\Sigma \vdash \fProc{p} : T}$
+  \textbf{Typing rules for processes} $\senv \types \proc : \ty$
   \begin{mathpar}
     \begin{bussproof}[P-Term]
-      \bussAs{\primitive \fType{T}}
-      \bussAs{\fType{\Sigma ; \tEmpty \vdash \fFunc{e} : T}}
-      \bussB{\fType{\Sigma \vdash \fProc{(\emptyset , \mset{\fFunc{e}})} : T}}
+      \bussAs{\primitive \ty}
+      \bussAs{\senv ; \tEmpty \types \tm : \ty}
+      \bussB{\senv \types (\asPrOp{\emptyset} , \mset{\tm}) : \ty}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Independent]
-      \bussAs{\fType{\Sigma_1 \vdash \fProc{(C_1,E_1)} : T}}
-      \bussAs{\fType{\Sigma_2 \vdash \fProc{(C_2,E_2)} : \tUnit}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 \vdash \fProc{(C_1 \cupdot C_2, E_1 \uplus E_2)} : T}}
+      \bussAs{\senv_1 \types (\chset_1,\pool_1) : \ty}
+      \bussAs{\senv_2 \types (\chset_2,\pool_2) : \tyUnit}
+      \bussB{\senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2, \pool_1 \uplus \pool_2) : \ty}
     \end{bussproof}
     \and
     \begin{bussproof}[P-Connect]
-      \bussAs{\fType{\Sigma_1 , \fFunc{c}:S \vdash \fProc{(C_1 , E_1)} : T}}
-      \bussAs{\fType{\Sigma_2 , \fFunc{c}:\dual{S} \vdash \fProc{(C_2 , E_2)} : \tUnit}}
-      \bussB{\fType{\Sigma_1 , \Sigma_2 \vdash \fProc{(C_1 \cupdot C_2 \cupdot \set{\fFunc{c}} , E_1 \uplus E_2)} : T}}
+      \bussAs{\senv_1 , \ch:\sty \types (\chset_1 , \pool_1) : \ty}
+      \bussAs{\senv_2 , \ch:\dual{\sty} \types (\chset_2 , \pool_2) : \tyUnit}
+      \bussB{\senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2 \cupdot \set{\ch} , \pool_1 \uplus \pool_2) : \ty}
     \end{bussproof}
   \end{mathpar}
   \caption{Typing for terms and processes}
@@ -728,46 +728,46 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
   \label{fig:typeSys}
 \end{figure}
 
-\Cref{fig:typeSys} defines the syntax of types $\fType{T}$ and session
-environments $\fType{\Sigma}$.
-Types $\fType{T}$ comprise
-the unit type ($\fType\tUnit$),
-linear implication ($\fType{\lFunc{T}{U}}$),
-linear products ($\fType{\lPair{T}{U}}$), and
+\Cref{fig:typeSys} defines the syntax of types $\ty$ and session
+environments $\senv$.
+Types $\ty$ comprise
+the unit type ($\tyUnit$),
+linear implication ($\lFunc{\ty}{\tyB}$),
+linear products ($\lPair{\ty}{\tyB}$), and
 session types.
-Session types $\fType{S}$ include
-input ($\fType{\sRecv{T}{S}}$),
-output ($\fType{\sSend{T}{S}}$), and
-closed channels ($\fType{\sTerm}$).
-Session environments $\fType{\Sigma}$ are finite maps from
-channels $\fFunc{c}$ to session types.
-We write $\dom(\fType{\Sigma})$ to denote the set of channels appearing in $\fType{\Sigma}$.
-Session duality $\fType{\dual{S}}$ swaps the direction of
+Session types $\sty$ include
+input ($\sRecv{\ty}{\sty}$),
+output ($\sSend{\ty}{\sty}$), and
+closed channels ($\sTerm$).
+Session environments $\senv$ are finite maps from
+channels $\ch$ to session types.
+We write $\dom(\senv)$ to denote the set of channels appearing in $\senv$.
+Session duality $\dual{\sty}$ swaps the direction of
 communication, as usual.
-We write $\fType{\dual{\Sigma}}$ for duality applied pointwise to every entry of
-$\fType{\Sigma}$.
+We write $\dual{\senv}$ for duality applied pointwise to every entry of
+$\senv$.
 
 \Cref{fig:typeSys} also gives the typing rules for terms and processes.
 The constants are given type signatures that reflect their intended usage.
 Specifically, they all act linearly in their arguments.
 Term-typing judgments are of the form
-$\fType{\Sigma ; \Delta \vdash \fFunc{e} : T}$, declaring that
-term $\fFunc{e}$ is of type~$\fType{T}$ when given resources
-of the types specified in the type environment $\fType{\Sigma ; \Delta}$.
+$\senv ; \lenv \types \tm : \ty$, declaring that
+term $\tm$ is of type~$\ty$ when given resources
+of the types specified in the type environment $\senv ; \lenv$.
 Since terms manipulate both channels and linear variables,
-the judgment includes both a session environment $\fType{\Sigma}$
-and variable environment $\fType{\Delta}$.
+the judgment includes both a session environment $\senv$
+and variable environment $\lenv$.
 Each assignment
-$\fType{\fFunc{\tLVA}:T}$ in $\fType{\Delta}$ is a promise for correct
-behavior when $\fFunc{\tLVA}$ is replaced by a value behaving as
-$\fType{T}$.
+$\tLVA:\ty$ in $\lenv$ is a promise for correct
+behavior when $\tLVA$ is replaced by a value behaving as
+$\ty$.
 
 The type judgment for processes takes the form
-$\fType{\Sigma \vdash \fProc{(C, E)} : T}$.
+$\senv \types (\chset, \pool) : \ty$.
 As every term in~$E$ is expected to be closed, the judgment
-is only parameterized by a session environment $\fType{\Sigma}$.
-The type~$\fType{T}$ is the type of the value computed by the ``main'' thread of~$E$.
-We implicitly assume that $\fType{\Sigma}$ and $\fProc{C}$
+is only parameterized by a session environment $\senv$.
+The type~$\ty$ is the type of the value computed by the ``main'' thread of~$E$.
+We implicitly assume that $\senv$ and $\chset$
 do not share channels, as the $C$ indicates the channels restricted to $E$.
 
 The \ruleLabel{P-Term} rule types a single thread by checking that the declared
@@ -777,13 +777,13 @@ by just returning them: All return types must be \emph{primitive types}:
 %
 \begin{mathpar}
   \begin{bussproof}
-    \bussAx{\primitive \fType{\tUnit}}
+    \bussAx{\primitive \tyUnit}
   \end{bussproof}
   \and
   \begin{bussproof}
-    \bussAs{\primitive \fType{U}}
-    \bussAs{\primitive \fType{V}}
-    \bussB{\primitive \fType{\lPair{U}{V}}}
+    \bussAs{\primitive \tyB}
+    \bussAs{\primitive \tyC}
+    \bussB{\primitive \lPair{\tyB}{\tyC}}
   \end{bussproof}
 \end{mathpar}
 
@@ -800,28 +800,28 @@ but whose connecting channel has been closed since.
 
 \begin{example}[Syntactic typability of the examples \rocq{sync_typed}]
 \label{ex:typing}
-  The process $\fProc{\var{sync}}$ of Example~\ref{ex:sync} is typable
-  in an empty context $\fType{\tEmpty \vdash \fProc{\var{sync}} : \tUnit}$.
+  The process $\asPrOp{\var{sync}}$ of Example~\ref{ex:sync} is typable
+  in an empty context $\tEmpty \types \asPrOp{\var{sync}} : \tyUnit$.
   %%
-  The closed $\fProc{\var{cycle}}$ process of Example~\ref{ex:cyclic} is harmless
+  The closed $\asPrOp{\var{cycle}}$ process of Example~\ref{ex:cyclic} is harmless
   but \emph{not} typable:
-  as the two threads share $ \fFunc{c} $,
+  as the two threads share $ \ch $,
   we must apply \ruleLabel{P-Connect}, which forces us to partition
-  the remaining channels (in this case $\set{\fProc{d}}$)
+  the remaining channels (in this case $\set{\asPr{d}}$)
   to give to the two threads.
-  As $\fProc{d}$ is used by both threads, one of the sub-derivations
+  As $\asPr{d}$ is used by both threads, one of the sub-derivations
   would need to fail.
   The same happens if one tries to apply \ruleLabel{P-Connect} on
-  $\fProc{d}$ first.
+  $\asPr{d}$ first.
   %%
-  For the same reasons, the $\fProc{\var{blocked}}$ process of Example~\ref{ex:deadlock}
+  For the same reasons, the $\asPrOp{\var{blocked}}$ process of Example~\ref{ex:deadlock}
   is also not typable, although in this case, desirably so.
   %%
-  The load balancer process $(\emptyset,\mset{\fFunc{\var{lb}}})$
+  The load balancer process $(\emptyset,\mset{\asTmOp{\var{lb}}})$
   of Example~\ref{ex:load-balancer} is also rejected by the type system
   as it violates linearity of channels in several ways,
   although intuitively it could be seen as respecting
-  a $ \fType{\fFunc{c} : \sRecv{\tUnit}{\sSend{\tUnit}{\sSend{\tUnit}{\sTerm}}}} $ interface.
+  a $ \ch : \sRecv{\tyUnit}{\sSend{\tyUnit}{\sSend{\tyUnit}{\sTerm}}} $ interface.
 \end{example}
 
 

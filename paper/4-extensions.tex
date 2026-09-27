@@ -13,50 +13,50 @@ features of GV \cite{conf/esop/LindleyM15} are covered; recursion is an extra.
 \begin{figure}[tp]
   \textbf{New values, terms, evaluation contexts}
   \begin{align*}
-    \fFunc{v} &::= \dots \sepr \fFunc{\tInj{1}{v}} \sepr \fFunc{\tInj{2}{v}}
+    \val &::= \dots \sepr \tInj{1}{\val} \sepr \tInj{2}{\val}
     & \text{injections}\\
-    \fFunc{e} &::= \dots \sepr \fFunc{\tCase{e}{x}{e}{x}{e}} &
+    \tm &::= \dots \sepr \tCase{\tm}{\ivx}{\tm}{\ivx}{\tm} &
                                                                        \text{sum elimination}\\
-    \fFunc{\fCtx{E}} & ::= \dots \sepr \fFunc{\tInj{1}{\fCtx{E}}} \sepr \fFunc{\tInj{2}{\fCtx{E}}}
-                       \sepr \fFunc{\tCase{\fCtx{E}}{x}{e}{x}{e}}
+    \ectx & ::= \dots \sepr \tInj{1}{\ectx} \sepr \tInj{2}{\ectx}
+                       \sepr \tCase{\ectx}{\ivx}{\tm}{\ivx}{\tm}
   \end{align*}
   \textbf{New labelled transitions}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Case]
-      \bussAx{\fFunc{\tCase{(\tInj{i}{v})}{x_1}{e_1}{x_2}{e_2}} \trans{\beta} \fFunc{\tSub{e_i}{v}{x_i}}}
+      \bussAx{\tCase{(\tInj{\asTm{i}}{\val})}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} \trans{\beta} \tSub{\tm_{\asTm{i}}}{\val}{\ivx_{\asTm{i}}}}
     \end{bussproof}
     % \and
     % \begin{bussproof}[T-Act-Case2]
-    % \bussAx{\fFunc{\tCase{\tInj{2}{v}}{\tLVA}{e}{\tLVA}{e}} \trans{\beta} \fFunc{\tSub{e'}{\tFixI{\tIVY}{e}}{\tIVX}}}
+    % \bussAx{\tCase{\tInj{2}{\val}}{\tLVA}{\tm}{\tLVA}{\tm} \trans{\beta} \tSub{\tm'}{\tFixI{\tIVY}{\tm}}{\tIVX}}
     % \end{bussproof}
   \end{mathpar}
   \textbf{New typing rules for terms}
   \begin{mathpar}
     \begin{bussproof}[E-Inj]
-      \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T_i}}
-      \bussU{\fType{\Sigma ; \Delta \vdash \fFunc{\tInj{i}{e}} : \lSum{T_1}{T_2}}}
+      \bussAs{\senv ; \lenv \types \tm : \ty_{\asTy{i}}}
+      \bussU{\senv ; \lenv \types \tInj{\asTm{i}}{\tm} : \lSum{\ty_1}{\ty_2}}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Case]
-      \bussAs{\fType{\Sigma_1 ; \Delta_1 \vdash \fFunc{e} : \lSum{T_1}{T_2}}}
-      \bussAsBelow{\fType{\Sigma_2 ; \Delta_2, \fFunc{x_1}:T_1 \vdash \fFunc{e_1} :U}}
-      \bussAsBelow{\fType{\Sigma_2 ; \Delta_2, \fFunc{x_2}:T_2 \vdash \fFunc{e_2} :U}}
-      \bussU{\fType{\Sigma_1 , \Sigma_2 ; \Delta_1 , \Delta_2 \vdash \fFunc{\tCase{e}{x_1}{e_1}{x_2}{e_2}} : U}}
+      \bussAs{\senv_1 ; \lenv_1 \types \tm : \lSum{\ty_1}{\ty_2}}
+      \bussAsBelow{\senv_2 ; \lenv_2, \ivx_1:\ty_1 \types \tm_1 :\tyB}
+      \bussAsBelow{\senv_2 ; \lenv_2, \ivx_2:\ty_2 \types \tm_2 :\tyB}
+      \bussU{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tCase{\tm}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} : \tyB}
     \end{bussproof}
   \end{mathpar}
   \textbf{New rule for the value logical relation}
   \begin{mathpar}
     \begin{bussproof}[V-Inj]
-      \bussAs{\fFunc{v} \in \lrVal{n}{\fType{\Sigma \vdash T_i}}}
-      \bussU{\fFunc{\tInj{i}{v}} \in \lrVal{n}{\fType{\Sigma \vdash \lSum{T_1}{T_2}}}}
+      \bussAs{\val \in \lrVal{n}{\senv \types \ty_{\asTy{i}}}}
+      \bussU{\tInj{\asTm{i}}{\val} \in \lrVal{n}{\senv \types \lSum{\ty_1}{\ty_2}}}
     \end{bussproof}
   \end{mathpar}
   \textbf{New rule for primitive types}
   \begin{mathpar}
     \begin{bussproof}
-      \bussAs{\primitive \fType{U}}
-      \bussAs{\primitive \fType{V}}
-      \bussB{\primitive \fType{\lSum{U}{V}}}
+      \bussAs{\primitive \tyB}
+      \bussAs{\primitive \tyC}
+      \bussB{\primitive \lSum{\tyB}{\tyC}}
     \end{bussproof}
   \end{mathpar}
   \caption{Extensions for sum types}
@@ -69,18 +69,18 @@ and choice in session types. It is well-known that branch and
 choice can be simulated using higher-order sessions and sum types
 \cite{DBLP:conf/ppdp/DardhaGS12,conf/esop/LindleyM15} by setting
 \begin{align*}
-  \fType{S_1 \ichoice S_2} &:= \fType{\sSend{(\dual{S_1} + \dual{S_2})}{\sTerm}}
-  & \fType{S_1 \echoice S_2} &:= \fType{\sRecv{(S_1 + S_2)}{\sWait}}
+  \sty_1 \ichoice \sty_2 &:= \sSend{(\dual{\sty_1} + \dual{\sty_2})}{\sTerm}
+  & \sty_1 \echoice \sty_2 &:= \sRecv{(\sty_1 + \sty_2)}{\sWait}
 \end{align*}
 and encoding the operations to select and match on a channel as follows.
 \begin{align*}
-  \fFunc{\mathit{select}~\textit{left}~c} &:= \fFunc{\tFork (\lambda
-                                   d. \tApp{\tClos}{(\tSend{\tPair{\tInj{1}{d}}{c}})})}
-  & \fFunc{\mathit{select}~\textit{right}~c} &:= \fFunc{\tFork (\lambda
-                                       d. \tApp{\tClos}{(\tSend{\tPair{\tInj{2}{d}}{c}})})}
+  \asTmOp{\mathit{select}}~\asTmOp{\textit{left}}~\ch &:= \tFork (\lambda
+                                   \chB. \tApp{\tClos}{(\tSend{\tPair{\tInj{1}{\chB}}{\ch}})})
+  & \asTmOp{\mathit{select}}~\asTmOp{\textit{right}}~\ch &:= \tFork (\lambda
+                                       \chB. \tApp{\tClos}{(\tSend{\tPair{\tInj{2}{\chB}}{\ch}})})
 \end{align*}
 \begin{align*}
-  \fFunc{\mathit{match}~c~(x_1.e_1) (x_2.e_2)} &= \fFunc{\tLet[d][c]{\tRecv c}{\tClos{c}; \tCase{d}{x_1}{e_1}{x_2}{e_2}}}
+  \asTmOp{\mathit{match}}~\ch~(\ivx_1.\tm_1) (\ivx_2.\tm_2) &= \tLet[\chB][\ch]{\tRecv \ch}{\tClos{\ch}; \tCase{\chB}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2}}
 \end{align*}
 Directly supporting branch and choice would require additional labelled
 reductions and hence additional cases in the definition of all logical
@@ -94,23 +94,23 @@ of the fundamental property.
 \begin{lemma}[Compositionality: \ruleLabel{inj} \rocq{sem_typed_inj1}]
   \label{lem:comp:inj}
   If
-  $ \fType{\Sigma;\Delta \proves \fFunc{e} : T_i}$,
+  $ \senv;\lenv \proves \tm : \ty_{\asTy{i}}$,
   then
-  $ \fType{\Sigma;\Delta \proves \fFunc{\tInj{i}{e}} : \lSum{T_1}{T_2}}$,
+  $ \senv;\lenv \proves \tInj{\asTm{i}}{\tm} : \lSum{\ty_1}{\ty_2}$,
   for $i\in\{1,2\}$.
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{case} \rocq{sem_typed_case}]
   \label{lem:comp:case}
   If
-  $ \fType{\Sigma_1;\Delta_1 \proves \fFunc{e} : \lSum{T_1}{T_2}}$
+  $ \senv_1;\lenv_1 \proves \tm : \lSum{\ty_1}{\ty_2}$
   and
-  $ \fType{\Sigma_2;\Delta_2 , \fFunc{x_1}:T_1 \proves \fFunc{e_1} : U}$
+  $ \senv_2;\lenv_2 , \ivx_1:\ty_1 \proves \tm_1 : \tyB$
   and
-  $ \fType{\Sigma_2;\Delta_2 , \fFunc{x_2}:T_2 \proves \fFunc{e_2} : U}$,
+  $ \senv_2;\lenv_2 , \ivx_2:\ty_2 \proves \tm_2 : \tyB$,
   then
-  $ \fType{\Sigma_1,\Sigma_2;\Delta_1,\Delta_2 \proves
-    \fFunc{\tCase{e}{x_1}{e_1}{x_2}{e_2}} : U}$.
+  $ \senv_1,\senv_2;\lenv_1,\lenv_2 \proves
+    \tCase{\tm}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} : \tyB$.
 \end{lemma}
 
 We exercise this extension with an example.
@@ -118,61 +118,61 @@ We exercise this extension with an example.
 \begin{example}[Leader election \rocq{leader_election_deadlock_free}]
 The problem of leader election can be reduced to a process $p_0$ that makes
 a finite number of $\tau$ steps and then finishes by nondeterministically
-performing a $\fType{left}$ 
-or $\fType{right}$ step on some channel of type $\fType{\fFunc{c} : \sTerm
-  \ichoice \sTerm}$.  We construct this process using standard syntactic
-sugar for the encoding of the type $\fType{Bool} = \fType{\tUnit+\tUnit}$ and
-the conditional $\fFunc{\mathit{if}}$.
-Both branches of the choice on~$\fFunc{c}$ continue with $\fType{\sTerm}$,
+performing a $\asTy{left}$ 
+or $\asTy{right}$ step on some channel of type $\ch : \sTerm
+  \ichoice \sTerm$.  We construct this process using standard syntactic
+sugar for the encoding of the type $\asTy{Bool} = \tyUnit+\tyUnit$ and
+the conditional $\asTmOp{\mathit{if}}$.
+Both branches of the choice on~$\ch$ continue with $\sTerm$,
 so the general encoding
-$\fType{\sTerm \ichoice \sTerm} = \fType{\sSend{(\sTerm + \sTerm)}{\sTerm}}$
-specializes to transmit the choice as a $\fType{Bool}$. This way, the interface
-type becomes $\fType{\fFunc{c} : \sSend{Bool}{\sTerm}}$ and
+$\sTerm \ichoice \sTerm = \sSend{(\sTerm + \sTerm)}{\sTerm}$
+specializes to transmit the choice as a $\asTy{Bool}$. This way, the interface
+type becomes $\ch : \sSend{\asTy{Bool}}{\sTerm}$ and
 Selection reduces to a send followed by a close:
 \begin{align*}
-  \fFunc{\mathit{select}~\mathit{left}~c}
-    &:= \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{c}})}}
+  \asTmOp{\mathit{select}}~\asTmOp{\mathit{left}}~\ch
+    &:= \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{true}}{\ch}})}
   &
-  \fFunc{\mathit{select}~\mathit{right}~c}
-    &:= \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{false}{c}})}}
+  \asTmOp{\mathit{select}}~\asTmOp{\mathit{right}}~\ch
+    &:= \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{false}}{\ch}})}
 \end{align*}
 
-The process $p_0 = (\set{\fFunc{cs}, \fFunc{d}}, \mset{\fFunc{e_0}, \fFunc{e_1},
-  \fFunc{e_2}})$ consists of the following terms. 
+The process $p_0 = (\set{\asTm{cs}, \chB}, \mset{\tm_0, \tm_1,
+  \tm_2})$ consists of the following terms. 
 \begin{align*}
-  \fFunc{e_0} &=
-                \fFunc{\tApp{\tClos}{(\tApp{\tSend}{\tPair{true}{\tApp{\tSend}{\tPair{false}{d}}}})}}
+  \tm_0 &=
+                \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{true}}{\tApp{\tSend}{\tPair{\asTm{false}}{\chB}}}})}
   \\
-  \fFunc{e_1} &=
-                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tIf{\tLVB}{\mathit{select}~\mathit{left}~c}{\tUnit}}}}
+  \tm_1 &=
+                \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\tLVB}{\asTmOp{\mathit{select}}~\asTmOp{\mathit{left}}~\ch}{\tUnit}}}
   \\
-  \fFunc{e_2} &=
-                \fFunc{\tLet[\tLVB][d]{\tApp{\tRecv}{d}}{\tLet*{\tApp{\tClos}{cs}}{\tLet*{\tApp{\tClos}{d}}{\tIf{\tLVB}{\mathit{select}~\mathit{right}~c}{\tUnit}}}}}
+  \tm_2 &=
+                \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\asTmOp{\mathit{select}}~\asTmOp{\mathit{right}}~\ch}{\tUnit}}}}
 \end{align*}
 Now we
-set out to prove that $p_0 \in \lrProc{n}{ \fFunc{c}\fType{:
-  \sSend{Bool}{\sTerm}} \vdash \fType{\tUnit}}$. This process has essentially
+set out to prove that $p_0 \in \lrProc{n}{ \ch:
+  \sSend{\asTy{Bool}}{\sTerm} \vdash \tyUnit}$. This process has essentially
 two different reduction sequences due to a race condition.
-Either $\fFunc{e_0}$
-communicates first with $\fFunc{e_1}$ and then with $\fFunc{e_2}$ or
-vice versa. Each term, $\fFunc{e_1}$ and $\fFunc{e_2}$, receives a
-boolean on channel $\fFunc{d}$, then synchronizes by closing
-$\fFunc{cs}$, $\fFunc{e_2}$ closes $\fFunc{d}$, and we are left with
-one term where the condition is $\fFunc{true}$ and another where it is
-$\fFunc{false}$. The $\fFunc{true}$-term executes a $\fFunc{select}$
-and the $\fFunc{false}$-term does nothing.
+Either $\tm_0$
+communicates first with $\tm_1$ and then with $\tm_2$ or
+vice versa. Each term, $\tm_1$ and $\tm_2$, receives a
+boolean on channel $\chB$, then synchronizes by closing
+$\asTm{cs}$, $\tm_2$ closes $\chB$, and we are left with
+one term where the condition is $\asTm{true}$ and another where it is
+$\asTm{false}$. The $\asTm{true}$-term executes a $\asTm{select}$
+and the $\asTm{false}$-term does nothing.
 
 The soundness of process $p_0$ cannot be argued via syntactic typing.
 The process $p_0$ is not reachable by a reduction sequence from a process of the
 form $(\set{}, \mset{e})$, for some closed $e$, because
-thread $\fFunc{e_0}$ shares $\fFunc{d}$ with both $\fFunc{e_1}$ and
-$\fFunc{e_2}$. Term $\fFunc{e_1}$ is not typable
+thread $\tm_0$ shares $\chB$ with both $\tm_1$ and
+$\tm_2$. Term $\tm_1$ is not typable
 (cf. \cref{sec:syntacticTyping}) because it violates linearity for
-variables/channels $\fFunc{d}$ and $\fFunc{c}$. Likewise, term
-$\fFunc{e_2}$ violates linearity for channel $\fFunc{c}$.
+variables/channels $\chB$ and $\ch$. Likewise, term
+$\tm_2$ violates linearity for channel $\ch$.
 
 See \cref{sec:reduct-lead-elect} in the appendix for the reduction sequence.
-Composing $p_0$ over $\fFunc{c}$ with a syntactically typable client
+Composing $p_0$ over $\ch$ with a syntactically typable client
 yields a closed, deadlock-free process.
 \end{example}
 
@@ -184,43 +184,43 @@ yields a closed, deadlock-free process.
 \begin{figure}[tp]
   \textbf{New values, terms, types}
   \begin{align*}
-    \fFunc{v} &::= \dots \sepr \fFunc{\IExp{(\tIVX = e)}}
+    \val &::= \dots \sepr \IExp{(\tIVX = \tm)}
     & \text{recursively defined thunk}\\
-    \fFunc{e} &::= \dots \sepr \fFunc{\tForce} & \text{thunk elimination}\\
-    \fType{T} &::= \dots \sepr \fType{\tBox{T}}
+    \tm &::= \dots \sepr \tForce & \text{thunk elimination}\\
+    \ty &::= \dots \sepr \tBox{\ty}
   \end{align*}
-  % Since $\fFunc{\tForce}$ is a function, no new evaluation contexts
+  % Since $\tForce$ is a function, no new evaluation contexts
   % are needed: thunk elimination is ordinary application.
 
   \textbf{New labelled transition}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Exp]
-      \bussAx{\fFunc{\tApp{\tForce}{\IExp{(\tIVX = e)}}}
+      \bussAx{\tApp{\tForce}{\IExp{(\tIVX = \tm)}}
         \trans{\beta}
-        \fFunc{\tSub{e}{\IExp{(\tIVX = e)}}{\tIVX}}}
+        \tSub{\tm}{\IExp{(\tIVX = \tm)}}{\tIVX}}
     \end{bussproof}
   \end{mathpar}
   \textbf{New typing rules for terms}
   \begin{mathpar}
     \begin{bussproof}[E-Exp]
-      \bussAs{\fType{\tEmpty ; \tBox{\Delta} , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{e} : T}}
-      \bussU{\fType{\tEmpty ; \tBox{\Delta} \vdash \fFunc{\IExp{(\tIVX = e)}} : \tBox{T}}}
+      \bussAs{\tEmpty ; \tBox{\lenv} , \tIVX:\tBox{\ty} \types \tm : \ty}
+      \bussU{\tEmpty ; \tBox{\lenv} \types \IExp{(\tIVX = \tm)} : \tBox{\ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Force]
-      \bussAx{\fType{\tEmpty ; \tEmpty \vdash \fFunc{\tForce} : \lFunc{\tBox{T}}{T}}}
+      \bussAx{\tEmpty ; \tEmpty \types \tForce : \lFunc{\tBox{\ty}}{\ty}}
     \end{bussproof}
   \end{mathpar}
   \textbf{Structural rules for boxed hypotheses}
   \begin{mathpar}
     \begin{bussproof}[E-Weak]
-      \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : U}}
-      \bussU{\fType{\Sigma ; \Delta , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{e} : U}}
+      \bussAs{\senv ; \lenv \types \tm : \tyB}
+      \bussU{\senv ; \lenv , \tIVX:\tBox{\ty} \types \tm : \tyB}
     \end{bussproof}
     \and
     \begin{bussproof}[E-Contract]
-      \bussAs{\fType{\Sigma ; \Delta , \fFunc{\tIVX}:\tBox{T} , \fFunc{\tIVY}:\tBox{T} \vdash \fFunc{e} : U}}
-      \bussU{\fType{\Sigma ; \Delta , \fFunc{\tIVX}:\tBox{T} \vdash \fFunc{\tSub{e}{\tIVX}{\tIVY}} : U}}
+      \bussAs{\senv ; \lenv , \tIVX:\tBox{\ty} , \tIVY:\tBox{\ty} \types \tm : \tyB}
+      \bussU{\senv ; \lenv , \tIVX:\tBox{\ty} \types \tSub{\tm}{\tIVX}{\tIVY} : \tyB}
     \end{bussproof}
   \end{mathpar}
   \caption{Extending the term language and typing
@@ -235,9 +235,9 @@ recursion. Lily is based on a term calculus for linear logic with
 exponentials where ``recursion is absorbed into terms of the
 exponential type'' \cite{DBLP:journals/entcs/BiermanPR00}. In
 consequence, we add a boxed type\footnote{The boxed type corresponds to the
-  exponential, but its usual type constructor $\fType{!T}$ is already in use for
+  exponential, but its usual type constructor $!\ty$ is already in use for
 session types.} for duplicable values, an introduction form
-for recursively defined values, \emph{thunks}, in the style of Lily, and a $\fFunc{\tForce}$
+for recursively defined values, \emph{thunks}, in the style of Lily, and a $\tForce$
 operator as an eliminator for boxed types as shown in
 \cref{fig:lily:terms}. Lily's eliminator is a let-box, which is
 equivalent.
@@ -252,7 +252,7 @@ proved admissible. \citet{conf/esop/LindleyM15} approach
 replication in a similar way, but their introduction rule is not recursive
 and their elimination is via let-box.
 
-Operationally, a thunk $\fFunc{\IExp{(\tIVX = e)}}$ is a recursively defined value and
+Operationally, a thunk $\IExp{(\tIVX = \tm)}$ is a recursively defined value and
 the elimination operator exposes the body by unrolling the recursion.
 % The reduction rule
 % we propose here is proved to be a Kleene
@@ -261,23 +261,23 @@ the elimination operator exposes the body by unrolling the recursion.
 \citet{DBLP:journals/entcs/BiermanPR00} define some syntactic sugar for a fixed
 point operator and non-recursive thunks:
 \begin{align*}
-  \fFunc{\tFixI{\tIVX}{e}} &:= \fFunc{\tApp{\tForce}{\IExp{(\tIVX = e)}}}
-  & \fFunc{\IExp{e}} & := \fFunc{\IExp{(\tIVX = e)}} \quad \text{where}~\fFunc{\tIVX\notin fv (e)}
+  \tFixI{\tIVX}{\tm} &:= \tApp{\tForce}{\IExp{(\tIVX = \tm)}}
+  & \IExp{\tm} & := \IExp{(\tIVX = \tm)} \quad \text{where}~\tIVX\notin \asTm{fv} (\tm)
 \end{align*}
 
 We extend the value logical relation in a similar way as
 \citet{DBLP:journals/entcs/BiermanPR00}.
 \begin{align*}
-  \lrVal{n}{\fType{\tEmpty \vdash \tBox{T}}}
-  &= \set{ \fFunc{\IExp{(\tIVX = e)}} \mid
-    \fchans(\fFunc{e}) = \emptyset \land
-    \fFunc{{\tFixI{\tIVX}{e}}} \in \lrTerm{n}{\fType{\tEmpty \vdash T}}
+  \lrVal{n}{\tEmpty \types \tBox{\ty}}
+  &= \set{ \IExp{(\tIVX = \tm)} \mid
+    \fchans(\tm) = \emptyset \land
+    {\tFixI{\tIVX}{\tm}} \in \lrTerm{n}{\tEmpty \types \ty}
     }
 \end{align*}
 A replicable thunk owns no channels, which is what the side condition
-$\fchans(\fFunc{e}) = \emptyset$ records; exponentials are also admitted as
+$\fchans(\tm) = \emptyset$ records; exponentials are also admitted as
 return types of a thread, so we add the rule
-$\primitive \fType{T} \implies \primitive \fType{\tBox{T}}$
+$\primitive \ty \implies \primitive \tBox{\ty}$
 to the ones of \cref{sec:syntacticTyping:typeSys}.
 
 For the additional cases of the fundamental theorem, we prove the
@@ -287,89 +287,89 @@ in \cref{fig:lily:terms}.
 \begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_box}]
   \label{lem:comp:exp}
   If
-  $ \fType{\tEmpty;\tBox{\Delta}, \tBox{T} \proves \fFunc{e} : T}$
+  $ \tEmpty;\tBox{\lenv}, \tBox{\ty} \proves \tm : \ty$
   and moreover
   \begin{enumerate*}[(i)]
-    \item $\fFunc{e}$ owns no channels, \ie
-      $\fchans(\fFunc{e}) = \emptyset$; and
-    \item every free variable of $\fFunc{e}$ is declared in
-      $\fType{\tBox{\Delta}, \tBox{T}}$,
+    \item $\tm$ owns no channels, \ie
+      $\fchans(\tm) = \emptyset$; and
+    \item every free variable of $\tm$ is declared in
+      $\tBox{\lenv}, \tBox{\ty}$,
   \end{enumerate*}
   then
-  $ \fType{\tEmpty;\tBox{\Delta} \proves \fFunc{\IExp{(x=e)}} : \tBox{T}}$.
+  $ \tEmpty;\tBox{\lenv} \proves \IExp{(\ivx=\tm)} : \tBox{\ty}$.
 \end{lemma}
 
 Like abstraction (\cref{lem:comp:abs}), the thunk introduction
 builds a value whose clause of $\mathcal{V}$ carries a syntactic side
-condition, $\fchans(\fFunc{e}) = \emptyset$; relevance is not needed because every
+condition, $\fchans(\tm) = \emptyset$; relevance is not needed because every
 hypothesis is boxed and may be weakened.
 
 \begin{lemma}[Compositionality: \ruleLabel{force} \rocq{sem_typed_force}]
   \label{lem:comp:force}
   If
-  $ \fType{\Sigma; \Delta \proves \fFunc{e} : \tBox{T}}$,
+  $ \senv; \lenv \proves \tm : \tBox{\ty}$,
   then
-  $ \fType{\Sigma; \Delta \proves \fFunc{\tApp{\tForce}{e}} : {T}}$.
+  $ \senv; \lenv \proves \tApp{\tForce}{\tm} : {\ty}$.
 \end{lemma}
 
 \begin{lemma}[Compositionality: \ruleLabel{weak} \rocq{sem_typed_weaken}]
   If
-  $ \fType{\Sigma; \Delta \proves \fFunc{e} : U}$,
+  $ \senv; \lenv \proves \tm : \tyB$,
   then
-  $ \fType{\Sigma; \Delta, x:\tBox{T} \proves \fFunc{e} : U}$.
+  $ \senv; \lenv, \asTy{x}:\tBox{\ty} \proves \tm : \tyB$.
 \end{lemma}
 \begin{lemma}[Compositionality: \ruleLabel{contract} \rocq{sem_typed_contract}]
   If
-  $ \fType{\Sigma; \Delta, x:\tBox{T}, y:\tBox{T} \proves \fFunc{e} : U}$,\\
+  $ \senv; \lenv, \asTy{x}:\tBox{\ty}, \asTy{y}:\tBox{\ty} \proves \tm : \tyB$,\\
   then
-  $ \fType{\Sigma; \Delta, x:\tBox{T} \proves \fFunc{\tSub{e}{x}{y}} : U}$.
+  $ \senv; \lenv, \asTy{x}:\tBox{\ty} \proves \tSub{\tm}{\ivx}{\ivy} : \tyB$.
 \end{lemma}
 
 This encoding of recursion also supports replication as in CP
 \cite{conf/icfp/Wadler12,DBLP:journals/jfp/Wadler14}, the process calculus
 companion to GV \cite{conf/esop/LindleyM15}. We implement a replicable
-unrestricted session carrying type $\fType{S}$ as a function
-of type $\fType{[S]} := \fType{\tBox{(\lFunc{\tUnit}{S})}}$ and
+unrestricted session carrying type $\sty$ as a function
+of type $[\sty] := \tBox{(\lFunc{\tyUnit}{\sty})}$ and
 treat the new operators as macros as follows.
 \begin{align*}
-  \fFunc{repl} & \fType{{}:{\lFunc{\tBox{(\lFunc{S}{\tUnit})}}{[{\dual{S}}]}}}
+  \asTm{repl} & {}:{\lFunc{\tBox{(\lFunc{\sty}{\tyUnit})}}{[{\dual{\sty}}]}}
   &
-    \fFunc{req} & \fType{{}:{\lFunc{[S]}{S}}} \\
-  \fFunc{repl} & :=
-                 \fFunc{\tAbs{x}{\IExp{(\tAbs{\_}{\tApp{\tFork}{(\tApp{\tForce}{x})}})}}}
-  & \fFunc{req} & := \fFunc{\tAbs{x}{\tApp{(\tApp{\tForce}{x})}{\tUnit}}}
+    \asTm{req} & {}:{\lFunc{[\sty]}{\sty}} \\
+  \asTm{repl} & :=
+                 \tAbs{\ivx}{\IExp{(\tAbs{\_}{\tApp{\tFork}{(\tApp{\tForce}{\ivx})}})}}
+  & \asTm{req} & := \tAbs{\ivx}{\tApp{(\tApp{\tForce}{\ivx})}{\tUnit}}
 \end{align*}
 
 These macros are enough to build a replicated server.
 
 \begin{example}[A session factory \rocq{repl_deadlock_free}]
 \label{ex:factory}
-Let $\fFunc{\var{ff}} :=
-\fFunc{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}}$
+Let $\asTmOp{\var{ff}} :=
+\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}$
 be the worker forked in \cref{ex:sync}; it serves a session of
-type $\fType{\sSend{\tUnit}{\sTerm}}$, so
-$\fFunc{repl}$ turns a boxed copy of it into a supply of fresh
-sessions of the dual type, one for each call of $\fFunc{req}$.
+type $\sSend{\tyUnit}{\sTerm}$, so
+$\asTm{repl}$ turns a boxed copy of it into a supply of fresh
+sessions of the dual type, one for each call of $\asTm{req}$.
 \begin{align*}
-  \fFunc{\var{factory}} &:= \fFunc{\tApp{repl}{(\IExp{\var{ff}})}}
-  &&\fType{{}: [\sRecv{\tUnit}{\sTerm}]}
+  \asTmOp{\var{factory}} &:= \tApp{\asTm{repl}}{(\IExp{\asTmOp{\var{ff}}})}
+  &&{}: [\sRecv{\tyUnit}{\sTerm}]
   \\
-  \fFunc{\var{use}~\tIVX} &:=
-    \fFunc{\tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{req}{\tIVX})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}}
+  \asTmOp{\var{use}}~\tIVX &:=
+    \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\asTm{req}}{\tIVX})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
   \\
-  \fFunc{\var{main}} &:=
-    \fFunc{\tApp{(\tAbs{\tIVX}{\tLet*{\var{use}~\tIVX}{\var{use}~\tIVX}})}{\var{factory}}}
+  \asTmOp{\var{main}} &:=
+    \tApp{(\tAbs{\tIVX}{\tLet*{\asTmOp{\var{use}}~\tIVX}{\asTmOp{\var{use}}~\tIVX}})}{\asTmOp{\var{factory}}}
 \end{align*}
 The factory is bound once and used twice, which is legal because its
-type is boxed: the two occurrences of $\fFunc{\tIVX}$ are justified by
-contraction (\ruleLabel{E-Contract}). Each $\fFunc{req}$ re-runs the
-suspended $\fFunc{\tFork}$, so the two clients obtain two distinct
+type is boxed: the two occurrences of $\tIVX$ are justified by
+contraction (\ruleLabel{E-Contract}). Each $\asTm{req}$ re-runs the
+suspended $\tFork$, so the two clients obtain two distinct
 private sessions served by two independent copies of the worker; a
 factory may also be discarded outright, by weakening
 (\rocq{discard_deadlock_free}). Hence
-$(\emptyset, \mset{\fFunc{\var{main}}})$ is closed and typable,
-$\fType{\tEmpty \types \fProc{(\emptyset, \mset{\fFunc{\var{main}}})} :
-  \tUnit}$ \rocq{repl_typed}, and therefore deadlock free.
+$(\emptyset, \mset{\asTmOp{\var{main}}})$ is closed and typable,
+$\tEmpty \types (\asPrOp{\emptyset}, \mset{\asTmOp{\var{main}}}) :
+  \tyUnit$ \rocq{repl_typed}, and therefore deadlock free.
 \end{example}
 
 \subsection{Recursive Types}
@@ -380,11 +380,11 @@ session types to be recursive, too. Specifically, we adopt the traditional appro
 equi-recursive session types, where a recursive type is always equal to its
 unfolding.
 \begin{align*}
-  \fType{S} &::= \dots \sepr \fType{\mu\alpha.S} \sepr \fType{\alpha}
-  & \fType{\mu\alpha.S} &= \fType{\tSub{S}{\mu\alpha.S}{\alpha}}
+  \sty &::= \dots \sepr \tyMu\tvar.\sty \sepr \tvar
+  & \tyMu\tvar.\sty &= \tSub{\sty}{\tyMu\tvar.\sty}{\tvar}
 \end{align*}
 Repeated unfolding of a session type reaches one of the head-normal forms
-$\fType{\sRecv{T}{S}}$, $\fType{\sSend{T}{S}}$ or $\fType{\sTerm}$ in
+$\sRecv{\ty}{\sty}$, $\sSend{\ty}{\sty}$ or $\sTerm$ in
 finitely many steps, due to contractivity, so the top-level constructor
 of a session type is always available for inspection.
 Hence all our prior definitions and proofs carry over essentially
@@ -393,9 +393,9 @@ functions that expose the top-level constructor in the respective clause
 of the logical relation.
 
 Formally, session types are compared up to \emph{session type equivalence}
-$\fType{S \approx R}$, which is defined
+$\sty \approx \styB$, which is defined
 coinductively. Both sides are
-observed through unfolding, so that $\fType{\mu\alpha.S}$ and its
+observed through unfolding, so that $\tyMu\tvar.\sty$ and its
 unfolding are indistinguishable by construction. 
 Expressing equi-recursive handling of session types in the syntactic type
 system requires defining type equivalence modulo unfolding of recursion and a conversion rule, which
@@ -403,41 +403,41 @@ lets a term be retyped at any equivalent type (see \cref{sec:app-duality}
 for the standard definition of type equivalence):
 \begin{mathpar}
   \begin{bussproof}[E-Conv]
-    \bussAs{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T}}
-    \bussAs{\fType{T \approx T'}}
-    \bussB{\fType{\Sigma ; \Delta \vdash \fFunc{e} : T'}}
+    \bussAs{\senv ; \lenv \types \tm : \ty}
+    \bussAs{\ty \approx \ty'}
+    \bussB{\senv ; \lenv \types \tm : \ty'}
   \end{bussproof}
 \end{mathpar}
 
 The logical relation is quotiented by $\approx$ throughout.
 \ruleLabel{V-Chan} lets a channel store any protocol equivalent to the
 one demanded, and a rule matching
-$\fType{\Sigma} = \fType{\Sigma_1, \fFunc{c}:\sRecv{U}{S}}$ reads that
+$\senv = \senv_1, \ch:\sRecv{\tyB}{\sty}$ reads that
 entry through unfolding (\rocq{senv_hd}) rather than matching
 directly. Conversion therefore holds semantically as well, and in both 
-directions: if $\fType{T \approx T'}$, then the value relation and the
-term relation at $\fType{T}$ and at $\fType{T'}$ have the same members
+directions: if $\ty \approx \ty'$, then the value relation and the
+term relation at $\ty$ and at $\ty'$ have the same members
 (\rocq{Vrel_teq_iff}, \rocq{Erel_teq_iff}), and semantic typing
 transports along $\approx$ (\rocq{sem_typed_teq}), which is the
 compositionality lemma for \ruleLabel{E-Conv}.
 
 % PT: I don't think we have to write about dualization here!
 % Dualization, finally, needs one more session type former than the
-% grammar above provides. Reading $\fType{\dual{\alpha}}$ as
-% $\fType{\alpha}$ is unsound under a binder, so the mechanization
-% carries a dualized session variable $\fType{\dual{\alpha}}$ next to
-% $\fType{\alpha}$. It is never written in a 
+% grammar above provides. Reading $\dual{\tvar}$ as
+% $\tvar$ is unsound under a binder, so the mechanization
+% carries a dualized session variable $\dual{\tvar}$ next to
+% $\tvar$. It is never written in a 
 % source type and enters only through dualization.
 
 
-For readability, we write $\fType{\dual{S}}$ for the dual type of
-$\fType{S}$ in \cref{fig:link-operator}. However, with recursive types the two
+For readability, we write $\dual{\sty}$ for the dual type of
+$\sty$ in \cref{fig:link-operator}. However, with recursive types the two
 ends are related by coinductive duality rather than by the duality function, so
 \ruleLabel{O-Link} and \ruleLabel{Q-Link} use
-$\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:R}$ with
-$\fType{S \perp R}$. Duality has the same shape as $\approx$ with $?$ swapped
+$\senv_1, \ch:\sty, \chB:\styB$ with
+$\sty \perp \styB$. Duality has the same shape as $\approx$ with $?$ swapped
 against $!$; payloads are still equivalent. It agrees with the function, because
-$\fType{S \perp R}$ holds exactly when $\fType{S \approx \dual{R}}$.
+$\sty \perp \styB$ holds exactly when $\sty \approx \dual{\styB}$.
 
 
 \subsection{The Link Operator}
@@ -446,56 +446,56 @@ $\fType{S \perp R}$ holds exactly when $\fType{S \approx \dual{R}}$.
 \begin{figure}[tp]
   \textbf{New constant, session label}
   \begin{align*}
-    \fFunc{k} &::= \dots \sepr \fFunc{\tLink}
+    \cst &::= \dots \sepr \tLink
     & \text{forwarding operator}
     \\
-    \sigma &::= \dots \sepr \lLink{c}{c}
+    \sigma &::= \dots \sepr \lLink{\ch}{\ch}
              &\text{forwarding session label}
   \end{align*}
   \textbf{New labelled transitions}
   \begin{mathpar}
     \begin{bussproof}[T-Act-Link]
-      \bussAx{\fFunc{\tApp{\tLink}{\tPair{c}{d}}} \trans{\lLink{c}{d}} \fFunc{\tUnit}}
+      \bussAx{\tApp{\tLink}{\tPair{\ch}{\chB}} \trans{\lLink{\ch}{\chB}} \tUnit}
     \end{bussproof}
         \and
     \begin{bussproof}[P-Act-Link]
-      \bussAs{\fFunc{e} \trans{\lLink{c}{d}} \fFunc{e'}}
-      \bussU{\fProc{(C \cupdot \set{\fFunc{c}}, E \uplus \mset{\fFunc{e}})} \trans{\tau} \fProc{(C, \tSub{(E \uplus \mset{\fFunc{e'}})}{\fFunc{d}}{\fFunc{c}})}}
+      \bussAs{\tm \trans{\lLink{\ch}{\chB}} \tm'}
+      \bussU{(\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm}) \trans{\tau} (\chset, \tSub{(\pool \uplus \mset{\tm'})}{\chB}{\ch})}
     \end{bussproof}
   \end{mathpar}
   \textbf{Subjects and escaping channels of the new label} \\
-  $ \fc(\lLink{c}{d}) = \set{\fFunc{c},\fFunc{d}} $, \quad
-  $ \sent(\lLink{c}{d}) = \emptyset $
+  $ \fc(\lLink{\ch}{\chB}) = \set{\ch,\chB} $, \quad
+  $ \sent(\lLink{\ch}{\chB}) = \emptyset $
 
   \textbf{New type-indexed family of constants} \\
-  $ \fType{\fFunc{\tLink} : \lFunc{\tPair{S}{\dual{S}}}{\tUnit}} $
+  $ \tLink : \lFunc{\tPair{\sty}{\dual{\sty}}}{\tyUnit} $
 
 %   New case for the term logical relation
 %   \begin{enumerate}[start=6]
-%   \item $\lambda = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
-%     \fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}$ and $\fFunc{e'} \in \lrTerm{n'}{\fType{\Sigma_1 \vdash T}}$.
+%   \item $\lambda = \lLink{\ch}{\chB}$ implies $\ch \ne \chB$ and $\senv =
+%     \senv_1, \ch:\sty, \chB:\dual{\sty}$ and $\tm' \in \lrTerm{n'}{\senv_1 \types \ty}$.
 %   \end{enumerate}
 %
 %   New case for the process logical relation \\
-%   To establish that $\fProc{p} \in \lrProc{n}{\fType{\Sigma \vdash T}}$ where
+%   To establish that $\proc \in \lrProc{n}{\senv \types \ty}$ where
 %   $n=n'+1$ and $p$ reduces:
 %   \begin{enumerate}[start=5]
-%   \item $\pi = \lLink{c}{d}$ implies $\fFunc{c} \ne \fFunc{d}$ and $\fType{\Sigma} =
-%     \fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}$ and $\fProc{p'} \in \lrProc{n'}{\fType{\Sigma_1 \vdash T}}$.
+%   \item $\pi = \lLink{\ch}{\chB}$ implies $\ch \ne \chB$ and $\senv =
+%     \senv_1, \ch:\sty, \chB:\dual{\sty}$ and $\proc' \in \lrProc{n'}{\senv_1 \types \ty}$.
 %   \end{enumerate}
 
   \textbf{New obligation rules for the term and process transitions}
   \begin{mathpar}
     \begin{bussproof}[O-Link]
-      \bussAs{\fFunc{c} \ne \fFunc{d}}
-      \bussAs{\fFunc{e'} \in \lrTerm{n}{\fType{\Sigma_1 \vdash T}}}
-      \bussB{\obl{\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}}{n}{\fFunc{e} \trans{\lLink{c}{d}} \fFunc{e'} : \fType{T}}}
+      \bussAs{\ch \ne \chB}
+      \bussAs{\tm' \in \lrTerm{n}{\senv_1 \types \ty}}
+      \bussB{\obl{\senv_1, \ch:\sty, \chB:\dual{\sty}}{n}{\tm \trans{\lLink{\ch}{\chB}} \tm' : \ty}}
     \end{bussproof}
     \and
     \begin{bussproof}[Q-Link]
-      \bussAs{\fFunc{c} \ne \fFunc{d}}
-      \bussAs{\fProc{p'} \in \lrProc{n}{\fType{\Sigma_1 \vdash T}}}
-      \bussB{\obl{\fType{\Sigma_1, \fFunc{c}:S, \fFunc{d}:\dual{S}}}{n}{\fProc{p} \trans{\lLink{c}{d}} \fProc{p'} : \fType{T}}}
+      \bussAs{\ch \ne \chB}
+      \bussAs{\proc' \in \lrProc{n}{\senv_1 \types \ty}}
+      \bussB{\obl{\senv_1, \ch:\sty, \chB:\dual{\sty}}{n}{\proc \trans{\lLink{\ch}{\chB}} \proc' : \ty}}
     \end{bussproof}
   \end{mathpar}
 
@@ -513,37 +513,37 @@ session types and connects them. This way, all messages on one channel
 are forwarded to the other channel, in both directions.
 
 \Cref{fig:link-operator} shows how to extend $\OurLang$ with
-forwarding. We add a new operator $\fFunc{\tLink}$ and a forwarding label
-$\lLink{\fFunc{c}}{\fFunc{d}}$ to indicate the request to forward between sessions
-$\fFunc{c}$ and $\fFunc{d}$. The label is generated by a term
+forwarding. We add a new operator $\tLink$ and a forwarding label
+$\lLink{\ch}{\chB}$ to indicate the request to forward between sessions
+$\ch$ and $\chB$. The label is generated by a term
 reduction.
 As forwarding is symmetric the label
 carries a \emph{set} of channels, i.e., their order does not matter.
 The semantics does \emph{not} require the two ends to be different: a self-forwarding
-$\fFunc{\tApp{\tLink}{\tPair{c}{c}}}$ is a redex like any other and
-emits the singleton label $\lLink{c}{c} = \lLinkSingle{c}$. 
+$\tApp{\tLink}{\tPair{\ch}{\ch}}$ is a redex like any other and
+emits the singleton label $\lLink{\ch}{\ch} = \lLinkSingle{\ch}$. 
 Self-forwarding is ruled out by typing, but it may happen under the hood of the
 logical relation.
 
 The corresponding process reduction \TirName{P-Act-Link} requires that one of
 the channel ends involved in forwarding is local. In this case, one
-local channel, say $\fFunc{c}$, is removed and the other channel is
-substituted for $\fFunc{c}$. If no local channel is involved in the
+local channel, say $\ch$, is removed and the other channel is
+substituted for $\ch$. If no local channel is involved in the
 label, the configuration as a whole takes a labelled reduction step
 (via \TirName{P-Act-Session} in \cref{fig:proc-semantics}).
 The new obligation rules formalize the postcondition
 of the forwarder: the two connected channel ends vanish from the
 context as a consequence of the forwarding reduction.
 
-Both ends appear in the interface $\fType{\Sigma}$ in
+Both ends appear in the interface $\senv$ in
 \TirName{O-Link} and \TirName{Q-Link} because a forwarding label
 reaches the interface only when neither end is restricted
 (\TirName{P-Act-Session}). A forwarding between a restricted end
-$\fFunc{c}$ and an external end $\fFunc{d}$ emits no label: it is the
+$\ch$ and an external end $\chB$ emits no label: it is the
 $\tau$-step \TirName{P-Act-Link}, so it is governed by the reduction
 clause of the relation at an unchanged interface --- after the step
-the peer of $\fFunc{c}$, retargeted to $\fFunc{d}$ by the
-substitution, must serve the external session $\fFunc{d}$ directly.
+the peer of $\ch$, retargeted to $\chB$ by the
+substitution, must serve the external session $\chB$ directly.
 Establishing this clause for composite configurations is the
 forwarding case of \cref{lem:comp:connect}, which rests on the
 invariance of the relations under channel substitution.
@@ -551,10 +551,10 @@ Distinctness of the two ends is imposed by the logical relation: a configuration
 offering a forwarding whose two ends 
 coincide names a single channel, which no instance of the case above
 matches, so such a configuration is simply not in the relation.
-No typed term builds one either, because $\fFunc{\tLink}$ consumes a
+No typed term builds one either, because $\tLink$ consumes a
 session type together with its dual and linearity forbids one channel
 supplying both.
-On a restricted channel the substitution $\tSub{\cdot}{\fFunc{c}}{\fFunc{c}}$
+On a restricted channel the substitution $\tSub{\cdot}{\ch}{\ch}$
 is the identity, so \ruleLabel{P-Act-Link} degenerates to releasing the
 name --- which is what a self-forwarding means: the thread held both
 ends, so the session ``evaporates''.
@@ -572,40 +572,40 @@ Wadler'', where Wadler's system is a process calculus equivalent to GV
 mechanize the ring of size three and let the middle agent forward
 instead of relay by hand.
 \begin{align*}
-  \fFunc{\var{ag}_0} &:=
-    \fFunc{\tLet*{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{r_0}})}}{\tLet[\tLVB][\tLVA]{\tApp{\tRecv}{r_2}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}}}
+  \asTmOp{\var{ag}}_0 &:=
+    \tLet*{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{r}_0}})}}{\tLet[\tLVB][\tLVA]{\tApp{\tRecv}{\asTm{r}_2}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}}
   \\
-  \fFunc{\var{ag}_1} &:= \fFunc{\tApp{\tLink}{\tPair{r_1}{r_0}}}
+  \asTmOp{\var{ag}}_1 &:= \tApp{\tLink}{\tPair{\asTm{r}_1}{\asTm{r}_0}}
   \\
-  \fFunc{\var{ag}_2} &:=
-    \fFunc{\tLet[\tLVB][\tLVA]{\tApp{\tRecv}{r_1}}{\tLet*{\tLVB}{\tLet*{\tApp{\tClos}{\tLVA}}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{r_2}})}}}}}
+  \asTmOp{\var{ag}}_2 &:=
+    \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{\asTm{r}_1}}{\tLet*{\tLVB}{\tLet*{\tApp{\tClos}{\tLVA}}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{r}_2}})}}}}
   \\
-  \fProc{\var{sched}} &:=
-    (\set{\fFunc{r_0}, \fFunc{r_1}, \fFunc{r_2}},
-     \mset{\fFunc{\var{ag}_0}, \fFunc{\var{ag}_1}, \fFunc{\var{ag}_2}})
+  \asPrOp{\var{sched}} &:=
+    (\set{\asTm{r}_0, \asTm{r}_1, \asTm{r}_2},
+     \mset{\asTmOp{\var{ag}}_0, \asTmOp{\var{ag}}_1, \asTmOp{\var{ag}}_2})
 \end{align*}
-Agent $\fFunc{\var{ag}_0}$ starts a round by sending the token on
-$\fFunc{r_0}$ and then waits for it to come back on $\fFunc{r_2}$;
-$\fFunc{\var{ag}_2}$ collects it on $\fFunc{r_1}$ and passes it on to
-$\fFunc{r_2}$; and $\fFunc{\var{ag}_1}$ splices its predecessor
+Agent $\asTmOp{\var{ag}}_0$ starts a round by sending the token on
+$\asTm{r}_0$ and then waits for it to come back on $\asTm{r}_2$;
+$\asTmOp{\var{ag}}_2$ collects it on $\asTm{r}_1$ and passes it on to
+$\asTm{r}_2$; and $\asTmOp{\var{ag}}_1$ splices its predecessor
 directly to its successor and retires. Three threads sharing three
 channels form a cycle, so no derivation by \ruleLabel{P-Connect}
-exists and $\fProc{\var{sched}}$ is syntactically untypable. Nor does
-forwarding make the cycle go away: once $\fFunc{\var{ag}_1}$ fires,
-$\fFunc{r_0}$ and $\fFunc{r_1}$ are merged and the agent becomes
-$\fFunc{\tUnit}$, leaving two threads on two channels --- the minimal
+exists and $\asPrOp{\var{sched}}$ is syntactically untypable. Nor does
+forwarding make the cycle go away: once $\asTmOp{\var{ag}}_1$ fires,
+$\asTm{r}_0$ and $\asTm{r}_1$ are merged and the agent becomes
+$\tUnit$, leaving two threads on two channels --- the minimal
 cyclic process. Yet the ring never blocks, because
-$\fFunc{\var{ag}_0}$ sends before it receives; reversing those two
+$\asTmOp{\var{ag}}_0$ sends before it receives; reversing those two
 actions would deadlock it. The mechanization establishes deadlock freedom
 by exhibiting a closed invariant on the reachable configurations, and
-in fact $\fProc{\var{sched}}$ terminates \rocq{sched_terminates} and is
+in fact $\asPrOp{\var{sched}}$ terminates \rocq{sched_terminates} and is
 semantically typed at the empty interface,
-$\fType{\tEmpty \proves \fProc{\var{sched}} : \tUnit}$
+$\tEmpty \proves \asPrOp{\var{sched}} : \tyUnit$
 \rocq{sched_sem_ptyped}, so it composes with syntactically typed code
 by \cref{lem:comp:connect}.
 
 If we would split
-$\fFunc{\var{ag}_0}$ into a sending and a receiving half running in
+$\asTmOp{\var{ag}}_0$ into a sending and a receiving half running in
 parallel, then the topology becomes a tree. With two rounds of communication we
 are back at a cycle, because the second send happens after the first receive and any
 channel added to sequence the halves restores the cycle. We
