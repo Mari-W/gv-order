@@ -1,0 +1,136 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{proofrules}[2026/09/30 mathpartir-based inference rules]
+
+% Inference rules are stated with mathpartir's \infer*, inside proofrules
+% (several rules, laid out by mathpar) or proofrule (one displayed rule).
+%
+%   \infer*[lab=T-App]{premise \\ premise}{conclusion} \label{rule:T-App}
+%
+% The rule name is typeset above the rule AND becomes the target of
+% \label, so \ref{rule:T-App} prints the name as a link and
+% \cref{rule:T-App} prints "rule T-App".  Inside a derivation, a step is
+% justified on the right instead:
+%
+%   \infer*[Right=\ref{rule:T-App}]{...}{...}
+%
+% Right= is \rlap'ed, so justifications do not eat into the text width.
+
+\RequirePackage{xparse}
+\RequirePackage{mathpartir}
+\RequirePackage{graphicx}
+
+% Plain small-caps name, for a rule mentioned without a target of its own
+% (a family of rules, a lemma title naming the rule it discharges).
+\NewDocumentCommand\ruleLabel{m}{\textup{\textsc{#1}}}
+
+\AtBeginDocument{%
+  \@ifpackageloaded{hyperref}{}{\providecommand\phantomsection{}}%
+}
+
+\def\RuleNameStyle#1{\textsc{\strut#1}}
+\def\RuleName#1{\hbox{\TirNameStyle{\strut#1}}}
+
+% As \RuleName, but also makes the name the current label target, with
+% cleveref type "rule" so \cref says "rule Foo".
+\def\RuleNameLbl#1{%
+  \RuleName{#1}%
+  \protected@xdef\@currentlabel{\protect\RuleNameStyle{#1}}%
+  \protected@xdef\cref@currentlabel{%
+    [rule][0][]%
+    \protect\RuleNameStyle{\strut#1}}%
+  \phantomsection%
+}
+
+\newenvironment{proofrules}{%
+  \let\RefTirName\RuleName
+  \let\TirName\RuleName
+  \let\LabTirName\RuleNameLbl
+  \providecommand{\relabel}[1]{\@bsphack\@esphack}%
+  \setkeys{mpr}{vcenter}%
+  \begin{mathpar}%
+}{%
+  \end{mathpar}%
+  \ignorespacesafterend%
+}
+
+% Same, but may break across pages (long rule figures).
+\newenvironment{proofrules*}{%
+  \let\RefTirName\RuleName
+  \let\TirName\RuleName
+  \let\LabTirName\RuleNameLbl
+  \providecommand{\relabel}[1]{\@bsphack\@esphack}%
+  \begin{mathparpagebreakable}%
+}{%
+  \end{mathparpagebreakable}%
+  \ignorespacesafterend%
+}
+
+% A single rule, displayed.
+\newenvironment{proofrule}{%
+  \begin{equation*}%
+  \let\RefTirName\RuleName
+  \let\TirName\RuleName
+  \let\LabTirName\RuleNameLbl
+  \providecommand{\relabel}[1]{\@bsphack\@esphack}%
+}{%
+  \end{equation*}%
+  \ignorespacesafterend%
+}
+
+% A derivation: shrink to the text width if it would otherwise stick out.
+\newif\if@deriv@wrap
+\newsavebox{\@derivation}
+\newenvironment{derivation}[1][\small]{%
+  \begin{lrbox}{\@derivation}#1\(%
+}{%
+  \)%
+  \end{lrbox}%
+  \ifmmode\@deriv@wrapfalse\else\@deriv@wraptrue\fi
+  \if@deriv@wrap\begin{equation*}\fi
+  \ifdim\wd\@derivation<\linewidth
+    \usebox{\@derivation}%
+  \else
+    \resizebox{\linewidth}{!}{\usebox{\@derivation}}%
+  \fi
+  \if@deriv@wrap\end{equation*}\fi
+  \ignorespacesafterend%
+}
+
+% ---------------------------------------------------------------------
+% Grouping rules inside a figure.
+%
+%   \adjustfigure[]                 (no size change; [\small] to shrink)
+%   \rulesection*{First group}      no rule above: opens the figure
+%   \begin{proofrules} ... \end{proofrules}
+%   \rulesection{Next group}
+%   \begin{proofrules} ... \end{proofrules}
+%   \rulesectionend                 closes the last group
+% ---------------------------------------------------------------------
+\RequirePackage{xcolor}
+
+\newcommand{\adjustfigure}[1][\small]{%
+  \centering#1%
+  \columnwidth=\linewidth% needed in twocolumn layout
+  \belowdisplayskip=0pt\belowdisplayshortskip=0pt% no spurious space around eqs
+  \abovedisplayskip=0pt\abovedisplayshortskip=0pt}
+
+\newlength{\rulesecskip}
+\setlength{\rulesecskip}{.5\baselineskip}
+\newcommand{\rulesecdiv}{%
+  \noindent\leavevmode%
+  \leaders\hrule height 0.6ex depth \dimexpr.12ex-0.6ex\hfill\kern0pt%
+}
+\newcommand{\rulesection}{%
+  \@ifstar{\rulesection@}{\rulesection@@}%
+}
+\newcommand{\rulesection@@}{\par\vspace{\rulesecskip}\rulesection@}
+\newcommand{\rulesection@}[1]{%
+  {\color{gray}\makebox[1em]{\rulesecdiv}\hspace{1ex}{#1}\hspace{1ex}\rulesecdiv}%
+  \vspace{\rulesecskip}%
+}
+\newcommand{\rulesectionend}{%
+  \par\vspace{\rulesecskip}%
+  {\color{gray}\rulesecdiv}%
+}
+
+\endinput

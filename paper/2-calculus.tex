@@ -64,7 +64,8 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
 \end{figure}
 
 \begin{figure}[tp]
-  \textbf{Evaluation contexts $\ectx$, session labels $\sigma$, term labels $\lambda$}
+  \adjustfigure[]
+  \rulesection*{Evaluation contexts $\ectx$, session labels $\sigma$, term labels $\lambda$}
   \begin{align*}
     \ectx &::=
       \hole \sepr
@@ -88,42 +89,43 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
       \lFork{\ch}{\val}
     & \text{(term labels)}
   \end{align*}
-  \textbf{Labelled reductions for terms}
-  \begin{mathpar}
-    \begin{bussproof}[T-Act-App]
-      \bussAx{
-      \tApp{(\tAbs{\tLVA}{\tm})}{\val} \trans{\beta} \tSub{\tm}{\val}{\tLVA}}
-    \end{bussproof}
+  \rulesection{Labelled reductions for terms}
+  \begin{proofrules}
+    \infer*[lab=T-Act-App]{ }{
+      \tApp{(\tAbs{\tLVA}{\tm})}{\val} \trans{\beta} \tSub{\tm}{\val}{\tLVA}
+    } \label{rule:T-Act-App}
     \and
-    \begin{bussproof}[T-Act-Let*]
-      \bussAx{\tLet*{\tUnit}{\tm} \trans{\beta} \tm}
-    \end{bussproof}
+    \infer*[lab=T-Act-Let*]{ }{
+      \tLet*{\tUnit}{\tm} \trans{\beta} \tm
+    } \label{rule:T-Act-Let*}
     \and
-    \begin{bussproof}[T-Act-LetPair]
-      \bussAx{\tLet[\tLVA][\tLVB]{\tPair{\valB}{\val}}{\tm} \trans{\beta} \tSub{\tSub{\tm}{\valB}{\tLVA}}{\val}{\tLVB}}
-    \end{bussproof}
+    \infer*[lab=T-Act-LetPair]{ }{
+      \tLet[\tLVA][\tLVB]{\tPair{\valB}{\val}}{\tm} \trans{\beta} \tSub{\tSub{\tm}{\valB}{\tLVA}}{\val}{\tLVB}
+    } \label{rule:T-Act-LetPair}
     \and
-    \begin{bussproof}[T-Act-Fork]
-      \bussAx{\tApp{\tFork}{\val} \trans{\lFork{\ch}{\val}} \ch}
-    \end{bussproof}
+    \infer*[lab=T-Act-Fork]{ }{
+      \tApp{\tFork}{\val} \trans{\lFork{\ch}{\val}} \ch
+    } \label{rule:T-Act-Fork}
     \\\
-    \begin{bussproof}[T-Act-Recv]
-      \bussAx{\tApp{\tRecv}{\ch} \trans{\lRecv{\ch}{\val}} \tPair{\val}{\ch}}
-    \end{bussproof}
+    \infer*[lab=T-Act-Recv]{ }{
+      \tApp{\tRecv}{\ch} \trans{\lRecv{\ch}{\val}} \tPair{\val}{\ch}
+    } \label{rule:T-Act-Recv}
     \and
-    \begin{bussproof}[T-Act-Send]
-      \bussAx{\tApp{\tSend}{\tPair{\val}{\ch}} \trans{\lSend{\ch}{\val}} \ch}
-    \end{bussproof}
+    \infer*[lab=T-Act-Send]{ }{
+      \tApp{\tSend}{\tPair{\val}{\ch}} \trans{\lSend{\ch}{\val}} \ch
+    } \label{rule:T-Act-Send}
     \and
-    \begin{bussproof}[T-Act-Close]
-      \bussAx{\tApp{\tClos}{\ch} \trans{\lTerm{\ch}} \tUnit}
-    \end{bussproof}
+    \infer*[lab=T-Act-Close]{ }{
+      \tApp{\tClos}{\ch} \trans{\lTerm{\ch}} \tUnit
+    } \label{rule:T-Act-Close}
     \and
-    \begin{bussproof}[T-Act-Ctx]
-      \bussAs{\tm \trans{\lambda} \tm'}
-      \bussU{\ectx[\tm] \trans{\lambda} \ectx[\tm']}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=T-Act-Ctx]{
+      \tm \trans{\lambda} \tm'
+    }{
+      \ectx[\tm] \trans{\lambda} \ectx[\tm']
+    } \label{rule:T-Act-Ctx}
+  \end{proofrules}
+  \rulesectionend
   \caption{Semantics of \OurLang\ terms \rocq{slabel}}
   \Description{Grammars for evaluation contexts, session labels and term labels, and the seven axioms plus one congruence rule of the labelled term reduction relation.}
   \label{fig:term-semantics}
@@ -161,7 +163,7 @@ $\lTerm{\ch}$ for terminating the connection on $\ch$.
 A fork generates a label~$\lFork{\ch}{\val}$,
 recording the new channel~$\ch$ and
 the code to run in the forked thread~$\val$.
-The rule~\ruleLabel{T-Act-Ctx} uses standard call-by-value evaluation contexts.
+The rule~\ref{rule:T-Act-Ctx} uses standard call-by-value evaluation contexts.
 
 We define GV-style \emph{term reduction} $\tm \redu \tm'$ as
 the pure steps $\tm \trans{\beta} \tm'$
@@ -192,22 +194,22 @@ $(\chset,\pool) \trans{\pi} (\chset,\pool)$ between processes.
 A process $(C,E)$ might represent the full network, or some sub-network of
 the global state. In the latter case, terms in~$E$ may use channels that do not
 appear in~$C$ to communicate with the environment. 
-The \ruleLabel{P-Act-Session} rule lifts communication effects~$\sigma$
+The \ref{rule:P-Act-Session} rule lifts communication effects~$\sigma$
 that pertain to channels linking to the environment,
 to a transition of the process labelled with~$\sigma$.
 We denote the channels that are extruded from the internal scope due to a
 an communication effect~$\sigma$ by $\sent(\sigma)$:
   $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
   $\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
-Rule \ruleLabel{P-Act-Beta} lets a thread take an internal $\tau$~step
+Rule \ref{rule:P-Act-Beta} lets a thread take an internal $\tau$~step
 to execute a $\beta$~reduction of the term it is running.
-Rule \ruleLabel{P-Act-Fork} interprets the fork labels~$ \lFork{\ch}{\val} $
+Rule \ref{rule:P-Act-Fork} interprets the fork labels~$ \lFork{\ch}{\val} $
 by adding a fresh name $\ch$ to~$C$ and adding a thread
 running~$\val$ applied to~$\ch$.
-Communication labels are interpreted by the \ruleLabel{P-Act-Msg} rule,
+Communication labels are interpreted by the \ref{rule:P-Act-Msg} rule,
 which matches a send $\lSend{\ch}{\val}$ (over a restricted $\ch$)
 in one thread with a receive $\lRecv{\ch}{\val}$ of another.
-Similarly, \ruleLabel{P-Act-Close} makes two close actions on the same
+Similarly, \ref{rule:P-Act-Close} makes two close actions on the same
 restricted channel match.
 \ed{explain why we keep close only over internal channels}
 
@@ -229,42 +231,52 @@ semantics.
 \end{theorem}
 
 \begin{figure}[tp]
-  \textbf{Process labels $\pi ::= \tau \sepr \sigma$} \par\medskip
+  \adjustfigure[]
+  % TODO(mathpartir): this heading *is* the content (the label grammar),
+  % not a title for what follows.  Its trailing \par\medskip was dropped
+  % in favour of \rulesection's own spacing; check you like the result.
+  \rulesection*{Process labels $\pi ::= \tau \sepr \sigma$}
   % \textbf{Process labels $\pi$}
   % \begin{align*}
   % \pi &::= \tau \sepr \sigma
   % \end{align*}
-  \textbf{Labelled reductions for processes}
-  \begin{mathpar}
-    \begin{bussproof}[P-Act-Session]
-      \bussAs{\tm \trans{\sigma} \tm'}
-      \bussAs{\fc(\sigma) \disjoint \chset}
-      \bussB{(\chset, \pool \uplus \mset{\tm}) \trans{\sigma} (\chset \setminus \sent(\sigma), \pool \uplus \mset{\tm'})}
-    \end{bussproof}
+  \rulesection{Labelled reductions for processes}
+  \begin{proofrules}
+    \infer*[lab=P-Act-Session]{
+      \tm \trans{\sigma} \tm' \\
+      \fc(\sigma) \disjoint \chset
+    }{
+      (\chset, \pool \uplus \mset{\tm}) \trans{\sigma} (\chset \setminus \sent(\sigma), \pool \uplus \mset{\tm'})
+    } \label{rule:P-Act-Session}
     \and
-    \begin{bussproof}[P-Act-Fork]
-      \bussAs{\tm \trans{\lFork{\ch}{\val}} \tm'}
-      \bussAs{\ch~\text{fresh}}
-      \bussB{(\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm', \tApp{\val}{\ch}})}
-    \end{bussproof}
+    \infer*[lab=P-Act-Fork]{
+      \tm \trans{\lFork{\ch}{\val}} \tm' \\
+      \ch~\text{fresh}
+    }{
+      (\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm', \tApp{\val}{\ch}})
+    } \label{rule:P-Act-Fork}
     \and
-    \begin{bussproof}[P-Act-Beta]
-      \bussAs{\tm \trans{\beta} \tm'}
-      \bussU{(\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset, \pool \uplus \mset{\tm'})}
-    \end{bussproof}
+    \infer*[lab=P-Act-Beta]{
+      \tm \trans{\beta} \tm'
+    }{
+      (\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset, \pool \uplus \mset{\tm'})
+    } \label{rule:P-Act-Beta}
     \and
-    \begin{bussproof}[P-Act-Msg]
-      \bussAs{\tm \trans{\lSend{\ch}{\val}} \tm'}
-      \bussAs{\tmB \trans{\lRecv{\ch}{\val}} \tmB'}
-      \bussB{(\chset, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tmB'})}
-    \end{bussproof}
+    \infer*[lab=P-Act-Msg]{
+      \tm \trans{\lSend{\ch}{\val}} \tm' \\
+      \tmB \trans{\lRecv{\ch}{\val}} \tmB'
+    }{
+      (\chset, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tmB'})
+    } \label{rule:P-Act-Msg}
     \and
-    \begin{bussproof}[P-Act-Close]
-      \bussAs{\tm \trans{\lTerm{\ch}} \tm'}
-      \bussAs{\tmB \trans{\lTerm{\ch}} \tmB'}
-        \bussB{(\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tmB'})}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=P-Act-Close]{
+      \tm \trans{\lTerm{\ch}} \tm' \\
+      \tmB \trans{\lTerm{\ch}} \tmB'
+    }{
+      (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tmB'})
+    } \label{rule:P-Act-Close}
+  \end{proofrules}
+  \rulesectionend
   \caption{LTS semantics of \OurLang\ processes \rocq{plabel}}
   \Description{The grammar of process labels and the five rules of the process labelled transition relation: one lifting an external offer, and one each for beta steps, forks, matched messages and matched closes.}
   \label{fig:proc-semantics}
@@ -327,7 +339,7 @@ semantics.
   After a~$\beta$ reduction in the new thread,
   the first thread has a receive on~$\ch$ in evaluation position,
   and the second a send on~$\ch$.
-  By \ruleLabel{P-Act-Msg} the two actions are matched and the message~$\tUnit$
+  By \ref{rule:P-Act-Msg} the two actions are matched and the message~$\tUnit$
   is exchanged.
   After deconstructing the received value, the two threads synchronously close
   the channel, bringing the whole process to a graceful termination.
@@ -387,7 +399,7 @@ will consider untyped processes and accept only well-behaved ones
   \end{align}
 \end{example}
 
-We explain the significance of the \ruleLabel{P-Act-Session} rule with the following lemma.
+We explain the significance of the \ref{rule:P-Act-Session} rule with the following lemma.
 It considers the case that two disjoint processes communicate over an external channel $c$.
 We can internalize this communication by putting the processes together and close them over $c$.
 \begin{lemma}[Internalizing communication \rocq{internalize_comm}]
@@ -396,7 +408,7 @@ We can internalize this communication by putting the processes together and clos
   It then holds that $(\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1' \uplus \pool_2')$.
 \end{lemma}
 % \begin{proof}
-%   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ruleLabel{P-Act-Session}.
+%   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ref{rule:P-Act-Session}.
 %
 %   Rule inversion on $(C_1, E_1)$ yields
 %   \begin{align}
@@ -412,13 +424,13 @@ We can internalize this communication by putting the processes together and clos
 %     C_2' & = C_2 \setminus \sent(\lRecv{\ch}{\val}) = C_2 \setminus \emptyset \\
 %     E_2' & = E_2'' \uplus \mset{\tmB'}
 %   \end{align}
-%   Hence we can apply \ruleLabel{P-Act-Msg} from the assumptions~(\cref{eq:1}) and~(\cref{eq:2}) to conclude
+%   Hence we can apply \ref{rule:P-Act-Msg} from the assumptions~(\cref{eq:1}) and~(\cref{eq:2}) to conclude
 %   \begin{align}
 %     (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm, \tmB})
 %     & \trans{\tau} (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm', \tmB'})
 %   \end{align}
-%   Note that the channel set is left \emph{unchanged} by \ruleLabel{P-Act-Msg}:
-%   the channels $\fchans(\val)$ that \ruleLabel{P-Act-Session} extrudes
+%   Note that the channel set is left \emph{unchanged} by \ref{rule:P-Act-Msg}:
+%   the channels $\fchans(\val)$ that \ref{rule:P-Act-Session} extrudes
 %   from $C_1$ remain in scope of the combined process, since the
 %   receiver is now part of it.
 % \end{proof}
@@ -427,7 +439,7 @@ The same construction applies to the other synchronizing action.
 Two processes that both offer to close the external channel $c$ can be
 put together and closed over $c$, and their offers become an internal
 step.
-Closing consumes the channel, so \ruleLabel{P-Act-Close} removes
+Closing consumes the channel, so \ref{rule:P-Act-Close} removes
 $\ch$ from the set of internal channels and the combined process ends with the channel set
 $C_1 \cupdot C_2$.
 \begin{lemma}[Internalizing a close \rocq{internalize_close}]
@@ -619,7 +631,8 @@ Our goal is to demonstrate its soundness by justifying its rules with
 a more liberal logical relation in \cref{sec:logicalRelation}.
 
 \begin{figure}[tp]
-  \textbf{Types $\ty$, session types $\sty$, session environments $\senv$} \rocq{ty}
+  \adjustfigure[]
+  \rulesection*{Types $\ty$, session types $\sty$, session environments $\senv$ \rocq{ty}}
   \begin{align*}
     \ty,\tyB &::= \tyUnit \sepr \lFunc{\ty}{\tyB} \sepr \lPair{\ty}{\tyB} \sepr \sty
     \\
@@ -627,7 +640,7 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
     \\
     \senv &::= \tEmpty \sepr \ch:\sty \sepr \senv,\senv
   \end{align*}
-  \textbf{Session duality $\dual{\sty}$}
+  \rulesection{Session duality $\dual{\sty}$}
   \begin{align*}
     \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
     &
@@ -640,12 +653,12 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
 % \end{figure}
 %
 % \begin{figure}[tp]
-  \textbf{Linear variable environments} $\lenv$
+  \rulesection{Linear variable environments $\lenv$}
   \begin{align*}
     \lenv &::= \tEmpty \sepr \tLVA:\ty \sepr
                      \lenv, \lenv
   \end{align*}
-  \textbf{Type-indexed families of type signatures for constants $\cst:\ty$}
+  \rulesection{Type-indexed families of type signatures for constants $\cst:\ty$}
   \begin{align*}
     \tFork &{}:\lFunc{(\lFunc{\sty}{\tyUnit})}{\dual{\sty}}
     &
@@ -655,74 +668,84 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
     &
     \tClos &{}:\lFunc{\sTerm}{\tyUnit}
   \end{align*}
-  \textbf{Typing rules for terms} $\senv ; \lenv \types \tm : \ty$ \rocq{typed}
-  \begin{mathpar}
-    \begin{bussproof}[E-Unit]
-      \bussAx{\tEmpty ; \tEmpty \types \tUnit : \tyUnit}
-    \end{bussproof}
+  \rulesection{Typing rules for terms $\senv ; \lenv \types \tm : \ty$ \rocq{typed}}
+  \begin{proofrules}
+    \infer*[lab=E-Unit]{ }{
+      \tEmpty ; \tEmpty \types \tUnit : \tyUnit
+    } \label{rule:E-Unit}
     \and
-    \begin{bussproof}[E-Const]
-      \bussAs{\cst : \lFunc{\ty}{\tyB}}
-      \bussU{\tEmpty ; \tEmpty \types \cst : \lFunc{\ty}{\tyB}}
-    \end{bussproof}
+    \infer*[lab=E-Const]{
+      \cst : \lFunc{\ty}{\tyB}
+    }{
+      \tEmpty ; \tEmpty \types \cst : \lFunc{\ty}{\tyB}
+    } \label{rule:E-Const}
     \and
-    \begin{bussproof}[E-LVar]
-      \bussAx{\tEmpty ; \tLVA:\ty \types \tLVA : \ty}
-    \end{bussproof}
+    \infer*[lab=E-LVar]{ }{
+      \tEmpty ; \tLVA:\ty \types \tLVA : \ty
+    } \label{rule:E-LVar}
     \and
-    \begin{bussproof}[E-Ch]
-      \bussAx{\ch:\sty ; \tEmpty \types \ch : \sty}
-    \end{bussproof}
+    \infer*[lab=E-Ch]{ }{
+      \ch:\sty ; \tEmpty \types \ch : \sty
+    } \label{rule:E-Ch}
     \and
-    \begin{bussproof}[E-Abs]
-      \bussAs{\senv ; \lenv , \tLVA:\ty \types \tm : \tyB}
-      \bussU{\senv ; \lenv \types \tAbs{\tLVA}{\tm} : \lFunc{\ty}{\tyB}}
-    \end{bussproof}
+    \infer*[lab=E-Abs]{
+      \senv ; \lenv , \tLVA:\ty \types \tm : \tyB
+    }{
+      \senv ; \lenv \types \tAbs{\tLVA}{\tm} : \lFunc{\ty}{\tyB}
+    } \label{rule:E-Abs}
     \and
-    \begin{bussproof}[E-App]
-      \bussAs{\senv_1 ; \lenv_1 \types \tm_1 : \lFunc{\ty}{\tyB}}
-      \bussAs{\senv_2 ; \lenv_2 \types \tm_2 : \ty}
-      \bussB{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tApp{\tm_1}{\tm_2} : \tyB}
-    \end{bussproof}
+    \infer*[lab=E-App]{
+      \senv_1 ; \lenv_1 \types \tm_1 : \lFunc{\ty}{\tyB} \\
+      \senv_2 ; \lenv_2 \types \tm_2 : \ty
+    }{
+      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tApp{\tm_1}{\tm_2} : \tyB
+    } \label{rule:E-App}
     \and
-    \begin{bussproof}[E-Pair]
-      \bussAs{\senv_1 ; \lenv_1 \types \tm_1 : \ty}
-      \bussAs{\senv_2 ; \lenv_2 \types \tm_2 : \tyB}
-      \bussB{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tPair{\tm_1}{\tm_2} : \lPair{\ty}{\tyB}}
-    \end{bussproof}
+    \infer*[lab=E-Pair]{
+      \senv_1 ; \lenv_1 \types \tm_1 : \ty \\
+      \senv_2 ; \lenv_2 \types \tm_2 : \tyB
+    }{
+      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tPair{\tm_1}{\tm_2} : \lPair{\ty}{\tyB}
+    } \label{rule:E-Pair}
     \and
-    \begin{bussproof}[E-Let*]
-      \bussAs{\senv_1 ; \lenv_1 \types \tm_1 : \tyUnit}
-      \bussAs{\senv_2 ; \lenv_2 \types \tm_2 : \ty}
-      \bussB{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet*{\tm_1}{\tm_2} : \ty}
-    \end{bussproof}
+    \infer*[lab=E-Let*]{
+      \senv_1 ; \lenv_1 \types \tm_1 : \tyUnit \\
+      \senv_2 ; \lenv_2 \types \tm_2 : \ty
+    }{
+      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet*{\tm_1}{\tm_2} : \ty
+    } \label{rule:E-Let*}
     \and
-    \begin{bussproof}[E-LetPair]
-      \bussAs{\senv_1 ; \lenv_1 \types \tm_1 : \lPair{\tyB}{\tyC}}
-      \bussAs{\senv_2 ; \lenv_2 , \tLVA:\tyB , \tLVB:\tyC \types \tm_2 : \ty}
-      \bussB{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet[\tLVA][\tLVB]{\tm_1}{\tm_2} : \ty}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{Typing rules for processes} $\senv \types \proc : \ty$
-  \begin{mathpar}
-    \begin{bussproof}[P-Term]
-      \bussAs{\primitive \ty}
-      \bussAs{\senv ; \tEmpty \types \tm : \ty}
-      \bussB{\senv \types (\asPrOp{\emptyset} , \mset{\tm}) : \ty}
-    \end{bussproof}
+    \infer*[lab=E-LetPair]{
+      \senv_1 ; \lenv_1 \types \tm_1 : \lPair{\tyB}{\tyC} \\
+      \senv_2 ; \lenv_2 , \tLVA:\tyB , \tLVB:\tyC \types \tm_2 : \ty
+    }{
+      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet[\tLVA][\tLVB]{\tm_1}{\tm_2} : \ty
+    } \label{rule:E-LetPair}
+  \end{proofrules}
+  \rulesection{Typing rules for processes $\senv \types \proc : \ty$}
+  \begin{proofrules}
+    \infer*[lab=P-Term]{
+      \primitive \ty \\
+      \senv ; \tEmpty \types \tm : \ty
+    }{
+      \senv \types (\asPrOp{\emptyset} , \mset{\tm}) : \ty
+    } \label{rule:P-Term}
     \and
-    \begin{bussproof}[P-Independent]
-      \bussAs{\senv_1 \types (\chset_1,\pool_1) : \ty}
-      \bussAs{\senv_2 \types (\chset_2,\pool_2) : \tyUnit}
-      \bussB{\senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2, \pool_1 \uplus \pool_2) : \ty}
-    \end{bussproof}
+    \infer*[lab=P-Independent]{
+      \senv_1 \types (\chset_1,\pool_1) : \ty \\
+      \senv_2 \types (\chset_2,\pool_2) : \tyUnit
+    }{
+      \senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2, \pool_1 \uplus \pool_2) : \ty
+    } \label{rule:P-Independent}
     \and
-    \begin{bussproof}[P-Connect]
-      \bussAs{\senv_1 , \ch:\sty \types (\chset_1 , \pool_1) : \ty}
-      \bussAs{\senv_2 , \ch:\dual{\sty} \types (\chset_2 , \pool_2) : \tyUnit}
-      \bussB{\senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2 \cupdot \set{\ch} , \pool_1 \uplus \pool_2) : \ty}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=P-Connect]{
+      \senv_1 , \ch:\sty \types (\chset_1 , \pool_1) : \ty \\
+      \senv_2 , \ch:\dual{\sty} \types (\chset_2 , \pool_2) : \tyUnit
+    }{
+      \senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2 \cupdot \set{\ch} , \pool_1 \uplus \pool_2) : \ty
+    } \label{rule:P-Connect}
+  \end{proofrules}
+  \rulesectionend
   \caption{Typing for terms and processes}
   \Description{Grammars for types, session types, session environments and linear variable environments; the definition of session duality; the type signatures of the four constants; nine typing rules for terms and three for processes.}
   \label{fig:typeSys}
@@ -770,32 +793,33 @@ The type~$\ty$ is the type of the value computed by the ``main'' thread of~$E$.
 We implicitly assume that $\senv$ and $\chset$
 do not share channels, as the $C$ indicates the channels restricted to $E$.
 
-The \ruleLabel{P-Term} rule types a single thread by checking that the declared
+The \ref{rule:P-Term} rule types a single thread by checking that the declared
 type is in fact the type of the expression it is running, and that such expression can be typed in the empty variable environment (\ie it is closed).
 Additionally, we ensure a thread cannot avoid closing its channels
 by just returning them: All return types must be \emph{primitive types}:
 %
-\begin{mathpar}
-  \begin{bussproof}
-    \bussAx{\primitive \tyUnit}
-  \end{bussproof}
+\begin{proofrules}
+  \infer*{ }{
+    \primitive \tyUnit
+  }
   \and
-  \begin{bussproof}
-    \bussAs{\primitive \tyB}
-    \bussAs{\primitive \tyC}
-    \bussB{\primitive \lPair{\tyB}{\tyC}}
-  \end{bussproof}
-\end{mathpar}
+  \infer*{
+    \primitive \tyB \\
+    \primitive \tyC
+  }{
+    \primitive \lPair{\tyB}{\tyC}
+  }
+\end{proofrules}
 
-Rule \ruleLabel{P-Connect} composes two processes that interact in a dual way
+Rule \ref{rule:P-Connect} composes two processes that interact in a dual way
 on exactly one channel,
 similar to well-known session-typing rules
 derived from linear logic's cut rule~\cite{DBLP:journals/tcs/Girard87}.
-Rule \ruleLabel{P-Independent} composes two processes that
+Rule \ref{rule:P-Independent} composes two processes that
 do not interact at all, similar to typing rules derived
 from linear logic's mix rule.
 This latter rule is important to account for processes
-that were previously composed by \ruleLabel{P-Connect}
+that were previously composed by \ref{rule:P-Connect}
 but whose connecting channel has been closed since.
 
 \begin{example}[Syntactic typability of the examples \rocq{sync_typed}]
@@ -806,12 +830,12 @@ but whose connecting channel has been closed since.
   The closed $\asPrOp{\var{cycle}}$ process of Example~\ref{ex:cyclic} is harmless
   but \emph{not} typable:
   as the two threads share $ \ch $,
-  we must apply \ruleLabel{P-Connect}, which forces us to partition
+  we must apply \ref{rule:P-Connect}, which forces us to partition
   the remaining channels (in this case $\set{\asPr{d}}$)
   to give to the two threads.
   As $\asPr{d}$ is used by both threads, one of the sub-derivations
   would need to fail.
-  The same happens if one tries to apply \ruleLabel{P-Connect} on
+  The same happens if one tries to apply \ref{rule:P-Connect} on
   $\asPr{d}$ first.
   %%
   For the same reasons, the $\asPrOp{\var{blocked}}$ process of Example~\ref{ex:deadlock}

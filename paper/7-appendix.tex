@@ -205,14 +205,15 @@ communicates first with $\tm_1$.
 \label{sec:app-duality}
 
 \begin{figure}[tp]
-  \textbf{Session types} $\sty$, extending \cref{sec:extens-recurs-ii}
+  \adjustfigure[]
+  \rulesection*{Session types $\sty$, extending \cref{sec:extens-recurs-ii}}
   \begin{align*}
     \sty &::= \sRecv{\ty}{\sty} \sepr \sSend{\ty}{\sty} \sepr
                    \sTerm \sepr \tyMu\tvar.\sty \sepr
                    \tvar \sepr \dual{\tvar}
     % & \text{($\dual{\tvar}$ never occurs in a source type)}
   \end{align*}
-  \textbf{Duality} $\dual{\sty}$
+  \rulesection{Duality $\dual{\sty}$}
   \begin{align*}
     \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
     &
@@ -227,84 +228,94 @@ communicates first with $\tm_1$.
   $\dual{\tvar}$; $\sflipop_\alpha$ does the same swap, but only for the
   designated variable $\tvar$, leaving every other variable alone. 
 
-  \textbf{Equivalence} $\ty \approx \tyB, \sty \approx \styB$, coinductively
-  \begin{mathpar}
-    \begin{bussproof}[Eq-Unit]
-      \bussAx{\tyUnit \approx \tyUnit}      
-    \end{bussproof}
+  \rulesection{Equivalence $\ty \approx \tyB, \sty \approx \styB$, coinductively}
+  \begin{proofrules}
+    \infer*[lab=Eq-Unit]{ }{
+      \tyUnit \approx \tyUnit
+    } \label{rule:Eq-Unit}
     \and
-    \begin{bussproof}
-      \bussAs{\ty \approx \ty'}
-      \bussAs{\tyB \approx \tyB'}
-      \bussB{\lFunc{\ty}{\tyB} \approx {\lFunc{\ty'}{\tyB'}}}
-    \end{bussproof}
+    \infer*{
+      \ty \approx \ty' \\
+      \tyB \approx \tyB'
+    }{
+      \lFunc{\ty}{\tyB} \approx {\lFunc{\ty'}{\tyB'}}
+    }
     \and
-    \begin{bussproof}
-      \bussAs{\ty \approx \ty'}
-      \bussAs{\tyB \approx \tyB'}
-      \bussB{\lPair{\ty}{\tyB} \approx {\lPair{\ty'}{\tyB'}}}
-    \end{bussproof}
+    \infer*{
+      \ty \approx \ty' \\
+      \tyB \approx \tyB'
+    }{
+      \lPair{\ty}{\tyB} \approx {\lPair{\ty'}{\tyB'}}
+    }
     \\
-    \begin{bussproof}[Eq-Recv]
-      \bussAs{\ty \approx \tyB}
-      \bussAs{\sty \approx \styB}
-      \bussB{\sRecv{\ty}{\sty} \approx \sSend{\tyB}{\styB}}
-    \end{bussproof}
+    \infer*[lab=Eq-Recv]{
+      \ty \approx \tyB \\
+      \sty \approx \styB
+    }{
+      \sRecv{\ty}{\sty} \approx \sSend{\tyB}{\styB}
+    } \label{rule:Eq-Recv}
     \and
-    \begin{bussproof}[Eq-Send]
-      \bussAs{\ty \approx \tyB}
-      \bussAs{\sty \approx \styB}
-      \bussB{\sSend{\ty}{\sty} \approx \sRecv{\tyB}{\styB}}
-    \end{bussproof}
+    \infer*[lab=Eq-Send]{
+      \ty \approx \tyB \\
+      \sty \approx \styB
+    }{
+      \sSend{\ty}{\sty} \approx \sRecv{\tyB}{\styB}
+    } \label{rule:Eq-Send}
     \and
-    \begin{bussproof}[Eq-Close]
-      \bussAx{\sTerm \approx \sTerm}
-    \end{bussproof}
+    \infer*[lab=Eq-Close]{ }{
+      \sTerm \approx \sTerm
+    } \label{rule:Eq-Close}
     \\
-    \begin{bussproof}[Eq-MuL]
-      \bussAs{\sty[\tyMu\tvar.\sty/\tvar] \approx \styB}
-      \bussU{\tyMu\tvar.\sty \approx \styB}
-    \end{bussproof}
+    \infer*[lab=Eq-MuL]{
+      \sty[\tyMu\tvar.\sty/\tvar] \approx \styB
+    }{
+      \tyMu\tvar.\sty \approx \styB
+    } \label{rule:Eq-MuL}
     \and
-    \begin{bussproof}[Eq-MuR]
-      \bussAs{\sty \approx \styB[\tyMu\tvar.\styB/\tvar]}
-      \bussU{\sty \approx \tyMu\tvar.\styB}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=Eq-MuR]{
+      \sty \approx \styB[\tyMu\tvar.\styB/\tvar]
+    }{
+      \sty \approx \tyMu\tvar.\styB
+    } \label{rule:Eq-MuR}
+  \end{proofrules}
 
-  \textbf{Relational duality} $\sty \isdual \styB$, coinductively
-  \begin{mathpar}
-    \begin{bussproof}[D-Recv]
-      \bussAs{\ty \approx \tyB}
-      \bussAs{\sty \isdual \styB}
-      \bussB{\sRecv{\ty}{\sty} \isdual \sSend{\tyB}{\styB}}
-    \end{bussproof}
+  \rulesection{Relational duality $\sty \isdual \styB$, coinductively}
+  \begin{proofrules}
+    \infer*[lab=D-Recv]{
+      \ty \approx \tyB \\
+      \sty \isdual \styB
+    }{
+      \sRecv{\ty}{\sty} \isdual \sSend{\tyB}{\styB}
+    } \label{rule:D-Recv}
     \and
-    \begin{bussproof}[D-Send]
-      \bussAs{\ty \approx \tyB}
-      \bussAs{\sty \isdual \styB}
-      \bussB{\sSend{\ty}{\sty} \isdual \sRecv{\tyB}{\styB}}
-    \end{bussproof}
+    \infer*[lab=D-Send]{
+      \ty \approx \tyB \\
+      \sty \isdual \styB
+    }{
+      \sSend{\ty}{\sty} \isdual \sRecv{\tyB}{\styB}
+    } \label{rule:D-Send}
     \and
-    \begin{bussproof}[D-Close]
-      \bussAx{\sTerm \isdual \sTerm}
-    \end{bussproof}
+    \infer*[lab=D-Close]{ }{
+      \sTerm \isdual \sTerm
+    } \label{rule:D-Close}
     \\
-    \begin{bussproof}[D-MuL]
-      \bussAs{\sty[\tyMu\tvar.\sty/\tvar] \isdual \styB}
-      \bussU{\tyMu\tvar.\sty \isdual \styB}
-    \end{bussproof}
+    \infer*[lab=D-MuL]{
+      \sty[\tyMu\tvar.\sty/\tvar] \isdual \styB
+    }{
+      \tyMu\tvar.\sty \isdual \styB
+    } \label{rule:D-MuL}
     \and
-    \begin{bussproof}[D-MuR]
-      \bussAs{\sty \isdual \styB[\tyMu\tvar.\styB/\tvar]}
-      \bussU{\sty \isdual \tyMu\tvar.\styB}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=D-MuR]{
+      \sty \isdual \styB[\tyMu\tvar.\styB/\tvar]
+    }{
+      \sty \isdual \tyMu\tvar.\styB
+    } \label{rule:D-MuR}
+  \end{proofrules}
   % \ie $\sty \isdual \styB$ holds if $\unf(\sty)$ and
   % $\unf(\styB)$ match one of the four conclusions, up to the
   % symmetry of \ruleLabel{D-Var}.
 
-  \textbf{Facts}
+  \rulesection{Facts}
   \begin{align*}
     \dual{\dual{\sty}} &= \sty
     &
@@ -312,6 +323,7 @@ communicates first with $\tm_1$.
     &
     \sty \isdual \styB &\iff \sty \approx \dual{\styB}
   \end{align*}
+  \rulesectionend
   \caption{Equivalence and duality of recursive session types
     \quad \rocq{dual}}
   \Description{The grammar of recursive session types with polarized
@@ -394,12 +406,12 @@ reductions of the base calculus and the extensions.
 \paragraph{Reduction semantics for processes}
 \Cref{fig:red-semantics} gives the reduction semantics
 $\proc \sred \proc'$: a thread takes a pure step
-(\ruleLabel{R-Lift}); a fork spawns a thread and restricts a fresh
-channel (\ruleLabel{R-Fork}); a send and a receive on the same
-restricted channel synchronize (\ruleLabel{R-Com}); two closes on the
-same restricted channel retire it (\ruleLabel{R-Close}); and a
+(\ref{rule:R-Lift}); a fork spawns a thread and restricts a fresh
+channel (\ref{rule:R-Fork}); a send and a receive on the same
+restricted channel synchronize (\ref{rule:R-Com}); two closes on the
+same restricted channel retire it (\ref{rule:R-Close}); and a
 forwarder fuses a restricted end with its partner by substitution
-(\ruleLabel{R-Link}, and symmetrically for the other end of the
+(\ref{rule:R-Link}, and symmetrically for the other end of the
 pair). Interactions happen under evaluation contexts in the
 participating threads; where
 the LTS of \cref{fig:proc-semantics} lets the term transitions
@@ -413,37 +425,40 @@ it is easy to relate structured process terms to a formulation based
 on a soup of processes like ours.
 
 \begin{figure}[tp]
-  \textbf{Reduction semantics} $\proc \sred \proc'$
-  \begin{mathpar}
-    \begin{bussproof}[R-Lift]
-      \bussAs{\tm \redu[\mathsf{V}] \tm'}
-      \bussU{(\chset, \pool \uplus \mset{\tm}) \sred (\chset, \pool \uplus \mset{\tm'})}
-    \end{bussproof}
+  \adjustfigure[]
+  \rulesection*{Reduction semantics $\proc \sred \proc'$}
+  \begin{proofrules}
+    \infer*[lab=R-Lift]{
+      \tm \redu[\mathsf{V}] \tm'
+    }{
+      (\chset, \pool \uplus \mset{\tm}) \sred (\chset, \pool \uplus \mset{\tm'})
+    } \label{rule:R-Lift}
     \and
-    \begin{bussproof}[R-Fork]
-      \bussAs{\ch \text{ fresh}}
-      \bussU{(\chset, \pool \uplus \mset{\ectx[\tApp{\tFork}{\val}]}) \sred
-             (\chset \cupdot \set{\ch}, \pool \uplus \mset{\ectx[\ch], \tApp{\val}{\ch}})}
-    \end{bussproof}
+    \infer*[lab=R-Fork]{
+      \ch \text{ fresh}
+    }{
+      (\chset, \pool \uplus \mset{\ectx[\tApp{\tFork}{\val}]}) \sred (\chset \cupdot \set{\ch}, \pool \uplus \mset{\ectx[\ch], \tApp{\val}{\ch}})
+    } \label{rule:R-Fork}
     \and
-    \begin{bussproof}[R-Com]
-      \bussAs{\ch \in \chset}
-      \bussU{(\chset, \pool \uplus \mset{\ectx[\tApp{\tSend}{\tPair{\val}{\ch}}], \ectx'[\tApp{\tRecv}{\ch}]}) \sred
-             (\chset, \pool \uplus \mset{\ectx[\ch], \ectx'[\tPair{\val}{\ch}]})}
-    \end{bussproof}
+    \infer*[lab=R-Com]{
+      \ch \in \chset
+    }{
+      (\chset, \pool \uplus \mset{\ectx[\tApp{\tSend}{\tPair{\val}{\ch}}], \ectx'[\tApp{\tRecv}{\ch}]}) \sred (\chset, \pool \uplus \mset{\ectx[\ch], \ectx'[\tPair{\val}{\ch}]})
+    } \label{rule:R-Com}
     \and
-    \begin{bussproof}[R-Close]
-      \bussAs{\ch \in \chset}
-      \bussU{(\chset, \pool \uplus \mset{\ectx[\tApp{\tClos}{\ch}], \ectx'[\tApp{\tClos}{\ch}]}) \sred
-             (\chset \setminus \set{\ch}, \pool \uplus \mset{\ectx[\tUnit], \ectx'[\tUnit]})}
-    \end{bussproof}
+    \infer*[lab=R-Close]{
+      \ch \in \chset
+    }{
+      (\chset, \pool \uplus \mset{\ectx[\tApp{\tClos}{\ch}], \ectx'[\tApp{\tClos}{\ch}]}) \sred (\chset \setminus \set{\ch}, \pool \uplus \mset{\ectx[\tUnit], \ectx'[\tUnit]})
+    } \label{rule:R-Close}
     \and
-    \begin{bussproof}[R-Link]
-      \bussAs{\ch \in \chset}
-      \bussU{(\chset, \pool \uplus \mset{\ectx[\tApp{\tLink}{\tPair{\ch}{\chB}}]}) \sred
-             (\chset \setminus \set{\ch}, \tSub{(\pool \uplus \mset{\ectx[\tUnit]})}{\chB}{\ch})}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=R-Link]{
+      \ch \in \chset
+    }{
+      (\chset, \pool \uplus \mset{\ectx[\tApp{\tLink}{\tPair{\ch}{\chB}}]}) \sred (\chset \setminus \set{\ch}, \tSub{(\pool \uplus \mset{\ectx[\tUnit]})}{\chB}{\ch})
+    } \label{rule:R-Link}
+  \end{proofrules}
+  \rulesectionend
   \caption{Reduction semantics: pure steps, fork, communication,
     closing, and forwarding, with no labels \quad \rocq{red}}
   \Description{Five reduction rules for process soups: lifting a pure
@@ -459,13 +474,13 @@ between the congruence closure of the labeled semantics and
 evaluation contexts: filling a labeled step into a context is a
 labeled step, and conversely every labeled step decomposes into an
 evaluation context around a head step.
-\ruleLabel{R-Lift} then matches
-\ruleLabel{P-Act-Beta} by \cref{lem:vred-reduction}, and each
+\Cref{rule:R-Lift} then matches
+\ref{rule:P-Act-Beta} by \cref{lem:vred-reduction}, and each
 interaction rule matches the process rule that consumes the
-corresponding labels: \ruleLabel{R-Fork} with
-\ruleLabel{P-Act-Fork}, \ruleLabel{R-Com} with \ruleLabel{P-Act-Msg},
-\ruleLabel{R-Close} with \ruleLabel{P-Act-Close}, and
-\ruleLabel{R-Link} with \ruleLabel{P-Act-Link}, whose unordered label
+corresponding labels: \ref{rule:R-Fork} with
+\ref{rule:P-Act-Fork}, \ref{rule:R-Com} with \ref{rule:P-Act-Msg},
+\ref{rule:R-Close} with \ref{rule:P-Act-Close}, and
+\ref{rule:R-Link} with \ref{rule:P-Act-Link}, whose unordered label
 pair accounts for the two orientations of the rule.
 
 %%% Local Variables:

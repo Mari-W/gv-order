@@ -11,7 +11,8 @@ features of GV \cite{conf/esop/LindleyM15} are covered; recursion is an extra.
 
 
 \begin{figure}[tp]
-  \textbf{New values, terms, evaluation contexts}
+  \adjustfigure[]
+  \rulesection*{New values, terms, evaluation contexts}
   \begin{align*}
     \val &::= \dots \sepr \tInj{1}{\val} \sepr \tInj{2}{\val}
     & \text{injections}\\
@@ -20,45 +21,50 @@ features of GV \cite{conf/esop/LindleyM15} are covered; recursion is an extra.
     \ectx & ::= \dots \sepr \tInj{1}{\ectx} \sepr \tInj{2}{\ectx}
                        \sepr \tCase{\ectx}{\ivx}{\tm}{\ivx}{\tm}
   \end{align*}
-  \textbf{New labelled transitions}
-  \begin{mathpar}
-    \begin{bussproof}[T-Act-Case]
-      \bussAx{\tCase{(\tInj{\asTm{i}}{\val})}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} \trans{\beta} \tSub{\tm_{\asTm{i}}}{\val}{\ivx_{\asTm{i}}}}
-    \end{bussproof}
+  \rulesection{New labelled transitions}
+  \begin{proofrules}
+    \infer*[lab=T-Act-Case]{ }{
+      \tCase{(\tInj{\asTm{i}}{\val})}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} \trans{\beta} \tSub{\tm_{\asTm{i}}}{\val}{\ivx_{\asTm{i}}}
+    } \label{rule:T-Act-Case}
     % \and
-    % \begin{bussproof}[T-Act-Case2]
-    % \bussAx{\tCase{\tInj{2}{\val}}{\tLVA}{\tm}{\tLVA}{\tm} \trans{\beta} \tSub{\tm'}{\tFixI{\tIVY}{\tm}}{\tIVX}}
-    % \end{bussproof}
-  \end{mathpar}
-  \textbf{New typing rules for terms}
-  \begin{mathpar}
-    \begin{bussproof}[E-Inj]
-      \bussAs{\senv ; \lenv \types \tm : \ty_{\asTy{i}}}
-      \bussU{\senv ; \lenv \types \tInj{\asTm{i}}{\tm} : \lSum{\ty_1}{\ty_2}}
-    \end{bussproof}
+    % \infer*[lab=T-Act-Case2]{ }{
+    %   \tCase{\tInj{2}{\val}}{\tLVA}{\tm}{\tLVA}{\tm} \trans{\beta} \tSub{\tm'}{\tFixI{\tIVY}{\tm}}{\tIVX}
+    % } \label{rule:T-Act-Case2}
+  \end{proofrules}
+  \rulesection{New typing rules for terms}
+  \begin{proofrules}
+    \infer*[lab=E-Inj]{
+      \senv ; \lenv \types \tm : \ty_{\asTy{i}}
+    }{
+      \senv ; \lenv \types \tInj{\asTm{i}}{\tm} : \lSum{\ty_1}{\ty_2}
+    } \label{rule:E-Inj}
     \and
-    \begin{bussproof}[E-Case]
-      \bussAs{\senv_1 ; \lenv_1 \types \tm : \lSum{\ty_1}{\ty_2}}
-      \bussAsBelow{\senv_2 ; \lenv_2, \ivx_1:\ty_1 \types \tm_1 :\tyB}
-      \bussAsBelow{\senv_2 ; \lenv_2, \ivx_2:\ty_2 \types \tm_2 :\tyB}
-      \bussU{\senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tCase{\tm}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} : \tyB}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{New rule for the value logical relation}
-  \begin{mathpar}
-    \begin{bussproof}[V-Inj]
-      \bussAs{\val \in \lrVal{n}{\senv \types \ty_{\asTy{i}}}}
-      \bussU{\tInj{\asTm{i}}{\val} \in \lrVal{n}{\senv \types \lSum{\ty_1}{\ty_2}}}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{New rule for primitive types}
-  \begin{mathpar}
-    \begin{bussproof}
-      \bussAs{\primitive \tyB}
-      \bussAs{\primitive \tyC}
-      \bussB{\primitive \lSum{\tyB}{\tyC}}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=E-Case]{
+      \senv_1 ; \lenv_1 \types \tm : \lSum{\ty_1}{\ty_2} \\\\
+      \senv_2 ; \lenv_2, \ivx_1:\ty_1 \types \tm_1 :\tyB \\\\
+      \senv_2 ; \lenv_2, \ivx_2:\ty_2 \types \tm_2 :\tyB
+    }{
+      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tCase{\tm}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} : \tyB
+    } \label{rule:E-Case}
+  \end{proofrules}
+  \rulesection{New rule for the value logical relation}
+  \begin{proofrules}
+    \infer*[lab=V-Inj]{
+      \val \in \lrVal{n}{\senv \types \ty_{\asTy{i}}}
+    }{
+      \tInj{\asTm{i}}{\val} \in \lrVal{n}{\senv \types \lSum{\ty_1}{\ty_2}}
+    } \label{rule:V-Inj}
+  \end{proofrules}
+  \rulesection{New rule for primitive types}
+  \begin{proofrules}
+    \infer*{
+      \primitive \tyB \\
+      \primitive \tyC
+    }{
+      \primitive \lSum{\tyB}{\tyC}
+    }
+  \end{proofrules}
+  \rulesectionend
   \caption{Extensions for sum types}
   \Description{Additional values, terms and evaluation contexts for sums; one reduction axiom; two typing rules; one rule of the value logical relation; and one rule for primitive types.}
   \label{fig:sum-types}
@@ -182,7 +188,8 @@ yields a closed, deadlock-free process.
 \label{sec:recursion}
 
 \begin{figure}[tp]
-  \textbf{New values, terms, types}
+  \adjustfigure[]
+  \rulesection*{New values, terms, types}
   \begin{align*}
     \val &::= \dots \sepr \IExp{(\tIVX = \tm)}
     & \text{recursively defined thunk}\\
@@ -192,37 +199,39 @@ yields a closed, deadlock-free process.
   % Since $\tForce$ is a function, no new evaluation contexts
   % are needed: thunk elimination is ordinary application.
 
-  \textbf{New labelled transition}
-  \begin{mathpar}
-    \begin{bussproof}[T-Act-Exp]
-      \bussAx{\tApp{\tForce}{\IExp{(\tIVX = \tm)}}
-        \trans{\beta}
-        \tSub{\tm}{\IExp{(\tIVX = \tm)}}{\tIVX}}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{New typing rules for terms}
-  \begin{mathpar}
-    \begin{bussproof}[E-Exp]
-      \bussAs{\tEmpty ; \tBox{\lenv} , \tIVX:\tBox{\ty} \types \tm : \ty}
-      \bussU{\tEmpty ; \tBox{\lenv} \types \IExp{(\tIVX = \tm)} : \tBox{\ty}}
-    \end{bussproof}
+  \rulesection{New labelled transition}
+  \begin{proofrules}
+    \infer*[lab=T-Act-Exp]{ }{
+      \tApp{\tForce}{\IExp{(\tIVX = \tm)}} \trans{\beta} \tSub{\tm}{\IExp{(\tIVX = \tm)}}{\tIVX}
+    } \label{rule:T-Act-Exp}
+  \end{proofrules}
+  \rulesection{New typing rules for terms}
+  \begin{proofrules}
+    \infer*[lab=E-Exp]{
+      \tEmpty ; \tBox{\lenv} , \tIVX:\tBox{\ty} \types \tm : \ty
+    }{
+      \tEmpty ; \tBox{\lenv} \types \IExp{(\tIVX = \tm)} : \tBox{\ty}
+    } \label{rule:E-Exp}
     \and
-    \begin{bussproof}[E-Force]
-      \bussAx{\tEmpty ; \tEmpty \types \tForce : \lFunc{\tBox{\ty}}{\ty}}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{Structural rules for boxed hypotheses}
-  \begin{mathpar}
-    \begin{bussproof}[E-Weak]
-      \bussAs{\senv ; \lenv \types \tm : \tyB}
-      \bussU{\senv ; \lenv , \tIVX:\tBox{\ty} \types \tm : \tyB}
-    \end{bussproof}
+    \infer*[lab=E-Force]{ }{
+      \tEmpty ; \tEmpty \types \tForce : \lFunc{\tBox{\ty}}{\ty}
+    } \label{rule:E-Force}
+  \end{proofrules}
+  \rulesection{Structural rules for boxed hypotheses}
+  \begin{proofrules}
+    \infer*[lab=E-Weak]{
+      \senv ; \lenv \types \tm : \tyB
+    }{
+      \senv ; \lenv , \tIVX:\tBox{\ty} \types \tm : \tyB
+    } \label{rule:E-Weak}
     \and
-    \begin{bussproof}[E-Contract]
-      \bussAs{\senv ; \lenv , \tIVX:\tBox{\ty} , \tIVY:\tBox{\ty} \types \tm : \tyB}
-      \bussU{\senv ; \lenv , \tIVX:\tBox{\ty} \types \tSub{\tm}{\tIVX}{\tIVY} : \tyB}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=E-Contract]{
+      \senv ; \lenv , \tIVX:\tBox{\ty} , \tIVY:\tBox{\ty} \types \tm : \tyB
+    }{
+      \senv ; \lenv , \tIVX:\tBox{\ty} \types \tSub{\tm}{\tIVX}{\tIVY} : \tyB
+    } \label{rule:E-Contract}
+  \end{proofrules}
+  \rulesectionend
   \caption{Extending the term language and typing
     (\cref{fig:typeSys}) with recursive exponentials in the style of Lily.}
   \Description{Additional values for recursive exponentials; one reduction axiom; two typing rules; and the two structural rules for boxed hypotheses.}
@@ -247,7 +256,7 @@ only boxed types, indicated by $\tBox{\Delta}$; forcing a thunk eliminates the
 boxed type; boxed-typed variables are subject to weakening and contraction
 (\cref{fig:lily:terms}). In the mechanization, weakening is a rule of the
 system, while contraction is built into environment
-splitting and the explicit rule \ruleLabel{E-Contract} is
+splitting and the explicit rule \ref{rule:E-Contract} is
 proved admissible. \citet{conf/esop/LindleyM15} approach
 replication in a similar way, but their introduction rule is not recursive
 and their elimination is via let-box.
@@ -362,7 +371,7 @@ sessions of the dual type, one for each call of $\asTm{req}$.
 \end{align*}
 The factory is bound once and used twice, which is legal because its
 type is boxed: the two occurrences of $\tIVX$ are justified by
-contraction (\ruleLabel{E-Contract}). Each $\asTm{req}$ re-runs the
+contraction (\ref{rule:E-Contract}). Each $\asTm{req}$ re-runs the
 suspended $\tFork$, so the two clients obtain two distinct
 private sessions served by two independent copies of the worker; a
 factory may also be discarded outright, by weakening
@@ -401,16 +410,17 @@ Expressing equi-recursive handling of session types in the syntactic type
 system requires defining type equivalence modulo unfolding of recursion and a conversion rule, which
 lets a term be retyped at any equivalent type (see \cref{sec:app-duality}
 for the standard definition of type equivalence):
-\begin{mathpar}
-  \begin{bussproof}[E-Conv]
-    \bussAs{\senv ; \lenv \types \tm : \ty}
-    \bussAs{\ty \approx \ty'}
-    \bussB{\senv ; \lenv \types \tm : \ty'}
-  \end{bussproof}
-\end{mathpar}
+\begin{proofrules}
+  \infer*[lab=E-Conv]{
+    \senv ; \lenv \types \tm : \ty \\
+    \ty \approx \ty'
+  }{
+    \senv ; \lenv \types \tm : \ty'
+  } \label{rule:E-Conv}
+\end{proofrules}
 
 The logical relation is quotiented by $\approx$ throughout.
-\ruleLabel{V-Chan} lets a channel store any protocol equivalent to the
+\Cref{rule:V-Chan} lets a channel store any protocol equivalent to the
 one demanded, and a rule matching
 $\senv = \senv_1, \ch:\sRecv{\tyB}{\sty}$ reads that
 entry through unfolding (\rocq{senv_hd}) rather than matching
@@ -419,7 +429,7 @@ directions: if $\ty \approx \ty'$, then the value relation and the
 term relation at $\ty$ and at $\ty'$ have the same members
 (\rocq{Vrel_teq_iff}, \rocq{Erel_teq_iff}), and semantic typing
 transports along $\approx$ (\rocq{sem_typed_teq}), which is the
-compositionality lemma for \ruleLabel{E-Conv}.
+compositionality lemma for \ref{rule:E-Conv}.
 
 % PT: I don't think we have to write about dualization here!
 % Dualization, finally, needs one more session type former than the
@@ -433,7 +443,7 @@ compositionality lemma for \ruleLabel{E-Conv}.
 For readability, we write $\dual{\sty}$ for the dual type of
 $\sty$ in \cref{fig:link-operator}. However, with recursive types the two
 ends are related by coinductive duality rather than by the duality function, so
-\ruleLabel{O-Link} and \ruleLabel{Q-Link} use
+\ref{rule:O-Link} and \ref{rule:Q-Link} use
 $\senv_1, \ch:\sty, \chB:\styB$ with
 $\sty \perp \styB$. Duality has the same shape as $\approx$ with $?$ swapped
 against $!$; payloads are still equivalent. It agrees with the function, because
@@ -444,7 +454,8 @@ $\sty \perp \styB$ holds exactly when $\sty \approx \dual{\styB}$.
 \label{sec:extens-link-oper}
 
 \begin{figure}[tp]
-  \textbf{New constant, session label}
+  \adjustfigure[]
+  \rulesection*{New constant, session label}
   \begin{align*}
     \cst &::= \dots \sepr \tLink
     & \text{forwarding operator}
@@ -452,22 +463,29 @@ $\sty \perp \styB$ holds exactly when $\sty \approx \dual{\styB}$.
     \sigma &::= \dots \sepr \lLink{\ch}{\ch}
              &\text{forwarding session label}
   \end{align*}
-  \textbf{New labelled transitions}
-  \begin{mathpar}
-    \begin{bussproof}[T-Act-Link]
-      \bussAx{\tApp{\tLink}{\tPair{\ch}{\chB}} \trans{\lLink{\ch}{\chB}} \tUnit}
-    \end{bussproof}
+  \rulesection{New labelled transitions}
+  \begin{proofrules}
+    \infer*[lab=T-Act-Link]{ }{
+      \tApp{\tLink}{\tPair{\ch}{\chB}} \trans{\lLink{\ch}{\chB}} \tUnit
+    } \label{rule:T-Act-Link}
         \and
-    \begin{bussproof}[P-Act-Link]
-      \bussAs{\tm \trans{\lLink{\ch}{\chB}} \tm'}
-      \bussU{(\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm}) \trans{\tau} (\chset, \tSub{(\pool \uplus \mset{\tm'})}{\chB}{\ch})}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{Subjects and escaping channels of the new label} \\
+    \infer*[lab=P-Act-Link]{
+      \tm \trans{\lLink{\ch}{\chB}} \tm'
+    }{
+      (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm}) \trans{\tau} (\chset, \tSub{(\pool \uplus \mset{\tm'})}{\chB}{\ch})
+    } \label{rule:P-Act-Link}
+  \end{proofrules}
+  % TODO(mathpartir): this group is one line of content, not rules.  The
+  % heading's trailing \\ was dropped, so the content now sits on the
+  % heading line instead of below it.  Keep it, or fold the content into
+  % the heading, or go back to \textbf here.
+  \rulesection{Subjects and escaping channels of the new label}
   $ \fc(\lLink{\ch}{\chB}) = \set{\ch,\chB} $, \quad
   $ \sent(\lLink{\ch}{\chB}) = \emptyset $
 
-  \textbf{New type-indexed family of constants} \\
+  % TODO(mathpartir): same as above, and worse -- \rulesecdiv's \hfill
+  % pushes the single line of content out to the right margin.
+  \rulesection{New type-indexed family of constants}
   $ \tLink : \lFunc{\tPair{\sty}{\dual{\sty}}}{\tyUnit} $
 
 %   New case for the term logical relation
@@ -484,21 +502,24 @@ $\sty \perp \styB$ holds exactly when $\sty \approx \dual{\styB}$.
 %     \senv_1, \ch:\sty, \chB:\dual{\sty}$ and $\proc' \in \lrProc{n'}{\senv_1 \types \ty}$.
 %   \end{enumerate}
 
-  \textbf{New obligation rules for the term and process transitions}
-  \begin{mathpar}
-    \begin{bussproof}[O-Link]
-      \bussAs{\ch \ne \chB}
-      \bussAs{\tm' \in \lrTerm{n}{\senv_1 \types \ty}}
-      \bussB{\obl{\senv_1, \ch:\sty, \chB:\dual{\sty}}{n}{\tm \trans{\lLink{\ch}{\chB}} \tm' : \ty}}
-    \end{bussproof}
+  \rulesection{New obligation rules for the term and process transitions}
+  \begin{proofrules}
+    \infer*[lab=O-Link]{
+      \ch \ne \chB \\
+      \tm' \in \lrTerm{n}{\senv_1 \types \ty}
+    }{
+      \obl{\senv_1, \ch:\sty, \chB:\dual{\sty}}{n}{\tm \trans{\lLink{\ch}{\chB}} \tm' : \ty}
+    } \label{rule:O-Link}
     \and
-    \begin{bussproof}[Q-Link]
-      \bussAs{\ch \ne \chB}
-      \bussAs{\proc' \in \lrProc{n}{\senv_1 \types \ty}}
-      \bussB{\obl{\senv_1, \ch:\sty, \chB:\dual{\sty}}{n}{\proc \trans{\lLink{\ch}{\chB}} \proc' : \ty}}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=Q-Link]{
+      \ch \ne \chB \\
+      \proc' \in \lrProc{n}{\senv_1 \types \ty}
+    }{
+      \obl{\senv_1, \ch:\sty, \chB:\dual{\sty}}{n}{\proc \trans{\lLink{\ch}{\chB}} \proc' : \ty}
+    } \label{rule:Q-Link}
+  \end{proofrules}
 
+  \rulesectionend
   \caption{Extensions for forwarding (the link operator)}
   \Description{The new link constant and forwarding session label; the term and process reduction rules for forwarding; the subjects and escaping channels of the new label; the type of link; and the new obligation rules of the term and process logical relations.}
   \label{fig:link-operator}
@@ -555,7 +576,7 @@ No typed term builds one either, because $\tLink$ consumes a
 session type together with its dual and linearity forbids one channel
 supplying both.
 On a restricted channel the substitution $\tSub{\cdot}{\ch}{\ch}$
-is the identity, so \ruleLabel{P-Act-Link} degenerates to releasing the
+is the identity, so \ref{rule:P-Act-Link} degenerates to releasing the
 name --- which is what a self-forwarding means: the thread held both
 ends, so the session ``evaporates''.
 
@@ -589,7 +610,7 @@ $\asTm{r}_0$ and then waits for it to come back on $\asTm{r}_2$;
 $\asTmOp{\var{ag}}_2$ collects it on $\asTm{r}_1$ and passes it on to
 $\asTm{r}_2$; and $\asTmOp{\var{ag}}_1$ splices its predecessor
 directly to its successor and retires. Three threads sharing three
-channels form a cycle, so no derivation by \ruleLabel{P-Connect}
+channels form a cycle, so no derivation by \ref{rule:P-Connect}
 exists and $\asPrOp{\var{sched}}$ is syntactically untypable. Nor does
 forwarding make the cycle go away: once $\asTmOp{\var{ag}}_1$ fires,
 $\asTm{r}_0$ and $\asTm{r}_1$ are merged and the agent becomes
@@ -613,7 +634,7 @@ therefore also mechanize the two-round scheduler, whose agents are the
 ones above with a round in front \rocq{sched2_deadlock_free}.
 \end{example}
 % Installing this extension, requires to update the proof of
-% \ruleLabel{E-Abs}
+% \ref{rule:E-Abs}
 % to cater for the new functional constant and
 % all other rules to cater for the new labeled reduction.
 

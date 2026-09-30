@@ -59,18 +59,18 @@ mutually defined relations for values and terms in inference rule style. The
 relations are inductive on the lexicographic ordering on the step count $n$,
 first, and then on the size of $\senv \types \ty$. 
 
-Apart from \ruleLabel{V-Abs}, the value rules do nothing but
+Apart from \ref{rule:V-Abs}, the value rules do nothing but
 distribute the session environment over the structure of the value.
-\ruleLabel{V-Pair} splits $\senv$ between the two components, where
+\Cref{rule:V-Pair} splits $\senv$ between the two components, where
 $\senv_1, \senv_2$ denotes the union of two session 
 environments with disjoint domains.
-The leaves decide what is left: \ruleLabel{V-Chan} accounts for
-exactly the one entry naming that channel, while \ruleLabel{V-Unit}
-and \ruleLabel{V-Const} demand the empty environment.
+The leaves decide what is left: \ref{rule:V-Chan} accounts for
+exactly the one entry naming that channel, while \ref{rule:V-Unit}
+and \ref{rule:V-Const} demand the empty environment.
 A value is thus related at $\senv$ only if its external channels are used linearly.
 
 The first premise of
-\ruleLabel{V-Abs} is the usual step-indexed treatment of a
+\ref{rule:V-Abs} is the usual step-indexed treatment of a
 function: for every argument in the value relation at a strictly
 smaller index $j<n$, the body substituted with that argument must be
 in the term relation at~$j$. 
@@ -80,10 +80,10 @@ syntactically which channels extrude a process by looking at the channels syntac
 the typed view of a value agree only if its free channels are exactly
 the ones its interface declares.
 
-The term relation is given by a step rule \ruleLabel{E-Step} that asks only what a term
+The term relation is given by a step rule \ref{rule:E-Step} that asks only what a term
 \emph{does}: either it cannot move, and then it has to be in the value relation for its declared type, or it can, and then every transition it offers has
 to discharge the obligation carried by its label.
-It is defined inductively \emph{on the step index} $n$ with base case \ruleLabel{E-Zero}.
+It is defined inductively \emph{on the step index} $n$ with base case \ref{rule:E-Zero}.
 % Read without that index the rules are not a valid inductive definition.
 % We chose this representational style solely because it is easier to read. The obligations of a possible transition are stated
 % at index $n$ and mention the value relation at $n+1$. The definition is
@@ -100,96 +100,104 @@ value relation refers to
 the term relation only at strictly smaller indices $j < n+1$.
 The labels govern the channel
 management by adjusting the session environment $\senv$.
-A $\beta$ step leaves it unchanged (\ruleLabel{O-Beta}). When
-creating a new thread (label $\lFork{\ch}{\val}$, \ruleLabel{O-Fork}), we split $\senv$ between
+A $\beta$ step leaves it unchanged (\ref{rule:O-Beta}). When
+creating a new thread (label $\lFork{\ch}{\val}$, \ref{rule:O-Fork}), we split $\senv$ between
 the new thread ($\senv_1$) and the original thread
 ($\senv_2$), which gets extended by the newly introduced
-channel $\ch$. For input (label $\lRecv{\ch}{\val}$, \ruleLabel{O-Recv}), we may obtain
+channel $\ch$. For input (label $\lRecv{\ch}{\val}$, \ref{rule:O-Recv}), we may obtain
 additional channels from another thread (in $\senv_2$) and
 continue in the original session environment with an updated type for
 $\ch$ extended by $\senv_2$.
 Here the environment chooses the message, so the obligation quantifies
 over every value in the value relation at any index $j \le n$, together
 with the interface $\senv_2$ that the value brings with it.
-For output (label $\lSend{\ch}{\val}$, \ruleLabel{O-Send}), we split off $\senv_2$ which
+For output (label $\lSend{\ch}{\val}$, \ref{rule:O-Send}), we split off $\senv_2$ which
 describes the channels that we pass in the value $\val$ to another thread
 and update the type of $\ch$.
-For closing (label $\lTerm{\ch}$, \ruleLabel{O-Close}), we drop the channel $\ch$.
+For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$.
 
 \begin{figure}[tp]
-  \textbf{Value logical relation} $\val \in \lrVal{n}{\senv \types \ty}$
-  \begin{mathpar}
-    \begin{bussproof}[V-Unit]
-      \bussAx{\tUnit \in \lrVal{n}{\tEmpty \types \tyUnit}}
-    \end{bussproof}
+  \adjustfigure[]
+  \rulesection*{Value logical relation $\val \in \lrVal{n}{\senv \types \ty}$}
+  \begin{proofrules}
+    \infer*[lab=V-Unit]{ }{
+      \tUnit \in \lrVal{n}{\tEmpty \types \tyUnit}
+    } \label{rule:V-Unit}
     \and
-    \begin{bussproof}[V-Chan]
-      \bussAx{\ch \in \lrVal{n}{\ch:\sty \types \sty}}
-    \end{bussproof}
+    \infer*[lab=V-Chan]{ }{
+      \ch \in \lrVal{n}{\ch:\sty \types \sty}
+    } \label{rule:V-Chan}
     \and
-    \begin{bussproof}[V-Const]
-      \bussAs{\cst : \lFunc{\ty}{\tyB}}
-      \bussU{\cst \in \lrVal{n}{\tEmpty \types \lFunc{\ty}{\tyB}}}
-    \end{bussproof}
+    \infer*[lab=V-Const]{
+      \cst : \lFunc{\ty}{\tyB}
+    }{
+      \cst \in \lrVal{n}{\tEmpty \types \lFunc{\ty}{\tyB}}
+    } \label{rule:V-Const}
     \and
-    \begin{bussproof}[V-Pair]
-      \bussAs{\val_1 \in \lrVal{n}{\senv_1 \types \ty}}
-      \bussAs{\val_2 \in \lrVal{n}{\senv_2 \types \tyB}}
-      \bussB{\tPair{\val_1}{\val_2} \in \lrVal{n}{\senv_1, \senv_2 \types \lPair{\ty}{\tyB}}}
-    \end{bussproof}
+    \infer*[lab=V-Pair]{
+      \val_1 \in \lrVal{n}{\senv_1 \types \ty} \\
+      \val_2 \in \lrVal{n}{\senv_2 \types \tyB}
+    }{
+      \tPair{\val_1}{\val_2} \in \lrVal{n}{\senv_1, \senv_2 \types \lPair{\ty}{\tyB}}
+    } \label{rule:V-Pair}
     \and
-    \begin{bussproof}[V-Abs]
-      \bussAs{\forall j<n , \senv' , \val \in \lrVal{j}{\senv' \types \ty}\st
-              \tSub{\tm}{\val}{\tLVA} \in \lrTerm{j}{\senv, \senv' \types \tyB}}
-      \bussAs{\fchans(\tm) = \dom(\senv)}
-      \bussB{\tAbs{\tLVA}{\tm} \in \lrVal{n}{\senv \types \lFunc{\ty}{\tyB}}}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{Term logical relation} $\tm \in \lrTerm{n}{\senv \types \ty}$
-  \begin{mathpar}
-    \begin{bussproof}[E-Zero]
-      \bussAx{\tm \in \lrTerm{0}{\senv \types \ty}}
-    \end{bussproof}
+    \infer*[lab=V-Abs]{
+      \forall j<n , \senv' , \val \in \lrVal{j}{\senv' \types \ty}\st \tSub{\tm}{\val}{\tLVA} \in \lrTerm{j}{\senv, \senv' \types \tyB} \\
+      \fchans(\tm) = \dom(\senv)
+    }{
+      \tAbs{\tLVA}{\tm} \in \lrVal{n}{\senv \types \lFunc{\ty}{\tyB}}
+    } \label{rule:V-Abs}
+  \end{proofrules}
+  \rulesection{Term logical relation $\tm \in \lrTerm{n}{\senv \types \ty}$}
+  \begin{proofrules}
+    \infer*[lab=E-Zero]{ }{
+      \tm \in \lrTerm{0}{\senv \types \ty}
+    } \label{rule:E-Zero}
     \and
-    \begin{bussproof}[E-Step]
-      \bussAs{\irred \tm \implies \tm \in \lrVal{n+1}{\senv \types \ty}}
-      \bussAs{\forall \lambda, \tm'\st \tm \trans{\lambda} \tm'
-              \implies \obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}}
-      \bussB{\tm \in \lrTerm{n+1}{\senv \types \ty}}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{Obligations of a term transition}
+    \infer*[lab=E-Step]{
+      \irred \tm \implies \tm \in \lrVal{n+1}{\senv \types \ty} \\
+      \forall \lambda, \tm'\st \tm \trans{\lambda} \tm' \implies \obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}
+    }{
+      \tm \in \lrTerm{n+1}{\senv \types \ty}
+    } \label{rule:E-Step}
+  \end{proofrules}
+  \rulesection{Obligations of a term transition}
   $\obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}$
-  \begin{mathpar}
-    \begin{bussproof}[O-Beta]
-      \bussAs{\tm' \in \lrTerm{n}{\senv \types \ty}}
-      \bussU{\obl{\senv}{n}{\tm \trans{\beta} \tm' : \ty}}
-    \end{bussproof}
+  \begin{proofrules}
+    \infer*[lab=O-Beta]{
+      \tm' \in \lrTerm{n}{\senv \types \ty}
+    }{
+      \obl{\senv}{n}{\tm \trans{\beta} \tm' : \ty}
+    } \label{rule:O-Beta}
     \and
-    \begin{bussproof}[O-Fork]
-      \bussAs{\ch \not\in \dom(\senv_1,\senv_2)}
-      \bussAs{\val \in \lrVal{n+1}{\senv_1 \types \lFunc{\sty}{\tyUnit}}}
-      \bussAs{\tm' \in \lrTerm{n}{\senv_2, \ch:\dual{\sty} \types \ty}}
-      \bussT{\obl{\senv_1, \senv_2}{n}{\tm \trans{\lFork{\ch}{\val}} \tm' : \ty}}
-    \end{bussproof}
+    \infer*[lab=O-Fork]{
+      \ch \not\in \dom(\senv_1,\senv_2) \\
+      \val \in \lrVal{n+1}{\senv_1 \types \lFunc{\sty}{\tyUnit}} \\
+      \tm' \in \lrTerm{n}{\senv_2, \ch:\dual{\sty} \types \ty}
+    }{
+      \obl{\senv_1, \senv_2}{n}{\tm \trans{\lFork{\ch}{\val}} \tm' : \ty}
+    } \label{rule:O-Fork}
     \and
-    \begin{bussproof}[O-Recv]
-      \bussAs{\forall j \le n , \senv_2 , \val \in \lrVal{j}{\senv_2 \types \tyB}\st
-              \tm' \in \lrTerm{j}{\senv_1, \senv_2, \ch:\sty \types \ty}}
-      \bussU{\obl{\senv_1, \ch:\sRecv{\tyB}{\sty}}{n}{\tm \trans{\lRecv{\ch}{\val}} \tm' : \ty}}
-    \end{bussproof}
+    \infer*[lab=O-Recv]{
+      \forall j \le n , \senv_2 , \val \in \lrVal{j}{\senv_2 \types \tyB}\st \tm' \in \lrTerm{j}{\senv_1, \senv_2, \ch:\sty \types \ty}
+    }{
+      \obl{\senv_1, \ch:\sRecv{\tyB}{\sty}}{n}{\tm \trans{\lRecv{\ch}{\val}} \tm' : \ty}
+    } \label{rule:O-Recv}
     \and
-    \begin{bussproof}[O-Send]
-      \bussAs{\val \in \lrVal{n+1}{\senv_2 \types \tyB}}
-      \bussAs{\tm' \in \lrTerm{n}{\senv_1, \ch:\sty \types \ty}}
-      \bussB{\obl{\senv_1, \senv_2, \ch:\sSend{\tyB}{\sty}}{n}{\tm \trans{\lSend{\ch}{\val}} \tm' : \ty}}
-    \end{bussproof}
+    \infer*[lab=O-Send]{
+      \val \in \lrVal{n+1}{\senv_2 \types \tyB} \\
+      \tm' \in \lrTerm{n}{\senv_1, \ch:\sty \types \ty}
+    }{
+      \obl{\senv_1, \senv_2, \ch:\sSend{\tyB}{\sty}}{n}{\tm \trans{\lSend{\ch}{\val}} \tm' : \ty}
+    } \label{rule:O-Send}
     \and
-    \begin{bussproof}[O-Close]
-      \bussAs{\tm' \in \lrTerm{n}{\senv_1 \types \ty}}
-      \bussU{\obl{\senv_1, \ch:\sTerm}{n}{\tm \trans{\lTerm{\ch}} \tm' : \ty}}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=O-Close]{
+      \tm' \in \lrTerm{n}{\senv_1 \types \ty}
+    }{
+      \obl{\senv_1, \ch:\sTerm}{n}{\tm \trans{\lTerm{\ch}} \tm' : \ty}
+    } \label{rule:O-Close}
+  \end{proofrules}
+  \rulesectionend
   \caption{The value and term logical relations (\rocq{Vdef})}
   \Description{The value and term relations}
   \label{fig:logrel-rules-term}
@@ -204,36 +212,36 @@ type different from $\tyUnit$. The obligations of a process
 transition are similar to the ones of a term transition, but with an extra twist
 for output.
 
-\ruleLabel{P-Zero} and \ruleLabel{P-Step} mirror \ruleLabel{E-Zero} and
-\ruleLabel{E-Step}, with the step index read exactly as at the term
+\Cref{rule:P-Zero,rule:P-Step} mirror \ref{rule:E-Zero} and
+\ref{rule:E-Step}, with the step index read exactly as at the term
 level, and the obligations of a process transition are again collected
 in a judgment defined by cases on the label.
 
-\ruleLabel{Q-Tau} is the analogue of \ruleLabel{O-Beta}. A silent step
+\Cref{rule:Q-Tau} is the analogue of \ref{rule:O-Beta}. A silent step
 leaves the session environment untouched and only lowers the index,
 which is what makes internal activity invisible at the interface. A
-fork is silent at the process level (\ruleLabel{P-Act-Fork}), so
-\ruleLabel{O-Fork} has no counterpart here. The environment split it
+fork is silent at the process level (\ref{rule:P-Act-Fork}), so
+\ref{rule:O-Fork} has no counterpart here. The environment split it
 performs has already happened inside the thread that forked.
-\ruleLabel{Q-Close} is \ruleLabel{O-Close}, replacing expression transition by
+\Cref{rule:Q-Close} is \ref{rule:O-Close}, replacing expression transition by
 process transition.  It also drops $\ch$ from the environment.
-\ruleLabel{Q-Recv} is \ruleLabel{O-Recv} with transition replaced.
+\Cref{rule:Q-Recv} is \ref{rule:O-Recv} with transition replaced.
 
-Rule \ruleLabel{Q-Send} says more than its term counterpart because it has to
+Rule \ref{rule:Q-Send} says more than its term counterpart because it has to
 deal with scope extrusion. A message
 sent to the environment may carry two kinds of channels: either they are
 external, described by $\senv_{\asTy{v}}$, or they are restricted in the
 sending process, and the latter channels extrude the internal scope, described
 by $\senv_{\asTy{e}}$. The premise
 $\dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset$ is the
-same idea as in \ruleLabel{V-Abs} for expressions. Because a value in the
+same idea as in \ref{rule:V-Abs} for expressions. Because a value in the
 relation owns exactly the channels it declares, the extruded interface
 is determined by the value sent away. The message leaves with
 the dual ends $\dual{\senv_{\asTy{e}}}$, and the residual process is split into
 one part in the process relation that continues with $\ch$ and another part produced by the
 auxiliary extrusion split 
 $(C_w, E_w) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}$ of
-\ruleLabel{T-Nil} and \ruleLabel{T-Cons}, one extruded channel at a
+\ref{rule:T-Nil} and \ref{rule:T-Cons}, one extruded channel at a
 time. It yields one piece in the process relation for every
 $\chB \in \dom(\senv_{\asTy{e}})$. For all $\chB$, the piece for $\chB$ owns
 that channel and lies in the process relation on its own, and does not 
@@ -248,79 +256,69 @@ end up in the crossed dependency of $\asPrOp{\var{blocked}}$
 (\cref{ex:deadlock}), even though each of the two connections is
 unobjectionable on its own. One end per piece rules out such a cycle.
 Without the machinery of the extrusion split the semantic rule for
-\ruleLabel{P-Connect} (\cref{lem:comp:connect}) would not hold as stated, as we
+\ref{rule:P-Connect} (\cref{lem:comp:connect}) would not hold as stated, as we
 would be able to compose two pieces that each lie in the relation into a process
 that deadlocks. 
 
 \begin{figure}[tp]
-  \textbf{Process logical relation} $\proc \in \lrProc{n}{\senv \types \ty}$
-  \begin{mathpar}
-    \begin{bussproof}[P-Zero]
-      \bussAx{\proc \in \lrProc{0}{\senv \types \ty}}
-    \end{bussproof}
+  \adjustfigure[]
+  \rulesection*{Process logical relation $\proc \in \lrProc{n}{\senv \types \ty}$}
+  \begin{proofrules}
+    \infer*[lab=P-Zero]{ }{
+      \proc \in \lrProc{0}{\senv \types \ty}
+    } \label{rule:P-Zero}
     \and
-    \begin{bussproof}[P-Step]
-      \bussAs{\begin{array}{@{}l@{}}
-        \irred \proc \implies
-        \proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool) \land
-        \val \in \lrVal{n+1}{\senv \types \ty} \land
-        \forall \tm \in \pool\st \tm = \tUnit
-        \\
-        \forall \pi, \proc'\st \proc \trans{\pi} \proc'
-        \implies \obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}
-      \end{array}}
-      \bussU{\proc \in \lrProc{n+1}{\senv \types \ty}}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{Obligations of a process transition}
+    \infer*[lab=P-Step]{
+      \irred \proc \implies \proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool) \land \val \in \lrVal{n+1}{\senv \types \ty} \land \forall \tm \in \pool\st \tm = \tUnit \\\\
+      \forall \pi, \proc'\st \proc \trans{\pi} \proc' \implies \obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}
+    }{
+      \proc \in \lrProc{n+1}{\senv \types \ty}
+    } \label{rule:P-Step}
+  \end{proofrules}
+  \rulesection{Obligations of a process transition}
   $\obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}$,
   where $\proc = (\chset,\pool)$ and $\proc' = (\chset',\pool')$
-  \begin{mathpar}
-    \begin{bussproof}[Q-Tau]
-      \bussAs{\proc' \in \lrProc{n}{\senv \types \ty}}
-      \bussU{\obl{\senv}{n}{\proc \trans{\tau} \proc' : \ty}}
-    \end{bussproof}
+  \begin{proofrules}
+    \infer*[lab=Q-Tau]{
+      \proc' \in \lrProc{n}{\senv \types \ty}
+    }{
+      \obl{\senv}{n}{\proc \trans{\tau} \proc' : \ty}
+    } \label{rule:Q-Tau}
     \and
-    \begin{bussproof}[Q-Close]
-      \bussAs{\proc' \in \lrProc{n}{\senv_1 \types \ty}}
-      \bussU{\obl{\senv_1, \ch:\sTerm}{n}{\proc \trans{\lTerm{\ch}} \proc' : \ty}}
-    \end{bussproof}
+    \infer*[lab=Q-Close]{
+      \proc' \in \lrProc{n}{\senv_1 \types \ty}
+    }{
+      \obl{\senv_1, \ch:\sTerm}{n}{\proc \trans{\lTerm{\ch}} \proc' : \ty}
+    } \label{rule:Q-Close}
     \and
-    \begin{bussproof}[Q-Recv]
-      \bussAs{\forall j \le n , \senv_2 , \val \in \lrVal{j}{\senv_2 \types \tyB}\st
-              \proc' \in \lrProc{j}{\senv_1, \senv_2, \ch:\sty \types \ty}}
-      \bussU{\obl{\senv_1, \ch:\sRecv{\tyB}{\sty}}{n}{\proc \trans{\lRecv{\ch}{\val}} \proc' : \ty}}
-    \end{bussproof}
+    \infer*[lab=Q-Recv]{
+      \forall j \le n , \senv_2 , \val \in \lrVal{j}{\senv_2 \types \tyB}\st \proc' \in \lrProc{j}{\senv_1, \senv_2, \ch:\sty \types \ty}
+    }{
+      \obl{\senv_1, \ch:\sRecv{\tyB}{\sty}}{n}{\proc \trans{\lRecv{\ch}{\val}} \proc' : \ty}
+    } \label{rule:Q-Recv}
     \and
-    \begin{bussproof}[Q-Send]
-      \bussAs{\begin{array}{@{}l@{}}
-        \dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset
-        \quad
-        \set{\ty_0,\ty_{\asTy{w}}} = \set{\ty,\tUnit}
-        \\
-        \val \in \lrVal{n+1}{\senv_{\asTy{v}}, \dual{\senv_{\asTy{e}}} \types \tyB}
-        \quad
-        (\chset_0,\pool_0) \in \lrProc{n}{\senv_0, \ch:\sty \types \ty_0}
-        \quad
-        (\chset_{\asPr{w}},\pool_{\asPr{w}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}
-      \end{array}}
-      \bussU{\obl{\senv_0, \senv_{\asTy{v}}, \senv_{\asTy{w}}, \ch:\sSend{\tyB}{\sty}}{n}
-              {\proc \trans{\lSend{\ch}{\val}} (\chset_0 \cupdot \chset_{\asPr{w}}, \pool_0 \uplus \pool_{\asPr{w}}) : \ty}}
-    \end{bussproof}
-  \end{mathpar}
-  \textbf{Extrusion split} $\proc \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv \types \ty}$
-  \begin{mathpar}
-    \begin{bussproof}[T-Nil]
-      \bussAx{(\asPrOp{\emptyset},\asPrOp{\emptyset}) \in \lrTopo{n}{\tEmpty ; \tEmpty \types \tyUnit}}
-    \end{bussproof}
+    \infer*[lab=Q-Send]{
+      \dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset \quad \set{\ty_0,\ty_{\asTy{w}}} = \set{\ty,\tUnit} \\\\
+      \val \in \lrVal{n+1}{\senv_{\asTy{v}}, \dual{\senv_{\asTy{e}}} \types \tyB} \quad (\chset_0,\pool_0) \in \lrProc{n}{\senv_0, \ch:\sty \types \ty_0} \quad (\chset_{\asPr{w}},\pool_{\asPr{w}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}
+    }{
+      \obl{\senv_0, \senv_{\asTy{v}}, \senv_{\asTy{w}}, \ch:\sSend{\tyB}{\sty}}{n} {\proc \trans{\lSend{\ch}{\val}} (\chset_0 \cupdot \chset_{\asPr{w}}, \pool_0 \uplus \pool_{\asPr{w}}) : \ty}
+    } \label{rule:Q-Send}
+  \end{proofrules}
+  \rulesection{Extrusion split $\proc \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv \types \ty}$}
+  \begin{proofrules}
+    \infer*[lab=T-Nil]{ }{
+      (\asPrOp{\emptyset},\asPrOp{\emptyset}) \in \lrTopo{n}{\tEmpty ; \tEmpty \types \tyUnit}
+    } \label{rule:T-Nil}
     \and
-    \begin{bussproof}[T-Cons]
-      \bussAs{(\chset_{\asPr{d}},\pool_{\asPr{d}}) \in \lrProc{n}{\senv_{\asTy{d}}, \chB:\sty \types \ty_{\asTy{d}}}}
-      \bussAs{(\chset_{\asPr{r}},\pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{r}} \types \ty_{\asTy{r}}}}
-      \bussAs{\set{\ty_{\asTy{d}},\ty_{\asTy{r}}} = \set{\ty,\tUnit}}
-      \bussT{(\chset_{\asPr{d}} \cupdot \chset_{\asPr{r}}, \pool_{\asPr{d}} \uplus \pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}}, \chB:\sty ; \senv_{\asTy{d}}, \senv_{\asTy{r}} \types \ty}}
-    \end{bussproof}
-  \end{mathpar}
+    \infer*[lab=T-Cons]{
+      (\chset_{\asPr{d}},\pool_{\asPr{d}}) \in \lrProc{n}{\senv_{\asTy{d}}, \chB:\sty \types \ty_{\asTy{d}}} \\
+      (\chset_{\asPr{r}},\pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{r}} \types \ty_{\asTy{r}}} \\
+      \set{\ty_{\asTy{d}},\ty_{\asTy{r}}} = \set{\ty,\tUnit}
+    }{
+      (\chset_{\asPr{d}} \cupdot \chset_{\asPr{r}}, \pool_{\asPr{d}} \uplus \pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}}, \chB:\sty ; \senv_{\asTy{d}}, \senv_{\asTy{r}} \types \ty}
+    } \label{rule:T-Cons}
+  \end{proofrules}
+  \rulesectionend
   \caption{The process logical relation and the extrusion split \quad \rocq{extrusion_split}}
   \Description{The process relation with extrusion splits}
   \label{fig:logrel-rules-proc}
@@ -383,9 +381,9 @@ with closed terms respecting their assumed types.
 %The judgment is purely semantic --- it imposes no syntactic condition on
 %$\tm$.
 %Syntactic information is needed at exactly one point: the rule
-%\ruleLabel{E-Abs} (\cref{lem:comp:abs}) builds a $\lambda$-value, and a
+%\ref{rule:E-Abs} (\cref{lem:comp:abs}) builds a $\lambda$-value, and a
 %$\lambda$-value must own exactly the channels its interface declares ---
-%the syntactic premise of \ruleLabel{V-Abs}.
+%the syntactic premise of \ref{rule:V-Abs}.
 %That fact cannot be read off the closure above, so it enters as three
 %explicit syntactic premises of that one rule; syntactic typing maintains
 %all three (\rocq{typed_term_wf}), so the fundamental property is
@@ -491,7 +489,7 @@ we state the ones for terms first, then the ones for processes.
 \end{lemma}
 
 Abstraction is the only term rule that needs syntactic information,
-  for the reason given at \ruleLabel{V-Abs}. Both equations hold for
+  for the reason given at \ref{rule:V-Abs}. Both equations hold for
   every syntactically typed term by linearity, so the
   fundamental property is not affected.
 \begin{lemma}[Compositionality: \ruleLabel{abs} \rocq{sem_typed_lam}]
@@ -639,7 +637,7 @@ satisfy the semantic judgment.
   $ \tEmpty \types \asPrOp{\var{sync}} : \tyUnit $,
   by \cref{th:fundamental} we have
   $ \tEmpty \proves \asPrOp{\var{sync}} : \tyUnit $;
-  then by \cref{th:proc-composit} (\ruleLabel{P-Independent})
+  then by \cref{th:proc-composit} (\ref{rule:P-Independent})
   we obtain that
   $
     \tEmpty \proves (\asPrOp{\emptyset}, \mset{\asTmOp{\var{sync}}, \asTmOp{\var{cycle}}}) : \tyUnit
@@ -700,7 +698,7 @@ satisfy the semantic judgment.
       (\asPrOp{\emptyset}, \mset{\asTm{q}}) : \tyUnit
   $.
   By \cref{th:proc-composit},
-  we can apply \ruleLabel{P-Connect} to obtain
+  we can apply \ref{rule:P-Connect} to obtain
   $
       \tEmpty
       \proves
