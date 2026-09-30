@@ -230,7 +230,7 @@ communicates first with $\tm_1$.
 
   \rulesection{Equivalence $\ty \approx \tyB, \sty \approx \styB$, coinductively}
   \begin{proofrules}
-    \infer*[lab=Eq-Unit]{ }{
+    \infer*[lab=Eq-Unit]{}{
       \tyUnit \approx \tyUnit
     } \label{rule:Eq-Unit}
     \and
@@ -262,7 +262,7 @@ communicates first with $\tm_1$.
       \sSend{\ty}{\sty} \approx \sRecv{\tyB}{\styB}
     } \label{rule:Eq-Send}
     \and
-    \infer*[lab=Eq-Close]{ }{
+    \infer*[lab=Eq-Close]{}{
       \sTerm \approx \sTerm
     } \label{rule:Eq-Close}
     \\
@@ -295,7 +295,7 @@ communicates first with $\tm_1$.
       \sSend{\ty}{\sty} \isdual \sRecv{\tyB}{\styB}
     } \label{rule:D-Send}
     \and
-    \infer*[lab=D-Close]{ }{
+    \infer*[lab=D-Close]{}{
       \sTerm \isdual \sTerm
     } \label{rule:D-Close}
     \\

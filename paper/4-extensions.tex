@@ -23,11 +23,11 @@ features of GV \cite{conf/esop/LindleyM15} are covered; recursion is an extra.
   \end{align*}
   \rulesection{New labelled transitions}
   \begin{proofrules}
-    \infer*[lab=T-Act-Case]{ }{
+    \infer*[lab=T-Act-Case]{}{
       \tCase{(\tInj{\asTm{i}}{\val})}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} \trans{\beta} \tSub{\tm_{\asTm{i}}}{\val}{\ivx_{\asTm{i}}}
     } \label{rule:T-Act-Case}
     % \and
-    % \infer*[lab=T-Act-Case2]{ }{
+    % \infer*[lab=T-Act-Case2]{}{
     %   \tCase{\tInj{2}{\val}}{\tLVA}{\tm}{\tLVA}{\tm} \trans{\beta} \tSub{\tm'}{\tFixI{\tIVY}{\tm}}{\tIVX}
     % } \label{rule:T-Act-Case2}
   \end{proofrules}
@@ -97,7 +97,7 @@ shown in \cref{fig:sum-types}. We prove the following compositionality lemmas
 corresponding to the typing rules for sum types and integrate them in the proof
 of the fundamental property.
 
-\begin{lemma}[Compositionality: \ruleLabel{inj} \rocq{sem_typed_inj1}]
+\begin{lemma}[Compositionality: \ref{rule:E-Inj} \rocq{sem_typed_inj1}]
   \label{lem:comp:inj}
   If
   $ \senv;\lenv \proves \tm : \ty_{\asTy{i}}$,
@@ -106,7 +106,7 @@ of the fundamental property.
   for $i\in\{1,2\}$.
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{case} \rocq{sem_typed_case}]
+\begin{lemma}[Compositionality: \ref{rule:E-Case} \rocq{sem_typed_case}]
   \label{lem:comp:case}
   If
   $ \senv_1;\lenv_1 \proves \tm : \lSum{\ty_1}{\ty_2}$
@@ -201,7 +201,7 @@ yields a closed, deadlock-free process.
 
   \rulesection{New labelled transition}
   \begin{proofrules}
-    \infer*[lab=T-Act-Exp]{ }{
+    \infer*[lab=T-Act-Exp]{}{
       \tApp{\tForce}{\IExp{(\tIVX = \tm)}} \trans{\beta} \tSub{\tm}{\IExp{(\tIVX = \tm)}}{\tIVX}
     } \label{rule:T-Act-Exp}
   \end{proofrules}
@@ -213,7 +213,7 @@ yields a closed, deadlock-free process.
       \tEmpty ; \tBox{\lenv} \types \IExp{(\tIVX = \tm)} : \tBox{\ty}
     } \label{rule:E-Exp}
     \and
-    \infer*[lab=E-Force]{ }{
+    \infer*[lab=E-Force]{}{
       \tEmpty ; \tEmpty \types \tForce : \lFunc{\tBox{\ty}}{\ty}
     } \label{rule:E-Force}
   \end{proofrules}
@@ -293,7 +293,7 @@ For the additional cases of the fundamental theorem, we prove the
 following compositionality lemmas, each corresponding to one of the typing rules
 in \cref{fig:lily:terms}.
 
-\begin{lemma}[Compositionality: \ruleLabel{exp} \rocq{sem_typed_box}]
+\begin{lemma}[Compositionality: \ref{rule:E-Exp} \rocq{sem_typed_box}]
   \label{lem:comp:exp}
   If
   $ \tEmpty;\tBox{\lenv}, \tBox{\ty} \proves \tm : \ty$
@@ -313,7 +313,7 @@ builds a value whose clause of $\mathcal{V}$ carries a syntactic side
 condition, $\fchans(\tm) = \emptyset$; relevance is not needed because every
 hypothesis is boxed and may be weakened.
 
-\begin{lemma}[Compositionality: \ruleLabel{force} \rocq{sem_typed_force}]
+\begin{lemma}[Compositionality: \ref{rule:E-Force} \rocq{sem_typed_force}]
   \label{lem:comp:force}
   If
   $ \senv; \lenv \proves \tm : \tBox{\ty}$,
@@ -321,13 +321,13 @@ hypothesis is boxed and may be weakened.
   $ \senv; \lenv \proves \tApp{\tForce}{\tm} : {\ty}$.
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{weak} \rocq{sem_typed_weaken}]
+\begin{lemma}[Compositionality: \ref{rule:E-Weak} \rocq{sem_typed_weaken}]
   If
   $ \senv; \lenv \proves \tm : \tyB$,
   then
   $ \senv; \lenv, \asTy{x}:\tBox{\ty} \proves \tm : \tyB$.
 \end{lemma}
-\begin{lemma}[Compositionality: \ruleLabel{contract} \rocq{sem_typed_contract}]
+\begin{lemma}[Compositionality: \ref{rule:E-Contract} \rocq{sem_typed_contract}]
   If
   $ \senv; \lenv, \asTy{x}:\tBox{\ty}, \asTy{y}:\tBox{\ty} \proves \tm : \tyB$,\\
   then
@@ -465,7 +465,7 @@ $\sty \perp \styB$ holds exactly when $\sty \approx \dual{\styB}$.
   \end{align*}
   \rulesection{New labelled transitions}
   \begin{proofrules}
-    \infer*[lab=T-Act-Link]{ }{
+    \infer*[lab=T-Act-Link]{}{
       \tApp{\tLink}{\tPair{\ch}{\chB}} \trans{\lLink{\ch}{\chB}} \tUnit
     } \label{rule:T-Act-Link}
         \and

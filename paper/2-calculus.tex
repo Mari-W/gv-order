@@ -91,31 +91,31 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
   \end{align*}
   \rulesection{Labelled reductions for terms}
   \begin{proofrules}
-    \infer*[lab=T-Act-App]{ }{
+    \infer*[lab=T-Act-App]{}{
       \tApp{(\tAbs{\tLVA}{\tm})}{\val} \trans{\beta} \tSub{\tm}{\val}{\tLVA}
     } \label{rule:T-Act-App}
     \and
-    \infer*[lab=T-Act-Let*]{ }{
+    \infer*[lab=T-Act-Let*]{}{
       \tLet*{\tUnit}{\tm} \trans{\beta} \tm
     } \label{rule:T-Act-Let*}
     \and
-    \infer*[lab=T-Act-LetPair]{ }{
+    \infer*[lab=T-Act-LetPair]{}{
       \tLet[\tLVA][\tLVB]{\tPair{\valB}{\val}}{\tm} \trans{\beta} \tSub{\tSub{\tm}{\valB}{\tLVA}}{\val}{\tLVB}
     } \label{rule:T-Act-LetPair}
     \and
-    \infer*[lab=T-Act-Fork]{ }{
+    \infer*[lab=T-Act-Fork]{}{
       \tApp{\tFork}{\val} \trans{\lFork{\ch}{\val}} \ch
     } \label{rule:T-Act-Fork}
-    \\\
-    \infer*[lab=T-Act-Recv]{ }{
+    \and
+    \infer*[lab=T-Act-Recv]{}{
       \tApp{\tRecv}{\ch} \trans{\lRecv{\ch}{\val}} \tPair{\val}{\ch}
     } \label{rule:T-Act-Recv}
     \and
-    \infer*[lab=T-Act-Send]{ }{
+    \infer*[lab=T-Act-Send]{}{
       \tApp{\tSend}{\tPair{\val}{\ch}} \trans{\lSend{\ch}{\val}} \ch
     } \label{rule:T-Act-Send}
     \and
-    \infer*[lab=T-Act-Close]{ }{
+    \infer*[lab=T-Act-Close]{}{
       \tApp{\tClos}{\ch} \trans{\lTerm{\ch}} \tUnit
     } \label{rule:T-Act-Close}
     \and
@@ -670,7 +670,7 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
   \end{align*}
   \rulesection{Typing rules for terms $\senv ; \lenv \types \tm : \ty$ \rocq{typed}}
   \begin{proofrules}
-    \infer*[lab=E-Unit]{ }{
+    \infer*[lab=E-Unit]{}{
       \tEmpty ; \tEmpty \types \tUnit : \tyUnit
     } \label{rule:E-Unit}
     \and
@@ -680,11 +680,11 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
       \tEmpty ; \tEmpty \types \cst : \lFunc{\ty}{\tyB}
     } \label{rule:E-Const}
     \and
-    \infer*[lab=E-LVar]{ }{
+    \infer*[lab=E-LVar]{}{
       \tEmpty ; \tLVA:\ty \types \tLVA : \ty
     } \label{rule:E-LVar}
     \and
-    \infer*[lab=E-Ch]{ }{
+    \infer*[lab=E-Ch]{}{
       \ch:\sty ; \tEmpty \types \ch : \sty
     } \label{rule:E-Ch}
     \and
@@ -799,7 +799,7 @@ Additionally, we ensure a thread cannot avoid closing its channels
 by just returning them: All return types must be \emph{primitive types}:
 %
 \begin{proofrules}
-  \infer*{ }{
+  \infer*{}{
     \primitive \tyUnit
   }
   \and

@@ -120,11 +120,11 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
   \adjustfigure[]
   \rulesection*{Value logical relation $\val \in \lrVal{n}{\senv \types \ty}$}
   \begin{proofrules}
-    \infer*[lab=V-Unit]{ }{
+    \infer*[lab=V-Unit]{}{
       \tUnit \in \lrVal{n}{\tEmpty \types \tyUnit}
     } \label{rule:V-Unit}
     \and
-    \infer*[lab=V-Chan]{ }{
+    \infer*[lab=V-Chan]{}{
       \ch \in \lrVal{n}{\ch:\sty \types \sty}
     } \label{rule:V-Chan}
     \and
@@ -150,7 +150,7 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
   \end{proofrules}
   \rulesection{Term logical relation $\tm \in \lrTerm{n}{\senv \types \ty}$}
   \begin{proofrules}
-    \infer*[lab=E-Zero]{ }{
+    \infer*[lab=E-Zero]{}{
       \tm \in \lrTerm{0}{\senv \types \ty}
     } \label{rule:E-Zero}
     \and
@@ -264,7 +264,7 @@ that deadlocks.
   \adjustfigure[]
   \rulesection*{Process logical relation $\proc \in \lrProc{n}{\senv \types \ty}$}
   \begin{proofrules}
-    \infer*[lab=P-Zero]{ }{
+    \infer*[lab=P-Zero]{}{
       \proc \in \lrProc{0}{\senv \types \ty}
     } \label{rule:P-Zero}
     \and
@@ -306,7 +306,7 @@ that deadlocks.
   \end{proofrules}
   \rulesection{Extrusion split $\proc \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv \types \ty}$}
   \begin{proofrules}
-    \infer*[lab=T-Nil]{ }{
+    \infer*[lab=T-Nil]{}{
       (\asPrOp{\emptyset},\asPrOp{\emptyset}) \in \lrTopo{n}{\tEmpty ; \tEmpty \types \tyUnit}
     } \label{rule:T-Nil}
     \and
@@ -468,22 +468,22 @@ we state the ones for terms first, then the ones for processes.
 %   for every $ m \le n $.
 % \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{unit} \rocq{sem_typed_unit}]
+\begin{lemma}[Compositionality: \ref{rule:E-Unit} \rocq{sem_typed_unit}]
   \label{lem:comp:unit}
   $\tEmpty ; \tEmpty \proves \tUnit : \tyUnit$.
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{const} \rocq{sem_typed_konst}]
+\begin{lemma}[Compositionality: \ref{rule:E-Const} \rocq{sem_typed_konst}]
   \label{lem:comp:const}
   If $\cst : \lFunc{\ty}{\tyB}$, then $\tEmpty ; \tEmpty \proves \cst : \lFunc{\ty}{\tyB}$.
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{lvar} \rocq{sem_typed_var}]
+\begin{lemma}[Compositionality: \ref{rule:E-LVar} \rocq{sem_typed_var}]
   \label{lem:comp:lvar}
   $\tEmpty ; \tLVA:\ty \proves \tLVA : \ty$.
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{ch} \rocq{sem_typed_chan}]
+\begin{lemma}[Compositionality: \ref{rule:E-Ch} \rocq{sem_typed_chan}]
   \label{lem:comp:ch}
   $\ch:\sty ; \tEmpty \proves \ch : \sty$.
 \end{lemma}
@@ -492,7 +492,7 @@ Abstraction is the only term rule that needs syntactic information,
   for the reason given at \ref{rule:V-Abs}. Both equations hold for
   every syntactically typed term by linearity, so the
   fundamental property is not affected.
-\begin{lemma}[Compositionality: \ruleLabel{abs} \rocq{sem_typed_lam}]
+\begin{lemma}[Compositionality: \ref{rule:E-Abs} \rocq{sem_typed_lam}]
   \label{lem:comp:abs}
   If $\senv ; \lenv , \tLVA:\ty \proves \tm : \tyB$
   and $\fchans(\tm) = \dom(\senv)$
@@ -501,28 +501,28 @@ Abstraction is the only term rule that needs syntactic information,
   $\senv ; \lenv \proves \tAbs{\tLVA}{\tm} : \lFunc{\ty}{\tyB}$
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{app} \rocq{sem_typed_app}]
+\begin{lemma}[Compositionality: \ref{rule:E-App} \rocq{sem_typed_app}]
   \label{lem:comp:app}
   If $\senv_1 ; \lenv_1 \proves \tm_1 : \lFunc{\ty}{\tyB}$
   and $\senv_2 ; \lenv_2 \proves \tm_2 : \ty$, then
   \[ \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \proves \tApp{\tm_1}{\tm_2} : \tyB \]
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{pair} \rocq{sem_typed_pair}]
+\begin{lemma}[Compositionality: \ref{rule:E-Pair} \rocq{sem_typed_pair}]
   \label{lem:comp:pair}
   If $\senv_1 ; \lenv_1 \proves \tm_1 : \ty$
   and $\senv_2 ; \lenv_2 \proves \tm_2 : \tyB$, then
   \[ \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \proves \tPair{\tm_1}{\tm_2} : \lPair{\ty}{\tyB} \]
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{let*} \rocq{sem_typed_letu}]
+\begin{lemma}[Compositionality: \ref{rule:E-Let*} \rocq{sem_typed_letu}]
   \label{lem:comp:letUnit}
   If $\senv_1 ; \lenv_1 \proves \tm_1 : \tyUnit$
   and $\senv_2 ; \lenv_2 \proves \tm_2 : \ty$, then
   \[ \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \proves \tLet*{\tm_1}{\tm_2} : \ty \]
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{letpair} \rocq{sem_typed_letp}]
+\begin{lemma}[Compositionality: \ref{rule:E-LetPair} \rocq{sem_typed_letp}]
   \label{lem:comp:let}
   If $\senv_1 ; \lenv_1 \proves \tm_1 : \lPair{\tyB}{\tyC}$ and $\senv_2 ; \lenv_2 , \tLVA:\tyB , \tLVB:\tyC \proves \tm_2 : \ty$
   then
@@ -537,7 +537,7 @@ Abstraction is the only term rule that needs syntactic information,
 
 We now move to the process level.
 
-\begin{lemma}[Compositionality: \ruleLabel{term} \rocq{Prel_term}]
+\begin{lemma}[Compositionality: \ref{rule:P-Term} \rocq{Prel_term}]
   \label{lem:comp:term}
   If
   $\primitive \ty$
@@ -546,7 +546,7 @@ We now move to the process level.
   then
   \[ (\asPrOp{\emptyset}, \mset{\tm}) \in \lrProc{n}{\senv \types \ty} \]
 \end{lemma}
-\begin{lemma}[Compositionality: \ruleLabel{independent} \rocq{Prel_independent}]
+\begin{lemma}[Compositionality: \ref{rule:P-Independent} \rocq{Prel_independent}]
   \label{lem:comp:independent}
   If
   $\primitive \ty$
@@ -562,7 +562,7 @@ We now move to the process level.
   \[ (\chset_1 \cupdot \chset_2, \pool_1 \uplus \pool_2) \in \lrProc{n}{\senv_1, \senv_2 \types \ty} \]
 \end{lemma}
 
-\begin{lemma}[Compositionality: \ruleLabel{connect} \rocq{Prel_connect}]
+\begin{lemma}[Compositionality: \ref{rule:P-Connect} \rocq{Prel_connect}]
   \label{lem:comp:connect}
   If
   $\primitive \ty$
