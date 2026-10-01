@@ -68,7 +68,7 @@
   \expandafter\def\csname lr@col@#1\endcsname{#2}%
   \expandafter\def\csname lr@alph@#1\endcsname{#3}%
   \expandafter\NewDocumentCommand\csname as#1\endcsname{ m }%
-    {\lr@leaf{#2}{#3}{##1}}%
+    {\lr@leaf{#2}{#3}{\mathit{##1}}}%
   \expandafter\NewDocumentCommand\csname as#1Op\endcsname{ m }%
     {{\color{#2}##1}}}
 
