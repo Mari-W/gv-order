@@ -1,5 +1,5 @@
 \PassOptionsToPackage{inline,shortlabels}{enumitem}
-\PassOptionsToPackage{capitalise,noabbrev}{cleveref}
+% \PassOptionsToPackage{capitalize,noabbrev}{cleveref}
 \PassOptionsToPackage{dvipsnames,rgb}{xcolor}
 
 \documentclass[acmsmall,screen,review,anonymous]{acmart}
@@ -20,21 +20,10 @@
 
 \input{preamble}
 
-\RequirePackage{cleveref}
-
-\crefname{definition}{Definition}{Definitions}
-\Crefname{definition}{Definition}{Definitions}
-\crefname{example}{Example}{Examples}
-\Crefname{example}{Example}{Examples}
+\usepackage[capitalise,noabbrev]{cleveref}
 
 \crefname{rule}{rule}{rules}
 \Crefname{rule}{Rule}{Rules}
-
-\crefname{lemma}{lemma}{lemmas}
-\Crefname{lemma}{Lemma}{Lemmas}
-
-\crefname{theorem}{theorem}{theorems}
-\Crefname{theorem}{Theorem}{Theorems}
 
 \AddToHook{env/theorem/begin}{\crefalias{theorem}{theorem}}
 \AddToHook{env/lemma/begin}{\crefalias{theorem}{lemma}}
