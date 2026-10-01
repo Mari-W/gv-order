@@ -125,10 +125,10 @@
 \colorlet{pt}{blue}
 \colorlet{mw}{violet}
 
-\DeclareRobustCommand{\ed}{\@ifstar{\makemargincomment{ed}}{\makecomment{ed}}}
-\DeclareRobustCommand{\bh}{\@ifstar{\makemargincomment{bh}}{\makecomment{bh}}}
-\DeclareRobustCommand{\pt}{\@ifstar{\makemargincomment{pt}}{\makecomment{pt}}}
-\DeclareRobustCommand{\mw}{\@ifstar{\makemargincomment{mw}}{\makecomment{mw}}}
+\DeclareRobustCommand{\ed}{\@ifstar{\makemargincomment{ed}}{\makecomment@{ed}}}
+\DeclareRobustCommand{\bh}{\@ifstar{\makemargincomment{bh}}{\makecomment@{bh}}}
+\DeclareRobustCommand{\pt}{\@ifstar{\makemargincomment{pt}}{\makecomment@{pt}}}
+\DeclareRobustCommand{\mw}{\@ifstar{\makemargincomment{mw}}{\makecomment@{mw}}}
 
 \DeclareRobustCommand{\ED}[1][]{\MakeComment{ed}{#1}}
 \DeclareRobustCommand{\BH}[1][]{\MakeComment{bh}{#1}}
