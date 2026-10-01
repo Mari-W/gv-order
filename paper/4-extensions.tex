@@ -87,13 +87,13 @@ choice can be simulated using higher-order sessions and sum types
 \end{align*}
 and encoding the operations to select and match on a channel as follows.
 \begin{align*}
-  \asTmOp{\mathit{select}}~\asTmOp{\textit{left}}~\ch &:= \tFork (\lambda
+  \asTmId{select}~\asTmId{left}~\ch &:= \tFork (\lambda
                                    \chB. \tApp{\tClos}{(\tSend{\tPair{\tInj{1}{\chB}}{\ch}})})
-  & \asTmOp{\mathit{select}}~\asTmOp{\textit{right}}~\ch &:= \tFork (\lambda
+  & \asTmId{select}~\asTmId{right}~\ch &:= \tFork (\lambda
                                        \chB. \tApp{\tClos}{(\tSend{\tPair{\tInj{2}{\chB}}{\ch}})})
 \end{align*}
 \begin{align*}
-  \asTmOp{\mathit{match}}~\ch~(\ivx_1.\tm_1) (\ivx_2.\tm_2) &= \tLet[\chB][\ch]{\tRecv \ch}{\tClos{\ch}; \tCase{\chB}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2}}
+  \asTmId{match}~\ch~(\ivx_1.\tm_1) (\ivx_2.\tm_2) &= \tLet[\chB][\ch]{\tRecv \ch}{\tClos{\ch}; \tCase{\chB}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2}}
 \end{align*}
 Directly supporting branch and choice would require additional labelled
 reductions and hence additional cases in the definition of all logical
@@ -135,7 +135,7 @@ performing a $\asTy{left}$
 or $\asTy{right}$ step on some channel of type $\ch : \sTerm
   \ichoice \sTerm$.  We construct this process using standard syntactic
 sugar for the encoding of the type $\asTy{Bool} = \tyUnit+\tyUnit$ and
-the conditional $\asTmOp{\mathit{if}}$.
+the conditional $\asTmId{if}$.
 Both branches of the choice on~$\ch$ continue with $\sTerm$,
 so the general encoding
 $\sTerm \ichoice \sTerm = \sSend{(\sTerm + \sTerm)}{\sTerm}$
@@ -143,24 +143,24 @@ specializes to transmit the choice as a $\asTy{Bool}$. This way, the interface
 type becomes $\ch : \sSend{\asTy{Bool}}{\sTerm}$ and
 Selection reduces to a send followed by a close:
 \begin{align*}
-  \asTmOp{\mathit{select}}~\asTmOp{\mathit{left}}~\ch
-    &:= \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{true}}{\ch}})}
+  \asTmId{select}~\asTmId{left}~\ch
+    &:= \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTmId{true}}{\ch}})}
   &
-  \asTmOp{\mathit{select}}~\asTmOp{\mathit{right}}~\ch
-    &:= \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{false}}{\ch}})}
+  \asTmId{select}~\asTmId{right}~\ch
+    &:= \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTmId{false}}{\ch}})}
 \end{align*}
 
-The process $p_0 = (\set{\asTm{cs}, \chB}, \mset{\tm_0, \tm_1,
+The process $p_0 = (\set{\asTmId{cs}, \chB}, \mset{\tm_0, \tm_1,
   \tm_2})$ consists of the following terms. 
 \begin{align*}
   \tm_0 &=
-                \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{true}}{\tApp{\tSend}{\tPair{\asTm{false}}{\chB}}}})}
+                \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTmId{true}}{\tApp{\tSend}{\tPair{\asTmId{false}}{\chB}}}})}
   \\
   \tm_1 &=
-                \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\tLVB}{\asTmOp{\mathit{select}}~\asTmOp{\mathit{left}}~\ch}{\tUnit}}}
+                \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\tLVB}{\asTmId{select}~\asTmId{left}~\ch}{\tUnit}}}
   \\
   \tm_2 &=
-                \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\asTmOp{\mathit{select}}~\asTmOp{\mathit{right}}~\ch}{\tUnit}}}}
+                \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\asTmId{select}~\asTmId{right}~\ch}{\tUnit}}}}
 \end{align*}
 Now we
 set out to prove that $p_0 \in \lrProc{n}{ \ch:
@@ -170,10 +170,10 @@ Either $\tm_0$
 communicates first with $\tm_1$ and then with $\tm_2$ or
 vice versa. Each term, $\tm_1$ and $\tm_2$, receives a
 boolean on channel $\chB$, then synchronizes by closing
-$\asTm{cs}$, $\tm_2$ closes $\chB$, and we are left with
-one term where the condition is $\asTm{true}$ and another where it is
-$\asTm{false}$. The $\asTm{true}$-term executes a $\asTm{select}$
-and the $\asTm{false}$-term does nothing.
+$\asTmId{cs}$, $\tm_2$ closes $\chB$, and we are left with
+one term where the condition is $\asTmId{true}$ and another where it is
+$\asTmId{false}$. The $\asTmId{true}$-term executes a $\asTmId{select}$
+and the $\asTmId{false}$-term does nothing.
 
 The soundness of process $p_0$ cannot be argued via syntactic typing.
 The process $p_0$ is not reachable by a reduction sequence from a process of the
@@ -279,7 +279,7 @@ the elimination operator exposes the body by unrolling the recursion.
 point operator and non-recursive thunks:
 \begin{align*}
   \tFixI{\tIVX}{\tm} &:= \tApp{\tForce}{\IExp{(\tIVX = \tm)}}
-  & \IExp{\tm} & := \IExp{(\tIVX = \tm)} \quad \text{where}~\tIVX\notin \asTm{fv} (\tm)
+  & \IExp{\tm} & := \IExp{(\tIVX = \tm)} \quad \text{where}~\tIVX\notin \asTmId{fv} (\tm)
 \end{align*}
 
 We extend the value logical relation in a similar way as
@@ -349,43 +349,43 @@ unrestricted session carrying type $\sty$ as a function
 of type $[\sty] := \tBox{(\lFunc{\tyUnit}{\sty})}$ and
 treat the new operators as macros as follows.
 \begin{align*}
-  \asTm{repl} & {}:{\lFunc{\tBox{(\lFunc{\sty}{\tyUnit})}}{[{\dual{\sty}}]}}
+  \asTmId{repl} & {}:{\lFunc{\tBox{(\lFunc{\sty}{\tyUnit})}}{[{\dual{\sty}}]}}
   &
-    \asTm{req} & {}:{\lFunc{[\sty]}{\sty}} \\
-  \asTm{repl} & :=
+    \asTmId{req} & {}:{\lFunc{[\sty]}{\sty}} \\
+  \asTmId{repl} & :=
                  \tAbs{\ivx}{\IExp{(\tAbs{\_}{\tApp{\tFork}{(\tApp{\tForce}{\ivx})}})}}
-  & \asTm{req} & := \tAbs{\ivx}{\tApp{(\tApp{\tForce}{\ivx})}{\tUnit}}
+  & \asTmId{req} & := \tAbs{\ivx}{\tApp{(\tApp{\tForce}{\ivx})}{\tUnit}}
 \end{align*}
 
 These macros are enough to build a replicated server.
 
 \begin{example}[A session factory \rocq{repl_deadlock_free}]
 \label{ex:factory}
-Let $\asTmOp{\var{ff}} :=
+Let $\asTmId{ff} :=
 \tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}$
 be the worker forked in \cref{ex:sync}; it serves a session of
 type $\sSend{\tyUnit}{\sTerm}$, so
-$\asTm{repl}$ turns a boxed copy of it into a supply of fresh
-sessions of the dual type, one for each call of $\asTm{req}$.
+$\asTmId{repl}$ turns a boxed copy of it into a supply of fresh
+sessions of the dual type, one for each call of $\asTmId{req}$.
 \begin{align*}
-  \asTmOp{\var{factory}} &:= \tApp{\asTm{repl}}{(\IExp{\asTmOp{\var{ff}}})}
+  \asTmId{factory} &:= \tApp{\asTmId{repl}}{(\IExp{\asTmId{ff}})}
   &&{}: [\sRecv{\tyUnit}{\sTerm}]
   \\
-  \asTmOp{\var{use}}~\tIVX &:=
-    \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\asTm{req}}{\tIVX})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
+  \asTmId{use}~\tIVX &:=
+    \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\asTmId{req}}{\tIVX})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
   \\
-  \asTmOp{\var{main}} &:=
-    \tApp{(\tAbs{\tIVX}{\tLet*{\asTmOp{\var{use}}~\tIVX}{\asTmOp{\var{use}}~\tIVX}})}{\asTmOp{\var{factory}}}
+  \asTmId{main} &:=
+    \tApp{(\tAbs{\tIVX}{\tLet*{\asTmId{use}~\tIVX}{\asTmId{use}~\tIVX}})}{\asTmId{factory}}
 \end{align*}
 The factory is bound once and used twice, which is legal because its
 type is boxed: the two occurrences of $\tIVX$ are justified by
-contraction (\ref{rule:E-Contract}). Each $\asTm{req}$ re-runs the
+contraction (\ref{rule:E-Contract}). Each $\asTmId{req}$ re-runs the
 suspended $\tFork$, so the two clients obtain two distinct
 private sessions served by two independent copies of the worker; a
 factory may also be discarded outright, by weakening
 (\rocq{discard_deadlock_free}). Hence
-$(\emptyset, \mset{\asTmOp{\var{main}}})$ is closed and typable,
-$\tEmpty \types (\asPrOp{\emptyset}, \mset{\asTmOp{\var{main}}}) :
+$(\emptyset, \mset{\asTmId{main}})$ is closed and typable,
+$\tEmpty \types (\asPrOp{\emptyset}, \mset{\asTmId{main}}) :
   \tyUnit$ \rocq{repl_typed}, and therefore deadlock free.
 \end{example}
 
@@ -603,40 +603,40 @@ Wadler'', where Wadler's system is a process calculus equivalent to GV
 mechanize the ring of size three and let the middle agent forward
 instead of relay by hand.
 \begin{align*}
-  \asTmOp{\var{ag}}_0 &:=
+  \asTmId{ag}_0 &:=
     \tLet*{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{r}_0}})}}{\tLet[\tLVB][\tLVA]{\tApp{\tRecv}{\asTm{r}_2}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}}
   \\
-  \asTmOp{\var{ag}}_1 &:= \tApp{\tLink}{\tPair{\asTm{r}_1}{\asTm{r}_0}}
+  \asTmId{ag}_1 &:= \tApp{\tLink}{\tPair{\asTm{r}_1}{\asTm{r}_0}}
   \\
-  \asTmOp{\var{ag}}_2 &:=
+  \asTmId{ag}_2 &:=
     \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{\asTm{r}_1}}{\tLet*{\tLVB}{\tLet*{\tApp{\tClos}{\tLVA}}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{r}_2}})}}}}
   \\
-  \asPrOp{\var{sched}} &:=
+  \asPrId{sched} &:=
     (\set{\asTm{r}_0, \asTm{r}_1, \asTm{r}_2},
-     \mset{\asTmOp{\var{ag}}_0, \asTmOp{\var{ag}}_1, \asTmOp{\var{ag}}_2})
+     \mset{\asTmId{ag}_0, \asTmId{ag}_1, \asTmId{ag}_2})
 \end{align*}
-Agent $\asTmOp{\var{ag}}_0$ starts a round by sending the token on
+Agent $\asTmId{ag}_0$ starts a round by sending the token on
 $\asTm{r}_0$ and then waits for it to come back on $\asTm{r}_2$;
-$\asTmOp{\var{ag}}_2$ collects it on $\asTm{r}_1$ and passes it on to
-$\asTm{r}_2$; and $\asTmOp{\var{ag}}_1$ splices its predecessor
+$\asTmId{ag}_2$ collects it on $\asTm{r}_1$ and passes it on to
+$\asTm{r}_2$; and $\asTmId{ag}_1$ splices its predecessor
 directly to its successor and retires. Three threads sharing three
 channels form a cycle, so no derivation by \ref{rule:P-Connect}
-exists and $\asPrOp{\var{sched}}$ is syntactically untypable. Nor does
-forwarding make the cycle go away: once $\asTmOp{\var{ag}}_1$ fires,
+exists and $\asPrId{sched}$ is syntactically untypable. Nor does
+forwarding make the cycle go away: once $\asTmId{ag}_1$ fires,
 $\asTm{r}_0$ and $\asTm{r}_1$ are merged and the agent becomes
 $\tUnit$, leaving two threads on two channels --- the minimal
 cyclic process. Yet the ring never blocks, because
-$\asTmOp{\var{ag}}_0$ sends before it receives; reversing those two
+$\asTmId{ag}_0$ sends before it receives; reversing those two
 actions would deadlock it. The mechanization establishes deadlock freedom
 by exhibiting a closed invariant on the reachable configurations, and
-in fact $\asPrOp{\var{sched}}$ terminates (\rocq{sched_terminates}) and is
+in fact $\asPrId{sched}$ terminates (\rocq{sched_terminates}) and is
 semantically typed at the empty interface,
-$\tEmpty \proves \asPrOp{\var{sched}} : \tyUnit$
+$\tEmpty \proves \asPrId{sched} : \tyUnit$
 (\rocq{sched_sem_ptyped}), so it composes with syntactically typed code
 by \cref{lem:comp:connect}.
 
 If we would split
-$\asTmOp{\var{ag}}_0$ into a sending and a receiving half running in
+$\asTmId{ag}_0$ into a sending and a receiving half running in
 parallel, then the topology becomes a tree. With two rounds of communication we
 are back at a cycle, because the second send happens after the first receive and any
 channel added to sequence the halves restores the cycle. We

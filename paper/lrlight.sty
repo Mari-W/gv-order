@@ -48,29 +48,40 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% A marked leaf absorbs its own subscripts and primes, so the decoration
-%% is coloured with the letter and the source stays \senv_1.  The
-%% decoration is *collected first* and typeset inside the math alphabet:
-%% \mathsf{\Sigma_1} kerns its subscript, \mathsf{\Sigma}_1 does not.
+%% is coloured with the name and the source stays \senv_1.
+%%
+%% The decoration is collected first, then typeset INSIDE the colour but
+%% OUTSIDE the math alphabet.  A math alphabet claims the digits too:
+%% \mathnormal{r_0} takes the 0 from the math-italic family, where it is
+%% an oldstyle glyph that reads as "o".  \mathnormal{r}_0 leaves the
+%% digit where it belongs.  (For \mathsf the two are identical.)
 \def\lr@leaf#1#2#3{\lr@collect{#1}{#2}{#3}{}}
 \def\lr@collect#1#2#3#4{%
   \@ifnextchar'{\lr@c@prime{#1}{#2}{#3}{#4}}%
    {\@ifnextchar_{\lr@c@sub{#1}{#2}{#3}{#4}}%
-     {{\color{#1}#2{#3#4}}}}}
+     {{\color{#1}#2{#3}#4}}}}
 \def\lr@c@prime#1#2#3#4'{\lr@collect{#1}{#2}{#3}{#4'}}
 \def\lr@c@sub#1#2#3#4_#5{\lr@collect{#1}{#2}{#3}{#4_{#5}}}
 
-%% \DeclareSort{<S>}{<colour>}{<alphabet>} defines
-%%   \as<S>{...}    letters: colour + math alphabet
-%%   \as<S>Op{...}  symbols: colour only
+%% \DeclareSort{<S>}{<colour>}{<alphabet>} defines three entry points,
+%% all of which absorb a following subscript or prime:
+%%   \as<S>{...}    a metavariable: colour + the sort's math alphabet
+%%   \as<S>Id{...}  a multi-letter identifier: colour + \mathit, because
+%%                  \mathnormal{false} spaces the letters as five separate
+%%                  symbols instead of kerning them as a word
+%%   \as<S>Op{...}  already-formatted material (a symbol, \textit{...}):
+%%                  colour only, no alphabet
 %% A math alphabet must never see anything but letters -- that is the
 %% invariant the \mathsf/uppercase-Greek bug violated.
 \NewDocumentCommand\DeclareSort{ m m m }{%
   \expandafter\def\csname lr@col@#1\endcsname{#2}%
   \expandafter\def\csname lr@alph@#1\endcsname{#3}%
   \expandafter\NewDocumentCommand\csname as#1\endcsname{ m }%
-    {\lr@leaf{#2}{#3}{\mathit{##1}}}%
+    {\lr@leaf{#2}{#3}{##1}}%
+  \expandafter\NewDocumentCommand\csname as#1Id\endcsname{ m }%
+    {\lr@leaf{#2}{\mathit}{##1}}%
   \expandafter\NewDocumentCommand\csname as#1Op\endcsname{ m }%
-    {{\color{#2}##1}}}
+    {\lr@leaf{#2}{\@firstofone}{##1}}}
 
 %% \DeclareMetaVar\cs{<S>}{<letters>}  ->  \cs  \cs_1  \cs'  \cs'_1
 \NewDocumentCommand\DeclareMetaVar{ m m m }{%

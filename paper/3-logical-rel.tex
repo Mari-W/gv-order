@@ -262,7 +262,7 @@ cycle running through the environment:
 \ed{The text from here is unclear. What is ``a piece''? Referring to ${\var{blocked}}$ is also weird}
 a piece that kept two extruded
 ends, whose duals the environment may serve from a single thread, can
-end up in the crossed dependency of $\asPrOp{\var{blocked}}$
+end up in the crossed dependency of $\asPrId{blocked}$
 (\cref{ex:deadlock}), even though each of the two connections is
 unobjectionable on its own. One end per piece rules out such a cycle.
 Without the machinery of the extrusion split the semantic rule for
@@ -641,10 +641,10 @@ showing that the untypable-but-safe processes of \cref{sec:calculus}
 satisfy the semantic judgment.
 
 \begin{example}[Semantic typing of the cyclic topology \rocq{cycle_sem_ptyped}]
-  Consider the process $\asPrOp{\var{cycle}}$ of Example~\ref{ex:cyclic},
+  Consider the process $\asPrId{cycle}$ of Example~\ref{ex:cyclic},
   where we spelled out the only transition sequence $p_0 \redu^* p_4$.
   It is not hard to prove that
-  $ \tEmpty \proves \asPrOp{\var{cycle}} : \tyUnit $ holds:
+  $ \tEmpty \proves \asPrId{cycle} : \tyUnit $ holds:
   along $\tau$ transitions, the process relation (at $n+1$)
   simply requires the next process to be in the relation (at $n$);
   finally, the relation will consider~$p_4$
@@ -654,37 +654,37 @@ satisfy the semantic judgment.
 
   As a simple example of composition,
   we can prove that
-  $(\emptyset, \mset{\asTmOp{\var{sync}}, \asTmOp{\var{cycle}}})$
+  $(\emptyset, \mset{\asTmId{sync}, \asTmId{cycle}})$
   is deadlock free,
-  where $\asTmOp{\var{sync}}$ is the term in the $\var{sync}$ process of
+  where $\asTmId{sync}$ is the term in the $\var{sync}$ process of
   Example~\ref{ex:sync},
-  and $\asTmOp{\var{cycle}}$ is the term in $\var{cycle}$.
+  and $\asTmId{cycle}$ is the term in $\var{cycle}$.
   Since we have established in Example~\ref{ex:typing} that
-  $ \tEmpty \types \asPrOp{\var{sync}} : \tyUnit $,
+  $ \tEmpty \types \asPrId{sync} : \tyUnit $,
   by \cref{th:fundamental} we have
-  $ \tEmpty \proves \asPrOp{\var{sync}} : \tyUnit $;
+  $ \tEmpty \proves \asPrId{sync} : \tyUnit $;
   then by \cref{th:proc-composit} (\ref{rule:P-Independent})
   we obtain that
   $
-    \tEmpty \proves (\asPrOp{\emptyset}, \mset{\asTmOp{\var{sync}}, \asTmOp{\var{cycle}}}) : \tyUnit
+    \tEmpty \proves (\asPrOp{\emptyset}, \mset{\asTmId{sync}, \asTmId{cycle}}) : \tyUnit
   $
   which, by \cref{thm:adequacy}, is deadlock free.
 \end{example}
 
 \begin{example}[Semantic typing of the load balancer \rocq{lb_deadlock_free}]
-  Consider the process $(\emptyset,\mset{\asTmOp{\var{lb}}})$
+  Consider the process $(\emptyset,\mset{\asTmId{lb}})$
   of Example~\ref{ex:load-balancer}.
   We can prove that
   $
       \ch : \sRecv{\tyUnit}{\sSend{\tyUnit}{\sSend{\tyUnit}{\sTerm}}}
       \proves
-      (\asPrOp{\emptyset},\mset{\asTmOp{\var{lb}}}) : \tyUnit
+      (\asPrOp{\emptyset},\mset{\asTmId{lb}}) : \tyUnit
   $ holds.
   Initially, the process can only take a~$\tau$ step;
   we can safely skip ahead of any~$\tau$ step as the logical relation
   simply considers the next process in that case.
   The first non-$\tau$ transition that the process can take is when
-  the $ \tApp{\tRecv}{c} $ term in $ \asTmOp{\var{srv}} $
+  the $ \tApp{\tRecv}{c} $ term in $ \asTmId{srv} $
   is in evaluating position (which can only happen while the workers are still waiting for a signal on their channels).
   Thus the relation would consider an arbitrary $\pi = \lRecv{\ch}{\val}$;
   it will however continue checking only the transitions where
@@ -728,7 +728,7 @@ satisfy the semantic judgment.
   $
       \tEmpty
       \proves
-      (\set{\asPr{c}}, \mset{\asTm{q}, \asTm{lb}}) : \tyUnit
+      (\set{\asPr{c}}, \mset{\asTm{q}, \asTmId{lb}}) : \tyUnit
     .
   $
   By \cref{thm:adequacy}, this process is deadlock free.

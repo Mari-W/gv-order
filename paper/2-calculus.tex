@@ -313,7 +313,7 @@ We write $\trans{}[*]$ for the transitive, reflexive closure of process reductio
 \label{ex:sync}
   As a first example, consider this reduction sequence:
   \begin{align*}
-    \asPrOp{\var{sync}} := {}
+    \asPrId{sync} := {}
     & (\set{},\mset{ 
       \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\tFork}{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
        })
@@ -360,7 +360,7 @@ We write $\trans{}[*]$ for the transitive, reflexive closure of process reductio
       \tUnit
        })
   \end{align*}
-  The initial (closed) process $\asPrOp{\var{sync}}$
+  The initial (closed) process $\asPrId{sync}$
   has a fork in evaluation position,
   which creates a new channel~$\ch$ and a new thread.
   After a~$\beta$ reduction in the new thread,
@@ -391,11 +391,11 @@ will consider untyped processes and accept only well-behaved ones
 
 \begin{example}[Cyclic topology \rocq{cycle_proc}]
 \label{ex:cyclic}
-  The process $\asPrOp{\var{cycle}}$ below consists of two threads
+  The process $\asPrId{cycle}$ below consists of two threads
   sharing two channels~$\ch$ and $\chB$,
   but uses them in a safe way:
   \begin{align}
-    \asPrOp{\var{cycle}} := {}
+    \asPrId{cycle} := {}
     & (\set{\ch, \chB} , \mset{
       \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}} ,
       \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}})
@@ -532,7 +532,7 @@ which, by convention, is considered the value computed by the whole program.%
 \label{ex:deadlock}
   Consider the following process:
   \[
-    \asPrOp{\var{blocked}} := (
+    \asPrId{blocked} := (
       \set{ \ch,\chB },
       \mset{
         \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}},
@@ -540,7 +540,7 @@ which, by convention, is considered the value computed by the whole program.%
       }
     )
   \]
-  Clearly $\asPrOp{\var{blocked}}$ cannot take any further steps
+  Clearly $\asPrId{blocked}$ cannot take any further steps
   as the first thread is waiting to close~$\ch$,
   but the second thread wants to first close~$\chB$,
   a classic example of deadlock.
@@ -565,7 +565,7 @@ albeit it does not follow the usual discipline on channels.
 
 \begin{example}[Load balancer \rocq{lb}]
 \label{ex:load-balancer}
-  Consider an open process~$(\emptyset,\mset{\asTmOp{\var{lb}}})$
+  Consider an open process~$(\emptyset,\mset{\asTmId{lb}})$
   which replies to requests on a channel~$\ch$ shared with the environment,
   by delegating the two expected answers to two worker threads.
   We can represent such a process in \OurLang\ as follows.
@@ -576,11 +576,11 @@ albeit it does not follow the usual discipline on channels.
   \def\aquad{\phantom{\tAbs{\asTm{s}}{\ }}}
   \begin{minipage}[t]{0.44\textwidth}%
     \begin{align*}
-      \asTmOp{\var{lb}} := {}
-        & \tLetS{\asTm{w}_1}{\tApp{\tFork}{\asTm{worker}}}{}\\
-        & \tLetS{\asTm{w}_2}{\tApp{\tFork}{\asTm{worker}}}{\asTmOp{\var{srv}}}
+      \asTmId{lb} := {}
+        & \tLetS{\asTm{w}_1}{\tApp{\tFork}{\asTmId{worker}}}{}\\
+        & \tLetS{\asTm{w}_2}{\tApp{\tFork}{\asTmId{worker}}}{\asTmId{srv}}
       \\
-      \asTmOp{\var{worker}} := {}&
+      \asTmId{worker} := {}&
         \tAbs{\asTm{s}}{\ }
                  \tLet[\asTm{m}][\asTm{s}]{\tApp{\tRecv}{\asTm{s}}}{}\\
         & \tLet*{\asTm{m}}{}\\
@@ -590,7 +590,7 @@ albeit it does not follow the usual discipline on channels.
   \end{minipage}\hfill%
   \begin{minipage}[t]{0.44\textwidth}%
     \begin{align*}
-      \asTmOp{\var{srv}} := {}
+      \asTmId{srv} := {}
         & \tLet[\asTm{m}][\ch]{\tApp{\tRecv}{\ch}}{}\\
         & \tLet*{\asTm{m}}{}\\
         & \tLetS{\asTm{w}_1}{\tApp{\tSend}{\tPair{\tUnit}{\asTm{w}_1}}}{}\\
@@ -604,13 +604,13 @@ albeit it does not follow the usual discipline on channels.
   Four internal reductions
   (a fork and a $\beta$~step for each worker)
   reduce the process
-  $p_0=(\emptyset,\mset{\asTmOp{\var{lb}}})$
+  $p_0=(\emptyset,\mset{\asTmId{lb}})$
   to
   \[
     p_1 =
     (\set{\asTm{w}_1,\asTm{w}_2}, \mset{
-     \asTmOp{\var{srv}},
-     \tApp{\asTmOp{\var{worker}}}{\asTm{w}_1}, \tApp{\asTmOp{\var{worker}}}{\asTm{w}_2} })
+     \asTmId{srv},
+     \tApp{\asTmId{worker}}{\asTm{w}_1}, \tApp{\asTmId{worker}}{\asTm{w}_2} })
   \]
   This process violates several invariants of typable GV processes.
   First, all three processes share channel $\ch$ with the environment.
@@ -854,10 +854,10 @@ but whose connecting channel has been closed since.
 
 \begin{example}[Syntactic typability of the examples \rocq{sync_typed}]
 \label{ex:typing}
-  The process $\asPrOp{\var{sync}}$ of Example~\ref{ex:sync} is typable
-  in an empty context $\tEmpty \types \asPrOp{\var{sync}} : \tyUnit$.
+  The process $\asPrId{sync}$ of Example~\ref{ex:sync} is typable
+  in an empty context $\tEmpty \types \asPrId{sync} : \tyUnit$.
   %%
-  The closed $\asPrOp{\var{cycle}}$ process of Example~\ref{ex:cyclic} is harmless
+  The closed $\asPrId{cycle}$ process of Example~\ref{ex:cyclic} is harmless
   but \emph{not} typable:
   as the two threads share $ \ch $,
   we must apply \ref{rule:P-Connect}, which forces us to partition
@@ -868,10 +868,10 @@ but whose connecting channel has been closed since.
   The same happens if one tries to apply \ref{rule:P-Connect} on
   $\asPr{d}$ first.
   %%
-  For the same reasons, the $\asPrOp{\var{blocked}}$ process of Example~\ref{ex:deadlock}
+  For the same reasons, the $\asPrId{blocked}$ process of Example~\ref{ex:deadlock}
   is also not typable, although in this case, desirably so.
   %%
-  The load balancer process $(\emptyset,\mset{\asTmOp{\var{lb}}})$
+  The load balancer process $(\emptyset,\mset{\asTmId{lb}})$
   of Example~\ref{ex:load-balancer} is also rejected by the type system
   as it violates linearity of channels in several ways,
   although intuitively it could be seen as respecting

@@ -70,26 +70,26 @@ communicates first with $\tm_1$.
   \begin{small}
     \begin{align*}
       \tm_0 &=
-                    \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{true}}{\chB}})}
+                    \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTmId{true}}{\chB}})}
       \\
       \tm_1 &=
-                    \tLet[\tLVB][\chB]{\tPair{\asTm{false}}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
+                    \tLet[\tLVB][\chB]{\tPair{\asTmId{false}}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
       \\
       \tm_2 &=
-                    \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
+                    \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition ($\beta$ pair elimination) to
   \begin{small}
     \begin{align*}
       \tm_0 &=
-                    \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTm{true}}{\chB}})}
+                    \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTmId{true}}{\chB}})}
       \\
       \tm_1 &=
-                    {\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
+                    {\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
       \\
       \tm_2 &=
-                    \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
+                    \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition (internal communication) to
@@ -99,10 +99,10 @@ communicates first with $\tm_1$.
                     \tApp{\tClos}{\chB}
       \\
       \tm_1 &=
-                    {\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
+                    {\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
       \\
       \tm_2 &=
-                    \tLet[\tLVB][\chB]{\tPair{\asTm{true}}{\chB}}{\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
+                    \tLet[\tLVB][\chB]{\tPair{\asTmId{true}}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition ($\beta$ pair elimination) to
@@ -112,13 +112,13 @@ communicates first with $\tm_1$.
                     \tApp{\tClos}{\chB}
       \\
       \tm_1 &=
-                    {\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
+                    {\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
       \\
       \tm_2 &=
-                    {\tLet*{\tApp{\tClos}{\asTm{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
+                    {\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
-\item $\tau$ transition (internal communication, closing $\asTm{cs}$,
+\item $\tau$ transition (internal communication, closing $\asTmId{cs}$,
   new $C = \set{\ch, \chB}$)
   \begin{small}
     \begin{align*}
@@ -126,10 +126,10 @@ communicates first with $\tm_1$.
                     \tApp{\tClos}{\chB}
       \\
       \tm_1 &=
-                    {\tLet*{\tUnit}{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
+                    {\tLet*{\tUnit}{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
       \\
       \tm_2 &=
-                    {\tLet*{\tUnit}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
+                    {\tLet*{\tUnit}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transitions (2x $\beta$ unit)
@@ -139,10 +139,10 @@ communicates first with $\tm_1$.
                     \tApp{\tClos}{\chB}
       \\
       \tm_1 &=
-                    {{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
+                    {{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
       \\
       \tm_2 &=
-                    {{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
+                    {{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition (internal communication, closing $\chB$,
@@ -153,10 +153,10 @@ communicates first with $\tm_1$.
                     \tUnit
       \\
       \tm_1 &=
-                    {{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
+                    {{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
       \\
       \tm_2 &=
-                    {{\tLet*{\tUnit}{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
+                    {{\tLet*{\tUnit}{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transition (unit elim)
@@ -166,10 +166,10 @@ communicates first with $\tm_1$.
                     \tUnit
       \\
       \tm_1 &=
-                    {{\tIf{\asTm{false}}{\tApp{\tClos}{(\asTm{select}~\asTm{left}~\ch)}}{\tUnit}}}
+                    {{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
       \\
       \tm_2 &=
-                    {{{\tIf{\asTm{true}}{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}{\tUnit}}}}
+                    {{{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
     \end{align*}
   \end{small}
 \item $\tau$ transitions (2x $\beta$ bool)
@@ -182,10 +182,10 @@ communicates first with $\tm_1$.
                     {{{\tUnit}}}
       \\
       \tm_2 &=
-                    {{{{\tApp{\tClos}{(\asTm{select}~\asTm{right}~\ch)}}}}}
+                    {{{{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}}}}
     \end{align*}
   \end{small}
-\item There are two remaining labeled transitions: $\lSend{\ch}{\asTm{right}}$
+\item There are two remaining labeled transitions: $\lSend{\ch}{\asTmId{right}}$
   followed by $\lTerm{\ch}$. The resulting process is terminated and is
   an element of $\lrProc{n}{\tEmpty \vdash \tyUnit}$:
   \begin{small}

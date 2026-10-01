@@ -81,7 +81,7 @@ even if the type system would reject them.
 Consider, for example, a syntactically typable process~$\proc$ expecting to receive
 a choice between~$\asTy{A}$ and~$\asTy{B}$
 on some channel~$\ch : \asTy{A} \echoice \asTy{B}$;
-we might want to compose it with a component~$\asPr{elect}$
+we might want to compose it with a component~$\asPrId{elect}$
 that makes the choice by internally running a leader-election protocol
 and letting the leader pronounce their choice on~$\ch$.
 Such an election protocol might require violating the strict invariants
@@ -91,7 +91,7 @@ If a logical relation encoding the safe behavior expected on $\ch$
 was available, one could prove
 $\ch:\asTy{A} \echoice \asTy{B} \types \proc : \ty$ syntactically,
 and
-$\ch:\asTy{A} \ichoice \asTy{B} \proves \asPr{elect} : \tyUnit$ semantically,
+$\ch:\asTy{A} \ichoice \asTy{B} \proves \asPrId{elect} : \tyUnit$ semantically,
 and conclude that their composition over $\ch$ is deadlock-free.
 The objective of this paper is identifying such a logical relation.
 
