@@ -80,10 +80,12 @@ syntactically which channels extrude a process by looking at the channels syntac
 the typed view of a value agree only if its free channels are exactly
 the ones its interface declares.
 
-The term relation is given by a step rule \ref{rule:E-Step} that asks only what a term
-\emph{does}: either it cannot move, and then it has to be in the value relation for its declared type, or it can, and then every transition it offers has
-to discharge the obligation carried by its label.
-It is defined inductively \emph{on the step index} $n$ with base case \ref{rule:E-Zero}.
+\ed{I reformulated the E-Step rule by relying on the decidability of $\irred$ and the fact that the value relation contains only irreducible terms}
+The term relation is defined inductively \emph{on the step index}~$n$
+with base case \ref{rule:E-Zero}.
+The main constraints are imposed by \labelcref{rule:E-Term,rule:E-Step}:
+either the term is a value, and then it has to be in the value relation for its declared type, or it can take a step, and then every transition it offers has
+to discharge the obligation implied by its label.
 % Read without that index the rules are not a valid inductive definition.
 % We chose this representational style solely because it is easier to read. The obligations of a possible transition are stated
 % at index $n$ and mention the value relation at $n+1$. The definition is
@@ -118,7 +120,7 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Value logical relation $\val \in \lrVal{n}{\senv \types \ty}$}
+  \rulesection*{Value logical relation $\val \in \lrVal{n}{\senv \types \ty}$ (\rocq{Vdef})}
   \begin{proofrules}
     \infer*[lab=V-Unit]{}{
       \tUnit \in \lrVal{n}{\tEmpty \types \tyUnit}
@@ -148,21 +150,27 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
       \tAbs{\tLVA}{\tm} \in \lrVal{n}{\senv \types \lFunc{\ty}{\tyB}}
     } \label{rule:V-Abs}
   \end{proofrules}
-  \rulesection{Term logical relation $\tm \in \lrTerm{n}{\senv \types \ty}$}
+  \rulesection{Term logical relation $\tm \in \lrTerm{n}{\senv \types \ty}$ (\rocq{Edef})}
   \begin{proofrules}
     \infer*[lab=E-Zero]{}{
       \tm \in \lrTerm{0}{\senv \types \ty}
     } \label{rule:E-Zero}
     \and
+    \infer*[lab=E-Term]{
+      \val \in \lrVal{n+1}{\senv \types \ty}
+    }{
+      \val \in \lrTerm{n+1}{\senv \types \ty}
+    } \label{rule:E-Term}
+    \and
     \infer*[lab=E-Step]{
-      \irred \tm \implies \tm \in \lrVal{n+1}{\senv \types \ty} \\
+      \neg\irred \tm
+      \\
       \forall \lambda, \tm'\st \tm \trans{\lambda} \tm' \implies \obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}
     }{
       \tm \in \lrTerm{n+1}{\senv \types \ty}
     } \label{rule:E-Step}
   \end{proofrules}
-  \rulesection{Obligations of a term transition}
-  $\obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}$
+  \rulesection{Obligations of a term transition $\obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}$}
   \begin{proofrules}
     \infer*[lab=O-Beta]{
       \tm' \in \lrTerm{n}{\senv \types \ty}
@@ -198,7 +206,7 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
     } \label{rule:O-Close}
   \end{proofrules}
   \rulesectionend
-  \caption{The value and term logical relations (\rocq{Vdef})}
+  \caption{The value and term logical relations}
   \Description{The value and term relations}
   \label{fig:logrel-rules-term}
 \end{figure}
@@ -212,8 +220,7 @@ type different from $\tyUnit$. The obligations of a process
 transition are similar to the ones of a term transition, but with an extra twist
 for output.
 
-\Cref{rule:P-Zero,rule:P-Step} mirror \ref{rule:E-Zero} and
-\ref{rule:E-Step}, with the step index read exactly as at the term
+\Cref{rule:P-Zero,,rule:P-Term,rule:P-Step} mirror \labelcref{rule:E-Zero,,rule:E-Term,rule:E-Step}, with the step index read exactly as at the term
 level, and the obligations of a process transition are again collected
 in a judgment defined by cases on the label.
 
@@ -242,15 +249,18 @@ one part in the process relation that continues with $\ch$ and another part prod
 auxiliary extrusion split 
 $(C_w, E_w) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}$ of
 \ref{rule:T-Nil} and \ref{rule:T-Cons}, one extruded channel at a
-time. It yields one piece in the process relation for every
+time. It yields one piece \ed{what is a ``piece''?} in the process relation for every
 $\chB \in \dom(\senv_{\asTy{e}})$. For all $\chB$, the piece for $\chB$ owns
 that channel and lies in the process relation on its own, and does not 
 share channels with the other pieces. For $p$ to be in the process relation, it
 is sufficient that such a decomposition exists.
 
-This rule is the only place where the relation restricts the topology of a
-process, and it does so only from the outside. What it rules out is a
-cycle running through the environment: a piece that kept two extruded
+Crucially, this rule is the only place where the relation restricts the topology of a
+process, but it does so on the fly, and only for channels that, from being private and thus used freely, become part of the external interface.
+What the imposed constraints rule out is a
+cycle running through the environment:
+\ed{The text from here is unclear. What is ``a piece''? Referring to ${\var{blocked}}$ is also weird}
+a piece that kept two extruded
 ends, whose duals the environment may serve from a single thread, can
 end up in the crossed dependency of $\asPrOp{\var{blocked}}$
 (\cref{ex:deadlock}), even though each of the two connections is
@@ -262,22 +272,37 @@ that deadlocks.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Process logical relation $\proc \in \lrProc{n}{\senv \types \ty}$}
+  \rulesection*{Process logical relation $\proc \in \lrProc{n}{\senv \types \ty}$ (\rocq{Pdef})}
   \begin{proofrules}
     \infer*[lab=P-Zero]{}{
       \proc \in \lrProc{0}{\senv \types \ty}
     } \label{rule:P-Zero}
     \and
+    \infer*[lab=P-Term]{
+      % \irred \proc
+      % \\
+      % \proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool)
+      % \\
+      \val \in \lrVal{n+1}{\senv \types \ty}
+      % \\
+      % \forall \tm \in \pool\st \tm = \tUnit
+    }{
+      (\asPrOp{\emptyset}, \mset{\val,\tUnit,\dots,\tUnit})
+        \in \lrProc{n+1}{\senv \types \ty}
+    } \label{rule:P-Term}
+    \and
     \infer*[lab=P-Step]{
-      \irred \proc \implies \proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool) \land \val \in \lrVal{n+1}{\senv \types \ty} \land \forall \tm \in \pool\st \tm = \tUnit \\\\
+      \neg \irred \proc \\
       \forall \pi, \proc'\st \proc \trans{\pi} \proc' \implies \obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}
     }{
       \proc \in \lrProc{n+1}{\senv \types \ty}
     } \label{rule:P-Step}
   \end{proofrules}
-  \rulesection{Obligations of a process transition}
-  $\obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}$,
-  where $\proc = (\chset,\pool)$ and $\proc' = (\chset',\pool')$
+  \rulesection{Obligations of a process transition $\obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}$}
+  %
+  % $\obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty}$,
+  % where $\proc = (\chset,\pool)$ and $\proc' = (\chset',\pool')$
+  %
   \begin{proofrules}
     \infer*[lab=Q-Tau]{
       \proc' \in \lrProc{n}{\senv \types \ty}
@@ -298,28 +323,29 @@ that deadlocks.
     } \label{rule:Q-Recv}
     \and
     \infer*[lab=Q-Send]{
-      \dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset \quad \set{\ty_0,\ty_{\asTy{w}}} = \set{\ty,\tUnit} \\\\
+      \dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset \quad \set{\ty_0,\ty_{\asTy{w}}} = \set{\ty,\tUnit}
+      \\\\
       \val \in \lrVal{n+1}{\senv_{\asTy{v}}, \dual{\senv_{\asTy{e}}} \types \tyB} \quad (\chset_0,\pool_0) \in \lrProc{n}{\senv_0, \ch:\sty \types \ty_0} \quad (\chset_{\asPr{w}},\pool_{\asPr{w}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}
     }{
       \obl{\senv_0, \senv_{\asTy{v}}, \senv_{\asTy{w}}, \ch:\sSend{\tyB}{\sty}}{n} {\proc \trans{\lSend{\ch}{\val}} (\chset_0 \cupdot \chset_{\asPr{w}}, \pool_0 \uplus \pool_{\asPr{w}}) : \ty}
     } \label{rule:Q-Send}
   \end{proofrules}
-  \rulesection{Extrusion split $\proc \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv \types \ty}$}
+  \rulesection{Extrusion split $\proc \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv \types \ty}$ (\rocq{extrusion_split})}
   \begin{proofrules}
     \infer*[lab=T-Nil]{}{
       (\asPrOp{\emptyset},\asPrOp{\emptyset}) \in \lrTopo{n}{\tEmpty ; \tEmpty \types \tyUnit}
     } \label{rule:T-Nil}
     \and
     \infer*[lab=T-Cons]{
+      \set{\ty_{\asTy{d}},\ty_{\asTy{r}}} = \set{\ty,\tUnit}\\\\
       (\chset_{\asPr{d}},\pool_{\asPr{d}}) \in \lrProc{n}{\senv_{\asTy{d}}, \chB:\sty \types \ty_{\asTy{d}}} \\
-      (\chset_{\asPr{r}},\pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{r}} \types \ty_{\asTy{r}}} \\
-      \set{\ty_{\asTy{d}},\ty_{\asTy{r}}} = \set{\ty,\tUnit}
+      (\chset_{\asPr{r}},\pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{r}} \types \ty_{\asTy{r}}}
     }{
       (\chset_{\asPr{d}} \cupdot \chset_{\asPr{r}}, \pool_{\asPr{d}} \uplus \pool_{\asPr{r}}) \in \lrTopo{n}{\senv_{\asTy{e}}, \chB:\sty ; \senv_{\asTy{d}}, \senv_{\asTy{r}} \types \ty}
     } \label{rule:T-Cons}
   \end{proofrules}
   \rulesectionend
-  \caption{The process logical relation and the extrusion split \quad \rocq{extrusion_split}}
+  \caption{The process logical relation and the extrusion split}
   \Description{The process relation with extrusion splits}
   \label{fig:logrel-rules-proc}
 \end{figure}
@@ -389,7 +415,7 @@ with closed terms respecting their assumed types.
 %all three (\rocq{typed_term_wf}), so the fundamental property is
 %unaffected.
 
-At this point, adopting an LTS semantics pays off. It spares us from defining
+This is where adopting an LTS semantics pays off: It spares us from defining
 closing contexts to define the semantic judgment for open processes.
 
 To prove adequacy of our logical relation, we need two auxiliary lemmas.
@@ -610,7 +636,7 @@ We now move to the process level.
 \subsection{Examples}
 \label{sec:examples}
 
-Finally, we establish the expressiveness of our logical relation by
+In this section we establish the expressiveness of our logical relation by
 showing that the untypable-but-safe processes of \cref{sec:calculus}
 satisfy the semantic judgment.
 

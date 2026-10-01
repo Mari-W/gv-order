@@ -58,25 +58,15 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
       \tLet[\tLVA][\tLVA]{\tm}{\tm}
     & \text{(terms)}
   \end{align*}
-  \caption{Syntax of \OurLang \rocq{expr}}
+  \caption{Syntax of \OurLang (\rocq{expr})}
   \Description{Grammars for the constants, values and terms of GV-sharp.}
   \label{fig:syntax}
 \end{figure}
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Evaluation contexts $\ectx$, session labels $\sigma$, term labels $\lambda$}
+  \rulesection*{Session labels $\sigma$, term labels $\lambda$, Evaluation contexts $\ectx$ (\rocq{slabel})}
   \begin{align*}
-    \ectx &::=
-      \hole \sepr
-      \tApp{\ectx}{\tm} \sepr
-      \tApp{\val}{\ectx} \sepr
-      \tPair{\ectx}{\tm} \sepr
-      \tPair{\val}{\ectx} \sepr
-      \tLet*{\ectx}{\tm} \sepr
-      \tLet[\tLVA][\tLVA]{\ectx}{\tm}
-    & \text{(eval.\ contexts)}
-    \\
     \sigma &::=
       \lRecv{\ch}{\val} \sepr
       \lSend{\ch}{\val} \sepr
@@ -88,8 +78,18 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
       \sigma \sepr
       \lFork{\ch}{\val}
     & \text{(term labels)}
+    \\
+    \ectx &::=
+      \hole \sepr
+      \tApp{\ectx}{\tm} \sepr
+      \tApp{\val}{\ectx} \sepr
+      \tPair{\ectx}{\tm} \sepr
+      \tPair{\val}{\ectx} \sepr
+      \tLet*{\ectx}{\tm} \sepr
+      \tLet[\tLVA][\tLVA]{\ectx}{\tm}
+    & \text{(eval.\ contexts)}
   \end{align*}
-  \rulesection{Labelled reductions for terms}
+  \rulesection{Labelled reductions for terms (\rocq{tstep})}
   \begin{proofrules}
     \infer*[lab=T-Act-App]{}{
       \tApp{(\tAbs{\tLVA}{\tm})}{\val} \trans{\beta} \tSub{\tm}{\val}{\tLVA}
@@ -126,15 +126,29 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
     } \label{rule:T-Act-Ctx}
   \end{proofrules}
   \rulesectionend
-  \caption{Semantics of \OurLang\ terms \rocq{slabel}}
+  \caption{Semantics of \OurLang\ terms}
   \Description{Grammars for evaluation contexts, session labels and term labels, and the seven axioms plus one congruence rule of the labelled term reduction relation.}
   \label{fig:term-semantics}
 \end{figure}
 
 
-We specify the semantics of \OurLang\ by first defining a labelled
-reduction semantics for terms, where the labels represent the concurrency
-effects, and then lift it to an LTS semantics on processes.
+The semantics of \OurLang\ is a standard reduction semantics
+$\proc \sred \proc'$ for closed processes.
+The full definition is given in
+\cref{sec:app-harmony}, \cref{fig:red-semantics}.
+The reduction semantics is the ``ground truth'' specification of the
+behavior of closed processes.
+The end-to-end property that the type system/logical relation aims to prove
+is deadlock-freedom with respect to the reduction semantics.
+
+In order to define the logical relation, which inherently needs to
+constrain the potential behavior of an open process interacting with
+an environment, we define a \emph{labelled transition system} (LTS) semantics.
+As we prove in \cref{thm:harmony}, the internal transitions of the LTS are in perfect correspondence to the reduction steps, allowing us to transfer
+results on the LTS to properties of reductions.
+%%%
+We construct the LTS on processes by first defining an LTS on terms,
+where the labels represent the concurrency effects.
 
 \paragraph{Term semantics}
 The semantics of terms is shown in \cref{fig:term-semantics},
@@ -211,36 +225,48 @@ which matches a send $\lSend{\ch}{\val}$ (over a restricted $\ch$)
 in one thread with a receive $\lRecv{\ch}{\val}$ of another.
 Similarly, \ref{rule:P-Act-Close} makes two close actions on the same
 restricted channel match.
-\ed{explain why we keep close only over internal channels}
+\ed{explain why we keep close only over internal channels? Maybe nobody cares}
 
-We define \emph{process reduction},
-written $\proc \redu \proc'$,
-as $\proc \trans{\tau} \proc'$.
-We write $\trans{}[*]$ for its transitive, reflexive closure.
+The move to an ``open-world'' LTS semantics is a technical device to define
+the logical relation:
+what needs to be trusted is only the reduction semantics.
+The following result allows us to transfer results on the LTS
+to properties of reductions.
 
-The move to an LTS is a matter of convenience:
-reduction coincides with a conventional, label-free reduction
-semantics.
 \begin{theorem}[Harmony \rocq{harmony}]
   \label{thm:harmony}
-  $\proc \redu \proc'$
+  $\proc \trans{\tau} \proc'$
   if and only if
-  $\proc \sred \proc'$,
-  where $\proc \sred \proc'$ is the reduction semantics of
-  \cref{sec:app-harmony}, \cref{fig:red-semantics}.
+  $\proc \sred \proc'$
+  (as defined in \cref{sec:app-harmony}, \cref{fig:red-semantics}).
 \end{theorem}
+
+
+By virtue of this correspondence,
+transitions of the form $\proc \trans{\tau} \proc'$
+are abbreviated as $\proc \redu \proc'$,
+and called \emph{process reductions}.
+We write $\trans{}[*]$ for the transitive, reflexive closure of process reductions.
+
+
 
 \begin{figure}[tp]
   \adjustfigure[]
   % TODO(mathpartir): this heading *is* the content (the label grammar),
   % not a title for what follows.  Its trailing \par\medskip was dropped
   % in favour of \rulesection's own spacing; check you like the result.
-  \rulesection*{Process labels $\pi ::= \tau \sepr \sigma$}
   % \textbf{Process labels $\pi$}
   % \begin{align*}
   % \pi &::= \tau \sepr \sigma
   % \end{align*}
-  \rulesection{Labelled reductions for processes}
+  \rulesection{Labelled reductions for processes (\rocq{plabel})}
+  %
+  \begin{align*}
+    \pi &::= \tau \sepr \sigma
+    \qquad \text{(process labels)}
+  \end{align*}
+  % Process labels $\pi ::= \tau \sepr \sigma$
+  %
   \begin{proofrules}
     \infer*[lab=P-Act-Session]{
       \tm \trans{\sigma} \tm' \\
@@ -250,8 +276,9 @@ semantics.
     } \label{rule:P-Act-Session}
     \and
     \infer*[lab=P-Act-Fork]{
-      \tm \trans{\lFork{\ch}{\val}} \tm' \\
       \ch~\text{fresh}
+      \\
+      \smash{\tm \trans{\lFork{\ch}{\val}} \tm'}
     }{
       (\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm', \tApp{\val}{\ch}})
     } \label{rule:P-Act-Fork}
@@ -277,7 +304,7 @@ semantics.
     } \label{rule:P-Act-Close}
   \end{proofrules}
   \rulesectionend
-  \caption{LTS semantics of \OurLang\ processes \rocq{plabel}}
+  \caption{LTS semantics of \OurLang\ processes}
   \Description{The grammar of process labels and the five rules of the process labelled transition relation: one lifting an external offer, and one each for beta steps, forks, matched messages and matched closes.}
   \label{fig:proc-semantics}
 \end{figure}
@@ -461,10 +488,10 @@ which, by convention, is considered the value computed by the whole program.%
 \begin{definition}[Terminated process \rocq{terminated}]
 \label{def:terminated}
   A process $\proc$ is \emph{terminated} if,
-  for some~$\val$ and $\pool$,
-  $\proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool)$
-  and
-  $\forall \tm \in \pool.\,\tm = \tUnit$.
+  $\proc = (\asPrOp{\emptyset}, \mset{\val,\tUnit,\dots,\tUnit})$
+  for some~$\val$.
+  % and
+  % $\forall \tm \in \pool.\,\tm = \tUnit$.
 \end{definition}
 
 % \ed{Safety is unattainable for open processes: one has no control over received values}
@@ -628,19 +655,22 @@ This section presents a type system for \OurLang,
 which closely resembles existing type systems for GV
 based on the Curry-Howard correspondence.
 Our goal is to demonstrate its soundness by justifying its rules with
-a more liberal logical relation in \cref{sec:logicalRelation}.
+the more liberal logical relation of \cref{sec:logicalRelation}.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Types $\ty$, session types $\sty$, session environments $\senv$ \rocq{ty}}
+  \rulesection*{Types $\ty$, session types $\sty$, session environments $\senv$, linear environments $\lenv$ (\rocq{ty})}
   \begin{align*}
     \ty,\tyB &::= \tyUnit \sepr \lFunc{\ty}{\tyB} \sepr \lPair{\ty}{\tyB} \sepr \sty
+    &
+    \senv &::= \tEmpty \sepr \ch:\sty \sepr \senv,\senv
     \\
     \sty &::= \sRecv{\ty}{\sty} \sepr \sSend{\ty}{\sty} \sepr \sTerm
-    \\
-    \senv &::= \tEmpty \sepr \ch:\sty \sepr \senv,\senv
+    &
+    \lenv &::= \tEmpty \sepr \tLVA:\ty \sepr
+                     \lenv, \lenv
   \end{align*}
-  \rulesection{Session duality $\dual{\sty}$}
+  \rulesection{Session duality $\dual{\sty}$ (\rocq{dual})}
   \begin{align*}
     \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
     &
@@ -653,11 +683,11 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
 % \end{figure}
 %
 % \begin{figure}[tp]
-  \rulesection{Linear variable environments $\lenv$}
-  \begin{align*}
-    \lenv &::= \tEmpty \sepr \tLVA:\ty \sepr
-                     \lenv, \lenv
-  \end{align*}
+  % \rulesection{Linear variable environments $\lenv$}
+  % \begin{align*}
+  %   \lenv &::= \tEmpty \sepr \tLVA:\ty \sepr
+  %                    \lenv, \lenv
+  % \end{align*}
   \rulesection{Type-indexed families of type signatures for constants $\cst:\ty$}
   \begin{align*}
     \tFork &{}:\lFunc{(\lFunc{\sty}{\tyUnit})}{\dual{\sty}}
@@ -668,7 +698,7 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
     &
     \tClos &{}:\lFunc{\sTerm}{\tyUnit}
   \end{align*}
-  \rulesection{Typing rules for terms $\senv ; \lenv \types \tm : \ty$ \rocq{typed}}
+  \rulesection{Typing rules for terms $\senv ; \lenv \types \tm : \ty$ (\rocq{typed})}
   \begin{proofrules}
     \infer*[lab=E-Unit]{}{
       \tEmpty ; \tEmpty \types \tUnit : \tyUnit
@@ -722,7 +752,7 @@ a more liberal logical relation in \cref{sec:logicalRelation}.
       \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet[\tLVA][\tLVB]{\tm_1}{\tm_2} : \ty
     } \label{rule:E-LetPair}
   \end{proofrules}
-  \rulesection{Typing rules for processes $\senv \types \proc : \ty$}
+  \rulesection{Typing rules for processes $\senv \types \proc : \ty$ (\rocq{ptyped})}
   \begin{proofrules}
     \infer*[lab=P-Term]{
       \primitive \ty \\

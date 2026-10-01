@@ -95,6 +95,13 @@
 \colorlet{cPr}{black}         % process level: processes, pools, channel sets
 \colorlet{cTy}{RoyalBlue}     % type level: types, session types, environments
 
+\newcommand{\setlrcolors}[1]{%
+  \colorlet{cTm}{#1}%
+  \colorlet{cPr}{#1}%
+  \colorlet{cTy}{#1}%
+}
+
+
 \DeclareSort{Tm}{cTm}{\mathnormal}
 \DeclareSort{Pr}{cPr}{\mathit}
 \DeclareSort{Ty}{cTy}{\mathsf}

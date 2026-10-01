@@ -125,12 +125,15 @@
 }
 \newcommand{\rulesection@@}{\par\vspace{\rulesecskip}\rulesection@}
 \newcommand{\rulesection@}[1]{%
-  {\color{gray}\makebox[1em]{\rulesecdiv}\hspace{1ex}{#1}\hspace{1ex}\rulesecdiv}%
+  {\setrulesectioncolor\makebox[1em]{\rulesecdiv}\hspace{1ex}{#1}\hspace{1ex}\rulesecdiv}%
   \vspace{\rulesecskip}%
 }
 \newcommand{\rulesectionend}{%
   \par\vspace{\rulesecskip}%
-  {\color{gray}\rulesecdiv}%
+  {\setrulesectioncolor\rulesecdiv}%
+}
+\newcommand{\setrulesectioncolor}{
+  \color{gray}%
 }
 
 \endinput

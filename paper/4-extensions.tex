@@ -15,9 +15,9 @@ features of GV \cite{conf/esop/LindleyM15} are covered; recursion is an extra.
   \rulesection*{New values, terms, evaluation contexts}
   \begin{align*}
     \val &::= \dots \sepr \tInj{1}{\val} \sepr \tInj{2}{\val}
-    & \text{injections}\\
+    & \text{(injections)}\\
     \tm &::= \dots \sepr \tCase{\tm}{\ivx}{\tm}{\ivx}{\tm} &
-                                                                       \text{sum elimination}\\
+                                                                       \text{(sum elimination)}\\
     \ectx & ::= \dots \sepr \tInj{1}{\ectx} \sepr \tInj{2}{\ectx}
                        \sepr \tCase{\ectx}{\ivx}{\tm}{\ivx}{\tm}
   \end{align*}
@@ -46,6 +46,13 @@ features of GV \cite{conf/esop/LindleyM15} are covered; recursion is an extra.
     }{
       \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tCase{\tm}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} : \tyB
     } \label{rule:E-Case}
+    \and
+    \infer*{
+      \primitive \tyB \\
+      \primitive \tyC
+    }{
+      \primitive \lSum{\tyB}{\tyC}
+    }
   \end{proofrules}
   \rulesection{New rule for the value logical relation}
   \begin{proofrules}
@@ -55,15 +62,15 @@ features of GV \cite{conf/esop/LindleyM15} are covered; recursion is an extra.
       \tInj{\asTm{i}}{\val} \in \lrVal{n}{\senv \types \lSum{\ty_1}{\ty_2}}
     } \label{rule:V-Inj}
   \end{proofrules}
-  \rulesection{New rule for primitive types}
-  \begin{proofrules}
-    \infer*{
-      \primitive \tyB \\
-      \primitive \tyC
-    }{
-      \primitive \lSum{\tyB}{\tyC}
-    }
-  \end{proofrules}
+  % \rulesection{New rule for primitive types}
+  % \begin{proofrules}
+  %   \infer*{
+  %     \primitive \tyB \\
+  %     \primitive \tyC
+  %   }{
+  %     \primitive \lSum{\tyB}{\tyC}
+  %   }
+  % \end{proofrules}
   \rulesectionend
   \caption{Extensions for sum types}
   \Description{Additional values, terms and evaluation contexts for sums; one reduction axiom; two typing rules; one rule of the value logical relation; and one rule for primitive types.}
@@ -192,8 +199,8 @@ yields a closed, deadlock-free process.
   \rulesection*{New values, terms, types}
   \begin{align*}
     \val &::= \dots \sepr \IExp{(\tIVX = \tm)}
-    & \text{recursively defined thunk}\\
-    \tm &::= \dots \sepr \tForce & \text{thunk elimination}\\
+    & \text{(recursively defined thunk)}\\
+    \tm &::= \dots \sepr \tForce & \text{(thunk elimination)}\\
     \ty &::= \dots \sepr \tBox{\ty}
   \end{align*}
   % Since $\tForce$ is a function, no new evaluation contexts
@@ -216,9 +223,10 @@ yields a closed, deadlock-free process.
     \infer*[lab=E-Force]{}{
       \tEmpty ; \tEmpty \types \tForce : \lFunc{\tBox{\ty}}{\ty}
     } \label{rule:E-Force}
-  \end{proofrules}
-  \rulesection{Structural rules for boxed hypotheses}
-  \begin{proofrules}
+  % \end{proofrules}
+  % \rulesection{Structural rules for boxed hypotheses}
+  % \begin{proofrules}
+    \\
     \infer*[lab=E-Weak]{
       \senv ; \lenv \types \tm : \tyB
     }{
@@ -458,11 +466,15 @@ $\sty \perp \styB$ holds exactly when $\sty \approx \dual{\styB}$.
   \rulesection*{New constant, session label}
   \begin{align*}
     \cst &::= \dots \sepr \tLink
-    & \text{forwarding operator}
+    & \text{(forwarding operator)}
+    &&\fc(\lLink{\ch}{\chB}) &= \set{\ch,\chB}
     \\
     \sigma &::= \dots \sepr \lLink{\ch}{\ch}
-             &\text{forwarding session label}
+             &\text{(forwarding session label)}
+   && \sent(\lLink{\ch}{\chB}) &= \emptyset
   \end{align*}
+  % \rulesection{Subjects and escaping channels of the new label}
+
   \rulesection{New labelled transitions}
   \begin{proofrules}
     \infer*[lab=T-Act-Link]{}{
@@ -479,13 +491,11 @@ $\sty \perp \styB$ holds exactly when $\sty \approx \dual{\styB}$.
   % heading's trailing \\ was dropped, so the content now sits on the
   % heading line instead of below it.  Keep it, or fold the content into
   % the heading, or go back to \textbf here.
-  \rulesection{Subjects and escaping channels of the new label}
-  $ \fc(\lLink{\ch}{\chB}) = \set{\ch,\chB} $, \quad
-  $ \sent(\lLink{\ch}{\chB}) = \emptyset $
 
   % TODO(mathpartir): same as above, and worse -- \rulesecdiv's \hfill
   % pushes the single line of content out to the right margin.
   \rulesection{New type-indexed family of constants}
+
   $ \tLink : \lFunc{\tPair{\sty}{\dual{\sty}}}{\tyUnit} $
 
 %   New case for the term logical relation
@@ -619,10 +629,10 @@ cyclic process. Yet the ring never blocks, because
 $\asTmOp{\var{ag}}_0$ sends before it receives; reversing those two
 actions would deadlock it. The mechanization establishes deadlock freedom
 by exhibiting a closed invariant on the reachable configurations, and
-in fact $\asPrOp{\var{sched}}$ terminates \rocq{sched_terminates} and is
+in fact $\asPrOp{\var{sched}}$ terminates (\rocq{sched_terminates}) and is
 semantically typed at the empty interface,
 $\tEmpty \proves \asPrOp{\var{sched}} : \tyUnit$
-\rocq{sched_sem_ptyped}, so it composes with syntactically typed code
+(\rocq{sched_sem_ptyped}), so it composes with syntactically typed code
 by \cref{lem:comp:connect}.
 
 If we would split
@@ -631,7 +641,7 @@ parallel, then the topology becomes a tree. With two rounds of communication we
 are back at a cycle, because the second send happens after the first receive and any
 channel added to sequence the halves restores the cycle. We
 therefore also mechanize the two-round scheduler, whose agents are the
-ones above with a round in front \rocq{sched2_deadlock_free}.
+ones above with a round in front~(\rocq{sched2_deadlock_free}).
 \end{example}
 % Installing this extension, requires to update the proof of
 % \ref{rule:E-Abs}
