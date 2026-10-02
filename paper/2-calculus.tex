@@ -209,29 +209,90 @@ A process $(C,E)$ might represent the full network, or some sub-network of
 the global state. In the latter case, terms in~$E$ may use channels that do not
 appear in~$C$ to communicate with the environment. 
 The \ref{rule:P-Act-Session} rule lifts communication effects~$\sigma$
-that pertain to channels linking to the environment,
-to a transition of the process labelled with~$\sigma$.
-We denote the channels that are extruded from the internal scope due to a
-an communication effect~$\sigma$ by $\sent(\sigma)$:
-  $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
-  $\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
+happening on a channel shared with the environment
+($\fc(\sigma) \disjoint \chset$).
+When~$\sigma$ is a send action, the sent message may refer to names that
+are private, \ie names in~$C$: these names escape the local scope
+and become shared with the environment.
+The rule implements this in the spirit of the \textsc{Open} rule of the standard LTS for the \picalc~\cite{lts-pi}:
+the sent channels are computed from the label by the $\sent$ function
+$\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
+$\sent(\lSend{\ch}{\val}) = \fchans(\val)$;
+the resulting state updates the local scope to $C \setminus \sent(\sigma)$.
+% We denote the channels that are extruded from the internal scope due to a
+% an communication effect~$\sigma$ by $\sent(\sigma)$:
+%   $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
+%   $\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
 Rule \ref{rule:P-Act-Beta} lets a thread take an internal $\tau$~step
 to execute a $\beta$~reduction of the term it is running.
 Rule \ref{rule:P-Act-Fork} interprets the fork labels~$ \lFork{\ch}{\val} $
 by adding a fresh name $\ch$ to~$C$ and adding a thread
 running~$\val$ applied to~$\ch$.
 Communication labels are interpreted by the \ref{rule:P-Act-Msg} rule,
-which matches a send $\lSend{\ch}{\val}$ (over a restricted $\ch$)
+which matches a send $\lSend{\ch}{\val}$
 in one thread with a receive $\lRecv{\ch}{\val}$ of another.
 Similarly, \ref{rule:P-Act-Close} makes two close actions on the same
 restricted channel match.
-\ed{explain why we keep close only over internal channels? Maybe nobody cares}
+In the case of \ref{rule:P-Act-Close} the channel to be closed needs to be
+restricted because closing has the side-effect of removing the channel from
+the restrictions.
+\ed{we could add: ``it would be possible to modify the rule so closing on a free channel recorded the side-effect some other way, but we picked this way for simplicity, given that the LTS is not used to induce a behavioural equivalence but as a stepping stone for the logical relation definition.''}
+
+It may seem odd that while \cref{rule:P-Act-Session} removes the extruded
+channels from the private ones, there is no analog of \picalc' \textsc{Close}
+rule, which would re-introduce the sent channels as private once the
+sent is consumed by a corresponding receive.
+The reason is that, unlike standard \picalc, our \ref{rule:P-Act-Msg} rule
+makes two \emph{terms} synchronize, not two processes with their own individual scope. Therefore whatever channel $\ch$ sent with $\val$ is bound in $C$, it will stay in $C$, making $\ch$ in scope of the receiving term.
+The following lemma shows that the expected communication rule on processes can be derived from ours.
+
+\begin{lemma}[Internalizing communication \rocq{internalize_comm}]
+\label{lem:internalize}
+  Suppose that $(\chset_1, \pool_1) \trans{\lSend{\ch}{\val}} (\chset_1', \pool_1')$ and $(\chset_2, \pool_2) \trans{\lRecv{\ch}{\val}} (\chset_2', \pool_2')$ with $C_1 \disjoint C_2$.
+  It then holds that $(\chset_1 \cupdot \chset_2, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2, \pool_1' \uplus \pool_2')$.
+\end{lemma}
+% \begin{proof}
+%   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ref{rule:P-Act-Session}.
+%
+%   Rule inversion on $(C_1, E_1)$ yields
+%   \begin{align}
+%     E_1 &= E_1'' \uplus \mset{\tm} \\
+%         & \tm \trans{\lSend{\ch}{\val}} \tm' \label{eq:1}\\
+%     C_1' & = C_1 \setminus \sent(\lSend{\ch}{\val}) = C_1 \setminus \fchans(\val) \\
+%     E_1' & = E_1'' \uplus \mset{\tm'}
+%   \end{align}
+%   Rule inversion on $(C_2, E_2)$ yields
+%   \begin{align}
+%     E_2 & = E_2'' \uplus \mset{\tmB} \\
+%         & \tmB \trans{\lRecv{\ch}{\val}} \tmB' \label{eq:2}\\
+%     C_2' & = C_2 \setminus \sent(\lRecv{\ch}{\val}) = C_2 \setminus \emptyset \\
+%     E_2' & = E_2'' \uplus \mset{\tmB'}
+%   \end{align}
+%   Hence we can apply \ref{rule:P-Act-Msg} from the assumptions~(\cref{eq:1}) and~(\cref{eq:2}) to conclude
+%   \begin{align}
+%     (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm, \tmB})
+%     & \trans{\tau} (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm', \tmB'})
+%   \end{align}
+%   Note that the channel set is left \emph{unchanged} by \ref{rule:P-Act-Msg}:
+%   the channels $\fchans(\val)$ that \ref{rule:P-Act-Session} extrudes
+%   from $C_1$ remain in scope of the combined process, since the
+%   receiver is now part of it.
+% \end{proof}
+
+The same applies to the other synchronizing action, closing a channel, with the side-effect of removing the closed channel from the restricted channels.
+
+\begin{lemma}[Internalizing a close \rocq{internalize_close}]
+\label{lem:internalize-close}
+  Suppose that $(\chset_1, \pool_1) \trans{\lClos{\ch}} (\chset_1, \pool_1')$ and $(\chset_2, \pool_2) \trans{\lClos{\ch}} (\chset_2, \pool_2')$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
+  It then holds that $(\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2, \pool_1' \uplus \pool_2')$.
+\end{lemma}
+
+
 
 The move to an ``open-world'' LTS semantics is a technical device to define
-the logical relation:
-what needs to be trusted is only the reduction semantics.
+the logical relation, and should not be thought as a way to induce a behavioral equivalences.
 The following result allows us to transfer results on the LTS
-to properties of reductions.
+to properties of reductions so that what needs to be trusted for the claims on the behavioral guarantees of the logical relation is only the reduction semantics and not the LTS.
 
 \begin{theorem}[Harmony \rocq{harmony}]
   \label{thm:harmony}
@@ -425,55 +486,6 @@ will consider untyped processes and accept only well-behaved ones
     \tag{$p_4$}
   \end{align}
 \end{example}
-
-We explain the significance of the \ref{rule:P-Act-Session} rule with the following lemma.
-It considers the case that two disjoint processes communicate over an external channel $c$.
-We can internalize this communication by putting the processes together and close them over $c$.
-\begin{lemma}[Internalizing communication \rocq{internalize_comm}]
-\label{lem:internalize}
-  Suppose that $(\chset_1, \pool_1) \trans{\lSend{\ch}{\val}} (\chset_1', \pool_1')$ and $(\chset_2, \pool_2) \trans{\lRecv{\ch}{\val}} (\chset_2', \pool_2')$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
-  It then holds that $(\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1' \uplus \pool_2')$.
-\end{lemma}
-% \begin{proof}
-%   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ref{rule:P-Act-Session}.
-%
-%   Rule inversion on $(C_1, E_1)$ yields
-%   \begin{align}
-%     E_1 &= E_1'' \uplus \mset{\tm} \\
-%         & \tm \trans{\lSend{\ch}{\val}} \tm' \label{eq:1}\\
-%     C_1' & = C_1 \setminus \sent(\lSend{\ch}{\val}) = C_1 \setminus \fchans(\val) \\
-%     E_1' & = E_1'' \uplus \mset{\tm'}
-%   \end{align}
-%   Rule inversion on $(C_2, E_2)$ yields
-%   \begin{align}
-%     E_2 & = E_2'' \uplus \mset{\tmB} \\
-%         & \tmB \trans{\lRecv{\ch}{\val}} \tmB' \label{eq:2}\\
-%     C_2' & = C_2 \setminus \sent(\lRecv{\ch}{\val}) = C_2 \setminus \emptyset \\
-%     E_2' & = E_2'' \uplus \mset{\tmB'}
-%   \end{align}
-%   Hence we can apply \ref{rule:P-Act-Msg} from the assumptions~(\cref{eq:1}) and~(\cref{eq:2}) to conclude
-%   \begin{align}
-%     (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm, \tmB})
-%     & \trans{\tau} (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm', \tmB'})
-%   \end{align}
-%   Note that the channel set is left \emph{unchanged} by \ref{rule:P-Act-Msg}:
-%   the channels $\fchans(\val)$ that \ref{rule:P-Act-Session} extrudes
-%   from $C_1$ remain in scope of the combined process, since the
-%   receiver is now part of it.
-% \end{proof}
-
-The same construction applies to the other synchronizing action.
-Two processes that both offer to close the external channel $c$ can be
-put together and closed over $c$, and their offers become an internal
-step.
-Closing consumes the channel, so \ref{rule:P-Act-Close} removes
-$\ch$ from the set of internal channels and the combined process ends with the channel set
-$C_1 \cupdot C_2$.
-\begin{lemma}[Internalizing a close \rocq{internalize_close}]
-\label{lem:internalize-close}
-  Suppose that $(\chset_1, \pool_1) \trans{\lClos{\ch}} (\chset_1, \pool_1')$ and $(\chset_2, \pool_2) \trans{\lClos{\ch}} (\chset_2, \pool_2')$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
-  It then holds that $(\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2, \pool_1' \uplus \pool_2')$.
-\end{lemma}
 
 \paragraph{Properties of processes}
 We now formalize the notion of \emph{deadlock freedom}.
