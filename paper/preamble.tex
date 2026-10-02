@@ -177,14 +177,17 @@
   \ifdim\lr@arw@min<\z@ \lr@arw@min\z@ \fi}
 \newcommand\lr@arw@lbl[1]{%
   \settowidth\lr@arw@tmp{$\scriptstyle#1$}%
-  \ifdim\lr@arw@tmp<\lr@arw@min \lr@arw@tmp\lr@arw@min \fi
+  \ifdim\lr@arw@tmp<\lr@arw@min \lr@arw@tmp\lr@arw@min \fi%
   \mathmakebox[\lr@arw@tmp]{#1}}
 \NewDocumentCommand\trans{mo}{%
-  \mathrel{\xrightarrow{\lr@arw@lbl{#1}}\IfValueT{#2}{\vphantom{\longrightarrow}^{#2}}}}
+\ifblank{#1}{\xrightarrow{}}{
+  \xrightarrow{\lr@arw@lbl{#1}}
+}%
+  \IfValueT{#2}{^{#2}}}
 % \redu carries no label, but still goes through \xrightarrow so that it
 % is the same arrow, and the same length, as \trans with a short one.
 \NewDocumentCommand\redu{o}{%
-  \mathrel{\xrightarrow{\lr@arw@lbl{}}\IfValueT{#1}{\vphantom{\longrightarrow}^{#1}}}}
+  \longrightarrow\IfValueT{#1}{^{#1}}}
 \makeatother
 % Step of the label-free reduction semantics (appendix on harmony).
 \newcommand{\sred}{\mathrel{\rightsquigarrow}}

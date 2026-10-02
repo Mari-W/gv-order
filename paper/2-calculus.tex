@@ -181,7 +181,7 @@ The rule~\ref{rule:T-Act-Ctx} uses standard call-by-value evaluation contexts.
 
 We define GV-style \emph{term reduction} $\tm \redu \tm'$ as
 the pure steps $\tm \trans{\beta} \tm'$
-and write $\trans{}[*]$ for its transitive, reflexive closure.
+and write $\redu[*]$ for its transitive, reflexive closure.
 
 
 \paragraph{Process semantics}
@@ -517,7 +517,7 @@ which, by convention, is considered the value computed by the whole program.%
 \begin{definition}[Deadlock Freedom \rocq{deadlock_free}]
   \label{def:df}
   A process $\proc$ is \emph{deadlock free},
-  if ${\forall p'.\,\proc \trans{}[*] \proc'}$ implies $p'$ is safe.
+  if ${\forall p'.\,\proc \redu[*] \proc'}$ implies $p'$ is safe.
 \end{definition}
 
 \begin{example}[The forked exchange is deadlock free \rocq{sync_deadlock_free}]
