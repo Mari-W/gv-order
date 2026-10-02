@@ -53,7 +53,7 @@ Proof.
   apply proc_step_tau_inv in Hst
     as [(F & e & e' & Heq & He & ->)
        |[(F & e & c & v & e' & Heq & He & Hc1 & Hce & Hcf & ->)
-       |[(F & c & v & e & e' & f & f' & Heq & He & Hf & Hc & ->)
+       |[(F & c & v & e & e' & f & f' & Heq & He & Hf & ->)
        |[(F & c & e & e' & f & f' & Heq & He & Hf & Hc & ->)
        |(F & e & c & d & e' & Heq & He & Hc & ->)]]]];
     simpl in Hg.
@@ -113,78 +113,72 @@ Proof.
     apply gmultiset_split_elem_of2 in Heq
       as [(F1 & -> & ->)|[(F2 & -> & ->)
          |[(F1 & F2 & -> & -> & ->)|(F1 & F2 & -> & -> & ->)]]].
-    + (* both threads in E1 *)
-      destruct (decide (c ∈ C1)) as [HcC1|HcC1].
-      * assert (proc_step (C1, F1 ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
-                  (C1, F1 ⊎ {[+ e' +]} ⊎ {[+ f' +]})) as Hst1
-          by (by eapply PStepMsg).
-        pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1. simpl in HC1.
-        specialize (HC1 ltac:(set_solver)).
-        assert ((F1 ⊎ E2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}
-                = (F1 ⊎ {[+ e' +]} ⊎ {[+ f' +]}) ⊎ E2) as ->
-          by multiset_solver.
-        eapply IH;
-            [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver
-            |eauto using Prel_down1|eauto using Prel_down1].
-      * exfalso.
-        assert (proc_step (C1, F1 ⊎ {[+ e +]} ⊎ {[+ f +]}) (PSess (SSend c v))
-                  (C1 ∖ sentc (SSend c v), (F1 ⊎ {[+ f +]}) ⊎ {[+ e' +]}))
-          as Hst1.
-        { assert (F1 ⊎ {[+ e +]} ⊎ {[+ f +]} = (F1 ⊎ {[+ f +]}) ⊎ {[+ e +]})
-            as -> by multiset_solver.
-          eapply PStepSession; [done|set_solver]. }
-        pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst1). simpl in *.
-        set_solver.
-    + (* both threads in E2 *)
-      destruct (decide (c ∈ C2)) as [HcC2|HcC2].
-      * assert (proc_step (C2, F2 ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
-                  (C2, F2 ⊎ {[+ e' +]} ⊎ {[+ f' +]})) as Hst2
-          by (by eapply PStepMsg).
-        pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2. simpl in HC2.
-        specialize (HC2 ltac:(set_solver)).
-        assert ((E1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}
-                = E1 ⊎ (F2 ⊎ {[+ e' +]} ⊎ {[+ f' +]})) as ->
-          by multiset_solver.
-        eapply IH;
-            [done|by split|set_solver|set_solver|set_solver|set_solver
-            |set_solver
-            |eauto using Prel_down1|eauto using Prel_down1].
-      * exfalso.
-        assert (proc_step (C2, F2 ⊎ {[+ e +]} ⊎ {[+ f +]}) (PSess (SSend c v))
-                  (C2 ∖ sentc (SSend c v), (F2 ⊎ {[+ f +]}) ⊎ {[+ e' +]}))
-          as Hst2.
-        { assert (F2 ⊎ {[+ e +]} ⊎ {[+ f +]} = (F2 ⊎ {[+ f +]}) ⊎ {[+ e +]})
-            as -> by multiset_solver.
-          eapply PStepSession; [done|set_solver]. }
-        pose proof (Prel_sess_subj _ _ _ _ _ _ HP2 Hst2). simpl in *.
-        set_solver.
-    + (* sender in E1, receiver in E2 *)
-      exfalso. destruct (decide (c ∈ C1)) as [HcC1|HcC1].
-      * assert (proc_step (C2, F2 ⊎ {[+ f +]}) (PSess (SRecv c v))
-                  (C2 ∖ sentc (SRecv c v), F2 ⊎ {[+ f' +]})) as Hst2
-          by (eapply PStepSession; [done|set_solver]).
-        pose proof (Prel_sess_subj _ _ _ _ _ _ HP2 Hst2). simpl in *.
-        set_solver.
-      * assert (c ∈ C2) as HcC2 by set_solver.
+    + (* both threads in E1: the step is already one of that component *)
+      assert (proc_step (C1, F1 ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
+                (C1, F1 ⊎ {[+ e' +]} ⊎ {[+ f' +]})) as Hst1
+        by (by eapply PStepMsg).
+      pose proof (Prel_S_step _ _ _ _ _ _ HP1 Hst1) as HC1. simpl in HC1.
+      specialize (HC1 ltac:(set_solver)).
+      assert ((F1 ⊎ E2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}
+              = (F1 ⊎ {[+ e' +]} ⊎ {[+ f' +]}) ⊎ E2) as ->
+        by multiset_solver.
+      eapply IH;
+          [done|by split|set_solver|set_solver|set_solver|set_solver
+          |set_solver
+          |eauto using Prel_down1|eauto using Prel_down1].
+    + (* both threads in E2: the step is already one of that component *)
+      assert (proc_step (C2, F2 ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
+                (C2, F2 ⊎ {[+ e' +]} ⊎ {[+ f' +]})) as Hst2
+        by (by eapply PStepMsg).
+      pose proof (Prel_S_step _ _ _ _ _ _ HP2 Hst2) as HC2. simpl in HC2.
+      specialize (HC2 ltac:(set_solver)).
+      assert ((E1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}
+              = E1 ⊎ (F2 ⊎ {[+ e' +]} ⊎ {[+ f' +]})) as ->
+        by multiset_solver.
+      eapply IH;
+          [done|by split|set_solver|set_solver|set_solver|set_solver
+          |set_solver
+          |eauto using Prel_down1|eauto using Prel_down1].
+    + (* sender in E1, receiver in E2: the subject would be offered
+         by both components, hence owned by both environments *)
+      exfalso.
+      assert (c ∉ C1 → c ∈ dom Σ1) as Hs.
+      { intros HcC.
         assert (proc_step (C1, F1 ⊎ {[+ e +]}) (PSess (SSend c v))
-                  (C1 ∖ sentc (SSend c v), F1 ⊎ {[+ e' +]})) as Hst1
+                  (C1 ∖ sentc (SSend c v), F1 ⊎ {[+ e' +]})) as Hst
           by (eapply PStepSession; [done|set_solver]).
-        pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst1). simpl in *.
-        set_solver.
-    + (* sender in E2, receiver in E1 *)
-      exfalso. destruct (decide (c ∈ C1)) as [HcC1|HcC1].
-      * assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess (SSend c v))
-                  (C2 ∖ sentc (SSend c v), F2 ⊎ {[+ e' +]})) as Hst2
+        pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst). simpl in *.
+        set_solver. }
+      assert (c ∉ C2 → c ∈ dom Σ2) as Hr.
+      { intros HcC.
+        assert (proc_step (C2, F2 ⊎ {[+ f +]}) (PSess (SRecv c v))
+                  (C2 ∖ sentc (SRecv c v), F2 ⊎ {[+ f' +]})) as Hst
           by (eapply PStepSession; [done|set_solver]).
-        pose proof (Prel_sess_subj _ _ _ _ _ _ HP2 Hst2). simpl in *.
-        set_solver.
-      * assert (c ∈ C2) as HcC2 by set_solver.
+        pose proof (Prel_sess_subj _ _ _ _ _ _ HP2 Hst). simpl in *.
+        set_solver. }
+      apply map_disjoint_dom in Hdd.
+      clear -Hs Hr Hdd Hcc Hd1 Hd2.
+      destruct (decide (c ∈ C1)); destruct (decide (c ∈ C2)); set_solver.
+    + (* sender in E2, receiver in E1: the subject would be offered
+         by both components, hence owned by both environments *)
+      exfalso.
+      assert (c ∉ C2 → c ∈ dom Σ2) as Hs.
+      { intros HcC.
+        assert (proc_step (C2, F2 ⊎ {[+ e +]}) (PSess (SSend c v))
+                  (C2 ∖ sentc (SSend c v), F2 ⊎ {[+ e' +]})) as Hst
+          by (eapply PStepSession; [done|set_solver]).
+        pose proof (Prel_sess_subj _ _ _ _ _ _ HP2 Hst). simpl in *.
+        set_solver. }
+      assert (c ∉ C1 → c ∈ dom Σ1) as Hr.
+      { intros HcC.
         assert (proc_step (C1, F1 ⊎ {[+ f +]}) (PSess (SRecv c v))
-                  (C1 ∖ sentc (SRecv c v), F1 ⊎ {[+ f' +]})) as Hst1
+                  (C1 ∖ sentc (SRecv c v), F1 ⊎ {[+ f' +]})) as Hst
           by (eapply PStepSession; [done|set_solver]).
-        pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst1). simpl in *.
-        set_solver.
+        pose proof (Prel_sess_subj _ _ _ _ _ _ HP1 Hst). simpl in *.
+        set_solver. }
+      apply map_disjoint_dom in Hdd.
+      clear -Hs Hr Hdd Hcc Hd1 Hd2.
+      destruct (decide (c ∈ C1)); destruct (decide (c ∈ C2)); set_solver.
   - (* close *)
     apply gmultiset_split_elem_of2 in Heq
       as [(F1 & -> & ->)|[(F2 & -> & ->)

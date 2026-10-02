@@ -13,9 +13,10 @@
     - a [CLOSE] rule is added (GV♯'s P-Act-Close is a τ-step; the
       notes' COM/FORK/LIFTV inventory would make the backward
       direction fail);
-    - COM and CLOSE carry the [c ∈ C] premise that P-Act-Msg /
-      P-Act-Close require (the notes leave it to the ambient
-      invariant fc(E) ⊆ C, which raw GV♯ processes do not carry);
+    - CLOSE carries the [c ∈ C] premise that P-Act-Close requires
+      (the notes leave it to the ambient invariant fc(E) ⊆ C, which
+      raw GV♯ processes do not carry); COM, like P-Act-Msg, does not
+      ask for the channel to be restricted;
     - FORK carries the full freshness of P-Act-Fork (new channel not
       in C, nor in the rest of the soup, nor in the forking thread —
       channels are free names here, there is no α-conversion);
@@ -91,7 +92,6 @@ Inductive red : proc → proc → Prop :=
            E ⊎ {[+ fill K (Chan c) +]} ⊎ {[+ App v (Chan c) +]})
   | RedCom C E K K' v c :                               (* COM *)
       ectx_val K → ectx_val K' → is_val v →
-      c ∈ C →
       red (C, E ⊎ {[+ fill K (App ESend (Pair v (Chan c))) +]}
              ⊎ {[+ fill K' (App ERecv (Chan c)) +]})
           (C, E ⊎ {[+ fill K (Chan c) +]}
@@ -198,12 +198,12 @@ Theorem harmony_forward p p' : red p p' → preduction p p'.
 Proof.
   destruct 1 as
     [C E e e' Hv|C E K v c HK Hval Hc1 Hc2 Hc3
-    |C E K K' v c HK HK' Hval Hc|C E K K' c HK HK' Hc
+    |C E K K' v c HK HK' Hval|C E K K' c HK HK' Hc
     |C E K c d HK Hc|C E K c d HK Hd].
   - apply PStepBeta. by apply vred_reduction.
   - apply PStepFork; [|done|done|done].
     apply fill_tstep; [done|]. apply TStepHead. by apply HeadFork.
-  - eapply PStepMsg; [..|done].
+  - eapply PStepMsg.
     + apply fill_tstep; [done|]. apply TStepHead. by apply HeadSend.
     + apply fill_tstep; [done|]. apply TStepHead. by apply HeadRecv.
   - eapply PStepClose; [..|done].

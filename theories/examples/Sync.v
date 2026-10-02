@@ -59,8 +59,7 @@ Proof.
     - unfold u2. apply TStepAppR; [done|].
       apply TStepHead. by apply HeadSend.
     - unfold t1. apply TStepLetP.
-      apply TStepHead. by apply HeadRecv.
-    - set_solver. }
+      apply TStepHead. by apply HeadRecv. }
   (* β: pair elimination *)
   eapply rtc_l.
   { replace ((∅ : gmultiset expr) ⊎ {[+ u3 +]} ⊎ {[+ t2 +]})

@@ -353,7 +353,7 @@ Proof.
       with (({[+ ld2 +]} ⊎ {[+ ld0 +]} ⊎ {[+ ld1 +]}) : gmultiset expr)
       by multiset_solver.
     eapply PStepMsg;
-      [exact ld0_step|exact (ld1_step false)|set_solver].
+      [exact ld0_step|exact (ld1_step false)].
   - intros π p' Hst.
     inversion Hst; subst.
     + (* session: subjects cs/d are restricted *)
@@ -456,7 +456,7 @@ Proof.
             : gmultiset expr)
       by multiset_solver.
     eapply PStepMsg;
-      [exact l0s1_step|exact (ld2_step true)|set_solver].
+      [exact l0s1_step|exact (ld2_step true)].
   - assert (k = 1 ∨ k = 2) as [->| ->] by lia;
       intros π p' Hst; inversion Hst; subst.
     + (* k = 1, session *)
@@ -644,7 +644,7 @@ Proof.
             : gmultiset expr)
       by multiset_solver.
     eapply PStepMsg;
-      [exact l0s1_step|exact (ld1_step true)|set_solver].
+      [exact l0s1_step|exact (ld1_step true)].
   - assert (m = 1 ∨ m = 2) as [->| ->] by lia;
       intros π p' Hst; inversion Hst; subst.
     + (* m = 1, session *)

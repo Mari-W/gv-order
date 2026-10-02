@@ -1758,7 +1758,7 @@ Proof.
                 ⊎ {[+ sv5 w1 w2 +]} ⊎ {[+ wthread 1 w2 +]})
           by multiset_solver.
         eapply PStepMsg;
-          [apply sv5_send_step|apply wk1_recv_step|set_solver].
+          [apply sv5_send_step|apply wk1_recv_step].
     + (* k1 ∈ {2,3,5}: worker1 β *)
       eapply Hirr.
       replace ({[+ sv5 w1 w2 +]} ⊎ {[+ wthread k1 w1 +]}
@@ -2406,7 +2406,7 @@ Proof.
               ⊎ {[+ sv3 w1 w2 +]} ⊎ {[+ wthread 1 w1 +]})
         by multiset_solver.
       eapply PStepMsg;
-        [apply sv3_send_step|apply wk1_recv_step|set_solver].
+        [apply sv3_send_step|apply wk1_recv_step].
   - intros π p' Hst. inversion Hst; subst.
     + (* session: srv's send and the worker receives are all blocked *)
       lb_split; lb_wkill.

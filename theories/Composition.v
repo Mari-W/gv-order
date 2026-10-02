@@ -61,7 +61,7 @@ Lemma proc_step_tau_inv C E p' :
      p' = (C ∪ {[c]}, F ⊎ {[+ e' +]} ⊎ {[+ App v (Chan c) +]}))
   ∨ (∃ F c v e e' f f', E = F ⊎ {[+ e +]} ⊎ {[+ f +]} ∧
      tstep e (LSess (SSend c v)) e' ∧ tstep f (LSess (SRecv c v)) f' ∧
-     c ∈ C ∧ p' = (C, F ⊎ {[+ e' +]} ⊎ {[+ f' +]}))
+     p' = (C, F ⊎ {[+ e' +]} ⊎ {[+ f' +]}))
   ∨ (∃ F c e e' f f', E = F ⊎ {[+ e +]} ⊎ {[+ f +]} ∧
      tstep e (LSess (SClos c)) e' ∧ tstep f (LSess (SClos c)) f' ∧
      c ∈ C ∧ p' = (C ∖ {[c]}, F ⊎ {[+ e' +]} ⊎ {[+ f' +]}))
@@ -155,7 +155,7 @@ Proof.
   - apply proc_step_tau_inv in Hst
       as [(F & e & e' & -> & He & _)
          |[(F & e & c & v & e' & -> & He & Hc1 & Hce & Hcf & _)
-         |[(F & c & v & e & e' & f & f' & -> & He & Hf & Hc & _)
+         |[(F & c & v & e & e' & f & f' & -> & He & Hf & _)
          |[(F & c & e & e' & f & f' & -> & He & Hf & Hc & _)
          |(F & e & c & d & e' & -> & He & Hc & _)]]]].
     + assert ((F ⊎ {[+ e +]}) ⊎ E2 = (F ⊎ E2) ⊎ {[+ e +]}) as ->
@@ -169,7 +169,7 @@ Proof.
       eexists _, _. eapply PStepFork; [exact He''| | |]; set_solver.
     + assert ((F ⊎ {[+ e +]} ⊎ {[+ f +]}) ⊎ E2
               = ((F ⊎ E2) ⊎ {[+ e +]}) ⊎ {[+ f +]}) as -> by multiset_solver.
-      eexists _, _. eapply PStepMsg; [done|done|set_solver].
+      eexists _, _. eapply PStepMsg; [done|done].
     + assert ((F ⊎ {[+ e +]} ⊎ {[+ f +]}) ⊎ E2
               = ((F ⊎ E2) ⊎ {[+ e +]}) ⊎ {[+ f +]}) as -> by multiset_solver.
       eexists _, _. eapply PStepClose; [done|done|set_solver].

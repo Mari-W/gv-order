@@ -338,15 +338,16 @@ Proof.
           [apply (tstep_lam_send_inv _ (Chan "d") _ _ _ I) in Hs as [Hα _]
           |apply tstep_letu_unit_inv in Hs as [Hα _]]
       end; simplify_eq.
-    + (* msg: the send's subject e is not restricted *)
+    + (* msg: no thread receives *)
       exfalso.
       match goal with
-      | Heq : _ ⊎ {[+ ?e +]} ⊎ {[+ _ +]} = _,
-        Hs : tstep ?e (LSess (SSend _ _)) _ |- _ =>
-          apply gmultiset_pair_inv2 in Heq as [_ [[-> _]|[-> _]]];
-          [apply (tstep_lam_send_inv _ (Chan "d") _ _ _ I) in Hs as [Hα _]
+      | Heq : _ ⊎ {[+ ?e +]} ⊎ {[+ ?f +]} = _,
+        Hs : tstep ?e (LSess (SSend _ _)) _,
+        Hr : tstep ?f (LSess (SRecv _ _)) _ |- _ =>
+          apply gmultiset_pair_inv2 in Heq as [_ [[-> ->]|[-> ->]]];
+          [apply tstep_letu_unit_inv in Hr as [Hα _]
           |apply tstep_letu_unit_inv in Hs as [Hα _]]
-      end; simplify_eq; set_solver.
+      end; simplify_eq.
     + exfalso.
       match goal with
       | Heq : _ ⊎ {[+ ?e +]} ⊎ {[+ _ +]} = _,
@@ -399,15 +400,17 @@ Proof.
           [apply (tstep_lam_send_inv _ (Chan "d") _ _ _ I) in Hs as [Hα _]
           |apply tstep_letp_recv_inv in Hs as (v0 & _ & Hα & _)]
       end; simplify_eq.
-    + (* msg: the send's subject e is not restricted *)
+    + (* msg: the send is on e, the receive on d *)
       exfalso.
       match goal with
-      | Heq : _ ⊎ {[+ ?e +]} ⊎ {[+ _ +]} = _,
-        Hs : tstep ?e (LSess (SSend _ _)) _ |- _ =>
-          apply gmultiset_pair_inv2 in Heq as [_ [[-> _]|[-> _]]];
-          [apply (tstep_lam_send_inv _ (Chan "d") _ _ _ I) in Hs as [Hα _]
+      | Heq : _ ⊎ {[+ ?e +]} ⊎ {[+ ?f +]} = _,
+        Hs : tstep ?e (LSess (SSend _ _)) _,
+        Hr : tstep ?f (LSess (SRecv _ _)) _ |- _ =>
+          apply gmultiset_pair_inv2 in Heq as [_ [[-> ->]|[-> ->]]];
+          [apply (tstep_lam_send_inv _ (Chan "d") _ _ _ I) in Hs as [Hα _];
+           apply tstep_letp_recv_inv in Hr as (v0 & _ & Hα' & _)
           |apply tstep_letp_recv_inv in Hs as (v0 & _ & Hα & _)]
-      end; simplify_eq; set_solver.
+      end; simplify_eq.
     + exfalso.
       match goal with
       | Heq : _ ⊎ {[+ ?e +]} ⊎ {[+ _ +]} = _,

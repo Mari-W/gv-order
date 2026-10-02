@@ -443,9 +443,10 @@ Inductive plabel :=
 
     In P-Act-Fork the new channel c must be globally fresh: not
     restricted yet, and not free in any thread (the paper keeps this
-    implicit in the well-formedness of the "new" name). Rules
-    P-Act-Msg and P-Act-Close write the paper's C ∪ {c} source as
-    membership c ∈ C. *)
+    implicit in the well-formedness of the "new" name). Rule
+    P-Act-Close writes the paper's C ∪ {c} source as membership
+    c ∈ C. P-Act-Msg does not ask for c to be restricted: two threads
+    may synchronise on a free channel too. *)
 
 Inductive proc_step : proc → plabel → proc → Prop :=
   | PStepSession C E e σ e' :                          (* P-Act-Session *)
@@ -466,7 +467,6 @@ Inductive proc_step : proc → plabel → proc → Prop :=
   | PStepMsg C E c v e e' f f' :                       (* P-Act-Msg *)
       tstep e (LSess (SSend c v)) e' →
       tstep f (LSess (SRecv c v)) f' →
-      c ∈ C →
       proc_step (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
                 (C, E ⊎ {[+ e' +]} ⊎ {[+ f' +]})
   | PStepClose C E c e e' f f' :                       (* P-Act-Close *)
@@ -527,9 +527,10 @@ Proof. intros H. inversion H; simplify_eq. eauto 10. Qed.
 (** ** Internalizing communication (Lemma 2.3)
 
     Two disjoint processes communicating over an external channel c can
-    be put together and c closed over, turning the communication into
-    an internal τ step. Note: following P-Act-Msg (Fig. 3), the
-    combined channel set is unchanged — the channels sent along c stay
+    be put together, turning the communication into an internal τ
+    step; c need not be closed over, since P-Act-Msg does not require
+    its subject to be restricted. Note: following P-Act-Msg (Fig. 3),
+    the combined channel set is unchanged — the channels sent along c stay
     in scope of the combined process (the draft's Eq. (9) instead
     subtracts sentc(c!v); that spot is marked "XXX (not yet)" in the
     margin, and is not derivable from Fig. 3 as stated). *)
@@ -537,11 +538,11 @@ Proof. intros H. inversion H; simplify_eq. eauto 10. Qed.
 Lemma internalize_comm C1 E1 C1' E1' C2 E2 C2' E2' c v :
   proc_step (C1, E1) (PSess (SSend c v)) (C1', E1') →
   proc_step (C2, E2) (PSess (SRecv c v)) (C2', E2') →
-  C1 ## C2 → c ∉ C1 → c ∉ C2 →
-  proc_step (C1 ∪ C2 ∪ {[c]}, E1 ⊎ E2) PTau
-            (C1 ∪ C2 ∪ {[c]}, E1' ⊎ E2').
+  C1 ## C2 → c ∉ C1 →
+  proc_step (C1 ∪ C2, E1 ⊎ E2) PTau
+            (C1 ∪ C2, E1' ⊎ E2').
 Proof.
-  intros Hs Hr _ _ _.
+  intros Hs Hr _ _.
   apply proc_step_sess_inv in Hs as (F1 & e & e' & -> & Hstep1 & _ & Heq1).
   apply proc_step_sess_inv in Hr as (F2 & f & f' & -> & Hstep2 & _ & Heq2).
   simplify_eq.
@@ -549,7 +550,7 @@ Proof.
           = (F1 ⊎ F2) ⊎ {[+ e +]} ⊎ {[+ f +]}) as -> by multiset_solver.
   assert (F1 ⊎ {[+ e' +]} ⊎ (F2 ⊎ {[+ f' +]})
           = (F1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}) as -> by multiset_solver.
-  eapply PStepMsg; [done|done|set_solver].
+  by eapply PStepMsg.
 Qed.
 
 (** ** Internalizing a close

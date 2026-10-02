@@ -381,7 +381,6 @@ Proof.
     eapply PStepMsg.
     + by apply (tstep_eswap a b) in H.
     + by apply (tstep_eswap a b) in H0.
-    + by rewrite elem_of_gswap.
   - (* close *)
     rewrite !msswap_disj_union, !msswap_singleton, gswap_difference,
       gswap_singleton.

@@ -431,7 +431,7 @@ Proof.
     destruct (act_offer _ _ (LSess (SRecv c v)) Haf
                 (conj eq_refl (act_send_val _ _ _ Hae))) as [f' Hstf].
     exists PTau, (C, E0 ⊎ {[+ e' +]} ⊎ {[+ f' +]}).
-    eapply PStepMsg; [exact Hste|exact Hstf|done]. }
+    eapply PStepMsg; [exact Hste|exact Hstf]. }
   (* P-Act-Close *)
   destruct (decide (∃ e, e ∈ E ∧ ∃ c, act e = Some (AClos c) ∧ c ∈ C
                           ∧ ∃ f, f ∈ E ∖ {[+ e +]} ∧ act f = Some (AClos c)))
@@ -486,16 +486,20 @@ Proof.
       apply offers_fork in Hoff as ->;
       exists e; split; [multiset_solver|]; by exists v
     end.
-  - (* P-Act-Msg *)
-    apply Hmsg.
+  - (* P-Act-Msg: on a free channel the send is also an external
+       offer, already excluded *)
     match goal with H : tstep _ (LSess (SRecv _ _)) _ |- _ =>
       apply act_step in H as (b & Hbf & Hofff);
       apply offers_recv in Hofff as ->
     end.
     match goal with H : tstep ?e (LSess (SSend ?c ?v)) _ |- _ =>
       apply act_step in H as (a & Hae & Hoffe);
-      apply offers_send in Hoffe as ->; exists e; split; [multiset_solver|];
-      exists c, v
+      apply offers_send in Hoffe as ->;
+      destruct (decide (c ∈ C)) as [Hc|Hc];
+        [apply Hmsg; exists e; split; [multiset_solver|]; exists c, v
+        |exfalso; apply Hsess; exists e; split; [multiset_solver|];
+         exists (ASend c v), {[c]};
+         split_and!; [done|done|clear -Hc; set_solver]]
     end.
     split_and!; [done|done|].
     match goal with Hb : act ?f = Some (ARecv _) |- _ =>

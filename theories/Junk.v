@@ -766,7 +766,7 @@ Lemma ptau_inv C E p' :
        p' = (C ∪ {[c]}, F ⊎ {[+ e' +]} ⊎ {[+ App v (Chan c) +]}))
   ∨ (∃ F c v e e' f f', E = F ⊎ {[+ e +]} ⊎ {[+ f +]} ∧
        tstep e (LSess (SSend c v)) e' ∧ tstep f (LSess (SRecv c v)) f' ∧
-       c ∈ C ∧ p' = (C, F ⊎ {[+ e' +]} ⊎ {[+ f' +]}))
+       p' = (C, F ⊎ {[+ e' +]} ⊎ {[+ f' +]}))
   ∨ (∃ F c e e' f f', E = F ⊎ {[+ e +]} ⊎ {[+ f +]} ∧
        tstep e (LSess (SClos c)) e' ∧ tstep f (LSess (SClos c)) f' ∧
        c ∈ C ∧ p' = (C ∖ {[c]}, F ⊎ {[+ e' +]} ⊎ {[+ f' +]}))
@@ -832,7 +832,7 @@ Proof.
       - apply ptau_inv in Hst1 as
           [ (F & e & e' & -> & Hts & _)
           | [ (F & e & c & v & e' & -> & Hts & HcC & HcF & Hce & _)
-          | [ (F & c & v & e & e' & f & f' & -> & Hts & Htr & HcC & _)
+          | [ (F & c & v & e & e' & f & f' & -> & Hts & Htr & _)
           | [ (F & c & e & e' & f & f' & -> & Hts & Htr & HcC & _)
           | (F & e & c & d & e' & -> & Hts & HcC & _) ]]]].
         + (* β *)
@@ -856,8 +856,12 @@ Proof.
           eapply PStepFork; [exact Hts|set_solver| |].
           * pose proof (echans_echsubst_sub x b F). set_solver.
           * pose proof (fchans_chsubst x b e). set_solver.
-        + (* internal message *)
-          assert (c ≠ x) as Hcx by set_solver.
+        + (* internal message: on x the send would also be an offer *)
+          assert (c ≠ x) as Hcx.
+          { intros ->. eapply (Hnosessx (SSend x v)); [|simpl; clear; set_solver].
+            assert (F ⊎ {[+ e +]} ⊎ {[+ f +]}
+                    = (F ⊎ {[+ f +]}) ⊎ {[+ e +]}) as -> by multiset_solver.
+            eapply PStepSession; [exact Hts|]. simpl. clear -HxC. set_solver. }
           apply (tstep_chsubst x b) in Hts.
           apply (tstep_chsubst x b) in Htr.
           simpl in Hts, Htr. rewrite (csub_ne x b c) in Hts, Htr by done.
@@ -905,7 +909,7 @@ Proof.
       apply ptau_inv in Hst as
         [ (F' & e' & e'' & HeqE & Hts & ->)
         | [ (F' & e' & c & v' & e'' & HeqE & Hts & HcC & HcF & Hce & ->)
-        | [ (F' & c & v' & e' & e'' & f' & f'' & HeqE & Hts & Htr & HcC & ->)
+        | [ (F' & c & v' & e' & e'' & f' & f'' & HeqE & Hts & Htr & ->)
         | [ (F' & c & e' & e'' & f' & f'' & HeqE & Hts & Htr & HcC & ->)
         | (F' & e' & c & d & e'' & HeqE & Hts & HcC & ->) ]]]].
       * (* β *)
@@ -1005,7 +1009,6 @@ Proof.
         symmetry in HeqE1.
         apply echsubst_decomp in HeqE1 as (F2 & h & -> & -> & ->).
         simpl. intros Hguard.
-        assert (c ≠ x) as Hcx by set_solver.
         apply tstep_chsubst_det_inv in Hts as (α & h0 & Hh0 & Hα & ->);
           [|done].
         destruct α as [|[c0 w0|c0 w0|c0|cd0]|c0 v0]; simpl in Hα;
