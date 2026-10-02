@@ -83,7 +83,7 @@ the ones its interface declares.
 \ed{I reformulated the E-Step rule by relying on the decidability of $\irred$ and the fact that the value relation contains only irreducible terms}
 The term relation is defined inductively \emph{on the step index}~$n$
 with base case \ref{rule:E-Zero}.
-The main constraints are imposed by \labelcref{rule:E-Term,rule:E-Step}:
+The main constraints are imposed by \labelcref{rule:E-Stop,rule:E-Step}:
 either the term is a value, and then it has to be in the value relation for its declared type, or it can take a step, and then every transition it offers has
 to discharge the obligation implied by its label.
 % Read without that index the rules are not a valid inductive definition.
@@ -156,11 +156,11 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
       \tm \in \lrTerm{0}{\senv \types \ty}
     } \label{rule:E-Zero}
     \and
-    \infer*[lab=E-Term]{
+    \infer*[lab=E-Stop]{
       \val \in \lrVal{n+1}{\senv \types \ty}
     }{
       \val \in \lrTerm{n+1}{\senv \types \ty}
-    } \label{rule:E-Term}
+    } \label{rule:E-Stop}
     \and
     \infer*[lab=E-Step]{
       \neg\irred \tm
@@ -220,7 +220,7 @@ type different from $\tyUnit$. The obligations of a process
 transition are similar to the ones of a term transition, but with an extra twist
 for output.
 
-\Cref{rule:P-Zero,,rule:P-Term,rule:P-Step} mirror \labelcref{rule:E-Zero,,rule:E-Term,rule:E-Step}, with the step index read exactly as at the term
+\Cref{rule:P-Zero,,rule:P-Stop,rule:P-Step} mirror \labelcref{rule:E-Zero,,rule:E-Stop,rule:E-Step}, with the step index read exactly as at the term
 level, and the obligations of a process transition are again collected
 in a judgment defined by cases on the label.
 
@@ -278,7 +278,7 @@ that deadlocks.
       \proc \in \lrProc{0}{\senv \types \ty}
     } \label{rule:P-Zero}
     \and
-    \infer*[lab=P-Term]{
+    \infer*[lab=P-Stop]{
       % \irred \proc
       % \\
       % \proc = (\asPrOp{\emptyset}, \mset{\val} \uplus \pool)
@@ -289,7 +289,7 @@ that deadlocks.
     }{
       (\asPrOp{\emptyset}, \mset{\val,\tUnit,\dots,\tUnit})
         \in \lrProc{n+1}{\senv \types \ty}
-    } \label{rule:P-Term}
+    } \label{rule:P-Stop}
     \and
     \infer*[lab=P-Step]{
       \neg \irred \proc \\
