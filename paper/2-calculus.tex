@@ -621,13 +621,13 @@ albeit it does not follow the usual discipline on channels.
   For example:
   \[
     p_1 \trans{\lRecv{\ch}{\tUnit}}
-        \redu^*
+        \redu[*]
         \trans{\lSend{\ch}{\tUnit}}
-        \redu^*
+        \redu[*]
         \trans{\lSend{\ch}{\tUnit}}
-        \redu^*
+        \redu[*]
         \trans{\lClos{\ch}}
-        \redu^*
+        \redu[*]
     (\emptyset, \mset{\tUnit,\tUnit,\tUnit})
   \]
   Although two distinct interleavings can generate that behavior,

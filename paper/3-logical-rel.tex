@@ -426,7 +426,7 @@ To prove adequacy of our logical relation, we need two auxiliary lemmas.
   if $ p \in \lrProc{n+m}{\tEmpty \types \ty} $
   then, for all~$p'$,
   $
-    {p \redu^n p'} $ implies $ {p' \in \lrProc{m}{\tEmpty \types \ty}}.
+    {p \redu[n] p'} $ implies $ {p' \in \lrProc{m}{\tEmpty \types \ty}}.
   $
 \end{lemma}
 % \begin{proof}
@@ -463,7 +463,7 @@ To prove adequacy of our logical relation, we need two auxiliary lemmas.
 \end{theorem}
 
 \begin{proof}
-  Let $p \redu^m p'$.
+  Let $p \redu[m] p'$.
   From $\tEmpty \proves \proc : \ty$ we know
   $
     \forall n\in\Nat.\,
@@ -642,7 +642,7 @@ satisfy the semantic judgment.
 
 \begin{example}[Semantic typing of the cyclic topology \rocq{cycle_sem_ptyped}]
   Consider the process $\asPrId{cycle}$ of Example~\ref{ex:cyclic},
-  where we spelled out the only transition sequence $p_0 \redu^* p_4$.
+  where we spelled out the only transition sequence $p_0 \redu[*] p_4$.
   It is not hard to prove that
   $ \tEmpty \proves \asPrId{cycle} : \tyUnit $ holds:
   along $\tau$ transitions, the process relation (at $n+1$)
