@@ -440,9 +440,7 @@ on a soup of processes like ours.
       (\chset, \pool \uplus \mset{\ectx[\tApp{\tFork}{\val}]}) \sred (\chset \cupdot \set{\ch}, \pool \uplus \mset{\ectx[\ch], \tApp{\val}{\ch}})
     } \label{rule:R-Fork}
     \and
-    \infer*[lab=R-Com]{
-      \ch \in \chset
-    }{
+    \infer*[lab=R-Com]{}{
       (\chset, \pool \uplus \mset{\ectx[\tApp{\tSend}{\tPair{\val}{\ch}}], \ectx'[\tApp{\tRecv}{\ch}]}) \sred (\chset, \pool \uplus \mset{\ectx[\ch], \ectx'[\tPair{\val}{\ch}]})
     } \label{rule:R-Com}
     \and
