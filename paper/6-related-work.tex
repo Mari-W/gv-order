@@ -56,14 +56,14 @@ It would be interesting to try and embed our logical relation into
 a separation logic, allowing a more flexible mix of paradigms.
 
 While this work focused on the Curry-Howard based ways of composing processes,
-approaches based on priorities, \eg \cite{Kobayashi97,Padovani14,DardhaG18},
+approaches based on priorities, \eg \cite{Kobayashi97,Padovani14,DardhaG18,KokkeD23,APCP},
 track dependencies between actions across sessions explicitly in the types.
 Finding a semantic logical relation capturing priority-based reasoning
 would provide powerful compositional means of proving well-behavedness of
 components that cannot be syntactically typed (like our load balancer example).
-It could also provide a semantic bridge between priority-based and Curry-Howard-based systems, in the spirit of \citet{DardhaP22}.
+It could also provide a semantic bridge between priority-based and Curry-Howard-based systems, in the spirit of \cite{DardhaP22,Jaramillo025}.
 
-Multiparty Session Types also shed light on global dependencies in types.
+Multiparty Session Types~\cite{HondaYC16} also shed light on global dependencies in types.
 For programs interleaving several multiparty sessions,
 establishing deadlock freedom requires additional priority-based annotations and checks.
 If one considers programs with a single session involving multiple participants,
