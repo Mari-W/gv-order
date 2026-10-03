@@ -26,7 +26,7 @@ one based on priorities, and one based on Curry-Howard correspondences.
 
 The priority-based approach, introduced in Kobayashi's seminal paper \cite{Kobayashi97}
 and developed in a series of other works, \eg \cite{Padovani14,DardhaG18},
-essentially adds information to the cross-session dependencies in the types
+adds information to the cross-session dependencies in the types
 and requires some global, non-compositional, analysis
 to detect if the dependencies are circular.
 
@@ -55,8 +55,7 @@ a variation of the calculus previously proposed in \citet{DBLP:journals/jfp/GayV
 linear types and session-typed primitives
 (but that originally admitted deadlocks).
 Subsequently, \citet{conf/esop/LindleyM15} completed the picture by
-providing an elementary proof of deadlock freedom for CP, and translations from and to GV.
-\mw{i think the deadlock freedom proof is for GV, not CP, the translation in both directions is correctly stated.}
+providing an elementary proof of deadlock freedom for GV, and translations from and to CP.
 
 While these type systems satisfy the goal of \emph{compositionality},
 % (and can be automated)
@@ -146,7 +145,7 @@ and propose a new logical relation for it which is:
         on the behavior of untyped processes;
         and
   \item \textbf{Liberal:}
-        it does not constrain the communication topology of components,
+        it does not constrain the internal communication topology of components,
         as long as they are well-behaved on their external interface.
 \end{enumerate}
 
