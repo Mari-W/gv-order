@@ -177,6 +177,8 @@ $\lTerm{\ch}$ for terminating the connection on $\ch$.
 A fork generates a label~$\lFork{\ch}{\val}$,
 recording the new channel~$\ch$ and
 the code to run in the forked thread~$\val$.
+A $\lFork{\ch}{\val}$ label binds $\ch$;
+as is standard, we assume bound names of labels are chosen fresh for whatever is in scope: when a term or process is considered at an interface $\senv$, this means $\ch\notin\dom(\senv)$.
 The rule~\ref{rule:T-Act-Ctx} uses standard call-by-value evaluation contexts.
 
 We define GV-style \emph{term reduction} $\tm \redu \tm'$ as
@@ -208,26 +210,11 @@ $(\chset,\pool) \trans{\pi} (\chset,\pool)$ between processes.
 A process $(C,E)$ might represent the full network, or some sub-network of
 the global state. In the latter case, terms in~$E$ may use channels that do not
 appear in~$C$ to communicate with the environment. 
-The \ref{rule:P-Act-Session} rule lifts communication effects~$\sigma$
-happening on a channel shared with the environment
-($\fc(\sigma) \disjoint \chset$).
-When~$\sigma$ is a send action, the sent message may refer to names that
-are private, \ie names in~$C$: these names escape the local scope
-and become shared with the environment.
-The rule implements this in the spirit of the \textsc{Open} rule of the standard LTS for the \picalc~\cite{lts-pi}:
-the sent channels are computed from the label by the $\sent$ function
-$\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
-$\sent(\lSend{\ch}{\val}) = \fchans(\val)$;
-the resulting state updates the local scope to $C \setminus \sent(\sigma)$.
-% We denote the channels that are extruded from the internal scope due to a
-% an communication effect~$\sigma$ by $\sent(\sigma)$:
-%   $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
-%   $\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
-Rule \ref{rule:P-Act-Beta} lets a thread take an internal $\tau$~step
-to execute a $\beta$~reduction of the term it is running.
 Rule \ref{rule:P-Act-Fork} interprets the fork labels~$ \lFork{\ch}{\val} $
 by adding a fresh name $\ch$ to~$C$ and adding a thread
 running~$\val$ applied to~$\ch$.
+Rule \ref{rule:P-Act-Beta} lets a thread take an internal $\tau$~step
+to execute a $\beta$~reduction of the term it is running.
 Communication labels are interpreted by the \ref{rule:P-Act-Msg} rule,
 which matches a send $\lSend{\ch}{\val}$
 in one thread with a receive $\lRecv{\ch}{\val}$ of another.
@@ -237,6 +224,42 @@ In the case of \ref{rule:P-Act-Close} the channel to be closed needs to be
 restricted because closing has the side-effect of removing the channel from
 the restrictions.
 \ed{we could add: ``it would be possible to modify the rule so closing on a free channel recorded the side-effect some other way, but we picked this way for simplicity, given that the LTS is not used to induce a behavioural equivalence but as a stepping stone for the logical relation definition.''}
+
+The \ref{rule:P-Act-Session} rule lifts communication effects~$\sigma$
+happening on a channel shared with the environment
+($\fc(\sigma) \disjoint \chset$).
+When~$\sigma$ is a send action, the sent message may refer to names that
+are private, \ie names in~$C$: these names escape the local scope
+and become shared with the environment.
+The rule implements this in the spirit of the \textsc{Open} rule of the standard LTS for the \picalc~\cite{lts-pi}:
+the sent channels are removed from the local scope~$C$,
+so that the continuation process sees them as free channel names.
+The sent channels are computed from the label by the $\sent$ function,
+defined as $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$, and
+$\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
+% We denote the channels that are extruded from the internal scope due to a
+% an communication effect~$\sigma$ by $\sent(\sigma)$:
+%   $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
+%   $\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
+
+\begin{remark}
+\label{rm:sentc}
+The choice of computing the sent channels \emph{syntactically} is not a
+neutral choice. While in the pure \picalc, every message \emph{is} a channel name, in \OurLang\ a message is an arbitrary value.
+For example, sending a value $\val = (\tAbs{\tLVA}{\asTm{\Omega}\ \ch})$,
+where $\asTm{\Omega}$ is a diverging term,
+does not actually share $\ch$: the receiver will never be able to perform
+any action on it.
+Nevertheless, the LTS would see $\ch \in \sent(\val)$ and thus remove it
+from the local scope.
+To precisely capture these pathological cases one would need
+to semantically determine the sent channels.
+This sound approximation of the send transitions is a pragmatic choice
+which simplifies the LTS definition, at the price of needing some mild
+syntactic conditions in the logical relation
+(see \cref{rm:vabs}).
+\end{remark}
+
 
 It may seem odd that while \cref{rule:P-Act-Session} removes the extruded
 channels from the private ones, there is no analog of \picalc' \textsc{Close}
@@ -329,13 +352,6 @@ We write $\trans{}[*]$ for the transitive, reflexive closure of process reductio
   % Process labels $\pi ::= \tau \sepr \sigma$
   %
   \begin{proofrules}
-    \infer*[lab=P-Act-Session]{
-      \tm \trans{\sigma} \tm' \\
-      \fc(\sigma) \disjoint \chset
-    }{
-      (\chset, \pool \uplus \mset{\tm}) \trans{\sigma} (\chset \setminus \sent(\sigma), \pool \uplus \mset{\tm'})
-    } \label{rule:P-Act-Session}
-    \and
     \infer*[lab=P-Act-Fork]{
       \ch~\text{fresh}
       \\
@@ -363,6 +379,13 @@ We write $\trans{}[*]$ for the transitive, reflexive closure of process reductio
     }{
       (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tmB'})
     } \label{rule:P-Act-Close}
+    \and
+    \infer*[lab=P-Act-Session]{
+      \tm \trans{\sigma} \tm' \\
+      \fc(\sigma) \disjoint \chset
+    }{
+      (\chset, \pool \uplus \mset{\tm}) \trans{\sigma} (\chset \setminus \sent(\sigma), \pool \uplus \mset{\tm'})
+    } \label{rule:P-Act-Session}
   \end{proofrules}
   \rulesectionend
   \caption{LTS semantics of \OurLang\ processes}

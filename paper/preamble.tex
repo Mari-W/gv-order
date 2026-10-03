@@ -4,6 +4,11 @@
 % \newtheorem{theorem}{Theorem}
 % \newtheorem{lemma}{Lemma}
 
+\AtEndPreamble{%
+\theoremstyle{acmdefinition}
+\newtheorem{remark}[theorem]{Remark}}
+
+
 \makeatletter
 \newcommand*\FreezeMathAlpha[1]{%
   \@tempcnta=#1\relax

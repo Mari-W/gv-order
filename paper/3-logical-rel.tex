@@ -38,85 +38,17 @@ ones that are proven semantically, in the same derivation.
 
 The logical relation is defined on pairs
 $\senv \types \ty$, denoting reliance on session environment
-$\senv$ to provide a value of type $\ty$.
-The relation is step-indexed and consists of three parts:
+$\senv$ to produce a value of type~$\ty$.
+Three relations express the typing constraints:
 $\lrVal{n}{\senv \types \ty}$ for values,
 $\lrTerm{n}{\senv \types \ty}$ for terms, and
 $\lrProc{n}{\senv \types \ty}$ for processes.
-For technical reasons, the step index $n$ counts single reduction steps.
+The index~$n \in \Nat$ is a step index~\cite{Ahmed06} used to stratify
+the definitions, and represents a bound on the number of transitions
+the relation will examine.
+The semantics of a typing judgment is derived by the logical relations
+by quantifying over all~$n$.
 
-The value relation constrains the terms that are irreducible to
-be values that belong to the declared type.
-
-\begin{definition}[Irreducible terms/processes \rocq{irred}]
-We write $\irred \tm$ if there are no $\lambda,\tm'$ such that $\tm \trans{\lambda} \tm'$.
-We write $\irred \proc$ if there are no $\pi,\proc'$ such that $\proc \trans{\pi} \proc'$.
-\end{definition}
-
-\ed{TODO time permitting: improve explanation}
-\Cref{fig:logrel-rules-term} shows the
-mutually defined relations for values and terms in inference rule style. The
-relations are inductive on the lexicographic ordering on the step count $n$,
-first, and then on the size of $\senv \types \ty$. 
-
-Apart from \ref{rule:V-Abs}, the value rules do nothing but
-distribute the session environment over the structure of the value.
-\Cref{rule:V-Pair} splits $\senv$ between the two components, where
-$\senv_1, \senv_2$ denotes the union of two session 
-environments with disjoint domains.
-The leaves decide what is left: \ref{rule:V-Chan} accounts for
-exactly the one entry naming that channel, while \ref{rule:V-Unit}
-and \ref{rule:V-Const} demand the empty environment.
-A value is thus related at $\senv$ only if its external channels are used linearly.
-
-The first premise of
-\ref{rule:V-Abs} is the usual step-indexed treatment of a
-function: for every argument in the value relation at a strictly
-smaller index $j<n$, the body substituted with that argument must be
-in the term relation at~$j$. 
-The second premise $\fchans(\tm) = \dom(\senv)$ says that a closure owns exactly the channels its
-interface declares. We need it because the semantics decides
-syntactically which channels extrude a process by looking at the channels syntactically mentioned in the sent-away value. The syntactic and
-the typed view of a value agree only if its free channels are exactly
-the ones its interface declares.
-
-\ed{I reformulated the E-Step rule by relying on the decidability of $\irred$ and the fact that the value relation contains only irreducible terms}
-The term relation is defined inductively \emph{on the step index}~$n$
-with base case \ref{rule:E-Zero}.
-The main constraints are imposed by \labelcref{rule:E-Stop,rule:E-Step}:
-either the term is a value, and then it has to be in the value relation for its declared type, or it can take a step, and then every transition it offers has
-to discharge the obligation implied by its label.
-% Read without that index the rules are not a valid inductive definition.
-% We chose this representational style solely because it is easier to read. The obligations of a possible transition are stated
-% at index $n$ and mention the value relation at $n+1$. The definition is
-% still well founded because the value relation at an index appeals to
-% the term relation only at strictly smaller indices.
-
-The obligations of a transition are
-collected in the judgment
-$\obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}$,
-which is defined by cases on the label.
-While this judgment lives at index $n$, it is really part of the definition of
-$E$ at index $n+1$. Hence, it is safe to refer to $V$ at index $n+1$ because the
-value relation refers to
-the term relation only at strictly smaller indices $j < n+1$.
-The labels govern the channel
-management by adjusting the session environment $\senv$.
-A $\beta$ step leaves it unchanged (\ref{rule:O-Beta}). When
-creating a new thread (label $\lFork{\ch}{\val}$, \ref{rule:O-Fork}), we split $\senv$ between
-the new thread ($\senv_1$) and the original thread
-($\senv_2$), which gets extended by the newly introduced
-channel $\ch$. For input (label $\lRecv{\ch}{\val}$, \ref{rule:O-Recv}), we may obtain
-additional channels from another thread (in $\senv_2$) and
-continue in the original session environment with an updated type for
-$\ch$ extended by $\senv_2$.
-Here the environment chooses the message, so the obligation quantifies
-over every value in the value relation at any index $j \le n$, together
-with the interface $\senv_2$ that the value brings with it.
-For output (label $\lSend{\ch}{\val}$, \ref{rule:O-Send}), we split off $\senv_2$ which
-describes the channels that we pass in the value $\val$ to another thread
-and update the type of $\ch$.
-For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$.
 
 \begin{figure}[tp]
   \adjustfigure[]
@@ -144,8 +76,9 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
     } \label{rule:V-Pair}
     \and
     \infer*[lab=V-Abs]{
-      \forall j<n , \senv' , \val \in \lrVal{j}{\senv' \types \ty}\st \tSub{\tm}{\val}{\tLVA} \in \lrTerm{j}{\senv, \senv' \types \tyB} \\
       \fchans(\tm) = \dom(\senv)
+      \\\\
+      \forall j<n , \senv' , \val \in \lrVal{j}{\senv' \types \ty}\st \tSub{\tm}{\val}{\tLVA} \in \lrTerm{j}{\senv, \senv' \types \tyB}
     }{
       \tAbs{\tLVA}{\tm} \in \lrVal{n}{\senv \types \lFunc{\ty}{\tyB}}
     } \label{rule:V-Abs}
@@ -179,7 +112,7 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
     } \label{rule:O-Beta}
     \and
     \infer*[lab=O-Fork]{
-      \ch \not\in \dom(\senv_1,\senv_2) \\
+      % \ch \not\in \dom(\senv_1,\senv_2) \\
       \val \in \lrVal{n+1}{\senv_1 \types \lFunc{\sty}{\tyUnit}} \\
       \tm' \in \lrTerm{n}{\senv_2, \ch:\dual{\sty} \types \ty}
     }{
@@ -211,6 +144,86 @@ For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$
   \label{fig:logrel-rules-term}
 \end{figure}
 
+\paragraph{The Value Relation}
+The value relation constrains the terms that are irreducible to
+be values that belong to the declared type.
+
+\begin{definition}[Irreducible terms/processes \rocq{irred}]
+We write $\irred \tm$ if there are no $\lambda,\tm'$ such that $\tm \trans{\lambda} \tm'$.
+We write $\irred \proc$ if there are no $\pi,\proc'$ such that $\proc \trans{\pi} \proc'$.
+\end{definition}
+
+\Cref{fig:logrel-rules-term} shows the
+mutually defined relations for values and terms in inference rule style.
+
+With the exception of \ref{rule:V-Abs}, the value rules simply distributes the session environment over the structure of the value.
+\Cref{rule:V-Pair} splits $\senv$ between the two components, where
+$\senv_1, \senv_2$ denotes the union of two session
+environments with disjoint domains.
+The leaves decide what is left: \ref{rule:V-Chan} accounts for
+exactly the one entry naming that channel, while \ref{rule:V-Unit}
+and \ref{rule:V-Const} demand the empty environment.
+A value is thus related at $\senv$ only if its external channels are used linearly.
+
+The main premise of
+\ref{rule:V-Abs} is the usual step-indexed treatment of a
+function: for every argument in the value relation at a strictly
+smaller index $j<n$, the body substituted with that argument must be
+in the term relation at~$j$.
+The first premise $\fchans(\tm) = \dom(\senv)$ says that a closure owns exactly the channels its interface declares.
+
+\begin{remark}
+\label{rm:vabs}
+  The side condition on free names of \ref{rule:V-Abs}
+  is needed because the LTS semantics decides
+  which channels are extruded in a send action by looking at the channels syntactically mentioned in the sent-away value.
+  This is the only syntactic restriction used in the value/term logical relation,
+  and it arises from the pragmatic choice of the LTS definition (see \cref{rm:sentc}). We consider it a mild restriction, as it only rules out pathological
+  situations where a sent value mentions channels in dead code, and the same channels are used in the continuation of the send action.
+\end{remark}
+
+\paragraph{The Term Relation}
+\ed{I reformulated the E-Step rule by relying on the decidability of $\irred$ and the fact that the value relation contains only irreducible terms}
+The term relation is defined inductively \emph{on the step index}~$n$
+with base case \ref{rule:E-Zero}.
+The main constraints are imposed by \labelcref{rule:E-Stop,rule:E-Step}:
+either the term is a value, and then it has to be in the value relation for its declared type, or it can take a step, and then every transition it offers has
+to discharge the obligation implied by its label.
+% Read without that index the rules are not a valid inductive definition.
+% We chose this representational style solely because it is easier to read. The obligations of a possible transition are stated
+% at index $n$ and mention the value relation at $n+1$. The definition is
+% still well founded because the value relation at an index appeals to
+% the term relation only at strictly smaller indices.
+
+The obligations of a transition are
+collected in the judgment
+$\obl{\senv}{n}{\tm \trans{\lambda} \tm' : \ty}$,
+which is defined by cases on the label.
+While this judgment lives at index $n$, it is really part of the definition of
+$E$ at index $n+1$. Hence, it is safe to refer to $V$ at index $n+1$ because the
+value relation refers to
+the term relation only at strictly smaller indices $j < n+1$.
+The labels govern the channel
+management by adjusting the session environment $\senv$.
+A $\beta$ step leaves it unchanged (\ref{rule:O-Beta}). When
+creating a new thread (label $\lFork{\ch}{\val}$, \ref{rule:O-Fork}), we split $\senv$ between
+the new thread ($\senv_1$) and the original thread
+($\senv_2$), which gets extended by the newly introduced
+channel $\ch$. Following the conventions on name clashes, $\ch$ can be assumed to be fresh with respect to $\senv_1$ and $\senv_2$.
+For input (label $\lRecv{\ch}{\val}$, \ref{rule:O-Recv}), we may obtain
+additional channels from another thread (in $\senv_2$) and
+continue in the original session environment with an updated type for
+$\ch$ extended by $\senv_2$.
+Here the environment chooses the message, so the obligation quantifies
+over every value in the value relation at any index $j \le n$, together
+with the interface $\senv_2$ that the value brings with it.
+For output (label $\lSend{\ch}{\val}$, \ref{rule:O-Send}), we split off $\senv_2$ which
+describes the channels that we pass in the value $\val$ to another thread
+and update the type of $\ch$.
+For closing (label $\lTerm{\ch}$, \ref{rule:O-Close}), we drop the channel $\ch$.
+
+
+\paragraph{The Process Relation}
 \Cref{fig:logrel-rules-proc} shows the process level
 relations using the same inference rule style as on the term level.
 The irreducible case of the process relation requires that there is
@@ -220,55 +233,6 @@ type different from $\tyUnit$. The obligations of a process
 transition are similar to the ones of a term transition, but with an extra twist
 for output.
 
-\Cref{rule:P-Zero,,rule:P-Stop,rule:P-Step} mirror \labelcref{rule:E-Zero,,rule:E-Stop,rule:E-Step}, with the step index read exactly as at the term
-level, and the obligations of a process transition are again collected
-in a judgment defined by cases on the label.
-
-\Cref{rule:Q-Tau} is the analogue of \ref{rule:O-Beta}. A silent step
-leaves the session environment untouched and only lowers the index,
-which is what makes internal activity invisible at the interface. A
-fork is silent at the process level (\ref{rule:P-Act-Fork}), so
-\ref{rule:O-Fork} has no counterpart here. The environment split it
-performs has already happened inside the thread that forked.
-\Cref{rule:Q-Close} is \ref{rule:O-Close}, replacing expression transition by
-process transition.  It also drops $\ch$ from the environment.
-\Cref{rule:Q-Recv} is \ref{rule:O-Recv} with transition replaced.
-
-Rule \ref{rule:Q-Send} says more than its term counterpart because it has to
-deal with scope extrusion. A message
-sent to the environment may carry two kinds of channels: either they are
-external, described by $\senv_{\asTy{v}}$, or they are restricted in the
-sending process, and the latter channels extrude the internal scope, described
-by $\senv_{\asTy{e}}$. The premise
-$\dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset$ is the
-same idea as in \ref{rule:V-Abs} for expressions. Because a value in the
-relation owns exactly the channels it declares, the extruded interface
-is determined by the value sent away. The message leaves with
-the dual ends $\dual{\senv_{\asTy{e}}}$, and the residual process is split into
-one part in the process relation that continues with $\ch$ and another part produced by the
-auxiliary extrusion split 
-$(C_w, E_w) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}$ of
-\ref{rule:T-Nil} and \ref{rule:T-Cons}, one extruded channel at a
-time. It yields one piece \ed{what is a ``piece''?} in the process relation for every
-$\chB \in \dom(\senv_{\asTy{e}})$. For all $\chB$, the piece for $\chB$ owns
-that channel and lies in the process relation on its own, and does not 
-share channels with the other pieces. For $p$ to be in the process relation, it
-is sufficient that such a decomposition exists.
-
-Crucially, this rule is the only place where the relation restricts the topology of a
-process, but it does so on the fly, and only for channels that, from being private and thus used freely, become part of the external interface.
-What the imposed constraints rule out is a
-cycle running through the environment:
-\ed{The text from here is unclear. What is ``a piece''? Referring to ${\var{blocked}}$ is also weird}
-a piece that kept two extruded
-ends, whose duals the environment may serve from a single thread, can
-end up in the crossed dependency of $\asPrId{blocked}$
-(\cref{ex:deadlock}), even though each of the two connections is
-unobjectionable on its own. One end per piece rules out such a cycle.
-Without the machinery of the extrusion split the semantic rule for
-\ref{rule:P-Connect} (\cref{lem:comp:connect}) would not hold as stated, as we
-would be able to compose two pieces that each lie in the relation into a process
-that deadlocks. 
 
 \begin{figure}[tp]
   \adjustfigure[]
@@ -323,7 +287,9 @@ that deadlocks.
     } \label{rule:Q-Recv}
     \and
     \infer*[lab=Q-Send]{
-      \dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset \quad \set{\ty_0,\ty_{\asTy{w}}} = \set{\ty,\tUnit}
+      \dom(\senv_{\asTy{e}}) = \fchans(\val) \cap \chset
+      \\
+      \set{\ty_0,\ty_{\asTy{w}}} = \set{\ty,\tUnit}
       \\\\
       \val \in \lrVal{n+1}{\senv_{\asTy{v}}, \dual{\senv_{\asTy{e}}} \types \tyB} \quad (\chset_0,\pool_0) \in \lrProc{n}{\senv_0, \ch:\sty \types \ty_0} \quad (\chset_{\asPr{w}},\pool_{\asPr{w}}) \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv_{\asTy{w}} \types \ty_{\asTy{w}}}
     }{
@@ -349,6 +315,112 @@ that deadlocks.
   \Description{The process relation with extrusion splits}
   \label{fig:logrel-rules-proc}
 \end{figure}
+
+
+\Cref{rule:P-Zero,,rule:P-Stop,rule:P-Step} mirror \labelcref{rule:E-Zero,,rule:E-Stop,rule:E-Step}, with the step index read exactly as at the term
+level, and with obligations of a process transition again collected
+in an auxiliary judgment
+$ \obl{\senv}{n}{\proc \trans{\pi} \proc' : \ty} $
+defined by cases on the label.
+
+\Cref{rule:Q-Tau} is the analogue of \ref{rule:O-Beta}. A silent step
+leaves the session environment untouched and only lowers the index,
+which is what makes internal activity invisible at the interface. A
+fork is silent at the process level (\ref{rule:P-Act-Fork}), so
+\ref{rule:O-Fork} has no counterpart here. The environment split it
+performs has already happened inside the thread that forked.
+\Cref{rule:Q-Close} is \ref{rule:O-Close}, replacing expression transition by
+process transition.  It also drops $\ch$ from the environment.
+\Cref{rule:Q-Recv} is \ref{rule:O-Recv} with transition replaced.
+
+The crucial constraints of the logical relation are applied by the
+\ref{rule:Q-Send} rule.
+Let us untease the rule's meaning by first considering some special instances.
+When the sent value~$\val$ does not carry any channel (\eg $\val=\tUnit$),
+one can pick $C_w = \emptyset$, $E_w = \emptyset$,
+$\senv_{\asTy{v}} = \senv_{\asTy{e}} = \senv_{\asTy{w}} = \tEmpty$
+(trivially accepted by \ref{rule:T-Nil}), and
+the rule simply asks the continuation $(C_0, E_0)$ to be in the relation
+which sees $\ch$ as typed with the continuation type~$\sty$.
+
+More generally,
+suppose $\fchans(\val) \cap \chset = \set{\chB_1,\dots,\chB_n}$:
+these are the channels that are initially internal,
+but will be shared with the environment after the transition.
+For this sharing to be well-behaved, two things need to be established:
+\begin{enumerate*}
+  \item the channels will be used according to \emph{some} protocol
+        $ \chB_i : \sty_i $;
+  \item the channels cannot be used to form a cyclical topology with the environment.
+\end{enumerate*}
+To enforce the first constraint, the rule asks for some $\senv_{\asTy{e}}$
+which will consist of the type assignments $\chB_i : \sty_i$.
+The sent value will be typed by assuming the channels $\chB_i$ have
+the \emph{dual} types
+$\dual{\senv_{\asTy{e}}} = \chB_i : \dual{\sty_1},\dots,\chB_i : \dual{\sty_n}$,
+which are the types the environment should comply with.
+In general the value may also contain channels that are not internal, \ie not in~$C$, and the ownership of their endpoints is transferred through $\senv_{\asTy{v}}$.
+Additionally, the type of the value~$\tyB$ should be the one the type of $\ch$
+is expected to be sent.
+
+The second constraint requires us to make sure that the continuation of the
+protocol on~$\ch$ is handled by a different process than
+the process handling the extruded channels,
+and that each such channel is also handled by a separate process.
+This would simulate the structure that would be enforced by \cref{rule:P-Connect}
+if the extruded channel were introduced at this transition via spawning.
+The \ref{rule:Q-Send} rule enforces this
+by first splitting the resources into $\senv_{\asTy{0}}$
+(the ones used by the process implementing the continuation of $\ch$)
+and $\senv_{\asTy{w}}$
+(the ones used by the processes
+implementing the endpoints in $\senv_{\asTy{e}}$).
+Then, the auxiliary ``extrusion split'' relation
+$\proc \in \lrTopo{n}{\senv_{\asTy{e}} ; \senv \types \ty}$
+essentially iterates over $\senv_{\asTy{e}}$ and
+requires a parallel process for each $\chB_i$
+distributing the resources in $\senv_{\asTy{w}}$.
+Finally, by requiring each process in the split to produce either
+type~$\ty$ or $\tyUnit$, the rule makes sure exactly one process
+is responsible for producing the result value of type~$\ty$.
+
+Schematically, the rule requires the term after a send to look as follows:
+\begin{center}
+\begin{tabular}{c@{\quad}||@{\quad}c@{\quad}||@{\quad}c@{\quad}||@{\quad}c}
+  $\senv_{\asTy{0}}, \ch:\sty \types \ty_0$
+  &
+  $\senv_{\asTy{1}}, \chB_1:\sty_1 \types \ty_1$
+  &
+  {}\quad\dots\quad{}
+  &
+  $\senv_{\asTy{n}}, \chB_n:\sty_n \types \ty_n$
+  \\
+  $(C_0, E_0)$
+  &
+  $(C_1, E_1)$
+  &
+  \dots
+  &
+  $(C_n, E_n)$
+\end{tabular}
+% +
+% \begin{tabular}{c}
+% $\senv_{\asTy{v}}, \chB_1:\dual{\sty_1},\dots,\chB_n:\dual{\sty_n} \types \tyB$
+% \\
+% $ \val $
+% \end{tabular}
+\end{center}
+with the value~$\val$ transferring the dual endpoints of $\chB_1,\dots,\chB_n$
+to the environment.
+
+Crucially, this rule is the only place where the relation restricts the topology of a process, but it does so on the fly, and only for channels that, from being private and thus used freely, become part of the external interface.
+By keeping the processes separate for each extruded channel,
+the split guarantees that the environment can introduce whichever
+dependency on the dual endpoints without creating a circular dependency.
+
+The syntactic nature of the side condition on free channels,
+which uses $\fchans(\val)$,
+is again a consequence of the design of the LTS (see \cref{rm:sentc,rm:vabs}).
 
 \subsection{Fundamental Property}
 We can now define semantic counterparts to the typing judgments for terms
