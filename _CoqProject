@@ -19,14 +19,16 @@ theories/composition/Connection.v
 theories/Fundamental.v
 theories/Invariant.v
 theories/Support.v
-theories/examples/Sync.v
-theories/examples/Blocked.v
-theories/examples/Cycle.v
-theories/examples/Publish.v
-theories/examples/Leader.v
-theories/examples/Balancer.v
-theories/examples/Scheduler.v
-theories/examples/Splice.v
-theories/examples/Handoff.v
-theories/examples/Pingpong.v
-theories/examples/Factory.v
+# Examples disabled while the core is ported to the order-based system
+# (ORDERS-SPEC.md); they are ported separately.
+# theories/examples/Sync.v
+# theories/examples/Blocked.v
+# theories/examples/Cycle.v
+# theories/examples/Publish.v
+# theories/examples/Leader.v
+# theories/examples/Balancer.v
+# theories/examples/Scheduler.v
+# theories/examples/Splice.v
+# theories/examples/Handoff.v
+# theories/examples/Pingpong.v
+# theories/examples/Factory.v

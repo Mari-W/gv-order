@@ -17,10 +17,11 @@
       (the notes leave it to the ambient invariant fc(E) ⊆ C, which
       raw GV♯ processes do not carry); COM, like P-Act-Msg, does not
       ask for the channel to be restricted;
-    - FORK carries the full freshness of P-Act-Fork (new channel not
-      in C, nor in the rest of the soup, nor in the forking thread —
+    - NEW carries the full freshness of P-Act-New (new channel not
+      in C, nor in the rest of the soup, nor in the creating thread —
       channels are free names here, there is no α-conversion);
-    - the communicated value and the fork argument are values, as in
+    - SPAWN starts the thunk applied to ∗ as a thread of its own;
+    - the communicated value and the spawned thunk are values, as in
       the head rules.
 
     Main result (Harmony):
@@ -84,12 +85,15 @@ Inductive red : proc → proc → Prop :=
   | RedLift C E e e' :                                  (* LIFTV *)
       vred e e' →
       red (C, E ⊎ {[+ e +]}) (C, E ⊎ {[+ e' +]})
-  | RedFork C E K v c :                                 (* FORK *)
+  | RedNew C E K c :                                    (* NEW *)
+      ectx_val K →
+      c ∉ C → c ∉ echans E → c ∉ fchans (fill K (App ENew EUnit)) →
+      red (C, E ⊎ {[+ fill K (App ENew EUnit) +]})
+          (C ∪ {[c]}, E ⊎ {[+ fill K (Pair (Chan c) (Chan c)) +]})
+  | RedSpawn C E K v :                                  (* SPAWN *)
       ectx_val K → is_val v →
-      c ∉ C → c ∉ echans E → c ∉ fchans (fill K (App EFork v)) →
-      red (C, E ⊎ {[+ fill K (App EFork v) +]})
-          (C ∪ {[c]},
-           E ⊎ {[+ fill K (Chan c) +]} ⊎ {[+ App v (Chan c) +]})
+      red (C, E ⊎ {[+ fill K (App ESpawn v) +]})
+          (C, E ⊎ {[+ fill K EUnit +]} ⊎ {[+ App v EUnit +]})
   | RedCom C E K K' v c :                               (* COM *)
       ectx_val K → ectx_val K' → is_val v →
       red (C, E ⊎ {[+ fill K (App ESend (Pair v (Chan c))) +]}
@@ -197,12 +201,14 @@ Qed.
 Theorem harmony_forward p p' : red p p' → preduction p p'.
 Proof.
   destruct 1 as
-    [C E e e' Hv|C E K v c HK Hval Hc1 Hc2 Hc3
+    [C E e e' Hv|C E K c HK Hc1 Hc2 Hc3|C E K v HK Hval
     |C E K K' v c HK HK' Hval|C E K K' c HK HK' Hc
     |C E K c d HK Hc|C E K c d HK Hd].
   - apply PStepBeta. by apply vred_reduction.
-  - apply PStepFork; [|done|done|done].
-    apply fill_tstep; [done|]. apply TStepHead. by apply HeadFork.
+  - apply PStepNew; [|done|done|done].
+    apply fill_tstep; [done|]. apply TStepHead. apply HeadNew.
+  - apply PStepSpawn.
+    apply fill_tstep; [done|]. apply TStepHead. by apply HeadSpawn.
   - eapply PStepMsg.
     + apply fill_tstep; [done|]. apply TStepHead. by apply HeadSend.
     + apply fill_tstep; [done|]. apply TStepHead. by apply HeadRecv.
@@ -230,12 +236,18 @@ Proof.
   intros Hst; inversion Hst; subst.
   - (* P-Act-Beta *)
     apply RedLift. by apply vred_reduction.
-  - (* P-Act-Fork *)
-    match goal with H : tstep _ (LFork _ _) _ |- _ =>
+  - (* P-Act-New *)
+    match goal with H : tstep _ (LNew _) _ |- _ =>
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh)
     end.
     inversion Hh; subst.
-    by apply RedFork.
+    by apply RedNew.
+  - (* P-Act-Spawn *)
+    match goal with H : tstep _ (LSpawn _) _ |- _ =>
+      apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh)
+    end.
+    inversion Hh; subst.
+    by apply RedSpawn.
   - (* P-Act-Msg *)
     match goal with H : tstep _ (LSess (SSend _ _)) _ |- _ =>
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh)

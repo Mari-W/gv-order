@@ -2,8 +2,9 @@
 
     A labelled relation e --λ--> e' where labels λ (written α in the
     Coq code, as λ is reserved notation) record the effect:
-    β for pure reductions, session labels σ (c?v, c!v, c!) for
-    communication, and (νc)v for forks. *)
+    β for pure reductions, session labels σ (c?v, c!v, c!, c↔d) for
+    communication, (νc) for creating a channel and ⇑v for spawning a
+    thread. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export Syntax.
@@ -17,7 +18,7 @@ Inductive slabel :=
   | SClos (c : chan)               (* c!  : closing c *)
   | SLink (cd : gset chan).        (* ↔{c,d} : request to forward the pair *)
 
-(** Term labels α ::= β | σ | (νc)v
+(** Term labels α ::= β | σ | (νc) | ⇑v
 
     The forwarding label (§4.5) is a session label like any other: it
     is an offer the configuration makes on the channels it names, so
@@ -28,7 +29,8 @@ Inductive slabel :=
 Inductive tlabel :=
   | LBeta
   | LSess (σ : slabel)
-  | LFork (c : chan) (v : expr).   (* (νc)v : fork of thread v on new c *)
+  | LNew (c : chan)                (* (νc) : creation of channel c *)
+  | LSpawn (v : expr).             (* ⇑v   : spawning thread v ∗ *)
 
 (** ** Head steps
 
@@ -49,9 +51,12 @@ Inductive head_step : expr → tlabel → expr → Prop :=
   | HeadLetP u v e :                                    (* T-Act-LetPair *)
       is_val u → is_val v →
       head_step (LetP (Pair u v) e) LBeta (subst2 u v e)
-  | HeadFork v c :                                      (* T-Act-Fork *)
+  | HeadNew c :                                         (* T-Act-New *)
+      (* both ends of a channel carry the one name c *)
+      head_step (App ENew EUnit) (LNew c) (Pair (Chan c) (Chan c))
+  | HeadSpawn v :                                       (* T-Act-Spawn *)
       is_val v →
-      head_step (App EFork v) (LFork c v) (Chan c)
+      head_step (App ESpawn v) (LSpawn v) EUnit
   | HeadRecv c v :                                      (* T-Act-Recv *)
       is_val v →
       head_step (App ERecv (Chan c)) (LSess (SRecv c v)) (Pair v (Chan c))
@@ -159,6 +164,16 @@ Definition subjs (σ : slabel) : gset chan :=
     an output c!v leaks the channels occurring in the message v. *)
 Definition sentc (σ : slabel) : gset chan :=
   match σ with SSend _ v => fchans v | _ => ∅ end.
+
+(** Channels returning into the local scope due to a communication
+    effect: an input c?v brings back those channels of the message v
+    whose other end is already held by the rest E of the soup. This is
+    the receiving half of the π-calculus Close rule. A channel can
+    travel back to the holder of its other end once P-Connect composes
+    over cycles; restricting it at once keeps the process-level
+    environment a map with one end per channel. *)
+Definition backc (σ : slabel) (E : gmultiset expr) : gset chan :=
+  match σ with SRecv _ v => fchans v ∩ echans E | _ => ∅ end.
 
 (** ** Basic lemmas *)
 
@@ -318,7 +333,7 @@ Qed.
 Lemma head_step_label_val e α e' :
   head_step e α e' →
   match α with
-  | LSess (SRecv _ v) | LSess (SSend _ v) | LFork _ v => is_val v
+  | LSess (SRecv _ v) | LSess (SSend _ v) | LSpawn v => is_val v
   | _ => True
   end.
 Proof. by destruct 1. Qed.
@@ -326,7 +341,7 @@ Proof. by destruct 1. Qed.
 Lemma tstep_label_val e α e' :
   tstep e α e' →
   match α with
-  | LSess (SRecv _ v) | LSess (SSend _ v) | LFork _ v => is_val v
+  | LSess (SRecv _ v) | LSess (SSend _ v) | LSpawn v => is_val v
   | _ => True
   end.
 Proof. induction 1; [by eapply head_step_label_val|done..]. Qed.
@@ -348,7 +363,8 @@ Definition lchans (α : tlabel) : gset chan :=
   | LSess (SSend c _) => {[c]}
   | LSess (SClos c) => {[c]}
   | LSess (SLink cd) => cd
-  | LFork c v => {[c]} ∪ fchans v
+  | LNew c => {[c]}
+  | LSpawn v => fchans v
   end.
 
 Lemma head_step_fchans e α e' :
@@ -390,12 +406,12 @@ Proof.
     inversion Hh; simplify_eq; simpl; set_solver end.
 Qed.
 
-(** The value carried by a fork or send label is a subterm of the
+(** The value carried by a spawn or send label is a subterm of the
     stepping expression, so its channels are among the expression's. *)
-Lemma tstep_fork_val_fchans e c v e' :
-  tstep e (LFork c v) e' → fchans v ⊆ fchans e.
+Lemma tstep_spawn_val_fchans e v e' :
+  tstep e (LSpawn v) e' → fchans v ⊆ fchans e.
 Proof.
-  intros H. remember (LFork c v) as α eqn:Hα.
+  intros H. remember (LSpawn v) as α eqn:Hα.
   induction H; subst; simpl; try (specialize (IHtstep eq_refl); set_solver).
   match goal with Hh : head_step _ _ _ |- _ =>
     inversion Hh; simplify_eq; simpl; set_solver end.
@@ -441,7 +457,7 @@ Inductive plabel :=
 
 (** ** The labelled transition relation (Fig. 3)
 
-    In P-Act-Fork the new channel c must be globally fresh: not
+    In P-Act-New the new channel c must be globally fresh: not
     restricted yet, and not free in any thread (the paper keeps this
     implicit in the well-formedness of the "new" name). Rule
     P-Act-Close writes the paper's C ∪ {c} source as membership
@@ -455,15 +471,19 @@ Inductive proc_step : proc → plabel → proc → Prop :=
       tstep e (LSess σ) e' →
       subjs σ ## C →
       proc_step (C, E ⊎ {[+ e +]}) (PSess σ)
-                (C ∖ sentc σ, E ⊎ {[+ e' +]})
+                ((C ∖ sentc σ) ∪ backc σ E, E ⊎ {[+ e' +]})
   | PStepBeta C E e e' :                               (* P-Act-Beta *)
       tstep e LBeta e' →
       proc_step (C, E ⊎ {[+ e +]}) PTau (C, E ⊎ {[+ e' +]})
-  | PStepFork C E e c v e' :                           (* P-Act-Fork *)
-      tstep e (LFork c v) e' →
+  | PStepNew C E e c e' :                              (* P-Act-New *)
+      tstep e (LNew c) e' →
       c ∉ C → c ∉ echans E → c ∉ fchans e →
       proc_step (C, E ⊎ {[+ e +]}) PTau
-                (C ∪ {[c]}, E ⊎ {[+ e' +]} ⊎ {[+ App v (Chan c) +]})
+                (C ∪ {[c]}, E ⊎ {[+ e' +]})
+  | PStepSpawn C E e v e' :                            (* P-Act-Spawn *)
+      tstep e (LSpawn v) e' →
+      proc_step (C, E ⊎ {[+ e +]}) PTau
+                (C, E ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]})
   | PStepMsg C E c v e e' f f' :                       (* P-Act-Msg *)
       tstep e (LSess (SSend c v)) e' →
       tstep f (LSess (SRecv c v)) f' →
@@ -521,7 +541,7 @@ Lemma proc_step_sess_inv C E σ p' :
   proc_step (C, E) (PSess σ) p' →
   ∃ E0 e e',
     E = E0 ⊎ {[+ e +]} ∧ tstep e (LSess σ) e' ∧ subjs σ ## C ∧
-    p' = (C ∖ sentc σ, E0 ⊎ {[+ e' +]}).
+    p' = ((C ∖ sentc σ) ∪ backc σ E0, E0 ⊎ {[+ e' +]}).
 Proof. intros H. inversion H; simplify_eq. eauto 10. Qed.
 
 (** ** Internalizing communication (Lemma 2.3)
@@ -533,14 +553,21 @@ Proof. intros H. inversion H; simplify_eq. eauto 10. Qed.
     the combined channel set is unchanged — the channels sent along c stay
     in scope of the combined process (the draft's Eq. (9) instead
     subtracts sentc(c!v); that spot is marked "XXX (not yet)" in the
-    margin, and is not derivable from Fig. 3 as stated). *)
+    margin, and is not derivable from Fig. 3 as stated).
 
-Lemma internalize_comm C1 E1 C1' E1' C2 E2 C2' E2' c v :
+    The receiving side's own channel set grows by backc(c?v) on its
+    own ([proc_step_recv_chans]): those are channels of v whose other
+    end the receiver already holds. Both ends then occur free in the
+    two components, so in the composite they are already in the cut
+    C0 between them, and the composite's channel set C1 ∪ C2 ∪ C0 is
+    unchanged. *)
+
+Lemma internalize_comm C0 C1 E1 C1' E1' C2 E2 C2' E2' c v :
   proc_step (C1, E1) (PSess (SSend c v)) (C1', E1') →
   proc_step (C2, E2) (PSess (SRecv c v)) (C2', E2') →
   C1 ## C2 → c ∉ C1 →
-  proc_step (C1 ∪ C2, E1 ⊎ E2) PTau
-            (C1 ∪ C2, E1' ⊎ E2').
+  proc_step (C1 ∪ C2 ∪ C0, E1 ⊎ E2) PTau
+            (C1 ∪ C2 ∪ C0, E1' ⊎ E2').
 Proof.
   intros Hs Hr _ _.
   apply proc_step_sess_inv in Hs as (F1 & e & e' & -> & Hstep1 & _ & Heq1).
@@ -551,6 +578,19 @@ Proof.
   assert (F1 ⊎ {[+ e' +]} ⊎ (F2 ⊎ {[+ f' +]})
           = (F1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}) as -> by multiset_solver.
   by eapply PStepMsg.
+Qed.
+
+(** What an input does to the receiver's channel set: it only grows,
+    and only by channels of the message that the receiver's soup
+    already mentions. *)
+Lemma proc_step_recv_chans C E C' E' c v :
+  proc_step (C, E) (PSess (SRecv c v)) (C', E') →
+  C ⊆ C' ∧ C' ⊆ C ∪ (fchans v ∩ echans E).
+Proof.
+  intros H.
+  apply proc_step_sess_inv in H as (E0 & e & e' & -> & _ & _ & Heq).
+  simplify_eq. simpl. rewrite echans_disj_union, echans_singleton.
+  set_solver.
 Qed.
 
 (** ** Internalizing a close

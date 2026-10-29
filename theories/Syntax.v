@@ -9,9 +9,11 @@ From stdpp Require Import base strings gmap gmultiset countable.
 
 Definition chan := string.
 
-(** Constants for the concurrency primitives. *)
+(** Constants for the concurrency primitives. [new] creates a channel
+    and returns both of its ends; [spawn] starts a thread running a
+    thunk (they replace the paper's fork, which did both at once). *)
 Inductive konst :=
-  | KFork | KRecv | KSend | KClos | KLink
+  | KNew | KSpawn | KRecv | KSend | KClos | KLink
   | KForce.
 
 Inductive expr :=
@@ -33,7 +35,8 @@ Inductive expr :=
                                       value (suspends e); binds 1:
                                       index 0 = the thunk itself *)
 
-Notation EFork := (Konst KFork).
+Notation ENew := (Konst KNew).
+Notation ESpawn := (Konst KSpawn).
 Notation ERecv := (Konst KRecv).
 Notation ESend := (Konst KSend).
 Notation EClos := (Konst KClos).
@@ -64,12 +67,12 @@ Global Instance konst_countable : Countable konst.
 Proof.
   apply (inj_countable'
     (λ k, match k with
-          | KFork => 0 | KRecv => 1 | KSend => 2 | KClos => 3 | KLink => 4
-          | KForce => 5
+          | KNew => 0 | KSpawn => 1 | KRecv => 2 | KSend => 3 | KClos => 4
+          | KLink => 5 | KForce => 6
           end)
     (λ n, match n with
-          | 0 => KFork | 1 => KRecv | 2 => KSend | 3 => KClos | 4 => KLink
-          | _ => KForce
+          | 0 => KNew | 1 => KSpawn | 2 => KRecv | 3 => KSend | 4 => KClos
+          | 5 => KLink | _ => KForce
           end)).
   by intros [].
 Qed.
