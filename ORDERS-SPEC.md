@@ -194,7 +194,10 @@ Q-Tau     p —τ→ p′    ∃W′ ⊒ W.   W′ strict,   W′|_vis = W|_vis,
 Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                                       [changed]
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to (Σ₁, c : S@(k+1)) on their overlap B,
           dom Σ₂ ∖ B # names(W)   (fresh: no received channel inherits stale facts of an old name).
-              (C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(k+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
+              ∃π renaming only restricted names of (C′ ∪ B, E′).
+              π·(C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(k+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
+          (α-variant: restricted names are bound, so the environment's W′ cannot pin
+           stale facts on them; P-Term uses π = id)
           (B = channels whose other end the receiver already holds. The obligation is stated
            for the successor with B restricted; the LTS itself does not restrict. If the carrier c
            itself is in B (an end of c was sent over c), its continuation entry leaves Σ as well.
