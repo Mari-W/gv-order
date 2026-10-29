@@ -121,6 +121,10 @@ Qed.
 Definition lenv_unl (Δ : lenv) : Prop :=
   ∀ o, o ∈ Δ → o = None ∨ ∃ U, o = Some U ∧ unlimited U.
 
+(* PORT (in progress): the static system of ORDERS-SPEC.md §9 (frames,
+   points, G) replaces everything below. It is disabled until it is
+   ported, so that Relation.v builds on the environments above.
+
 (** ** Typing rules for terms: Σ; Δ ⊢ e : T *)
 
 Inductive typed : senv → lenv → expr → ty → Prop :=
@@ -642,3 +646,5 @@ Proof.
     end;
     rewrite ?dom_union_L; set_solver.
 Qed.
+
+*)

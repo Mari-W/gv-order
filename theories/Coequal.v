@@ -491,3 +491,16 @@ Qed.
 
 Definition tenv_dual (Θ : tenv) : Prop :=
   ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → e1.2 = e2.2 ∧ sdual e1.1 e2.1.
+
+(** Θ = Θ1, Θ2, defined when every overlap is a pair of dual ends at
+    the same count. *)
+Definition tenv_comp (Θ Θ1 Θ2 : tenv) : Prop :=
+  tenv_join Θ Θ1 Θ2 ∧
+  ∀ c e1 e2, Θ1 !! c = Some (One e1) → Θ2 !! c = Some (One e2) →
+    e1.2 = e2.2 ∧ sdual e1.1 e2.1.
+
+(** Two process-level environments agree on their overlap up to
+    duality, at equal counts. *)
+Definition senv_dual_on (Σ1 Σ2 : senv) : Prop :=
+  ∀ c e1 e2, Σ1 !! c = Some e1 → Σ2 !! c = Some e2 →
+    e1.2 = e2.2 ∧ sdual e1.1 e2.1.

@@ -870,6 +870,22 @@ Inductive ends_join : option ends → option ends → option ends → Prop :=
 Definition tenv_join (Θ Θ1 Θ2 : tenv) : Prop :=
   ∀ c, ends_join (Θ1 !! c) (Θ2 !! c) (Θ !! c).
 
+Lemma tenv_join_dom Θ Θ1 Θ2 :
+  tenv_join Θ Θ1 Θ2 → dom Θ = dom Θ1 ∪ dom Θ2.
+Proof.
+  intros H. apply set_eq. intros c. rewrite elem_of_union, !elem_of_dom.
+  pose proof (H c) as Hc.
+  destruct (Θ1 !! c), (Θ2 !! c), (Θ !! c); inversion Hc;
+    split; intros; try (by left); try (by right); try done;
+    destruct_or?; by destruct select (is_Some None).
+Qed.
+
+Lemma tenv_join_empty Θ : tenv_join Θ ∅ ∅ → Θ = ∅.
+Proof.
+  intros H. apply map_empty. intros c. specialize (H c).
+  rewrite !lookup_empty in H. by inversion H.
+Qed.
+
 (** ** Type-indexed families of type signatures for constants
     (§9)
 

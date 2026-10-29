@@ -1,9 +1,11 @@
-(** * The logical relation (Fig. 5) and semantic typing (§3)
+(** * The logical relation (Fig. 5, §7) and semantic typing (§3, §8)
 
-    Three step-indexed layers:
-      V_n⟦Σ ⊢ T⟧  values      ([Vrel])
-      E_n⟦Σ ⊢ T⟧  terms       ([Erel])
-      P_n⟦Σ ⊢ T⟧  processes   ([Prel])
+    Three step-indexed layers, indexed by a world W (Worlds.v):
+      V^W_n⟦Θ ⊢ T⟧      values      ([Vrel])
+      E^W_n⟦Θ ⊢ T ≺ F⟧  terms       ([Erel]), F a frame of points
+      P^W_n⟦Σ ⊢ T⟧      processes   ([Prel])
+    Values and terms are indexed by term-level environments Θ, which
+    may hold both ends of a channel; processes by process-level Σ.
 
     The step-index recursion is implemented by course-of-values
     recursion on n: [levels n] is (structurally in n) the family of all
@@ -11,8 +13,9 @@
     [level_at n] projects the actual level n. Later proofs only use the
     equations [level_at_eq] and [levels_at], never the encoding.
 
-    "Σ = Σ1, c : S" from the paper is rendered as
-    Σ = <[c := S]> Σ1 together with c ∉ dom Σ1.
+    "Σ = Σ1, c : S@k" from the paper is rendered as
+    Σ = <[c := (S, k)]> Σ1 together with c ∉ dom Σ1, and at the term
+    level as [tenv_ext Θ1 c (S, k) Θ].
 
     Lemma 3.5 needs the paper's argument "if p is not irreducible then
     it has some transition". That is [proc_progress], proved by
@@ -20,212 +23,173 @@
     development is closed under the global context. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Semantics Safety Types Coequal Typing.
+From LRGV Require Export Semantics Safety Types Coequal Worlds Ready Typing.
 
 (** ** The three relations, level by level *)
 
 Record level := Level {
-  lV : senv → ty → expr → Prop;
-  lE : senv → ty → expr → Prop;
-  lP : senv → ty → proc → Prop
+  lV : world → tenv → ty → expr → Prop;
+  lE : world → tenv → ty → gset point → expr → Prop;
+  lP : world → senv → ty → proc → Prop
 }.
 
 (** Value relation at level n, given the family [below] of levels < n.
     Recursive on the type; lower levels are accessed through [below]
-    (the ∀ j < n quantification in the ⊸ case). The ⊸ case also
-    requires the abstraction's channels to be covered by Σ — for all
-    other value forms this holds by construction ([Vrel_fchans]), and
-    compositionality needs it: a value sent to the environment must
-    not mention channels restricted by an independent component. *)
+    (the ∀ j < n quantification in the ⊸ and □ cases).
+
+    - V-Chan: the channel's current instant c@k is an alias of the
+      point the type names.
+    - V-Abs: the closure holds only above its lower point
+      ({λ} ≼ heads(Θ)); applied in any future world to an argument,
+      it is a good term under any frame above its upper point. The
+      argument's environment may hold the other ends of channels the
+      closure holds ([tenv_comp]).
+    - V-Const: the constant's signature is read in W.
+    - V-Box / V-All: ∀ appears only under □; a box is good at every
+      instance of its point variables, in every future world. *)
 Fixpoint Vdef (below : nat → level) (n : nat)
-    (Σ : senv) (T : ty) (v : expr) {struct T} : Prop :=
+    (W : world) (Θ : tenv) (T : ty) (v : expr) {struct T} : Prop :=
   match T with
-  | TUnit => Σ = ∅ ∧ v = EUnit
-  | TSess s =>
-      (* a channel is read up to session equivalence: the stored
-         protocol may be any ≈-equivalent type — E-Conv at the value
-         level. [seq] subsumes the [unfoldS]-equality this clause used
-         to demand ([unfoldS_seq]), and is what makes the relation
-         invariant under conversion at *every* position of a type
-         rather than only at its head ([Convert.Vrel_teq]). *)
-      ∃ c s0, v = Chan c ∧ Σ = {[c := s0]} ∧ seq s0 s
-  | TLolli T1 U =>
-      (∃ eb, v = Lam eb ∧ fchans eb = dom Σ ∧
-         ∀ j Σ' w, j < n → Σ' ##ₘ Σ →
-           lV (below j) Σ' T1 w →
-           lE (below j) (Σ ∪ Σ') U (subst1 w eb))
-      (* [konst_ty] is syntactic and not closed under ≈, so the
-         constant is typed at some T0 and converted here; without this
-         the ⊸ clause would be the one place [Vrel_teq] fails. *)
-      ∨ (∃ k T0, v = Konst k ∧ Σ = ∅ ∧ konst_ty k T0 ∧ teq T0 (TLolli T1 U))
+  | TUnit => Θ = ∅ ∧ v = EUnit
+  | TSess s x =>
+      ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
+        w_eq W (pt_chan c k) x
+  | TLolli ub lb T1 U =>
+      (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
+         ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
+           tenv_comp Θ'' Θ Θ' →
+           lV (below j) W' Θ' T1 w →
+           ub_below W' ub F →
+           lE (below j) W' Θ'' U F (subst1 w eb))
+      ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
+           teq T0 (TLolli ub lb T1 U))
   | TProd T1 U =>
-      ∃ v1 v2 Σ1 Σ2, v = Pair v1 v2 ∧ senv_split Σ Σ1 Σ2 ∧
-        Vdef below n Σ1 T1 v1 ∧ Vdef below n Σ2 U v2
+      ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp Θ Θ1 Θ2 ∧
+        Vdef below n W Θ1 T1 v1 ∧ Vdef below n W Θ2 U v2
   | TSum T1 U =>
-      (∃ v', v = Inj1 v' ∧ Vdef below n Σ T1 v')
-      ∨ (∃ v', v = Inj2 v' ∧ Vdef below n Σ U v')
-  | TBox T1 =>
-      (* a replicable thunk owns no channels — syntactically, so that
-         tightness ([Vrel_fchans]) survives — and its unrolling is a
-         good term at every lower index. This is Fig. 8's
-         V⟦□T⟧ = {!e | fix x.e ∈ E⟦T⟧} with fix x.e = e[!e/x]: [Vdef]
-         at level n is built before [Edef] at level n, but forcing
-         always takes a β step, so only lower indices are ever
-         constrained and [Vrel_box_iff] recovers the paper's
-         same-index statement *)
-      Σ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-        ∀ j, j < n → lE (below j) ∅ T1 (subst1 (EBox eb) eb)
+      (∃ v', v = Inj1 v' ∧ Vdef below n W Θ T1 v')
+      ∨ (∃ v', v = Inj2 v' ∧ Vdef below n W Θ U v')
+  | TBox m T1 =>
+      (* as in the paper's V⟦□T⟧ = {!e | fix x.e ∈ E⟦T ≺ ∅⟧}, at every
+         instance of the ∀ and in every future world; forcing always
+         takes a β step, so only lower indices are constrained *)
+      Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
+        ∀ W' j xs, wext W W' → j < n → length xs = m →
+          lE (below j) W' ∅ (ty_inst xs T1) ∅ (subst1 (EBox eb) eb)
   end.
 
-(** Term relation at level n (n = S n' in the non-trivial case),
-    given [below] and the level-n value relation [Vn]. One case per
-    label shape of the transition, with the Σ bookkeeping of Fig. 5.
-    The fork case is guarded by freshness of the new channel: fork
-    labels exist for every name c, but only fresh ones are process-
-    level enabled. *)
-Definition Edef (below : nat → level) (Vn : senv → ty → expr → Prop)
-    (n : nat) (Σ : senv) (T : ty) (e : expr) : Prop :=
+(** Term relation at level n (n = S n' in the non-trivial case), given
+    [below] and the level-n value relation [Vn]. A term that can step
+    must be ready and keep its offered entries below the frame F; one
+    case per label shape of the transition. The new case is guarded by
+    freshness of the new channel: new labels exist for every name c,
+    but only fresh ones are process-level enabled. *)
+Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
+    (n : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr)
+    : Prop :=
   match n with
   | 0 => True
   | S n' =>
-      (irred e → Vn Σ T e) ∧
+      (irred e → Vn W Θ T e) ∧                         (* E-Stop *)
+      (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) ∧  (* E-Step *)
       (∀ α e', tstep e α e' →
         match α with
-        | LBeta =>                                     (* case 1 *)
-            lE (below n') Σ T e'
-        | LFork c w =>                                 (* case 2 *)
-            c ∉ dom Σ →
-            ∃ Σ1 Σ2 s,
-              senv_split Σ Σ1 Σ2 ∧
-              Vn Σ1 (TLolli (TSess s) TUnit) w ∧
-              lE (below n') (<[c := dual s]> Σ2) T e'
-        | LSess (SRecv c w) =>                         (* case 3 *)
-            ∃ Σ1 U s,
-              senv_hd Σ c (SRcv U s) Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
-                lV (below j) Σ2 U w →
-                lE (below j) (<[c := s]> (Σ1 ∪ Σ2)) T e'
-        | LSess (SSend c w) =>                         (* case 4 *)
-            ∃ Σ1 Σ2 U s,
-              senv_hd Σ c (SSnd U s) (Σ1 ∪ Σ2) ∧
-              Σ1 ##ₘ Σ2 ∧ c ∉ dom Σ1 ∧ c ∉ dom Σ2 ∧
-              Vn Σ2 U w ∧
-              lE (below n') (<[c := s]> Σ1) T e'
-        | LSess (SClos c) =>                           (* case 5 *)
-            ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧
-              lE (below n') Σ1 T e'
-        | LSess (SLink cd) =>                                  (* case 6, Fig. 10 *)
-            (* the two connected ends vanish from the context; their
-               stored protocols are dual up to unfolding *)
-            ∃ c d Σ1 sc sd,
-              cd = {[c; d]} ∧ c ≠ d ∧
-              Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
-              c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-              sdual sd sc ∧
-              lE (below n') Σ1 T e'
+        | LBeta =>                                     (* O-Beta *)
+            lE (below n') W Θ T F e'
+        | LNew c =>                                    (* O-New *)
+            c ∉ dom Θ → NChan c ∉ w_names W →
+            ∃ s s' W', sdual s s' ∧ wext_fresh W {[NChan c]} W' ∧
+              lE (below n') W' (<[c := Both (s, 0) (s', 0)]> Θ) T F e'
+        | LSpawn w =>                                  (* O-Spawn *)
+            ∃ Θ1 Θ2 ub lb, tenv_comp Θ Θ1 Θ2 ∧
+              Vn W Θ1 (TLolli ub lb TUnit TUnit) w ∧
+              lE (below n') W Θ2 T F e'
+        | LSess (SRecv c w) =>                         (* O-Recv *)
+            ∃ Θ1 m U s k,
+              tenv_hd Θ c (SRcv m U s) k Θ1 ∧
+              ∀ W' j Θ2 Θ12, wext W W' → j ≤ n' →
+                tenv_comp Θ12 Θ1 Θ2 →
+                lV (below j) W' Θ2 (payload_at m U (pt_chan c k)) w →
+                ∃ Θ', tenv_ext Θ12 c (s, S k) Θ' ∧
+                  lE (below j) W' Θ' T F e'
+        | LSess (SSend c w) =>                         (* O-Send *)
+            ∃ Θr Θ1 Θ2 m U s k Θ',
+              tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp Θr Θ1 Θ2 ∧
+              Vn W Θ2 (payload_at m U (pt_chan c k)) w ∧
+              tenv_ext Θ1 c (s, S k) Θ' ∧
+              lE (below n') W Θ' T F e'
+        | LSess (SClos c) =>                           (* O-Close *)
+            ∃ Θ1 k, tenv_hd Θ c SEnd k Θ1 ∧ lE (below n') W Θ1 T F e'
+        | LSess (SLink cd) =>                          (* O-Link *)
+            (* c = d is a self-link: Θ holds both ends of c, and both
+               entries leave *)
+            ∃ c d Θ1 Θm sc sd kc kd,
+              cd = {[c; d]} ∧
+              tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
+              sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
+              lE (below n') W Θ1 T F e'
         end)
   end.
 
-(** Type bookkeeping for splitting a process into pieces: of the two
-    return types, at most one is not ∗ and it determines the total. *)
-Definition ty_one_of (A B C : ty) : Prop :=
-  (A = C ∧ B = TUnit) ∨ (A = TUnit ∧ B = C).
-
-(** The split an output forces on the residual, one piece per
-    extruded channel.
-
-    [extrusion_split P σ Σ T p]: the process p decomposes into a family of
-    pairwise independent processes, exactly one per channel d ∈ dom σ,
-    where the piece for d is in the (parameter) process relation P at
-    environment Σd, d : σ(d) — it owns the residual end of d. Σ
-    accumulates the Σd's (without the d's themselves) and T the return
-    types (at most one ≠ ∗). The base case is the degenerate empty
-    process: for no extruded channels, nothing needs to remain.
-
-    This is where the relation constrains topology, and the only
-    place it does: internally a component may be as cyclic as it
-    likes (see examples/Cycle.v), but on its EXTERNAL interface an
-    output must leave the residual split one piece per extruded
-    channel.  A single piece holding two extruded ends could close a
-    dependency cycle through the environment, which is exactly what
-    this rules out; and it is what the compositionality proofs need
-    when one communication transfers several restricted channels at
-    once, since each is reconnected to its own piece separately. *)
-Inductive extrusion_split (P : senv → ty → proc → Prop)
-    : gmap chan sty → senv → ty → proc → Prop :=
-  | extrusion_split_nil : extrusion_split P ∅ ∅ TUnit (∅, ∅)
-  | extrusion_split_cons σ d s Σd Σr Td Tr Tt Cd Ed Cr Er :
-      σ !! d = None →
-      d ∉ dom Σd → d ∉ dom Σr → d ∉ Cd → d ∉ Cr →
-      dom σ ## dom Σd → dom σ ## Cd →
-      Σd ##ₘ Σr → Cd ## Cr → Cd ## dom Σr → Cr ## dom Σd →
-      P (<[d := s]> Σd) Td (Cd, Ed) →
-      extrusion_split P σ Σr Tr (Cr, Er) →
-      ty_one_of Td Tr Tt →
-      extrusion_split P (<[d := s]> σ) (Σd ∪ Σr) Tt (Cd ∪ Cr, Ed ⊎ Er).
-
-Lemma extrusion_split_mono (P Q : senv → ty → proc → Prop) σ Σ T p :
-  (∀ Σ' T' p', P Σ' T' p' → Q Σ' T' p') →
-  extrusion_split P σ Σ T p → extrusion_split Q σ Σ T p.
-Proof. induction 2; econstructor; eauto. Qed.
-
 (** Process relation at level n. Differences from the term relation:
 
-    - τ obligations are guarded by [p'.1 ## dom Σ]: a fork picks a
+    - τ obligations are guarded by [p'.1 ## dom Σ]: [new] picks a
       globally fresh channel, and only names fresh for Σ as well are
       constrained (the paper's implicit "Σ and C do not share
       channels" well-formedness).
-    - the input case additionally assumes the received channels are
-      fresh for the restricted set ([dom Σ2 ## p.1]), for the same
-      reason.
-    - the output case (case 3, the ⌈updated⌉ one in Fig. 5) is the
-      iterated form: sending w on c leaks the restricted channels
-      dom σe = fchans w ∩ C; the residual splits into a continuation
-      piece for c and one independent piece per extruded channel
-      ([extrusion_split]), with the value typed against the duals of the
-      pieces' types. *)
-Definition Pdef (below : nat → level) (Vn : senv → ty → expr → Prop)
-    (n : nat) (Σ : senv) (T : ty) (p : proc) : Prop :=
+    - Q-Recv: the received channels are fresh for the restricted set
+      ([dom Σ2 ## p.1]). Channels B of the payload whose other end the
+      receiver already holds ("migration") come back: the obligation is
+      stated for the successor with B restricted, and their entries
+      leave both environments. If the carrier c is in B, its
+      continuation entry leaves as well.
+    - Q-Send: the restricted channels the message carries,
+      dom Σe = fchans w ∩ C, split into the ends that leave with the
+      message (Σe') and the ends that stay (Σe), dual at equal counts. *)
+Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
+    (n : nat) (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
   match n with
   | 0 => True
   | S n' =>
-      (pirred p →
-        ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vn Σ T v ∧
+      (pirred p →                                      (* P-Stop *)
+        ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vn W (tenv_of Σ) T v ∧
                (∀ e, e ∈ E → e = EUnit)) ∧
+      (¬ pirred p → ready_p W Σ p) ∧                   (* P-Step *)
       (∀ π p', proc_step p π p' →
         match π with
-        | PTau =>                                      (* case 1 *)
+        | PTau =>                                      (* Q-Tau *)
             p'.1 ## dom Σ →
-            lP (below n') Σ T p'
-        | PSess (SRecv c w) =>                         (* case 2 *)
-            ∃ Σ1 U s,
-              senv_hd Σ c (SRcv U s) Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
-                lV (below j) Σ2 U w →
-                lP (below j) (<[c := s]> (Σ1 ∪ Σ2)) T p'
-        | PSess (SSend c w) =>                         (* case 3, iterated *)
-            ∃ Σ0 Σv U s (σe : gmap chan sty) Σw C0 E0 Cw Ew T0 Tw,
-              senv_hd Σ c (SSnd U s) (Σ0 ∪ Σv ∪ Σw) ∧
-              Σ0 ##ₘ Σv ∧ Σ0 ##ₘ Σw ∧ Σv ##ₘ Σw ∧
-              c ∉ dom Σ0 ∧ c ∉ dom Σv ∧ c ∉ dom Σw ∧
-              dom σe = fchans w ∩ p.1 ∧
-              dom σe ## dom Σ ∧ c ∉ dom σe ∧
-              p'.1 = C0 ∪ Cw ∧ C0 ## Cw ∧
-              p'.2 = E0 ⊎ Ew ∧
-              Vn (Σv ∪ (dual <$> σe)) U w ∧
-              lP (below n') (<[c := s]> Σ0) T0 (C0, E0) ∧
-              extrusion_split (lP (below n')) σe Σw Tw (Cw, Ew) ∧
-              ty_one_of T0 Tw T
-        | PSess (SClos c) =>                           (* case 4 *)
-            ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧
-              lP (below n') Σ1 T p'
-        | PSess (SLink cd) =>                                  (* case 5, Fig. 10 *)
-            ∃ c d Σ1 sc sd,
+            lP (below n') W Σ T p'
+        | PSess (SRecv c w) =>                         (* Q-Recv *)
+            ∃ Σ1 m U s k,
+              senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
+              ∀ W' j Σ2, wext W W' → j ≤ n' → dom Σ2 ## p.1 →
+                senv_dual_on (<[c := (s, S k)]> Σ1) Σ2 →
+                lV (below j) W' (tenv_of Σ2) (payload_at m U (pt_chan c k)) w →
+                lP (below j) W'
+                  ((<[c := (s, S k)]> Σ1 ∖ Σ2) ∪ (Σ2 ∖ <[c := (s, S k)]> Σ1)) T
+                  (p'.1 ∪ (dom Σ2 ∩ dom (<[c := (s, S k)]> Σ1)), p'.2)
+        | PSess (SSend c w) =>                         (* Q-Send *)
+            ∃ Σ0 Σv m U s k (Σe Σe' : senv),
+              senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
+              Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
+              dom Σe = fchans w ∩ p.1 ∧ dom Σe' = dom Σe ∧
+              senv_dual_on Σe Σe' ∧
+              dom Σe ## dom Σ ∧
+              Vn W (tenv_of (Σv ∪ Σe')) (payload_at m U (pt_chan c k)) w ∧
+              lP (below n') W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T p'
+        | PSess (SClos c) =>                           (* Q-Close *)
+            ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧
+              lP (below n') W Σ1 T p'
+        | PSess (SLink cd) =>                          (* Q-Link *)
+            (* c = d cannot reach the interface: Σ holds one end per
+               channel *)
+            ∃ c d Σ1 sc sd kc kd,
               cd = {[c; d]} ∧ c ≠ d ∧
-              Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
+              Σ = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1) ∧
               c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-              sdual sd sc ∧
-              lP (below n') Σ1 T p'
+              sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
+              lP (below n') W Σ1 T p'
         end)
   end.
 
@@ -235,7 +199,8 @@ Definition mk_level (below : nat → level) (n : nat) : level :=
      lP := Pdef below (Vdef below n) n |}.
 
 Definition dummy_level : level :=
-  {| lV := λ _ _ _, False; lE := λ _ _ _, False; lP := λ _ _ _, False |}.
+  {| lV := λ _ _ _ _, False; lE := λ _ _ _ _ _, False;
+     lP := λ _ _ _ _, False |}.
 
 (** [levels n j] is level j, for every j < n (garbage above). *)
 Fixpoint levels (n : nat) : nat → level :=
@@ -246,9 +211,10 @@ Fixpoint levels (n : nat) : nat → level :=
 
 Definition level_at (n : nat) : level := levels (S n) n.
 
-Definition Vrel (n : nat) : senv → ty → expr → Prop := lV (level_at n).
-Definition Erel (n : nat) : senv → ty → expr → Prop := lE (level_at n).
-Definition Prel (n : nat) : senv → ty → proc → Prop := lP (level_at n).
+Definition Vrel (n : nat) : world → tenv → ty → expr → Prop := lV (level_at n).
+Definition Erel (n : nat) : world → tenv → ty → gset point → expr → Prop :=
+  lE (level_at n).
+Definition Prel (n : nat) : world → senv → ty → proc → Prop := lP (level_at n).
 
 (** ** Interface to the encoding *)
 
@@ -263,82 +229,84 @@ Proof.
   - assert (j = n') as -> by lia. by rewrite level_at_eq.
 Qed.
 
-Lemma Erel_0 Σ T e : Erel 0 Σ T e.
+Lemma Erel_0 W Θ T F e : Erel 0 W Θ T F e.
 Proof. unfold Erel. rewrite level_at_eq. simpl. exact I. Qed.
 
-Lemma Prel_0 Σ T p : Prel 0 Σ T p.
+Lemma Prel_0 W Σ T p : Prel 0 W Σ T p.
 Proof. unfold Prel. rewrite level_at_eq. simpl. exact I. Qed.
 
 (** Members of the value relation are values. *)
-Lemma Vdef_val below n Σ T v : Vdef below n Σ T v → is_val v.
+Lemma Vdef_val below n W Θ T v : Vdef below n W Θ T v → is_val v.
 Proof.
-  induction T in Σ, v |- *; simpl.
+  induction T in Θ, v |- *; simpl.
   - by intros [_ ->].
   - by intros [(eb & -> & _ & _)|(k & T0 & -> & _)].
-  - intros (v1 & v2 & Σ1 & Σ2 & -> & _ & H1 & H2).
+  - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & H1 & H2).
     simpl. apply andb_True. eauto.
   - intros [(v' & -> & H)|(v' & -> & H)]; simpl; eauto.
   - by intros (-> & eb & -> & _).
-  - by intros (c & s0 & -> & _).
+  - by intros (c & s0 & k & -> & _).
 Qed.
 
-Lemma Vrel_val n Σ T v : Vrel n Σ T v → is_val v.
+Lemma Vrel_val n W Θ T v : Vrel n W Θ T v → is_val v.
 Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_val. Qed.
 
-(** Values in the relation mention exactly the channels of Σ: the
+(** Values in the relation mention exactly the channels of Θ: the
     linear discipline has no weakening, so a value owns precisely the
     channels occurring in it. Tightness (⊇) is essential for the
     compositionality of outputs — a component's decomposition may not
     park a restricted channel inside a value that never mentions it,
     or the channel's end would leak out of the composite unaccounted. *)
-Lemma Vdef_fchans below n Σ T v :
-  Vdef below n Σ T v → fchans v = dom Σ.
+Lemma Vdef_fchans below n W Θ T v :
+  Vdef below n W Θ T v → fchans v = dom Θ.
 Proof.
-  induction T in Σ, v |- *; simpl.
+  induction T in Θ, v |- *; simpl.
   - intros [-> ->]. simpl. by rewrite dom_empty_L.
   - intros [(eb & -> & Hsup & _)|(k & T0 & -> & -> & _)]; simpl;
       [done|by rewrite dom_empty_L].
-  - intros (v1 & v2 & Σ1 & Σ2 & -> & [-> Hd] & H1 & H2). simpl.
-    rewrite (IHT1 _ _ H1), (IHT2 _ _ H2), dom_union_L. done.
+  - intros (v1 & v2 & Θ1 & Θ2 & -> & [Hj _] & H1 & H2). simpl.
+    rewrite (IHT1 _ _ H1), (IHT2 _ _ H2). by rewrite (tenv_join_dom _ _ _ Hj).
   - intros [(v' & -> & H)|(v' & -> & H)]; simpl; eauto.
   - intros (-> & eb & -> & Hfc & _). simpl.
     rewrite Hfc. by rewrite dom_empty_L.
-  - intros (c & s0 & -> & -> & _). simpl. by rewrite dom_singleton_L.
+  - intros (c & s0 & k & -> & -> & _). simpl. by rewrite dom_singleton_L.
 Qed.
 
-Lemma Vrel_fchans n Σ T v : Vrel n Σ T v → fchans v = dom Σ.
+Lemma Vrel_fchans n W Θ T v : Vrel n W Θ T v → fchans v = dom Θ.
 Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_fchans. Qed.
 
 (** Values of primitive type own no channels. *)
-Lemma Vdef_prim_empty below n Σ T v :
-  prim T → Vdef below n Σ T v → Σ = ∅.
+Lemma Vdef_prim_empty below n W Θ T v :
+  prim T → Vdef below n W Θ T v → Θ = ∅.
 Proof.
-  intros Hp. revert Σ v. induction Hp; simpl.
+  intros Hp. revert Θ v. induction Hp; simpl.
   - by intros ? ? [-> _].
-  - intros Σ v (v1 & v2 & Σ1 & Σ2 & -> & [-> Hd] & H1 & H2).
-    rewrite (IHHp1 _ _ H1), (IHHp2 _ _ H2).
-    apply (left_id ∅ (∪)).
-  - intros Σ v [(v' & -> & H)|(v' & -> & H)]; eauto.
-  - by intros Σ v (-> & _).
+  - intros Θ v (v1 & v2 & Θ1 & Θ2 & -> & [Hj _] & H1 & H2).
+    rewrite (IHHp1 _ _ H1), (IHHp2 _ _ H2) in Hj.
+    by apply tenv_join_empty.
+  - intros Θ v [(v' & -> & H)|(v' & -> & H)]; eauto.
+  - by intros Θ v (-> & _).
 Qed.
 
-Lemma Vrel_prim_empty n Σ T v : prim T → Vrel n Σ T v → Σ = ∅.
+Lemma Vrel_prim_empty n W Θ T v : prim T → Vrel n W Θ T v → Θ = ∅.
 Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_prim_empty. Qed.
 
-(** TLR-VAL: values in V are in E. *)
-Lemma Vrel_Erel n Σ T v : Vrel n Σ T v → Erel n Σ T v.
+(** TLR-VAL: values in V are in E, under any frame: a value does not
+    step, so neither readiness nor the frame is asked of it. *)
+Lemma Vrel_Erel n W Θ T F v : Vrel n W Θ T v → Erel n W Θ T F v.
 Proof.
   intros HV. assert (is_val v) by eauto using Vrel_val.
   destruct n as [|n']; [apply Erel_0|].
   unfold Erel. rewrite level_at_eq. simpl. split_and!.
   - intros _. unfold Vrel in HV. rewrite level_at_eq in HV. exact HV.
+  - intros Hirr. exfalso. by apply Hirr, val_irred.
   - intros α e' Hst. exfalso. eauto using val_no_tstep.
 Qed.
 
 (** Terminated shape of irreducible related processes. *)
-Lemma Prel_S_irred n Σ T p :
-  Prel (S n) Σ T p → pirred p →
-  ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) Σ T v ∧
+Lemma Prel_S_irred n W Σ T p :
+  Prel (S n) W Σ T p → pirred p →
+  ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) W (tenv_of Σ) T v ∧
          (∀ e, e ∈ E → e = EUnit).
 Proof.
   unfold Prel, Vrel. rewrite level_at_eq. simpl.
@@ -347,11 +315,11 @@ Qed.
 
 (** τ steps decrease the index by one (for τ successors whose
     restricted channels stay clear of Σ — always true for Σ = ∅). *)
-Lemma Prel_S_tau n Σ T p p' :
-  Prel (S n) Σ T p → preduction p p' → p'.1 ## dom Σ → Prel n Σ T p'.
+Lemma Prel_S_tau n W Σ T p p' :
+  Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ → Prel n W Σ T p'.
 Proof.
   unfold Prel at 1. rewrite level_at_eq. simpl.
-  intros (_ & Hstep) Hred Hdisj.
+  intros (_ & _ & Hstep) Hred Hdisj.
   specialize (Hstep _ _ Hred). simpl in Hstep. specialize (Hstep Hdisj).
   destruct (decide (n < n)); [lia|].
   unfold Prel. rewrite level_at_eq. exact Hstep.
@@ -359,20 +327,20 @@ Qed.
 
 (** With an empty session environment, no session-labelled transition
     is allowed by the relation. *)
-Lemma Prel_S_empty_no_sess n T p σ p' :
-  Prel (S n) ∅ T p → proc_step p (PSess σ) p' → False.
+Lemma Prel_S_empty_no_sess n W T p σ p' :
+  Prel (S n) W ∅ T p → proc_step p (PSess σ) p' → False.
 Proof.
   unfold Prel. rewrite level_at_eq. simpl.
-  intros (_ & Hstep) Hp. specialize (Hstep _ _ Hp).
+  intros (_ & _ & Hstep) Hp. specialize (Hstep _ _ Hp).
   destruct σ as [c w|c w|c|cd]; simpl in Hstep.
-  - destruct Hstep as (Σ1 & U & s & Heq & _).
-    exact (senv_hd_not_empty _ _ _ Heq).
-  - destruct Hstep as (?&?&?&?&?&?&?&?&?&?&?&?&Heq&_).
-    exact (senv_hd_not_empty _ _ _ Heq).
-  - destruct Hstep as (Σ1 & Heq & _).
-    exact (senv_hd_not_empty _ _ _ Heq).
+  - destruct Hstep as (Σ1 & m & U & s & k & Heq & _).
+    exact (senv_hd_not_empty _ _ _ _ Heq).
+  - destruct Hstep as (?&?&?&?&?&?&?&?&Heq&_).
+    exact (senv_hd_not_empty _ _ _ _ Heq).
+  - destruct Hstep as (Σ1 & k & Heq & _).
+    exact (senv_hd_not_empty _ _ _ _ Heq).
   - (* forwarding: both ends must be in Σ *)
-    destruct Hstep as (c & d & Σ1 & sc & sd & _ & _ & Heq & _).
+    destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd & _ & _ & Heq & _).
     exact (insert_non_empty _ _ _ (eq_sym Heq)).
 Qed.
 
@@ -384,221 +352,232 @@ Qed.
     index (via the case predicates [Ecase] / [Pcase]). All later
     proofs go through these and never touch [levels]/[level_at]. *)
 
-Lemma Vrel_unit_iff n Σ v : Vrel n Σ TUnit v ↔ Σ = ∅ ∧ v = EUnit.
+Lemma Vrel_unit_iff n W Θ v : Vrel n W Θ TUnit v ↔ Θ = ∅ ∧ v = EUnit.
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-Lemma Vrel_sess_iff n Σ s v :
-  Vrel n Σ (TSess s) v ↔
-  ∃ c s0, v = Chan c ∧ Σ = {[c := s0]} ∧ seq s0 s.
+Lemma Vrel_sess_iff n W Θ s x v :
+  Vrel n W Θ (TSess s x) v ↔
+  ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
+    w_eq W (pt_chan c k) x.
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-Lemma Vrel_prod_iff n Σ T U v :
-  Vrel n Σ (TProd T U) v ↔
-  ∃ v1 v2 Σ1 Σ2, v = Pair v1 v2 ∧ senv_split Σ Σ1 Σ2 ∧
-    Vrel n Σ1 T v1 ∧ Vrel n Σ2 U v2.
+Lemma Vrel_prod_iff n W Θ T U v :
+  Vrel n W Θ (TProd T U) v ↔
+  ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp Θ Θ1 Θ2 ∧
+    Vrel n W Θ1 T v1 ∧ Vrel n W Θ2 U v2.
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-Lemma Vrel_sum_iff n Σ T U v :
-  Vrel n Σ (TSum T U) v ↔
-  (∃ v', v = Inj1 v' ∧ Vrel n Σ T v')
-  ∨ (∃ v', v = Inj2 v' ∧ Vrel n Σ U v').
+Lemma Vrel_sum_iff n W Θ T U v :
+  Vrel n W Θ (TSum T U) v ↔
+  (∃ v', v = Inj1 v' ∧ Vrel n W Θ T v')
+  ∨ (∃ v', v = Inj2 v' ∧ Vrel n W Θ U v').
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-Lemma Vrel_box_iff n Σ T v :
-  Vrel n Σ (TBox T) v ↔
-  Σ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-    ∀ j, j < n → Erel j ∅ T (subst1 (EBox eb) eb).
+Lemma Vrel_box_iff n W Θ m T v :
+  Vrel n W Θ (TBox m T) v ↔
+  Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
+    ∀ W' j xs, wext W W' → j < n → length xs = m →
+      Erel j W' ∅ (ty_inst xs T) ∅ (subst1 (EBox eb) eb).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply and_iff_compat_l.
   split; intros (eb & -> & Hfc & H); exists eb; (split_and!; [done..|]);
-    intros j Hj.
+    intros W' j xs HW Hj Hxs.
   - rewrite <-(levels_at n j Hj). by apply H.
   - rewrite (levels_at n j Hj). by apply H.
 Qed.
 
-Lemma Vrel_box_empty n Σ T v : Vrel n Σ (TBox T) v → Σ = ∅.
+Lemma Vrel_box_empty n W Θ m T v : Vrel n W Θ (TBox m T) v → Θ = ∅.
 Proof. intros [-> _]%Vrel_box_iff. done. Qed.
 
 (** Values at an unlimited type own no channels. One case per
     modality; the structural rules only ever need this much. *)
-Lemma Vrel_unl_empty n Σ T v : unlimited T → Vrel n Σ T v → Σ = ∅.
+Lemma Vrel_unl_empty n W Θ T v : unlimited T → Vrel n W Θ T v → Θ = ∅.
 Proof. destruct T; try done. intros _. apply Vrel_box_empty. Qed.
 
-Lemma Vrel_lolli_iff n Σ T U v :
-  Vrel n Σ (TLolli T U) v ↔
-  (∃ eb, v = Lam eb ∧ fchans eb = dom Σ ∧
-     ∀ j Σ' w, j < n → Σ' ##ₘ Σ →
-       Vrel j Σ' T w → Erel j (Σ ∪ Σ') U (subst1 w eb))
-  ∨ (∃ k T0, v = Konst k ∧ Σ = ∅ ∧ konst_ty k T0 ∧ teq T0 (TLolli T U)).
+Lemma Vrel_lolli_iff n W Θ ub lb T U v :
+  Vrel n W Θ (TLolli ub lb T U) v ↔
+  (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
+     ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
+       tenv_comp Θ'' Θ Θ' →
+       Vrel j W' Θ' T w →
+       ub_below W' ub F →
+       Erel j W' Θ'' U F (subst1 w eb))
+  ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
+       teq T0 (TLolli ub lb T U)).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply or_iff_compat_r.
-  split; intros (eb & -> & Hsup & H); exists eb; (split_and!; [done..|]);
-    intros j Σ' w Hj Hd HV.
-  - rewrite <-(levels_at n j Hj). apply H; auto.
+  split; intros (eb & -> & Hsup & Hlb & H); exists eb; (split_and!; [done..|]);
+    intros W' j Θ' Θ'' w F HW Hj Hc HV Hub.
+  - rewrite <-(levels_at n j Hj). apply (H W' j Θ' Θ'' w F); auto.
     rewrite (levels_at n j Hj). exact HV.
-  - rewrite (levels_at n j Hj). apply H; auto.
+  - rewrite (levels_at n j Hj). apply (H W' j Θ' Θ'' w F); auto.
     rewrite <-(levels_at n j Hj). exact HV.
 Qed.
 
 (** The step-clause cases of the term relation at index S n'. *)
-Definition Ecase (n' : nat) (Σ : senv) (T : ty) (α : tlabel) (e' : expr)
-    : Prop :=
+Definition Ecase (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
+    (α : tlabel) (e' : expr) : Prop :=
   match α with
   | LBeta =>
-      Erel n' Σ T e'
-  | LFork c w =>
-      c ∉ dom Σ →
-      ∃ Σ1 Σ2 s,
-        senv_split Σ Σ1 Σ2 ∧
-        Vrel (S n') Σ1 (TLolli (TSess s) TUnit) w ∧
-        Erel n' (<[c := dual s]> Σ2) T e'
+      Erel n' W Θ T F e'
+  | LNew c =>
+      c ∉ dom Θ → NChan c ∉ w_names W →
+      ∃ s s' W', sdual s s' ∧ wext_fresh W {[NChan c]} W' ∧
+        Erel n' W' (<[c := Both (s, 0) (s', 0)]> Θ) T F e'
+  | LSpawn w =>
+      ∃ Θ1 Θ2 ub lb, tenv_comp Θ Θ1 Θ2 ∧
+        Vrel (S n') W Θ1 (TLolli ub lb TUnit TUnit) w ∧
+        Erel n' W Θ2 T F e'
   | LSess (SRecv c w) =>
-      ∃ Σ1 U s,
-        senv_hd Σ c (SRcv U s) Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 →
-          Vrel j Σ2 U w →
-          Erel j (<[c := s]> (Σ1 ∪ Σ2)) T e'
+      ∃ Θ1 m U s k,
+        tenv_hd Θ c (SRcv m U s) k Θ1 ∧
+        ∀ W' j Θ2 Θ12, wext W W' → j ≤ n' →
+          tenv_comp Θ12 Θ1 Θ2 →
+          Vrel j W' Θ2 (payload_at m U (pt_chan c k)) w →
+          ∃ Θ', tenv_ext Θ12 c (s, S k) Θ' ∧ Erel j W' Θ' T F e'
   | LSess (SSend c w) =>
-      ∃ Σ1 Σ2 U s,
-        senv_hd Σ c (SSnd U s) (Σ1 ∪ Σ2) ∧
-        Σ1 ##ₘ Σ2 ∧ c ∉ dom Σ1 ∧ c ∉ dom Σ2 ∧
-        Vrel (S n') Σ2 U w ∧
-        Erel n' (<[c := s]> Σ1) T e'
+      ∃ Θr Θ1 Θ2 m U s k Θ',
+        tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp Θr Θ1 Θ2 ∧
+        Vrel (S n') W Θ2 (payload_at m U (pt_chan c k)) w ∧
+        tenv_ext Θ1 c (s, S k) Θ' ∧
+        Erel n' W Θ' T F e'
   | LSess (SClos c) =>
-      ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧ Erel n' Σ1 T e'
+      ∃ Θ1 k, tenv_hd Θ c SEnd k Θ1 ∧ Erel n' W Θ1 T F e'
   | LSess (SLink cd) =>
-      ∃ c d Σ1 sc sd,
-        cd = {[c; d]} ∧ c ≠ d ∧
-        Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
-        c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-        sdual sd sc ∧
-        Erel n' Σ1 T e'
+      ∃ c d Θ1 Θm sc sd kc kd,
+        cd = {[c; d]} ∧
+        tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
+        sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
+        Erel n' W Θ1 T F e'
   end.
 
-Lemma Erel_S_iff n Σ T e :
-  Erel (S n) Σ T e ↔
-    (irred e → Vrel (S n) Σ T e) ∧
-    (∀ α e', tstep e α e' → Ecase n Σ T α e').
+Lemma Erel_S_iff n W Θ T F e :
+  Erel (S n) W Θ T F e ↔
+    (irred e → Vrel (S n) W Θ T e) ∧
+    (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) ∧
+    (∀ α e', tstep e α e' → Ecase n W Θ T F α e').
 Proof.
   unfold Ecase, Erel, Vrel. rewrite (level_at_eq (S n)).
   cbn [mk_level lV lE Edef].
   rewrite (levels_at (S n) n (Nat.lt_succ_diag_r n)).
-  apply and_iff_compat_l.
+  do 2 apply and_iff_compat_l.
   split; intros H α e' Hst; specialize (H α e' Hst);
-    destruct α as [|[c w|c w|c|cd]|c w]; try exact H.
+    destruct α as [|[c w|c w|c|cd]|c|w]; try exact H.
   - (* recv, → *)
-    destruct H as (Σ1 & U & s & HΣ & Hc & H).
-    exists Σ1, U, s. split_and!; [done|done|].
-    intros j Σ2 Hj Hd Hcd HV.
+    destruct H as (Θ1 & m & U & s & k & Hhd & H).
+    exists Θ1, m, U, s, k. split; [done|].
+    intros W' j Θ2 Θ12 HW Hj Hc HV.
     rewrite <-(levels_at (S n) j) in HV by lia.
-    specialize (H j Σ2 Hj Hd Hcd HV).
-    rewrite (levels_at (S n) j) in H by lia. exact H.
+    destruct (H W' j Θ2 Θ12 HW Hj Hc HV) as (Θ' & Hext & HE).
+    exists Θ'. split; [done|]. by rewrite (levels_at (S n) j) in HE by lia.
   - (* recv, ← *)
-    destruct H as (Σ1 & U & s & HΣ & Hc & H).
-    exists Σ1, U, s. split_and!; [done|done|].
-    intros j Σ2 Hj Hd Hcd HV.
+    destruct H as (Θ1 & m & U & s & k & Hhd & H).
+    exists Θ1, m, U, s, k. split; [done|].
+    intros W' j Θ2 Θ12 HW Hj Hc HV.
     rewrite (levels_at (S n) j) in HV by lia.
-    specialize (H j Σ2 Hj Hd Hcd HV).
-    rewrite <-(levels_at (S n) j) in H by lia. exact H.
+    destruct (H W' j Θ2 Θ12 HW Hj Hc HV) as (Θ' & Hext & HE).
+    exists Θ'. split; [done|]. by rewrite <-(levels_at (S n) j) in HE by lia.
 Qed.
 
 (** The step-clause cases of the process relation at index S n'. *)
-Definition Pcase (n' : nat) (Σ : senv) (T : ty) (p : proc) (π : plabel)
-    (p' : proc) : Prop :=
+Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
+    (π : plabel) (p' : proc) : Prop :=
   match π with
   | PTau =>
       p'.1 ## dom Σ →
-      Prel n' Σ T p'
+      Prel n' W Σ T p'
   | PSess (SRecv c w) =>
-      ∃ Σ1 U s,
-        senv_hd Σ c (SRcv U s) Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ j Σ2, j ≤ n' → Σ2 ##ₘ Σ1 → c ∉ dom Σ2 → dom Σ2 ## p.1 →
-          Vrel j Σ2 U w →
-          Prel j (<[c := s]> (Σ1 ∪ Σ2)) T p'
+      ∃ Σ1 m U s k,
+        senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
+        ∀ W' j Σ2, wext W W' → j ≤ n' → dom Σ2 ## p.1 →
+          senv_dual_on (<[c := (s, S k)]> Σ1) Σ2 →
+          Vrel j W' (tenv_of Σ2) (payload_at m U (pt_chan c k)) w →
+          Prel j W'
+            ((<[c := (s, S k)]> Σ1 ∖ Σ2) ∪ (Σ2 ∖ <[c := (s, S k)]> Σ1)) T
+            (p'.1 ∪ (dom Σ2 ∩ dom (<[c := (s, S k)]> Σ1)), p'.2)
   | PSess (SSend c w) =>
-      ∃ Σ0 Σv U s (σe : gmap chan sty) Σw C0 E0 Cw Ew T0 Tw,
-        senv_hd Σ c (SSnd U s) (Σ0 ∪ Σv ∪ Σw) ∧
-        Σ0 ##ₘ Σv ∧ Σ0 ##ₘ Σw ∧ Σv ##ₘ Σw ∧
-        c ∉ dom Σ0 ∧ c ∉ dom Σv ∧ c ∉ dom Σw ∧
-        dom σe = fchans w ∩ p.1 ∧
-        dom σe ## dom Σ ∧ c ∉ dom σe ∧
-        p'.1 = C0 ∪ Cw ∧ C0 ## Cw ∧
-        p'.2 = E0 ⊎ Ew ∧
-        Vrel (S n') (Σv ∪ (dual <$> σe)) U w ∧
-        Prel n' (<[c := s]> Σ0) T0 (C0, E0) ∧
-        extrusion_split (Prel n') σe Σw Tw (Cw, Ew) ∧
-        ty_one_of T0 Tw T
+      ∃ Σ0 Σv m U s k (Σe Σe' : senv),
+        senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
+        Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
+        dom Σe = fchans w ∩ p.1 ∧ dom Σe' = dom Σe ∧
+        senv_dual_on Σe Σe' ∧
+        dom Σe ## dom Σ ∧
+        Vrel (S n') W (tenv_of (Σv ∪ Σe')) (payload_at m U (pt_chan c k)) w ∧
+        Prel n' W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T p'
   | PSess (SClos c) =>
-      ∃ Σ1, senv_hd Σ c SEnd Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' Σ1 T p'
+      ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' W Σ1 T p'
   | PSess (SLink cd) =>
-      ∃ c d Σ1 sc sd,
+      ∃ c d Σ1 sc sd kc kd,
         cd = {[c; d]} ∧ c ≠ d ∧
-        Σ = <[c := sc]> (<[d := sd]> Σ1) ∧
+        Σ = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1) ∧
         c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-        sdual sd sc ∧
-        Prel n' Σ1 T p'
+        sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
+        Prel n' W Σ1 T p'
   end.
 
-Lemma Prel_S_iff n Σ T p :
-  Prel (S n) Σ T p ↔
+Lemma Prel_S_iff n W Σ T p :
+  Prel (S n) W Σ T p ↔
     (pirred p →
-      ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) Σ T v ∧
+      ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) W (tenv_of Σ) T v ∧
              (∀ e, e ∈ E → e = EUnit)) ∧
-    (∀ π p', proc_step p π p' → Pcase n Σ T p π p').
+    (¬ pirred p → ready_p W Σ p) ∧
+    (∀ π p', proc_step p π p' → Pcase n W Σ T p π p').
 Proof.
   unfold Pcase, Prel, Vrel. rewrite (level_at_eq (S n)).
   cbn [mk_level lV lP Pdef].
   rewrite (levels_at (S n) n (Nat.lt_succ_diag_r n)).
-  apply and_iff_compat_l.
+  do 2 apply and_iff_compat_l.
   split; intros H π p' Hst; specialize (H π p' Hst);
     destruct π as [|[c w|c w|c|cd]]; try exact H.
   - (* recv, → *)
-    destruct H as (Σ1 & U & s & HΣ & Hc & H).
-    exists Σ1, U, s. split_and!; [done|done|].
-    intros j Σ2 Hj Hd Hcd Hfr HV.
+    destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
+    exists Σ1, m, U, s, k. split_and!; [done|done|].
+    intros W' j Σ2 HW Hj Hfr Hdu HV.
     rewrite <-(levels_at (S n) j) in HV by lia.
-    specialize (H j Σ2 Hj Hd Hcd Hfr HV).
+    specialize (H W' j Σ2 HW Hj Hfr Hdu HV).
     rewrite (levels_at (S n) j) in H by lia. exact H.
   - (* recv, ← *)
-    destruct H as (Σ1 & U & s & HΣ & Hc & H).
-    exists Σ1, U, s. split_and!; [done|done|].
-    intros j Σ2 Hj Hd Hcd Hfr HV.
+    destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
+    exists Σ1, m, U, s, k. split_and!; [done|done|].
+    intros W' j Σ2 HW Hj Hfr Hdu HV.
     rewrite (levels_at (S n) j) in HV by lia.
-    specialize (H j Σ2 Hj Hd Hcd Hfr HV).
+    specialize (H W' j Σ2 HW Hj Hfr Hdu HV).
     rewrite <-(levels_at (S n) j) in H by lia. exact H.
 Qed.
 
 (** Convenient corollaries of the characteristic equations. *)
-Lemma Prel_S_intro n Σ T p :
+Lemma Prel_S_intro n W Σ T p :
   (pirred p →
-    ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) Σ T v ∧
+    ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vrel (S n) W (tenv_of Σ) T v ∧
            (∀ e, e ∈ E → e = EUnit)) →
-  (∀ π p', proc_step p π p' → Pcase n Σ T p π p') →
-  Prel (S n) Σ T p.
+  (¬ pirred p → ready_p W Σ p) →
+  (∀ π p', proc_step p π p' → Pcase n W Σ T p π p') →
+  Prel (S n) W Σ T p.
 Proof. intros. apply Prel_S_iff. done. Qed.
 
-Lemma Prel_S_step n Σ T p π p' :
-  Prel (S n) Σ T p → proc_step p π p' → Pcase n Σ T p π p'.
-Proof. intros HP Hst. apply Prel_S_iff in HP as (_ & H). auto. Qed.
+Lemma Prel_S_step n W Σ T p π p' :
+  Prel (S n) W Σ T p → proc_step p π p' → Pcase n W Σ T p π p'.
+Proof. intros HP Hst. apply Prel_S_iff in HP as (_ & _ & H). auto. Qed.
 
-Lemma Erel_S_step n Σ T e α e' :
-  Erel (S n) Σ T e → tstep e α e' → Ecase n Σ T α e'.
-Proof. intros HE Hst. apply Erel_S_iff in HE as (_ & H). auto. Qed.
+Lemma Erel_S_step n W Θ T F e α e' :
+  Erel (S n) W Θ T F e → tstep e α e' → Ecase n W Θ T F α e'.
+Proof. intros HE Hst. apply Erel_S_iff in HE as (_ & _ & H). auto. Qed.
 
 (** ** Semantic judgments (Defs. 3.2 and 3.3) *)
 
-(** Grounding substitutions G_n⟦Σ; Δ⟧: substitutions assigning to each
-    available variable of Δ a value in the value relation, splitting Σ
-    among them. *)
-Fixpoint grounding (n : nat) (Σ : senv) (Δ : lenv) (γ : nat → expr) : Prop :=
+(** Grounding substitutions G^W_n⟦Θ; Δ⟧: substitutions assigning to
+    each available variable of Δ a value in the value relation,
+    splitting Θ among them. *)
+Fixpoint grounding (n : nat) (W : world) (Θ : tenv) (Δ : lenv)
+    (γ : nat → expr) : Prop :=
   match Δ with
-  | [] => Σ = ∅
-  | None :: Δ' => grounding n Σ Δ' (γ ∘ S)
+  | [] => Θ = ∅
+  | None :: Δ' => grounding n W Θ Δ' (γ ∘ S)
   | Some T :: Δ' =>
-      ∃ Σ1 Σ2, senv_split Σ Σ1 Σ2 ∧ Vrel n Σ1 T (γ 0) ∧
-               grounding n Σ2 Δ' (γ ∘ S)
+      ∃ Θ1 Θ2, tenv_comp Θ Θ1 Θ2 ∧ Vrel n W Θ1 T (γ 0) ∧
+               grounding n W Θ2 Δ' (γ ∘ S)
   end.
 
 (** Free variables available in Δ: x is bound to a [Some] entry. *)
@@ -615,8 +594,8 @@ Lemma lenv_avail_lin_avail Δ x :
   lenv_avail_lin Δ x → lenv_avail Δ x.
 Proof. intros (T & ? & _). by exists T. Qed.
 
-(** Syntactic well-formedness of e against Σ; Δ: the channels of e are
-    exactly dom Σ, the free variables of e are available in Δ, and —
+(** Syntactic well-formedness of e against Θ; Δ: the channels of e are
+    exactly dom Θ, the free variables of e are available in Δ, and —
     relevance, i.e. absence of weakening — every linearly available
     variable of Δ occurs in e.
 
@@ -625,18 +604,20 @@ Proof. intros (T & ? & _). by exists T. Qed.
     for syntactically typed terms ([Terms.typed_term_wf]) and consumed
     as an explicit premise by exactly the two rules that build a
     suspended computation, whose V-clauses demand channel ownership:
-    E-Abs needs all three (the ⊸-clause asks for [fchans eb = dom Σ],
+    E-Abs needs all three (the ⊸-clause asks for [fchans eb = dom Θ],
     ⊆ from the first two, ⊇ from relevance) and E-Box needs the first
     two (the □-clause asks for [fchans eb = ∅]; relevance is vacuous
     there, the environment being unlimited). The elimination rules
     need none of it: E constrains environments, not term channels. *)
-Definition term_wf (Σ : senv) (Δ : lenv) (e : expr) : Prop :=
-  fchans e = dom Σ ∧
+Definition term_wf (Θ : tenv) (Δ : lenv) (e : expr) : Prop :=
+  fchans e = dom Θ ∧
   allfv (lenv_avail Δ) e ∧
   (∀ x, lenv_avail_lin Δ x → freevar x e).
 
-(** Σ; Δ ⊨ e : T.  The channels of e itself are covered by Σ; the
-    grounding substitution brings its own (disjoint) Σ'. (Def. 3.3;
+(** Θ; Δ ⊨^F_W e : T.  In every future world, the channels of e itself
+    are covered by Θ; the grounding substitution brings its own
+    (disjoint) Θ'. F is the frame (§8; F = ∅ is the paper's judgment,
+    plus ready). (Def. 3.3;
     the draft's phrasing conflates the two environments — this is the
     reading under which the rules of Fig. 4, e.g. E-Ch, are
     non-vacuous.)
@@ -645,30 +626,31 @@ Definition term_wf (Σ : senv) (Δ : lenv) (e : expr) : Prop :=
     of e beyond what Erel says about its behaviour. The syntactic
     side conditions live in [term_wf] and enter as premises exactly
     where Fig. 4's proofs consume them. *)
-Definition sem_typed (Σ : senv) (Δ : lenv) (e : expr) (T : ty) : Prop :=
-  ∀ n Σ' γ, Σ' ##ₘ Σ → grounding n Σ' Δ γ →
-    Erel n (Σ ∪ Σ') T (subst γ e).
+Definition sem_typed (W : world) (Θ : tenv) (Δ : lenv) (F : gset point)
+    (e : expr) (T : ty) : Prop :=
+  ∀ n W' Θ' γ, wext W W' → Θ' ##ₘ Θ → grounding n W' Θ' Δ γ →
+    Erel n W' (Θ ∪ Θ') T F (subst γ e).
 
-(** Σ ⊨ p : T *)
-Definition sem_ptyped (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∀ n, Prel n Σ T p.
+(** Σ ⊨_W p : T *)
+Definition sem_ptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∀ n, Prel n W Σ T p.
 
 (** ** The adequacy chain (Lemmas 3.4, 3.5 and Theorem 3.6) *)
 
 (** Lemma 3.4 (for the closed environment, which is what adequacy
     needs; the τ-guard is trivially satisfied at Σ = ∅). *)
-Lemma Prel_steps m n T p p' :
-  nsteps preduction m p p' → Prel (m + n) ∅ T p → Prel n ∅ T p'.
+Lemma Prel_steps m n W T p p' :
+  nsteps preduction m p p' → Prel (m + n) W ∅ T p → Prel n W ∅ T p'.
 Proof.
   induction 1 as [|m' x y z Hxy Hyz IH]; simpl; [done|].
   intros HP. apply IH. eapply Prel_S_tau; [done..|]. set_solver.
 Qed.
 
 (** Lemma 3.5 *)
-Lemma Prel_safe n T p : Prel (S n) ∅ T p → safe p.
+Lemma Prel_safe n W T p : Prel (S n) W ∅ T p → safe p.
 Proof.
   intros HP. destruct (proc_progress p) as [Hirr|(π & p' & Hst)].
-  - left. destruct (Prel_S_irred _ _ _ _ HP Hirr) as (v & E & -> & Hv & _ & HE).
+  - left. destruct (Prel_S_irred _ _ _ _ _ HP Hirr) as (v & E & -> & Hv & _ & HE).
     exists v, E. auto.
   - right. destruct π as [|σ].
     + by exists p'.
@@ -676,7 +658,7 @@ Proof.
 Qed.
 
 (** Theorem 3.6 (Adequacy) *)
-Theorem adequacy T p : sem_ptyped ∅ p T → deadlock_free p.
+Theorem adequacy W T p : sem_ptyped W ∅ p T → deadlock_free p.
 Proof.
   intros HP p' Hsteps. apply rtc_nsteps_1 in Hsteps as [m Hm].
   eapply (Prel_safe 0). eapply Prel_steps; [exact Hm|]. exact (HP (m + 1)).
@@ -684,78 +666,87 @@ Qed.
 
 (** ** Downward closure (Lemma 3.7) *)
 
-Lemma Vrel_down n m Σ T v : m ≤ n → Vrel n Σ T v → Vrel m Σ T v.
+Lemma Vrel_down n m W Θ T v : m ≤ n → Vrel n W Θ T v → Vrel m W Θ T v.
 Proof.
-  intros Hle. induction T in Σ, v |- *.
+  intros Hle. induction T in Θ, v |- *.
   - rewrite !Vrel_unit_iff. done.
   - rewrite !Vrel_lolli_iff.
-    intros [(eb & -> & Hsup & H)|Hk]; [left|by right].
-    exists eb. split_and!; [done..|]. intros j Σ' w Hj Hd HV.
-    apply H; auto. lia.
+    intros [(eb & -> & Hsup & Hlb & H)|Hk]; [left|by right].
+    exists eb. split_and!; [done..|].
+    intros W' j Θ' Θ'' w F HW Hj Hc HV Hub.
+    apply (H W' j Θ' Θ'' w F); auto. lia.
   - rewrite !Vrel_prod_iff.
-    intros (v1 & v2 & Σ1 & Σ2 & -> & Hsp & H1 & H2).
+    intros (v1 & v2 & Θ1 & Θ2 & -> & Hc & H1 & H2).
     eexists _, _, _, _. split_and!; eauto.
   - rewrite !Vrel_sum_iff.
     intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
   - rewrite !Vrel_box_iff.
     intros (-> & eb & -> & Hfc & H). split; [done|].
-    exists eb. split_and!; [done|done|]. intros j Hj. apply H. lia.
+    exists eb. split_and!; [done|done|]. intros W' j xs HW Hj Hxs.
+    apply H; auto. lia.
   - rewrite !Vrel_sess_iff. done.
 Qed.
 
-Lemma Erel_down n m Σ T e : m ≤ n → Erel n Σ T e → Erel m Σ T e.
+Lemma Erel_down n m W Θ T F e :
+  m ≤ n → Erel n W Θ T F e → Erel m W Θ T F e.
 Proof.
-  revert n Σ T e. induction m as [|m' IH]; intros n Σ T e Hle HE;
+  revert n W Θ T F e. induction m as [|m' IH]; intros n W Θ T F e Hle HE;
     [apply Erel_0|].
   destruct n as [|n']; [lia|].
-  apply Erel_S_iff in HE as (H1 & H2).
+  apply Erel_S_iff in HE as (H1 & Hr & H2).
   apply Erel_S_iff. split_and!.
   - intros He. eapply Vrel_down; [|by apply H1]. lia.
+  - done.
   - intros α e' Hst. specialize (H2 α e' Hst).
-    destruct α as [|[c w|c w|c|cd]|c w]; simpl in H2 |- *.
+    destruct α as [|[c w|c w|c|cd]|c|w]; simpl in H2 |- *.
     + eapply IH; [|exact H2]. lia.
-    + destruct H2 as (Σ1 & U & s & Hhd & Hc & H2).
-      eexists _, _, _. split_and!; [done|done|].
-      intros j Σ2 Hj Hd Hcd HV. apply H2; auto. lia.
-    + destruct H2 as (Σ1 & Σ2 & U & s & Hhd & ? & ? & ? & HV & HE').
-      eexists _, _, _, _. split_and!; eauto.
+    + destruct H2 as (Θ1 & m & U & s & k & Hhd & H2).
+      eexists _, _, _, _, _. split; [done|].
+      intros W' j Θ2 Θ12 HW Hj Hc HV. apply (H2 W' j Θ2 Θ12); auto. lia.
+    + destruct H2 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+                      Hhd & Hc & HV & Hext & HE').
+      eexists _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HE']. lia.
-    + destruct H2 as (Σ1 & Hhd & ? & HE').
-      eexists. split_and!; eauto. eapply IH; [|done]. lia.
-    + destruct H2 as (c & d & Σ1 & sc & sd & -> & ? & -> & ? & ? & ? & HE').
-      eexists _, _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
-    + intros Hc. destruct (H2 Hc) as (Σ1 & Σ2 & s & ? & HV & HE').
-      eexists _, _, _. split_and!; eauto.
+    + destruct H2 as (Θ1 & k & Hhd & HE').
+      eexists _, _. split; [done|]. eapply IH; [|done]. lia.
+    + destruct H2 as (c & d & Θ1 & Θm & sc & sd & kc & kd &
+                      -> & ? & ? & ? & ? & HE').
+      eexists _, _, _, _, _, _, _, _. split_and!; [done..|].
+      eapply IH; [|done]. lia.
+    + intros Hc Hn. destruct (H2 Hc Hn) as (s & s' & W' & ? & ? & HE').
+      eexists _, _, _. split_and!; [done|done|]. eapply IH; [|done]. lia.
+    + destruct H2 as (Θ1 & Θ2 & ub & lb & ? & HV & HE').
+      eexists _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|done]. lia.
 Qed.
 
-Lemma Prel_down n m Σ T p : m ≤ n → Prel n Σ T p → Prel m Σ T p.
+Lemma Prel_down n m W Σ T p : m ≤ n → Prel n W Σ T p → Prel m W Σ T p.
 Proof.
-  revert n Σ T p. induction m as [|m' IH]; intros n Σ T p Hle HP;
+  revert n W Σ T p. induction m as [|m' IH]; intros n W Σ T p Hle HP;
     [apply Prel_0|].
   destruct n as [|n']; [lia|].
-  apply Prel_S_iff in HP as (H1 & H2).
+  apply Prel_S_iff in HP as (H1 & Hr & H2).
   apply Prel_S_iff. split_and!.
   - intros Hirr. destruct (H1 Hirr) as (v & E & -> & ? & HV & ?).
     eexists _, _. split_and!; eauto. eapply Vrel_down; [|exact HV]. lia.
+  - done.
   - intros π p' Hst. specialize (H2 π p' Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in H2 |- *.
     + intros Hd. eapply IH; [|by apply H2]. lia.
-    + destruct H2 as (Σ1 & U & s & Hhd & Hc & H2).
-      eexists _, _, _. split_and!; [done|done|].
-      intros j Σ2 Hj Hd Hcd Hfr HV. apply H2; auto. lia.
-    + destruct H2 as (Σ0 & Σv & U & s & σe & Σw & C0 & E0 & Cw & Ew &
-                      T0 & Tw & Hhd & ? & ? & ? & ? & ? & ? & ? & ? & ? &
-                      ? & ? & ? & HV & HP0 & HPw & ?).
-      eexists _, _, _, _, _, _, _, _, _, _, _, _. split_and!; eauto.
+    + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
+      eexists _, _, _, _, _. split_and!; [done|done|].
+      intros W' j Σ2 HW Hj Hfr Hdu HV. apply H2; auto. lia.
+    + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Σe' & Hhd &
+                      ? & ? & ? & ? & ? & ? & ? & HV & HP0).
+      eexists _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HP0]. lia.
-      * eapply extrusion_split_mono; [|exact HPw].
-        intros ? ? ? ?. eapply IH; [|eauto]. lia.
-    + destruct H2 as (Σ1 & Hhd & ? & HP').
-      eexists. split_and!; eauto. eapply IH; [|done]. lia.
-    + destruct H2 as (c & d & Σ1 & sc & sd & -> & ? & -> & ? & ? & ? & HP').
-      eexists _, _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
+    + destruct H2 as (Σ1 & k & Hhd & ? & HP').
+      eexists _, _. split_and!; eauto. eapply IH; [|done]. lia.
+    + destruct H2 as (c & d & Σ1 & sc & sd & kc & kd &
+                      -> & ? & -> & ? & ? & ? & ? & HP').
+      eexists _, _, _, _, _, _, _. split_and!; [done..|].
+      eapply IH; [|done]. lia.
 Qed.
