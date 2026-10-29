@@ -518,6 +518,32 @@ Section join_paths.
           -- destruct b0, b, b1, b2, b3; naive_solver.
   Qed.
 
+  (** The same decomposition with the flags kept exactly: a path of
+      aliases decomposes into aliases. *)
+  Lemma jpath_decomp_exact b x y :
+    jpath b x y →
+    sfact b x y ∨
+    (∃ a c b1 b2 b3, sfact b1 x a ∧ pt_root a ∈ A ∧ wfact RJ b2 a c ∧
+       pt_root c ∈ A ∧ sfact b3 c y ∧ b1 || b2 || b3 = b).
+  Proof.
+    induction 1 as [x|b0 b x y z Hs Hp IH].
+    - left. left. apply (wf_eq_refl _ HW1).
+    - destruct IH as [Hyz|(a & c & b1 & b2 & b3 &
+                           Hya & Ha & Hac & Hc & Hcz & <-)].
+      + destruct (sfact_combine _ _ _ _ _ Hs Hyz) as [Hxz|(Hy & _ & _)].
+        * by left.
+        * right. exists y, y, b0, false, b. split_and!; try done.
+          -- destruct b0; simpl; apply (wf_eq_refl _ RJ_wf).
+          -- by rewrite orb_false_r.
+      + destruct (sfact_combine _ _ _ _ _ Hs Hya) as [Hxa|(Hy & _ & _)].
+        * right. exists a, c, (b0 || b1), b2, b3. split_and!; try done.
+          by rewrite !orb_assoc.
+        * right. exists y, c, b0, (b1 || b2), b3. split_and!; try done.
+          -- apply wfact_trans with a; [apply RJ_wf| |done].
+             by apply sfact_RJ.
+          -- by rewrite !orb_assoc.
+  Qed.
+
   (** A cycle in W₁ ⊔ W₂ is a cycle in W₁, in W₂, or in the
       restricted join. *)
   Lemma join_cycle x :
@@ -598,4 +624,95 @@ Proof.
     + destruct Hs as [[Hn Ho]|[Ha Hb]]; [by apply (wf_lt_same _ a b HJ)|].
       apply glt_base. left. by apply (Hold a b (HA a Ha) (HA b Hb)).
     + apply glt_base. by right.
+Qed.
+
+(** A fresh extension survives joining with a larger world that does
+    not know the new names: W ⊑ₒ W₁ placing N and W ⊑ W′ give
+    W′ ⊑ₒ W₁ ⊔ W′ placing N. Monotonicity of the relation at [new]
+    uses it. *)
+
+Lemma wgen_in_world W E L :
+  world_wf W →
+  (∀ x y, E x y → w_eq W x y) → (∀ x y, L x y → w_lt W x y) →
+  (∀ x y, geq E x y → w_eq W x y) ∧ (∀ x y, glt E L x y → w_lt W x y).
+Proof.
+  intros HW HE HL.
+  assert (∀ x y, geq E x y → w_eq W x y) as Heq.
+  { induction 1; eauto using wf_eq_refl, wf_eq_sym, wf_eq_trans,
+      wf_eq_shift, wf_eq_slot. }
+  split; [done|]. induction 1; eauto using wf_lt_trans, wf_lt_po.
+  eapply (wf_lt_eq _ HW); eauto.
+Qed.
+
+Lemma wjoin_sub_strict W W' :
+  wext W W' → strict (wjoin W W').
+Proof.
+  intros (Hn & He & Hl & [HW' Hi]).
+  destruct (wgen_in_world W' (λ x y, w_eq W x y ∨ w_eq W' x y)
+              (λ x y, w_lt W x y ∨ w_lt W' x y)) as [Heq Hlt];
+    [done|naive_solver|naive_solver|].
+  split.
+  - apply wgen_wf.
+    + intros x y H. assert (w_eq W' x y) as H' by (destruct H; auto).
+      eapply eq_or_supp_mono; [|by apply (wf_eq_supp _ HW')].
+      apply union_subseteq_r.
+    + intros x y H. assert (w_lt W' x y) as H' by (destruct H; auto).
+      eapply po_or_supp_mono; [|by apply (wf_lt_supp _ HW')].
+      apply union_subseteq_r.
+  - intros x Hx. apply (Hi x). by apply Hlt.
+Qed.
+
+Lemma wext_fresh_join W N W1 W' :
+  world_wf W → wext_fresh W N W1 → wext W W' → N ## w_names W' →
+  wext_fresh W' N (wjoin W1 W').
+Proof.
+  intros HW [(Hn1 & He1 & Hl1 & [HW1 Hi1]) [HN [Hnames Hold]]]
+         (Hn' & He' & Hl' & [HW' Hi']) HN'.
+  assert (strict (wjoin W1 W')) as Hstr.
+  { apply (fresh_extension W N W1 W'); [split_and!; done|done|done|].
+    by apply wjoin_sub_strict. }
+  set (A := w_names W1 ∩ w_names W').
+  assert (∀ x, pt_root x ∈ A → pt_root x ∉ N) as HA.
+  { intros x Hx. subst A. set_solver. }
+  (* facts of W₁ between points outside N are facts of W' *)
+  assert (∀ b x y, wfact W1 b x y → pt_root x ∉ N → pt_root y ∉ N →
+            wfact W' b x y) as H1.
+  { intros [] x y H Hx Hy; simpl in *.
+    - apply Hl'. by apply (Hold x y Hx Hy).
+    - apply He'. by apply (Hold x y Hx Hy). }
+  assert (∀ b x y, wfact (wjoin (wrestrict W1 A) (wrestrict W' A)) b x y →
+            wfact W' b x y) as HRJ.
+  { destruct (wgen_in_world W' (λ x y, w_eq (wrestrict W1 A) x y ∨
+                                         w_eq (wrestrict W' A) x y)
+                (λ x y, w_lt (wrestrict W1 A) x y ∨
+                        w_lt (wrestrict W' A) x y)) as [Heq Hlt]; [done| | |].
+    - intros x y [[H Hs]|[H Hs]]; [|done].
+      destruct Hs as [->|[Hx Hy]]; [apply (wf_eq_refl _ HW')|].
+      by apply (H1 false x y); [|apply HA..].
+    - intros x y [[H Hs]|[H Hs]]; [|done].
+      destruct Hs as [[Hn Ho]|[Hx Hy]]; [by apply wf_lt_same|].
+      by apply (H1 true x y); [|apply HA..].
+    - intros [] x y H; simpl in *; [by apply Hlt|by apply Heq]. }
+  (* a side fact between points outside N is a fact of W' *)
+  assert (∀ b x y, sfact W1 W' b x y → pt_root x ∉ N → pt_root y ∉ N →
+            wfact W' b x y) as Hs.
+  { intros b x y [H|H] Hx Hy; [by apply H1|done]. }
+  assert (∀ b x y, jpath W1 W' b x y → pt_root x ∉ N → pt_root y ∉ N →
+            wfact W' b x y) as Hpath.
+  { intros b x y Hp Hx Hy.
+    destruct (jpath_decomp_exact W1 W' HW1 HW' b x y Hp)
+      as [Hxy|(a & c & b1 & b2 & b3 & Hxa & Ha & Hac & Hc & Hcy & <-)];
+      [by apply Hs|].
+    apply (wfact_trans W' (b1 || b2) b3 x c y HW'); [|apply Hs; [done|by apply HA|done]].
+    apply (wfact_trans W' b1 b2 x a c HW'); [apply Hs; [done|done|by apply HA]|].
+    by apply HRJ. }
+  split_and!.
+  - split_and!; [simpl; set_solver|by apply wjoin_r..|done].
+  - done.
+  - simpl. rewrite Hnames. set_solver.
+  - intros x y Hx Hy. split.
+    + intros H. apply (Hpath false); [|done..].
+      by apply (join_jpath W1 W' HW1 HW').
+    + intros H. apply (Hpath true); [|done..].
+      by apply (join_jpath W1 W' HW1 HW').
 Qed.
