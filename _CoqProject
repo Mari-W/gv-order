@@ -6,6 +6,7 @@ theories/Coequal.v
 theories/Worlds.v
 theories/Semantics.v
 theories/Safety.v
+theories/Swap.v
 theories/Harmony.v
 theories/Ready.v
 theories/Typing.v
