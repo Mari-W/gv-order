@@ -1,30 +1,22 @@
 (** * Monotonicity in the world and frame weakening (§10)
 
-      W ⊑ W′  ⇒  V^W ⊆ V^{W′},  E^W ⊆ E^{W′}        ([Vrel_mono], [Erel_mono])
+      W ⊑ W′  ⇒  V^W ⊆ V^{W′},  E^W ⊆ E^{W′},  P^W ⊆ P^{W′}
+                                    ([Vrel_mono], [Erel_mono], [Prel_mono])
       F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧  ([Erel_frame])
 
     Facts only ever help: ready, the frame and every alias the relation
     asks for are positive in ≡ and ≺, and the clauses that quantify
-    over future worlds see fewer of them from a larger world. The one
-    clause that needs an argument is O-New: the fresh extension W ⊑ₒ W₁
-    the term picks is joined with the larger world W′, which stays a
-    fresh extension of W′ ([wext_fresh_join]). *)
+    over future worlds see fewer of them from a larger world. The
+    clauses that need an argument are O-New and Q-Tau: the points the
+    step placed are first renamed away from the larger world W′
+    ([Points.Erel_new_rename], [Points.Prel_tau_rename]), and the fresh
+    extension is then joined with W′, which stays a fresh extension of
+    W′ ([wext_fresh_join]). *)
 
 From stdpp Require Import base tactics gmap.
-From LRGV Require Export Relation.
+From LRGV Require Export Convert.
 
 (** ** Ingredients *)
-
-Lemma konst_ty_mono (peq plt peq' plt' : tpoint → tpoint → Prop) k T :
-  (∀ x y, peq x y → peq' x y) → (∀ x y, plt x y → plt' x y) →
-  konst_ty peq plt k T → konst_ty peq' plt' k T.
-Proof.
-  intros He Hl. destruct 1; econstructor; eauto.
-Qed.
-
-Lemma slot_aliases_mono (peq peq' : point → point → Prop) xs m x :
-  (∀ x y, peq x y → peq' x y) → slot_aliases peq xs m x → slot_aliases peq' xs m x.
-Proof. intros H [? Hx]. split; [done|]. eauto. Qed.
 
 Lemma lb_below_mono W W' lb H :
   wext W W' → lb_below W lb H → lb_below W' lb H.
@@ -89,29 +81,32 @@ Proof.
   - by apply IHj.
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 xs HW Hj Hc Hxs HVw.
-    destruct (H W' j Θ2 Θ12 xs HW Hj Hc Hxs HVw) as (Θ' & Hext & HE').
+    intros W' j Θ2 Θ12 HW Hj Hc HVw.
+    destruct (H W' j Θ2 Θ12 HW Hj Hc HVw) as (Θ' & Hext & HE').
     exists Θ'. split; [done|]. by apply IHj.
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & xs &
-                       Hhd & Hc & Hxs & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ', xs. split_and!; try done. by apply IHj.
+  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+                       Hhd & Hc & HVw & Hext & HE').
+    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done. by apply IHj.
   - destruct Hstep as (Θ1 & k & Hhd & HE').
     exists Θ1, k. split; [done|]. by apply IHj.
   - destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                        -> & ? & ? & ? & ? & HE').
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|]. by apply IHj.
-  - intros Hc Hn. destruct (Hstep Hc Hn) as (s & s' & W' & ? & ? & HE').
-    exists s, s', W'. split_and!; [done|done|]. by apply IHj.
+  - intros Hc. destruct (Hstep Hc) as (a & s & s' & W' & Ha & ? & ? & HE').
+    exists a, s, s', W'. split_and!; [|done|done|by apply IHj].
+    assert (frame_roots F' ⊆ frame_roots F) by (unfold frame_roots; set_solver).
+    set_solver.
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|]. by apply IHj.
 Qed.
 
-(** ** Monotonicity of V and E in the world *)
+(** ** Monotonicity of V, E and P in the world *)
 
-Lemma Vrel_Erel_mono n :
+Lemma rel_mono n :
   (∀ W W' Θ T v, world_wf W → wext W W' → Vrel n W Θ T v → Vrel n W' Θ T v) ∧
   (∀ W W' Θ T F e, world_wf W → wext W W' →
-     Erel n W Θ T F e → Erel n W' Θ T F e).
+     Erel n W Θ T F e → Erel n W' Θ T F e) ∧
+  (∀ W W' Σ T p, world_wf W → wext W W' → Prel n W Σ T p → Prel n W' Σ T p).
 Proof.
   induction n as [n IHn] using lt_wf_ind.
   assert (∀ W W' Θ T v, world_wf W → wext W W' →
@@ -127,9 +122,10 @@ Proof.
         { by eapply lb_below_mono. }
         intros W'' j Θ' Θ'' w F HW' Hj Hc HVw Hub.
         apply (HL W'' j Θ' Θ'' w F); [|done..]. by eapply wext_trans.
-      + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done|done| |done].
-        destruct HWW' as (_ & He & Hl & _).
-        eapply konst_ty_mono; [| |exact Hk]; unfold tw_eq, tw_lt; auto.
+      + apply Vrel_lolli_iff. right. exists k, T0.
+        destruct HWW' as (_ & He & Hl & _). split_and!; [done|done| |].
+        * eapply konst_ty_mono; [| |exact Hk]; auto.
+        * by eapply teqW_mono.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
       apply Vrel_prod_iff. exists v1, v2, Θ1, Θ2. split_and!; eauto.
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
@@ -140,60 +136,105 @@ Proof.
     - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hx).
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done..|].
       destruct HWW' as (_ & He & _). auto. }
-  split; [exact HV|].
-  intros W W' Θ T F e HW HWW' HE.
-  destruct n as [|n']; [apply Erel_0|].
-  assert (∀ j W0 W0' Θ0 F0 e0, j ≤ n' → world_wf W0 → wext W0 W0' →
-            Erel j W0 Θ0 T F0 e0 → Erel j W0' Θ0 T F0 e0) as HEj.
-  { intros j ? ? ? ? ? Hj. apply (proj2 (IHn j ltac:(lia))). }
-  apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
-  apply Erel_S_iff. split_and!.
-  { intros Hirr. eapply HV; [done|done|]. by apply Hval. }
-  { intros Hirr. destruct (Hrdy Hirr). split.
-    - by eapply ready_t_mono.
-    - by eapply frame_t_mono_w. }
-  intros α e' Hst. specialize (Hstep α e' Hst).
-  destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
-  - eapply HEj; [lia|done|done|exact Hstep].
-  - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
-    exists Θ1, m, U, s, k. split; [done|].
-    intros W'' j Θ2 Θ12 xs HW' Hj Hc Hxs HVw.
-    apply (H W'' j Θ2 Θ12 xs); [by eapply wext_trans|done..].
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & xs &
-                       Hhd & Hc & Hxs & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ', xs. split_and!; try done.
-    + eapply slot_aliases_mono; [|exact Hxs]. by destruct HWW' as (_ & ? & _).
-    + eapply HV; done.
-    + eapply HEj; [lia|done|done|exact HE'].
-  - destruct Hstep as (Θ1 & k & Hhd & HE').
-    exists Θ1, k. split; [done|]. eapply HEj; [lia|done|done|exact HE'].
-  - destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
-                       -> & ? & ? & ? & Hal & HE').
-    exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..| |].
-    + destruct HWW' as (_ & He & _). auto.
-    + eapply HEj; [lia|done|done|exact HE'].
-  - (* O-New: join the term's fresh extension with the larger world *)
-    intros Hc Hn.
-    assert (NChan c ∉ w_names W) as Hn0.
-    { destruct HWW' as (Hsub & _). set_solver. }
-    destruct (Hstep Hc Hn0) as (s & s' & W1 & Hdu & Hfr & HE').
-    pose proof (wext_fresh_join W {[NChan c]} W1 W' HW Hfr HWW'
-                  ltac:(set_solver)) as Hfr'.
-    exists s, s', (wjoin W1 W'). split_and!; [done|done|].
-    eapply HEj; [lia| |apply wext_join_l|exact HE'].
-    + destruct Hfr as ((_ & _ & _ & [? _]) & _). done.
-    + by destruct Hfr' as ((_ & _ & _ & ?) & _).
-  - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
-    exists Θ1, Θ2, ub, lb. split_and!; [done| |].
-    + eapply HV; done.
-    + eapply HEj; [lia|done|done|exact HE'].
+  split_and!; [exact HV| |].
+  - intros W W' Θ T F e HW HWW' HE.
+    destruct n as [|n']; [apply Erel_0|].
+    assert (∀ j W0 W0' Θ0 T0 F0 e0, j ≤ n' → world_wf W0 → wext W0 W0' →
+              Erel j W0 Θ0 T0 F0 e0 → Erel j W0' Θ0 T0 F0 e0) as HEj.
+    { intros j ? ? ? ? ? ? Hj. apply (proj1 (proj2 (IHn j ltac:(lia)))). }
+    apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
+    apply Erel_S_iff. split_and!.
+    { intros Hirr. eapply HV; [done|done|]. by apply Hval. }
+    { intros Hirr. destruct (Hrdy Hirr). split.
+      - by eapply ready_t_mono.
+      - by eapply frame_t_mono_w. }
+    intros α e' Hst. specialize (Hstep α e' Hst).
+    destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
+    + eapply HEj; [lia|done|done|exact Hstep].
+    + destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
+      exists Θ1, m, U, s, k. split; [done|].
+      intros W'' j Θ2 Θ12 HW' Hj Hc HVw.
+      apply (H W'' j Θ2 Θ12); [by eapply wext_trans|done..].
+    + destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+                         Hhd & Hc & HVw & Hext & HE').
+      exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
+      * eapply HV; done.
+      * eapply HEj; [lia|done|done|exact HE'].
+    + destruct Hstep as (Θ1 & k & Hhd & HE').
+      exists Θ1, k. split; [done|]. eapply HEj; [lia|done|done|exact HE'].
+    + destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
+                         -> & ? & ? & ? & Hal & HE').
+      exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..| |].
+      * destruct HWW' as (_ & He & _). auto.
+      * eapply HEj; [lia|done|done|exact HE'].
+    + (* O-New: rename the new point away from W', then join *)
+      intros Hc.
+      destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
+      destruct (fresh_const (w_names W' ∪ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F))
+        as [a1 Ha1].
+      assert (w_names W ⊆ w_names W') by (by destruct HWW').
+      destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
+                  ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
+      pose proof (wext_fresh_join W {[NConst a1]} W1' W' HW Hfr' HWW'
+                    ltac:(set_solver)) as Hfr''.
+      exists a1, (stysw a a1 s), (stysw a a1 s'), (wjoin W1' W'). split_and!.
+      * set_solver.
+      * by apply sdual_sw.
+      * done.
+      * eapply HEj; [lia| |apply wext_join_l|exact HE1].
+        -- by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
+        -- by destruct Hfr'' as ((_ & _ & _ & ?) & _).
+    + destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
+      exists Θ1, Θ2, ub, lb. split_and!; [done| |].
+      * eapply HV; done.
+      * eapply HEj; [lia|done|done|exact HE'].
+  - intros W W' Σ T p HW HWW' HP.
+    destruct n as [|n']; [apply Prel_0|].
+    assert (∀ j W0 W0' Σ0 p0, j ≤ n' → world_wf W0 → wext W0 W0' →
+              Prel j W0 Σ0 T p0 → Prel j W0' Σ0 T p0) as HPj.
+    { intros j ? ? ? ? Hj. apply (proj2 (proj2 (IHn j ltac:(lia)))). }
+    apply Prel_S_iff in HP as (Hirr & Hrdy & Hstep).
+    apply Prel_S_iff. split_and!.
+    { intros Hp. destruct (Hirr Hp) as (v & E & -> & ? & HVv & ?).
+      exists v, E. split_and!; [done|done| |done]. by eapply HV. }
+    { intros Hp. by eapply ready_p_mono, Hrdy. }
+    intros π q Hst. specialize (Hstep π q Hst).
+    destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
+    + (* Q-Tau: rename the placed points away from W', then join *)
+      destruct Hstep as (N & W1 & HN & Hfr & HP').
+      destruct (Prel_tau_rename n' (w_names W') _ W N W1 Σ T q eq_refl HW Hfr HN HP')
+        as (N' & W1' & HN'W & HN' & Hfr' & HP1).
+      pose proof (wext_fresh_join W N' W1' W' HW Hfr' HWW' HN'W) as Hfr''.
+      exists N', (wjoin W1' W'). split_and!; [done|done|].
+      eapply HPj; [lia| |apply wext_join_l|exact HP1].
+      * by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
+      * by destruct Hfr'' as ((_ & _ & _ & ?) & _).
+    + destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
+      exists Σ1, m, U, s, k. split_and!; [done|done|].
+      intros W'' j Θ2 HW' Hj Hok HVw.
+      apply (H W'' j Θ2); [by eapply wext_trans|done..].
+    + destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
+                         ? & ? & ? & ? & ? & ? & HVw & HP').
+      exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done.
+      * eapply HV; done.
+      * eapply HPj; [lia|done|done|exact HP'].
+    + destruct Hstep as (Σ1 & k & Hhd & ? & HP').
+      exists Σ1, k. split_and!; [done|done|]. eapply HPj; [lia|done|done|exact HP'].
+    + destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
+                         -> & ? & -> & ? & ? & ? & Hal & HP').
+      exists c, d, Σ1, sc, sd, kc, kd. split_and!; [done..| |].
+      * destruct HWW' as (_ & He & _). auto.
+      * eapply HPj; [lia|done|done|exact HP'].
 Qed.
 
 Lemma Vrel_mono n W W' Θ T v :
   world_wf W → wext W W' → Vrel n W Θ T v → Vrel n W' Θ T v.
-Proof. apply (proj1 (Vrel_Erel_mono n)). Qed.
+Proof. apply (proj1 (rel_mono n)). Qed.
 
 Lemma Erel_mono n W W' Θ T F e :
   world_wf W → wext W W' → Erel n W Θ T F e → Erel n W' Θ T F e.
-Proof. apply (proj2 (Vrel_Erel_mono n)). Qed.
+Proof. apply (proj1 (proj2 (rel_mono n))). Qed.
 
+Lemma Prel_mono n W W' Σ T p :
+  world_wf W → wext W W' → Prel n W Σ T p → Prel n W' Σ T p.
+Proof. apply (proj2 (proj2 (rel_mono n))). Qed.

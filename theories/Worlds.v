@@ -99,8 +99,12 @@ Record world_wf (W : world) : Prop := {
   wf_lt_po x : w_lt W x (pt_shift 1 x);
   wf_eq_supp x y : w_eq W x y → eq_or_supp (w_names W) x y;
   wf_lt_supp x y : w_lt W x y → po_or_supp (w_names W) x y;
-  wf_names_root p : p ∈ w_names W → pn_root p = p
+  wf_names_const p : p ∈ w_names W → ∃ a, p = NConst a
 }.
+
+(** The support consists of point constants, which are root names. *)
+Lemma wf_names_root W p : world_wf W → p ∈ w_names W → pn_root p = p.
+Proof. intros HW Hp. by destruct (wf_names_const _ HW p Hp) as [a ->]. Qed.
 
 Definition strict (W : world) : Prop :=
   world_wf W ∧ ∀ x, ¬ w_lt W x x.
@@ -175,7 +179,7 @@ Proof.
 Qed.
 
 Lemma wgen_wf N E L :
-  (∀ p, p ∈ N → pn_root p = p) →
+  (∀ p, p ∈ N → ∃ a, p = NConst a) →
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   world_wf (wgen N E L).
@@ -687,7 +691,7 @@ Proof.
     [done|naive_solver|naive_solver|].
   split.
   - apply wgen_wf.
-    + intros p [Hp|Hp]%elem_of_union; apply (wf_names_root _ HW'); [|done].
+    + intros p [Hp|Hp]%elem_of_union; apply (wf_names_const _ HW'); [|done].
       by apply Hn.
     + intros x y H. assert (w_eq W' x y) as H' by (destruct H; auto).
       eapply eq_or_supp_mono; [|by apply (wf_eq_supp _ HW')].

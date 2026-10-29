@@ -397,9 +397,9 @@ Section wsw.
     - intros H. apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[Hx Hy]].
       + left. split; [|done]. by apply (pnsw_inj a b).
       + right. rewrite !elem_of_names_sw', <-!pt_root_sw. done.
-    - intros Hp. apply elem_of_names_sw' in Hp. apply (wf_names_root _ HW) in Hp.
-      rewrite <-(pnsw_involutive a b p) at 2. rewrite <-Hp, <-pn_root_sw.
-      by rewrite pnsw_involutive.
+    - intros Hp. apply elem_of_names_sw' in Hp.
+      destruct (wf_names_const _ HW _ Hp) as [c Hc].
+      exists (nswap a b c). rewrite <-(pnsw_involutive a b p), Hc. done.
   Qed.
 
   Lemma wsw_strict W : strict W → strict (wsw a b W).
@@ -1343,7 +1343,7 @@ Section fixed.
     { intros x [Hx|Hx]; rewrite pt_root_sw, Hx; simpl;
         [rewrite nswap_l; by right|rewrite nswap_r; by left]. }
     assert (∀ p, p ∈ w_names W → pnsw a b p = p) as Hfixn.
-    { intros p Hp. pose proof (wf_names_root _ HW p Hp) as Hr.
+    { intros p Hp. pose proof (wf_names_root _ p HW Hp) as Hr.
       apply pnsw_fix; rewrite Hr; intros ->; done. }
     split_and!.
     - apply set_eq. intros p. simpl. rewrite elem_of_names_sw'. split; intros Hp.
@@ -1417,4 +1417,53 @@ Proof.
                                 (elements X)) : gset nat).
   exists (fresh C). intros Hin. apply (is_fresh C). subst C.
   apply elem_of_list_to_set, list_elem_of_omap. eexists. split; [by apply elem_of_elements|]. done.
+Qed.
+
+(** The points a τ step places can be renamed away from any finite set
+    of names X. *)
+Lemma Prel_tau_rename n X : ∀ m W N W1 Σ T p,
+  size (N ∩ X) = m →
+  world_wf W → wext_fresh W N W1 → N ## senv_roots Σ ∪ ty_roots T →
+  Prel n W1 Σ T p →
+  ∃ N' W1', N' ## X ∧ N' ## senv_roots Σ ∪ ty_roots T ∧
+    wext_fresh W N' W1' ∧ Prel n W1' Σ T p.
+Proof.
+  intros m. induction m as [m IH] using lt_wf_ind.
+  intros W N W1 Σ T p Hm HW Hfr HN HP.
+  destruct (decide (N ∩ X = ∅)) as [Hemp|Hne].
+  { exists N, W1. split_and!; [set_solver|done|done|done]. }
+  apply set_choose_L in Hne as [q Hq].
+  assert (world_wf W1) as HW1 by (destruct Hfr as ((_ & _ & _ & [? _]) & _); done).
+  destruct Hfr as [Hx [HNW [Hnames Hold]]].
+  assert (q ∈ w_names W1) as HqW1 by (rewrite Hnames; set_solver).
+  destruct (wf_names_const _ HW1 q HqW1) as [a ->].
+  destruct (fresh_const (w_names W1 ∪ X ∪ senv_roots Σ ∪ ty_roots T ∪ N)) as [a1 Ha1].
+  set (N'' := set_map (pnsw a a1) N : gset pname).
+  assert (∀ r, r ∈ N → ∃ c, r = NConst c) as HNc.
+  { intros r Hr. apply (wf_names_const _ HW1). rewrite Hnames. set_solver. }
+  assert (N'' ∩ X ⊆ (N ∩ X) ∖ {[NConst a]}) as Hsub.
+  { intros r. subst N''. rewrite elem_of_intersection, elem_of_map, elem_of_difference,
+      elem_of_intersection, elem_of_singleton.
+    intros [(r0 & -> & Hr0) HrX]. destruct (HNc r0 Hr0) as [c ->]. simpl in *.
+    unfold nswap in *. repeat case_decide; subst; simpl in *; [set_solver| |].
+    - exfalso. apply Ha1. set_solver.
+    - split; [split; done|congruence]. }
+  assert (size (N'' ∩ X) < m) as Hlt.
+  { rewrite <-Hm. eapply Nat.le_lt_trans; [apply subseteq_size, Hsub|].
+    rewrite size_difference by set_solver. rewrite size_singleton.
+    assert (size (N ∩ X) ≠ 0) by (intros ?%size_empty_inv; set_solver). lia. }
+  assert (NConst a ∉ senv_roots Σ ∪ ty_roots T) as Ha by set_solver.
+  assert (wext_fresh W N'' (wsw a a1 W1)) as Hfr''.
+  { pose proof (wext_fresh_wsw a a1 W N W1 (conj Hx (conj HNW (conj Hnames Hold))))
+      as H.
+    eapply wext_fresh_wsame; [|apply wsame_refl|exact H].
+    apply wsw_fix; [done|set_solver|set_solver]. }
+  assert (N'' ## senv_roots Σ ∪ ty_roots T) as HN''.
+  { apply elem_of_disjoint. intros r Hr Hr'. subst N''.
+    apply elem_of_map in Hr as (r0 & -> & Hr0). destruct (HNc r0 Hr0) as [c ->].
+    simpl in Hr'. unfold nswap in Hr'. repeat case_decide; subst;
+      [set_solver..|]. set_solver. }
+  apply (Prel_psw a a1) in HP.
+  rewrite senvsw_fix, tysw_fix in HP by set_solver.
+  exact (IH _ Hlt W N'' (wsw a a1 W1) Σ T p eq_refl HW Hfr'' HN'' HP).
 Qed.
