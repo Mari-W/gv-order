@@ -182,6 +182,15 @@ can remove c or d, and the two successors differ by the transposition (c d), so 
 composite's step reduces to the component's own step and needs no alias. The alias stays on
 O-Link and Q-Link. The freshness guard at new is subsumed (§7, §10).
 
+**31. (I) Which names may an α-variant introduce?**
+If an α-variant may rename a restricted name to any name absent from the
+process, it can pick an interface name or a name the world has facts about.
+The junk transport then cannot reuse the variant after renaming, and moving
+the world would need an unproved monotonicity.
+Decision (I1, taken by Claude under the author's delegation): α-variants are
+capture-avoiding, renaming only to names outside the interface and unknown to
+the step's world. The paper's freshness convention with the world in scope (§7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

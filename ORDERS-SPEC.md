@@ -191,6 +191,11 @@ P-Step    ¬irred p    ready_W(Σ, p)                                           
 Restricted names are bound in every step obligation: each Q-clause below is stated for
 some α-variant q of the successor (renaming only restricted names, Swap.alpha), not for
 the successor itself.                                                                       [new]
+α-variants are capture-avoiding (decision I1, taken by Claude under the author's delegation):
+a restricted name a may be renamed to b only if b does not occur in the process, b ∉ dom Σ,
+and b is unknown to the step's world (W′ for Q-Tau and Q-Recv, W otherwise). This is the
+paper's convention "bound names are chosen fresh for whatever is in scope", with the world
+in scope; a condition on α-variants, not a syntactic premise of any lemma.
 
 Q-Tau     p —τ→ p′    ∃W′ ⊒ W, ∃q α-variant of p′.   W′ strict,   W′|_vis = W|_vis,
           q ∈ P^{W′}_n⟦Σ ⊢ T⟧                                                                [changed]
