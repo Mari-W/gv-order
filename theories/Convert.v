@@ -4,10 +4,13 @@
     rule lets a term change its type along ≈, this file shows the
     logical relation does not notice:
 
-      teq T T' → Vrel n Σ T v → Vrel n Σ T' v      ([Vrel_teq])
-      teq T T' → Erel n Σ T e → Erel n Σ T' e      ([Erel_teq])
-      teq T T' → sem_typed Σ Δ e T → sem_typed Σ Δ e T'
-                                                  ([sem_typed_teq])
+      teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v        ([Vrel_teq])
+      teq T T' → Erel n W Θ T F e → Erel n W Θ T' F e    ([Erel_teq])
+      teq T T' → sem_typed W Θ Δ F e T → sem_typed W Θ Δ F e T'
+                                                        ([sem_typed_teq])
+
+    in every world and under every frame. ≈ keeps the points of a type
+    on the nose, so worlds and frames are untouched.
 
     ≈ is symmetric, so each of these is really a biconditional
     ([Vrel_teq_iff], [Erel_teq_iff]).
@@ -32,7 +35,7 @@
 
     [Ecase] threads the result type T unchanged through every
     transition — the types it *inspects* (the payload U and
-    continuation s of a communication) come from Σ via [senv_hd], not
+    continuation s of a communication) come from Θ via [tenv_hd], not
     from T. So the [Erel] half is a routine relay of the induction
     hypothesis, exactly as the old [Erel_sess_conv] was; the content is
     all in the [Vrel] half. *)
@@ -40,94 +43,116 @@
 From stdpp Require Import base tactics gmap.
 From LRGV Require Export Relation.
 
+(** ≈ commutes with instantiating point variables: the points of
+    both sides agree on the nose. *)
+Lemma eqT_pinst ρ T : ∀ U σ, eqT ρ T U → eqT ρ (pinst_ty σ T) (pinst_ty σ U).
+Proof.
+  induction T; intros [] σ; simpl; try done; naive_solver.
+Qed.
+
+Lemma teq_ty_inst xs T U : teq T U → teq (ty_inst xs T) (ty_inst xs U).
+Proof. apply eqT_pinst. Qed.
+
 (** The two halves have to be proved together: see the header. *)
 Lemma Vrel_Erel_teq n :
-  (∀ Σ T T' v, teq T T' → Vrel n Σ T v → Vrel n Σ T' v) ∧
-  (∀ Σ T T' e, teq T T' → Erel n Σ T e → Erel n Σ T' e).
+  (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) ∧
+  (∀ W Θ T T' F e, teq T T' → Erel n W Θ T F e → Erel n W Θ T' F e).
 Proof.
   induction n as [n IHn] using lt_wf_ind.
-  assert (∀ Σ T T' v, teq T T' → Vrel n Σ T v → Vrel n Σ T' v) as HV.
-  { intros Σ T. revert Σ. unfold teq.
-    induction T as [|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1|s];
-      intros Σ [] v Hteq HVv; try done.
+  assert (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
+  { intros W Θ T. revert Θ. unfold teq.
+    induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
+                   |m T1 IHT1|s x];
+      intros Θ [] v Hteq HVv; try done.
     - (* ⊸ *)
-      destruct Hteq as [Hteq1 Hteq2].
-      apply Vrel_lolli_iff in HVv as [(eb & -> & Hsup & HL)|(k & T0 & -> & -> & Hk & Ht)].
-      + apply Vrel_lolli_iff. left. exists eb. split_and!; [done|done|].
-        intros j Σ' w Hj Hd HVw.
+      destruct Hteq as (<- & <- & Hteq1 & Hteq2).
+      apply Vrel_lolli_iff in HVv
+        as [(eb & -> & Hsup & Hlb & HL)|(k & T0 & -> & -> & Hk & Ht)].
+      + apply Vrel_lolli_iff. left. exists eb. split_and!; [done|done|done|].
+        intros W' j Θ' Θ'' w F HW Hj Hc HVw Hub.
         eapply (proj2 (IHn j Hj)); [exact Hteq2|].
-        apply HL; [done|done|].
+        apply (HL W' j Θ' Θ'' w F); [done|done|done| |done].
         eapply (proj1 (IHn j Hj)); [|exact HVw].
         by apply teq_sym.
       + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done|done|done|].
-        eapply teq_trans; [exact Ht|]. by split.
+        eapply teq_trans; [exact Ht|]. by split_and!.
     - (* ⊗ *)
       destruct Hteq as [Hteq1 Hteq2].
-      apply Vrel_prod_iff in HVv as (v1 & v2 & Σ1 & Σ2 & -> & Hsp & H1 & H2).
-      apply Vrel_prod_iff. exists v1, v2, Σ1, Σ2. split_and!; eauto.
+      apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
+      apply Vrel_prod_iff. exists v1, v2, Θ1, Θ2. split_and!; eauto.
     - (* ⊕ *)
       destruct Hteq as [Hteq1 Hteq2].
       apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
     - (* □ *)
+      destruct Hteq as [<- Hteq].
       apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
       apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      intros j Hj. eapply (proj2 (IHn j Hj)); [exact Hteq|]. by apply HK.
+      intros W' j xs HW Hj Hxs. eapply (proj2 (IHn j Hj)).
+      + by apply teq_ty_inst.
+      + by apply HK.
     - (* session: the protocol is stored up to ≈ already *)
-      apply Vrel_sess_iff in HVv as (c & s0 & -> & -> & Hs0).
-      apply Vrel_sess_iff. exists c, s0. split_and!; [done|done|].
+      destruct Hteq as [<- Hs].
+      apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hx).
+      apply Vrel_sess_iff. exists c, s0, k. split_and!; [done|done| |done].
       by eapply seq_trans. }
   split; [exact HV|].
-  intros Σ T T' e Hteq HE.
+  intros W Θ T T' F e Hteq HE.
   destruct n as [|n']; [apply Erel_0|].
-  (* the induction hypothesis, packaged for the transition cases:
-     every one of them continues at a strictly smaller index *)
-  assert (∀ j Σ0 T0 T0' e0,
-            j < S n' → teq T0 T0' → Erel j Σ0 T0 e0 → Erel j Σ0 T0' e0) as HEj.
-  { intros j ? ? ? ? Hj. by apply (proj2 (IHn j Hj)). }
-  apply Erel_S_iff in HE as (Hval & Hstep).
-  apply Erel_S_iff. split.
+  assert (∀ j W0 Θ0 T0 T0' F0 e0, j < S n' → teq T0 T0' →
+            Erel j W0 Θ0 T0 F0 e0 → Erel j W0 Θ0 T0' F0 e0) as HEj.
+  { intros j ? ? ? ? ? ? Hj. by apply (proj2 (IHn j Hj)). }
+  apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
+  apply Erel_S_iff. split_and!; [|done|].
   { intros Hirr. eapply HV; [exact Hteq|]. by apply Hval. }
   intros α e' Hst. specialize (Hstep α e' Hst).
-  destruct α as [|[c w|c w|c|cd]|c w]; simpl in Hstep |- *.
+  destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
   - eapply HEj; [lia|exact Hteq|exact Hstep].
-  - destruct Hstep as (Σ1 & U & u & Hhd & Hc & H).
-    exists Σ1, U, u. split_and!; [done|done|].
-    intros j Σ2 Hj Hd Hcd HVw.
-    eapply HEj; [lia|exact Hteq|]. by apply H.
-  - destruct Hstep as (Σ1 & Σ2 & U & u & Hhd & Hd & Hc1 & Hc2 & HVw & HE').
-    exists Σ1, Σ2, U, u. split_and!; try done.
+  - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
+    exists Θ1, m, U, s, k. split; [done|].
+    intros W' j Θ2 Θ12 HW Hj Hc HVw.
+    destruct (H W' j Θ2 Θ12 HW Hj Hc HVw) as (Θ' & Hext & HE').
+    exists Θ'. split; [done|]. eapply HEj; [lia|exact Hteq|exact HE'].
+  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+                       Hhd & Hc & HVw & Hext & HE').
+    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
     eapply HEj; [lia|exact Hteq|exact HE'].
-  - destruct Hstep as (Σ1 & Hhd & Hc & HE').
-    exists Σ1. split_and!; [done|done|].
+  - destruct Hstep as (Θ1 & k & Hhd & HE').
+    exists Θ1, k. split; [done|].
     eapply HEj; [lia|exact Hteq|exact HE'].
-  - destruct Hstep as (c & d & Σ1 & sc & sd & -> & ? & -> & ? & ? & ? & HE').
-    eexists _, _, _, _, _. split_and!; [done..|].
+  - destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
+                       -> & ? & ? & ? & ? & HE').
+    exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|].
     eapply HEj; [lia|exact Hteq|exact HE'].
-  - intros Hcd. specialize (Hstep Hcd) as (Σ1 & Σ2 & sf & Hsp & HVw & HE').
-    exists Σ1, Σ2, sf. split_and!; [done|done|].
+  - intros Hc Hn. destruct (Hstep Hc Hn) as (s & s' & W' & ? & ? & HE').
+    exists s, s', W'. split_and!; [done|done|].
+    eapply HEj; [lia|exact Hteq|exact HE'].
+  - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
+    exists Θ1, Θ2, ub, lb. split_and!; [done|done|].
     eapply HEj; [lia|exact Hteq|exact HE'].
 Qed.
 
-Lemma Vrel_teq n Σ T T' v : teq T T' → Vrel n Σ T v → Vrel n Σ T' v.
+Lemma Vrel_teq n W Θ T T' v : teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v.
 Proof. apply (proj1 (Vrel_Erel_teq n)). Qed.
 
-Lemma Erel_teq n Σ T T' e : teq T T' → Erel n Σ T e → Erel n Σ T' e.
+Lemma Erel_teq n W Θ T T' F e :
+  teq T T' → Erel n W Θ T F e → Erel n W Θ T' F e.
 Proof. apply (proj2 (Vrel_Erel_teq n)). Qed.
 
-Lemma Vrel_teq_iff n Σ T T' v : teq T T' → Vrel n Σ T v ↔ Vrel n Σ T' v.
+Lemma Vrel_teq_iff n W Θ T T' v :
+  teq T T' → Vrel n W Θ T v ↔ Vrel n W Θ T' v.
 Proof. intros Ht. split; apply Vrel_teq; [done|by apply teq_sym]. Qed.
 
-Lemma Erel_teq_iff n Σ T T' e : teq T T' → Erel n Σ T e ↔ Erel n Σ T' e.
+Lemma Erel_teq_iff n W Θ T T' F e :
+  teq T T' → Erel n W Θ T F e ↔ Erel n W Θ T' F e.
 Proof. intros Ht. split; apply Erel_teq; [done|by apply teq_sym]. Qed.
 
 (** The compositionality lemma for E-Conv: semantic typing transports
-    along ≈. This is the semantic side of Typing.v's [typed_conv], and
-    the case the fundamental theorem discharges with it. *)
-Lemma sem_typed_teq Σ Δ e T T' :
-  teq T T' → sem_typed Σ Δ e T → sem_typed Σ Δ e T'.
+    along ≈, under any world and frame. *)
+Lemma sem_typed_teq W Θ Δ F e T T' :
+  teq T T' → sem_typed W Θ Δ F e T → sem_typed W Θ Δ F e T'.
 Proof.
-  intros Ht He n Σ' γ Hd Hg. eapply Erel_teq; [exact Ht|]. by apply He.
+  intros Ht He n W' Θ' γ HW Hd Hg. eapply Erel_teq; [exact Ht|]. by apply He.
 Qed.
 
 (** ** Reading a constant back out of the ⊸ clause
@@ -140,32 +165,22 @@ Qed.
     the first component, and convert the result along the second —
     which is the only way the ≈-quotient shows up in the constant's
     reduction lemmas. *)
-Lemma Vrel_konst_inv n Σ T U k :
-  Vrel n Σ (TLolli T U) (Konst k) →
-  ∃ A B, konst_ty k (TLolli A B) ∧ teq A T ∧ teq B U ∧ Σ = ∅.
+Lemma Vrel_konst_inv n W Θ ub lb T U k :
+  Vrel n W Θ (TLolli ub lb T U) (Konst k) →
+  ∃ A B, konst_ty (w_eq W) (w_lt W) k (TLolli ub lb A B) ∧
+    teq A T ∧ teq B U ∧ Θ = ∅.
 Proof.
-  intros HV. apply Vrel_lolli_iff in HV as [(eb & ? & _)|(k' & T0 & Hk' & -> & Hk & Ht)];
-    [done|simplify_eq].
-  destruct Hk; destruct Ht as [Ht1 Ht2]; eauto 10 using konst_ty.
+  intros HV. apply Vrel_lolli_iff in HV
+    as [(eb & ? & _)|(k' & T0 & Hk' & -> & Hk & Ht)]; [done|simplify_eq].
+  destruct T0; try done. destruct Ht as (<- & <- & Ht1 & Ht2). eauto 10.
 Qed.
 
-(** ** Conversion at a session type
+(** ** Conversion at a session type *)
 
-    The special case the old E-Conv was stated at, kept under its
-    former name so that its users need not change. *)
+Lemma Vrel_sess_seq n W Θ s s' x v :
+  seq s s' → Vrel n W Θ (TSess s x) v → Vrel n W Θ (TSess s' x) v.
+Proof. intros Hs. apply Vrel_teq. by split. Qed.
 
-Lemma Vrel_sess_seq n Σ s s' v :
-  seq s s' → Vrel n Σ (TSess s) v → Vrel n Σ (TSess s') v.
-Proof. intros Hs. by apply Vrel_teq. Qed.
-
-Lemma Erel_sess_seq n Σ s s' e :
-  seq s s' → Erel n Σ (TSess s) e → Erel n Σ (TSess s') e.
-Proof. intros Hs. by apply Erel_teq. Qed.
-
-Lemma Vrel_sess_conv n Σ s s' v :
-  unfoldS s = unfoldS s' → Vrel n Σ (TSess s) v → Vrel n Σ (TSess s') v.
-Proof. intros Hu. by apply Vrel_sess_seq, unfoldS_seq. Qed.
-
-Lemma Erel_sess_conv n Σ s s' e :
-  unfoldS s = unfoldS s' → Erel n Σ (TSess s) e → Erel n Σ (TSess s') e.
-Proof. intros Hu. by apply Erel_sess_seq, unfoldS_seq. Qed.
+Lemma Erel_sess_seq n W Θ s s' x F e :
+  seq s s' → Erel n W Θ (TSess s x) F e → Erel n W Θ (TSess s' x) F e.
+Proof. intros Hs. apply Erel_teq. by split. Qed.
