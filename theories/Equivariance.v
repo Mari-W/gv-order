@@ -855,3 +855,212 @@ Section envs.
         split_and!; [done|done|]. by apply sdual_smap.
   Qed.
 End envs.
+
+(** ** Readiness and frames *)
+
+Section ready.
+  Context (a b : chan).
+
+  Lemma slswap_involutive σ : slswap a b (slswap a b σ) = σ.
+  Proof.
+    destruct σ; simpl; by rewrite ?cswap_involutive, ?eswap_involutive,
+      ?gswap_involutive.
+  Qed.
+
+  Lemma tlswap_involutive α : tlswap a b (tlswap a b α) = α.
+  Proof.
+    destruct α; simpl; by rewrite ?slswap_involutive, ?cswap_involutive,
+      ?eswap_involutive.
+  Qed.
+
+  Lemma selects_swap Θ σ k :
+    selects Θ σ k → selects (tenvswap a b Θ) (slswap a b σ) (kswap a b k).
+  Proof.
+    destruct σ as [c v|c v|c|cd]; simpl.
+    - intros (Hk & e & m & T & s & He & Hu). split; [by rewrite Hk|].
+      exists (entswap a b e), m, (tyswap a b T), (styswap a b s).
+      rewrite tenv_entry_swap, He. split; [done|]. simpl.
+      by rewrite unfoldS_swap, Hu.
+    - intros (Hk & e & m & T & s & He & Hu). split; [by rewrite Hk|].
+      exists (entswap a b e), m, (tyswap a b T), (styswap a b s).
+      rewrite tenv_entry_swap, He. split; [done|]. simpl.
+      by rewrite unfoldS_swap, Hu.
+    - intros (Hk & e & He & Hu & Ht). split; [by rewrite Hk|].
+      exists (entswap a b e). rewrite tenv_entry_swap, He.
+      split_and!; [done|simpl; by rewrite unfoldS_swap, Hu|].
+      intros Hk2 e' He'. simpl in Hk2.
+      pose proof (tenv_entry_swap a b Θ (c, false)) as Hs. unfold kswap in Hs.
+      simpl in Hs. rewrite He' in Hs.
+      destruct (tenv_entry Θ (c, false)) as [e0|] eqn:E0; [|done].
+      injection Hs as ->. simpl. rewrite unfoldS_swap. intros Hend.
+      apply (Ht Hk2 e0); [done|].
+      rewrite <-(styswap_involutive a b (unfoldS e0.1)), Hend. done.
+    - intros (Hk & He). split.
+      + by apply elem_of_gswap.
+      + rewrite tenv_entry_swap. destruct He as [e He]. rewrite He. by eexists.
+  Qed.
+
+  Lemma offered_t_swap Θ t k :
+    offered_t Θ t k → offered_t (tenvswap a b Θ) (eswap a b t) (kswap a b k).
+  Proof.
+    intros (σ & t' & Hst & Hs). exists (slswap a b σ), (eswap a b t').
+    split; [exact (tstep_eswap a b _ _ _ Hst)|]. by apply selects_swap.
+  Qed.
+
+  Lemma offered_t_swap_iff Θ t k :
+    offered_t (tenvswap a b Θ) (eswap a b t) k ↔ offered_t Θ t (kswap a b k).
+  Proof.
+    split.
+    - intros H. apply offered_t_swap in H.
+      by rewrite tenvswap_involutive, eswap_involutive in H.
+    - intros H. apply offered_t_swap in H. by rewrite kswap_involutive in H.
+  Qed.
+
+  Lemma offered_p_swap Σ p k :
+    offered_p Σ p k → offered_p (senvswap a b Σ) (pswap a b p) (kswap a b k).
+  Proof.
+    intros (σ & p' & Hst & Hs). exists (slswap a b σ), (pswap a b p').
+    split; [exact (proc_step_pswap a b _ _ _ Hst)|].
+    rewrite <-tenvswap_of. by apply selects_swap.
+  Qed.
+
+  Lemma offered_p_swap_iff Σ p k :
+    offered_p (senvswap a b Σ) (pswap a b p) k ↔ offered_p Σ p (kswap a b k).
+  Proof.
+    split.
+    - intros H. apply offered_p_swap in H.
+      by rewrite senvswap_involutive, pswap_involutive in H.
+    - intros H. apply offered_p_swap in H. by rewrite kswap_involutive in H.
+  Qed.
+
+  Lemma stable_t_swap t : stable_t t → stable_t (eswap a b t).
+  Proof.
+    intros H α t' Hst. apply (tstep_eswap a b) in Hst.
+    rewrite eswap_involutive in Hst. specialize (H _ _ Hst).
+    by destruct α.
+  Qed.
+
+  Lemma stable_p_swap p : stable_p p → stable_p (pswap a b p).
+  Proof.
+    intros H p' Hst. apply (proc_step_pswap a b) in Hst.
+    rewrite pswap_involutive in Hst. exact (H _ Hst).
+  Qed.
+
+  Lemma irred_swap e : irred e → irred (eswap a b e).
+  Proof.
+    intros H α e' Hst. apply (tstep_eswap a b) in Hst.
+    rewrite eswap_involutive in Hst. exact (H _ _ Hst).
+  Qed.
+
+  Lemma pirred_swap p : pirred p → pirred (pswap a b p).
+  Proof.
+    intros H π p' Hst. apply (proc_step_pswap a b) in Hst.
+    rewrite pswap_involutive in Hst. exact (H _ _ Hst).
+  Qed.
+
+  Lemma above_offered_swap W Θ (off off' : ekey → Prop) :
+    (∀ k, off' k ↔ off (kswap a b k)) →
+    above_offered W Θ off →
+    above_offered (wswap a b W) (tenvswap a b Θ) off'.
+  Proof.
+    intros Hoff H k e He Hk. rewrite tenv_entry_swap' in He.
+    destruct (tenv_entry Θ (kswap a b k)) as [e0|] eqn:E0; [|done].
+    injection He as <-. rewrite Hoff in Hk.
+    destruct (H _ _ E0 Hk) as (k' & e' & Ho & He' & Hlt).
+    exists (kswap a b k'), (entswap a b e'). split_and!.
+    - by rewrite Hoff, kswap_involutive.
+    - by rewrite tenv_entry_swap, He'.
+    - rewrite <-(kswap_involutive a b k). rewrite !entry_head_swap.
+      by apply wswap_lt.
+  Qed.
+
+  Lemma ready_t_swap W Θ t :
+    ready_t W Θ t → ready_t (wswap a b W) (tenvswap a b Θ) (eswap a b t).
+  Proof.
+    intros H Hs. apply (stable_t_swap) in Hs. rewrite eswap_involutive in Hs.
+    destruct (H Hs) as [Hv Ha]. split.
+    - intros Hno. rewrite is_val_eswap. apply Hv. intros k Hk.
+      apply (Hno (kswap a b k)). by rewrite offered_t_swap_iff, kswap_involutive.
+    - apply (above_offered_swap _ _ (offered_t Θ t)); [|done].
+      intros k. apply offered_t_swap_iff.
+  Qed.
+
+  Lemma ready_p_swap W Σ p :
+    ready_p W Σ p → ready_p (wswap a b W) (senvswap a b Σ) (pswap a b p).
+  Proof.
+    intros H Hs. apply stable_p_swap in Hs. rewrite pswap_involutive in Hs.
+    destruct (H Hs) as [Hv Ha]. split.
+    - intros Hno. apply terminated_pswap. apply Hv. intros k Hk.
+      apply (Hno (kswap a b k)). by rewrite offered_p_swap_iff, kswap_involutive.
+    - rewrite <-tenvswap_of.
+      apply (above_offered_swap _ _ (offered_p Σ p)); [|done].
+      intros k. apply offered_p_swap_iff.
+  Qed.
+
+  Lemma frame_t_swap W Θ t F :
+    frame_t W Θ t F →
+    frame_t (wswap a b W) (tenvswap a b Θ) (eswap a b t) (set_map (ptswap a b) F).
+  Proof.
+    intros H Hs k e Ho He y Hy. apply stable_t_swap in Hs.
+    rewrite eswap_involutive in Hs.
+    rewrite offered_t_swap_iff in Ho. rewrite tenv_entry_swap' in He.
+    destruct (tenv_entry Θ (kswap a b k)) as [e0|] eqn:E0; [|done].
+    injection He as <-. apply elem_of_map in Hy as (y0 & -> & Hy0).
+    rewrite <-(kswap_involutive a b k), entry_head_swap. apply wswap_lt.
+    by apply (H Hs _ _ Ho E0).
+  Qed.
+
+  Lemma tau_link_alias_swap W' Σ p p' :
+    tau_link_alias W' Σ p p' →
+    tau_link_alias (wswap a b W') (senvswap a b Σ) (pswap a b p) (pswap a b p').
+  Proof.
+    intros H E e c d e' Hp Hst Hc Hd Hp'.
+    assert (p.2 = msswap a b E ⊎ {[+ eswap a b e +]}) as Hp0.
+    { rewrite <-(msswap_involutive a b p.2). destruct p; simpl in *.
+      by rewrite Hp, msswap_disj_union, msswap_singleton. }
+    apply (tstep_eswap a b) in Hst. simpl in Hst. rewrite gswap_upair in Hst.
+    rewrite dom_senvswap, elem_of_gswap' in Hc.
+    destruct p as [C0 E0]; simpl in *. rewrite elem_of_gswap' in Hd.
+    assert (p' = (C0 ∖ {[cswap a b d]},
+                  echsubst (cswap a b d) (cswap a b c)
+                    (msswap a b E ⊎ {[+ eswap a b e' +]}))) as Hp''.
+    { rewrite <-(pswap_involutive a b p'), Hp'. unfold pswap; simpl.
+      rewrite gswap_difference, gswap_singleton, gswap_involutive,
+        echsubst_msswap, msswap_disj_union, msswap_singleton. done. }
+    destruct (H _ _ _ _ _ Hp0 Hst Hc Hd Hp'') as (s & k & j & Hs & Hw).
+    exists (styswap a b s), k, j. split.
+    - by rewrite lookup_senvswap', Hs.
+    - simpl. by rewrite !ptswap_chan.
+  Qed.
+End ready.
+
+(** World equivalence leaves readiness, frames and aliases alone. *)
+Lemma above_offered_wsame W1 W2 Θ off :
+  wsame W1 W2 → above_offered W1 Θ off → above_offered W2 Θ off.
+Proof.
+  intros (_ & _ & Hl) H k e He Hk. destruct (H k e He Hk) as (k' & e' & ? & ? & ?).
+  exists k', e'. split_and!; [done|done|]. by apply Hl.
+Qed.
+
+Lemma ready_t_wsame W1 W2 Θ t : wsame W1 W2 → ready_t W1 Θ t → ready_t W2 Θ t.
+Proof.
+  intros HS H Hs. destruct (H Hs). split; [done|]. by eapply above_offered_wsame.
+Qed.
+
+Lemma ready_p_wsame W1 W2 Σ p : wsame W1 W2 → ready_p W1 Σ p → ready_p W2 Σ p.
+Proof.
+  intros HS H Hs. destruct (H Hs). split; [done|]. by eapply above_offered_wsame.
+Qed.
+
+Lemma frame_t_wsame W1 W2 Θ t F : wsame W1 W2 → frame_t W1 Θ t F → frame_t W2 Θ t F.
+Proof.
+  intros (_ & _ & Hl) H Hs k e Ho He y Hy. apply Hl. by eapply H.
+Qed.
+
+Lemma tau_link_alias_wsame W1 W2 Σ p p' :
+  wsame W1 W2 → tau_link_alias W1 Σ p p' → tau_link_alias W2 Σ p p'.
+Proof.
+  intros (_ & He & _) H E e c d e' ? ? ? ? ?.
+  destruct (H E e c d e') as (s & k & j & ? & ?); [done..|].
+  exists s, k, j. split; [done|]. by apply He.
+Qed.
