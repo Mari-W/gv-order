@@ -4,16 +4,16 @@
     state.
 
     - [ready_term]: a single thread that holds both ends of the
-      restricted channels C₀ (at equal counts) and is ready over
+      restricted channels C₀ (at aliased points) and is ready over
       Σ, Θ_B is a ready process over Σ: a stable thread never offers an
       entry of C₀, because it offers one action, and the other end of
       the same channel would have to lie strictly above an entry with
-      the same head.
+      an aliased head.
     - [ready_connect]: two ready components over a cut C₀ (dual ends at
-      equal counts) give a ready composite: in a stable composite the
+      aliased points) give a ready composite: in a stable composite the
       two ends of a cut channel are never both offered, so an entry
       that only a cut channel lies below has, on the other side, an
-      unoffered entry with the same head, and so on. The chain
+      unoffered entry with an aliased head, and so on. The chain
       descends strictly in the composite's world and visits each cut
       channel at most once, so it ends at an external offered entry. *)
 
@@ -201,7 +201,7 @@ Section connect.
   Context (Hd1 : Σ1 ##ₘ ΣC) (Hd2 : Σ2 ##ₘ ΣC') (Hd12 : Σ1 ##ₘ Σ2).
   Context (HC0 : dom ΣC = C0) (HC0' : dom ΣC' = C0).
   Context (Hcut : ∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' →
-                    e.2 = e'.2 ∧ sdual e.1 e'.1).
+                    w_eq W e.2 e'.2 ∧ sdual e.1 e'.1).
   Context (HC2 : C2 ## dom Σ1) (HC1 : C1 ## dom Σ2).
   Context (Hl1 : ∀ k e k' e',
              tenv_entry (tenv_of (Σ1 ∪ ΣC)) k = Some e →
@@ -417,9 +417,18 @@ Section connect.
   Lemma lt_trans_W x y z : w_lt W x y → w_lt W y z → w_lt W x z.
   Proof. destruct HW as [HWf _]. apply (wf_lt_trans _ HWf). Qed.
 
+  Lemma lt_eq_l x y z : w_eq W x y → w_lt W y z → w_lt W x z.
+  Proof. destruct HW as [HWf _]. intros. eapply (wf_lt_eq _ HWf); [done|done|apply HWf]. Qed.
+
+  Lemma lt_eq_r x y z : w_lt W x y → w_eq W y z → w_lt W x z.
+  Proof. destruct HW as [HWf _]. intros. eapply (wf_lt_eq _ HWf); [apply HWf|done|done]. Qed.
+
+  Lemma eq_sym_W x y : w_eq W x y → w_eq W y x.
+  Proof. destruct HW as [HWf _]. apply (wf_eq_sym _ HWf). Qed.
+
   (** One step of the descent from each side: an unoffered entry lies
       above a composite offer, or above an unoffered entry of the
-      other side on a cut channel, at the same head. *)
+      other side on a cut channel, at an aliased head. *)
   Definition coffer_below (h : point) : Prop :=
     ∃ k' e', offered_p Σ p k' ∧ tenv_entry (tenv_of Σ) k' = Some e' ∧
       w_lt W (entry_head k' e') h.
@@ -428,9 +437,9 @@ Section connect.
     stable_p p →
     tenv_entry (tenv_of Σa) k = Some e → ¬ offered_p Σa (C1, E1) k →
     coffer_below (entry_head k e) ∨
-    ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧ e1.2 = e2.2 ∧
+    ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧ w_eq W e1.2 e2.2 ∧
       ¬ offered_p Σb (C2, E2) (c, false) ∧
-      w_lt W (pt_chan c e1.2) (entry_head k e).
+      w_lt W e1.2 (entry_head k e).
   Proof.
     intros Hs He Hno. destruct (Hr1 (stable_l Hs)) as [_ Hab].
     destruct (Hab k e He Hno) as (k' & e' & Ho & He' & Hlt).
@@ -450,16 +459,16 @@ Section connect.
       exists k'.1, e', e2. split_and!; [done..| |].
       + intros Ho2. apply (cut_not_both k'.1 false false Hs Hc); [|done].
         by rewrite <-Hk'.
-      + rewrite Hk' in Hlt. exact Hlt.
+      + exact Hlt.
   Qed.
 
   Lemma step_r k e :
     stable_p p →
     tenv_entry (tenv_of Σb) k = Some e → ¬ offered_p Σb (C2, E2) k →
     coffer_below (entry_head k e) ∨
-    ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧ e1.2 = e2.2 ∧
+    ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧ w_eq W e1.2 e2.2 ∧
       ¬ offered_p Σa (C1, E1) (c, false) ∧
-      w_lt W (pt_chan c e1.2) (entry_head k e).
+      w_lt W e1.2 (entry_head k e).
   Proof.
     intros Hs He Hno. destruct (Hr2 (stable_r Hs)) as [_ Hab].
     destruct (Hab k e He Hno) as (k' & e' & Ho & He' & Hlt).
@@ -479,8 +488,7 @@ Section connect.
       exists k'.1, e1, e'. split_and!; [done..| |].
       + intros Ho1. apply (cut_not_both k'.1 false false Hs Hc); [done|].
         by rewrite <-Hk'.
-      + rewrite Hk' in Hlt. unfold entry_head in *. simpl in *.
-        by rewrite Hcnt.
+      + eapply lt_eq_l; [exact Hcnt|]. exact Hlt.
   Qed.
 
   (** The descent. V collects the cut channels visited so far; their
@@ -492,21 +500,21 @@ Section connect.
     (if i then tenv_entry (tenv_of Σa) k = Some e ∧ ¬ offered_p Σa (C1, E1) k
      else tenv_entry (tenv_of Σb) k = Some e ∧ ¬ offered_p Σb (C2, E2) k) →
     (∀ v ev, v ∈ V → ΣC !! v = Some ev →
-       entry_head k e = pt_chan v ev.2 ∨ w_lt W (entry_head k e) (pt_chan v ev.2)) →
+       w_eq W (entry_head k e) ev.2 ∨ w_lt W (entry_head k e) ev.2) →
     coffer_below (entry_head k e).
   Proof.
     induction n as [|n IH]; intros V i k e Hs Hn Hq Hinv.
     all: assert (coffer_below (entry_head k e) ∨
            ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧
-             e1.2 = e2.2 ∧
+             w_eq W e1.2 e2.2 ∧
              (if i then ¬ offered_p Σb (C2, E2) (c, false)
               else ¬ offered_p Σa (C1, E1) (c, false)) ∧
-             w_lt W (pt_chan c e1.2) (entry_head k e))
+             w_lt W e1.2 (entry_head k e))
            as [Hdone|(c & e1 & e2 & Hc & He1 & He2 & Hcnt & Hpart & Hlt)];
       [destruct i, Hq; [by apply step_l|by apply step_r]|done|].
     all: assert (c ∉ V) as HcV.
     1,3: intros HcV; destruct (Hinv c e1 HcV He1) as [Heq|Hlt'];
-         [rewrite Heq in Hlt; by eapply lt_irrefl_W
+         [apply (lt_irrefl_W (entry_head k e)); by eapply lt_eq_l
          |by eapply lt_irrefl_W, lt_trans_W].
     - exfalso. assert (c ∈ C0 ∖ V) as Hin by set_solver.
       assert (size (C0 ∖ V) ≠ 0) as Hnz.
@@ -514,28 +522,27 @@ Section connect.
       lia.
     - assert (C0 ∖ (V ∪ {[c]}) ⊂ C0 ∖ V) as Hsub by set_solver.
       apply subset_size in Hsub.
-      assert (∀ v ev, v ∈ V ∪ {[c]} → ΣC !! v = Some ev →
-                pt_chan c e1.2 = pt_chan v ev.2 ∨
-                w_lt W (pt_chan c e1.2) (pt_chan v ev.2)) as Hinv'.
-      { intros v ev Hv Hev. apply elem_of_union in Hv as [Hv| ->%elem_of_singleton].
+      assert (∀ h, w_eq W h e1.2 → ∀ v ev, v ∈ V ∪ {[c]} → ΣC !! v = Some ev →
+                w_eq W h ev.2 ∨ w_lt W h ev.2) as Hinv'.
+      { intros h Hh v ev Hv Hev. apply elem_of_union in Hv as [Hv| ->%elem_of_singleton].
         - right. destruct (Hinv v ev Hv Hev) as [Heq|Hlt'].
-          + by rewrite <-Heq.
-          + by eapply lt_trans_W.
+          + eapply lt_eq_l; [exact Hh|]. by eapply lt_eq_r.
+          + eapply lt_eq_l; [exact Hh|]. by eapply lt_trans_W.
         - left. rewrite He1 in Hev. by injection Hev as <-. }
       destruct i.
       + destruct (IH (V ∪ {[c]}) false (c, false) e2) as (k'' & e'' & ? & ? & Hlt'').
         * done.
         * lia.
         * split; [|done]. rewrite tenv_entry_of. by rewrite lookup_b_cut.
-        * unfold entry_head. simpl. rewrite <-Hcnt. exact Hinv'.
+        * apply Hinv'. unfold entry_head. simpl. by apply eq_sym_W.
         * exists k'', e''. split_and!; [done|done|].
-          eapply lt_trans_W; [|exact Hlt]. unfold entry_head in *. simpl in *.
-          by rewrite Hcnt.
+          eapply lt_trans_W; [|exact Hlt]. eapply lt_eq_r; [exact Hlt''|].
+          unfold entry_head. simpl. by apply eq_sym_W.
       + destruct (IH (V ∪ {[c]}) true (c, false) e1) as (k'' & e'' & ? & ? & Hlt'').
         * done.
         * lia.
         * split; [|done]. rewrite tenv_entry_of. by rewrite lookup_a_cut.
-        * exact Hinv'.
+        * apply Hinv'. destruct HW as [HWf _]. apply HWf.
         * exists k'', e''. split_and!; [done|done|].
           by eapply lt_trans_W.
   Qed.
@@ -649,7 +656,7 @@ Section term.
   Context (HW : strict W).
   Context (HB : dom ΘB = C0) (HΣB : dom Σ ## C0).
   Context (HBoth : ∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2).
-  Context (HBdual : tenv_dual ΘB).
+  Context (HBdual : tenv_dual (w_eq W) ΘB).
   Context (Hr : ready_t W (tenv_of Σ ∪ ΘB) t).
 
   Local Notation Θ := (tenv_of Σ ∪ ΘB).
@@ -721,9 +728,10 @@ Section term.
            by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
     all: assert (tenv_entry Θ (c', b) = Some (if b then e2 else e1)) as Hself
            by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
-    all: assert (entry_head (c', negb b) (if b then e1 else e2) =
-                 entry_head (c', b) (if b then e2 else e1)) as Hhead
-           by (unfold entry_head; simpl; destruct b; by rewrite Hcnt).
+    all: assert (w_eq W (entry_head (c', negb b) (if b then e1 else e2))
+                 (entry_head (c', b) (if b then e2 else e1))) as Hhead
+           by (unfold entry_head; simpl; destruct HW as [HWf _];
+               destruct b; simpl; [done|by apply (wf_eq_sym _ HWf)]).
     (* every offer of the thread is on c', from the same action *)
     all: assert (∀ k' σ' t'', tstep t (LSess σ') t'' → selects Θ σ' k' → k'.1 = c') as Hsame.
     1,3,5: intros k' σ' t'' Hst' Hsel'; destruct (tstep_same_act _ _ _ _ _ Hst Hst') as (a & Ha & Ha');
@@ -756,8 +764,9 @@ Section term.
     all: pose proof (Hsame _ _ _ Hst' Hsel') as Hk'1.
     all: destruct k' as [c'' b']; simpl in Hk'1; subst c''.
     all: destruct (decide (b' = b)) as [->|Hb'];
-      [rewrite Hself in He'; injection He' as <-; rewrite Hhead in Hlt;
-       by eapply (proj2 HW)
+      [rewrite Hself in He'; injection He' as <-;
+       destruct HW as [HWf Hirr]; apply (Hirr (entry_head (c', b) (if b then e2 else e1)));
+       eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|exact Hhead]
       |apply Hnoff; exists σ', t''; split; [done|];
        by replace (negb b) with b' by (destruct b, b'; first [reflexivity|contradiction])].
   Qed.
