@@ -764,26 +764,79 @@ Proof.
   simpl. by apply Prel_swap_fix.
 Qed.
 
-Lemma walpha_norm W Σ p q (X : gset chan) :
-  world_wf W → walpha W Σ p q →
-  ∃ L, walpha_av X W Σ p (pswaps L q) ∧ swaps_ok W Σ L.
+Lemma walpha_norm W Σ p q (X Y : gset chan) :
+  world_wf W → X ## Y → walpha W Σ p q →
+  ∃ L, walpha_av X W Σ p (pswaps L q) ∧ swaps_ok W Σ L ∧
+    Forall (λ ab, ab.1 ∉ Y ∧ ab.2 ∉ Y) L.
 Proof.
-  intros HW Hal. revert X.
-  induction Hal as [p|p q a b Ha Hb HbE HbΣ Hbw _ IH]; intros X.
-  { exists []. split; [constructor|constructor]. }
+  intros HW HXY Hal. revert X HXY.
+  induction Hal as [p|p q a b Ha Hb HbE HbΣ Hbw _ IH]; intros X HXY.
+  { exists []. split_and!; constructor. }
   destruct (decide (b ∈ X)) as [HbX|HbX].
-  - destruct (wfresh_pick W (X ∪ p.1 ∪ echans p.2 ∪ dom Σ ∪ {[a; b]}))
+  - destruct (wfresh_pick W (X ∪ Y ∪ p.1 ∪ echans p.2 ∪ dom Σ ∪ {[a; b]}))
       as (z & Hz & Hzw).
-    destruct (IH ({[b; z]} ∪ X)) as (L & Hq1 & HL).
-    exists ((b, z) :: L). split; [|constructor; [split_and!; simpl; [done|done|done|set_solver]|done]].
-    apply (walpha_av_step _ _ _ _ _ a z); [done|set_solver|set_solver|set_solver|done|set_solver|].
-    assert (pswap a z p = pswap b z (pswap a b p)) as ->.
-    { rewrite pswap_conj, cswap_l, (cswap_ne b z a) by set_solver.
-      rewrite (pswap_fresh b z p); [done|done|set_solver|done|set_solver]. }
-    apply walpha_av_pswap; [done|done|done|done|set_solver|done].
-  - destruct (IH X) as (L & Hq1 & HL).
-    exists L. split; [|done]. by econstructor.
+    destruct (IH ({[b; z]} ∪ X)) as (L & Hq1 & HL & HLY); [set_solver|].
+    exists ((b, z) :: L). split_and!.
+    + apply (walpha_av_step _ _ _ _ _ a z); [done|set_solver|set_solver|set_solver|done|set_solver|].
+      assert (pswap a z p = pswap b z (pswap a b p)) as ->.
+      { rewrite pswap_conj, cswap_l, (cswap_ne b z a) by set_solver.
+        rewrite (pswap_fresh b z p); [done|done|set_solver|done|set_solver]. }
+      apply walpha_av_pswap; [done|done|done|done|set_solver|done].
+    + constructor; [split_and!; simpl; [done|done|done|set_solver]|done].
+    + constructor; [simpl; set_solver|done].
+  - destruct (IH X HXY) as (L & Hq1 & HL & HLY).
+    exists L. split_and!; [|done|done]. by econstructor.
 Qed.
+
+(** Transpositions along a list, on sets and worlds. *)
+Definition gswaps (L : list (chan * chan)) (C : gset chan) : gset chan :=
+  foldr (λ ab D, gswap ab.1 ab.2 D) C L.
+
+Definition wswaps (L : list (chan * chan)) (W : world) : world :=
+  foldr (λ ab V, wswap ab.1 ab.2 V) W L.
+
+Lemma pswaps_fst L q : (pswaps L q).1 = gswaps L q.1.
+Proof. induction L as [|ab L IH]; [done|]. simpl. by rewrite IH. Qed.
+
+Lemma gswaps_out L C S :
+  Forall (λ ab, ab.1 ∉ C ∧ ab.2 ∉ C) L → gswaps L (C ∪ S) = C ∪ gswaps L S.
+Proof.
+  induction 1 as [|[a b'] L [Ha Hb] _ IH]; [done|]. simpl.
+  by rewrite IH, gswap_union, gswap_fresh.
+Qed.
+
+Lemma Prel_pswaps_restricted n W Σ T q L :
+  Forall (λ ab, ab.1 ∉ dom Σ ∧ ab.2 ∉ dom Σ) L →
+  Prel n W Σ T q → Prel n (wswaps L W) Σ T (pswaps L q).
+Proof.
+  intros HL HP. induction HL as [|[a b'] L [Ha Hb] _ IH]; [done|].
+  simpl. by apply Prel_swap_restricted.
+Qed.
+
+Lemma wswaps_fix W Σ L : world_wf W → swaps_ok W Σ L → wsame (wswaps L W) W.
+Proof.
+  intros HW HL. induction HL as [|[a b'] L (Ha & Hb & _ & _) _ IH]; [done|].
+  simpl. eapply wsame_trans; [apply wswap_wsame, IH|].
+  by apply wswap_fix.
+Qed.
+
+Lemma wext_inv_wswaps W Σ C S W1 L :
+  world_wf W → swaps_ok W Σ L → Forall (λ ab, ab.1 ∉ C ∧ ab.2 ∉ C) L →
+  wext_inv W (set_map NChan (C ∪ S)) W1 →
+  wext_inv W (set_map NChan (C ∪ gswaps L S)) (wswaps L W1).
+Proof.
+  intros HW HL HLC Hinv.
+  assert (∀ L', swaps_ok W Σ L' → Forall (λ ab, ab.1 ∉ C ∧ ab.2 ∉ C) L' →
+            wext_inv (wswaps L' W) (set_map NChan (gswaps L' (C ∪ S))) (wswaps L' W1))
+    as Hgen.
+  { induction L' as [|[a b'] L' IH]; intros HL' HLC'; [done|].
+    inversion HL' as [|? ? Hab HL'']; inversion HLC' as [|? ? Hab' HLC'']; subst.
+    simpl. apply (wext_inv_wswap a b') in IH; [|done|done].
+    by rewrite names_nchan_swap in IH. }
+  pose proof (Hgen L HL HLC) as H. rewrite gswaps_out in H by done.
+  eapply wext_inv_wsame; [by apply (wswaps_fix W Σ)|apply wsame_refl|exact H].
+Qed.
+
 
 (** The junk renaming commutes with an α-variant avoiding x and b. *)
 Lemma msswap_echsubst a b' x b E :
@@ -816,3 +869,59 @@ Proof.
     exists e0. split; [done|]. set_solver.
   - unfold pswap at 1; simpl. rewrite msswap_echsubst by done. exact IH.
 Qed.
+
+(** ** The junk-renaming transport *)
+
+Section junk.
+  Context (x b : chan) (Hbx : b ≠ x).
+
+  Definition junk_ok (n : nat) : Prop :=
+    ∀ W Σ T C E, world_wf W → x ∉ dom Σ → x ∉ C → b ∉ C →
+      Prel n W Σ T (C, E) → Prel n W Σ T (C, echsubst x b E).
+
+  Lemma wswaps_wf W L : world_wf W → world_wf (wswaps L W).
+  Proof. intros HW. induction L; simpl; [done|]. by apply wswap_wf. Qed.
+
+  Lemma swaps_ok_dom W Σ L :
+    swaps_ok W Σ L → Forall (λ ab, ab.1 ∉ dom Σ ∧ ab.2 ∉ dom Σ) L.
+  Proof. intros HL. eapply Forall_impl; [exact HL|]. naive_solver. Qed.
+
+  (** The successor's α-variant in a fixed world. *)
+  Lemma junk_fixed n W1 Σ T q r :
+    junk_ok n → world_wf W1 → x ∉ dom Σ → x ∉ q.1 → b ∉ q.1 →
+    walpha W1 Σ q r → Prel n W1 Σ T r →
+    ∃ r'', walpha W1 Σ (q.1, echsubst x b q.2) r'' ∧ Prel n W1 Σ T r''.
+  Proof.
+    intros IH HW1 HxΣ Hxq Hbq Hal HP.
+    destruct (walpha_norm W1 Σ q r {[x; b]} ∅) as (L & Hav & HL & _);
+      [done|set_solver|done|].
+    pose proof (Prel_pswaps _ _ _ _ _ _ HW1 HL HP) as HP1.
+    destruct (walpha_av_junk _ _ _ _ x b Hav Hxq Hbq) as (Hav' & Hx1 & Hb1).
+    set (r1 := pswaps L r) in *. destruct r1 as [C1 E1] eqn:Er1; simpl in *.
+    exists (C1, echsubst x b E1). split.
+    - by eapply walpha_av_walpha.
+    - by apply IH.
+  Qed.
+
+  (** The successor's α-variant in a world the step grew. *)
+  Lemma junk_moving n W W1 Σ T C q r :
+    junk_ok n → world_wf W → strict W1 → x ∉ dom Σ → x ∉ C → b ∉ C →
+    x ∉ q.1 → b ∉ q.1 →
+    walpha W Σ q r → wext_inv W (set_map NChan (C ∪ r.1)) W1 → Prel n W1 Σ T r →
+    ∃ W2 r'', walpha W Σ (q.1, echsubst x b q.2) r'' ∧
+      wext_inv W (set_map NChan (C ∪ r''.1)) W2 ∧ Prel n W2 Σ T r''.
+  Proof.
+    intros IH HW [HW1 _] HxΣ HxC HbC Hxq Hbq Hal Hinv HP.
+    destruct (walpha_norm W Σ q r {[x; b]} C) as (L & Hav & HL & HLC);
+      [done|set_solver|done|].
+    pose proof (Prel_pswaps_restricted _ _ _ _ _ _ (swaps_ok_dom _ _ _ HL) HP) as HP1.
+    pose proof (wext_inv_wswaps _ _ _ _ _ _ HW HL HLC Hinv) as Hinv1.
+    destruct (walpha_av_junk _ _ _ _ x b Hav Hxq Hbq) as (Hav' & Hx1 & Hb1).
+    rewrite <-pswaps_fst in Hinv1.
+    set (r1 := pswaps L r) in *. destruct r1 as [C1 E1] eqn:Er1; simpl in *.
+    exists (wswaps L W1), (C1, echsubst x b E1). split_and!.
+    - by eapply walpha_av_walpha.
+    - done.
+    - apply IH; [by apply wswaps_wf|done|done|done|done].
+  Qed.
+End junk.
