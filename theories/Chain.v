@@ -632,3 +632,194 @@ Section connect.
         * by exists k', e'.
   Qed.
 End connect.
+
+(** ** One thread holding both ends of its restricted channels *)
+
+(** All labels of a term come from its one redex. *)
+Lemma tstep_same_act e α α' e' e'' :
+  tstep e α e' → tstep e α' e'' → ∃ a, offers a α ∧ offers a α'.
+Proof.
+  intros H1 H2. destruct (act_step _ _ _ H1) as (a & Ha & Ho).
+  destruct (act_step _ _ _ H2) as (a' & Ha' & Ho'). rewrite Ha in Ha'.
+  injection Ha' as <-. eauto.
+Qed.
+
+Section term.
+  Context (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr).
+  Context (HW : strict W).
+  Context (HB : dom ΘB = C0) (HΣB : dom Σ ## C0).
+  Context (HBoth : ∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2).
+  Context (HBdual : tenv_dual ΘB).
+  Context (Hr : ready_t W (tenv_of Σ ∪ ΘB) t).
+
+  Local Notation Θ := (tenv_of Σ ∪ ΘB).
+  Local Notation p := (C0, {[+ t +]} : gmultiset expr).
+
+  Lemma single_soup : ({[+ t +]} : gmultiset expr) = ∅ ⊎ {[+ t +]}.
+  Proof. by rewrite (left_id_L ∅ (⊎)). Qed.
+
+  Lemma entry_ext c b : c ∈ dom Σ → tenv_entry Θ (c, b) = tenv_entry (tenv_of Σ) (c, b).
+  Proof.
+    intros Hc. unfold tenv_entry. simpl. rewrite lookup_union.
+    apply elem_of_dom in Hc as [e He]. unfold tenv_of. rewrite lookup_fmap, He.
+    simpl. by destruct (ΘB !! c).
+  Qed.
+
+  Lemma entry_cut c b : c ∈ C0 → tenv_entry Θ (c, b) = tenv_entry ΘB (c, b).
+  Proof.
+    intros Hc. unfold tenv_entry. simpl. rewrite lookup_union.
+    assert (Σ !! c = None) as HΣc by (apply not_elem_of_dom; set_solver).
+    unfold tenv_of. rewrite lookup_fmap, HΣc. simpl. by destruct (ΘB !! c).
+  Qed.
+
+  Lemma entry_dom k e : tenv_entry Θ k = Some e → k.1 ∈ dom Σ ∨ k.1 ∈ C0.
+  Proof.
+    destruct k as [c b]. simpl. intros He.
+    destruct (decide (c ∈ dom Σ)); [by left|right].
+    rewrite <-HB. apply elem_of_dom. unfold tenv_entry in He. simpl in He.
+    rewrite lookup_union in He. unfold tenv_of in He. rewrite lookup_fmap in He.
+    rewrite (proj1 (not_elem_of_dom _ _) n) in He. simpl in He.
+    destruct (ΘB !! c); [done|]. by destruct b.
+  Qed.
+
+  Lemma stable_thread : stable_p p → stable_t t.
+  Proof.
+    intros Hs α t' Hst. destruct α as [| |c|v]; try done.
+    - eapply (Hs (C0, ∅ ⊎ {[+ t' +]})). rewrite single_soup. by apply PStepBeta.
+    - destruct (exist_fresh (C0 ∪ fchans t)) as [z Hz].
+      destruct (new_retarget _ _ _ z Hst) as [t'' Ht''].
+      eapply (Hs (C0 ∪ {[z]}, ∅ ⊎ {[+ t'' +]})). rewrite single_soup.
+      apply PStepNew; [done|set_solver|rewrite echans_empty; set_solver|set_solver].
+    - eapply (Hs (C0, ∅ ⊎ {[+ t' +]} ⊎ {[+ App v EUnit +]})). rewrite single_soup.
+      by apply PStepSpawn.
+  Qed.
+
+  Lemma link_cut_tau cd t' x :
+    tstep t (LSess (SLink cd)) t' → x ∈ cd → x ∈ C0 → ¬ stable_p p.
+  Proof.
+    intros Hst Hx HxC Hs.
+    destruct (tstep_link_shape _ _ _ Hst) as (c & d & ->).
+    assert (x = c ∨ x = d) as [->| ->] by set_solver.
+    - eapply Hs. rewrite single_soup. by eapply PStepLink.
+    - rewrite upair_comm in Hst. eapply Hs. rewrite single_soup. by eapply PStepLink.
+  Qed.
+
+  (** A stable thread offers no entry of a restricted channel. *)
+  Lemma no_cut_offer k : stable_p p → offered_t Θ t k → k.1 ∉ C0.
+  Proof.
+    intros Hs (σ & t' & Hst & Hsel) Hc.
+    destruct σ as [c v|c v|c|cd].
+    4: { apply (link_cut_tau cd t' k.1 Hst); [exact (selects_subj _ _ _ Hsel)|done|done]. }
+    all: destruct k as [c' b]; simpl in Hc.
+    all: assert (is_Some (ΘB !! c')) as [o Ho] by (apply elem_of_dom; by rewrite HB).
+    all: destruct (HBoth _ _ Ho) as (e1 & e2 & ->).
+    all: destruct (HBdual _ _ _ Ho) as [Hcnt Hdu].
+    all: pose proof (stable_thread Hs) as Hst_t.
+    all: destruct (Hr Hst_t) as [_ Hab].
+    (* the other end of c' *)
+    all: assert (tenv_entry Θ (c', negb b) = Some (if b then e1 else e2)) as Hother
+           by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
+    all: assert (tenv_entry Θ (c', b) = Some (if b then e2 else e1)) as Hself
+           by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
+    all: assert (entry_head (c', negb b) (if b then e1 else e2) =
+                 entry_head (c', b) (if b then e2 else e1)) as Hhead
+           by (unfold entry_head; simpl; destruct b; by rewrite Hcnt).
+    (* every offer of the thread is on c', from the same action *)
+    all: assert (∀ k' σ' t'', tstep t (LSess σ') t'' → selects Θ σ' k' → k'.1 = c') as Hsame.
+    1,3,5: intros k' σ' t'' Hst' Hsel'; destruct (tstep_same_act _ _ _ _ _ Hst Hst') as (a & Ha & Ha');
+      destruct a; simpl in Ha, Ha'; try done; destruct σ'; try done;
+      first [destruct Ha as [<- _]|subst c]; destruct Ha' as [<- _] || subst;
+      simpl in Hsel; first [destruct Hsel as [<- _]|idtac];
+      destruct Hsel' as [? _]; congruence.
+    all: assert (¬ offered_t Θ t (c', negb b)) as Hnoff.
+    1,3,5: (intros (σ' & t'' & Hst' & Hsel');
+      destruct (tstep_same_act _ _ _ _ _ Hst Hst') as (a & Ha & Ha');
+      destruct a; simpl in Ha, Ha'; try done; destruct σ'; try done).
+    all: first
+      [ solve [ (* recv/recv or send/send: both ends with one polarity *)
+          destruct Hsel as (_ & ? & ? & ? & ? & Hs1 & Hu1);
+          destruct Hsel' as (_ & ? & ? & ? & ? & Hs2 & Hu2);
+          rewrite Hself in Hs1; rewrite Hother in Hs2;
+          injection Hs1 as <-; injection Hs2 as <-;
+          destruct b; try apply sdual_sym in Hdu;
+          first [ destruct (sdual_rcv _ _ _ _ _ Hdu ltac:(eassumption)) as (? & ? & ?)
+                | destruct (sdual_snd _ _ _ _ _ Hdu ltac:(eassumption)) as (? & ? & ?) ];
+          congruence ]
+      | solve [ (* close/close: only the first end is selected *)
+          destruct Hsel as (Hk1 & ? & Hs1 & Hu1 & Ht1);
+          destruct Hsel' as (Hk2 & ? & Hs2 & Hu2 & Ht2);
+          simpl in Hk1, Hk2; subst;
+          destruct b; simpl in *;
+          [apply (Ht1 eq_refl _ Hs2 Hu2)|apply (Ht2 eq_refl _ Hs1 Hu1)] ]
+      | idtac ].
+    all: destruct (Hab _ _ Hother Hnoff) as (k' & e' & (σ' & t'' & Hst' & Hsel') & He' & Hlt).
+    all: pose proof (Hsame _ _ _ Hst' Hsel') as Hk'1.
+    all: destruct k' as [c'' b']; simpl in Hk'1; subst c''.
+    all: destruct (decide (b' = b)) as [->|Hb'];
+      [rewrite Hself in He'; injection He' as <-; rewrite Hhead in Hlt;
+       by eapply (proj2 HW)
+      |apply Hnoff; exists σ', t''; split; [done|];
+       by replace (negb b) with b' by (destruct b, b'; first [reflexivity|contradiction])].
+  Qed.
+  Lemma lift_offer k : stable_p p → k.1 ∈ dom Σ → offered_t Θ t k → offered_p Σ p k.
+  Proof.
+    intros Hs Hk (σ & t' & Hst & Hsel).
+    pose proof (selects_subj _ _ _ Hsel) as Hsub.
+    assert (subjs σ ## C0) as Hdj.
+    { destruct σ as [c v|c v|c|cd].
+      4: { apply elem_of_disjoint. intros x Hx HxC.
+           by apply (link_cut_tau cd t' x Hst). }
+      all: simpl in *; apply elem_of_singleton in Hsub; subst c;
+        apply disjoint_singleton_l; set_solver. }
+    exists σ, (C0 ∖ sentc σ, ∅ ⊎ {[+ t' +]}). split.
+    - rewrite single_soup. by apply PStepSession.
+    - eapply selects_agree; [|exact Hsel]. intros b. by apply entry_ext.
+  Qed.
+
+  Lemma unlift_offer k : k.1 ∈ dom Σ → offered_p Σ p k → offered_t Θ t k.
+  Proof.
+    intros Hk (σ & q & Hst & Hsel).
+    apply proc_step_sess_inv in Hst as (E0 & e & e' & HE & Hst & _ & _).
+    assert (e = t) as ->.
+    { assert (e ∈ ({[+ t +]} : gmultiset expr)) as He by (rewrite HE; multiset_solver).
+      by apply gmultiset_elem_of_singleton in He. }
+    exists σ, e'. split; [done|]. eapply selects_agree; [|exact Hsel].
+    intros b. symmetry. by apply entry_ext.
+  Qed.
+
+  Theorem ready_term : ready_p W Σ p.
+  Proof.
+    intros Hs. destruct (Hr (stable_thread Hs)) as [Hv Hab]. split.
+    - intros Hno.
+      assert (∀ k, ¬ offered_t Θ t k) as Hno'.
+      { intros k Ho. pose proof Ho as (σ & t' & _ & Hsel).
+        destruct (selects_entry _ _ _ Hsel) as [e He].
+        destruct (entry_dom _ _ He) as [Hin|Hc].
+        - apply (Hno k). by apply lift_offer.
+        - by apply (no_cut_offer k Hs Ho). }
+      assert (C0 = ∅) as HC0.
+      { apply set_eq. intros c. split; [|set_solver]. intros Hc.
+        exfalso. assert (is_Some (ΘB !! c)) as [o Ho] by (apply elem_of_dom; by rewrite HB).
+        destruct (HBoth _ _ Ho) as (e1 & e2 & ->).
+        destruct (Hab (c, false) e1) as (k' & e' & Ho' & _).
+        - rewrite entry_cut by done. unfold tenv_entry. simpl. by rewrite Ho.
+        - apply Hno'.
+        - by apply (Hno' k'). }
+      rewrite HC0. exists t, ∅. split_and!.
+      + by rewrite (right_id_L ∅ (⊎)).
+      + by apply Hv.
+      + intros e He. multiset_solver.
+    - intros k e He Hk.
+      pose proof He as He0. apply tenv_entry_of_key in He0 as [Hkk HΣk].
+      assert (k.1 ∈ dom Σ) as Hin by (by apply elem_of_dom_2 in HΣk).
+      destruct (Hab k e) as (k' & e' & Ho & He' & Hlt).
+      + rewrite Hkk, entry_ext by done. by rewrite <-Hkk.
+      + intros Ho. by apply Hk, lift_offer.
+      + destruct (entry_dom _ _ He') as [Hin'|Hc].
+        * exists k', e'. split_and!.
+          -- by apply lift_offer.
+          -- destruct k' as [c' b']. rewrite <-entry_ext by done. done.
+          -- done.
+        * by destruct (no_cut_offer k' Hs Ho).
+  Qed.
+End term.
