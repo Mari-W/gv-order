@@ -290,6 +290,18 @@ x ≡ y) is a valid environment without any conversion. Type point conversion
 stays, because P-Connect meets a payload typed at P[x] by the sender and at
 P[y] by the receiver (§7, §10).
 
+**41. Name hygiene of process steps: restricted names stay off the interface.**
+Q-Tau had no guard, and Q-Recv no freshness of received channels against the
+restricted set. A new step may then pick a name that the interface Σ holds
+without any thread mentioning it, and a receive may deliver a channel whose
+name is restricted inside the process. In P-Connect the composite's successor is
+then a component whose restricted name is the other component's interface name,
+and no renaming repairs it: renaming at the composite level also renames the
+interface. Decision (Claude, delegated, overnight rules): Q-Tau constrains only
+successors with p′.1 # dom Σ, and Q-Recv only received environments with
+dom Θ₂ # p.1. These are the paper's implicit "Σ and C do not share channels",
+not world conditions; adequacy (Σ = ∅) is unaffected (§7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

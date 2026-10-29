@@ -219,7 +219,11 @@ Qed.
 
     - Q-Tau: the world may grow by a fresh extension, placing the
       points of channels the step creates, fresh for the points of Σ
-      and T. The paper's Q-Tau is
+      and T. Only successors whose restricted channels stay clear of
+      Σ are constrained (configurations whose restricted names clash
+      with their interface are not well formed; sharp edges 41).
+    - Q-Recv: received channels are not restricted names of the
+      process (the same hygiene). The paper's Q-Tau is
       W′ = W.
     - Q-Recv: channels B the receiver ends up holding both ends of
       ("migration", or both ends in one message) come back: the
@@ -241,12 +245,13 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
       (∀ π p', proc_step p π p' →
         match π with
         | PTau =>                                      (* Q-Tau *)
+            p'.1 ## dom Σ →
             ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
               lP (below n') W' Σ T p'
         | PSess (SRecv c w) =>                         (* Q-Recv *)
             ∃ Σ1 m U s k,
               senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ W' j Θ2, wext W W' → j ≤ n' →
+              ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
                 recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
                 lV (below j) W' Θ2 (payload_at m U k) w →
                 lP (below j) W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
@@ -397,12 +402,12 @@ Qed.
 (** τ steps decrease the index by one and may grow the world by a
     fresh extension. *)
 Lemma Prel_S_tau n W Σ T p p' :
-  Prel (S n) W Σ T p → preduction p p' →
+  Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ →
   ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧ Prel n W' Σ T p'.
 Proof.
   unfold Prel at 1. rewrite level_at_eq. simpl.
-  intros (_ & _ & Hstep) Hred.
-  specialize (Hstep _ _ Hred). simpl in Hstep.
+  intros (_ & _ & Hstep) Hred Hd.
+  specialize (Hstep _ _ Hred). simpl in Hstep. specialize (Hstep Hd).
   destruct (decide (n < n)); [lia|].
   unfold Prel. rewrite level_at_eq. exact Hstep.
 Qed.
@@ -569,12 +574,13 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
     (π : plabel) (p' : proc) : Prop :=
   match π with
   | PTau =>
+      p'.1 ## dom Σ →
       ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
         Prel n' W' Σ T p'
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ W' j Θ2, wext W W' → j ≤ n' →
+        ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
           recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
           Vrel j W' Θ2 (payload_at m U k) w →
           Prel j W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
@@ -616,16 +622,16 @@ Proof.
   - (* recv, → *)
     destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
     exists Σ1, m, U, s, k. split_and!; [done|done|].
-    intros W' j Θ2 HW Hj Hdu HV.
+    intros W' j Θ2 HW Hj Hfr Hdu HV.
     rewrite <-(levels_at (S n) j) in HV by lia.
-    specialize (H W' j Θ2 HW Hj Hdu HV).
+    specialize (H W' j Θ2 HW Hj Hfr Hdu HV).
     rewrite (levels_at (S n) j) in H by lia. exact H.
   - (* recv, ← *)
     destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
     exists Σ1, m, U, s, k. split_and!; [done|done|].
-    intros W' j Θ2 HW Hj Hdu HV.
+    intros W' j Θ2 HW Hj Hfr Hdu HV.
     rewrite (levels_at (S n) j) in HV by lia.
-    specialize (H W' j Θ2 HW Hj Hdu HV).
+    specialize (H W' j Θ2 HW Hj Hfr Hdu HV).
     rewrite <-(levels_at (S n) j) in H by lia. exact H.
 Qed.
 
@@ -728,7 +734,8 @@ Proof.
   induction m as [|m IH]; intros W n T p p' Hrun HP.
   { inversion Hrun; subst. by exists W. }
   inversion Hrun as [|? ? q ? Hpq Hqr]; subst. simpl in HP.
-  destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (N & W' & _ & _ & HP').
+  destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (N & W' & _ & _ & HP');
+    [rewrite dom_empty_L; apply disjoint_empty_r|].
   exact (IH W' n T q p' Hqr HP').
 Qed.
 
@@ -822,11 +829,11 @@ Proof.
   - done.
   - intros π p' Hst. specialize (H2 π p' Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in H2 |- *.
-    + destruct H2 as (N & W' & ? & ? & ?).
+    + intros Hd. destruct (H2 Hd) as (N & W' & ? & ? & ?).
       exists N, W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
       eexists _, _, _, _, _. split_and!; [done|done|].
-      intros W' j Θ2 HW Hj Hdu HV. apply (H2 W' j Θ2); auto. lia.
+      intros W' j Θ2 HW Hj Hfr Hdu HV. apply (H2 W' j Θ2); auto. lia.
     + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
                       ? & ? & ? & ? & ? & ? & HV & HP0).
       eexists _, _, _, _, _, _, _, _. split_and!; eauto.

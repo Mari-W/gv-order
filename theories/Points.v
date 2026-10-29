@@ -1173,7 +1173,8 @@ Proof.
     intros π q Hst. specialize (Hstep _ _ Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* τ *)
-      destruct Hstep as (N & W1 & HN & Hfr & HP').
+      intros Hd. rewrite dom_senvsw in Hd.
+      destruct (Hstep Hd) as (N & W1 & HN & Hfr & HP').
       exists (set_map (pnsw a b) N), (wsw a b W1). split_and!.
       * rewrite senv_roots_sw, (proj1 (roots_sw_mut a b)), <-set_map_union_L.
         by apply disjoint_names_sw.
@@ -1186,8 +1187,9 @@ Proof.
       split_and!.
       * by apply (senv_hd_sw a b _ _ (SRcv m U s)).
       * by rewrite dom_senvsw.
-      * intros W'' j Θ2 Hx Hj Hok HVw.
+      * intros W'' j Θ2 Hx Hj Hfr Hok HVw.
         assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
+        assert (dom (tenvsw a b Θ2) ## p.1) as Hfr' by (by rewrite dom_tenvsw).
         assert (recv_ok (wsw a b W'') (<[c := (s, pt_shift 1 k)]> Σ1) (tenvsw a b Θ2)) as Hok'.
         { apply (recv_ok_sw a b) in Hok.
           rewrite senvsw_insert, senvsw_involutive in Hok.
@@ -1195,7 +1197,7 @@ Proof.
           by rewrite stysw_involutive, ptsw_shift, ptsw_involutive in Hok. }
         apply (IHV j ltac:(lia) W'' (wsw a b W'')) in HVw; [|apply wsame_refl].
         rewrite payload_at_sw, tysw_involutive, ptsw_involutive in HVw.
-        specialize (H _ _ _ Hx' Hj Hok' HVw).
+        specialize (H _ _ _ Hx' Hj Hfr' Hok' HVw).
         apply (IHP j ltac:(lia) (wsw a b W'') W'') in H; [|apply Hrt].
         rewrite <-recv_env_sw, tenvsw_involutive, senvsw_insert in H.
         unfold esw in H. simpl in H. rewrite ptsw_shift in H.

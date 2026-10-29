@@ -204,7 +204,7 @@ Proof.
     intros π q Hst. specialize (Hstep π q Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* Q-Tau: rename the placed points away from W', then join *)
-      destruct Hstep as (N & W1 & HN & Hfr & HP').
+      intros Hd. destruct (Hstep Hd) as (N & W1 & HN & Hfr & HP').
       destruct (Prel_tau_rename n' (w_names W') _ W N W1 Σ T q eq_refl HW Hfr HN HP')
         as (N' & W1' & HN'W & HN' & Hfr' & HP1).
       pose proof (wext_fresh_join W N' W1' W' HW Hfr' HWW' HN'W) as Hfr''.
@@ -214,7 +214,7 @@ Proof.
       * by destruct Hfr'' as ((_ & _ & _ & ?) & _).
     + destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
       exists Σ1, m, U, s, k. split_and!; [done|done|].
-      intros W'' j Θ2 HW' Hj Hok HVw.
+      intros W'' j Θ2 HW' Hj Hfr Hok HVw.
       apply (H W'' j Θ2); [by eapply wext_trans|done..].
     + destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
                          ? & ? & ? & ? & Hsp & ? & HVw & HP').

@@ -288,7 +288,7 @@ Proof.
     intros π q Hst. specialize (Hstep π q Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* Q-Tau: rename the placed points away from the points of T' *)
-      destruct Hstep as (N & W1 & HN & Hfr & HP').
+      intros Hd. destruct (Hstep Hd) as (N & W1 & HN & Hfr & HP').
       destruct (Prel_tau_rename n' (ty_roots T') _ W N W1 Σ T q eq_refl HW Hfr HN HP')
         as (N' & W1' & HN'T & HN' & Hfr' & HP1).
       exists N', W1'. split_and!; [set_solver|done|].
@@ -297,7 +297,7 @@ Proof.
       * intros. destruct Hfr' as ((_ & He & _) & _). auto.
     + destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
       exists Σ1, m, U, s, k. split_and!; [done|done|].
-      intros W' j Θ2 HW' Hj Hok HVw.
+      intros W' j Θ2 HW' Hj Hfr Hok HVw.
       eapply HPj; [lia|by eapply wext_wf| |by apply H].
       intros. by eapply wext_eq.
     + destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &

@@ -206,11 +206,11 @@ because worlds speak about points only, so the environment's world cannot pin an
 them. Gone with decision N: the α-variant at a receive (E), the freshness of received
 names, the name guard at new and the invisible-names condition of Q-Tau.
 
-Q-Tau     p —τ→ p′    ∃W′ ⊒ₒ W.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧                                     [changed]
+Q-Tau     p —τ→ p′    p′.1 # dom Σ  ⇒  ∃W′ ⊒ₒ W.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧                    [changed]
           (W′ places the points N of channels the step creates, N # names(W) ∪ points(Σ, T).
            The paper's Q-Tau is W′ = W.)
 Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)                                       [changed]
-          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Σ₂ dual to (Σ₁, c : S@(x+1)) on their overlap B.
+          ∀W′ ⊒ W, j ≤ n, Σ₂ # p.1, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Σ₂ dual to (Σ₁, c : S@(x+1)) on their overlap B.
               (C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(x+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
           (B = channels whose other end the receiver already holds. The obligation is stated
            for the successor with B restricted; the LTS itself does not restrict. If the carrier c

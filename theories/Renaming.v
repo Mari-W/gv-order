@@ -634,7 +634,9 @@ Proof.
     { destruct π; simpl; by rewrite ?slswap_involutive. }
     destruct (plswap a b π) as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* τ *)
-      destruct Hstep as (N & W1 & HN & Hfr & HP').
+      intros Hd. destruct Hstep as (N & W1 & HN & Hfr & HP').
+      { destruct q as [Cq Eq]; simpl in *.
+        rewrite dom_senvswap in Hd. by apply gswap_disjoint_iff in Hd. }
       exists N, W1. split_and!; [by rewrite senv_roots_swap|done|].
       by apply (IHP n' ltac:(lia)).
     + (* recv *)
@@ -643,12 +645,15 @@ Proof.
       split_and!.
       * by apply (senv_hd_swap a b _ _ (SRcv m U s)).
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
-      * intros W' j Θ2 Hx Hj Hok HVw.
+      * intros W' j Θ2 Hx Hj Hfr Hok HVw.
+        assert (dom (tenvswap a b Θ2) ## p.1) as Hfr'.
+        { rewrite dom_tenvswap. destruct p as [C E]; simpl in *.
+          rewrite <-(gswap_involutive a b C). by apply gswap_disjoint_iff. }
         assert (recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) (tenvswap a b Θ2)) as Hok'.
         { apply (recv_ok_swap a b) in Hok.
           by rewrite senvswap_insert, senvswap_involutive, cswap_involutive in Hok. }
         apply (IHV j ltac:(lia)) in HVw. rewrite eswap_involutive in HVw.
-        specialize (H _ _ _ Hx Hj Hok' HVw).
+        specialize (H _ _ _ Hx Hj Hfr' Hok' HVw).
         apply (IHP j ltac:(lia)) in H.
         rewrite <-recv_env_swap, tenvswap_involutive, senvswap_insert in H.
         unfold pswap in H; simpl in H.
