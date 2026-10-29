@@ -7,6 +7,7 @@ theories/Worlds.v
 theories/Semantics.v
 theories/Safety.v
 theories/Harmony.v
+theories/Ready.v
 theories/Typing.v
 theories/Relation.v
 theories/Convert.v
