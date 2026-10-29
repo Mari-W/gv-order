@@ -191,6 +191,16 @@ Decision (I1, taken by Claude under the author's delegation): α-variants are
 capture-avoiding, renaming only to names outside the interface and unknown to
 the step's world. The paper's freshness convention with the world in scope (§7).
 
+**32. (J) Fresh for which world?**
+I1 required the names an α-variant introduces to be unknown to the world after
+the step. At new that is impossible: the created channel must carry facts in
+the new world, so it can never be renamed away from a name with stale facts,
+and P-Term fails (witness: new picks a name with a conflicting stale fact and
+then sends it).
+Decision (J1, Claude, delegated): fresh for the world before the step, in
+every clause. The created channel is renamed to a fresh name first and placed
+by the step (§7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
