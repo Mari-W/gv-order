@@ -179,11 +179,15 @@ P-Step    ¬irred p    ready_W(Σ, p)                                           
           ∀π, p′.  p —π→ p′  ⇒  Σ ⊩ⁿ_W p —π→ p′ : T
           ⇒   p ∈ P^W_{n+1}⟦Σ ⊢ T⟧
 
-Q-Tau     p′ ∈ P^W_n⟦Σ ⊢ T⟧                       for τ steps other than new and link
-Q-New     the τ step creates c:   c ∉ names(W),   ∃W′ ⊒ₒ W placing c.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧    [new]
-Q-TauLink the τ step links an external c (Σ ∋ c : S@k) with a restricted d at count j:
-          c@k ≡_W d@j.   p′ ∈ P^W_n⟦Σ ⊢ T⟧         (mirrors O-Link; a link between two
-          restricted channels needs no alias)                                              [new]
+Q-Tau     p —τ→ p′    ∃W′ ⊒ W.   W′ strict,   W′|_vis = W|_vis,   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧         [changed]
+          vis = all names except those restricted in p′ (what the environment can see)
+          if the step creates c (new):  c ∉ names(W)
+          if the step links an external c (Σ ∋ c : S@k) with a restricted d at count j:
+              c@k ≡_{W′} d@j        (the alias may be created by this step; mirrors O-Link;
+                                      a link between two restricted channels needs nothing)
+          The paper's Q-Tau is the case W′ = W. The world may grow, but invisibly; this replaces
+          the paper's invariance under channel substitution, which no longer holds for free once
+          names carry facts.
 Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                                       [changed]
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to (Σ₁, c : S@(k+1)) on their overlap B,
           dom Σ₂ ∖ B # names(W)   (fresh: no received channel inherits stale facts of an old name).
@@ -283,7 +287,10 @@ Internalizing a link
 LTS renaming      a bijective renaming of channel names preserves process steps and safety        [new]
                   (used by adequacy: runs whose fresh names are known to W are renamings of runs
                    whose fresh names are not)
-Prel_steps, Prel_safe            restated for runs with names fresh for W (Q-New)
+Prel_steps, Prel_safe            restated for runs with names fresh for W (Q-Tau at new)
+Invisible extension
+                  W₁ ⊑ W₁′ strict with W₁′ unchanged on the names W₂ knows, W₁ ⊔ W₂ strict
+                  ⇒  W₁′ ⊔ W₂ strict        (by Amalgamation; generalizes Fresh extension)   [new]
 ```
 
 ## 11  Lemmas: compositionality (one per rule)
