@@ -811,3 +811,140 @@ Section move.
                 simpl; rewrite E2; done].
   Qed.
 End move.
+
+Lemma elem_of_tenv_heads_entry Θ x :
+  x ∈ tenv_heads Θ ↔ ∃ k e, tenv_entry Θ k = Some e ∧ x = e.2.
+Proof.
+  rewrite elem_of_tenv_heads. split.
+  - intros (c & o & Hc & Hx). destruct o as [e|e1 e2]; simpl in Hx.
+    + apply elem_of_singleton in Hx as ->. exists (c, false), e.
+      unfold tenv_entry. simpl. by rewrite Hc.
+    + apply elem_of_union in Hx as [->%elem_of_singleton| ->%elem_of_singleton].
+      * exists (c, false), e1. unfold tenv_entry. simpl. by rewrite Hc.
+      * exists (c, true), e2. unfold tenv_entry. simpl. by rewrite Hc.
+  - intros ([c b] & e & He & ->). unfold tenv_entry in He. simpl in He.
+    destruct (Θ !! c) as [[f|f1 f2]|] eqn:Hc, b; simplify_eq; exists c; eexists;
+      (split; [done|]); simpl; set_solver.
+Qed.
+
+Lemma elem_of_tenv_roots_entry Θ x :
+  x ∈ tenv_roots Θ ↔ ∃ k e, tenv_entry Θ k = Some e ∧ x ∈ entry_roots e.
+Proof.
+  rewrite elem_of_tenv_roots. split.
+  - intros (c & o & Hc & Hx). destruct o as [e|e1 e2]; simpl in Hx.
+    + exists (c, false), e. unfold tenv_entry. simpl. by rewrite Hc.
+    + apply elem_of_union in Hx as [Hx|Hx].
+      * exists (c, false), e1. unfold tenv_entry. simpl. by rewrite Hc.
+      * exists (c, true), e2. unfold tenv_entry. simpl. by rewrite Hc.
+  - intros ([c b] & e & He & Hx). unfold tenv_entry in He. simpl in He.
+    destruct (Θ !! c) as [[f|f1 f2]|] eqn:Hc, b; simplify_eq; exists c; eexists;
+      (split; [done|]); simpl; set_solver.
+Qed.
+
+Lemma join_one_res a b e :
+  ends_join a b (Some (One e)) → (a = Some (One e) ∧ b = None) ∨ (a = None ∧ b = Some (One e)).
+Proof. intros H. inversion H; subst; [left|right]; done. Qed.
+
+Section move2.
+  Context (W : world) (HW : world_wf W) (c d : chan) (Hcd : c ≠ d).
+
+  Lemma move_heads Θ Θ' : tenv_move W c d Θ Θ' → tenv_heads Θ' = tenv_heads Θ.
+  Proof.
+    intros H. destruct (move_keys W c d Hcd Θ Θ' H) as (κ & _ & _ & Hf & Hb).
+    apply set_eq. intros x. rewrite !elem_of_tenv_heads_entry. split.
+    - intros (k' & e & He & ->). destruct (Hb _ _ He) as (k & _ & Hk). eauto.
+    - intros (k & e & He & ->). eauto.
+  Qed.
+
+  Lemma move_roots Θ Θ' : tenv_move W c d Θ Θ' → tenv_roots Θ' = tenv_roots Θ.
+  Proof.
+    intros H. destruct (move_keys W c d Hcd Θ Θ' H) as (κ & _ & _ & Hf & Hb).
+    apply set_eq. intros x. rewrite !elem_of_tenv_roots_entry. split.
+    - intros (k' & e & He & Hx). destruct (Hb _ _ He) as (k & _ & Hk). eauto.
+    - intros (k & e & He & Hx). eauto.
+  Qed.
+
+  (** Splitting a composition along a move. *)
+  Lemma move_comp_split Θ Θ' Θ1 Θ2 :
+    tenv_move W c d Θ Θ' → tenv_comp (w_eq W) Θ Θ1 Θ2 →
+    ∃ Θ1' Θ2', tenv_move W c d Θ1 Θ1' ∧ tenv_move W c d Θ2 Θ2' ∧
+      tenv_comp (w_eq W) Θ' Θ1' Θ2'.
+  Proof.
+    intros (Hc & Ho & Hj & Hdd) [Hjn Hdu].
+    destruct (map_choice2 (λ k o1 o2,
+        (k ≠ c → k ≠ d → o1 = Θ1 !! k ∧ o2 = Θ2 !! k) ∧
+        (k = c → o1 = None ∧ o2 = None) ∧
+        (k = d → ends_join (Θ1 !! c) (Θ1 !! d) o1 ∧
+                 ends_join (Θ2 !! c) (Θ2 !! d) o2 ∧ ends_join o1 o2 (Θ' !! d)))
+        (dom Θ1 ∪ dom Θ2 ∪ {[d]})) as (Θ1' & Θ2' & HP).
+    { intros k. destruct (decide (k = c)) as [->|Hkc].
+      { exists None, None. split_and!; [done|done|congruence]. }
+      destruct (decide (k = d)) as [->|Hkd].
+      2: { exists (Θ1 !! k), (Θ2 !! k). split_and!; [done|congruence|congruence]. }
+      exists (match Θ1 !! c, Θ1 !! d with
+              | None, x => x | x, None => x | Some _, Some _ => Θ' !! d end),
+             (match Θ2 !! c, Θ2 !! d with
+              | None, x => x | x, None => x | Some _, Some _ => Θ' !! d end).
+      split_and!; [done|congruence|intros _].
+      pose proof (Hjn c) as Jc. pose proof (Hjn d) as Jd.
+      destruct (Θ1 !! c) as [a1|], (Θ2 !! c) as [a2|], (Θ1 !! d) as [b1|],
+        (Θ2 !! d) as [b2|];
+        inversion Jc as [Ec|? Ec|? Ec|? ? Ec|? ? Ec]; inversion Jd as [Ed|? Ed|? Ed|? ? Ed|? ? Ed];
+        inversion Hj; simplify_eq; try congruence;
+        repeat match goal with H : Some _ = Θ !! _ |- _ => rewrite <-H in *; clear H end;
+        repeat match goal with H : None = Θ !! _ |- _ => rewrite <-H in *; clear H end;
+        repeat match goal with H : _ = Θ' !! _ |- _ => rewrite <-H in *; clear H end;
+        simplify_eq; split_and!; try constructor; try done; try congruence.
+    }
+    { intros k Hk. split_and!.
+      - intros Hkc Hkd. split; symmetry; apply not_elem_of_dom; set_solver.
+      - done.
+      - intros ->. set_solver. }
+    exists Θ1', Θ2'.
+    assert (∀ k, k ≠ c → k ≠ d → Θ1' !! k = Θ1 !! k ∧ Θ2' !! k = Θ2 !! k) as Hne
+      by (intros k ? ?; by apply HP).
+    destruct (proj1 (proj2 (HP c)) eq_refl) as [Hc1 Hc2].
+    destruct (proj2 (proj2 (HP d)) eq_refl) as (Hd1 & Hd2 & Hd12).
+    pose proof (Hjn c) as Jc. pose proof (Hjn d) as Jd.
+    (* the ends of c and d in Θ, read off the parts *)
+    assert (∀ e1 e2, Θ1 !! c = Some (One e1) → Θ1 !! d = Some (One e2) →
+              Θ !! c = Some (One e1) ∧ Θ !! d = Some (One e2)) as Hpart1.
+    { intros e1 e2 H1 H2. rewrite H1 in Jc. rewrite H2 in Jd.
+      inversion Jc; inversion Jd; simplify_eq;
+        repeat match goal with H : Some _ = Θ !! _ |- _ => rewrite <-H in *; clear H end;
+        repeat match goal with H : None = Θ !! _ |- _ => rewrite <-H in *; clear H end;
+        try (by split); inversion Hj. }
+    assert (∀ e1 e2, Θ2 !! c = Some (One e1) → Θ2 !! d = Some (One e2) →
+              Θ !! c = Some (One e1) ∧ Θ !! d = Some (One e2)) as Hpart2.
+    { intros e1 e2 H1 H2. rewrite H1 in Jc. rewrite H2 in Jd.
+      inversion Jc; inversion Jd; simplify_eq;
+        repeat match goal with H : Some _ = Θ !! _ |- _ => rewrite <-H in *; clear H end;
+        repeat match goal with H : None = Θ !! _ |- _ => rewrite <-H in *; clear H end;
+        try (by split); inversion Hj. }
+    split_and!.
+    - split_and!; [done|intros; by apply Hne|done|].
+      intros e1 e2 H1 H2. destruct (Hpart1 e1 e2 H1 H2). by apply Hdd.
+    - split_and!; [done|intros; by apply Hne|done|].
+      intros e1 e2 H1 H2. destruct (Hpart2 e1 e2 H1 H2). by apply Hdd.
+    - split.
+      + intros k. destruct (decide (k = c)) as [->|Hkc].
+        { rewrite Hc, Hc1, Hc2. constructor. }
+        destruct (decide (k = d)) as [->|Hkd]; [done|].
+        destruct (Hne k Hkc Hkd) as [-> ->]. rewrite Ho by done. apply Hjn.
+      + intros k e1 e2 H1 H2. destruct (decide (k = c)) as [->|Hkc]; [congruence|].
+        destruct (decide (k = d)) as [->|Hkd].
+        2: { destruct (Hne k Hkc Hkd) as [E1 E2]. rewrite E1 in H1. rewrite E2 in H2.
+             by apply (Hdu k). }
+        rewrite H1 in Hd1. rewrite H2 in Hd2.
+        destruct (join_one_res _ _ _ Hd1) as [[A1 B1]|[A1 B1]];
+          destruct (join_one_res _ _ _ Hd2) as [[A2 B2]|[A2 B2]].
+        * by apply (Hdu c).
+        * rewrite A1, A2 in Jc. rewrite B1, B2 in Jd. inversion Jc. inversion Jd.
+          by apply Hdd.
+        * rewrite A1, A2 in Jc. rewrite B1, B2 in Jd. inversion Jc. inversion Jd.
+          destruct (Hdd e2 e1) as [Hx Hs]; [done|done|]. split.
+          -- by apply (wf_eq_sym _ HW).
+          -- by apply sdual_sym.
+        * by apply (Hdu d).
+  Qed.
+End move2.
