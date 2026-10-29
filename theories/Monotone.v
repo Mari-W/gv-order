@@ -15,12 +15,16 @@ From LRGV Require Export Relation.
 
 (** ** Ingredients *)
 
-Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) k T :
+Lemma konst_ty_mono (peq plt peq' plt' : tpoint → tpoint → Prop) k T :
   (∀ x y, peq x y → peq' x y) → (∀ x y, plt x y → plt' x y) →
   konst_ty peq plt k T → konst_ty peq' plt' k T.
 Proof.
   intros He Hl. destruct 1; econstructor; eauto.
 Qed.
+
+Lemma slot_aliases_mono (peq peq' : point → point → Prop) xs m x :
+  (∀ x y, peq x y → peq' x y) → slot_aliases peq xs m x → slot_aliases peq' xs m x.
+Proof. intros H [? Hx]. split; [done|]. eauto. Qed.
 
 Lemma lb_below_mono W W' lb H :
   wext W W' → lb_below W lb H → lb_below W' lb H.
@@ -85,12 +89,12 @@ Proof.
   - by apply IHj.
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 HW Hj Hc HVw.
-    destruct (H W' j Θ2 Θ12 HW Hj Hc HVw) as (Θ' & Hext & HE').
+    intros W' j Θ2 Θ12 xs HW Hj Hc Hxs HVw.
+    destruct (H W' j Θ2 Θ12 xs HW Hj Hc Hxs HVw) as (Θ' & Hext & HE').
     exists Θ'. split; [done|]. by apply IHj.
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
-                       Hhd & Hc & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done. by apply IHj.
+  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & xs &
+                       Hhd & Hc & Hxs & HVw & Hext & HE').
+    exists Θr, Θ1, Θ2, m, U, s, k, Θ', xs. split_and!; try done. by apply IHj.
   - destruct Hstep as (Θ1 & k & Hhd & HE').
     exists Θ1, k. split; [done|]. by apply IHj.
   - destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
@@ -124,7 +128,8 @@ Proof.
         intros W'' j Θ' Θ'' w F HW' Hj Hc HVw Hub.
         apply (HL W'' j Θ' Θ'' w F); [|done..]. by eapply wext_trans.
       + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done|done| |done].
-        destruct HWW' as (_ & He & Hl & _). by eapply konst_ty_mono.
+        destruct HWW' as (_ & He & Hl & _).
+        eapply konst_ty_mono; [| |exact Hk]; unfold tw_eq, tw_lt; auto.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
       apply Vrel_prod_iff. exists v1, v2, Θ1, Θ2. split_and!; eauto.
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
@@ -152,11 +157,12 @@ Proof.
   - eapply HEj; [lia|done|done|exact Hstep].
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W'' j Θ2 Θ12 HW' Hj Hc HVw.
-    apply (H W'' j Θ2 Θ12); [by eapply wext_trans|done..].
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
-                       Hhd & Hc & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
+    intros W'' j Θ2 Θ12 xs HW' Hj Hc Hxs HVw.
+    apply (H W'' j Θ2 Θ12 xs); [by eapply wext_trans|done..].
+  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & xs &
+                       Hhd & Hc & Hxs & HVw & Hext & HE').
+    exists Θr, Θ1, Θ2, m, U, s, k, Θ', xs. split_and!; try done.
+    + eapply slot_aliases_mono; [|exact Hxs]. by destruct HWW' as (_ & ? & _).
     + eapply HV; done.
     + eapply HEj; [lia|done|done|exact HE'].
   - destruct Hstep as (Θ1 & k & Hhd & HE').

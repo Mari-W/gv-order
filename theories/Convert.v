@@ -110,12 +110,12 @@ Proof.
   - eapply HEj; [lia|exact Hteq|exact Hstep].
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 HW Hj Hc HVw.
-    destruct (H W' j Θ2 Θ12 HW Hj Hc HVw) as (Θ' & Hext & HE').
+    intros W' j Θ2 Θ12 xs HW Hj Hc Hxs HVw.
+    destruct (H W' j Θ2 Θ12 xs HW Hj Hc Hxs HVw) as (Θ' & Hext & HE').
     exists Θ'. split; [done|]. eapply HEj; [lia|exact Hteq|exact HE'].
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
-                       Hhd & Hc & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
+  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & xs &
+                       Hhd & Hc & Hxs & HVw & Hext & HE').
+    exists Θr, Θ1, Θ2, m, U, s, k, Θ', xs. split_and!; try done.
     eapply HEj; [lia|exact Hteq|exact HE'].
   - destruct Hstep as (Θ1 & k & Hhd & HE').
     exists Θ1, k. split; [done|].
@@ -167,7 +167,7 @@ Qed.
     reduction lemmas. *)
 Lemma Vrel_konst_inv n W Θ ub lb T U k :
   Vrel n W Θ (TLolli ub lb T U) (Konst k) →
-  ∃ A B, konst_ty (w_eq W) (w_lt W) k (TLolli ub lb A B) ∧
+  ∃ A B, konst_ty (tw_eq W) (tw_lt W) k (TLolli ub lb A B) ∧
     teq A T ∧ teq B U ∧ Θ = ∅.
 Proof.
   intros HV. apply Vrel_lolli_iff in HV

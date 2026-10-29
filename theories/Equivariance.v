@@ -1,146 +1,32 @@
 (** * Renaming restricted names: equivariance with worlds (§10)
 
     Restricted names are bound. A transposition of two channel names
-    a ↔ b, applied to terms and processes ([Swap.v]), to the points of
-    types, to the keys and entries of environments, and to the facts
-    and support of worlds alike, maps the logical relation to itself
-    ([rel_swap]). Consequences:
+    a ↔ b, applied to terms and processes ([Swap.v]), to the keys of
+    environments, and to the facts and support of worlds alike, maps
+    the logical relation to itself ([rel_swap]). Types mention no
+    channels (decision F2), so they are never moved. Consequences:
+    a process can rename its restricted names away from any finite set
+    of names, and P is monotone in the world up to such a renaming.
 
-    - a process can rename its restricted names away from any finite
-      set of names, e.g. the names a given world mentions
-      ([Prel_rename_away]);
-    - P is monotone in the world up to such a renaming
-      ([Prel_mono_rename]).
-
-    The file builds the transport bottom-up: points, types and
-    session types (generically for any map on points, then for the
-    transposition), worlds, environments, readiness, and finally the
-    three relations by induction on the step index. *)
+    The file builds the transport bottom-up: instants, worlds,
+    environments, readiness, and finally the three relations by
+    induction on the step index. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export Monotone Swap.
-
-(** ** Mapping the points of a type *)
-
-Fixpoint tmap (f : point → point) (T : ty) : ty :=
-  match T with
-  | TUnit => TUnit
-  | TLolli ub lb T1 U => TLolli (f <$> ub) (f <$> lb) (tmap f T1) (tmap f U)
-  | TProd T1 U => TProd (tmap f T1) (tmap f U)
-  | TSum T1 U => TSum (tmap f T1) (tmap f U)
-  | TBox n T1 => TBox n (tmap f T1)
-  | TSess s x => TSess (smap f s) (f x)
-  end
-with smap (f : point → point) (s : sty) : sty :=
-  match s with
-  | SRcv m T s' => SRcv m (tmap f T) (smap f s')
-  | SSnd m T s' => SSnd m (tmap f T) (smap f s')
-  | SEnd => SEnd
-  | SMu s' => SMu (smap f s')
-  | SVar a => SVar a
-  | SVarD a => SVarD a
-  end.
-
-Section tmap.
-  Context (f : point → point).
-
-  Lemma smap_sren_mut :
-    (∀ T r, tmap f (sren_ty r T) = sren_ty r (tmap f T)) ∧
-    (∀ s r, smap f (sren r s) = sren r (smap f s)).
-  Proof. apply ty_sty_mut_ind; intros; simpl; f_equal; auto. Qed.
-
-  Lemma smap_sflip_mut :
-    (∀ T k, tmap f (sflip_ty k T) = sflip_ty k (tmap f T)) ∧
-    (∀ s k, smap f (sflip k s) = sflip k (smap f s)).
-  Proof.
-    apply ty_sty_mut_ind; intros; simpl; f_equal; auto;
-      repeat case_decide; done.
-  Qed.
-
-  Lemma smap_dual s : smap f (dual s) = dual (smap f s).
-  Proof.
-    induction s; simpl; f_equal; auto.
-    by rewrite (proj2 smap_sflip_mut), IHs.
-  Qed.
-
-  Lemma smap_sinst_mut :
-    (∀ T σ, tmap f (sinst_ty σ T) = sinst_ty (smap f ∘ σ) (tmap f T)) ∧
-    (∀ s σ, smap f (sinst σ s) = sinst (smap f ∘ σ) (smap f s)).
-  Proof.
-    apply ty_sty_mut_ind; intros; simpl; f_equal; auto.
-    - rewrite H. apply sinst_ext. intros [|a]; simpl; [done|].
-      unfold compose. apply (proj2 smap_sren_mut).
-    - apply smap_dual.
-  Qed.
-
-  Lemma smap_unroll s : smap f (unroll s) = unroll (smap f s).
-  Proof.
-    unfold unroll. rewrite (proj2 smap_sinst_mut). apply sinst_ext.
-    by intros [|a].
-  Qed.
-
-  Lemma smap_mu_depth s : mu_depth (smap f s) = mu_depth s.
-  Proof. induction s; simpl; auto. Qed.
-
-  Lemma smap_unfoldN k : ∀ s, smap f (unfoldN k s) = unfoldN k (smap f s).
-  Proof.
-    induction k as [|k IH]; intros s; [done|].
-    destruct s; simpl; try done. by rewrite IH, smap_unroll.
-  Qed.
-
-  Lemma smap_unfoldS s : smap f (unfoldS s) = unfoldS (smap f s).
-  Proof. unfold unfoldS. by rewrite smap_mu_depth, smap_unfoldN. Qed.
-
-  Lemma eqT_tmap (ρ ρ' : sty → sty → Prop) T : ∀ U,
-    (∀ s r, ρ s r → ρ' (smap f s) (smap f r)) →
-    eqT ρ T U → eqT ρ' (tmap f T) (tmap f U).
-  Proof. induction T; intros [] Hρ; simpl; try done; naive_solver. Qed.
-
-  Lemma aeq_smap n : ∀ s r, aeq n s r → aeq n (smap f s) (smap f r).
-  Proof.
-    induction n as [|n IH]; intros s r H; [done|].
-    simpl in *. unfold eq_step in *. rewrite <-!smap_unfoldS.
-    destruct (unfoldS s), (unfoldS r); simpl in *; try done;
-      try congruence;
-      try (destruct H as (-> & ? & ?); split_and!; eauto using eqT_tmap).
-  Qed.
-
-  Lemma adual_smap n : ∀ s r, adual n s r → adual n (smap f s) (smap f r).
-  Proof.
-    induction n as [|n IH]; intros s r H; [done|].
-    simpl in *. unfold dual_step in *. rewrite <-!smap_unfoldS.
-    destruct (unfoldS s) eqn:Es, (unfoldS r) eqn:Er; simpl in *; try done;
-      try (destruct H as (-> & ? & ?); split_and!; eauto using eqT_tmap, aeq_smap);
-      try (rewrite H; simpl; done);
-      try (rewrite <-smap_dual, <-H; done);
-      try (injection H as ->; f_equal;
-           by rewrite (proj2 smap_sflip_mut), smap_dual).
-  Qed.
-
-  Lemma seq_smap s r : seq s r → seq (smap f s) (smap f r).
-  Proof. intros H n. by apply aeq_smap. Qed.
-
-  Lemma sdual_smap s r : sdual s r → sdual (smap f s) (smap f r).
-  Proof. intros H n. by apply adual_smap. Qed.
-
-  Lemma teq_tmap T U : teq T U → teq (tmap f T) (tmap f U).
-  Proof. apply eqT_tmap. intros. by apply seq_smap. Qed.
-End tmap.
 
 (** ** The transposition on points *)
 
 Fixpoint pnswap (a b : chan) (p : pname) : pname :=
   match p with
   | NChan c => NChan (cswap a b c)
+  | NConst x => NConst x
   | NVar x => NVar x
   | NSlot q o i => NSlot (pnswap a b q) o i
   end.
 
 Definition ptswap (a b : chan) (x : point) : point :=
   Pt (pnswap a b (pt_name x)) (pt_off x).
-
-Notation tyswap a b := (tmap (ptswap a b)).
-Notation styswap a b := (smap (ptswap a b)).
 
 Section points.
   Context (a b : chan).
@@ -172,8 +58,7 @@ Section points.
   Lemma ptswap_chan c k : ptswap a b (pt_chan c k) = pt_chan (cswap a b c) k.
   Proof. done. Qed.
 
-  Lemma ptswap_pvar x : ptswap a b (pvar x) = pvar x.
-  Proof. done. Qed.
+
 
   Lemma pn_root_swap p : pn_root (pnswap a b p) = pnswap a b (pn_root p).
   Proof. induction p; simpl; auto. Qed.
@@ -181,133 +66,17 @@ Section points.
   Lemma pt_root_swap x : pt_root (ptswap a b x) = pnswap a b (pt_root x).
   Proof. apply pn_root_swap. Qed.
 
-  Lemma pn_inst_swap σ p :
-    ptswap a b (pn_inst σ p) = pn_inst (ptswap a b ∘ σ) (pnswap a b p).
-  Proof. induction p; simpl; [done|done|]. by rewrite <-IHp. Qed.
+  Lemma pnswap_emb p : pnswap a b (emb_name p) = emb_name p.
+  Proof. induction p; simpl; by f_equal. Qed.
 
-  Lemma pt_inst_swap σ x :
-    ptswap a b (pt_inst σ x) = pt_inst (ptswap a b ∘ σ) (ptswap a b x).
-  Proof. unfold pt_inst. by rewrite ptswap_shift, pn_inst_swap. Qed.
+  (** Type points mention no channels: a transposition fixes them. *)
+  Lemma ptswap_emb x : ptswap a b (emb x) = emb x.
+  Proof. unfold ptswap, emb. simpl. by rewrite pnswap_emb. Qed.
+
+  Lemma opt_ptswap_emb (o : option tpoint) :
+    ptswap a b <$> (emb <$> o) = emb <$> o.
+  Proof. destruct o; simpl; by rewrite ?ptswap_emb. Qed.
 End points.
-
-(** Instantiation of point variables, extensionally. *)
-Lemma pn_inst_ext σ σ' p :
-  (∀ x, σ x = σ' x) → pn_inst σ p = pn_inst σ' p.
-Proof. intros H. induction p; simpl; [done|apply H|by rewrite IHp]. Qed.
-
-Lemma pt_inst_ext σ σ' x :
-  (∀ y, σ y = σ' y) → pt_inst σ x = pt_inst σ' x.
-Proof. intros H. unfold pt_inst. by rewrite (pn_inst_ext σ σ'). Qed.
-
-Lemma pup_ext m σ σ' : (∀ x, σ x = σ' x) → ∀ x, pup m σ x = pup m σ' x.
-Proof. intros H x. unfold pup. case_decide; [done|]. by rewrite H. Qed.
-
-Lemma pinst_ty_ext T : ∀ σ σ', (∀ x, σ x = σ' x) → pinst_ty σ T = pinst_ty σ' T.
-Proof.
-  induction T; intros σ σ' H; simpl; f_equal; auto.
-  - destruct ub; simpl; [|done]. f_equal. by apply pt_inst_ext.
-  - destruct lb; simpl; [|done]. f_equal. by apply pt_inst_ext.
-  - apply IHT. by apply pup_ext.
-  - by apply pt_inst_ext.
-Qed.
-
-Section types.
-  Context (a b : chan).
-
-  Lemma pup_swap m σ x :
-    ptswap a b (pup m σ x) = pup m (ptswap a b ∘ σ) x.
-  Proof.
-    unfold pup. case_decide; [done|].
-    rewrite pt_inst_swap. apply pt_inst_ext. done.
-  Qed.
-
-  Lemma tyswap_pinst T : ∀ σ,
-    tyswap a b (pinst_ty σ T) = pinst_ty (ptswap a b ∘ σ) (tyswap a b T).
-  Proof.
-    induction T; intros σ; simpl; f_equal; auto.
-    - destruct ub; simpl; [|done]. by rewrite pt_inst_swap.
-    - destruct lb; simpl; [|done]. by rewrite pt_inst_swap.
-    - rewrite IHT. apply pinst_ty_ext. intros x. apply pup_swap.
-    - apply pt_inst_swap.
-  Qed.
-
-  Lemma plist_swap xs x :
-    ptswap a b (plist xs x) = plist (ptswap a b <$> xs) x.
-  Proof.
-    unfold plist. rewrite list_lookup_fmap, length_fmap.
-    by destruct (xs !! x).
-  Qed.
-
-  Lemma tyswap_ty_inst xs T :
-    tyswap a b (ty_inst xs T) = ty_inst (ptswap a b <$> xs) (tyswap a b T).
-  Proof.
-    unfold ty_inst. rewrite tyswap_pinst. apply pinst_ty_ext.
-    intros x. apply plist_swap.
-  Qed.
-
-  Lemma slots_swap x m : ptswap a b <$> slots x m = slots (ptswap a b x) m.
-  Proof. unfold slots. rewrite <-list_fmap_compose. done. Qed.
-
-  Lemma tyswap_payload_at m T x :
-    tyswap a b (payload_at m T x) = payload_at m (tyswap a b T) (ptswap a b x).
-  Proof. unfold payload_at. by rewrite tyswap_ty_inst, slots_swap. Qed.
-
-  Lemma heads_swap T : heads (tyswap a b T) = set_map (ptswap a b) (heads T).
-  Proof.
-    induction T; simpl.
-    - set_solver.
-    - destruct lb; simpl; set_solver.
-    - rewrite IHT1, IHT2. set_solver.
-    - rewrite IHT1, IHT2. set_solver.
-    - set_solver.
-    - set_solver.
-  Qed.
-
-  Lemma tmap_involutive_mut :
-    (∀ T, tyswap a b (tyswap a b T) = T) ∧
-    (∀ s, styswap a b (styswap a b s) = s).
-  Proof.
-    apply ty_sty_mut_ind; intros; simpl; f_equal; auto using ptswap_involutive.
-    - destruct ub; simpl; [|done]. by rewrite ptswap_involutive.
-    - destruct lb; simpl; [|done]. by rewrite ptswap_involutive.
-  Qed.
-
-  Lemma tyswap_involutive T : tyswap a b (tyswap a b T) = T.
-  Proof. apply tmap_involutive_mut. Qed.
-
-  Lemma styswap_involutive s : styswap a b (styswap a b s) = s.
-  Proof. apply tmap_involutive_mut. Qed.
-
-  Lemma prim_swap T : prim T → prim (tyswap a b T).
-  Proof. induction 1; simpl; constructor; auto. Qed.
-
-  Lemma unlimited_swap T : unlimited T → unlimited (tyswap a b T).
-  Proof. by destruct T. Qed.
-End types.
-
-(** Constants are typed in a world; their signatures transport along
-    a transposition of the world's points. *)
-Lemma konst_ty_swap a b (peq plt : point → point → Prop) k T :
-  konst_ty peq plt k T →
-  konst_ty (λ x y, peq (ptswap a b x) (ptswap a b y))
-           (λ x y, plt (ptswap a b x) (ptswap a b y)) k (tyswap a b T).
-Proof.
-  destruct 1 as [S x|ub lb|m T S x xs Hl Hxs Hh|m T S x|x|S x x' Hx|n T xs Hl];
-    simpl.
-  - rewrite smap_dual. constructor.
-  - constructor.
-  - rewrite tyswap_ty_inst, ptswap_shift. constructor.
-    + by rewrite length_fmap.
-    + intros i y Hy. apply list_lookup_fmap_Some in Hy as (y0 & -> & Hy0).
-      rewrite ptswap_slot, !ptswap_involutive. by apply Hxs.
-    + intros h Hh'. rewrite <-tyswap_ty_inst, heads_swap in Hh'.
-      apply elem_of_map in Hh' as (h0 & -> & Hh0).
-      rewrite !ptswap_involutive. by apply Hh.
-  - rewrite tyswap_payload_at, ptswap_shift. constructor.
-  - constructor.
-  - rewrite smap_dual. constructor. by rewrite !ptswap_involutive.
-  - rewrite tyswap_ty_inst. constructor. by rewrite length_fmap.
-Qed.
 
 (** ** Worlds up to equivalence, and the transposition of a world *)
 
@@ -527,48 +296,33 @@ Qed.
 Global Instance cswap_inj_inst a b : Inj (=) (=) (cswap a b).
 Proof. intros x y. apply cswap_inj. Qed.
 
-Definition entswap (a b : chan) (e : sty * nat) : sty * nat :=
-  (styswap a b e.1, e.2).
+(** Session types mention no channels (decision F2), so a
+    transposition moves only the keys of an environment. *)
+Definition tenvswap (a b : chan) (Θ : tenv) : tenv := kmap (cswap a b) Θ.
 
-Definition endsswap (a b : chan) (o : ends) : ends :=
-  match o with
-  | One e => One (entswap a b e)
-  | Both e1 e2 => Both (entswap a b e1) (entswap a b e2)
-  end.
-
-Definition tenvswap (a b : chan) (Θ : tenv) : tenv :=
-  kmap (cswap a b) (endsswap a b <$> Θ).
-
-Definition senvswap (a b : chan) (Σ : senv) : senv :=
-  kmap (cswap a b) (entswap a b <$> Σ).
+Definition senvswap (a b : chan) (Σ : senv) : senv := kmap (cswap a b) Σ.
 
 Definition kswap (a b : chan) (k : ekey) : ekey := (cswap a b k.1, k.2).
 
 Section envs.
   Context (a b : chan).
 
-  Lemma entswap_involutive e : entswap a b (entswap a b e) = e.
-  Proof. destruct e. unfold entswap. simpl. by rewrite styswap_involutive. Qed.
-
-  Lemma endsswap_involutive o : endsswap a b (endsswap a b o) = o.
-  Proof. destruct o; simpl; by rewrite !entswap_involutive. Qed.
-
   Lemma lookup_tenvswap Θ c :
-    tenvswap a b Θ !! cswap a b c = endsswap a b <$> Θ !! c.
-  Proof. unfold tenvswap. by rewrite (lookup_kmap (cswap a b)), lookup_fmap. Qed.
+    tenvswap a b Θ !! cswap a b c = Θ !! c.
+  Proof. unfold tenvswap. by rewrite (lookup_kmap (cswap a b)). Qed.
 
   Lemma lookup_tenvswap' Θ c :
-    tenvswap a b Θ !! c = endsswap a b <$> Θ !! cswap a b c.
+    tenvswap a b Θ !! c = Θ !! cswap a b c.
   Proof.
     rewrite <-(cswap_involutive a b c) at 1. by rewrite lookup_tenvswap.
   Qed.
 
   Lemma lookup_senvswap Σ c :
-    senvswap a b Σ !! cswap a b c = entswap a b <$> Σ !! c.
-  Proof. unfold senvswap. by rewrite (lookup_kmap (cswap a b)), lookup_fmap. Qed.
+    senvswap a b Σ !! cswap a b c = Σ !! c.
+  Proof. unfold senvswap. by rewrite (lookup_kmap (cswap a b)). Qed.
 
   Lemma lookup_senvswap' Σ c :
-    senvswap a b Σ !! c = entswap a b <$> Σ !! cswap a b c.
+    senvswap a b Σ !! c = Σ !! cswap a b c.
   Proof.
     rewrite <-(cswap_involutive a b c) at 1. by rewrite lookup_senvswap.
   Qed.
@@ -576,13 +330,13 @@ Section envs.
   Lemma tenvswap_involutive Θ : tenvswap a b (tenvswap a b Θ) = Θ.
   Proof.
     apply map_eq. intros c. rewrite !lookup_tenvswap', cswap_involutive.
-    destruct (Θ !! c); simpl; [by rewrite endsswap_involutive|done].
+    done.
   Qed.
 
   Lemma senvswap_involutive Σ : senvswap a b (senvswap a b Σ) = Σ.
   Proof.
     apply map_eq. intros c. rewrite !lookup_senvswap', cswap_involutive.
-    destruct (Σ !! c); simpl; [by rewrite entswap_involutive|done].
+    done.
   Qed.
 
   Lemma dom_tenvswap Θ : dom (tenvswap a b Θ) = gswap a b (dom Θ).
@@ -604,7 +358,7 @@ Section envs.
   Proof. apply map_eq. intros c. by rewrite lookup_senvswap', !lookup_empty. Qed.
 
   Lemma tenvswap_insert Θ c o :
-    tenvswap a b (<[c := o]> Θ) = <[cswap a b c := endsswap a b o]> (tenvswap a b Θ).
+    tenvswap a b (<[c := o]> Θ) = <[cswap a b c := o]> (tenvswap a b Θ).
   Proof.
     apply map_eq. intros d. rewrite lookup_tenvswap'.
     destruct (decide (d = cswap a b c)) as [->|Hd].
@@ -614,7 +368,7 @@ Section envs.
   Qed.
 
   Lemma senvswap_insert Σ c e :
-    senvswap a b (<[c := e]> Σ) = <[cswap a b c := entswap a b e]> (senvswap a b Σ).
+    senvswap a b (<[c := e]> Σ) = <[cswap a b c := e]> (senvswap a b Σ).
   Proof.
     apply map_eq. intros d. rewrite lookup_senvswap'.
     destruct (decide (d = cswap a b c)) as [->|Hd].
@@ -624,7 +378,7 @@ Section envs.
   Qed.
 
   Lemma tenvswap_singleton c o :
-    tenvswap a b {[c := o]} = {[cswap a b c := endsswap a b o]}.
+    tenvswap a b {[c := o]} = {[cswap a b c := o]}.
   Proof. by rewrite <-!insert_empty, tenvswap_insert, tenvswap_empty. Qed.
 
   Lemma senvswap_union Σ1 Σ2 :
@@ -678,14 +432,14 @@ Section envs.
   Qed.
 
   Lemma tenv_entry_swap Θ k :
-    tenv_entry (tenvswap a b Θ) (kswap a b k) = entswap a b <$> tenv_entry Θ k.
+    tenv_entry (tenvswap a b Θ) (kswap a b k) = tenv_entry Θ k.
   Proof.
     destruct k as [c s]. unfold tenv_entry, kswap. simpl.
     rewrite lookup_tenvswap. by destruct (Θ !! c) as [[]|], s.
   Qed.
 
   Lemma tenv_entry_swap' Θ k :
-    tenv_entry (tenvswap a b Θ) k = entswap a b <$> tenv_entry Θ (kswap a b k).
+    tenv_entry (tenvswap a b Θ) k = tenv_entry Θ (kswap a b k).
   Proof.
     destruct k as [c s]. rewrite <-(cswap_involutive a b c) at 1.
     apply (tenv_entry_swap Θ (cswap a b c, s)).
@@ -695,7 +449,7 @@ Section envs.
   Proof. destruct k. unfold kswap. simpl. by rewrite cswap_involutive. Qed.
 
   Lemma entry_head_swap k e :
-    entry_head (kswap a b k) (entswap a b e) = ptswap a b (entry_head k e).
+    entry_head (kswap a b k) e = ptswap a b (entry_head k e).
   Proof. done. Qed.
 
   Lemma elem_of_tenv_heads Θ x :
@@ -716,7 +470,7 @@ Section envs.
   Qed.
 
   Lemma ends_heads_swap c o :
-    ends_heads (cswap a b c) (endsswap a b o) = set_map (ptswap a b) (ends_heads c o).
+    ends_heads (cswap a b c) o = set_map (ptswap a b) (ends_heads c o).
   Proof.
     apply set_eq. intros x. rewrite elem_of_map.
     destruct o as [e|e1 e2]; simpl; split.
@@ -742,15 +496,13 @@ Section envs.
       apply elem_of_map in Hx as (x0 & -> & Hx0). exists x0. split; [done|].
       apply elem_of_tenv_heads. eauto.
     - intros (x0 & -> & Hx0). apply elem_of_tenv_heads in Hx0 as (c & o & Hc & Hx).
-      exists (cswap a b c), (endsswap a b o). split.
+      exists (cswap a b c), o. split.
       + by rewrite lookup_tenvswap, Hc.
       + rewrite ends_heads_swap. by apply elem_of_map_2.
   Qed.
 
   (** The relations between environments. *)
 
-  Lemma unfoldS_swap s : unfoldS (styswap a b s) = styswap a b (unfoldS s).
-  Proof. by rewrite smap_unfoldS. Qed.
 
   Lemma tenv_join_swap Θ Θ1 Θ2 :
     tenv_join Θ Θ1 Θ2 → tenv_join (tenvswap a b Θ) (tenvswap a b Θ1) (tenvswap a b Θ2).
@@ -767,43 +519,43 @@ Section envs.
     destruct (Θ1 !! _) as [[]|] eqn:E1; try done.
     destruct (Θ2 !! _) as [[]|] eqn:E2; try done.
     injection H1 as <-. injection H2 as <-.
-    destruct (Hd _ _ _ E1 E2) as [? ?]. simpl. split; [done|]. by apply sdual_smap.
+    destruct (Hd _ _ _ E1 E2) as [? ?]. simpl. split; [done|]. done.
   Qed.
 
   Lemma tenv_ext_swap Θ1 c e Θ :
     tenv_ext Θ1 c e Θ →
-    tenv_ext (tenvswap a b Θ1) (cswap a b c) (entswap a b e) (tenvswap a b Θ).
+    tenv_ext (tenvswap a b Θ1) (cswap a b c) e (tenvswap a b Θ).
   Proof.
     intros [[H1 ->]|(e' & H1 & [->| ->])].
     - left. rewrite lookup_tenvswap, H1. split; [done|]. by rewrite tenvswap_insert.
-    - right. exists (entswap a b e'). rewrite lookup_tenvswap, H1.
+    - right. exists e'. rewrite lookup_tenvswap, H1.
       split; [done|]. left. by rewrite tenvswap_insert.
-    - right. exists (entswap a b e'). rewrite lookup_tenvswap, H1.
+    - right. exists e'. rewrite lookup_tenvswap, H1.
       split; [done|]. right. by rewrite tenvswap_insert.
   Qed.
 
   Lemma tenv_hd_swap Θ c u k Θ1 :
     tenv_hd Θ c u k Θ1 →
-    tenv_hd (tenvswap a b Θ) (cswap a b c) (styswap a b u) k (tenvswap a b Θ1).
+    tenv_hd (tenvswap a b Θ) (cswap a b c) u k (tenvswap a b Θ1).
   Proof.
-    intros (s & Hext & Hu). exists (styswap a b s). split.
+    intros (s & Hext & Hu). exists s. split.
     - apply (tenv_ext_swap _ _ (s, k)). done.
-    - by rewrite unfoldS_swap, Hu.
+    - done.
   Qed.
 
   Lemma tenv_dual_swap Θ : tenv_dual Θ → tenv_dual (tenvswap a b Θ).
   Proof.
     intros H c e1 e2 He. rewrite lookup_tenvswap' in He.
     destruct (Θ !! _) as [[]|] eqn:E; try done. injection He as <- <-.
-    destruct (H _ _ _ E). simpl. split; [done|]. by apply sdual_smap.
+    destruct (H _ _ _ E). simpl. split; [done|]. done.
   Qed.
 
   Lemma senv_hd_swap Σ c u k Σ1 :
     senv_hd Σ c u k Σ1 →
-    senv_hd (senvswap a b Σ) (cswap a b c) (styswap a b u) k (senvswap a b Σ1).
+    senv_hd (senvswap a b Σ) (cswap a b c) u k (senvswap a b Σ1).
   Proof.
-    intros (s & -> & Hu). exists (styswap a b s).
-    rewrite senvswap_insert. split; [done|]. by rewrite unfoldS_swap, Hu.
+    intros (s & -> & Hu). exists s.
+    rewrite senvswap_insert. split; [done|]. done.
   Qed.
 
   Lemma senv_dual_on_swap Σ1 Σ2 :
@@ -812,7 +564,7 @@ Section envs.
     intros H c e1 e2 H1 H2. rewrite lookup_senvswap' in H1, H2.
     destruct (Σ1 !! _) eqn:E1, (Σ2 !! _) eqn:E2; try done.
     injection H1 as <-. injection H2 as <-.
-    destruct (H _ _ _ E1 E2). simpl. split; [done|]. by apply sdual_smap.
+    destruct (H _ _ _ E1 E2). simpl. split; [done|]. done.
   Qed.
 
   Lemma recv_back_swap Σr Θ2 :
@@ -849,10 +601,10 @@ Section envs.
     - intros r o Hr. rewrite lookup_tenvswap' in Hr.
       destruct (Θe !! _) as [o0|] eqn:E; [|done]. injection Hr as <-.
       specialize (H _ _ E). destruct o0 as [e'|e1 e2]; simpl.
-      + destruct H as (e & He & ? & ?). exists (entswap a b e).
-        rewrite lookup_senvswap', He. split_and!; [done|done|]. by apply sdual_smap.
+      + destruct H as (e & He & ? & ?). exists e.
+        rewrite lookup_senvswap', He. split_and!; [done|done|]. done.
       + destruct H as (He & ? & ?). rewrite lookup_senvswap', He.
-        split_and!; [done|done|]. by apply sdual_smap.
+        split_and!; [done|done|]. done.
   Qed.
 End envs.
 
@@ -878,23 +630,19 @@ Section ready.
   Proof.
     destruct σ as [c v|c v|c|cd]; simpl.
     - intros (Hk & e & m & T & s & He & Hu). split; [by rewrite Hk|].
-      exists (entswap a b e), m, (tyswap a b T), (styswap a b s).
+      exists e, m, T, s.
       rewrite tenv_entry_swap, He. split; [done|]. simpl.
-      by rewrite unfoldS_swap, Hu.
+      done.
     - intros (Hk & e & m & T & s & He & Hu). split; [by rewrite Hk|].
-      exists (entswap a b e), m, (tyswap a b T), (styswap a b s).
+      exists e, m, T, s.
       rewrite tenv_entry_swap, He. split; [done|]. simpl.
-      by rewrite unfoldS_swap, Hu.
+      done.
     - intros (Hk & e & He & Hu & Ht). split; [by rewrite Hk|].
-      exists (entswap a b e). rewrite tenv_entry_swap, He.
-      split_and!; [done|simpl; by rewrite unfoldS_swap, Hu|].
+      exists e. rewrite tenv_entry_swap, He.
+      split_and!; [done|done|].
       intros Hk2 e' He'. simpl in Hk2.
       pose proof (tenv_entry_swap a b Θ (c, false)) as Hs. unfold kswap in Hs.
-      simpl in Hs. rewrite He' in Hs.
-      destruct (tenv_entry Θ (c, false)) as [e0|] eqn:E0; [|done].
-      injection Hs as ->. simpl. rewrite unfoldS_swap. intros Hend.
-      apply (Ht Hk2 e0); [done|].
-      rewrite <-(styswap_involutive a b (unfoldS e0.1)), Hend. done.
+      simpl in Hs. rewrite He' in Hs. apply (Ht Hk2 e'). by rewrite Hs.
     - intros (Hk & He). split.
       + by apply elem_of_gswap.
       + rewrite tenv_entry_swap. destruct He as [e He]. rewrite He. by eexists.
@@ -967,7 +715,7 @@ Section ready.
     destruct (tenv_entry Θ (kswap a b k)) as [e0|] eqn:E0; [|done].
     injection He as <-. rewrite Hoff in Hk.
     destruct (H _ _ E0 Hk) as (k' & e' & Ho & He' & Hlt).
-    exists (kswap a b k'), (entswap a b e'). split_and!.
+    exists (kswap a b k'), e'. split_and!.
     - by rewrite Hoff, kswap_involutive.
     - by rewrite tenv_entry_swap, He'.
     - rewrite <-(kswap_involutive a b k). rewrite !entry_head_swap.
@@ -1028,7 +776,7 @@ Section ready.
       rewrite gswap_difference, gswap_singleton, gswap_involutive,
         echsubst_msswap, msswap_disj_union, msswap_singleton. done. }
     destruct (H _ _ _ _ _ Hp0 Hst Hc Hd Hp'') as (s & k & j & Hs & Hw).
-    exists (styswap a b s), k, j. split.
+    exists s, k, j. split.
     - by rewrite lookup_senvswap', Hs.
     - simpl. by rewrite !ptswap_chan.
   Qed.
@@ -1141,10 +889,32 @@ Proof.
 Qed.
 
 Lemma konst_ty_wsame W1 W2 k T :
-  wsame W1 W2 → konst_ty (w_eq W1) (w_lt W1) k T → konst_ty (w_eq W2) (w_lt W2) k T.
+  wsame W1 W2 → konst_ty (tw_eq W1) (tw_lt W1) k T → konst_ty (tw_eq W2) (tw_lt W2) k T.
 Proof.
   intros (_ & He & Hl). apply konst_ty_mono; intros; [by apply He|by apply Hl].
 Qed.
+
+(** Type points are fixed by a transposition, so the constants' side
+    conditions read the same in the transposed world. *)
+Lemma konst_ty_wswap a b W k T :
+  konst_ty (tw_eq W) (tw_lt W) k T →
+  konst_ty (tw_eq (wswap a b W)) (tw_lt (wswap a b W)) k T.
+Proof.
+  apply konst_ty_mono; intros x y; unfold tw_eq, tw_lt; simpl;
+    by rewrite !ptswap_emb.
+Qed.
+
+Lemma slot_aliases_wswap a b W xs m x :
+  slot_aliases (w_eq W) xs m x →
+  slot_aliases (w_eq (wswap a b W)) xs m (ptswap a b x).
+Proof.
+  intros [Hl Hx]. split; [done|]. intros i y Hy. simpl.
+  rewrite ptswap_emb, ptswap_slot, ptswap_involutive. by apply Hx.
+Qed.
+
+Lemma slot_aliases_wsame W1 W2 xs m x :
+  wsame W1 W2 → slot_aliases (w_eq W1) xs m x → slot_aliases (w_eq W2) xs m x.
+Proof. intros (_ & He & _) [Hl Hx]. split; [done|]. intros. apply He. eauto. Qed.
 
 Lemma wext_swap_back a b W W' W'' :
   wsame (wswap a b W) W' → wext W' W'' → wext W (wswap a b W'').
@@ -1163,30 +933,30 @@ Qed.
 
 Lemma rel_swap a b n :
   (∀ W W' Θ T v, wsame (wswap a b W) W' → Vrel n W Θ T v →
-     Vrel n W' (tenvswap a b Θ) (tyswap a b T) (eswap a b v)) ∧
+     Vrel n W' (tenvswap a b Θ) T (eswap a b v)) ∧
   (∀ W W' Θ T F e, wsame (wswap a b W) W' → Erel n W Θ T F e →
-     Erel n W' (tenvswap a b Θ) (tyswap a b T) (set_map (ptswap a b) F)
+     Erel n W' (tenvswap a b Θ) T (set_map (ptswap a b) F)
        (eswap a b e)) ∧
   (∀ W W' Σ T p, wsame (wswap a b W) W' → Prel n W Σ T p →
-     Prel n W' (senvswap a b Σ) (tyswap a b T) (pswap a b p)).
+     Prel n W' (senvswap a b Σ) T (pswap a b p)).
 Proof.
   induction n as [n IHn] using lt_wf_ind.
   assert (∀ j, j < n → ∀ W W' Θ T v, wsame (wswap a b W) W' → Vrel j W Θ T v →
-            Vrel j W' (tenvswap a b Θ) (tyswap a b T) (eswap a b v)) as IHV
+            Vrel j W' (tenvswap a b Θ) T (eswap a b v)) as IHV
     by (intros j Hj; apply (IHn j Hj)).
   assert (∀ j, j < n → ∀ W W' Θ T F e, wsame (wswap a b W) W' →
             Erel j W Θ T F e →
-            Erel j W' (tenvswap a b Θ) (tyswap a b T) (set_map (ptswap a b) F)
+            Erel j W' (tenvswap a b Θ) T (set_map (ptswap a b) F)
               (eswap a b e)) as IHE
     by (intros j Hj; apply (IHn j Hj)).
   assert (∀ j, j < n → ∀ W W' Σ T p, wsame (wswap a b W) W' → Prel j W Σ T p →
-            Prel j W' (senvswap a b Σ) (tyswap a b T) (pswap a b p)) as IHP
+            Prel j W' (senvswap a b Σ) T (pswap a b p)) as IHP
     by (intros j Hj; apply (IHn j Hj)).
   (* the round trip: back to the source of a transposition *)
   assert (∀ W'', wsame (wswap a b (wswap a b W'')) W'') as Hrt
     by (intros; apply wswap_wswap).
   assert (∀ W W' Θ T v, wsame (wswap a b W) W' → Vrel n W Θ T v →
-            Vrel n W' (tenvswap a b Θ) (tyswap a b T) (eswap a b v)) as HV.
+            Vrel n W' (tenvswap a b Θ) T (eswap a b v)) as HV.
   { intros W W' Θ T. revert Θ.
     induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m T1 IHT1|s x];
       intros Θ v HS HVv; simpl.
@@ -1198,23 +968,22 @@ Proof.
         * done.
         * by rewrite fchans_eswap, dom_tenvswap, Hfc.
         * rewrite tenv_heads_swap. eapply lb_below_wsame; [exact HS|].
-          by apply lb_below_swap.
+          rewrite <-(opt_ptswap_emb a b lb). by apply lb_below_swap.
         * intros W'' j Θ' Θ'' w F Hx Hj Hc HVw Hub.
           assert (wext W (wswap a b W'')) as Hx' by (by eapply wext_swap_back).
           apply (tenv_comp_swap a b) in Hc. rewrite tenvswap_involutive in Hc.
           apply (IHV j Hj W'' (wswap a b W'')) in HVw; [|apply wsame_refl].
-          rewrite tyswap_involutive in HVw.
-          apply (ub_below_swap a b) in Hub. rewrite opt_ptswap_involutive in Hub.
+          apply (ub_below_swap a b) in Hub. rewrite opt_ptswap_emb in Hub.
           specialize (H _ _ _ _ _ _ Hx' Hj Hc HVw Hub).
           apply (IHE j Hj (wswap a b W'') W'') in H; [|apply Hrt].
           rewrite tenvswap_involutive, set_ptswap_involutive, eswap_subst1,
             eswap_involutive in H.
           exact H.
-      + apply Vrel_lolli_iff. right. exists k, (tyswap a b T0). split_and!.
+      + apply Vrel_lolli_iff. right. exists k, T0. split_and!.
         * done.
         * by rewrite tenvswap_empty.
-        * eapply konst_ty_wsame; [exact HS|]. by apply konst_ty_swap.
-        * by apply (teq_tmap (ptswap a b) _ (TLolli ub lb T1 U)).
+        * eapply konst_ty_wsame; [exact HS|]. by apply konst_ty_wswap.
+        * done.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hc & H1 & H2).
       apply Vrel_prod_iff.
       exists (eswap a b v1), (eswap a b v2), (tenvswap a b Θ1), (tenvswap a b Θ2).
@@ -1228,19 +997,18 @@ Proof.
       exists (eswap a b eb). split_and!; [done|by rewrite fchans_eswap, Hfc, gswap_empty|].
       intros W'' j xs Hx Hj Hxs.
       assert (wext W (wswap a b W'')) as Hx' by (by eapply wext_swap_back).
-      specialize (H _ j (ptswap a b <$> xs) Hx' Hj ltac:(by rewrite length_fmap)).
+      specialize (H _ j xs Hx' Hj Hxs).
       apply (IHE j Hj (wswap a b W'') W'') in H; [|apply Hrt].
-      rewrite tenvswap_empty, set_ptswap_empty, tyswap_ty_inst,
-        list_ptswap_involutive, eswap_subst1 in H.
+      rewrite tenvswap_empty, set_ptswap_empty, eswap_subst1 in H.
       exact H.
     - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs & Hx).
-      apply Vrel_sess_iff. exists (cswap a b c), (styswap a b s0), k.
+      apply Vrel_sess_iff. exists (cswap a b c), s0, k.
       split_and!.
       + done.
       + by rewrite tenvswap_singleton.
-      + by apply seq_smap.
-      + destruct HS as (_ & He & _). apply He. rewrite <-ptswap_chan.
-        by apply wswap_eq. }
+      + done.
+      + destruct HS as (_ & He & _). apply He. rewrite <-ptswap_chan,
+          <-(ptswap_emb a b x). by apply wswap_eq. }
   split_and!; [exact HV| |].
   - (* term relation *)
     intros W W' Θ T F e HS HE.
@@ -1261,28 +1029,30 @@ Proof.
     + apply (IHE n' ltac:(lia) W); done.
     + (* recv *)
       destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
-      exists (tenvswap a b Θ1), m, (tyswap a b U), (styswap a b s), k.
+      exists (tenvswap a b Θ1), m, U, s, k.
       split; [by apply (tenv_hd_swap a b _ _ (SRcv m U s))|].
-      intros W'' j Θ2 Θ12 Hx Hj Hc HVw.
+      intros W'' j Θ2 Θ12 xs Hx Hj Hc Hxs HVw.
       assert (wext W (wswap a b W'')) as Hx' by (by eapply wext_swap_back).
       apply (tenv_comp_swap a b) in Hc. rewrite tenvswap_involutive in Hc.
+      apply (slot_aliases_wswap a b) in Hxs.
+      rewrite ptswap_chan, cswap_involutive in Hxs.
       apply (IHV j ltac:(lia) W'' (wswap a b W'')) in HVw; [|apply wsame_refl].
-      rewrite tyswap_payload_at, tyswap_involutive, ptswap_chan,
-        cswap_involutive, eswap_involutive in HVw.
-      destruct (H _ _ _ _ Hx' Hj Hc HVw) as (Θ' & Hext & HE').
+      rewrite eswap_involutive in HVw.
+      destruct (H _ _ _ _ xs Hx' Hj Hc Hxs HVw) as (Θ' & Hext & HE').
       exists (tenvswap a b Θ'). split.
       * apply (tenv_ext_swap a b) in Hext. by rewrite tenvswap_involutive in Hext.
       * by apply (IHE j ltac:(lia) (wswap a b W'') W'').
     + (* send *)
-      destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
-                         Hhd & Hc & HVw & Hext & HE').
+      destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & xs &
+                         Hhd & Hc & Hxs & HVw & Hext & HE').
       exists (tenvswap a b Θr), (tenvswap a b Θ1), (tenvswap a b Θ2), m,
-        (tyswap a b U), (styswap a b s), k, (tenvswap a b Θ').
+        U, s, k, (tenvswap a b Θ'), xs.
       split_and!.
       * by apply (tenv_hd_swap a b _ _ (SSnd m U s)).
       * by apply tenv_comp_swap.
-      * apply (HV W W') in HVw; [|done].
-        by rewrite tyswap_payload_at, ptswap_chan in HVw.
+      * eapply slot_aliases_wsame; [exact HS|].
+        rewrite <-ptswap_chan. by apply slot_aliases_wswap.
+      * by apply (HV W W') in HVw.
       * by apply (tenv_ext_swap a b _ _ (s, S k)).
       * by apply (IHE n' ltac:(lia) W).
     + (* close *)
@@ -1294,12 +1064,12 @@ Proof.
       destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                          -> & H1 & H2 & Hdu & Hal & HE').
       exists (cswap a b c), (cswap a b d), (tenvswap a b Θ1), (tenvswap a b Θm),
-        (styswap a b sc), (styswap a b sd), kc, kd.
+        sc, sd, kc, kd.
       split_and!.
       * apply gswap_upair.
       * by apply (tenv_ext_swap a b _ _ (sd, kd)).
       * by apply (tenv_ext_swap a b _ _ (sc, kc)).
-      * by apply sdual_smap.
+      * done.
       * destruct HS as (_ & He & _). apply He. rewrite <-!ptswap_chan.
         by apply wswap_eq.
       * by apply (IHE n' ltac:(lia) W).
@@ -1312,8 +1082,8 @@ Proof.
         rewrite <-(cswap_involutive a b c) at 1. apply nchan_names_swap.
         by rewrite cswap_involutive. }
       destruct (Hstep Hc0 Hn0) as (s & s' & W1 & Hdu & Hfr & HE').
-      exists (styswap a b s), (styswap a b s'), (wswap a b W1). split_and!.
-      * by apply sdual_smap.
+      exists s, s', (wswap a b W1). split_and!.
+      * done.
       * apply (wext_fresh_wswap a b) in Hfr.
         rewrite names_singleton_swap in Hfr.
         eapply wext_fresh_wsame; [exact HS|apply wsame_refl|exact Hfr].
@@ -1321,8 +1091,7 @@ Proof.
         by rewrite tenvswap_insert in HE'.
     + (* spawn *)
       destruct Hstep as (Θ1 & Θ2 & ub & lb & Hc & HVw & HE').
-      exists (tenvswap a b Θ1), (tenvswap a b Θ2), (ptswap a b <$> ub),
-        (ptswap a b <$> lb).
+      exists (tenvswap a b Θ1), (tenvswap a b Θ2), ub, lb.
       split_and!.
       * by apply tenv_comp_swap.
       * apply (HV W W' _ (TLolli ub lb TUnit TUnit)) in HVw; [|done]. exact HVw.
@@ -1369,11 +1138,11 @@ Proof.
       * by apply (IHP n' ltac:(lia) W1).
     + (* recv *)
       destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
-      exists (senvswap a b Σ1), m, (tyswap a b U), (styswap a b s), k.
+      exists (senvswap a b Σ1), m, U, s, k.
       split_and!.
       * by apply (senv_hd_swap a b _ _ (SRcv m U s)).
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
-      * intros W'' j Θ2 Hx Hj Hfr Hok HVw.
+      * intros W'' j Θ2 xs Hx Hj Hfr Hok Hxs HVw.
         assert (wext W (wswap a b W'')) as Hx' by (by eapply wext_swap_back).
         assert (dom (tenvswap a b Θ2) ## p.1) as Hfr'.
         { rewrite dom_tenvswap. destruct p as [C E]; simpl in *.
@@ -1381,13 +1150,13 @@ Proof.
         assert (recv_ok W (<[c := (s, S k)]> Σ1) (tenvswap a b Θ2)) as Hok'.
         { apply (recv_ok_swap a b) in Hok.
           rewrite senvswap_insert, senvswap_involutive, cswap_involutive in Hok.
-          unfold entswap in Hok; simpl in Hok. rewrite styswap_involutive in Hok.
           eapply recv_ok_wsame; [|exact Hok].
           eapply wsame_trans; [apply wswap_wsame, wsame_sym, HS|apply wswap_wswap]. }
         apply (IHV j ltac:(lia) W'' (wswap a b W'')) in HVw; [|apply wsame_refl].
-        rewrite tyswap_payload_at, tyswap_involutive, ptswap_chan,
-          cswap_involutive, eswap_involutive in HVw.
-        destruct (H _ _ _ Hx' Hj Hfr' Hok' HVw) as (q0 & Hal & HP0).
+        rewrite eswap_involutive in HVw.
+        apply (slot_aliases_wswap a b) in Hxs.
+        rewrite ptswap_chan, cswap_involutive in Hxs.
+        destruct (H _ _ _ xs Hx' Hj Hfr' Hok' Hxs HVw) as (q0 & Hal & HP0).
         apply (IHP j ltac:(lia) (wswap a b W'') W'') in HP0; [|apply Hrt].
         rewrite <-recv_env_swap, tenvswap_involutive, senvswap_insert in HP0.
         exists (pswap a b q0). split; [|exact HP0].
@@ -1396,10 +1165,10 @@ Proof.
           senvswap_insert in Hal.
         exact Hal.
     + (* send *)
-      destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
-                         Hd0v & Hc0 & Hcv & Hdom & Hsplit & HdΣ & HVw & HP').
-      exists (senvswap a b Σ0), (senvswap a b Σv), m, (tyswap a b U),
-        (styswap a b s), k, (senvswap a b Σe), (tenvswap a b Θe).
+      destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & xs & Hhd &
+                         Hd0v & Hc0 & Hcv & Hdom & Hsplit & HdΣ & Hxs & HVw & HP').
+      exists (senvswap a b Σ0), (senvswap a b Σv), m, U,
+        s, k, (senvswap a b Σe), (tenvswap a b Θe), xs.
       split_and!.
       * rewrite <-senvswap_union. by apply (senv_hd_swap a b _ _ (SSnd m U s)).
       * by apply senvswap_disjoint.
@@ -1409,8 +1178,10 @@ Proof.
         by rewrite dom_tenvswap, fchans_eswap, Hdom, gswap_intersection.
       * by apply send_split_swap.
       * rewrite dom_tenvswap, dom_senvswap. by apply gswap_disjoint_iff.
+      * eapply slot_aliases_wsame; [exact HS|].
+        rewrite <-ptswap_chan. by apply slot_aliases_wswap.
       * apply (HV W W') in HVw; [|done].
-        by rewrite tenvswap_union, tenvswap_of, tyswap_payload_at, ptswap_chan in HVw.
+        by rewrite tenvswap_union, tenvswap_of in HVw.
       * apply (IHP n' ltac:(lia) W W') in HP'; [|done].
         by rewrite senvswap_insert, senvswap_union in HP'.
     + (* close *)
@@ -1422,30 +1193,30 @@ Proof.
     + (* link *)
       destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
                          -> & Hne & -> & Hc1 & Hd1 & Hdu & Hal & HP').
-      exists (cswap a b c), (cswap a b d), (senvswap a b Σ1), (styswap a b sc),
-        (styswap a b sd), kc, kd.
+      exists (cswap a b c), (cswap a b d), (senvswap a b Σ1), sc,
+        sd, kc, kd.
       split_and!.
       * apply gswap_upair.
       * intros Heq. by apply cswap_inj in Heq.
       * by rewrite !senvswap_insert.
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
-      * by apply sdual_smap.
+      * done.
       * destruct HS as (_ & He & _). apply He. rewrite <-!ptswap_chan.
         by apply wswap_eq.
       * by apply (IHP n' ltac:(lia) W).
 Qed.
 
 Lemma Vrel_swap a b n W Θ T v :
-  Vrel n W Θ T v → Vrel n (wswap a b W) (tenvswap a b Θ) (tyswap a b T) (eswap a b v).
+  Vrel n W Θ T v → Vrel n (wswap a b W) (tenvswap a b Θ) T (eswap a b v).
 Proof. apply (rel_swap a b n). apply wsame_refl. Qed.
 
 Lemma Erel_swap a b n W Θ T F e :
   Erel n W Θ T F e →
-  Erel n (wswap a b W) (tenvswap a b Θ) (tyswap a b T) (set_map (ptswap a b) F)
+  Erel n (wswap a b W) (tenvswap a b Θ) T (set_map (ptswap a b) F)
     (eswap a b e).
 Proof. apply (rel_swap a b n). apply wsame_refl. Qed.
 
 Lemma Prel_swap a b n W Σ T p :
-  Prel n W Σ T p → Prel n (wswap a b W) (senvswap a b Σ) (tyswap a b T) (pswap a b p).
+  Prel n W Σ T p → Prel n (wswap a b W) (senvswap a b Σ) T (pswap a b p).
 Proof. apply (rel_swap a b n). apply wsame_refl. Qed.

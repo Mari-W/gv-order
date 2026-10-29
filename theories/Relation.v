@@ -27,6 +27,10 @@ From LRGV Require Export Semantics Safety Swap Types Coequal Worlds Ready Typing
 
 (** ** The three relations, level by level *)
 
+(** A world read on type points, through the embedding. *)
+Definition tw_eq (W : world) (x y : tpoint) : Prop := w_eq W (emb x) (emb y).
+Definition tw_lt (W : world) (x y : tpoint) : Prop := w_lt W (emb x) (emb y).
+
 Record level := Level {
   lV : world → tenv → ty → expr → Prop;
   lE : world → tenv → ty → gset point → expr → Prop;
@@ -53,15 +57,15 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TUnit => Θ = ∅ ∧ v = EUnit
   | TSess s x =>
       ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
-        w_eq W (pt_chan c k) x
+        w_eq W (pt_chan c k) (emb x)
   | TLolli ub lb T1 U =>
-      (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
+      (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W (emb <$> lb) (tenv_heads Θ) ∧
          ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
            tenv_comp Θ'' Θ Θ' →
            lV (below j) W' Θ' T1 w →
-           ub_below W' ub F →
+           ub_below W' (emb <$> ub) F →
            lE (below j) W' Θ'' U F (subst1 w eb))
-      ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
+      ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (tw_eq W) (tw_lt W) k T0 ∧
            teq T0 (TLolli ub lb T1 U))
   | TProd T1 U =>
       ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp Θ Θ1 Θ2 ∧
@@ -107,15 +111,17 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
         | LSess (SRecv c w) =>                         (* O-Recv *)
             ∃ Θ1 m U s k,
               tenv_hd Θ c (SRcv m U s) k Θ1 ∧
-              ∀ W' j Θ2 Θ12, wext W W' → j ≤ n' →
+              ∀ W' j Θ2 Θ12 xs, wext W W' → j ≤ n' →
                 tenv_comp Θ12 Θ1 Θ2 →
-                lV (below j) W' Θ2 (payload_at m U (pt_chan c k)) w →
+                slot_aliases (w_eq W') xs m (pt_chan c k) →
+                lV (below j) W' Θ2 (ty_inst xs U) w →
                 ∃ Θ', tenv_ext Θ12 c (s, S k) Θ' ∧
                   lE (below j) W' Θ' T F e'
         | LSess (SSend c w) =>                         (* O-Send *)
-            ∃ Θr Θ1 Θ2 m U s k Θ',
+            ∃ Θr Θ1 Θ2 m U s k Θ' xs,
               tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp Θr Θ1 Θ2 ∧
-              Vn W Θ2 (payload_at m U (pt_chan c k)) w ∧
+              slot_aliases (w_eq W) xs m (pt_chan c k) ∧
+              Vn W Θ2 (ty_inst xs U) w ∧
               tenv_ext Θ1 c (s, S k) Θ' ∧
               lE (below n') W Θ' T F e'
         | LSess (SClos c) =>                           (* O-Close *)
@@ -216,18 +222,20 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
         | PSess (SRecv c w) =>                         (* Q-Recv *)
             ∃ Σ1 m U s k,
               senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
+              ∀ W' j Θ2 xs, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
                 recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
-                lV (below j) W' Θ2 (payload_at m U (pt_chan c k)) w →
+                slot_aliases (w_eq W') xs m (pt_chan c k) →
+                lV (below j) W' Θ2 (ty_inst xs U) w →
                 ∃ q, alpha (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
                   lP (below j) W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
         | PSess (SSend c w) =>                         (* Q-Send *)
-            ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
+            ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv) xs,
               senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
               Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
               dom Θe = fchans w ∩ p.1 ∧ send_split Σe Θe ∧
               dom Θe ## dom Σ ∧
-              Vn W (tenv_of Σv ∪ Θe) (payload_at m U (pt_chan c k)) w ∧
+              slot_aliases (w_eq W) xs m (pt_chan c k) ∧
+              Vn W (tenv_of Σv ∪ Θe) (ty_inst xs U) w ∧
               lP (below n') W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T p'
         | PSess (SClos c) =>                           (* Q-Close *)
             ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧
@@ -390,7 +398,7 @@ Proof.
   destruct σ as [c w|c w|c|cd]; simpl in Hstep.
   - destruct Hstep as (Σ1 & m & U & s & k & Heq & _).
     exact (senv_hd_not_empty _ _ _ _ Heq).
-  - destruct Hstep as (?&?&?&?&?&?&?&?&Heq&_).
+  - destruct Hstep as (?&?&?&?&?&?&?&?&?&Heq&_).
     exact (senv_hd_not_empty _ _ _ _ Heq).
   - destruct Hstep as (Σ1 & k & Heq & _).
     exact (senv_hd_not_empty _ _ _ _ Heq).
@@ -413,7 +421,7 @@ Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 Lemma Vrel_sess_iff n W Θ s x v :
   Vrel n W Θ (TSess s x) v ↔
   ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
-    w_eq W (pt_chan c k) x.
+    w_eq W (pt_chan c k) (emb x).
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_prod_iff n W Θ T U v :
@@ -452,13 +460,13 @@ Proof. destruct T; try done. intros _. apply Vrel_box_empty. Qed.
 
 Lemma Vrel_lolli_iff n W Θ ub lb T U v :
   Vrel n W Θ (TLolli ub lb T U) v ↔
-  (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
+  (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W (emb <$> lb) (tenv_heads Θ) ∧
      ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
        tenv_comp Θ'' Θ Θ' →
        Vrel j W' Θ' T w →
-       ub_below W' ub F →
+       ub_below W' (emb <$> ub) F →
        Erel j W' Θ'' U F (subst1 w eb))
-  ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
+  ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (tw_eq W) (tw_lt W) k T0 ∧
        teq T0 (TLolli ub lb T U)).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
@@ -488,14 +496,16 @@ Definition Ecase (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
   | LSess (SRecv c w) =>
       ∃ Θ1 m U s k,
         tenv_hd Θ c (SRcv m U s) k Θ1 ∧
-        ∀ W' j Θ2 Θ12, wext W W' → j ≤ n' →
+        ∀ W' j Θ2 Θ12 xs, wext W W' → j ≤ n' →
           tenv_comp Θ12 Θ1 Θ2 →
-          Vrel j W' Θ2 (payload_at m U (pt_chan c k)) w →
+          slot_aliases (w_eq W') xs m (pt_chan c k) →
+          Vrel j W' Θ2 (ty_inst xs U) w →
           ∃ Θ', tenv_ext Θ12 c (s, S k) Θ' ∧ Erel j W' Θ' T F e'
   | LSess (SSend c w) =>
-      ∃ Θr Θ1 Θ2 m U s k Θ',
+      ∃ Θr Θ1 Θ2 m U s k Θ' xs,
         tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp Θr Θ1 Θ2 ∧
-        Vrel (S n') W Θ2 (payload_at m U (pt_chan c k)) w ∧
+        slot_aliases (w_eq W) xs m (pt_chan c k) ∧
+        Vrel (S n') W Θ2 (ty_inst xs U) w ∧
         tenv_ext Θ1 c (s, S k) Θ' ∧
         Erel n' W Θ' T F e'
   | LSess (SClos c) =>
@@ -523,16 +533,16 @@ Proof.
   - (* recv, → *)
     destruct H as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 HW Hj Hc HV.
+    intros W' j Θ2 Θ12 xs HW Hj Hc Hxs HV.
     rewrite <-(levels_at (S n) j) in HV by lia.
-    destruct (H W' j Θ2 Θ12 HW Hj Hc HV) as (Θ' & Hext & HE).
+    destruct (H W' j Θ2 Θ12 xs HW Hj Hc Hxs HV) as (Θ' & Hext & HE).
     exists Θ'. split; [done|]. by rewrite (levels_at (S n) j) in HE by lia.
   - (* recv, ← *)
     destruct H as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 HW Hj Hc HV.
+    intros W' j Θ2 Θ12 xs HW Hj Hc Hxs HV.
     rewrite (levels_at (S n) j) in HV by lia.
-    destruct (H W' j Θ2 Θ12 HW Hj Hc HV) as (Θ' & Hext & HE).
+    destruct (H W' j Θ2 Θ12 xs HW Hj Hc Hxs HV) as (Θ' & Hext & HE).
     exists Θ'. split; [done|]. by rewrite <-(levels_at (S n) j) in HE by lia.
 Qed.
 
@@ -549,18 +559,20 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
+        ∀ W' j Θ2 xs, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
           recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
-          Vrel j W' Θ2 (payload_at m U (pt_chan c k)) w →
+          slot_aliases (w_eq W') xs m (pt_chan c k) →
+          Vrel j W' Θ2 (ty_inst xs U) w →
           ∃ q, alpha (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
             Prel j W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
   | PSess (SSend c w) =>
-      ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
+      ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv) xs,
         senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
         Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
         dom Θe = fchans w ∩ p.1 ∧ send_split Σe Θe ∧
         dom Θe ## dom Σ ∧
-        Vrel (S n') W (tenv_of Σv ∪ Θe) (payload_at m U (pt_chan c k)) w ∧
+        slot_aliases (w_eq W) xs m (pt_chan c k) ∧
+        Vrel (S n') W (tenv_of Σv ∪ Θe) (ty_inst xs U) w ∧
         Prel n' W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T p'
   | PSess (SClos c) =>
       ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' W Σ1 T p'
@@ -590,16 +602,16 @@ Proof.
   - (* recv, → *)
     destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
     exists Σ1, m, U, s, k. split_and!; [done|done|].
-    intros W' j Θ2 HW Hj Hfr Hdu HV.
+    intros W' j Θ2 xs HW Hj Hfr Hdu Hxs HV.
     rewrite <-(levels_at (S n) j) in HV by lia.
-    specialize (H W' j Θ2 HW Hj Hfr Hdu HV).
+    specialize (H W' j Θ2 xs HW Hj Hfr Hdu Hxs HV).
     rewrite (levels_at (S n) j) in H by lia. exact H.
   - (* recv, ← *)
     destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
     exists Σ1, m, U, s, k. split_and!; [done|done|].
-    intros W' j Θ2 HW Hj Hfr Hdu HV.
+    intros W' j Θ2 xs HW Hj Hfr Hdu Hxs HV.
     rewrite (levels_at (S n) j) in HV by lia.
-    specialize (H W' j Θ2 HW Hj Hfr Hdu HV).
+    specialize (H W' j Θ2 xs HW Hj Hfr Hdu Hxs HV).
     rewrite <-(levels_at (S n) j) in H by lia. exact H.
 Qed.
 
@@ -794,10 +806,10 @@ Proof.
     + eapply IH; [|exact H2]. lia.
     + destruct H2 as (Θ1 & m & U & s & k & Hhd & H2).
       eexists _, _, _, _, _. split; [done|].
-      intros W' j Θ2 Θ12 HW Hj Hc HV. apply (H2 W' j Θ2 Θ12); auto. lia.
-    + destruct H2 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
-                      Hhd & Hc & HV & Hext & HE').
-      eexists _, _, _, _, _, _, _, _. split_and!; eauto.
+      intros W' j Θ2 Θ12 xs HW Hj Hc Hxs HV. apply (H2 W' j Θ2 Θ12 xs); auto. lia.
+    + destruct H2 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & xs &
+                      Hhd & Hc & Hxs & HV & Hext & HE').
+      eexists _, _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HE']. lia.
     + destruct H2 as (Θ1 & k & Hhd & HE').
@@ -830,10 +842,10 @@ Proof.
       exists W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
       eexists _, _, _, _, _. split_and!; [done|done|].
-      intros W' j Θ2 HW Hj Hfr Hdu HV. apply H2; auto. lia.
-    + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
-                      ? & ? & ? & ? & ? & ? & HV & HP0).
-      eexists _, _, _, _, _, _, _, _. split_and!; eauto.
+      intros W' j Θ2 xs HW Hj Hfr Hdu Hxs HV. apply (H2 W' j Θ2 xs); auto. lia.
+    + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Θe & xs & Hhd &
+                      ? & ? & ? & ? & ? & ? & ? & HV & HP0).
+      eexists _, _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HP0]. lia.
     + destruct H2 as (Σ1 & k & Hhd & ? & HP').
