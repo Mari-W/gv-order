@@ -897,6 +897,37 @@ Proof.
   eapply wsame_trans; [apply wswap_wsame, wsame_sym, HS|apply wswap_wswap].
 Qed.
 
+(** α-variants transport along transpositions and world equivalence. *)
+Lemma wfresh_swap a b W c : wfresh W c → wfresh (wswap a b W) (cswap a b c).
+Proof.
+  intros H p Hp Hr. simpl in Hp. apply elem_of_names_swap' in Hp.
+  apply (H _ Hp). rewrite <-(pnswap_involutive a b p) in Hr.
+  rewrite pn_root_swap in Hr. apply (f_equal (pnswap a b)) in Hr.
+  rewrite pnswap_involutive in Hr. rewrite Hr. simpl. by rewrite cswap_involutive.
+Qed.
+
+Lemma wfresh_wsame W1 W2 c : wsame W1 W2 → wfresh W1 c → wfresh W2 c.
+Proof. intros (Hn & _) H p Hp. rewrite <-Hn in Hp. by apply H. Qed.
+
+Lemma walpha_pswap a b W Σ p q :
+  walpha W Σ p q →
+  walpha (wswap a b W) (senvswap a b Σ) (pswap a b p) (pswap a b q).
+Proof.
+  induction 1 as [p|p q c d Hc Hd HdE HdΣ Hdw _ IH]; [constructor|].
+  apply (walpha_step _ _ _ _ (cswap a b c) (cswap a b d)).
+  - destruct p; simpl in *. by apply elem_of_gswap.
+  - destruct p; simpl in *. by rewrite elem_of_gswap.
+  - destruct p; simpl in *. rewrite echans_msswap. by rewrite elem_of_gswap.
+  - rewrite dom_senvswap. by rewrite elem_of_gswap.
+  - by apply wfresh_swap.
+  - by rewrite <-pswap_conj.
+Qed.
+
+Lemma walpha_wsame W1 W2 Σ p q : wsame W1 W2 → walpha W1 Σ p q → walpha W2 Σ p q.
+Proof.
+  intros HS. induction 1; [constructor|]. econstructor; eauto using wfresh_wsame.
+Qed.
+
 (** ** The relations are equivariant
 
     One induction on the step index carries all three relations. The
@@ -1100,7 +1131,7 @@ Proof.
       { destruct q as [Cq Eq]; simpl in *.
         rewrite dom_senvswap in Hd. by apply gswap_disjoint_iff in Hd. }
       exists (wswap a b W1), (pswap a b q0). split_and!.
-      * by apply alpha_pswap.
+      * by apply walpha_pswap.
       * apply (wext_inv_wswap a b) in Hinv.
         rewrite names_nchan_swap, gswap_union in Hinv.
         eapply wext_inv_wsame; [exact HS|apply wsame_refl|exact Hinv].
@@ -1129,10 +1160,10 @@ Proof.
         apply (IHP j ltac:(lia) (wswap a b W'') W'') in HP0; [|apply Hrt].
         rewrite <-recv_env_swap, tenvswap_involutive, senvswap_insert in HP0.
         exists (pswap a b q0). split; [|exact HP0].
-        apply (alpha_pswap a b) in Hal. unfold pswap at 1 in Hal; simpl in Hal.
-        rewrite gswap_union, <-recv_back_swap, tenvswap_involutive,
+        apply (walpha_pswap a b) in Hal. unfold pswap at 1 in Hal; simpl in Hal.
+        rewrite gswap_union, <-recv_back_swap, <-recv_env_swap, tenvswap_involutive,
           senvswap_insert in Hal.
-        exact Hal.
+        eapply walpha_wsame; [apply Hrt|exact Hal].
     + (* send *)
       destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & xs & Hhd &
                          Hd0v & Hc0 & Hcv & Hdom & Hsplit & HdΣ & Hxs & HVw & HP').
@@ -1154,13 +1185,17 @@ Proof.
       * destruct HP' as (q0 & Hal & HP').
         apply (IHP n' ltac:(lia) W W') in HP'; [|done].
         rewrite senvswap_insert, senvswap_union in HP'.
-        exists (pswap a b q0). split; [by apply alpha_pswap|done].
+        exists (pswap a b q0). split; [|done].
+        apply (walpha_pswap a b) in Hal.
+        rewrite senvswap_insert, senvswap_union in Hal.
+        by eapply walpha_wsame.
     + (* close *)
       destruct Hstep as (Σ1 & k & Hhd & Hc & q0 & Hal & HP').
       exists (senvswap a b Σ1), k. split_and!.
       * by apply (senv_hd_swap a b _ _ SEnd).
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
-      * exists (pswap a b q0). split; [by apply alpha_pswap|].
+      * exists (pswap a b q0). split;
+          [apply (walpha_pswap a b) in Hal; by eapply walpha_wsame|].
         by apply (IHP n' ltac:(lia) W).
     + (* link *)
       destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
@@ -1176,7 +1211,8 @@ Proof.
       * done.
       * destruct HS as (_ & He & _). apply He. rewrite <-!ptswap_chan.
         by apply wswap_eq.
-      * exists (pswap a b q0). split; [by apply alpha_pswap|].
+      * exists (pswap a b q0). split;
+          [apply (walpha_pswap a b) in Hal; by eapply walpha_wsame|].
         by apply (IHP n' ltac:(lia) W).
 Qed.
 
@@ -1212,8 +1248,6 @@ Lemma pn_root_idem p : pn_root (pn_root p) = pn_root p.
 Proof. induction p; simpl; auto. Qed.
 
 (** A world that knows neither name is fixed by their transposition. *)
-Definition wfresh (W : world) (c : chan) : Prop :=
-  ∀ p, p ∈ w_names W → pn_root p ≠ NChan c.
 
 Lemma wswap_fix a b W :
   world_wf W → wfresh W a → wfresh W b → wsame (wswap a b W) W.

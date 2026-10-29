@@ -172,10 +172,29 @@ Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
     | Both e1 e2 => Σe !! r = None ∧ e1.2 = e2.2 ∧ sdual e1.1 e2.1
     end.
 
+(** ** α-variants
+
+    Restricted names are bound. An α-variant of a process renames its
+    restricted names, one at a time, to names that capture nothing:
+    absent from the process, outside the interface Σ, and unknown to
+    the world of the step (decision I1). *)
+
+Definition wfresh (W : world) (c : chan) : Prop :=
+  ∀ p, p ∈ w_names W → pn_root p ≠ NChan c.
+
+Inductive walpha (W : world) (Σ : senv) : proc → proc → Prop :=
+  | walpha_refl p : walpha W Σ p p
+  | walpha_step p q a b :
+      a ∈ p.1 → b ∉ p.1 → b ∉ echans p.2 → b ∉ dom Σ → wfresh W b →
+      walpha W Σ (pswap a b p) q → walpha W Σ p q.
+
+Lemma walpha_alpha W Σ p q : walpha W Σ p q → alpha p q.
+Proof. induction 1; econstructor; eauto. Qed.
+
 (** Process relation at level n. Differences from the term relation:
 
     - Restricted names are bound: every step obligation is stated for
-      some α-variant of the successor ([Swap.alpha]), so facts a world
+      some α-variant of the successor ([walpha]), so facts a world
       states about restricted names never pin the process, and the two
       orientations of an internal link are the same obligation.
     - Q-Tau: the world may grow, but only invisibly: W ⊑ W′ adds facts
@@ -191,7 +210,7 @@ Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
       and their entries leave both environments. If the carrier c is
       in B, its continuation entry leaves as well. The other received
       channels are fresh for W ([recv_ok]). The obligation holds for an
-      α-variant of the successor ([Swap.alpha]): restricted names are
+      α-variant of the successor ([walpha]): restricted names are
       bound, so facts the environment's W′ states about them do not
       pin the process.
     - Q-Send: the restricted channels the message carries,
@@ -210,7 +229,7 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
         match π with
         | PTau =>                                      (* Q-Tau *)
             p'.1 ## dom Σ →
-            ∃ W' q, alpha p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
+            ∃ W' q, walpha W' Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
               lP (below n') W' Σ T q
         | PSess (SRecv c w) =>                         (* Q-Recv *)
             ∃ Σ1 m U s k,
@@ -219,7 +238,8 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
                 recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
                 slot_aliases (w_eq W') xs m (pt_chan c k) →
                 lV (below j) W' Θ2 (ty_inst xs U) w →
-                ∃ q, alpha (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
+                ∃ q, walpha W' (recv_env (<[c := (s, S k)]> Σ1) Θ2)
+                 (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
                   lP (below j) W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
         | PSess (SSend c w) =>                         (* Q-Send *)
             ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv) xs,
@@ -229,10 +249,11 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
               dom Θe ## dom Σ ∧
               slot_aliases (w_eq W) xs m (pt_chan c k) ∧
               Vn W (tenv_of Σv ∪ Θe) (ty_inst xs U) w ∧
-              ∃ q, alpha p' q ∧ lP (below n') W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T q
+              ∃ q, walpha W (<[c := (s, S k)]> (Σ0 ∪ Σe)) p' q ∧
+                lP (below n') W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T q
         | PSess (SClos c) =>                           (* Q-Close *)
             ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧
-              ∃ q, alpha p' q ∧ lP (below n') W Σ1 T q
+              ∃ q, walpha W Σ1 p' q ∧ lP (below n') W Σ1 T q
         | PSess (SLink cd) =>                          (* Q-Link *)
             (* c = d cannot reach the interface: Σ holds one end per
                channel *)
@@ -241,7 +262,7 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
               Σ = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1) ∧
               c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
               sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
-              ∃ q, alpha p' q ∧ lP (below n') W Σ1 T q
+              ∃ q, walpha W Σ1 p' q ∧ lP (below n') W Σ1 T q
         end)
   end.
 
@@ -370,7 +391,7 @@ Qed.
     restricted channels stay clear of Σ). *)
 Lemma Prel_S_tau n W Σ T p p' :
   Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ →
-  ∃ W' q, alpha p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
+  ∃ W' q, walpha W' Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
     Prel n W' Σ T q.
 Proof.
   unfold Prel at 1. rewrite level_at_eq. simpl.
@@ -544,7 +565,7 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
   match π with
   | PTau =>
       p'.1 ## dom Σ →
-      ∃ W' q, alpha p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
+      ∃ W' q, walpha W' Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
         Prel n' W' Σ T q
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
@@ -553,7 +574,8 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
           recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
           slot_aliases (w_eq W') xs m (pt_chan c k) →
           Vrel j W' Θ2 (ty_inst xs U) w →
-          ∃ q, alpha (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
+          ∃ q, walpha W' (recv_env (<[c := (s, S k)]> Σ1) Θ2)
+                 (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
             Prel j W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
   | PSess (SSend c w) =>
       ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv) xs,
@@ -563,17 +585,18 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
         dom Θe ## dom Σ ∧
         slot_aliases (w_eq W) xs m (pt_chan c k) ∧
         Vrel (S n') W (tenv_of Σv ∪ Θe) (ty_inst xs U) w ∧
-        ∃ q, alpha p' q ∧ Prel n' W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T q
+        ∃ q, walpha W (<[c := (s, S k)]> (Σ0 ∪ Σe)) p' q ∧
+          Prel n' W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T q
   | PSess (SClos c) =>
       ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧
-        ∃ q, alpha p' q ∧ Prel n' W Σ1 T q
+        ∃ q, walpha W Σ1 p' q ∧ Prel n' W Σ1 T q
   | PSess (SLink cd) =>
       ∃ c d Σ1 sc sd kc kd,
         cd = {[c; d]} ∧ c ≠ d ∧
         Σ = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1) ∧
         c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
         sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
-        ∃ q, alpha p' q ∧ Prel n' W Σ1 T q
+        ∃ q, walpha W Σ1 p' q ∧ Prel n' W Σ1 T q
   end.
 
 Lemma Prel_S_iff n W Σ T p :
@@ -708,7 +731,7 @@ Proof.
   inversion Hrun as [|? ? q ? Hpq Hqr]; subst. simpl in HP.
   destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (W' & q' & Hal & _ & HP').
   { rewrite dom_empty_L. apply disjoint_empty_r. }
-  destruct (alpha_nsteps _ _ _ _ Hal Hqr) as (r' & Hr' & Hs').
+  destruct (alpha_nsteps _ _ _ _ (walpha_alpha _ _ _ _ Hal) Hqr) as (r' & Hr' & Hs').
   destruct (IH W' n T q' r' Hr' HP') as (W'' & r & HPr & Hs).
   exists W'', r. split; [done|]. intros H. by apply Hs', Hs.
 Qed.
