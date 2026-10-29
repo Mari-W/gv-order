@@ -38,6 +38,25 @@ Fixpoint pn_root (p : pname) : pname :=
 
 Definition pt_root (x : point) : pname := pn_root (pt_name x).
 
+(** The root names of the points of a type, an environment and a
+    frame. A point created at [new] avoids them (decision O1). Session
+    types have no free points, so the recursion stops there. *)
+Definition opt_roots (o : option point) : gset pname :=
+  match o with Some x => {[pt_root x]} | None => ∅ end.
+
+Fixpoint ty_roots (T : ty) : gset pname :=
+  match T with
+  | TUnit => ∅
+  | TLolli ub lb T1 U => opt_roots ub ∪ opt_roots lb ∪ ty_roots T1 ∪ ty_roots U
+  | TProd T1 U | TSum T1 U => ty_roots T1 ∪ ty_roots U
+  | TBox _ T1 => ty_roots T1
+  | TSess _ x => {[pt_root x]}
+  end.
+
+Definition tenv_roots (Θ : tenv) : gset pname := set_map pt_root (tenv_heads Θ).
+Definition senv_roots (Σ : senv) : gset pname := tenv_roots (tenv_of Σ).
+Definition frame_roots (F : gset point) : gset pname := set_map pt_root F.
+
 Lemma pt_root_shift n x : pt_root (pt_shift n x) = pt_root x.
 Proof. done. Qed.
 

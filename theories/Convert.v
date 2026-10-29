@@ -64,6 +64,17 @@ Proof.
   - destruct H1 as [? ?], H2 as [<- ?]. split; [done|]. by eapply seq_trans.
 Qed.
 
+(** ≈ keeps every point of a type. *)
+Lemma ty_roots_teq T : ∀ U, teq T U → ty_roots T = ty_roots U.
+Proof.
+  unfold teq. induction T; intros [] H; simpl in *; try done.
+  - destruct H as (<- & <- & H1 & H2). by rewrite (IHT1 _ H1), (IHT2 _ H2).
+  - destruct H as [H1 H2]. by rewrite (IHT1 _ H1), (IHT2 _ H2).
+  - destruct H as [H1 H2]. by rewrite (IHT1 _ H1), (IHT2 _ H2).
+  - destruct H as [<- H1]. by apply IHT.
+  - by destruct H as [<- _].
+Qed.
+
 (** The two halves have to be proved together: see the header. *)
 Lemma Vrel_Erel_teq n :
   (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) ∧
@@ -135,8 +146,9 @@ Proof.
                        -> & ? & ? & ? & ? & HE').
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|].
     eapply HEj; [lia|exact Hteq|exact HE'].
-  - intros Hc. destruct (Hstep Hc) as (a & s & s' & W' & ? & ? & HE').
-    exists a, s, s', W'. split_and!; [done|done|].
+  - intros Hc. destruct (Hstep Hc) as (a & s & s' & W' & Ha & ? & ? & HE').
+    exists a, s, s', W'. split_and!; [|done|done|].
+    { by rewrite <-(ty_roots_teq _ _ Hteq). }
     eapply HEj; [lia|exact Hteq|exact HE'].
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|].

@@ -116,8 +116,8 @@ Fixpoint Vdef (below : nat → level) (n : nat)
     [below] and the level-n value relation [Vn]. A term that can step
     must be ready and keep its offered entries below the frame F; one
     case per label shape of the transition. At new, the created
-    channel gets a point (a, 0) with a fresh for W, and W grows by a
-    fresh extension placing a. The name c is only required to be new
+    channel gets a point (a, 0) with a fresh for W and for the points
+    of Θ, T and F, and W grows by a fresh extension placing a. The name c is only required to be new
     to Θ, so that the continuation environment can be formed. *)
 Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
     (n : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr)
@@ -133,7 +133,8 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
             lE (below n') W Θ T F e'
         | LNew c =>                                    (* O-New *)
             c ∉ dom Θ →
-            ∃ a s s' W', sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
+            ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F ∧
+              sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
               lE (below n') W'
                 (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
         | LSpawn w =>                                  (* O-Spawn *)
@@ -203,7 +204,8 @@ Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
     successor itself. Differences from the term relation:
 
     - Q-Tau: the world may grow by a fresh extension, placing the
-      points of channels the step creates. The paper's Q-Tau is
+      points of channels the step creates, fresh for the points of Σ
+      and T. The paper's Q-Tau is
       W′ = W.
     - Q-Recv: channels B the receiver ends up holding both ends of
       ("migration", or both ends in one message) come back: the
@@ -225,7 +227,8 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
       (∀ π p', proc_step p π p' →
         match π with
         | PTau =>                                      (* Q-Tau *)
-            ∃ N W', wext_fresh W N W' ∧ lP (below n') W' Σ T p'
+            ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
+              lP (below n') W' Σ T p'
         | PSess (SRecv c w) =>                         (* Q-Recv *)
             ∃ Σ1 m U s k,
               senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
@@ -381,7 +384,7 @@ Qed.
     fresh extension. *)
 Lemma Prel_S_tau n W Σ T p p' :
   Prel (S n) W Σ T p → preduction p p' →
-  ∃ N W', wext_fresh W N W' ∧ Prel n W' Σ T p'.
+  ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧ Prel n W' Σ T p'.
 Proof.
   unfold Prel at 1. rewrite level_at_eq. simpl.
   intros (_ & _ & Hstep) Hred.
@@ -489,7 +492,8 @@ Definition Ecase (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
       Erel n' W Θ T F e'
   | LNew c =>
       c ∉ dom Θ →
-      ∃ a s s' W', sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
+      ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F ∧
+        sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
         Erel n' W' (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
   | LSpawn w =>
       ∃ Θ1 Θ2 ub lb, tenv_comp Θ Θ1 Θ2 ∧
@@ -551,7 +555,8 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
     (π : plabel) (p' : proc) : Prop :=
   match π with
   | PTau =>
-      ∃ N W', wext_fresh W N W' ∧ Prel n' W' Σ T p'
+      ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
+        Prel n' W' Σ T p'
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
@@ -709,7 +714,7 @@ Proof.
   induction m as [|m IH]; intros W n T p p' Hrun HP.
   { inversion Hrun; subst. by exists W. }
   inversion Hrun as [|? ? q ? Hpq Hqr]; subst. simpl in HP.
-  destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (N & W' & _ & HP').
+  destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (N & W' & _ & _ & HP').
   exact (IH W' n T q p' Hqr HP').
 Qed.
 
@@ -783,8 +788,8 @@ Proof.
                       -> & ? & ? & ? & ? & HE').
       eexists _, _, _, _, _, _, _, _. split_and!; [done..|].
       eapply IH; [|done]. lia.
-    + intros Hc. destruct (H2 Hc) as (a & s & s' & W' & ? & ? & HE').
-      eexists _, _, _, _. split_and!; [done|done|]. eapply IH; [|done]. lia.
+    + intros Hc. destruct (H2 Hc) as (a & s & s' & W' & ? & ? & ? & HE').
+      eexists _, _, _, _. split_and!; [done|done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Θ1 & Θ2 & ub & lb & ? & HV & HE').
       eexists _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
@@ -803,8 +808,8 @@ Proof.
   - done.
   - intros π p' Hst. specialize (H2 π p' Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in H2 |- *.
-    + destruct H2 as (N & W' & ? & ?).
-      exists N, W'. split; [done|]. eapply IH; [|done]. lia.
+    + destruct H2 as (N & W' & ? & ? & ?).
+      exists N, W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
       eexists _, _, _, _, _. split_and!; [done|done|].
       intros W' j Θ2 HW Hj Hdu HV. apply (H2 W' j Θ2); auto. lia.
