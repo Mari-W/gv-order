@@ -201,6 +201,14 @@ Decision (J1, Claude, delegated): fresh for the world before the step, in
 every clause. The created channel is renamed to a fresh name first and placed
 by the step (§7).
 
+**33. (K) Fresh for the environment's world at a receive.**
+After J1, a Q-Recv α-variant could introduce a name fresh for W but known to
+the environment's world W″, which carries the environment's stale facts. The
+junk transport cannot replace such a witness.
+Decision (K1, Claude, delegated): at Q-Recv, names are fresh for W″. Together
+with I1 and J1 the rule is "fresh for every fact the process did not add
+itself" (§7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

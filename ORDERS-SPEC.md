@@ -193,11 +193,19 @@ some α-variant q of the successor (renaming only restricted names, Swap.alpha),
 the successor itself.                                                                       [new]
 α-variants are capture-avoiding (decision I1, taken by Claude under the author's delegation):
 a restricted name a may be renamed to b only if b does not occur in the process, b ∉ dom Σ,
-and b is unknown to the PRE-step world W, for every Q-clause (decision J1, Claude, delegated:
-freshness for the post-step world W′ made P-Term false at new, because a created channel
-renamed to a W′-fresh name cannot carry the facts the step adds). This is the paper's
-convention "bound names are chosen fresh for whatever is in scope", with the world in scope;
-a condition on α-variants, not a syntactic premise of any lemma.
+and b is unknown to every fact the process did not add itself:
+  Q-Tau                       fresh for the pre-step world W   (W′ only adds the process's own,
+                              invisible facts; decision J1: freshness for W′ made P-Term false at
+                              new, because a created channel renamed to a W′-fresh name cannot
+                              carry the facts the step adds)
+  Q-Recv                      fresh for the environment's world W″ in which the continuation lives
+                              (decision K1: freshness only for W let the original pick names on
+                              which W″ states stale facts, and the junk transport could not
+                              replace that witness)
+  Q-Send, Q-Close, Q-Link     fresh for W
+(I1, J1, K1 taken by Claude under the author's delegation.) This is the paper's convention
+"bound names are chosen fresh for whatever is in scope", with the worlds in scope; a condition
+on α-variants, not a syntactic premise of any lemma.
 
 Q-Tau     p —τ→ p′    ∃W′ ⊒ W, ∃q α-variant of p′.   W′ strict,   W′|_vis = W|_vis,
           q ∈ P^{W′}_n⟦Σ ⊢ T⟧                                                                [changed]
