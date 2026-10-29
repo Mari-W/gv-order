@@ -124,8 +124,8 @@ Proof.
                        -> & ? & ? & ? & ? & HE').
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|].
     eapply HEj; [lia|exact Hteq|exact HE'].
-  - intros Hc Hn. destruct (Hstep Hc Hn) as (s & s' & W' & ? & ? & HE').
-    exists s, s', W'. split_and!; [done|done|].
+  - intros Hc. destruct (Hstep Hc) as (a & s & s' & W' & ? & ? & HE').
+    exists a, s, s', W'. split_and!; [done|done|].
     eapply HEj; [lia|exact Hteq|exact HE'].
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|].
@@ -167,7 +167,7 @@ Qed.
     reduction lemmas. *)
 Lemma Vrel_konst_inv n W Θ ub lb T U k :
   Vrel n W Θ (TLolli ub lb T U) (Konst k) →
-  ∃ A B, konst_ty (tw_eq W) (tw_lt W) k (TLolli ub lb A B) ∧
+  ∃ A B, konst_ty (w_eq W) (w_lt W) k (TLolli ub lb A B) ∧
     teq A T ∧ teq B U ∧ Θ = ∅.
 Proof.
   intros HV. apply Vrel_lolli_iff in HV

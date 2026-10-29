@@ -408,7 +408,7 @@ Neither item is part of the current Rocq round, and neither is on the progress p
 
 Decidability of "W_G strict". Uniform schemas (every counter shifted by a constant on both
 sides) are a zero-cycle problem on a periodic graph, decided by Kosaraju–Sullivan 1988 in
-polynomial time. Schemas with a counter on one side only (e.g. ∀b. (c[κ], b) ≺ (c, κ+1)) give
+polynomial time. Schemas with a counter on one side only (e.g. ∀b. (c[κ][1], b) ≺ (c, κ+1)) give
 edges with a free coordinate; extension of their linear program believed decidable, proof open.
 The static system produces only uniform edges (equal counters on both sides) and free-coordinate
 edges (independent counters), so the free-coordinate extension covers every schema it emits.
