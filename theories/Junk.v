@@ -1078,6 +1078,89 @@ Section move2.
       exists Θ''. split; [done|]. apply move_id. apply not_elem_of_dom.
       destruct Hext as [[Hr ->]|(f & Hr & [-> | ->])]; by rewrite lookup_insert_ne.
   Qed.
+
+  (** Joining with a part that holds no end of c. *)
+  Lemma move_comp_join Θ Θ' Θa Θ'' :
+    tenv_move W c d Θ Θ' → tenv_comp (w_eq W) Θ'' Θ' Θa → Θa !! c = None →
+    ∃ Θ0, tenv_comp (w_eq W) Θ0 Θ Θa ∧ tenv_move W c d Θ0 Θ''.
+  Proof.
+    intros (Hc & Ho & Hj & Hdd) [Hjn Hdu] Hac.
+    set (od := match Θ !! c with
+               | None => Θ'' !! d
+               | Some _ => match Θ !! d with None => Θa !! d | Some _ => Θ !! d end
+               end).
+    destruct (map_choice2 (B := unit) (λ k o _,
+        (k ≠ c → k ≠ d → o = Θ'' !! k) ∧ (k = c → o = Θ !! c) ∧ (k = d → o = od))
+        (dom Θ'' ∪ dom Θ)) as (Θ0 & _ & HP).
+    { intros k. destruct (decide (k = c)) as [->|Hkc].
+      { exists (Θ !! c), None. split_and!; [done|done|congruence]. }
+      destruct (decide (k = d)) as [->|Hkd].
+      - exists od, None. split_and!; [done|congruence|done].
+      - exists (Θ'' !! k), None. split_and!; [done|congruence|congruence]. }
+    { intros k Hk. split_and!.
+      - intros. symmetry. apply not_elem_of_dom. set_solver.
+      - intros ->. symmetry. apply not_elem_of_dom. set_solver.
+      - intros ->. assert (Θ'' !! d = None) as E1 by (apply not_elem_of_dom; set_solver).
+        assert (Θ !! d = None) as E2 by (apply not_elem_of_dom; set_solver).
+        unfold od. destruct (Θ !! c); [|done]. rewrite E2. pose proof (Hjn d) as J.
+        rewrite E1 in J. inversion J; done. }
+    assert (∀ k, k ≠ c → k ≠ d → Θ0 !! k = Θ'' !! k) as H0ne by (intros; by apply HP).
+    assert (Θ0 !! c = Θ !! c) as H0c by (by apply HP).
+    assert (Θ0 !! d = od) as H0d by (by apply HP).
+    pose proof (Hjn d) as Jd. pose proof (Hjn c) as Jc.
+    rewrite Hc, Hac in Jc. apply join_l_none in Jc.
+    destruct (Θ !! c) as [oc|] eqn:Ec; [destruct (Θ !! d) as [od0|] eqn:Ed|];
+      unfold od in H0d; rewrite ?Ec, ?Ed in H0d, Hj.
+    - (* both c and d in Θ: fused, the part holds neither *)
+      assert (Θa !! d = None ∧ Θ'' !! d = Θ' !! d) as [Had Hdd'].
+      { destruct (ends_join_cases _ _ _ Hj) as
+          [(? & ? & ?)|[(? & ? & ? & ?)|[(? & ? & ? & ?)|(e1 & e2 & E1 & E2 & [E3|E3])]]];
+          try discriminate; rewrite E3 in Jd; inversion Jd; split; congruence. }
+      exists Θ0. split_and!.
+      + split.
+        * intros k. destruct (decide (k = c)) as [->|Hkc].
+          { rewrite H0c, Hac, ?Ec. constructor. }
+          destruct (decide (k = d)) as [->|Hkd].
+          { rewrite H0d, Ed, Had. constructor. }
+          rewrite H0ne by done. rewrite <-(Ho k) by done. apply Hjn.
+        * intros k f1 f2 F1 F2. destruct (decide (k = c)) as [->|Hkc]; [congruence|].
+          destruct (decide (k = d)) as [->|Hkd]; [congruence|].
+          apply (Hdu k); [by rewrite Ho|done].
+      + split_and!.
+        * exact Jc.
+        * intros k ? ?. by rewrite H0ne.
+        * rewrite H0c, H0d, Hdd'. exact Hj.
+        * intros f1 f2 F1 F2. rewrite H0c in F1. rewrite H0d in F2. by apply Hdd.
+    - (* only c in Θ: renaming, d comes from the part *)
+      apply join_l_none in Hj. exists Θ0. split_and!.
+      + split.
+        * intros k. destruct (decide (k = c)) as [->|Hkc].
+          { rewrite H0c, Hac, ?Ec. constructor. }
+          destruct (decide (k = d)) as [->|Hkd].
+          { rewrite H0d, ?Ed. destruct (Θa !! d); constructor. }
+          rewrite H0ne by done. rewrite <-(Ho k) by done. apply Hjn.
+        * intros k f1 f2 F1 F2. destruct (decide (k = c)) as [->|Hkc]; [congruence|].
+          destruct (decide (k = d)) as [->|Hkd]; [congruence|].
+          apply (Hdu k); [by rewrite Ho|done].
+      + split_and!.
+        * exact Jc.
+        * intros k ? ?. by rewrite H0ne.
+        * rewrite H0c, H0d, ?Ec, <-Hj. done.
+        * intros f1 f2 F1 F2. rewrite H0c, ?Ec in F1. rewrite H0d in F2.
+          apply (Hdu d); [by rewrite Hj, ?Ec|done].
+    - (* no c in Θ: the move is the identity *)
+      assert (Θ' = Θ) as ->.
+      { apply map_eq. intros k. destruct (decide (k = c)) as [->|Hkc]; [by rewrite Hc, Ec|].
+        destruct (decide (k = d)) as [->|Hkd]; [|by apply Ho].
+        inversion Hj; congruence. }
+      exists Θ''. split_and!.
+      + by split.
+      + assert (Θ0 = Θ'') as <-.
+        { apply map_eq. intros k. destruct (decide (k = c)) as [->|Hkc].
+          - by rewrite H0c, Jc.
+          - destruct (decide (k = d)) as [->|Hkd]; [done|]. by apply H0ne. }
+        apply move_id. apply not_elem_of_dom. by rewrite H0c.
+  Qed.
 End move2.
 
 
