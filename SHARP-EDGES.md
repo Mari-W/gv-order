@@ -171,6 +171,17 @@ A junk occurrence of c there would merge with a live channel.
 Decision (G2): port the paper's junk-collapse lemma (Junk.v) to worlds, so the
 composition lemmas need no tightness premise (§10).
 
+**30. Internal links: α-closure instead of an alias; the paper's junk argument works again.**
+With an alias obligation on internal τ links (an external c linked to a restricted d), junk
+collapse is false: ({d}, {link⟨x,d⟩, (λy.∗) d, close b}) is related in a world with
+(b,0) ≺ (d,0), because its link names the junk x and owes nothing, but renaming x to b gives
+link⟨b,d⟩ with b external, which owes b@0 ≡ d@j, impossible above that fact.
+Decision: restricted names are bound in every step obligation (each Q-clause holds for some
+α-variant of the successor). A link between a cut channel c and a component's restricted d
+can remove c or d, and the two successors differ by the transposition (c d), so the
+composite's step reduces to the component's own step and needs no alias. The alias stays on
+O-Link and Q-Link. The freshness guard at new is subsumed (§7, §10).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
