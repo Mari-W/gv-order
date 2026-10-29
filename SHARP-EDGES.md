@@ -159,6 +159,18 @@ Decision (F2): types never mention channel names. Points in types are bound
 variables, point constants and slots of those. Channels appear only in worlds
 and environments, and types reach them through aliases (§4, §7).
 
+**28. P is not monotone in the world, even up to renaming.**
+A larger world can state stale facts about a restricted name, and renaming
+only moves the needed facts onto the new name.
+Decision: stated only for extensions that touch no restricted name. P-Connect
+keeps one world per component and does not need more (§10).
+
+**29. (G) link substitutes in the whole soup.**
+P-Act-Link writes [d/c] into every thread, also into the other component's.
+A junk occurrence of c there would merge with a live channel.
+Decision (G2): port the paper's junk-collapse lemma (Junk.v) to worlds, so the
+composition lemmas need no tightness premise (§10).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
