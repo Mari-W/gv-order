@@ -700,3 +700,119 @@ Proof.
   - right; right; right; right; left. eauto 14.
   - right; right; right; right; right. eauto 14.
 Qed.
+
+(** ** α-variants that avoid given names
+
+    [walpha_av X W Σ q r]: an α-variant whose renaming steps introduce
+    no name of X. Every α-variant can be made to avoid X by a final
+    transposition of names the world and the interface do not know
+    ([walpha_norm]), which the relation does not notice
+    ([Prel_swap_fix]). *)
+
+Inductive walpha_av (X : gset chan) (W : world) (Σ : senv) : proc → proc → Prop :=
+  | walpha_av_refl p : walpha_av X W Σ p p
+  | walpha_av_step p q a b :
+      a ∈ p.1 → b ∉ p.1 → b ∉ echans p.2 → b ∉ dom Σ → wfresh W b → b ∉ X →
+      walpha_av X W Σ (pswap a b p) q → walpha_av X W Σ p q.
+
+Lemma walpha_av_walpha X W Σ p q : walpha_av X W Σ p q → walpha W Σ p q.
+Proof. induction 1; econstructor; eauto. Qed.
+
+Lemma wfresh_pick (W : world) (Y : gset chan) : ∃ z, z ∉ Y ∧ wfresh W z.
+Proof.
+  set (Z := list_to_set (omap (λ p, match pn_root p with NChan c => Some c | _ => None end)
+                              (elements (w_names W))) : gset chan).
+  destruct (exist_fresh (Y ∪ Z)) as [z Hz]. exists z. split; [set_solver|].
+  intros p Hp Hr. apply Hz, elem_of_union_r, elem_of_list_to_set, list_elem_of_omap.
+  exists p. split; [by apply elem_of_elements|by rewrite Hr].
+Qed.
+
+Lemma walpha_av_mono X Y W Σ p q :
+  Y ⊆ X → walpha_av X W Σ p q → walpha_av Y W Σ p q.
+Proof. intros HXY. induction 1; econstructor; eauto. Qed.
+
+(** Transposing two names the world and the interface do not know maps
+    an α-variant avoiding both to one, with the same names avoided. *)
+Lemma walpha_av_pswap X W Σ p q a b :
+  world_wf W → wfresh W a → wfresh W b → a ∉ dom Σ → b ∉ dom Σ →
+  walpha_av ({[a; b]} ∪ X) W Σ p q →
+  walpha_av X W Σ (pswap a b p) (pswap a b q).
+Proof.
+  intros HW Ha Hb HaΣ HbΣ.
+  induction 1 as [p|p q c d Hc Hd HdE HdΣ Hdw HdX _ IH]; [constructor|].
+  assert (cswap a b d = d) as Hsd by (apply cswap_ne; set_solver).
+  apply (walpha_av_step _ _ _ _ _ (cswap a b c) d).
+  - destruct p; simpl in *. by apply elem_of_gswap.
+  - destruct p; simpl in *. rewrite <-Hsd. by rewrite elem_of_gswap.
+  - destruct p; simpl in *. rewrite echans_msswap, <-Hsd. by rewrite elem_of_gswap.
+  - done.
+  - done.
+  - set_solver.
+  - rewrite <-Hsd. by rewrite <-pswap_conj.
+Qed.
+
+Definition pswaps (L : list (chan * chan)) (q : proc) : proc :=
+  foldr (λ ab r, pswap ab.1 ab.2 r) q L.
+
+Definition swaps_ok (W : world) (Σ : senv) (L : list (chan * chan)) : Prop :=
+  Forall (λ ab, wfresh W ab.1 ∧ wfresh W ab.2 ∧ ab.1 ∉ dom Σ ∧ ab.2 ∉ dom Σ) L.
+
+Lemma Prel_pswaps n W Σ T q L :
+  world_wf W → swaps_ok W Σ L → Prel n W Σ T q → Prel n W Σ T (pswaps L q).
+Proof.
+  intros HW HL HP. induction HL as [|[a b] L (? & ? & ? & ?) _ IH]; [done|].
+  simpl. by apply Prel_swap_fix.
+Qed.
+
+Lemma walpha_norm W Σ p q (X : gset chan) :
+  world_wf W → walpha W Σ p q →
+  ∃ L, walpha_av X W Σ p (pswaps L q) ∧ swaps_ok W Σ L.
+Proof.
+  intros HW Hal. revert X.
+  induction Hal as [p|p q a b Ha Hb HbE HbΣ Hbw _ IH]; intros X.
+  { exists []. split; [constructor|constructor]. }
+  destruct (decide (b ∈ X)) as [HbX|HbX].
+  - destruct (wfresh_pick W (X ∪ p.1 ∪ echans p.2 ∪ dom Σ ∪ {[a; b]}))
+      as (z & Hz & Hzw).
+    destruct (IH ({[b; z]} ∪ X)) as (L & Hq1 & HL).
+    exists ((b, z) :: L). split; [|constructor; [split_and!; simpl; [done|done|done|set_solver]|done]].
+    apply (walpha_av_step _ _ _ _ _ a z); [done|set_solver|set_solver|set_solver|done|set_solver|].
+    assert (pswap a z p = pswap b z (pswap a b p)) as ->.
+    { rewrite pswap_conj, cswap_l, (cswap_ne b z a) by set_solver.
+      rewrite (pswap_fresh b z p); [done|done|set_solver|done|set_solver]. }
+    apply walpha_av_pswap; [done|done|done|done|set_solver|done].
+  - destruct (IH X) as (L & Hq1 & HL).
+    exists L. split; [|done]. by econstructor.
+Qed.
+
+(** The junk renaming commutes with an α-variant avoiding x and b. *)
+Lemma msswap_echsubst a b' x b E :
+  a ≠ x → a ≠ b → b' ≠ x → b' ≠ b →
+  msswap a b' (echsubst x b E) = echsubst x b (msswap a b' E).
+Proof.
+  intros. rewrite echsubst_msswap. by rewrite !cswap_ne.
+Qed.
+
+Lemma walpha_av_junk W Σ q r x b :
+  walpha_av {[x; b]} W Σ q r → x ∉ q.1 → b ∉ q.1 →
+  walpha_av {[x; b]} W Σ (q.1, echsubst x b q.2) (r.1, echsubst x b r.2) ∧
+  x ∉ r.1 ∧ b ∉ r.1.
+Proof.
+  induction 1 as [q|q r a b' Ha Hb' HbE HbΣ Hbw HbX _ IH]; intros Hx Hb.
+  { split_and!; [constructor|done|done]. }
+  assert (a ≠ x ∧ a ≠ b) as [Hax Hab] by (split; intros ->; done).
+  assert (b' ≠ x ∧ b' ≠ b) as [Hbx Hbb] by set_solver.
+  destruct q as [C E]; simpl in *.
+  destruct IH as (IH & Hxr & Hbr).
+  { simpl. rewrite elem_of_gswap'. by rewrite cswap_ne. }
+  { simpl. rewrite elem_of_gswap'. by rewrite cswap_ne. }
+  split_and!; [|done|done].
+  apply (walpha_av_step _ _ _ _ _ a b'); simpl; [done|done| |done|done|done|].
+  - pose proof (echans_echsubst_sup x b E). intros Hin.
+    apply fchans_chsubst in Hin || idtac.
+    apply elem_of_echans in Hin as (e & He & Hbe).
+    unfold echsubst in He. apply elem_of_gmultiset_map in He as (e0 & -> & He0).
+    apply fchans_chsubst in Hbe. apply HbE. apply elem_of_echans.
+    exists e0. split; [done|]. set_solver.
+  - unfold pswap at 1; simpl. rewrite msswap_echsubst by done. exact IH.
+Qed.
