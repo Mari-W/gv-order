@@ -180,7 +180,10 @@ P-Step    ¬irred p    ready_W(Σ, p)                                           
           ⇒   p ∈ P^W_{n+1}⟦Σ ⊢ T⟧
 
 Q-Tau     p —τ→ p′    ∃W′ ⊒ W.   W′ strict,   W′|_vis = W|_vis,   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧         [changed]
-          vis = all names except those restricted in p′ (what the environment can see)
+          vis = all names except those restricted in p or in p′ (what the environment can see;
+                "or in p" so that a link removing d can create the alias c ≡ d)
+          checked for steps with p′'s restricted channels disjoint from dom Σ (the paper's implicit
+          convention "Σ and C share no channels", made explicit)
           if the step creates c (new):  c ∉ names(W)
           if the step links an external c (Σ ∋ c : S@k) with a restricted d at count j:
               c@k ≡_{W′} d@j        (the alias may be created by this step; mirrors O-Link;
@@ -277,7 +280,14 @@ Internalizing a close            unchanged
 Amalgamation      W₁, W₂ strict  ⇒  (W₁ ⊔ W₂ strict  ⇔  (W₁|_A ⊔ W₂|_A) strict),   A = names W₁ and W₂ share
 Fresh extension   W₁ ⊑ₒ W₁′ placing names N,  N # names(W₂),  W₂ strict,  W₁ ⊔ W₂ strict
                   ⇒   W₁′ ⊔ W₂ strict
-Monotonicity      W ⊑ W′  ⇒  V/E/P^W ⊆ V/E/P^{W′}
+Monotonicity      W ⊑ W′  ⇒  V/E^W ⊆ V/E^{W′}      (needs world_wf W)
+                  P: monotone only up to renaming restricted names (a larger world may mention them)
+Renaming restricted names                                                                  [new]
+                  restricted names are bound: V, E and P are invariant under a bijective renaming of
+                  channel names applied to processes, types, environments and worlds alike; a process
+                  can rename its restricted names away from any names a given world mentions.
+                  (Extends the paper's invariance under channel substitution, Renaming.v, to worlds.
+                   Needed because Q-Recv's W′ ⊒ W may state facts about names the process restricts.)
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
 Renaming along an alias
                   p ∈ P^W_n⟦Σ, c : S@k ⊢ T⟧,   c@k ≡_W d@j   ⇒   p[d/c] ∈ P^W_n⟦Σ, d : S@j ⊢ T⟧
