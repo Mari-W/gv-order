@@ -293,7 +293,8 @@ Amalgamation      W₁, W₂ strict  ⇒  (W₁ ⊔ W₂ strict  ⇔  (W₁|_A �
 Fresh extension   W₁ ⊑ₒ W₁′ placing names N,  N # names(W₂),  W₂ strict,  W₁ ⊔ W₂ strict
                   ⇒   W₁′ ⊔ W₂ strict
 Monotonicity      W ⊑ W′  ⇒  V/E^W ⊆ V/E^{W′}      (needs world_wf W)
-                  P: monotone only up to renaming restricted names (a larger world may mention them)
+                  P: monotone only for extensions that add no fact touching the process's restricted
+                  names (not even up to renaming; P-Connect does not need the general form)
 Renaming restricted names                                                                  [new]
                   restricted names are bound: V, E and P are invariant under a bijective renaming of
                   channel names applied to processes, types, environments and worlds alike; a process
@@ -304,6 +305,10 @@ Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ 
 Renaming along an alias
                   p ∈ P^W_n⟦Σ, c : S@k ⊢ T⟧,   c@k ≡_W d@j   ⇒   p[d/c] ∈ P^W_n⟦Σ, d : S@j ⊢ T⟧
                   (needs slot congruence; report if a further freshness premise is needed)
+Junk collapse with worlds
+                  P-Act-Link substitutes in the whole soup; junk occurrences of the removed name in
+                  other threads must not matter. Port of the paper's Junk.v to worlds (decision G2),
+                  so P-Term and P-Connect need no tightness premise.                                 [changed]
 Internalizing a link
                   a link between two cut channels in the composite combines the components' steps   [new]
 LTS renaming      a bijective renaming of channel names preserves process steps and safety        [new]
