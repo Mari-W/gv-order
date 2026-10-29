@@ -1,14 +1,16 @@
-(** * Type point conversion (§10)
+(** * Type point conversion and Entry conversion (§10)
 
-    Aliased points are interchangeable in types:
+    Aliased points are interchangeable:
 
       T ≈_W T′  ⇒  V, E, P at T ⇔ V, E, P at T′       ([rel_tconv])
+      Θ ≈_W Θ′  ⇒  V, E at Θ ⇔ V, E at Θ′             ([rel_econv])
 
-    where ≈_W is ≈ with ground points compared up to ≡_W ([teqW]). In
-    particular a payload type P[x] may be read at any alias y of x
-    ([teqW_payload]), which P-Connect needs when the two ends of a cut
-    channel sit at aliased points. Environments need no conversion:
-    every overlap condition already reads ≡_W (sharp edges 40). *)
+    For types, ≈_W is ≈ with ground points compared up to ≡_W
+    ([teqW]); a payload type P[x] may be read at any alias y of x
+    ([teqW_payload]). For environments, ≈_W keeps the channels and
+    their ends and relates each end's session type by ≈ and its point
+    by ≡_W ([tconv]); composition reads ≡_W (sharp edges 40), so it
+    commutes with ≈_W. *)
 
 From stdpp Require Import base tactics gmap.
 From LRGV Require Export Monotone.
@@ -327,3 +329,532 @@ Lemma Vrel_payload n W Θ m U x y v :
   world_wf W → w_eq W x y → Vrel n W Θ (payload_at m U x) v →
   Vrel n W Θ (payload_at m U y) v.
 Proof. intros HW Hxy. apply Vrel_tconv; [done|]. by apply teqW_payload. Qed.
+
+(** ** Environments up to aliases
+
+    Θ ≈_W Θ′: the same channels with the same ends, each end's session
+    type up to ≈ and its point up to ≡_W. Composition reads ≡_W already
+    (sharp edges 40), so composing commutes with ≈_W. *)
+
+Definition entry_conv (W : world) (e e' : sty * point) : Prop :=
+  seq e.1 e'.1 ∧ w_eq W e.2 e'.2.
+
+Definition ends_conv (W : world) (o o' : ends) : Prop :=
+  match o, o' with
+  | One e, One e' => entry_conv W e e'
+  | Both e1 e2, Both e1' e2' => entry_conv W e1 e1' ∧ entry_conv W e2 e2'
+  | _, _ => False
+  end.
+
+Definition oconv (W : world) (o o' : option ends) : Prop :=
+  match o, o' with
+  | Some a, Some b => ends_conv W a b
+  | None, None => True
+  | _, _ => False
+  end.
+
+Definition tconv (W : world) (Θ Θ' : tenv) : Prop := ∀ c, oconv W (Θ !! c) (Θ' !! c).
+
+(** Finite choice for maps: a pointwise choice that is [None] outside a
+    finite set of keys gives a map. *)
+Lemma map_choice2 {A B} (P : chan → option A → option B → Prop) (D : gset chan) :
+  (∀ c, ∃ o1 o2, P c o1 o2) → (∀ c, c ∉ D → P c None None) →
+  ∃ (m1 : gmap chan A) (m2 : gmap chan B), ∀ c, P c (m1 !! c) (m2 !! c).
+Proof.
+  revert P. induction D as [|c0 D Hc0 IH] using set_ind_L; intros P Hall Hout.
+  { exists ∅, ∅. intros c. rewrite !lookup_empty. apply Hout. set_solver. }
+  destruct (Hall c0) as (o1 & o2 & H0).
+  set (P' := λ c a b, if decide (c = c0) then a = None ∧ b = None else P c a b).
+  destruct (IH P') as (m1 & m2 & Hm).
+  { intros c. unfold P'. case_decide; [by exists None, None|apply Hall]. }
+  { intros c Hc. unfold P'. case_decide; [done|]. apply Hout. set_solver. }
+  exists (match o1 with Some a => <[c0 := a]> m1 | None => delete c0 m1 end),
+         (match o2 with Some b => <[c0 := b]> m2 | None => delete c0 m2 end).
+  intros c. destruct (decide (c = c0)) as [->|Hne].
+  - destruct o1, o2; rewrite ?lookup_insert_eq, ?lookup_delete_eq; done.
+  - specialize (Hm c). unfold P' in Hm. rewrite decide_False in Hm by done.
+    destruct o1, o2; rewrite ?lookup_insert_ne, ?lookup_delete_ne by done; done.
+Qed.
+
+Section tconv.
+  Context (W : world) (HW : world_wf W).
+
+  Lemma entry_conv_refl e : entry_conv W e e.
+  Proof. split; [apply seq_refl|apply HW]. Qed.
+
+  Lemma entry_conv_sym e e' : entry_conv W e e' → entry_conv W e' e.
+  Proof. intros [? ?]. split; [by apply seq_sym|by apply (wf_eq_sym _ HW)]. Qed.
+
+  Lemma entry_conv_trans e e' e'' :
+    entry_conv W e e' → entry_conv W e' e'' → entry_conv W e e''.
+  Proof.
+    intros [? ?] [? ?]. split; [by eapply seq_trans|by eapply (wf_eq_trans _ HW)].
+  Qed.
+
+  Lemma ends_conv_refl o : ends_conv W o o.
+  Proof. destruct o; simpl; auto using entry_conv_refl. Qed.
+
+  Lemma ends_conv_sym o o' : ends_conv W o o' → ends_conv W o' o.
+  Proof. destruct o, o'; simpl; naive_solver eauto using entry_conv_sym. Qed.
+
+  Lemma tconv_refl Θ : tconv W Θ Θ.
+  Proof. intros c. destruct (Θ !! c); simpl; auto using ends_conv_refl. Qed.
+
+  Lemma tconv_sym Θ Θ' : tconv W Θ Θ' → tconv W Θ' Θ.
+  Proof.
+    intros H c. specialize (H c). destruct (Θ !! c), (Θ' !! c); simpl in *; try done.
+    by apply ends_conv_sym.
+  Qed.
+
+  Lemma tconv_dom Θ Θ' : tconv W Θ Θ' → dom Θ = dom Θ'.
+  Proof.
+    intros H. apply set_eq. intros c. rewrite !elem_of_dom. specialize (H c).
+    destruct (Θ !! c), (Θ' !! c); simpl in *; naive_solver.
+  Qed.
+
+  Lemma tconv_empty Θ' : tconv W ∅ Θ' → Θ' = ∅.
+  Proof.
+    intros H. apply map_empty. intros c. specialize (H c).
+    rewrite lookup_empty in H. by destruct (Θ' !! c).
+  Qed.
+
+  Lemma tconv_insert Θ Θ' c o o' :
+    tconv W Θ Θ' → ends_conv W o o' → tconv W (<[c := o]> Θ) (<[c := o']> Θ').
+  Proof.
+    intros H Ho d. destruct (decide (d = c)) as [->|Hne].
+    - by rewrite !lookup_insert_eq.
+    - rewrite !lookup_insert_ne by done. apply H.
+  Qed.
+
+  Lemma tconv_singleton c o o' :
+    ends_conv W o o' → tconv W {[c := o]} {[c := o']}.
+  Proof.
+    intros Ho. rewrite <-!insert_empty. apply tconv_insert; [|done].
+    intros d. by rewrite !lookup_empty.
+  Qed.
+
+  Lemma tconv_entry Θ Θ' k e :
+    tconv W Θ Θ' → tenv_entry Θ k = Some e →
+    ∃ e', tenv_entry Θ' k = Some e' ∧ entry_conv W e e'.
+  Proof.
+    intros H He. destruct k as [c b]. unfold tenv_entry in *. simpl in *.
+    specialize (H c). destruct (Θ !! c) as [[]|], (Θ' !! c) as [[]|], b;
+      simpl in *; simplify_eq; try done; naive_solver.
+  Qed.
+
+  Lemma tconv_entry_none Θ Θ' k :
+    tconv W Θ Θ' → tenv_entry Θ k = None → tenv_entry Θ' k = None.
+  Proof.
+    intros H He. destruct k as [c b]. unfold tenv_entry in *. simpl in *.
+    specialize (H c). destruct (Θ !! c) as [[]|], (Θ' !! c) as [[]|], b;
+      simpl in *; simplify_eq; try done.
+  Qed.
+
+  Lemma tconv_heads Θ Θ' y' :
+    tconv W Θ Θ' → y' ∈ tenv_heads Θ' → ∃ y, y ∈ tenv_heads Θ ∧ w_eq W y y'.
+  Proof.
+    intros H Hy. apply elem_of_tenv_heads in Hy as (c & o' & Hc & Hy).
+    specialize (H c). rewrite Hc in H. destruct (Θ !! c) as [o|] eqn:Ho; [|done].
+    destruct o as [e|e1 e2], o' as [e'|e1' e2']; simpl in *; try done.
+    - apply elem_of_singleton in Hy as ->. exists e.2.
+      split; [apply elem_of_tenv_heads; exists c, (One e); split; [done|];
+              simpl; set_solver|apply H].
+    - destruct H as [[_ H1] [_ H2]].
+      apply elem_of_union in Hy as [->%elem_of_singleton| ->%elem_of_singleton].
+      + exists e1.2. split; [|done]. apply elem_of_tenv_heads.
+        exists c, (Both e1 e2). split; [done|]. simpl. set_solver.
+      + exists e2.2. split; [|done]. apply elem_of_tenv_heads.
+        exists c, (Both e1 e2). split; [done|]. simpl. set_solver.
+  Qed.
+
+  (** Selection reads only the heads of the session types, which ≈
+      keeps. *)
+  Lemma selects_conv Θ Θ' σ k : tconv W Θ Θ' → selects Θ σ k → selects Θ' σ k.
+  Proof.
+    intros H. destruct σ as [c v|c v|c|cd]; simpl.
+    - intros [Hk (e & m & T & s & He & Hu)]. split; [done|].
+      destruct (tconv_entry _ _ _ _ H He) as (e' & He' & [Hs _]).
+      destruct (seq_rcv_inv e'.1 e.1 m T s) as (U & s' & Hu' & _); [by apply seq_sym|done|].
+      eauto 10.
+    - intros [Hk (e & m & T & s & He & Hu)]. split; [done|].
+      destruct (tconv_entry _ _ _ _ H He) as (e' & He' & [Hs _]).
+      destruct (seq_snd_inv e'.1 e.1 m T s) as (U & s' & Hu' & _); [by apply seq_sym|done|].
+      eauto 10.
+    - intros [Hk (e & He & Hu & Ht)]. split; [done|].
+      destruct (tconv_entry _ _ _ _ H He) as (e' & He' & [Hs _]).
+      exists e'. split_and!; [done| |].
+      + apply (seq_end_inv _ e.1); [by apply seq_sym|done].
+      + intros Hk2 f' Hf' Hf'u.
+        destruct (tenv_entry Θ (c, false)) as [f|] eqn:Ef.
+        * destruct (tconv_entry _ _ _ _ H Ef) as (f'' & Hf'' & [Hsf _]).
+          rewrite Hf' in Hf''. injection Hf'' as <-.
+          apply (Ht Hk2 f eq_refl). by apply (seq_end_inv _ f'.1).
+        * apply (tconv_entry_none _ _ _ H) in Ef. congruence.
+    - intros [Hk [e He]]. split; [done|].
+      destruct (tconv_entry _ _ _ _ H He) as (e' & He' & _). by eexists.
+  Qed.
+
+  Lemma offered_t_conv Θ Θ' t k :
+    tconv W Θ Θ' → offered_t Θ t k ↔ offered_t Θ' t k.
+  Proof.
+    intros H. split; intros (σ & t' & Hs & Hk); exists σ, t'; split; try done.
+    - by eapply selects_conv.
+    - eapply selects_conv; [by apply tconv_sym|done].
+  Qed.
+
+  Lemma ready_t_conv Θ Θ' t : tconv W Θ Θ' → ready_t W Θ t → ready_t W Θ' t.
+  Proof.
+    intros H Hr Hs. destruct (Hr Hs) as [Hv Ha]. split.
+    - intros Hno. apply Hv. intros k Hk. apply (Hno k). by apply (offered_t_conv Θ).
+    - intros k e' He' Hk.
+      destruct (tconv_entry _ _ _ _ (tconv_sym _ _ H) He') as (e & He & [_ Hee]).
+      destruct (Ha k e He) as (k' & f & Ho & Hf & Hlt).
+      { intros Ho. apply Hk. by apply (offered_t_conv Θ). }
+      destruct (tconv_entry _ _ _ _ H Hf) as (f' & Hf' & [_ Hff]).
+      exists k', f'. split_and!; [by apply (offered_t_conv Θ)|done|].
+      unfold entry_head in *. eapply (wf_lt_eq _ HW);
+        [by apply (wf_eq_sym _ HW)|exact Hlt|by apply (wf_eq_sym _ HW)].
+  Qed.
+
+  Lemma frame_t_conv Θ Θ' t F : tconv W Θ Θ' → frame_t W Θ t F → frame_t W Θ' t F.
+  Proof.
+    intros H Hf Hs k e' Ho He' y Hy.
+    apply (offered_t_conv Θ) in Ho; [|done].
+    destruct (tconv_entry _ _ _ _ (tconv_sym _ _ H) He') as (e & He & [_ Hee]).
+    unfold entry_head in *. eapply (wf_lt_eq _ HW); [exact Hee|by eapply Hf|apply HW].
+  Qed.
+
+  Lemma insert_over (Θ : tenv) c o o2 :
+    Θ !! c = Some o → <[c := o]> (<[c := o2]> Θ) = Θ.
+  Proof.
+    intros H. apply map_eq. intros d. destruct (decide (d = c)) as [->|Hne].
+    - by rewrite lookup_insert_eq.
+    - by rewrite !lookup_insert_ne.
+  Qed.
+
+  (** Taking one end off, and putting one on. *)
+  Lemma tconv_unext Θm c e Θ Θ' :
+    tconv W Θ Θ' → tenv_ext Θm c e Θ →
+    ∃ e' Θm', tenv_ext Θm' c e' Θ' ∧ entry_conv W e e' ∧ tconv W Θm Θm'.
+  Proof.
+    intros H [[Hm ->]|(f & Hm & [-> | ->])]; pose proof (H c) as Hc;
+      rewrite lookup_insert_eq in Hc; destruct (Θ' !! c) as [o'|] eqn:Ho'; try done.
+    - destruct o' as [e'|]; simpl in Hc; try done.
+      exists e', (delete c Θ'). split_and!; [|done|].
+      + left. split; [apply lookup_delete_eq|]. by rewrite insert_delete_id.
+      + intros d. destruct (decide (d = c)) as [->|Hne].
+        * by rewrite Hm, lookup_delete_eq.
+        * rewrite lookup_delete_ne by done. specialize (H d).
+          by rewrite lookup_insert_ne in H.
+    - destruct o' as [|e' f']; simpl in Hc; try done. destruct Hc as [He Hf].
+      exists e', (<[c := One f']> Θ'). split_and!; [|done|].
+      + right. exists f'. split; [apply lookup_insert_eq|]. left.
+        by rewrite insert_over.
+      + intros d. destruct (decide (d = c)) as [->|Hne].
+        * by rewrite Hm, lookup_insert_eq.
+        * rewrite lookup_insert_ne by done. specialize (H d).
+          by rewrite lookup_insert_ne in H.
+    - destruct o' as [|f' e']; simpl in Hc; try done. destruct Hc as [Hf He].
+      exists e', (<[c := One f']> Θ'). split_and!; [|done|].
+      + right. exists f'. split; [apply lookup_insert_eq|]. right.
+        by rewrite insert_over.
+      + intros d. destruct (decide (d = c)) as [->|Hne].
+        * by rewrite Hm, lookup_insert_eq.
+        * rewrite lookup_insert_ne by done. specialize (H d).
+          by rewrite lookup_insert_ne in H.
+  Qed.
+
+  Lemma tconv_ext Θm Θm' c e e' Θ :
+    tconv W Θm Θm' → entry_conv W e e' → tenv_ext Θm c e Θ →
+    ∃ Θ', tenv_ext Θm' c e' Θ' ∧ tconv W Θ Θ'.
+  Proof.
+    intros H He [[Hm ->]|(f & Hm & [-> | ->])]; pose proof (H c) as Hc;
+      rewrite Hm in Hc; destruct (Θm' !! c) as [o'|] eqn:Ho'; try done.
+    - exists (<[c := One e']> Θm'). split; [by left|]. by apply tconv_insert.
+    - destruct o' as [f'|]; simpl in Hc; try done.
+      exists (<[c := Both e' f']> Θm'). split; [right; exists f'; by split; [|left]|].
+      apply tconv_insert; [done|]. by split.
+    - destruct o' as [f'|]; simpl in Hc; try done.
+      exists (<[c := Both f' e']> Θm'). split; [right; exists f'; by split; [|right]|].
+      apply tconv_insert; [done|]. by split.
+  Qed.
+End tconv.
+
+Lemma ends_join_cases a b c :
+  ends_join a b c →
+  (a = None ∧ b = None ∧ c = None) ∨ (∃ o, a = Some o ∧ b = None ∧ c = Some o) ∨
+  (∃ o, a = None ∧ b = Some o ∧ c = Some o) ∨
+  (∃ e1 e2, a = Some (One e1) ∧ b = Some (One e2) ∧
+     (c = Some (Both e1 e2) ∨ c = Some (Both e2 e1))).
+Proof. destruct 1; [left|right; left|right; right; left|right; right; right..]; eauto 10. Qed.
+
+Section tconv_comp.
+  Context (W : world) (HW : world_wf W).
+
+  Lemma entry_conv_dual e1 e2 e1' e2' :
+    entry_conv W e1 e1' → entry_conv W e2 e2' →
+    w_eq W e1.2 e2.2 ∧ sdual e1.1 e2.1 → w_eq W e1'.2 e2'.2 ∧ sdual e1'.1 e2'.1.
+  Proof.
+    intros [Hs1 Hx1] [Hs2 Hx2] [Hx Hs]. split.
+    - eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
+      by eapply (wf_eq_trans _ HW).
+    - eapply sdual_seq_l; [exact Hs1|]. by eapply sdual_seq_r.
+  Qed.
+
+  (** Splitting a composition along ≈. *)
+  Lemma tconv_comp_split Θ Θ1 Θ2 Θ' :
+    tenv_comp (w_eq W) Θ Θ1 Θ2 → tconv W Θ Θ' →
+    ∃ Θ1' Θ2', tenv_comp (w_eq W) Θ' Θ1' Θ2' ∧ tconv W Θ1 Θ1' ∧ tconv W Θ2 Θ2'.
+  Proof.
+    intros [Hj Hd] H.
+    destruct (map_choice2 (λ c o1 o2, ends_join o1 o2 (Θ' !! c) ∧
+                oconv W (Θ1 !! c) o1 ∧ oconv W (Θ2 !! c) o2) (dom Θ'))
+      as (Θ1' & Θ2' & HP).
+    { intros c. specialize (H c).
+      destruct (ends_join_cases _ _ _ (Hj c)) as
+        [(-> & -> & E)|[(o & -> & -> & E)|[(o & -> & -> & E)|(e1 & e2 & -> & -> & [E|E])]]];
+        rewrite E in H; destruct (Θ' !! c) as [o'|]; try done.
+      - exists None, None. split_and!; [constructor|done|done].
+      - exists (Some o'), None. split_and!; [constructor|done|done].
+      - exists None, (Some o'). split_and!; [constructor|done|done].
+      - destruct o' as [|e1' e2']; [done|]. destruct H as [H1 H2].
+        exists (Some (One e1')), (Some (One e2')). split_and!; [constructor|done|done].
+      - destruct o' as [|e2' e1']; [done|]. destruct H as [H2 H1].
+        exists (Some (One e1')), (Some (One e2')). split_and!; [constructor|done|done]. }
+    { intros c Hc. apply not_elem_of_dom in Hc. rewrite Hc.
+      specialize (H c). rewrite Hc in H.
+      destruct (ends_join_cases _ _ _ (Hj c)) as
+        [(-> & -> & E)|[(o & -> & -> & E)|[(o & -> & -> & E)|(e1 & e2 & -> & -> & [E|E])]]];
+        rewrite E in H; try done. split_and!; [constructor|done|done]. }
+    exists Θ1', Θ2'. split_and!.
+    - split; [intros c; apply HP|].
+      intros c e1' e2' H1' H2'. destruct (HP c) as (_ & Hc1 & Hc2).
+      rewrite H1' in Hc1. rewrite H2' in Hc2.
+      destruct (Θ1 !! c) as [[e1|]|] eqn:E1; try done.
+      destruct (Θ2 !! c) as [[e2|]|] eqn:E2; try done.
+      apply (entry_conv_dual e1 e2); [done|done|]. by apply (Hd c).
+    - intros c. apply HP.
+    - intros c. apply HP.
+  Qed.
+
+  (** Joining with a converted part. *)
+  Lemma tconv_comp_join Θ1 Θ1' Θ2 Θ12' :
+    tenv_comp (w_eq W) Θ12' Θ1' Θ2 → tconv W Θ1 Θ1' →
+    ∃ Θ12, tenv_comp (w_eq W) Θ12 Θ1 Θ2 ∧ tconv W Θ12 Θ12'.
+  Proof.
+    intros [Hj Hd] H.
+    destruct (map_choice2 (B := unit) (λ c o _, ends_join (Θ1 !! c) (Θ2 !! c) o ∧
+                oconv W o (Θ12' !! c)) (dom Θ12')) as (Θ12 & _ & HP).
+    { intros c. specialize (H c).
+      destruct (ends_join_cases _ _ _ (Hj c)) as
+        [(E1 & -> & ->)|[(o & E1 & -> & ->)|[(o & E1 & -> & ->)|(e1' & e2 & E1 & -> & [->| ->])]]];
+        rewrite E1 in H; destruct (Θ1 !! c) as [o1|]; try done.
+      - exists None, None. split; [constructor|done].
+      - exists (Some o1), None. split; [constructor|done].
+      - exists (Some o), None. split; [constructor|]. apply (ends_conv_refl W HW).
+      - destruct o1 as [e1|]; [|done].
+        exists (Some (Both e1 e2)), None. split; [constructor|].
+        split; [done|apply (entry_conv_refl W HW)].
+      - destruct o1 as [e1|]; [|done].
+        exists (Some (Both e2 e1)), None. split; [constructor|].
+        split; [apply (entry_conv_refl W HW)|done]. }
+    { intros c Hc. apply not_elem_of_dom in Hc. rewrite Hc.
+      specialize (H c).
+      destruct (ends_join_cases _ _ _ (Hj c)) as
+        [(E1 & -> & E)|[(o & E1 & -> & E)|[(o & E1 & -> & E)|(e1' & e2 & E1 & -> & [E|E])]]];
+        rewrite Hc in E; try done. rewrite E1 in H. destruct (Θ1 !! c); [done|].
+      split; [constructor|done]. }
+    exists Θ12. split.
+    - split; [intros c; apply HP|].
+      intros c e1 e2 H1 H2. specialize (H c). rewrite H1 in H.
+      destruct (Θ1' !! c) as [[e1'|]|] eqn:E1'; try done.
+      apply (entry_conv_dual e1' e2); [by apply entry_conv_sym|apply entry_conv_refl; done|].
+      by apply (Hd c).
+    - intros c. apply HP.
+  Qed.
+End tconv_comp.
+
+Lemma tconv_mono W W' Θ Θ' :
+  (∀ x y, w_eq W x y → w_eq W' x y) → tconv W Θ Θ' → tconv W' Θ Θ'.
+Proof.
+  intros Hm H c. specialize (H c).
+  destruct (Θ !! c) as [[]|], (Θ' !! c) as [[]|]; simpl in *; try done;
+    unfold entry_conv in *; naive_solver.
+Qed.
+
+Lemma tconv_singleton_inv W c o Θ' :
+  tconv W {[c := o]} Θ' → ∃ o', Θ' = {[c := o']} ∧ ends_conv W o o'.
+Proof.
+  intros H. pose proof (H c) as Hc. rewrite lookup_singleton_eq in Hc.
+  destruct (Θ' !! c) as [o'|] eqn:Ho'; [|done]. exists o'. split; [|done].
+  apply map_eq. intros d. destruct (decide (d = c)) as [->|Hne].
+  - by rewrite Ho', lookup_singleton_eq.
+  - rewrite lookup_singleton_ne by done. specialize (H d).
+    rewrite lookup_singleton_ne in H by done. by destruct (Θ' !! d).
+Qed.
+
+Lemma teq_teqW W T U : teq T U → teqW W T U.
+Proof.
+  unfold teq. revert U. induction T; intros [] H; simpl in *; try done.
+  - destruct H as (-> & -> & ? & ?). split_and!; [apply opt_rel_refl..|auto|auto].
+  - destruct H. split; auto.
+  - destruct H. split; auto.
+  - destruct H as [<- ?]. split; auto.
+  - destruct H as [<- ?]. split; [by left|done].
+Qed.
+
+Lemma tconv_tenv_roots W Θ Θ' x :
+  tconv W Θ Θ' → x ∈ tenv_roots Θ' → ∃ c o', Θ' !! c = Some o' ∧ x ∈ ends_roots o'.
+Proof. intros _ Hx. by apply elem_of_tenv_roots in Hx. Qed.
+
+(** ** Environments up to ≈ leave V and E unchanged (Entry conversion) *)
+
+Lemma rel_econv n :
+  (∀ W Θ Θ' T v, world_wf W → tconv W Θ Θ' → Vrel n W Θ T v → Vrel n W Θ' T v) ∧
+  (∀ W Θ Θ' T F e, world_wf W → tconv W Θ Θ' →
+     Erel n W Θ T F e → Erel n W Θ' T F e).
+Proof.
+  induction n as [n IHn] using lt_wf_ind.
+  assert (∀ W Θ Θ' T v, world_wf W → tconv W Θ Θ' →
+            Vrel n W Θ T v → Vrel n W Θ' T v) as HV.
+  { intros W Θ Θ' T. revert Θ Θ'.
+    induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
+                   |m T1 IHT1|s x];
+      intros Θ Θ' v HW Hc HVv.
+    - apply Vrel_unit_iff in HVv as [-> ->]. apply Vrel_unit_iff.
+      split; [by apply (tconv_empty W)|done].
+    - apply Vrel_lolli_iff in HVv
+        as [(eb & -> & Hsup & Hlb & HL)|(k & T0 & -> & -> & Hk & Ht)].
+      + apply Vrel_lolli_iff. left. exists eb. split_and!; [done| | |].
+        * by rewrite <-(tconv_dom W Θ Θ').
+        * destruct lb as [x|]; simpl in *.
+          -- intros y' Hy'. destruct (tconv_heads W HW Θ Θ' y' Hc Hy') as (y & Hy & Hyy).
+             destruct (Hlb y Hy) as [He|Hl]; [left|right].
+             ++ by eapply (wf_eq_trans _ HW).
+             ++ eapply (wf_lt_eq _ HW); [apply HW|exact Hl|exact Hyy].
+          -- apply set_eq. intros y'. split; [|set_solver]. intros Hy'.
+             destruct (tconv_heads W HW Θ Θ' y' Hc Hy') as (y & Hy & _). set_solver.
+        * intros W' j Θa Θ'' w F HW' Hj Hcomp HVw Hub.
+          assert (world_wf W') as HW'f by (by eapply wext_wf).
+          destruct (tconv_comp_join W' HW'f Θ Θ' Θa Θ'' Hcomp) as (Θ0 & Hc0 & Hconv).
+          { eapply tconv_mono; [|exact Hc]. intros. by eapply wext_eq. }
+          eapply (proj2 (IHn j Hj)); [done|exact Hconv|].
+          by apply (HL W' j Θa Θ0 w F).
+      + apply (tconv_empty W) in Hc as ->. apply Vrel_lolli_iff. right.
+        by exists k, T0.
+    - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
+      destruct (tconv_comp_split W HW Θ Θ1 Θ2 Θ' Hsp Hc) as (Θ1' & Θ2' & Hsp' & Hc1 & Hc2).
+      apply Vrel_prod_iff. exists v1, v2, Θ1', Θ2'. split_and!; eauto.
+    - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
+        apply Vrel_sum_iff; [left|right]; exists v'; eauto.
+    - apply Vrel_box_iff in HVv as (-> & HB).
+      apply (tconv_empty W) in Hc as ->. by apply Vrel_box_iff.
+    - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hk).
+      destruct (tconv_singleton_inv W c _ Θ' Hc) as ([[s0' k']|] & -> & Ho); [|done].
+      destruct Ho as [Hs Hkk]. simpl in *.
+      apply Vrel_sess_iff. exists c, s0', k'. split_and!; [done|done| |].
+      + eapply seq_trans; [by apply seq_sym|exact Hs0].
+      + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|exact Hk]. }
+  split; [exact HV|].
+  intros W Θ Θ' T F e HW Hc HE.
+  destruct n as [|n']; [apply Erel_0|].
+  assert (∀ j W0 Θ0 Θ0' e0, j ≤ n' → world_wf W0 → tconv W0 Θ0 Θ0' →
+            Erel j W0 Θ0 T F e0 → Erel j W0 Θ0' T F e0) as HEj.
+  { intros j ? ? ? ? Hj. apply (proj2 (IHn j ltac:(lia))). }
+  apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
+  apply Erel_S_iff. split_and!.
+  { intros Hirr. eapply HV; [done|exact Hc|]. by apply Hval. }
+  { intros Hirr. destruct (Hrdy Hirr). split.
+    - by eapply ready_t_conv.
+    - by eapply frame_t_conv. }
+  intros α e' Hst. specialize (Hstep α e' Hst).
+  destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
+  - by eapply HEj.
+  - (* O-Recv *)
+    destruct Hstep as (Θ1 & m & U & s & k & (s0 & Hext & Hu) & H).
+    destruct (tconv_unext W Θ1 c (s0, k) Θ Θ' Hc Hext)
+      as ([s0' k'] & Θ1' & Hext' & [Hs Hkk] & Hc1). simpl in Hs, Hkk.
+    destruct (seq_rcv_inv s0' s0 m U s) as (U' & s'' & Hu' & HU & Hs'');
+      [by apply seq_sym|done|].
+    exists Θ1', m, U', s'', k'. split; [by exists s0'|].
+    intros W' j Θ2 Θ12' HW' Hj Hcomp HVw.
+    assert (world_wf W') as HW'f by (by eapply wext_wf).
+    assert (∀ x y, w_eq W x y → w_eq W' x y) as Hsub by (intros; by eapply wext_eq).
+    destruct (tconv_comp_join W' HW'f Θ1 Θ1' Θ2 Θ12' Hcomp) as (Θ12 & Hc12 & Hconv);
+      [by eapply tconv_mono|].
+    assert (Vrel j W' Θ2 (payload_at m U k) w) as HVw0.
+    { eapply Vrel_tconv; [done| |exact HVw].
+      eapply teqW_trans; [done|apply teq_teqW, teq_ty_inst, HU|].
+      apply teqW_payload; [done|]. apply Hsub. by apply (wf_eq_sym _ HW). }
+    destruct (H W' j Θ2 Θ12 HW' Hj Hc12 HVw0) as (Θ'' & Hext2 & HE').
+    destruct (tconv_ext W' Θ12 Θ12' c (s, pt_shift 1 k) (s'', pt_shift 1 k') Θ''
+                Hconv) as (Θ''' & Hext3 & Hc3); [|done|].
+    { split; simpl; [by apply seq_sym|]. apply Hsub. by apply (wf_eq_shift _ HW). }
+    exists Θ'''. split; [done|]. eapply HEj; [lia|done|exact Hc3|exact HE'].
+  - (* O-Send *)
+    destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & ΘS & (s0 & Hext & Hu) &
+                       Hsp & HVw & Hext1 & HE').
+    destruct (tconv_unext W Θr c (s0, k) Θ Θ' Hc Hext)
+      as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
+    destruct (seq_snd_inv s0' s0 m U s) as (U' & s'' & Hu' & HU & Hs'');
+      [by apply seq_sym|done|].
+    destruct (tconv_comp_split W HW Θr Θ1 Θ2 Θr' Hsp Hcr) as (Θ1' & Θ2' & Hsp' & Hc1 & Hc2).
+    destruct (tconv_ext W Θ1 Θ1' c (s, pt_shift 1 k) (s'', pt_shift 1 k') ΘS Hc1)
+      as (Θ''' & Hext3 & Hc3); [|done|].
+    { split; simpl; [by apply seq_sym|]. by apply (wf_eq_shift _ HW). }
+    exists Θr', Θ1', Θ2', m, U', s'', k', Θ'''. split_and!.
+    + by exists s0'.
+    + done.
+    + eapply Vrel_tconv; [done| |by eapply HV].
+      eapply teqW_trans; [done|apply teqW_payload; [done|exact Hkk]|].
+      apply teq_teqW, teq_ty_inst. by apply teq_sym.
+    + done.
+    + eapply HEj; [lia|done|exact Hc3|exact HE'].
+  - (* O-Close *)
+    destruct Hstep as (Θ1 & k & (s0 & Hext & Hu) & HE').
+    destruct (tconv_unext W Θ1 c (s0, k) Θ Θ' Hc Hext)
+      as ([s0' k'] & Θ1' & Hext' & [Hs Hkk] & Hc1). simpl in Hs, Hkk.
+    exists Θ1', k'. split.
+    + exists s0'. split; [done|]. apply (seq_end_inv _ s0); [by apply seq_sym|done].
+    + eapply HEj; [lia|done|exact Hc1|exact HE'].
+  - (* O-Link *)
+    destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & Hext1 & Hext2 &
+                       Hdu & Hal & HE').
+    destruct (tconv_unext W Θm c (sc, kc) Θ Θ' Hc Hext2)
+      as ([sc' kc'] & Θm' & Hext2' & [Hsc Hkc] & Hcm). simpl in Hsc, Hkc.
+    destruct (tconv_unext W Θ1 d (sd, kd) Θm Θm' Hcm Hext1)
+      as ([sd' kd'] & Θ1' & Hext1' & [Hsd Hkd] & Hc1). simpl in Hsd, Hkd.
+    exists c, d, Θ1', Θm', sc', sd', kc', kd'. split_and!; [done|done|done| | |].
+    + eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
+    + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
+      eapply (wf_eq_trans _ HW); [exact Hal|exact Hkd].
+    + eapply HEj; [lia|done|exact Hc1|exact HE'].
+  - (* O-New: rename the new point away from the points of Θ' *)
+    intros Hc0. rewrite <-(tconv_dom W Θ Θ' Hc) in Hc0.
+    destruct (Hstep Hc0) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
+    destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ tenv_roots Θ' ∪ ty_roots T
+                           ∪ frame_roots F)) as [a1 Ha1].
+    destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
+                ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
+    exists a1, (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
+    + set_solver.
+    + by apply sdual_sw.
+    + done.
+    + assert (world_wf W1') as HW1 by (by destruct Hfr' as ((_ & _ & _ & [? _]) & _)).
+      eapply HEj; [lia|done| |exact HE1].
+      apply (tconv_insert W1'); [|apply (ends_conv_refl W1' HW1)].
+      eapply tconv_mono; [|exact Hc]. intros. destruct Hfr' as ((_ & He & _) & _). auto.
+  - (* O-Spawn *)
+    destruct Hstep as (Θ1 & Θ2 & ub & lb & Hsp & HVw & HE').
+    destruct (tconv_comp_split W HW Θ Θ1 Θ2 Θ' Hsp Hc) as (Θ1' & Θ2' & Hsp' & Hc1 & Hc2).
+    exists Θ1', Θ2', ub, lb. split_and!; [done|by eapply HV|].
+    eapply HEj; [lia|done|exact Hc2|exact HE'].
+Qed.
+
+Lemma Vrel_econv n W Θ Θ' T v :
+  world_wf W → tconv W Θ Θ' → Vrel n W Θ T v → Vrel n W Θ' T v.
+Proof. apply (proj1 (rel_econv n)). Qed.
+
+Lemma Erel_econv n W Θ Θ' T F e :
+  world_wf W → tconv W Θ Θ' → Erel n W Θ T F e → Erel n W Θ' T F e.
+Proof. apply (proj2 (rel_econv n)). Qed.
