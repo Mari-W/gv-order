@@ -1387,13 +1387,14 @@ Proof.
         apply (IHV j ltac:(lia) W'' (wswap a b W'')) in HVw; [|apply wsame_refl].
         rewrite tyswap_payload_at, tyswap_involutive, ptswap_chan,
           cswap_involutive, eswap_involutive in HVw.
-        specialize (H _ _ _ Hx' Hj Hfr' Hok' HVw).
-        apply (IHP j ltac:(lia) (wswap a b W'') W'') in H; [|apply Hrt].
-        rewrite <-recv_env_swap, tenvswap_involutive, senvswap_insert in H.
-        unfold pswap in H; simpl in H.
+        destruct (H _ _ _ Hx' Hj Hfr' Hok' HVw) as (q0 & Hal & HP0).
+        apply (IHP j ltac:(lia) (wswap a b W'') W'') in HP0; [|apply Hrt].
+        rewrite <-recv_env_swap, tenvswap_involutive, senvswap_insert in HP0.
+        exists (pswap a b q0). split; [|exact HP0].
+        apply (alpha_pswap a b) in Hal. unfold pswap at 1 in Hal; simpl in Hal.
         rewrite gswap_union, <-recv_back_swap, tenvswap_involutive,
-          senvswap_insert in H.
-        exact H.
+          senvswap_insert in Hal.
+        exact Hal.
     + (* send *)
       destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
                          Hd0v & Hc0 & Hcv & Hdom & Hsplit & HdΣ & HVw & HP').

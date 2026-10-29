@@ -399,3 +399,58 @@ Lemma preduction_chans p q :
 Proof.
   inversion 1; subst; simpl; [left; set_solver|right; eauto|left; set_solver..].
 Qed.
+
+(** ** α-variants
+
+    [alpha p q]: q arises from p by renaming restricted names of p to
+    names p does not mention, one at a time. Every other name is
+    fixed. *)
+
+Inductive alpha : proc → proc → Prop :=
+  | alpha_refl p : alpha p p
+  | alpha_step p q a b :
+      a ∈ p.1 → b ∉ p.1 → b ∉ echans p.2 →
+      alpha (pswap a b p) q → alpha p q.
+
+Lemma cswap_conj a b c d z :
+  cswap a b (cswap c d z) = cswap (cswap a b c) (cswap a b d) (cswap a b z).
+Proof. unfold cswap. repeat case_decide; congruence. Qed.
+
+Lemma eswap_conj a b c d e :
+  eswap a b (eswap c d e) = eswap (cswap a b c) (cswap a b d) (eswap a b e).
+Proof. induction e; simpl; f_equal; auto using cswap_conj. Qed.
+
+Lemma gswap_conj a b c d C :
+  gswap a b (gswap c d C) = gswap (cswap a b c) (cswap a b d) (gswap a b C).
+Proof.
+  apply set_eq. intros z. rewrite !elem_of_gswap'.
+  rewrite <-(cswap_involutive a b z) at 2.
+  rewrite <-cswap_conj, cswap_involutive. done.
+Qed.
+
+Lemma msswap_conj a b c d E :
+  msswap a b (msswap c d E) = msswap (cswap a b c) (cswap a b d) (msswap a b E).
+Proof.
+  induction E as [|e E IH] using gmultiset_ind.
+  - by rewrite !msswap_empty.
+  - rewrite !msswap_disj_union, !msswap_singleton, IH. by rewrite eswap_conj.
+Qed.
+
+Lemma pswap_conj a b c d p :
+  pswap a b (pswap c d p) = pswap (cswap a b c) (cswap a b d) (pswap a b p).
+Proof. unfold pswap. simpl. by rewrite gswap_conj, msswap_conj. Qed.
+
+Lemma alpha_pswap a b p q : alpha p q → alpha (pswap a b p) (pswap a b q).
+Proof.
+  induction 1 as [p|p q c d Hc Hd HdE _ IH]; [constructor|].
+  apply (alpha_step _ _ (cswap a b c) (cswap a b d)).
+  - destruct p; simpl in *. by apply elem_of_gswap.
+  - destruct p; simpl in *. by rewrite elem_of_gswap.
+  - destruct p; simpl in *. rewrite echans_msswap. by rewrite elem_of_gswap.
+  - by rewrite <-pswap_conj.
+Qed.
+
+Lemma alpha_trans p q r : alpha p q → alpha q r → alpha p r.
+Proof.
+  induction 1; [done|]. intros Hr. econstructor; eauto.
+Qed.

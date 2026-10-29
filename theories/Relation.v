@@ -189,7 +189,10 @@ Definition tau_link_alias (W' : world) (Σ : senv) (p p' : proc) : Prop :=
       the obligation is stated for the successor with B restricted,
       and their entries leave both environments. If the carrier c is
       in B, its continuation entry leaves as well. The other received
-      channels are fresh for W ([recv_ok]).
+      channels are fresh for W ([recv_ok]). The obligation holds for an
+      α-variant of the successor ([Swap.alpha]): restricted names are
+      bound, so facts the environment's W′ states about them do not
+      pin the process.
     - Q-Send: the restricted channels the message carries,
       dom Θe = fchans w ∩ C, split into the ends that leave with the
       message (Θe, possibly both ends) and the ends that stay (Σe). *)
@@ -216,8 +219,8 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
               ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
                 recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
                 lV (below j) W' Θ2 (payload_at m U (pt_chan c k)) w →
-                lP (below j) W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T
-                  (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2)
+                ∃ q, alpha (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
+                  lP (below j) W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
         | PSess (SSend c w) =>                         (* Q-Send *)
             ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
               senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
@@ -549,8 +552,8 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
         ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
           recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
           Vrel j W' Θ2 (payload_at m U (pt_chan c k)) w →
-          Prel j W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T
-            (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2)
+          ∃ q, alpha (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
+            Prel j W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
   | PSess (SSend c w) =>
       ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
         senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
