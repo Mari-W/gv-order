@@ -1,21 +1,117 @@
 (** * Types, session types, duality, environments (§2.2, Fig. 5 top)
 
-    T, U ::= ∗ | T ⊸ U | T ⊗ U | T ⊕ U | S
-    S    ::= ?T.S | !T.S | Close | µα.S | α | α̅ *)
+    T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs. T)
+    S    ::= ?P.S | !P.S | Close | µα.S | α | α̅      P ::= ∃ιs. T
+    β    ::= ι | ⊥        λ ::= ι | ⊤
+    ι    ::= (p, b)       p ::= c | point variable | ι[i] *)
 
-From stdpp Require Import base strings gmap.
+From stdpp Require Import base strings gmap countable.
 From LRGV Require Export Syntax.
+
+(** ** Points
+
+    A point is a name with an offset. A name is a channel, a point
+    variable (de Bruijn, bound by ∀ under □ or by ∃ in a payload), or
+    the slot ι[i]: "the i-th point carried by the action at ι". A
+    channel point (c, k) is the k-th action on c. Slots are written
+    with the name and offset of ι unpacked, so that [pname] is not
+    mutual with [point]. *)
+
+Inductive pname :=
+  | NChan (c : chan)
+  | NVar (a : nat)
+  | NSlot (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
+
+Record point := Pt { pt_name : pname; pt_off : nat }.
+
+Global Instance pname_eq_dec : EqDecision pname.
+Proof. solve_decision. Defined.
+
+Global Instance pname_countable : Countable pname.
+Proof.
+  set (enc := fix go p : gen_tree (chan + nat) :=
+    match p with
+    | NChan c => GenLeaf (inl c)
+    | NVar a => GenLeaf (inr a)
+    | NSlot p b i => GenNode 0 [go p; GenLeaf (inr b); GenLeaf (inr i)]
+    end).
+  set (dec := fix go t : pname :=
+    match t with
+    | GenLeaf (inl c) => NChan c
+    | GenLeaf (inr a) => NVar a
+    | GenNode 0 [t; GenLeaf (inr b); GenLeaf (inr i)] => NSlot (go t) b i
+    | _ => NVar 0
+    end).
+  apply (inj_countable' enc dec).
+  intros p; induction p; simpl; congruence.
+Qed.
+
+Global Instance point_eq_dec : EqDecision point.
+Proof. solve_decision. Defined.
+
+Global Instance point_countable : Countable point.
+Proof.
+  apply (inj_countable' (λ x, (pt_name x, pt_off x)) (λ '(p, b), Pt p b)).
+  by intros [].
+Qed.
+
+(** (c, k), ι + n, ι[i] and the point variable a. *)
+Definition pt_chan (c : chan) (k : nat) : point := Pt (NChan c) k.
+Definition pt_shift (n : nat) (x : point) : point :=
+  Pt (pt_name x) (pt_off x + n).
+Definition pt_slot (x : point) (i : nat) : point :=
+  Pt (NSlot (pt_name x) (pt_off x) i) 0.
+Definition pvar (a : nat) : point := Pt (NVar a) 0.
+
+(** Instantiation of point variables. A name denotes the point at
+    offset 0; the offset of a point adds on top. *)
+Fixpoint pn_inst (σ : nat → point) (p : pname) : point :=
+  match p with
+  | NChan c => pt_chan c 0
+  | NVar a => σ a
+  | NSlot p b i => pt_slot (pt_shift b (pn_inst σ p)) i
+  end.
+
+Definition pt_inst (σ : nat → point) (x : point) : point :=
+  pt_shift (pt_off x) (pn_inst σ (pt_name x)).
+
+(** Lifting an instantiation under a binder of m point variables. *)
+Definition pup (m : nat) (σ : nat → point) : nat → point :=
+  λ a, if decide (a < m) then pvar a
+       else pt_inst (λ a', pvar (a' + m)) (σ (a - m)).
+
+(** The instantiation that sends the variable i to the i-th point of
+    a list, and shifts the variables beyond it down. *)
+Definition plist (xs : list point) : nat → point :=
+  λ a, match xs !! a with Some x => x | None => pvar (a - length xs) end.
+
+(** The slots ι[0], …, ι[m-1]. *)
+Definition slots (x : point) (m : nat) : list point :=
+  (λ i, pt_slot x i) <$> seq 0 m.
+
+(** ** Types
+
+    The arrow carries an upper point β ([None] = ⊥: the call never
+    blocks) and a lower point λ ([None] = ⊤: the closure holds
+    nothing). □ binds n point variables (∀ only directly under □), a
+    payload binds m (∃). Session types are unannotated: the only points
+    inside them are those of payloads, all bound by the payload's ∃, so
+    point instantiation never enters a session type. *)
 
 Inductive ty :=
   | TUnit                          (* ∗ *)
-  | TLolli (T U : ty)              (* T ⊸ U *)
+  | TLolli (ub lb : option point) (T U : ty)
+                                   (* T ⊸^ub_lb U *)
   | TProd (T U : ty)               (* T ⊗ U *)
   | TSum (T U : ty)                (* T ⊕ U *)
-  | TBox (T : ty)                 (* □T — unlimited (replicable) values *)
-  | TSess (S : sty)
+  | TBox (n : nat) (T : ty)        (* □(∀ι₀ … ιₙ₋₁. T) — unlimited
+                                      (replicable) values *)
+  | TSess (S : sty) (x : point)    (* S@x *)
 with sty :=
-  | SRcv (T : ty) (S : sty)        (* ?T.S *)
-  | SSnd (T : ty) (S : sty)        (* !T.S *)
+  | SRcv (m : nat) (T : ty) (S : sty)
+                                   (* ?(∃ι₀ … ιₘ₋₁. T).S *)
+  | SSnd (m : nat) (T : ty) (S : sty)
+                                   (* !(∃ι₀ … ιₘ₋₁. T).S *)
   | SEnd                           (* Close *)
   | SMu (S : sty)                  (* µα.S — binds one session variable *)
   | SVar (a : nat)                 (* α — de Bruijn *)
@@ -26,6 +122,47 @@ with sty :=
 Scheme ty_mut_ind := Induction for ty Sort Prop
   with sty_mut_ind := Induction for sty Sort Prop.
 Combined Scheme ty_sty_mut_ind from ty_mut_ind, sty_mut_ind.
+
+(** ** Point instantiation
+
+    T[σ]: instantiate the free point variables of T. Session types are
+    left alone (see above), so this is a plain recursion on [ty]. *)
+
+Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
+  match T with
+  | TUnit => TUnit
+  | TLolli ub lb T1 U =>
+      TLolli (pt_inst σ <$> ub) (pt_inst σ <$> lb)
+        (pinst_ty σ T1) (pinst_ty σ U)
+  | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
+  | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
+  | TBox n T1 => TBox n (pinst_ty (pup n σ) T1)
+  | TSess s x => TSess s (pt_inst σ x)
+  end.
+
+(** T[xs/ιs]: instantiate the ∀ of a □ (or the ∃ of a payload) with a
+    list of points. *)
+Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
+
+(** The payload ∃ι₀ … ιₘ₋₁. T at the action x: P[x] = T[x[i]/ιᵢ]. *)
+Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
+  ty_inst (slots x m) T.
+
+(** ** Heads
+
+    The points at which a value of the type is next used:
+    heads(S@ι) = {ι}, heads(T ⊸^β_λ U) = {λ} ∖ {⊤}, ∅ for ∗ and □. *)
+
+Definition opt_heads (o : option point) : gset point :=
+  match o with Some x => {[x]} | None => ∅ end.
+
+Fixpoint heads (T : ty) : gset point :=
+  match T with
+  | TUnit | TBox _ _ => ∅
+  | TLolli _ lb _ _ => opt_heads lb
+  | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
+  | TSess _ x => {[x]}
+  end.
 
 (** ** Session-type substitution (§4.3)
 
@@ -40,16 +177,16 @@ Combined Scheme ty_sty_mut_ind from ty_mut_ind, sty_mut_ind.
 Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli T1 U => TLolli (sren_ty r T1) (sren_ty r U)
+  | TLolli ub lb T1 U => TLolli ub lb (sren_ty r T1) (sren_ty r U)
   | TProd T1 U => TProd (sren_ty r T1) (sren_ty r U)
   | TSum T1 U => TSum (sren_ty r T1) (sren_ty r U)
-  | TBox T1 => TBox (sren_ty r T1)
-  | TSess s => TSess (sren r s)
+  | TBox n T1 => TBox n (sren_ty r T1)
+  | TSess s x => TSess (sren r s) x
   end
 with sren (r : nat → nat) (s : sty) : sty :=
   match s with
-  | SRcv T s' => SRcv (sren_ty r T) (sren r s')
-  | SSnd T s' => SSnd (sren_ty r T) (sren r s')
+  | SRcv m T s' => SRcv m (sren_ty r T) (sren r s')
+  | SSnd m T s' => SSnd m (sren_ty r T) (sren r s')
   | SEnd => SEnd
   | SMu s' => SMu (sren (upren r) s')
   | SVar a => SVar (r a)
@@ -67,16 +204,16 @@ with sren (r : nat → nat) (s : sty) : sty :=
 Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli T1 U => TLolli (sflip_ty k T1) (sflip_ty k U)
+  | TLolli ub lb T1 U => TLolli ub lb (sflip_ty k T1) (sflip_ty k U)
   | TProd T1 U => TProd (sflip_ty k T1) (sflip_ty k U)
   | TSum T1 U => TSum (sflip_ty k T1) (sflip_ty k U)
-  | TBox T1 => TBox (sflip_ty k T1)
-  | TSess s => TSess (sflip k s)
+  | TBox n T1 => TBox n (sflip_ty k T1)
+  | TSess s x => TSess (sflip k s) x
   end
 with sflip (k : nat) (s : sty) : sty :=
   match s with
-  | SRcv T s' => SRcv (sflip_ty k T) (sflip k s')
-  | SSnd T s' => SSnd (sflip_ty k T) (sflip k s')
+  | SRcv m T s' => SRcv m (sflip_ty k T) (sflip k s')
+  | SSnd m T s' => SSnd m (sflip_ty k T) (sflip k s')
   | SEnd => SEnd
   | SMu s' => SMu (sflip (S k) s')
   | SVar a => if decide (a = k) then SVarD a else SVar a
@@ -101,8 +238,8 @@ with sflip (k : nat) (s : sty) : sty :=
 
 Fixpoint dual (s : sty) : sty :=
   match s with
-  | SRcv T s' => SSnd T (dual s')
-  | SSnd T s' => SRcv T (dual s')
+  | SRcv m T s' => SSnd m T (dual s')
+  | SSnd m T s' => SRcv m T (dual s')
   | SEnd => SEnd
   | SMu s' => SMu (sflip 0 (dual s'))
   | SVar a => SVarD a
@@ -117,16 +254,16 @@ Definition sty_up (σ : nat → sty) : nat → sty := SVar 0 .: (sren S ∘ σ).
 Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli T1 U => TLolli (sinst_ty σ T1) (sinst_ty σ U)
+  | TLolli ub lb T1 U => TLolli ub lb (sinst_ty σ T1) (sinst_ty σ U)
   | TProd T1 U => TProd (sinst_ty σ T1) (sinst_ty σ U)
   | TSum T1 U => TSum (sinst_ty σ T1) (sinst_ty σ U)
-  | TBox T1 => TBox (sinst_ty σ T1)
-  | TSess s => TSess (sinst σ s)
+  | TBox n T1 => TBox n (sinst_ty σ T1)
+  | TSess s x => TSess (sinst σ s) x
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
   match s with
-  | SRcv T s' => SRcv (sinst_ty σ T) (sinst σ s')
-  | SSnd T s' => SSnd (sinst_ty σ T) (sinst σ s')
+  | SRcv m T s' => SRcv m (sinst_ty σ T) (sinst σ s')
+  | SSnd m T s' => SSnd m (sinst_ty σ T) (sinst σ s')
   | SEnd => SEnd
   | SMu s' => SMu (sinst (sty_up σ) s')
   | SVar a => σ a
@@ -161,10 +298,10 @@ Definition unfoldS (s : sty) : sty := unfoldN (mu_depth s) s.
 Lemma unfoldS_hd u : mu_depth u = 0 → unfoldS u = u.
 Proof. unfold unfoldS. by intros ->. Qed.
 
-Lemma mu_depth_rcv T s : mu_depth (SRcv T s) = 0.
+Lemma mu_depth_rcv m T s : mu_depth (SRcv m T s) = 0.
 Proof. done. Qed.
 
-Lemma mu_depth_snd T s : mu_depth (SSnd T s) = 0.
+Lemma mu_depth_snd m T s : mu_depth (SSnd m T s) = 0.
 Proof. done. Qed.
 
 Lemma mu_depth_end : mu_depth SEnd = 0.
@@ -175,13 +312,14 @@ Proof. done. Qed.
 Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
   match T with
   | TUnit => True
-  | TLolli T1 U | TProd T1 U | TSum T1 U => sclosed_ty k T1 ∧ sclosed_ty k U
-  | TBox T1 => sclosed_ty k T1
-  | TSess s => sclosed k s
+  | TLolli _ _ T1 U | TProd T1 U | TSum T1 U =>
+      sclosed_ty k T1 ∧ sclosed_ty k U
+  | TBox _ T1 => sclosed_ty k T1
+  | TSess s _ => sclosed k s
   end
 with sclosed (k : nat) (s : sty) : Prop :=
   match s with
-  | SRcv T s' | SSnd T s' => sclosed_ty k T ∧ sclosed k s'
+  | SRcv _ T s' | SSnd _ T s' => sclosed_ty k T ∧ sclosed k s'
   | SEnd => True
   | SMu s' => sclosed (S k) s'
   | SVar a | SVarD a => a < k
@@ -242,7 +380,7 @@ Definition sflip_comm := proj2 sflip_comm_mut.
 
 Lemma sflip_dual s : ∀ j, sflip j (dual s) = dual (sflip j s).
 Proof.
-  induction s as [T s IH|T s IH| |s IH|a|a]; intros j; simpl; f_equal;
+  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros j; simpl; f_equal;
     auto.
   - rewrite <-IH. apply sflip_comm. lia.
   - repeat (case_decide; simpl); congruence.
@@ -251,19 +389,19 @@ Qed.
 
 Lemma sflip_mu_depth s : ∀ k, mu_depth (sflip k s) = mu_depth s.
 Proof.
-  induction s as [T s IH|T s IH| |s IH|a|a]; intros k; simpl; auto;
+  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros k; simpl; auto;
     case_decide; done.
 Qed.
 
 Lemma dual_involutive s : dual (dual s) = s.
 Proof.
-  induction s as [T s IH|T s IH| |s IH|a|a]; simpl; f_equal; auto.
+  induction s as [m T s IH|m T s IH| |s IH|a|a]; simpl; f_equal; auto.
   rewrite <-sflip_dual, sflip_sflip. exact IH.
 Qed.
 
 Lemma dual_mu_depth s : mu_depth (dual s) = mu_depth s.
 Proof.
-  induction s as [T s IH|T s IH| |s IH|a|a]; simpl; auto.
+  induction s as [m T s IH|m T s IH| |s IH|a|a]; simpl; auto.
   by rewrite sflip_mu_depth, IH.
 Qed.
 
@@ -304,7 +442,7 @@ Qed.
 
 Lemma dual_sren s : ∀ r, dual (sren r s) = sren r (dual s).
 Proof.
-  induction s as [T s IH|T s IH| |s IH|a|a]; intros r; simpl; f_equal;
+  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros r; simpl; f_equal;
     auto.
   rewrite IH. apply (proj2 sflip_sren_iff_mut).
   intros [|a]; simpl; unfold compose; split; intros; simplify_eq; done.
@@ -342,7 +480,7 @@ Qed.
 
 Lemma dual_sinst s : ∀ σ, dual (sinst σ s) = sinst σ (dual s).
 Proof.
-  induction s as [T s IH|T s IH| |s IH|a|a]; intros σ; simpl; f_equal;
+  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros σ; simpl; f_equal;
     auto.
   - rewrite IH. apply (proj2 sflip_sinst_mut); [done|].
     intros [|a] Ha; simpl; [lia|]. unfold compose.
@@ -401,7 +539,7 @@ Definition sclosed_ty_sren := proj1 sclosed_sren_mut.
 Lemma dual_unfoldN k : ∀ s, dual (unfoldN k s) = unfoldN k (dual s).
 Proof.
   induction k as [|k IH]; intros s; simpl; [done|].
-  destruct s as [T s'|T s'| |s'|a|a]; simpl; try done.
+  destruct s as [m T s'|m T s'| |s'|a|a]; simpl; try done.
   by rewrite IH, dual_unroll.
 Qed.
 
@@ -431,14 +569,14 @@ Fixpoint head_ok (s : sty) : Prop :=
 Fixpoint contractive_ty (T : ty) : Prop :=
   match T with
   | TUnit => True
-  | TLolli T1 U | TProd T1 U | TSum T1 U =>
+  | TLolli _ _ T1 U | TProd T1 U | TSum T1 U =>
       contractive_ty T1 ∧ contractive_ty U
-  | TBox T1 => contractive_ty T1
-  | TSess s => contractive s
+  | TBox _ T1 => contractive_ty T1
+  | TSess s _ => contractive s
   end
 with contractive (s : sty) : Prop :=
   match s with
-  | SRcv T s' | SSnd T s' => contractive_ty T ∧ contractive s'
+  | SRcv _ T s' | SSnd _ T s' => contractive_ty T ∧ contractive s'
   | SEnd => True
   | SMu s' => head_ok s' ∧ contractive s'
   | SVar _ | SVarD _ => True
@@ -450,14 +588,14 @@ Proof. destruct s; simpl; intros; intuition lia. Qed.
 
 Lemma head_ok_sinst s : ∀ σ, head_ok s → head_ok (sinst σ s).
 Proof.
-  induction s as [T s IH|T s IH| |s IH|a|a]; intros σ Hh; simpl in *;
+  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros σ Hh; simpl in *;
     auto; destruct Hh.
 Qed.
 
 Lemma mu_depth_sinst_hd s :
   ∀ σ, head_ok s → mu_depth (sinst σ s) = mu_depth s.
 Proof.
-  induction s as [T s IH|T s IH| |s IH|a|a]; intros σ Hh; simpl in *;
+  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros σ Hh; simpl in *;
     auto; destruct Hh.
 Qed.
 
@@ -471,7 +609,7 @@ Lemma unfoldN_head d :
   ∀ s, head_ok s → mu_depth s = d → mu_depth (unfoldN d s) = 0.
 Proof.
   induction d as [|d IH]; intros s Hh Hd;
-    destruct s as [T s'|T s'| |s'|a|a]; simplify_eq/=; try done.
+    destruct s as [m T s'|m T s'| |s'|a|a]; simplify_eq/=; try done.
   apply IH; [by apply head_ok_sinst|].
   unfold unroll. by rewrite mu_depth_sinst_hd.
 Qed.
@@ -481,15 +619,15 @@ Proof. intros Hh. by eapply unfoldN_head. Qed.
 
 Corollary unfoldS_form s :
   head_ok s →
-  (∃ T s', unfoldS s = SRcv T s') ∨ (∃ T s', unfoldS s = SSnd T s') ∨
+  (∃ m T s', unfoldS s = SRcv m T s') ∨ (∃ m T s', unfoldS s = SSnd m T s') ∨
   unfoldS s = SEnd.
 Proof.
   intros Hh.
   pose proof (unfoldS_head s Hh) as Hd.
   pose proof (head_ok_unfoldN (mu_depth s) s Hh) as Hh'.
   revert Hd Hh'. unfold unfoldS.
-  destruct (unfoldN (mu_depth s) s) as [T s'|T s'| |s'|a|a];
-    simpl; intros Hd Hh'; simplify_eq; eauto; destruct Hh'.
+  destruct (unfoldN (mu_depth s) s) as [m T s'|m T s'| |s'|a|a];
+    simpl; intros Hd Hh'; simplify_eq; eauto 10; destruct Hh'.
 Qed.
 
 (** ** Primitive types: possible return types of threads. *)
@@ -498,7 +636,7 @@ Inductive prim : ty → Prop :=
   | prim_unit : prim TUnit
   | prim_prod U V : prim U → prim V → prim (TProd U V)
   | prim_sum U V : prim U → prim V → prim (TSum U V)
-  | prim_box U : prim U → prim (TBox U).
+  | prim_box n U : prim U → prim (TBox n U).
 
 (** ** Unlimited types
 
@@ -509,61 +647,65 @@ Inductive prim : ty → Prop :=
     one is a matter of extending the match below. *)
 
 Definition unlimited (T : ty) : Prop :=
-  match T with TBox _ => True | _ => False end.
+  match T with TBox _ _ => True | _ => False end.
 
-Lemma unlimited_box T : unlimited (TBox T).
+Lemma unlimited_box n T : unlimited (TBox n T).
 Proof. done. Qed.
 
-(** ** Session environments: finite maps from channels to session types.
+(** ** Session environments: finite maps from channels to session
+    types with counters, c : S@k, k the number of actions done on c.
+    This is the process-level Σ, one end per channel.
 
     Splitting Σ = Σ1, Σ2 is disjoint union of the underlying maps. *)
 
 (** A notation rather than a definition, so that stdpp's map lemmas
     apply by keyed unification without unfolding. *)
-Notation senv := (gmap chan sty).
+Notation senv := (gmap chan (sty * nat)).
 
 Definition senv_split (Σ Σ1 Σ2 : senv) : Prop :=
   Σ = Σ1 ∪ Σ2 ∧ Σ1 ##ₘ Σ2.
 
-(** Σ assigns c a session type whose *unfolding* is u, over the rest
-    Σ1. Every clause of the logical relation that inspects a session
+(** Σ assigns c a session type whose *unfolding* is u, at count k,
+    over the rest Σ1. Every clause of the logical relation that inspects a session
     type goes through this, which is what makes the relation respect
     µα.S = S[µα.S/α] without ever comparing environments up to that
     equation: the stored type is whatever it is, and only its head
     normal form is matched. On a non-contractive type [unfoldS] leaves
     a µ or a variable in head position, so no clause applies. *)
-Definition senv_hd (Σ : senv) (c : chan) (u : sty) (Σ1 : senv) : Prop :=
-  ∃ s, Σ = <[c := s]> Σ1 ∧ unfoldS s = u.
+Definition senv_hd (Σ : senv) (c : chan) (u : sty) (k : nat)
+    (Σ1 : senv) : Prop :=
+  ∃ s, Σ = <[c := (s, k)]> Σ1 ∧ unfoldS s = u.
 
 (** The non-recursive case: the type is stored already unfolded. *)
-Lemma senv_hd_nf Σ c u Σ1 :
-  mu_depth u = 0 → Σ = <[c := u]> Σ1 → senv_hd Σ c u Σ1.
+Lemma senv_hd_nf Σ c u k Σ1 :
+  mu_depth u = 0 → Σ = <[c := (u, k)]> Σ1 → senv_hd Σ c u k Σ1.
 Proof. intros Hd ->. exists u. split; [done|by apply unfoldS_hd]. Qed.
 
 (** An empty environment assigns nothing. *)
-Lemma senv_hd_not_empty c u Σ1 : ¬ senv_hd ∅ c u Σ1.
+Lemma senv_hd_not_empty c u k Σ1 : ¬ senv_hd ∅ c u k Σ1.
 Proof. intros (s & Heq & _). exact (insert_non_empty _ _ _ (eq_sym Heq)). Qed.
 
-Lemma senv_hd_dom Σ c u Σ1 : senv_hd Σ c u Σ1 → dom Σ = {[c]} ∪ dom Σ1.
+Lemma senv_hd_dom Σ c u k Σ1 :
+  senv_hd Σ c u k Σ1 → dom Σ = {[c]} ∪ dom Σ1.
 Proof. intros (s & -> & _). by rewrite dom_insert_L. Qed.
 
 (** Read a head form off a stored type. *)
-Lemma senv_hd_intro Σ c s u Σ1 :
-  unfoldS s = u → Σ = <[c := s]> Σ1 → senv_hd Σ c u Σ1.
+Lemma senv_hd_intro Σ c s k u Σ1 :
+  unfoldS s = u → Σ = <[c := (s, k)]> Σ1 → senv_hd Σ c u k Σ1.
 Proof. intros Hu ->. by exists s. Qed.
 
 (** Invert a head-form reading against a known insert: with c fresh
-    for both rests, the stored type is the inserted one. *)
-Lemma senv_hd_insert_inv Σ1 c s u Σr :
+    for both rests, the stored entry is the inserted one. *)
+Lemma senv_hd_insert_inv Σ1 c s k u k' Σr :
   c ∉ dom Σ1 → c ∉ dom Σr →
-  senv_hd (<[c := s]> Σ1) c u Σr →
-  unfoldS s = u ∧ Σ1 = Σr.
+  senv_hd (<[c := (s, k)]> Σ1) c u k' Σr →
+  unfoldS s = u ∧ k = k' ∧ Σ1 = Σr.
 Proof.
   intros H1 Hr (s0 & Heq & Hu).
-  assert (s = s0) as <-.
+  assert ((s, k) = (s0, k')) as [= <- <-].
   { apply (f_equal (lookup c)) in Heq.
     rewrite !lookup_insert_eq in Heq. by simplify_eq. }
-  split; [done|].
+  split; [done|]. split; [done|].
   apply map_eq. intros i. destruct (decide (i = c)) as [->|Hi].
   - apply not_elem_of_dom in H1. apply not_elem_of_dom in Hr.
     by rewrite H1, Hr.
@@ -574,12 +716,12 @@ Qed.
 (** How CONNECT transports a head reading to the peer end: the two
     ends of a session unfold in lockstep ([dual_unfoldS]), and the
     payload agrees on the nose. *)
-Lemma unfoldS_dual_rcv s U s' :
-  unfoldS s = SRcv U s' → unfoldS (dual s) = SSnd U (dual s').
+Lemma unfoldS_dual_rcv s m U s' :
+  unfoldS s = SRcv m U s' → unfoldS (dual s) = SSnd m U (dual s').
 Proof. intros Hu. by rewrite <-dual_unfoldS, Hu. Qed.
 
-Lemma unfoldS_dual_snd s U s' :
-  unfoldS s = SSnd U s' → unfoldS (dual s) = SRcv U (dual s').
+Lemma unfoldS_dual_snd s m U s' :
+  unfoldS s = SSnd m U s' → unfoldS (dual s) = SRcv m U (dual s').
 Proof. intros Hu. by rewrite <-dual_unfoldS, Hu. Qed.
 
 Lemma unfoldS_dual_end s : unfoldS s = SEnd → unfoldS (dual s) = SEnd.
@@ -658,23 +800,119 @@ Ltac senv_perm :=
   rewrite ?lookup_singleton_Some, ?lookup_empty;
   naive_solver.
 
+(** ** Term-level environments
+
+    Θ may hold both ends of a channel (both carry the channel's one
+    name): after [new], and after receiving the other end of a channel
+    the thread already holds. An entry of Θ is a channel with one end
+    ([One]) or two ([Both]); the two ends of a [Both] are unordered,
+    and that they are dual at equal counts is stated where it is needed
+    ([Coequal.tenv_dual]). The process-level Σ embeds as [One]s. *)
+
+Inductive ends :=
+  | One (e : sty * nat)
+  | Both (e1 e2 : sty * nat).
+
+Notation tenv := (gmap chan ends).
+
+Definition tenv_of (Σ : senv) : tenv := One <$> Σ.
+
+(** Entries, one per end, keyed by the channel and a side bit (the
+    second end of a [Both] is side [true]). Keys keep two equal ends of
+    a channel apart: ready counts entries, not names. *)
+Notation ekey := (chan * bool)%type.
+
+Definition tenv_entry (Θ : tenv) (k : ekey) : option (sty * nat) :=
+  match Θ !! k.1, k.2 with
+  | Some (One e), false => Some e
+  | Some (Both e _), false => Some e
+  | Some (Both _ e), true => Some e
+  | _, _ => None
+  end.
+
+(** head(c : S@k) = (c, k). *)
+Definition entry_head (k : ekey) (e : sty * nat) : point := pt_chan k.1 e.2.
+
+Definition ends_heads (c : chan) (o : ends) : gset point :=
+  match o with
+  | One e => {[pt_chan c e.2]}
+  | Both e1 e2 => {[pt_chan c e1.2; pt_chan c e2.2]}
+  end.
+
+Definition tenv_heads (Θ : tenv) : gset point :=
+  map_fold (λ c o X, ends_heads c o ∪ X) ∅ Θ.
+
+Definition senv_heads (Σ : senv) : gset point := tenv_heads (tenv_of Σ).
+
+(** Θ = Θ1, c : e. *)
+Definition tenv_ext (Θ1 : tenv) (c : chan) (e : sty * nat) (Θ : tenv)
+    : Prop :=
+  (Θ1 !! c = None ∧ Θ = <[c := One e]> Θ1) ∨
+  (∃ e', Θ1 !! c = Some (One e') ∧
+     (Θ = <[c := Both e e']> Θ1 ∨ Θ = <[c := Both e' e]> Θ1)).
+
+(** The term-level [senv_hd]: Θ = Θ1, c : S@k with S unfolding to u. *)
+Definition tenv_hd (Θ : tenv) (c : chan) (u : sty) (k : nat) (Θ1 : tenv)
+    : Prop :=
+  ∃ s, tenv_ext Θ1 c (s, k) Θ ∧ unfoldS s = u.
+
+(** Θ = Θ1, Θ2: pointwise, and only defined where the overlap is one
+    end on each side. *)
+Inductive ends_join : option ends → option ends → option ends → Prop :=
+  | ends_join_none : ends_join None None None
+  | ends_join_l o : ends_join (Some o) None (Some o)
+  | ends_join_r o : ends_join None (Some o) (Some o)
+  | ends_join_both e1 e2 :
+      ends_join (Some (One e1)) (Some (One e2)) (Some (Both e1 e2))
+  | ends_join_both' e1 e2 :
+      ends_join (Some (One e1)) (Some (One e2)) (Some (Both e2 e1)).
+
+Definition tenv_join (Θ Θ1 Θ2 : tenv) : Prop :=
+  ∀ c, ends_join (Θ1 !! c) (Θ2 !! c) (Θ !! c).
+
 (** ** Type-indexed families of type signatures for constants
-    (Fig. 4 and Fig. 10)
+    (§9)
 
-    fork : (S ⊸ ∗) ⊸ dual S     send : (T ⊗ !T.S) ⊸ S
-    recv : ?T.S ⊸ T ⊗ S         clos : Close ⊸ ∗
-    link : ⟨S, dual S⟩ ⊸ ∗ *)
+    new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι
+    spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
+    send   : (T[ιs] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)
+               P = ∃ιs. T,  {ι} ≺ heads(T[ιs]),  each ιsᵢ ≡ ι[i]
+    recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
+    close  : Close@ι ⊸^ι_⊤ ∗
+    link   : S@ι ⊗ dual S@ι′ ⊸^ι_⊤ ∗       ι ≡ ι′
+    force  : □(∀ιs. T) ⊸^⊥_⊤ T[ιs′/ιs]
 
-Inductive konst_ty : konst → ty → Prop :=
-  | KTFork S :
-      konst_ty KFork (TLolli (TLolli (TSess S) TUnit) (TSess (dual S)))
-  | KTRecv T S :
-      konst_ty KRecv (TLolli (TSess (SRcv T S)) (TProd T (TSess S)))
-  | KTSend T S :
-      konst_ty KSend (TLolli (TProd T (TSess (SSnd T S))) (TSess S))
-  | KTClos :
-      konst_ty KClos (TLolli (TSess SEnd) TUnit)
-  | KTLink S :
-      konst_ty KLink (TLolli (TProd (TSess S) (TSess (dual S))) TUnit)
-  | KTForce T :
-      konst_ty KForce (TLolli (TBox T) T).
+    The side conditions on points are read in an order given as two
+    relations: the world G generates for typing, a world W for the
+    logical relation. Freshness of ι in [new] is a typing condition
+    (Typing.v). *)
+
+Inductive konst_ty (peq plt : point → point → Prop) : konst → ty → Prop :=
+  | KTNew S x :
+      konst_ty peq plt KNew
+        (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) x)))
+  | KTSpawn ub lb :
+      konst_ty peq plt KSpawn
+        (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)
+  | KTSend m T S x xs :
+      length xs = m →
+      (∀ i y, xs !! i = Some y → peq y (pt_slot x i)) →
+      (∀ h, h ∈ heads (ty_inst xs T) → plt x h) →
+      konst_ty peq plt KSend
+        (TLolli (Some x) None
+           (TProd (ty_inst xs T) (TSess (SSnd m T S) x))
+           (TSess S (pt_shift 1 x)))
+  | KTRecv m T S x :
+      konst_ty peq plt KRecv
+        (TLolli (Some x) None
+           (TSess (SRcv m T S) x)
+           (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))
+  | KTClos x :
+      konst_ty peq plt KClos (TLolli (Some x) None (TSess SEnd x) TUnit)
+  | KTLink S x x' :
+      peq x x' →
+      konst_ty peq plt KLink
+        (TLolli (Some x) None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
+  | KTForce n T xs :
+      length xs = n →
+      konst_ty peq plt KForce (TLolli None None (TBox n T) (ty_inst xs T)).
