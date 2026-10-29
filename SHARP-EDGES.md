@@ -230,6 +230,16 @@ machinery is undone (renaming along an alias, junk collapse, internalizing a
 link, α-closure of every clause, I1/J1/K1, ownership). A self-link still
 releases the channel. Reduction semantics and Harmony change (§3, §7, §10).
 
+**36. (M) An untyped forwarder is not in E.**
+E asks every label for its clause. An untyped fwd c d can fire c?v while c has
+type !P.S, and O-Recv then has no head to consume, so fwd c d ∉ E for every S
+other than Close, although no well-typed partner ever fires that label.
+Decision (M1, Claude, delegated): the forwarder follows the session type.
+link carries its type S, filled in by typing (surface syntax unchanged), and
+link_S ⟨c, d⟩ —β→ fwd_S c d reads only on the receiving side. E, P and the
+O-clauses stay as they are. Rejected M2 (no obligation for labels of the wrong
+kind), because it changes E and P and endangers the chain arguments (§2, §7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

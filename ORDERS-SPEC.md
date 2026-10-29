@@ -40,13 +40,14 @@ T-Act-Spawn     spawn v                    —⇑v→     ∗                   
 T-Act-Recv      recv c                     —c?v→    ⟨v, c⟩
 T-Act-Send      send ⟨v, c⟩                —c!v→    c
 T-Act-Close     close c                    —c!→     ∗
-T-Act-Link      link ⟨c, d⟩                —β→      fwd c d      (c ≠ d)               [changed]
-T-Act-LinkSelf  link ⟨c, c⟩                —c↔c→    ∗            (releases c, as in the paper)
-T-Act-Fwd       fwd c d                    —c?v→    relay v c d     (symmetrically from d to c)
-                relay v c d                —d!v→    fwd c d
-                fwd c d                    —c!→     fin d           (symmetrically)
+T-Act-Link      link_S ⟨c, d⟩              —β→      fwd_S c d    (c ≠ d)               [changed]
+T-Act-LinkSelf  link_S ⟨c, c⟩              —c↔c→    ∗            (releases c, as in the paper)
+T-Act-Fwd       fwd_{?P.S} c d             —c?v→    relay_S v c d   (fwd_{!P.S} c d reads on d)
+                relay_S v c d              —d!v→    fwd_S c d
+                fwd_Close c d              —c!→     fin d
                 fin d                      —d!→     ∗
-                fwd, relay, fin are runtime forms; their encoding is an implementation choice.
+                μ is unfolded. S is c's type, d has the dual. fwd, relay, fin are runtime forms.
+                (decision M1: the forwarder follows the session type)                    [new]
 T-Act-Ctx       t —λ→ t′   ⇒   𝒦[t] —λ→ 𝒦[t′]
 ```
 
@@ -191,7 +192,9 @@ O-Recv    Θ = Θ₁, c : (?P.S)@k                                              
 O-Close   Θ = Θ₁, c : Close@k      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
 O-LinkSelf  Θ = Θ₁, c : S@k, c : S′@k    S ⊥ S′      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧              [changed]
           (self-link: both entries leave Θ. A link between two different channels is a β step
-           to a forwarder, checked by the ordinary O-Send / O-Recv / O-Close clauses.)
+           to a typed forwarder fwd_S, checked by the ordinary O-Send / O-Recv / O-Close clauses.
+           An untyped fwd would fail them: it offers c?v also when c : !P.S, and that label
+           has no obligation that holds. Decision M1.)
                                                                 [removed] O-Fork
 
 P-Zero    p ∈ P^W_0⟦Σ ⊢ T⟧
@@ -261,7 +264,8 @@ spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
 send   : (T[ιs] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)    P = ∃ιs. T,  {ι} ≺_G heads(T[ιs]),  each ιsᵢ ≡_G ι[i]
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
-link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
+link_S : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
+         (S is filled in by the typing derivation, the surface syntax keeps plain link)
 force  : □(∀ιs. T) ⊸^⊥_⊤ T[ιs′/ιs]
 
 E-Unit     ·; · ⊢^F ∗ : ∗
@@ -315,7 +319,7 @@ Renaming restricted names                                                       
                   (Extends the paper's invariance under channel substitution, Renaming.v, to worlds.
                    Needed because Q-Recv's W′ ⊒ W may state facts about names the process restricts.)
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
-Forwarder         link ⟨c, d⟩ with c@k ≡_W d@j:  fwd c d ∈ E⟦c : S@k, d : S′@j ⊢ ∗⟧   (by the step index;
+Forwarder         c@k ≡_W d@j,  S ⊥ S′:  fwd_S c d ∈ E⟦c : S@k, d : S′@j ⊢ ∗⟧   (by the step index;
                   relayed payloads stay aliased through slot congruence)                       [new]
 LTS renaming      a bijective renaming of channel names preserves process steps and safety        [new]
                   (used by adequacy: runs whose fresh names are known to W are renamings of runs
