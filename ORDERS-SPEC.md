@@ -100,6 +100,8 @@ carrier     instants (p, b)
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
 alias       p@a ≡ q@b   ≔   (p, a+n) ≡ (q, b+n) for all n
+slot congruence   x ≡ y  ⇒  x[i] ≡ y[i]        (equal instants carry the same message)      [new]
+            the support of a world is counted on root names (channels and point variables)
 F ≺ G       every element of F is ≺ every element of G        (frames, ⊥ and ⊤ as expected)
 
 W ⊑ W′      ≡ ⊆ ≡′,  ≺ ⊆ ≺′,  W′ strict                        (Kripke order)
@@ -177,9 +179,14 @@ P-Step    ¬irred p    ready_W(Σ, p)                                           
           ∀π, p′.  p —π→ p′  ⇒  Σ ⊩ⁿ_W p —π→ p′ : T
           ⇒   p ∈ P^W_{n+1}⟦Σ ⊢ T⟧
 
-Q-Tau     p′ ∈ P^W_n⟦Σ ⊢ T⟧
+Q-Tau     p′ ∈ P^W_n⟦Σ ⊢ T⟧                       for τ steps other than new and link
+Q-New     the τ step creates c:   c ∉ names(W),   ∃W′ ⊒ₒ W placing c.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧    [new]
+Q-TauLink the τ step links an external c (Σ ∋ c : S@k) with a restricted d at count j:
+          c@k ≡_W d@j.   p′ ∈ P^W_n⟦Σ ⊢ T⟧         (mirrors O-Link; a link between two
+          restricted channels needs no alias)                                              [new]
 Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                                       [changed]
-          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to (Σ₁, c : S@(k+1)) on their overlap B.
+          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to (Σ₁, c : S@(k+1)) on their overlap B,
+          dom Σ₂ ∖ B # names(W)   (fresh: no received channel inherits stale facts of an old name).
               (C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(k+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
           (B = channels whose other end the receiver already holds. The obligation is stated
            for the successor with B restricted; the LTS itself does not restrict. If the carrier c
@@ -270,7 +277,13 @@ Monotonicity      W ⊑ W′  ⇒  V/E/P^W ⊆ V/E/P^{W′}
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
 Renaming along an alias
                   p ∈ P^W_n⟦Σ, c : S@k ⊢ T⟧,   c@k ≡_W d@j   ⇒   p[d/c] ∈ P^W_n⟦Σ, d : S@j ⊢ T⟧
-Prel_steps, Prel_safe            unchanged statements
+                  (needs slot congruence; report if a further freshness premise is needed)
+Internalizing a link
+                  a link between two cut channels in the composite combines the components' steps   [new]
+LTS renaming      a bijective renaming of channel names preserves process steps and safety        [new]
+                  (used by adequacy: runs whose fresh names are known to W are renamings of runs
+                   whose fresh names are not)
+Prel_steps, Prel_safe            restated for runs with names fresh for W (Q-New)
 ```
 
 ## 11  Lemmas: compositionality (one per rule)
@@ -323,7 +336,7 @@ P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalg
 ```
 Fundamental     Θ; Δ ⊢^F_G t : T   ⇒   Θ; Δ ⊨^F_{W_G} t : T
                 Σ ⊢_G p : T        ⇒   Σ ⊨_{W_G} p : T
-Adequacy        · ⊨_W p : T   ⇒   p deadlock free                      (proof unchanged)
+Adequacy        · ⊨_W p : T   ⇒   p deadlock free         (paper's proof plus LTS renaming for fresh names)
 Soundness       · ⊢_G p : T,  W_G strict   ⇒   p deadlock free
 Decidability    W_G strict is decidable:  Kosaraju–Sullivan for edges with offsets,
                 plus our lemma for schemas with a variable on one side only (free coordinates)
