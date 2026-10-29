@@ -83,7 +83,7 @@ p    ::= c | ι-variable | ι[i]        channel, abstract point, slot "the i-th 
 Σ    ::= · | c : S@k | Σ, Σ                       process level, a finite map,  k = actions done on c
 Θ    ::= Σ | Θ, c : S@k, c : S′@k                  term level, may hold both ends,  S ⊥ S′
 Δ    ::= · | x : T | Δ, Δ
-prim ∗,  prim T ⊗ U,  prim T + U,  prim □σ
+prim ∗,  prim T ⊗ U,  prim T + U,  prim □T if prim T     (as in the paper)
 
 heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ι}      heads(T ⊸^β_λ U) = {λ} ∖ {⊤}
 heads(T ⊗ U) = heads(T + U) = heads(T) ∪ heads(U)
@@ -155,7 +155,7 @@ E-Step    ¬irred t    ready_W(Θ, t)    frame_W(t, F)                          
           ⇒   t ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
 
 O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
-O-New     ∃S ⊥ S′, W′ ⊒ₒ W placing c.   t′ ∈ E^{W′}_n⟦Θ, c : S@0, c : S′@0 ⊢ T ≺ F⟧    [new]
+O-New     c ∉ names(W)    ∃S ⊥ S′, W′ ⊒ₒ W placing c.   t′ ∈ E^{W′}_n⟦Θ, c : S@0, c : S′@0 ⊢ T ≺ F⟧    [new]
 O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^β_λ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧       [new]
 O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@k     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[(c, k)]⟧                    [changed]
           t′ ∈ E^W_n⟦Θ₁, c : S@(k+1) ⊢ T ≺ F⟧
@@ -184,10 +184,17 @@ Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                 
           (B = channels whose other end the receiver already holds. The obligation is stated
            for the successor with B restricted; the LTS itself does not restrict. If the carrier c
            itself is in B (an end of c was sent over c), its continuation entry leaves Σ as well.
+           Σ₂ is a term-level environment: a payload may carry both ends of one channel; such a
+           channel also belongs to B and is restricted in the continuation.
+           The guard c ∉ dom Σ₂ of the paper is dropped (c may be in B).
            Lemma needed: restricting B only removes external steps on channels no environment holds.)
 Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@k      dom Σ_e = fchans(v) ∩ C                          [changed]
           v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[(c, k)]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(k+1) ⊢ T⟧
           Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay
+          (both ends of a restricted channel may leave with v; then it has no entry in Σ_e)
+
+Obligations whose continuation environment cannot be formed (e.g. Θ already holds both
+ends of c) fail; such a thread is never ready anyway.
 Q-Close   Σ = Σ₁, c : Close@k      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
 Q-Link    c ≠ d    Σ = Σ₁, c : S@k, d : S′@j    S ⊥ S′    c@k ≡_W d@j                     [changed]
           p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
@@ -256,8 +263,9 @@ Restriction of returning channels
                   successor with B restricted, because B already lies in the cut C₀            [new]
 Internalizing a close            unchanged
 
-Amalgamation      W₁ ⊔ W₂ strict  ⇔  (W₁|_A ⊔ W₂|_A) strict,   A = names W₁ and W₂ share
-Fresh extension   W₁ ⊑ₒ W₁′,  W₁ ⊔ W₂ strict   ⇒   W₁′ ⊔ W₂ strict
+Amalgamation      W₁, W₂ strict  ⇒  (W₁ ⊔ W₂ strict  ⇔  (W₁|_A ⊔ W₂|_A) strict),   A = names W₁ and W₂ share
+Fresh extension   W₁ ⊑ₒ W₁′ placing names N,  N # names(W₂),  W₂ strict,  W₁ ⊔ W₂ strict
+                  ⇒   W₁′ ⊔ W₂ strict
 Monotonicity      W ⊑ W′  ⇒  V/E/P^W ⊆ V/E/P^{W′}
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
 Renaming along an alias
