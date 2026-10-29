@@ -1220,3 +1220,109 @@ Proof. apply (rel_swap a b n). apply wsame_refl. Qed.
 Lemma Prel_swap a b n W Σ T p :
   Prel n W Σ T p → Prel n (wswap a b W) (senvswap a b Σ) T (pswap a b p).
 Proof. apply (rel_swap a b n). apply wsame_refl. Qed.
+
+(** ** Renaming names a world does not know *)
+
+Lemma pnswap_fix a b p :
+  pn_root p ≠ NChan a → pn_root p ≠ NChan b → pnswap a b p = p.
+Proof.
+  induction p; simpl; intros Ha Hb; try done.
+  - f_equal. apply cswap_ne; congruence.
+  - f_equal. by apply IHp.
+Qed.
+
+Lemma ptswap_fix a b x :
+  pt_root x ≠ NChan a → pt_root x ≠ NChan b → ptswap a b x = x.
+Proof. intros. destruct x. unfold ptswap. simpl. by rewrite pnswap_fix. Qed.
+
+Lemma pn_root_idem p : pn_root (pn_root p) = pn_root p.
+Proof. induction p; simpl; auto. Qed.
+
+(** A world that knows neither name is fixed by their transposition. *)
+Definition wfresh (W : world) (c : chan) : Prop :=
+  ∀ p, p ∈ w_names W → pn_root p ≠ NChan c.
+
+Lemma wswap_fix a b W :
+  world_wf W → wfresh W a → wfresh W b → wsame (wswap a b W) W.
+Proof.
+  intros HW Ha Hb.
+  assert (∀ x, pt_root x = NChan a ∨ pt_root x = NChan b → pt_root x ∉ w_names W)
+    as Hout.
+  { intros x [Hx|Hx] Hin; [apply (Ha _ Hin)|apply (Hb _ Hin)];
+      rewrite <-Hx; unfold pt_root; apply pn_root_idem. }
+  assert (∀ x, (pt_root x ≠ NChan a ∧ pt_root x ≠ NChan b) ∨
+               pt_root x = NChan a ∨ pt_root x = NChan b) as Hcase.
+  { intros x. destruct (decide (pt_root x = NChan a)); [by right; left|].
+    destruct (decide (pt_root x = NChan b)); [by right; right|by left]. }
+  assert (∀ x, pt_root x = NChan a ∨ pt_root x = NChan b →
+            pt_root (ptswap a b x) = NChan a ∨ pt_root (ptswap a b x) = NChan b)
+    as Hsw.
+  { intros x [Hx|Hx]; rewrite pt_root_swap, Hx; simpl;
+      [rewrite cswap_l; by right|rewrite cswap_r; by left]. }
+  split_and!.
+  - apply set_eq. intros p. simpl. rewrite elem_of_names_swap'. split; intros Hp.
+    + assert (pnswap a b (pnswap a b p) = pnswap a b p) as E
+        by (apply pnswap_fix; [apply (Ha _ Hp)|apply (Hb _ Hp)]).
+      rewrite pnswap_involutive in E. by rewrite E.
+    + rewrite pnswap_fix; [done|apply (Ha _ Hp)|apply (Hb _ Hp)].
+  - intros x y. simpl.
+    destruct (Hcase x) as [[Hxa Hxb]|Hx];
+      [destruct (Hcase y) as [[Hya Hyb]|Hy]|].
+    + by rewrite !ptswap_fix.
+    + split; intros H.
+      * apply (wf_eq_supp _ HW) in H as [H|[_ H]];
+          [|by destruct (Hout _ (Hsw _ Hy))].
+        apply (ptswap_inj a b) in H as ->. apply HW.
+      * apply (wf_eq_supp _ HW) in H as [->|[_ H]]; [apply HW|].
+        by destruct (Hout _ Hy).
+    + split; intros H.
+      * apply (wf_eq_supp _ HW) in H as [H|[H _]];
+          [|by destruct (Hout _ (Hsw _ Hx))].
+        apply (ptswap_inj a b) in H as ->. apply HW.
+      * apply (wf_eq_supp _ HW) in H as [->|[H _]]; [apply HW|].
+        by destruct (Hout _ Hx).
+  - intros x y. simpl.
+    destruct (Hcase x) as [[Hxa Hxb]|Hx];
+      [destruct (Hcase y) as [[Hya Hyb]|Hy]|].
+    + by rewrite !ptswap_fix.
+    + split; intros H.
+      * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[_ H]];
+          [|by destruct (Hout _ (Hsw _ Hy))].
+        apply wf_lt_same; [done| |done]. by apply (pnswap_inj a b).
+      * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[_ H]]; [|by destruct (Hout _ Hy)].
+        apply wf_lt_same; [done|simpl; by rewrite Hn|done].
+    + split; intros H.
+      * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[H _]];
+          [|by destruct (Hout _ (Hsw _ Hx))].
+        apply wf_lt_same; [done| |done]. by apply (pnswap_inj a b).
+      * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[H _]]; [|by destruct (Hout _ Hx)].
+        apply wf_lt_same; [done|simpl; by rewrite Hn|done].
+Qed.
+
+Lemma senvswap_fix a b Σ : a ∉ dom Σ → b ∉ dom Σ → senvswap a b Σ = Σ.
+Proof.
+  intros Ha Hb. apply map_eq. intros c. rewrite lookup_senvswap'.
+  destruct (decide (c = a)) as [->|?]; [|destruct (decide (c = b)) as [->|?]].
+  - rewrite cswap_l. apply not_elem_of_dom in Ha, Hb. by rewrite Ha, Hb.
+  - rewrite cswap_r. apply not_elem_of_dom in Ha, Hb. by rewrite Ha, Hb.
+  - by rewrite cswap_ne.
+Qed.
+
+(** Renaming restricted names: the world moves along, the interface
+    stays. *)
+Lemma Prel_swap_restricted a b n W Σ T p :
+  a ∉ dom Σ → b ∉ dom Σ → Prel n W Σ T p → Prel n (wswap a b W) Σ T (pswap a b p).
+Proof.
+  intros Ha Hb HP. apply (Prel_swap a b) in HP. by rewrite senvswap_fix in HP.
+Qed.
+
+(** ... and when the world knows neither name, it stays as well. *)
+Lemma Prel_swap_fix a b n W Σ T p :
+  world_wf W → wfresh W a → wfresh W b → a ∉ dom Σ → b ∉ dom Σ →
+  Prel n W Σ T p → Prel n W Σ T (pswap a b p).
+Proof.
+  intros HW Ha Hb HaΣ HbΣ HP.
+  pose proof (proj2 (proj2 (rel_swap a b n)) W W Σ T p
+                (wswap_fix a b W HW Ha Hb) HP) as H'.
+  by rewrite senvswap_fix in H'.
+Qed.
