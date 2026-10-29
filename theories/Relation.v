@@ -131,6 +131,41 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
         end)
   end.
 
+(** ** Messages at the process level
+
+    Q-Recv: the payload's environment Θ2 is term-level, so a message
+    may carry both ends of one channel. B ([recv_back]) is the set of
+    channels the receiver ends up holding both ends of: those whose
+    other end it already holds, and those whose both ends arrive in
+    one message. They are restricted in the continuation. Every other
+    received channel is fresh for the world, so it inherits no facts
+    of an old name. *)
+
+Definition tenv_ones (Θ : tenv) : senv :=
+  omap (λ o, match o with One e => Some e | Both _ _ => None end) Θ.
+
+Definition recv_back (Σr : senv) (Θ2 : tenv) : gset chan :=
+  (dom Θ2 ∩ dom Σr) ∪ (dom Θ2 ∖ dom (tenv_ones Θ2)).
+
+Definition recv_ok (W : world) (Σr : senv) (Θ2 : tenv) : Prop :=
+  senv_dual_on Σr (tenv_ones Θ2) ∧ tenv_dual Θ2 ∧
+  (dom Θ2 ∖ dom (tenv_ones Θ2)) ## dom Σr ∧
+  (∀ c, c ∈ dom (tenv_ones Θ2) → c ∉ dom Σr → NChan c ∉ w_names W).
+
+Definition recv_env (Σr : senv) (Θ2 : tenv) : senv :=
+  (Σr ∖ tenv_ones Θ2) ∪ (tenv_ones Θ2 ∖ Σr).
+
+(** Q-Send: the restricted channels a message carries. Θe holds the
+    ends that leave with the message (one end, or both), Σe the ends
+    that stay, dual at equal counts. *)
+Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
+  dom Σe ⊆ dom Θe ∧
+  ∀ r o, Θe !! r = Some o →
+    match o with
+    | One e' => ∃ e, Σe !! r = Some e ∧ e.2 = e'.2 ∧ sdual e.1 e'.1
+    | Both e1 e2 => Σe !! r = None ∧ e1.2 = e2.2 ∧ sdual e1.1 e2.1
+    end.
+
 (** Process relation at level n. Differences from the term relation:
 
     - τ obligations are guarded by [p'.1 ## dom Σ]: [new] picks a
@@ -138,14 +173,15 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
       constrained (the paper's implicit "Σ and C do not share
       channels" well-formedness).
     - Q-Recv: the received channels are fresh for the restricted set
-      ([dom Σ2 ## p.1]). Channels B of the payload whose other end the
-      receiver already holds ("migration") come back: the obligation is
-      stated for the successor with B restricted, and their entries
-      leave both environments. If the carrier c is in B, its
-      continuation entry leaves as well.
+      ([dom Θ2 ## p.1]). Channels B the receiver ends up holding both
+      ends of ("migration", or both ends in one message) come back:
+      the obligation is stated for the successor with B restricted,
+      and their entries leave both environments. If the carrier c is
+      in B, its continuation entry leaves as well. The other received
+      channels are fresh for W ([recv_ok]).
     - Q-Send: the restricted channels the message carries,
-      dom Σe = fchans w ∩ C, split into the ends that leave with the
-      message (Σe') and the ends that stay (Σe), dual at equal counts. *)
+      dom Θe = fchans w ∩ C, split into the ends that leave with the
+      message (Θe, possibly both ends) and the ends that stay (Σe). *)
 Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
     (n : nat) (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
   match n with
@@ -163,20 +199,18 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
         | PSess (SRecv c w) =>                         (* Q-Recv *)
             ∃ Σ1 m U s k,
               senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ W' j Σ2, wext W W' → j ≤ n' → dom Σ2 ## p.1 →
-                senv_dual_on (<[c := (s, S k)]> Σ1) Σ2 →
-                lV (below j) W' (tenv_of Σ2) (payload_at m U (pt_chan c k)) w →
-                lP (below j) W'
-                  ((<[c := (s, S k)]> Σ1 ∖ Σ2) ∪ (Σ2 ∖ <[c := (s, S k)]> Σ1)) T
-                  (p'.1 ∪ (dom Σ2 ∩ dom (<[c := (s, S k)]> Σ1)), p'.2)
+              ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
+                recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
+                lV (below j) W' Θ2 (payload_at m U (pt_chan c k)) w →
+                lP (below j) W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T
+                  (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2)
         | PSess (SSend c w) =>                         (* Q-Send *)
-            ∃ Σ0 Σv m U s k (Σe Σe' : senv),
+            ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
               senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
               Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
-              dom Σe = fchans w ∩ p.1 ∧ dom Σe' = dom Σe ∧
-              senv_dual_on Σe Σe' ∧
-              dom Σe ## dom Σ ∧
-              Vn W (tenv_of (Σv ∪ Σe')) (payload_at m U (pt_chan c k)) w ∧
+              dom Θe = fchans w ∩ p.1 ∧ send_split Σe Θe ∧
+              dom Θe ## dom Σ ∧
+              Vn W (tenv_of Σv ∪ Θe) (payload_at m U (pt_chan c k)) w ∧
               lP (below n') W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T p'
         | PSess (SClos c) =>                           (* Q-Close *)
             ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧
@@ -491,20 +525,18 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ W' j Σ2, wext W W' → j ≤ n' → dom Σ2 ## p.1 →
-          senv_dual_on (<[c := (s, S k)]> Σ1) Σ2 →
-          Vrel j W' (tenv_of Σ2) (payload_at m U (pt_chan c k)) w →
-          Prel j W'
-            ((<[c := (s, S k)]> Σ1 ∖ Σ2) ∪ (Σ2 ∖ <[c := (s, S k)]> Σ1)) T
-            (p'.1 ∪ (dom Σ2 ∩ dom (<[c := (s, S k)]> Σ1)), p'.2)
+        ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
+          recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
+          Vrel j W' Θ2 (payload_at m U (pt_chan c k)) w →
+          Prel j W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T
+            (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2)
   | PSess (SSend c w) =>
-      ∃ Σ0 Σv m U s k (Σe Σe' : senv),
+      ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
         senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
         Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
-        dom Σe = fchans w ∩ p.1 ∧ dom Σe' = dom Σe ∧
-        senv_dual_on Σe Σe' ∧
-        dom Σe ## dom Σ ∧
-        Vrel (S n') W (tenv_of (Σv ∪ Σe')) (payload_at m U (pt_chan c k)) w ∧
+        dom Θe = fchans w ∩ p.1 ∧ send_split Σe Θe ∧
+        dom Θe ## dom Σ ∧
+        Vrel (S n') W (tenv_of Σv ∪ Θe) (payload_at m U (pt_chan c k)) w ∧
         Prel n' W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T p'
   | PSess (SClos c) =>
       ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧ Prel n' W Σ1 T p'
@@ -534,16 +566,16 @@ Proof.
   - (* recv, → *)
     destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
     exists Σ1, m, U, s, k. split_and!; [done|done|].
-    intros W' j Σ2 HW Hj Hfr Hdu HV.
+    intros W' j Θ2 HW Hj Hfr Hdu HV.
     rewrite <-(levels_at (S n) j) in HV by lia.
-    specialize (H W' j Σ2 HW Hj Hfr Hdu HV).
+    specialize (H W' j Θ2 HW Hj Hfr Hdu HV).
     rewrite (levels_at (S n) j) in H by lia. exact H.
   - (* recv, ← *)
     destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
     exists Σ1, m, U, s, k. split_and!; [done|done|].
-    intros W' j Σ2 HW Hj Hfr Hdu HV.
+    intros W' j Θ2 HW Hj Hfr Hdu HV.
     rewrite (levels_at (S n) j) in HV by lia.
-    specialize (H W' j Σ2 HW Hj Hfr Hdu HV).
+    specialize (H W' j Θ2 HW Hj Hfr Hdu HV).
     rewrite <-(levels_at (S n) j) in H by lia. exact H.
 Qed.
 
@@ -737,9 +769,9 @@ Proof.
     + intros Hd. eapply IH; [|by apply H2]. lia.
     + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
       eexists _, _, _, _, _. split_and!; [done|done|].
-      intros W' j Σ2 HW Hj Hfr Hdu HV. apply H2; auto. lia.
-    + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Σe' & Hhd &
-                      ? & ? & ? & ? & ? & ? & ? & HV & HP0).
+      intros W' j Θ2 HW Hj Hfr Hdu HV. apply H2; auto. lia.
+    + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
+                      ? & ? & ? & ? & ? & ? & HV & HP0).
       eexists _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * eapply IH; [|exact HP0]. lia.
