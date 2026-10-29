@@ -78,7 +78,10 @@ T, U ::= ∗ | T ⊗ U | T + U | T ⊸^β_λ U | S@ι | □(∀ιs. T)          
 S    ::= ?P.S | !P.S | Close | μX.S | X                                 session types, unannotated
 P    ::= ∃ιs. T           payload, all points of T bound                sugar: !(S₁ ⊗ S₂).S binds them implicitly
 ι    ::= (p, b)           a point: a name with an offset
-p    ::= c | ι-variable | ι[i]        channel, abstract point, slot "the i-th point carried by the action at ι"
+p    ::= a | ι-variable | p[b][i]     point constant, bound point variable, slot "the i-th point carried at (p,b)"
+         Types never mention channel names (decision F2). Channel names, and slots rooted at channels
+         such as (c,k)[i], occur only in worlds and environments; types reach channels only through
+         aliases in W. Renaming channels therefore never changes a type.                          [changed]
 
 Σ    ::= · | c : S@k | Σ, Σ                       process level, a finite map,  k = actions done on c
 Θ    ::= Σ | Θ, c : S@k, c : S′@k                  term level, may hold both ends,  S ⊥ S′
@@ -137,7 +140,7 @@ offered and can synchronize, so that state is not stable.
 
 ```
 V-Unit    ∗ ∈ V^W_n⟦· ⊢ ∗⟧
-V-Chan    c ∈ V^W_n⟦c : S@k ⊢ S′@x⟧            if S ≈ S′ and c@k ≡_W x                 [changed]
+V-Chan    c ∈ V^W_n⟦c : S@k ⊢ S′@x⟧            if S ≈ S′ and c@k ≡_W x,  x a point (never a channel)   [changed]
 V-Const   k ∈ V^W_n⟦· ⊢ T⟧                     if k : T  (instance of its signature)
 V-Pair    v₁ ∈ V^W_n⟦Σ₁ ⊢ T⟧   v₂ ∈ V^W_n⟦Σ₂ ⊢ U⟧   ⇒   ⟨v₁, v₂⟩ ∈ V^W_n⟦Σ₁, Σ₂ ⊢ T ⊗ U⟧
 V-Inj     v ∈ V^W_n⟦Σ ⊢ Tᵢ⟧   ⇒   injᵢ v ∈ V^W_n⟦Σ ⊢ T₁ + T₂⟧
@@ -148,7 +151,9 @@ V-Abs     fchans(t) = dom Σ        {λ} ≼_W heads(Σ)                        
 V-Box     fchans(t) = ∅     ∀W′ ⊒ W.  fix x.t ∈ E^{W′}_n⟦· ⊢ T ≺ ∅⟧   ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □T⟧
 V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧                     [new]
 
-payload at a slot      P[x] ≔ T[x[i] / ιᵢ]     for P = ∃ι₁ … ιₘ. T,  x = (c, k)
+payload at a slot      the value is typed T[xs/ιs] for P = ∃ι₁ … ιₘ. T, with point constants xs such that
+                       xᵢ ≡_W (c, k)[i]  (O-Send/Q-Send: the sender's world; O-Recv/Q-Recv: ∀W′ ⊒ W and
+                       fresh constants xs with these aliases). Written P[(c, k)] below.
 
 E-Zero    t ∈ E^W_0⟦Θ ⊢ T ≺ F⟧
 E-Stop    v ∈ V^W_{n+1}⟦Θ ⊢ T⟧   ⇒   v ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
@@ -245,7 +250,7 @@ force  : □(∀ιs. T) ⊸^⊥_⊤ T[ιs′/ιs]
 E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    k : T   ⇒   ·; · ⊢^F k : T
 E-LVar     ·; x : T ⊢^F x : T
-E-Ch       c : S@k; · ⊢^F c : S@(c, k)
+E-Ch       c : S@k; · ⊢^F c : S@ι        with ι ≡_G (c, k)  (a point aliased to the channel's instant)
 E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ fresh, only fact β ≺ μ      λ fresh, only facts {λ} ≼ heads(Θ, Δ)
            ⇒   Θ; Δ ⊢^F λx.t : T ⊸^β_λ U
 E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^β_λ U     Θ₂; Δ₂ ⊢^{F ∪ {λ}} t₂ : T     {β} ≺_G F
@@ -312,7 +317,7 @@ Invisible extension
 E-Unit      ·; · ⊨^F ∗ : ∗
 E-Const     k : T   ⇒   ·; · ⊨^F k : T                      for new, spawn, send, recv, close, link, force
 E-LVar      ·; x : T ⊨^F x : T
-E-Ch        c : S@k; · ⊨^F c : S@(c, k)
+E-Ch        c : S@k; · ⊨^F c : S@ι        with ι ≡_W (c, k)
 E-Abs       ∀F′ with {β} ≺ F′.  Θ; Δ, x : T ⊨^{F′} t : U       {λ} ≼ heads(Θ, Δ)
             fchans(t) = dom Θ      fv(t) = dom(Δ, x : T)
             ⇒   Θ; Δ ⊨^F λx.t : T ⊸^β_λ U
