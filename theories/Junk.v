@@ -689,3 +689,125 @@ Proof.
   - right; right; right; right; left. eauto 14.
   - right; right; right; right; right. eauto 14.
 Qed.
+
+(** ** Moving the ends of a channel to another key
+
+    [tenv_move W c d Θ Θ′]: Θ′ is Θ with the ends of c moved to d.
+    If Θ holds no end of c this is the identity on Θ (junk); if Θ
+    holds no end of d it renames c to d; if Θ holds one end of each,
+    they become the two ends of d (fusion), which must then be dual and
+    aliased. *)
+
+Definition tenv_move (W : world) (c d : chan) (Θ Θ' : tenv) : Prop :=
+  Θ' !! c = None ∧ (∀ k, k ≠ c → k ≠ d → Θ' !! k = Θ !! k) ∧
+  ends_join (Θ !! c) (Θ !! d) (Θ' !! d) ∧
+  (∀ e1 e2, Θ !! c = Some (One e1) → Θ !! d = Some (One e2) →
+     w_eq W e1.2 e2.2 ∧ sdual e1.1 e2.1).
+
+Section move.
+  Context (W : world) (c d : chan) (Hcd : c ≠ d).
+
+  Lemma move_lookup_ne Θ Θ' k :
+    tenv_move W c d Θ Θ' → k ≠ c → k ≠ d → Θ' !! k = Θ !! k.
+  Proof. intros (_ & H & _). apply H. Qed.
+
+  Lemma move_dom Θ Θ' k :
+    tenv_move W c d Θ Θ' →
+    k ∈ dom Θ' ↔ k ≠ c ∧ (k ∈ dom Θ ∨ (k = d ∧ c ∈ dom Θ)).
+  Proof.
+    intros (Hc & Ho & Hj & _). rewrite !elem_of_dom.
+    destruct (decide (k = c)) as [->|Hkc].
+    { rewrite Hc. split; [by intros []|naive_solver]. }
+    destruct (decide (k = d)) as [->|Hkd].
+    - destruct (ends_join_cases _ _ _ Hj) as
+        [(E1 & E2 & E3)|[(o & E1 & E2 & E3)|[(o & E1 & E2 & E3)|(e1 & e2 & E1 & E2 & [E3|E3])]]];
+        rewrite ?E1, ?E2, ?E3; naive_solver.
+    - rewrite Ho by done. naive_solver.
+  Qed.
+
+  Lemma move_empty Θ' : tenv_move W c d ∅ Θ' → Θ' = ∅.
+  Proof.
+    intros (Hc & Ho & Hj & _). apply map_empty. intros k.
+    rewrite !lookup_empty in Hj.
+    destruct (ends_join_cases _ _ _ Hj) as
+      [(_ & _ & E3)|[(? & ? & _)|[(? & _ & ? & _)|(? & ? & ? & _)]]]; try done.
+    destruct (decide (k = c)) as [->|?]; [done|].
+    destruct (decide (k = d)) as [->|?]; [done|]. rewrite Ho by done. apply lookup_empty.
+  Qed.
+
+  Lemma move_mono W' Θ Θ' :
+    (∀ x y, w_eq W x y → w_eq W' x y) → tenv_move W c d Θ Θ' → tenv_move W' c d Θ Θ'.
+  Proof.
+    intros Hm (Hc & Ho & Hj & Hd). split_and!; [done..|].
+    intros e1 e2 H1 H2. destruct (Hd e1 e2 H1 H2). auto.
+  Qed.
+
+  Lemma move_id Θ : c ∉ dom Θ → tenv_move W c d Θ Θ.
+  Proof.
+    intros Hc. apply not_elem_of_dom in Hc. split_and!; [done|done| |].
+    - rewrite Hc. destruct (Θ !! d); constructor.
+    - intros e1 e2 H. congruence.
+  Qed.
+
+  Lemma move_insert Θ Θ' k o :
+    k ≠ c → k ≠ d → tenv_move W c d Θ Θ' →
+    tenv_move W c d (<[k := o]> Θ) (<[k := o]> Θ').
+  Proof.
+    intros Hkc Hkd (Hc & Ho & Hj & Hdd). split_and!.
+    - by rewrite lookup_insert_ne.
+    - intros k' Hk'c Hk'd. destruct (decide (k' = k)) as [->|Hne].
+      + by rewrite !lookup_insert_eq.
+      + rewrite !lookup_insert_ne by done. by apply Ho.
+    - rewrite !lookup_insert_ne by done. done.
+    - intros e1 e2. rewrite !lookup_insert_ne by done. apply Hdd.
+  Qed.
+
+  (** The ends move with their keys. *)
+  Lemma move_keys Θ Θ' :
+    tenv_move W c d Θ Θ' →
+    ∃ κ : ekey → ekey, (∀ k, (κ k).1 = csub c d k.1) ∧
+      (∀ k, k.1 ≠ c → k.1 ≠ d → κ k = k) ∧
+      (∀ k e, tenv_entry Θ k = Some e → tenv_entry Θ' (κ k) = Some e) ∧
+      (∀ k' e', tenv_entry Θ' k' = Some e' → ∃ k, κ k = k' ∧ tenv_entry Θ k = Some e').
+  Proof.
+    intros (Hc & Ho & Hj & _).
+    assert (∀ k, k.1 ≠ c → k.1 ≠ d → tenv_entry Θ' k = tenv_entry Θ k) as Hent.
+    { intros [k b] H1 H2. unfold tenv_entry. simpl in *. by rewrite Ho. }
+    destruct (ends_join_cases _ _ _ Hj) as
+      [(E1 & E2 & E3)|[(o & E1 & E2 & E3)|[(o & E1 & E2 & E3)|(e1 & e2 & E1 & E2 & [E3|E3])]]].
+    4: exists (λ k, if decide (k.1 = c) then (d, false)
+                    else if decide (k.1 = d) then (d, true) else k).
+    5: exists (λ k, if decide (k.1 = c) then (d, true)
+                    else if decide (k.1 = d) then (d, false) else k).
+    1-3: exists (λ k, (csub c d k.1, k.2)).
+    all: split_and!.
+    all: try (intros [k b]; simpl; unfold csub; repeat case_decide; simpl; congruence).
+    all: try (intros [k b] Hk1 Hk2; simpl in *; unfold csub;
+              repeat case_decide; simpl; congruence).
+    all: try (intros [k b] e He; simpl in *; unfold csub;
+              destruct (decide (k = c)) as [->|Hkc];
+              [unfold tenv_entry in *; simpl in *; rewrite ?E1, ?E2, ?E3 in *;
+               destruct b; simplify_eq; done|];
+              destruct (decide (k = d)) as [->|Hkd];
+              [unfold tenv_entry in *; simpl in *; rewrite ?E1, ?E2, ?E3 in *;
+               destruct b; simplify_eq; done|];
+              rewrite Hent; done).
+    all: intros [k b] e He; destruct (decide (k = c)) as [->|Hkc];
+      [unfold tenv_entry in He; simpl in He; by rewrite Hc in He|].
+    all: destruct (decide (k = d)) as [->|Hkd];
+      [|exists (k, b); simpl; unfold csub; repeat case_decide; try congruence;
+        split; [done|]; by rewrite <-Hent].
+    all: unfold tenv_entry in *; simpl in *; rewrite ?E1, ?E2, ?E3 in *.
+    all: try (exists (c, b); simpl; unfold csub;
+              repeat case_decide; try congruence; simpl;
+              rewrite ?E1; destruct o; destruct b; simplify_eq; done).
+    all: try (exists (d, b); simpl; unfold csub;
+              repeat case_decide; try congruence; simpl;
+              rewrite ?E2; destruct o; destruct b; simplify_eq; done).
+    all: destruct b; simplify_eq.
+    all: first [exists (c, false); simpl; repeat case_decide; try congruence;
+                simpl; rewrite E1; done
+               |exists (d, false); simpl; repeat case_decide; try congruence;
+                simpl; rewrite E2; done].
+  Qed.
+End move.
