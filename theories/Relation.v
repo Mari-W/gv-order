@@ -13,9 +13,10 @@
     [level_at n] projects the actual level n. Later proofs only use the
     equations [level_at_eq] and [levels_at], never the encoding.
 
-    "Σ = Σ1, c : S@k" from the paper is rendered as
-    Σ = <[c := (S, k)]> Σ1 together with c ∉ dom Σ1, and at the term
-    level as [tenv_ext Θ1 c (S, k) Θ].
+    "Σ = Σ1, c : S@x" from the paper is rendered as
+    Σ = <[c := (S, x)]> Σ1 together with c ∉ dom Σ1, and at the term
+    level as [tenv_ext Θ1 c (S, x) Θ]. Worlds speak about points only,
+    so no clause constrains a channel name.
 
     Lemma 3.5 needs the paper's argument "if p is not irreducible then
     it has some transition". That is [proc_progress], proved by
@@ -23,13 +24,9 @@
     development is closed under the global context. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Semantics Safety Swap Types Coequal Worlds Ready Typing.
+From LRGV Require Export Semantics Safety Types Coequal Worlds Ready Typing.
 
 (** ** The three relations, level by level *)
-
-(** A world read on type points, through the embedding. *)
-Definition tw_eq (W : world) (x y : tpoint) : Prop := w_eq W (emb x) (emb y).
-Definition tw_lt (W : world) (x y : tpoint) : Prop := w_lt W (emb x) (emb y).
 
 Record level := Level {
   lV : world → tenv → ty → expr → Prop;
@@ -41,8 +38,8 @@ Record level := Level {
     Recursive on the type; lower levels are accessed through [below]
     (the ∀ j < n quantification in the ⊸ and □ cases).
 
-    - V-Chan: the channel's current instant c@k is an alias of the
-      point the type names.
+    - V-Chan: the channel's current point x is an alias of the point
+      the type names.
     - V-Abs: the closure holds only above its lower point
       ({λ} ≼ heads(Θ)); applied in any future world to an argument,
       it is a good term under any frame above its upper point. The
@@ -57,15 +54,15 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TUnit => Θ = ∅ ∧ v = EUnit
   | TSess s x =>
       ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
-        w_eq W (pt_chan c k) (emb x)
+        w_eq W k x
   | TLolli ub lb T1 U =>
-      (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W (emb <$> lb) (tenv_heads Θ) ∧
+      (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
          ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
            tenv_comp Θ'' Θ Θ' →
            lV (below j) W' Θ' T1 w →
-           ub_below W' (emb <$> ub) F →
+           ub_below W' ub F →
            lE (below j) W' Θ'' U F (subst1 w eb))
-      ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (tw_eq W) (tw_lt W) k T0 ∧
+      ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
            teq T0 (TLolli ub lb T1 U))
   | TProd T1 U =>
       ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp Θ Θ1 Θ2 ∧
@@ -85,9 +82,10 @@ Fixpoint Vdef (below : nat → level) (n : nat)
 (** Term relation at level n (n = S n' in the non-trivial case), given
     [below] and the level-n value relation [Vn]. A term that can step
     must be ready and keep its offered entries below the frame F; one
-    case per label shape of the transition. The new case is guarded by
-    freshness of the new channel: new labels exist for every name c,
-    but only fresh ones are process-level enabled. *)
+    case per label shape of the transition. At new, the created
+    channel gets a point (a, 0) with a fresh for W, and W grows by a
+    fresh extension placing a. The name c is only required to be new
+    to Θ, so that the continuation environment can be formed. *)
 Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
     (n : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr)
     : Prop :=
@@ -101,9 +99,10 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
         | LBeta =>                                     (* O-Beta *)
             lE (below n') W Θ T F e'
         | LNew c =>                                    (* O-New *)
-            c ∉ dom Θ → NChan c ∉ w_names W →
-            ∃ s s' W', sdual s s' ∧ wext_fresh W {[NChan c]} W' ∧
-              lE (below n') W' (<[c := Both (s, 0) (s', 0)]> Θ) T F e'
+            c ∉ dom Θ →
+            ∃ a s s' W', sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
+              lE (below n') W'
+                (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
         | LSpawn w =>                                  (* O-Spawn *)
             ∃ Θ1 Θ2 ub lb, tenv_comp Θ Θ1 Θ2 ∧
               Vn W Θ1 (TLolli ub lb TUnit TUnit) w ∧
@@ -113,16 +112,16 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
               tenv_hd Θ c (SRcv m U s) k Θ1 ∧
               ∀ W' j Θ2 Θ12 xs, wext W W' → j ≤ n' →
                 tenv_comp Θ12 Θ1 Θ2 →
-                slot_aliases (w_eq W') xs m (pt_chan c k) →
+                slot_aliases (w_eq W') xs m k →
                 lV (below j) W' Θ2 (ty_inst xs U) w →
-                ∃ Θ', tenv_ext Θ12 c (s, S k) Θ' ∧
+                ∃ Θ', tenv_ext Θ12 c (s, pt_shift 1 k) Θ' ∧
                   lE (below j) W' Θ' T F e'
         | LSess (SSend c w) =>                         (* O-Send *)
             ∃ Θr Θ1 Θ2 m U s k Θ' xs,
               tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp Θr Θ1 Θ2 ∧
-              slot_aliases (w_eq W) xs m (pt_chan c k) ∧
+              slot_aliases (w_eq W) xs m k ∧
               Vn W Θ2 (ty_inst xs U) w ∧
-              tenv_ext Θ1 c (s, S k) Θ' ∧
+              tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
               lE (below n') W Θ' T F e'
         | LSess (SClos c) =>                           (* O-Close *)
             ∃ Θ1 k, tenv_hd Θ c SEnd k Θ1 ∧ lE (below n') W Θ1 T F e'
@@ -132,7 +131,7 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
             ∃ c d Θ1 Θm sc sd kc kd,
               cd = {[c; d]} ∧
               tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
-              sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
+              sdual sd sc ∧ w_eq W kc kd ∧
               lE (below n') W Θ1 T F e'
         end)
   end.
@@ -143,9 +142,7 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
     may carry both ends of one channel. B ([recv_back]) is the set of
     channels the receiver ends up holding both ends of: those whose
     other end it already holds, and those whose both ends arrive in
-    one message. They are restricted in the continuation. Every other
-    received channel is fresh for the world, so it inherits no facts
-    of an old name. *)
+    one message. They are restricted in the continuation. *)
 
 Definition tenv_ones (Θ : tenv) : senv :=
   omap (λ o, match o with One e => Some e | Both _ _ => None end) Θ.
@@ -153,17 +150,16 @@ Definition tenv_ones (Θ : tenv) : senv :=
 Definition recv_back (Σr : senv) (Θ2 : tenv) : gset chan :=
   (dom Θ2 ∩ dom Σr) ∪ (dom Θ2 ∖ dom (tenv_ones Θ2)).
 
-Definition recv_ok (W : world) (Σr : senv) (Θ2 : tenv) : Prop :=
+Definition recv_ok (Σr : senv) (Θ2 : tenv) : Prop :=
   senv_dual_on Σr (tenv_ones Θ2) ∧ tenv_dual Θ2 ∧
-  (dom Θ2 ∖ dom (tenv_ones Θ2)) ## dom Σr ∧
-  (∀ c, c ∈ dom (tenv_ones Θ2) → c ∉ dom Σr → NChan c ∉ w_names W).
+  (dom Θ2 ∖ dom (tenv_ones Θ2)) ## dom Σr.
 
 Definition recv_env (Σr : senv) (Θ2 : tenv) : senv :=
   (Σr ∖ tenv_ones Θ2) ∪ (tenv_ones Θ2 ∖ Σr).
 
 (** Q-Send: the restricted channels a message carries. Θe holds the
     ends that leave with the message (one end, or both), Σe the ends
-    that stay, dual at equal counts. *)
+    that stay, dual at the same point. *)
 Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
   dom Σe ⊆ dom Θe ∧
   ∀ r o, Θe !! r = Some o →
@@ -172,51 +168,17 @@ Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
     | Both e1 e2 => Σe !! r = None ∧ e1.2 = e2.2 ∧ sdual e1.1 e2.1
     end.
 
-(** ** α-variants
+(** Process relation at level n. Every clause is stated for the
+    successor itself. Differences from the term relation:
 
-    Restricted names are bound. An α-variant of a process renames its
-    restricted names, one at a time, to names that capture nothing:
-    absent from the process, outside the interface Σ, and fresh for
-    every fact the process did not add itself (decisions I1, J1, K1):
-    for Q-Tau the world before the step (the world after it may carry
-    facts about them, e.g. about a renamed new channel), for Q-Recv
-    the environment's world the continuation lives in, otherwise the
-    current world. *)
-
-Definition wfresh (W : world) (c : chan) : Prop :=
-  ∀ p, p ∈ w_names W → pn_root p ≠ NChan c.
-
-Inductive walpha (W : world) (Σ : senv) : proc → proc → Prop :=
-  | walpha_refl p : walpha W Σ p p
-  | walpha_step p q a b :
-      a ∈ p.1 → b ∉ p.1 → b ∉ echans p.2 → b ∉ dom Σ → wfresh W b →
-      walpha W Σ (pswap a b p) q → walpha W Σ p q.
-
-Lemma walpha_alpha W Σ p q : walpha W Σ p q → alpha p q.
-Proof. induction 1; econstructor; eauto. Qed.
-
-(** Process relation at level n. Differences from the term relation:
-
-    - Restricted names are bound: every step obligation is stated for
-      some α-variant of the successor ([walpha]), so facts a world
-      states about restricted names never pin the process, and the two
-      orientations of an internal link are the same obligation.
-    - Q-Tau: the world may grow, but only invisibly: W ⊑ W′ adds facts
-      only about names restricted before the step or in the chosen
-      α-variant ([wext_inv]). Only successors whose restricted
-      channels stay clear of Σ are constrained (the paper's implicit
-      "Σ and C do not share channels"). The paper's Q-Tau is W′ = W
-      with the successor itself.
-    - Q-Recv: the received channels are fresh for the restricted set
-      ([dom Θ2 ## p.1]). Channels B the receiver ends up holding both
-      ends of ("migration", or both ends in one message) come back:
-      the obligation is stated for the successor with B restricted,
-      and their entries leave both environments. If the carrier c is
-      in B, its continuation entry leaves as well. The other received
-      channels are fresh for W ([recv_ok]). The obligation holds for an
-      α-variant of the successor ([walpha]): restricted names are
-      bound, so facts the environment's W′ states about them do not
-      pin the process.
+    - Q-Tau: the world may grow by a fresh extension, placing the
+      points of channels the step creates. The paper's Q-Tau is
+      W′ = W.
+    - Q-Recv: channels B the receiver ends up holding both ends of
+      ("migration", or both ends in one message) come back: the
+      obligation is stated for the successor with B restricted, and
+      their entries leave both environments. If the carrier c is in B,
+      its continuation entry leaves as well.
     - Q-Send: the restricted channels the message carries,
       dom Θe = fchans w ∩ C, split into the ends that leave with the
       message (Θe, possibly both ends) and the ends that stay (Σe). *)
@@ -232,32 +194,28 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
       (∀ π p', proc_step p π p' →
         match π with
         | PTau =>                                      (* Q-Tau *)
-            p'.1 ## dom Σ →
-            ∃ W' q, walpha W Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
-              lP (below n') W' Σ T q
+            ∃ N W', wext_fresh W N W' ∧ lP (below n') W' Σ T p'
         | PSess (SRecv c w) =>                         (* Q-Recv *)
             ∃ Σ1 m U s k,
               senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-              ∀ W' j Θ2 xs, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
-                recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
-                slot_aliases (w_eq W') xs m (pt_chan c k) →
+              ∀ W' j Θ2 xs, wext W W' → j ≤ n' →
+                recv_ok (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
+                slot_aliases (w_eq W') xs m k →
                 lV (below j) W' Θ2 (ty_inst xs U) w →
-                ∃ q, walpha W' (recv_env (<[c := (s, S k)]> Σ1) Θ2)
-                 (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
-                  lP (below j) W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
+                lP (below j) W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
+                  (p'.1 ∪ recv_back (<[c := (s, pt_shift 1 k)]> Σ1) Θ2, p'.2)
         | PSess (SSend c w) =>                         (* Q-Send *)
             ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv) xs,
               senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
               Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
               dom Θe = fchans w ∩ p.1 ∧ send_split Σe Θe ∧
               dom Θe ## dom Σ ∧
-              slot_aliases (w_eq W) xs m (pt_chan c k) ∧
+              slot_aliases (w_eq W) xs m k ∧
               Vn W (tenv_of Σv ∪ Θe) (ty_inst xs U) w ∧
-              ∃ q, walpha W (<[c := (s, S k)]> (Σ0 ∪ Σe)) p' q ∧
-                lP (below n') W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T q
+              lP (below n') W (<[c := (s, pt_shift 1 k)]> (Σ0 ∪ Σe)) T p'
         | PSess (SClos c) =>                           (* Q-Close *)
             ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧
-              ∃ q, walpha W Σ1 p' q ∧ lP (below n') W Σ1 T q
+              lP (below n') W Σ1 T p'
         | PSess (SLink cd) =>                          (* Q-Link *)
             (* c = d cannot reach the interface: Σ holds one end per
                channel *)
@@ -265,8 +223,8 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
               cd = {[c; d]} ∧ c ≠ d ∧
               Σ = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1) ∧
               c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-              sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
-              ∃ q, walpha W Σ1 p' q ∧ lP (below n') W Σ1 T q
+              sdual sd sc ∧ w_eq W kc kd ∧
+              lP (below n') W Σ1 T p'
         end)
   end.
 
@@ -390,17 +348,15 @@ Proof.
   intros (H1 & _) Hirr. exact (H1 Hirr).
 Qed.
 
-(** τ steps decrease the index by one, may grow the world invisibly,
-    and relate an α-variant of the successor (for τ successors whose
-    restricted channels stay clear of Σ). *)
+(** τ steps decrease the index by one and may grow the world by a
+    fresh extension. *)
 Lemma Prel_S_tau n W Σ T p p' :
-  Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ →
-  ∃ W' q, walpha W Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
-    Prel n W' Σ T q.
+  Prel (S n) W Σ T p → preduction p p' →
+  ∃ N W', wext_fresh W N W' ∧ Prel n W' Σ T p'.
 Proof.
   unfold Prel at 1. rewrite level_at_eq. simpl.
-  intros (_ & _ & Hstep) Hred Hdisj.
-  specialize (Hstep _ _ Hred). simpl in Hstep. specialize (Hstep Hdisj).
+  intros (_ & _ & Hstep) Hred.
+  specialize (Hstep _ _ Hred). simpl in Hstep.
   destruct (decide (n < n)); [lia|].
   unfold Prel. rewrite level_at_eq. exact Hstep.
 Qed.
@@ -419,7 +375,7 @@ Proof.
     exact (senv_hd_not_empty _ _ _ _ Heq).
   - destruct Hstep as (Σ1 & k & Heq & _).
     exact (senv_hd_not_empty _ _ _ _ Heq).
-  - (* forwarding: both ends must be in Σ *)
+  - (* link: both ends must be in Σ *)
     destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd & _ & _ & Heq & _).
     exact (insert_non_empty _ _ _ (eq_sym Heq)).
 Qed.
@@ -438,7 +394,7 @@ Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 Lemma Vrel_sess_iff n W Θ s x v :
   Vrel n W Θ (TSess s x) v ↔
   ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
-    w_eq W (pt_chan c k) (emb x).
+    w_eq W k x.
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_prod_iff n W Θ T U v :
@@ -477,13 +433,13 @@ Proof. destruct T; try done. intros _. apply Vrel_box_empty. Qed.
 
 Lemma Vrel_lolli_iff n W Θ ub lb T U v :
   Vrel n W Θ (TLolli ub lb T U) v ↔
-  (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W (emb <$> lb) (tenv_heads Θ) ∧
+  (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
      ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
        tenv_comp Θ'' Θ Θ' →
        Vrel j W' Θ' T w →
-       ub_below W' (emb <$> ub) F →
+       ub_below W' ub F →
        Erel j W' Θ'' U F (subst1 w eb))
-  ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (tw_eq W) (tw_lt W) k T0 ∧
+  ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
        teq T0 (TLolli ub lb T U)).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
@@ -503,9 +459,9 @@ Definition Ecase (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
   | LBeta =>
       Erel n' W Θ T F e'
   | LNew c =>
-      c ∉ dom Θ → NChan c ∉ w_names W →
-      ∃ s s' W', sdual s s' ∧ wext_fresh W {[NChan c]} W' ∧
-        Erel n' W' (<[c := Both (s, 0) (s', 0)]> Θ) T F e'
+      c ∉ dom Θ →
+      ∃ a s s' W', sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
+        Erel n' W' (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
   | LSpawn w =>
       ∃ Θ1 Θ2 ub lb, tenv_comp Θ Θ1 Θ2 ∧
         Vrel (S n') W Θ1 (TLolli ub lb TUnit TUnit) w ∧
@@ -515,15 +471,15 @@ Definition Ecase (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
         tenv_hd Θ c (SRcv m U s) k Θ1 ∧
         ∀ W' j Θ2 Θ12 xs, wext W W' → j ≤ n' →
           tenv_comp Θ12 Θ1 Θ2 →
-          slot_aliases (w_eq W') xs m (pt_chan c k) →
+          slot_aliases (w_eq W') xs m k →
           Vrel j W' Θ2 (ty_inst xs U) w →
-          ∃ Θ', tenv_ext Θ12 c (s, S k) Θ' ∧ Erel j W' Θ' T F e'
+          ∃ Θ', tenv_ext Θ12 c (s, pt_shift 1 k) Θ' ∧ Erel j W' Θ' T F e'
   | LSess (SSend c w) =>
       ∃ Θr Θ1 Θ2 m U s k Θ' xs,
         tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp Θr Θ1 Θ2 ∧
-        slot_aliases (w_eq W) xs m (pt_chan c k) ∧
+        slot_aliases (w_eq W) xs m k ∧
         Vrel (S n') W Θ2 (ty_inst xs U) w ∧
-        tenv_ext Θ1 c (s, S k) Θ' ∧
+        tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
         Erel n' W Θ' T F e'
   | LSess (SClos c) =>
       ∃ Θ1 k, tenv_hd Θ c SEnd k Θ1 ∧ Erel n' W Θ1 T F e'
@@ -531,7 +487,7 @@ Definition Ecase (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
       ∃ c d Θ1 Θm sc sd kc kd,
         cd = {[c; d]} ∧
         tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
-        sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
+        sdual sd sc ∧ w_eq W kc kd ∧
         Erel n' W Θ1 T F e'
   end.
 
@@ -568,39 +524,35 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
     (π : plabel) (p' : proc) : Prop :=
   match π with
   | PTau =>
-      p'.1 ## dom Σ →
-      ∃ W' q, walpha W Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
-        Prel n' W' Σ T q
+      ∃ N W', wext_fresh W N W' ∧ Prel n' W' Σ T p'
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ W' j Θ2 xs, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
-          recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
-          slot_aliases (w_eq W') xs m (pt_chan c k) →
+        ∀ W' j Θ2 xs, wext W W' → j ≤ n' →
+          recv_ok (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
+          slot_aliases (w_eq W') xs m k →
           Vrel j W' Θ2 (ty_inst xs U) w →
-          ∃ q, walpha W' (recv_env (<[c := (s, S k)]> Σ1) Θ2)
-                 (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
-            Prel j W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
+          Prel j W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
+            (p'.1 ∪ recv_back (<[c := (s, pt_shift 1 k)]> Σ1) Θ2, p'.2)
   | PSess (SSend c w) =>
       ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv) xs,
         senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
         Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
         dom Θe = fchans w ∩ p.1 ∧ send_split Σe Θe ∧
         dom Θe ## dom Σ ∧
-        slot_aliases (w_eq W) xs m (pt_chan c k) ∧
+        slot_aliases (w_eq W) xs m k ∧
         Vrel (S n') W (tenv_of Σv ∪ Θe) (ty_inst xs U) w ∧
-        ∃ q, walpha W (<[c := (s, S k)]> (Σ0 ∪ Σe)) p' q ∧
-          Prel n' W (<[c := (s, S k)]> (Σ0 ∪ Σe)) T q
+        Prel n' W (<[c := (s, pt_shift 1 k)]> (Σ0 ∪ Σe)) T p'
   | PSess (SClos c) =>
       ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧
-        ∃ q, walpha W Σ1 p' q ∧ Prel n' W Σ1 T q
+        Prel n' W Σ1 T p'
   | PSess (SLink cd) =>
       ∃ c d Σ1 sc sd kc kd,
         cd = {[c; d]} ∧ c ≠ d ∧
         Σ = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1) ∧
         c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-        sdual sd sc ∧ w_eq W (pt_chan c kc) (pt_chan d kd) ∧
-        ∃ q, walpha W Σ1 p' q ∧ Prel n' W Σ1 T q
+        sdual sd sc ∧ w_eq W kc kd ∧
+        Prel n' W Σ1 T p'
   end.
 
 Lemma Prel_S_iff n W Σ T p :
@@ -620,16 +572,16 @@ Proof.
   - (* recv, → *)
     destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
     exists Σ1, m, U, s, k. split_and!; [done|done|].
-    intros W' j Θ2 xs HW Hj Hfr Hdu Hxs HV.
+    intros W' j Θ2 xs HW Hj Hdu Hxs HV.
     rewrite <-(levels_at (S n) j) in HV by lia.
-    specialize (H W' j Θ2 xs HW Hj Hfr Hdu Hxs HV).
+    specialize (H W' j Θ2 xs HW Hj Hdu Hxs HV).
     rewrite (levels_at (S n) j) in H by lia. exact H.
   - (* recv, ← *)
     destruct H as (Σ1 & m & U & s & k & Hhd & Hc & H).
     exists Σ1, m, U, s, k. split_and!; [done|done|].
-    intros W' j Θ2 xs HW Hj Hfr Hdu Hxs HV.
+    intros W' j Θ2 xs HW Hj Hdu Hxs HV.
     rewrite (levels_at (S n) j) in HV by lia.
-    specialize (H W' j Θ2 xs HW Hj Hfr Hdu Hxs HV).
+    specialize (H W' j Θ2 xs HW Hj Hdu Hxs HV).
     rewrite <-(levels_at (S n) j) in H by lia. exact H.
 Qed.
 
@@ -723,21 +675,17 @@ Definition sem_ptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
 
 (** ** The adequacy chain (Lemmas 3.4, 3.5 and Theorem 3.6) *)
 
-(** Lemma 3.4, for the closed environment: along a run, an α-variant
-    of the last state is related in some world, and its safety implies
-    the safety of the last state ([Swap.alpha_nsteps]). *)
+(** Lemma 3.4, for the closed environment: the last state of a run is
+    related in some world. *)
 Lemma Prel_steps m : ∀ W n T p p',
   nsteps preduction m p p' → Prel (m + n) W ∅ T p →
-  ∃ W' r, Prel n W' ∅ T r ∧ (safe r → safe p').
+  ∃ W', Prel n W' ∅ T p'.
 Proof.
   induction m as [|m IH]; intros W n T p p' Hrun HP.
-  { inversion Hrun; subst. by exists W, p'. }
+  { inversion Hrun; subst. by exists W. }
   inversion Hrun as [|? ? q ? Hpq Hqr]; subst. simpl in HP.
-  destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (W' & q' & Hal & _ & HP').
-  { rewrite dom_empty_L. apply disjoint_empty_r. }
-  destruct (alpha_nsteps _ _ _ _ (walpha_alpha _ _ _ _ Hal) Hqr) as (r' & Hr' & Hs').
-  destruct (IH W' n T q' r' Hr' HP') as (W'' & r & HPr & Hs).
-  exists W'', r. split; [done|]. intros H. by apply Hs', Hs.
+  destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (N & W' & _ & HP').
+  exact (IH W' n T q p' Hqr HP').
 Qed.
 
 (** Lemma 3.5 *)
@@ -751,14 +699,13 @@ Proof.
     + exfalso. by eapply Prel_S_empty_no_sess.
 Qed.
 
-(** Theorem 3.6 (Adequacy). Runs relate α-variants of their states,
-    and safety transports along renamings ([Swap.safe_pswap_iff]). *)
+(** Theorem 3.6 (Adequacy). *)
 Theorem adequacy W T p : sem_ptyped W ∅ p T → deadlock_free p.
 Proof.
   intros HP p' Hsteps. apply rtc_nsteps_1 in Hsteps as [m Hm].
-  destruct (Prel_steps m W 1 T p p' Hm) as (W' & r & HPr & Hs);
+  destruct (Prel_steps m W 1 T p p' Hm) as (W' & HPr);
     [by rewrite Nat.add_1_r|].
-  apply Hs. by eapply (Prel_safe 0).
+  by eapply (Prel_safe 0).
 Qed.
 
 (** ** Downward closure (Lemma 3.7) *)
@@ -811,8 +758,8 @@ Proof.
                       -> & ? & ? & ? & ? & HE').
       eexists _, _, _, _, _, _, _, _. split_and!; [done..|].
       eapply IH; [|done]. lia.
-    + intros Hc Hn. destruct (H2 Hc Hn) as (s & s' & W' & ? & ? & HE').
-      eexists _, _, _. split_and!; [done|done|]. eapply IH; [|done]. lia.
+    + intros Hc. destruct (H2 Hc) as (a & s & s' & W' & ? & ? & HE').
+      eexists _, _, _, _. split_and!; [done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Θ1 & Θ2 & ub & lb & ? & HV & HE').
       eexists _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
@@ -831,22 +778,20 @@ Proof.
   - done.
   - intros π p' Hst. specialize (H2 π p' Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in H2 |- *.
-    + intros Hd. destruct (H2 Hd) as (W' & q & ? & ? & ?).
-      exists W', q. split_and!; [done|done|]. eapply IH; [|done]. lia.
+    + destruct H2 as (N & W' & ? & ?).
+      exists N, W'. split; [done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
       eexists _, _, _, _, _. split_and!; [done|done|].
-      intros W' j Θ2 xs HW Hj Hfr Hdu Hxs HV. apply (H2 W' j Θ2 xs); auto. lia.
+      intros W' j Θ2 xs HW Hj Hdu Hxs HV. apply (H2 W' j Θ2 xs); auto. lia.
     + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Θe & xs & Hhd &
                       ? & ? & ? & ? & ? & ? & ? & HV & HP0).
-      destruct HP0 as (q & Hal & HP0).
       eexists _, _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
-      * exists q. split; [done|]. eapply IH; [|exact HP0]. lia.
-    + destruct H2 as (Σ1 & k & Hhd & ? & q & Hal & HP').
-      eexists _, _. split_and!; eauto. exists q. split; [done|].
-      eapply IH; [|done]. lia.
+      * eapply IH; [|exact HP0]. lia.
+    + destruct H2 as (Σ1 & k & Hhd & ? & HP').
+      eexists _, _. split_and!; eauto. eapply IH; [|done]. lia.
     + destruct H2 as (c & d & Σ1 & sc & sd & kc & kd &
-                      -> & ? & -> & ? & ? & ? & ? & q & Hal & HP').
+                      -> & ? & -> & ? & ? & ? & ? & HP').
       eexists _, _, _, _, _, _, _. split_and!; [done..|].
-      exists q. split; [done|]. eapply IH; [|done]. lia.
+      eapply IH; [|done]. lia.
 Qed.

@@ -8,23 +8,20 @@
 From stdpp Require Import base strings gmap countable.
 From LRGV Require Export Syntax.
 
-(** ** Instants and points (decision F2)
+(** ** Points
 
-    Two sorts of names. A type point names an instant abstractly: a
-    point constant, a point variable (de Bruijn, bound by ∀ under □ or
-    by ∃ in a payload), or the slot p[b][i] of a type point. Types
-    mention only type points, never channels. A world instant (what
-    worlds relate, [point]) is a channel, a point constant, a point
-    variable, or a slot of an instant; slots rooted at channels such as
-    (c, k)[i] exist only here. Types reach channels only through
-    aliases in a world, and type points embed into instants ([emb]).
-    Renaming channels therefore never changes a type.
+    One sort of names (decision N). A point (p, b) is a name p with an
+    offset b. A name is a point constant, a point variable (de Bruijn,
+    bound by ∀ under □ or by ∃ in a payload), or the slot p[b][i], "the
+    i-th point carried at (p, b)". Worlds and environments use ground
+    points (constants and their slots), static types also use
+    variables. No point mentions a channel, so renaming channels
+    changes no type and no world.
 
-    Both sorts write a slot with the name and offset of its base
-    unpacked, so that names are not mutual with points. *)
+    A slot writes the name and offset of its base unpacked, so that
+    names are not mutual with points. *)
 
 Inductive pname :=
-  | NChan (c : chan)
   | NConst (a : nat)
   | NVar (a : nat)
   | NSlot (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
@@ -36,19 +33,17 @@ Proof. solve_decision. Defined.
 
 Global Instance pname_countable : Countable pname.
 Proof.
-  set (enc := fix go p : gen_tree (chan + nat) :=
+  set (enc := fix go p : gen_tree nat :=
     match p with
-    | NChan c => GenLeaf (inl c)
-    | NConst a => GenNode 1 [GenLeaf (inr a)]
-    | NVar a => GenLeaf (inr a)
-    | NSlot p b i => GenNode 0 [go p; GenLeaf (inr b); GenLeaf (inr i)]
+    | NConst a => GenNode 1 [GenLeaf a]
+    | NVar a => GenLeaf a
+    | NSlot p b i => GenNode 0 [go p; GenLeaf b; GenLeaf i]
     end).
   set (dec := fix go t : pname :=
     match t with
-    | GenLeaf (inl c) => NChan c
-    | GenNode 1 [GenLeaf (inr a)] => NConst a
-    | GenLeaf (inr a) => NVar a
-    | GenNode 0 [t; GenLeaf (inr b); GenLeaf (inr i)] => NSlot (go t) b i
+    | GenNode 1 [GenLeaf a] => NConst a
+    | GenLeaf a => NVar a
+    | GenNode 0 [t; GenLeaf b; GenLeaf i] => NSlot (go t) b i
     | _ => NVar 0
     end).
   apply (inj_countable' enc dec).
@@ -64,111 +59,39 @@ Proof.
   by intros [].
 Qed.
 
-(** (c, k), x + n and x[i] for instants. *)
-Definition pt_chan (c : chan) (k : nat) : point := Pt (NChan c) k.
+(** x + n, x[i], the variable a, and the constant a at offset 0. *)
 Definition pt_shift (n : nat) (x : point) : point :=
   Pt (pt_name x) (pt_off x + n).
 Definition pt_slot (x : point) (i : nat) : point :=
   Pt (NSlot (pt_name x) (pt_off x) i) 0.
-
-(** Type points. *)
-Inductive tname :=
-  | TNConst (a : nat)
-  | TNVar (a : nat)
-  | TNSlot (p : tname) (b : nat) (i : nat).
-
-Record tpoint := TPt { tp_name : tname; tp_off : nat }.
-
-Global Instance tname_eq_dec : EqDecision tname.
-Proof. solve_decision. Defined.
-
-Global Instance tname_countable : Countable tname.
-Proof.
-  set (enc := fix go p : gen_tree nat :=
-    match p with
-    | TNConst a => GenNode 1 [GenLeaf a]
-    | TNVar a => GenLeaf a
-    | TNSlot p b i => GenNode 0 [go p; GenLeaf b; GenLeaf i]
-    end).
-  set (dec := fix go t : tname :=
-    match t with
-    | GenNode 1 [GenLeaf a] => TNConst a
-    | GenLeaf a => TNVar a
-    | GenNode 0 [t; GenLeaf b; GenLeaf i] => TNSlot (go t) b i
-    | _ => TNVar 0
-    end).
-  apply (inj_countable' enc dec).
-  intros p; induction p; simpl; congruence.
-Qed.
-
-Global Instance tpoint_eq_dec : EqDecision tpoint.
-Proof. solve_decision. Defined.
-
-Global Instance tpoint_countable : Countable tpoint.
-Proof.
-  apply (inj_countable' (λ x, (tp_name x, tp_off x)) (λ '(p, b), TPt p b)).
-  by intros [].
-Qed.
-
-Definition tp_shift (n : nat) (x : tpoint) : tpoint :=
-  TPt (tp_name x) (tp_off x + n).
-Definition tp_slot (x : tpoint) (i : nat) : tpoint :=
-  TPt (TNSlot (tp_name x) (tp_off x) i) 0.
-Definition tpvar (a : nat) : tpoint := TPt (TNVar a) 0.
-
-(** The embedding of type points into instants. *)
-Fixpoint emb_name (p : tname) : pname :=
-  match p with
-  | TNConst a => NConst a
-  | TNVar a => NVar a
-  | TNSlot p b i => NSlot (emb_name p) b i
-  end.
-
-Definition emb (x : tpoint) : point := Pt (emb_name (tp_name x)) (tp_off x).
-
-Lemma emb_shift n x : emb (tp_shift n x) = pt_shift n (emb x).
-Proof. done. Qed.
-
-Lemma emb_slot x i : emb (tp_slot x i) = pt_slot (emb x) i.
-Proof. done. Qed.
-
-Lemma emb_name_inj p q : emb_name p = emb_name q → p = q.
-Proof.
-  revert q. induction p; intros [] H; simpl in H; try discriminate;
-    injection H; intros; subst; f_equal; auto.
-Qed.
-
-Lemma emb_inj x y : emb x = emb y → x = y.
-Proof.
-  destruct x, y. unfold emb. simpl. intros H. injection H as H1 ->.
-  by apply emb_name_inj in H1 as ->.
-Qed.
+Definition pvar (a : nat) : point := Pt (NVar a) 0.
+Definition pconst (a : nat) : point := Pt (NConst a) 0.
 
 (** Instantiation of point variables. A name denotes the point at
     offset 0; the offset of a point adds on top. *)
-Fixpoint pn_inst (σ : nat → tpoint) (p : tname) : tpoint :=
+Fixpoint pn_inst (σ : nat → point) (p : pname) : point :=
   match p with
-  | TNConst a => TPt (TNConst a) 0
-  | TNVar a => σ a
-  | TNSlot p b i => tp_slot (tp_shift b (pn_inst σ p)) i
+  | NConst a => Pt (NConst a) 0
+  | NVar a => σ a
+  | NSlot p b i => pt_slot (pt_shift b (pn_inst σ p)) i
   end.
 
-Definition pt_inst (σ : nat → tpoint) (x : tpoint) : tpoint :=
-  tp_shift (tp_off x) (pn_inst σ (tp_name x)).
+Definition pt_inst (σ : nat → point) (x : point) : point :=
+  pt_shift (pt_off x) (pn_inst σ (pt_name x)).
 
 (** Lifting an instantiation under a binder of m point variables. *)
-Definition pup (m : nat) (σ : nat → tpoint) : nat → tpoint :=
-  λ a, if decide (a < m) then tpvar a
-       else pt_inst (λ a', tpvar (a' + m)) (σ (a - m)).
+Definition pup (m : nat) (σ : nat → point) : nat → point :=
+  λ a, if decide (a < m) then pvar a
+       else pt_inst (λ a', pvar (a' + m)) (σ (a - m)).
 
 (** The instantiation that sends the variable i to the i-th point of
     a list, and shifts the variables beyond it down. *)
-Definition plist (xs : list tpoint) : nat → tpoint :=
-  λ a, match xs !! a with Some x => x | None => tpvar (a - length xs) end.
+Definition plist (xs : list point) : nat → point :=
+  λ a, match xs !! a with Some x => x | None => pvar (a - length xs) end.
 
-(** The slots x[0], …, x[m-1] of a type point. *)
-Definition slots (x : tpoint) (m : nat) : list tpoint :=
-  (λ i, tp_slot x i) <$> seq 0 m.
+(** The slots x[0], …, x[m-1] of a point. *)
+Definition slots (x : point) (m : nat) : list point :=
+  (λ i, pt_slot x i) <$> seq 0 m.
 
 (** ** Types
 
@@ -181,13 +104,13 @@ Definition slots (x : tpoint) (m : nat) : list tpoint :=
 
 Inductive ty :=
   | TUnit                          (* ∗ *)
-  | TLolli (ub lb : option tpoint) (T U : ty)
+  | TLolli (ub lb : option point) (T U : ty)
                                    (* T ⊸^ub_lb U *)
   | TProd (T U : ty)               (* T ⊗ U *)
   | TSum (T U : ty)                (* T ⊕ U *)
   | TBox (n : nat) (T : ty)        (* □(∀ι₀ … ιₙ₋₁. T) — unlimited
                                       (replicable) values *)
-  | TSess (S : sty) (x : tpoint)   (* S@x *)
+  | TSess (S : sty) (x : point)   (* S@x *)
 with sty :=
   | SRcv (m : nat) (T : ty) (S : sty)
                                    (* ?(∃ι₀ … ιₘ₋₁. T).S *)
@@ -209,7 +132,7 @@ Combined Scheme ty_sty_mut_ind from ty_mut_ind, sty_mut_ind.
     T[σ]: instantiate the free point variables of T. Session types are
     left alone (see above), so this is a plain recursion on [ty]. *)
 
-Fixpoint pinst_ty (σ : nat → tpoint) (T : ty) : ty :=
+Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
   | TLolli ub lb T1 U =>
@@ -223,29 +146,29 @@ Fixpoint pinst_ty (σ : nat → tpoint) (T : ty) : ty :=
 
 (** T[xs/ιs]: instantiate the ∀ of a □ (or the ∃ of a payload) with a
     list of points. *)
-Definition ty_inst (xs : list tpoint) (T : ty) : ty := pinst_ty (plist xs) T.
+Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
 
-(** The payload ∃ι₀ … ιₘ₋₁. T at the type point x: P[x] = T[x[i]/ιᵢ]
+(** The payload ∃ι₀ … ιₘ₋₁. T at the point x: P[x] = T[x[i]/ιᵢ]
     (the signature of [recv]). The logical relation instead types a
-    payload at points aliased to the channel's slots in a world. *)
-Definition payload_at (m : nat) (T : ty) (x : tpoint) : ty :=
+    payload at points aliased to the slots of x in a world. *)
+Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
   ty_inst (slots x m) T.
 
-(** A list of type points aliased, in a world given by its ≡, to the
-    slots (c, k)[0], …, (c, k)[m-1] of a channel's instant. *)
-Definition slot_aliases (peq : point → point → Prop) (xs : list tpoint)
+(** A list of points aliased, in a world given by its ≡, to the slots
+    x[0], …, x[m-1] of a channel's current point x. *)
+Definition slot_aliases (peq : point → point → Prop) (xs : list point)
     (m : nat) (x : point) : Prop :=
-  length xs = m ∧ ∀ i y, xs !! i = Some y → peq (emb y) (pt_slot x i).
+  length xs = m ∧ ∀ i y, xs !! i = Some y → peq y (pt_slot x i).
 
 (** ** Heads
 
     The points at which a value of the type is next used:
     heads(S@ι) = {ι}, heads(T ⊸^β_λ U) = {λ} ∖ {⊤}, ∅ for ∗ and □. *)
 
-Definition opt_heads (o : option tpoint) : gset tpoint :=
+Definition opt_heads (o : option point) : gset point :=
   match o with Some x => {[x]} | None => ∅ end.
 
-Fixpoint heads (T : ty) : gset tpoint :=
+Fixpoint heads (T : ty) : gset point :=
   match T with
   | TUnit | TBox _ _ => ∅
   | TLolli _ lb _ _ => opt_heads lb
@@ -742,26 +665,27 @@ Lemma unlimited_box n T : unlimited (TBox n T).
 Proof. done. Qed.
 
 (** ** Session environments: finite maps from channels to session
-    types with counters, c : S@k, k the number of actions done on c.
+    types at points, c : S@x, x the channel's current point. Each
+    action on c moves x to x + 1.
     This is the process-level Σ, one end per channel.
 
     Splitting Σ = Σ1, Σ2 is disjoint union of the underlying maps. *)
 
 (** A notation rather than a definition, so that stdpp's map lemmas
     apply by keyed unification without unfolding. *)
-Notation senv := (gmap chan (sty * nat)).
+Notation senv := (gmap chan (sty * point)).
 
 Definition senv_split (Σ Σ1 Σ2 : senv) : Prop :=
   Σ = Σ1 ∪ Σ2 ∧ Σ1 ##ₘ Σ2.
 
-(** Σ assigns c a session type whose *unfolding* is u, at count k,
+(** Σ assigns c a session type whose *unfolding* is u, at point k,
     over the rest Σ1. Every clause of the logical relation that inspects a session
     type goes through this, which is what makes the relation respect
     µα.S = S[µα.S/α] without ever comparing environments up to that
     equation: the stored type is whatever it is, and only its head
     normal form is matched. On a non-contractive type [unfoldS] leaves
     a µ or a variable in head position, so no clause applies. *)
-Definition senv_hd (Σ : senv) (c : chan) (u : sty) (k : nat)
+Definition senv_hd (Σ : senv) (c : chan) (u : sty) (k : point)
     (Σ1 : senv) : Prop :=
   ∃ s, Σ = <[c := (s, k)]> Σ1 ∧ unfoldS s = u.
 
@@ -895,12 +819,12 @@ Ltac senv_perm :=
     name): after [new], and after receiving the other end of a channel
     the thread already holds. An entry of Θ is a channel with one end
     ([One]) or two ([Both]); the two ends of a [Both] are unordered,
-    and that they are dual at equal counts is stated where it is needed
+    and that they are dual at the same point is stated where it is needed
     ([Coequal.tenv_dual]). The process-level Σ embeds as [One]s. *)
 
 Inductive ends :=
-  | One (e : sty * nat)
-  | Both (e1 e2 : sty * nat).
+  | One (e : sty * point)
+  | Both (e1 e2 : sty * point).
 
 Notation tenv := (gmap chan ends).
 
@@ -911,7 +835,7 @@ Definition tenv_of (Σ : senv) : tenv := One <$> Σ.
     a channel apart: ready counts entries, not names. *)
 Notation ekey := (chan * bool)%type.
 
-Definition tenv_entry (Θ : tenv) (k : ekey) : option (sty * nat) :=
+Definition tenv_entry (Θ : tenv) (k : ekey) : option (sty * point) :=
   match Θ !! k.1, k.2 with
   | Some (One e), false => Some e
   | Some (Both e _), false => Some e
@@ -919,13 +843,13 @@ Definition tenv_entry (Θ : tenv) (k : ekey) : option (sty * nat) :=
   | _, _ => None
   end.
 
-(** head(c : S@k) = (c, k). *)
-Definition entry_head (k : ekey) (e : sty * nat) : point := pt_chan k.1 e.2.
+(** head(c : S@x) = x. *)
+Definition entry_head (k : ekey) (e : sty * point) : point := e.2.
 
 Definition ends_heads (c : chan) (o : ends) : gset point :=
   match o with
-  | One e => {[pt_chan c e.2]}
-  | Both e1 e2 => {[pt_chan c e1.2; pt_chan c e2.2]}
+  | One e => {[e.2]}
+  | Both e1 e2 => {[e1.2; e2.2]}
   end.
 
 Definition tenv_heads (Θ : tenv) : gset point :=
@@ -934,14 +858,14 @@ Definition tenv_heads (Θ : tenv) : gset point :=
 Definition senv_heads (Σ : senv) : gset point := tenv_heads (tenv_of Σ).
 
 (** Θ = Θ1, c : e. *)
-Definition tenv_ext (Θ1 : tenv) (c : chan) (e : sty * nat) (Θ : tenv)
+Definition tenv_ext (Θ1 : tenv) (c : chan) (e : sty * point) (Θ : tenv)
     : Prop :=
   (Θ1 !! c = None ∧ Θ = <[c := One e]> Θ1) ∨
   (∃ e', Θ1 !! c = Some (One e') ∧
      (Θ = <[c := Both e e']> Θ1 ∨ Θ = <[c := Both e' e]> Θ1)).
 
-(** The term-level [senv_hd]: Θ = Θ1, c : S@k with S unfolding to u. *)
-Definition tenv_hd (Θ : tenv) (c : chan) (u : sty) (k : nat) (Θ1 : tenv)
+(** The term-level [senv_hd]: Θ = Θ1, c : S@x with S unfolding to u. *)
+Definition tenv_hd (Θ : tenv) (c : chan) (u : sty) (k : point) (Θ1 : tenv)
     : Prop :=
   ∃ s, tenv_ext Θ1 c (s, k) Θ ∧ unfoldS s = u.
 
@@ -992,7 +916,7 @@ Qed.
     logical relation. Freshness of ι in [new] is a typing condition
     (Typing.v). *)
 
-Inductive konst_ty (peq plt : tpoint → tpoint → Prop) : konst → ty → Prop :=
+Inductive konst_ty (peq plt : point → point → Prop) : konst → ty → Prop :=
   | KTNew S x :
       konst_ty peq plt KNew
         (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) x)))
@@ -1001,17 +925,17 @@ Inductive konst_ty (peq plt : tpoint → tpoint → Prop) : konst → ty → Pro
         (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)
   | KTSend m T S x xs :
       length xs = m →
-      (∀ i y, xs !! i = Some y → peq y (tp_slot x i)) →
+      (∀ i y, xs !! i = Some y → peq y (pt_slot x i)) →
       (∀ h, h ∈ heads (ty_inst xs T) → plt x h) →
       konst_ty peq plt KSend
         (TLolli (Some x) None
            (TProd (ty_inst xs T) (TSess (SSnd m T S) x))
-           (TSess S (tp_shift 1 x)))
+           (TSess S (pt_shift 1 x)))
   | KTRecv m T S x :
       konst_ty peq plt KRecv
         (TLolli (Some x) None
            (TSess (SRcv m T S) x)
-           (TProd (payload_at m T x) (TSess S (tp_shift 1 x))))
+           (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))
   | KTClos x :
       konst_ty peq plt KClos (TLolli (Some x) None (TSess SEnd x) TUnit)
   | KTLink S x x' :
