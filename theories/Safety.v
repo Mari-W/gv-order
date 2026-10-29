@@ -439,7 +439,8 @@ Proof.
   { right. destruct (gmultiset_split1 _ _ He) as [E0 ->].
     destruct (asubjs_offers _ _ Hs) as (σ & Hσ & Hoff).
     destruct (act_offer _ _ (LSess σ) Ha Hoff) as [e' Hst].
-    exists (PSess σ), ((C ∖ sentc σ) ∪ backc σ E0, E0 ⊎ {[+ e' +]}).
+    exists (PSess σ),
+      ((C ∖ sentc σ) ∪ backc σ (E0 ⊎ {[+ e +]}), E0 ⊎ {[+ e' +]}).
     apply PStepSession; [done|by rewrite Hσ]. }
   (* P-Act-Msg: the receiver is retargeted to the value the sender emits *)
   destruct (decide (∃ e, e ∈ E ∧ ∃ c v, act e = Some (ASend c v) ∧ c ∈ C

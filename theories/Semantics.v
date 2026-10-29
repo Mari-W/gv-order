@@ -167,8 +167,8 @@ Definition sentc (σ : slabel) : gset chan :=
 
 (** Channels returning into the local scope due to a communication
     effect: an input c?v brings back those channels of the message v
-    whose other end is already held by the rest E of the soup. This is
-    the receiving half of the π-calculus Close rule. A channel can
+    whose other end is already held by the soup E before the step, the
+    receiving thread included. This is the receiving half of the π-calculus Close rule. A channel can
     travel back to the holder of its other end once P-Connect composes
     over cycles; restricting it at once keeps the process-level
     environment a map with one end per channel. *)
@@ -471,7 +471,7 @@ Inductive proc_step : proc → plabel → proc → Prop :=
       tstep e (LSess σ) e' →
       subjs σ ## C →
       proc_step (C, E ⊎ {[+ e +]}) (PSess σ)
-                ((C ∖ sentc σ) ∪ backc σ E, E ⊎ {[+ e' +]})
+                ((C ∖ sentc σ) ∪ backc σ (E ⊎ {[+ e +]}), E ⊎ {[+ e' +]})
   | PStepBeta C E e e' :                               (* P-Act-Beta *)
       tstep e LBeta e' →
       proc_step (C, E ⊎ {[+ e +]}) PTau (C, E ⊎ {[+ e' +]})
@@ -541,7 +541,7 @@ Lemma proc_step_sess_inv C E σ p' :
   proc_step (C, E) (PSess σ) p' →
   ∃ E0 e e',
     E = E0 ⊎ {[+ e +]} ∧ tstep e (LSess σ) e' ∧ subjs σ ## C ∧
-    p' = ((C ∖ sentc σ) ∪ backc σ E0, E0 ⊎ {[+ e' +]}).
+    p' = ((C ∖ sentc σ) ∪ backc σ E, E0 ⊎ {[+ e' +]}).
 Proof. intros H. inversion H; simplify_eq. eauto 10. Qed.
 
 (** ** Internalizing communication (Lemma 2.3)
@@ -580,17 +580,16 @@ Proof.
   by eapply PStepMsg.
 Qed.
 
-(** What an input does to the receiver's channel set: it only grows,
-    and only by channels of the message that the receiver's soup
+(** What an input does to the receiver's channel set: it grows by
+    exactly the channels of the message that the receiver's soup
     already mentions. *)
 Lemma proc_step_recv_chans C E C' E' c v :
   proc_step (C, E) (PSess (SRecv c v)) (C', E') →
-  C ⊆ C' ∧ C' ⊆ C ∪ (fchans v ∩ echans E).
+  C' = C ∪ (fchans v ∩ echans E).
 Proof.
   intros H.
   apply proc_step_sess_inv in H as (E0 & e & e' & -> & _ & _ & Heq).
-  simplify_eq. simpl. rewrite echans_disj_union, echans_singleton.
-  set_solver.
+  simplify_eq. simpl. set_solver.
 Qed.
 
 (** ** Internalizing a close
