@@ -316,6 +316,9 @@ C, dual and aliased. P-Term and P-Connect become lemmas that build decomposition
 the fundamental theorem for processes goes through the decomposition. A link renames
 or fuses keys inside single threads, one step each (an E-level substitution lemma that
 generalizes the paper's junk collapse). V, E and P are unchanged (§11).
+Rejected by the author: P-Connect stays a composition of two components, each in P
+with its own world. Replacement under discussion: an index budget with a component-level
+Internalizing a link lemma. No decomposition code was committed.
 
 ## From the earlier abandoned mechanization (spec §15)
 
