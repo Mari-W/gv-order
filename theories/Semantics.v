@@ -165,16 +165,6 @@ Definition subjs (σ : slabel) : gset chan :=
 Definition sentc (σ : slabel) : gset chan :=
   match σ with SSend _ v => fchans v | _ => ∅ end.
 
-(** Channels returning into the local scope due to a communication
-    effect: an input c?v brings back those channels of the message v
-    whose other end is already held by the soup E before the step, the
-    receiving thread included. This is the receiving half of the π-calculus Close rule. A channel can
-    travel back to the holder of its other end once P-Connect composes
-    over cycles; restricting it at once keeps the process-level
-    environment a map with one end per channel. *)
-Definition backc (σ : slabel) (E : gmultiset expr) : gset chan :=
-  match σ with SRecv _ v => fchans v ∩ echans E | _ => ∅ end.
-
 (** ** Basic lemmas *)
 
 Lemma val_head_step v α e' : head_step v α e' → is_val v → False.
@@ -471,7 +461,7 @@ Inductive proc_step : proc → plabel → proc → Prop :=
       tstep e (LSess σ) e' →
       subjs σ ## C →
       proc_step (C, E ⊎ {[+ e +]}) (PSess σ)
-                ((C ∖ sentc σ) ∪ backc σ (E ⊎ {[+ e +]}), E ⊎ {[+ e' +]})
+                (C ∖ sentc σ, E ⊎ {[+ e' +]})
   | PStepBeta C E e e' :                               (* P-Act-Beta *)
       tstep e LBeta e' →
       proc_step (C, E ⊎ {[+ e +]}) PTau (C, E ⊎ {[+ e' +]})
@@ -541,7 +531,7 @@ Lemma proc_step_sess_inv C E σ p' :
   proc_step (C, E) (PSess σ) p' →
   ∃ E0 e e',
     E = E0 ⊎ {[+ e +]} ∧ tstep e (LSess σ) e' ∧ subjs σ ## C ∧
-    p' = ((C ∖ sentc σ) ∪ backc σ E, E0 ⊎ {[+ e' +]}).
+    p' = (C ∖ sentc σ, E0 ⊎ {[+ e' +]}).
 Proof. intros H. inversion H; simplify_eq. eauto 10. Qed.
 
 (** ** Internalizing communication (Lemma 2.3)
@@ -555,12 +545,9 @@ Proof. intros H. inversion H; simplify_eq. eauto 10. Qed.
     subtracts sentc(c!v); that spot is marked "XXX (not yet)" in the
     margin, and is not derivable from Fig. 3 as stated).
 
-    The receiving side's own channel set grows by backc(c?v) on its
-    own ([proc_step_recv_chans]): those are channels of v whose other
-    end the receiver already holds. Both ends then occur free in the
-    two components, so in the composite they are already in the cut
-    C0 between them, and the composite's channel set C1 ∪ C2 ∪ C0 is
-    unchanged. *)
+    The composite's channel set is C1 ∪ C2 ∪ C0, with C0 the cut
+    between the two components (P-Connect composes over a set of
+    channels); P-Act-Msg leaves it unchanged. *)
 
 Lemma internalize_comm C0 C1 E1 C1' E1' C2 E2 C2' E2' c v :
   proc_step (C1, E1) (PSess (SSend c v)) (C1', E1') →
@@ -578,18 +565,6 @@ Proof.
   assert (F1 ⊎ {[+ e' +]} ⊎ (F2 ⊎ {[+ f' +]})
           = (F1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}) as -> by multiset_solver.
   by eapply PStepMsg.
-Qed.
-
-(** What an input does to the receiver's channel set: it grows by
-    exactly the channels of the message that the receiver's soup
-    already mentions. *)
-Lemma proc_step_recv_chans C E C' E' c v :
-  proc_step (C, E) (PSess (SRecv c v)) (C', E') →
-  C' = C ∪ (fchans v ∩ echans E).
-Proof.
-  intros H.
-  apply proc_step_sess_inv in H as (E0 & e & e' & -> & _ & _ & Heq).
-  simplify_eq. simpl. set_solver.
 Qed.
 
 (** ** Internalizing a close
