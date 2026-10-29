@@ -152,7 +152,8 @@ offered and can synchronize, so that state is not stable.
 ```
 V-Unit    ∗ ∈ V^W_n⟦· ⊢ ∗⟧
 V-Chan    c ∈ V^W_n⟦c : S@x ⊢ S′@y⟧            if S ≈ S′ and x ≡_W y                     [changed]
-V-Const   k ∈ V^W_n⟦· ⊢ T⟧                     if k : T  (instance of its signature)
+V-Const   k ∈ V^W_n⟦· ⊢ T⟧                     if k : T₀ (instance of its signature) and T₀ ≈_W T
+          (≈_W: ≈ with ground points compared up to ≡_W; needed for Type point conversion)   [changed]
 V-Pair    v₁ ∈ V^W_n⟦Σ₁ ⊢ T⟧   v₂ ∈ V^W_n⟦Σ₂ ⊢ U⟧   ⇒   ⟨v₁, v₂⟩ ∈ V^W_n⟦Σ₁, Σ₂ ⊢ T ⊗ U⟧
 V-Inj     v ∈ V^W_n⟦Σ ⊢ Tᵢ⟧   ⇒   injᵢ v ∈ V^W_n⟦Σ ⊢ T₁ + T₂⟧
 V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)                                      [changed]
@@ -177,7 +178,7 @@ E-Step    ¬irred t    ready_W(Θ, t)    frame_W(t, F)                          
           ⇒   t ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
 
 O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
-O-New     ∃a ∉ names(W), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
+O-New     ∃a ∉ names(W) ∪ points(Θ, T, F), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
           (the created channel name needs no condition, only its point is fresh)               [new]
 O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^u_ℓ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧       [new]
 O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@x     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[x]⟧                          [changed]
@@ -205,7 +206,8 @@ them. Gone with decision N: the α-variant at a receive (E), the freshness of re
 names, the name guard at new and the invisible-names condition of Q-Tau.
 
 Q-Tau     p —τ→ p′    ∃W′ ⊒ₒ W.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧                                     [changed]
-          (W′ places the points of channels the step creates. The paper's Q-Tau is W′ = W.)
+          (W′ places the points N of channels the step creates, N # names(W) ∪ points(Σ, T).
+           The paper's Q-Tau is W′ = W.)
 Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)                                       [changed]
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Σ₂ dual to (Σ₁, c : S@(x+1)) on their overlap B.
               (C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(x+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧

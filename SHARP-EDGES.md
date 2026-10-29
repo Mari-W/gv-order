@@ -265,6 +265,17 @@ action. It replaces the separate alias notation. Arrows are written T ⊸^u_ℓ 
 again, because β and λ also name a label and abstraction. Found while updating
 gvsharp-orders.lagda (§4, §5, §7, §9, §10).
 
+**39. (O) A fresh point must also avoid the environment's points.**
+O-New only asked a ∉ names(W). An environment may mention points outside W's
+support, so in monotonicity (W ⊑ W′) the chosen a can be known to W′, and
+renaming it away also renames its occurrences in Θ, T, F.
+Decision (O1, Claude, delegated): the new point is fresh for W and for the
+points of Θ, T, F (Q-Tau: of Σ, T). A prover can always pick a globally fresh
+constant. Rejected: a scoping invariant roots(Θ, T, F) ⊆ names(W) (O2), which
+threads through every statement. Also from this round: V-Const reads the
+signature up to ≡_W, because payloads by substitution fix recv's payload at the
+slots of the session point and Type point conversion must move them (§7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
