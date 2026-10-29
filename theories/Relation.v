@@ -176,10 +176,12 @@ Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
 
     Restricted names are bound. An α-variant of a process renames its
     restricted names, one at a time, to names that capture nothing:
-    absent from the process, outside the interface Σ, and unknown to
-    the world before the step (decisions I1, J1): the world after the
-    step may then carry facts about them, e.g. about a renamed new
-    channel. *)
+    absent from the process, outside the interface Σ, and fresh for
+    every fact the process did not add itself (decisions I1, J1, K1):
+    for Q-Tau the world before the step (the world after it may carry
+    facts about them, e.g. about a renamed new channel), for Q-Recv
+    the environment's world the continuation lives in, otherwise the
+    current world. *)
 
 Definition wfresh (W : world) (c : chan) : Prop :=
   ∀ p, p ∈ w_names W → pn_root p ≠ NChan c.
@@ -240,7 +242,7 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
                 recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
                 slot_aliases (w_eq W') xs m (pt_chan c k) →
                 lV (below j) W' Θ2 (ty_inst xs U) w →
-                ∃ q, walpha W (recv_env (<[c := (s, S k)]> Σ1) Θ2)
+                ∃ q, walpha W' (recv_env (<[c := (s, S k)]> Σ1) Θ2)
                  (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
                   lP (below j) W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
         | PSess (SSend c w) =>                         (* Q-Send *)
@@ -576,7 +578,7 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
           recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
           slot_aliases (w_eq W') xs m (pt_chan c k) →
           Vrel j W' Θ2 (ty_inst xs U) w →
-          ∃ q, walpha W (recv_env (<[c := (s, S k)]> Σ1) Θ2)
+          ∃ q, walpha W' (recv_env (<[c := (s, S k)]> Σ1) Θ2)
                  (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
             Prel j W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
   | PSess (SSend c w) =>

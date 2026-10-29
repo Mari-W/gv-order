@@ -1163,7 +1163,7 @@ Proof.
         apply (walpha_pswap a b) in Hal. unfold pswap at 1 in Hal; simpl in Hal.
         rewrite gswap_union, <-recv_back_swap, <-recv_env_swap, tenvswap_involutive,
           senvswap_insert in Hal.
-        eapply walpha_wsame; [exact HS|exact Hal].
+        eapply walpha_wsame; [apply Hrt|exact Hal].
     + (* send *)
       destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & xs & Hhd &
                          Hd0v & Hc0 & Hcv & Hdom & Hsplit & HdΣ & Hxs & HVw & HP').
