@@ -15,9 +15,9 @@ theories/Convert.v
 theories/Monotone.v
 theories/Equivariance.v
 theories/Chain.v
+theories/Junk.v
 theories/Terms.v
 theories/Renaming.v
-theories/Junk.v
 theories/Composition.v
 theories/composition/Term.v
 theories/composition/Independence.v
