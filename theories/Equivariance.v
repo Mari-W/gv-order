@@ -758,28 +758,7 @@ Section ready.
     by apply (H Hs _ _ Ho E0).
   Qed.
 
-  Lemma tau_link_alias_swap W' Σ p p' :
-    tau_link_alias W' Σ p p' →
-    tau_link_alias (wswap a b W') (senvswap a b Σ) (pswap a b p) (pswap a b p').
-  Proof.
-    intros H E e c d e' Hp Hst Hc Hd Hp'.
-    assert (p.2 = msswap a b E ⊎ {[+ eswap a b e +]}) as Hp0.
-    { rewrite <-(msswap_involutive a b p.2). destruct p; simpl in *.
-      by rewrite Hp, msswap_disj_union, msswap_singleton. }
-    apply (tstep_eswap a b) in Hst. simpl in Hst. rewrite gswap_upair in Hst.
-    rewrite dom_senvswap, elem_of_gswap' in Hc.
-    destruct p as [C0 E0]; simpl in *. rewrite elem_of_gswap' in Hd.
-    assert (p' = (C0 ∖ {[cswap a b d]},
-                  echsubst (cswap a b d) (cswap a b c)
-                    (msswap a b E ⊎ {[+ eswap a b e' +]}))) as Hp''.
-    { rewrite <-(pswap_involutive a b p'), Hp'. unfold pswap; simpl.
-      rewrite gswap_difference, gswap_singleton, gswap_involutive,
-        echsubst_msswap, msswap_disj_union, msswap_singleton. done. }
-    destruct (H _ _ _ _ _ Hp0 Hst Hc Hd Hp'') as (s & k & j & Hs & Hw).
-    exists s, k, j. split.
-    - by rewrite lookup_senvswap', Hs.
-    - simpl. by rewrite !ptswap_chan.
-  Qed.
+
 End ready.
 
 (** World equivalence leaves readiness, frames and aliases alone. *)
@@ -805,13 +784,7 @@ Proof.
   intros (_ & _ & Hl) H Hs k e Ho He y Hy. apply Hl. by eapply H.
 Qed.
 
-Lemma tau_link_alias_wsame W1 W2 Σ p p' :
-  wsame W1 W2 → tau_link_alias W1 Σ p p' → tau_link_alias W2 Σ p p'.
-Proof.
-  intros (_ & He & _) H E e c d e' ? ? ? ? ?.
-  destruct (H E e c d e') as (s & k & j & ? & ?); [done..|].
-  exists s, k, j. split; [done|]. by apply He.
-Qed.
+
 
 (** ** Small transport facts used by the main lemma *)
 
@@ -1122,19 +1095,15 @@ Proof.
     { destruct π; simpl; by rewrite ?slswap_involutive. }
     destruct (plswap a b π) as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* τ *)
-      intros Hd Hf.
-      destruct p as [C E], q as [Cq Eq]; simpl in *.
-      destruct Hstep as (W1 & Hinv & Hal & HP').
-      { rewrite dom_senvswap in Hd. by apply gswap_disjoint_iff in Hd. }
-      { intros c Hc Hc' HcW. apply (Hf (cswap a b c)).
-        - by apply elem_of_gswap.
-        - by rewrite elem_of_gswap.
-        - destruct HS as (<- & _). by apply nchan_names_swap. }
-      exists (wswap a b W1). split_and!.
+      intros Hd.
+      destruct Hstep as (W1 & q0 & Hal & Hinv & HP').
+      { destruct q as [Cq Eq]; simpl in *.
+        rewrite dom_senvswap in Hd. by apply gswap_disjoint_iff in Hd. }
+      exists (wswap a b W1), (pswap a b q0). split_and!.
+      * by apply alpha_pswap.
       * apply (wext_inv_wswap a b) in Hinv.
         rewrite names_nchan_swap, gswap_union in Hinv.
         eapply wext_inv_wsame; [exact HS|apply wsame_refl|exact Hinv].
-      * apply (tau_link_alias_swap a b) in Hal. exact Hal.
       * by apply (IHP n' ltac:(lia) W1).
     + (* recv *)
       destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
@@ -1182,17 +1151,20 @@ Proof.
         rewrite <-ptswap_chan. by apply slot_aliases_wswap.
       * apply (HV W W') in HVw; [|done].
         by rewrite tenvswap_union, tenvswap_of in HVw.
-      * apply (IHP n' ltac:(lia) W W') in HP'; [|done].
-        by rewrite senvswap_insert, senvswap_union in HP'.
+      * destruct HP' as (q0 & Hal & HP').
+        apply (IHP n' ltac:(lia) W W') in HP'; [|done].
+        rewrite senvswap_insert, senvswap_union in HP'.
+        exists (pswap a b q0). split; [by apply alpha_pswap|done].
     + (* close *)
-      destruct Hstep as (Σ1 & k & Hhd & Hc & HP').
+      destruct Hstep as (Σ1 & k & Hhd & Hc & q0 & Hal & HP').
       exists (senvswap a b Σ1), k. split_and!.
       * by apply (senv_hd_swap a b _ _ SEnd).
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
-      * by apply (IHP n' ltac:(lia) W).
+      * exists (pswap a b q0). split; [by apply alpha_pswap|].
+        by apply (IHP n' ltac:(lia) W).
     + (* link *)
       destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
-                         -> & Hne & -> & Hc1 & Hd1 & Hdu & Hal & HP').
+                         -> & Hne & -> & Hc1 & Hd1 & Hdu & Hal' & q0 & Hal & HP').
       exists (cswap a b c), (cswap a b d), (senvswap a b Σ1), sc,
         sd, kc, kd.
       split_and!.
@@ -1204,7 +1176,8 @@ Proof.
       * done.
       * destruct HS as (_ & He & _). apply He. rewrite <-!ptswap_chan.
         by apply wswap_eq.
-      * by apply (IHP n' ltac:(lia) W).
+      * exists (pswap a b q0). split; [by apply alpha_pswap|].
+        by apply (IHP n' ltac:(lia) W).
 Qed.
 
 Lemma Vrel_swap a b n W Θ T v :

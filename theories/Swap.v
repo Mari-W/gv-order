@@ -454,3 +454,14 @@ Lemma alpha_trans p q r : alpha p q → alpha q r → alpha p r.
 Proof.
   induction 1; [done|]. intros Hr. econstructor; eauto.
 Qed.
+
+(** Runs and safety transport along α-variants. *)
+Lemma alpha_nsteps p q m r :
+  alpha p q → nsteps preduction m p r →
+  ∃ r', nsteps preduction m q r' ∧ (safe r' → safe r).
+Proof.
+  intros Hal. revert m r. induction Hal as [p|p q a b _ _ _ _ IH]; intros m r Hr.
+  - by exists r.
+  - destruct (IH m (pswap a b r)) as (r' & Hr' & Hs); [by apply nsteps_pswap|].
+    exists r'. split; [done|]. intros H. apply (safe_pswap_iff a b). by apply Hs.
+Qed.
