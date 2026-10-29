@@ -28,8 +28,9 @@ Record world := World {
 }.
 
 (** The root name of a point: a slot ι[i] belongs to the name of ι.
-    The support is counted on root names (point constants), so that slot congruence does not need infinitely many
-    slot names in a finite support. *)
+    The support is a set of root names (point constants), so that
+    slot congruence does not need infinitely many slot names in a
+    finite support. *)
 Fixpoint pn_root (p : pname) : pname :=
   match p with
   | NSlot q _ _ => pn_root q
@@ -97,7 +98,8 @@ Record world_wf (W : world) : Prop := {
   wf_lt_eq x x' y y' : w_eq W x x' → w_lt W x' y' → w_eq W y' y → w_lt W x y;
   wf_lt_po x : w_lt W x (pt_shift 1 x);
   wf_eq_supp x y : w_eq W x y → eq_or_supp (w_names W) x y;
-  wf_lt_supp x y : w_lt W x y → po_or_supp (w_names W) x y
+  wf_lt_supp x y : w_lt W x y → po_or_supp (w_names W) x y;
+  wf_names_root p : p ∈ w_names W → pn_root p = p
 }.
 
 Definition strict (W : world) : Prop :=
@@ -173,11 +175,12 @@ Proof.
 Qed.
 
 Lemma wgen_wf N E L :
+  (∀ p, p ∈ N → pn_root p = p) →
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   world_wf (wgen N E L).
 Proof.
-  intros HE HL. split; simpl.
+  intros HN HE HL. split; simpl; [..|done].
   - apply geq_refl.
   - apply geq_sym.
   - apply geq_trans.
@@ -232,6 +235,7 @@ Proof. unfold po_or_supp. set_solver. Qed.
 Lemma wjoin_wf W1 W2 : world_wf W1 → world_wf W2 → world_wf (wjoin W1 W2).
 Proof.
   intros H1 H2. apply wgen_wf.
+  - intros p [Hp|Hp]%elem_of_union; [by apply H1|by apply H2].
   - intros x y [Hxy|Hxy].
     + eapply (eq_or_supp_mono (w_names W1)); [set_solver|].
       by apply (wf_eq_supp _ H1).
@@ -293,6 +297,7 @@ Proof.
     destruct Hs as [?|[??]]; [by left|].
     destruct Hxy as [?|[??]]; [by left|].
     right. split; by apply elem_of_intersection.
+  - intros p [Hp _]%elem_of_intersection. by apply HW.
 Qed.
 
 (** An alias is just ≡, because ≡ is closed under shifting. *)
@@ -682,6 +687,8 @@ Proof.
     [done|naive_solver|naive_solver|].
   split.
   - apply wgen_wf.
+    + intros p [Hp|Hp]%elem_of_union; apply (wf_names_root _ HW'); [|done].
+      by apply Hn.
     + intros x y H. assert (w_eq W' x y) as H' by (destruct H; auto).
       eapply eq_or_supp_mono; [|by apply (wf_eq_supp _ HW')].
       apply union_subseteq_r.

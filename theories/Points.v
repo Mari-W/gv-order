@@ -320,6 +320,7 @@ Proof.
   - intros x. apply Hl, HW.
   - intros x y. rewrite <-He, <-Hn. apply HW.
   - intros x y. rewrite <-Hl, <-Hn. apply HW.
+  - intros p. rewrite <-Hn. apply HW.
 Qed.
 
 Lemma wsame_strict W1 W2 : wsame W1 W2 → strict W1 → strict W2.
@@ -396,6 +397,9 @@ Section wsw.
     - intros H. apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[Hx Hy]].
       + left. split; [|done]. by apply (pnsw_inj a b).
       + right. rewrite !elem_of_names_sw', <-!pt_root_sw. done.
+    - intros Hp. apply elem_of_names_sw' in Hp. apply (wf_names_root _ HW) in Hp.
+      rewrite <-(pnsw_involutive a b p) at 2. rewrite <-Hp, <-pn_root_sw.
+      by rewrite pnsw_involutive.
   Qed.
 
   Lemma wsw_strict W : strict W → strict (wsw a b W).
@@ -1246,3 +1250,171 @@ Proof. apply (rel_psw a b n). apply wsame_refl. Qed.
 Lemma Prel_psw a b n W Σ T p :
   Prel n W Σ T p → Prel n (wsw a b W) (senvsw a b Σ) (tysw a b T) p.
 Proof. apply (rel_psw a b n). apply wsame_refl. Qed.
+
+(** ** Transpositions of names nobody mentions *)
+
+Lemma nswap_r a b : nswap a b b = a.
+Proof. unfold nswap. repeat case_decide; congruence. Qed.
+
+Section fixed.
+  Context (a b : nat).
+
+  Lemma pnsw_fix p :
+    pn_root p ≠ NConst a → pn_root p ≠ NConst b → pnsw a b p = p.
+  Proof.
+    induction p; simpl; intros Ha Hb; try done.
+    - f_equal. apply nswap_ne; congruence.
+    - f_equal. by apply IHp.
+  Qed.
+
+  Lemma ptsw_fix x :
+    pt_root x ≠ NConst a → pt_root x ≠ NConst b → ptsw a b x = x.
+  Proof. intros. destruct x. unfold ptsw. simpl. by rewrite pnsw_fix. Qed.
+
+  Lemma tysw_fix_mut :
+    (∀ T, NConst a ∉ ty_roots T → NConst b ∉ ty_roots T → tysw a b T = T) ∧
+    (∀ s, NConst a ∉ sty_roots s → NConst b ∉ sty_roots s → stysw a b s = s).
+  Proof.
+    apply ty_sty_mut_ind; simpl; intros; try done; f_equal;
+      try (apply H; set_solver); try (apply H0; set_solver);
+      try (apply ptsw_fix; set_solver).
+    - destruct ub; simpl; [|done]. f_equal. apply ptsw_fix; set_solver.
+    - destruct lb; simpl; [|done]. f_equal. apply ptsw_fix; set_solver.
+  Qed.
+
+  Lemma tysw_fix T : NConst a ∉ ty_roots T → NConst b ∉ ty_roots T → tysw a b T = T.
+  Proof. apply tysw_fix_mut. Qed.
+
+  Lemma esw_fix e :
+    NConst a ∉ entry_roots e → NConst b ∉ entry_roots e → esw a b e = e.
+  Proof.
+    destruct e as [s x]. unfold entry_roots, esw. simpl. intros Ha Hb.
+    rewrite (proj2 tysw_fix_mut), ptsw_fix; set_solver.
+  Qed.
+
+  Lemma endsw_fix o :
+    NConst a ∉ ends_roots o → NConst b ∉ ends_roots o → endsw a b o = o.
+  Proof. destruct o; simpl; intros; by rewrite !esw_fix by set_solver. Qed.
+
+  Lemma tenvsw_fix Θ :
+    NConst a ∉ tenv_roots Θ → NConst b ∉ tenv_roots Θ → tenvsw a b Θ = Θ.
+  Proof.
+    intros Ha Hb. apply map_eq. intros c. rewrite lookup_tenvsw.
+    destruct (Θ !! c) as [o|] eqn:E; simpl; [|done]. f_equal.
+    apply endsw_fix; intros Hin; [apply Ha|apply Hb];
+      apply elem_of_tenv_roots; eauto.
+  Qed.
+
+  Lemma senvsw_fix Σ :
+    NConst a ∉ senv_roots Σ → NConst b ∉ senv_roots Σ → senvsw a b Σ = Σ.
+  Proof.
+    intros Ha Hb. apply map_eq. intros c. rewrite lookup_senvsw.
+    destruct (Σ !! c) as [e|] eqn:E; simpl; [|done]. f_equal.
+    apply esw_fix; intros Hin; [apply Ha|apply Hb]; apply elem_of_tenv_roots;
+      exists c, (One e); unfold tenv_of; by rewrite lookup_fmap, E.
+  Qed.
+
+  Lemma set_ptsw_fix F :
+    NConst a ∉ frame_roots F → NConst b ∉ frame_roots F → set_map (ptsw a b) F = F.
+  Proof.
+    intros Ha Hb. apply set_eq. intros x. rewrite elem_of_map. split.
+    - intros (y & -> & Hy). rewrite ptsw_fix; [done| |];
+        intros E; [apply Ha|apply Hb]; rewrite <-E; by apply elem_of_map_2.
+    - intros Hx. exists x. rewrite ptsw_fix; [done| |];
+        intros E; [apply Ha|apply Hb]; rewrite <-E; by apply elem_of_map_2.
+  Qed.
+
+  (** A world that knows neither constant is fixed by their
+      transposition. *)
+  Lemma wsw_fix W :
+    world_wf W → NConst a ∉ w_names W → NConst b ∉ w_names W →
+    wsame (wsw a b W) W.
+  Proof.
+    intros HW Ha Hb.
+    assert (∀ x, pt_root x = NConst a ∨ pt_root x = NConst b → pt_root x ∉ w_names W)
+      as Hout by (intros x [-> | ->]; done).
+    assert (∀ x, (pt_root x ≠ NConst a ∧ pt_root x ≠ NConst b) ∨
+                 pt_root x = NConst a ∨ pt_root x = NConst b) as Hcase.
+    { intros x. destruct (decide (pt_root x = NConst a)); [by right; left|].
+      destruct (decide (pt_root x = NConst b)); [by right; right|by left]. }
+    assert (∀ x, pt_root x = NConst a ∨ pt_root x = NConst b →
+              pt_root (ptsw a b x) = NConst a ∨ pt_root (ptsw a b x) = NConst b)
+      as Hsw.
+    { intros x [Hx|Hx]; rewrite pt_root_sw, Hx; simpl;
+        [rewrite nswap_l; by right|rewrite nswap_r; by left]. }
+    assert (∀ p, p ∈ w_names W → pnsw a b p = p) as Hfixn.
+    { intros p Hp. pose proof (wf_names_root _ HW p Hp) as Hr.
+      apply pnsw_fix; rewrite Hr; intros ->; done. }
+    split_and!.
+    - apply set_eq. intros p. simpl. rewrite elem_of_names_sw'. split; intros Hp.
+      + assert (pnsw a b (pnsw a b p) = pnsw a b p) as E by (by apply Hfixn).
+        rewrite pnsw_involutive in E. by rewrite E.
+      + by rewrite Hfixn.
+    - intros x y. simpl.
+      destruct (Hcase x) as [[Hxa Hxb]|Hx];
+        [destruct (Hcase y) as [[Hya Hyb]|Hy]|].
+      + by rewrite !ptsw_fix.
+      + split; intros H.
+        * apply (wf_eq_supp _ HW) in H as [H|[_ H]];
+            [|by destruct (Hout _ (Hsw _ Hy))].
+          apply (ptsw_inj a b) in H as ->. apply HW.
+        * apply (wf_eq_supp _ HW) in H as [->|[_ H]]; [apply HW|].
+          by destruct (Hout _ Hy).
+      + split; intros H.
+        * apply (wf_eq_supp _ HW) in H as [H|[H _]];
+            [|by destruct (Hout _ (Hsw _ Hx))].
+          apply (ptsw_inj a b) in H as ->. apply HW.
+        * apply (wf_eq_supp _ HW) in H as [->|[H _]]; [apply HW|].
+          by destruct (Hout _ Hx).
+    - intros x y. simpl.
+      destruct (Hcase x) as [[Hxa Hxb]|Hx];
+        [destruct (Hcase y) as [[Hya Hyb]|Hy]|].
+      + by rewrite !ptsw_fix.
+      + split; intros H.
+        * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[_ H]];
+            [|by destruct (Hout _ (Hsw _ Hy))].
+          apply wf_lt_same; [done| |done]. by apply (pnsw_inj a b).
+        * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[_ H]]; [|by destruct (Hout _ Hy)].
+          apply wf_lt_same; [done|simpl; by rewrite Hn|done].
+      + split; intros H.
+        * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[H _]];
+            [|by destruct (Hout _ (Hsw _ Hx))].
+          apply wf_lt_same; [done| |done]. by apply (pnsw_inj a b).
+        * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[H _]]; [|by destruct (Hout _ Hx)].
+          apply wf_lt_same; [done|simpl; by rewrite Hn|done].
+  Qed.
+End fixed.
+
+(** The point a term creates at [new] can be renamed to any constant
+    that is fresh for the world and for the points of Θ, T and F. *)
+Lemma Erel_new_rename n W W1 Θ T F e c s s' a0 a1 :
+  world_wf W → wext_fresh W {[NConst a0]} W1 →
+  NConst a0 ∉ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F →
+  NConst a1 ∉ w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F →
+  Erel n W1 (<[c := Both (s, pconst a0) (s', pconst a0)]> Θ) T F e →
+  ∃ W1', wext_fresh W {[NConst a1]} W1' ∧
+    Erel n W1' (<[c := Both (stysw a0 a1 s, pconst a1) (stysw a0 a1 s', pconst a1)]> Θ)
+      T F e.
+Proof.
+  intros HW Hfr Ha0 Ha1 HE.
+  assert (NConst a0 ∉ w_names W) as Ha0W by (destruct Hfr as (_ & HN & _); set_solver).
+  exists (wsw a0 a1 W1). split.
+  - apply (wext_fresh_wsw a0 a1) in Hfr. rewrite set_map_singleton_L in Hfr.
+    simpl in Hfr. rewrite nswap_l in Hfr.
+    eapply wext_fresh_wsame; [|apply wsame_refl|exact Hfr].
+    apply wsw_fix; [done|done|set_solver].
+  - apply (Erel_psw a0 a1) in HE.
+    rewrite tenvsw_insert, tenvsw_fix, tysw_fix, set_ptsw_fix in HE by set_solver.
+    assert (∀ s0, esw a0 a1 (s0, pconst a0) = (stysw a0 a1 s0, pconst a1)) as Hes.
+    { intros s0. unfold esw. simpl. by rewrite ptsw_pconst, nswap_l. }
+    cbn [endsw] in HE. by rewrite !Hes in HE.
+Qed.
+
+(** There is always a constant outside a finite set of names. *)
+Lemma fresh_const (X : gset pname) : ∃ a, NConst a ∉ X.
+Proof.
+  set (C := list_to_set (omap (λ p, match p with NConst a => Some a | _ => None end)
+                                (elements X)) : gset nat).
+  exists (fresh C). intros Hin. apply (is_fresh C). subst C.
+  apply elem_of_list_to_set, list_elem_of_omap. eexists. split; [by apply elem_of_elements|]. done.
+Qed.
