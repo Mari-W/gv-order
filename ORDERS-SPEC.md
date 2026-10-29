@@ -350,6 +350,15 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
                    a message instantiates Q-Recv with W₁ ⊔ W₂ (the sender's alias names the payload),
                    new by Fresh extension and Renaming points,  link by Internalizing a link and Entry conversion
 
+            index budget (plan A, sharp edges 42): inside the proof, components in P at index 4^n give
+            the composite in P at n. A link of two cut channels fuses the other ends inside one component
+            by Internalizing a link (a synchronization there costs two of its steps).
+Internalizing a link (component level)
+            prim T,  p ∈ P^W_{2n}⟦Σ, c : S̄@x, d : S@y⟧,  x ≡_W y   ⇒   (C ∪ {d}, E[d/c]) ∈ P^W_n⟦Σ ⊢ T⟧
+            proof: each step of the fused process is at most two steps of p (a synchronization on d is
+            c!v then d?v); readiness by the chain argument (the two ends are never both offered in a
+            stable fused process); prim T rules out a terminated p that returns the two ends.
+
 P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalgam is a subset of the full one)
             Σᵢ, Σ_Cᵢ ⊨_{Wᵢ} (Cᵢ, Eᵢ) : Tᵢ  (i = 1 … n),  exactly one Tᵢ = T, all others ∗,
             the Σ_Cᵢ together hold both ends of every channel in C₀, each end once, dual,

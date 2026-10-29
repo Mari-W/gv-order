@@ -317,8 +317,14 @@ the fundamental theorem for processes goes through the decomposition. A link ren
 or fuses keys inside single threads, one step each (an E-level substitution lemma that
 generalizes the paper's junk collapse). V, E and P are unchanged (§11).
 Rejected by the author: P-Connect stays a composition of two components, each in P
-with its own world. Replacement under discussion: an index budget with a component-level
-Internalizing a link lemma. No decomposition code was committed.
+with its own world. No decomposition code was committed.
+Adopted (plan A, author): an index budget. P-Connect is stated at ⊨ level; inside, the
+components at index 4^n give the composite at n. A composite step costs each component
+at most one step plus at most one halving, because a link fuses one pair. A budget that
+grows with the cut size k fails, since delegating a restricted channel over the cut
+enlarges k. It rests on Internalizing a link at component level: for prim T,
+p ∈ P^W_{2n}⟦Σ, c : S̄@x, d : S@y⟧ with x ≡ y gives (C ∪ {d}, E[d/c]) ∈ P^W_n⟦Σ ⊢ T⟧.
+prim T is needed: a terminated p returning ⟨c, d⟩ fuses into a stuck (C ∪ {d}, ⟨d, d⟩).
 
 ## From the earlier abandoned mechanization (spec §15)
 
