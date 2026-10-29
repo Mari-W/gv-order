@@ -40,7 +40,13 @@ T-Act-Spawn     spawn v                    —⇑v→     ∗                   
 T-Act-Recv      recv c                     —c?v→    ⟨v, c⟩
 T-Act-Send      send ⟨v, c⟩                —c!v→    c
 T-Act-Close     close c                    —c!→     ∗
-T-Act-Link      link ⟨c, d⟩                —c↔d→    ∗
+T-Act-Link      link ⟨c, d⟩                —β→      fwd c d      (c ≠ d)               [changed]
+T-Act-LinkSelf  link ⟨c, c⟩                —c↔c→    ∗            (releases c, as in the paper)
+T-Act-Fwd       fwd c d                    —c?v→    relay v c d     (symmetrically from d to c)
+                relay v c d                —d!v→    fwd c d
+                fwd c d                    —c!→     fin d           (symmetrically)
+                fin d                      —d!→     ∗
+                fwd, relay, fin are runtime forms; their encoding is an implementation choice.
 T-Act-Ctx       t —λ→ t′   ⇒   𝒦[t] —λ→ 𝒦[t′]
 ```
 
@@ -52,10 +58,16 @@ P-Act-Spawn     t —⇑v→ t′                   (C, E ⊎ {t}) —τ→ (C, 
 P-Act-Beta      t —β→ t′                    (C, E ⊎ {t}) —τ→ (C, E ⊎ {t′})
 P-Act-Msg       t —c!v→ t′   u —c?v→ u′     (C, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
 P-Act-Close     t —c!→ t′    u —c!→ u′      (C ⊍ {c}, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
-P-Act-Link      t —c↔d→ t′                  (C ⊍ {c}, E ⊎ {t}) —τ→ (C, (E ⊎ {t′})[d/c])
+P-Act-LinkSelf  t —c↔c→ t′                  (C ⊍ {c}, E ⊎ {t}) —τ→ (C, E ⊎ {t′})            [changed]
 P-Act-Session   t —σ→ t′   fc(σ) # C        (C, E ⊎ {t}) —σ→ (C ∖ sent(σ), E ⊎ {t′})      unchanged
                                                                    [removed] P-Act-Fork
 ```
+
+Link is a forwarder (decision of the author, 2026-10-29): link ⟨c, d⟩ turns into a thread
+that relays every message between c and d. There is no channel substitution anywhere in
+the LTS, so no junk lemma, no renaming along an alias and no internalizing-a-link lemma
+are needed. A self-link releases the channel as in the paper (no substitution either).
+The reduction semantics and Harmony change accordingly.
 
 With multi-channel P-Connect (cycles) a channel can travel back to the holder
 of its other end ("migration"). The paper never meets this: with
@@ -103,7 +115,8 @@ carrier     instants (p, b)
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
 alias       p@a ≡ q@b   ≔   (p, a+n) ≡ (q, b+n) for all n
-slot congruence   x ≡ y  ⇒  x[i] ≡ y[i]        (equal instants carry the same message)      [new]
+slot congruence   x ≡ y  ⇒  x[i] ≡ y[i]        (equal instants carry the same message;
+                  the forwarder relays payloads between aliased instants)                       [new]
             the support of a world is counted on root names (channels and point variables)
 F ≺ G       every element of F is ≺ every element of G        (frames, ⊥ and ⊤ as expected)
 
@@ -176,10 +189,9 @@ O-Recv    Θ = Θ₁, c : (?P.S)@k                                              
           (Θ may then hold both ends of a received channel; Θ₁, Σ₂ is defined when every
            overlap is a pair of dual ends at the same count)
 O-Close   Θ = Θ₁, c : Close@k      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
-O-Link    Θ = Θ₁, c : S@k, d : S′@j    S ⊥ S′    c@k ≡_W d@j                              [changed]
-          t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
-          (c = d allowed: a self-link, Θ holds both ends of c; both entries leave Θ.
-           Matches P-Act-Link with c = d, which releases c. `link (new ∗)` is typable.)
+O-LinkSelf  Θ = Θ₁, c : S@k, c : S′@k    S ⊥ S′      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧              [changed]
+          (self-link: both entries leave Θ. A link between two different channels is a β step
+           to a forwarder, checked by the ordinary O-Send / O-Recv / O-Close clauses.)
                                                                 [removed] O-Fork
 
 P-Zero    p ∈ P^W_0⟦Σ ⊢ T⟧
@@ -188,43 +200,20 @@ P-Step    ¬irred p    ready_W(Σ, p)                                           
           ∀π, p′.  p —π→ p′  ⇒  Σ ⊩ⁿ_W p —π→ p′ : T
           ⇒   p ∈ P^W_{n+1}⟦Σ ⊢ T⟧
 
-Restricted names are bound in every step obligation: each Q-clause below is stated for
-some α-variant q of the successor (renaming only restricted names, Swap.alpha), not for
-the successor itself.                                                                       [new]
-α-variants are capture-avoiding (decision I1, taken by Claude under the author's delegation):
-a restricted name a may be renamed to b only if b does not occur in the process, b ∉ dom Σ,
-and b is unknown to every fact the process did not add itself:
-  Q-Tau                       fresh for the pre-step world W   (W′ only adds the process's own,
-                              invisible facts; decision J1: freshness for W′ made P-Term false at
-                              new, because a created channel renamed to a W′-fresh name cannot
-                              carry the facts the step adds)
-  Q-Recv                      fresh for the environment's world W″ in which the continuation lives
-                              (decision K1: freshness only for W let the original pick names on
-                              which W″ states stale facts, and the junk transport could not
-                              replace that witness)
-  Q-Send, Q-Close, Q-Link     fresh for W
-(I1, J1, K1 taken by Claude under the author's delegation.) This is the paper's convention
-"bound names are chosen fresh for whatever is in scope", with the worlds in scope; a condition
-on α-variants, not a syntactic premise of any lemma.
+Restricted names are bound at a receive: Q-Recv is stated for some α-variant of its
+successor (renaming only restricted names to names absent from the process, Swap.alpha),
+so the environment's world cannot pin stale facts on them (decision E). The other clauses
+are stated for the successor itself.
+(Superseded by the forwarder: α-closure of every clause, capture-avoiding α-variants and
+their freshness rules, decisions I1, J1, K1, and the ownership condition L. They existed only
+because link substituted names in the whole soup.)
 
-Q-Tau     p —τ→ p′    ∃W′ ⊒ W, ∃q α-variant of p′.   W′ strict,   W′|_vis = W|_vis,
-          q ∈ P^{W′}_n⟦Σ ⊢ T⟧                                                                [changed]
-          vis = all names except those restricted in p or in q (what the environment can see)
+Q-Tau     p —τ→ p′    ∃W′ ⊒ W.   W′ strict,   W′|_vis = W|_vis,   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧     [changed]
+          vis = all names except those restricted in p′ (what the environment can see)
+          new creating c:  c ∉ names(W)
           checked for steps with p′'s restricted channels disjoint from dom Σ (the paper's implicit
           convention "Σ and C share no channels", made explicit)
-          No freshness guard at new and no alias condition on internal links: a new name the
-          world knows is renamed away in q, and the two orientations of a link between two
-          restricted channels (removing c or removing d) give α-equivalent successors, so the
-          composite's step reduces to the component's own step. The paper's Q-Tau is W′ = W, q = p′.
-          Ownership (decision L, Claude, delegated; a condition on steps, not on program text):
-          the τ step acts only on channels p owns or restricts:  a message on c needs c ∈ C,
-          a close on c needs c ∈ C (as the LTS demands), a link needs both ends in dom Σ ∪ C
-          (the removed one in C). Other τ steps act on no channel. A step violating this has no
-          obligation it can meet. Junk may still occur in code that is never evaluated; it never
-          acts, so renaming it cannot activate it. External labels already demand c ∈ Σ, and the
-          term level already demands entries in Θ, so only internal process steps change.
-          (Chosen instead of building tightness, fchans ⊆ dom Σ ∪ C, into E and P, which the
-          author ruled out as syntactic.)
+          The world may grow, but only invisibly (needed for new). The paper's Q-Tau is W′ = W.
 Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                                       [changed]
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to (Σ₁, c : S@(k+1)) on their overlap B,
           dom Σ₂ ∖ B # names(W)   (fresh: no received channel inherits stale facts of an old name).
@@ -247,9 +236,8 @@ Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@k      dom Σ_e = fchans(v) ∩ C        
 Obligations whose continuation environment cannot be formed (e.g. Θ already holds both
 ends of c) fail; such a thread is never ready anyway.
 Q-Close   Σ = Σ₁, c : Close@k      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
-Q-Link    c ≠ d    Σ = Σ₁, c : S@k, d : S′@j    S ⊥ S′    c@k ≡_W d@j                     [changed]
-          p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
-          (c = d cannot reach the interface: process-level Σ holds one end per channel)
+                                    [removed] Q-Link (link between two channels is a β step;
+                                     a self-link cannot reach the interface)
                                     [removed] extrusion split 𝒯, T-Nil, T-Cons, Q-Twice
 ```
 
@@ -327,24 +315,13 @@ Renaming restricted names                                                       
                   (Extends the paper's invariance under channel substitution, Renaming.v, to worlds.
                    Needed because Q-Recv's W′ ⊒ W may state facts about names the process restricts.)
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
-Renaming along an alias
-                  p ∈ P^W_n⟦Σ, c : S@k ⊢ T⟧,   c@k ≡_W d@j   ⇒   p[d/c] ∈ P^W_n⟦Σ, d : S@j ⊢ T⟧
-                  (needs slot congruence; and the term-level version for E. Still needed for the links
-                   that keep their alias: O-Link in P-Term's link case, Q-Link for an external survivor)
-Junk collapse with worlds
-                  x ∉ dom Σ ∪ C,  b ∉ C,  b ≠ x,  p ∈ P^W_n⟦Σ ⊢ T⟧  ⇒  p[b/x] ∈ P^W_n⟦Σ ⊢ T⟧
-                  P-Act-Link substitutes in the whole soup; junk occurrences of the removed name in
-                  other threads must not matter. Port of the paper's Junk.v to worlds (decision G2),
-                  so P-Term and P-Connect need no tightness premise. It holds because no τ obligation
-                  depends on names any more (α-closure, no alias on internal links); with the alias
-                  it failed: link⟨x, d⟩ owes nothing, link⟨b, d⟩ with b external owes b ≡ d.     [changed]
-Internalizing a link
-                  a link between two cut channels in the composite combines the components' steps   [new]
+Forwarder         link ⟨c, d⟩ with c@k ≡_W d@j:  fwd c d ∈ E⟦c : S@k, d : S′@j ⊢ ∗⟧   (by the step index;
+                  relayed payloads stay aliased through slot congruence)                       [new]
 LTS renaming      a bijective renaming of channel names preserves process steps and safety        [new]
                   (used by adequacy: runs whose fresh names are known to W are renamings of runs
                    whose fresh names are not)
-Prel_steps, Prel_safe            along a run an α-variant of each state is related (Swap.alpha_nsteps);
-                                 safety is invariant under renaming
+Prel_steps, Prel_safe            restated for runs whose new names are fresh for W (Swap.frun);
+                                 runs with other names are renamings of those
 Invisible extension
                   W₁ ⊑ W₁′ strict with W₁′ unchanged on the names W₂ knows, W₁ ⊔ W₂ strict
                   ⇒  W₁′ ⊔ W₂ strict        (by Amalgamation; generalizes Fresh extension)   [new]
@@ -386,7 +363,7 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
             ⇒   Σ₁, Σ₂ ⊨_{W₁ ⊔ W₂} (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T
             proof: ready by the chain argument across C₀;  τ steps by the Internalizing lemmas,
                    a message instantiates Q-Recv with W₁ ⊔ W₂ (the sender's alias names the payload),
-                   new by Fresh extension,  link by Renaming along an alias
+                   new by Fresh/Invisible extension,  link is a β step to a forwarder (nothing special)
 
 P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalgam is a subset of the full one)
             Σᵢ, Σ_Cᵢ ⊨_{Wᵢ} (Cᵢ, Eᵢ) : Tᵢ  (i = 1 … n),  exactly one Tᵢ = T, all others ∗,
@@ -434,7 +411,7 @@ An earlier order design was mechanized and abandoned. What it taught, and how th
 
 - Minimality ("my instant is minimal") is unsound as a gate. ready here compares every held entry with some offered entry, strictly, and compares entries, never sets of instants (equal instants must not collapse into one element; that is why no "distinct channels have distinct instants" premise is needed).
 - The old cut only composed when the composite's external interface carried no ordering, because a leastness-shaped gate is not invariant under external steps. Here ready is checked per state by each component, and P-Connect combines them state by state with the chain argument. This is the central claim and the main risk; report early if it does not go through.
-- Step preservation of the cut was left open in three cases: rendezvous with payload migration (handled here by Q-Recv stating its continuation with the returning channels restricted), link with an external survivor (handled here by the linker's alias and Renaming along an alias), mixed extrusion (no plain/ordered mix here). Report early if any of them resists.
+- Step preservation of the cut was left open in three cases: rendezvous with payload migration (handled here by Q-Recv stating its continuation with the returning channels restricted), link with an external survivor (gone: link is a forwarder, no substitution), mixed extrusion (no plain/ordered mix here). Report early if any of them resists.
 - Term-level ∀-introduction got stuck (instantiation needed an order-indistinguishable world copy). Here ∀ appears only directly under □, on values, and is an intersection over instances.
 - The frame/window condition holds for offered entries only; a condition on all pending heads is false (recv returns a continuation above its own instant).
 - A closure without a lower bound must hold nothing (λ = ⊤ forces Σ = ∅).

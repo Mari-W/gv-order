@@ -220,6 +220,16 @@ only act on owned or restricted channels, so the original never executes a link
 on junk, and neither does the renamed process. Rejected: building tightness
 (fchans ⊆ dom Σ ∪ C) into E and P, because it is syntactic (§7).
 
+**35. Link as a forwarder (author's decision).**
+Entries 19 (B), 29 (G), 30, 31 (I), 32 (J), 33 (K) and 34 (L) all came from one
+cause: P-Act-Link substitutes a channel name in the whole soup, and with names
+carrying order facts every substitution needs an argument (aliases, junk,
+orientation, α-freshness). Decision: link ⟨c, d⟩ becomes a forwarder thread
+that relays messages, with no substitution anywhere in the LTS. The link-only
+machinery is undone (renaming along an alias, junk collapse, internalizing a
+link, α-closure of every clause, I1/J1/K1, ownership). A self-link still
+releases the channel. Reduction semantics and Harmony change (§3, §7, §10).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
