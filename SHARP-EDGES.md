@@ -209,6 +209,17 @@ Decision (K1, Claude, delegated): at Q-Recv, names are fresh for W″. Together
 with I1 and J1 the rule is "fresh for every fact the process did not add
 itself" (§7).
 
+**34. (L) The junk target can become restricted later.**
+In P-Connect the junk target b is a live cut channel, which can later move
+into comp2 and become restricted. A junk redex link⟨x, r⟩ in the original
+then becomes link⟨b, r⟩ with both names restricted and known to the world, and
+the two link orientations differ by a transposition of two world-known names,
+which neither an α-step nor an invisible world move bridges.
+Decision (Claude, delegated): semantic ownership in Q-Tau. An internal step may
+only act on owned or restricted channels, so the original never executes a link
+on junk, and neither does the renamed process. Rejected: building tightness
+(fchans ⊆ dom Σ ∪ C) into E and P, because it is syntactic (§7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

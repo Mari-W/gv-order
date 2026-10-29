@@ -216,6 +216,15 @@ Q-Tau     p —τ→ p′    ∃W′ ⊒ W, ∃q α-variant of p′.   W′ stri
           world knows is renamed away in q, and the two orientations of a link between two
           restricted channels (removing c or removing d) give α-equivalent successors, so the
           composite's step reduces to the component's own step. The paper's Q-Tau is W′ = W, q = p′.
+          Ownership (decision L, Claude, delegated; a condition on steps, not on program text):
+          the τ step acts only on channels p owns or restricts:  a message on c needs c ∈ C,
+          a close on c needs c ∈ C (as the LTS demands), a link needs both ends in dom Σ ∪ C
+          (the removed one in C). Other τ steps act on no channel. A step violating this has no
+          obligation it can meet. Junk may still occur in code that is never evaluated; it never
+          acts, so renaming it cannot activate it. External labels already demand c ∈ Σ, and the
+          term level already demands entries in Θ, so only internal process steps change.
+          (Chosen instead of building tightness, fchans ⊆ dom Σ ∪ C, into E and P, which the
+          author ruled out as syntactic.)
 Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                                       [changed]
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to (Σ₁, c : S@(k+1)) on their overlap B,
           dom Σ₂ ∖ B # names(W)   (fresh: no received channel inherits stale facts of an old name).
