@@ -13,6 +13,7 @@ theories/Typing.v
 theories/Relation.v
 theories/Convert.v
 theories/Monotone.v
+theories/Equivariance.v
 theories/Terms.v
 theories/Renaming.v
 theories/Junk.v
