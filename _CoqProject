@@ -15,11 +15,10 @@ theories/Points.v
 theories/Convert.v
 theories/Monotone.v
 theories/Conversion.v
-theories/Equivariance.v
+theories/Renaming.v
 theories/Chain.v
 theories/Junk.v
 theories/Terms.v
-theories/Renaming.v
 theories/Composition.v
 theories/composition/Term.v
 theories/composition/Independence.v
