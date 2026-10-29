@@ -1761,3 +1761,101 @@ Proof.
           pose proof (HbC ltac:(sset)). sset. }
         { done. }
 Qed.
+
+(** ** Substituting a channel inside a related term (E-level) *)
+
+Section sub_helpers.
+  Context (W : world) (c d : chan) (Hcd : c ≠ d).
+
+  Lemma fchans_move Θ Θ' e :
+    tenv_move W c d Θ Θ' → fchans e = dom Θ → fchans (chsubst c d e) = dom Θ'.
+  Proof.
+    intros Hm He. destruct (decide (c ∈ dom Θ)) as [Hc|Hc].
+    - apply set_eq. intros y. rewrite (move_dom W c d Θ Θ' y Hm). split.
+      + intros Hy. apply fchans_chsubst in Hy. rewrite <-He.
+        apply elem_of_union in Hy as [Hy| ->%elem_of_singleton];
+          [apply elem_of_difference in Hy as [? ?]; split; [set_solver|by left]|].
+        split; [congruence|right; split; [done|by rewrite He]].
+      + intros [Hyc [Hy|[-> _]]].
+        * rewrite <-He in Hy. apply (fchans_chsubst_sup c d e) in Hy.
+          apply elem_of_union in Hy as [?|?%elem_of_singleton]; [done|congruence].
+        * apply fchans_chsubst_hit. by rewrite He.
+    - rewrite chsubst_id by (by rewrite He).
+      rewrite (move_none W c d Θ Θ' Hm) by (by apply not_elem_of_dom). done.
+  Qed.
+
+  Lemma move_singleton c0 o Θ' :
+    tenv_move W c d {[c0 := o]} Θ' →
+    (c0 = c ∧ Θ' = {[d := o]}) ∨ (c0 ≠ c ∧ Θ' = {[c0 := o]}).
+  Proof.
+    intros Hm. destruct (decide (c0 = c)) as [->|Hne].
+    - left. split; [done|]. destruct Hm as (Hc & Ho & Hj & _).
+      rewrite lookup_singleton_eq, lookup_singleton_ne in Hj by done.
+      apply join_l_none in Hj.
+      apply map_eq. intros k. destruct (decide (k = c)) as [->|Hkc].
+      { rewrite Hc, lookup_singleton_ne by done. done. }
+      destruct (decide (k = d)) as [->|Hkd]; [by rewrite lookup_singleton_eq|].
+      rewrite Ho, !lookup_singleton_ne by done. done.
+    - right. split; [done|]. apply (move_none W c d); [done|].
+      by rewrite lookup_singleton_ne.
+  Qed.
+End sub_helpers.
+
+(** A session step of a related term acts on channels its environment holds. *)
+Lemma Erel_subjs n W Θ T F e σ e' :
+  Erel (S n) W Θ T F e → tstep e (LSess σ) e' → subjs σ ⊆ dom Θ.
+Proof.
+  intros HE Hst. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc.
+  destruct σ as [c w|c w|c|cd]; simpl in Hc |- *.
+  - destruct Hc as (Θ1 & m & U & s & k & (s0 & Hext & _) & _).
+    destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; rewrite dom_insert_L; set_solver.
+  - destruct Hc as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & (s0 & Hext & _) & _).
+    destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; rewrite dom_insert_L; set_solver.
+  - destruct Hc as (Θ1 & k & (s0 & Hext & _) & _).
+    destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; rewrite dom_insert_L; set_solver.
+  - destruct Hc as (c1 & d1 & Θ1 & Θm & sc & sd & kc & kd & -> & H1 & H2 & _).
+    destruct H2 as [[_ ->]|(f & _ & [-> | ->])]; rewrite dom_insert_L;
+    destruct H1 as [[_ ->]|(g & _ & [-> | ->])]; rewrite ?dom_insert_L; set_solver.
+Qed.
+
+(** A stable, ready term holding one end each of two aliased channels
+    acts on neither, unless by a link. *)
+Lemma fusion_exclusion n W Θ T F e c d e1 e2 σ e' :
+  strict W → Erel (S n) W Θ T F e → Θ !! c = Some (One e1) → Θ !! d = Some (One e2) →
+  w_eq W e1.2 e2.2 → c ≠ d → tstep e (LSess σ) e' →
+  (c ∈ subjs σ ∨ d ∈ subjs σ) → ∃ cd, σ = SLink cd.
+Proof.
+  intros [HWf Hirr] HE Hc Hd Hx Hcd Hst Hsub.
+  destruct σ as [c0 w|c0 w|c0|cd]; [exfalso..|by eexists].
+  all: assert (stable_t e) as Hs by (intros α f Hf;
+         destruct (tstep_same_act _ _ _ _ _ Hst Hf) as (a & Ha & Ha');
+         destruct a, α; simpl in *; done).
+  all: assert (¬ irred e) as Hni by (intros Hi; by apply (Hi _ _ Hst)).
+  all: pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hstep; simpl in Hstep.
+  all: apply Erel_S_iff in HE as (_ & Hrdy & _).
+  all: destruct (Hrdy Hni) as [Hr _]; destruct (Hr Hs) as [_ Ha].
+  all: assert (∀ k, offered_t Θ e k → k.1 = c0) as Hsame
+         by (intros k (σ' & f & Hf & Hsel); apply selects_subj in Hsel;
+             destruct (tstep_same_act _ _ _ _ _ Hst Hf) as (a & Ha1 & Ha2);
+             destruct a, σ'; simpl in *; try done; set_solver).
+  all: simpl in Hsub; assert (c0 = c ∨ c0 = d) as [->| ->] by set_solver.
+  (* the other channel's end is not offered, and lies above no offer *)
+  all: match goal with
+       | |- _ => idtac
+       end.
+  all: first
+    [ (destruct (Ha (d, false) e2) as (k' & f & Ho & Hf & Hlt);
+       [unfold tenv_entry; simpl; by rewrite Hd
+       |intros Ho; apply Hsame in Ho; simpl in Ho; congruence|];
+       pose proof (Hsame _ Ho) as Hk'; destruct k' as [k1 [|]]; simpl in Hk'; subst k1;
+       unfold tenv_entry in Hf; simpl in Hf; rewrite Hc in Hf; [done|];
+       injection Hf as <-; unfold entry_head in Hlt; simpl in Hlt;
+       apply (Hirr e2.2); eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf])
+    | (destruct (Ha (c, false) e1) as (k' & f & Ho & Hf & Hlt);
+       [unfold tenv_entry; simpl; by rewrite Hc
+       |intros Ho; apply Hsame in Ho; simpl in Ho; congruence|];
+       pose proof (Hsame _ Ho) as Hk'; destruct k' as [k1 [|]]; simpl in Hk'; subst k1;
+       unfold tenv_entry in Hf; simpl in Hf; rewrite Hd in Hf; [done|];
+       injection Hf as <-; unfold entry_head in Hlt; simpl in Hlt;
+       apply (Hirr e1.2); eapply (wf_lt_eq _ HWf); [exact Hx|exact Hlt|apply HWf]) ].
+Qed.
