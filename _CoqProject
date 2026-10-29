@@ -12,6 +12,7 @@ theories/Ready.v
 theories/Typing.v
 theories/Relation.v
 theories/Convert.v
+theories/Monotone.v
 theories/Terms.v
 theories/Renaming.v
 theories/Junk.v
