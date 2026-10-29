@@ -95,25 +95,25 @@ nothing is lost (§7).
 
 **17. prim □T keeps the premise prim T.** This is the paper's rule (§4).
 
-**18. (A) Process-level new did not extend the world.**
+**18. (A) Process-level new did not extend the world.** *(superseded, see 37)*
 The thread's world grows at new, the process world did not, so a thread that
 creates a channel and sends it failed at process level.
 Decision: Q-Tau may grow the world (entry 21).
 
-**19. (B) An internal link renames a visible channel.**
+**19. (B) An internal link renames a visible channel.** *(superseded, see 37)*
 After P-Act-Link removing c, the environment talks over d, and the world knows
 nothing about d. The paper got this for free from invariance under channel
 substitution, which fails once names carry order facts.
 Decision: an internal link must make c and d aliases. The step may create the
 alias (entry 21).
 
-**20. (C) Worlds lacked slot congruence, and old names could carry stale facts.**
+**20. (C) Worlds lacked slot congruence, and old names could carry stale facts.** *(superseded, see 37 (slot congruence stays))*
 x ≡ y did not give x[i] ≡ y[i], so renaming along an alias failed. A channel
 arriving under a name the world already knows would inherit old facts.
 Decision: slot congruence is a world law, and received channels must be unknown
 to W except returning ones (§5, §7).
 
-**21. One Q-Tau instead of special rules.**
+**21. One Q-Tau instead of special rules.** *(superseded, see 37)*
 The world may grow during a τ step, but only invisibly, so nothing changes
 between names the environment can see. The invisible names are those
 restricted before or after the step, so a link removing d can still create the
@@ -121,11 +121,11 @@ alias. The step is checked only when its restricted channels are disjoint from
 the interface, the paper's implicit convention made explicit (§7, lemma
 "invisible extension" in §10).
 
-**22. Adequacy needs a renaming lemma for the LTS.**
+**22. Adequacy needs a renaming lemma for the LTS.** *(superseded, see 37)*
 Q-Tau only checks runs whose fresh names are unknown to W. Other runs are
 renamings of checked runs (Swap.v, §10, §12).
 
-**23. (D) The environment's world can mention restricted names.**
+**23. (D) The environment's world can mention restricted names.** *(superseded, see 37)*
 Q-Recv quantifies over every larger world, and such a world may state facts
 about names the process restricts. Witness: a component placed its internal r
 for a later send, and the environment's world contradicts that placement.
@@ -133,13 +133,13 @@ Independence and P-monotonicity fail.
 Decision: restricted names are bound. V, E and P are invariant under renaming
 channel names, worlds and types included (Equivariance.v, §10).
 
-**24. (E) Renaming alone does not repair it.**
+**24. (E) Renaming alone does not repair it.** *(superseded, see 37)*
 Renaming moves the stale fact onto the new name, and Q-Recv demanded the exact
 successor.
 Decision: Q-Recv's continuation holds for some α-variant of the successor,
 renaming only its restricted names (§7).
 
-**25. P is monotone in the world only up to renaming.**
+**25. P is monotone in the world only up to renaming.** *(superseded, see 37)*
 A larger world may mention restricted names. V and E are monotone, given a
 well-formed world (§10).
 
@@ -149,7 +149,7 @@ with a counter on one side only need a free-coordinate extension, which we
 believe decidable but have to prove. Uniformity is not a restriction, because
 the static system produces only equal or independent counters (§12).
 
-**27. (F) Renaming private names must not touch types.**
+**27. (F) Renaming private names must not touch types.** *(superseded, see 37 (completed))*
 P-Connect renames the private names of the component that does not receive,
 and renaming acts on every channel name, including names a type mentions. If a
 fresh name appears in a session type of Σ or in the process type, the renamed
@@ -159,19 +159,19 @@ Decision (F2): types never mention channel names. Points in types are bound
 variables, point constants and slots of those. Channels appear only in worlds
 and environments, and types reach them through aliases (§4, §7).
 
-**28. P is not monotone in the world, even up to renaming.**
+**28. P is not monotone in the world, even up to renaming.** *(superseded, see 37)*
 A larger world can state stale facts about a restricted name, and renaming
 only moves the needed facts onto the new name.
 Decision: stated only for extensions that touch no restricted name. P-Connect
 keeps one world per component and does not need more (§10).
 
-**29. (G) link substitutes in the whole soup.**
+**29. (G) link substitutes in the whole soup.** *(superseded, see 37)*
 P-Act-Link writes [d/c] into every thread, also into the other component's.
 A junk occurrence of c there would merge with a live channel.
 Decision (G2): port the paper's junk-collapse lemma (Junk.v) to worlds, so the
 composition lemmas need no tightness premise (§10).
 
-**30. Internal links: α-closure instead of an alias; the paper's junk argument works again.**
+**30. Internal links: α-closure instead of an alias; the paper's junk argument works again.** *(superseded, see 37)*
 With an alias obligation on internal τ links (an external c linked to a restricted d), junk
 collapse is false: ({d}, {link⟨x,d⟩, (λy.∗) d, close b}) is related in a world with
 (b,0) ≺ (d,0), because its link names the junk x and owes nothing, but renaming x to b gives
@@ -182,7 +182,7 @@ can remove c or d, and the two successors differ by the transposition (c d), so 
 composite's step reduces to the component's own step and needs no alias. The alias stays on
 O-Link and Q-Link. The freshness guard at new is subsumed (§7, §10).
 
-**31. (I) Which names may an α-variant introduce?**
+**31. (I) Which names may an α-variant introduce?** *(superseded, see 37)*
 If an α-variant may rename a restricted name to any name absent from the
 process, it can pick an interface name or a name the world has facts about.
 The junk transport then cannot reuse the variant after renaming, and moving
@@ -191,7 +191,7 @@ Decision (I1, taken by Claude under the author's delegation): α-variants are
 capture-avoiding, renaming only to names outside the interface and unknown to
 the step's world. The paper's freshness convention with the world in scope (§7).
 
-**32. (J) Fresh for which world?**
+**32. (J) Fresh for which world?** *(superseded, see 37)*
 I1 required the names an α-variant introduces to be unknown to the world after
 the step. At new that is impossible: the created channel must carry facts in
 the new world, so it can never be renamed away from a name with stale facts,
@@ -201,7 +201,7 @@ Decision (J1, Claude, delegated): fresh for the world before the step, in
 every clause. The created channel is renamed to a fresh name first and placed
 by the step (§7).
 
-**33. (K) Fresh for the environment's world at a receive.**
+**33. (K) Fresh for the environment's world at a receive.** *(superseded, see 37)*
 After J1, a Q-Recv α-variant could introduce a name fresh for W but known to
 the environment's world W″, which carries the environment's stale facts. The
 junk transport cannot replace such a witness.
@@ -209,7 +209,7 @@ Decision (K1, Claude, delegated): at Q-Recv, names are fresh for W″. Together
 with I1 and J1 the rule is "fresh for every fact the process did not add
 itself" (§7).
 
-**34. (L) The junk target can become restricted later.**
+**34. (L) The junk target can become restricted later.** *(superseded, see 37)*
 In P-Connect the junk target b is a live cut channel, which can later move
 into comp2 and become restricted. A junk redex link⟨x, r⟩ in the original
 then becomes link⟨b, r⟩ with both names restricted and known to the world, and
@@ -220,7 +220,7 @@ only act on owned or restricted channels, so the original never executes a link
 on junk, and neither does the renamed process. Rejected: building tightness
 (fchans ⊆ dom Σ ∪ C) into E and P, because it is syntactic (§7).
 
-**35. Link as a forwarder (author's decision).**
+**35. Link as a forwarder (author's decision).** *(superseded, see 37)*
 Entries 19 (B), 29 (G), 30, 31 (I), 32 (J), 33 (K) and 34 (L) all came from one
 cause: P-Act-Link substitutes a channel name in the whole soup, and with names
 carrying order facts every substitution needs an argument (aliases, junk,
@@ -230,7 +230,7 @@ machinery is undone (renaming along an alias, junk collapse, internalizing a
 link, α-closure of every clause, I1/J1/K1, ownership). A self-link still
 releases the channel. Reduction semantics and Harmony change (§3, §7, §10).
 
-**36. (M) An untyped forwarder is not in E.**
+**36. (M) An untyped forwarder is not in E.** *(superseded, see 37)*
 E asks every label for its clause. An untyped fwd c d can fire c?v while c has
 type !P.S, and O-Recv then has no head to consume, so fwd c d ∉ E for every S
 other than Close, although no well-typed partner ever fires that label.
@@ -239,6 +239,22 @@ link carries its type S, filled in by typing (surface syntax unchanged), and
 link_S ⟨c, d⟩ —β→ fwd_S c d reads only on the receiving side. E, P and the
 O-clauses stay as they are. Rejected M2 (no obligation for labels of the wrong
 kind), because it changes E and P and endangers the chain arguments (§2, §7).
+
+**37. (N) Facts on channel names were the cause.**
+With M1 the forwarder failed readiness: it reads before it writes, so it offers
+one of its two entries while the other sits at the same instant. The relation
+was right. link ⟨a, b⟩ ∥ link ⟨b, a⟩ over a P-Connect cut {a, b} deadlocks
+under forwarders and terminates under substitution. A separate analysis traced
+entries 18 to 36 to one cause: worlds attached facts to channel names, and every
+step that renames a channel had to move those facts.
+Decision (author, 2026-10-29): worlds speak about points only. Each entry
+carries its current point, c : S@x, new picks a fresh point, and V-Chan compares
+points up to ≡. link substitutes as in the paper, Q-Tau is the paper's clause
+plus a conservative extension, Q-Recv states the exact successor, and the
+paper's renaming and junk lemmas hold with the world fixed. Gone: the forwarder,
+link_S, invisible extension, the α-variant (E), received-name freshness, the
+guard at new, P-monotonicity restrictions, the two sorts of F2. New: Renaming
+points and Entry conversion (§10).
 
 ## From the earlier abandoned mechanization (spec §15)
 

@@ -10,6 +10,11 @@ The frame F is an input parameter of E. F = ∅ is exactly the paper's E. It is
 part of E (not a separate relation) so that E and the frame condition use the
 same world extension at every `new`.
 
+Worlds speak about points only, never about channel names (decision N, 2026-10-29).
+Every environment entry carries the point of its channel's current instant,
+c : S@x. Renaming channels therefore never touches a world, link substitutes as
+in the paper, and the paper's renaming and junk lemmas hold with the world fixed.
+
 ## 1  Syntax
 
 ```
@@ -40,14 +45,7 @@ T-Act-Spawn     spawn v                    —⇑v→     ∗                   
 T-Act-Recv      recv c                     —c?v→    ⟨v, c⟩
 T-Act-Send      send ⟨v, c⟩                —c!v→    c
 T-Act-Close     close c                    —c!→     ∗
-T-Act-Link      link_S ⟨c, d⟩              —β→      fwd_S c d    (c ≠ d)               [changed]
-T-Act-LinkSelf  link_S ⟨c, c⟩              —c↔c→    ∗            (releases c, as in the paper)
-T-Act-Fwd       fwd_{?P.S} c d             —c?v→    relay_S v c d   (fwd_{!P.S} c d reads on d)
-                relay_S v c d              —d!v→    fwd_S c d
-                fwd_Close c d              —c!→     fin d
-                fin d                      —d!→     ∗
-                μ is unfolded. S is c's type, d has the dual. fwd, relay, fin are runtime forms.
-                (decision M1: the forwarder follows the session type)                    [new]
+T-Act-Link      link ⟨c, d⟩                —c↔d→    ∗            (c = d allowed)
 T-Act-Ctx       t —λ→ t′   ⇒   𝒦[t] —λ→ 𝒦[t′]
 ```
 
@@ -59,16 +57,15 @@ P-Act-Spawn     t —⇑v→ t′                   (C, E ⊎ {t}) —τ→ (C, 
 P-Act-Beta      t —β→ t′                    (C, E ⊎ {t}) —τ→ (C, E ⊎ {t′})
 P-Act-Msg       t —c!v→ t′   u —c?v→ u′     (C, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
 P-Act-Close     t —c!→ t′    u —c!→ u′      (C ⊍ {c}, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
-P-Act-LinkSelf  t —c↔c→ t′                  (C ⊍ {c}, E ⊎ {t}) —τ→ (C, E ⊎ {t′})            [changed]
+P-Act-Link      t —c↔d→ t′                  (C ⊍ {c}, E ⊎ {t}) —τ→ (C, (E ⊎ {t′})[d/c])      unchanged
 P-Act-Session   t —σ→ t′   fc(σ) # C        (C, E ⊎ {t}) —σ→ (C ∖ sent(σ), E ⊎ {t′})      unchanged
                                                                    [removed] P-Act-Fork
 ```
 
-Link is a forwarder (decision of the author, 2026-10-29): link ⟨c, d⟩ turns into a thread
-that relays every message between c and d. There is no channel substitution anywhere in
-the LTS, so no junk lemma, no renaming along an alias and no internalizing-a-link lemma
-are needed. A self-link releases the channel as in the paper (no substitution either).
-The reduction semantics and Harmony change accordingly.
+Link substitutes in the whole soup, as in the paper. With c = d it releases c. Worlds
+mention no channel names, so the substitution never has to move a fact. A forwarder
+encoding was tried and dropped. Under forwarders link ⟨a, b⟩ ∥ link ⟨b, a⟩ over a
+P-Connect cut {a, b} deadlocks, and under substitution it terminates (sharp edges 35 to 37).
 
 With multi-channel P-Connect (cycles) a channel can travel back to the holder
 of its other end ("migration"). The paper never meets this: with
@@ -92,33 +89,32 @@ S    ::= ?P.S | !P.S | Close | μX.S | X                                 session
 P    ::= ∃ιs. T           payload, all points of T bound                sugar: !(S₁ ⊗ S₂).S binds them implicitly
 ι    ::= (p, b)           a point: a name with an offset
 p    ::= a | ι-variable | p[b][i]     point constant, bound point variable, slot "the i-th point carried at (p,b)"
-         Types never mention channel names (decision F2). Channel names, and slots rooted at channels
-         such as (c,k)[i], occur only in worlds and environments; types reach channels only through
-         aliases in W. Renaming channels therefore never changes a type.                          [changed]
+         Neither types nor worlds mention channel names (decisions F2 and N). Channels occur only
+         as keys of environments. Renaming channels changes no type and no world.               [changed]
 
-Σ    ::= · | c : S@k | Σ, Σ                       process level, a finite map,  k = actions done on c
-Θ    ::= Σ | Θ, c : S@k, c : S′@k                  term level, may hold both ends,  S ⊥ S′
+Σ    ::= · | c : S@x | Σ, Σ                       process level, a finite map,  x a ground point,
+                                                  c's current instant; each action on c moves x to x+1
+Θ    ::= Σ | Θ, c : S@x, c : S′@x                  term level, may hold both ends,  S ⊥ S′
 Δ    ::= · | x : T | Δ, Δ
 prim ∗,  prim T ⊗ U,  prim T + U,  prim □T if prim T     (as in the paper)
 
 heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ι}      heads(T ⊸^β_λ U) = {λ} ∖ {⊤}
 heads(T ⊗ U) = heads(T + U) = heads(T) ∪ heads(U)
-heads(c : S@k) = {(c, k)}     heads(Σ, Δ) = ⋃ heads of the entries
+heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 ```
 
 - ∀ appears only directly under □ (never on linear functions, never inside session types).
-- Points are extra names in the order, not k-th actions of a channel; facts may place them anywhere. A point used as S@ι is aliased to the channel's current instant.
+- Points are the only names in the order. Facts may place them anywhere. A value c of type S@ι needs ι ≡ the point of c's entry.
 
 ## 5  Worlds   [new]
 
 ```
-carrier     instants (p, b)
+carrier     instants (p, b),  p a point constant or a slot of one. No channel names.   [changed]
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
 alias       p@a ≡ q@b   ≔   (p, a+n) ≡ (q, b+n) for all n
-slot congruence   x ≡ y  ⇒  x[i] ≡ y[i]        (equal instants carry the same message;
-                  the forwarder relays payloads between aliased instants)                       [new]
-            the support of a world is counted on root names (channels and point variables)
+slot congruence   x ≡ y  ⇒  x[i] ≡ y[i]        (equal instants carry the same message)     [new]
+            the support of a world is counted on root names (point constants)
 F ≺ G       every element of F is ≺ every element of G        (frames, ⊥ and ⊤ as expected)
 
 W ⊑ W′      ≡ ⊆ ≡′,  ≺ ⊆ ≺′,  W′ strict                        (Kripke order)
@@ -129,7 +125,7 @@ W₁ ⊔ W₂     (≡₁ ∪ ≡₂)* with (≺₁ ∪ ≺₂)⁺ on the classe
 ## 6  Readiness and frames   [new]
 
 ```
-entries(Θ)   one entry per end:  c : S@k  (twice for a channel whose both ends Θ holds)
+entries(Θ)   one entry per end:  c : S@x  (twice for a channel whose both ends Θ holds)
 offered(x)   = the entries selected by the labels of x's transitions     x a term or a process
                c!v selects the entry of c whose type unfolds to !…,  c?v the one with ?…,
                c! either Close entry,  c↔d the entries of c and d
@@ -154,7 +150,7 @@ offered and can synchronize, so that state is not stable.
 
 ```
 V-Unit    ∗ ∈ V^W_n⟦· ⊢ ∗⟧
-V-Chan    c ∈ V^W_n⟦c : S@k ⊢ S′@x⟧            if S ≈ S′ and c@k ≡_W x,  x a point (never a channel)   [changed]
+V-Chan    c ∈ V^W_n⟦c : S@x ⊢ S′@y⟧            if S ≈ S′ and x ≡_W y                     [changed]
 V-Const   k ∈ V^W_n⟦· ⊢ T⟧                     if k : T  (instance of its signature)
 V-Pair    v₁ ∈ V^W_n⟦Σ₁ ⊢ T⟧   v₂ ∈ V^W_n⟦Σ₂ ⊢ U⟧   ⇒   ⟨v₁, v₂⟩ ∈ V^W_n⟦Σ₁, Σ₂ ⊢ T ⊗ U⟧
 V-Inj     v ∈ V^W_n⟦Σ ⊢ Tᵢ⟧   ⇒   injᵢ v ∈ V^W_n⟦Σ ⊢ T₁ + T₂⟧
@@ -165,13 +161,12 @@ V-Abs     fchans(t) = dom Σ        {λ} ≼_W heads(Σ)                        
 V-Box     fchans(t) = ∅     ∀W′ ⊒ W.  fix x.t ∈ E^{W′}_n⟦· ⊢ T ≺ ∅⟧   ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □T⟧
 V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧                     [new]
 
-payload at a slot      the value is typed T[xs/ιs] for P = ∃ι₁ … ιₘ. T, with type points xs such that
-                       xᵢ ≡_W (c, k)[i].  O-Send/Q-Send: ∃xs in the sender's world.  O-Recv/Q-Recv:
+payload at a slot      for c : S@x the value is typed T[xs/ιs] for P = ∃ι₁ … ιₘ. T, with points xs
+                       such that xᵢ ≡_W x[i].  O-Send/Q-Send: ∃xs in the sender's world.  O-Recv/Q-Recv:
                        ∀W′ ⊒ W, ∀xs with these aliases in W′ (no freshness: P-Connect instantiates the
-                       receiver with the sender's xs). Written P[(c, k)] below.
-names                  two sorts: type points (constants, bound variables, slots of those) and world
-                       instants (channels, embedded type points, slots of either), joined by an embedding;
-                       slots rooted at channels exist only in worlds.
+                       receiver with the sender's xs). Written P[x] below.
+names                  one sort, points. Worlds and environments use ground points (constants and their
+                       slots). Static types also use bound point variables. (Replaces the two sorts of F2.)
 
 E-Zero    t ∈ E^W_0⟦Θ ⊢ T ≺ F⟧
 E-Stop    v ∈ V^W_{n+1}⟦Θ ⊢ T⟧   ⇒   v ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
@@ -180,21 +175,20 @@ E-Step    ¬irred t    ready_W(Θ, t)    frame_W(t, F)                          
           ⇒   t ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
 
 O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
-O-New     c ∉ names(W)    ∃S ⊥ S′, W′ ⊒ₒ W placing c.   t′ ∈ E^{W′}_n⟦Θ, c : S@0, c : S′@0 ⊢ T ≺ F⟧    [new]
+O-New     ∃a ∉ names(W), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
+          (the created channel name needs no condition, only its point is fresh)               [new]
 O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^β_λ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧       [new]
-O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@k     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[(c, k)]⟧                    [changed]
-          t′ ∈ E^W_n⟦Θ₁, c : S@(k+1) ⊢ T ≺ F⟧
-O-Recv    Θ = Θ₁, c : (?P.S)@k                                                           [changed]
-          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Θ₁, Σ₂ defined.
-              t′ ∈ E^{W′}_j⟦Θ₁, Σ₂, c : S@(k+1) ⊢ T ≺ F⟧
+O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@x     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[x]⟧                          [changed]
+          t′ ∈ E^W_n⟦Θ₁, c : S@(x+1) ⊢ T ≺ F⟧
+O-Recv    Θ = Θ₁, c : (?P.S)@x                                                           [changed]
+          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Θ₁, Σ₂ defined.
+              t′ ∈ E^{W′}_j⟦Θ₁, Σ₂, c : S@(x+1) ⊢ T ≺ F⟧
           (Θ may then hold both ends of a received channel; Θ₁, Σ₂ is defined when every
-           overlap is a pair of dual ends at the same count)
-O-Close   Θ = Θ₁, c : Close@k      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
-O-LinkSelf  Θ = Θ₁, c : S@k, c : S′@k    S ⊥ S′      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧              [changed]
-          (self-link: both entries leave Θ. A link between two different channels is a β step
-           to a typed forwarder fwd_S, checked by the ordinary O-Send / O-Recv / O-Close clauses.
-           An untyped fwd would fail them: it offers c?v also when c : !P.S, and that label
-           has no obligation that holds. Decision M1.)
+           overlap is a pair of dual ends at the same point)
+O-Close   Θ = Θ₁, c : Close@x      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
+O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧       [changed]
+          (c = d allowed: a self-link, Θ holds both ends of c, both entries leave Θ.
+           Matches P-Act-Link with c = d, which releases c. `link (new ∗)` is typable.)
                                                                 [removed] O-Fork
 
 P-Zero    p ∈ P^W_0⟦Σ ⊢ T⟧
@@ -203,27 +197,16 @@ P-Step    ¬irred p    ready_W(Σ, p)                                           
           ∀π, p′.  p —π→ p′  ⇒  Σ ⊩ⁿ_W p —π→ p′ : T
           ⇒   p ∈ P^W_{n+1}⟦Σ ⊢ T⟧
 
-Restricted names are bound at a receive: Q-Recv is stated for some α-variant of its
-successor (renaming only restricted names to names absent from the process, Swap.alpha),
-so the environment's world cannot pin stale facts on them (decision E). The other clauses
-are stated for the successor itself.
-(Superseded by the forwarder: α-closure of every clause, capture-avoiding α-variants and
-their freshness rules, decisions I1, J1, K1, and the ownership condition L. They existed only
-because link substituted names in the whole soup.)
+Every clause is stated for the successor itself. Restricted channels carry no facts,
+because worlds speak about points only, so the environment's world cannot pin anything on
+them. Gone with decision N: the α-variant at a receive (E), the freshness of received
+names, the name guard at new and the invisible-names condition of Q-Tau.
 
-Q-Tau     p —τ→ p′    ∃W′ ⊒ W.   W′ strict,   W′|_vis = W|_vis,   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧     [changed]
-          vis = all names except those restricted in p′ (what the environment can see)
-          new creating c:  c ∉ names(W)
-          checked for steps with p′'s restricted channels disjoint from dom Σ (the paper's implicit
-          convention "Σ and C share no channels", made explicit)
-          The world may grow, but only invisibly (needed for new). The paper's Q-Tau is W′ = W.
-Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                                       [changed]
-          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to (Σ₁, c : S@(k+1)) on their overlap B,
-          dom Σ₂ ∖ B # names(W)   (fresh: no received channel inherits stale facts of an old name).
-              ∃q α-variant of (C′ ∪ B, E′).
-              q ∈ P^{W′}_j⟦(Σ₁, c : S@(k+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
-          (α-variant: restricted names are bound, so the environment's W′ cannot pin
-           stale facts on them; P-Term uses q itself)
+Q-Tau     p —τ→ p′    ∃W′ ⊒ₒ W.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧                                     [changed]
+          (W′ places the points of channels the step creates. The paper's Q-Tau is W′ = W.)
+Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)                                       [changed]
+          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Σ₂ dual to (Σ₁, c : S@(x+1)) on their overlap B.
+              (C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(x+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
           (B = channels whose other end the receiver already holds. The obligation is stated
            for the successor with B restricted; the LTS itself does not restrict. If the carrier c
            itself is in B (an end of c was sent over c), its continuation entry leaves Σ as well.
@@ -231,16 +214,16 @@ Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                 
            channel also belongs to B and is restricted in the continuation.
            The guard c ∉ dom Σ₂ of the paper is dropped (c may be in B).
            Lemma needed: restricting B only removes external steps on channels no environment holds.)
-Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@k      dom Σ_e = fchans(v) ∩ C                          [changed]
-          v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[(c, k)]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(k+1) ⊢ T⟧
+Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@x      dom Σ_e = fchans(v) ∩ C                          [changed]
+          v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[x]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(x+1) ⊢ T⟧
           Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay
           (both ends of a restricted channel may leave with v; then it has no entry in Σ_e)
 
 Obligations whose continuation environment cannot be formed (e.g. Θ already holds both
 ends of c) fail; such a thread is never ready anyway.
-Q-Close   Σ = Σ₁, c : Close@k      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
-                                    [removed] Q-Link (link between two channels is a β step;
-                                     a self-link cannot reach the interface)
+Q-Close   Σ = Σ₁, c : Close@x      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
+Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧   [changed]
+          (c = d cannot reach the interface: process-level Σ holds one end per channel)
                                     [removed] extrusion split 𝒯, T-Nil, T-Cons, Q-Twice
 ```
 
@@ -264,14 +247,13 @@ spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
 send   : (T[ιs] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)    P = ∃ιs. T,  {ι} ≺_G heads(T[ιs]),  each ιsᵢ ≡_G ι[i]
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
-link_S : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
-         (S is filled in by the typing derivation, the surface syntax keeps plain link)
+link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
 force  : □(∀ιs. T) ⊸^⊥_⊤ T[ιs′/ιs]
 
 E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    k : T   ⇒   ·; · ⊢^F k : T
 E-LVar     ·; x : T ⊢^F x : T
-E-Ch       c : S@k; · ⊢^F c : S@ι        with ι ≡_G (c, k)  (a point aliased to the channel's instant)
+E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_G ι
 E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ fresh, only fact β ≺ μ      λ fresh, only facts {λ} ≼ heads(Θ, Δ)
            ⇒   Θ; Δ ⊢^F λx.t : T ⊸^β_λ U
 E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^β_λ U     Θ₂; Δ₂ ⊢^{F ∪ {λ}} t₂ : T     {β} ≺_G F
@@ -299,36 +281,27 @@ P-Connect  Σ₁, Σ_C ⊢_G (C₁, E₁) : T    Σ₂, Σ_C′ ⊢_G (C₂, E�
 ## 10  Lemmas: LTS and worlds
 
 ```
-Harmony                          p —τ→ p′  ⇔  p ⟶ p′                       unchanged statement
+Harmony                          p —τ→ p′  ⇔  p ⟶ p′                       unchanged
 Internalizing communication      generalized to a cut C₀ (statement otherwise unchanged)          [changed]
 Restriction of returning channels
                   in the P-Connect proof the composite's successor equals the receiving component's
                   successor with B restricted, because B already lies in the cut C₀            [new]
 Internalizing a close            unchanged
+Internalizing a link             unchanged (the paper's, world fixed)
 
-Amalgamation      W₁, W₂ strict  ⇒  (W₁ ⊔ W₂ strict  ⇔  (W₁|_A ⊔ W₂|_A) strict),   A = names W₁ and W₂ share
-Fresh extension   W₁ ⊑ₒ W₁′ placing names N,  N # names(W₂),  W₂ strict,  W₁ ⊔ W₂ strict
+Amalgamation      W₁, W₂ strict  ⇒  (W₁ ⊔ W₂ strict  ⇔  (W₁|_A ⊔ W₂|_A) strict),   A = points W₁ and W₂ share
+Fresh extension   W₁ ⊑ₒ W₁′ placing points N,  N # names(W₂),  W₂ strict,  W₁ ⊔ W₂ strict
                   ⇒   W₁′ ⊔ W₂ strict
-Monotonicity      W ⊑ W′  ⇒  V/E^W ⊆ V/E^{W′}      (needs world_wf W)
-                  P: monotone only for extensions that add no fact touching the process's restricted
-                  names (not even up to renaming; P-Connect does not need the general form)
-Renaming restricted names                                                                  [new]
-                  restricted names are bound: V, E and P are invariant under a bijective renaming of
-                  channel names applied to processes, types, environments and worlds alike; a process
-                  can rename its restricted names away from any names a given world mentions.
-                  (Extends the paper's invariance under channel substitution, Renaming.v, to worlds.
-                   Needed because Q-Recv's W′ ⊒ W may state facts about names the process restricts.)
+Monotonicity      W ⊑ W′  ⇒  V/E/P^W ⊆ V/E/P^{W′}      (needs world_wf W; expected for P without
+                  restriction now, because no fact can mention a restricted channel)
+Renaming channels the paper's Renaming.v and Junk.v, with the world fixed                       unchanged
+Renaming points   a bijective renaming of point constants applied to the world, the environment
+                  and the types preserves V, E and P (P-Connect's new case renames a component's
+                  fresh point away from the other world)                                       [new]
+Entry conversion  x ≡_W y  ⇒  (t ∈ E^W_n⟦Θ, c : S@x ⊢ T ≺ F⟧ ⇔ t ∈ E^W_n⟦Θ, c : S@y ⊢ T ≺ F⟧),
+                  likewise for P (P-Term's link case; uses slot congruence for payloads)       [new]
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
-Forwarder         c@k ≡_W d@j,  S ⊥ S′:  fwd_S c d ∈ E⟦c : S@k, d : S′@j ⊢ ∗⟧   (by the step index;
-                  relayed payloads stay aliased through slot congruence)                       [new]
-LTS renaming      a bijective renaming of channel names preserves process steps and safety        [new]
-                  (used by adequacy: runs whose fresh names are known to W are renamings of runs
-                   whose fresh names are not)
-Prel_steps, Prel_safe            restated for runs whose new names are fresh for W (Swap.frun);
-                                 runs with other names are renamings of those
-Invisible extension
-                  W₁ ⊑ W₁′ strict with W₁′ unchanged on the names W₂ knows, W₁ ⊔ W₂ strict
-                  ⇒  W₁′ ⊔ W₂ strict        (by Amalgamation; generalizes Fresh extension)   [new]
+Prel_steps, Prel_safe            unchanged (the paper's)
 ```
 
 ## 11  Lemmas: compositionality (one per rule)
@@ -337,7 +310,7 @@ Invisible extension
 E-Unit      ·; · ⊨^F ∗ : ∗
 E-Const     k : T   ⇒   ·; · ⊨^F k : T                      for new, spawn, send, recv, close, link, force
 E-LVar      ·; x : T ⊨^F x : T
-E-Ch        c : S@k; · ⊨^F c : S@ι        with ι ≡_W (c, k)
+E-Ch        c : S@x; · ⊨^F c : S@ι        with ι ≡_W x
 E-Abs       ∀F′ with {β} ≺ F′.  Θ; Δ, x : T ⊨^{F′} t : U       {λ} ≼ heads(Θ, Δ)
             fchans(t) = dom Θ      fv(t) = dom(Δ, x : T)
             ⇒   Θ; Δ ⊨^F λx.t : T ⊸^β_λ U
@@ -367,7 +340,7 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
             ⇒   Σ₁, Σ₂ ⊨_{W₁ ⊔ W₂} (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T
             proof: ready by the chain argument across C₀;  τ steps by the Internalizing lemmas,
                    a message instantiates Q-Recv with W₁ ⊔ W₂ (the sender's alias names the payload),
-                   new by Fresh/Invisible extension,  link is a β step to a forwarder (nothing special)
+                   new by Fresh extension and Renaming points,  link by Internalizing a link and Entry conversion
 
 P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalgam is a subset of the full one)
             Σᵢ, Σ_Cᵢ ⊨_{Wᵢ} (Cᵢ, Eᵢ) : Tᵢ  (i = 1 … n),  exactly one Tᵢ = T, all others ∗,
@@ -381,7 +354,7 @@ P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalg
 ```
 Fundamental     Θ; Δ ⊢^F_G t : T   ⇒   Θ; Δ ⊨^F_{W_G} t : T
                 Σ ⊢_G p : T        ⇒   Σ ⊨_{W_G} p : T
-Adequacy        · ⊨_W p : T   ⇒   p deadlock free         (paper's proof plus LTS renaming for fresh names)
+Adequacy        · ⊨_W p : T   ⇒   p deadlock free         (the paper's proof)
 Soundness       · ⊢_G p : T,  W_G strict   ⇒   p deadlock free
 Decidability    W_G strict is decidable:  Kosaraju–Sullivan for edges with offsets,
                 plus our lemma for schemas with a variable on one side only (free coordinates)
@@ -389,6 +362,8 @@ Decidability    W_G strict is decidable:  Kosaraju–Sullivan for edges with off
 ```
 
 ## 13  Examples
+
+(c, k) below is the point of c's entry after k actions.
 
 ```
 sync            typable                       new and spawn instead of fork
@@ -407,7 +382,7 @@ bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,
 
 - Deferred by the author: order that depends on the run (one W per component); slot positions must be finite schemas in G.
 - To prove: free-coordinate extension of Kosaraju–Sullivan (paper level); chain arguments in P-Term and P-Connect; all frame-carrying lemmas.
-- Mechanization: Θ (both ends) only at term level, counters in `senv`, worlds with aliases, amalgamation.
+- Mechanization: Θ (both ends) only at term level, points in `senv` entries, worlds over points with aliases, amalgamation.
 
 ## 15  Lessons from the earlier mechanization (respect these)
 
@@ -415,7 +390,7 @@ An earlier order design was mechanized and abandoned. What it taught, and how th
 
 - Minimality ("my instant is minimal") is unsound as a gate. ready here compares every held entry with some offered entry, strictly, and compares entries, never sets of instants (equal instants must not collapse into one element; that is why no "distinct channels have distinct instants" premise is needed).
 - The old cut only composed when the composite's external interface carried no ordering, because a leastness-shaped gate is not invariant under external steps. Here ready is checked per state by each component, and P-Connect combines them state by state with the chain argument. This is the central claim and the main risk; report early if it does not go through.
-- Step preservation of the cut was left open in three cases: rendezvous with payload migration (handled here by Q-Recv stating its continuation with the returning channels restricted), link with an external survivor (gone: link is a forwarder, no substitution), mixed extrusion (no plain/ordered mix here). Report early if any of them resists.
+- Step preservation of the cut was left open in three cases: rendezvous with payload migration (handled here by Q-Recv stating its continuation with the returning channels restricted), link with an external survivor (the paper's substitution, plus Entry conversion; worlds name no channels), mixed extrusion (no plain/ordered mix here). Report early if any of them resists.
 - Term-level ∀-introduction got stuck (instantiation needed an order-indistinguishable world copy). Here ∀ appears only directly under □, on values, and is an intersection over instances.
 - The frame/window condition holds for offered entries only; a condition on all pending heads is false (recv returns a continuation above its own instant).
 - A closure without a lower bound must hold nothing (λ = ⊤ forces Σ = ∅).
