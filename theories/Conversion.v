@@ -858,3 +858,322 @@ Proof. apply (proj1 (rel_econv n)). Qed.
 Lemma Erel_econv n W Θ Θ' T F e :
   world_wf W → tconv W Θ Θ' → Erel n W Θ T F e → Erel n W Θ' T F e.
 Proof. apply (proj2 (rel_econv n)). Qed.
+
+(** ** Interfaces up to aliases leave P unchanged (Entry conversion for P) *)
+
+Definition sconv (W : world) (Σ Σ' : senv) : Prop :=
+  ∀ c, match Σ !! c, Σ' !! c with
+       | Some e, Some e' => entry_conv W e e'
+       | None, None => True
+       | _, _ => False
+       end.
+
+Section sconv.
+  Context (W : world) (HW : world_wf W).
+
+  Lemma sconv_tconv Σ Σ' : sconv W Σ Σ' → tconv W (tenv_of Σ) (tenv_of Σ').
+  Proof.
+    intros H c. specialize (H c). unfold tenv_of. rewrite !lookup_fmap.
+    destruct (Σ !! c), (Σ' !! c); simpl in *; done.
+  Qed.
+
+  Lemma sconv_dom Σ Σ' : sconv W Σ Σ' → dom Σ = dom Σ'.
+  Proof.
+    intros H. apply set_eq. intros c. rewrite !elem_of_dom. specialize (H c).
+    destruct (Σ !! c), (Σ' !! c); naive_solver.
+  Qed.
+
+  Lemma sconv_refl Σ : sconv W Σ Σ.
+  Proof. intros c. destruct (Σ !! c); [apply (entry_conv_refl W HW)|done]. Qed.
+
+  Lemma sconv_insert Σ Σ' c e e' :
+    sconv W Σ Σ' → entry_conv W e e' → sconv W (<[c := e]> Σ) (<[c := e']> Σ').
+  Proof.
+    intros H He d. destruct (decide (d = c)) as [->|Hne].
+    - by rewrite !lookup_insert_eq.
+    - rewrite !lookup_insert_ne by done. apply H.
+  Qed.
+
+  Lemma sconv_delete Σ Σ' c : sconv W Σ Σ' → sconv W (delete c Σ) (delete c Σ').
+  Proof.
+    intros H d. destruct (decide (d = c)) as [->|Hne].
+    - by rewrite !lookup_delete_eq.
+    - rewrite !lookup_delete_ne by done. apply H.
+  Qed.
+
+  Lemma sconv_union Σ1 Σ1' Σ2 Σ2' :
+    sconv W Σ1 Σ1' → sconv W Σ2 Σ2' → sconv W (Σ1 ∪ Σ2) (Σ1' ∪ Σ2').
+  Proof.
+    intros H1 H2 c. specialize (H1 c). specialize (H2 c). rewrite !lookup_union.
+    destruct (Σ1 !! c), (Σ1' !! c), (Σ2 !! c), (Σ2' !! c); simpl in *; done.
+  Qed.
+
+  Lemma sconv_difference Σ1 Σ1' Σ2 :
+    sconv W Σ1 Σ1' → sconv W (Σ1 ∖ Σ2) (Σ1' ∖ Σ2).
+  Proof.
+    intros H c. specialize (H c). rewrite !lookup_difference.
+    destruct (Σ2 !! c), (Σ1 !! c), (Σ1' !! c); simpl in *; done.
+  Qed.
+
+  Lemma difference_sconv Σ Σ2 Σ2' :
+    sconv W Σ2 Σ2' → Σ ∖ Σ2 = Σ ∖ Σ2'.
+  Proof.
+    intros H. apply map_eq. intros c. specialize (H c). rewrite !lookup_difference.
+    destruct (Σ2 !! c), (Σ2' !! c); simpl in *; done.
+  Qed.
+
+  (** Reading a head off a converted interface. *)
+  Lemma sconv_hd Σ Σ' c u k Σ1 :
+    sconv W Σ Σ' → senv_hd Σ c u k Σ1 → c ∉ dom Σ1 →
+    ∃ s s' k' Σ1', Σ = <[c := (s, k)]> Σ1 ∧ Σ' = <[c := (s', k')]> Σ1' ∧
+      unfoldS s = u ∧ seq s s' ∧ w_eq W k k' ∧ sconv W Σ1 Σ1' ∧ c ∉ dom Σ1'.
+  Proof.
+    intros H (s & -> & Hu) Hc. pose proof (H c) as Hcc. rewrite lookup_insert_eq in Hcc.
+    destruct (Σ' !! c) as [[s' k']|] eqn:E; [|done]. destruct Hcc as [Hs Hk].
+    exists s, s', k', (delete c Σ'). split_and!; try done.
+    - by rewrite insert_delete_id.
+    - intros d. destruct (decide (d = c)) as [->|Hne].
+      + rewrite lookup_delete_eq. by apply not_elem_of_dom in Hc as ->.
+      + rewrite lookup_delete_ne by done. specialize (H d).
+        by rewrite lookup_insert_ne in H.
+    - by rewrite dom_delete_L; set_solver.
+  Qed.
+
+  Lemma senv_dual_on_conv Σ1 Σ1' Σ2 :
+    sconv W Σ1 Σ1' → senv_dual_on (w_eq W) Σ1' Σ2 → senv_dual_on (w_eq W) Σ1 Σ2.
+  Proof.
+    intros H Hd c e1 e2 H1 H2. specialize (H c). rewrite H1 in H.
+    destruct (Σ1' !! c) as [e1'|] eqn:E; [|done].
+    apply (entry_conv_dual W HW e1' e2); [by apply entry_conv_sym|apply entry_conv_refl; done|].
+    by apply (Hd c).
+  Qed.
+
+  Lemma recv_ok_conv Σr Σr' Θ2 : sconv W Σr Σr' → recv_ok W Σr' Θ2 → recv_ok W Σr Θ2.
+  Proof.
+    intros H (H1 & H2 & H3). split_and!; [by eapply senv_dual_on_conv|done|].
+    by rewrite (sconv_dom Σr Σr').
+  Qed.
+
+  Lemma recv_back_conv Σr Σr' Θ2 : sconv W Σr Σr' → recv_back Σr Θ2 = recv_back Σr' Θ2.
+  Proof. intros H. unfold recv_back. by rewrite (sconv_dom Σr Σr'). Qed.
+
+  Lemma recv_env_conv Σr Σr' Θ2 :
+    sconv W Σr Σr' → sconv W (recv_env Σr Θ2) (recv_env Σr' Θ2).
+  Proof.
+    intros H. unfold recv_env. rewrite (difference_sconv (tenv_ones Θ2) Σr Σr' H).
+    apply sconv_union; [by apply sconv_difference|apply sconv_refl].
+  Qed.
+
+  Lemma above_offered_conv Σ Σ' off :
+    sconv W Σ Σ' → above_offered W (tenv_of Σ) off → above_offered W (tenv_of Σ') off.
+  Proof.
+    intros H Ha k e' He' Hk. apply sconv_tconv in H.
+    destruct (tconv_entry _ _ _ _ _ (tconv_sym W HW _ _ H) He') as (e & He & [_ Hee]).
+    destruct (Ha k e He Hk) as (k' & f & Ho & Hf & Hlt).
+    destruct (tconv_entry _ _ _ _ _ H Hf) as (f' & Hf' & [_ Hff]).
+    exists k', f'. split_and!; [done|done|].
+    unfold entry_head in *. eapply (wf_lt_eq _ HW);
+      [by apply (wf_eq_sym _ HW)|exact Hlt|by apply (wf_eq_sym _ HW)].
+  Qed.
+
+  Lemma offered_p_conv Σ Σ' p k : sconv W Σ Σ' → offered_p Σ p k ↔ offered_p Σ' p k.
+  Proof.
+    intros H. apply sconv_tconv in H. unfold offered_p.
+    split; intros (σ & p' & Hs & Hk); exists σ, p'; split; try done.
+    - by eapply selects_conv.
+    - eapply selects_conv; [by apply tconv_sym|done].
+  Qed.
+
+  Lemma ready_p_conv Σ Σ' p : sconv W Σ Σ' → ready_p W Σ p → ready_p W Σ' p.
+  Proof.
+    intros H Hr Hs. destruct (Hr Hs) as [Hv Ha]. split.
+    - intros Hno. apply Hv. intros k Hk. apply (Hno k). by apply (offered_p_conv Σ).
+    - eapply above_offered_conv; [exact H|].
+      intros k e He Hk. destruct (Ha k e He) as (k' & f & Ho & Hf & Hlt).
+      { intros Ho. apply Hk. by apply (offered_p_conv Σ). }
+      exists k', f. split_and!; [by apply (offered_p_conv Σ)|done|done].
+  Qed.
+End sconv.
+
+Lemma sconv_mono W W' Σ Σ' :
+  (∀ x y, w_eq W x y → w_eq W' x y) → sconv W Σ Σ' → sconv W' Σ Σ'.
+Proof.
+  intros Hm H c. specialize (H c). destruct (Σ !! c), (Σ' !! c); try done.
+  destruct H. split; auto.
+Qed.
+
+Lemma tconv_union W Θ1 Θ1' Θ2 Θ2' :
+  tconv W Θ1 Θ1' → tconv W Θ2 Θ2' → tconv W (Θ1 ∪ Θ2) (Θ1' ∪ Θ2').
+Proof.
+  intros H1 H2 c. specialize (H1 c). specialize (H2 c). rewrite !lookup_union.
+  destruct (Θ1 !! c), (Θ1' !! c), (Θ2 !! c), (Θ2' !! c); simpl in *; done.
+Qed.
+
+Definition senv_restrict (Σ : senv) (D : gset chan) : senv :=
+  filter (λ kv, kv.1 ∈ D) Σ.
+
+Lemma lookup_senv_restrict Σ D c :
+  senv_restrict Σ D !! c = if decide (c ∈ D) then Σ !! c else None.
+Proof.
+  unfold senv_restrict. destruct (Σ !! c) eqn:E.
+  - case_decide.
+    + apply map_lookup_filter_Some. naive_solver.
+    + apply map_lookup_filter_None. right. intros ? Hx. simplify_eq. done.
+  - case_decide; apply map_lookup_filter_None; by left.
+Qed.
+
+(** Splitting a converted union along the doms of the parts. *)
+Lemma sconv_split W Σ0 Σv Σ' :
+  Σ0 ##ₘ Σv → sconv W (Σ0 ∪ Σv) Σ' →
+  ∃ Σ0' Σv', Σ' = Σ0' ∪ Σv' ∧ Σ0' ##ₘ Σv' ∧ sconv W Σ0 Σ0' ∧ sconv W Σv Σv' ∧
+    dom Σ0' = dom Σ0 ∧ dom Σv' = dom Σv.
+Proof.
+  intros Hd H.
+  exists (senv_restrict Σ' (dom Σ0)), (senv_restrict Σ' (dom Σv)).
+  assert (∀ c, c ∈ dom Σ0 → Σv !! c = None) as Hn0.
+  { intros c Hc. apply elem_of_dom in Hc as [e He]. specialize (Hd c).
+    rewrite He in Hd. by destruct (Σv !! c). }
+  assert (sconv W Σ0 (senv_restrict Σ' (dom Σ0))) as H0.
+  { intros c. rewrite lookup_senv_restrict. specialize (H c). rewrite lookup_union in H.
+    case_decide as Hc.
+    - rewrite (Hn0 c Hc) in H. apply elem_of_dom in Hc as [e He]. rewrite He in H |- *.
+      by destruct (Σ' !! c).
+    - apply not_elem_of_dom in Hc. by rewrite Hc. }
+  assert (sconv W Σv (senv_restrict Σ' (dom Σv))) as Hv.
+  { intros c. rewrite lookup_senv_restrict. specialize (H c). rewrite lookup_union in H.
+    case_decide as Hc.
+    - apply elem_of_dom in Hc as [e He]. rewrite He in H |- *.
+      assert (Σ0 !! c = None) as E0.
+      { specialize (Hd c). rewrite He in Hd. by destruct (Σ0 !! c). }
+      rewrite E0 in H. by destruct (Σ' !! c).
+    - apply not_elem_of_dom in Hc. by rewrite Hc. }
+  split_and!.
+  - apply map_eq. intros c. rewrite lookup_union, !lookup_senv_restrict.
+    specialize (H c). rewrite lookup_union in H.
+    case_decide as A; case_decide as B.
+    + exfalso. assert (Σv !! c = None) as N by (by apply Hn0).
+      apply elem_of_dom in B as [? ?]. congruence.
+    + by destruct (Σ' !! c).
+    + by destruct (Σ' !! c).
+    + apply not_elem_of_dom in A, B. rewrite A, B in H. by destruct (Σ' !! c).
+  - intros c. rewrite !lookup_senv_restrict. case_decide as A; case_decide as B; try done.
+    + assert (Σv !! c = None) as N by (by apply Hn0). apply elem_of_dom in B as [? ?].
+      congruence.
+    + by destruct (Σ' !! c).
+    + by destruct (Σ' !! c).
+  - done.
+  - done.
+  - apply set_eq. intros c. rewrite !elem_of_dom. specialize (H0 c).
+    destruct (Σ0 !! c), (senv_restrict Σ' (dom Σ0) !! c); naive_solver.
+  - apply set_eq. intros c. rewrite !elem_of_dom. specialize (Hv c).
+    destruct (Σv !! c), (senv_restrict Σ' (dom Σv) !! c); naive_solver.
+Qed.
+
+Lemma Prel_sconv n : ∀ W Σ Σ' T p,
+  world_wf W → sconv W Σ Σ' → Prel n W Σ T p → Prel n W Σ' T p.
+Proof.
+  induction n as [n IHn] using lt_wf_ind.
+  intros W Σ Σ' T p HW Hc HP.
+  destruct n as [|n']; [apply Prel_0|].
+  assert (∀ j W0 Σ0 Σ0' p0, j ≤ n' → world_wf W0 → sconv W0 Σ0 Σ0' →
+            Prel j W0 Σ0 T p0 → Prel j W0 Σ0' T p0) as HPj.
+  { intros j ? ? ? ? Hj. apply IHn. lia. }
+  apply Prel_S_iff in HP as (Hirr & Hrdy & Hstep).
+  apply Prel_S_iff. split_and!.
+  { intros Hp. destruct (Hirr Hp) as (v & E & -> & ? & HVv & ?).
+    exists v, E. split_and!; [done|done| |done].
+    eapply Vrel_econv; [done|by apply sconv_tconv|exact HVv]. }
+  { intros Hp. eapply (ready_p_conv W HW); [exact Hc|]. by apply Hrdy. }
+  intros π q Hst. specialize (Hstep π q Hst).
+  destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
+  - (* Q-Tau *)
+    intros Hd. rewrite <-(sconv_dom W Σ Σ' Hc) in Hd.
+    destruct (Hstep Hd) as (N & W1 & HN & Hfr & HP').
+    destruct (Prel_tau_rename n' (senv_roots Σ') _ W N W1 Σ T q eq_refl HW Hfr HN HP')
+      as (N' & W1' & HN'X & HN' & Hfr' & HP1).
+    exists N', W1'. split_and!; [set_solver|done|].
+    assert (world_wf W1') as HW1 by (by destruct Hfr' as ((_ & _ & _ & [? _]) & _)).
+    eapply HPj; [lia|done| |exact HP1].
+    eapply sconv_mono; [|exact Hc]. intros. destruct Hfr' as ((_ & He & _) & _). auto.
+  - (* Q-Recv *)
+    destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc1 & H).
+    destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)
+      as (s0 & s0' & k' & Σ1' & HΣ & HΣ' & Hu & Hs & Hk & Hc1' & Hcd').
+    destruct (seq_rcv_inv s0' s0 m U s) as (U' & s'' & Hu' & HU & Hs'');
+      [by apply seq_sym|done|].
+    exists Σ1', m, U', s'', k'. split_and!; [by exists s0'|done|].
+    intros W' j Θ2 HW' Hj Hfr Hok HVw.
+    assert (world_wf W') as HW'f by (by eapply wext_wf).
+    assert (∀ x y, w_eq W x y → w_eq W' x y) as Hsub by (intros; by eapply wext_eq).
+    assert (sconv W' (<[c := (s, pt_shift 1 k)]> Σ1) (<[c := (s'', pt_shift 1 k')]> Σ1'))
+      as Hcr.
+    { apply sconv_insert; [by eapply sconv_mono|].
+      split; simpl; [by apply seq_sym|]. apply Hsub. by apply (wf_eq_shift _ HW). }
+    assert (Vrel j W' Θ2 (payload_at m U k) w) as HVw0.
+    { eapply Vrel_tconv; [done| |exact HVw].
+      eapply teqW_trans; [done|apply teq_teqW, teq_ty_inst, HU|].
+      apply teqW_payload; [done|]. apply Hsub. by apply (wf_eq_sym _ HW). }
+    pose proof (H W' j Θ2 HW' Hj Hfr (recv_ok_conv W' HW'f _ _ _ Hcr Hok) HVw0) as HP1.
+    rewrite (recv_back_conv W' _ _ Θ2 Hcr) in HP1.
+    eapply HPj; [lia|done| |exact HP1]. by apply (recv_env_conv W' HW'f).
+  - (* Q-Send *)
+    destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd & Hd0v & Hc0 & Hcv &
+                       Hdom & Hsplit & HdΣ & HVw & HP').
+    destruct (sconv_hd W HW Σ Σ' c _ k (Σ0 ∪ Σv) Hc Hhd ltac:(rewrite dom_union_L; set_solver))
+      as (s0 & s0' & k' & Σ01' & HΣ & HΣ' & Hu & Hs & Hk & Hc1' & Hcd').
+    destruct (seq_snd_inv s0' s0 m U s) as (U' & s'' & Hu' & HU & Hs'');
+      [by apply seq_sym|done|].
+    destruct (sconv_split W Σ0 Σv Σ01' Hd0v Hc1') as
+      (Σ0' & Σv' & -> & Hd0v' & Hc0' & Hcv' & Hdom0 & Hdomv).
+    exists Σ0', Σv', m, U', s'', k', Σe, Θe. split_and!.
+    + by exists s0'.
+    + done.
+    + by rewrite Hdom0.
+    + by rewrite Hdomv.
+    + done.
+    + done.
+    + by rewrite <-(sconv_dom W Σ Σ' Hc).
+    + eapply Vrel_tconv; [done| |].
+      { eapply teqW_trans; [done|apply teqW_payload; [done|exact Hk]|].
+        apply teq_teqW, teq_ty_inst. by apply teq_sym. }
+      eapply Vrel_econv; [done| |exact HVw].
+      apply tconv_union; [by apply sconv_tconv|apply tconv_refl; done].
+    + eapply HPj; [lia|done| |exact HP'].
+      apply sconv_insert; [apply sconv_union; [done|apply (sconv_refl W HW)]|].
+      split; simpl; [by apply seq_sym|]. by apply (wf_eq_shift _ HW).
+  - (* Q-Close *)
+    destruct Hstep as (Σ1 & k & Hhd & Hc1 & HP').
+    destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)
+      as (s0 & s0' & k' & Σ1' & HΣ & HΣ' & Hu & Hs & Hk & Hc1' & Hcd').
+    exists Σ1', k'. split_and!; [|done|].
+    + exists s0'. split; [done|]. apply (seq_end_inv _ s0); [by apply seq_sym|done].
+    + eapply HPj; [lia|done|exact Hc1'|exact HP'].
+  - (* Q-Link *)
+    destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd & -> & Hne & HΣ & Hc1 & Hd1 &
+                       Hdu & Hal & HP').
+    pose proof (Hc c) as Hcc. pose proof (Hc d) as Hdd. rewrite HΣ in Hcc, Hdd.
+    rewrite lookup_insert_eq in Hcc. rewrite lookup_insert_ne, lookup_insert_eq in Hdd by done.
+    destruct (Σ' !! c) as [[sc' kc']|] eqn:Ec; [|done].
+    destruct (Σ' !! d) as [[sd' kd']|] eqn:Ed; [|done].
+    destruct Hcc as [Hsc Hkc], Hdd as [Hsd Hkd]. simpl in *.
+    exists c, d, (delete c (delete d Σ')), sc', sd', kc', kd'. split_and!.
+    + done.
+    + done.
+    + apply map_eq. intros x. destruct (decide (x = c)) as [->|Hxc].
+      { by rewrite lookup_insert_eq. }
+      rewrite lookup_insert_ne by done. destruct (decide (x = d)) as [->|Hxd].
+      { by rewrite lookup_insert_eq. }
+      by rewrite lookup_insert_ne, lookup_delete_ne, lookup_delete_ne.
+    + rewrite dom_delete_L. set_solver.
+    + rewrite !dom_delete_L. set_solver.
+    + eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
+    + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
+      eapply (wf_eq_trans _ HW); [exact Hal|exact Hkd].
+    + eapply HPj; [lia|done| |exact HP'].
+      intros x. destruct (decide (x = c)) as [->|Hxc].
+      { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hc1 as ->. }
+      rewrite lookup_delete_ne by done. destruct (decide (x = d)) as [->|Hxd].
+      { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hd1 as ->. }
+      rewrite lookup_delete_ne by done. specialize (Hc x). rewrite HΣ in Hc.
+      by rewrite !lookup_insert_ne in Hc.
+Qed.
