@@ -53,8 +53,21 @@ P-Act-Beta      t —β→ t′                    (C, E ⊎ {t}) —τ→ (C, E
 P-Act-Msg       t —c!v→ t′   u —c?v→ u′     (C, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
 P-Act-Close     t —c!→ t′    u —c!→ u′      (C ⊍ {c}, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
 P-Act-Link      t —c↔d→ t′                  (C ⊍ {c}, E ⊎ {t}) —τ→ (C, (E ⊎ {t′})[d/c])
-P-Act-Session   t —σ→ t′   fc(σ) # C        (C, E ⊎ {t}) —σ→ (C ∖ sent(σ), E ⊎ {t′})
+P-Act-Session   t —σ→ t′   fc(σ) # C        (C, E ⊎ {t}) —σ→ ((C ∖ sent(σ)) ∪ back(σ, E), E ⊎ {t′})   [changed]
                                                                    [removed] P-Act-Fork
+
+back(c?v, E) = fchans(v) ∩ fchans(E)     received channels whose other end is already inside
+back(σ, E)   = ∅ otherwise
+```
+
+`back` is the receiving half of the π-calculus Close rule. The paper does not
+need it: with single-channel P-Connect (a tree) and the extrusion split, a
+received channel's other end is never inside the receiver. With multi-channel
+P-Connect (cycles) a channel can travel back to the holder of its other end
+("migration"); the LTS then restricts it at once, so process-level Σ stays a
+plain map with one end per channel.
+
+```
 terminated, safe, deadlock free        unchanged
 ```
 
@@ -99,14 +112,25 @@ W₁ ⊔ W₂     (≡₁ ∪ ≡₂)* with (≺₁ ∪ ≺₂)⁺ on the classe
 ## 6  Readiness and frames   [new]
 
 ```
-offered(x)   = { c | x —σ→ x′, c ∈ fc(σ) }              x a term or a process
+entries(Θ)   one entry per end:  c : S@k  (twice for a channel whose both ends Θ holds)
+offered(x)   = the entries selected by the labels of x's transitions     x a term or a process
+               c!v selects the entry of c whose type unfolds to !…,  c?v the one with ?…,
+               c! either Close entry,  c↔d the entries of c and d
 stable(t)    = no t —λ→ t′ with λ ∈ {β, (νc), ⇑v}        stable(p) = no p —τ→ p′
 
 ready_W(Θ, x) ≔ stable(x) ⇒
                   (offered(x) = ∅  ⇒  x is a value / p is terminated)
-                ∧ ∀d ∈ dom Θ ∖ offered(x).  ∃c ∈ offered(x).  head(c) ≺_W head(d)
+                ∧ ∀e ∈ entries(Θ) ∖ offered(x).  ∃o ∈ offered(x).  head(o) ≺_W head(e)
 
-frame_W(t, F) ≔ stable(t) ⇒ ∀c ∈ offered(t).  {head(c)} ≺_W F
+frame_W(t, F) ≔ stable(t) ⇒ ∀o ∈ offered(t).  {head(o)} ≺_W F
+```
+
+ready counts entries, not names: a thread holding both ends of c and blocking
+on one of them must hold the other entry not offered, so it needs
+head(c) ≺ head(c), which fails. Two threads holding one end each are both
+offered and can synchronize, so that state is not stable.
+
+```
 ```
 
 ## 7  Logical relation   V^W_n⟦Σ ⊢ T⟧,  E^W_n⟦Θ ⊢ T ≺ F⟧,  P^W_n⟦Σ ⊢ T⟧
@@ -138,8 +162,10 @@ O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^β_λ ∗⟧
 O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@k     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[(c, k)]⟧                    [changed]
           t′ ∈ E^W_n⟦Θ₁, c : S@(k+1) ⊢ T ≺ F⟧
 O-Recv    Θ = Θ₁, c : (?P.S)@k                                                           [changed]
-          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧.
+          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Θ₁, Σ₂ defined.
               t′ ∈ E^{W′}_j⟦Θ₁, Σ₂, c : S@(k+1) ⊢ T ≺ F⟧
+          (Θ may then hold both ends of a received channel; Θ₁, Σ₂ is defined when every
+           overlap is a pair of dual ends at the same count)
 O-Close   Θ = Θ₁, c : Close@k      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
 O-Link    c ≠ d    Θ = Θ₁, c : S@k, d : S′@j    S ⊥ S′    c@k ≡_W d@j                     [changed]
           t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
@@ -153,7 +179,9 @@ P-Step    ¬irred p    ready_W(Σ, p)                                           
 
 Q-Tau     p′ ∈ P^W_n⟦Σ ⊢ T⟧
 Q-Recv    Σ = Σ₁, c : (?P.S)@k                                                           [changed]
-          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧.  p′ ∈ P^{W′}_j⟦Σ₁, Σ₂, c : S@(k+1) ⊢ T⟧
+          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to Σ₁ on their overlap B.
+              p′ ∈ P^{W′}_j⟦(Σ₁ ∖ B), (Σ₂ ∖ B), c : S@(k+1) ⊢ T⟧
+          (B = back(σ, E): those channels move into C by P-Act-Session)
 Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@k      dom Σ_e = fchans(v) ∩ C                          [changed]
           v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[(c, k)]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(k+1) ⊢ T⟧
           Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay
@@ -218,7 +246,8 @@ P-Connect  Σ₁, Σ_C ⊢_G (C₁, E₁) : T    Σ₂, Σ_C′ ⊢_G (C₂, E�
 
 ```
 Harmony                          p —τ→ p′  ⇔  p ⟶ p′                       unchanged statement
-Internalizing communication      unchanged
+Internalizing communication      the receiving side's C grows by back(σ); in the composite those
+                                 channels are already in the cut, so the composite's C is unchanged   [changed]
 Internalizing a close            unchanged
 
 Amalgamation      W₁ ⊔ W₂ strict  ⇔  (W₁|_A ⊔ W₂|_A) strict,   A = names W₁ and W₂ share
@@ -307,3 +336,16 @@ bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,
 - Deferred by the author: order that depends on the run (one W per component); slot positions must be finite schemas in G.
 - To prove: free-coordinate extension of Kosaraju–Sullivan (paper level); chain arguments in P-Term and P-Connect; all frame-carrying lemmas.
 - Mechanization: Θ (both ends) only at term level, counters in `senv`, worlds with aliases, amalgamation.
+
+## 15  Lessons from the earlier mechanization (respect these)
+
+An earlier order design was mechanized and abandoned. What it taught, and how this spec already accounts for it:
+
+- Minimality ("my instant is minimal") is unsound as a gate. ready here compares every held entry with some offered entry, strictly, and compares entries, never sets of instants (equal instants must not collapse into one element; that is why no "distinct channels have distinct instants" premise is needed).
+- The old cut only composed when the composite's external interface carried no ordering, because a leastness-shaped gate is not invariant under external steps. Here ready is checked per state by each component, and P-Connect combines them state by state with the chain argument. This is the central claim and the main risk; report early if it does not go through.
+- Step preservation of the cut was left open in three cases: rendezvous with payload migration (handled here by `back` in P-Act-Session), link with an external survivor (handled here by the linker's alias and Renaming along an alias), mixed extrusion (no plain/ordered mix here). Report early if any of them resists.
+- Term-level ∀-introduction got stuck (instantiation needed an order-indistinguishable world copy). Here ∀ appears only directly under □, on values, and is an intersection over instances.
+- The frame/window condition holds for offered entries only; a condition on all pending heads is false (recv returns a continuation above its own instant).
+- A closure without a lower bound must hold nothing (λ = ⊤ forces Σ = ∅).
+- Unrolling under ≈ needs contractiveness (the paper already assumes it). Counters live in Σ, not in types, so unrolling never has to advance an annotation.
+- Constants are typed through their signatures, one compositionality lemma per constant.
