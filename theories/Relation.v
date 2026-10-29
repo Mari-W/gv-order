@@ -144,11 +144,11 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
         | LSess (SRecv c w) =>                         (* O-Recv *)
             ∃ Θ1 m U s k,
               tenv_hd Θ c (SRcv m U s) k Θ1 ∧
-              ∀ W' j Θ2 Θ12, wext W W' → j ≤ n' →
-                tenv_comp (w_eq W') Θ12 Θ1 Θ2 →
+              ∀ W' j Θ2 Θ1c Θ', wext W W' → j ≤ n' →
+                tenv_ext Θ1 c (s, pt_shift 1 k) Θ1c →
+                tenv_comp (w_eq W') Θ' Θ1c Θ2 →
                 lV (below j) W' Θ2 (payload_at m U k) w →
-                ∃ Θ', tenv_ext Θ12 c (s, pt_shift 1 k) Θ' ∧
-                  lE (below j) W' Θ' T F e'
+                lE (below j) W' Θ' T F e'
         | LSess (SSend c w) =>                         (* O-Send *)
             ∃ Θr Θ1 Θ2 m U s k Θ',
               tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
@@ -521,10 +521,11 @@ Definition Ecase (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
   | LSess (SRecv c w) =>
       ∃ Θ1 m U s k,
         tenv_hd Θ c (SRcv m U s) k Θ1 ∧
-        ∀ W' j Θ2 Θ12, wext W W' → j ≤ n' →
-          tenv_comp (w_eq W') Θ12 Θ1 Θ2 →
+        ∀ W' j Θ2 Θ1c Θ', wext W W' → j ≤ n' →
+          tenv_ext Θ1 c (s, pt_shift 1 k) Θ1c →
+          tenv_comp (w_eq W') Θ' Θ1c Θ2 →
           Vrel j W' Θ2 (payload_at m U k) w →
-          ∃ Θ', tenv_ext Θ12 c (s, pt_shift 1 k) Θ' ∧ Erel j W' Θ' T F e'
+          Erel j W' Θ' T F e'
   | LSess (SSend c w) =>
       ∃ Θr Θ1 Θ2 m U s k Θ',
         tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
@@ -556,17 +557,17 @@ Proof.
   - (* recv, → *)
     destruct H as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 HW Hj Hc HV.
+    intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV.
     rewrite <-(levels_at (S n) j) in HV by lia.
-    destruct (H W' j Θ2 Θ12 HW Hj Hc HV) as (Θ' & Hext & HE).
-    exists Θ'. split; [done|]. by rewrite (levels_at (S n) j) in HE by lia.
+    pose proof (H W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV) as HE.
+    by rewrite (levels_at (S n) j) in HE by lia.
   - (* recv, ← *)
     destruct H as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 HW Hj Hc HV.
+    intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV.
     rewrite (levels_at (S n) j) in HV by lia.
-    destruct (H W' j Θ2 Θ12 HW Hj Hc HV) as (Θ' & Hext & HE).
-    exists Θ'. split; [done|]. by rewrite <-(levels_at (S n) j) in HE by lia.
+    pose proof (H W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV) as HE.
+    by rewrite <-(levels_at (S n) j) in HE by lia.
 Qed.
 
 (** The step-clause cases of the process relation at index S n'. *)
@@ -797,7 +798,7 @@ Proof.
     + eapply IH; [|exact H2]. lia.
     + destruct H2 as (Θ1 & m & U & s & k & Hhd & H2).
       eexists _, _, _, _, _. split; [done|].
-      intros W' j Θ2 Θ12 HW Hj Hc HV. apply (H2 W' j Θ2 Θ12); auto. lia.
+      intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV. apply (H2 W' j Θ2 Θ1c Θ'); auto. lia.
     + destruct H2 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                       Hhd & Hc & HV & Hext & HE').
       eexists _, _, _, _, _, _, _, _. split_and!; eauto.

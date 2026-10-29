@@ -556,13 +556,12 @@ Proof.
       destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
       exists (tenvswap a b Θ1), m, U, s, k.
       split; [by apply (tenv_hd_swap a b _ _ (SRcv m U s))|].
-      intros W' j Θ2 Θ12 Hx Hj Hc HVw.
-      apply (tenv_comp_swap a b) in Hc. rewrite tenvswap_involutive in Hc.
+      intros W' j Θ2 Θ1c Θ' Hx Hj Hext Hc HVw.
+      apply (tenv_comp_swap a b) in Hc.
+      apply (tenv_ext_swap a b) in Hext. rewrite tenvswap_involutive, cswap_involutive in Hext.
       apply (IHV j ltac:(lia)) in HVw. rewrite eswap_involutive in HVw.
-      destruct (H _ _ _ _ Hx Hj Hc HVw) as (Θ' & Hext & HE').
-      exists (tenvswap a b Θ'). split.
-      * apply (tenv_ext_swap a b) in Hext. by rewrite tenvswap_involutive in Hext.
-      * by apply (IHE j ltac:(lia)).
+      pose proof (H _ _ _ _ _ Hx Hj Hext Hc HVw) as HE'.
+      apply (IHE j ltac:(lia)) in HE'. by rewrite tenvswap_involutive in HE'.
     + (* send *)
       destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').

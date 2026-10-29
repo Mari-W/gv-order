@@ -184,8 +184,10 @@ O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^u_ℓ ∗⟧
 O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@x     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[x]⟧                          [changed]
           t′ ∈ E^W_n⟦Θ₁, c : S@(x+1) ⊢ T ≺ F⟧
 O-Recv    Θ = Θ₁, c : (?P.S)@x                                                           [changed]
-          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Θ₁, Σ₂ defined.
-              t′ ∈ E^{W′}_j⟦Θ₁, Σ₂, c : S@(x+1) ⊢ T ≺ F⟧
+          ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  (Θ₁, c : S@(x+1)), Σ₂ defined.
+              t′ ∈ E^{W′}_j⟦(Θ₁, c : S@(x+1)), Σ₂ ⊢ T ≺ F⟧
+          (the payload is composed with the continuation, so a returning end of c must be
+           dual to it at an aliased point; sharp edges 43)
           (Θ may then hold both ends of a received channel; Θ₁, Σ₂ is defined when every
            overlap is a pair of dual ends at ≡_{W′} points. Every overlap condition of the
            relation reads ≡_W, never equality of points: sharp edges 40)

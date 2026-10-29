@@ -124,9 +124,8 @@ Proof.
   - eapply HEj; [lia|done|exact Hteq|exact Hstep].
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 HW0 Hj Hc HVw.
-    destruct (H W' j Θ2 Θ12 HW0 Hj Hc HVw) as (Θ' & Hext & HE').
-    exists Θ'. split; [done|]. eapply HEj; [lia|apply HW0|exact Hteq|exact HE'].
+    intros W' j Θ2 Θ1c Θ' HW0 Hj Hext Hc HVw.
+    eapply HEj; [lia|apply HW0|exact Hteq|]. by apply (H W' j Θ2 Θ1c Θ').
   - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                        Hhd & Hc & HVw & Hext & HE').
     exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.

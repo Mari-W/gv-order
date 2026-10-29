@@ -326,6 +326,19 @@ enlarges k. It rests on Internalizing a link at component level: for prim T,
 p ∈ P^W_{2n}⟦Σ, c : S̄@x, d : S@y⟧ with x ≡ y gives (C ∪ {d}, E[d/c]) ∈ P^W_n⟦Σ ⊢ T⟧.
 prim T is needed: a terminated p returning ⟨c, d⟩ fuses into a stuck (C ∪ {d}, ⟨d, d⟩).
 
+**43. O-Recv composes the payload with the carrier's continuation.**
+O-Recv composed the received environment Θ₂ with Θ₁ (the environment without the
+carrier's end) and only then added the carrier's continuation c : S@(x+1), with no
+check between the two. A payload that carries an end of the carrier itself was
+therefore merged with the continuation even when the two are not dual or aliased.
+This breaks the fusion of two ends at a link (a value holding both ends of the fused
+channel, where a closure later receives on one of them a payload naming that channel,
+is in V before fusion and out of V after). Q-Recv already checks this overlap
+(recv_ok reads the continuation's entry). Decision (Claude, delegated, overnight
+rules): O-Recv quantifies over Θ₂ and over the composition Θ′ = (Θ₁, c : S@(x+1)), Θ₂,
+so a returning end of the carrier must be dual to the continuation at an aliased point.
+E becomes weaker (fewer payloads), the fundamental theorem only easier (§7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

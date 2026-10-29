@@ -1102,15 +1102,17 @@ Proof.
       destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
       exists (tenvsw a b Θ1), m, (tysw a b U), (stysw a b s), (ptsw a b k).
       split; [by apply (tenv_hd_sw a b _ _ (SRcv m U s))|].
-      intros W'' j Θ2 Θ12 Hx Hj Hc HVw.
+      intros W'' j Θ2 Θ1c Θ' Hx Hj Hext Hc HVw.
       assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
-      apply (tenv_comp_sw a b) in Hc. rewrite tenvsw_involutive in Hc.
+      apply (tenv_comp_sw a b) in Hc.
+      apply (tenv_ext_sw a b) in Hext. rewrite tenvsw_involutive in Hext.
+      unfold esw in Hext. simpl in Hext.
+      rewrite stysw_involutive, ptsw_shift, ptsw_involutive in Hext.
       apply (IHV j ltac:(lia) W'' (wsw a b W'')) in HVw; [|apply wsame_refl].
       rewrite payload_at_sw, tysw_involutive, ptsw_involutive in HVw.
-      destruct (H _ _ _ _ Hx' Hj Hc HVw) as (Θ' & Hext & HE').
-      exists (tenvsw a b Θ'). split.
-      * apply (tenv_ext_sw a b) in Hext. by rewrite tenvsw_involutive in Hext.
-      * by apply (IHE j ltac:(lia) (wsw a b W'') W'').
+      pose proof (H _ _ _ _ _ Hx' Hj Hext Hc HVw) as HE'.
+      apply (IHE j ltac:(lia) (wsw a b W'') W'') in HE'; [|apply Hrt].
+      by rewrite tenvsw_involutive in HE'.
     + (* send *)
       destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').

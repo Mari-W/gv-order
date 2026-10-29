@@ -248,9 +248,8 @@ Proof.
     + by eapply HEj.
     + destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
       exists Θ1, m, U, s, k. split; [done|].
-      intros W' j Θ2 Θ12 HW' Hj Hc HVw.
-      destruct (H W' j Θ2 Θ12 HW' Hj Hc HVw) as (Θ' & Hext & HE').
-      exists Θ'. split; [done|]. eapply HEj; [lia|by eapply wext_wf| |exact HE'].
+      intros W' j Θ2 Θ1c Θ' HW' Hj Hext Hc HVw.
+      eapply HEj; [lia|by eapply wext_wf| |by apply (H W' j Θ2 Θ1c Θ')].
       intros. by eapply wext_eq.
     + destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').
@@ -777,20 +776,23 @@ Proof.
     destruct (seq_rcv_inv s0' s0 m U s) as (U' & s'' & Hu' & HU & Hs'');
       [by apply seq_sym|done|].
     exists Θ1', m, U', s'', k'. split; [by exists s0'|].
-    intros W' j Θ2 Θ12' HW' Hj Hcomp HVw.
+    intros W' j Θ2 Θ1c' Θ'' HW' Hj HextT Hcomp HVw.
     assert (world_wf W') as HW'f by (by eapply wext_wf).
     assert (∀ x y, w_eq W x y → w_eq W' x y) as Hsub by (intros; by eapply wext_eq).
-    destruct (tconv_comp_join W' HW'f Θ1 Θ1' Θ2 Θ12' Hcomp) as (Θ12 & Hc12 & Hconv);
-      [by eapply tconv_mono|].
+    destruct (tconv_ext W' Θ1' Θ1 c (s'', pt_shift 1 k') (s, pt_shift 1 k) Θ1c')
+      as (Θ1c & Hext1 & Hc1c).
+    { apply (tconv_sym W' HW'f). by eapply tconv_mono. }
+    { split; simpl; [done|]. apply Hsub. apply (wf_eq_shift _ HW).
+      by apply (wf_eq_sym _ HW). }
+    { done. }
+    destruct (tconv_comp_join W' HW'f Θ1c Θ1c' Θ2 Θ'' Hcomp) as (Θ0 & Hc0 & Hconv);
+      [by apply (tconv_sym W' HW'f)|].
     assert (Vrel j W' Θ2 (payload_at m U k) w) as HVw0.
     { eapply Vrel_tconv; [done| |exact HVw].
       eapply teqW_trans; [done|apply teq_teqW, teq_ty_inst, HU|].
       apply teqW_payload; [done|]. apply Hsub. by apply (wf_eq_sym _ HW). }
-    destruct (H W' j Θ2 Θ12 HW' Hj Hc12 HVw0) as (Θ'' & Hext2 & HE').
-    destruct (tconv_ext W' Θ12 Θ12' c (s, pt_shift 1 k) (s'', pt_shift 1 k') Θ''
-                Hconv) as (Θ''' & Hext3 & Hc3); [|done|].
-    { split; simpl; [by apply seq_sym|]. apply Hsub. by apply (wf_eq_shift _ HW). }
-    exists Θ'''. split; [done|]. eapply HEj; [lia|done|exact Hc3|exact HE'].
+    pose proof (H W' j Θ2 Θ1c Θ0 HW' Hj Hext1 Hc0 HVw0) as HE'.
+    eapply HEj; [lia|done|exact Hconv|exact HE'].
   - (* O-Send *)
     destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & ΘS & (s0 & Hext & Hu) &
                        Hsp & HVw & Hext1 & HE').

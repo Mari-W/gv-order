@@ -81,9 +81,8 @@ Proof.
   - by apply IHj.
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 HW Hj Hc HVw.
-    destruct (H W' j Θ2 Θ12 HW Hj Hc HVw) as (Θ' & Hext & HE').
-    exists Θ'. split; [done|]. by apply IHj.
+    intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HVw.
+    apply IHj; [done|]. by apply (H W' j Θ2 Θ1c Θ').
   - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                        Hhd & Hc & HVw & Hext & HE').
     exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done. by apply IHj.
@@ -154,8 +153,8 @@ Proof.
     + eapply HEj; [lia|done|done|exact Hstep].
     + destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
       exists Θ1, m, U, s, k. split; [done|].
-      intros W'' j Θ2 Θ12 HW' Hj Hc HVw.
-      apply (H W'' j Θ2 Θ12); [by eapply wext_trans|done..].
+      intros W'' j Θ2 Θ1c Θ' HW' Hj Hext Hc HVw.
+      apply (H W'' j Θ2 Θ1c Θ'); [by eapply wext_trans|done..].
     + destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').
       exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
