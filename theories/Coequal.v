@@ -493,7 +493,7 @@ Definition tenv_dual (Θ : tenv) : Prop :=
   ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → e1.2 = e2.2 ∧ sdual e1.1 e2.1.
 
 (** Θ = Θ1, Θ2, defined when every overlap is a pair of dual ends at
-    the same count. *)
+    the same point. *)
 Definition tenv_comp (Θ Θ1 Θ2 : tenv) : Prop :=
   tenv_join Θ Θ1 Θ2 ∧
   ∀ c e1 e2, Θ1 !! c = Some (One e1) → Θ2 !! c = Some (One e2) →

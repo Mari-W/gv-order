@@ -11,6 +11,7 @@ theories/Harmony.v
 theories/Ready.v
 theories/Typing.v
 theories/Relation.v
+theories/Points.v
 theories/Convert.v
 theories/Monotone.v
 theories/Equivariance.v

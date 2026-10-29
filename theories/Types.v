@@ -148,17 +148,9 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
     list of points. *)
 Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
 
-(** The payload ∃ι₀ … ιₘ₋₁. T at the point x: P[x] = T[x[i]/ιᵢ]
-    (the signature of [recv]). The logical relation instead types a
-    payload at points aliased to the slots of x in a world. *)
+(** The payload ∃ι₀ … ιₘ₋₁. T at the point x: P[x] = T[x[i]/ιᵢ]. *)
 Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
   ty_inst (slots x m) T.
-
-(** A list of points aliased, in a world given by its ≡, to the slots
-    x[0], …, x[m-1] of a channel's current point x. *)
-Definition slot_aliases (peq : point → point → Prop) (xs : list point)
-    (m : nat) (x : point) : Prop :=
-  length xs = m ∧ ∀ i y, xs !! i = Some y → peq y (pt_slot x i).
 
 (** ** Heads
 
@@ -904,8 +896,7 @@ Qed.
 
     new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
-    send   : (T[ιs] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)
-               P = ∃ιs. T,  {ι} ≺ heads(T[ιs]),  each ιsᵢ ≡ ι[i]
+    send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι])
     recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
     close  : Close@ι ⊸^ι_⊤ ∗
     link   : S@ι ⊗ dual S@ι′ ⊸^ι_⊤ ∗       ι ≡ ι′
@@ -923,13 +914,11 @@ Inductive konst_ty (peq plt : point → point → Prop) : konst → ty → Prop 
   | KTSpawn ub lb :
       konst_ty peq plt KSpawn
         (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)
-  | KTSend m T S x xs :
-      length xs = m →
-      (∀ i y, xs !! i = Some y → peq y (pt_slot x i)) →
-      (∀ h, h ∈ heads (ty_inst xs T) → plt x h) →
+  | KTSend m T S x :
+      (∀ h, h ∈ heads (payload_at m T x) → plt x h) →
       konst_ty peq plt KSend
         (TLolli (Some x) None
-           (TProd (ty_inst xs T) (TSess (SSnd m T S) x))
+           (TProd (payload_at m T x) (TSess (SSnd m T S) x))
            (TSess S (pt_shift 1 x)))
   | KTRecv m T S x :
       konst_ty peq plt KRecv

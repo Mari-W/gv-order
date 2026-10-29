@@ -39,8 +39,8 @@ Fixpoint pn_root (p : pname) : pname :=
 Definition pt_root (x : point) : pname := pn_root (pt_name x).
 
 (** The root names of the points of a type, an environment and a
-    frame. A point created at [new] avoids them (decision O1). Session
-    types have no free points, so the recursion stops there. *)
+    frame, payloads of session types included. A point created at
+    [new] avoids them (decision O1). *)
 Definition opt_roots (o : option point) : gset pname :=
   match o with Some x => {[pt_root x]} | None => ∅ end.
 
@@ -50,10 +50,25 @@ Fixpoint ty_roots (T : ty) : gset pname :=
   | TLolli ub lb T1 U => opt_roots ub ∪ opt_roots lb ∪ ty_roots T1 ∪ ty_roots U
   | TProd T1 U | TSum T1 U => ty_roots T1 ∪ ty_roots U
   | TBox _ T1 => ty_roots T1
-  | TSess _ x => {[pt_root x]}
+  | TSess s x => sty_roots s ∪ {[pt_root x]}
+  end
+with sty_roots (s : sty) : gset pname :=
+  match s with
+  | SRcv _ T s' | SSnd _ T s' => ty_roots T ∪ sty_roots s'
+  | SMu s' => sty_roots s'
+  | SEnd | SVar _ | SVarD _ => ∅
   end.
 
-Definition tenv_roots (Θ : tenv) : gset pname := set_map pt_root (tenv_heads Θ).
+Definition entry_roots (e : sty * point) : gset pname := sty_roots e.1 ∪ {[pt_root e.2]}.
+
+Definition ends_roots (o : ends) : gset pname :=
+  match o with
+  | One e => entry_roots e
+  | Both e1 e2 => entry_roots e1 ∪ entry_roots e2
+  end.
+
+Definition tenv_roots (Θ : tenv) : gset pname :=
+  map_fold (λ _ o X, ends_roots o ∪ X) ∅ Θ.
 Definition senv_roots (Σ : senv) : gset pname := tenv_roots (tenv_of Σ).
 Definition frame_roots (F : gset point) : gset pname := set_map pt_root F.
 
