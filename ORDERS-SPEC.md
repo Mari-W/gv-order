@@ -151,9 +151,13 @@ V-Abs     fchans(t) = dom Σ        {λ} ≼_W heads(Σ)                        
 V-Box     fchans(t) = ∅     ∀W′ ⊒ W.  fix x.t ∈ E^{W′}_n⟦· ⊢ T ≺ ∅⟧   ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □T⟧
 V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧                     [new]
 
-payload at a slot      the value is typed T[xs/ιs] for P = ∃ι₁ … ιₘ. T, with point constants xs such that
-                       xᵢ ≡_W (c, k)[i]  (O-Send/Q-Send: the sender's world; O-Recv/Q-Recv: ∀W′ ⊒ W and
-                       fresh constants xs with these aliases). Written P[(c, k)] below.
+payload at a slot      the value is typed T[xs/ιs] for P = ∃ι₁ … ιₘ. T, with type points xs such that
+                       xᵢ ≡_W (c, k)[i].  O-Send/Q-Send: ∃xs in the sender's world.  O-Recv/Q-Recv:
+                       ∀W′ ⊒ W, ∀xs with these aliases in W′ (no freshness: P-Connect instantiates the
+                       receiver with the sender's xs). Written P[(c, k)] below.
+names                  two sorts: type points (constants, bound variables, slots of those) and world
+                       instants (channels, embedded type points, slots of either), joined by an embedding;
+                       slots rooted at channels exist only in worlds.
 
 E-Zero    t ∈ E^W_0⟦Θ ⊢ T ≺ F⟧
 E-Stop    v ∈ V^W_{n+1}⟦Θ ⊢ T⟧   ⇒   v ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
