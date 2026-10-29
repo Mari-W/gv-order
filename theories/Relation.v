@@ -177,7 +177,9 @@ Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
     Restricted names are bound. An α-variant of a process renames its
     restricted names, one at a time, to names that capture nothing:
     absent from the process, outside the interface Σ, and unknown to
-    the world of the step (decision I1). *)
+    the world before the step (decisions I1, J1): the world after the
+    step may then carry facts about them, e.g. about a renamed new
+    channel. *)
 
 Definition wfresh (W : world) (c : chan) : Prop :=
   ∀ p, p ∈ w_names W → pn_root p ≠ NChan c.
@@ -229,7 +231,7 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
         match π with
         | PTau =>                                      (* Q-Tau *)
             p'.1 ## dom Σ →
-            ∃ W' q, walpha W' Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
+            ∃ W' q, walpha W Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
               lP (below n') W' Σ T q
         | PSess (SRecv c w) =>                         (* Q-Recv *)
             ∃ Σ1 m U s k,
@@ -238,7 +240,7 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
                 recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
                 slot_aliases (w_eq W') xs m (pt_chan c k) →
                 lV (below j) W' Θ2 (ty_inst xs U) w →
-                ∃ q, walpha W' (recv_env (<[c := (s, S k)]> Σ1) Θ2)
+                ∃ q, walpha W (recv_env (<[c := (s, S k)]> Σ1) Θ2)
                  (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
                   lP (below j) W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
         | PSess (SSend c w) =>                         (* Q-Send *)
@@ -391,7 +393,7 @@ Qed.
     restricted channels stay clear of Σ). *)
 Lemma Prel_S_tau n W Σ T p p' :
   Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ →
-  ∃ W' q, walpha W' Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
+  ∃ W' q, walpha W Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
     Prel n W' Σ T q.
 Proof.
   unfold Prel at 1. rewrite level_at_eq. simpl.
@@ -565,7 +567,7 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
   match π with
   | PTau =>
       p'.1 ## dom Σ →
-      ∃ W' q, walpha W' Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
+      ∃ W' q, walpha W Σ p' q ∧ wext_inv W (set_map NChan (p.1 ∪ q.1)) W' ∧
         Prel n' W' Σ T q
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
@@ -574,7 +576,7 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
           recv_ok W (<[c := (s, S k)]> Σ1) Θ2 →
           slot_aliases (w_eq W') xs m (pt_chan c k) →
           Vrel j W' Θ2 (ty_inst xs U) w →
-          ∃ q, walpha W' (recv_env (<[c := (s, S k)]> Σ1) Θ2)
+          ∃ q, walpha W (recv_env (<[c := (s, S k)]> Σ1) Θ2)
                  (p'.1 ∪ recv_back (<[c := (s, S k)]> Σ1) Θ2, p'.2) q ∧
             Prel j W' (recv_env (<[c := (s, S k)]> Σ1) Θ2) T q
   | PSess (SSend c w) =>

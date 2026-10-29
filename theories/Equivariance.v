@@ -1131,7 +1131,7 @@ Proof.
       { destruct q as [Cq Eq]; simpl in *.
         rewrite dom_senvswap in Hd. by apply gswap_disjoint_iff in Hd. }
       exists (wswap a b W1), (pswap a b q0). split_and!.
-      * by apply walpha_pswap.
+      * eapply walpha_wsame; [exact HS|]. by apply walpha_pswap.
       * apply (wext_inv_wswap a b) in Hinv.
         rewrite names_nchan_swap, gswap_union in Hinv.
         eapply wext_inv_wsame; [exact HS|apply wsame_refl|exact Hinv].
@@ -1163,7 +1163,7 @@ Proof.
         apply (walpha_pswap a b) in Hal. unfold pswap at 1 in Hal; simpl in Hal.
         rewrite gswap_union, <-recv_back_swap, <-recv_env_swap, tenvswap_involutive,
           senvswap_insert in Hal.
-        eapply walpha_wsame; [apply Hrt|exact Hal].
+        eapply walpha_wsame; [exact HS|exact Hal].
     + (* send *)
       destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & xs & Hhd &
                          Hd0v & Hc0 & Hcv & Hdom & Hsplit & HdΣ & Hxs & HVw & HP').
