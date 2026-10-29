@@ -82,13 +82,16 @@ terminated, safe, deadlock free        unchanged
 ## 4  Types and environments   [changed]
 
 ```
-T, U ::= ∗ | T ⊗ U | T + U | T ⊸^β_λ U | S@ι | □(∀ιs. T)            term types
-β    ::= ι | ⊥            upper point: the call blocks at most at β     (⊥: never blocks)
-λ    ::= ι | ⊤            lower point: the closure holds only above λ   (⊤: holds nothing)
+T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. T)            term types
+u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥: never blocks)
+ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
+                          (no ⊤ for u: every function has a known upper point, a function that may
+                           block anywhere gets a point variable)
 S    ::= ?P.S | !P.S | Close | μX.S | X                                 session types, unannotated
 P    ::= ∃ιs. T           payload, all points of T bound                sugar: !(S₁ ⊗ S₂).S binds them implicitly
 ι    ::= (p, b)           a point: a name with an offset
 p    ::= a | ι-variable | p[b][i]     point constant, bound point variable, slot "the i-th point carried at (p,b)"
+x[i] ≔ (p[b][i], 0)  for x = (p, b)     the i-th point carried at instant x, as a point
          Neither types nor worlds mention channel names (decisions F2 and N). Channels occur only
          as keys of environments. Renaming channels changes no type and no world.               [changed]
 
@@ -98,7 +101,7 @@ p    ::= a | ι-variable | p[b][i]     point constant, bound point variable, slo
 Δ    ::= · | x : T | Δ, Δ
 prim ∗,  prim T ⊗ U,  prim T + U,  prim □T if prim T     (as in the paper)
 
-heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ι}      heads(T ⊸^β_λ U) = {λ} ∖ {⊤}
+heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ι}      heads(T ⊸^u_ℓ U) = {ℓ} ∖ {⊤}
 heads(T ⊗ U) = heads(T + U) = heads(T) ∪ heads(U)
 heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 ```
@@ -112,9 +115,10 @@ heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 carrier     instants (p, b),  p a point constant or a slot of one. No channel names.   [changed]
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
-alias       p@a ≡ q@b   ≔   (p, a+n) ≡ (q, b+n) for all n
-slot congruence   x ≡ y  ⇒  x[i] ≡ y[i]        (equal instants carry the same message)     [new]
-            the support of a world is counted on root names (point constants)
+successor congruence   x ≡ y  ⇒  x+1 ≡ y+1     (aliased instants stay aliased; replaces the
+                                                 separate alias notation p@a ≡ q@b)        [new]
+slot congruence        x ≡ y  ⇒  x[i] ≡ y[i]    (equal instants carry the same message)     [new]
+x ≼ y       x ≺ y or x ≡ y
 F ≺ G       every element of F is ≺ every element of G        (frames, ⊥ and ⊤ as expected)
 
 W ⊑ W′      ≡ ⊆ ≡′,  ≺ ⊆ ≺′,  W′ strict                        (Kripke order)
@@ -143,9 +147,6 @@ on one of them must hold the other entry not offered, so it needs
 head(c) ≺ head(c), which fails. Two threads holding one end each are both
 offered and can synchronize, so that state is not stable.
 
-```
-```
-
 ## 7  Logical relation   V^W_n⟦Σ ⊢ T⟧,  E^W_n⟦Θ ⊢ T ≺ F⟧,  P^W_n⟦Σ ⊢ T⟧
 
 ```
@@ -154,17 +155,18 @@ V-Chan    c ∈ V^W_n⟦c : S@x ⊢ S′@y⟧            if S ≈ S′ and x ≡
 V-Const   k ∈ V^W_n⟦· ⊢ T⟧                     if k : T  (instance of its signature)
 V-Pair    v₁ ∈ V^W_n⟦Σ₁ ⊢ T⟧   v₂ ∈ V^W_n⟦Σ₂ ⊢ U⟧   ⇒   ⟨v₁, v₂⟩ ∈ V^W_n⟦Σ₁, Σ₂ ⊢ T ⊗ U⟧
 V-Inj     v ∈ V^W_n⟦Σ ⊢ Tᵢ⟧   ⇒   injᵢ v ∈ V^W_n⟦Σ ⊢ T₁ + T₂⟧
-V-Abs     fchans(t) = dom Σ        {λ} ≼_W heads(Σ)                                      [changed]
-          ∀W′ ⊒ W, j < n, Σ′, v ∈ V^{W′}_j⟦Σ′ ⊢ T⟧, F with {β} ≺_{W′} F.
+V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)                                      [changed]
+          ∀W′ ⊒ W, j < n, Σ′, v ∈ V^{W′}_j⟦Σ′ ⊢ T⟧, F with {u} ≺_{W′} F.
               t[v/x] ∈ E^{W′}_j⟦Σ, Σ′ ⊢ U ≺ F⟧
-          ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^β_λ U⟧
+          ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^u_ℓ U⟧
 V-Box     fchans(t) = ∅     ∀W′ ⊒ W.  fix x.t ∈ E^{W′}_n⟦· ⊢ T ≺ ∅⟧   ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □T⟧
 V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧                     [new]
 
-payload at a slot      for c : S@x the value is typed T[xs/ιs] for P = ∃ι₁ … ιₘ. T, with points xs
-                       such that xᵢ ≡_W x[i].  O-Send/Q-Send: ∃xs in the sender's world.  O-Recv/Q-Recv:
-                       ∀W′ ⊒ W, ∀xs with these aliases in W′ (no freshness: P-Connect instantiates the
-                       receiver with the sender's xs). Written P[x] below.
+payload at a slot      P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.     [changed]
+                       A plain substitution, no quantifier on either side. The sender's channels
+                       satisfy it up to ≡ (V-Chan), so the sender must have aliased them to the slots.
+                       (Before decision N slots of channel instants could not occur in types, which
+                       forced ∃xs at the sender and ∀xs at the receiver.)
 names                  one sort, points. Worlds and environments use ground points (constants and their
                        slots). Static types also use bound point variables. (Replaces the two sorts of F2.)
 
@@ -177,14 +179,14 @@ E-Step    ¬irred t    ready_W(Θ, t)    frame_W(t, F)                          
 O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
 O-New     ∃a ∉ names(W), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
           (the created channel name needs no condition, only its point is fresh)               [new]
-O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^β_λ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧       [new]
+O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^u_ℓ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧       [new]
 O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@x     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[x]⟧                          [changed]
           t′ ∈ E^W_n⟦Θ₁, c : S@(x+1) ⊢ T ≺ F⟧
 O-Recv    Θ = Θ₁, c : (?P.S)@x                                                           [changed]
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Θ₁, Σ₂ defined.
               t′ ∈ E^{W′}_j⟦Θ₁, Σ₂, c : S@(x+1) ⊢ T ≺ F⟧
           (Θ may then hold both ends of a received channel; Θ₁, Σ₂ is defined when every
-           overlap is a pair of dual ends at the same point)
+           overlap is a pair of dual ends at ≡_{W′} points, by Entry conversion the same as equal points)
 O-Close   Θ = Θ₁, c : Close@x      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
 O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧       [changed]
           (c = d allowed: a self-link, Θ holds both ends of c, both entries leave Θ.
@@ -215,6 +217,7 @@ Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)                 
            The guard c ∉ dom Σ₂ of the paper is dropped (c may be in B).
            Lemma needed: restricting B only removes external steps on channels no environment holds.)
 Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@x      dom Σ_e = fchans(v) ∩ C                          [changed]
+          ∃Σ_e, Σ_e′ (points chosen by the obligation).
           v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[x]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(x+1) ⊢ T⟧
           Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay
           (both ends of a restricted channel may leave with v; then it has no entry in Σ_e)
@@ -243,8 +246,8 @@ W_G        the world G generates, required strict
            Num: total.   Fin: G finite.   Decided by Kosaraju–Sullivan plus free coordinates (§11)
 
 new    : ∗ ⊸^⊥_⊤ S@ι ⊗ S′@ι                                  S ⊥ S′,  ι fresh
-spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
-send   : (T[ιs] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)    P = ∃ιs. T,  {ι} ≺_G heads(T[ιs]),  each ιsᵢ ≡_G ι[i]
+spawn  : (∗ ⊸^u_ℓ ∗) ⊸^⊥_⊤ ∗
+send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_G heads(P[ι])
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
 link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
@@ -254,9 +257,9 @@ E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    k : T   ⇒   ·; · ⊢^F k : T
 E-LVar     ·; x : T ⊢^F x : T
 E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_G ι
-E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ fresh, only fact β ≺ μ      λ fresh, only facts {λ} ≼ heads(Θ, Δ)
-           ⇒   Θ; Δ ⊢^F λx.t : T ⊸^β_λ U
-E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^β_λ U     Θ₂; Δ₂ ⊢^{F ∪ {λ}} t₂ : T     {β} ≺_G F
+E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ fresh, only fact u ≺ μ      ℓ fresh, only facts {ℓ} ≼ heads(Θ, Δ)
+           ⇒   Θ; Δ ⊢^F λx.t : T ⊸^u_ℓ U
+E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^u_ℓ U     Θ₂; Δ₂ ⊢^{F ∪ {ℓ}} t₂ : T     {u} ≺_G F
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F t₁ t₂ : U
 E-Pair     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T     Θ₂; Δ₂ ⊢^{F ∪ heads(T)} t₂ : U
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F ⟨t₁, t₂⟩ : T ⊗ U
@@ -271,7 +274,7 @@ E-Exp      ·; □Δ, x : □(∀ιs. T) ⊢^∅ t : T     G closed under the su
            ⇒   ·; □Δ ⊢^F !(x = t) : □(∀ιs. T)
 E-Weak, E-Contract, E-Conv      as in the paper, with ⊢^F
 
-P-Term     prim T    Σ, Θ_B; · ⊢^∅ t : T    Θ_B = both ends of every channel in C₀           [changed]
+P-Term     prim T    Σ, Θ_B; · ⊢^∅ t : T    Θ_B = both ends of every channel in C₀, some points  [changed]
            ⇒   Σ ⊢_G (C₀, {t}) : T
 P-Connect  Σ₁, Σ_C ⊢_G (C₁, E₁) : T    Σ₂, Σ_C′ ⊢_G (C₂, E₂) : ∗    Σ_C ⊥ Σ_C′ over C₀ (possibly ∅)
            ⇒   Σ₁, Σ₂ ⊢_G (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T                                     [changed]
@@ -298,6 +301,8 @@ Renaming channels the paper's Renaming.v and Junk.v, with the world fixed       
 Renaming points   a bijective renaming of point constants applied to the world, the environment
                   and the types preserves V, E and P (P-Connect's new case renames a component's
                   fresh point away from the other world)                                       [new]
+Type point conversion  ι ≡_W ι′ ⇒ V/E/P with ι in a type ⇔ with ι′ in its place   [new]
+                  (send and recv use it to move between P[x] and the sender's own points)
 Entry conversion  x ≡_W y  ⇒  (t ∈ E^W_n⟦Θ, c : S@x ⊢ T ≺ F⟧ ⇔ t ∈ E^W_n⟦Θ, c : S@y ⊢ T ≺ F⟧),
                   likewise for P (P-Term's link case; uses slot congruence for payloads)       [new]
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
@@ -311,10 +316,10 @@ E-Unit      ·; · ⊨^F ∗ : ∗
 E-Const     k : T   ⇒   ·; · ⊨^F k : T                      for new, spawn, send, recv, close, link, force
 E-LVar      ·; x : T ⊨^F x : T
 E-Ch        c : S@x; · ⊨^F c : S@ι        with ι ≡_W x
-E-Abs       ∀F′ with {β} ≺ F′.  Θ; Δ, x : T ⊨^{F′} t : U       {λ} ≼ heads(Θ, Δ)
+E-Abs       ∀F′ with {u} ≺ F′.  Θ; Δ, x : T ⊨^{F′} t : U       {ℓ} ≼ heads(Θ, Δ)
             fchans(t) = dom Θ      fv(t) = dom(Δ, x : T)
-            ⇒   Θ; Δ ⊨^F λx.t : T ⊸^β_λ U
-E-App       Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^β_λ U     Θ₂; Δ₂ ⊨^{F ∪ {λ}} t₂ : T     {β} ≺ F
+            ⇒   Θ; Δ ⊨^F λx.t : T ⊸^u_ℓ U
+E-App       Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^u_ℓ U     Θ₂; Δ₂ ⊨^{F ∪ {ℓ}} t₂ : T     {u} ≺ F
             ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊨^F t₁ t₂ : U
 E-Pair      Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t₁ : T     Θ₂; Δ₂ ⊨^{F ∪ heads(T)} t₂ : U
             ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊨^F ⟨t₁, t₂⟩ : T ⊗ U
@@ -372,7 +377,7 @@ blocked         rejected                       (c,0) ≺ (d,0) and (d,0) ≺ (c,
 load balancer   semantic                       races on c, unchanged
 factory         typable                        repl and req via new, spawn and □∀
 leader election semantic                       breaks linearity, unchanged
-scheduler       typable (before: semantic)     r₁@0 ≡ r₀@0 from the link,  reversed ag₀ rejected
+scheduler       typable (before: semantic)     (r₁,0) ≡ (r₀,0) from the link,  reversed ag₀ rejected
 request/reply   typable, recursive             (a,κ) ≺ (b,κ),  (b,κ) ≺ (a,κ+1) under □∀κ          [new]
 delegation      typable                        receiver: c[k][1] ≺ (c,k+1),  sender aliases d to it  [new]
 bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0)                         [new]
@@ -393,7 +398,7 @@ An earlier order design was mechanized and abandoned. What it taught, and how th
 - Step preservation of the cut was left open in three cases: rendezvous with payload migration (handled here by Q-Recv stating its continuation with the returning channels restricted), link with an external survivor (the paper's substitution, plus Entry conversion; worlds name no channels), mixed extrusion (no plain/ordered mix here). Report early if any of them resists.
 - Term-level ∀-introduction got stuck (instantiation needed an order-indistinguishable world copy). Here ∀ appears only directly under □, on values, and is an intersection over instances.
 - The frame/window condition holds for offered entries only; a condition on all pending heads is false (recv returns a continuation above its own instant).
-- A closure without a lower bound must hold nothing (λ = ⊤ forces Σ = ∅).
+- A closure without a lower bound must hold nothing (ℓ = ⊤ forces Σ = ∅).
 - Unrolling under ≈ needs contractiveness (the paper already assumes it). Counters live in Σ, not in types, so unrolling never has to advance an annotation.
 - Constants are typed through their signatures, one compositionality lemma per constant.
 
@@ -405,7 +410,8 @@ Decidability of "W_G strict". Uniform schemas (every counter shifted by a consta
 sides) are a zero-cycle problem on a periodic graph, decided by Kosaraju–Sullivan 1988 in
 polynomial time. Schemas with a counter on one side only (e.g. ∀b. (c[κ], b) ≺ (c, κ+1)) give
 edges with a free coordinate; extension of their linear program believed decidable, proof open.
-The static system only produces equal or independent counters, so uniformity is no restriction.
+The static system produces only uniform edges (equal counters on both sides) and free-coordinate
+edges (independent counters), so the free-coordinate extension covers every schema it emits.
 
 An algorithmic type system. The static system of §9 is declarative. Missing for an algorithm:
 - choosing G: rules emit facts instead of checking them; G is the collected set

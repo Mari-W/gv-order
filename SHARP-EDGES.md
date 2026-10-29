@@ -256,6 +256,15 @@ link_S, invisible extension, the α-variant (E), received-name freshness, the
 guard at new, P-monotonicity restrictions, the two sorts of F2. New: Renaming
 points and Entry conversion (§10).
 
+**38. Consequences of points-only worlds (Claude, delegated).**
+Payloads become a plain substitution P[x] = T[x[1..m]/ιs]. The ∃xs at the sender
+and ∀xs at the receiver existed only because slots of channel instants could not
+occur in types. Successor congruence x ≡ y ⇒ x+1 ≡ y+1 becomes a world law,
+because entries now move along their points and Entry conversion must survive an
+action. It replaces the separate alias notation. Arrows are written T ⊸^u_ℓ U
+again, because β and λ also name a label and abstraction. Found while updating
+gvsharp-orders.lagda (§4, §5, §7, §9, §10).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
