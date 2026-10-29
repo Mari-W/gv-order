@@ -405,3 +405,23 @@ An earlier order design was mechanized and abandoned. What it taught, and how th
 - A closure without a lower bound must hold nothing (λ = ⊤ forces Σ = ∅).
 - Unrolling under ≈ needs contractiveness (the paper already assumes it). Counters live in Σ, not in types, so unrolling never has to advance an annotation.
 - Constants are typed through their signatures, one compositionality lemma per constant.
+
+## 16  Out of scope for now
+
+Neither item is part of the current Rocq round, and neither is on the progress page.
+
+Decidability of "W_G strict". Uniform schemas (every counter shifted by a constant on both
+sides) are a zero-cycle problem on a periodic graph, decided by Kosaraju–Sullivan 1988 in
+polynomial time. Schemas with a counter on one side only (e.g. ∀b. (c[κ], b) ≺ (c, κ+1)) give
+edges with a free coordinate; extension of their linear program believed decidable, proof open.
+The static system only produces equal or independent counters, so uniformity is no restriction.
+
+An algorithmic type system. The static system of §9 is declarative. Missing for an algorithm:
+- choosing G: rules emit facts instead of checking them; G is the collected set
+- checking G: the decision procedure above
+- fresh points (E-Abs μ, ℓ; new ι): generate fresh point variables
+- ∀ instantiation (E-Force): unification over points
+- payload points (send's ∃xs): determined by the aliases to the slot
+- environment splitting (E-App, E-Let*): input/output contexts
+- conversion (E-Conv): ≈ on regular session types is decidable; apply at application/ascription
+- annotations: ∀ schemes under □ and recursive types are given, not inferred
