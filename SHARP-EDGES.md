@@ -149,6 +149,16 @@ with a counter on one side only need a free-coordinate extension, which we
 believe decidable but have to prove. Uniformity is not a restriction, because
 the static system produces only equal or independent counters (§12).
 
+**27. (F) Renaming private names must not touch types.**
+P-Connect renames the private names of the component that does not receive,
+and renaming acts on every channel name, including names a type mentions. If a
+fresh name appears in a session type of Σ or in the process type, the renamed
+process no longer fits the same interface. No semantic counterexample, only an
+obstruction to the proof.
+Decision (F2): types never mention channel names. Points in types are bound
+variables, point constants and slots of those. Channels appear only in worlds
+and environments, and types reach them through aliases (§4, §7).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
