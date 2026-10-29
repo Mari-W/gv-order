@@ -1079,3 +1079,102 @@ Section move2.
       destruct Hext as [[Hr ->]|(f & Hr & [-> | ->])]; by rewrite lookup_insert_ne.
   Qed.
 End move2.
+
+
+Lemma recv_back_not_env W Σr Θ2 c :
+  recv_ok W Σr Θ2 → c ∈ recv_back Σr Θ2 → c ∉ dom (recv_env Σr Θ2).
+Proof.
+  intros (_ & _ & Hb) Hc. unfold recv_back, recv_env in *.
+  rewrite dom_union_L, elem_of_union, !elem_of_dom.
+  intros [[e He]|[e He]].
+  - apply lookup_difference_Some in He as [HΣ Hn].
+    apply elem_of_union in Hc as [Hc|Hc].
+    + apply elem_of_intersection in Hc as [Hc1 Hc2].
+      apply elem_of_dom in Hc1 as [o Ho].
+      destruct o as [e1|e1 e2].
+      * unfold tenv_ones in Hn. rewrite lookup_omap, Ho in Hn. done.
+      * apply (proj1 (elem_of_disjoint _ _) Hb c); [|by apply elem_of_dom_2 in HΣ].
+        apply elem_of_difference. split; [by apply elem_of_dom_2 in Ho|].
+        unfold tenv_ones. rewrite elem_of_dom, lookup_omap, Ho. by intros [? ?].
+    + apply (proj1 (elem_of_disjoint _ _) Hb c); [done|by apply elem_of_dom_2 in HΣ].
+  - apply lookup_difference_Some in He as [Ho Hn].
+    apply elem_of_union in Hc as [Hc|Hc].
+    + apply elem_of_intersection in Hc as [_ Hc2]. apply elem_of_dom in Hc2 as [? ?].
+      congruence.
+    + apply elem_of_difference in Hc as [_ Hc]. apply Hc. by apply elem_of_dom_2 in Ho.
+Qed.
+
+(** Every session step of a substituted term comes from one of the
+    original, on the preimage of its subjects. *)
+Definition ssub_rel (x b : chan) (σ σ' : slabel) : Prop :=
+  match σ, σ' with
+  | SRecv c0 _, SRecv c' _ => csub x b c0 = c'
+  | SSend c0 w, SSend c' w' => csub x b c0 = c' ∧ w' = chsubst x b w
+  | SClos c0, SClos c' => csub x b c0 = c'
+  | SLink cd0, SLink cd' => gsub x b cd0 = cd'
+  | _, _ => False
+  end.
+
+Lemma ssub_rel_subjs x b σ σ' : ssub_rel x b σ σ' → subjs σ' = gsub x b (subjs σ).
+Proof.
+  destruct σ, σ'; simpl; try done; unfold gsub; rewrite ?set_map_singleton_L;
+    naive_solver.
+Qed.
+
+Lemma tstep_chsubst_back x b e σ' f' :
+  tstep (chsubst x b e) (LSess σ') f' → ∃ σ f, tstep e (LSess σ) f ∧ ssub_rel x b σ σ'.
+Proof.
+  intros Hst. destruct σ' as [c w'|c w'|c|cd].
+  - destruct (recv_retarget _ _ _ _ EUnit Hst) as [f'' Hf''] ; [done|].
+    destruct (tstep_chsubst_recv_inv_subst x b e c EUnit f'') as (c0 & f & Hc0 & Hf & _);
+      [done|]. exists (SRecv c0 EUnit), f. by split.
+  - destruct (tstep_chsubst_det_inv x b e _ f' Hst I) as (α & f & Hf & Hα & _).
+    destruct α as [|[c0 w|c0 w|c0|cd0]| |]; simpl in Hα; try discriminate.
+    injection Hα as H1 H2. subst. exists (SSend c0 w), f. by split.
+  - destruct (tstep_chsubst_det_inv x b e _ f' Hst I) as (α & f & Hf & Hα & _).
+    destruct α as [|[c0 w|c0 w|c0|cd0]| |]; simpl in Hα; try discriminate.
+    injection Hα as H1. subst. exists (SClos c0), f. by split.
+  - destruct (tstep_chsubst_det_inv x b e _ f' Hst I) as (α & f & Hf & Hα & _).
+    destruct α as [|[c0 w|c0 w|c0|cd0]| |]; simpl in Hα; try discriminate.
+    injection Hα as H1. subst. exists (SLink cd0), f. by split.
+Qed.
+
+Lemma ssub_rel_select x b Σ σ σ' k :
+  ssub_rel x b σ σ' → subjs σ' = subjs σ →
+  selects (tenv_of Σ) σ k ↔ selects (tenv_of Σ) σ' k.
+Proof.
+  intros Hr Hs. destruct σ as [c0 w|c0 w|c0|cd0], σ' as [c w'|c w'|c|cd]; simpl in *;
+    try done; unfold gsub in *; rewrite ?set_map_singleton_L in Hs.
+  all: try (apply (inj singleton) in Hs as ->; done).
+  by rewrite Hs.
+Qed.
+(** ** The junk-renaming transport for processes *)
+
+(** Every external offer of a related process is on interface channels. *)
+Lemma Prel_offer_dom n W Σ T C E0 e σ e' :
+  Prel (S n) W Σ T (C, E0 ⊎ {[+ e +]}) → tstep e (LSess σ) e' → subjs σ ## C →
+  subjs σ ⊆ dom Σ.
+Proof.
+  intros HP Hst Hd.
+  pose proof (Prel_S_step _ _ _ _ _ _ _ HP (PStepSession C E0 e σ e' Hst Hd)) as Hc.
+  destruct σ as [c w|c w|c|cd]; simpl in Hc |- *.
+  - destruct Hc as (Σ1 & m & U & s & k & Hhd & _). apply senv_hd_dom in Hhd. set_solver.
+  - destruct Hc as (?&?&?&?&?&?&?&?&Hhd&_). apply senv_hd_dom in Hhd. set_solver.
+  - destruct Hc as (Σ1 & k & Hhd & _). apply senv_hd_dom in Hhd. set_solver.
+  - destruct Hc as (c & d & Σ1 & sc & sd & kc & kd & -> & _ & -> & _).
+    rewrite !dom_insert_L. set_solver.
+Qed.
+
+Lemma echsubst_disj_union2 x b F e f :
+  echsubst x b (F ⊎ {[+ e +]} ⊎ {[+ f +]}) =
+  echsubst x b F ⊎ {[+ chsubst x b e +]} ⊎ {[+ chsubst x b f +]}.
+Proof. by rewrite !echsubst_disj_union, !echsubst_singleton. Qed.
+
+Lemma echsubst_disj_union1 x b F e :
+  echsubst x b (F ⊎ {[+ e +]}) = echsubst x b F ⊎ {[+ chsubst x b e +]}.
+Proof. by rewrite echsubst_disj_union, echsubst_singleton. Qed.
+
+Lemma msswap_echsubst_fresh a z x b E :
+  a ∉ echans (echsubst x b E) → z ∉ echans (echsubst x b E) →
+  msswap a z (echsubst x b E) = echsubst x b E.
+Proof. intros Ha Hz. by apply msswap_fresh. Qed.
