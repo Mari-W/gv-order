@@ -188,25 +188,26 @@ P-Step    ¬irred p    ready_W(Σ, p)                                           
           ∀π, p′.  p —π→ p′  ⇒  Σ ⊩ⁿ_W p —π→ p′ : T
           ⇒   p ∈ P^W_{n+1}⟦Σ ⊢ T⟧
 
-Q-Tau     p —τ→ p′    ∃W′ ⊒ W.   W′ strict,   W′|_vis = W|_vis,   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧         [changed]
-          vis = all names except those restricted in p or in p′ (what the environment can see;
-                "or in p" so that a link removing d can create the alias c ≡ d)
+Restricted names are bound in every step obligation: each Q-clause below is stated for
+some α-variant q of the successor (renaming only restricted names, Swap.alpha), not for
+the successor itself.                                                                       [new]
+
+Q-Tau     p —τ→ p′    ∃W′ ⊒ W, ∃q α-variant of p′.   W′ strict,   W′|_vis = W|_vis,
+          q ∈ P^{W′}_n⟦Σ ⊢ T⟧                                                                [changed]
+          vis = all names except those restricted in p or in q (what the environment can see)
           checked for steps with p′'s restricted channels disjoint from dom Σ (the paper's implicit
           convention "Σ and C share no channels", made explicit)
-          if the step creates c (new):  c ∉ names(W)
-          if the step links an external c (Σ ∋ c : S@k) with a restricted d at count j:
-              c@k ≡_{W′} d@j        (the alias may be created by this step; mirrors O-Link;
-                                      a link between two restricted channels needs nothing)
-          The paper's Q-Tau is the case W′ = W. The world may grow, but invisibly; this replaces
-          the paper's invariance under channel substitution, which no longer holds for free once
-          names carry facts.
+          No freshness guard at new and no alias condition on internal links: a new name the
+          world knows is renamed away in q, and the two orientations of a link between two
+          restricted channels (removing c or removing d) give α-equivalent successors, so the
+          composite's step reduces to the component's own step. The paper's Q-Tau is W′ = W, q = p′.
 Q-Recv    Σ = Σ₁, c : (?P.S)@k     p —c?v→ (C′, E′)                                       [changed]
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to (Σ₁, c : S@(k+1)) on their overlap B,
           dom Σ₂ ∖ B # names(W)   (fresh: no received channel inherits stale facts of an old name).
-              ∃π renaming only restricted names of (C′ ∪ B, E′).
-              π·(C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(k+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
+              ∃q α-variant of (C′ ∪ B, E′).
+              q ∈ P^{W′}_j⟦(Σ₁, c : S@(k+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
           (α-variant: restricted names are bound, so the environment's W′ cannot pin
-           stale facts on them; P-Term uses π = id)
+           stale facts on them; P-Term uses q itself)
           (B = channels whose other end the receiver already holds. The obligation is stated
            for the successor with B restricted; the LTS itself does not restrict. If the carrier c
            itself is in B (an end of c was sent over c), its continuation entry leaves Σ as well.
@@ -304,17 +305,22 @@ Renaming restricted names                                                       
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
 Renaming along an alias
                   p ∈ P^W_n⟦Σ, c : S@k ⊢ T⟧,   c@k ≡_W d@j   ⇒   p[d/c] ∈ P^W_n⟦Σ, d : S@j ⊢ T⟧
-                  (needs slot congruence; report if a further freshness premise is needed)
+                  (needs slot congruence; and the term-level version for E. Still needed for the links
+                   that keep their alias: O-Link in P-Term's link case, Q-Link for an external survivor)
 Junk collapse with worlds
+                  x ∉ dom Σ ∪ C,  b ∉ C,  b ≠ x,  p ∈ P^W_n⟦Σ ⊢ T⟧  ⇒  p[b/x] ∈ P^W_n⟦Σ ⊢ T⟧
                   P-Act-Link substitutes in the whole soup; junk occurrences of the removed name in
                   other threads must not matter. Port of the paper's Junk.v to worlds (decision G2),
-                  so P-Term and P-Connect need no tightness premise.                                 [changed]
+                  so P-Term and P-Connect need no tightness premise. It holds because no τ obligation
+                  depends on names any more (α-closure, no alias on internal links); with the alias
+                  it failed: link⟨x, d⟩ owes nothing, link⟨b, d⟩ with b external owes b ≡ d.     [changed]
 Internalizing a link
                   a link between two cut channels in the composite combines the components' steps   [new]
 LTS renaming      a bijective renaming of channel names preserves process steps and safety        [new]
                   (used by adequacy: runs whose fresh names are known to W are renamings of runs
                    whose fresh names are not)
-Prel_steps, Prel_safe            restated for runs with names fresh for W (Q-Tau at new)
+Prel_steps, Prel_safe            along a run an α-variant of each state is related (Swap.alpha_nsteps);
+                                 safety is invariant under renaming
 Invisible extension
                   W₁ ⊑ W₁′ strict with W₁′ unchanged on the names W₂ knows, W₁ ⊔ W₂ strict
                   ⇒  W₁′ ⊔ W₂ strict        (by Amalgamation; generalizes Fresh extension)   [new]
