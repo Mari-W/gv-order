@@ -56,8 +56,9 @@ P-Act-Link      t —c↔d→ t′                  (C ⊍ {c}, E ⊎ {t}) —τ
 P-Act-Session   t —σ→ t′   fc(σ) # C        (C, E ⊎ {t}) —σ→ ((C ∖ sent(σ)) ∪ back(σ, E), E ⊎ {t′})   [changed]
                                                                    [removed] P-Act-Fork
 
-back(c?v, E) = fchans(v) ∩ fchans(E)     received channels whose other end is already inside
-back(σ, E)   = ∅ otherwise
+back(c?v, E ⊎ {t}) = fchans(v) ∩ fchans(E ⊎ {t})     received channels whose other end is already inside,
+                                                     the receiving thread t included
+back(σ, _)         = ∅ otherwise
 ```
 
 `back` is the receiving half of the π-calculus Close rule. The paper does not
@@ -167,8 +168,10 @@ O-Recv    Θ = Θ₁, c : (?P.S)@k                                              
           (Θ may then hold both ends of a received channel; Θ₁, Σ₂ is defined when every
            overlap is a pair of dual ends at the same count)
 O-Close   Θ = Θ₁, c : Close@k      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
-O-Link    c ≠ d    Θ = Θ₁, c : S@k, d : S′@j    S ⊥ S′    c@k ≡_W d@j                     [changed]
+O-Link    Θ = Θ₁, c : S@k, d : S′@j    S ⊥ S′    c@k ≡_W d@j                              [changed]
           t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
+          (c = d allowed: a self-link, Θ holds both ends of c; both entries leave Θ.
+           Matches P-Act-Link with c = d, which releases c. `link (new ∗)` is typable.)
                                                                 [removed] O-Fork
 
 P-Zero    p ∈ P^W_0⟦Σ ⊢ T⟧
@@ -181,13 +184,16 @@ Q-Tau     p′ ∈ P^W_n⟦Σ ⊢ T⟧
 Q-Recv    Σ = Σ₁, c : (?P.S)@k                                                           [changed]
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[(c, k)]⟧,  Σ₂ dual to Σ₁ on their overlap B.
               p′ ∈ P^{W′}_j⟦(Σ₁ ∖ B), (Σ₂ ∖ B), c : S@(k+1) ⊢ T⟧
-          (B = back(σ, E): those channels move into C by P-Act-Session)
+          (B = back(σ, E ⊎ {t}): those channels move into C by P-Act-Session.
+           If the carrier c itself is in B (an end of c was sent over c), its continuation
+           entry c : S@(k+1) leaves Σ as well; Σ₂'s entry for c must then be dual to S at count k+1.)
 Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@k      dom Σ_e = fchans(v) ∩ C                          [changed]
           v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[(c, k)]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(k+1) ⊢ T⟧
           Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay
 Q-Close   Σ = Σ₁, c : Close@k      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
 Q-Link    c ≠ d    Σ = Σ₁, c : S@k, d : S′@j    S ⊥ S′    c@k ≡_W d@j                     [changed]
           p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
+          (c = d cannot reach the interface: process-level Σ holds one end per channel)
                                     [removed] extrusion split 𝒯, T-Nil, T-Cons, Q-Twice
 ```
 
