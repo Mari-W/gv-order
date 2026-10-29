@@ -1,9 +1,9 @@
 (** * Worlds: aliases and a strict order on instants (§5)
 
     A world W = (≡, ≺) relates instants (p, b), i.e. points. ≡ is an
-    equivalence of aliases, closed under shifting both sides
-    (p@a ≡ q@b means (p, a+n) ≡ (q, b+n) for all n), and ≺ is a
-    transitive order on ≡-classes that contains program order
+    equivalence of aliases with successor congruence (x ≡ y gives
+    x+1 ≡ y+1) and slot congruence (x ≡ y gives x[i] ≡ y[i]), and ≺
+    is a transitive order on ≡-classes that contains program order
     (p, b) ≺ (p, b+1). A world is strict when ≺ is irreflexive. Worlds
     are the Kripke index of the logical relation.
 
@@ -68,10 +68,6 @@ Record world_wf (W : world) : Prop := {
 
 Definition strict (W : world) : Prop :=
   world_wf W ∧ ∀ x, ¬ w_lt W x x.
-
-(** p@a ≡ q@b, the alias. *)
-Definition w_alias (W : world) (x y : point) : Prop :=
-  ∀ n, w_eq W (pt_shift n x) (pt_shift n y).
 
 (** ≼ = ≺ or ≡. *)
 Definition w_le (W : world) (x y : point) : Prop := w_eq W x y ∨ w_lt W x y.
@@ -272,13 +268,13 @@ Proof. destruct x. unfold pt_shift. simpl. f_equal. lia. Qed.
 Lemma pt_shift_S n x : pt_shift 1 (pt_shift n x) = pt_shift (S n) x.
 Proof. destruct x. unfold pt_shift. simpl. f_equal. lia. Qed.
 
-Lemma w_alias_iff W x y : world_wf W → w_alias W x y ↔ w_eq W x y.
+(** Successor congruence, n times. *)
+Lemma wf_eq_shift_n W x y n : world_wf W → w_eq W x y →
+  w_eq W (pt_shift n x) (pt_shift n y).
 Proof.
-  intros HW. split.
-  - intros H. specialize (H 0). by rewrite !pt_shift_0 in H.
-  - intros H n. induction n as [|n IH]; [by rewrite !pt_shift_0|].
-    rewrite <-(pt_shift_S n x), <-(pt_shift_S n y).
-    by apply (wf_eq_shift _ HW).
+  intros HW H. induction n as [|n IH]; [by rewrite !pt_shift_0|].
+  rewrite <-(pt_shift_S n x), <-(pt_shift_S n y).
+  by apply (wf_eq_shift _ HW).
 Qed.
 
 (** The Kripke order is reflexive on strict worlds and transitive. *)

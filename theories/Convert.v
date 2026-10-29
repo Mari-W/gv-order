@@ -53,6 +53,17 @@ Qed.
 Lemma teq_ty_inst xs T U : teq T U → teq (ty_inst xs T) (ty_inst xs U).
 Proof. apply eqT_pinst. Qed.
 
+(** ≈_W absorbs ≈ on the right. *)
+Lemma teqW_teq_r W T : ∀ U U', teqW W T U → teq U U' → teqW W T U'.
+Proof.
+  unfold teq. induction T; intros [] [] H1 H2; simpl in *; try done.
+  - destruct H1 as (? & ? & ? & ?), H2 as (<- & <- & ? & ?). split_and!; eauto.
+  - destruct H1, H2. split; eauto.
+  - destruct H1, H2. split; eauto.
+  - destruct H1 as [-> ?], H2 as [<- ?]. split; eauto.
+  - destruct H1 as [? ?], H2 as [<- ?]. split; [done|]. by eapply seq_trans.
+Qed.
+
 (** The two halves have to be proved together: see the header. *)
 Lemma Vrel_Erel_teq n :
   (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) ∧
@@ -75,7 +86,7 @@ Proof.
         eapply (proj1 (IHn j Hj)); [|exact HVw].
         by apply teq_sym.
       + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done|done|done|].
-        eapply teq_trans; [exact Ht|]. by split_and!.
+        eapply teqW_teq_r; [exact Ht|]. by split_and!.
     - (* ⊗ *)
       destruct Hteq as [Hteq1 Hteq2].
       apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
@@ -110,12 +121,12 @@ Proof.
   - eapply HEj; [lia|exact Hteq|exact Hstep].
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
-    intros W' j Θ2 Θ12 xs HW Hj Hc Hxs HVw.
-    destruct (H W' j Θ2 Θ12 xs HW Hj Hc Hxs HVw) as (Θ' & Hext & HE').
+    intros W' j Θ2 Θ12 HW Hj Hc HVw.
+    destruct (H W' j Θ2 Θ12 HW Hj Hc HVw) as (Θ' & Hext & HE').
     exists Θ'. split; [done|]. eapply HEj; [lia|exact Hteq|exact HE'].
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & xs &
-                       Hhd & Hc & Hxs & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ', xs. split_and!; try done.
+  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+                       Hhd & Hc & HVw & Hext & HE').
+    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
     eapply HEj; [lia|exact Hteq|exact HE'].
   - destruct Hstep as (Θ1 & k & Hhd & HE').
     exists Θ1, k. split; [done|].
@@ -160,19 +171,20 @@ Qed.
     [konst_ty] is not closed under ≈, so the relation types a constant
     at its own [konst_ty] type and converts ([Relation.Vdef]). Every
     [konst_ty] type is a ⊸, so a constant related at T ⊸ U is typed at
-    some A ⊸ B with A ≈ T and B ≈ U. Users then [inversion] the
+    some A ⊸ B with A ≈_W T and B ≈_W U. Users then [inversion] the
     [konst_ty] to fix A and B, convert the argument along [teq_sym] of
     the first component, and convert the result along the second —
     which is the only way the ≈-quotient shows up in the constant's
     reduction lemmas. *)
 Lemma Vrel_konst_inv n W Θ ub lb T U k :
   Vrel n W Θ (TLolli ub lb T U) (Konst k) →
-  ∃ A B, konst_ty (w_eq W) (w_lt W) k (TLolli ub lb A B) ∧
-    teq A T ∧ teq B U ∧ Θ = ∅.
+  ∃ ub0 lb0 A B, konst_ty (w_eq W) (w_lt W) k (TLolli ub0 lb0 A B) ∧
+    opt_rel (pteqW W) ub0 ub ∧ opt_rel (pteqW W) lb0 lb ∧
+    teqW W A T ∧ teqW W B U ∧ Θ = ∅.
 Proof.
   intros HV. apply Vrel_lolli_iff in HV
     as [(eb & ? & _)|(k' & T0 & Hk' & -> & Hk & Ht)]; [done|simplify_eq].
-  destruct T0; try done. destruct Ht as (<- & <- & Ht1 & Ht2). eauto 10.
+  destruct T0; try done. destruct Ht as (? & ? & Ht1 & Ht2). eauto 10.
 Qed.
 
 (** ** Conversion at a session type *)
