@@ -10,7 +10,7 @@ From LRGV Require Export Semantics.
 (** ** Properties of processes (Defs. 2.4–2.6) *)
 
 (** A terminated process has released all channels; the main thread
-    has computed a value and all forked threads have reduced to ∗. *)
+    has computed a value and all spawned threads have reduced to ∗. *)
 Definition terminated (p : proc) : Prop :=
   ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ (∀ e, e ∈ E → e = EUnit).
 
@@ -24,7 +24,8 @@ Definition deadlock_free (p : proc) : Prop :=
 
 Inductive action :=
   | ABeta
-  | AFork (v : expr)
+  | ANew
+  | ASpawn (v : expr)
   | ARecv (c : chan)
   | ASend (c : chan) (v : expr)
   | AClos (c : chan)
@@ -38,7 +39,7 @@ Proof. solve_decision. Defined.
     this is set-valued (cf. [subjs]). *)
 Definition asubjs (a : action) : option (gset chan) :=
   match a with
-  | ABeta | AFork _ => None
+  | ABeta | ANew | ASpawn _ => None
   | ARecv c | ASend c _ | AClos c => Some {[c]}
   | ALink c d => Some {[c; d]}
   end.
@@ -54,7 +55,8 @@ Fixpoint act (e : expr) : option action :=
         if is_val e2 then
           match e1, e2 with
           | Lam _, _ => Some ABeta
-          | Konst KFork, v => Some (AFork v)
+          | Konst KNew, EUnit => Some ANew
+          | Konst KSpawn, v => Some (ASpawn v)
           | Konst KRecv, Chan c => Some (ARecv c)
           | Konst KSend, Pair v (Chan c) => Some (ASend c v)
           | Konst KClos, Chan c => Some (AClos c)
@@ -81,7 +83,8 @@ Fixpoint act (e : expr) : option action :=
 Definition offers (a : action) (α : tlabel) : Prop :=
   match a, α with
   | ABeta, LBeta => True
-  | AFork v, LFork _ w => v = w
+  | ANew, LNew _ => True
+  | ASpawn v, LSpawn w => v = w
   | ARecv c, LSess (SRecv d w) => c = d ∧ is_val w
   | ASend c v, LSess (SSend d w) => c = d ∧ v = w
   | AClos c, LSess (SClos d) => c = d
@@ -113,7 +116,8 @@ Proof.
     + (* T-Act-App *) by exists ABeta.
     + (* T-Act-Let* *) by exists ABeta.
     + (* T-Act-LetPair *) by exists ABeta.
-    + (* T-Act-Fork *) by exists (AFork v).
+    + (* T-Act-New *) by exists ANew.
+    + (* T-Act-Spawn *) by exists (ASpawn v).
     + (* T-Act-Recv *) exists (ARecv c). split; [done|by split].
     + (* T-Act-Send *) by exists (ASend c v).
     + (* T-Act-Close *) by exists (AClos c).
@@ -155,19 +159,23 @@ Proof.
     destruct e1 as [| |k| |e0 | | | | | | | | ]; try discriminate.
     + (* a concurrency primitive *)
       destruct k; simplify_eq.
-      * (* T-Act-Fork *)
-        destruct α as [|σ|c w]; try done. simpl in Hoff. simplify_eq.
-        exists (Chan c). apply TStepHead, HeadFork. by rewrite Hb2.
+      * (* T-Act-New *)
+        destruct e2 as [| | | | | | | | | | | | ]; try discriminate.
+        simplify_eq. destruct α as [|σ|c|w]; try done.
+        exists (Pair (Chan c) (Chan c)). apply TStepHead, HeadNew.
+      * (* T-Act-Spawn *)
+        destruct α as [|σ|c|w]; try done. simpl in Hoff. simplify_eq.
+        exists EUnit. apply TStepHead, HeadSpawn. by rewrite Hb2.
       * (* T-Act-Recv *)
         destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
-        simplify_eq. destruct α as [|σ| ]; try done.
+        simplify_eq. destruct α as [|σ| | ]; try done.
         destruct σ as [d w|d w|d|cd]; try done.
         destruct Hoff as [-> Hw]. exists (Pair w (Chan d)).
         by apply TStepHead, HeadRecv.
       * (* T-Act-Send *)
         destruct e2 as [| | | | | |v w | | | | | | ]; try discriminate.
         destruct w as [| | |d | | | | | | | | | ]; try discriminate.
-        simplify_eq. destruct α as [|σ| ]; try done.
+        simplify_eq. destruct α as [|σ| | ]; try done.
         destruct σ as [d' w'|d' w'|d'|cd']; try done.
         destruct Hoff as [-> ->].
         pose proof (is_val_of_true _ Hb2) as Hv2. simpl in Hv2.
@@ -175,7 +183,7 @@ Proof.
         exists (Chan d'). by apply TStepHead, HeadSend.
       * (* T-Act-Close *)
         destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
-        simplify_eq. destruct α as [|σ| ]; try done.
+        simplify_eq. destruct α as [|σ| | ]; try done.
         destruct σ as [d w|d w|d|cd]; try done. simpl in Hoff. simplify_eq.
         exists EUnit. by apply TStepHead, HeadClos.
       * (* T-Act-Link *)
@@ -183,7 +191,7 @@ Proof.
         destruct v as [| | |c' | | | | | | | | | ]; try discriminate.
         destruct w as [| | |d' | | | | | | | | | ]; try discriminate.
         simplify_eq.
-        destruct α as [|σ| ]; try done.
+        destruct α as [|σ| | ]; try done.
         destruct σ as [| | |cd'']; try done.
         simpl in Hoff. subst cd''.
         exists EUnit. by apply TStepHead, HeadLink.
@@ -249,10 +257,12 @@ Qed.
 Lemma tstep_progress e : irred e ∨ ∃ α e', tstep e α e'.
 Proof.
   destruct (act e) as [a|] eqn:Ha; [right|left; by apply act_None_irred].
-  destruct a as [|v|c|c v|c|c d].
+  destruct a as [| |v|c|c v|c|c d].
   - destruct (act_offer _ _ LBeta Ha I) as [e' ?]. by exists LBeta, e'.
-  - destruct (act_offer _ _ (LFork "" v) Ha eq_refl) as [e' ?].
-    by exists (LFork "" v), e'.
+  - destruct (act_offer _ _ (LNew "") Ha I) as [e' ?].
+    by exists (LNew ""), e'.
+  - destruct (act_offer _ _ (LSpawn v) Ha eq_refl) as [e' ?].
+    by exists (LSpawn v), e'.
   - destruct (act_offer _ _ (LSess (SRecv c EUnit)) Ha (conj eq_refl I))
       as [e' ?].
     by exists (LSess (SRecv c EUnit)), e'.
@@ -270,7 +280,10 @@ Qed.
 Lemma offers_beta a : offers a LBeta → a = ABeta.
 Proof. by destruct a. Qed.
 
-Lemma offers_fork a c v : offers a (LFork c v) → a = AFork v.
+Lemma offers_new a c : offers a (LNew c) → a = ANew.
+Proof. by destruct a. Qed.
+
+Lemma offers_spawn a v : offers a (LSpawn v) → a = ASpawn v.
 Proof. destruct a; try done. by intros ->. Qed.
 
 Lemma offers_send a c v : offers a (LSess (SSend c v)) → a = ASend c v.
@@ -292,7 +305,7 @@ Proof. destruct a, σ; naive_solver. Qed.
 Lemma asubjs_offers a S :
   asubjs a = Some S → ∃ σ, subjs σ = S ∧ offers a (LSess σ).
 Proof.
-  destruct a as [|v|d|d v|d|d d']; simpl; intros Hs; try discriminate;
+  destruct a as [| |v|d|d v|d|d d']; simpl; intros Hs; try discriminate;
     injection Hs as <-.
   - exists (SRecv d EUnit). by split.
   - exists (SSend d v). by split.
@@ -329,16 +342,16 @@ Proof.
     split; [by apply gmultiset_elem_of_elements|done].
 Defined.
 
-Global Instance act_fork_dec e : Decision (∃ v, act e = Some (AFork v)).
+Global Instance act_spawn_dec e : Decision (∃ v, act e = Some (ASpawn v)).
 Proof.
-  destruct (act e) as [[|v|c|c v|c|c d]|] eqn:Ha;
+  destruct (act e) as [[| |v|c|c v|c|c d]|] eqn:Ha;
     try (right; intros (? & ?); simplify_eq; done).
   left. by exists v.
 Defined.
 
 Global Instance act_link_dec e : Decision (∃ c d, act e = Some (ALink c d)).
 Proof.
-  destruct (act e) as [[|v|c|c v|c|c d]|] eqn:Ha;
+  destruct (act e) as [[| |v|c|c v|c|c d]|] eqn:Ha;
     try (right; intros (? & ? & ?); simplify_eq; done).
   left. by exists c, d.
 Defined.
@@ -358,7 +371,7 @@ Global Instance act_msg_dec (C : gset chan) (E : gmultiset expr) e :
   Decision (∃ c v, act e = Some (ASend c v) ∧ c ∈ C
                    ∧ ∃ f, f ∈ E ∖ {[+ e +]} ∧ act f = Some (ARecv c)).
 Proof.
-  destruct (act e) as [[|v|d|d v|d|d d']|] eqn:Ha;
+  destruct (act e) as [[| |v|d|d v|d|d d']|] eqn:Ha;
     try (right; intros (? & ? & ? & _); simplify_eq; done).
   destruct (decide (d ∈ C)) as [Hd|Hd];
     [|right; intros (? & ? & ? & ? & _); simplify_eq; contradiction].
@@ -371,7 +384,7 @@ Global Instance act_clos_dec (C : gset chan) (E : gmultiset expr) e :
   Decision (∃ c, act e = Some (AClos c) ∧ c ∈ C
                  ∧ ∃ f, f ∈ E ∖ {[+ e +]} ∧ act f = Some (AClos c)).
 Proof.
-  destruct (act e) as [[|v|d|d v|d|d d']|] eqn:Ha;
+  destruct (act e) as [[| |v|d|d v|d|d d']|] eqn:Ha;
     try (right; intros (? & ? & _); simplify_eq; done).
   destruct (decide (d ∈ C)) as [Hd|Hd];
     [|right; intros (? & ? & ? & _); simplify_eq; contradiction].
@@ -403,15 +416,22 @@ Proof.
   { right. destruct (gmultiset_split1 _ _ He) as [E0 ->].
     destruct (act_offer _ _ LBeta Ha I) as [e' Hst].
     exists PTau, (C, E0 ⊎ {[+ e' +]}). by apply PStepBeta. }
-  (* P-Act-Fork: every name is offered, so take a globally fresh one *)
-  destruct (decide (∃ e, e ∈ E ∧ ∃ v, act e = Some (AFork v)))
-    as [(e & He & v & Ha)|Hfork].
+  (* P-Act-New: every name is offered, so take a globally fresh one *)
+  destruct (decide (∃ e, e ∈ E ∧ act e = Some ANew))
+    as [(e & He & Ha)|Hnew].
   { right. destruct (gmultiset_split1 _ _ He) as [E0 ->].
     pose (c := fresh (C ∪ echans E0 ∪ fchans e)).
     assert (c ∉ C ∪ echans E0 ∪ fchans e) as Hc by apply is_fresh.
-    destruct (act_offer _ _ (LFork c v) Ha eq_refl) as [e' Hst].
-    exists PTau, (C ∪ {[c]}, E0 ⊎ {[+ e' +]} ⊎ {[+ App v (Chan c) +]}).
-    apply PStepFork; [done|set_solver..]. }
+    destruct (act_offer _ _ (LNew c) Ha I) as [e' Hst].
+    exists PTau, (C ∪ {[c]}, E0 ⊎ {[+ e' +]}).
+    apply PStepNew; [done|set_solver..]. }
+  (* P-Act-Spawn *)
+  destruct (decide (∃ e, e ∈ E ∧ ∃ v, act e = Some (ASpawn v)))
+    as [(e & He & v & Ha)|Hspawn].
+  { right. destruct (gmultiset_split1 _ _ He) as [E0 ->].
+    destruct (act_offer _ _ (LSpawn v) Ha eq_refl) as [e' Hst].
+    exists PTau, (C, E0 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]}).
+    by apply PStepSpawn. }
   (* P-Act-Session: a communication whose subject is not restricted *)
   destruct (decide (∃ e, e ∈ E ∧ ∃ a S,
                       act e = Some a ∧ asubjs a = Some S ∧ S ## C))
@@ -419,7 +439,7 @@ Proof.
   { right. destruct (gmultiset_split1 _ _ He) as [E0 ->].
     destruct (asubjs_offers _ _ Hs) as (σ & Hσ & Hoff).
     destruct (act_offer _ _ (LSess σ) Ha Hoff) as [e' Hst].
-    exists (PSess σ), (C ∖ sentc σ, E0 ⊎ {[+ e' +]}).
+    exists (PSess σ), ((C ∖ sentc σ) ∪ backc σ E0, E0 ⊎ {[+ e' +]}).
     apply PStepSession; [done|by rewrite Hσ]. }
   (* P-Act-Msg: the receiver is retargeted to the value the sender emits *)
   destruct (decide (∃ e, e ∈ E ∧ ∃ c v, act e = Some (ASend c v) ∧ c ∈ C
@@ -479,11 +499,18 @@ Proof.
       apply offers_beta in Hoff as ->; exists e
     end.
     split; [multiset_solver|done].
-  - (* P-Act-Fork *)
-    apply Hfork.
-    match goal with H : tstep ?e (LFork _ ?v) _ |- _ =>
+  - (* P-Act-New *)
+    apply Hnew.
+    match goal with H : tstep ?e (LNew _) _ |- _ =>
       apply act_step in H as (a & Ha & Hoff);
-      apply offers_fork in Hoff as ->;
+      apply offers_new in Hoff as ->;
+      exists e; split; [multiset_solver|done]
+    end.
+  - (* P-Act-Spawn *)
+    apply Hspawn.
+    match goal with H : tstep ?e (LSpawn ?v) _ |- _ =>
+      apply act_step in H as (a & Ha & Hoff);
+      apply offers_spawn in Hoff as ->;
       exists e; split; [multiset_solver|]; by exists v
     end.
   - (* P-Act-Msg: on a free channel the send is also an external
