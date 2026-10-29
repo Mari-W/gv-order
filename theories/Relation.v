@@ -23,7 +23,7 @@
     development is closed under the global context. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Semantics Safety Types Coequal Worlds Ready Typing.
+From LRGV Require Export Semantics Safety Swap Types Coequal Worlds Ready Typing.
 
 (** ** The three relations, level by level *)
 
@@ -166,12 +166,23 @@ Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
     | Both e1 e2 => Σe !! r = None ∧ e1.2 = e2.2 ∧ sdual e1.1 e2.1
     end.
 
+(** Q-Tau: a τ step that links an external end c with a restricted d
+    (P-Act-Link removing d) needs the alias c@k ≡ d@j in the world the
+    step moves to. The step is identified by its successor. *)
+Definition tau_link_alias (W' : world) (Σ : senv) (p p' : proc) : Prop :=
+  ∀ E e c d e', p.2 = E ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' →
+    c ∈ dom Σ → d ∈ p.1 → p' = (p.1 ∖ {[d]}, echsubst d c (E ⊎ {[+ e' +]})) →
+    ∃ s k j, Σ !! c = Some (s, k) ∧ w_eq W' (pt_chan c k) (pt_chan d j).
+
 (** Process relation at level n. Differences from the term relation:
 
-    - τ obligations are guarded by [p'.1 ## dom Σ]: [new] picks a
-      globally fresh channel, and only names fresh for Σ as well are
-      constrained (the paper's implicit "Σ and C do not share
-      channels" well-formedness).
+    - Q-Tau: the world may grow, but only invisibly: W ⊑ W′ adds facts
+      only about names restricted before or after the step
+      ([wext_inv]). A [new] is constrained only for names fresh for Σ
+      (the paper's implicit "Σ and C do not share channels") and for
+      W; an internal link between an external and a restricted
+      channel needs the alias ([tau_link_alias]). The paper's Q-Tau is
+      W′ = W.
     - Q-Recv: the received channels are fresh for the restricted set
       ([dom Θ2 ## p.1]). Channels B the receiver ends up holding both
       ends of ("migration", or both ends in one message) come back:
@@ -195,7 +206,10 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
         match π with
         | PTau =>                                      (* Q-Tau *)
             p'.1 ## dom Σ →
-            lP (below n') W Σ T p'
+            (∀ c, c ∈ p'.1 → c ∉ p.1 → NChan c ∉ w_names W) →
+            ∃ W', wext_inv W (set_map NChan (p.1 ∪ p'.1)) W' ∧
+              tau_link_alias W' Σ p p' ∧
+              lP (below n') W' Σ T p'
         | PSess (SRecv c w) =>                         (* Q-Recv *)
             ∃ Σ1 m U s k,
               senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
@@ -347,14 +361,18 @@ Proof.
   intros (H1 & _) Hirr. exact (H1 Hirr).
 Qed.
 
-(** τ steps decrease the index by one (for τ successors whose
-    restricted channels stay clear of Σ — always true for Σ = ∅). *)
+(** τ steps decrease the index by one and may grow the world
+    invisibly (for τ successors whose restricted channels stay clear
+    of Σ, and whose new name is fresh for W). *)
 Lemma Prel_S_tau n W Σ T p p' :
-  Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ → Prel n W Σ T p'.
+  Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ →
+  (∀ c, c ∈ p'.1 → c ∉ p.1 → NChan c ∉ w_names W) →
+  ∃ W', wext_inv W (set_map NChan (p.1 ∪ p'.1)) W' ∧
+    tau_link_alias W' Σ p p' ∧ Prel n W' Σ T p'.
 Proof.
   unfold Prel at 1. rewrite level_at_eq. simpl.
-  intros (_ & _ & Hstep) Hred Hdisj.
-  specialize (Hstep _ _ Hred). simpl in Hstep. specialize (Hstep Hdisj).
+  intros (_ & _ & Hstep) Hred Hdisj Hfr.
+  specialize (Hstep _ _ Hred). simpl in Hstep. specialize (Hstep Hdisj Hfr).
   destruct (decide (n < n)); [lia|].
   unfold Prel. rewrite level_at_eq. exact Hstep.
 Qed.
@@ -521,7 +539,10 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
   match π with
   | PTau =>
       p'.1 ## dom Σ →
-      Prel n' W Σ T p'
+      (∀ c, c ∈ p'.1 → c ∉ p.1 → NChan c ∉ w_names W) →
+      ∃ W', wext_inv W (set_map NChan (p.1 ∪ p'.1)) W' ∧
+        tau_link_alias W' Σ p p' ∧
+        Prel n' W' Σ T p'
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
@@ -669,13 +690,31 @@ Definition sem_ptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
 
 (** ** The adequacy chain (Lemmas 3.4, 3.5 and Theorem 3.6) *)
 
-(** Lemma 3.4 (for the closed environment, which is what adequacy
-    needs; the τ-guard is trivially satisfied at Σ = ∅). *)
-Lemma Prel_steps m n W T p p' :
-  nsteps preduction m p p' → Prel (m + n) W ∅ T p → Prel n W ∅ T p'.
+(** Lemma 3.4, for the closed environment and for runs whose [new]
+    steps pick names fresh for the world ([Swap.frun]). The world
+    grows along the run; N bounds the channel names it knows. *)
+Lemma Prel_steps N m p p' :
+  frun N m p p' → ∀ W n T,
+  (∀ c, NChan c ∈ w_names W → c ∈ N) → p.1 ⊆ N →
+  Prel (m + n) W ∅ T p → ∃ W', Prel n W' ∅ T p'.
 Proof.
-  induction 1 as [|m' x y z Hxy Hyz IH]; simpl; [done|].
-  intros HP. apply IH. eapply Prel_S_tau; [done..|]. set_solver.
+  induction 1 as [N p|N m p q r Hpq HqN Hrun IH]; intros W n T HWN HpN HP.
+  { by exists W. }
+  simpl in HP.
+  destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (W' & (_ & Hn' & _) & _ & HP').
+  { rewrite dom_empty_L. apply disjoint_empty_r. }
+  { intros c Hq Hp HcW. apply HWN in HcW. clear -HqN Hq Hp HcW.
+    destruct p, q; simpl in *. set_solver. }
+  apply (IH W' n T); [| |done].
+  - intros c Hc. apply Hn', elem_of_union in Hc as [Hc|Hc].
+    + apply HWN in Hc. clear -Hc. destruct p, q; simpl in *. set_solver.
+    + apply elem_of_map in Hc as (c' & Heq & Hc'). injection Heq as <-.
+      apply elem_of_union. destruct (decide (c ∈ p.1)) as [Hp|Hp];
+        [left; by apply HpN|right].
+      apply elem_of_difference. split; [|done].
+      apply elem_of_union in Hc' as [?|?]; [contradiction|done].
+  - intros c Hc. apply elem_of_union. destruct (decide (c ∈ p.1)) as [Hp|Hp];
+      [left; by apply HpN|right]. by apply elem_of_difference.
 Qed.
 
 (** Lemma 3.5 *)
@@ -689,11 +728,29 @@ Proof.
     + exfalso. by eapply Prel_S_empty_no_sess.
 Qed.
 
-(** Theorem 3.6 (Adequacy) *)
+(** The channel names a world knows. *)
+Definition wchans (W : world) : gset chan :=
+  list_to_set (omap (λ x, match x with NChan c => Some c | _ => None end)
+                    (elements (w_names W))).
+
+Lemma elem_of_wchans W c : NChan c ∈ w_names W → c ∈ wchans W.
+Proof.
+  intros Hc. unfold wchans. apply elem_of_list_to_set, list_elem_of_omap.
+  exists (NChan c). split; [by apply elem_of_elements|done].
+Qed.
+
+(** Theorem 3.6 (Adequacy). A run whose [new] steps pick names the
+    world knows is a renaming of one whose names are fresh
+    ([Swap.frun_rename]), and safety transports along renamings. *)
 Theorem adequacy W T p : sem_ptyped W ∅ p T → deadlock_free p.
 Proof.
   intros HP p' Hsteps. apply rtc_nsteps_1 in Hsteps as [m Hm].
-  eapply (Prel_safe 0). eapply Prel_steps; [exact Hm|]. exact (HP (m + 1)).
+  destruct (frun_rename m (wchans W ∪ p.1) p p' Hm) as (r & Hrun & Hsafe).
+  apply Hsafe.
+  destruct (Prel_steps _ _ _ _ Hrun W 1 T) as (W' & HP');
+    [intros c Hc; apply elem_of_wchans in Hc; set_solver|set_solver|
+     by rewrite Nat.add_1_r|].
+  by eapply (Prel_safe 0).
 Qed.
 
 (** ** Downward closure (Lemma 3.7) *)
@@ -766,7 +823,8 @@ Proof.
   - done.
   - intros π p' Hst. specialize (H2 π p' Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in H2 |- *.
-    + intros Hd. eapply IH; [|by apply H2]. lia.
+    + intros Hd Hf. destruct (H2 Hd Hf) as (W' & ? & ? & ?).
+      exists W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
       eexists _, _, _, _, _. split_and!; [done|done|].
       intros W' j Θ2 HW Hj Hfr Hdu HV. apply H2; auto. lia.

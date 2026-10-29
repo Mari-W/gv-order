@@ -626,6 +626,46 @@ Proof.
     + apply glt_base. by right.
 Qed.
 
+(** ** Invisible extension
+
+    W ⊑ W′ grows only on the names N the environment cannot see: W′
+    knows no names beyond W and N, and adds nothing between instants
+    of other names. This is how a process-level τ step may grow its
+    world (Relation.v, Q-Tau). A fresh extension is the special case
+    where N is new. *)
+
+Definition wext_inv (W : world) (N : gset pname) (W' : world) : Prop :=
+  wext W W' ∧ w_names W' ⊆ w_names W ∪ N ∧
+  (∀ x y, pt_root x ∉ N → pt_root y ∉ N →
+     (w_eq W' x y → w_eq W x y) ∧ (w_lt W' x y → w_lt W x y)).
+
+Lemma wext_fresh_inv W N W' : wext_fresh W N W' → wext_inv W N W'.
+Proof.
+  intros (HW & _ & Hn & Hold). split_and!; [done| |done]. rewrite Hn. done.
+Qed.
+
+Theorem invisible_extension W1 N W1' W2 :
+  wext_inv W1 N W1' → N ## w_names W2 → strict W2 →
+  strict (wjoin W1 W2) → strict (wjoin W1' W2).
+Proof.
+  intros [(_ & _ & _ & HW1') [_ Hold]] HN2 HW2 [HJ Hi].
+  apply amalgamation; [done..|].
+  set (A := w_names W1' ∩ w_names W2).
+  assert (∀ x, pt_root x ∈ A → pt_root x ∉ N) as HA.
+  { intros x Hx. subst A. set_solver. }
+  split; [apply wjoin_wf; apply wrestrict_wf; [apply HW1'|apply HW2]|].
+  intros x Hx. apply (Hi x).
+  revert Hx. apply wgen_incl.
+  - intros a b [[Hab Hs]|[Hab Hs]].
+    + destruct Hs as [->|[Ha Hb]]; [apply geq_refl|].
+      apply geq_base. left. by apply (Hold a b (HA a Ha) (HA b Hb)).
+    + apply geq_base. by right.
+  - intros a b [[Hab Hs]|[Hab Hs]].
+    + destruct Hs as [[Hn Ho]|[Ha Hb]]; [by apply (wf_lt_same _ a b HJ)|].
+      apply glt_base. left. by apply (Hold a b (HA a Ha) (HA b Hb)).
+    + apply glt_base. by right.
+Qed.
+
 (** A fresh extension survives joining with a larger world that does
     not know the new names: W ⊑ₒ W₁ placing N and W ⊑ W′ give
     W′ ⊑ₒ W₁ ⊔ W′ placing N. Monotonicity of the relation at [new]
