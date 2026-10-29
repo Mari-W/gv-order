@@ -302,6 +302,21 @@ successors with p′.1 # dom Σ, and Q-Recv only received environments with
 dom Θ₂ # p.1. These are the paper's implicit "Σ and C do not share channels",
 not world conditions; adequacy (Σ = ∅) is unaffected (§7).
 
+**42. (P) P-Connect over related components loses step indices at a linked cut pair.**
+With a multi-channel cut, component 1 may link two cut channels c and d. Component 2
+then holds both ends of d and must be related with d restricted. A synchronization on
+d inside component 2 is one τ step of the composite but two steps (c̄!v, then d̄?v) of
+component 2, so the index halves and the induction on n breaks. Q-Tau picks its world
+per index, so stating the lemma for all indices does not help.
+Decision (P1, Claude, delegated, overnight rules): the process relation is proved for
+thread decompositions. A configuration (C, E) is decomposed when every thread is
+E-related in one world W, the threads' environments compose (overlaps at ≡_W points)
+to an environment that agrees with Σ on dom Σ and holds both ends of every channel of
+C, dual and aliased. P-Term and P-Connect become lemmas that build decompositions, and
+the fundamental theorem for processes goes through the decomposition. A link renames
+or fuses keys inside single threads, one step each (an E-level substitution lemma that
+generalizes the paper's junk collapse). V, E and P are unchanged (§11).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
