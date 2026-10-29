@@ -187,7 +187,8 @@ O-Recv    Θ = Θ₁, c : (?P.S)@x                                              
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Θ₁, Σ₂ defined.
               t′ ∈ E^{W′}_j⟦Θ₁, Σ₂, c : S@(x+1) ⊢ T ≺ F⟧
           (Θ may then hold both ends of a received channel; Θ₁, Σ₂ is defined when every
-           overlap is a pair of dual ends at ≡_{W′} points, by Entry conversion the same as equal points)
+           overlap is a pair of dual ends at ≡_{W′} points. Every overlap condition of the
+           relation reads ≡_W, never equality of points: sharp edges 40)
 O-Close   Θ = Θ₁, c : Close@x      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
 O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧       [changed]
           (c = d allowed: a self-link, Θ holds both ends of c, both entries leave Θ.

@@ -91,14 +91,14 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TLolli ub lb T1 U =>
       (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
          ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
-           tenv_comp Θ'' Θ Θ' →
+           tenv_comp (w_eq W') Θ'' Θ Θ' →
            lV (below j) W' Θ' T1 w →
            ub_below W' ub F →
            lE (below j) W' Θ'' U F (subst1 w eb))
       ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
            teqW W T0 (TLolli ub lb T1 U))
   | TProd T1 U =>
-      ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp Θ Θ1 Θ2 ∧
+      ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
         Vdef below n W Θ1 T1 v1 ∧ Vdef below n W Θ2 U v2
   | TSum T1 U =>
       (∃ v', v = Inj1 v' ∧ Vdef below n W Θ T1 v')
@@ -138,20 +138,20 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
               lE (below n') W'
                 (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
         | LSpawn w =>                                  (* O-Spawn *)
-            ∃ Θ1 Θ2 ub lb, tenv_comp Θ Θ1 Θ2 ∧
+            ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
               Vn W Θ1 (TLolli ub lb TUnit TUnit) w ∧
               lE (below n') W Θ2 T F e'
         | LSess (SRecv c w) =>                         (* O-Recv *)
             ∃ Θ1 m U s k,
               tenv_hd Θ c (SRcv m U s) k Θ1 ∧
               ∀ W' j Θ2 Θ12, wext W W' → j ≤ n' →
-                tenv_comp Θ12 Θ1 Θ2 →
+                tenv_comp (w_eq W') Θ12 Θ1 Θ2 →
                 lV (below j) W' Θ2 (payload_at m U k) w →
                 ∃ Θ', tenv_ext Θ12 c (s, pt_shift 1 k) Θ' ∧
                   lE (below j) W' Θ' T F e'
         | LSess (SSend c w) =>                         (* O-Send *)
             ∃ Θr Θ1 Θ2 m U s k Θ',
-              tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp Θr Θ1 Θ2 ∧
+              tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
               Vn W Θ2 (payload_at m U k) w ∧
               tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
               lE (below n') W Θ' T F e'
@@ -182,8 +182,8 @@ Definition tenv_ones (Θ : tenv) : senv :=
 Definition recv_back (Σr : senv) (Θ2 : tenv) : gset chan :=
   (dom Θ2 ∩ dom Σr) ∪ (dom Θ2 ∖ dom (tenv_ones Θ2)).
 
-Definition recv_ok (Σr : senv) (Θ2 : tenv) : Prop :=
-  senv_dual_on Σr (tenv_ones Θ2) ∧ tenv_dual Θ2 ∧
+Definition recv_ok (W : world) (Σr : senv) (Θ2 : tenv) : Prop :=
+  senv_dual_on (w_eq W) Σr (tenv_ones Θ2) ∧ tenv_dual (w_eq W) Θ2 ∧
   (dom Θ2 ∖ dom (tenv_ones Θ2)) ## dom Σr.
 
 Definition recv_env (Σr : senv) (Θ2 : tenv) : senv :=
@@ -191,14 +191,28 @@ Definition recv_env (Σr : senv) (Θ2 : tenv) : senv :=
 
 (** Q-Send: the restricted channels a message carries. Θe holds the
     ends that leave with the message (one end, or both), Σe the ends
-    that stay, dual at the same point. *)
-Definition send_split (Σe : senv) (Θe : tenv) : Prop :=
+    that stay, dual at aliased points. *)
+Definition send_split (W : world) (Σe : senv) (Θe : tenv) : Prop :=
   dom Σe ⊆ dom Θe ∧
   ∀ r o, Θe !! r = Some o →
     match o with
-    | One e' => ∃ e, Σe !! r = Some e ∧ e.2 = e'.2 ∧ sdual e.1 e'.1
-    | Both e1 e2 => Σe !! r = None ∧ e1.2 = e2.2 ∧ sdual e1.1 e2.1
+    | One e' => ∃ e, Σe !! r = Some e ∧ w_eq W e.2 e'.2 ∧ sdual e.1 e'.1
+    | Both e1 e2 => Σe !! r = None ∧ w_eq W e1.2 e2.2 ∧ sdual e1.1 e2.1
     end.
+
+Lemma recv_ok_mono W W' Σr Θ2 :
+  (∀ x y, w_eq W x y → w_eq W' x y) → recv_ok W Σr Θ2 → recv_ok W' Σr Θ2.
+Proof.
+  intros Hp (H1 & H2 & H3). split_and!; [|by eapply tenv_dual_mono|done].
+  by eapply senv_dual_on_mono.
+Qed.
+
+Lemma send_split_mono W W' Σe Θe :
+  (∀ x y, w_eq W x y → w_eq W' x y) → send_split W Σe Θe → send_split W' Σe Θe.
+Proof.
+  intros Hp [Hd H]. split; [done|]. intros r o Hr. specialize (H r o Hr).
+  destruct o; naive_solver.
+Qed.
 
 (** Process relation at level n. Every clause is stated for the
     successor itself. Differences from the term relation:
@@ -233,7 +247,7 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
             ∃ Σ1 m U s k,
               senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
               ∀ W' j Θ2, wext W W' → j ≤ n' →
-                recv_ok (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
+                recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
                 lV (below j) W' Θ2 (payload_at m U k) w →
                 lP (below j) W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
                   (p'.1 ∪ recv_back (<[c := (s, pt_shift 1 k)]> Σ1) Θ2, p'.2)
@@ -241,7 +255,7 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
             ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
               senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
               Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
-              dom Θe = fchans w ∩ p.1 ∧ send_split Σe Θe ∧
+              dom Θe = fchans w ∩ p.1 ∧ send_split W Σe Θe ∧
               dom Θe ## dom Σ ∧
               Vn W (tenv_of Σv ∪ Θe) (payload_at m U k) w ∧
               lP (below n') W (<[c := (s, pt_shift 1 k)]> (Σ0 ∪ Σe)) T p'
@@ -431,7 +445,7 @@ Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
 Lemma Vrel_prod_iff n W Θ T U v :
   Vrel n W Θ (TProd T U) v ↔
-  ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp Θ Θ1 Θ2 ∧
+  ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
     Vrel n W Θ1 T v1 ∧ Vrel n W Θ2 U v2.
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
@@ -467,7 +481,7 @@ Lemma Vrel_lolli_iff n W Θ ub lb T U v :
   Vrel n W Θ (TLolli ub lb T U) v ↔
   (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
      ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
-       tenv_comp Θ'' Θ Θ' →
+       tenv_comp (w_eq W') Θ'' Θ Θ' →
        Vrel j W' Θ' T w →
        ub_below W' ub F →
        Erel j W' Θ'' U F (subst1 w eb))
@@ -496,19 +510,19 @@ Definition Ecase (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
         sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
         Erel n' W' (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
   | LSpawn w =>
-      ∃ Θ1 Θ2 ub lb, tenv_comp Θ Θ1 Θ2 ∧
+      ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
         Vrel (S n') W Θ1 (TLolli ub lb TUnit TUnit) w ∧
         Erel n' W Θ2 T F e'
   | LSess (SRecv c w) =>
       ∃ Θ1 m U s k,
         tenv_hd Θ c (SRcv m U s) k Θ1 ∧
         ∀ W' j Θ2 Θ12, wext W W' → j ≤ n' →
-          tenv_comp Θ12 Θ1 Θ2 →
+          tenv_comp (w_eq W') Θ12 Θ1 Θ2 →
           Vrel j W' Θ2 (payload_at m U k) w →
           ∃ Θ', tenv_ext Θ12 c (s, pt_shift 1 k) Θ' ∧ Erel j W' Θ' T F e'
   | LSess (SSend c w) =>
       ∃ Θr Θ1 Θ2 m U s k Θ',
-        tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp Θr Θ1 Θ2 ∧
+        tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
         Vrel (S n') W Θ2 (payload_at m U k) w ∧
         tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
         Erel n' W Θ' T F e'
@@ -561,7 +575,7 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
         ∀ W' j Θ2, wext W W' → j ≤ n' →
-          recv_ok (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
+          recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
           Vrel j W' Θ2 (payload_at m U k) w →
           Prel j W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
             (p'.1 ∪ recv_back (<[c := (s, pt_shift 1 k)]> Σ1) Θ2, p'.2)
@@ -569,7 +583,7 @@ Definition Pcase (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
       ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
         senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
         Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
-        dom Θe = fchans w ∩ p.1 ∧ send_split Σe Θe ∧
+        dom Θe = fchans w ∩ p.1 ∧ send_split W Σe Θe ∧
         dom Θe ## dom Σ ∧
         Vrel (S n') W (tenv_of Σv ∪ Θe) (payload_at m U k) w ∧
         Prel n' W (<[c := (s, pt_shift 1 k)]> (Σ0 ∪ Σe)) T p'
@@ -644,7 +658,7 @@ Fixpoint grounding (n : nat) (W : world) (Θ : tenv) (Δ : lenv)
   | [] => Θ = ∅
   | None :: Δ' => grounding n W Θ Δ' (γ ∘ S)
   | Some T :: Δ' =>
-      ∃ Θ1 Θ2, tenv_comp Θ Θ1 Θ2 ∧ Vrel n W Θ1 T (γ 0) ∧
+      ∃ Θ1 Θ2, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧ Vrel n W Θ1 T (γ 0) ∧
                grounding n W Θ2 Δ' (γ ∘ S)
   end.
 

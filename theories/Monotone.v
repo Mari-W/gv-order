@@ -128,6 +128,7 @@ Proof.
         * by eapply teqW_mono.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
       apply Vrel_prod_iff. exists v1, v2, Θ1, Θ2. split_and!; eauto.
+      eapply tenv_comp_mono; [|exact Hsp]. by destruct HWW' as (_ & ? & _).
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
     - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
@@ -158,6 +159,7 @@ Proof.
     + destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').
       exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
+      * eapply tenv_comp_mono; [|exact Hc]. by destruct HWW' as (_ & ? & _).
       * eapply HV; done.
       * eapply HEj; [lia|done|done|exact HE'].
     + destruct Hstep as (Θ1 & k & Hhd & HE').
@@ -184,8 +186,9 @@ Proof.
       * eapply HEj; [lia| |apply wext_join_l|exact HE1].
         -- by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
         -- by destruct Hfr'' as ((_ & _ & _ & ?) & _).
-    + destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
-      exists Θ1, Θ2, ub, lb. split_and!; [done| |].
+    + destruct Hstep as (Θ1 & Θ2 & ub & lb & Hc & HVw & HE').
+      exists Θ1, Θ2, ub, lb. split_and!.
+      * eapply tenv_comp_mono; [|exact Hc]. by destruct HWW' as (_ & ? & _).
       * eapply HV; done.
       * eapply HEj; [lia|done|done|exact HE'].
   - intros W W' Σ T p HW HWW' HP.
@@ -214,8 +217,9 @@ Proof.
       intros W'' j Θ2 HW' Hj Hok HVw.
       apply (H W'' j Θ2); [by eapply wext_trans|done..].
     + destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
-                         ? & ? & ? & ? & ? & ? & HVw & HP').
+                         ? & ? & ? & ? & Hsp & ? & HVw & HP').
       exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done.
+      * eapply send_split_mono; [|exact Hsp]. by destruct HWW' as (_ & ? & _).
       * eapply HV; done.
       * eapply HPj; [lia|done|done|exact HP'].
     + destruct Hstep as (Σ1 & k & Hhd & ? & HP').

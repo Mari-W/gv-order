@@ -686,15 +686,16 @@ Section envs.
     inversion H; simpl; constructor.
   Qed.
 
-  Lemma tenv_comp_sw Θ Θ1 Θ2 :
-    tenv_comp Θ Θ1 Θ2 → tenv_comp (tenvsw a b Θ) (tenvsw a b Θ1) (tenvsw a b Θ2).
+  Lemma tenv_comp_sw W Θ Θ1 Θ2 :
+    tenv_comp (w_eq W) Θ Θ1 Θ2 →
+    tenv_comp (w_eq (wsw a b W)) (tenvsw a b Θ) (tenvsw a b Θ1) (tenvsw a b Θ2).
   Proof.
     intros [Hj Hd]. split; [by apply tenv_join_sw|].
     intros c e1 e2 H1 H2. rewrite lookup_tenvsw in H1, H2.
     destruct (Θ1 !! c) as [[]|] eqn:E1; try done.
     destruct (Θ2 !! c) as [[]|] eqn:E2; try done.
     injection H1 as <-. injection H2 as <-.
-    destruct (Hd _ _ _ E1 E2) as [Hx Hs]. simpl. rewrite Hx.
+    destruct (Hd _ _ _ E1 E2) as [Hx Hs]. simpl. rewrite !ptsw_involutive.
     split; [done|]. by apply sdual_sw.
   Qed.
 
@@ -718,12 +719,13 @@ Section envs.
     - by rewrite <-unfoldS_sw, Hu.
   Qed.
 
-  Lemma tenv_dual_sw Θ : tenv_dual Θ → tenv_dual (tenvsw a b Θ).
+  Lemma tenv_dual_sw W Θ :
+    tenv_dual (w_eq W) Θ → tenv_dual (w_eq (wsw a b W)) (tenvsw a b Θ).
   Proof.
     intros H c e1 e2 He. rewrite lookup_tenvsw in He.
     destruct (Θ !! c) as [[]|] eqn:E; try done. injection He as <- <-.
-    destruct (H _ _ _ E) as [Hx Hs]. simpl. rewrite Hx. split; [done|].
-    by apply sdual_sw.
+    destruct (H _ _ _ E) as [Hx Hs]. simpl. rewrite !ptsw_involutive.
+    split; [done|]. by apply sdual_sw.
   Qed.
 
   Lemma senv_hd_sw Σ c u k Σ1 :
@@ -734,14 +736,15 @@ Section envs.
     rewrite senvsw_insert. split; [done|]. by rewrite <-unfoldS_sw, Hu.
   Qed.
 
-  Lemma senv_dual_on_sw Σ1 Σ2 :
-    senv_dual_on Σ1 Σ2 → senv_dual_on (senvsw a b Σ1) (senvsw a b Σ2).
+  Lemma senv_dual_on_sw W Σ1 Σ2 :
+    senv_dual_on (w_eq W) Σ1 Σ2 →
+    senv_dual_on (w_eq (wsw a b W)) (senvsw a b Σ1) (senvsw a b Σ2).
   Proof.
     intros H c e1 e2 H1 H2. rewrite lookup_senvsw in H1, H2.
     destruct (Σ1 !! c) eqn:E1, (Σ2 !! c) eqn:E2; try done.
     injection H1 as <-. injection H2 as <-.
-    destruct (H _ _ _ E1 E2) as [Hx Hs]. simpl. rewrite Hx. split; [done|].
-    by apply sdual_sw.
+    destruct (H _ _ _ E1 E2) as [Hx Hs]. simpl. rewrite !ptsw_involutive.
+    split; [done|]. by apply sdual_sw.
   Qed.
 
   Lemma recv_back_sw Σr Θ2 :
@@ -756,8 +759,8 @@ Section envs.
     unfold recv_env. by rewrite tenv_ones_sw, senvsw_union, !senvsw_difference.
   Qed.
 
-  Lemma recv_ok_sw Σr Θ2 :
-    recv_ok Σr Θ2 → recv_ok (senvsw a b Σr) (tenvsw a b Θ2).
+  Lemma recv_ok_sw W Σr Θ2 :
+    recv_ok W Σr Θ2 → recv_ok (wsw a b W) (senvsw a b Σr) (tenvsw a b Θ2).
   Proof.
     intros (Hd & Ht & Hb). split_and!.
     - rewrite tenv_ones_sw. by apply senv_dual_on_sw.
@@ -765,8 +768,8 @@ Section envs.
     - by rewrite tenv_ones_sw, dom_tenvsw, !dom_senvsw.
   Qed.
 
-  Lemma send_split_sw Σe Θe :
-    send_split Σe Θe → send_split (senvsw a b Σe) (tenvsw a b Θe).
+  Lemma send_split_sw W Σe Θe :
+    send_split W Σe Θe → send_split (wsw a b W) (senvsw a b Σe) (tenvsw a b Θe).
   Proof.
     intros [Hsub H]. split.
     - by rewrite dom_senvsw, dom_tenvsw.
@@ -774,10 +777,10 @@ Section envs.
       destruct (Θe !! r) as [o0|] eqn:E; [|done]. injection Hr as <-.
       specialize (H _ _ E). destruct o0 as [e'|e1 e2]; simpl.
       + destruct H as (e & He & Hx & Hs). exists (esw a b e).
-        rewrite lookup_senvsw, He. simpl. rewrite Hx.
+        rewrite lookup_senvsw, He. simpl. rewrite !ptsw_involutive.
         split_and!; [done|done|]. by apply sdual_sw.
       + destruct H as (He & Hx & Hs). rewrite lookup_senvsw, He. simpl.
-        rewrite Hx. split_and!; [done|done|]. by apply sdual_sw.
+        rewrite !ptsw_involutive. split_and!; [done|done|]. by apply sdual_sw.
   Qed.
 End envs.
 
@@ -1061,7 +1064,7 @@ Proof.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hc & H1 & H2).
       apply Vrel_prod_iff.
       exists v1, v2, (tenvsw a b Θ1), (tenvsw a b Θ2).
-      split_and!; [done|by apply tenv_comp_sw|by apply IHT1|by apply IHU].
+      split_and!; [done|eapply tenv_comp_mono; [|by apply tenv_comp_sw]; intros ? ? ?; by apply HS|by apply IHT1|by apply IHU].
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; eexists; (split; [done|]).
       + by apply IHT1.
@@ -1115,7 +1118,7 @@ Proof.
         (tysw a b U), (stysw a b s), (ptsw a b k), (tenvsw a b Θ').
       split_and!.
       * by apply (tenv_hd_sw a b _ _ (SSnd m U s)).
-      * by apply tenv_comp_sw.
+      * eapply tenv_comp_mono; [|by apply tenv_comp_sw]; intros ? ? ?; by apply HS.
       * rewrite <-payload_at_sw. by apply (HV W W') in HVw.
       * by apply (tenv_ext_sw a b _ _ (s, pt_shift 1 k)).
       * by apply (IHE n' ltac:(lia) W).
@@ -1153,7 +1156,7 @@ Proof.
       destruct Hstep as (Θ1 & Θ2 & ub & lb & Hc & HVw & HE').
       exists (tenvsw a b Θ1), (tenvsw a b Θ2), (ptsw a b <$> ub), (ptsw a b <$> lb).
       split_and!.
-      * by apply tenv_comp_sw.
+      * eapply tenv_comp_mono; [|by apply tenv_comp_sw]; intros ? ? ?; by apply HS.
       * apply (HV W W' _ (TLolli ub lb TUnit TUnit)) in HVw; [|done]. exact HVw.
       * by apply (IHE n' ltac:(lia) W).
   - (* process relation *)
@@ -1185,7 +1188,7 @@ Proof.
       * by rewrite dom_senvsw.
       * intros W'' j Θ2 Hx Hj Hok HVw.
         assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
-        assert (recv_ok (<[c := (s, pt_shift 1 k)]> Σ1) (tenvsw a b Θ2)) as Hok'.
+        assert (recv_ok (wsw a b W'') (<[c := (s, pt_shift 1 k)]> Σ1) (tenvsw a b Θ2)) as Hok'.
         { apply (recv_ok_sw a b) in Hok.
           rewrite senvsw_insert, senvsw_involutive in Hok.
           unfold esw in Hok. simpl in Hok.
@@ -1210,7 +1213,7 @@ Proof.
       * by rewrite dom_senvsw.
       * by rewrite dom_senvsw.
       * by rewrite dom_tenvsw.
-      * by apply send_split_sw.
+      * eapply send_split_mono; [|by apply send_split_sw]. intros ? ? ?. by apply HS.
       * by rewrite dom_tenvsw, dom_senvsw.
       * apply (HV W W') in HVw; [|done].
         by rewrite tenvsw_union, tenvsw_of, payload_at_sw in HVw.

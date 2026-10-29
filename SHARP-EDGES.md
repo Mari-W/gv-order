@@ -276,6 +276,20 @@ threads through every statement. Also from this round: V-Const reads the
 signature up to ≡_W, because payloads by substitution fix recv's payload at the
 slots of the session point and Type point conversion must move them (§7).
 
+**40. Overlaps of environments at aliased points, not equal ones.**
+Θ₁, Σ₂ (and Θ = Θ₁, Θ₂, the both-ends condition of Θ, recv_ok and the
+split of Q-Send) asked dual ends at equal points, with Entry conversion to
+move between aliased ones. Entry conversion is not stable that way: a
+conversion must keep every equality between the two ends of a channel, also
+after later actions (x+1 against the other end's point), so it would need a
+bijection of points that commutes with successors, which an alias between two
+names does not give. Decision (Claude, delegated, overnight rules): every
+overlap condition reads the world's ≡ instead of equality. Composition is then
+closed under aliases by definition, and a link's survivor (ends at x and y with
+x ≡ y) is a valid environment without any conversion. Type point conversion
+stays, because P-Connect meets a payload typed at P[x] by the sender and at
+P[y] by the receiver (§7, §10).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

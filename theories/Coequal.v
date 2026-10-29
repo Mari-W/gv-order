@@ -487,20 +487,38 @@ Qed.
 (** ** Term-level environments with both ends
 
     A term-level environment holds both ends of a channel only at dual
-    types and equal counts (§4: Θ, c : S@k, c : S′@k with S ⊥ S′). *)
+    types and aliased points (§4: Θ, c : S@x, c : S′@x′ with S ⊥ S′
+    and x ≡ x′). The aliases are read in a relation [peq], the ≡ of a
+    world, so that aliased points are interchangeable without any
+    conversion. *)
 
-Definition tenv_dual (Θ : tenv) : Prop :=
-  ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → e1.2 = e2.2 ∧ sdual e1.1 e2.1.
+Definition tenv_dual (peq : point → point → Prop) (Θ : tenv) : Prop :=
+  ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → peq e1.2 e2.2 ∧ sdual e1.1 e2.1.
 
 (** Θ = Θ1, Θ2, defined when every overlap is a pair of dual ends at
-    the same point. *)
-Definition tenv_comp (Θ Θ1 Θ2 : tenv) : Prop :=
+    aliased points. *)
+Definition tenv_comp (peq : point → point → Prop) (Θ Θ1 Θ2 : tenv) : Prop :=
   tenv_join Θ Θ1 Θ2 ∧
   ∀ c e1 e2, Θ1 !! c = Some (One e1) → Θ2 !! c = Some (One e2) →
-    e1.2 = e2.2 ∧ sdual e1.1 e2.1.
+    peq e1.2 e2.2 ∧ sdual e1.1 e2.1.
 
 (** Two process-level environments agree on their overlap up to
-    duality, at equal counts. *)
-Definition senv_dual_on (Σ1 Σ2 : senv) : Prop :=
+    duality, at aliased points. *)
+Definition senv_dual_on (peq : point → point → Prop) (Σ1 Σ2 : senv) : Prop :=
   ∀ c e1 e2, Σ1 !! c = Some e1 → Σ2 !! c = Some e2 →
-    e1.2 = e2.2 ∧ sdual e1.1 e2.1.
+    peq e1.2 e2.2 ∧ sdual e1.1 e2.1.
+
+Lemma tenv_dual_mono (peq peq' : point → point → Prop) Θ :
+  (∀ x y, peq x y → peq' x y) → tenv_dual peq Θ → tenv_dual peq' Θ.
+Proof. intros Hp H c e1 e2 He. destruct (H c e1 e2 He). auto. Qed.
+
+Lemma tenv_comp_mono (peq peq' : point → point → Prop) Θ Θ1 Θ2 :
+  (∀ x y, peq x y → peq' x y) → tenv_comp peq Θ Θ1 Θ2 → tenv_comp peq' Θ Θ1 Θ2.
+Proof.
+  intros Hp [Hj H]. split; [done|]. intros c e1 e2 H1 H2.
+  destruct (H c e1 e2 H1 H2). auto.
+Qed.
+
+Lemma senv_dual_on_mono (peq peq' : point → point → Prop) Σ1 Σ2 :
+  (∀ x y, peq x y → peq' x y) → senv_dual_on peq Σ1 Σ2 → senv_dual_on peq' Σ1 Σ2.
+Proof. intros Hp H c e1 e2 H1 H2. destruct (H c e1 e2 H1 H2). auto. Qed.
