@@ -85,7 +85,7 @@ Fixpoint occ (x : nat) (e : expr) : bool :=
   | Case e e1 e2 => occ x e || occ (S x) e1 || occ (S x) e2
   end.
 
-Definition unlb (T : ty) : bool := match T with TBox _ _ _ _ => true | _ => false end.
+Definition unlb (T : ty) : bool := match T with TBox _ _ _ => true | _ => false end.
 
 Lemma unlb_unl T : unlb T = true → unlimited T.
 Proof. by destruct T. Qed.
@@ -744,7 +744,7 @@ Lemma pvar_unknown W a : world_wf W → ¬ pt_known W (pvar a).
 Proof. intros HW Hk. destruct (wf_names_const _ HW _ Hk) as [b Hb]. done. Qed.
 
 Definition Tfac_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (pc 0 0)).
-Definition Tfac : ty := TBox 0 (BCs [] []) None Tfac_body.
+Definition Tfac : ty := TBox 0 (BCs [] []) (TLolli None None TUnit Tfac_body).
 
 Definition fac : expr :=
   EBox (Lam (LetU (Var 0) (LetP (App ENew EUnit)
@@ -817,7 +817,7 @@ Qed.
     (a,0) ≺ (b,0) and (a,1) ≺ (b,0). *)
 
 Definition Tfa_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (Pt (NVar 0) 0)).
-Definition Tfa : ty := TBox 1 (BCs [] []) None Tfa_body.
+Definition Tfa : ty := TBox 1 (BCs [] []) (TLolli None None TUnit Tfa_body).
 
 Definition faca : expr := fac.
 
@@ -1046,7 +1046,7 @@ Qed.
 
 Lemma bcs_closed n σ C : bcs_scoped n C → bcs_inst (pup n σ) C = C.
 Proof.
-  intros H. assert (pscoped 0 (TBox n C None TUnit)) as Hs.
+  intros H. assert (pscoped 0 (TBox n C (TLolli None None TUnit TUnit))) as Hs.
   { cbn. rewrite Nat.add_0_r. done. }
   pose proof (pinst_closed σ _ Hs) as E. by injection E.
 Qed.
@@ -1067,9 +1067,9 @@ Ltac body_scope := cbn; repeat split; intros ? Hv; injection Hv; lia.
     the box type itself. *)
 Ltac box_open C T :=
   rewrite (bcs_closed 2 _ C rq_C_scoped);
-  change (lenv_pinst (pshift 2) [Some (TBox 2 C None T)])
-    with [Some (pinst_ty (pshift 2) (TBox 2 C None T))];
-  rewrite (pinst_closed _ (TBox 2 C None T)) by (split; [exact rq_C_scoped|]; unfold T; body_scope).
+  change (lenv_pinst (pshift 2) [Some (TBox 2 C (TLolli None None TUnit T))])
+    with [Some (pinst_ty (pshift 2) (TBox 2 C (TLolli None None TUnit T)))];
+  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [exact rq_C_scoped|]; unfold T; body_scope).
 
 Lemma pt_inst_var σ a k : pt_inst σ (Pt (NVar a) k) = pt_shift k (σ a).
 Proof. done. Qed.
@@ -1084,7 +1084,7 @@ Qed.
 
 Ltac conv_sess := split; first [done|apply seq_unf; done].
 
-Lemma srv_typed W F : world_wf W → typed W ∅ [] ∅ [] F srv (TBox 2 rq_C None srv_body).
+Lemma srv_typed W F : world_wf W → typed W ∅ [] ∅ [] F srv (TBox 2 rq_C (TLolli None None TUnit srv_body)).
 Proof.
   intros HW. unfold srv.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
@@ -1118,7 +1118,7 @@ Proof.
     exists (pv 1 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma cli_typed W F : world_wf W → typed W ∅ [] ∅ [] F cli (TBox 2 rq_C None cli_body).
+Lemma cli_typed W F : world_wf W → typed W ∅ [] ∅ [] F cli (TBox 2 rq_C (TLolli None None TUnit cli_body)).
 Proof.
   intros HW. unfold cli.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
@@ -1308,13 +1308,13 @@ Qed.
 
 Ltac box_open2 C HC T :=
   rewrite (bcs_closed 2 _ C HC);
-  change (lenv_pinst (pshift 2) [Some (TBox 2 C None T)])
-    with [Some (pinst_ty (pshift 2) (TBox 2 C None T))];
-  rewrite (pinst_closed _ (TBox 2 C None T)) by (split; [exact HC|]; unfold T; body_scope).
+  change (lenv_pinst (pshift 2) [Some (TBox 2 C (TLolli None None TUnit T))])
+    with [Some (pinst_ty (pshift 2) (TBox 2 C (TLolli None None TUnit T)))];
+  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [exact HC|]; unfold T; body_scope).
 
 Ltac skn_slot := right; eexists _, _, (pvar 0); split_and!; [by left|by left|done].
 
-Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 rel_C None relay_body).
+Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 rel_C (TLolli None None TUnit relay_body)).
 Proof.
   intros HW. unfold relay.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
@@ -1352,7 +1352,7 @@ Proof.
     exists (sv 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma prod_typed W F : world_wf W → typed W ∅ [] ∅ [] F prod (TBox 2 rel_C None prod_body).
+Lemma prod_typed W F : world_wf W → typed W ∅ [] ∅ [] F prod (TBox 2 rel_C (TLolli None None TUnit prod_body)).
 Proof.
   intros HW. unfold prod.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].

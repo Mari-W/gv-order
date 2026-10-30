@@ -11,7 +11,7 @@ Set Default Proof Using "All".
 
 (** ** Applying force
 
-    force : □(∀ιs. C.^u T) ⊸^{u[xs/ιs]}_⊤ T[xs/ιs], at an instance xs
+    force : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[xs/ιs]}_⊤ T[xs/ιs], at an instance xs
     with C[xs/ιs] in W (sharp edges 58). Its upper point is the box's,
     instantiated, so the frame of the application is one V-Box
     accepts, and the instance meets the box's constraint. *)
@@ -24,7 +24,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hu & HB & HV).
   inversion Hk as [| | | | | |m C1 ub1 T1 xs Hxs HC1 HK1]; subst.
-  apply Vrel_box_iff in HV as (-> & eb & -> & Hfc & HK).
+  apply Vrel_box_thunk_iff in HV as (-> & eb & -> & Hfc & HK).
   destruct n as [|n']; [apply Erel_0|].
   apply (Erel_det_beta_S _ _ _ _ _ _ (subst1 (EBox eb) eb)).
   - by apply TStepHead, HeadForce.
@@ -76,7 +76,7 @@ Qed.
 Lemma sem_typed_force W Θ Δ F e m C ub T xs :
   world_wf W → length xs = m → bcs_hold (w_lt W) C xs → Forall (pt_known W) xs →
   ub_below W (pt_inst (plist xs) <$> ub) F →
-  sem_typed W Θ Δ F e (TBox m C ub T) →
+  sem_typed W Θ Δ F e (TBox m C (TLolli ub None TUnit T)) →
   sem_typed W Θ Δ F (App EForce e) (ty_inst xs T).
 Proof.
   intros HW Hxs HC HK Hub He.
@@ -136,11 +136,11 @@ Proof.
 Qed.
 
 Lemma sem_typed_box W Δ F e m C ub T :
-  lenv_unl Δ → term_wf ∅ (Some (TBox m C ub T) :: Δ) e →
+  lenv_unl Δ → term_wf ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) e →
   (∀ W1 xs F', wext W W1 → length xs = m → bcs_hold (w_lt W1) C xs →
      Forall (pt_known W1) xs → ub_below W1 (pt_inst (plist xs) <$> ub) F' →
-     sem_typed W1 ∅ (Some (TBox m C ub T) :: Δ) F' e (ty_inst xs T)) →
-  sem_typed W ∅ Δ F (EBox e) (TBox m C ub T).
+     sem_typed W1 ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) F' e (ty_inst xs T)) →
+  sem_typed W ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T)).
 Proof.
   intros Hu (Hfc & Hfv & _) He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   pose proof (wext_wf _ _ HW) as HW'.
@@ -154,9 +154,9 @@ Proof.
       - intros (T' & Hx). unfold compose. rewrite fchans_rename. by eapply grounding_fchans. }
     rewrite Hfc, dom_empty_L in Hsub. set_solver. }
   assert (∀ j W2, j ≤ n → wext W' W2 →
-            Vrel j W2 ∅ (TBox m C ub T) (EBox (subst (up γ) e))) as Hbox.
+            Vrel j W2 ∅ (TBox m C (TLolli ub None TUnit T)) (EBox (subst (up γ) e))) as Hbox.
   { induction j as [j IHj] using lt_wf_ind. intros W2 Hj HW2.
-    apply Vrel_box_iff. split; [done|]. exists (subst (up γ) e). split_and!; [done|done|].
+    apply Vrel_box_thunk_iff. split; [done|]. exists (subst (up γ) e). split_and!; [done|done|].
     intros W3 k xs F' HW3 Hk Hxs HC HKn Hub. rewrite subst1_subst.
     pose proof (wext_trans _ _ _ HW2 HW3) as HW23.
     pose proof (wext_trans _ _ _ HW HW23) as HWW3.

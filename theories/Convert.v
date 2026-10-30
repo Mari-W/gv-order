@@ -62,7 +62,7 @@ Proof.
   - destruct H1 as (? & ? & ? & ?), H2 as (<- & <- & ? & ?). split_and!; eauto.
   - destruct H1, H2. split; eauto.
   - destruct H1, H2. split; eauto.
-  - destruct H1 as (-> & ? & ? & ?), H2 as (<- & <- & <- & ?). split_and!; eauto.
+  - destruct H1 as (-> & ? & ?), H2 as (<- & <- & ?). split_and!; eauto.
   - destruct H1 as [? ?], H2 as [<- ?]. split; [done|]. by eapply seq_trans.
 Qed.
 
@@ -72,12 +72,9 @@ Lemma Vrel_Erel_teq n :
   (∀ W Θ T T' F e, world_wf W → teq T T' → Erel n W Θ T F e → Erel n W Θ T' F e).
 Proof.
   induction n as [n IHn] using lt_wf_ind.
-  assert (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
-  { intros W Θ T. revert Θ. unfold teq.
-    induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
-                   |m C0 ub T1 IHT1|s x];
-      intros Θ [] v Hteq HVv; try done.
-    - (* ⊸ *)
+  assert (∀ W Θ ub lb T1 T2 T' v, teq (TLolli ub lb T1 T2) T' →
+            Vrel n W Θ (TLolli ub lb T1 T2) v → Vrel n W Θ T' v) as Hfun.
+  { intros W Θ ub lb T1 T2 [] v Hteq HVv; unfold teq in Hteq; simpl in Hteq; try done.
       destruct Hteq as (<- & <- & Hteq1 & Hteq2).
       apply Vrel_lolli_iff in HVv
         as [(eb & -> & Hsup & Hlb & HL)|(k & T0 & -> & -> & Hk & Ht)].
@@ -88,7 +85,16 @@ Proof.
         eapply (proj1 (IHn j Hj)); [|exact HVw].
         by apply teq_sym.
       + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done|done|done|].
-        eapply teqW_teq_r; [exact Ht|]. by split_and!.
+        eapply teqW_teq_r; [exact Ht|]. by split_and!. }
+  assert (∀ W Θ T T' eb, teq T T' → Vrel n W Θ T (Lam eb) → Vrel n W Θ T' (Lam eb)) as Hlam.
+  { intros W Θ T T' eb Hteq HVv.
+    destruct (Vrel_lam_inv _ _ _ _ _ HVv) as (? & ? & ? & ? & ->). by eapply Hfun. }
+  assert (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
+  { intros W Θ T. revert Θ.
+    induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
+                   |m C0 T1 IHT1|s x];
+      intros Θ T' v Hteq HVv; destruct T'; unfold teq in Hteq; simpl in Hteq; try done.
+    - by eapply Hfun.
     - (* ⊗ *)
       destruct Hteq as [Hteq1 Hteq2].
       apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
@@ -98,14 +104,11 @@ Proof.
       apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
     - (* □ *)
-      destruct Hteq as (<- & <- & <- & Hteq).
+      destruct Hteq as (<- & <- & Hteq).
       apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
       apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      intros W' j xs F HW Hj Hxs HC HKn Hub. eapply (proj2 (IHn j Hj)).
-
-      + apply HW.
-      + by apply teq_ty_inst.
-      + by apply HK.
+      intros W' xs HW Hxs HC HKn. eapply Hlam; [|by apply HK].
+      by apply teq_ty_inst.
     - (* session: the protocol is stored up to ≈ already *)
       destruct Hteq as [<- Hs].
       apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hx).

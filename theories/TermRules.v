@@ -391,7 +391,7 @@ Proof.
   destruct n as [|n']; [intros; apply Erel_0|]. intros Hst Hdet HE.
   apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst).
-  - intros _. split; intros Hs; exfalso; exact (Hs _ _ Hst).
+  - intros _ Hs. exfalso. exact (Hs _ _ Hst).
   - intros α e'' Hst'. destruct (Hdet _ _ Hst') as [-> ->]. simpl.
     eapply Erel_down; [|exact HE]. lia.
 Qed.
@@ -402,7 +402,7 @@ Lemma Erel_det_beta_S n W Θ T F e e' :
 Proof.
   intros Hst Hdet HE. apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst).
-  - intros _. split; intros Hs; exfalso; exact (Hs _ _ Hst).
+  - intros _ Hs. exfalso. exact (Hs _ _ Hst).
   - intros α e'' Hst'. destruct (Hdet _ _ Hst') as [-> ->]. exact HE.
 Qed.
 
@@ -812,7 +812,7 @@ Proof.
     by apply TStepHead, HeadNew.
   apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
-  - intros _. split; intros Hs; exfalso; exact (Hs _ _ Hst0).
+  - intros _ Hs. exfalso. exact (Hs _ _ Hst0).
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | |c| | | | | | | |]; subst. simpl. intros _.
     destruct (fresh_const (w_names W ∪ ty_roots U ∪ frame_roots F)) as [a Ha].
@@ -852,7 +852,7 @@ Proof.
   assert (tstep (App ESpawn v2) (LSpawn v2) EUnit) as Hst0 by by apply TStepHead, HeadSpawn.
   apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
-  - intros _. split; intros Hs; exfalso; exact (Hs _ _ Hst0).
+  - intros _ Hs. exfalso. exact (Hs _ _ Hst0).
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst; subst. simpl.
     exists Θ, ∅, ub1, lb1. split_and!; [apply tenv_comp_empty_r|done|].
@@ -869,18 +869,15 @@ Proof.
   - by rewrite lookup_singleton_ne.
 Qed.
 
-Lemma ready_single W c o e :
-  offered_t {[c := One o]} e (c, false) → ready_t W {[c := One o]} e.
+Lemma ready_single W c o e F :
+  offered_t {[c := One o]} e (c, false) → (∀ y, y ∈ F → w_lt W o.2 y) →
+  ready_t W {[c := One o]} F e.
 Proof.
-  intros Hoff Hs. split.
+  intros Hoff HF Hs. split.
   - intros H. exfalso. exact (H _ Hoff).
-  - intros k' e' He Hn. exfalso. apply Hn. by destruct (entry_single _ _ _ _ He) as [-> ->].
-Qed.
-
-Lemma frame_single W c o e F :
-  (∀ y, y ∈ F → w_lt W o.2 y) → frame_t W {[c := One o]} e F.
-Proof.
-  intros H Hs k' e' _ He y Hy. destruct (entry_single _ _ _ _ He) as [-> ->]. by apply H.
+  - intros k e' _ He. destruct (entry_single _ _ _ _ He) as [-> ->]. split.
+    + intros k' e'' He' Hn. exfalso. apply Hn. by destruct (entry_single _ _ _ _ He') as [-> ->].
+    + intros y Hy. by apply HF.
 Qed.
 
 Lemma ub_some_below W x x' F :
@@ -912,11 +909,11 @@ Proof.
     as Hst0 by (intros; by apply TStepHead, HeadRecv).
   apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ (Hst0 EUnit I)).
-  - intros _. split.
-    + apply ready_single. exists (SRecv c EUnit), (Pair EUnit (Chan c)). split; [by apply Hst0|].
+  - intros _. apply ready_single.
+    + exists (SRecv c EUnit), (Pair EUnit (Chan c)). split; [by apply Hst0|].
       split; [done|]. exists (s0, k), m, U0, s'. split; [|done].
       unfold tenv_entry. simpl. by rewrite lookup_singleton_eq.
-    + apply frame_single. intros y Hy. simpl.
+    + intros y Hy. simpl.
       eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | | | |c' w Hw| | | | | |]; subst. simpl.
@@ -951,11 +948,11 @@ Proof.
     by apply TStepHead, HeadClos.
   apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
-  - intros _. split.
-    + apply ready_single. exists (SClos c), EUnit. split; [done|].
+  - intros _. apply ready_single.
+    + exists (SClos c), EUnit. split; [done|].
       split; [done|]. exists (s0, k). split_and!; [|done|done].
       unfold tenv_entry. simpl. by rewrite lookup_singleton_eq.
-    + apply frame_single. intros y Hy. simpl.
+    + intros y Hy. simpl.
       eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst; subst. simpl.
@@ -1068,13 +1065,13 @@ Proof.
       destruct b; simplify_eq; try done; exfalso; by apply (Hno e'). }
   apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
-  - intros _. split.
-    + intros Hs. split; [intros H; exfalso; exact (H _ Hoff)|].
-      intros k' e' He' Hn. exists kc, (s0, k). split_and!; [done|done|].
+  - intros _ Hs. split; [intros H; exfalso; exact (H _ Hoff)|].
+    intros k0 e0 Hoff0 He0. rewrite (Honly k0 e0 Hoff0 He0). split.
+    + intros k' e' He' Hn.
       destruct (decide (k' = kc)) as [->|Hne]; [by exfalso|].
       destruct (Hrest k' e' Hne He') as (k'' & Hk'').
       unfold entry_head. simpl. by apply (Habove k'').
-    + intros Hs k' e' Hoff' He' y Hy. rewrite (Honly k' e' Hoff' He'). unfold entry_head. simpl.
+    + intros y Hy. unfold entry_head. simpl.
       eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
   - intros α e' Hst. apply app_val_step in Hst; [|done|simpl; by apply andb_True].
     assert (α = LSess (SSend c w) ∧ e' = Chan c) as [-> ->] by (inversion Hst; done). simpl.
@@ -1118,16 +1115,16 @@ Proof.
     rewrite (tenv_join_dom _ _ _ (proj1 Hc)), !dom_singleton_L in Hin. set_solver. }
   apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
-  - intros _. split.
-    + intros Hs. split.
-      * intros H. exfalso. apply (H (c, false)), Hoff.
-        destruct Hc as [Hj _]. specialize (Hj c). rewrite lookup_singleton_eq in Hj.
-        unfold tenv_entry. simpl. inversion Hj; by eexists.
-      * intros k' e' He' Hn. exfalso. apply Hn, Hoff. by eexists.
-    + intros Hs k' e' _ He' y Hy. unfold entry_head.
-      destruct (comp_entry _ _ _ _ _ _ Hc He') as [[k1 H1]|[k1 H1]].
-      * destruct (entry_single _ _ _ _ H1) as [_ ->]. by apply Hcl.
-      * destruct (entry_single _ _ _ _ H1) as [_ ->]. by apply Hdl.
+  - intros _ Hs. split.
+    + intros H. exfalso. apply (H (c, false)), Hoff.
+      destruct Hc as [Hj _]. specialize (Hj c). rewrite lookup_singleton_eq in Hj.
+      unfold tenv_entry. simpl. inversion Hj; by eexists.
+    + intros k' e' _ He'. split.
+      * intros k2 e2 He2 Hn. exfalso. apply Hn, Hoff. by eexists.
+      * intros y Hy. unfold entry_head.
+        destruct (comp_entry _ _ _ _ _ _ Hc He') as [[k1 H1]|[k1 H1]].
+        -- destruct (entry_single _ _ _ _ H1) as [_ ->]. by apply Hcl.
+        -- destruct (entry_single _ _ _ _ H1) as [_ ->]. by apply Hdl.
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     assert (α = LSess (SLink {[c; d]}) ∧ e' = EUnit) as [-> ->] by (inversion Hst; done). simpl.
     exists c, d, ∅, {[d := One (sd, kd)]}, sc, sd, kc, kd. split_and!.

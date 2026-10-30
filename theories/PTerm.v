@@ -69,7 +69,7 @@ Proof.
       by (constructor; by constructor).
     apply Erel_S_iff. split_and!.
     + intros Hirr. exfalso. by apply (Hirr _ _ Hb).
-    + intros _. split; intros Hs; exfalso; exact (Hs _ _ Hb).
+    + intros _ Hs. exfalso. exact (Hs _ _ Hb).
     + intros α e' Hst.
       inversion Hst as [? ? ? Hh| ? ? ? ? Hs| ? ? ? ? ? Hs| | | | | | |]; subst.
       * inversion Hh; subst. simpl.
@@ -913,7 +913,9 @@ Section level.
       destruct (tok_empty _ _ _ _ Hok H0) as [-> ->]. rewrite H0 in HV. done. }
     assert (¬ irred t → ready_p W Σ (C0, {[+ t +]})) as Hready.
     { intros Hn. destruct Hok as [HW Hd Hdj Hb Hdu].
-      apply (ready_term W Σ ΘB C0 t HW Hd Hdj Hb Hdu). exact (proj1 (Hrdy Hn)). }
+      eapply (ready_term W Σ ΘB C0 t HW Hd Hdj Hb Hdu).
+      all: first [exact (Hrdy Hn)|exact Hn|
+        intros σ t' Hst; exact (offered_some _ _ _ _ _ _ _ _ HE Hst)]. }
     apply Prel_S_intro.
     - intros Hirr. destruct (tstep_progress t) as [Hi|(α & t' & Hs)].
       + destruct (Hstop Hi) as (-> & -> & HV). exists t, ∅. split_and!.

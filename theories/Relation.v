@@ -67,8 +67,8 @@ Fixpoint teqW (W : world) (T U : ty) : Prop :=
       teqW W T1 U1 ∧ teqW W T2 U2
   | TProd T1 T2, TProd U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
   | TSum T1 T2, TSum U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
-  | TBox n C ub T1, TBox n' C' ub' U1 =>
-      n = n' ∧ bcs_rel (pteqW W) C C' ∧ opt_rel (pteqW W) ub ub' ∧ teqW W T1 U1
+  | TBox n C T1, TBox n' C' U1 =>
+      n = n' ∧ bcs_rel (pteqW W) C C' ∧ teqW W T1 U1
 
   | TSess s x, TSess r y => pteqW W x y ∧ seq s r
   | _, _ => False
@@ -94,16 +94,25 @@ Record level := Level {
       argument's environment may hold the other ends of channels the
       closure holds ([tenv_comp]).
     - V-Const: the constant's signature is read in W, up to ≈_W.
-    - V-Box / V-All: ∀ appears only under □; a box is good at every
+    - V-Box / V-All: ∀ appears only under □; a box is the thunk
+      λ_. fix x.e, and it is good when the thunk is in V at every
       instance of its point variables that meets its constraint C, in
-      every future world (sharp edges 58). *)
-Fixpoint Vdef (below : nat → level) (n : nat)
-    (W : world) (Θ : tenv) (T : ty) (v : expr) {struct T} : Prop :=
+      every future world (sharp edges 58, 63). *)
+
+(** The thunk a box !e stands for: applied to ∗ it unrolls once. *)
+Definition thunk (eb : expr) : expr := Lam (rename S (subst1 (EBox eb) eb)).
+
+Lemma thunk_app w eb : subst1 w (rename S (subst1 (EBox eb) eb)) = subst1 (EBox eb) eb.
+Proof.
+  unfold subst1 at 1. rewrite subst_rename. rewrite <-(subst_ids (subst1 _ eb)) at 2.
+  by apply subst_ext.
+Qed.
+
+(** V at an arrow type. It reads the argument and the result only at
+    lower levels, so V-Box can use it at an instance of its type. *)
+Definition Vfun (below : nat → level) (n : nat)
+    (W : world) (Θ : tenv) (T : ty) (v : expr) : Prop :=
   match T with
-  | TUnit => Θ = ∅ ∧ v = EUnit
-  | TSess s x =>
-      ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
-        w_eq W k x
   | TLolli ub lb T1 U =>
       (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
          ∀ W' j Θ' Θ'' w F, wext W W' → j < n →
@@ -113,23 +122,30 @@ Fixpoint Vdef (below : nat → level) (n : nat)
            lE (below j) W' Θ'' U F (subst1 w eb))
       ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) (pt_known W) k T0 ∧
            teqW W T0 (TLolli ub lb T1 U))
+  | _ => False
+  end.
+
+Fixpoint Vdef (below : nat → level) (n : nat)
+    (W : world) (Θ : tenv) (T : ty) (v : expr) {struct T} : Prop :=
+  match T with
+  | TUnit => Θ = ∅ ∧ v = EUnit
+  | TSess s x =>
+      ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
+        w_eq W k x
+  | TLolli ub lb T1 U => Vfun below n W Θ (TLolli ub lb T1 U) v
   | TProd T1 U =>
       ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
         Vdef below n W Θ1 T1 v1 ∧ Vdef below n W Θ2 U v2
   | TSum T1 U =>
       (∃ v', v = Inj1 v' ∧ Vdef below n W Θ T1 v')
       ∨ (∃ v', v = Inj2 v' ∧ Vdef below n W Θ U v')
-  | TBox m C ub T1 =>
-      (* the paper's V⟦□T⟧ = {!e | fix x.e ∈ E⟦T ≺ ∅⟧}, at every
-         instance of the ∀, in every future world, and under every
-         frame above the instantiated upper point (sharp edges 52);
-         forcing always takes a β step, so only lower indices are
-         constrained *)
+  | TBox m C T1 =>
+      (* V of the thunk at every instance of the ∀ that meets C and
+         that the world knows, in every future world (sharp edges 63) *)
       Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-        ∀ W' j xs F, wext W W' → j < n → length xs = m →
+        ∀ W' xs, wext W W' → length xs = m →
           bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
-          ub_below W' (pt_inst (plist xs) <$> ub) F →
-          lE (below j) W' ∅ (ty_inst xs T1) F (subst1 (EBox eb) eb)
+          Vfun below n W' ∅ (ty_inst xs T1) (thunk eb)
   end.
 
 (** ** The cost of a step (sharp edges 45)
@@ -265,14 +281,14 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
 
 (** Term relation at level n' + 1 with fuel k, given [below] and the
     level-(n'+1) value relation [Vn]. A term that can step must be
-    ready and keep its offered entries below the frame F. A giving
+    ready in Θ ∣ F (one condition, sharp edges 63). A giving
     successor of e is smaller than e, so fuel above esize e does not
     matter ([Efuel_fuel]). *)
 Fixpoint Efuel (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
     (n' k : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr)
     : Prop :=
   (irred e → Vn W Θ T e) ∧                             (* E-Stop *)
-  (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) ∧      (* E-Step *)
+  (¬ irred e → ready_t W Θ F e) ∧                     (* E-Step *)
   ∀ α e', tstep e α e' →
     Eobl (λ j, lV (below j)) Vn (λ j, lE (below j))
       (match k with 0 => λ _ _ _ _ _, False | S k' => Efuel below Vn n' k' end)
@@ -584,23 +600,31 @@ Lemma Vrel_sum_iff n W Θ T U v :
   ∨ (∃ v', v = Inj2 v' ∧ Vrel n W Θ U v').
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-Lemma Vrel_box_iff n W Θ m C ub T v :
-  Vrel n W Θ (TBox m C ub T) v ↔
-  Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-    ∀ W' j xs F, wext W W' → j < n → length xs = m →
-      bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
-      ub_below W' (pt_inst (plist xs) <$> ub) F →
-      Erel j W' ∅ (ty_inst xs T) F (subst1 (EBox eb) eb).
+(** A λ is in V only at an arrow type, where V is [Vfun]. *)
+Lemma Vrel_Vfun n W Θ U eb : Vrel n W Θ U (Lam eb) ↔ Vfun (levels n) n W Θ U (Lam eb).
 Proof.
-  unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
-  apply and_iff_compat_l.
-  split; intros (eb & -> & Hfc & H); exists eb; (split_and!; [done..|]);
-    intros W' j xs F HW Hj Hxs HC HK HF.
-  - rewrite <-(levels_at n j Hj). by apply H.
-  - rewrite (levels_at n j Hj). by apply H.
+  unfold Vrel. rewrite (level_at_eq n). destruct U; cbn [mk_level lV Vdef Vfun]; try done.
+  - split; [intros [_ ?]|]; done.
+  - split; [intros (? & ? & ? & ? & ? & _)|]; done.
+  - split; [intros [(? & ? & _)|(? & ? & _)]|]; done.
+  - split; [intros (_ & ? & ? & _)|]; done.
+  - split; [intros (? & ? & ? & ? & _)|]; done.
 Qed.
 
-Lemma Vrel_box_empty n W Θ m C ub T v : Vrel n W Θ (TBox m C ub T) v → Θ = ∅.
+(** V-Box: the thunk is in V at every admissible instance. *)
+Lemma Vrel_box_iff n W Θ m C T v :
+  Vrel n W Θ (TBox m C T) v ↔
+  Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
+    ∀ W' xs, wext W W' → length xs = m →
+      bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
+      Vrel n W' ∅ (ty_inst xs T) (thunk eb).
+Proof.
+  unfold thunk. setoid_rewrite Vrel_Vfun.
+  unfold Vrel at 1. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done.
+Qed.
+
+Lemma Vrel_box_empty n W Θ m C T v : Vrel n W Θ (TBox m C T) v → Θ = ∅.
+
 
 Proof. intros [-> _]%Vrel_box_iff. done. Qed.
 
@@ -620,7 +644,7 @@ Lemma Vrel_lolli_iff n W Θ ub lb T U v :
   ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) (pt_known W) k T0 ∧
        teqW W T0 (TLolli ub lb T U)).
 Proof.
-  unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
+  unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef Vfun].
   apply or_iff_compat_r.
   split; intros (eb & -> & Hsup & Hlb & H); exists eb; (split_and!; [done..|]);
     intros W' j Θ' Θ'' w F HW Hj Hc HV Hub.
@@ -780,7 +804,7 @@ Qed.
 Lemma Erel_S_iff n W Θ T F e :
   Erel (S n) W Θ T F e ↔
     (irred e → Vrel (S n) W Θ T e) ∧
-    (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) ∧
+    (¬ irred e → ready_t W Θ F e) ∧
     (∀ α e', tstep e α e' → Ecase n W Θ T F α e').
 Proof.
   rewrite Erel_S_unfold. cbn [Efuel].
@@ -823,7 +847,7 @@ Qed.
 Lemma Erel_S_ind n (Φ : world → tenv → ty → gset point → expr → Prop) :
   (∀ W Θ T F e,
      (irred e → Vrel (S n) W Θ T e) →
-     (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) →
+     (¬ irred e → ready_t W Θ F e) →
      (∀ α e', tstep e α e' →
         Ecase_gen (λ W Θ T F e, Erel (S n) W Θ T F e ∧ Φ W Θ T F e) n W Θ T F α e') →
      Φ W Θ T F e) →
@@ -1045,15 +1069,26 @@ Qed.
 
 (** ** Downward closure (Lemma 3.7) *)
 
+Lemma Vrel_down_lolli n m W Θ ub lb T U v :
+  m ≤ n → Vrel n W Θ (TLolli ub lb T U) v → Vrel m W Θ (TLolli ub lb T U) v.
+Proof.
+  intros Hle. rewrite !Vrel_lolli_iff.
+  intros [(eb & -> & Hsup & Hlb & H)|Hk]; [left|by right].
+  exists eb. split_and!; [done..|].
+  intros W' j Θ' Θ'' w F HW Hj Hc HV Hub.
+  apply (H W' j Θ' Θ'' w F); auto. lia.
+Qed.
+
+Lemma Vrel_down_lam n m W Θ T eb : m ≤ n → Vrel n W Θ T (Lam eb) → Vrel m W Θ T (Lam eb).
+Proof.
+  intros Hle. destruct T; try (rewrite Vrel_Vfun; done). by apply Vrel_down_lolli.
+Qed.
+
 Lemma Vrel_down n m W Θ T v : m ≤ n → Vrel n W Θ T v → Vrel m W Θ T v.
 Proof.
   intros Hle. induction T in Θ, v |- *.
   - rewrite !Vrel_unit_iff. done.
-  - rewrite !Vrel_lolli_iff.
-    intros [(eb & -> & Hsup & Hlb & H)|Hk]; [left|by right].
-    exists eb. split_and!; [done..|].
-    intros W' j Θ' Θ'' w F HW Hj Hc HV Hub.
-    apply (H W' j Θ' Θ'' w F); auto. lia.
+  - by apply Vrel_down_lolli.
   - rewrite !Vrel_prod_iff.
     intros (v1 & v2 & Θ1 & Θ2 & -> & Hc & H1 & H2).
     eexists _, _, _, _. split_and!; eauto.
@@ -1061,9 +1096,10 @@ Proof.
     intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
   - rewrite !Vrel_box_iff.
     intros (-> & eb & -> & Hfc & H). split; [done|].
-    exists eb. split_and!; [done|done|]. intros W' j xs HW Hj Hxs.
-    apply H; auto. lia.
+    exists eb. split_and!; [done|done|]. intros W' xs HW Hxs HC HK.
+    eapply Vrel_down_lam; [exact Hle|]. by apply H.
   - rewrite !Vrel_sess_iff. done.
+
 Qed.
 
 Lemma Erel_down n m W Θ T F e :
@@ -1130,3 +1166,39 @@ Proof.
                       -> & ? & -> & ? & ? & ? & ? & HP').
       eexists _, _, _, _, _, _, _. split_and!; [done..|]. exact (proj2 HP').
 Qed.
+
+(** V-Box at a thunk type ∗ ⊸^u_⊤ T, read as the box of sharp edge 52:
+    the unrolled body is in E at every lower index, admissible instance
+    and frame above the instantiated upper point. *)
+Lemma Vrel_box_thunk_iff n W Θ m C ub T v :
+  Vrel n W Θ (TBox m C (TLolli ub None TUnit T)) v ↔
+  Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
+    ∀ W' j xs F, wext W W' → j < n → length xs = m →
+      bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
+      ub_below W' (pt_inst (plist xs) <$> ub) F →
+      Erel j W' ∅ (ty_inst xs T) F (subst1 (EBox eb) eb).
+Proof.
+  rewrite Vrel_box_iff. apply and_iff_compat_l.
+  split; intros (eb & -> & Hfc & H); exists eb; (split_and!; [done..|]).
+  - intros W' j xs F HW Hj Hxs HC HK HF.
+    specialize (H W' xs HW Hxs HC HK). cbn in H.
+    apply Vrel_lolli_iff in H as [(eb' & Heb & _ & _ & H)|(? & ? & ? & _)]; [|done].
+    injection Heb as <-. rewrite <-(thunk_app EUnit eb).
+    apply (H W' j ∅ ∅ EUnit F); [apply wext_refl, HW|done|apply tenv_comp_empty_r|
+      by apply Vrel_unit_iff|done].
+  - intros W' xs HW Hxs HC HK. cbn. apply Vrel_lolli_iff. left.
+    exists (rename S (subst1 (EBox eb) eb)). split; [done|]. split; [|split].
+    + rewrite fchans_rename, dom_empty_L. apply set_eq. intros c. split; [|set_solver].
+      intros Hc%fchans_subst1_sub. simpl in Hc. set_solver.
+    + simpl. unfold tenv_heads. by rewrite map_fold_empty.
+    + intros W'' j Θ' Θ'' w F HW' Hj Hc HV HF.
+      apply Vrel_unit_iff in HV as [-> ->]. apply tenv_comp_empty_r_inv in Hc as ->.
+      rewrite thunk_app. apply H; [by eapply wext_trans|done|done| | |done].
+      * eapply bcs_hold_mono; [|exact HC]. apply HW'.
+      * eapply Forall_impl; [exact HK|]. intros x Hx. apply HW', Hx.
+Qed.
+
+(** A λ is in V only at an arrow type. *)
+Lemma Vrel_lam_inv n W Θ T eb :
+  Vrel n W Θ T (Lam eb) → ∃ ub lb T1 U, T = TLolli ub lb T1 U.
+Proof. rewrite Vrel_Vfun. destruct T; try done. intros _. eauto. Qed.

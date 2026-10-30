@@ -8,8 +8,11 @@
     of c and blocking on one of them holds the other entry unoffered and
     would need head(c) ≺ head(c).
 
-    The frame condition says the offered entries lie below the frame F,
-    the points the context of the term still has to use. *)
+    For a term, readiness and the frame are one condition (sharp edges
+    63). Every offered head lies below every head the term holds and
+    does not offer, and below every point of the frame F, the points
+    the context of the term still has to use. A process has no frame
+    and keeps the condition above. *)
 
 From stdpp Require Import base strings gmap gmultiset.
 From LRGV Require Export Safety Worlds.
@@ -49,7 +52,8 @@ Definition stable_t (t : expr) : Prop :=
 (** No τ step. *)
 Definition stable_p (p : proc) : Prop := ∀ p', ¬ proc_step p PTau p'.
 
-(** ** ready_W and frame_W *)
+(** ** ready_W *)
+
 
 (** Every held entry not offered lies strictly above an offered one. *)
 Definition above_offered (W : world) (Θ : tenv) (off : ekey → Prop) : Prop :=
@@ -57,29 +61,59 @@ Definition above_offered (W : world) (Θ : tenv) (off : ekey → Prop) : Prop :=
     ∃ k' e', off k' ∧ tenv_entry Θ k' = Some e' ∧
       w_lt W (entry_head k' e') (entry_head k e).
 
-Definition ready_t (W : world) (Θ : tenv) (t : expr) : Prop :=
+(** Every offered entry lies strictly below every held entry not
+    offered and below every point of F. *)
+Definition below_rest (W : world) (Θ : tenv) (off : ekey → Prop) (F : gset point)
+    : Prop :=
+  ∀ k e, off k → tenv_entry Θ k = Some e →
+    (∀ k' e', tenv_entry Θ k' = Some e' → ¬ off k' →
+       w_lt W (entry_head k e) (entry_head k' e')) ∧
+    (∀ y, y ∈ F → w_lt W (entry_head k e) y).
+
+(** ready_W(Θ ∣ F, t). *)
+Definition ready_t (W : world) (Θ : tenv) (F : gset point) (t : expr) : Prop :=
   stable_t t →
     ((∀ k, ¬ offered_t Θ t k) → is_val t) ∧
-    above_offered W Θ (offered_t Θ t).
+    below_rest W Θ (offered_t Θ t) F.
 
 Definition ready_p (W : world) (Σ : senv) (p : proc) : Prop :=
   stable_p p →
     ((∀ k, ¬ offered_p Σ p k) → terminated p) ∧
     above_offered W (tenv_of Σ) (offered_p Σ p).
 
-(** The offered entries lie below the frame. *)
-Definition frame_t (W : world) (Θ : tenv) (t : expr) (F : gset point) : Prop :=
-  stable_t t →
-    ∀ k e, offered_t Θ t k → tenv_entry Θ k = Some e →
-      ∀ y, y ∈ F → w_lt W (entry_head k e) y.
-
 (** ** Basic facts *)
 
-Lemma frame_t_empty W Θ t : frame_t W Θ t ∅.
-Proof. intros _ k e _ _ y Hy. set_solver. Qed.
+Lemma below_rest_frame W Θ off F F' :
+  F' ⊆ F → below_rest W Θ off F → below_rest W Θ off F'.
+Proof.
+  intros HF H k e Ho He. destruct (H k e Ho He) as [H1 H2].
+  split; [done|]. intros y Hy. apply H2. set_solver.
+Qed.
 
-Lemma frame_t_mono W Θ t F F' : F' ⊆ F → frame_t W Θ t F → frame_t W Θ t F'.
-Proof. intros HF H Hs k e Ho He y Hy. apply (H Hs k e); [done..|set_solver]. Qed.
+Lemma ready_t_frame W Θ t F F' : F' ⊆ F → ready_t W Θ F t → ready_t W Θ F' t.
+Proof.
+  intros HF H Hs. destruct (H Hs) as [? ?]. split; [done|].
+  by eapply below_rest_frame.
+Qed.
+
+(** The relation between the two forms of readiness. With an offered
+    entry, below_rest gives above_offered. *)
+Lemma below_rest_above W Θ (off : ekey → Prop) F k0 e0 :
+  off k0 → tenv_entry Θ k0 = Some e0 →
+  below_rest W Θ off F → above_offered W Θ off.
+Proof.
+  intros Ho He H k e Hk Hn. exists k0, e0. split_and!; [done|done|].
+  exact (proj1 (H k0 e0 Ho He) k e Hk Hn).
+Qed.
+
+Lemma below_rest_lt W W' Θ off F :
+  (∀ x y, w_lt W x y → w_lt W' x y) →
+  below_rest W Θ off F → below_rest W' Θ off F.
+Proof.
+  intros Hl H k e Ho He. destruct (H k e Ho He) as [H1 H2].
+  split; intros; [apply Hl; by apply H1|apply Hl; by apply H2].
+Qed.
+
 
 (** Values have no transitions, so they are stable and offer nothing. *)
 Lemma val_stable_t v : is_val v → stable_t v.

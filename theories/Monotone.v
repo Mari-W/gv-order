@@ -38,10 +38,10 @@ Proof.
   destruct (H k e He Hk) as (k' & e' & ? & ? & ?). eauto 10.
 Qed.
 
-Lemma ready_t_mono W W' Θ e : wext W W' → ready_t W Θ e → ready_t W' Θ e.
+Lemma ready_t_mono W W' Θ F e : wext W W' → ready_t W Θ F e → ready_t W' Θ F e.
 Proof.
-  intros HW H Hs. destruct (H Hs) as [? ?]. split; [done|].
-  by eapply above_offered_mono.
+  intros (_ & _ & Hl & _) H Hs. destruct (H Hs) as [? ?]. split; [done|].
+  by eapply below_rest_lt.
 Qed.
 
 Lemma ready_p_mono W W' Σ p : wext W W' → ready_p W Σ p → ready_p W' Σ p.
@@ -50,11 +50,6 @@ Proof.
   by eapply above_offered_mono.
 Qed.
 
-Lemma frame_t_mono_w W W' Θ e F :
-  wext W W' → frame_t W Θ e F → frame_t W' Θ e F.
-Proof.
-  intros (_ & _ & Hl & _) H Hs k e0 Ho He y Hy. apply Hl. by eapply H.
-Qed.
 
 Lemma wext_join_l W1 W' :
   strict (wjoin W1 W') → wext W1 (wjoin W1 W').
@@ -75,8 +70,7 @@ Proof.
   assert (∀ j W0 Θ0 T0 e0, j ≤ n → Erel j W0 Θ0 T0 F e0 → Erel j W0 Θ0 T0 F' e0)
     as IHj by (intros; eapply IH; [lia|done|done]).
   apply Erel_S_iff. split_and!; [done| |].
-  { intros Hirr. destruct (Hrdy Hirr). split; [done|].
-    by eapply frame_t_mono. }
+  { intros Hirr. eapply ready_t_frame; [exact HF|]. by apply Hrdy. }
   intros α e' Hst. specialize (Hstep α e' Hst).
   destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
   - by apply IHj.
@@ -134,7 +128,7 @@ Proof.
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
     - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
       apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      intros W'' j xs HW' Hj Hxs. apply HK; [|done..]. by eapply wext_trans.
+      intros W'' xs HW' Hxs. apply HK; [|done..]. by eapply wext_trans.
     - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hx).
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done..|].
       destruct HWW' as (_ & He & _). auto. }
@@ -148,9 +142,7 @@ Proof.
     { intros j ? ? ? ? ? ? Hj. apply (proj1 (proj2 (IHn j ltac:(lia)))). }
     apply Erel_S_iff. split_and!.
     { intros Hirr. eapply HV; [done|done|]. by apply Hval. }
-    { intros Hirr. destruct (Hrdy Hirr). split.
-      - by eapply ready_t_mono.
-      - by eapply frame_t_mono_w. }
+    { intros Hirr. eapply ready_t_mono; [done|]. by apply Hrdy. }
     intros α e' Hst. specialize (Hstep α e' Hst).
     destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
     + eapply HEj; [lia|done|done|exact Hstep].

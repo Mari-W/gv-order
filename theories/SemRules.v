@@ -68,11 +68,11 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       sem_rules W Θ2 (Some T2 :: Δ2) F e2 T →
       sem_rules W Θ Δ F (Case e e1 e2) T
   | sr_box Δ F e m C ub T :                              (* E-Exp *)
-      lenv_unl Δ → term_wf ∅ (Some (TBox m C ub T) :: Δ) e →
+      lenv_unl Δ → term_wf ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) e →
       (∀ W1 xs F', wext W W1 → length xs = m → bcs_hold (w_lt W1) C xs →
          Forall (pt_known W1) xs → ub_below W1 (pt_inst (plist xs) <$> ub) F' →
-         sem_rules W1 ∅ (Some (TBox m C ub T) :: Δ) F' e (ty_inst xs T)) →
-      sem_rules W ∅ Δ F (EBox e) (TBox m C ub T)
+         sem_rules W1 ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) F' e (ty_inst xs T)) →
+      sem_rules W ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T))
   | sr_wk Θ Δ' Δ F e T :                                 (* E-Weak *)
       lenv_wk Δ' Δ → sem_rules W Θ Δ' F e T → sem_rules W Θ Δ F e T
   | sr_contract Θ Δ U F e T :                            (* E-Contract *)
@@ -86,7 +86,7 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
 Lemma sem_rules_force W Θ Δ F e m C ub T xs :
   world_wf W → length xs = m → bcs_hold (w_lt W) C xs → Forall (pt_known W) xs →
   ub_below W (pt_inst (plist xs) <$> ub) F →
-  sem_rules W Θ Δ F e (TBox m C ub T) →
+  sem_rules W Θ Δ F e (TBox m C (TLolli ub None TUnit T)) →
   sem_rules W Θ Δ F (App EForce e) (ty_inst xs T).
 Proof.
   intros HW Hxs HC HK Hub He.

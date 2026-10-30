@@ -327,7 +327,7 @@ Qed.
 
 Lemma pinst_ty_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C ub T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
     intros σ τ H; simpl.
   - done.
   - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_ext|destruct lb; simpl; f_equal; auto using pt_inst_ext|auto|auto].
@@ -335,14 +335,13 @@ Proof.
   - f_equal; auto.
   - f_equal.
     + apply bcs_inst_ext. intros a. by apply pup_ext.
-    + destruct ub; simpl; [|done]. f_equal. apply pt_inst_ext. intros a. by apply pup_ext.
     + apply IH. intros a. by apply pup_ext.
   - f_equal. by apply pt_inst_ext.
 Qed.
 
 Lemma pinst_ty_comp T : ∀ τ σ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C ub T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
     intros τ σ; simpl.
   - done.
   - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_comp|destruct lb; simpl; f_equal; auto using pt_inst_comp|auto|auto].
@@ -350,15 +349,13 @@ Proof.
   - f_equal; auto.
   - f_equal.
     + rewrite bcs_comp. apply bcs_inst_ext. intros a. apply pup_comp.
-    + destruct ub; simpl; [|done]. f_equal. rewrite pt_inst_comp.
-      apply pt_inst_ext. intros a. apply pup_comp.
     + rewrite IH. apply pinst_ty_ext. intros a. apply pup_comp.
   - f_equal. apply pt_inst_comp.
 Qed.
 
 Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C ub T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
     simpl.
   - done.
   - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_pvar|destruct lb; simpl; f_equal; auto using pt_inst_pvar|auto|auto].
@@ -366,8 +363,6 @@ Proof.
   - f_equal; auto.
   - f_equal.
     + rewrite (bcs_inst_ext _ pvar); [apply bcs_pvar|apply pup_pvar].
-    + destruct ub as [u|]; simpl; [|done]. f_equal.
-      rewrite (pt_inst_ext _ pvar); [apply pt_inst_pvar|apply pup_pvar].
     + rewrite (pinst_ty_ext _ _ pvar); [done|apply pup_pvar].
   - f_equal. apply pt_inst_pvar.
 Qed.
@@ -628,7 +623,7 @@ Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   | TUnit => True
   | TLolli ub lb T1 U => opt_scoped k ub ∧ opt_scoped k lb ∧ pscoped k T1 ∧ pscoped k U
   | TProd T1 U | TSum T1 U => pscoped k T1 ∧ pscoped k U
-  | TBox n C ub T1 => bcs_scoped (n + k) C ∧ opt_scoped (n + k) ub ∧ pscoped (n + k) T1
+  | TBox n C T1 => bcs_scoped (n + k) C ∧ pscoped (n + k) T1
   | TSess _ x => pt_scoped k x
   end.
 
@@ -641,7 +636,7 @@ Proof.
   assert (∀ k n σ τ, (∀ a, a < k → σ a = τ a) → ∀ a, a < n + k → pup n σ a = pup n τ a) as Hup.
   { intros k n σ τ H a Ha. unfold pup. destruct (decide (a < n)); [done|].
     rewrite H; [done|lia]. }
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C ub T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
     intros k σ τ HT H; simpl in *.
   - done.
   - destruct HT as (Hub & Hlb & H1 & H2).
@@ -649,7 +644,7 @@ Proof.
              |destruct lb; simpl in *; [f_equal; eauto|done]|eauto|eauto].
   - destruct HT. f_equal; eauto.
   - destruct HT. f_equal; eauto.
-  - destruct HT as ([HS HC] & Hub & H1). f_equal.
+  - destruct HT as ([HS HC] & H1). f_equal.
     + unfold bcs_inst. f_equal.
       * apply list_fmap_ext. intros i s' Hs. apply list_fmap_ext. intros j x Hx.
         rewrite Forall_forall in HS. pose proof (HS s' (list_elem_of_lookup_2 _ _ _ Hs)) as HSs.
@@ -658,7 +653,6 @@ Proof.
       * unfold pcs_inst. apply list_fmap_ext. intros i p Hp.
         destruct (HC p (list_elem_of_lookup_2 _ _ _ Hp)) as [Hp1 Hp2].
         f_equal; (eapply Hpt; [done|]); by apply Hup.
-    + destruct ub; simpl in *; [|done]. f_equal. eapply Hpt; [done|]. by apply Hup.
     + eapply IH; [done|]. by apply Hup.
   - f_equal. eauto.
 Qed.
@@ -685,7 +679,7 @@ Proof. destruct o; simpl; [by rewrite set_map_singleton_L|by rewrite set_map_emp
 
 Lemma heads_pinst σ T : heads (pinst_ty σ T) = set_map (pt_inst σ) (heads T).
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C ub T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
     simpl.
   - by rewrite set_map_empty.
   - apply opt_heads_pinst.
@@ -1006,12 +1000,12 @@ Qed.
 
 Lemma eqT_pinst ρ T : ∀ U σ, eqT ρ T U → eqT ρ (pinst_ty σ T) (pinst_ty σ U).
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C ub T1 IH | s x];
-    intros [| ub' lb' U1 U2 | U1 U2 | U1 U2 | n' C' ub' U1 | r y] σ; simpl; try done.
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
+    intros [| ub' lb' U1 U2 | U1 U2 | U1 U2 | n' C' U1 | r y] σ; simpl; try done.
   - intros (-> & -> & H1 & H2). split_and!; auto.
   - intros [H1 H2]. split_and!; auto.
   - intros [H1 H2]. split_and!; auto.
-  - intros (-> & -> & -> & H1). split_and!; auto.
+  - intros (-> & -> & H1). split_and!; auto.
   - intros (-> & H). split_and!; auto.
 Qed.
 
@@ -1073,8 +1067,8 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       lenv_unl Δ → φ ∉ dom Φ →
       typed W (<[φ := ub]> (fhyps_pinst (pshift m) Φ))
         (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pup m (pshift m)) C, ids m)]) ∅
-        (lenv_pinst (pshift m) (Some (TBox m C ub T) :: Δ)) (∅, Some φ) e T →
-      typed W Φ Ψ ∅ Δ F (EBox e) (TBox m C ub T)
+        (lenv_pinst (pshift m) (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) (∅, Some φ) e T →
+      typed W Φ Ψ ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T))
   | t_wk Φ Ψ Θ Δ' Δ F e T :                             (* E-Weak *)
       lenv_wk Δ' Δ → typed W Φ Ψ Θ Δ' F e T → typed W Φ Ψ Θ Δ F e T
   | t_contract Φ Ψ Θ Δ U F e T :                        (* E-Contract *)
@@ -1089,7 +1083,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
 Lemma typed_force W Φ Ψ Θ Δ F e m C ub T xs :
   world_wf W → length xs = m → bcs_hold (slt W Ψ) C xs → Forall (skn W Ψ) xs →
   ub_below_s W Ψ Φ (pt_inst (plist xs) <$> ub) F →
-  typed W Φ Ψ Θ Δ F e (TBox m C ub T) →
+  typed W Φ Ψ Θ Δ F e (TBox m C (TLolli ub None TUnit T)) →
   typed W Φ Ψ Θ Δ F (App EForce e) (ty_inst xs T).
 Proof.
   intros HW Hxs HC HK Hub He.
@@ -1399,14 +1393,14 @@ Proof.
   - cbn [pinst_ty]. rewrite tenv_pinst_empty. apply sr_box; [by apply lenv_unl_pinst| |].
     { pose proof (typed_term_wf_s _ _ _ _ _ _ _ _ Hb) as Hwf.
       rewrite term_wf_lenv_pinst in Hwf.
-      change (term_wf ∅ (lenv_pinst σ (Some (TBox m C ub T) :: Δ)) e).
+      change (term_wf ∅ (lenv_pinst σ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) e).
       by rewrite term_wf_lenv_pinst. }
     intros W2 xs F' HW2 Hxs HC HK Hub'. subst m.
     assert (∀ a, pt_inst (pt_inst (plist xs) ∘ pup (length xs) σ) (pshift (length xs) a) = σ a) as Hsh
       by (intros a; by apply plist_pup_shift).
     set (m := length xs).
-    assert (lenv_pinst (pt_inst (plist xs) ∘ pup m σ) (lenv_pinst (pshift m) (Some (TBox m C ub T) :: Δ))
-            = lenv_pinst σ (Some (TBox m C ub T) :: Δ)) as E1.
+    assert (lenv_pinst (pt_inst (plist xs) ∘ pup m σ) (lenv_pinst (pshift m) (Some (TBox m C (TLolli ub None TUnit T)) :: Δ))
+            = lenv_pinst σ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) as E1.
     { rewrite lenv_pinst_comp. apply lenv_pinst_ext. exact Hsh. }
     assert (pinst_ty (pt_inst (plist xs) ∘ pup m σ) T = ty_inst xs (pinst_ty (pup m σ) T)) as E2.
     { unfold ty_inst. by rewrite pinst_ty_comp. }
@@ -1669,7 +1663,7 @@ Definition ord_body : ty :=
 
 Definition ord_C : bcs := BCs [] [(pvar 0, pvar 1)].
 
-Definition ord_ty : ty := TBox 2 ord_C None ord_body.
+Definition ord_ty : ty := TBox 2 ord_C (TLolli None None TUnit ord_body).
 
 (** A fact of a hypothesis at the empty word. *)
 Lemma sl_hyp0 W Ψ C xs x y x' y' :
@@ -1689,7 +1683,7 @@ Lemma ordered_typed W F : world_wf W → typed W ∅ [] ∅ [] F ord_box ord_ty.
 Proof.
   intros HW. unfold ord_box, ord_ty.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
-  cbn. set (Bx := TBox 2 _ _ _).
+  cbn. set (Bx := TBox 2 _ _).
   set (Ψ := [(_, _)]). set (Tc := TSess SEnd (pvar 0)). set (Td := TSess SEnd (pvar 1)).
   unfold ord_body. fold Tc Td.
   apply (t_lam W _ _ _ _ _ _ _ _ _ _ 1); [set_solver|done|].

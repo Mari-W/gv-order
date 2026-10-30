@@ -1945,6 +1945,44 @@ Proof.
     destruct H1 as [[_ ->]|(g & _ & [-> | ->])]; rewrite ?dom_insert_L; set_solver.
 Qed.
 
+(** A term with a session step offers some entry. *)
+Lemma offered_some n W Θ T F e σ e' :
+  Erel (S n) W Θ T F e → tstep e (LSess σ) e' → ∃ k, offered_t Θ e k.
+Proof.
+  intros HE Hst. pose proof (Erel_subjs _ _ _ _ _ _ _ _ HE Hst) as Hsub.
+  pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hstep.
+  assert (∀ c u k Θr, tenv_hd Θ c u k Θr → ∃ b s, tenv_entry Θ (c, b) = Some (s, k) ∧ unfoldS s = u)
+    as Hhd.
+  { intros c u k Θr (s & [(_ & ->)|(e0 & _ & [->| ->])] & Hu).
+    - exists false, s. unfold tenv_entry. simpl. by rewrite lookup_insert_eq.
+    - exists false, s. unfold tenv_entry. simpl. by rewrite lookup_insert_eq.
+    - exists true, s. unfold tenv_entry. simpl. by rewrite lookup_insert_eq. }
+  destruct σ as [c w|c w|c|cd]; simpl in Hstep.
+  - destruct Hstep as (Θ1 & m & U & s & k & Hh & _). destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
+    exists (c, b), (SRecv c w), e'. split; [done|]. split; [done|]. eauto 10.
+  - destruct Hstep as (Θr & ? & ? & m & U & s & k & ? & Hh & _).
+    destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
+    exists (c, b), (SSend c w), e'. split; [done|]. split; [done|]. eauto 10.
+  - destruct Hstep as (Θ1 & k & Hh & _). destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
+    destruct b.
+    + destruct (tenv_entry Θ (c, false)) as [e0|] eqn:E0.
+      * assert (unfoldS e0.1 = SEnd ∨ unfoldS e0.1 ≠ SEnd) as [Hu0|Hu0]
+          by (destruct (unfoldS e0.1); first [by left|by right]).
+        -- exists (c, false), (SClos c), e'. split; [done|]. split; [done|].
+           exists e0. split_and!; [done|done|discriminate].
+        -- exists (c, true), (SClos c), e'. split; [done|]. split; [done|].
+           exists (s0, k). split_and!; [done|done|]. intros _ e1 He1. congruence.
+      * exists (c, true), (SClos c), e'. split; [done|]. split; [done|].
+        exists (s0, k). split_and!; [done|done|]. intros _ e1 He1. congruence.
+    + exists (c, false), (SClos c), e'. split; [done|]. split; [done|].
+      exists (s0, k). split_and!; [done|done|discriminate].
+  - destruct (set_choose_or_empty cd) as [[c Hc]|Hcd].
+    + assert (c ∈ dom Θ) as HcΘ by (apply Hsub; done). apply elem_of_dom in HcΘ as [o Ho].
+      exists (c, false), (SLink cd), e'. split; [done|]. split; [done|].
+      unfold tenv_entry. simpl. rewrite Ho. destruct o; by eexists.
+    + exfalso. destruct Hstep as (c & d & ? & ? & ? & ? & ? & ? & -> & _). set_solver.
+Qed.
+
 (** A stable, ready term holding one end each of two aliased channels
     acts on neither, unless by a link. *)
 Lemma fusion_exclusion n W Θ T F e c d e1 e2 σ e' :
@@ -1959,31 +1997,29 @@ Proof.
          destruct a, α; simpl in *; done).
   all: assert (¬ irred e) as Hni by (intros Hi; by apply (Hi _ _ Hst)).
   all: pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hstep; simpl in Hstep.
+  all: destruct (offered_some _ _ _ _ _ _ _ _ HE Hst) as [k0 Hk0].
   all: apply Erel_S_iff in HE as (_ & Hrdy & _).
-  all: destruct (Hrdy Hni) as [Hr _]; destruct (Hr Hs) as [_ Ha].
+  all: destruct (Hrdy Hni Hs) as [_ Ha].
   all: assert (∀ k, offered_t Θ e k → k.1 = c0) as Hsame
          by (intros k (σ' & f & Hf & Hsel); apply selects_subj in Hsel;
              destruct (tstep_same_act _ _ _ _ _ Hst Hf) as (a & Ha1 & Ha2);
              destruct a, σ'; simpl in *; try done; set_solver).
   all: simpl in Hsub; assert (c0 = c ∨ c0 = d) as [->| ->] by set_solver.
-  (* the other channel's end is not offered, and lies above no offer *)
-  all: match goal with
-       | |- _ => idtac
-       end.
+  (* the offer lies below the other channel's end, which is aliased to it *)
+  all: pose proof (Hsame _ Hk0) as Hk0c; destruct k0 as [k1 b0]; simpl in Hk0c; subst k1.
+  all: pose proof Hk0 as (σ1 & t1 & _ & Hsel1); destruct (selects_entry _ _ _ Hsel1) as [f Hf].
+  all: destruct b0; unfold tenv_entry in Hf; simpl in Hf; rewrite ?Hc, ?Hd in Hf; try done.
+  all: injection Hf as <-.
   all: first
-    [ (destruct (Ha (d, false) e2) as (k' & f & Ho & Hf & Hlt);
-       [unfold tenv_entry; simpl; by rewrite Hd
-       |intros Ho; apply Hsame in Ho; simpl in Ho; congruence|];
-       pose proof (Hsame _ Ho) as Hk'; destruct k' as [k1 [|]]; simpl in Hk'; subst k1;
-       unfold tenv_entry in Hf; simpl in Hf; rewrite Hc in Hf; [done|];
-       injection Hf as <-; unfold entry_head in Hlt; simpl in Hlt;
+    [ (pose proof (proj1 (Ha _ _ Hk0 ltac:(unfold tenv_entry; simpl; by rewrite Hc)) (d, false) e2
+         ltac:(unfold tenv_entry; simpl; by rewrite Hd)
+         ltac:(intros Ho; apply Hsame in Ho; simpl in Ho; congruence)) as Hlt;
+       unfold entry_head in Hlt; simpl in Hlt;
        apply (Hirr e2.2); eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf])
-    | (destruct (Ha (c, false) e1) as (k' & f & Ho & Hf & Hlt);
-       [unfold tenv_entry; simpl; by rewrite Hc
-       |intros Ho; apply Hsame in Ho; simpl in Ho; congruence|];
-       pose proof (Hsame _ Ho) as Hk'; destruct k' as [k1 [|]]; simpl in Hk'; subst k1;
-       unfold tenv_entry in Hf; simpl in Hf; rewrite Hd in Hf; [done|];
-       injection Hf as <-; unfold entry_head in Hlt; simpl in Hlt;
+    | (pose proof (proj1 (Ha _ _ Hk0 ltac:(unfold tenv_entry; simpl; by rewrite Hd)) (c, false) e1
+         ltac:(unfold tenv_entry; simpl; by rewrite Hc)
+         ltac:(intros Ho; apply Hsame in Ho; simpl in Ho; congruence)) as Hlt;
+       unfold entry_head in Hlt; simpl in Hlt;
        apply (Hirr e1.2); eapply (wf_lt_eq _ HWf); [exact Hx|exact Hlt|apply HWf]) ].
 Qed.
 
@@ -2564,19 +2600,18 @@ Proof.
     exact (HV W Θ Θ' T e c d HW Hcd Hm (Hval Hirr0)).
   - intros Hni. assert (¬ irred e) as Hni0.
     { intros Hi. apply Hni. by apply irred_chsubst_back. }
-    destruct (Hrdy Hni0) as [Hr Hfr]. split.
-    + intros Hs. apply stable_chsubst in Hs as Hs0. destruct (Hr Hs0) as [Hv Ha]. split.
-      * intros Hno. rewrite is_val_chsubst. apply Hv. intros k Hk. apply (Hno (κ k)).
-        by apply Hfwd.
-      * intros k' e' He' Hk'. destruct (Hκ4 k' e' He') as (k & <- & He).
-        destruct (Ha k e' He) as (k0 & e0 & Ho & He0 & Hlt).
-        { intros Ho. apply Hk'. by apply Hfwd. }
-        exists (κ k0), e0. split_and!; [by apply Hfwd|by apply Hκ3|].
-        unfold entry_head in *. done.
-    + intros Hs k' e' Ho He' y Hy. apply stable_chsubst in Hs as Hs0.
+    intros Hs. apply stable_chsubst in Hs as Hs0. destruct (Hrdy Hni0 Hs0) as [Hv Ha]. split.
+    + intros Hno. rewrite is_val_chsubst. apply Hv. intros k Hk. apply (Hno (κ k)).
+      by apply Hfwd.
+    + intros k' e' Ho He'.
       destruct (Hback k' e' Ho He') as (k & e0 & Ho0 & He0 & Heq).
-      pose proof (Hfr Hs0 k e0 Ho0 He0 y Hy) as Hlt. unfold entry_head in *.
-      eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf].
+      destruct (Ha k e0 Ho0 He0) as [H1 H2]. split.
+      * intros k2 e2 He2 Hn2. destruct (Hκ4 k2 e2 He2) as (k3 & <- & He3).
+        assert (¬ offered_t Θ e k3) as Hn3 by (intros Ho3; apply Hn2; by apply Hfwd).
+        pose proof (H1 k3 e2 He3 Hn3) as Hlt. unfold entry_head in *.
+        eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf].
+      * intros y Hy. pose proof (H2 y Hy) as Hlt. unfold entry_head in *.
+        eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf].
   - intros α f' Hst. destruct α as [|[c' w'|c' w'|c'|cd']|c'|w'].
     + (* β *)
       apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].

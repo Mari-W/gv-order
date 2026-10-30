@@ -419,14 +419,30 @@ Section ready.
     - rewrite <-(kswap_involutive a b k). by rewrite !entry_head_swap.
   Qed.
 
-  Lemma ready_t_swap W Θ t :
-    ready_t W Θ t → ready_t W (tenvswap a b Θ) (eswap a b t).
+  Lemma below_rest_swap W Θ (off off' : ekey → Prop) F :
+    (∀ k, off' k ↔ off (kswap a b k)) →
+    below_rest W Θ off F →
+    below_rest W (tenvswap a b Θ) off' F.
+  Proof.
+    intros Hoff H k e Ho He. rewrite tenv_entry_swap' in He.
+    destruct (tenv_entry Θ (kswap a b k)) as [e0|] eqn:E0; [|done].
+    injection He as <-. rewrite Hoff in Ho.
+    destruct (H _ _ Ho E0) as [H1 H2].
+    rewrite <-(kswap_involutive a b k), entry_head_swap. split; [|done].
+    intros k' e' He' Hn. rewrite tenv_entry_swap' in He'.
+    destruct (tenv_entry Θ (kswap a b k')) as [e1|] eqn:E1; [|done].
+    injection He' as <-. rewrite <-(kswap_involutive a b k'), entry_head_swap.
+    apply (H1 _ _ E1). by rewrite <-Hoff.
+  Qed.
+
+  Lemma ready_t_swap W Θ F t :
+    ready_t W Θ F t → ready_t W (tenvswap a b Θ) F (eswap a b t).
   Proof.
     intros H Hs. apply (stable_t_swap) in Hs. rewrite eswap_involutive in Hs.
     destruct (H Hs) as [Hv Ha]. split.
     - intros Hno. rewrite is_val_eswap. apply Hv. intros k Hk.
       apply (Hno (kswap a b k)). by rewrite offered_t_swap_iff, kswap_involutive.
-    - apply (above_offered_swap _ _ (offered_t Θ t)); [|done].
+    - apply (below_rest_swap _ _ (offered_t Θ t)); [|done].
       intros k. apply offered_t_swap_iff.
   Qed.
 
@@ -442,17 +458,6 @@ Section ready.
       intros k. apply offered_p_swap_iff.
   Qed.
 
-  Lemma frame_t_swap W Θ t F :
-    frame_t W Θ t F → frame_t W (tenvswap a b Θ) (eswap a b t) F.
-  Proof.
-    intros H Hs k e Ho He y Hy. apply stable_t_swap in Hs.
-    rewrite eswap_involutive in Hs.
-    rewrite offered_t_swap_iff in Ho. rewrite tenv_entry_swap' in He.
-    destruct (tenv_entry Θ (kswap a b k)) as [e0|] eqn:E0; [|done].
-    injection He as <-.
-    rewrite <-(kswap_involutive a b k), entry_head_swap.
-    by apply (H Hs _ _ Ho E0).
-  Qed.
 
 
 End ready.
@@ -512,13 +517,10 @@ Proof.
   assert (∀ j, j < n → ∀ W Σ T p, Prel j W Σ T p →
             Prel j W (senvswap a b Σ) T (pswap a b p)) as IHP
     by (intros j Hj; apply (IHn j Hj)).
-  assert (∀ W Θ T v, Vrel n W Θ T v → Vrel n W (tenvswap a b Θ) T (eswap a b v)) as HV.
-  { intros W Θ T. revert Θ.
-    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m C0 ub0 T1 IHT1|s x];
-      intros Θ v HVv; simpl.
-    - apply Vrel_unit_iff in HVv as [-> ->].
-      apply Vrel_unit_iff. by rewrite tenvswap_empty.
-    - apply Vrel_lolli_iff in HVv
+  assert (∀ W Θ ub lb T1 U v, Vrel n W Θ (TLolli ub lb T1 U) v →
+            Vrel n W (tenvswap a b Θ) (TLolli ub lb T1 U) (eswap a b v)) as Hfun.
+  { intros W Θ ub lb T1 U v HVv.
+      apply Vrel_lolli_iff in HVv
         as [(eb & -> & Hfc & Hlb & H)|(k & T0 & -> & -> & Hk & Ht)].
       + apply Vrel_lolli_iff. left. exists (eswap a b eb). split_and!.
         * done.
@@ -531,7 +533,18 @@ Proof.
           apply (IHE j Hj) in H.
           by rewrite tenvswap_involutive, eswap_subst1, eswap_involutive in H.
       + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done| |done|done].
-        by rewrite tenvswap_empty.
+        by rewrite tenvswap_empty. }
+  assert (∀ W Θ T eb, Vrel n W Θ T (Lam eb) →
+            Vrel n W (tenvswap a b Θ) T (eswap a b (Lam eb))) as Hlam.
+  { intros W Θ T eb HVv.
+    destruct (Vrel_lam_inv _ _ _ _ _ HVv) as (? & ? & ? & ? & ->). by apply Hfun. }
+  assert (∀ W Θ T v, Vrel n W Θ T v → Vrel n W (tenvswap a b Θ) T (eswap a b v)) as HV.
+  { intros W Θ T. revert Θ.
+    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m C0 T1 IHT1|s x];
+      intros Θ v HVv; simpl.
+    - apply Vrel_unit_iff in HVv as [-> ->].
+      apply Vrel_unit_iff. by rewrite tenvswap_empty.
+    - by apply Hfun.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hc & H1 & H2).
       apply Vrel_prod_iff.
       exists (eswap a b v1), (eswap a b v2), (tenvswap a b Θ1), (tenvswap a b Θ2).
@@ -543,11 +556,10 @@ Proof.
     - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
       apply Vrel_box_iff. rewrite tenvswap_empty. split; [done|].
       exists (eswap a b eb). split_and!; [done|by rewrite fchans_eswap, Hfc, gswap_empty|].
-      intros W' j xs F Hx Hj Hxs HC HK Hub.
-      specialize (H _ j xs F Hx Hj Hxs HC HK Hub).
-
-      apply (IHE j Hj) in H.
-      by rewrite tenvswap_empty, eswap_subst1 in H.
+      intros W' xs Hx Hxs HC HK.
+      specialize (H _ xs Hx Hxs HC HK). apply Hlam in H.
+      unfold thunk in H. simpl in H.
+      by rewrite tenvswap_empty, eswap_rename, eswap_subst1 in H.
     - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs & Hx).
       apply Vrel_sess_iff. exists (cswap a b c), s0, k.
       split_and!; [done|by rewrite tenvswap_singleton|done|done]. }
@@ -559,9 +571,8 @@ Proof.
     apply Erel_S_iff. split_and!.
     { intros Hirr. apply HV. apply Hval.
       apply (irred_swap a b) in Hirr. by rewrite eswap_involutive in Hirr. }
-    { intros Hirr. destruct Hrdy as [Hr Hf].
-      { intros Hirr0. apply Hirr. by apply irred_swap. }
-      split; [by apply ready_t_swap|by apply frame_t_swap]. }
+    { intros Hirr. apply ready_t_swap, Hrdy.
+      intros Hirr0. apply Hirr. by apply irred_swap. }
     intros α e'' Hst. apply tstep_eswap_inv' in Hst.
     specialize (Hstep _ _ Hst).
     rewrite <-(tlswap_involutive a b α), <-(eswap_involutive a b e'').

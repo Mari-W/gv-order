@@ -102,7 +102,7 @@ Section teqW.
   Proof.
     induction T; intros [] H; simpl in *; try done; try naive_solver.
     - destruct H as (? & ? & ? & ?). split_and!; auto using opt_rel_sym.
-    - destruct H as (? & ? & ? & ?). split_and!; auto using opt_rel_sym, bcs_rel_sym.
+    - destruct H as (? & ? & ?). split_and!; auto using bcs_rel_sym.
     - destruct H as [? ?]. split; [by apply pteqW_sym|by apply seq_sym].
   Qed.
 
@@ -111,8 +111,8 @@ Section teqW.
     induction T; intros [] [] H1 H2; simpl in *; try done; try naive_solver.
     - destruct H1 as (? & ? & ? & ?), H2 as (? & ? & ? & ?).
       split_and!; eauto using opt_rel_trans.
-    - destruct H1 as (? & ? & ? & ?), H2 as (? & ? & ? & ?).
-      split_and!; eauto using opt_rel_trans, bcs_rel_trans. congruence.
+    - destruct H1 as (? & ? & ?), H2 as (? & ? & ?).
+      split_and!; eauto using bcs_rel_trans. congruence.
     - destruct H1 as [? ?], H2 as [? ?]. split; [by eapply pteqW_trans|by eapply seq_trans].
   Qed.
 
@@ -195,7 +195,6 @@ Section teqW.
     - destruct lb; simpl; [by apply pteqW_inst_l|done].
     - apply (proj1 (bcs_rel_inst_l _ _ _ (pup_pteqW _ _ _ H))).
     - apply (proj2 (bcs_rel_inst_l _ _ _ (pup_pteqW _ _ _ H))).
-    - destruct ub; simpl; [|done]. apply pteqW_inst_l. by apply pup_pteqW.
     - apply IHT. by apply pup_pteqW.
     - by apply pteqW_inst_l.
   Qed.
@@ -208,8 +207,7 @@ Section teqW.
       + destruct lb, lb0; simpl in *; try done. by apply pteqW_inst_r.
     - destruct H. split; auto.
     - destruct H. split; auto.
-    - destruct H as (<- & HC & Hu & ?). split_and!; [done|by apply bcs_rel_inst_r| |by apply IHT].
-      destruct ub, ub0; simpl in *; try done. by apply pteqW_inst_r.
+    - destruct H as (<- & HC & ?). split_and!; [done|by apply bcs_rel_inst_r|by apply IHT].
     - destruct H as [? ?]. split; [by apply pteqW_inst_r|done].
   Qed.
 
@@ -335,14 +333,9 @@ Lemma rel_tconv n :
   (∀ W Σ T T' p, world_wf W → teqW W T T' → Prel n W Σ T p → Prel n W Σ T' p).
 Proof.
   induction n as [n IHn] using lt_wf_ind.
-  assert (∀ W Θ T T' v, world_wf W → teqW W T T' →
-            Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
-  { intros W Θ T. revert Θ.
-    induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
-                   |m C0 ub T1 IHT1|s x];
-      intros Θ [|ub' lb' T1' T2'|T1' T2'|T1' T2'|m' C0' ub' T1'|s' x'] v HW Ht HVv;
-      simpl in Ht; try done.
-    - (* ⊸ *)
+  assert (∀ W Θ ub lb T1 T2 T' v, world_wf W → teqW W (TLolli ub lb T1 T2) T' →
+            Vrel n W Θ (TLolli ub lb T1 T2) v → Vrel n W Θ T' v) as Hfun.
+  { intros W Θ ub lb T1 T2 [|ub' lb' T1' T2'| | | |] v HW Ht HVv; simpl in Ht; try done.
       destruct Ht as (Hu & Hl & Ht1 & Ht2).
       apply Vrel_lolli_iff in HVv
         as [(eb & -> & Hsup & Hlb & HL)|(k & T0 & -> & -> & Hk & Ht)].
@@ -361,29 +354,33 @@ Proof.
           destruct Hu as [->|(? & ? & ?)]; [by left|right; split_and!; auto].
           by eapply wext_eq.
       + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done|done|done|].
-        eapply teqW_trans; [done|exact Ht|]. simpl. by split_and!.
+        eapply teqW_trans; [done|exact Ht|]. simpl. by split_and!. }
+  assert (∀ W Θ T T' eb, world_wf W → teqW W T T' →
+            Vrel n W Θ T (Lam eb) → Vrel n W Θ T' (Lam eb)) as Hlam.
+  { intros W Θ T T' eb HW Ht HVv.
+    destruct (Vrel_lam_inv _ _ _ _ _ HVv) as (? & ? & ? & ? & ->). by eapply Hfun. }
+  assert (∀ W Θ T T' v, world_wf W → teqW W T T' →
+            Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
+  { intros W Θ T. revert Θ.
+    induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
+                   |m C0 T1 IHT1|s x];
+      intros Θ [|ub' lb' T1' T2'|T1' T2'|T1' T2'|m' C0' T1'|s' x'] v HW Ht HVv;
+      simpl in Ht; try done.
+    - by eapply Hfun.
     - destruct Ht as [Ht1 Ht2].
       apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
       apply Vrel_prod_iff. exists v1, v2, Θ1, Θ2. split_and!; eauto.
     - destruct Ht as [Ht1 Ht2].
       apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
-    - destruct Ht as (<- & HC & Hu & Ht).
+    - destruct Ht as (<- & HC & Ht).
       apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
       apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      intros W' j xs F HW' Hj Hxs HCx HKx Hub. pose proof (wext_wf _ _ HW') as HW'f.
-      eapply (proj1 (proj2 (IHn j Hj))).
-      + done.
+      intros W' xs HW' Hxs HCx HKx. pose proof (wext_wf _ _ HW') as HW'f.
+      eapply Hlam; [done| |].
       + apply teqW_ty_inst. eapply teqW_mono; [|exact Ht]. intros. by eapply wext_eq.
-      + apply HK; [done..| | |].
-        { by eapply (bcs_hold_conv W W' C0 C0'). }
-        { done. }
-        eapply ub_below_conv; [done| |exact Hub].
-        destruct ub, ub'; simpl in *; try done. apply pteqW_inst_r.
-        apply pteqW_sym; [done|].
-        destruct Hu as [->|(? & ? & ?)]; [by left|right; split_and!; auto].
-        by eapply wext_eq.
-
+      + apply HK; [done..| |done].
+        by eapply (bcs_hold_conv W W' C0 C0').
     - destruct Ht as [Hx Hs].
       apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hk).
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done|done| |].
@@ -663,26 +660,24 @@ Section tconv.
     - eapply selects_conv; [by apply tconv_sym|done].
   Qed.
 
-  Lemma ready_t_conv Θ Θ' t : tconv W Θ Θ' → ready_t W Θ t → ready_t W Θ' t.
+  Lemma ready_t_conv Θ Θ' F t : tconv W Θ Θ' → ready_t W Θ F t → ready_t W Θ' F t.
   Proof.
     intros H Hr Hs. destruct (Hr Hs) as [Hv Ha]. split.
     - intros Hno. apply Hv. intros k Hk. apply (Hno k). by apply (offered_t_conv Θ).
-    - intros k e' He' Hk.
+    - intros k e' Ho He'.
+      pose proof (proj2 (offered_t_conv Θ Θ' t k H) Ho) as Ho0.
       destruct (tconv_entry _ _ _ _ (tconv_sym _ _ H) He') as (e & He & [_ Hee]).
-      destruct (Ha k e He) as (k' & f & Ho & Hf & Hlt).
-      { intros Ho. apply Hk. by apply (offered_t_conv Θ). }
-      destruct (tconv_entry _ _ _ _ H Hf) as (f' & Hf' & [_ Hff]).
-      exists k', f'. split_and!; [by apply (offered_t_conv Θ)|done|].
-      unfold entry_head in *. eapply (wf_lt_eq _ HW);
-        [by apply (wf_eq_sym _ HW)|exact Hlt|by apply (wf_eq_sym _ HW)].
-  Qed.
-
-  Lemma frame_t_conv Θ Θ' t F : tconv W Θ Θ' → frame_t W Θ t F → frame_t W Θ' t F.
-  Proof.
-    intros H Hf Hs k e' Ho He' y Hy.
-    apply (offered_t_conv Θ) in Ho; [|done].
-    destruct (tconv_entry _ _ _ _ (tconv_sym _ _ H) He') as (e & He & [_ Hee]).
-    unfold entry_head in *. eapply (wf_lt_eq _ HW); [exact Hee|by eapply Hf|apply HW].
+      destruct (Ha k e Ho0 He) as [H1 H2]. split.
+      + intros k' f' Hf' Hn.
+        destruct (tconv_entry _ _ _ _ (tconv_sym _ _ H) Hf') as (f & Hf & [_ Hff]).
+        assert (¬ offered_t Θ t k') as Hn0.
+        { intros Ho'. apply Hn. by apply (offered_t_conv Θ). }
+        pose proof (H1 k' f Hf Hn0) as Hlt.
+        unfold entry_head in *. eapply (wf_lt_eq _ HW); [|exact Hlt|];
+          first [done|by apply (wf_eq_sym _ HW)].
+      + intros y Hy. pose proof (H2 y Hy) as Hlt.
+        unfold entry_head in *. eapply (wf_lt_eq _ HW); [|exact Hlt|apply (wf_eq_refl _ HW)].
+        first [done|by apply (wf_eq_sym _ HW)].
   Qed.
 
   Lemma insert_over (Θ : tenv) c o o2 :
@@ -860,7 +855,7 @@ Proof.
   - destruct H as (-> & -> & ? & ?). split_and!; [apply opt_rel_refl..|auto|auto].
   - destruct H. split; auto.
   - destruct H. split; auto.
-  - destruct H as (<- & <- & <- & ?). split_and!; [done|apply bcs_rel_refl|apply opt_rel_refl|auto].
+  - destruct H as (<- & <- & ?). split_and!; [done|apply bcs_rel_refl|auto].
   - destruct H as [<- ?]. split; [by left|done].
 
 Qed.
@@ -927,9 +922,7 @@ Proof.
   { intros j ? ? ? ? Hj. apply (proj2 (IHn j ltac:(lia))). }
   apply Erel_S_iff. split_and!.
   { intros Hirr. eapply HV; [done|exact Hc|]. by apply Hval. }
-  { intros Hirr. destruct (Hrdy Hirr). split.
-    - by eapply ready_t_conv.
-    - by eapply frame_t_conv. }
+  { intros Hirr. eapply ready_t_conv; [done|exact Hc|]. by apply Hrdy. }
   intros α e' Hst. specialize (Hstep α e' Hst).
   destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
   - by eapply HEj.

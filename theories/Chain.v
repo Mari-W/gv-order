@@ -657,7 +657,9 @@ Section term.
   Context (HB : dom ΘB = C0) (HΣB : dom Σ ## C0).
   Context (HBoth : ∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2).
   Context (HBdual : tenv_dual (w_eq W) ΘB).
-  Context (Hr : ready_t W (tenv_of Σ ∪ ΘB) t).
+  Context (F : gset point) (Hr : ready_t W (tenv_of Σ ∪ ΘB) F t).
+  Context (Hni : ¬ irred t).
+  Context (Hsome : ∀ σ t', tstep t (LSess σ) t' → ∃ k, offered_t (tenv_of Σ ∪ ΘB) t k).
 
   Local Notation Θ := (tenv_of Σ ∪ ΘB).
   Local Notation p := (C0, {[+ t +]} : gmultiset expr).
@@ -760,15 +762,10 @@ Section term.
           destruct b; simpl in *;
           [apply (Ht1 eq_refl _ Hs2 Hu2)|apply (Ht2 eq_refl _ Hs1 Hu1)] ]
       | idtac ].
-    all: destruct (Hab _ _ Hother Hnoff) as (k' & e' & (σ' & t'' & Hst' & Hsel') & He' & Hlt).
-    all: pose proof (Hsame _ _ _ Hst' Hsel') as Hk'1.
-    all: destruct k' as [c'' b']; simpl in Hk'1; subst c''.
-    all: destruct (decide (b' = b)) as [->|Hb'];
-      [rewrite Hself in He'; injection He' as <-;
-       destruct HW as [HWf Hirr]; apply (Hirr (entry_head (c', b) (if b then e2 else e1)));
-       eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|exact Hhead]
-      |apply Hnoff; exists σ', t''; split; [done|];
-       by replace (negb b) with b' by (destruct b, b'; first [reflexivity|contradiction])].
+    all: pose proof (proj1 (Hab (c', b) _ (ex_intro _ _ (ex_intro _ _ (conj Hst Hsel))) Hself)
+                       _ _ Hother Hnoff) as Hlt.
+    all: destruct HW as [HWf Hirr]; apply (Hirr (entry_head (c', b) (if b then e2 else e1)));
+       eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|exact Hhead].
   Qed.
   Lemma lift_offer k : stable_p p → k.1 ∈ dom Σ → offered_t Θ t k → offered_p Σ p k.
   Proof.
@@ -798,28 +795,18 @@ Section term.
 
   Theorem ready_term : ready_p W Σ p.
   Proof.
-    intros Hs. destruct (Hr (stable_thread Hs)) as [Hv Hab]. split.
-    - intros Hno.
-      assert (∀ k, ¬ offered_t Θ t k) as Hno'.
-      { intros k Ho. pose proof Ho as (σ & t' & _ & Hsel).
-        destruct (selects_entry _ _ _ Hsel) as [e He].
-        destruct (entry_dom _ _ He) as [Hin|Hc].
-        - apply (Hno k). by apply lift_offer.
-        - by apply (no_cut_offer k Hs Ho). }
-      assert (C0 = ∅) as HC0.
-      { apply set_eq. intros c. split; [|set_solver]. intros Hc.
-        exfalso. assert (is_Some (ΘB !! c)) as [o Ho] by (apply elem_of_dom; by rewrite HB).
-        destruct (HBoth _ _ Ho) as (e1 & e2 & ->).
-        destruct (Hab (c, false) e1) as (k' & e' & Ho' & _).
-        - rewrite entry_cut by done. unfold tenv_entry. simpl. by rewrite Ho.
-        - apply Hno'.
-        - by apply (Hno' k'). }
-      rewrite HC0. exists t, ∅. split_and!.
-      + by rewrite (right_id_L ∅ (⊎)).
-      + by apply Hv.
-      + intros e He. multiset_solver.
+    intros Hs. pose proof (stable_thread Hs) as Hst. destruct (Hr Hst) as [Hv Hab0].
+    destruct (tstep_progress t) as [Hi|(α & t0 & Hst0)]; [by destruct Hni|].
+    pose proof (Hst _ _ Hst0) as Hα. destruct α as [|σ0|c|w]; try done.
+    destruct (Hsome _ _ Hst0) as [k0 Hk0].
+    assert (∃ e0, tenv_entry Θ k0 = Some e0) as [e0 He0].
+    { destruct Hk0 as (σ1 & t1 & _ & Hsel1). by apply (selects_entry _ σ1). }
+    pose proof (below_rest_above _ _ _ _ _ _ Hk0 He0 Hab0) as Hab. split.
+    - intros Hno. exfalso. destruct (entry_dom _ _ He0) as [Hin|Hc].
+      + apply (Hno k0). by apply lift_offer.
+      + by apply (no_cut_offer k0 Hs Hk0).
     - intros k e He Hk.
-      pose proof He as He0. apply tenv_entry_of_key in He0 as [Hkk HΣk].
+      pose proof He as He0'. apply tenv_entry_of_key in He0' as [Hkk HΣk].
       assert (k.1 ∈ dom Σ) as Hin by (by apply elem_of_dom_2 in HΣk).
       destruct (Hab k e) as (k' & e' & Ho & He' & Hlt).
       + rewrite Hkk, entry_ext by done. by rewrite <-Hkk.
