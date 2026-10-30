@@ -82,7 +82,9 @@ terminated, safe, deadlock free        unchanged
 ## 4  Types and environments   [changed]
 
 ```
-T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs.^u T)         term types (u may mention ιs; sharp edges 52)
+T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C.^u T)      term types (u may mention ιs; sharp edges 52)
+C    ::= {x₁ ≺ y₁, …, xₖ ≺ yₖ}  constraint of a box, a finite set of ≺ facts over ιs and   [new, 58]
+                          outer points. No ≡ facts. C = ∅ is the box of 52. □(∀ιs.^u T) abbreviates C = ∅.
 u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥: never blocks)
 ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
                           (no ⊤ for u: every function has a known upper point, a function that may
@@ -162,8 +164,11 @@ V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)                       
           ∀W′ ⊒ W, j < n, Σ′, v ∈ V^{W′}_j⟦Σ′ ⊢ T⟧, F with {u} ≺_{W′} F.
               t[v/x] ∈ E^{W′}_j⟦Σ, Σ′ ⊢ U ≺ F⟧
           ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^u_ℓ U⟧
-V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs, F with {u[xs/ιs]} ≺_{W′} F.  fix x.t ∈ E^{W′}_n⟦· ⊢ T[xs/ιs] ≺ F⟧
-          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs.^u T)⟧                                          [changed, 52]
+V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs with C[xs/ιs] in W′, F with {u[xs/ιs]} ≺_{W′} F.
+              fix x.t ∈ E^{W′}_n⟦· ⊢ T[xs/ιs] ≺ F⟧
+          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C.^u T)⟧                                    [changed, 52, 58]
+          (C[xs/ιs] in W′: every fact x ≺ y of C holds as x[xs/ιs] ≺_{W′} y[xs/ιs])
+          (≈_W compares the constraints of two boxes fact by fact, points up to ≡_W)        [new, 58]
 V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧                     [new]
 
 payload at a slot      P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.     [changed]
@@ -273,7 +278,9 @@ send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
 link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
-force  : □(∀ιs.^u T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]                                [changed, 52]
+force  : □(∀ιs. C.^u T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]      C[ιs′/ιs] holds         [changed, 52, 58]
+         (a premise on the order, as pt_known is for new: KTForce reads C[ιs′/ιs] in the
+          order konst_ty is given, ≺_W in V-Const, W ∪ Ψ in the static system)
 
 E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    k : T   ⇒   ·; · ⊢^F k : T
@@ -292,8 +299,12 @@ E-LetPair  Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂    
 E-Inj      Θ; Δ ⊢^F t : Tᵢ   ⇒   Θ; Δ ⊢^F injᵢ t : T₁ + T₂
 E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊢^F tᵢ : U  (i = 1, 2)
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F case t of … : U
-E-Exp      ·; □Δ, x : □(∀ιs.^u T) ⊢^{μ} t : T   (μ fresh, only u ≺ μ)     G closed under the substitutions at recursive calls
-           ⇒   ·; □Δ ⊢^F !(x = t) : □(∀ιs.^u T)                                              [changed, 52]
+E-Exp      ·; □Δ, x : □(∀ιs. C.^u T) ⊢^{μ}_{Ψ, C} t : T   (μ fresh, only u ≺ μ)     G closed under the substitutions at recursive calls
+           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C.^u T)                                         [changed, 52, 58]
+           Ψ: the constraints of the enclosing boxes, hypotheses on point variables. Every side
+           condition x ≺ y of the static system is read in W ∪ Ψ: the closure of ≺_W and Ψ under
+           ≡_W and transitivity (58). A recursive call forces x at some xs and so asks C[xs/ιs]
+           from W ∪ Ψ, C.
            ιs are point variables in the premise, typed once (57). E-Const at send and recv asks
            the payload ∃ιs.T to have no free point variable beyond ιs, the "all points of T bound" of §4 (57)
 E-Weak, E-Contract, E-Conv      as in the paper, with ⊢^F
@@ -354,8 +365,9 @@ E-LetPair   Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂   
 E-Inj       Θ; Δ ⊨^F t : Tᵢ   ⇒   Θ; Δ ⊨^F injᵢ t : T₁ + T₂
 E-Case      Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊨^F tᵢ : U
             ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊨^F case t of … : U
-E-Exp       ∀xs, F′ with {u[xs/ιs]} ≺ F′.  ·; □Δ, x : □(∀ιs.^u T) ⊨^{F′} t : T[xs/ιs]     fchans(t) = ∅     fv(t) ⊆ dom(□Δ, x)
-            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs.^u T)                                            [changed, 52]
+E-Exp       ∀xs with C[xs/ιs], F′ with {u[xs/ιs]} ≺ F′.  ·; □Δ, x : □(∀ιs. C.^u T) ⊨^{F′} t : T[xs/ιs]
+            fchans(t) = ∅     fv(t) ⊆ dom(□Δ, x)
+            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C.^u T)                                      [changed, 52, 58]
 E-Force     Θ; Δ ⊨^F t : □(∀ιs.^u T)    {u[xs/ιs]} ≺ F   ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
@@ -441,6 +453,11 @@ global context.
 Restoring a fresh point μ needs "dropping a fresh conservative extension", which is false at
 V-Const (sharp edges 54, DropCounter.v). A frame variable avoids the lemma, because no point,
 type or world mentions it (56).
+Constrained boxes (58): typed W Φ Ψ Θ Δ F e T carries the hypotheses Ψ, and slt W Ψ is the
+static ≺. E-Exp extends the shifted Ψ by C. typed_pinst asks Ψ[σ] in slt W Ψ′, typed_ityped
+asks Ψ[σ] in ≺_{W₁}, and a derived fact survives because each generator does (slt_pinst).
+The infinitary it_box reads C[xs/ιs] in W₁ and carries term_wf of the body, which
+typed_term_wf_s reads off the finitary derivation. Example: ordered_typed, ordered_force.
 
 
 ## 13  Examples

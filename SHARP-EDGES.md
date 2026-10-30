@@ -547,6 +547,42 @@ with a variable root is reflexivity or program order, and every instance keeps b
 fundamental_proc and soundness are closed under the global context. No semantic statement
 changed, and no file outside Static.v.
 
+**58. Constrained quantification □(∀ιs. C.^u T) (approved by the author 2026-10-30, Rocq 8f6aec6, ef86970).**
+A box body knows nothing about two of its point variables except program order. A box whose
+arguments must be used in a fixed order therefore did not type. The box now carries a finite
+set C of facts x ≺ y over its ιs and outer points, under the binder like u (TBox n C ub T).
+C = ∅ is the box of 52. V-Box quantifies over the instances xs with C[xs/ιs] in W′. KTForce
+asks C[xs/ιs] in the order that konst_ty is given, which is ≺_W in V-Const and a premise on
+the world, as pt_known is for new (49). ≈_W compares two constraints fact by fact, points up
+to ≡_W (pcs_rel). The relation changed nowhere else. Monotonicity, conversion (pcs_hold_conv),
+point renaming (pcs_hold_sw), channel renaming, junk, Connect, PTerm and ConnectN went through
+with the extra hypothesis passed along. sem_typed_force and sem_typed_box gained the
+constraint as a premise, and no other composition lemma changed.
+
+The static judgment is typed W Φ Ψ Θ Δ F e T. Ψ lists the constraints of the enclosing boxes
+as hypotheses on point variables. Every side condition x ≺ y is read in slt W Ψ, the closure
+of ≺_W and Ψ under ≡_W and transitivity, and x ≼ y as x ≡_W y or slt W Ψ x y. E-Exp types the
+body under the shifted Ψ followed by C, so a recursive call at xs must derive C[xs/ιs] from
+W, Ψ and C. A derived fact survives substitution because every generator does (slt_map). A
+fact of W maps by pinst_lt, a hypothesis maps by assumption, and ≡_W and transitivity hold in
+the target. typed_pinst asks Ψ[σ] in slt W Ψ′ (slt_pinst_s). typed_ityped asks Ψ[σ] in ≺_{W₁},
+and the box case meets the body's hypotheses from Ψ[σ] in W₁ and C[xs] in W₂ (E4 in the proof).
+Without hypotheses slt W [] is ≺_W (slt_nil).
+
+C has ≺ facts only (Claude, delegated). An ≡ hypothesis on point variables would also have
+to enter ≡, with successor and slot congruence and the duality checks of tenv_comp and E-Ch,
+and the static ≡ is ≡_W at every one of those places. No example so far needs one. The
+infinitary it_box now carries term_wf of the body, because an unsatisfiable C makes its
+premise vacuous and ityped_term_wf had read term_wf off one instance.
+typed_term_wf_s reads it off the finitary derivation instead.
+
+Example in Static.v: ordered = !(f = λp. let (c, d) = p in let () = close c in close d) at
+□(∀ι ι′. {ι ≺ ι′}.^⊥ Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗) (ordered_typed). close c blocks at ι while the
+body holds d at ι′, which needs the hypothesis. ordered_force forces it at ((a, 0), (a, 1)),
+where program order meets C. The relay of docs/DECIDABILITY.md §8.2 still does not type. Its
+recursive call at (ι+1, ι[1]+1, ζ) asks ι+1 ≺ ι[1]+1, and neither W nor C relates a slot of ι
+to ι. The ceiling also fails, because ι ≺ ζ in C does not give ι+1 ≺ ζ.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
