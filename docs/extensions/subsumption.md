@@ -6,14 +6,34 @@ generalize priorities, trees and acyclic worlds.
 
 ## Targets
 
-| System | Calculus | Translation idea | Needs |
-|---|---|---|---|
-| GV♯ (the paper) | GV, tree topology | trees give a world without cross facts | core |
-| PGV (Kokke and Dardha 2021) | GV with priorities | priority of an action becomes the rank of its instant | core |
-| Padovani (CSL-LICS 2014) | linear π | priorities as ranks, shifting z ↦ z+n as box instances | encoding of π into GV |
-| Mordido and Pérez (2026) | GV with context-free sessions | priority sequences n₁ + k·n₂ as infinite constraints | B |
-| Balzer, Toninho and Pfenning (ESOP 2019) | shared sessions | their acyclic order on worlds as facts | shared channels |
-| Dardha and Gay, Kobayashi | π with usages and levels | levels as ranks | encoding of π into GV |
+Tier 1 are functional systems with a direct translation. Tier 2 reach us through
+translations that already exist. Tier 3 need an extension of the core first.
+
+| Tier | System | Calculus | Translation idea | Needs |
+|---|---|---|---|---|
+| 1 | GV♯ (the paper), GV (Lindley and Morris 2015) | GV, tree topology | trees give a world without cross facts | core |
+| 1 | PGV (Kokke and Dardha 2021), its Linear Haskell embedding | GV with priorities | priority of an action becomes the rank of its instant | core |
+| 1 | Padovani and Novara (FORTE 2015) | higher-order functional, linear channels with levels, effects | levels as ranks, polymorphic recursion as boxes | linear channels as one-shot sessions |
+| 1 | Mordido and Pérez (2026) | GV with context-free sessions | priority sequences n₁ + k·n₂ as infinite constraints | B |
+| 2 | CP (Wadler), HCP | classical linear logic processes | through the CP to GV translation of Lindley and Morris 2015 | tier 1 for GV |
+| 2 | PCP (Dardha and Gay 2018) | CP with priorities and a cycle rule | through PGV, which Kokke and Dardha relate to PCP | tier 1 for PGV |
+| 2 | Kobayashi (2006), class K | π with usages, obligation and capability levels | the pair of levels to ranks | encoding of π into GV |
+| 2 | Padovani (CSL-LICS 2014) | linear π | priorities as ranks, shifting z ↦ z+n as box instances | encoding of π into GV |
+| 2 | Vieira and Vasconcelos (2013) | binary sessions on π, events | their strict partial order on events is a world, their partial union is ⊔ | encoding of π into GV |
+| 3 | APCP, CGV (van den Heuvel and Pérez 2021, 2022) | asynchronous, cyclic | APCP priorities as ranks | asynchronous communication |
+| 3 | Balzer, Toninho and Pfenning (ESOP 2019) | shared sessions | their acyclic order on worlds as facts | shared channels |
+| 3 | λ-lock++ (Jacobs and Balzer 2023) | locks with local lock orders | one world per lock group | locks |
+| 3 | MPGV (Jacobs, Balzer and Krebbers 2022) | multiparty GV, no priorities | n-ary fork as a tree of binary channels | multiparty sessions |
+
+## Using the comparison results
+
+Two papers compare whole classes. Dardha and Pérez (2022) show that the
+processes typable from classical linear logic, class L, are strictly included in
+those of Kobayashi's system, class K. Jaramillo and Pérez (ECOOP 2025) relate HCP
+to Padovani's asynchronous priority system. A translation of K into our system
+therefore covers L through the first result, modulo the encoding of π into GV.
+Kobayashi's obligation and capability levels are the strongest target among the
+π systems.
 
 ## Outline for PGV
 
