@@ -293,7 +293,8 @@ Ltac mdisj_close :=
   end.
 
 Ltac mlk := repeat (rewrite ?lookup_union, ?lookup_difference, ?lookup_intersection,
-                      ?lookup_fmap in * ).
+                      ?lookup_fmap, ?lookup_insert_eq in * );
+  repeat (rewrite lookup_insert_ne in * by done).
 
 Ltac mdestr :=
   repeat match goal with
@@ -306,7 +307,24 @@ Ltac mdestr :=
       end
   end.
 
-Ltac mpoint := mlk; mdestr; simpl in *; simplify_eq; try done; try mdisj_close.
+Ltac mpoint := mlk; mdestr; simpl in *; simplify_eq; try done; try mdisj_close; try congruence.
+
+Lemma dom_tenv_ones_sub Θ : dom (tenv_ones Θ) ⊆ dom Θ.
+Proof.
+  pose proof (dom_omap_subseteq (λ o, match o with One e => Some e | Both _ _ => None end) Θ).
+  unfold tenv_ones. set_solver.
+Qed.
+
+(** The channels of Θ2 that some Σ holds are ones-entries of Θ2, when
+    Θ2's both-entries avoid Σ. *)
+Lemma dom_ones_inter Θ2 (X : gset chan) :
+  (dom Θ2 ∖ dom (tenv_ones Θ2)) ## X → dom Θ2 ∩ X = dom (tenv_ones Θ2) ∩ X.
+Proof.
+  intros H. pose proof (dom_tenv_ones_sub Θ2) as Hs. apply set_eq. intros x.
+  rewrite !elem_of_intersection. split; [|naive_solver].
+  intros [Hx HxX]. split; [|done]. destruct (decide (x ∈ dom (tenv_ones Θ2))); [done|].
+  exfalso. apply (H x); [|done]. by apply elem_of_difference.
+Qed.
 
 (** ** The step cases, for steps of component 1 *)
 
@@ -480,5 +498,149 @@ Section steps.
         rewrite lookup_union, !lookup_insert_ne by done. mpoint.
       + assert (Σ2' ∪ ΣC' ∖ Σv = Σ2 ∪ ΣC') as -> ; [|done].
         apply map_eq. intros r. subst Σ2'. mpoint.
+  Qed.
+  (** Q-Recv for a receive of component 1 on an interface channel. *)
+  Lemma ext_recv F1 e c w e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SRecv c w)) e' → c ∉ C →
+    Pcase_gen (Prel (S n')) n' W Σ T (C, E1 ⊎ E2) (PSess (SRecv c w))
+      (C ∖ sentc (SRecv c w), F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst Hc. pose proof Σ2C as H2C. pose proof Σ1C' as H1C'.
+    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
+    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    assert (proc_step (C1, E1) (PSess (SRecv c w)) (C1 ∖ sentc (SRecv c w), F1 ⊎ {[+ e' +]}))
+      as Hst1.
+    { rewrite HE. apply (PStepSession C1 F1 e (SRecv c w) e' Hst). simpl. clear -Hc. set_solver. }
+    pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hst1) as Hc1. simpl in Hc1.
+    destruct Hc1 as (Σ1a & mm & U & s & k & (s0 & HΣa & Hu) & Hc1a & Hcont).
+    assert (c ∈ dom Σ1) as HcΣ1.
+    { assert (c ∈ dom (Σ1 ∪ ΣC)) as H by (rewrite HΣa, dom_insert_L; clear; set_solver).
+      rewrite dom_union_L, HC0 in H. clear -H Hc. set_solver. }
+    assert (c ∉ C0) as HcC0 by (clear -Hc; set_solver).
+    assert (ΣC !! c = None) as HCc by (apply not_elem_of_dom; by rewrite HC0).
+    assert (Σ2 !! c = None) as H2c.
+    { apply not_elem_of_dom. apply map_disjoint_dom in Hd12. clear -Hd12 HcΣ1. set_solver. }
+    assert (Σ1a !! c = None) as H1ac by (by apply not_elem_of_dom).
+    assert (dom Σ1 ∪ C0 = {[c]} ∪ dom Σ1a) as HdΣa.
+    { rewrite <-HC0, <-dom_union_L, HΣa, dom_insert_L. done. }
+    exists (Σ1a ∖ ΣC ∪ Σ2), mm, U, s, k. split_and!.
+    - exists s0. split; [|done]. apply map_eq. intros r.
+      pose proof (f_equal (lookup r) HΣa) as Hr.
+      destruct (decide (r = c)) as [->|Hrc].
+      + rewrite lookup_insert_eq in Hr |- *. mpoint.
+      + rewrite lookup_insert_ne in Hr |- * by done. mpoint.
+    - rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
+      clear -Hc1a HcΣ1 Hd12. set_solver.
+    - intros W' j Θ2 HW'' Hj HΘC Hok' HV. simpl in HΘC. cbn [fst snd sentc].
+      set (Σr1 := <[c := (s, pt_shift 1 k)]> Σ1a).
+      set (Σr := <[c := (s, pt_shift 1 k)]> (Σ1a ∖ ΣC ∪ Σ2)) in *.
+      set (ones := tenv_ones Θ2).
+      assert (strict W') as HW3 by apply HW''.
+      assert (dom Σr1 = {[c]} ∪ dom Σ1a) as HDr1 by (subst Σr1; by rewrite dom_insert_L).
+      assert (dom Σr = {[c]} ∪ (dom Σ1a ∖ C0) ∪ dom Σ2) as HDr.
+      { subst Σr. rewrite dom_insert_L, dom_union_L, dom_difference_L, HC0. set_solver. }
+      pose proof (dom_tenv_ones_sub Θ2) as HDo. fold ones in HDo.
+      destruct Hok' as (Hdo & Htd & Hb). fold ones in Hdo, Hb.
+      assert (recv_ok W' Σr1 Θ2) as Hok1.
+      { split_and!; [|done|].
+        - intros r e1 e2 H1 H2. apply (Hdo r e1 e2); [|done].
+          assert (r ∈ dom Θ2) as HrΘ by (apply HDo; by eapply elem_of_dom_2).
+          assert (r ∉ C0) as HrC0 by (clear -HrΘ HΘC; set_solver).
+          subst Σr Σr1. destruct (decide (r = c)) as [->|Hrc].
+          + rewrite lookup_insert_eq in H1 |- *. done.
+          + rewrite lookup_insert_ne in H1 |- * by done.
+            assert (ΣC !! r = None) as HCr by (apply not_elem_of_dom; by rewrite HC0).
+            by rewrite lookup_union, lookup_difference, HCr, H1, union_Some_l.
+        - fold ones. rewrite HDr1. rewrite HDr in Hb. clear -Hb HΘC HDo. set_solver. }
+      pose proof (Hcont W' j Θ2 HW'' Hj ltac:(clear -HΘC; set_solver) Hok1 HV) as HP1'.
+      fold Σr1 in HP1'. simpl in HP1'. rewrite difference_empty_L in HP1'.
+      assert (Prel j W' (Σ2 ∪ ΣC') TB (C2, E2)) as HP2'.
+      { eapply Prel_mono; [apply HWf|done|]. eapply Prel_down; [|exact HP2]. lia. }
+      set (ΣCn := ΣC ∪ (ones ∩ Σ2)). set (ΣCn' := ΣC' ∪ (Σ2 ∩ ones)).
+      set (Σ1n := recv_env Σr1 Θ2 ∖ ΣCn). set (Σ2n := Σ2 ∖ ones).
+      set (D := dom ones ∩ dom Σ2).
+      set (B1 := recv_back Σr1 Θ2).
+      assert (dom Θ2 ∩ dom Σ2 = D) as HD.
+      { subst D. apply dom_ones_inter. rewrite HDr in Hb. clear -Hb. set_solver. }
+      assert (dom Σr1 ## dom Σ2) as Hr12.
+      { rewrite HDr1. apply map_disjoint_dom in Hd12. clear -HdΣa Hd12 HΣ2C0. set_solver. }
+      assert (dom ones ## C0) as HoC0 by (clear -HDo HΘC; set_solver).
+      assert (B1 ## dom Σ2) as HB12.
+      { subst B1. unfold recv_back. fold ones. rewrite HDr in Hb. clear -Hr12 Hb. set_solver. }
+      pose proof (λ r, recv_back_not_env _ _ _ r Hok1) as HB1env. fold B1 in HB1env.
+      pose proof (dom_recv_env Σr1 Θ2) as HDre.
+      assert (C ∖ ∅ ∪ recv_back Σr Θ2 = (C1 ∪ B1) ∪ C2 ∪ (C0 ∪ D)) as ->.
+      { subst B1. unfold recv_back. fold ones. rewrite <-HD, HDr, HDr1.
+        clear -HdΣa HΘC. set_solver. }
+      assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver.
+      assert (ones ##ₘ ΣC) as HoC by (apply map_disjoint_dom; by rewrite HC0).
+      assert (Σr1 ##ₘ Σ2) as Hr12' by (by apply map_disjoint_dom).
+      assert (recv_env Σr Θ2 = Σ1n ∪ Σ2n) as ->.
+      { apply map_eq. intros r. pose proof (f_equal (lookup r) HΣa) as Hr.
+        subst Σ1n Σ2n ΣCn. unfold recv_env. fold ones.
+        destruct (decide (r = c)) as [->|Hrc].
+        - subst Σr Σr1. rewrite lookup_insert_eq in Hr.
+          rewrite !lookup_union, !lookup_difference, !lookup_insert_eq. mpoint.
+        - subst Σr Σr1. rewrite lookup_insert_ne in Hr by done.
+          rewrite !lookup_union, !lookup_difference, !lookup_insert_ne by done. mpoint. }
+      apply (IHo j Hj W' Σ1n Σ2n ΣCn ΣCn' (C0 ∪ D) (C1 ∪ B1) C2 _ _ TA TB Hty).
+      + assert (dom Σ1n ⊆ dom (recv_env Σr1 Θ2)) as HD1n.
+        { subst Σ1n. rewrite dom_difference_L. clear. set_solver. }
+        assert (dom Σ2n ⊆ dom Σ2) as HD2n.
+        { subst Σ2n. rewrite dom_difference_L. clear. set_solver. }
+        assert (B1 ⊆ dom Θ2) as HB1Θ by apply recv_back_dom.
+        assert (dom Σr1 ⊆ dom Σ1 ∪ C0) as Hr1a by (rewrite HDr1; clear -HdΣa HcΣ1; set_solver).
+        assert (dom ΣCn = C0 ∪ D) as HDC.
+        { subst ΣCn D. by rewrite dom_union_L, dom_intersection_L, HC0. }
+        assert (dom ΣCn' = C0 ∪ D) as HDC'.
+        { subst ΣCn' D. rewrite dom_union_L, dom_intersection_L, HC0'. clear. set_solver. }
+        split; [done| | | | done | done | | | | | | | |].
+        * apply map_disjoint_spec. intros r x y H1 H2. subst Σ1n.
+          apply lookup_difference_Some in H1 as [_ H]. congruence.
+        * apply map_disjoint_spec. intros r x y H1 H2. subst Σ2n ΣCn'. mpoint.
+        * apply map_disjoint_spec. intros r x y H1 H2. subst Σ1n Σ2n ΣCn.
+          unfold recv_env in H1. fold ones in H1. mpoint.
+        * intros r x y Hx Hy. subst ΣCn ΣCn'.
+          apply lookup_union_Some_raw in Hx as [Hx|[HCr Hx]].
+          { assert (is_Some (ΣC' !! r)) as [y' Hy'].
+            { apply elem_of_dom. rewrite HC0', <-HC0. by eapply elem_of_dom_2. }
+            rewrite lookup_union, Hy', union_Some_l in Hy. injection Hy as <-.
+            destruct (Hcut r x y' Hx Hy') as [Hq Hdu]. split; [|done].
+            by eapply wext_eq. }
+          assert (ΣC' !! r = None) as HC'r.
+          { apply not_elem_of_dom. rewrite HC0', <-HC0. by apply not_elem_of_dom. }
+          rewrite lookup_union, HC'r in Hy. simpl in Hy. rewrite (left_id_L None (∪)) in Hy.
+          apply lookup_intersection_Some in Hx as [Hx _].
+          apply lookup_intersection_Some in Hy as [Hy _].
+          assert (Σr !! r = Some y) as Hry.
+          { assert (r ≠ c) as Hrc by (intros ->; congruence).
+            subst Σr. rewrite lookup_insert_ne by done.
+            assert (Σ1a !! r = None) as H1ar.
+            { destruct (Σ1a !! r) as [z|] eqn:Hq; [|done]. exfalso.
+              apply (proj1 (map_disjoint_spec _ _) Hr12' r z y); [|done].
+              subst Σr1. by rewrite lookup_insert_ne. }
+            by rewrite lookup_union, lookup_difference, H1ar, HCr, Hy. }
+          destruct (Hdo r y x Hry Hx) as [Hq Hdu]. split; [|by apply sdual_sym].
+          by apply (wf_eq_sym _ (proj1 HW3)).
+        * clear -HD2n HC1Σ2 HB12. set_solver.
+        * clear -HD1n HDre Hr1a HC2Σ1 HC20 HΘC. set_solver.
+        * intros r Hr1 Hr2. apply HD1n in Hr2. apply elem_of_union in Hr1 as [Hr1|Hr1].
+          -- apply HDre in Hr2. clear -Hr1 Hr2 Hr1a HC1Σ1 HC10 HΘC. set_solver.
+          -- by apply (HB1env r).
+        * clear -HD2n HC2Σ2. set_solver.
+        * subst D. clear -HC10 HC1Σ2 HB1Θ HΘC HB12. set_solver.
+        * subst D. clear -HC20 HC2Σ2. set_solver.
+        * clear -HC12 HB1Θ HΘC. set_solver.
+      + assert (Σ1n ∪ ΣCn = recv_env Σr1 Θ2) as ->; [|exact HP1'].
+        apply map_eq. intros r. pose proof (f_equal (lookup r) HΣa) as Hr.
+        subst Σ1n ΣCn. unfold recv_env. fold ones.
+        destruct (decide (r = c)) as [->|Hrc].
+        * subst Σr1. rewrite lookup_insert_eq in Hr.
+          rewrite !lookup_union, !lookup_difference, !lookup_insert_eq. mpoint.
+        * subst Σr1. rewrite lookup_insert_ne in Hr by done.
+          rewrite !lookup_union, !lookup_difference, !lookup_insert_ne by done. mpoint.
+      + assert (Σ2n ∪ ΣCn' = Σ2 ∪ ΣC') as ->; [|exact HP2'].
+        apply map_eq. intros r. subst Σ2n ΣCn'. mpoint.
   Qed.
 End steps.
