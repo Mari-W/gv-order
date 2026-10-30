@@ -1,5 +1,7 @@
 # Design review after sharp edges 1 to 61 (2026-10-30)
 
+Historical. This review covered the order design as of sharp edges 61. Its items are resolved or superseded (sharp edges 62 to 67), and C2, one world per component, stays deferred. The current design is ORDERS-SPEC.md.
+
 Status. The author approved every item of A and B on 2026-10-30, and agreed with
 C. Slots stay, boxes keep both jobs, and one world per component stays deferred.
 

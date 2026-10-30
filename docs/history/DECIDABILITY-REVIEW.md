@@ -1,5 +1,7 @@
 # Review of DECIDABILITY.md
 
+Historical. This review checked Lemma 1 and Theorems 1, 2, 3 and 5 of an earlier docs/DECIDABILITY.md. Its gaps G1 to G3 are resolved there (G2 by offset alignment), and the static system it assumes is superseded (sharp edges 65).
+
 Reviewed 2026-10-30 against DECIDABILITY.md as of that date, ORDERS-SPEC.md §5
 and the text of Kosaraju and Sullivan (store key `kosaraju1988detecting`). Scope
 is Lemma 1, Theorems 1, 2, 3 and 5. Lemma 2 is checked only as far as Theorem 3
