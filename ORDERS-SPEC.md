@@ -151,7 +151,7 @@ W₁ ⊔ W₂     (≡₁ ∪ ≡₂)* with (≺₁ ∪ ≺₂)⁺ on the classe
 entries(Θ)   one entry per end:  c : S@x  (twice for a channel whose both ends Θ holds)
 offered(x)   = the entries selected by the labels of x's transitions     x a term or a process
                c!v selects the entry of c whose type unfolds to !…,  c?v the one with ?…,
-               c! either Close entry,  c↔d the entries of c and d
+               c! the first Close entry (Rocq),  c↔d the entries of c and d
 stable(t)    = no t —λ→ t′ with λ ∈ {β, (νc), ⇑v}        stable(p) = no p —τ→ p′
 
 ready_W(Θ ∣ F, t) ≔ stable(t) ⇒                                          terms (sharp edges 63)
@@ -199,7 +199,6 @@ V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C[xs/ιs] hol
            x ≡ y as x[xs/ιs] ≡_{W′} y[xs/ιs]. Monotone along ⊑ because C is positive)
           (≈_W relates two constraints when each fact of one has a fact of the other with
            points up to ≡_W)
-V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧
 
 payload at x           P[x] ≔ T[x.1, …, x.m / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.
                        A plain substitution, no quantifier on either side. The sender's channels
@@ -218,8 +217,8 @@ Giving steps keep the index (sharp edges 45)
           Q-Send, Q-Close, Q-Link, and Q-Tau for the τ of P-Act-Link) state the successor at
           n+1, the index of the step itself. β, new, spawn, receive and a synchronization
           (τ of P-Act-Session or P-Act-Close) cost one. E_{n+1} and P_{n+1} are least fixpoints over giving
-          steps at fixed n+1, over E_n and P_n. Giving steps are well founded because each removes
-          a send, close or link redex outside every λ, or a channel from C ∪ dom Σ.
+          steps at fixed n+1, over E_n and P_n. Giving steps are well founded because each lowers
+          the syntactic size of the term (summed over the soup for processes, Rocq).
           In the clauses below, read the continuation index of a giving step as n+1.
           The giving clause for the τ of P-Act-Link keeps the world (W′ = W), because a link
           creates no points. Rocq encodes E_{n+1} and P_{n+1} as inductive predicates (Eind, Pind)
@@ -330,7 +329,7 @@ E-Const    k : T   ⇒   ·; · ⊢^F k : T
 E-LVar     ·; x : T ⊢^F x : T
 E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_Γ ι
 E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ a fresh frame variable, only hypothesis u ≺ μ (sharp edges 56)
-           ℓ fresh, only facts {ℓ} ≼ heads(Θ, Δ)
+           {ℓ} ≼_Γ heads(Θ, Δ)  (Rocq asks no freshness of ℓ)
            ⇒   Θ; Δ ⊢^F λx.t : T ⊸^u_ℓ U
 E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^u_ℓ U     Θ₂; Δ₂ ⊢^{F ∪ {ℓ}} t₂ : T     {u} ≺_Γ F
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F t₁ t₂ : U
