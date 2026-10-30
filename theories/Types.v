@@ -953,7 +953,7 @@ Qed.
     The side conditions on points are read in an order given as two
     relations: the world G generates for typing, a world W for the
     logical relation. Freshness of ι in [new] is a typing condition
-    (Typing.v). [pk] says which points the order knows: the point of
+    (Static.v). [pk] says which points the order knows: the point of
     [new] must be one, so that the created point can be aliased to it
     (sharp edges 49). force asks its instance known and the box's
     constraint at every word of the instance (sharp edges 61). *)

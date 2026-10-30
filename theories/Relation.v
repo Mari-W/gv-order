@@ -24,7 +24,7 @@
     development is closed under the global context. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export Semantics Safety Types Coequal Worlds Ready Typing.
+From LRGV Require Export Semantics Safety Types Coequal Worlds Ready Lenv.
 
 (** ** Types up to aliases
 
