@@ -33,9 +33,29 @@ partial orders.
    C = {ι+k ≺ ζ ∣ k ∈ ℕ}
    ```
 
-   The ceiling ζ is the one of the tail-call example. It also bounds the
-   continuation. A finer version asks ι+k ≺ ζ for k < n only, and then the facts
-   depend on the existential n. Direction C decides this.
+   The ceiling ζ is the one of the tail-call example. The recursive calls stay
+   inside C for every offset, because C[ι+1+n/ι] ⊆ C. This coarse version needs
+   offset variables in points (ι+n with n bound by ∃) and nothing new in the
+   constraint language.
+
+   The coarse ceiling also bounds the continuation, and that fails as soon as
+   another channel acts between the segment and the continuation.
+
+   ```
+   sendTree t c ; close d ; send v c
+   ```
+
+   The world needs (c,k) ≺ (d,0) for k < n and (d,0) ≺ (c,n), with n the size of
+   t. Two additions can express it.
+   - Facts that depend on data. C = {ι+k ≺ ζ ∣ k < n} ∪ {ζ ≺ ι+n} with n a term
+     over the tree (direction C, offsets as terms). The world of a closed program
+     then contains facts at the concrete n.
+   - Segment ends as names. A new root names "the instant where the segment that
+     starts at x ends", like a carried root names a message position. The facts
+     become data free, every point of the segment below ζ and ζ below the end.
+     The run fixes the alias between the end and a concrete instant, so the world
+     must learn an alias between existing points while the program runs
+     (direction C, worlds that grow).
 3. Polymorphism over session types. ∀α under □, next to ∀ιs. α occurs only in
    session positions S@x, and V reads those only through V-Chan. If V recurses on
    the value structure of a type and treats session subterms as opaque, T[S/α]
