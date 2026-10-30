@@ -803,6 +803,24 @@ Rejected.v keeps badlink, whose argument reads only the alias. No statement of
 soundness, of the fundamental theorems, of adequacy or of a composition lemma
 changed.
 
+**69. Adequacy for repaired PGV (Claude, 2026-10-30, theories/pgv/). Number 68 is taken by the non-blocking link.**
+A closed program of type 1 in the monotone fragment of repaired PGV is deadlock
+free (`pgv_deadlock_free`, closed under the global context). The PGV judgment
+is Fig. 2 on our terms with R1 in the schemas of send and recv and R2 in
+T-Pair. Every derivation becomes a derivation of `typed` at one world `Wpgv`
+for every frame above u_p, and `soundness` finishes. The world has one point
+per session type up to duality. Its ≡ is "same denotation" and its ≺ is
+"rising rank" on the root constant. A canonical map into points would have to
+commute with successor and would merge two protocols with one continuation, so
+the denotation goes into a separate domain. u_⊤ for the upper bound ⊤ lies
+above every u_n and takes a pair rank. The proof needs o < pr(S) only at the
+session types that send and recv act on, and only at the top. The fragment
+asks it recursively, as decided. The upper point of our send is the channel's
+point and PGV's is u_o, so an unapplied send, recv, close or wait becomes
+λz. k z (`pgv_eta`). Applied ones stay, and a program that applies all of them
+is its own translation (`pgv_deadlock_free_applied`). Left out are 0, absurd
+and link. link waits for 68.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

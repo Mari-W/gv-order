@@ -50,6 +50,11 @@ Kobayashi's obligation and capability levels are the strongest target among the
 
 ## Outline for PGV
 
+Status 2026-10-30. Route 1 is done in Rocq for the monotone fragment of
+repaired PGV without link (theories/pgv/, `pgv_deadlock_free`). Step 1 uses
+the protocol-point world, step 4 holds with that one world for every program.
+pgv-adequacy.md §7 has the details.
+
 1. Points from priorities. A PGV session type writes a priority o on every action,
    !^o T.S. The instant of that action gets rank o, and the world orders instants
    by rank. Every PGV side condition has to become a strict fact. Where PGV
