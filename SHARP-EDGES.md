@@ -551,6 +551,15 @@ and Wrr has (a,k) ≺ (b,k) ≺ (a,k+1) for every k (ranks 2k+2, 2k+3). The rela
 the client holds sessions at (a,0) and (b,0) at once. Both recursive examples recurse through
 spawn. A tail call still asks the call's upper point below the body's (58).
 
+**62. Approved refactors A3, A4, B4 and B5 (Rocq 32ba5c2, 5d73add, 041baa2).**
+The infinitary rules are `sem_rules` in SemRules.v, and E-Abs there carries
+term_wf as E-Exp does. Typing.v is reduced to Lenv.v. The cost of a label is
+defined once (send, close, link 0, the rest 1), and every obligation sits at
+n − cost. E and P recur on (n, size) through fuel equal to the size, because
+the unfolding equation of stdlib Fix needs functional extensionality. Connect3,
+PTerm and Internalize use the same measure, and their proofs were not
+restructured. No statement of a composition lemma or of soundness changed.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
