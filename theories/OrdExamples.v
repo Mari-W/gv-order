@@ -370,3 +370,92 @@ Proof.
   apply ptyped_closed; [constructor|]. apply sync_typed; [apply Wpo_strict|].
   unfold pt_known, Wpo. simpl. set_solver.
 Qed.
+
+(** The world with program order and the facts [L] on the constants [cs]. *)
+Definition Wfacts (cs : list nat) (L : list (point * point)) : world :=
+  wgen (list_to_set (NConst <$> cs)) (λ _ _, False) (λ x y, (x, y) ∈ L).
+
+Lemma Wfacts_strict cs L k g h :
+  0 < k →
+  Forall (λ p, pt_root p.1 ∈ NConst <$> cs ∧ pt_root p.2 ∈ NConst <$> cs) L →
+  Forall (λ p, prank k g h p.1 < prank k g h p.2) L →
+  strict (Wfacts cs L).
+Proof.
+  intros Hk HL Hr. apply (wgen_strict _ _ _ id (prank k g h)); try done.
+  - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
+  - intros x y Hxy. right. rewrite Forall_forall in HL. destruct (HL _ Hxy) as [H1 H2].
+    rewrite !elem_of_list_to_set. by split.
+  - intros x. by apply prank_shift.
+  - intros x y Hxy. rewrite Forall_forall in Hr. apply (Hr _ Hxy).
+Qed.
+
+Lemma Wfacts_lt cs L x y : (x, y) ∈ L → w_lt (Wfacts cs L) x y.
+Proof. intros H. by apply glt_base. Qed.
+
+Lemma Wfacts_known cs L a : a ∈ cs → pt_known (Wfacts cs L) (pc a 0).
+Proof. intros H. unfold pt_known. simpl. apply elem_of_list_to_set, list_elem_of_fmap. eauto. Qed.
+
+(** ** cycle: typable
+
+    cycle = let (c, c′) = new ∗ in let (d, d′) = new ∗ in
+            let () = spawn (λu. let () = u in let () = close c′ in close d′) in
+            let () = close c in close d
+
+    c, c′ : Close@(a,0) and d, d′ : Close@(b,0). Both threads close c
+    while they hold d, so both need (a,0) ≺ (b,0), and the world has it.
+    The paper's P-Connect over {c, d} is here the closed program that
+    creates both channels. *)
+
+Definition cycle_thunk : expr :=
+  Lam (LetU (Var 0) (LetU (App EClos (Var 3)) (App EClos (Var 1)))).
+
+Definition cycle_main : expr :=
+  LetP (App ENew EUnit) (LetP (App ENew EUnit)
+    (LetU (App ESpawn cycle_thunk) (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
+
+Lemma cycle_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
+  w_lt W (pc 0 0) (pc 1 0) →
+  typed W ∅ [] ∅ [] (∅, None) cycle_main TUnit.
+Proof.
+  intros HW Ha Hb Hab. unfold cycle_main.
+  tstep.
+  { tstep; [tstep|apply (KTNew _ _ _ SEnd (pc 0 0) Ha)|done|apply ubs_none]. }
+  cbn. tstep.
+  { tstep; [tstep|apply (KTNew _ _ _ SEnd (pc 1 0) Hb)|done|apply ubs_none]. }
+  cbn. tstep.
+  { tstep.
+    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].
+      { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; by apply sl_w]. }
+      cbn. tstep; [tstep|]. cbn. tstep.
+      + tstep; [tstep|apply KTClos|done|].
+        apply ubs_intro; [intros y Hy; mem_cases Hy; by apply sl_w|].
+        exists (pc 1 0). split; [done|]. right. by apply sl_w.
+      + tstep; [tstep|apply KTClos|done|].
+        apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (pc 1 0). split; [done|]. apply sle_refl, HW.
+    - apply KTSpawn.
+    - done.
+    - apply ubs_none. }
+  cbn. tstep.
+  { tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [|done].
+    intros y Hy. mem_cases Hy. by apply sl_w. }
+  tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+Qed.
+
+Definition Wcycle : world := Wfacts [0; 1] [(pc 0 0, pc 1 0)].
+
+Lemma Wcycle_strict : strict Wcycle.
+Proof.
+  apply (Wfacts_strict _ _ 1 (λ a, 10 * a) (λ _ _ _, 0)); [lia| |].
+  - apply Forall_singleton. cbn. set_solver.
+  - apply Forall_singleton. cbn. lia.
+Qed.
+
+Lemma cycle_deadlock_free : deadlock_free (∅, {[+ cycle_main +]}).
+Proof.
+  apply (soundness Wcycle _ TUnit Wcycle_strict).
+  apply ptyped_closed; [constructor|]. apply cycle_typed; [apply Wcycle_strict| | |].
+  - apply Wfacts_known. set_solver.
+  - apply Wfacts_known. set_solver.
+  - apply Wfacts_lt. set_solver.
+Qed.
