@@ -339,6 +339,24 @@ rules): O-Recv quantifies over Θ₂ and over the composition Θ′ = (Θ₁, c 
 so a returning end of the carrier must be dual to the continuation at an aliased point.
 E becomes weaker (fewer payloads), the fundamental theorem only easier (§7).
 
+**44. The halving budget breaks at an external receive.**
+Internalizing a link is stated as P_{2n} ⇒ P_n, and P-Connect as components at 4^n
+giving the composite at n. Both proofs go by induction on n. At an external receive of
+the fused process q the obligation is, for every j ≤ n − 1 and every payload in V_j,
+that the successor q′ is in P_j. The receive of p offers only the same thing, a
+successor p′ in P_j for a payload in V_j, because the payload is given at j and V is
+not upward closed. The induction hypothesis turns p′ ∈ P_{2j} into q′ ∈ P_j, so it
+needs p′ ∈ P_{2j}, which the payload at j does not give. The same gap appears in
+P-Connect, where the composite receives on a channel of one component and the
+induction hypothesis asks for that component at 4^j. The statement itself is not
+refuted. A fused process takes fewer steps than p, and the payload runs the same number
+of steps in both, so q′ needs at most 2j steps of the part of p′ that is not the
+payload. The budget P_{2n} ⇒ P_n cannot express this split between the two parts.
+Open, for the author. Possible ways out are a relation in which session steps keep the
+index (only β, new and spawn lower it, with a coinductive clause for session steps at
+a fixed index), a budget that indexes the payload and the rest separately, or a
+treatment of links in the cut that does not fuse.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
