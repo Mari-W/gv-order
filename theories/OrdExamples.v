@@ -264,10 +264,10 @@ Section frames.
     (∀ y, y ∈ P → slt W Ψ x y) →
     match o with Some φ => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u | None => True end →
     ub_below_s W Ψ Φ (Some x) (P, o).
-  Proof. intros H1 H2. split; [exact H1|by destruct o]. Qed.
+  Proof. apply ub_below_s_intro. Qed.
 
   Lemma ubs_none Ψ Φ F : ub_below_s W Ψ Φ None F.
-  Proof. destruct F as [? []]; split; done. Qed.
+  Proof. done. Qed.
 
   Lemma sle_refl Ψ x : world_wf W → sle W Ψ x x.
   Proof. intros HW. left. apply (wf_eq_refl _ HW). Qed.
