@@ -177,6 +177,15 @@ E-Step    ¬irred t    ready_W(Θ, t)    frame_W(t, F)                          
           ∀λ, t′.  t —λ→ t′  ⇒  Θ ⊩ⁿ_W t —λ→ t′ : T ≺ F
           ⇒   t ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
 
+Giving steps keep the index (sharp edges 45)                                             [new]
+          send, close and link are giving steps. Their obligations (O-Send, O-Close, O-Link,
+          Q-Send, Q-Close, Q-Link, and Q-Tau for the τ of P-Act-Link) state the successor at
+          n+1, the index of the step itself. β, new, spawn, receive and a synchronization
+          (τ of P-Act-Session or P-Act-Close) cost one. E_{n+1} and P_{n+1} are least fixpoints over giving
+          steps at fixed n+1, over E_n and P_n. Giving steps are well founded because each removes
+          a send, close or link redex outside every λ, or a channel from C ∪ dom Σ.
+          In the clauses below, read the continuation index of a giving step as n+1.
+
 O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
 O-New     ∃a ∉ names(W) ∪ points(Θ, T, F), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
           (the created channel name needs no condition, only its point is fresh)               [new]
@@ -352,13 +361,15 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
                    a message instantiates Q-Recv with W₁ ⊔ W₂ (the sender's alias names the payload),
                    new by Fresh extension and Renaming points,  link by Internalizing a link and Entry conversion
 
-            index budget (plan A, sharp edges 42): inside the proof, components in P at index 4^n give
-            the composite in P at n. A link of two cut channels fuses the other ends inside one component
-            by Internalizing a link (a synchronization there costs two of its steps).
+            index (sharp edges 45, replaces the budget of plan A): components in P at n give the
+            composite in P at n. A synchronization of the composite is a giving step of one component
+            (free) and a receive or close of the other. A link of two cut channels fuses the other ends
+            inside one component by Internalizing a link.
 Internalizing a link (component level)
-            prim T,  p ∈ P^W_{2n}⟦Σ, c : S̄@x, d : S@y⟧,  x ≡_W y   ⇒   (C ∪ {d}, E[d/c]) ∈ P^W_n⟦Σ ⊢ T⟧
-            proof: each step of the fused process is at most two steps of p (a synchronization on d is
-            c!v then d?v); readiness by the chain argument (the two ends are never both offered in a
+            prim T,  p ∈ P^W_n⟦Σ, c : S̄@x, d : S@y⟧,  x ≡_W y   ⇒   (C ∪ {d}, E[d/c]) ∈ P^W_n⟦Σ ⊢ T⟧
+            proof: a synchronization on d of the fused process is c!v (free) then d?v of p, and a
+            close on d is two closes of p (both free); induction on n, inside on the giving-step
+            fixpoint of p; readiness by the chain argument (the two ends are never both offered in a
             stable fused process); prim T rules out a terminated p that returns the two ends.
 
 P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalgam is a subset of the full one)

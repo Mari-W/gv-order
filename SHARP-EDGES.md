@@ -357,6 +357,21 @@ index (only β, new and spawn lower it, with a coinductive clause for session st
 a fixed index), a budget that indexes the payload and the rest separately, or a
 treatment of links in the cut that does not fuse.
 
+**45. Giving steps keep the index (decided 2026-10-30, 01:50, replaces the budget of 42).**
+Send, close and link keep the index in E and in P. β, new, spawn, receive and a
+synchronization cost one. The budget of 44 came from Internalizing a link, where one
+synchronization of the fused process is two external steps of p (c!v, then d?v). With a
+free send this pair costs one step, as the synchronization does, so Internalizing a link
+becomes P_n ⇒ P_n and P-Connect takes components at n to the composite at n. The receive
+gap of 44 disappears with the budget, because the receive of p already gives p′ at the
+index the fused process needs. E_{n+1} and P_{n+1} are least fixpoints over giving steps
+at fixed n+1. Giving steps are well founded, because each removes a send, close or link
+redex outside every λ or a channel from C ∪ dom Σ, so the fixpoint excludes no process.
+Adequacy keeps its proof. A run of k steps contains at most k costly steps, and the free
+steps between two costly ones are finitely many. The composition lemmas keep their
+statements. Rejected are a two-index budget (more bookkeeping, same effect) and links that
+do not fuse (forwarders deadlock in a cycle, decision N).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
