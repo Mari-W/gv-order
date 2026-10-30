@@ -3,6 +3,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export Connect.
 
+(** Section lemmas take every section variable, so that both
+    orientations of a configuration can be passed uniformly. *)
+Set Default Proof Using "All".
+
 Lemma senv_roots_union Σ1 Σ2 : senv_roots (Σ1 ∪ Σ2) ⊆ senv_roots Σ1 ∪ senv_roots Σ2.
 Proof.
   intros x. unfold senv_roots. rewrite elem_of_union, !elem_of_tenv_roots.
