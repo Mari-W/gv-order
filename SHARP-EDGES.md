@@ -583,6 +583,66 @@ where program order meets C. The relay of docs/DECIDABILITY.md §8.2 still does 
 recursive call at (ι+1, ι[1]+1, ζ) asks ι+1 ≺ ι[1]+1, and neither W nor C relates a slot of ι
 to ι. The ceiling also fails, because ι ≺ ζ in C does not give ι+1 ≺ ζ.
 
+**59. new in a box body cannot create a channel at a point variable (Claude, 2026-10-30). Open.**
+The factory of spec §13 is a box □(∀ι.^⊥ ∗ ⊸ S@ι) whose body runs new and spawns the worker,
+so that each request yields a session at a point the caller picks. It does not type. KTNew asks
+pt_known W ι of the point of new (49). A well-formed world knows constants only
+(wf_names_const), so it knows no point variable (pvar_unknown in OrdExamples.v). No other rule
+gives a value of type S@ι in a box body. E-Conv compares points by equality (eqT), E-Ch needs
+a channel of Θ and E-Exp types the body with Θ = ∅, and a received payload lives at the slots
+of the receiving point. OrdExamples.v types the factory at one constant point instead
+(fac_typed, fac_deadlock_free). Its client uses the box twice but holds one session at a
+time, because two sessions at (a, 0) held together ask (a, 0) ≺ (a, 0). Options, none
+mechanized. (A) Keep it, so a factory serves its sessions in sequence. (B) V-Box quantifies
+over known instances only, KTForce asks the instance known as it asks C (58), and the static
+system reads the box's ιs as known. A recursive call at ι+1 stays known, because roots do not
+change under shift. This touches V-Box, KTForce and their lemmas, as 58 did. (C) O-New also
+places the root of ι, rejected in 49.
+
+**60. Recursive boxes cannot carry their constraint to the next unrolling (Claude, 2026-10-30). Open.**
+request/reply of spec §13 does not type, and neither does the relay of docs/DECIDABILITY.md
+§8.2. In request/reply the server is
+srv : □(∀ι ι′. {ι ≺ ι′, ι′ ≺ ι+1}.^⊥ Sa@ι ⊗ Sb@ι′ ⊸^{ι′}_⊤ ∗), which receives on a at ι while
+it holds b at ι′, replies on b at ι′ while it holds a at ι+1, and recurses at (ι+1, ι′+1)
+inside a spawned thunk. The spawn removes the ceiling of 58. The thunk's lower point ι′ lies
+below a at ι+1 and b at ι′+1, and its upper point is ι′+1, the upper point of the call. A
+tail call would ask ι′+1 ≼ ι′ at the frame variable instead. The recursive call fails at
+typed_force. It asks C at (ι+1, ι′+1), that is ι+1 ≺ ι′+1 and ι′+1 ≺ ι+2, in slt W C, and
+neither is derivable. slt closes the hypotheses under ≡_W and transitivity, and a
+well-formed world relates points with a variable root by program order only.
+rr_call_underivable (OrdExamples.v) proves this for ι+1 ≺ ι′+1 with a rank that meets C and
+program order and puts ι′+1 below ι+1. No finite C helps, because each unrolling asks C one
+step further and no rule raises the offset of a hypothesis. In the relay the call
+instantiates (ι, ι′) by (ι+1, ι[0]+1) and asks ι+1 ≺ ι[0]+1, which C relates only through
+ι′, below both.
+
+Options. (A) A successor law x ≺ y ⇒ x+1 ≺ y+1. As a static rule alone it is unsound. A box
+under {ι ≺ ι′, ι′ ≺ ι+1} with c, d : !∗.Close sends on c, sends on d, closes c and closes d.
+Closing c while it holds d at ι′+1 asks ι+1 ≺ ι′+1, which the law gives. Forced at
+((a,0), (b,0)) in a world with (a,0) ≺ (b,0) ≺ (a,1) and (b,1) ≺ (a,1) (strict, ranks 0, 1, 3,
+2), it runs against a partner that receives on c, receives on d, closes d and closes c. That
+partner types from the world alone, and the two deadlock, the box on close c and the partner
+on close d. As a law of every world it rejects deadlock-free programs that type now. Two
+threads that both act on c, d, d, c need (c,0) ≺ (d,0) and (d,1) ≺ (c,1), and the law turns
+the first into (c,1) ≺ (d,1). (B) Counter variables ∀κ over points (c, κ). The body still has
+to derive C at κ+1 from C at κ. Either the world gives the facts uniformly in κ, which is (A)
+on the names involved, or the hypotheses hold at every κ, which is (C) with a second binder
+kind and its own substitution lemma. (C) Shift-invariant facts. A fact x ≺ y of C marked
+invariant stands for x+n ≺ y+n for every n. KTForce and V-Box ask all of them, the body gets
+all of them as hypotheses, and slt gets one generator for the shifted hypotheses. The call at
+(ι+1, ι′+1) asks the facts at n+1, which are hypotheses, so request/reply types. A caller
+needs a world with (a,n) ≺ (b,n) ≺ (a,n+1) for every n, strict by the ranks 2n and 2n+1. We
+expect the 58 proofs to carry over unchanged in shape. Substitution commutes with shift
+(pt_inst_shift), a shift keeps roots, so pcs_roots and point renaming are unaffected, and
+≈_W compares facts up to ≡_W, which successor congruence preserves under shift. Not
+mechanized. The cost is a flag per fact in TBox, the premise of KTForce and V-Box, the slt
+generator, and the 58 lemmas passing it along. It does not cover the relay, whose step is no
+shift. (D) Orbit-invariant constraints. The box declares a step substitution σ of its ιs, C
+holds at every iterate σᵏ, and recursive calls go to σ(ιs). (C) is σ = shift by one. The relay
+types with σ = (ι+1, ι[0]+1). This is a sound form of reading A of DECIDABILITY.md §8.1, at
+the cost of σ in the type and iterates of substitutions in V-Box. Recommendation (Claude): (C)
+is the smallest sound change for request/reply. (D) is needed only if the relay matters.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

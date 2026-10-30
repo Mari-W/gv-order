@@ -799,3 +799,132 @@ Proof.
   apply ptyped_closed; [constructor|]. apply fac_typed; [apply Wpo_strict|].
   unfold pt_known, Wpo. simpl. set_solver.
 Qed.
+
+(** ** request/reply: does not type (SHARP-EDGES 60)
+
+    The server answers every request on a with a reply on b, forever:
+
+      Sa = μX. ?∗.X      Sb = μX. !∗.X
+      srv : □(∀ι ι′. {ι ≺ ι′, ι′ ≺ ι+1}.^⊥ Sa@ι ⊗ Sb@ι′ ⊸^{ι′}_⊤ ∗)
+      srv = !(f = λp. let (a, b) = p in let (x, a) = recv a in let () = x in
+                     let (b, w) = ⟨send ⟨∗, b⟩, ∗⟩ in let () = w in
+                     spawn (λv. let () = v in (force f) ⟨a, b⟩))
+
+    recv a blocks at ι while the body holds b at ι′ and asks ι ≺ ι′.
+    send b blocks at ι′ while it holds a at ι+1 and asks ι′ ≺ ι+1. Both
+    are hypotheses of C. The spec's (a,κ) ≺ (b,κ) and (b,κ) ≺ (a,κ+1)
+    are these two facts with ι = (a,κ) and ι′ = (b,κ). The recursion
+    goes through spawn, so the λ's upper point ι′ needs no ceiling:
+    the thunk captures a at ι+1 and b at ι′+1, its lower point ι′ lies
+    below both, and its upper point is ι′+1, the upper point of the
+    call. A tail call (force f) ⟨a, b⟩ would instead ask ι′+1 ≼ ι′ at
+    the frame variable (E-App/φ), which fails for every point term.
+
+    The recursive call fails. typed_force asks C at (ι+1, ι′+1), that is
+    ι+1 ≺ ι′+1 and ι′+1 ≺ ι+2, in slt W C. Neither follows: slt closes
+    the hypotheses under ≡_W and transitivity, a world_wf W relates
+    points with a variable root by program order only (wf_lt_supp,
+    wf_names_const), and no rule shifts a hypothesis by one.
+    [rr_call_underivable] proves it for ι+1 ≺ ι′+1. The rank 10(k+1) for
+    (ι,k) and 15+k for (ι′,k) meets the hypotheses and program order but
+    puts ι′+1 below ι+1. A finite C cannot help: every unrolling asks C
+    one step further, and C must already contain each of those facts,
+    because no rule produces a fact at a larger offset than C states. *)
+
+Definition isvar (x : point) : bool := match pt_root x with NVar _ => true | _ => false end.
+
+Definition rr_rank (x : point) : nat :=
+  match pt_name x with
+  | NVar 0 => 10 * S (pt_off x)
+  | NVar 1 => 15 + pt_off x
+  | _ => pt_off x
+  end.
+
+Definition rr_R (x y : point) : Prop :=
+  if isvar x && isvar y then rr_rank x < rr_rank y else isvar x = false ∧ isvar y = false.
+
+Definition rr_C : list (point * point) := [(pvar 0, pvar 1); (pvar 1, pt_shift 1 (pvar 0))].
+
+Lemma isvar_const W x : world_wf W → pt_root x ∈ w_names W → isvar x = false.
+Proof. intros HW Hx. unfold isvar. by destruct (wf_names_const _ HW _ Hx) as [a ->]. Qed.
+
+Lemma rr_call_underivable W : world_wf W →
+  ¬ slt W rr_C (pt_shift 1 (pvar 0)) (pt_shift 1 (pvar 1)).
+Proof.
+  intros HW H.
+  assert (∀ x y, slt W rr_C x y → rr_R x y) as HR.
+  { apply (slt_map W rr_C rr_R id); unfold id.
+    - intros x y Hxy. unfold rr_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]|[Hx Hy]].
+      + destruct x as [p o], y as [q o']. simpl in *. subst q. unfold isvar, rr_rank, pt_root. simpl.
+        destruct (pn_root p) eqn:Hr; simpl; [done| |done].
+        destruct p as [|[|[|]]|]; simpl in *; try lia; simplify_eq.
+      + rewrite (isvar_const W x), (isvar_const W y); done.
+    - intros x y Hxy. unfold rr_C in Hxy. rewrite !elem_of_cons in Hxy.
+      destruct Hxy as [Hxy|[Hxy|Hxy]]; [simplify_eq; vm_compute; lia|simplify_eq; vm_compute; lia|].
+      by apply elem_of_nil in Hxy.
+    - intros x x' y Hxx' Hx'y. destruct (wf_eq_supp _ HW _ _ Hxx') as [->|[Hx Hx']]; [done|].
+      revert Hx'y. unfold rr_R. rewrite (isvar_const W x), (isvar_const W x'); done.
+    - intros x y y' Hxy' Hy'y. destruct (wf_eq_supp _ HW _ _ Hy'y) as [<-|[Hy' Hy]]; [done|].
+      revert Hxy'. unfold rr_R. rewrite (isvar_const W y), (isvar_const W y'), !andb_false_r; done.
+    - intros x y z. unfold rr_R.
+      destruct (isvar x), (isvar y), (isvar z); simpl; intuition (try lia; try discriminate). }
+  apply HR in H. vm_compute in H. lia.
+Qed.
+
+(** ** relay (docs/DECIDABILITY.md §8.2): does not type (SHARP-EDGES 60)
+
+      S = μX. ?(∃ι. D@ι).X     D = ?∗.Close
+      r = !(f = λp. let (c, d) = p in let (e, c) = recv c in
+                   let (v, e) = recv e in let () = v in
+                   let () = close d in (force f) ⟨c, e⟩)
+        : □(∀ι ι′. C.^⊥ S@ι ⊗ Close@ι′ ⊸ ∗)
+
+    The body blocks at ι holding d at ι′, at ι[0] holding c at ι+1 and
+    d at ι′, and at ι′ holding c at ι+1 and e at ι[0]+1. So C needs
+    ι ≺ ι′, ι[0] ≺ ι+1, ι[0] ≺ ι′, ι′ ≺ ι+1 and ι′ ≺ ι[0]+1 (slots
+    counted from 0). The call instantiates (ι, ι′) by (ι+1, ι[0]+1) and
+    asks C there, among others ι+1 ≺ ι[0]+1. C relates ι+1 and ι[0]+1
+    only through ι′, which lies below both. The rank of
+    [rr_call_underivable] adapts: put ι[0]+1 below ι+1. Shift-invariant
+    facts do not help here, because the step ι′ ↦ ι[0]+1 is no shift.
+    The ceiling of §8.2 disappears with the spawn of request/reply.
+
+    ** blocked: rejected
+
+      blocked = let (c, c′) = new ∗ in let (d, d′) = new ∗ in
+                let () = spawn (λu. let () = u in let () = close d′ in close c′) in
+                let () = close c in close d
+
+    Say new puts c at x and d at y. The main thread closes c while it
+    holds d, so E-Let* puts y into the frame of close c and E-App asks
+    x ≺ y (ub_below_s). The thunk closes d′ while it holds c′, so its
+    body asks y ≺ x. E-Conv keeps points (eqT compares them by
+    equality) and E-Weak drops only unlimited bindings, so every
+    derivation asks both facts, and x ≺ y ≺ x contradicts strictness.
+    This holds for every choice of x and y, x = y included.
+
+    ** bad link: rejected
+
+      badlink = let (c₁, c₂) = new ∗ in let (d₁, d₃) = new ∗ in let (e₂, e₃) = new ∗ in
+                let () = spawn (λu. let () = u in link ⟨c₁, d₁⟩) in
+                let () = spawn (λu. let () = u in let () = close e₃ in close d₃) in
+                let () = close c₂ in close e₂
+
+    With c at x, d at y and e at z: link asks x ≡ y (KTLink), the main
+    thread closes c₂ while it holds e₂ and asks x ≺ z, the second
+    thunk closes e₃ while it holds d₃ and asks z ≺ y. Then
+    x ≺ z ≺ y ≡ x, and wf_lt_eq gives x ≺ x. This is the spec's
+    (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0). The program deadlocks: after the
+    link the main thread waits on c₂ for d₃, and the second thread
+    waits on e₃ for e₂. *)
+
+Definition blocked_main : expr :=
+  LetP (App ENew EUnit) (LetP (App ENew EUnit)
+    (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (App EClos (Var 1)) (App EClos (Var 3))))))
+      (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
+
+Definition badlink_main : expr :=
+  LetP (App ENew EUnit) (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App ELink (Pair (Var 6) (Var 4))))))
+      (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (App EClos (Var 1)) (App EClos (Var 3))))))
+        (LetU (App EClos (Var 4)) (App EClos (Var 1))))))).
