@@ -436,3 +436,229 @@ Proof.
   apply tenv_comp_empty_r_inv in Hc as ->. apply Vrel_Erel. simpl.
   apply Vrel_sess_iff. exists c, s, k. split_and!; [done|done|done|]. by apply (proj1 (proj2 HW)).
 Qed.
+
+Lemma grounding_ext n W Θ Δ γ γ' :
+  (∀ i, γ i = γ' i) → grounding n W Θ Δ γ → grounding n W Θ Δ γ'.
+Proof.
+  revert Θ γ γ'. induction Δ as [|[T|] Δ IH]; intros Θ γ γ' Hγ Hg; simpl in *; [done| |].
+  - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg). exists Θ1, Θ2. split_and!; [done|by rewrite <-Hγ|].
+    eapply IH; [|exact Hg]. intros i. apply Hγ.
+  - eapply IH; [|exact Hg]. intros i. apply Hγ.
+Qed.
+
+Lemma wext_sym W W' : wext W W' → ∀ x y, w_eq W' x y → w_eq W' y x.
+Proof. intros HW. apply (wf_eq_sym _ (wext_wf _ _ HW)). Qed.
+
+(** ** The elimination skeleton
+
+    Θ1; Δ1 ⊨^{F ∪ heads(Θ2, Δ2)} e1 : Th, and a continuation that
+    takes the value of e1 together with a grounding of Δ2, give the
+    composite. One instance per elimination rule. *)
+
+Lemma sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 Th T (f : (nat → expr) → frame) :
+  tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → (∀ γ, frame_val (f γ)) →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 Th →
+  (∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' → grounding n W' Θ' Δ2 γ →
+     ∀ W'' j Θ1' Θ3 v, wext W' W'' → j ≤ n → tenv_comp (w_eq W'') Θ3 Θ1' Θ'' →
+       Vrel j W'' Θ1' Th v → Erel j W'' Θ3 T F (fill_frame (f γ) v)) →
+  ∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ Θ' → grounding n W' Θ' Δ γ →
+    Erel n W' Θ'' T F (fill_frame (f γ) (subst γ e1)).
+Proof.
+  intros Hc Hsp Hf He1 HK n W' Θ' Θ'' γ HW Hc'' Hg.
+  pose proof (wext_wf _ _ HW) as HW'. pose proof (wext_sym _ _ HW) as Hs.
+  destruct (grounding_split _ _ _ _ _ _ _ HW' Hsp Hg) as (Θ'1 & Θ'2 & Hc' & Hg1 & Hg2).
+  pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW)) Hc) as HcW.
+  destruct (comp_swap4 _ _ _ _ _ _ _ _ Hs Hc'' HcW Hc') as (A & B & HAB & HA & HB).
+  eapply (Erel_bind n (f γ) W' Θ'' A B Th T F (tenv_heads Θ2 ∪ lenv_heads Δ2)).
+  - apply Hf.
+  - apply HW.
+  - done.
+  - eapply heads_above_comp; [exact HB|by apply heads_above_self|by eapply grounding_heads].
+  - by apply (He1 n W' Θ'1 A γ).
+  - intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. by eapply (HK n W' Θ'2 B γ).
+Qed.
+
+(** ** E-Inj *)
+
+Lemma sem_typed_inj1 W Θ Δ F e T U :
+  sem_typed W Θ Δ F e T → sem_typed W Θ Δ F (Inj1 e) (TSum T U).
+Proof.
+  intros He n W' Θ' Θ'' γ HW Hc Hg. simpl.
+  change (Inj1 (subst γ e)) with (fill_frame FInj1 (subst γ e)).
+  eapply (Erel_bind n FInj1 W' Θ'' Θ'' ∅ T _ F ∅); [done|apply HW|apply tenv_comp_empty_r|
+    apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
+  intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
+  apply tenv_comp_empty_r_inv in Hc3 as ->. apply Vrel_Erel. simpl.
+  apply Vrel_sum_iff. left. eauto.
+Qed.
+
+Lemma sem_typed_inj2 W Θ Δ F e T U :
+  sem_typed W Θ Δ F e U → sem_typed W Θ Δ F (Inj2 e) (TSum T U).
+Proof.
+  intros He n W' Θ' Θ'' γ HW Hc Hg. simpl.
+  change (Inj2 (subst γ e)) with (fill_frame FInj2 (subst γ e)).
+  eapply (Erel_bind n FInj2 W' Θ'' Θ'' ∅ U _ F ∅); [done|apply HW|apply tenv_comp_empty_r|
+    apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
+  intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
+  apply tenv_comp_empty_r_inv in Hc3 as ->. apply Vrel_Erel. simpl.
+  apply Vrel_sum_iff. right. eauto.
+Qed.
+
+(** Moving the second premise of an elimination rule to a later world
+    and a lower index. *)
+Lemma sem_typed_later W Θ2 Δ2 F e T n W' Θ' Θ'' γ W'' j :
+  sem_typed W Θ2 Δ2 F e T → wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' →
+  grounding n W' Θ' Δ2 γ → wext W' W'' → j ≤ n →
+  Erel j W'' Θ'' T F (subst γ e).
+Proof.
+  intros He HW Hc Hg HW'' Hj. apply (He j W'' Θ' Θ'' γ).
+  - by eapply wext_trans.
+  - eapply tenv_comp_mono; [|exact Hc]. apply HW''.
+  - eapply grounding_down; [exact Hj|]. eapply grounding_mono; [|exact HW''|exact Hg].
+    exact (wext_wf _ _ HW).
+Qed.
+
+(** ** E-Let* *)
+
+Lemma sem_typed_letu W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :
+  tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 TUnit →
+  sem_typed W Θ2 Δ2 F e2 T →
+  sem_typed W Θ Δ F (LetU e1 e2) T.
+Proof.
+  intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  change (LetU (subst γ e1) (subst γ e2)) with (fill_frame (FLetU (subst γ e2)) (subst γ e1)).
+  eapply (sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 TUnit T (λ γ, FLetU (subst γ e2)));
+    [done|done|done|done| |done|done|done].
+  clear dependent Θ' Θ'' n γ W'.
+  intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. simpl.
+  apply Vrel_unit_iff in HV as [-> ->].
+  apply (tenv_comp_empty_l_inv _ _ _ (wext_sym _ _ (wext_trans _ _ _ HW HW''))) in Hc3 as ->.
+  apply (Erel_det_beta _ _ _ _ _ _ (subst γ e2)).
+  - apply TStepHead, HeadLetU.
+  - intros α e'' Hst. apply tstep_letu_inv in Hst as [(e1' & Hst & _)|(_ & -> & ->)]; [|done].
+    exfalso. by eapply val_no_tstep.
+  - by eapply sem_typed_later.
+Qed.
+
+(** Rearranging the environment of a let-bound value: Θ3 = Θ1', B with
+    Θ1' = Θa, Θb and B = Θ2, Θ'2 gives Θ3 = Θ2, X with X = Θb, A and
+    A = Θa, Θ'2. *)
+Lemma comp_bind2 R Θ3 Θ1' B Θa Θb Θ2 Θ'2 :
+  (∀ x y, R x y → R y x) →
+  tenv_comp R Θ3 Θ1' B → tenv_comp R Θ1' Θa Θb → tenv_comp R B Θ2 Θ'2 →
+  ∃ X A, tenv_comp R Θ3 Θ2 X ∧ tenv_comp R X Θb A ∧ tenv_comp R A Θa Θ'2.
+Proof.
+  intros Hs Hc HcA HcB.
+  destruct (comp_swap4 _ _ _ _ _ _ _ _ Hs Hc HcA (comp_comm _ _ _ _ Hs HcB))
+    as (A & B' & H1 & H2 & H3).
+  destruct (comp_assoc _ _ _ _ _ _ Hs (comp_comm _ _ _ _ Hs H1) H3) as [HX HY].
+  eexists _, A. split_and!; [by apply comp_comm|exact HX|done].
+Qed.
+
+(** ** E-LetPair *)
+
+Lemma sem_typed_letp W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :
+  tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TProd T1 T2) →
+  sem_typed W Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
+  sem_typed W Θ Δ F (LetP e1 e2) T.
+Proof.
+  intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  change (LetP (subst γ e1) (subst (up (up γ)) e2))
+    with (fill_frame (FLetP (subst (up (up γ)) e2)) (subst γ e1)).
+  eapply (sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 (TProd T1 T2) T (λ γ, FLetP (subst (up (up γ)) e2)));
+    [done|done|done|done| |done|done|done].
+  clear dependent Θ' Θ'' n γ W'.
+  intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. simpl.
+  pose proof (wext_trans _ _ _ HW HW'') as HW2.
+  apply Vrel_prod_iff in HV as (v1 & v2 & Θa & Θb & -> & Hcab & HV1 & HV2).
+  pose proof (Vrel_val _ _ _ _ _ HV1) as Hv1. pose proof (Vrel_val _ _ _ _ _ HV2) as Hv2.
+  pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW'')) Hc') as Hc'W.
+  destruct (comp_bind2 _ _ _ _ _ _ _ _ (wext_sym _ _ HW2) Hc3 Hcab Hc'W) as (X & A & HX & HXA & HA).
+  apply (Erel_det_beta _ _ _ _ _ _ (subst2 v1 v2 (subst (up (up γ)) e2))).
+  - by apply TStepHead, HeadLetP.
+  - intros α e'' Hst. apply tstep_letp_inv in Hst as [(e1' & Hst & _)|(u & w & Heq & _ & _ & -> & ->)].
+    + exfalso. eapply val_no_tstep; [exact Hst|]. simpl. by apply andb_True.
+    + by injection Heq as -> ->.
+  - rewrite subst2_subst. apply (He2 j W'' X Θ3); [done|done|].
+    exists Θb, A. split_and!; [done|done|].
+    exists Θa, Θ'. split_and!; [done|done|].
+    eapply grounding_ext; [|eapply grounding_down; [exact Hj|]].
+    { intros i. done. }
+    eapply grounding_mono; [exact (wext_wf _ _ HW)|exact HW''|exact Hg].
+Qed.
+
+(** ** E-Case *)
+
+Lemma sem_typed_case W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T :
+  tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e (TSum T1 T2) →
+  sem_typed W Θ2 (Some T1 :: Δ2) F e1 T →
+  sem_typed W Θ2 (Some T2 :: Δ2) F e2 T →
+  sem_typed W Θ Δ F (Case e e1 e2) T.
+Proof.
+  intros Hc Hsp He He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  change (Case (subst γ e) (subst (up γ) e1) (subst (up γ) e2))
+    with (fill_frame (FCase (subst (up γ) e1) (subst (up γ) e2)) (subst γ e)).
+  eapply (sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e (TSum T1 T2) T
+            (λ γ, FCase (subst (up γ) e1) (subst (up γ) e2)));
+    [done|done|done|done| |done|done|done].
+  clear dependent Θ' Θ'' n γ W'.
+  intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. simpl.
+  pose proof (wext_trans _ _ _ HW HW'') as HW2. pose proof (wext_sym _ _ HW2) as Hs.
+  pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW'')) Hc') as Hc'W.
+  (* Θ3 = Θ2, X with X = Θ1', Θ' *)
+  destruct (comp_assoc _ _ _ _ _ _ Hs (comp_comm _ _ _ _ Hs Hc3) (comp_comm _ _ _ _ Hs Hc'W))
+    as [HX HY].
+  assert (grounding j W'' Θ' Δ2 γ) as Hg'.
+  { eapply grounding_down; [exact Hj|].
+    eapply grounding_mono; [exact (wext_wf _ _ HW)|exact HW''|exact Hg]. }
+  apply Vrel_sum_iff in HV as [(w & -> & HVw)|(w & -> & HVw)];
+    pose proof (Vrel_val _ _ _ _ _ HVw) as Hw.
+  - apply (Erel_det_beta _ _ _ _ _ _ (subst1 w (subst (up γ) e1))).
+    + by apply TStepHead, HeadCase1.
+    + intros α e'' Hst. apply tstep_case_inv in Hst
+        as [(e' & Hst & _)|[(u & Heq & _ & -> & ->)|(u & Heq & _)]]; [|by injection Heq as ->|done].
+      exfalso. by eapply val_no_tstep.
+    + rewrite subst1_subst. apply (He1 j W'' (tjoin_as Θ3 Θ' Θ1') Θ3); [done|by apply comp_comm|].
+      exists Θ1', Θ'. split_and!; [by apply comp_comm|done|].
+      eapply grounding_ext; [|exact Hg']. done.
+  - apply (Erel_det_beta _ _ _ _ _ _ (subst1 w (subst (up γ) e2))).
+    + by apply TStepHead, HeadCase2.
+    + intros α e'' Hst. apply tstep_case_inv in Hst
+        as [(e' & Hst & _)|[(u & Heq & _)|(u & Heq & _ & -> & ->)]]; [|done|by injection Heq as ->].
+      exfalso. by eapply val_no_tstep.
+    + rewrite subst1_subst. apply (He2 j W'' (tjoin_as Θ3 Θ' Θ1') Θ3); [done|by apply comp_comm|].
+      exists Θ1', Θ'. split_and!; [by apply comp_comm|done|].
+      eapply grounding_ext; [|exact Hg']. done.
+Qed.
+
+(** ** E-Pair *)
+
+Lemma sem_typed_pair W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :
+  tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 T →
+  sem_typed W Θ2 Δ2 (F ∪ heads T) e2 U →
+  sem_typed W Θ Δ F (Pair e1 e2) (TProd T U).
+Proof.
+  intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  change (Pair (subst γ e1) (subst γ e2)) with (fill_frame (FPairL (subst γ e2)) (subst γ e1)).
+  eapply (sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 T (TProd T U) (λ γ, FPairL (subst γ e2)));
+    [done|done|done|done| |done|done|done].
+  clear dependent Θ' Θ'' n γ W'.
+  intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v1 HW'' Hj Hc3 HV1. simpl.
+  pose proof (wext_trans _ _ _ HW HW'') as HW2. pose proof (wext_sym _ _ HW2) as Hs.
+  pose proof (Vrel_val _ _ _ _ _ HV1) as Hv1.
+  change (Pair v1 (subst γ e2)) with (fill_frame (FPairR v1) (subst γ e2)).
+  eapply (Erel_bind j (FPairR v1) W'' Θ3 Θ'' Θ1' U (TProd T U) F (heads T)).
+  - done.
+  - apply HW''.
+  - by apply comp_comm.
+  - eapply Vrel_heads_above; [exact (wext_wf _ _ HW2)|exact HV1].
+  - exact (sem_typed_later _ _ _ _ _ _ n W' Θ' Θ'' γ W'' j He2 HW Hc' Hg HW'' Hj).
+  - intros W3 j' Θ2' Θ4 v2 HW3 Hj' Hc4 HV2. apply Vrel_Erel. simpl.
+    apply Vrel_prod_iff. exists v1, v2, Θ1', Θ2'. split_and!; [done| | |done].
+    { apply comp_comm; [exact (wext_sym _ _ (wext_trans _ _ _ HW2 HW3))|exact Hc4]. }
+    eapply Vrel_down; [exact Hj'|]. eapply Vrel_mono; [exact (wext_wf _ _ HW2)|exact HW3|exact HV1].
+Qed.
