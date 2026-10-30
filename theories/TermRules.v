@@ -1195,3 +1195,25 @@ Proof.
     + eapply Vrel_down; [exact Hj'|]. eapply Vrel_mono; [exact (wext_wf _ _ HW2)|exact HW3|exact HV1].
     + eapply ub_below_mono; [exact HW4|exact Hub].
 Qed.
+
+(** ** E-Weak (E-Conv is [sem_typed_teq], Convert.v) *)
+
+Lemma grounding_wk n W Θ Δ' Δ γ :
+  world_wf W → lenv_wk Δ' Δ → grounding n W Θ Δ γ → grounding n W Θ Δ' γ.
+Proof.
+  intros HW Hwk. revert Θ γ.
+  induction Hwk as [|[T|] Δ' Δ Hwk IH|U Δ' Δ HU Hwk IH]; intros Θ γ Hg; simpl in *.
+  - done.
+  - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg). exists Θ1, Θ2. split_and!; [done|done|by apply IH].
+  - by apply IH.
+  - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
+    rewrite (Vrel_unl_empty _ _ _ _ _ HU HV) in Hc.
+    apply (tenv_comp_empty_l_inv _ _ _ (wf_eq_sym _ HW)) in Hc as ->. by apply IH.
+Qed.
+
+Lemma sem_typed_wk W Θ Δ' Δ F e T :
+  lenv_wk Δ' Δ → sem_typed W Θ Δ' F e T → sem_typed W Θ Δ F e T.
+Proof.
+  intros Hwk He n W' Θ' Θ'' γ HW Hc Hg. apply (He n W' Θ' Θ'' γ HW Hc).
+  eapply grounding_wk; [exact (wext_wf _ _ HW)|exact Hwk|exact Hg].
+Qed.
