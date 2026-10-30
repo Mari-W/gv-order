@@ -111,12 +111,13 @@ Proof.
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done|done| |done].
       by eapply seq_trans. }
   split; [exact HV|].
-  intros W Θ T T' F e HW Hteq HE.
-  destruct n as [|n']; [apply Erel_0|].
+  destruct n as [|n']; [intros; apply Erel_0|].
+  intros W Θ T T' F e HW Hteq HE. revert T' HW Hteq.
+  induction HE as [W Θ T F e Hval Hrdy Hstep] using Erel_S_ind.
+  intros T' HW Hteq.
   assert (∀ j W0 Θ0 T0 T0' F0 e0, j < S n' → world_wf W0 → teq T0 T0' →
             Erel j W0 Θ0 T0 F0 e0 → Erel j W0 Θ0 T0' F0 e0) as HEj.
   { intros j ? ? ? ? ? ? Hj. by apply (proj2 (IHn j Hj)). }
-  apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
   apply Erel_S_iff. split_and!; [|done|].
   { intros Hirr. eapply HV; [exact Hteq|]. by apply Hval. }
   intros α e' Hst. specialize (Hstep α e' Hst).
@@ -129,14 +130,14 @@ Proof.
   - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                        Hhd & Hc & HVw & Hext & HE').
     exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
-    eapply HEj; [lia|done|exact Hteq|exact HE'].
+    exact (proj2 HE' T' HW Hteq).
   - destruct Hstep as (Θ1 & k & Hhd & HE').
     exists Θ1, k. split; [done|].
-    eapply HEj; [lia|done|exact Hteq|exact HE'].
+    exact (proj2 HE' T' HW Hteq).
   - destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                        -> & ? & ? & ? & ? & HE').
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|].
-    eapply HEj; [lia|done|exact Hteq|exact HE'].
+    exact (proj2 HE' T' HW Hteq).
   - (* O-New: rename the new point away from the points of T' *)
     intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
     destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
