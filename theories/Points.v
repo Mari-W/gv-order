@@ -1087,9 +1087,10 @@ Proof.
       + destruct HS as (_ & He & _). apply He. by apply wsw_eq. }
   split_and!; [exact HV| |].
   - (* term relation *)
-    intros W W' Θ T F e HS HE.
-    destruct n as [|n']; [apply Erel_0|].
-    apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
+    destruct n as [|n']; [intros; apply Erel_0|].
+    intros W W' Θ T F e HS HE. revert W' HS.
+    induction HE as [W Θ T F e Hval Hrdy Hstep] using Erel_S_ind.
+    intros W' HS.
     apply Erel_S_iff. split_and!.
     { intros Hirr. apply (HV W); [done|]. by apply Hval. }
     { intros Hirr. destruct (Hrdy Hirr) as [Hr Hf]. split.
@@ -1123,12 +1124,12 @@ Proof.
       * eapply tenv_comp_mono; [|by apply tenv_comp_sw]; intros ? ? ?; by apply HS.
       * rewrite <-payload_at_sw. by apply (HV W W') in HVw.
       * by apply (tenv_ext_sw a b _ _ (s, pt_shift 1 k)).
-      * by apply (IHE n' ltac:(lia) W).
+      * by apply (proj2 HE').
     + (* close *)
       destruct Hstep as (Θ1 & k & Hhd & HE').
       exists (tenvsw a b Θ1), (ptsw a b k). split.
       * by apply (tenv_hd_sw a b _ _ SEnd).
-      * by apply (IHE n' ltac:(lia) W).
+      * by apply (proj2 HE').
     + (* link *)
       destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                          -> & H1 & H2 & Hdu & Hal & HE').
@@ -1140,7 +1141,7 @@ Proof.
       * by apply (tenv_ext_sw a b _ _ (sc, kc)).
       * by apply sdual_sw.
       * destruct HS as (_ & He & _). apply He. by apply wsw_eq.
-      * by apply (IHE n' ltac:(lia) W).
+      * by apply (proj2 HE').
     + (* new *)
       intros Hc. rewrite dom_tenvsw in Hc.
       destruct (Hstep Hc) as (a0 & s & s' & W1 & Ha & Hdu & Hfr & HE').
@@ -1162,9 +1163,10 @@ Proof.
       * apply (HV W W' _ (TLolli ub lb TUnit TUnit)) in HVw; [|done]. exact HVw.
       * by apply (IHE n' ltac:(lia) W).
   - (* process relation *)
-    intros W W' Σ T p HS HP.
-    destruct n as [|n']; [apply Prel_0|].
-    apply Prel_S_iff in HP as (Hirr & Hrdy & Hstep).
+    destruct n as [|n']; [intros; apply Prel_0|].
+    intros W W' Σ T p HS HP. revert W' HS.
+    induction HP as [W Σ T p Hirr Hrdy Hstep] using Prel_S_ind.
+    intros W' HS.
     apply Prel_S_iff. split_and!.
     { intros Hpirr.
       destruct (Hirr Hpirr) as (v & E & -> & Hv & HVv & HE).
@@ -1175,14 +1177,23 @@ Proof.
     intros π q Hst. specialize (Hstep _ _ Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* τ *)
-      intros Hd. rewrite dom_senvsw in Hd.
-      destruct (Hstep Hd) as (N & W1 & HN & Hfr & HP').
+      destruct Hstep as [Htau Hlink]. split.
+      { intros Hd. rewrite dom_senvsw in Hd.
+        destruct (Htau Hd) as (N & W1 & HN & Hfr & HP').
+        exists (set_map (pnsw a b) N), (wsw a b W1). split_and!.
+        * rewrite senv_roots_sw, (proj1 (roots_sw_mut a b)), <-set_map_union_L.
+          by apply disjoint_names_sw.
+        * apply (wext_fresh_wsw a b) in Hfr.
+          eapply wext_fresh_wsame; [exact HS|apply wsame_refl|exact Hfr].
+        * by apply (IHP n' ltac:(lia) W1). }
+      intros Hl Hd. rewrite dom_senvsw in Hd.
+      destruct (Hlink Hl Hd) as (N & W1 & HN & Hfr & HP').
       exists (set_map (pnsw a b) N), (wsw a b W1). split_and!.
       * rewrite senv_roots_sw, (proj1 (roots_sw_mut a b)), <-set_map_union_L.
         by apply disjoint_names_sw.
       * apply (wext_fresh_wsw a b) in Hfr.
         eapply wext_fresh_wsame; [exact HS|apply wsame_refl|exact Hfr].
-      * by apply (IHP n' ltac:(lia) W1).
+      * apply (proj2 HP'). apply wsame_refl.
     + (* recv *)
       destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
       exists (senvsw a b Σ1), m, (tysw a b U), (stysw a b s), (ptsw a b k).
@@ -1221,14 +1232,14 @@ Proof.
       * by rewrite dom_tenvsw, dom_senvsw.
       * apply (HV W W') in HVw; [|done].
         by rewrite tenvsw_union, tenvsw_of, payload_at_sw in HVw.
-      * apply (IHP n' ltac:(lia) W W') in HP'; [|done].
-        by rewrite senvsw_insert, senvsw_union in HP'.
+      * apply (proj2 HP' W') in HS.
+        by rewrite senvsw_insert, senvsw_union in HS.
     + (* close *)
       destruct Hstep as (Σ1 & k & Hhd & Hc & HP').
       exists (senvsw a b Σ1), (ptsw a b k). split_and!.
       * by apply (senv_hd_sw a b _ _ SEnd).
       * by rewrite dom_senvsw.
-      * by apply (IHP n' ltac:(lia) W).
+      * by apply (proj2 HP').
     + (* link *)
       destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
                          -> & Hne & -> & Hc1 & Hd1 & Hdu & Hal & HP').
@@ -1242,7 +1253,7 @@ Proof.
       * by rewrite dom_senvsw.
       * by apply sdual_sw.
       * destruct HS as (_ & He & _). apply He. by apply wsw_eq.
-      * by apply (IHP n' ltac:(lia) W).
+      * by apply (proj2 HP').
 Qed.
 
 Lemma Vrel_psw a b n W Θ T v :
