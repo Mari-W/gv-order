@@ -254,6 +254,11 @@ Definition Ptau_case (X : world → senv → ty → proc → Prop)
   p'.1 ## dom Σ →
   ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧ X W' Σ T p'.
 
+(** A link creates no points: its τ keeps the world. *)
+Definition Plinktau_case (X : world → senv → ty → proc → Prop)
+    (W : world) (Σ : senv) (T : ty) (p' : proc) : Prop :=
+  p'.1 ## dom Σ → X W Σ T p'.
+
 Definition Psend_case (Vn : world → tenv → ty → expr → Prop)
     (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (p : proc) (c : chan) (w : expr) (p' : proc)
@@ -327,7 +332,7 @@ Inductive Pind (below : nat → level) (Vn : world → tenv → ty → expr → 
       (¬ pirred p → ready_p W Σ p) →                   (* P-Step *)
       (∀ π p', proc_step p π p' → Pcostly below Vn n' W Σ T p π p') →
       (∀ p', proc_step p PTau p' → ptau_link p p' →    (* Q-Tau, link *)
-         Ptau_case (Pind below Vn n') W Σ T p') →
+         Plinktau_case (Pind below Vn n') W Σ T p') →
       (∀ c w p', proc_step p (PSess (SSend c w)) p' →  (* Q-Send *)
          Psend_case Vn (Pind below Vn n') W Σ T p c w p') →
       (∀ c p', proc_step p (PSess (SClos c)) p' →      (* Q-Close *)
@@ -542,6 +547,11 @@ Lemma Ptau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
   Ptau_case X W Σ T p' → Ptau_case Y W Σ T p'.
 Proof. intros HXY H Hd. destruct (H Hd) as (?&?&?&?&?). eexists _, _. eauto. Qed.
 
+Lemma Plinktau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
+  (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
+  Plinktau_case X W Σ T p' → Plinktau_case Y W Σ T p'.
+Proof. intros HXY H Hd. auto. Qed.
+
 Lemma Psend_case_mono Vn (X Y : world → senv → ty → proc → Prop) W Σ T p c w p' :
   (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
   Psend_case Vn X W Σ T p c w p' → Psend_case Vn Y W Σ T p c w p'.
@@ -711,7 +721,7 @@ Definition Pcase_gen (X : world → senv → ty → proc → Prop)
   match π with
   | PTau =>
       Ptau_case (Prel n') W Σ T p' ∧
-      (ptau_link p p' → Ptau_case X W Σ T p')
+      (ptau_link p p' → Plinktau_case X W Σ T p')
   | PSess (SRecv c w) =>
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
@@ -732,7 +742,7 @@ Lemma Pcase_gen_mono X Y n' W Σ T p π p' :
   Pcase_gen X n' W Σ T p π p' → Pcase_gen Y n' W Σ T p π p'.
 Proof.
   intros HXY. destruct π as [|[c w|c w|c|cd]]; simpl; try done.
-  - intros [H1 H2]. split; [done|]. intros Hl. eapply Ptau_case_mono; eauto.
+  - intros [H1 H2]. split; [done|]. intros Hl. eapply Plinktau_case_mono; eauto.
   - by apply Psend_case_mono.
   - by apply Pclos_case_mono.
   - by apply Plink_case_mono.
@@ -746,7 +756,7 @@ Lemma Pind_iff below Vn n' W Σ T p :
     (¬ pirred p → ready_p W Σ p) ∧
     (∀ π p', proc_step p π p' → Pcostly below Vn n' W Σ T p π p') ∧
     (∀ p', proc_step p PTau p' → ptau_link p p' →
-       Ptau_case (Pind below Vn n') W Σ T p') ∧
+       Plinktau_case (Pind below Vn n') W Σ T p') ∧
     (∀ c w p', proc_step p (PSess (SSend c w)) p' →
        Psend_case Vn (Pind below Vn n') W Σ T p c w p') ∧
     (∀ c p', proc_step p (PSess (SClos c)) p' →
@@ -805,7 +815,7 @@ Proof.
   - intros (H1 & H2 & H3 & H4 & H5 & H6 & H7). split_and!; [done|done|].
     intros π p' Hst. destruct π as [|[c w|c w|c|cd]]; simpl.
     + split; [exact (proj1 (Pcostly_tau_conv _ _ _ _ _ _) (H3 _ _ Hst))|].
-      intros Hl. eapply Ptau_case_mono; [exact Hto|]. by apply H4.
+      intros Hl. eapply Plinktau_case_mono; [exact Hto|]. by apply H4.
     + exact (proj1 (Pcostly_recv_conv (Prel (S n)) _ _ _ _ _ _ _ _) (H3 _ _ Hst)).
     + eapply Psend_case_mono; [exact Hto|]. by apply H5.
     + eapply Pclos_case_mono; [exact Hto|]. by apply H6.
@@ -815,7 +825,7 @@ Proof.
       destruct π as [|[c w|c w|c|cd]]; try done.
       * exact (proj2 (Pcostly_tau_conv _ _ _ _ _ _) (proj1 H)).
       * exact (proj2 (Pcostly_recv_conv (Prel (S n)) _ _ _ _ _ _ _ _) H).
-    + intros p' Hst Hl. eapply Ptau_case_mono; [exact Hfrom|]. exact (proj2 (H3 _ _ Hst) Hl).
+    + intros p' Hst Hl. eapply Plinktau_case_mono; [exact Hfrom|]. exact (proj2 (H3 _ _ Hst) Hl).
     + intros c w p' Hst. eapply Psend_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
     + intros c p' Hst. eapply Pclos_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
     + intros cd p' Hst. eapply Plink_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
@@ -839,8 +849,8 @@ Proof.
     apply Hind; [done|done|].
     intros π p' Hst. destruct π as [|[c w|c w|c|cd]]; simpl.
     - split; [exact (proj1 (Pcostly_tau_conv _ _ _ _ _ _) (H3 _ _ Hst))|].
-      intros Hl Hd. destruct (H4 p' Hst Hl Hd) as (N & W' & Ha & Hb & HP').
-      exists N, W'. split_and!; try done; [by apply Prel_S_unfold|exact (IH _ _ _ _ HP')].
+      intros Hl Hd. pose proof (H4 p' Hst Hl Hd) as HP'.
+      split; [by apply Prel_S_unfold|exact (IH _ _ _ _ HP')].
     - exact (proj1 (Pcostly_recv_conv (Prel (S n)) _ _ _ _ _ _ _ _) (H3 _ _ Hst)).
     - destruct (H5 c w p' Hst) as (Σ0&Σv&m&U&s&k&Σe&Θe&Ha&Hb&Hc&Hd&He&Hf&Hg&Hh&HP').
       exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done; [by apply Prel_S_unfold|exact (IH _ _ _ _ HP')].
@@ -1094,7 +1104,7 @@ Proof.
     + destruct H2 as [H2 Hl]. split.
       * intros Hd. destruct (H2 Hd) as (N & W' & ? & ? & ?).
         exists N, W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
-      * intros Hlk. eapply Ptau_case_mono; [|exact (Hl Hlk)]. by intros ? ? ? ? [_ ?].
+      * intros Hlk. eapply Plinktau_case_mono; [|exact (Hl Hlk)]. by intros ? ? ? ? [_ ?].
     + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
       eexists _, _, _, _, _. split_and!; [done|done|].
       intros W' j Θ2 HW Hj Hfr Hdu HV. apply (H2 W' j Θ2); auto. lia.

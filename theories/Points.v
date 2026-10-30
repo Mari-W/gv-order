@@ -1187,13 +1187,7 @@ Proof.
           eapply wext_fresh_wsame; [exact HS|apply wsame_refl|exact Hfr].
         * by apply (IHP n' ltac:(lia) W1). }
       intros Hl Hd. rewrite dom_senvsw in Hd.
-      destruct (Hlink Hl Hd) as (N & W1 & HN & Hfr & HP').
-      exists (set_map (pnsw a b) N), (wsw a b W1). split_and!.
-      * rewrite senv_roots_sw, (proj1 (roots_sw_mut a b)), <-set_map_union_L.
-        by apply disjoint_names_sw.
-      * apply (wext_fresh_wsw a b) in Hfr.
-        eapply wext_fresh_wsame; [exact HS|apply wsame_refl|exact Hfr].
-      * apply (proj2 HP'). apply wsame_refl.
+      exact (proj2 (Hlink Hl Hd) W' HS).
     + (* recv *)
       destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
       exists (senvsw a b Σ1), m, (tysw a b U), (stysw a b s), (ptsw a b k).
