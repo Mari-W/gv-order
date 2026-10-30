@@ -88,6 +88,14 @@ has no axioms and no admitted proofs.
 
 - `DropCounter.v`: why the fresh point of E-Abs and E-Exp is a frame variable.
 
+`pgv/`, adequacy for repaired Priority GV (docs/extensions/adequacy/pgv-adequacy.md).
+
+- `PGVTypes.v`: PGV's priorities, types, duality, pr(·) and the monotone fragment `pgv_mono`.
+- `PGVTyping.v`: the schemas and Fig. 2 on our terms with repairs R1 and R2 (`pgv_typed`, `pgv_frag`).
+- `PGVWorld.v`: the protocol-point world `Wpgv`, its strictness and the translation of types.
+- `PGVTranslate.v`: PGV derivations become `typed` derivations (`pgv_translate`, `pgv_deadlock_free`).
+- `PGVExamples.v`: Example 2.1 of the paper, a delegation, and the two counterexamples rejected.
+
 ## Main results
 
 - `soundness` (static/Fundamental.v): a typed closed process at a strict world is deadlock free.
@@ -95,6 +103,7 @@ has no axioms and no admitted proofs.
 - `adequacy` (relation/LogicalRelation.v): a semantically typed closed process is deadlock free.
 - `Prel_term`, `Prel_indep` (composition/PTerm.v), `Prel_connect` (composition/PConnect.v), `Prel_connect_n` (composition/PConnectN.v), `Prel_internalize` (composition/Internalize.v).
 - `Erel_bind` (rules/Bind.v).
+- `pgv_deadlock_free` (pgv/PGVTranslate.v): a closed program of type 1 in the monotone fragment of repaired PGV is deadlock free.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, one per file in examples/.
 
 ## Other documents

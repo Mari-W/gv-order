@@ -46,3 +46,8 @@ theories/examples/Forwarder.v
 theories/examples/Ordered.v
 theories/examples/Rejected.v
 theories/counterexamples/DropCounter.v
+theories/pgv/PGVTypes.v
+theories/pgv/PGVTyping.v
+theories/pgv/PGVWorld.v
+theories/pgv/PGVTranslate.v
+theories/pgv/PGVExamples.v
