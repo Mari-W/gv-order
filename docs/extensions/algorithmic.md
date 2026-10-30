@@ -48,7 +48,7 @@ channel after b of its own actions.
 
 The static system of ORDERS-SPEC §9 needs no decision procedure. Its box
 constraints are arbitrary sets of positive facts, and its side conditions are
-entailments (sharp edges 65). This document studies decidability for a
+entailments (sharp edges 65). This section studies decidability for a
 candidate fragment of constraints, for a later algorithmic system. The fragment
 has counter facts ∀κ̄. x ≺ y whose coordinates are constants or a counter plus
 an offset, with each counter at most once per side. Section 1 defines it as the
