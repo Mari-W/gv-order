@@ -858,3 +858,108 @@ Proof.
     exists Θ, ∅, ub1, lb1. split_and!; [apply tenv_comp_empty_r|done|].
     apply Vrel_Erel. eapply Vrel_tconv; [apply HW|exact HB|]. by apply Vrel_unit_iff.
 Qed.
+
+(** Readiness and frame of a term holding one end, which it offers. *)
+Lemma entry_single c o k' e' :
+  tenv_entry {[c := One o]} k' = Some e' → k' = (c, false) ∧ e' = o.
+Proof.
+  destruct k' as [c' b]. unfold tenv_entry. simpl.
+  destruct (decide (c' = c)) as [->|Hne].
+  - rewrite lookup_singleton_eq. destruct b; intros; simplify_eq. done.
+  - by rewrite lookup_singleton_ne.
+Qed.
+
+Lemma ready_single W c o e :
+  offered_t {[c := One o]} e (c, false) → ready_t W {[c := One o]} e.
+Proof.
+  intros Hoff Hs. split.
+  - intros H. exfalso. exact (H _ Hoff).
+  - intros k' e' He Hn. exfalso. apply Hn. by destruct (entry_single _ _ _ _ He) as [-> ->].
+Qed.
+
+Lemma frame_single W c o e F :
+  (∀ y, y ∈ F → w_lt W o.2 y) → frame_t W {[c := One o]} e F.
+Proof.
+  intros H Hs k' e' _ He y Hy. destruct (entry_single _ _ _ _ He) as [-> ->]. by apply H.
+Qed.
+
+Lemma ub_some_below W x x' F :
+  world_wf W → opt_rel (pteqW W) (Some x) x' → ub_below W x' F → ∀ y, y ∈ F → w_lt W x y.
+Proof.
+  intros HW Hr Hub. apply (ub_below_conv W x' (Some x)) in Hub; [done|done|].
+  by apply opt_rel_sym.
+Qed.
+
+Lemma tenv_ext_empty c o Θ : tenv_ext ∅ c o Θ → Θ = {[c := One o]}.
+Proof.
+  intros [[_ ->]|(e' & H & _)]; [by rewrite insert_empty|by rewrite lookup_empty in H].
+Qed.
+
+Lemma Erel_app_recv n W Θ ub lb T U F v2 :
+  strict W → Vrel n W ∅ (TLolli ub lb T U) ERecv → Vrel n W Θ T v2 → ub_below W ub F →
+  Erel n W Θ U F (App ERecv v2).
+Proof.
+  intros HW HV1 HV2 Hub0. pose proof (proj1 HW) as HWf.
+  destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
+    as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
+  inversion Hk as [| |m T0 S x| | | |]; subst.
+  pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
+  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
+  destruct (seq_rcv_inv _ _ _ _ _ Hs0 (unfoldS_hd _ (mu_depth_rcv _ _ _)))
+    as (U0 & s' & Hu0 & HU0 & Hs').
+  destruct n as [|n']; [apply Erel_0|].
+  assert (∀ w, is_val w → tstep (App ERecv (Chan c)) (LSess (SRecv c w)) (Pair w (Chan c)))
+    as Hst0 by (intros; by apply TStepHead, HeadRecv).
+  apply Erel_S_iff. split_and!.
+  - intros Hirr. exfalso. exact (Hirr _ _ (Hst0 EUnit I)).
+  - intros _. split.
+    + apply ready_single. exists (SRecv c EUnit), (Pair EUnit (Chan c)). split; [by apply Hst0|].
+      split; [done|]. exists (s0, k), m, U0, s'. split; [|done].
+      unfold tenv_entry. simpl. by rewrite lookup_singleton_eq.
+    + apply frame_single. intros y Hy. simpl.
+      eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
+  - intros α e' Hst. apply app_val_step in Hst; [|done|done].
+    inversion Hst as [| | | | |c' w Hw| | | | | |]; subst. simpl.
+    exists ∅, m, U0, s', k. split.
+    { exists s0. split; [|done]. left. split; [done|by rewrite insert_empty]. }
+    intros W' j Θ2 Θ1c Θ' HW' Hj Hext Hcomp HVw.
+    apply tenv_ext_empty in Hext as ->.
+    pose proof (wext_wf _ _ HW') as HWf'.
+    apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [apply HW'|exact HB]|].
+    apply Vrel_prod_iff. exists w, (Chan c), Θ2, {[c := One (s', pt_shift 1 k)]}. split_and!.
+    + done.
+    + apply comp_comm; [exact (wf_eq_sym _ HWf')|exact Hcomp].
+    + eapply Vrel_teq; [apply teq_ty_inst, HU0|].
+      eapply Vrel_payload; [done| |exact HVw]. by apply (proj1 (proj2 HW')).
+    + apply Vrel_sess_iff. exists c, s', (pt_shift 1 k). split_and!; [done|done|done|].
+      apply (wf_eq_shift _ HWf'). by apply (proj1 (proj2 HW')).
+Qed.
+
+Lemma Erel_app_close n W Θ ub lb T U F v2 :
+  strict W → Vrel n W ∅ (TLolli ub lb T U) EClos → Vrel n W Θ T v2 → ub_below W ub F →
+  Erel n W Θ U F (App EClos v2).
+Proof.
+  intros HW HV1 HV2 Hub0. pose proof (proj1 HW) as HWf.
+  destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
+    as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
+  inversion Hk as [| | | |x| |]; subst.
+  pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
+  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
+  pose proof (seq_end_inv _ _ Hs0 eq_refl) as Hu0.
+  destruct n as [|n']; [apply Erel_0|].
+  assert (tstep (App EClos (Chan c)) (LSess (SClos c)) EUnit) as Hst0
+    by apply TStepHead, HeadClos.
+  apply Erel_S_iff. split_and!.
+  - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
+  - intros _. split.
+    + apply ready_single. exists (SClos c), EUnit. split; [done|].
+      split; [done|]. exists (s0, k). split_and!; [|done|done].
+      unfold tenv_entry. simpl. by rewrite lookup_singleton_eq.
+    + apply frame_single. intros y Hy. simpl.
+      eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
+  - intros α e' Hst. apply app_val_step in Hst; [|done|done].
+    inversion Hst; subst. simpl.
+    exists ∅, k. split.
+    + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
+    + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|]. by apply Vrel_unit_iff.
+Qed.
