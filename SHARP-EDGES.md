@@ -472,6 +472,24 @@ theorem. P-Term and P-Connect carry the implicit well-formedness of Prel_term an
 Prel_connect as premises: Θ_B dual at aliased points over exactly C₀, the disjoint unions,
 and dual cut ends.
 
+**54. (Q) Dropping a fresh conservative extension fails at V-Const (Claude, 2026-10-30).**
+Undoing the infinitary part of 53 needs this lemma. If W′ places a fresh constant μ over W
+and adds nothing between old points, then V and E at W′ give V and E at W for Θ, T and F
+without μ. The lemma is false. The witness T₀ of V-Const is existential, and force's
+instance xs may use μ. Counterexample (DropCounter.v, closed under the global context):
+W knows b and has only program order. W′ adds (μ,1) ≡ (b,0), a fresh conservative
+extension (Wm_fresh). force is in V^{W′} at □(∀ι. Close@(ι+1)) ⊸ Close@(b,0) with
+xs = [(μ,0)]. It is in no V^W at that type, because no point x of W has x+1 ≡_W (b,0)
+(force_notin_Wb, and force_notin_Erel_Wb for E). The E-Abs instance
+W + {u ≺ μ, μ ≺ F′} has no alias on μ, but the restricted lemma has no proof in the style
+of monotonicity either. At O-New the world can alias the new point to μ, so the restriction
+of that world to the old names and a leaves the no-alias class, and V-Const then needs a
+new witness for xs. Options: (A) keep the "every" premises of 53 (status quo, sound,
+closed). (B) prove the no-alias lemma by rebuilding witnesses, mapping μ into unused
+slots of the point new creates. This is a different proof, and its truth is open. (C) change
+V-Const, for instance by asking pt_known W of force's xs as 49 does for new. This changes
+the relation and needs the author. Static.v is unchanged.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

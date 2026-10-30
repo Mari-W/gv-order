@@ -428,6 +428,8 @@ point (and every instance xs for E-Exp) in place of a fresh μ; the other rules 
 fundamental (terms), fundamental_proc (processes, P-Connect by Prel_connect with W₁ = W₂ = W),
 soundness (strict W, ptyped W ∅ p T ⇒ deadlock_free p, via adequacy). All closed under the
 global context.
+Restoring the fresh μ needs "dropping a fresh conservative extension", which is false at
+V-Const (sharp edges 54, DropCounter.v). E-Abs and E-Exp keep the "every" premises.
 
 
 ## 13  Examples
