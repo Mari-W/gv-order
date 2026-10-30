@@ -560,6 +560,36 @@ the unfolding equation of stdlib Fix needs functional extensionality. Connect3,
 PTerm and Internalize use the same measure, and their proofs were not
 restructured. No statement of a composition lemma or of soundness changed.
 
+**63. Approved refactors B2 and B3: the upper point lives on arrows, and readiness absorbs the frame.**
+The box former is TBox n C T and carries no point. A box of the design has
+type □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T), so u sits on the thunk's arrow under the binder.
+V-Box asks that the thunk λ_. fix x.t be in V at every admissible instance
+(Vrel_box_iff). Vdef reads that through Vfun, the arrow clause factored out of
+Vdef. Vfun reads argument and result only at lower levels, so V-Box can use it
+at an instance of its type without breaking the structural recursion. A λ is in
+V only at an arrow type (Vrel_lam_inv), so a box type whose body is no arrow is
+empty. Vrel_box_thunk_iff unfolds V-Box at a thunk type to the clause of 52, and
+the composition lemmas for force and E-Exp use it unchanged. force has type
+□(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊸^{u[xs/ιs]}_⊤ T[xs/ιs] (KTForce). The lemmas that map V
+along a transformation (swap of points, swap of channels, ≈, ≈_W, index) prove
+the arrow case first and use it at the instance in the box case.
+
+ready_t W Θ F t is ready_W(Θ ∣ F, t). Every offered head lies below every head
+of Θ that is not offered and below every point of F (below_rest). E-Step has one
+premise. For a term the change is a strengthening only at a link, whose two
+offered entries are compared one by one, and every typed link holds both
+entries alone, so no proof needed more. The bind lemma reads the context's heads
+as points of the hole's frame, as 48 says. P keeps its readiness. The
+unified form at F = ∅ is false for processes. Two components that offer at
+unrelated points (a,0) and (c,0), with held entries at (b,5) above (a,0) and
+(d,0) above (c,0), are each ready, and their parallel composition (P-Connect
+with an empty cut) would need (a,0) ≺ (d,0). ready_term (Chain.v) turns the
+term's readiness into the process's. It needs an offered entry, which a stable
+term that is no value has (offered_some, now in Junk.v), and the term not
+irreducible. Both are new hypotheses of its section. No statement of a
+composition lemma or of soundness changed beyond the box types, which read
+TBox m C (TLolli ub None TUnit T) where they read TBox m C ub T.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

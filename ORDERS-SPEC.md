@@ -10,8 +10,8 @@ fork, P-Act-Fork, O-Fork, extrusion split (𝒯, T-Nil, T-Cons, Q-Twice),
 P-Independent and P-Res have no counterpart here.
 
 The frame F is an input parameter of E. F = ∅ is exactly the paper's E. It is
-part of E (not a separate relation) so that E and the frame condition use the
-same world extension at every `new`.
+part of E (not a separate relation) so that E and readiness use the same world
+extension at every `new`.
 
 Worlds speak about points only, never about channel names (sharp edges 37).
 Every environment entry carries the point of its channel's current instant,
@@ -82,9 +82,11 @@ terminated, safe, deadlock free        unchanged
 ## 4  Types and environments
 
 ```
-T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C.^u_Σ T)    term types (u may mention ιs, sharp edges 52)
+T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)    term types (sharp edges 52, 63)
+                          A box is a polymorphic thunk. Its upper point u lives on the arrow,
+                          under the binder, and may mention ιs. The box former carries no point.
 C    ::= {x₁ ≺ y₁, …, xₖ ≺ yₖ}  constraint of a box, a finite set of ≺ facts over ιs and   (sharp edges 58)
-                          outer points. No ≡ facts. □(∀ιs.^u T) abbreviates C = ∅.
+                          outer points. No ≡ facts. □(∀ιs. ∗ ⊸^u_⊤ T) abbreviates C = ∅.
 Σ    ::= {σ₁, …, σₘ}      steps of a box, each a substitution of ιs by points over ιs        (sharp edges 61)
                           (ι ↦ ι+1, ι′ ↦ ι[0]+1). C holds at xs when C[w(xs)/ιs] holds for every
                           word w over Σ, the empty word giving xs. With Σ = ∅, C holds at xs alone.
@@ -139,12 +141,20 @@ offered(x)   = the entries selected by the labels of x's transitions     x a ter
                c! either Close entry,  c↔d the entries of c and d
 stable(t)    = no t —λ→ t′ with λ ∈ {β, (νc), ⇑v}        stable(p) = no p —τ→ p′
 
-ready_W(Θ, x) ≔ stable(x) ⇒
-                  (offered(x) = ∅  ⇒  x is a value / p is terminated)
-                ∧ ∀e ∈ entries(Θ) ∖ offered(x).  ∃o ∈ offered(x).  head(o) ≺_W head(e)
+ready_W(Θ ∣ F, t) ≔ stable(t) ⇒                                          terms (sharp edges 63)
+                      (offered(t) = ∅  ⇒  t is a value)
+                    ∧ ∀o ∈ offered(t).  ∀y ∈ heads(entries(Θ) ∖ offered(t)) ∪ F.  head(o) ≺_W y
 
-frame_W(t, F) ≔ stable(t) ⇒ ∀o ∈ offered(t).  {head(o)} ≺_W F
+ready_W(Σ, p) ≔ stable(p) ⇒                                              processes
+                  (offered(p) = ∅  ⇒  p is terminated)
+                ∧ ∀e ∈ entries(Σ) ∖ offered(p).  ∃o ∈ offered(p).  head(o) ≺_W head(e)
 ```
+
+A term offers the entries of one redex, so its readiness can ask every offered
+head below every other head and below the frame F, the points the context still
+has to use. A process offers the redexes of all its threads at once, and two
+threads may offer at unrelated points. Its readiness therefore asks only some
+offered head below each held one, and it has no frame (sharp edges 63).
 
 ready counts entries, not names: a thread holding both ends of c and blocking
 on one of them must hold the other entry not offered, so it needs
@@ -166,10 +176,12 @@ V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)
           ∀W′ ⊒ W, j < n, Σ′, v ∈ V^{W′}_j⟦Σ′ ⊢ T⟧, F with {u} ≺_{W′} F.
               t[v/x] ∈ E^{W′}_j⟦Σ, Σ′ ⊢ U ≺ F⟧
           ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^u_ℓ U⟧
-V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C at every Σ-word of xs in W′,
-              F with {u[xs/ιs]} ≺_{W′} F.
-              fix x.t ∈ E^{W′}_n⟦· ⊢ T[xs/ιs] ≺ F⟧
-          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C.^u_Σ T)⟧                     (sharp edges 52, 58, 61)
+V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C at every Σ-word of xs in W′.
+              λ_. fix x.t ∈ V^{W′}_n⟦· ⊢ (∗ ⊸^u_⊤ T)[xs/ιs]⟧
+          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)⟧                (sharp edges 58, 61, 63)
+          (V of the thunk at every admissible instance. Unfolded by V-Abs, this is fix x.t in
+           E^{W′}_j at every j < n and every F with {u[xs/ιs]} ≺_{W′} F, the box of sharp edges 52.
+           Rocq: Vrel_box_iff, unfolded in Vrel_box_thunk_iff)
           (C[xs/ιs] in W′: every fact x ≺ y of C holds as x[xs/ιs] ≺_{W′} y[xs/ιs].
            Rocq: bcs_hold (w_lt W′) C xs and Forall (pt_known W′) xs, sharp edges 59, 61)
           (≈_W compares the constraints of two boxes fact by fact and step by step,
@@ -184,7 +196,7 @@ names                  one sort, points. Worlds and environments use ground poin
 
 E-Zero    t ∈ E^W_0⟦Θ ⊢ T ≺ F⟧
 E-Stop    v ∈ V^W_{n+1}⟦Θ ⊢ T⟧   ⇒   v ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
-E-Step    ¬irred t    ready_W(Θ, t)    frame_W(t, F)
+E-Step    ¬irred t    ready_W(Θ ∣ F, t)
           ∀λ, t′.  t —λ→ t′  ⇒  Θ ⊩ⁿ_W t —λ→ t′ : T ≺ F
           ⇒   t ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
 
@@ -279,7 +291,8 @@ send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
 link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_W ι′
-force  : □(∀ιs. C.^u_Σ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]    C at every Σ-word of ιs′, ιs′ known   (sharp edges 52, 58, 61)
+force  : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]    C at every Σ-word of ιs′, ιs′ known   (sharp edges 58, 61, 63)
+         (force applies the thunk. Its upper point is the thunk's, instantiated)
          (premises on the order and the support, as pt_known is for new: KTForce reads C in the
           order konst_ty is given and knownness in its predicate. V-Const reads ≺_W and pt_known W.
           The static system reads W ∪ Ψ and skn, sharp edges 61)
@@ -305,8 +318,8 @@ E-LetPair  Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂    
 E-Inj      Θ; Δ ⊢^F t : Tᵢ   ⇒   Θ; Δ ⊢^F injᵢ t : T₁ + T₂
 E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊢^F tᵢ : U  (i = 1, 2)
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F case t of … : U
-E-Exp      ·; □Δ, x : □(∀ιs. C.^u_Σ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
-           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C.^u_Σ T)                          (sharp edges 52, 57, 58, 61)
+E-Exp      ·; □Δ, x : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
+           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)                 (sharp edges 57, 58, 61, 63)
            Ψ: the constraints of the enclosing boxes with their instances, hypotheses (C, xs).
            Every side condition x ≺ y of the static system is read in W ∪ Ψ: the closure of ≺_W
            and the facts of every (C, xs) at every Σ-word of xs, under ≡_W and transitivity
@@ -373,10 +386,10 @@ E-Inj       Θ; Δ ⊨^F t : Tᵢ   ⇒   Θ; Δ ⊨^F injᵢ t : T₁ + T₂
 E-Case      Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊨^F tᵢ : U
             ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊨^F case t of … : U
 E-Exp       ∀xs known with C at every Σ-word of xs, F′ with {u[xs/ιs]} ≺ F′.
-                ·; □Δ, x : □(∀ιs. C.^u_Σ T) ⊨^{F′} t : T[xs/ιs]
+                ·; □Δ, x : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊨^{F′} t : T[xs/ιs]
             fchans(t) = ∅     fv(t) ⊆ dom(□Δ, x)
-            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C.^u_Σ T)                       (sharp edges 52, 58, 61)
-E-Force     Θ; Δ ⊨^F t : □(∀ιs. C.^u_Σ T)    xs known, C at every Σ-word of xs    {u[xs/ιs]} ≺ F
+            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)                (sharp edges 58, 61, 63)
+E-Force     Θ; Δ ⊨^F t : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)    xs known, C at every Σ-word of xs    {u[xs/ιs]} ≺ F
             ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
