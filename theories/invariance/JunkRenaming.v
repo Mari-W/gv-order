@@ -1,16 +1,10 @@
 (** * Junk renaming (§10)
 
-    The paper's Junk.v, with the world fixed. Renaming a channel that a
-    related process does not own (a "junk" name, absent from the
-    interface and the restricted set, though possibly present in the
-    syntax) into an arbitrary other name preserves the process
-    relation. An interface-fresh channel can never act (every clause
-    that would observe it demands an interface entry), so its
-    occurrences are inert. Worlds mention no channels, so the world
-    stays as it is.
-
-    This file holds the syntax and the step correspondence of a
-    channel substitution; the transport of the relation follows. *)
+    Renaming a channel that a related process does not own (absent from
+    its interface and its restricted set) into any other name preserves
+    P ([Prel_junk]). Such a channel never acts, because every clause
+    that observes a channel asks for an interface entry. The world stays
+    fixed. [Erel_junk] and [Erel_rename] are the term-level versions. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.ReadyChain invariance.ChannelRenaming.
@@ -637,9 +631,6 @@ Qed.
 
 (** ** Auxiliary facts for the transport *)
 
-Lemma echsubst_empty x b : echsubst x b (∅ : gmultiset expr) = ∅.
-Proof. apply gmultiset_map_empty. Qed.
-
 Lemma subjs_ssub x b σ : subjs (ssub x b σ) = gsub x b (subjs σ).
 Proof.
   destruct σ; simpl; try done.
@@ -1193,7 +1184,6 @@ Section move2.
   Qed.
 End move2.
 
-
 Lemma recv_back_not_env W Σr Θ2 c :
   recv_ok W Σr Θ2 → c ∈ recv_back Σr Θ2 → c ∉ dom (recv_env Σr Θ2).
 Proof.
@@ -1286,11 +1276,6 @@ Proof. by rewrite !echsubst_disj_union, !echsubst_singleton. Qed.
 Lemma echsubst_disj_union1 x b F e :
   echsubst x b (F ⊎ {[+ e +]}) = echsubst x b F ⊎ {[+ chsubst x b e +]}.
 Proof. by rewrite echsubst_disj_union, echsubst_singleton. Qed.
-
-Lemma msswap_echsubst_fresh a z x b E :
-  a ∉ echans (echsubst x b E) → z ∉ echans (echsubst x b E) →
-  msswap a z (echsubst x b E) = echsubst x b E.
-Proof. intros Ha Hz. by apply msswap_fresh. Qed.
 
 Lemma terminated_pirred p : terminated p → pirred p.
 Proof.
@@ -2052,7 +2037,6 @@ Proof.
   by destruct α.
 Qed.
 
-
 Lemma irred_chsubst_back x b e : irred e → irred (chsubst x b e).
 Proof.
   intros Hi α f' Hf'. destruct α as [|σ'|c'|w'].
@@ -2232,28 +2216,6 @@ Section fuse_helpers2.
       + intros f1 f2 A B. congruence.
   Qed.
 End fuse_helpers2.
-
-(** A move is junk, a renaming, or a fusion. *)
-Lemma move_cases W c d Θ Θ' :
-  tenv_move W c d Θ Θ' →
-  (Θ !! c = None ∧ Θ' = Θ) ∨ (Θ !! d = None ∧ Θ' = tenvswap c d Θ) ∨ fused c d Θ.
-Proof.
-  intros Hm. destruct (Θ !! c) as [oc|] eqn:Ec.
-  - destruct (Θ !! d) as [od|] eqn:Ed.
-    + right; right. pose proof Hm as (_ & _ & Hj & _). rewrite Ec, Ed in Hj.
-      inversion Hj; subst; by eexists _, _.
-    + right; left. split; [done|]. by apply (move_rename_eq W c d).
-  - left. split; [done|]. by apply (move_none W c d).
-Qed.
-
-Lemma Vrel_move_easy n W Θ Θ' T v c d :
-  c ≠ d → tenv_move W c d Θ Θ' → ¬ fused c d Θ →
-  Vrel n W Θ T v → Vrel n W Θ' T (chsubst c d v).
-Proof.
-  intros Hcd Hm Hf HV. destruct (move_cases W c d Θ Θ' Hm) as [[Hc ->]|[[Hd ->]|?]]; [| |done].
-  - rewrite chsubst_id; [done|]. rewrite (Vrel_fchans _ _ _ _ _ HV). by apply not_elem_of_dom.
-  - apply Vrel_rename; [by apply not_elem_of_dom|done].
-Qed.
 
 Lemma selects_agree Θ Θ' σ k :
   (∀ y, y ∈ subjs σ → Θ' !! y = Θ !! y) → selects Θ σ k → selects Θ' σ k.
@@ -2741,8 +2703,3 @@ Proof.
   intros HW Hd Hcd HE. apply (proj2 (rel_fuse n) W Θ _ T F e c d HW Hcd); [|done].
   apply move_swap; [done|]. by apply not_elem_of_dom.
 Qed.
-
-Lemma Erel_move_easy n W Θ Θ' T F e c d :
-  strict W → c ≠ d → tenv_move W c d Θ Θ' → ¬ fused c d Θ →
-  Erel n W Θ T F e → Erel n W Θ' T F (chsubst c d e).
-Proof. intros HW Hcd Hm _ HE. by apply (proj2 (rel_fuse n) W Θ Θ' T F e c d). Qed.

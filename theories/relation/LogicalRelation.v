@@ -1,31 +1,15 @@
-(** * The logical relation (Fig. 5, §7) and semantic typing (§3, §8)
+(** * The logical relation (§7) and semantic typing
 
-    Three step-indexed layers, indexed by a world W (Worlds.v):
-      V^W_n⟦Θ ⊢ T⟧      values      ([Vrel])
-      E^W_n⟦Θ ⊢ T ≺ F⟧  terms       ([Erel]), F a frame of points
-      P^W_n⟦Σ ⊢ T⟧      processes   ([Prel])
-    Values and terms are indexed by term-level environments Θ, which
-    may hold both ends of a channel; processes by process-level Σ.
+    V^W_n⟦Θ ⊢ T⟧ ([Vrel]), E^W_n⟦Θ ⊢ T ≺ F⟧ ([Erel]) and P^W_n⟦Σ ⊢ T⟧
+    ([Prel]), indexed by a world W and a step index n, and [adequacy].
+    Θ may hold both ends of a channel, Σ only one.
 
-    The step-index recursion is implemented by course-of-values
-    recursion on n: [levels n] is (structurally in n) the family of all
-    levels below n, [mk_level below n] builds level n from it, and
-    [level_at n] projects the actual level n. Inside level n + 1, E and
-    P recur on the size of the term and of the soup, which every giving
-    step lowers: the recursion is on (n, size) in lexicographic order,
-    with the size as fuel ([Efuel], [Pfuel]). Later proofs only use the
-    equations [Erel_S_iff] and [Prel_S_iff] and the induction
-    principles [Erel_S_ind] and [Prel_S_ind], never the encoding.
-
-    "Σ = Σ1, c : S@x" from the paper is rendered as
-    Σ = <[c := (S, x)]> Σ1 together with c ∉ dom Σ1, and at the term
-    level as [tenv_ext Θ1 c (S, x) Θ]. Worlds speak about points only,
-    so no clause constrains a channel name.
-
-    Lemma 3.5 needs the paper's argument "if p is not irreducible then
-    it has some transition". That is [proc_progress], proved by
-    deciding reducibility rather than by excluded middle, so the
-    development is closed under the global context. *)
+    The step index uses course-of-values recursion ([levels],
+    [mk_level]). Inside a level, E and P recur on the size of the term
+    or the soup through fuel ([Efuel], [Pfuel]). Later proofs use only
+    [Erel_S_iff], [Prel_S_iff], [Erel_S_ind] and [Prel_S_ind].
+    [proc_progress] decides reducibility, so adequacy needs no excluded
+    middle. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export lang.Semantics lang.Safety types.Types types.SessionEquiv relation.Worlds relation.Readiness types.LinearEnv.
@@ -158,9 +142,6 @@ Definition pcost (π : plabel) : nat := match π with PSess σ => scost σ | PTa
 (** n − c, by recursion on c, so that it computes at a variable n. *)
 Fixpoint nlower (n c : nat) : nat := match c with 0 => n | S c' => pred (nlower n c') end.
 
-Lemma nlower_le n c : nlower n c ≤ n.
-Proof. induction c; simpl; lia. Qed.
-
 (** The relation at index n − c, from the relations [low] below n and
     the relation [top] at n. *)
 Definition at_cost {A} (low : nat → A) (top : A) (n c : nat) : A :=
@@ -182,9 +163,6 @@ Fixpoint esize (e : expr) : nat :=
 
 Definition msize (E : gmultiset expr) : nat := sum_list (esize <$> elements E).
 
-Lemma msize_empty : msize ∅ = 0.
-Proof. unfold msize. by rewrite gmultiset_elements_empty. Qed.
-
 Lemma msize_disj_union E1 E2 : msize (E1 ⊎ E2) = msize E1 + msize E2.
 Proof.
   unfold msize. rewrite gmultiset_elements_disj_union, fmap_app, sum_list_with_app.
@@ -195,9 +173,6 @@ Lemma msize_singleton e : msize {[+ e +]} = esize e.
 Proof. unfold msize. rewrite gmultiset_elements_singleton. simpl. lia. Qed.
 
 Lemma esize_chsubst c d e : esize (chsubst c d e) = esize e.
-Proof. induction e; simpl; lia. Qed.
-
-Lemma esize_eswap a b e : esize (eswap a b e) = esize e.
 Proof. induction e; simpl; lia. Qed.
 
 Lemma msize_echsubst c d E : msize (echsubst c d E) = msize E.
@@ -281,7 +256,8 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
     level-(n'+1) value relation [Vn]. A term that can step must be
     ready in Θ ∣ F (one condition, sharp edges 63). A giving
     successor of e is smaller than e, so fuel above esize e does not
-    matter ([Efuel_fuel]). *)
+    matter ([Efuel_fuel]). Fuel replaces stdlib Fix, whose unfolding
+    equation needs functional extensionality (sharp edges 62). *)
 Fixpoint Efuel (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
     (n' k : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr)
     : Prop :=
@@ -306,7 +282,8 @@ Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr →
     may carry both ends of one channel. B ([recv_back]) is the set of
     channels the receiver ends up holding both ends of: those whose
     other end it already holds, and those whose both ends arrive in
-    one message. They are restricted in the continuation. *)
+    one message. They are restricted in the continuation, because an
+    interface entry of Σ holds one end only. *)
 
 Definition tenv_ones (Θ : tenv) : senv :=
   omap (λ o, match o with One e => Some e | Both _ _ => None end) Θ.
@@ -331,13 +308,6 @@ Definition send_split (W : world) (Σe : senv) (Θe : tenv) : Prop :=
     | One e' => ∃ e, Σe !! r = Some e ∧ w_eq W e.2 e'.2 ∧ sdual e.1 e'.1
     | Both e1 e2 => Σe !! r = None ∧ w_eq W e1.2 e2.2 ∧ sdual e1.1 e2.1
     end.
-
-Lemma recv_ok_mono W W' Σr Θ2 :
-  (∀ x y, w_eq W x y → w_eq W' x y) → recv_ok W Σr Θ2 → recv_ok W' Σr Θ2.
-Proof.
-  intros Hp (H1 & H2 & H3). split_and!; [|by eapply tenv_dual_mono|done].
-  by eapply senv_dual_on_mono.
-Qed.
 
 Lemma send_split_mono W W' Σe Θe :
   (∀ x y, w_eq W x y → w_eq W' x y) → send_split W Σe Θe → send_split W' Σe Θe.
@@ -440,9 +410,9 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
       and T. Only successors whose restricted channels stay clear of
       Σ are constrained (configurations whose restricted names clash
       with their interface are not well formed; sharp edges 41).
+      The paper's Q-Tau is W′ = W.
     - Q-Recv: received channels are not restricted names of the
-      process (the same hygiene). The paper's Q-Tau is
-      W′ = W.
+      process (the same hygiene).
     - Q-Recv: channels B the receiver ends up holding both ends of
       ("migration", or both ends in one message) come back: the
       obligation is stated for the successor with B restricted, and
@@ -567,9 +537,6 @@ Qed.
 Lemma Vrel_prim_empty n W Θ T v : prim T → Vrel n W Θ T v → Θ = ∅.
 Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_prim_empty. Qed.
 
-
-
-
 (** ** Characteristic equations
 
     Encoding-free unfoldings of the three relations: [Vrel_*_iff] per
@@ -622,7 +589,6 @@ Proof.
 Qed.
 
 Lemma Vrel_box_empty n W Θ m C T v : Vrel n W Θ (TBox m C T) v → Θ = ∅.
-
 
 Proof. intros [-> _]%Vrel_box_iff. done. Qed.
 
@@ -696,36 +662,10 @@ Proof.
     split_and!; [done|auto|apply HEl; [lia|exact HX]].
 Qed.
 
-Lemma Ptau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
-  (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
-  Ptau_case X W Σ T p' → Ptau_case Y W Σ T p'.
-Proof. intros HXY H Hd. destruct (H Hd) as (?&?&?&?&?). eexists _, _. eauto. Qed.
-
 Lemma Plinktau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
   (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
   Plinktau_case X W Σ T p' → Plinktau_case Y W Σ T p'.
 Proof. intros HXY H Hd. auto. Qed.
-
-Lemma Psend_case_mono Vn (X Y : world → senv → ty → proc → Prop) W Σ T p c w p' :
-  (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
-  Psend_case Vn X W Σ T p c w p' → Psend_case Vn Y W Σ T p c w p'.
-Proof.
-  intros HXY (Σ0&Σv&m&U&s&k&Σe&Θe&?&?&?&?&?&?&?&?&HX).
-  exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; auto.
-Qed.
-
-Lemma Pclos_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T c p' :
-  (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
-  Pclos_case X W Σ T c p' → Pclos_case Y W Σ T c p'.
-Proof. intros HXY (?&?&?&?&HX). hnf. eauto 10. Qed.
-
-Lemma Plink_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T cd p' :
-  (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
-  Plink_case X W Σ T cd p' → Plink_case Y W Σ T cd p'.
-Proof.
-  intros HXY (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
-  exists c, d, Σ1, sc, sd, kc, kd. split_and!; auto.
-Qed.
 
 Lemma Pobl_mono Vl1 Vl2 V1 V2 Pl1 Pl2 P1 P2 n W Σ T p π p' :
   (∀ j W Θ T v, j ≤ n → Vl2 j W Θ T v → Vl1 j W Θ T v) →
@@ -981,7 +921,7 @@ Proof. intros (T & ? & _). by exists T. Qed.
 
     None of this is part of the semantic judgment below. It is a
     separate, purely syntactic predicate, established once and for all
-    for syntactically typed terms ([Terms.typed_term_wf]) and consumed
+    for syntactically typed terms ([typed_term_wf_s]) and consumed
     as an explicit premise by exactly the two rules that build a
     suspended computation, whose V-clauses demand channel ownership:
     E-Abs needs all three (the ⊸-clause asks for [fchans eb = dom Θ],
@@ -1010,11 +950,8 @@ Qed.
     are covered by Θ; the grounding substitution brings its own Θ',
     composed with Θ (Θ'' = Θ, Θ'). The two may overlap in dual ends at
     aliased points, because a bound variable may hold the other end of
-    a channel of Θ (sharp edges 50). F is the frame (§8; F = ∅ is the paper's judgment,
-    plus ready). (Def. 3.3;
-    the draft's phrasing conflates the two environments — this is the
-    reading under which the rules of Fig. 4, e.g. E-Ch, are
-    non-vacuous.)
+    a channel of Θ (sharp edges 50). F is the frame, and F = ∅ is the
+    paper's judgment (Def. 3.3) plus readiness.
 
     The judgment is purely semantic: it says nothing about the syntax
     of e beyond what Erel says about its behaviour. The syntactic

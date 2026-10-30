@@ -1,46 +1,13 @@
-(** * Conversion: the logical relation is invariant under ≈
+(** * The logical relation is invariant under ≈ (semantic E-Conv)
 
-    The semantic counterpart of E-Conv. Where Typing.v's conversion
-    rule lets a term change its type along ≈, this file shows the
-    logical relation does not notice:
+    teq T T' moves V, E and semantic typing from T to T' ([Vrel_teq],
+    [Erel_teq], [sem_typed_teq]) in every well-formed world and under
+    every frame. At [new] the fresh point is renamed away from the
+    points of the converted type ([Erel_new_rename]).
 
-      teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v        ([Vrel_teq])
-      teq T T' → Erel n W Θ T F e → Erel n W Θ T' F e    ([Erel_teq])
-      teq T T' → sem_typed W Θ Δ F e T → sem_typed W Θ Δ F e T'
-                                                        ([sem_typed_teq])
-
-    in every (well-formed) world and under every frame. ≈ keeps the
-    points of a type outside its session types on the nose. Session
-    payloads may differ, so at [new] the fresh point is renamed away
-    from the points of the converted type ([Points.Erel_new_rename]).
-
-    ≈ is symmetric, so each of these is really a biconditional
-    ([Vrel_teq_iff], [Erel_teq_iff]).
-
-    ** The shape of the induction
-
-    Both relations are step-indexed, and ≈ is a step-indexed
-    approximation too, which is what makes this go through without any
-    coinduction: everything is an induction on the step index.
-
-    [Vrel] at index n needs [Vrel] and [Erel] at every j < n (the ⊸
-    and □ clauses quantify over lower levels), while [Erel] at index n
-    needs [Vrel] at the *same* n (the irreducible-value conjunct) and
-    [Erel] at n-1 (every transition case). So the two are proved
-    simultaneously by strong induction on n, with [Vrel]'s half run by
-    an inner structural induction on the type — which terminates
-    because ⊗, ⊕ and the ⊸/□ payloads all shrink the type, and the
-    session case is a leaf: [Vrel]'s [TSess] clause stores the protocol
-    up to ≈ and never descends into it.
-
-    ** Why the result type is carried through the step cases for free
-
-    [Ecase] threads the result type T unchanged through every
-    transition — the types it *inspects* (the payload U and
-    continuation s of a communication) come from Θ via [tenv_hd], not
-    from T. So the [Erel] half is a routine relay of the induction
-    hypothesis, exactly as the old [Erel_sess_conv] was; the content is
-    all in the [Vrel] half. *)
+    V and E are proved together by strong induction on the step index,
+    with an inner induction on the type for V. The session case is a
+    leaf, because V stores the protocol up to ≈. *)
 
 From stdpp Require Import base tactics gmap.
 From LRGV Require Export invariance.PointRenaming.
@@ -166,14 +133,6 @@ Lemma Erel_teq n W Θ T T' F e :
   world_wf W → teq T T' → Erel n W Θ T F e → Erel n W Θ T' F e.
 Proof. apply (proj2 (Vrel_Erel_teq n)). Qed.
 
-Lemma Vrel_teq_iff n W Θ T T' v :
-  teq T T' → Vrel n W Θ T v ↔ Vrel n W Θ T' v.
-Proof. intros Ht. split; apply Vrel_teq; [done|by apply teq_sym]. Qed.
-
-Lemma Erel_teq_iff n W Θ T T' F e :
-  world_wf W → teq T T' → Erel n W Θ T F e ↔ Erel n W Θ T' F e.
-Proof. intros HW Ht. split; apply Erel_teq; [done|done|done|by apply teq_sym]. Qed.
-
 (** The compositionality lemma for E-Conv: semantic typing transports
     along ≈, under any world and frame. *)
 Lemma sem_typed_teq W Θ Δ F e T T' :
@@ -202,13 +161,3 @@ Proof.
     as [(eb & ? & _)|(k' & T0 & Hk' & -> & Hk & Ht)]; [done|simplify_eq].
   destruct T0; try done. destruct Ht as (? & ? & Ht1 & Ht2). eauto 10.
 Qed.
-
-(** ** Conversion at a session type *)
-
-Lemma Vrel_sess_seq n W Θ s s' x v :
-  seq s s' → Vrel n W Θ (TSess s x) v → Vrel n W Θ (TSess s' x) v.
-Proof. intros Hs. apply Vrel_teq. by split. Qed.
-
-Lemma Erel_sess_seq n W Θ s s' x F e :
-  world_wf W → seq s s' → Erel n W Θ (TSess s x) F e → Erel n W Θ (TSess s' x) F e.
-Proof. intros HW Hs. apply Erel_teq; [done|]. by split. Qed.

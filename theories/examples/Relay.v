@@ -85,8 +85,6 @@ Definition rel_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-
-
 Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 rel_C (TLolli None None TUnit relay_body)).
 Proof.
   intros HW. unfold relay.

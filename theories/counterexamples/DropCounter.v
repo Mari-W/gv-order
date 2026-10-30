@@ -9,7 +9,9 @@
     b = 0 and μ = 1. W knows b and has only program order. W′ adds the
     alias (μ,1) ≡ (b,0) and places μ ([Wm_fresh]). force is in V^{W′}
     at □(∀ι. Close@(ι+1)) ⊸ Close@(b,0) with xs = [(μ,0)], and in no
-    V^W at that type, because no point x of W has x+1 ≡_W (b,0). *)
+    V^W at that type, because no point x of W has x+1 ≡_W (b,0). This is
+    why E-Abs and E-Exp use a frame variable φ instead of a fresh point
+    (static/FactTheory.v). *)
 From stdpp Require Import base gmap.
 From LRGV Require Import relation.LogicalRelation.
 

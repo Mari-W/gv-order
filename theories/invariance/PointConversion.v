@@ -1,16 +1,10 @@
-(** * Type point conversion and Entry conversion (§10)
+(** * Point conversion of types and environments (§10)
 
-    Aliased points are interchangeable:
-
-      T ≈_W T′  ⇒  V, E, P at T ⇔ V, E, P at T′       ([rel_tconv])
-      Θ ≈_W Θ′  ⇒  V, E at Θ ⇔ V, E at Θ′             ([rel_econv])
-
-    For types, ≈_W is ≈ with ground points compared up to ≡_W
-    ([teqW]); a payload type P[x] may be read at any alias y of x
-    ([teqW_payload]). For environments, ≈_W keeps the channels and
-    their ends and relates each end's session type by ≈ and its point
-    by ≡_W ([tconv]); composition reads ≡_W (sharp edges 40), so it
-    commutes with ≈_W. *)
+    Aliased points are interchangeable. T ≈_W T′ gives V, E and P at T
+    iff at T′ ([rel_tconv]), and Θ ≈_W Θ′ gives V and E at Θ iff at Θ′
+    ([rel_econv]). For types, ≈_W is ≈ with ground points compared up
+    to ≡_W ([teqW]). For environments it keeps channels and ends and
+    relates each end by ≈ and ≡_W ([tconv]). *)
 
 From stdpp Require Import base tactics gmap.
 From LRGV Require Export invariance.Monotonicity.
@@ -211,10 +205,6 @@ Section teqW.
   Qed.
 End teqW.
 
-Lemma teqW_mono' W W' T U :
-  (∀ x y, w_eq W x y → w_eq W' x y) → teqW W T U → teqW W' T U.
-Proof. apply teqW_mono. Qed.
-
 Lemma lb_below_conv W lb lb' H :
   world_wf W → opt_rel (pteqW W) lb lb' → lb_below W lb H → lb_below W lb' H.
 Proof.
@@ -238,26 +228,6 @@ Proof. by intros (_ & _ & _ & [? _]). Qed.
 
 Lemma wext_eq W W' x y : wext W W' → w_eq W x y → w_eq W' x y.
 Proof. intros (_ & He & _). auto. Qed.
-
-(** Points aliased in W stay aliased under aliased instantiations. *)
-Lemma weq_inst W σ τ x y :
-  world_wf W → (∀ i, w_eq W (σ i) (τ i)) → w_eq W x y → w_eq W (pt_inst σ x) (pt_inst τ y).
-Proof.
-  intros HW Hs Hxy. destruct (wf_eq_supp _ HW _ _ Hxy) as [<-|[Hx Hy]].
-  - clear Hxy. destruct x as [p o]. unfold pt_inst. simpl. apply wf_eq_shift_n; [done|].
-    induction p; simpl; [apply (wf_eq_refl _ HW)|apply Hs|].
-    apply (wf_eq_slot _ HW), wf_eq_shift_n; [done|]. apply IHp.
-  - destruct (wf_names_const _ HW _ Hx) as [a Ha]. destruct (wf_names_const _ HW _ Hy) as [b Hb].
-    rewrite (pt_inst_ground σ x), (pt_inst_ground τ y); [done| |]; unfold pt_ground; eauto.
-Qed.
-
-Lemma Forall2_elem_l {A B} (R : A → B → Prop) l k x :
-  Forall2 R l k → x ∈ l → ∃ y, y ∈ k ∧ R x y.
-Proof.
-  intros H Hx. apply list_elem_of_lookup in Hx as [i Hi].
-  destruct (Forall2_lookup_l _ _ _ _ _ H Hi) as (y & Hy & HR).
-  exists y. split; [by eapply list_elem_of_lookup_2|done].
-Qed.
 
 (** A box constraint up to aliases holds when the other one does (65). *)
 Lemma bcs_hold_conv W W' C C' xs :
@@ -504,12 +474,6 @@ Section tconv.
   Lemma entry_conv_sym e e' : entry_conv W e e' → entry_conv W e' e.
   Proof. intros [? ?]. split; [by apply seq_sym|by apply (wf_eq_sym _ HW)]. Qed.
 
-  Lemma entry_conv_trans e e' e'' :
-    entry_conv W e e' → entry_conv W e' e'' → entry_conv W e e''.
-  Proof.
-    intros [? ?] [? ?]. split; [by eapply seq_trans|by eapply (wf_eq_trans _ HW)].
-  Qed.
-
   Lemma ends_conv_refl o : ends_conv W o o.
   Proof. destruct o; simpl; auto using entry_conv_refl. Qed.
 
@@ -543,13 +507,6 @@ Section tconv.
     intros H Ho d. destruct (decide (d = c)) as [->|Hne].
     - by rewrite !lookup_insert_eq.
     - rewrite !lookup_insert_ne by done. apply H.
-  Qed.
-
-  Lemma tconv_singleton c o o' :
-    ends_conv W o o' → tconv W {[c := o]} {[c := o']}.
-  Proof.
-    intros Ho. rewrite <-!insert_empty. apply tconv_insert; [|done].
-    intros d. by rewrite !lookup_empty.
   Qed.
 
   Lemma tconv_entry Θ Θ' k e :
@@ -821,10 +778,6 @@ Proof.
 
 Qed.
 
-Lemma tconv_tenv_roots W Θ Θ' x :
-  tconv W Θ Θ' → x ∈ tenv_roots Θ' → ∃ c o', Θ' !! c = Some o' ∧ x ∈ ends_roots o'.
-Proof. intros _ Hx. by apply elem_of_tenv_roots in Hx. Qed.
-
 (** ** Environments up to ≈ leave V and E unchanged (Entry conversion) *)
 
 Lemma rel_econv n :
@@ -1012,13 +965,6 @@ Section sconv.
     intros H He d. destruct (decide (d = c)) as [->|Hne].
     - by rewrite !lookup_insert_eq.
     - rewrite !lookup_insert_ne by done. apply H.
-  Qed.
-
-  Lemma sconv_delete Σ Σ' c : sconv W Σ Σ' → sconv W (delete c Σ) (delete c Σ').
-  Proof.
-    intros H d. destruct (decide (d = c)) as [->|Hne].
-    - by rewrite !lookup_delete_eq.
-    - rewrite !lookup_delete_ne by done. apply H.
   Qed.
 
   Lemma sconv_union Σ1 Σ1' Σ2 Σ2' :

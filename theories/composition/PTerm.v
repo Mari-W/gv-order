@@ -206,22 +206,6 @@ Ltac fin_is := rewrite ?is_Some_Some_iff, ?is_Some_None_iff in *; tauto.
 Ltac dset := rewrite ?elem_of_union, ?elem_of_intersection, ?elem_of_difference,
                ?elem_of_dom in *.
 
-(** Destruct every lookup at x and simplify. *)
-Ltac lkx x :=
-  tlk;
-  repeat match goal with
-  | |- context [?M !! x] =>
-      let E := fresh "L" in destruct (M !! x) as [[]|] eqn:E || destruct (M !! x) eqn:E;
-      rewrite ?E in *
-  | H : context [?M !! x] |- _ =>
-      lazymatch type of H with
-      | ?M !! x = _ => fail
-      | _ => let E := fresh "L" in
-             destruct (M !! x) as [[]|] eqn:E || destruct (M !! x) eqn:E; rewrite ?E in *
-      end
-  end;
-  simpl in *; rewrite ?ounion_Some, ?ounion_None in *; simplify_eq; try done.
-
 (** ** The receive case: the received channels whose both ends the
     thread now holds join the restricted set *)
 

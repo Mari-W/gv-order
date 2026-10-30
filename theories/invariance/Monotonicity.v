@@ -50,7 +50,6 @@ Proof.
   by eapply above_offered_mono.
 Qed.
 
-
 Lemma wext_join_l W1 W' :
   strict (wjoin W1 W') → wext W1 (wjoin W1 W').
 Proof.

@@ -1,4 +1,8 @@
-(** * P-Connect, continued: links, internal steps and synchronizations *)
+(** * P-Connect, part two: links, internal steps and synchronizations
+
+    The step cases of component 1 other than external send, receive and
+    close. External links, τ steps, synchronizations across the cut, and
+    links across the cut. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.ConnectCut.

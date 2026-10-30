@@ -1,7 +1,7 @@
 (** * Renaming channels (§10)
 
     The paper's Renaming.v, with the world fixed. A transposition of
-    two channel names a ↔ b, applied to terms and processes ([Swap.v])
+    two channel names a ↔ b, applied to terms and processes ([ChannelSwap.v])
     and to the keys of environments, maps the logical relation to
     itself ([rel_swap]). Worlds and types mention no channels, so they
     stay as they are. Consequence: a process can rename its restricted
@@ -81,9 +81,6 @@ Section envs.
   Lemma tenvswap_empty : tenvswap a b ∅ = ∅.
   Proof. apply map_eq. intros c. by rewrite lookup_tenvswap', !lookup_empty. Qed.
 
-  Lemma senvswap_empty : senvswap a b ∅ = ∅.
-  Proof. apply map_eq. intros c. by rewrite lookup_senvswap', !lookup_empty. Qed.
-
   Lemma tenvswap_insert Θ c o :
     tenvswap a b (<[c := o]> Θ) = <[cswap a b c := o]> (tenvswap a b Θ).
   Proof.
@@ -135,13 +132,6 @@ Section envs.
   Proof.
     intros Hd c. rewrite !lookup_senvswap'. specialize (Hd (cswap a b c)).
     by destruct (Σ1 !! _), (Σ2 !! _).
-  Qed.
-
-  Lemma tenvswap_disjoint Θ1 Θ2 :
-    Θ1 ##ₘ Θ2 → tenvswap a b Θ1 ##ₘ tenvswap a b Θ2.
-  Proof.
-    intros Hd c. rewrite !lookup_tenvswap'. specialize (Hd (cswap a b c)).
-    by destruct (Θ1 !! _), (Θ2 !! _).
   Qed.
 
   Lemma tenvswap_of Σ : tenvswap a b (tenv_of Σ) = tenv_of (senvswap a b Σ).
@@ -202,7 +192,6 @@ Section envs.
   Proof. unfold senv_roots. by rewrite <-tenvswap_of, tenv_roots_swap. Qed.
 
   (** The relations between environments. *)
-
 
   Lemma tenv_join_swap Θ Θ1 Θ2 :
     tenv_join Θ Θ1 Θ2 → tenv_join (tenvswap a b Θ) (tenvswap a b Θ1) (tenvswap a b Θ2).
@@ -457,8 +446,6 @@ Section ready.
       apply (above_offered_swap _ _ (offered_p Σ p)); [|done].
       intros k. apply offered_p_swap_iff.
   Qed.
-
-
 
 End ready.
 

@@ -1,8 +1,7 @@
-(** * Compositionality of the term rules, part 2 (spec §11)
+(** * Compositionality of the rules that need the box (spec §11)
 
-    The rules that need the box (sharp edges 52): the application of
-    force, hence E-App for every function value, E-Force, E-Exp, and
-    E-Contract. *)
+    The application of force, hence E-App for every function value, and
+    E-Force, E-Exp and E-Contract (sharp edges 52). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export rules.TermRules.

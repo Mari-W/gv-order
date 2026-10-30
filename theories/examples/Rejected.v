@@ -84,7 +84,7 @@ Proof.
   apply HR in H. vm_compute in H. lia.
 Qed.
 
-(** ** relay (docs/DECIDABILITY.md §8.2) without steps: does not type (SHARP-EDGES 60, typed above with 61)
+(** ** relay with a one-round constraint: the call does not type (SHARP-EDGES 60)
 
       S = μX. ?(∃ι. D@ι).X     D = ?∗.Close
       r = !(f = λp. let (c, d) = p in let (e, c) = recv c in
@@ -100,7 +100,7 @@ Qed.
     only through ι′, which lies below both. The rank of
     [rr_call_underivable] adapts: put ι[0]+1 below ι+1. Shift-invariant
     facts do not help here, because the step ι′ ↦ ι[0]+1 is no shift.
-    The ceiling of §8.2 disappears with the spawn of request/reply.
+    Relay.v types the relay with a constraint for every round.
 
     ** blocked: rejected
 

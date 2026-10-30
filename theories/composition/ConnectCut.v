@@ -1,27 +1,13 @@
-(** * P-Connect (§11)
+(** * P-Connect, part one: the cut and the external steps (§11)
 
-    Two components, each P-related in the same world, compose over a
-    cut C₀: components at n give the composite at n (sharp edges 45).
-    The world W₁ ⊔ W₂ of the spec's statement enters through
-    monotonicity at the end ([Prel_connect]).
-
-    The proof goes by induction on n and, at a fixed level S n', by
-    induction on the syntactic size of the composite's soup. Every
-    giving step (send, close, link, and the τ of P-Act-Link) removes a
-    redex and leaves the soup strictly smaller, while renaming,
-    junk substitution and fusion of the other component keep its size
-    (sharp edges 46). *)
+    P-Connect goes by induction on n and, at level S n', by induction on
+    the size of the composite's soup (sharp edges 46). Every giving step
+    removes a redex, while renaming, junk substitution and fusion keep
+    the size. This file sets up configurations over a cut C₀ and proves
+    the external send, receive and close of component 1. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.Internalize.
-
-Lemma msize_msswap a b E : msize (msswap a b E) = msize E.
-Proof.
-  induction E as [|e E IH] using gmultiset_ind.
-  - unfold msswap. by rewrite gmultiset_map_empty.
-  - rewrite msswap_disj_union, msswap_singleton, !msize_disj_union, !msize_singleton.
-    by rewrite esize_eswap, IH.
-Qed.
 
 (** ** Configurations over a cut
 
@@ -74,12 +60,6 @@ Section cut_facts.
 
   Lemma co_Σ2C0 : dom Σ2 ## C0.
   Proof. rewrite <-(co_dom' _ _ _ _ _ _ _ _ H). apply map_disjoint_dom, (co_d2 _ _ _ _ _ _ _ _ H). Qed.
-
-  Lemma co_dom_a : dom (Σ1 ∪ ΣC) = dom Σ1 ∪ C0.
-  Proof. by rewrite dom_union_L, (co_dom _ _ _ _ _ _ _ _ H). Qed.
-
-  Lemma co_dom_b : dom (Σ2 ∪ ΣC') = dom Σ2 ∪ C0.
-  Proof. by rewrite dom_union_L, (co_dom' _ _ _ _ _ _ _ _ H). Qed.
 
   Lemma co_union_comm : Σ1 ∪ Σ2 = Σ2 ∪ Σ1.
   Proof. apply map_union_comm, (co_d12 _ _ _ _ _ _ _ _ H). Qed.
@@ -145,7 +125,6 @@ Proof.
     match goal with H : tstep ?e _ _ |- _ =>
       apply (val_no_tstep e _ _ H), Hv; multiset_solver end.
 Qed.
-
 
 (** ** Termination and readiness of the composite *)
 

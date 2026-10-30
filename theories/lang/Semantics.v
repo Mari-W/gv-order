@@ -80,19 +80,11 @@ Inductive head_step : expr → tlabel → expr → Prop :=
          replicating it re-runs the suspended computation *)
       head_step (App EForce (EBox e)) LBeta (subst1 (EBox e) e)
   | HeadLink c d :                                      (* T-Act-Link *)
-      (* the paper's ↔{c,d} carries a set of two channels; the order
-         does not matter — symmetry is in the process rules.  The ends
-         are NOT required to be distinct: a self-forwarding is a redex
-         like any other, and letting it step is what keeps it visible.
-         Were it stuck, a configuration could carry one silently and
-         no clause would ever examine it (commit 25c38d8,
-         [dead_related]) — and substitution creates exactly that
-         residue.  Stepping, it emits the singleton label {[c]}, which
-         the forwarding clause of the logical relation cannot satisfy
-         (it demands two DISTINCT ends with dual protocols), so such a
-         configuration is simply not related.  Typed terms never build
-         the redex: [link] consumes a session type and its dual, and
-         linearity forbids one channel supplying both. *)
+      (* The label ↔{c,d} is a set, so the order of c and d does not
+         matter. The ends need not be distinct. A self-forwarding steps
+         with the label {[c]}, which the link clause of the relation
+         rejects, so a stuck self-link can never hide in a related
+         configuration. Typed terms never build one. *)
       head_step (App ELink (Pair (Chan c) (Chan d)))
         (LSess (SLink {[c; d]})) EUnit.
 
@@ -128,7 +120,6 @@ Inductive tstep : expr → tlabel → expr → Prop :=
 
 (** GV-style term reduction: just the pure steps. *)
 Definition reduction (e e' : expr) : Prop := tstep e LBeta e'.
-Notation red_star := (rtc reduction).
 
 (** ** Anatomy of a label
 
@@ -273,18 +264,6 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
 Definition frame_val (f : frame) : Prop :=
   match f with FAppR v1 | FPairR v1 => is_val v1 | _ => True end.
 
-(** The channels a frame contributes. *)
-Definition frame_chans (f : frame) : gset chan :=
-  match f with
-  | FAppL e | FAppR e | FPairL e | FPairR e | FLetU e | FLetP e => fchans e
-  | FCase e1 e2 => fchans e1 ∪ fchans e2
-  | FInj1 | FInj2 => ∅
-  end.
-
-Lemma fchans_fill_frame f e :
-  fchans (fill_frame f e) = frame_chans f ∪ fchans e.
-Proof. destruct f; simpl; set_solver. Qed.
-
 Lemma tstep_fill f e α e' :
   frame_val f → tstep e α e' →
   tstep (fill_frame f e) α (fill_frame f e').
@@ -386,36 +365,6 @@ Proof.
     inversion Hh; simplify_eq; eauto end.
 Qed.
 
-(** Both ends named by a forwarding label are free in the term. *)
-Lemma tstep_link_subj e cd e' :
-  tstep e (LSess (SLink cd)) e' → cd ⊆ fchans e.
-Proof.
-  intros H. remember (LSess (SLink cd)) as α eqn:Hα.
-  induction H; subst; simpl; try (specialize (IHtstep eq_refl); set_solver).
-  match goal with Hh : head_step _ _ _ |- _ =>
-    inversion Hh; simplify_eq; simpl; set_solver end.
-Qed.
-
-(** The value carried by a spawn or send label is a subterm of the
-    stepping expression, so its channels are among the expression's. *)
-Lemma tstep_spawn_val_fchans e v e' :
-  tstep e (LSpawn v) e' → fchans v ⊆ fchans e.
-Proof.
-  intros H. remember (LSpawn v) as α eqn:Hα.
-  induction H; subst; simpl; try (specialize (IHtstep eq_refl); set_solver).
-  match goal with Hh : head_step _ _ _ |- _ =>
-    inversion Hh; simplify_eq; simpl; set_solver end.
-Qed.
-
-Lemma tstep_send_val_fchans e c v e' :
-  tstep e (LSess (SSend c v)) e' → fchans v ⊆ fchans e.
-Proof.
-  intros H. remember (LSess (SSend c v)) as α eqn:Hα.
-  induction H; subst; simpl; try (specialize (IHtstep eq_refl); set_solver).
-  match goal with Hh : head_step _ _ _ |- _ =>
-    inversion Hh; simplify_eq; simpl; set_solver end.
-Qed.
-
 (** Receives can be retargeted to any other value: the term LTS offers
     an input transition for every value. *)
 Lemma recv_retarget e c w e' w' :
@@ -486,24 +435,13 @@ Inductive proc_step : proc → plabel → proc → Prop :=
       proc_step (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
                 (C ∖ {[c]}, E ⊎ {[+ e' +]} ⊎ {[+ f' +]})
   | PStepLink C E e c d e' :                           (* P-Act-Link *)
-      (* the paper's rule, verbatim: the removed end c must be
-         restricted, and the whole resulting configuration — the other
-         threads AND the actor's continuation — is substituted, so
-         c's peer gets fused with whoever holds d.  The label set is
-         unordered, so this one rule also removes the other end
-         (instantiate c and d the other way round, [upair_comm]).
-         Soundness of the whole-soup substitution against the logical
-         relation rests on channel tightness — without it the
-         substitution rewrites junk-carrying siblings and no
-         renaming-transport lemma exists (mechanized counterexamples: commit 25c38d8).
-         The ends need not be distinct: for c = d the substitution is
-         the identity and the rule simply releases the name, which is
-         what a self-forwarding means — the thread held both ends, so
-         the channel is spent.  Releasing is safe precisely because a
-         configuration carrying a self-forwarding on a FREE channel
-         offers the singleton label and is refuted by the relation, so
-         no live name can be stolen this way.  There is no separate
-         lifted rule: an offer with both ends free is P-Act-Session. *)
+      (* The paper's rule. The removed end c must be restricted, and the
+         whole resulting soup is substituted, the actor's continuation
+         included, so c's peer is fused with whoever holds d. The label
+         is unordered, so the same rule removes either end
+         ([upair_comm]). For c = d the substitution is the identity and
+         the rule releases the name. An offer with both ends free is
+         P-Act-Session. *)
       tstep e (LSess (SLink {[c; d]})) e' →
       c ∈ C →
       proc_step (C, E ⊎ {[+ e +]}) PTau
@@ -533,81 +471,3 @@ Lemma proc_step_sess_inv C E σ p' :
     E = E0 ⊎ {[+ e +]} ∧ tstep e (LSess σ) e' ∧ subjs σ ## C ∧
     p' = (C ∖ sentc σ, E0 ⊎ {[+ e' +]}).
 Proof. intros H. inversion H; simplify_eq. eauto 10. Qed.
-
-(** ** Internalizing communication (Lemma 2.3)
-
-    Two disjoint processes communicating over an external channel c can
-    be put together, turning the communication into an internal τ
-    step; c need not be closed over, since P-Act-Msg does not require
-    its subject to be restricted. Note: following P-Act-Msg (Fig. 3),
-    the combined channel set is unchanged — the channels sent along c stay
-    in scope of the combined process (the draft's Eq. (9) instead
-    subtracts sentc(c!v); that spot is marked "XXX (not yet)" in the
-    margin, and is not derivable from Fig. 3 as stated).
-
-    The composite's channel set is C1 ∪ C2 ∪ C0, with C0 the cut
-    between the two components (P-Connect composes over a set of
-    channels); P-Act-Msg leaves it unchanged. *)
-
-Lemma internalize_comm C0 C1 E1 C1' E1' C2 E2 C2' E2' c v :
-  proc_step (C1, E1) (PSess (SSend c v)) (C1', E1') →
-  proc_step (C2, E2) (PSess (SRecv c v)) (C2', E2') →
-  C1 ## C2 → c ∉ C1 →
-  proc_step (C1 ∪ C2 ∪ C0, E1 ⊎ E2) PTau
-            (C1 ∪ C2 ∪ C0, E1' ⊎ E2').
-Proof.
-  intros Hs Hr _ _.
-  apply proc_step_sess_inv in Hs as (F1 & e & e' & -> & Hstep1 & _ & Heq1).
-  apply proc_step_sess_inv in Hr as (F2 & f & f' & -> & Hstep2 & _ & Heq2).
-  simplify_eq.
-  assert (F1 ⊎ {[+ e +]} ⊎ (F2 ⊎ {[+ f +]})
-          = (F1 ⊎ F2) ⊎ {[+ e +]} ⊎ {[+ f +]}) as -> by multiset_solver.
-  assert (F1 ⊎ {[+ e' +]} ⊎ (F2 ⊎ {[+ f' +]})
-          = (F1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}) as -> by multiset_solver.
-  by eapply PStepMsg.
-Qed.
-
-(** ** Internalizing a close
-
-    The same construction for the other synchronising action. Two
-    disjoint processes that both offer to close the external channel c
-    can be put together and closed over c, and the offers become an
-    internal τ step.
-
-    One difference to [internalize_comm], and it is the point of the
-    lemma: the τ step CONSUMES the channel. P-Act-Close removes c from
-    the restricted set, so the combined process ends at C1 ∪ C2, not at
-    C1 ∪ C2 ∪ {[c]} — closing is the only way a name leaves scope
-    besides forwarding.
-
-    The premises' own channel sets are untouched: sentc (SClos c) = ∅,
-    so C1' = C1 and C2' = C2 (a close leaks nothing), which is why the
-    conclusion can be read off C1 and C2 alone. The freshness premises
-    c ∉ C1 and c ∉ C2 are load-bearing here (they are what makes the
-    subtraction come out as C1 ∪ C2), unlike in [internalize_comm]
-    where they are not consumed; both are anyway forced by
-    P-Act-Session's side condition subjs σ ## C on the two assumed
-    transitions. *)
-
-Lemma internalize_close C1 E1 C1' E1' C2 E2 C2' E2' c :
-  proc_step (C1, E1) (PSess (SClos c)) (C1', E1') →
-  proc_step (C2, E2) (PSess (SClos c)) (C2', E2') →
-  C1 ## C2 → c ∉ C1 → c ∉ C2 →
-  proc_step (C1 ∪ C2 ∪ {[c]}, E1 ⊎ E2) PTau
-            (C1 ∪ C2, E1' ⊎ E2').
-Proof.
-  intros H1 H2 _ Hc1 Hc2.
-  apply proc_step_sess_inv in H1 as (F1 & e & e' & -> & Hstep1 & _ & Heq1).
-  apply proc_step_sess_inv in H2 as (F2 & f & f' & -> & Hstep2 & _ & Heq2).
-  simplify_eq.
-  assert (F1 ⊎ {[+ e +]} ⊎ (F2 ⊎ {[+ f +]})
-          = (F1 ⊎ F2) ⊎ {[+ e +]} ⊎ {[+ f +]}) as -> by multiset_solver.
-  assert (F1 ⊎ {[+ e' +]} ⊎ (F2 ⊎ {[+ f' +]})
-          = (F1 ⊎ F2) ⊎ {[+ e' +]} ⊎ {[+ f' +]}) as -> by multiset_solver.
-  (* P-Act-Close fires at the combined process and retires c; the
-     subtraction is then exactly C1 ∪ C2 because c is fresh for both. *)
-  pose proof (PStepClose (C1 ∪ C2 ∪ {[c]}) (F1 ⊎ F2) c e e' f f'
-                Hstep1 Hstep2 ltac:(set_solver)) as Hstep.
-  assert ((C1 ∪ C2 ∪ {[c]}) ∖ {[c]} = C1 ∪ C2) as Heq by set_solver.
-  by rewrite Heq in Hstep.
-Qed.

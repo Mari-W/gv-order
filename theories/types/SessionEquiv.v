@@ -1,93 +1,16 @@
-(** * Coinductive session equivalence and relational duality (E-Conv)
+(** * Coinductive session equivalence and relational duality
 
-    S ≈ R   coinductive session equivalence   ([seq])
-    T ≈ U   its congruence through the full type grammar ([teq])
-    S ⊥ R   coinductive relational duality     ([sdual])
+    S ≈ R ([seq]), its congruence T ≈ U through the type grammar
+    ([teq]), and the duality S ⊥ R ([sdual]). The rules follow the
+    coinductive model of Thiemann's dual-session development
+    (github.com/peterthiemann/dual-session). GV♯ has no choice former,
+    so the ⊕ and & rules are the ! and ? rules at a [TSum] payload.
 
-    ** Source
-
-    The rule set is transcribed from the first figure captioned
-    "Equivalence and relational duality in the coinductive model" of
-    Thiemann's dual-session development (github.com/peterthiemann/
-    dual-session, tex/paper.tex on the master branch). The figure has
-    three parts, all three of which are reproduced below:
-
-      1. an *inductive* type equivalence T ≈_ρ U parameterised by a
-         session relation ρ, congruent through the type formers and
-         handing off to ρ at chan(S)                    — [eqT];
-      2. a *coinductive* session equivalence S ≈ R, whose prefix rules
-         take the payloads related by (1) instantiated at ≈ itself
-                                                        — [seq];
-      3. a *coinductive* relational duality S ⊥ R, with the same shape
-         as (2) but swapping ! against ? — payloads still *equivalent*,
-         not dual                                       — [sdual].
-
-    ** What did not transfer, and how it is handled
-
-    - The figure's grammar has [int]; GV# has none. Conversely GV# has
-      ⊗, ⊕, □ and ⊸ where the figure has ×, →. Part 1 is extended by
-      congruence to every GV# type former ([eqT] below).
-    - The figure has session *selection* ⊕{ℓᵢ:Sᵢ} and *branching*
-      &{ℓᵢ:Sᵢ} as primitive session formers, with one rule each in
-      parts 2 and 3. GV# has no such formers: choice is encoded by
-      sending resp. receiving a [TSum] payload (see examples/Leader.v,
-      where "Close ⊕ Close" is !(∗+∗).Close). Those two rules are
-      therefore *derived* instances here — the ⊕/& rules of parts 2
-      and 3 are exactly the !/? rules applied at a [TSum] payload,
-      whose components are related by part 1's [TSum] congruence.
-    - The figure lives in the coinductive model, i.e. on infinite
-      session *trees*, so it has no µ and no type variables. GV# is
-      syntactic and equi-recursive, so every observation here is taken
-      through [unfoldS] — the same head-normal-form discipline the
-      logical relation already uses (Types.v, [senv_hd]).
-    - GV#'s polarised dual variable α̅ ([SVarD]) has no counterpart in
-      the figure. It only ever enters through [dual], and it is
-      handled by the degenerate clauses described next.
-
-    ** Implementation strategy: step-indexed approximation
-
-    ≈ and ⊥ are defined as [∀ n, aeq n] resp. [∀ n, adual n], where
-    [aeq n] is equality-to-observation-depth-n, rather than by [cofix].
-    Two reasons:
-
-    - Guardedness. A native coinductive would have to be guarded
-      through [unfoldS], which is a function and not a constructor, and
-      through the *mutual* ty/sty grammar via the payload congruence.
-      Neither is accepted by the guard checker without contortions.
-    - Composability. The logical relation of Relation.v is itself
-      step-indexed, and the invariance proof (Terms.v) runs an
-      induction on the LR's index; an approximation-indexed ≈ is
-      consumed there directly, at the matching index, with no
-      coinduction bookkeeping at all.
-
-    Nothing is lost: the coinduction principle is recovered as
-    [seq_coind] / [sdual_coind] — any relation contained in its own
-    one-step unfolding is contained in ≈ resp. ⊥ — so the definitions
-    are used exactly as a coinductive one would be.
-
-    The one-step unfoldings [eq_step] and [dual_step] factor the
-    36-way case split on the two head normal forms into a single
-    place; every lemma below goes through their monotonicity lemmas
-    rather than repeating it.
-
-    Degenerate heads (a µ or a variable left in head position, i.e. a
-    non-contractive type) are related by ≈ only when their head normal
-    forms are literally equal, and by ⊥ only when one is the [dual] of
-    the other. This keeps ≈ reflexive and ⊥ total on [dual]
-    unconditionally, while agreeing with Types.v's convention that
-    ill-formed types relate nothing interesting.
-
-    ** Relation to the old E-Conv
-
-    Typing.v's E-Conv used to read
-
-      unfoldS s = unfoldS s' → typed Σ Δ e (TSess s) → typed Σ Δ e (TSess s')
-
-    i.e. conversion only at a top-level session type, and only between
-    types with *syntactically identical* head normal forms — top-level
-    fold/unfold, no congruence into payloads or continuations. That
-    rule is the instance [unfoldS_seq] (below) of the new one: equal
-    unfoldings imply ≈, at every depth and hence in the limit. *)
+    ≈ and ⊥ are ∀ n of a depth-n approximation ([aeq], [adual]) instead
+    of a cofix, which would have to be guarded through [unfoldS] and the
+    mutual type grammar. [seq_coind] and [sdual_coind] recover the
+    coinduction principles. A non-contractive head relates only to an
+    equal head (≈) or its dual (⊥). *)
 
 From stdpp Require Import base tactics.
 From LRGV Require Export types.Types.
@@ -106,7 +29,6 @@ Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
   | TProd T1 T2, TProd U1 U2 => eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TSum T1 T2, TSum U1 U2 => eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TBox n C T1, TBox n' C' U1 => n = n' ∧ C = C' ∧ eqT ρ T1 U1
-
 
   | TSess s x, TSess r y => x = y ∧ ρ s r
   | _, _ => False
@@ -219,22 +141,6 @@ Proof.
   intros a b Hab. apply Hab.
 Qed.
 
-(** ** Downward closure in the observation depth *)
-
-Lemma aeq_down n : ∀ m s r, m ≤ n → aeq n s r → aeq m s r.
-Proof.
-  induction n as [|n IH]; intros [|m] s r Hle H; [done|lia|done|].
-  eapply eq_step_mono; [|exact H]. intros a b. apply IH. lia.
-Qed.
-
-Lemma adual_down n : ∀ m s r, m ≤ n → adual n s r → adual m s r.
-Proof.
-  induction n as [|n IH]; intros [|m] s r Hle H; [done|lia|done|].
-  eapply dual_step_mono; [| |exact H].
-  - intros a b. apply aeq_down. lia.
-  - intros a b. apply IH. lia.
-Qed.
-
 (** ** ≈ is an equivalence *)
 
 Lemma aeq_refl n : ∀ s, aeq n s s.
@@ -264,9 +170,6 @@ Qed.
 (** The payload congruence at a fixed depth, packaged so that the
     case analyses below can discharge payload goals by [eauto]. *)
 
-Lemma aeqT_refl n T : eqT (aeq n) T T.
-Proof. apply eqT_refl, aeq_refl. Qed.
-
 Lemma aeqT_sym n T U : eqT (aeq n) T U → eqT (aeq n) U T.
 Proof. apply eqT_sym, aeq_sym. Qed.
 
@@ -291,9 +194,6 @@ Proof. apply eqT_refl, seq_refl. Qed.
 Lemma teq_sym T U : teq T U → teq U T.
 Proof. apply eqT_sym, seq_sym. Qed.
 
-Lemma teq_trans T U V : teq T U → teq U V → teq T V.
-Proof. apply eqT_trans. intros ? ? ?. apply seq_trans. Qed.
-
 (** Depth-indexed agreement at every depth *is* agreement, because
     the type grammar itself is finite: the index only ever guards the
     session positions. This is what lets the inversion lemmas below
@@ -310,35 +210,8 @@ Proof.
   - destruct (H 0) as (-> & -> & _). split_and!; [done|done|].
     apply IHT. intros n. by destruct (H n) as (_ & _ & ?).
 
-
   - destruct (H 0) as (-> & _). split; [done|]. intros n. by destruct (H n).
 Qed.
-
-Lemma eqT_teq ρ T U : (∀ s r, ρ s r → seq s r) → eqT ρ T U → teq T U.
-Proof. apply eqT_mono. Qed.
-
-(** ** The old E-Conv is an instance
-
-    Equal head normal forms agree at every depth, so [unfoldS]-equality
-    — the whole of the previous conversion rule — implies ≈. *)
-
-Lemma aeq_unfoldS n : ∀ s r, unfoldS s = unfoldS r → aeq n s r.
-Proof.
-  induction n as [|n IH]; intros s r Hu; [done|].
-  unfold aeq; fold aeq. unfold eq_step. rewrite Hu.
-  destruct (unfoldS r); try done; split_and!; auto using eqT_refl, aeq_refl.
-Qed.
-
-Lemma unfoldS_seq s r : unfoldS s = unfoldS r → seq s r.
-Proof. intros Hu n. by apply aeq_unfoldS. Qed.
-
-(** Fold/unfold: µα.S ≈ S[µα.S/α], the instance the paper's E-Conv
-    was introduced for. On a non-contractive type [unfoldS] leaves a µ
-    in head position and there is nothing to say — the same convention
-    Types.v takes throughout. *)
-
-Lemma seq_unfoldS s : head_ok s → seq (unfoldS s) s.
-Proof. intros Hh. by apply unfoldS_seq, unfoldS_hd, unfoldS_head. Qed.
 
 (** ** ≈ is a congruence for [dual] *)
 
@@ -522,7 +395,3 @@ Proof.
   intros Hp [Hj H]. split; [done|]. intros c e1 e2 H1 H2.
   destruct (H c e1 e2 H1 H2). auto.
 Qed.
-
-Lemma senv_dual_on_mono (peq peq' : point → point → Prop) Σ1 Σ2 :
-  (∀ x y, peq x y → peq' x y) → senv_dual_on peq Σ1 Σ2 → senv_dual_on peq' Σ1 Σ2.
-Proof. intros Hp H c e1 e2 H1 H2. destruct (H c e1 e2 H1 H2). auto. Qed.

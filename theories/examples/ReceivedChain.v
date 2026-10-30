@@ -73,7 +73,6 @@ Proof.
   intros Hg Hx. apply Forall_singleton. apply (skn_in W Ψ ch_C [pvar 0] (pvar 0)); [done|by left|done].
 Qed.
 
-
 Lemma rch_typed W F : world_wf W → typed W ∅ [] ∅ [] F rch (TBox 1 ch_C (TLolli None None TUnit rch_body)).
 Proof.
   intros HW. unfold rch.

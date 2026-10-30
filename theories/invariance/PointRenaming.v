@@ -24,12 +24,6 @@ Definition nswap (a b x : nat) : nat :=
 Lemma nswap_involutive a b x : nswap a b (nswap a b x) = x.
 Proof. unfold nswap. repeat case_decide; congruence. Qed.
 
-Lemma nswap_inj a b x y : nswap a b x = nswap a b y → x = y.
-Proof.
-  intros H. rewrite <-(nswap_involutive a b x), <-(nswap_involutive a b y).
-  by rewrite H.
-Qed.
-
 Lemma nswap_ne a b x : x ≠ a → x ≠ b → nswap a b x = x.
 Proof. unfold nswap. repeat case_decide; congruence. Qed.
 
@@ -56,7 +50,6 @@ Fixpoint tysw (a b : nat) (T : ty) : ty :=
   | TProd T1 U => TProd (tysw a b T1) (tysw a b U)
   | TSum T1 U => TSum (tysw a b T1) (tysw a b U)
   | TBox n C T1 => TBox n (bcs_sw a b C) (tysw a b T1)
-
 
   | TSess s x => TSess (stysw a b s) (ptsw a b x)
   end
@@ -93,9 +86,6 @@ Section points.
   Proof. done. Qed.
 
   Lemma ptsw_slot x i : ptsw a b (pt_slot x i) = pt_slot (ptsw a b x) i.
-  Proof. done. Qed.
-
-  Lemma ptsw_pvar x : ptsw a b (pvar x) = pvar x.
   Proof. done. Qed.
 
   Lemma ptsw_pconst x : ptsw a b (pconst x) = pconst (nswap a b x).
@@ -221,9 +211,6 @@ Section points.
 
   Lemma sdual_sw s r : sdual s r → sdual (stysw a b s) (stysw a b r).
   Proof. intros H n. by apply adual_sw. Qed.
-
-  Lemma teq_sw T U : teq T U → teq (tysw a b T) (tysw a b U).
-  Proof. apply eqT_sw. apply seq_sw. Qed.
 
   (** Point instantiation commutes. *)
   Lemma pn_inst_sw σ p :
@@ -536,13 +523,6 @@ Proof.
   intros Hb y Hy. destruct (Hb y Hy); [left; by apply He|right; by apply Hl].
 Qed.
 
-Lemma ub_below_wsame W1 W2 ub F :
-  wsame W1 W2 → ub_below W1 ub F → ub_below W2 ub F.
-Proof.
-  intros (_ & _ & Hl). destruct ub; simpl; [|done]. intros Hb y Hy. apply Hl. auto.
-Qed.
-
-
 (** ** Environments *)
 
 Definition esw (a b : nat) (e : sty * point) : sty * point :=
@@ -565,12 +545,6 @@ Section envs.
 
   Lemma endsw_involutive o : endsw a b (endsw a b o) = o.
   Proof. destruct o; simpl; by rewrite ?esw_involutive. Qed.
-
-  Lemma esw_inj e e' : esw a b e = esw a b e' → e = e'.
-  Proof. intros H. by rewrite <-(esw_involutive e), H, esw_involutive. Qed.
-
-  Lemma endsw_inj o o' : endsw a b o = endsw a b o' → o = o'.
-  Proof. intros H. by rewrite <-(endsw_involutive o), H, endsw_involutive. Qed.
 
   Lemma lookup_tenvsw Θ c : tenvsw a b Θ !! c = endsw a b <$> Θ !! c.
   Proof. apply lookup_fmap. Qed.
@@ -597,9 +571,6 @@ Section envs.
   Proof. apply dom_fmap_L. Qed.
 
   Lemma tenvsw_empty : tenvsw a b ∅ = ∅.
-  Proof. apply fmap_empty. Qed.
-
-  Lemma senvsw_empty : senvsw a b ∅ = ∅.
   Proof. apply fmap_empty. Qed.
 
   Lemma tenvsw_insert Θ c o :
@@ -633,12 +604,6 @@ Section envs.
     by destruct (Σ1 !! c), (Σ2 !! c).
   Qed.
 
-  Lemma tenvsw_disjoint Θ1 Θ2 : Θ1 ##ₘ Θ2 → tenvsw a b Θ1 ##ₘ tenvsw a b Θ2.
-  Proof.
-    intros Hd c. rewrite !lookup_tenvsw. specialize (Hd c).
-    by destruct (Θ1 !! c), (Θ2 !! c).
-  Qed.
-
   Lemma tenvsw_of Σ : tenvsw a b (tenv_of Σ) = tenv_of (senvsw a b Σ).
   Proof.
     apply map_eq. intros c. unfold tenv_of.
@@ -658,9 +623,6 @@ Section envs.
     destruct k as [c s]. unfold tenv_entry. simpl.
     rewrite lookup_tenvsw. by destruct (Θ !! c) as [[]|], s.
   Qed.
-
-  Lemma entry_head_sw k e : entry_head k (esw a b e) = ptsw a b (entry_head k e).
-  Proof. done. Qed.
 
   Lemma elem_of_tenv_heads Θ x :
     x ∈ tenv_heads Θ ↔ ∃ c o, Θ !! c = Some o ∧ x ∈ ends_heads c o.
@@ -947,7 +909,6 @@ Section ready.
       exact (proj2 (offered_p_sw _ _ _) Ho).
   Qed.
 
-
   Lemma bcs_hold_sw W C xs :
     bcs_hold (w_eq W) (w_lt W) C xs →
     bcs_hold (w_eq (wsw a b W)) (w_lt (wsw a b W)) (bcs_sw a b C) (ptsw a b <$> xs).
@@ -987,7 +948,6 @@ Section ready.
       apply pt_inst_ext. intros i. symmetry. apply plist_sw.
   Qed.
 
-
   Lemma pteqW_sw W x y : pteqW W x y → pteqW (wsw a b W) (ptsw a b x) (ptsw a b y).
   Proof.
     intros [->|(Hx & Hy & H)]; [by left|right].
@@ -1014,7 +974,6 @@ Section ready.
         split; [apply bcs_open_sw; by exists g1|by apply Hf].
     - destruct H as [? ?]. split; [by apply pteqW_sw|by apply seq_sw].
 
-
   Qed.
 End ready.
 
@@ -1036,7 +995,6 @@ Lemma ready_p_wsame W1 W2 Σ p : wsame W1 W2 → ready_p W1 Σ p → ready_p W2 
 Proof.
   intros HS H Hs. destruct (H Hs). split; [done|]. by eapply above_offered_wsame.
 Qed.
-
 
 Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) (pk pk' : point → Prop) k T :
   (∀ x y, peq x y → peq' x y) → (∀ x y, plt x y → plt' x y) → (∀ x, pk x → pk' x) →
@@ -1065,8 +1023,6 @@ Proof.
     + intros g Hg. destruct (HC2 g Hg) as (g' & ? & ?). eauto.
 Qed.
 
-
-
 Lemma wext_swap_back a b W W' W'' :
   wsame (wsw a b W) W' → wext W' W'' → wext W (wsw a b W'').
 Proof.
@@ -1093,9 +1049,6 @@ Section misc.
     - intros Hx. exists (ptsw a b x). split; [by rewrite ptsw_involutive|].
       apply elem_of_map. exists x. done.
   Qed.
-
-  Lemma set_ptsw_empty : set_map (ptsw a b) (∅ : gset point) = (∅ : gset point).
-  Proof. apply set_map_empty. Qed.
 
   Lemma frame_roots_sw F :
     frame_roots (set_map (ptsw a b) F) = set_map (pnsw a b) (frame_roots F).
@@ -1376,10 +1329,6 @@ Proof.
       * by apply (proj2 HP').
 Qed.
 
-Lemma Vrel_psw a b n W Θ T v :
-  Vrel n W Θ T v → Vrel n (wsw a b W) (tenvsw a b Θ) (tysw a b T) v.
-Proof. apply (rel_psw a b n). apply wsame_refl. Qed.
-
 Lemma Erel_psw a b n W Θ T F e :
   Erel n W Θ T F e →
   Erel n (wsw a b W) (tenvsw a b Θ) (tysw a b T) (set_map (ptsw a b) F) e.
@@ -1428,7 +1377,6 @@ Section fixed.
     - destruct ub; simpl; [|done]. f_equal. apply ptsw_fix; set_solver.
     - destruct lb; simpl; [|done]. f_equal. apply ptsw_fix; set_solver.
   Qed.
-
 
   Lemma tysw_fix T
  : NConst a ∉ ty_roots T → NConst b ∉ ty_roots T → tysw a b T = T.

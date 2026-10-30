@@ -1,7 +1,7 @@
 (** * scheduler: typable
 
-    Milner's scheduler with three agents on a ring r₀, r₁, r₂ (the paper
-    era's Scheduler.v), as a closed program:
+    Milner's scheduler with three agents on a ring r₀, r₁, r₂, as a
+    closed program.
 
       ag₀ = let () = close (send ⟨∗, r₀⟩) in recvclose r₂          (main)
       ag₁ = link ⟨r₁, r₀⟩                                          (spawned)

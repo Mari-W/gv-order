@@ -1,9 +1,8 @@
-(** * LTS renaming: transpositions of channel names (§10)
+(** * Transpositions of channel names in the LTS (§10)
 
     A transposition of two channel names, applied to terms, labels,
     restricted sets and soups, maps transitions to transitions and
-    preserves safety. The relation is invariant under it
-    ([Renaming.rel_swap]). *)
+    preserves safety ([safe_pswap_iff]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export lang.Safety.
@@ -249,13 +248,6 @@ Proof.
   by rewrite gswap_involutive, msswap_involutive.
 Qed.
 
-Lemma pswap_fresh a b (p : proc) :
-  a ∉ p.1 → b ∉ p.1 → a ∉ echans p.2 → b ∉ echans p.2 → pswap a b p = p.
-Proof.
-  destruct p as [C E]. unfold pswap; simpl. intros.
-  by rewrite gswap_fresh, msswap_fresh.
-Qed.
-
 (** ** The process LTS is equivariant *)
 
 Lemma proc_step_pswap a b p π p' :
@@ -307,13 +299,6 @@ Qed.
 Lemma preduction_pswap a b p q :
   preduction p q → preduction (pswap a b p) (pswap a b q).
 Proof. intros H. exact (proc_step_pswap a b _ _ _ H). Qed.
-
-Lemma nsteps_pswap a b m p q :
-  nsteps preduction m p q → nsteps preduction m (pswap a b p) (pswap a b q).
-Proof.
-  induction 1; [constructor|]. econstructor; [|done].
-  by apply preduction_pswap.
-Qed.
 
 (** ** Safety is equivariant *)
 

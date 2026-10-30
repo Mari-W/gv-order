@@ -138,14 +138,6 @@ Lemma length_filter_cons {A} (P : A → Prop) `{∀ x, Decision (P x)} x l :
   length (filter P (x :: l)) = (if decide (P x) then 1 else 0) + length (filter P l).
 Proof. rewrite filter_cons. by case_decide. Qed.
 
-Lemma filter_len0 {A} (P : A → Prop) `{∀ x, Decision (P x)} l x :
-  length (filter P l) = 0 → x ∈ l → ¬ P x.
-Proof.
-  intros Hl Hx HP. apply nil_length_inv in Hl.
-  assert (x ∈ filter P l) as Hin by (by apply list_elem_of_filter). rewrite Hl in Hin.
-  by apply elem_of_nil in Hin.
-Qed.
-
 (** ** One step: merge the first two components *)
 
 Section merge.

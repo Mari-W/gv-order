@@ -1,33 +1,10 @@
-(** * Harmony: a reduction semantics for process soups vs the τ-LTS
+(** * Harmony of a reduction semantics with the process LTS
 
-    Following the notes in harmony.lagda (the "Alternative": a direct
-    reduction semantics on soups (C, E), no ∥/ν/≡ configuration
-    calculus), adapted to GV♯:
-
-    - the pure reduction −→V and the redex rules are phrased with
-      genuine multi-frame evaluation contexts 𝓔 (lists of the
-      one-level frames of Semantics.v, with the right-of-value
-      side conditions), so the semantics is defined WITHOUT reference
-      to the labelled [tstep] relation — harmony is then a real
-      theorem, not a reformulation;
-    - a [CLOSE] rule is added (GV♯'s P-Act-Close is a τ-step; the
-      notes' COM/FORK/LIFTV inventory would make the backward
-      direction fail);
-    - CLOSE carries the [c ∈ C] premise that P-Act-Close requires
-      (the notes leave it to the ambient invariant fc(E) ⊆ C, which
-      raw GV♯ processes do not carry); COM, like P-Act-Msg, does not
-      ask for the channel to be restricted;
-    - NEW carries the full freshness of P-Act-New (new channel not
-      in C, nor in the rest of the soup, nor in the creating thread —
-      channels are free names here, there is no α-conversion);
-    - SPAWN starts the thunk applied to ∗ as a thread of its own;
-    - the communicated value and the spawned thunk are values, as in
-      the head rules.
-
-    Main result (Harmony):
-      red p p'  ↔  preduction p p'
-    via the two context/label bridge lemmas [fill_tstep] and
-    [tstep_fill_decomp]. *)
+    [red] is a reduction semantics on soups (C, E) with multi-frame
+    evaluation contexts. It is defined without the labelled [tstep], so
+    [harmony] (red p p' ↔ preduction p p') is a real theorem. CLOSE
+    carries the c ∈ C premise of P-Act-Close, and NEW the freshness of
+    P-Act-New. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Import lang.Semantics.

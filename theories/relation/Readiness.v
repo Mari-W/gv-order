@@ -12,7 +12,9 @@
     63). Every offered head lies below every head the term holds and
     does not offer, and below every point of the frame F, the points
     the context of the term still has to use. A process has no frame
-    and keeps the condition above. *)
+    and keeps the condition above. The term form at F = ∅ would be
+    false for processes, because two ready components that offer at
+    unrelated points compose to a process that is not (sharp edges 63). *)
 
 From stdpp Require Import base strings gmap gmultiset.
 From LRGV Require Export lang.Safety relation.Worlds.
@@ -53,7 +55,6 @@ Definition stable_t (t : expr) : Prop :=
 Definition stable_p (p : proc) : Prop := ∀ p', ¬ proc_step p PTau p'.
 
 (** ** ready_W *)
-
 
 (** Every held entry not offered lies strictly above an offered one. *)
 Definition above_offered (W : world) (Θ : tenv) (off : ekey → Prop) : Prop :=
@@ -113,11 +114,3 @@ Proof.
   intros Hl H k e Ho He. destruct (H k e Ho He) as [H1 H2].
   split; intros; [apply Hl; by apply H1|apply Hl; by apply H2].
 Qed.
-
-
-(** Values have no transitions, so they are stable and offer nothing. *)
-Lemma val_stable_t v : is_val v → stable_t v.
-Proof. intros Hv α t' Hst. exfalso. by eapply val_no_tstep. Qed.
-
-Lemma val_not_offered Θ v k : is_val v → ¬ offered_t Θ v k.
-Proof. intros Hv (σ & t' & Hst & _). by eapply val_no_tstep. Qed.

@@ -13,7 +13,7 @@
     [new] avoids.
 
     Worlds are relations ([Prop]-valued), so that the world generated
-    by a set of schemas (Typing.v) and the join of two worlds are both
+    by a set of facts and the join of two worlds are both
     plain inductive closures ([wgen]). *)
 
 From stdpp Require Import base gmap relations.
@@ -56,7 +56,6 @@ Fixpoint ty_roots (T : ty) : gset pname :=
   | TLolli ub lb T1 U => opt_roots ub ∪ opt_roots lb ∪ ty_roots T1 ∪ ty_roots U
   | TProd T1 U | TSum T1 U => ty_roots T1 ∪ ty_roots U
   | TBox _ C T1 => bcs_roots C ∪ ty_roots T1
-
 
   | TSess s x => sty_roots s ∪ {[pt_root x]}
   end
@@ -122,10 +121,6 @@ Definition w_le (W : world) (x y : point) : Prop := w_eq W x y ∨ w_lt W x y.
 (** W knows x: the root of x is in the support (sharp edges 49). *)
 Definition pt_known (W : world) (x : point) : Prop := pt_root x ∈ w_names W.
 
-(** F ≺ G between sets of points (frames). *)
-Definition w_lt_set (W : world) (X Y : gset point) : Prop :=
-  ∀ x y, x ∈ X → y ∈ Y → w_lt W x y.
-
 (** {β} ≺ F for an upper point (⊥ = [None] is below everything) and
     {λ} ≼ H for a lower point (⊤ = [None] is below nothing, so it forces
     H = ∅: a closure without a lower bound holds nothing). *)
@@ -156,9 +151,6 @@ Inductive glt (E L : prel) : prel :=
 
 Definition wgen (N : gset pname) (E L : prel) : world :=
   World N (geq E) (glt E L).
-
-Lemma pt_name_shift n x : pt_name (pt_shift n x) = pt_name x.
-Proof. done. Qed.
 
 Lemma geq_supp N E x y :
   (∀ x y, E x y → eq_or_supp N x y) → geq E x y → eq_or_supp N x y.

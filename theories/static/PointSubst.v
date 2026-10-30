@@ -289,9 +289,6 @@ Proof.
   - apply list_fmap_ext. intros _ x _. by apply pt_inst_ext.
 Qed.
 
-Lemma length_ids m : length (ids m) = m.
-Proof. unfold ids. by rewrite length_fmap, length_seq. Qed.
-
 Lemma ids_pup m σ : pt_inst (pup m σ) <$> ids m = ids m.
 Proof.
   unfold ids. rewrite <-list_fmap_compose. apply list_fmap_ext. intros i x Hx. simpl.
@@ -486,30 +483,6 @@ Section transfer.
     - destruct (wf_names_const _ HW _ Hx) as [a Ha]. destruct (wf_names_const _ HW _ Hy) as [b Hb].
       rewrite (pt_inst_const σ x a Ha), (pt_inst_const σ y b Hb).
     destruct HW1 as (_ & He & Hl & _). auto.
-  Qed.
-
-  Lemma pinst_le x y : w_le W x y → w_le W1 (pt_inst σ x) (pt_inst σ y).
-  Proof. intros [H|H]; [left; by apply pinst_eq|right; by apply pinst_lt]. Qed.
-
-  Lemma pinst_known x : pt_known W x → pt_known W1 (pt_inst σ x).
-  Proof.
-    intros Hx. destruct (wf_names_const _ HW _ Hx) as [a Ha].
-    rewrite (pt_inst_const σ x a Ha). destruct HW1 as [HN _]. unfold pt_known in *. set_solver.
-  Qed.
-
-  Lemma ub_below_pinst ub F :
-    ub_below W ub F → ub_below W1 (pt_inst σ <$> ub) (set_map (pt_inst σ) F).
-  Proof.
-    destruct ub as [x|]; simpl; [|done]. intros H y Hy.
-    apply elem_of_map in Hy as (y0 & -> & Hy0). by apply pinst_lt, H.
-  Qed.
-
-  Lemma lb_below_pinst lb H :
-    lb_below W lb H → lb_below W1 (pt_inst σ <$> lb) (set_map (pt_inst σ) H).
-  Proof.
-    destruct lb as [x|]; simpl.
-    - intros Hl y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0). by apply pinst_le, Hl.
-    - intros ->. apply set_map_empty.
   Qed.
 
   Lemma konst_ty_pinst (peq peq' plt plt' : point → point → Prop) (pk pk' : point → Prop) k T :

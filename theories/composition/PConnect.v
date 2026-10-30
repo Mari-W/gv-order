@@ -1,4 +1,10 @@
-(** * P-Connect, continued: links across the cut *)
+(** * P-Connect (§11)
+
+    Two components P-related in the same world compose over a cut C₀,
+    and components at n give the composite at n (sharp edges 45).
+    [conn_level] assembles the step cases of ConnectCut.v and
+    ConnectSteps.v. [Prel_connect] reaches the world W₁ ⊔ W₂ by
+    monotonicity. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.ConnectSteps.
@@ -6,7 +12,6 @@ From LRGV Require Export composition.ConnectSteps.
 (** Section lemmas take every section variable, so that both
     orientations of a configuration can be passed uniformly. *)
 Set Default Proof Using "All".
-
 
 (** ** Assembly *)
 

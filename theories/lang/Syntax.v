@@ -180,8 +180,6 @@ Fixpoint closed_at (n : nat) (e : expr) : bool :=
   | EBox e => closed_at (S n) e
   end.
 
-Definition closed (e : expr) : bool := closed_at 0 e.
-
 (** All channels in a term are considered free (terms only bind variables). *)
 Fixpoint fchans (e : expr) : gset chan :=
   match e with
@@ -220,36 +218,6 @@ Proof.
   - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
   - rewrite (subst_ext _ (up Var) Var); [done|by intros [|x]].
 Qed.
-
-(** Substitutions agreeing below the closedness bound act identically. *)
-Lemma subst_closed_at_ext e : ∀ n σ σ',
-  closed_at n e → (∀ x, x < n → σ x = σ' x) → subst σ e = subst σ' e.
-Proof.
-  induction e; intros n σ σ' Hcl Hag; simpl in *; f_equal;
-    repeat match goal with
-    | H : Is_true (_ && _) |- _ => apply andb_True in H as [? ?]
-    end; eauto.
-  - apply bool_decide_unpack in Hcl. by apply Hag.
-  - eapply IHe; [done|]. intros [|x] Hx; simpl; [done|].
-    unfold compose. rewrite Hag; [done|lia].
-  - eapply IHe2; [done|]. intros [|[|x]] Hx; simpl; [done..|].
-    unfold compose. rewrite Hag; [done|lia].
-  - eapply IHe2; [done|]. intros [|x] Hx; simpl; [done|].
-    unfold compose. rewrite Hag; [done|lia].
-  - eapply IHe3; [done|]. intros [|x] Hx; simpl; [done|].
-    unfold compose. rewrite Hag; [done|lia].
-  - eapply IHe; [done|]. intros [|x] Hx; simpl; [done|].
-    unfold compose. rewrite Hag; [done|lia].
-Qed.
-
-Lemma subst_closed e σ : closed e → subst σ e = e.
-Proof.
-  intros Hcl. rewrite (subst_closed_at_ext e 0 σ Var); [|done|lia].
-  apply subst_ids.
-Qed.
-
-Lemma subst1_closed e v : closed e → subst1 v e = e.
-Proof. apply subst_closed. Qed.
 
 (** ** Composition laws for renaming and substitution *)
 
@@ -421,60 +389,6 @@ Proof.
   - apply (IHe (S y) (upren r) H).
 Qed.
 
-(** ** Closedness under renaming and substitution *)
-
-Lemma closed_at_rename e : ∀ r m m',
-  (∀ x, x < m → r x < m') → closed_at m e → closed_at m' (rename r e).
-Proof.
-  induction e; simpl; intros r m m' Hr Hcl;
-    repeat match goal with
-    | H : Is_true (_ && _) |- _ => apply andb_True in H as [? ?]
-    end; try (apply andb_True; split); eauto.
-  - apply bool_decide_unpack in Hcl. case_bool_decide; [done|]. exfalso; auto with lia.
-  - eapply IHe; [|done]. intros [|x] Hx; simpl; [lia|].
-    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
-  - eapply IHe2; [|done]. intros [|[|x]] Hx; simpl; [lia|lia|].
-    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
-  - apply andb_True; split; [eauto|].
-    eapply IHe2; [|done]. intros [|x] Hx; simpl; [lia|].
-    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
-  - eapply IHe3; [|done]. intros [|x] Hx; simpl; [lia|].
-    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
-  - eapply IHe; [|done]. intros [|x] Hx; simpl; [lia|].
-    unfold compose. assert (r x < m') by (apply Hr; lia). lia.
-Qed.
-
-Lemma closed_at_subst e : ∀ m γ,
-  allfv (λ x, closed_at m (γ x)) e → closed_at m (subst γ e).
-Proof.
-  induction e; simpl; intros m γ HP;
-    try (destruct HP; apply andb_True; split); eauto.
-  - apply IHe. eapply allfv_mono; [|done]. intros [|x]; simpl.
-    + intros _. done.
-    + intros Hc. unfold compose. eapply closed_at_rename; [|done].
-      intros; lia.
-  - apply IHe2. eapply allfv_mono; [|done]. intros [|[|x]]; simpl.
-    + intros _. done.
-    + intros _. done.
-    + intros Hc. unfold compose.
-      eapply (closed_at_rename _ S (S m)); [intros; lia|].
-      eapply (closed_at_rename _ S m); [intros; lia|done].
-  - destruct H0 as [H1 H2]. apply andb_True; split; [by apply IHe1|].
-    apply IHe2. eapply allfv_mono; [|exact H1]. intros [|x]; simpl.
-    + intros _. done.
-    + intros Hc. unfold compose. eapply closed_at_rename; [|done].
-      intros; lia.
-  - destruct H0 as [H1 H2].
-    apply IHe3. eapply allfv_mono; [|exact H2]. intros [|x]; simpl.
-    + intros _. done.
-    + intros Hc. unfold compose. eapply closed_at_rename; [|done].
-      intros; lia.
-  - apply IHe. eapply allfv_mono; [|done]. intros [|x]; simpl.
-    + intros _. done.
-    + intros Hc. unfold compose. eapply closed_at_rename; [|done].
-      intros; lia.
-Qed.
-
 (** ** Channels under renaming and substitution *)
 
 Lemma fchans_rename e : ∀ r, fchans (rename r e) = fchans e.
@@ -608,7 +522,6 @@ Proof. induction e; simpl; f_equal; auto using cswap_comm. Qed.
 Lemma is_val_eswap a b e : is_val (eswap a b e) = is_val e.
 Proof. induction e; simpl; try done; by rewrite ?IHe1, ?IHe2. Qed.
 
-
 (** ** Channel substitution (§4.5)
 
     e[d/c] — retarget every occurrence of channel c to d. Channels are
@@ -641,9 +554,6 @@ Proof.
 Qed.
 
 (** Channel bounds for the β-substitutions. *)
-(** Substitution never erases channel occurrences. *)
-Lemma fchans_subst_sup e : ∀ γ, fchans e ⊆ fchans (subst γ e).
-Proof. induction e; simpl; intros γ; try set_solver. Qed.
 
 Lemma fchans_subst1_sub v e : fchans (subst1 v e) ⊆ fchans e ∪ fchans v.
 Proof.
@@ -702,15 +612,8 @@ Definition echans (E : gmultiset expr) : gset chan :=
 Definition echsubst (c d : chan) (E : gmultiset expr) : gmultiset expr :=
   gmultiset_map (chsubst c d) E.
 
-(** E[c↔d] — transpose the two channel names in every thread. The
-    forwarding step uses the transposition rather than the paper's
-    one-sided substitution: on soups where the surviving end does not
-    already occur — in particular every typed configuration, by
-    channel-tightness — the two coincide ([echswap_echsubst]), and the
-    transposition keeps the rule total and the composition lemmas
-    compositional (a one-sided substitution can merge a dead ⟨d,d⟩
-    forwarding pair into a live one, which no renaming-stability lemma
-    survives; see docs/link-design.md). *)
+(** E[c↔d], the transposition of two channel names in every thread.
+    Channel renaming uses it (ChannelSwap.v). *)
 Definition echswap (c d : chan) (E : gmultiset expr) : gmultiset expr :=
   gmultiset_map (eswap c d) E.
 
@@ -738,24 +641,6 @@ Qed.
 Lemma echans_singleton e : echans {[+ e +]} = fchans e.
 Proof.
   unfold echans. rewrite gmultiset_elements_singleton. simpl. set_solver.
-Qed.
-
-(** Substituting a channel that occurs in no thread is the identity. *)
-Lemma echswap_comm c d E : echswap c d E = echswap d c E.
-Proof.
-  unfold echswap. induction E as [|e E IH] using gmultiset_ind.
-  - by rewrite !gmultiset_map_empty.
-  - rewrite !gmultiset_map_disj_union, !gmultiset_map_singleton, IH.
-    by rewrite eswap_comm.
-Qed.
-
-Lemma echswap_echsubst_flip a b E :
-  echswap a b (echsubst b a E) = echsubst a b E.
-Proof.
-  unfold echswap, echsubst. induction E as [|e E IH] using gmultiset_ind.
-  - by rewrite !gmultiset_map_empty.
-  - rewrite !gmultiset_map_disj_union, !gmultiset_map_singleton, IH.
-    by rewrite eswap_chsubst_flip.
 Qed.
 
 Lemma echsubst_id c d E : c ∉ echans E → echsubst c d E = E.

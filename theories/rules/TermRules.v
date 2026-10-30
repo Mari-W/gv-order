@@ -980,22 +980,6 @@ Proof.
     rewrite lookup_insert_ne by done. by apply Hoff.
 Qed.
 
-(** The entries of Θ = Θ1, c : e other than the one of e are entries
-    of Θ1. *)
-Lemma ext_other_entry Θ1 c e Θ k' e' :
-  tenv_ext Θ1 c e Θ → tenv_entry Θ k' = Some e' →
-  tenv_entry Θ k' = Some e ∨ ∃ k'', tenv_entry Θ1 k'' = Some e'.
-Proof.
-  intros Hext He'. destruct k' as [c' b]. destruct (decide (c' = c)) as [->|Hne].
-  - unfold tenv_entry in *. simpl in *.
-    destruct Hext as [[H1 ->]|(f & H1 & [->| ->])]; rewrite lookup_insert_eq in He' |- *.
-    + destruct b; simplify_eq. by left.
-    + destruct b; simplify_eq; [right; exists (c, false); simpl; by rewrite H1|by left].
-    + destruct b; simplify_eq; [by left|right; exists (c, false); simpl; by rewrite H1].
-  - right. exists (c', b). unfold tenv_entry in *. simpl in *.
-    destruct Hext as [[_ ->]|(f & _ & [->| ->])]; by rewrite lookup_insert_ne in He'.
-Qed.
-
 Lemma Erel_app_send n W Θ ub lb T U F v2 :
   strict W → Vrel n W ∅ (TLolli ub lb T U) ESend → Vrel n W Θ T v2 → ub_below W ub F →
   Erel n W Θ U F (App ESend v2).
@@ -1193,7 +1177,7 @@ Proof.
     + eapply ub_below_mono; [exact HW4|exact Hub].
 Qed.
 
-(** ** E-Weak (E-Conv is [sem_typed_teq], Convert.v) *)
+(** ** E-Weak (E-Conv is [sem_typed_teq], EquivInvariance.v) *)
 
 Lemma grounding_wk n W Θ Δ' Δ γ :
   world_wf W → lenv_wk Δ' Δ → grounding n W Θ Δ γ → grounding n W Θ Δ' γ.

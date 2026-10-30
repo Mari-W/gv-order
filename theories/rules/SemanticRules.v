@@ -1,14 +1,11 @@
 (** * The semantic rules in derivation form (sharp edges 53)
 
-    [sem_rules] lists the compositionality lemmas of TermRules.v and
-    TermRules2.v as the rules of an infinitary judgment: the bodies of
-    λ and box are typed in every later world, under every frame above
-    the upper point and, for a box, at every admissible instance. Its
-    fundamental theorem [sem_rules_fundamental] is one rule per lemma.
-    The finite static system of Static.v reaches it through
-    [typed_sem_rules]. E-Abs carries the well-formedness of its body
-    as a premise, which [typed_sem_rules] reads off the finite
-    derivation. *)
+    [sem_rules] collects the lemmas of TermRules.v and BoxRules.v as the
+    rules of an infinitary judgment. The bodies of λ and box are typed
+    in every later world, under every frame above the upper point, and
+    for a box at every admissible instance. [sem_rules_fundamental] is
+    one rule per lemma. The static system reaches it through
+    [typed_sem_rules] (static/Fundamental.v). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export rules.BoxRules.

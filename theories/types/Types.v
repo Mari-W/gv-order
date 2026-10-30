@@ -122,9 +122,10 @@ Definition fact_scoped (k : nat) (g : fact) : Prop :=
     variables only, 0, …, n-1 for the box's ιs and n + j for the j-th
     point of [bc_env], which lives outside the binder and carries the
     outer point variables and constants. Substitution and renaming act
-    on [bc_env] alone, so they never touch the predicate, and the roots
-    of a constraint are the finitely many roots of [bc_env]. A fact
-    whose variables lie beyond n + |bc_env| is not part of C. *)
+    on [bc_env] alone and never touch the predicate, so their equations
+    hold by computation on lists, without functional extensionality.
+    The roots of a constraint are the finitely many roots of [bc_env].
+    A fact whose variables lie beyond n + |bc_env| is not part of C. *)
 Record bcs := BCs { bc_env : list point; bc_facts : fact → Prop }.
 
 (** ** Types
@@ -453,9 +454,6 @@ Proof. done. Qed.
 Lemma mu_depth_snd m T s : mu_depth (SSnd m T s) = 0.
 Proof. done. Qed.
 
-Lemma mu_depth_end : mu_depth SEnd = 0.
-Proof. done. Qed.
-
 (** ** Closedness of session variables *)
 
 Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
@@ -483,24 +481,6 @@ Proof.
 Qed.
 
 Definition sinst_ext := proj2 sinst_ext_mut.
-Definition sinst_ty_ext := proj1 sinst_ext_mut.
-
-(** A payload closed under the enclosing µ's is untouched by unrolling. *)
-Lemma sinst_closed_mut :
-  (∀ T k σ, sclosed_ty k T → (∀ a, a < k → σ a = SVar a) →
-            sinst_ty σ T = T) ∧
-  (∀ s k σ, sclosed k s → (∀ a, a < k → σ a = SVar a) → sinst σ s = s).
-Proof.
-  apply ty_sty_mut_ind; intros; simpl in *; try done;
-    repeat match goal with H : _ ∧ _ |- _ => destruct H end;
-    f_equal; eauto.
-  - eapply H; [done|]. intros [|a] Ha; simpl; [done|].
-    unfold compose. rewrite H1; [done|lia].
-  - by rewrite H0.
-Qed.
-
-Definition sinst_closed := proj2 sinst_closed_mut.
-Definition sinst_ty_closed := proj1 sinst_closed_mut.
 
 (** ** The flip algebra
 
@@ -670,21 +650,6 @@ Proof.
   intros [|a] Ha; [lia|done].
 Qed.
 
-Lemma sclosed_sren_mut :
-  (∀ T k k' r, sclosed_ty k T → (∀ a, a < k → r a < k') →
-               sclosed_ty k' (sren_ty r T)) ∧
-  (∀ s k k' r, sclosed k s → (∀ a, a < k → r a < k') →
-               sclosed k' (sren r s)).
-Proof.
-  apply ty_sty_mut_ind; intros; simpl in *;
-    repeat match goal with H : _ ∧ _ |- _ => destruct H end;
-    try done; try (split; eauto; fail); eauto.
-  eapply H; [done|]. intros [|a] Ha; simpl; [lia|].
-  unfold compose. assert (r a < k') by (apply H1; lia). lia.
-Qed.
-
-Definition sclosed_ty_sren := proj1 sclosed_sren_mut.
-
 Lemma dual_unfoldN k : ∀ s, dual (unfoldN k s) = unfoldN k (dual s).
 Proof.
   induction k as [|k IH]; intros s; simpl; [done|].
@@ -696,88 +661,6 @@ Qed.
     lockstep — unconditionally, thanks to the polarized dual. *)
 Lemma dual_unfoldS s : dual (unfoldS s) = unfoldS (dual s).
 Proof. unfold unfoldS. rewrite dual_mu_depth. apply dual_unfoldN. Qed.
-
-(** ** Contractiveness (§4.3, paper-facing)
-
-    Nothing below is threaded through typing or the logical relation:
-    every clause reads session types through [unfoldS], and on an
-    ill-formed type [unfoldS] leaves a µ or a variable in head
-    position, so no clause applies — such types simply relate
-    nothing. [unfoldS_form] is §4.3's "as equi-recursive types have
-    contractive definitions, we can always determine the top-level
-    constructor of a type in finite time", as a theorem. *)
-
-(** The µ-spine ends in a communication constructor. *)
-Fixpoint head_ok (s : sty) : Prop :=
-  match s with
-  | SMu s' => head_ok s'
-  | SVar _ | SVarD _ => False
-  | _ => True
-  end.
-
-Fixpoint contractive_ty (T : ty) : Prop :=
-  match T with
-  | TUnit => True
-  | TLolli _ _ T1 U | TProd T1 U | TSum T1 U =>
-      contractive_ty T1 ∧ contractive_ty U
-  | TBox _ _ T1 => contractive_ty T1
-  | TSess s _ => contractive s
-  end
-with contractive (s : sty) : Prop :=
-  match s with
-  | SRcv _ T s' | SSnd _ T s' => contractive_ty T ∧ contractive s'
-  | SEnd => True
-  | SMu s' => head_ok s' ∧ contractive s'
-  | SVar _ | SVarD _ => True
-  end.
-
-(** A closed contractive type has a well-ended µ-spine. *)
-Lemma contractive_head_ok s : sclosed 0 s → contractive s → head_ok s.
-Proof. destruct s; simpl; intros; intuition lia. Qed.
-
-Lemma head_ok_sinst s : ∀ σ, head_ok s → head_ok (sinst σ s).
-Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros σ Hh; simpl in *;
-    auto; destruct Hh.
-Qed.
-
-Lemma mu_depth_sinst_hd s :
-  ∀ σ, head_ok s → mu_depth (sinst σ s) = mu_depth s.
-Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros σ Hh; simpl in *;
-    auto; destruct Hh.
-Qed.
-
-Lemma head_ok_unfoldN d : ∀ s, head_ok s → head_ok (unfoldN d s).
-Proof.
-  induction d as [|d IH]; intros s Hh; simpl; [done|].
-  destruct s; try done. apply IH, head_ok_sinst, Hh.
-Qed.
-
-Lemma unfoldN_head d :
-  ∀ s, head_ok s → mu_depth s = d → mu_depth (unfoldN d s) = 0.
-Proof.
-  induction d as [|d IH]; intros s Hh Hd;
-    destruct s as [m T s'|m T s'| |s'|a|a]; simplify_eq/=; try done.
-  apply IH; [by apply head_ok_sinst|].
-  unfold unroll. by rewrite mu_depth_sinst_hd.
-Qed.
-
-Theorem unfoldS_head s : head_ok s → mu_depth (unfoldS s) = 0.
-Proof. intros Hh. by eapply unfoldN_head. Qed.
-
-Corollary unfoldS_form s :
-  head_ok s →
-  (∃ m T s', unfoldS s = SRcv m T s') ∨ (∃ m T s', unfoldS s = SSnd m T s') ∨
-  unfoldS s = SEnd.
-Proof.
-  intros Hh.
-  pose proof (unfoldS_head s Hh) as Hd.
-  pose proof (head_ok_unfoldN (mu_depth s) s Hh) as Hh'.
-  revert Hd Hh'. unfold unfoldS.
-  destruct (unfoldN (mu_depth s) s) as [m T s'|m T s'| |s'|a|a];
-    simpl; intros Hd Hh'; simplify_eq; eauto 10; destruct Hh'.
-Qed.
 
 (** ** Primitive types: possible return types of threads. *)
 
@@ -798,9 +681,6 @@ Inductive prim : ty → Prop :=
 Definition unlimited (T : ty) : Prop :=
   match T with TBox _ _ _ => True | _ => False end.
 
-Lemma unlimited_box n C T : unlimited (TBox n C T).
-Proof. done. Qed.
-
 (** ** Session environments: finite maps from channels to session
     types at points, c : S@x, x the channel's current point. Each
     action on c moves x to x + 1.
@@ -811,9 +691,6 @@ Proof. done. Qed.
 (** A notation rather than a definition, so that stdpp's map lemmas
     apply by keyed unification without unfolding. *)
 Notation senv := (gmap chan (sty * point)).
-
-Definition senv_split (Σ Σ1 Σ2 : senv) : Prop :=
-  Σ = Σ1 ∪ Σ2 ∧ Σ1 ##ₘ Σ2.
 
 (** Σ assigns c a session type whose *unfolding* is u, at point k,
     over the rest Σ1. Every clause of the logical relation that inspects a session
@@ -826,11 +703,6 @@ Definition senv_hd (Σ : senv) (c : chan) (u : sty) (k : point)
     (Σ1 : senv) : Prop :=
   ∃ s, Σ = <[c := (s, k)]> Σ1 ∧ unfoldS s = u.
 
-(** The non-recursive case: the type is stored already unfolded. *)
-Lemma senv_hd_nf Σ c u k Σ1 :
-  mu_depth u = 0 → Σ = <[c := (u, k)]> Σ1 → senv_hd Σ c u k Σ1.
-Proof. intros Hd ->. exists u. split; [done|by apply unfoldS_hd]. Qed.
-
 (** An empty environment assigns nothing. *)
 Lemma senv_hd_not_empty c u k Σ1 : ¬ senv_hd ∅ c u k Σ1.
 Proof. intros (s & Heq & _). exact (insert_non_empty _ _ _ (eq_sym Heq)). Qed.
@@ -838,117 +710,6 @@ Proof. intros (s & Heq & _). exact (insert_non_empty _ _ _ (eq_sym Heq)). Qed.
 Lemma senv_hd_dom Σ c u k Σ1 :
   senv_hd Σ c u k Σ1 → dom Σ = {[c]} ∪ dom Σ1.
 Proof. intros (s & -> & _). by rewrite dom_insert_L. Qed.
-
-(** Read a head form off a stored type. *)
-Lemma senv_hd_intro Σ c s k u Σ1 :
-  unfoldS s = u → Σ = <[c := (s, k)]> Σ1 → senv_hd Σ c u k Σ1.
-Proof. intros Hu ->. by exists s. Qed.
-
-(** Invert a head-form reading against a known insert: with c fresh
-    for both rests, the stored entry is the inserted one. *)
-Lemma senv_hd_insert_inv Σ1 c s k u k' Σr :
-  c ∉ dom Σ1 → c ∉ dom Σr →
-  senv_hd (<[c := (s, k)]> Σ1) c u k' Σr →
-  unfoldS s = u ∧ k = k' ∧ Σ1 = Σr.
-Proof.
-  intros H1 Hr (s0 & Heq & Hu).
-  assert ((s, k) = (s0, k')) as [= <- <-].
-  { apply (f_equal (lookup c)) in Heq.
-    rewrite !lookup_insert_eq in Heq. by simplify_eq. }
-  split; [done|]. split; [done|].
-  apply map_eq. intros i. destruct (decide (i = c)) as [->|Hi].
-  - apply not_elem_of_dom in H1. apply not_elem_of_dom in Hr.
-    by rewrite H1, Hr.
-  - apply (f_equal (lookup i)) in Heq.
-    by rewrite !lookup_insert_ne in Heq by congruence.
-Qed.
-
-(** How CONNECT transports a head reading to the peer end: the two
-    ends of a session unfold in lockstep ([dual_unfoldS]), and the
-    payload agrees on the nose. *)
-Lemma unfoldS_dual_rcv s m U s' :
-  unfoldS s = SRcv m U s' → unfoldS (dual s) = SSnd m U (dual s').
-Proof. intros Hu. by rewrite <-dual_unfoldS, Hu. Qed.
-
-Lemma unfoldS_dual_snd s m U s' :
-  unfoldS s = SSnd m U s' → unfoldS (dual s) = SRcv m U (dual s').
-Proof. intros Hu. by rewrite <-dual_unfoldS, Hu. Qed.
-
-Lemma unfoldS_dual_end s : unfoldS s = SEnd → unfoldS (dual s) = SEnd.
-Proof. intros Hu. by rewrite <-dual_unfoldS, Hu. Qed.
-
-Lemma senv_split_empty_l Σ : senv_split Σ ∅ Σ.
-Proof.
-  split; [by rewrite (left_id ∅ (∪))|]. apply map_disjoint_empty_l.
-Qed.
-
-Lemma senv_split_comm Σ Σ1 Σ2 : senv_split Σ Σ1 Σ2 → senv_split Σ Σ2 Σ1.
-Proof.
-  intros [-> Hd]. split; [by apply map_union_comm|done].
-Qed.
-
-(** Inserting a fresh binding is the same as unioning a singleton on
-    either side. *)
-Lemma insert_as_union (Σ : senv) c s :
-  c ∉ dom Σ → <[c := s]> Σ = Σ ∪ {[c := s]}.
-Proof.
-  intros. apply insert_union_singleton_r. by apply not_elem_of_dom.
-Qed.
-
-(** Cancellation of insertions of the same fresh key. *)
-Lemma insert_fresh_inv (Σ1 Σ2 : senv) c s1 s2 :
-  <[c := s1]> Σ1 = <[c := s2]> Σ2 → c ∉ dom Σ1 → c ∉ dom Σ2 →
-  s1 = s2 ∧ Σ1 = Σ2.
-Proof.
-  intros Heq Hc1 Hc2.
-  apply not_elem_of_dom in Hc1, Hc2.
-  assert (s1 = s2).
-  { pose proof (f_equal (λ m, m !! c) Heq) as Hl. cbv beta in Hl.
-    rewrite !lookup_insert_eq in Hl. by simplify_eq. }
-  split; [done|]. apply map_eq. intros i.
-  destruct (decide (i = c)) as [->|Hi]; [congruence|].
-  pose proof (f_equal (λ m, m !! i) Heq) as Hl. cbv beta in Hl.
-  by rewrite !lookup_insert_ne in Hl.
-Qed.
-
-(** Rotating a disjoint union. *)
-Lemma map_union_swap (Σa Σn Σb : senv) :
-  Σn ##ₘ Σb → (Σa ∪ Σn) ∪ Σb = (Σa ∪ Σb) ∪ Σn.
-Proof.
-  intros. by rewrite <-!(assoc_L (∪)), (map_union_comm Σn Σb).
-Qed.
-
-(** Discharging disjointness of unions/inserts of session environments,
-    allowing hypotheses phrased with [dom]. *)
-Ltac senv_disj :=
-  repeat match goal with
-  | H : _ ∉ dom _ |- _ => rewrite not_elem_of_dom in H
-  | H : _ ## dom _ |- _ => apply map_disjoint_dom_2 in H
-  | H : dom _ ## _ |- _ => symmetry in H; apply map_disjoint_dom_2 in H
-  end;
-  solve_map_disjoint.
-
-(** Discharging [dom]-membership side conditions. *)
-Ltac senv_dom :=
-  rewrite ?dom_union_L, ?dom_insert_L, ?dom_singleton_L, ?dom_empty_L;
-  set_solver.
-
-(** Proving equalities between unions/inserts of pairwise disjoint
-    session environments (permutations, reassociations): turn inserts
-    into singleton unions, then decide pointwise. *)
-Ltac senv_perm :=
-  repeat match goal with
-  | H : _ ∉ dom _ |- _ => rewrite not_elem_of_dom in H
-  | H : _ ## dom _ |- _ => apply map_disjoint_dom_2 in H
-  | H : dom _ ## _ |- _ => symmetry in H; apply map_disjoint_dom_2 in H
-  end;
-  decompose_map_disjoint;
-  apply map_eq; intros ?;
-  apply option_eq; intros ?;
-  rewrite ?insert_union_singleton_l;
-  rewrite ?lookup_union_Some by solve_map_disjoint;
-  rewrite ?lookup_singleton_Some, ?lookup_empty;
-  naive_solver.
 
 (** ** Term-level environments
 
@@ -991,8 +752,6 @@ Definition ends_heads (c : chan) (o : ends) : gset point :=
 
 Definition tenv_heads (Θ : tenv) : gset point :=
   map_fold (λ c o X, ends_heads c o ∪ X) ∅ Θ.
-
-Definition senv_heads (Σ : senv) : gset point := tenv_heads (tenv_of Σ).
 
 (** Θ = Θ1, c : e. *)
 Definition tenv_ext (Θ1 : tenv) (c : chan) (e : sty * point) (Θ : tenv)
@@ -1050,7 +809,7 @@ Qed.
     The side conditions on points are read in an order given as two
     relations: the world G generates for typing, a world W for the
     logical relation. Freshness of ι in [new] is a typing condition
-    (Static.v). [pk] says which points the order knows: the point of
+    (static/). [pk] says which points the order knows: the point of
     [new] must be one, so that the created point can be aliased to it
     (sharp edges 49). force asks its instance known and every
     fact of the box's constraint at the instance (sharp edges 65). *)
@@ -1086,5 +845,3 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       konst_ty peq plt pk KForce
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n C (TLolli ub None TUnit T))
            (ty_inst xs T)).
-
-

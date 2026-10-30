@@ -1,21 +1,12 @@
-(** * The chain arguments for readiness (§11, P-Term and P-Connect)
+(** * The chain arguments for readiness (§11)
 
-    Readiness of a composite from readiness of its parts, state by
-    state.
-
-    - [ready_term]: a single thread that holds both ends of the
-      restricted channels C₀ (at aliased points) and is ready over
-      Σ, Θ_B is a ready process over Σ: a stable thread never offers an
-      entry of C₀, because it offers one action, and the other end of
-      the same channel would have to lie strictly above an entry with
-      an aliased head.
-    - [ready_connect]: two ready components over a cut C₀ (dual ends at
-      aliased points) give a ready composite: in a stable composite the
-      two ends of a cut channel are never both offered, so an entry
-      that only a cut channel lies below has, on the other side, an
-      unoffered entry with an aliased head, and so on. The chain
-      descends strictly in the composite's world and visits each cut
-      channel at most once, so it ends at an external offered entry. *)
+    [ready_term] turns a ready thread that holds both ends of the
+    channels of C₀ into a ready process. [ready_connect] turns two ready
+    components over a cut C₀ into a ready composite. In a stable
+    composite the two ends of a cut channel are never both offered, so a
+    chain of unoffered entries descends strictly in the world, visits
+    each cut channel at most once, and ends at an external offered
+    entry. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export relation.LogicalRelation.
@@ -780,17 +771,6 @@ Section term.
     exists σ, (C0 ∖ sentc σ, ∅ ⊎ {[+ t' +]}). split.
     - rewrite single_soup. by apply PStepSession.
     - eapply selects_agree; [|exact Hsel]. intros b. by apply entry_ext.
-  Qed.
-
-  Lemma unlift_offer k : k.1 ∈ dom Σ → offered_p Σ p k → offered_t Θ t k.
-  Proof.
-    intros Hk (σ & q & Hst & Hsel).
-    apply proc_step_sess_inv in Hst as (E0 & e & e' & HE & Hst & _ & _).
-    assert (e = t) as ->.
-    { assert (e ∈ ({[+ t +]} : gmultiset expr)) as He by (rewrite HE; multiset_solver).
-      by apply gmultiset_elem_of_singleton in He. }
-    exists σ, e'. split; [done|]. eapply selects_agree; [|exact Hsel].
-    intros b. symmetry. by apply entry_ext.
   Qed.
 
   Theorem ready_term : ready_p W Σ p.

@@ -48,9 +48,6 @@ Definition rr_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-
-
-
 (** C[ι+1, ι′+1] ⊆ C. *)
 Lemma rq_step g : rq_P g → fact_scoped 2 g → rq_P (fact_map (pt_inst (plist [pv 0 1; pv 1 1])) g).
 Proof. intros (k & [-> | ->]) _; exists (S k); [by left|by right]. Qed.

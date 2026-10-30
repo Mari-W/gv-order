@@ -399,7 +399,6 @@ Proof.
   - eapply sr_conv; [by apply (steq_teqW W W1 σ HW HW1 Ψ)|by apply IH].
 Qed.
 
-
 (** ** The substitution lemma on its own
 
     Instantiating point variables by points preserves derivations at
@@ -533,7 +532,6 @@ Proof.
   - eapply t_conv; [by apply (steq_pinst_s W W σ Hwf HWW Ψ)|by apply IH].
 Qed.
 
-
 (** A closed derivation: no frame variables, no hypotheses, and the
     identity substitution. *)
 Lemma typed_sem_rules_closed W Θ Δ F e T :
@@ -547,10 +545,6 @@ Proof.
   - intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty.
   - intros C xs Hg. cbn in Hg. by apply elem_of_nil in Hg.
 Qed.
-
-Lemma typed_term_wf W Θ Δ F e T :
-  typed W ∅ [] Θ Δ (F, None) e T → strict W → term_wf Θ Δ e.
-Proof. intros Ht _. exact (typed_term_wf_s _ _ _ _ _ _ _ _ Ht). Qed.
 
 (** ** The fundamental theorem for terms *)
 

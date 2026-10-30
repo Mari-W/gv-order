@@ -1,17 +1,10 @@
-(** * factory: typable at one constant point (before 61)
+(** * factory: a box that yields a fresh session per request
 
-    The spec's factory is a box □(∀ι.^⊥ ∗ ⊸ S@ι) whose body runs new and
-    spawns the worker, so that every request yields a session at a
-    point the caller picks. Before 61 that box did not type (SHARP-EDGES 59).
-    Its body must create the channel at the point variable ι, and KTNew
-    asks pt_known W ι, the premise of sharp edges 49. A well-formed world
-    knows constants only (wf_names_const), so no world knows a point
-    variable ([pvar_unknown]). A value of type S@ι cannot come from
-    elsewhere either: E-Conv compares points by equality (eqT), E-Ch
-    needs a channel of Θ, which a box body (E-Exp, Θ = ∅) lacks, and a
-    payload received at x lives at the slots of x, not at ι.
-
-    What types is the factory at one constant point:
+    [fac] creates every session at one constant point (a,0). [faca] is
+    the same body under □∀ι and creates the session at the point
+    variable ι. No well-formed world knows a point variable
+    ([pvar_unknown]), so new at ι types through the knownness of the
+    box's own instance (sharp edges 59, 61).
 
       fac  = !(f = λu. let () = u in let (c, c′) = new ∗ in
                        let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
@@ -20,7 +13,7 @@
              let () = recvclose ((force f) ∗) in recvclose ((force f) ∗)
 
     f is used twice (contraction at □). Both sessions live at (a,0), so
-    the client must finish one before it requests the next: holding
+    the client must finish one before it requests the next. Holding
     both while it blocks on one would ask (a,0) ≺ (a,0). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -90,7 +83,7 @@ Proof.
   unfold pt_known, Wpo. simpl. set_solver.
 Qed.
 
-(** ** factory under □∀ι: typable (SHARP-EDGES 59, resolved)
+(** ** factory under □∀ι: typable (SHARP-EDGES 61)
 
       faca : □(∀ι. ∗ ⊸^⊥_⊤ (?∗.Close)@ι)      (the body of fac, new at ι)
       fa_main = let (f, u) = ⟨faca, ∗⟩ in let () = u in

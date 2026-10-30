@@ -52,7 +52,6 @@ Proof.
   apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-
 Lemma sync_deadlock_free : deadlock_free (∅, {[+ sync_main +]}).
 Proof.
   apply (soundness (Wpo [0]) _ TUnit (Wpo_strict _)).

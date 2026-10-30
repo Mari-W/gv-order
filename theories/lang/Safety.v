@@ -1,8 +1,8 @@
-(** * What we are trying to guarantee, and that the LTS delivers it
+(** * Deadlock freedom and progress
 
     The correctness criteria for processes (Defs. 2.4-2.6) and the
-    progress theorem: a process that offers no action is either
-    terminated or genuinely stuck. *)
+    progress theorem. A process that offers no action is terminated or
+    stuck. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export lang.Semantics.

@@ -10,12 +10,14 @@ From LRGV Require Export rules.SemanticRules.
 
 Set Default Proof Using "All".
 
-(** ** The finitary static system (sharp edges 54, option D)
+(** ** Static frames and hypotheses (sharp edges 54, 56)
 
     E-Abs and E-Exp type the body under the frame {φ} for a fresh
-    frame variable φ, with the single hypothesis u ≺ φ. A frame is a
-    set of points and at most one frame variable: the body of λ or box
-    starts at {φ} and the other rules only add points. φ occurs only in
+    frame variable φ, with the single hypothesis u ≺ φ. A fresh point
+    would not do, because a world that adds a fresh point cannot be
+    dropped again (counterexamples/DropCounter.v). A frame is a set of
+    points and at most one frame variable. The body of λ or box starts
+    at {φ} and the other rules only add points. φ occurs only in
     frames and in the hypotheses Φ, never in a type, an environment or
     the world, so it is never a point that [new] or force could alias.
     x ≺ φ holds when x ≼ u in W for the hypothesis u ≺ φ. E-Exp types

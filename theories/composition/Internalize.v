@@ -289,24 +289,6 @@ Section steps.
     rewrite subjs_ssub, gsub_id by done. set_solver.
   Qed.
 
-  Lemma back_ext σ' q' :
-    proc_step (C ∪ {[d]}, echsubst c d E) (PSess σ') q' →
-    ∃ σ F e e' f', E = F ⊎ {[+ e +]} ∧ tstep e (LSess σ) e' ∧ ssub_rel c d σ σ' ∧
-      c ∉ subjs σ ∧ d ∉ subjs σ ∧ subjs σ ## C ∧ subjs σ' = subjs σ ∧
-      tstep (chsubst c d e) (LSess σ') f' ∧
-      q' = ((C ∪ {[d]}) ∖ sentc σ', echsubst c d F ⊎ {[+ f' +]}).
-  Proof.
-    intros Hq. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
-    apply echsubst_decomp in HE as (F & e & -> & -> & ->).
-    destruct (tstep_chsubst_back c d e σ' f' Hst) as (σ & e' & He & Hr).
-    pose proof (ssub_rel_subjs _ _ _ _ Hr) as Hs.
-    assert (c ∉ subjs σ ∧ d ∉ subjs σ) as [Hc Hd].
-    { split; intros Hin; apply (elem_of_disjoint _ _) in HsC; apply (HsC d); [|set_solver| |set_solver];
-        rewrite Hs; unfold gsub; apply elem_of_map; [exists c|exists d];
-        (split; [|done]); unfold csub; [by rewrite decide_True|by rewrite decide_False]. }
-    rewrite gsub_id in Hs by done.
-    exists σ, F, e, e', f'. split_and!; try done. rewrite <-Hs. set_solver.
-  Qed.
 End steps.
 
 (** ** Readiness of the fused process *)
@@ -349,19 +331,6 @@ Section ready.
       { rewrite subjs_ssub, gsub_id; [done|]. tauto. }
       apply (selects_agree (tenv_of Σp)); [|done].
       intros y Hy. symmetry. apply tenv_of_fused_ne; intros ->; tauto.
-  Qed.
-
-  Lemma off_back k : offered_p Σ q k → offered_p Σp (C, E) k ∧ k.1 ≠ c ∧ k.1 ≠ d.
-  Proof.
-    intros (σ' & q' & Hq & Hsel).
-    destruct (back_ext c d Hcd C E HcC HdC σ' q' Hq)
-      as (σ & F & e & e' & f' & -> & Hst & Hr & Hc & Hd & HsC & Hs & _ & _).
-    pose proof (selects_subj _ _ _ Hsel) as Hk. rewrite Hs in Hk.
-    split_and!; [|intros Heq; apply Hc; by rewrite <-Heq|intros Heq; apply Hd; by rewrite <-Heq].
-    exists σ, (C ∖ sentc σ, F ⊎ {[+ e' +]}). split; [by apply PStepSession|].
-    apply (selects_agree (tenv_of Σ)).
-    { intros y Hy. apply tenv_of_fused_ne; intros ->; tauto. }
-    by apply (ssub_rel_select_t c d _ σ σ' k Hr).
   Qed.
 
   Lemma sync_tau :
@@ -708,9 +677,6 @@ Section internalize.
     Local Notation q := (C ∪ {[d]}, echsubst c d E).
     Local Notation X := (λ W Σp T p, Prel (S n') W Σp T p ∧ fuse_goal (S n') W Σp T p).
     Context (Hstep : ∀ π p', proc_step (C, E) π p' → Pcase_gen X n' W Σp T (C, E) π p').
-
-    Lemma int_ok_here : int_ok W Σ sc sd kc kd C.
-    Proof. by split_and!. Qed.
 
     Lemma int_ok_ext W' Σ' C' :
       wext W W' → c ∉ dom Σ' → d ∉ dom Σ' → c ∉ C' → d ∉ C' → int_ok W' Σ' sc sd kc kd C'.
