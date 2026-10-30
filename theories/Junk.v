@@ -2044,3 +2044,28 @@ Proof.
       * rewrite chsubst_id; [done|]. by rewrite (Vrel_fchans _ _ _ _ _ HVw).
       * by apply IHn; [lia|..].
 Qed.
+
+Lemma eswap_chsubst_absent a b e : b ∉ fchans e → eswap a b e = chsubst a b e.
+Proof.
+  induction e; simpl; intros Hb; f_equal; try (apply IHe || apply IHe1 || apply IHe2 ||
+    apply IHe3); try set_solver.
+  unfold cswap, csub. repeat case_decide; set_solver.
+Qed.
+
+(** Renaming c to a channel d the environment does not hold. *)
+Lemma Erel_rename n W Θ T F e c d :
+  strict W → d ∉ dom Θ → c ≠ d → Erel n W Θ T F e →
+  Erel n W (tenvswap c d Θ) T F (chsubst c d e).
+Proof.
+  intros HW Hd Hcd HE. apply (Erel_swap c d) in HE.
+  rewrite <-(chsubst_eswap_same c d e). apply Erel_junk; [done| |done|done].
+  rewrite dom_tenvswap, elem_of_gswap', cswap_l. done.
+Qed.
+
+Lemma Vrel_rename n W Θ T v c d :
+  d ∉ dom Θ → Vrel n W Θ T v → Vrel n W (tenvswap c d Θ) T (chsubst c d v).
+Proof.
+  intros Hd HV. rewrite <-eswap_chsubst_absent.
+  - by apply Vrel_swap.
+  - by rewrite (Vrel_fchans _ _ _ _ _ HV).
+Qed.
