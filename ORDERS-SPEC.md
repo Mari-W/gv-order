@@ -598,7 +598,7 @@ Neither item is part of the current Rocq round, and neither is on the progress p
 The design first aims at a constraint language that expresses many programs (sharp edges 65).
 Decidability comes later, for an algorithmic system over a fragment of the constraints.
 
-Decidability. A candidate fragment is the counter language of docs/DECIDABILITY.md: facts
+Decidability. A candidate fragment is the counter language of docs/extensions/algorithmic.md (section on decidability): facts
 ∀κ̄. x ≺ y whose coordinates are constants or κ + n, with each counter at most once per side.
 That document decides strictness of the generated world under further side conditions and
 shows undecidability without them. It writes forced invariants as C = ⋃ₖ C₀[σᵏ(ιs)] and carried roots as x.i.
