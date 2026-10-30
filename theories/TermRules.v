@@ -396,6 +396,16 @@ Proof.
     eapply Erel_down; [|exact HE]. lia.
 Qed.
 
+Lemma Erel_det_beta_S n W Θ T F e e' :
+  tstep e LBeta e' → (∀ α e'', tstep e α e'' → α = LBeta ∧ e'' = e') →
+  Erel n W Θ T F e' → Erel (S n) W Θ T F e.
+Proof.
+  intros Hst Hdet HE. apply Erel_S_iff. split_and!.
+  - intros Hirr. exfalso. exact (Hirr _ _ Hst).
+  - intros _. split; intros Hs; exfalso; exact (Hs _ _ Hst).
+  - intros α e'' Hst'. destruct (Hdet _ _ Hst') as [-> ->]. exact HE.
+Qed.
+
 (** ** The rules without elimination of a function *)
 
 Lemma sem_typed_unit W Δ F : lenv_empty Δ → sem_typed W ∅ Δ F EUnit TUnit.
@@ -747,4 +757,104 @@ Proof.
       eapply grounding_ext; [|eapply grounding_down; [|eapply grounding_mono; [exact HW'|exact HW2|exact Hg]]].
       * done.
       * lia.
+Qed.
+
+(** ** Applying a value to a value
+
+    One lemma per kind of function: a closure, and each constant but
+    force (sharp edges 51). *)
+
+Lemma app_val_step v1 v2 α e' :
+  is_val v1 → is_val v2 → tstep (App v1 v2) α e' → head_step (App v1 v2) α e'.
+Proof.
+  intros H1 H2 Hst. apply tstep_app_inv in Hst as [(? & Hst & _)|[(_ & ? & Hst & _)|(_ & _ & H)]];
+    [exfalso; by eapply val_no_tstep..|done].
+Qed.
+
+Lemma Erel_app_lam n W Θ Θ1 Θ2 ub lb T U F eb v2 :
+  strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 →
+  Vrel n W Θ1 (TLolli ub lb T U) (Lam eb) → Vrel n W Θ2 T v2 → ub_below W ub F →
+  Erel n W Θ U F (App (Lam eb) v2).
+Proof.
+  intros HW Hc HV1 HV2 Hub. pose proof (Vrel_val _ _ _ _ _ HV2) as Hv2.
+  destruct n as [|n']; [apply Erel_0|].
+  apply Vrel_lolli_iff in HV1 as [(eb' & Heq & _ & _ & HL)|(k & _ & Heq & _)]; [|done].
+  injection Heq as <-.
+  apply (Erel_det_beta_S _ _ _ _ _ _ (subst1 v2 eb)).
+  - by apply TStepHead, HeadApp.
+  - intros α e'' Hst. apply app_val_step in Hst; [|done|done]. by inversion Hst.
+  - apply (HL W n' Θ2 Θ v2 F); [by apply wext_refl|lia|done| |done].
+    eapply Vrel_down; [|exact HV2]. lia.
+Qed.
+
+Lemma konst_app_inv n W Θ1 Θ2 ub lb T U k v2 :
+  world_wf W → Vrel n W Θ1 (TLolli ub lb T U) (Konst k) → Vrel n W Θ2 T v2 →
+  Θ1 = ∅ ∧ ∃ ub0 lb0 A B, konst_ty (w_eq W) (w_lt W) (pt_known W) k (TLolli ub0 lb0 A B) ∧
+    opt_rel (pteqW W) ub0 ub ∧ teqW W B U ∧ Vrel n W Θ2 A v2.
+Proof.
+  intros HW HV1 HV2.
+  destruct (Vrel_konst_inv _ _ _ _ _ _ _ _ HV1) as (ub0 & lb0 & A & B & Hk & Hub & _ & HA & HB & ->).
+  split; [done|]. exists ub0, lb0, A, B. split_and!; [done|done|done|].
+  eapply Vrel_tconv; [done| |exact HV2]. by apply teqW_sym.
+Qed.
+
+Lemma Erel_app_new n W Θ ub lb T U F v2 :
+  strict W → Vrel n W ∅ (TLolli ub lb T U) ENew → Vrel n W Θ T v2 →
+  Erel n W Θ U F (App ENew v2).
+Proof.
+  intros HW HV1 HV2.
+  destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
+    as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
+  inversion Hk as [S x Hx| | | | | |]; subst.
+  apply Vrel_unit_iff in HV as [-> ->].
+  destruct n as [|n']; [apply Erel_0|].
+  assert (tstep (App ENew EUnit) (LNew "c") (Pair (Chan "c") (Chan "c"))) as Hst0
+    by apply TStepHead, HeadNew.
+  apply Erel_S_iff. split_and!.
+  - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
+  - intros _. split; intros Hs; exfalso; exact (Hs _ _ Hst0).
+  - intros α e' Hst. apply app_val_step in Hst; [|done|done].
+    inversion Hst as [| | |c| | | | | | | |]; subst. simpl. intros _.
+    destruct (fresh_const (w_names W ∪ ty_roots U ∪ frame_roots F)) as [a Ha].
+    destruct (wext_fresh_alias W a x HW Hx ltac:(clear -Ha; set_solver)) as (W' & Hfr & Hal).
+    exists a, S, (dual S), W'. split_and!.
+    + unfold tenv_roots. rewrite map_fold_empty. clear -Ha. set_solver.
+    + apply sdual_dual.
+    + done.
+    + pose proof (proj1 Hfr) as HWW'. pose proof (wext_wf _ _ HWW') as HW'.
+      apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [apply HWW'|exact HB]|].
+      apply Vrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, pconst a)]},
+        {[c := One (dual S, pconst a)]}. split_and!.
+      * done.
+      * split.
+        -- intros c'. rewrite insert_empty. destruct (decide (c' = c)) as [->|Hne].
+           ++ rewrite !lookup_singleton_eq. constructor.
+           ++ rewrite !lookup_singleton_ne by done. constructor.
+        -- intros c' e1 e2 H1 H2. destruct (decide (c' = c)) as [->|Hne];
+             [|by rewrite lookup_singleton_ne in H1].
+           rewrite lookup_singleton_eq in H1, H2. simplify_eq. simpl.
+           split; [apply (wf_eq_refl _ HW')|apply sdual_dual].
+      * apply Vrel_sess_iff. exists c, S, (pconst a). split_and!; [done|done|apply seq_refl|done].
+      * apply Vrel_sess_iff. exists c, (dual S), (pconst a).
+        split_and!; [done|done|apply seq_refl|done].
+Qed.
+
+Lemma Erel_app_spawn n W Θ ub lb T U F v2 :
+  strict W → Vrel n W ∅ (TLolli ub lb T U) ESpawn → Vrel n W Θ T v2 →
+  Erel n W Θ U F (App ESpawn v2).
+Proof.
+  intros HW HV1 HV2.
+  destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
+    as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
+  inversion Hk as [|ub1 lb1| | | | |]; subst.
+  pose proof (Vrel_val _ _ _ _ _ HV) as Hv.
+  destruct n as [|n']; [apply Erel_0|].
+  assert (tstep (App ESpawn v2) (LSpawn v2) EUnit) as Hst0 by by apply TStepHead, HeadSpawn.
+  apply Erel_S_iff. split_and!.
+  - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
+  - intros _. split; intros Hs; exfalso; exact (Hs _ _ Hst0).
+  - intros α e' Hst. apply app_val_step in Hst; [|done|done].
+    inversion Hst; subst. simpl.
+    exists Θ, ∅, ub1, lb1. split_and!; [apply tenv_comp_empty_r|done|].
+    apply Vrel_Erel. eapply Vrel_tconv; [apply HW|exact HB|]. by apply Vrel_unit_iff.
 Qed.
