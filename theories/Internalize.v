@@ -225,3 +225,192 @@ Section steps.
     exists σ, F, e, e', f'. split_and!; try done. rewrite <-Hs. set_solver.
   Qed.
 End steps.
+
+(** ** Readiness of the fused process *)
+
+Section ready.
+  Context (c d : chan) (Hcd : c ≠ d) (W : world) (HW : strict W) (Σ : senv)
+    (sc sd : sty) (kc kd : point) (C : gset chan) (E : gmultiset expr).
+  Context (HcΣ : c ∉ dom Σ) (HdΣ : d ∉ dom Σ) (HcC : c ∉ C) (HdC : d ∉ C)
+    (Hdu : sdual sc sd) (Hal : w_eq W kc kd).
+  Local Notation Σp := (fusedP c d Σ sc sd kc kd).
+  Local Notation q := (C ∪ {[d]}, echsubst c d E).
+
+  Lemma tenv_of_fused_ne y : y ≠ c → y ≠ d → tenv_of Σp !! y = tenv_of Σ !! y.
+  Proof. intros. unfold tenv_of. by rewrite !lookup_fmap, fusedP_ne. Qed.
+
+  Lemma entry_c : tenv_entry (tenv_of Σp) (c, false) = Some (sc, kc).
+  Proof. unfold tenv_entry, tenv_of. simpl. by rewrite lookup_fmap, fusedP_c. Qed.
+
+  Lemma entry_d : tenv_entry (tenv_of Σp) (d, false) = Some (sd, kd).
+  Proof. unfold tenv_entry, tenv_of. simpl. by rewrite lookup_fmap, fusedP_d. Qed.
+
+  Lemma stable_back : stable_p q → stable_p (C, E).
+  Proof.
+    intros Hs p' Hp. destruct (lift_tau c d Hcd C E HcC HdC p' Hp) as [q' Hq].
+    exact (Hs q' Hq).
+  Qed.
+
+  Lemma off_fwd k :
+    stable_p q → offered_p Σp (C, E) k → k.1 ≠ c → k.1 ≠ d → offered_p Σ q k.
+  Proof.
+    intros Hs (σ & p' & Hp & Hsel) Hk1 Hk2.
+    destruct (decide (c ∈ subjs σ ∨ d ∈ subjs σ)) as [Ht|Ht].
+    - exfalso. destruct σ as [c0 w|c0 w|c0|cd]; simpl in Ht.
+      1-3: apply selects_subj in Hsel; simpl in Hsel; set_solver.
+      destruct (lift_link_cd c d Hcd C E HcC HdC cd p' Hp Ht) as [q' Hq]. exact (Hs q' Hq).
+    - destruct (lift_ext c d Hcd C E HcC HdC σ p' Hp) as [q' Hq]; [tauto|tauto|].
+      exists (ssub c d σ), q'. split; [done|].
+      assert (ssub_rel c d σ (ssub c d σ)) as Hr by (destruct σ; simpl; done).
+      apply (ssub_rel_select_t c d _ σ (ssub c d σ) k Hr).
+      { rewrite subjs_ssub, gsub_id; [done|]. tauto. }
+      apply (selects_agree (tenv_of Σp)); [|done].
+      intros y Hy. symmetry. apply tenv_of_fused_ne; intros ->; tauto.
+  Qed.
+
+  Lemma off_back k : offered_p Σ q k → offered_p Σp (C, E) k ∧ k.1 ≠ c ∧ k.1 ≠ d.
+  Proof.
+    intros (σ' & q' & Hq & Hsel).
+    destruct (back_ext c d Hcd C E HcC HdC σ' q' Hq)
+      as (σ & F & e & e' & f' & -> & Hst & Hr & Hc & Hd & HsC & Hs & _ & _).
+    pose proof (selects_subj _ _ _ Hsel) as Hk. rewrite Hs in Hk.
+    split_and!; [|intros Heq; apply Hc; by rewrite <-Heq|intros Heq; apply Hd; by rewrite <-Heq].
+    exists σ, (C ∖ sentc σ, F ⊎ {[+ e' +]}). split; [by apply PStepSession|].
+    apply (selects_agree (tenv_of Σ)).
+    { intros y Hy. apply tenv_of_fused_ne; intros ->; tauto. }
+    by apply (ssub_rel_select_t c d _ σ σ' k Hr).
+  Qed.
+
+  Lemma sync_tau :
+    offered_p Σp (C, E) (c, false) → offered_p Σp (C, E) (d, false) →
+    ∃ q', proc_step q PTau q'.
+  Proof.
+    intros (σ1 & p1 & H1 & Hs1) (σ2 & p2 & H2 & Hs2).
+    destruct σ1 as [c1 w1|c1 w1|c1|cd1];
+      [| | |eapply lift_link_cd; [done..|exact H1|left; by apply selects_subj in Hs1]].
+    all: destruct σ2 as [c2 w2|c2 w2|c2|cd2];
+      [| | |eapply lift_link_cd; [done..|exact H2|right; by apply selects_subj in Hs2]].
+    all: simpl in Hs1, Hs2; destruct Hs1 as [Hc1 Hs1], Hs2 as [Hc2 Hs2];
+      simpl in Hc1, Hc2; subst c1 c2.
+    (* the heads of the two entries *)
+    all: first [destruct Hs1 as (e & m & T & s & He1 & Hu1)
+               |destruct Hs1 as (e & He1 & Hu1 & _)];
+         first [destruct Hs2 as (e' & m' & T' & s' & He2 & Hu2)
+               |destruct Hs2 as (e' & He2 & Hu2 & _)].
+    all: rewrite entry_c in He1; rewrite entry_d in He2;
+      injection He1 as <-; injection He2 as <-; simpl in Hu1, Hu2.
+    (* mismatched heads contradict duality *)
+    all: try (destruct (sdual_rcv _ _ _ _ _ Hdu Hu1) as (? & ? & Hx); congruence).
+    all: try (destruct (sdual_snd _ _ _ _ _ Hdu Hu1) as (? & ? & Hx); congruence).
+    all: try (pose proof (sdual_end _ _ Hdu Hu1) as Hx; congruence).
+    - (* receive on c, send on d *)
+      destruct (two_threads C E _ _ _ _ H1 H2) as (F & e1 & e1' & e2 & e2' & -> & Hst1 & Hst2).
+      { intros [] Ha1 Ha2; simpl in Ha1, Ha2; naive_solver. }
+      apply (tstep_chsubst c d) in Hst1, Hst2. simpl in Hst1, Hst2.
+      rewrite csub_hit in Hst1. rewrite (csub_ne c d d) in Hst2 by done.
+      destruct (recv_retarget _ _ _ _ (chsubst c d w2) Hst1) as [f'' Hf''].
+      { by apply tstep_send_val in Hst2. }
+      eexists. rewrite echsubst_disj_union2.
+      replace (echsubst c d F ⊎ {[+ chsubst c d e1 +]} ⊎ {[+ chsubst c d e2 +]})
+        with (echsubst c d F ⊎ {[+ chsubst c d e2 +]} ⊎ {[+ chsubst c d e1 +]})
+        by multiset_solver.
+      by eapply PStepMsg.
+    - (* send on c, receive on d *)
+      destruct (two_threads C E _ _ _ _ H1 H2) as (F & e1 & e1' & e2 & e2' & -> & Hst1 & Hst2).
+      { intros [] Ha1 Ha2; simpl in Ha1, Ha2; naive_solver. }
+      apply (tstep_chsubst c d) in Hst1, Hst2. simpl in Hst1, Hst2.
+      rewrite csub_hit in Hst1. rewrite (csub_ne c d d) in Hst2 by done.
+      destruct (recv_retarget _ _ _ _ (chsubst c d w1) Hst2) as [f'' Hf''].
+      { by apply tstep_send_val in Hst1. }
+      eexists. rewrite echsubst_disj_union2. by eapply PStepMsg.
+    - (* close on both *)
+      destruct (two_threads C E _ _ _ _ H1 H2) as (F & e1 & e1' & e2 & e2' & -> & Hst1 & Hst2).
+      { intros [] Ha1 Ha2; simpl in Ha1, Ha2; naive_solver. }
+      apply (tstep_chsubst c d) in Hst1, Hst2. simpl in Hst1, Hst2.
+      rewrite csub_hit in Hst1. rewrite (csub_ne c d d) in Hst2 by done.
+      eexists. rewrite echsubst_disj_union2. eapply PStepClose; [done|done|set_solver].
+  Qed.
+
+  Lemma lt_eq_false x y : w_lt W x y → w_eq W x y → False.
+  Proof.
+    intros Hlt Heq. destruct HW as [HWf Hirr]. apply (Hirr y).
+    eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf].
+  Qed.
+
+  Lemma fused_ready :
+    ready_p W Σp (C, E) → ¬ terminated (C, E) → stable_p q →
+    ((∀ k, ¬ offered_p Σ q k) → False) ∧ above_offered W (tenv_of Σ) (offered_p Σ q).
+  Proof.
+    intros Hrdy Hnt Hs. destruct HW as [HWf _].
+    destruct (Hrdy (stable_back Hs)) as [Hv Ha].
+    assert (¬ (offered_p Σp (C, E) (c, false) ∧ offered_p Σp (C, E) (d, false))) as Hnb.
+    { intros [H1 H2]. destruct (sync_tau H1 H2) as [q' Hq]. exact (Hs q' Hq). }
+    assert (Hcd_key : ∀ k, offered_p Σp (C, E) k → k.1 = c ∨ k.1 = d → k.2 = false).
+    { intros [k1 b] (σ & p' & _ & Hsel) Hk. destruct (selects_entry _ _ _ Hsel) as [e He].
+      simpl in *. destruct Hk as [->| ->];
+        [by apply fusedP_entry_c in He as [-> _]|by apply fusedP_entry_d in He as [-> _]]. }
+    (* an offered end of c or d lies above an offer of the fused process *)
+    assert (Hkey : ∀ k0 e0, offered_p Σp (C, E) k0 → tenv_entry (tenv_of Σp) k0 = Some e0 →
+              k0.1 = c ∨ k0.1 = d →
+              ∃ k' e', offered_p Σ q k' ∧ tenv_entry (tenv_of Σ) k' = Some e' ∧
+                w_lt W e'.2 e0.2).
+    { intros [k1 b] e0 Ho He Hk. pose proof (Hcd_key _ Ho Hk) as Hb. simpl in Hb, Hk. subst b.
+      destruct Hk as [->| ->].
+      - rewrite entry_c in He. injection He as <-.
+        destruct (Ha (d, false) (sd, kd) entry_d) as (k' & e' & Ho' & He' & Hlt).
+        { intros Hd'. by apply Hnb. }
+        unfold entry_head in Hlt. simpl in Hlt.
+        destruct (decide (k'.1 = c)) as [Hk'|Hk'].
+        { exfalso. destruct k' as [k1' b']. simpl in Hk'. subst k1'.
+          apply fusedP_entry_c in He' as [-> ->]. simpl in Hlt.
+          by apply (lt_eq_false kc kd). }
+        destruct (decide (k'.1 = d)) as [Hk''|Hk''].
+        { exfalso. destruct k' as [k1' b']. simpl in Hk''. subst k1'.
+          apply fusedP_entry_d in He' as [-> ->]; [|done]. simpl in Hlt.
+          destruct HW as [_ Hirr]. exact (Hirr _ Hlt). }
+        exists k', e'. split_and!.
+        + by apply off_fwd.
+        + by rewrite <-(fusedP_entry_ne c d Σ sc sd kc kd).
+        + simpl. eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|by apply (wf_eq_sym _ HWf)].
+      - rewrite entry_d in He. injection He as <-.
+        destruct (Ha (c, false) (sc, kc) entry_c) as (k' & e' & Ho' & He' & Hlt).
+        { intros Hc'. by apply Hnb. }
+        unfold entry_head in Hlt. simpl in Hlt.
+        destruct (decide (k'.1 = d)) as [Hk'|Hk'].
+        { exfalso. destruct k' as [k1' b']. simpl in Hk'. subst k1'.
+          apply fusedP_entry_d in He' as [-> ->]; [|done]. simpl in Hlt.
+          apply (lt_eq_false kd kc); [done|by apply (wf_eq_sym _ HWf)]. }
+        destruct (decide (k'.1 = c)) as [Hk''|Hk''].
+        { exfalso. destruct k' as [k1' b']. simpl in Hk''. subst k1'.
+          apply fusedP_entry_c in He' as [-> ->]. simpl in Hlt.
+          destruct HW as [_ Hirr]. exact (Hirr _ Hlt). }
+        exists k', e'. split_and!.
+        + by apply off_fwd.
+        + by rewrite <-(fusedP_entry_ne c d Σ sc sd kc kd).
+        + simpl. eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|exact Hal]. }
+    split.
+    - intros Hno. apply Hnt, Hv. intros k Ho.
+      destruct (decide (k.1 = c ∨ k.1 = d)) as [Hk|Hk].
+      + pose proof Ho as (σ & p' & _ & Hsel). destruct (selects_entry _ _ _ Hsel) as [e He].
+        destruct (Hkey k e Ho He Hk) as (k' & e' & Ho' & _). exact (Hno k' Ho').
+      + apply (Hno k). apply off_fwd; [done|done|tauto|tauto].
+    - intros k e He Hk.
+      assert (k.1 ≠ c ∧ k.1 ≠ d) as [Hk1 Hk2].
+      { destruct k as [k1 b]. unfold tenv_entry, tenv_of in He. simpl in He |- *.
+        rewrite lookup_fmap in He.
+        split; intros ->; [rewrite (proj1 (not_elem_of_dom _ _) HcΣ) in He
+                          |rewrite (proj1 (not_elem_of_dom _ _) HdΣ) in He]; done. }
+      destruct (Ha k e) as (k' & e' & Ho' & He' & Hlt).
+      { by rewrite (fusedP_entry_ne c d Σ sc sd kc kd). }
+      { intros Ho. apply Hk. by apply off_fwd. }
+      unfold entry_head in Hlt.
+      destruct (decide (k'.1 = c ∨ k'.1 = d)) as [Hk'|Hk'].
+      + destruct (Hkey k' e' Ho' He' Hk') as (k'' & e'' & Ho'' & He'' & Hlt').
+        exists k'', e''. split_and!; [done|done|]. unfold entry_head.
+        by eapply (wf_lt_trans _ HWf).
+      + exists k', e'. split_and!.
+        * apply off_fwd; [done|done|tauto|tauto].
+        * rewrite <-(fusedP_entry_ne c d Σ sc sd kc kd); [done|tauto|tauto].
+        * done.
+  Qed.
+End ready.
