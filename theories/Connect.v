@@ -292,9 +292,9 @@ Ltac mdisj_close :=
       exfalso; apply H; eapply elem_of_dom_2; eassumption
   end.
 
-Ltac mlk := repeat (rewrite ?lookup_union, ?lookup_difference, ?lookup_intersection,
-                      ?lookup_fmap, ?lookup_insert_eq in * );
-  repeat (rewrite lookup_insert_ne in * by done).
+Ltac mlk := repeat (progress (rewrite ?lookup_union, ?lookup_difference, ?lookup_intersection,
+                      ?lookup_fmap, ?lookup_insert_eq in * ) ||
+                    (rewrite lookup_insert_ne in * by done)).
 
 Ltac mdestr :=
   repeat match goal with
@@ -642,5 +642,65 @@ Section steps.
           rewrite !lookup_union, !lookup_difference, !lookup_insert_ne by done. mpoint.
       + assert (Σ2n ∪ ΣCn' = Σ2 ∪ ΣC') as ->; [|exact HP2'].
         apply map_eq. intros r. subst Σ2n ΣCn'. mpoint.
+  Qed.
+  (** Component 1 loses interface entries only (close, link): the
+      composite's successor is again a configuration over the same cut. *)
+  Lemma iface_shrink Σ1a F1 e e' :
+    E1 = F1 ⊎ {[+ e +]} → esize e' < esize e →
+    Σ1a ##ₘ ΣC → dom Σ1a ⊆ dom Σ1 →
+    Prel (S n') W (Σ1a ∪ ΣC) TA (C1, F1 ⊎ {[+ e' +]}) →
+    Prel (S n') W (Σ1a ∪ Σ2) T (C, F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hsz Hd Hsub HP1'.
+    assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    apply (IHi W Σ1a Σ2 ΣC ΣC' C0 C1 C2 _ _ TA TB); try done.
+    - rewrite <-Hm, HE, !msize_disj_union, !msize_singleton. lia.
+    - apply map_disjoint_dom in Hd12.
+      split; try done; try (apply map_disjoint_dom); clear -Hsub Hd12 HC2Σ1 HC1Σ1; set_solver.
+  Qed.
+
+  (** Q-Close for a close of component 1 on an interface channel. *)
+  Lemma ext_close F1 e c e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SClos c)) e' → c ∉ C →
+    Pclos_case (Prel (S n')) W Σ T c (C ∖ sentc (SClos c), F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst Hc. pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    assert (proc_step (C1, E1) (PSess (SClos c)) (C1 ∖ sentc (SClos c), F1 ⊎ {[+ e' +]}))
+      as Hst1.
+    { rewrite HE. apply (PStepSession C1 F1 e (SClos c) e' Hst). simpl. clear -Hc. set_solver. }
+    pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hst1) as Hc1. simpl in Hc1.
+    rewrite difference_empty_L in Hc1. cbn [sentc]. rewrite difference_empty_L.
+    destruct Hc1 as (Σ1a & k & (s0 & HΣa & Hu) & Hc1a & HP1').
+    assert (c ∉ C0) as HcC0 by (clear -Hc; set_solver).
+    assert (ΣC !! c = None) as HCc by (apply not_elem_of_dom; by rewrite HC0).
+    assert (ΣC ⊆ Σ1a) as HCsub.
+    { apply map_subseteq_spec. intros r x Hx. pose proof (f_equal (lookup r) HΣa) as Hr.
+      destruct (decide (r = c)) as [->|Hrc]; [congruence|].
+      rewrite lookup_insert_ne in Hr by done.
+      rewrite lookup_union, Hx in Hr. destruct (Σ1 !! r) eqn:H1r.
+      - exfalso. exact (proj1 (map_disjoint_spec _ _) Hd1 r _ _ H1r Hx).
+      - by rewrite (left_id_L None (∪)) in Hr. }
+    exists (Σ1a ∖ ΣC ∪ Σ2), k. split_and!.
+    - exists s0. split; [|done]. apply map_eq. intros r.
+      pose proof (f_equal (lookup r) HΣa) as Hr.
+      pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
+      destruct (decide (r = c)) as [->|Hrc]; mpoint.
+      all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence).
+    - assert (c ∈ dom Σ1).
+      { assert (c ∈ dom (Σ1 ∪ ΣC)) as H by (rewrite HΣa, dom_insert_L; clear; set_solver).
+        rewrite dom_union_L, HC0 in H. clear -H HcC0. set_solver. }
+      rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
+      clear -Hc1a H Hd12. set_solver.
+    - eapply iface_shrink; [done|by apply (tstep_giving_size _ _ _ Hst)| | |].
+      + by apply map_disjoint_difference_l1.
+      + rewrite dom_difference_L. intros r Hr.
+        assert (r ∈ dom (Σ1 ∪ ΣC)) as H.
+        { rewrite HΣa, dom_insert_L. clear -Hr. set_solver. }
+        rewrite dom_union_L in H. clear -H Hr. set_solver.
+      + assert (Σ1a ∖ ΣC ∪ ΣC = Σ1a) as -> ; [|done].
+        apply map_eq. intros r. pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
+        mpoint. all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence).
   Qed.
 End steps.
