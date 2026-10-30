@@ -713,3 +713,89 @@ Proof.
   - by apply geq_base.
   - by apply glt_base.
 Qed.
+
+(** ** factory: typable at one constant point, not under □∀ι
+
+    The spec's factory is a box □(∀ι.^⊥ ∗ ⊸ S@ι) whose body runs new and
+    spawns the worker, so that every request yields a session at a
+    point the caller picks. That box does not type (SHARP-EDGES 59).
+    Its body must create the channel at the point variable ι, and KTNew
+    asks pt_known W ι, the premise of sharp edges 49. A well-formed world
+    knows constants only (wf_names_const), so no world knows a point
+    variable ([pvar_unknown]). A value of type S@ι cannot come from
+    elsewhere either: E-Conv compares points by equality (eqT), E-Ch
+    needs a channel of Θ, which a box body (E-Exp, Θ = ∅) lacks, and a
+    payload received at x lives at the slots of x, not at ι.
+
+    What types is the factory at one constant point:
+
+      fac  = !(f = λu. let () = u in let (c, c′) = new ∗ in
+                       let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
+           : □(∗ ⊸^⊥_⊤ (?∗.Close)@(a,0))
+      main = let (f, u) = ⟨fac, ∗⟩ in let () = u in
+             let () = recvclose ((force f) ∗) in recvclose ((force f) ∗)
+
+    f is used twice (contraction at □). Both sessions live at (a,0), so
+    the client must finish one before it requests the next: holding
+    both while it blocks on one would ask (a,0) ≺ (a,0). *)
+
+Lemma pvar_unknown W a : world_wf W → ¬ pt_known W (pvar a).
+Proof. intros HW Hk. destruct (wf_names_const _ HW _ Hk) as [b Hb]. done. Qed.
+
+Definition Tfac_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (pc 0 0)).
+Definition Tfac : ty := TBox 0 [] None Tfac_body.
+
+Definition fac : expr :=
+  EBox (Lam (LetU (Var 0) (LetP (App ENew EUnit)
+    (LetU (App ESpawn (Lam (LetU (Var 0) (sendclose (Var 2))))) (Var 0))))).
+
+Definition request : expr := recvclose (App (App EForce (Var 1)) EUnit).
+
+Definition fac_main : expr :=
+  LetP (Pair fac EUnit) (LetU (Var 0) (LetU request request)).
+
+Lemma fac_typed W : world_wf W → pt_known W (pc 0 0) →
+  typed W ∅ [] ∅ [] (∅, None) fac_main TUnit.
+Proof.
+  intros HW Ha. unfold fac_main.
+  tstep.
+  { tstep; [tstep|].
+    apply (t_box W _ _ _ _ _ 0 [] None Tfac_body 0); [by apply allunl_unl|set_solver|].
+    cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
+    cbn. tstep; [tstep|]. cbn. tstep.
+    { tstep; [tstep|apply (KTNew _ _ _ Sd (pc 0 0) Ha)|done|apply ubs_none]. }
+    cbn. tstep; [|tstep].
+    tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pc 0 0)) 2); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
+    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pc 0 0)); cbn; set_solver|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pc 0 1). split; [done|]. right. apply (slt_po W _ (pc 0 0) HW).
+    - apply KTClos.
+    - done.
+    - apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pc 0 1). split; [done|]. apply sle_refl, HW. }
+  cbn. tstep; [tstep|]. cbn.
+  assert (∀ P, (∀ y, y ∈ P → False) →
+    typed W ∅ [] ∅ [None; Some Tfac] (P, None) request TUnit) as Hreq.
+  { intros P HP. unfold request, recvclose. tstep.
+    - tstep; [| | |].
+      + eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
+        cbn. apply (typed_force W _ _ _ _ _ _ 0 [] None Tfac_body []); [done|done| |apply ubs_none|tstep].
+        intros q Hq. by apply elem_of_nil in Hq.
+      + apply KTRecv.
+      + kscope.
+      + apply ubs_intro; [|done]. intros y Hy. cbn in Hy.
+        rewrite elem_of_union in Hy. destruct Hy as [Hy|Hy]; [by destruct (HP y)|set_solver].
+    - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [|done]. intros y Hy. by destruct (HP y). }
+  tstep; apply Hreq; cbn; set_solver.
+Qed.
+
+Lemma fac_deadlock_free : deadlock_free (∅, {[+ fac_main +]}).
+Proof.
+  apply (soundness (Wpo [0]) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed; [constructor|]. apply fac_typed; [apply Wpo_strict|].
+  unfold pt_known, Wpo. simpl. set_solver.
+Qed.
