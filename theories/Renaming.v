@@ -543,8 +543,9 @@ Proof.
     - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
       apply Vrel_box_iff. rewrite tenvswap_empty. split; [done|].
       exists (eswap a b eb). split_and!; [done|by rewrite fchans_eswap, Hfc, gswap_empty|].
-      intros W' j xs Hx Hj Hxs.
-      specialize (H _ j xs Hx Hj Hxs).
+      intros W' j xs F Hx Hj Hxs Hub.
+      specialize (H _ j xs F Hx Hj Hxs Hub).
+
       apply (IHE j Hj) in H.
       by rewrite tenvswap_empty, eswap_subst1 in H.
     - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs & Hx).

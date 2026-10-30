@@ -108,8 +108,12 @@ Inductive ty :=
                                    (* T ⊸^ub_lb U *)
   | TProd (T U : ty)               (* T ⊗ U *)
   | TSum (T U : ty)                (* T ⊕ U *)
-  | TBox (n : nat) (T : ty)        (* □(∀ι₀ … ιₙ₋₁. T) — unlimited
-                                      (replicable) values *)
+  | TBox (n : nat) (ub : option point) (T : ty)
+                                   (* □(∀ι₀ … ιₙ₋₁.^ub T) — unlimited
+                                      (replicable) values; the upper
+                                      point ub ([None] = ⊥) lies under
+                                      the binder (sharp edges 52) *)
+
   | TSess (S : sty) (x : point)   (* S@x *)
 with sty :=
   | SRcv (m : nat) (T : ty) (S : sty)
@@ -140,7 +144,7 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
         (pinst_ty σ T1) (pinst_ty σ U)
   | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
   | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
-  | TBox n T1 => TBox n (pinst_ty (pup n σ) T1)
+  | TBox n ub T1 => TBox n (pt_inst (pup n σ) <$> ub) (pinst_ty (pup n σ) T1)
   | TSess s x => TSess s (pt_inst σ x)
   end.
 
@@ -162,7 +166,7 @@ Definition opt_heads (o : option point) : gset point :=
 
 Fixpoint heads (T : ty) : gset point :=
   match T with
-  | TUnit | TBox _ _ => ∅
+  | TUnit | TBox _ _ _ => ∅
   | TLolli _ lb _ _ => opt_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
   | TSess _ x => {[x]}
@@ -184,7 +188,7 @@ Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   | TLolli ub lb T1 U => TLolli ub lb (sren_ty r T1) (sren_ty r U)
   | TProd T1 U => TProd (sren_ty r T1) (sren_ty r U)
   | TSum T1 U => TSum (sren_ty r T1) (sren_ty r U)
-  | TBox n T1 => TBox n (sren_ty r T1)
+  | TBox n ub T1 => TBox n ub (sren_ty r T1)
   | TSess s x => TSess (sren r s) x
   end
 with sren (r : nat → nat) (s : sty) : sty :=
@@ -211,7 +215,7 @@ Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   | TLolli ub lb T1 U => TLolli ub lb (sflip_ty k T1) (sflip_ty k U)
   | TProd T1 U => TProd (sflip_ty k T1) (sflip_ty k U)
   | TSum T1 U => TSum (sflip_ty k T1) (sflip_ty k U)
-  | TBox n T1 => TBox n (sflip_ty k T1)
+  | TBox n ub T1 => TBox n ub (sflip_ty k T1)
   | TSess s x => TSess (sflip k s) x
   end
 with sflip (k : nat) (s : sty) : sty :=
@@ -261,7 +265,7 @@ Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   | TLolli ub lb T1 U => TLolli ub lb (sinst_ty σ T1) (sinst_ty σ U)
   | TProd T1 U => TProd (sinst_ty σ T1) (sinst_ty σ U)
   | TSum T1 U => TSum (sinst_ty σ T1) (sinst_ty σ U)
-  | TBox n T1 => TBox n (sinst_ty σ T1)
+  | TBox n ub T1 => TBox n ub (sinst_ty σ T1)
   | TSess s x => TSess (sinst σ s) x
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
@@ -318,7 +322,7 @@ Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
   | TUnit => True
   | TLolli _ _ T1 U | TProd T1 U | TSum T1 U =>
       sclosed_ty k T1 ∧ sclosed_ty k U
-  | TBox _ T1 => sclosed_ty k T1
+  | TBox _ _ T1 => sclosed_ty k T1
   | TSess s _ => sclosed k s
   end
 with sclosed (k : nat) (s : sty) : Prop :=
@@ -575,7 +579,7 @@ Fixpoint contractive_ty (T : ty) : Prop :=
   | TUnit => True
   | TLolli _ _ T1 U | TProd T1 U | TSum T1 U =>
       contractive_ty T1 ∧ contractive_ty U
-  | TBox _ T1 => contractive_ty T1
+  | TBox _ _ T1 => contractive_ty T1
   | TSess s _ => contractive s
   end
 with contractive (s : sty) : Prop :=
@@ -640,7 +644,7 @@ Inductive prim : ty → Prop :=
   | prim_unit : prim TUnit
   | prim_prod U V : prim U → prim V → prim (TProd U V)
   | prim_sum U V : prim U → prim V → prim (TSum U V)
-  | prim_box n U : prim U → prim (TBox n U).
+  | prim_box n ub U : prim U → prim (TBox n ub U).
 
 (** ** Unlimited types
 
@@ -651,9 +655,9 @@ Inductive prim : ty → Prop :=
     one is a matter of extending the match below. *)
 
 Definition unlimited (T : ty) : Prop :=
-  match T with TBox _ _ => True | _ => False end.
+  match T with TBox _ _ _ => True | _ => False end.
 
-Lemma unlimited_box n T : unlimited (TBox n T).
+Lemma unlimited_box n ub T : unlimited (TBox n ub T).
 Proof. done. Qed.
 
 (** ** Session environments: finite maps from channels to session
@@ -900,7 +904,7 @@ Qed.
     recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
     close  : Close@ι ⊸^ι_⊤ ∗
     link   : S@ι ⊗ dual S@ι′ ⊸^ι_⊤ ∗       ι ≡ ι′
-    force  : □(∀ιs. T) ⊸^⊥_⊤ T[ιs′/ιs]
+    force  : □(∀ιs.^u T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]   (sharp edges 52)
 
     The side conditions on points are read in an order given as two
     relations: the world G generates for typing, a world W for the
@@ -935,6 +939,8 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       peq x x' →
       konst_ty peq plt pk KLink
         (TLolli (Some x) None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
-  | KTForce n T xs :
+  | KTForce n ub T xs :
       length xs = n →
-      konst_ty peq plt pk KForce (TLolli None None (TBox n T) (ty_inst xs T)).
+      konst_ty peq plt pk KForce
+        (TLolli (pt_inst (plist xs) <$> ub) None (TBox n ub T) (ty_inst xs T)).
+

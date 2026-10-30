@@ -105,7 +105,8 @@ Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
       ub = ub' ∧ lb = lb' ∧ eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TProd T1 T2, TProd U1 U2 => eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TSum T1 T2, TSum U1 U2 => eqT ρ T1 U1 ∧ eqT ρ T2 U2
-  | TBox n T1, TBox n' U1 => n = n' ∧ eqT ρ T1 U1
+  | TBox n ub T1, TBox n' ub' U1 => n = n' ∧ ub = ub' ∧ eqT ρ T1 U1
+
   | TSess s x, TSess r y => x = y ∧ ρ s r
   | _, _ => False
   end.
@@ -305,8 +306,9 @@ Proof.
   - destruct (H 0) as (-> & -> & _). split_and!; [done|done| |].
     + apply IHT1. intros n. by destruct (H n) as (_ & _ & ? & _).
     + apply IHT2. intros n. by destruct (H n) as (_ & _ & _ & ?).
-  - destruct (H 0) as (-> & _). split; [done|].
-    apply IHT. intros n. by destruct (H n).
+  - destruct (H 0) as (-> & -> & _). split_and!; [done|done|].
+    apply IHT. intros n. by destruct (H n) as (_ & _ & ?).
+
   - destruct (H 0) as (-> & _). split; [done|]. intros n. by destruct (H n).
 Qed.
 

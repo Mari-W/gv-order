@@ -54,7 +54,9 @@ Fixpoint teqW (W : world) (T U : ty) : Prop :=
       teqW W T1 U1 ∧ teqW W T2 U2
   | TProd T1 T2, TProd U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
   | TSum T1 T2, TSum U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
-  | TBox n T1, TBox n' U1 => n = n' ∧ teqW W T1 U1
+  | TBox n ub T1, TBox n' ub' U1 =>
+      n = n' ∧ opt_rel (pteqW W) ub ub' ∧ teqW W T1 U1
+
   | TSess s x, TSess r y => pteqW W x y ∧ seq s r
   | _, _ => False
   end.
@@ -103,13 +105,16 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TSum T1 U =>
       (∃ v', v = Inj1 v' ∧ Vdef below n W Θ T1 v')
       ∨ (∃ v', v = Inj2 v' ∧ Vdef below n W Θ U v')
-  | TBox m T1 =>
-      (* as in the paper's V⟦□T⟧ = {!e | fix x.e ∈ E⟦T ≺ ∅⟧}, at every
-         instance of the ∀ and in every future world; forcing always
-         takes a β step, so only lower indices are constrained *)
+  | TBox m ub T1 =>
+      (* the paper's V⟦□T⟧ = {!e | fix x.e ∈ E⟦T ≺ ∅⟧}, at every
+         instance of the ∀, in every future world, and under every
+         frame above the instantiated upper point (sharp edges 52);
+         forcing always takes a β step, so only lower indices are
+         constrained *)
       Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-        ∀ W' j xs, wext W W' → j < n → length xs = m →
-          lE (below j) W' ∅ (ty_inst xs T1) ∅ (subst1 (EBox eb) eb)
+        ∀ W' j xs F, wext W W' → j < n → length xs = m →
+          ub_below W' (pt_inst (plist xs) <$> ub) F →
+          lE (below j) W' ∅ (ty_inst xs T1) F (subst1 (EBox eb) eb)
   end.
 
 (** Giving steps (sharp edges 45): send, close and link keep the
@@ -477,21 +482,23 @@ Lemma Vrel_sum_iff n W Θ T U v :
   ∨ (∃ v', v = Inj2 v' ∧ Vrel n W Θ U v').
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-Lemma Vrel_box_iff n W Θ m T v :
-  Vrel n W Θ (TBox m T) v ↔
+Lemma Vrel_box_iff n W Θ m ub T v :
+  Vrel n W Θ (TBox m ub T) v ↔
   Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-    ∀ W' j xs, wext W W' → j < n → length xs = m →
-      Erel j W' ∅ (ty_inst xs T) ∅ (subst1 (EBox eb) eb).
+    ∀ W' j xs F, wext W W' → j < n → length xs = m →
+      ub_below W' (pt_inst (plist xs) <$> ub) F →
+      Erel j W' ∅ (ty_inst xs T) F (subst1 (EBox eb) eb).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply and_iff_compat_l.
   split; intros (eb & -> & Hfc & H); exists eb; (split_and!; [done..|]);
-    intros W' j xs HW Hj Hxs.
+    intros W' j xs F HW Hj Hxs HF.
   - rewrite <-(levels_at n j Hj). by apply H.
   - rewrite (levels_at n j Hj). by apply H.
 Qed.
 
-Lemma Vrel_box_empty n W Θ m T v : Vrel n W Θ (TBox m T) v → Θ = ∅.
+Lemma Vrel_box_empty n W Θ m ub T v : Vrel n W Θ (TBox m ub T) v → Θ = ∅.
+
 Proof. intros [-> _]%Vrel_box_iff. done. Qed.
 
 (** Values at an unlimited type own no channels. One case per

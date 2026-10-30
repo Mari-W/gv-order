@@ -50,7 +50,8 @@ Fixpoint ty_roots (T : ty) : gset pname :=
   | TUnit => ∅
   | TLolli ub lb T1 U => opt_roots ub ∪ opt_roots lb ∪ ty_roots T1 ∪ ty_roots U
   | TProd T1 U | TSum T1 U => ty_roots T1 ∪ ty_roots U
-  | TBox _ T1 => ty_roots T1
+  | TBox _ ub T1 => opt_roots ub ∪ ty_roots T1
+
   | TSess s x => sty_roots s ∪ {[pt_root x]}
   end
 with sty_roots (s : sty) : gset pname :=
