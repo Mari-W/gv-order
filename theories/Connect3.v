@@ -447,3 +447,57 @@ Section assembly.
                [first [by rewrite HCs, HEs|reflexivity]|f_equal; [by rewrite HCs|multiset_solver]].
   Qed.
 End assembly.
+
+(** ** P-Connect *)
+
+Lemma conn_all n : ∀ T, prim T → conn_at n T.
+Proof.
+  induction n as [n IHn] using lt_wf_ind. intros T HT.
+  destruct n as [|n'].
+  { intros ? ? ? ? ? ? ? ? ? ? ? ? _ _ _ _. apply Prel_0. }
+  assert (IHo : ∀ j, j ≤ n' → conn_at j T) by (intros j Hj; apply IHn; [lia|done]).
+  assert (∀ m, conn_lt (S n') T m) as Hlt.
+  { intros m. induction m as [m IHm] using lt_wf_ind.
+    intros W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hsz Hty Hok HP1 HP2.
+    exact (conn_level n' T HT IHo (msize (E1 ⊎ E2)) (IHm _ Hsz)
+             W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB eq_refl Hty Hok HP1 HP2). }
+  intros W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hty Hok HP1 HP2.
+  exact (Hlt (S (msize (E1 ⊎ E2))) W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB (Nat.lt_succ_diag_r _)
+           Hty Hok HP1 HP2).
+Qed.
+
+Lemma wext_join_l' W1 W2 : strict (wjoin W1 W2) → wext W1 (wjoin W1 W2).
+Proof.
+  intros H. split_and!; [simpl; set_solver|apply wjoin_l|apply wjoin_l|done].
+Qed.
+
+Lemma wext_join_r' W1 W2 : strict (wjoin W1 W2) → wext W2 (wjoin W1 W2).
+Proof.
+  intros H. split_and!; [simpl; set_solver|apply wjoin_r|apply wjoin_r|done].
+Qed.
+
+(** P-Connect (§11). Component 1 runs at T, component 2 at ∗, and they
+    share the cut C₀: Σ_C and Σ_C′ hold the two ends of each channel of
+    C₀, dual and at aliased points of W₁ ⊔ W₂. The remaining premises
+    are the spec's implicit well-formedness: worlds well formed, and the
+    restricted sets and the interfaces pairwise disjoint. *)
+Theorem Prel_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :
+  prim T →
+  sem_ptyped W1 (Σ1 ∪ ΣC) (C1, E1) T → sem_ptyped W2 (Σ2 ∪ ΣC') (C2, E2) TUnit →
+  dom ΣC = C0 → dom ΣC' = C0 →
+  (∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' →
+     w_eq (wjoin W1 W2) e.2 e'.2 ∧ sdual e.1 e'.1) →
+  C1 ## dom Σ2 → C2 ## dom Σ1 →
+  strict (wjoin W1 W2) → world_wf W1 → world_wf W2 →
+  Σ1 ##ₘ ΣC → Σ2 ##ₘ ΣC' → Σ1 ##ₘ Σ2 →
+  C1 ## dom Σ1 → C2 ## dom Σ2 → C1 ## C0 → C2 ## C0 → C1 ## C2 →
+  sem_ptyped (wjoin W1 W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ C0, E1 ⊎ E2) T.
+Proof.
+  intros HT HP1 HP2 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HW HW1 HW2 Hd1 Hd2 Hd12 HC1Σ1 HC2Σ2 HC10 HC20 HC12 n.
+  apply (conn_all n T HT (wjoin W1 W2) Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T TUnit).
+  - by left.
+  - by split.
+  - eapply (Prel_mono n W1); [done|by apply wext_join_l'|apply HP1].
+  - eapply (Prel_mono n W2); [done|by apply wext_join_r'|apply HP2].
+Qed.
+
