@@ -22,6 +22,7 @@ theories/Internalize.v
 theories/Connect.v
 theories/Connect2.v
 theories/Connect3.v
+theories/Term.v
 theories/Terms.v
 theories/Composition.v
 theories/composition/Term.v
