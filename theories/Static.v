@@ -12,102 +12,17 @@
     and the outer environment and hypotheses shifted past them. E-Const
     asks the payload of send and recv to be scoped by its binders
     ([kscoped]). [typed_pinst] substitutes points for point variables.
-    [typed_ityped] does that and instantiates φ by any frame above u at
-    any later world in one induction, and yields the infinitary
-    judgment [ityped] of sharp edges 53, whose fundamental theorem
-    [ifundamental] is the old one. *)
+    [typed_sem_rules] does that and instantiates φ by any frame above u at
+    any later world in one induction, and yields the semantic rules
+    [sem_rules] of SemRules.v, whose fundamental theorem
+    [sem_rules_fundamental] is the old one. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export TermRules2.
+From LRGV Require Export SemRules.
 
 Set Default Proof Using "All".
 
-(** ** The infinitary judgment
-
-    The reading of sharp edges 53: the bodies of λ and box are typed in
-    every later world and under every frame above the upper point. It
-    is now the target of frame instantiation (below), not the static
-    system itself. *)
-
-Inductive ityped (W : world) : tenv → lenv → gset point → expr → ty → Prop :=
-  | it_unit Δ F :                                        (* E-Unit *)
-      lenv_empty Δ →
-      ityped W ∅ Δ F EUnit TUnit
-  | it_konst Δ F k T :                                   (* E-Const *)
-      lenv_empty Δ → konst_ty (w_eq W) (w_lt W) (pt_known W) k T →
-      ityped W ∅ Δ F (Konst k) T
-  | it_var Δ F x T :                                     (* E-LVar *)
-      lenv_only Δ x T →
-      ityped W ∅ Δ F (Var x) T
-  | it_chan Δ F c s k s' y :                             (* E-Ch, ι′ ≡_G ι *)
-      lenv_empty Δ → seq s s' → w_eq W k y →
-      ityped W {[c := One (s, k)]} Δ F (Chan c) (TSess s' y)
-  | it_lam Θ Δ F e T U ub lb :                           (* E-Abs *)
-      lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
-      (∀ W1 F', wext W W1 → ub_below W1 ub F' → ityped W1 Θ (Some T :: Δ) F' e U) →
-      ityped W Θ Δ F (Lam e) (TLolli ub lb T U)
-  | it_app Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :           (* E-App *)
-      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
-      ityped W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TLolli ub lb T U) →
-      ityped W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
-      ityped W Θ Δ F (App e1 e2) U
-  | it_pair Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :                (* E-Pair *)
-      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      ityped W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 T →
-      ityped W Θ2 Δ2 (F ∪ heads T) e2 U →
-      ityped W Θ Δ F (Pair e1 e2) (TProd T U)
-  | it_letu Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :                  (* E-Let* *)
-      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      ityped W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 TUnit →
-      ityped W Θ2 Δ2 F e2 T →
-      ityped W Θ Δ F (LetU e1 e2) T
-  | it_letp Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :            (* E-LetPair *)
-      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      ityped W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TProd T1 T2) →
-      ityped W Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
-      ityped W Θ Δ F (LetP e1 e2) T
-  | it_inj1 Θ Δ F e T U :                                (* E-Inj *)
-      ityped W Θ Δ F e T → ityped W Θ Δ F (Inj1 e) (TSum T U)
-  | it_inj2 Θ Δ F e T U :
-      ityped W Θ Δ F e U → ityped W Θ Δ F (Inj2 e) (TSum T U)
-  | it_case Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T :          (* E-Case *)
-      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      ityped W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e (TSum T1 T2) →
-      ityped W Θ2 (Some T1 :: Δ2) F e1 T →
-      ityped W Θ2 (Some T2 :: Δ2) F e2 T →
-      ityped W Θ Δ F (Case e e1 e2) T
-  | it_box Δ F e m C ub T :                              (* E-Exp *)
-      lenv_unl Δ → term_wf ∅ (Some (TBox m C ub T) :: Δ) e →
-      (∀ W1 xs F', wext W W1 → length xs = m → bcs_hold (w_lt W1) C xs →
-         Forall (pt_known W1) xs → ub_below W1 (pt_inst (plist xs) <$> ub) F' →
-         ityped W1 ∅ (Some (TBox m C ub T) :: Δ) F' e (ty_inst xs T)) →
-      ityped W ∅ Δ F (EBox e) (TBox m C ub T)
-  | it_wk Θ Δ' Δ F e T :                                 (* E-Weak *)
-      lenv_wk Δ' Δ → ityped W Θ Δ' F e T → ityped W Θ Δ F e T
-  | it_contract Θ Δ U F e T :                            (* E-Contract *)
-      unlimited U →
-      ityped W Θ (Some U :: Some U :: Δ) F e T →
-      ityped W Θ (Some U :: Δ) F (rename pred e) T
-  | it_conv Θ Δ F e T T' :                               (* E-Conv *)
-      teq T T' → ityped W Θ Δ F e T → ityped W Θ Δ F e T'.
-
-(** E-Force is E-App at the constant force. *)
-Lemma ityped_force W Θ Δ F e m C ub T xs :
-  world_wf W → length xs = m → bcs_hold (w_lt W) C xs → Forall (pt_known W) xs →
-  ub_below W (pt_inst (plist xs) <$> ub) F →
-  ityped W Θ Δ F e (TBox m C ub T) →
-  ityped W Θ Δ F (App EForce e) (ty_inst xs T).
-Proof.
-  intros HW Hxs HC HK Hub He.
-  eapply (it_app W Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ _ None).
-  - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
-  - apply lenv_split_nones_l.
-  - exact Hub.
-  - apply it_konst; [apply lenv_empty_nones|]. by constructor.
-  - simpl. by rewrite union_empty_r_L.
-Qed.
-
-(** ** Typed terms are well formed (the premises of E-Abs and E-Exp) *)
+(** ** Lemmas on available variables, for [typed_term_wf_s] *)
 
 Lemma lenv_wk_avail Δ' Δ x :
   lenv_wk Δ' Δ → lenv_avail Δ' x → lenv_avail Δ x.
@@ -140,192 +55,6 @@ Proof.
   apply HΔ in Hx. done.
 Qed.
 
-Lemma ub_below_empty W ub : ub_below W ub ∅.
-Proof. destruct ub; simpl; [set_solver|done]. Qed.
-
-Lemma ityped_term_wf W Θ Δ F e T : ityped W Θ Δ F e T → strict W → term_wf Θ Δ e.
-Proof.
-  unfold term_wf. induction 1 as
-    [W Δ F HΔ
-    |W Δ F k T HΔ Hk
-    |W Δ F x T Ho
-    |W Δ F c s k s' y HΔ _ _
-    |W Θ Δ F e T U ub lb _ _ IH
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U HΘ HΔ _ _ IH1 _ IH2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U HΘ HΔ _ IH1 _ IH2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T HΘ HΔ _ IH1 _ IH2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T HΘ HΔ _ IH1 _ IH2
-    |W Θ Δ F e T U _ IH
-    |W Θ Δ F e T U _ IH
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ _ IH0 _ IH1 _ IH2
-    |W Δ F e m C ub T HΔ Hwf _ IH
-    |W Θ Δ' Δ F e T Hwk _ IH
-    |W Θ Δ U F e T Hu _ IH
-    |W Θ Δ F e T T' _ _ IH]; intros HW.
-  (* E-Unit *)
-  - split_and!; simpl; [by rewrite dom_empty_L|done|].
-    intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)).
-  (* E-Const *)
-  - split_and!; simpl; [by rewrite dom_empty_L|done|].
-    intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)).
-  (* E-LVar *)
-  - split_and!; simpl.
-    + by rewrite dom_empty_L.
-    + destruct Ho as [Hlk _]. by exists T.
-    + intros x' (T' & Hx' & _). destruct Ho as [_ Huniq].
-      by destruct (Huniq x' T' Hx') as [-> _].
-  (* E-Ch *)
-  - split_and!; simpl; [by rewrite dom_singleton_L|done|].
-    intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)).
-  (* E-Abs *)
-  - destruct (IH W ∅ (wext_refl _ HW) (ub_below_empty _ _) HW) as (Hfc & Hfv & Hrv).
-    split_and!; simpl; [done| |].
-    + eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
-      * intros _. done.
-      * intros (T' & HT'). by exists T'.
-    + intros x (T' & Hx & Hnb). apply (Hrv (S x)). exists T'. auto.
-  (* E-App *)
-  - destruct (IH1 HW) as (Hfc1 & Hfv1 & Hrv1). destruct (IH2 HW) as (Hfc2 & Hfv2 & Hrv2).
-    split_and!.
-    + simpl. rewrite (tenv_join_dom _ _ _ (proj1 HΘ)). set_solver.
-    + simpl. split.
-      * eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_l.
-      * eapply allfv_mono; [|exact Hfv2]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_r.
-    + intros x (T' & Hx & Hnb). simpl.
-      destruct (lenv_split_lookup_inv _ _ _ _ _ HΔ Hx) as [Hx1|Hx2].
-      * left. apply Hrv1. exists T'. auto.
-      * right. apply Hrv2. exists T'. auto.
-  (* E-Pair *)
-  - destruct (IH1 HW) as (Hfc1 & Hfv1 & Hrv1). destruct (IH2 HW) as (Hfc2 & Hfv2 & Hrv2).
-    split_and!.
-    + simpl. rewrite (tenv_join_dom _ _ _ (proj1 HΘ)). set_solver.
-    + simpl. split.
-      * eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_l.
-      * eapply allfv_mono; [|exact Hfv2]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_r.
-    + intros x (T' & Hx & Hnb). simpl.
-      destruct (lenv_split_lookup_inv _ _ _ _ _ HΔ Hx) as [Hx1|Hx2].
-      * left. apply Hrv1. exists T'. auto.
-      * right. apply Hrv2. exists T'. auto.
-  (* E-Let* *)
-  - destruct (IH1 HW) as (Hfc1 & Hfv1 & Hrv1). destruct (IH2 HW) as (Hfc2 & Hfv2 & Hrv2).
-    split_and!.
-    + simpl. rewrite (tenv_join_dom _ _ _ (proj1 HΘ)). set_solver.
-    + simpl. split.
-      * eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_l.
-      * eapply allfv_mono; [|exact Hfv2]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_r.
-    + intros x (T' & Hx & Hnb). simpl.
-      destruct (lenv_split_lookup_inv _ _ _ _ _ HΔ Hx) as [Hx1|Hx2].
-      * left. apply Hrv1. exists T'. auto.
-      * right. apply Hrv2. exists T'. auto.
-  (* E-LetPair *)
-  - destruct (IH1 HW) as (Hfc1 & Hfv1 & Hrv1). destruct (IH2 HW) as (Hfc2 & Hfv2 & Hrv2).
-    split_and!.
-    + simpl. rewrite (tenv_join_dom _ _ _ (proj1 HΘ)). set_solver.
-    + simpl. split.
-      * eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_l.
-      * eapply allfv_mono; [|exact Hfv2]. intros [|[|x]]; simpl.
-        -- intros _. done.
-        -- intros _. done.
-        -- intros (T' & ?). exists T'. eauto using lenv_split_lookup_r.
-    + intros x (T' & Hx & Hnb). simpl.
-      destruct (lenv_split_lookup_inv _ _ _ _ _ HΔ Hx) as [Hx1|Hx2].
-      * left. apply Hrv1. exists T'. auto.
-      * right. apply (Hrv2 (S (S x))). exists T'. auto.
-  (* E-Inj *)
-  - exact (IH HW).
-  - exact (IH HW).
-  (* E-Case *)
-  - destruct (IH0 HW) as (Hfc0 & Hfv0 & Hrv0). destruct (IH1 HW) as (Hfc1 & Hfv1 & Hrv1).
-    destruct (IH2 HW) as (Hfc2 & Hfv2 & Hrv2).
-    split_and!.
-    + simpl. rewrite (tenv_join_dom _ _ _ (proj1 HΘ)). set_solver.
-    + simpl. split_and!.
-      * eapply allfv_mono; [|exact Hfv0]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_l.
-      * eapply allfv_mono; [|exact Hfv1]. intros [|x]; simpl.
-        -- intros _. done.
-        -- intros (T' & ?). exists T'. eauto using lenv_split_lookup_r.
-      * eapply allfv_mono; [|exact Hfv2]. intros [|x]; simpl.
-        -- intros _. done.
-        -- intros (T' & ?). exists T'. eauto using lenv_split_lookup_r.
-    + intros x (T' & Hx & Hnb). simpl.
-      destruct (lenv_split_lookup_inv _ _ _ _ _ HΔ Hx) as [Hx1|Hx2].
-      * left. apply Hrv0. exists T'. auto.
-      * right. left. apply (Hrv1 (S x)). exists T'. auto.
-  (* E-Exp *)
-  - destruct Hwf as (Hfc & Hfv & Hrv).
-    split_and!; simpl; [done| |].
-    + eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
-      * intros _. done.
-      * intros (T' & HT'). by exists T'.
-    + intros x (T' & Hx & Hnb). apply (Hrv (S x)). exists T'. auto.
-  (* E-Weak *)
-  - destruct (IH HW) as (Hfc & Hfv & Hrv). split_and!; [done| |].
-    + eapply allfv_mono; [|exact Hfv]. intros x Hx. eauto using lenv_wk_avail.
-    + intros x Hx. apply Hrv. eauto using lenv_wk_avail_lin.
-  (* E-Contract *)
-  - destruct (IH HW) as (Hfc & Hfv & Hrv). split_and!.
-    + by rewrite fchans_rename.
-    + apply allfv_rename. eapply allfv_mono; [|exact Hfv].
-      intros [|[|x]] (T' & HT'); simpl in *; by exists T'.
-    + intros [|x] (T' & Hx & Hnb); simpl in Hx.
-      * simplify_eq. by destruct (Hnb Hu).
-      * apply (freevar_rename e (S (S x)) pred). apply Hrv. by exists T'.
-  (* E-Conv *)
-  - exact (IH HW).
-Qed.
-
-(** ** The fundamental theorem for the infinitary judgment *)
-
-Theorem ifundamental W Θ Δ F e T : ityped W Θ Δ F e T → strict W → sem_typed W Θ Δ F e T.
-Proof.
-  intros Ht. pose proof Ht as Ht0. revert Ht0.
-  induction Ht as
-    [W Δ F HΔ
-    |W Δ F k T HΔ Hk
-    |W Δ F x T Ho
-    |W Δ F c s k s' y HΔ Hs Hk
-    |W Θ Δ F e T U ub lb Hlb Hb IH
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U HΘ HΔ Hub H1 IH1 H2 IH2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U HΘ HΔ H1 IH1 H2 IH2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T HΘ HΔ H1 IH1 H2 IH2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T HΘ HΔ H1 IH1 H2 IH2
-    |W Θ Δ F e T U H IH
-    |W Θ Δ F e T U H IH
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ H0 IH0 H1 IH1 H2 IH2
-    |W Δ F e m C ub T HΔ Hwf Hb IH
-    |W Θ Δ' Δ F e T Hwk H IH
-    |W Θ Δ U F e T Hu H IH
-    |W Θ Δ F e T T' Hteq H IH]; intros Ht0 HW.
-  - by apply sem_typed_unit.
-  - by apply sem_typed_konst.
-  - by apply sem_typed_var.
-  - by apply sem_typed_chan.
-  - apply sem_typed_lam; [| |].
-    + eapply (ityped_term_wf W); [|exact HW].
-      apply (Hb W ∅ (wext_refl _ HW) (ub_below_empty _ _)).
-    + done.
-    + intros W1 F' HW1 Hub'. apply IH; [done|done| |apply HW1]. by apply Hb.
-  - eapply sem_typed_app; [done|done|done|by apply IH1|by apply IH2].
-  - eapply sem_typed_pair; [done|done|by apply IH1|by apply IH2].
-  - eapply sem_typed_letu; [done|done|by apply IH1|by apply IH2].
-  - eapply sem_typed_letp; [done|done|by apply IH1|by apply IH2].
-  - apply sem_typed_inj1. by apply IH.
-  - apply sem_typed_inj2. by apply IH.
-  - eapply sem_typed_case; [done|done|by apply IH0|by apply IH1|by apply IH2].
-  - apply sem_typed_box; [done|done|].
-    intros W1 xs F' HW1 Hxs HC HK Hub'. apply IH; [done..| |apply HW1]. by apply Hb.
-  - eapply sem_typed_wk; [done|by apply IH].
-  - apply sem_typed_contract; [done|by apply IH].
-  - eapply sem_typed_teq; [done|by apply IH].
-Qed.
 
 (** ** The finitary static system (sharp edges 54, option D)
 
@@ -486,7 +215,7 @@ Definition inst_ok (W : world) (Φ : fhyps) (ρ : nat → gset point) : Prop :=
 
     The body of a box is typed once, with the box's ιs as the point
     variables 0, …, m-1 and every outer point variable shifted past
-    them. [typed_ityped] substitutes points for the variables. A
+    them. [typed_sem_rules] substitutes points for the variables. A
     payload ∃ιs.T is scoped: its points are constants or among its m
     binders, so substitution commutes with [payload_at]. *)
 
@@ -1590,11 +1319,11 @@ Ltac frame_pinst :=
     world W₁, the point variables become points by σ. A box body is
     typed with its ιs as variables, so the box case substitutes the
     instance xs there and the outer σ beyond (plist_pup_shift). *)
-Lemma typed_ityped W Φ Ψ Θ Δ F e T :
+Lemma typed_sem_rules W Φ Ψ Θ Δ F e T :
   typed W Φ Ψ Θ Δ F e T →
   ∀ W1 ρ σ, world_wf W → wext W W1 → inst_ok W1 (fhyps_pinst σ Φ) ρ →
   hyps_hold (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) →
-  ityped W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_inst ρ (sf_pinst σ F)) e (pinst_ty σ T).
+  sem_rules W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_inst ρ (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
   induction 1 as
     [Φ Ψ Δ F HΔ
@@ -1614,22 +1343,25 @@ Proof.
     |Φ Ψ Θ Δ U F e T Hu H IH
     |Φ Ψ Θ Δ F e T T' Hteq H IH]; intros W1 ρ σ HW HW1 Hρ HΨ;
     pose proof HW1 as (HN & He & Hl & HS).
-  - rewrite tenv_pinst_empty. apply it_unit. by apply lenv_empty_pinst.
-  - rewrite tenv_pinst_empty. apply it_konst; [by apply lenv_empty_pinst|].
+  - rewrite tenv_pinst_empty. apply sr_unit. by apply lenv_empty_pinst.
+  - rewrite tenv_pinst_empty. apply sr_konst; [by apply lenv_empty_pinst|].
     apply (konst_ty_pinst W W1 σ HW HW1 (slt W Ψ) _ (skn W Ψ)); [| |done|done].
     + intros x y Hxy. by apply (slt_pinst W W1 σ HW HW1 Ψ).
     + intros x Hx. by apply (skn_pinst_known W W1 σ HW HW1 Ψ).
-  - rewrite tenv_pinst_empty. apply it_var. by apply lenv_only_pinst.
+  - rewrite tenv_pinst_empty. apply sr_var. by apply lenv_only_pinst.
   - unfold tenv_pinst. rewrite map_fmap_singleton. simpl.
-    apply it_chan; [by apply lenv_empty_pinst|done|by apply (pinst_eq W)].
-  - cbn [pinst_ty]. apply it_lam.
+    apply sr_chan; [by apply lenv_empty_pinst|done|by apply (pinst_eq W)].
+  - cbn [pinst_ty]. apply sr_lam.
+    + assert (term_wf Θ (lenv_pinst σ (Some T :: Δ)) e) as (Hfc & Hwf)
+        by (rewrite term_wf_lenv_pinst; exact (typed_term_wf_s _ _ _ _ _ _ _ _ Hb)).
+      split; [unfold tenv_pinst; by rewrite dom_fmap_L|exact Hwf].
     + rewrite tenv_heads_pinst, lenv_heads_pinst, <-set_map_union_L.
       by apply (lb_below_h_pinst W W1 σ HW HW1 Ψ).
     + intros W2 F' HW2 Hub'. rewrite <-(sf_inst_fresh ρ φ F'), <-(sf_pinst_fresh σ φ).
       apply (IH W2 _ σ HW (wext_trans _ _ _ HW1 HW2)).
       * apply inst_ok_pinst_insert; [exact (inst_ok_mono _ _ _ _ HW2 Hρ)|exact Hub'].
       * exact (hyps_hold_wext _ _ _ HW2 HΨ).
-  - apply (it_app W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
+  - apply (sr_app W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
              _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)).
     + by apply (tenv_comp_pinst W).
     + by apply lenv_split_pinst.
@@ -1639,32 +1371,32 @@ Proof.
     + frame_pinst. by apply (IH1 W1 ρ σ).
     + frame_pinst. by apply IH2.
   - cbn [pinst_ty].
-    apply (it_pair W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
+    apply (sr_pair W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
     + by apply (tenv_comp_pinst W).
     + by apply lenv_split_pinst.
     + frame_pinst. by apply IH1.
     + frame_pinst. by apply IH2.
-  - apply (it_letu W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
+  - apply (sr_letu W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
     + by apply (tenv_comp_pinst W).
     + by apply lenv_split_pinst.
     + frame_pinst. by apply (IH1 W1 ρ σ).
     + by apply IH2.
-  - apply (it_letp W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
+  - apply (sr_letp W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
              _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)).
     + by apply (tenv_comp_pinst W).
     + by apply lenv_split_pinst.
     + frame_pinst. by apply (IH1 W1 ρ σ).
     + by apply (IH2 W1 ρ σ).
-  - cbn [pinst_ty]. apply it_inj1. by apply IH.
-  - cbn [pinst_ty]. apply it_inj2. by apply IH.
-  - apply (it_case W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
+  - cbn [pinst_ty]. apply sr_inj1. by apply IH.
+  - cbn [pinst_ty]. apply sr_inj2. by apply IH.
+  - apply (sr_case W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
              _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)).
     + by apply (tenv_comp_pinst W).
     + by apply lenv_split_pinst.
     + frame_pinst. by apply (IH0 W1 ρ σ).
     + by apply (IH1 W1 ρ σ).
     + by apply (IH2 W1 ρ σ).
-  - cbn [pinst_ty]. rewrite tenv_pinst_empty. apply it_box; [by apply lenv_unl_pinst| |].
+  - cbn [pinst_ty]. rewrite tenv_pinst_empty. apply sr_box; [by apply lenv_unl_pinst| |].
     { pose proof (typed_term_wf_s _ _ _ _ _ _ _ _ Hb) as Hwf.
       rewrite term_wf_lenv_pinst in Hwf.
       change (term_wf ∅ (lenv_pinst σ (Some (TBox m C ub T) :: Δ)) e).
@@ -1700,16 +1432,16 @@ Proof.
       * destruct ub as [u|]; simpl in *; [|done]. by rewrite pt_inst_comp in Hub'.
     + apply hyps_hold_app; [exact (hyps_hold_wext _ _ _ HW2 HΨ)|].
       intros C0 xs0 Hg. apply list_elem_of_singleton in Hg. injection Hg as -> ->. done.
-  - eapply it_wk; [by apply lenv_wk_pinst|by apply IH].
-  - cbn [lenv_pinst]. apply it_contract; [by apply unlimited_pinst|by apply (IH W1 ρ σ)].
-  - eapply it_conv; [by apply eqT_pinst|by apply IH].
+  - eapply sr_wk; [by apply lenv_wk_pinst|by apply IH].
+  - cbn [lenv_pinst]. apply sr_contract; [by apply unlimited_pinst|by apply (IH W1 ρ σ)].
+  - eapply sr_conv; [by apply eqT_pinst|by apply IH].
 Qed.
 
 
 (** ** The substitution lemma on its own
 
     Instantiating point variables by points preserves derivations at
-    the same world. [typed_ityped] composes this substitution with
+    the same world. [typed_sem_rules] composes this substitution with
     frame instantiation; the fundamental theorem needs only that. *)
 
 Lemma kscoped_pinst peq plt pk k T σ :
@@ -1841,11 +1573,11 @@ Qed.
 
 (** A closed derivation: no frame variables, no hypotheses, and the
     identity substitution. *)
-Lemma typed_ityped_closed W Θ Δ F e T :
-  strict W → typed W ∅ [] Θ Δ (F, None) e T → ityped W Θ Δ F e T.
+Lemma typed_sem_rules_closed W Θ Δ F e T :
+  strict W → typed W ∅ [] Θ Δ (F, None) e T → sem_rules W Θ Δ F e T.
 Proof.
   intros HW Ht.
-  pose proof (typed_ityped _ _ _ _ _ _ _ _ Ht W (λ _, ∅) pvar (proj1 HW) (wext_refl _ HW)) as H.
+  pose proof (typed_sem_rules _ _ _ _ _ _ _ _ Ht W (λ _, ∅) pvar (proj1 HW) (wext_refl _ HW)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
   unfold sf_inst in H. simpl in H. rewrite union_empty_r_L in H.
   apply H.
@@ -1861,7 +1593,7 @@ Proof. intros Ht _. exact (typed_term_wf_s _ _ _ _ _ _ _ _ Ht). Qed.
 
 Theorem fundamental W Θ Δ F e T :
   typed W ∅ [] Θ Δ (F, None) e T → strict W → sem_typed W Θ Δ F e T.
-Proof. intros Ht HW. apply ifundamental; [|done]. by apply typed_ityped_closed. Qed.
+Proof. intros Ht HW. apply sem_rules_fundamental; [|done]. by apply typed_sem_rules_closed. Qed.
 
 (** ** Processes
 

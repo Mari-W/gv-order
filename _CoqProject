@@ -9,7 +9,7 @@ theories/Safety.v
 theories/Swap.v
 theories/Harmony.v
 theories/Ready.v
-theories/Typing.v
+theories/Lenv.v
 theories/Relation.v
 theories/Points.v
 theories/Convert.v
@@ -26,8 +26,9 @@ theories/PTerm.v
 theories/Bind.v
 theories/TermRules.v
 theories/TermRules2.v
+theories/SemRules.v
 theories/Static.v
-theories/DropCounter.v
+theories/counterexamples/DropCounter.v
 theories/ConnectN.v
 theories/OrdExamples.v
 # Examples disabled while the core is ported to the order-based system
