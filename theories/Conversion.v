@@ -232,15 +232,16 @@ Proof.
       + by eapply seq_trans.
       + eapply (wf_eq_trans _ HW); [exact Hk|]. by apply pteqW_eq. }
   split_and!; [exact HV| |].
-  - intros W Θ T T' F e HW Ht HE.
-    destruct n as [|n']; [apply Erel_0|].
+  - destruct n as [|n']; [intros; apply Erel_0|].
+    intros W Θ T T' F e HW Ht HE. revert T' HW Ht.
+    induction HE as [W Θ T F e Hval Hrdy Hstep] using Erel_S_ind.
+    intros T' HW Ht.
     assert (∀ j W0 Θ0 F0 e0, j ≤ n' → world_wf W0 →
               (∀ x y, w_eq W x y → w_eq W0 x y) →
               Erel j W0 Θ0 T F0 e0 → Erel j W0 Θ0 T' F0 e0) as HEj.
     { intros j W0 Θ0 F0 e0 Hj HW0 Hsub.
       apply (proj1 (proj2 (IHn j ltac:(lia)))); [done|].
       by eapply teqW_mono. }
-    apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
     apply Erel_S_iff. split_and!; [|done|].
     { intros Hirr. eapply HV; [done|exact Ht|]. by apply Hval. }
     intros α e' Hst. specialize (Hstep α e' Hst).
@@ -253,12 +254,12 @@ Proof.
       intros. by eapply wext_eq.
     + destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').
-      exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done. by eapply HEj.
+      exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done. exact (proj2 HE' T' HW Ht).
     + destruct Hstep as (Θ1 & k & Hhd & HE').
-      exists Θ1, k. split; [done|]. by eapply HEj.
+      exists Θ1, k. split; [done|]. exact (proj2 HE' T' HW Ht).
     + destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                          -> & ? & ? & ? & ? & HE').
-      exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|]. by eapply HEj.
+      exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|]. exact (proj2 HE' T' HW Ht).
     + (* O-New: rename the new point away from the points of T' *)
       intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
       destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
@@ -274,22 +275,25 @@ Proof.
         -- intros. destruct Hfr' as ((_ & He & _) & _). auto.
     + destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
       exists Θ1, Θ2, ub, lb. split_and!; [done|done|]. by eapply HEj.
-  - intros W Σ T T' p HW Ht HP.
-    destruct n as [|n']; [apply Prel_0|].
+  - destruct n as [|n']; [intros; apply Prel_0|].
+    intros W Σ T T' p HW Ht HP. revert T' HW Ht.
+    induction HP as [W Σ T p Hirr Hrdy Hstep] using Prel_S_ind.
+    intros T' HW Ht.
     assert (∀ j W0 Σ0 p0, j ≤ n' → world_wf W0 →
               (∀ x y, w_eq W x y → w_eq W0 x y) →
               Prel j W0 Σ0 T p0 → Prel j W0 Σ0 T' p0) as HPj.
     { intros j W0 Σ0 p0 Hj HW0 Hsub.
       apply (proj2 (proj2 (IHn j ltac:(lia)))); [done|].
       by eapply teqW_mono. }
-    apply Prel_S_iff in HP as (Hirr & Hrdy & Hstep).
     apply Prel_S_iff. split_and!; [|done|].
     { intros Hp. destruct (Hirr Hp) as (v & E & -> & ? & HVv & ?).
       exists v, E. split_and!; [done|done| |done]. by eapply HV. }
     intros π q Hst. specialize (Hstep π q Hst).
     destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* Q-Tau: rename the placed points away from the points of T' *)
-      intros Hd. destruct (Hstep Hd) as (N & W1 & HN & Hfr & HP').
+      destruct Hstep as [Htau Hlink]. split.
+      2: { intros Hl Hd. exact (proj2 (Hlink Hl Hd) T' HW Ht). }
+      intros Hd. destruct (Htau Hd) as (N & W1 & HN & Hfr & HP').
       destruct (Prel_tau_rename n' (ty_roots T') _ W N W1 Σ T q eq_refl HW Hfr HN HP')
         as (N' & W1' & HN'T & HN' & Hfr' & HP1).
       exists N', W1'. split_and!; [set_solver|done|].
@@ -303,12 +307,12 @@ Proof.
       intros. by eapply wext_eq.
     + destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
                          ? & ? & ? & ? & ? & ? & HVw & HP').
-      exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done. by eapply HPj.
+      exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done. exact (proj2 HP' T' HW Ht).
     + destruct Hstep as (Σ1 & k & Hhd & ? & HP').
-      exists Σ1, k. split_and!; [done|done|]. by eapply HPj.
+      exists Σ1, k. split_and!; [done|done|]. exact (proj2 HP' T' HW Ht).
     + destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
                          -> & ? & -> & ? & ? & ? & ? & HP').
-      exists c, d, Σ1, sc, sd, kc, kd. split_and!; [done..|]. by eapply HPj.
+      exists c, d, Σ1, sc, sd, kc, kd. split_and!; [done..|]. exact (proj2 HP' T' HW Ht).
 Qed.
 
 Lemma Vrel_tconv n W Θ T T' v :
@@ -755,12 +759,13 @@ Proof.
       + eapply seq_trans; [by apply seq_sym|exact Hs0].
       + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|exact Hk]. }
   split; [exact HV|].
-  intros W Θ Θ' T F e HW Hc HE.
-  destruct n as [|n']; [apply Erel_0|].
+  destruct n as [|n']; [intros; apply Erel_0|].
+  intros W Θ Θ' T F e HW Hc HE. revert Θ' HW Hc.
+  induction HE as [W Θ T F e Hval Hrdy Hstep] using Erel_S_ind.
+  intros Θ' HW Hc.
   assert (∀ j W0 Θ0 Θ0' e0, j ≤ n' → world_wf W0 → tconv W0 Θ0 Θ0' →
             Erel j W0 Θ0 T F e0 → Erel j W0 Θ0' T F e0) as HEj.
   { intros j ? ? ? ? Hj. apply (proj2 (IHn j ltac:(lia))). }
-  apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
   apply Erel_S_iff. split_and!.
   { intros Hirr. eapply HV; [done|exact Hc|]. by apply Hval. }
   { intros Hirr. destruct (Hrdy Hirr). split.
@@ -811,14 +816,14 @@ Proof.
       eapply teqW_trans; [done|apply teqW_payload; [done|exact Hkk]|].
       apply teq_teqW, teq_ty_inst. by apply teq_sym.
     + done.
-    + eapply HEj; [lia|done|exact Hc3|exact HE'].
+    + exact (proj2 HE' _ HW Hc3).
   - (* O-Close *)
     destruct Hstep as (Θ1 & k & (s0 & Hext & Hu) & HE').
     destruct (tconv_unext W Θ1 c (s0, k) Θ Θ' Hc Hext)
       as ([s0' k'] & Θ1' & Hext' & [Hs Hkk] & Hc1). simpl in Hs, Hkk.
     exists Θ1', k'. split.
     + exists s0'. split; [done|]. apply (seq_end_inv _ s0); [by apply seq_sym|done].
-    + eapply HEj; [lia|done|exact Hc1|exact HE'].
+    + exact (proj2 HE' _ HW Hc1).
   - (* O-Link *)
     destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & Hext1 & Hext2 &
                        Hdu & Hal & HE').
@@ -830,7 +835,7 @@ Proof.
     + eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
     + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
       eapply (wf_eq_trans _ HW); [exact Hal|exact Hkd].
-    + eapply HEj; [lia|done|exact Hc1|exact HE'].
+    + exact (proj2 HE' _ HW Hc1).
   - (* O-New: rename the new point away from the points of Θ' *)
     intros Hc0. rewrite <-(tconv_dom W Θ Θ' Hc) in Hc0.
     destruct (Hstep Hc0) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
@@ -1077,10 +1082,12 @@ Proof.
   induction n as [n IHn] using lt_wf_ind.
   intros W Σ Σ' T p HW Hc HP.
   destruct n as [|n']; [apply Prel_0|].
+  revert Σ' HW Hc.
+  induction HP as [W Σ T p Hirr Hrdy Hstep] using Prel_S_ind.
+  intros Σ' HW Hc.
   assert (∀ j W0 Σ0 Σ0' p0, j ≤ n' → world_wf W0 → sconv W0 Σ0 Σ0' →
             Prel j W0 Σ0 T p0 → Prel j W0 Σ0' T p0) as HPj.
   { intros j ? ? ? ? Hj. apply IHn. lia. }
-  apply Prel_S_iff in HP as (Hirr & Hrdy & Hstep).
   apply Prel_S_iff. split_and!.
   { intros Hp. destruct (Hirr Hp) as (v & E & -> & ? & HVv & ?).
     exists v, E. split_and!; [done|done| |done].
@@ -1089,8 +1096,11 @@ Proof.
   intros π q Hst. specialize (Hstep π q Hst).
   destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
   - (* Q-Tau *)
+    destruct Hstep as [Htau Hlink]. split.
+    2: { intros Hl Hd. rewrite <-(sconv_dom W Σ Σ' Hc) in Hd.
+         exact (proj2 (Hlink Hl Hd) Σ' HW Hc). }
     intros Hd. rewrite <-(sconv_dom W Σ Σ' Hc) in Hd.
-    destruct (Hstep Hd) as (N & W1 & HN & Hfr & HP').
+    destruct (Htau Hd) as (N & W1 & HN & Hfr & HP').
     destruct (Prel_tau_rename n' (senv_roots Σ') _ W N W1 Σ T q eq_refl HW Hfr HN HP')
       as (N' & W1' & HN'X & HN' & Hfr' & HP1).
     exists N', W1'. split_and!; [set_solver|done|].
@@ -1140,7 +1150,7 @@ Proof.
         apply teq_teqW, teq_ty_inst. by apply teq_sym. }
       eapply Vrel_econv; [done| |exact HVw].
       apply tconv_union; [by apply sconv_tconv|apply tconv_refl; done].
-    + eapply HPj; [lia|done| |exact HP'].
+    + apply (proj2 HP'); [done|].
       apply sconv_insert; [apply sconv_union; [done|apply (sconv_refl W HW)]|].
       split; simpl; [by apply seq_sym|]. by apply (wf_eq_shift _ HW).
   - (* Q-Close *)
@@ -1149,7 +1159,7 @@ Proof.
       as (s0 & s0' & k' & Σ1' & HΣ & HΣ' & Hu & Hs & Hk & Hc1' & Hcd').
     exists Σ1', k'. split_and!; [|done|].
     + exists s0'. split; [done|]. apply (seq_end_inv _ s0); [by apply seq_sym|done].
-    + eapply HPj; [lia|done|exact Hc1'|exact HP'].
+    + exact (proj2 HP' _ HW Hc1').
   - (* Q-Link *)
     destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd & -> & Hne & HΣ & Hc1 & Hd1 &
                        Hdu & Hal & HP').
@@ -1171,7 +1181,7 @@ Proof.
     + eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
     + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
       eapply (wf_eq_trans _ HW); [exact Hal|exact Hkd].
-    + eapply HPj; [lia|done| |exact HP'].
+    + apply (proj2 HP'); [done|].
       intros x. destruct (decide (x = c)) as [->|Hxc].
       { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hc1 as ->. }
       rewrite lookup_delete_ne by done. destruct (decide (x = d)) as [->|Hxd].
