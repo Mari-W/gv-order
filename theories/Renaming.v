@@ -514,7 +514,7 @@ Proof.
     by (intros j Hj; apply (IHn j Hj)).
   assert (∀ W Θ T v, Vrel n W Θ T v → Vrel n W (tenvswap a b Θ) T (eswap a b v)) as HV.
   { intros W Θ T. revert Θ.
-    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m T1 IHT1|s x];
+    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m C0 ub0 T1 IHT1|s x];
       intros Θ v HVv; simpl.
     - apply Vrel_unit_iff in HVv as [-> ->].
       apply Vrel_unit_iff. by rewrite tenvswap_empty.
@@ -543,8 +543,8 @@ Proof.
     - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
       apply Vrel_box_iff. rewrite tenvswap_empty. split; [done|].
       exists (eswap a b eb). split_and!; [done|by rewrite fchans_eswap, Hfc, gswap_empty|].
-      intros W' j xs F Hx Hj Hxs Hub.
-      specialize (H _ j xs F Hx Hj Hxs Hub).
+      intros W' j xs F Hx Hj Hxs HC Hub.
+      specialize (H _ j xs F Hx Hj Hxs HC Hub).
 
       apply (IHE j Hj) in H.
       by rewrite tenvswap_empty, eswap_subst1 in H.

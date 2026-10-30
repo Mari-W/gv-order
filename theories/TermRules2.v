@@ -11,9 +11,10 @@ Set Default Proof Using "All".
 
 (** ** Applying force
 
-    force : □(∀ιs.^u T) ⊸^{u[xs/ιs]}_⊤ T[xs/ιs]. Its upper point is the
-    box's, instantiated, so the frame of the application is one V-Box
-    accepts. *)
+    force : □(∀ιs. C.^u T) ⊸^{u[xs/ιs]}_⊤ T[xs/ιs], at an instance xs
+    with C[xs/ιs] in W (sharp edges 58). Its upper point is the box's,
+    instantiated, so the frame of the application is one V-Box
+    accepts, and the instance meets the box's constraint. *)
 
 Lemma Erel_app_force n W Θ ub lb T U F v2 :
   strict W → Vrel n W ∅ (TLolli ub lb T U) EForce → Vrel n W Θ T v2 → ub_below W ub F →
@@ -22,14 +23,14 @@ Proof.
   intros HW HV1 HV2 Hub.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hu & HB & HV).
-  inversion Hk as [| | | | | |m ub1 T1 xs Hxs]; subst.
+  inversion Hk as [| | | | | |m C1 ub1 T1 xs Hxs HC1]; subst.
   apply Vrel_box_iff in HV as (-> & eb & -> & Hfc & HK).
   destruct n as [|n']; [apply Erel_0|].
   apply (Erel_det_beta_S _ _ _ _ _ _ (subst1 (EBox eb) eb)).
   - by apply TStepHead, HeadForce.
   - intros α e'' Hst. apply app_val_step in Hst; [|done|done]. by inversion Hst.
   - eapply Erel_tconv; [apply HW|exact HB|].
-    apply (HK W n' xs F); [by apply wext_refl|lia|done|].
+    apply (HK W n' xs F); [by apply wext_refl|lia|done|done|].
     eapply ub_below_conv; [apply HW| |exact Hub]. by apply opt_rel_sym; [apply HW|].
 Qed.
 
@@ -72,12 +73,13 @@ Proof.
   induction Δ as [|[T|] Δ IH]; unfold lenv_nones; simpl; constructor; auto.
 Qed.
 
-Lemma sem_typed_force W Θ Δ F e m ub T xs :
-  world_wf W → length xs = m → ub_below W (pt_inst (plist xs) <$> ub) F →
-  sem_typed W Θ Δ F e (TBox m ub T) →
+Lemma sem_typed_force W Θ Δ F e m C ub T xs :
+  world_wf W → length xs = m → pcs_hold (w_lt W) (pcs_inst (plist xs) C) →
+  ub_below W (pt_inst (plist xs) <$> ub) F →
+  sem_typed W Θ Δ F e (TBox m C ub T) →
   sem_typed W Θ Δ F (App EForce e) (ty_inst xs T).
 Proof.
-  intros HW Hxs Hub He.
+  intros HW Hxs HC Hub He.
   eapply (sem_typed_app W Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ _ None).
   - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
   - apply lenv_split_nones_l.
@@ -115,8 +117,9 @@ Qed.
 (** ** E-Exp
 
     The body is good, in every later world, at every instance xs of the
-    box's point variables and under every frame above the instantiated
-    upper point (sharp edges 52). The box is then a value at every
+    box's point variables that meets its constraint C (sharp edges 58),
+    and under every frame above the instantiated upper point (sharp
+    edges 52). The box is then a value at every
     index, by induction on the index (the recursive occurrence is the
     box itself, one level down). *)
 
@@ -132,11 +135,12 @@ Proof.
   - apply (IH _ (γ ∘ S)); [|done]. intros o Ho. apply Hu. by right.
 Qed.
 
-Lemma sem_typed_box W Δ F e m ub T :
-  lenv_unl Δ → term_wf ∅ (Some (TBox m ub T) :: Δ) e →
-  (∀ W1 xs F', wext W W1 → length xs = m → ub_below W1 (pt_inst (plist xs) <$> ub) F' →
-     sem_typed W1 ∅ (Some (TBox m ub T) :: Δ) F' e (ty_inst xs T)) →
-  sem_typed W ∅ Δ F (EBox e) (TBox m ub T).
+Lemma sem_typed_box W Δ F e m C ub T :
+  lenv_unl Δ → term_wf ∅ (Some (TBox m C ub T) :: Δ) e →
+  (∀ W1 xs F', wext W W1 → length xs = m → pcs_hold (w_lt W1) (pcs_inst (plist xs) C) →
+     ub_below W1 (pt_inst (plist xs) <$> ub) F' →
+     sem_typed W1 ∅ (Some (TBox m C ub T) :: Δ) F' e (ty_inst xs T)) →
+  sem_typed W ∅ Δ F (EBox e) (TBox m C ub T).
 Proof.
   intros Hu (Hfc & Hfv & _) He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   pose proof (wext_wf _ _ HW) as HW'.
@@ -150,13 +154,13 @@ Proof.
       - intros (T' & Hx). unfold compose. rewrite fchans_rename. by eapply grounding_fchans. }
     rewrite Hfc, dom_empty_L in Hsub. set_solver. }
   assert (∀ j W2, j ≤ n → wext W' W2 →
-            Vrel j W2 ∅ (TBox m ub T) (EBox (subst (up γ) e))) as Hbox.
+            Vrel j W2 ∅ (TBox m C ub T) (EBox (subst (up γ) e))) as Hbox.
   { induction j as [j IHj] using lt_wf_ind. intros W2 Hj HW2.
     apply Vrel_box_iff. split; [done|]. exists (subst (up γ) e). split_and!; [done|done|].
-    intros W3 k xs F' HW3 Hk Hxs Hub. rewrite subst1_subst.
+    intros W3 k xs F' HW3 Hk Hxs HC Hub. rewrite subst1_subst.
     pose proof (wext_trans _ _ _ HW2 HW3) as HW23.
     pose proof (wext_trans _ _ _ HW HW23) as HWW3.
-    apply (He W3 xs F' HWW3 Hxs Hub k W3 ∅ ∅).
+    apply (He W3 xs F' HWW3 Hxs HC Hub k W3 ∅ ∅).
     - apply wext_refl, HWW3.
     - apply tenv_comp_empty_r.
     - exists ∅, ∅. split_and!.

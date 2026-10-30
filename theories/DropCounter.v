@@ -155,17 +155,19 @@ Proof.
 Qed.
 
 Definition Tb : ty := TSess SEnd (Pt (NVar 0) 1).
-Definition Tcex : ty := TLolli None None (TBox 1 None Tb) (TSess SEnd (Pt (NConst b0) 0)).
+Definition Tcex : ty := TLolli None None (TBox 1 [] None Tb) (TSess SEnd (Pt (NConst b0) 0)).
 
 Lemma Tcex_roots : NConst mu ∉ ty_roots Tcex.
-Proof. simpl. unfold pt_root. simpl. set_solver. Qed.
+Proof. simpl. unfold pt_root, pcs_roots. simpl. set_solver. Qed.
 
 Lemma force_in_Wm n : Vrel n Wm ∅ Tcex (Konst KForce).
 Proof.
-  apply Vrel_lolli_iff. right. exists KForce, (TLolli None None (TBox 1 None Tb) (ty_inst [Pt (NConst mu) 0] Tb)).
+  apply Vrel_lolli_iff. right. exists KForce, (TLolli None None (TBox 1 [] None Tb) (ty_inst [Pt (NConst mu) 0] Tb)).
   split_and!; [done|done| |].
-  - apply (KTForce _ _ _ 1 None Tb [Pt (NConst mu) 0]). done.
+  - apply (KTForce _ _ _ 1 [] None Tb [Pt (NConst mu) 0]); try done;
+      intros p Hp; by apply elem_of_nil in Hp.
   - simpl. split_and!; try done.
+    + constructor.
     + left. done.
     + apply seq_refl.
     + right. split_and!; [by exists mu|by exists b0|]. done.
@@ -178,7 +180,7 @@ Proof.
   simplify_eq. inversion Hkt; subst.
   simpl in Heq. destruct Heq as (_ & _ & Hbox & Hres).
   destruct T as [| | | | |s y]; simpl in Hbox; try naive_solver.
-  destruct Hbox as (Hn & Hub & Hs & _).
+  destruct Hbox as (Hn & _ & Hub & Hs & _).
   destruct ub; simpl in Hub; [done|].
   destruct Hs as [->|(_ & Hg & _)]; [|by destruct Hg].
   destruct xs as [|x []]; simpl in *; try lia.

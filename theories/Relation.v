@@ -46,6 +46,10 @@ Definition opt_rel (R : point → point → Prop) (o o' : option point) : Prop :
   | _, _ => False
   end.
 
+(** Constraints compared fact by fact (sharp edges 58). *)
+Definition pcs_rel (R : point → point → Prop) (C C' : list (point * point)) : Prop :=
+  Forall2 (λ p q, R p.1 q.1 ∧ R p.2 q.2) C C'.
+
 Fixpoint teqW (W : world) (T U : ty) : Prop :=
   match T, U with
   | TUnit, TUnit => True
@@ -54,8 +58,8 @@ Fixpoint teqW (W : world) (T U : ty) : Prop :=
       teqW W T1 U1 ∧ teqW W T2 U2
   | TProd T1 T2, TProd U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
   | TSum T1 T2, TSum U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
-  | TBox n ub T1, TBox n' ub' U1 =>
-      n = n' ∧ opt_rel (pteqW W) ub ub' ∧ teqW W T1 U1
+  | TBox n C ub T1, TBox n' C' ub' U1 =>
+      n = n' ∧ pcs_rel (pteqW W) C C' ∧ opt_rel (pteqW W) ub ub' ∧ teqW W T1 U1
 
   | TSess s x, TSess r y => pteqW W x y ∧ seq s r
   | _, _ => False
@@ -82,7 +86,8 @@ Record level := Level {
       closure holds ([tenv_comp]).
     - V-Const: the constant's signature is read in W, up to ≈_W.
     - V-Box / V-All: ∀ appears only under □; a box is good at every
-      instance of its point variables, in every future world. *)
+      instance of its point variables that meets its constraint C, in
+      every future world (sharp edges 58). *)
 Fixpoint Vdef (below : nat → level) (n : nat)
     (W : world) (Θ : tenv) (T : ty) (v : expr) {struct T} : Prop :=
   match T with
@@ -105,7 +110,7 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TSum T1 U =>
       (∃ v', v = Inj1 v' ∧ Vdef below n W Θ T1 v')
       ∨ (∃ v', v = Inj2 v' ∧ Vdef below n W Θ U v')
-  | TBox m ub T1 =>
+  | TBox m C ub T1 =>
       (* the paper's V⟦□T⟧ = {!e | fix x.e ∈ E⟦T ≺ ∅⟧}, at every
          instance of the ∀, in every future world, and under every
          frame above the instantiated upper point (sharp edges 52);
@@ -113,6 +118,7 @@ Fixpoint Vdef (below : nat → level) (n : nat)
          constrained *)
       Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
         ∀ W' j xs F, wext W W' → j < n → length xs = m →
+          pcs_hold (w_lt W') (pcs_inst (plist xs) C) →
           ub_below W' (pt_inst (plist xs) <$> ub) F →
           lE (below j) W' ∅ (ty_inst xs T1) F (subst1 (EBox eb) eb)
   end.
@@ -482,22 +488,23 @@ Lemma Vrel_sum_iff n W Θ T U v :
   ∨ (∃ v', v = Inj2 v' ∧ Vrel n W Θ U v').
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-Lemma Vrel_box_iff n W Θ m ub T v :
-  Vrel n W Θ (TBox m ub T) v ↔
+Lemma Vrel_box_iff n W Θ m C ub T v :
+  Vrel n W Θ (TBox m C ub T) v ↔
   Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
     ∀ W' j xs F, wext W W' → j < n → length xs = m →
+      pcs_hold (w_lt W') (pcs_inst (plist xs) C) →
       ub_below W' (pt_inst (plist xs) <$> ub) F →
       Erel j W' ∅ (ty_inst xs T) F (subst1 (EBox eb) eb).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply and_iff_compat_l.
   split; intros (eb & -> & Hfc & H); exists eb; (split_and!; [done..|]);
-    intros W' j xs F HW Hj Hxs HF.
+    intros W' j xs F HW Hj Hxs HC HF.
   - rewrite <-(levels_at n j Hj). by apply H.
   - rewrite (levels_at n j Hj). by apply H.
 Qed.
 
-Lemma Vrel_box_empty n W Θ m ub T v : Vrel n W Θ (TBox m ub T) v → Θ = ∅.
+Lemma Vrel_box_empty n W Θ m C ub T v : Vrel n W Θ (TBox m C ub T) v → Θ = ∅.
 
 Proof. intros [-> _]%Vrel_box_iff. done. Qed.
 
