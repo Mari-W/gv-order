@@ -371,6 +371,11 @@ Adequacy keeps its proof. A run of k steps contains at most k costly steps, and 
 steps between two costly ones are finitely many. The composition lemmas keep their
 statements. Rejected are a two-index budget (more bookkeeping, same effect) and links that
 do not fuse (forwarders deadlock in a cycle, decision N).
+Encoding (Claude, routine). E_{n+1} and P_{n+1} are inductive predicates over the giving
+steps, parameterised by the level-n relations. The giving clause for the τ of P-Act-Link
+states the successor in the same world, because a link creates no points. With a world
+extension there, monotonicity in the world would need a renaming of points at the same
+index, which the induction over giving steps does not provide.
 
 ## From the earlier abandoned mechanization (spec §15)
 

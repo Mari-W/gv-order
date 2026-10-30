@@ -185,6 +185,9 @@ Giving steps keep the index (sharp edges 45)                                    
           steps at fixed n+1, over E_n and P_n. Giving steps are well founded because each removes
           a send, close or link redex outside every λ, or a channel from C ∪ dom Σ.
           In the clauses below, read the continuation index of a giving step as n+1.
+          The giving clause for the τ of P-Act-Link keeps the world (W′ = W), because a link
+          creates no points. Rocq encodes E_{n+1} and P_{n+1} as inductive predicates (Eind, Pind)
+          over the level-n relations, with induction principles Erel_S_ind and Prel_S_ind.
 
 O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
 O-New     ∃a ∉ names(W) ∪ points(Θ, T, F), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
