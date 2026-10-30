@@ -54,55 +54,49 @@ Section teqW.
     opt_rel (pteqW W) o o' → opt_rel (pteqW W) o' o'' → opt_rel (pteqW W) o o''.
   Proof. destruct o, o', o''; simpl; try done. apply pteqW_trans. Qed.
 
-  Lemma pcs_rel_refl C : pcs_rel (pteqW W) C C.
-  Proof. apply Forall_Forall2_diag, Forall_forall. intros p _. split; apply pteqW_refl. Qed.
+  Lemma fact_rel_refl g : fact_rel (pteqW W) g g.
+  Proof. destruct g; simpl; split; apply pteqW_refl. Qed.
 
-  Lemma pcs_rel_sym C C' : pcs_rel (pteqW W) C C' → pcs_rel (pteqW W) C' C.
+  Lemma fact_rel_sym g g' : fact_rel (pteqW W) g g' → fact_rel (pteqW W) g' g.
+  Proof. destruct g, g'; simpl; try done; intros [? ?]; split; by apply pteqW_sym. Qed.
+
+  Lemma fact_rel_trans g g' g'' :
+    fact_rel (pteqW W) g g' → fact_rel (pteqW W) g' g'' → fact_rel (pteqW W) g g''.
   Proof.
-    intros H. apply Forall2_flip. eapply Forall2_impl; [exact H|].
-    intros p q [? ?]; split; by apply pteqW_sym.
+    destruct g, g', g''; simpl; try done; intros [? ?] [? ?]; split; by eapply pteqW_trans.
   Qed.
 
-  Lemma pcs_rel_trans C C' C'' :
-    pcs_rel (pteqW W) C C' → pcs_rel (pteqW W) C' C'' → pcs_rel (pteqW W) C C''.
+  Lemma bcs_rel_refl n C : bcs_rel (pteqW W) n C C.
+  Proof. split; intros g Hg; exists g; split; auto using fact_rel_refl. Qed.
+
+  Lemma bcs_rel_sym n C C' : bcs_rel (pteqW W) n C C' → bcs_rel (pteqW W) n C' C.
   Proof.
-    apply Forall2_trans. intros p q r [? ?] [? ?]. split; by eapply pteqW_trans.
+    intros [H1 H2]. split; intros g Hg.
+    - destruct (H2 g Hg) as (g' & ? & ?). exists g'. split; [done|by apply fact_rel_sym].
+    - destruct (H1 g Hg) as (g' & ? & ?). exists g'. split; [done|by apply fact_rel_sym].
   Qed.
 
-  Lemma steps_rel_refl (ss : list (list point)) : Forall2 (Forall2 (pteqW W)) ss ss.
+  Lemma bcs_rel_trans n C C' C'' :
+    bcs_rel (pteqW W) n C C' → bcs_rel (pteqW W) n C' C'' → bcs_rel (pteqW W) n C C''.
   Proof.
-    apply Forall_Forall2_diag, Forall_forall. intros s _.
-    apply Forall_Forall2_diag, Forall_forall. intros x _. apply pteqW_refl.
-  Qed.
-
-  Lemma bcs_rel_refl C : bcs_rel (pteqW W) C C.
-  Proof. split; [apply steps_rel_refl|apply pcs_rel_refl]. Qed.
-
-  Lemma bcs_rel_sym C C' : bcs_rel (pteqW W) C C' → bcs_rel (pteqW W) C' C.
-  Proof.
-    intros [HS HC]. split; [|by apply pcs_rel_sym].
-    apply Forall2_flip. eapply Forall2_impl; [exact HS|]. intros s r Hsr.
-    apply Forall2_flip. eapply Forall2_impl; [exact Hsr|]. intros. by apply pteqW_sym.
-  Qed.
-
-  Lemma bcs_rel_trans C C' C'' :
-    bcs_rel (pteqW W) C C' → bcs_rel (pteqW W) C' C'' → bcs_rel (pteqW W) C C''.
-  Proof.
-    intros [HS1 HC1] [HS2 HC2]. split; [|by eapply pcs_rel_trans].
-    revert HS1 HS2. apply Forall2_trans. intros s r t H1 H2. revert H1 H2.
-    apply Forall2_trans. intros. by eapply pteqW_trans.
+    intros [H1 H2] [H3 H4]. split; intros g Hg.
+    - destruct (H1 g Hg) as (g' & Hg' & ?). destruct (H3 g' Hg') as (g'' & ? & ?).
+      exists g''. split; [done|by eapply fact_rel_trans].
+    - destruct (H4 g Hg) as (g' & Hg' & ?). destruct (H2 g' Hg') as (g'' & ? & ?).
+      exists g''. split; [done|by eapply fact_rel_trans].
   Qed.
 
   Lemma teqW_refl T : teqW W T T.
   Proof.
-    induction T; simpl; repeat split; auto using opt_rel_refl, pteqW_refl, seq_refl, steps_rel_refl, pcs_rel_refl.
+    induction T; simpl; repeat match goal with |- _ ∧ _ => split end;
+      auto using opt_rel_refl, pteqW_refl, seq_refl, bcs_rel_refl.
   Qed.
 
   Lemma teqW_sym T : ∀ U, teqW W T U → teqW W U T.
   Proof.
     induction T; intros [] H; simpl in *; try done; try naive_solver.
     - destruct H as (? & ? & ? & ?). split_and!; auto using opt_rel_sym.
-    - destruct H as (? & ? & ?). split_and!; auto using bcs_rel_sym.
+    - destruct H as (<- & ? & ?). split_and!; auto using bcs_rel_sym.
     - destruct H as [? ?]. split; [by apply pteqW_sym|by apply seq_sym].
   Qed.
 
@@ -111,8 +105,8 @@ Section teqW.
     induction T; intros [] [] H1 H2; simpl in *; try done; try naive_solver.
     - destruct H1 as (? & ? & ? & ?), H2 as (? & ? & ? & ?).
       split_and!; eauto using opt_rel_trans.
-    - destruct H1 as (? & ? & ?), H2 as (? & ? & ?).
-      split_and!; eauto using bcs_rel_trans. congruence.
+    - destruct H1 as (<- & ? & ?), H2 as (<- & ? & ?).
+      split_and!; eauto using bcs_rel_trans.
     - destruct H1 as [? ?], H2 as [? ?]. split; [by eapply pteqW_trans|by eapply seq_trans].
   Qed.
 
@@ -156,45 +150,39 @@ Section teqW.
     (∀ i, pteqW W (σ i) (τ i)) → ∀ i, pteqW W (pup m σ i) (pup m τ i).
   Proof. intros H i. unfold pup. case_decide; [by left|]. by apply pteqW_inst_r. Qed.
 
-  Lemma pcs_rel_inst_l σ τ C :
-    (∀ i, pteqW W (σ i) (τ i)) → pcs_rel (pteqW W) (pcs_inst σ C) (pcs_inst τ C).
+  Lemma bcs_rel_inst_l n σ τ C :
+    (∀ i, pteqW W (σ i) (τ i)) → bcs_rel (pteqW W) n (bcs_inst σ C) (bcs_inst τ C).
   Proof.
-    intros H. unfold pcs_rel, pcs_inst. apply Forall2_fmap, Forall_Forall2_diag, Forall_forall.
-    intros p _. split; by apply pteqW_inst_l.
+    intros H. assert (∀ g, fact_rel (pteqW W) (fact_map (pt_inst (pup n σ)) g)
+                                    (fact_map (pt_inst (pup n τ)) g)) as Hf.
+    { intros []; simpl; split; apply pteqW_inst_l, pup_pteqW, H. }
+    split; intros g Hg; apply bcs_open_inst in Hg as (g0 & Hg0 & ->).
+    - exists (fact_map (pt_inst (pup n τ)) g0). split; [apply bcs_open_inst; by exists g0|apply Hf].
+    - exists (fact_map (pt_inst (pup n σ)) g0). split; [apply bcs_open_inst; by exists g0|apply Hf].
   Qed.
 
-  Lemma pcs_rel_inst_r ρ C C' :
-    pcs_rel (pteqW W) C C' → pcs_rel (pteqW W) (pcs_inst ρ C) (pcs_inst ρ C').
+  Lemma bcs_rel_inst_r n ρ C C' :
+    bcs_rel (pteqW W) n C C' → bcs_rel (pteqW W) n (bcs_inst ρ C) (bcs_inst ρ C').
   Proof.
-    intros H. unfold pcs_rel, pcs_inst. apply Forall2_fmap. eapply Forall2_impl; [exact H|].
-    intros p q [? ?]; split; by apply pteqW_inst_r.
-  Qed.
-
-  Lemma bcs_rel_inst_l σ τ C :
-    (∀ i, pteqW W (σ i) (τ i)) → bcs_rel (pteqW W) (bcs_inst σ C) (bcs_inst τ C).
-  Proof.
-    intros H. split; [|by apply pcs_rel_inst_l]. simpl.
-    apply Forall2_fmap, Forall_Forall2_diag, Forall_forall. intros s _.
-    apply Forall2_fmap, Forall_Forall2_diag, Forall_forall. intros x _. by apply pteqW_inst_l.
-  Qed.
-
-  Lemma bcs_rel_inst_r ρ C C' :
-    bcs_rel (pteqW W) C C' → bcs_rel (pteqW W) (bcs_inst ρ C) (bcs_inst ρ C').
-  Proof.
-    intros [HS HC]. split; [|by apply pcs_rel_inst_r]. simpl.
-    apply Forall2_fmap. eapply Forall2_impl; [exact HS|]. intros s r Hsr.
-    apply Forall2_fmap. eapply Forall2_impl; [exact Hsr|]. intros. by apply pteqW_inst_r.
+    intros [H1 H2]. assert (∀ g g', fact_rel (pteqW W) g g' →
+      fact_rel (pteqW W) (fact_map (pt_inst (pup n ρ)) g) (fact_map (pt_inst (pup n ρ)) g')) as Hf.
+    { intros [] []; simpl; try done; intros [? ?]; split; by apply pteqW_inst_r. }
+    split; intros g Hg; apply bcs_open_inst in Hg as (g0 & Hg0 & ->).
+    - destruct (H1 g0 Hg0) as (g1 & ? & ?). exists (fact_map (pt_inst (pup n ρ)) g1).
+      split; [apply bcs_open_inst; by exists g1|by apply Hf].
+    - destruct (H2 g0 Hg0) as (g1 & ? & ?). exists (fact_map (pt_inst (pup n ρ)) g1).
+      split; [apply bcs_open_inst; by exists g1|by apply Hf].
   Qed.
 
   (** Instantiating with aliased points gives types up to aliases. *)
   Lemma teqW_pinst_l T : ∀ σ τ,
     (∀ i, pteqW W (σ i) (τ i)) → teqW W (pinst_ty σ T) (pinst_ty τ T).
   Proof.
-    induction T; intros σ τ H; simpl; repeat split; auto using seq_refl.
+    induction T; intros σ τ H; simpl; repeat match goal with |- _ ∧ _ => split end;
+      auto using seq_refl.
     - destruct ub; simpl; [by apply pteqW_inst_l|done].
     - destruct lb; simpl; [by apply pteqW_inst_l|done].
-    - apply (proj1 (bcs_rel_inst_l _ _ _ (pup_pteqW _ _ _ H))).
-    - apply (proj2 (bcs_rel_inst_l _ _ _ (pup_pteqW _ _ _ H))).
+    - by apply bcs_rel_inst_l.
     - apply IHT. by apply pup_pteqW.
     - by apply pteqW_inst_l.
   Qed.
@@ -251,24 +239,6 @@ Proof. by intros (_ & _ & _ & [? _]). Qed.
 Lemma wext_eq W W' x y : wext W W' → w_eq W x y → w_eq W' x y.
 Proof. intros (_ & He & _). auto. Qed.
 
-(** A constraint up to aliases holds when the other one does (58). *)
-Lemma pcs_hold_conv W W' ρ C C' :
-  world_wf W → wext W W' → pcs_rel (pteqW W) C C' →
-  pcs_hold (w_lt W') (pcs_inst ρ C') → pcs_hold (w_lt W') (pcs_inst ρ C).
-Proof.
-  intros HW HWW' Hr. pose proof (wext_wf _ _ HWW') as HW'.
-  assert (∀ x y, pteqW W x y → w_eq W' (pt_inst ρ x) (pt_inst ρ y)) as Hp.
-  { intros x y Hxy. eapply wext_eq; [exact HWW'|]. apply (pteqW_eq _ HW).
-    by apply pteqW_inst_r. }
-  induction Hr as [|q q' C C' [H1 H2] _ IH]; intros H p Hp'; [by apply elem_of_nil in Hp'|].
-  unfold pcs_inst in Hp', H. rewrite fmap_cons in Hp', H.
-  apply elem_of_cons in Hp' as [->|Hp'].
-  - specialize (H _ (list_elem_of_here _ _)). cbn [fst snd] in H |- *.
-    eapply (wf_lt_eq _ HW'); [by apply Hp|exact H|].
-    apply (wf_eq_sym _ HW'). by apply Hp.
-  - apply IH; [|done]. intros r Hr'. apply H. by apply list_elem_of_further.
-Qed.
-
 (** Points aliased in W stay aliased under aliased instantiations. *)
 Lemma weq_inst W σ τ x y :
   world_wf W → (∀ i, w_eq W (σ i) (τ i)) → w_eq W x y → w_eq W (pt_inst σ x) (pt_inst τ y).
@@ -289,39 +259,20 @@ Proof.
   exists y. split; [by eapply list_elem_of_lookup_2|done].
 Qed.
 
-(** A box constraint up to aliases holds when the other one does (58, 61). *)
+(** A box constraint up to aliases holds when the other one does (65). *)
 Lemma bcs_hold_conv W W' C C' xs :
-  world_wf W → wext W W' → bcs_rel (pteqW W) C C' →
-  bcs_hold (w_lt W') C' xs → bcs_hold (w_lt W') C xs.
+  world_wf W → wext W W' → bcs_rel (pteqW W) (length xs) C C' →
+  bcs_hold (w_eq W') (w_lt W') C' xs → bcs_hold (w_eq W') (w_lt W') C xs.
 Proof.
-  intros HW HWW' [HS HC] H w Hw. pose proof (wext_wf _ _ HWW') as HW'.
-  assert (∀ x y, pteqW W x y → w_eq W' x y) as Hp.
-  { intros x y Hxy. eapply wext_eq; [exact HWW'|]. by apply (pteqW_eq _ HW). }
-  assert (∃ w', Forall (λ s, s ∈ bc_steps C') w' ∧ Forall2 (Forall2 (pteqW W)) w w')
-    as (w' & Hw' & Hww).
-  { clear H. induction Hw as [|s w Hs _ IH]; [by exists []|].
-    destruct IH as (w' & ? & ?). destruct (Forall2_elem_l _ _ _ _ HS Hs) as (s' & ? & ?).
-    exists (s' :: w'). split; by constructor. }
-  assert (∀ a, w_eq W' (wsub (length xs) w a) (wsub (length xs) w' a)) as Hws.
-  { clear -Hww HW' Hp. induction Hww as [|s s' w w' Hss _ IH]; intros a; simpl.
-    - apply (wf_eq_refl _ HW').
-    - apply weq_inst; [done| |apply IH]. intros i. unfold pext. case_decide; [|apply (wf_eq_refl _ HW')].
-      destruct (s !! i) eqn:E1, (s' !! i) eqn:E2.
-      + apply Hp. by apply (Forall2_lookup_lr _ _ _ _ _ _ Hss E1 E2).
-      + destruct (Forall2_lookup_l _ _ _ _ _ Hss E1) as (? & ? & _). congruence.
-      + destruct (Forall2_lookup_r _ _ _ _ _ Hss E2) as (? & ? & _). congruence.
-      + apply (wf_eq_refl _ HW'). }
-  specialize (H w' Hw'). intros p Hpm. unfold pcs_inst in Hpm.
-  apply list_elem_of_fmap in Hpm as ([x y] & -> & Hxy). simpl.
-  destruct (Forall2_elem_l _ _ _ _ HC Hxy) as ([x' y'] & Hxy' & [H1 H2]). simpl in H1, H2.
-  assert (∀ z z', pteqW W z z' →
-    w_eq W' (pt_inst (λ a, pt_inst (plist xs) (wsub (length xs) w a)) z)
-            (pt_inst (λ a, pt_inst (plist xs) (wsub (length xs) w' a)) z')) as Hz.
-  { intros z z' Hzz. apply weq_inst; [done| |by apply Hp].
-    intros a. apply weq_inst; [done| |apply Hws]. intros. apply (wf_eq_refl _ HW'). }
-  eapply (wf_lt_eq _ HW'); [apply Hz, H1| |apply (wf_eq_sym _ HW'), Hz, H2].
-  apply (H (pt_inst _ x', pt_inst _ y')). unfold pcs_inst. apply list_elem_of_fmap.
-  by exists (x', y').
+  intros HW HWW' [HC _] H g Hg. pose proof (wext_wf _ _ HWW') as HW'.
+  assert (∀ z z', pteqW W z z' → w_eq W' (pt_inst (plist xs) z) (pt_inst (plist xs) z')) as Hz.
+  { intros z z' Hzz. eapply wext_eq; [exact HWW'|]. apply (pteqW_eq _ HW).
+    by apply pteqW_inst_r. }
+  destruct (HC g Hg) as (g' & Hg' & Hr). specialize (H g' Hg').
+  destruct g as [x y|x y], g' as [x' y'|x' y']; simpl in *; try done; destruct Hr as [H1 H2].
+  - eapply (wf_lt_eq _ HW'); [apply Hz, H1|exact H|apply (wf_eq_sym _ HW'), Hz, H2].
+  - eapply (wf_eq_trans _ HW'); [apply Hz, H1|].
+    eapply (wf_eq_trans _ HW'); [exact H|apply (wf_eq_sym _ HW'), Hz, H2].
 Qed.
 
 (** ** The relations are invariant *)
@@ -380,7 +331,7 @@ Proof.
       eapply Hlam; [done| |].
       + apply teqW_ty_inst. eapply teqW_mono; [|exact Ht]. intros. by eapply wext_eq.
       + apply HK; [done..| |done].
-        by eapply (bcs_hold_conv W W' C0 C0').
+        eapply (bcs_hold_conv W W' C0 C0'); [done|done| |done]. by rewrite Hxs.
     - destruct Ht as [Hx Hs].
       apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hk).
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done|done| |].

@@ -45,14 +45,10 @@ Definition pt_root (x : point) : pname := pn_root (pt_name x).
 Definition opt_roots (o : option point) : gset pname :=
   match o with Some x => {[pt_root x]} | None => ∅ end.
 
-Definition pcs_roots (C : list (point * point)) : gset pname :=
-  ⋃ ((λ p, {[pt_root p.1]} ∪ {[pt_root p.2]}) <$> C).
-
-Definition steps_roots (ss : list (list point)) : gset pname :=
-  ⋃ ((λ s : list point, ⋃ ((λ x, {[pt_root x]}) <$> s)) <$> ss).
-
+(** The facts of a constraint speak of variables only, so its roots
+    are those of its outer points (sharp edges 65). *)
 Definition bcs_roots (C : bcs) : gset pname :=
-  steps_roots (bc_steps C) ∪ pcs_roots (bc_facts C).
+  ⋃ ((λ x, {[pt_root x]}) <$> bc_env C).
 
 Fixpoint ty_roots (T : ty) : gset pname :=
   match T with

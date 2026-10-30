@@ -50,14 +50,12 @@ Definition opt_rel (R : point → point → Prop) (o o' : option point) : Prop :
   | _, _ => False
   end.
 
-(** Constraints compared fact by fact (sharp edges 58). *)
-Definition pcs_rel (R : point → point → Prop) (C C' : list (point * point)) : Prop :=
-  Forall2 (λ p q, R p.1 q.1 ∧ R p.2 q.2) C C'.
-
-(** Box constraints: steps point by point, facts fact by fact (sharp
-    edges 61). *)
-Definition bcs_rel (R : point → point → Prop) (C C' : bcs) : Prop :=
-  Forall2 (Forall2 R) (bc_steps C) (bc_steps C') ∧ pcs_rel R (bc_facts C) (bc_facts C').
+(** Box constraints under a binder of n point variables: every fact of
+    one has a fact of the other of the same kind with related points
+    (sharp edges 65). *)
+Definition bcs_rel (R : point → point → Prop) (n : nat) (C C' : bcs) : Prop :=
+  (∀ g, bcs_open n C g → ∃ g', bcs_open n C' g' ∧ fact_rel R g g') ∧
+  (∀ g', bcs_open n C' g' → ∃ g, bcs_open n C g ∧ fact_rel R g g').
 
 Fixpoint teqW (W : world) (T U : ty) : Prop :=
   match T, U with
@@ -68,7 +66,7 @@ Fixpoint teqW (W : world) (T U : ty) : Prop :=
   | TProd T1 T2, TProd U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
   | TSum T1 T2, TSum U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
   | TBox n C T1, TBox n' C' U1 =>
-      n = n' ∧ bcs_rel (pteqW W) C C' ∧ teqW W T1 U1
+      n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW W T1 U1
 
   | TSess s x, TSess r y => pteqW W x y ∧ seq s r
   | _, _ => False
@@ -144,7 +142,7 @@ Fixpoint Vdef (below : nat → level) (n : nat)
          that the world knows, in every future world (sharp edges 63) *)
       Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
         ∀ W' xs, wext W W' → length xs = m →
-          bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
+          bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
           Vfun below n W' ∅ (ty_inst xs T1) (thunk eb)
   end.
 
@@ -616,7 +614,7 @@ Lemma Vrel_box_iff n W Θ m C T v :
   Vrel n W Θ (TBox m C T) v ↔
   Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
     ∀ W' xs, wext W W' → length xs = m →
-      bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
+      bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
       Vrel n W' ∅ (ty_inst xs T) (thunk eb).
 Proof.
   unfold thunk. setoid_rewrite Vrel_Vfun.
@@ -1174,7 +1172,7 @@ Lemma Vrel_box_thunk_iff n W Θ m C ub T v :
   Vrel n W Θ (TBox m C (TLolli ub None TUnit T)) v ↔
   Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
     ∀ W' j xs F, wext W W' → j < n → length xs = m →
-      bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
+      bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
       ub_below W' (pt_inst (plist xs) <$> ub) F →
       Erel j W' ∅ (ty_inst xs T) F (subst1 (EBox eb) eb).
 Proof.
@@ -1194,7 +1192,7 @@ Proof.
     + intros W'' j Θ' Θ'' w F HW' Hj Hc HV HF.
       apply Vrel_unit_iff in HV as [-> ->]. apply tenv_comp_empty_r_inv in Hc as ->.
       rewrite thunk_app. apply H; [by eapply wext_trans|done|done| | |done].
-      * eapply bcs_hold_mono; [|exact HC]. apply HW'.
+      * eapply bcs_hold_mono; [| |exact HC]; apply HW'.
       * eapply Forall_impl; [exact HK|]. intros x Hx. apply HW', Hx.
 Qed.
 

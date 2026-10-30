@@ -12,8 +12,9 @@
     canonical representative that identifies the generating aliases.
 
     The examples that do not type carry the failing rule and fact in a
-    comment. request/reply, the relay and the factory under □∀ι type with
-    the steps and the knownness of SHARP-EDGES.md 61. *)
+    comment. request/reply and the relay type with infinite constraints
+    (SHARP-EDGES.md 65), the factory under □∀ι with the knownness of
+    61. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export Static.
@@ -176,8 +177,8 @@ Qed.
 Section rules.
   Context (W : world) (HW : world_wf W).
 
-  Lemma comp0 : tenv_comp (w_eq W) ∅ ∅ ∅.
-  Proof. apply tenv_comp_empty_l. intros ? ?. apply (wf_eq_sym _ HW). Qed.
+  Lemma comp0 Ψ : tenv_comp (seqs W Ψ) ∅ ∅ ∅.
+  Proof. apply tenv_comp_empty_l. intros ? ?. apply se_sym. Qed.
 
   Lemma tenv_heads0 : tenv_heads ∅ = ∅.
   Proof. unfold tenv_heads. by rewrite map_fold_empty. Qed.
@@ -204,7 +205,7 @@ Section rules.
       argument comes first so that its type is known. *)
   Lemma tv_appk Φ Ψ Δ F k e2 ub T U :
     typed W Φ Ψ ∅ Δ F e2 T →
-    konst_ty (w_eq W) (slt W Ψ) (skn W Ψ) k (TLolli ub None T U) →
+    konst_ty (seqs W Ψ) (slt W Ψ) (skn W Ψ) k (TLolli ub None T U) →
     kscoped k (TLolli ub None T U) →
     ub_below_s W Ψ Φ ub F →
     typed W Φ Ψ ∅ Δ F (App (Konst k) e2) U.
@@ -270,7 +271,7 @@ Section frames.
   Proof. done. Qed.
 
   Lemma sle_refl Ψ x : world_wf W → sle W Ψ x x.
-  Proof. intros HW. left. apply (wf_eq_refl _ HW). Qed.
+  Proof. intros HW. left. apply se_refl. Qed.
 
   Lemma slt_po Ψ x : world_wf W → slt W Ψ x (pt_shift 1 x).
   Proof. intros HW. apply sl_w, (wf_lt_po _ HW). Qed.
@@ -632,9 +633,9 @@ Proof.
   { (* ag₁ = link ⟨r₁, r₀⟩ *)
     tstep.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 2 0)) (Some (pc 0 0)) 0); [set_solver| |].
-      { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|left; by apply (wf_eq_sym _ HW)]. }
+      { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|left; by apply se_sym, se_w]. }
       cbn. tstep; [tstep|]. cbn.
-      tstep; [tstep; tstep|apply (KTLink _ _ _ Sd (pc 2 0) (pc 0 0) Hca)|done|].
+      tstep; [tstep; tstep|apply (KTLink _ _ _ Sd (pc 2 0) (pc 0 0) (se_w _ _ _ _ Hca))|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pc 2 0). split; [done|]. apply sle_refl, HW.
     - apply KTSpawn.
@@ -744,7 +745,7 @@ Lemma pvar_unknown W a : world_wf W → ¬ pt_known W (pvar a).
 Proof. intros HW Hk. destruct (wf_names_const _ HW _ Hk) as [b Hb]. done. Qed.
 
 Definition Tfac_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (pc 0 0)).
-Definition Tfac : ty := TBox 0 (BCs [] []) (TLolli None None TUnit Tfac_body).
+Definition Tfac : ty := TBox 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
 
 Definition fac : expr :=
   EBox (Lam (LetU (Var 0) (LetP (App ENew EUnit)
@@ -761,7 +762,7 @@ Proof.
   intros HW Ha. unfold fac_main.
   tstep.
   { tstep; [tstep|].
-    apply (t_box W _ _ _ _ _ 0 (BCs [] []) None Tfac_body 0); [by apply allunl_unl|set_solver|].
+    apply (t_box W _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|].
     cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
     cbn. tstep; [tstep|]. cbn. tstep.
     { tstep; [tstep|apply (KTNew _ _ _ Sd (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
@@ -783,9 +784,9 @@ Proof.
   { intros P HP. unfold request, recvclose. tstep.
     - tstep; [| | |].
       + eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-        cbn. apply (typed_force W _ _ _ _ _ _ 0 (BCs [] []) None Tfac_body []);
+        cbn. apply (typed_force W _ _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body []);
           [done|done| |constructor|apply ubs_none|tstep].
-        apply bcs_hold_nil; [done|]. intros q Hq. by apply elem_of_nil in Hq.
+        apply bcs_hold_intro. by intros ? [].
       + apply KTRecv.
       + kscope.
       + apply ubs_intro; [|done]. intros y Hy. cbn in Hy.
@@ -817,7 +818,7 @@ Qed.
     (a,0) ≺ (b,0) and (a,1) ≺ (b,0). *)
 
 Definition Tfa_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (Pt (NVar 0) 0)).
-Definition Tfa : ty := TBox 1 (BCs [] []) (TLolli None None TUnit Tfa_body).
+Definition Tfa : ty := TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
 
 Definition faca : expr := fac.
 
@@ -859,9 +860,9 @@ Proof.
     typed W ∅ [] ∅ [None; Some Tfa] (P, None) (App (App EForce (Var 1)) EUnit)
       (TSess (SRcv 0 TUnit SEnd) (pc a 0))) as Hreq.
   { intros P a Hk. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-    cbn. apply (typed_force W _ _ _ _ _ _ 1 (BCs [] []) None Tfa_body [pc a 0]);
+    cbn. apply (typed_force W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None Tfa_body [pc a 0]);
       [done|done| |constructor; [by left|constructor]|apply ubs_none|tstep].
-    apply bcs_hold_nil; [done|]. intros q Hq. by apply elem_of_nil in Hq. }
+    apply bcs_hold_intro. by intros ? []. }
   tstep.
   { tstep; [tstep|apply faca_typed, HW]. }
   cbn. tstep; [tstep|]. cbn. tstep.
@@ -897,36 +898,25 @@ Proof.
   - apply Wfacts_lt. set_solver.
 Qed.
 
-(** ** request/reply without steps: does not type (SHARP-EDGES 60, typed below with 61)
+(** ** request/reply with one round only: the call does not type (SHARP-EDGES 60, 65)
 
     The server answers every request on a with a reply on b, forever:
 
       Sa = μX. ?∗.X      Sb = μX. !∗.X
-      srv : □(∀ι ι′. {ι ≺ ι′, ι′ ≺ ι+1}.^⊥ Sa@ι ⊗ Sb@ι′ ⊸^{ι′}_⊤ ∗)
       srv = !(f = λp. let (a, b) = p in let (x, a) = recv a in let () = x in
-                     let (b, w) = ⟨send ⟨∗, b⟩, ∗⟩ in let () = w in
-                     spawn (λv. let () = v in (force f) ⟨a, b⟩))
+                     spawn (λv. let () = v in (force f) ⟨a, send ⟨∗, b⟩⟩))
 
     recv a blocks at ι while the body holds b at ι′ and asks ι ≺ ι′.
-    send b blocks at ι′ while it holds a at ι+1 and asks ι′ ≺ ι+1. Both
-    are hypotheses of C. The spec's (a,κ) ≺ (b,κ) and (b,κ) ≺ (a,κ+1)
-    are these two facts with ι = (a,κ) and ι′ = (b,κ). The recursion
-    goes through spawn, so the λ's upper point ι′ needs no ceiling:
-    the thunk captures a at ι+1 and b at ι′+1, its lower point ι′ lies
-    below both, and its upper point is ι′+1, the upper point of the
-    call. A tail call (force f) ⟨a, b⟩ would instead ask ι′+1 ≼ ι′ at
-    the frame variable (E-App/φ), which fails for every point term.
-
-    The recursive call fails. typed_force asks C at (ι+1, ι′+1), that is
-    ι+1 ≺ ι′+1 and ι′+1 ≺ ι+2, in slt W C. Neither follows: slt closes
-    the hypotheses under ≡_W and transitivity, a world_wf W relates
-    points with a variable root by program order only (wf_lt_supp,
-    wf_names_const), and no rule shifts a hypothesis by one.
-    [rr_call_underivable] proves it for ι+1 ≺ ι′+1. The rank 10(k+1) for
-    (ι,k) and 15+k for (ι′,k) meets the hypotheses and program order but
-    puts ι′+1 below ι+1. A finite C cannot help: every unrolling asks C
-    one step further, and C must already contain each of those facts,
-    because no rule produces a fact at a larger offset than C states. *)
+    send b blocks at ι′ while it holds a at ι+1 and asks ι′ ≺ ι+1. With
+    the one-round constraint {ι ≺ ι′, ι′ ≺ ι+1} the recursive force at
+    (ι+1, ι′+1) asks ι+1 ≺ ι′+1, and the fact theory does not derive it.
+    Its ≡ relates points with a variable root by equality only, its ≺
+    closes the hypotheses under ≡ and transitivity, and a world_wf W
+    relates points with a variable root by program order only. The rank
+    10(k+1) for (ι,k) and 15+k for (ι′,k) meets the hypotheses and
+    program order but puts ι′+1 below ι+1 ([rr_call_underivable]). C is
+    the invariant of the recursion, so it has to state every round at
+    once, which the typed version below does. *)
 
 Definition isvar (x : point) : bool := match pt_root x with NVar _ => true | _ => false end.
 
@@ -940,43 +930,55 @@ Definition rr_rank (x : point) : nat :=
 Definition rr_R (x y : point) : Prop :=
   if isvar x && isvar y then rr_rank x < rr_rank y else isvar x = false ∧ isvar y = false.
 
-Definition rr_C : list (point * point) := [(pvar 0, pvar 1); (pvar 1, pt_shift 1 (pvar 0))].
+Definition rr_C1 (g : fact) : Prop :=
+  g = FLt (pvar 0) (pvar 1) ∨ g = FLt (pvar 1) (pt_shift 1 (pvar 0)).
 
 Lemma isvar_const W x : world_wf W → pt_root x ∈ w_names W → isvar x = false.
 Proof. intros HW Hx. unfold isvar. by destruct (wf_names_const _ HW _ Hx) as [a ->]. Qed.
 
 Lemma rr_call_underivable W : world_wf W →
-  ¬ slt W [(BCs [] rr_C, ids 2)] (pt_shift 1 (pvar 0)) (pt_shift 1 (pvar 1)).
+  ¬ slt W [(BCs [] rr_C1, ids 2)] (pt_shift 1 (pvar 0)) (pt_shift 1 (pvar 1)).
 Proof.
   intros HW H.
-  assert (∀ x y, slt W [(BCs [] rr_C, ids 2)] x y → rr_R x y) as HR.
-  { apply (slt_map W _ rr_R id); unfold id.
-    - intros x y Hxy. unfold rr_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]|[Hx Hy]].
-      + destruct x as [p o], y as [q o']. simpl in *. subst q. unfold isvar, rr_rank, pt_root. simpl.
+  assert (∀ x y, slt W [(BCs [] rr_C1, ids 2)] x y → rr_R x y) as HR.
+  { intros x y Hxy. change (match NP x, NP y with NP x, NP y => rr_R x y | _, _ => True end).
+    refine (proj2 (fl_map (FCtx W [(BCs [] rr_C1, ids 2)] ∅)
+      (λ x y, x = y ∨ (isvar x = false ∧ isvar y = false))
+      (λ a b, match a, b with NP x, NP y => rr_R x y | _, _ => True end) id id
+      _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
+    - intros x0 y0 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
+      split; by apply (isvar_const W).
+    - intros x0 y0 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
+      injection Hg as -> ->. apply bcs_open_nil in Hg0 as [[->| ->] _]; discriminate.
+    - by left.
+    - intros x0 y0 [->|[? ?]]; [by left|by right].
+    - intros x0 y0 z0 [->|[? ?]] [->|[? ?]]; [by left|by right|by right|by right].
+    - intros x0 y0 [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
+    - intros x0 y0 i [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
+    - intros x0 y0 Hxy. unfold rr_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]|[Hx Hy]].
+      + destruct x0 as [p o], y0 as [q o']. simpl in *. subst q. unfold isvar, rr_rank, pt_root. simpl.
         destruct (pn_root p) eqn:Hr; simpl; [done| |done].
         destruct p as [|[|[|]]|]; simpl in *; try lia; simplify_eq.
-      + rewrite (isvar_const W x), (isvar_const W y); done.
-    - intros x y (C & xs & Hg & w & Hw & Hxy). apply list_elem_of_singleton in Hg.
-      injection Hg as -> ->.
-      destruct w as [|s w]; [|apply Forall_cons in Hw as [Hs _]; by apply elem_of_nil in Hs].
-      cbn in Hxy. rewrite !elem_of_cons in Hxy.
-      destruct Hxy as [Hxy|[Hxy|Hxy]]; [simplify_eq; vm_compute; lia|simplify_eq; vm_compute; lia|].
-      by apply elem_of_nil in Hxy.
-    - intros x x' y Hxx' Hx'y. destruct (wf_eq_supp _ HW _ _ Hxx') as [->|[Hx Hx']]; [done|].
-      revert Hx'y. unfold rr_R. rewrite (isvar_const W x), (isvar_const W x'); done.
-    - intros x y y' Hxy' Hy'y. destruct (wf_eq_supp _ HW _ _ Hy'y) as [<-|[Hy' Hy]]; [done|].
-      revert Hxy'. unfold rr_R. rewrite (isvar_const W y), (isvar_const W y'), !andb_false_r; done.
-    - intros x y z. unfold rr_R.
-      destruct (isvar x), (isvar y), (isvar z); simpl; intuition (try lia; try discriminate). }
+      + rewrite (isvar_const W x0), (isvar_const W y0); done.
+    - intros x0 y0 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
+      injection Hg as -> ->. apply bcs_open_nil in Hg0 as [[->| ->] _];
+        cbn in E; injection E as -> ->; vm_compute; lia.
+    - intros φ u Hu. by rewrite lookup_empty in Hu.
+    - intros x0 x' [y0|] HQ H0; [|done]. destruct HQ as [->|[Hx Hx']]; [done|].
+      revert H0. unfold rr_R. rewrite Hx, Hx'. cbn. tauto.
+    - intros [x0|] y0 y' H0 HQ; [|done]. destruct HQ as [<-|[Hy' Hy]]; [done|].
+      revert H0. unfold rr_R. rewrite Hy, Hy', !andb_false_r. cbn. tauto.
+    - intros [x0|] y0 [z0|]; try done. unfold rr_R.
+      destruct (isvar x0), (isvar y0), (isvar z0); simpl; intuition (try lia; try discriminate). }
   apply HR in H. vm_compute in H. lia.
 Qed.
 
-(** ** request/reply with a step: typable (SHARP-EDGES 61)
+(** ** request/reply: typable, recursive (SHARP-EDGES 65)
 
-    The box carries the step σ = (ι, ι′) ↦ (ι+1, ι′+1), and C holds at
-    every iterate of σ:
+    C states every round at once:
 
-      srv : □(∀ι ι′. {ι ≺ ι′, ι′ ≺ ι+1}.^⊥_{σ} Sa@ι ⊗ Sb@ι′ ⊸^{ι′}_⊤ ∗)
+      C = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1  ∣  k ∈ ℕ}
+      srv : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (Sa@ι ⊗ Sb@ι′ ⊸^{ι′}_⊤ ∗))
       srv = !(f = λp. let (a, b) = p in let (x, a) = recv a in let () = x in
                      spawn (λv. let () = v in (force f) ⟨a, send ⟨∗, b⟩⟩))
       cli : the same box over the dual sessions
@@ -986,12 +988,12 @@ Qed.
       main = let (s, c) = ⟨srv, cli⟩ in let (a, a′) = new ∗ in let (b, b′) = new ∗ in
              let () = spawn (λu. let () = u in (force s) ⟨a, b⟩) in (force c) ⟨a′, b′⟩
 
-    The recursive force is at σ(ι, ι′), whose iterates are among those
-    of (ι, ι′), so it needs no proof of C ([step_hold]). The send in the
-    server's thunk blocks at ι′ while the pair holds a at ι+1, which is
-    the hypothesis ι′ ≺ ι+1. main forces both boxes at ((a,0), (b,0)),
-    and C at every word there is (a,k) ≺ (b,k) and (b,k) ≺ (a,k+1), the
-    uniform facts of [Wrr]. *)
+    The recursive force at (ι+1, ι′+1) asks C there, and C[ι+1, ι′+1] ⊆ C,
+    so the body's own hypothesis gives it ([bcs_hold_self]). The send in
+    the server's thunk blocks at ι′ while the pair holds a at ι+1, the
+    fact ι′ ≺ ι+1 of C. main forces both boxes at ((a,0), (b,0)), where
+    C is (a,k) ≺ (b,k) and (b,k) ≺ (a,k+1) for every k, the facts of
+    [Wrr]. *)
 
 Lemma seq_unf s r : unfoldS s = unfoldS r → seq s r.
 Proof.
@@ -999,23 +1001,26 @@ Proof.
   destruct (unfoldS r); try done; split_and!; auto using eqT_refl, aeq_refl.
 Qed.
 
-Lemma step_hold W Ψ C ys s xs :
-  (C, ys) ∈ Ψ → s ∈ bc_steps C → length s = length ys → pt_inst (plist ys) <$> s = xs →
-  bcs_hold (slt W Ψ) C xs.
-Proof. intros Hg Hs Hl <-. apply bcs_hold_step; [done|done|]. by apply hyp_in_fact. Qed.
-
 Lemma skn_in W Ψ C ys y x : (C, ys) ∈ Ψ → y ∈ ys → pt_root x = pt_root y → skn W Ψ x.
 Proof. intros Hg Hy E. right. by exists C, ys, y. Qed.
 
+(** A fact of a set-builder constraint: one disjunct is the fact. *)
+Ltac cmem :=
+  hnf; first [eexists; first [left; reflexivity|right; reflexivity]
+             |left; hnf; repeat (first [left; reflexivity|right]); reflexivity].
+
 Ltac hyp0 x y :=
-  eapply (sl_hyp0 _ _ _ _ x y); [by left|cbn; repeat (first [by left|right])|reflexivity|reflexivity].
+  eapply (sl_hyp0 _ _ _ _ x y); [by left|cmem|cbn; lia|reflexivity|reflexivity].
+
+Ltac vb_list := repeat (apply Forall_cons; split); try (apply Forall_nil; done); cbn; lia.
 
 Abbreviation pv a k := (Pt (NVar a) k).
 
 Definition Sa : sty := SMu (SRcv 0 TUnit (SVar 0)).
 Definition Sb : sty := SMu (SSnd 0 TUnit (SVar 0)).
 
-Definition rq_C : bcs := BCs [[pv 0 1; pv 1 1]] [(pv 0 0, pv 1 0); (pv 1 0, pv 0 1)].
+Definition rq_P (g : fact) : Prop := ∃ k, g = FLt (pv 0 k) (pv 1 k) ∨ g = FLt (pv 1 k) (pv 0 (S k)).
+Definition rq_C : bcs := BCs [] rq_P.
 
 Definition srv_body : ty :=
   TLolli (Some (pv 1 0)) None (TProd (TSess Sa (pv 0 0)) (TSess Sb (pv 1 0))) TUnit.
@@ -1044,32 +1049,15 @@ Proof.
   intros a Ha. lia.
 Qed.
 
-Lemma bcs_closed n σ C : bcs_scoped n C → bcs_inst (pup n σ) C = C.
-Proof.
-  intros H. assert (pscoped 0 (TBox n C (TLolli None None TUnit TUnit))) as Hs.
-  { cbn. rewrite Nat.add_0_r. done. }
-  pose proof (pinst_closed σ _ Hs) as E. by injection E.
-Qed.
-
-Lemma rq_C_scoped : bcs_scoped 2 rq_C.
-Proof.
-  split.
-  - cbn. apply Forall_singleton, Forall_cons. split; [|apply Forall_singleton];
-      intros ? Hv; injection Hv; lia.
-  - intros p Hp. cbn in Hp. rewrite !elem_of_cons in Hp.
-    destruct Hp as [->|[->|Hp]]; [| |by apply elem_of_nil in Hp];
-      split; intros ? Hv; injection Hv; lia.
-Qed.
-
 Ltac body_scope := cbn; repeat split; intros ? Hv; injection Hv; lia.
 
 (** Open a closed box: its hypothesis and recursive binding are C and
     the box type itself. *)
 Ltac box_open C T :=
-  rewrite (bcs_closed 2 _ C rq_C_scoped);
+  try change (bcs_inst (pshift 2) C) with C;
   change (lenv_pinst (pshift 2) [Some (TBox 2 C (TLolli None None TUnit T))])
     with [Some (pinst_ty (pshift 2) (TBox 2 C (TLolli None None TUnit T)))];
-  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [exact rq_C_scoped|]; unfold T; body_scope).
+  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
 
 Lemma pt_inst_var σ a k : pt_inst σ (Pt (NVar a) k) = pt_shift k (σ a).
 Proof. done. Qed.
@@ -1083,6 +1071,14 @@ Proof.
 Qed.
 
 Ltac conv_sess := split; first [done|apply seq_unf; done].
+
+(** C[ι+1, ι′+1] ⊆ C. *)
+Lemma rq_step g : rq_P g → fact_scoped 2 g → rq_P (fact_map (pt_inst (plist [pv 0 1; pv 1 1])) g).
+Proof. intros (k & [-> | ->]) _; exists (S k); [by left|by right]. Qed.
+
+Lemma rq_call W Ψ :
+  (rq_C, ids 2) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) rq_C [pv 0 1; pv 1 1].
+Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact rq_step]. Qed.
 
 Lemma srv_typed W F : world_wf W → typed W ∅ [] ∅ [] F srv (TBox 2 rq_C (TLolli None None TUnit srv_body)).
 Proof.
@@ -1104,7 +1100,7 @@ Proof.
   eapply tv_app; [exact HW|reflexivity| | |].
   - apply (typed_force W _ _ _ _ _ _ 2 rq_C None srv_body [pv 0 1; pv 1 1]);
       [done|done| | |apply ubs_none|tstep].
-    + eapply (step_hold W _ rq_C _ [pv 0 1; pv 1 1]); [by left|cbn; by left|done|reflexivity].
+    + apply rq_call. by left.
     + apply (skn_ids2 W _ rq_C); [by left|done|done].
   - tstep.
     + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0)) (TProd TUnit (TSess (SSnd 0 TUnit Sb) (pv 1 0)))).
@@ -1148,48 +1144,26 @@ Proof.
   eapply tv_app; [exact HW|reflexivity| | |].
   - apply (typed_force W _ _ _ _ _ _ 2 rq_C None cli_body [pv 0 1; pv 1 1]);
       [done|done| | |apply ubs_none|tstep].
-    + eapply (step_hold W _ rq_C _ [pv 0 1; pv 1 1]); [by left|cbn; by left|done|reflexivity].
+    + apply rq_call. by left.
     + apply (skn_ids2 W _ rq_C); [by left|done|done].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pv 1 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-(** C at every word of the shift step, at ((a,0), (b,0)). *)
-Lemma rq_wsub w a : Forall (λ s, s ∈ bc_steps rq_C) w → a < 2 → wsub 2 w a = Pt (NVar a) (length w).
-Proof.
-  induction 1 as [|s w Hs _ IH]; intros Ha; [done|].
-  cbn in Hs. apply list_elem_of_singleton in Hs as ->.
-  cbn [wsub length]. rewrite IH by done. rewrite pt_inst_var. unfold pext.
-  rewrite decide_True by done. destruct a as [|[|a]]; [| |lia]; cbn; unfold pt_shift; cbn; f_equal; lia.
-Qed.
-
-Lemma rq_inst w a k :
-  Forall (λ s, s ∈ bc_steps rq_C) w → a < 2 →
-  pt_inst (λ b, pt_inst (plist [pc 0 0; pc 1 0]) (wsub (length [pc 0 0; pc 1 0]) w b))
-    (Pt (NVar a) k) = Pt (NConst a) (length w + k).
-Proof.
-  intros Hw Ha. rewrite pt_inst_var. cbv beta. cbn [length]. rewrite rq_wsub by done.
-  rewrite pt_inst_var. destruct a as [|[|a]]; [| |lia]; cbn; unfold pt_shift; cbn; f_equal; lia.
-Qed.
-
+(** C at ((a,0), (b,0)) is the facts of [Wrr]. *)
 Lemma rq_hold_W W :
   (∀ k, w_lt W (pc 0 k) (pc 1 k)) → (∀ k, w_lt W (pc 1 k) (pc 0 (S k))) →
-  bcs_hold (w_lt W) rq_C [pc 0 0; pc 1 0].
-Proof.
-  intros H1 H2 w Hw p Hp. apply list_elem_of_fmap in Hp as (q & -> & Hq).
-  cbn in Hq. rewrite !elem_of_cons in Hq.
-  destruct Hq as [->|[->|Hq]]; [| |by apply elem_of_nil in Hq]; cbn [fst snd];
-    rewrite !rq_inst by (done || lia); rewrite ?Nat.add_0_r, ?Nat.add_1_r; auto.
-Qed.
+  bcs_hold (w_eq W) (w_lt W) rq_C [pc 0 0; pc 1 0].
+Proof. intros H1 H2. apply bcs_hold_intro. intros g (k & [-> | ->]) _; [apply H1|apply H2]. Qed.
 
 Lemma rr_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
   (∀ k, w_lt W (pc 0 k) (pc 1 k)) → (∀ k, w_lt W (pc 1 k) (pc 0 (S k))) →
   typed W ∅ [] ∅ [] (∅, None) rr_main TUnit.
 Proof.
   intros HW Ha Hb H1 H2. unfold rr_main.
-  assert (bcs_hold (slt W []) rq_C [pc 0 0; pc 1 0]) as HC.
-  { eapply bcs_hold_mono; [|by apply rq_hold_W]. intros ? ? ?. by apply sl_w. }
+  assert (bcs_hold (seqs W []) (slt W []) rq_C [pc 0 0; pc 1 0]) as HC.
+  { eapply bcs_hold_mono; [intros ? ? ?; by apply se_w|intros ? ? ?; by apply sl_w|by apply rq_hold_W]. }
   assert (Forall (skn W []) [pc 0 0; pc 1 0]) as HK.
   { constructor; [by left|constructor; [by left|constructor]]. }
   tstep.
@@ -1242,11 +1216,12 @@ Proof.
   - intros k. apply glt_base. exists k. by right.
 Qed.
 
-(** ** relay with a slot step: typable (SHARP-EDGES 61)
+(** ** relay: typable, recursive (SHARP-EDGES 65)
 
-      S = μX. ?(∃ι. D@ι).X      D = ?∗.Close      σ = (ι, ι′) ↦ (ι+1, ι[0]+1)
-      C = {ι ≺ ι′, ι ≺ ι[0], ι[0] ≺ ι+1, ι[0] ≺ ι′, ι′ ≺ ι+1, ι′ ≺ ι[0]+1}
-      relay : □(∀ι ι′. C.^⊥_{σ} S@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗)
+      S = μX. ?(∃ι. D@ι).X      D = ?∗.Close
+      C₀(x, y) = {x ≺ y, x ≺ x[0], x[0] ≺ x+1, x[0] ≺ y, y ≺ x+1, y ≺ x[0]+1}
+      C = C₀(ι, ι′) ∪ {C₀(ι+k+1, ι+k[0]+1) ∣ k ∈ ℕ}       (slots from 0)
+      relay : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (S@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗))
       relay = !(f = λp. let (c, d) = p in let (e, c) = recv c in
                        let (v, e) = recv e in let () = v in let () = close d in
                        spawn (λw. let () = w in (force f) ⟨c, e⟩))
@@ -1261,18 +1236,45 @@ Qed.
     The relay is §8.2's with a spawn in place of the tail call, which
     removes the ceiling. prod creates e at ι[0], the slot its payload
     must live at, so it needs new under □∀ (59) and ι ≺ ι[0] for its
-    send. At ((a,0), (b,0)) the words give ι = (a,k), ι[0] = (a,k)[0]
-    and ι′ = (b,0) for k = 0, (a,k-1)[0]+1 otherwise ([rel_ip]). [Wrel]
-    orders them by the ranks 3k+3, 3k+4+4o for (a,k)[0]+o, and 5 for (b,0). *)
+    send. The call at (ι+1, ι[0]+1) asks C there, which is round 0 of
+    the family and round k+1 for round k, so C[ι+1, ι[0]+1] ⊆ C
+    ([rel_sub]). At ((a,0), (b,0)) round k is C₀((a,k), [rel_ip] k),
+    with rel_ip 0 = (b,0) and rel_ip (k+1) = (a,k)[0]+1. [Wrel] orders
+    them by the ranks 3k+3, 3k+4+4o for (a,k)[0]+o, and 5 for (b,0). *)
 
 Definition Dr : sty := SRcv 0 TUnit SEnd.
 Definition Srl : sty := SMu (SRcv 1 (TSess Dr (Pt (NVar 0) 0)) (SVar 0)).
 
 Abbreviation sv o := (Pt (NSlot (NVar 0) 0 0) o).
 
-Definition rel_C : bcs :=
-  BCs [[pv 0 1; sv 1]]
-    [(pv 0 0, pv 1 0); (pv 0 0, sv 0); (sv 0, pv 0 1); (sv 0, pv 1 0); (pv 1 0, pv 0 1); (pv 1 0, sv 1)].
+Definition c0 (x y : point) (g : fact) : Prop :=
+  g = FLt x y ∨ g = FLt x (pt_slot x 0) ∨ g = FLt (pt_slot x 0) (pt_shift 1 x) ∨
+  g = FLt (pt_slot x 0) y ∨ g = FLt y (pt_shift 1 x) ∨ g = FLt y (pt_shift 1 (pt_slot x 0)).
+
+Definition rel_P (g : fact) : Prop :=
+  c0 (pv 0 0) (pv 1 0) g ∨ ∃ k, c0 (pv 0 (S k)) (Pt (NSlot (NVar 0) k 0) 1) g.
+
+Definition rel_C : bcs := BCs [] rel_P.
+
+Lemma c0_inst σ x y g : c0 x y g → c0 (pt_inst σ x) (pt_inst σ y) (fact_map (pt_inst σ) g).
+Proof.
+  unfold c0. intros [-> | [-> | [-> | [-> | [-> | ->]]]]]; cbn [fact_map];
+    rewrite ?pt_inst_slot, ?pt_inst_shift, ?pt_inst_slot;
+    repeat (first [left; reflexivity|right]); reflexivity.
+Qed.
+
+(** C[ι+1, ι[0]+1] ⊆ C: round 0 goes to round 0 of the family, round
+    k+1 to round k+2. *)
+Lemma rel_sub g : rel_P g → fact_scoped 2 g → rel_P (fact_map (pt_inst (plist [pv 0 1; sv 1])) g).
+Proof.
+  intros [Hg|(k & Hg)] _; right.
+  - exists 0. exact (c0_inst _ _ _ _ Hg).
+  - exists (S k). exact (c0_inst _ _ _ _ Hg).
+Qed.
+
+Lemma rel_call W Ψ :
+  (rel_C, ids 2) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) rel_C [pv 0 1; sv 1].
+Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact rel_sub]. Qed.
 
 Definition relay_body : ty :=
   TLolli (Some (pv 1 0)) None (TProd (TSess Srl (pv 0 0)) (TSess SEnd (pv 1 0))) TUnit.
@@ -1296,21 +1298,11 @@ Definition rel_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-Lemma rel_C_scoped : bcs_scoped 2 rel_C.
-Proof.
-  split.
-  - cbn. apply Forall_singleton, Forall_cons. split; [|apply Forall_singleton];
-      intros ? Hv; injection Hv; lia.
-  - intros p Hp. cbn in Hp. rewrite !elem_of_cons in Hp.
-    repeat destruct Hp as [->|Hp]; try (by apply elem_of_nil in Hp);
-      split; intros ? Hv; injection Hv; lia.
-Qed.
-
-Ltac box_open2 C HC T :=
-  rewrite (bcs_closed 2 _ C HC);
+Ltac box_open2 C T :=
+  try change (bcs_inst (pshift 2) C) with C;
   change (lenv_pinst (pshift 2) [Some (TBox 2 C (TLolli None None TUnit T))])
     with [Some (pinst_ty (pshift 2) (TBox 2 C (TLolli None None TUnit T)))];
-  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [exact HC|]; unfold T; body_scope).
+  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
 
 Ltac skn_slot := right; eexists _, _, (pvar 0); split_and!; [by left|by left|done].
 
@@ -1318,7 +1310,7 @@ Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 rel
 Proof.
   intros HW. unfold relay.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
-  box_open2 rel_C rel_C_scoped relay_body. cbn. unfold relay_body.
+  box_open2 rel_C relay_body. cbn. unfold relay_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
@@ -1344,7 +1336,7 @@ Proof.
   eapply tv_app; [exact HW|reflexivity| | |].
   - apply (typed_force W _ _ _ _ _ _ 2 rel_C None relay_body [pv 0 1; sv 1]);
       [done|done| | |apply ubs_none|tstep].
-    + eapply (step_hold W _ rel_C _ [pv 0 1; sv 1]); [by left|cbn; by left|done|reflexivity].
+    + apply rel_call. by left.
     + apply Forall_cons. split; [|apply Forall_singleton];
         apply (skn_in W _ rel_C [pvar 0; pvar 1] (pvar 0)); [by left|by left|done|by left|by left|done].
   - tstep; tstep.
@@ -1356,7 +1348,7 @@ Lemma prod_typed W F : world_wf W → typed W ∅ [] ∅ [] F prod (TBox 2 rel_C
 Proof.
   intros HW. unfold prod.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
-  box_open2 rel_C rel_C_scoped prod_body. cbn. unfold prod_body.
+  box_open2 rel_C prod_body. cbn. unfold prod_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep| |done|apply ubs_none]. apply (KTNew _ _ _ Dr (sv 0)). skn_slot. }
@@ -1390,7 +1382,7 @@ Proof.
   eapply tv_app; [exact HW|reflexivity| | |].
   - apply (typed_force W _ _ _ _ _ _ 2 rel_C None prod_body [pv 0 1; sv 1]);
       [done|done| | |apply ubs_none|tstep].
-    + eapply (step_hold W _ rel_C _ [pv 0 1; sv 1]); [by left|cbn; by left|done|reflexivity].
+    + apply rel_call. by left.
     + apply Forall_cons. split; [|apply Forall_singleton];
         apply (skn_in W _ rel_C [pvar 0; pvar 1] (pvar 0)); [by left|by left|done|by left|by left|done].
   - tstep; tstep.
@@ -1398,51 +1390,25 @@ Proof.
     exists (sv 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-(** The words of σ at ((a,0), (b,0)). *)
+(** Round k of C at ((a,0), (b,0)). *)
 Definition rel_sl (k : nat) : point := Pt (NSlot (NConst 0) k 0) 0.
 Definition rel_ip (k : nat) : point :=
   match k with 0 => pc 1 0 | S j => Pt (NSlot (NConst 0) j 0) 1 end.
-Definition rel_ipv (k : nat) : point :=
-  match k with 0 => pvar 1 | S j => Pt (NSlot (NVar 0) j 0) 1 end.
-
-Lemma rel_wsub w : Forall (λ s, s ∈ bc_steps rel_C) w →
-  wsub 2 w 0 = Pt (NVar 0) (length w) ∧ wsub 2 w 1 = rel_ipv (length w).
-Proof.
-  induction 1 as [|s w Hs _ [IH0 IH1]]; [done|].
-  cbn in Hs. apply list_elem_of_singleton in Hs as ->. cbn [wsub length].
-  rewrite IH0, IH1. split.
-  - rewrite pt_inst_var. unfold pext. rewrite decide_True by lia. cbn. unfold pt_shift. cbn. f_equal; lia.
-  - destruct (length w) as [|j]; cbn [rel_ipv].
-    + unfold pvar. rewrite pt_inst_var. unfold pext. rewrite decide_True by lia. cbn. done.
-    + unfold pt_inst. cbn [pt_name pt_off pn_inst]. unfold pext. rewrite decide_True by lia.
-      cbn. unfold pt_shift, pt_slot. cbn. first [done|f_equal; [f_equal|]; lia].
-Qed.
-
-Lemma rel_L w : Forall (λ s, s ∈ bc_steps rel_C) w →
-  pt_inst (plist [pc 0 0; pc 1 0]) (wsub (length [pc 0 0; pc 1 0]) w 0) = pc 0 (length w) ∧
-  pt_inst (plist [pc 0 0; pc 1 0]) (wsub (length [pc 0 0; pc 1 0]) w 1) = rel_ip (length w).
-Proof.
-  intros Hw. destruct (rel_wsub w Hw) as [E0 E1]. cbn [length]. rewrite E0, E1. split.
-  - rewrite pt_inst_var. cbn. unfold pt_shift. cbn. f_equal.
-  - destruct (length w) as [|j]; cbn; [done|]. unfold pt_shift, pt_slot. cbn. f_equal; f_equal; lia.
-Qed.
-
-Lemma pt_inst_slotv σ a b i o :
-  pt_inst σ (Pt (NSlot (NVar a) b i) o) = pt_shift o (pt_slot (pt_shift b (σ a)) i).
-Proof. done. Qed.
 
 Lemma rel_hold_W W :
   (∀ k, w_lt W (pc 0 k) (rel_ip k) ∧ w_lt W (pc 0 k) (rel_sl k) ∧
         w_lt W (rel_sl k) (pt_shift 1 (pc 0 k)) ∧ w_lt W (rel_sl k) (rel_ip k) ∧
         w_lt W (rel_ip k) (pt_shift 1 (pc 0 k)) ∧ w_lt W (rel_ip k) (pt_shift 1 (rel_sl k))) →
-  bcs_hold (w_lt W) rel_C [pc 0 0; pc 1 0].
+  bcs_hold (w_eq W) (w_lt W) rel_C [pc 0 0; pc 1 0].
 Proof.
-  intros H w Hw p Hp. destruct (rel_L w Hw) as [E0 E1].
-  destruct (H (length w)) as (A1 & A2 & A3 & A4 & A5 & A6).
-  apply list_elem_of_fmap in Hp as (q & -> & Hq). cbn in Hq. rewrite !elem_of_cons in Hq.
-  repeat destruct Hq as [->|Hq]; try (by apply elem_of_nil in Hq); cbn [fst snd];
-    rewrite ?pt_inst_var, ?pt_inst_slotv; cbv beta; rewrite ?E0, ?E1, ?pt_shift_0;
-    first [exact A1|exact A2|exact A3|exact A4|exact A5|exact A6].
+  intros H.
+  assert (∀ k g, c0 (pc 0 k) (rel_ip k) g → fact_holds (w_eq W) (w_lt W) g) as Hc.
+  { intros k g Hg. destruct (H k) as (A1 & A2 & A3 & A4 & A5 & A6).
+    unfold c0 in Hg. repeat destruct Hg as [->|Hg]; subst; cbn;
+      first [exact A1|exact A2|exact A3|exact A4|exact A5|exact A6]. }
+  apply bcs_hold_intro. intros g [Hg|(k & Hg)] _.
+  - apply (Hc 0). exact (c0_inst _ _ _ _ Hg).
+  - apply (Hc (S k)). exact (c0_inst _ _ _ _ Hg).
 Qed.
 
 Definition rel_L_facts (x y : point) : Prop :=
@@ -1479,8 +1445,8 @@ Lemma rel_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) �
   typed W ∅ [] ∅ [] (∅, None) rel_main TUnit.
 Proof.
   intros HW Ha Hb H. unfold rel_main.
-  assert (bcs_hold (slt W []) rel_C [pc 0 0; pc 1 0]) as HC.
-  { eapply bcs_hold_mono; [|by apply rel_hold_W]. intros ? ? ?. by apply sl_w. }
+  assert (bcs_hold (seqs W []) (slt W []) rel_C [pc 0 0; pc 1 0]) as HC.
+  { eapply bcs_hold_mono; [intros ? ? ?; by apply se_w|intros ? ? ?; by apply sl_w|by apply rel_hold_W]. }
   assert (Forall (skn W []) [pc 0 0; pc 1 0]) as HK.
   { constructor; [by left|constructor; [by left|constructor]]. }
   assert (w_lt W (pc 0 0) (pc 1 0)) as H0 by apply (H 0).

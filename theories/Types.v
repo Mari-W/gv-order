@@ -93,10 +93,39 @@ Definition plist (xs : list point) : nat → point :=
 Definition slots (x : point) (m : nat) : list point :=
   (λ i, pt_slot x i) <$> seq 0 m.
 
-(** The constraint of a box (sharp edges 58, 61): facts x ≺ y over the
-    ιs and outer points, and a finite set of steps. A step is a list of
-    points, the images of ι₀, …, ιₙ₋₁. No steps is the box of 58. *)
-Record bcs := BCs { bc_steps : list (list point); bc_facts : list (point * point) }.
+(** Facts of a constraint: x ≺ y and x ≡ y (sharp edges 65). *)
+Inductive fact := FLt (x y : point) | FEq (x y : point).
+
+Definition fact_map (f : point → point) (g : fact) : fact :=
+  match g with FLt x y => FLt (f x) (f y) | FEq x y => FEq (f x) (f y) end.
+
+(** g holds when its ≺ holds in [lt] and its ≡ in [eq]. *)
+Definition fact_holds (eq lt : point → point → Prop) (g : fact) : Prop :=
+  match g with FLt x y => lt x y | FEq x y => eq x y end.
+
+(** Two facts of the same kind with related points. *)
+Definition fact_rel (R : point → point → Prop) (g g' : fact) : Prop :=
+  match g, g' with
+  | FLt x y, FLt x' y' | FEq x y, FEq x' y' => R x x' ∧ R y y'
+  | _, _ => False
+  end.
+
+(** The root of a name is a variable below k. *)
+Fixpoint pn_vb (k : nat) (p : pname) : Prop :=
+  match p with NConst _ => False | NVar a => a < k | NSlot q _ _ => pn_vb k q end.
+
+Definition fact_scoped (k : nat) (g : fact) : Prop :=
+  match g with FLt x y | FEq x y => pn_vb k (pt_name x) ∧ pn_vb k (pt_name y) end.
+
+(** The constraint of a box (sharp edges 65): any set of positive facts,
+    finite or infinite. It is a closure: the facts [bc_facts] speak of
+    variables only, 0, …, n-1 for the box's ιs and n + j for the j-th
+    point of [bc_env], which lives outside the binder and carries the
+    outer point variables and constants. Substitution and renaming act
+    on [bc_env] alone, so they never touch the predicate, and the roots
+    of a constraint are the finitely many roots of [bc_env]. A fact
+    whose variables lie beyond n + |bc_env| is not part of C. *)
+Record bcs := BCs { bc_env : list point; bc_facts : fact → Prop }.
 
 (** ** Types
 
@@ -119,9 +148,9 @@ Inductive ty :=
                                       type ∗ ⊸^u_⊤ U, so the upper point
                                       u lives on the arrow under the
                                       binder (sharp edges 52, 63); the
-                                      constraint C has facts x ≺ y over
-                                      the ιs and steps, also under the
-                                      binder (sharp edges 58, 61) *)
+                                      constraint C is a set of facts
+                                      x ≺ y and x ≡ y over the ιs and
+                                      outer points (sharp edges 65) *)
 
   | TSess (S : sty) (x : point)   (* S@x *)
 with sty :=
@@ -145,40 +174,107 @@ Combined Scheme ty_sty_mut_ind from ty_mut_ind, sty_mut_ind.
     T[σ]: instantiate the free point variables of T. Session types are
     left alone (see above), so this is a plain recursion on [ty]. *)
 
-(** C[σ]: instantiate both sides of every fact of a constraint. *)
-Definition pcs_inst (σ : nat → point) (C : list (point * point)) : list (point * point) :=
-  (λ p, (pt_inst σ p.1, pt_inst σ p.2)) <$> C.
-
-(** C holds in the order [lt]. *)
-Definition pcs_hold (lt : point → point → Prop) (C : list (point * point)) : Prop :=
-  ∀ p, p ∈ C → lt p.1 p.2.
-
-(** A box constraint under σ: the steps and the facts. *)
+(** C[σ]: the outer points of C instantiated. *)
 Definition bcs_inst (σ : nat → point) (C : bcs) : bcs :=
-  BCs ((λ s : list point, pt_inst σ <$> s) <$> bc_steps C) (pcs_inst σ (bc_facts C)).
+  BCs (pt_inst σ <$> bc_env C) (bc_facts C).
 
-(** One step as a substitution of the box's context: the i-th of the m
-    ιs goes to the i-th point of s, every other variable stays. A word
-    applies its last step first (sharp edges 61). *)
-Definition pext (m : nat) (s : list point) : nat → point :=
-  λ a, if decide (a < m) then match s !! a with Some x => x | None => pvar a end
-       else pvar a.
+(** The facts of C under its binder of n point variables: the ιs are
+    the variables 0, …, n-1 and the outer points are shifted past them. *)
+Definition bcs_open (n : nat) (C : bcs) (g : fact) : Prop :=
+  ∃ f, bc_facts C f ∧ fact_scoped (n + length (bc_env C)) f ∧
+    g = fact_map (pt_inst (pup n (plist (bc_env C)))) f.
 
-Fixpoint wsub (m : nat) (w : list (list point)) : nat → point :=
-  match w with
-  | [] => pvar
-  | s :: w' => λ a, pt_inst (pext m s) (wsub m w' a)
-  end.
+(** C holds at the instance xs: every fact of C[xs/ιs] holds, ≺ in [lt]
+    and ≡ in [eq] (sharp edges 65). *)
+Definition bcs_hold (eq lt : point → point → Prop) (C : bcs) (xs : list point) : Prop :=
+  ∀ g, bcs_open (length xs) C g → fact_holds eq lt (fact_map (pt_inst (plist xs)) g).
 
-(** C holds at the instance xs: its facts hold at w(xs) for every word w
-    over its steps. The empty word gives C[xs/ιs] (sharp edges 58). *)
-Definition bcs_hold (lt : point → point → Prop) (C : bcs) (xs : list point) : Prop :=
-  ∀ w, Forall (λ s, s ∈ bc_steps C) w →
-    pcs_hold lt (pcs_inst (λ a, pt_inst (plist xs) (wsub (length xs) w a)) (bc_facts C)).
+Lemma bcs_hold_mono (eq eq' lt lt' : point → point → Prop) C xs :
+  (∀ x y, eq x y → eq' x y) → (∀ x y, lt x y → lt' x y) →
+  bcs_hold eq lt C xs → bcs_hold eq' lt' C xs.
+Proof. intros He Hl H g Hg. specialize (H g Hg). destruct g; simpl in *; auto. Qed.
 
-Lemma bcs_hold_mono (lt lt' : point → point → Prop) C xs :
-  (∀ x y, lt x y → lt' x y) → bcs_hold lt C xs → bcs_hold lt' C xs.
-Proof. intros Hl H w Hw p Hp. apply Hl, (H w Hw p Hp). Qed.
+Lemma fact_map_ext (f f' : point → point) g :
+  (∀ x, f x = f' x) → fact_map f g = fact_map f' g.
+Proof. intros H. destruct g; simpl; by rewrite !H. Qed.
+
+Lemma fact_map_comp (f f' : point → point) g :
+  fact_map f (fact_map f' g) = fact_map (f ∘ f') g.
+Proof. by destruct g. Qed.
+
+(** Substitution of the outer points is the image of the open facts
+    under the lifted substitution. *)
+Section bcs_open.
+  Local Lemma bpt_shift_0 x : pt_shift 0 x = x.
+  Proof. destruct x as [p o]. unfold pt_shift. simpl. f_equal. lia. Qed.
+
+  Local Lemma bpt_inst_pvar σ a : pt_inst σ (pvar a) = σ a.
+  Proof. unfold pt_inst, pvar. simpl. apply bpt_shift_0. Qed.
+
+  Local Lemma bpt_inst_shift σ n x : pt_inst σ (pt_shift n x) = pt_shift n (pt_inst σ x).
+  Proof.
+    destruct x as [p o]. unfold pt_inst, pt_shift. simpl.
+    destruct (pn_inst σ p). simpl. f_equal. lia.
+  Qed.
+
+  Local Lemma bpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
+  Proof.
+    induction p as [a|a|p IH b i]; simpl; [done|done|].
+    assert (∀ x, pt_inst τ (pt_slot x i) = pt_slot (pt_inst τ x) i) as Hs
+      by (intros [q o]; done).
+    by rewrite Hs, bpt_inst_shift, IH.
+  Qed.
+
+  Local Lemma bpt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
+  Proof. unfold pt_inst at 2 3. by rewrite bpt_inst_shift, bpn_inst_comp. Qed.
+
+  Local Lemma bpt_inst_ext_vb k σ τ x :
+    pn_vb k (pt_name x) → (∀ a, a < k → σ a = τ a) → pt_inst σ x = pt_inst τ x.
+  Proof.
+    intros Hx H. destruct x as [p o]. unfold pt_inst. simpl in *. f_equal.
+    induction p as [a|a|p IH b i]; simpl in *; [done|by apply H|by rewrite IH].
+  Qed.
+
+  Local Lemma bpt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
+  Proof.
+    intros H. destruct x as [p o]. unfold pt_inst. simpl. f_equal.
+    induction p as [a|a|p IH b i]; simpl; [done|apply H|by rewrite IH].
+  Qed.
+
+  Local Lemma bpup_plist σ n env a :
+    a < n + length env →
+    pup n (plist (pt_inst σ <$> env)) a = pt_inst (pup n σ) (pup n (plist env) a).
+  Proof.
+    intros Ha. unfold pup at 1 3. destruct (decide (a < n)).
+    - rewrite bpt_inst_pvar. unfold pup. by rewrite decide_True.
+    - unfold plist. rewrite list_lookup_fmap.
+      destruct (lookup_lt_is_Some_2 env (a - n)) as [e He]; [lia|]. rewrite He. simpl.
+      rewrite !bpt_inst_comp. apply bpt_inst_ext. intros b. simpl.
+      rewrite bpt_inst_pvar. unfold pup. rewrite decide_False by lia.
+      by replace (b + n - n) with b by lia.
+  Qed.
+
+  Lemma bcs_open_inst σ n C g :
+    bcs_open n (bcs_inst σ C) g ↔ ∃ g0, bcs_open n C g0 ∧ g = fact_map (pt_inst (pup n σ)) g0.
+  Proof.
+    destruct C as [env P]. unfold bcs_open, bcs_inst; simpl. rewrite length_fmap.
+    assert (∀ f, fact_scoped (n + length env) f →
+              fact_map (pt_inst (pup n (plist (pt_inst σ <$> env)))) f
+              = fact_map (pt_inst (pup n σ)) (fact_map (pt_inst (pup n (plist env))) f)) as E.
+    { intros f Hf. rewrite fact_map_comp.
+      assert (∀ x, pn_vb (n + length env) (pt_name x) →
+                pt_inst (pup n (plist (pt_inst σ <$> env))) x
+                = (pt_inst (pup n σ) ∘ pt_inst (pup n (plist env))) x) as Ex.
+      { intros x Hx. simpl. rewrite bpt_inst_comp. apply (bpt_inst_ext_vb _ _ _ _ Hx).
+        intros a Ha. by apply bpup_plist. }
+      destruct f; simpl in *; destruct Hf; f_equal; auto. }
+    split.
+    - intros (f & Hf & Hs & ->). exists (fact_map (pt_inst (pup n (plist env))) f).
+      split; [by exists f|]. by apply E.
+    - intros (g0 & (f & Hf & Hs & ->) & ->). exists f. split_and!; [done|done|].
+      symmetry. by apply E.
+  Qed.
+End bcs_open.
 
 Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   match T with
@@ -189,7 +285,7 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
   | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
   | TBox n C T1 =>
-      TBox n (bcs_inst (pup n σ) C) (pinst_ty (pup n σ) T1)
+      TBox n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   | TSess s x => TSess s (pt_inst σ x)
   end.
 
@@ -956,8 +1052,8 @@ Qed.
     logical relation. Freshness of ι in [new] is a typing condition
     (Static.v). [pk] says which points the order knows: the point of
     [new] must be one, so that the created point can be aliased to it
-    (sharp edges 49). force asks its instance known and the box's
-    constraint at every word of the instance (sharp edges 61). *)
+    (sharp edges 49). force asks its instance known and every
+    fact of the box's constraint at the instance (sharp edges 65). *)
 
 Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
     : konst → ty → Prop :=
@@ -986,7 +1082,7 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       konst_ty peq plt pk KLink
         (TLolli (Some x) None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
   | KTForce n C ub T xs :
-      length xs = n → bcs_hold plt C xs → Forall pk xs →
+      length xs = n → bcs_hold peq plt C xs → Forall pk xs →
       konst_ty peq plt pk KForce
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n C (TLolli ub None TUnit T))
            (ty_inst xs T)).

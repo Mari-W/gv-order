@@ -155,20 +155,20 @@ Proof.
 Qed.
 
 Definition Tb : ty := TSess SEnd (Pt (NVar 0) 1).
-Definition Tcex : ty := TLolli None None (TBox 1 (BCs [] []) (TLolli None None TUnit Tb)) (TSess SEnd (Pt (NConst b0) 0)).
+Definition Tcex : ty := TLolli None None (TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tb)) (TSess SEnd (Pt (NConst b0) 0)).
 
 Lemma Tcex_roots : NConst mu ∉ ty_roots Tcex.
-Proof. simpl. unfold pt_root, bcs_roots, steps_roots, pcs_roots. simpl. set_solver. Qed.
+Proof. simpl. unfold pt_root, bcs_roots. simpl. set_solver. Qed.
 
 Lemma force_in_Wm n : Vrel n Wm ∅ Tcex (Konst KForce).
 Proof.
-  apply Vrel_lolli_iff. right. exists KForce, (TLolli None None (TBox 1 (BCs [] []) (TLolli None None TUnit Tb)) (ty_inst [Pt (NConst mu) 0] Tb)).
+  apply Vrel_lolli_iff. right. exists KForce, (TLolli None None (TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tb)) (ty_inst [Pt (NConst mu) 0] Tb)).
   split_and!; [done|done| |].
-  - apply (KTForce _ _ _ 1 (BCs [] []) None Tb [Pt (NConst mu) 0]); try done.
-    + intros w _ p Hp. by apply elem_of_nil in Hp.
+  - apply (KTForce _ _ _ 1 (BCs [] (λ _, False)) None Tb [Pt (NConst mu) 0]); try done.
+    + intros g (f & [] & _).
     + constructor; [|constructor]. unfold pt_known. simpl. set_solver.
   - simpl. split_and!; try done.
-    + split; constructor.
+    + split; intros g (f & [] & _).
     + left. done.
     + apply seq_refl.
     + right. split_and!; [by exists mu|by exists b0|]. done.

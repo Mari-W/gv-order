@@ -74,7 +74,7 @@ Proof.
 Qed.
 
 Lemma sem_typed_force W Θ Δ F e m C ub T xs :
-  world_wf W → length xs = m → bcs_hold (w_lt W) C xs → Forall (pt_known W) xs →
+  world_wf W → length xs = m → bcs_hold (w_eq W) (w_lt W) C xs → Forall (pt_known W) xs →
   ub_below W (pt_inst (plist xs) <$> ub) F →
   sem_typed W Θ Δ F e (TBox m C (TLolli ub None TUnit T)) →
   sem_typed W Θ Δ F (App EForce e) (ty_inst xs T).
@@ -137,7 +137,7 @@ Qed.
 
 Lemma sem_typed_box W Δ F e m C ub T :
   lenv_unl Δ → term_wf ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) e →
-  (∀ W1 xs F', wext W W1 → length xs = m → bcs_hold (w_lt W1) C xs →
+  (∀ W1 xs F', wext W W1 → length xs = m → bcs_hold (w_eq W1) (w_lt W1) C xs →
      Forall (pt_known W1) xs → ub_below W1 (pt_inst (plist xs) <$> ub) F' →
      sem_typed W1 ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) F' e (ty_inst xs T)) →
   sem_typed W ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T)).
