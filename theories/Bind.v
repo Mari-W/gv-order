@@ -146,3 +146,97 @@ Proof.
   all: eapply (wf_lt_eq _ HWf); [apply HWf|eapply (wf_lt_trans _ HWf); [exact Hlh|exact Hlt']|];
          by apply (wf_eq_sym _ HWf).
 Qed.
+
+(** ** Moving a head entry between Θ1 and Θ = Θ1, Θ2 *)
+
+Lemma palter_eq (A B : tenv) c :
+  (∀ y, y ≠ c → A !! y = B !! y) → partial_alter (λ _, B !! c) c A = B.
+Proof.
+  intros H. apply map_eq. intros y. destruct (decide (y = c)) as [->|Hy].
+  - by rewrite lookup_partial_alter_eq.
+  - rewrite lookup_partial_alter_ne by done. by apply H.
+Qed.
+
+Lemma ext_transfer A c e B A' B' :
+  tenv_ext A c e B → A' !! c = A !! c → B' !! c = B !! c →
+  (∀ y, y ≠ c → A' !! y = B' !! y) → tenv_ext A' c e B'.
+Proof.
+  intros Hx HA HB Hy.
+  assert (∀ o, B !! c = Some o → B' = <[c := o]> A') as Hins.
+  { intros o Ho. apply map_eq. intros z. destruct (decide (z = c)) as [->|Hz].
+    - by rewrite lookup_insert_eq, HB.
+    - rewrite lookup_insert_ne by done. symmetry. by apply Hy. }
+  destruct Hx as [(H1 & ->)|(e' & H1 & [->| ->])].
+  - left. split; [by rewrite HA|]. apply Hins. by rewrite lookup_insert_eq.
+  - right. exists e'. split; [by rewrite HA|]. left. apply Hins. by rewrite lookup_insert_eq.
+  - right. exists e'. split; [by rewrite HA|]. right. apply Hins. by rewrite lookup_insert_eq.
+Qed.
+
+Lemma ext_off A c e B y : tenv_ext A c e B → y ≠ c → A !! y = B !! y.
+Proof. intros Hx Hy. by apply (proj2 (tenv_ext_inv _ _ _ _ Hx)). Qed.
+
+(** The composite's head: Θ = Θ1, Θ2 with c ∉ dom Θ2. *)
+Lemma comp_ext R Θ Θ1 Θ2 Θ1r c e :
+  tenv_comp R Θ Θ1 Θ2 → Θ2 !! c = None → tenv_ext Θ1r c e Θ1 →
+  tenv_comp R (partial_alter (λ _, Θ1r !! c) c Θ) Θ1r Θ2 ∧
+  tenv_ext (partial_alter (λ _, Θ1r !! c) c Θ) c e Θ.
+Proof.
+  intros Hc H2 Hx. split.
+  - pose proof (comp_set _ _ _ _ c (Θ1r !! c) Hc H2) as H.
+    rewrite (palter_eq Θ1 Θ1r c) in H; [done|].
+    intros y Hy. symmetry. by apply (ext_off _ _ _ _ _ Hx).
+  - eapply ext_transfer; [exact Hx|by rewrite lookup_partial_alter_eq|by apply (comp_lookup R Θ Θ1 Θ2)|].
+    intros y Hy. rewrite lookup_partial_alter_ne by done. done.
+Qed.
+
+(** The converse: extending the composite's remainder at c. *)
+Lemma comp_ext_back R Θr Θ1r Θ2 Θrc c e :
+  tenv_comp R Θr Θ1r Θ2 → Θ2 !! c = None → tenv_ext Θr c e Θrc →
+  tenv_comp R Θrc (partial_alter (λ _, Θrc !! c) c Θ1r) Θ2 ∧
+  tenv_ext Θ1r c e (partial_alter (λ _, Θrc !! c) c Θ1r).
+Proof.
+  intros Hc H2 Hx. split.
+  - pose proof (comp_set _ _ _ _ c (Θrc !! c) Hc H2) as H.
+    rewrite (palter_eq Θr Θrc c) in H; [done|].
+    intros y Hy. by apply (ext_off _ _ _ _ _ Hx).
+  - eapply ext_transfer; [exact Hx|symmetry; by apply (comp_lookup R Θr Θ1r Θ2)|by rewrite lookup_partial_alter_eq|].
+    intros y Hy. rewrite lookup_partial_alter_ne by done. done.
+Qed.
+
+(** A term with a session step offers some entry. *)
+Lemma offered_some n W Θ T F e σ e' :
+  Erel (S n) W Θ T F e → tstep e (LSess σ) e' → ∃ k, offered_t Θ e k.
+Proof.
+  intros HE Hst. pose proof (Erel_subjs _ _ _ _ _ _ _ _ HE Hst) as Hsub.
+  pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hstep.
+  assert (∀ c u k Θr, tenv_hd Θ c u k Θr → ∃ b s, tenv_entry Θ (c, b) = Some (s, k) ∧ unfoldS s = u)
+    as Hhd.
+  { intros c u k Θr (s & [(_ & ->)|(e0 & _ & [->| ->])] & Hu).
+    - exists false, s. unfold tenv_entry. simpl. by rewrite lookup_insert_eq.
+    - exists false, s. unfold tenv_entry. simpl. by rewrite lookup_insert_eq.
+    - exists true, s. unfold tenv_entry. simpl. by rewrite lookup_insert_eq. }
+  destruct σ as [c w|c w|c|cd]; simpl in Hstep.
+  - destruct Hstep as (Θ1 & m & U & s & k & Hh & _). destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
+    exists (c, b), (SRecv c w), e'. split; [done|]. split; [done|]. eauto 10.
+  - destruct Hstep as (Θr & ? & ? & m & U & s & k & ? & Hh & _).
+    destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
+    exists (c, b), (SSend c w), e'. split; [done|]. split; [done|]. eauto 10.
+  - destruct Hstep as (Θ1 & k & Hh & _). destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
+    destruct b.
+    + destruct (tenv_entry Θ (c, false)) as [e0|] eqn:E0.
+      * assert (unfoldS e0.1 = SEnd ∨ unfoldS e0.1 ≠ SEnd) as [Hu0|Hu0]
+          by (destruct (unfoldS e0.1); first [by left|by right]).
+        -- exists (c, false), (SClos c), e'. split; [done|]. split; [done|].
+           exists e0. split_and!; [done|done|discriminate].
+        -- exists (c, true), (SClos c), e'. split; [done|]. split; [done|].
+           exists (s0, k). split_and!; [done|done|]. intros _ e1 He1. congruence.
+      * exists (c, true), (SClos c), e'. split; [done|]. split; [done|].
+        exists (s0, k). split_and!; [done|done|]. intros _ e1 He1. congruence.
+    + exists (c, false), (SClos c), e'. split; [done|]. split; [done|].
+      exists (s0, k). split_and!; [done|done|discriminate].
+  - destruct (set_choose_or_empty cd) as [[c Hc]|Hcd].
+    + assert (c ∈ dom Θ) as HcΘ by (apply Hsub; done). apply elem_of_dom in HcΘ as [o Ho].
+      exists (c, false), (SLink cd), e'. split; [done|]. split; [done|].
+      unfold tenv_entry. simpl. rewrite Ho. destruct o; by eexists.
+    + exfalso. destruct Hstep as (c & d & ? & ? & ? & ? & ? & ? & -> & _). set_solver.
+Qed.
