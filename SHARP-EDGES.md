@@ -823,6 +823,32 @@ absurd. link is in after 68. Its schema S × S̄ ⊸ 1 maps to KTLink, and both
 ends sit at a[code S], so ι ≡ ι′ holds by reflexivity
 (`pgv_link_deadlock_free`).
 
+**70. Adequacy for repaired Padovani and Novara (Claude, 2026-10-30, theories/pn/).**
+The translation of a closed program of type unit in fragment v1 of Padovani and
+Novara with repair R2 is deadlock free (`pn_deadlock_free`, closed under the
+global context), and so are parallel Fibonacci and the signal pipe
+(`fibo_deadlock_free`, `pipe_deadlock_free`). The judgment `pn_typed` is Table 2
+with T-App-Poly on our terms and yields the translated term, because the
+translation needs types. A function of level ⊤ becomes a box over one point
+variable, the level anchor, and every level is a slot of the anchor. Shifted
+copies of one arrow get one box type, normalized by the arrow's first finite
+level. The box constraint is the infinite set of facts that a denotation and a
+rank give between points of the variable, and a force at the anchor B[RAnc a]
+meets it because instantiation adds a to every level. T-App-Poly at n is a force
+at the anchor shifted by n. The world identifies points of the root with one
+denotation and orders them by rank in ℤ with a top element, the ceiling for the
+latent effect ⊤ (new helpers `zrank`, `wgen_strict_den` in ExampleTools.v). The
+translation lemma holds at every anchor, every offset (which is the shift lemma
+that section 4 of padovani-novara.md asked for) and every frame above the
+effect. The static system has no lemma that inserts a binding, so the lemma
+types the term renamed past inserted unlimited entries. unit becomes the box of
+∗, because P&N's unit is unlimited. send and recv close the one-shot channel.
+Restrictions of v1 are unit and sums of unlimited types as basic types, new only
+in let form, constants only applied, recursive types only μα.p[⌈α⌉ᵐ]ⁿ with
+wrap and unwrap erased and conversion at the top of a type, payloads channels or
+unlimited, and arrow level ⊥ left out. padovani-novara.md §7 lists every
+discrepancy. No core change.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

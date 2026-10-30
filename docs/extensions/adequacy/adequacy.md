@@ -55,6 +55,10 @@ repaired PGV with link (theories/pgv/, `pgv_deadlock_free`). Step 1 uses
 the protocol-point world, step 4 holds with that one world for every program.
 pgv-adequacy.md §7 has the details.
 
+Status 2026-10-30 for Padovani and Novara. Fragment v1 with repair R2 is done in
+Rocq (theories/pn/, `pn_deadlock_free`), with fibo and the signal pipe.
+padovani-novara.md §7 has the details and every discrepancy.
+
 1. Points from priorities. A PGV session type writes a priority o on every action,
    !^o T.S. The instant of that action gets rank o, and the world orders instants
    by rank. Every PGV side condition has to become a strict fact. Where PGV

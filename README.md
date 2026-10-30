@@ -96,6 +96,14 @@ has no axioms and no admitted proofs.
 - `PGVTranslate.v`: PGV derivations become `typed` derivations (`pgv_translate`, `pgv_deadlock_free`).
 - `PGVExamples.v`: Example 2.1 of the paper, a delegation, a link, and the two counterexamples rejected.
 
+`pn/`, adequacy for Padovani and Novara, FORTE 2015 (docs/extensions/adequacy/padovani-novara.md §7).
+
+- `PNTypes.v`: levels, channel, arrow, recursive and wrapped types, the level |t| and the shift ⇑ⁿ.
+- `PNTyping.v`: Table 2 with T-App-Poly on our terms, repaired fix, as a judgment that also yields the translated term (`pn_typed`).
+- `PNWorld.v`: the level world `Wpn` of anchors and ranks into ℤ with a top element, its strictness and the translation of types.
+- `PNTranslate.v`: derivations become `typed` derivations at every anchor and offset (`pn_translate`, `pn_deadlock_free`).
+- `PNExamples.v`: parallel Fibonacci and the signal pipe, both deadlock free.
+
 ## Main results
 
 - `soundness` (static/Fundamental.v): a typed closed process at a strict world is deadlock free.
@@ -104,6 +112,7 @@ has no axioms and no admitted proofs.
 - `Prel_term`, `Prel_indep` (composition/PTerm.v), `Prel_connect` (composition/PConnect.v), `Prel_connect_n` (composition/PConnectN.v), `Prel_internalize` (composition/Internalize.v).
 - `Erel_bind` (rules/Bind.v).
 - `pgv_deadlock_free` (pgv/PGVTranslate.v): a closed program of type 1 in the monotone fragment of repaired PGV is deadlock free.
+- `pn_deadlock_free` (pn/PNTranslate.v): the translation of a closed program of type unit in fragment v1 of repaired Padovani and Novara is deadlock free. `fibo_deadlock_free` and `pipe_deadlock_free` (pn/PNExamples.v) apply it.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, one per file in examples/.
 
 ## Other documents

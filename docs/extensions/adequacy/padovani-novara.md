@@ -1,8 +1,10 @@
 # D.2 Adequacy for Padovani and Novara (FORTE 2015)
 
-Status. Stage 1 done on 2026-10-30, stage 2 waits for the author. Same
-procedure as for PGV (pgv-adequacy.md). Study first, then model the system on
-our terms and translate it into the static system.
+Status. Stage 1 done on 2026-10-30. Stage 2 done on 2026-10-30 in
+theories/pn/ (section 7), with the general theorem `pn_deadlock_free` and both
+examples closed under the global context. Same procedure as for PGV
+(pgv-adequacy.md). Study first, then model the system on our terms and
+translate it into the static system.
 
 Source. L. Padovani and L. Novara, Types for Deadlock-Free Higher-Order Programs,
 FORTE 2015, LNCS 9039, pp. 3–18. Indexed as padovani2015types with full text. The
@@ -299,6 +301,198 @@ Decisions for the author. The level anchor or argument-relative points for the
 general theorem. The fibo of v1. Whether ExampleTools.v gets ranks into ℤ with a
 top element. Whether the theorem goes into Rocq or stays on paper with the two
 examples in Rocq.
+
+## Stage 2 results
+
+### 7  Mechanization
+
+theories/pn/ proves the following, closed under the global context.
+
+```
+Theorem pn_deadlock_free e τ e' :
+  pn_typed [] e PUnit τ e' → deadlock_free (∅, {[+ e' +]}).
+
+Theorem pn_translate Γ e t τ e' :
+  pn_typed Γ e t τ e' →
+  ∀ Ψ B k ins Δ Φ F, good Ψ B → erel B k ins Γ Δ → ub_below_s Wpn Ψ Φ (hiz B k τ) F →
+  typed Wpn Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trz B k t).
+
+Theorem fibo_deadlock_free :
+  ∃ τ e', pn_typed [] fibo_main PUnit τ e' ∧ deadlock_free (∅, {[+ e' +]}).
+Theorem pipe_deadlock_free :
+  ∃ τ e', pn_typed [] pipe_main PUnit τ e' ∧ deadlock_free (∅, {[+ e' +]}).
+```
+
+Branch pn-adequacy, commits 9900084 (model, world, translation, theorem) and
+cb18433 (examples).
+
+#### 7.1  The judgment
+
+`pn_typed Γ e t τ e′` (PNTyping.v) is Γ ⊢ e : t & τ of Table 2 (p8) with
+[T-APP-POLY] (p10) on the terms of lang/Syntax.v. The last index e′ is the term
+of the static system the derivation translates to. The translation needs the
+types, because a function of level ⊤ becomes a box and its application a force.
+Levels are `lvl` = ⊥ | ℤ | ⊤. Types are `pty` (PNTypes.v).
+
+```
+pty ::= PUnit | PSum t s | PChan inp t n | PRec inp m n | PDisp m t | PArr t r σ s
+        ?[t]ⁿ / ![t]ⁿ    μα.p[⌈α⌉ᵐ]ⁿ    ⌈t⌉ᵐ    t →^{r,σ} s with r ∈ ℤ ∪ {⊤}
+
+source syntax
+  x, λ, application, ()             Var, Lam, App, EUnit
+  fix λf.e                          EBox e, f the index 0 of e (repair R2)
+  let a = new() in e                LetP (App ENew EUnit) e, a? at index 1, a! at index 0
+  send e₁ e₂, recv e, fork e        App (App ESend e₁) e₂, App ERecv e, App ESpawn e
+  inj₁ e, inj₂ e, case              Inj1, Inj2, Case (sums of unlimited types)
+  wrap, unwrap                      erased, [T-Conv] at the top of a type
+```
+
+|t|, un(t), ⇑ⁿ, |Γ| and Γ₁ + Γ₂ follow p7, p8, p10 and p13. The shift goes
+inside level-⊤ arrows and leaves basic types alone (p10).
+
+#### 7.2  The world and the types
+
+`Wpn` (PNWorld.v) has one root constant. Levels become slots of a level anchor
+B. B[RAnc a] is the anchor shifted by a. B[RCh c] is the point of the channel
+with code c, its message at offset 0 and its close at offset 1. B[RLo z] is the
+lower point of level z, B[RHi z] the upper point of level z and B[RTop] the
+ceiling for the latent effect ⊤. The root constant is the anchor of shift 0.
+Inside a box the anchor is the box's one point variable, and a force
+instantiates it with an anchor of the caller.
+
+A denotation `den` reads points. It commutes with successor and slots and adds
+the anchor's shift to every level of its slots. The rank `rank` of a denotation
+is (level, instant) in ℤ × ℕ with a top element, read lexicographically.
+B[RLo z] ranks at (z, 0), the message of a channel of level z at (z, 1), its close at
+(z, 2), B[RHi z] at (z, 3) and B[RTop] at top. `Wpn` identifies two points of
+the root with one denotation and orders two with rising rank. `Wpn_strict`
+follows from `wgen_strict_den`, a new general lemma in ExampleTools.v next to
+`wgen_strict_by`, together with `zrank` and `wgen_strict_z` (decision 4).
+
+`trz B k t` translates ⇑ᵏ t at the anchor B.
+
+```
+unit               □(∀. C0. ∗ ⊸^⊥_⊤ ∗)                       (unit is unlimited in P&N, ∗ is linear here)
+t + s              □(∀. C0. ∗ ⊸^⊥_⊤ ([t] ⊕ [s]))
+p[t]ⁿ              (p(∃ιs. P).Close)@B[RCh c]               c the code of ⇑ᵏ p[t]ⁿ
+μα.p[⌈α⌉ᵐ]ⁿ        (µα. p(∃ι. α@ι).Close)@B[RCh c]
+⌈t⌉ᵐ               trz B (k + m) t                          (wrap and unwrap erased)
+t →^{r,σ} s        [t] ⊸^{B[RHi σ+k]}_{B[RLo r+k]} [s]       r ∈ ℤ, σ = ⊥ gives ⊥, σ = ⊤ gives B[RTop]
+t →^{⊤,σ} s        □(∀ι. Crel. ∗ ⊸^⊥_⊤ ([t] ⊸^{ι[RHi σ−m]}_⊤ [s]))   [t], [s] at anchor ι and offset −m
+```
+
+A channel payload sits at the first slot of the carrier's point (one binder).
+The denotation sends that slot to the point of the payload's channel, so the
+received channel converts by E-Conv. An unlimited payload needs no binder. m is
+the first finite level of the arrow (`mlev`), so ⇑ⁿ of a level-⊤ arrow has the
+same box type (`trz_lshift`). Crel holds every fact between points of the box
+variable that the denotation and the rank give, an infinite constraint. A force
+at the anchor B[RAnc a] meets it, because instantiating the variable at an
+anchor of shift a adds a to every level (`den_inst`, `crel_hold`).
+
+#### 7.3  How each rule maps
+
+The lemma holds at every anchor B whose facts Ψ provides (`good`), at every
+offset k (the shift ⇑ᵏ of the whole derivation, which is the missing lemma of
+section 4 built into the induction), at every frame F above hi(τ), and up to
+inserted unlimited or spent entries of Δ (`erel`).
+
+| P&N | ours | side condition |
+|---|---|---|
+| T-Name | E-LVar after E-Weak | un(Γ) makes the other entries boxes |
+| T-Const () | E-Exp of ∗ (`unitv`) | un(Γ) gives □Δ |
+| T-Fun, \|Γ\| ∈ ℤ | E-Abs with ℓ = B[RLo \|Γ\|+k], u = hi(ρ) | ℓ ≼ every head of Γ (`env_lo_below`) |
+| T-Fun, \|Γ\| = ⊤ | E-Exp then E-Abs with ℓ = ⊤, body at anchor ι and offset −m | □Δ, heads ∅ |
+| T-App, ρ ∈ ℤ | E-App | τ₁ < \|Γ₂\| puts hi(τ₁) below heads(Δ₂), τ₂ < ρ puts hi(τ₂) below ℓ |
+| T-App-Poly at n | E-Force at B[RAnc k+n+m], E-Conv, E-App | Crel holds at the anchor, the forced arrow converts to ⇑ⁿ by ≡ of the denotation |
+| let a = new() in e | E-LetPair over E-App of new | the point B[RCh c] is known |
+| send e₁ e₂ | E-App of `send_tr` = λc.λv. send (v, c) ; close | hi(n) above both instants, payload above the carrier |
+| recv e | E-App of `recv_tr` = λc. let (v, c′) = recv c in close c′ ; v | the close lies below the payload's head |
+| fork e | E-App of `fork_tr` = λf. spawn (λz. z ; force (f ∗)) ; ∗ | spawn's upper point ⊥ is P&N's masking |
+| fix λf.e | E-Exp of force e at the box's own ι | the body's hypothesis (Crel, ι) |
+| inj₁ e, inj₂ e | E-App of λx. !(y = injᵢ x) | un components |
+| case | E-Case over force e | τ₁ < \|Γ₂\| |
+| T-Conv | E-Conv | unfolding keeps the point and unrolls the µ, ⌈t⌉ᵐ and ⇑ᵐ t translate alike |
+| T-Thread | P-Term at F = ∅ | none |
+
+Print Assumptions. `pn_translate`, `pn_deadlock_free`, `fibo_deadlock_free` and
+`pipe_deadlock_free` are closed under the global context, and so are the 31
+earlier ones (35 in all).
+
+#### 7.4  Examples
+
+fibo (`fibo_deadlock_free`). The printed program of Example 1 with unit for int.
+The test n ≤ 1 is a case on d : unit + unit, fibo (n − 1) a and fibo (n − 2) b
+are fibo (inj₁ ()) a and fibo (inj₂ ()) b, recv a + recv b is
+plus (recv a) (recv b) with plus = λx.λy.(), and send c n is send c (). The main
+program is let c = new() in (fork λ_.fibo (inj₂ ()) c); recv c. c has level 0,
+a level −2 and b level −1 (p11). The calls are T-App-Poly at the shifts 0 and −2
+for a, 0 and −1 for b, 0 and 0 in the main program. The right spine recurses
+forever.
+
+pipe (`pipe_deadlock_free`). Example 2 with the types of Example 4 (p13) and
+the main program of p5, both pipes forked. tⁿ = μα.?[⌈α⌉²]ⁿ,
+sⁿ = ![⌈tⁿ⁺¹⌉²]ⁿ⁺¹, cont : s⁰ → s², pipe : t⁰ → s⁰ →^{0,⊤} unit. The recursive
+call is T-App-Poly at the shift 2. In the main program a has level 0 and b level
+1, pipe a b is at the shift 0, pipe b (cont a) at the shift 1 and cont a at the
+shift −1. The fresh channel of cont has level 3 and payload ⌈t³⌉², folded to t³
+and wrapped to ⌈t¹⌉² by T-Conv.
+
+#### 7.5  Discrepancies with the paper and the report
+
+Every place where the Rocq model differs from the chapter (hal-01767327) or the
+report (hal-00954364v1), one per line, with its location.
+
+- PNTypes.v `pty`. int is left out. unit is the only basic type.
+- PNTypes.v `PSum`, PNTyping.v `pn_inj1`, `pn_inj2`, `pn_case`. Sums t + s are an addition. Neither the chapter nor this fragment of the report has them. A sum is a basic type with level ⊤, and ⇑ⁿ leaves it alone.
+- PNTyping.v `pn_inj1`, `pn_inj2`, `pn_case`. Both components of a sum must be unlimited. A sum of linear types is not typable.
+- PNTyping.v `pn_case`. The side condition τ₁ < |Γ₂| and the result effect τ₁ ⊔ τ₂ are our choice, by analogy with let as application (p5) and T-Split of the report (TR p7). Both branches have one effect τ₂.
+- PNTypes.v `PChan`. Polarities are ? and !. The full polarity # is no type of a variable.
+- PNTyping.v `pn_new`. new appears only as let a = new() in e, applied to the literal (). The name a of type #[t]ⁿ becomes two variables, its ? end at index 1 and its ! end at index 0, because our new returns both ends and our variables are linear. The rule is T-App on (λa.e)(new ()), whose side conditions hold trivially.
+- PNTyping.v. new is no value. λ_.new () has no type in the model, while the chapter types it at unit → #[t]ⁿ.
+- PNTyping.v `pn_split`. + on variables merges no polarities. A linear variable goes to one side and an unlimited one to both. p[t]ⁿ + q[t]ⁿ arises only for names.
+- PNTyping.v. Names, runtime typing, T-New and T-Par are not modelled. The theorem covers closed programs ⟨e⟩, as for PGV.
+- PNTypes.v `PArr`. The level of an arrow is in ℤ ∪ {⊤}. Level ⊥ is left out. No rule produces it, and no function of level ⊥ can be applied (τ₂ < ⊥ fails).
+- PNTyping.v `pn_send`, `pn_recv`, `pn_fork`, `pn_fix`. Constants appear only applied. T-Const covers () alone. Unapplied send, recv and fork are η-expanded by the programmer, with the same type (send = λc.λv.send c v has ![t]ⁿ → t →^{n,n} unit).
+- PNTyping.v `pn_send`. The partial application send e₁, a value of type t →^{n,n} unit on p5, exists only inside send e₁ e₂. The rule is the composite of two T-App.
+- PNTyping.v `pn_send`, `pn_recv`, `pn_fork`. Each rule takes one instance of the schema. T-App-Poly on a constant is T-App at the shifted instance, because every schema is closed under ⇑ⁿ. The model has no separate rule for it.
+- PNTyping.v `pn_fix`. fix stands only as fix λf.e (repair R2) at an arrow of level ⊤, Γ unlimited, e of effect ⊥. This is exactly what T-App of fix : (t → t) → t to λf.e gives when t is an arrow of level ⊤.
+- PNTyping.v `pn_app`, `pn_app_top`. T-App asks ρ ∈ ℤ. T-App at ρ = ⊤ is T-App-Poly at the shift 0 (`pn_app_top`), and its translation forces.
+- PNTyping.v `pn_conv`, `pconv`. wrap and unwrap are erased from the syntax. A conversion relates μα.p[⌈α⌉ᵐ]ⁿ and its unfolding, and ⌈t⌉ᵐ and ⇑ᵐ t, in both directions and at the top of a type only. The chapter's types are trees, equal everywhere, and wrap and unwrap are constants (p13). Conversions inside payloads are not modelled.
+- PNTypes.v `PRec`. Recursive types are only μα.p[⌈α⌉ᵐ]ⁿ, the channel that carries a later copy of itself. Other infinite types are left out, recursion through arrows among them. This also excludes the stuck program fix fix of section 4, which needs s = s → s.
+- PNTypes.v `payok`. Payloads are channels, possibly wrapped, or unlimited types. A payload of linear arrow type is left out, because its points would need carried roots.
+- PNTyping.v `penv`. Environments are de Bruijn lists. un(Γ) of T-Name and T-Const is weakening of unlimited entries.
+- PNExamples.v. let x = e₁ in e₂ and e₁; e₂ are (λx.e₂) e₁, as p5 allows. e₁; e₂ binds an unused unit variable.
+- PNExamples.v `fibo_pn`. int becomes unit + unit, the test a case, fibo (n − 1) and fibo (n − 2) become fibo (inj₁ ()) and fibo (inj₂ ()), + becomes plus = λx.λy.(), and send c n becomes send c (). The right spine does not terminate.
+- PNExamples.v `fibo_main`. The chapter gives no main program for fibo. Ours is let c = new() in (fork λ_.fibo (inj₂ ()) c); recv c.
+- PNExamples.v `cont_pn`, `pipe_pn`. cont and pipe are typed once at n = 0 and used at other levels by T-App-Poly, as p13 intends.
+
+#### 7.6  Workarounds on our side
+
+- PNWorld.v `trz`, PNTyping.v `unitv`. unit translates to the box □(∗ ⊸ ∗) and () to !(x = ∗), because P&N's unit is unlimited and our ∗ is linear. Sums translate to the box of the sum.
+- PNTyping.v `send_tr`, `recv_tr`. A linear channel is a session with one message followed by Close. send and recv close the channel after the message, and both ends close.
+- PNTyping.v `fork_tr`. fork applies the thunk to the box of ∗ and forces the result back to ∗ for spawn. A thunk of level ⊤ is forced first, at the anchor of shift 0.
+- PNTyping.v `inj1_tr`, `inj2_tr`. inj e becomes (λx. !(y = inj x)) e, so the injection happens after e and inside a box.
+- PNTyping.v `lam_tr`. A λ of level ⊤ becomes !(f = λx.e) with the box's index skipped by a renaming. fix λf.e becomes !(f = force e), which forces the inner box at the box's own variable.
+- PNTyping.v `pn_app_poly`. An application of a level-⊤ function forces first.
+- PNWorld.v `rpt`, `mneg`. A box binds one point variable, the level anchor. Every point of its type is a slot of it. The stage 1 plan had ∀ι₀ ιs with the argument's points, which turned out unnecessary. Shifted copies of one arrow share a box type through the normalization by the first finite level.
+- PNWorld.v `Crel`. The box constraint is infinite, all facts that the denotation and the rank give between points of the box variable. The same constraint serves every box.
+- PNWorld.v `chres`. Channel points are keyed by the channel's code (type up to polarity, wrappings resolved, one unfolding), not by a new site. Two channels with one type and level share a point. The stage 1 plan keyed fresh channels by level offset and new site.
+- PNWorld.v `rank`. lo(n), the two instants and hi(n) rank at (n, 0), (n, 1), (n, 2) and (n, 3). The stage 1 plan said (n, −1) and (n, ω).
+- PNWorld.v `hiz`. The latent effect ⊤ becomes the ceiling B[RTop], ranked at the top element. All ceilings are aliased.
+- PNTranslate.v `erel`, `ren_of`. The static system has no lemma that inserts a binding, and a box body sees the box at index 0. The translation lemma therefore types e′ renamed past inserted unlimited or spent entries.
+- PNTranslate.v `pn_translate`. Frames stand for effects, as for PGV. A thread is typed at the empty frame, which matches T-Thread ignoring the effect.
+- PNTranslate.v `pn_deadlock_free`. The theorem is about the translation e′, which differs from e by the boxes, the forces, the closes, the closed λ terms of send, recv, fork and injections, and the erased wraps. A simulation from e′ to e is not mechanized.
+- ExampleTools.v `zrank`, `wgen_strict_z`, `wgen_strict_den`. New general helpers for strict worlds by ranks into ℤ with a top element (decision 4).
+
+#### 7.7  Findings about the paper, the plan and our documents
+
+- Chapter p10. ⇑ⁿ of a level-⊤ arrow gives a different P&N type, although such a function is level polymorphic. Two shifted copies of one arrow are distinct P&N types and need T-App-Poly to be used alike. Our translation identifies them.
+- Chapter p13. The contractiveness condition is needed for |⌈t⌉ⁿ|. The restricted μα.p[⌈α⌉ᵐ]ⁿ is contractive by construction.
+- Report. The report proves a different system (section 4). Nothing in stage 2 used the report beyond T-Split as a model for the case rule.
+- Stage 1, section 6. The plan's "∀ι₀ ιs" (one anchor plus argument points), its ranks (n, −1) and (n, ω), and its keying of fresh channels by new site differ from the mechanization (7.6). The plan's claim that the shift lemma Γ ⊢ e : t & ρ ⇒ ⇑ⁿΓ ⊢ e : ⇑ⁿt & n + ρ holds is confirmed in the form of the offset k of `pn_translate`, for our fragment.
+- gvsharp-orders.lagda E-Weak (around line 827) and ORDERS-SPEC.md §9 state weakening with a named fresh variable. Rocq's `t_wk` is positional (an unlimited entry becomes spent) and the static system has no renaming lemma that inserts a binding. Nothing is wrong, but the lagda reading suggests a lemma that Rocq does not have. `erel` works around it.
+- No core change was needed. lang/, types/, relation/, invariance/, composition/, rules/ and static/ are untouched.
 
 ## Stage 2, model and translate (after the author has seen stage 1)
 
