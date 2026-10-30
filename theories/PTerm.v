@@ -722,7 +722,7 @@ Section level.
     exists (delete c Σ), m0, U, s, k. split_and!.
     - exists s0. split; [|done]. by rewrite insert_delete_id.
     - by rewrite dom_delete_L; clear; set_solver.
-    - intros W' j Θ2 HW' Hj Hd Hrok HV.
+    - intros W' j Θ2 HW' Hj Hd Hrok HV. cbn [nlower pcost scost pred] in Hj.
       assert (tok W (<[c := (s, pt_shift 1 k)]> (delete c Σ)) ΘB C0) as Hok1.
       { apply tok_insert; [done|]. eapply tok_sub; [|exact Hok]. apply delete_subseteq. }
       destruct (recv_comp W W' _ ΘB C0 Θ2 Hok1 HW' Hd Hrok) as [Hok' Hcomp].

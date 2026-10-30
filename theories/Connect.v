@@ -15,62 +15,12 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export Internalize.
 
-(** ** The size of a soup *)
-
-Fixpoint esize (e : expr) : nat :=
-  match e with
-  | Var _ | EUnit | Konst _ | Chan _ => 1
-  | Lam e | Inj1 e | Inj2 e | EBox e => S (esize e)
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => S (esize e1 + esize e2)
-  | Case e e1 e2 => S (esize e + esize e1 + esize e2)
-  end.
-
-Definition msize (E : gmultiset expr) : nat := sum_list (esize <$> elements E).
-
-Lemma msize_empty : msize ∅ = 0.
-Proof. unfold msize. by rewrite gmultiset_elements_empty. Qed.
-
-Lemma msize_disj_union E1 E2 : msize (E1 ⊎ E2) = msize E1 + msize E2.
-Proof.
-  unfold msize. rewrite gmultiset_elements_disj_union, fmap_app, sum_list_with_app.
-  done.
-Qed.
-
-Lemma msize_singleton e : msize {[+ e +]} = esize e.
-Proof. unfold msize. rewrite gmultiset_elements_singleton. simpl. lia. Qed.
-
-Lemma esize_chsubst c d e : esize (chsubst c d e) = esize e.
-Proof. induction e; simpl; lia. Qed.
-
-Lemma esize_eswap a b e : esize (eswap a b e) = esize e.
-Proof. induction e; simpl; lia. Qed.
-
-Lemma msize_echsubst c d E : msize (echsubst c d E) = msize E.
-Proof.
-  induction E as [|e E IH] using gmultiset_ind.
-  - by rewrite echsubst_empty.
-  - rewrite echsubst_disj_union, echsubst_singleton, !msize_disj_union, !msize_singleton.
-    by rewrite esize_chsubst, IH.
-Qed.
-
 Lemma msize_msswap a b E : msize (msswap a b E) = msize E.
 Proof.
   induction E as [|e E IH] using gmultiset_ind.
   - unfold msswap. by rewrite gmultiset_map_empty.
   - rewrite msswap_disj_union, msswap_singleton, !msize_disj_union, !msize_singleton.
     by rewrite esize_eswap, IH.
-Qed.
-
-(** Giving steps of a thread shrink it. *)
-Definition giving (σ : slabel) : Prop :=
-  match σ with SRecv _ _ => False | _ => True end.
-
-Lemma tstep_giving_size e σ e' : tstep e (LSess σ) e' → giving σ → esize e' < esize e.
-Proof.
-  intros H Hg. remember (LSess σ) as α eqn:Hα. revert Hα.
-  induction H as [e α e' Hh| | | | | | | | | ]; intros ->; simpl;
-    try (specialize (IHtstep eq_refl); lia).
-  inversion Hh; subst; simpl; try done; lia.
 Qed.
 
 (** ** Configurations over a cut
@@ -532,7 +482,7 @@ Section steps.
       + rewrite lookup_insert_ne in Hr |- * by done. mpoint.
     - rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
       clear -Hc1a HcΣ1 Hd12. set_solver.
-    - intros W' j Θ2 HW'' Hj HΘC Hok' HV. simpl in HΘC. cbn [fst snd sentc].
+    - intros W' j Θ2 HW'' Hj HΘC Hok' HV. simpl in HΘC. cbn [nlower pcost scost pred] in Hj. cbn [fst snd sentc].
       set (Σr1 := <[c := (s, pt_shift 1 k)]> Σ1a).
       set (Σr := <[c := (s, pt_shift 1 k)]> (Σ1a ∖ ΣC ∪ Σ2)) in *.
       set (ones := tenv_ones Θ2).

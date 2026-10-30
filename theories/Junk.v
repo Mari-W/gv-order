@@ -2595,6 +2595,7 @@ Proof.
       rewrite Hc0 in Hhd'.
       exists Θ1', m, U, s, k. split; [done|].
       intros W' j Θ2 Θ1c' Θ'' HW' Hj Hext Hcomp HVw.
+      cbn [nlower tcost scost pred] in Hj.
       assert (strict W') as HW'' by (by destruct HW' as (_ & _ & _ & ?)).
       destruct (move_ext_given_ok W c d Θ1 Θ1' c0 _ Θ1c' Hcd Hm1 Hok1
                   ltac:(by rewrite Hc0)) as (Θ1c & Hext1 & Hm1c).

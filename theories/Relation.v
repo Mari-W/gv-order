@@ -10,8 +10,12 @@
     The step-index recursion is implemented by course-of-values
     recursion on n: [levels n] is (structurally in n) the family of all
     levels below n, [mk_level below n] builds level n from it, and
-    [level_at n] projects the actual level n. Later proofs only use the
-    equations [level_at_eq] and [levels_at], never the encoding.
+    [level_at n] projects the actual level n. Inside level n + 1, E and
+    P recur on the size of the term and of the soup, which every giving
+    step lowers: the recursion is on (n, size) in lexicographic order,
+    with the size as fuel ([Efuel], [Pfuel]). Later proofs only use the
+    equations [Erel_S_iff] and [Prel_S_iff] and the induction
+    principles [Erel_S_ind] and [Prel_S_ind], never the encoding.
 
     "Σ = Σ1, c : S@x" from the paper is rendered as
     Σ = <[c := (S, x)]> Σ1 together with c ∉ dom Σ1, and at the term
@@ -128,90 +132,158 @@ Fixpoint Vdef (below : nat → level) (n : nat)
           lE (below j) W' ∅ (ty_inst xs T1) F (subst1 (EBox eb) eb)
   end.
 
-(** Giving steps (sharp edges 45): send, close and link keep the
-    index. Their clauses take the relation X at the same level, and
-    E_{n+1} is the least fixpoint over them ([Eind]). *)
-Definition Esend_case (Vn : world → tenv → ty → expr → Prop)
-    (X : world → tenv → ty → gset point → expr → Prop)
-    (W : world) (Θ : tenv) (T : ty) (F : gset point) (c : chan) (w e' : expr)
-    : Prop :=
-  ∃ Θr Θ1 Θ2 m U s k Θ',
-    tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
-    Vn W Θ2 (payload_at m U k) w ∧
-    tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
-    X W Θ' T F e'.
+(** ** The cost of a step (sharp edges 45)
 
-Definition Eclos_case (X : world → tenv → ty → gset point → expr → Prop)
-    (W : world) (Θ : tenv) (T : ty) (F : gset point) (c : chan) (e' : expr)
-    : Prop :=
-  ∃ Θ1 k, tenv_hd Θ c SEnd k Θ1 ∧ X W Θ1 T F e'.
+    Send, close and link are giving steps: they cost nothing and keep
+    the index. Every other step costs one. A step taken at index n
+    carries its obligation at index n − cost. *)
+Definition scost (σ : slabel) : nat := match σ with SRecv _ _ => 1 | _ => 0 end.
+Definition tcost (α : tlabel) : nat := match α with LSess σ => scost σ | _ => 1 end.
+Definition pcost (π : plabel) : nat := match π with PSess σ => scost σ | PTau => 1 end.
 
-(** c = d is a self-link: Θ holds both ends of c, and both entries
-    leave. *)
-Definition Elink_case (X : world → tenv → ty → gset point → expr → Prop)
-    (W : world) (Θ : tenv) (T : ty) (F : gset point) (cd : gset chan) (e' : expr)
-    : Prop :=
-  ∃ c d Θ1 Θm sc sd kc kd,
-    cd = {[c; d]} ∧
-    tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
-    sdual sd sc ∧ w_eq W kc kd ∧
-    X W Θ1 T F e'.
+(** n − c, by recursion on c, so that it computes at a variable n. *)
+Fixpoint nlower (n c : nat) : nat := match c with 0 => n | S c' => pred (nlower n c') end.
 
-(** The steps that cost one: β, new, spawn and receive. At new, the
-    created channel gets a point (a, 0) with a fresh for W and for the
-    points of Θ, T and F, and W grows by a fresh extension placing a.
-    The name c is only required to be new to Θ, so that the
-    continuation environment can be formed. *)
-Definition Ecostly (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
-    (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
+Lemma nlower_le n c : nlower n c ≤ n.
+Proof. induction c; simpl; lia. Qed.
+
+(** The relation at index n − c, from the relations [low] below n and
+    the relation [top] at n. *)
+Definition at_cost {A} (low : nat → A) (top : A) (n c : nat) : A :=
+  match c with 0 => top | S _ => low (nlower n c) end.
+
+(** ** The size of a term and of a soup (sharp edges 46, 47)
+
+    Every giving step shrinks the thread that takes it
+    ([tstep_giving_size]), so inside one index the term and process
+    relations recur on the size. *)
+
+Fixpoint esize (e : expr) : nat :=
+  match e with
+  | Var _ | EUnit | Konst _ | Chan _ => 1
+  | Lam e | Inj1 e | Inj2 e | EBox e => S (esize e)
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => S (esize e1 + esize e2)
+  | Case e e1 e2 => S (esize e + esize e1 + esize e2)
+  end.
+
+Definition msize (E : gmultiset expr) : nat := sum_list (esize <$> elements E).
+
+Lemma msize_empty : msize ∅ = 0.
+Proof. unfold msize. by rewrite gmultiset_elements_empty. Qed.
+
+Lemma msize_disj_union E1 E2 : msize (E1 ⊎ E2) = msize E1 + msize E2.
+Proof.
+  unfold msize. rewrite gmultiset_elements_disj_union, fmap_app, sum_list_with_app.
+  done.
+Qed.
+
+Lemma msize_singleton e : msize {[+ e +]} = esize e.
+Proof. unfold msize. rewrite gmultiset_elements_singleton. simpl. lia. Qed.
+
+Lemma esize_chsubst c d e : esize (chsubst c d e) = esize e.
+Proof. induction e; simpl; lia. Qed.
+
+Lemma esize_eswap a b e : esize (eswap a b e) = esize e.
+Proof. induction e; simpl; lia. Qed.
+
+Lemma msize_echsubst c d E : msize (echsubst c d E) = msize E.
+Proof.
+  induction E as [|e E IH] using gmultiset_ind.
+  - unfold echsubst. by rewrite gmultiset_map_empty.
+  - rewrite echsubst_disj_union, echsubst_singleton, !msize_disj_union, !msize_singleton.
+    by rewrite esize_chsubst, IH.
+Qed.
+
+(** Giving steps of a thread shrink it. *)
+Definition giving (σ : slabel) : Prop :=
+  match σ with SRecv _ _ => False | _ => True end.
+
+Lemma tstep_giving_size e σ e' : tstep e (LSess σ) e' → giving σ → esize e' < esize e.
+Proof.
+  intros H Hg. remember (LSess σ) as α eqn:Hα. revert Hα.
+  induction H as [e α e' Hh| | | | | | | | | ]; intros ->; simpl;
+    try (specialize (IHtstep eq_refl); lia).
+  inversion Hh; subst; simpl; try done; lia.
+Qed.
+
+(** A step that costs nothing shrinks the term. *)
+Lemma tcost_giving α e e' : tstep e α e' → tcost α = 0 → esize e' < esize e.
+Proof.
+  intros Hst Hc. destruct α as [|[c w|c w|c|cd]|c|w]; try discriminate Hc;
+    by apply (tstep_giving_size _ _ _ Hst).
+Qed.
+
+(** The obligation of a step e --α--> e' at index n, given the value
+    and term relations below n ([Vlow], [Elow]) and at n ([Vn], [En]).
+    At new, the created channel gets a point (a, 0) with a fresh for W
+    and for the points of Θ, T and F, and W grows by a fresh extension
+    placing a. The name c is only required to be new to Θ, so that the
+    continuation environment can be formed. A link with c = d is a
+    self-link: Θ holds both ends of c, and both entries leave. *)
+Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
+    (Vn : world → tenv → ty → expr → Prop)
+    (Elow : nat → world → tenv → ty → gset point → expr → Prop)
+    (En : world → tenv → ty → gset point → expr → Prop)
+    (n : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
     (α : tlabel) (e' : expr) : Prop :=
   match α with
   | LBeta =>                                           (* O-Beta *)
-      lE (below n') W Θ T F e'
+      at_cost Elow En n (tcost α) W Θ T F e'
   | LNew c =>                                          (* O-New *)
       c ∉ dom Θ →
       ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F ∧
         sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
-        lE (below n') W'
+        at_cost Elow En n (tcost α) W'
           (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
   | LSpawn w =>                                        (* O-Spawn *)
       ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
         Vn W Θ1 (TLolli ub lb TUnit TUnit) w ∧
-        lE (below n') W Θ2 T F e'
+        at_cost Elow En n (tcost α) W Θ2 T F e'
   | LSess (SRecv c w) =>                               (* O-Recv *)
       ∃ Θ1 m U s k,
         tenv_hd Θ c (SRcv m U s) k Θ1 ∧
-        ∀ W' j Θ2 Θ1c Θ', wext W W' → j ≤ n' →
+        ∀ W' j Θ2 Θ1c Θ', wext W W' → j ≤ nlower n (tcost α) →
           tenv_ext Θ1 c (s, pt_shift 1 k) Θ1c →
           tenv_comp (w_eq W') Θ' Θ1c Θ2 →
-          lV (below j) W' Θ2 (payload_at m U k) w →
-          lE (below j) W' Θ' T F e'
-  | LSess _ => True
+          Vlow j W' Θ2 (payload_at m U k) w →
+          Elow j W' Θ' T F e'
+  | LSess (SSend c w) =>                               (* O-Send *)
+      ∃ Θr Θ1 Θ2 m U s k Θ',
+        tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
+        Vn W Θ2 (payload_at m U k) w ∧
+        tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
+        at_cost Elow En n (tcost α) W Θ' T F e'
+  | LSess (SClos c) =>                                 (* O-Close *)
+      ∃ Θ1 k, tenv_hd Θ c SEnd k Θ1 ∧ at_cost Elow En n (tcost α) W Θ1 T F e'
+  | LSess (SLink cd) =>                                (* O-Link *)
+      ∃ c d Θ1 Θm sc sd kc kd,
+        cd = {[c; d]} ∧
+        tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
+        sdual sd sc ∧ w_eq W kc kd ∧
+        at_cost Elow En n (tcost α) W Θ1 T F e'
   end.
 
-(** Term relation at level n' + 1, given [below] and the level-(n'+1)
-    value relation [Vn]. A term that can step must be ready and keep
-    its offered entries below the frame F. *)
-Inductive Eind (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
-    (n' : nat) : world → tenv → ty → gset point → expr → Prop :=
-  | Eind_intro W Θ T F e :
-      (irred e → Vn W Θ T e) →                         (* E-Stop *)
-      (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) →  (* E-Step *)
-      (∀ α e', tstep e α e' → Ecostly below Vn n' W Θ T F α e') →
-      (∀ c w e', tstep e (LSess (SSend c w)) e' →      (* O-Send *)
-         Esend_case Vn (Eind below Vn n') W Θ T F c w e') →
-      (∀ c e', tstep e (LSess (SClos c)) e' →          (* O-Close *)
-         Eclos_case (Eind below Vn n') W Θ T F c e') →
-      (∀ cd e', tstep e (LSess (SLink cd)) e' →        (* O-Link *)
-         Elink_case (Eind below Vn n') W Θ T F cd e') →
-      Eind below Vn n' W Θ T F e.
+(** Term relation at level n' + 1 with fuel k, given [below] and the
+    level-(n'+1) value relation [Vn]. A term that can step must be
+    ready and keep its offered entries below the frame F. A giving
+    successor of e is smaller than e, so fuel above esize e does not
+    matter ([Efuel_fuel]). *)
+Fixpoint Efuel (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
+    (n' k : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr)
+    : Prop :=
+  (irred e → Vn W Θ T e) ∧                             (* E-Stop *)
+  (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) ∧      (* E-Step *)
+  ∀ α e', tstep e α e' →
+    Eobl (λ j, lV (below j)) Vn (λ j, lE (below j))
+      (match k with 0 => λ _ _ _ _ _, False | S k' => Efuel below Vn n' k' end)
+      (S n') W Θ T F α e'.
 
 Definition Edef (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
     (n : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr)
     : Prop :=
   match n with
   | 0 => True
-  | S n' => Eind below Vn n' W Θ T F e
+  | S n' => Efuel below Vn n' (S (esize e)) W Θ T F e
   end.
 
 (** ** Messages at the process level
@@ -301,27 +373,53 @@ Definition Plink_case (X : world → senv → ty → proc → Prop)
     sdual sd sc ∧ w_eq W kc kd ∧
     X W Σ1 T p'.
 
-(** The process steps that cost one: every τ (a τ of P-Act-Link also
-    has the giving clause) and receive. *)
-Definition Pcostly (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
-    (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
+(** The giving steps of a process shrink its soup: a giving step of a
+    thread, and the τ of P-Act-Link. *)
+Lemma pcost_giving π p p' :
+  proc_step p π p' → pcost π = 0 ∨ ptau_link p p' → msize p'.2 < msize p.2.
+Proof.
+  intros Hst [Hc|(C & E & e & c & d & e' & -> & Hst' & _ & ->)]; simpl.
+  - destruct π as [|σ]; [discriminate Hc|].
+    inversion Hst; subst; simpl. rewrite !msize_disj_union, !msize_singleton.
+    destruct σ; try discriminate Hc;
+      match goal with H : tstep _ (LSess _) _ |- _ => pose proof (tstep_giving_size _ _ _ H I) end; lia.
+  - rewrite msize_echsubst, !msize_disj_union, !msize_singleton.
+    pose proof (tstep_giving_size _ _ _ Hst' I). lia.
+Qed.
+
+(** The obligation of a process step p --π--> p' at index n, given the
+    value and process relations below n ([Vlow], [Plow]) and at n ([Vn],
+    [Pn]). A τ of P-Act-Link costs one as a τ, and as a giving step it
+    carries in addition the obligation at n itself. *)
+Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
+    (Vn : world → tenv → ty → expr → Prop)
+    (Plow : nat → world → senv → ty → proc → Prop)
+    (Pn : world → senv → ty → proc → Prop)
+    (n : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
     (π : plabel) (p' : proc) : Prop :=
   match π with
   | PTau =>                                            (* Q-Tau *)
-      Ptau_case (lP (below n')) W Σ T p'
+      Ptau_case (at_cost Plow Pn n (pcost π)) W Σ T p' ∧
+      (ptau_link p p' → Plinktau_case Pn W Σ T p')
   | PSess (SRecv c w) =>                               (* Q-Recv *)
       ∃ Σ1 m U s k,
         senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
+        ∀ W' j Θ2, wext W W' → j ≤ nlower n (pcost π) → dom Θ2 ## p.1 →
           recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
-          lV (below j) W' Θ2 (payload_at m U k) w →
-          lP (below j) W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
+          Vlow j W' Θ2 (payload_at m U k) w →
+          Plow j W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
             (p'.1 ∪ recv_back (<[c := (s, pt_shift 1 k)]> Σ1) Θ2, p'.2)
-  | PSess _ => True
+  | PSess (SSend c w) =>                               (* Q-Send *)
+      Psend_case Vn (at_cost Plow Pn n (pcost π)) W Σ T p c w p'
+  | PSess (SClos c) =>                                 (* Q-Close *)
+      Pclos_case (at_cost Plow Pn n (pcost π)) W Σ T c p'
+  | PSess (SLink cd) =>                                (* Q-Link *)
+      Plink_case (at_cost Plow Pn n (pcost π)) W Σ T cd p'
   end.
 
-(** Process relation at level n' + 1. Every clause is stated for the
-    successor itself. Differences from the term relation:
+(** Process relation at level n' + 1 with fuel k. Every clause is
+    stated for the successor itself. Differences from the term
+    relation:
 
     - Q-Tau: the world may grow by a fresh extension, placing the
       points of channels the step creates, fresh for the points of Σ
@@ -339,29 +437,22 @@ Definition Pcostly (below : nat → level) (Vn : world → tenv → ty → expr 
     - Q-Send: the restricted channels the message carries,
       dom Θe = fchans w ∩ C, split into the ends that leave with the
       message (Θe, possibly both ends) and the ends that stay (Σe). *)
-Inductive Pind (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
-    (n' : nat) : world → senv → ty → proc → Prop :=
-  | Pind_intro W Σ T p :
-      (pirred p →                                      (* P-Stop *)
-        ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vn W (tenv_of Σ) T v ∧
-               (∀ e, e ∈ E → e = EUnit)) →
-      (¬ pirred p → ready_p W Σ p) →                   (* P-Step *)
-      (∀ π p', proc_step p π p' → Pcostly below Vn n' W Σ T p π p') →
-      (∀ p', proc_step p PTau p' → ptau_link p p' →    (* Q-Tau, link *)
-         Plinktau_case (Pind below Vn n') W Σ T p') →
-      (∀ c w p', proc_step p (PSess (SSend c w)) p' →  (* Q-Send *)
-         Psend_case Vn (Pind below Vn n') W Σ T p c w p') →
-      (∀ c p', proc_step p (PSess (SClos c)) p' →      (* Q-Close *)
-         Pclos_case (Pind below Vn n') W Σ T c p') →
-      (∀ cd p', proc_step p (PSess (SLink cd)) p' →    (* Q-Link *)
-         Plink_case (Pind below Vn n') W Σ T cd p') →
-      Pind below Vn n' W Σ T p.
+Fixpoint Pfuel (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
+    (n' k : nat) (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
+  (pirred p →                                          (* P-Stop *)
+    ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vn W (tenv_of Σ) T v ∧
+           (∀ e, e ∈ E → e = EUnit)) ∧
+  (¬ pirred p → ready_p W Σ p) ∧                       (* P-Step *)
+  ∀ π p', proc_step p π p' →
+    Pobl (λ j, lV (below j)) Vn (λ j, lP (below j))
+      (match k with 0 => λ _ _ _ _, False | S k' => Pfuel below Vn n' k' end)
+      (S n') W Σ T p π p'.
 
 Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr → Prop)
     (n : nat) (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
   match n with
   | 0 => True
-  | S n' => Pind below Vn n' W Σ T p
+  | S n' => Pfuel below Vn n' (S (msize p.2)) W Σ T p
   end.
 
 Definition mk_level (below : nat → level) (n : nat) : level :=
@@ -539,26 +630,48 @@ Proof.
     rewrite <-(levels_at n j Hj). exact HV.
 Qed.
 
-(** Monotonicity of the giving clauses in the relation they take. *)
-Lemma Esend_case_mono Vn (X Y : world → tenv → ty → gset point → expr → Prop) W Θ T F c w e' :
-  (∀ W Θ T F e, X W Θ T F e → Y W Θ T F e) →
-  Esend_case Vn X W Θ T F c w e' → Esend_case Vn Y W Θ T F c w e'.
-Proof.
-  intros HXY (Θr&Θ1&Θ2&m&U&s&k&Θ'&?&?&?&?&HX).
-  exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; auto.
-Qed.
+(** ** The obligations read at the levels
 
-Lemma Eclos_case_mono (X Y : world → tenv → ty → gset point → expr → Prop) W Θ T F c e' :
-  (∀ W Θ T F e, X W Θ T F e → Y W Θ T F e) →
-  Eclos_case X W Θ T F c e' → Eclos_case Y W Θ T F c e'.
-Proof. intros HXY (?&?&?&HX). hnf. eauto. Qed.
+    [Ecase_gen X n'] is the obligation of a step at index S n', with X
+    for the relation at S n' itself. [Ecase n'] takes X = E_{n'+1}. *)
+Definition Ecase_gen (X : world → tenv → ty → gset point → expr → Prop)
+    (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
+    (α : tlabel) (e' : expr) : Prop :=
+  Eobl Vrel (Vrel (S n')) Erel X (S n') W Θ T F α e'.
 
-Lemma Elink_case_mono (X Y : world → tenv → ty → gset point → expr → Prop) W Θ T F cd e' :
-  (∀ W Θ T F e, X W Θ T F e → Y W Θ T F e) →
-  Elink_case X W Θ T F cd e' → Elink_case Y W Θ T F cd e'.
+Notation Ecase n' := (Ecase_gen (Erel (S n')) n').
+
+Definition Pcase_gen (X : world → senv → ty → proc → Prop)
+    (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
+    (π : plabel) (p' : proc) : Prop :=
+  Pobl Vrel (Vrel (S n')) Prel X (S n') W Σ T p π p'.
+
+Notation Pcase n' := (Pcase_gen (Prel (S n')) n').
+
+(** An obligation reads the relations below n at indices up to n, and
+    the relation at n only at the successor of a giving step. *)
+Lemma Eobl_mono Vl1 Vl2 V1 V2 El1 El2 E1 E2 n W Θ T F α e' :
+  (∀ j W Θ T v, j ≤ n → Vl2 j W Θ T v → Vl1 j W Θ T v) →
+  (∀ W Θ T v, V1 W Θ T v → V2 W Θ T v) →
+  (∀ j W Θ T F, j ≤ n → El1 j W Θ T F e' → El2 j W Θ T F e') →
+  (tcost α = 0 → ∀ W Θ T F, E1 W Θ T F e' → E2 W Θ T F e') →
+  Eobl Vl1 V1 El1 E1 (S n) W Θ T F α e' → Eobl Vl2 V2 El2 E2 (S n) W Θ T F α e'.
 Proof.
-  intros HXY (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
-  exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; auto.
+  intros HVl HV HEl HE.
+  destruct α as [|[c w|c w|c|cd]|c|w]; cbn [Eobl at_cost tcost scost nlower pred] in *.
+  - intros H. apply HEl; [lia|exact H].
+  - intros (Θ1 & m & U & s & k & Hhd & H). exists Θ1, m, U, s, k. split; [done|].
+    intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV'.
+    apply HEl; [lia|]. apply (H W' j Θ2 Θ1c Θ'); try done. apply HVl; [lia|done].
+  - intros (Θr&Θ1&Θ2&m&U&s&k&Θ'&?&?&?&?&HX).
+    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; auto.
+  - intros (Θ1&k&?&HX). exists Θ1, k. split; auto.
+  - intros (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
+    exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; auto.
+  - intros H Hc. destruct (H Hc) as (a&s&s'&W'&?&?&?&HX).
+    exists a, s, s', W'. split_and!; try done. apply HEl; [lia|exact HX].
+  - intros (Θ1&Θ2&ub&lb&?&?&HX). exists Θ1, Θ2, ub, lb.
+    split_and!; [done|auto|apply HEl; [lia|exact HX]].
 Qed.
 
 Lemma Ptau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
@@ -592,89 +705,76 @@ Proof.
   exists c, d, Σ1, sc, sd, kc, kd. split_and!; auto.
 Qed.
 
-(** The step-clause cases of the term relation at index S n', with the
-    relation X for the giving steps. *)
-Definition Ecase_gen (X : world → tenv → ty → gset point → expr → Prop)
-    (n' : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
-    (α : tlabel) (e' : expr) : Prop :=
-  match α with
-  | LBeta =>
-      Erel n' W Θ T F e'
-  | LNew c =>
-      c ∉ dom Θ →
-      ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F ∧
-        sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
-        Erel n' W' (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
-  | LSpawn w =>
-      ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
-        Vrel (S n') W Θ1 (TLolli ub lb TUnit TUnit) w ∧
-        Erel n' W Θ2 T F e'
-  | LSess (SRecv c w) =>
-      ∃ Θ1 m U s k,
-        tenv_hd Θ c (SRcv m U s) k Θ1 ∧
-        ∀ W' j Θ2 Θ1c Θ', wext W W' → j ≤ n' →
-          tenv_ext Θ1 c (s, pt_shift 1 k) Θ1c →
-          tenv_comp (w_eq W') Θ' Θ1c Θ2 →
-          Vrel j W' Θ2 (payload_at m U k) w →
-          Erel j W' Θ' T F e'
-  | LSess (SSend c w) => Esend_case (Vrel (S n')) X W Θ T F c w e'
-  | LSess (SClos c) => Eclos_case X W Θ T F c e'
-  | LSess (SLink cd) => Elink_case X W Θ T F cd e'
-  end.
-
-Notation Ecase n' := (Ecase_gen (Erel (S n')) n').
+Lemma Pobl_mono Vl1 Vl2 V1 V2 Pl1 Pl2 P1 P2 n W Σ T p π p' :
+  (∀ j W Θ T v, j ≤ n → Vl2 j W Θ T v → Vl1 j W Θ T v) →
+  (∀ W Θ T v, V1 W Θ T v → V2 W Θ T v) →
+  (∀ j W Σ T q, j ≤ n → Pl1 j W Σ T q → Pl2 j W Σ T q) →
+  (pcost π = 0 ∨ ptau_link p p' → ∀ W Σ T, P1 W Σ T p' → P2 W Σ T p') →
+  Pobl Vl1 V1 Pl1 P1 (S n) W Σ T p π p' → Pobl Vl2 V2 Pl2 P2 (S n) W Σ T p π p'.
+Proof.
+  intros HVl HV HPl HP.
+  destruct π as [|[c w|c w|c|cd]]; cbn [Pobl at_cost pcost scost nlower pred] in *.
+  - intros [H1 H2]. split.
+    + intros Hd. destruct (H1 Hd) as (N&W'&?&?&HX). exists N, W'.
+      split_and!; [done|done|]. apply HPl; [lia|exact HX].
+    + intros Hl Hd. apply HP; [by right|]. exact (H2 Hl Hd).
+  - intros (Σ1 & m & U & s & k & Hhd & Hc & H). exists Σ1, m, U, s, k.
+    split_and!; [done|done|]. intros W' j Θ2 HW Hj Hfr Hdu HV'.
+    apply HPl; [lia|]. apply (H W' j Θ2); try done. apply HVl; [lia|done].
+  - intros (Σ0&Σv&m&U&s&k&Σe&Θe&?&?&?&?&?&?&?&?&HX).
+    exists Σ0, Σv, m, U, s, k, Σe, Θe.
+    split_and!; try done; first [apply HP; [by left|exact HX]|auto].
+  - intros (Σ1&k&?&?&HX). exists Σ1, k. split_and!; try done; first [apply HP; [by left|exact HX]|auto].
+  - intros (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
+    exists c, d, Σ1, sc, sd, kc, kd.
+    split_and!; try done; first [apply HP; [by left|exact HX]|auto].
+Qed.
 
 Lemma Ecase_gen_mono X Y n' W Θ T F α e' :
   (∀ W Θ T F e, X W Θ T F e → Y W Θ T F e) →
   Ecase_gen X n' W Θ T F α e' → Ecase_gen Y n' W Θ T F α e'.
+Proof. intros HXY. apply Eobl_mono; auto. Qed.
+
+Lemma Pcase_gen_mono X Y n' W Σ T p π p' :
+  (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
+  Pcase_gen X n' W Σ T p π p' → Pcase_gen Y n' W Σ T p π p'.
+Proof. intros HXY. apply Pobl_mono; auto. Qed.
+
+(** The fuel does not matter above the size. *)
+Lemma Efuel_fuel below Vn n' k1 k2 W Θ T F e :
+  esize e < k1 → esize e < k2 →
+  Efuel below Vn n' k1 W Θ T F e → Efuel below Vn n' k2 W Θ T F e.
 Proof.
-  intros HXY. destruct α as [|[c w|c w|c|cd]|c|w]; simpl; try done.
-  - by apply Esend_case_mono.
-  - by apply Eclos_case_mono.
-  - by apply Elink_case_mono.
+  revert k2 W Θ T F e. induction k1 as [|k1 IH]; intros k2 W Θ T F e H1 H2; [lia|].
+  destruct k2 as [|k2]; [lia|]. intros (Hs & Hr & Ht). split_and!; [done|done|].
+  intros α e' Hst. eapply Eobl_mono; [..|exact (Ht α e' Hst)]; [done|done|done|].
+  intros Hc W' Θ' T' F' HX. pose proof (tcost_giving _ _ _ Hst Hc).
+  apply (IH k2); [lia|lia|exact HX].
 Qed.
 
-Lemma Eind_iff below Vn n' W Θ T F e :
-  Eind below Vn n' W Θ T F e ↔
-    (irred e → Vn W Θ T e) ∧
-    (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) ∧
-    (∀ α e', tstep e α e' → Ecostly below Vn n' W Θ T F α e') ∧
-    (∀ c w e', tstep e (LSess (SSend c w)) e' →
-       Esend_case Vn (Eind below Vn n') W Θ T F c w e') ∧
-    (∀ c e', tstep e (LSess (SClos c)) e' →
-       Eclos_case (Eind below Vn n') W Θ T F c e') ∧
-    (∀ cd e', tstep e (LSess (SLink cd)) e' →
-       Elink_case (Eind below Vn n') W Θ T F cd e').
+Lemma Pfuel_fuel below Vn n' k1 k2 W Σ T p :
+  msize p.2 < k1 → msize p.2 < k2 →
+  Pfuel below Vn n' k1 W Σ T p → Pfuel below Vn n' k2 W Σ T p.
 Proof.
-  split; [intros []; split_and!; done|].
-  intros (?&?&?&?&?&?). by constructor.
+  revert k2 W Σ T p. induction k1 as [|k1 IH]; intros k2 W Σ T p H1 H2; [lia|].
+  destruct k2 as [|k2]; [lia|]. intros (Hs & Hr & Ht). split_and!; [done|done|].
+  intros π p' Hst. eapply Pobl_mono; [..|exact (Ht π p' Hst)]; [done|done|done|].
+  intros Hc W' Σ' T' HX. pose proof (pcost_giving _ _ _ Hst Hc).
+  apply (IH k2); [lia|lia|exact HX].
 Qed.
 
 Lemma Erel_S_unfold n W Θ T F e :
-  Erel (S n) W Θ T F e ↔ Eind (levels (S n)) (Vrel (S n)) n W Θ T F e.
+  Erel (S n) W Θ T F e ↔ Efuel (levels (S n)) (Vrel (S n)) n (S (esize e)) W Θ T F e.
 Proof.
   unfold Erel, Vrel. rewrite (level_at_eq (S n)). cbn [mk_level lV lE Edef].
   done.
 Qed.
 
-(** The costly cases at level S n, read through [levels]. *)
-Lemma Ecostly_conv X n W Θ T F α e' :
-  (∀ c w, α ≠ LSess (SSend c w)) → (∀ c, α ≠ LSess (SClos c)) →
-  (∀ cd, α ≠ LSess (SLink cd)) →
-  Ecostly (levels (S n)) (Vrel (S n)) n W Θ T F α e' ↔ Ecase_gen X n W Θ T F α e'.
+Lemma Prel_S_unfold n W Σ T p :
+  Prel (S n) W Σ T p ↔ Pfuel (levels (S n)) (Vrel (S n)) n (S (msize p.2)) W Σ T p.
 Proof.
-  intros H1 H2 H3. unfold Ecostly, Ecase_gen, Erel, Vrel.
-  rewrite (levels_at (S n) n (Nat.lt_succ_diag_r n)).
-  destruct α as [|[c w|c w|c|cd]|c|w]; try done;
-    [|exfalso; by eapply H1|exfalso; by eapply H2|exfalso; by eapply H3].
-  split; intros (Θ1 & m & U & s & k & Hhd & H); exists Θ1, m, U, s, k;
-    (split; [done|]); intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV.
-  - rewrite <-(levels_at (S n) j) in HV by lia.
-    pose proof (H W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV) as HE.
-    by rewrite (levels_at (S n) j) in HE by lia.
-  - rewrite (levels_at (S n) j) in HV by lia.
-    pose proof (H W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV) as HE.
-    by rewrite <-(levels_at (S n) j) in HE by lia.
+  unfold Prel, Vrel. rewrite (level_at_eq (S n)). cbn [mk_level lV lP Pdef].
+  done.
 Qed.
 
 Lemma Erel_S_iff n W Θ T F e :
@@ -683,137 +783,17 @@ Lemma Erel_S_iff n W Θ T F e :
     (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) ∧
     (∀ α e', tstep e α e' → Ecase n W Θ T F α e').
 Proof.
-  rewrite Erel_S_unfold, Eind_iff.
-  assert (∀ W Θ T F e, Eind (levels (S n)) (Vrel (S n)) n W Θ T F e →
-            Erel (S n) W Θ T F e) as Hto by (intros; by apply Erel_S_unfold).
-  assert (∀ W Θ T F e, Erel (S n) W Θ T F e →
-            Eind (levels (S n)) (Vrel (S n)) n W Θ T F e) as Hfrom
-    by (intros; by apply Erel_S_unfold).
-  split.
-  - intros (H1 & H2 & H3 & H4 & H5 & H6). split_and!; [done|done|].
-    intros α e' Hst. destruct α as [|[c w|c w|c|cd]|c|w].
-    1,2,6,7: (apply (Ecostly_conv (Erel (S n))); [intros; discriminate..|]; by apply H3).
-    + simpl. eapply Esend_case_mono; [exact Hto|]. by apply H4.
-    + simpl. eapply Eclos_case_mono; [exact Hto|]. by apply H5.
-    + simpl. eapply Elink_case_mono; [exact Hto|]. by apply H6.
-  - intros (H1 & H2 & H3). split_and!; [done|done| | | |].
-    + intros α e' Hst. pose proof (H3 α e' Hst) as H.
-      destruct α as [|[c w|c w|c|cd]|c|w]; try done.
-      all: by apply (Ecostly_conv (Erel (S n))); [intros; discriminate..|].
-    + intros c w e' Hst. eapply Esend_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
-    + intros c e' Hst. eapply Eclos_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
-    + intros cd e' Hst. eapply Elink_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
-Qed.
-
-(** Induction over the giving steps at a fixed level S n: the giving
-    successors carry the property being proved. *)
-Lemma Erel_S_ind n (Φ : world → tenv → ty → gset point → expr → Prop) :
-  (∀ W Θ T F e,
-     (irred e → Vrel (S n) W Θ T e) →
-     (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) →
-     (∀ α e', tstep e α e' →
-        Ecase_gen (λ W Θ T F e, Erel (S n) W Θ T F e ∧ Φ W Θ T F e) n W Θ T F α e') →
-     Φ W Θ T F e) →
-  ∀ W Θ T F e, Erel (S n) W Θ T F e → Φ W Θ T F e.
-Proof.
-  intros Hind.
-  assert (∀ W Θ T F e, Eind (levels (S n)) (Vrel (S n)) n W Θ T F e → Φ W Θ T F e) as H.
-  { fix IH 6. intros W Θ T F e HE. destruct HE as [W Θ T F e H1 H2 H3 H4 H5 H6].
-    apply Hind; [done|done|].
-    intros α e' Hst. destruct α as [|[c w|c w|c|cd]|c|w].
-    1,2,6,7: (apply (Ecostly_conv _); [intros; discriminate..|]; by apply H3).
-    - simpl. destruct (H4 c w e' Hst) as (Θr&Θ1&Θ2&m&U&s&k&Θ'&Ha&Hb&Hc&Hd&HE').
-      exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done; [by apply Erel_S_unfold|exact (IH _ _ _ _ _ HE')].
-    - simpl. destruct (H5 c e' Hst) as (Θ1&k&Ha&HE').
-      exists Θ1, k. split_and!; try done; [by apply Erel_S_unfold|exact (IH _ _ _ _ _ HE')].
-    - simpl. destruct (H6 cd e' Hst) as (c&d&Θ1&Θm&sc&sd&kc&kd&Ha&Hb&Hc&Hd&He&HE').
-      exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; try done; [by apply Erel_S_unfold|exact (IH _ _ _ _ _ HE')]. }
-  intros W Θ T F e HE. apply H. by apply Erel_S_unfold.
-Qed.
-
-(** The step-clause cases of the process relation at index S n', with
-    the relation X for the giving steps. Every τ costs one; a τ of
-    P-Act-Link has in addition the giving clause. *)
-Definition Pcase_gen (X : world → senv → ty → proc → Prop)
-    (n' : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
-    (π : plabel) (p' : proc) : Prop :=
-  match π with
-  | PTau =>
-      Ptau_case (Prel n') W Σ T p' ∧
-      (ptau_link p p' → Plinktau_case X W Σ T p')
-  | PSess (SRecv c w) =>
-      ∃ Σ1 m U s k,
-        senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
-        ∀ W' j Θ2, wext W W' → j ≤ n' → dom Θ2 ## p.1 →
-          recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
-          Vrel j W' Θ2 (payload_at m U k) w →
-          Prel j W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
-            (p'.1 ∪ recv_back (<[c := (s, pt_shift 1 k)]> Σ1) Θ2, p'.2)
-  | PSess (SSend c w) => Psend_case (Vrel (S n')) X W Σ T p c w p'
-  | PSess (SClos c) => Pclos_case X W Σ T c p'
-  | PSess (SLink cd) => Plink_case X W Σ T cd p'
-  end.
-
-Notation Pcase n' := (Pcase_gen (Prel (S n')) n').
-
-Lemma Pcase_gen_mono X Y n' W Σ T p π p' :
-  (∀ W Σ T p, X W Σ T p → Y W Σ T p) →
-  Pcase_gen X n' W Σ T p π p' → Pcase_gen Y n' W Σ T p π p'.
-Proof.
-  intros HXY. destruct π as [|[c w|c w|c|cd]]; simpl; try done.
-  - intros [H1 H2]. split; [done|]. intros Hl. eapply Plinktau_case_mono; eauto.
-  - by apply Psend_case_mono.
-  - by apply Pclos_case_mono.
-  - by apply Plink_case_mono.
-Qed.
-
-Lemma Pind_iff below Vn n' W Σ T p :
-  Pind below Vn n' W Σ T p ↔
-    (pirred p →
-      ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ Vn W (tenv_of Σ) T v ∧
-             (∀ e, e ∈ E → e = EUnit)) ∧
-    (¬ pirred p → ready_p W Σ p) ∧
-    (∀ π p', proc_step p π p' → Pcostly below Vn n' W Σ T p π p') ∧
-    (∀ p', proc_step p PTau p' → ptau_link p p' →
-       Plinktau_case (Pind below Vn n') W Σ T p') ∧
-    (∀ c w p', proc_step p (PSess (SSend c w)) p' →
-       Psend_case Vn (Pind below Vn n') W Σ T p c w p') ∧
-    (∀ c p', proc_step p (PSess (SClos c)) p' →
-       Pclos_case (Pind below Vn n') W Σ T c p') ∧
-    (∀ cd p', proc_step p (PSess (SLink cd)) p' →
-       Plink_case (Pind below Vn n') W Σ T cd p').
-Proof.
-  split; [intros []; split_and!; done|].
-  intros (?&?&?&?&?&?&?). by constructor.
-Qed.
-
-Lemma Prel_S_unfold n W Σ T p :
-  Prel (S n) W Σ T p ↔ Pind (levels (S n)) (Vrel (S n)) n W Σ T p.
-Proof.
-  unfold Prel, Vrel. rewrite (level_at_eq (S n)). cbn [mk_level lV lP Pdef].
-  done.
-Qed.
-
-Lemma Pcostly_tau_conv n W Σ T p p' :
-  Pcostly (levels (S n)) (Vrel (S n)) n W Σ T p PTau p' ↔ Ptau_case (Prel n) W Σ T p'.
-Proof.
-  unfold Pcostly, Prel. by rewrite (levels_at (S n) n (Nat.lt_succ_diag_r n)).
-Qed.
-
-Lemma Pcostly_recv_conv X n W Σ T p c w p' :
-  Pcostly (levels (S n)) (Vrel (S n)) n W Σ T p (PSess (SRecv c w)) p' ↔
-  Pcase_gen X n W Σ T p (PSess (SRecv c w)) p'.
-Proof.
-  unfold Pcostly, Pcase_gen, Prel, Vrel.
-  split; intros (Σ1 & m & U & s & k & Hhd & Hc & H);
-    exists Σ1, m, U, s, k; (split_and!; [done|done|]);
-    intros W' j Θ2 HW Hj Hfr Hdu HV.
-  - rewrite <-(levels_at (S n) j) in HV by lia.
-    specialize (H W' j Θ2 HW Hj Hfr Hdu HV).
-    rewrite (levels_at (S n) j) in H by lia. exact H.
-  - rewrite (levels_at (S n) j) in HV by lia.
-    specialize (H W' j Θ2 HW Hj Hfr Hdu HV).
-    rewrite <-(levels_at (S n) j) in H by lia. exact H.
+  rewrite Erel_S_unfold. cbn [Efuel].
+  split; intros (H1 & H2 & H3); (split_and!; [done|done|]); intros α e' Hst;
+    (eapply Eobl_mono; [..|exact (H3 α e' Hst)]); try done.
+  - intros j W' Θ' T' v Hj HV. cbv beta. by rewrite (levels_at (S n) j) by lia.
+  - intros j W' Θ' T' F' Hj HE. cbv beta in HE. by rewrite (levels_at (S n) j) in HE by lia.
+  - intros Hc W' Θ' T' F' HX. pose proof (tcost_giving _ _ _ Hst Hc).
+    apply Erel_S_unfold. apply (Efuel_fuel _ _ _ (esize e)); [lia|lia|exact HX].
+  - intros j W' Θ' T' v Hj HV. cbv beta in HV. by rewrite (levels_at (S n) j) in HV by lia.
+  - intros j W' Θ' T' F' Hj HE. cbv beta. by rewrite (levels_at (S n) j) by lia.
+  - intros Hc W' Θ' T' F' HX. pose proof (tcost_giving _ _ _ Hst Hc).
+    apply Erel_S_unfold in HX. apply (Efuel_fuel _ _ _ (S (esize e'))); [lia|lia|exact HX].
 Qed.
 
 Lemma Prel_S_iff n W Σ T p :
@@ -824,33 +804,41 @@ Lemma Prel_S_iff n W Σ T p :
     (¬ pirred p → ready_p W Σ p) ∧
     (∀ π p', proc_step p π p' → Pcase n W Σ T p π p').
 Proof.
-  rewrite Prel_S_unfold, Pind_iff.
-  assert (∀ W Σ T p, Pind (levels (S n)) (Vrel (S n)) n W Σ T p →
-            Prel (S n) W Σ T p) as Hto by (intros; by apply Prel_S_unfold).
-  assert (∀ W Σ T p, Prel (S n) W Σ T p →
-            Pind (levels (S n)) (Vrel (S n)) n W Σ T p) as Hfrom
-    by (intros; by apply Prel_S_unfold).
-  split.
-  - intros (H1 & H2 & H3 & H4 & H5 & H6 & H7). split_and!; [done|done|].
-    intros π p' Hst. destruct π as [|[c w|c w|c|cd]]; simpl.
-    + split; [exact (proj1 (Pcostly_tau_conv _ _ _ _ _ _) (H3 _ _ Hst))|].
-      intros Hl. eapply Plinktau_case_mono; [exact Hto|]. by apply H4.
-    + exact (proj1 (Pcostly_recv_conv (Prel (S n)) _ _ _ _ _ _ _ _) (H3 _ _ Hst)).
-    + eapply Psend_case_mono; [exact Hto|]. by apply H5.
-    + eapply Pclos_case_mono; [exact Hto|]. by apply H6.
-    + eapply Plink_case_mono; [exact Hto|]. by apply H7.
-  - intros (H1 & H2 & H3). split_and!; [done|done| | | | |].
-    + intros π p' Hst. pose proof (H3 π p' Hst) as H.
-      destruct π as [|[c w|c w|c|cd]]; try done.
-      * exact (proj2 (Pcostly_tau_conv _ _ _ _ _ _) (proj1 H)).
-      * exact (proj2 (Pcostly_recv_conv (Prel (S n)) _ _ _ _ _ _ _ _) H).
-    + intros p' Hst Hl. eapply Plinktau_case_mono; [exact Hfrom|]. exact (proj2 (H3 _ _ Hst) Hl).
-    + intros c w p' Hst. eapply Psend_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
-    + intros c p' Hst. eapply Pclos_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
-    + intros cd p' Hst. eapply Plink_case_mono; [exact Hfrom|]. exact (H3 _ _ Hst).
+  rewrite Prel_S_unfold. cbn [Pfuel].
+  split; intros (H1 & H2 & H3); (split_and!; [done|done|]); intros π p' Hst;
+    (eapply Pobl_mono; [..|exact (H3 π p' Hst)]); try done.
+  - intros j W' Θ' T' v Hj HV. cbv beta. by rewrite (levels_at (S n) j) by lia.
+  - intros j W' Σ' T' q Hj HP. cbv beta in HP. by rewrite (levels_at (S n) j) in HP by lia.
+  - intros Hc W' Σ' T' HX. pose proof (pcost_giving _ _ _ Hst Hc).
+    apply Prel_S_unfold. apply (Pfuel_fuel _ _ _ (msize p.2)); [lia|lia|exact HX].
+  - intros j W' Θ' T' v Hj HV. cbv beta in HV. by rewrite (levels_at (S n) j) in HV by lia.
+  - intros j W' Σ' T' q Hj HP. cbv beta. by rewrite (levels_at (S n) j) by lia.
+  - intros Hc W' Σ' T' HX. pose proof (pcost_giving _ _ _ Hst Hc).
+    apply Prel_S_unfold in HX. apply (Pfuel_fuel _ _ _ (S (msize p'.2))); [lia|lia|exact HX].
 Qed.
 
-(** Induction over the giving steps at a fixed level S n. *)
+(** Induction over the giving steps at a fixed level S n, on the size
+    of the term: the giving successors carry the property being
+    proved. *)
+Lemma Erel_S_ind n (Φ : world → tenv → ty → gset point → expr → Prop) :
+  (∀ W Θ T F e,
+     (irred e → Vrel (S n) W Θ T e) →
+     (¬ irred e → ready_t W Θ e ∧ frame_t W Θ e F) →
+     (∀ α e', tstep e α e' →
+        Ecase_gen (λ W Θ T F e, Erel (S n) W Θ T F e ∧ Φ W Θ T F e) n W Θ T F α e') →
+     Φ W Θ T F e) →
+  ∀ W Θ T F e, Erel (S n) W Θ T F e → Φ W Θ T F e.
+Proof.
+  intros Hind W Θ T F e. remember (esize e) as k eqn:Hk. revert W Θ T F e Hk.
+  induction k as [k IH] using lt_wf_ind. intros W Θ T F e Hk HE.
+  apply Erel_S_iff in HE as (H1 & H2 & H3). apply Hind; [done|done|].
+  intros α e' Hst. eapply Eobl_mono; [..|exact (H3 α e' Hst)]; [done|done|done|].
+  intros Hc W' Θ' T' F' HX. split; [done|].
+  pose proof (tcost_giving _ _ _ Hst Hc). by apply (IH (esize e')); [lia| |].
+Qed.
+
+(** Induction over the giving steps at a fixed level S n, on the size
+    of the soup. *)
 Lemma Prel_S_ind n (Φ : world → senv → ty → proc → Prop) :
   (∀ W Σ T p,
      (pirred p →
@@ -862,22 +850,12 @@ Lemma Prel_S_ind n (Φ : world → senv → ty → proc → Prop) :
      Φ W Σ T p) →
   ∀ W Σ T p, Prel (S n) W Σ T p → Φ W Σ T p.
 Proof.
-  intros Hind.
-  assert (∀ W Σ T p, Pind (levels (S n)) (Vrel (S n)) n W Σ T p → Φ W Σ T p) as H.
-  { fix IH 5. intros W Σ T p HP. destruct HP as [W Σ T p H1 H2 H3 H4 H5 H6 H7].
-    apply Hind; [done|done|].
-    intros π p' Hst. destruct π as [|[c w|c w|c|cd]]; simpl.
-    - split; [exact (proj1 (Pcostly_tau_conv _ _ _ _ _ _) (H3 _ _ Hst))|].
-      intros Hl Hd. pose proof (H4 p' Hst Hl Hd) as HP'.
-      split; [by apply Prel_S_unfold|exact (IH _ _ _ _ HP')].
-    - exact (proj1 (Pcostly_recv_conv (Prel (S n)) _ _ _ _ _ _ _ _) (H3 _ _ Hst)).
-    - destruct (H5 c w p' Hst) as (Σ0&Σv&m&U&s&k&Σe&Θe&Ha&Hb&Hc&Hd&He&Hf&Hg&Hh&HP').
-      exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done; [by apply Prel_S_unfold|exact (IH _ _ _ _ HP')].
-    - destruct (H6 c p' Hst) as (Σ1&k&Ha&Hb&HP').
-      exists Σ1, k. split_and!; try done; [by apply Prel_S_unfold|exact (IH _ _ _ _ HP')].
-    - destruct (H7 cd p' Hst) as (c&d&Σ1&sc&sd&kc&kd&Ha&Hb&Hc&Hd&He&Hf&Hg&HP').
-      exists c, d, Σ1, sc, sd, kc, kd. split_and!; try done; [by apply Prel_S_unfold|exact (IH _ _ _ _ HP')]. }
-  intros W Σ T p HP. apply H. by apply Prel_S_unfold.
+  intros Hind W Σ T p. remember (msize p.2) as k eqn:Hk. revert W Σ T p Hk.
+  induction k as [k IH] using lt_wf_ind. intros W Σ T p Hk HP.
+  apply Prel_S_iff in HP as (H1 & H2 & H3). apply Hind; [done|done|].
+  intros π p' Hst. eapply Pobl_mono; [..|exact (H3 π p' Hst)]; [done|done|done|].
+  intros Hc W' Σ' T' HX. split; [done|].
+  pose proof (pcost_giving _ _ _ Hst Hc). by apply (IH (msize p'.2)); [lia| |].
 Qed.
 
 (** Convenient corollaries of the characteristic equations. *)
