@@ -51,8 +51,9 @@ partial orders.
      over the tree (direction C, offsets as terms). The world of a closed program
      then contains facts at the concrete n.
    - Segment ends as names. A new root names "the instant where the segment that
-     starts at x ends", like a carried root names a message position. The facts
-     become data free, every point of the segment below ζ and ζ below the end.
+     starts at x ends", like a carried root names a message position. ζ below
+     the end is then a plain fact. Every point of the segment below ζ becomes
+     the conditional fact x+k ≺ end ⇒ x+k ≺ ζ, which is not positive.
      The run fixes the alias between the end and a concrete instant, so the world
      must learn an alias between existing points while the program runs
      (direction C, worlds that grow).
