@@ -282,7 +282,15 @@ Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y 
 ```
 W          a well-formed world over point constants, the index of the judgment
 Ψ          hypotheses (C, xs) of the enclosing boxes (E-Exp below)
-≺_{W,Ψ}    the static ≺. It reads facts from W and Ψ only (sharp edges 53, 58, 61).
+Φ          frame hypotheses u ≺ φ of the enclosing λs and boxes (E-Abs, E-Exp)
+Γ ⊢ a ≺ b  the one fact theory, Γ = (W, Ψ, Φ), a and b points or frame variables (sharp edges 64).
+           Generators: x ≺_W y,  every fact of a hypothesis (C, xs) at every Σ-word of xs,
+           u ≺ φ for every frame hypothesis. Closed under ≡_W on points and under
+           transitivity through points. With Ψ = Φ = ∅ it is ≺_W (the ground case).
+           One lemma carries a derivation along a map of the generators. It gives point
+           substitution (typed_pinst) and frame instantiation into a world (typed_sem_rules).
+≺_{W,Ψ}    Γ ⊢ x ≺ y between points. It does not depend on Φ.
+{u} ≺ F    Γ ⊢ u ≺ a for every point and the frame variable a of F.
            The schema set G and its world W_G belong to decidability alone (§16, docs/DECIDABILITY.md).
 
 new    : ∗ ⊸^⊥_⊤ S@ι ⊗ S′@ι                                  S ⊥ S′,  ι fresh
@@ -295,7 +303,7 @@ force  : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs
          (force applies the thunk. Its upper point is the thunk's, instantiated)
          (premises on the order and the support, as pt_known is for new: KTForce reads C in the
           order konst_ty is given and knownness in its predicate. V-Const reads ≺_W and pt_known W.
-          The static system reads W ∪ Ψ and skn, sharp edges 61)
+          The static system reads Γ and skn, sharp edges 61, 64)
 new    : as above, ι known. The static system reads ι known when W knows it or ι has the
          root of an instance point of a hypothesis in Ψ, so new may create a channel at a
          box's ιs (sharp edges 59, 61)
@@ -321,11 +329,10 @@ E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ�
 E-Exp      ·; □Δ, x : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
            ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)                 (sharp edges 57, 58, 61, 63)
            Ψ: the constraints of the enclosing boxes with their instances, hypotheses (C, xs).
-           Every side condition x ≺ y of the static system is read in W ∪ Ψ: the closure of ≺_W
-           and the facts of every (C, xs) at every Σ-word of xs, under ≡_W and transitivity
-           (58, 61). A recursive call forces x at a step σᵢ(ιs) and gets C at every word of it
+           Every side condition x ≺ y of the static system is read in Γ ⊢ x ≺ y
+           (58, 61, 64). A recursive call forces x at a step σᵢ(ιs) and gets C at every word of it
            from the body's own hypothesis (C, ιs), because those words are words of ιs. Any
-           other instance asks C at all its words from W ∪ Ψ.
+           other instance asks C at all its words from Γ.
            ιs are point variables in the premise, typed once (57). E-Const at send and recv asks
            the payload ∃ιs.T to have no free point variable beyond ιs, the "all points of T bound" of §4 (57)
 E-Weak, E-Contract, E-Conv      as in the paper, with ⊢^F

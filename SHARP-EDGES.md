@@ -590,6 +590,27 @@ irreducible. Both are new hypotheses of its section. No statement of a
 composition lemma or of soundness changed beyond the box types, which read
 TBox m C (TLolli ub None TUnit T) where they read TBox m C ub T.
 
+**64. Approved refactor B1: one fact theory.**
+The static system reads every fact from one judgment fl Γ a b, written
+Γ ⊢ a ≺ b, over nodes, which are points and frame variables (Static.v). The
+context Γ = (W, Ψ, Φ) has three generators: x ≺_W y, the facts of a hypothesis
+(C, xs) at every word of xs, and u ≺ φ for a frame hypothesis. The judgment is
+closed under ≡_W and under transitivity through a point. A frame variable never
+sits in the middle of a derivation, because no generator has one on the left.
+slt W Ψ is the fragment between points, and it does not depend on Φ
+(fl_points). ub_below_s is the judgment from u to every node of the frame, and
+ub_below_h is gone. fl_map carries a derivation along any map of the generators.
+Point substitution is fl_map with σ on points (fl_pinst). Instantiating the frame
+variables into a world is fl_map with each node read as the points it stands for
+(ub_below_s_inst). Without hypotheses the judgment is ≺_W (slt_nil), which makes
+the world the ground case. The force premise stays C at every word of its
+instance in Γ. The step invariance of 61 needs no closure condition on Γ,
+because the facts of a hypothesis are generated at every word. typed keeps W,
+Φ and Ψ as separate arguments, which together form Γ. No statement of a
+composition lemma, of soundness or of the semantic relation changed. The
+examples in Static.v and OrdExamples.v prove {u} ≺ F through
+ub_below_s_intro, which reads the frame variable as x ≼ u for its hypothesis.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
