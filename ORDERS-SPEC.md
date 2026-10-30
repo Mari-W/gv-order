@@ -353,6 +353,8 @@ E-Force     Θ; Δ ⊨^F t : □(∀ιs. T)   ⇒   Θ; Δ ⊨^F force t : T[xs/
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
 E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
+            Rocq: the elimination rules go through Erel_bind (Bind.v, sharp edges 48). The hole runs
+            under frame F ∪ H, where every entry of the context's environment lies at or above H.
 
 P-Term      prim T,   Σ, Θ_B; · ⊨^∅_W t : T,   Θ_B both ends of C₀
             ⇒   Σ ⊨_W (C₀, {t}) : T

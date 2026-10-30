@@ -401,6 +401,15 @@ threads with conn_all at n′, one at T and the spawned one at ∗. Proved as Pr
 (PTerm.v). Statement as in §11. Implicit side conditions made explicit there are W strict,
 dom Θ_B = C₀, Θ_B holds only both-ends entries, dual at ≡_W points, and dom Σ # C₀.
 
+**48. The bind lemma takes the context's heads as part of the hole's frame (Claude, routine, 2026-10-30).**
+Erel_bind (Bind.v) runs K[e] with e ∈ E^W_n⟦Θ1 ⊢ U ≺ F ∪ H⟧, the composite at Θ = Θ1, Θ2 and
+frame F, where every entry of Θ2 lies at or above some point of H. E-App and E-Pair instantiate
+H with heads(Θ2, Δ2) for the left subterm and with {ℓ} or heads(T) for the right one. The frame
+then forbids the redex of e to act on a channel that Θ2 also holds, because the two ends sit at
+aliased points and the frame would put one strictly below the other (subjs_free). Every step of e
+is therefore a step on Θ1 alone, and the composite's offers are e's offers. At new, the point e
+picks is renamed by Erel_new_rename to one that is also fresh for Θ2, T and F.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
