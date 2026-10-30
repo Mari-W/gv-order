@@ -1088,3 +1088,54 @@ Proof.
       apply Vrel_sess_iff. exists c, s', (pt_shift 1 k). split_and!; [done|done|done|].
       by apply (wf_eq_shift _ HWf).
 Qed.
+
+Lemma Erel_app_link n W Θ ub lb T U F v2 :
+  strict W → Vrel n W ∅ (TLolli ub lb T U) ELink → Vrel n W Θ T v2 → ub_below W ub F →
+  Erel n W Θ U F (App ELink v2).
+Proof.
+  intros HW HV1 HV2 Hub0. pose proof (proj1 HW) as HWf.
+  destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
+    as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
+  inversion Hk as [| | | | |S x x' Hxx'|]; subst.
+  pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
+  apply Vrel_prod_iff in HV as (vc & vd & Θc & Θd & -> & Hc & HVc & HVd).
+  apply Vrel_sess_iff in HVc as (c & sc & kc & -> & -> & Hsc & Hkc).
+  apply Vrel_sess_iff in HVd as (d & sd & kd & -> & -> & Hsd & Hkd).
+  assert (∀ y, y ∈ F → w_lt W kc y) as Hcl.
+  { intros y Hy. eapply (wf_lt_eq _ HWf); [exact Hkc|by apply Hxl|apply HWf]. }
+  assert (∀ y, y ∈ F → w_lt W kd y) as Hdl.
+  { intros y Hy. eapply (wf_lt_eq _ HWf);
+      [eapply (wf_eq_trans _ HWf); [exact Hkd|exact (wf_eq_sym _ HWf _ _ Hxx')]|by apply Hxl|apply HWf]. }
+  destruct n as [|n']; [apply Erel_0|].
+  assert (tstep (App ELink (Pair (Chan c) (Chan d))) (LSess (SLink {[c; d]})) EUnit) as Hst0
+    by apply TStepHead, HeadLink.
+  assert (∀ k', is_Some (tenv_entry Θ k') → offered_t Θ (App ELink (Pair (Chan c) (Chan d))) k')
+    as Hoff.
+  { intros [c' b] [e' He']. exists (SLink {[c; d]}), EUnit. split; [done|]. split; [|by eexists].
+    simpl. assert (c' ∈ dom Θ) as Hin.
+    { apply elem_of_dom. unfold tenv_entry in He'. simpl in He'.
+      destruct (Θ !! c'); [by eexists|done]. }
+    rewrite (tenv_join_dom _ _ _ (proj1 Hc)), !dom_singleton_L in Hin. set_solver. }
+  apply Erel_S_iff. split_and!.
+  - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
+  - intros _. split.
+    + intros Hs. split.
+      * intros H. exfalso. apply (H (c, false)), Hoff.
+        destruct Hc as [Hj _]. specialize (Hj c). rewrite lookup_singleton_eq in Hj.
+        unfold tenv_entry. simpl. inversion Hj; by eexists.
+      * intros k' e' He' Hn. exfalso. apply Hn, Hoff. by eexists.
+    + intros Hs k' e' _ He' y Hy. unfold entry_head.
+      destruct (comp_entry _ _ _ _ _ _ Hc He') as [[k1 H1]|[k1 H1]].
+      * destruct (entry_single _ _ _ _ H1) as [_ ->]. by apply Hcl.
+      * destruct (entry_single _ _ _ _ H1) as [_ ->]. by apply Hdl.
+  - intros α e' Hst. apply app_val_step in Hst; [|done|done].
+    assert (α = LSess (SLink {[c; d]}) ∧ e' = EUnit) as [-> ->] by (inversion Hst; done). simpl.
+    exists c, d, ∅, {[d := One (sd, kd)]}, sc, sd, kc, kd. split_and!.
+    + done.
+    + left. split; [done|by rewrite insert_empty].
+    + apply (comp_single_ext (w_eq W)). apply comp_comm; [exact (wf_eq_sym _ HWf)|exact Hc].
+    + apply sdual_seq_dual. eapply seq_trans; [exact Hsd|]. apply seq_dual, seq_sym, Hsc.
+    + eapply (wf_eq_trans _ HWf); [exact Hkc|].
+      eapply (wf_eq_trans _ HWf); [exact Hxx'|exact (wf_eq_sym _ HWf _ _ Hkd)].
+    + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|]. by apply Vrel_unit_iff.
+Qed.
