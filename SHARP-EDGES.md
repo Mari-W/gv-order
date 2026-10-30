@@ -357,7 +357,7 @@ index (only β, new and spawn lower it, with a coinductive clause for session st
 a fixed index), a budget that indexes the payload and the rest separately, or a
 treatment of links in the cut that does not fuse.
 
-**45. Giving steps keep the index (decided 2026-10-30, 01:50, replaces the budget of 42).**
+**45. Giving steps keep the index (decided 2026-10-30, 01:50, replaces the budget of 42). Confirmed by the author 2026-10-30.**
 Send, close and link keep the index in E and in P. β, new, spawn, receive and a
 synchronization cost one. The budget of 44 came from Internalizing a link, where one
 synchronization of the fused process is two external steps of p (c!v, then d?v). With a
@@ -441,7 +441,7 @@ upper point, □^u(∀ιs. T). V-Box asks E at every F with {u} ≺ F, force has
 does. (A) V-Box asks E at every frame, which a typed body need not satisfy. (C) force only
 at frame ∅. E-App and E-Force wait for this decision. The other rules do not use V-Box.
 
-**52. □ carries an upper point under its binder (decided 2026-10-30, 06:40, resolves 51).**
+**52. □ carries an upper point under its binder (decided 2026-10-30, 06:40, resolves 51). Confirmed by the author 2026-10-30.**
 Option B of 51, with u scoped under the ∀: □(∀ιs.^u T), u ::= ι | ⊥, and u may mention ιs.
 force : □(∀ιs.^u T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]. V-Box asks, for every W′ ⊒ W, every xs and
 every F with {u[xs/ιs]} ≺_{W′} F, that fix x.t ∈ E^{W′}_n⟦· ⊢ T[xs/ιs] ≺ F⟧. E-Exp types the
