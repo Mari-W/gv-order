@@ -363,14 +363,16 @@ E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
             The semantic condition behind H: the environment of v ∈ V⟦Θ ⊢ T⟧ lies at or above
             heads(T) (Vrel_heads_above, TermRules.v), and a grounding's environment at or above
             heads(Δ) (grounding_heads). Typing then needs nothing extra.
-            Open (sharp edges 51): E-App with force, and E-Force, fail as stated, because V-Box
-            gives frame ∅ and force has upper point ⊥.
             Proved in TermRules.v: sem_typed_unit, sem_typed_konst, sem_typed_var, sem_typed_chan,
             sem_typed_lam (E-Abs; premise for every later world W₁ and F′ with {u} ≺_{W₁} F′),
             sem_typed_inj1/2, sem_typed_letu, sem_typed_letp, sem_typed_case, sem_typed_pair,
             sem_typed_wk, and E-App as sem_typed_app_gen from app_good, which Erel_app_noforce
             gives for every function value but force. E-Conv is sem_typed_teq (Convert.v).
-            Not yet: E-Exp, E-Force, E-Contract.
+            Proved in TermRules2.v (after 52): Erel_app_force, hence app_good_all and E-App for
+            every function (sem_typed_app); E-Force (sem_typed_force, at an instance xs with
+            {u[xs/ιs]} ≺_W F); E-Exp (sem_typed_box, premise for every later world, xs and F′
+            with {u[xs/ιs]} ≺ F′, by induction on the index); E-Contract (sem_typed_contract,
+            the two most recent bindings, t[x/y] = rename pred t).
 
 P-Term      prim T,   Σ, Θ_B; · ⊨^∅_W t : T,   Θ_B both ends of C₀
             ⇒   Σ ⊨_W (C₀, {t}) : T
@@ -419,6 +421,14 @@ Decidability    W_G strict is decidable:  Kosaraju–Sullivan for edges with off
                 plus our lemma for schemas with a variable on one side only (free coordinates)
                 (paper-level, not mechanized in this round)
 ```
+
+Rocq (Static.v, sharp edges 53): typed W Θ Δ F e T and ptyped W Σ p T, indexed by the world
+W = W_G. E-Abs and E-Exp quantify over every later world and every frame above the upper
+point (and every instance xs for E-Exp) in place of a fresh μ; the other rules as in §9.
+fundamental (terms), fundamental_proc (processes, P-Connect by Prel_connect with W₁ = W₂ = W),
+soundness (strict W, ptyped W ∅ p T ⇒ deadlock_free p, via adequacy). All closed under the
+global context.
+
 
 ## 13  Examples
 

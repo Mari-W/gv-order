@@ -26,6 +26,7 @@ theories/PTerm.v
 theories/Bind.v
 theories/TermRules.v
 theories/TermRules2.v
+theories/Static.v
 # Templates from the paper's development, not yet ported (they do not
 # compile against the order-based relation):
 # theories/Terms.v

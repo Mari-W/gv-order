@@ -453,7 +453,27 @@ This is a type annotation. It adds no premise. Rejected: (A) E at every frame, w
 body that acts on an outer point cannot meet, and (C) force only at frame ∅, which forbids
 forcing a box inside any context with pending channels.
 
+**53. The static system reads fresh point variables as "every" (Claude, delegated, 2026-10-30).**
+Static.v indexes Θ; Δ ⊢^F_G t : T by the world W = W_G and reads every side condition on
+points in W. E-Abs types the body under {μ} with μ fresh and only u ≺ μ. E-Exp does the same
+and leaves the box's ιs free in the body. Static.v states both premises for every later world
+W₁ ⊒ W and every frame F′ with {u} ≺_{W₁} F′, and E-Exp also for every instance xs of ιs,
+which is the shape of V-Abs, V-Box, sem_typed_lam and sem_typed_box. A μ about which only
+u ≺ μ is known can stand for any such frame, so the rule adds no restriction. With these
+premises the fundamental theorem is an induction that applies one lemma per rule. The
+syntactic presentation with fact schemas and a fresh constant μ would need two more lemmas:
+a typing derivation survives a substitution of point variables (G closed under it), and E
+is invariant when a conservative fresh extension of the world is dropped (the reverse of
+monotonicity, for names nothing mentions). Neither is mechanized. The other rules are §9 as
+written, and E-Force is derived from E-App at the constant force (typed_force). Static
+P-Connect is binary with one world W, and Prel_connect at W₁ = W₂ = W gives it, because
+W ⊔ W ⊑ W (wext_join_self). P-Connectⁿ is therefore not needed for the fundamental
+theorem. P-Term and P-Connect carry the implicit well-formedness of Prel_term and
+Prel_connect as premises: Θ_B dual at aliased points over exactly C₀, the disjoint unions,
+and dual cut ends.
+
 ## From the earlier abandoned mechanization (spec §15)
+
 
 Leastness as gate, a gate that is not invariant under external steps, the
 premise "distinct channels have distinct instants", term-level ∀-introduction,
