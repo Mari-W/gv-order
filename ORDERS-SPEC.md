@@ -576,7 +576,7 @@ every k.
 
 ## 14  Open
 
-- Deferred by the author: order that depends on the run (one W per component, docs/DESIGN-REVIEW.md C2).
+- Deferred by the author: order that depends on the run (one W per component, docs/history/DESIGN-REVIEW.md C2).
 - A constraint has finitely many roots in Rocq (the roots of its outer points). §4 does not say so. O-New needs it, because a type with infinitely many constant roots leaves no fresh point.
 - Rocq admits box bodies that are not thunks. Their V is empty, but the grammar of §4 has only the thunk form.
 
@@ -602,7 +602,7 @@ Decidability comes later, for an algorithmic system over a fragment of the const
 Decidability. A candidate fragment is the counter language of docs/DECIDABILITY.md: facts
 ∀κ̄. x ≺ y whose coordinates are constants or κ + n, with each counter at most once per side.
 That document decides strictness of the generated world under further side conditions and
-shows undecidability without them. It predates sharp edges 65 and speaks of steps and slots.
+shows undecidability without them. It writes forced invariants as C = ⋃ₖ C₀[σᵏ(ιs)] and carried roots as x.i.
 
 An algorithmic type system. The static system of §9 is declarative. Missing for an algorithm:
 - choosing facts: rules emit facts instead of checking them
