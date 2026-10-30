@@ -525,3 +525,165 @@ gadget is open (§7).
   topics in theory of Turing machines. Annals of Mathematics 74(3), 1961. Store key
   `minsky1961recursive`. Cited for undecidable halting of two-counter machines,
   not re-read here.
+
+## 8  Can the static system violate (M)?
+
+The answer depends on how a recursive box contributes facts. Under the orbit
+reading of §1.3 the static system emits a G that satisfies (D), (R), (C) and (S),
+generates a strict world, and violates (M). Under the reading of Static.v, which
+types a box body at every instance in one world, the same program is rejected, and
+the emitted set is not a finite set of unit schemas. Neither reading is shown here
+to yield the gadget of Theorem 5.
+
+### 8.1  Two readings of "emits"
+
+A derivation emits the atoms its side conditions ask for (ORDERS-SPEC §16, "rules
+emit facts instead of checking them"). The finitary system of Static.v adds one row
+to the table of §1.3. Inside the body of a λ or a box the frame holds the frame
+variable φ with the hypothesis u ≺ φ, and E-App checks x ≺ φ as x ≼_W u (sharp
+edges 56). So every blocking point x in the body of a function with upper point u
+emits one more atom.
+
+```
+E-App/φ  x ≼ u            x blocking in the body of λ or box with upper point u
+```
+
+The readings differ at E-Exp.
+
+- Reading A (orbit, §1.3). G contains the body atoms at the instances in the orbit
+  of the first instance under the substitutions at recursive calls. This is how we
+  read "G closed under the substitutions at recursive calls" in ORDERS-SPEC §9.
+- Reading B (every instance, Static.v). Rule t_box types the body for every
+  instance xs of the box's ιs at the one world W. G must then contain the body
+  atoms at every instance.
+
+The soundness theorem of Static.v covers reading B only, because V-Box asks for
+every instance (sharp edges 52). Reading A is therefore an interpretation of the
+spec that the mechanized proof does not cover. A sound version of A needs V-Box
+restricted to the instances of an orbit.
+
+### 8.2  A program that violates (M) under reading A
+
+The receiver relay holds the channel it received in the previous round while it
+receives the next one, and it acts on the new channel first.
+
+```
+D  = ?∗.Close
+S  = μX. ?(∃ι. D@ι). X
+
+r  : □(∀ι ι′ ζ.^⊥  S@ι ⊗ Close@ι′ ⊸^ζ_⊤ ∗)
+r  = !(f = λp. let (c, d) = p in
+              let (e, c) = recv c in
+              let (v, e) = recv e in let () = v in
+              let () = close d in
+              (force f) ⟨c, e⟩)
+
+t₀ = let (d, c) = recv c in let (v, d) = recv d in let () = v in (force r) ⟨c, d⟩
+```
+
+P-Term types t₀ as an open process with Σ = c : S@(c, 0), where the point constant
+is written c as in ORDERS-SPEC §13. We have not written out the partner. The
+recursive call instantiates (ι, ι′, ζ) by (ι+1, ι[1]+1, ζ), and t₀ forces r at
+((c, 1), (c[0][1], 1), (z, 0)) for a point constant z that no channel uses.
+
+ζ is a ceiling. A loop that blocks at unboundedly many points needs an upper point
+u with u[xs′] ≼ u[xs] at the recursive call (row E-App/φ) that lies above every
+blocking point of the body. Under shift-only instantiation only a bound variable
+with shift 0 or a constant does this.
+
+Write c_k = (c, k) and d_k^j = (c[k][1], j). Round k ≥ 1 runs at the instance
+(c_k, d_{k−1}^1, (z, 0)), and these instances form the orbit. We emit each ≼ of
+row E-App/φ as ≺. Round k emits the following atoms.
+
+```
+recv c     c_k ≺ d_{k−1}^1                              c_k ≺ (z, 0)
+recv e     d_k^0 ≺ d_{k−1}^1,    d_k^0 ≺ c_{k+1}         d_k^0 ≺ (z, 0)
+close d    d_{k−1}^1 ≺ c_{k+1},  d_{k−1}^1 ≺ d_k^1        d_{k−1}^1 ≺ (z, 0)
+call       (z, 0) ≼ (z, 0)
+```
+
+t₀ emits d_0^0 ≺ c_1. With k = κ+1 the round atoms are unit schemas over one
+counter κ ∈ ℕ.
+
+```
+(c, κ+1) ≺ (c[κ][1], 1)
+(c[κ+1][1], 0) ≺ (c[κ][1], 1)          (c[κ+1][1], 0) ≺ (c, κ+2)
+(c[κ][1], 1) ≺ (c, κ+2)                (c[κ][1], 1) ≺ (c[κ+1][1], 1)
+(c, κ+1) ≺ (z, 0)     (c[κ+1][1], 0) ≺ (z, 0)     (c[κ][1], 1) ≺ (z, 0)
+(c[0][1], 0) ≺ (c, 1)                                                  ground, from t₀
+```
+
+**Claim.** W_G is strict, G satisfies (D), (R), (C) and (S), and G violates (M).
+
+*Proof.* Rank c_k by 3k, d_k^0 by 3k+1, d_k^j for j ≥ 1 by 3k+6−1/j, and (z, j) by
+ω+j. Every atom and every program-order step on these points raises the rank. Every
+other point carries program order only. G has no alias schema, so W_G is strict.
+
+Each schema has κ at most once per side, with coefficient 1, so (D) and (C) hold.
+Without alias schemas Sh(G) is the set of prefixes {c, c.1, z}, so (S) holds. The
+first schema puts κ at the offset of c and at the index coordinate of c.1, and every
+other shared κ sits at one of these two positions. So the role r consists of these
+two positions, one per shape, and (R) holds. The offsets of c.1 and of z hold only
+constants and form roles of their own.
+
+The ground fact (c[0][1], 0) ≺ (c, 1) puts constants at both positions of r, so r
+carries a constant. The schema (c[κ+1][1], 0) ≺ (c[κ][1], 1) shares r with shift −1
+and gives the shift graph of r a self-loop of weight −1 at c.1. ∎
+
+Theorem 4 therefore does not cover the static system under reading A. relay is not
+shift-only, because it instantiates ι′ by ι[1]+1. Its orbit lies in L anyway. A
+reading of §1.3 that admits only shift-only boxes rejects relay, but that reading is
+a syntactic restriction on recursion. The family c.1 has one counting coordinate,
+so relay falls in the open case of §7.1.
+
+### 8.3  Reading B rejects relay
+
+At the instance ι′ = ι the first recv blocks at ι while it holds d at ι, and asks
+ι ≺ ι. The ceiling fails as well, because x ≼ ζ would have to hold for every
+point ζ. More generally a body atom s ≺ s′ that some instance makes reflexive is
+never emitted into a strict world, and the instances x and x+1 of a one-variable
+body hold together.
+
+Under reading B the emitted set consists of ground atoms and atoms quantified over
+all points. A send at the bound point ι in a box body emits ι ≺ ι[i] for every
+point ι, which mentions the shapes f, f.i, f.i.i, … for every f. So G is not a
+finite set of unit schemas over finitely many shapes, (M) is not defined for it,
+and Theorems 1 to 5 do not apply. Its strictness problem is of the kind §7.2
+describes.
+
+Which recursive loops reading B types is not settled here. A loop that blocks at
+ι, ι+1, … needs a point term u over the box's variables with ι+n ≼ u for all n at
+every instance, and a bound ceiling variable does not qualify under B.
+
+### 8.4  The gadget
+
+relay realizes one ingredient of Theorem 5 that §6 does not list, a role that
+carries a constant and has a negative shift. It is the cleanup edge
+⟨h_t; κt+1, 0, 0⟩ ≺ ⟨h_t; κt, 0, 0⟩ in one coordinate. It does not realize the
+gadget. Four pieces are missing.
+
+1. Three counting coordinates in one family. The gadget uses points
+   a[t][q][x][1][y][1] whose index coordinates t, x and y move independently. Under
+   reading A each counter comes from a box. This needs three nested recursive boxes
+   whose bodies act on channels received at depth 3 and hold the channel of the
+   previous round at each level, as relay does at depth 1. §1.3 does not define the
+   orbit of nested boxes with slot substitutions such as ι′ ↦ ι[1]+1.
+2. Zero test and decrement at one coordinate. The zero branch needs a schema with
+   the constant 0 at x while t and y are shared. The first action on a freshly
+   received channel produces such constants. The decrement needs x shared between
+   the channels of rounds t and t+1 with shift −1, from a lockstep inner loop over
+   two received channels. Under reading A both code paths emit their atoms at every
+   orbit instance. This matches the gadget only if the atoms of each path realize
+   exactly its edge.
+3. No extra cycles. Each blocking action emits an atom towards every held head and
+   towards the ceiling, and each send emits ι ≺ ι[i]. A gadget edge may become a
+   chain of such atoms. A reduction must show that no combination of these atoms
+   closes a cycle that the run of M does not close.
+4. A computable map M ↦ P_M with P_M well typed iff M does not halt. With pieces 1
+   to 3 this makes type checking under reading A undecidable, beyond the
+   undecidability of strictness for arbitrary schema sets.
+
+Under reading A, typability does not imply (M). Decidable type checking then needs
+one of three things. (M) becomes a premise of the static system, or a procedure
+decides the emitted sets beyond Theorem 4, or a proof shows that programs never emit
+the gadget. Under reading B the question is not posed in L, and §7.2 applies.
