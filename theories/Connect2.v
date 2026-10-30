@@ -12,6 +12,21 @@ Proof.
   - right. exists c0, o. rewrite lookup_fmap. by rewrite (left_id_L None (∪)) in Ho.
 Qed.
 
+Lemma echsubst_msswap_same a b E : echsubst a b (msswap a b E) = echsubst a b E.
+Proof.
+  induction E as [|e E IH] using gmultiset_ind.
+  - unfold msswap. by rewrite gmultiset_map_empty.
+  - rewrite msswap_disj_union, msswap_singleton, !echsubst_disj_union, !echsubst_singleton, IH.
+    by rewrite chsubst_eswap_same.
+Qed.
+
+Lemma gswap_minus_other a b (C : gset chan) :
+  a ∈ C → b ∈ C → gswap a b (C ∖ {[b]}) = C ∖ {[a]}.
+Proof.
+  intros Ha Hb. apply set_eq. intros x. rewrite elem_of_gswap', !elem_of_difference, !elem_of_singleton.
+  unfold cswap. repeat case_decide; subst; naive_solver.
+Qed.
+
 Section steps2.
   Context (n' : nat) (T : ty) (HT : prim T).
   Context (IHo : ∀ j, j ≤ n' → conn_at j T).
@@ -475,5 +490,37 @@ Section steps2.
       eapply Prel_down; [|exact HP1']. lia.
     - assert (Σ2n ∪ ΣC2n = recv_env Σr2 Θ2) as -> by (subst ΣC2n; by apply map_difference_union).
       exact HP2'.
+  Qed.
+  (** The giving clause for a link of component 1 that removes a
+      channel restricted in component 1. *)
+  Lemma link_own F1 e c d e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C1 →
+    Prel (S n') W Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
+  Proof.
+    intros HE Hst Hc.
+    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
+    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
+    pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    assert (proc_step (C1, E1) PTau (C1 ∖ {[c]}, echsubst c d (F1 ⊎ {[+ e' +]}))) as Hs1
+      by (rewrite HE; by apply PStepLink).
+    pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hs1) as [_ Hg].
+    assert (ptau_link (C1, E1) (C1 ∖ {[c]}, echsubst c d (F1 ⊎ {[+ e' +]}))) as Hl.
+    { exists C1, F1, e, c, d, e'. by rewrite HE. }
+    pose proof (Hg Hl ltac:(simpl; rewrite dom_union_L, HC0; clear -HC1Σ1 HC10; set_solver)) as HP1'.
+    assert (Prel (S n') W (Σ2 ∪ ΣC') TB (C2, echsubst c d E2)) as HP2'.
+    { destruct (decide (d = c)) as [->|Hdc]; [by rewrite echsubst_refl|].
+      apply Prel_junk; [| |intros Hd'| |exact HP2].
+      - rewrite dom_union_L, HC0'. clear -Hc HC1Σ2 HC10. set_solver.
+      - clear -Hc HC12. set_solver.
+      - rewrite dom_union_L, HC0'. clear -Hd' HC2Σ2 HC20. set_solver.
+      - done. }
+    assert (C ∖ {[c]} = (C1 ∖ {[c]}) ∪ C2 ∪ C0) as -> by (clear -Hc HC12 HC10; set_solver).
+    assert (echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]}) = echsubst c d (F1 ⊎ {[+ e' +]}) ⊎ echsubst c d E2)
+      as -> by (rewrite !echsubst_disj_union; multiset_solver).
+    apply (IHi W Σ1 Σ2 ΣC ΣC' C0 _ C2 _ _ TA TB); [|done| |exact HP1'|exact HP2'].
+    - rewrite <-Hm, HE, !msize_disj_union, !msize_echsubst, !msize_disj_union, !msize_singleton.
+      pose proof (tstep_giving_size _ _ _ Hst I). lia.
+    - split; try done; clear -HC1Σ2 HC1Σ1 HC10 HC12; set_solver.
   Qed.
 End steps2.
