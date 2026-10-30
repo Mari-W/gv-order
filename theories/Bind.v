@@ -240,3 +240,108 @@ Proof.
       unfold tenv_entry. simpl. rewrite Ho. destruct o; by eexists.
     + exfalso. destruct Hstep as (c & d & ? & ? & ? & ? & ? & ? & -> & _). set_solver.
 Qed.
+
+(** ** Readiness of K[e] *)
+
+Lemma lt_le_W W x y z : world_wf W → w_lt W x y → w_le W y z → w_lt W x z.
+Proof.
+  intros HW Hxy [Hyz|Hyz].
+  - eapply (wf_lt_eq _ HW); [apply HW|exact Hxy|exact Hyz].
+  - eapply (wf_lt_trans _ HW); eauto.
+Qed.
+
+Lemma eq_le_W W x y z : world_wf W → w_le W x y → w_eq W y z → w_le W x z.
+Proof.
+  intros HW [Hxy|Hxy] Hyz.
+  - left. eapply (wf_eq_trans _ HW); eauto.
+  - right. eapply (wf_lt_eq _ HW); [apply HW|exact Hxy|exact Hyz].
+Qed.
+
+Lemma entry_agree R Θ Θ1 Θ2 c b :
+  tenv_comp R Θ Θ1 Θ2 → c ∉ dom Θ2 → tenv_entry Θ (c, b) = tenv_entry Θ1 (c, b).
+Proof.
+  intros Hc Hc2. unfold tenv_entry. simpl.
+  rewrite (comp_lookup R Θ Θ1 Θ2); [done|done|by apply not_elem_of_dom].
+Qed.
+
+Section bind_ready.
+  Context (n : nat) (W : world) (Θ Θ1 Θ2 : tenv) (Th : ty) (F H : gset point).
+  Context (f : frame) (e : expr).
+  Context (Hf : frame_val f) (Hv : ¬ is_val e) (HW : strict W).
+  Context (Hc : tenv_comp (w_eq W) Θ Θ1 Θ2) (Hh : heads_above W H Θ2).
+  Context (HE : Erel (S n) W Θ1 Th (F ∪ H) e).
+
+  Lemma br_up k : offered_t Θ1 e k → offered_t Θ (fill_frame f e) k ∧ k.1 ∉ dom Θ2.
+  Proof.
+    intros (σ & e' & Hst & Hsel).
+    assert (k.1 ∉ dom Θ2) as Hk.
+    { intros Hin. apply (subjs_free _ _ _ _ _ _ _ _ _ _ _ HW Hc Hh HE Hst (k.1)); [|done].
+      by apply (selects_subj _ _ _ Hsel). }
+    split; [|done]. exists σ, (fill_frame f e'). split; [by apply tstep_fill|].
+    eapply selects_agree; [|exact Hsel]. intros y Hy.
+    apply (comp_lookup _ _ _ _ _ Hc), not_elem_of_dom.
+    exact (subjs_free _ _ _ _ _ _ _ _ _ _ _ HW Hc Hh HE Hst y Hy).
+  Qed.
+
+  Lemma br_down k : offered_t Θ (fill_frame f e) k → offered_t Θ1 e k ∧ k.1 ∉ dom Θ2.
+  Proof.
+    intros (σ & E' & Hst & Hsel).
+    destruct (tstep_fill_inv _ _ _ _ Hf Hv Hst) as (e' & Hst' & ->).
+    assert (k.1 ∉ dom Θ2) as Hk.
+    { intros Hin. apply (subjs_free _ _ _ _ _ _ _ _ _ _ _ HW Hc Hh HE Hst' (k.1)); [|done].
+      by apply (selects_subj _ _ _ Hsel). }
+    split; [|done]. exists σ, e'. split; [done|].
+    eapply selects_agree; [|exact Hsel]. intros y Hy. symmetry.
+    apply (comp_lookup _ _ _ _ _ Hc), not_elem_of_dom.
+    exact (subjs_free _ _ _ _ _ _ _ _ _ _ _ HW Hc Hh HE Hst' y Hy).
+  Qed.
+
+  Lemma br_stable : stable_t (fill_frame f e) → stable_t e.
+  Proof. intros Hs α e' Hst. exact (Hs _ _ (tstep_fill _ _ _ _ Hf Hst)). Qed.
+
+  Lemma bind_ready : ready_t W Θ (fill_frame f e) ∧ frame_t W Θ (fill_frame f e) F.
+  Proof.
+    pose proof HE as HE0. apply Erel_S_iff in HE0 as (Hval & Hrdy & _).
+    assert (¬ irred e) as Hni by (intros Hi; apply Hv; by eapply Vrel_val, Hval).
+    destruct (Hrdy Hni) as [Hr Hfr].
+    split.
+    - intros Hs. pose proof (br_stable Hs) as Hse. destruct (Hr Hse) as [_ Hab].
+      destruct (tstep_progress e) as [Hi|(α & e' & Hst)]; [by destruct Hni|].
+      pose proof (Hse _ _ Hst) as Hα. destruct α as [|σ|c|w]; try done.
+      destruct (offered_some _ _ _ _ _ _ _ _ HE Hst) as [k0 Hk0].
+      destruct (br_up k0 Hk0) as [Hk0' Hk0f].
+      split; [intros Hno; exfalso; exact (Hno k0 Hk0')|].
+      intros [c b] ent Hent Hnot.
+      destruct (decide (c ∈ dom Θ2)) as [Hin|Hnin].
+      + assert (∃ ent0, tenv_entry Θ1 k0 = Some ent0) as [ent0 Hent0].
+        { destruct Hk0 as (σ0 & e0 & Hst0 & Hsel0). by apply (selects_entry _ σ0). }
+        assert (∃ h, h ∈ H ∧ w_le W h ent.2) as (h & HhH & Hle).
+        { apply elem_of_dom in Hin as [o2 Ho2]. destruct Hc as [Hj Hd].
+          pose proof (Hj c) as Jc. unfold tenv_entry in Hent. simpl in Hent. rewrite Ho2 in Jc.
+          destruct (Θ1 !! c) as [o1|] eqn:Ho1, (Θ !! c) as [o|] eqn:Ho;
+            inversion Jc; subst; try done.
+          all: first [ (apply (Hh (c, b)); unfold tenv_entry; simpl; rewrite Ho2; done) | lazymatch type of Ho1 with _ = Some (One ?e1) => lazymatch type of Ho2 with _ = Some (One ?e2) =>
+                     destruct (Hh (c, false) e2) as (h & Hh1 & Hh2);
+                       [unfold tenv_entry; simpl; by rewrite Ho2|];
+                     destruct (Hd c e1 e2 Ho1 Ho2) as [Hq _];
+                     exists h; split; [done|];
+                     destruct b; simplify_eq; first
+                       [done|eapply eq_le_W; [apply HW|exact Hh2|by apply (wf_eq_sym _ (proj1 HW))]]
+                 end end ]. }
+        exists k0, ent0. split_and!; [done| |].
+        * rewrite <-Hent0. destruct k0. by apply (entry_agree _ _ _ _ _ _ Hc).
+        * eapply lt_le_W; [apply HW| |exact Hle].
+          exact (Hfr Hse k0 ent0 Hk0 Hent0 h ltac:(set_solver)).
+      + rewrite (entry_agree _ _ _ _ _ _ Hc) in Hent by done.
+        destruct (Hab (c, b) ent Hent) as (k' & ent' & Ho' & He' & Hlt).
+        { intros Ho. apply Hnot. exact (proj1 (br_up _ Ho)). }
+        destruct (br_up k' Ho') as [Ho'' Hk'f].
+        exists k', ent'. split_and!; [done| |done].
+        rewrite <-He'. destruct k'. by apply (entry_agree _ _ _ _ _ _ Hc).
+    - intros Hs k ent Ho Hent y Hy.
+      destruct (br_down k Ho) as [Ho' Hkf].
+      rewrite (surjective_pairing k), (entry_agree _ _ _ _ _ _ Hc) in Hent by done.
+      rewrite <-surjective_pairing in Hent.
+      exact (Hfr (br_stable Hs) k ent Ho' Hent y ltac:(set_solver)).
+  Qed.
+End bind_ready.
