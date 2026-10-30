@@ -79,8 +79,8 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       unlimited U →
       sem_rules W Θ (Some U :: Some U :: Δ) F e T →
       sem_rules W Θ (Some U :: Δ) F (rename pred e) T
-  | sr_conv Θ Δ F e T T' :                               (* E-Conv *)
-      teq T T' → sem_rules W Θ Δ F e T → sem_rules W Θ Δ F e T'.
+  | sr_conv Θ Δ F e T T' :                               (* E-Conv, ≈_W (sharp edges 67) *)
+      teqW W T T' → sem_rules W Θ Δ F e T → sem_rules W Θ Δ F e T'.
 
 (** E-Force is E-App at the constant force. *)
 Lemma sem_rules_force W Θ Δ F e m C ub T xs :
@@ -137,5 +137,5 @@ Proof.
     intros W1 xs F' HW1 Hxs HC HK Hub'. apply IH; [done..| |apply HW1]. by apply Hb.
   - eapply sem_typed_wk; [done|by apply IH].
   - apply sem_typed_contract; [done|by apply IH].
-  - eapply sem_typed_teq; [done|by apply IH].
+  - eapply sem_typed_tconv; [done|by apply IH].
 Qed.

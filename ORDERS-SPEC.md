@@ -1,4 +1,4 @@
-# Order-based GV♯: specification (state of 2026-10-30, after sharp edges 65)
+# Order-based GV♯: specification (state of 2026-10-30, after sharp edges 67)
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
@@ -307,8 +307,8 @@ W          a well-formed world over point constants, the index of the judgment
            One lemma carries a derivation along a map of the generators. It gives point
            substitution (typed_pinst) and frame instantiation into a world (typed_sem_rules).
 ≺_Γ, ≡_Γ   Γ ⊢ x ≺ y and Γ ⊢ x ≡ y between points. They do not depend on Φ. Every comparison
-           of points in the static system reads them: E-Ch, link, the payload of send and recv,
-           duality of composed ends.
+           of points in the static system reads them: E-Ch, link, E-Conv (which moves the payload
+           of send and recv), duality of composed ends.
 {u} ≺ F    Γ ⊢ u ≺ a for every point and the frame variable a of F.
 known      a point is known when W knows it or its root is a root of an instance point of a
            hypothesis in Ψ (sharp edges 59).
@@ -354,7 +354,13 @@ E-Exp      ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊢^{μ}_{Ψ, (C,ιs)}
            those of the current one. ι ≺ ι′ does not give ι+1 ≺ ι′+1 (rr_call_underivable).
            ιs are point variables in the premise, typed once (57). E-Const at send and recv asks
            the payload ∃ιs.T to have no free point variable beyond ιs, the "all points of T bound" of §4 (57)
-E-Weak, E-Contract, E-Conv      as in the paper, with ⊢^F
+E-Weak, E-Contract   as in the paper, with ⊢^F
+E-Conv     Θ; Δ ⊢^F t : T     T ≈_Γ T′   ⇒   Θ; Δ ⊢^F t : T′               (sharp edges 67)
+           ≈_Γ is ≈ with the points of session types and the points u, ℓ of arrows compared
+           by ≡_Γ. Boxes are compared by ≈ with their points unchanged, because their points
+           live under the binder of their ιs. With ≡_Γ replaced by equality it is the paper's
+           rule. Soundness: under an instance whose hypotheses hold in W₁, ≡_Γ maps into ≡ of W₁,
+           and type point conversion (§10) transports V, E and P along ≈_W₁.
 
 P-Term     prim T    Σ, Θ_B; · ⊢^∅ t : T    Θ_B = both ends of every channel in C₀, some points
            ⇒   Σ ⊢_W (C₀, {t}) : T
@@ -419,7 +425,7 @@ E-Force     Θ; Δ ⊨^F t : □(∀ιs. C. ∗ ⊸^u_⊤ T)    xs known, C[xs/�
             ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
-E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
+E-Conv      Θ; Δ ⊨^F t : T,   T ≈_W T′   ⇒   Θ; Δ ⊨^F t : T′          (sharp edges 67)
             Rocq: the elimination rules go through Erel_bind (Bind.v, sharp edges 48). The hole runs
             under frame F ∪ H, where every entry of the context's environment lies at or above H.
             The semantic condition behind H: the environment of v ∈ V⟦Θ ⊢ T⟧ lies at or above
@@ -429,7 +435,8 @@ E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
             sem_typed_lam (E-Abs; premise for every later world W₁ and F′ with {u} ≺_{W₁} F′),
             sem_typed_inj1/2, sem_typed_letu, sem_typed_letp, sem_typed_case, sem_typed_pair,
             sem_typed_wk, and E-App as sem_typed_app_gen from app_good, which Erel_app_noforce
-            gives for every function value but force. E-Conv is sem_typed_teq (Convert.v).
+            gives for every function value but force. E-Conv is sem_typed_tconv (Conversion.v),
+            with sem_typed_teq (Convert.v) its case T ≈ T′.
             Proved in TermRules2.v: Erel_app_force, hence app_good_all and E-App for
             every function (sem_typed_app); E-Force (sem_typed_force, at an instance xs with
             {u[xs/ιs]} ≺_W F); E-Exp (sem_typed_box, premise for every later world, xs and F′
@@ -520,6 +527,11 @@ Free constraints (65, 66): a recursive call gets C at its instance ys from the b
 hypothesis by bcs_hold_sub, or by bcs_hold_self when C[ys] ⊆ C. soundness, fundamental,
 fundamental_proc, Prel_connect_n and the ten deadlock_free examples of §13 are closed under
 the global context.
+E-Conv up to ≈_Γ (67): t_conv asks steq W Ψ T T′, and teq_steq gives the old premise.
+steq_teqW maps it to ≈_{W₁} under an instance, sr_conv takes ≈_W, and sem_typed_tconv is
+rel_tconv in every later world. The forwarder types (fw_deadlock_free). Its world relates
+slots by ≡, so its strictness uses wgen_strict_cong, whose name map respects slots without
+commuting with them. The eleven deadlock_free examples and the four theorems stay closed.
 
 
 ## 13  Examples
@@ -542,28 +554,29 @@ bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,
 ```
 
 Rocq types request/reply and the relay with these infinite constraints (sharp edges 66).
-The three programs below are the ones 65 expected. Rocq types two of them.
+The three programs below are the ones 65 expected. Rocq types all three.
 
 ```
 tail call       typable, no spawn              □(∀ι ζ. {ι+k ≺ ζ ∣ k ∈ ℕ}. ∗ ⊸^⊥_⊤ (S@ι ⊸^ζ_⊤ ∗)),
                                                the tail call at (ι+1, ζ) asks ζ ≺ μ, a frame hypothesis,
                                                the world has (a,k) ≺ (z,0) for every k (tc_deadlock_free)
-forwarder       not typable                    receives d on one channel and sends it on another inside a box,
-                                               C ∋ (ι+k).1 ≡ (ι′+k).1 is never read (sharp edges 66)
+forwarder       typable, recursion by spawn    receives d on one channel and sends it on another inside a box,
+                                               C ∋ (ι+k).1 ≡ (ι′+k).1, E-Conv moves d from D@ι.1 to D@ι′.1
+                                               (sharp edges 67, fw_deadlock_free)
 received chain  typable, recursion by spawn    call at ι.1, C = {ι.1ⁿ + 1 ≺ ι.1ⁿ⁺¹ ∣ n ∈ ℕ},
                                                ι.1ⁿ = ι.1.….1 (n times), upper point ι+1 (ch_deadlock_free)
 ```
 
-The forwarder fails at send. recv gives d the type D@ι.1, send at ι′ asks D@ι′.1, and no rule
-of §9 moves the point of a variable's type along Γ ⊢ ≡. E-Conv compares points by equality,
-and E-Ch converts channel names only. The comparison of "the payload of send and recv" that §9
-reads in Γ ⊢ ≡ has no rule behind it. The missing rule is E-Conv up to ≈ with points compared
-by Γ ⊢ ≡.
+The forwarder failed at send before sharp edges 67. recv gives d the type D@ι.1 and send at ι′
+asks D@ι′.1. E-Conv compared points by equality then, so the fact ι.1 ≡ ι′.1 of C was never read.
+E-Conv up to ≈_Γ reads it. In the closed program a producer sends fresh channels on a, the
+forwarder passes them from a to b, and a consumer closes them. The producer and the consumer
+share C = {ι+k ≺ (ι+k).1, (ι+k).1 ≺ ι+k+1 ∣ k ∈ ℕ}, and the world has (a,k).1 ≡ (b,k).1 for
+every k.
 
 ## 14  Open
 
 - Deferred by the author: order that depends on the run (one W per component, docs/DESIGN-REVIEW.md C2).
-- The forwarder of §13 needs E-Conv up to ≈ with points compared by Γ ⊢ ≡ (sharp edges 66). Decision for the author.
 - A constraint has finitely many roots in Rocq (the roots of its outer points). §4 does not say so. O-New needs it, because a type with infinitely many constant roots leaves no fresh point.
 - Rocq admits box bodies that are not thunks. Their V is empty, but the grammar of §4 has only the thunk form.
 

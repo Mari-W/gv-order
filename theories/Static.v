@@ -220,6 +220,38 @@ Proof.
   - by apply (wf_eq_slot _ HW).
 Qed.
 
+(** ** Types up to Γ ⊢ ≡ (sharp edges 67)
+
+    [steq W Ψ T U] is ≈ with the points of T outside session types and
+    boxes compared by Γ ⊢ ≡ ([seqs W Ψ]). A box is compared by ≈ with
+    its points on the nose, because its points live under the binder
+    of its ιs. E-Conv reads it. [teq_steq] makes ≈ a special case,
+    and [steq_teqW] carries it into ≈_W₁ of a world where the
+    hypotheses hold. *)
+Fixpoint steq (W : world) (Ψ : hyps) (T U : ty) : Prop :=
+  match T, U with
+  | TUnit, TUnit => True
+  | TLolli ub lb T1 T2, TLolli ub' lb' U1 U2 =>
+      opt_rel (seqs W Ψ) ub ub' ∧ opt_rel (seqs W Ψ) lb lb' ∧
+      steq W Ψ T1 U1 ∧ steq W Ψ T2 U2
+  | TProd T1 T2, TProd U1 U2 => steq W Ψ T1 U1 ∧ steq W Ψ T2 U2
+  | TSum T1 T2, TSum U1 U2 => steq W Ψ T1 U1 ∧ steq W Ψ T2 U2
+  | TBox n C T1, TBox n' C' U1 => n = n' ∧ C = C' ∧ teq T1 U1
+  | TSess s x, TSess r y => seqs W Ψ x y ∧ seq s r
+  | _, _ => False
+  end.
+
+Lemma teq_steq W Ψ T : ∀ U, teq T U → steq W Ψ T U.
+Proof.
+  unfold teq. induction T; intros [] H; simpl in *; try done.
+  - destruct H as (-> & -> & ? & ?). split_and!; auto.
+    + destruct ub0; simpl; [apply se_refl|done].
+    + destruct lb0; simpl; [apply se_refl|done].
+  - destruct H. split; auto.
+  - destruct H. split; auto.
+  - destruct H as [<- ?]. split; [apply se_refl|done].
+Qed.
+
 Lemma slt_nil W x y : world_wf W → slt W [] x y → w_lt W x y.
 Proof.
   intros HW H. change (match NP x, NP y with NP x, NP y => w_lt W x y | _, _ => True end).
@@ -963,6 +995,40 @@ Section transfer.
     hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) → tenv_comp (seqs W Ψ) Θ Θ1 Θ2 →
     tenv_comp (seqs W1 Ψ') (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2).
   Proof. intros HΨ. apply tenv_comp_pinst. intros x y. by apply (seqs_pinst_s Ψ). Qed.
+
+  (** E-Conv up to Γ ⊢ ≡ survives substitution (sharp edges 67). *)
+  Lemma steq_pinst_s Ψ Ψ' T : ∀ U,
+    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) →
+    steq W Ψ T U → steq W1 Ψ' (pinst_ty σ T) (pinst_ty σ U).
+  Proof.
+    intros U HΨ. revert U. induction T; intros [] H; simpl in *; try done.
+    - destruct H as (Hu & Hl & ? & ?). split_and!; auto.
+      + destruct ub, ub0; simpl in *; try done. by apply (seqs_pinst_s Ψ).
+      + destruct lb, lb0; simpl in *; try done. by apply (seqs_pinst_s Ψ).
+    - destruct H. split; auto.
+    - destruct H. split; auto.
+    - destruct H as (<- & <- & ?). split_and!; [done|done|by apply eqT_pinst].
+    - destruct H as [? ?]. split; [by apply (seqs_pinst_s Ψ)|done].
+  Qed.
+
+  Lemma steq_teqW Ψ T : ∀ U,
+    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) →
+    steq W Ψ T U → teqW W1 (pinst_ty σ T) (pinst_ty σ U).
+  Proof.
+    pose proof (wext_wf _ _ HW1) as HW1'.
+    intros U HΨ. revert U. induction T; intros [] H; simpl in *; try done.
+    - destruct H as (Hu & Hl & ? & ?). split_and!; auto.
+      + destruct ub, ub0; simpl in *; try done.
+        apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
+      + destruct lb, lb0; simpl in *; try done.
+        apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
+    - destruct H. split; auto.
+    - destruct H. split; auto.
+    - destruct H as (<- & <- & ?). split_and!; [done|apply bcs_rel_refl|].
+      apply teq_teqW. by apply eqT_pinst.
+    - destruct H as [? ?]. split; [|done].
+      apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
+  Qed.
 End transfer.
 
 (** ** Substitution in environments, hypotheses and frames *)
@@ -1161,8 +1227,8 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       unlimited U →
       typed W Φ Ψ Θ (Some U :: Some U :: Δ) F e T →
       typed W Φ Ψ Θ (Some U :: Δ) F (rename pred e) T
-  | t_conv Φ Ψ Θ Δ F e T T' :                           (* E-Conv *)
-      teq T T' → typed W Φ Ψ Θ Δ F e T → typed W Φ Ψ Θ Δ F e T'.
+  | t_conv Φ Ψ Θ Δ F e T T' :                           (* E-Conv, ≈ up to Γ ⊢ ≡ *)
+      steq W Ψ T T' → typed W Φ Ψ Θ Δ F e T → typed W Φ Ψ Θ Δ F e T'.
 
 (** E-Force is E-App at the constant force. The instance must meet the
     box's constraint, every fact read from W and the hypotheses Ψ
@@ -1535,7 +1601,7 @@ Proof.
       intros C0 xs0 Hg. apply list_elem_of_singleton in Hg. injection Hg as -> ->. done.
   - eapply sr_wk; [by apply lenv_wk_pinst|by apply IH].
   - cbn [lenv_pinst]. apply sr_contract; [by apply unlimited_pinst|by apply (IH W1 ρ σ)].
-  - eapply sr_conv; [by apply eqT_pinst|by apply IH].
+  - eapply sr_conv; [by apply (steq_teqW W W1 σ HW HW1 Ψ)|by apply IH].
 Qed.
 
 
@@ -1669,7 +1735,7 @@ Proof.
     exact H.
   - eapply t_wk; [by apply lenv_wk_pinst|by apply IH].
   - cbn [lenv_pinst]. apply t_contract; [by apply unlimited_pinst|by apply (IH σ Ψ')].
-  - eapply t_conv; [by apply eqT_pinst|by apply IH].
+  - eapply t_conv; [by apply (steq_pinst_s W W σ Hwf HWW Ψ)|by apply IH].
 Qed.
 
 

@@ -433,6 +433,16 @@ Lemma Prel_tconv n W Σ T T' p :
   world_wf W → teqW W T T' → Prel n W Σ T p → Prel n W Σ T' p.
 Proof. apply (proj2 (proj2 (rel_tconv n))). Qed.
 
+(** The compositionality lemma for E-Conv up to aliases: semantic
+    typing transports along ≈_W, which persists into every later world
+    (sharp edges 67). *)
+Lemma sem_typed_tconv W Θ Δ F e T T' :
+  teqW W T T' → sem_typed W Θ Δ F e T → sem_typed W Θ Δ F e T'.
+Proof.
+  intros Ht He n W' Θ' Θ'' γ HW Hd Hg. eapply Erel_tconv; [apply HW| |by apply (He n W' Θ')].
+  eapply teqW_mono; [|exact Ht]. intros x y. by apply wext_eq.
+Qed.
+
 (** A payload typed at P[x] is typed at P[y] for every alias y of x. *)
 Lemma Vrel_payload n W Θ m U x y v :
   world_wf W → w_eq W x y → Vrel n W Θ (payload_at m U x) v →

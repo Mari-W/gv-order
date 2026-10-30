@@ -698,6 +698,40 @@ the static system and waits for the author.
 Slots stay 0-based in Rocq (pt_slot x i, slots x m = x[0], …, x[m−1]). The
 spec's carried root x.i with i ≥ 1 is pt_slot x (i−1).
 
+**67. E-Conv up to Γ ⊢ ≡ (decided by the author 2026-10-30, Rocq done).**
+E-Conv now converts T to T′ when they agree up to ≈ and Γ ⊢ ≡ relates
+their points. The relation is steq W Ψ (Static.v). It compares the
+points of session types and the upper and lower points of arrows by
+seqs W Ψ, session types by ≈, and boxes by ≈ with points on the nose.
+A box keeps syntactic points because its points live under the binder
+of its ιs, where Γ ⊢ ≡ of the outer context says nothing. teq_steq makes
+the old rule a special case, and the examples reach it through
+conv_sess. Soundness is steq_teqW. Under an instantiation σ whose
+hypotheses hold in W₁, seqs_pinst maps Γ ⊢ ≡ to ≡ of W₁, and
+w_eq_pteqW turns that into ≈_W₁, because in a well-formed world only
+ground points have proper aliases. sr_conv in SemRules.v now takes ≈_W
+in place of ≈. Its compositionality lemma sem_typed_tconv (Conversion.v)
+is rel_tconv in every later world, with ≈_W carried along W ⊑ W′ by
+teqW_mono. typed_pinst carries steq along σ by steq_pinst_s. No
+statement of soundness, of the fundamental theorems or of an existing
+composition lemma changed.
+
+The forwarder of 66 types (fwd_typed in OrdExamples.v). Its box has
+Cf = {ι+k ≺ ι′+k, ι′+k ≺ ι+k+1, ι′+k ≺ (ι′+k)[0], (ι+k)[0] ≡ (ι′+k)[0] ∣ k}.
+recv gives d the type Close@ι[0], E-Conv moves it to Close@ι′[0] along
+the ≡ fact of Cf, and the send at ι′ asks ι′ ≺ ι′[0] for its payload.
+The recursive call at (ι+1, ι′+1) asks Cf one round later, which Cf
+contains. fw_main runs a producer, the forwarder and a consumer over
+two channels a and b. The producer and the consumer share
+Cp = {ι+k ≺ (ι+k)[0], (ι+k)[0] ≺ ι+k+1 ∣ k}, and the producer creates
+its payload at the slot with new. The world Wfw has (b,k)[0] ≡ (a,k)[0]
+for every k. wgen_strict needs a name map that commutes with slots, and
+no such map identifies (b,k)[0] with (a,k)[0] without identifying (b,k)
+with (a,k). wgen_strict_cong asks only that the map respects slots,
+cn x = cn y ⇒ cn x[i] = cn y[i]. fw_cn reads (b,k)[0] as (a,k)[0] at
+every depth, and the rank orders (a,k), (b,k), (a,k)[0] by 3k, 3k+1,
+3k+2. fw_deadlock_free is closed under the global context.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
