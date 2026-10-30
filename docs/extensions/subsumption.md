@@ -1,8 +1,21 @@
 # D. Subsumption of related systems
 
-Goal. Every program that a related deadlock-free system types also types here,
-through a translation of its derivations. The paper can then say that orders
-generalize priorities, trees and acyclic worlds.
+Goal. Every program that a related deadlock-free system types is deadlock free
+by our relation. The paper can then say that orders generalize priorities, trees
+and acyclic worlds.
+
+## Two routes
+
+1. Translation into the static system. Map each source derivation to a
+   derivation of spec §9 at a world built from the source annotations. Soundness
+   then follows from ours.
+2. Direct fundamental theorem. Interpret the source judgment in our relation and
+   prove each source rule as a compatibility lemma. This is adequacy in the sense
+   of the paper. It needs no detour through spec §9 and states the result in the
+   source system's own terms.
+
+The study on branch orders-old-backup (docs/DESIGN-pgv-fundamental.md) chose
+route 2 for PGV. Route 1 is cheaper where spec §9 already has matching rules.
 
 ## Targets
 
@@ -47,6 +60,40 @@ Kobayashi's obligation and capability levels are the strongest target among the
    world of step 1. Fork in PGV is derived from new and spawn, as here.
 4. Statement. If ⊢_PGV p, then ⊢_W p for the world W of its priorities, and W is
    strict.
+
+## What the earlier PGV study found
+
+The study on orders-old-backup designed route 2 on the channel-named priority
+relation that the current design replaced. Its findings that carry over follow.
+
+- PGV has no recursion and no recursive types, so its value relation is a
+  structural recursion on the PGV type.
+- The arrow bounds split cleanly. p is read off the closure, because T-Lam sets
+  it to the minimum priority of the captured environment. q is quantified over
+  frames, because PGV only uses it as "everything I do stays below what you still
+  hold". This is exactly our lower point ℓ and our frame F.
+- T-App is the hardest rule. It needs an expression relation with frames and a
+  bind lemma for it. The current design has both (E with F, Erel_bind).
+- Branching (T-CaseSum) causes no trouble under the direct route.
+
+Its walls came from the old design. The current design should remove them, which
+has to be checked.
+
+- W-A. A carrier and the channel it delegates could not lie in one cut interface,
+  because the old composition demanded injective priorities per region. Worlds
+  now speak about points, nothing asks distinct instants to differ (spec §15),
+  and P-Connect cuts any set of channels.
+- W-B. A channel captured in a sent closure was invisible, because the old
+  annotation map was blind under arrows. Arrows now carry ℓ and u, so a sent
+  closure exposes its bounds through V-Abs.
+- D6. Global distinctness of priorities. The study already showed it liftable by
+  a normalization at the front end.
+
+The study estimated 3850 lines on the old base. Its stages 1 and 2 (the layer and
+the bind lemma) exist in the current core, which should cut the estimate roughly
+in half. docs/LITERATURE.md on the same branch holds a rule-by-rule comparison of
+PGV and a mapping plan for MPGV. Its PGV theorem numbers are off by one in
+several places.
 
 ## Outline for GV♯
 
