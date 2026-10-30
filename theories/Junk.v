@@ -2219,3 +2219,367 @@ Section fuse_helpers2.
       + intros f1 f2 A B. congruence.
   Qed.
 End fuse_helpers2.
+
+(** ** Fusion: two dual, aliased ends of distinct channels become the
+    two ends of one channel *)
+
+Definition fused (c d : chan) (Θ : tenv) : Prop :=
+  ∃ e1 e2, Θ !! c = Some (One e1) ∧ Θ !! d = Some (One e2).
+
+Global Instance fused_dec c d Θ : Decision (fused c d Θ).
+Proof.
+  unfold fused. destruct (Θ !! c) as [[]|], (Θ !! d) as [[]|];
+    first [left; by eexists _, _ | right; intros (? & ? & ? & ?); congruence].
+Defined.
+
+(** A move is junk, a renaming, or a fusion. *)
+Lemma move_cases W c d Θ Θ' :
+  tenv_move W c d Θ Θ' →
+  (Θ !! c = None ∧ Θ' = Θ) ∨ (Θ !! d = None ∧ Θ' = tenvswap c d Θ) ∨ fused c d Θ.
+Proof.
+  intros Hm. destruct (Θ !! c) as [oc|] eqn:Ec.
+  - destruct (Θ !! d) as [od|] eqn:Ed.
+    + right; right. pose proof Hm as (_ & _ & Hj & _). rewrite Ec, Ed in Hj.
+      inversion Hj; subst; by eexists _, _.
+    + right; left. split; [done|]. by apply (move_rename_eq W c d).
+  - left. split; [done|]. by apply (move_none W c d).
+Qed.
+
+Lemma Vrel_move_easy n W Θ Θ' T v c d :
+  c ≠ d → tenv_move W c d Θ Θ' → ¬ fused c d Θ →
+  Vrel n W Θ T v → Vrel n W Θ' T (chsubst c d v).
+Proof.
+  intros Hcd Hm Hf HV. destruct (move_cases W c d Θ Θ' Hm) as [[Hc ->]|[[Hd ->]|?]]; [| |done].
+  - rewrite chsubst_id; [done|]. rewrite (Vrel_fchans _ _ _ _ _ HV). by apply not_elem_of_dom.
+  - apply Vrel_rename; [by apply not_elem_of_dom|done].
+Qed.
+
+Lemma Erel_move_easy n W Θ Θ' T F e c d :
+  strict W → c ≠ d → tenv_move W c d Θ Θ' → ¬ fused c d Θ →
+  Erel n W Θ T F e → Erel n W Θ' T F (chsubst c d e).
+Proof.
+  intros HW Hcd Hm Hf HE. destruct (move_cases W c d Θ Θ' Hm) as [[Hc ->]|[[Hd ->]|?]]; [| |done].
+  - apply Erel_junk; [done|by apply not_elem_of_dom|done|done].
+  - apply Erel_rename; [done|by apply not_elem_of_dom|done|done].
+Qed.
+
+Lemma selects_agree Θ Θ' σ k :
+  (∀ y, y ∈ subjs σ → Θ' !! y = Θ !! y) → selects Θ σ k → selects Θ' σ k.
+Proof.
+  intros Hag Hs. destruct σ as [c0 w|c0 w|c0|cd]; simpl in *; unfold tenv_entry in *.
+  - destruct Hs as [Hk Hr]. split; [done|]. rewrite Hag; [done|]. rewrite Hk. set_solver.
+  - destruct Hs as [Hk Hr]. split; [done|]. rewrite Hag; [done|]. rewrite Hk. set_solver.
+  - destruct Hs as [Hk (e0 & He & Hu & Hn)]. split; [done|]. exists e0.
+    rewrite Hag by (rewrite Hk; set_solver). split_and!; [done|done|].
+    intros H2 e' He'. simpl in He'. rewrite Hag in He' by set_solver. by apply (Hn H2 e').
+  - destruct Hs as [Hk Hr]. split; [done|]. rewrite Hag; done.
+Qed.
+
+(** Taking an end off, in every case of a move. *)
+Lemma move_unext_any W c d Θ Θ' c0 e Θm :
+  c ≠ d → tenv_move W c d Θ Θ' → tenv_ext Θm c0 e Θ →
+  ∃ Θm', tenv_ext Θm' (csub c d c0) e Θ' ∧ tenv_move W c d Θm Θm'.
+Proof.
+  intros Hcd Hm Hx.
+  assert (is_Some (Θ !! c0)) as [o Ho].
+  { destruct Hx as [[_ ->]|(e' & _ & [-> | ->])]; rewrite lookup_insert_eq; by eexists. }
+  destruct (decide (c0 = c)) as [->|Hc0]; [|destruct (decide (c0 = d)) as [->|Hd0]].
+  - destruct (Θ !! d) as [od|] eqn:Ed.
+    + pose proof Hm as (_ & _ & Hj & _). rewrite Ho, Ed in Hj.
+      inversion Hj as [| | |e1 e2 E1 E2 E3|e1 e2 E1 E2 E3]; subst.
+      all: destruct (move_unext_fused_c W c d Hcd Θ Θ' e1 e2 e Θm Hm Ho Ed Hx) as [H1 H2].
+      all: exists Θm; unfold csub; rewrite decide_True by done; done.
+    + apply (move_unext_gen W c d Hcd Θ Θ' c e Θm Hm Hx). right; left. done.
+  - destruct (Θ !! c) as [oc|] eqn:Ec.
+    + pose proof Hm as (_ & _ & Hj & _). rewrite Ec, Ho in Hj.
+      inversion Hj as [| | |e1 e2 E1 E2 E3|e1 e2 E1 E2 E3]; subst.
+      all: destruct (move_unext_fused_d W c d Hcd Θ Θ' e1 e2 e Θm Hm Ec Ho Hx) as [H1 H2].
+      all: exists (tenvswap c d Θm); unfold csub; rewrite decide_False by done; done.
+    + apply (move_unext_gen W c d Hcd Θ Θ' d e Θm Hm Hx). right; right. done.
+  - apply (move_unext_gen W c d Hcd Θ Θ' c0 e Θm Hm Hx). left. done.
+Qed.
+
+Section fused_offers.
+  Context (W : world) (c d : chan) (Hcd : c ≠ d) (Θ Θ' : tenv) (e : expr)
+    (Hm : tenv_move W c d Θ Θ') (κ : ekey → ekey)
+    (Hκ1 : ∀ k, (κ k).1 = csub c d k.1)
+    (Hκ2 : ∀ k, k.1 ≠ c → k.1 ≠ d → κ k = k)
+    (Hκ3 : ∀ k e, tenv_entry Θ k = Some e → tenv_entry Θ' (κ k) = Some e)
+    (Hκ4 : ∀ k' e', tenv_entry Θ' k' = Some e' → ∃ k, κ k = k' ∧ tenv_entry Θ k = Some e')
+    (Hexcl : ∀ σ f, tstep e (LSess σ) f → (c ∈ subjs σ ∨ d ∈ subjs σ) → ∃ cd, σ = SLink cd).
+
+  Lemma fused_offer_fwd k : offered_t Θ e k → offered_t Θ' (chsubst c d e) (κ k).
+  Proof.
+    intros (σ & f & Hf & Hsel). exists (ssub c d σ), (chsubst c d f).
+    split; [by apply (tstep_chsubst c d) in Hf|].
+    destruct (decide (c ∈ subjs σ ∨ d ∈ subjs σ)) as [Ht|Ht].
+    - destruct (Hexcl _ _ Hf Ht) as [cd ->]. simpl in *.
+      destruct Hsel as [Hk [e0 He0]]. split.
+      + rewrite Hκ1. unfold gsub. by apply elem_of_map_2.
+      + eexists. apply Hκ3. exact He0.
+    - pose proof (selects_subj _ _ _ Hsel) as Hk.
+      rewrite Hκ2 by set_solver.
+      assert (ssub_rel c d σ (ssub c d σ)) as Hr by (destruct σ; simpl; done).
+      apply (ssub_rel_select_t c d Θ' σ (ssub c d σ) k Hr).
+      { rewrite subjs_ssub, gsub_id; [done|]. set_solver. }
+      apply (selects_agree Θ); [|done].
+      intros y Hy. apply (move_lookup_ne W c d); [done|set_solver|set_solver].
+  Qed.
+
+  Lemma fused_offer_back e1 e2 k' e' :
+    world_wf W → Θ !! c = Some (One e1) → Θ !! d = Some (One e2) → w_eq W e1.2 e2.2 →
+    offered_t Θ' (chsubst c d e) k' → tenv_entry Θ' k' = Some e' →
+    ∃ k e0, offered_t Θ e k ∧ tenv_entry Θ k = Some e0 ∧ w_eq W e0.2 e'.2.
+  Proof.
+    intros HWf Hc Hd Hx (σ' & f' & Hf' & Hsel) He'.
+    destruct (tstep_chsubst_back c d e σ' f' Hf') as (σ & f & Hf & Hr).
+    destruct (Hκ4 k' e' He') as (k & <- & He).
+    destruct (decide (c ∈ subjs σ ∨ d ∈ subjs σ)) as [Ht|Ht].
+    - destruct (Hexcl _ _ Hf Ht) as [cd ->]. simpl in Ht.
+      destruct σ' as [| | |cd']; simpl in Hr; try done. subst cd'.
+      simpl in Hsel. destruct Hsel as [Hk _]. rewrite Hκ1 in Hk.
+      unfold gsub in Hk. apply elem_of_map in Hk as (z & Hz & Hzin).
+      destruct (decide (k.1 ∈ cd)) as [Hin|Hnin].
+      + exists k, e'. split_and!; [|done|apply HWf].
+        exists (SLink cd), f. split; [done|]. split; [done|by eexists].
+      + destruct k as [k1 b]; simpl in *.
+        unfold tenv_entry in He; simpl in He.
+        destruct (decide (k1 = c)) as [->|Hk1].
+        * assert (d ∈ cd) as Hdin.
+          { unfold csub in Hz. rewrite decide_True in Hz by done.
+            destruct (decide (z = c)) as [->|Hzc]; [done|]. by subst z. }
+          rewrite Hc in He. destruct b; [done|]. injection He as <-.
+          exists (d, false), e2. split_and!.
+          -- exists (SLink cd), f. split; [done|]. split; [done|].
+             unfold tenv_entry; simpl. rewrite Hd. by eexists.
+          -- unfold tenv_entry; simpl. by rewrite Hd.
+          -- by apply (wf_eq_sym _ HWf).
+        * assert (k1 = d ∧ c ∈ cd) as [-> Hcin].
+          { unfold csub in Hz. rewrite decide_False in Hz by done.
+            destruct (decide (z = c)) as [->|Hzc]; [done|]. by subst z. }
+          rewrite Hd in He. destruct b; [done|]. injection He as <-.
+          exists (c, false), e1. split_and!.
+          -- exists (SLink cd), f. split; [done|]. split; [done|].
+             unfold tenv_entry; simpl. rewrite Hc. by eexists.
+          -- unfold tenv_entry; simpl. by rewrite Hc.
+          -- done.
+    - pose proof (ssub_rel_subjs _ _ _ _ Hr) as Hs. rewrite gsub_id in Hs by set_solver.
+      pose proof (selects_subj _ _ _ Hsel) as Hk. rewrite Hκ1, Hs in Hk.
+      assert (k.1 ≠ c ∧ k.1 ≠ d) as [Hk1 Hk2].
+      { unfold csub in Hk. case_decide; set_solver. }
+      rewrite Hκ2 in Hsel by done.
+      exists k, e'. split_and!; [|done|apply HWf].
+      exists σ, f. split; [done|].
+      apply (ssub_rel_select_t c d Θ' σ σ' k Hr) in Hsel; [|done].
+      apply (selects_agree Θ'); [|done].
+      intros y Hy. symmetry. apply (move_lookup_ne W c d); [done|set_solver|set_solver].
+  Qed.
+End fused_offers.
+
+Lemma rel_fuse n :
+  (∀ W Θ Θ' T v c d, strict W → c ≠ d → tenv_move W c d Θ Θ' →
+     Vrel n W Θ T v → Vrel n W Θ' T (chsubst c d v)) ∧
+  (∀ W Θ Θ' T F e c d, strict W → c ≠ d → tenv_move W c d Θ Θ' →
+     Erel n W Θ T F e → Erel n W Θ' T F (chsubst c d e)).
+Proof.
+  induction n as [n IHn] using lt_wf_ind.
+  assert (∀ W Θ Θ' T v c d, strict W → c ≠ d → tenv_move W c d Θ Θ' →
+            Vrel n W Θ T v → Vrel n W Θ' T (chsubst c d v)) as HV.
+  { intros W Θ Θ' T. revert Θ Θ'.
+    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m T1 IHT1|s x];
+      intros Θ Θ' v c d HW Hcd Hm HVv.
+    all: destruct (decide (fused c d Θ)) as [Hfu|Hfu];
+      [|by apply (Vrel_move_easy n W Θ Θ' _ v c d)].
+    all: destruct Hfu as (e1 & e2 & Hc & Hd).
+    - apply Vrel_unit_iff in HVv as [-> _]. by rewrite lookup_empty in Hc.
+    - apply Vrel_lolli_iff in HVv
+        as [(eb & -> & Hfc & Hlb & HL)|(k & T0 & -> & -> & _)];
+        [|by rewrite lookup_empty in Hc].
+      apply Vrel_lolli_iff. left. exists (chsubst c d eb). split_and!.
+      + done.
+      + exact (fchans_move W c d Hcd Θ Θ' eb Hm Hfc).
+      + by rewrite (move_heads W c d Hcd Θ Θ' Hm).
+      + intros W' j Θa Θ'' w F Hx Hj Hcomp HVw Hub.
+        assert (strict W') as HW' by (by destruct Hx as (_ & _ & _ & ?)).
+        destruct (exist_fresh (dom Θ ∪ dom Θa ∪ fchans eb ∪ fchans w ∪ {[c; d]})) as [z Hz].
+        assert (c ∉ dom Θ') as Hc' by (pose proof Hm as (Hc0 & _); by apply not_elem_of_dom).
+        assert (z ∉ dom Θ') as Hz'.
+        { rewrite (move_dom W c d Θ Θ' z Hm). set_solver. }
+        apply (tenv_comp_swap c z) in Hcomp.
+        rewrite (tenvswap_fix c z Θ') in Hcomp by done.
+        assert (tenv_move W' c d Θ Θ') as HmW'.
+        { eapply (move_mono W c d W'); [|exact Hm]. intros ? ? ?. by apply (proj1 (proj2 Hx)). }
+        destruct (move_comp_join W' (proj1 HW') c d Hcd Θ Θ' (tenvswap c z Θa)
+                    (tenvswap c z Θ'') HmW' Hcomp) as (Θ0 & Hc0 & Hm0).
+        { rewrite lookup_tenvswap', cswap_l. apply not_elem_of_dom. set_solver. }
+        pose proof (HL W' j (tenvswap c z Θa) Θ0 (eswap c z w) F Hx Hj Hc0
+                      (Vrel_swap c z _ _ _ _ _ HVw) Hub) as HE1.
+        apply (proj2 (IHn j Hj) W' _ _ _ _ _ c d HW' Hcd Hm0) in HE1.
+        rewrite chsubst_subst1 in HE1.
+        rewrite (chsubst_id c d (eswap c z w)) in HE1.
+        2: { rewrite fchans_eswap, elem_of_gswap', cswap_l. set_solver. }
+        apply (Erel_swap c z) in HE1. rewrite tenvswap_involutive, eswap_subst1,
+          eswap_involutive in HE1.
+        rewrite (eswap_fresh c z (chsubst c d eb)) in HE1; [done| |].
+        * by apply fchans_chsubst_notin.
+        * intros Hz2. apply fchans_chsubst in Hz2. set_solver.
+    - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
+      destruct (move_comp_split W (proj1 HW) c d Hcd Θ Θ' Θ1 Θ2 Hm Hsp)
+        as (Θ1' & Θ2' & Hm1 & Hm2 & Hsp').
+      apply Vrel_prod_iff. exists (chsubst c d v1), (chsubst c d v2), Θ1', Θ2'.
+      split_and!; [done|done|exact (IHT1 Θ1 Θ1' v1 c d HW Hcd Hm1 H1)|exact (IHU Θ2 Θ2' v2 c d HW Hcd Hm2 H2)].
+    - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
+        apply Vrel_sum_iff; [left|right]; eexists; (split; [done|]).
+      + exact (IHT1 Θ Θ' v' c d HW Hcd Hm H).
+      + exact (IHU Θ Θ' v' c d HW Hcd Hm H).
+    - apply Vrel_box_iff in HVv as (-> & _). by rewrite lookup_empty in Hc.
+    - apply Vrel_sess_iff in HVv as (c0 & s0 & k & -> & -> & _).
+      rewrite lookup_singleton_Some in Hc, Hd. destruct Hc as [<- _], Hd as [-> _]. done. }
+  split; [exact HV|].
+  intros W Θ Θ' T F e c d HW Hcd Hm HE.
+  destruct (decide (fused c d Θ)) as [Hfu|Hfu];
+    [|by apply (Erel_move_easy n W Θ Θ' T F e c d)].
+  destruct Hfu as (e1 & e2 & Hc & Hd).
+  assert (w_eq W e1.2 e2.2) as Hx by (pose proof Hm as (_ & _ & _ & H); by apply H).
+  pose proof (proj1 HW) as HWf.
+  destruct n as [|n']; [apply Erel_0|].
+  pose proof HE as HE0.
+  apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
+  assert (Hexcl : ∀ σ f, tstep e (LSess σ) f → (c ∈ subjs σ ∨ d ∈ subjs σ) →
+                    ∃ cd, σ = SLink cd).
+  { intros σ f Hf Ht. exact (fusion_exclusion n' W Θ T F e c d e1 e2 σ f HW HE0 Hc Hd Hx Hcd Hf Ht). }
+  destruct (move_keys W c d Hcd Θ Θ' Hm) as (κ & Hκ1 & Hκ2 & Hκ3 & Hκ4).
+  pose proof (fused_offer_fwd W c d Hcd Θ Θ' e Hm κ Hκ1 Hκ2 Hκ3 Hκ4 Hexcl) as Hfwd.
+  pose proof (fused_offer_back W c d Hcd Θ Θ' e Hm κ Hκ1 Hκ2 Hκ3 Hκ4 Hexcl e1 e2) as Hback.
+  assert (∀ j, j < S n' → ∀ W Θ Θ' T F e, strict W → tenv_move W c d Θ Θ' →
+            Erel j W Θ T F e → Erel j W Θ' T F (chsubst c d e)) as IHE.
+  { intros j Hj W1 Θ1 Θ1' T1 F1 e0 HW1 Hm1 HE1.
+    exact (proj2 (IHn j Hj) W1 Θ1 Θ1' T1 F1 e0 c d HW1 Hcd Hm1 HE1). }
+  apply Erel_S_iff. split_and!.
+  - intros Hirr. apply irred_chsubst in Hirr as Hirr0.
+    exact (HV W Θ Θ' T e c d HW Hcd Hm (Hval Hirr0)).
+  - intros Hni. assert (¬ irred e) as Hni0.
+    { intros Hi. apply Hni. by apply irred_chsubst_back. }
+    destruct (Hrdy Hni0) as [Hr Hfr]. split.
+    + intros Hs. apply stable_chsubst in Hs as Hs0. destruct (Hr Hs0) as [Hv Ha]. split.
+      * intros Hno. rewrite is_val_chsubst. apply Hv. intros k Hk. apply (Hno (κ k)).
+        by apply Hfwd.
+      * intros k' e' He' Hk'. destruct (Hκ4 k' e' He') as (k & <- & He).
+        destruct (Ha k e' He) as (k0 & e0 & Ho & He0 & Hlt).
+        { intros Ho. apply Hk'. by apply Hfwd. }
+        exists (κ k0), e0. split_and!; [by apply Hfwd|by apply Hκ3|].
+        unfold entry_head in *. done.
+    + intros Hs k' e' Ho He' y Hy. apply stable_chsubst in Hs as Hs0.
+      destruct (Hback k' e' HWf Hc Hd Hx Ho He') as (k & e0 & Ho0 & He0 & Heq).
+      pose proof (Hfr Hs0 k e0 Ho0 He0 y Hy) as Hlt. unfold entry_head in *.
+      eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf].
+  - intros α f' Hst. destruct α as [|[c' w'|c' w'|c'|cd']|c'|w'].
+    + (* β *)
+      apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
+      apply eq_sym, lsub_beta in Hα as ->.
+      eapply (IHE n'); [lia|done|exact Hm|exact (Hstep _ _ Hf)].
+    + (* receive: freshen the payload's c through z *)
+      destruct (exist_fresh (fchans w' ∪ fchans e ∪ dom Θ ∪ dom Θ' ∪ {[c; d]})) as [z Hz].
+      destruct (tstep_chsubst_recv_inv_swap c d z e c' w' f')
+        as (c0 & f & Hc0 & Hf & ->); [done|set_solver|set_solver|set_solver|done|set_solver|].
+      assert (c0 ≠ c ∧ c0 ≠ d) as [Hc0c Hc0d].
+      { split; intros ->; destruct (Hexcl _ _ Hf) as [? ?]; simpl; set_solver || done. }
+      rewrite csub_ne in Hc0 by done. subst c0.
+      pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
+      destruct Hc1 as (Θ1 & m & U & s & k & Hhd & H).
+      destruct (move_hd W c d Hcd Θ Θ' c' _ k Θ1 Hm Hhd (or_introl (conj Hc0c Hc0d)))
+        as (Θ1' & Hhd' & Hm1). rewrite csub_ne in Hhd' by done.
+      exists Θ1', m, U, s, k. split; [done|].
+      intros W' j Θ2 Θ1c' Θ'' HW' Hj Hext Hcomp HVw.
+      assert (strict W') as HW'' by (by destruct HW' as (_ & _ & _ & ?)).
+      destruct (move_ext_given W c d Θ1 Θ1' c' _ Θ1c' Hm1 Hc0c Hc0d Hext)
+        as (Θ1c & Hext1 & Hm1c).
+      assert (z ∉ dom Θ2) as HzΘ2 by (rewrite <-(Vrel_fchans _ _ _ _ _ HVw); set_solver).
+      assert (c ∉ dom Θ1c' ∧ z ∉ dom Θ1c') as [HcΘ1 HzΘ1].
+      { assert (dom Θ1' ⊆ dom Θ' ∧ c' ∈ dom Θ') as [Hs1 Hs2].
+        { destruct Hhd' as (s0 & Hx0 & _).
+          destruct Hx0 as [[_ ->]|(g & _ & [-> | ->])]; rewrite dom_insert_L; set_solver. }
+        assert (c ∉ dom Θ') as Hc'' by (pose proof Hm as (Hc0' & _); by apply not_elem_of_dom).
+        assert (dom Θ1c' ⊆ dom Θ1' ∪ {[c']}) as Hs3.
+        { destruct Hext as [[_ ->]|(g & _ & [-> | ->])]; rewrite dom_insert_L; set_solver. }
+        split; set_solver. }
+      apply (tenv_comp_swap c z) in Hcomp.
+      rewrite (tenvswap_fix c z Θ1c') in Hcomp by done.
+      assert (tenv_move W' c d Θ1c Θ1c') as Hm1c'.
+      { eapply (move_mono W c d W'); [|exact Hm1c]. intros ? ? ?. by apply (proj1 (proj2 HW')). }
+      destruct (move_comp_join W' (proj1 HW'') c d Hcd Θ1c Θ1c' (tenvswap c z Θ2)
+                  (tenvswap c z Θ'') Hm1c' Hcomp) as (Θ0 & Hc0 & Hm0).
+      { rewrite lookup_tenvswap', cswap_l. by apply not_elem_of_dom. }
+      pose proof (H W' j (tenvswap c z Θ2) Θ1c Θ0 HW' Hj Hext1 Hc0
+                    (Vrel_swap c z _ _ _ _ _ HVw)) as HE1.
+      apply (IHE j ltac:(lia) W' _ _ T F f HW'' Hm0) in HE1.
+      apply (Erel_swap c z) in HE1. rewrite tenvswap_involutive in HE1. exact HE1.
+    + (* send *)
+      apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
+      destruct α as [|[c0 w0|c0 w0|c0|cd0]| |]; simpl in Hα; try discriminate.
+      injection Hα as Hc0 Hw0.
+      assert (c0 ≠ c ∧ c0 ≠ d) as [Hc0c Hc0d].
+      { split; intros ->; destruct (Hexcl _ _ Hf) as [? ?]; simpl; set_solver || done. }
+      rewrite csub_ne in Hc0 by done. subst c0 w'.
+      pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
+      destruct Hc1 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ'' & Hhd & Hsp & HVw & Hext & HE').
+      destruct (move_hd W c d Hcd Θ Θ' c' _ k Θr Hm Hhd (or_introl (conj Hc0c Hc0d)))
+        as (Θr' & Hhd' & Hmr). rewrite csub_ne in Hhd' by done.
+      destruct (move_comp_split W HWf c d Hcd Θr Θr' Θ1 Θ2 Hmr Hsp)
+        as (Θ1' & Θ2' & Hm1 & Hm2 & Hsp').
+      destruct (move_ext W c d Hcd Θ1 Θ1' c' _ Θ'' Hm1 Hext (or_introl (conj Hc0c Hc0d)))
+        as (Θ3 & Hext' & Hm3). rewrite csub_ne in Hext' by done.
+      exists Θr', Θ1', Θ2', m, U, s, k, Θ3. split_and!; [done|done| |done|].
+      * exact (HV W Θ2 Θ2' _ w0 c d HW Hcd Hm2 HVw).
+      * eapply (IHE n'); [lia|done|eassumption|eassumption].
+    + (* close *)
+      apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
+      destruct α as [|[c0 w0|c0 w0|c0|cd0]| |]; simpl in Hα; try discriminate.
+      injection Hα as Hc0.
+      assert (c0 ≠ c ∧ c0 ≠ d) as [Hc0c Hc0d].
+      { split; intros ->; destruct (Hexcl _ _ Hf) as [? ?]; simpl; set_solver || done. }
+      rewrite csub_ne in Hc0 by done. subst c0.
+      pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
+      destruct Hc1 as (Θ1 & k & Hhd & HE').
+      destruct (move_hd W c d Hcd Θ Θ' c' _ k Θ1 Hm Hhd (or_introl (conj Hc0c Hc0d)))
+        as (Θ1' & Hhd' & Hm1). rewrite csub_ne in Hhd' by done.
+      exists Θ1', k. split; [done|]. eapply (IHE n'); [lia|done|eassumption|eassumption].
+    + (* link *)
+      apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
+      destruct α as [|[c0 w0|c0 w0|c0|cd0]| |]; simpl in Hα; try discriminate.
+      injection Hα as Hcd'. subst cd'.
+      pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
+      destruct Hc1 as (c1 & d1 & Θ1 & Θm & sc & sd & kc & kd & -> & H1 & H2 & Hdu & Hal & HE').
+      destruct (move_unext_any W c d Θ Θ' c1 _ Θm Hcd Hm H2) as (Θm' & H2' & Hmm).
+      destruct (move_unext_any W c d Θm Θm' d1 _ Θ1 Hcd Hmm H1) as (Θ1' & H1' & Hm1).
+      exists (csub c d c1), (csub c d d1), Θ1', Θm', sc, sd, kc, kd. split_and!; [|done..|].
+      * unfold gsub. by rewrite set_map_union_L, !set_map_singleton_L.
+      * eapply (IHE n'); [lia|done|eassumption|eassumption].
+    + (* new: through a fresh c0, then rename c0 to the image's name *)
+      intros Hc'.
+      destruct (exist_fresh (fchans e ∪ dom Θ ∪ dom Θ' ∪ {[c; d; c']})) as [c0 Hc0].
+      destruct (tstep_chsubst_new_inv c d e c' f' Hst c0) as (f & Hf & ->); [set_solver..|].
+      pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
+      destruct (Hc1 ltac:(set_solver)) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
+      exists a, s, s', W1. split_and!; [|done|done|].
+      { by rewrite (move_roots W c d Hcd Θ Θ' Hm). }
+      assert (strict W1) as HW1 by (by destruct Hfr as ((_ & _ & _ & ?) & _)).
+      assert (tenv_move W1 c d Θ Θ') as HmW1.
+      { eapply (move_mono W c d W1); [|exact Hm]. intros ? ? ?.
+        by apply (proj1 (proj2 (proj1 Hfr))). }
+      apply (IHE n' ltac:(lia) W1 _ (<[c0 := Both (s, pconst a) (s', pconst a)]> Θ') T F f HW1)
+        in HE'; [|apply move_insert; [set_solver|set_solver|done]].
+      apply (Erel_rename _ _ _ _ _ _ c0 c') in HE'; [|done| |set_solver].
+      2: { rewrite dom_insert_L. set_solver. }
+      by rewrite tenvswap_insert, tenvswap_fix, cswap_l in HE' by set_solver.
+    + (* spawn *)
+      apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
+      destruct α as [| | |v]; simpl in Hα; try discriminate. injection Hα as ->.
+      pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
+      destruct Hc1 as (Θ1 & Θ2 & ub & lb & Hsp & HVw & HE').
+      destruct (move_comp_split W HWf c d Hcd Θ Θ' Θ1 Θ2 Hm Hsp)
+        as (Θ1' & Θ2' & Hm1 & Hm2 & Hsp').
+      exists Θ1', Θ2', ub, lb. split_and!; [done| |].
+      * exact (HV W Θ1 Θ1' _ v c d HW Hcd Hm1 HVw).
+      * eapply (IHE n'); [lia|done|eassumption|eassumption].
+Qed.
