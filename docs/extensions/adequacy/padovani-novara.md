@@ -2,7 +2,8 @@
 
 Status. Stage 1 done on 2026-10-30. Stage 2 done on 2026-10-30 in
 theories/pn/ (section 7), with the general theorem `pn_deadlock_free` and both
-examples closed under the global context. Same procedure as for PGV
+examples closed under the global context. Stage 3 done on 2026-10-30, a
+simulation back to the source semantics of the paper (section 8). Same procedure as for PGV
 (pgv-adequacy.md). Study first, then model the system on our terms and
 translate it into the static system.
 
@@ -482,7 +483,7 @@ report (hal-00954364v1), one per line, with its location.
 - PNWorld.v `hiz`. The latent effect ⊤ becomes the ceiling B[RTop], ranked at the top element. All ceilings are aliased.
 - PNTranslate.v `erel`, `ren_of`. The static system has no lemma that inserts a binding, and a box body sees the box at index 0. The translation lemma therefore types e′ renamed past inserted unlimited or spent entries.
 - PNTranslate.v `pn_translate`. Frames stand for effects, as for PGV. A thread is typed at the empty frame, which matches T-Thread ignoring the effect.
-- PNTranslate.v `pn_deadlock_free`. The theorem is about the translation e′, which differs from e by the boxes, the forces, the closes, the closed λ terms of send, recv, fork and injections, and the erased wraps. A simulation from e′ to e is not mechanized.
+- PNTranslate.v `pn_deadlock_free`. The theorem is about the translation e′, which differs from e by the boxes, the forces, the closes, the closed λ terms of send, recv, fork and injections, and the erased wraps. Section 8 carries the theorem back to e in the paper's semantics.
 - ExampleTools.v `zrank`, `wgen_strict_z`, `wgen_strict_den`. New general helpers for strict worlds by ranks into ℤ with a top element (decision 4).
 
 #### 7.7  Findings about the paper, the plan and our documents
@@ -493,6 +494,161 @@ report (hal-00954364v1), one per line, with its location.
 - Stage 1, section 6. The plan's "∀ι₀ ιs" (one anchor plus argument points), its ranks (n, −1) and (n, ω), and its keying of fresh channels by new site differ from the mechanization (7.6). The plan's claim that the shift lemma Γ ⊢ e : t & ρ ⇒ ⇑ⁿΓ ⊢ e : ⇑ⁿt & n + ρ holds is confirmed in the form of the offset k of `pn_translate`, for our fragment.
 - gvsharp-orders.lagda E-Weak (around line 827) and ORDERS-SPEC.md §9 state weakening with a named fresh variable. Rocq's `t_wk` is positional (an unlimited entry becomes spent) and the static system has no renaming lemma that inserts a binding. Nothing is wrong, but the lagda reading suggests a lemma that Rocq does not have. `erel` works around it.
 - No core change was needed. lang/, types/, relation/, invariance/, composition/, rules/ and static/ are untouched.
+
+## Stage 3 results
+
+### 8  Simulation
+
+theories/pn/PNSemantics.v gives Padovani and Novara's own semantics on the
+source syntax of `pn_typed`. theories/pn/PNSimulation.v carries
+`pn_deadlock_free` back to the source program through a simulation. All of the
+following is closed under the global context, and the 35 earlier theorems stay
+closed.
+
+```
+Theorem pn_deadlock_free_source e τ e' :
+  pn_typed [] e PUnit τ e' → fixlam e → pn_deadlock_free_src e.
+
+Definition pn_deadlock_free_src (e : expr) : Prop :=
+  ∀ q, rtc src_tau (∅, {[+ e +]}) q → src_irred q → src_final q.
+
+Theorem fibo_deadlock_free_src : pn_deadlock_free_src fibo_main.
+Theorem pipe_deadlock_free_src : pn_deadlock_free_src pipe_main.
+```
+
+`fixlam e` says that every fix in e is fix λf.λx.e₀. Section 8.5 shows that the
+simulation fails without it. Branch pn-simulation.
+
+#### 8.1  The source semantics
+
+`src_head` and `src_step` are Table 1 (p5) on expressions. (λx.e) v → e{v/x}
+and fix λx.e → e{fix λx.e/x} are β steps (`SHApp`, `SHFix`). The four process
+rules become labelled redexes. new() steps with the label of its fresh name,
+fork v with the label of v, send a v and recv a with the halves of a
+communication. Values are `is_sval`, that is k, a, λx.e and send v as on p5,
+plus injections and the pair that new() returns. fix λf.e is no value. Reduction
+contexts are E e and v E as on p5.
+
+`src_pstep` is the process relation on flat processes (C, E), the restricted
+names C and a multiset E of threads. The label is `None` for τ and `Some a` for a
+communication on a free name a. A communication on a restricted name is τ and
+removes a from C, because channels are linear (p5). `src_tau` is the τ step.
+`src_irred q` says that q has no step with any label. `src_final q` says that
+every thread of q is (). This is Q ≡ ⟨()⟩, because ⟨()⟩ is the inert process
+(p5). `pn_deadlock_free_src e` is Definition 1 (p14) for the closed program ⟨e⟩.
+
+#### 8.2  The relation
+
+`trel Ξ M s t m` relates a source term s and a target term t at a mode m. A mode
+is the shape of a P&N type that the translation reads.
+
+```
+mode ::= MUnit | MSum m m | MChan m | MRecC | MFn m m | MBox m m
+```
+
+`pmode` maps a type to its mode. MFn is an arrow of finite level and MBox an
+arrow of level ⊤, because the translation boxes the second and forces it at
+each use. A channel has the mode of its payload, and the recursive channel
+μα.p[⌈α⌉ᵐ]ⁿ is MRecC. A channel that carries MRecC also has mode MRecC, so that
+a recursive type and its unfolding agree (`mode_pconv`). ⇑ⁿ keeps the mode
+(`mode_lshift`). M gives the modes of the free variables, and Ξ the mode of each
+channel name. Sender and receiver read one Ξ, so the received value has the mode
+the receiver expects. A new channel extends Ξ at the new step.
+
+The relation has one rule per form of the translation (`tr_var` to `tr_case`),
+plus the forms that administrative steps reach before a source step. These are
+`tr_fixu` (fix λf.λx.b unfolded in the source while the target keeps the box),
+`tr_send1` (send_tr after its first β), `tr_recv1`, `tr_fork1` (recv_tr and
+fork_tr after their β), and `tr_inj1b`, `tr_inj2b` (the injection after its λ).
+It needs no typing of the source after a step, so no subject reduction for
+`pn_typed`, which has no names, is needed.
+
+- `trel_of_typed`. Every translation is related, `pn_typed Γ e t τ e′` and
+  `fixlam e` give `trel Ξ (menv Γ) e e′ (pmode t)` at every Ξ.
+- `trel_rename`, `trel_subst`. The relation is closed under renaming and under
+  substitution of related terms. The renaming `rename (upren S)` inside a box
+  commutes with both (`sb_boxlam`, `rn_boxlam`), and so does the unfolding of
+  fix (`sb_unf`, `rn_unf`).
+- `trel_xi`. The relation reads Ξ only at the channels of the source.
+
+Processes are related by `prel`. Both sides have the same C, and the threads
+are paired one to one (`mrel`) by `Rt`. The main thread is related at MUnit, a
+spawned thread ⟨v ()⟩ to force (v′ (box ∗)) (`Rsp`).
+
+#### 8.3  The administrative steps
+
+These are the target steps that no source step accounts for.
+
+- force of the box of a λ of level ⊤ before its application (`box_norm`).
+- Two forces for fix λf.λx.b. The first unfolds the recursive box, the second
+  opens the inner box (`box_norm`). The source unfolds fix λf.λx.b once, earlier
+  and alone (`tr_fix` to `tr_fixu`, zero target steps).
+- β of send_tr after its channel, of the resulting λ after the payload, β of
+  recv_tr and of fork_tr, β of inj₁ and inj₂ (`val_norm`, `send_from_send1`,
+  `recv_from_recv1`, `spawn_from_fork1`).
+- force of the box of a sum before case (`fwd`, case `tr_case`).
+- After a message, β of the receiver's let, both closes, and the two `let ∗`
+  that follow (`send_from_send1`, `recv_from_recv1`).
+- In a spawned thread, the β of the thunk, `let ∗`, and at the end force of
+  box ∗ (`spawn_from_fork1`, `classify`).
+
+`fwd` is the simulation of one thread. A source step with label α is matched by
+`post`, administrative β steps, the corresponding step, and administrative β
+steps again. `sim_step` lifts it to processes. A message is followed at once by
+the close synchronization of both ends.
+
+#### 8.4  Administrative steps never block
+
+The extra close cannot block. `fwd` at a send and at a receive performs the
+message, the receiver's β to `close c′; v`, the close of both ends and the two
+`let ∗`, in one simulation step (`send_from_send1`, `recv_from_recv1`). The
+close needs c ∈ C, which holds because the source communication is τ and so a ∈
+C, and C is the same on both sides. A related target state therefore never
+offers a close.
+
+The other administrative steps are β steps of one thread. `classify` shows that
+a stuck source thread is (), a pending send or a pending receive, and that β
+steps bring its target thread to a value, to a pending send on the same channel,
+or to a pending receive on the same channel (`act` of lang/Safety.v). `final`
+then concludes. The target after these β steps is reachable and hence safe by
+`pn_deadlock_free`. If it is terminated, every source thread is (). If it steps,
+the step is a message between a pending send and a pending receive on one
+channel, and the two source threads communicate, against irreducibility.
+
+#### 8.5  Where the simulation fails, the restriction `fixlam`
+
+The source evaluates the body e of fix λf.e once, at the unfolding, and
+substitutes fix λf.e for f. The target keeps the box !(f = force e′) and runs e′
+at every force. The two agree when e is a λ, because a λ takes no step. When
+e is no value, the number of runs differs. For example
+fix λf.((λ_.λx.x) (fork λ_.())) has type unit →^{⊤,⊥} unit by `pn_fix`, because
+fork is pure (p7). Bound by let and never applied, it spawns one thread in the
+source and none in the target, so no relation between thread pools survives.
+The translation is unchanged. The theorem asks `fixlam e` instead, and both
+examples satisfy it by computation. Removing the restriction needs a different
+translation of fix, one that runs e′ once and shares its value.
+
+#### 8.6  Deviations of the source semantics from the paper
+
+- PNSemantics.v `src_pstep`. Processes are flat, a set C of restricted names and a multiset of threads, in place of process terms up to ≡. The standard rules of ≡ bring every process into this form.
+- PNSemantics.v `src_final`. Q ≡ ⟨()⟩ is read as every thread being (), whatever names C still holds. This uses (νa)⟨()⟩ ≡ ⟨()⟩, which the chapter does not list but calls standard (p5).
+- PNSemantics.v `SHNew`, `SHLetP`. let a = new() in e is [LetP (App ENew EUnit) e]. new() steps to the pair (a, a) of one fresh name, and a second β step binds both ends. The paper has one name a, new() → a and one β.
+- PNSemantics.v `SPNew`. The fresh name is fresh for the whole process. The chapter asks a ∉ fn(E) of the thread (p5) and relies on α-renaming of bound names.
+- PNSemantics.v `src_head`, `src_step`. Sums add inj₁ E, inj₂ E and case E as contexts, the β of case, and injections of values as values. The chapter has no sums.
+- PNSemantics.v `src_step`. The context let (a, a) = E in e is added for the new form.
+- PNSemantics.v `is_sval`. The pair of values is a value, for the pair that new() returns.
+- PNSemantics.v. wrap and unwrap are erased (section 7.5), so unwrap (wrap v) → v is no step.
+- PNSemantics.v `SHRecv`. A receive steps with any value as label, and the process rule pairs it with the sender's value, as Table 1 does.
+- PNSemantics.v `pn_deadlock_free_src`. Definition 1 is stated for closed programs ⟨e⟩ only, as the theorem of section 7.
+- PNSimulation.v `pn_deadlock_free_source`. The theorem needs `fixlam e` (section 8.5).
+
+#### 8.7  Other findings
+
+- The relation is untyped up to modes. The chapter's subject reduction (Theorem 1, p13) is not needed, and none is proved.
+- `mchan` identifies a channel that carries the recursive channel with the recursive channel itself. Both have payload mode MRecC, so the identification loses nothing that the relation reads.
+- The simulation stutters on both sides. The source unfolding of fix takes no target step (`tr_fixu`), and the target forces of a fix box take no source step.
+- Rocq 9.2 warns that `Notation` for an abbreviation is deprecated. The administrative forms in PNSimulation.v use `Notation` like the rest of the development.
+- No core change. lang/, types/, relation/, invariance/, composition/, rules/, static/ and the earlier files of theories/pn/ are untouched.
 
 ## Stage 2, model and translate (after the author has seen stage 1)
 

@@ -56,3 +56,5 @@ theories/pn/PNTyping.v
 theories/pn/PNWorld.v
 theories/pn/PNTranslate.v
 theories/pn/PNExamples.v
+theories/pn/PNSemantics.v
+theories/pn/PNSimulation.v

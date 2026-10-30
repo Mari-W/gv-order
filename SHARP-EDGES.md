@@ -849,6 +849,25 @@ wrap and unwrap erased and conversion at the top of a type, payloads channels or
 unlimited, and arrow level ⊥ left out. padovani-novara.md §7 lists every
 discrepancy. No core change.
 
+**71. Padovani and Novara in their own semantics (Claude, 2026-10-30, theories/pn/).**
+`pn_deadlock_free_source` makes a closed program of type unit deadlock free in
+the sense of Definition 1 of the chapter, in the chapter's semantics
+(PNSemantics.v), when every fix is fix λf.λx.e (`fixlam`). fibo and the pipe
+follow (`fibo_deadlock_free_src`, `pipe_deadlock_free_src`). The proof is a
+forward simulation into the target and a normalization of administrative steps
+when the source is stuck (PNSimulation.v). The relation `trel` is untyped up to
+modes, the shape of a P&N type that the translation reads, with one mode per
+channel name in Ξ, so that sender and receiver agree on the payload. It is
+closed under substitution, and the renaming inside a box and the unfolding of
+fix commute with it. The extra close never blocks, because the simulation of a
+communication performs the message, the receiver's β and both closes in one
+step, and a related target never offers a close. fix λf.e with e no λ breaks the
+simulation. The source runs e once at the unfolding, the target runs e′ at every
+force, and an effect in e (fork is pure) then gives different thread pools.
+The translation is unchanged, and the theorem asks `fixlam` instead.
+padovani-novara.md §8 lists every deviation of the source semantics from the
+chapter. No core change.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

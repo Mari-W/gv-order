@@ -103,6 +103,8 @@ has no axioms and no admitted proofs.
 - `PNWorld.v`: the level world `Wpn` of anchors and ranks into ℤ with a top element, its strictness and the translation of types.
 - `PNTranslate.v`: derivations become `typed` derivations at every anchor and offset (`pn_translate`, `pn_deadlock_free`).
 - `PNExamples.v`: parallel Fibonacci and the signal pipe, both deadlock free.
+- `PNSemantics.v`: the reduction semantics of the chapter on the source syntax and Definition 1 (`src_pstep`, `pn_deadlock_free_src`), §8.
+- `PNSimulation.v`: the simulation of the source by its translation and the theorem in the source semantics (`trel`, `fwd`, `pn_deadlock_free_source`).
 
 ## Main results
 
@@ -113,6 +115,7 @@ has no axioms and no admitted proofs.
 - `Erel_bind` (rules/Bind.v).
 - `pgv_deadlock_free` (pgv/PGVTranslate.v): a closed program of type 1 in the monotone fragment of repaired PGV is deadlock free.
 - `pn_deadlock_free` (pn/PNTranslate.v): the translation of a closed program of type unit in fragment v1 of repaired Padovani and Novara is deadlock free. `fibo_deadlock_free` and `pipe_deadlock_free` (pn/PNExamples.v) apply it.
+- `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, one per file in examples/.
 
 ## Other documents
