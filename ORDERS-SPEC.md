@@ -492,9 +492,10 @@ bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,
 
 ## 14  Open
 
-- Deferred by the author: order that depends on the run (one W per component); slot positions must be finite schemas in G (docs/DECIDABILITY.md).
-- To prove: free-coordinate extension of Kosaraju–Sullivan (paper level); chain arguments in P-Term and P-Connect; all frame-carrying lemmas.
-- Mechanization: Θ (both ends) only at term level, points in `senv` entries, worlds over points with aliases, amalgamation.
+- Deferred by the author: order that depends on the run (one W per component, docs/DESIGN-REVIEW.md C2).
+- Decidability of type checking: open beyond the classes of docs/DECIDABILITY.md. Delegation through recursion and relay-shaped schemas violate (M).
+- Recursion on a received channel needs unbounded slot nesting, which no finite set of facts covers.
+- Approved refactors in progress: docs/DESIGN-REVIEW.md B1 to B5.
 
 ## 15  Lessons from the earlier mechanization (respect these)
 
