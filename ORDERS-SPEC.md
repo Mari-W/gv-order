@@ -425,14 +425,16 @@ Decidability    W_G strict is decidable:  Kosaraju–Sullivan for edges with off
                 (paper-level, not mechanized in this round)
 ```
 
-Rocq (Static.v, sharp edges 53): typed W Θ Δ F e T and ptyped W Σ p T, indexed by the world
-W = W_G. E-Abs and E-Exp quantify over every later world and every frame above the upper
-point (and every instance xs for E-Exp) in place of a fresh μ; the other rules as in §9.
+Rocq (Static.v, sharp edges 53, 56): typed W Φ Θ Δ F e T and ptyped W Σ p T, indexed by the
+world W = W_G. The fresh μ of E-Abs and E-Exp is a frame variable φ with the hypothesis u ≺ φ
+in Φ, at the same W. E-Exp still quantifies over the instance xs of ιs (56). The other rules as
+in §9. typed_ityped instantiates φ at any later world into the infinitary judgment of 53.
 fundamental (terms), fundamental_proc (processes, P-Connect by Prel_connect with W₁ = W₂ = W),
 soundness (strict W, ptyped W ∅ p T ⇒ deadlock_free p, via adequacy). All closed under the
 global context.
-Restoring the fresh μ needs "dropping a fresh conservative extension", which is false at
-V-Const (sharp edges 54, DropCounter.v). E-Abs and E-Exp keep the "every" premises.
+Restoring a fresh point μ needs "dropping a fresh conservative extension", which is false at
+V-Const (sharp edges 54, DropCounter.v). A frame variable avoids the lemma, because no point,
+type or world mentions it (56).
 
 
 ## 13  Examples
