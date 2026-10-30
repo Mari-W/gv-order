@@ -51,6 +51,7 @@ Fixpoint pr_env (Γ : penv) : prio :=
     recv  : ?ᵒT.S ⊸^{⊤,o} T × S      o < pr(T)  (R1)
     close : endᵒ_! ⊸^{⊤,o} 1
     wait  : endᵒ_? ⊸^{⊤,o} 1
+    link  : S × S̄ ⊸ 1
 
     T ⊸ U is the pure arrow T ⊸^{⊤,⊥} U (p. 5). *)
 
@@ -68,7 +69,9 @@ Inductive pgv_konst (ok : psty → Prop) : konst → pty → Prop :=
   | pk_close o :
       pgv_konst ok KClos (PLolli PTop (PNat o) (PSess (PEndS o)) PUnit)
   | pk_wait o :
-      pgv_konst ok KClos (PLolli PTop (PNat o) (PSess (PEndR o)) PUnit).
+      pgv_konst ok KClos (PLolli PTop (PNat o) (PSess (PEndR o)) PUnit)
+  | pk_link S :
+      pgv_konst ok KLink (PLolli PTop PBot (PProd (PSess S) (PSess (pdual S))) PUnit).
 
 (** ** Typing rules for terms (p. 9)
 

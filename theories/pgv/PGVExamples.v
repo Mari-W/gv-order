@@ -8,6 +8,8 @@
       share two channels. PGV types it and GV does not.
     - [deleg]: the main thread sends one end of a channel over another
       channel, and the child uses it.
+    - [lnk]: a child links two channels and two other threads talk
+      through the link.
 
     Both counterexamples of docs/extensions/adequacy/pgv-counterexamples.txt
     fail at the step the repairs name ([cx1_rejected], [cx2_rejected]). *)
@@ -210,6 +212,33 @@ Qed.
 
 Theorem pgv_deleg_deadlock_free : deadlock_free (∅, {[+ deleg +]}).
 Proof. destruct deleg_typed as [p H]. by apply (pgv_deadlock_free_applied _ p). Qed.
+
+(** ** Link
+
+    let (x, x′) = new () in let (y, y′) = new () in
+    spawn (λ(). link (x′, y));
+    spawn (λ(). let x = send ((), x) in close x);
+    let ((), y′) = recv y′ in wait y′
+
+    x, y : !⁰1.end¹_!. The child links x′ to y, so the send on x reaches
+    the receive on y′. *)
+
+Definition lnk : expr :=
+  LetP (App (Konst KNew) EUnit) (LetP (App (Konst KNew) EUnit)
+    (LetU (App (Konst KSpawn) (Lam (LetU (Var 0) (App (Konst KLink) (Pair (Var 3) (Var 2))))))
+      (LetU (App (Konst KSpawn) (Lam (LetU (Var 0)
+              (plet (App (Konst KSend) (Pair EUnit (Var 4))) (App (Konst KClos) (Var 0))))))
+        (LetP (App (Konst KRecv) (Var 0)) (LetU (Var 1) (App (Konst KClos) (Var 0))))))).
+
+Lemma lnk_typed : ∃ p, pgv_frag [] p lnk PUnit.
+Proof.
+  eexists. unfold lnk, plet.
+  pnew (PSnd 0 PUnit (PEndS 1)). pnew (PSnd 0 PUnit (PEndS 1)).
+  repeat pstep.
+Qed.
+
+Theorem pgv_link_deadlock_free : deadlock_free (∅, {[+ lnk +]}).
+Proof. destruct lnk_typed as [p H]. by apply (pgv_deadlock_free_applied _ p). Qed.
 
 (** ** The counterexamples fail where the repairs say
 

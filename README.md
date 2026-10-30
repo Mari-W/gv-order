@@ -94,7 +94,7 @@ has no axioms and no admitted proofs.
 - `PGVTyping.v`: the schemas and Fig. 2 on our terms with repairs R1 and R2 (`pgv_typed`, `pgv_frag`).
 - `PGVWorld.v`: the protocol-point world `Wpgv`, its strictness and the translation of types.
 - `PGVTranslate.v`: PGV derivations become `typed` derivations (`pgv_translate`, `pgv_deadlock_free`).
-- `PGVExamples.v`: Example 2.1 of the paper, a delegation, and the two counterexamples rejected.
+- `PGVExamples.v`: Example 2.1 of the paper, a delegation, a link, and the two counterexamples rejected.
 
 ## Main results
 

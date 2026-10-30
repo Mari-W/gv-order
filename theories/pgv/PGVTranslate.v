@@ -141,7 +141,7 @@ Proof.
   assert (∀ s, spr s = o → ub_below_s Wpgv [] Φ (Some (ppt s)) F) as Hx.
   { intros s <-. eapply ubs_lower; [|exact Hub]. intros x [=<-].
     eexists. split; [done|]. right. apply ppt_below_upt. }
-  inversion Hk as [| |o' T0 S Hpr Hs0|o' T0 S Hpr Hs0|o'|o']; subst.
+  inversion Hk as [| |o' T0 S Hpr Hs0|o' T0 S Hpr Hs0|o'|o'|]; subst.
   - (* send *)
     set (x := ppt (PSnd o T0 S)).
     eapply t_conv.
@@ -210,10 +210,12 @@ Proof.
         by rewrite lookup_insert_eq.
       * apply t_var. split; [done|]. intros [|y] T' Hy; simpl in Hy; [by simplify_eq|].
         apply list_elem_of_lookup_2 in Hy. by apply HΔ in Hy.
-  - destruct Hk as [S|p q| | | |]; simpl in Ek |- *; try done.
+  - destruct Hk as [S|p q| | | | |S]; simpl in Ek |- *; try done.
     + apply t_konst; [done| |done]. rewrite tr_sty_dual, ppt_dual.
       apply KTNew. left. by apply pgv_known.
     + apply t_konst; [done|apply KTSpawn|done].
+    + apply t_konst; [done| |done]. rewrite tr_sty_dual, ppt_dual.
+      apply KTLink. apply se_refl.
 Qed.
 
 Lemma pgv_konst_inv ok Γ p k T :

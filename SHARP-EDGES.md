@@ -818,8 +818,10 @@ session types that send and recv act on, and only at the top. The fragment
 asks it recursively, as decided. The upper point of our send is the channel's
 point and PGV's is u_o, so an unapplied send, recv, close or wait becomes
 λz. k z (`pgv_eta`). Applied ones stay, and a program that applies all of them
-is its own translation (`pgv_deadlock_free_applied`). Left out are 0, absurd
-and link. link waits for 68.
+is its own translation (`pgv_deadlock_free_applied`). Left out are 0 and
+absurd. link is in after 68. Its schema S × S̄ ⊸ 1 maps to KTLink, and both
+ends sit at a[code S], so ι ≡ ι′ holds by reflexivity
+(`pgv_link_deadlock_free`).
 
 ## From the earlier abandoned mechanization (spec §15)
 
