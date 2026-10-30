@@ -963,3 +963,128 @@ Proof.
     + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|]. by apply Vrel_unit_iff.
 Qed.
+
+(** Θ = Θ1, c : e as a composition with a singleton. *)
+Lemma comp_single_ext R Θ Θ1 c e : tenv_comp R Θ Θ1 {[c := One e]} → tenv_ext Θ1 c e Θ.
+Proof.
+  intros [Hj _]. pose proof (Hj c) as Jc. rewrite lookup_singleton_eq in Jc.
+  assert (∀ c', c' ≠ c → Θ !! c' = Θ1 !! c') as Hoff.
+  { intros c' Hne. specialize (Hj c'). rewrite lookup_singleton_ne in Hj by done.
+    by inversion Hj. }
+  inversion Jc as [|o H1 H2 H3|o H1 H2 H3|e1 e2 H1 H2 H3|e1 e2 H1 H2 H3]; subst.
+  - left. split; [done|]. apply map_eq. intros c'. destruct (decide (c' = c)) as [->|Hne].
+    + by rewrite lookup_insert_eq.
+    + rewrite lookup_insert_ne by done. by apply Hoff.
+  - right. exists e1. split; [done|]. right. apply map_eq. intros c'.
+    destruct (decide (c' = c)) as [->|Hne]; [by rewrite lookup_insert_eq|].
+    rewrite lookup_insert_ne by done. by apply Hoff.
+  - right. exists e1. split; [done|]. left. apply map_eq. intros c'.
+    destruct (decide (c' = c)) as [->|Hne]; [by rewrite lookup_insert_eq|].
+    rewrite lookup_insert_ne by done. by apply Hoff.
+Qed.
+
+(** The entries of Θ = Θ1, c : e other than the one of e are entries
+    of Θ1. *)
+Lemma ext_other_entry Θ1 c e Θ k' e' :
+  tenv_ext Θ1 c e Θ → tenv_entry Θ k' = Some e' →
+  tenv_entry Θ k' = Some e ∨ ∃ k'', tenv_entry Θ1 k'' = Some e'.
+Proof.
+  intros Hext He'. destruct k' as [c' b]. destruct (decide (c' = c)) as [->|Hne].
+  - unfold tenv_entry in *. simpl in *.
+    destruct Hext as [[H1 ->]|(f & H1 & [->| ->])]; rewrite lookup_insert_eq in He' |- *.
+    + destruct b; simplify_eq. by left.
+    + destruct b; simplify_eq; [right; exists (c, false); simpl; by rewrite H1|by left].
+    + destruct b; simplify_eq; [by left|right; exists (c, false); simpl; by rewrite H1].
+  - right. exists (c', b). unfold tenv_entry in *. simpl in *.
+    destruct Hext as [[_ ->]|(f & _ & [->| ->])]; by rewrite lookup_insert_ne in He'.
+Qed.
+
+Lemma Erel_app_send n W Θ ub lb T U F v2 :
+  strict W → Vrel n W ∅ (TLolli ub lb T U) ESend → Vrel n W Θ T v2 → ub_below W ub F →
+  Erel n W Θ U F (App ESend v2).
+Proof.
+  intros HW HV1 HV2 Hub0. pose proof (proj1 HW) as HWf.
+  destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
+    as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
+  inversion Hk as [| |m T0 S x Hpay| | | |]; subst.
+  pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
+  apply Vrel_prod_iff in HV as (w & vc & Θw & Θc & -> & Hc & HVw & HVc).
+  apply Vrel_sess_iff in HVc as (c & s0 & k & -> & -> & Hs0 & Hk0).
+  pose proof (Vrel_val _ _ _ _ _ HVw) as Hw.
+  destruct (seq_snd_inv _ _ _ _ _ Hs0 (unfoldS_hd _ (mu_depth_snd _ _ _)))
+    as (U0 & s' & Hu0 & HU0 & Hs').
+  pose proof (comp_single_ext _ _ _ _ _ Hc) as Hext.
+  (* the payload's entries lie above x *)
+  assert (∀ k' e', tenv_entry Θw k' = Some e' → w_lt W k e'.2) as Habove.
+  { intros k' e' He'. destruct (Vrel_heads_above _ _ _ _ _ HWf HVw _ _ He') as (h & Hh & Hle).
+    eapply (wf_lt_eq _ HWf); [exact Hk0|eapply lt_le_W; [done|by apply Hpay|exact Hle]|apply HWf]. }
+  (* the key of the sending end *)
+  assert (∃ kc, tenv_entry Θ kc = Some (s0, k) ∧ kc.1 = c ∧
+            ∀ k' e', k' ≠ kc → tenv_entry Θ k' = Some e' → ∃ k'', tenv_entry Θw k'' = Some e')
+    as (kc & Hkc & Hkc1 & Hrest).
+  { assert (∀ c' b e', c' ≠ c → tenv_entry Θ (c', b) = Some e' → tenv_entry Θw (c', b) = Some e')
+      as Hne.
+    { intros c' b e' Hne He'. unfold tenv_entry in *. simpl in *.
+      destruct Hext as [[_ ->]|(f & _ & [->| ->])]; by rewrite lookup_insert_ne in He'. }
+    destruct Hext as [[H1 ->]|(f & H1 & [->| ->])].
+    - exists (c, false). unfold tenv_entry at 1. simpl. rewrite lookup_insert_eq.
+      split_and!; [done|done|]. intros [c' b] e' Hk' He'. destruct (decide (c' = c)) as [->|Hc'].
+      + unfold tenv_entry in He'. simpl in He'. rewrite lookup_insert_eq in He'.
+        destruct b; [done|congruence].
+      + exists (c', b). apply Hne; [done|]. done.
+    - exists (c, false). unfold tenv_entry at 1. simpl. rewrite lookup_insert_eq.
+      split_and!; [done|done|]. intros [c' b] e' Hk' He'. destruct (decide (c' = c)) as [->|Hc'].
+      + unfold tenv_entry in He'. simpl in He'. rewrite lookup_insert_eq in He'.
+        destruct b; [|congruence]. injection He' as <-. exists (c, false).
+        unfold tenv_entry. simpl. by rewrite H1.
+      + exists (c', b). by apply Hne.
+    - exists (c, true). unfold tenv_entry at 1. simpl. rewrite lookup_insert_eq.
+      split_and!; [done|done|]. intros [c' b] e' Hk' He'. destruct (decide (c' = c)) as [->|Hc'].
+      + unfold tenv_entry in He'. simpl in He'. rewrite lookup_insert_eq in He'.
+        destruct b; [congruence|]. injection He' as <-. exists (c, false).
+        unfold tenv_entry. simpl. by rewrite H1.
+      + exists (c', b). by apply Hne. }
+  destruct n as [|n']; [apply Erel_0|].
+  assert (tstep (App ESend (Pair w (Chan c))) (LSess (SSend c w)) (Chan c)) as Hst0
+    by by apply TStepHead, HeadSend.
+  assert (offered_t Θ (App ESend (Pair w (Chan c))) kc) as Hoff.
+  { exists (SSend c w), (Chan c). split; [done|]. split; [done|].
+    exists (s0, k), m, U0, s'. done. }
+  (* only the sending end is offered: the other end of c, if Θw holds it, is dual *)
+  assert (∀ k' e', offered_t Θ (App ESend (Pair w (Chan c))) k' → tenv_entry Θ k' = Some e' →
+            e' = (s0, k)) as Honly.
+  { intros k' e' (σ & t' & Hst & Hsel) He'.
+    apply app_val_step in Hst; [|done|simpl; by apply andb_True].
+    assert (σ = SSend c w) as -> by (inversion Hst; done).
+    destruct Hsel as (Hk1 & e'' & m' & T' & s'' & He'' & Hu''). rewrite He' in He''.
+    injection He'' as <-. destruct k' as [c' b]. simpl in Hk1. subst c'.
+    assert (∀ f, Θw !! c = Some (One f) → unfoldS f.1 = SSnd m' T' s'' → False) as Hno.
+    { intros f Hf Hfu. destruct Hc as [_ Hd].
+      destruct (Hd c f (s0, k) Hf (lookup_singleton_eq _ _)) as [_ Hdu].
+      destruct (sdual_snd _ _ _ _ _ Hdu Hfu) as (U1 & r1 & Hr1). simpl in Hr1.
+      by rewrite Hu0 in Hr1. }
+    unfold tenv_entry in He'. simpl in He'.
+    destruct Hext as [[H1 ->]|(f & H1 & [->| ->])]; rewrite lookup_insert_eq in He';
+      destruct b; simplify_eq; try done; exfalso; by apply (Hno e'). }
+  apply Erel_S_iff. split_and!.
+  - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
+  - intros _. split.
+    + intros Hs. split; [intros H; exfalso; exact (H _ Hoff)|].
+      intros k' e' He' Hn. exists kc, (s0, k). split_and!; [done|done|].
+      destruct (decide (k' = kc)) as [->|Hne]; [by exfalso|].
+      destruct (Hrest k' e' Hne He') as (k'' & Hk'').
+      unfold entry_head. simpl. by apply (Habove k'').
+    + intros Hs k' e' Hoff' He' y Hy. rewrite (Honly k' e' Hoff' He'). unfold entry_head. simpl.
+      eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
+  - intros α e' Hst. apply app_val_step in Hst; [|done|simpl; by apply andb_True].
+    assert (α = LSess (SSend c w) ∧ e' = Chan c) as [-> ->] by (inversion Hst; done). simpl.
+    exists Θw, ∅, Θw, m, U0, s', k, {[c := One (s', pt_shift 1 k)]}. split_and!.
+    + by exists s0.
+    + apply tenv_comp_empty_l. exact (wf_eq_sym _ HWf).
+    + eapply Vrel_payload; [done|exact (wf_eq_sym _ HWf _ _ Hk0)|].
+      eapply Vrel_teq; [apply teq_ty_inst, teq_sym, HU0|exact HVw].
+    + left. split; [done|by rewrite insert_empty].
+    + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|].
+      apply Vrel_sess_iff. exists c, s', (pt_shift 1 k). split_and!; [done|done|done|].
+      by apply (wf_eq_shift _ HWf).
+Qed.
