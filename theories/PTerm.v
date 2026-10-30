@@ -640,3 +640,342 @@ Proof.
         -- intros x o. destruct (decide (x = c)) as [->|Hxc]; [tlk; done|]. tlk. apply Hb.
         -- intros x f1 f2. destruct (decide (x = c)) as [->|Hxc]; [tlk; done|]. tlk. apply Hdu'.
 Qed.
+
+(** ** Small facts for the step cases *)
+
+Lemma tok_insert W Σ ΘB C0 c e : c ∉ C0 → tok W Σ ΘB C0 → tok W (<[c := e]> Σ) ΘB C0.
+Proof.
+  intros Hc [HW Hd Hdj Hb Hdu]. split; try done. rewrite dom_insert_L. clear -Hc Hdj. set_solver.
+Qed.
+
+Lemma tok_delete W Σ ΘB C0 c : tok W Σ ΘB C0 → tok W Σ (delete c ΘB) (C0 ∖ {[c]}).
+Proof.
+  intros [HW Hd Hdj Hb Hdu]. split; try done.
+  - by rewrite dom_delete_L, Hd.
+  - clear -Hdj. set_solver.
+  - intros x o. destruct (decide (x = c)) as [->|Hx]; [tlk; done|]. tlk. apply Hb.
+  - intros x f1 f2. destruct (decide (x = c)) as [->|Hx]; [tlk; done|]. tlk. apply Hdu.
+Qed.
+
+Lemma ins_one Σ ΘB c e :
+  ΘB !! c = None → <[c := One e]> (tenv_of Σ ∪ ΘB) = tenv_of (<[c := e]> Σ) ∪ ΘB.
+Proof.
+  intros Hc. apply map_eq. intros x. destruct (decide (x = c)) as [->|Hx]; tlk; [|done].
+  simpl. by rewrite ounion_Some.
+Qed.
+
+Lemma ins_both Σ ΘB c o :
+  Σ !! c = None → <[c := o]> (tenv_of Σ ∪ ΘB) = tenv_of Σ ∪ <[c := o]> ΘB.
+Proof.
+  intros Hc. apply map_eq. intros x. destruct (decide (x = c)) as [->|Hx]; tlk; [|done].
+  rewrite Hc. simpl. by rewrite ounion_None.
+Qed.
+
+Lemma removed_eq Θ Θ' Θ1 x e : Θ' !! x = Θ !! x → removed Θ Θ1 x e → removed Θ' Θ1 x e.
+Proof. intros H. unfold removed. by rewrite H. Qed.
+
+Lemma ptau_link_C p p' : ptau_link p p' → ∃ c, c ∈ p.1 ∧ p'.1 = p.1 ∖ {[c]}.
+Proof. intros (C & E & e & c & d & e' & -> & _ & Hc & ->). by exists c. Qed.
+
+Lemma ΘB_none_of W Σ ΘB C0 c : tok W Σ ΘB C0 → c ∉ C0 → ΘB !! c = None.
+Proof.
+  intros Hok Hc. destruct (tok_at W Σ ΘB C0 c Hok) as (HC & _).
+  destruct (ΘB !! c) eqn:E; [|done]. exfalso. apply Hc, HC. by eexists.
+Qed.
+
+(** A thread at a primitive type that stops holds nothing. *)
+Lemma tok_empty W Σ ΘB C0 : tok W Σ ΘB C0 → tenv_of Σ ∪ ΘB = ∅ → Σ = ∅ ∧ C0 = ∅.
+Proof.
+  intros Hok H. pose proof (map_positive_l _ _ H) as H1.
+  rewrite H1, (left_id_L ∅ (∪)) in H. split; [by apply tenv_of_empty_inv|].
+  rewrite <-(tok_dom _ _ _ _ Hok), H. apply dom_empty_L.
+Qed.
+
+(** ** P-Term *)
+
+Definition term_at (n : nat) (T : ty) : Prop :=
+  ∀ W Σ ΘB C0 t, tok W Σ ΘB C0 →
+    Erel n W (tenv_of Σ ∪ ΘB) T ∅ t → Prel n W Σ T (C0, {[+ t +]}).
+
+Section level.
+  Context (n' : nat) (IHo : ∀ j T, j ≤ n' → prim T → term_at j T).
+  Context (T : ty) (HT : prim T) (m : nat).
+  Context (IHi : ∀ W Σ ΘB C0 t, esize t < m → tok W Σ ΘB C0 →
+             Erel (S n') W (tenv_of Σ ∪ ΘB) T ∅ t → Prel (S n') W Σ T (C0, {[+ t +]})).
+  Context (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr).
+  Context (Hsz : esize t = m) (Hok : tok W Σ ΘB C0).
+  Context (HE : Erel (S n') W (tenv_of Σ ∪ ΘB) T ∅ t).
+
+  Local Notation Θ := (tenv_of Σ ∪ ΘB).
+
+  Lemma HWs : strict W.
+  Proof. apply (tok_strict _ _ _ _ Hok). Qed.
+
+  Lemma case_recv c w t' :
+    tstep t (LSess (SRecv c w)) t' → c ∉ C0 →
+    Pcase n' W Σ T (C0, {[+ t +]}) (PSess (SRecv c w)) (C0, {[+ t' +]}).
+  Proof.
+    intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
+    destruct Hc as (Θ1 & m0 & U & s & k & Hhd & Hcont).
+    destruct (hd_iface _ _ _ _ _ _ _ _ Hok HcC Hhd) as (s0 & HΣc & Hu & ->).
+    pose proof (ΘB_none_of _ _ _ _ _ Hok HcC) as HBc.
+    exists (delete c Σ), m0, U, s, k. split_and!.
+    - exists s0. split; [|done]. by rewrite insert_delete_id.
+    - by rewrite dom_delete_L; clear; set_solver.
+    - intros W' j Θ2 HW' Hj Hd Hrok HV.
+      assert (tok W (<[c := (s, pt_shift 1 k)]> (delete c Σ)) ΘB C0) as Hok1.
+      { apply tok_insert; [done|]. eapply tok_sub; [|exact Hok]. apply delete_subseteq. }
+      destruct (recv_comp W W' _ ΘB C0 Θ2 Hok1 HW' Hd Hrok) as [Hok' Hcomp].
+      simpl. eapply (IHo j T); [lia|done|exact Hok'|].
+      eapply (Hcont W' j Θ2); [done|done| |exact Hcomp|done].
+      left. split.
+      + tlk. by rewrite HBc.
+      + by rewrite ins_one.
+  Qed.
+
+  Lemma case_close c t' :
+    tstep t (LSess (SClos c)) t' → c ∉ C0 →
+    Pcase n' W Σ T (C0, {[+ t +]}) (PSess (SClos c)) (C0, {[+ t' +]}).
+  Proof.
+    intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
+    destruct Hc as (Θ1 & k & Hhd & HE').
+    destruct (hd_iface _ _ _ _ _ _ _ _ Hok HcC Hhd) as (s0 & HΣc & Hu & ->).
+    exists (delete c Σ), k. split_and!.
+    - exists s0. split; [|done]. by rewrite insert_delete_id.
+    - by rewrite dom_delete_L; clear; set_solver.
+    - apply (IHi W (delete c Σ) ΘB C0); [|eapply tok_sub; [apply delete_subseteq|exact Hok]|done].
+      rewrite <-Hsz. by apply (tstep_giving_size _ _ _ Hst).
+  Qed.
+
+  Lemma case_send c w t' :
+    tstep t (LSess (SSend c w)) t' → c ∉ C0 →
+    Pcase n' W Σ T (C0, {[+ t +]}) (PSess (SSend c w)) (C0 ∖ fchans w, {[+ t' +]}).
+  Proof.
+    intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
+    destruct Hc as (Θr & Θ1 & Θ2 & m0 & U & s & k & Θ' & Hhd & Hcomp & HV & Hext & HE').
+    destruct (hd_iface _ _ _ _ _ _ _ _ Hok HcC Hhd) as (s0 & HΣc & Hu & ->).
+    pose proof (ΘB_none_of _ _ _ _ _ Hok HcC) as HBc.
+    assert (tok W (delete c Σ) ΘB C0) as Hok0 by (eapply tok_sub; [apply delete_subseteq|exact Hok]).
+    assert (c ∉ dom (delete c Σ)) as HcΣ by (rewrite dom_delete_L; clear; set_solver).
+    destruct (send_env W (delete c Σ) ΘB C0 Θ1 Θ2 c (s, pt_shift 1 k) Hok0 HcC HcΣ Hcomp)
+      as (H2 & H1 & Hdj & HΣeq & Hdome & Hsplit & Hde & Hok').
+    assert (Θ1 !! c = None) as H1c.
+    { destruct (comp_at W (delete c Σ) ΘB C0 Θ1 Θ2 c Hok0 Hcomp) as
+        [(_&_&?&_)|[(?&_&HH&_)|[(?&_&HH&_)|(?&?&HH&_)]]]; [done|..];
+        rewrite ?lookup_delete_eq in HH; congruence. }
+    assert (Θ' = <[c := One (s, pt_shift 1 k)]> Θ1) as ->.
+    { destruct Hext as [(_ & ->)|(e' & HH & _)]; [done|congruence]. }
+    exists (mdrop (delete c Σ) Θ2), (mkeep (delete c Σ) Θ2), m0, U, s, k,
+      (tenv_ones (mkeep Θ1 ΘB)), (mkeep Θ2 ΘB). split_and!.
+    - exists s0. split; [|done]. rewrite <-HΣeq. by rewrite insert_delete_id.
+    - done.
+    - intros Hin. apply HcΣ. rewrite HΣeq, dom_union_L. clear -Hin. set_solver.
+    - intros Hin. apply HcΣ. rewrite HΣeq, dom_union_L. clear -Hin. set_solver.
+    - simpl. by rewrite (Vrel_fchans _ _ _ _ _ HV).
+    - done.
+    - intros x Hx1 Hx2. apply (Hde x Hx1). rewrite dom_delete_L.
+      destruct (decide (x = c)); [clear -e; set_solver|clear -Hx2 n; set_solver].
+    - by rewrite <-H2.
+    - rewrite (Vrel_fchans _ _ _ _ _ HV). apply (IHi W _ (mdrop ΘB Θ2) (C0 ∖ dom Θ2)); [|exact Hok'|by rewrite <-H1].
+      rewrite <-Hsz. by apply (tstep_giving_size _ _ _ Hst).
+  Qed.
+
+  Lemma case_slink cd t' :
+    tstep t (LSess (SLink cd)) t' → cd ## C0 →
+    Pcase n' W Σ T (C0, {[+ t +]}) (PSess (SLink cd)) (C0, {[+ t' +]}).
+  Proof.
+    intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
+    destruct Hc as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & H1 & H2 & Hdu & Heq & HE').
+    assert (c ∉ C0 ∧ d ∉ C0) as [Hc0 Hd0] by (clear -HcC; set_solver).
+    pose proof (ΘB_none_of _ _ _ _ _ Hok Hc0) as HBc.
+    pose proof (ΘB_none_of _ _ _ _ _ Hok Hd0) as HBd.
+    apply tenv_ext_inv in H1 as [Hr1 Ho1]. apply tenv_ext_inv in H2 as [Hr2 Ho2].
+    destruct (Σ !! c) as [a|] eqn:HΣc.
+    2: { exfalso. destruct (removed_some _ _ _ _ Hr2) as [o Ho]. revert Ho. tlk.
+         rewrite HΣc, HBc. simpl. rewrite ounion_None. discriminate. }
+    destruct (removed_one _ _ _ _ _ _ Hr2 HΣc HBc) as [Hmc Ha]. subst a.
+    assert (c ≠ d) as Hne.
+    { intros <-. destruct (removed_some _ _ _ _ Hr1) as [o Ho]. congruence. }
+    apply (removed_eq _ (tenv_of Σ ∪ ΘB)) in Hr1; [|symmetry; by apply Ho2].
+    destruct (Σ !! d) as [b|] eqn:HΣd.
+    2: { exfalso. destruct (removed_some _ _ _ _ Hr1) as [o Ho]. revert Ho. tlk.
+         rewrite HΣd, HBd. simpl. rewrite ounion_None. discriminate. }
+    destruct (removed_one _ _ _ _ _ _ Hr1 HΣd HBd) as [H1d Hb]. subst b.
+    exists c, d, (delete c (delete d Σ)), sc, sd, kc, kd. split_and!; try done.
+    - apply map_eq. intros x. destruct (decide (x = c)) as [->|Hxc]; [tlk; done|].
+      destruct (decide (x = d)) as [->|Hxd]; tlk; done.
+    - rewrite dom_delete_L. clear. set_solver.
+    - rewrite !dom_delete_L. clear. set_solver.
+    - apply (IHi W _ ΘB C0); [| |].
+      + rewrite <-Hsz. by apply (tstep_giving_size _ _ _ Hst).
+      + eapply tok_sub; [|exact Hok]. etrans; apply delete_subseteq.
+      + assert (Θ1 = tenv_of (delete c (delete d Σ)) ∪ ΘB) as <-; [|done].
+        apply map_eq. intros x. destruct (decide (x = d)) as [->|Hxd].
+        { rewrite H1d. tlk. by rewrite HBd. }
+        destruct (decide (x = c)) as [->|Hxc].
+        { rewrite Ho1 by done. rewrite Hmc. tlk. by rewrite HBc. }
+        rewrite Ho1, Ho2 by done. tlk. done.
+  Qed.
+
+  Lemma no_ptau_link C' E' : C' = C0 → ¬ ptau_link (C0, {[+ t +]}) (C', E').
+  Proof.
+    intros -> Hl. destruct (ptau_link_C _ _ Hl) as (c & Hc & HC). simpl in *.
+    assert (c ∈ C0 ∖ {[c]}) as Hc' by (by rewrite <-HC). clear -Hc'. set_solver.
+  Qed.
+
+  Lemma case_beta t' :
+    tstep t LBeta t' → Pcase n' W Σ T (C0, {[+ t +]}) PTau (C0, {[+ t' +]}).
+  Proof.
+    intros Hst. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
+    split; [|intros Hl; exfalso; by eapply no_ptau_link].
+    intros _. exists ∅, W. split_and!.
+    - apply disjoint_empty_l.
+    - apply wext_fresh_refl, HWs.
+    - exact (IHo n' T (le_n _) HT W Σ ΘB C0 t' Hok Hc).
+  Qed.
+
+  Lemma tok_add_both W' c k1 k2 :
+    tok W' Σ ΘB C0 → c ∉ dom Σ → c ∉ C0 → w_eq W' k1.2 k2.2 → sdual k1.1 k2.1 →
+    tok W' Σ (<[c := Both k1 k2]> ΘB) (C0 ∪ {[c]}).
+  Proof.
+    intros [HW Hd Hdj Hb Hdu] HcΣ HcC Hq Hdd. split; try done.
+    - by rewrite dom_insert_L, Hd, (comm_L (∪)).
+    - clear -Hdj HcΣ. set_solver.
+    - intros x o. destruct (decide (x = c)) as [->|Hx]; tlk; [intros [= <-]; eauto|apply Hb].
+    - intros x f1 f2. destruct (decide (x = c)) as [->|Hx]; tlk; [intros [= <- <-]; done|apply Hdu].
+  Qed.
+
+  Lemma case_new c t' :
+    tstep t (LNew c) t' → c ∉ C0 →
+    Pcase n' W Σ T (C0, {[+ t +]}) PTau (C0 ∪ {[c]}, {[+ t' +]}).
+  Proof.
+    intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
+    split.
+    2: { intros Hl. exfalso. destruct (ptau_link_C _ _ Hl) as (c' & Hc' & HC). simpl in *.
+         assert (c' ∈ C0 ∖ {[c']}) as Hc'' by (rewrite <-HC; clear -Hc'; set_solver).
+         clear -Hc''. set_solver. }
+    intros Hd. simpl in Hd.
+    assert (c ∉ dom Σ) as HcΣ by (clear -Hd; set_solver).
+    destruct Hc as (a & s & s' & W' & Hfr & Hdd & Hwf & HE').
+    { unfold tenv_of. rewrite dom_union_L, dom_fmap_L, (tok_dom _ _ _ _ Hok). clear -HcΣ HcC. set_solver. }
+    exists {[NConst a]}, W'. split_and!; [|done|].
+    - pose proof (senv_roots_sub Σ ΘB). clear -Hfr H. set_solver.
+    - apply (IHo n' T (le_n _) HT W' Σ (<[c := Both (s, pconst a) (s', pconst a)]> ΘB)).
+      + apply tok_add_both; [|done|done| |done].
+        * eapply tok_mono; [exact (proj1 Hwf)|exact Hok].
+        * apply (wf_eq_refl _ (proj1 (proj2 (proj2 (proj2 (proj1 Hwf)))))).
+      + rewrite <-ins_both; [done|]. by apply not_elem_of_dom.
+  Qed.
+
+  Lemma case_spawn v t' :
+    tstep t (LSpawn v) t' →
+    Pcase n' W Σ T (C0, {[+ t +]}) PTau (C0, {[+ t' +]} ⊎ {[+ App v EUnit +]}).
+  Proof.
+    intros Hst. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
+    split; [|intros Hl; exfalso; by eapply no_ptau_link].
+    intros _. exists ∅, W. split_and!; [apply disjoint_empty_l|apply wext_fresh_refl, HWs|].
+    destruct Hc as (Θ1 & Θ2 & ub & lb & Hcomp & HV & HE2).
+    destruct (spawn_env W Σ ΘB C0 Θ1 Θ2 Hok Hcomp) as (H2 & H1 & Hok2 & Hok1 & Hcut & HΣ & HC).
+    pose proof (IHo n' T (le_n _) HT _ _ _ _ t' Hok2 ltac:(by rewrite <-H2)) as HP1.
+    pose proof (IHo n' TUnit (le_n _) prim_unit _ _ _ _ (App v EUnit) Hok1
+                  ltac:(rewrite <-H1; exact (Erel_spawned _ _ _ _ _ _ HV HWs))) as HP2.
+    pose proof (conn_all n' T HT _ _ _ _ _ _ _ _ _ _ T TUnit ltac:(by left) Hcut HP1 HP2) as HP.
+    by rewrite HΣ, HC in HP.
+  Qed.
+
+  Lemma case_tlink c d t' :
+    tstep t (LSess (SLink {[c; d]})) t' → c ∈ C0 →
+    Pcase n' W Σ T (C0, {[+ t +]}) PTau (C0 ∖ {[c]}, {[+ chsubst c d t' +]}).
+  Proof.
+    intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc.
+    destruct Hc as (c' & d' & Θ1 & Θm & sc & sd & kc & kd & Hcd & H1 & H2 & Hdu & Heq & HE').
+    assert (esize t' < m) as Hlt by (rewrite <-Hsz; by apply (tstep_giving_size _ _ _ Hst)).
+    assert (Prel (S n') W Σ T (C0 ∖ {[c]}, {[+ chsubst c d t' +]})) as HP.
+    { destruct (link_env W Σ ΘB C0 Θm Θ1 c' d' (sc, kc) (sd, kd) c d Hok HcC (eq_sym Hcd)
+                  H1 H2 Hdu Heq) as [(<- & HΘ1)|(Hne & Θ' & ΘB' & Hmv & Hcv & Hok')].
+      - rewrite chsubst_self. apply (IHi W Σ (delete c ΘB) (C0 ∖ {[c]})); [done|by apply tok_delete|].
+        by rewrite <-HΘ1.
+      - apply (IHi W Σ ΘB' (C0 ∖ {[c]})); [by rewrite esize_chsubst|done|].
+        eapply Erel_econv; [apply HWs|exact Hcv|].
+        exact (proj2 (rel_fuse (S n')) W Θ1 Θ' T ∅ t' c d HWs Hne Hmv HE'). }
+    simpl. split.
+    - intros _. exists ∅, W. split_and!; [apply disjoint_empty_l|apply wext_fresh_refl, HWs|].
+      eapply Prel_down; [|exact HP]. lia.
+    - intros _ _. exact HP.
+  Qed.
+
+  Lemma term_level : Prel (S n') W Σ T (C0, {[+ t +]}).
+  Proof.
+    pose proof HE as HE0. apply Erel_S_iff in HE0 as (Hval & Hrdy & _).
+    assert (irred t → Σ = ∅ ∧ C0 = ∅ ∧ Vrel (S n') W ∅ T t) as Hstop.
+    { intros Hirr. pose proof (Hval Hirr) as HV.
+      pose proof (Vrel_prim_empty _ _ _ _ _ HT HV) as H0.
+      destruct (tok_empty _ _ _ _ Hok H0) as [-> ->]. rewrite H0 in HV. done. }
+    assert (¬ irred t → ready_p W Σ (C0, {[+ t +]})) as Hready.
+    { intros Hn. destruct Hok as [HW Hd Hdj Hb Hdu].
+      apply (ready_term W Σ ΘB C0 t HW Hd Hdj Hb Hdu). exact (proj1 (Hrdy Hn)). }
+    apply Prel_S_intro.
+    - intros Hirr. destruct (tstep_progress t) as [Hi|(α & t' & Hs)].
+      + destruct (Hstop Hi) as (-> & -> & HV). exists t, ∅. split_and!.
+        * by rewrite (right_id_L ∅ (⊎)).
+        * by eapply Vrel_val.
+        * unfold tenv_of. by rewrite fmap_empty.
+        * intros e He. exfalso. clear -He. multiset_solver.
+      + exfalso. assert (¬ irred t) as Hn by (intros Hi; exact (Hi _ _ Hs)).
+        destruct (Hready Hn (λ p' Hp', Hirr _ _ Hp')) as [Ht _].
+        destruct (Ht (λ k Hk, match Hk with ex_intro _ σ (ex_intro _ q (conj Hq _)) => Hirr _ _ Hq end))
+          as (v & E & Heq & Hv & _).
+        injection Heq as _ HE'. assert (v ∈ ({[+ t +]} : gmultiset expr)) as Hin.
+        { rewrite HE'. apply gmultiset_elem_of_disj_union. left. by apply gmultiset_elem_of_singleton. }
+        apply gmultiset_elem_of_singleton in Hin as Htv. symmetry in Htv.
+        rewrite <-Htv in Hv. exact (val_no_tstep _ _ _ Hs Hv).
+    - intros Hn. destruct (tstep_progress t) as [Hi|(α & t' & Hs)].
+      + exfalso. apply Hn. destruct (Hstop Hi) as (_ & -> & HV). apply vals_pirred.
+        intros e He. apply gmultiset_elem_of_singleton in He as ->. by eapply Vrel_val.
+      + apply Hready. intros Hi. exact (Hi _ _ Hs).
+    - intros π p' Hst.
+      destruct (single_step _ _ _ _ Hst) as
+        [(σ & t' & -> & Hs & Hsub & ->)|[(t' & -> & Hs & ->)|[(c & t' & -> & Hs & Hc & _ & ->)
+        |[(v & t' & -> & Hs & ->)|(c & d & t' & -> & Hs & Hc & ->)]]]].
+      + destruct σ as [c w|c w|c|cd]; simpl in Hsub |- *.
+        * rewrite difference_empty_L. apply case_recv; [done|clear -Hsub; set_solver].
+        * apply case_send; [done|clear -Hsub; set_solver].
+        * rewrite difference_empty_L. apply case_close; [done|clear -Hsub; set_solver].
+        * rewrite difference_empty_L. by apply case_slink.
+      + by apply case_beta.
+      + by apply case_new.
+      + by apply case_spawn.
+      + by apply case_tlink.
+  Qed.
+End level.
+
+Lemma term_all n : ∀ T, prim T → term_at n T.
+Proof.
+  induction n as [n IHn] using lt_wf_ind. intros T HT. destruct n as [|n'].
+  { intros ? ? ? ? ? _ _. apply Prel_0. }
+  assert (IHo : ∀ j T, j ≤ n' → prim T → term_at j T)
+    by (intros j T' Hj HT'; apply IHn; [lia|done]).
+  assert (∀ m W Σ ΘB C0 t, esize t < m → tok W Σ ΘB C0 →
+            Erel (S n') W (tenv_of Σ ∪ ΘB) T ∅ t → Prel (S n') W Σ T (C0, {[+ t +]})) as Hlt.
+  { intros m. induction m as [m IHm] using lt_wf_ind. intros W Σ ΘB C0 t Hsz Hok HE.
+    exact (term_level n' IHo T HT (esize t)
+             (λ W Σ ΘB C0 t' H, IHm (esize t) Hsz W Σ ΘB C0 t' H) W Σ ΘB C0 t eq_refl Hok HE). }
+  intros W Σ ΘB C0 t Hok HE. exact (Hlt (S (esize t)) W Σ ΘB C0 t (Nat.lt_succ_diag_r _) Hok HE).
+Qed.
+
+(** P-Term (§11). Σ, Θ_B; · ⊨^∅_W t : T with Θ_B holding both ends of
+    every channel of C₀ gives Σ ⊨_W (C₀, {t}) : T. The side conditions
+    are the spec's implicit well-formedness: W strict, Θ_B holds both
+    ends (dual, at aliased points) of exactly the channels of C₀, and
+    the interface avoids C₀. *)
+Theorem Prel_term W Σ ΘB C0 t T :
+  prim T → strict W → dom ΘB = C0 → dom Σ ## C0 →
+  (∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2) → tenv_dual (w_eq W) ΘB →
+  sem_typed W (tenv_of Σ ∪ ΘB) [] ∅ t T →
+  sem_ptyped W Σ (C0, {[+ t +]}) T.
+Proof.
+  intros HT HW Hd Hdj Hb Hdu Ht n.
+  apply (term_all n T HT W Σ ΘB C0 t); [by split|].
+  pose proof (Ht n W ∅ Var (wext_refl W HW) (map_disjoint_empty_l _) eq_refl) as H.
+  by rewrite subst_ids, (right_id_L ∅ (∪)) in H.
+Qed.
