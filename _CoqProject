@@ -28,6 +28,7 @@ theories/TermRules.v
 theories/TermRules2.v
 theories/Static.v
 theories/DropCounter.v
+theories/ConnectN.v
 # Examples disabled while the core is ported to the order-based system
 # (ORDERS-SPEC.md); they are ported separately.
 # theories/examples/Sync.v

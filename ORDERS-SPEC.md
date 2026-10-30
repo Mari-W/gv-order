@@ -408,6 +408,9 @@ P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalg
             the Σ_Cᵢ together hold both ends of every channel in C₀, each end once, dual,
             W₁ ⊔ … ⊔ Wₙ strict
             ⇒   Σ₁, …, Σₙ ⊨_{W₁ ⊔ … ⊔ Wₙ} (C₁ ⊍ … ⊍ Cₙ ⊍ C₀, E₁ ⊎ … ⊎ Eₙ) : T
+            Rocq (sharp edges 55): Prel_connect_n (ConnectN.v). The components move to the
+            full amalgam first (monotonicity), then P-Connect folds at that one world
+            (Prel_connect_list). The cut ends are dual at ≡ of the full amalgam.
 ```
 
 ## 12  Main results
