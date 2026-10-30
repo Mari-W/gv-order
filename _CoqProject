@@ -51,3 +51,8 @@ theories/pgv/PGVTyping.v
 theories/pgv/PGVWorld.v
 theories/pgv/PGVTranslate.v
 theories/pgv/PGVExamples.v
+theories/pn/PNTypes.v
+theories/pn/PNTyping.v
+theories/pn/PNWorld.v
+theories/pn/PNTranslate.v
+theories/pn/PNExamples.v

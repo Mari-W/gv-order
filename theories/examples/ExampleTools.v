@@ -112,6 +112,71 @@ Proof.
     |exact HL|exact Hs|by apply slot_respect|exact Hc|exact Hr|exact HLr].
 Qed.
 
+(** ** Ranks into ℤ with a top element
+
+    Levels of Padovani and Novara fall and rise without bound, and a
+    latent effect ⊤ needs a ceiling above every level (pn/PNWorld.v). A
+    rank is a pair of an integer level and an instant, read
+    lexicographically, or a top element with an instant above all of
+    them. *)
+Inductive zrank := ZR (z : Z) (k : nat) | ZT (k : nat).
+
+Definition zlt (a b : zrank) : Prop :=
+  match a, b with
+  | ZR z k, ZR z' k' => (z < z')%Z ∨ (z = z' ∧ k < k')
+  | ZR _ _, ZT _ => True
+  | ZT k, ZT k' => k < k'
+  | ZT _, ZR _ _ => False
+  end.
+
+Lemma zlt_irrefl a : ¬ zlt a a.
+Proof. destruct a; simpl; lia. Qed.
+
+Lemma zlt_trans a b c : zlt a b → zlt b c → zlt a c.
+Proof. destruct a, b, c; simpl; lia. Qed.
+
+Lemma wgen_strict_z N E L (cn : point → point) (r : point → zrank) :
+  (∀ p, p ∈ N → ∃ a, p = NConst a) →
+  (∀ x y, E x y → eq_or_supp N x y) →
+  (∀ x y, L x y → po_or_supp N x y) →
+  (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
+  (∀ x y i, cn x = cn y → cn (pt_slot x i) = cn (pt_slot y i)) →
+  (∀ x y, E x y → cn x = cn y) →
+  (∀ x, zlt (r x) (r (pt_shift 1 x))) →
+  (∀ x y, L x y → zlt (r (cn x)) (r (cn y))) →
+  strict (wgen N E L).
+Proof. apply wgen_strict_by; [apply zlt_irrefl|apply zlt_trans]. Qed.
+
+(** Strictness through a denotation of points that commutes with
+    successor and slots. ≡ facts relate points with one denotation, and
+    the rank of a denotation rises along successor and along ≺ facts.
+    The denotation need not be a point, so aliases need no
+    representative (pn/PNWorld.v). *)
+Lemma wgen_strict_den {D A} (R : A → A → Prop) N E L (den : point → D)
+    (dsh : D → D) (dsl : D → nat → D) (r : D → A) :
+  (∀ a, ¬ R a a) → (∀ a b c, R a b → R b c → R a c) →
+  (∀ p, p ∈ N → ∃ a, p = NConst a) →
+  (∀ x y, E x y → eq_or_supp N x y) →
+  (∀ x y, L x y → po_or_supp N x y) →
+  (∀ x, den (pt_shift 1 x) = dsh (den x)) →
+  (∀ x i, den (pt_slot x i) = dsl (den x) i) →
+  (∀ x y, E x y → den x = den y) →
+  (∀ d, R (r d) (r (dsh d))) →
+  (∀ x y, L x y → R (r (den x)) (r (den y))) →
+  strict (wgen N E L).
+Proof.
+  intros Hirr Htr HN HE HL Hs Hl Hc Hr HLr. split; [by apply wgen_wf|].
+  assert (∀ x y, geq E x y → den x = den y) as Heq.
+  { induction 1; try congruence; auto; rewrite ?Hs, ?Hl; congruence. }
+  assert (∀ x y, glt E L x y → R (r (den x)) (r (den y))) as Hlt.
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    - by apply HLr.
+    - rewrite Hs. apply Hr.
+    - apply Heq in Hx, Hy. by rewrite Hx, <-Hy.
+    - by eapply Htr. }
+  intros x H. apply Hlt in H. exact (Hirr _ H).
+Qed.
+
 (** The rank of a point is a weight per root constant, slots weighted
     by their base, plus a step per name times the offset. *)
 Fixpoint pn_rank (g : nat → nat) (h : nat → nat → nat → nat) (p : pname) : nat :=
