@@ -1,18 +1,44 @@
 # Deciding strictness of W_G
 
-State of 2026-10-30. Paper-level. Nothing here is mechanized. Notation follows
-ORDERS-SPEC.md §4, §5 and §9.
+State of 2026-10-30, revised the same day after DECIDABILITY-REVIEW.md and sharp
+edges 58. Paper-level. Nothing here is mechanized. Notation follows ORDERS-SPEC.md
+§4, §5 and §9.
 
 ## 0  Results
 
-Strictness of W_G is decidable for every finite G in the schema class L of §1 that
-satisfies four syntactic side conditions (diagonal freedom, role consistency,
-equal coefficients, monotone boundary roles) and a fifth, finite shape closure,
-that holds for every example but is not shown decidable here. When no role
-carries a constant the procedure is polynomial in the size of the static graph 𝒢
-of §2. Otherwise it is polynomial in the size of an abstract graph that grows
-exponentially in the number of constant-carrying roles per shape (Theorems 2 to 4). The free-coordinate extension that ORDERS-SPEC §16 calls open
-is Theorem 3.
+Static.v types a box body once, with its point variables and its constraint C as
+hypotheses, at one world W that knows constants only (sharp edges 57 and 58). The
+type checker then decides strictness of W_G for a finite set G of ground facts and
+ground aliases. It also decides entailments W_G ∪ Ψ ⊢ x ≺ y at the side conditions
+that mention point variables, among them the body atoms of a box under its C and
+C[xs] at force sites inside box bodies (§9). Lemma 5 reduces an entailment to at
+most (2|Ψ| + 2)² ground queries and a search in a graph on 2|Ψ| + 2 vertices.
+Lemma 6 reduces a ground query to strictness of G plus one fact. Lemma 7 bounds the
+choice of G to relations on the finitely many ground points the open conditions
+mention. Everything therefore rests on strictness for ground G. Ground G lies in L
+without counter variables. It satisfies (D), (C) and (A) outright, and (R) and (S)
+when its aliases relate shapes of equal depth. Theorem 4 decides it under (M).
+Delegation emits aliases of unequal depth, and a delegation round trip violates (M)
+(§9.3). Strictness for those ground G is open.
+
+Theorems 1 to 4 are results about the schema class L of §1, which models the orbit
+reading of §1.3. Static.v no longer uses that reading. Strictness of W_G is
+decidable for every finite G in L that satisfies five syntactic side conditions
+(diagonal freedom, role consistency, offset alignment, equal coefficients,
+monotone boundary roles) and a sixth, finite shape closure, that holds for every
+example but is not shown decidable here. When no role carries a constant the
+procedure is polynomial in the size of the static graph 𝒢 of §2. Otherwise it is
+polynomial in the size of an abstract graph that grows exponentially in the number
+of constant-carrying roles per shape (Theorems 2 to 4). Theorem 3 needs
+constant-free G. Every slot point carries the constant offset 0, so the sender gate
+(c, κ) ≺ (c[κ][1], 0) of the free-coordinate extension of ORDERS-SPEC §16 needs
+Theorem 4 and (M). Theorem 3 alone covers only the receiver schema
+(c[κ][1], b) ≺ (c, κ+1).
+
+Offset alignment (A) answers gap G2 of the review. It rejects an alias that carries
+a counter at the offset on one side and at an index coordinate on the other, such
+as the delegation alias (e, κ) ≡ (c[κ][1], 0) under recursion. Under the reading of
+Static.v there are no counters, and (A) rejects nothing.
 
 Two claims of ORDERS-SPEC do not hold as stated.
 
@@ -22,12 +48,13 @@ Two claims of ORDERS-SPEC do not hold as stated.
   two-counter machines).
 - Slot names do not nest boundedly in programs. A recursion on a received channel
   needs the points c, c[0][1], c[0][1][0][1], … (§1.4). Any finite G has bounded
-  depth, so the static system rejects such a program. This is a completeness gap,
-  not a decidability gap.
+  depth, so the static system under the orbit reading rejects such a program.
+  Static.v rejects it as well (§9.4). This is a completeness gap, not a
+  decidability gap.
 
-Proved here are Theorems 1 to 5 and Lemmas 1 to 4. Cited are the linear-programming
+Proved here are Theorems 1 to 5 and Lemmas 1 to 7. Cited are the linear-programming
 characterization of zero multicycles and the recursive SCC scheme of Kosaraju and
-Sullivan (STOC 1988, pp. 399–400), polynomial-time linear programming, and the
+Sullivan (STOC 1988, pp. 399–401), polynomial-time linear programming, and the
 undecidability of halting for two-counter machines (Minsky 1961). We re-prove the
 parts of Kosaraju–Sullivan we change.
 
@@ -102,8 +129,8 @@ payload  x ≡ ι[i]                 the sender's channel aliased to the slot (d
 ```
 
 At top level all coordinates are constants. Inside the body of a recursive box
-□(∀ιs. T) the atoms mention the bound point variables ιs. "G closed under the
-substitutions at recursive calls" means that G contains the facts of every instance
+□(∀ιs. T) the atoms mention the bound point variables ιs. The orbit reading takes
+"G closed under the substitutions at recursive calls" to mean that G contains the facts of every instance
 in the orbit of the first instance under the recursive substitutions. We call a
 box shift-only when its recursive calls instantiate each bound point variable ι_j
 by ι_j + s_j. With a single recursive call site and all s_j ∈ {0, s}, the orbit is
@@ -123,6 +150,10 @@ adds its own counter. This gives the free-coordinate schemas.
 ```
 
 Orbits that do not fit L are listed in §7.
+
+Static.v does not use the orbit reading. It reads the atoms of a box body as
+entailment obligations under the hypotheses C of the box and emits only ground atoms
+into G (§9). The orbit reading and the class L remain the setting of Theorems 1 to 5.
 
 ### 1.4  Nesting
 
@@ -175,32 +206,52 @@ w = i₁…i_k with shape(s).w ∈ Sh(G), the schema
 with fresh shared variables ν₀, …, ν_k. The case k = 0 is the successor closure
 s + ν₀ ≡ s′ + ν₀.
 
-**Lemma 1 (alias closure).** On points of shapes in Sh(G), ≡_{W_G} is the
-equivalence generated by the instances of A(G).
+Let E be the equivalence generated by the instances of A(G). It relates points of
+shapes in Sh(G). Write u[w] + n for (u[i₁] + n₁ … [i_k]) + n with w = n₁ i₁ … i_k
+nonempty. The outside equivalence O is the equivalence on points of shapes outside
+Sh(G) generated by the pairs u[w] + n ≡ v[w] + n with u E v and u[w] outside Sh(G).
+Then v[w] lies outside Sh(G) as well, by alias transfer along the chain from u to v.
+O relates points with equal offsets.
 
-*Proof.* The instances of A(G) are aliases of W_G by successor and slot congruence,
-which gives one inclusion. For the other, let R be the set of instances of A(G)
-and E its equivalence closure. E is closed under +1, because R is (shift ν_k). If
-x E y by a chain x = z₀, …, z_m = y and x[i] has a shape in Sh(G), then each z_j
-is related to x by a chain of alias schemas, so each z_j[i] has a shape in Sh(G)
-by alias transfer, and z_j[i] R z_{j+1}[i] by the instance of A(G) with w extended
-by i. So E is closed under slots on Sh(G). E contains the base aliases, so E
-contains ≡_{W_G} restricted to Sh(G). ∎
+**Lemma 1 (alias closure).** ≡_{W_G} is E ∪ O. In particular ≡_{W_G} restricted to
+points of shapes in Sh(G) is E.
 
-**Theorem 1 (reduction).** Under (S), W_G is strict iff Γ_G has no closed walk
-that contains a strict edge.
+*Proof.* The instances of A(G) and the generators of O are aliases of W_G by
+successor and slot congruence. This gives E ∪ O ⊆ ≡_{W_G}. For the other inclusion
+it suffices that E ∪ O is a congruence that contains the base aliases, because
+≡_{W_G} is the least such relation on all points. E and O live on disjoint sets of
+points, so E ∪ O is an equivalence. E contains the base aliases (k = 0, ν₀ = 0).
+
+Successor. E is closed under +1, because the set of instances of A(G) is (shift
+ν_k). The generators of O are closed under +1 (raise n), so O is.
+
+Slots on E. Let x E y by a chain x = z₀, …, z_m = y. Each z_j is related to x by a
+chain of alias schemas. If x[i] has a shape in Sh(G), then each z_j[i] has a shape
+in Sh(G) by alias transfer, and the instance of A(G) with word w.i and ν_{k+1} = 0
+relates z_j[i] to z_{j+1}[i]. So x[i] E y[i]. If x[i] lies outside Sh(G), then
+x[i] O y[i] by the generator with u = x, v = y, w = 0 i and n = 0.
+
+Slots on O. Sh(G) is prefix closed, so every slot of an outside point lies outside.
+The image of a generator u[w] + n ≡ v[w] + n under [i] is the generator for the word
+w n i with offset 0. So [i] maps chains of generators to chains of generators, and
+O is closed under slots. ∎
+
+**Theorem 1 (reduction).** W_G is strict iff Γ_G has no closed walk that contains a
+strict edge.
 
 *Proof.* The order of W_G is the transitive closure of the strict edges composed
 with ≡ on both sides, read on ≡-classes. It is irreflexive iff no point x has
 x ≺⁺ x modulo ≡, that is, iff there is no closed walk of strict edges and
 ≡-steps with at least one strict edge. By Lemma 1 a ≡-step between points of
-Sh(G) is a path of weak edges. It remains to show that points outside Sh(G) lie on
-no such walk. By alias transfer, a derived alias relates a point of shape g.w to
-one of shape h.w with g, h related by an alias schema, and g.w ∈ Sh(G) iff
-h.w ∈ Sh(G). So no ≡-step and no edge leaves or enters the outside part except
-program order, which keeps the shape. Every ≺ schema mentions shapes of G only.
-Inside the outside part, aliases preserve the offset and program order raises it,
-so it carries no closed walk with a strict edge. ∎
+Sh(G) is an E-step, that is, a path of weak edges, and a ≡-step at a point outside
+Sh(G) is an O-step and stays outside. It remains to show that points outside Sh(G)
+lie on no such walk. No ≡-step relates a point of Sh(G) to an outside point. No
+strict edge leaves or enters the outside part except program order, which keeps the
+shape, because every ≺ schema mentions shapes of G only. Inside the outside part, O
+preserves the offset and program order raises it, so it carries no closed walk with
+a strict edge. ∎
+
+Theorem 1 does not use (S). (S) makes the static graph below finite.
 
 The static graph 𝒢 is the finite multigraph whose vertices are the shapes of
 Sh(G). Each ≺ schema and the program-order schema of each shape give a strict
@@ -208,6 +259,32 @@ edge, and each schema of A(G) gives two weak edges, one per direction. Every
 closed walk of Γ_G projects to a closed walk of 𝒢.
 
 ## 3  Roles
+
+Roles need every edge of 𝒢 to be a unit schema. A schema of A(G) adds ν₀ to the
+offsets of s and s′. If a shared variable κ sits at the offset of s and at an index
+coordinate of s′, the offset of s + ν₀ is κ + c + ν₀, a sum of two variables. The
+alias (e, κ) ≡ (c[κ][1], 0) gives (e, κ + ν₀) ≡ (c[κ][1], ν₀), whose instances
+relate (e, m) to (c[k][1], m − k) for all k ≤ m. No finite set of unit schemas has
+these instances (DECIDABILITY-REVIEW.md, G2). We exclude this case.
+
+Offset alignment (A). In every alias schema of G, the two offsets hold either
+constants or one shared variable κ, as κ + c on one side and κ + c′ on the other.
+
+(A) costs one scan over the alias schemas. It fails in two ways. A shared variable
+sits at the offset on one side and at an index coordinate on the other, the case
+above. Or an offset holds a free variable κ. Then the instances with κ = 0 and κ = 1
+are aliased to the same point, so (f, …, c) ≡ (f, …, c+1), and program order makes
+W_G non-strict. The second failure therefore decides the instance at once, and only
+the first one rejects G. Under the orbit reading the first failure is delegation
+under recursion with a payload alias that carries the counter. Under the reading of
+Static.v there are no counters (§9), and (A) rejects nothing.
+
+Under (D) and (A) every schema of A(G) is a unit schema. ν₀ lands in the
+coordinates that were the offsets of s and s′, and ν_k for k ≥ 1 in fresh offsets.
+If those coordinates hold κ + c and κ + c′, κ occurs nowhere else by (D), and κ + ν₀
+renames to one variable κ′ ∈ ℕ with the same instances. Otherwise they hold
+constants, and c + ν₀, c′ + ν₀ are unit expressions with ν₀ shared. (D) carries over
+to A(G).
 
 Union the coordinate positions (f, j) over all edges of 𝒢 whenever one shared
 variable sits at (f, j) on one side and at (g, j′) on the other. The classes are
@@ -217,15 +294,16 @@ Role consistency (R). No role contains two positions of the same shape.
 
 Under (R) every vertex (f, x) has at most one r-coordinate x_r for each role r,
 and R(f) denotes the roles present at f. For an edge e and a role r, e shares r
-when a shared variable carries r from source to target, with shift δ_e[r] ∈ ℤ.
-Otherwise e cuts r. An edge cuts r when r is absent on one side, when it holds a
-free variable on one side, or when it holds a constant on one side.
+when a shared variable carries r from source to target, with shift δ_e[r] ∈ ℤ, and
+when r is absent at both ends, with shift 0. Otherwise e cuts r. An edge cuts r when
+r is present on one side only, when it holds a free variable on one side, or when it
+holds a constant on one side.
 
 (R) and (D) are checked by one union-find pass over G. Program order shares every
-role of its shape, with shift 1 on the offset role and 0 elsewhere. The schemas of
-A(G) share the roles of s and s′ and the fresh roles ν_k.
+role of its shape, with shift 1 on the offset role and 0 elsewhere. Under (A) the
+schemas of A(G) share the roles of s and s′ and the fresh roles ν_k.
 
-**Lemma 2 (threads).** Assume (D) and (R) and that no schema of G contains a
+**Lemma 2 (threads).** Assume (D), (R) and (A) and that no schema of G contains a
 constant. Then Γ_G has a closed walk with a strict edge iff 𝒢 has a closed walk
 e₁ … e_n with a strict edge such that every role r is cut by some e_k or satisfies
 Σ_k δ_{e_k}[r] = 0.
@@ -264,8 +342,8 @@ x ≥ 0
 x_e ≥ 1
 ```
 
-This is Kosaraju and Sullivan's multicycle LP (their Thm 2.4, p. 399) with the
-labels restricted to the roles outside S. A feasible x scales to an integral
+This is Kosaraju and Sullivan's multicycle LP (their Thm 2.4, p. 399, in the
+per-edge form x_e ≥ 1 of their §3, p. 400) with the labels restricted to the roles outside S. A feasible x scales to an integral
 circulation whose support contains e.
 
 **Algorithm SFZ(H)** (strict zero cycles with free coordinates).
@@ -285,8 +363,8 @@ circulation whose support contains e.
 Singleton vertices without E′ edges count as components. H|Q keeps the edges of
 H with both ends in Q.
 
-**Theorem 3 (free coordinates).** Under (D) and (R), for constant-free G, SFZ(𝒢)
-returns Yes iff Γ_G has a closed walk with a strict edge, and it runs in
+**Theorem 3 (free coordinates).** Under (D), (R), (A) and (S), for constant-free
+G, SFZ(𝒢) returns Yes iff Γ_G has a closed walk with a strict edge, and it runs in
 polynomial time.
 
 *Proof.* By Lemma 2 it suffices to show that SFZ(H) returns Yes iff H contains a
@@ -316,20 +394,25 @@ of H (line 3) and has zero sum on W. So W is valid.
 
 Termination and cost. Line 6 shrinks S, so the loop runs at most |roles| + 1
 times per call. Line 9 recurses only when k ≥ 2, on smaller vertex sets. As in
-Kosaraju–Sullivan (Thm 3.3, p. 400), the calls at one recursion depth work on
+Kosaraju–Sullivan (Thm 3.3 and its proof, p. 401), the calls at one recursion depth work on
 disjoint subgraphs, and the depth is at most |V(𝒢)|. The total is
 O(|V| · (|roles| + 1) · |E|) feasibility tests of linear programs with |E|
 variables and |V| + |E| + |roles| constraints, each polynomial. ∎
 
-**Theorem 2 (uniform schemas).** If every edge shares every role of both its
-ends (no free variables, no constants, equal role sets), then S = ∅ throughout,
+**Theorem 2 (uniform schemas).** Assume (D), (R), (A) and (S). If every edge
+shares every role of both its ends (no free variables, no constants, equal role
+sets), then S = ∅ throughout,
 SFZ is Kosaraju and Sullivan's ZCYCLE with the extra requirement of a strict edge,
 and strictness of W_G is decided in O(|V| · |E|) LP tests.
 
 The strict-edge requirement is the only change to ZCYCLE. ZCYCLE asks for a zero
 cycle, and strictness asks for a zero cycle through a strict edge. Weak edges
 alone form zero cycles (an alias and its reverse), and those cycles are harmless.
-The domain ℕ instead of ℤ costs nothing (the shift-up step in Lemma 2).
+The domain ℕ instead of ℤ costs nothing (the shift-up step in Lemma 2). S = ∅
+relies on the convention of §3 that an edge shares, with shift 0, every role absent
+at both its ends. Without it, weak components of 𝒢 with different role sets put
+those roles into cut(𝒢). The answer is the same, because those roles have no shift
+on those edges and their LP constraint is trivial (DECIDABILITY-REVIEW.md, G3).
 
 ## 5  Constants
 
@@ -372,7 +455,7 @@ The edge keeps e's strictness and e's shifts on roles outside R_c. For r ∈ R_c
 shares r with shift δ_e[r] when e shares r and a_r = a′_r = ∞. In every other case
 it cuts r. 𝒢^# is constant-free.
 
-**Lemma 3 (abstraction).** Under (D), (R) and (M), Γ_G has a closed walk with a
+**Lemma 3 (abstraction).** Under (D), (R), (A) and (M), Γ_G has a closed walk with a
 strict edge iff 𝒢^# has a valid closed walk.
 
 *Proof.* (⇒) Map each concrete vertex (f, x) to (f, a) with a_r = x_r when
@@ -393,7 +476,7 @@ finite. Values are nondecreasing around the walk and return to their start, so
 they are all equal and all shifts on r are 0. The concrete value is that constant.
 In each case the concrete walk closes. ∎
 
-**Theorem 4 (boundaries on monotone roles).** Under (D), (R), (S) and (M),
+**Theorem 4 (boundaries on monotone roles).** Under (D), (R), (A), (S) and (M),
 strictness of W_G is decidable. Run SFZ on 𝒢^#. The size of 𝒢^# is at most
 |Sh(G)| · (B − L + 2)^ρ, with ρ the largest number of constant-carrying roles at
 one shape.
@@ -437,8 +520,8 @@ The split multiplies the number of shapes by at most Π_r m_r. Schemas that viol
 ## 6  Undecidability with general boundaries
 
 **Theorem 5.** Strictness of W_G is undecidable for finite sets of unit schemas
-that satisfy (D), (R) and (S), use no alias schemas, and use shapes of depth at
-most 3. The roles that carry constants then violate (M).
+that satisfy (D), (R), (A) and (S), use no alias schemas, and use shapes of depth
+at most 3. The roles that carry constants then violate (M).
 
 *Proof.* Reduce halting of a deterministic two-counter machine M from (q₀, 0, 0)
 (Minsky 1961). Encode a configuration (q, x, y) at clock t as the point
@@ -489,18 +572,18 @@ gadget is open (§7).
 1. ORDERS-SPEC §16, "boundary facts reduce by unrolling". False in general
    (Theorem 5). True for monotone roles in any dimension (Theorem 4). The case of
    non-monotone boundary roles with fewer than three counting coordinates per
-   family is open. The criterion (M) is
-   syntactic and cheap. Whether the static system can violate it is open. If it
-   can, either the static system must enforce (M) or the type checker cannot be
-   complete for strictness.
+   family is open. The criterion (M) is syntactic and cheap. The static system
+   violates it under reading A (§8.2) and under reading C (§9.3). Under reading C
+   the violating G is ground, and Theorem 5 says nothing about ground G.
 2. Slot nesting is unbounded in programs (§1.4). The static system types only
-   programs whose orbit closure fits a finite G. A schema language with variables
+   programs whose orbit closure fits a finite G. Static.v rejects the recursive
+   receiver as well (§9.4). A schema language with variables
    ranging over names would cover the recursive receiver. Its graphs are
    prefix-rewriting graphs with counters, and nothing here decides them.
 3. (S), finiteness of the shape closure, is defined but its decidability in
    general is not proved here. It holds when every alias schema relates two shapes
    of equal depth, because transfer then preserves depth and the slot indices come
-   from G.
+   from G. Delegation emits aliases of unequal depth, also in ground G (§9.3).
 4. Orbits outside L. A box whose bound points move at different rates (a sent
    twice per unfolding, b once) gives schemas such as (a, 2κ) ≺ (b, κ), a scaling
    and not a shift. Lemma 4 does not apply. A consistent choice of rates per
@@ -514,13 +597,22 @@ gadget is open (§7).
    the lifting interacts with cuts, and that case is open.
 6. The reading of §1. ORDERS-SPEC does not define schemas, orbits or fresh points
    inside boxes. Sections 1.1 to 1.3 fix one reading. A different reading of
-   "closed under the substitutions at recursive calls" changes the class.
+   "closed under the substitutions at recursive calls" changes the class. Static.v
+   follows reading C of §9, and the orbit reading is no longer the target.
+7. Offset alignment (A). We did not extend Lemma 2 to edges that relate an offset
+   on one side to the sum of an index and an offset on the other. Such an edge
+   relates (e, m) to (c[k][1], m − k) for all k ≤ m, a two-variable constraint
+   that roles cannot express. (A) rejects these G under the orbit reading. Under
+   reading C it rejects nothing.
+8. Reading C (§9). Open are strictness for ground G with aliases of unequal depth
+   or with roles that violate (M), a polynomial bound for the choice of G in
+   Lemma 7, and whether ground G can encode a two-counter machine.
 
 ## References
 
 - S. Rao Kosaraju, Gregory F. Sullivan. Detecting cycles in dynamic graphs in
   polynomial time. STOC 1988, pp. 398–406. Store key `kosaraju1988detecting`.
-  Used: Thm 2.2 and 2.4 (p. 399), VPARTITION, ZCYCLE and Thm 3.3 (p. 400).
+  Used: Thm 2.2 and 2.4 (p. 399), VPARTITION and ZCYCLE (pp. 400–401), Thm 3.3 and its proof (p. 401).
 - Marvin L. Minsky. Recursive unsolvability of Post's problem of "Tag" and other
   topics in theory of Turing machines. Annals of Mathematics 74(3), 1961. Store key
   `minsky1961recursive`. Cited for undecidable halting of two-counter machines,
@@ -528,10 +620,16 @@ gadget is open (§7).
 
 ## 8  Can the static system violate (M)?
 
+This section predates sharp edges 57 and 58. Neither of its readings is what
+Static.v does now. Static.v follows reading C of §9, under which G is ground and the
+question of this section becomes the question of §9.3. The relay discussion stays
+because it shows what reading A would cost and why relay does not type.
+
 The answer depends on how a recursive box contributes facts. Under the orbit
 reading of §1.3 the static system emits a G that satisfies (D), (R), (C) and (S),
-generates a strict world, and violates (M). Under the reading of Static.v, which
-types a box body at every instance in one world, the same program is rejected, and
+generates a strict world, and violates (M). Under reading B, which Static.v used
+before sharp edges 57 and which types a box body at every instance in one world, the
+same program is rejected, and
 the emitted set is not a finite set of unit schemas. Neither reading is shown here
 to yield the gadget of Theorem 5.
 
@@ -553,12 +651,13 @@ The readings differ at E-Exp.
 - Reading A (orbit, §1.3). G contains the body atoms at the instances in the orbit
   of the first instance under the substitutions at recursive calls. This is how we
   read "G closed under the substitutions at recursive calls" in ORDERS-SPEC §9.
-- Reading B (every instance, Static.v). Rule t_box types the body for every
+- Reading B (every instance, Static.v before sharp edges 57). Rule t_box types the body for every
   instance xs of the box's ιs at the one world W. G must then contain the body
   atoms at every instance.
 
-The soundness theorem of Static.v covers reading B only, because V-Box asks for
-every instance (sharp edges 52). Reading A is therefore an interpretation of the
+The soundness theorem of Static.v at that time covered reading B only, because
+V-Box asked for every instance (sharp edges 52). After sharp edges 58 V-Box asks for
+every instance xs with C[xs/ιs], and the theorem covers reading C. Reading A is therefore an interpretation of the
 spec that the mechanized proof does not cover. A sound version of A needs V-Box
 restricted to the instances of an orbit.
 
@@ -655,6 +754,16 @@ Which recursive loops reading B types is not settled here. A loop that blocks at
 ι, ι+1, … needs a point term u over the box's variables with ι+n ≼ u for all n at
 every instance, and a bound ceiling variable does not qualify under B.
 
+Under reading C (§9) relay still does not type (sharp edges 58). Its recursive call
+at (ι+1, ι[1]+1, ζ) needs ι+1 ≺ ι[1]+1, and neither W nor C relates a slot of ι to
+ι. A larger C does not help. Call a family a variable root with a slot path. W
+relates two points of a family with a variable root by program order only, and
+never two different such families. The call shifts ι by 1, so the instance of the
+C fact from family ι with the largest offset starts above every hypothesis in that
+family. From there only program order continues, and it stays in family ι. A target
+in family ι.1 or at ζ is out of reach. The ceiling fails for the same reason,
+because ι ≺ ζ in C does not give ι+1 ≺ ζ.
+
 ### 8.4  The gadget
 
 relay realizes one ingredient of Theorem 5 that §6 does not list, a role that
@@ -687,3 +796,109 @@ Under reading A, typability does not imply (M). Decidable type checking then nee
 one of three things. (M) becomes a premise of the static system, or a procedure
 decides the emitted sets beyond Theorem 4, or a proof shows that programs never emit
 the gadget. Under reading B the question is not posed in L, and §7.2 applies.
+
+## 9  The checker under sharp edges 58
+
+### 9.1  Reading C
+
+Static.v types a program at one well-formed world W = W_G, and W knows constants
+only (ORDERS-SPEC §12, sharp edges 57). E-Exp types a box body □(∀ιs. C.^u T) once,
+with ιs as point variables and the hypotheses Ψ of the enclosing boxes followed by
+C. Every side condition x ≺ y is read in slt W Ψ, the closure of ≺_W and Ψ under ≡_W
+and transitivity, and x ≼ y as x ≡_W y or slt W Ψ x y. A force at xs asks C[xs/ιs]
+in the same relation, which is ≺_W at top level (sharp edges 58). We call this
+reading C. The soundness theorem of Static.v covers it.
+
+A side condition is ground when all its points have constant roots and open
+otherwise. A ground condition can enter W as a fact or an alias. An open condition
+cannot, because W relates a point with a variable root only by reflexivity and
+program order (sharp edges 57). C has ≺ facts only, so an open ≡ condition is
+syntactic equality. G is therefore a finite set of ground atoms and ground aliases.
+It has no counter variables, and the schemas of §1.3 do not arise.
+
+The checker decides three things. W_G is strict. Every open condition is entailed by
+W_G and the hypotheses in scope. And G is chosen so that both hold (Lemma 7).
+
+### 9.2  Entailment and ground queries
+
+**Lemma 5 (entailment).** Let G be ground, W = W_G, Ψ a finite set of ≺ facts over
+point terms, and x, y point terms. Let N consist of x, y and the endpoints of Ψ, so
+|N| ≤ 2|Ψ| + 2. The graph H on N has a strict edge u → v when u ≺ v ∈ Ψ, when u and v
+have constant roots and u ≺_W v, or when u and v lie in one family with a variable
+root and u has the smaller offset. It has a weak edge u → v when u ≡_W v. Then x ≺ y
+holds in slt W Ψ iff H has a path from x to y with a strict edge.
+
+*Proof.* A derivation of x ≺ y in slt W Ψ is a chain x = z₀, …, z_n = y whose steps
+are ≺_W steps or Ψ facts, each up to ≡_W. Cut the chain at the endpoints of its Ψ
+steps. Between two cuts every step is a ≺_W step, and these compose into one ≺_W
+step by transitivity. ≺_W relates points with constant roots by the order W_G
+generates, points of one family with a variable root by program order, and nothing
+else. So every segment is an edge of H. Conversely every edge of H is a step of
+slt W Ψ. ∎
+
+Lemma 5 costs at most |N|² ground queries u ≺_W v and u ≡_W v and one search in H.
+Lemma 6 reduces both queries to strictness.
+
+**Lemma 6 (ground queries).** Let W_G be strict and x, y ground. Then x ≼_{W_G} y iff
+W_{G ∪ {y ≺ x}} is not strict. Further x ≡_{W_G} y iff x ≼ y and y ≼ x, and
+x ≺_{W_G} y iff x ≼ y and not y ≼ x.
+
+*Proof.* ORDERS-SPEC §5 has successor and slot congruence for ≡ only, so the new fact
+leaves ≡ unchanged and adds the single edge y → x to Γ_G. A closed walk with a strict
+edge must use it, because W_G is strict. Between two uses it runs from x to y in Γ_G,
+which gives x ≼_{W_G} y. Conversely x ≼ y closes such a walk. The other two claims
+hold because a strict W_G never has x ≺ y and y ≼ x together. ∎
+
+G ∪ {y ≺ x} is ground. It can add shapes to Sh(G) and make a role carry a constant,
+so the hypotheses of Theorem 4 must be checked again for it.
+
+**Lemma 7 (choosing G).** Let G₀ hold the ground conditions, and let P be the finite
+set of ground points that occur in the open conditions and in the hypotheses in
+scope. Some G ⊇ G₀ with W_G strict entails every open condition iff some
+G₀ ∪ R does, where R is a set of facts and aliases between points of P.
+
+*Proof.* Take a strict W′ ⊇ W_{G₀} that entails every open condition. Let R be the
+facts a ≺ b and aliases a ≡ b with a, b ∈ P that hold in W′. W_{G₀ ∪ R} ⊑ W′, so it
+is strict. By Lemma 5 each open condition needs only ≺_W and ≡_W between points of
+P, and R supplies those. ∎
+
+The search ranges over relations on P, finitely many, and each candidate costs one
+strictness test and the entailments of Lemma 5. This bound is exponential in |P|. A
+better one is open.
+
+### 9.3  Strictness for ground G
+
+Ground G lies in L with m = 0. The schemas of A(G) contain only the fresh variables
+ν_k, each once per side, at the offsets or at the index coordinates the offsets
+become. So (D), (C) and (A) hold, and Lemma 4 is not needed. Lemma 1 and Theorem 1
+apply. (R) and (S) hold when every alias relates shapes of equal depth (§7.3).
+Theorem 4 then decides strictness under (M).
+
+Delegation breaks both premises. The payload alias x ≡ ι[i] relates the shape of x
+to a shape one slot deeper than that of ι, so aliases of unequal depth are the rule.
+(M) also fails for a plain program. A process receives d on c at instant 2, acts
+twice on d, and sends d on c at instant 7. The payload alias is
+(c[2][1], 2) ≡ (c[7][1], 0), and A(G) holds (c[2][1], 2 + ν₀) ≡ (c[7][1], ν₀). Its
+shift on the offset role of c.1 is −2 in one direction. Any ground fact at an offset
+of c.1 makes that role carry a constant, so the shift graph has a negative cycle.
+The cycle is not a closed walk of Γ_G, because the index coordinates 2 and 7 are
+distinct constants. So (M) rejects this G although no closed walk realizes the
+negative cycle. A criterion that looks only at the walks Lemma 3 must realize is
+open.
+
+### 9.4  Status of the earlier results
+
+| Result | Under reading C |
+|---|---|
+| Lemma 1, Theorem 1 | apply to ground G |
+| Lemmas 2, 3, Theorems 2 to 4 | apply to ground G under (R), (S) and (M). (D), (C) and (A) hold outright |
+| Lemma 4 | not needed, ground G has no coefficients |
+| Theorem 5 | does not apply, it needs counter variables. Whether ground G can encode a two-counter machine through A(G) is open |
+| §1.4, unbounded nesting | Static.v rejects the recursive receiver f. With C = {ι+1 ≺ ι[1]} the call at ι[1] asks ι[1]+1 ≺ ι[1][1], and no chain from family ι.1 at offset 1 reaches family ι.1.1 |
+| §8, relay | does not type (§8.3) |
+
+The argument of §8.3 applies to any recursive call that shifts a variable ι by
+s ≥ 1 and needs a C fact from family ι to another family. A loop that alternates
+between two channels at ι and ι′ and keeps ι ≺ ι′ in C is of this kind, because its
+call at (ι+1, ι′+1) asks ι+1 ≺ ι′+1. Whether the examples of ORDERS-SPEC §13 type
+under reading C is being tested separately.
