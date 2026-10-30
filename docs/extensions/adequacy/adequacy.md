@@ -1,4 +1,4 @@
-# D. Subsumption of related systems
+# D. Adequacy for related systems
 
 Goal. Every program that a related deadlock-free system types is deadlock free
 by our relation. The paper can then say that orders generalize priorities, trees

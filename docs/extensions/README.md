@@ -9,7 +9,7 @@ extend it. Each has its own outline in this folder.
 | A | Algorithmic typing | [algorithmic.md](algorithmic.md) | core |
 | B | Context-free session types | [context-free.md](context-free.md) | core, parts of C |
 | C | Data-dependent constraints | [data-dependent.md](data-dependent.md) | core |
-| D | Subsumption of related systems | [subsumption.md](subsumption.md) | core, B for the CFST systems |
+| D | Adequacy for related systems | [adequacy/adequacy.md](adequacy/adequacy.md) | core, B for the CFST systems |
 
 ## Why these four
 

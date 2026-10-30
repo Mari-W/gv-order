@@ -2,7 +2,7 @@
 
 Goal. Every closed program of a PGV fragment is deadlock free, proved by
 translating PGV derivations into the static system (route 1 of
-[subsumption.md](subsumption.md)). Source is Kokke and Dardha, "Prioritise the
+[adequacy.md](adequacy.md)). Source is Kokke and Dardha, "Prioritise the
 Best Variation", LMCS 19(4):28 = arXiv 2103.14466v6. Page numbers are pdf pages.
 
 State of 2026-10-30. The paper study is done. The Rocq part has not started and

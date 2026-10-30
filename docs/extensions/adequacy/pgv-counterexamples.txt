@@ -1,4 +1,4 @@
-Two closed PGV programs that type and deadlock
+Two closed PGV programs that type and deadlock, and the repairs
 
 Source. W. Kokke and O. Dardha, Prioritise the Best Variation, LMCS 19(4):28,
 2023 (arXiv 2103.14466v6). Page numbers are the journal's (28:N). Typing rules
@@ -123,3 +123,39 @@ Why it deadlocks.
   As in the first program, subject reduction types the configuration, it is
   canonical, it does not reduce, and the main thread is no value. This
   contradicts Theorem 3.13 (p. 28:24).
+
+
+=====================================================================
+3. Repairs
+=====================================================================
+
+R1. Payload above the action. A session type !ᵒT.S or ?ᵒT.S is well formed
+    only when o < pr(T). Equivalently, the schemas of send and recv carry the
+    side condition o < pr(T). This is the condition PCP puts on its send and
+    receive rules, o < pr(Γ, A, B) (Fig. 8, p. 28:28). It rejects program 2 at
+    the type of d, whose payload has priority 1 below the action at 3.
+
+R2. T-Pair compares the right component with the left value.
+
+      Γ ⊢^p M : T     Δ ⊢^q N : U     p < pr(Δ)     q < pr(T)
+      ───────────────────────────────────────────────────────
+      Γ, Δ ⊢^{p ⊔ q} (M, N) : T × U
+
+    The left value is held while N runs, because (V, E) is an evaluation
+    context. R2 rejects program 1 at the pair (c, send ((), w)), where q = 5 and
+    pr(T) = 1.
+
+R3. The progress proof. Theorem 3.13 picks the ready term with the smallest
+    priority bound. That bound is the maximum over the whole evaluation context
+    (proof of Lemma 3.12, p. 28:24), so the step "the priority of L is pr(S)"
+    does not follow. Pick instead the ready term whose current action has the
+    least priority o, on an endpoint y. Its partner holds the dual y′ at top
+    priority o. With R1 and R2 every other action the partner could be blocked
+    on is guarded by a check against pr(y′) = o and so lies below o, which
+    contradicts the choice of o. Hence the partner is ready on y′ and the two
+    threads reduce by E-Send or E-Close.
+
+None of the repairs restricts session types whose priorities fall along the
+session, such as !⁵1.?⁰1.end. The argument of R3 reads only top priorities at
+the current instant.
+
