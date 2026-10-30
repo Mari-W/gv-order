@@ -82,7 +82,7 @@ terminated, safe, deadlock free        unchanged
 ## 4  Types and environments   [changed]
 
 ```
-T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. T)            term types
+T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs.^u T)         term types (u may mention ιs; sharp edges 52)
 u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥: never blocks)
 ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
                           (no ⊤ for u: every function has a known upper point, a function that may
@@ -162,7 +162,8 @@ V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)                       
           ∀W′ ⊒ W, j < n, Σ′, v ∈ V^{W′}_j⟦Σ′ ⊢ T⟧, F with {u} ≺_{W′} F.
               t[v/x] ∈ E^{W′}_j⟦Σ, Σ′ ⊢ U ≺ F⟧
           ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^u_ℓ U⟧
-V-Box     fchans(t) = ∅     ∀W′ ⊒ W.  fix x.t ∈ E^{W′}_n⟦· ⊢ T ≺ ∅⟧   ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □T⟧
+V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs, F with {u[xs/ιs]} ≺_{W′} F.  fix x.t ∈ E^{W′}_n⟦· ⊢ T[xs/ιs] ≺ F⟧
+          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs.^u T)⟧                                          [changed, 52]
 V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧                     [new]
 
 payload at a slot      P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.     [changed]
@@ -272,7 +273,7 @@ send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
 link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
-force  : □(∀ιs. T) ⊸^⊥_⊤ T[ιs′/ιs]
+force  : □(∀ιs.^u T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]                                [changed, 52]
 
 E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    k : T   ⇒   ·; · ⊢^F k : T
@@ -291,8 +292,8 @@ E-LetPair  Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂    
 E-Inj      Θ; Δ ⊢^F t : Tᵢ   ⇒   Θ; Δ ⊢^F injᵢ t : T₁ + T₂
 E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊢^F tᵢ : U  (i = 1, 2)
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F case t of … : U
-E-Exp      ·; □Δ, x : □(∀ιs. T) ⊢^∅ t : T     G closed under the substitutions at recursive calls
-           ⇒   ·; □Δ ⊢^F !(x = t) : □(∀ιs. T)
+E-Exp      ·; □Δ, x : □(∀ιs.^u T) ⊢^{μ} t : T   (μ fresh, only u ≺ μ)     G closed under the substitutions at recursive calls
+           ⇒   ·; □Δ ⊢^F !(x = t) : □(∀ιs.^u T)                                              [changed, 52]
 E-Weak, E-Contract, E-Conv      as in the paper, with ⊢^F
 
 P-Term     prim T    Σ, Θ_B; · ⊢^∅ t : T    Θ_B = both ends of every channel in C₀, some points  [changed]
@@ -351,9 +352,9 @@ E-LetPair   Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂   
 E-Inj       Θ; Δ ⊨^F t : Tᵢ   ⇒   Θ; Δ ⊨^F injᵢ t : T₁ + T₂
 E-Case      Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊨^F tᵢ : U
             ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊨^F case t of … : U
-E-Exp       ∀xs.  ·; □Δ, x : □(∀ιs. T) ⊨^∅ t : T[xs/ιs]     fchans(t) = ∅     fv(t) ⊆ dom(□Δ, x)
-            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. T)
-E-Force     Θ; Δ ⊨^F t : □(∀ιs. T)   ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
+E-Exp       ∀xs, F′ with {u[xs/ιs]} ≺ F′.  ·; □Δ, x : □(∀ιs.^u T) ⊨^{F′} t : T[xs/ιs]     fchans(t) = ∅     fv(t) ⊆ dom(□Δ, x)
+            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs.^u T)                                            [changed, 52]
+E-Force     Θ; Δ ⊨^F t : □(∀ιs.^u T)    {u[xs/ιs]} ≺ F   ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
 E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′

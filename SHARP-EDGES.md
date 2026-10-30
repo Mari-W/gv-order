@@ -428,7 +428,7 @@ dual ends. The disjoint version cannot prove E-LetPair, E-Case or E-Abs then. De
 sem_typed quantifies over Θ″ with tenv_comp (≡ of the future world) Θ″ Θ Θ′, as V-Abs
 already does for its argument. P-Term instantiates Θ′ = ∅ (§8).
 
-**51. (Q) E-App fails when the function is force.** *(open, for the author)*
+**51. (Q) E-App fails when the function is force.** *(decided as 52)*
 V-Box asks the body in E at frame ∅, and force has upper point ⊥, so E-App applies it under
 every frame F. Counterexample: the box body creates a channel at a fresh a, receives on it
 (a spawned thread sends) and returns it at type Close@(x+1). Every proof of E for the body
@@ -440,6 +440,18 @@ upper point, □^u(∀ιs. T). V-Box asks E at every F with {u} ≺ F, force has
 □^u(∀ιs. T) ⊸^u_⊤ T[ιs′/ιs], and E-Exp types the body under {μ} with only u ≺ μ, as E-Abs
 does. (A) V-Box asks E at every frame, which a typed body need not satisfy. (C) force only
 at frame ∅. E-App and E-Force wait for this decision. The other rules do not use V-Box.
+
+**52. □ carries an upper point under its binder (decided 2026-10-30, 06:40, resolves 51).**
+Option B of 51, with u scoped under the ∀: □(∀ιs.^u T), u ::= ι | ⊥, and u may mention ιs.
+force : □(∀ιs.^u T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]. V-Box asks, for every W′ ⊒ W, every xs and
+every F with {u[xs/ιs]} ≺_{W′} F, that fix x.t ∈ E^{W′}_n⟦· ⊢ T[xs/ιs] ≺ F⟧. E-Exp types the
+body under {μ} with only u ≺ μ, as E-Abs does. The upper point of a box is the upper point
+of the function force makes of it, so □^u σ behaves as a replicable ∗ ⊸^u σ. u sits under
+the binder because the request/reply example under □∀κ acts at (a, κ), which no point fixed
+outside the ∀ bounds. ⊥ keeps the old behaviour for bodies that act on no outer point.
+This is a type annotation. It adds no premise. Rejected: (A) E at every frame, which a typed
+body that acts on an outer point cannot meet, and (C) force only at frame ∅, which forbids
+forcing a box inside any context with pending channels.
 
 ## From the earlier abandoned mechanization (spec §15)
 
