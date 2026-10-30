@@ -1139,3 +1139,59 @@ Proof.
       eapply (wf_eq_trans _ HWf); [exact Hxx'|exact (wf_eq_sym _ HWf _ _ Hkd)].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|]. by apply Vrel_unit_iff.
 Qed.
+
+(** Every function value but force (sharp edges 51). *)
+Lemma Erel_app_noforce n W Θ Θ1 Θ2 ub lb T U F v1 v2 :
+  strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → v1 ≠ EForce →
+  Vrel n W Θ1 (TLolli ub lb T U) v1 → Vrel n W Θ2 T v2 → ub_below W ub F →
+  Erel n W Θ U F (App v1 v2).
+Proof.
+  intros HW Hc Hnf HV1 HV2 Hub.
+  pose proof (wf_eq_sym _ (proj1 HW)) as Hs.
+  destruct (proj1 (Vrel_lolli_iff _ _ _ _ _ _ _ _) HV1) as [(eb & -> & _)|(k & T0 & -> & -> & _)].
+  - by eapply Erel_app_lam.
+  - apply (tenv_comp_empty_l_inv _ _ _ Hs) in Hc as ->.
+    destruct k; [eapply Erel_app_new|eapply Erel_app_spawn|eapply Erel_app_recv|eapply Erel_app_send
+                |eapply Erel_app_close|eapply Erel_app_link|done]; eauto.
+Qed.
+
+(** ** E-App, given the application of values
+
+    The skeleton of E-App: two binds, then the application of two
+    values. [app_good] holds for every function value except force
+    ([Erel_app_noforce]); force waits for sharp edges 51. *)
+
+Definition app_good (ub lb : option point) (T U : ty) : Prop :=
+  ∀ n W Θ Θ1 Θ2 F v1 v2, strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 →
+    Vrel n W Θ1 (TLolli ub lb T U) v1 → Vrel n W Θ2 T v2 → ub_below W ub F →
+    Erel n W Θ U F (App v1 v2).
+
+Lemma sem_typed_app_gen W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :
+  app_good ub lb T U →
+  tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TLolli ub lb T U) →
+  sem_typed W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
+  sem_typed W Θ Δ F (App e1 e2) U.
+Proof.
+  intros Hgood Hc Hsp Hub He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  change (App (subst γ e1) (subst γ e2)) with (fill_frame (FAppL (subst γ e2)) (subst γ e1)).
+  eapply (sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 (TLolli ub lb T U) U (λ γ, FAppL (subst γ e2)));
+    [done|done|done|done| |done|done|done].
+  clear dependent Θ' Θ'' n γ W'.
+  intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v1 HW'' Hj Hc3 HV1. simpl.
+  pose proof (wext_trans _ _ _ HW HW'') as HW2. pose proof (wext_sym _ _ HW2) as Hs.
+  pose proof (Vrel_val _ _ _ _ _ HV1) as Hv1.
+  change (App v1 (subst γ e2)) with (fill_frame (FAppR v1) (subst γ e2)).
+  eapply (Erel_bind j (FAppR v1) W'' Θ3 Θ'' Θ1' T U F (opt_heads lb)).
+  - done.
+  - apply HW''.
+  - by apply comp_comm.
+  - eapply (Vrel_heads_above _ _ _ (TLolli ub lb T U)); [exact (wext_wf _ _ HW2)|exact HV1].
+  - exact (sem_typed_later _ _ _ _ _ _ n W' Θ' Θ'' γ W'' j He2 HW Hc' Hg HW'' Hj).
+  - intros W3 j' Θ2' Θ4 v2 HW3 Hj' Hc4 HV2.
+    pose proof (wext_trans _ _ _ HW2 HW3) as HW4.
+    apply (Hgood j' W3 Θ4 Θ1' Θ2'); [apply HW4| | |done|].
+    + apply comp_comm; [exact (wext_sym _ _ HW4)|exact Hc4].
+    + eapply Vrel_down; [exact Hj'|]. eapply Vrel_mono; [exact (wext_wf _ _ HW2)|exact HW3|exact HV1].
+    + eapply ub_below_mono; [exact HW4|exact Hub].
+Qed.
