@@ -1,16 +1,19 @@
-# Order-based GV♯: specification (state of 2026-10-29)
+# Order-based GV♯: specification (state of 2026-10-30)
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
 `paper/orders-plan.pdf`). Notation follows the paper (`paper/2-calculus.tex`,
-`paper/3-logical-rel.tex`, `paper/4-extensions.tex`). Tags: `[new]`,
-`[changed]`, `[removed]` relative to the paper.
+`paper/3-logical-rel.tex`, `paper/4-extensions.tex`). Rules marked unchanged
+are the paper's as they stand. The others add points, worlds or frames to the
+paper's rule of the same name, or have no counterpart in the paper. The paper's
+fork, P-Act-Fork, O-Fork, extrusion split (𝒯, T-Nil, T-Cons, Q-Twice),
+P-Independent and P-Res have no counterpart here.
 
 The frame F is an input parameter of E. F = ∅ is exactly the paper's E. It is
 part of E (not a separate relation) so that E and the frame condition use the
 same world extension at every `new`.
 
-Worlds speak about points only, never about channel names (decision N, 2026-10-29).
+Worlds speak about points only, never about channel names (sharp edges 37).
 Every environment entry carries the point of its channel's current instant,
 c : S@x. Renaming channels therefore never touches a world, link substitutes as
 in the paper, and the paper's renaming and junk lemmas hold with the world fixed.
@@ -18,14 +21,14 @@ in the paper, and the paper's renaming and junk lemmas hold with the world fixed
 ## 1  Syntax
 
 ```
-k  ::= new | spawn | recv | send | close | link | force                    [changed] fork removed
+k  ::= new | spawn | recv | send | close | link | force
 v  ::= ∗ | k | c | λx.t | ⟨v, v⟩ | inj₁ v | inj₂ v | !(x = t)
 t  ::= x | v | t t | ⟨t, t⟩ | inj₁ t | inj₂ t | let () = t in t | let (x, y) = t in t
      | case t of inj₁ x ⇒ t | inj₂ x ⇒ t
 𝒦  ::= □ | 𝒦 t | v 𝒦 | ⟨𝒦, t⟩ | ⟨v, 𝒦⟩ | injᵢ 𝒦 | let () = 𝒦 in t | let (x, y) = 𝒦 in t | case 𝒦 of …
 
 σ  ::= c?v | c!v | c! | c↔d                                             session labels
-λ  ::= β | σ | (νc) | ⇑v                                                [changed] term labels
+λ  ::= β | σ | (νc) | ⇑v term labels
 fc(β) = fc((νc)) = fc(⇑v) = ∅    fc(c?v) = fc(c!v) = fc(c!) = {c}    fc(c↔d) = {c, d}
 sent(c!v) = fchans(v),  otherwise ∅
 ```
@@ -40,8 +43,8 @@ T-Act-Let*      let () = ∗ in t            —β→      t
 T-Act-LetPair   let (x,y) = ⟨w,v⟩ in t     —β→      t[w/x][v/y]
 T-Act-Case      case injᵢ v of … xᵢ ⇒ tᵢ   —β→      tᵢ[v/xᵢ]
 T-Act-Exp       force !(x = t)             —β→      t[!(x = t)/x]
-T-Act-New       new ∗                      —(νc)→   ⟨c, c⟩                    [new]
-T-Act-Spawn     spawn v                    —⇑v→     ∗                         [new]
+T-Act-New       new ∗                      —(νc)→   ⟨c, c⟩
+T-Act-Spawn     spawn v                    —⇑v→     ∗
 T-Act-Recv      recv c                     —c?v→    ⟨v, c⟩
 T-Act-Send      send ⟨v, c⟩                —c!v→    c
 T-Act-Close     close c                    —c!→     ∗
@@ -52,20 +55,17 @@ T-Act-Ctx       t —λ→ t′   ⇒   𝒦[t] —λ→ 𝒦[t′]
 ## 3  Process LTS   p = (C, E),  π ::= τ | σ
 
 ```
-P-Act-New       c fresh    t —(νc)→ t′      (C, E ⊎ {t}) —τ→ (C ⊍ {c}, E ⊎ {t′})        [new]
-P-Act-Spawn     t —⇑v→ t′                   (C, E ⊎ {t}) —τ→ (C, E ⊎ {t′, v ∗})          [new]
+P-Act-New       c fresh    t —(νc)→ t′      (C, E ⊎ {t}) —τ→ (C ⊍ {c}, E ⊎ {t′})
+P-Act-Spawn     t —⇑v→ t′                   (C, E ⊎ {t}) —τ→ (C, E ⊎ {t′, v ∗})
 P-Act-Beta      t —β→ t′                    (C, E ⊎ {t}) —τ→ (C, E ⊎ {t′})
 P-Act-Msg       t —c!v→ t′   u —c?v→ u′     (C, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
 P-Act-Close     t —c!→ t′    u —c!→ u′      (C ⊍ {c}, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
 P-Act-Link      t —c↔d→ t′                  (C ⊍ {c}, E ⊎ {t}) —τ→ (C, (E ⊎ {t′})[d/c])      unchanged
 P-Act-Session   t —σ→ t′   fc(σ) # C        (C, E ⊎ {t}) —σ→ (C ∖ sent(σ), E ⊎ {t′})      unchanged
-                                                                   [removed] P-Act-Fork
 ```
 
 Link substitutes in the whole soup, as in the paper. With c = d it releases c. Worlds
-mention no channel names, so the substitution never has to move a fact. A forwarder
-encoding was tried and dropped. Under forwarders link ⟨a, b⟩ ∥ link ⟨b, a⟩ over a
-P-Connect cut {a, b} deadlocks, and under substitution it terminates (sharp edges 35 to 37).
+mention no channel names, so the substitution never has to move a fact (sharp edges 37).
 
 With multi-channel P-Connect (cycles) a channel can travel back to the holder
 of its other end ("migration"). The paper never meets this: with
@@ -79,15 +79,15 @@ so process-level Σ stays a plain map with one end per channel.
 terminated, safe, deadlock free        unchanged
 ```
 
-## 4  Types and environments   [changed]
+## 4  Types and environments
 
 ```
-T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C.^u_Σ T)    term types (u may mention ιs; sharp edges 52)
-C    ::= {x₁ ≺ y₁, …, xₖ ≺ yₖ}  constraint of a box, a finite set of ≺ facts over ιs and   [new, 58]
-                          outer points. No ≡ facts. C = ∅ is the box of 52. □(∀ιs.^u T) abbreviates C = ∅.
-Σ    ::= {σ₁, …, σₘ}      steps of a box, each a substitution of ιs by points over ιs        [new, 61]
+T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C.^u_Σ T)    term types (u may mention ιs, sharp edges 52)
+C    ::= {x₁ ≺ y₁, …, xₖ ≺ yₖ}  constraint of a box, a finite set of ≺ facts over ιs and   (sharp edges 58)
+                          outer points. No ≡ facts. □(∀ιs.^u T) abbreviates C = ∅.
+Σ    ::= {σ₁, …, σₘ}      steps of a box, each a substitution of ιs by points over ιs        (sharp edges 61)
                           (ι ↦ ι+1, ι′ ↦ ι[0]+1). C holds at xs when C[w(xs)/ιs] holds for every
-                          word w over Σ, the empty word giving xs. Σ = ∅ is the box of 58.
+                          word w over Σ, the empty word giving xs. With Σ = ∅, C holds at xs alone.
 u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥: never blocks)
 ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
                           (no ⊤ for u: every function has a known upper point, a function that may
@@ -97,8 +97,8 @@ P    ::= ∃ιs. T           payload, all points of T bound                sugar
 ι    ::= (p, b)           a point: a name with an offset
 p    ::= a | ι-variable | p[b][i]     point constant, bound point variable, slot "the i-th point carried at (p,b)"
 x[i] ≔ (p[b][i], 0)  for x = (p, b)     the i-th point carried at instant x, as a point
-         Neither types nor worlds mention channel names (decisions F2 and N). Channels occur only
-         as keys of environments. Renaming channels changes no type and no world.               [changed]
+         Neither types nor worlds mention channel names (sharp edges 27, 37). Channels occur only
+         as keys of environments. Renaming channels changes no type and no world.
 
 Σ    ::= · | c : S@x | Σ, Σ                       process level, a finite map,  x a ground point,
                                                   c's current instant; each action on c moves x to x+1
@@ -114,24 +114,23 @@ heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 - ∀ appears only directly under □ (never on linear functions, never inside session types).
 - Points are the only names in the order. Facts may place them anywhere. A value c of type S@ι needs ι ≡ the point of c's entry.
 
-## 5  Worlds   [new]
+## 5  Worlds
 
 ```
-carrier     instants (p, b),  p a point constant or a slot of one. No channel names.   [changed]
+carrier     instants (p, b),  p a point constant or a slot of one. No channel names.
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
-successor congruence   x ≡ y  ⇒  x+1 ≡ y+1     (aliased instants stay aliased; replaces the
-                                                 separate alias notation p@a ≡ q@b)        [new]
-slot congruence        x ≡ y  ⇒  x[i] ≡ y[i]    (equal instants carry the same message)     [new]
+successor congruence   x ≡ y  ⇒  x+1 ≡ y+1     (aliased instants stay aliased)
+slot congruence        x ≡ y  ⇒  x[i] ≡ y[i]    (equal instants carry the same message)
 x ≼ y       x ≺ y or x ≡ y
-F ≺ G       every element of F is ≺ every element of G        (frames, ⊥ and ⊤ as expected)
+F ≺ F′      every element of F is ≺ every element of F′       (frames, ⊥ and ⊤ as expected)
 
 W ⊑ W′      ≡ ⊆ ≡′,  ≺ ⊆ ≺′,  W′ strict                        (Kripke order)
 W ⊑ₒ W′     W ⊑ W′ and W′ adds nothing between old instants    (only at new)
 W₁ ⊔ W₂     (≡₁ ∪ ≡₂)* with (≺₁ ∪ ≺₂)⁺ on the classes
 ```
 
-## 6  Readiness and frames   [new]
+## 6  Readiness and frames
 
 ```
 entries(Θ)   one entry per end:  c : S@x  (twice for a channel whose both ends Θ holds)
@@ -156,42 +155,40 @@ offered and can synchronize, so that state is not stable.
 
 ```
 V-Unit    ∗ ∈ V^W_n⟦· ⊢ ∗⟧
-V-Chan    c ∈ V^W_n⟦c : S@x ⊢ S′@y⟧            if S ≈ S′ and x ≡_W y                     [changed]
+V-Chan    c ∈ V^W_n⟦c : S@x ⊢ S′@y⟧            if S ≈ S′ and x ≡_W y
 V-Const   k ∈ V^W_n⟦· ⊢ T⟧                     if k : T₀ (instance of its signature) and T₀ ≈_W T
-          (≈_W: ≈ with ground points compared up to ≡_W; needed for Type point conversion)   [changed]
+          (≈_W: ≈ with ground points compared up to ≡_W; needed for Type point conversion)
           (new's ι must be known to W, its root in the support, so that O-New can alias
-           the created point to it; sharp edges 49)                                          [new]
+           the created point to it; sharp edges 49)
 V-Pair    v₁ ∈ V^W_n⟦Σ₁ ⊢ T⟧   v₂ ∈ V^W_n⟦Σ₂ ⊢ U⟧   ⇒   ⟨v₁, v₂⟩ ∈ V^W_n⟦Σ₁, Σ₂ ⊢ T ⊗ U⟧
 V-Inj     v ∈ V^W_n⟦Σ ⊢ Tᵢ⟧   ⇒   injᵢ v ∈ V^W_n⟦Σ ⊢ T₁ + T₂⟧
-V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)                                      [changed]
+V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)
           ∀W′ ⊒ W, j < n, Σ′, v ∈ V^{W′}_j⟦Σ′ ⊢ T⟧, F with {u} ≺_{W′} F.
               t[v/x] ∈ E^{W′}_j⟦Σ, Σ′ ⊢ U ≺ F⟧
           ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^u_ℓ U⟧
 V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C at every Σ-word of xs in W′,
               F with {u[xs/ιs]} ≺_{W′} F.
               fix x.t ∈ E^{W′}_n⟦· ⊢ T[xs/ιs] ≺ F⟧
-          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C.^u_Σ T)⟧                                  [changed, 52, 58, 61]
+          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C.^u_Σ T)⟧                     (sharp edges 52, 58, 61)
           (C[xs/ιs] in W′: every fact x ≺ y of C holds as x[xs/ιs] ≺_{W′} y[xs/ιs].
            Rocq: bcs_hold (w_lt W′) C xs and Forall (pt_known W′) xs, sharp edges 59, 61)
           (≈_W compares the constraints of two boxes fact by fact and step by step,
-           points up to ≡_W)                                                              [new, 58, 61]
-V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧                     [new]
+           points up to ≡_W)
+V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧
 
-payload at a slot      P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.     [changed]
+payload at a slot      P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.
                        A plain substitution, no quantifier on either side. The sender's channels
                        satisfy it up to ≡ (V-Chan), so the sender must have aliased them to the slots.
-                       (Before decision N slots of channel instants could not occur in types, which
-                       forced ∃xs at the sender and ∀xs at the receiver.)
 names                  one sort, points. Worlds and environments use ground points (constants and their
-                       slots). Static types also use bound point variables. (Replaces the two sorts of F2.)
+                       slots). Static types also use bound point variables.
 
 E-Zero    t ∈ E^W_0⟦Θ ⊢ T ≺ F⟧
 E-Stop    v ∈ V^W_{n+1}⟦Θ ⊢ T⟧   ⇒   v ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
-E-Step    ¬irred t    ready_W(Θ, t)    frame_W(t, F)                                      [changed]
+E-Step    ¬irred t    ready_W(Θ, t)    frame_W(t, F)
           ∀λ, t′.  t —λ→ t′  ⇒  Θ ⊩ⁿ_W t —λ→ t′ : T ≺ F
           ⇒   t ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
 
-Giving steps keep the index (sharp edges 45)                                             [new]
+Giving steps keep the index (sharp edges 45)
           send, close and link are giving steps. Their obligations (O-Send, O-Close, O-Link,
           Q-Send, Q-Close, Q-Link, and Q-Tau for the τ of P-Act-Link) state the successor at
           n+1, the index of the step itself. β, new, spawn, receive and a synchronization
@@ -205,11 +202,11 @@ Giving steps keep the index (sharp edges 45)                                    
 
 O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
 O-New     ∃a ∉ names(W) ∪ points(Θ, T, F), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
-          (the created channel name needs no condition, only its point is fresh)               [new]
-O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^u_ℓ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧       [new]
-O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@x     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[x]⟧                          [changed]
+          (the created channel name needs no condition, only its point is fresh)
+O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^u_ℓ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧
+O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@x     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[x]⟧
           t′ ∈ E^W_n⟦Θ₁, c : S@(x+1) ⊢ T ≺ F⟧
-O-Recv    Θ = Θ₁, c : (?P.S)@x                                                           [changed]
+O-Recv    Θ = Θ₁, c : (?P.S)@x
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  (Θ₁, c : S@(x+1)), Σ₂ defined.
               t′ ∈ E^{W′}_j⟦(Θ₁, c : S@(x+1)), Σ₂ ⊢ T ≺ F⟧
           (the payload is composed with the continuation, so a returning end of c must be
@@ -218,26 +215,24 @@ O-Recv    Θ = Θ₁, c : (?P.S)@x                                              
            overlap is a pair of dual ends at ≡_{W′} points. Every overlap condition of the
            relation reads ≡_W, never equality of points: sharp edges 40)
 O-Close   Θ = Θ₁, c : Close@x      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
-O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧       [changed]
+O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
           (c = d allowed: a self-link, Θ holds both ends of c, both entries leave Θ.
            Matches P-Act-Link with c = d, which releases c. `link (new ∗)` is typable.)
-                                                                [removed] O-Fork
 
 P-Zero    p ∈ P^W_0⟦Σ ⊢ T⟧
 P-Stop    v ∈ V^W_{n+1}⟦Σ ⊢ T⟧   ⇒   (∅, {v, ∗, …, ∗}) ∈ P^W_{n+1}⟦Σ ⊢ T⟧
-P-Step    ¬irred p    ready_W(Σ, p)                                                       [changed]
+P-Step    ¬irred p    ready_W(Σ, p)
           ∀π, p′.  p —π→ p′  ⇒  Σ ⊩ⁿ_W p —π→ p′ : T
           ⇒   p ∈ P^W_{n+1}⟦Σ ⊢ T⟧
 
 Every clause is stated for the successor itself. Restricted channels carry no facts,
 because worlds speak about points only, so the environment's world cannot pin anything on
-them. Gone with decision N: the α-variant at a receive (E), the freshness of received
-names, the name guard at new and the invisible-names condition of Q-Tau.
+them.
 
-Q-Tau     p —τ→ p′    p′.1 # dom Σ  ⇒  ∃W′ ⊒ₒ W.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧                    [changed]
+Q-Tau     p —τ→ p′    p′.1 # dom Σ  ⇒  ∃W′ ⊒ₒ W.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧
           (W′ places the points N of channels the step creates, N # names(W) ∪ points(Σ, T).
            The paper's Q-Tau is W′ = W.)
-Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)                                       [changed]
+Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)
           ∀W′ ⊒ W, j ≤ n, Σ₂ # p.1, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Σ₂ dual to (Σ₁, c : S@(x+1)) on their overlap B.
               (C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(x+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
           (B = channels whose other end the receiver already holds. The obligation is stated
@@ -247,7 +242,7 @@ Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)                 
            channel also belongs to B and is restricted in the continuation.
            The guard c ∉ dom Σ₂ of the paper is dropped (c may be in B).
            Lemma needed: restricting B only removes external steps on channels no environment holds.)
-Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@x      dom Σ_e = fchans(v) ∩ C                          [changed]
+Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@x      dom Σ_e = fchans(v) ∩ C
           ∃Σ_e, Σ_e′ (points chosen by the obligation).
           v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[x]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(x+1) ⊢ T⟧
           Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay
@@ -256,9 +251,8 @@ Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@x      dom Σ_e = fchans(v) ∩ C        
 Obligations whose continuation environment cannot be formed (e.g. Θ already holds both
 ends of c) fail; such a thread is never ready anyway.
 Q-Close   Σ = Σ₁, c : Close@x      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
-Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧   [changed]
+Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
           (c = d cannot reach the interface: process-level Σ holds one end per channel)
-                                    [removed] extrusion split 𝒯, T-Nil, T-Cons, Q-Twice
 ```
 
 ## 8  Semantic judgments
@@ -271,34 +265,36 @@ Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y 
 Θ; Δ ⊨_W t : T     ≔   Θ; Δ ⊨^∅_W t : T                  (the paper's judgement, plus ready)
 ```
 
-## 9  Static typing   Θ; Δ ⊢^F_G t : T   [new parts]
+## 9  Static typing   Θ; Δ ⊢^F_{W,Ψ} t : T
 
 ```
-G          finite set of fact schemas and alias schemas over points
-W_G        the world G generates, required strict
-           Num: total.   Fin: G finite.   Decided by Kosaraju–Sullivan plus free coordinates (§11)
+W          a well-formed world over point constants, the index of the judgment
+Ψ          hypotheses (C, xs) of the enclosing boxes (E-Exp below)
+≺_{W,Ψ}    the static ≺. It reads facts from W and Ψ only (sharp edges 53, 58, 61).
+           The schema set G and its world W_G belong to decidability alone (§16, docs/DECIDABILITY.md).
 
 new    : ∗ ⊸^⊥_⊤ S@ι ⊗ S′@ι                                  S ⊥ S′,  ι fresh
 spawn  : (∗ ⊸^u_ℓ ∗) ⊸^⊥_⊤ ∗
-send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_G heads(P[ι])
+send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_{W,Ψ} heads(P[ι])
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
-link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
-force  : □(∀ιs. C.^u_Σ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]    C at every Σ-word of ιs′, ιs′ known   [changed, 52, 58, 61]
+link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_W ι′
+force  : □(∀ιs. C.^u_Σ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]    C at every Σ-word of ιs′, ιs′ known   (sharp edges 52, 58, 61)
          (premises on the order and the support, as pt_known is for new: KTForce reads C in the
           order konst_ty is given and knownness in its predicate. V-Const reads ≺_W and pt_known W.
           The static system reads W ∪ Ψ and skn, sharp edges 61)
-new    : as above, ι known. The static system reads ι known when W knows it or ι has the     [changed, 61]
+new    : as above, ι known. The static system reads ι known when W knows it or ι has the
          root of an instance point of a hypothesis in Ψ, so new may create a channel at a
-         box's ιs (sharp edges 59)
+         box's ιs (sharp edges 59, 61)
 
 E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    k : T   ⇒   ·; · ⊢^F k : T
 E-LVar     ·; x : T ⊢^F x : T
-E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_G ι
-E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ fresh, only fact u ≺ μ      ℓ fresh, only facts {ℓ} ≼ heads(Θ, Δ)
+E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_W ι
+E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ a fresh frame variable, only hypothesis u ≺ μ (sharp edges 56)
+           ℓ fresh, only facts {ℓ} ≼ heads(Θ, Δ)
            ⇒   Θ; Δ ⊢^F λx.t : T ⊸^u_ℓ U
-E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^u_ℓ U     Θ₂; Δ₂ ⊢^{F ∪ {ℓ}} t₂ : T     {u} ≺_G F
+E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^u_ℓ U     Θ₂; Δ₂ ⊢^{F ∪ {ℓ}} t₂ : T     {u} ≺_{W,Ψ} F
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F t₁ t₂ : U
 E-Pair     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T     Θ₂; Δ₂ ⊢^{F ∪ heads(T)} t₂ : U
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F ⟨t₁, t₂⟩ : T ⊗ U
@@ -309,8 +305,8 @@ E-LetPair  Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂    
 E-Inj      Θ; Δ ⊢^F t : Tᵢ   ⇒   Θ; Δ ⊢^F injᵢ t : T₁ + T₂
 E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊢^F tᵢ : U  (i = 1, 2)
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F case t of … : U
-E-Exp      ·; □Δ, x : □(∀ιs. C.^u_Σ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ fresh, only u ≺ μ)     G closed under the substitutions at recursive calls
-           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C.^u_Σ T)                                       [changed, 52, 58, 61]
+E-Exp      ·; □Δ, x : □(∀ιs. C.^u_Σ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
+           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C.^u_Σ T)                          (sharp edges 52, 57, 58, 61)
            Ψ: the constraints of the enclosing boxes with their instances, hypotheses (C, xs).
            Every side condition x ≺ y of the static system is read in W ∪ Ψ: the closure of ≺_W
            and the facts of every (C, xs) at every Σ-word of xs, under ≡_W and transitivity
@@ -321,37 +317,36 @@ E-Exp      ·; □Δ, x : □(∀ιs. C.^u_Σ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   
            the payload ∃ιs.T to have no free point variable beyond ιs, the "all points of T bound" of §4 (57)
 E-Weak, E-Contract, E-Conv      as in the paper, with ⊢^F
 
-P-Term     prim T    Σ, Θ_B; · ⊢^∅ t : T    Θ_B = both ends of every channel in C₀, some points  [changed]
-           ⇒   Σ ⊢_G (C₀, {t}) : T
-P-Connect  Σ₁, Σ_C ⊢_G (C₁, E₁) : T    Σ₂, Σ_C′ ⊢_G (C₂, E₂) : ∗    Σ_C ⊥ Σ_C′ over C₀ (possibly ∅)
-           ⇒   Σ₁, Σ₂ ⊢_G (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T                                     [changed]
-                                                      [removed] P-Independent, P-Res
+P-Term     prim T    Σ, Θ_B; · ⊢^∅ t : T    Θ_B = both ends of every channel in C₀, some points
+           ⇒   Σ ⊢_W (C₀, {t}) : T
+P-Connect  Σ₁, Σ_C ⊢_W (C₁, E₁) : T    Σ₂, Σ_C′ ⊢_W (C₂, E₂) : ∗    Σ_C ⊥ Σ_C′ over C₀ (possibly ∅)
+           ⇒   Σ₁, Σ₂ ⊢_W (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T
 ```
 
 ## 10  Lemmas: LTS and worlds
 
 ```
 Harmony                          p —τ→ p′  ⇔  p ⟶ p′                       unchanged
-Internalizing communication      generalized to a cut C₀ (statement otherwise unchanged)          [changed]
+Internalizing communication      the paper's, generalized to a cut C₀
 Restriction of returning channels
                   in the P-Connect proof the composite's successor equals the receiving component's
-                  successor with B restricted, because B already lies in the cut C₀            [new]
+                  successor with B restricted, because B already lies in the cut C₀
 Internalizing a close            unchanged
 Internalizing a link             unchanged (the paper's, world fixed)
 
 Amalgamation      W₁, W₂ strict  ⇒  (W₁ ⊔ W₂ strict  ⇔  (W₁|_A ⊔ W₂|_A) strict),   A = points W₁ and W₂ share
 Fresh extension   W₁ ⊑ₒ W₁′ placing points N,  N # names(W₂),  W₂ strict,  W₁ ⊔ W₂ strict
                   ⇒   W₁′ ⊔ W₂ strict
-Monotonicity      W ⊑ W′  ⇒  V/E/P^W ⊆ V/E/P^{W′}      (needs world_wf W; expected for P without
-                  restriction now, because no fact can mention a restricted channel)
+Monotonicity      W ⊑ W′  ⇒  V/E/P^W ⊆ V/E/P^{W′}      (needs world_wf W. P needs no
+                  restriction, because no fact can mention a restricted channel)
 Renaming channels the paper's Renaming.v and Junk.v, with the world fixed                       unchanged
 Renaming points   a bijective renaming of point constants applied to the world, the environment
                   and the types preserves V, E and P (P-Connect's new case renames a component's
-                  fresh point away from the other world)                                       [new]
-Type point conversion  ι ≡_W ι′ ⇒ V/E/P with ι in a type ⇔ with ι′ in its place   [new]
+                  fresh point away from the other world)
+Type point conversion  ι ≡_W ι′ ⇒ V/E/P with ι in a type ⇔ with ι′ in its place
                   (send and recv use it to move between P[x] and the sender's own points)
 Entry conversion  x ≡_W y  ⇒  (t ∈ E^W_n⟦Θ, c : S@x ⊢ T ≺ F⟧ ⇔ t ∈ E^W_n⟦Θ, c : S@y ⊢ T ≺ F⟧),
-                  likewise for P (P-Term's link case; uses slot congruence for payloads)       [new]
+                  likewise for P (P-Term's link case; uses slot congruence for payloads)
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
 Prel_steps, Prel_safe            unchanged (the paper's)
 ```
@@ -377,10 +372,12 @@ E-LetPair   Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂   
 E-Inj       Θ; Δ ⊨^F t : Tᵢ   ⇒   Θ; Δ ⊨^F injᵢ t : T₁ + T₂
 E-Case      Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊨^F tᵢ : U
             ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊨^F case t of … : U
-E-Exp       ∀xs with C[xs/ιs], F′ with {u[xs/ιs]} ≺ F′.  ·; □Δ, x : □(∀ιs. C.^u T) ⊨^{F′} t : T[xs/ιs]
+E-Exp       ∀xs known with C at every Σ-word of xs, F′ with {u[xs/ιs]} ≺ F′.
+                ·; □Δ, x : □(∀ιs. C.^u_Σ T) ⊨^{F′} t : T[xs/ιs]
             fchans(t) = ∅     fv(t) ⊆ dom(□Δ, x)
-            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C.^u T)                                      [changed, 52, 58]
-E-Force     Θ; Δ ⊨^F t : □(∀ιs.^u T)    {u[xs/ιs]} ≺ F   ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
+            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C.^u_Σ T)                       (sharp edges 52, 58, 61)
+E-Force     Θ; Δ ⊨^F t : □(∀ιs. C.^u_Σ T)    xs known, C at every Σ-word of xs    {u[xs/ιs]} ≺ F
+            ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
 E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
@@ -394,7 +391,7 @@ E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
             sem_typed_inj1/2, sem_typed_letu, sem_typed_letp, sem_typed_case, sem_typed_pair,
             sem_typed_wk, and E-App as sem_typed_app_gen from app_good, which Erel_app_noforce
             gives for every function value but force. E-Conv is sem_typed_teq (Convert.v).
-            Proved in TermRules2.v (after 52): Erel_app_force, hence app_good_all and E-App for
+            Proved in TermRules2.v: Erel_app_force, hence app_good_all and E-App for
             every function (sem_typed_app); E-Force (sem_typed_force, at an instance xs with
             {u[xs/ιs]} ≺_W F); E-Exp (sem_typed_box, premise for every later world, xs and F′
             with {u[xs/ιs]} ≺ F′, by induction on the index); E-Contract (sem_typed_contract,
@@ -418,7 +415,7 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
             Proved as Prel_connect (Connect3.v). Implicit side conditions made explicit there:
             dom Σ_C = dom Σ_C′ = C₀, cut ends dual at ≡ of W₁ ⊔ W₂, W₁ and W₂ well formed,
             Σ₁, Σ₂, Σ_C pairwise disjoint as maps, C₁ # dom Σ₁, C₂ # dom Σ₂, C₁, C₂, C₀ disjoint.
-            index (sharp edges 45, replaces the budget of plan A): components in P at n give the
+            index (sharp edges 45): components in P at n give the
             composite in P at n. A synchronization of the composite is a giving step of one component
             (free) and a receive or close of the other. A link of two cut channels fuses the other ends
             inside one component by Internalizing a link.
@@ -442,29 +439,26 @@ P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalg
 ## 12  Main results
 
 ```
-Fundamental     Θ; Δ ⊢^F_G t : T   ⇒   Θ; Δ ⊨^F_{W_G} t : T
-                Σ ⊢_G p : T        ⇒   Σ ⊨_{W_G} p : T
+Fundamental     Θ; Δ ⊢^F_W t : T   ⇒   Θ; Δ ⊨^F_W t : T
+                Σ ⊢_W p : T        ⇒   Σ ⊨_W p : T
 Adequacy        · ⊨_W p : T   ⇒   p deadlock free         (the paper's proof)
-Soundness       · ⊢_G p : T,  W_G strict   ⇒   p deadlock free
-Decidability    W_G strict is decidable:  Kosaraju–Sullivan for edges with offsets,
-                plus our lemma for schemas with a variable on one side only (free coordinates)
-                (paper-level, not mechanized in this round)
+Soundness       · ⊢_W p : T,  W strict   ⇒   p deadlock free
+Decidability    concerns the schema set G and its world W_G only (§16, docs/DECIDABILITY.md)
 ```
 
 Rocq (Static.v, sharp edges 53, 56): typed W Φ Θ Δ F e T and ptyped W Σ p T, indexed by the
-world W = W_G. The fresh μ of E-Abs and E-Exp is a frame variable φ with the hypothesis u ≺ φ
+world W. The fresh μ of E-Abs and E-Exp is a frame variable φ with the hypothesis u ≺ φ
 in Φ, at the same W. E-Exp types the body once with ιs as point variables 0, …, m−1 and Φ, □Δ
 and the recursive binding shifted past them (57). E-Const asks kscoped of send and recv. The
 other rules as in §9. typed_pinst substitutes points for point variables. typed_ityped does that
-and instantiates φ at any later world into the infinitary judgment of 53. "G closed under the
-substitutions" holds of every well-formed W, because W knows constants only and relates points
-with a variable root by reflexivity and program order.
+and instantiates φ at any later world into the infinitary judgment of 53. Every well-formed W
+is closed under the substitutions at recursive calls, because W knows constants only and
+relates points with a variable root by reflexivity and program order.
 fundamental (terms), fundamental_proc (processes, P-Connect by Prel_connect with W₁ = W₂ = W),
 soundness (strict W, ptyped W ∅ p T ⇒ deadlock_free p, via adequacy). All closed under the
 global context.
-Restoring a fresh point μ needs "dropping a fresh conservative extension", which is false at
-V-Const (sharp edges 54, DropCounter.v). A frame variable avoids the lemma, because no point,
-type or world mentions it (56).
+A frame variable needs no lemma about dropping a fresh conservative extension, which is false
+at V-Const (sharp edges 54, 56, DropCounter.v).
 Constrained boxes (58): typed W Φ Ψ Θ Δ F e T carries the hypotheses Ψ, and slt W Ψ is the
 static ≺. E-Exp extends the shifted Ψ by C. typed_pinst asks Ψ[σ] in slt W Ψ′, typed_ityped
 asks Ψ[σ] in ≺_{W₁}, and a derived fact survives because each generator does (slt_pinst).
@@ -484,21 +478,21 @@ deadlock_free examples are closed under the global context (dc8acc1, 18b13f1).
 
 ```
 sync            typable                       new and spawn instead of fork
-cycle           typable (before: semantic)     P-Connect over {c, d},  (c,0) ≺ (d,0) in both threads
+cycle           typable                        P-Connect over {c, d},  (c,0) ≺ (d,0) in both threads
 blocked         rejected                       (c,0) ≺ (d,0) and (d,0) ≺ (c,0)
 load balancer   semantic                       races on c, unchanged
 factory         typable                        new at ι under □∀ι, two sessions at (a,0), (b,0) held at once (61)
 leader election semantic                       breaks linearity, unchanged
-scheduler       typable (before: semantic)     (r₁,0) ≡ (r₀,0) from the link,  reversed ag₀ rejected
-request/reply   typable, recursive             step (ι+1, ι′+1), (a,k) ≺ (b,k) ≺ (a,k+1) for all k (61)  [new]
-relay           typable, recursive             step (ι+1, ι[0]+1), producer creates its payload at ι[0] (61)  [new]
-delegation      typable                        receiver: c[k][1] ≺ (c,k+1),  sender aliases d to it  [new]
-bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0)                         [new]
+scheduler       typable                        (r₁,0) ≡ (r₀,0) from the link,  reversed ag₀ rejected
+request/reply   typable, recursive             step (ι+1, ι′+1), (a,k) ≺ (b,k) ≺ (a,k+1) for all k (61)
+relay           typable, recursive             step (ι+1, ι[0]+1), producer creates its payload at ι[0] (61)
+delegation      typable                        receiver: c[k][1] ≺ (c,k+1),  sender aliases d to it
+bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0)
 ```
 
 ## 14  Open
 
-- Deferred by the author: order that depends on the run (one W per component); slot positions must be finite schemas in G.
+- Deferred by the author: order that depends on the run (one W per component); slot positions must be finite schemas in G (docs/DECIDABILITY.md).
 - To prove: free-coordinate extension of Kosaraju–Sullivan (paper level); chain arguments in P-Term and P-Connect; all frame-carrying lemmas.
 - Mechanization: Θ (both ends) only at term level, points in `senv` entries, worlds over points with aliases, amalgamation.
 
