@@ -73,12 +73,59 @@ partial orders.
   scheduler A.5 (Mordido and Pérez 2026). Every example of Mordido and Pérez
   should type here, which feeds direction D.
 
+## Decisions for the mechanization (2026-10-30, overnight, to be confirmed)
+
+The author asked for full context-free session types on the logical relation.
+The decisions below follow the philosophy of the core. They keep the relation
+and the composition lemmas free of syntactic premises, stay close to Thiemann
+and Vasconcelos, and leave PGV and Padovani–Novara alone. Each is provisional
+and logged in SHARP-EDGES.
+
+- K1. Session syntax. S ::= Skip | S;S | !P | ?P | ⊕(S, S) | &(S, S) | Close |
+  μX.S | X | X̄. Send and receive lose their continuation, as in Thiemann and
+  Vasconcelos. Choice is binary, and n-ary choice nests. The existing session
+  type variables X and their duals X̄ serve as continuation variables.
+- K2. Close needs no position rule. After a close the entry leaves the
+  environment, so the rest of Close;S is never read. No well-formedness
+  condition forbids it.
+- K3. Equivalence is bisimilarity on the LTS of Thiemann and Vasconcelos over
+  contractive types, with the monoid laws of Skip and ;, the distribution of
+  choice over ;, and equirecursive μ. The relation reads only the head normal
+  form unr(S), whose cases are Skip, !P;S′, ?P;S′, ⊕(S₁,S₂), &(S₁,S₂), Close and
+  a variable. Duality is pointwise and maps X to X̄.
+- K4. Choice in the calculus. Two new constants select₁, select₂ and one new
+  constant branch with labels c◁i and c▷i. Selecting gives a step like send and
+  costs 0. Branching waits like receive and costs 1. branch returns a sum, so
+  case does the dispatch. Readiness treats a selection like a send and a branch
+  like a receive.
+- K5. Points. Every action, choices included, moves the instant by one. Skip
+  and ; move nothing.
+- K6. Polymorphism over the continuation. A box binds session type variables
+  next to its point variables, □(∀ιs αs. C. ∗ ⊸^u_⊤ T). V-Box quantifies over
+  all closed session types for αs. V reads a session type only through V-Chan,
+  so instantiating α keeps the recursion of V well founded.
+- K7. Existential points. A new type former ∃ι. C. T with a positive
+  constraint C, the dual of the box binder. V⟦∃ι. C. T⟧ holds when some point x
+  satisfies C[x/ι] and the value lies in V⟦T[x/ι]⟧. sendTree returns
+  ∃ι′. C. α@ι′ for the instant after its segment.
+- K8. Facts about segments use the coarse ceiling, a point ζ with ι+k ≺ ζ for
+  every k. Facts that depend on the length of the segment wait for direction C.
+  The example sendTree t c ; close d ; send v c stays outside.
+- K9. Branch layout. The work happens on a branch cfst from orders-lr. PGV and
+  Padovani–Novara (theories/pgv, theories/pn) leave that branch's build and are
+  not ported.
+
 ## Order of work
 
-1. Design note on point 2, together with direction C.
-2. Types, duality and head normal form in Rocq.
-3. The relation and the composition lemmas.
-4. The static system.
-5. The examples.
+1. Stage A. Session syntax K1, head normal form, contractiveness, bisimilarity
+   and duality K3, choice constants and labels K4 in the LTS.
+2. Stage B. The relation for the new labels and the head normal form, readiness,
+   costs, and the composition lemmas P-Connect, P-Term, internalizing a link and
+   the bind lemma.
+3. Stage C. Boxes over session variables K6 and existential points K7 in the
+   relation and in the static system, then the fundamental theorem.
+4. Stage D. Examples sendTree and recvTree, a stream, and a tree server that
+   recurses on both subtrees, each with a closed deadlock_free proof.
 
-Steps 2 and 3 cost the most.
+Stages A and B cost the most. Each stage ends with a full build, closed Print
+Assumptions and a report.
