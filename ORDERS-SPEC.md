@@ -364,6 +364,12 @@ E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
             heads(Δ) (grounding_heads). Typing then needs nothing extra.
             Open (sharp edges 51): E-App with force, and E-Force, fail as stated, because V-Box
             gives frame ∅ and force has upper point ⊥.
+            Proved in TermRules.v: sem_typed_unit, sem_typed_konst, sem_typed_var, sem_typed_chan,
+            sem_typed_lam (E-Abs; premise for every later world W₁ and F′ with {u} ≺_{W₁} F′),
+            sem_typed_inj1/2, sem_typed_letu, sem_typed_letp, sem_typed_case, sem_typed_pair,
+            sem_typed_wk, and E-App as sem_typed_app_gen from app_good, which Erel_app_noforce
+            gives for every function value but force. E-Conv is sem_typed_teq (Convert.v).
+            Not yet: E-Exp, E-Force, E-Contract.
 
 P-Term      prim T,   Σ, Θ_B; · ⊨^∅_W t : T,   Θ_B both ends of C₀
             ⇒   Σ ⊨_W (C₀, {t}) : T
