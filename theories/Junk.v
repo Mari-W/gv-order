@@ -2069,3 +2069,153 @@ Proof.
   - by apply Vrel_swap.
   - by rewrite (Vrel_fchans _ _ _ _ _ HV).
 Qed.
+
+(** ** Helpers for fusion *)
+
+Section fuse_helpers.
+  Context (W : world) (c d : chan) (Hcd : c ≠ d).
+
+  Lemma move_rename_eq Θ Θ' : tenv_move W c d Θ Θ' → Θ !! d = None → Θ' = tenvswap c d Θ.
+  Proof.
+    intros (Hc & Ho & Hj & _) Hd. rewrite Hd in Hj. apply join_l_none in Hj.
+    apply map_eq. intros k. rewrite lookup_tenvswap'.
+    destruct (decide (k = c)) as [->|Hkc]; [by rewrite cswap_l, Hc, Hd|].
+    destruct (decide (k = d)) as [->|Hkd]; [by rewrite cswap_r, Hj|].
+    rewrite cswap_ne by done. by apply Ho.
+  Qed.
+
+  Lemma move_ext_given Θ1 Θ1' c0 e Θ1c' :
+    tenv_move W c d Θ1 Θ1' → c0 ≠ c → c0 ≠ d → tenv_ext Θ1' c0 e Θ1c' →
+    ∃ Θ1c, tenv_ext Θ1 c0 e Θ1c ∧ tenv_move W c d Θ1c Θ1c'.
+  Proof.
+    intros Hm H1 H2 Hext.
+    assert (Θ1' !! c0 = Θ1 !! c0) as E0 by (by apply (move_lookup_ne W c d Θ1 Θ1')).
+    destruct Hext as [[Hr ->]|(f & Hr & [-> | ->])].
+    - exists (<[c0 := One e]> Θ1). split; [left; by rewrite <-E0|]. by apply move_insert.
+    - exists (<[c0 := Both e f]> Θ1). split; [right; exists f; rewrite <-E0; by split; [|left]|].
+      by apply move_insert.
+    - exists (<[c0 := Both f e]> Θ1). split; [right; exists f; rewrite <-E0; by split; [|right]|].
+      by apply move_insert.
+  Qed.
+
+  Lemma move_unext Θ Θ' c0 e Θm :
+    tenv_move W c d Θ Θ' → tenv_ext Θm c0 e Θ → c0 ≠ c → c0 ≠ d →
+    ∃ Θm', tenv_ext Θm' c0 e Θ' ∧ tenv_move W c d Θm Θm'.
+  Proof.
+    intros Hm Hext H1 H2. pose proof Hm as (Hc & Ho & Hj & Hdd).
+    assert (Θ' !! c0 = Θ !! c0) as E0 by (by apply Ho).
+    destruct Hext as [[Hr ->]|(f & Hr & [-> | ->])].
+    - exists (delete c0 Θ'). split.
+      + left. split; [apply lookup_delete_eq|].
+        rewrite insert_delete_id; [done|]. rewrite E0. by rewrite lookup_insert_eq.
+      + split_and!.
+        * by rewrite lookup_delete_ne.
+        * intros k' ? ?. destruct (decide (k' = c0)) as [->|?].
+          -- by rewrite lookup_delete_eq.
+          -- rewrite lookup_delete_ne by done. rewrite Ho by done. by rewrite lookup_insert_ne.
+        * rewrite lookup_delete_ne by done. by rewrite !lookup_insert_ne in Hj.
+        * intros e1 e2 A B. apply Hdd; by rewrite lookup_insert_ne.
+    - exists (<[c0 := One f]> Θ'). split.
+      + right. exists f. split; [apply lookup_insert_eq|].
+        left. rewrite insert_over; [done|]. rewrite E0. by rewrite lookup_insert_eq.
+      + split_and!.
+        * by rewrite lookup_insert_ne.
+        * intros k' ? ?. destruct (decide (k' = c0)) as [->|?].
+          -- by rewrite !lookup_insert_eq.
+          -- rewrite !lookup_insert_ne by done. rewrite Ho by done. by rewrite lookup_insert_ne.
+        * rewrite !lookup_insert_ne by done. by rewrite !lookup_insert_ne in Hj.
+        * intros e1 e2 A B. apply Hdd; by rewrite lookup_insert_ne.
+    - exists (<[c0 := One f]> Θ'). split.
+      + right. exists f. split; [apply lookup_insert_eq|].
+        right. rewrite insert_over; [done|]. rewrite E0. by rewrite lookup_insert_eq.
+      + split_and!.
+        * by rewrite lookup_insert_ne.
+        * intros k' ? ?. destruct (decide (k' = c0)) as [->|?].
+          -- by rewrite !lookup_insert_eq.
+          -- rewrite !lookup_insert_ne by done. rewrite Ho by done. by rewrite lookup_insert_ne.
+        * rewrite !lookup_insert_ne by done. by rewrite !lookup_insert_ne in Hj.
+        * intros e1 e2 A B. apply Hdd; by rewrite lookup_insert_ne.
+  Qed.
+End fuse_helpers.
+
+Section fuse_helpers2.
+  Context (W : world) (c d : chan) (Hcd : c ≠ d).
+
+  (** Taking an end off, in every case of a move. *)
+  Lemma move_unext_gen Θ Θ' c0 e Θm :
+    tenv_move W c d Θ Θ' → tenv_ext Θm c0 e Θ →
+    (c0 ≠ c ∧ c0 ≠ d) ∨ (c0 = c ∧ Θ !! d = None) ∨ (c0 = d ∧ Θ !! c = None) →
+    ∃ Θm', tenv_ext Θm' (csub c d c0) e Θ' ∧ tenv_move W c d Θm Θm'.
+  Proof.
+    intros Hm Hext Hcase.
+    destruct Hcase as [[H1 H2]|[[-> Hd]|[-> HΘc]]].
+    - rewrite csub_ne by done. by apply (move_unext W c d Θ Θ').
+    - rewrite csub_hit. rewrite (move_rename_eq W c d Θ Θ' Hm Hd).
+      exists (tenvswap c d Θm). split.
+      + apply (tenv_ext_swap c d) in Hext. by rewrite cswap_l in Hext.
+      + assert (Θm !! d = None) as Hmd.
+        { destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; by rewrite lookup_insert_ne in Hd. }
+        split_and!.
+        * rewrite lookup_tenvswap', cswap_l. done.
+        * intros k ? ?. rewrite lookup_tenvswap', cswap_ne; done.
+        * rewrite lookup_tenvswap', cswap_r, Hmd. destruct (Θm !! c); constructor.
+        * intros e1 e2 A B. congruence.
+    - rewrite csub_ne by done.
+      assert (Θ' = Θ) as -> by (by apply (move_none W c d Θ Θ')).
+      exists Θm. split; [done|]. apply move_id. apply not_elem_of_dom.
+      destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; by rewrite lookup_insert_ne in HΘc.
+  Qed.
+
+  (** In a fusion, taking off c's end leaves the rest as it is. *)
+  Lemma move_unext_fused_c Θ Θ' e1 e2 e Θm :
+    tenv_move W c d Θ Θ' → Θ !! c = Some (One e1) → Θ !! d = Some (One e2) →
+    tenv_ext Θm c e Θ → tenv_ext Θm d e Θ' ∧ tenv_move W c d Θm Θm.
+  Proof.
+    intros Hm Hc Hd Hext.
+    destruct Hext as [[Hr ->]|(f & Hr & [-> | ->])];
+      [|by rewrite lookup_insert_eq in Hc..].
+    rewrite lookup_insert_eq in Hc. injection Hc as <-.
+    rewrite lookup_insert_ne in Hd by done.
+    split; [|apply move_id; by apply not_elem_of_dom].
+    destruct Hm as (Hc' & Ho & Hj & _).
+    rewrite lookup_insert_eq, lookup_insert_ne, Hd in Hj by done.
+    right. exists e2. split; [done|].
+    assert (∀ o, Θ' !! d = Some o → Θ' = <[d := o]> Θm) as Heq.
+    { intros o Ho'. apply map_eq. intros k. destruct (decide (k = d)) as [->|Hkd].
+      - by rewrite lookup_insert_eq.
+      - rewrite lookup_insert_ne by done. destruct (decide (k = c)) as [->|Hkc].
+        + by rewrite Hc', Hr.
+        + rewrite Ho by done. by rewrite lookup_insert_ne. }
+    inversion Hj as [| | |? ? A B E|? ? A B E]; [left|right]; by apply Heq.
+  Qed.
+
+  (** In a fusion, taking off d's end renames c to d in the rest. *)
+  Lemma move_unext_fused_d Θ Θ' e1 e2 e Θm :
+    tenv_move W c d Θ Θ' → Θ !! c = Some (One e1) → Θ !! d = Some (One e2) →
+    tenv_ext Θm d e Θ → tenv_ext (tenvswap c d Θm) d e Θ' ∧ tenv_move W c d Θm (tenvswap c d Θm).
+  Proof.
+    intros Hm Hc Hd Hext.
+    destruct Hext as [[Hr ->]|(f & Hr & [-> | ->])];
+      [|by rewrite lookup_insert_eq in Hd..].
+    rewrite lookup_insert_eq in Hd. injection Hd as <-.
+    rewrite lookup_insert_ne in Hc by done.
+    assert (Θm !! c = Some (One e1)) as Hmc by done.
+    split.
+    - destruct Hm as (Hc' & Ho & Hj & _).
+      rewrite lookup_insert_eq, lookup_insert_ne, Hmc in Hj by done.
+      right. exists e1. split; [by rewrite lookup_tenvswap', cswap_r|].
+      assert (∀ o, Θ' !! d = Some o → Θ' = <[d := o]> (tenvswap c d Θm)) as Heq.
+      { intros o Ho'. apply map_eq. intros k. destruct (decide (k = d)) as [->|Hkd].
+        - by rewrite lookup_insert_eq.
+        - rewrite lookup_insert_ne, lookup_tenvswap' by done.
+          destruct (decide (k = c)) as [->|Hkc].
+          + by rewrite cswap_l, Hc', Hr.
+          + rewrite cswap_ne, Ho by done. by rewrite lookup_insert_ne. }
+      inversion Hj as [| | |? ? A B E|? ? A B E]; [right|left]; by apply Heq.
+    - split_and!.
+      + rewrite lookup_tenvswap', cswap_l. done.
+      + intros k ? ?. rewrite lookup_tenvswap', cswap_ne; done.
+      + rewrite lookup_tenvswap', cswap_r, Hr, Hmc. constructor.
+      + intros f1 f2 A B. congruence.
+  Qed.
+End fuse_helpers2.
