@@ -1,4 +1,4 @@
-# Order-based GV♯: specification (state of 2026-10-30)
+# Order-based GV♯: specification (state of 2026-10-30, after sharp edges 65)
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
@@ -82,23 +82,36 @@ terminated, safe, deadlock free        unchanged
 ## 4  Types and environments
 
 ```
-T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)    term types (sharp edges 52, 63)
+T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C. ∗ ⊸^u_⊤ T)      term types (sharp edges 52, 63, 65)
                           A box is a polymorphic thunk. Its upper point u lives on the arrow,
                           under the binder, and may mention ιs. The box former carries no point.
-C    ::= {x₁ ≺ y₁, …, xₖ ≺ yₖ}  constraint of a box, a finite set of ≺ facts over ιs and   (sharp edges 58)
-                          outer points. No ≡ facts. □(∀ιs. ∗ ⊸^u_⊤ T) abbreviates C = ∅.
-Σ    ::= {σ₁, …, σₘ}      steps of a box, each a substitution of ιs by points over ιs        (sharp edges 61)
-                          (ι ↦ ι+1, ι′ ↦ ι[0]+1). C holds at xs when C[w(xs)/ιs] holds for every
-                          word w over Σ, the empty word giving xs. With Σ = ∅, C holds at xs alone.
+C    ⊆ { x ≺ y,  x ≡ y }  constraint of a box: any set of positive facts, finite or infinite,   (sharp edges 65)
+                          between points whose roots are ιs, point variables of enclosing boxes
+                          or point constants. □(∀ιs. ∗ ⊸^u_⊤ T) abbreviates C = ∅.
+                          C holds at xs in W when every fact of C[xs/ιs] holds in W.
+                          Written with set-builder notation, e.g.
+                            { ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1  ∣  k ∈ ℕ }          request and reply
+                          Only positive facts: they persist along W ⊑ W′, so V-Box is monotone.
+                          A fact x ⊀ y would not persist. An unsatisfiable C is harmless, its box
+                          is never forced.
 u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥: never blocks)
 ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
                           (no ⊤ for u: every function has a known upper point, a function that may
                            block anywhere gets a point variable)
 S    ::= ?P.S | !P.S | Close | μX.S | X                                 session types, unannotated
 P    ::= ∃ιs. T           payload, all points of T bound                sugar: !(S₁ ⊗ S₂).S binds them implicitly
-ι    ::= (p, b)           a point: a name with an offset
-p    ::= a | ι-variable | p[b][i]     point constant, bound point variable, slot "the i-th point carried at (p,b)"
-x[i] ≔ (p[b][i], 0)  for x = (p, b)     the i-th point carried at instant x, as a point
+x, ι ::= (p, b)           a point, the instant b of the root p: p after b actions
+p    ::= a | ι-variable | x.i        root: point constant, bound point variable, carried root
+x.i                       carried root, i ≥ 1: the i-th channel carried by the message of the action
+                          that leaves x. As a point, x.i also stands for (x.i, 0).
+x + n ≔ (p, b + n)  for x = (p, b)
+         (c,k).1 reads "the first channel carried by c's message at its action k", and
+         (c,k).1 + 2 is that channel after two of its own actions.
+         Why carried roots exist (sharp edges 5): a receiver plans the order of a channel it has
+         not received yet, without knowing which channel the sender picks. It names the arriving
+         channel by its position in the message. The sender must put the channel it sends at
+         that point, by aliasing its point there or by creating it there with new. The world
+         records both sides, so P-Connect checks that they agree.
          Neither types nor worlds mention channel names (sharp edges 27, 37). Channels occur only
          as keys of environments. Renaming channels changes no type and no world.
 
@@ -119,11 +132,11 @@ heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 ## 5  Worlds
 
 ```
-carrier     instants (p, b),  p a point constant or a slot of one. No channel names.
+carrier     instants (p, b),  p a point constant or a carried root of one. No channel names.
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
 successor congruence   x ≡ y  ⇒  x+1 ≡ y+1     (aliased instants stay aliased)
-slot congruence        x ≡ y  ⇒  x[i] ≡ y[i]    (equal instants carry the same message)
+carried congruence     x ≡ y  ⇒  x.i ≡ y.i      (equal instants carry the same message)
 x ≼ y       x ≺ y or x ≡ y
 F ≺ F′      every element of F is ≺ every element of F′       (frames, ⊥ and ⊤ as expected)
 
@@ -176,23 +189,23 @@ V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)
           ∀W′ ⊒ W, j < n, Σ′, v ∈ V^{W′}_j⟦Σ′ ⊢ T⟧, F with {u} ≺_{W′} F.
               t[v/x] ∈ E^{W′}_j⟦Σ, Σ′ ⊢ U ≺ F⟧
           ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^u_ℓ U⟧
-V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C at every Σ-word of xs in W′.
+V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C[xs/ιs] holding in W′.
               λ_. fix x.t ∈ V^{W′}_n⟦· ⊢ (∗ ⊸^u_⊤ T)[xs/ιs]⟧
-          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)⟧                (sharp edges 58, 61, 63)
+          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C. ∗ ⊸^u_⊤ T)⟧                  (sharp edges 58, 63, 65)
           (V of the thunk at every admissible instance. Unfolded by V-Abs, this is fix x.t in
            E^{W′}_j at every j < n and every F with {u[xs/ιs]} ≺_{W′} F, the box of sharp edges 52.
            Rocq: Vrel_box_iff, unfolded in Vrel_box_thunk_iff)
-          (C[xs/ιs] in W′: every fact x ≺ y of C holds as x[xs/ιs] ≺_{W′} y[xs/ιs].
-           Rocq: bcs_hold (w_lt W′) C xs and Forall (pt_known W′) xs, sharp edges 59, 61)
-          (≈_W compares the constraints of two boxes fact by fact and step by step,
+          (C[xs/ιs] in W′: every fact x ≺ y of C holds as x[xs/ιs] ≺_{W′} y[xs/ιs], every fact
+           x ≡ y as x[xs/ιs] ≡_{W′} y[xs/ιs]. Monotone along ⊑ because C is positive)
+          (≈_W relates two constraints when each fact of one has a fact of the other with
            points up to ≡_W)
 V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧
 
-payload at a slot      P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.
+payload at x           P[x] ≔ T[x.1, …, x.m / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.
                        A plain substitution, no quantifier on either side. The sender's channels
-                       satisfy it up to ≡ (V-Chan), so the sender must have aliased them to the slots.
+                       satisfy it up to ≡ (V-Chan), so the sender must have put them at the carried points.
 names                  one sort, points. Worlds and environments use ground points (constants and their
-                       slots). Static types also use bound point variables.
+                       carried roots). Static types also use bound point variables.
 
 E-Zero    t ∈ E^W_0⟦Θ ⊢ T ≺ F⟧
 E-Stop    v ∈ V^W_{n+1}⟦Θ ⊢ T⟧   ⇒   v ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
@@ -283,39 +296,43 @@ Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y 
 W          a well-formed world over point constants, the index of the judgment
 Ψ          hypotheses (C, xs) of the enclosing boxes (E-Exp below)
 Φ          frame hypotheses u ≺ φ of the enclosing λs and boxes (E-Abs, E-Exp)
-Γ ⊢ a ≺ b  the one fact theory, Γ = (W, Ψ, Φ), a and b points or frame variables (sharp edges 64).
-           Generators: x ≺_W y,  every fact of a hypothesis (C, xs) at every Σ-word of xs,
-           u ≺ φ for every frame hypothesis. Closed under ≡_W on points and under
-           transitivity through points. With Ψ = Φ = ∅ it is ≺_W (the ground case).
+Γ ⊢ a ≺ b, Γ ⊢ x ≡ y
+           the one fact theory, Γ = (W, Ψ, Φ), a and b points or frame variables (sharp edges 64, 65).
+           Generators: the facts of W,  every fact of C[xs/ιs] for a hypothesis (C, xs) in Ψ,
+           u ≺ φ for every frame hypothesis. ≡ is the least congruence (successor and carried)
+           containing the ≡ generators. ≺ contains program order and the ≺ generators and is
+           closed under ≡ and under transitivity through points. With Ψ = Φ = ∅ it is W
+           (the ground case). Side conditions are entailments, with no decision procedure
+           asked for (§16).
            One lemma carries a derivation along a map of the generators. It gives point
            substitution (typed_pinst) and frame instantiation into a world (typed_sem_rules).
-≺_{W,Ψ}    Γ ⊢ x ≺ y between points. It does not depend on Φ.
+≺_Γ, ≡_Γ   Γ ⊢ x ≺ y and Γ ⊢ x ≡ y between points. They do not depend on Φ. Every comparison
+           of points in the static system reads them: E-Ch, link, the payload of send and recv,
+           duality of composed ends.
 {u} ≺ F    Γ ⊢ u ≺ a for every point and the frame variable a of F.
-           The schema set G and its world W_G belong to decidability alone (§16, docs/DECIDABILITY.md).
+known      a point is known when W knows it or its root is a root of an instance point of a
+           hypothesis in Ψ (sharp edges 59).
 
-new    : ∗ ⊸^⊥_⊤ S@ι ⊗ S′@ι                                  S ⊥ S′,  ι fresh
+new    : ∗ ⊸^⊥_⊤ S@ι ⊗ S′@ι                                  S ⊥ S′,  ι known
+         (new may create a channel at a box's ιs or at a carried point of one)
 spawn  : (∗ ⊸^u_ℓ ∗) ⊸^⊥_⊤ ∗
-send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_{W,Ψ} heads(P[ι])
+send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_Γ heads(P[ι])
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
-link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_W ι′
-force  : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]    C at every Σ-word of ιs′, ιs′ known   (sharp edges 58, 61, 63)
-         (force applies the thunk. Its upper point is the thunk's, instantiated)
-         (premises on the order and the support, as pt_known is for new: KTForce reads C in the
-          order konst_ty is given and knownness in its predicate. V-Const reads ≺_W and pt_known W.
-          The static system reads Γ and skn, sharp edges 61, 64)
-new    : as above, ι known. The static system reads ι known when W knows it or ι has the
-         root of an instance point of a hypothesis in Ψ, so new may create a channel at a
-         box's ιs (sharp edges 59, 61)
+link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_Γ ι′
+force  : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]      Γ ⊢ C[ιs′/ιs],  ιs′ known   (sharp edges 58, 63, 65)
+         (force applies the thunk. Its upper point is the thunk's, instantiated.
+          Γ ⊢ C[ιs′/ιs] asks every fact of the instance, ≺ and ≡)
+         (premises on the order and the support, as known is for new. V-Const reads them in W)
 
 E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    k : T   ⇒   ·; · ⊢^F k : T
 E-LVar     ·; x : T ⊢^F x : T
-E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_W ι
+E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_Γ ι
 E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ a fresh frame variable, only hypothesis u ≺ μ (sharp edges 56)
            ℓ fresh, only facts {ℓ} ≼ heads(Θ, Δ)
            ⇒   Θ; Δ ⊢^F λx.t : T ⊸^u_ℓ U
-E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^u_ℓ U     Θ₂; Δ₂ ⊢^{F ∪ {ℓ}} t₂ : T     {u} ≺_{W,Ψ} F
+E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^u_ℓ U     Θ₂; Δ₂ ⊢^{F ∪ {ℓ}} t₂ : T     {u} ≺_Γ F
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F t₁ t₂ : U
 E-Pair     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T     Θ₂; Δ₂ ⊢^{F ∪ heads(T)} t₂ : U
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F ⟨t₁, t₂⟩ : T ⊗ U
@@ -326,13 +343,15 @@ E-LetPair  Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂    
 E-Inj      Θ; Δ ⊢^F t : Tᵢ   ⇒   Θ; Δ ⊢^F injᵢ t : T₁ + T₂
 E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊢^F tᵢ : U  (i = 1, 2)
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F case t of … : U
-E-Exp      ·; □Δ, x : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
-           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)                 (sharp edges 57, 58, 61, 63)
+E-Exp      ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
+           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C. ∗ ⊸^u_⊤ T)                   (sharp edges 57, 58, 63, 65)
            Ψ: the constraints of the enclosing boxes with their instances, hypotheses (C, xs).
-           Every side condition x ≺ y of the static system is read in Γ ⊢ x ≺ y
-           (58, 61, 64). A recursive call forces x at a step σᵢ(ιs) and gets C at every word of it
-           from the body's own hypothesis (C, ιs), because those words are words of ιs. Any
-           other instance asks C at all its words from Γ.
+           Every side condition of the static system is read in Γ (58, 64, 65).
+           Recursion needs no rule of its own. A recursive call is a force of x at some ιs′,
+           and Γ ⊢ C[ιs′/ιs] holds whenever C[ιs′/ιs] ⊆ C, through the body's own hypothesis
+           (C, ιs). C is then an invariant of the recursion: it states the facts of every
+           round at once, because the body cannot derive the facts of the next round from
+           those of the current one. ι ≺ ι′ does not give ι+1 ≺ ι′+1 (rr_call_underivable).
            ιs are point variables in the premise, typed once (57). E-Const at send and recv asks
            the payload ∃ιs.T to have no free point variable beyond ιs, the "all points of T bound" of §4 (57)
 E-Weak, E-Contract, E-Conv      as in the paper, with ⊢^F
@@ -366,7 +385,7 @@ Renaming points   a bijective renaming of point constants applied to the world, 
 Type point conversion  ι ≡_W ι′ ⇒ V/E/P with ι in a type ⇔ with ι′ in its place
                   (send and recv use it to move between P[x] and the sender's own points)
 Entry conversion  x ≡_W y  ⇒  (t ∈ E^W_n⟦Θ, c : S@x ⊢ T ≺ F⟧ ⇔ t ∈ E^W_n⟦Θ, c : S@y ⊢ T ≺ F⟧),
-                  likewise for P (P-Term's link case; uses slot congruence for payloads)
+                  likewise for P (P-Term's link case; uses carried congruence for payloads)
 Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
 Prel_steps, Prel_safe            unchanged (the paper's)
 ```
@@ -392,11 +411,11 @@ E-LetPair   Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂   
 E-Inj       Θ; Δ ⊨^F t : Tᵢ   ⇒   Θ; Δ ⊨^F injᵢ t : T₁ + T₂
 E-Case      Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊨^F tᵢ : U
             ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊨^F case t of … : U
-E-Exp       ∀xs known with C at every Σ-word of xs, F′ with {u[xs/ιs]} ≺ F′.
-                ·; □Δ, x : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T) ⊨^{F′} t : T[xs/ιs]
+E-Exp       ∀xs known with C[xs/ιs], F′ with {u[xs/ιs]} ≺ F′.
+                ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊨^{F′} t : T[xs/ιs]
             fchans(t) = ∅     fv(t) ⊆ dom(□Δ, x)
-            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)                (sharp edges 58, 61, 63)
-E-Force     Θ; Δ ⊨^F t : □(∀ιs. C_Σ. ∗ ⊸^u_⊤ T)    xs known, C at every Σ-word of xs    {u[xs/ιs]} ≺ F
+            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C. ∗ ⊸^u_⊤ T)                  (sharp edges 58, 63, 65)
+E-Force     Θ; Δ ⊨^F t : □(∀ιs. C. ∗ ⊸^u_⊤ T)    xs known, C[xs/ιs]    {u[xs/ιs]} ≺ F
             ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
@@ -463,8 +482,11 @@ Fundamental     Θ; Δ ⊢^F_W t : T   ⇒   Θ; Δ ⊨^F_W t : T
                 Σ ⊢_W p : T        ⇒   Σ ⊨_W p : T
 Adequacy        · ⊨_W p : T   ⇒   p deadlock free         (the paper's proof)
 Soundness       · ⊢_W p : T,  W strict   ⇒   p deadlock free
-Decidability    concerns the schema set G and its world W_G only (§16, docs/DECIDABILITY.md)
 ```
+
+Rocq state. Rocq implements the design before sharp edges 65: finite constraints of ≺ facts
+with steps Σ, C at every Σ-word, ≡ read in W alone, slots written p[b][i]. The paragraphs
+below describe that state. Porting to free constraints is pending (sharp edges 65).
 
 Rocq (Static.v, sharp edges 53, 56): typed W Φ Θ Δ F e T and ptyped W Σ p T, indexed by the
 world W. The fresh μ of E-Abs and E-Exp is a frame variable φ with the hypothesis u ≺ φ
@@ -504,19 +526,30 @@ load balancer   semantic                       races on c, unchanged
 factory         typable                        new at ι under □∀ι, two sessions at (a,0), (b,0) held at once (61)
 leader election semantic                       breaks linearity, unchanged
 scheduler       typable                        (r₁,0) ≡ (r₀,0) from the link,  reversed ag₀ rejected
-request/reply   typable, recursive             step (ι+1, ι′+1), (a,k) ≺ (b,k) ≺ (a,k+1) for all k (61)
-relay           typable, recursive             step (ι+1, ι[0]+1), producer creates its payload at ι[0] (61)
-delegation      typable                        receiver: c[k][1] ≺ (c,k+1),  sender aliases d to it
+request/reply   typable, recursive             C = {ι+k ≺ ι′+k, ι′+k ≺ ι+k+1 ∣ k ∈ ℕ}, call at (ι+1, ι′+1)
+relay           typable, recursive             C over ι+k and (ι+k).1, call at (ι+1, ι.1+1),
+                                               producer creates its payload at the carried point
+delegation      typable                        receiver: (c,k).1 ≺ (c,k+1),  sender aliases d to (c,k).1
 bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0)
+```
+
+Rocq types request/reply and the relay in the step form of sharp edges 61. Expected under
+sharp edges 65, not yet checked in Rocq:
+
+```
+tail call       □(∀ι ζ. {ι+k ≺ ζ ∣ k ∈ ℕ}. ∗ ⊸^⊥_⊤ (S@ι ⊸^ζ_⊤ ∗)),  ζ a ceiling above every round,
+                the tail call at (ι+1, ζ) asks ζ ≺ μ, a frame hypothesis
+forwarder       receives d on one channel and sends it on another inside a box,
+                C ∋ (ι+k).1 ≡ (ι′+k).1
+received chain  recursion on the channel it receives, call at ι.1,
+                C = {ι.1ⁿ + 1 ≺ ι.1ⁿ⁺¹ ∣ n ∈ ℕ},  ι.1ⁿ = ι.1.….1 (n times)
 ```
 
 ## 14  Open
 
 - Deferred by the author: order that depends on the run (one W per component, docs/DESIGN-REVIEW.md C2).
-- Decidability of type checking: open beyond the classes of docs/DECIDABILITY.md. Delegation through recursion and relay-shaped schemas violate (M).
-- Recursion on a received channel needs unbounded slot nesting, which no finite set of facts covers.
-- A sequential tail call asks the call's upper point below the body's (sharp edges 58). The recursive examples recurse through spawn.
-- Rocq admits box bodies that are not thunks. Their V is empty, but the grammar of §3 has only the thunk form.
+- Port of sharp edges 65 to Rocq: free constraints, ≡ in C, the static ≡ judgment, carried-root notation. Then the three expected examples of §13.
+- Rocq admits box bodies that are not thunks. Their V is empty, but the grammar of §4 has only the thunk form.
 
 ## 15  Lessons from the earlier mechanization (respect these)
 
@@ -534,20 +567,21 @@ An earlier order design was mechanized and abandoned. What it taught, and how th
 ## 16  Out of scope for now
 
 Neither item is part of the current Rocq round, and neither is on the progress page.
+The design first aims at a constraint language that expresses many programs (sharp edges 65).
+Decidability comes later, for an algorithmic system over a fragment of the constraints.
 
-Decidability of "W_G strict". Uniform schemas (every counter shifted by a constant on both
-sides) are a zero-cycle problem on a periodic graph, decided by Kosaraju–Sullivan 1988 in
-polynomial time. Schemas with a counter on one side only (e.g. ∀b. (c[κ][1], b) ≺ (c, κ+1)) give
-edges with a free coordinate; extension of their linear program believed decidable, proof open.
-The static system produces only uniform edges (equal counters on both sides) and free-coordinate
-edges (independent counters), so the free-coordinate extension covers every schema it emits.
+Decidability. A candidate fragment is the counter language of docs/DECIDABILITY.md: facts
+∀κ̄. x ≺ y whose coordinates are constants or κ + n, with each counter at most once per side.
+That document decides strictness of the generated world under further side conditions and
+shows undecidability without them. It predates sharp edges 65 and speaks of steps and slots.
 
 An algorithmic type system. The static system of §9 is declarative. Missing for an algorithm:
-- choosing G: rules emit facts instead of checking them; G is the collected set
-- checking G: the decision procedure above
+- choosing facts: rules emit facts instead of checking them
+- checking facts: entailment for the chosen fragment of constraints
+- choosing C: constraints of recursive boxes as invariants, given or inferred
 - fresh points (E-Abs μ, ℓ; new ι): generate fresh point variables
 - ∀ instantiation (E-Force): unification over points
-- payload points (send's ∃xs): determined by the aliases to the slot
+- payload points (send's ∃xs): determined by the aliases to the carried points
 - environment splitting (E-App, E-Let*): input/output contexts
 - conversion (E-Conv): ≈ on regular session types is decidable; apply at application/ascription
 - annotations: ∀ schemes under □ and recursive types are given, not inferred

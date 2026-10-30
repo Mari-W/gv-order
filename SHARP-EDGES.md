@@ -611,6 +611,24 @@ composition lemma, of soundness or of the semantic relation changed. The
 examples in Static.v and OrdExamples.v prove {u} ≺ F through
 ub_below_s_intro, which reads the frame variable as x ≼ u for its hypothesis.
 
+**65. Free constraints replace steps, and slots become carried roots (decided by the author 2026-10-30, spec only, Rocq pending).**
+Steps were hard to read, and the restrictions of 58 and 61 (finite C, ≺ facts
+only, invariance by words) came from decidability, which the author postponed.
+A constraint is now any set of positive facts x ≺ y and x ≡ y, finite or
+infinite, written with set-builder notation. Positivity is the one semantic
+limit, because V-Box must persist along ⊑ and a fact x ⊀ y does not. Steps
+leave the core. A recursive call is a force like any other and asks Γ ⊢ C at
+its instance, which holds whenever the instance of C is contained in C. C is
+the invariant of the recursion and states the facts of every round at once.
+≡ in C lets a box body delegate a channel it did not create, so the static
+system reads ≡ from Γ as a congruence over W and the hypotheses. Slots are
+renamed carried roots, written x.i with positions from 1, and §4 of the spec
+states why they exist. The infinite sets give three programs the old design
+rejected: a tail call with a ceiling ζ and {ι+k ≺ ζ ∣ k ∈ ℕ}, a forwarder
+inside a box, and recursion on a received channel. None is checked in Rocq
+yet. Decidability moves to §16 as a question about a fragment, with the
+counter language of docs/DECIDABILITY.md as the candidate.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
