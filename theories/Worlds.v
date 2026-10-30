@@ -48,12 +48,18 @@ Definition opt_roots (o : option point) : gset pname :=
 Definition pcs_roots (C : list (point * point)) : gset pname :=
   ⋃ ((λ p, {[pt_root p.1]} ∪ {[pt_root p.2]}) <$> C).
 
+Definition steps_roots (ss : list (list point)) : gset pname :=
+  ⋃ ((λ s : list point, ⋃ ((λ x, {[pt_root x]}) <$> s)) <$> ss).
+
+Definition bcs_roots (C : bcs) : gset pname :=
+  steps_roots (bc_steps C) ∪ pcs_roots (bc_facts C).
+
 Fixpoint ty_roots (T : ty) : gset pname :=
   match T with
   | TUnit => ∅
   | TLolli ub lb T1 U => opt_roots ub ∪ opt_roots lb ∪ ty_roots T1 ∪ ty_roots U
   | TProd T1 U | TSum T1 U => ty_roots T1 ∪ ty_roots U
-  | TBox _ C ub T1 => pcs_roots C ∪ opt_roots ub ∪ ty_roots T1
+  | TBox _ C ub T1 => bcs_roots C ∪ opt_roots ub ∪ ty_roots T1
 
   | TSess s x => sty_roots s ∪ {[pt_root x]}
   end

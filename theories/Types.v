@@ -93,6 +93,11 @@ Definition plist (xs : list point) : nat → point :=
 Definition slots (x : point) (m : nat) : list point :=
   (λ i, pt_slot x i) <$> seq 0 m.
 
+(** The constraint of a box (sharp edges 58, 61): facts x ≺ y over the
+    ιs and outer points, and a finite set of steps. A step is a list of
+    points, the images of ι₀, …, ιₙ₋₁. No steps is the box of 58. *)
+Record bcs := BCs { bc_steps : list (list point); bc_facts : list (point * point) }.
+
 (** ** Types
 
     The arrow carries an upper point β ([None] = ⊥: the call never
@@ -108,14 +113,14 @@ Inductive ty :=
                                    (* T ⊸^ub_lb U *)
   | TProd (T U : ty)               (* T ⊗ U *)
   | TSum (T U : ty)                (* T ⊕ U *)
-  | TBox (n : nat) (C : list (point * point)) (ub : option point) (T : ty)
+  | TBox (n : nat) (C : bcs) (ub : option point) (T : ty)
                                    (* □(∀ι₀ … ιₙ₋₁. C.^ub T) — unlimited
                                       (replicable) values; the upper
                                       point ub ([None] = ⊥) lies under
                                       the binder (sharp edges 52); the
-                                      constraint C is a list of facts
-                                      x ≺ y over the ιs, also under the
-                                      binder (sharp edges 58) *)
+                                      constraint C has facts x ≺ y over
+                                      the ιs and steps, also under the
+                                      binder (sharp edges 58, 61) *)
 
   | TSess (S : sty) (x : point)   (* S@x *)
 with sty :=
@@ -147,6 +152,33 @@ Definition pcs_inst (σ : nat → point) (C : list (point * point)) : list (poin
 Definition pcs_hold (lt : point → point → Prop) (C : list (point * point)) : Prop :=
   ∀ p, p ∈ C → lt p.1 p.2.
 
+(** A box constraint under σ: the steps and the facts. *)
+Definition bcs_inst (σ : nat → point) (C : bcs) : bcs :=
+  BCs ((λ s : list point, pt_inst σ <$> s) <$> bc_steps C) (pcs_inst σ (bc_facts C)).
+
+(** One step as a substitution of the box's context: the i-th of the m
+    ιs goes to the i-th point of s, every other variable stays. A word
+    applies its last step first (sharp edges 61). *)
+Definition pext (m : nat) (s : list point) : nat → point :=
+  λ a, if decide (a < m) then match s !! a with Some x => x | None => pvar a end
+       else pvar a.
+
+Fixpoint wsub (m : nat) (w : list (list point)) : nat → point :=
+  match w with
+  | [] => pvar
+  | s :: w' => λ a, pt_inst (pext m s) (wsub m w' a)
+  end.
+
+(** C holds at the instance xs: its facts hold at w(xs) for every word w
+    over its steps. The empty word gives C[xs/ιs] (sharp edges 58). *)
+Definition bcs_hold (lt : point → point → Prop) (C : bcs) (xs : list point) : Prop :=
+  ∀ w, Forall (λ s, s ∈ bc_steps C) w →
+    pcs_hold lt (pcs_inst (λ a, pt_inst (plist xs) (wsub (length xs) w a)) (bc_facts C)).
+
+Lemma bcs_hold_mono (lt lt' : point → point → Prop) C xs :
+  (∀ x y, lt x y → lt' x y) → bcs_hold lt C xs → bcs_hold lt' C xs.
+Proof. intros Hl H w Hw p Hp. apply Hl, (H w Hw p Hp). Qed.
+
 Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
@@ -156,7 +188,7 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
   | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
   | TBox n C ub T1 =>
-      TBox n (pcs_inst (pup n σ) C) (pt_inst (pup n σ) <$> ub) (pinst_ty (pup n σ) T1)
+      TBox n (bcs_inst (pup n σ) C) (pt_inst (pup n σ) <$> ub) (pinst_ty (pup n σ) T1)
   | TSess s x => TSess s (pt_inst σ x)
   end.
 
@@ -952,7 +984,7 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       konst_ty peq plt pk KLink
         (TLolli (Some x) None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
   | KTForce n C ub T xs :
-      length xs = n → pcs_hold plt (pcs_inst (plist xs) C) →
+      length xs = n → bcs_hold plt C xs → Forall pk xs →
       konst_ty peq plt pk KForce
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n C ub T) (ty_inst xs T)).
 

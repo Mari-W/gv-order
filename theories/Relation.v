@@ -50,6 +50,11 @@ Definition opt_rel (R : point → point → Prop) (o o' : option point) : Prop :
 Definition pcs_rel (R : point → point → Prop) (C C' : list (point * point)) : Prop :=
   Forall2 (λ p q, R p.1 q.1 ∧ R p.2 q.2) C C'.
 
+(** Box constraints: steps point by point, facts fact by fact (sharp
+    edges 61). *)
+Definition bcs_rel (R : point → point → Prop) (C C' : bcs) : Prop :=
+  Forall2 (Forall2 R) (bc_steps C) (bc_steps C') ∧ pcs_rel R (bc_facts C) (bc_facts C').
+
 Fixpoint teqW (W : world) (T U : ty) : Prop :=
   match T, U with
   | TUnit, TUnit => True
@@ -59,7 +64,7 @@ Fixpoint teqW (W : world) (T U : ty) : Prop :=
   | TProd T1 T2, TProd U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
   | TSum T1 T2, TSum U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
   | TBox n C ub T1, TBox n' C' ub' U1 =>
-      n = n' ∧ pcs_rel (pteqW W) C C' ∧ opt_rel (pteqW W) ub ub' ∧ teqW W T1 U1
+      n = n' ∧ bcs_rel (pteqW W) C C' ∧ opt_rel (pteqW W) ub ub' ∧ teqW W T1 U1
 
   | TSess s x, TSess r y => pteqW W x y ∧ seq s r
   | _, _ => False
@@ -118,7 +123,7 @@ Fixpoint Vdef (below : nat → level) (n : nat)
          constrained *)
       Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
         ∀ W' j xs F, wext W W' → j < n → length xs = m →
-          pcs_hold (w_lt W') (pcs_inst (plist xs) C) →
+          bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
           ub_below W' (pt_inst (plist xs) <$> ub) F →
           lE (below j) W' ∅ (ty_inst xs T1) F (subst1 (EBox eb) eb)
   end.
@@ -492,14 +497,14 @@ Lemma Vrel_box_iff n W Θ m C ub T v :
   Vrel n W Θ (TBox m C ub T) v ↔
   Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
     ∀ W' j xs F, wext W W' → j < n → length xs = m →
-      pcs_hold (w_lt W') (pcs_inst (plist xs) C) →
+      bcs_hold (w_lt W') C xs → Forall (pt_known W') xs →
       ub_below W' (pt_inst (plist xs) <$> ub) F →
       Erel j W' ∅ (ty_inst xs T) F (subst1 (EBox eb) eb).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   apply and_iff_compat_l.
   split; intros (eb & -> & Hfc & H); exists eb; (split_and!; [done..|]);
-    intros W' j xs F HW Hj Hxs HC HF.
+    intros W' j xs F HW Hj Hxs HC HK HF.
   - rewrite <-(levels_at n j Hj). by apply H.
   - rewrite (levels_at n j Hj). by apply H.
 Qed.

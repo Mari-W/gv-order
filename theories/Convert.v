@@ -101,7 +101,7 @@ Proof.
       destruct Hteq as (<- & <- & <- & Hteq).
       apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
       apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      intros W' j xs F HW Hj Hxs HC Hub. eapply (proj2 (IHn j Hj)).
+      intros W' j xs F HW Hj Hxs HC HKn Hub. eapply (proj2 (IHn j Hj)).
 
       + apply HW.
       + by apply teq_ty_inst.
