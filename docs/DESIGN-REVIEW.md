@@ -1,5 +1,8 @@
 # Design review after sharp edges 1 to 61 (2026-10-30)
 
+Status. The author approved every item of A and B on 2026-10-30, and agreed with
+C. Slots stay, boxes keep both jobs, and one world per component stays deferred.
+
 Each item says what it buys and what it costs. Group A changes no definition.
 Group B changes definitions and means re-proving. Group C records root causes
 we work around today without changing them.
