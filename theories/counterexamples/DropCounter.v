@@ -11,7 +11,7 @@
     at □(∀ι. Close@(ι+1)) ⊸ Close@(b,0) with xs = [(μ,0)], and in no
     V^W at that type, because no point x of W has x+1 ≡_W (b,0). *)
 From stdpp Require Import base gmap.
-From LRGV Require Import Relation.
+From LRGV Require Import relation.LogicalRelation.
 
 Definition b0 : nat := 0.
 Definition mu : nat := 1.

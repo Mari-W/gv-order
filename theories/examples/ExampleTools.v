@@ -1,0 +1,466 @@
+(** * Shared tools for the examples (spec §13)
+
+    Each typable example is a closed program. Its channels come from
+    [new] and its threads from [spawn], so the process is (∅, {t}) and
+    P-Term types it with Σ = Θ_B = ∅. Every example is typed in every
+    world with the facts it needs ([*_typed]), then at one explicit
+    strict world, and [soundness] gives [*_deadlock_free].
+
+    This file holds what several examples share. Strict worlds come from
+    a rank, splitting of linear environments by occurrence, derived
+    rules for Θ = ∅ with the tactics that apply them, and a few worlds,
+    sessions and box tactics. *)
+
+From stdpp Require Import base strings gmap gmultiset relations.
+From LRGV Require Export static.Fundamental.
+
+Set Default Proof Using "All".
+
+(** ** Strict worlds from a rank *)
+
+Lemma geq_cn (E : prel) (cn : point → point) x y :
+  (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
+  (∀ x i, cn (pt_slot x i) = pt_slot (cn x) i) →
+  (∀ x y, E x y → cn x = cn y) →
+  geq E x y → cn x = cn y.
+Proof.
+  intros Hs Hl HE. induction 1; try congruence; auto.
+Qed.
+
+Lemma wgen_strict N E L (cn : point → point) (r : point → nat) :
+  (∀ p, p ∈ N → ∃ a, p = NConst a) →
+  (∀ x y, E x y → eq_or_supp N x y) →
+  (∀ x y, L x y → po_or_supp N x y) →
+  (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
+  (∀ x i, cn (pt_slot x i) = pt_slot (cn x) i) →
+  (∀ x y, E x y → cn x = cn y) →
+  (∀ x, r x < r (pt_shift 1 x)) →
+  (∀ x y, L x y → r (cn x) < r (cn y)) →
+  strict (wgen N E L).
+Proof.
+  intros HN HE HL Hs Hl Hc Hr HLr. split; [by apply wgen_wf|].
+  assert (∀ x y, glt E L x y → r (cn x) < r (cn y)) as Hlt.
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    - by apply HLr.
+    - rewrite Hs. apply Hr.
+    - apply (geq_cn E cn) in Hx, Hy; [|done..]. by rewrite Hx, <-Hy.
+    - lia. }
+  intros x H. apply Hlt in H. lia.
+Qed.
+
+(** The rank of a point: a weight per root constant, slots weighted
+    by their base, and a step per name times the offset. *)
+Fixpoint pn_rank (g : nat → nat) (h : nat → nat → nat → nat) (p : pname) : nat :=
+  match p with
+  | NConst a => g a
+  | NVar _ => 0
+  | NSlot q b i => h (pn_rank g h q) b i
+  end.
+
+Definition prank (k : pname → nat) (g : nat → nat) (h : nat → nat → nat → nat) (x : point) : nat :=
+  pn_rank g h (pt_name x) + k (pt_name x) * S (pt_off x).
+
+Lemma prank_shift k g h x : (∀ p, 0 < k p) → prank k g h x < prank k g h (pt_shift 1 x).
+Proof. intros Hk. specialize (Hk (pt_name x)). unfold prank, pt_shift. simpl. nia. Qed.
+
+(** ** Splitting linear environments by occurrence
+
+    The derivations below never name Δ₁ and Δ₂. [lp e x Δ] keeps the
+    unlimited bindings of Δ and the linear ones that occur in e, with
+    x the index of Δ's head inside e. [sok] checks that every linear
+    binding goes to exactly one side. *)
+
+Fixpoint occ (x : nat) (e : expr) : bool :=
+  match e with
+  | Var y => Nat.eqb x y
+  | EUnit | Konst _ | Chan _ => false
+  | Lam e | EBox e => occ (S x) e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => occ x e1 || occ x e2
+  | LetP e1 e2 => occ x e1 || occ (S (S x)) e2
+  | Inj1 e | Inj2 e => occ x e
+  | Case e e1 e2 => occ x e || occ (S x) e1 || occ (S x) e2
+  end.
+
+Definition unlb (T : ty) : bool := match T with TBox _ _ _ => true | _ => false end.
+
+Lemma unlb_unl T : unlb T = true → unlimited T.
+Proof. by destruct T. Qed.
+
+Fixpoint lp (e : expr) (x : nat) (Δ : lenv) : lenv :=
+  match Δ with
+  | [] => []
+  | None :: Δ' => None :: lp e (S x) Δ'
+  | Some T :: Δ' => (if unlb T || occ x e then Some T else None) :: lp e (S x) Δ'
+  end.
+
+Fixpoint sok (e1 : expr) (x1 : nat) (e2 : expr) (x2 : nat) (Δ : lenv) : bool :=
+  match Δ with
+  | [] => true
+  | None :: Δ' => sok e1 (S x1) e2 (S x2) Δ'
+  | Some T :: Δ' => (unlb T || xorb (occ x1 e1) (occ x2 e2)) && sok e1 (S x1) e2 (S x2) Δ'
+  end.
+
+Lemma lp_split e1 x1 e2 x2 Δ :
+  sok e1 x1 e2 x2 Δ = true → lenv_split Δ (lp e1 x1 Δ) (lp e2 x2 Δ).
+Proof.
+  revert x1 x2. induction Δ as [|[T|] Δ IH]; intros x1 x2 H; simpl in *; [constructor| |].
+  - apply andb_true_iff in H as [H1 H2].
+    destruct (unlb T) eqn:Hu; simpl.
+    + apply lsplit_unl; [by apply unlb_unl|by apply IH].
+    + destruct (occ x1 e1), (occ x2 e2); simpl in *; try done;
+        [apply lsplit_l|apply lsplit_r]; by apply IH.
+  - apply lsplit_none. by apply IH.
+Qed.
+
+Fixpoint allunl (Δ : lenv) : bool :=
+  match Δ with
+  | [] => true
+  | None :: Δ' => allunl Δ'
+  | Some T :: Δ' => unlb T && allunl Δ'
+  end.
+
+Fixpoint lonly (x : nat) (Δ : lenv) : lenv :=
+  match Δ, x with
+  | [], _ => []
+  | o :: Δ', 0 => o :: lenv_nones Δ'
+  | _ :: Δ', S x' => None :: lonly x' Δ'
+  end.
+
+Fixpoint oku (x : nat) (Δ : lenv) : bool :=
+  match Δ, x with
+  | [], _ => true
+  | _ :: Δ', 0 => allunl Δ'
+  | o :: Δ', S x' => match o with Some T => unlb T | None => true end && oku x' Δ'
+  end.
+
+Lemma nones_wk Δ : allunl Δ = true → lenv_wk (lenv_nones Δ) Δ.
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; intros H; [constructor| |].
+  - apply andb_true_iff in H as [H1 H2]. apply lwk_drop; [by apply unlb_unl|by apply IH].
+  - apply lwk_cons. by apply IH.
+Qed.
+
+Lemma lonly_wk x Δ : oku x Δ = true → lenv_wk (lonly x Δ) Δ.
+Proof.
+  revert x. induction Δ as [|o Δ IH]; intros [|x] H; simpl in *; [constructor|constructor| |].
+  - apply lwk_cons. by apply nones_wk.
+  - apply andb_true_iff in H as [H1 H2]. destruct o as [T|].
+    + apply lwk_drop; [by apply unlb_unl|by apply IH].
+    + apply lwk_cons. by apply IH.
+Qed.
+
+Lemma lonly_only x Δ T : Δ !! x = Some (Some T) → lenv_only (lonly x Δ) x T.
+Proof.
+  revert x. induction Δ as [|o Δ IH]; intros [|x] H; simpl in *; [done|done| |].
+  - simplify_eq. split; [done|]. intros [|y] T' Hy; simpl in Hy; [by simplify_eq|].
+    exfalso. apply list_elem_of_lookup_2 in Hy. apply lenv_empty_nones in Hy. done.
+  - destruct (IH x H) as [H1 H2]. split; [done|]. intros [|y] T' Hy; simpl in Hy; [done|].
+    destruct (H2 y T' Hy). split; [lia|done].
+Qed.
+
+Lemma allunl_unl Δ : allunl Δ = true → lenv_unl Δ.
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; intros H o Ho; [by apply elem_of_nil in Ho| |].
+  - apply andb_true_iff in H as [H1 H2]. apply elem_of_cons in Ho as [->|Ho].
+    + right. exists T. split; [done|by apply unlb_unl].
+    + by apply IH.
+  - apply elem_of_cons in Ho as [->|Ho]; [by left|by apply IH].
+Qed.
+
+(** ** Derived rules for Θ = ∅ *)
+
+Section rules.
+  Context (W : world) (HW : world_wf W).
+
+  Lemma comp0 Ψ : tenv_comp (seqs W Ψ) ∅ ∅ ∅.
+  Proof. apply tenv_comp_empty_l. intros ? ?. apply se_sym. Qed.
+
+  Lemma tenv_heads0 : tenv_heads ∅ = ∅.
+  Proof. unfold tenv_heads. by rewrite map_fold_empty. Qed.
+
+  Lemma tv_var Φ Ψ Δ F x T :
+    Δ !! x = Some (Some T) → oku x Δ = true → typed W Φ Ψ ∅ Δ F (Var x) T.
+  Proof. intros H1 H2. eapply t_wk; [by apply lonly_wk|]. apply t_var. by apply lonly_only. Qed.
+
+  Lemma tv_unit Φ Ψ Δ F : allunl Δ = true → typed W Φ Ψ ∅ Δ F EUnit TUnit.
+  Proof. intros H. eapply t_wk; [by apply nones_wk|]. apply t_unit, lenv_empty_nones. Qed.
+
+  Lemma tv_app Φ Ψ Δ F e1 e2 ub lb T U :
+    sok e1 0 e2 0 Δ = true →
+    typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 (TLolli ub lb T U) →
+    typed W Φ Ψ ∅ (lp e2 0 Δ) (sf_union F (opt_heads lb)) e2 T →
+    ub_below_s W Ψ Φ ub F →
+    typed W Φ Ψ ∅ Δ F (App e1 e2) U.
+  Proof.
+    intros Hs H1 H2 Hu. eapply t_app; [apply comp0|by apply lp_split|exact Hu| |exact H2].
+    by rewrite tenv_heads0, union_empty_l_L.
+  Qed.
+
+  (** A constant applied: its type is given by [konst_ty], the
+      argument comes first so that its type is known. *)
+  Lemma tv_appk Φ Ψ Δ F k e2 ub T U :
+    typed W Φ Ψ ∅ Δ F e2 T →
+    konst_ty (seqs W Ψ) (slt W Ψ) (skn W Ψ) k (TLolli ub None T U) →
+    kscoped k (TLolli ub None T U) →
+    ub_below_s W Ψ Φ ub F →
+    typed W Φ Ψ ∅ Δ F (App (Konst k) e2) U.
+  Proof.
+    intros H2 Hk Hks Hu. eapply (t_app W Φ Ψ ∅ ∅ ∅ Δ (lenv_nones Δ) Δ F _ _ ub None).
+    - apply comp0.
+    - apply lenv_split_nones_l.
+    - exact Hu.
+    - apply t_konst; [apply lenv_empty_nones|done|done].
+    - destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L.
+  Qed.
+
+  Lemma tv_pair Φ Ψ Δ F e1 e2 T U :
+    sok e1 0 e2 0 Δ = true →
+    typed W Φ Ψ ∅ (lp e2 0 Δ) (sf_union F (heads T)) e2 U →
+    typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 T →
+    typed W Φ Ψ ∅ Δ F (Pair e1 e2) (TProd T U).
+  Proof.
+    intros Hs H2 H1. eapply t_pair; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite tenv_heads0, union_empty_l_L.
+  Qed.
+
+  Lemma tv_letu Φ Ψ Δ F e1 e2 T :
+    sok e1 0 e2 0 Δ = true →
+    typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 TUnit →
+    typed W Φ Ψ ∅ (lp e2 0 Δ) F e2 T →
+    typed W Φ Ψ ∅ Δ F (LetU e1 e2) T.
+  Proof.
+    intros Hs H1 H2. eapply t_letu; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite tenv_heads0, union_empty_l_L.
+  Qed.
+
+  Lemma tv_letp Φ Ψ Δ F e1 e2 T1 T2 T :
+    sok e1 0 e2 2 Δ = true →
+    typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 2 Δ))) e1 (TProd T1 T2) →
+    typed W Φ Ψ ∅ (Some T2 :: Some T1 :: lp e2 2 Δ) F e2 T →
+    typed W Φ Ψ ∅ Δ F (LetP e1 e2) T.
+  Proof.
+    intros Hs H1 H2. eapply t_letp; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite tenv_heads0, union_empty_l_L.
+  Qed.
+
+  Lemma tv_lam Φ Ψ Δ F e T U ub lb φ :
+    φ ∉ dom Φ →
+    lb_below_h W Ψ lb (lenv_heads Δ) →
+    typed W (<[φ := ub]> Φ) Ψ ∅ (Some T :: Δ) (∅, Some φ) e U →
+    typed W Φ Ψ ∅ Δ F (Lam e) (TLolli ub lb T U).
+  Proof. intros Hφ Hl H. eapply t_lam; [exact Hφ| |exact H]. by rewrite tenv_heads0, union_empty_l_L. Qed.
+
+End rules.
+
+(** {u} ≺ F, split into the points of F and the frame variable. *)
+Section frames.
+  Context (W : world).
+
+  Lemma ubs_intro Ψ Φ x P o :
+    (∀ y, y ∈ P → slt W Ψ x y) →
+    match o with Some φ => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u | None => True end →
+    ub_below_s W Ψ Φ (Some x) (P, o).
+  Proof. apply ub_below_s_intro. Qed.
+
+  Lemma ubs_none Ψ Φ F : ub_below_s W Ψ Φ None F.
+  Proof. done. Qed.
+
+  Lemma sle_refl Ψ x : world_wf W → sle W Ψ x x.
+  Proof. intros HW. left. apply se_refl. Qed.
+
+  Lemma slt_po Ψ x : world_wf W → slt W Ψ x (pt_shift 1 x).
+  Proof. intros HW. apply sl_w, (wf_lt_po _ HW). Qed.
+End frames.
+
+(** A closed thread is a closed process. *)
+Lemma ptyped_closed W t T :
+  prim T → typed W ∅ [] ∅ [] (∅, None) t T → ptyped W ∅ (∅, {[+ t +]}) T.
+Proof.
+  intros HT Ht. apply (pt_term W ∅ ∅ ∅ t T HT); [done|set_solver| | |].
+  { intros c o Ho. by rewrite lookup_empty in Ho. }
+  { intros c e1 e2 He. by rewrite lookup_empty in He. }
+  unfold tenv_of. rewrite fmap_empty, (left_id_L ∅ (∪)). exact Ht.
+Qed.
+
+(** Membership in a concrete frame: one goal per point. *)
+Ltac mem_cases H :=
+  cbn in H; rewrite ?elem_of_union, ?elem_of_singleton in H;
+  repeat match type of H with _ ∨ _ => destruct H as [H|H] end;
+  try (by apply not_elem_of_empty in H); subst.
+
+(** One typing step, by the head of the term. *)
+Ltac tstep :=
+  match goal with
+  | |- typed _ _ _ _ _ _ (Var _) _ => apply tv_var; [assumption|done|reflexivity]
+  | |- typed _ _ _ _ _ _ EUnit _ => apply tv_unit; [assumption|reflexivity]
+  | |- typed _ _ _ _ _ _ (LetU _ _) _ => apply tv_letu; [assumption|reflexivity| |]
+  | |- typed _ _ _ _ _ _ (LetP _ _) _ => eapply tv_letp; [assumption|reflexivity| |]
+  | |- typed _ _ _ _ _ _ (Pair _ _) _ => eapply tv_pair; [assumption|reflexivity| |]
+  | |- typed _ _ _ _ _ _ (App (Konst _) _) _ => eapply tv_appk; [assumption| | | |]
+  end.
+
+Abbreviation pc a k := (Pt (NConst a) k).
+
+(** The world with program order only, on the constants [as]. *)
+Definition Wpo (cs : list nat) : world :=
+  wgen (list_to_set (NConst <$> cs)) (λ _ _, False) (λ _ _, False).
+
+Lemma Wpo_strict cs : strict (Wpo cs).
+Proof.
+  apply (wgen_strict _ _ _ id (prank (λ _, 1) (λ _, 0) (λ _ _ _, 0))); try done.
+  - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
+  - intros x. apply prank_shift. lia.
+Qed.
+
+(** The world with program order and the facts [L] on the constants [cs]. *)
+Definition Wfacts (cs : list nat) (L : list (point * point)) : world :=
+  wgen (list_to_set (NConst <$> cs)) (λ _ _, False) (λ x y, (x, y) ∈ L).
+
+Lemma Wfacts_strict cs L k g h :
+  (∀ p, 0 < k p) →
+  Forall (λ p, pt_root p.1 ∈ NConst <$> cs ∧ pt_root p.2 ∈ NConst <$> cs) L →
+  Forall (λ p, prank k g h p.1 < prank k g h p.2) L →
+  strict (Wfacts cs L).
+Proof.
+  intros Hk HL Hr. apply (wgen_strict _ _ _ id (prank k g h)); try done.
+  - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
+  - intros x y Hxy. right. rewrite Forall_forall in HL. destruct (HL _ Hxy) as [H1 H2].
+    rewrite !elem_of_list_to_set. by split.
+  - intros x. by apply prank_shift.
+  - intros x y Hxy. rewrite Forall_forall in Hr. apply (Hr _ Hxy).
+Qed.
+
+Lemma Wfacts_lt cs L x y : (x, y) ∈ L → w_lt (Wfacts cs L) x y.
+Proof. intros H. by apply glt_base. Qed.
+
+Lemma Wfacts_known cs L a : a ∈ cs → pt_known (Wfacts cs L) (pc a 0).
+Proof. intros H. unfold pt_known. simpl. apply elem_of_list_to_set, list_elem_of_fmap. eauto. Qed.
+
+(** E-Const at send and recv: the payload is scoped by its binders. *)
+Ltac kscope := cbn; repeat split; try done; intros ? Hv; injection Hv; lia.
+
+(** !∗.Close *)
+Definition Sd : sty := SSnd 0 TUnit SEnd.
+
+Definition sendclose (v : expr) : expr := App EClos (App ESend (Pair EUnit v)).
+Definition recvclose (v : expr) : expr := LetP (App ERecv v) (LetU (Var 1) (App EClos (Var 0))).
+
+Lemma seq_unf s r : unfoldS s = unfoldS r → seq s r.
+Proof.
+  intros E [|n]; [done|]. cbn [aeq]. unfold eq_step. rewrite E.
+  destruct (unfoldS r); try done; split_and!; auto using eqT_refl, aeq_refl.
+Qed.
+
+Lemma skn_in W Ψ C ys y x : (C, ys) ∈ Ψ → y ∈ ys → pt_root x = pt_root y → skn W Ψ x.
+Proof. intros Hg Hy E. right. by exists C, ys, y. Qed.
+
+(** A fact of a set-builder constraint: one disjunct is the fact. *)
+Ltac cmem :=
+  hnf; first [eexists; first [reflexivity|left; reflexivity|right; reflexivity]
+             |exists 0; reflexivity
+             |left; hnf; repeat (first [left; reflexivity|right]); reflexivity].
+
+Ltac hyp0 x y :=
+  eapply (sl_hyp0 _ _ _ _ x y); [by left|cmem|cbn; lia|reflexivity|reflexivity].
+
+Ltac vb_list := repeat (apply Forall_cons; split); try (apply Forall_nil; done); cbn; lia.
+
+Abbreviation pv a k := (Pt (NVar a) k).
+
+Definition Sa : sty := SMu (SRcv 0 TUnit (SVar 0)).
+Definition Sb : sty := SMu (SSnd 0 TUnit (SVar 0)).
+
+(** Closed boxes: no outer point variable, so substitution fixes them. *)
+Lemma pinst_closed σ T : pscoped 0 T → pinst_ty σ T = T.
+Proof.
+  intros H. rewrite (pinst_ty_ext_scoped T 0 σ pvar); [apply pinst_ty_pvar|done|].
+  intros a Ha. lia.
+Qed.
+
+Ltac body_scope := cbn; repeat split; intros ? Hv; injection Hv; lia.
+
+(** Open a closed box: its hypothesis and recursive binding are C and
+    the box type itself. *)
+Ltac box_open C T :=
+  try change (bcs_inst (pshift 2) C) with C;
+  change (lenv_pinst (pshift 2) [Some (TBox 2 C (TLolli None None TUnit T))])
+    with [Some (pinst_ty (pshift 2) (TBox 2 C (TLolli None None TUnit T)))];
+  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
+
+Lemma skn_ids2 W Ψ C x y :
+  (C, [pvar 0; pvar 1]) ∈ Ψ → pt_root x = NVar 0 → pt_root y = NVar 1 → Forall (skn W Ψ) [x; y].
+Proof.
+  intros Hg Hx Hy. apply Forall_cons. split; [|apply Forall_singleton].
+  - apply (skn_in W Ψ C [pvar 0; pvar 1] (pvar 0)); [done|rewrite !elem_of_cons; auto|done].
+  - apply (skn_in W Ψ C [pvar 0; pvar 1] (pvar 1)); [done|rewrite !elem_of_cons; auto|done].
+Qed.
+
+Ltac conv_sess := apply teq_steq; split; first [done|apply seq_unf; done].
+
+Ltac skn_slot := right; eexists _, _, (pvar 0); split_and!; [by left|by left|done].
+
+(** ** Strict worlds from a lexicographic rank
+
+    A ceiling ζ above every instant of a channel has no rank in ℕ. A
+    pair rank orders it after them. *)
+
+Definition lexlt (p q : nat * nat) : Prop := p.1 < q.1 ∨ (p.1 = q.1 ∧ p.2 < q.2).
+
+Lemma wgen_strict_lex N E L (cn : point → point) (r : point → nat * nat) :
+  (∀ p, p ∈ N → ∃ a, p = NConst a) →
+  (∀ x y, E x y → eq_or_supp N x y) →
+  (∀ x y, L x y → po_or_supp N x y) →
+  (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
+  (∀ x i, cn (pt_slot x i) = pt_slot (cn x) i) →
+  (∀ x y, E x y → cn x = cn y) →
+  (∀ x, lexlt (r x) (r (pt_shift 1 x))) →
+  (∀ x y, L x y → lexlt (r (cn x)) (r (cn y))) →
+  strict (wgen N E L).
+Proof.
+  intros HN HE HL Hs Hl Hc Hr HLr. split; [by apply wgen_wf|].
+  assert (∀ x y, glt E L x y → lexlt (r (cn x)) (r (cn y))) as Hlt.
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    - by apply HLr.
+    - rewrite Hs. apply Hr.
+    - apply (geq_cn E cn) in Hx, Hy; [|done..]. by rewrite Hx, <-Hy.
+    - unfold lexlt in *. lia. }
+  intros x H. apply Hlt in H. unfold lexlt in H. lia.
+Qed.
+
+Ltac box_open1 C T :=
+  try change (bcs_inst (pshift 1) C) with C;
+  change (lenv_pinst (pshift 1) [Some (TBox 1 C (TLolli None None TUnit T))])
+    with [Some (pinst_ty (pshift 1) (TBox 1 C (TLolli None None TUnit T)))];
+  rewrite (pinst_closed _ (TBox 1 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
+
+(** Strictness when ≡ relates slots: the name map need only respect
+    slots, not commute with them. *)
+Lemma geq_cn_cong (E : prel) (cn : point → point) x y :
+  (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
+  (∀ x y i, cn x = cn y → cn (pt_slot x i) = cn (pt_slot y i)) →
+  (∀ x y, E x y → cn x = cn y) →
+  geq E x y → cn x = cn y.
+Proof.
+  intros Hs Hl HE. induction 1; try congruence; auto.
+Qed.
+
+Lemma wgen_strict_cong N E L (cn : point → point) (r : point → nat) :
+  (∀ p, p ∈ N → ∃ a, p = NConst a) →
+  (∀ x y, E x y → eq_or_supp N x y) →
+  (∀ x y, L x y → po_or_supp N x y) →
+  (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
+  (∀ x y i, cn x = cn y → cn (pt_slot x i) = cn (pt_slot y i)) →
+  (∀ x y, E x y → cn x = cn y) →
+  (∀ x, r x < r (pt_shift 1 x)) →
+  (∀ x y, L x y → r (cn x) < r (cn y)) →
+  strict (wgen N E L).
+Proof.
+  intros HN HE HL Hs Hl Hc Hr HLr. split; [by apply wgen_wf|].
+  assert (∀ x y, glt E L x y → r (cn x) < r (cn y)) as Hlt.
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    - by apply HLr.
+    - rewrite Hs. apply Hr.
+    - apply (geq_cn_cong E cn) in Hx, Hy; [|done..]. by rewrite Hx, <-Hy.
+    - lia. }
+  intros x H. apply Hlt in H. lia.
+Qed.
