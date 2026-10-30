@@ -19,6 +19,7 @@ theories/Renaming.v
 theories/Chain.v
 theories/Junk.v
 theories/Internalize.v
+theories/Connect.v
 theories/Terms.v
 theories/Composition.v
 theories/composition/Term.v

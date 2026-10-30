@@ -377,6 +377,19 @@ states the successor in the same world, because a link creates no points. With a
 extension there, monotonicity in the world would need a renaming of points at the same
 index, which the induction over giving steps does not provide.
 
+**46. P-Connect inducts on the soup size inside a level (Claude, routine, 2026-10-30).**
+Nested induction on the two components' giving-step fixpoints does not close. A link of
+two cut channels in component 1 fuses component 2, and a link of a cut channel with an
+interface channel renames component 2. Neither result is a giving successor of
+component 2, so the inner hypothesis does not reach it, whichever component is the
+outer one. Inside the level S n the proof therefore inducts on the syntactic size of the
+composite's soup. Every giving step removes a send, close or link redex together with
+any payload, so the soup shrinks. Junk substitution, renaming and fusion of the other
+component replace channel names only and keep the size. The relation and the statement
+stay as they are. Inside, P-Connect is proved for components in one world W, with one
+component at T and the other at ∗ in either order, so that each step case is proved once.
+The spec's W₁ ⊔ W₂ enters through monotonicity.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

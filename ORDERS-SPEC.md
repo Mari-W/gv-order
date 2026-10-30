@@ -364,6 +364,8 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
                    a message instantiates Q-Recv with W₁ ⊔ W₂ (the sender's alias names the payload),
                    new by Fresh extension and Renaming points,  link by Internalizing a link and Entry conversion
 
+            Rocq (sharp edges 46): induction on n, inside on the size of the composite's soup;
+            both components in one world W ⊒ W₁, W₂ (monotonicity), one at T, the other at ∗.
             index (sharp edges 45, replaces the budget of plan A): components in P at n give the
             composite in P at n. A synchronization of the composite is a giving step of one component
             (free) and a receive or close of the other. A link of two cut channels fuses the other ends
