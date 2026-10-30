@@ -214,4 +214,105 @@ Section steps3.
       + clear -HC20. set_solver.
       + clear -HC12 Hd1'. set_solver.
   Qed.
+  (** The giving clause for a link τ of the composite whose thread is in
+      component 1. *)
+  Lemma link_give F1 e c d e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C →
+    Prel (S n') W Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
+  Proof.
+    intros HE Hst HcC.
+    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
+    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
+    pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    destruct (decide (c ∈ C1)) as [Hc1|Hc1].
+    { exact (link_own n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok0 HP1 HP2
+               F1 e c d e' HE Hst Hc1). }
+    destruct (decide (d ∈ C1)) as [Hd1'|Hd1'].
+    { assert (d ≠ c) as Hdc by (intros ->; done).
+      rewrite upair_comm in Hst.
+      pose proof (link_own n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok0 HP1 HP2
+                    F1 e d c e' HE Hst Hd1') as H.
+      apply (Prel_swap_restricted c d) in H.
+      - unfold pswap in H. simpl in H.
+        rewrite gswap_minus_other, msswap_echsubst_flip in H; [done|done|clear -Hd1'; set_solver].
+      - apply map_disjoint_dom in Hd12. rewrite dom_union_L.
+        clear -HcC HC1Σ1 HC1Σ2 HC2Σ1 HC2Σ2 HΣ1C0 HΣ2C0. set_solver.
+      - rewrite dom_union_L. clear -Hd1' HC1Σ1 HC1Σ2. set_solver. }
+    rewrite HE in HP1.
+    pose proof (Prel_offer_dom _ _ _ _ _ _ _ _ _ HP1 Hst ltac:(simpl; clear -Hc1 Hd1'; set_solver))
+      as Hsub. simpl in Hsub. rewrite dom_union_L, HC0 in Hsub. rewrite <-HE in HP1.
+    assert (c ∈ C0) as HcC0.
+    { assert (c ∈ dom Σ1 ∪ C0) as H by (apply Hsub; clear; set_solver).
+      clear -H HcC HC2Σ1 Hc1. set_solver. }
+    assert (d ∈ dom Σ1 ∪ C0) as Hd by (apply Hsub; clear; set_solver).
+    apply elem_of_union in Hd as [Hd|Hd].
+    - exact (link_iface F1 e c d e' HE Hst HcC0 Hd).
+    - exact (link_cut F1 e c d e' HE Hst HcC0 Hd).
+  Qed.
+  Local Notation own := (own_tau n' T IHo m W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2).
+
+  Lemma C12_0 : C1 ## C2 ∪ C0.
+  Proof. pose proof (co_C12 _ _ _ _ _ _ _ _ Hok). pose proof (co_C10 _ _ _ _ _ _ _ _ Hok). set_solver. Qed.
+
+  (** Internal steps of component 1, by kind. *)
+  Lemma tau_beta F1 e e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e LBeta e' →
+    Ptau_case (Prel n') W Σ T (C, F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst. pose proof (own (C1, F1 ⊎ {[+ e' +]})) as H. simpl in H.
+    assert (F1 ⊎ E2 ⊎ {[+ e' +]} = F1 ⊎ {[+ e' +]} ⊎ E2) as -> by multiset_solver.
+    apply H; [rewrite HE; by apply PStepBeta|apply C12_0].
+  Qed.
+
+  Lemma tau_spawn F1 e v e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSpawn v) e' →
+    Ptau_case (Prel n') W Σ T (C, F1 ⊎ E2 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]}).
+  Proof.
+    intros HE Hst. pose proof (own (C1, F1 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]})) as H. simpl in H.
+    assert (F1 ⊎ E2 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]} = F1 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]} ⊎ E2)
+      as -> by multiset_solver.
+    apply H; [rewrite HE; by apply PStepSpawn|apply C12_0].
+  Qed.
+
+  Lemma tau_new F1 e c e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LNew c) e' → c ∉ C → c ∉ echans (F1 ⊎ E2) → c ∉ fchans e →
+    Ptau_case (Prel n') W Σ T (C ∪ {[c]}, F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst Hc Hce Hcf. pose proof (own (C1 ∪ {[c]}, F1 ⊎ {[+ e' +]})) as H. simpl in H.
+    assert (F1 ⊎ E2 ⊎ {[+ e' +]} = F1 ⊎ {[+ e' +]} ⊎ E2) as -> by multiset_solver.
+    assert (C ∪ {[c]} = C1 ∪ {[c]} ∪ C2 ∪ C0) as -> by (clear; set_solver).
+    rewrite echans_disj_union in Hce.
+    apply H.
+    - rewrite HE. apply PStepNew; [done|clear -Hc; set_solver|clear -Hce; set_solver|done].
+    - pose proof C12_0. clear -H0 Hc. set_solver.
+  Qed.
+
+  Lemma tau_msg F1 c v e e' f f' :
+    E1 = F1 ⊎ {[+ e +]} ⊎ {[+ f +]} → tstep e (LSess (SSend c v)) e' →
+    tstep f (LSess (SRecv c v)) f' →
+    Ptau_case (Prel n') W Σ T (C, F1 ⊎ E2 ⊎ {[+ e' +]} ⊎ {[+ f' +]}).
+  Proof.
+    intros HE Hst1 Hst2. pose proof (own (C1, F1 ⊎ {[+ e' +]} ⊎ {[+ f' +]})) as H. simpl in H.
+    assert (F1 ⊎ E2 ⊎ {[+ e' +]} ⊎ {[+ f' +]} = F1 ⊎ {[+ e' +]} ⊎ {[+ f' +]} ⊎ E2)
+      as -> by multiset_solver.
+    apply H; [rewrite HE; by eapply PStepMsg|apply C12_0].
+  Qed.
+
+  Lemma tau_close F1 c e e' f f' :
+    E1 = F1 ⊎ {[+ e +]} ⊎ {[+ f +]} → tstep e (LSess (SClos c)) e' →
+    tstep f (LSess (SClos c)) f' →
+    Ptau_case (Prel n') W Σ T (C ∖ {[c]}, F1 ⊎ E2 ⊎ {[+ e' +]} ⊎ {[+ f' +]}).
+  Proof.
+    intros HE Hst1 Hst2.
+    destruct (decide (c ∈ C1)) as [Hc|Hc].
+    2: { exfalso. exact (own_close_contra n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB
+                           Hm Hty Hok HP1 HP2 F1 e e' f f' c HE Hst1 Hst2 Hc). }
+    pose proof (own (C1 ∖ {[c]}, F1 ⊎ {[+ e' +]} ⊎ {[+ f' +]})) as H. simpl in H.
+    assert (F1 ⊎ E2 ⊎ {[+ e' +]} ⊎ {[+ f' +]} = F1 ⊎ {[+ e' +]} ⊎ {[+ f' +]} ⊎ E2)
+      as -> by multiset_solver.
+    pose proof C12_0 as H0.
+    assert (C ∖ {[c]} = C1 ∖ {[c]} ∪ C2 ∪ C0) as -> by (clear -Hc H0; set_solver).
+    apply H; [rewrite HE; by eapply PStepClose|clear -H0; set_solver].
+  Qed.
 End steps3.
