@@ -905,32 +905,36 @@ Qed.
     The side conditions on points are read in an order given as two
     relations: the world G generates for typing, a world W for the
     logical relation. Freshness of ι in [new] is a typing condition
-    (Typing.v). *)
+    (Typing.v). [pk] says which points the order knows: the point of
+    [new] must be one, so that the created point can be aliased to it
+    (sharp edges 49). *)
 
-Inductive konst_ty (peq plt : point → point → Prop) : konst → ty → Prop :=
+Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
+    : konst → ty → Prop :=
   | KTNew S x :
-      konst_ty peq plt KNew
+      pk x →
+      konst_ty peq plt pk KNew
         (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) x)))
   | KTSpawn ub lb :
-      konst_ty peq plt KSpawn
+      konst_ty peq plt pk KSpawn
         (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)
   | KTSend m T S x :
       (∀ h, h ∈ heads (payload_at m T x) → plt x h) →
-      konst_ty peq plt KSend
+      konst_ty peq plt pk KSend
         (TLolli (Some x) None
            (TProd (payload_at m T x) (TSess (SSnd m T S) x))
            (TSess S (pt_shift 1 x)))
   | KTRecv m T S x :
-      konst_ty peq plt KRecv
+      konst_ty peq plt pk KRecv
         (TLolli (Some x) None
            (TSess (SRcv m T S) x)
            (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))
   | KTClos x :
-      konst_ty peq plt KClos (TLolli (Some x) None (TSess SEnd x) TUnit)
+      konst_ty peq plt pk KClos (TLolli (Some x) None (TSess SEnd x) TUnit)
   | KTLink S x x' :
       peq x x' →
-      konst_ty peq plt KLink
+      konst_ty peq plt pk KLink
         (TLolli (Some x) None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
   | KTForce n T xs :
       length xs = n →
-      konst_ty peq plt KForce (TLolli None None (TBox n T) (ty_inst xs T)).
+      konst_ty peq plt pk KForce (TLolli None None (TBox n T) (ty_inst xs T)).

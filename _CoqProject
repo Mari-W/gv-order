@@ -24,14 +24,17 @@ theories/Connect2.v
 theories/Connect3.v
 theories/PTerm.v
 theories/Bind.v
-theories/Terms.v
-theories/Composition.v
-theories/composition/Term.v
-theories/composition/Independence.v
-theories/composition/Connection.v
-theories/Fundamental.v
-theories/Invariant.v
-theories/Support.v
+theories/TermRules.v
+# Templates from the paper's development, not yet ported (they do not
+# compile against the order-based relation):
+# theories/Terms.v
+# theories/Composition.v
+# theories/composition/Term.v
+# theories/composition/Independence.v
+# theories/composition/Connection.v
+# theories/Fundamental.v
+# theories/Invariant.v
+# theories/Support.v
 # Examples disabled while the core is ported to the order-based system
 # (ORDERS-SPEC.md); they are ported separately.
 # theories/examples/Sync.v

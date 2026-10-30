@@ -410,6 +410,37 @@ aliased points and the frame would put one strictly below the other (subjs_free)
 is therefore a step on Θ1 alone, and the composite's offers are e's offers. At new, the point e
 picks is renamed by Erel_new_rename to one that is also fresh for Θ2, T and F.
 
+**49. The point of new must be known to the world (Claude, delegated, 2026-10-30).**
+V-Const put new in V at ∗ ⊸ S@ι ⊗ S′@ι for every ι. When the world does not know the root of
+ι (a point variable, or a constant outside the support), new ∗ fails E at index 2. O-New
+places only the fresh a, so no extension can alias (a, 0) to ι, and ⟨c, c⟩ is then not in V
+at S@ι ⊗ S′@ι. E-App fails on new ∗ for that reason. Decision: konst_ty takes the points
+the order knows as a third parameter. In V it is pt_known W (the root is in the support),
+monotone in W. KTNew asks it of ι. Then the fresh extension aliasing (a, 0) to ι exists
+(wext_fresh_alias, TermRules.v). The static system reads every point of G as known.
+Rejected: letting O-New also place the root of ι, which changes the clause and its
+renaming lemma (§7).
+
+**50. The semantic judgment composes the grounding's environment with Θ (Claude, delegated, 2026-10-30).**
+sem_typed asked Θ′ ##ₘ Θ and used Θ ∪ Θ′. A value bound by let (x, y) = t₁ in t₂, by case
+or by a λ may hold the other end of a channel of Θ, because the static Θ₁, Θ₂ composes
+dual ends. The disjoint version cannot prove E-LetPair, E-Case or E-Abs then. Decision:
+sem_typed quantifies over Θ″ with tenv_comp (≡ of the future world) Θ″ Θ Θ′, as V-Abs
+already does for its argument. P-Term instantiates Θ′ = ∅ (§8).
+
+**51. (Q) E-App fails when the function is force.** *(open, for the author)*
+V-Box asks the body in E at frame ∅, and force has upper point ⊥, so E-App applies it under
+every frame F. Counterexample: the box body creates a channel at a fresh a, receives on it
+(a spawned thread sends) and returns it at type Close@(x+1). Every proof of E for the body
+must alias (a, 0) ≡ x at new, because the world grows only at new and the final value
+needs (a, 1) ≡ x+1. The body is in E at frame ∅. Applied by force under F = {x}, the
+stable state that waits on (a, 0) needs (a, 0) ≺ x, which fails. So force ∈ V and the
+box ∈ V, but force b ∉ E⟦· ⊢ Close@(x+1) ≺ {x}⟧. Options: (B, recommended) □ carries an
+upper point, □^u(∀ιs. T). V-Box asks E at every F with {u} ≺ F, force has type
+□^u(∀ιs. T) ⊸^u_⊤ T[ιs′/ιs], and E-Exp types the body under {μ} with only u ≺ μ, as E-Abs
+does. (A) V-Box asks E at every frame, which a typed body need not satisfy. (C) force only
+at frame ∅. E-App and E-Force wait for this decision. The other rules do not use V-Box.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the

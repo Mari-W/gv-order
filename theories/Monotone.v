@@ -123,8 +123,9 @@ Proof.
         intros W'' j Θ' Θ'' w F HW' Hj Hc HVw Hub.
         apply (HL W'' j Θ' Θ'' w F); [|done..]. by eapply wext_trans.
       + apply Vrel_lolli_iff. right. exists k, T0.
-        destruct HWW' as (_ & He & Hl & _). split_and!; [done|done| |].
-        * eapply konst_ty_mono; [| |exact Hk]; auto.
+        destruct HWW' as (Hn & He & Hl & _). split_and!; [done|done| |].
+        * eapply konst_ty_mono; [| | |exact Hk]; auto.
+          unfold pt_known. intros x Hx. by apply Hn.
         * by eapply teqW_mono.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
       apply Vrel_prod_iff. exists v1, v2, Θ1, Θ2. split_and!; eauto.

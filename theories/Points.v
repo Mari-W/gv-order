@@ -878,11 +878,12 @@ Section ready.
   Qed.
 
   Lemma konst_ty_sw W k T :
-    konst_ty (w_eq W) (w_lt W) k T →
-    konst_ty (w_eq (wsw a b W)) (w_lt (wsw a b W)) k (tysw a b T).
+    konst_ty (w_eq W) (w_lt W) (pt_known W) k T →
+    konst_ty (w_eq (wsw a b W)) (w_lt (wsw a b W)) (pt_known (wsw a b W)) k (tysw a b T).
   Proof.
     destruct 1; simpl; rewrite ?dual_sw.
-    - constructor.
+    - constructor. unfold pt_known in *. simpl.
+      by rewrite pt_root_sw, elem_of_names_sw.
     - constructor.
     - rewrite payload_at_sw. constructor. intros h Hh.
       rewrite <-payload_at_sw, heads_sw in Hh.
@@ -934,10 +935,10 @@ Proof.
   intros (_ & _ & Hl) H Hs k e Ho He y Hy. apply Hl. by eapply H.
 Qed.
 
-Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) k T :
-  (∀ x y, peq x y → peq' x y) → (∀ x y, plt x y → plt' x y) →
-  konst_ty peq plt k T → konst_ty peq' plt' k T.
-Proof. intros He Hl. destruct 1; econstructor; eauto. Qed.
+Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) (pk pk' : point → Prop) k T :
+  (∀ x y, peq x y → peq' x y) → (∀ x y, plt x y → plt' x y) → (∀ x, pk x → pk' x) →
+  konst_ty peq plt pk k T → konst_ty peq' plt' pk' k T.
+Proof. intros He Hl Hk. destruct 1; econstructor; eauto. Qed.
 
 Lemma teqW_mono W1 W2 T : ∀ U,
   (∀ x y, w_eq W1 x y → w_eq W2 x y) → teqW W1 T U → teqW W2 T U.
@@ -1057,8 +1058,9 @@ Proof.
       + apply Vrel_lolli_iff. right. exists k, (tysw a b T0). split_and!.
         * done.
         * by rewrite tenvsw_empty.
-        * eapply konst_ty_mono; [| |by apply konst_ty_sw];
-            intros; destruct HS as (_ & He & Hl); [by apply He|by apply Hl].
+        * eapply konst_ty_mono; [| | |by apply konst_ty_sw];
+            intros; destruct HS as (Hn & He & Hl); [by apply He|by apply Hl|].
+          unfold pt_known in *. by rewrite <-Hn.
         * eapply teqW_mono; [|by apply (teqW_sw a b W T0 (TLolli ub lb T1 U))].
           intros. by apply HS.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hc & H1 & H2).

@@ -175,7 +175,7 @@ Proof. intros HW Ht. split; apply Erel_teq; [done|done|done|by apply teq_sym]. Q
 Lemma sem_typed_teq W Θ Δ F e T T' :
   teq T T' → sem_typed W Θ Δ F e T → sem_typed W Θ Δ F e T'.
 Proof.
-  intros Ht He n W' Θ' γ HW Hd Hg. eapply Erel_teq; [apply HW|exact Ht|]. by apply He.
+  intros Ht He n W' Θ' Θ'' γ HW Hd Hg. eapply Erel_teq; [apply HW|exact Ht|]. by apply (He n W' Θ').
 Qed.
 
 (** ** Reading a constant back out of the ⊸ clause
@@ -190,7 +190,7 @@ Qed.
     reduction lemmas. *)
 Lemma Vrel_konst_inv n W Θ ub lb T U k :
   Vrel n W Θ (TLolli ub lb T U) (Konst k) →
-  ∃ ub0 lb0 A B, konst_ty (w_eq W) (w_lt W) k (TLolli ub0 lb0 A B) ∧
+  ∃ ub0 lb0 A B, konst_ty (w_eq W) (w_lt W) (pt_known W) k (TLolli ub0 lb0 A B) ∧
     opt_rel (pteqW W) ub0 ub ∧ opt_rel (pteqW W) lb0 lb ∧
     teqW W A T ∧ teqW W B U ∧ Θ = ∅.
 Proof.

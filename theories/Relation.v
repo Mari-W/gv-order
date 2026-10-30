@@ -95,7 +95,7 @@ Fixpoint Vdef (below : nat → level) (n : nat)
            lV (below j) W' Θ' T1 w →
            ub_below W' ub F →
            lE (below j) W' Θ'' U F (subst1 w eb))
-      ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
+      ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) (pt_known W) k T0 ∧
            teqW W T0 (TLolli ub lb T1 U))
   | TProd T1 U =>
       ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
@@ -507,7 +507,7 @@ Lemma Vrel_lolli_iff n W Θ ub lb T U v :
        Vrel j W' Θ' T w →
        ub_below W' ub F →
        Erel j W' Θ'' U F (subst1 w eb))
-  ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) k T0 ∧
+  ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) (pt_known W) k T0 ∧
        teqW W T0 (TLolli ub lb T U)).
 Proof.
   unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
@@ -975,9 +975,23 @@ Definition term_wf (Θ : tenv) (Δ : lenv) (e : expr) : Prop :=
   allfv (lenv_avail Δ) e ∧
   (∀ x, lenv_avail_lin Δ x → freevar x e).
 
+Lemma tenv_comp_empty_r (peq : point → point → Prop) Θ : tenv_comp peq Θ Θ ∅.
+Proof.
+  split; [|intros c e1 e2 _ H; by rewrite lookup_empty in H].
+  intros c. rewrite lookup_empty. destruct (Θ !! c); constructor.
+Qed.
+
+Lemma tenv_comp_empty_r_inv (peq : point → point → Prop) Θ Θ1 : tenv_comp peq Θ Θ1 ∅ → Θ = Θ1.
+Proof.
+  intros [Hj _]. apply map_eq. intros c. specialize (Hj c). rewrite lookup_empty in Hj.
+  by inversion Hj.
+Qed.
+
 (** Θ; Δ ⊨^F_W e : T.  In every future world, the channels of e itself
-    are covered by Θ; the grounding substitution brings its own
-    (disjoint) Θ'. F is the frame (§8; F = ∅ is the paper's judgment,
+    are covered by Θ; the grounding substitution brings its own Θ',
+    composed with Θ (Θ'' = Θ, Θ'). The two may overlap in dual ends at
+    aliased points, because a bound variable may hold the other end of
+    a channel of Θ (sharp edges 50). F is the frame (§8; F = ∅ is the paper's judgment,
     plus ready). (Def. 3.3;
     the draft's phrasing conflates the two environments — this is the
     reading under which the rules of Fig. 4, e.g. E-Ch, are
@@ -989,8 +1003,8 @@ Definition term_wf (Θ : tenv) (Δ : lenv) (e : expr) : Prop :=
     where Fig. 4's proofs consume them. *)
 Definition sem_typed (W : world) (Θ : tenv) (Δ : lenv) (F : gset point)
     (e : expr) (T : ty) : Prop :=
-  ∀ n W' Θ' γ, wext W W' → Θ' ##ₘ Θ → grounding n W' Θ' Δ γ →
-    Erel n W' (Θ ∪ Θ') T F (subst γ e).
+  ∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ Θ' →
+    grounding n W' Θ' Δ γ → Erel n W' Θ'' T F (subst γ e).
 
 (** Σ ⊨_W p : T *)
 Definition sem_ptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=

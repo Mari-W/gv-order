@@ -154,6 +154,8 @@ V-Unit    ∗ ∈ V^W_n⟦· ⊢ ∗⟧
 V-Chan    c ∈ V^W_n⟦c : S@x ⊢ S′@y⟧            if S ≈ S′ and x ≡_W y                     [changed]
 V-Const   k ∈ V^W_n⟦· ⊢ T⟧                     if k : T₀ (instance of its signature) and T₀ ≈_W T
           (≈_W: ≈ with ground points compared up to ≡_W; needed for Type point conversion)   [changed]
+          (new's ι must be known to W, its root in the support, so that O-New can alias
+           the created point to it; sharp edges 49)                                          [new]
 V-Pair    v₁ ∈ V^W_n⟦Σ₁ ⊢ T⟧   v₂ ∈ V^W_n⟦Σ₂ ⊢ U⟧   ⇒   ⟨v₁, v₂⟩ ∈ V^W_n⟦Σ₁, Σ₂ ⊢ T ⊗ U⟧
 V-Inj     v ∈ V^W_n⟦Σ ⊢ Tᵢ⟧   ⇒   injᵢ v ∈ V^W_n⟦Σ ⊢ T₁ + T₂⟧
 V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)                                      [changed]
@@ -250,7 +252,9 @@ Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y 
 ## 8  Semantic judgments
 
 ```
-Θ; Δ ⊨^F_W t : T   ≔   ∀n, W′ ⊒ W, Σ′ # Θ, γ ∈ G^{W′}_n⟦Σ′; Δ⟧.   tγ ∈ E^{W′}_n⟦Θ, Σ′ ⊢ T ≺ F⟧
+Θ; Δ ⊨^F_W t : T   ≔   ∀n, W′ ⊒ W, Θ′, γ ∈ G^{W′}_n⟦Θ′; Δ⟧, (Θ, Θ′) defined in W′.   tγ ∈ E^{W′}_n⟦Θ, Θ′ ⊢ T ≺ F⟧
+                       (Θ, Θ′ composes, dual ends at ≡_{W′} points allowed: a bound value may hold
+                        the other end of a channel of Θ; sharp edges 50)
 Σ ⊨_W p : T        ≔   ∀n.  p ∈ P^W_n⟦Σ ⊢ T⟧
 Θ; Δ ⊨_W t : T     ≔   Θ; Δ ⊨^∅_W t : T                  (the paper's judgement, plus ready)
 ```
@@ -355,6 +359,11 @@ E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^
 E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
             Rocq: the elimination rules go through Erel_bind (Bind.v, sharp edges 48). The hole runs
             under frame F ∪ H, where every entry of the context's environment lies at or above H.
+            The semantic condition behind H: the environment of v ∈ V⟦Θ ⊢ T⟧ lies at or above
+            heads(T) (Vrel_heads_above, TermRules.v), and a grounding's environment at or above
+            heads(Δ) (grounding_heads). Typing then needs nothing extra.
+            Open (sharp edges 51): E-App with force, and E-Force, fail as stated, because V-Box
+            gives frame ∅ and force has upper point ⊥.
 
 P-Term      prim T,   Σ, Θ_B; · ⊨^∅_W t : T,   Θ_B both ends of C₀
             ⇒   Σ ⊨_W (C₀, {t}) : T

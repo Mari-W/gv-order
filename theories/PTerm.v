@@ -976,8 +976,8 @@ Theorem Prel_term W Σ ΘB C0 t T :
 Proof.
   intros HT HW Hd Hdj Hb Hdu Ht n.
   apply (term_all n T HT W Σ ΘB C0 t); [by split|].
-  pose proof (Ht n W ∅ Var (wext_refl W HW) (map_disjoint_empty_l _) eq_refl) as H.
-  by rewrite subst_ids, (right_id_L ∅ (∪)) in H.
+  pose proof (Ht n W ∅ _ Var (wext_refl W HW) (tenv_comp_empty_r _ _) eq_refl) as H.
+  by rewrite subst_ids in H.
 Qed.
 
 (** ** Independence: P-Connect with an empty cut *)

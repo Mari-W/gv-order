@@ -112,6 +112,9 @@ Definition strict (W : world) : Prop :=
 (** ≼ = ≺ or ≡. *)
 Definition w_le (W : world) (x y : point) : Prop := w_eq W x y ∨ w_lt W x y.
 
+(** W knows x: the root of x is in the support (sharp edges 49). *)
+Definition pt_known (W : world) (x : point) : Prop := pt_root x ∈ w_names W.
+
 (** F ≺ G between sets of points (frames). *)
 Definition w_lt_set (W : world) (X Y : gset point) : Prop :=
   ∀ x y, x ∈ X → y ∈ Y → w_lt W x y.
