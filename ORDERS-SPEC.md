@@ -384,7 +384,7 @@ Fresh extension   W₁ ⊑ₒ W₁′ placing points N,  N # names(W₂),  W₂ 
                   ⇒   W₁′ ⊔ W₂ strict
 Monotonicity      W ⊑ W′  ⇒  V/E/P^W ⊆ V/E/P^{W′}      (needs world_wf W. P needs no
                   restriction, because no fact can mention a restricted channel)
-Renaming channels the paper's Renaming.v and Junk.v, with the world fixed                       unchanged
+Renaming channels the paper's invariance/ChannelRenaming.v and invariance/JunkRenaming.v, with the world fixed                       unchanged
 Renaming points   a bijective renaming of point constants applied to the world, the environment
                   and the types preserves V, E and P (P-Connect's new case renames a component's
                   fresh point away from the other world)
@@ -426,18 +426,18 @@ E-Force     Θ; Δ ⊨^F t : □(∀ιs. C. ∗ ⊸^u_⊤ T)    xs known, C[xs/�
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
 E-Conv      Θ; Δ ⊨^F t : T,   T ≈_W T′   ⇒   Θ; Δ ⊨^F t : T′          (sharp edges 67)
-            Rocq: the elimination rules go through Erel_bind (Bind.v, sharp edges 48). The hole runs
+            Rocq: the elimination rules go through Erel_bind (rules/Bind.v, sharp edges 48). The hole runs
             under frame F ∪ H, where every entry of the context's environment lies at or above H.
             The semantic condition behind H: the environment of v ∈ V⟦Θ ⊢ T⟧ lies at or above
-            heads(T) (Vrel_heads_above, TermRules.v), and a grounding's environment at or above
+            heads(T) (Vrel_heads_above, rules/TermRules.v), and a grounding's environment at or above
             heads(Δ) (grounding_heads). Typing then needs nothing extra.
-            Proved in TermRules.v: sem_typed_unit, sem_typed_konst, sem_typed_var, sem_typed_chan,
+            Proved in rules/TermRules.v: sem_typed_unit, sem_typed_konst, sem_typed_var, sem_typed_chan,
             sem_typed_lam (E-Abs; premise for every later world W₁ and F′ with {u} ≺_{W₁} F′),
             sem_typed_inj1/2, sem_typed_letu, sem_typed_letp, sem_typed_case, sem_typed_pair,
             sem_typed_wk, and E-App as sem_typed_app_gen from app_good, which Erel_app_noforce
-            gives for every function value but force. E-Conv is sem_typed_tconv (Conversion.v),
-            with sem_typed_teq (Convert.v) its case T ≈ T′.
-            Proved in TermRules2.v: Erel_app_force, hence app_good_all and E-App for
+            gives for every function value but force. E-Conv is sem_typed_tconv (invariance/PointConversion.v),
+            with sem_typed_teq (invariance/EquivInvariance.v) its case T ≈ T′.
+            Proved in rules/BoxRules.v: Erel_app_force, hence app_good_all and E-App for
             every function (sem_typed_app); E-Force (sem_typed_force, at an instance xs with
             {u[xs/ιs]} ≺_W F); E-Exp (sem_typed_box, premise for every later world, xs and F′
             with {u[xs/ιs]} ≺ F′, by induction on the index); E-Contract (sem_typed_contract,
@@ -447,7 +447,7 @@ P-Term      prim T,   Σ, Θ_B; · ⊨^∅_W t : T,   Θ_B both ends of C₀
             ⇒   Σ ⊨_W (C₀, {t}) : T
             proof: chain argument over C₀ inside one thread
             Rocq (sharp edges 47): induction on n, inside on the size of the thread. Proved as
-            Prel_term (PTerm.v). Implicit side conditions made explicit there: W strict,
+            Prel_term (composition/PTerm.v). Implicit side conditions made explicit there: W strict,
             dom Θ_B = C₀, Θ_B only both-ends entries, dual at ≡_W points, dom Σ # C₀.
 P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ ⊨_{W₂} (C₂, E₂) : ∗,
             Σ_C ⊥ Σ_C′ over C₀,   C₁ # dom Σ₂,   C₂ # dom Σ₁,   W₁ ⊔ W₂ strict
@@ -458,7 +458,7 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
 
             Rocq (sharp edges 46): induction on n, inside on the size of the composite's soup;
             both components in one world W ⊒ W₁, W₂ (monotonicity), one at T, the other at ∗.
-            Proved as Prel_connect (Connect3.v). Implicit side conditions made explicit there:
+            Proved as Prel_connect (composition/PConnect.v). Implicit side conditions made explicit there:
             dom Σ_C = dom Σ_C′ = C₀, cut ends dual at ≡ of W₁ ⊔ W₂, W₁ and W₂ well formed,
             Σ₁, Σ₂, Σ_C pairwise disjoint as maps, C₁ # dom Σ₁, C₂ # dom Σ₂, C₁, C₂, C₀ disjoint.
             index (sharp edges 45): components in P at n give the
@@ -477,7 +477,7 @@ P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalg
             the Σ_Cᵢ together hold both ends of every channel in C₀, each end once, dual,
             W₁ ⊔ … ⊔ Wₙ strict
             ⇒   Σ₁, …, Σₙ ⊨_{W₁ ⊔ … ⊔ Wₙ} (C₁ ⊍ … ⊍ Cₙ ⊍ C₀, E₁ ⊎ … ⊎ Eₙ) : T
-            Rocq (sharp edges 55): Prel_connect_n (ConnectN.v). The components move to the
+            Rocq (sharp edges 55): Prel_connect_n (composition/PConnectN.v). The components move to the
             full amalgam first (monotonicity), then P-Connect folds at that one world
             (Prel_connect_list). The cut ends are dual at ≡ of the full amalgam.
 ```
@@ -499,7 +499,7 @@ slots p[b][i] with positions from 0, so the spec's x.i is the slot i−1. The pa
 describe the earlier refactors. Where they mention steps and words, sharp edges 66 replaces
 them by bcs_open and bcs_hold_sub.
 
-Rocq (Static.v, sharp edges 53, 56): typed W Φ Θ Δ F e T and ptyped W Σ p T, indexed by the
+Rocq (static/, sharp edges 53, 56): typed W Φ Θ Δ F e T and ptyped W Σ p T, indexed by the
 world W. The fresh μ of E-Abs and E-Exp is a frame variable φ with the hypothesis u ≺ φ
 in Φ, at the same W. E-Exp types the body once with ιs as point variables 0, …, m−1 and Φ, □Δ
 and the recursive binding shifted past them (57). E-Const asks kscoped of send and recv. The
