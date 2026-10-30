@@ -16,7 +16,7 @@ translations that already exist. Tier 3 need an extension of the core first.
 | 1 | Padovani and Novara (FORTE 2015) | higher-order functional, linear channels with levels, effects | levels as ranks, polymorphic recursion as boxes | linear channels as one-shot sessions |
 | 1 | Mordido and Pérez (2026) | GV with context-free sessions | priority sequences n₁ + k·n₂ as infinite constraints | B |
 | 2 | CP (Wadler), HCP | classical linear logic processes | through the CP to GV translation of Lindley and Morris 2015 | tier 1 for GV |
-| 2 | PCP (Dardha and Gay 2018) | CP with priorities and a cycle rule | through PGV, which Kokke and Dardha relate to PCP | tier 1 for PGV |
+| 2 | PCP (Dardha and Gay 2018) | CP with priorities and a cycle rule | through the PCP to PGV encoding of Kokke and Dardha, which preserves typing | tier 1 for PGV |
 | 2 | Kobayashi (2006), class K | π with usages, obligation and capability levels | the pair of levels to ranks | encoding of π into GV |
 | 2 | Padovani (CSL-LICS 2014) | linear π | priorities as ranks, shifting z ↦ z+n as box instances | encoding of π into GV |
 | 2 | Vieira and Vasconcelos (2013) | binary sessions on π, events | their strict partial order on events is a world, their partial union is ⊔ | encoding of π into GV |
