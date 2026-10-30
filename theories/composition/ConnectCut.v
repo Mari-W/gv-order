@@ -149,7 +149,7 @@ Lemma Prel_S_ready n W Σ T p : Prel (S n) W Σ T p → prim T → ready_p W Σ 
 Proof.
   intros HP HT. destruct (proc_progress p) as [Hirr|(π & p' & Hst)].
   - destruct (Prel_S_stop_prim _ _ _ _ _ HP HT Hirr) as (-> & v & E & -> & Hv & _ & HE).
-    intros _. split.
+    intros _. right. split.
     + intros _. exists v, E. done.
     + intros k e He. exfalso. unfold tenv_entry, tenv_of in He.
       rewrite lookup_fmap, lookup_empty in He. by destruct k.2.
@@ -181,7 +181,8 @@ Section stop_ready.
            Vrel (S n') W (tenv_of (Σ1 ∪ Σ2)) T v ∧ (∀ e, e ∈ E → e = EUnit).
   Proof.
     intros Hirr.
-    destruct (conn_ready (λ p' Hp', Hirr _ _ Hp')) as [Ht _].
+    destruct (conn_ready (λ p' Hp', Hirr _ _ Hp')) as [(cd & q & Hq)|[Ht _]];
+      [by destruct (Hirr _ _ Hq)|].
     assert (∀ k, ¬ offered_p (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ C0, E1 ⊎ E2) k) as Hno.
     { intros k (σ & q & Hq & _). exact (Hirr _ _ Hq). }
     destruct (Ht Hno) as (v & U & Heq & Hv & HU).

@@ -894,12 +894,13 @@ Section ready.
     intros H Hs. destruct (H Hs) as [H1 H2]. split.
     - intros Hn. apply H1. intros k Hk. apply (Hn k).
       exact (proj2 (offered_t_sw _ _ _) Hk).
-    - eapply below_rest_sw; [|exact H2]. intros k. apply offered_t_sw.
+    - destruct H2 as [?|H2]; [by left|right].
+      eapply below_rest_sw; [|exact H2]. intros k. apply offered_t_sw.
   Qed.
 
   Lemma ready_p_sw W Σ p : ready_p W Σ p → ready_p (wsw a b W) (senvsw a b Σ) p.
   Proof.
-    intros H Hs. destruct (H Hs) as [H1 H2]. split.
+    intros H Hs. destruct (H Hs) as [?|[H1 H2]]; [by left|right]. split.
     - intros Hn. apply H1. intros k Hk. apply (Hn k).
       exact (proj2 (offered_p_sw _ _ _) Hk).
     - rewrite <-tenvsw_of. eapply above_offered_sw in H2. intros k e He Hk.
@@ -987,13 +988,14 @@ Qed.
 
 Lemma ready_t_wsame W1 W2 Θ F t : wsame W1 W2 → ready_t W1 Θ F t → ready_t W2 Θ F t.
 Proof.
-  intros (_ & _ & Hl) H Hs. destruct (H Hs). split; [done|].
-  eapply below_rest_lt; [|done]. intros. by apply Hl.
+  intros (_ & _ & Hl) H Hs. destruct (H Hs) as [? [?|?]]; split; [done|by left|done|].
+  right. eapply below_rest_lt; [|done]. intros. by apply Hl.
 Qed.
 
 Lemma ready_p_wsame W1 W2 Σ p : wsame W1 W2 → ready_p W1 Σ p → ready_p W2 Σ p.
 Proof.
-  intros HS H Hs. destruct (H Hs). split; [done|]. by eapply above_offered_wsame.
+  intros HS H Hs. destruct (H Hs) as [?|[? ?]]; [by left|right].
+  split; [done|]. by eapply above_offered_wsame.
 Qed.
 
 Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) (pk pk' : point → Prop) k T :

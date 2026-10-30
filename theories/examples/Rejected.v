@@ -129,7 +129,9 @@ Qed.
     x ≺ z ≺ y ≡ x, and wf_lt_eq gives x ≺ x. This is the spec's
     (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0). The program deadlocks: after the
     link the main thread waits on c₂ for d₃, and the second thread
-    waits on e₃ for e₂. *)
+    waits on e₃ for e₂. The argument reads only the alias of KTLink.
+    link has upper point ⊥ (sharp edges 68), so the link thunk asks
+    no fact, and the program stays rejected. *)
 
 Definition blocked_main : expr :=
   LetP (App ENew EUnit) (LetP (App ENew EUnit)

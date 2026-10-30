@@ -1,4 +1,4 @@
-# Order-based GV♯: specification (state of 2026-10-30, after sharp edges 67)
+# Order-based GV♯: specification (state of 2026-10-30, after sharp edges 68)
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
@@ -153,15 +153,28 @@ offered(x)   = the entries selected by the labels of x's transitions     x a ter
                c!v selects the entry of c whose type unfolds to !…,  c?v the one with ?…,
                c! the first Close entry (Rocq),  c↔d the entries of c and d
 stable(t)    = no t —λ→ t′ with λ ∈ {β, (νc), ⇑v}        stable(p) = no p —τ→ p′
+link(t)      = some t —c↔d→ t′                            link(p) = some p —c↔d→ p′
 
-ready_W(Θ ∣ F, t) ≔ stable(t) ⇒                                          terms (sharp edges 63)
+ready_W(Θ ∣ F, t) ≔ stable(t) ⇒                                          terms (sharp edges 63, 68)
                       (offered(t) = ∅  ⇒  t is a value)
-                    ∧ ∀o ∈ offered(t).  ∀y ∈ heads(entries(Θ) ∖ offered(t)) ∪ F.  head(o) ≺_W y
+                    ∧ (link(t)  ∨  ∀o ∈ offered(t).  ∀y ∈ heads(entries(Θ) ∖ offered(t)) ∪ F.  head(o) ≺_W y)
 
-ready_W(Σ, p) ≔ stable(p) ⇒                                              processes
-                  (offered(p) = ∅  ⇒  p is terminated)
-                ∧ ∀e ∈ entries(Σ) ∖ offered(p).  ∃o ∈ offered(p).  head(o) ≺_W head(e)
+ready_W(Σ, p) ≔ stable(p) ⇒                                              processes (sharp edges 68)
+                  link(p)
+                ∨ ((offered(p) = ∅  ⇒  p is terminated)
+                   ∧ ∀e ∈ entries(Σ) ∖ offered(p).  ∃o ∈ offered(p).  head(o) ≺_W head(e))
 ```
+
+Link does not block (sharp edges 68). P-Act-Link fires it as a τ once one of
+its channels is restricted, and a closed process restricts every channel. So a
+term or process with a link redex is ready and compares nothing. A link label
+still selects its entries, so the first conjunct of the term form asks an
+entry of Θ for the link. The process form exempts the whole process. A thread
+K[link ⟨c, d⟩] that also holds e gives P-Term no offered entry below e, so an
+exemption of the link entries alone would fail P-Term. In a stable composite a
+component's link redex touches no restricted channel, or it would fire. It is
+therefore a link redex of the composite, and without one the components meet
+the old condition.
 
 A term offers the entries of one redex, so its readiness can ask every offered
 head below every other head and below the frame F, the points the context still
@@ -242,6 +255,10 @@ O-Close   Θ = Θ₁, c : Close@x      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
 O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
           (c = d allowed: a self-link, Θ holds both ends of c, both entries leave Θ.
            Matches P-Act-Link with c = d, which releases c. `link (new ∗)` is typable.)
+          (Θ₁ may keep the other end of c or d. A link compares nothing in readiness, so the
+           context of a link may hold that end, and Erel_bind passes it through by
+           comp_ext_gen. `let (c₁, c₂) = new ∗ in let () = link ⟨c₁, d⟩ in close c₂` is typable.
+           Sharp edges 68)
 
 P-Zero    p ∈ P^W_0⟦Σ ⊢ T⟧
 P-Stop    v ∈ V^W_{n+1}⟦Σ ⊢ T⟧   ⇒   (∅, {v, ∗, …, ∗}) ∈ P^W_{n+1}⟦Σ ⊢ T⟧
@@ -256,6 +273,8 @@ them.
 Q-Tau     p —τ→ p′    p′.1 # dom Σ  ⇒  ∃W′ ⊒ₒ W.   p′ ∈ P^{W′}_n⟦Σ ⊢ T⟧
           (W′ places the points N of channels the step creates, N # names(W) ∪ points(Σ, T).
            The paper's Q-Tau is W′ = W.)
+          (The τ of P-Act-Link keeps W. Before it fires, p is ready by its link redex alone,
+           so no fact about the link's channels is ever asked. Sharp edges 68)
 Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)
           ∀W′ ⊒ W, j ≤ n, Σ₂ # p.1, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Σ₂ dual to (Σ₁, c : S@(x+1)) on their overlap B.
               (C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(x+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
@@ -277,6 +296,7 @@ ends of c) fail; such a thread is never ready anyway.
 Q-Close   Σ = Σ₁, c : Close@x      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
 Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
           (c = d cannot reach the interface: process-level Σ holds one end per channel)
+          (a process waiting at an interface link is ready by link(p), sharp edges 68)
 ```
 
 ## 8  Semantic judgments
@@ -318,7 +338,9 @@ spawn  : (∗ ⊸^u_ℓ ∗) ⊸^⊥_⊤ ∗
 send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_Γ heads(P[ι])
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
-link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_Γ ι′
+link   : S@ι ⊗ S′@ι′ ⊸^⊥_⊤ ∗                                  S ⊥ S′,  ι ≡_Γ ι′
+         (link never blocks, so E-App asks no frame fact for it. The paper's link has no
+          order at all, sharp edges 68)
 force  : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]      Γ ⊢ C[ιs′/ιs],  ιs′ known   (sharp edges 58, 63, 65)
          (force applies the thunk. Its upper point is the thunk's, instantiated.
           Γ ⊢ C[ιs′/ιs] asks every fact of the instance, ≺ and ≡)
@@ -430,6 +452,10 @@ E-Conv      Θ; Δ ⊨^F t : T,   T ≈_W T′   ⇒   Θ; Δ ⊨^F t : T′    
             The semantic condition behind H: the environment of v ∈ V⟦Θ ⊢ T⟧ lies at or above
             heads(T) (Vrel_heads_above, rules/TermRules.v), and a grounding's environment at or above
             heads(Δ) (grounding_heads). Typing then needs nothing extra.
+            H keeps a redex of the hole off the context's channels (subjs_free) for every redex
+            but a link. A link may act on the other end of a channel the context holds, and the
+            link case moves that end with comp_ext_gen (sharp edges 68). Erel_app_link proves the
+            constant at upper point ⊥ and asks nothing of F.
             Proved in rules/TermRules.v: sem_typed_unit, sem_typed_konst, sem_typed_var, sem_typed_chan,
             sem_typed_lam (E-Abs; premise for every later world W₁ and F′ with {u} ≺_{W₁} F′),
             sem_typed_inj1/2, sem_typed_letu, sem_typed_letp, sem_typed_case, sem_typed_pair,
@@ -444,14 +470,17 @@ E-Conv      Θ; Δ ⊨^F t : T,   T ≈_W T′   ⇒   Θ; Δ ⊨^F t : T′    
 
 P-Term      prim T,   Σ, Θ_B; · ⊨^∅_W t : T,   Θ_B both ends of C₀
             ⇒   Σ ⊨_W (C₀, {t}) : T
-            proof: chain argument over C₀ inside one thread
+            proof: chain argument over C₀ inside one thread (a thread at a link of an interface
+            channel gives link(p), a link of a channel of C₀ fires, sharp edges 68)
             Rocq (sharp edges 47): induction on n, inside on the size of the thread. Proved as
             Prel_term (composition/PTerm.v). Implicit side conditions made explicit there: W strict,
             dom Θ_B = C₀, Θ_B only both-ends entries, dual at ≡_W points, dom Σ # C₀.
 P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ ⊨_{W₂} (C₂, E₂) : ∗,
             Σ_C ⊥ Σ_C′ over C₀,   C₁ # dom Σ₂,   C₂ # dom Σ₁,   W₁ ⊔ W₂ strict
             ⇒   Σ₁, Σ₂ ⊨_{W₁ ⊔ W₂} (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T
-            proof: ready by the chain argument across C₀;  τ steps by the Internalizing lemmas,
+            proof: ready by the chain argument across C₀ (a component's link redex is one of the
+                   stable composite, else both components meet the old condition, sharp edges 68);
+                   τ steps by the Internalizing lemmas,
                    a message instantiates Q-Recv with W₁ ⊔ W₂ (the sender's alias names the payload),
                    new by Fresh extension and Renaming points,  link by Internalizing a link and Entry conversion
 
@@ -470,6 +499,8 @@ Internalizing a link (component level)
             close on d is two closes of p (both free); induction on n, inside on the giving-step
             fixpoint of p; readiness by the chain argument (the two ends are never both offered in a
             stable fused process); prim T rules out a terminated p that returns the two ends.
+            A link redex of p on c or d fires in the fused process, any other stays a link redex
+            of it (fused_ready, sharp edges 68).
 
 P-Connectⁿ  (corollary, by induction on n using P-Connect; every partial amalgam is a subset of the full one)
             Σᵢ, Σ_Cᵢ ⊨_{Wᵢ} (Cᵢ, Eᵢ) : Tᵢ  (i = 1 … n),  exactly one Tᵢ = T, all others ∗,
@@ -531,6 +562,15 @@ steq_teqW maps it to ≈_{W₁} under an instance, sr_conv takes ≈_W, and sem_
 rel_tconv in every later world. The forwarder types (fw_deadlock_free). Its world relates
 slots by ≡, so its strictness uses wgen_strict_cong, whose name map respects slots without
 commuting with them. The eleven deadlock_free examples and the four theorems stay closed.
+Non-blocking link (68): Readiness.v adds link_t and link_p and the link disjuncts of §6.
+konst_ty types link as TLolli None None, and Erel_app_link is ready by its link redex.
+ReadyChain.v proves the old chain argument as ready_connect_core for components without a
+link redex, and ready_connect lifts a component's link redex by link_l and link_r. ready_term,
+fused_ready (Internalize.v) and Prel_S_ready, conn_stop (ConnectCut.v) take the new disjunct.
+Bind.v splits subjs_free into subjs_free_br, which reads the comparisons, and subjs_free for
+redexes other than a link, and its link case uses comp_ext_gen. The invariance lemmas carry
+link_t and link_p along renaming, conversion and monotonicity. No statement of soundness, of
+the fundamental theorems, of adequacy or of a composition lemma changed.
 
 
 ## 13  Examples

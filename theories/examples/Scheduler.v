@@ -62,8 +62,7 @@ Proof.
       { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|left; by apply se_sym, se_w]. }
       cbn. tstep; [tstep|]. cbn.
       tstep; [tstep; tstep|apply (KTLink _ _ _ Sd (pc 2 0) (pc 0 0) (se_w _ _ _ _ Hca))|done|].
-      apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 2 0). split; [done|]. apply sle_refl, HW.
+      apply ubs_none.
     - apply KTSpawn.
     - done.
     - apply ubs_none. }

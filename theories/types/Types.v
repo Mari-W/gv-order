@@ -803,7 +803,7 @@ Qed.
     send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι])
     recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
     close  : Close@ι ⊸^ι_⊤ ∗
-    link   : S@ι ⊗ dual S@ι′ ⊸^ι_⊤ ∗       ι ≡ ι′
+    link   : S@ι ⊗ dual S@ι′ ⊸^⊥_⊤ ∗       ι ≡ ι′   (never blocks, sharp edges 68)
     force  : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]   C[ιs′/ιs]   (52, 58, 63)
 
     The side conditions on points are read in an order given as two
@@ -839,7 +839,7 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
   | KTLink S x x' :
       peq x x' →
       konst_ty peq plt pk KLink
-        (TLolli (Some x) None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
+        (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
   | KTForce n C ub T xs :
       length xs = n → bcs_hold peq plt C xs → Forall pk xs →
       konst_ty peq plt pk KForce

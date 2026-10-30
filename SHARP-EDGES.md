@@ -732,6 +732,77 @@ cn x = cn y ⇒ cn x[i] = cn y[i]. fw_cn reads (b,k)[0] as (a,k)[0] at
 every depth, and the rank orders (a,k), (b,k), (a,k)[0] by 3k, 3k+1,
 3k+2. fw_deadlock_free is closed under the global context.
 
+**68. Link does not block (decided by the author 2026-10-30).**
+The paper types link : S × S̄ ⊸ 1 with no order at all. The port made it
+blocking without a decision. Readiness counted the two entries of a c↔d
+redex as offered, so every other held entry and the frame had to lie above
+them, and the signature S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗ made E-App ask {ι} ≺ F. A link
+never waits for a partner. P-Act-Link fires it as a τ as soon as one of its
+channels is restricted, and a closed process restricts every channel, so a
+stable closed process never holds a link redex.
+
+Decision. A thread at a link imposes no order fact, and link has upper point ⊥.
+
+```
+link(t)  ≔  ∃cd t′. t —c↔d→ t′            link(p)  ≔  ∃cd p′. p —c↔d→ p′
+
+ready_W(Θ ∣ F, t) ≔ stable(t) ⇒
+                      (offered(t) = ∅  ⇒  t is a value)
+                    ∧ (link(t)  ∨  ∀o ∈ offered(t). ∀y ∈ heads(entries(Θ) ∖ offered(t)) ∪ F. head(o) ≺_W y)
+
+ready_W(Σ, p) ≔ stable(p) ⇒
+                  link(p)
+                ∨ ((offered(p) = ∅  ⇒  p is terminated)
+                   ∧ ∀e ∈ entries(Σ) ∖ offered(p). ∃o ∈ offered(p). head(o) ≺_W head(e))
+
+link : S@ι ⊗ S′@ι′ ⊸^⊥_⊤ ∗          S ⊥ S′,  ι ≡_Γ ι′
+```
+
+offered and selects keep c↔d. The first conjunct of the term form still asks
+an entry of Θ for one of the link's channels, and a link label still selects
+both entries. Only the comparisons go.
+
+The process form exempts the whole process, not only the link entries. A
+single thread K[link ⟨c, d⟩] that also holds e gives P-Term no offered entry
+below e, because its term readiness compares nothing. A per-entry exemption
+would therefore fail P-Term. The whole-process exemption is sound for the
+composition lemmas. In a stable composite a component's link redex has no
+restricted channel, or the composite would fire it as a τ. So the
+composite has the same redex and is ready by its first disjunct. If the
+composite has no link redex, neither component has one, and both components
+satisfy the old condition, on which the old chain argument runs unchanged.
+Internalizing a link argues the same way. A link redex of the unfused
+process that touches c or d becomes one on the restricted d of the fused
+process and would fire. Adequacy never reads readiness. It reads only that
+a session step at Σ = ∅ has no obligation to meet.
+
+One consequence reaches the bind lemma. The old frame H kept every redex of
+the hole off the channels of the context, a link included. A link may now act
+on the other end of a channel the context holds, as in
+let (c₁, c₂) = new ∗ in let () = link ⟨c₁, d⟩ in close c₂, which types now.
+Bind.v splits subjs_free in two. subjs_free_br reads the comparisons and covers
+every redex, and subjs_free covers every redex but a link. The link case of
+Erel_bind moves the context's end with comp_ext_gen, which extends
+comp_ext to a context that holds the other end of the linked channel.
+
+Rocq. Readiness.v defines link_t and link_p and the two disjuncts. The static
+side is konst_ty with KTLink at TLolli None None, and Erel_app_link (TermRules.v)
+is ready by its link redex. The proofs that changed are these.
+ReadyChain.v proves the old chain argument as ready_connect_core for
+components in their second disjunct, and ready_connect lifts a component's link
+redex to the composite by link_l and link_r. ready_term turns a link redex of
+the thread into link(p) and uses link_t_only (a term at a link offers nothing
+else) in no_cut_offer. fused_ready (Internalize.v) concludes link(q) or the old
+condition. Prel_S_ready and conn_stop (ConnectCut.v) and term_level (PTerm.v)
+take the new disjunct. Prel_junk, fusion_exclusion and the fused Erel lemma
+(JunkRenaming.v) carry it through substitution. The invariance lemmas
+ready_t_sw, ready_p_sw, ready_t_wsame, ready_p_wsame, ready_t_swap,
+ready_p_swap, ready_t_conv, ready_p_conv, ready_t_mono and ready_p_mono carry
+link_t and link_p. Scheduler.v closes the link application by ubs_none, and
+Rejected.v keeps badlink, whose argument reads only the alias. No statement of
+soundness, of the fundamental theorems, of adequacy or of a composition lemma
+changed.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

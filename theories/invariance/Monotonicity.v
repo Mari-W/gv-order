@@ -40,13 +40,13 @@ Qed.
 
 Lemma ready_t_mono W W' Θ F e : wext W W' → ready_t W Θ F e → ready_t W' Θ F e.
 Proof.
-  intros (_ & _ & Hl & _) H Hs. destruct (H Hs) as [? ?]. split; [done|].
-  by eapply below_rest_lt.
+  intros (_ & _ & Hl & _) H Hs. destruct (H Hs) as [? [?|?]]; split; [done|by left|done|].
+  right. by eapply below_rest_lt.
 Qed.
 
 Lemma ready_p_mono W W' Σ p : wext W W' → ready_p W Σ p → ready_p W' Σ p.
 Proof.
-  intros HW H Hs. destruct (H Hs) as [? ?]. split; [done|].
+  intros HW H Hs. destruct (H Hs) as [?|[? ?]]; [by left|right]. split; [done|].
   by eapply above_offered_mono.
 Qed.
 

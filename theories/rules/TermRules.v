@@ -875,7 +875,7 @@ Lemma ready_single W c o e F :
 Proof.
   intros Hoff HF Hs. split.
   - intros H. exfalso. exact (H _ Hoff).
-  - intros k e' _ He. destruct (entry_single _ _ _ _ He) as [-> ->]. split.
+  - right. intros k e' _ He. destruct (entry_single _ _ _ _ He) as [-> ->]. split.
     + intros k' e'' He' Hn. exfalso. apply Hn. by destruct (entry_single _ _ _ _ He') as [-> ->].
     + intros y Hy. by apply HF.
 Qed.
@@ -1050,7 +1050,7 @@ Proof.
   apply Erel_S_iff. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
   - intros _ Hs. split; [intros H; exfalso; exact (H _ Hoff)|].
-    intros k0 e0 Hoff0 He0. rewrite (Honly k0 e0 Hoff0 He0). split.
+    right. intros k0 e0 Hoff0 He0. rewrite (Honly k0 e0 Hoff0 He0). split.
     + intros k' e' He' Hn.
       destruct (decide (k' = kc)) as [->|Hne]; [by exfalso|].
       destruct (Hrest k' e' Hne He') as (k'' & Hk'').
@@ -1078,15 +1078,9 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [| | | | |S x x' Hxx'|]; subst.
-  pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_prod_iff in HV as (vc & vd & Θc & Θd & -> & Hc & HVc & HVd).
   apply Vrel_sess_iff in HVc as (c & sc & kc & -> & -> & Hsc & Hkc).
   apply Vrel_sess_iff in HVd as (d & sd & kd & -> & -> & Hsd & Hkd).
-  assert (∀ y, y ∈ F → w_lt W kc y) as Hcl.
-  { intros y Hy. eapply (wf_lt_eq _ HWf); [exact Hkc|by apply Hxl|apply HWf]. }
-  assert (∀ y, y ∈ F → w_lt W kd y) as Hdl.
-  { intros y Hy. eapply (wf_lt_eq _ HWf);
-      [eapply (wf_eq_trans _ HWf); [exact Hkd|exact (wf_eq_sym _ HWf _ _ Hxx')]|by apply Hxl|apply HWf]. }
   destruct n as [|n']; [apply Erel_0|].
   assert (tstep (App ELink (Pair (Chan c) (Chan d))) (LSess (SLink {[c; d]})) EUnit) as Hst0
     by apply TStepHead, HeadLink.
@@ -1103,12 +1097,8 @@ Proof.
     + intros H. exfalso. apply (H (c, false)), Hoff.
       destruct Hc as [Hj _]. specialize (Hj c). rewrite lookup_singleton_eq in Hj.
       unfold tenv_entry. simpl. inversion Hj; by eexists.
-    + intros k' e' _ He'. split.
-      * intros k2 e2 He2 Hn. exfalso. apply Hn, Hoff. by eexists.
-      * intros y Hy. unfold entry_head.
-        destruct (comp_entry _ _ _ _ _ _ Hc He') as [[k1 H1]|[k1 H1]].
-        -- destruct (entry_single _ _ _ _ H1) as [_ ->]. by apply Hcl.
-        -- destruct (entry_single _ _ _ _ H1) as [_ ->]. by apply Hdl.
+    + (* a link compares nothing (sharp edges 68) *)
+      left. by exists {[c; d]}, EUnit.
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     assert (α = LSess (SLink {[c; d]}) ∧ e' = EUnit) as [-> ->] by (inversion Hst; done). simpl.
     exists c, d, ∅, {[d := One (sd, kd)]}, sc, sd, kc, kd. split_and!.

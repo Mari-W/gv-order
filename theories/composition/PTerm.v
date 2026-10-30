@@ -908,7 +908,8 @@ Section level.
         * unfold tenv_of. by rewrite fmap_empty.
         * intros e He. exfalso. clear -He. multiset_solver.
       + exfalso. assert (¬ irred t) as Hn by (intros Hi; exact (Hi _ _ Hs)).
-        destruct (Hready Hn (λ p' Hp', Hirr _ _ Hp')) as [Ht _].
+        destruct (Hready Hn (λ p' Hp', Hirr _ _ Hp')) as [(cd & q & Hq)|[Ht _]];
+          [by destruct (Hirr _ _ Hq)|].
         destruct (Ht (λ k Hk, match Hk with ex_intro _ σ (ex_intro _ q (conj Hq _)) => Hirr _ _ Hq end))
           as (v & E & Heq & Hv & _).
         injection Heq as _ HE'. assert (v ∈ ({[+ t +]} : gmultiset expr)) as Hin.

@@ -1455,7 +1455,9 @@ Proof.
     assert (¬ pirred (C, E)) as Hni.
     { intros Hp0. apply Hnirr. destruct (Hirr Hp0) as (v & E1 & Heq & Hv & _ & HE1).
       apply terminated_pirred. by apply (Hterm E1 v). }
-    destruct (Hrdy Hni Hs0) as [Hv Ha]. split.
+    destruct (Hrdy Hni Hs0) as [(cd & q & Hq)|[Hv Ha]].
+    { left. destruct (Hfwd_sess _ _ Hq) as [q' Hq']. by exists (gsub x b cd), q'. }
+    right. split.
     + intros Hno. destruct (Hv (λ k Ho, Hno k (proj1 (Hoffers k) Ho)))
         as (v & E1 & Heq & Hvv & HE1).
       by apply (Hterm E1 v).
@@ -1985,6 +1987,7 @@ Proof.
   all: destruct (offered_some _ _ _ _ _ _ _ _ HE Hst) as [k0 Hk0].
   all: apply Erel_S_iff in HE as (_ & Hrdy & _).
   all: destruct (Hrdy Hni Hs) as [_ Ha].
+  all: destruct Ha as [Hl|Ha]; [by destruct (link_t_only _ _ _ Hl Hst)|].
   all: assert (∀ k, offered_t Θ e k → k.1 = c0) as Hsame
          by (intros k (σ' & f & Hf & Hsel); apply selects_subj in Hsel;
              destruct (tstep_same_act _ _ _ _ _ Hst Hf) as (a & Ha1 & Ha2);
@@ -2565,7 +2568,9 @@ Proof.
     intros Hs. apply stable_chsubst in Hs as Hs0. destruct (Hrdy Hni0 Hs0) as [Hv Ha]. split.
     + intros Hno. rewrite is_val_chsubst. apply Hv. intros k Hk. apply (Hno (κ k)).
       by apply Hfwd.
-    + intros k' e' Ho He'.
+    + destruct Ha as [(cd & f & Hf)|Ha].
+      { left. exists (gsub c d cd), (chsubst c d f). by apply (tstep_chsubst c d) in Hf. }
+      right. intros k' e' Ho He'.
       destruct (Hback k' e' Ho He') as (k & e0 & Ho0 & He0 & Heq).
       destruct (Ha k e0 Ho0 He0) as [H1 H2]. split.
       * intros k2 e2 He2 Hn2. destruct (Hκ4 k2 e2 He2) as (k3 & <- & He3).

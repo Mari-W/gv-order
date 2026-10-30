@@ -391,10 +391,18 @@ Section ready.
 
   Lemma fused_ready :
     ready_p W Σp (C, E) → ¬ terminated (C, E) → stable_p q →
-    ((∀ k, ¬ offered_p Σ q k) → False) ∧ above_offered W (tenv_of Σ) (offered_p Σ q).
+    link_p q ∨
+    (((∀ k, ¬ offered_p Σ q k) → False) ∧ above_offered W (tenv_of Σ) (offered_p Σ q)).
   Proof.
     intros Hrdy Hnt Hs. destruct HW as [HWf _].
-    destruct (Hrdy (stable_back Hs)) as [Hv Ha].
+    destruct (Hrdy (stable_back Hs)) as [(cd & p' & Hp)|[Hv Ha]].
+    { (* a link redex on c or d fires in q, any other stays a link redex *)
+      left. destruct (decide (c ∈ subjs (SLink cd) ∨ d ∈ subjs (SLink cd))) as [Ht|Ht].
+      - destruct (lift_link_cd c d Hcd C E HcC HdC cd p' Hp Ht) as [q' Hq].
+        by destruct (Hs q' Hq).
+      - destruct (lift_ext c d Hcd C E HcC HdC _ p' Hp) as [q' Hq]; [tauto|tauto|].
+        by exists (gsub c d cd), q'. }
+    right.
     assert (¬ (offered_p Σp (C, E) (c, false) ∧ offered_p Σp (C, E) (d, false))) as Hnb.
     { intros [H1 H2]. destruct (sync_tau H1 H2) as [q' Hq]. exact (Hs q' Hq). }
     assert (Hcd_key : ∀ k, offered_p Σp (C, E) k → k.1 = c ∨ k.1 = d → k.2 = false).
@@ -1722,11 +1730,11 @@ Section internalize.
     - intros Hq. exfalso.
       assert (stable_p (C ∪ {[d]}, echsubst c d E)) as Hs by (intros q' Hq'; exact (Hq _ _ Hq')).
       destruct (fused_ready c d Hcd W HW Σ sc sd kc kd C E HcΣ HdΣ HcC HdC Hdu Hal Hrdy' Hnt Hs)
-        as [Hno _].
+        as [(cd & q' & Hq')|[Hno _]]; [exact (Hq _ _ Hq')|].
       apply Hno. intros k (σ & q' & Hq' & _). exact (Hq _ _ Hq').
     - intros _ Hs.
       destruct (fused_ready c d Hcd W HW Σ sc sd kc kd C E HcΣ HdΣ HcC HdC Hdu Hal Hrdy' Hnt Hs)
-        as [Hno Hab].
+        as [?|[Hno Hab]]; [by left|right].
       split; [intros H; exfalso; by apply Hno|done].
     - intros π q' Hst. destruct π as [|σ'].
       + simpl. split.

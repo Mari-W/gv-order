@@ -185,6 +185,10 @@ Qed.
 
 (** ** Two components over a cut *)
 
+(** Readiness of a process without its link disjunct. *)
+Definition ready_core (W : world) (Σ : senv) (p : proc) : Prop :=
+  ((∀ k, ¬ offered_p Σ p k) → terminated p) ∧ above_offered W (tenv_of Σ) (offered_p Σ p).
+
 Section connect.
   Context (W W1 W2 : world) (Σ1 Σ2 ΣC ΣC' : senv) (C0 C1 C2 : gset chan)
     (E1 E2 : gmultiset expr).
@@ -402,6 +406,34 @@ Section connect.
   Context (Hr1 : ready_p W1 Σa (C1, E1)) (Hr2 : ready_p W2 Σb (C2, E2)).
   Context (Hu2 : terminated (C2, E2) → ∀ e, e ∈ E2 → e = EUnit).
 
+  (** A link redex of a component in a stable composite touches no
+      restricted channel, so it is a link redex of the composite
+      (sharp edges 68). *)
+  Lemma link_l : stable_p p → link_p (C1, E1) → link_p p.
+  Proof.
+    intros Hs (cd & q & Hst).
+    destruct (decide (subjs (SLink cd) ## C)) as [Hdj|Hdj].
+    - destruct (sess_lift _ _ C E2 _ _ Hst Hdj) as [q' Hq']. by exists cd, q'.
+    - exfalso. destruct (link_tau _ _ C E2 _ _ Hst) as [q' Hq'].
+      { apply not_disjoint_ex in Hdj as (x & Hx & Hx'). by exists x. }
+      exact (Hs _ Hq').
+  Qed.
+
+  Lemma link_r : stable_p p → link_p (C2, E2) → link_p p.
+  Proof.
+    intros Hs (cd & q & Hst).
+    destruct (decide (subjs (SLink cd) ## C)) as [Hdj|Hdj].
+    - destruct (sess_lift _ _ C E1 _ _ Hst Hdj) as [q' Hq']. rewrite <-soup_comm in Hq'.
+      by exists cd, q'.
+    - exfalso. destruct (link_tau _ _ C E1 _ _ Hst) as [q' Hq'].
+      { apply not_disjoint_ex in Hdj as (x & Hx & Hx'). by exists x. }
+      rewrite <-soup_comm in Hq'. exact (Hs _ Hq').
+  Qed.
+
+  (** The chain argument proper, for components without link redexes. *)
+  Section core.
+  Context (Hc1 : ready_core W1 Σa (C1, E1)) (Hc2 : ready_core W2 Σb (C2, E2)).
+
   Lemma lt_irrefl_W x : ¬ w_lt W x x.
   Proof. destruct HW as [_ Hi]. apply Hi. Qed.
 
@@ -432,7 +464,7 @@ Section connect.
       ¬ offered_p Σb (C2, E2) (c, false) ∧
       w_lt W e1.2 (entry_head k e).
   Proof.
-    intros Hs He Hno. destruct (Hr1 (stable_l Hs)) as [_ Hab].
+    intros Hs He Hno. destruct Hc1 as [_ Hab].
     destruct (Hab k e He Hno) as (k' & e' & Ho & He' & Hlt).
     apply Hl1 in Hlt; [|done|done].
     pose proof He' as He'0. apply tenv_entry_of_key in He'0 as [Hk' Hk'e].
@@ -461,7 +493,7 @@ Section connect.
       ¬ offered_p Σa (C1, E1) (c, false) ∧
       w_lt W e1.2 (entry_head k e).
   Proof.
-    intros Hs He Hno. destruct (Hr2 (stable_r Hs)) as [_ Hab].
+    intros Hs He Hno. destruct Hc2 as [_ Hab].
     destruct (Hab k e He Hno) as (k' & e' & Ho & He' & Hlt).
     apply Hl2 in Hlt; [|done|done].
     pose proof He' as He'0. apply tenv_entry_of_key in He'0 as [Hk' Hk'e].
@@ -585,12 +617,12 @@ Section connect.
     - by apply (Hno k').
   Qed.
 
-  Theorem ready_connect : ready_p W Σ p.
+  Lemma ready_connect_core : stable_p p → ready_core W Σ p.
   Proof.
     intros Hs. split.
     - intros Hno.
-      destruct (Hr1 (stable_l Hs)) as [Ht1 Hab1].
-      destruct (Hr2 (stable_r Hs)) as [Ht2 Hab2].
+      destruct Hc1 as [Ht1 Hab1].
+      destruct Hc2 as [Ht2 Hab2].
       pose proof (no_offers_l Hs Hno) as Hno1.
       pose proof (no_offers_r Hs Hno) as Hno2.
       apply empty_of_no_offers in Hab1; [|done].
@@ -629,6 +661,15 @@ Section connect.
         * set_solver.
         * by exists k', e'.
   Qed.
+  End core.
+
+  Theorem ready_connect : ready_p W Σ p.
+  Proof.
+    intros Hs.
+    destruct (Hr1 (stable_l Hs)) as [Hl1'|Ho1]; [left; by apply link_l|].
+    destruct (Hr2 (stable_r Hs)) as [Hl2'|Ho2]; [left; by apply link_r|].
+    right. by apply ready_connect_core.
+  Qed.
 End connect.
 
 (** ** One thread holding both ends of its restricted channels *)
@@ -640,6 +681,13 @@ Proof.
   intros H1 H2. destruct (act_step _ _ _ H1) as (a & Ha & Ho).
   destruct (act_step _ _ _ H2) as (a' & Ha' & Ho'). rewrite Ha in Ha'.
   injection Ha' as <-. eauto.
+Qed.
+
+(** A term at a link offers nothing else. *)
+Lemma link_t_only t σ t' : link_t t → tstep t (LSess σ) t' → ∃ cd, σ = SLink cd.
+Proof.
+  intros (cd & t0 & H0) H. destruct (tstep_same_act _ _ _ _ _ H0 H) as (a & Ha & Ha').
+  destruct a; simpl in Ha, Ha'; try done. destruct σ; try done. eauto.
 Qed.
 
 Section term.
@@ -716,6 +764,7 @@ Section term.
     all: destruct (HBdual _ _ _ Ho) as [Hcnt Hdu].
     all: pose proof (stable_thread Hs) as Hst_t.
     all: destruct (Hr Hst_t) as [_ Hab].
+    all: destruct Hab as [Hl|Hab]; [by destruct (link_t_only _ _ _ Hl Hst)|].
     (* the other end of c' *)
     all: assert (tenv_entry Θ (c', negb b) = Some (if b then e1 else e2)) as Hother
            by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
@@ -776,6 +825,12 @@ Section term.
   Theorem ready_term : ready_p W Σ p.
   Proof.
     intros Hs. pose proof (stable_thread Hs) as Hst. destruct (Hr Hst) as [Hv Hab0].
+    destruct Hab0 as [(cd & t1 & Hl)|Hab0].
+    { left. assert (subjs (SLink cd) ## C0) as Hdj.
+      { apply elem_of_disjoint. intros x Hx HxC. by apply (link_cut_tau cd t1 x Hl). }
+      exists cd, (C0 ∖ sentc (SLink cd), ∅ ⊎ {[+ t1 +]}).
+      rewrite single_soup. by apply PStepSession. }
+    right.
     destruct (tstep_progress t) as [Hi|(α & t0 & Hst0)]; [by destruct Hni|].
     pose proof (Hst _ _ Hst0) as Hα. destruct α as [|σ0|c|w]; try done.
     destruct (Hsome _ _ Hst0) as [k0 Hk0].

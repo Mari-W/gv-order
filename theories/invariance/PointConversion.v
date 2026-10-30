@@ -582,7 +582,7 @@ Section tconv.
   Proof.
     intros H Hr Hs. destruct (Hr Hs) as [Hv Ha]. split.
     - intros Hno. apply Hv. intros k Hk. apply (Hno k). by apply (offered_t_conv Θ).
-    - intros k e' Ho He'.
+    - destruct Ha as [?|Ha]; [by left|right]. intros k e' Ho He'.
       pose proof (proj2 (offered_t_conv Θ Θ' t k H) Ho) as Ho0.
       destruct (tconv_entry _ _ _ _ (tconv_sym _ _ H) He') as (e & He & [_ Hee]).
       destruct (Ha k e Ho0 He) as [H1 H2]. split.
@@ -1052,7 +1052,7 @@ Section sconv.
 
   Lemma ready_p_conv Σ Σ' p : sconv W Σ Σ' → ready_p W Σ p → ready_p W Σ' p.
   Proof.
-    intros H Hr Hs. destruct (Hr Hs) as [Hv Ha]. split.
+    intros H Hr Hs. destruct (Hr Hs) as [?|[Hv Ha]]; [by left|right]. split.
     - intros Hno. apply Hv. intros k Hk. apply (Hno k). by apply (offered_p_conv Σ).
     - eapply above_offered_conv; [exact H|].
       intros k e He Hk. destruct (Ha k e He) as (k' & f & Ho & Hf & Hlt).

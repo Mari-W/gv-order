@@ -431,7 +431,10 @@ Section ready.
     destruct (H Hs) as [Hv Ha]. split.
     - intros Hno. rewrite is_val_eswap. apply Hv. intros k Hk.
       apply (Hno (kswap a b k)). by rewrite offered_t_swap_iff, kswap_involutive.
-    - apply (below_rest_swap _ _ (offered_t Θ t)); [|done].
+    - destruct Ha as [(cd & t' & Hst)|Ha].
+      { left. exists (gswap a b cd), (eswap a b t').
+        exact (tstep_eswap a b _ _ _ Hst). }
+      right. apply (below_rest_swap _ _ (offered_t Θ t)); [|done].
       intros k. apply offered_t_swap_iff.
   Qed.
 
@@ -439,7 +442,10 @@ Section ready.
     ready_p W Σ p → ready_p W (senvswap a b Σ) (pswap a b p).
   Proof.
     intros H Hs. apply stable_p_swap in Hs. rewrite pswap_involutive in Hs.
-    destruct (H Hs) as [Hv Ha]. split.
+    destruct (H Hs) as [(cd & p' & Hst)|[Hv Ha]].
+    { left. exists (gswap a b cd), (pswap a b p').
+      exact (proc_step_pswap a b _ _ _ Hst). }
+    right. split.
     - intros Hno. apply terminated_pswap. apply Hv. intros k Hk.
       apply (Hno (kswap a b k)). by rewrite offered_p_swap_iff, kswap_involutive.
     - rewrite <-tenvswap_of.

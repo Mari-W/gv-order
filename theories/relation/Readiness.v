@@ -14,7 +14,12 @@
     the context of the term still has to use. A process has no frame
     and keeps the condition above. The term form at F = ∅ would be
     false for processes, because two ready components that offer at
-    unrelated points compose to a process that is not (sharp edges 63). *)
+    unrelated points compose to a process that is not (sharp edges 63).
+
+    A link never blocks (sharp edges 68). A term or a process with a
+    link redex is ready and compares nothing. P-Act-Link fires the link
+    once one of its channels is restricted, so in a closed process no
+    stable state holds one. *)
 
 From stdpp Require Import base strings gmap gmultiset.
 From LRGV Require Export lang.Safety relation.Worlds.
@@ -71,16 +76,23 @@ Definition below_rest (W : world) (Θ : tenv) (off : ekey → Prop) (F : gset po
        w_lt W (entry_head k e) (entry_head k' e')) ∧
     (∀ y, y ∈ F → w_lt W (entry_head k e) y).
 
+(** A link redex (sharp edges 68). A link never waits for a partner,
+    so a term or process at one compares nothing. *)
+Definition link_t (t : expr) : Prop := ∃ cd t', tstep t (LSess (SLink cd)) t'.
+
+Definition link_p (p : proc) : Prop := ∃ cd p', proc_step p (PSess (SLink cd)) p'.
+
 (** ready_W(Θ ∣ F, t). *)
 Definition ready_t (W : world) (Θ : tenv) (F : gset point) (t : expr) : Prop :=
   stable_t t →
     ((∀ k, ¬ offered_t Θ t k) → is_val t) ∧
-    below_rest W Θ (offered_t Θ t) F.
+    (link_t t ∨ below_rest W Θ (offered_t Θ t) F).
 
 Definition ready_p (W : world) (Σ : senv) (p : proc) : Prop :=
   stable_p p →
-    ((∀ k, ¬ offered_p Σ p k) → terminated p) ∧
-    above_offered W (tenv_of Σ) (offered_p Σ p).
+    link_p p ∨
+    (((∀ k, ¬ offered_p Σ p k) → terminated p) ∧
+     above_offered W (tenv_of Σ) (offered_p Σ p)).
 
 (** ** Basic facts *)
 
@@ -93,8 +105,8 @@ Qed.
 
 Lemma ready_t_frame W Θ t F F' : F' ⊆ F → ready_t W Θ F t → ready_t W Θ F' t.
 Proof.
-  intros HF H Hs. destruct (H Hs) as [? ?]. split; [done|].
-  by eapply below_rest_frame.
+  intros HF H Hs. destruct (H Hs) as [? [?|?]]. split; [done|by left].
+  split; [done|]. right. by eapply below_rest_frame.
 Qed.
 
 (** The relation between the two forms of readiness. With an offered
