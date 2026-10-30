@@ -484,9 +484,13 @@ Adequacy        · ⊨_W p : T   ⇒   p deadlock free         (the paper's proo
 Soundness       · ⊢_W p : T,  W strict   ⇒   p deadlock free
 ```
 
-Rocq state. Rocq implements the design before sharp edges 65: finite constraints of ≺ facts
-with steps Σ, C at every Σ-word, ≡ read in W alone, slots written p[b][i]. The paragraphs
-below describe that state. Porting to free constraints is pending (sharp edges 65).
+Rocq state. Rocq implements sharp edges 65 (sharp edges 66, 297c45f, d3dfbe4). A constraint
+is a closure BCs env P, a predicate P on facts over variables closed by its outer points env,
+and substitution acts on env. Its roots are the finitely many roots of env. The static ≡ is
+seqs W Ψ, and fl_map transfers it together with the static ≺. Rocq writes carried roots as
+slots p[b][i] with positions from 0, so the spec's x.i is the slot i−1. The paragraphs below
+describe the earlier refactors. Where they mention steps and words, sharp edges 66 replaces
+them by bcs_open and bcs_hold_sub.
 
 Rocq (Static.v, sharp edges 53, 56): typed W Φ Θ Δ F e T and ptyped W Σ p T, indexed by the
 world W. The fresh μ of E-Abs and E-Exp is a frame variable φ with the hypothesis u ≺ φ
@@ -512,6 +516,10 @@ typed_pinst asks it in slt W Ψ′ with skn. Words commute with substitution (wi
 bcs_hold_inst and hyp_fact_inst carry facts through both. A recursive call at a step uses
 bcs_hold_step. soundness, fundamental, fundamental_proc, Prel_connect_n and all eight
 deadlock_free examples are closed under the global context (dc8acc1, 18b13f1).
+Free constraints (65, 66): a recursive call gets C at its instance ys from the body's
+hypothesis by bcs_hold_sub, or by bcs_hold_self when C[ys] ⊆ C. soundness, fundamental,
+fundamental_proc, Prel_connect_n and the ten deadlock_free examples of §13 are closed under
+the global context.
 
 
 ## 13  Examples
@@ -533,22 +541,30 @@ delegation      typable                        receiver: (c,k).1 ≺ (c,k+1),  s
 bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0)
 ```
 
-Rocq types request/reply and the relay in the step form of sharp edges 61. Expected under
-sharp edges 65, not yet checked in Rocq:
+Rocq types request/reply and the relay with these infinite constraints (sharp edges 66).
+The three programs below are the ones 65 expected. Rocq types two of them.
 
 ```
-tail call       □(∀ι ζ. {ι+k ≺ ζ ∣ k ∈ ℕ}. ∗ ⊸^⊥_⊤ (S@ι ⊸^ζ_⊤ ∗)),  ζ a ceiling above every round,
-                the tail call at (ι+1, ζ) asks ζ ≺ μ, a frame hypothesis
-forwarder       receives d on one channel and sends it on another inside a box,
-                C ∋ (ι+k).1 ≡ (ι′+k).1
-received chain  recursion on the channel it receives, call at ι.1,
-                C = {ι.1ⁿ + 1 ≺ ι.1ⁿ⁺¹ ∣ n ∈ ℕ},  ι.1ⁿ = ι.1.….1 (n times)
+tail call       typable, no spawn              □(∀ι ζ. {ι+k ≺ ζ ∣ k ∈ ℕ}. ∗ ⊸^⊥_⊤ (S@ι ⊸^ζ_⊤ ∗)),
+                                               the tail call at (ι+1, ζ) asks ζ ≺ μ, a frame hypothesis,
+                                               the world has (a,k) ≺ (z,0) for every k (tc_deadlock_free)
+forwarder       not typable                    receives d on one channel and sends it on another inside a box,
+                                               C ∋ (ι+k).1 ≡ (ι′+k).1 is never read (sharp edges 66)
+received chain  typable, recursion by spawn    call at ι.1, C = {ι.1ⁿ + 1 ≺ ι.1ⁿ⁺¹ ∣ n ∈ ℕ},
+                                               ι.1ⁿ = ι.1.….1 (n times), upper point ι+1 (ch_deadlock_free)
 ```
+
+The forwarder fails at send. recv gives d the type D@ι.1, send at ι′ asks D@ι′.1, and no rule
+of §9 moves the point of a variable's type along Γ ⊢ ≡. E-Conv compares points by equality,
+and E-Ch converts channel names only. The comparison of "the payload of send and recv" that §9
+reads in Γ ⊢ ≡ has no rule behind it. The missing rule is E-Conv up to ≈ with points compared
+by Γ ⊢ ≡.
 
 ## 14  Open
 
 - Deferred by the author: order that depends on the run (one W per component, docs/DESIGN-REVIEW.md C2).
-- Port of sharp edges 65 to Rocq: free constraints, ≡ in C, the static ≡ judgment, carried-root notation. Then the three expected examples of §13.
+- The forwarder of §13 needs E-Conv up to ≈ with points compared by Γ ⊢ ≡ (sharp edges 66). Decision for the author.
+- A constraint has finitely many roots in Rocq (the roots of its outer points). §4 does not say so. O-New needs it, because a type with infinitely many constant roots leaves no fresh point.
 - Rocq admits box bodies that are not thunks. Their V is empty, but the grammar of §4 has only the thunk form.
 
 ## 15  Lessons from the earlier mechanization (respect these)

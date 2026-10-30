@@ -629,6 +629,75 @@ inside a box, and recursion on a received channel. None is checked in Rocq
 yet. Decidability moves to §16 as a question about a fragment, with the
 counter language of docs/DECIDABILITY.md as the candidate.
 
+**66. Rocq port of 65 (Claude, 2026-10-30, Rocq 297c45f, d3dfbe4).**
+A constraint is a closure BCs env P (Types.v). P is a predicate on facts
+FLt x y and FEq x y whose points have variable roots only. The variables
+0, …, n−1 are the box's ιs, and n + j is the j-th point of env, which
+lives outside the binder and carries the outer point variables and
+constants. Substitution and renaming of points act on env alone, so
+pinst_ty, the swaps of Points.v and their equations hold by computation
+on lists, with no functional extensionality. The image of P under
+substitution, which the spec writes C[σ], is bcs_open n C, and
+bcs_open_inst and bcs_open_sw state that it commutes with substitution
+and renaming. A fact whose variables lie beyond n + |env| is not part of
+C. The representation forces one restriction the spec does not state. A
+constraint has finitely many roots, those of env. A type with infinitely
+many constant roots would leave O-New no fresh point, so the restriction
+is needed anyway. bcs_hold eq lt C xs asks every open fact at xs, ≺ in
+lt and ≡ in eq. V-Box, KTForce, sem_typed_force and sem_typed_box read
+it in W′ with both relations. ≈_W on constraints (bcs_rel) relates two
+constraints when every open fact of one has an open fact of the other of
+the same kind with points related by ≈_W, in both directions.
+bcs_hold_conv moves a constraint along it.
+
+The fact theory has a second judgment seqs W Ψ, the least congruence for
+successor and slots that contains ≡ of W and the ≡ facts of the
+hypotheses. fl is closed under it. fl_map maps both judgments along one
+map of the generators and concludes their conjunction. fl_pinst,
+seqs_pinst and slt_pinst are its instances. E-Const reads konst_ty at
+seqs W Ψ, so link compares its ends in Γ ⊢ ≡. E-Ch and the composition
+of environments read seqs W Ψ too. P-Term and P-Connect keep ≡ of W,
+because Ψ = [] at process level. Hypotheses stay a list of (C, xs), with
+hyps_inst σ substituting env and xs. Steps, words, wsub, pext,
+bcs_hold_step and bcs_hold_nil are gone. A recursive call is a force.
+bcs_hold_sub derives C at an instance ys from the body's hypothesis (C, xs)
+when every fact of C[ys] is a fact of C[xs], and bcs_hold_self is the case
+of a constraint without outer points, C[ys] ⊆ C. No statement of a
+composition lemma or of soundness changed beyond the types of the box
+premises. Static.v grew from 1819 to 1840 lines.
+
+Examples (OrdExamples.v), all with deadlock_free closed under the global
+context. request/reply has C = {ι+k ≺ ι′+k, ι′+k ≺ ι+k+1 ∣ k}, and its
+call at (ι+1, ι′+1) is rq_step. rr_call_underivable now states that the
+one-round constraint {ι ≺ ι′, ι′ ≺ ι+1} does not give ι+1 ≺ ι′+1, by a
+rank that meets the hypotheses, program order and ≡, which relates
+points with variable roots by equality only. The relay has
+C = C₀(ι, ι′) ∪ {C₀(ι+k+1, ι+k[0]+1) ∣ k} with slots from 0. Its call at
+(ι+1, ι[0]+1) maps round 0 to round 0 of the family and round k+1 to
+round k+2 (rel_sub). The tail call (tc_deadlock_free) types without spawn
+under {ι+k ≺ ζ ∣ k}. Its world has (a,k) ≺ (z,0) for every k, which no
+rank into ℕ orders, so wgen_strict_lex uses a pair rank. Recursion on a
+received channel (ch_deadlock_free) types with
+C = {ι[0]ⁿ + 1 ≺ ι[0]ⁿ⁺¹ ∣ n} and recursion through spawn. The upper point
+ι+1 of its λ covers the receive at ι and the close at ι+1, and the call
+forces the box at ι[0].
+
+The forwarder does not type, and the obstacle is not the constraint. recv
+gives the received channel d the type D@ι[0]. send on the outgoing channel
+at ι′ is the constant send at its KTSend instance, whose payload is D@ι′[0].
+E-Const types a constant at its instance exactly, E-Conv compares points by
+equality, and only E-Ch moves the point of a type along ≡, for a channel
+name. So no derivation gives the variable d the type D@ι′[0], and the fact
+ι[0] ≡ ι′[0] is never read. Spec §9 lists the payload of send and recv
+among the comparisons that read Γ ⊢ ≡, and no rule of §9 or of Rocq does
+that for a variable. Inside a box Θ = ∅, so Γ ⊢ ≡ reaches link alone. The
+missing rule is E-Conv up to ≈ with points compared by Γ ⊢ ≡. Its semantic
+side would be rel_tconv along ≈ of W₁ after seqs_pinst. It is a change of
+the static system and waits for the author.
+
+Slots stay 0-based in Rocq (pt_slot x i, slots x m = x[0], …, x[m−1]). The
+spec's carried root x.i with i ≥ 1 is pt_slot x (i−1).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
