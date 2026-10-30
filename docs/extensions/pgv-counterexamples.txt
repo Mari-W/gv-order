@@ -1,0 +1,125 @@
+Two closed PGV programs that type and deadlock
+
+Source. W. Kokke and O. Dardha, Prioritise the Best Variation, LMCS 19(4):28,
+2023 (arXiv 2103.14466v6). Page numbers are the journal's (28:N). Typing rules
+and constant schemas are Fig. 2 on p. 28:9, the sugar `let x = M in N` is Fig. 3
+on p. 28:12, evaluation contexts are on p. 28:7 and configuration reduction on
+p. 28:8. Both programs were checked by hand against these rules. Neither is
+machine checked.
+
+Notation. new () returns (x, x′) with x : S and x′ : S̄. M; N sequences units.
+Priorities are superscripts. A rule's side condition p < pr(Δ) compares the
+bound p of the first premise with the smallest top priority in Δ.
+
+
+=====================================================================
+1. A pair whose left component holds a lower priority than the right acts at
+=====================================================================
+
+Program.
+
+  let (c, c′) = new () in          c : !¹1.end⁷!    c′ : ?¹1.end⁷?
+  let (v, v′) = new () in          v : !²1.end⁸!    v′ : ?²1.end⁸?
+  let (w, w′) = new () in          w : !⁵1.end⁹!    w′ : ?⁵1.end⁹?
+  spawn (λ(). let (u, c′) = recv c′ in u; let (u, v′) = recv v′ in u;
+              wait c′; wait v′);
+  spawn (λ(). let v = send ((), v) in let (u, w′) = recv w′ in u;
+              close v; wait w′);
+  let z = (c, send ((), w)) in
+  let (c, w) = z in
+  let c = send ((), c) in close c; close w
+
+Why it types.
+
+  Main thread, the pair (c, send ((), w)).
+    send ((), w) is T-App of send : 1 × !⁵1.end⁹! ⊸^{⊤,5} end⁹! to the pair
+    ((), w). The inner T-Pair asks ⊥ < pr(w) = 5. T-App asks ⊥ < ⊤ and
+    ⊥ < pr(w) = 5. Its bound is 5.
+    The outer T-Pair has first premise c ⊢^⊥ c : !¹1.end⁷! and second premise
+    w ⊢^5 send ((), w) : end⁹!. Its only side condition is ⊥ < pr(w) = 5. No
+    rule compares the bound 5 of the right component with the priority 1 of the
+    value c that the pair already holds.
+    let z = … in … is T-Let, which asks 5 < pr(Δ) for the context Δ of the
+    body without z. That context is empty, so pr(Δ) = ⊤.
+  Main thread, the rest.
+    let (c, w) = z in … is T-LetPair with bound ⊥.
+    let c = send ((), c) in … asks 1 < pr(w : end⁹!) = 9.
+    close c at 7 before close w at 9 asks 7 < 9.
+  First child.
+    recv c′ at 1 while holding v′ asks 1 < pr(v′, 1, end⁷?) = 2.
+    recv v′ at 2 while holding c′ : end⁷? asks 2 < pr(c′, 1, end⁸?) = 7.
+    wait c′ at 7 before wait v′ at 8 asks 7 < 8.
+  Second child.
+    send ((), v) at 2 while holding w′ asks 2 < pr(w′) = 5.
+    recv w′ at 5 while holding v : end⁸! asks 5 < pr(v, 1, end⁹?) = 8.
+    close v at 8 before wait w′ at 9 asks 8 < 9.
+  new, spawn and the sequencing of the two spawns have bound ⊥.
+
+Why it deadlocks.
+
+  Pairs evaluate left to right, (V, E) is an evaluation context (p. 28:7), so
+  main reaches send ((), w) while the pair holds c. After the news and spawns
+  the three threads are
+    main     F[send ((), w)]   waits for a recv on w′
+    child 1  F[recv c′]        waits for a send on c
+    child 2  F[send ((), v)]   waits for a recv on v′
+  Only child 2 receives on w′, and it does so after its send on v. Only child 1
+  receives on v′, and it does so after its receive on c′. Only main sends on c,
+  and it does so after its send on w. E-Send and E-Close are synchronous
+  (p. 28:8), so no rule applies.
+  The configuration is reachable from a typed one, so subject reduction
+  (Theorem 3.5) types it. It is canonical and does not reduce, and the main
+  thread is no value, so it is not in normal form (Definition 3.11, p. 28:24).
+  This contradicts Theorem 3.13 (p. 28:24).
+
+
+=====================================================================
+2. A channel sent over a carrier of higher priority than its own
+=====================================================================
+
+Program.
+
+  let (c, c′) = new () in      c : ?¹1.end⁴?             c′ : !¹1.end⁴!
+  let (d, d′) = new () in      d : !³(!¹1.end⁴!).end⁵!   d′ : ?³(!¹1.end⁴!).end⁵?
+  let (e, e′) = new () in      e : !²1.end⁶!             e′ : ?²1.end⁶?
+  spawn (λ(). let d = send (c′, d) in close d);
+  spawn (λ(). let (u, e′) = recv e′ in u;
+              let z = recv d′ in
+              let (c′, d′) = z in
+              let c′ = send ((), c′) in close c′; wait d′; wait e′);
+  let (u, c) = recv c in u; let e = send ((), e) in wait c; close e
+
+Why it types.
+
+  First child.
+    send (c′, d) is T-App of send : T × !³T.end⁵! ⊸^{⊤,3} end⁵! with
+    T = !¹1.end⁴!. The schema puts no condition on T, and in particular none
+    relating pr(T) = 1 to the priority 3 of the action. The inner T-Pair asks
+    ⊥ < pr(d) = 3. The body asks nothing else, and close d acts at 5.
+  Second child.
+    recv e′ at 2 while holding d′ asks 2 < pr(d′, 1, end⁶?) = 3 in T-LetPair.
+    let z = recv d′ in … is T-Let. It asks 3 < pr(Δ) for the context of the
+    body without z, which holds only e′ : end⁶?, so pr(Δ) = 6. T-Let never
+    compares the bound 3 with the type of z, whose first component has
+    priority 1. (T-LetPair would, through pr(Δ, T, T′).)
+    let (c′, d′) = z in … is T-LetPair with bound ⊥.
+    send ((), c′) at 1 while holding d′ : end⁵? and e′ : end⁶? asks 1 < 5.
+    close c′ at 4, wait d′ at 5 and wait e′ at 6 ask 4 < 5 and 5 < 6.
+  Main thread.
+    recv c at 1 while holding e asks 1 < pr(e, 1, end⁴?) = 2.
+    send ((), e) at 2 while holding c : end⁴? asks 2 < 4.
+    wait c at 4 before close e at 6 asks 4 < 6.
+
+Why it deadlocks.
+
+  After the news and spawns the three threads are
+    main     F[recv c]          waits for a send on c′
+    child 1  F[send (c′, d)]    waits for a recv on d′
+    child 2  F[recv e′]         waits for a send on e
+  c′ sits inside child 1's payload. It reaches child 2 only through the
+  exchange on d, and child 2 sends on it only after that exchange. Child 2
+  reaches its receive on d′ only after its receive on e′. Only main sends on e,
+  and it does so after its receive on c. No rule applies.
+  As in the first program, subject reduction types the configuration, it is
+  canonical, it does not reduce, and the main thread is no value. This
+  contradicts Theorem 3.13 (p. 28:24).
