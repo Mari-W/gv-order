@@ -515,7 +515,8 @@ bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,
 - Deferred by the author: order that depends on the run (one W per component, docs/DESIGN-REVIEW.md C2).
 - Decidability of type checking: open beyond the classes of docs/DECIDABILITY.md. Delegation through recursion and relay-shaped schemas violate (M).
 - Recursion on a received channel needs unbounded slot nesting, which no finite set of facts covers.
-- Approved refactors in progress: docs/DESIGN-REVIEW.md B1 to B5.
+- A sequential tail call asks the call's upper point below the body's (sharp edges 58). The recursive examples recurse through spawn.
+- Rocq admits box bodies that are not thunks. Their V is empty, but the grammar of §3 has only the thunk form.
 
 ## 15  Lessons from the earlier mechanization (respect these)
 
