@@ -82,9 +82,12 @@ terminated, safe, deadlock free        unchanged
 ## 4  Types and environments   [changed]
 
 ```
-T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C.^u T)      term types (u may mention ιs; sharp edges 52)
+T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C.^u_Σ T)    term types (u may mention ιs; sharp edges 52)
 C    ::= {x₁ ≺ y₁, …, xₖ ≺ yₖ}  constraint of a box, a finite set of ≺ facts over ιs and   [new, 58]
                           outer points. No ≡ facts. C = ∅ is the box of 52. □(∀ιs.^u T) abbreviates C = ∅.
+Σ    ::= {σ₁, …, σₘ}      steps of a box, each a substitution of ιs by points over ιs        [new, 61]
+                          (ι ↦ ι+1, ι′ ↦ ι[0]+1). C holds at xs when C[w(xs)/ιs] holds for every
+                          word w over Σ, the empty word giving xs. Σ = ∅ is the box of 58.
 u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥: never blocks)
 ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
                           (no ⊤ for u: every function has a known upper point, a function that may
@@ -164,11 +167,14 @@ V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)                       
           ∀W′ ⊒ W, j < n, Σ′, v ∈ V^{W′}_j⟦Σ′ ⊢ T⟧, F with {u} ≺_{W′} F.
               t[v/x] ∈ E^{W′}_j⟦Σ, Σ′ ⊢ U ≺ F⟧
           ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^u_ℓ U⟧
-V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs with C[xs/ιs] in W′, F with {u[xs/ιs]} ≺_{W′} F.
+V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C at every Σ-word of xs in W′,
+              F with {u[xs/ιs]} ≺_{W′} F.
               fix x.t ∈ E^{W′}_n⟦· ⊢ T[xs/ιs] ≺ F⟧
-          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C.^u T)⟧                                    [changed, 52, 58]
-          (C[xs/ιs] in W′: every fact x ≺ y of C holds as x[xs/ιs] ≺_{W′} y[xs/ιs])
-          (≈_W compares the constraints of two boxes fact by fact, points up to ≡_W)        [new, 58]
+          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C.^u_Σ T)⟧                                  [changed, 52, 58, 61]
+          (C[xs/ιs] in W′: every fact x ≺ y of C holds as x[xs/ιs] ≺_{W′} y[xs/ιs].
+           Rocq: bcs_hold (w_lt W′) C xs and Forall (pt_known W′) xs, sharp edges 59, 61)
+          (≈_W compares the constraints of two boxes fact by fact and step by step,
+           points up to ≡_W)                                                              [new, 58, 61]
 V-All     v ∈ V^W_n⟦Σ ⊢ ∀ιs. T⟧   ≔   ∀xs.  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧                     [new]
 
 payload at a slot      P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.     [changed]
@@ -278,9 +284,13 @@ send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_
 recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
 close  : Close@ι ⊸^ι_⊤ ∗
 link   : S@ι ⊗ S′@ι′ ⊸^ι_⊤ ∗                                  S ⊥ S′,  ι ≡_G ι′
-force  : □(∀ιs. C.^u T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]      C[ιs′/ιs] holds         [changed, 52, 58]
-         (a premise on the order, as pt_known is for new: KTForce reads C[ιs′/ιs] in the
-          order konst_ty is given, ≺_W in V-Const, W ∪ Ψ in the static system)
+force  : □(∀ιs. C.^u_Σ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]    C at every Σ-word of ιs′, ιs′ known   [changed, 52, 58, 61]
+         (premises on the order and the support, as pt_known is for new: KTForce reads C in the
+          order konst_ty is given and knownness in its predicate. V-Const reads ≺_W and pt_known W.
+          The static system reads W ∪ Ψ and skn, sharp edges 61)
+new    : as above, ι known. The static system reads ι known when W knows it or ι has the     [changed, 61]
+         root of an instance point of a hypothesis in Ψ, so new may create a channel at a
+         box's ιs (sharp edges 59)
 
 E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    k : T   ⇒   ·; · ⊢^F k : T
@@ -299,12 +309,14 @@ E-LetPair  Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂    
 E-Inj      Θ; Δ ⊢^F t : Tᵢ   ⇒   Θ; Δ ⊢^F injᵢ t : T₁ + T₂
 E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊢^F tᵢ : U  (i = 1, 2)
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F case t of … : U
-E-Exp      ·; □Δ, x : □(∀ιs. C.^u T) ⊢^{μ}_{Ψ, C} t : T   (μ fresh, only u ≺ μ)     G closed under the substitutions at recursive calls
-           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C.^u T)                                         [changed, 52, 58]
-           Ψ: the constraints of the enclosing boxes, hypotheses on point variables. Every side
-           condition x ≺ y of the static system is read in W ∪ Ψ: the closure of ≺_W and Ψ under
-           ≡_W and transitivity (58). A recursive call forces x at some xs and so asks C[xs/ιs]
-           from W ∪ Ψ, C.
+E-Exp      ·; □Δ, x : □(∀ιs. C.^u_Σ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ fresh, only u ≺ μ)     G closed under the substitutions at recursive calls
+           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C.^u_Σ T)                                       [changed, 52, 58, 61]
+           Ψ: the constraints of the enclosing boxes with their instances, hypotheses (C, xs).
+           Every side condition x ≺ y of the static system is read in W ∪ Ψ: the closure of ≺_W
+           and the facts of every (C, xs) at every Σ-word of xs, under ≡_W and transitivity
+           (58, 61). A recursive call forces x at a step σᵢ(ιs) and gets C at every word of it
+           from the body's own hypothesis (C, ιs), because those words are words of ιs. Any
+           other instance asks C at all its words from W ∪ Ψ.
            ιs are point variables in the premise, typed once (57). E-Const at send and recv asks
            the payload ∃ιs.T to have no free point variable beyond ιs, the "all points of T bound" of §4 (57)
 E-Weak, E-Contract, E-Conv      as in the paper, with ⊢^F
@@ -458,6 +470,12 @@ static ≺. E-Exp extends the shifted Ψ by C. typed_pinst asks Ψ[σ] in slt W 
 asks Ψ[σ] in ≺_{W₁}, and a derived fact survives because each generator does (slt_pinst).
 The infinitary it_box reads C[xs/ιs] in W₁ and carries term_wf of the body, which
 typed_term_wf_s reads off the finitary derivation. Example: ordered_typed, ordered_force.
+Steps and new under □∀ (61): Ψ is a list of hypotheses (C, xs) and sl_h yields C at every word
+of xs. typed_ityped asks every hypothesis of Ψ[σ] to hold in W₁ at known instance points,
+typed_pinst asks it in slt W Ψ′ with skn. Words commute with substitution (wins_pinst), so
+bcs_hold_inst and hyp_fact_inst carry facts through both. A recursive call at a step uses
+bcs_hold_step. soundness, fundamental, fundamental_proc, Prel_connect_n and all eight
+deadlock_free examples are closed under the global context (dc8acc1, 18b13f1).
 
 
 ## 13  Examples
@@ -469,10 +487,11 @@ sync            typable                       new and spawn instead of fork
 cycle           typable (before: semantic)     P-Connect over {c, d},  (c,0) ≺ (d,0) in both threads
 blocked         rejected                       (c,0) ≺ (d,0) and (d,0) ≺ (c,0)
 load balancer   semantic                       races on c, unchanged
-factory         typable                        repl and req via new, spawn and □∀
+factory         typable                        new at ι under □∀ι, two sessions at (a,0), (b,0) held at once (61)
 leader election semantic                       breaks linearity, unchanged
 scheduler       typable (before: semantic)     (r₁,0) ≡ (r₀,0) from the link,  reversed ag₀ rejected
-request/reply   typable, recursive             (a,κ) ≺ (b,κ),  (b,κ) ≺ (a,κ+1) under □∀κ          [new]
+request/reply   typable, recursive             step (ι+1, ι′+1), (a,k) ≺ (b,k) ≺ (a,k+1) for all k (61)  [new]
+relay           typable, recursive             step (ι+1, ι[0]+1), producer creates its payload at ι[0] (61)  [new]
 delegation      typable                        receiver: c[k][1] ≺ (c,k+1),  sender aliases d to it  [new]
 bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0)                         [new]
 ```

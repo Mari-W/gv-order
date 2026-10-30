@@ -12,7 +12,8 @@
     canonical representative that identifies the generating aliases.
 
     The examples that do not type carry the failing rule and fact in a
-    comment, see SHARP-EDGES.md 59 and 60. *)
+    comment. request/reply, the relay and the factory under □∀ι type with
+    the steps and the knownness of SHARP-EDGES.md 61. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export Static.
@@ -714,11 +715,11 @@ Proof.
   - by apply glt_base.
 Qed.
 
-(** ** factory: typable at one constant point, not under □∀ι
+(** ** factory: typable at one constant point (before 61)
 
     The spec's factory is a box □(∀ι.^⊥ ∗ ⊸ S@ι) whose body runs new and
     spawns the worker, so that every request yields a session at a
-    point the caller picks. That box does not type (SHARP-EDGES 59).
+    point the caller picks. Before 61 that box did not type (SHARP-EDGES 59).
     Its body must create the channel at the point variable ι, and KTNew
     asks pt_known W ι, the premise of sharp edges 49. A well-formed world
     knows constants only (wf_names_const), so no world knows a point
@@ -896,7 +897,7 @@ Proof.
   - apply Wfacts_lt. set_solver.
 Qed.
 
-(** ** request/reply: does not type (SHARP-EDGES 60)
+(** ** request/reply without steps: does not type (SHARP-EDGES 60, typed below with 61)
 
     The server answers every request on a with a reply on b, forever:
 
@@ -1516,7 +1517,7 @@ Proof.
   - intros k. split_and!; apply glt_base; exists k; naive_solver.
 Qed.
 
-(** ** relay (docs/DECIDABILITY.md §8.2): does not type (SHARP-EDGES 60)
+(** ** relay (docs/DECIDABILITY.md §8.2) without steps: does not type (SHARP-EDGES 60, typed above with 61)
 
       S = μX. ?(∃ι. D@ι).X     D = ?∗.Close
       r = !(f = λp. let (c, d) = p in let (e, c) = recv c in

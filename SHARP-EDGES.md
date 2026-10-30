@@ -583,7 +583,7 @@ where program order meets C. The relay of docs/DECIDABILITY.md §8.2 still does 
 recursive call at (ι+1, ι[1]+1, ζ) asks ι+1 ≺ ι[1]+1, and neither W nor C relates a slot of ι
 to ι. The ceiling also fails, because ι ≺ ζ in C does not give ι+1 ≺ ζ.
 
-**59. new in a box body cannot create a channel at a point variable (Claude, 2026-10-30). Open.**
+**59. new in a box body cannot create a channel at a point variable (Claude, 2026-10-30). Resolved by 61 (option B).**
 The factory of spec §13 is a box □(∀ι.^⊥ ∗ ⊸ S@ι) whose body runs new and spawns the worker,
 so that each request yields a session at a point the caller picks. It does not type. KTNew asks
 pt_known W ι of the point of new (49). A well-formed world knows constants only
@@ -599,7 +599,7 @@ system reads the box's ιs as known. A recursive call at ι+1 stays known, becau
 change under shift. This touches V-Box, KTForce and their lemmas, as 58 did. (C) O-New also
 places the root of ι, rejected in 49.
 
-**60. Recursive boxes cannot carry their constraint to the next unrolling (Claude, 2026-10-30). Open.**
+**60. Recursive boxes cannot carry their constraint to the next unrolling (Claude, 2026-10-30). Resolved by 61 (option D with a finite set of steps).**
 request/reply of spec §13 does not type, and neither does the relay of docs/DECIDABILITY.md
 §8.2. In request/reply the server is
 srv : □(∀ι ι′. {ι ≺ ι′, ι′ ≺ ι+1}.^⊥ Sa@ι ⊗ Sb@ι′ ⊸^{ι′}_⊤ ∗), which receives on a at ι while
@@ -642,6 +642,52 @@ holds at every iterate σᵏ, and recursive calls go to σ(ιs). (C) is σ = shi
 types with σ = (ι+1, ι[0]+1). This is a sound form of reading A of DECIDABILITY.md §8.1, at
 the cost of σ in the type and iterates of substitutions in V-Box. Recommendation (Claude): (C)
 is the smallest sound change for request/reply. (D) is needed only if the relay matters.
+
+**61. Step-invariant constraints □(∀ιs. C.^u_Σ T) and new under □∀ (design approved by the author 2026-10-30, Rocq dc8acc1, 18b13f1).**
+A box constraint is now a record bcs of steps Σ and facts. A step is a list of points, the
+images of ι₀, …, ιₙ₋₁, and acts on the box's context by pext (ιᵢ ↦ sᵢ, every other variable
+stays). A word applies its last step first (wsub). bcs_hold lt C xs says that the facts hold at
+w(xs) for every word w over Σ, and the empty word gives C[xs/ιs]. Σ = ∅ is the box of 58, and
+bcs_hold_nil turns a 58 proof into a 61 proof. V-Box ranges over the instances xs with
+bcs_hold (≺_{W′}) C xs whose points W′ knows. KTForce asks bcs_hold of C at its instance in the
+order konst_ty is given, and asks the instance known in the predicate konst_ty is given, a
+semantic premise like pt_known for new (49). ≈_W compares the steps point by point up to ≡_W
+(bcs_rel), so teqW's box clause has the same four conjuncts. bcs_hold_conv maps a word of one
+constraint to the related word of the other and needs ≡_W to be a congruence for substitution
+(weq_inst). sem_typed_force, sem_typed_box, it_box and ityped_force gained the new premises as
+in 58. No other composition lemma changed, and no semantic lemma broke.
+
+The static hypotheses Ψ are a list of pairs (C, xs), a constraint and its instance (hyps). The
+generator sl_h of slt yields every fact of C at every word of xs (hyp_fact). E-Exp types the body
+under hyps_inst (pshift m) Ψ followed by (C shifted past the ιs, ids m), the box's own constraint
+at its own ιs. The static force premise is bcs_hold (slt W Ψ) C xs together with skn for the
+points of xs. We chose this single premise over a separate rule for recursive calls (Claude,
+delegated). A call at a step σᵢ(ιs) of the box gets the premise from the body's hypothesis by
+bcs_hold_step, because the words of σᵢ(xs) are words of xs that start with σᵢ. The same lemma
+serves a force of an outer box inside a body at a step of that box. Any other instance has to
+show C at all words from W and Ψ, which for a ground instance means uniform facts in W
+(rq_hold_W, rel_hold_W). typed_ityped asks every hypothesis of Ψ[σ] to hold in W₁ with known
+instance points (hyps_hold), typed_pinst asks it in slt W Ψ′ with skn. Substitution commutes with
+words (wsub_pup, pext_pup, wins_pinst), so bcs_hold_inst and hyp_fact_inst carry facts through
+both lemmas.
+
+59, option B. The static knownness is skn W Ψ x, which holds when W knows x or x has the root of
+an instance point of a hypothesis. KTNew reads skn in the static system and pt_known in V-Const.
+V-Box quantifies over known instances only, rather than deriving knownness elsewhere (Claude,
+delegated). skn_pinst moves skn to pt_known W₁ in typed_ityped, because the instance points of
+every hypothesis are known there and a point and its slots and shifts share a root. The top level
+has no hypotheses, so a closed program creates channels at known constants as before.
+ordered_force gained the premise that W knows (a, 0).
+
+Examples (OrdExamples.v), all with deadlock_free closed under the global context. request/reply
+(rr_deadlock_free) types the server and client at σ = (ι+1, ι′+1) and C = {ι ≺ ι′, ι′ ≺ ι+1},
+and Wrr has (a,k) ≺ (b,k) ≺ (a,k+1) for every k (ranks 2k+2, 2k+3). The relay
+(rel_deadlock_free) types at σ = (ι+1, ι[0]+1) with C = {ι ≺ ι′, ι ≺ ι[0], ι[0] ≺ ι+1, ι[0] ≺ ι′,
+ι′ ≺ ι+1, ι′ ≺ ι[0]+1}. Its producer creates the payload channel at ι[0] with new, which needs
+59, and its send of that channel asks ι ≺ ι[0]. Wrel ranks (a,k) by 3k+3, (a,k)[0]+o by
+3k+4+4o and (b,0) by 5. The factory under □∀ι (fa_deadlock_free) creates its channel at ι, and
+the client holds sessions at (a,0) and (b,0) at once. Both recursive examples recurse through
+spawn. A tail call still asks the call's upper point below the body's (58).
 
 ## From the earlier abandoned mechanization (spec §15)
 

@@ -955,7 +955,8 @@ Qed.
     logical relation. Freshness of ι in [new] is a typing condition
     (Typing.v). [pk] says which points the order knows: the point of
     [new] must be one, so that the created point can be aliased to it
-    (sharp edges 49). *)
+    (sharp edges 49). force asks its instance known and the box's
+    constraint at every word of the instance (sharp edges 61). *)
 
 Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
     : konst → ty → Prop :=
