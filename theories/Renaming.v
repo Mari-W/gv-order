@@ -483,6 +483,20 @@ End misc.
 
     One induction on the step index carries all three relations. *)
 
+Lemma ptau_link_pswap a b p q :
+  ptau_link p q → ptau_link (pswap a b p) (pswap a b q).
+Proof.
+  intros (C & E & e & c & d & e' & -> & Hst & Hc & ->).
+  exists (gswap a b C), (msswap a b E), (eswap a b e), (cswap a b c),
+    (cswap a b d), (eswap a b e').
+  unfold pswap; simpl. split_and!.
+  - by rewrite msswap_disj_union, msswap_singleton.
+  - apply (tstep_eswap a b) in Hst. simpl in Hst. by rewrite gswap_upair in Hst.
+  - by rewrite elem_of_gswap.
+  - by rewrite gswap_difference, gswap_singleton, echsubst_msswap,
+      msswap_disj_union, msswap_singleton.
+Qed.
+
 Lemma rel_swap a b n :
   (∀ W Θ T v, Vrel n W Θ T v → Vrel n W (tenvswap a b Θ) T (eswap a b v)) ∧
   (∀ W Θ T F e, Erel n W Θ T F e → Erel n W (tenvswap a b Θ) T F (eswap a b e)) ∧
@@ -538,9 +552,9 @@ Proof.
       split_and!; [done|by rewrite tenvswap_singleton|done|done]. }
   split_and!; [exact HV| |].
   - (* term relation *)
+    destruct n as [|n']; [intros; apply Erel_0|].
     intros W Θ T F e HE.
-    destruct n as [|n']; [apply Erel_0|].
-    apply Erel_S_iff in HE as (Hval & Hrdy & Hstep).
+    induction HE as [W Θ T F e Hval Hrdy Hstep] using Erel_S_ind.
     apply Erel_S_iff. split_and!.
     { intros Hirr. apply HV. apply Hval.
       apply (irred_swap a b) in Hirr. by rewrite eswap_involutive in Hirr. }
@@ -572,12 +586,12 @@ Proof.
       * by apply tenv_comp_swap.
       * by apply HV.
       * by apply (tenv_ext_swap a b _ _ (s, pt_shift 1 k)).
-      * by apply (IHE n' ltac:(lia)).
+      * exact (proj2 HE').
     + (* close *)
       destruct Hstep as (Θ1 & k & Hhd & HE').
       exists (tenvswap a b Θ1), k. split.
       * by apply (tenv_hd_swap a b _ _ SEnd).
-      * by apply (IHE n' ltac:(lia)).
+      * exact (proj2 HE').
     + (* link *)
       destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                          -> & H1 & H2 & Hdu & Hal & HE').
@@ -589,7 +603,7 @@ Proof.
       * by apply (tenv_ext_swap a b _ _ (sc, kc)).
       * done.
       * done.
-      * by apply (IHE n' ltac:(lia)).
+      * exact (proj2 HE').
     + (* new *)
       intros Hc.
       assert (c ∉ dom Θ) as Hc0.
@@ -608,9 +622,9 @@ Proof.
       * apply (HV _ _ (TLolli ub lb TUnit TUnit)) in HVw. exact HVw.
       * by apply (IHE n' ltac:(lia)).
   - (* process relation *)
+    destruct n as [|n']; [intros; apply Prel_0|].
     intros W Σ T p HP.
-    destruct n as [|n']; [apply Prel_0|].
-    apply Prel_S_iff in HP as (Hirr & Hrdy & Hstep).
+    induction HP as [W Σ T p Hirr Hrdy Hstep] using Prel_S_ind.
     apply Prel_S_iff. split_and!.
     { intros Hpirr.
       destruct Hirr as (v & E & -> & Hv & HVv & HE).
@@ -633,11 +647,17 @@ Proof.
     { destruct π; simpl; by rewrite ?slswap_involutive. }
     destruct (plswap a b π) as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
     + (* τ *)
-      intros Hd. destruct Hstep as (N & W1 & HN & Hfr & HP').
-      { destruct q as [Cq Eq]; simpl in *.
+      destruct Hstep as [Htau Hlink].
+      assert ((pswap a b q).1 ## dom (senvswap a b Σ) → q.1 ## dom Σ) as Hdd.
+      { intros Hd. destruct q as [Cq Eq]; simpl in *.
         rewrite dom_senvswap in Hd. by apply gswap_disjoint_iff in Hd. }
-      exists N, W1. split_and!; [by rewrite senv_roots_swap|done|].
-      by apply (IHP n' ltac:(lia)).
+      split.
+      { intros Hd. destruct (Htau (Hdd Hd)) as (N & W1 & HN & Hfr & HP').
+        exists N, W1. split_and!; [by rewrite senv_roots_swap|done|].
+        by apply (IHP n' ltac:(lia)). }
+      intros Hl Hd. apply (ptau_link_pswap a b) in Hl.
+      rewrite !pswap_involutive in Hl.
+      exact (proj2 (Hlink Hl (Hdd Hd))).
     + (* recv *)
       destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
       exists (senvswap a b Σ1), m, U, s, k.
@@ -674,14 +694,14 @@ Proof.
       * by apply send_split_swap.
       * rewrite dom_tenvswap, dom_senvswap. by apply gswap_disjoint_iff.
       * apply HV in HVw. by rewrite tenvswap_union, tenvswap_of in HVw.
-      * apply (IHP n' ltac:(lia)) in HP'.
-        by rewrite senvswap_insert, senvswap_union in HP'.
+      * pose proof (proj2 HP') as HP2.
+        by rewrite senvswap_insert, senvswap_union in HP2.
     + (* close *)
       destruct Hstep as (Σ1 & k & Hhd & Hc & HP').
       exists (senvswap a b Σ1), k. split_and!.
       * by apply (senv_hd_swap a b _ _ SEnd).
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
-      * by apply (IHP n' ltac:(lia)).
+      * exact (proj2 HP').
     + (* link *)
       destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
                          -> & Hne & -> & Hc1 & Hd1 & Hdu & Hal & HP').
@@ -695,7 +715,7 @@ Proof.
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
       * done.
       * done.
-      * by apply (IHP n' ltac:(lia)).
+      * exact (proj2 HP').
 Qed.
 
 Lemma Vrel_swap a b n W Θ T v :
