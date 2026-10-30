@@ -23,6 +23,7 @@ theories/Connect.v
 theories/Connect2.v
 theories/Connect3.v
 theories/PTerm.v
+theories/Bind.v
 theories/Terms.v
 theories/Composition.v
 theories/composition/Term.v
