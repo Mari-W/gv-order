@@ -357,6 +357,9 @@ E-Conv      Θ; Δ ⊨^F t : T,   T ≈ T′   ⇒   Θ; Δ ⊨^F t : T′
 P-Term      prim T,   Σ, Θ_B; · ⊨^∅_W t : T,   Θ_B both ends of C₀
             ⇒   Σ ⊨_W (C₀, {t}) : T
             proof: chain argument over C₀ inside one thread
+            Rocq (sharp edges 47): induction on n, inside on the size of the thread. Proved as
+            Prel_term (PTerm.v). Implicit side conditions made explicit there: W strict,
+            dom Θ_B = C₀, Θ_B only both-ends entries, dual at ≡_W points, dom Σ # C₀.
 P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ ⊨_{W₂} (C₂, E₂) : ∗,
             Σ_C ⊥ Σ_C′ over C₀,   C₁ # dom Σ₂,   C₂ # dom Σ₁,   W₁ ⊔ W₂ strict
             ⇒   Σ₁, Σ₂ ⊨_{W₁ ⊔ W₂} (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T

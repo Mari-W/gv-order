@@ -390,6 +390,17 @@ stay as they are. Inside, P-Connect is proved for components in one world W, wit
 component at T and the other at ∗ in either order, so that each step case is proved once.
 The spec's W₁ ⊔ W₂ enters through monotonicity.
 
+**47. P-Term inducts on the thread size inside a level (Claude, routine, 2026-10-30).**
+The plan was an inner induction on the giving fixpoint of E (Erel_S_ind). It does not
+reach a link of a restricted channel c. The process step substitutes d for c in the
+thread, and chsubst c d t′ is not a giving successor of t. As in entry 46 the proof
+inducts on esize t inside the level S n′. Every giving step shrinks the thread, and the
+substitution keeps its size. The substituted thread is related by rel_fuse (d restricted)
+or by rel_fuse and Entry conversion (d in the interface). The spawn case composes the two
+threads with conn_all at n′, one at T and the spawned one at ∗. Proved as Prel_term
+(PTerm.v). Statement as in §11. Implicit side conditions made explicit there are W strict,
+dom Θ_B = C₀, Θ_B holds only both-ends entries, dual at ≡_W points, and dom Σ # C₀.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 Leastness as gate, a gate that is not invariant under external steps, the
