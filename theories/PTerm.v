@@ -979,3 +979,21 @@ Proof.
   pose proof (Ht n W ∅ Var (wext_refl W HW) (map_disjoint_empty_l _) eq_refl) as H.
   by rewrite subst_ids, (right_id_L ∅ (∪)) in H.
 Qed.
+
+(** ** Independence: P-Connect with an empty cut *)
+
+Theorem Prel_indep W1 W2 Σ1 Σ2 C1 C2 E1 E2 T :
+  prim T →
+  sem_ptyped W1 Σ1 (C1, E1) T → sem_ptyped W2 Σ2 (C2, E2) TUnit →
+  C1 ## dom Σ2 → C2 ## dom Σ1 →
+  strict (wjoin W1 W2) → world_wf W1 → world_wf W2 → Σ1 ##ₘ Σ2 →
+  C1 ## dom Σ1 → C2 ## dom Σ2 → C1 ## C2 →
+  sem_ptyped (wjoin W1 W2) (Σ1 ∪ Σ2) (C1 ∪ C2, E1 ⊎ E2) T.
+Proof.
+  intros HT HP1 HP2 H12 H21 HW HW1 HW2 Hd HC1 HC2 HC12.
+  rewrite <-(right_id_L ∅ (∪) (C1 ∪ C2)).
+  apply (Prel_connect W1 W2 Σ1 Σ2 ∅ ∅ ∅); try done.
+  all: first [by rewrite (right_id_L ∅ (∪)) | apply dom_empty_L
+             | (intros c e e' H; by rewrite lookup_empty in H)
+             | apply map_disjoint_empty_r | apply disjoint_empty_r].
+Qed.
