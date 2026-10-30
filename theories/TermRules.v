@@ -662,3 +662,89 @@ Proof.
     { apply comp_comm; [exact (wext_sym _ _ (wext_trans _ _ _ HW2 HW3))|exact Hc4]. }
     eapply Vrel_down; [exact Hj'|]. eapply Vrel_mono; [exact (wext_wf _ _ HW2)|exact HW3|exact HV1].
 Qed.
+
+(** ** Channels of a grounding *)
+
+Lemma grounding_fchans n W Θ Δ γ x T :
+  grounding n W Θ Δ γ → Δ !! x = Some (Some T) → fchans (γ x) ⊆ dom Θ.
+Proof.
+  revert Θ γ x. induction Δ as [|[T0|] Δ IH]; intros Θ γ x Hg Hx; simpl in *; [done| |].
+  - destruct Hg as (Θ1 & Θ2 & [Hj _] & HV & Hg). rewrite (tenv_join_dom _ _ _ Hj).
+    destruct x as [|x]; simpl in Hx.
+    + rewrite (Vrel_fchans _ _ _ _ _ HV). set_solver.
+    + pose proof (IH _ _ _ Hg Hx). set_solver.
+  - destruct x as [|x]; simpl in Hx; [done|]. exact (IH _ _ _ Hg Hx).
+Qed.
+
+Lemma grounding_dom n W Θ Δ γ ch :
+  grounding n W Θ Δ γ → ch ∈ dom Θ →
+  ∃ x T, Δ !! x = Some (Some T) ∧ ¬ unlimited T ∧ ch ∈ fchans (γ x).
+Proof.
+  revert Θ γ. induction Δ as [|[T0|] Δ IH]; intros Θ γ Hg Hch; simpl in *.
+  - subst. rewrite dom_empty_L in Hch. set_solver.
+  - destruct Hg as (Θ1 & Θ2 & [Hj _] & HV & Hg). rewrite (tenv_join_dom _ _ _ Hj) in Hch.
+    apply elem_of_union in Hch as [Hch|Hch].
+    + exists 0, T0. split_and!; [done| |].
+      * intros Hu. rewrite (Vrel_unl_empty _ _ _ _ _ Hu HV), dom_empty_L in Hch. set_solver.
+      * by rewrite (Vrel_fchans _ _ _ _ _ HV).
+    + destruct (IH _ _ Hg Hch) as (x & T & ? & ? & ?). by exists (S x), T.
+  - destruct (IH _ _ Hg Hch) as (x & T & ? & ? & ?). by exists (S x), T.
+Qed.
+
+Lemma le_le_W W x y z : world_wf W → w_le W x y → w_le W y z → w_le W x z.
+Proof.
+  intros HW Hxy [Hyz|Hyz]; [by eapply eq_le_W|]. right.
+  destruct Hxy as [Hxy|Hxy].
+  - eapply (wf_lt_eq _ HW); [exact Hxy|exact Hyz|apply HW].
+  - eapply (wf_lt_trans _ HW); eauto.
+Qed.
+
+(** ** E-Abs *)
+
+Lemma sem_typed_lam W Θ Δ F e T U ub lb :
+  term_wf Θ (Some T :: Δ) e →
+  lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
+  (∀ W1 F', wext W W1 → ub_below W1 ub F' → sem_typed W1 Θ (Some T :: Δ) F' e U) →
+  sem_typed W Θ Δ F (Lam e) (TLolli ub lb T U).
+Proof.
+  intros (Hfc & Hfv & Hrel) Hlb He n W' Θ' Θ'' γ HW Hc Hg. simpl.
+  pose proof (wext_wf _ _ HW) as HW'. pose proof (wext_sym _ _ HW) as Hs.
+  apply Vrel_Erel, Vrel_lolli_iff. left. exists (subst (up γ) e). split_and!; [done| | |].
+  - rewrite (tenv_join_dom _ _ _ (proj1 Hc)). apply set_eq. intros ch. split.
+    + intros Hch.
+      assert (fchans (subst (up γ) e) ⊆ fchans e ∪ dom Θ') as Hsub.
+      { apply fchans_subst. eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
+        - intros _. set_solver.
+        - intros (T' & Hx). unfold compose. rewrite fchans_rename. by eapply grounding_fchans. }
+      rewrite <-Hfc. set_solver.
+    + intros [Hch|Hch]%elem_of_union.
+      * apply fchans_subst_super. by rewrite Hfc.
+      * destruct (grounding_dom _ _ _ _ _ _ Hg Hch) as (x & T' & Hx & Hu & Hin).
+        assert (freevar (S x) e) as Hfree by (apply Hrel; by exists T').
+        pose proof (fchans_subst_free e (S x) (up γ) Hfree) as Hsub. simpl in Hsub.
+        unfold compose in Hsub. rewrite fchans_rename in Hsub. set_solver.
+  - assert (∀ h, h ∈ tenv_heads Θ'' → (h ∈ tenv_heads Θ ∨ ∃ h', h' ∈ lenv_heads Δ ∧ w_le W' h' h))
+      as Hh.
+    { intros h (k & e0 & He0 & ->)%elem_of_tenv_heads_entry.
+      destruct (comp_entry _ _ _ _ _ _ Hc He0) as [[k' Hk]|[k' Hk]].
+      - left. apply elem_of_tenv_heads_entry. eauto.
+      - right. exact (grounding_heads _ _ _ _ _ HW' Hg _ _ Hk). }
+    pose proof (lb_below_mono _ _ _ _ HW Hlb) as Hlb'.
+    destruct lb as [l|]; simpl in *.
+    + intros h Hin. destruct (Hh h Hin) as [Hin'|(h' & Hh' & Hle)].
+      * apply Hlb'. set_solver.
+      * eapply le_le_W; [exact HW'| |exact Hle]. apply Hlb'. set_solver.
+    + apply set_eq. intros h. split; [|set_solver]. intros Hin.
+      destruct (Hh h Hin) as [Hin'|(h' & Hh' & _)]; set_solver.
+  - intros W2 j Θa Θb w F' HW2 Hj Hcb HVw Hub. rewrite subst1_subst.
+    pose proof (wext_trans _ _ _ HW HW2) as HWW2. pose proof (wext_sym _ _ HWW2) as Hs2.
+    pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW2)) Hc) as HcW2.
+    destruct (comp_assoc _ _ _ _ _ _ Hs2 Hcb (comp_comm _ _ _ _ Hs2 HcW2)) as [HX HY].
+    apply (He W2 F' HWW2 Hub j W2 (tjoin_as Θb Θ' Θa) Θb).
+    + by apply wext_refl, HWW2.
+    + by apply comp_comm.
+    + exists Θa, Θ'. split_and!; [by apply comp_comm|done|].
+      eapply grounding_ext; [|eapply grounding_down; [|eapply grounding_mono; [exact HW'|exact HW2|exact Hg]]].
+      * done.
+      * lia.
+Qed.
