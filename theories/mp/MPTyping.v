@@ -156,7 +156,7 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
       msplit Γ Γ1 Γ2 →
       mtyped Θ Γ1 e1 (payty P) ef1 e1' →
       mtyped Θ Γ2 e2 (MChan pol Q h d) ef2 e2' →
-      mview pol (mhd Q h d).1 = ASnd a P K →
+      mview pol (mhd Q h d).1 = ASnd a P K → mwf Q → pfin a →
       plt Θ ef1 (envp Γ2) → plt Θ ef2 (tprios (payty P)) →
       plt Θ [a] (tprios (payty P)) → plt Θ [a] [chead K (mhd Q h d).2 d] →
       mtyped Θ Γ (App ESend (Pair e1 e2)) (MChan pol K (mhd Q h d).2 d) (ef1 ++ ef2 ++ [a])
@@ -164,29 +164,29 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
   | m_recv Γ Γ1 Γ2 e e2 e' e2' pol Q h d a P K V ef1 ef2 :   (* receive, T-LetPair *)
       msplit Γ Γ1 Γ2 →
       mtyped Θ Γ1 e (MChan pol Q h d) ef1 e' →
-      mview pol (mhd Q h d).1 = ARcv a P K →
+      mview pol (mhd Q h d).1 = ARcv a P K → mwf Q → pfin a →
       mtyped Θ (Some (MChan pol K (mhd Q h d).2 d) :: Some (payty P) :: Γ2) e2 V ef2 e2' →
       plt Θ (ef1 ++ [a]) (envp Γ2) →
       plt Θ [a] (tprios (payty P)) → plt Θ [a] [chead K (mhd Q h d).2 d] →
       mtyped Θ Γ (LetP (App ERecv e) e2) V (ef1 ++ [a] ++ ef2) (LetP (App ERecv e') e2')
   | m_close Γ e e' pol Q h d a ef :                          (* close, wait *)
       mtyped Θ Γ e (MChan pol Q h d) ef e' →
-      mview pol (mhd Q h d).1 = AEnd a →
+      mview pol (mhd Q h d).1 = AEnd a → mwf Q → pfin a →
       mtyped Θ Γ (App EClos e) MUnit (ef ++ [a]) (LetU (App EClos e') unitv)
   | m_sel1 Γ e e' pol Q h d a K1 K2 ef :                     (* T-Sel *)
       mtyped Θ Γ e (MChan pol Q h d) ef e' →
-      mview pol (mhd Q h d).1 = ASel a K1 K2 →
+      mview pol (mhd Q h d).1 = ASel a K1 K2 → mwf Q → pfin a →
       plt Θ [a] [chead K1 (mhd Q h d).2 d; chead K2 (mhd Q h d).2 d] →
       mtyped Θ Γ (App ESel1 e) (MChan pol K1 (mhd Q h d).2 d) (ef ++ [a]) (App ESel1 e')
   | m_sel2 Γ e e' pol Q h d a K1 K2 ef :
       mtyped Θ Γ e (MChan pol Q h d) ef e' →
-      mview pol (mhd Q h d).1 = ASel a K1 K2 →
+      mview pol (mhd Q h d).1 = ASel a K1 K2 → mwf Q → pfin a →
       plt Θ [a] [chead K1 (mhd Q h d).2 d; chead K2 (mhd Q h d).2 d] →
       mtyped Θ Γ (App ESel2 e) (MChan pol K2 (mhd Q h d).2 d) (ef ++ [a]) (App ESel2 e')
   | m_match Γ Γ1 Γ2 e e1 e2 e' e1' e2' pol Q h d a K1 K2 V ef1 ef2 : (* T-Match, R6 *)
       msplit Γ Γ1 Γ2 →
       mtyped Θ Γ1 e (MChan pol Q h d) ef1 e' →
-      mview pol (mhd Q h d).1 = ABra a K1 K2 →
+      mview pol (mhd Q h d).1 = ABra a K1 K2 → mwf Q → pfin a →
       mtyped Θ (Some (MChan pol K1 (mhd Q h d).2 d) :: Γ2) e1 V ef2 e1' →
       mtyped Θ (Some (MChan pol K2 (mhd Q h d).2 d) :: Γ2) e2 V ef2 e2' →
       plt Θ (ef1 ++ [a]) (envp Γ2) →
@@ -196,10 +196,10 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
       mtyped Θ Γ e (MArr MUnit lo σ MUnit) ef e' →
       mtyped Θ Γ (App ESpawn e) MUnit ef (App fork_tr e')
   | m_inst Γ e e' pol S0 h d ef :                            (* T-Inst, R5 *)
-      mtyped Θ Γ e (MChan pol (MRec S0) h d) ef e' →
+      mtyped Θ Γ e (MChan pol (MRec S0) h d) ef e' → rbody S0 → mact S0 →
       mtyped Θ Γ e (MChan pol (munf S0 h) (padd h d) d) ef e'
   | m_fold Γ e e' pol S0 h d ef :                            (* T-Eq *)
-      mtyped Θ Γ e (MChan pol (munf S0 h) (padd h d) d) ef e' →
+      mtyped Θ Γ e (MChan pol (munf S0 h) (padd h d) d) ef e' → rbody S0 → mact S0 →
       mtyped Θ Γ e (MChan pol (MRec S0) h d) ef e'
   | m_sub Γ e e' T ef ef' :                                  (* a larger effect *)
       mtyped Θ Γ e T ef e' → hle Θ ef ef' →

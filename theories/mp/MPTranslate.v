@@ -449,3 +449,138 @@ Section heads.
       + rewrite !length_app. destruct l1, l2; simpl in *; try lia. naive_solver.
   Qed.
 End heads.
+
+(** ** Channels *)
+
+Lemma mact_mhd Q h d : mact Q → mhd Q h d = (Q, h).
+Proof. by destruct Q. Qed.
+
+Lemma mact_mmap f Q : mact Q → mact (mmap f Q).
+Proof. by destruct Q. Qed.
+
+Lemma mact_subV X Q : mact Q → mact (msubV X Q).
+Proof. by destruct Q. Qed.
+
+Lemma mact_munf S0 h : mact S0 → mact (munf S0 h).
+Proof. intros H. apply mact_subV, mact_mmap, H. Qed.
+
+Lemma xrk_lt a e : xlt a e → rlt (xrk a 1 (KT 1)) (xrk e 1 (KT 1)).
+Proof. destruct a, e; simpl; lia. Qed.
+
+Lemma xmaxl_single v a : xmaxl v [a] = evalp v a.
+Proof. simpl. by destruct (evalp v a). Qed.
+
+Lemma xmaxl_in v a l : a ∈ l → xle (evalp v a) (xmaxl v l).
+Proof.
+  induction l as [|b l IH]; intros H; [by apply elem_of_nil in H|].
+  apply elem_of_cons in H as [->|H]; simpl; [apply xle_max_l|].
+  eapply xle_trans; [by apply IH|apply xle_max_r].
+Qed.
+
+Lemma ch_hi a x n : pfin a → xle (evalp [] a) x → rlt (xrk (evalp [] a) 1 (KT 1)) (rank (DHi x n)).
+Proof. destruct a; simpl; try done; destruct x; simpl; lia. Qed.
+
+Section chan.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
+  Context (pol : bool) (Q : msty) (h : prio) (d : Z) (Hw : mwf Q).
+  Abbreviation Q1 := (mhd Q h d).1.
+  Abbreviation h1 := (mhd Q h d).2.
+  Abbreviation x := (rpt B (RCh Q h d)).
+
+  Lemma ch_conv :
+    steq Wmp Ψ (tr B (MChan pol Q h d)) (TSess (polS pol (ers Q1)) x) ∧
+    steq Wmp Ψ (TSess (polS pol (ers Q1)) x) (tr B (MChan pol Q h d)).
+  Proof.
+    pose proof (ers_mhd Q h d Hw) as E. simpl.
+    assert (seq (polS pol (ers Q)) (polS pol (ers Q1))) as E'
+      by (destruct pol; simpl; [by apply seq_dual|done]).
+    split; (split; [apply se_refl|]); [done|by apply seq_sym].
+  Qed.
+
+  Lemma den_x v : models Θ v → den v x = DCh (mmap (pclose v) Q1) (pclose v h1) d.
+  Proof. intros Hv. rewrite (den_ch _ _ _ HB) by done. unfold dch. by rewrite mhd_pclose. Qed.
+
+  Lemma rank_x v : models Θ v → rank (den v x) = xrk (evalp v (hprio Q1)) 1 (KT 1).
+  Proof. intros Hv. rewrite den_x by done. simpl. rewrite hprio_mmap by done. by rewrite evalp_pclose. Qed.
+
+  (** The point after a message is the point of the continuation. *)
+  Lemma ch_next a P K :
+    (Q1 = MSnd a P K ∨ Q1 = MRcv a P K) → plt Θ [a] [chead K h1 d] →
+    seqs Wmp Ψ (pt_shift 1 x) (rpt B (RCh K h1 d)).
+  Proof.
+    intros HQ Hr. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    rewrite den_shift, den_x, (den_ch _ _ _ HB) by done. unfold dsh, guard.
+    assert (dnext (DCh (mmap (pclose v) Q1) (pclose v h1) d) = dch (mmap (pclose v) K) (pclose v h1) d) as En
+      by (destruct HQ as [-> | ->]; done).
+    rewrite En. rewrite decide_True; [done|]. rewrite dch_rank.
+    destruct HQ as [-> | ->]; simpl; rewrite evalp_pclose; apply xrk_lt;
+      specialize (Hr v Hv _ (list_elem_of_here _ _)); by rewrite xmaxl_single in Hr.
+  Qed.
+
+  (** The point after a choice of branch b. *)
+  Lemma ch_branch a K1 K2 b :
+    (Q1 = MSel a K1 K2 ∨ Q1 = MBra a K1 K2) → plt Θ [a] [chead K1 h1 d; chead K2 h1 d] →
+    seqs Wmp Ψ (pt_br x b) (rpt B (RCh (if b then K2 else K1) h1 d)).
+  Proof.
+    intros HQ Hr. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    rewrite den_br, den_x, (den_ch _ _ _ HB) by done. unfold dbr, guard.
+    assert (∀ K, K = K1 ∨ K = K2 → xlt (evalp v a) (evalp v (chead K h1 d))) as HK.
+    { intros K HK. rewrite <-xmaxl_single. apply Hr; [done|]. destruct HK as [->| ->]; set_solver. }
+    destruct HQ as [-> | ->], b; simpl; (rewrite decide_True; [done|]);
+      rewrite mhd_pclose; simpl; rewrite hprio_mmap by done; rewrite !evalp_pclose; apply xrk_lt, HK; auto.
+  Qed.
+
+  (** The payload slot is the point of the payload channel. *)
+  Lemma ch_pay a pp Qp hp dp K :
+    (Q1 = MSnd a (MPChan pp Qp hp dp) K ∨ Q1 = MRcv a (MPChan pp Qp hp dp) K) →
+    seqs Wmp Ψ (pt_slot x 0) (rpt B (RCh Qp hp dp)).
+  Proof.
+    intros HQ. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    rewrite den_slot, den_x, (den_ch _ _ _ HB) by done. by destruct HQ as [-> | ->].
+  Qed.
+
+  (** The action lies below the upper point of an effect that holds it. *)
+  Lemma ch_below_hi a ef :
+    hprio Q1 = a → pfin a → a ∈ ef → slt Wmp Ψ x (rpt B (RHi ef)).
+  Proof.
+    intros Ha Hf Hin. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv.
+    rewrite rank_x, (den_hi _ _ _ HB), Ha by done. rewrite <-(evalp_pclose v a).
+    apply ch_hi; [by destruct a|]. rewrite evalp_pclose. by apply xmaxl_in.
+  Qed.
+
+  Lemma ch_ub Φ a ef F :
+    hprio Q1 = a → pfin a → a ∈ ef → ub_below_s Wmp Ψ Φ (hiz B ef) F → ub_below_s Wmp Ψ Φ (Some x) F.
+  Proof.
+    intros Ha Hf Hin. apply (ubs_lower Wmp Wmp_wf). intros y [=<-].
+    exists (rpt B (RHi ef)). split; [by destruct ef; [by apply elem_of_nil in Hin|]|].
+    right. by apply (ch_below_hi a).
+  Qed.
+
+  (** The action lies below the heads of what it carries and of what
+      the thread still holds. *)
+  Lemma ch_below_lt a l y :
+    hprio Q1 = a → pfin a → plt Θ [a] l →
+    pt_root y = pt_root B →
+    (∀ v, models Θ v → ∃ ρ, ρ ∈ l ∧ xle (evalp v ρ) XT ∧ rank (den v y) = xrk (evalp v ρ) 1 (KT 1)) →
+    slt Wmp Ψ x y.
+  Proof.
+    intros Ha Hf Hl Hy Hd. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv.
+    destruct (Hd v Hv) as (ρ & Hρ & _ & ->). rewrite rank_x, Ha by done. apply xrk_lt.
+    specialize (Hl v Hv ρ Hρ). by rewrite xmaxl_single in Hl.
+  Qed.
+End chan.
+
+Lemma ch_inst Ψ Θ B pol S0 h d :
+  good Ψ Θ B → rbody S0 → mact S0 →
+  steq Wmp Ψ (tr B (MChan pol (MRec S0) h d)) (tr B (MChan pol (munf S0 h) (padd h d) d)) ∧
+  steq Wmp Ψ (tr B (MChan pol (munf S0 h) (padd h d) d)) (tr B (MChan pol (MRec S0) h d)).
+Proof.
+  intros HB Hb Ha.
+  assert (seqs Wmp Ψ (rpt B (RCh (MRec S0) h d)) (rpt B (RCh (munf S0 h) (padd h d) d))) as Hx.
+  { apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv. rewrite !(den_ch _ _ _ HB) by done.
+    unfold dch. rewrite !mhd_pclose. rewrite (mact_mhd (munf S0 h)) by by apply mact_munf. done. }
+  pose proof (ers_mhd (MRec S0) h d (conj Hb Ha)) as E. simpl in E.
+  assert (seq (polS pol (SMu (ers S0))) (polS pol (ers (munf S0 h)))) as E'
+    by (destruct pol; unfold polS; [by apply seq_dual|done]).
+  split; simpl; split; [done|done|by apply se_sym|by apply seq_sym].
+Qed.
