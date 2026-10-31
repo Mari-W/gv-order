@@ -33,6 +33,10 @@ partial orders.
    C = {ι+k ≺ ζ ∣ k ∈ ℕ}
    ```
 
+   This was the sketch. The mechanized type (sharp edges 73) has no Tree
+   argument and returns ∃ι′≽ι. C′. α@ι′ with C′ = {ι ≺ ι′} ∪ {ι′+k ≺ ζ ∣ k}.
+   The existential binds a point with a lower point, not an offset.
+
    The ceiling ζ is the one of the tail-call example. The recursive calls stay
    inside C for every offset, because C[ι+1+n/ι] ⊆ C. This coarse version needs
    offset variables in points (ι+n with n bound by ∃) and nothing new in the
@@ -69,7 +73,7 @@ partial orders.
 ## Target examples
 
 - sendTree and recvTree (Thiemann and Vasconcelos 2016).
-- Stream, the binary tree with polymorphism per node, and the asynchronous
+- Stream, the binary tree with polymorphism per node, and the
   scheduler A.5 (Mordido and Pérez 2026). Every example of Mordido and Pérez
   should type here, which feeds direction D.
 
@@ -150,8 +154,9 @@ integers. Int and () become ∗. A tree travels on a channel or comes from
 the program's own selections, so drain and copy stand in for recvTree and
 sendTree on tree values, and the main program sends the fixed tree
 Node(Leaf, Leaf). A unary choice becomes a send of ∗ and its branch a
-receive, which K4 treats alike. The scheduler runs synchronously, where
-Mordido and Pérez run it asynchronously.
+receive, which K4 treats alike. Both semantics are synchronous (Mordido and
+Pérez, Fig. 15, p. 30). Only the scheduler of van den Heuvel and Pérez that A.5
+starts from is asynchronous.
 
 Findings.
 - The coarse ceiling of K8 suffices for every example. copy acts on two

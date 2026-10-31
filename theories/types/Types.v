@@ -1294,7 +1294,8 @@ Qed.
     branch : &(S₁, S₂)@ι ⊸^ι_⊤ S₁@(ι+1) + S₂@(ι+1)
     close  : Close@ι ⊸^ι_⊤ ∗
     link   : S@ι ⊗ dual S@ι′ ⊸^⊥_⊤ ∗       ι ≡ ι′   (never blocks, sharp edges 68)
-    force  : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]   C[ιs′/ιs]   (52, 58, 63)
+    force  : □(∀ιs αs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs][ss/αs]
+             C[ιs′/ιs], every s ∈ ss hereditarily contractive   (52, 58, 63, 73)
 
     The side conditions on points are read in an order given as two
     relations: the world G generates for typing, a world W for the

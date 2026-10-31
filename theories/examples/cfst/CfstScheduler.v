@@ -27,9 +27,8 @@
     9⌊k/2⌋ + b(X, k mod 2). Mordido and Pérez fix the sequences n + 6k
     at new, n = 1, 3, 5 for the worker channels and n = 2, 4, 6 for the
     scheduler channels. We need no such choice: the world states the
-    interleaving, and every instant of every channel is a point. Their
-    semantics is asynchronous, ours synchronous. The ring still runs:
-    every rendezvous of a round finds its partner. *)
+    interleaving, and every instant of every channel is a point. Both
+    semantics are synchronous (their Fig. 15). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.cfst.CfstTools.

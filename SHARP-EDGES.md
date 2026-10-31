@@ -977,9 +977,11 @@ the instantiated body only through Vfun at the levels below n, and Vlam (V at
 an arrow) is a clause of the lower level, so the size of ss never matters.
 
 ≈ on box bodies. ≈ and ⊥ of open session types are not closed under
-substitution. Two open types can be bisimilar while an instance of their
-variables breaks the bisimulation, because a variable is a head whose
-continuation is compared as a whole. eqT therefore compares the body of a box
+substitution. µY. X;Y and µY. X;(X;Y) are bisimilar, both X;X;X;… with X read
+as a head. The instance X := Skip is hereditarily contractive, yet it turns
+both into types without a head, which unr leaves stuck and which relate only
+when equal. A contractive instance can make a contractive type non-contractive.
+eqT therefore compares the body of a box
 with k > 0 by equality, and teqW (≈ up to aliases in W) becomes teqW_r ρ with
 the session types compared by ρ. teqW is teqW_r ≈. A box body with k > 0
 uses teqW_r (=), which aliasing points cannot break (teqW_r_pinst_l) and
@@ -1133,8 +1135,9 @@ facts of the three follower instances and the eight facts of the leader.
 Mordido and Pérez fix the sequences n + 6k at new (n = 1, 3, 5 for the worker
 channels, 2, 4, 6 for the scheduler channels). We need no such choice.
 Simplifications. The unary choices become sends and receives of ∗ (above).
-Their semantics is asynchronous and ours synchronous. The ring is deadlock
-free in both.
+Both semantics are synchronous (Fig. 15, p. 30). A.5 starts from the
+asynchronous scheduler of van den Heuvel and Pérez, but its own reductions
+R-Com, R-Ch and R-Close pair both sides in one step.
 
 Issues. None of the examples needed a change of the core. Typing derivations
 with E-Open pass the shifted context in normal form to tv_open and check the
