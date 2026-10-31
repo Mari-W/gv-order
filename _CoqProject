@@ -58,3 +58,4 @@ theories/counterexamples/DropCounter.v
 theories/mp/MPTypes.v
 theories/mp/MPTyping.v
 theories/mp/MPWorld.v
+theories/mp/MPTranslate.v

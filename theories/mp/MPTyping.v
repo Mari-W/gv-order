@@ -47,8 +47,11 @@ Definition models (Θ : pctx) (v : val) : Prop :=
 Definition plt (Θ : pctx) (ef lo : list prio) : Prop :=
   ∀ v, models Θ v → ∀ ρ, ρ ∈ lo → xlt (xmaxl v ef) (evalp v ρ).
 
-Definition ple (Θ : pctx) (ef ef' : list prio) : Prop :=
-  ∀ v, models Θ v → xle (xmaxl v ef) (xmaxl v ef').
+(** σs ≤ σs′ for a latent effect: a segment of it, an effect with ⊤,
+    or strictly below at every valuation. *)
+Definition hle (Θ : pctx) (ef ef' : list prio) : Prop :=
+  ef = [] ∨ PTop ∈ ef' ∨ (∃ l1 l2, ef' = l1 ++ ef ++ l2) ∨
+  (ef' ≠ [] ∧ ∀ v, models Θ v → xlt (xmaxl v ef) (xmaxl v ef')).
 
 (** The effect is not ⊤ (ρ₂ < ⊤ for an argument of T-AbsUn). *)
 Definition pntop (Θ : pctx) (ef : list prio) : Prop :=
@@ -131,7 +134,7 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
   | m_fix Γ e e' nv cs T σ V ef :                           (* R4, T-PAbs, T-AbsUn *)
       menv_poly Γ →
       mtyped (PCtx nv cs) (Some T :: Some (MPoly nv cs T σ V) :: Γ) e V ef e' →
-      ple (PCtx nv cs) ef σ →
+      hle (PCtx nv cs) ef σ →
       mtyped Θ Γ (EBox (Lam e)) (MPoly nv cs T σ V) [] (EBox (Lam e'))
   | m_let Γ Γ1 Γ2 e1 e2 e1' e2' T V ef1 ef2 :                (* T-Let *)
       msplit Γ Γ1 Γ2 →
@@ -199,5 +202,5 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
       mtyped Θ Γ e (MChan pol (munf S0 h) (padd h d) d) ef e' →
       mtyped Θ Γ e (MChan pol (MRec S0) h d) ef e'
   | m_sub Γ e e' T ef ef' :                                  (* a larger effect *)
-      mtyped Θ Γ e T ef e' → ple Θ ef ef' →
+      mtyped Θ Γ e T ef e' → hle Θ ef ef' →
       mtyped Θ Γ e T ef' e'.

@@ -105,7 +105,7 @@ Inductive dn :=
   | DAnc (v : val)
   | DCh (Q : msty) (h : prio) (d : Z)       (* Q in head form *)
   | DLo (x : ext) (n : nat)
-  | DHi (x : ext)
+  | DHi (x : ext) (n : nat)
   | DJ (j : Z).
 
 Definition xrk (x : ext) (j : Z) (t : rk) : rk :=
@@ -116,9 +116,13 @@ Definition rank (d : dn) : rk :=
   | DAnc _ => KT 0
   | DCh Q _ _ => xrk (evalp [] (hprio Q)) 1 (KT 1)
   | DLo x n => xrk x (- Z.of_nat n) (KT (- Z.of_nat n))
-  | DHi x => xrk x 3 KH
+  | DHi x n => xrk x (3 + Z.of_nat n) KH
   | DJ j => KT j
   end.
+
+(** The subrank of an upper point: the length of its list, or 0 when ⊤
+    is in it, so that every effect that contains ⊤ has one point. *)
+Definition hlen (l : list prio) : nat := if bool_decide (PTop ∈ l) then 0 else length l.
 
 (** A channel in head form. *)
 Definition dch (Q : msty) (h : prio) (d : Z) : dn := DCh (mhd Q h d).1 (mhd Q h d).2 d.
@@ -150,7 +154,7 @@ Definition dsl (d : dn) (i : nat) : dn :=
       | Some (RAnc σ) => DAnc (evalZ v <$> σ)
       | Some (RCh Q h dd) => dch (mmap (pclose v) Q) (pclose v h) dd
       | Some (RLo l) => DLo (xminl v l) (length l)
-      | Some (RHi l) => DHi (xmaxl v l)
+      | Some (RHi l) => DHi (xmaxl v l) (hlen l)
       | None => DJ 0
       end
   | DCh (MSnd _ (MPChan _ Q h dd) _) _ _ | DCh (MRcv _ (MPChan _ Q h dd) _) _ _ =>
@@ -476,12 +480,12 @@ Proof.
 Qed.
 
 (** An upper point below a channel head of higher priority. *)
-Lemma hi_chan a e : xlt a e → rlt (rank (DHi a)) (xrk e 1 (KT 1)).
+Lemma hi_chan a n e : xlt a e → rlt (rank (DHi a n)) (xrk e 1 (KT 1)).
 Proof. destruct a, e; simpl; lia. Qed.
 
 (** An upper point below a lower point of higher priority. *)
-Lemma hi_lo v a l : (∀ ρ, ρ ∈ l → xlt a (evalp v ρ)) →
-  rlt (rank (DHi a)) (rank (DLo (xminl v l) (length l))).
+Lemma hi_lo v a n l : (∀ ρ, ρ ∈ l → xlt a (evalp v ρ)) →
+  rlt (rank (DHi a n)) (rank (DLo (xminl v l) (length l))).
 Proof.
   intros H. destruct (xlt_minl v a l H) as [->|H2]; [destruct a; simpl; lia|].
   destruct a, (xminl v l); simpl in *; lia.
@@ -506,7 +510,7 @@ Section facts.
   Proof. intros Hv. unfold rpt. rewrite den_slot, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
   Lemma den_lo v l : models Θ v → den v (rpt B (RLo l)) = DLo (xminl v l) (length l).
   Proof. intros Hv. unfold rpt. rewrite den_slot, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
-  Lemma den_hi v l : models Θ v → den v (rpt B (RHi l)) = DHi (xmaxl v l).
+  Lemma den_hi v l : models Θ v → den v (rpt B (RHi l)) = DHi (xmaxl v l) (hlen l).
   Proof. intros Hv. unfold rpt. rewrite den_slot, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
 
   Lemma rank_ch v Q h d : models Θ v →
