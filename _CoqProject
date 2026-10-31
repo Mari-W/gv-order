@@ -46,4 +46,8 @@ theories/examples/Forwarder.v
 theories/examples/Ordered.v
 theories/examples/Rejected.v
 theories/examples/SendTreeType.v
+theories/examples/cfst/CfstTools.v
+theories/examples/cfst/TreeCopy.v
+theories/examples/cfst/Stream.v
+theories/examples/cfst/CfstDeadlock.v
 theories/counterexamples/DropCounter.v
