@@ -108,6 +108,8 @@ and logged in SHARP-EDGES.
   next to its point variables, □(∀ιs αs. C. ∗ ⊸^u_⊤ T). V-Box quantifies over
   all closed session types for αs. V reads a session type only through V-Chan,
   so instantiating α keeps the recursion of V well founded.
+  As built, V-Box quantifies over hereditarily contractive session types
+  (sharp edges 73).
 - K7. Existential points. A new type former ∃ι. C. T with a positive
   constraint C, the dual of the box binder. V⟦∃ι. C. T⟧ holds when some point x
   satisfies C[x/ι] and the value lies in V⟦T[x/ι]⟧. sendTree returns

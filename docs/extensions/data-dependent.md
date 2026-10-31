@@ -95,8 +95,9 @@ What stays open.
 Cost. Branch roots revise K4 and K5 on branch cfst. They touch the point
 syntax and world laws (as carried roots did, sharp edges 37 onwards), O-Select,
 O-Branch, Q-Select, Q-Branch, the stage B lemmas that move an entry by a choice,
-and the constraints of TreeCopy.v, Stream.v and CfstScheduler.v, whose ceilings
-become sets over paths.
+and the constraints of the examples with choice, whose ceilings become sets
+over paths. In the event (sharp edges 76) Stream.v and CfstScheduler.v make no
+choice and kept their constraints.
 
 ## Open questions
 
