@@ -148,6 +148,8 @@ the core unchanged. The files are in theories/examples/cfst/, and SHARP-EDGES
 | the classic deadlock | Mordido and Pérez p. 3 | rejected, no strict world types it | CfstDeadlock.v |
 | its repair, one thread sends first | Mordido and Pérez p. 3 | typed | CfstDeadlock.v |
 | Milner's scheduler, k = 3 | Mordido and Pérez A.5 | typed | CfstScheduler.v |
+| treeSum serving transform on Node 3 Leaf (Node 4 Leaf Leaf) | Thiemann and Vasconcelos Listing 2 | typed | TreeSum.v |
+| the arithmetic server with the client Add (Const 5) (Mult (Const 7) (Const 9)) | Thiemann and Vasconcelos Listing 3 | typed | ArithServer.v |
 
 Simplifications. The calculus keeps no recursive data types and no
 integers. Int and () become ∗. A tree travels on a channel or comes from
@@ -173,6 +175,8 @@ Findings.
 - The classic deadlock is rejected through soundness. The program reaches a
   state where both threads wait on a receive, so it is not deadlock free and
   no strict world types it. No inversion of derivations is needed.
-- Not mechanized. The transform and treeSum pair and the arithmetic server of
-  Thiemann and Vasconcelos add a reply after the subtrees to the shape of
-  copy and drain.
+- A reply after the subtrees needs no new fact. treeSum opens the result of
+  its right call at κ″, sends, and packs at κ with the witness κ″+1, under
+  the coarse ceiling. The arithmetic server is drain with two branches in
+  place of a branch and a receive. Both return the channel without the
+  integer, and Int becomes ∗ (SHARP-EDGES 75).

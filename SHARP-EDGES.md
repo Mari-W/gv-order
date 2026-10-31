@@ -1144,6 +1144,58 @@ with E-Open pass the shifted context in normal form to tv_open and check the
 equations by reflexivity. The transform and treeSum pair and the arithmetic
 server of Thiemann and Vasconcelos are not mechanized (above).
 
+**75. Context-free session types, the remote tree sum and the arithmetic server (Claude, 2026-10-31, branch cfst).**
+Listings 2 and 3 of Thiemann and Vasconcelos (pp. 3–4) type without data
+types, and the core is unchanged. This closes the gap that entry 74 left.
+TreeSum.v and ArithServer.v prove both closed programs deadlock free
+(ts_deadlock_free, as_deadlock_free) at the strict world Wsum. Wsum has
+(a,k) ≺ (z,0) for every k and the ranks (0, k) for a and (1, k) for z. Int
+becomes ∗, and a tree or a term is never a value.
+
+The remote tree sum (Listing 2, TreeSum.v). Typed.
+
+    XformC = µX. ⊕(Skip, (!∗;(X;X));?∗)        XformD = dual XformC
+    treeSum : □(∀κ ζ β. C. ∗ ⊸^⊥_⊤ ((XformD;β)@κ ⊸^ζ_⊤ ∃κ′≽κ. C′. β@κ′))
+    C  = {κ+k ≺ ζ ∣ k}      C′ = {κ ≺ κ′} ∪ {κ′+k ≺ ζ ∣ k}
+
+The type is the one of drain with XformD for TreeD. The node branch
+reassociates ((?∗;(XformD;XformD));!∗);β to ?∗;(XformD;(XformD;(!∗;β))) by
+three uses of seq_assoc. The left call instantiates β at XformD;(!∗;β), the
+right call at !∗;β. The reply after the subtrees is what drain lacks. The
+right call returns ∃κ″≽κ′. C′. (!∗;β)@κ″. The code opens it, sends on the
+channel at κ″, which C′ puts below ζ, and packs at κ with the witness κ″+1.
+The pack needs κ ≺ κ+2 ≺ κ′ ≺ κ″ ≺ κ″+1 and κ″+1+k ≺ ζ, the second from C′
+at k+1. The coarse ceiling suffices, because the reply acts on the channel
+of the segment and on no other. The client is transform specialised to
+aTree = Node 3 Leaf (Node 4 Leaf Leaf). It makes ten actions at (a,0), …,
+(a,9), and the two replies arrive at (a,7) and (a,8).
+
+The arithmetic server (Listing 3, ArithServer.v). Typed.
+
+    TermC = µX. ⊕(!∗, ⊕(X;X, X;X))           TermD = dual TermC
+    receiveEval : the type of treeSum with TermD for XformD
+
+Const is select₁, Add is select₂ select₁ and Mult is select₂ select₂. The
+Const branch receives and packs at κ+2. Add and Mult run the code of drain
+after two branches, where drain has a branch and a receive, so the left call
+sits at κ+2 as in drain. The derivation distributes the inner choice over β
+by seq_choice_dist_with before it reassociates. computeService runs
+receiveEval on TermD;(!∗;Close), sends the result and closes. The client is
+the paper's, Add (Const 5) (Mult (Const 7) (Const 9)) and a receive, twelve
+actions at (a,0), …, (a,11).
+
+Differences from the paper. treeSum and receiveEval return the channel
+alone, not int ⊗ β, and the reply carries ∗ for x+l+r. Add and Mult run the
+same code, because no value tells them apart. The ternary choice of TermChan
+nests as binary choices (K1). Both programs end the session with close,
+where the paper discards a channel of type skip with fst (p. 4). transform
+reads a tree value, and here the client is a straight-line program that the
+tree fixes. XformChan writes !int;XformChan;XformChan;?int, and we bracket it
+as (!∗;(X;X));?∗, which ≈ identifies with every other bracketing.
+
+Nothing failed to type. The only new lemma is tv_case_same in
+ArithServer.v, case with two equal branches.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
