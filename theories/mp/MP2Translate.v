@@ -1088,3 +1088,226 @@ Section anc.
   Lemma anc_known : Forall (skn Wmp Ψ) [X].
   Proof. apply Forall_singleton. by apply (rpt_known Ψ Θ B HB). Qed.
 End anc.
+
+(** ** Forcing at a segment *)
+
+Lemma pt_inst_plist2_0 x B : pt_inst (plist [x; B]) (pvar 0) = x.
+Proof. apply pt_inst_pvar_at. Qed.
+Lemma pt_inst_plist2_1 x B : pt_inst (plist [x; B]) (pvar 1) = B.
+Proof. apply pt_inst_pvar_at. Qed.
+
+Lemma cseg_hold Ψ Θ B k x : good Ψ Θ B →
+  (∀ u, slt Wmp Ψ (mwalk x u) (ceil B) ∧ slt Wmp Ψ (floor B) (mwalk x u)) →
+  bcs_hold (seqs Wmp Ψ) (slt Wmp Ψ) (Cseg k) [x; B].
+Proof.
+  intros HB Hx g Hg. apply bcs_open_nil in Hg as [Hg _]. destruct Hg as [[(u & ->)|(u & ->)]|Hc].
+  - simpl. rewrite pt_inst_mwalk, pt_inst_plist2_0, pt_inst_rpt, pt_inst_plist2_1. apply Hx.
+  - simpl. rewrite pt_inst_mwalk, pt_inst_plist2_0, pt_inst_rpt, pt_inst_plist2_1. apply Hx.
+  - assert (∀ y, pt_root y = NVar 1 → pt_root (pt_inst (plist [x; B]) y) = pt_name B) as Hr.
+    { intros y Hy. rewrite pt_root_inst, Hy. simpl. destruct (gd_isroot _ _ _ HB) as [Ho Hrt].
+      unfold pt_root. done. }
+    assert (∀ v ts y, pt_root y = NVar 1 →
+      den (ianc B v ts) (pt_inst (plist [x; B]) y) = den (ianc (Pt (NVar 1) 0) v ts) y) as Hd.
+    { intros v ts y Hy. apply (den_inst _ _ _ 1); [done|].
+      change (plist [x; B] 1) with B. rewrite den_ianc by apply HB.
+      unfold ianc. by rewrite decide_True. }
+    destruct g as [y z|y z]; simpl in *; destruct Hc as (Hy & Hz & E).
+    + apply (gd_lt _ _ _ HB); [by apply Hr|by apply Hr|]. intros v ts _.
+      rewrite !Hd by done. by apply E.
+    + apply (gd_eq _ _ _ HB); [by apply Hr|by apply Hr|]. intros v ts _.
+      rewrite !Hd by done. by apply E.
+Qed.
+
+(** ** fork *)
+
+Lemma rename_fork r : rename r fork_tr = fork_tr.
+Proof. done. Qed.
+Lemma rename_unitv r : rename r unitv = unitv.
+Proof. done. Qed.
+
+Lemma fork_tr_typed Φ Ψ Δ0 F ub lb :
+  lenv_empty Δ0 →
+  typed Wmp Φ Ψ ∅ Δ0 F fork_tr (TLolli None None (TLolli ub lb U U) U).
+Proof.
+  intros HΔ. pose proof Wmp_wf as HW. set (φ0 := fresh (dom Φ)).
+  apply (t_lam Wmp Φ Ψ ∅ Δ0 F _ _ _ None None φ0); [apply is_fresh| |].
+  { simpl. by rewrite (tenv_heads0 Wmp HW), empty_heads, union_empty_l_L. }
+  set (Φ1 := <[φ0 := None]> Φ).
+  set (fT := TLolli ub lb U U).
+  set (E := Some fT :: Δ0).
+  eapply (t_letu Wmp Φ1 Ψ ∅ ∅ ∅ E E (lenv_nones E)); [by apply comp0|apply lenv_split_nones_r| |].
+  2:{ apply tv_unitv; [done|apply nones_unl]. }
+  eapply (t_app Wmp Φ1 Ψ ∅ ∅ ∅ E (lenv_nones E) E _ _ _ None None (TLolli ub lb TUnit TUnit)).
+  { by apply comp0. } { apply lenv_split_nones_l. } { done. }
+  { apply t_konst; [apply lenv_empty_nones|apply KTSpawn|done]. }
+  set (φ := fresh (dom Φ1)).
+  apply (t_lam Wmp Φ1 Ψ ∅ E _ _ _ _ ub lb φ); [apply is_fresh| |].
+  { simpl. rewrite (tenv_heads0 Wmp HW), empty_heads by done. destruct lb as [l|]; simpl; [|set_solver].
+    intros y Hy. assert (y = l) as -> by set_solver. left. apply se_refl. }
+  set (Φ2 := <[φ := ub]> Φ1).
+  eapply (t_letu Wmp Φ2 Ψ ∅ ∅ ∅ _ (Some TUnit :: None :: Δ0) (None :: Some fT :: Δ0));
+    [by apply comp0| | |].
+  { constructor. constructor. by apply lenv_split_empty'. }
+  { apply tv_var_unl; [done|done|]. intros y T Hne Hy. destruct y as [|[|y]]; simpl in Hy; try done.
+    exfalso. by eapply empty_lookup. }
+  assert (ub_below_s Wmp Ψ Φ2 ub (∅, Some φ)) as Hub by apply (ubs_fresh _ HW).
+  eapply (typed_force0 Wmp Φ2 Ψ ∅ _ _ _ 0 (BCs [] (λ _, False)) None TUnit []); [done|done| |done|done|].
+  { intros g Hg. apply bcs_open_nil in Hg as [[] _]. }
+  eapply (t_app Wmp Φ2 Ψ ∅ ∅ ∅ _ (None :: Some fT :: Δ0) (lenv_nones (None :: Some fT :: Δ0))
+            _ _ _ ub lb U U).
+  { by apply comp0. } { apply lenv_split_nones_r. } { done. }
+  { apply tv_var_unl; [done|done|]. intros y T Hne Hy. destruct y as [|[|y]]; simpl in Hy; try done.
+    exfalso. by eapply empty_lookup. }
+  { apply tv_unitv; [done|apply nones_unl]. }
+Qed.
+
+(** ** Opening the end point of a segment *)
+
+Lemma hyps_hold_sub W Ψ0 Ψ' :
+  (∀ h, h ∈ Ψ0 → h ∈ Ψ') → hyps_hold (seqs W Ψ') (slt W Ψ') (skn W Ψ') Ψ0.
+Proof.
+  intros Hs C xs Hin. specialize (Hs _ Hin). split.
+  - intros g Hg. destruct g as [x y|x y]; simpl; [apply sl_h|apply se_h];
+      exists C, xs; (split; [done|]); [exists (FLt x y)|exists (FEq x y)]; by split.
+  - apply Forall_forall. intros y Hy%list_elem_of_In. right. exists C, xs, y. split; [exact Hs|]. split; [exact Hy|done].
+Qed.
+
+Section shift.
+  Context (Ψ Ψ' : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
+  Context (HΨ : hyps_hold (seqs Wmp Ψ') (slt Wmp Ψ') (skn Wmp Ψ') (hyps_inst (pshift 1) Ψ)).
+
+  Lemma wext_mp : wext Wmp Wmp.
+  Proof. apply wext_refl, Wmp_strict. Qed.
+
+  Lemma slt_up x y : slt Wmp Ψ x y → slt Wmp Ψ' (pt_inst (pshift 1) x) (pt_inst (pshift 1) y).
+  Proof. apply (slt_pinst_s Wmp Wmp (pshift 1) Wmp_wf wext_mp Ψ Ψ' x y HΨ). Qed.
+  Lemma seqs_up x y : seqs Wmp Ψ x y → seqs Wmp Ψ' (pt_inst (pshift 1) x) (pt_inst (pshift 1) y).
+  Proof. apply (seqs_pinst_s Wmp Wmp (pshift 1) Wmp_wf wext_mp Ψ Ψ' x y HΨ). Qed.
+  Lemma skn_up x : skn Wmp Ψ x → skn Wmp Ψ' (pt_inst (pshift 1) x).
+  Proof. apply (skn_pinst_s Wmp Wmp (pshift 1) Wmp_wf wext_mp Ψ Ψ' x HΨ). Qed.
+
+  (** Every point of the shifted root is the shift of a point of the root. *)
+  Lemma unshift x : pt_root x = pt_name (pt_inst (pshift 1) B) →
+    ∃ x0, x = pt_inst (pshift 1) x0 ∧ pt_root x0 = pt_name B ∧
+      ∀ v ts, den (ianc (pt_inst (pshift 1) B) v ts) x = den (ianc B v ts) x0.
+  Proof.
+    destruct (gd_isroot _ _ _ HB) as [Ho Hr]. destruct B as [r o]. simpl in *. subst o.
+    destruct (pn_root_cases r) as [a [Ha|Ha]]; rewrite Ha in Hr; subst r.
+    - change (pt_inst (pshift 1) (Pt (NConst a) 0)) with (Pt (NConst a) 0). simpl. intros Hx.
+      exists x. split; [symmetry; by apply (pt_inst_const _ _ a)|]. split; [done|]. done.
+    - change (pt_inst (pshift 1) (Pt (NVar a) 0)) with (pvar (a + 1)). simpl. intros Hx.
+      exists (pt_inst (λ b, pvar (pred b)) x). split_and!.
+      + rewrite pt_inst_comp, <-(pt_inst_pvar x) at 1. apply pt_inst_ext_root.
+        intros b Hb. rewrite Hx in Hb. injection Hb as <-. simpl. rewrite Nat.add_1_r. simpl. rewrite pt_inst_pvar_at.
+        unfold pshift. f_equal. lia.
+      + rewrite pt_root_inst, Hx. simpl. by rewrite Nat.add_1_r.
+      + intros v ts. symmetry. apply (den_inst _ _ _ (a + 1)); [done|].
+        simpl. rewrite Nat.add_1_r. simpl. unfold ianc, pvar. simpl.
+        rewrite !decide_True by done. unfold den. simpl. by rewrite decide_True.
+  Qed.
+
+  Lemma good_shift : good Ψ' Θ (pt_inst (pshift 1) B).
+  Proof.
+    destruct (gd_isroot _ _ _ HB) as [Ho Hr].
+    split.
+    - destruct B as [r o]. simpl in *. subst o.
+      destruct (pn_root_cases r) as [a [Ha|Ha]]; rewrite Ha in Hr; subst r; done.
+    - apply HB.
+    - intros x y Hx Hy E. destruct (unshift x Hx) as (x0 & -> & Hx0 & Dx).
+      destruct (unshift y Hy) as (y0 & -> & Hy0 & Dy). apply seqs_up, (gd_eq _ _ _ HB); [done|done|].
+      intros v ts Hv. rewrite <-Dx, <-Dy. by apply E.
+    - intros x y Hx Hy E. destruct (unshift x Hx) as (x0 & -> & Hx0 & Dx).
+      destruct (unshift y Hy) as (y0 & -> & Hy0 & Dy). apply slt_up, (gd_lt _ _ _ HB); [done|done|].
+      intros v ts Hv. rewrite <-Dx, <-Dy. by apply E.
+    - intros x Hx. destruct (unshift x Hx) as (x0 & -> & Hx0 & _). apply skn_up, (gd_kn _ _ _ HB), Hx0.
+  Qed.
+End shift.
+
+Lemma tr_names B pts pts' T : (∀ m, m ∈ tnames T → pts m = pts' m) → tr B pts T = tr B pts' T.
+Proof.
+  induction T as [|p Q [h d|n w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k Qa Qr];
+    simpl; intros H; try done.
+  - rewrite H; [done|by left].
+  - rewrite IH1, IH2; [done| |]; intros m Hm; apply H; set_solver.
+Qed.
+
+Lemma trs_pinst σ ss B pts T : pinst_ty σ (trs ss B pts T) = trs ss (pt_inst σ B) (pt_inst σ ∘ pts) T.
+Proof. unfold trs. by rewrite pinst_sinst, tr_pinst. Qed.
+
+Definition pts_open (n : nat) (pts : nat → point) : nat → point :=
+  λ m, if decide (m = n) then pvar 0 else pt_inst (pshift 1) (pts m).
+
+Lemma pinst_trs_open ss B pts n o :
+  (∀ t, o = Some t → n ∉ tnames t) →
+  fmap (pinst_ty (pshift 1)) (fmap (trs ss B pts) o) =
+  fmap (trs ss (pt_inst (pshift 1) B) (pts_open n pts)) o.
+Proof.
+  intros Ho. destruct o as [t|]; simpl; [|done]. f_equal. rewrite trs_pinst. unfold trs. f_equal.
+  apply tr_names. intros m Hm. unfold pts_open. simpl. rewrite decide_False; [done|].
+  intros ->. by apply (Ho t).
+Qed.
+
+Lemma erel_shift B ss pts ins Γ Δ n :
+  erel B ss pts ins Γ Δ → n ∉ menames Γ →
+  erel (pt_inst (pshift 1) B) ss (pts_open n pts) ins Γ (lenv_pinst (pshift 1) Δ).
+Proof.
+  induction 1 as [|o ins Γ Δ H IH|o ins Γ Δ Ho H IH]; intros Hn; simpl.
+  - constructor.
+  - change (lenv_pinst (pshift 1) (fmap (trs ss B pts) o :: Δ))
+      with (fmap (pinst_ty (pshift 1)) (fmap (trs ss B pts) o) :: lenv_pinst (pshift 1) Δ).
+    rewrite (pinst_trs_open ss B pts n); [apply er_keep, IH|]; destruct o as [t|]; simpl in Hn; try set_solver.
+    all: intros ? [=<-]; set_solver.
+  - change (lenv_pinst (pshift 1) (o :: Δ)) with (fmap (pinst_ty (pshift 1)) o :: lenv_pinst (pshift 1) Δ).
+    apply er_skip; [|by apply IH].
+    destruct Ho as [->|(T & -> & HT)]; [by left|right]. eexists. split; [done|]. by apply unlimited_pinst.
+Qed.
+
+Lemma erel_open B ss pts ins Γ Δ i pol Q n :
+  erel B ss pts ins Γ Δ → Γ !! i = Some (Some (MEx pol Q)) → n ∉ menames Γ →
+  erel (pt_inst (pshift 1) B) ss (pts_open n pts) ins (<[i := Some (MCh pol Q (PX n []))]> Γ)
+    (<[ren_of ins i := Some (TSess (sinst (slist ss) (polS pol (ers Q))) (pvar 0))]> (lenv_pinst (pshift 1) Δ)).
+Proof.
+  intros H. revert i. induction H as [|o ins Γ Δ H IH|o ins Γ Δ Ho H IH]; intros i Hi Hn; simpl.
+  - done.
+  - assert (n ∉ menames Γ) as Hn'.
+    { destruct o as [t|]; simpl in Hn; [set_solver|done]. }
+    change (lenv_pinst (pshift 1) (fmap (trs ss B pts) o :: Δ))
+      with (fmap (pinst_ty (pshift 1)) (fmap (trs ss B pts) o) :: lenv_pinst (pshift 1) Δ).
+    destruct i as [|i]; simpl in *.
+    + injection Hi as ->. simpl.
+      assert (Some (TSess (sinst (slist ss) (polS pol (ers Q))) (pvar 0)) =
+        fmap (trs ss (pt_inst (pshift 1) B) (pts_open n pts)) (Some (MCh pol Q (PX n [])))) as ->.
+      { simpl. unfold trs, pts_open. simpl. by rewrite decide_True. }
+      apply er_keep. by apply erel_shift.
+    + rewrite (pinst_trs_open ss B pts n); [apply er_keep; by apply IH|].
+      intros t ->. simpl in Hn. set_solver.
+  - change (lenv_pinst (pshift 1) (o :: Δ)) with (fmap (pinst_ty (pshift 1)) o :: lenv_pinst (pshift 1) Δ).
+    simpl. apply er_skip; [|by apply IH].
+    destruct Ho as [->|(T & -> & HT)]; [by left|right]. eexists. split; [done|]. by apply unlimited_pinst.
+Qed.
+
+Lemma mwalk_vb k x u : pn_vb k (pt_name x) → pn_vb k (pt_name (mwalk x u)).
+Proof. revert x. induction u as [|[] u IH]; intros x Hx; simpl; [done|..]; by apply IH. Qed.
+
+Lemma pts_ok_open Ψ Θ B pts n :
+  good Ψ Θ B → pts_ok Ψ B pts →
+  pts_ok (hyps_inst (pshift 1) Ψ ++ [(Cex (pt_inst (pshift 1) B), ids 1)]) (pt_inst (pshift 1) B) (pts_open n pts).
+Proof.
+  intros HB Hp. set (Ψ' := hyps_inst (pshift 1) Ψ ++ [(Cex (pt_inst (pshift 1) B), ids 1)]).
+  assert (hyps_hold (seqs Wmp Ψ') (slt Wmp Ψ') (skn Wmp Ψ') (hyps_inst (pshift 1) Ψ)) as HΨ.
+  { apply hyps_hold_sub. intros h Hh. unfold Ψ'. set_solver. }
+  intros m. unfold pts_open. case_decide as Hm.
+  - split; [right; exists (Cex (pt_inst (pshift 1) B)), (ids 1), (pvar 0); split_and!; [unfold Ψ'; set_solver|by left|done]|].
+    intros u. split.
+    + eapply (sl_hyp _ _ [pt_inst (pshift 1) B] (pex_fact 0 1) (ids 1) (FLt (mwalk (pvar 0) u) (rpt (pvar 1) (RHi [PTop]))));
+        [unfold Ψ'; set_solver|left; by exists u| |].
+      * split; [apply mwalk_vb; simpl; lia|simpl; lia].
+      * cbn [fact_map]. rewrite pt_inst_mwalk, pt_inst_rpt, !pt_inst_pvar_at. reflexivity.
+    + eapply (sl_hyp _ _ [pt_inst (pshift 1) B] (pex_fact 0 1) (ids 1) (FLt (rpt (pvar 1) (RLo [LP PBot])) (mwalk (pvar 0) u)));
+        [unfold Ψ'; set_solver|right; by exists u| |].
+      * split; [simpl; lia|apply mwalk_vb; simpl; lia].
+      * cbn [fact_map]. rewrite pt_inst_mwalk, pt_inst_rpt, !pt_inst_pvar_at. reflexivity.
+  - destruct (Hp m) as [Hk Hw]. split; [by apply (skn_up Ψ Ψ' Θ B HB HΨ)|].
+    intros u. destruct (Hw u) as [H1 H2]. unfold ceil, floor in *. rewrite <-!pt_inst_rpt, <-pt_inst_mwalk.
+    split; by apply (slt_up Ψ Ψ' Θ B HB HΨ).
+Qed.
