@@ -301,3 +301,68 @@ Theorem t2_mp2_deadlock_free : ∃ ef e', mtyped pc0 [] t2_main MUnit ef e' ∧ 
 Proof.
   destruct t2_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp2_deadlock_free.
 Qed.
+
+(** ** The repair of the classic deadlock (p. 3)
+
+      a : ?¹Unit; Wait³        b : ?²Unit; Wait⁴
+      T1 = let (_, a) = receive a in let b = send () b in wait a; close b
+      T2 = let a′ = send () a′ in let (_, b′) = receive b′ in close a′; wait b′
+      main = new a, new b, fork T1, T2
+
+    The paper's priorities R = ?^p Int; Wait^{p+2} and S = ?^q Int;
+    Wait^{q+2} at p = 1, q = 2, with the two variants of f inlined. The
+    deadlocking original receives first in both threads and fails the
+    check of T-LetPair in one of them. *)
+
+Definition dfQa : msty := MSeq (MRcv (PZ 1) MPUnit) (MEnd (PZ 3) true).
+Definition dfQb : msty := MSeq (MRcv (PZ 2) MPUnit) (MEnd (PZ 4) true).
+
+Definition df_T1 : expr :=
+  LetP (App ERecv (Var 4)) (App (Lam (LetU (App EClos (Var 1)) (App EClos (Var 0)))) (App ESend (Pair EUnit (Var 3)))).
+Definition df_T2 : expr :=
+  App (Lam (LetP (App ERecv (Var 2)) (LetU (App EClos (Var 2)) (App EClos (Var 0))))) (App ESend (Pair EUnit (Var 2))).
+
+Definition df_main : expr :=
+  LetP (App ENew EUnit) (LetP (App ENew EUnit) (LetU (App ESpawn (Lam df_T1)) df_T2)).
+
+Lemma df_main_typed : ∃ ef e', mtyped pc0 [] df_main MUnit ef e'.
+Proof.
+  do 2 eexists. unfold df_main.
+  eapply (m_new _ _ _ _ dfQa (PZ 0) 1). eapply (m_new _ _ _ _ dfQb (PZ 0) 1).
+  eapply (m_letu _ _ [Some _; None; None; Some _] [None; Some _; Some _; None]); [msp| | |apply plt_nil].
+  { (* T1 *)
+    eapply m_fork. eapply m_lam. unfold df_T1.
+    eapply (m_recv _ _ [None; None; None; None; Some _] [Some _; Some _; None; None; None] _ _ _ _ false (PZ 1) MPUnit
+              (MEnd (PZ 3) true) p01); [msp|apply m_var; onlyun|split; [done|split; [apply plt_none|plt0]]| |plt0].
+    eapply (m_let _ _ [None; None; None; Some _; None; None; None] [Some _; Some _; Some _; None; None; None; None]);
+      [msp| | |].
+    - eapply (m_send _ _ [None; None; None; None; None; None; None] [None; None; None; Some _; None; None; None]
+                _ _ _ _ true (PZ 2) MPUnit (MEnd (PZ 4) true) p01);
+        [msp|apply m_unit; allun|apply m_var; onlyun|split; [done|split; [apply plt_none|plt0]]|apply plt_nil|apply plt_none].
+    - eapply (m_letu _ _ [None; Some _; None; None; None; None; None; None] [Some _; None; Some _; Some _; None; None; None; None]);
+        [msp| | |].
+      + eapply (m_close _ _ _ _ false (PZ 3) true p01); [apply m_var; onlyun|done].
+      + eapply (m_close _ _ _ _ true (PZ 4) true p01); [apply m_var; onlyun|done].
+      + plt0.
+    - plt0. }
+  (* T2 *)
+  unfold df_T2.
+  eapply (m_let _ _ [None; None; Some _; None] [None; Some _; None; None]); [msp| | |].
+  - eapply (m_send _ _ [None; None; None; None] [None; None; Some _; None]
+              _ _ _ _ true (PZ 1) MPUnit (MEnd (PZ 3) true) p01);
+      [msp|apply m_unit; allun|apply m_var; onlyun|split; [done|split; [apply plt_none|plt0]]|apply plt_nil|apply plt_none].
+  - eapply (m_recv _ _ [None; None; Some _; None; None] [Some _; None; None; None; None] _ _ _ _ false (PZ 2) MPUnit
+              (MEnd (PZ 4) true) p01); [msp|apply m_var; onlyun|split; [done|split; [apply plt_none|plt0]]| |].
+    + eapply (m_letu _ _ [None; None; Some _; None; None; None; None] [Some _; Some _; None; None; None; None; None]);
+        [msp| | |].
+      * eapply (m_close _ _ _ _ true (PZ 3) true p01); [apply m_var; onlyun|done].
+      * eapply (m_close _ _ _ _ false (PZ 4) true p01); [apply m_var; onlyun|done].
+      * plt0.
+    + plt0.
+  - plt0.
+Qed.
+
+Theorem df_mp2_deadlock_free : ∃ ef e', mtyped pc0 [] df_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
+Proof.
+  destruct df_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp2_deadlock_free.
+Qed.
