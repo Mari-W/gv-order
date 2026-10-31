@@ -154,3 +154,74 @@ Proof.
         one_inst. apply Forall_singleton. done.
       * apply plt_none.
 Qed.
+
+(** A main program: one thread selects the tree Node(Leaf, Leaf) on a
+    channel of type TreeChannel; Wait⁹ with sequence 1 + 2k, the other
+    receives it with receiveTree and waits. *)
+
+Definition K0 : msty := MEnd (PZ 9) true.
+Definition Qc : msty := MSeq TC K0.
+
+Definition rt_sender : expr :=
+  App EClos (App ESel1 (App ESel1 (App ESend (Pair EUnit (App ESel2 (Var 1)))))).
+
+Definition rt_main : expr :=
+  App (Lam (LetP (App ENew EUnit)
+    (LetU (App ESpawn (Lam rt_sender))
+          (App (Lam (App EClos (Var 0))) (App (Var 2) (Var 1)))))) receiveTree.
+
+Definition NN (h : Z) : msty := MSeq (MRcv (PZ h) MPUnit) (MSeq TC TC).
+
+Lemma pc0_val v ts : models pc0 v ts → v = [] ∧ ts = [].
+Proof. done. Qed.
+
+Ltac oeq0 := intros ?v ?ts [-> ->]; apply oeq_hdt; vm_compute; reflexivity.
+Ltac plt0 := right; intros ?v ?ts [-> ->] ?l ?Hl;
+  repeat (apply elem_of_cons in Hl as [->|Hl]; [vm_compute; done|]); by apply elem_of_nil in Hl.
+Ltac seq0 := intros ?ss ?Hl ?Hf; destruct ss; [|discriminate]; rewrite !sinst_nil.
+
+Lemma rt_sender_typed : ∃ ef e',
+  mtyped pc0 [Some MUnit; Some (MCh true Qc (PR (PZ 1) 2)); None; None] rt_sender MUnit ef e'.
+Proof.
+  do 2 eexists. unfold rt_sender.
+  eapply (m_close _ _ _ _ true (PZ 9) true (PR (PZ 7) 2)); [|done].
+  eapply (m_eq _ _ _ _ true (MSeq MSkip K0) _ (PR (PZ 7) 2) (PR (PZ 7) 2)); [|split; [|split; [done|oeq0]]].
+  2:{ seq0. apply seq_skip_l, hcontractive_contractive, hcontractive_end. }
+  eapply (m_sel _ _ _ _ true (PZ 5) (MSeq MSkip K0) (MSeq (NN 6) K0) (PR (PZ 7) 2) _ false); [|split; [done|plt0]].
+  eapply (m_eq _ _ _ _ true (MSeq (MSeq MSkip TC) K0) _ (PR (PZ 5) 2) (PR (PZ 7) 2)); [|split; [|split; [done|oeq0]]].
+  2:{ seq0. apply seq_unf. vm_compute. reflexivity. }
+  eapply (m_sel _ _ _ _ true (PZ 3) (MSeq (MSeq MSkip TC) K0) (MSeq (MSeq (NN 4) TC) K0) (PR (PZ 5) 2) _ false);
+    [|split; [done|plt0]].
+  eapply (m_eq _ _ _ _ true (MSeq (MSeq TC TC) K0) _ (PR (PZ 3) 2) (PR (PZ 5) 2)); [|split; [|split; [done|oeq0]]].
+  2:{ seq0. apply seq_unf. vm_compute. reflexivity. }
+  eapply (m_send _ _ [None; None; None; None] [Some _; Some _; None; None] _ _ _ _ true (PZ 2) MPUnit
+            (MSeq (MSeq TC TC) K0) (PR (PZ 3) 2)); [msp|apply m_unit; allun| |split; [done|split; [apply plt_none|plt0]]|apply plt_nil|apply plt_none].
+  eapply (m_eq _ _ _ _ true (MSeq (NN 2) K0) _ (PR (PZ 3) 2) (PR (PZ 3) 2)); [|split; [|split; [done|oeq0]]].
+  2:{ seq0. cbn. apply seq_assoc; [apply hcontractive_rcv|apply hcontractive_seq; apply TDu_hc|apply hcontractive_end]. }
+  eapply (m_sel _ _ _ _ true (PZ 1) (MSeq MSkip K0) (MSeq (NN 2) K0) (PR (PZ 3) 2) _ true); [|split; [done|plt0]].
+  eapply (m_eq _ _ _ _ true Qc _ (PR (PZ 1) 2) (PR (PZ 3) 2)); [|split; [|split; [done|oeq0]]].
+  2:{ seq0. apply seq_unf. vm_compute. reflexivity. }
+  apply m_var. onlyun.
+Qed.
+
+Lemma rt_main_typed : ∃ ef e', mtyped pc0 [] rt_main MUnit ef e'.
+Proof.
+  destruct (receiveTree_typed pc0) as [er Hr]. destruct rt_sender_typed as (es & es' & Hs).
+  do 2 eexists. unfold rt_main.
+  eapply (m_let _ _ [] []); [msp|exact Hr| |apply plt_nil].
+  eapply (m_new _ _ _ _ Qc (PZ 1) 2).
+  eapply (m_letu _ _ [Some _; None; None] [None; Some _; Some _]); [msp| | |apply plt_nil].
+  - eapply m_fork. eapply m_lam. exact Hs.
+  - eapply (m_let _ _ [None; Some _; Some _] [None; None; Some _]); [msp| | |apply plt_none].
+    + eapply (m_appseg _ _ [None; None; Some _] [None; Some _; None] _ _ _ _ false 1 (MSeq TC (MTV 0)) (MTV 0) [K0]);
+        [msp|apply m_var; onlyun|done|by apply Forall_singleton| |cbn; split; [done|lia]|cbn; lia
+        |apply m_var; onlyun|apply plt_nil|apply pntop_nil].
+      intros ss Hl _. destruct ss; [|discriminate]. apply Forall_singleton. apply hcontractive_end.
+    + eapply (m_open _ _ _ _ 0 false K0 0 MUnit); [done|cbn; set_solver|cbn; set_solver|].
+      cbn. eapply (m_close _ _ _ _ false (PZ 9) true (PX 0 [])); [apply m_var; onlyun|done].
+Qed.
+
+Theorem rt_mp2_deadlock_free : ∃ ef e', mtyped pc0 [] rt_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
+Proof.
+  destruct rt_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp2_deadlock_free.
+Qed.
