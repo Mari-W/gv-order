@@ -59,6 +59,11 @@ Status 2026-10-30 for Padovani and Novara. Fragment v1 with repair R2 is done in
 Rocq (theories/pn/, `pn_deadlock_free`), with fibo and the signal pipe.
 padovani-novara.md §7 has the details and every discrepancy.
 
+Status 2026-10-31 for Mordido and Pérez. Stage 1 is done on paper
+(mordido-perez.md, mordido-perez-counterexamples.txt). Five closed programs type
+and get stuck, each with a local repair, and one deadlock-free program types
+there and not here (mordido-perez.md 9.5).
+
 1. Points from priorities. A PGV session type writes a priority o on every action,
    !^o T.S. The instant of that action gets rank o, and the world orders instants
    by rank. Every PGV side condition has to become a strict fact. Where PGV
