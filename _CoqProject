@@ -51,4 +51,6 @@ theories/examples/cfst/TreeCopy.v
 theories/examples/cfst/Stream.v
 theories/examples/cfst/CfstDeadlock.v
 theories/examples/cfst/CfstScheduler.v
+theories/examples/cfst/TreeSum.v
+theories/examples/cfst/ArithServer.v
 theories/counterexamples/DropCounter.v
