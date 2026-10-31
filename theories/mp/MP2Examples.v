@@ -366,3 +366,170 @@ Theorem df_mp2_deadlock_free : ∃ ef e', mtyped pc0 [] df_main MUnit ef e' ∧ 
 Proof.
   destruct df_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp2_deadlock_free.
 Qed.
+
+(** ** Two streams in a cycle (Listings 1.1 and 1.2, p. 4)
+
+      Stream    = µβ.∀^S ι. !^ι Unit; β
+      client    : ∀p q (p < q < p + 2). Stream⟨p, 2⟩ →^{⊤,⊥}_un dual Stream⟨q, 2⟩ →^{p,⊤}_lin Unit
+      newclient : ∀p q (q < p < q + 2). the same type
+      main = let (w1, r1) = new Stream 1 2 in let (w2, r2) = new Stream 2 2 in
+             fork (λ_. client{1, 2} w1 r2); newclient{2, 1} w2 r1
+
+    As in version 1 the abstraction names the head q of c2 as well. inst
+    is T-Eq at the sequence, which unfolds µ and pops the head. *)
+
+Definition st0 : msty := MSeq (MSnd (PI 0) MPUnit) MVar.
+Definition stream : msty := MRec st0.
+
+Definition cl_ctx (lt : Z → Z → Prop) : pctx :=
+  PCtx 2 0 (λ v ts, ts = [] ∧ ∃ p q, v = [p; q] ∧ lt p q).
+
+Definition cl_ty (lt : Z → Z → Prop) : mty :=
+  MPoly (cl_ctx lt) (MCh false stream (PR (PV 0 0) 2)) []
+    (MArr (MCh true stream (PR (PV 1 0) 2)) [LC stream (PV 0 0) 2] [PTop] MUnit).
+
+Definition cl_lt (p q : Z) : Prop := (p < q < p + 2)%Z.
+Definition ncl_lt (p q : Z) : Prop := (q < p < q + 2)%Z.
+
+Definition client : expr :=
+  EBox (Lam (Lam (App (Lam (LetP (App ERecv (Var 1)) (App (App (Var 5) (Var 2)) (Var 0))))
+                      (App ESend (Pair EUnit (Var 1)))))).
+
+Definition newclient : expr :=
+  EBox (Lam (Lam (LetP (App ERecv (Var 0))
+                   (App (Lam (App (App (Var 5) (Var 0)) (Var 1)))
+                        (App ESend (Pair EUnit (Var 3))))))).
+
+Definition st_body : expr :=
+  LetP (App ENew EUnit) (LetP (App ENew EUnit)
+    (LetU (App ESpawn (Lam (App (App (Var 6) (Var 4)) (Var 1))))
+          (App (App (Var 4) (Var 1)) (Var 2)))).
+
+(** client and newclient are arguments, so both are typed under the
+    empty environment. *)
+Definition st_main : expr := App (App (Lam (Lam st_body)) client) newclient.
+
+Lemma m_app_poly' Θ Γ Γ1 Γ2 e1 e2 e1' e2' Θ' T σ V ef1 ef2 σs τs V' ef :
+  msplit Γ Γ1 Γ2 → mtyped Θ Γ1 e1 (MPoly Θ' T σ V) ef1 e1' → pinst_ok Θ Θ' σs τs →
+  tpure (pc_nt Θ') T → tpure (pc_nt Θ') V →
+  mtyped Θ Γ2 e2 (msub σs τs T) ef2 e2' → plt Θ ef1 (envp Γ2) → pntop Θ ef2 →
+  V' = msub σs τs V → ef = ef1 ++ ef2 ++ (psub σs <$> σ) →
+  mtyped Θ Γ (App e1 e2) V' ef (App (App EForce e1') e2').
+Proof. intros ???????? -> ->. by eapply m_app_poly. Qed.
+
+Lemma oeq_st v ts j n :
+  oeq (DCh (mclose v ts stream) (pclose v (PV j n)) 2)
+      (DCh (mclose v ts (MSeq (MSnd (PV j n) MPUnit) stream)) (pclose v (PV j (n + 2))) 2).
+Proof. apply oeq_hdt. cbn. by rewrite Z.add_0_r, Z.add_assoc. Qed.
+
+Lemma seq_st : seq (ers stream) (ers (MSeq (MSnd (PV 0 0) MPUnit) stream)).
+Proof. apply seq_unf. vm_compute. reflexivity. Qed.
+
+(** T-Eq at a stream: the head ι + n becomes an action, the sequence pops. *)
+Lemma m_inst_st Θ Γ e e' pol j n ef :
+  pc_nt Θ = 0 →
+  mtyped Θ Γ e (MCh pol stream (PR (PV j n) 2)) ef e' →
+  mtyped Θ Γ e (MCh pol (MSeq (MSnd (PV j n) MPUnit) stream) (PR (PV j (n + 2)) 2)) ef e'.
+Proof.
+  intros Hnt H. eapply m_eq; [exact H|]. split.
+  - intros ss Hl _. rewrite Hnt in Hl. destruct ss; [|discriminate]. rewrite !sinst_nil.
+    exact seq_st.
+  - split; [done|]. intros v ts _. apply oeq_st.
+Qed.
+
+Ltac plt_cl :=
+  right; intros ?v ?ts [-> (?p & ?q & -> & ?Hpq)] ?l ?Hl; simpl in Hl;
+  repeat (apply elem_of_cons in Hl as [->|Hl]; [cbn; unfold cl_lt, ncl_lt in *; lia|]); by apply elem_of_nil in Hl.
+
+Lemma pok_cl lt : (∀ p q, lt p q → lt (p + 2) (q + 2))%Z →
+  pinst_ok (cl_ctx lt) (cl_ctx lt) [PV 0 2; PV 1 2] [].
+Proof.
+  intros Hlt. split_and!; [done|done|repeat constructor|constructor|intros ss _ _; constructor|].
+  intros v ts [-> (p & q & -> & Hpq)]. split; [done|]. exists (p + 2)%Z, (q + 2)%Z. split; [done|]. by apply Hlt.
+Qed.
+
+Lemma tpure_cl k : tpure k (MCh false stream (PR (PV 0 0) 2)) ∧
+  tpure k (MArr (MCh true stream (PR (PV 1 0) 2)) [LC stream (PV 0 0) 2] [PTop] MUnit).
+Proof. split; cbn; repeat split; repeat constructor. Qed.
+
+Lemma client_typed Θ : ∃ e', mtyped Θ [] client (cl_ty cl_lt) [] e'.
+Proof.
+  eexists. unfold client, cl_ty.
+  eapply m_fix; [allun|apply tpure_cl|apply tpure_cl|exists [0%Z; 1%Z], []; split; [done|]; exists 0%Z, 1%Z; split; [done|]; unfold cl_lt; lia| |left; done].
+  eapply m_lam.
+  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  eapply (m_let _ _ [None; Some _; None] [Some _; None; Some _]); [msp| | |].
+  - eapply (m_send _ _ [None; None; None] [None; Some _; None] _ _ _ _ false (PV 0 0) MPUnit stream (PR (PV 0 2) 2));
+      [msp|apply m_unit; allun| |split; [done|split; [apply plt_none|plt_cl]]|apply plt_nil|apply plt_none].
+    apply m_inst_st; [done|]. apply m_var; onlyun.
+  - eapply (m_recv _ _ [None; Some _; None; None] [Some _; None; None; Some _] _ _ _ _ true (PV 1 0) MPUnit stream (PR (PV 1 2) 2));
+      [msp| |split; [done|split; [apply plt_none|plt_cl]]| |].
+    + apply m_inst_st; [done|]. apply m_var; onlyun.
+    + eapply (m_app _ _ [None; None; Some _; None; None; Some _] [Some _; Some _; None; None; None; None]); [msp| | |apply plt_nil|apply plt_nil].
+      * eapply (m_app_poly' _ _ [None; None; None; None; None; Some _] [None; None; Some _; None; None; None]
+                  _ _ _ _ _ _ _ _ _ _ [PV 0 2; PV 1 2] []);
+          [msp|apply m_var; onlyun|apply pok_cl; unfold cl_lt; lia|apply tpure_cl|apply tpure_cl|apply m_var; onlyun|apply plt_nil|apply pntop_nil|reflexivity|reflexivity].
+      * apply m_var; onlyun.
+    + plt_cl.
+  - plt_cl.
+Qed.
+
+Lemma newclient_typed Θ : ∃ e', mtyped Θ [] newclient (cl_ty ncl_lt) [] e'.
+Proof.
+  eexists. unfold newclient, cl_ty.
+  eapply m_fix; [allun|apply tpure_cl|apply tpure_cl|exists [1%Z; 0%Z], []; split; [done|]; exists 1%Z, 0%Z; split; [done|]; unfold ncl_lt; lia| |left; done].
+  eapply m_lam.
+  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  eapply (m_recv _ _ [Some _; None; None] [None; Some _; Some _] _ _ _ _ true (PV 1 0) MPUnit stream (PR (PV 1 2) 2));
+    [msp| |split; [done|split; [apply plt_none|plt_cl]]| |].
+  - apply m_inst_st; [done|]. apply m_var; onlyun.
+  - eapply (m_let _ _ [None; None; None; Some _; None] [Some _; Some _; None; None; Some _]); [msp| | |].
+    + eapply (m_send _ _ [None; None; None; None; None] [None; None; None; Some _; None] _ _ _ _ false (PV 0 0) MPUnit stream (PR (PV 0 2) 2));
+        [msp|apply m_unit; allun| |split; [done|split; [apply plt_none|plt_cl]]|apply plt_nil|apply plt_none].
+      apply m_inst_st; [done|]. apply m_var; onlyun.
+    + eapply (m_app _ _ [Some _; None; None; None; None; Some _] [None; Some _; Some _; None; None; None]); [msp| | |apply plt_nil|apply plt_nil].
+      * eapply (m_app_poly' _ _ [None; None; None; None; None; Some _] [Some _; None; None; None; None; None]
+                  _ _ _ _ _ _ _ _ _ _ [PV 0 2; PV 1 2] []);
+          [msp|apply m_var; onlyun|apply pok_cl; unfold ncl_lt; lia|apply tpure_cl|apply tpure_cl|apply m_var; onlyun|apply plt_nil|apply pntop_nil|reflexivity|reflexivity].
+      * apply m_var; onlyun.
+    + plt_cl.
+  - plt_cl.
+Qed.
+
+Lemma pok_main lt p q : lt p q → pinst_ok pc0 (cl_ctx lt) [PZ p; PZ q] [].
+Proof.
+  intros H. split_and!; [done|done|repeat constructor|constructor|intros ss _ _; constructor|].
+  intros v ts [-> ->]. split; [done|]. exists p, q. split; [done|done].
+Qed.
+
+Lemma st_main_typed : ∃ ef e', mtyped pc0 [] st_main MUnit ef e'.
+Proof.
+  destruct (client_typed pc0) as [ec Hc]. destruct (newclient_typed pc0) as [en Hn].
+  do 2 eexists. unfold st_main.
+  eapply (m_app _ _ [] []); [msp| |exact Hn|apply plt_none|apply plt_nil].
+  eapply (m_app _ _ [] []); [msp| |exact Hc|apply plt_none|apply plt_nil].
+  eapply m_lam. eapply m_lam. unfold st_body.
+  eapply (m_new _ _ _ _ stream (PZ 1) 2). eapply (m_new _ _ _ _ stream (PZ 2) 2).
+  eapply (m_letu _ _ [Some _; None; None; Some _; None; Some _] [None; Some _; Some _; None; Some _; Some _]);
+    [msp| | |apply plt_nil].
+  - eapply m_fork. eapply m_lam.
+    eapply (m_app _ _ [None; None; None; None; Some _; None; Some _] [Some _; Some _; None; None; None; None; None]);
+      [msp| | |apply plt_nil|apply plt_nil].
+    + eapply (m_app_poly' _ _ [None; None; None; None; None; None; Some _] [None; None; None; None; Some _; None; None]
+                _ _ _ _ _ _ _ _ _ _ [PZ 1; PZ 2] []);
+        [msp|apply m_var; onlyun|apply pok_main; unfold cl_lt; lia|apply tpure_cl|apply tpure_cl|apply m_var; onlyun
+        |apply plt_nil|apply pntop_nil|reflexivity|reflexivity].
+    + apply m_var; onlyun.
+  - eapply (m_app _ _ [None; Some _; None; None; Some _; Some _] [None; None; Some _; None; None; None]);
+      [msp| | |apply plt_nil|apply plt_nil].
+    + eapply (m_app_poly' _ _ [None; None; None; None; Some _; Some _] [None; Some _; None; None; None; None]
+                _ _ _ _ _ _ _ _ _ _ [PZ 2; PZ 1] []);
+        [msp|apply m_var; onlyun|apply pok_main; unfold ncl_lt; lia|apply tpure_cl|apply tpure_cl|apply m_var; onlyun
+        |apply plt_nil|apply pntop_nil|reflexivity|reflexivity].
+    + apply m_var; onlyun.
+Qed.
+
+Theorem st_mp2_deadlock_free : ∃ ef e', mtyped pc0 [] st_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
+Proof.
+  destruct st_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp2_deadlock_free.
+Qed.
