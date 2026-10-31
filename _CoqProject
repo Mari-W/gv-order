@@ -64,3 +64,4 @@ theories/mp/MP2Types.v
 theories/mp/MP2World.v
 theories/mp/MP2Typing.v
 theories/mp/MP2Translate.v
+theories/mp/MP2Examples.v
