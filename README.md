@@ -32,7 +32,7 @@ has no axioms and no admitted proofs.
 
 `types/`, the types.
 
-- `Types.v`: types, context-free session types (Skip, ;, !P, ?P, ⊕, &, Close, μ), their head normal form `unfoldS` (unr), points, constraints, duality, environments.
+- `Types.v`: types with boxes over points and session variables and existential points, context-free session types (Skip, ;, !P, ?P, ⊕, &, Close, μ), their head normal form `unfoldS` (unr), points, constraints, duality, environments.
 - `SessionEquiv.v`: bisimilarity ≈ on heads, the laws of ; and μ, and duality ⊥.
 - `LinearEnv.v`: linear variable environments, splitting and weakening.
 
@@ -40,7 +40,7 @@ has no axioms and no admitted proofs.
 
 - `Worlds.v`: worlds, their facts ≡ and ≺, extension and strictness.
 - `Readiness.v`: readiness of terms (with a frame) and of processes.
-- `LogicalRelation.v`: V, E and P with O-Select, O-Branch, Q-Select and Q-Branch, semantic typing, and `adequacy`.
+- `LogicalRelation.v`: V, E and P with O-Select, O-Branch, Q-Select and Q-Branch, V-Box over session instances and V-Ex, semantic typing, and `adequacy`.
 
 `invariance/`, properties of the relation (spec §10).
 
@@ -65,7 +65,7 @@ has no axioms and no admitted proofs.
 
 - `Bind.v`: evaluation contexts (`Erel_bind`).
 - `TermRules.v`: one compositionality lemma per typing rule.
-- `BoxRules.v`: the rules that need the box, E-App, E-Force, E-Exp and E-Contract.
+- `BoxRules.v`: the rules that need the box, E-App, E-Force, E-Exp and E-Contract, and E-Pack and E-Open for existential points.
 - `SemanticRules.v`: the infinitary judgment of these rules and its fundamental theorem.
 
 `static/`, the static system (spec §9).
@@ -83,12 +83,13 @@ has no axioms and no admitted proofs.
 - `RequestReply.v`, `Relay.v`, `TailCall.v`, `ReceivedChain.v`, `Forwarder.v`: recursive boxes with infinite constraints.
 - `Ordered.v`: a box whose constraint orders its two arguments.
 - `Rejected.v`: programs the static system rejects (`rr_call_underivable`).
+- `SendTreeType.v`: the type of sendTree with the coarse ceiling, a smoke test (SHARP-EDGES 73).
 
 `counterexamples/`
 
 - `DropCounter.v`: why the fresh point of E-Abs and E-Exp is a frame variable.
 
-On branch `cfst` (context-free session types, SHARP-EDGES 72) `pgv/` and `pn/` stay in the tree but are not part of the build.
+On branch `cfst` (context-free session types, SHARP-EDGES 72 and 73) `pgv/` and `pn/` stay in the tree but are not part of the build.
 
 `pgv/`, adequacy for repaired Priority GV (docs/extensions/adequacy/pgv-adequacy.md).
 

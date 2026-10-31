@@ -1,4 +1,4 @@
-# Order-based GV♯: specification (state of 2026-10-31, after sharp edges 68; branch cfst: context-free session types, sharp edges 72)
+# Order-based GV♯: specification (state of 2026-10-31, after sharp edges 68; branch cfst: context-free session types, sharp edges 72, 73)
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
@@ -97,6 +97,11 @@ C    ⊆ { x ≺ y,  x ≡ y }  constraint of a box: any set of positive facts, 
                           Only positive facts: they persist along W ⊑ W′, so V-Box is monotone.
                           A fact x ⊀ y would not persist. An unsatisfiable C is harmless, its box
                           is never forced.
+           | □(∀ιs αs. C. ∗ ⊸^u_⊤ T) | ∃ιs≽ℓ. C. T          (K6, K7, sharp edges 73)
+                          A box binds session variables αs next to its ιs. αs occur in session
+                          positions only. The existential binds points, carries a lower point ℓ
+                          (heads(∃ιs≽ℓ. C. T) = {ℓ}) and a positive constraint C as for boxes.
+                          Rocq: TBox n k C T, TEx ℓ n C T.
 u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥: never blocks)
 ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
                           (no ⊤ for u: every function has a known upper point, a function that may
@@ -226,6 +231,14 @@ V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C[xs/ιs] hol
            x ≡ y as x[xs/ιs] ≡_{W′} y[xs/ιs]. Monotone along ⊑ because C is positive)
           (≈_W relates two constraints when each fact of one has a fact of the other with
            points up to ≡_W)
+V-Box with αs  as V-Box, and in addition at every list ss of hereditarily contractive session
+          types for the αs, with the thunk in V at (∗ ⊸^u_⊤ T)[xs/ιs][ss/αs]. The instances need
+          not be closed. Box bodies with αs compare by ≈_W with session types on the nose
+          (teqW_r), because ≈ of open session types is not closed under instances (sharp edges 73)
+V-Ex      {ℓ} ≼_W heads(Σ)    xs known to W,  C[xs/ιs] holds in W,  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧
+          ⇒   v ∈ V^W_n⟦Σ ⊢ ∃ιs≽ℓ. C. T⟧                                       (K7, sharp edges 73)
+          (Rocq: Vrel_ex_iff. Vdef carries a point substitution so that the clause stays
+           structural)
 
 payload at x           P[x] ≔ T[x.1, …, x.m / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.
                        A plain substitution, no quantifier on either side. The sender's channels
@@ -400,6 +413,14 @@ E-Exp      ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊢^{μ}_{Ψ, (C,ιs)}
            those of the current one. ι ≺ ι′ does not give ι+1 ≺ ι′+1 (rr_call_underivable).
            ιs are point variables in the premise, typed once (57). E-Const at send and recv asks
            the payload ∃ιs.T to have no free point variable beyond ιs, the "all points of T bound" of §4 (57)
+E-Exp with αs  the premise of E-Exp at every list ss of hereditarily contractive session types,
+           at type T[ss/αs], infinitary in ss (sharp edges 73). force instantiates the αs at such
+           an ss and returns T[ιs′/ιs][ss/αs]
+E-Pack     Θ; Δ ⊢^F t : T[xs/ιs]    xs known    Γ ⊢ C[xs/ιs]    Γ ⊢ {ℓ} ≼ heads(T[xs/ιs])
+           ⇒   Θ; Δ ⊢^F t : ∃ιs≽ℓ. C. T                                         (sharp edges 73)
+E-Open     Θ; Δ, x : T, Δ′ ⊢^F_{Ψ, (C,ιs)} t : U    ιs fresh    T not unlimited
+           ⇒   Θ; Δ, x : ∃ιs≽ℓ. C. T, Δ′ ⊢^F_Ψ t : U                             (sharp edges 73)
+           (a rule on the environment, no term former. Rocq: t_open shifts Φ, Ψ, Θ, Δ, F and U)
 E-Weak, E-Contract   as in the paper, with ⊢^F
 E-Conv     Θ; Δ ⊢^F t : T     T ≈_Γ T′   ⇒   Θ; Δ ⊢^F t : T′               (sharp edges 67)
            (≈ on session types is the bisimilarity of §4, so E-Conv applies the laws of ; and μ)
@@ -470,6 +491,13 @@ E-Exp       ∀xs known with C[xs/ιs], F′ with {u[xs/ιs]} ≺ F′.
             ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C. ∗ ⊸^u_⊤ T)                  (sharp edges 58, 63, 65)
 E-Force     Θ; Δ ⊨^F t : □(∀ιs. C. ∗ ⊸^u_⊤ T)    xs known, C[xs/ιs]    {u[xs/ιs]} ≺ F
             ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
+            (with αs, E-Exp and E-Force take every hereditarily contractive ss as well,
+             sem_typed_box and sem_typed_force)
+E-Pack      Θ; Δ ⊨^F t : T[xs/ιs]    xs known, C[xs/ιs]    {ℓ} ≼ heads(T[xs/ιs])
+            ⇒   Θ; Δ ⊨^F t : ∃ιs≽ℓ. C. T                     (sem_typed_pack, via Erel_Vsub)
+E-Open      Δ(x) = ∃ιs≽ℓ. C. T    ∀W′ ⊒ W, xs known to W′ with C[xs/ιs].
+                Θ; Δ[x : T[xs/ιs]] ⊨^F_{W′} t : U
+            ⇒   Θ; Δ ⊨^F t : U                                (sem_typed_open)
 E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
 E-Conv      Θ; Δ ⊨^F t : T,   T ≈_W T′   ⇒   Θ; Δ ⊨^F t : T′          (sharp edges 67)

@@ -949,6 +949,108 @@ not ported. The examples port by rewriting !P.S to !P;S and ?P.S to ?P;S.
 No deviation from K1, K2, K4, K5 or K9. The deviation from K3 is the one
 above. K6, K7 and K8 belong to stage C.
 
+**73. Context-free session types, stage C (Claude, 2026-10-31, branch cfst).**
+Boxes bind session variables (K6), a new type former binds points
+existentially (K7), and the type of sendTree is expressible with the coarse
+ceiling (K8). The statements of soundness, the fundamental theorems, adequacy,
+Prel_connect, Prel_connect_n, Prel_term, Prel_indep, Prel_internalize and
+Erel_bind are unchanged. No obstruction came up.
+
+Boxes over session variables (K6, Types.v). TBox n k C T binds n points and k
+session variables. sinst_ty lifts its substitution k times under the box, as
+under k µ's, and sclosed_ty counts the k binders. Point instantiation never
+enters a session type, so pinst_ty and sinst_ty commute on the nose
+(pinst_sinst). force instantiates both binders. KTForce takes points xs with
+C[xs] and session types ss, length ss = k and every s in ss hereditarily
+contractive, and gives the type
+T[xs/ιs][ss/αs] for the result.
+
+V-Box (LogicalRelation.v). The thunk is in V at every later world, every
+instance xs of the points that meets C, and every list ss of hereditarily
+contractive session types. The instances need not be closed. A free session
+variable in a head relates nothing, because V-Chan and the step clauses read
+only heads that unfoldS produces. Contractiveness is needed, because the laws
+that E-Conv uses (seq_skip_l, seq_assoc) hold only for hereditarily
+contractive types (entry 72). K6 says closed. We quantify over contractive ones
+and require nothing else. The recursion of V stays well founded. V-Box reads
+the instantiated body only through Vfun at the levels below n, and Vlam (V at
+an arrow) is a clause of the lower level, so the size of ss never matters.
+
+≈ on box bodies. ≈ and ⊥ of open session types are not closed under
+substitution. Two open types can be bisimilar while an instance of their
+variables breaks the bisimulation, because a variable is a head whose
+continuation is compared as a whole. eqT therefore compares the body of a box
+with k > 0 by equality, and teqW (≈ up to aliases in W) becomes teqW_r ρ with
+the session types compared by ρ. teqW is teqW_r ≈. A box body with k > 0
+uses teqW_r (=), which aliasing points cannot break (teqW_r_pinst_l) and
+session instances keep (teqW_eq_sinst). Conversion inside a box body with
+session variables happens at each instance, in the infinitary premise below.
+
+E-Exp (Typing.v). The body is typed once with the ιs as point variables 0, …,
+m−1, as before, and at every hereditarily contractive instance ss of the αs,
+at type T[ss/αs]. Deviation from K6, which asked for the αs as variables in
+the body. With the αs as variables the substitution lemma for session
+variables would need ≈ and ⊥ closed under instances, which fails as above.
+The premise is infinitary in ss and finitary in points. typed_term_wf_s picks
+the instance Closeᵏ (slist_witness). typed_sem_rules and typed_pinst
+instantiate ss in the premise and use pinst_sinst. The examples have k = 0,
+use the tactic box_k0 for the one empty instance and typed_force0 for force.
+
+Existential points (K7). TEx lb n C T is ∃ι₀ … ιₙ₋₁ ≽ lb. C. T. Deviation from
+K7. The former carries a lower point lb. Every closure and every value that
+holds channels needs a lower bound of its heads for the frame discipline, and
+heads(∃ι≽lb. C. T) is {lb}. lb = None is ⊤ and forces an empty environment,
+as on ⊸. V⟦TEx lb n C T⟧ holds when lb ≼ heads(Θ) and some known xs of length
+n with C[xs] in W carry the value in V⟦T[xs/ιs]⟧ (Vrel_ex_iff). C is any set
+of positive facts, as for boxes.
+
+Making V structural at ∃. T[xs/ιs] is not a subterm of the existential, so
+Vdef carries a point substitution σ and reads T under it (Vdef_ext, Vdef_comp,
+Vdef_inst). Proofs by induction on types use ty_ind_ex, whose ∃ case gets the
+hypothesis at every instance, by induction on tsize, which point
+instantiation keeps. A λ can now be in V at an existential type, so the old
+Vrel_Vfun is false. Vlam, V restricted to arrows, replaces it in V-Box and in
+the invariance proofs.
+
+Invariance. V is monotone at ∃ (Monotonicity.v), invariant under point
+swaps (PointRenaming.v), channel swaps, moves and junk collapse
+(ChannelRenaming.v, JunkRenaming.v), ≈ (EquivInvariance.v) and ≈ up to aliases
+(PointConversion.v). bcs_hold_conv_sub is the alias transport of a constraint
+without a later world.
+
+E-Pack and E-Open. sem_typed_pack (BoxRules.v) turns a term of type T[xs/ιs]
+into one of type ∃ιs≽lb. C. T when xs is known, C[xs] holds and lb ≼
+heads(T[xs/ιs]). It rests on Erel_Vsub, E closed under any inclusion of V that
+holds in every later world, with the point created at new renamed away from
+the target type as in Erel_tconv. sem_typed_open opens a hypothesis i of type
+∃ιs≽lb. C. T and asks the term at every later world and every known instance
+that meets C, with hypothesis i at T[xs/ιs] (grounding_open). sem_rules has
+sr_pack and sr_open. The static E-Pack asks xs known in Γ, Γ ⊢ C[xs] and
+Γ ⊢ lb ≼ heads(T[xs/ιs]). The static E-Open shifts Φ, Ψ, Θ, Δ, F and U past
+n new point variables, adds the hypothesis (C, ιs) to Ψ like a box body, and
+retypes hypothesis i at T. Two deviations from K7. E-Open is a rule on the
+environment without a term former, because the existential has no runtime
+content. E-Open asks T not unlimited, so that relevance (term_wf) carries
+over from the opened hypothesis to the existential one, which is never
+unlimited. E-Conv compares boxes and existentials by ≈ with their points on
+the nose (steq).
+
+The coarse ceiling (K8, examples/SendTreeType.v). The type is
+
+    TreeC = µX. ⊕(Skip, !∗;X;X)
+    C  = {ι+k ≺ ζ ∣ k}
+    C′ = {ι ≺ ι′} ∪ {ι′+k ≺ ζ ∣ k}
+    sendTree : □(∀ι ζ α. C. ∗ ⊸^⊥_⊤ ((TreeC;α)@ι ⊸^ζ_⊤ ∃ι′≽ι. C′. α@ι′))
+
+C′ needs ι ≺ ι′, which holds because every path through TreeC selects at
+least once, and ι′ below the ceiling for every offset. ι is the lower point of
+the existential. The file proves the type closed in points and in session
+variables, computes its instance at α := Close, shows that C′ at ι′ gives
+C[ι′/ι] for the next call (send_C_after), and that the instant after a select
+stays in C (send_C_shift). The sketch's argument Tree has no counterpart,
+because the calculus has no recursive data types, and !Int is !∗. The term
+and its derivation are stage D.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
