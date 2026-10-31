@@ -99,9 +99,6 @@ Qed.
 Lemma skip_l s : hcontractive s → seq (SSeq SSkip s) s.
 Proof. intros Hs. by apply seq_skip_l, hcontractive_contractive. Qed.
 
-Ltac fsc := cbn; repeat split; lia.
-
-Ltac inlist := solve [repeat first [apply list_elem_of_here | apply list_elem_of_further]].
 
 (** ** drain *)
 

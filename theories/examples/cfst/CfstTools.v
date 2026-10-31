@@ -213,6 +213,11 @@ Qed.
 (** Frame variable lookups after E-Open. *)
 Ltac fv_look := rewrite ?lookup_fmap; simplify_map_eq; reflexivity.
 
+(** Scoping of a concrete fact, and membership in a concrete list. *)
+Ltac fsc := cbn; repeat split; lia.
+
+Ltac inlist := solve [repeat first [apply list_elem_of_here | apply list_elem_of_further]].
+
 (** One typing step, with case. *)
 Ltac cstep :=
   match goal with
