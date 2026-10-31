@@ -584,3 +584,150 @@ Proof.
     by (destruct pol; unfold polS; [by apply seq_dual|done]).
   split; simpl; split; [done|done|by apply se_sym|by apply seq_sym].
 Qed.
+
+(** ** The head action, erased *)
+
+Lemma view_snd pol Q a P K : mview pol Q = ASnd a P K →
+  polS pol (ers Q) = SSeq (SSnd (pm P) (ersp P)) (polS pol (ers K)) ∧ hprio Q = a ∧
+  (Q = MSnd a P K ∨ Q = MRcv a P K).
+Proof. destruct pol, Q; simpl; intros H; try discriminate; injection H as <- <- <-; auto. Qed.
+
+Lemma view_rcv pol Q a P K : mview pol Q = ARcv a P K →
+  polS pol (ers Q) = SSeq (SRcv (pm P) (ersp P)) (polS pol (ers K)) ∧ hprio Q = a ∧
+  (Q = MSnd a P K ∨ Q = MRcv a P K).
+Proof. destruct pol, Q; simpl; intros H; try discriminate; injection H as <- <- <-; auto. Qed.
+
+Lemma view_end pol Q a : mview pol Q = AEnd a → polS pol (ers Q) = SEnd ∧ hprio Q = a.
+Proof. destruct pol, Q; simpl; intros H; try discriminate; injection H as <-; auto. Qed.
+
+Lemma view_sel pol Q a K1 K2 : mview pol Q = ASel a K1 K2 →
+  polS pol (ers Q) = SPlus (polS pol (ers K1)) (polS pol (ers K2)) ∧ hprio Q = a ∧
+  (Q = MSel a K1 K2 ∨ Q = MBra a K1 K2).
+Proof. destruct pol, Q; simpl; intros H; try discriminate; injection H as <- <- <-; auto. Qed.
+
+Lemma view_bra pol Q a K1 K2 : mview pol Q = ABra a K1 K2 →
+  polS pol (ers Q) = SWith (polS pol (ers K1)) (polS pol (ers K2)) ∧ hprio Q = a ∧
+  (Q = MSel a K1 K2 ∨ Q = MBra a K1 K2).
+Proof. destruct pol, Q; simpl; intros H; try discriminate; injection H as <- <- <-; auto. Qed.
+
+(** ** Forcing at an anchor
+
+    The type of a priority abstraction read at B[RAnc σs] is its
+    instance T[σs/ιs] read at B. *)
+
+Lemma evalp_psub v σ ρ : Forall pfin σ → evalp (evalZ v <$> σ) ρ = evalp v (psub σ ρ).
+Proof.
+  intros Hσ. destruct ρ as [| | |j n|]; simpl; try done.
+  rewrite list_lookup_fmap. destruct (σ !! j) as [s|] eqn:E; simpl; [|done].
+  apply (Forall_lookup_1 _ _ _ _ Hσ) in E. destruct s; simpl in E; try done; unfold evalZ; cbn; f_equal; lia.
+Qed.
+
+Lemma pclose_psub v σ ρ : Forall pfin σ → pclose (evalZ v <$> σ) ρ = pclose v (psub σ ρ).
+Proof.
+  intros Hσ. destruct ρ as [| | |j n|]; simpl; try done.
+  rewrite list_lookup_fmap. destruct (σ !! j) as [s|] eqn:E; simpl; [|done].
+  apply (Forall_lookup_1 _ _ _ _ Hσ) in E. destruct s; simpl in E; try done; unfold evalZ; cbn; f_equal; lia.
+Qed.
+
+Lemma psub_top σ ρ : Forall pfin σ → psub σ ρ = PTop ↔ ρ = PTop.
+Proof.
+  intros Hσ. destruct ρ as [| | |j n|]; simpl; try done.
+  destruct (σ !! j) as [s|] eqn:E; simpl; [|done].
+  apply (Forall_lookup_1 _ _ _ _ Hσ) in E. by destruct s.
+Qed.
+
+Lemma xmaxl_psub v σ l : Forall pfin σ → xmaxl (evalZ v <$> σ) l = xmaxl v (psub σ <$> l).
+Proof. intros Hσ. induction l; simpl; [done|]. by rewrite IHl, evalp_psub. Qed.
+Lemma xminl_psub v σ l : Forall pfin σ → xminl (evalZ v <$> σ) l = xminl v (psub σ <$> l).
+Proof. intros Hσ. induction l; simpl; [done|]. by rewrite IHl, evalp_psub. Qed.
+
+Lemma hlen_psub σ l : Forall pfin σ → hlen (psub σ <$> l) = hlen l.
+Proof.
+  intros Hσ. unfold hlen. rewrite length_fmap.
+  assert (PTop ∈ psub σ <$> l ↔ PTop ∈ l) as E.
+  { rewrite list_elem_of_fmap. split; [intros (ρ & Hρ & Hin); symmetry in Hρ;
+      apply (psub_top σ ρ Hσ) in Hρ; by subst|intros Hin; by exists PTop]. }
+  by rewrite (bool_decide_ext _ _ E).
+Qed.
+
+Section anc.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B) (σ : list prio) (Hσ : Forall pfin σ).
+  Abbreviation X := (rpt B (RAnc σ)).
+
+  Lemma den_X_slot v r : models Θ v → den v (rpt X r) = dsl (DAnc (evalZ v <$> σ)) (encode_nat r).
+  Proof. intros Hv. unfold rpt at 1. by rewrite den_slot, (den_anc _ _ _ HB). Qed.
+
+  Lemma hiz_anc ef : opt_rel (seqs Wmp Ψ) (hiz X ef) (hiz B (psub σ <$> ef)).
+  Proof.
+    destruct ef as [|ρ ef]; simpl; [done|]. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    rewrite den_X_slot, (den_hi _ _ _ HB) by done. unfold dsl. rewrite decode_encode_nat.
+    rewrite xmaxl_psub by done. f_equal. symmetry. by apply (hlen_psub σ (ρ :: ef)).
+  Qed.
+
+  Lemma tr_anc T : steq Wmp Ψ (tr X T) (tr B (msub σ T)) ∧ steq Wmp Ψ (tr B (msub σ T)) (tr X T).
+  Proof.
+    induction T as [|p Q h d|T IH1 lo ef V IH2|nv cs T IH1 ef V IH2]; simpl.
+    - done.
+    - assert (seqs Wmp Ψ (rpt X (RCh Q h d)) (rpt B (RCh (mmap (psub σ) Q) (psub σ h) d))) as E.
+      { apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+        rewrite den_X_slot, (den_ch _ _ _ HB) by done. simpl. rewrite decode_encode_nat.
+        rewrite (proj1 (mmap_comp _ _)), (pclose_psub v σ h Hσ).
+        by rewrite (proj1 (mmap_ext _ (pclose v ∘ psub σ) (λ ρ, pclose_psub v σ ρ Hσ)) Q). }
+      rewrite (proj1 (ers_mmap _)). split; (split; [|apply seq_refl]); [done|by apply se_sym].
+    - assert (seqs Wmp Ψ (rpt X (RLo lo)) (rpt B (RLo (psub σ <$> lo)))) as E.
+      { apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+        rewrite den_X_slot, (den_lo _ _ _ HB) by done. simpl. rewrite decode_encode_nat.
+        by rewrite xminl_psub, length_fmap. }
+      pose proof (hiz_anc ef) as Eh.
+      destruct IH1 as [IH1 IH1'], IH2 as [IH2 IH2']. split; split_and!; try done.
+      + destruct (hiz X ef), (hiz B (psub σ <$> ef)); simpl in *; try done. by apply se_sym.
+      + by apply se_sym.
+    - split; simpl; apply teq_refl.
+  Qed.
+End anc.
+
+(** ** fork *)
+
+Section fork.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
+
+  Lemma rename_fork r : rename r fork_tr = fork_tr.
+  Proof. done. Qed.
+  Lemma rename_unitv r : rename r unitv = unitv.
+  Proof. done. Qed.
+
+  Lemma fork_tr_typed Φ Δ0 F lo σ :
+    lenv_empty Δ0 →
+    typed Wmp Φ Ψ ∅ Δ0 F fork_tr (TLolli None None (tr B (MArr MUnit lo σ MUnit)) U).
+  Proof.
+    intros HΔ. pose proof Wmp_wf as HW. set (φ0 := fresh (dom Φ)).
+    apply (t_lam Wmp Φ Ψ ∅ Δ0 F _ _ _ None None φ0); [apply is_fresh| |].
+    { simpl. by rewrite (tenv_heads0 Wmp HW), empty_heads, union_empty_l_L. }
+    set (Φ1 := <[φ0 := None]> Φ).
+    set (fT := tr B (MArr MUnit lo σ MUnit)).
+    set (E := Some fT :: Δ0).
+    eapply (t_letu Wmp Φ1 Ψ ∅ ∅ ∅ E E (lenv_nones E)); [by apply comp0|apply lenv_split_nones_r| |].
+    2:{ apply tv_unitv; [done|apply nones_unl]. }
+    set (ub := hiz B σ). set (lb := Some (rpt B (RLo lo))).
+    eapply (t_app Wmp Φ1 Ψ ∅ ∅ ∅ E (lenv_nones E) E _ _ _ None None (TLolli ub lb TUnit TUnit)).
+    { by apply comp0. } { apply lenv_split_nones_l. } { done. }
+    { apply t_konst; [apply lenv_empty_nones|apply KTSpawn|done]. }
+    set (φ := fresh (dom Φ1)).
+    apply (t_lam Wmp Φ1 Ψ ∅ E _ _ _ _ ub lb φ); [apply is_fresh| |].
+    { simpl. rewrite (tenv_heads0 Wmp HW), empty_heads, union_empty_l_L, union_empty_r_L by done.
+      intros y Hy. apply elem_of_singleton in Hy as ->. left. apply se_refl. }
+    set (Φ2 := <[φ := ub]> Φ1).
+    eapply (t_letu Wmp Φ2 Ψ ∅ ∅ ∅ _ (Some TUnit :: None :: Δ0) (None :: Some fT :: Δ0));
+      [by apply comp0| | |].
+    { constructor. constructor. by apply lenv_split_empty'. }
+    { apply tv_var_unl; [done|done|var_others HΔ]. }
+    assert (ub_below_s Wmp Ψ Φ2 ub (∅, Some φ)) as Hub by apply (ubs_fresh Wmp HW).
+    eapply (typed_force0 Wmp Φ2 Ψ ∅ _ _ _ 0 (BCs [] (λ _, False)) None TUnit []); [done|done| |done|done|].
+    { intros g Hg. apply bcs_open_nil in Hg as [[] _]. }
+    eapply (t_app Wmp Φ2 Ψ ∅ ∅ ∅ _ (None :: Some fT :: Δ0) (lenv_nones (None :: Some fT :: Δ0))
+              _ _ _ ub lb U U).
+    { by apply comp0. } { apply lenv_split_nones_r. } { done. }
+    { apply tv_var_unl; [done|done|var_others HΔ]. }
+    { apply tv_unitv; [done|apply nones_unl]. }
+  Qed.
+End fork.
