@@ -59,3 +59,4 @@ theories/mp/MPTypes.v
 theories/mp/MPTyping.v
 theories/mp/MPWorld.v
 theories/mp/MPTranslate.v
+theories/mp/MPExamples.v
