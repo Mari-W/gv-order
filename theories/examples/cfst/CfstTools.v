@@ -206,7 +206,7 @@ Proof.
   - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
   - intros x y (k & [[-> ->]|[[-> ->]|[[-> ->]|[-> ->]]]]); right; rewrite !elem_of_list_to_set; cbn; set_solver.
   - intros x. unfold lexlt, tree_rank, pt_shift, pt_root. cbn.
-    destruct (pn_root (pt_name x)) as [[|[|[|a]]]| |]; cbn; right; split; try done; lia.
+    destruct (pn_root (pt_name x)) as [[|[|[|a]]]| | |]; cbn; right; split; try done; lia.
   - intros x y (k & [[-> ->]|[[-> ->]|[[-> ->]|[-> ->]]]]); unfold lexlt, tree_rank, id; cbn; lia.
 Qed.
 

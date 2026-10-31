@@ -2,10 +2,11 @@
 
     A world W = (≡, ≺) relates instants (p, b), i.e. points. ≡ is an
     equivalence of aliases with successor congruence (x ≡ y gives
-    x+1 ≡ y+1) and slot congruence (x ≡ y gives x[i] ≡ y[i]), and ≺
-    is a transitive order on ≡-classes that contains program order
-    (p, b) ≺ (p, b+1). A world is strict when ≺ is irreflexive. Worlds
-    are the Kripke index of the logical relation.
+    x+1 ≡ y+1), slot congruence (x ≡ y gives x[i] ≡ y[i]) and branch
+    congruence (x ≡ y gives x◁i ≡ y◁i, K10), and ≺ is a transitive
+    order on ≡-classes that contains program order (p, b) ≺ (p, b+1)
+    and x ≺ x◁i. A world is strict when ≺ is irreflexive. Worlds are
+    the Kripke index of the logical relation.
 
     A world carries its support: the names its facts mention. Outside
     the support only reflexivity and program order hold. The support
@@ -33,7 +34,7 @@ Record world := World {
     finite support. *)
 Fixpoint pn_root (p : pname) : pname :=
   match p with
-  | NSlot q _ _ => pn_root q
+  | NSlot q _ _ | NBr q _ _ => pn_root q
   | _ => p
   end.
 
@@ -87,14 +88,68 @@ Proof. done. Qed.
 Lemma pt_root_slot x i : pt_root (pt_slot x i) = pt_root x.
 Proof. done. Qed.
 
+Lemma pt_root_br x i : pt_root (pt_br x i) = pt_root x.
+Proof. done. Qed.
+
+(** ** Program order
+
+    x ≺ x+1 and x ≺ x◁i, closed under transitivity (K10). It holds in
+    every world, and a size that rises along both steps makes it
+    irreflexive. *)
+Inductive ppo : point → point → Prop :=
+  | ppo_po x : ppo x (pt_shift 1 x)
+  | ppo_br x i : ppo x (pt_br x i)
+  | ppo_trans x y z : ppo x y → ppo y z → ppo x z.
+
+Fixpoint pn_size (p : pname) : nat :=
+  match p with
+  | NConst _ | NVar _ => 0
+  | NSlot q b _ | NBr q b _ => pn_size q + b + 1
+  end.
+
+Definition pt_size (x : point) : nat := pn_size (pt_name x) + pt_off x.
+
+Lemma ppo_size x y : ppo x y → pt_size x < pt_size y.
+Proof.
+  unfold pt_size. induction 1; simpl; [lia|lia|lia].
+Qed.
+
+Lemma ppo_irrefl x : ¬ ppo x x.
+Proof. intros H%ppo_size. lia. Qed.
+
+Lemma ppo_root x y : ppo x y → pt_root x = pt_root y.
+Proof. induction 1; [done|done|congruence]. Qed.
+
+Lemma ppo_same x y : pt_name x = pt_name y → pt_off x < pt_off y → ppo x y.
+Proof.
+  destruct x as [p a], y as [q b]; simpl. intros <- Ho.
+  replace b with (a + S (b - a - 1)) by lia. generalize (b - a - 1) as k.
+  intros k. induction k as [|k IH].
+  - replace (a + 1) with (pt_off (pt_shift 1 (Pt p a))) by (simpl; lia).
+    apply ppo_po.
+  - eapply ppo_trans; [exact IH|].
+    replace (a + S (S k)) with (pt_off (pt_shift 1 (Pt p (a + S k)))) by (simpl; lia).
+    apply ppo_po.
+Qed.
+
+(** A map on points that commutes with successor and branch roots
+    preserves program order. *)
+Lemma ppo_map (f : point → point) x y :
+  (∀ z, f (pt_shift 1 z) = pt_shift 1 (f z)) →
+  (∀ z i, f (pt_br z i) = pt_br (f z) i) →
+  ppo x y → ppo (f x) (f y).
+Proof.
+  intros Hs Hb. induction 1 as [z|z i|]; [rewrite Hs; apply ppo_po
+    |rewrite Hb; apply ppo_br|by eapply ppo_trans].
+Qed.
+
 (** Facts between two points either are trivial or involve names of
     the support only. *)
 Definition eq_or_supp (N : gset pname) (x y : point) : Prop :=
   x = y ∨ (pt_root x ∈ N ∧ pt_root y ∈ N).
 
 Definition po_or_supp (N : gset pname) (x y : point) : Prop :=
-  (pt_name x = pt_name y ∧ pt_off x < pt_off y) ∨
-  (pt_root x ∈ N ∧ pt_root y ∈ N).
+  ppo x y ∨ (pt_root x ∈ N ∧ pt_root y ∈ N).
 
 Record world_wf (W : world) : Prop := {
   wf_eq_refl x : w_eq W x x;
@@ -102,9 +157,11 @@ Record world_wf (W : world) : Prop := {
   wf_eq_trans x y z : w_eq W x y → w_eq W y z → w_eq W x z;
   wf_eq_shift x y : w_eq W x y → w_eq W (pt_shift 1 x) (pt_shift 1 y);
   wf_eq_slot x y i : w_eq W x y → w_eq W (pt_slot x i) (pt_slot y i);
+  wf_eq_br x y i : w_eq W x y → w_eq W (pt_br x i) (pt_br y i);
   wf_lt_trans x y z : w_lt W x y → w_lt W y z → w_lt W x z;
   wf_lt_eq x x' y y' : w_eq W x x' → w_lt W x' y' → w_eq W y' y → w_lt W x y;
   wf_lt_po x : w_lt W x (pt_shift 1 x);
+  wf_lt_br x i : w_lt W x (pt_br x i);
   wf_eq_supp x y : w_eq W x y → eq_or_supp (w_names W) x y;
   wf_lt_supp x y : w_lt W x y → po_or_supp (w_names W) x y;
   wf_names_const p : p ∈ w_names W → ∃ a, p = NConst a
@@ -143,11 +200,13 @@ Inductive geq (E : prel) : prel :=
   | geq_sym x y : geq E x y → geq E y x
   | geq_trans x y z : geq E x y → geq E y z → geq E x z
   | geq_shift x y : geq E x y → geq E (pt_shift 1 x) (pt_shift 1 y)
-  | geq_slot x y i : geq E x y → geq E (pt_slot x i) (pt_slot y i).
+  | geq_slot x y i : geq E x y → geq E (pt_slot x i) (pt_slot y i)
+  | geq_br x y i : geq E x y → geq E (pt_br x i) (pt_br y i).
 
 Inductive glt (E L : prel) : prel :=
   | glt_base x y : L x y → glt E L x y
   | glt_po x : glt E L x (pt_shift 1 x)
+  | glt_br x i : glt E L x (pt_br x i)
   | glt_eq x x' y y' : geq E x x' → glt E L x' y' → geq E y' y → glt E L x y
   | glt_trans x y z : glt E L x y → glt E L y z → glt E L x z.
 
@@ -158,8 +217,9 @@ Lemma geq_supp N E x y :
   (∀ x y, E x y → eq_or_supp N x y) → geq E x y → eq_or_supp N x y.
 Proof.
   intros HE. unfold eq_or_supp.
-  induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH];
-    [by apply HE|by left|naive_solver|naive_solver| |].
+  induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y i _ IH];
+    [by apply HE|by left|naive_solver|naive_solver| | |].
+  - destruct IH as [->|[??]]; [by left|right; done].
   - destruct IH as [->|[??]]; [by left|right; done].
   - destruct IH as [->|[??]]; [by left|right; done].
 Qed.
@@ -170,16 +230,19 @@ Lemma glt_supp N E L x y :
   glt E L x y → po_or_supp N x y.
 Proof.
   intros HE HL. unfold po_or_supp.
-  induction 1 as [x y Hb|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  induction 1 as [x y Hb|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
   - by apply HL.
-  - left. simpl. split; [done|lia].
+  - left. apply ppo_po.
+  - left. apply ppo_br.
   - apply (geq_supp N) in Hx; [|done]. apply (geq_supp N) in Hy; [|done].
-    unfold eq_or_supp, po_or_supp, pt_root in *.
-    destruct Hx as [->|[??]], Hy as [<-|[??]], IH as [[??]|[??]];
-      first [left; split; [congruence|lia]|right; split; congruence].
-  - unfold po_or_supp, pt_root in *.
-    destruct IH1 as [[??]|[??]], IH2 as [[??]|[??]];
-      first [left; split; [congruence|lia]|right; split; congruence].
+    unfold eq_or_supp, po_or_supp in *.
+    destruct Hx as [->|[??]], Hy as [<-|[??]], IH as [Hp|[??]];
+      try pose proof (ppo_root _ _ Hp);
+      first [by left|right; split; congruence].
+  - unfold po_or_supp in *.
+    destruct IH1 as [Hp1|[??]], IH2 as [Hp2|[??]];
+      try pose proof (ppo_root _ _ Hp1); try pose proof (ppo_root _ _ Hp2);
+      first [left; by eapply ppo_trans|right; split; congruence].
 Qed.
 
 Lemma wgen_wf N E L :
@@ -194,9 +257,11 @@ Proof.
   - apply geq_trans.
   - apply geq_shift.
   - apply geq_slot.
+  - apply geq_br.
   - apply glt_trans.
   - apply glt_eq.
   - apply glt_po.
+  - apply glt_br.
   - intros x y. by apply geq_supp.
   - intros x y. by apply glt_supp.
 Qed.
@@ -282,21 +347,24 @@ Proof.
     destruct Hs as [->|[??]]; [by left|by right].
   - intros x y i [? Hs]. split; [by apply (wf_eq_slot _ HW)|].
     destruct Hs as [->|[??]]; [by left|by right].
+  - intros x y i [? Hs]. split; [by apply (wf_eq_br _ HW)|].
+    destruct Hs as [->|[??]]; [by left|by right].
   - intros x y z [? Hs1] [? Hs2]. split; [by eapply (wf_lt_trans _ HW)|].
-    destruct Hs1 as [[H1 H1']|[H1 H1']], Hs2 as [[H2 H2']|[H2 H2']].
-    + left. split; [congruence|lia].
-    + right. split; [unfold pt_root; by rewrite H1|done].
-    + right. split; [done|unfold pt_root; by rewrite <-H2].
+    destruct Hs1 as [H1|[H1 H1']], Hs2 as [H2|[H2 H2']].
+    + left. by eapply ppo_trans.
+    + right. split; [by rewrite (ppo_root _ _ H1)|done].
+    + right. split; [done|by rewrite <-(ppo_root _ _ H2)].
     + by right.
   - intros x x' y y' [? Hx] [? Hl] [? Hy]. split; [by eapply (wf_lt_eq _ HW)|].
     destruct Hx as [<-|[Hx1 Hx2]], Hy as [->|[Hy1 Hy2]].
     + exact Hl.
     + right. split; [|done].
-      destruct Hl as [[He _]|[? _]]; [unfold pt_root; by rewrite He|done].
+      destruct Hl as [He|[? _]]; [by rewrite (ppo_root _ _ He)|done].
     + right. split; [done|].
-      destruct Hl as [[He _]|[_ ?]]; [unfold pt_root; by rewrite <-He|done].
+      destruct Hl as [He|[_ ?]]; [by rewrite <-(ppo_root _ _ He)|done].
     + by right.
-  - intros x. split; [apply (wf_lt_po _ HW)|]. left. simpl. split; [done|lia].
+  - intros x. split; [apply (wf_lt_po _ HW)|]. left. apply ppo_po.
+  - intros x i. split; [apply (wf_lt_br _ HW)|]. left. apply ppo_br.
   - intros x y [Hxy Hs]. apply (wf_eq_supp _ HW) in Hxy.
     destruct Hs as [->|[??]]; [by left|].
     destruct Hxy as [->|[??]]; [by left|].
@@ -352,6 +420,12 @@ Proof.
   - unfold pt_shift. simpl. f_equal. lia.
 Qed.
 
+Lemma wf_lt_ppo W x y : world_wf W → ppo x y → w_lt W x y.
+Proof.
+  intros HW. induction 1; [apply (wf_lt_po _ HW)|apply (wf_lt_br _ HW)|].
+  by eapply (wf_lt_trans _ HW).
+Qed.
+
 (** ** Facts with a strictness flag
 
     [wfact W b x y] is x ≺ y for b = true and x ≡ y for b = false. A
@@ -362,7 +436,7 @@ Definition wfact (W : world) (b : bool) (x y : point) : Prop :=
   if b then w_lt W x y else w_eq W x y.
 
 Definition univ (b : bool) (x y : point) : Prop :=
-  if b then pt_name x = pt_name y ∧ pt_off x < pt_off y else x = y.
+  if b then ppo x y else x = y.
 
 Lemma wfact_trans W b1 b2 x y z :
   world_wf W → wfact W b1 x y → wfact W b2 y z → wfact W (b1 || b2) x z.
@@ -377,7 +451,7 @@ Qed.
 Lemma univ_wfact W b x y : world_wf W → univ b x y → wfact W b x y.
 Proof.
   intros HW. destruct b; simpl.
-  - intros [??]. by apply wf_lt_same.
+  - by apply wf_lt_ppo.
   - intros ->. apply (wf_eq_refl _ HW).
 Qed.
 
@@ -474,22 +548,34 @@ Section join_paths.
     destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_slot.
   Qed.
 
+  Lemma jpath_br x y i :
+    jpath false x y → jpath false (pt_br x i) (pt_br y i).
+  Proof.
+    remember false as b eqn:Hb. induction 1 as [|b1 b2 x y z Hs Hp IH];
+      [constructor|].
+    destruct b1, b2; try discriminate.
+    change false with (false || false). econstructor; [|by apply IH].
+    destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_br.
+  Qed.
+
   Lemma join_jpath :
     (∀ x y, w_eq (wjoin W1 W2) x y → jpath false x y) ∧
     (∀ x y, w_lt (wjoin W1 W2) x y → jpath true x y).
   Proof.
     assert (∀ x y, w_eq (wjoin W1 W2) x y → jpath false x y) as Heq.
-    { simpl. induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH].
+    { simpl. induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y i _ IH].
       - apply jpath_one. done.
       - constructor.
       - by apply jpath_rev.
       - change false with (false || false). by eapply jpath_app.
       - by apply jpath_shift.
-      - by apply jpath_slot. }
+      - by apply jpath_slot.
+      - by apply jpath_br. }
     split; [done|]. simpl.
-    induction 1 as [x y Hb|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    induction 1 as [x y Hb|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - by apply jpath_one.
     - apply jpath_one. left. apply (wf_lt_po _ HW1).
+    - apply jpath_one. left. apply (wf_lt_br _ HW1).
     - change true with ((false || true) || false).
       eapply jpath_app; [eapply jpath_app; [by apply Heq|done]|by apply Heq].
     - change true with (true || true). by eapply jpath_app.
@@ -663,7 +749,7 @@ Proof.
       apply geq_base. left. by apply (Hold a b (HA a Ha) (HA b Hb)).
     + apply geq_base. by right.
   - intros a b [[Hab Hs]|[Hab Hs]].
-    + destruct Hs as [[Hn Ho]|[Ha Hb]]; [by apply (wf_lt_same _ a b HJ)|].
+    + destruct Hs as [Hp|[Ha Hb]]; [by apply (wf_lt_ppo _ a b HJ)|].
       apply glt_base. left. by apply (Hold a b (HA a Ha) (HA b Hb)).
     + apply glt_base. by right.
 Qed.
@@ -681,8 +767,8 @@ Proof.
   intros HW HE HL.
   assert (∀ x y, geq E x y → w_eq W x y) as Heq.
   { induction 1; eauto using wf_eq_refl, wf_eq_sym, wf_eq_trans,
-      wf_eq_shift, wf_eq_slot. }
-  split; [done|]. induction 1; eauto using wf_lt_trans, wf_lt_po.
+      wf_eq_shift, wf_eq_slot, wf_eq_br. }
+  split; [done|]. induction 1; eauto using wf_lt_trans, wf_lt_po, wf_lt_br.
   eapply (wf_lt_eq _ HW); eauto.
 Qed.
 
@@ -734,7 +820,7 @@ Proof.
       destruct Hs as [->|[Hx Hy]]; [apply (wf_eq_refl _ HW')|].
       by apply (H1 false x y); [|apply HA..].
     - intros x y [[H Hs]|[H Hs]]; [|done].
-      destruct Hs as [[Hn Ho]|[Hx Hy]]; [by apply wf_lt_same|].
+      destruct Hs as [Hp|[Hx Hy]]; [by apply wf_lt_ppo|].
       by apply (H1 true x y); [|apply HA..].
     - intros [] x y H; simpl in *; [by apply Hlt|by apply Heq]. }
   (* a side fact between points outside N is a fact of W' *)

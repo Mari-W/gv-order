@@ -25,16 +25,18 @@ Section alias.
     | NConst c => if decide (c = a) then x else Pt (NConst c) 0
     | NVar v => Pt (NVar v) 0
     | NSlot q b i => pt_slot (pt_shift b (acn q)) i
+    | NBr q b i => pt_br (pt_shift b (acn q)) i
     end.
 
   Definition acanon (y : point) : point := pt_shift (pt_off y) (acn (pt_name y)).
 
   Lemma acn_id p : pn_root p ≠ NConst a → acn p = Pt p 0.
   Proof.
-    induction p as [c|v|q IH b i]; simpl; intros Hr.
+    induction p as [c|v|q IH b i|q IH b i]; simpl; intros Hr.
     - rewrite decide_False; [done|]. intros ->. by apply Hr.
     - done.
     - rewrite IH by done. unfold pt_slot, pt_shift. simpl. done.
+    - rewrite IH by done. unfold pt_br, pt_shift. simpl. done.
   Qed.
 
   Lemma acanon_id y : pt_root y ≠ NConst a → acanon y = y.
@@ -45,12 +47,13 @@ Section alias.
   Lemma acn_root p :
     pt_root (acn p) = if decide (pn_root p = NConst a) then pt_root x else pn_root p.
   Proof.
-    induction p as [c|v|q IH b i]; simpl.
+    induction p as [c|v|q IH b i|q IH b i]; simpl.
     - destruct (decide (c = a)) as [->|Hc].
       + by rewrite decide_True.
       + rewrite decide_False; [done|congruence].
     - done.
     - rewrite pt_root_slot, pt_root_shift. exact IH.
+    - rewrite pt_root_br, pt_root_shift. exact IH.
   Qed.
 
   Lemma acanon_root y :
@@ -65,19 +68,20 @@ Section alias.
     unfold acanon, pt_slot, pt_shift. simpl. repeat f_equal; try lia.
   Qed.
 
-  Lemma acanon_name_off y z :
-    pt_name y = pt_name z → pt_off y < pt_off z →
-    pt_name (acanon y) = pt_name (acanon z) ∧ pt_off (acanon y) < pt_off (acanon z).
-  Proof. intros Hn Ho. unfold acanon, pt_shift. simpl. rewrite Hn. split; [done|lia]. Qed.
+  Lemma acanon_br y i : acanon (pt_br y i) = pt_br (acanon y) i.
+  Proof.
+    unfold acanon, pt_br, pt_shift. simpl. repeat f_equal; try lia.
+  Qed.
+
+  Lemma acanon_ppo y z : ppo y z → ppo (acanon y) (acanon z).
+  Proof. apply ppo_map; [apply acanon_shift|apply acanon_br]. Qed.
 
   Definition W0 : world :=
-    World {[pt_root x]} (λ y z, y = z)
-      (λ y z, pt_name y = pt_name z ∧ pt_off y < pt_off z).
+    World {[pt_root x]} (λ y z, y = z) ppo.
 
   Definition W0' : world :=
     World ({[pt_root x]} ∪ {[NConst a]}) (λ y z, acanon y = acanon z)
-      (λ y z, pt_name (acanon y) = pt_name (acanon z) ∧
-              pt_off (acanon y) < pt_off (acanon z)).
+      (λ y z, ppo (acanon y) (acanon z)).
 
   Context (W : world) (HW : strict W) (Hx : pt_known W x) (Ha : NConst a ∉ w_names W).
 
@@ -92,9 +96,11 @@ Section alias.
     - intros; congruence.
     - intros; congruence.
     - intros; congruence.
-    - intros y z w [H1 H2] [H3 H4]. split; [congruence|lia].
-    - intros y y' z z' -> [H1 H2] <-. done.
-    - intros y. unfold pt_shift. simpl. split; [done|lia].
+    - intros; congruence.
+    - intros y z w H1 H2. by eapply ppo_trans.
+    - intros y y' z z' -> H <-. done.
+    - intros y. apply ppo_po.
+    - intros y i. apply ppo_br.
     - intros y z ->. by left.
     - intros y z H. by left.
     - intros p ->%elem_of_singleton. exact (wf_names_const _ (proj1 HW) _ Hx).
@@ -105,18 +111,17 @@ Section alias.
     split_and!; simpl.
     - by apply singleton_subseteq_l.
     - intros y z ->. apply (wf_eq_refl _ (proj1 HW)).
-    - intros y z [Hn Ho]. by apply wf_lt_same; [apply HW| |].
+    - intros y z Hp. by apply wf_lt_ppo; [apply HW|].
     - done.
   Qed.
 
   Lemma acanon_supp y z :
-    pt_name (acanon y) = pt_name (acanon z) → y ≠ z ∨ True →
+    pt_root (acanon y) = pt_root (acanon z) → y ≠ z ∨ True →
     (pt_root y = NConst a ∨ pt_root z = NConst a) →
     pt_root y ∈ ({[pt_root x]} ∪ {[NConst a]} : gset pname) ∧
     pt_root z ∈ ({[pt_root x]} ∪ {[NConst a]} : gset pname).
   Proof.
-    intros Hn _ Hyz.
-    assert (pt_root (acanon y) = pt_root (acanon z)) as Hr by (unfold pt_root; by rewrite Hn).
+    intros Hr _ Hyz.
     rewrite !acanon_root in Hr.
     destruct (decide (pt_root y = NConst a)) as [Hy|Hy],
              (decide (pt_root z = NConst a)) as [Hz|Hz]; set_solver.
@@ -130,26 +135,27 @@ Section alias.
     - intros; congruence.
     - intros y z H. by rewrite !acanon_shift, H.
     - intros y z i H. by rewrite !acanon_slot, H.
-    - intros y z w [H1 H2] [H3 H4]. split; [congruence|lia].
-    - intros y y' z z' H1 [H2 H3] H4.
+    - intros y z i H. by rewrite !acanon_br, H.
+    - intros y z w H1 H2. by eapply ppo_trans.
+    - intros y y' z z' H1 H2 H4.
       change (acanon y = acanon y') in H1. change (acanon z' = acanon z) in H4.
-      change (pt_name (acanon y) = pt_name (acanon z) ∧ pt_off (acanon y) < pt_off (acanon z)).
-      rewrite H1, <-H4. split; [exact H2|exact H3].
-    - intros y. rewrite acanon_shift. unfold pt_shift. simpl. split; [done|lia].
+      change (ppo (acanon y) (acanon z)). by rewrite H1, <-H4.
+    - intros y. rewrite acanon_shift. apply ppo_po.
+    - intros y i. rewrite acanon_br. apply ppo_br.
     - intros y z H. unfold eq_or_supp.
       destruct (decide (pt_root y = NConst a ∨ pt_root z = NConst a)) as [Hyz|Hyz].
       + right. apply acanon_supp; [by rewrite H|by right|done].
       + left. rewrite !acanon_id in H by naive_solver. done.
-    - intros y z [Hn Ho]. unfold po_or_supp.
+    - intros y z Hp. unfold po_or_supp.
       destruct (decide (pt_root y = NConst a ∨ pt_root z = NConst a)) as [Hyz|Hyz].
-      + right. apply acanon_supp; [done|by right|done].
-      + left. rewrite !acanon_id in Hn, Ho by naive_solver. done.
+      + right. apply acanon_supp; [by apply ppo_root|by right|done].
+      + left. rewrite !acanon_id in Hp by naive_solver. done.
     - intros p [Hp|Hp]%elem_of_union; apply elem_of_singleton in Hp as ->; [|by eexists].
       exact (wf_names_const _ (proj1 HW) _ Hx).
   Qed.
 
   Lemma W0'_strict : strict W0'.
-  Proof. split; [apply W0'_wf|]. intros y [_ Ho]. lia. Qed.
+  Proof. split; [apply W0'_wf|]. intros y H. exact (ppo_irrefl _ H). Qed.
 
   Lemma W0_fresh : wext_fresh W0 {[NConst a]} W0'.
   Proof.
@@ -158,7 +164,7 @@ Section alias.
     - split_and!; cbn [w_eq w_lt w_names W0 W0'].
       + set_solver.
       + intros y z ->. done.
-      + intros y z [Hn Ho]. by apply acanon_name_off.
+      + intros y z Hp. by apply acanon_ppo.
       + apply W0'_strict.
     - simpl. set_solver.
     - done.
@@ -976,7 +982,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SPlus S1 S2) x ∧
-            B = TSess (sbranch b S1 S2) (pt_shift 1 x)) as (S1 & S2 & x & -> & -> & ->).
+            B = TSess (sbranch b S1 S2) (pt_br x b)) as (S1 & S2 & x & -> & -> & ->).
   { destruct b; simpl in Hk; inversion Hk; subst; eauto 10. }
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
@@ -995,12 +1001,12 @@ Proof.
   - intros α e' Hst. apply app_val_step in Hst; [|by destruct b|done].
     assert (α = LSess (SSel c b) ∧ e' = Chan c) as [-> ->]
       by (destruct b; inversion Hst; subst; done).
-    simpl. exists ∅, s1, s2, k, {[c := One (sbranch b s1 s2, pt_shift 1 k)]}. split_and!.
+    simpl. exists ∅, s1, s2, k, {[c := One (sbranch b s1 s2, pt_br k b)]}. split_and!.
     + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
     + left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|].
-      apply Vrel_sess_iff. exists c, (sbranch b s1 s2), (pt_shift 1 k).
-      split_and!; [done|done|by destruct b|by apply (wf_eq_shift _ HWf)].
+      apply Vrel_sess_iff. exists c, (sbranch b s1 s2), (pt_br k b).
+      split_and!; [done|done|by destruct b|by apply (wf_eq_br _ HWf)].
 Qed.
 
 (** branch (K4): it waits like receive, at cost 1, and returns the
@@ -1013,7 +1019,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SWith S1 S2) x ∧
-            B = TSum (TSess S1 (pt_shift 1 x)) (TSess S2 (pt_shift 1 x)))
+            B = TSum (TSess S1 (pt_br x false)) (TSess S2 (pt_br x true)))
     as (S1 & S2 & x & -> & -> & ->) by (inversion Hk; subst; eauto 10).
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
@@ -1031,13 +1037,13 @@ Proof.
       eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | | | | | | | | |c' b'| | | |]; subst. simpl.
-    exists ∅, s1, s2, k, {[c := One (sbranch b' s1 s2, pt_shift 1 k)]}. split_and!.
+    exists ∅, s1, s2, k, {[c := One (sbranch b' s1 s2, pt_br k b')]}. split_and!.
     + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
     + left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [|exact HB]; done|].
       apply Vrel_sum_iff. destruct b'; [right|left]; eexists; (split; [done|]);
-        apply Vrel_sess_iff; eexists _, _, (pt_shift 1 k);
-        (split_and!; [done|done|done|by apply (wf_eq_shift _ HWf)]).
+        apply Vrel_sess_iff; eexists _, _, (pt_br k _);
+        (split_and!; [done|done|done|by apply (wf_eq_br _ HWf)]).
 Qed.
 
 (** Θ = Θ1, c : e as a composition with a singleton. *)

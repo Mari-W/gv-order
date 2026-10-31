@@ -53,4 +53,5 @@ theories/examples/cfst/CfstDeadlock.v
 theories/examples/cfst/CfstScheduler.v
 theories/examples/cfst/TreeSum.v
 theories/examples/cfst/ArithServer.v
+theories/examples/cfst/BranchOrder.v
 theories/counterexamples/DropCounter.v

@@ -38,8 +38,24 @@ Definition rr_rank (x : point) : nat :=
   | _ => pt_off x
   end.
 
+(** The rank reads a branch root x◁i as x+1 ([pt_erase], K10). *)
 Definition rr_R (x y : point) : Prop :=
-  if isvar x && isvar y then rr_rank x < rr_rank y else isvar x = false ∧ isvar y = false.
+  if isvar x && isvar y then rr_rank (pt_erase x) < rr_rank (pt_erase y)
+  else isvar x = false ∧ isvar y = false.
+
+Lemma rr_rank_shift x : rr_rank x < rr_rank (pt_shift 1 x).
+Proof. destruct x as [[[|[|]]|[|[|]]| |] o]; unfold rr_rank; simpl; lia. Qed.
+
+Lemma rr_rank_ppo x y : ppo x y → rr_rank (pt_erase x) < rr_rank (pt_erase y).
+Proof.
+  induction 1 as [x|x i|x y z _ IH1 _ IH2].
+  - rewrite pt_erase_shift. apply rr_rank_shift.
+  - rewrite pt_erase_br. apply rr_rank_shift.
+  - lia.
+Qed.
+
+Lemma isvar_ppo x y : ppo x y → isvar x = isvar y.
+Proof. intros H. unfold isvar. by rewrite (ppo_root _ _ H). Qed.
 
 Definition rr_C1 (g : fact) : Prop :=
   g = FLt (pvar 0) (pvar 1) ∨ g = FLt (pvar 1) (pt_shift 1 (pvar 0)).
@@ -56,7 +72,7 @@ Proof.
     refine (proj2 (fl_map (FCtx W [(BCs [] rr_C1, ids 2)] ∅)
       (λ x y, x = y ∨ (isvar x = false ∧ isvar y = false))
       (λ a b, match a, b with NP x, NP y => rr_R x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
     - intros x0 y0 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
       split; by apply (isvar_const W).
     - intros x0 y0 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
@@ -66,10 +82,9 @@ Proof.
     - intros x0 y0 z0 [->|[? ?]] [->|[? ?]]; [by left|by right|by right|by right].
     - intros x0 y0 [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
     - intros x0 y0 i [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
-    - intros x0 y0 Hxy. unfold rr_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]|[Hx Hy]].
-      + destruct x0 as [p o], y0 as [q o']. simpl in *. subst q. unfold isvar, rr_rank, pt_root. simpl.
-        destruct (pn_root p) eqn:Hr; simpl; [done| |done].
-        destruct p as [|[|[|]]|]; simpl in *; try lia; simplify_eq.
+    - intros x0 y0 i [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
+    - intros x0 y0 Hxy. unfold rr_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [Hp|[Hx Hy]].
+      + rewrite <-(isvar_ppo _ _ Hp). destruct (isvar x0); simpl; [by apply rr_rank_ppo|done].
       + rewrite (isvar_const W x0), (isvar_const W y0); done.
     - intros x0 y0 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
       injection Hg as -> ->. apply bcs_open_nil in Hg0 as [[->| ->] _];

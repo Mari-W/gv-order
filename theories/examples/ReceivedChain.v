@@ -191,7 +191,9 @@ Proof.
   - intros x. apply prank_shift. lia.
   - assert (∀ n, pn_rank (λ _, 0) (λ r _ _, r + 2) (chc n) = 2 * n) as Hr
       by (induction n as [|n IH]; cbn; lia).
-    intros x y (n & -> & ->). unfold id, prank. cbn [pt_name pt_off]. rewrite !Hr. lia.
+    assert (∀ n, pn_nobr (chc n)) as Hb by (induction n; simpl; auto).
+    intros x y (n & -> & ->). rewrite !pt_erase_nobr by apply Hb.
+    unfold id, prank. cbn [pt_name pt_off]. rewrite !Hr. lia.
 Qed.
 
 Lemma ch_deadlock_free : deadlock_free (∅, {[+ ch_main +]}).

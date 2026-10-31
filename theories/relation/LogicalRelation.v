@@ -275,11 +275,11 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
         at_cost Elow En n (tcost α) W Θ1 T F e'
   | LSess (SSel c b) =>                                (* O-Select *)
       ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SPlus s1 s2) k Θr ∧
-        tenv_ext Θr c (sbranch b s1 s2, pt_shift 1 k) Θ' ∧
+        tenv_ext Θr c (sbranch b s1 s2, pt_br k b) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
   | LSess (SBra c b) =>                                (* O-Branch *)
       ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SWith s1 s2) k Θr ∧
-        tenv_ext Θr c (sbranch b s1 s2, pt_shift 1 k) Θ' ∧
+        tenv_ext Θr c (sbranch b s1 s2, pt_br k b) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
   end.
 
@@ -379,12 +379,12 @@ Definition Pclos_case (X : world → senv → ty → proc → Prop)
   ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧ X W Σ1 T p'.
 
 (** Q-Select (u = ⊕) and Q-Branch (u = &): the entry of c moves to the
-    branch b at the next instant. *)
+    branch b at the branch root k◁b (K10). *)
 Definition Pchoice_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (c : chan) (b : bool)
     (u : sty → sty → sty) (p' : proc) : Prop :=
   ∃ Σ1 s1 s2 k, senv_hd Σ c (u s1 s2) k Σ1 ∧ c ∉ dom Σ1 ∧
-    X W (<[c := (sbranch b s1 s2, pt_shift 1 k)]> Σ1) T p'.
+    X W (<[c := (sbranch b s1 s2, pt_br k b)]> Σ1) T p'.
 
 (** c = d cannot reach the interface: Σ holds one end per channel. *)
 Definition Plink_case (X : world → senv → ty → proc → Prop)

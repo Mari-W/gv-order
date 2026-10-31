@@ -67,7 +67,7 @@ Proof.
             ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') as Hm.
   { refine (proj2 (fl_map _ (w_eq W1)
       (λ a b, ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
     - intros x0 y0 H. by apply He.
     - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
     - apply (wf_eq_refl _ Hwf).
@@ -75,6 +75,7 @@ Proof.
     - apply (wf_eq_trans _ Hwf).
     - apply (wf_eq_shift _ Hwf).
     - apply (wf_eq_slot _ Hwf).
+    - apply (wf_eq_br _ Hwf).
     - intros x0 y0 H ? ? -> ->. by apply Hl.
     - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
     - intros φ u Hu ? b' -> Hb'. exact (Hρ φ (Some u) Hu b' Hb').

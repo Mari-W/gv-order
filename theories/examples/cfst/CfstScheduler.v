@@ -486,7 +486,7 @@ Proof.
     + cbn. destruct a as [|[|[|[|[|[|]]]]]]; try lia; set_solver.
   - intros x. unfold lexlt, sch_rank, pt_shift, pt_root. cbn [pt_name pt_off].
     rewrite Nat.add_1_r.
-    destruct (pn_root (pt_name x)) as [[|[|[|[|[|[|[|a]]]]]]]| |]; cbn [fst snd]; right;
+    destruct (pn_root (pt_name x)) as [[|[|[|[|[|[|[|a]]]]]]]| | |]; cbn [fst snd]; right;
       (split; [done|]); first [apply rk_S|lia].
   - intros x y Hxy. unfold id.
     destruct Hxy as [(xs & r & Hxs & Hg)|[Hg|(a & k & Ha & -> & ->)]].

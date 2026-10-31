@@ -110,6 +110,7 @@ Fixpoint ren20 (p : pname) : pname :=
   | NConst a => if decide (a = 2) then NConst 0 else NConst a
   | NVar a => NVar a
   | NSlot q b i => NSlot (ren20 q) b i
+  | NBr q b i => NBr (ren20 q) b i
   end.
 
 Definition cn20 (x : point) : point := Pt (ren20 (pt_name x)) (pt_off x).

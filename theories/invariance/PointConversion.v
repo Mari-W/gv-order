@@ -146,11 +146,16 @@ Section teqW.
     intros H. apply w_eq_pteqW. apply (wf_eq_slot _ HW). by apply pteqW_eq.
   Qed.
 
+  Lemma pteqW_br x y i : pteqW W x y → pteqW W (pt_br x i) (pt_br y i).
+  Proof.
+    intros H. apply w_eq_pteqW. apply (wf_eq_br _ HW). by apply pteqW_eq.
+  Qed.
+
   (** A ground point is fixed by instantiation. *)
   Lemma pn_inst_ground σ p a : pn_root p = NConst a → pn_inst σ p = Pt p 0.
   Proof.
-    induction p; simpl; intros H; try done. rewrite IHp by done.
-    unfold pt_slot, pt_shift. simpl. by rewrite ?Nat.add_0_l.
+    induction p; simpl; intros H; try done; rewrite IHp by done;
+      unfold pt_slot, pt_br, pt_shift; simpl; by rewrite ?Nat.add_0_l.
   Qed.
 
   Lemma pt_inst_ground σ x : pt_ground x → pt_inst σ x = x.
@@ -169,7 +174,9 @@ Section teqW.
     (∀ i, pteqW W (σ i) (τ i)) → pteqW W (pt_inst σ x) (pt_inst τ x).
   Proof.
     intros H. destruct x as [p o]. unfold pt_inst. simpl. apply pteqW_shift.
-    induction p; simpl; [by left|apply H|]. apply pteqW_slot, pteqW_shift, IHp.
+    induction p; simpl; [by left|apply H| |].
+    - apply pteqW_slot, pteqW_shift, IHp.
+    - apply pteqW_br, pteqW_shift, IHp.
   Qed.
 
   Lemma pup_pteqW m σ τ :
@@ -1004,9 +1011,9 @@ Proof.
       as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
     destruct (seq_plus_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
       [by apply seq_sym|done|].
-    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_shift 1 k)
-                (sbranch i s1' s2', pt_shift 1 k') ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
-    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_shift _ HW). }
+    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_br k i)
+                (sbranch i s1' s2', pt_br k' i) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
+    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_br _ HW). }
     exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
     exact (proj2 HE' _ HW Hc3).
   - (* O-Branch *)
@@ -1015,9 +1022,9 @@ Proof.
       as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
     destruct (seq_with_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
       [by apply seq_sym|done|].
-    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_shift 1 k)
-                (sbranch i s1' s2', pt_shift 1 k') ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
-    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_shift _ HW). }
+    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_br k i)
+                (sbranch i s1' s2', pt_br k' i) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
+    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_br _ HW). }
     exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
     eapply HEj; [lia|done|exact Hc3|exact HE'].
   - (* O-New: rename the new point away from the points of Θ' *)
@@ -1373,7 +1380,7 @@ Proof.
       [by apply seq_sym|done|].
     exists Σ1', s1', s2', k'. split_and!; [by exists s0'|done|].
     apply (proj2 HP'); [done|]. apply sconv_insert; [done|].
-    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_shift _ HW).
+    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_br _ HW).
   - (* Q-Branch *)
     destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc1 & HP').
     destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)
@@ -1382,5 +1389,5 @@ Proof.
       [by apply seq_sym|done|].
     exists Σ1', s1', s2', k'. split_and!; [by exists s0'|done|].
     eapply HPj; [lia|done| |exact HP']. apply sconv_insert; [done|].
-    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_shift _ HW).
+    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_br _ HW).
 Qed.

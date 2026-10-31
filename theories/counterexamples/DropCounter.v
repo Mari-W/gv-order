@@ -24,6 +24,7 @@ Fixpoint cnm (p : pname) (o : nat) : point :=
   | NConst a => if decide (a = b0) then Pt (NConst mu) (S o) else Pt (NConst a) o
   | NVar a => Pt (NVar a) o
   | NSlot q o' i => Pt (NSlot (pt_name (cnm q o')) (pt_off (cnm q o')) i) o
+  | NBr q o' i => Pt (NBr (pt_name (cnm q o')) (pt_off (cnm q o')) i) o
   end.
 Definition cpt (x : point) : point := cnm (pt_name x) (pt_off x).
 
@@ -39,13 +40,16 @@ Proof.
 Qed.
 Lemma cpt_slot x i : cpt (pt_slot x i) = pt_slot (cpt x) i.
 Proof. done. Qed.
+Lemma cpt_br x i : cpt (pt_br x i) = pt_br (cpt x) i.
+Proof. done. Qed.
 
 Lemma cnm_root p o :
   pt_root (cnm p o) = if decide (pn_root p = NConst b0) then NConst mu else pn_root p.
 Proof.
-  revert o. induction p as [a|a|q IH o' i]; intros o; simpl.
+  revert o. induction p as [a|a|q IH o' i|q IH o' i]; intros o; simpl.
   - unfold pt_root. repeat case_decide; simpl; subst; try done; congruence.
   - done.
+  - unfold pt_root in *. simpl. apply IH.
   - unfold pt_root in *. simpl. apply IH.
 Qed.
 
@@ -53,19 +57,81 @@ Qed.
 Lemma cnm_inj p o p' o' :
   pn_root p ≠ NConst mu → pn_root p' ≠ NConst mu → cnm p o = cnm p' o' → p = p' ∧ o = o'.
 Proof.
-  revert o p' o'. induction p as [a|a|q IH oq i]; intros o p' o' Hr Hr' E;
-    destruct p' as [a'|a'|q' oq' i']; simpl in *;
+  revert o p' o'. induction p as [a|a|q IH oq i|q IH oq i]; intros o p' o' Hr Hr' E;
+    destruct p' as [a'|a'|q' oq' i'|q' oq' i']; simpl in *;
     repeat case_decide; simplify_eq/=; try done; try (split; congruence).
+  - destruct (IH oq q' oq' Hr Hr') as [-> ->]; [|done].
+    destruct (cnm q oq) eqn:E1, (cnm q' oq') eqn:E2. simpl in *. by subst.
   - destruct (IH oq q' oq' Hr Hr') as [-> ->]; [|done].
     destruct (cnm q oq) eqn:E1, (cnm q' oq') eqn:E2. simpl in *. by subst.
 Qed.
 
+(* the inverse of cnm on the μ line: μ-points move back onto b, one earlier *)
+Fixpoint cinvn (p : pname) (o : nat) : point :=
+  match p with
+  | NConst a => if decide (a = mu) then Pt (NConst b0) (o - 1) else Pt (NConst a) o
+  | NVar a => Pt (NVar a) o
+  | NSlot q o' i => Pt (NSlot (pt_name (cinvn q o')) (pt_off (cinvn q o')) i) o
+  | NBr q o' i => Pt (NBr (pt_name (cinvn q o')) (pt_off (cinvn q o')) i) o
+  end.
+Definition cinv (x : point) : point := cinvn (pt_name x) (pt_off x).
+
+(* the offset at the root constant of a point *)
+Fixpoint pn_boff (p : pname) (o : nat) : nat :=
+  match p with
+  | NConst _ | NVar _ => o
+  | NSlot q o' _ | NBr q o' _ => pn_boff q o'
+  end.
+Definition cq (x : point) : Prop :=
+  pt_root x = NConst mu → 1 ≤ pn_boff (pt_name x) (pt_off x).
+
+Lemma cinv_cpt x : pt_root x ≠ NConst mu → cinv (cpt x) = x.
+Proof.
+  destruct x as [p o]. unfold cinv, cpt, pt_root. simpl. revert o.
+  induction p as [a|a|q IH oq i|q IH oq i]; intros o Hm; simpl in *.
+  - destruct (decide (a = b0)) as [->|Hb]; simpl.
+    + f_equal. lia.
+    + rewrite ?decide_False by (intros ->; done). done.
+  - done.
+  - rewrite IH by done. done.
+  - rewrite IH by done. done.
+Qed.
+
+Lemma cq_cpt x : pt_root x ≠ NConst mu → cq (cpt x).
+Proof.
+  destruct x as [p o]. unfold cq, cpt, pt_root. simpl. revert o.
+  induction p as [a|a|q IH oq i|q IH oq i]; intros o Hm; simpl in *.
+  - repeat case_decide; simpl; [lia|congruence].
+  - discriminate.
+  - apply IH, Hm.
+  - apply IH, Hm.
+Qed.
+
+Lemma cinv_ppo x y : ppo x y → cq x → ppo (cinv x) (cinv y).
+Proof.
+  assert (∀ z, cq z → cq (pt_shift 1 z)) as Hqs.
+  { intros [[| | |] o]; unfold cq, pt_root; simpl; intros H Hr; try (apply H, Hr); lia. }
+  assert (∀ z i, cq z → cq (pt_br z i)) as Hqb.
+  { intros [p o] i. unfold cq, pt_root. simpl. done. }
+  assert (∀ x y, ppo x y → cq x → cq y) as Hq.
+  { induction 1; auto. }
+  induction 1 as [z|z i|x y z H1 IH1 _ IH2]; intros Hz.
+  - destruct z as [[a| | |] o]; unfold cinv, pt_shift; simpl;
+      [|apply ppo_po..].
+    destruct (decide (a = mu)) as [->|Ha].
+    + unfold cq, pt_root in Hz. simpl in Hz. specialize (Hz eq_refl).
+      replace (o + 1 - 1) with (o - 1 + 1) by lia. apply (ppo_po (Pt (NConst b0) (o - 1))).
+    + apply (ppo_po (Pt (NConst a) o)).
+  - apply (ppo_br (cinv z) i).
+  - eapply ppo_trans; [by apply IH1|]. apply IH2. by eapply Hq.
+Qed.
+
 Definition Wb : world :=
-  World {[NConst b0]} (λ x y, x = y) (λ x y, pt_name x = pt_name y ∧ pt_off x < pt_off y).
+  World {[NConst b0]} (λ x y, x = y) ppo.
 
 Definition Wm : world :=
   World ({[NConst b0]} ∪ {[NConst mu]}) (λ x y, cpt x = cpt y)
-    (λ x y, pt_name (cpt x) = pt_name (cpt y) ∧ pt_off (cpt x) < pt_off (cpt y)).
+    (λ x y, ppo (cpt x) (cpt y)).
 
 Lemma Wb_strict : strict Wb.
 Proof.
@@ -75,13 +141,15 @@ Proof.
   - naive_solver.
   - naive_solver.
   - naive_solver.
-  - intros x y z [? ?] [? ?]. split; [congruence|lia].
   - naive_solver.
-  - intros x. split; [done|simpl; lia].
+  - intros x y z ? ?. by eapply ppo_trans.
+  - naive_solver.
+  - apply ppo_po.
+  - apply ppo_br.
   - intros x y ->. by left.
   - intros x y H. by left.
   - intros p Hp. set_solver.
-  - intros x [_ H]. lia.
+  - apply ppo_irrefl.
 Qed.
 
 Lemma cpt_root_in x : pt_root x = NConst b0 ∨ pt_root x = NConst mu →
@@ -95,8 +163,8 @@ Proof. unfold cpt. rewrite cnm_root. unfold pt_root. intros H. by case_decide. Q
 Lemma cpt_out_id x : pt_root x ≠ NConst b0 → pt_root x ≠ NConst mu → cpt x = x.
 Proof.
   destruct x as [p o]. unfold cpt, pt_root. simpl. revert o.
-  induction p as [a|a|q IH oq i]; intros o Hb Hm; simpl in *; repeat case_decide; subst; try done.
-  rewrite IH by done. done.
+  induction p as [a|a|q IH oq i|q IH oq i]; intros o Hb Hm; simpl in *; repeat case_decide; subst; try done;
+    rewrite IH by done; done.
 Qed.
 
 Lemma Wm_strict : strict Wm.
@@ -107,9 +175,11 @@ Proof.
   - intros x y z. congruence.
   - intros x y H. by rewrite !cpt_shift, H.
   - intros x y i H. by rewrite !cpt_slot, H.
-  - intros x y z [? ?] [? ?]. split; [congruence|lia].
+  - intros x y i H. by rewrite !cpt_br, H.
+  - intros x y z ? ?. by eapply ppo_trans.
   - intros x x' y y' -> ? <-. done.
-  - intros x. rewrite cpt_shift. simpl. split; [done|lia].
+  - intros x. rewrite cpt_shift. apply ppo_po.
+  - intros x i. rewrite cpt_br. apply ppo_br.
   - intros x y H. unfold eq_or_supp.
     destruct (decide (pt_root x = NConst b0 ∨ pt_root x = NConst mu)) as [Hx|Hx];
     destruct (decide (pt_root y = NConst b0 ∨ pt_root y = NConst mu)) as [Hy|Hy].
@@ -117,17 +187,17 @@ Proof.
     + exfalso. apply cpt_root_in in Hx. rewrite H, cpt_root_out in Hx by naive_solver. naive_solver.
     + exfalso. apply cpt_root_in in Hy. rewrite <-H, cpt_root_out in Hy by naive_solver. naive_solver.
     + left. rewrite cpt_out_id in H by naive_solver. rewrite cpt_out_id in H by naive_solver. done.
-  - intros x y [Hn Ho]. unfold po_or_supp.
+  - intros x y Hp. unfold po_or_supp. pose proof (ppo_root _ _ Hp) as Hn.
     destruct (decide (pt_root x = NConst b0 ∨ pt_root x = NConst mu)) as [Hx|Hx];
     destruct (decide (pt_root y = NConst b0 ∨ pt_root y = NConst mu)) as [Hy|Hy].
     + right. set_solver.
-    + exfalso. apply cpt_root_in in Hx. unfold pt_root in Hx. rewrite Hn in Hx.
-      fold (pt_root (cpt y)) in Hx. rewrite cpt_root_out in Hx by naive_solver. naive_solver.
-    + exfalso. apply cpt_root_in in Hy. unfold pt_root in Hy. rewrite <-Hn in Hy.
-      fold (pt_root (cpt x)) in Hy. rewrite cpt_root_out in Hy by naive_solver. naive_solver.
-    + left. rewrite !cpt_out_id in Hn, Ho by naive_solver. done.
+    + exfalso. apply cpt_root_in in Hx. rewrite Hn in Hx.
+      rewrite cpt_root_out in Hx by naive_solver. naive_solver.
+    + exfalso. apply cpt_root_in in Hy. rewrite <-Hn in Hy.
+      rewrite cpt_root_out in Hy by naive_solver. naive_solver.
+    + left. rewrite !cpt_out_id in Hp by naive_solver. done.
   - intros p Hp. set_solver.
-  - intros x [_ H]. lia.
+  - intros x H. exact (ppo_irrefl _ H).
 Qed.
 
 Lemma Wm_fresh : wext_fresh Wb {[NConst mu]} Wm.
@@ -136,24 +206,15 @@ Proof.
   - split_and!; simpl.
     + set_solver.
     + by intros x y ->.
-    + intros [p o] [p' o'] [Hn Ho]; simpl in *. subst p'. unfold cpt. simpl.
-      rewrite (cnm_name p o o'). split; [done|]. rewrite (cnm_off p o), (cnm_off p o'). lia.
+    + intros x y Hp. apply ppo_map; [apply cpt_shift|apply cpt_br|done].
     + exact Wm_strict.
   - simpl. set_solver.
   - done.
   - intros [p o] [p' o'] Hx Hy. unfold pt_root in Hx, Hy. simpl in *. split.
     + intros H. unfold cpt in H. simpl in H.
       destruct (cnm_inj p o p' o') as [-> ->]; [set_solver|set_solver|done|done].
-    + intros [Hn Ho]. unfold cpt in Hn, Ho. simpl in *.
-      assert (p = p') as <-.
-      { destruct (cnm_inj p 0 p' 0) as [? _]; [set_solver|set_solver| |done].
-        destruct (cnm p 0) eqn:E1, (cnm p' 0) eqn:E2.
-        rewrite (cnm_name p o 0), (cnm_name p' o' 0), E1, E2 in Hn. simpl in Hn. subst.
-        (* same name; offsets at 0 agree because they depend on the name only *)
-        pose proof (cnm_off p 0) as H1. pose proof (cnm_off p' 0) as H2.
-        rewrite E1 in H1. rewrite E2 in H2. simpl in *.
-        destruct p, p'; simpl in *; repeat case_decide; simplify_eq/=; try done; set_solver. }
-      split; [done|]. rewrite (cnm_off p o), (cnm_off p o') in Ho. lia.
+    + intros Hp. apply cinv_ppo in Hp; [|apply cq_cpt; unfold pt_root; simpl; set_solver].
+      rewrite !cinv_cpt in Hp by (unfold pt_root; simpl; set_solver). done.
 Qed.
 
 Definition Tb : ty := TSess SEnd (Pt (NVar 0) 1).

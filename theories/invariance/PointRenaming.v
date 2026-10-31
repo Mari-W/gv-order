@@ -35,6 +35,7 @@ Fixpoint pnsw (a b : nat) (p : pname) : pname :=
   | NConst x => NConst (nswap a b x)
   | NVar x => NVar x
   | NSlot q o i => NSlot (pnsw a b q) o i
+  | NBr q o i => NBr (pnsw a b q) o i
   end.
 
 Definition ptsw (a b : nat) (x : point) : point :=
@@ -92,6 +93,17 @@ Section points.
 
   Lemma ptsw_slot x i : ptsw a b (pt_slot x i) = pt_slot (ptsw a b x) i.
   Proof. done. Qed.
+
+  Lemma ptsw_br x i : ptsw a b (pt_br x i) = pt_br (ptsw a b x) i.
+  Proof. done. Qed.
+
+  Lemma ppo_sw_1 x y : ppo x y → ppo (ptsw a b x) (ptsw a b y).
+  Proof. apply ppo_map; [intros; apply ptsw_shift|intros; apply ptsw_br]. Qed.
+
+  Lemma ppo_sw x y : ppo (ptsw a b x) (ptsw a b y) ↔ ppo x y.
+  Proof.
+    split; [|apply ppo_sw_1]. intros H%ppo_sw_1. by rewrite !ptsw_involutive in H.
+  Qed.
 
   Lemma ptsw_pconst x : ptsw a b (pconst x) = pconst (nswap a b x).
   Proof. done. Qed.
@@ -265,7 +277,10 @@ Section points.
   (** Point instantiation commutes. *)
   Lemma pn_inst_sw σ p :
     ptsw a b (pn_inst σ p) = pn_inst (ptsw a b ∘ σ) (pnsw a b p).
-  Proof. induction p; simpl; try done. by rewrite ptsw_slot, ptsw_shift, IHp. Qed.
+  Proof.
+    induction p; simpl; try done; [by rewrite ptsw_slot, ptsw_shift, IHp|].
+    by rewrite ptsw_br, ptsw_shift, IHp.
+  Qed.
 
   Lemma pt_inst_sw σ x :
     ptsw a b (pt_inst σ x) = pt_inst (ptsw a b ∘ σ) (ptsw a b x).
@@ -349,7 +364,7 @@ Section points.
   Proof. rewrite pt_inst_sw. apply pt_inst_ext. intros i. apply plist_sw. Qed.
 
   Lemma pn_vb_sw k p : pn_vb k p → pnsw a b p = p.
-  Proof. induction p; simpl; intros H; [done|done|by rewrite IHp]. Qed.
+  Proof. induction p; simpl; intros H; [done|done|by rewrite IHp..]. Qed.
 
   (** Renaming acts on the outer points of a constraint only, and its
       open facts are the renamed ones (sharp edges 65). *)
@@ -434,9 +449,11 @@ Proof.
   - intros x y z. rewrite <-!He. apply HW.
   - intros x y. rewrite <-!He. apply HW.
   - intros x y i. rewrite <-!He. apply HW.
+  - intros x y i. rewrite <-!He. apply HW.
   - intros x y z. rewrite <-!Hl. apply HW.
   - intros x x' y y'. rewrite <-!He, <-!Hl. apply HW.
   - intros x. apply Hl, HW.
+  - intros x i. apply Hl, HW.
   - intros x y. rewrite <-He, <-Hn. apply HW.
   - intros x y. rewrite <-Hl, <-Hn. apply HW.
   - intros p. rewrite <-Hn. apply HW.
@@ -507,14 +524,16 @@ Section wsw.
     - apply HW.
     - rewrite !ptsw_shift. apply HW.
     - rewrite !ptsw_slot. apply HW.
+    - rewrite !ptsw_br. apply HW.
     - apply HW.
     - apply HW.
     - rewrite ptsw_shift. apply HW.
+    - rewrite ptsw_br. apply HW.
     - intros H. apply (wf_eq_supp _ HW) in H as [H|[Hx Hy]].
       + left. by apply (ptsw_inj a b).
       + right. rewrite !elem_of_names_sw', <-!pt_root_sw. done.
-    - intros H. apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[Hx Hy]].
-      + left. split; [|done]. by apply (pnsw_inj a b).
+    - intros H. apply (wf_lt_supp _ HW) in H as [Hp|[Hx Hy]].
+      + left. by apply (ppo_sw a b).
       + right. rewrite !elem_of_names_sw', <-!pt_root_sw. done.
     - intros Hp. apply elem_of_names_sw' in Hp.
       destruct (wf_names_const _ HW _ Hp) as [c Hc].
@@ -1349,7 +1368,7 @@ Proof.
       exists (tenvsw a b Θr), (stysw a b s1), (stysw a b s2), (ptsw a b k), (tenvsw a b Θ').
       split_and!.
       * by apply (tenv_hd_sw a b _ _ (SPlus s1 s2)).
-      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_shift 1 k)) in Hext.
+      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_br k i)) in Hext.
         unfold esw in Hext; simpl in Hext. by rewrite sbranch_map in Hext.
       * by apply (proj2 HE').
     + (* branch *)
@@ -1357,7 +1376,7 @@ Proof.
       exists (tenvsw a b Θr), (stysw a b s1), (stysw a b s2), (ptsw a b k), (tenvsw a b Θ').
       split_and!.
       * by apply (tenv_hd_sw a b _ _ (SWith s1 s2)).
-      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_shift 1 k)) in Hext.
+      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_br k i)) in Hext.
         unfold esw in Hext; simpl in Hext. by rewrite sbranch_map in Hext.
       * by apply (IHE n' ltac:(lia) W).
     + (* new *)
@@ -1504,6 +1523,7 @@ Section fixed.
     induction p; simpl; intros Ha Hb; try done.
     - f_equal. apply nswap_ne; congruence.
     - f_equal. by apply IHp.
+    - f_equal. by apply IHp.
   Qed.
 
   Lemma ptsw_fix x :
@@ -1621,17 +1641,17 @@ Section fixed.
         [destruct (Hcase y) as [[Hya Hyb]|Hy]|].
       + by rewrite !ptsw_fix.
       + split; intros H.
-        * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[_ H]];
+        * apply (wf_lt_supp _ HW) in H as [Hp|[_ H]];
             [|by destruct (Hout _ (Hsw _ Hy))].
-          apply wf_lt_same; [done| |done]. by apply (pnsw_inj a b).
-        * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[_ H]]; [|by destruct (Hout _ Hy)].
-          apply wf_lt_same; [done|simpl; by rewrite Hn|done].
+          apply wf_lt_ppo; [done|]. by apply (ppo_sw a b).
+        * apply (wf_lt_supp _ HW) in H as [Hp|[_ H]]; [|by destruct (Hout _ Hy)].
+          apply wf_lt_ppo; [done|]. by apply (ppo_sw a b).
       + split; intros H.
-        * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[H _]];
+        * apply (wf_lt_supp _ HW) in H as [Hp|[H _]];
             [|by destruct (Hout _ (Hsw _ Hx))].
-          apply wf_lt_same; [done| |done]. by apply (pnsw_inj a b).
-        * apply (wf_lt_supp _ HW) in H as [[Hn Ho]|[H _]]; [|by destruct (Hout _ Hx)].
-          apply wf_lt_same; [done|simpl; by rewrite Hn|done].
+          apply wf_lt_ppo; [done|]. by apply (ppo_sw a b).
+        * apply (wf_lt_supp _ HW) in H as [Hp|[H _]]; [|by destruct (Hout _ Hx)].
+          apply wf_lt_ppo; [done|]. by apply (ppo_sw a b).
   Qed.
 End fixed.
 

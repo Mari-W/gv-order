@@ -830,7 +830,7 @@ Section internalize.
       { by exists s0. }
       { rewrite dom_delete_L. clear. set_solver. }
       cbn [sentc] in HΦ. rewrite difference_empty_L in HΦ.
-      pose proof (HΦ (<[a := (sbranch i s1 s2, pt_shift 1 k)]> (delete a Σ)) C (F ⊎ {[+ f +]})
+      pose proof (HΦ (<[a := (sbranch i s1 s2, pt_br k i)]> (delete a Σ)) C (F ⊎ {[+ f +]})
                     sc sd kc kd) as HP.
       rewrite echsubst_disj_union1 in HP. apply HP.
       { unfold fusedP. rewrite (insert_insert_ne _ a c), (insert_insert_ne _ a d) by done. done. }
@@ -864,7 +864,7 @@ Section internalize.
       { by exists s0. }
       { rewrite dom_delete_L. clear. set_solver. }
       cbn [sentc] in HP1. rewrite difference_empty_L in HP1.
-      pose proof (IH n' (le_n _) W _ _ HP1 (<[a := (sbranch i s1 s2, pt_shift 1 k)]> (delete a Σ))
+      pose proof (IH n' (le_n _) W _ _ HP1 (<[a := (sbranch i s1 s2, pt_br k i)]> (delete a Σ))
                     C (F ⊎ {[+ f +]}) sc sd kc kd) as HP.
       rewrite echsubst_disj_union1 in HP. apply HP.
       { unfold fusedP. rewrite (insert_insert_ne _ a c), (insert_insert_ne _ a d) by done. done. }
@@ -1309,10 +1309,10 @@ Section internalize.
         by (rewrite HΣ; by rewrite lookup_insert_eq).
       assert (Σ1 = delete c0 (fusedP c d Σ sc sd kc kd)) as ->.
       { rewrite HΣ, delete_insert_id; [done|]. by apply not_elem_of_dom. }
-      assert ((<[c0 := (sbranch i s1 s2, pt_shift 1 k)]> (delete c0 (fusedP c d Σ sc sd kc kd)))
+      assert ((<[c0 := (sbranch i s1 s2, pt_br k i)]> (delete c0 (fusedP c d Σ sc sd kc kd)))
                 !! c1 = Some (s1', k')) as E1 by (rewrite HΣ2; by rewrite lookup_insert_eq).
       rewrite lookup_insert_ne, lookup_delete_ne in E1 by done.
-      assert (Σ2 = delete c1 (<[c0 := (sbranch i s1 s2, pt_shift 1 k)]>
+      assert (Σ2 = delete c1 (<[c0 := (sbranch i s1 s2, pt_br k i)]>
                                 (delete c0 (fusedP c d Σ sc sd kc kd)))) as ->.
       { rewrite HΣ2, delete_insert_id; [done|]. by apply not_elem_of_dom. }
       destruct Hcc as [[-> ->]|[-> ->]].
@@ -1320,20 +1320,20 @@ Section internalize.
         injection E0 as <- <-. injection E1 as <- <-.
         destruct (sdual_plus_with _ _ _ _ _ _ Hdu Hu Hu') as [Hd1 Hd2].
         apply (IH n' (le_n _) W _ _ HP2 Σ C _ (sbranch i s1 s2) (sbranch i r1 r2)
-                 (pt_shift 1 kc) (pt_shift 1 kd)); [|done|].
+                 (pt_br kc i) (pt_br kd i)); [|done|].
         + unfold fusedP. apply map_eq. intros y.
           destruct (decide (y = d)) as [->|Hyd]; [by simplify_map_eq|].
           destruct (decide (y = c)) as [->|Hyc]; by simplify_map_eq.
-        + split_and!; try done; [by apply sdual_sbranch|by apply (wf_eq_shift _ HWf)].
+        + split_and!; try done; [by apply sdual_sbranch|by apply (wf_eq_br _ HWf)].
       - rewrite (fusedP_d c d Hcd) in E0. rewrite fusedP_c in E1.
         injection E0 as <- <-. injection E1 as <- <-.
         destruct (sdual_with_plus _ _ _ _ _ _ Hdu Hu' Hu) as [Hd1 Hd2].
         apply (IH n' (le_n _) W _ _ HP2 Σ C _ (sbranch i r1 r2) (sbranch i s1 s2)
-                 (pt_shift 1 kc) (pt_shift 1 kd)); [|done|].
+                 (pt_br kc i) (pt_br kd i)); [|done|].
         + unfold fusedP. apply map_eq. intros y.
           destruct (decide (y = c)) as [->|Hyc]; [by simplify_map_eq|].
           destruct (decide (y = d)) as [->|Hyd]; by simplify_map_eq.
-        + split_and!; try done; [by apply sdual_sbranch|by apply (wf_eq_shift _ HWf)].
+        + split_and!; try done; [by apply sdual_sbranch|by apply (wf_eq_br _ HWf)].
     Qed.
 
     Lemma close_steps F2 h h0 g g0 c0 c1 :
