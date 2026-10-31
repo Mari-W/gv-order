@@ -346,3 +346,35 @@ Why it deadlocks.
 Repair R6. T-Match asks ρ < |Γ2|, the condition T-App puts on the effect of an
 argument. The child then needs 5 < 3 and the program is rejected. The rule
 m_match of theories/mp/MPTyping.v has the condition.
+
+
+=====================================================================
+Program 7 (stage 2, version 2). A channel at priority ⊤ is dropped
+=====================================================================
+
+Found while lifting the restrictions of fragment v1 (mordido-perez.md 12). It
+reads fork with a linear thunk (R2).
+
+Program.
+
+  let (x, y) = new (Close^⊤) in
+  fork{⊤}{⊤} (λlin _:Unit. wait{⊤} y);
+  ()
+
+Why it types.
+
+  close and wait take ι ∈ (⊥, ⊤] (Fig. 5, p. 11), so Close^⊤ and Wait^⊤ are
+  session types of actions at ⊤. The thunk captures y with |Wait^⊤| = ⊤, so it
+  has lower bound ⊤ and effect ⊤, and fork accepts ι1 = ⊤ ∈ (⊥, ⊤] and
+  ι2 = ⊤ ∈ [⊥, ⊤]. fork has effect ⊥, so T-Let holds. The last expression () is
+  T-Const, which asks |Γ| = ⊤, and |x : Close^⊤| = ⊤. Context split treats a type
+  of priority ⊤ as unrestricted (S-Top, Fig. 12, p. 24), so x is never used.
+
+Why it deadlocks.
+
+  The child waits on y forever, because main never closes x and ends with ().
+  The final configuration is not •⟨v⟩ alone, against Definition 1 and
+  Theorem 3 (p. 16).
+
+Repair R7. Action priorities are finite. The rule m_close of
+theories/mp/MP2Typing.v asks pfin ρ at a sequence.

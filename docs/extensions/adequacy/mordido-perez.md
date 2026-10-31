@@ -1,9 +1,11 @@
 # D.3 Adequacy for Mordido and Pérez (2026)
 
 Status. Stage 1 done on 2026-10-31, research and design. Stage 2 mechanized on
-2026-10-31 in theories/mp/ on branch cfst, for fragment v1 with decisions D1 to
-D6 below (section 12, restriction log in section 13). Same procedure as for PGV
-(pgv-adequacy.md) and Padovani and Novara (padovani-novara.md).
+2026-10-31 in theories/mp/ on branch cfst, first for fragment v1 and then as
+version 2, which covers context-free session types, session type variables and
+functions over unbounded segments (section 12, restriction log in section 13).
+Same procedure as for PGV (pgv-adequacy.md) and Padovani and Novara
+(padovani-novara.md).
 
 Source. A. Mordido and J. A. Pérez, Deadlock-Free Context-Free Session Types,
 LNCS 2026, DOI 10.1007/978-3-032-28187-6_11. Indexed as mordido2026deadlockfree
@@ -470,131 +472,204 @@ stay outside the translation. The tree already types directly in TreeCopy.v.
 
 ## Stage 2, mechanization
 
-### 12  Fragment v1 in Rocq
+### 12  Version 2 in Rocq
 
 The author decided D1 (the repaired system), D2 = (c) (branch roots in the
-core, per-branch priorities allowed), D3 (Ψ modular), D4 (restrictions only
-where needed) and D6 (a general theorem). The files are in theories/mp/.
+core), D3 (Ψ modular), D4 (restrictions only where needed) and D6 (a general
+theorem). Fragment v1 (MPTypes.v to MPExamples.v) stays in the tree and is
+superseded by version 2.
 
 | File | Content |
 |---|---|
-| MPTypes.v | priorities, session types with µβ.∀^S ι.S, channel types with sequences, erasure into the core |
-| MPTyping.v | the judgment `mtyped Θ Γ e T σs e′`, Figs. 5, 6, 13, 14 on our terms |
-| MPWorld.v | anchors for valuations, denotations, ranks, `Wmp`, `Crel Θ`, `good` |
-| MPTranslate.v | `mp_translate`, `mp_deadlock_free` |
-| MPExamples.v | the two streams through the translation, `st_mp_deadlock_free` |
+| MP2Types.v | priorities, context-free session types with type variables, head normal form, positions, functional types, erasure |
+| MP2World.v | ranks with the ceiling, denotations, walks, observational equivalence, `Wmp`, anchors, `good`, the box constraints |
+| MP2Typing.v | the judgment `mtyped Θ Γ e T σs e′` |
+| MP2Translate.v | `mp2_translate`, `mp2_deadlock_free` |
+| MP2Examples.v | receiveTree with a sender, the two streams, T2, the repaired classic deadlock, a partial send |
 
-The source system. Source terms are our terms with priorities erased, so the
-translation of send, receive, select, match and new is the identity, and unit
-becomes the box of ∗. A priority is ⊥, ⊤, n, ι_j + n for a variable of the
-enclosing abstraction, or ι + n for the binder of ∀^S. A channel type
-`MChan pol S h d` is S with the sequence h + k·d (D3), and `pol` marks the dual
-end. inst unfolds µβ.∀^S ι.S at the head with ι := h and pops the sequence to
-h + d. Send and receive read the head through inst, as the examples write
-`send () (inst c1)`. Their side conditions are those of Fig. 5 with R1 and R3.
-The payload lies above the action, the continuation above the action, the
-effect of the payload below its priority. A priority abstraction is
-`MPoly Θ T σs U`, ∀ιs∈Θ. T →^{⊤,σs}_un U, typed by rec f. Λιs. λx.e (R4) under
-a context of units and abstractions, and applied by T-PApp and T-App in one
-step. Θ is a list of strict inequalities between affine priorities, and every
-comparison holds at every valuation of Θ.
+The source system. Source terms are our terms, as in v1. Session types are
+those of Fig. 1 with binary choice: Skip, S;S, !^ρ P, ?^ρ P, ⊕^ρ(S, S),
+&^ρ(S, S), Close^ρ, Wait^ρ, µβ.∀^S ι.S, β and session type variables. µβ.S is
+µβ.∀^S ι.S with ι unused, and ∀^S ι.S is µβ.∀^S ι.S with β unused. A channel
+type is S at a position. A position is either the sequence h + k·d of the
+channel (D3) or an abstract position, the walk w from an end point n. T-Eq
+(`m_eq`) asks the erasures to be bisimilar at every instance of the type
+variables and the two channel points to be observationally equivalent at every
+valuation. It covers inst, the monoid laws and distribution. An action needs
+its channel type in head shape, and at a sequence it has the side conditions of
+Fig. 5 with R1 and R3. Θ is a predicate on valuations of the priority and
+session type variables. A priority abstraction ∀ιs αs ∈ Θ. T →^{⊤,σs}_un U is
+forced at an instance that meets Θ (T-PApp and T-TApp in one step). A function
+over a segment has type ∀αs. Sa →^{⊤,⊤} ∃. Sr (`MSeg`). Its body is typed at
+any valuation with its channel at an abstract position (`m_fixseg`). A call
+returns ∃. Sr (`m_appseg`), opening it gives a channel at a fresh end point
+(`m_open`), and a channel at any position packs into ∃ (`m_pack`). At an
+abstract position an action has effect ⊤, the latent effect of receiveTree
+(p. 21), and sends only unit.
 
-The world. One anchor per box, the box's only point variable, stands for a
-valuation of Θ. A channel point is the slot of the anchor named by the channel
-type and sequence. Its denotation is the type in head form, its successor and
-branch roots denote the continuation and the chosen branch, its first slot the
-payload. The rank is the priority of the head. So the order of a branch is the
-rank of a branch-rooted point (D2), and two channels with one denotation share
-a point, as two channels with one priority are unordered for Mordido and Pérez.
-`Crel Θ` holds every fact true at every valuation of Θ, and a force at an
-instance σs that satisfies Θ meets it. Shift uniformity and "new only in main"
-are therefore not needed.
+The world. As in v1, one anchor per box stands for a valuation and a channel
+point at a sequence is the slot of the anchor named by its type. A point
+denotes a channel by its raw session type and sequence head, and the head
+normal form gives its successor, branch roots and payload slot. Two points are
+equivalent when every walk from them reaches equal ranks, so T-Eq preserves
+points without a canonical form. The rank of a channel is the priority of its
+head. An upper point with ⊤ is the ceiling, above every walk of every channel,
+junk included, and the lower point of ⊥ is the floor below them. A function
+over a segment is a box over a channel point κ and the caller's anchor B with
+the constraint {κ·w ≺ ceil(B), floor(B) ≺ κ·w ∣ w} plus every fact about B true
+at every valuation. It returns ∃κ′. {κ′·w ≺ ceil(B), floor(B) ≺ κ′·w ∣ w}. This
+is the coarse ceiling of K8 with walks that include payload slots, read in the
+rank world. The body needs no anchor of its own, so a recursive call on the end
+point of an earlier call needs no priority that the caller cannot name.
 
 Theorems, both closed under the global context.
 
 ```
-Theorem mp_translate Θ Γ e T ef e' :
+Theorem mp2_translate Θ Γ e T ef e' :
   mtyped Θ Γ e T ef e' →
-  ∀ Ψ B ins Δ Φ F, good Ψ Θ B → erel B ins Γ Δ → ub_below_s Wmp Ψ Φ (hiz B ef) F →
-  typed Wmp Φ Ψ ∅ Δ F (rename (ren_of ins) e') (tr B T).
+  ∀ ss Ψ B pts ins Δ Φ F, length ss = pc_nt Θ → Forall hcontractive ss →
+  good Ψ Θ B → pts_ok Ψ B pts → erel B ss pts ins Γ Δ → ub_below_s Wmp Ψ Φ (hiz B ef) F →
+  typed Wmp Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trs ss B pts T).
 
-Theorem mp_deadlock_free e ef e' :
+Theorem mp2_deadlock_free e ef e' :
   mtyped pc0 [] e MUnit ef e' → deadlock_free (∅, {[+ e' +]}).
-
-Theorem st_mp_deadlock_free :
-  ∃ ef e', mtyped pc0 [] st_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
 ```
 
-A sixth defect. T-Match never compares the priority ρ of the branching with
-|Γ₂|, the channels the branches hold (p. 26). Program 6 of
-mordido-perez-counterexamples.txt matches at 5 while it holds a channel at 3
-and deadlocks. Repair R6 adds ρ < |Γ₂|.
+ss is an instance of the session type variables, pts maps end points to points
+between the floor and the ceiling of B, and `trs ss B pts T` is the translated
+type under ss.
 
-Not done. The scheduler (it needs unary choice, see the log), the classic
-deadlock and its repair, T2 of 9.5 and the rejection of the six counterexamples
-are not mechanized. The simulation back to the source semantics is stage 3.
+Examples through the translation, each with `∃ ef e', mtyped pc0 [] main MUnit
+ef e' ∧ deadlock_free (∅, {[+ e' +]})`.
+
+| Program | Source | Theorem |
+|---|---|---|
+| receiveTree on the tree channel, against a sender of Node(Leaf, Leaf) | pp. 5, 21 | `rt_mp2_deadlock_free` |
+| two streams in a cycle | Listings 1.1, 1.2, p. 4 | `st_mp2_deadlock_free` |
+| the repair of the classic deadlock, p = 1, q = 2, f and g inlined | p. 3 | `df_mp2_deadlock_free` |
+| T2, branches that order a channel differently | section 9.5 | `t2_mp2_deadlock_free` |
+
+`psend_typed` types a partial send as the closure λc. send x c. Its lower bound
+is the payload's priority, which is R1.
+
+Findings.
+
+- Milner's scheduler (A.5) is not typed by the repaired system. In
+  follower{next d₁} d₁ a₂ c₂ of the main for k = 3 (p. 38) prev has the
+  sequence 2 + 6k and succ the sequence 4 + 6k. Line 14 selects Next on succ at
+  b + 4 = 8 while the thread holds prev, whose next action is at 2 + 6 = 8. T-Let
+  asks 8 < 8, and with the latent effect ⊔|Sℓ| of T-Sel (Fig. 14, p. 26) it asks
+  10 < 8. CfstScheduler.v types the scheduler directly with ranks that read the
+  parity of the instant.
+- A seventh program types and deadlocks. Close^⊤ and Wait^⊤ are allowed
+  (Fig. 5, close at ι ∈ (⊥, ⊤]), and a channel of priority ⊤ is unrestricted
+  (S-Top, Fig. 12, and T-Const, which asks |Γ| = ⊤). Program 7 of
+  mordido-perez-counterexamples.txt drops the closing end and its partner
+  waits forever. Repair R7 keeps action priorities finite.
+- The bound ∀α :: ρ of a session type variable constrains nothing. Fig. 4 and
+  its text (p. 10) read |α| as the interval of ρ when ρ has free priority
+  variables. receiveTree types only because T-Match does not check that a
+  continuation rises. Version 2 needs no bound, because receiveTree is a
+  function over a segment, where only the ceiling and the floor matter.
+- Rising continuations are forced by the rank world. A continuation after an
+  unbounded segment has a priority either below the last action of the
+  segment, which no strict order permits along program order, or at a position
+  that depends on the length of the segment.
+
+Not done. The rejection of the seven counterexamples by `mtyped` is not
+mechanized. A rejection needs an inversion of derivations through `m_eq` and
+`m_sub`, which is not cheap. The simulation back to the source semantics is
+stage 3.
 
 ### 13  Restriction log
 
 Each entry gives the reason and what is lost. "Lost" means a program that the
-repaired system of Mordido and Pérez types and fragment v1 does not.
+repaired system of Mordido and Pérez types and version 2 does not translate.
 
 Repairs.
 
 - R1, the arrow after a payload has the payload's priority. Reason: program 1
-  drops a channel and program 2 hides one from the order. v1 has no partial
-  send at all, send takes the pair. Lost: programs that pass a partial send as
-  a value, and programs that hold one across an action above the payload. The
-  second kind is rejected by their own rules when the channel is held directly.
+  drops a channel and program 2 hides one from the order. A partial send is the
+  closure λc. send x c, and T-AbsLin gives it the lower bound |x|
+  (`psend_typed`). Lost: nothing beyond the repair.
 - R2, fork takes a linear thunk. Reason: as printed no example types. Lost:
-  nothing, fork with an unrestricted thunk of a closed body is a special case.
+  nothing.
 - R3, the payload check reads the head of the payload's sequence. Reason:
-  program 3. The payload type carries its sequence, so a received channel keeps
-  its next priority. Lost: programs that type only through the set |T|, whose
-  payload acts at or below the carrier. Their monomorphic versions are
-  rejected by their own rules. Polymorphic payloads stay allowed.
-- R4, recursion is rec f. Λιs. λx.e. Reason: fix never reduces (program 4).
+  program 3. Lost: programs that type only through the set |T| of Fig. 4, whose
+  payload acts at or below the carrier. Polymorphic payloads stay allowed.
+- R4, recursion is rec f. Λιs αs. λx.e. Reason: fix never reduces (program 4).
   Lost: uses of fix as printed, which all get stuck.
-- R5, inst has no run-time trace. Reason: program 5. Lost: nothing.
+- R5, inst has no run-time trace. Reason: program 5. inst is T-Eq. Lost:
+  nothing.
 - R6, T-Match asks ρ < |Γ₂|. Reason: program 6. Lost: programs that block on a
-  branching while they hold a channel below it, which T-Let rejects for every
-  other blocking action.
+  branching while they hold a channel below it.
+- R7, action priorities are finite. Reason: program 7, a channel at Close^⊤ is
+  unrestricted and can be dropped. Lost: programs that close or wait at ⊤.
 
-Deviations of v1.
+Deviations of version 2.
 
-- Ψ in the types (D3). A function names the heads of all its polymorphic
-  channel parameters as priority variables, with intervals that relate them.
-  The paper reads them from the caller's Ψ and types the body once, at the first
-  call. Lost: recursive functions whose body holds only for the sequences of the
-  first call, for example unequal increments. Those programs repeat their first
-  round, and Stream.v types the streams directly with a world of instants.
-- No session type variables ∀β^ρ and no unknown sequence position after a call.
-  Reason: a call that consumes a segment of unknown length returns its channel
-  at an unknown head, which needs existential priorities. Lost: receiveTree
-  and the tree channel (p. 5, p. 21). TreeCopy.v types them directly.
-- No functional type variables ∀α^ρ. They occur only in the constants and in
-  fix, and v1 has the constants as term formers. Lost: nothing in the paper.
-- No µα.T. Lost: nothing in the paper.
-- Session types carry their continuation, !^ρ P.S, with binary choice, and no
-  Skip and ;. Reason: without session variables S;S is only needed for
-  non-tail recursion, which is outside v1 anyway. Lost: the same tree programs,
-  unary and n-ary choices (the scheduler's Worker and Sched), and channels that
-  end in Skip.
-- ∀^S only as µβ.∀^S ι.S, β not inside a payload. F-PAbsS forbids nesting. Lost:
-  monomorphic recursive session types µβ.S, which repeat their priorities and so
-  cannot run a second round, and channels that send their own type.
-- Products only as the results of new and receive, payloads unit or channels.
-  Lost: pairs as values and functions as payloads, no example uses either.
-- A λ whose closure holds no channel is written as a priority abstraction. Their
-  T-AbsLin gives it the lower bound ⊤. Lost: such a λ whose type mentions
-  priority variables of an enclosing abstraction, passed as a value.
-- A priority abstraction captures only units and abstractions and is closed in
-  priority variables. Lost: nothing in the paper.
-- Every continuation rises at a match. T-Sel and the constants check it for the
-  side that selects or sends, T-Match does not. Lost: programs whose branching
-  partner can never select, deadlock free only through divergence.
-- Action priorities are integers. close and wait allow ι = ⊤ (Fig. 5). Lost:
-  actions at ⊤, no example uses them.
+- Ψ in the types (D3). A function names the heads of the sequences of its
+  channel parameters as priority variables. Lost: recursive functions whose
+  body holds only for the sequences of the first call, for example unequal
+  increments. Those programs repeat their first round.
+- Functions over unbounded segments. A function of latent effect ⊤ that recurses
+  over a segment of one channel is written as `MSeg`, without priority
+  parameters. Lost: such functions with a second linear parameter, and bodies
+  that send a channel (an abstract position cannot name the carried slot, so
+  inside such a body and after its calls only unit is sent). The paper's only
+  example, receiveTree, has one channel and Int payloads.
+- After a segment call the returned channel acts with effect ⊤ and has priority
+  ⊥ in the context. Reason: its end point is existential, and only the ceiling
+  and the floor relate it to other points. Lost: programs that act on the
+  returned channel while they hold a channel of finite priority, or act on
+  another channel while they hold it. Their continuation either falls below the
+  segment or lies at a position that depends on the data, and the rank world
+  orders neither.
+- Session type variables. A priority abstraction binds session type variables,
+  which the anchor interprets and the box of the core binds (K6). A bound
+  ∀α :: ρ becomes part of the predicate Θ. Type variables do not occur in the
+  body of a µ. Reason: an instance with its own ∀^S would nest ∀^S, which
+  F-PAbsS forbids (p. 22). Lost: µβ.∀^S ι.S whose body mentions a type variable.
+- No functional type variables, no µα.T, products only as the results of new and
+  receive, payloads unit or channels. Lost: nothing in the paper.
+- A channel at Skip is linear. Fig. 4 gives Skip priority ⊤, so their context
+  split may drop it. Reason: the core has no rule that discards a session at
+  Skip, and the core does not change. Lost: programs that discard a channel at
+  Skip. Every example ends its channels with Close or Wait.
+- Choice is binary. A unary choice is a binary one with equal branches, and its
+  match a case with equal branches, with no rule of its own. A choice of n ≥ 3
+  labels nests binary choices, and each inner choice needs a priority strictly
+  between the outer one and the continuations. Lost: n-ary choices whose
+  continuations lie at ρ + 1. Doubling every priority of a program keeps it
+  typed and makes room. The paper has no n-ary choice.
+- Every continuation rises at a match, at a sequence. Reason: the branch root
+  x◁i is equivalent to the point of the branch only when the branch rises. Lost:
+  programs whose branching partner can never select, and abstractions whose
+  continuation type variable falls below the branching, which Fig. 4 admits
+  because it reads |α| as an interval.
+- A priority abstraction captures only units and abstractions and takes and
+  returns no channel at an abstract position and no unopened segment result.
+  Reason: the core compares existential types on the nose. Lost: a function that
+  returns the result of a segment call unopened. No example does.
+- A priority abstraction has a satisfiable Θ. Lost: nothing callable.
+- Milner's scheduler is outside the repaired system (section 12), so nothing is
+  lost there.
 - More permissive than the paper. select has effect ρ instead of ⊔|Sℓ|, an
-  effect may grow (`m_sub`), and lower bounds and effects are exact lists. These
-  accept more source programs and lose none.
+  effect may grow (`m_sub`), T-Eq accepts every rewrite that keeps the erasure
+  and the point, and lower bounds and effects are exact lists. These accept more
+  source programs and lose none.
+
+Paper examples. Through the translation go receiveTree with the tree channel
+(pp. 5, 21), the two streams (Listings 1.1, 1.2) and the repair of the classic
+deadlock (p. 3). The classic deadlock itself deadlocks. Their rules reject it,
+and CfstDeadlock.v shows that no strict world types it. Milner's scheduler (A.5)
+is not typed by their repaired rules.
+
+Programs their repaired system types that version 2 does not translate:
+recursive functions whose body holds only for the first round's sequences
+(D3), segment functions with a second linear parameter or that send channels,
+programs that order the channel returned by a segment call against other
+finite channels, µ bodies with type variables, programs that discard a channel
+at Skip, n-ary choices without room between priorities, branchings whose
+continuation does not rise, and functions that return an unopened segment
+result.
