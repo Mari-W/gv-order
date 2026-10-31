@@ -176,7 +176,7 @@ Lemma pc0_val v ts : models pc0 v ts → v = [] ∧ ts = [].
 Proof. done. Qed.
 
 Ltac oeq0 := intros ?v ?ts [-> ->]; apply oeq_hdt; vm_compute; reflexivity.
-Ltac plt0 := right; intros ?v ?ts [-> ->] ?l ?Hl;
+Ltac plt0 := right; intros ?v ?ts [-> ->] ?l ?Hl; simpl in Hl;
   repeat (apply elem_of_cons in Hl as [->|Hl]; [vm_compute; done|]); by apply elem_of_nil in Hl.
 Ltac seq0 := intros ?ss ?Hl ?Hf; destruct ss; [|discriminate]; rewrite !sinst_nil.
 
@@ -224,4 +224,80 @@ Qed.
 Theorem rt_mp2_deadlock_free : ∃ ef e', mtyped pc0 [] rt_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
 Proof.
   destruct rt_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp2_deadlock_free.
+Qed.
+
+(** ** Branches that order a channel differently (mordido-perez.md §9.5, T2)
+
+      c : ⊕¹{A: !⁵Unit; Close⁶, B: !²Unit; Close⁶}      d : Close³
+      T1 = select A c; send () c; close c
+      T2 = match c′ with { A → wait d′; receive c′; wait c′
+                         , B → receive c′; wait d′; wait c′ }
+      T3 = close d
+      main = new c, new d, fork T1, fork T3, T2
+
+    The two branches of T2 order c′ and d′ in opposite ways. Version 1
+    already typed it through branch roots; here it runs through the
+    version 2 judgment. *)
+
+Definition t2K1 : msty := MSeq (MSnd (PZ 5) MPUnit) (MEnd (PZ 6) false).
+Definition t2K2 : msty := MSeq (MSnd (PZ 2) MPUnit) (MEnd (PZ 6) false).
+Definition t2Qc : msty := MSel (PZ 1) t2K1 t2K2.
+Definition t2Qd : msty := MEnd (PZ 3) false.
+
+Definition t2_T1 : expr := App EClos (App ESend (Pair EUnit (App ESel1 (Var 4)))).
+Definition t2_T3 : expr := App EClos (Var 1).
+Definition t2_T2 : expr :=
+  Case (App EBra (Var 2))
+    (LetU (App EClos (Var 2)) (LetP (App ERecv (Var 0)) (App EClos (Var 0))))
+    (LetP (App ERecv (Var 0)) (LetU (App EClos (Var 4)) (App EClos (Var 0)))).
+
+Definition t2_main : expr :=
+  LetP (App ENew EUnit) (LetP (App ENew EUnit)
+    (LetU (App ESpawn (Lam t2_T1)) (LetU (App ESpawn (Lam t2_T3)) t2_T2))).
+
+Abbreviation p01 := (PR (PZ 0) 1).
+
+Lemma t2_main_typed : ∃ ef e', mtyped pc0 [] t2_main MUnit ef e'.
+Proof.
+  do 2 eexists. unfold t2_main.
+  eapply (m_new _ _ _ _ t2Qc (PZ 0) 1). eapply (m_new _ _ _ _ t2Qd (PZ 0) 1).
+  eapply (m_letu _ _ [None; None; None; Some _] [Some _; Some _; Some _; None]); [msp| | |apply plt_nil].
+  { (* T1 *)
+    eapply m_fork. eapply m_lam. unfold t2_T1.
+    eapply (m_close _ _ _ _ false (PZ 6) false p01); [|done].
+    eapply (m_send _ _ [None; None; None; None; None] [Some _; None; None; None; Some _] _ _ _ _ false (PZ 5) MPUnit
+              (MEnd (PZ 6) false) p01); [msp|apply m_unit; allun| |split; [done|split; [apply plt_none|plt0]]|apply plt_nil|apply plt_none].
+    change (sndQ false (PZ 5) MPUnit (MEnd (PZ 6) false)) with t2K1.
+    eapply (m_sel _ _ _ _ false (PZ 1) t2K1 t2K2 p01 _ false); [|split; [done|plt0]].
+    apply m_var; onlyun. }
+  eapply (m_letu _ _ [Some _; None; None; None] [None; Some _; Some _; None]); [msp| | |apply plt_nil].
+  { (* T3 *)
+    eapply m_fork. eapply m_lam. unfold t2_T3.
+    eapply (m_close _ _ _ _ true (PZ 3) false p01); [apply m_var; onlyun|done]. }
+  (* T2 *)
+  unfold t2_T2. eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  eapply (m_match _ _ [None; None; Some _; None] [None; Some _; None; None] _ _ _ _ _ _ true (PZ 1) t2K1 t2K2 p01);
+    [msp|apply m_var; onlyun|split; [done|plt0]| | |plt0].
+  - (* A *)
+    eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+    eapply (m_letu _ _ [None; None; Some _; None; None] [Some _; None; None; None; None]); [msp| | |].
+    + eapply (m_close _ _ _ _ false (PZ 3) false p01); [apply m_var; onlyun|done].
+    + eapply (m_recv _ _ [Some _; None; None; None; None] [None; None; None; None; None] _ _ _ _ true (PZ 5) MPUnit
+                (MEnd (PZ 6) false) p01); [msp|apply m_var; onlyun|split; [done|split; [apply plt_none|plt0]]| |apply plt_none].
+      eapply (m_close _ _ _ _ true (PZ 6) false p01); [apply m_var; onlyun|done].
+    + plt0.
+  - (* B *)
+    eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+    eapply (m_recv _ _ [Some _; None; None; None; None] [None; None; Some _; None; None] _ _ _ _ true (PZ 2) MPUnit
+              (MEnd (PZ 6) false) p01); [msp|apply m_var; onlyun|split; [done|split; [apply plt_none|plt0]]| |plt0].
+    eapply (m_letu _ _ [None; None; None; None; Some _; None; None] [Some _; Some _; None; None; None; None; None]);
+      [msp| | |].
+    + eapply (m_close _ _ _ _ false (PZ 3) false p01); [apply m_var; onlyun|done].
+    + eapply (m_close _ _ _ _ true (PZ 6) false p01); [apply m_var; onlyun|done].
+    + plt0.
+Qed.
+
+Theorem t2_mp2_deadlock_free : ∃ ef e', mtyped pc0 [] t2_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
+Proof.
+  destruct t2_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp2_deadlock_free.
 Qed.
