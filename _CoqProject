@@ -45,4 +45,5 @@ theories/examples/ReceivedChain.v
 theories/examples/Forwarder.v
 theories/examples/Ordered.v
 theories/examples/Rejected.v
+theories/examples/SendTreeType.v
 theories/counterexamples/DropCounter.v
