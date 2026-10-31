@@ -578,8 +578,8 @@ Findings.
 
 Not done. The rejection of the seven counterexamples by `mtyped` is not
 mechanized. A rejection needs an inversion of derivations through `m_eq` and
-`m_sub`, which is not cheap. The simulation back to the source semantics is
-stage 3.
+`m_sub`, which is not cheap. Section 14 carries deadlock freedom back to their
+semantics.
 
 ### 13  Restriction log
 
@@ -705,3 +705,80 @@ finite channels, µ bodies with type variables, programs that discard a channel
 at Skip, n-ary choices without room between priorities, branchings whose
 continuation does not rise, and functions that return an unopened segment
 result.
+
+## Stage 3, the source semantics
+
+### 14  Deadlock freedom in their semantics
+
+Every closed program that the repaired source system types at unit is deadlock
+free in their own semantics, Fig. 15 (p. 30), in the sense of Definition 1
+(p. 16).
+
+```
+Theorem mp2_deadlock_free_source e ef e' :
+  mtyped pc0 [] e MUnit ef e' → mp_deadlock_free_src e.
+
+Definition mp_deadlock_free_src (e : expr) : Prop :=
+  ∀ q, rtc src_pstep (∅, {[+ e +]}) q → src_irred q → src_final q.
+```
+
+`src_final q` says that no restriction is left, every child thread is () and
+the main thread is a value. The four programs of section 12 follow
+(`rt_deadlock_free_src`, `st_deadlock_free_src`, `df_deadlock_free_src`,
+`t2_deadlock_free_src`). The theorem needs no premise beyond the typing. A
+recursive function is rec f. λx.e by repair R4, so the typing yields no other
+form of recursion, and the simulation needs no restriction like the one on fix
+for Padovani and Novara.
+
+| File | Content |
+|---|---|
+| MP2Semantics.v | source reduction `src_step` and `src_pstep`, Definition 1 as `mp_deadlock_free_src` |
+| MP2Simulation.v | the relation `trm`, the forward simulation `fwd`, `classify`, `final`, the theorem |
+
+The model of Fig. 15. The source terms are the terms of `mtyped`, so both sides
+run on the syntax of lang/Syntax.v. The deviations follow.
+
+- Configurations are flat, a set of restricted names and a multiset of threads.
+  The rules of ≡ bring every closed configuration into this form.
+- Both ends of a channel carry one name. let (x, y) = new S in e is one term for
+  R-New and R-NewPoly, because the sequence of R-NewPoly lives in the types. The
+  fresh name is fresh for the whole configuration.
+- Type and priority applications are erased, and so is inst (R5). The β rule of
+  R4 is (rec f. λx.e) v → e[v/x][rec f. λx.e/f].
+- match y with {ℓ → eℓ} is a case on branch y, and R-Ch puts the channel into the
+  chosen branch in one step.
+- R-Close drops the restriction of the closed name. Fig. 15 keeps it, and ≡
+  removes it only once no thread mentions the name. A name closes once here, so a
+  program that closes a name twice is stuck here and not in Fig. 15. Linearity
+  (R7) rules such programs out, but the simulation does not track types and
+  does not use this.
+- R-Com and R-Ch fire on any name. In Fig. 15 a thread that holds a name always
+  runs under its restriction, because ≡ drops a restriction only when no thread
+  mentions the name.
+- Definition 1 asks the final value of the main thread to have a type of
+  priority ⊤. The simulation does not track types, so it shows only that the
+  main thread is a value.
+
+The simulation. `trm M s t m` relates a source term to a target term at a mode,
+the shape the translation reads: data (unit and channels), a linear function,
+or a function that is forced before it is applied. It holds every translation
+(`trm_of_typed`) and one administrative form, the translated recursive function
+after the force and before its argument is a value. Unit is () in the source and
+the box of () in the target. Close is followed by an administrative let, and
+fork by the two β steps of `fork_tr`. Communication is synchronous on both sides,
+so a message, a choice and a close each match one target step, and no extra step
+follows a message.
+
+- `fwd`. Every source step is matched by the corresponding target step with β
+  steps before and after.
+- `tri` and `classify`. A source thread is a value, steps, or is stuck. A stuck
+  source thread, for example () where a channel is expected, has a target that
+  reaches a term offering no action at all. The relation does not track the
+  payload kind of a channel, so such stuck terms cannot be ruled out, and the
+  proof does not need to rule them out.
+- `final`. If the source is irreducible, administrative steps bring the target to
+  a configuration whose threads are values, pending actions matching pending
+  source actions, or terms offering nothing. The target is deadlock free by
+  `mp2_deadlock_free`, so it is terminated or it reduces. Termination makes the
+  source final. A reduction pairs two pending actions, and the source pairs the
+  same two.

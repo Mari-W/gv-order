@@ -109,6 +109,8 @@ Version 2 in `mp/` supersedes fragment v1, with context-free session types, sess
 - `MP2World.v`: denotations of raw session types, observational equivalence of points, the ceiling above junk, the box constraints of abstractions and segments.
 - `MP2Translate.v`: the translation lemma and deadlock freedom of every closed program (`mp2_translate`, `mp2_deadlock_free`).
 - `MP2Examples.v`: receiveTree with the tree channel, the two streams, the repaired classic deadlock and T2, each translated (`rt_mp2_deadlock_free`, `st_mp2_deadlock_free`, `df_mp2_deadlock_free`, `t2_mp2_deadlock_free`), and the rank of the tree channel after receiveTree, which depends on the size of the tree (`rt_rank_data`, SHARP-EDGES 79).
+- `MP2Semantics.v`: their reduction (Fig. 15) with repairs R4 and R5, and their deadlock freedom (Definition 1) for a source program.
+- `MP2Simulation.v`: a simulation between source configurations and translated processes, so every typed closed program is deadlock free in their semantics (`mp2_deadlock_free_source`, SHARP-EDGES 80, docs/extensions/adequacy/mordido-perez.md 14), with the four examples (`rt_deadlock_free_src` and the others).
 
 `counterexamples/`
 

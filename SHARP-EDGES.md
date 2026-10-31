@@ -1417,6 +1417,35 @@ leaves Ψ unchanged (p. 25), so the body is checked under fixed sequences for
 both parameters. Section 13 of docs/extensions/adequacy/mordido-perez.md keeps
 the three losses with these reasons.
 
+**80. Mordido and Pérez, deadlock freedom in their semantics (Claude, 2026-10-31, theories/mp/MP2Semantics.v, MP2Simulation.v).**
+Every closed program of unit type in the repaired source system is deadlock free
+in their semantics (`mp2_deadlock_free_source`, closed under the global
+context). MP2Semantics.v models Fig. 15 (p. 30) on flat configurations with
+synchronous R-Com, R-Ch and R-Close, R-New and R-NewPoly as one rule, R-Fork,
+the β rule of repair R4 and the erasure of inst (R5). Definition 1 (p. 16) is
+`mp_deadlock_free_src`. The four programs of section 12 follow in the source
+semantics. The core and the translation are unchanged.
+
+The simulation forces no premise on programs. Padovani and Novara needed every
+fix to be fix λf.λx.e (SHARP-EDGES 71). Here repair R4 already makes recursion
+rec f. λx.e, and `mtyped` yields no other form.
+
+Three points shaped the proof. The translation is close to the identity, so a
+related source value always has a target value, and only one administrative
+form enters the relation, a translated recursive function after its force and
+before its argument is a value. Both semantics are synchronous, so a message, a
+choice and a close each match one target step. The relation does not record
+whether a channel carries unit or a channel next, so it cannot rule out a source
+thread stuck on () where a channel is expected. `tri` shows that the target of
+such a thread reaches a term that offers nothing, and `final` needs nothing more,
+because the target then cannot reduce through that thread either.
+
+The model departs from Fig. 15 in three places, listed in section 14 of
+docs/extensions/adequacy/mordido-perez.md. R-Close drops the restriction, so a
+name closes once. R-Com and R-Ch fire on any name. The final value of the main
+thread is shown to be a value, not to have a type of priority ⊤, because the
+simulation does not track types.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
