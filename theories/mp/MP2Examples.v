@@ -551,3 +551,22 @@ Proof.
   - apply m_var. split; [done|]. intros [|[|y]] t' Hy Hl; simpl in Hl; try done.
   - apply plt_nil.
 Qed.
+
+(** ** After a segment the rank of the channel depends on the data
+
+    The channel of [rt_main] has type TreeChannel; Wait⁹ and sequence
+    1 + 2k. After the tree Node(Leaf, Leaf) it reaches Wait⁹ at rank 9.
+    After a tree with four nodes on its left spine its last leaf is
+    offered at 17, so Wait⁹ does not rise and the point is junk, above
+    every finite level. A fact fixed when receiveTree is defined cannot
+    put the returned channel below a finite priority, and the latent
+    effect ⊤ after the call is forced (mordido-perez.md §13). *)
+
+Definition rt_wsmall : list wstep := [WB true; WS; WB false; WB false].
+Definition rt_wbig : list wstep :=
+  [WB true; WS; WB true; WS; WB true; WS; WB true; WS; WB false; WB false; WB false; WB false; WB false].
+
+Lemma rt_rank_data :
+  rank (dwalk (DCh Qc (PZ 1) 2) rt_wsmall) = KZ 9 1 ∧
+  ∀ z j, rlt (KZ z j) (rank (dwalk (DCh Qc (PZ 1) 2) rt_wbig)).
+Proof. split; [vm_compute; reflexivity|]. intros z j. vm_compute. done. Qed.
