@@ -96,6 +96,13 @@ has no axioms and no admitted proofs.
 - `ArithServer.v`: their arithmetic expression server (Listing 3) with binary choices and its fixed client (`as_deadlock_free`).
 - `BranchOrder.v`: a branch that orders two channels against the other branch, typable with branch roots and not under K5 (`bo_deadlock_free`, SHARP-EDGES 76).
 
+`mp/`, Mordido and Pérez in fragment v1 with repairs R1 to R6 (SHARP-EDGES 77, docs/extensions/adequacy/mordido-perez.md 12 and 13).
+
+- `MPTypes.v`, `MPTyping.v`: their types and typing on our terms, the judgment yields the translated term.
+- `MPWorld.v`: anchors for valuations, channel points named by their type in head form, the box constraint over every valuation.
+- `MPTranslate.v`: the translation lemma and deadlock freedom of every closed program (`mp_translate`, `mp_deadlock_free`).
+- `MPExamples.v`: the two streams typed in the source judgment and translated (`st_mp_deadlock_free`).
+
 `counterexamples/`
 
 - `DropCounter.v`: why the fresh point of E-Abs and E-Exp is a frame variable.

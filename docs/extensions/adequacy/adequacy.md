@@ -62,7 +62,11 @@ padovani-novara.md §7 has the details and every discrepancy.
 Status 2026-10-31 for Mordido and Pérez. Stage 1 is done on paper
 (mordido-perez.md, mordido-perez-counterexamples.txt). Five closed programs type
 and get stuck, each with a local repair, and one deadlock-free program types
-there and not here (mordido-perez.md 9.5).
+there and not here (mordido-perez.md 9.5). Stage 2 is mechanized for fragment v1 in
+theories/mp/ (mordido-perez.md 12 and 13). Every closed program of v1 with
+repairs R1 to R6 translates to a deadlock-free program (`mp_deadlock_free`),
+and the two streams go through the translation (`st_mp_deadlock_free`). A sixth
+defect came up, a branching that ignores the channels it holds (R6).
 
 1. Points from priorities. A PGV session type writes a priority o on every action,
    !^o T.S. The instant of that action gets rank o, and the world orders instants

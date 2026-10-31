@@ -1266,6 +1266,57 @@ program needs the cycle ι+1 ≺ (d,0) ≺ ι+1, so no strict world types it.
 Nothing failed. The core, the old examples and the seven ported files build
 with Print Assumptions closed for the 38 earlier results and the five new ones.
 
+**77. Adequacy for repaired Mordido and Pérez, fragment v1 (Claude, 2026-10-31, theories/mp/).**
+Every closed program of unit type in fragment v1 of Mordido and Pérez with
+repairs R1 to R6 translates to a deadlock-free program (`mp_deadlock_free`,
+closed under the global context). The two streams of Listings 1.1 and 1.2 go
+through the general translation (`st_mp_deadlock_free`). The judgment
+`mtyped Θ Γ e T σs e′` is their typing on our terms and yields the translated
+term, as `pn_typed` does for Padovani and Novara. The core is unchanged.
+
+Model. The priority map Ψ moves into the types (D3). A channel type is a
+session type with the sequence h + k·d of its channel, and inst unfolds
+µβ.∀^S ι.S at the head with ι := h and pops the sequence to h + d. A priority
+abstraction ∀ιs∈Θ. T →^{⊤,σ}_un U names the heads of its channel parameters
+as priority variables, and Θ is a list of strict inequalities between affine
+priorities. Effects are lists read as their maximum and lower bounds lists
+read as their minimum, so ⊔ and |Γ| need no symbolic join.
+
+World. A box over one point variable, the anchor, stands for every valuation
+of Θ. The slots of an anchor are the anchor of an instance, the channel of
+a type and sequence, the lower point of a list and the upper point of a list.
+A point denotes a valuation, a channel in head form, a level or junk. A
+successor, a branch root and the first slot of a channel denote the
+continuation, the chosen branch and the payload, so the denotation follows
+the type and branch priorities map to ranks of branch roots (D2). A
+continuation whose priority does not rise denotes junk ranked on top, so the
+rank rises along program order and along x ≺ x◁i (`wgen_strict_dn`, a copy
+of `wgen_strict_den` that reads branch roots). The box constraint `Crel Θ`
+holds every fact between points of the anchor that holds at every valuation
+of Θ, and a force at the anchor of an instance σs meets it when σs
+instantiates Θ (`crel_hold`). Recursive calls need no shift uniformity and
+`new` may occur anywhere, because a channel point is named by its type.
+
+Two subranks were needed. ≼ must hold uniformly over valuations, and min ρs
+and max σs tie with other points at some valuations only. A lower point has
+the subrank −|ρs|, so a closure that captures a closure with fewer entries
+lies strictly below it. An upper point has the subrank |σs|, or 0 when ⊤ is
+in σs, and the effect order `hle` admits a segment, an effect with ⊤ or a
+strictly smaller one.
+
+A sixth defect. T-Match (Fig. 14, p. 26) never compares the priority of the
+branching with the channels the branches hold. A thread that matches at 5
+while it holds a channel at 3 types, and deadlocks against a partner that
+acts at 3 first (program 6 of mordido-perez-counterexamples.txt). Repair R6
+asks ρ < |Γ₂|, the check T-App makes for an argument. Our rule `m_match` has it.
+
+Restrictions and the losses they cause are in the restriction log of
+docs/extensions/adequacy/mordido-perez.md. The main ones are no session type
+variables and no existential sequence positions, so the tree channel stays
+outside, continuation-carrying binary session types without Skip and ;, and
+payloads unit or channels. The scheduler, the classic deadlock, T2 and the
+rejection of the counterexamples are not mechanized yet.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

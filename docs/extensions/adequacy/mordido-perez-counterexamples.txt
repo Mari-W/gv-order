@@ -306,3 +306,43 @@ R5. Priority instantiation leaves no trace at run time. E-PInst becomes
     terminates.
 
 No repair touches T-Let, T-LetPair, T-Pair or T-App.
+
+
+=====================================================================
+Program 6 (stage 2). A branching ignores what the thread holds
+=====================================================================
+
+Found while mechanizing the translation (mordido-perez.md 12). It reads fork
+with a linear thunk (R2) and uses a unary choice.
+
+Program.
+
+  let (c, c′) = new C in
+  let (d, d′) = new D in
+  fork{3}{7} (λlin _:Unit.
+      match c′ with { L → λlin c′:Wait^7. wait{3} d′; wait{7} c′ });
+  close{3} d;
+  let c = select L c in close{7} c
+
+  C = ⊕^5{L: Close^7}      dual C = &^5{L: Wait^7}      D = Close^3
+
+Why it types.
+
+  The child holds c′ and d′. T-Match (Fig. 14, p. 26) types the scrutinee c′
+  with effect ⊥ under Γ1 = c′, so ρ1 < |Γ2| is ⊥ < |d′| = 3. The branch is
+  T-AbsLin with lower bound |Γ2| = 3. Its body waits on d′ at 3, where T-Let
+  asks 3 < |c′| = 7, then on c′ at 7. The match has effect ⊥ ⊔ 7 ⊔ 5. No
+  premise of T-Match compares the 5 of the branching with |Γ2| = 3. The thunk
+  has lower bound 3 and effect 7.
+  Main holds c and d. close d has effect 3 < |c| = 5. select L c is T-Sel with
+  5 < |Close^7| = 7, then close c at 7. The type is Unit.
+
+Why it deadlocks.
+
+  Main blocks on close d, whose partner d′ waits only inside the branch. The
+  child blocks on the match, whose partner selects only after close d. No rule
+  applies and main is no value, against Theorem 3 (p. 16).
+
+Repair R6. T-Match asks ρ < |Γ2|, the condition T-App puts on the effect of an
+argument. The child then needs 5 < 3 and the program is rejected. The rule
+m_match of theories/mp/MPTyping.v has the condition.
