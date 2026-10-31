@@ -108,7 +108,7 @@ Version 2 in `mp/` supersedes fragment v1, with context-free session types, sess
 - `MP2Types.v`, `MP2Typing.v`: their types and typing with Skip, ;, type variables and segment functions, the judgment yields the translated term.
 - `MP2World.v`: denotations of raw session types, observational equivalence of points, the ceiling above junk, the box constraints of abstractions and segments.
 - `MP2Translate.v`: the translation lemma and deadlock freedom of every closed program (`mp2_translate`, `mp2_deadlock_free`).
-- `MP2Examples.v`: receiveTree with the tree channel, the two streams, the repaired classic deadlock and T2, each translated (`rt_mp2_deadlock_free`, `st_mp2_deadlock_free`, `df_mp2_deadlock_free`, `t2_mp2_deadlock_free`).
+- `MP2Examples.v`: receiveTree with the tree channel, the two streams, the repaired classic deadlock and T2, each translated (`rt_mp2_deadlock_free`, `st_mp2_deadlock_free`, `df_mp2_deadlock_free`, `t2_mp2_deadlock_free`), and the rank of the tree channel after receiveTree, which depends on the size of the tree (`rt_rank_data`, SHARP-EDGES 79).
 
 `counterexamples/`
 

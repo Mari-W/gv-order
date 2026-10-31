@@ -613,19 +613,50 @@ Deviations of version 2.
   channel parameters as priority variables. Lost: recursive functions whose
   body holds only for the sequences of the first call, for example unequal
   increments. Those programs repeat their first round.
-- Functions over unbounded segments. A function of latent effect ⊤ that recurses
-  over a segment of one channel is written as `MSeg`, without priority
-  parameters. Lost: such functions with a second linear parameter, and bodies
-  that send a channel (an abstract position cannot name the carried slot, so
-  inside such a body and after its calls only unit is sent). The paper's only
-  example, receiveTree, has one channel and Int payloads.
+- Functions over unbounded segments. A segment is the part of a session that
+  one call of a recursive function consumes, and its length depends on the
+  data, as the whole tree does in receiveTree. A function of latent effect ⊤
+  that recurses over a segment is written as `MSeg`, over one channel and
+  without priority parameters. Its channel sits at an abstract position, a walk
+  from an end point whose head of sequence nobody knows. An action there has
+  effect ⊤, because the head after earlier calls has no bound. SHARP-EDGES 79
+  records an attempt to give these instants their real ranks, which lifted
+  nothing.
+  - Lost: such functions with a second linear parameter. Reason: a second
+    channel held during an action of effect ⊤ would need a priority above ⊤.
+    Two parameters with one common head would order each other, but after a
+    call both heads depend on the data, independently unless one existential
+    returns both channels, and version 2 has no product results. Their rules
+    type a copy over two tree channels with a pair result, because they check
+    the body under the sequences that Ψ fixes for the names of the parameters
+    (T-Inst and T-AbsLin, p. 25), as they do for receiveTree.
+  - Lost: bodies that send a channel, and sends of a channel on the channel a
+    call returns. Reason: the core sends a channel only if its point is the slot
+    of the carrier and lies above the carrier. At an abstract position the
+    carrier is a walk of an existential point, and no fact equates its slot
+    with a point of the anchor at every head. The order between a walk and its
+    own slot is a fact about one walk. It fails where the rank world puts junk,
+    and a recursive call on an end point cannot pass it on, because the caller
+    knows only the floor and the ceiling of that end point's walks. Receiving a
+    channel there works and leaves it at the walk of the slot.
 - After a segment call the returned channel acts with effect ⊤ and has priority
-  ⊥ in the context. Reason: its end point is existential, and only the ceiling
-  and the floor relate it to other points. Lost: programs that act on the
-  returned channel while they hold a channel of finite priority, or act on
-  another channel while they hold it. Their continuation either falls below the
-  segment or lies at a position that depends on the data, and the rank world
-  orders neither.
+  ⊥ in the context. Reason: the head of its sequence after the call depends on
+  the data and has no bound. `rt_rank_data` takes the channel of rt_main, of
+  type TreeChannel; Wait⁹ with sequence 1 + 2k. After Node(Leaf, Leaf) it
+  reaches Wait⁹ at rank 9. After a tree with four nodes on its left spine the
+  last leaf sits at 17 and Wait⁹ is junk, above every finite level. So no fact
+  fixed when the function is defined puts the returned channel below an anchor
+  point of finite priority.
+  - Lost: programs that act on the returned channel while they hold a channel
+    of finite priority. Their continuation runs below the segment for large
+    data, which their rules do not see.
+  - Lost: programs that act on another channel while they hold the returned
+    one. These are sound in the rank world, because junk lies above every
+    finite level. Their lower bound needs positions at end points with a head
+    written relative to the end point, a symbolic walk that computes a bound
+    valid at every head, a fixed increment in `MSeg`, and an existential whose
+    anchor carries the instance of the type variables. Version 2 has none of
+    them.
 - Session type variables. A priority abstraction binds session type variables,
   which the anchor interprets and the box of the core binds (K6). A bound
   ∀α :: ρ becomes part of the predicate Θ. Type variables do not occur in the

@@ -1360,6 +1360,63 @@ does not check that a continuation rises.
 The restriction log is section 13 of docs/extensions/adequacy/mordido-perez.md.
 The rejection of the counterexamples by the source judgment is not mechanized.
 
+**79. Ranks inside unbounded calls, an attempt (Claude, 2026-10-31, theories/mp/MP2Examples.v).**
+The plan was to give the instants of a segment function their real ranks. A
+segment is the part of a session that one call of a recursive function
+consumes, and its length depends on the data, as the whole tree does in
+receiveTree. The rank of an instant was to come from its remaining session type
+and the valuation. The box was to hold the static set of every κ·w ≺ ι·w′ whose
+head priorities compare that way, a carried slot was to rank at its payload's
+priority, and the ceiling was to stay only for the latent effect ⊤ toward the
+caller. None of the three losses of section 13 is lifted. Version 2 is
+unchanged except for one lemma.
+
+The rank of an instant is not a function of its remaining type. The world gives
+a continuation that does not rise junk, ranked above every finite level, and
+whether the continuation after a segment rises depends on the length of the
+segment. `rt_rank_data` takes the channel of rt_main, of type TreeChannel; Wait⁹
+with sequence 1 + 2k. After Node(Leaf, Leaf) the walk reaches Wait⁹ at rank 9.
+After a tree with four nodes on its left spine the last leaf sits at 17 and
+Wait⁹ is junk. No fact fixed when receiveTree is defined can put the returned
+channel below a finite priority, so acting on it while holding a channel of
+finite priority stays out of reach (loss c). Their rules accept that
+continuation, which runs below the segment for large data.
+
+Three obstacles stand behind the other losses.
+
+- A fact about an existential point holds at every head and at every instance
+  of the type variables, because the predicate of a box is fixed where the
+  function is defined and the core instantiates only points and session
+  variables. The anchor can carry the instance in the slot B[RAnc [] τs], so an
+  item whose denotation reads the type may still depend on it. Equality never
+  crosses roots. The slot of a walk of an existential point equals no point of
+  the anchor at every head, so a channel of the anchor cannot be sent at an
+  abstract position (loss b).
+- The core asks κ·w ≺ κ·w·0 before a send at κ·w. This holds only at walks that
+  are not junk, and a recursive call on an end point cannot discharge it,
+  because the caller knows only the floor and the ceiling of that end point's
+  walks.
+- Two channel parameters have two unknown heads. After a call both depend on
+  the data, independently unless one existential returns both, and version 2
+  has no product results. Inside the body an action at an abstract position has
+  effect ⊤, and no second channel lies above ⊤ (loss a).
+
+One part of loss c is sound but not done. Holding the returned channel while
+acting on another channel below its priority is fine in the rank world, because
+junk lies above every finite level. It needs a lower bound for the instants of
+the returned channel at every head. That asks for positions PX n w h d whose
+head is written relative to the end point (PI k for the head of n plus k), an
+invariant that the walk is junk or equals the position's channel at every
+concrete head, a symbolic walk that computes the bound, a fixed increment in
+MSeg, and an existential whose anchor is B[RAnc [] τs] with the facts
+X[RLw Q u] ≺ κ·u. This redesigns positions and was left out.
+
+The paper types a copy over two tree channels with a pair result, as it types
+receiveTree. T-Inst reads the sequence Ψ(x) of the parameter's name and T-AbsLin
+leaves Ψ unchanged (p. 25), so the body is checked under fixed sequences for
+both parameters. Section 13 of docs/extensions/adequacy/mordido-perez.md keeps
+the three losses with these reasons.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
