@@ -705,3 +705,386 @@ Section heads.
       intros i Hi. by apply Hl.
   Qed.
 End heads.
+
+Section heads2.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
+
+  Lemma hi_below_lo ef lo x :
+    plt Θ ef lo → hiz B ef = Some x → slt Wmp Ψ x (rpt B (RLo lo)).
+  Proof.
+    intros Hlt Hx. destruct ef as [|ρ0 ef0]; [done|]. injection Hx as <-.
+    destruct Hlt as [Hn|Hlt]; [done|].
+    apply (slt_rpt Ψ Θ B HB). intros v ts Hv.
+    rewrite (den_hi Ψ Θ B HB), (den_lo Ψ Θ B HB). apply hi_lo. by apply Hlt.
+  Qed.
+
+  Lemma hi_below_ch ef Q h d x :
+    plt Θ ef [LC Q h d] → hiz B ef = Some x → slt Wmp Ψ x (rpt B (RCh Q h d)).
+  Proof.
+    intros Hlt Hx. destruct ef as [|ρ0 ef0]; [done|]. injection Hx as <-.
+    destruct Hlt as [Hn|Hlt]; [done|].
+    apply (slt_rpt Ψ Θ B HB). intros v ts Hv.
+    rewrite (den_hi Ψ Θ B HB), (rank_ch Ψ Θ B HB). apply hi_chan. exact (Hlt v ts Hv (LC Q h d) (list_elem_of_here _ _)).
+  Qed.
+
+  Lemma lo_floor l : LP PBot ∈ l → sle Wmp Ψ (rpt B (RLo l)) (floor B).
+  Proof.
+    intros Hl. assert (∀ v ts, xminlb v ts l = XB) as Hm.
+    { intros v ts. pose proof (xminlb_le v ts l _ Hl) as H. simpl in H. by destruct (xminlb v ts l). }
+    destruct l as [|i [|i' l']]; [by apply elem_of_nil in Hl| |].
+    - apply list_elem_of_singleton in Hl as <-. left. apply se_refl.
+    - right. apply (slt_rpt Ψ Θ B HB). intros v ts _. rewrite !(den_lo Ψ Θ B HB), Hm. simpl. lia.
+  Qed.
+
+  Lemma sle_slt x y z : sle Wmp Ψ x y → slt Wmp Ψ y z → slt Wmp Ψ x z.
+  Proof. intros [H|H] H'; [by eapply slt_seqs_l|by eapply sl_trans]. Qed.
+
+  Lemma env_lo_below ss pts ins Γ Δ h :
+    pts_ok Ψ B pts → erel B ss pts ins Γ Δ → h ∈ lenv_heads Δ → sle Wmp Ψ (rpt B (RLo (envp Γ))) h.
+  Proof.
+    intros Hp H Hh. destruct (erel_heads _ _ _ _ _ _ _ H Hh) as (t & Ht & Hh').
+    destruct t as [|p Q [hh d|n w]|p Q|T lo ef' V|Θ' T ef' V|p k Qa Qr]; simpl in Hh'; try set_solver.
+    - apply elem_of_singleton in Hh' as ->. right. apply (slt_rpt Ψ Θ B HB). intros v ts Hv.
+      rewrite (den_lo Ψ Θ B HB), (rank_ch Ψ Θ B HB).
+      assert (LC Q hh d ∈ envp Γ) as Hi by (apply (envp_in Ψ Θ B HB Γ (MCh p Q (PR hh d))); [done|by left]).
+      destruct (envp Γ) as [|i0 l0] eqn:E; [by apply elem_of_nil in Hi|]. simpl length.
+      apply lo_chan. by apply (xminlb_le v ts (i0 :: l0) (LC Q hh d)).
+    - apply elem_of_singleton in Hh' as ->. right. eapply sle_slt; [apply lo_floor|apply (Hp n)].
+      apply (envp_in Ψ Θ B HB Γ (MCh p Q (PX n w))); [done|by left].
+    - apply elem_of_singleton in Hh' as ->. apply lo_floor.
+      apply (envp_in Ψ Θ B HB Γ (MEx p Q)); [done|by left].
+    - apply elem_of_singleton in Hh' as ->.
+      destruct (envp_seg Ψ Θ B HB Γ _ Ht) as (l1 & l2 & E). simpl in E.
+      destruct (decide (l1 = [] ∧ l2 = [])) as [[-> ->]|Hl].
+      { rewrite E, app_nil_r. left. apply se_refl. }
+      right. apply (slt_rpt Ψ Θ B HB). intros v ts Hv.
+      rewrite !(den_lo Ψ Θ B HB). rewrite E. apply lo_lo.
+      + rewrite !xminlb_app. eapply xle_trans; [apply xmin_le_r|apply xmin_le_l].
+      + rewrite !length_app. destruct l1, l2; simpl in *; try lia. naive_solver.
+  Qed.
+
+  Lemma ubs_part Φ F l1 l2 ef1 ss pts ins Γ2 Δ2 :
+    ub_below_s Wmp Ψ Φ (hiz B (l1 ++ ef1 ++ l2)) F → plt Θ ef1 (envp Γ2) → erel B ss pts ins Γ2 Δ2 →
+    ub_below_s Wmp Ψ Φ (hiz B ef1) (sf_union F (lenv_heads Δ2)).
+  Proof.
+    intros HF Hl HΔ. apply (ubs_union _ Wmp_wf).
+    - by apply (ubs_hle Ψ Θ B HB _ _ _ _ (hle_seg Ψ Θ B HB ef1 l1 l2)).
+    - intros x Hx h Hh. by apply (env_hi_below Ψ Θ B HB ss pts ins Γ2 Δ2 ef1 x h).
+  Qed.
+
+  Lemma ubs_seg Φ F ef l1 l2 :
+    ub_below_s Wmp Ψ Φ (hiz B (l1 ++ ef ++ l2)) F → ub_below_s Wmp Ψ Φ (hiz B ef) F.
+  Proof. apply (ubs_hle Ψ Θ B HB), (hle_seg Ψ Θ B HB). Qed.
+
+  (** A point below the ceiling lies below the frame of an effect with ⊤. *)
+  Lemma ubs_ceil Φ F ef x :
+    PTop ∈ ef → slt Wmp Ψ x (ceil B) → ub_below_s Wmp Ψ Φ (hiz B ef) F → ub_below_s Wmp Ψ Φ (Some x) F.
+  Proof.
+    intros Ht Hx. apply (ubs_lower Wmp Wmp_wf). intros y [=<-].
+    exists (rpt B (RHi ef)). split; [destruct ef; [by apply elem_of_nil in Ht|done]|].
+    right. eapply slt_seqs_r; [exact Hx|]. by apply (ceil_top Ψ Θ B HB).
+  Qed.
+End heads2.
+
+(** ** Channels at a sequence *)
+
+Definition mclosep (v : val) (ts : list msty) (P : mpay) : mpay := tsubp ts (mmapp (pclose v) P).
+
+Lemma rank_dch Q h d : rank (DCh Q h d) = xrk (hext (vprio (hdt h d Q).1)) 1 (KT 1).
+Proof. done. Qed.
+
+Lemma hdt_snd v ts h d a P K :
+  hdt h d (mclose v ts (MSeq (MSnd a P) K)) = (Some (VSnd (pclose v a) (mclosep v ts P) (mclose v ts K)), h).
+Proof. done. Qed.
+Lemma hdt_rcv v ts h d a P K :
+  hdt h d (mclose v ts (MSeq (MRcv a P) K)) = (Some (VRcv (pclose v a) (mclosep v ts P) (mclose v ts K)), h).
+Proof. done. Qed.
+Lemma hdt_sel v ts h d a K1 K2 :
+  hdt h d (mclose v ts (MSel a K1 K2)) = (Some (VSel (pclose v a) (mclose v ts K1) (mclose v ts K2)), h).
+Proof. done. Qed.
+Lemma hdt_bra v ts h d a K1 K2 :
+  hdt h d (mclose v ts (MBra a K1 K2)) = (Some (VBra (pclose v a) (mclose v ts K1) (mclose v ts K2)), h).
+Proof. done. Qed.
+Lemma hdt_end v ts h d a w :
+  hdt h d (mclose v ts (MEnd a w)) = (Some (VEnd (pclose v a)), h).
+Proof. done. Qed.
+
+(** The head shapes and their priority. *)
+Definition hshape (Q : msty) (a : prio) : Prop :=
+  ∀ v ts h d, vprio (hdt h d (mclose v ts Q)).1 = Some (pclose v a).
+
+Lemma hshape_snd pol a P K : hshape (sndQ pol a P K) a.
+Proof. intros v ts h d. destruct pol; done. Qed.
+Lemma hshape_rcv pol a P K : hshape (rcvQ pol a P K) a.
+Proof. intros v ts h d. destruct pol; done. Qed.
+Lemma hshape_sel pol a K1 K2 : hshape (selQ pol a K1 K2) a.
+Proof. intros v ts h d. destruct pol; done. Qed.
+Lemma hshape_bra pol a K1 K2 : hshape (braQ pol a K1 K2) a.
+Proof. intros v ts h d. destruct pol; done. Qed.
+Lemma hshape_end a w : hshape (MEnd a w) a.
+Proof. intros v ts h d. done. Qed.
+
+Lemma pt_root_shift x n : pt_root (pt_shift n x) = pt_root x.
+Proof. done. Qed.
+Lemma pt_root_br x b : pt_root (pt_br x b) = pt_root x.
+Proof. done. Qed.
+Lemma pt_root_slot x i : pt_root (pt_slot x i) = pt_root x.
+Proof. done. Qed.
+
+Lemma plt_single Θ a l v ts : plt Θ [a] [l] → models Θ v ts → xlt (evalp v a) (evlb v ts l).
+Proof.
+  intros [H|H] Hv; [done|]. specialize (H v ts Hv l (list_elem_of_here _ _)).
+  by rewrite xmaxl_single in H.
+Qed.
+
+Section chan.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
+
+  Lemma rank_x Q a h d v ts : hshape Q a →
+    rank (den (ianc B v ts) (rpt B (RCh Q h d))) = xrk (evalp v a) 1 (KT 1).
+  Proof. intros Ha. rewrite (den_ch Ψ Θ B HB), rank_dch, Ha. simpl. by rewrite evalp_pclose. Qed.
+
+  Lemma ch_next pol a P K Q h d :
+    (Q = sndQ pol a P K ∨ Q = rcvQ pol a P K) → plt Θ [a] [LC K h d] →
+    seqs Wmp Ψ (pt_shift 1 (rpt B (RCh Q h d))) (rpt B (RCh K h d)).
+  Proof.
+    intros HQ Hr. apply (gd_eq _ _ _ HB); [rewrite pt_root_shift; by apply rpt_root, HB|by apply rpt_root, HB|].
+    intros v ts Hv. rewrite den_shift, !(den_ch Ψ Θ B HB). unfold dsh, guard.
+    assert (dnext (DCh (mclose v ts Q) (pclose v h) d) = DCh (mclose v ts K) (pclose v h) d) as ->.
+    { destruct HQ as [->| ->]; destruct pol; done. }
+    rewrite decide_True; [apply oeq_refl|].
+    assert (hshape Q a) as Ha by (destruct HQ as [->| ->]; [apply hshape_snd|apply hshape_rcv]).
+    rewrite <-(den_ch Ψ Θ B HB), (rank_x Q a) by done. rewrite rank_dch.
+    apply xrk_lt. exact (plt_single Θ a (LC K h d) v ts Hr Hv).
+  Qed.
+
+  Lemma ch_branch pol a K1 K2 Q h d b :
+    (Q = selQ pol a K1 K2 ∨ Q = braQ pol a K1 K2) → plt Θ [a] [LC K1 h d; LC K2 h d] →
+    seqs Wmp Ψ (pt_br (rpt B (RCh Q h d)) b) (rpt B (RCh (if b then K2 else K1) h d)).
+  Proof.
+    intros HQ Hr. apply (gd_eq _ _ _ HB); [rewrite pt_root_br; by apply rpt_root, HB|by apply rpt_root, HB|].
+    intros v ts Hv. rewrite den_br, !(den_ch Ψ Θ B HB). unfold dbr, guard.
+    assert (dbr0 (DCh (mclose v ts Q) (pclose v h) d) b = DCh (mclose v ts (if b then K2 else K1)) (pclose v h) d) as ->.
+    { destruct HQ as [->| ->]; destruct pol, b; done. }
+    rewrite decide_True; [apply oeq_refl|].
+    assert (hshape Q a) as Ha by (destruct HQ as [->| ->]; [apply hshape_sel|apply hshape_bra]).
+    rewrite <-(den_ch Ψ Θ B HB), (rank_x Q a) by done. rewrite rank_dch.
+    apply xrk_lt. destruct Hr as [Hn|Hr]; [done|].
+    specialize (Hr v ts Hv (LC (if b then K2 else K1) h d)). rewrite xmaxl_single in Hr.
+    apply Hr. destruct b; set_solver.
+  Qed.
+
+  Lemma ch_pay pol a pp Qp hp dp K Q h d :
+    (Q = sndQ pol a (MPChan pp Qp hp dp) K ∨ Q = rcvQ pol a (MPChan pp Qp hp dp) K) →
+    seqs Wmp Ψ (pt_slot (rpt B (RCh Q h d)) 0) (rpt B (RCh Qp hp dp)).
+  Proof.
+    intros HQ. apply (gd_eq _ _ _ HB); [rewrite pt_root_slot; by apply rpt_root, HB|by apply rpt_root, HB|].
+    intros v ts Hv. rewrite den_slot, !(den_ch Ψ Θ B HB).
+    destruct HQ as [->| ->]; destruct pol; apply oeq_refl.
+  Qed.
+
+  Lemma ch_below_hi Q a h d ef :
+    hshape Q a → pfin a → a ∈ ef → slt Wmp Ψ (rpt B (RCh Q h d)) (rpt B (RHi ef)).
+  Proof.
+    intros Ha Hf Hin. apply (slt_rpt Ψ Θ B HB). intros v ts Hv.
+    rewrite (rank_x Q a) by done. rewrite (den_hi Ψ Θ B HB). rewrite <-(evalp_pclose v a).
+    apply ch_hi; [by destruct a|]. rewrite evalp_pclose. by apply xmaxl_in.
+  Qed.
+
+  Lemma ch_ub Φ Q a h d ef F :
+    hshape Q a → pfin a → a ∈ ef → ub_below_s Wmp Ψ Φ (hiz B ef) F →
+    ub_below_s Wmp Ψ Φ (Some (rpt B (RCh Q h d))) F.
+  Proof.
+    intros Ha Hf Hin. apply (ubs_lower Wmp Wmp_wf). intros y [=<-].
+    exists (rpt B (RHi ef)). split; [by destruct ef; [by apply elem_of_nil in Hin|]|].
+    right. by apply (ch_below_hi Q a).
+  Qed.
+
+  Lemma ch_below_ch Q a h d Qp hp dp :
+    hshape Q a → plt Θ [a] [LC Qp hp dp] → slt Wmp Ψ (rpt B (RCh Q h d)) (rpt B (RCh Qp hp dp)).
+  Proof.
+    intros Ha Hl. apply (slt_rpt Ψ Θ B HB). intros v ts Hv.
+    rewrite (rank_x Q a), (rank_ch Ψ Θ B HB) by done. apply xrk_lt.
+    exact (plt_single Θ a (LC Qp hp dp) v ts Hl Hv).
+  Qed.
+End chan.
+
+(** ** Forcing at an anchor *)
+
+Lemma evalp_psub v σ ρ : Forall pfin σ → evalp (evalZ v <$> σ) ρ = evalp v (psub σ ρ).
+Proof.
+  intros Hσ. destruct ρ as [| | |j n|]; simpl; try done.
+  rewrite list_lookup_fmap. destruct (σ !! j) as [s|] eqn:E; simpl; [|done].
+  apply (Forall_lookup_1 _ _ _ _ Hσ) in E. destruct s; simpl in E; try done; unfold evalZ; cbn; f_equal; lia.
+Qed.
+
+Lemma pclose_psub v σ ρ : Forall pfin σ → pclose (evalZ v <$> σ) ρ = pclose v (psub σ ρ).
+Proof.
+  intros Hσ. destruct ρ as [| | |j n|]; simpl; try done.
+  rewrite list_lookup_fmap. destruct (σ !! j) as [s|] eqn:E; simpl; [|done].
+  apply (Forall_lookup_1 _ _ _ _ Hσ) in E. destruct s; simpl in E; try done; unfold evalZ; cbn; f_equal; lia.
+Qed.
+
+Lemma psub_top σ ρ : Forall pfin σ → psub σ ρ = PTop ↔ ρ = PTop.
+Proof.
+  intros Hσ. destruct ρ as [| | |j n|]; simpl; try done.
+  destruct (σ !! j) as [s|] eqn:E; simpl; [|done].
+  apply (Forall_lookup_1 _ _ _ _ Hσ) in E. by destruct s.
+Qed.
+
+Lemma xmaxl_psub v σ l : Forall pfin σ → xmaxl (evalZ v <$> σ) l = xmaxl v (psub σ <$> l).
+Proof. intros Hσ. induction l; simpl; [done|]. by rewrite IHl, evalp_psub. Qed.
+
+Lemma hlen_psub σ l : Forall pfin σ → hlen (psub σ <$> l) = hlen l.
+Proof.
+  intros Hσ. unfold hlen. rewrite length_fmap.
+  assert (PTop ∈ psub σ <$> l ↔ PTop ∈ l) as E.
+  { rewrite list_elem_of_fmap. split; [intros (ρ & Hρ & Hin); symmetry in Hρ;
+      apply (psub_top σ ρ Hσ) in Hρ; by subst|intros Hin; by exists PTop]. }
+  by rewrite (bool_decide_ext _ _ E).
+Qed.
+
+Lemma mmap_comp f g : (∀ Q, mmap f (mmap g Q) = mmap (f ∘ g) Q) ∧
+                      (∀ P, mmapp f (mmapp g P) = mmapp (f ∘ g) P).
+Proof. apply msty_mpay_mut; intros; simpl; congruence. Qed.
+
+Lemma mmap_ext f g : (∀ ρ, f ρ = g ρ) →
+  (∀ Q, mmap f Q = mmap g Q) ∧ (∀ P, mmapp f P = mmapp g P).
+Proof. intros H. apply msty_mpay_mut; intros; simpl; congruence. Qed.
+
+Fixpoint rclosed_mmap f (Q : msty) : rclosed Q → rclosed (mmap f Q).
+Proof.
+  destruct Q as [| A B | a [|pp Qp hp dp] | a [|pp Qp hp dp] | a A B | a A B | a w | Q0 | | j];
+    simpl; try done; intros H; repeat match goal with H : _ ∧ _ |- _ => destruct H end;
+    try split; by apply rclosed_mmap.
+Qed.
+
+Fixpoint rbody_mmap f (Q : msty) : rbody Q → rbody (mmap f Q).
+Proof.
+  destruct Q as [| A B | a [|pp Qp hp dp] | a [|pp Qp hp dp] | a A B | a A B | a w | Q0 | | j];
+    simpl; try done; intros H; repeat match goal with H : _ ∧ _ |- _ => destruct H end;
+    try split; try by apply rbody_mmap. all: by apply rclosed_mmap.
+Qed.
+
+Fixpoint msc_mmap f k (Q : msty) : msc k Q → msc k (mmap f Q).
+Proof.
+  destruct Q as [| A B | a [|pp Qp hp dp] | a [|pp Qp hp dp] | a A B | a A B | a w | Q0 | | j];
+    simpl; try done; intros H; repeat match goal with H : _ ∧ _ |- _ => destruct H end;
+    try split; try by apply msc_mmap. by apply rbody_mmap.
+Qed.
+
+(** Closing an instance is instantiating the closed caller. *)
+Fixpoint mclose_msq (Q : msty) : ∀ v ts σ τ, Forall pfin σ → msc (length τ) Q →
+  mclose (evalZ v <$> σ) (mclose v ts <$> τ) Q = mclose v ts (msq σ τ Q).
+Proof.
+  intros v ts σ τ Hσ HQ. unfold mclose, msq.
+  destruct Q as [| A B | a P | a P | a A B | a A B | a w | S0 | | j]; simpl in *.
+  - done.
+  - destruct HQ. f_equal; by apply mclose_msq.
+  - rewrite pclose_psub by done. f_equal. destruct P as [|pp Qp hp dp]; [done|]. simpl.
+    rewrite pclose_psub by done. f_equal. by apply mclose_msq.
+  - rewrite pclose_psub by done. f_equal. destruct P as [|pp Qp hp dp]; [done|]. simpl.
+    rewrite pclose_psub by done. f_equal. by apply mclose_msq.
+  - destruct HQ. rewrite pclose_psub by done. f_equal; by apply mclose_msq.
+  - destruct HQ. rewrite pclose_psub by done. f_equal; by apply mclose_msq.
+  - by rewrite pclose_psub.
+  - rewrite (tsub_rbody τ (mmap (psub σ) S0)) by (by apply rbody_mmap).
+    rewrite !tsub_rbody by (by repeat apply rbody_mmap). f_equal.
+    rewrite (proj1 (mmap_comp _ _)). apply mmap_ext. intros ρ. simpl. by rewrite pclose_psub.
+  - done.
+  - rewrite list_lookup_fmap. destruct (lookup_lt_is_Some_2 τ j HQ) as [q Hq]. by rewrite Hq.
+Qed.
+
+Section anc.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B) (σ : list prio) (τ : list msty).
+  Context (Hσ : Forall pfin σ).
+  Abbreviation X := (rpt B (RAnc σ τ)).
+
+  Lemma rpt_X_root r : pt_root (rpt X r) = pt_name B.
+  Proof. unfold rpt. rewrite pt_root_slot. by apply rpt_root, HB. Qed.
+
+  Lemma den_X_slot v ts r : den (ianc B v ts) (rpt X r) = dsl (DAnc (evalZ v <$> σ) (mclose v ts <$> τ)) (encode_nat r).
+  Proof. unfold rpt at 1. by rewrite den_slot, (den_anc Ψ Θ B HB). Qed.
+
+  Lemma seqs_X r r' :
+    (∀ v ts, models Θ v ts → oeq (den (ianc B v ts) (rpt X r)) (den (ianc B v ts) (rpt B r'))) →
+    seqs Wmp Ψ (rpt X r) (rpt B r').
+  Proof. intros H. apply (gd_eq _ _ _ HB); [apply rpt_X_root|by apply rpt_root, HB|done]. Qed.
+
+  Lemma hiz_anc ef : opt_rel (seqs Wmp Ψ) (hiz X ef) (hiz B (psub σ <$> ef)).
+  Proof.
+    destruct ef as [|ρ ef]; simpl; [done|]. apply seqs_X. intros v ts _.
+    rewrite den_X_slot, (den_hi Ψ Θ B HB). simpl. rewrite decode_encode_nat.
+    rewrite xmaxl_psub by done. pose proof (hlen_psub σ (ρ :: ef) Hσ) as E. simpl in E. rewrite E.
+    apply oeq_refl.
+  Qed.
+
+  Lemma anc_ch Q h d : msc (length τ) Q → seqs Wmp Ψ (rpt X (RCh Q h d)) (rpt B (RCh (msq σ τ Q) (psub σ h) d)).
+  Proof.
+    intros HQ. apply seqs_X. intros v ts _. rewrite den_X_slot, (den_ch Ψ Θ B HB). simpl.
+    rewrite decode_encode_nat, mclose_msq, pclose_psub by done. apply oeq_refl.
+  Qed.
+
+  Lemma evlb_lsub v ts l :
+    (match l with LC Q _ _ => msc (length τ) Q | _ => True end) →
+    evlb (evalZ v <$> σ) (mclose v ts <$> τ) l = evlb v ts (lsub σ τ l).
+  Proof.
+    destruct l as [ρ|Q h d]; simpl; intros HQ; [by apply evalp_psub|].
+    unfold cprio. by rewrite mclose_msq, pclose_psub.
+  Qed.
+
+  Lemma anc_lo lo : Forall (λ l, match l with LC Q _ _ => msc (length τ) Q | _ => True end) lo →
+    seqs Wmp Ψ (rpt X (RLo lo)) (rpt B (RLo (lsub σ τ <$> lo))).
+  Proof.
+    intros Hl. apply seqs_X. intros v ts _. rewrite den_X_slot, (den_lo Ψ Θ B HB). simpl.
+    rewrite decode_encode_nat, length_fmap.
+    assert (xminlb (evalZ v <$> σ) (mclose v ts <$> τ) lo = xminlb v ts (lsub σ τ <$> lo)) as ->; [|apply oeq_refl].
+    induction Hl as [|l lo Hl1 Hl2 IH]; simpl; [done|]. by rewrite IH, evlb_lsub.
+  Qed.
+
+  Lemma tr_anc ss pts pts' T : tpure (length τ) T →
+    steq Wmp Ψ (sinst_ty (slist ((λ q, sinst (slist ss) (ers q)) <$> τ)) (tr X pts' T)) (trs ss B pts (msub σ τ T)) ∧
+    steq Wmp Ψ (trs ss B pts (msub σ τ T)) (sinst_ty (slist ((λ q, sinst (slist ss) (ers q)) <$> τ)) (tr X pts' T)).
+  Proof.
+    unfold trs. induction T as [|p Q [h d|n w]| p Q |T IH1 lo ef V IH2|Θ' T IH1 ef V IH2|p k Qa Qr];
+      simpl; intros HT; try done.
+    - assert (sinst (slist ((λ q, sinst (slist ss) (ers q)) <$> τ)) (polS p (ers Q)) =
+              sinst (slist ss) (polS p (ers (msq σ τ Q)))) as E.
+      { rewrite !polS_sinst. f_equal. unfold msq. rewrite ers_tsub by (by apply msc_mmap).
+        by rewrite (proj1 (ers_mmap _)). }
+      rewrite E. pose proof (anc_ch Q h d HT). split; (split; [|apply seq_refl]); [done|by apply se_sym].
+    - destruct HT as (H1 & H2 & H3). destruct (IH1 H1) as [A1 A2], (IH2 H2) as [B1 B2].
+      pose proof (hiz_anc ef) as Eh. pose proof (anc_lo lo H3) as El.
+      split; split_and!; try done.
+      + destruct (hiz X ef), (hiz B (psub σ <$> ef)); simpl in *; try done. by apply se_sym.
+      + by apply se_sym.
+    - pose proof (tr_closed (slist ((λ q, sinst (slist ss) (ers q)) <$> τ)) X pts' (MPoly Θ' T ef V) I HT) as E1.
+      pose proof (tr_closed (slist ss) B pts (MPoly Θ' T ef V) I HT) as E2.
+      simpl in E1, E2. rewrite E1, E2. split; apply teq_refl.
+    - pose proof (tr_closed (slist ((λ q, sinst (slist ss) (ers q)) <$> τ)) X pts' (MSeg p k Qa Qr) I HT) as E1.
+      pose proof (tr_closed (slist ss) B pts (MSeg p k Qa Qr) I HT) as E2.
+      simpl in E1, E2. rewrite E1, E2. split; apply teq_refl.
+  Qed.
+
+  (** A box forced at X meets its constraint when the instance meets Θ′. *)
+  Lemma crel_hold Θ' : (∀ v ts, models Θ v ts → models Θ' (evalZ v <$> σ) (mclose v ts <$> τ)) →
+    bcs_hold (seqs Wmp Ψ) (slt Wmp Ψ) (Crel Θ') [X].
+  Proof.
+    intros Hm g Hg. apply bcs_open_nil in Hg as [Hg _].
+    assert (∀ x, pt_root x = NVar 0 → pt_root (pt_inst (plist [X]) x) = pt_name B) as Hr.
+    { intros x Hx. rewrite pt_root_inst, Hx. change (pt_root (rpt B (RAnc σ τ)) = pt_name B). by apply rpt_root, HB. }
+    assert (∀ v ts x, pt_root x = NVar 0 →
+      den (ianc B v ts) (pt_inst (plist [X]) x) = den (ianc (Pt (NVar 0) 0) (evalZ v <$> σ) (mclose v ts <$> τ)) x) as Hd.
+    { intros v ts x Hx. apply (den_inst _ _ _ 0); [done|].
+      change (plist [X] 0) with X. rewrite (den_anc Ψ Θ B HB).
+      unfold ianc. by rewrite decide_True. }
+    destruct g as [x y|x y]; simpl in *; destruct Hg as (Hx & Hy & E).
+    - apply (gd_lt _ _ _ HB); [by apply Hr|by apply Hr|]. intros v ts Hv.
+      rewrite !Hd by done. by apply E, Hm.
+    - apply (gd_eq _ _ _ HB); [by apply Hr|by apply Hr|]. intros v ts Hv.
+      rewrite !Hd by done. by apply E, Hm.
+  Qed.
+
+  Lemma anc_known : Forall (skn Wmp Ψ) [X].
+  Proof. apply Forall_singleton. by apply (rpt_known Ψ Θ B HB). Qed.
+End anc.
