@@ -1051,6 +1051,96 @@ stays in C (send_C_shift). The sketch's argument Tree has no counterpart,
 because the calculus has no recursive data types, and !Int is !∗. The term
 and its derivation are stage D.
 
+**74. Context-free session types, stage D, examples (Claude, 2026-10-31, branch cfst).**
+Every example of stage D is a closed program in theories/examples/cfst/. The
+typed ones get deadlock_free from soundness at an explicit strict world. The
+one rejected example gets a proof that no strict world types it. The core is
+unchanged. CfstTools.v adds general lemmas only, hereditary contractiveness
+by induction on the depth (hc_ind, ahc_seq, hcontractive_seq), congruences of
+≈ under a prefix and under ⊕ and &, the derived rules tv_case and tv_open for
+Θ = ∅, and the facts of a constraint whose environment holds outer points
+(bcs_hold_env, sl_hyp).
+
+Simplifications that hold for all examples. The calculus has no recursive
+data types and no integers, a decided constraint. Int and () become ∗, and a
+tree is never a value. It travels on a channel or is fixed by the program's own
+choices. A unary choice {Start: S} of Mordido and Pérez becomes !∗;S, and its
+branch becomes a receive. K4 gives select the readiness and cost of send and
+branch those of receive, so the relation sees the same synchronizations.
+
+Tree serialization (Thiemann and Vasconcelos 2016, pp. 2–3, TreeCopy.v).
+Typed. drain is recvTree without the tree it builds. It reads a TreeD;β
+channel, where TreeD = dual TreeC, recurses on both subtrees and returns
+∃κ′≽κ. C′. β@κ′, the dual of the type of SendTreeType.v. drain is also the
+binary tree channel of Mordido and Pérez (p. 5), with one point per node in
+place of one priority per node. copy is recvTree followed by sendTree on a
+second channel, fused. It instantiates both continuations at TreeD;β and
+TreeC;α for the left call and at β and α for the right one, which is the
+polymorphic recursion of Thiemann and Vasconcelos (p. 3). The node branch
+reassociates (?∗;(TreeD;TreeD));β to ?∗;(TreeD;(TreeD;β)) by seq_assoc and
+seq_rcv_cong, as the paper does on p. 3. The coarse ceiling of K8 suffices
+for both. copy needs more than the ceiling, the zigzag κ+k ≺ ι+k ≺ κ+k+1
+between its two channels. It holds for every k, because a node costs two
+instants on each channel and a leaf one, so the two channels advance in
+lockstep and D[κ+n, ι+n] ⊆ D. The existential result states the zigzag again
+at κ′, ι′, and E-Open makes it a hypothesis for the right call. The result of
+the right call has lower point κ′, so the code opens it and packs it again
+at κ, through κ ≺ κ+2 ≺ κ′ ≺ κ″ (an η-expanded identity λr. r). The main
+program sends the fixed tree Node(Leaf, Leaf) on a, copies it from a to b
+and drains it from b, in the world (a,k) ≺ (b,k) ≺ (a,k+1) and (a,k),
+(b,k) ≺ (z,0), strict by the ranks (0, 2k), (0, 2k+1) and (1, k).
+Simplification. sendTree on a tree value and recvTree into a tree value need
+a data type, so copy and drain stand in for them. The transform and treeSum
+pair (Listing 2) and the arithmetic server (Listing 3) have the same shape
+as copy and drain plus a reply after the subtrees, and are not mechanized.
+
+The data-dependent case of K8 stays outside. sendTree t c; close d; send v c
+needs (d,0) ≺ (c,n) with n the size of t, and no example of stage D needs it.
+copy holds both channels and acts on both inside the segment, but the
+lockstep removes the dependency, because the offset n is the same on both
+channels and only the difference of the offsets enters the facts.
+
+Two streams (Mordido and Pérez, Listings 1.1 and 1.2, Stream.v). Typed. client
+sends on w1 and receives on r2, newclient receives on r1 and sends on w2, both
+by tail calls under the coarse ceiling. The priority sequences [1, 3, 5, …] and
+[2, 4, 6, …] of new become the facts (1,k) ≺ (2,k) ≺ (1,k+1) of the world.
+The protocol is regular.
+
+The classic deadlock (Mordido and Pérez, p. 3, CfstDeadlock.v). Rejected. f
+receives on its first channel and then sends on the second, and the program
+runs f ⟨a, b′⟩ and f ⟨b, a′⟩ in parallel. The receive of the first thread
+blocks at (a,0) with b′ at (b,0) in the frame, so E-App asks (a,0) ≺ (b,0).
+The second asks (b,0) ≺ (a,0). The proof does not invert derivations.
+dl_not_deadlock_free runs the program to the state where both threads wait on
+a receive and shows that it has no τ step and is not terminated.
+dl_untypable then follows from soundness. No strict world types the program.
+The repair of Mordido and Pérez, g sends first and receives afterwards, types
+in the lockstep world (dlfix_deadlock_free).
+
+Milner's scheduler (Mordido and Pérez, A.5, pp. 37–39, CfstScheduler.v).
+Typed. Three followers in a ring with three workers, k = 3 as in the paper.
+The follower is a recursive box over its three channels and a ceiling. Its
+constraint holds, for every round r, twelve facts that put each action of a
+round below the two channels the follower still holds, at the instants 2r and
+2r+1, and the ceiling above everything. The constraint needs the parity of
+the instant. No rank a·k + b of the instants meets it, already for one
+follower, because π+2r ≺ ω+2r and ω+2r+1 ≺ π+2r+1 force b_π < b_ω < b_π.
+The world of the closed program therefore has the rank 9⌊k/2⌋ + b(X, k mod 2),
+checked first by a script on eight rounds and then in Rocq (Wsch_strict). The
+leader acts twice on A1 and C1 and then runs the follower at (C3, A1, C1) with
+the instants (0, 2, 2), so the ring is not uniform, and the world lists the
+facts of the three follower instances and the eight facts of the leader.
+Mordido and Pérez fix the sequences n + 6k at new (n = 1, 3, 5 for the worker
+channels, 2, 4, 6 for the scheduler channels). We need no such choice.
+Simplifications. The unary choices become sends and receives of ∗ (above).
+Their semantics is asynchronous and ours synchronous. The ring is deadlock
+free in both.
+
+Issues. None of the examples needed a change of the core. Typing derivations
+with E-Open pass the shifted context in normal form to tv_open and check the
+equations by reflexivity. The transform and treeSum pair and the arithmetic
+server of Thiemann and Vasconcelos are not mechanized (above).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

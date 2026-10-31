@@ -129,3 +129,45 @@ and logged in SHARP-EDGES.
 
 Stages A and B cost the most. Each stage ends with a full build, closed Print
 Assumptions and a report.
+
+## Stage D results (2026-10-31)
+
+Every target example types or is rejected as the literature expects, with
+the core unchanged. The files are in theories/examples/cfst/, and SHARP-EDGES
+74 has the details.
+
+| Example | Source | Result | File |
+|---|---|---|---|
+| recvTree as drain, the tree channel with one point per node | Thiemann and Vasconcelos pp. 2–3, Mordido and Pérez p. 5 | typed | TreeCopy.v |
+| recvTree then sendTree as copy, polymorphic recursion in both continuations | Thiemann and Vasconcelos pp. 2–3 | typed | TreeCopy.v |
+| two streams in a cycle | Mordido and Pérez Listings 1.1, 1.2 | typed | Stream.v |
+| the classic deadlock | Mordido and Pérez p. 3 | rejected, no strict world types it | CfstDeadlock.v |
+| its repair, one thread sends first | Mordido and Pérez p. 3 | typed | CfstDeadlock.v |
+| Milner's scheduler, k = 3 | Mordido and Pérez A.5 | typed | CfstScheduler.v |
+
+Simplifications. The calculus keeps no recursive data types and no
+integers. Int and () become ∗. A tree travels on a channel or comes from
+the program's own selections, so drain and copy stand in for recvTree and
+sendTree on tree values, and the main program sends the fixed tree
+Node(Leaf, Leaf). A unary choice becomes a send of ∗ and its branch a
+receive, which K4 treats alike. The scheduler runs synchronously, where
+Mordido and Pérez run it asynchronously.
+
+Findings.
+- The coarse ceiling of K8 suffices for every example. copy acts on two
+  channels inside the segment, but both advance by the size of the tree, so
+  its zigzag κ+k ≺ ι+k ≺ κ+k+1 is stable under the shift and needs no fact
+  that depends on data. The case sendTree t c; close d; send v c stays
+  outside, as K8 says.
+- Existential points need one open and one pack per recursive call whose
+  result is passed on, because the lower point of the result is the point of
+  the call. copy and drain wrap the second call in λr. r for this.
+- The scheduler needs the parity of the instant. Its follower admits no
+  rank linear in the instant, and the closed program gets the rank
+  9⌊k/2⌋ + b(X, k mod 2).
+- The classic deadlock is rejected through soundness. The program reaches a
+  state where both threads wait on a receive, so it is not deadlock free and
+  no strict world types it. No inversion of derivations is needed.
+- Not mechanized. The transform and treeSum pair and the arithmetic server of
+  Thiemann and Vasconcelos add a reply after the subtrees to the shape of
+  copy and drain.
