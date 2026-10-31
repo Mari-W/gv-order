@@ -565,7 +565,7 @@ Findings.
   (Fig. 5, close at ι ∈ (⊥, ⊤]), and a channel of priority ⊤ is unrestricted
   (S-Top, Fig. 12, and T-Const, which asks |Γ| = ⊤). Program 7 of
   mordido-perez-counterexamples.txt drops the closing end and its partner
-  waits forever. Repair R7 keeps action priorities finite.
+  waits forever. Repair R7 keeps channels linear and action priorities finite.
 - The bound ∀α :: ρ of a session type variable constrains nothing. Fig. 4 and
   its text (p. 10) read |α| as the interval of ρ when ρ has free priority
   variables. receiveTree types only because T-Match does not check that a
@@ -603,8 +603,9 @@ Repairs.
   nothing.
 - R6, T-Match asks ρ < |Γ₂|. Reason: program 6. Lost: programs that block on a
   branching while they hold a channel below it.
-- R7, action priorities are finite. Reason: program 7, a channel at Close^⊤ is
-  unrestricted and can be dropped. Lost: programs that close or wait at ⊤.
+- R7, a channel is linear at every priority, and action priorities at a
+  sequence are finite. Reason: program 7, a channel at Close^⊤ is unrestricted
+  and can be dropped. Lost: programs that close or wait at ⊤ at a sequence.
 
 Deviations of version 2.
 

@@ -103,6 +103,13 @@ has no axioms and no admitted proofs.
 - `MPTranslate.v`: the translation lemma and deadlock freedom of every closed program (`mp_translate`, `mp_deadlock_free`).
 - `MPExamples.v`: the two streams typed in the source judgment and translated (`st_mp_deadlock_free`).
 
+Version 2 in `mp/` supersedes fragment v1, with context-free session types, session type variables and functions over unbounded segments (SHARP-EDGES 78, docs/extensions/adequacy/mordido-perez.md 12 and 13).
+
+- `MP2Types.v`, `MP2Typing.v`: their types and typing with Skip, ;, type variables and segment functions, the judgment yields the translated term.
+- `MP2World.v`: denotations of raw session types, observational equivalence of points, the ceiling above junk, the box constraints of abstractions and segments.
+- `MP2Translate.v`: the translation lemma and deadlock freedom of every closed program (`mp2_translate`, `mp2_deadlock_free`).
+- `MP2Examples.v`: receiveTree with the tree channel, the two streams, the repaired classic deadlock and T2, each translated (`rt_mp2_deadlock_free`, `st_mp2_deadlock_free`, `df_mp2_deadlock_free`, `t2_mp2_deadlock_free`).
+
 `counterexamples/`
 
 - `DropCounter.v`: why the fresh point of E-Abs and E-Exp is a frame variable.

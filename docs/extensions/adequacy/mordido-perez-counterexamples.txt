@@ -376,5 +376,6 @@ Why it deadlocks.
   The final configuration is not •⟨v⟩ alone, against Definition 1 and
   Theorem 3 (p. 16).
 
-Repair R7. Action priorities are finite. The rule m_close of
-theories/mp/MP2Typing.v asks pfin ρ at a sequence.
+Repair R7. A channel is linear at every priority, and action priorities at a
+sequence are finite. In theories/mp/MP2Typing.v msplit copies only units and
+abstractions, and m_close asks pfin ρ at a sequence.

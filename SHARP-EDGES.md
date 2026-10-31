@@ -1317,6 +1317,49 @@ outside, continuation-carrying binary session types without Skip and ;, and
 payloads unit or channels. The scheduler, the classic deadlock, T2 and the
 rejection of the counterexamples are not mechanized yet.
 
+**78. Adequacy for repaired Mordido and Pérez, version 2 (Claude, 2026-10-31, theories/mp/MP2*.v).**
+Every closed program of unit type in version 2 of Mordido and Pérez with
+repairs R1 to R7 translates to a deadlock-free program (`mp2_deadlock_free`,
+closed under the global context). Version 2 has context-free session types
+with Skip and ;, session type variables, and functions over unbounded
+segments. receiveTree with the tree channel, the two streams and the repaired
+classic deadlock go through the general translation, and so does T2. The core
+is unchanged.
+
+Points by observation. A channel point denotes its raw session type and the
+head of its sequence. Two points are equivalent when every walk from them
+reaches equal ranks (`oeq`), a congruence for successors, branch roots and
+slots that the rank respects. T-Eq then keeps the point without a canonical
+form of context-free session types. `wgen_strict_oeq` generalizes the
+strictness lemma of version 1 to such an equivalence.
+
+The ceiling on top. Junk must stay below the ceiling, so the ranks are ⊥,
+integers, junk and ⊤, then the ceiling, then the junk of the ceiling. An upper
+point with ⊤ is the ceiling. The lower point of a closure that holds nothing
+lies above the ceiling, so an argument of effect ⊤ may precede it.
+
+Segments without an anchor. A recursive call on the end point of an earlier
+call needs the priority of that end point, which the caller cannot name. An
+existential anchor does not help, because the callee's constraint cannot
+mention facts of the caller's valuation, and an anchor from the callee's
+valuation cannot express the caller's session type variables. The box of a
+function over a segment therefore binds the channel point and the caller's
+anchor, with the coarse ceiling and floor of every walk as constraint. Its body
+is typed at every valuation, and a channel at an abstract position acts with
+effect ⊤. The rank world forces this. A continuation after an unbounded
+segment either falls below the segment or sits at a position that depends on
+the data.
+
+Two findings about the paper. Close^⊤ types and can be dropped, because a
+channel of priority ⊤ is unrestricted (program 7, repair R7). Milner's
+scheduler is not typed by the repaired rules. Its follower selects Next on succ
+at 8 while it holds prev at 8. The bound ∀α :: ρ of a session type variable
+constrains nothing (Fig. 4, p. 10), and receiveTree types only because T-Match
+does not check that a continuation rises.
+
+The restriction log is section 13 of docs/extensions/adequacy/mordido-perez.md.
+The rejection of the counterexamples by the source judgment is not mechanized.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
