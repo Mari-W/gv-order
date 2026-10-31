@@ -24,23 +24,23 @@ has no axioms and no admitted proofs.
 
 `lang/`, the calculus.
 
-- `Syntax.v`: terms with de Bruijn variables and channel names.
-- `Semantics.v`: the labelled term semantics and the process LTS.
+- `Syntax.v`: terms with de Bruijn variables and channel names, the constants select₁, select₂ and branch included.
+- `Semantics.v`: the labelled term semantics and the process LTS, with the choice labels c◁i, c▷i and P-Act-Choice.
 - `Safety.v`: deadlock freedom and the other process properties, and progress.
 - `ChannelSwap.v`: transpositions of channel names commute with the LTS.
 - `Harmony.v`: a reduction semantics for soups agrees with the LTS (`harmony`).
 
 `types/`, the types.
 
-- `Types.v`: types, session types, points, constraints, duality, environments.
-- `SessionEquiv.v`: coinductive session equivalence ≈ and duality ⊥.
+- `Types.v`: types, context-free session types (Skip, ;, !P, ?P, ⊕, &, Close, μ), their head normal form `unfoldS` (unr), points, constraints, duality, environments.
+- `SessionEquiv.v`: bisimilarity ≈ on heads, the laws of ; and μ, and duality ⊥.
 - `LinearEnv.v`: linear variable environments, splitting and weakening.
 
 `relation/`, the logical relation.
 
 - `Worlds.v`: worlds, their facts ≡ and ≺, extension and strictness.
 - `Readiness.v`: readiness of terms (with a frame) and of processes.
-- `LogicalRelation.v`: V, E and P, semantic typing, and `adequacy`.
+- `LogicalRelation.v`: V, E and P with O-Select, O-Branch, Q-Select and Q-Branch, semantic typing, and `adequacy`.
 
 `invariance/`, properties of the relation (spec §10).
 
@@ -87,6 +87,8 @@ has no axioms and no admitted proofs.
 `counterexamples/`
 
 - `DropCounter.v`: why the fresh point of E-Abs and E-Exp is a frame variable.
+
+On branch `cfst` (context-free session types, SHARP-EDGES 72) `pgv/` and `pn/` stay in the tree but are not part of the build.
 
 `pgv/`, adequacy for repaired Priority GV (docs/extensions/adequacy/pgv-adequacy.md).
 

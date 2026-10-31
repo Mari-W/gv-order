@@ -1,4 +1,4 @@
-# Order-based GV♯: specification (state of 2026-10-30, after sharp edges 68)
+# Order-based GV♯: specification (state of 2026-10-31, after sharp edges 68; branch cfst: context-free session types, sharp edges 72)
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
@@ -21,15 +21,15 @@ in the paper, and the paper's renaming and junk lemmas hold with the world fixed
 ## 1  Syntax
 
 ```
-k  ::= new | spawn | recv | send | close | link | force
+k  ::= new | spawn | recv | send | close | link | force | select₁ | select₂ | branch      (choice: K4, sharp edges 72)
 v  ::= ∗ | k | c | λx.t | ⟨v, v⟩ | inj₁ v | inj₂ v | !(x = t)
 t  ::= x | v | t t | ⟨t, t⟩ | inj₁ t | inj₂ t | let () = t in t | let (x, y) = t in t
      | case t of inj₁ x ⇒ t | inj₂ x ⇒ t
 𝒦  ::= □ | 𝒦 t | v 𝒦 | ⟨𝒦, t⟩ | ⟨v, 𝒦⟩ | injᵢ 𝒦 | let () = 𝒦 in t | let (x, y) = 𝒦 in t | case 𝒦 of …
 
-σ  ::= c?v | c!v | c! | c↔d                                             session labels
+σ  ::= c?v | c!v | c! | c↔d | c◁i | c▷i      (i = 1, 2)                 session labels
 λ  ::= β | σ | (νc) | ⇑v term labels
-fc(β) = fc((νc)) = fc(⇑v) = ∅    fc(c?v) = fc(c!v) = fc(c!) = {c}    fc(c↔d) = {c, d}
+fc(β) = fc((νc)) = fc(⇑v) = ∅    fc(c?v) = fc(c!v) = fc(c!) = fc(c◁i) = fc(c▷i) = {c}    fc(c↔d) = {c, d}
 sent(c!v) = fchans(v),  otherwise ∅
 ```
 
@@ -49,6 +49,8 @@ T-Act-Recv      recv c                     —c?v→    ⟨v, c⟩
 T-Act-Send      send ⟨v, c⟩                —c!v→    c
 T-Act-Close     close c                    —c!→     ∗
 T-Act-Link      link ⟨c, d⟩                —c↔d→    ∗            (c = d allowed)
+T-Act-Select    selectᵢ c                  —c◁i→    c
+T-Act-Branch    branch c                   —c▷i→    injᵢ c       (for both i: branch takes either pick)
 T-Act-Ctx       t —λ→ t′   ⇒   𝒦[t] —λ→ 𝒦[t′]
 ```
 
@@ -60,6 +62,7 @@ P-Act-Spawn     t —⇑v→ t′                   (C, E ⊎ {t}) —τ→ (C, 
 P-Act-Beta      t —β→ t′                    (C, E ⊎ {t}) —τ→ (C, E ⊎ {t′})
 P-Act-Msg       t —c!v→ t′   u —c?v→ u′     (C, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
 P-Act-Close     t —c!→ t′    u —c!→ u′      (C ⊍ {c}, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})
+P-Act-Choice    t —c◁i→ t′   u —c▷i→ u′     (C, E ⊎ {t, u}) —τ→ (C, E ⊎ {t′, u′})     (like P-Act-Msg)
 P-Act-Link      t —c↔d→ t′                  (C ⊍ {c}, E ⊎ {t}) —τ→ (C, (E ⊎ {t′})[d/c])      unchanged
 P-Act-Session   t —σ→ t′   fc(σ) # C        (C, E ⊎ {t}) —σ→ (C ∖ sent(σ), E ⊎ {t′})      unchanged
 ```
@@ -98,7 +101,17 @@ u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥:
 ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
                           (no ⊤ for u: every function has a known upper point, a function that may
                            block anywhere gets a point variable)
-S    ::= ?P.S | !P.S | Close | μX.S | X                                 session types, unannotated
+S    ::= Skip | S;S | ?P | !P | ⊕(S, S) | &(S, S) | Close | μX.S | X | X̄
+                                                                       session types, unannotated (K1, sharp edges 72)
+                          Send and receive have no continuation, choice is binary.
+                          The relation reads only the head normal form unr(S) (Thiemann and Vasconcelos,
+                          Lemma 3.8): Skip | !P;S′ | ?P;S′ | ⊕(S₁, S₂) | &(S₁, S₂) | Close | X;S′ | X̄;S′.
+                          !P reads as !P;Skip, ⊕(S₁, S₂);S as ⊕(S₁;S, S₂;S), Close;S as Close (K2).
+                          unr counts fuel (Rocq unfoldS). A type without a head (not contractive)
+                          relates nothing, as μX.X did before.
+                          ≈ is bisimilarity on heads: Skip;S ≈ S, S;Skip ≈ S, (S₁;S₂);S₃ ≈ S₁;(S₂;S₃),
+                          ⊕(S₁, S₂);S ≈ ⊕(S₁;S, S₂;S), μX.S ≈ S[μX.S/X] for contractive types (K3).
+                          Duality is pointwise: !P ↔ ?P, ⊕ ↔ &, dual(S₁;S₂) = dual S₁; dual S₂, X ↔ X̄.
 P    ::= ∃ιs. T           payload, all points of T bound                sugar: !(S₁ ⊗ S₂).S binds them implicitly
 x, ι ::= (p, b)           a point, the instant b of the root p: p after b actions
 p    ::= a | ι-variable | x.i        root: point constant, bound point variable, carried root
@@ -151,6 +164,7 @@ W₁ ⊔ W₂     (≡₁ ∪ ≡₂)* with (≺₁ ∪ ≺₂)⁺ on the classe
 entries(Θ)   one entry per end:  c : S@x  (twice for a channel whose both ends Θ holds)
 offered(x)   = the entries selected by the labels of x's transitions     x a term or a process
                c!v selects the entry of c whose type unfolds to !…,  c?v the one with ?…,
+               c◁i the one with ⊕…,  c▷i the one with &…,
                c! the first Close entry (Rocq),  c↔d the entries of c and d
 stable(t)    = no t —λ→ t′ with λ ∈ {β, (νc), ⇑v}        stable(p) = no p —τ→ p′
 link(t)      = some t —c↔d→ t′                            link(p) = some p —c↔d→ p′
@@ -226,9 +240,10 @@ E-Step    ¬irred t    ready_W(Θ ∣ F, t)
           ⇒   t ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
 
 Giving steps keep the index (sharp edges 45)
-          send, close and link are giving steps. Their obligations (O-Send, O-Close, O-Link,
-          Q-Send, Q-Close, Q-Link, and Q-Tau for the τ of P-Act-Link) state the successor at
-          n+1, the index of the step itself. β, new, spawn, receive and a synchronization
+          send, select, close and link are giving steps. Their obligations (O-Send, O-Select,
+          O-Close, O-Link, Q-Send, Q-Select, Q-Close, Q-Link, and Q-Tau for the τ of P-Act-Link)
+          state the successor at n+1, the index of the step itself. β, new, spawn, receive,
+          branch and a synchronization
           (τ of P-Act-Session or P-Act-Close) cost one. E_{n+1} and P_{n+1} are least fixpoints over giving
           steps at fixed n+1, over E_n and P_n. Giving steps are well founded because each lowers
           the syntactic size of the term (summed over the soup for processes, Rocq).
@@ -241,9 +256,10 @@ O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
 O-New     ∃a ∉ names(W) ∪ points(Θ, T, F), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
           (the created channel name needs no condition, only its point is fresh)
 O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^u_ℓ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧
-O-Send    Θ = Θ₁, Θ₂, c : (!P.S)@x     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[x]⟧
+          (Every "Θ = Θ₁, c : S@x" below reads the head unr(S); c : (!P;S′)@x means unr(S) = !P;S′.)
+O-Send    Θ = Θ₁, Θ₂, c : (!P;S)@x     v ∈ V^W_{n+1}⟦Θ₂ ⊢ P[x]⟧
           t′ ∈ E^W_n⟦Θ₁, c : S@(x+1) ⊢ T ≺ F⟧
-O-Recv    Θ = Θ₁, c : (?P.S)@x
+O-Recv    Θ = Θ₁, c : (?P;S)@x
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  (Θ₁, c : S@(x+1)), Σ₂ defined.
               t′ ∈ E^{W′}_j⟦(Θ₁, c : S@(x+1)), Σ₂ ⊢ T ≺ F⟧
           (the payload is composed with the continuation, so a returning end of c must be
@@ -252,6 +268,11 @@ O-Recv    Θ = Θ₁, c : (?P.S)@x
            overlap is a pair of dual ends at ≡_{W′} points. Every overlap condition of the
            relation reads ≡_W, never equality of points: sharp edges 40)
 O-Close   Θ = Θ₁, c : Close@x      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
+O-Select  Θ = Θ₁, c : ⊕(S₁, S₂)@x   t —c◁i→ t′   t′ ∈ E^W_{n+1}⟦Θ₁, c : Sᵢ@(x+1) ⊢ T ≺ F⟧   (giving, like send)
+O-Branch  Θ = Θ₁, c : &(S₁, S₂)@x   t —c▷i→ t′   t′ ∈ E^W_n⟦Θ₁, c : Sᵢ@(x+1) ⊢ T ≺ F⟧
+          (costs one, like receive. No payload arrives, so it is stated at W, not at every W′ ⊒ W.
+           Every action moves the instant by one. Skip and ; move nothing, because unr removes
+           them before a clause reads the head. K4, K5, sharp edges 72)
 O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
           (c = d allowed: a self-link, Θ holds both ends of c, both entries leave Θ.
            Matches P-Act-Link with c = d, which releases c. `link (new ∗)` is typable.)
@@ -275,7 +296,7 @@ Q-Tau     p —τ→ p′    p′.1 # dom Σ  ⇒  ∃W′ ⊒ₒ W.   p′ ∈ 
            The paper's Q-Tau is W′ = W.)
           (The τ of P-Act-Link keeps W. Before it fires, p is ready by its link redex alone,
            so no fact about the link's channels is ever asked. Sharp edges 68)
-Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)
+Q-Recv    Σ = Σ₁, c : (?P;S)@x     p —c?v→ (C′, E′)
           ∀W′ ⊒ W, j ≤ n, Σ₂ # p.1, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  Σ₂ dual to (Σ₁, c : S@(x+1)) on their overlap B.
               (C′ ∪ B, E′) ∈ P^{W′}_j⟦(Σ₁, c : S@(x+1)) ∖ B, Σ₂ ∖ B ⊢ T⟧
           (B = channels whose other end the receiver already holds. The obligation is stated
@@ -285,7 +306,7 @@ Q-Recv    Σ = Σ₁, c : (?P.S)@x     p —c?v→ (C′, E′)
            channel also belongs to B and is restricted in the continuation.
            The guard c ∉ dom Σ₂ of the paper is dropped (c may be in B).
            Lemma needed: restricting B only removes external steps on channels no environment holds.)
-Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@x      dom Σ_e = fchans(v) ∩ C
+Q-Send    Σ = Σ₀, Σ_v, c : (!P;S)@x      dom Σ_e = fchans(v) ∩ C
           ∃Σ_e, Σ_e′ (points chosen by the obligation).
           v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[x]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(x+1) ⊢ T⟧
           Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay
@@ -294,6 +315,8 @@ Q-Send    Σ = Σ₀, Σ_v, c : (!P.S)@x      dom Σ_e = fchans(v) ∩ C
 Obligations whose continuation environment cannot be formed (e.g. Θ already holds both
 ends of c) fail; such a thread is never ready anyway.
 Q-Close   Σ = Σ₁, c : Close@x      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
+Q-Select  Σ = Σ₁, c : ⊕(S₁, S₂)@x   p —c◁i→ p′   p′ ∈ P^W_{n+1}⟦Σ₁, c : Sᵢ@(x+1) ⊢ T⟧   (giving)
+Q-Branch  Σ = Σ₁, c : &(S₁, S₂)@x   p —c▷i→ p′   p′ ∈ P^W_n⟦Σ₁, c : Sᵢ@(x+1) ⊢ T⟧
 Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
           (c = d cannot reach the interface: process-level Σ holds one end per channel)
           (a process waiting at an interface link is ready by link(p), sharp edges 68)
@@ -335,8 +358,10 @@ known      a point is known when W knows it or its root is a root of an instance
 new    : ∗ ⊸^⊥_⊤ S@ι ⊗ S′@ι                                  S ⊥ S′,  ι known
          (new may create a channel at a box's ιs or at a carried point of one)
 spawn  : (∗ ⊸^u_ℓ ∗) ⊸^⊥_⊤ ∗
-send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_Γ heads(P[ι])
-recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
+send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_Γ heads(P[ι])
+recv   : (?P;S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
+selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@(ι+1)                          (K4, sharp edges 72)
+branch : &(S₁, S₂)@ι ⊸^ι_⊤ S₁@(ι+1) + S₂@(ι+1)               (case does the dispatch)
 close  : Close@ι ⊸^ι_⊤ ∗
 link   : S@ι ⊗ S′@ι′ ⊸^⊥_⊤ ∗                                  S ⊥ S′,  ι ≡_Γ ι′
          (link never blocks, so E-App asks no frame fact for it. The paper's link has no
@@ -377,6 +402,7 @@ E-Exp      ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊢^{μ}_{Ψ, (C,ιs)}
            the payload ∃ιs.T to have no free point variable beyond ιs, the "all points of T bound" of §4 (57)
 E-Weak, E-Contract   as in the paper, with ⊢^F
 E-Conv     Θ; Δ ⊢^F t : T     T ≈_Γ T′   ⇒   Θ; Δ ⊢^F t : T′               (sharp edges 67)
+           (≈ on session types is the bisimilarity of §4, so E-Conv applies the laws of ; and μ)
            ≈_Γ is ≈ with the points of session types and the points u, ℓ of arrows compared
            by ≡_Γ. Boxes are compared by ≈ with their points unchanged, because their points
            live under the binder of their ιs. With ≡_Γ replaced by equality it is the paper's
@@ -491,12 +517,13 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
             Σ₁, Σ₂, Σ_C pairwise disjoint as maps, C₁ # dom Σ₁, C₂ # dom Σ₂, C₁, C₂, C₀ disjoint.
             index (sharp edges 45): components in P at n give the
             composite in P at n. A synchronization of the composite is a giving step of one component
-            (free) and a receive or close of the other. A link of two cut channels fuses the other ends
+            (free) and a receive, branch or close of the other. A selection meeting a branch across
+            the cut moves both cut ends to the chosen branch (cross_choice, sharp edges 72). A link of two cut channels fuses the other ends
             inside one component by Internalizing a link.
 Internalizing a link (component level)
             prim T,  p ∈ P^W_n⟦Σ, c : S̄@x, d : S@y⟧,  x ≡_W y   ⇒   (C ∪ {d}, E[d/c]) ∈ P^W_n⟦Σ ⊢ T⟧
-            proof: a synchronization on d of the fused process is c!v (free) then d?v of p, and a
-            close on d is two closes of p (both free); induction on n, inside on the giving-step
+            proof: a synchronization on d of the fused process is c!v (free) then d?v of p, a choice
+            on d is c◁i (free) then d▷i of p, and a close on d is two closes of p (both free); induction on n, inside on the giving-step
             fixpoint of p; readiness by the chain argument (the two ends are never both offered in a
             stable fused process); prim T rules out a terminated p that returns the two ends.
             A link redex of p on c or d fires in the fused process, any other stays a link redex
@@ -520,6 +547,12 @@ Fundamental     Θ; Δ ⊢^F_W t : T   ⇒   Θ; Δ ⊨^F_W t : T
 Adequacy        · ⊨_W p : T   ⇒   p deadlock free         (the paper's proof)
 Soundness       · ⊢_W p : T,  W strict   ⇒   p deadlock free
 ```
+
+Rocq state, branch cfst (sharp edges 72). The session types are those of K1, read through
+unfoldS = unr with fuel. select₁, select₂ and branch are konst_ty KTSel1, KTSel2 and KTBra, the
+labels SSel and SBra, the obligations O-Select, O-Branch, Q-Select and Q-Branch (Pchoice_case).
+Every composition lemma, adequacy and the fundamental theorems keep their statements. theories/pgv
+and theories/pn are out of the build (K9).
 
 Rocq state. Rocq implements sharp edges 65 (sharp edges 66, 297c45f, d3dfbe4). A constraint
 is a closure BCs env P, a predicate P on facts over variables closed by its outer points env,

@@ -868,6 +868,87 @@ The translation is unchanged, and the theorem asks `fixlam` instead.
 padovani-novara.md §8 lists every deviation of the source semantics from the
 chapter. No core change.
 
+**72. Context-free session types, stages A and B (Claude, 2026-10-31, branch cfst).**
+The core now runs on the session types of K1 (docs/extensions/context-free.md).
+The statements of soundness, the fundamental theorems, adequacy, Prel_connect,
+Prel_connect_n, Prel_term, Prel_indep, Prel_internalize and Erel_bind are
+unchanged. Only the session types inside them changed.
+
+Syntax (K1, Types.v). sty has SSkip, SSeq, SSnd m T and SRcv m T without
+continuation, SPlus and SWith for binary ⊕ and &, SEnd, SMu, SVar and SVarD.
+dual swaps SSnd and SRcv, SPlus and SWith, distributes over SSeq and keeps the
+polarized variables. dual_unfoldS still holds unconditionally.
+
+Head normal form (K3). unfoldS is unr of Thiemann and Vasconcelos (§3.3,
+Lemma 3.8). It returns Skip, SSeq o S′ with o one of SSnd, SRcv, SVar, SVarD,
+SPlus, SWith or Close. A lone !P, ?P or variable reads as itself followed by
+Skip, a choice followed by S takes S into both branches, and Close;S is Close
+(K2). unr terminates only on contractive types, and a Rocq function must be
+total. unrN therefore counts fuel, one unit per ; and µ on the spine
+(sfuel), and unfoldS returns the type itself when no head appears. A stuck
+type is never in head form, so no clause of the relation applies to it, as
+before for µα.α. We call S contractive when unfoldS S is a head, which is
+"unr(S) is defined" of Lemma 3.8. On a closed type that is contractive in the
+sense of Fig. 3, unr never reaches a recursion variable, so it explores only
+the syntax of S and the fuel suffices. That characterization is argued here
+and not mechanized. Deviation from K3. Contractiveness is the semantic
+condition, not the syntactic judgment of Fig. 3.
+
+Bisimilarity (K3, SessionEquiv.v). ≈ and ⊥ keep their form, ∀ n of a
+depth-n approximation, and read the head through a view hd (hview). The LTS
+of Fig. 5 is deterministic, so a bisimulation compares exactly the action of
+the head and the continuations, which eq_step does. We do not define the LTS
+of Fig. 5 itself. The laws are lemmas, seq_skip_l (S contractive),
+seq_skip_r and seq_assoc (hereditarily contractive, hcontractive, because
+their bisimulations visit the continuations), seq_choice_dist_plus,
+seq_choice_dist_with and seq_close_seq (every type), seq_mu (µα.S
+contractive). The paper states its laws for well-formed types. New
+inversions seq_plus_inv and seq_with_inv, and the kind of a head (hkind) with
+sdual_kind, which turns every head mismatch across ⊥ into a discriminate.
+
+Choice in the calculus (K4, Syntax.v, Semantics.v). Constants KSel1, KSel2
+and KBra, labels SSel c b and SBra c b with b = false for branch 1. select_i c
+steps to c by c◁i, branch c steps to inj_i c by c▷i for both i. P-Act-Choice
+is a τ of a selection and a branch on one channel, free or restricted, like
+P-Act-Msg. Harmony has the reduction rules RedChoice1 and RedChoice2 and still
+holds. Progress (Safety.v) has the actions ASel and ABra. The signatures are
+KTSel1, KTSel2 (⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@(ι+1)) and KTBra
+(&(S₁, S₂)@ι ⊸^ι_⊤ S₁@(ι+1) + S₂@(ι+1)). Two constructors instead of one
+indexed by the branch keep inversion on konst_ty clean.
+
+The relation (K4, K5). selects offers the ⊕ entry for c◁i and the & entry for
+c▷i. O-Select asks Θ = Θr, c : S@k with unfoldS S = ⊕(S₁, S₂) and the
+successor at the same index with c : Sᵢ@(k+1) (a giving step, cost 0, like
+send). O-Branch is the same at index n − 1 (cost 1, like receive, without a
+payload and so without the quantification over later worlds). Q-Select and
+Q-Branch (Pchoice_case) are the process forms. Every action moves the instant
+by one, and Skip and ; move nothing, because unfoldS removes them before a
+clause reads the head. A small choice. O-Branch is stated at W and n − 1,
+because no payload arrives, while O-Recv quantifies over W′ ⊒ W and j ≤ n − 1
+for its payload.
+
+What changed in the proofs. Every case analysis on labels gained the two
+labels. PointRenaming, ChannelRenaming, PointConversion, EquivInvariance and
+Monotonicity carry the new clauses. In ReadyChain cut_not_both closes every
+mismatch by sdual_kind and selects_kind, choice_tau synchronizes a selection
+with a branch (bra_retarget), and no_cut_offer uses the kinds as well.
+In JunkRenaming both labels are deterministic under substitution, rel_fuse moves
+the entry like send, Prel_junk gets the internal choice. In Internalize a choice
+on the fused channel is a free c◁i of p followed by its d▷i (choice_case),
+external choices are ext_sel and ext_bra. ConnectCut and ConnectSteps have
+ext_choice for an interface channel (iface_lower for the branch at n − 1),
+cross_choice for a selection meeting a branch across the cut, which updates
+both cut ends, tau_choice inside one component. PTerm has case_choice. In Bind
+select works like send and branch like receive. TermRules has Erel_app_sel and
+Erel_app_bra. In the static system the constants type by E-Const at their
+signatures, conversion is E-Conv up to the new ≈ and Γ ⊢ ≡.
+
+Branch layout (K9). theories/pgv and theories/pn are out of _CoqProject and
+not ported. The examples port by rewriting !P.S to !P;S and ?P.S to ?P;S.
+
+No deviation from K1, K2, K4, K5 or K9. The deviation from K3 is the one
+above. K6, K7 and K8 belong to stage C.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
