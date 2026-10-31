@@ -229,7 +229,7 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
   | m_appseg Γ Γ1 Γ2 e1 e2 e1' e2' pol k Qa Qr τs p ef1 ef2 : (* T-TApp, T-App at a segment *)
       msplit Γ Γ1 Γ2 →
       mtyped Θ Γ1 e1 (MSeg pol k Qa Qr) ef1 e1' →
-      length τs = k → Forall (msc (pc_nt Θ)) τs → hcinst Θ τs →
+      length τs = k → Forall (msc (pc_nt Θ)) τs → hcinst Θ τs → msc k Qa → msc k Qr →
       mtyped Θ Γ2 e2 (MCh pol (tsub τs Qa) p) ef2 e2' →
       plt Θ ef1 (envp Γ2) → pntop Θ ef2 →
       mtyped Θ Γ (App e1 e2) (MEx pol (tsub τs Qr)) (ef1 ++ ef2 ++ [PTop])

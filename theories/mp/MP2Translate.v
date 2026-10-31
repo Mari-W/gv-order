@@ -1311,3 +1311,104 @@ Proof.
     intros u. destruct (Hw u) as [H1 H2]. unfold ceil, floor in *. rewrite <-!pt_inst_rpt, <-pt_inst_mwalk.
     split; by apply (slt_up Ψ Ψ' Θ B HB HΨ).
 Qed.
+
+(** ** Translated types, unfolded *)
+
+Definition chpt (B : point) (pts : nat → point) (Q : msty) (p : mpos) : point :=
+  match p with PR h d => rpt B (RCh Q h d) | PX n w => mwalk (pts n) w end.
+
+Lemma trs_unit ss B pts : trs ss B pts MUnit = U.
+Proof. done. Qed.
+Lemma trs_arr ss B pts T lo ef V :
+  trs ss B pts (MArr T lo ef V) = TLolli (hiz B ef) (Some (rpt B (RLo lo))) (trs ss B pts T) (trs ss B pts V).
+Proof. done. Qed.
+Lemma trs_ch ss B pts pol Q p :
+  trs ss B pts (MCh pol Q p) = TSess (sinst (slist ss) (polS pol (ers Q))) (chpt B pts Q p).
+Proof. by destruct p. Qed.
+Lemma trs_ex ss B pts pol Q :
+  trs ss B pts (MEx pol Q) = TEx (Some (floor B)) 1 (Cex B) (TSess (sinst (slist ss) (polS pol (ers Q))) (pvar 0)).
+Proof. done. Qed.
+Lemma trs_snd ss B pts pol a P K p :
+  trs ss B pts (MCh pol (sndQ pol a P K) p) =
+  TSess (SSeq (SSnd (pm P) (sinst_ty (slist ss) (ersp P))) (sinst (slist ss) (polS pol (ers K)))) (chpt B pts (sndQ pol a P K) p).
+Proof. destruct pol, p; done. Qed.
+Lemma trs_rcv ss B pts pol a P K p :
+  trs ss B pts (MCh pol (rcvQ pol a P K) p) =
+  TSess (SSeq (SRcv (pm P) (sinst_ty (slist ss) (ersp P))) (sinst (slist ss) (polS pol (ers K)))) (chpt B pts (rcvQ pol a P K) p).
+Proof. destruct pol, p; done. Qed.
+Lemma trs_sel ss B pts pol a K1 K2 p :
+  trs ss B pts (MCh pol (selQ pol a K1 K2) p) =
+  TSess (SPlus (sinst (slist ss) (polS pol (ers K1))) (sinst (slist ss) (polS pol (ers K2)))) (chpt B pts (selQ pol a K1 K2) p).
+Proof. destruct pol, p; done. Qed.
+Lemma trs_bra ss B pts pol a K1 K2 p :
+  trs ss B pts (MCh pol (braQ pol a K1 K2) p) =
+  TSess (SWith (sinst (slist ss) (polS pol (ers K1))) (sinst (slist ss) (polS pol (ers K2)))) (chpt B pts (braQ pol a K1 K2) p).
+Proof. destruct pol, p; done. Qed.
+Lemma trs_end ss B pts pol a w p :
+  trs ss B pts (MCh pol (MEnd a w) p) = TSess SEnd (chpt B pts (MEnd a w) p).
+Proof. destruct pol, p; done. Qed.
+
+Lemma pt_root_mwalk x u : pt_root (mwalk x u) = pt_root x.
+Proof. revert x. induction u as [|[] u IH]; intros x; simpl; [done|..]; by rewrite IH. Qed.
+
+Section chpt.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B) (pts : nat → point) (Hp : pts_ok Ψ B pts).
+
+  Lemma chpt_ok Q p u : slt Wmp Ψ (mwalk (chpt B pts Q p) u) (ceil B) ∧ slt Wmp Ψ (floor B) (mwalk (chpt B pts Q p) u).
+  Proof. destruct p as [h d|n w]; simpl; [by apply (ch_ceil Ψ Θ B HB)|]. rewrite <-mwalk_app. apply Hp. Qed.
+
+  Lemma chpt_known Q p : skn Wmp Ψ (chpt B pts Q p).
+  Proof.
+    destruct p as [h d|n w]; simpl; [by apply (rpt_known Ψ Θ B HB)|].
+    eapply skn_root; [|apply (Hp n)]. by rewrite pt_root_mwalk.
+  Qed.
+
+  Lemma B_known : skn Wmp Ψ B.
+  Proof. apply (gd_kn _ _ _ HB). destruct (gd_isroot _ _ _ HB) as [_ Hr]. exact Hr. Qed.
+End chpt.
+
+Definition pts0 (B : point) : nat → point := λ _, rpt B (RCh MSkip (PZ 0) 0).
+
+Lemma pts0_ok Ψ Θ B : good Ψ Θ B → pts_ok Ψ B (pts0 B).
+Proof. intros HB n. split; [apply (rpt_known Ψ Θ B HB)|]. intros u. apply (ch_ceil Ψ Θ B HB). Qed.
+
+Lemma hiz_le_ceil Ψ Θ B ef x : good Ψ Θ B → hiz B ef = Some x → sle Wmp Ψ x (ceil B).
+Proof.
+  intros HB Hx. destruct ef as [|ρ ef0]; [done|]. injection Hx as <-.
+  destruct (decide (PTop ∈ ρ :: ef0)) as [Ht|Ht].
+  - left. apply se_sym. by apply (ceil_top Ψ Θ B HB).
+  - right. apply (slt_rpt Ψ Θ B HB). intros v ts _. rewrite (rank_ceil Ψ Θ B HB), (den_hi Ψ Θ B HB).
+    pose proof (xmaxl_notop v (ρ :: ef0) Ht). destruct (xmaxl v (ρ :: ef0)); simpl; done.
+Qed.
+
+Lemma tpure_names k T : tpure k T → tnames T = [].
+Proof.
+  induction T as [|p Q [h d|n w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k' Qa Qr];
+    simpl; try done. intros (H1 & H2 & _). by rewrite IH1, IH2.
+Qed.
+
+Lemma erel_poly B ss pts B' ss' pts' σ ins Γ Δ :
+  erel B ss pts ins Γ Δ → menv_poly Γ → erel B' ss' pts' ins Γ (lenv_pinst σ Δ).
+Proof.
+  intros H. induction H as [|o ins Γ Δ H IH|o ins Γ Δ Ho H IH]; intros HΓ; simpl.
+  - constructor.
+  - assert (menv_poly Γ) as HΓ' by (intros t Ht; apply HΓ; by right).
+    change (lenv_pinst σ (fmap (trs ss B pts) o :: Δ)) with (fmap (pinst_ty σ) (fmap (trs ss B pts) o) :: lenv_pinst σ Δ).
+    destruct o as [t|]; simpl.
+    + destruct (HΓ t (list_elem_of_here _ _)) as [Hu Ht].
+      rewrite trs_pinst, (trs_un ss ss' _ B' _ pts') by done.
+      apply (er_keep _ _ _ (Some t)). by apply IH.
+    + apply (er_keep _ _ _ None). by apply IH.
+  - change (lenv_pinst σ (o :: Δ)) with (fmap (pinst_ty σ) o :: lenv_pinst σ Δ).
+    apply er_skip; [|by apply IH]. destruct Ho as [->|(T & -> & HT)]; [by left|right].
+    eexists. split; [done|]. by apply unlimited_pinst.
+Qed.
+Lemma pscoped_sinst kk σ T : pscoped kk T → pscoped kk (sinst_ty σ T).
+Proof. revert kk σ. induction T; intros kk σ HT; simpl in *; naive_solver. Qed.
+
+Lemma ersp_scoped ss P : pscoped (pm P) (sinst_ty (slist ss) (ersp P)).
+Proof.
+  apply pscoped_sinst. destruct P; simpl.
+  - split; [unfold bcs_scoped; simpl; constructor|]. repeat split.
+  - intros a Ha. injection Ha as <-. lia.
+Qed.
