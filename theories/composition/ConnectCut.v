@@ -633,4 +633,97 @@ Section steps.
         apply map_eq. intros r. pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
         mpoint. all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence).
   Qed.
+
+  (** Component 1 keeps its interface at a lower index (branch). *)
+  Lemma iface_lower Σ1a F1 e' :
+    Σ1a ##ₘ ΣC → dom Σ1a ⊆ dom Σ1 →
+    Prel n' W (Σ1a ∪ ΣC) TA (C1, F1 ⊎ {[+ e' +]}) →
+    Prel n' W (Σ1a ∪ Σ2) T (C, F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros Hd Hsub HP1'.
+    assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    apply (IHo n' (le_n _) W Σ1a Σ2 ΣC ΣC' C0 C1 C2 _ _ TA TB); try done.
+    - apply map_disjoint_dom in Hd12.
+      split; try done; try (apply map_disjoint_dom); clear -Hsub Hd12 HC2Σ1 HC1Σ1; set_solver.
+    - eapply Prel_down; [|exact HP2]. lia.
+  Qed.
+
+  (** Q-Select and Q-Branch for a choice of component 1 on an interface channel. *)
+  Lemma ext_choice F1 e c i e' (bra : bool) :
+    E1 = F1 ⊎ {[+ e +]} →
+    tstep e (LSess (if bra then SBra c i else SSel c i)) e' → c ∉ C →
+    Pchoice_case (if bra then Prel n' else Prel (S n')) W Σ T c i
+      (if bra then SWith else SPlus) (C, F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst Hc. pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    assert (proc_step (C1, E1) (PSess (if bra then SBra c i else SSel c i))
+              (C1, F1 ⊎ {[+ e' +]})) as Hst1.
+    { rewrite HE. rewrite <-(difference_empty_L C1) at 2.
+      replace (∅ : gset chan) with (sentc (if bra then SBra c i else SSel c i)) by (by destruct bra).
+      apply PStepSession; [done|]. destruct bra; simpl; clear -Hc; set_solver. }
+    pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hst1) as Hc1.
+    assert (Pchoice_case (if bra then Prel n' else Prel (S n')) W (Σ1 ∪ ΣC) TA c i
+              (if bra then SWith else SPlus) (C1, F1 ⊎ {[+ e' +]})) as Hc1'
+      by (destruct bra; exact Hc1).
+    clear Hc1. destruct Hc1' as (Σ1a & s1 & s2 & k & (s0 & HΣa & Hu) & Hc1a & HP1').
+    assert (c ∉ C0) as HcC0 by (clear -Hc; set_solver).
+    assert (ΣC !! c = None) as HCc by (apply not_elem_of_dom; by rewrite HC0).
+    assert (ΣC ⊆ Σ1a) as HCsub.
+    { apply map_subseteq_spec. intros r x Hx. pose proof (f_equal (lookup r) HΣa) as Hr.
+      destruct (decide (r = c)) as [->|Hrc]; [congruence|].
+      rewrite lookup_insert_ne in Hr by done.
+      rewrite lookup_union, Hx in Hr. destruct (Σ1 !! r) eqn:H1r.
+      - exfalso. exact (proj1 (map_disjoint_spec _ _) Hd1 r _ _ H1r Hx).
+      - by rewrite (left_id_L None (∪)) in Hr. }
+    assert (c ∈ dom Σ1) as HcΣ1.
+    { assert (c ∈ dom (Σ1 ∪ ΣC)) as H by (rewrite HΣa, dom_insert_L; clear; set_solver).
+      rewrite dom_union_L, HC0 in H. clear -H HcC0. set_solver. }
+    assert (Σ1a ∖ ΣC ∪ ΣC = Σ1a) as HΣre.
+    { apply map_eq. intros r. pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
+      mpoint. all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence). }
+    exists (Σ1a ∖ ΣC ∪ Σ2), s1, s2, k. split_and!.
+    - exists s0. split; [|done]. apply map_eq. intros r.
+      pose proof (f_equal (lookup r) HΣa) as Hr.
+      pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
+      destruct (decide (r = c)) as [->|Hrc]; mpoint.
+      all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence).
+    - rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
+      clear -Hc1a HcΣ1 Hd12. set_solver.
+    - rewrite insert_union_l.
+      assert (<[c := (sbranch i s1 s2, pt_shift 1 k)]> (Σ1a ∖ ΣC) ##ₘ ΣC) as Hdj.
+      { apply map_disjoint_insert_l. split; [done|]. by apply map_disjoint_difference_l1. }
+      assert (dom (<[c := (sbranch i s1 s2, pt_shift 1 k)]> (Σ1a ∖ ΣC)) ⊆ dom Σ1) as Hdm.
+      { rewrite dom_insert_L, dom_difference_L. intros r Hr.
+        apply elem_of_union in Hr as [->%elem_of_singleton|Hr]; [done|].
+        assert (r ∈ dom (Σ1 ∪ ΣC)) as H.
+        { rewrite HΣa, dom_insert_L. clear -Hr. set_solver. }
+        rewrite dom_union_L in H. clear -H Hr. set_solver. }
+      assert (<[c := (sbranch i s1 s2, pt_shift 1 k)]> (Σ1a ∖ ΣC) ∪ ΣC =
+              <[c := (sbranch i s1 s2, pt_shift 1 k)]> Σ1a) as Hre
+        by (by rewrite <-insert_union_l, HΣre).
+      destruct bra.
+      + apply iface_lower; [done|done|]. by rewrite Hre.
+      + eapply iface_shrink; [done|by apply (tstep_giving_size _ _ _ Hst)|done|done|].
+        by rewrite Hre.
+  Qed.
+
+  Lemma ext_sel F1 e c i e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SSel c i)) e' → c ∉ C →
+    Pcase_gen (Prel (S n')) n' W Σ T (C, E1 ⊎ E2) (PSess (SSel c i))
+      (C ∖ sentc (SSel c i), F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst Hc. cbn [Pcase_gen Pobl at_cost pcost scost sentc].
+    rewrite difference_empty_L. exact (ext_choice F1 e c i e' false HE Hst Hc).
+  Qed.
+
+  Lemma ext_bra F1 e c i e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SBra c i)) e' → c ∉ C →
+    Pcase_gen (Prel (S n')) n' W Σ T (C, E1 ⊎ E2) (PSess (SBra c i))
+      (C ∖ sentc (SBra c i), F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst Hc. cbn [Pcase_gen Pobl at_cost pcost scost sentc nlower pred].
+    rewrite difference_empty_L. exact (ext_choice F1 e c i e' true HE Hst Hc).
+  Qed.
 End steps.

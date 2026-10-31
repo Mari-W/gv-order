@@ -132,10 +132,11 @@ Fixpoint Vdef (below : nat → level) (n : nat)
 
 (** ** The cost of a step (sharp edges 45)
 
-    Send, close and link are giving steps: they cost nothing and keep
-    the index. Every other step costs one. A step taken at index n
+    Send, select, close and link are giving steps: they cost nothing and
+    keep the index. Every other step costs one, receive and branch
+    included (K4). A step taken at index n
     carries its obligation at index n − cost. *)
-Definition scost (σ : slabel) : nat := match σ with SRecv _ _ => 1 | _ => 0 end.
+Definition scost (σ : slabel) : nat := match σ with SRecv _ _ | SBra _ _ => 1 | _ => 0 end.
 Definition tcost (α : tlabel) : nat := match α with LSess σ => scost σ | _ => 1 end.
 Definition pcost (π : plabel) : nat := match π with PSess σ => scost σ | PTau => 1 end.
 
@@ -185,7 +186,7 @@ Qed.
 
 (** Giving steps of a thread shrink it. *)
 Definition giving (σ : slabel) : Prop :=
-  match σ with SRecv _ _ => False | _ => True end.
+  match σ with SRecv _ _ | SBra _ _ => False | _ => True end.
 
 Lemma tstep_giving_size e σ e' : tstep e (LSess σ) e' → giving σ → esize e' < esize e.
 Proof.
@@ -198,7 +199,7 @@ Qed.
 (** A step that costs nothing shrinks the term. *)
 Lemma tcost_giving α e e' : tstep e α e' → tcost α = 0 → esize e' < esize e.
 Proof.
-  intros Hst Hc. destruct α as [|[c w|c w|c|cd]|c|w]; try discriminate Hc;
+  intros Hst Hc. destruct α as [|[c w|c w|c|cd|c b|c b]|c|w]; try discriminate Hc;
     by apply (tstep_giving_size _ _ _ Hst).
 Qed.
 
@@ -230,7 +231,7 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
         at_cost Elow En n (tcost α) W Θ2 T F e'
   | LSess (SRecv c w) =>                               (* O-Recv *)
       ∃ Θ1 m U s k,
-        tenv_hd Θ c (SRcv m U s) k Θ1 ∧
+        tenv_hd Θ c (SSeq (SRcv m U) s) k Θ1 ∧
         ∀ W' j Θ2 Θ1c Θ', wext W W' → j ≤ nlower n (tcost α) →
           tenv_ext Θ1 c (s, pt_shift 1 k) Θ1c →
           tenv_comp (w_eq W') Θ' Θ1c Θ2 →
@@ -238,7 +239,7 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
           Elow j W' Θ' T F e'
   | LSess (SSend c w) =>                               (* O-Send *)
       ∃ Θr Θ1 Θ2 m U s k Θ',
-        tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
+        tenv_hd Θ c (SSeq (SSnd m U) s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
         Vn W Θ2 (payload_at m U k) w ∧
         tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
@@ -250,6 +251,14 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
         tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
         sdual sd sc ∧ w_eq W kc kd ∧
         at_cost Elow En n (tcost α) W Θ1 T F e'
+  | LSess (SSel c b) =>                                (* O-Select *)
+      ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SPlus s1 s2) k Θr ∧
+        tenv_ext Θr c (sbranch b s1 s2, pt_shift 1 k) Θ' ∧
+        at_cost Elow En n (tcost α) W Θ' T F e'
+  | LSess (SBra c b) =>                                (* O-Branch *)
+      ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SWith s1 s2) k Θr ∧
+        tenv_ext Θr c (sbranch b s1 s2, pt_shift 1 k) Θ' ∧
+        at_cost Elow En n (tcost α) W Θ' T F e'
   end.
 
 (** Term relation at level n' + 1 with fuel k, given [below] and the
@@ -336,7 +345,7 @@ Definition Psend_case (Vn : world → tenv → ty → expr → Prop)
     (W : world) (Σ : senv) (T : ty) (p : proc) (c : chan) (w : expr) (p' : proc)
     : Prop :=
   ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
-    senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
+    senv_hd Σ c (SSeq (SSnd m U) s) k (Σ0 ∪ Σv) ∧
     Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
     dom Θe = fchans w ∩ p.1 ∧ send_split W Σe Θe ∧
     dom Θe ## dom Σ ∧
@@ -346,6 +355,14 @@ Definition Psend_case (Vn : world → tenv → ty → expr → Prop)
 Definition Pclos_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (c : chan) (p' : proc) : Prop :=
   ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧ X W Σ1 T p'.
+
+(** Q-Select (u = ⊕) and Q-Branch (u = &): the entry of c moves to the
+    branch b at the next instant. *)
+Definition Pchoice_case (X : world → senv → ty → proc → Prop)
+    (W : world) (Σ : senv) (T : ty) (c : chan) (b : bool)
+    (u : sty → sty → sty) (p' : proc) : Prop :=
+  ∃ Σ1 s1 s2 k, senv_hd Σ c (u s1 s2) k Σ1 ∧ c ∉ dom Σ1 ∧
+    X W (<[c := (sbranch b s1 s2, pt_shift 1 k)]> Σ1) T p'.
 
 (** c = d cannot reach the interface: Σ holds one end per channel. *)
 Definition Plink_case (X : world → senv → ty → proc → Prop)
@@ -387,7 +404,7 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
       (ptau_link p p' → Plinktau_case Pn W Σ T p')
   | PSess (SRecv c w) =>                               (* Q-Recv *)
       ∃ Σ1 m U s k,
-        senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
+        senv_hd Σ c (SSeq (SRcv m U) s) k Σ1 ∧ c ∉ dom Σ1 ∧
         ∀ W' j Θ2, wext W W' → j ≤ nlower n (pcost π) → dom Θ2 ## p.1 →
           recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
           Vlow j W' Θ2 (payload_at m U k) w →
@@ -399,6 +416,10 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
       Pclos_case (at_cost Plow Pn n (pcost π)) W Σ T c p'
   | PSess (SLink cd) =>                                (* Q-Link *)
       Plink_case (at_cost Plow Pn n (pcost π)) W Σ T cd p'
+  | PSess (SSel c b) =>                                (* Q-Select *)
+      Pchoice_case (at_cost Plow Pn n (pcost π)) W Σ T c b SPlus p'
+  | PSess (SBra c b) =>                                (* Q-Branch *)
+      Pchoice_case (at_cost Plow Pn n (pcost π)) W Σ T c b SWith p'
   end.
 
 (** Process relation at level n' + 1 with fuel k. Every clause is
@@ -646,7 +667,7 @@ Lemma Eobl_mono Vl1 Vl2 V1 V2 El1 El2 E1 E2 n W Θ T F α e' :
   Eobl Vl1 V1 El1 E1 (S n) W Θ T F α e' → Eobl Vl2 V2 El2 E2 (S n) W Θ T F α e'.
 Proof.
   intros HVl HV HEl HE.
-  destruct α as [|[c w|c w|c|cd]|c|w]; cbn [Eobl at_cost tcost scost nlower pred] in *.
+  destruct α as [|[c w|c w|c|cd|c b|c b]|c|w]; cbn [Eobl at_cost tcost scost nlower pred] in *.
   - intros H. apply HEl; [lia|exact H].
   - intros (Θ1 & m & U & s & k & Hhd & H). exists Θ1, m, U, s, k. split; [done|].
     intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV'.
@@ -656,6 +677,9 @@ Proof.
   - intros (Θ1&k&?&HX). exists Θ1, k. split; auto.
   - intros (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; auto.
+  - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; auto.
+  - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'.
+    split_and!; [done|done|]. apply HEl; [lia|exact HX].
   - intros H Hc. destruct (H Hc) as (a&s&s'&W'&?&?&?&HX).
     exists a, s, s', W'. split_and!; try done. apply HEl; [lia|exact HX].
   - intros (Θ1&Θ2&ub&lb&?&?&HX). exists Θ1, Θ2, ub, lb.
@@ -675,7 +699,7 @@ Lemma Pobl_mono Vl1 Vl2 V1 V2 Pl1 Pl2 P1 P2 n W Σ T p π p' :
   Pobl Vl1 V1 Pl1 P1 (S n) W Σ T p π p' → Pobl Vl2 V2 Pl2 P2 (S n) W Σ T p π p'.
 Proof.
   intros HVl HV HPl HP.
-  destruct π as [|[c w|c w|c|cd]]; cbn [Pobl at_cost pcost scost nlower pred] in *.
+  destruct π as [|[c w|c w|c|cd|c b|c b]]; cbn [Pobl at_cost pcost scost nlower pred] in *.
   - intros [H1 H2]. split.
     + intros Hd. destruct (H1 Hd) as (N&W'&?&?&HX). exists N, W'.
       split_and!; [done|done|]. apply HPl; [lia|exact HX].
@@ -690,6 +714,10 @@ Proof.
   - intros (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
     exists c, d, Σ1, sc, sd, kc, kd.
     split_and!; try done; first [apply HP; [by left|exact HX]|auto].
+  - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k.
+    split_and!; try done. apply HP; [by left|exact HX].
+  - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k.
+    split_and!; try done. apply HPl; [lia|exact HX].
 Qed.
 
 Lemma Ecase_gen_mono X Y n' W Θ T F α e' :
@@ -873,7 +901,7 @@ Lemma Prel_S_empty_no_sess n W T p σ p' :
   Prel (S n) W ∅ T p → proc_step p (PSess σ) p' → False.
 Proof.
   intros HP Hp. pose proof (Prel_S_step _ _ _ _ _ _ _ HP Hp) as Hstep.
-  destruct σ as [c w|c w|c|cd]; simpl in Hstep.
+  destruct σ as [c w|c w|c|cd|c b|c b]; simpl in Hstep.
   - destruct Hstep as (Σ1 & m & U & s & k & Heq & _).
     exact (senv_hd_not_empty _ _ _ _ Heq).
   - destruct Hstep as (?&?&?&?&?&?&?&?&Heq&_).
@@ -883,6 +911,10 @@ Proof.
   - (* link: both ends must be in Σ *)
     destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd & _ & _ & Heq & _).
     exact (insert_non_empty _ _ _ (eq_sym Heq)).
+  - destruct Hstep as (Σ1 & s1 & s2 & k & Heq & _).
+    exact (senv_hd_not_empty _ _ _ _ Heq).
+  - destruct Hstep as (Σ1 & s1 & s2 & k & Heq & _).
+    exact (senv_hd_not_empty _ _ _ _ Heq).
 Qed.
 
 (** ** Semantic judgments (Defs. 3.2 and 3.3) *)
@@ -1048,7 +1080,7 @@ Proof.
   - intros He. eapply Vrel_down; [|by apply H1]. lia.
   - done.
   - intros α e' Hst. specialize (H2 α e' Hst).
-    destruct α as [|[c w|c w|c|cd]|c|w]; simpl in H2 |- *.
+    destruct α as [|[c w|c w|c|cd|c b|c b]|c|w]; simpl in H2 |- *.
     + eapply IH; [|exact H2]. lia.
     + destruct H2 as (Θ1 & m & U & s & k & Hhd & H2).
       eexists _, _, _, _, _. split; [done|].
@@ -1063,6 +1095,10 @@ Proof.
     + destruct H2 as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                       -> & ? & ? & ? & ? & HE').
       eexists _, _, _, _, _, _, _, _. split_and!; [done..|]. exact (proj2 HE').
+    + destruct H2 as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      eexists _, _, _, _, _. split_and!; [done..|]. exact (proj2 HE').
+    + destruct H2 as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      eexists _, _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
     + intros Hc. destruct (H2 Hc) as (a & s & s' & W' & ? & ? & ? & HE').
       eexists _, _, _, _. split_and!; [done|done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Θ1 & Θ2 & ub & lb & ? & HV & HE').
@@ -1082,7 +1118,7 @@ Proof.
     eexists _, _. split_and!; eauto. eapply Vrel_down; [|exact HV]. lia.
   - done.
   - intros π p' Hst. specialize (H2 π p' Hst).
-    destruct π as [|[c w|c w|c|cd]]; simpl in H2 |- *.
+    destruct π as [|[c w|c w|c|cd|c b|c b]]; simpl in H2 |- *.
     + destruct H2 as [H2 Hl]. split.
       * intros Hd. destruct (H2 Hd) as (N & W' & ? & ? & ?).
         exists N, W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
@@ -1100,6 +1136,10 @@ Proof.
     + destruct H2 as (c & d & Σ1 & sc & sd & kc & kd &
                       -> & ? & -> & ? & ? & ? & ? & HP').
       eexists _, _, _, _, _, _, _. split_and!; [done..|]. exact (proj2 HP').
+    + destruct H2 as (Σ1 & s1 & s2 & k & ? & ? & HP').
+      eexists _, _, _, _. split_and!; [done..|]. exact (proj2 HP').
+    + destruct H2 as (Σ1 & s1 & s2 & k & ? & ? & HP').
+      eexists _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
 Qed.
 
 (** V-Box at a thunk type ∗ ⊸^u_⊤ T, read as the box of sharp edge 52:

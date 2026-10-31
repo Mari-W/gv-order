@@ -92,7 +92,7 @@ Proof.
   apply Erel_S_iff. split_and!; [|done|].
   { intros Hirr. eapply HV; [exact Hteq|]. by apply Hval. }
   intros α e' Hst. specialize (Hstep α e' Hst).
-  destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
+  destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hstep |- *.
   - eapply HEj; [lia|done|exact Hteq|exact Hstep].
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
@@ -109,6 +109,12 @@ Proof.
                        -> & ? & ? & ? & ? & HE').
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|].
     exact (proj2 HE' T' HW Hteq).
+  - destruct Hstep as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
+    exists Θr, s1, s2, k, Θ'. split_and!; [done|done|].
+    exact (proj2 HE' T' HW Hteq).
+  - destruct Hstep as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
+    exists Θr, s1, s2, k, Θ'. split_and!; [done|done|].
+    eapply HEj; [lia|done|exact Hteq|exact HE'].
   - (* O-New: rename the new point away from the points of T' *)
     intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
     destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'

@@ -61,9 +61,10 @@ Fixpoint ty_roots (T : ty) : gset pname :=
   end
 with sty_roots (s : sty) : gset pname :=
   match s with
-  | SRcv _ T s' | SSnd _ T s' => ty_roots T ∪ sty_roots s'
+  | SRcv _ T | SSnd _ T => ty_roots T
   | SMu s' => sty_roots s'
-  | SEnd | SVar _ | SVarD _ => ∅
+  | SEnd | SVar _ | SVarD _ | SSkip => ∅
+  | SSeq s1 s2 | SPlus s1 s2 | SWith s1 s2 => sty_roots s1 ∪ sty_roots s2
   end.
 
 Definition entry_roots (e : sty * point) : gset pname := sty_roots e.1 ∪ {[pt_root e.2]}.

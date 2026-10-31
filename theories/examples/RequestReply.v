@@ -63,7 +63,7 @@ Proof.
   box_open rq_C srv_body. cbn. unfold srv_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
-  { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (SRcv 0 TUnit Sa) (pv 0 0))).
+  { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (SSeq (SRcv 0 TUnit) Sa) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -79,7 +79,7 @@ Proof.
     + apply rq_call. by left.
     + apply (skn_ids2 W _ rq_C); [by left|done|done].
   - tstep.
-    + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0)) (TProd TUnit (TSess (SSnd 0 TUnit Sb) (pv 1 0)))).
+    + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0)) (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) Sb) (pv 1 0)))).
       * tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
       * apply (KTSend _ _ _ 0 TUnit Sb (pv 1 0)). cbn. set_solver.
       * kscope.
@@ -99,14 +99,14 @@ Proof.
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd TUnit (TSess (SSnd 0 TUnit (dual Sa)) (pv 0 0)))).
+              (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) (dual Sa)) (pv 0 0)))).
     - tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
     - apply (KTSend _ _ _ 0 TUnit (dual Sa) (pv 0 0)). cbn. set_solver.
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 0) (pv 1 0)|].
       exists (pv 1 0). split; [done|]. right. hyp0 (pv 0 0) (pv 1 0). }
   cbn. tstep; [tstep|]. cbn. tstep.
-  { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 1 0)) (TSess (SRcv 0 TUnit (dual Sb)) (pv 1 0))).
+  { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 1 0)) (TSess (SSeq (SRcv 0 TUnit) (dual Sb)) (pv 1 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.

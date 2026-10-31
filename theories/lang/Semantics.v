@@ -11,12 +11,18 @@ From LRGV Require Export lang.Syntax.
 
 (** ** Labels *)
 
-(** Session labels σ ::= c?v | c!v | c! *)
+(** Session labels σ ::= c?v | c!v | c! | c↔d | c◁i | c▷i *)
 Inductive slabel :=
   | SRecv (c : chan) (v : expr)    (* c?v : receiving value v on c *)
   | SSend (c : chan) (v : expr)    (* c!v : sending value v on c *)
   | SClos (c : chan)               (* c!  : closing c *)
-  | SLink (cd : gset chan).        (* ↔{c,d} : request to forward the pair *)
+  | SLink (cd : gset chan)         (* ↔{c,d} : request to forward the pair *)
+  | SSel (c : chan) (b : bool)     (* c◁i : selecting branch i on c,
+                                      i = 1 for false, i = 2 for true (K4) *)
+  | SBra (c : chan) (b : bool).    (* c▷i : branching on c, branch i taken *)
+
+(** The injection of a branch: inj₁ for false, inj₂ for true. *)
+Definition inj_of (b : bool) (e : expr) : expr := if b then Inj2 e else Inj1 e.
 
 (** Term labels α ::= β | σ | (νc) | ⇑v
 
@@ -65,6 +71,14 @@ Inductive head_step : expr → tlabel → expr → Prop :=
       head_step (App ESend (Pair v (Chan c))) (LSess (SSend c v)) (Chan c)
   | HeadClos c :                                        (* T-Act-Close *)
       head_step (App EClos (Chan c)) (LSess (SClos c)) EUnit
+  | HeadSel1 c :                                        (* T-Act-Select₁ *)
+      head_step (App ESel1 (Chan c)) (LSess (SSel c false)) (Chan c)
+  | HeadSel2 c :                                        (* T-Act-Select₂ *)
+      head_step (App ESel2 (Chan c)) (LSess (SSel c true)) (Chan c)
+  | HeadBra c b :                                       (* T-Act-Branch *)
+      (* branch waits for either pick and returns the channel in the
+         injection of the branch taken *)
+      head_step (App EBra (Chan c)) (LSess (SBra c b)) (inj_of b (Chan c))
   | HeadCase1 v e1 e2 :                                 (* T-Act-Case-Inl *)
       is_val v →
       head_step (Case (Inj1 v) e1 e2) LBeta (subst1 v e1)
@@ -147,7 +161,7 @@ Qed.
     actions, both ends for a forwarding offer. *)
 Definition subjs (σ : slabel) : gset chan :=
   match σ with
-  | SRecv c _ | SSend c _ | SClos c => {[c]}
+  | SRecv c _ | SSend c _ | SClos c | SSel c _ | SBra c _ => {[c]}
   | SLink cd => cd
   end.
 
@@ -332,6 +346,7 @@ Definition lchans (α : tlabel) : gset chan :=
   | LSess (SSend c _) => {[c]}
   | LSess (SClos c) => {[c]}
   | LSess (SLink cd) => cd
+  | LSess (SSel c _) | LSess (SBra c _) => {[c]}
   | LNew c => {[c]}
   | LSpawn v => fchans v
   end.
@@ -339,7 +354,7 @@ Definition lchans (α : tlabel) : gset chan :=
 Lemma head_step_fchans e α e' :
   head_step e α e' → fchans e' ⊆ fchans e ∪ lchans α.
 Proof.
-  destruct 1; simpl;
+  destruct 1; simpl; try destruct b;
     try (etrans; [apply fchans_subst1_sub|]);
     try (etrans; [apply fchans_subst2_sub|]);
     set_solver.
@@ -374,6 +389,24 @@ Proof.
   intros H Hw'. remember (LSess (SRecv c w)) as α eqn:Hα.
   induction H; subst; try discriminate.
   - inversion H; simplify_eq. eexists. apply TStepHead. by apply HeadRecv.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepAppL.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepAppR.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepPairL.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepPairR.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepLetU.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepLetP.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj1.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepInj2.
+  - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepCase.
+Qed.
+
+(** A branch can take either pick: the term LTS offers c▷i for both i. *)
+Lemma bra_retarget e c i e' j :
+  tstep e (LSess (SBra c i)) e' → ∃ e'', tstep e (LSess (SBra c j)) e''.
+Proof.
+  intros H. remember (LSess (SBra c i)) as α eqn:Hα.
+  induction H; subst; try discriminate.
+  - inversion H; simplify_eq. eexists. apply TStepHead. apply HeadBra.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepAppL.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepAppR.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepPairL.
@@ -434,6 +467,13 @@ Inductive proc_step : proc → plabel → proc → Prop :=
       c ∈ C →
       proc_step (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
                 (C ∖ {[c]}, E ⊎ {[+ e' +]} ⊎ {[+ f' +]})
+  | PStepChoice C E c b e e' f f' :                    (* P-Act-Choice *)
+      (* a selection meets a branch on the same channel, like a message
+         without payload; the channel may be free or restricted *)
+      tstep e (LSess (SSel c b)) e' →
+      tstep f (LSess (SBra c b)) f' →
+      proc_step (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
+                (C, E ⊎ {[+ e' +]} ⊎ {[+ f' +]})
   | PStepLink C E e c d e' :                           (* P-Act-Link *)
       (* The paper's rule. The removed end c must be restricted, and the
          whole resulting soup is substituted, the actor's continuation

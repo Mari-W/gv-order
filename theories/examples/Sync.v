@@ -13,7 +13,7 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Definition Ssync : sty := SSnd 0 TUnit SEnd.
+Definition Ssync : sty := SSeq (SSnd 0 TUnit) SEnd.
 
 Definition sync_thunk : expr :=
   Lam (LetU (Var 0) (App EClos (App ESend (Pair EUnit (Var 2))))).

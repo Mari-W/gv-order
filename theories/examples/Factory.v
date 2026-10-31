@@ -24,7 +24,7 @@ Set Default Proof Using "All".
 Lemma pvar_unknown W a : world_wf W → ¬ pt_known W (pvar a).
 Proof. intros HW Hk. destruct (wf_names_const _ HW _ Hk) as [b Hb]. done. Qed.
 
-Definition Tfac_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (pc 0 0)).
+Definition Tfac_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (pc 0 0)).
 Definition Tfac : ty := TBox 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
 
 Definition fac : expr :=
@@ -97,7 +97,7 @@ Qed.
     which the one-point factory could not: x is used while y waits, so
     (a,0) ≺ (b,0) and (a,1) ≺ (b,0). *)
 
-Definition Tfa_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (Pt (NVar 0) 0)).
+Definition Tfa_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (Pt (NVar 0) 0)).
 Definition Tfa : ty := TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
 
 Definition faca : expr := fac.
@@ -138,7 +138,7 @@ Proof.
   intros HW Ha Hb H1 H2. unfold fa_main.
   assert (∀ P a, pt_known W (pc a 0) →
     typed W ∅ [] ∅ [None; Some Tfa] (P, None) (App (App EForce (Var 1)) EUnit)
-      (TSess (SRcv 0 TUnit SEnd) (pc a 0))) as Hreq.
+      (TSess (SSeq (SRcv 0 TUnit) SEnd) (pc a 0))) as Hreq.
   { intros P a Hk. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
     cbn. apply (typed_force W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None Tfa_body [pc a 0]);
       [done|done| |constructor; [by left|constructor]|apply ubs_none|tstep].

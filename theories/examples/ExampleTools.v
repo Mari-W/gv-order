@@ -469,16 +469,12 @@ Proof. intros H. unfold pt_known. simpl. apply elem_of_list_to_set, list_elem_of
 Ltac kscope := cbn; repeat split; try done; intros ? Hv; injection Hv; lia.
 
 (** !∗.Close *)
-Definition Sd : sty := SSnd 0 TUnit SEnd.
+Definition Sd : sty := SSeq (SSnd 0 TUnit) SEnd.
 
 Definition sendclose (v : expr) : expr := App EClos (App ESend (Pair EUnit v)).
 Definition recvclose (v : expr) : expr := LetP (App ERecv v) (LetU (Var 1) (App EClos (Var 0))).
 
-Lemma seq_unf s r : unfoldS s = unfoldS r → seq s r.
-Proof.
-  intros E [|n]; [done|]. cbn [aeq]. unfold eq_step. rewrite E.
-  destruct (unfoldS r); try done; split_and!; auto using eqT_refl, aeq_refl.
-Qed.
+(** [seq_unf] (types/SessionEquiv.v) relates two types with one head. *)
 
 Lemma skn_in W Ψ C ys y x : (C, ys) ∈ Ψ → y ∈ ys → pt_root x = pt_root y → skn W Ψ x.
 Proof. intros Hg Hy E. right. by exists C, ys, y. Qed.
@@ -496,8 +492,8 @@ Ltac vb_list := repeat (apply Forall_cons; split); try (apply Forall_nil; done);
 
 Abbreviation pv a k := (Pt (NVar a) k).
 
-Definition Sa : sty := SMu (SRcv 0 TUnit (SVar 0)).
-Definition Sb : sty := SMu (SSnd 0 TUnit (SVar 0)).
+Definition Sa : sty := SMu (SSeq (SRcv 0 TUnit) (SVar 0)).
+Definition Sb : sty := SMu (SSeq (SSnd 0 TUnit) (SVar 0)).
 
 (** Closed boxes: no outer point variable, so substitution fixes them. *)
 Lemma pinst_closed σ T : pscoped 0 T → pinst_ty σ T = T.

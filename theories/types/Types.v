@@ -1,7 +1,9 @@
 (** * Types, session types, duality, environments (§2.2, Fig. 5 top)
 
     T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs. T)
-    S    ::= ?P.S | !P.S | Close | µα.S | α | α̅      P ::= ∃ιs. T
+    S    ::= Skip | S;S | ?P | !P | ⊕(S, S) | &(S, S) | Close | µα.S | α | α̅
+                                                    P ::= ∃ιs. T
+    (context-free session types, K1 of docs/extensions/context-free.md)
     β    ::= ι | ⊥        λ ::= ι | ⊤
     ι    ::= (p, b)       p ::= a | point variable | p[b][i]   (no channels) *)
 
@@ -155,16 +157,18 @@ Inductive ty :=
 
   | TSess (S : sty) (x : point)   (* S@x *)
 with sty :=
-  | SRcv (m : nat) (T : ty) (S : sty)
-                                   (* ?(∃ι₀ … ιₘ₋₁. T).S *)
-  | SSnd (m : nat) (T : ty) (S : sty)
-                                   (* !(∃ι₀ … ιₘ₋₁. T).S *)
+  | SRcv (m : nat) (T : ty)        (* ?(∃ι₀ … ιₘ₋₁. T), no continuation *)
+  | SSnd (m : nat) (T : ty)        (* !(∃ι₀ … ιₘ₋₁. T), no continuation *)
   | SEnd                           (* Close *)
   | SMu (S : sty)                  (* µα.S — binds one session variable *)
   | SVar (a : nat)                 (* α — de Bruijn *)
-  | SVarD (a : nat).               (* α̅ — the dual of what α stands for;
+  | SVarD (a : nat)                (* α̅ — the dual of what α stands for;
                                       never written in source types, it
                                       enters only through [dual] *)
+  | SSkip                          (* Skip *)
+  | SSeq (S1 S2 : sty)             (* S₁;S₂ *)
+  | SPlus (S1 S2 : sty)            (* ⊕(S₁, S₂): select a branch *)
+  | SWith (S1 S2 : sty).           (* &(S₁, S₂): offer both branches *)
 
 Scheme ty_mut_ind := Induction for ty Sort Prop
   with sty_mut_ind := Induction for sty Sort Prop.
@@ -335,12 +339,16 @@ Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   end
 with sren (r : nat → nat) (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SRcv m (sren_ty r T) (sren r s')
-  | SSnd m T s' => SSnd m (sren_ty r T) (sren r s')
+  | SRcv m T => SRcv m (sren_ty r T)
+  | SSnd m T => SSnd m (sren_ty r T)
   | SEnd => SEnd
   | SMu s' => SMu (sren (upren r) s')
   | SVar a => SVar (r a)
   | SVarD a => SVarD (r a)
+  | SSkip => SSkip
+  | SSeq s1 s2 => SSeq (sren r s1) (sren r s2)
+  | SPlus s1 s2 => SPlus (sren r s1) (sren r s2)
+  | SWith s1 s2 => SWith (sren r s1) (sren r s2)
   end.
 
 (** ** Polarity flip
@@ -362,12 +370,16 @@ Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   end
 with sflip (k : nat) (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SRcv m (sflip_ty k T) (sflip k s')
-  | SSnd m T s' => SSnd m (sflip_ty k T) (sflip k s')
+  | SRcv m T => SRcv m (sflip_ty k T)
+  | SSnd m T => SSnd m (sflip_ty k T)
   | SEnd => SEnd
   | SMu s' => SMu (sflip (S k) s')
   | SVar a => if decide (a = k) then SVarD a else SVar a
   | SVarD a => if decide (a = k) then SVar a else SVarD a
+  | SSkip => SSkip
+  | SSeq s1 s2 => SSeq (sflip k s1) (sflip k s2)
+  | SPlus s1 s2 => SPlus (sflip k s1) (sflip k s2)
+  | SWith s1 s2 => SWith (sflip k s1) (sflip k s2)
   end.
 
 (** ** Session duality: swaps the direction of communication.
@@ -377,6 +389,8 @@ with sflip (k : nat) (s : sty) : sty :=
     !T.S carry the same T — and variables carry a polarity:
 
       dual α = α̅    dual α̅ = α    dual (µα.S) = µα. flip₀ (dual S)
+      dual Skip = Skip    dual (S₁;S₂) = dual S₁; dual S₂
+      dual ⊕(S₁, S₂) = &(dual S₁, dual S₂)    dual &(S₁, S₂) = ⊕(dual S₁, dual S₂)
 
     The flip at the binder makes tail occurrences ("continue as
     myself") come out as α again, while payload occurrences come out
@@ -388,12 +402,16 @@ with sflip (k : nat) (s : sty) : sty :=
 
 Fixpoint dual (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SSnd m T (dual s')
-  | SSnd m T s' => SRcv m T (dual s')
+  | SRcv m T => SSnd m T
+  | SSnd m T => SRcv m T
   | SEnd => SEnd
   | SMu s' => SMu (sflip 0 (dual s'))
   | SVar a => SVarD a
   | SVarD a => SVar a
+  | SSkip => SSkip
+  | SSeq s1 s2 => SSeq (dual s1) (dual s2)
+  | SPlus s1 s2 => SWith (dual s1) (dual s2)
+  | SWith s1 s2 => SPlus (dual s1) (dual s2)
   end.
 
 (** Substituting under α̅ dualizes the substituend, matching its
@@ -412,47 +430,180 @@ Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SRcv m (sinst_ty σ T) (sinst σ s')
-  | SSnd m T s' => SSnd m (sinst_ty σ T) (sinst σ s')
+  | SRcv m T => SRcv m (sinst_ty σ T)
+  | SSnd m T => SSnd m (sinst_ty σ T)
   | SEnd => SEnd
   | SMu s' => SMu (sinst (sty_up σ) s')
   | SVar a => σ a
   | SVarD a => dual (σ a)
+  | SSkip => SSkip
+  | SSeq s1 s2 => SSeq (sinst σ s1) (sinst σ s2)
+  | SPlus s1 s2 => SPlus (sinst σ s1) (sinst σ s2)
+  | SWith s1 s2 => SWith (sinst σ s1) (sinst σ s2)
   end.
 
 (** One-step unrolling: µα.s ↦ s[µα.s/α]. *)
 Definition unroll (s : sty) : sty := sinst (SMu s .: SVar) s.
 
-(** ** Head normal form
+(** ** Head normal form (K3 of docs/extensions/context-free.md)
 
-    Under contractive definitions the leading µ's are finitely many,
-    so unfolding until a communication constructor appears terminates.
-    [unfoldS] is total: on a non-contractive type such as µα.α it
-    simply stops, leaving a µ or a variable in head position, and the
-    logical relation's clauses — which all match on the *unfolding* —
-    are then unsatisfiable. Ill-formed types therefore need no
-    well-formedness side condition; they just relate nothing. *)
+    The relation reads a session type only through its head normal
+    form unr(S) (Thiemann and Vasconcelos 2016, §3.3 and Lemma 3.8),
+    whose cases are
 
-Fixpoint mu_depth (s : sty) : nat :=
-  match s with SMu s' => S (mu_depth s') | _ => 0 end.
+      Skip | !P;S′ | ?P;S′ | α;S′ | α̅;S′ | ⊕(S₁, S₂) | &(S₁, S₂) | Close
 
-Fixpoint unfoldN (k : nat) (s : sty) : sty :=
-  match k with
-  | 0 => s
-  | S k' => match s with SMu s' => unfoldN k' (unroll s') | _ => s end
+    A lone !P, ?P or variable is read as itself followed by Skip, a
+    choice followed by S distributes S into its branches, and Close;S
+    is Close (K2: after a close the entry leaves the environment, so S
+    is never read). unr unrolls µ and descends into the left of ;
+    until such a head appears.
+
+    unr terminates on contractive types only, so [unrN] counts fuel and
+    returns [None] when it runs out. [unfoldS] runs it with the fuel
+    [sfuel S] and returns S itself when no head appears. A stuck type is
+    never in head form ([unrN_shape]), so the relation's clauses, which
+    all match on a head, relate nothing at it. We call S contractive when
+    [unfoldS S] is a head ([contractive]), which is "unr(S) is defined"
+    of Lemma 3.8. On a closed type that is contractive in the sense of
+    Fig. 3 of the paper, unr never reaches a recursion variable, so it
+    explores only the syntax of S and the fuel suffices. That
+    characterization is not mechanized. *)
+
+(** S₁;S₂ for a head S₁ other than Skip: the continuation joins the
+    head's own, and a choice takes it into both branches. *)
+Definition hseq (h s2 : sty) : sty :=
+  match h with
+  | SSeq o SSkip => SSeq o s2
+  | SSeq o r => SSeq o (SSeq r s2)
+  | SPlus a b => SPlus (SSeq a s2) (SSeq b s2)
+  | SWith a b => SWith (SSeq a s2) (SSeq b s2)
+  | _ => h
   end.
 
-Definition unfoldS (s : sty) : sty := unfoldN (mu_depth s) s.
+Fixpoint unrN (k : nat) (s : sty) : option sty :=
+  match k with
+  | 0 => None
+  | S k' =>
+      match s with
+      | SSkip => Some SSkip
+      | SSeq s1 s2 =>
+          match unrN k' s1 with
+          | Some SSkip => unrN k' s2
+          | Some h => Some (hseq h s2)
+          | None => None
+          end
+      | SRcv m T => Some (SSeq (SRcv m T) SSkip)
+      | SSnd m T => Some (SSeq (SSnd m T) SSkip)
+      | SVar a => Some (SSeq (SVar a) SSkip)
+      | SVarD a => Some (SSeq (SVarD a) SSkip)
+      | SMu b => unrN k' (unroll b)
+      | SEnd => Some SEnd
+      | SPlus a b => Some (SPlus a b)
+      | SWith a b => Some (SWith a b)
+      end
+  end.
 
-(** A type already in head normal form is its own unfolding. *)
-Lemma unfoldS_hd u : mu_depth u = 0 → unfoldS u = u.
-Proof. unfold unfoldS. by intros ->. Qed.
+(** The fuel: one per ; and µ on the spine of the type. *)
+Fixpoint sfuel (s : sty) : nat :=
+  match s with
+  | SSeq a b => S (sfuel a + sfuel b)
+  | SMu b => S (sfuel b)
+  | _ => 1
+  end.
 
-Lemma mu_depth_rcv m T s : mu_depth (SRcv m T s) = 0.
+Definition unfoldS (s : sty) : sty :=
+  match unrN (sfuel s) s with Some h => h | None => s end.
+
+(** The heads. *)
+Definition satom (o : sty) : Prop :=
+  match o with SRcv _ _ | SSnd _ _ | SVar _ | SVarD _ => True | _ => False end.
+
+Definition hnf_shape (h : sty) : Prop :=
+  match h with
+  | SSkip | SEnd | SPlus _ _ | SWith _ _ => True
+  | SSeq o _ => satom o
+  | _ => False
+  end.
+
+Definition contractive (s : sty) : Prop := hnf_shape (unfoldS s).
+
+Lemma hseq_shape h s2 : hnf_shape h → h ≠ SSkip → hnf_shape (hseq h s2).
+Proof.
+  destruct h as [| | | | | | |o r| |]; simpl; try done.
+  destruct r; done.
+Qed.
+
+Lemma unrN_shape k : ∀ s h, unrN k s = Some h → hnf_shape h.
+Proof.
+  induction k as [|k IH]; intros s h Hs; [done|].
+  destruct s; simpl in Hs; try (injection Hs as <-; done); [by eapply IH|].
+  destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+  pose proof (IH _ _ E1) as Hh1.
+  destruct h1 as [| | | | | | |o r| |]; try (exact (IH _ _ Hs)); simpl in Hh1; try done;
+    injection Hs as <-; simpl; try done; destruct r; done.
+Qed.
+
+Lemma unrN_mono k : ∀ k' s h, unrN k s = Some h → k ≤ k' → unrN k' s = Some h.
+Proof.
+  induction k as [|k IH]; intros k' s h Hs Hk; [done|].
+  destruct k' as [|k']; [lia|]. destruct s; simpl in *; try done.
+  - apply IH; [done|lia].
+  - destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+    rewrite (IH k' _ _ E1) by lia.
+    destruct h1; try done. apply IH; [done|lia].
+Qed.
+
+(** A head is its own normal form. *)
+Lemma sfuel_pos s : 1 ≤ sfuel s.
+Proof. destruct s; simpl; lia. Qed.
+
+Lemma unrN_hd k s : hnf_shape s → sfuel s ≤ k → unrN k s = Some s.
+Proof.
+  intros Hs Hk. destruct s as [| | | | | | |o r| |]; simpl in *; try done;
+    destruct k as [|k]; try lia; try done.
+  pose proof (sfuel_pos o). destruct k as [|k]; [lia|].
+  destruct o; simpl; try done; destruct r; done.
+Qed.
+
+Lemma unrN_hd_fuel u : hnf_shape u → unrN (sfuel u) u = Some u.
+Proof.
+  intros Hu. by apply unrN_hd.
+Qed.
+
+Lemma unfoldS_hd u : hnf_shape u → unfoldS u = u.
+Proof. intros Hu. unfold unfoldS. by rewrite unrN_hd_fuel. Qed.
+
+Lemma unfoldS_rcv m T s : unfoldS (SSeq (SRcv m T) s) = SSeq (SRcv m T) s.
+Proof. by apply unfoldS_hd. Qed.
+
+Lemma unfoldS_snd m T s : unfoldS (SSeq (SSnd m T) s) = SSeq (SSnd m T) s.
+Proof. by apply unfoldS_hd. Qed.
+
+Lemma unfoldS_plus a b : unfoldS (SPlus a b) = SPlus a b.
+Proof. by apply unfoldS_hd. Qed.
+
+Lemma unfoldS_with a b : unfoldS (SWith a b) = SWith a b.
+Proof. by apply unfoldS_hd. Qed.
+
+Lemma unfoldS_end : unfoldS SEnd = SEnd.
 Proof. done. Qed.
 
-Lemma mu_depth_snd m T s : mu_depth (SSnd m T s) = 0.
-Proof. done. Qed.
+(** [unfoldS] either reaches a head or leaves the type alone. *)
+Lemma unfoldS_cases s : (unrN (sfuel s) s = Some (unfoldS s) ∧ hnf_shape (unfoldS s)) ∨
+                        (unrN (sfuel s) s = None ∧ unfoldS s = s).
+Proof.
+  unfold unfoldS. destruct (unrN (sfuel s) s) as [h|] eqn:E; [left|by right].
+  split; [done|]. by eapply unrN_shape.
+Qed.
+
+(** A head that [unfoldS] returns is the one every larger fuel gives. *)
+Lemma unfoldS_unrN s k : hnf_shape (unfoldS s) → sfuel s ≤ k → unrN k s = Some (unfoldS s).
+Proof.
+  intros Hh Hk. destruct (unfoldS_cases s) as [[E _]|[E Es]].
+  - by eapply unrN_mono.
+  - exfalso. rewrite Es in Hh. by rewrite unrN_hd_fuel in E.
+Qed.
 
 (** ** Closedness of session variables *)
 
@@ -466,10 +617,11 @@ Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
   end
 with sclosed (k : nat) (s : sty) : Prop :=
   match s with
-  | SRcv _ T s' | SSnd _ T s' => sclosed_ty k T ∧ sclosed k s'
-  | SEnd => True
+  | SRcv _ T | SSnd _ T => sclosed_ty k T
+  | SEnd | SSkip => True
   | SMu s' => sclosed (S k) s'
   | SVar a | SVarD a => a < k
+  | SSeq s1 s2 | SPlus s1 s2 | SWith s1 s2 => sclosed k s1 ∧ sclosed k s2
   end.
 
 Lemma sinst_ext_mut :
@@ -509,29 +661,29 @@ Definition sflip_comm := proj2 sflip_comm_mut.
 
 Lemma sflip_dual s : ∀ j, sflip j (dual s) = dual (sflip j s).
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros j; simpl; f_equal;
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros j; simpl; f_equal;
     auto.
   - rewrite <-IH. apply sflip_comm. lia.
   - repeat (case_decide; simpl); congruence.
   - repeat (case_decide; simpl); congruence.
 Qed.
 
-Lemma sflip_mu_depth s : ∀ k, mu_depth (sflip k s) = mu_depth s.
+Lemma sfuel_sflip s : ∀ k, sfuel (sflip k s) = sfuel s.
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros k; simpl; auto;
-    case_decide; done.
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros k; simpl; auto;
+    try case_decide; done.
 Qed.
 
 Lemma dual_involutive s : dual (dual s) = s.
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; simpl; f_equal; auto.
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; simpl; f_equal; auto.
   rewrite <-sflip_dual, sflip_sflip. exact IH.
 Qed.
 
-Lemma dual_mu_depth s : mu_depth (dual s) = mu_depth s.
+Lemma sfuel_dual s : sfuel (dual s) = sfuel s.
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; simpl; auto.
-  by rewrite sflip_mu_depth, IH.
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; simpl; auto.
+  by rewrite sfuel_sflip, IH.
 Qed.
 
 (** ** Flip versus renaming and substitution
@@ -571,7 +723,7 @@ Qed.
 
 Lemma dual_sren s : ∀ r, dual (sren r s) = sren r (dual s).
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros r; simpl; f_equal;
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros r; simpl; f_equal;
     auto.
   rewrite IH. apply (proj2 sflip_sren_iff_mut).
   intros [|a]; simpl; unfold compose; split; intros; simplify_eq; done.
@@ -609,7 +761,7 @@ Qed.
 
 Lemma dual_sinst s : ∀ σ, dual (sinst σ s) = sinst σ (dual s).
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros σ; simpl; f_equal;
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros σ; simpl; f_equal;
     auto.
   - rewrite IH. apply (proj2 sflip_sinst_mut); [done|].
     intros [|a] Ha; simpl; [lia|]. unfold compose.
@@ -650,17 +802,35 @@ Proof.
   intros [|a] Ha; [lia|done].
 Qed.
 
-Lemma dual_unfoldN k : ∀ s, dual (unfoldN k s) = unfoldN k (dual s).
+Lemma dual_hseq h s2 : dual (hseq h s2) = hseq (dual h) (dual s2).
+Proof. destruct h as [| | | | | | |o r| |]; simpl; try done. by destruct r. Qed.
+
+Lemma dual_skip_iff h : dual h = SSkip ↔ h = SSkip.
+Proof. split; [|by intros ->]. by destruct h. Qed.
+
+Lemma dual_unrN k : ∀ s, unrN k (dual s) = dual <$> unrN k s.
 Proof.
   induction k as [|k IH]; intros s; simpl; [done|].
-  destruct s as [m T s'|m T s'| |s'|a|a]; simpl; try done.
-  by rewrite IH, dual_unroll.
+  destruct s as [m T|m T| |b|a|a| |s1 s2|s1 s2|s1 s2]; simpl; try done.
+  - by rewrite <-dual_unroll, IH.
+  - rewrite IH. destruct (unrN k s1) as [h|]; simpl; [|done].
+    destruct h as [| | | | | | |h1 h2| |]; simpl; try apply IH; try done.
+    destruct h2; done.
 Qed.
 
 (** The property CONNECT needs: the two ends of a session unfold in
     lockstep — unconditionally, thanks to the polarized dual. *)
 Lemma dual_unfoldS s : dual (unfoldS s) = unfoldS (dual s).
-Proof. unfold unfoldS. rewrite dual_mu_depth. apply dual_unfoldN. Qed.
+Proof.
+  unfold unfoldS. rewrite sfuel_dual, dual_unrN.
+  by destruct (unrN (sfuel s) s).
+Qed.
+
+Lemma hnf_shape_dual h : hnf_shape (dual h) ↔ hnf_shape h.
+Proof. destruct h as [| | | | | | |o r| |]; simpl; try done. by destruct o. Qed.
+
+Lemma contractive_dual s : contractive (dual s) ↔ contractive s.
+Proof. unfold contractive. by rewrite <-dual_unfoldS, hnf_shape_dual. Qed.
 
 (** ** Primitive types: possible return types of threads. *)
 
@@ -800,8 +970,10 @@ Qed.
 
     new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
-    send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι])
-    recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
+    send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι])
+    recv   : (?P;S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
+    selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@(ι+1)
+    branch : &(S₁, S₂)@ι ⊸^ι_⊤ S₁@(ι+1) + S₂@(ι+1)
     close  : Close@ι ⊸^ι_⊤ ∗
     link   : S@ι ⊗ dual S@ι′ ⊸^⊥_⊤ ∗       ι ≡ ι′   (never blocks, sharp edges 68)
     force  : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]   C[ιs′/ιs]   (52, 58, 63)
@@ -813,6 +985,12 @@ Qed.
     [new] must be one, so that the created point can be aliased to it
     (sharp edges 49). force asks its instance known and every
     fact of the box's constraint at the instance (sharp edges 65). *)
+
+(** The branch a selection or a branch label picks: S₁ for false. *)
+Definition sbranch (b : bool) (S1 S2 : sty) : sty := if b then S2 else S1.
+
+Lemma sbranch_map (f : sty → sty) b S1 S2 : f (sbranch b S1 S2) = sbranch b (f S1) (f S2).
+Proof. by destruct b. Qed.
 
 Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
     : konst → ty → Prop :=
@@ -827,15 +1005,25 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       (∀ h, h ∈ heads (payload_at m T x) → plt x h) →
       konst_ty peq plt pk KSend
         (TLolli (Some x) None
-           (TProd (payload_at m T x) (TSess (SSnd m T S) x))
+           (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) S) x))
            (TSess S (pt_shift 1 x)))
   | KTRecv m T S x :
       konst_ty peq plt pk KRecv
         (TLolli (Some x) None
-           (TSess (SRcv m T S) x)
+           (TSess (SSeq (SRcv m T) S) x)
            (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))
   | KTClos x :
       konst_ty peq plt pk KClos (TLolli (Some x) None (TSess SEnd x) TUnit)
+  | KTSel1 S1 S2 x :
+      konst_ty peq plt pk KSel1
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_shift 1 x)))
+  | KTSel2 S1 S2 x :
+      konst_ty peq plt pk KSel2
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_shift 1 x)))
+  | KTBra S1 S2 x :
+      konst_ty peq plt pk KBra
+        (TLolli (Some x) None (TSess (SWith S1 S2) x)
+           (TSum (TSess S1 (pt_shift 1 x)) (TSess S2 (pt_shift 1 x))))
   | KTLink S x x' :
       peq x x' →
       konst_ty peq plt pk KLink

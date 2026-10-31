@@ -28,7 +28,7 @@ Set Default Proof Using "All".
 Fixpoint chv (n : nat) : pname := match n with 0 => NVar 0 | S m => NSlot (chv m) 0 0 end.
 Fixpoint chc (n : nat) : pname := match n with 0 => NConst 0 | S m => NSlot (chc m) 0 0 end.
 
-Definition Sch : sty := SMu (SRcv 1 (TSess (SVar 0) (pvar 0)) SEnd).
+Definition Sch : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0))) SEnd).
 
 Definition ch_P (g : fact) : Prop := ∃ n, g = FLt (Pt (chv n) 1) (Pt (chv (S n)) 0).
 Definition ch_C : bcs := BCs [] ch_P.
@@ -80,7 +80,7 @@ Proof.
   box_open1 ch_C rch_body. cbn. unfold rch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
-  { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (SRcv 1 (TSess Sch (pvar 0)) SEnd) (pv 0 0))).
+  { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (SSeq (SRcv 1 (TSess Sch (pvar 0))) SEnd) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -119,7 +119,7 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd (TSess Sch chs) (TSess (SSnd 1 (TSess Sch (pvar 0)) SEnd) (pv 0 0)))).
+              (TProd (TSess Sch chs) (TSess (SSeq (SSnd 1 (TSess Sch (pvar 0))) SEnd) (pv 0 0)))).
     - tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
     - apply (KTSend _ _ _ 1 (TSess Sch (pvar 0)) SEnd (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. apply Hlt. by left.

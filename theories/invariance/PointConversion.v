@@ -321,7 +321,7 @@ Proof.
     apply Erel_S_iff. split_and!; [|done|].
     { intros Hirr. eapply HV; [done|exact Ht|]. by apply Hval. }
     intros α e' Hst. specialize (Hstep α e' Hst).
-    destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
+    destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hstep |- *.
     + by eapply HEj.
     + destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
       exists Θ1, m, U, s, k. split; [done|].
@@ -336,6 +336,10 @@ Proof.
     + destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                          -> & ? & ? & ? & ? & HE').
       exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|]. exact (proj2 HE' T' HW Ht).
+    + destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. exact (proj2 HE' T' HW Ht).
+    + destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by eapply HEj.
     + (* O-New: rename the new point away from the points of T' *)
       intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
       destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
@@ -365,7 +369,7 @@ Proof.
     { intros Hp. destruct (Hirr Hp) as (v & E & -> & ? & HVv & ?).
       exists v, E. split_and!; [done|done| |done]. by eapply HV. }
     intros π q Hst. specialize (Hstep π q Hst).
-    destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
+    destruct π as [|[c w|c w|c|cd|c i|c i]]; simpl in Hstep |- *.
     + (* Q-Tau: rename the placed points away from the points of T' *)
       destruct Hstep as [Htau Hlink]. split.
       2: { intros Hl Hd. exact (proj2 (Hlink Hl Hd) T' HW Ht). }
@@ -389,6 +393,10 @@ Proof.
     + destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
                          -> & ? & -> & ? & ? & ? & ? & HP').
       exists c, d, Σ1, sc, sd, kc, kd. split_and!; [done..|]. exact (proj2 HP' T' HW Ht).
+    + destruct Hstep as (Σ1 & s1 & s2 & k & ? & ? & HP').
+      exists Σ1, s1, s2, k. split_and!; [done..|]. exact (proj2 HP' T' HW Ht).
+    + destruct Hstep as (Σ1 & s1 & s2 & k & ? & ? & HP').
+      exists Σ1, s1, s2, k. split_and!; [done..|]. by eapply HPj.
 Qed.
 
 Lemma Vrel_tconv n W Θ T T' v :
@@ -547,7 +555,7 @@ Section tconv.
       keeps. *)
   Lemma selects_conv Θ Θ' σ k : tconv W Θ Θ' → selects Θ σ k → selects Θ' σ k.
   Proof.
-    intros H. destruct σ as [c v|c v|c|cd]; simpl.
+    intros H. destruct σ as [c v|c v|c|cd|c i|c i]; simpl.
     - intros [Hk (e & m & T & s & He & Hu)]. split; [done|].
       destruct (tconv_entry _ _ _ _ H He) as (e' & He' & [Hs _]).
       destruct (seq_rcv_inv e'.1 e.1 m T s) as (U & s' & Hu' & _); [by apply seq_sym|done|].
@@ -568,6 +576,14 @@ Section tconv.
         * apply (tconv_entry_none _ _ _ H) in Ef. congruence.
     - intros [Hk [e He]]. split; [done|].
       destruct (tconv_entry _ _ _ _ H He) as (e' & He' & _). by eexists.
+    - intros [Hk (e & s1 & s2 & He & Hu)]. split; [done|].
+      destruct (tconv_entry _ _ _ _ H He) as (e' & He' & [Hs _]).
+      destruct (seq_plus_inv e'.1 e.1 s1 s2) as (r1 & r2 & Hu' & _); [by apply seq_sym|done|].
+      eauto 10.
+    - intros [Hk (e & s1 & s2 & He & Hu)]. split; [done|].
+      destruct (tconv_entry _ _ _ _ H He) as (e' & He' & [Hs _]).
+      destruct (seq_with_inv e'.1 e.1 s1 s2) as (r1 & r2 & Hu' & _); [by apply seq_sym|done|].
+      eauto 10.
   Qed.
 
   Lemma offered_t_conv Θ Θ' t k :
@@ -838,7 +854,7 @@ Proof.
   { intros Hirr. eapply HV; [done|exact Hc|]. by apply Hval. }
   { intros Hirr. eapply ready_t_conv; [done|exact Hc|]. by apply Hrdy. }
   intros α e' Hst. specialize (Hstep α e' Hst).
-  destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
+  destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hstep |- *.
   - by eapply HEj.
   - (* O-Recv *)
     destruct Hstep as (Θ1 & m & U & s & k & (s0 & Hext & Hu) & H).
@@ -902,6 +918,28 @@ Proof.
     + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
       eapply (wf_eq_trans _ HW); [exact Hal|exact Hkd].
     + exact (proj2 HE' _ HW Hc1).
+  - (* O-Select *)
+    destruct Hstep as (Θr & s1 & s2 & k & ΘS & (s0 & Hext & Hu) & Hext1 & HE').
+    destruct (tconv_unext W Θr c (s0, k) Θ Θ' Hc Hext)
+      as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
+    destruct (seq_plus_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
+      [by apply seq_sym|done|].
+    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_shift 1 k)
+                (sbranch i s1' s2', pt_shift 1 k') ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
+    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_shift _ HW). }
+    exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
+    exact (proj2 HE' _ HW Hc3).
+  - (* O-Branch *)
+    destruct Hstep as (Θr & s1 & s2 & k & ΘS & (s0 & Hext & Hu) & Hext1 & HE').
+    destruct (tconv_unext W Θr c (s0, k) Θ Θ' Hc Hext)
+      as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
+    destruct (seq_with_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
+      [by apply seq_sym|done|].
+    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_shift 1 k)
+                (sbranch i s1' s2', pt_shift 1 k') ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
+    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_shift _ HW). }
+    exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
+    eapply HEj; [lia|done|exact Hc3|exact HE'].
   - (* O-New: rename the new point away from the points of Θ' *)
     intros Hc0. rewrite <-(tconv_dom W Θ Θ' Hc) in Hc0.
     destruct (Hstep Hc0) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
@@ -1153,7 +1191,7 @@ Proof.
     eapply Vrel_econv; [done|by apply sconv_tconv|exact HVv]. }
   { intros Hp. eapply (ready_p_conv W HW); [exact Hc|]. by apply Hrdy. }
   intros π q Hst. specialize (Hstep π q Hst).
-  destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
+  destruct π as [|[c w|c w|c|cd|c i|c i]]; simpl in Hstep |- *.
   - (* Q-Tau *)
     destruct Hstep as [Htau Hlink]. split.
     2: { intros Hl Hd. rewrite <-(sconv_dom W Σ Σ' Hc) in Hd.
@@ -1247,4 +1285,22 @@ Proof.
       { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hd1 as ->. }
       rewrite lookup_delete_ne by done. specialize (Hc x). rewrite HΣ in Hc.
       by rewrite !lookup_insert_ne in Hc.
+  - (* Q-Select *)
+    destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc1 & HP').
+    destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)
+      as (s0 & s0' & k' & Σ1' & HΣ & HΣ' & Hu & Hs & Hk & Hc1' & Hcd').
+    destruct (seq_plus_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
+      [by apply seq_sym|done|].
+    exists Σ1', s1', s2', k'. split_and!; [by exists s0'|done|].
+    apply (proj2 HP'); [done|]. apply sconv_insert; [done|].
+    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_shift _ HW).
+  - (* Q-Branch *)
+    destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc1 & HP').
+    destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)
+      as (s0 & s0' & k' & Σ1' & HΣ & HΣ' & Hu & Hs & Hk & Hc1' & Hcd').
+    destruct (seq_with_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
+      [by apply seq_sym|done|].
+    exists Σ1', s1', s2', k'. split_and!; [by exists s0'|done|].
+    eapply HPj; [lia|done| |exact HP']. apply sconv_insert; [done|].
+    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_shift _ HW).
 Qed.

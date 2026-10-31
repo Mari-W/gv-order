@@ -55,12 +55,16 @@ Fixpoint tysw (a b : nat) (T : ty) : ty :=
   end
 with stysw (a b : nat) (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SRcv m (tysw a b T) (stysw a b s')
-  | SSnd m T s' => SSnd m (tysw a b T) (stysw a b s')
+  | SRcv m T => SRcv m (tysw a b T)
+  | SSnd m T => SSnd m (tysw a b T)
   | SEnd => SEnd
   | SMu s' => SMu (stysw a b s')
   | SVar x => SVar x
   | SVarD x => SVarD x
+  | SSkip => SSkip
+  | SSeq s1 s2 => SSeq (stysw a b s1) (stysw a b s2)
+  | SPlus s1 s2 => SPlus (stysw a b s1) (stysw a b s2)
+  | SWith s1 s2 => SWith (stysw a b s1) (stysw a b s2)
   end.
 
 Section points.
@@ -165,17 +169,46 @@ Section points.
     by intros [|i].
   Qed.
 
-  Lemma mu_depth_sw s : mu_depth (stysw a b s) = mu_depth s.
+  Lemma sfuel_sw s : sfuel (stysw a b s) = sfuel s.
   Proof. induction s; simpl; auto. Qed.
 
-  Lemma unfoldN_sw k : ∀ s, stysw a b (unfoldN k s) = unfoldN k (stysw a b s).
+  Lemma hseq_sw h s2 : stysw a b (hseq h s2) = hseq (stysw a b h) (stysw a b s2).
+  Proof. destruct h as [| | | | | | |o r| |]; simpl; try done. by destruct r. Qed.
+
+  Lemma unrN_sw k : ∀ s, unrN k (stysw a b s) = stysw a b <$> unrN k s.
   Proof.
     induction k as [|k IH]; intros s; [done|].
-    destruct s; simpl; try done. by rewrite IH, unroll_sw.
+    destruct s as [m T|m T| |s'|x|x| |s1 s2|s1 s2|s1 s2]; simpl; try done.
+    - by rewrite <-unroll_sw, IH.
+    - rewrite IH. destruct (unrN k s1) as [h|]; simpl; [|done].
+      destruct h as [| | | | | | |h1 h2| |]; simpl; try apply IH; try done.
+      destruct h2; done.
   Qed.
 
   Lemma unfoldS_sw s : stysw a b (unfoldS s) = unfoldS (stysw a b s).
-  Proof. unfold unfoldS. by rewrite mu_depth_sw, unfoldN_sw. Qed.
+  Proof.
+    unfold unfoldS. rewrite sfuel_sw, unrN_sw.
+    by destruct (unrN (sfuel s) s).
+  Qed.
+
+  Definition vsw (h : hview) : hview :=
+    match h with
+    | HSkip => HSkip
+    | HRcv m T s => HRcv m (tysw a b T) (stysw a b s)
+    | HSnd m T s => HSnd m (tysw a b T) (stysw a b s)
+    | HVar x s => HVar x (stysw a b s)
+    | HVarD x s => HVarD x (stysw a b s)
+    | HPlus s1 s2 => HPlus (stysw a b s1) (stysw a b s2)
+    | HWith s1 s2 => HWith (stysw a b s1) (stysw a b s2)
+    | HEnd => HEnd
+    | HStuck u => HStuck (stysw a b u)
+    end.
+
+  Lemma hd_sw s : hd (stysw a b s) = vsw (hd s).
+  Proof.
+    unfold hd. rewrite <-unfoldS_sw. destruct (unfoldS s) as [| | | | | | |o r| |]; try done.
+    by destruct o.
+  Qed.
 
   (** Type equivalence and duality are invariant. *)
   Lemma eqT_sw (ρ ρ' : sty → sty → Prop) T : ∀ U,
@@ -188,22 +221,24 @@ Section points.
   Lemma aeq_sw n : ∀ s r, aeq n s r → aeq n (stysw a b s) (stysw a b r).
   Proof.
     induction n as [|n IH]; intros s r; [done|]. simpl. unfold eq_step.
-    rewrite <-!unfoldS_sw.
-    destruct (unfoldS s), (unfoldS r); simpl; try done;
+    rewrite !hd_sw.
+    hd_cases s; hd_cases r; simpl; try done;
       try (intros (-> & ? & ?); split_and!; [done|by eapply eqT_sw|auto]);
-      try (intros H; by inversion H).
+      try (intros (-> & ?); split; auto);
+      try (intros (? & ?); split; auto);
+      try (intros H; by subst).
   Qed.
 
   Lemma adual_sw n : ∀ s r, adual n s r → adual n (stysw a b s) (stysw a b r).
   Proof.
     induction n as [|n IH]; intros s r; [done|]. simpl. unfold dual_step.
-    rewrite <-!unfoldS_sw.
-    destruct (unfoldS s) eqn:E1, (unfoldS r) eqn:E2; simpl; try done;
+    rewrite !hd_sw.
+    hd_cases s; hd_cases r; simpl; try done;
       try (intros (-> & ? & ?); split_and!;
            [done|eapply eqT_sw; [apply aeq_sw|done]|auto]);
-      try (intros H; by inversion H);
-      try (intros H; simplify_eq; simpl;
-           by rewrite ?(proj2 sflip_sw_mut), ?dual_sw).
+      try (intros (-> & ?); split; auto);
+      try (intros (? & ?); split; auto);
+      try (intros H; subst; by rewrite dual_sw).
   Qed.
 
   Lemma seq_sw s r : seq s r → seq (stysw a b s) (stysw a b r).
@@ -820,24 +855,23 @@ Section ready.
 
   Lemma selects_sw Θ σ k : selects (tenvsw a b Θ) σ k ↔ selects Θ σ k.
   Proof.
-    destruct σ as [c w|c w|c|cd]; simpl; rewrite ?tenv_entry_sw.
+    destruct σ as [c w|c w|c|cd|c i|c i]; simpl; rewrite ?tenv_entry_sw.
     - split; intros [Hk (e & m & T & s & He & Hu)]; split; [done| |done|].
       + destruct (tenv_entry Θ k) as [e0|] eqn:E; [|done]. injection He as <-.
-        simpl in Hu. rewrite <-unfoldS_sw in Hu.
-        destruct (unfoldS e0.1) eqn:Eu; try done.
-        injection Hu as <- <- <-. eexists _, _, _, _. split; [done|exact Eu].
+        simpl in Hu. apply unfoldS_rcv_iff in Hu. rewrite hd_sw in Hu.
+        destruct (hd e0.1) eqn:Eu; try done. simpl in Hu. injection Hu as <- <- <-.
+        eexists _, _, _, _. split; [done|]. by apply unfoldS_rcv_iff.
       + exists (esw a b e), m, (tysw a b T), (stysw a b s). rewrite He.
         split; [done|]. simpl. by rewrite <-unfoldS_sw, Hu.
     - split; intros [Hk (e & m & T & s & He & Hu)]; split; [done| |done|].
       + destruct (tenv_entry Θ k) as [e0|] eqn:E; [|done]. injection He as <-.
-        simpl in Hu. rewrite <-unfoldS_sw in Hu.
-        destruct (unfoldS e0.1) eqn:Eu; try done.
-        injection Hu as <- <- <-. eexists _, _, _, _. split; [done|exact Eu].
+        simpl in Hu. apply unfoldS_snd_iff in Hu. rewrite hd_sw in Hu.
+        destruct (hd e0.1) eqn:Eu; try done. simpl in Hu. injection Hu as <- <- <-.
+        eexists _, _, _, _. split; [done|]. by apply unfoldS_snd_iff.
       + exists (esw a b e), m, (tysw a b T), (stysw a b s). rewrite He.
         split; [done|]. simpl. by rewrite <-unfoldS_sw, Hu.
     - assert (∀ s, unfoldS (stysw a b s) = SEnd ↔ unfoldS s = SEnd) as HE.
-      { intros s. rewrite <-unfoldS_sw. split; [|by intros ->].
-        by destruct (unfoldS s). }
+      { intros s. rewrite !unfoldS_end_iff, hd_sw. by destruct (hd s). }
       split; intros [Hk (e & He & Hu & H2)]; split; try done.
       + destruct (tenv_entry Θ k) as [e0|] eqn:E; [|done]. injection He as <-.
         exists e0. split_and!; [done|by apply HE|].
@@ -849,6 +883,20 @@ Section ready.
     - split; intros [Hk Hs]; split; try done.
       + destruct (tenv_entry Θ k); [done|by destruct Hs].
       + by destruct (tenv_entry Θ k).
+    - split; intros [Hk (e & s1 & s2 & He & Hu)]; split; [done| |done|].
+      + destruct (tenv_entry Θ k) as [e0|] eqn:E; [|done]. injection He as <-.
+        simpl in Hu. apply unfoldS_plus_iff in Hu. rewrite hd_sw in Hu.
+        destruct (hd e0.1) eqn:Eu; try done. simpl in Hu. injection Hu as <- <-.
+        eexists _, _, _. split; [done|]. by apply unfoldS_plus_iff.
+      + exists (esw a b e), (stysw a b s1), (stysw a b s2). rewrite He.
+        split; [done|]. simpl. by rewrite <-unfoldS_sw, Hu.
+    - split; intros [Hk (e & s1 & s2 & He & Hu)]; split; [done| |done|].
+      + destruct (tenv_entry Θ k) as [e0|] eqn:E; [|done]. injection He as <-.
+        simpl in Hu. apply unfoldS_with_iff in Hu. rewrite hd_sw in Hu.
+        destruct (hd e0.1) eqn:Eu; try done. simpl in Hu. injection Hu as <- <-.
+        eexists _, _, _. split; [done|]. by apply unfoldS_with_iff.
+      + exists (esw a b e), (stysw a b s1), (stysw a b s2). rewrite He.
+        split; [done|]. simpl. by rewrite <-unfoldS_sw, Hu.
   Qed.
 
   Lemma offered_t_sw Θ t k : offered_t (tenvsw a b Θ) t k ↔ offered_t Θ t k.
@@ -939,6 +987,9 @@ Section ready.
       apply elem_of_map in Hh as (h0 & -> & Hh0). simpl.
       rewrite !ptsw_involutive. auto.
     - rewrite payload_at_sw. constructor.
+    - constructor.
+    - constructor.
+    - constructor.
     - constructor.
     - constructor. simpl. by rewrite !ptsw_involutive.
     - rewrite ty_inst_sw.
@@ -1178,12 +1229,12 @@ Proof.
     { intros Hirr. eapply ready_t_wsame; [exact HS|]. by apply ready_t_sw, Hrdy. }
 
     intros α e'' Hst. specialize (Hstep _ _ Hst).
-    destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
+    destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hstep |- *.
     + apply (IHE n' ltac:(lia) W); done.
     + (* recv *)
       destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
       exists (tenvsw a b Θ1), m, (tysw a b U), (stysw a b s), (ptsw a b k).
-      split; [by apply (tenv_hd_sw a b _ _ (SRcv m U s))|].
+      split; [by apply (tenv_hd_sw a b _ _ (SSeq (SRcv m U) s))|].
       intros W'' j Θ2 Θ1c Θ' Hx Hj Hext Hc HVw.
       assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
       apply (tenv_comp_sw a b) in Hc.
@@ -1201,7 +1252,7 @@ Proof.
       exists (tenvsw a b Θr), (tenvsw a b Θ1), (tenvsw a b Θ2), m,
         (tysw a b U), (stysw a b s), (ptsw a b k), (tenvsw a b Θ').
       split_and!.
-      * by apply (tenv_hd_sw a b _ _ (SSnd m U s)).
+      * by apply (tenv_hd_sw a b _ _ (SSeq (SSnd m U) s)).
       * eapply tenv_comp_mono; [|by apply tenv_comp_sw]; intros ? ? ?; by apply HS.
       * rewrite <-payload_at_sw. by apply (HV W W') in HVw.
       * by apply (tenv_ext_sw a b _ _ (s, pt_shift 1 k)).
@@ -1223,6 +1274,22 @@ Proof.
       * by apply sdual_sw.
       * destruct HS as (_ & He & _). apply He. by apply wsw_eq.
       * by apply (proj2 HE').
+    + (* select *)
+      destruct Hstep as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
+      exists (tenvsw a b Θr), (stysw a b s1), (stysw a b s2), (ptsw a b k), (tenvsw a b Θ').
+      split_and!.
+      * by apply (tenv_hd_sw a b _ _ (SPlus s1 s2)).
+      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_shift 1 k)) in Hext.
+        unfold esw in Hext; simpl in Hext. by rewrite sbranch_map in Hext.
+      * by apply (proj2 HE').
+    + (* branch *)
+      destruct Hstep as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
+      exists (tenvsw a b Θr), (stysw a b s1), (stysw a b s2), (ptsw a b k), (tenvsw a b Θ').
+      split_and!.
+      * by apply (tenv_hd_sw a b _ _ (SWith s1 s2)).
+      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_shift 1 k)) in Hext.
+        unfold esw in Hext; simpl in Hext. by rewrite sbranch_map in Hext.
+      * by apply (IHE n' ltac:(lia) W).
     + (* new *)
       intros Hc. rewrite dom_tenvsw in Hc.
       destruct (Hstep Hc) as (a0 & s & s' & W1 & Ha & Hdu & Hfr & HE').
@@ -1256,7 +1323,7 @@ Proof.
     { intros Hpirr. eapply ready_p_wsame; [exact HS|]. apply ready_p_sw.
       by apply Hrdy. }
     intros π q Hst. specialize (Hstep _ _ Hst).
-    destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
+    destruct π as [|[c w|c w|c|cd|c i|c i]]; simpl in Hstep |- *.
     + (* τ *)
       destruct Hstep as [Htau Hlink]. split.
       { intros Hd. rewrite dom_senvsw in Hd.
@@ -1273,7 +1340,7 @@ Proof.
       destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
       exists (senvsw a b Σ1), m, (tysw a b U), (stysw a b s), (ptsw a b k).
       split_and!.
-      * by apply (senv_hd_sw a b _ _ (SRcv m U s)).
+      * by apply (senv_hd_sw a b _ _ (SSeq (SRcv m U) s)).
       * by rewrite dom_senvsw.
       * intros W'' j Θ2 Hx Hj Hfr Hok HVw.
         assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
@@ -1298,7 +1365,7 @@ Proof.
       exists (senvsw a b Σ0), (senvsw a b Σv), m, (tysw a b U),
         (stysw a b s), (ptsw a b k), (senvsw a b Σe), (tenvsw a b Θe).
       split_and!.
-      * rewrite <-senvsw_union. by apply (senv_hd_sw a b _ _ (SSnd m U s)).
+      * rewrite <-senvsw_union. by apply (senv_hd_sw a b _ _ (SSeq (SSnd m U) s)).
       * by apply senvsw_disjoint.
       * by rewrite dom_senvsw.
       * by rewrite dom_senvsw.
@@ -1329,6 +1396,19 @@ Proof.
       * by apply sdual_sw.
       * destruct HS as (_ & He & _). apply He. by apply wsw_eq.
       * by apply (proj2 HP').
+    + (* select *)
+      destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc & HP').
+      exists (senvsw a b Σ1), (stysw a b s1), (stysw a b s2), (ptsw a b k). split_and!.
+      * by apply (senv_hd_sw a b _ _ (SPlus s1 s2)).
+      * by rewrite dom_senvsw.
+      * apply (proj2 HP' W') in HS. rewrite senvsw_insert in HS. unfold esw in HS; simpl in HS. by rewrite sbranch_map in HS.
+    + (* branch *)
+      destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc & HP').
+      exists (senvsw a b Σ1), (stysw a b s1), (stysw a b s2), (ptsw a b k). split_and!.
+      * by apply (senv_hd_sw a b _ _ (SWith s1 s2)).
+      * by rewrite dom_senvsw.
+      * apply (IHP n' ltac:(lia) W W') in HP'; [|done].
+        rewrite senvsw_insert in HP'. unfold esw in HP'; simpl in HP'. by rewrite sbranch_map in HP'.
 Qed.
 
 Lemma Erel_psw a b n W Θ T F e :

@@ -20,7 +20,7 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Definition Sdel : sty := SSnd 1 (TSess Sd (pvar 0)) SEnd.
+Definition Sdel : sty := SSeq (SSnd 1 (TSess Sd (pvar 0))) SEnd.
 Abbreviation ps k := (Pt (NSlot (NConst 0) 0 0) k).
 
 Definition deleg_thunk : expr :=

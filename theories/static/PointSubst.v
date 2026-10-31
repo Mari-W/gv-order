@@ -409,8 +409,8 @@ Qed.
     binders (§4: "P ::= ∃ιs. T, all points of T bound"). *)
 Definition kscoped (k : konst) (T : ty) : Prop :=
   match k, T with
-  | KSend, TLolli _ _ (TProd _ (TSess (SSnd m P _) _)) _ => pscoped m P
-  | KRecv, TLolli _ _ (TSess (SRcv m P _) _) _ => pscoped m P
+  | KSend, TLolli _ _ (TProd _ (TSess (SSeq (SSnd m P) _) _)) _ => pscoped m P
+  | KRecv, TLolli _ _ (TSess (SSeq (SRcv m P) _) _) _ => pscoped m P
   | _, _ => True
   end.
 
@@ -493,7 +493,8 @@ Section transfer.
     konst_ty peq' plt' pk' k (pinst_ty σ T).
   Proof.
     intros Heq Hlt Hpk Hk.
-    destruct 1 as [S x Hx|ub lb|m P S x Hh|m P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK];
+    destruct 1 as [S x Hx|ub lb|m P S x Hh|m P S x|x|S1 S2 x|S1 S2 x|S1 S2 x|S x x' Hxx'
+                   |n C ub P xs Hxs HC HK];
       simpl in *.
     - constructor. by apply Hpk.
     - constructor.
@@ -502,6 +503,9 @@ Section transfer.
       apply elem_of_map in Hh' as (h0 & -> & Hh0). by apply Hlt, Hh.
     - rewrite payload_pinst, pt_inst_shift by done. constructor.
     - constructor.
+    - rewrite pt_inst_shift. constructor.
+    - rewrite pt_inst_shift. constructor.
+    - rewrite pt_inst_shift. constructor.
     - constructor. by apply Heq.
     - assert (∀ a, pt_inst (plist (pt_inst σ <$> xs)) (pup n σ a) = pt_inst σ (plist xs a))
         as Hc by (intros a; by apply plist_pup_comm).

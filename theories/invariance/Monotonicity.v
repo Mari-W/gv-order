@@ -71,7 +71,7 @@ Proof.
   apply Erel_S_iff. split_and!; [done| |].
   { intros Hirr. eapply ready_t_frame; [exact HF|]. by apply Hrdy. }
   intros α e' Hst. specialize (Hstep α e' Hst).
-  destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
+  destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hstep |- *.
   - by apply IHj.
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
@@ -85,6 +85,10 @@ Proof.
   - destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                        -> & ? & ? & ? & ? & HE').
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|]. by apply (proj2 HE').
+  - destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+    exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by apply (proj2 HE').
+  - destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+    exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by apply IHj.
   - intros Hc. destruct (Hstep Hc) as (a & s & s' & W' & Ha & ? & ? & HE').
     exists a, s, s', W'. split_and!; [|done|done|by apply IHj].
     assert (frame_roots F' ⊆ frame_roots F) by (unfold frame_roots; set_solver).
@@ -143,7 +147,7 @@ Proof.
     { intros Hirr. eapply HV; [done|done|]. by apply Hval. }
     { intros Hirr. eapply ready_t_mono; [done|]. by apply Hrdy. }
     intros α e' Hst. specialize (Hstep α e' Hst).
-    destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
+    destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hstep |- *.
     + eapply HEj; [lia|done|done|exact Hstep].
     + destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
       exists Θ1, m, U, s, k. split; [done|].
@@ -162,6 +166,10 @@ Proof.
       exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..| |].
       * destruct HWW' as (_ & He & _). auto.
       * exact (proj2 HE' W' HW HWW').
+    + destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. exact (proj2 HE' W' HW HWW').
+    + destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. eapply HEj; [lia|done|done|exact HE'].
     + (* O-New: rename the new point away from W', then join *)
       intros Hc.
       destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
@@ -196,7 +204,7 @@ Proof.
       exists v, E. split_and!; [done|done| |done]. by eapply HV. }
     { intros Hp. by eapply ready_p_mono, Hrdy. }
     intros π q Hst. specialize (Hstep π q Hst).
-    destruct π as [|[c w|c w|c|cd]]; simpl in Hstep |- *.
+    destruct π as [|[c w|c w|c|cd|c i|c i]]; simpl in Hstep |- *.
     + (* Q-Tau: rename the placed points away from W', then join *)
       destruct Hstep as [Htau Hlink]. split.
       { intros Hd. destruct (Htau Hd) as (N & W1 & HN & Hfr & HP').
@@ -225,6 +233,10 @@ Proof.
       exists c, d, Σ1, sc, sd, kc, kd. split_and!; [done..| |].
       * destruct HWW' as (_ & He & _). auto.
       * exact (proj2 HP' W' HW HWW').
+    + destruct Hstep as (Σ1 & s1 & s2 & k & ? & ? & HP').
+      exists Σ1, s1, s2, k. split_and!; [done..|]. exact (proj2 HP' W' HW HWW').
+    + destruct Hstep as (Σ1 & s1 & s2 & k & ? & ? & HP').
+      exists Σ1, s1, s2, k. split_and!; [done..|]. eapply HPj; [lia|done|done|exact HP'].
 Qed.
 
 Lemma Vrel_mono n W W' Θ T v :

@@ -51,6 +51,10 @@ Proof.
     replace (E ⊎ {[+ e +]} ⊎ {[+ f +]} ⊎ E2) with (E ⊎ E2 ⊎ {[+ e +]} ⊎ {[+ f +]})
       by multiset_solver.
     eapply PStepClose; [done|done|]. clear -HC H4. set_solver.
+  - eexists.
+    replace (E ⊎ {[+ e +]} ⊎ {[+ f +]} ⊎ E2) with (E ⊎ E2 ⊎ {[+ e +]} ⊎ {[+ f +]})
+      by multiset_solver.
+    by eapply PStepChoice.
   - eexists. rewrite <-(assoc_L (⊎)), (comm_L (⊎) {[+ e +]}), (assoc_L (⊎)).
     eapply PStepLink; [done|]. clear -HC H3. set_solver.
 Qed.
@@ -108,28 +112,84 @@ Proof.
   by eapply PStepClose.
 Qed.
 
-(** ** Duality at the head *)
-
-Lemma sdual_snd s r m T s' : sdual s r → unfoldS s = SSnd m T s' →
-  ∃ U r', unfoldS r = SRcv m U r'.
+Lemma choice_tau C1 E1 C2 E2 C c i j q1 q2 :
+  proc_step (C1, E1) (PSess (SSel c i)) q1 →
+  proc_step (C2, E2) (PSess (SBra c j)) q2 →
+  ∃ q, proc_step (C, E1 ⊎ E2) PTau q.
 Proof.
-  intros H Hs. specialize (H 1). simpl in H. unfold dual_step in H.
-  rewrite Hs in H. destruct (unfoldS r); simpl in H; try done;
-    try (destruct H as (-> & _); by eexists _, _).
+  intros H1 H2.
+  apply proc_step_sess_inv in H1 as (F1 & e & e' & -> & Hst1 & _ & _).
+  apply proc_step_sess_inv in H2 as (F2 & f & f' & -> & Hst2 & _ & _).
+  destruct (bra_retarget _ _ _ _ i Hst2) as [f'' Hf].
+  eexists.
+  replace (F1 ⊎ {[+ e +]} ⊎ (F2 ⊎ {[+ f +]})) with (F1 ⊎ F2 ⊎ {[+ e +]} ⊎ {[+ f +]})
+    by multiset_solver.
+  by eapply PStepChoice.
 Qed.
 
-Lemma sdual_rcv s r m T s' : sdual s r → unfoldS s = SRcv m T s' →
-  ∃ U r', unfoldS r = SSnd m U r'.
+(** ** Duality at the head *)
+
+Lemma sdual_snd s r m T s' : sdual s r → unfoldS s = SSeq (SSnd m T) s' →
+  ∃ U r', unfoldS r = SSeq (SRcv m U) r'.
 Proof.
   intros H Hs. specialize (H 1). simpl in H. unfold dual_step in H.
-  rewrite Hs in H. destruct (unfoldS r); simpl in H; try done;
-    try (destruct H as (-> & _); by eexists _, _).
+  rewrite (hd_of _ _ Hs) in H. rewrite unfoldS_unview.
+  hd_cases r; simpl in H; try done. destruct H as (-> & _). by eexists _, _.
+Qed.
+
+Lemma sdual_rcv s r m T s' : sdual s r → unfoldS s = SSeq (SRcv m T) s' →
+  ∃ U r', unfoldS r = SSeq (SSnd m U) r'.
+Proof.
+  intros H Hs. specialize (H 1). simpl in H. unfold dual_step in H.
+  rewrite (hd_of _ _ Hs) in H. rewrite unfoldS_unview.
+  hd_cases r; simpl in H; try done. destruct H as (-> & _). by eexists _, _.
 Qed.
 
 Lemma sdual_end s r : sdual s r → unfoldS s = SEnd → unfoldS r = SEnd.
 Proof.
   intros H Hs. specialize (H 1). simpl in H. unfold dual_step in H.
-  rewrite Hs in H. by destruct (unfoldS r).
+  rewrite (hd_of _ _ Hs) in H. rewrite unfoldS_unview. by hd_cases r.
+Qed.
+
+Lemma sdual_plus s r s1 s2 : sdual s r → unfoldS s = SPlus s1 s2 →
+  ∃ r1 r2, unfoldS r = SWith r1 r2.
+Proof.
+  intros H Hs. specialize (H 1). simpl in H. unfold dual_step in H.
+  rewrite (hd_of _ _ Hs) in H. rewrite unfoldS_unview.
+  hd_cases r; simpl in H; try done. by eexists _, _.
+Qed.
+
+Lemma sdual_with s r s1 s2 : sdual s r → unfoldS s = SWith s1 s2 →
+  ∃ r1 r2, unfoldS r = SPlus r1 r2.
+Proof.
+  intros H Hs. specialize (H 1). simpl in H. unfold dual_step in H.
+  rewrite (hd_of _ _ Hs) in H. rewrite unfoldS_unview.
+  hd_cases r; simpl in H; try done. by eexists _, _.
+Qed.
+
+(** The kind of head a session label selects. *)
+Definition lkind (σ : slabel) : hkind :=
+  match σ with
+  | SRecv _ _ => KdRcv | SSend _ _ => KdSnd | SClos _ => KdEnd
+  | SSel _ _ => KdPlus | SBra _ _ => KdWith | SLink _ => KdStuck
+  end.
+
+Lemma selects_kind Θ σ k e :
+  selects Θ σ k → tenv_entry Θ k = Some e → (∀ cd, σ ≠ SLink cd) →
+  kind (hd e.1) = lkind σ.
+Proof.
+  intros Hs He Hl. destruct σ; simpl in Hs.
+  - destruct Hs as (_ & e' & ? & ? & ? & He' & Hu). rewrite He in He'. injection He' as <-.
+    by rewrite (hd_of _ _ Hu).
+  - destruct Hs as (_ & e' & ? & ? & ? & He' & Hu). rewrite He in He'. injection He' as <-.
+    by rewrite (hd_of _ _ Hu).
+  - destruct Hs as (_ & e' & He' & Hu & _). rewrite He in He'. injection He' as <-.
+    by rewrite (hd_of _ _ Hu).
+  - by destruct (Hl cd).
+  - destruct Hs as (_ & e' & ? & ? & He' & Hu). rewrite He in He'. injection He' as <-.
+    by rewrite (hd_of _ _ Hu).
+  - destruct Hs as (_ & e' & ? & ? & He' & Hu). rewrite He in He'. injection He' as <-.
+    by rewrite (hd_of _ _ Hu).
 Qed.
 
 (** ** Entries of a process-level environment *)
@@ -154,6 +214,8 @@ Proof.
   - intros (_ & e & _ & _ & _ & ? & _). eauto.
   - intros (_ & e & ? & _). eauto.
   - intros (_ & ?). done.
+  - intros (_ & e & _ & _ & ? & _). eauto.
+  - intros (_ & e & _ & _ & ? & _). eauto.
 Qed.
 
 Lemma selects_subj Θ σ k : selects Θ σ k → k.1 ∈ subjs σ.
@@ -165,7 +227,7 @@ Lemma selects_agree Θ Θ' σ k :
   selects Θ σ k → selects Θ' σ k.
 Proof.
   intros Hag. destruct k as [c b]. simpl in Hag.
-  destruct σ as [d v|d v|d|cd]; simpl.
+  destruct σ as [d v|d v|d|cd|d i|d i]; simpl.
   - intros (Hk & e & m & T & s & He & Hu). split; [done|].
     exists e, m, T, s. by rewrite <-Hag.
   - intros (Hk & e & m & T & s & He & Hu). split; [done|].
@@ -174,6 +236,10 @@ Proof.
     exists e. rewrite <-Hag. split_and!; [done|done|].
     intros Hb e' He'. apply (Ht Hb e'). by rewrite Hag.
   - intros (Hk & He). split; [done|]. by rewrite <-Hag.
+  - intros (Hk & e & s1 & s2 & He & Hu). split; [done|].
+    exists e, s1, s2. by rewrite <-Hag.
+  - intros (Hk & e & s1 & s2 & He & Hu). split; [done|].
+    exists e, s1, s2. by rewrite <-Hag.
 Qed.
 
 Lemma not_disjoint_ex (X Y : gset chan) : ¬ X ## Y → ∃ x, x ∈ X ∧ x ∈ Y.
@@ -271,8 +337,8 @@ Section connect.
     - destruct (sess_lift _ _ C E2 _ _ Hst Hdj) as [q' Hq'].
       exists σ, q'. split; [done|]. eapply selects_agree; [|exact Hsel].
       intros b. rewrite !tenv_entry_of. destruct b; [done|]. by apply lookup_a_l.
-    - exfalso. destruct σ as [c v|c v|c|cd].
-      1-3: (apply proc_step_sess_inv in Hst as (? & ? & ? & _ & _ & HdC & _);
+    - exfalso. destruct σ as [c v|c v|c|cd|c i|c i].
+      1-3,5-6: (apply proc_step_sess_inv in Hst as (? & ? & ? & _ & _ & HdC & _);
             simpl in Hsub, HdC; apply elem_of_singleton in Hsub; subst c;
             apply Hdj; simpl; apply disjoint_singleton_l;
             assert (k.1 ∉ C0) by (rewrite <-HC0; apply not_elem_of_dom;
@@ -296,8 +362,8 @@ Section connect.
       rewrite <-soup_comm in Hq'.
       exists σ, q'. split; [done|]. eapply selects_agree; [|exact Hsel].
       intros b. rewrite !tenv_entry_of. destruct b; [done|]. by apply lookup_b_r.
-    - exfalso. destruct σ as [c v|c v|c|cd].
-      1-3: (apply proc_step_sess_inv in Hst as (? & ? & ? & _ & _ & HdC & _);
+    - exfalso. destruct σ as [c v|c v|c|cd|c i|c i].
+      1-3,5-6: (apply proc_step_sess_inv in Hst as (? & ? & ? & _ & _ & HdC & _);
             simpl in Hsub, HdC; apply elem_of_singleton in Hsub; subst c;
             apply Hdj; simpl; apply disjoint_singleton_l;
             assert (k.1 ∉ C0) by (rewrite <-HC0'; apply not_elem_of_dom;
@@ -319,7 +385,7 @@ Section connect.
 
   Lemma sel_recv Σ' d v c b :
     selects (tenv_of Σ') (SRecv d v) (c, b) →
-    d = c ∧ ∃ e m T s, Σ' !! c = Some e ∧ unfoldS e.1 = SRcv m T s.
+    d = c ∧ ∃ e m T s, Σ' !! c = Some e ∧ unfoldS e.1 = SSeq (SRcv m T) s.
   Proof.
     intros (Hk & e & m & T & s & He & Hu). simpl in Hk.
     apply tenv_entry_of_key in He as [_ He]. simpl in He. split; [done|].
@@ -328,7 +394,7 @@ Section connect.
 
   Lemma sel_send Σ' d v c b :
     selects (tenv_of Σ') (SSend d v) (c, b) →
-    d = c ∧ ∃ e m T s, Σ' !! c = Some e ∧ unfoldS e.1 = SSnd m T s.
+    d = c ∧ ∃ e m T s, Σ' !! c = Some e ∧ unfoldS e.1 = SSeq (SSnd m T) s.
   Proof.
     intros (Hk & e & m & T & s & He & Hu). simpl in Hk.
     apply tenv_entry_of_key in He as [_ He]. simpl in He. split; [done|].
@@ -344,6 +410,24 @@ Section connect.
     by exists e.
   Qed.
 
+  Lemma sel_sel Σ' d i c b :
+    selects (tenv_of Σ') (SSel d i) (c, b) →
+    d = c ∧ ∃ e s1 s2, Σ' !! c = Some e ∧ unfoldS e.1 = SPlus s1 s2.
+  Proof.
+    intros (Hk & e & s1 & s2 & He & Hu). simpl in Hk.
+    apply tenv_entry_of_key in He as [_ He]. simpl in He. split; [done|].
+    by exists e, s1, s2.
+  Qed.
+
+  Lemma sel_bra Σ' d i c b :
+    selects (tenv_of Σ') (SBra d i) (c, b) →
+    d = c ∧ ∃ e s1 s2, Σ' !! c = Some e ∧ unfoldS e.1 = SWith s1 s2.
+  Proof.
+    intros (Hk & e & s1 & s2 & He & Hu). simpl in Hk.
+    apply tenv_entry_of_key in He as [_ He]. simpl in He. split; [done|].
+    by exists e, s1, s2.
+  Qed.
+
   (** In a stable composite the two ends of a cut channel are never
       both offered: they would synchronize. *)
   Lemma cut_not_both c b1 b2 :
@@ -353,55 +437,36 @@ Section connect.
     intros Hs Hc (σ1 & q1 & Hst1 & Hsel1) (σ2 & q2 & Hst2 & Hsel2).
     pose proof (lookup_a_cut c Hc) as Ha. pose proof (lookup_b_cut c Hc) as Hb.
     assert (c ∈ C) as HcC by set_solver.
-    destruct σ1 as [d1 v1|d1 v1|d1|cd1].
+    destruct σ1 as [d1 v1|d1 v1|d1|cd1|d1 i1|d1 i1].
     4: { destruct (link_tau _ _ C E2 _ _ Hst1) as [q' Hq'];
          [exists c; split; [exact (selects_subj _ _ _ Hsel1)|done]|].
          exact (Hs _ Hq'). }
-    all: destruct σ2 as [d2 v2|d2 v2|d2|cd2].
+    all: destruct σ2 as [d2 v2|d2 v2|d2|cd2|d2 i2|d2 i2].
     all: try (destruct (link_tau _ _ C E1 _ _ Hst2) as [q' Hq'];
               [exists c; split; [exact (selects_subj _ _ _ Hsel2)|done]|];
               rewrite <-soup_comm in Hq'; exact (Hs _ Hq')).
-    all: repeat match goal with
-         | H : selects _ (SRecv _ _) _ |- _ =>
-             apply sel_recv in H as (-> & ? & ? & ? & ? & ? & ?)
-         | H : selects _ (SSend _ _) _ |- _ =>
-             apply sel_send in H as (-> & ? & ? & ? & ? & ? & ?)
-         | H : selects _ (SClos _) _ |- _ =>
-             apply sel_clos in H as (-> & ? & ? & ?)
-         end.
-    all: try rewrite Ha in H; try rewrite Ha in H1;
-         try rewrite Hb in H; try rewrite Hb in H1.
-    all: match goal with
-         | H1 : ΣC !! ?d = Some ?e1, H2 : ΣC' !! ?d = Some ?e2 |- _ =>
-             destruct (Hcut _ _ _ H1 H2) as [_ Hdu]
-         end.
-    - (* recv / recv *)
-      match goal with H : unfoldS _ = SRcv _ _ _ |- _ =>
-        destruct (sdual_rcv _ _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
-    - (* recv / send *)
-      destruct (msg_tau _ _ _ _ C _ _ _ _ _ Hst2 Hst1) as [q' Hq'].
+    (* the two ends are dual, so their kinds are dual *)
+    all: try (
+      destruct (selects_entry _ _ _ Hsel1) as [e1 He1];
+      destruct (selects_entry _ _ _ Hsel2) as [e2 He2];
+      pose proof (selects_kind _ _ _ _ Hsel1 He1 ltac:(by intros ? ?)) as K1;
+      pose proof (selects_kind _ _ _ _ Hsel2 He2 ltac:(by intros ? ?)) as K2;
+      apply tenv_entry_of_key in He1 as [_ He1]; simpl in He1; rewrite Ha in He1;
+      apply tenv_entry_of_key in He2 as [_ He2]; simpl in He2; rewrite Hb in He2;
+      destruct (Hcut _ _ _ He1 He2) as [_ Hdu]; apply sdual_kind in Hdu;
+      rewrite K1, K2 in Hdu; simpl in Hdu; discriminate Hdu).
+    all: pose proof (selects_subj _ _ _ Hsel1) as Hs1; pose proof (selects_subj _ _ _ Hsel2) as Hs2;
+      simpl in Hs1, Hs2; apply elem_of_singleton in Hs1, Hs2; subst d1 d2.
+    - destruct (msg_tau _ _ _ _ C _ _ _ _ _ Hst2 Hst1) as [q' Hq'].
       rewrite <-soup_comm in Hq'. exact (Hs _ Hq').
-    - (* recv / close *)
-      match goal with H : unfoldS _ = SRcv _ _ _ |- _ =>
-        destruct (sdual_rcv _ _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
-    - (* send / recv *)
-      destruct (msg_tau _ _ _ _ C _ _ _ _ _ Hst1 Hst2) as [q' Hq'].
+    - destruct (msg_tau _ _ _ _ C _ _ _ _ _ Hst1 Hst2) as [q' Hq'].
       exact (Hs _ Hq').
-    - (* send / send *)
-      match goal with H : unfoldS _ = SSnd _ _ _ |- _ =>
-        destruct (sdual_snd _ _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
-    - (* send / close *)
-      match goal with H : unfoldS _ = SSnd _ _ _ |- _ =>
-        destruct (sdual_snd _ _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
-    - (* close / recv *)
-      match goal with H : unfoldS _ = SEnd |- _ =>
-        pose proof (sdual_end _ _ Hdu H) end. congruence.
-    - (* close / send *)
-      match goal with H : unfoldS _ = SEnd |- _ =>
-        pose proof (sdual_end _ _ Hdu H) end. congruence.
-    - (* close / close *)
-      destruct (close_tau _ _ _ _ C _ _ _ Hst1 Hst2 HcC) as [q' Hq'].
+    - destruct (close_tau _ _ _ _ C _ _ _ Hst1 Hst2 HcC) as [q' Hq'].
       exact (Hs _ Hq').
+    - destruct (choice_tau _ _ _ _ C _ _ _ _ _ Hst1 Hst2) as [q' Hq'].
+      exact (Hs _ Hq').
+    - destruct (choice_tau _ _ _ _ C _ _ _ _ _ Hst2 Hst1) as [q' Hq'].
+      rewrite <-soup_comm in Hq'. exact (Hs _ Hq').
   Qed.
   Context (Hr1 : ready_p W1 Σa (C1, E1)) (Hr2 : ready_p W2 Σb (C2, E2)).
   Context (Hu2 : terminated (C2, E2) → ∀ e, e ∈ E2 → e = EUnit).
@@ -690,6 +755,21 @@ Proof.
   destruct a; simpl in Ha, Ha'; try done. destruct σ; try done. eauto.
 Qed.
 
+Lemma slabel_link_dec σ : {cd | σ = SLink cd} + (∀ cd, σ ≠ SLink cd).
+Proof. destruct σ; try (right; done). left. by eexists. Qed.
+
+Lemma slabel_clos_dec σ : {d | σ = SClos d} + (∀ d, σ ≠ SClos d).
+Proof. destruct σ; try (right; done). left. by eexists. Qed.
+
+(** Two labels of one action select heads of one kind. *)
+Lemma offers_same_kind a σ σ' :
+  offers a (LSess σ) → offers a (LSess σ') → lkind σ = lkind σ'.
+Proof. destruct a, σ, σ'; simpl; intros H1 H2; done. Qed.
+
+Lemma lkind_not_self_dual σ : (∀ cd, σ ≠ SLink cd) → (∀ c, σ ≠ SClos c) →
+  lkind σ ≠ kdual (lkind σ).
+Proof. intros Hl Hc. destruct σ; simpl; try done; [by destruct (Hc c)|by destruct (Hl cd)]. Qed.
+
 Section term.
   Context (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr).
   Context (HW : strict W).
@@ -756,63 +836,54 @@ Section term.
   Lemma no_cut_offer k : stable_p p → offered_t Θ t k → k.1 ∉ C0.
   Proof.
     intros Hs (σ & t' & Hst & Hsel) Hc.
-    destruct σ as [c v|c v|c|cd].
-    4: { apply (link_cut_tau cd t' k.1 Hst); [exact (selects_subj _ _ _ Hsel)|done|done]. }
-    all: destruct k as [c' b]; simpl in Hc.
-    all: assert (is_Some (ΘB !! c')) as [o Ho] by (apply elem_of_dom; by rewrite HB).
-    all: destruct (HBoth _ _ Ho) as (e1 & e2 & ->).
-    all: destruct (HBdual _ _ _ Ho) as [Hcnt Hdu].
-    all: pose proof (stable_thread Hs) as Hst_t.
-    all: destruct (Hr Hst_t) as [_ Hab].
-    all: destruct Hab as [Hl|Hab]; [by destruct (link_t_only _ _ _ Hl Hst)|].
+    destruct (slabel_link_dec σ) as [[cd ->]|Hl].
+    { apply (link_cut_tau cd t' k.1 Hst); [exact (selects_subj _ _ _ Hsel)|done|done]. }
+    destruct k as [c' b]; simpl in Hc.
+    assert (is_Some (ΘB !! c')) as [o Ho] by (apply elem_of_dom; by rewrite HB).
+    destruct (HBoth _ _ Ho) as (e1 & e2 & ->).
+    destruct (HBdual _ _ _ Ho) as [Hcnt Hdu].
+    pose proof (stable_thread Hs) as Hst_t.
+    destruct (Hr Hst_t) as [_ Hab].
+    destruct Hab as [Hlk|Hab]; [destruct (link_t_only _ _ _ Hlk Hst) as [cd ->]; by destruct (Hl cd)|].
     (* the other end of c' *)
-    all: assert (tenv_entry Θ (c', negb b) = Some (if b then e1 else e2)) as Hother
-           by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
-    all: assert (tenv_entry Θ (c', b) = Some (if b then e2 else e1)) as Hself
-           by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
-    all: assert (w_eq W (entry_head (c', negb b) (if b then e1 else e2))
-                 (entry_head (c', b) (if b then e2 else e1))) as Hhead
-           by (unfold entry_head; simpl; destruct HW as [HWf _];
-               destruct b; simpl; [done|by apply (wf_eq_sym _ HWf)]).
-    (* every offer of the thread is on c', from the same action *)
-    all: assert (∀ k' σ' t'', tstep t (LSess σ') t'' → selects Θ σ' k' → k'.1 = c') as Hsame.
-    1,3,5: intros k' σ' t'' Hst' Hsel'; destruct (tstep_same_act _ _ _ _ _ Hst Hst') as (a & Ha & Ha');
-      destruct a; simpl in Ha, Ha'; try done; destruct σ'; try done;
-      first [destruct Ha as [<- _]|subst c]; destruct Ha' as [<- _] || subst;
-      simpl in Hsel; first [destruct Hsel as [<- _]|idtac];
-      destruct Hsel' as [? _]; congruence.
-    all: assert (¬ offered_t Θ t (c', negb b)) as Hnoff.
-    1,3,5: (intros (σ' & t'' & Hst' & Hsel');
-      destruct (tstep_same_act _ _ _ _ _ Hst Hst') as (a & Ha & Ha');
-      destruct a; simpl in Ha, Ha'; try done; destruct σ'; try done).
-    all: first
-      [ solve [ (* recv/recv or send/send: both ends with one polarity *)
-          destruct Hsel as (_ & ? & ? & ? & ? & Hs1 & Hu1);
-          destruct Hsel' as (_ & ? & ? & ? & ? & Hs2 & Hu2);
-          rewrite Hself in Hs1; rewrite Hother in Hs2;
-          injection Hs1 as <-; injection Hs2 as <-;
-          destruct b; try apply sdual_sym in Hdu;
-          first [ destruct (sdual_rcv _ _ _ _ _ Hdu ltac:(eassumption)) as (? & ? & ?)
-                | destruct (sdual_snd _ _ _ _ _ Hdu ltac:(eassumption)) as (? & ? & ?) ];
-          congruence ]
-      | solve [ (* close/close: only the first end is selected *)
-          destruct Hsel as (Hk1 & ? & Hs1 & Hu1 & Ht1);
-          destruct Hsel' as (Hk2 & ? & Hs2 & Hu2 & Ht2);
-          simpl in Hk1, Hk2; subst;
-          destruct b; simpl in *;
-          [apply (Ht1 eq_refl _ Hs2 Hu2)|apply (Ht2 eq_refl _ Hs1 Hu1)] ]
-      | idtac ].
-    all: pose proof (proj1 (Hab (c', b) _ (ex_intro _ _ (ex_intro _ _ (conj Hst Hsel))) Hself)
-                       _ _ Hother Hnoff) as Hlt.
-    all: destruct HW as [HWf Hirr]; apply (Hirr (entry_head (c', b) (if b then e2 else e1)));
-       eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|exact Hhead].
+    assert (tenv_entry Θ (c', negb b) = Some (if b then e1 else e2)) as Hother
+      by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
+    assert (tenv_entry Θ (c', b) = Some (if b then e2 else e1)) as Hself
+      by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
+    assert (w_eq W (entry_head (c', negb b) (if b then e1 else e2))
+              (entry_head (c', b) (if b then e2 else e1))) as Hhead
+      by (unfold entry_head; simpl; destruct HW as [HWf _];
+          destruct b; simpl; [done|by apply (wf_eq_sym _ HWf)]).
+    (* the other end is not offered: an offer of it comes from the same action *)
+    assert (¬ offered_t Θ t (c', negb b)) as Hnoff.
+    { intros (σ' & t'' & Hst' & Hsel').
+      destruct (tstep_same_act _ _ _ _ _ Hst Hst') as (a & Ha & Ha').
+      pose proof (offers_same_kind _ _ _ Ha Ha') as Hkk.
+      destruct (slabel_clos_dec σ) as [[d ->]|Hc'].
+      - destruct σ'; simpl in Hkk; try discriminate Hkk.
+        destruct Hsel as (Hk1 & ? & Hs1 & Hu1 & Ht1).
+        destruct Hsel' as (Hk2 & ? & Hs2 & Hu2 & Ht2).
+        simpl in Hk1, Hk2; subst.
+        destruct b; simpl in *;
+          [apply (Ht1 eq_refl _ Hs2 Hu2)|apply (Ht2 eq_refl _ Hs1 Hu1)].
+      - assert (∀ cd, σ' ≠ SLink cd) as Hl'
+          by (intros cd ->; destruct σ; simpl in Hkk; try discriminate Hkk; naive_solver).
+        pose proof (selects_kind _ _ _ _ Hsel Hself Hl) as K1.
+        pose proof (selects_kind _ _ _ _ Hsel' Hother Hl') as K2.
+        destruct b; simpl in *; [apply sdual_sym in Hdu|];
+          apply sdual_kind in Hdu; rewrite K1, K2, <-Hkk in Hdu;
+          by apply (lkind_not_self_dual σ Hl Hc'). }
+    pose proof (proj1 (Hab (c', b) _ (ex_intro _ _ (ex_intro _ _ (conj Hst Hsel))) Hself)
+                  _ _ Hother Hnoff) as Hlt.
+    destruct HW as [HWf Hirr]; apply (Hirr (entry_head (c', b) (if b then e2 else e1)));
+      eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|exact Hhead].
   Qed.
   Lemma lift_offer k : stable_p p → k.1 ∈ dom Σ → offered_t Θ t k → offered_p Σ p k.
   Proof.
     intros Hs Hk (σ & t' & Hst & Hsel).
     pose proof (selects_subj _ _ _ Hsel) as Hsub.
     assert (subjs σ ## C0) as Hdj.
-    { destruct σ as [c v|c v|c|cd].
+    { destruct σ as [c v|c v|c|cd|c i|c i].
       4: { apply elem_of_disjoint. intros x Hx HxC.
            by apply (link_cut_tau cd t' x Hst). }
       all: simpl in *; apply elem_of_singleton in Hsub; subst c;
