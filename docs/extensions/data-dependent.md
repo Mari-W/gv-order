@@ -36,7 +36,14 @@ open, and both need facts that refer to a value known only at run time.
 
 ## Session choice needs names, not data (2026-10-31)
 
-Program T2 of mordido-perez.md §9.5 types in Mordido and Pérez and fails here.
+Done as K10 of context-free.md (SHARP-EDGES 76). Branch roots are in the
+mechanization on branch cfst, every cfst example is ported to ceilings over
+walks, and T1, T2 and T3 below type and are deadlock free in
+theories/examples/cfst/BranchOrder.v. The rest of this section is the design
+as written before the work.
+
+Program T2 of mordido-perez.md §9.5 types in Mordido and Pérez and fails under
+K5.
 
 ```
 c : ⊕{A: !∗;Close, B: !∗;Close}      d : Close

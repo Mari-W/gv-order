@@ -103,7 +103,7 @@ and logged in SHARP-EDGES.
   case does the dispatch. Readiness treats a selection like a send and a branch
   like a receive.
 - K5. Points. Every action, choices included, moves the instant by one. Skip
-  and ; move nothing.
+  and ; move nothing. For choices K10 replaces it.
 - K6. Polymorphism over the continuation. A box binds session type variables
   next to its point variables, □(∀ιs αs. C. ∗ ⊸^u_⊤ T). V-Box quantifies over
   all closed session types for αs. V reads a session type only through V-Chan,
@@ -118,6 +118,14 @@ and logged in SHARP-EDGES.
 - K9. Branch layout. The work happens on a branch cfst from orders-lr. PGV and
   Padovani–Novara (theories/pgv, theories/pn) leave that branch's build and are
   not ported.
+- K10. Branch roots (2026-10-31, approved by the author, replaces K5 for
+  choices). selectᵢ and branch move the entry of c from x to the branch root
+  x◁i, a new point name like the carried root x.i. The world laws gain
+  congruence x ≡ y ⇒ x◁i ≡ y◁i and program order x ≺ x◁i. Send, receive and
+  close still move by one. Ceilings over ι+k become ceilings over the walks
+  from ι, the points reached by successors and branch roots. The program T2 of
+  data-dependent.md types in BranchOrder.v and did not under K5. SHARP-EDGES 76
+  has the details.
 
 ## Order of work
 

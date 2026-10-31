@@ -83,9 +83,9 @@ has no axioms and no admitted proofs.
 - `RequestReply.v`, `Relay.v`, `TailCall.v`, `ReceivedChain.v`, `Forwarder.v`: recursive boxes with infinite constraints.
 - `Ordered.v`: a box whose constraint orders its two arguments.
 - `Rejected.v`: programs the static system rejects (`rr_call_underivable`).
-- `SendTreeType.v`: the type of sendTree with the coarse ceiling, a smoke test (SHARP-EDGES 73).
+- `SendTreeType.v`: the type of sendTree with the coarse ceiling over walks, a smoke test (SHARP-EDGES 73, 76).
 
-`examples/cfst/`, the examples of context-free session types (SHARP-EDGES 74 and 75).
+`examples/cfst/`, the examples of context-free session types (SHARP-EDGES 74, 75 and 76). Since K10 a choice moves its channel to a branch root x◁i, and ceilings range over the walks from a point.
 
 - `CfstTools.v`: hereditary contractiveness by depth, congruences of ≈, case and E-Open for Θ = ∅, facts of constraints with outer points, the lockstep world.
 - `TreeCopy.v`: recvTree as `drain` and sendTree after recvTree as `copy`, both with polymorphic recursion and existential points, run on a fixed tree (`tree_deadlock_free`).
@@ -94,6 +94,7 @@ has no axioms and no admitted proofs.
 - `CfstScheduler.v`: Milner's cyclic scheduler with three schedulers and three workers (`sch_deadlock_free`).
 - `TreeSum.v`: treeSum of Thiemann and Vasconcelos (Listing 2) with the reply after both subtrees, serving the client transform on a fixed tree (`ts_deadlock_free`).
 - `ArithServer.v`: their arithmetic expression server (Listing 3) with binary choices and its fixed client (`as_deadlock_free`).
+- `BranchOrder.v`: a branch that orders two channels against the other branch, typable with branch roots and not under K5 (`bo_deadlock_free`, SHARP-EDGES 76).
 
 `counterexamples/`
 
@@ -129,7 +130,7 @@ On branch `cfst` (context-free session types, SHARP-EDGES 72 and 73) `pgv/` and 
 - `pgv_deadlock_free` (pgv/PGVTranslate.v): a closed program of type 1 in the monotone fragment of repaired PGV is deadlock free.
 - `pn_deadlock_free` (pn/PNTranslate.v): the translation of a closed program of type unit in fragment v1 of repaired Padovani and Novara is deadlock free. `fibo_deadlock_free` and `pipe_deadlock_free` (pn/PNExamples.v) apply it.
 - `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
-- The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, one per file in examples/. On branch `cfst` also `tree_deadlock_free`, `st_deadlock_free`, `dlfix_deadlock_free`, `sch_deadlock_free`, `ts_deadlock_free`, `as_deadlock_free` and `dl_untypable` in examples/cfst/.
+- The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, one per file in examples/. On branch `cfst` also `tree_deadlock_free`, `st_deadlock_free`, `dlfix_deadlock_free`, `sch_deadlock_free`, `ts_deadlock_free`, `as_deadlock_free`, `bo_deadlock_free` and `dl_untypable` in examples/cfst/.
 
 ## Other documents
 

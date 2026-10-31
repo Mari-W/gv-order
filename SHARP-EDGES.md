@@ -1196,6 +1196,76 @@ as (!∗;(X;X));?∗, which ≈ identifies with every other bracketing.
 Nothing failed to type. The only new lemma is tv_case_same in
 ArithServer.v, case with two equal branches.
 
+**76. Branch roots for session choice, K10 (Claude, 2026-10-31, branch cfst).**
+K10 replaces K5 for choices, as approved by the author. K5 put both
+continuations of a choice at ι+1, so a thread that orders c against d
+differently per branch needed both orders in one world. Program T2 of
+docs/extensions/adequacy/mordido-perez.md §9.5 is the witness. Its branch A
+needs (d,0) ≺ ι+1 and its branch B needs ι+1 ≺ (d,0). A branch root x◁i now
+names the point of c after branch i was picked at x, as the carried root x.i
+names a message position.
+
+Definitions. The point syntax gains a fourth name former, and the world laws
+gain two fields.
+
+    pname  ::= … | NBr p b i            pt_br x i = (NBr (name x) (off x) i, 0)
+    wf_eq_br  x ≡ y → x◁i ≡ y◁i         wf_lt_br  x ≺ x◁i
+    geq_br, glt_br                      the same two rules in generated worlds
+    ppo    the closure of x ≺ x+1 and x ≺ x◁i under transitivity
+    selectᵢ : ⊕(S₁,S₂)@ι ⊸^ι_⊤ Sᵢ@(ι◁i)
+    branch  : &(S₁,S₂)@ι ⊸^ι_⊤ S₁@(ι◁1) + S₂@(ι◁2)
+    O-Select, O-Branch, Q-Select, Q-Branch   the entry moves to (sbranch b s₁ s₂, k◁b)
+    se_br  Γ ⊢ x ≡ y → Γ ⊢ x◁i ≡ y◁i     fl_map takes the matching hypothesis
+
+Branch i = 1 is the label [false] and i = 2 is [true], as in c◁i. The costs
+stay. Program order used to be "same name, smaller offset" in po_or_supp and
+in univ. Both now read ppo, and pt_size, which rises by one along each step,
+makes ppo irreflexive. pn_inst, pn_vb, pn_root, the point transposition and
+the alias map of new get the branch case like the slot case. No premise of
+the relation is syntactic, and the statements of soundness, fundamental,
+adequacy, Prel_connect, Prel_connect_n, Prel_term, Prel_indep,
+Prel_internalize and Erel_bind are unchanged. Their proofs change at the
+choice steps only, where wf_eq_shift becomes wf_eq_br (PointConversion.v,
+ConnectSteps.v, Internalize.v, TermRules.v).
+
+The examples of the core. The rank lemmas of ExampleTools.v split in two.
+wgen_strict_br takes ranks that rise along branch roots. wgen_strict_by and
+its instances first erase x◁i to x+1 (pt_erase), so every world without
+branch facts keeps its rank. Their ≡ and ≺ hypotheses now read the erased
+points, which cbn computes away on concrete facts. Rejected.v reads its hand
+rank through pt_erase. DropCounter.v needs the converse of its alias map on
+the μ line (cinv), because the fresh world has to reflect ppo onto the old one.
+
+Walks. A walk is a list of steps, each a successor or a branch root, and ι·w
+is its end from ι (pwalk). The ceilings of K8 become ceilings over the walks.
+
+    send_C  = {ι·w ≺ ζ ∣ w}           after_C = {ι ≺ ι′} ∪ {ι′·w ≺ ζ ∣ w}
+    copy_C  = {κ·w ≺ ι·w, ι·w ≺ (κ·w)·s, κ·w ≺ ζ, ι·w ≺ ζ ∣ w, s}
+
+drain, copy, treeSum and receiveEval keep their shapes with k replaced by w.
+The left recursive call sits at κ◁2+1 and meets C through the walk
+[◁2, +1] followed by w. Copy's zigzag relates the points of its two channels
+at the same walk, because the select copies the branch it just took. The
+closed worlds rank a point by its size. Wcopy has a·w ≺ b·w ≺ (a·w)·s and
+a·w, b·w ≺ (z,0), with ranks (0, 2n), (0, 2n+1) and (1, n) for a point of
+size n. Wsum has a·w ≺ (z,0). The clients and the producer act at the points
+of a fixed walk (tsp, asp). Stream.v, CfstDeadlock.v and CfstScheduler.v use
+no choice and keep their constraints. They needed only the extra case of a
+pattern on names.
+
+receiveEval got longer. Add and Mult used to run the same code at κ+2, typed
+once by tv_case_same. Now they run at (κ◁2)◁1 and (κ◁2)◁2, two different
+points, so the proof types the code once for an arbitrary label i and uses it
+for both branches. tv_case_same is gone.
+
+BranchOrder.v types T1, T2 and T3 and proves them deadlock free
+(bo_deadlock_free) at the world ι ≺ ι◁B ≺ (d,0) ≺ ι◁A and (d,0) ≺ ι◁B+1. The
+rank is ten times the size, plus 12 on d and 5 on ι◁A. Under K5 the same
+program needs the cycle ι+1 ≺ (d,0) ≺ ι+1, so no strict world types it.
+
+Nothing failed. The core, the old examples and the seven ported files build
+with Print Assumptions closed for the 38 earlier results and the five new ones.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
