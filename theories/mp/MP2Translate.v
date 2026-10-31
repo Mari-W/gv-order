@@ -1412,3 +1412,451 @@ Proof.
   - split; [unfold bcs_scoped; simpl; constructor|]. repeat split.
   - intros a Ha. injection Ha as <-. lia.
 Qed.
+
+(** ** Payloads *)
+
+Lemma payload_unit x : payload_at 0 U x = U.
+Proof. done. Qed.
+
+Lemma payload_chan s x : payload_at 1 (TSess s (pvar 0)) x = TSess s (pt_slot x 0).
+Proof. unfold payload_at, ty_inst. simpl. by rewrite pt_inst_pvar_at. Qed.
+
+Lemma pay_conv Ψ ss B pts x P :
+  (∀ pp Qp hp dp, P = MPChan pp Qp hp dp → seqs Wmp Ψ (pt_slot x 0) (rpt B (RCh Qp hp dp))) →
+  steq Wmp Ψ (trs ss B pts (payty P)) (payload_at (pm P) (sinst_ty (slist ss) (ersp P)) x) ∧
+  steq Wmp Ψ (payload_at (pm P) (sinst_ty (slist ss) (ersp P)) x) (trs ss B pts (payty P)) ∧
+  (∀ y, y ∈ heads (payload_at (pm P) (sinst_ty (slist ss) (ersp P)) x) →
+     ∃ pp Qp hp dp, P = MPChan pp Qp hp dp ∧ y = pt_slot x 0).
+Proof.
+  intros Hp. destruct P as [|pp Qp hp dp].
+  - change (payload_at (pm MPUnit) (sinst_ty (slist ss) (ersp MPUnit)) x) with (payload_at 0 U x).
+    rewrite payload_unit. change (trs ss B pts (payty MPUnit)) with U.
+    split_and!; [apply steq_refl|apply steq_refl|]. intros y Hy. by apply elem_of_empty in Hy.
+  - specialize (Hp pp Qp hp dp eq_refl).
+    change (payload_at (pm (MPChan pp Qp hp dp)) (sinst_ty (slist ss) (ersp (MPChan pp Qp hp dp))) x)
+      with (payload_at 1 (TSess (sinst (slist ss) (polS pp (ers Qp))) (pvar 0)) x).
+    change (trs ss B pts (payty (MPChan pp Qp hp dp))) with (TSess (sinst (slist ss) (polS pp (ers Qp))) (rpt B (RCh Qp hp dp))).
+    rewrite payload_chan. split_and!.
+    + split; [by apply se_sym|apply seq_refl].
+    + split; [done|apply seq_refl].
+    + intros y Hy. simpl in Hy. apply elem_of_singleton in Hy as ->. by eexists _, _, _, _.
+Qed.
+
+Lemma pay_px ss B pts n w P :
+  trs ss B pts (rpayty (PX n w) P) = payload_at (pm P) (sinst_ty (slist ss) (ersp P)) (mwalk (pts n) w).
+Proof.
+  destruct P as [|pp Qp hp dp]; [done|].
+  change (payload_at (pm (MPChan pp Qp hp dp)) (sinst_ty (slist ss) (ersp (MPChan pp Qp hp dp))) (mwalk (pts n) w))
+    with (payload_at 1 (TSess (sinst (slist ss) (polS pp (ers Qp))) (pvar 0)) (mwalk (pts n) w)).
+  rewrite payload_chan. unfold trs. simpl. by rewrite mwalk_app.
+Qed.
+
+(** ** The translation lemma *)
+
+Theorem mp2_translate Θ Γ e T ef e' :
+  mtyped Θ Γ e T ef e' →
+  ∀ ss Ψ B pts ins Δ Φ F, length ss = pc_nt Θ → Forall hcontractive ss →
+  good Ψ Θ B → pts_ok Ψ B pts → erel B ss pts ins Γ Δ → ub_below_s Wmp Ψ Φ (hiz B ef) F →
+  typed Wmp Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trs ss B pts T).
+Proof.
+  pose proof Wmp_wf as HW.
+  induction 1 as [Θ Γ x t Hx
+    |Θ Γ HΓ
+    |Θ Γ e e' T V ef He IH
+    |Θ Γ Γ1 Γ2 e1 e2 e1' e2' T lo σ V ef1 ef2 Hs H1 IH1 H2 IH2 Hl1 Hl2
+    |Θ Γ Γ1 Γ2 e1 e2 e1' e2' Θ' T σ V ef1 ef2 σs τs Hs H1 IH1 Hok HT HV H2 IH2 Hl1 Hnt
+    |Θ Γ e e' Θ' T σ V ef Hpoly HT HV Hinh He IH Hle
+    |Θ Γ e e' pol k Qa Qr ef Hpoly HQa HQr He IH
+    |Θ Γ Γ1 Γ2 e1 e2 e1' e2' pol k Qa Qr τs p ef1 ef2 Hs H1 IH1 Hlen Hsc Hhc HQa HQr H2 IH2 Hl1 Hnt
+    |Θ Γ e e' i pol Q n V ef Hi Hn HnV He IH
+    |Θ Γ e e' pol Q p ef He IH
+    |Θ Γ Γ1 Γ2 e1 e2 e1' e2' T V ef1 ef2 Hs H1 IH1 H2 IH2 Hl
+    |Θ Γ Γ1 Γ2 e1 e2 e1' e2' V ef1 ef2 Hs H1 IH1 H2 IH2 Hl
+    |Θ Γ e e' Q n d V ef He IH
+    |Θ Γ Γ1 Γ2 e1 e2 e1' e2' pol a P K p ef1 ef2 Hs H1 IH1 H2 IH2 Hok Hl1 Hl2
+    |Θ Γ Γ1 Γ2 e e2 e' e2' pol a P K p V ef1 ef2 Hs H1 IH1 Hok H2 IH2 Hl
+    |Θ Γ e e' pol a w p ef H IH Hok
+    |Θ Γ e e' pol a K1 K2 p ef b H IH Hok
+    |Θ Γ Γ1 Γ2 e e1 e2 e' e1' e2' pol a K1 K2 p V ef1 ef2 Hs H1 IH Hok HA IHA HB' IHB Hl
+    |Θ Γ e e' lo σ ef H IH
+    |Θ Γ e e' pol Q Q' p p' ef H IH Heq
+    |Θ Γ e e' T ef ef' H IH Hle];
+    intros ss Ψ B pts ins Δ Φ F Hlss Hss HB Hp HΔ HF.
+  - (* T-Var *)
+    by apply (erel_var B ss pts ins Γ Δ Wmp Φ Ψ F x t HW HΔ Hx).
+  - (* () *)
+    rewrite rename_unitv, trs_unit. apply (tv_unitv Wmp HW). by apply (erel_unl B ss pts ins Γ Δ).
+  - (* T-AbsLin *)
+    cbn [rename]. rewrite ren_up, trs_arr. set (φ := fresh (dom Φ)).
+    apply (t_lam Wmp Φ Ψ ∅ Δ F _ _ _ (hiz B ef) (Some (rpt B (RLo (envp Γ)))) φ); [apply is_fresh| |].
+    + simpl. rewrite (tenv_heads0 _ HW), union_empty_l_L. intros y Hy.
+      apply (env_lo_below Ψ Θ B HB ss pts ins Γ Δ y Hp HΔ Hy).
+    + apply IH; [done|done|done|done|by apply (er_keep _ _ _ (Some T))|apply (ubs_fresh _ HW)].
+  - (* T-App *)
+    cbn [rename]. destruct (erel_split B ss pts ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
+    eapply (t_app Wmp Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (hiz B σ) (Some (rpt B (RLo lo))) (trs ss B pts T)).
+    + by apply comp0.
+    + done.
+    + apply (ubs_seg Ψ Θ B HB Φ F σ (ef1 ++ ef2) []). by rewrite app_nil_r, <-app_assoc.
+    + rewrite (tenv_heads0 _ HW), union_empty_l_L, <-trs_arr. apply (IH1 ss Ψ B pts ins Δ1); try done.
+      by apply (ubs_part Ψ Θ B HB Φ F [] (ef2 ++ σ) ef1 ss pts ins Γ2 Δ2).
+    + apply (IH2 ss Ψ B pts ins Δ2); try done. apply (ubs_union _ HW).
+      * apply (ubs_seg Ψ Θ B HB Φ F ef2 ef1 σ). done.
+      * intros x Hx h Hh. simpl in Hh. apply elem_of_singleton in Hh as ->.
+        by apply (hi_below_lo Ψ Θ B HB ef2 lo x).
+  - (* T-PApp, T-TApp, T-App *)
+    cbn [rename]. destruct (erel_split B ss pts ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
+    destruct Hok as (Hlσ & Hlτ & Hfin & Hsc & Hhc & Hmod).
+    set (X := rpt B (RAnc σs τs)).
+    set (ssf := (λ q, sinst (slist ss) (ers q)) <$> τs).
+    set (Tb := TLolli (hiz (pvar 0) σ) None (tr (pvar 0) (ptsb (pvar 0)) T) (tr (pvar 0) (ptsb (pvar 0)) V)).
+    assert (trs ss B pts (MPoly Θ' T σ V) = TBox 1 (pc_nt Θ') (Crel Θ') (TLolli None None TUnit Tb)) as Ebox.
+    { unfold trs. rewrite tr_closed; [done|done|by split]. }
+    eapply (t_app Wmp Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (hiz B (psub σs <$> σ)) None (trs ss B pts (msub σs τs T))).
+    + by apply comp0.
+    + done.
+    + apply (ubs_seg Ψ Θ B HB Φ F (psub σs <$> σ) (ef1 ++ ef2) []). by rewrite app_nil_r, <-app_assoc.
+    + rewrite (tenv_heads0 _ HW), union_empty_l_L.
+      apply (t_conv _ _ _ _ _ _ _ (sinst_ty (slist ssf) (ty_inst [X] Tb))).
+      { unfold ty_inst, Tb. simpl. rewrite hiz_pinst, !tr_pinst, pt_inst_pvar_at. simpl.
+        rewrite <-Hlτ in HT, HV.
+        destruct (tr_anc Ψ Θ B HB σs τs Hfin ss pts (pt_inst (plist [X]) ∘ ptsb (pvar 0)) T HT) as [E1 _].
+        destruct (tr_anc Ψ Θ B HB σs τs Hfin ss pts (pt_inst (plist [X]) ∘ ptsb (pvar 0)) V HV) as [E2 _].
+        split_and!; [|done|done|done].
+        pose proof (hiz_anc Ψ Θ B HB σs τs Hfin σ) as Eh. exact Eh. }
+      eapply (typed_force Wmp Φ Ψ ∅ Δ1 _ _ 1 (pc_nt Θ') (Crel Θ') None Tb [X] ssf);
+        [done|done|by apply (crel_hold Ψ Θ B HB σs τs Hfin)|apply (anc_known Ψ Θ B HB σs τs Hfin)| | |done|].
+      { unfold ssf. by rewrite length_fmap. }
+      { unfold ssf. apply Forall_fmap. by apply Hhc. }
+      rewrite <-Ebox. apply (IH1 ss Ψ B pts ins Δ1); try done.
+      by apply (ubs_part Ψ Θ B HB Φ F [] (ef2 ++ (psub σs <$> σ)) ef1 ss pts ins Γ2 Δ2).
+    + rewrite sf_union_empty. apply (IH2 ss Ψ B pts ins Δ2); try done.
+      apply (ubs_seg Ψ Θ B HB Φ F ef2 ef1 (psub σs <$> σ)). done.
+  - (* rec f. Λιs αs. λx.e *)
+    cbn [rename]. rewrite ren_up2.
+    set (Tb := TLolli (hiz (pvar 0) σ) None (tr (pvar 0) (ptsb (pvar 0)) T) (tr (pvar 0) (ptsb (pvar 0)) V)).
+    assert (trs ss B pts (MPoly Θ' T σ V) = TBox 1 (pc_nt Θ') (Crel Θ') (TLolli None None TUnit Tb)) as Ebox.
+    { unfold trs. rewrite tr_closed; [done|done|by split]. }
+    assert (menv_un Γ) as HΓ by (intros t Ht; apply Hpoly, Ht).
+    rewrite Ebox. set (φ := fresh (dom Φ)).
+    apply (t_box Wmp Φ Ψ Δ F _ 1 (pc_nt Θ') (Crel Θ') None Tb φ); [by apply (erel_unl B ss pts ins Γ Δ)|apply is_fresh|].
+    intros ss' Hss' Hhc'. change (bcs_inst (pshift 1) (Crel Θ')) with (Crel Θ').
+    set (Ψ' := hyps_inst (pshift 1) Ψ ++ [(Crel Θ', ids 1)]).
+    assert (good Ψ' Θ' (pvar 0)) as HB' by (apply good_box; [done|unfold Ψ'; set_solver]).
+    set (Φ1 := <[φ := None]> (fhyps_pinst (pshift 1) Φ)). set (φ' := fresh (dom Φ1)).
+    assert (sinst_ty (slist ss') Tb = TLolli (hiz (pvar 0) σ) None (trs ss' (pvar 0) (pts0 (pvar 0)) T)
+                                        (trs ss' (pvar 0) (pts0 (pvar 0)) V)) as ETb.
+    { unfold Tb, trs. simpl. rewrite !(tr_names (pvar 0) (ptsb (pvar 0)) (pts0 (pvar 0))); [done| |];
+        intros m Hm; [rewrite (tpure_names _ V HV) in Hm|rewrite (tpure_names _ T HT) in Hm]; by apply elem_of_nil in Hm. }
+    rewrite ETb.
+    apply (t_lam Wmp Φ1 Ψ' ∅ _ _ _ _ _ (hiz (pvar 0) σ) None φ'); [apply is_fresh| |].
+    + simpl. rewrite (tenv_heads0 _ HW), !union_empty_l_L. apply unl_heads, unl_pinst.
+      by apply (erel_unl B ss pts ins Γ Δ HΔ HΓ).
+    + apply IH; [done|done|done|by apply (pts0_ok Ψ' Θ')| |].
+      * apply (er_keep _ _ _ (Some T)).
+        change (lenv_pinst (pshift 1) (Some (TBox 1 (pc_nt Θ') (Crel Θ') (TLolli None None TUnit Tb)) :: Δ))
+          with (Some (pinst_ty (pshift 1) (TBox 1 (pc_nt Θ') (Crel Θ') (TLolli None None TUnit Tb))) :: lenv_pinst (pshift 1) Δ).
+        rewrite <-Ebox, trs_pinst, (trs_un ss ss' _ (pvar 0) _ (pts0 (pvar 0))) by (done || by split).
+        apply (er_keep _ _ _ (Some (MPoly Θ' T σ V))). by apply (erel_poly B ss pts).
+      * apply (ubs_hle Ψ' Θ' (pvar 0) HB' _ ef σ); [done|]. apply (ubs_fresh _ HW).
+  - (* rec f. Λαs. λx.e over a segment *)
+    cbn [rename]. rewrite ren_up2.
+    set (Tseg := TLolli (Some (rpt (pvar 1) (RHi [PTop]))) None (TSess (polS pol (ers Qa)) (pvar 0))
+                   (TEx (Some (rpt (pvar 1) (RLo [LP PBot]))) 1 (Cex (pvar 1)) (TSess (polS pol (ers Qr)) (pvar 0)))).
+    assert (trs ss B pts (MSeg pol k Qa Qr) = TBox 2 k (Cseg k) (TLolli None None TUnit Tseg)) as Eseg.
+    { unfold trs. rewrite tr_closed; [done|done|by split]. }
+    assert (menv_un Γ) as HΓ by (intros t Ht; apply Hpoly, Ht).
+    rewrite Eseg. set (φ := fresh (dom Φ)).
+    apply (t_box Wmp Φ Ψ Δ F _ 2 k (Cseg k) None Tseg φ); [by apply (erel_unl B ss pts ins Γ Δ)|apply is_fresh|].
+    intros ss' Hss' Hhc'. change (bcs_inst (pshift 2) (Cseg k)) with (Cseg k).
+    set (Ψ' := hyps_inst (pshift 2) Ψ ++ [(Cseg k, ids 2)]).
+    assert (good Ψ' (Θany k) (pvar 1)) as HB' by (apply good_seg; unfold Ψ'; set_solver).
+    set (pts' := λ _ : nat, pvar 0).
+    set (Φ1 := <[φ := None]> (fhyps_pinst (pshift 2) Φ)). set (φ' := fresh (dom Φ1)).
+    assert (sinst_ty (slist ss') Tseg = TLolli (Some (ceil (pvar 1))) None
+              (trs ss' (pvar 1) pts' (MCh pol Qa (PX 0 []))) (trs ss' (pvar 1) pts' (MEx pol Qr))) as ET by done.
+    rewrite ET.
+    apply (t_lam Wmp Φ1 Ψ' ∅ _ _ _ _ _ (Some (ceil (pvar 1))) None φ'); [apply is_fresh| |].
+    + simpl. rewrite (tenv_heads0 _ HW), !union_empty_l_L. apply unl_heads, unl_pinst.
+      by apply (erel_unl B ss pts ins Γ Δ HΔ HΓ).
+    + apply IH; [done|done|done| | |].
+      * intros m. split; [right; exists (Cseg k), (ids 2), (pvar 0); split_and!; [unfold Ψ'; set_solver|unfold ids; simpl; by left|done]|].
+        intros u. split.
+        -- eapply (sl_hyp _ _ [] (λ g, pex_fact 0 1 g ∨ crel_fact (Θany k) (NVar 1) g) (ids 2) (FLt (mwalk (pvar 0) u) (rpt (pvar 1) (RHi [PTop]))));
+             [unfold Ψ'; set_solver|left; left; by exists u|split; [apply mwalk_vb; simpl; lia|simpl; lia]|].
+           cbn [fact_map]. rewrite pt_inst_mwalk, pt_inst_rpt, !pt_inst_pvar_at. reflexivity.
+        -- eapply (sl_hyp _ _ [] (λ g, pex_fact 0 1 g ∨ crel_fact (Θany k) (NVar 1) g) (ids 2) (FLt (rpt (pvar 1) (RLo [LP PBot])) (mwalk (pvar 0) u)));
+             [unfold Ψ'; set_solver|left; right; by exists u|split; [simpl; lia|apply mwalk_vb; simpl; lia]|].
+           cbn [fact_map]. rewrite pt_inst_mwalk, pt_inst_rpt, !pt_inst_pvar_at. reflexivity.
+      * apply (er_keep _ _ _ (Some (MCh pol Qa (PX 0 [])))).
+        change (lenv_pinst (pshift 2) (Some (TBox 2 k (Cseg k) (TLolli None None TUnit Tseg)) :: Δ))
+          with (Some (pinst_ty (pshift 2) (TBox 2 k (Cseg k) (TLolli None None TUnit Tseg))) :: lenv_pinst (pshift 2) Δ).
+        rewrite <-Eseg, trs_pinst, (trs_un ss ss' _ (pvar 1) _ pts') by (done || by split).
+        apply (er_keep _ _ _ (Some (MSeg pol k Qa Qr))). by apply (erel_poly B ss pts).
+      * apply (ubs_lower Wmp HW _ _ _ (Some (ceil (pvar 1)))); [|apply (ubs_fresh _ HW)].
+        intros x Hx. exists (ceil (pvar 1)). split; [done|]. by apply (hiz_le_ceil Ψ' (Θany k) (pvar 1) ef).
+  - (* T-TApp, T-App at a segment *)
+    cbn [rename]. destruct (erel_split B ss pts ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
+    set (x := chpt B pts (tsub τs Qa) p).
+    set (ssf := (λ q, sinst (slist ss) (ers q)) <$> τs).
+    set (Tseg := TLolli (Some (rpt (pvar 1) (RHi [PTop]))) None (TSess (polS pol (ers Qa)) (pvar 0))
+                   (TEx (Some (rpt (pvar 1) (RLo [LP PBot]))) 1 (Cex (pvar 1)) (TSess (polS pol (ers Qr)) (pvar 0)))).
+    assert (trs ss B pts (MSeg pol k Qa Qr) = TBox 2 k (Cseg k) (TLolli None None TUnit Tseg)) as Eseg.
+    { unfold trs. rewrite tr_closed; [done|done|by split]. }
+    assert (sinst_ty (slist ssf) (ty_inst [x; B] Tseg) =
+            TLolli (Some (ceil B)) None (trs ss B pts (MCh pol (tsub τs Qa) p)) (trs ss B pts (MEx pol (tsub τs Qr)))) as Ef.
+    { rewrite trs_ch, trs_ex. unfold ty_inst, Tseg. simpl pinst_ty.
+      rewrite !pt_inst_rpt, pt_inst_plist2_0, pt_inst_plist2_1, pup1_0.
+      unfold Cex, bcs_inst. simpl fmap. rewrite pt_inst_plist2_1. simpl sinst_ty.
+      rewrite <-Hlen in HQa, HQr. unfold ssf. rewrite !polS_sinst, !ers_tsub by done. done. }
+    eapply (t_app Wmp Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (Some (ceil B)) None (trs ss B pts (MCh pol (tsub τs Qa) p))).
+    + by apply comp0.
+    + done.
+    + apply (ubs_lower Wmp HW _ _ _ (hiz B (ef1 ++ ef2 ++ [PTop]))); [|done].
+      intros y [=<-]. eexists. split; [destruct ef1; [destruct ef2|]; done|].
+      left. apply (ceil_top Ψ Θ B HB). set_solver.
+    + rewrite (tenv_heads0 _ HW), union_empty_l_L, <-Ef.
+      eapply (typed_force Wmp Φ Ψ ∅ Δ1 _ _ 2 k (Cseg k) None Tseg [x; B] ssf); [done|done| | | | |done|].
+      { apply (cseg_hold Ψ Θ B k x HB). intros u. apply (chpt_ok Ψ Θ B HB pts Hp). }
+      { constructor; [apply (chpt_known Ψ Θ B HB pts Hp)|apply Forall_singleton, (B_known Ψ Θ B HB pts Hp)]. }
+      { unfold ssf. by rewrite length_fmap. }
+      { unfold ssf. apply Forall_fmap. by apply Hhc. }
+      rewrite <-Eseg. apply (IH1 ss Ψ B pts ins Δ1); try done.
+      by apply (ubs_part Ψ Θ B HB Φ F [] (ef2 ++ [PTop]) ef1 ss pts ins Γ2 Δ2).
+    + rewrite sf_union_empty. apply (IH2 ss Ψ B pts ins Δ2); try done.
+      apply (ubs_seg Ψ Θ B HB Φ F ef2 ef1 [PTop]). done.
+  - (* the end point of a segment *)
+    set (sQ := sinst (slist ss) (polS pol (ers Q))).
+    set (Ψ' := hyps_inst (pshift 1) Ψ ++ [(Cex (pt_inst (pshift 1) B), ids 1)]).
+    assert (hyps_hold (seqs Wmp Ψ') (slt Wmp Ψ') (skn Wmp Ψ') (hyps_inst (pshift 1) Ψ)) as HΨ.
+    { apply hyps_hold_sub. intros h Hh. unfold Ψ'. set_solver. }
+    pose proof (erel_lookup B ss pts ins Γ Δ i _ HΔ Hi) as Hl. simpl in Hl.
+    apply (tv_open Wmp Φ Ψ Δ F _ (ren_of ins i) (Some (floor B)) 1 (Cex B) (TSess sQ (pvar 0)) (trs ss B pts V)
+             (fhyps_pinst (pshift 1) Φ) Ψ'
+             (<[ren_of ins i := Some (TSess sQ (pvar 0))]> (lenv_pinst (pshift 1) Δ))
+             (sf_pinst (pshift 1) F) (trs ss (pt_inst (pshift 1) B) (pts_open n pts) V));
+      [exact Hl|intros []|done|done|done|done| |].
+    { rewrite trs_pinst. unfold trs. f_equal. apply tr_names. intros m Hm. unfold pts_open. simpl.
+      rewrite decide_False; [done|]. intros ->. done. }
+    apply IH; try done.
+    + by apply (good_shift Ψ Ψ' Θ B HB HΨ).
+    + by apply (pts_ok_open Ψ Θ B pts n HB Hp).
+    + by apply erel_open.
+    + rewrite <-hiz_pinst. by apply (ub_below_s_pinst Wmp Wmp (pshift 1) Ψ Ψ' Φ (hiz B ef) F HW (wext_mp Ψ Ψ' Θ B HB HΨ) HΨ).
+  - (* a later end point *)
+    rewrite trs_ex. set (x := chpt B pts Q p).
+    apply (t_pack Wmp Φ Ψ ∅ Δ F _ (Some (floor B)) 1 (Cex B) (TSess (sinst (slist ss) (polS pol (ers Q))) (pvar 0)) [x]).
+    + done.
+    + apply Forall_singleton, (chpt_known Ψ Θ B HB pts Hp).
+    + apply bcs_hold_env. intros f [(u & ->)|(u & ->)] _; cbn [fact_map fact_holds];
+        rewrite ?pt_inst_mwalk, ?pt_inst_rpt; change (pt_inst (plist ([x] ++ [B])) (pvar 0)) with (pt_shift 0 x);
+        change (pt_inst (plist ([x] ++ [B])) (pvar 1)) with (pt_shift 0 B); rewrite !pt_shift_0;
+        apply (chpt_ok Ψ Θ B HB pts Hp Q p u).
+    + assert (ty_inst [x] (TSess (sinst (slist ss) (polS pol (ers Q))) (pvar 0)) = trs ss B pts (MCh pol Q p)) as ->.
+      { rewrite trs_ch. unfold ty_inst. simpl pinst_ty. by rewrite pt_inst_pvar_at. }
+      rewrite trs_ch. simpl. intros y Hy. apply elem_of_singleton in Hy as ->.
+      right. apply (chpt_ok Ψ Θ B HB pts Hp Q p []).
+    + assert (ty_inst [x] (TSess (sinst (slist ss) (polS pol (ers Q))) (pvar 0)) = trs ss B pts (MCh pol Q p)) as ->.
+      { rewrite trs_ch. unfold ty_inst. simpl pinst_ty. by rewrite pt_inst_pvar_at. }
+      by apply IH.
+  - (* T-Let *)
+    cbn [rename]. rewrite ren_up.
+    destruct (erel_split B ss pts ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
+    set (lb := Some (rpt B (RLo (envp Γ2)))).
+    eapply (t_app Wmp Φ Ψ ∅ ∅ ∅ Δ Δ2 Δ1 F _ _ (hiz B ef2) lb (trs ss B pts T)).
+    + by apply comp0.
+    + by apply lenv_split_comm.
+    + apply (ubs_seg Ψ Θ B HB Φ F ef2 ef1 []). by rewrite app_nil_r.
+    + set (φ := fresh (dom Φ)).
+      apply (t_lam Wmp Φ Ψ ∅ Δ2 _ _ _ _ (hiz B ef2) lb φ); [apply is_fresh| |].
+      * simpl. rewrite (tenv_heads0 _ HW), union_empty_l_L. intros y Hy.
+        apply (env_lo_below Ψ Θ B HB ss pts ins Γ2 Δ2 y Hp HΔ2 Hy).
+      * apply IH2; [done|done|done|done|by apply (er_keep _ _ _ (Some T))|apply (ubs_fresh _ HW)].
+    + apply (IH1 ss Ψ B pts ins Δ1); try done. apply (ubs_union _ HW).
+      * apply (ubs_seg Ψ Θ B HB Φ F ef1 [] ef2). done.
+      * intros x Hx h Hh. simpl in Hh. apply elem_of_singleton in Hh as ->.
+        by apply (hi_below_lo Ψ Θ B HB ef1 _ x).
+  - (* e₁; e₂ *)
+    cbn [rename]. destruct (erel_split B ss pts ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
+    eapply (t_letu Wmp Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2); [by apply comp0|done| |].
+    + rewrite (tenv_heads0 _ HW), union_empty_l_L.
+      change TUnit with (ty_inst [] TUnit).
+      eapply (typed_force0 Wmp Φ Ψ ∅ Δ1 _ _ 0 (BCs [] (λ _, False)) None TUnit []);
+        [done|done| |done|done|].
+      { intros g Hg. apply bcs_open_nil in Hg as [[] _]. }
+      apply (IH1 ss Ψ B pts ins Δ1); try done.
+      by apply (ubs_part Ψ Θ B HB Φ F [] ef2 ef1 ss pts ins Γ2 Δ2).
+    + apply (IH2 ss Ψ B pts ins Δ2); try done. apply (ubs_seg Ψ Θ B HB Φ F ef2 ef1 []).
+      by rewrite app_nil_r.
+  - (* new *)
+    cbn [rename]. rewrite ren_up2.
+    set (S := sinst (slist ss) (ers Q)). set (x := rpt B (RCh Q n d)).
+    assert (trs ss B pts (MCh false Q (PR n d)) = TSess S x) as E1 by done.
+    assert (trs ss B pts (MCh true Q (PR n d)) = TSess (dual S) x) as E2.
+    { rewrite trs_ch. simpl. unfold S. by rewrite dual_sinst. }
+    eapply (t_letp Wmp Φ Ψ ∅ ∅ ∅ Δ (lenv_nones Δ) Δ F _ _ (TSess S x) (TSess (dual S) x));
+      [by apply comp0|apply lenv_split_nones_l| |].
+    + apply (tv_app_closed Wmp HW _ _ _ _ _ _ None TUnit).
+      * apply t_konst; [apply lenv_empty_nones| |done].
+        apply (KTNew _ _ _ S x). by apply (rpt_known Ψ Θ B HB).
+      * apply t_unit, lenv_empty_nones.
+      * done.
+    + apply IH; try done. rewrite <-E1, <-E2. apply (er_keep _ _ _ (Some _)), (er_keep _ _ _ (Some _)), HΔ.
+  - (* send *)
+    cbn [rename]. destruct (erel_split B ss pts ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
+    set (S := sinst (slist ss) (polS pol (ers K))). set (Tp := sinst_ty (slist ss) (ersp P)).
+    destruct p as [h d|n w].
+    + destruct Hok as (Hfin & Hpay & Hrise). simpl aeff. rewrite trs_ch. simpl chpt.
+      set (x := rpt B (RCh (sndQ pol a P K) h d)).
+      assert (∀ pp Qp hp dp, P = MPChan pp Qp hp dp → seqs Wmp Ψ (pt_slot x 0) (rpt B (RCh Qp hp dp))) as Hsl.
+      { intros pp Qp hp dp ->. by apply (ch_pay Ψ Θ B HB pol a pp Qp hp dp K); left. }
+      destruct (pay_conv Ψ ss B pts x P Hsl) as (Hp1 & _ & Hp3).
+      apply (tv_app_closed Wmp HW _ _ _ _ _ _ (Some x) (TProd (payload_at (pm P) Tp x) (TSess (SSeq (SSnd (pm P) Tp) S) x))).
+      * eapply t_conv; [|apply t_konst; [apply lenv_empty_nones|apply (KTSend _ _ _ (pm P) Tp S x)|apply ersp_scoped]].
+        -- apply steq_lolli; [apply steq_refl|]. apply steq_sess; [|apply seq_refl].
+           by apply (ch_next Ψ Θ B HB pol a P K); [left|].
+        -- intros y Hy. destruct (Hp3 y Hy) as (pp & Qp & hp & dp & -> & ->).
+           eapply slt_seqs_r; [|apply se_sym, (Hsl pp Qp hp dp eq_refl)].
+           apply (ch_below_ch Ψ Θ B HB _ a); [apply hshape_snd|exact Hpay].
+      * eapply (t_pair Wmp Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2); [by apply comp0|done| |].
+        -- rewrite (tenv_heads0 _ HW), union_empty_l_L. eapply t_conv; [exact Hp1|].
+           apply (IH1 ss Ψ B pts ins Δ1); try done.
+           by apply (ubs_part Ψ Θ B HB Φ F [] (ef2 ++ [a]) ef1 ss pts ins Γ2 Δ2).
+        -- assert (TSess (SSeq (SSnd (pm P) Tp) S) x = trs ss B pts (MCh pol (sndQ pol a P K) (PR h d))) as -> by
+             (by rewrite trs_snd).
+           apply (IH2 ss Ψ B pts ins Δ2); try done. apply (ubs_union _ HW); [by apply (ubs_seg Ψ Θ B HB Φ F ef2 ef1 [a])|].
+           intros z Hz y Hy. destruct (Hp3 y Hy) as (pp & Qp & hp & dp & -> & ->).
+           eapply slt_seqs_r; [|apply se_sym, (Hsl pp Qp hp dp eq_refl)].
+           by apply (hi_below_ch Ψ Θ B HB ef2 Qp hp dp z).
+      * apply (ch_ub Ψ Θ B HB Φ _ a h d (ef1 ++ ef2 ++ [a])); [apply hshape_snd|done|set_solver|done].
+    + simpl in Hok. subst P. simpl aeff. set (x := mwalk (pts n) w).
+      apply (tv_app_closed Wmp HW _ _ _ _ _ _ (Some x) (TProd U (TSess (SSeq (SSnd 0 U) S) x))).
+      * eapply t_conv; [|apply t_konst; [apply lenv_empty_nones|apply (KTSend _ _ _ 0 U S x)|apply (ersp_scoped [] MPUnit)]].
+        -- rewrite trs_ch. simpl chpt. rewrite mwalk_app. apply steq_refl.
+        -- intros y Hy. by apply elem_of_empty in Hy.
+      * eapply (t_pair Wmp Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2); [by apply comp0|done| |].
+        -- rewrite (tenv_heads0 _ HW), union_empty_l_L. change U with (trs ss B pts (payty MPUnit)).
+           apply (IH1 ss Ψ B pts ins Δ1); try done.
+           by apply (ubs_part Ψ Θ B HB Φ F [] (ef2 ++ [PTop]) ef1 ss pts ins Γ2 Δ2).
+        -- assert (TSess (SSeq (SSnd 0 U) S) x = trs ss B pts (MCh pol (sndQ pol a MPUnit K) (PX n w))) as -> by
+             (by rewrite trs_snd).
+           change (heads U) with (∅ : gset point). rewrite sf_union_empty.
+           apply (IH2 ss Ψ B pts ins Δ2); try done. by apply (ubs_seg Ψ Θ B HB Φ F ef2 ef1 [PTop]).
+      * apply (ubs_ceil Ψ Θ B HB Φ F (ef1 ++ ef2 ++ [PTop])); [set_solver| |done].
+        apply (chpt_ok Ψ Θ B HB pts Hp (sndQ pol a MPUnit K) (PX n w) []).
+  - (* receive *)
+    cbn [rename]. rewrite ren_up2.
+    destruct (erel_split B ss pts ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
+    set (S := sinst (slist ss) (polS pol (ers K))). set (Tp := sinst_ty (slist ss) (ersp P)).
+    assert (ub_below_s Wmp Ψ Φ (hiz B (ef1 ++ [aeff p a])) (sf_union F (lenv_heads Δ2))) as Hpart.
+    { apply (ubs_part Ψ Θ B HB Φ F [] ef2 (ef1 ++ [aeff p a]) ss pts ins Γ2 Δ2); [|done|done].
+      by rewrite <-app_assoc. }
+    eapply (t_letp Wmp Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (trs ss B pts (rpayty p P)) (trs ss B pts (MCh pol K (pnext p))));
+      [by apply comp0|done| |].
+    + rewrite (tenv_heads0 _ HW), union_empty_l_L.
+      set (x := chpt B pts (rcvQ pol a P K) p).
+      apply (tv_app_closed Wmp HW _ _ _ _ _ _ (Some x) (trs ss B pts (MCh pol (rcvQ pol a P K) p))).
+      * eapply t_conv; [|apply t_konst; [apply lenv_empty_nones|apply (KTRecv _ _ _ (pm P) Tp S x)|apply ersp_scoped]].
+        rewrite trs_rcv. apply steq_lolli; [apply steq_refl|]. destruct p as [h d|n w].
+        -- destruct Hok as (Hfin & Hpay & Hrise).
+           assert (∀ pp Qp hp dp, P = MPChan pp Qp hp dp → seqs Wmp Ψ (pt_slot x 0) (rpt B (RCh Qp hp dp))) as Hsl.
+           { intros pp Qp hp dp ->. by apply (ch_pay Ψ Θ B HB pol a pp Qp hp dp K); right. }
+           destruct (pay_conv Ψ ss B pts x P Hsl) as (_ & Hp2 & _).
+           apply steq_prod; [done|]. rewrite trs_ch. apply steq_sess; [|apply seq_refl].
+           by apply (ch_next Ψ Θ B HB pol a P K); [right|].
+        -- rewrite pay_px, trs_ch. simpl chpt. rewrite mwalk_app. apply steq_refl.
+      * apply (IH1 ss Ψ B pts ins Δ1); try done. by apply (ubs_seg Ψ Θ B HB _ _ ef1 [] [aeff p a]).
+      * destruct p as [h d|n w].
+        -- destruct Hok as (Hfin & _). by apply (ch_ub Ψ Θ B HB Φ _ a h d (ef1 ++ [a])); [apply hshape_rcv|done|set_solver|].
+        -- apply (ubs_ceil Ψ Θ B HB Φ _ (ef1 ++ [PTop])); [set_solver| |done].
+           apply (chpt_ok Ψ Θ B HB pts Hp (rcvQ pol a P K) (PX n w) []).
+    + apply (IH2 ss Ψ B pts _ _ _ _ Hlss Hss HB Hp).
+      * apply (er_keep _ _ _ (Some _)), (er_keep _ _ _ (Some _)), HΔ2.
+      * apply (ubs_seg Ψ Θ B HB Φ F ef2 (ef1 ++ [aeff p a]) []). by rewrite app_nil_r, <-app_assoc.
+  - (* close, wait *)
+    cbn [rename]. set (x := chpt B pts (MEnd a w) p).
+    eapply (t_letu Wmp Φ Ψ ∅ ∅ ∅ Δ Δ (lenv_nones Δ)); [by apply comp0|apply lenv_split_nones_r| |].
+    + rewrite (tenv_heads0 _ HW), nones_heads, union_empty_l_L, sf_union_empty.
+      apply (tv_app_closed Wmp HW _ _ _ _ _ _ (Some x) (TSess SEnd x)).
+      * apply t_konst; [apply lenv_empty_nones|apply KTClos|done].
+      * unfold x. rewrite <-(trs_end ss B pts pol a w p). apply (IH ss Ψ B pts ins Δ); try done.
+        by apply (ubs_seg Ψ Θ B HB _ _ ef [] [aeff p a]).
+      * destruct p as [h d|n w'].
+        -- by apply (ch_ub Ψ Θ B HB Φ _ a h d (ef ++ [a])); [apply hshape_end|done|set_solver|].
+        -- apply (ubs_ceil Ψ Θ B HB Φ _ (ef ++ [PTop])); [set_solver| |done].
+           apply (chpt_ok Ψ Θ B HB pts Hp (MEnd a w) (PX n w') []).
+    + rewrite trs_unit. apply (tv_unitv Wmp HW). apply nones_unl.
+  - (* T-Sel *)
+    set (x := chpt B pts (selQ pol a K1 K2) p).
+    set (S1 := sinst (slist ss) (polS pol (ers K1))). set (S2 := sinst (slist ss) (polS pol (ers K2))).
+    assert (steq Wmp Ψ (TSess (if b then S2 else S1) (pt_br x b)) (trs ss B pts (MCh pol (if b then K2 else K1) (pbr p b)))) as Er.
+    { rewrite trs_ch. destruct p as [h d|n w].
+      - apply steq_sess; [|destruct b; apply seq_refl]. simpl chpt. by apply (ch_branch Ψ Θ B HB pol a K1 K2); [left|apply Hok].
+      - simpl chpt. rewrite mwalk_app. destruct b; apply steq_refl. }
+    cbn [rename]. apply (tv_app_closed Wmp HW _ _ _ _ _ _ (Some x) (TSess (SPlus S1 S2) x)).
+    + eapply t_conv; [apply steq_lolli; [apply steq_refl|exact Er]|].
+      destruct b; (apply t_konst; [apply lenv_empty_nones| |done]); [apply KTSel2|apply KTSel1].
+    + unfold x, S1, S2. rewrite <-(trs_sel ss B pts pol a K1 K2 p). apply (IH ss Ψ B pts ins Δ); try done.
+      by apply (ubs_seg Ψ Θ B HB _ _ ef [] [aeff p a]).
+    + destruct p as [h d|n w].
+      * destruct Hok as (Hfin & _). by apply (ch_ub Ψ Θ B HB Φ _ a h d (ef ++ [a])); [apply hshape_sel|done|set_solver|].
+      * apply (ubs_ceil Ψ Θ B HB Φ _ (ef ++ [PTop])); [set_solver| |done].
+        apply (chpt_ok Ψ Θ B HB pts Hp (selQ pol a K1 K2) (PX n w) []).
+  - (* match *)
+    cbn [rename]. rewrite !ren_up.
+    destruct (erel_split B ss pts ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
+    set (x := chpt B pts (braQ pol a K1 K2) p).
+    set (S1 := sinst (slist ss) (polS pol (ers K1))). set (S2 := sinst (slist ss) (polS pol (ers K2))).
+    assert (ub_below_s Wmp Ψ Φ (hiz B (ef1 ++ [aeff p a])) (sf_union F (lenv_heads Δ2))) as Hpart.
+    { apply (ubs_part Ψ Θ B HB Φ F [] ef2 (ef1 ++ [aeff p a]) ss pts ins Γ2 Δ2); [|done|done].
+      by rewrite <-app_assoc. }
+    assert (∀ b : bool, steq Wmp Ψ (TSess (if b then S2 else S1) (pt_br x b)) (trs ss B pts (MCh pol (if b then K2 else K1) (pbr p b)))) as Er.
+    { intros b. rewrite trs_ch. destruct p as [h d|n w].
+      - apply steq_sess; [|destruct b; apply seq_refl]. simpl chpt. by apply (ch_branch Ψ Θ B HB pol a K1 K2); [right|apply Hok].
+      - simpl chpt. rewrite mwalk_app. destruct b; apply steq_refl. }
+    eapply (t_case Wmp Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ _ (trs ss B pts (MCh pol K1 (pbr p false)))
+              (trs ss B pts (MCh pol K2 (pbr p true)))); [by apply comp0|done| | |].
+    + rewrite (tenv_heads0 _ HW), union_empty_l_L.
+      apply (tv_app_closed Wmp HW _ _ _ _ _ _ (Some x) (trs ss B pts (MCh pol (braQ pol a K1 K2) p))).
+      * eapply t_conv; [|apply t_konst; [apply lenv_empty_nones|apply KTBra|done]].
+        rewrite trs_bra. apply steq_lolli; [apply steq_refl|]. apply steq_sum; [apply (Er false)|apply (Er true)].
+      * apply (IH ss Ψ B pts ins Δ1); try done. by apply (ubs_seg Ψ Θ B HB _ _ ef1 [] [aeff p a]).
+      * destruct p as [h d|n w].
+        -- destruct Hok as (Hfin & _). by apply (ch_ub Ψ Θ B HB Φ _ a h d (ef1 ++ [a])); [apply hshape_bra|done|set_solver|].
+        -- apply (ubs_ceil Ψ Θ B HB Φ _ (ef1 ++ [PTop])); [set_solver| |done].
+           apply (chpt_ok Ψ Θ B HB pts Hp (braQ pol a K1 K2) (PX n w) []).
+    + apply IHA; try done; [by apply (er_keep _ _ _ (Some _))|].
+      apply (ubs_seg Ψ Θ B HB Φ F ef2 (ef1 ++ [aeff p a]) []). by rewrite app_nil_r, <-app_assoc.
+    + apply IHB; try done; [by apply (er_keep _ _ _ (Some _))|].
+      apply (ubs_seg Ψ Θ B HB Φ F ef2 (ef1 ++ [aeff p a]) []). by rewrite app_nil_r, <-app_assoc.
+  - (* fork *)
+    cbn [rename]. rewrite rename_fork, trs_unit.
+    apply (tv_app_closed Wmp HW _ _ _ _ _ _ None (trs ss B pts (MArr MUnit lo σ MUnit))).
+    + rewrite trs_arr, trs_unit. apply fork_tr_typed. apply lenv_empty_nones.
+    + by apply IH.
+    + done.
+  - (* T-Eq *)
+    destruct Heq as [Hseq Hpos]. eapply t_conv; [|apply IH; done]. rewrite !trs_ch.
+    assert (seq (sinst (slist ss) (polS pol (ers Q))) (sinst (slist ss) (polS pol (ers Q')))) as Es.
+    { rewrite !polS_sinst. destruct pol; simpl; [apply seq_dual|]; by apply Hseq. }
+    destruct p as [h d|n w], p' as [h' d'|n' w']; simpl in Hpos; try done.
+    + destruct Hpos as [<- Ho]. apply steq_sess; [|done]. simpl.
+      apply (seqs_rpt Ψ Θ B HB). intros v ts Hv. rewrite !(den_ch Ψ Θ B HB). by apply Ho.
+    + destruct Hpos as [<- <-]. apply steq_sess; [apply se_refl|done].
+  - (* a larger effect *)
+    apply IH; try done. by apply (ubs_hle Ψ Θ B HB _ ef ef').
+Qed.
+
+(** ** Deadlock freedom *)
+
+(** A closed program of unit type translates to a typed closed thread
+    at the strict world [Wmp], so it is deadlock free. *)
+Theorem mp2_deadlock_free e ef e' :
+  mtyped pc0 [] e MUnit ef e' → deadlock_free (∅, {[+ e' +]}).
+Proof.
+  intros H. apply (soundness Wmp _ U Wmp_strict). apply ptyped_closed; [repeat constructor|].
+  rewrite <-(rename_id e'), (rename_ext e' (λ x, x) (ren_of [])) by done.
+  apply (mp2_translate pc0 [] e MUnit ef e' H [] [] proot (pts0 proot) [] [] ∅ (∅, None));
+    [done|constructor|apply good_root|apply (pts0_ok [] pc0), good_root|constructor|].
+  destruct (hiz proot ef); [|done]. split; simpl; [set_solver|done].
+Qed.
