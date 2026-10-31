@@ -56,10 +56,10 @@ Lemma rq_call W Ψ :
   (rq_C, ids 2) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) rq_C [pv 0 1; pv 1 1].
 Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact rq_step]. Qed.
 
-Lemma srv_typed W F : world_wf W → typed W ∅ [] ∅ [] F srv (TBox 2 rq_C (TLolli None None TUnit srv_body)).
+Lemma srv_typed W F : world_wf W → typed W ∅ [] ∅ [] F srv (TBox 2 0 rq_C (TLolli None None TUnit srv_body)).
 Proof.
   intros HW. unfold srv.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rq_C srv_body. cbn. unfold srv_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
@@ -74,7 +74,7 @@ Proof.
   { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; hyp0 (pv 1 0) (pv 0 1)]. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rq_C None srv_body [pv 0 1; pv 1 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None srv_body [pv 0 1; pv 1 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply rq_call. by left.
     + apply (skn_ids2 W _ rq_C); [by left|done|done].
@@ -90,10 +90,10 @@ Proof.
     exists (pv 1 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma cli_typed W F : world_wf W → typed W ∅ [] ∅ [] F cli (TBox 2 rq_C (TLolli None None TUnit cli_body)).
+Lemma cli_typed W F : world_wf W → typed W ∅ [] ∅ [] F cli (TBox 2 0 rq_C (TLolli None None TUnit cli_body)).
 Proof.
   intros HW. unfold cli.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rq_C cli_body. cbn. unfold cli_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
@@ -118,7 +118,7 @@ Proof.
       first [right; hyp0 (pv 1 0) (pv 0 1)|right; apply (slt_po W _ (pv 1 0) HW)]. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rq_C None cli_body [pv 0 1; pv 1 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None cli_body [pv 0 1; pv 1 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply rq_call. by left.
     + apply (skn_ids2 W _ rq_C); [by left|done|done].
@@ -154,13 +154,13 @@ Proof.
     { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; by apply sl_w]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 2 rq_C None srv_body [pc 0 0; pc 1 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None srv_body [pc 0 0; pc 1 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pc 1 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rq_C None cli_body [pc 0 0; pc 1 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None cli_body [pc 0 0; pc 1 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

@@ -234,7 +234,8 @@ Lemma Vrel_heads_above n W Θ T v :
   world_wf W → Vrel n W Θ T v → heads_above W (heads T) Θ.
 Proof.
   intros HW. revert Θ v.
-  induction T as [|ub lb T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1 T2 IH2|m T1 IH1|s x];
+  induction T as [|ub lb T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1 T2 IH2|m kk C0 T1 IH1|s x
+                 |lb m C0 T1 IH1];
     intros Θ v HV; simpl.
   - apply Vrel_unit_iff in HV as [-> _]. apply heads_above_empty.
   - apply Vrel_lolli_iff in HV as [(eb & _ & _ & Hlb & _)|(k & T0 & _ & -> & _)];
@@ -255,6 +256,11 @@ Proof.
     + rewrite lookup_singleton_eq in He. destruct b; simplify_eq.
       exists x. split; [set_solver|]. left. by apply (wf_eq_sym _ HW).
     + rewrite lookup_singleton_ne in He by done. done.
+  - apply Vrel_ex_iff in HV as [Hlb _].
+    intros k e He. destruct lb as [l|]; simpl in Hlb.
+    + exists l. split; [set_solver|]. apply Hlb. apply elem_of_tenv_heads_entry. eauto.
+    + exfalso. assert (e.2 ∈ tenv_heads Θ) as Hin by (apply elem_of_tenv_heads_entry; eauto).
+      rewrite Hlb in Hin. set_solver.
 Qed.
 
 (** ** Grounding substitutions *)

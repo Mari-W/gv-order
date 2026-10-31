@@ -102,45 +102,19 @@ Proof.
 Qed.
 
 Lemma pinst_ty_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
-Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
-    intros σ τ H; simpl.
-  - done.
-  - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_ext|destruct lb; simpl; f_equal; auto using pt_inst_ext|auto|auto].
-  - f_equal; auto.
-  - f_equal; auto.
-  - f_equal.
-    + by apply bcs_inst_ext.
-    + apply IH. intros a. by apply pup_ext.
-  - f_equal. by apply pt_inst_ext.
-Qed.
+Proof. apply tinst_ext. Qed.
 
 Lemma pinst_ty_comp T : ∀ τ σ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
-Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
-    intros τ σ; simpl.
-  - done.
-  - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_comp|destruct lb; simpl; f_equal; auto using pt_inst_comp|auto|auto].
-  - f_equal; auto.
-  - f_equal; auto.
-  - f_equal.
-    + apply bcs_comp.
-    + rewrite IH. apply pinst_ty_ext. intros a. apply pup_comp.
-  - f_equal. apply pt_inst_comp.
-Qed.
+Proof. apply tinst_comp. Qed.
 
 Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
+Proof. apply tinst_pvar. Qed.
+
+(** Point instances leave session types alone, so they commute with
+    session instances. *)
+Lemma pinst_sinst σ τ T : pinst_ty σ (sinst_ty τ T) = sinst_ty τ (pinst_ty σ T).
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
-    simpl.
-  - done.
-  - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_pvar|destruct lb; simpl; f_equal; auto using pt_inst_pvar|auto|auto].
-  - f_equal; auto.
-  - f_equal; auto.
-  - f_equal.
-    + apply bcs_pvar.
-    + rewrite (pinst_ty_ext _ _ pvar); [done|apply pup_pvar].
-  - f_equal. apply pt_inst_pvar.
+  revert σ τ. induction T; intros σ τ; simpl; f_equal; auto.
 Qed.
 
 (** Instantiating a list after lifting past it. *)
@@ -368,8 +342,9 @@ Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   | TUnit => True
   | TLolli ub lb T1 U => opt_scoped k ub ∧ opt_scoped k lb ∧ pscoped k T1 ∧ pscoped k U
   | TProd T1 U | TSum T1 U => pscoped k T1 ∧ pscoped k U
-  | TBox n C T1 => bcs_scoped k C ∧ pscoped (n + k) T1
+  | TBox n _ C T1 => bcs_scoped k C ∧ pscoped (n + k) T1
   | TSess _ x => pt_scoped k x
+  | TEx lb n C T1 => opt_scoped k lb ∧ bcs_scoped k C ∧ pscoped (n + k) T1
   end.
 
 Lemma pinst_ty_ext_scoped T : ∀ k σ τ,
@@ -381,7 +356,8 @@ Proof.
   assert (∀ k n σ τ, (∀ a, a < k → σ a = τ a) → ∀ a, a < n + k → pup n σ a = pup n τ a) as Hup.
   { intros k n σ τ H a Ha. unfold pup. destruct (decide (a < n)); [done|].
     rewrite H; [done|lia]. }
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n kk C T1 IH | s x
+                 | lb n C T1 IH];
     intros k σ τ HT H; simpl in *.
   - done.
   - destruct HT as (Hub & Hlb & H1 & H2).
@@ -395,6 +371,12 @@ Proof.
       apply HC. by eapply list_elem_of_lookup_2.
     + eapply IH; [done|]. by apply Hup.
   - f_equal. eauto.
+  - destruct HT as (Hlb & HC & H1). f_equal.
+    + destruct lb; simpl in *; [f_equal; eauto|done].
+    + unfold bcs_inst. f_equal. apply list_fmap_ext. intros i x Hx.
+      unfold bcs_scoped in HC. rewrite Forall_forall in HC. eapply Hpt; [|exact H].
+      apply HC. by eapply list_elem_of_lookup_2.
+    + eapply IH; [done|]. by apply Hup.
 Qed.
 
 Lemma payload_pinst σ m T x :
@@ -419,7 +401,8 @@ Proof. destruct o; simpl; [by rewrite set_map_singleton_L|by rewrite set_map_emp
 
 Lemma heads_pinst σ T : heads (pinst_ty σ T) = set_map (pt_inst σ) (heads T).
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
+                 | lb n C T1 IH];
     simpl.
   - by rewrite set_map_empty.
   - apply opt_heads_pinst.
@@ -427,6 +410,7 @@ Proof.
   - by rewrite IH1, IH2, set_map_union_L.
   - by rewrite set_map_empty.
   - by rewrite set_map_singleton_L.
+  - apply opt_heads_pinst.
 Qed.
 
 (** ** Facts survive substitution
@@ -494,7 +478,7 @@ Section transfer.
   Proof.
     intros Heq Hlt Hpk Hk.
     destruct 1 as [S x Hx|ub lb|m P S x Hh|m P S x|x|S1 S2 x|S1 S2 x|S1 S2 x|S x x' Hxx'
-                   |n C ub P xs Hxs HC HK];
+                   |n kk C ub P xs ss Hxs HC HK Hss Hsc];
       simpl in *.
     - constructor. by apply Hpk.
     - constructor.
@@ -515,7 +499,7 @@ Section transfer.
         apply pt_inst_ext. intros a. apply Hc. }
       assert (ty_inst (pt_inst σ <$> xs) (pinst_ty (pup n σ) P) = pinst_ty σ (ty_inst xs P)) as E2.
       { unfold ty_inst. rewrite !pinst_ty_comp. apply pinst_ty_ext. intros a. apply Hc. }
-      rewrite <-E1, <-E2. constructor; [by rewrite length_fmap| |].
+      rewrite pinst_sinst, <-E1, <-E2. constructor; [by rewrite length_fmap| | |done|done].
       + by apply (bcs_hold_inst peq _ plt).
       + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx. by apply Hpk.
   Qed.
@@ -647,8 +631,9 @@ Section transfer.
       + destruct lb, lb0; simpl in *; try done. by apply (seqs_pinst_s Ψ).
     - destruct H. split; auto.
     - destruct H. split; auto.
-    - destruct H as (<- & <- & ?). split_and!; [done|done|by apply eqT_pinst].
+    - exact (eqT_pinst seq _ _ σ H).
     - destruct H as [? ?]. split; [by apply (seqs_pinst_s Ψ)|done].
+    - exact (eqT_pinst seq _ _ σ H).
   Qed.
 
   Lemma steq_teqW Ψ T : ∀ U,
@@ -664,10 +649,12 @@ Section transfer.
         apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
     - destruct H. split; auto.
     - destruct H. split; auto.
-    - destruct H as (<- & <- & ?). split_and!; [done|apply bcs_rel_refl|].
-      apply teq_teqW. by apply eqT_pinst.
+    - apply (teq_teqW _ (pinst_ty σ (TBox _ _ _ _)) (pinst_ty σ (TBox _ _ _ _))).
+      exact (eqT_pinst seq _ _ σ H).
     - destruct H as [? ?]. split; [|done].
       apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
+    - apply (teq_teqW _ (pinst_ty σ (TEx _ _ _ _)) (pinst_ty σ (TEx _ _ _ _))).
+      exact (eqT_pinst seq _ _ σ H).
   Qed.
 End transfer.
 
@@ -788,17 +775,6 @@ Proof.
   - intros y Hy. destruct F as [P o]. simpl in *.
     apply elem_of_map in Hy as (y0 & -> & Hy0). exact (Hm _ _ (HP y0 Hy0)).
   - intros φ Hφ'. destruct F as [P o]. simpl in *. exact (Hm _ _ (Hφ φ Hφ')).
-Qed.
-
-Lemma eqT_pinst ρ T : ∀ U σ, eqT ρ T U → eqT ρ (pinst_ty σ T) (pinst_ty σ U).
-Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
-    intros [| ub' lb' U1 U2 | U1 U2 | U1 U2 | n' C' U1 | r y] σ; simpl; try done.
-  - intros (-> & -> & H1 & H2). split_and!; auto.
-  - intros [H1 H2]. split_and!; auto.
-  - intros [H1 H2]. split_and!; auto.
-  - intros (-> & -> & H1). split_and!; auto.
-  - intros (-> & H). split_and!; auto.
 Qed.
 
 Lemma tenv_pinst_empty σ : tenv_pinst σ ∅ = ∅.

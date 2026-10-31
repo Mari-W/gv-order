@@ -157,16 +157,16 @@ Proof.
 Qed.
 
 Definition Tb : ty := TSess SEnd (Pt (NVar 0) 1).
-Definition Tcex : ty := TLolli None None (TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tb)) (TSess SEnd (Pt (NConst b0) 0)).
+Definition Tcex : ty := TLolli None None (TBox 1 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tb)) (TSess SEnd (Pt (NConst b0) 0)).
 
 Lemma Tcex_roots : NConst mu ∉ ty_roots Tcex.
 Proof. simpl. unfold pt_root, bcs_roots. simpl. set_solver. Qed.
 
 Lemma force_in_Wm n : Vrel n Wm ∅ Tcex (Konst KForce).
 Proof.
-  apply Vrel_lolli_iff. right. exists KForce, (TLolli None None (TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tb)) (ty_inst [Pt (NConst mu) 0] Tb)).
+  apply Vrel_lolli_iff. right. exists KForce, (TLolli None None (TBox 1 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tb)) (sinst_ty (slist []) (ty_inst [Pt (NConst mu) 0] Tb))).
   split_and!; [done|done| |].
-  - apply (KTForce _ _ _ 1 (BCs [] (λ _, False)) None Tb [Pt (NConst mu) 0]); try done.
+  - apply (KTForce _ _ _ 1 0 (BCs [] (λ _, False)) None Tb [Pt (NConst mu) 0] []); try done.
     + intros g (f & [] & _).
     + constructor; [|constructor]. unfold pt_known. simpl. set_solver.
   - simpl. split_and!; try done.
@@ -182,8 +182,9 @@ Proof.
   intros H. apply Vrel_lolli_iff in H as [(eb & ? & _)|(k & T0 & Hk & _ & Hkt & Heq)]; [done|].
   simplify_eq. inversion Hkt; subst.
   simpl in Heq. destruct Heq as (_ & _ & Hbox & Hres).
-  destruct T as [| | | | |s y]; simpl in Hbox; try naive_solver.
-  destruct Hbox as (Hn & _ & Hub & _ & _ & Hs & _).
+  destruct ss; [|by destruct Hbox as (_ & ? & _)]. rewrite sinst_slist_nil in Hres.
+  destruct T as [| | | | |s y|]; simpl in Hbox; try naive_solver.
+  destruct Hbox as (Hn & _ & _ & Hub & _ & _ & Hs & _).
   destruct ub; simpl in Hub; [done|].
   destruct Hs as [->|(_ & Hg & _)]; [|by destruct Hg].
   destruct xs as [|x []]; simpl in *; try lia.

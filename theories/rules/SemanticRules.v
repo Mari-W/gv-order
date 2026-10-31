@@ -64,12 +64,24 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       sem_rules W Θ2 (Some T1 :: Δ2) F e1 T →
       sem_rules W Θ2 (Some T2 :: Δ2) F e2 T →
       sem_rules W Θ Δ F (Case e e1 e2) T
-  | sr_box Δ F e m C ub T :                              (* E-Exp *)
-      lenv_unl Δ → term_wf ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) e →
-      (∀ W1 xs F', wext W W1 → length xs = m → bcs_hold (w_eq W1) (w_lt W1) C xs →
+  | sr_box Δ F e m k C ub T :                            (* E-Exp *)
+      lenv_unl Δ → term_wf ∅ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ) e →
+      (∀ W1 xs ss F', wext W W1 → length xs = m → length ss = k → Forall hcontractive ss →
+         bcs_hold (w_eq W1) (w_lt W1) C xs →
          Forall (pt_known W1) xs → ub_below W1 (pt_inst (plist xs) <$> ub) F' →
-         sem_rules W1 ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) F' e (ty_inst xs T)) →
-      sem_rules W ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T))
+         sem_rules W1 ∅ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ) F' e
+           (sinst_ty (slist ss) (ty_inst xs T))) →
+      sem_rules W ∅ Δ F (EBox e) (TBox m k C (TLolli ub None TUnit T))
+  | sr_pack Θ Δ F e lb m C T xs :                        (* E-Pack *)
+      length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+      lb_below W lb (heads (ty_inst xs T)) →
+      sem_rules W Θ Δ F e (ty_inst xs T) → sem_rules W Θ Δ F e (TEx lb m C T)
+  | sr_open Θ Δ F e i lb m C T U :                       (* E-Open *)
+      Δ !! i = Some (Some (TEx lb m C T)) →
+      (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+         bcs_hold (w_eq W1) (w_lt W1) C xs →
+         sem_rules W1 Θ (<[i := Some (ty_inst xs T)]> Δ) F e U) →
+      sem_rules W Θ Δ F e U
   | sr_wk Θ Δ' Δ F e T :                                 (* E-Weak *)
       lenv_wk Δ' Δ → sem_rules W Θ Δ' F e T → sem_rules W Θ Δ F e T
   | sr_contract Θ Δ U F e T :                            (* E-Contract *)
@@ -80,13 +92,14 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       teqW W T T' → sem_rules W Θ Δ F e T → sem_rules W Θ Δ F e T'.
 
 (** E-Force is E-App at the constant force. *)
-Lemma sem_rules_force W Θ Δ F e m C ub T xs :
+Lemma sem_rules_force W Θ Δ F e m k C ub T xs ss :
   world_wf W → length xs = m → bcs_hold (w_eq W) (w_lt W) C xs → Forall (pt_known W) xs →
+  length ss = k → Forall hcontractive ss →
   ub_below W (pt_inst (plist xs) <$> ub) F →
-  sem_rules W Θ Δ F e (TBox m C (TLolli ub None TUnit T)) →
-  sem_rules W Θ Δ F (App EForce e) (ty_inst xs T).
+  sem_rules W Θ Δ F e (TBox m k C (TLolli ub None TUnit T)) →
+  sem_rules W Θ Δ F (App EForce e) (sinst_ty (slist ss) (ty_inst xs T)).
 Proof.
-  intros HW Hxs HC HK Hub He.
+  intros HW Hxs HC HK Hss Hsc Hub He.
   eapply (sr_app W Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ _ None).
   - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
   - apply lenv_split_nones_l.
@@ -113,7 +126,9 @@ Proof.
     |W Θ Δ F e T U H IH
     |W Θ Δ F e T U H IH
     |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ H0 IH0 H1 IH1 H2 IH2
-    |W Δ F e m C ub T HΔ Hwf Hb IH
+    |W Δ F e m k C ub T HΔ Hwf Hb IH
+    |W Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
+    |W Θ Δ F e i lb m C T U Hi Hb IH
     |W Θ Δ' Δ F e T Hwk H IH
     |W Θ Δ U F e T Hu H IH
     |W Θ Δ F e T T' Hteq H IH]; intros Ht0 HW.
@@ -131,7 +146,10 @@ Proof.
   - apply sem_typed_inj2. by apply IH.
   - eapply sem_typed_case; [done|done|by apply IH0|by apply IH1|by apply IH2].
   - apply sem_typed_box; [done|done|].
-    intros W1 xs F' HW1 Hxs HC HK Hub'. apply IH; [done..| |apply HW1]. by apply Hb.
+    intros W1 xs ss F' HW1 Hxs Hss Hsc HC HK Hub'. apply IH; [done..| |apply HW1]. by apply Hb.
+  - eapply sem_typed_pack; [done..|by apply IH].
+  - eapply sem_typed_open; [done|].
+    intros W1 xs HW1 Hxs HK HC. apply IH; [done..| |apply HW1]. by apply Hb.
   - eapply sem_typed_wk; [done|by apply IH].
   - apply sem_typed_contract; [done|by apply IH].
   - eapply sem_typed_tconv; [done|by apply IH].

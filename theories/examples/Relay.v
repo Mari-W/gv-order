@@ -85,10 +85,10 @@ Definition rel_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 rel_C (TLolli None None TUnit relay_body)).
+Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 0 rel_C (TLolli None None TUnit relay_body)).
 Proof.
   intros HW. unfold relay.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rel_C relay_body. cbn. unfold relay_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
@@ -113,7 +113,7 @@ Proof.
       first [right; hyp0 (sv 0) (pv 0 1)|right; apply (slt_po W _ (sv 0) HW)]. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rel_C None relay_body [pv 0 1; sv 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rel_C None relay_body [pv 0 1; sv 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply rel_call. by left.
     + apply Forall_cons. split; [|apply Forall_singleton];
@@ -123,10 +123,10 @@ Proof.
     exists (sv 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma prod_typed W F : world_wf W → typed W ∅ [] ∅ [] F prod (TBox 2 rel_C (TLolli None None TUnit prod_body)).
+Lemma prod_typed W F : world_wf W → typed W ∅ [] ∅ [] F prod (TBox 2 0 rel_C (TLolli None None TUnit prod_body)).
 Proof.
   intros HW. unfold prod.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rel_C prod_body. cbn. unfold prod_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
@@ -159,7 +159,7 @@ Proof.
       first [right; hyp0 (sv 0) (pv 0 1)|right; apply (slt_po W _ (sv 0) HW)]. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rel_C None prod_body [pv 0 1; sv 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rel_C None prod_body [pv 0 1; sv 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply rel_call. by left.
     + apply Forall_cons. split; [|apply Forall_singleton];
@@ -241,13 +241,13 @@ Proof.
     { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; by apply sl_w]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 2 rel_C None relay_body [pc 0 0; pc 1 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 2 rel_C None relay_body [pc 0 0; pc 1 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pc 1 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rel_C None prod_body [pc 0 0; pc 1 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rel_C None prod_body [pc 0 0; pc 1 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

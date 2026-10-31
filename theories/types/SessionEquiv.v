@@ -28,7 +28,11 @@ Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
       ub = ub' ∧ lb = lb' ∧ eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TProd T1 T2, TProd U1 U2 => eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TSum T1 T2, TSum U1 U2 => eqT ρ T1 U1 ∧ eqT ρ T2 U2
-  | TBox n C T1, TBox n' C' U1 => n = n' ∧ C = C' ∧ eqT ρ T1 U1
+  | TBox n k C T1, TBox n' k' C' U1 =>
+      (* a body over session variables compares on the nose: ≈ of open
+         session types is not closed under their instances (sharp edges 73) *)
+      n = n' ∧ k = k' ∧ C = C' ∧ match k with 0 => eqT ρ T1 U1 | S _ => T1 = U1 end
+  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ eqT ρ T1 U1
 
   | TSess s x, TSess r y => x = y ∧ ρ s r
   | _, _ => False
@@ -37,23 +41,23 @@ Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
 Lemma eqT_mono ρ ρ' T : ∀ U,
   (∀ s r, ρ s r → ρ' s r) → eqT ρ T U → eqT ρ' T U.
 Proof.
-  induction T; intros [] Hρ; simpl; naive_solver.
+  induction T; intros [] Hρ; simpl; repeat case_match; naive_solver.
 Qed.
 
 Lemma eqT_refl ρ T : (∀ s, ρ s s) → eqT ρ T T.
-Proof. intros Hρ. induction T; simpl; auto. Qed.
+Proof. intros Hρ. induction T; simpl; repeat case_match; auto. Qed.
 
 Lemma eqT_sym ρ T : ∀ U,
   (∀ s r, ρ s r → ρ r s) → eqT ρ T U → eqT ρ U T.
 Proof.
-  induction T; intros [] Hρ; simpl; naive_solver.
+  induction T; intros [] Hρ; simpl; repeat case_match; naive_solver.
 Qed.
 
 Lemma eqT_trans ρ T : ∀ U V,
   (∀ s r t, ρ s r → ρ r t → ρ s t) →
   eqT ρ T U → eqT ρ U V → eqT ρ T V.
 Proof.
-  induction T; intros [] []; simpl; naive_solver.
+  induction T; intros [] []; simpl; repeat case_match; naive_solver.
 Qed.
 
 (** ** Parts 2 and 3: the one-step unfoldings
@@ -65,55 +69,6 @@ Qed.
     and Vasconcelos (Fig. 5) is deterministic, so a bisimulation
     compares exactly these heads, the action of the head and the
     continuations. *)
-
-Inductive hview :=
-  | HSkip
-  | HRcv (m : nat) (T : ty) (s : sty)
-  | HSnd (m : nat) (T : ty) (s : sty)
-  | HVar (a : nat) (s : sty)
-  | HVarD (a : nat) (s : sty)
-  | HPlus (s1 s2 : sty)
-  | HWith (s1 s2 : sty)
-  | HEnd
-  | HStuck (u : sty).
-
-Definition view (u : sty) : hview :=
-  match u with
-  | SSkip => HSkip
-  | SSeq (SRcv m T) s => HRcv m T s
-  | SSeq (SSnd m T) s => HSnd m T s
-  | SSeq (SVar a) s => HVar a s
-  | SSeq (SVarD a) s => HVarD a s
-  | SPlus a b => HPlus a b
-  | SWith a b => HWith a b
-  | SEnd => HEnd
-  | u => HStuck u
-  end.
-
-Definition unview (h : hview) : sty :=
-  match h with
-  | HSkip => SSkip
-  | HRcv m T s => SSeq (SRcv m T) s
-  | HSnd m T s => SSeq (SSnd m T) s
-  | HVar a s => SSeq (SVar a) s
-  | HVarD a s => SSeq (SVarD a) s
-  | HPlus a b => SPlus a b
-  | HWith a b => SWith a b
-  | HEnd => SEnd
-  | HStuck u => u
-  end.
-
-Lemma unview_view u : unview (view u) = u.
-Proof. destruct u as [| | | | | | |o r| |]; try done. by destruct o. Qed.
-
-(** The head of S. *)
-Definition hd (s : sty) : hview := view (unfoldS s).
-
-Lemma unfoldS_unview s : unfoldS s = unview (hd s).
-Proof. unfold hd. by rewrite unview_view. Qed.
-
-Lemma hd_of s u : unfoldS s = u → hd s = view u.
-Proof. unfold hd. by intros ->. Qed.
 
 (** Reading a head off [hd]. *)
 Lemma unfoldS_rcv_iff s m T r : unfoldS s = SSeq (SRcv m T) r ↔ hd s = HRcv m T r.
@@ -323,10 +278,12 @@ Proof.
   - destruct (H 0) as (-> & -> & _). split_and!; [done|done| |].
     + apply IHT1. intros n. by destruct (H n) as (_ & _ & ? & _).
     + apply IHT2. intros n. by destruct (H n) as (_ & _ & _ & ?).
-  - destruct (H 0) as (-> & -> & _). split_and!; [done|done|].
-    apply IHT. intros n. by destruct (H n) as (_ & _ & ?).
-
+  - destruct (H 0) as (-> & -> & -> & H0). split_and!; [done|done|done|].
+    destruct k0; [|done].
+    apply IHT. intros n. by destruct (H n) as (_ & _ & _ & ?).
   - destruct (H 0) as (-> & _). split; [done|]. intros n. by destruct (H n).
+  - destruct (H 0) as (-> & -> & -> & _). split_and!; [done|done|done|].
+    apply IHT. intros n. by destruct (H n) as (_ & _ & _ & ?).
 Qed.
 
 (** ≈ is its own one-step unfolding. *)
@@ -580,19 +537,6 @@ Qed.
 
 (** Hereditary contractiveness: every type reachable from S by actions
     has a head. *)
-Definition hc_step (τ : sty → Prop) (s : sty) : Prop :=
-  match hd s with
-  | HSkip | HEnd => True
-  | HRcv _ _ s' | HSnd _ _ s' | HVar _ s' | HVarD _ s' => τ s'
-  | HPlus a b | HWith a b => τ a ∧ τ b
-  | HStuck _ => False
-  end.
-
-Fixpoint ahc (n : nat) (s : sty) : Prop :=
-  match n with 0 => True | S n' => hc_step (ahc n') s end.
-
-Definition hcontractive (s : sty) : Prop := ∀ n, ahc n s.
-
 Lemma hcontractive_contractive s : hcontractive s → contractive s.
 Proof.
   intros H. specialize (H 1). simpl in H. unfold hc_step in H.

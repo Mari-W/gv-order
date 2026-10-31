@@ -210,7 +210,7 @@ Fixpoint occ (x : nat) (e : expr) : bool :=
   | Case e e1 e2 => occ x e || occ (S x) e1 || occ (S x) e2
   end.
 
-Definition unlb (T : ty) : bool := match T with TBox _ _ _ => true | _ => false end.
+Definition unlb (T : ty) : bool := match T with TBox _ _ _ _ => true | _ => false end.
 
 Lemma unlb_unl T : unlb T = true → unlimited T.
 Proof. by destruct T. Qed.
@@ -495,6 +495,23 @@ Abbreviation pv a k := (Pt (NVar a) k).
 Definition Sa : sty := SMu (SSeq (SRcv 0 TUnit) (SVar 0)).
 Definition Sb : sty := SMu (SSeq (SSnd 0 TUnit) (SVar 0)).
 
+(** A box without session variables: its body is typed at the one
+    empty instance. *)
+Ltac box_k0 :=
+  let ss := fresh "ss" in let Hss := fresh "Hss" in
+  intros ss Hss ?; destruct ss; [|discriminate Hss]; rewrite sinst_slist_nil.
+
+(** E-Force at a box without session variables. *)
+Lemma typed_force0 W Φ Ψ Θ Δ F e m C ub T xs :
+  world_wf W → length xs = m → bcs_hold (seqs W Ψ) (slt W Ψ) C xs → Forall (skn W Ψ) xs →
+  ub_below_s W Ψ Φ (pt_inst (plist xs) <$> ub) F →
+  typed W Φ Ψ Θ Δ F e (TBox m 0 C (TLolli ub None TUnit T)) →
+  typed W Φ Ψ Θ Δ F (App EForce e) (ty_inst xs T).
+Proof.
+  intros. rewrite <-(sinst_slist_nil (ty_inst xs T)).
+  by eapply (typed_force W Φ Ψ Θ Δ F e m 0 C ub T xs []).
+Qed.
+
 (** Closed boxes: no outer point variable, so substitution fixes them. *)
 Lemma pinst_closed σ T : pscoped 0 T → pinst_ty σ T = T.
 Proof.
@@ -508,9 +525,9 @@ Ltac body_scope := cbn; repeat split; intros ? Hv; injection Hv; lia.
     the box type itself. *)
 Ltac box_open C T :=
   try change (bcs_inst (pshift 2) C) with C;
-  change (lenv_pinst (pshift 2) [Some (TBox 2 C (TLolli None None TUnit T))])
-    with [Some (pinst_ty (pshift 2) (TBox 2 C (TLolli None None TUnit T)))];
-  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
+  change (lenv_pinst (pshift 2) [Some (TBox 2 0 C (TLolli None None TUnit T))])
+    with [Some (pinst_ty (pshift 2) (TBox 2 0 C (TLolli None None TUnit T)))];
+  rewrite (pinst_closed _ (TBox 2 0 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
 
 Lemma skn_ids2 W Ψ C x y :
   (C, [pvar 0; pvar 1]) ∈ Ψ → pt_root x = NVar 0 → pt_root y = NVar 1 → Forall (skn W Ψ) [x; y].
@@ -526,7 +543,7 @@ Ltac skn_slot := right; eexists _, _, (pvar 0); split_and!; [by left|by left|don
 
 Ltac box_open1 C T :=
   try change (bcs_inst (pshift 1) C) with C;
-  change (lenv_pinst (pshift 1) [Some (TBox 1 C (TLolli None None TUnit T))])
-    with [Some (pinst_ty (pshift 1) (TBox 1 C (TLolli None None TUnit T)))];
-  rewrite (pinst_closed _ (TBox 1 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
+  change (lenv_pinst (pshift 1) [Some (TBox 1 0 C (TLolli None None TUnit T))])
+    with [Some (pinst_ty (pshift 1) (TBox 1 0 C (TLolli None None TUnit T)))];
+  rewrite (pinst_closed _ (TBox 1 0 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
 

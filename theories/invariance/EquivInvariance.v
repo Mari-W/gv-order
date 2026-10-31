@@ -16,7 +16,8 @@ From LRGV Require Export invariance.PointRenaming.
     both sides agree on the nose. *)
 Lemma eqT_pinst ρ T : ∀ U σ, eqT ρ T U → eqT ρ (pinst_ty σ T) (pinst_ty σ U).
 Proof.
-  induction T; intros [] σ; simpl; try done; naive_solver.
+  induction T; intros [] σ; simpl; try done; try naive_solver.
+  intros (<- & <- & <- & H). split_and!; [done..|]. destruct k; [auto|by subst].
 Qed.
 
 Lemma teq_ty_inst xs T U : teq T U → teq (ty_inst xs T) (ty_inst xs U).
@@ -29,8 +30,10 @@ Proof.
   - destruct H1 as (? & ? & ? & ?), H2 as (<- & <- & ? & ?). split_and!; eauto.
   - destruct H1, H2. split; eauto.
   - destruct H1, H2. split; eauto.
-  - destruct H1 as (-> & ? & ?), H2 as (<- & <- & ?). split_and!; eauto.
+  - destruct H1 as (-> & -> & ? & H1), H2 as (<- & <- & <- & H2). split_and!; eauto.
+    case_match; [eauto|congruence].
   - destruct H1 as [? ?], H2 as [<- ?]. split; [done|]. by eapply seq_trans.
+  - destruct H1 as (? & -> & ? & ?), H2 as (<- & <- & <- & ?). split_and!; eauto.
 Qed.
 
 (** The two halves have to be proved together: see the header. *)
@@ -53,13 +56,15 @@ Proof.
         by apply teq_sym.
       + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done|done|done|].
         eapply teqW_teq_r; [exact Ht|]. by split_and!. }
-  assert (∀ W Θ T T' eb, teq T T' → Vrel n W Θ T (Lam eb) → Vrel n W Θ T' (Lam eb)) as Hlam.
+  assert (∀ W Θ T T' eb, teq T T' → Vlam n W Θ T (Lam eb) → Vlam n W Θ T' (Lam eb)) as Hlam.
   { intros W Θ T T' eb Hteq HVv.
-    destruct (Vrel_lam_inv _ _ _ _ _ HVv) as (? & ? & ? & ? & ->). by eapply Hfun. }
+    apply Vlam_iff in HVv as [(? & ? & ? & ? & ->) HVv]. apply Vlam_iff. split.
+    - destruct T'; unfold teq in Hteq; simpl in Hteq; try done. eauto.
+    - by eapply Hfun. }
   assert (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
   { intros W Θ T. revert Θ.
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
-                   |m C0 T1 IHT1|s x];
+                   |m kk C0 T1 IHT1|s x|lb m C0 T1 IHT1] using ty_ind_ex;
       intros Θ T' v Hteq HVv; destruct T'; unfold teq in Hteq; simpl in Hteq; try done.
     - by eapply Hfun.
     - (* ⊗ *)
@@ -71,16 +76,22 @@ Proof.
       apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
     - (* □ *)
-      destruct Hteq as (<- & <- & Hteq).
+      destruct Hteq as (<- & <- & <- & Hteq).
       apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
       apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      intros W' xs HW Hxs HC HKn. eapply Hlam; [|by apply HK].
-      by apply teq_ty_inst.
+      intros W' xs ss HW Hxs Hss Hsc HC HKn. eapply Hlam; [|by apply HK].
+      destruct kk as [|kk]; [|subst; apply teq_refl].
+      destruct ss; [|done]. rewrite !sinst_slist_nil. by apply teq_ty_inst.
     - (* session: the protocol is stored up to ≈ already *)
       destruct Hteq as [<- Hs].
       apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hx).
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done|done| |done].
-      by eapply seq_trans. }
+      by eapply seq_trans.
+    - (* ∃ *)
+      destruct Hteq as (<- & <- & <- & Hteq).
+      apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
+      apply Vrel_ex_iff. split; [done|]. exists xs. split_and!; [done..|].
+      apply (IHT1 (plist xs) _ _ _ (teq_ty_inst xs _ _ Hteq) H). }
   split; [exact HV|].
   destruct n as [|n']; [intros; apply Erel_0|].
   intros W Θ T T' F e HW Hteq HE. revert T' HW Hteq.

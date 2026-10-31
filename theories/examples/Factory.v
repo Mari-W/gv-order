@@ -25,7 +25,7 @@ Lemma pvar_unknown W a : world_wf W → ¬ pt_known W (pvar a).
 Proof. intros HW Hk. destruct (wf_names_const _ HW _ Hk) as [b Hb]. done. Qed.
 
 Definition Tfac_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (pc 0 0)).
-Definition Tfac : ty := TBox 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
+Definition Tfac : ty := TBox 0 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
 
 Definition fac : expr :=
   EBox (Lam (LetU (Var 0) (LetP (App ENew EUnit)
@@ -42,7 +42,7 @@ Proof.
   intros HW Ha. unfold fac_main.
   tstep.
   { tstep; [tstep|].
-    apply (t_box W _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|].
+    apply (t_box W _ _ _ _ _ 0 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|box_k0].
     cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
     cbn. tstep; [tstep|]. cbn. tstep.
     { tstep; [tstep|apply (KTNew _ _ _ Sd (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
@@ -64,7 +64,7 @@ Proof.
   { intros P HP. unfold request, recvclose. tstep.
     - tstep; [| | |].
       + eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-        cbn. apply (typed_force W _ _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body []);
+        cbn. apply (typed_force0 W _ _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body []);
           [done|done| |constructor|apply ubs_none|tstep].
         apply bcs_hold_intro. by intros ? [].
       + apply KTRecv.
@@ -98,7 +98,7 @@ Qed.
     (a,0) ≺ (b,0) and (a,1) ≺ (b,0). *)
 
 Definition Tfa_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (Pt (NVar 0) 0)).
-Definition Tfa : ty := TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
+Definition Tfa : ty := TBox 1 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
 
 Definition faca : expr := fac.
 
@@ -110,7 +110,7 @@ Definition fa_main : expr :=
 Lemma faca_typed W F : world_wf W → typed W ∅ [] ∅ [] F faca Tfa.
 Proof.
   intros HW. unfold faca, fac, Tfa.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep| |done|apply ubs_none].
@@ -140,7 +140,7 @@ Proof.
     typed W ∅ [] ∅ [None; Some Tfa] (P, None) (App (App EForce (Var 1)) EUnit)
       (TSess (SSeq (SRcv 0 TUnit) SEnd) (pc a 0))) as Hreq.
   { intros P a Hk. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-    cbn. apply (typed_force W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None Tfa_body [pc a 0]);
+    cbn. apply (typed_force0 W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None Tfa_body [pc a 0]);
       [done|done| |constructor; [by left|constructor]|apply ubs_none|tstep].
     apply bcs_hold_intro. by intros ? []. }
   tstep.

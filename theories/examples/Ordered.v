@@ -19,7 +19,7 @@ Definition ord_body : ty :=
 
 Definition ord_C : bcs := BCs [] (λ g, g = FLt (pvar 0) (pvar 1)).
 
-Definition ord_ty : ty := TBox 2 ord_C (TLolli None None TUnit ord_body).
+Definition ord_ty : ty := TBox 2 0 ord_C (TLolli None None TUnit ord_body).
 
 Definition ord_box : expr :=
   EBox (Lam (LetP (Var 0)
@@ -28,8 +28,8 @@ Definition ord_box : expr :=
 Lemma ordered_typed W F : world_wf W → typed W ∅ [] ∅ [] F ord_box ord_ty.
 Proof.
   intros HW. unfold ord_box, ord_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
-  cbn. set (Bx := TBox 2 _ _).
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  cbn. set (Bx := TBox 2 0 _ _).
   set (Ψ := [(_, _)]). set (Tc := TSess SEnd (pvar 0)). set (Td := TSess SEnd (pvar 1)).
   unfold ord_body. fold Tc Td.
   apply (t_lam W _ _ _ _ _ _ _ _ _ _ 1); [set_solver|done|].
@@ -71,7 +71,7 @@ Lemma ordered_force W F a : world_wf W → pt_known W (Pt (NConst a) 0) →
   typed W ∅ [] ∅ [] (F, None) (App EForce ord_box)
     (ty_inst [Pt (NConst a) 0; Pt (NConst a) 1] ord_body).
 Proof.
-  intros HW Ha. apply typed_force with (m := 2) (C := ord_C) (ub := None); [done|done| | |done|].
+  intros HW Ha. apply typed_force0 with (m := 2) (C := ord_C) (ub := None); [done|done| | |done|].
   - apply bcs_hold_intro. intros g -> _. cbn.
     apply sl_w. apply (wf_lt_po_n W (Pt (NConst a) 0) 0 HW).
   - constructor; [left; exact Ha|constructor; [left; unfold pt_known in *; exact Ha|constructor]].

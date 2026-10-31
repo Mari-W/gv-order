@@ -73,10 +73,10 @@ Proof.
   intros Hg Hx. apply Forall_singleton. apply (skn_in W Ψ ch_C [pvar 0] (pvar 0)); [done|by left|done].
 Qed.
 
-Lemma rch_typed W F : world_wf W → typed W ∅ [] ∅ [] F rch (TBox 1 ch_C (TLolli None None TUnit rch_body)).
+Lemma rch_typed W F : world_wf W → typed W ∅ [] ∅ [] F rch (TBox 1 0 ch_C (TLolli None None TUnit rch_body)).
 Proof.
   intros HW. unfold rch.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 ch_C rch_body. cbn. unfold rch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
@@ -95,7 +95,7 @@ Proof.
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 ch_C None rch_body [chs]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None rch_body [chs]);
       [done|done| | |apply ubs_none|tstep].
     + apply ch_call. by left.
     + apply (skn_ch W _ chs); [by left|done].
@@ -104,10 +104,10 @@ Proof.
     exists (pt_shift 1 chs). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma sch_typed W F : world_wf W → typed W ∅ [] ∅ [] F sch (TBox 1 ch_C (TLolli None None TUnit sch_body)).
+Lemma sch_typed W F : world_wf W → typed W ∅ [] ∅ [] F sch (TBox 1 0 ch_C (TLolli None None TUnit sch_body)).
 Proof.
   intros HW. unfold sch.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 ch_C sch_body. cbn. unfold sch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (ch_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 0) chs) as Hlt.
@@ -135,7 +135,7 @@ Proof.
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 ch_C None sch_body [chs]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None sch_body [chs]);
       [done|done| | |apply ubs_none|tstep].
     + apply ch_call. by left.
     + apply (skn_ch W _ chs); [by left|done].
@@ -163,13 +163,13 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 ch_C None sch_body [pc 0 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None sch_body [pc 0 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pc 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 ch_C None rch_body [pc 0 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None rch_body [pc 0 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

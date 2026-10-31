@@ -5,7 +5,10 @@
     indexed by W. The fresh μ of E-Abs and E-Exp is a frame variable φ
     with the one hypothesis u ≺ φ (sharp edges 54, 56). E-Exp types the
     body once, with the box's ιs as point variables 0, …, m-1 (sharp
-    edges 57). *)
+    edges 57), and at every hereditarily contractive instance of its
+    session variables αs (sharp edges 73). E-Open opens an existential
+    hypothesis into fresh point variables 0, …, m-1 under its
+    constraint, scoped like a box body. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export static.PointSubst.
@@ -60,12 +63,25 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ2 (Some T1 :: Δ2) F e1 T →
       typed W Φ Ψ Θ2 (Some T2 :: Δ2) F e2 T →
       typed W Φ Ψ Θ Δ F (Case e e1 e2) T
-  | t_box Φ Ψ Δ F e m C ub T φ :                        (* E-Exp *)
+  | t_box Φ Ψ Δ F e m k C ub T φ :                      (* E-Exp *)
       lenv_unl Δ → φ ∉ dom Φ →
-      typed W (<[φ := ub]> (fhyps_pinst (pshift m) Φ))
-        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)]) ∅
-        (lenv_pinst (pshift m) (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) (∅, Some φ) e T →
-      typed W Φ Ψ ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T))
+      (∀ ss, length ss = k → Forall hcontractive ss →
+         typed W (<[φ := ub]> (fhyps_pinst (pshift m) Φ))
+           (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)]) ∅
+           (lenv_pinst (pshift m) (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ)) (∅, Some φ) e
+           (sinst_ty (slist ss) T)) →
+      typed W Φ Ψ ∅ Δ F (EBox e) (TBox m k C (TLolli ub None TUnit T))
+  | t_pack Φ Ψ Θ Δ F e lb m C T xs :                    (* E-Pack *)
+      length xs = m → Forall (skn W Ψ) xs → bcs_hold (seqs W Ψ) (slt W Ψ) C xs →
+      lb_below_h W Ψ lb (heads (ty_inst xs T)) →
+      typed W Φ Ψ Θ Δ F e (ty_inst xs T) → typed W Φ Ψ Θ Δ F e (TEx lb m C T)
+  | t_open Φ Ψ Θ Δ F e i lb m C T U :                   (* E-Open *)
+      Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T →
+      typed W (fhyps_pinst (pshift m) Φ)
+        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
+        (tenv_pinst (pshift m) Θ) (<[i := Some T]> (lenv_pinst (pshift m) Δ))
+        (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) →
+      typed W Φ Ψ Θ Δ F e U
   | t_wk Φ Ψ Θ Δ' Δ F e T :                             (* E-Weak *)
       lenv_wk Δ' Δ → typed W Φ Ψ Θ Δ' F e T → typed W Φ Ψ Θ Δ F e T
   | t_contract Φ Ψ Θ Δ U F e T :                        (* E-Contract *)
@@ -78,13 +94,14 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
 (** E-Force is E-App at the constant force. The instance must meet the
     box's constraint, every fact read from W and the hypotheses Ψ
     (sharp edges 58, 65). *)
-Lemma typed_force W Φ Ψ Θ Δ F e m C ub T xs :
+Lemma typed_force W Φ Ψ Θ Δ F e m k C ub T xs ss :
   world_wf W → length xs = m → bcs_hold (seqs W Ψ) (slt W Ψ) C xs → Forall (skn W Ψ) xs →
+  length ss = k → Forall hcontractive ss →
   ub_below_s W Ψ Φ (pt_inst (plist xs) <$> ub) F →
-  typed W Φ Ψ Θ Δ F e (TBox m C (TLolli ub None TUnit T)) →
-  typed W Φ Ψ Θ Δ F (App EForce e) (ty_inst xs T).
+  typed W Φ Ψ Θ Δ F e (TBox m k C (TLolli ub None TUnit T)) →
+  typed W Φ Ψ Θ Δ F (App EForce e) (sinst_ty (slist ss) (ty_inst xs T)).
 Proof.
-  intros HW Hxs HC HK Hub He.
+  intros HW Hxs HC HK Hss Hsc Hub He.
   eapply (t_app W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ _ None).
   - apply tenv_comp_empty_l, se_sym.
   - apply lenv_split_nones_l.
