@@ -533,3 +533,21 @@ Theorem st_mp2_deadlock_free : ∃ ef e', mtyped pc0 [] st_main MUnit ef e' ∧ 
 Proof.
   destruct st_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp2_deadlock_free.
 Qed.
+
+(** ** A partial send as a value (R1)
+
+    send v with v bound to x is λc. send x c. T-AbsLin gives the
+    closure the lower bound |x|, the priority of the payload, which is
+    repair R1. No rule of its own is needed. *)
+
+Lemma psend_typed Θ P pol a K p : snd_ok Θ p a P K →
+  ∃ e', mtyped Θ [Some (payty P)] (Lam (App ESend (Pair (Var 1) (Var 0))))
+          (MArr (MCh pol (sndQ pol a P K) p) (tprios (payty P) ++ []) [aeff p a] (MCh pol K (pnext p))) [] e'.
+Proof.
+  intros Hok. eexists. eapply m_lam.
+  eapply (m_sub _ _ _ _ _ ([] ++ [] ++ [aeff p a])); [|right; right; left; by exists [], []].
+  eapply (m_send _ _ [None; Some _] [Some _; None]); [msp| | |exact Hok|apply plt_nil|].
+  - apply m_var. split; [done|]. intros [|[|y]] t' Hy Hl; simpl in Hl; try done.
+  - apply m_var. split; [done|]. intros [|[|y]] t' Hy Hl; simpl in Hl; try done.
+  - apply plt_nil.
+Qed.
