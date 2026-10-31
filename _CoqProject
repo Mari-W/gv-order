@@ -60,3 +60,7 @@ theories/mp/MPTyping.v
 theories/mp/MPWorld.v
 theories/mp/MPTranslate.v
 theories/mp/MPExamples.v
+theories/mp/MP2Types.v
+theories/mp/MP2World.v
+theories/mp/MP2Typing.v
+theories/mp/MP2Translate.v

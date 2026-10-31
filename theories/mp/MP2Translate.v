@@ -1,0 +1,707 @@
+(** * From derivations of Mordido and Pérez to the static system, version 2
+
+    A derivation Θ | Γ ⊢ e : T ⋄ σs ⇝ e′ becomes a derivation of [typed]
+    at the priority world [Wmp] ([mp2_translate]). The lemma holds at
+    every instance ss of the session type variables, every anchor B
+    whose facts the context Ψ provides for every valuation of Θ
+    ([good]), every map pts of end points whose walks lie between the
+    floor and the ceiling of B ([pts_ok]), and every frame F above the
+    upper point of σs. [soundness] then makes every closed program of
+    type unit deadlock free ([mp2_deadlock_free]). *)
+
+From stdpp Require Import base gmap numbers.
+From LRGV Require Export mp.MP2Typing.
+
+Set Default Proof Using "All".
+
+(** ** Renaming past inserted entries *)
+
+Fixpoint ren_of (ins : list bool) (x : nat) : nat :=
+  match ins with
+  | [] => x
+  | false :: ins => match x with 0 => 0 | S x => S (ren_of ins x) end
+  | true :: ins => S (ren_of ins x)
+  end.
+
+Lemma rename_id e : rename (λ x, x) e = e.
+Proof.
+  induction e; simpl; f_equal; try done;
+    (etransitivity; [|eassumption]); apply rename_ext; by intros [|[|x]].
+Qed.
+
+Lemma ren_up ins e : rename (upren (ren_of ins)) e = rename (ren_of (false :: ins)) e.
+Proof. apply rename_ext. by intros [|x]. Qed.
+
+Lemma ren_up2 ins e :
+  rename (upren (upren (ren_of ins))) e = rename (ren_of (false :: false :: ins)) e.
+Proof. apply rename_ext. by intros [|[|x]]. Qed.
+
+(** ** Linear environments *)
+
+Section lenv.
+  Lemma unl_wk Δ : lenv_unl Δ → lenv_wk (lenv_nones Δ) Δ.
+  Proof.
+    induction Δ as [|o Δ IH]; intros H; simpl; [constructor|].
+    destruct (H o) as [->|(T & -> & HT)]; [by left| |].
+    - constructor. apply IH. intros o' Ho'. apply H. by right.
+    - apply lwk_drop; [done|]. apply IH. intros o' Ho'. apply H. by right.
+  Qed.
+
+  Lemma unl_heads Δ : lenv_unl Δ → lenv_heads Δ = ∅.
+  Proof.
+    induction Δ as [|o Δ IH]; intros H; simpl; [done|].
+    destruct (H o) as [->|(T & -> & HT)]; [by left| |].
+    - apply IH. intros o' Ho'. apply H. by right.
+    - destruct T; try done. simpl. rewrite IH; [set_solver|]. intros o' Ho'. apply H. by right.
+  Qed.
+
+  Lemma unl_pinst σ Δ : lenv_unl Δ → lenv_unl (lenv_pinst σ Δ).
+  Proof.
+    intros H o Ho. apply list_elem_of_fmap in Ho as (o' & -> & Ho').
+    destruct (H o' Ho') as [->|(T & -> & HT)]; [by left|right].
+    eexists. split; [done|]. by apply unlimited_pinst.
+  Qed.
+
+  Lemma nones_heads Δ : lenv_heads (lenv_nones Δ) = ∅.
+  Proof. induction Δ; simpl; done. Qed.
+
+  Lemma nones_unl Δ : lenv_unl (lenv_nones Δ).
+  Proof. intros o Ho. left. by apply lenv_empty_nones in Ho. Qed.
+
+  Lemma lenv_split_nones_r Δ : lenv_split Δ Δ (lenv_nones Δ).
+  Proof. apply lenv_split_comm, lenv_split_nones_l. Qed.
+
+  Lemma lonly_wk_unl x Δ :
+    (∀ y T, y ≠ x → Δ !! y = Some (Some T) → unlimited T) → lenv_wk (lonly x Δ) Δ.
+  Proof.
+    revert x. induction Δ as [|o Δ IH]; intros [|x] H; simpl; [constructor|constructor| |].
+    - constructor. apply unl_wk. intros o' Ho'. apply list_elem_of_lookup_1 in Ho' as [y Hy].
+      destruct o' as [T|]; [|by left]. right. exists T. split; [done|]. by apply (H (S y)).
+    - destruct o as [T|].
+      + apply lwk_drop; [by apply (H 0)|]. apply IH. intros y T' Hy HyT. apply (H (S y)); [lia|done].
+      + constructor. apply IH. intros y T' Hy HyT. apply (H (S y)); [lia|done].
+  Qed.
+
+  Lemma empty_heads Δ : lenv_empty Δ → lenv_heads Δ = ∅.
+  Proof. intros H. apply unl_heads. intros o Ho. left. by apply H. Qed.
+
+  Lemma empty_lookup Δ y T : lenv_empty Δ → Δ !! y = Some (Some T) → False.
+  Proof. intros H Hy. apply list_elem_of_lookup_2 in Hy. by apply H in Hy. Qed.
+
+  Lemma lenv_split_empty' Δ : lenv_empty Δ → lenv_split Δ Δ Δ.
+  Proof.
+    induction Δ as [|o Δ IH]; intros H; [constructor|].
+    rewrite (H o) by set_solver. constructor. apply IH. intros o' Ho'. apply H. set_solver.
+  Qed.
+End lenv.
+
+Section rules.
+  Context (W : world) (HW : world_wf W).
+
+  Lemma tv_var_unl Φ Ψ Δ F x T :
+    Δ !! x = Some (Some T) → (∀ y T', y ≠ x → Δ !! y = Some (Some T') → unlimited T') →
+    typed W Φ Ψ ∅ Δ F (Var x) T.
+  Proof. intros H1 H2. eapply t_wk; [by apply lonly_wk_unl|]. apply t_var. by apply lonly_only. Qed.
+
+  Lemma tv_unit_unl Φ Ψ Δ F : lenv_unl Δ → typed W Φ Ψ ∅ Δ F EUnit TUnit.
+  Proof. intros H. eapply t_wk; [by apply unl_wk|]. apply t_unit, lenv_empty_nones. Qed.
+
+  (** E-Exp for a closed constraint and no session variable. *)
+  Lemma tv_box Φ Ψ Δ F e m C ub T :
+    lenv_unl Δ → bc_env C = [] →
+    (∀ φ, φ ∉ dom Φ →
+      typed W (<[φ := ub]> (fhyps_pinst (pshift m) Φ)) (hyps_inst (pshift m) Ψ ++ [(C, ids m)]) ∅
+        (lenv_pinst (pshift m) (Some (TBox m 0 C (TLolli ub None TUnit T)) :: Δ)) (∅, Some φ) e T) →
+    typed W Φ Ψ ∅ Δ F (EBox e) (TBox m 0 C (TLolli ub None TUnit T)).
+  Proof.
+    intros HΔ HC H. set (φ := fresh (dom Φ)). apply (t_box W Φ Ψ Δ F e m 0 C ub T φ); [done|apply is_fresh|].
+    assert (bcs_inst (pshift m) C = C) as -> by (destruct C; simpl in *; by subst).
+    box_k0. apply H, is_fresh.
+  Qed.
+
+  Lemma tv_unitv Φ Ψ Δ F : lenv_unl Δ → typed W Φ Ψ ∅ Δ F unitv U.
+  Proof.
+    intros HΔ. apply tv_box; [done|done|]. intros φ _. apply tv_unit_unl.
+    apply unl_pinst. intros o [->|Ho]%elem_of_cons; [right; by eexists|by apply HΔ].
+  Qed.
+
+  Lemma tv_app_closed Φ Ψ Δ F f e ub T U' :
+    typed W Φ Ψ ∅ (lenv_nones Δ) (sf_union F (lenv_heads Δ)) f (TLolli ub None T U') →
+    typed W Φ Ψ ∅ Δ F e T →
+    ub_below_s W Ψ Φ ub F →
+    typed W Φ Ψ ∅ Δ F (App f e) U'.
+  Proof.
+    intros Hf He Hub. eapply (t_app W Φ Ψ ∅ ∅ ∅ Δ (lenv_nones Δ) Δ F _ _ ub None).
+    - by apply comp0.
+    - apply lenv_split_nones_l.
+    - done.
+    - by rewrite (tenv_heads0 W HW), union_empty_l_L.
+    - destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L.
+  Qed.
+
+  Lemma ubs_fresh Ψ Φ φ u : ub_below_s W Ψ (<[φ := u]> Φ) u (∅, Some φ).
+  Proof.
+    destruct u as [u|]; [|done]. split; simpl; [set_solver|].
+    intros φ' [=<-]. apply (fl_v (FCtx _ _ _)). simpl. by rewrite lookup_insert_eq.
+  Qed.
+
+  Lemma ubs_union Ψ Φ u F X :
+    ub_below_s W Ψ Φ u F → (∀ x, u = Some x → ∀ h, h ∈ X → slt W Ψ x h) →
+    ub_below_s W Ψ Φ u (sf_union F X).
+  Proof.
+    destruct u as [x|]; [|done]. intros [H1 H2] HX. split; [|done]. simpl.
+    intros y [Hy|Hy]%elem_of_union; [by apply H1|]. apply fl_points. by apply (HX x).
+  Qed.
+
+  Lemma ubs_lower Ψ Φ a b F :
+    (∀ x, a = Some x → ∃ y, b = Some y ∧ sle W Ψ x y) →
+    ub_below_s W Ψ Φ b F → ub_below_s W Ψ Φ a F.
+  Proof.
+    intros Hab Hb. destruct a as [x|]; [|done].
+    destruct (Hab x eq_refl) as (y & -> & Hxy). destruct Hb as [H1 H2].
+    destruct Hxy as [Hxy|Hxy]; split.
+    - intros z Hz. eapply (fl_eql (FCtx W Ψ Φ)); [exact Hxy|by apply H1].
+    - intros φ Hφ. eapply (fl_eql (FCtx W Ψ Φ)); [exact Hxy|by apply H2].
+    - intros z Hz. eapply (fl_trans (FCtx W Ψ Φ)); [apply fl_points; exact Hxy|by apply H1].
+    - intros φ Hφ. eapply (fl_trans (FCtx W Ψ Φ)); [apply fl_points; exact Hxy|by apply H2].
+  Qed.
+End rules.
+
+Lemma sf_union_empty F : sf_union F ∅ = F.
+Proof. destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L. Qed.
+
+Lemma slt_seqs_r W Ψ x y z : slt W Ψ x y → seqs W Ψ y z → slt W Ψ x z.
+Proof. intros H1 H2. by eapply (fl_eqr (FCtx W Ψ ∅)). Qed.
+
+Lemma slt_seqs_l W Ψ x y z : seqs W Ψ x y → slt W Ψ y z → slt W Ψ x z.
+Proof. intros H1 H2. by eapply (fl_eql (FCtx W Ψ ∅)). Qed.
+
+Lemma steq_lolli W Ψ ub lb T T' U U' :
+  steq W Ψ T T' → steq W Ψ U U' → steq W Ψ (TLolli ub lb T U) (TLolli ub lb T' U').
+Proof.
+  intros H1 H2. simpl. split_and!; [destruct ub; [apply se_refl|done]|destruct lb; [apply se_refl|done]|done|done].
+Qed.
+
+Lemma steq_sess W Ψ s s' x x' : seqs W Ψ x x' → seq s s' → steq W Ψ (TSess s x) (TSess s' x').
+Proof. intros H1 H2. by split. Qed.
+
+Lemma steq_prod W Ψ T T' U U' : steq W Ψ T T' → steq W Ψ U U' → steq W Ψ (TProd T U) (TProd T' U').
+Proof. intros H1 H2. by split. Qed.
+
+Lemma steq_sum W Ψ T T' U U' : steq W Ψ T T' → steq W Ψ U U' → steq W Ψ (TSum T U) (TSum T' U').
+Proof. intros H1 H2. by split. Qed.
+
+Lemma steq_refl W Ψ T : steq W Ψ T T.
+Proof. apply teq_steq, teq_refl. Qed.
+
+(** ** Session substitutions *)
+
+Lemma heads_sinst σ T : heads (sinst_ty σ T) = heads T.
+Proof. revert σ. induction T; intros σ; simpl; try done; by rewrite ?IHT1, ?IHT2. Qed.
+
+Lemma unlimited_sinst σ T : unlimited T → unlimited (sinst_ty σ T).
+Proof. destruct T; simpl; done. Qed.
+
+Lemma lenv_heads_sinst σ Δ : lenv_heads (fmap (M:=option) (sinst_ty σ) <$> Δ) = lenv_heads Δ.
+Proof. induction Δ as [|[T|] Δ IH]; simpl; [done| |exact IH]. rewrite heads_sinst. by f_equal. Qed.
+
+Lemma polS_sinst σ p s : sinst σ (polS p s) = polS p (sinst σ s).
+Proof. destruct p; simpl; [by rewrite dual_sinst|done]. Qed.
+
+(** A closed session type has no variable. *)
+
+Fixpoint rclosed_sinst_mut (Q : msty) : ∀ σ, rclosed Q → sinst σ (ers Q) = ers Q
+with rclosedp_sinst_mut (P : mpay) : ∀ σ, match P with MPUnit => True | MPChan _ Q _ _ => rclosed Q end →
+  sinst_ty σ (ersp P) = ersp P.
+Proof.
+  - destruct Q as [| A B | a P | a P | a A B | a A B | a w | Q0 | | j]; intros σ HQ; simpl in *; try done.
+    + destruct HQ. by rewrite !rclosed_sinst_mut.
+    + by rewrite rclosedp_sinst_mut.
+    + by rewrite rclosedp_sinst_mut.
+    + destruct HQ. by rewrite !rclosed_sinst_mut.
+    + destruct HQ. by rewrite !rclosed_sinst_mut.
+  - destruct P as [|pp Qp hp dp]; intros σ HP; simpl; [done|]. by rewrite polS_sinst, rclosed_sinst_mut.
+Qed.
+
+(** The body of a µ has the µ's own variable only. *)
+Fixpoint rbody_sinst (Q : msty) : ∀ σ, rbody Q → σ 0 = SVar 0 → sinst σ (ers Q) = ers Q.
+Proof.
+  destruct Q as [| A B | a P | a P | a A B | a A B | a w | Q0 | | j]; intros σ HQ H0; simpl in *; try done.
+  - destruct HQ. by rewrite !rbody_sinst.
+  - by rewrite rclosedp_sinst_mut.
+  - by rewrite rclosedp_sinst_mut.
+  - destruct HQ. by rewrite !rbody_sinst.
+  - destruct HQ. by rewrite !rbody_sinst.
+Qed.
+
+Lemma mrec_sinst σ S0 : rbody S0 → sinst σ (ers (MRec S0)) = ers (MRec S0).
+Proof. intros H. simpl. f_equal. by apply rbody_sinst. Qed.
+
+(** A scoped session type depends on the instance below its scope only. *)
+Fixpoint msc_sinst_ext (Q : msty) : ∀ k σ σ', msc k Q → (∀ j, j < k → σ j = σ' j) →
+  sinst σ (ers Q) = sinst σ' (ers Q)
+with mscp_sinst_ext (P : mpay) : ∀ k σ σ', match P with MPUnit => True | MPChan _ Q _ _ => msc k Q end →
+  (∀ j, j < k → σ j = σ' j) → sinst_ty σ (ersp P) = sinst_ty σ' (ersp P).
+Proof.
+  - destruct Q as [| A B | a P | a P | a A B | a A B | a w | Q0 | | j]; intros k σ σ' HQ H; simpl in *; try done.
+    + destruct HQ. by rewrite !(msc_sinst_ext _ k σ σ').
+    + by rewrite (mscp_sinst_ext P k σ σ').
+    + by rewrite (mscp_sinst_ext P k σ σ').
+    + destruct HQ. by rewrite !(msc_sinst_ext _ k σ σ').
+    + destruct HQ. by rewrite !(msc_sinst_ext _ k σ σ').
+    + f_equal. rewrite !rbody_sinst; done.
+    + by apply H.
+  - destruct P as [|pp Qp hp dp]; intros k σ σ' HP H; simpl; [done|].
+    by rewrite !polS_sinst, (msc_sinst_ext Qp k σ σ').
+Qed.
+
+Lemma tsub_rbody τ Q : rbody Q → tsub τ Q = Q.
+Proof.
+  assert (∀ Q, rclosed Q → tsub τ Q = Q) as Hc.
+  { fix IH 1. intros [| A B | a P | a P | a A B | a A B | a w | Q0 | | j] HQ; simpl in *; try done;
+      repeat match goal with H : _ ∧ _ |- _ => destruct H end; try (by rewrite !IH).
+    - destruct P as [|pp Qp hp dp]; [done|]. simpl. by rewrite IH.
+    - destruct P as [|pp Qp hp dp]; [done|]. simpl. by rewrite IH. }
+  revert Q. fix IH 1. intros [| A B | a P | a P | a A B | a A B | a w | Q0 | | j] HQ; simpl in *; try done;
+    repeat match goal with H : _ ∧ _ |- _ => destruct H end; try (by rewrite !IH).
+  - destruct P as [|pp Qp hp dp]; [done|]. simpl. by rewrite Hc.
+  - destruct P as [|pp Qp hp dp]; [done|]. simpl. by rewrite Hc.
+Qed.
+
+(** Instantiating the variables by τ, then by σ, is instantiating them
+    by the instances of τ under σ. *)
+Fixpoint ers_tsub (Q : msty) : ∀ τ σ, msc (length τ) Q →
+  sinst σ (ers (tsub τ Q)) = sinst (slist ((λ q, sinst σ (ers q)) <$> τ)) (ers Q)
+with ersp_tsub (P : mpay) : ∀ τ σ, match P with MPUnit => True | MPChan _ Q _ _ => msc (length τ) Q end →
+  sinst_ty σ (ersp (tsubp τ P)) = sinst_ty (slist ((λ q, sinst σ (ers q)) <$> τ)) (ersp P).
+Proof.
+  - destruct Q as [| A B | a P | a P | a A B | a A B | a w | Q0 | | j]; intros τ σ HQ; simpl in *; try done.
+    + destruct HQ. by rewrite !ers_tsub.
+    + rewrite ersp_tsub by done. f_equal. by destruct P.
+    + rewrite ersp_tsub by done. f_equal. by destruct P.
+    + destruct HQ. by rewrite !ers_tsub.
+    + destruct HQ. by rewrite !ers_tsub.
+    + rewrite tsub_rbody by done. rewrite !rbody_sinst; done.
+    + unfold slist. rewrite list_lookup_fmap.
+      destruct (lookup_lt_is_Some_2 τ j HQ) as [q Hq]. by rewrite Hq.
+  - destruct P as [|pp Qp hp dp]; intros τ σ HP; simpl; [done|].
+    by rewrite !polS_sinst, ers_tsub.
+Qed.
+
+Lemma iter_sty_up_lt k σ j : j < k → Nat.iter k sty_up σ j = SVar j.
+Proof.
+  revert j. induction k as [|k IH]; intros j Hj; [lia|]. simpl.
+  destruct j as [|j]; [done|]. unfold sty_up. simpl. unfold compose. rewrite IH by lia. done.
+Qed.
+
+Lemma msc_sinst_id Q k σ : msc k Q → (∀ j, j < k → σ j = SVar j) → sinst σ (ers Q) = ers Q.
+Proof.
+  intros HQ H. rewrite (msc_sinst_ext Q k σ SVar); [|done|done].
+  apply sinst_id_mut. done.
+Qed.
+
+(** ** Translated types under a session substitution *)
+
+Definition trs (ss : list sty) (B : point) (pts : nat → point) (T : mty) : ty :=
+  sinst_ty (slist ss) (tr B pts T).
+
+(** A type scoped below k is fixed by an instance that fixes the
+    variables below k. Closed abstractions are fixed by every instance. *)
+Lemma tr_sinst_id k σ B pts T :
+  tpure k T → (∀ j, j < k → σ j = SVar j) → sinst_ty σ (tr B pts T) = tr B pts T.
+Proof.
+  revert k σ B pts. induction T as [|p Q [h d|n w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k' Qa Qr];
+    intros k σ B pts HT Hσ; simpl in *; try done.
+  - by rewrite polS_sinst, (msc_sinst_id Q k).
+  - destruct HT as (H1 & H2 & _). by rewrite (IH1 k), (IH2 k).
+  - destruct HT as [H1 H2]. do 4 f_equal; [apply (IH1 (pc_nt Θ))|apply (IH2 (pc_nt Θ))]; try done;
+      intros j Hj; by apply iter_sty_up_lt.
+  - destruct HT as [H1 H2]. rewrite !polS_sinst.
+    rewrite !(msc_sinst_id _ k'); try done; intros j Hj; by apply iter_sty_up_lt.
+Qed.
+
+Lemma tr_closed σ B pts T : mun T → tpure 0 T → sinst_ty σ (tr B pts T) = tr B pts T.
+Proof. intros _ HT. apply (tr_sinst_id 0); [done|lia]. Qed.
+
+Lemma trs_un ss ss' B B' pts pts' T : mun T → tpure 0 T → trs ss B pts T = trs ss' B' pts' T.
+Proof. intros H1 H2. unfold trs. rewrite !tr_closed by done. by apply tr_un. Qed.
+
+Lemma trs_unlimited ss B pts T : mun T → unlimited (trs ss B pts T).
+Proof. intros H. apply unlimited_sinst. by apply tr_unlimited. Qed.
+
+Lemma heads_trs ss B pts T : heads (trs ss B pts T) = heads (tr B pts T).
+Proof. apply heads_sinst. Qed.
+
+(** ** The environment relation *)
+
+Inductive erel (B : point) (ss : list sty) (pts : nat → point) : list bool → menv → lenv → Prop :=
+  | er_nil : erel B ss pts [] [] []
+  | er_keep o ins Γ Δ : erel B ss pts ins Γ Δ →
+      erel B ss pts (false :: ins) (o :: Γ) (fmap (trs ss B pts) o :: Δ)
+  | er_skip o ins Γ Δ :
+      (o = None ∨ ∃ T, o = Some T ∧ unlimited T) →
+      erel B ss pts ins Γ Δ → erel B ss pts (true :: ins) Γ (o :: Δ).
+
+Section erel.
+  Context (B : point) (ss : list sty) (pts : nat → point).
+
+  Lemma erel_split ins Γ Δ Γ1 Γ2 :
+    erel B ss pts ins Γ Δ → msplit Γ Γ1 Γ2 →
+    ∃ Δ1 Δ2, lenv_split Δ Δ1 Δ2 ∧ erel B ss pts ins Γ1 Δ1 ∧ erel B ss pts ins Γ2 Δ2.
+  Proof.
+    intros H. revert Γ1 Γ2. induction H as [|o ins Γ Δ H IH|o ins Γ Δ Ho H IH]; intros Γ1 Γ2 Hs.
+    - inversion Hs; subst. exists [], []. split_and!; constructor.
+    - inversion Hs as [|? ? ? Hs'|t ? ? ? Hs'|t ? ? ? Hs'|t ? ? ? Ht Hs']; subst;
+        destruct (IH _ _ Hs') as (Δ1 & Δ2 & Hd & H1 & H2).
+      + exists (None :: Δ1), (None :: Δ2). split_and!; [simpl; by constructor|apply (er_keep _ _ _ None)..]; done.
+      + exists (Some (trs ss B pts t) :: Δ1), (None :: Δ2). split_and!; [simpl; by constructor
+          |apply (er_keep _ _ _ (Some t))|apply (er_keep _ _ _ None)]; done.
+      + exists (None :: Δ1), (Some (trs ss B pts t) :: Δ2). split_and!; [simpl; by constructor
+          |apply (er_keep _ _ _ None)|apply (er_keep _ _ _ (Some t))]; done.
+      + exists (Some (trs ss B pts t) :: Δ1), (Some (trs ss B pts t) :: Δ2). split_and!;
+          [apply lsplit_unl; [by apply trs_unlimited|done]|apply (er_keep _ _ _ (Some t))..]; done.
+    - destruct (IH _ _ Hs) as (Δ1 & Δ2 & Hd & H1 & H2). exists (o :: Δ1), (o :: Δ2).
+      split_and!; [|by constructor..].
+      destruct Ho as [->|(T & -> & HT)]; [by constructor|by apply lsplit_unl].
+  Qed.
+
+  Lemma erel_lookup ins Γ Δ x o :
+    erel B ss pts ins Γ Δ → Γ !! x = Some o → Δ !! ren_of ins x = Some (fmap (trs ss B pts) o).
+  Proof.
+    intros H. revert x. induction H as [|o' ins Γ Δ H IH|o' ins Γ Δ Ho H IH]; intros x Hx; simpl.
+    - done.
+    - destruct x; simpl in *; [by simplify_eq|by apply IH].
+    - by apply IH.
+  Qed.
+
+  Lemma erel_inv ins Γ Δ y T :
+    erel B ss pts ins Γ Δ → Δ !! y = Some (Some T) →
+    (∃ x t, y = ren_of ins x ∧ Γ !! x = Some (Some t) ∧ T = trs ss B pts t) ∨ unlimited T.
+  Proof.
+    intros H. revert y. induction H as [|o' ins Γ Δ H IH|o' ins Γ Δ Ho H IH]; intros y Hy; simpl.
+    - done.
+    - destruct y; simpl in *.
+      + destruct o' as [t|]; simpl in Hy; simplify_eq. left. by exists 0, t.
+      + destruct (IH y Hy) as [(x & t & -> & Hx & ->)|]; [|by right]. left. by exists (S x), t.
+    - destruct y; simpl in *.
+      + simplify_eq. destruct Ho as [|(T' & ? & ?)]; [done|]. simplify_eq. by right.
+      + destruct (IH y Hy) as [(x & t & -> & Hx & ->)|]; [|by right]. left. by exists x, t.
+  Qed.
+
+  Lemma erel_var ins Γ Δ W Φ Ψ F x t :
+    world_wf W → erel B ss pts ins Γ Δ → menv_only_un Γ x t →
+    typed W Φ Ψ ∅ Δ F (Var (ren_of ins x)) (trs ss B pts t).
+  Proof.
+    intros HW H [Hx Hun]. apply tv_var_unl; [done|by apply (erel_lookup _ Γ _ _ (Some t))|].
+    intros y T Hy HyT. destruct (erel_inv _ _ _ _ _ H HyT) as [(x' & t' & -> & Hx' & ->)|]; [|done].
+    apply trs_unlimited, (Hun x'); [|done]. intros ->. done.
+  Qed.
+
+  Lemma erel_unl ins Γ Δ : erel B ss pts ins Γ Δ → menv_un Γ → lenv_unl Δ.
+  Proof.
+    intros H HΓ o Ho. apply list_elem_of_lookup_1 in Ho as [y Hy].
+    destruct o as [T|]; [|by left]. right. exists T. split; [done|].
+    destruct (erel_inv _ _ _ _ _ H Hy) as [(x & t & -> & Hx & ->)|]; [|done].
+    apply trs_unlimited, HΓ. by eapply list_elem_of_lookup_2.
+  Qed.
+
+  Lemma erel_heads ins Γ Δ h :
+    erel B ss pts ins Γ Δ → h ∈ lenv_heads Δ → ∃ t, Some t ∈ Γ ∧ h ∈ heads (tr B pts t).
+  Proof.
+    intros H. induction H as [|o ins Γ Δ H IH|o ins Γ Δ Ho H IH]; simpl; intros Hh.
+    - set_solver.
+    - destruct o as [t|]; simpl in Hh.
+      + apply elem_of_union in Hh as [Hh|Hh].
+        * exists t. split; [by left|]. by rewrite <-(heads_trs ss).
+        * destruct (IH Hh) as (t' & ? & ?). exists t'. split; [by right|done].
+      + destruct (IH Hh) as (t' & ? & ?). exists t'. split; [by right|done].
+    - destruct Ho as [->|(T & -> & HT)]; simpl in Hh; [by apply IH|].
+      destruct T; try done. simpl in Hh. apply IH. set_solver.
+  Qed.
+End erel.
+
+(** ** Points of a good anchor *)
+
+Lemma rpt_root B r : isroot B → pt_root (rpt B r) = pt_name B.
+Proof. intros [_ Hr]. unfold rpt, pt_root, pt_slot. simpl. exact Hr. Qed.
+
+Section facts.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
+
+  Lemma den_rpt v ts r : den (ianc B v ts) (rpt B r) = dsl (DAnc v ts) (encode_nat r).
+  Proof. unfold rpt. rewrite den_slot, den_ianc; [done|apply HB]. Qed.
+
+  Lemma den_anc v ts σ τ : den (ianc B v ts) (rpt B (RAnc σ τ)) = DAnc (evalZ v <$> σ) (mclose v ts <$> τ).
+  Proof. rewrite den_rpt. simpl. by rewrite decode_encode_nat. Qed.
+  Lemma den_ch v ts Q h d : den (ianc B v ts) (rpt B (RCh Q h d)) = DCh (mclose v ts Q) (pclose v h) d.
+  Proof. rewrite den_rpt. simpl. by rewrite decode_encode_nat. Qed.
+  Lemma den_lo v ts l : den (ianc B v ts) (rpt B (RLo l)) = DLo (xminlb v ts l) (length l).
+  Proof. rewrite den_rpt. simpl. by rewrite decode_encode_nat. Qed.
+  Lemma den_hi v ts l : den (ianc B v ts) (rpt B (RHi l)) = DHi (xmaxl v l) (hlen l).
+  Proof. rewrite den_rpt. simpl. by rewrite decode_encode_nat. Qed.
+
+  Lemma rank_ch v ts Q h d :
+    rank (den (ianc B v ts) (rpt B (RCh Q h d))) = xrk (cprio v ts Q h d) 1 (KT 1).
+  Proof. by rewrite den_ch. Qed.
+
+  Lemma slt_rpt r r' :
+    (∀ v ts, models Θ v ts → rlt (rank (den (ianc B v ts) (rpt B r))) (rank (den (ianc B v ts) (rpt B r')))) →
+    slt Wmp Ψ (rpt B r) (rpt B r').
+  Proof. intros H. apply (gd_lt _ _ _ HB); [by apply rpt_root, HB|by apply rpt_root, HB|done]. Qed.
+
+  Lemma seqs_rpt r r' :
+    (∀ v ts, models Θ v ts → oeq (den (ianc B v ts) (rpt B r)) (den (ianc B v ts) (rpt B r'))) →
+    seqs Wmp Ψ (rpt B r) (rpt B r').
+  Proof. intros H. apply (gd_eq _ _ _ HB); [by apply rpt_root, HB|by apply rpt_root, HB|done]. Qed.
+
+  Lemma rpt_known r : skn Wmp Ψ (rpt B r).
+  Proof. apply (gd_kn _ _ _ HB). by apply rpt_root, HB. Qed.
+End facts.
+
+(** ** Walks of a channel stay between the floor and the ceiling *)
+
+Definition low (d : dn) : Prop := match d with DCh _ _ _ | DJ _ => True | _ => False end.
+
+Lemma low_jnk d : low d → low (jnk (rank d)).
+Proof. destruct d as [| Q h dd | | | j |]; simpl; try done; intros _; by destruct (hext _). Qed.
+
+Lemma low_guard d d' : low d → low d' → low (guard d d').
+Proof. intros H H'. unfold guard. case_decide; [done|]. by apply low_jnk. Qed.
+
+Lemma low_walk d u : low d → low (dwalk d u).
+Proof.
+  revert d. induction u as [|[|b|i] u IH]; intros d Hd; simpl; [done| | |]; apply IH.
+  - apply low_guard; [done|]. destruct d; simpl; try done. destruct (hdt _ _ _) as [[[]|] ?]; done.
+  - apply low_guard; [done|]. destruct d; simpl; try done. destruct (hdt _ _ _) as [[[]|] ?]; done.
+  - destruct d as [| Q h dd | | | j |]; simpl; try done.
+    destruct i; [|done]. destruct (hdt _ _ _) as [[[a [|? ? ? ?] K|a [|? ? ? ?] K| | | | |]|] ?]; done.
+Qed.
+
+Lemma low_ceil d : low d → rlt (rank d) KH.
+Proof. destruct d as [| Q h dd | | | j |]; simpl; try done. intros _. by destruct (hext _). Qed.
+
+Lemma low_floor d : low d → rlt (KB (-1)) (rank d).
+Proof. destruct d as [| Q h dd | | | j |]; simpl; try done. intros _. destruct (hext _); simpl; lia. Qed.
+
+Definition ceil (B : point) : point := rpt B (RHi [PTop]).
+Definition floor (B : point) : point := rpt B (RLo [LP PBot]).
+
+Section ceil.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
+
+  Lemma rank_ceil v ts : rank (den (ianc B v ts) (ceil B)) = KH.
+  Proof. unfold ceil. by rewrite (den_hi Ψ Θ B HB). Qed.
+
+  Lemma rank_floor v ts : rank (den (ianc B v ts) (floor B)) = KB (-1).
+  Proof. unfold floor. by rewrite (den_lo Ψ Θ B HB). Qed.
+
+  Lemma ch_ceil Q h d u :
+    slt Wmp Ψ (mwalk (rpt B (RCh Q h d)) u) (ceil B) ∧ slt Wmp Ψ (floor B) (mwalk (rpt B (RCh Q h d)) u).
+  Proof.
+    assert (pt_root (mwalk (rpt B (RCh Q h d)) u) = pt_name B) as Hr.
+    { rewrite <-(rpt_root B (RCh Q h d)) by apply HB.
+      generalize (rpt B (RCh Q h d)). clear. induction u as [|[] u IH]; intros x; simpl; [done|..];
+        rewrite IH; done. }
+    assert (∀ v ts, low (den (ianc B v ts) (mwalk (rpt B (RCh Q h d)) u))) as Hl.
+    { intros v ts. rewrite den_mwalk, (den_ch Ψ Θ B HB). by apply low_walk. }
+    split; [apply (gd_lt _ _ _ HB); [done|by apply rpt_root, HB|]|apply (gd_lt _ _ _ HB); [by apply rpt_root, HB|done|]];
+      intros v ts _; [rewrite rank_ceil; by apply low_ceil|rewrite rank_floor; by apply low_floor].
+  Qed.
+
+  (** Every upper point with ⊤ is the ceiling. *)
+  Lemma ceil_top ef : PTop ∈ ef → seqs Wmp Ψ (ceil B) (rpt B (RHi ef)).
+  Proof.
+    intros Ht. apply (seqs_rpt Ψ Θ B HB). intros v ts _. rewrite !(den_hi Ψ Θ B HB).
+    assert (xmaxl v ef = XT) as ->.
+    { clear -Ht. induction ef as [|ρ ef IH]; [by apply elem_of_nil in Ht|].
+      apply elem_of_cons in Ht as [<-|Ht]; simpl; [by destruct (xmaxl v ef)|].
+      rewrite IH by done. by destruct (evalp v ρ). }
+    unfold hlen. rewrite (bool_decide_eq_true_2 (PTop ∈ ef)) by done. simpl. apply oeq_refl.
+  Qed.
+End ceil.
+
+(** End points: known, between the floor and the ceiling. *)
+Definition pts_ok (Ψ : hyps) (B : point) (pts : nat → point) : Prop :=
+  ∀ n, skn Wmp Ψ (pts n) ∧
+       ∀ u, slt Wmp Ψ (mwalk (pts n) u) (ceil B) ∧ slt Wmp Ψ (floor B) (mwalk (pts n) u).
+
+(** ** Comparisons of ranks *)
+
+Lemma xmaxl_app v l1 l2 : xmaxl v (l1 ++ l2) = xmax (xmaxl v l1) (xmaxl v l2).
+Proof.
+  induction l1 as [|ρ l1 IH]; simpl; [by destruct (xmaxl v l2)|].
+  rewrite IH. destruct (evalp v ρ), (xmaxl v l1), (xmaxl v l2); simpl; f_equal; lia.
+Qed.
+
+Lemma xminlb_app v ts l1 l2 : xminlb v ts (l1 ++ l2) = xmin (xminlb v ts l1) (xminlb v ts l2).
+Proof.
+  induction l1 as [|ρ l1 IH]; simpl; [by destruct (xminlb v ts l2)|].
+  rewrite IH. destruct (evlb v ts ρ), (xminlb v ts l1), (xminlb v ts l2); simpl; f_equal; lia.
+Qed.
+
+Lemma xmaxl_top v l : PTop ∈ l → xmaxl v l = XT.
+Proof.
+  induction l as [|ρ l IH]; intros H; [by apply elem_of_nil in H|].
+  apply elem_of_cons in H as [<-|H]; simpl; [by destruct (xmaxl v l)|].
+  rewrite IH by done. by destruct (evalp v ρ).
+Qed.
+
+Lemma xmaxl_notop v l : PTop ∉ l → xmaxl v l ≠ XT.
+Proof.
+  induction l as [|ρ l IH]; intros H; simpl; [done|].
+  assert (ρ ≠ PTop) by set_solver. assert (xmaxl v l ≠ XT) by set_solver.
+  destruct ρ, (xmaxl v l); simpl; done.
+Qed.
+
+Lemma xle_max_l a b : xle a (xmax a b).
+Proof. destruct a, b; simpl; lia. Qed.
+Lemma xle_max_r a b : xle b (xmax a b).
+Proof. destruct a, b; simpl; lia. Qed.
+Lemma xmin_le_l a b : xle (xmin a b) a.
+Proof. destruct a, b; simpl; lia. Qed.
+Lemma xmin_le_r a b : xle (xmin a b) b.
+Proof. destruct a, b; simpl; lia. Qed.
+Lemma xle_trans a b c : xle a b → xle b c → xle a c.
+Proof. destruct a, b, c; simpl; lia. Qed.
+
+Lemma xminlb_le v ts l i : i ∈ l → xle (xminlb v ts l) (evlb v ts i).
+Proof.
+  induction l as [|i' l IH]; intros Hi; [by apply elem_of_nil in Hi|].
+  apply elem_of_cons in Hi as [->|Hi]; simpl; [apply xmin_le_l|].
+  eapply xle_trans; [apply xmin_le_r|by apply IH].
+Qed.
+
+Lemma xlt_minlb v ts a l : (∀ i, i ∈ l → xlt a (evlb v ts i)) → l = [] ∨ xlt a (xminlb v ts l).
+Proof.
+  induction l as [|i l IH]; intros H; [by left|right]. simpl.
+  assert (xlt a (evlb v ts i)) as H1 by (apply H; by left).
+  destruct (IH (λ i' Hi', H i' (list_elem_of_further _ _ _ Hi'))) as [->|H2].
+  - simpl. by destruct (evlb v ts i).
+  - destruct a, (evlb v ts i), (xminlb v ts l); simpl in *; lia.
+Qed.
+
+Lemma xmaxl_in v a l : a ∈ l → xle (evalp v a) (xmaxl v l).
+Proof.
+  induction l as [|b l IH]; intros H; [by apply elem_of_nil in H|].
+  apply elem_of_cons in H as [->|H]; simpl; [apply xle_max_l|].
+  eapply xle_trans; [by apply IH|apply xle_max_r].
+Qed.
+
+Lemma xlt_bot x : ¬ xlt x XB.
+Proof. destruct x; simpl; tauto. Qed.
+
+Lemma xmaxl_single v a : xmaxl v [a] = evalp v a.
+Proof. simpl. by destruct (evalp v a). Qed.
+
+Lemma hlen_top l : PTop ∈ l → hlen l = 0.
+Proof. intros H. unfold hlen. by rewrite bool_decide_eq_true_2. Qed.
+Lemma hlen_notop l : PTop ∉ l → hlen l = length l.
+Proof. intros H. unfold hlen. by rewrite bool_decide_eq_false_2. Qed.
+
+Lemma hi_hi a b n n' : xle a b → b ≠ XT → n < n' → rlt (rank (DHi a n)) (rank (DHi b n')).
+Proof. destruct a, b; simpl; try done; lia. Qed.
+
+Lemma hi_hi_lt a b n n' : xlt a b → rlt (rank (DHi a n)) (rank (DHi b n')).
+Proof. destruct a, b; simpl; try done; lia. Qed.
+
+Lemma hi_chan a n e : xlt a e → rlt (rank (DHi a n)) (xrk e 1 (KT 1)).
+Proof. destruct a, e; simpl; lia. Qed.
+
+Lemma hi_lo v ts a n l : (∀ i, i ∈ l → xlt a (evlb v ts i)) →
+  rlt (rank (DHi a n)) (rank (DLo (xminlb v ts l) (length l))).
+Proof.
+  intros H. destruct (xlt_minlb v ts a l H) as [->|H2]; [destruct a; simpl; lia|].
+  destruct a, (xminlb v ts l), (length l); simpl in *; lia.
+Qed.
+
+Lemma lo_chan m n e : xle m e → rlt (rank (DLo m (S n))) (xrk e 1 (KT 1)).
+Proof. destruct m, e; simpl; lia. Qed.
+
+Lemma lo_lo m m' n n' : xle m m' → n' < n → rlt (rank (DLo m n)) (rank (DLo m' n')).
+Proof. destruct m, m', n, n'; simpl; lia. Qed.
+
+Lemma xrk_lt a e : xlt a e → rlt (xrk a 1 (KT 1)) (xrk e 1 (KT 1)).
+Proof. destruct a, e; simpl; lia. Qed.
+
+Lemma ch_hi a x n : pfin a → xle (evalp [] a) x → rlt (xrk (evalp [] a) 1 (KT 1)) (rank (DHi x n)).
+Proof. destruct a; simpl; try done; destruct x; simpl; lia. Qed.
+
+Lemma evalp_pclose v ρ : evalp [] (pclose v ρ) = evalp v ρ.
+Proof. by destruct ρ. Qed.
+
+(** ** Effects, lower bounds and the environment *)
+
+Section heads.
+  Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
+
+  Lemma hi_le ef ef' x :
+    hle Θ ef ef' → hiz B ef = Some x → ∃ y, hiz B ef' = Some y ∧ sle Wmp Ψ x y.
+  Proof.
+    intros Hle Hx. destruct ef as [|ρ ef0]; [done|]. injection Hx as <-. set (ef := ρ :: ef0).
+    assert (∀ l, l ≠ [] → hiz B l = Some (rpt B (RHi l))) as Hz by (by intros [|??]).
+    assert (∀ e2, PTop ∈ e2 → e2 ≠ [] → sle Wmp Ψ (rpt B (RHi ef)) (rpt B (RHi e2))) as Htop.
+    { intros e2 Ht Hne. destruct (decide (PTop ∈ ef)) as [Ht'|Ht'].
+      - left. apply (seqs_rpt Ψ Θ B HB). intros v ts _. rewrite !(den_hi Ψ Θ B HB).
+        rewrite !xmaxl_top, !hlen_top by done. apply oeq_refl.
+      - right. apply (slt_rpt Ψ Θ B HB). intros v ts _. rewrite !(den_hi Ψ Θ B HB).
+        rewrite (xmaxl_top v e2) by done. pose proof (xmaxl_notop v ef Ht').
+        destruct (xmaxl v ef); simpl; done. }
+    destruct Hle as [Hn|[Ht|[(l1 & l2 & ->)|[Hne Hs]]]]; [done| | |].
+    - assert (ef' ≠ []) as Hne by (intros ->; by apply elem_of_nil in Ht).
+      exists (rpt B (RHi ef')). split; [by apply Hz|]. by apply Htop.
+    - exists (rpt B (RHi (l1 ++ ef ++ l2))). split; [apply Hz; by destruct l1|].
+      destruct (decide (l1 = [] ∧ l2 = [])) as [[-> ->]|Hl].
+      { rewrite app_nil_r. left. apply se_refl. }
+      destruct (decide (PTop ∈ l1 ++ ef ++ l2)) as [Ht|Ht]; [apply Htop; [done|by destruct l1]|].
+      right. apply (slt_rpt Ψ Θ B HB). intros v ts _. rewrite !(den_hi Ψ Θ B HB).
+      rewrite !hlen_notop by set_solver. apply hi_hi.
+      + rewrite !xmaxl_app. eapply xle_trans; [apply xle_max_l|apply xle_max_r].
+      + by apply xmaxl_notop.
+      + rewrite !length_app. destruct l1, l2; simpl in *; try lia. naive_solver.
+    - exists (rpt B (RHi ef')). split; [by apply Hz|]. right.
+      apply (slt_rpt Ψ Θ B HB). intros v ts Hv. rewrite !(den_hi Ψ Θ B HB).
+      apply hi_hi_lt. by apply (Hs v ts).
+  Qed.
+
+  Lemma ubs_hle Φ ef ef' F :
+    hle Θ ef ef' → ub_below_s Wmp Ψ Φ (hiz B ef') F → ub_below_s Wmp Ψ Φ (hiz B ef) F.
+  Proof. intros Hle. apply (ubs_lower Wmp Wmp_wf). intros x Hx. by apply (hi_le ef ef' x). Qed.
+
+  Lemma hle_seg ef l1 l2 : hle Θ ef (l1 ++ ef ++ l2).
+  Proof. right; right; left. by exists l1, l2. Qed.
+
+  Lemma envp_seg Γ t : Some t ∈ Γ → ∃ l1 l2, envp Γ = l1 ++ tprios t ++ l2.
+  Proof.
+    induction Γ as [|o Γ IH]; intros Ht; [by apply elem_of_nil in Ht|].
+    apply elem_of_cons in Ht as [<-|Ht]; simpl.
+    - by exists [], (envp Γ).
+    - destruct (IH Ht) as (l1 & l2 & ->). destruct o as [t'|].
+      + exists (tprios t' ++ l1), l2. by rewrite app_assoc.
+      + by exists l1, l2.
+  Qed.
+
+  Lemma envp_in Γ t i : Some t ∈ Γ → i ∈ tprios t → i ∈ envp Γ.
+  Proof. intros Ht Hi. destruct (envp_seg Γ t Ht) as (l1 & l2 & ->). set_solver. Qed.
+
+  (** An upper point below every head of the environment. *)
+  Lemma env_hi_below ss pts ins Γ Δ ef x h :
+    erel B ss pts ins Γ Δ → plt Θ ef (envp Γ) → hiz B ef = Some x → h ∈ lenv_heads Δ → slt Wmp Ψ x h.
+  Proof.
+    intros H Hlt Hx Hh. destruct (erel_heads _ _ _ _ _ _ _ H Hh) as (t & Ht & Hh').
+    destruct ef as [|ρ0 ef0]; [done|]. injection Hx as <-.
+    destruct Hlt as [Hn|Hlt]; [done|].
+    assert (∀ i, i ∈ tprios t → ∀ v ts, models Θ v ts → xlt (xmaxl v (ρ0 :: ef0)) (evlb v ts i)) as Hl.
+    { intros i Hi v ts Hv. apply (Hlt v ts Hv). by apply (envp_in Γ t). }
+    destruct t as [|p Q [hh d|n w]|p Q|T lo ef' V|Θ' T ef' V|p k Qa Qr]; simpl in Hh'; try set_solver.
+    - apply elem_of_singleton in Hh' as ->. apply (slt_rpt Ψ Θ B HB).
+      intros v ts Hv. rewrite (den_hi Ψ Θ B HB), (rank_ch Ψ Θ B HB). apply hi_chan.
+      apply (Hl (LC Q hh d)); [by left|done].
+    - exfalso. destruct (gd_inh _ _ _ HB) as (v & ts & Hv).
+      specialize (Hl (LP PBot) (list_elem_of_here _ _) v ts Hv). exact (xlt_bot _ Hl).
+    - exfalso. destruct (gd_inh _ _ _ HB) as (v & ts & Hv).
+      specialize (Hl (LP PBot) (list_elem_of_here _ _) v ts Hv). exact (xlt_bot _ Hl).
+    - apply elem_of_singleton in Hh' as ->. apply (slt_rpt Ψ Θ B HB).
+      intros v ts Hv. rewrite (den_hi Ψ Θ B HB), (den_lo Ψ Θ B HB). apply hi_lo.
+      intros i Hi. by apply Hl.
+  Qed.
+End heads.
