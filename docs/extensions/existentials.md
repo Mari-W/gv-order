@@ -1,10 +1,12 @@
 # Existential points
 
-Branch `exists`, built on `fresh-points`, sharp edges 97 to 104. Part 1 adds
+Branch `exists`, built on `fresh-points`, sharp edges 97 to 108. Part 1 adds
 existential points to the base order-based relation. Part 2 makes ∀ a type
 former of its own and □ a plain modality over it. Part 3 adds the lower bound ⊥
 and deletes E-NewFresh as a rule. Part 4 lets the constraint of new hold one
-alias ι ≡ x and moves every example to the existential signature. Each part sits in its own commits. The statements of `soundness`, `fundamental`, `fundamental_proc` and of
+alias ι ≡ x and moves every example to the existential signature. Part 5 makes
+the constraint of new any acyclic and conservative set of facts and moves the
+examples to the empty world. Each part sits in its own commits. The statements of `soundness`, `fundamental`, `fundamental_proc` and of
 every composition lemma are the same as on `fresh-points`.
 
 ## Part 1. Existential points
@@ -532,3 +534,176 @@ moved from PNSimulation.v to lang/ThreadSim.v.
   (invariance/PointRenaming.v) lost one branch. No statement changed.
 - `pgv_translate` at an applied send, recv or close rewrites `comm k` in the
   new clause of `pgv_eta`, and `konst_tr` reads λz. k z off `kon_eta_comm`.
+
+## Part 5. Creation constraints and the empty world
+
+### The premise of new
+
+new keeps its one signature (decided 2026-11-01, approved as an
+experiment). Its constraint C is now any set of facts, finite or infinite,
+that relate points of ι to each other and to outer points, by ≺ and by ≡.
+The premise is the one of static-system.md §5.
+
+```
+new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι        cc_ok Γ C,  outer points of C known
+
+cc_ok Γ C  =  acyclic      every cycle of Γ + C is a cycle of Γ
+              conservative Γ + C ⊢ x ≺ y  implies  Γ ⊢ x ≺ y
+                           Γ + C ⊢ x ≡ y  implies  Γ ⊢ x ≡ y
+                           for all points x, y without root ι
+```
+
+The Rocq constructor is `KTNewEx S C : cc_ok peq plt C → Forall pk (bc_env C)`
+in types/Types.v. `cc_ok`, `cc_acyclic` and `cc_conservative` read the facts
+of Γ under the binder of ι (`cc_up`, the outer points shift past ι) and add
+the facts of C at ι (`cc_eq`, `cc_lt`, which use `bcs_open 1 C`). Γ ⊢ is the
+closure `geq`, `glt`, which contains program order and is closed under ≡.
+`geq` and `glt` moved from relation/Worlds.v to types/Types.v for this.
+
+Acyclicity is stated relative to Γ. Γ + C has a cycle only where Γ has one.
+When Γ is acyclic this is the condition Γ + C ⊬ p ≺ p of static-system.md.
+The relative form is the one that survives substitution, because a
+substitution may make a hypothesis cyclic, and then the absolute form fails
+in the image although nothing about C changed.
+
+### Soundness
+
+relation/Creation.v proves the premise sound. Three lemmas carry it.
+
+- `interp` is the closed form of T + C for a theory T. Let K be a theory
+  over the points of the body of new that contains C, agrees with T on the
+  outer points through a map g, and has no cycle that T lacks. Then T plus
+  the image of C adds no fact between outer points and no cycle. The order
+  of T + C has four shapes (`V`), by whether each end is a point of the
+  fresh name. A path visits the fresh name at most twice, because every
+  piece of a path that leaves the fresh name and comes back closes into T by
+  conservativity of K. Transitivity is one lemma over flags b, where b says
+  whether a piece is ≺ or ≡ (`V_trans`).
+- `wext_cc` is the run-time world. At O-New the relation picks a fresh
+  constant a, and W′ is W with the facts of C at a. `interp` at T = W, with
+  g reading ι as a, shows that W′ adds no fact between points of other
+  names, which is W ⊑ₒ W′, and no cycle, so W′ is strict. `Erel_app_new` in
+  rules/TermRules.v calls it in place of `wext_fresh_new`.
+- `cc_ok_transfer` moves `cc_ok` along a map of the generators. Instances
+  are `cc_ok_mono` (world extension, `konst_ty_mono`), the transposition of
+  constants (`konst_ty_sw`) and the substitution of outer points
+  (`cc_ok_pinst`, static/PointSubst.v, used by `konst_ty_pinst` in
+  `typed_sem_rules` and `typed_pinst`).
+
+The statements of `konst_ty_mono`, `konst_ty_pinst`, `konst_ty_sw`,
+`soundness`, `fundamental` and `fundamental_proc` did not change.
+
+### The earlier forms as lemmas
+
+`cc_model` (relation/Creation.v) proves `cc_ok` from a model. A model reads
+the points of ι through a map φ that may identify them with outer points,
+orders the remaining points of ι by a strict order R that contains program
+order, and lists the facts Lo that enter ι from below and Hi that leave it.
+Betweenness of Lo and Hi through R is the one condition on Γ. The facts of C
+must hold in the model. The model is a closed form of Γ + C, so the least
+closure lies inside it.
+
+- `cc_ok_fresh` (static/PointSubst.v). The two forms of part 4 are creation
+  constraints. Without an alias φ is the identity and R is program order of
+  one name, and the condition is the betweenness of sharp edges 94. With the
+  alias ι ≡ w, φ reads every point of ι at w.
+- `cc_ok_alias` (static/Fundamental.v). C = {ι ≡ x} is a creation constraint
+  in every context. `t_new_at` uses it and keeps its statement.
+- `t_new_open` (static/Typing.v) types `let_new e` from `cc_ok` and the outer
+  points known. `t_newfresh_open` is its instance at the form of sharp edges
+  93.
+- `cc_ok_inner` (examples/ExampleTools.v). A constraint whose facts are ≺
+  facts between points of ι is a creation constraint when some strict order
+  contains program order and the facts.
+
+### The examples in the empty world
+
+Every example whose program creates its channels in main now types in the
+empty world `Wpo []`. The facts that were in the world are the creation
+constraints of the news. The deadlock theorems kept their statements.
+
+| Example | Creation constraints |
+|---|---|
+| Sync.v | c with no fact |
+| Cycle.v | c with no fact, d with γ ≺ ε |
+| Scheduler.v | r₀ with no fact, r₁ by the alias at γ, r₂ with γ+1 ≺ ε |
+| RequestReply.v | a with no fact, b with {γ+k ≺ ε+k, ε+k ≺ γ+k+1} |
+| Delegation.v | c with {ι ≺ ι[0], ι[0]+1 ≺ ι+1}, d by the alias at ι[0] |
+| ReceivedChain.v | c with the box constraint {ι[0]ⁿ+1 ≺ ι[0]ⁿ⁺¹} itself |
+| TailCall.v | c with {ι+k ≺ ι[0]}, the ceiling is the carried point ι[0] |
+| Relay.v | c with the facts of its own rounds, d with the four facts of round 0 that mention it |
+| Forwarder.v | a with the producer constraint, b with {γ+k ≺ ε+k, ε+k ≺ γ+k+1, ε+k ≺ (ε+k)[0], (γ+k)[0] ≡ (ε+k)[0], (ε+k)[0] ≺ ε+k+1} |
+| FreshBetween.v, FreshMany.v | as before, and `fb_deadlock_free`, `fm_deadlock_free` now use the typing of the copy |
+| SyncFresh.v, CycleFresh.v, SchedulerFresh.v, RequestReplyFresh.v, RelayFresh.v, TailCallFresh.v | the copy of the program reuses the typing of its base file |
+
+Three constraints need what part 4 did not allow. Delegation, received chain
+and relay state facts between ι and its own carried points. Tail call takes
+its ceiling inside ι, because a world constant is no longer available. Sb
+carries no channel, so ι[0] is a point that no channel occupies. Forwarder
+needs the infinite family of aliases (γ+k)[0] ≡ (ε+k)[0] between the payload
+slots of the new channel and of the older one. Its model reads (ε+k)[0] as
+(γ+k)[0].
+
+One example resists. Factory.v keeps its worlds.
+
+- `fac_main`. main creates no channel and so knows no point. The box fac
+  returns its session at a point that its type names, and main passes the
+  result of force straight to recv. No variable binds that result, so no
+  E-Open can hide the point behind ∃, and in the empty world no point can
+  be named.
+- `fa_main`. The two sessions come from two calls of the box. Neither exists
+  when the other is created, and main needs (a,0) ≺ (b,0) and
+  (a,1) ≺ (b,0) between them. No creation constraint can state a fact
+  between two channels of which neither is in scope at the other's
+  creation.
+
+### The translations
+
+Neither translation can produce creation constraints in place of its world
+without a change that the task forbids.
+
+- PGV. The point of a channel is a function of its session type,
+  `tr_ty (PSess s) = TSess (tr_sty s) (ppt s)` (pgv/PGVWorld.v), and the
+  bounds of a function type are global priorities,
+  `tr_ty (PLolli p q T U) = TLolli (ubp q) (lbp p) …`. PGV's new is a value
+  `new_tr` whose type `∗ ⊸ S@ppt S ⊗ S̄@ppt S` names the point outside any
+  binder (`new_tr_typed`, pgv/PGVTranslate.v). A function typed where no
+  channel exists, such as the argument of (λf. let ⟨a,a′⟩ = new ∗ in … f a …)
+  (λx. close x), carries a bound that the gate of E-App later compares with
+  the point of a channel created inside the other λ. Neither is in scope at
+  the other's creation, so the fact must come from a world. Giving functions
+  and payloads ∀ or ∃ types would change `tr_ty` and the statement of
+  `pgv_translate`, and E-Gen does not generalize closures that capture
+  channels.
+- PN. The translation is relative to an anchor point (`good Ψ B`,
+  pn/PNWorld.v), and inside a box the anchor is the box variable under the
+  hypothesis `Crel`. At the top level the anchor is the root constant of
+  `Wpn` (`good_root`). Both examples start with a polymorphic application,
+  T-App-Poly, before their first new (`pn_poly'` in `fibo_main` and
+  `pipe_main`, pn/PNExamples.v). It forces a box at the root anchor, which
+  `typed_force` asks known, and in the empty world no point is known there.
+  Supplying the anchor from a prelude new would change the translated term
+  and the statement of `pn_deadlock_free`.
+
+### W stays
+
+W is not removed from `typed` and `ptyped`. The PGV translation needs the
+global points of priorities, the PN translation needs one root anchor, and
+Factory needs a point that main does not create. `soundness` keeps its
+premise `strict W`.
+
+### What broke and how it was fixed
+
+- `KTNewEx` lost `fresh_ok` and `fresh_between` and gained `cc_ok`. The
+  inversions name one hypothesis less. `fresh_ok`, `fresh_between` and their
+  shape lemmas stay as the forms that `cc_ok_fresh` accepts.
+- `konst_ty_mono` and `konst_ty_sw` prove the new case with
+  `cc_ok_transfer`, and `konst_ty_pinst` with `cc_ok_pinst`.
+- `wext_fresh_new`, `wext_fresh_alias`, the alias world of rules/TermRules.v
+  and rules/FreshWorlds.v are gone. `wext_cc` builds the world for every
+  creation constraint.
+- The helpers of examples/FreshTools.v (`fresh_clean`, `skn_inst`,
+  `sf_pinst_none`, `fhyps_pinst_empty`) moved to examples/ExampleTools.v,
+  because the base examples use them.
+- The typing lemmas of the examples lost their premises on W. They keep
+  `strict W` or `world_wf W`, because `t_new_at` and the tactics read it.

@@ -1090,6 +1090,58 @@ No statement of soundness, fundamental, fundamental_proc, a composition lemma
 or a theorem of PGV or PN changed, and no typing rule was added.
 docs/extensions/existentials.md, part 4.
 
+**105. Creation constraints of the general form (Claude, 2026-11-01, branch exists).**
+The author approved the experiment of static-system.md §5. The constraint C
+of new is any set of ≺ and ≡ facts, finite or infinite, between points of ι
+and outer points. new asks `cc_ok`, which says that Γ + C is acyclic and
+conservative over Γ (types/Types.v). `fresh_ok` and `fresh_between` are no
+longer premises. `KTNewEx` takes `cc_ok peq plt C` and the outer points known.
+The run-time world is W with the facts of C at the fresh constant
+(`wext_cc`, relation/Creation.v). Its proof is one closed form of T + C
+(`interp`) in which a path enters the fresh name at most twice, because
+conservativity closes every detour through it. The same lemma moves `cc_ok`
+along world extension, renaming and substitution (`cc_ok_transfer`). The two
+forms of part 4 follow from `cc_model` (`cc_ok_fresh`, `cc_ok_alias`), and
+`t_new_at` kept its statement. rules/FreshWorlds.v and the alias world of
+rules/TermRules.v are gone. No typing rule was added, and the statements of
+soundness, fundamental, fundamental_proc and the composition lemmas did not
+change. docs/extensions/existentials.md, part 5.
+
+**106. Acyclicity relative to Γ (Claude, 2026-11-01).**
+static-system.md asks Γ + C ⊬ p ≺ p. `cc_acyclic` asks that every cycle of
+Γ + C be a cycle of Γ. The two agree when Γ is acyclic, and soundness only
+meets acyclic Γ, because the world of a run is strict. The relative form is
+needed for `typed_pinst`. A substitution may send the hypotheses of a box
+into a cyclic context, and the absolute form would then fail for a C that
+did not change. The relative form transfers, by `interp` at the target
+theory.
+
+**107. The examples in the empty world (Claude, 2026-11-01).**
+Every example that creates its channels in main types in `Wpo []`, and its
+deadlock theorem kept its statement. Delegation, received chain and relay
+state facts between ι and its carried points in C, such as ι ≺ ι[0].
+Forwarder states the infinite family (γ+k)[0] ≡ (ε+k)[0] in the constraint
+of b. Tail call takes its ceiling at the carried point ι[0], which no
+channel occupies, because Sb carries none. Factory resists. In `fac_main`
+main creates no channel, so no point is known, and the box returns its
+session at a point that its type names, straight into recv with no variable
+to open. In `fa_main` main needs (a,0) ≺ (b,0) and (a,1) ≺ (b,0) between
+the sessions of two box calls, and neither is in scope when the other is
+created. The table is in existentials.md, part 5.
+
+**108. W stays in the static judgment (Claude, 2026-11-01).**
+Stage 2 of the experiment asked whether the translations from PGV and from
+Padovani and Novara can produce creation constraints in place of their
+worlds. They cannot without a change to a statement. PGV fixes the point of
+a channel by its session type (`tr_ty`, `ppt`) and the bounds of a function
+by global priorities, and its new is a value whose type names the point
+outside any binder. A function typed before a channel exists is compared by
+the gate of E-App with the point of a channel created inside another λ, and
+no creation constraint sees both. PN is relative to an anchor, but the top
+level anchor is the root constant of `Wpn`, and both examples force a box
+there before their first new. Factory also needs a point that main does not
+create. So W is not removed, and `soundness` keeps `strict W`.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
