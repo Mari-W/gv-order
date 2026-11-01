@@ -84,16 +84,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
         (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
         (tenv_pinst (pshift m) Θ) (<[i := Some T]> (lenv_pinst (pshift m) Δ))
         (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) →
-      typed W Φ Ψ Θ Δ F e U
-  | t_gen Φ Ψ Δ F v m C T :                             (* E-Gen, values only *)
-      is_val v → lenv_unl Δ →
-      typed W (fhyps_pinst (pshift m) Φ)
-        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)]) ∅
-        (lenv_pinst (pshift m) Δ) (sf_pinst (pshift m) F) v T →
-      typed W Φ Ψ ∅ Δ F v (TAll m C T)
-  | t_inst Φ Ψ Θ Δ F e m C T xs :                       (* E-Inst *)
-      length xs = m → Forall (skn W Ψ) xs → bcs_hold (seqs W Ψ) (slt W Ψ) C xs →
-      typed W Φ Ψ Θ Δ F e (TAll m C T) → typed W Φ Ψ Θ Δ F e (ty_inst xs T).
+      typed W Φ Ψ Θ Δ F e U.
 
 (** The ⊥ flag (sharp edges 103). A subterm whose context holds an
     unopened existential with lower bound ⊥ is typed under a frame with
@@ -105,13 +96,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
     its constraint, scoped like a box body. With the existential
     signature of new and a let that binds the result of new it gives
     E-NewFresh ([t_newfresh_open] below), which is no rule of its own
-    (sharp edges 103).
-
-    E-Gen and E-Inst (sharp edges 101). ∀ is a type former of its own.
-    E-Gen generalizes a value v over fresh point variables 0, …, m-1
-    under C, scoped like a box body, when v holds no channel and its
-    environment is unlimited (the value restriction). E-Inst puts known
-    points that meet C in place of the ιs. *)
+    (sharp edges 103). *)
 
 (** E-Force is E-App at the constant force. The instance must meet the
     box's constraint, every fact read from W and the hypotheses Ψ

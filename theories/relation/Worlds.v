@@ -48,8 +48,7 @@ Fixpoint ty_roots (T : ty) : gset pname :=
   | TUnit => ∅
   | TLolli ub lb T1 U => opt_roots ub ∪ opt_roots lb ∪ ty_roots T1 ∪ ty_roots U
   | TProd T1 U | TSum T1 U => ty_roots T1 ∪ ty_roots U
-  | TBoxM T1 => ty_roots T1
-  | TAll _ C T1 => bcs_roots C ∪ ty_roots T1
+  | TBox _ C T1 => bcs_roots C ∪ ty_roots T1
   | TSess s x => sty_roots s ∪ {[pt_root x]}
   | TEx lb _ C T1 => set_map pt_root (lb_heads lb) ∪ bcs_roots C ∪ ty_roots T1
   end

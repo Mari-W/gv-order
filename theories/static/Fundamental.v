@@ -218,9 +218,7 @@ Proof.
     |Φ Ψ Θ Δ U F e T Hu _ IH
     |Φ Ψ Θ Δ F e T T' _ _ IH
     |Φ Ψ Θ Δ F e lb m C T xs _ _ _ _ _ IH
-    |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu _ IH
-    |Φ Ψ Δ F v m C T Hv Hu _ IH
-    |Φ Ψ Θ Δ F e m C T xs _ _ _ _ IH].
+    |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu _ IH].
   (* E-Unit *)
   - split_and!; simpl; [by rewrite dom_empty_L|done|].
     intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)).
@@ -346,10 +344,6 @@ Proof.
     + rewrite Hfc. unfold tenv_pinst. by rewrite dom_fmap_L.
     + eapply allfv_mono; [|exact Hfv]. intros x. by apply (open_avail _ _ _ lb m C).
     + intros x Hx. apply Hrv. by apply (open_avail_lin _ _ _ lb m C).
-  (* E-Gen *)
-  - exact (proj1 (term_wf_lenv_pinst _ _ _ _) IH).
-  (* E-Inst *)
-  - exact IH.
 Qed.
 
 Ltac frame_pinst :=
@@ -386,9 +380,7 @@ Proof.
     |Φ Ψ Θ Δ U F e T Hu H IH
     |Φ Ψ Θ Δ F e T T' Hteq H IH
     |Φ Ψ Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
-    |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu Hb IH
-    |Φ Ψ Δ F v m C T Hv Hu Hb IH
-    |Φ Ψ Θ Δ F e m C T xs Hxs HK HC H IH]; intros W1 ρ σ HW HW1 Hρ HΨ;
+    |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu Hb IH]; intros W1 ρ σ HW HW1 Hρ HΨ;
     pose proof HW1 as (HN & He & Hl & HS).
   - rewrite tenv_pinst_empty. apply sr_unit. by apply lenv_empty_pinst.
   - rewrite tenv_pinst_empty. apply sr_konst; [by apply lenv_empty_pinst|].
@@ -528,51 +520,6 @@ Proof.
     + exact (inst_ok_mono _ _ _ _ HW2 Hρ).
     + apply hyps_hold_app; [exact (hyps_hold_wext _ _ _ HW2 HΨ)|].
       intros C0 xs0 Hg. apply list_elem_of_singleton in Hg. injection Hg as -> ->. done.
-  - (* E-Gen *)
-    cbn [pinst_ty]. rewrite tenv_pinst_empty.
-    apply (sr_gen W1 _ _ _ m (bcs_inst σ C) (pinst_ty (pup m σ) T)).
-    + done.
-    + by apply lenv_unl_pinst.
-    + pose proof (typed_term_wf_s _ _ _ _ _ _ _ _ Hb) as Hwf.
-      rewrite term_wf_lenv_pinst in Hwf. by rewrite term_wf_lenv_pinst.
-    + intros W2 xs HW2 Hxs HK' HC'. subst m.
-      set (σ' := pt_inst (plist xs) ∘ pup (length xs) σ).
-      assert (∀ a, pt_inst σ' (pshift (length xs) a) = σ a) as Hsh
-        by (intros a; by apply plist_pup_shift).
-      pose proof (IH W2 ρ σ' HW (wext_trans _ _ _ HW1 HW2)) as Hb'.
-      rewrite tenv_pinst_empty in Hb'.
-      rewrite lenv_pinst_comp, (lenv_pinst_ext _ σ) in Hb' by exact Hsh.
-      rewrite sf_pinst_comp, (sf_pinst_ext _ σ) in Hb' by exact Hsh.
-      assert (fhyps_pinst σ' (fhyps_pinst (pshift (length xs)) Φ) = fhyps_pinst σ Φ) as E3.
-      { unfold fhyps_pinst. rewrite <-map_fmap_compose. apply map_fmap_ext.
-        intros j [u|] _; simpl; [|done]. f_equal. rewrite pt_inst_comp.
-        apply pt_inst_ext. exact Hsh. }
-      assert (hyps_inst σ' (hyps_inst (pshift (length xs)) Ψ ++
-                [(bcs_inst (pshift (length xs)) C, ids (length xs))])
-              = hyps_inst σ Ψ ++ [(bcs_inst σ C, xs)]) as E4.
-      { rewrite hyps_inst_app, hyps_comp, hyps_inst_single. f_equal.
-        - apply hyps_inst_ext. exact Hsh.
-        - f_equal. f_equal; [|apply ids_plist].
-          rewrite bcs_comp. apply bcs_inst_ext. exact Hsh. }
-      rewrite E3, E4 in Hb'.
-      assert (pinst_ty σ' T = ty_inst xs (pinst_ty (pup (length xs) σ) T)) as E2.
-      { unfold ty_inst, σ'. by rewrite pinst_ty_comp. }
-      rewrite E2 in Hb'. apply Hb'.
-      * exact (inst_ok_mono _ _ _ _ HW2 Hρ).
-      * apply hyps_hold_app; [exact (hyps_hold_wext _ _ _ HW2 HΨ)|].
-        intros C0 xs0 Hg. apply list_elem_of_singleton in Hg. injection Hg as -> ->. done.
-  - (* E-Inst *)
-    assert (pinst_ty σ (ty_inst xs T) = ty_inst (pt_inst σ <$> xs) (pinst_ty (pup m σ) T)) as E.
-    { unfold ty_inst. rewrite !pinst_ty_comp. apply pinst_ty_ext. intros a. symmetry.
-      by apply plist_pup_comm. }
-    rewrite E. apply (sr_inst W1 _ _ _ _ m (bcs_inst σ C)).
-    + by rewrite length_fmap.
-    + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx.
-      by apply (skn_pinst_known W W1 σ HW HW1 Ψ).
-    + apply (bcs_hold_inst (seqs W Ψ) _ (slt W Ψ)); [| |done].
-      * intros x y Hxy. by apply (seqs_pinst W W1 σ HW HW1 Ψ).
-      * intros x y Hxy. by apply (slt_pinst W W1 σ HW HW1 Ψ).
-    + by apply (IH W1 ρ σ).
 Qed.
 
 (** ** The substitution lemma on its own
@@ -657,9 +604,7 @@ Proof.
     |Φ Ψ Θ Δ U F e T Hu H IH
     |Φ Ψ Θ Δ F e T T' Hteq H IH
     |Φ Ψ Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
-    |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu Hb IH
-    |Φ Ψ Δ F v m C T Hv Hu Hb IH
-    |Φ Ψ Θ Δ F e m C T xs Hxs HK HC H IH]; intros σ Ψ' HΨ.
+    |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu Hb IH]; intros σ Ψ' HΨ.
   - rewrite tenv_pinst_empty. apply t_unit. by apply lenv_empty_pinst.
   - rewrite tenv_pinst_empty. apply t_konst; [by apply lenv_empty_pinst| |].
     + apply (konst_ty_pinst W W σ Hwf HWW (seqs W Ψ) _ (slt W Ψ) _ (skn W Ψ)); [| | |done|done].
@@ -768,29 +713,6 @@ Proof.
       rewrite (pinst_ty_comp U), (pinst_ty_ext U _ (pt_inst (pshift m) ∘ σ)), <-pinst_ty_comp in H
         by apply pup_pshift.
       exact H.
-  - (* E-Gen *)
-    cbn [pinst_ty]. rewrite tenv_pinst_empty.
-    apply (t_gen W _ _ _ _ _ m (bcs_inst σ C) (pinst_ty (pup m σ) T)); [done|by apply lenv_unl_pinst|].
-    pose proof (IH (pup m σ) _ (hyps_hold_open W Ψ Ψ' σ m C HW HΨ)) as H.
-    rewrite (fhyps_pinst_comp_ext (pup m σ) (pshift m) (pshift m) σ) in H by apply pup_pshift.
-    rewrite tenv_pinst_empty in H.
-    rewrite lenv_pinst_comp, (lenv_pinst_ext _ (pt_inst (pshift m) ∘ σ)), <-lenv_pinst_comp in H
-      by apply pup_pshift.
-    rewrite sf_pinst_comp, (sf_pinst_ext _ (pt_inst (pshift m) ∘ σ)), <-sf_pinst_comp in H
-      by apply pup_pshift.
-    exact H.
-  - (* E-Inst *)
-    assert (pinst_ty σ (ty_inst xs T) = ty_inst (pt_inst σ <$> xs) (pinst_ty (pup m σ) T)) as E.
-    { unfold ty_inst. rewrite !pinst_ty_comp. apply pinst_ty_ext. intros a. symmetry.
-      by apply plist_pup_comm. }
-    rewrite E. apply (t_inst W _ _ _ _ _ _ m (bcs_inst σ C)).
-    + by rewrite length_fmap.
-    + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx.
-      by apply (skn_pinst_s W W σ Hwf HWW Ψ).
-    + apply (bcs_hold_inst (seqs W Ψ) _ (slt W Ψ)); [| |done].
-      * intros x y Hxy. by apply (seqs_pinst_s W W σ Hwf HWW Ψ).
-      * intros x y Hxy. by apply (slt_pinst_s W W σ Hwf HWW Ψ).
-    + by apply IH.
 Qed.
 
 (** ** new at a known point (sharp edges 104)

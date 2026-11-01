@@ -1,6 +1,6 @@
 (** * Types, session types, duality, environments (§2.2, Fig. 5 top)
 
-    T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □T | ∀ιs. C. T | ∃^ℓ ιs. C. T
+    T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs. C. T) | ∃^ℓ ιs. C. T
     S    ::= ?P.S | !P.S | Close | µα.S | α | α̅      P ::= ∃ιs. T
     β    ::= ι | ⊥        λ ::= ι | ⊤
     ι    ::= (p, b)       p ::= a | point variable | p[b][i]   (no channels) *)
@@ -152,8 +152,9 @@ Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
 
     The arrow carries an upper point β ([None] = ⊥: the call never
     blocks) and a lower point λ ([None] = ⊤: the closure holds
-    nothing). ∀ binds n point variables, and □ is a modality over any
-    type (sharp edges 101). ∃ binds n, and a payload binds m. Session types are unannotated: the only points
+    nothing). □ binds n point variables, so ∀ occurs only directly
+    under □ (sharp edges 101, undone 2026-11-01). ∃ binds n, and a
+    payload binds m. Session types are unannotated: the only points
     inside them are those of payloads, all bound by the payload's ∃, so
     point instantiation never enters a session type. *)
 
@@ -163,14 +164,15 @@ Inductive ty :=
                                    (* T ⊸^ub_lb U *)
   | TProd (T U : ty)               (* T ⊗ U *)
   | TSum (T U : ty)                (* T ⊕ U *)
-  | TBoxM (T : ty)                 (* □T — unlimited (replicable)
-                                      values. A box stands for its thunk,
-                                      and the thunk lies in T. The boxes
-                                      of the static system have type
-                                      □(∀ιs. C. ∗ ⊸^u_⊤ U), so the upper
-                                      point u lives on the arrow under
-                                      the binder (sharp edges 52, 63,
-                                      101) *)
+  | TBox (n : nat) (C : bcs) (T : ty)
+                                   (* □(∀ι₀ … ιₙ₋₁. C. T) — unlimited
+                                      (replicable) values. T is a thunk
+                                      type ∗ ⊸^u_⊤ U, so the upper point
+                                      u lives on the arrow under the
+                                      binder (sharp edges 52, 63); the
+                                      constraint C is a set of facts
+                                      x ≺ y and x ≡ y over the ιs and
+                                      outer points (sharp edges 65) *)
 
   | TSess (S : sty) (x : point)   (* S@x *)
   | TEx (lb : lbound) (n : nat) (C : bcs) (T : ty)
@@ -180,15 +182,6 @@ Inductive ty :=
                                       instance meeting C, and its
                                       channels lie at or above the lower
                                       bound ℓ, which is ⊤, ⊥ or a point *)
-  | TAll (n : nat) (C : bcs) (T : ty)
-                                   (* ∀ι₀ … ιₙ₋₁. C. T — the value lies
-                                      in T at every known instance of
-                                      the ιs that meets C, in every later
-                                      world, and holds no channel. The
-                                      constraint C is a set of facts
-                                      x ≺ y and x ≡ y over the ιs and
-                                      outer points (sharp edges 65,
-                                      101) *)
 with sty :=
   | SRcv (m : nat) (T : ty) (S : sty)
                                    (* ?(∃ι₀ … ιₘ₋₁. T).S *)
@@ -200,9 +193,6 @@ with sty :=
   | SVarD (a : nat).               (* α̅ — the dual of what α stands for;
                                       never written in source types, it
                                       enters only through [dual] *)
-
-(** The boxes of the static system, □(∀ιs. C. T). *)
-Notation TBox n C T := (TBoxM (TAll n C T)).
 
 Scheme ty_mut_ind := Induction for ty Sort Prop
   with sty_mut_ind := Induction for sty Sort Prop.
@@ -323,9 +313,8 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
         (pinst_ty σ T1) (pinst_ty σ U)
   | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
   | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
-  | TBoxM T1 => TBoxM (pinst_ty σ T1)
-  | TAll n C T1 =>
-      TAll n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
+  | TBox n C T1 =>
+      TBox n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   | TSess s x => TSess s (pt_inst σ x)
   | TEx lb n C T1 =>
       TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
@@ -418,50 +407,47 @@ Section tinst.
 
   Lemma tinst_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
   Proof.
-    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH0 | s x
-                   | lb n C T1 IH | n C T1 IH]; intros σ τ H; simpl.
+    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                   | lb n C T1 IH]; intros σ τ H; simpl.
     - done.
     - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_ext
                |destruct lb; simpl; f_equal; auto using tpt_inst_ext|auto|auto].
     - f_equal; auto.
     - f_equal; auto.
-    - f_equal; auto.
+    - f_equal; [by apply tbcs_ext|]. apply IH. intros a. by apply tpup_ext.
     - f_equal. by apply tpt_inst_ext.
     - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_ext|by apply tbcs_ext|].
       apply IH. intros a. by apply tpup_ext.
-    - f_equal; [by apply tbcs_ext|]. apply IH. intros a. by apply tpup_ext.
   Qed.
 
   Lemma tinst_comp T : ∀ τ σ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
   Proof.
-    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH0 | s x
-                   | lb n C T1 IH | n C T1 IH]; intros τ σ; simpl.
+    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                   | lb n C T1 IH]; intros τ σ; simpl.
     - done.
     - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_comp
                |destruct lb; simpl; f_equal; auto using tpt_inst_comp|auto|auto].
     - f_equal; auto.
     - f_equal; auto.
-    - f_equal; auto.
+    - f_equal; [apply tbcs_comp|]. rewrite IH. apply tinst_ext. intros a. apply tpup_comp.
     - f_equal. apply tpt_inst_comp.
     - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_comp|apply tbcs_comp|].
       rewrite IH. apply tinst_ext. intros a. apply tpup_comp.
-    - f_equal; [apply tbcs_comp|]. rewrite IH. apply tinst_ext. intros a. apply tpup_comp.
   Qed.
 
   Lemma tinst_pvar T : pinst_ty pvar T = T.
   Proof.
-    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH0 | s x
-                   | lb n C T1 IH | n C T1 IH]; simpl.
+    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                   | lb n C T1 IH]; simpl.
     - done.
     - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_pvar
                |destruct lb; simpl; f_equal; auto using tpt_inst_pvar|auto|auto].
     - f_equal; auto.
     - f_equal; auto.
-    - f_equal; auto.
+    - f_equal; [apply tbcs_pvar|]. rewrite (tinst_ext _ _ pvar); [done|apply tpup_pvar].
     - f_equal. apply tpt_inst_pvar.
     - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_pvar|apply tbcs_pvar|].
       rewrite (tinst_ext _ _ pvar); [done|apply tpup_pvar].
-    - f_equal; [apply tbcs_pvar|]. rewrite (tinst_ext _ _ pvar); [done|apply tpup_pvar].
   Qed.
 End tinst.
 
@@ -472,7 +458,7 @@ Fixpoint tsize (T : ty) : nat :=
   match T with
   | TUnit | TSess _ _ => 1
   | TLolli _ _ T1 U | TProd T1 U | TSum T1 U => S (tsize T1 + tsize U)
-  | TBoxM T1 | TAll _ _ T1 | TEx _ _ _ T1 => S (tsize T1)
+  | TBox _ _ T1 | TEx _ _ _ T1 => S (tsize T1)
   end.
 
 Lemma tsize_pinst T : ∀ σ, tsize (pinst_ty σ T) = tsize T.
@@ -483,13 +469,12 @@ Lemma ty_ind_ex (P : ty → Prop) :
   (∀ ub lb T, P T → ∀ U, P U → P (TLolli ub lb T U)) →
   (∀ T, P T → ∀ U, P U → P (TProd T U)) →
   (∀ T, P T → ∀ U, P U → P (TSum T U)) →
-  (∀ T, P T → P (TBoxM T)) →
+  (∀ n C T, (∀ σ, P (pinst_ty σ T)) → P (TBox n C T)) →
   (∀ s x, P (TSess s x)) →
   (∀ lb n C T, (∀ σ, P (pinst_ty σ T)) → P (TEx lb n C T)) →
-  (∀ n C T, (∀ σ, P (pinst_ty σ T)) → P (TAll n C T)) →
   ∀ T, P T.
 Proof.
-  intros H1 H2 H3 H4 H5 H6 H7 H8.
+  intros H1 H2 H3 H4 H5 H6 H7.
   enough (∀ m T, tsize T < m → P T) as H by (intros T; apply (H (S (tsize T))); lia).
   induction m as [|m IH]; intros T HT; [lia|].
   destruct T; simpl in HT.
@@ -497,10 +482,9 @@ Proof.
   - apply H2; apply IH; lia.
   - apply H3; apply IH; lia.
   - apply H4; apply IH; lia.
-  - apply H5. apply IH. lia.
+  - apply H5. intros σ. apply IH. rewrite tsize_pinst. lia.
   - apply H6.
   - apply H7. intros σ. apply IH. rewrite tsize_pinst. lia.
-  - apply H8. intros σ. apply IH. rewrite tsize_pinst. lia.
 Qed.
 
 (** ** Heads
@@ -516,7 +500,7 @@ Definition lb_heads (lb : lbound) : gset point :=
 
 Fixpoint heads (T : ty) : gset point :=
   match T with
-  | TUnit | TBoxM _ | TAll _ _ _ => ∅
+  | TUnit | TBox _ _ _ => ∅
   | TLolli _ lb _ _ => opt_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
   | TSess _ x => {[x]}
@@ -553,8 +537,7 @@ Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   | TLolli ub lb T1 U => TLolli ub lb (sren_ty r T1) (sren_ty r U)
   | TProd T1 U => TProd (sren_ty r T1) (sren_ty r U)
   | TSum T1 U => TSum (sren_ty r T1) (sren_ty r U)
-  | TBoxM T1 => TBoxM (sren_ty r T1)
-  | TAll n C T1 => TAll n C (sren_ty r T1)
+  | TBox n C T1 => TBox n C (sren_ty r T1)
   | TEx lb n C T1 => TEx lb n C (sren_ty r T1)
   | TSess s x => TSess (sren r s) x
   end
@@ -582,8 +565,7 @@ Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   | TLolli ub lb T1 U => TLolli ub lb (sflip_ty k T1) (sflip_ty k U)
   | TProd T1 U => TProd (sflip_ty k T1) (sflip_ty k U)
   | TSum T1 U => TSum (sflip_ty k T1) (sflip_ty k U)
-  | TBoxM T1 => TBoxM (sflip_ty k T1)
-  | TAll n C T1 => TAll n C (sflip_ty k T1)
+  | TBox n C T1 => TBox n C (sflip_ty k T1)
   | TEx lb n C T1 => TEx lb n C (sflip_ty k T1)
   | TSess s x => TSess (sflip k s) x
   end
@@ -634,8 +616,7 @@ Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   | TLolli ub lb T1 U => TLolli ub lb (sinst_ty σ T1) (sinst_ty σ U)
   | TProd T1 U => TProd (sinst_ty σ T1) (sinst_ty σ U)
   | TSum T1 U => TSum (sinst_ty σ T1) (sinst_ty σ U)
-  | TBoxM T1 => TBoxM (sinst_ty σ T1)
-  | TAll n C T1 => TAll n C (sinst_ty σ T1)
+  | TBox n C T1 => TBox n C (sinst_ty σ T1)
   | TEx lb n C T1 => TEx lb n C (sinst_ty σ T1)
   | TSess s x => TSess (sinst σ s) x
   end
@@ -690,7 +671,7 @@ Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
   | TUnit => True
   | TLolli _ _ T1 U | TProd T1 U | TSum T1 U =>
       sclosed_ty k T1 ∧ sclosed_ty k U
-  | TBoxM T1 | TAll _ _ T1 => sclosed_ty k T1
+  | TBox _ _ T1 => sclosed_ty k T1
   | TEx _ _ _ T1 => sclosed_ty k T1
   | TSess s _ => sclosed k s
   end
@@ -909,7 +890,7 @@ Inductive prim : ty → Prop :=
     one is a matter of extending the match below. *)
 
 Definition unlimited (T : ty) : Prop :=
-  match T with TBoxM _ => True | _ => False end.
+  match T with TBox _ _ _ => True | _ => False end.
 
 (** ** Session environments: finite maps from channels to session
     types at points, c : S@x, x the channel's current point. Each

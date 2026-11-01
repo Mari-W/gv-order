@@ -29,10 +29,9 @@ Proof.
   - destruct H1 as (? & ? & ? & ?), H2 as (<- & <- & ? & ?). split_and!; eauto.
   - destruct H1, H2. split; eauto.
   - destruct H1, H2. split; eauto.
-  - eauto.
+  - destruct H1 as (-> & ? & ?), H2 as (<- & <- & ?). split_and!; eauto.
   - destruct H1 as [? ?], H2 as [<- ?]. split; [done|]. by eapply seq_trans.
   - destruct H1 as (? & -> & ? & ?), H2 as (<- & <- & <- & ?). split_and!; eauto.
-  - destruct H1 as (-> & ? & ?), H2 as (<- & <- & ?). split_and!; eauto.
 Qed.
 
 (** The two halves have to be proved together: see the header. *)
@@ -58,7 +57,7 @@ Proof.
   assert (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
   { intros W Θ T. revert W Θ.
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
-                   |T1 IHT0|s x|lb m C0 T1 IHT1|m C0 T1 IHT1] using ty_ind_ex;
+                   |m C0 T1 IHT1|s x|lb m C0 T1 IHT1] using ty_ind_ex;
       intros W Θ T' v Hteq HVv; destruct T'; unfold teq in Hteq; simpl in Hteq; try done.
     - by eapply Hfun.
     - (* ⊗ *)
@@ -70,9 +69,11 @@ Proof.
       apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
     - (* □ *)
-      apply Vrel_boxm_iff in HVv as (-> & eb & -> & Hfc & HK).
-      apply Vrel_boxm_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      by eapply IHT0.
+      destruct Hteq as (<- & <- & Hteq).
+      apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
+      apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
+      intros W' xs HW Hxs HC HKn. eapply (IHT1 (plist xs)); [|by apply HK].
+      by apply teq_ty_inst.
     - (* session: the protocol is stored up to ≈ already *)
       destruct Hteq as [<- Hs].
       apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hx).
@@ -82,13 +83,7 @@ Proof.
       destruct Hteq as (<- & <- & <- & Hteq).
       apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
       apply Vrel_ex_iff. split; [done|]. exists xs. split_and!; [done..|].
-      eapply (IHT1 (plist xs)); [|exact H]. by apply teq_ty_inst.
-    - (* ∀ *)
-      destruct Hteq as (<- & <- & Hteq).
-      apply Vrel_all_iff in HVv as (-> & Hv & Hfc & HK).
-      apply Vrel_all_iff. split_and!; [done..|].
-      intros W' xs HW Hxs HC HKn. eapply (IHT1 (plist xs)); [|by apply HK].
-      by apply teq_ty_inst. }
+      eapply (IHT1 (plist xs)); [|exact H]. by apply teq_ty_inst. }
   split; [exact HV|].
   destruct n as [|n']; [intros; apply Erel_0|].
   intros W Θ T T' F e HW Hteq HE. revert T' HW Hteq.

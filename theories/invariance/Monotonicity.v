@@ -113,7 +113,7 @@ Proof.
             Vrel n W Θ T v → Vrel n W' Θ T v) as HV.
   { intros W W' Θ T. revert W W' Θ.
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
-                   |T1 IHT0|s x|lb m C0 T1 IHT1|m C0 T1 IHT1] using ty_ind_ex;
+                   |m C0 T1 IHT1|s x|lb m C0 T1 IHT1] using ty_ind_ex;
       intros W W' Θ v HW HWW' HVv.
     - by apply Vrel_unit_iff in HVv; apply Vrel_unit_iff.
     - apply Vrel_lolli_iff in HVv
@@ -132,9 +132,9 @@ Proof.
       eapply tenv_comp_mono; [|exact Hsp]. by destruct HWW' as (_ & ? & _).
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
-    - apply Vrel_boxm_iff in HVv as (-> & eb & -> & Hfc & HK).
-      apply Vrel_boxm_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      by apply (IHT0 W).
+    - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
+      apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
+      intros W'' xs HW' Hxs. apply HK; [|done..]. by eapply wext_trans.
     - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hx).
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done..|].
       destruct HWW' as (_ & He & _). auto.
@@ -144,10 +144,7 @@ Proof.
       + eapply Forall_impl; [exact HK|]. intros x Hx. unfold pt_known in *.
         by apply HWW'.
       + destruct HWW' as (_ & He & Hl & _). by eapply bcs_hold_mono.
-      + by apply (IHT1 (plist xs) W).
-    - apply Vrel_all_iff in HVv as (-> & Hv & Hfc & HK).
-      apply Vrel_all_iff. split_and!; [done..|].
-      intros W'' xs HW' Hxs. apply HK; [|done..]. by eapply wext_trans. }
+      + by apply (IHT1 (plist xs) W). }
   split_and!; [exact HV| |].
   - destruct n as [|n']; [intros; apply Erel_0|].
     intros W W' Θ T F e HW HWW' HE. revert W' HW HWW'.
