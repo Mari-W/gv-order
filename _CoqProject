@@ -68,3 +68,9 @@ theories/mp/MP2Examples.v
 theories/mp/MP2Semantics.v
 theories/mp/MP2Simulation.v
 theories/mp/MPRounds.v
+theories/mp/MP3Types.v
+theories/mp/MP3World.v
+theories/mp/MP3Typing.v
+theories/mp/MP3Translate.v
+theories/mp/MP3Examples.v
+theories/mp/MP3Simulation.v
