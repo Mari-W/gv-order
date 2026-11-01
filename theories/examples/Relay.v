@@ -20,12 +20,13 @@
     must live at, so it needs new under □∀ (59) and ι ≺ ι[0] for its
     send. The call at (ι+1, ι[0]+1) asks C there, which is round 0 of
     the family and round k+1 for round k, so C[ι+1, ι[0]+1] ⊆ C
-    ([rel_sub]). At ((a,0), (b,0)) round k is C₀((a,k), [rel_ip] k),
-    with rel_ip 0 = (b,0) and rel_ip (k+1) = (a,k)[0]+1. [Wrel] orders
-    them by the ranks 3k+3, 3k+4+4o for (a,k)[0]+o, and 5 for (b,0).
+    ([rel_sub]). main forces both boxes at (γ, ε), the points of c and
+    d. Round 0 is C₀(γ, ε) and round k+1 is C₀(γ+k+1, γ+k[0]+1).
 
-    In the empty world c is created with the facts of its own rounds and
-    d with the four facts of round 0 that mention it (sharp edges 105). *)
+    main types in the empty world. c is created with the facts of its
+    own rounds, ordered by the ranks 3k+3 for γ+k and 3k+4+4o for
+    γ+k[0]+o, and d with the four facts of round 0 that mention it
+    (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -171,58 +172,10 @@ Proof.
     exists (sv 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-(** Round k of C at ((a,0), (b,0)). *)
-Definition rel_sl (k : nat) : point := Pt (NSlot (NConst 0) k 0) 0.
-Definition rel_ip (k : nat) : point :=
-  match k with 0 => pc 1 0 | S j => Pt (NSlot (NConst 0) j 0) 1 end.
-
-Lemma rel_hold_W W :
-  (∀ k, w_lt W (pc 0 k) (rel_ip k) ∧ w_lt W (pc 0 k) (rel_sl k) ∧
-        w_lt W (rel_sl k) (pt_shift 1 (pc 0 k)) ∧ w_lt W (rel_sl k) (rel_ip k) ∧
-        w_lt W (rel_ip k) (pt_shift 1 (pc 0 k)) ∧ w_lt W (rel_ip k) (pt_shift 1 (rel_sl k))) →
-  bcs_hold (w_eq W) (w_lt W) rel_C [pc 0 0; pc 1 0].
-Proof.
-  intros H.
-  assert (∀ k g, c0 (pc 0 k) (rel_ip k) g → fact_holds (w_eq W) (w_lt W) g) as Hc.
-  { intros k g Hg. destruct (H k) as (A1 & A2 & A3 & A4 & A5 & A6).
-    unfold c0 in Hg. repeat destruct Hg as [->|Hg]; subst; cbn;
-      first [exact A1|exact A2|exact A3|exact A4|exact A5|exact A6]. }
-  apply bcs_hold_intro. intros g [Hg|(k & Hg)] _.
-  - apply (Hc 0). exact (c0_inst _ _ _ _ Hg).
-  - apply (Hc (S k)). exact (c0_inst _ _ _ _ Hg).
-Qed.
-
-Definition rel_L_facts (x y : point) : Prop :=
-  ∃ k, (x = pc 0 k ∧ y = rel_ip k) ∨ (x = pc 0 k ∧ y = rel_sl k) ∨
-       (x = rel_sl k ∧ y = pt_shift 1 (pc 0 k)) ∨ (x = rel_sl k ∧ y = rel_ip k) ∨
-       (x = rel_ip k ∧ y = pt_shift 1 (pc 0 k)) ∨ (x = rel_ip k ∧ y = pt_shift 1 (rel_sl k)).
-
-Definition Wrel : world := wgen (list_to_set (NConst <$> [0; 1])) (λ _ _, False) rel_L_facts.
-
-Definition rel_base (p : pname) : nat :=
-  match p with NConst 0 => 3 | NConst 1 => 5 | NSlot (NConst 0) k 0 => 3 * k + 4 | _ => 0 end.
-Definition rel_step (p : pname) : nat :=
-  match p with NConst 0 => 3 | NConst 1 => 10 | NSlot (NConst 0) _ 0 => 4 | _ => 1 end.
-Definition rel_rank (x : point) : nat := rel_base (pt_name x) + rel_step (pt_name x) * pt_off x.
-
-Lemma Wrel_strict : strict Wrel.
-Proof.
-  apply (wgen_strict _ _ _ id rel_rank); try done.
-  - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
-  - intros x y (k & H); right; rewrite !elem_of_list_to_set;
-      repeat destruct H as [[-> ->]|H]; try destruct H as [-> ->];
-      destruct k; cbn; set_solver.
-  - intros x. unfold rel_rank, pt_shift. cbn.
-    assert (0 < rel_step (pt_name x)) by (unfold rel_step; repeat case_match; lia). nia.
-  - intros x y (k & H); unfold id;
-      repeat destruct H as [[-> ->]|H]; try destruct H as [-> ->];
-      destruct k; unfold rel_rank; cbn; lia.
-Qed.
-
 (** Both channels come from creation constraints (sharp edges 105).
     c is created with the facts of its own rounds, which stay inside
     its name: ι ≺ ι[0], ι[0] ≺ ι+1 and every later round C₀(ι+k+1,
-    ι+k[0]+1). The ranks of [Wrel] order them. d is created at a fresh
+    ι+k[0]+1). The ranks [relv_rank] order them. d is created at a fresh
     point ε with the four facts of round 0 that mention it,
 
       {ι ≺ ε,  ι[0] ≺ ε,  ε ≺ ι+1,  ε ≺ ι[0]+1},

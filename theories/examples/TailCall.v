@@ -12,9 +12,7 @@
     under the frame variable μ with ζ ≺ μ. The send and the receive
     block at ι and ask ι ≺ μ, which is ι ≺ ζ ≺ μ. The tail call at
     (ι+1, ζ) has upper point ζ and asks ζ ≺ μ, the frame hypothesis.
-    Its force asks C[ι+1, ζ] ⊆ C ([tc_sub]). main forces at ((a,0), (z,0))
-    in [Wtc], where (a,k) ≺ (z,0) for every k, strict by the rank (0,k)
-    for (a,k) and (1,k) for (z,k).
+    Its force asks C[ι+1, ζ] ⊆ C ([tc_sub]).
 
     In the empty world main creates c with {ι+k ≺ ι[0] ∣ k ∈ ℕ} and
     forces at (ι, ι[0]). The ceiling is the carried point ι[0], which no

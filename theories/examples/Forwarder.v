@@ -24,10 +24,7 @@
     E-Conv up to Γ ⊢ ≡ ([t_conv] with [steq]) moves d along the fact
     ι[0] ≡ ι′[0] of Cf ([se_hyp0]). The producer creates e at ι[0], the
     slot its payload must live at. The recursive calls ask Cf and Cp one
-    round later, which C contains ([fw_sub], [fp_sub]). [Wfw] has
-    (a,k)[0] ≡ (b,k)[0] for every k, and its strictness reads (b,k)[0]
-    as (a,k)[0] through a map on names that respects slots
-    ([wgen_strict_cong]).
+    round later, which C contains ([fw_sub], [fp_sub]).
 
     In the empty world main creates a with the producer constraint fp_C
     and b with the facts that relate it to a, the alias family

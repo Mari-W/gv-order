@@ -17,8 +17,7 @@
     e at ι[0] with new, sends it at ι while it holds e′ at ι[0], which
     asks ι ≺ ι[0], derived from ι ≺ ι+1 ≺ ι[0]. The upper point ι+1 of the
     λ covers both blocking points. A tail call would need a ceiling, as
-    in the tail-call example. [Wch] has (a,0)[0]ⁿ + 1 ≺ (a,0)[0]ⁿ⁺¹,
-    strict by the rank 2·depth + offset.
+    in the tail-call example.
 
     In the empty world main creates c with the box constraint itself as
     its creation constraint and forces both boxes at its point. Every
@@ -31,7 +30,6 @@ From LRGV Require Export examples.ExampleTools.
 Set Default Proof Using "All".
 
 Fixpoint chv (n : nat) : pname := match n with 0 => NVar 0 | S m => NSlot (chv m) 0 0 end.
-Fixpoint chc (n : nat) : pname := match n with 0 => NConst 0 | S m => NSlot (chc m) 0 0 end.
 
 Definition Sch : sty := SMu (SRcv 1 (TSess (SVar 0) (pvar 0)) SEnd).
 
@@ -60,9 +58,6 @@ Abbreviation chs := (Pt (NSlot (NVar 0) 0 0) 0).
 
 Lemma chv_inst n : pn_inst (plist [chs]) (chv n) = Pt (chv (S n)) 0.
 Proof. induction n as [|n IH]; [done|]. cbn [chv pn_inst]. by rewrite IH. Qed.
-
-Lemma chc_inst n : pn_inst (plist [pc 0 0]) (chv n) = Pt (chc n) 0.
-Proof. induction n as [|n IH]; [done|]. cbn [chv chc pn_inst]. by rewrite IH. Qed.
 
 Lemma ch_sub g : ch_P g → fact_scoped 1 g → ch_P (fact_map (pt_inst (plist [chs])) g).
 Proof.

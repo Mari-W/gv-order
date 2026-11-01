@@ -16,9 +16,7 @@
     The recursive force at (ι+1, ι′+1) asks C there, and C[ι+1, ι′+1] ⊆ C,
     so the body's own hypothesis gives it ([bcs_hold_self]). The send in
     the server's thunk blocks at ι′ while the pair holds a at ι+1, the
-    fact ι′ ≺ ι+1 of C. main forces both boxes at ((a,0), (b,0)), where
-    C is (a,k) ≺ (b,k) and (b,k) ≺ (a,k+1) for every k, the facts of
-    [Wrr].
+    fact ι′ ≺ ι+1 of C.
 
     In the empty world main creates a at γ with no fact and b at ε with
     the creation constraint {γ+k ≺ ε+k, ε+k ≺ γ+k+1 ∣ k ∈ ℕ}, and forces
@@ -130,12 +128,6 @@ Proof.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pv 1 1). split; [done|]. apply sle_refl, HW.
 Qed.
-
-(** C at ((a,0), (b,0)) is the facts of [Wrr]. *)
-Lemma rq_hold_W W :
-  (∀ k, w_lt W (pc 0 k) (pc 1 k)) → (∀ k, w_lt W (pc 1 k) (pc 0 (S k))) →
-  bcs_hold (w_eq W) (w_lt W) rq_C [pc 0 0; pc 1 0].
-Proof. intros H1 H2. apply bcs_hold_intro. intros g (k & [-> | ->]) _; [apply H1|apply H2]. Qed.
 
 (** The constraint of b: the variable 0 is ε, the variable 1 is γ. *)
 Definition rrf_facts (g : fact) : Prop :=

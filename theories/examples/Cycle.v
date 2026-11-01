@@ -5,7 +5,7 @@
             let () = close c in close d
 
     c, c′ : Close@(a,0) and d, d′ : Close@(b,0). Both threads close c
-    while they hold d, so both need (a,0) ≺ (b,0), and the world has it.
+    while they hold d, so both need (a,0) ≺ (b,0).
     The paper's P-Connect over {c, d} is here the closed program that
     creates both channels.
 
