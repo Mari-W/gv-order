@@ -379,3 +379,45 @@ Why it deadlocks.
 Repair R7. A channel is linear at every priority, and action priorities at a
 sequence are finite. In theories/mp/MP2Typing.v msplit copies only units and
 abstractions, and m_close asks pfin ρ at a sequence.
+
+
+Program 8 (stage 4, version 3). Two loops type at their first round and deadlock
+================================================================================
+
+Found while building the world from the derivation (mordido-perez.md 15.2). It
+reads fork with a linear thunk (R2) and the payload check per channel (R3).
+
+Program.
+
+  client a b = let a = send () (inst a) in
+               let (_, b) = receive (inst b) in client{next a} a b      (Listing 1.1, p. 4)
+  dsend b a  = let (_, a) = receive (inst a) in
+               let b = send () (inst b) in
+               let b = send () (inst b) in dsend{next b} b a
+  main = let (a, a') = new Stream 1 4 () in
+         let (b, b') = new Stream 2 2 () in
+         fork (λlin _:Unit. client{next a} a b');
+         dsend{next b} b a'
+
+Why it types.
+
+  Their rules check a recursive body once, under the map of the first call
+  (pp. 28, 29). The first round of client sends on a at 1 while it holds b at 2,
+  and receives on b at 2 while it holds a at 1 + 4 = 5. The first round of dsend
+  receives on a at 1 while it holds b at 2, and sends on b at 2 and at 4 while it
+  holds a at 5. Every check of T-Let and T-LetPair holds, 1 < 2 < 5 and
+  1 < 2 < 4 < 5. The recursive calls check only the call site.
+
+Why it deadlocks.
+
+  client sends a and dsend receives it. dsend sends b and client receives it.
+  client starts its second round and sends on a. dsend sends on b a second
+  time. Neither partner receives, and the configuration is stuck before any
+  value. theories/mp/MPRounds.v runs it in their semantics
+  (p8_not_deadlock_free).
+
+Repair R8. A recursive body types at every round, under the sequences that the
+round reaches. In version 2 and version 3 the priority abstraction of a
+recursive function holds at every valuation that a recursive call reaches, and
+client's second round would need 5 < 4 (p8_not_mtyped).
+

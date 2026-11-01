@@ -4,8 +4,10 @@ Status. Stage 1 done on 2026-10-31, research and design. Stage 2 mechanized on
 2026-10-31 in theories/mp/ on branch cfst, first for fragment v1 and then as
 version 2, which covers context-free session types, session type variables and
 functions over unbounded segments (section 12, restriction log in section 13).
-Same procedure as for PGV (pgv-adequacy.md) and Padovani and Novara
-(padovani-novara.md).
+Version 3 on 2026-11-01 adds n-ary choices and channels created after a segment
+call, and program 8 shows that a recursive body must type at every round
+(section 15). Same procedure as for PGV (pgv-adequacy.md) and Padovani and
+Novara (padovani-novara.md).
 
 Source. A. Mordido and J. A. Pérez, Deadlock-Free Context-Free Session Types,
 LNCS 2026, DOI 10.1007/978-3-032-28187-6_11. Indexed as mordido2026deadlockfree
@@ -606,13 +608,21 @@ Repairs.
 - R7, a channel is linear at every priority, and action priorities at a
   sequence are finite. Reason: program 7, a channel at Close^⊤ is unrestricted
   and can be dropped. Lost: programs that close or wait at ⊤ at a sequence.
+- R8, the body of a recursive function types at every round, under the
+  sequences that the round reaches. A round is one run of the body from one
+  call to the next. Reason: program 8 (section 15.2). Their rules type the body
+  once, under the sequences of the first call (pp. 28, 29), and accept two loops
+  that deadlock in the second round. Lost: programs whose loops type only at
+  their first round. Each one we know types again after other sequence
+  annotations at new, for example `rr_main` (section 15.2).
 
 Deviations of version 2.
 
 - Ψ in the types (D3). A function names the heads of the sequences of its
-  channel parameters as priority variables. Lost: recursive functions whose
-  body holds only for the sequences of the first call, for example unequal
-  increments. Those programs repeat their first round.
+  channel parameters as priority variables, so its body holds at every round.
+  This is repair R8. Unequal increments are kept when every round advances all
+  channels by one amount of priority (`rr_mp2_deadlock_free`). Version 3 keeps
+  it. Section 15.2 shows that nothing weaker is sound.
 - Functions over unbounded segments. A segment is the part of a session that
   one call of a recursive function consumes, and its length depends on the
   data, as the whole tree does in receiveTree. A function of latent effect ⊤
@@ -622,14 +632,22 @@ Deviations of version 2.
   effect ⊤, because the head after earlier calls has no bound. SHARP-EDGES 79
   records an attempt to give these instants their real ranks, which lifted
   nothing.
-  - Lost: such functions with a second linear parameter. Reason: a second
-    channel held during an action of effect ⊤ would need a priority above ⊤.
-    Two parameters with one common head would order each other, but after a
-    call both heads depend on the data, independently unless one existential
-    returns both channels, and version 2 has no product results. Their rules
-    type a copy over two tree channels with a pair result, because they check
-    the body under the sequences that Ψ fixes for the names of the parameters
-    (T-Inst and T-AbsLin, p. 25), as they do for receiveTree.
+  - Lost: such functions with a second linear parameter (U2). The core types
+    one, `copy` in theories/examples/cfst/TreeCopy.v, with the lockstep facts
+    D = {κ·w ≺ ι·w, ι·w ≺ (κ·w)·s, κ·w ≺ ζ, ι·w ≺ ζ ∣ w, s} and an existential
+    over two end points with a ⊗ result. So the loss is one of the
+    translation, not of the core. It stays in version 3, for two reasons. The
+    rank world cannot meet D at a call. Two channels of one tree type with
+    heads h₁ < h₂ and one increment have ranks q + h₁ and q + h₂ at the walk w,
+    and (κ·w)·s acts at q + 1 + h₁ when the next action of the tree is at ι + 1
+    (p. 5). So ι·w ≺ (κ·w)·s asks h₂ − h₁ < 1. D has to be a fact of a world
+    built from facts, and the strictness of such a world is a global property
+    (section 15.4). Second, segment functions in versions 2 and 3 return one
+    channel, and a ⊗ result needs a new form of `MEx` and a new opening rule.
+    Their rules type a copy over two tree channels with a pair result,
+    because they check the body under the sequences that Ψ fixes for the names
+    of the parameters (T-Inst and T-AbsLin, p. 25), as they do for
+    receiveTree.
   - Lost: bodies that send a channel, and sends of a channel on the channel a
     call returns. Reason: the core sends a channel only if its point is the slot
     of the carrier and lies above the carrier. At an abstract position the
@@ -647,16 +665,19 @@ Deviations of version 2.
   last leaf sits at 17 and Wait⁹ is junk, above every finite level. So no fact
   fixed when the function is defined puts the returned channel below an anchor
   point of finite priority.
-  - Lost: programs that act on the returned channel while they hold a channel
-    of finite priority. Their continuation runs below the segment for large
-    data, which their rules do not see.
-  - Lost: programs that act on another channel while they hold the returned
-    one. These are sound in the rank world, because junk lies above every
-    finite level. Their lower bound needs positions at end points with a head
-    written relative to the end point, a symbolic walk that computes a bound
-    valid at every head, a fixed increment in `MSeg`, and an existential whose
-    anchor carries the instance of the type variables. Version 2 has none of
-    them.
+  - Lost in version 2: programs that act on the returned channel while they
+    hold a channel of finite priority, and programs that act on another
+    channel while they hold the returned one.
+  - Version 3 lifts both for channels created after the call, one direction
+    per channel (section 15.3). A channel created below the floor may act
+    while the caller holds the returned channel. A channel created above the
+    ceiling may be held while the caller acts on the returned channel.
+  - Lost in version 3: a channel created after the call that the program
+    orders against the returned channel in both directions, and channels
+    received or created before the call. Reason: the walks of the returned
+    channel have ranks that depend on the data (`rt_rank_data`), so only the
+    floor and the ceiling bound them uniformly. A two way interleaving needs
+    a world built from facts (section 15.4).
 - Session type variables. A priority abstraction binds session type variables,
   which the anchor interprets and the box of the core binds (K6). A bound
   ∀α :: ρ becomes part of the predicate Θ. Type variables do not occur in the
@@ -671,9 +692,10 @@ Deviations of version 2.
 - Choice is binary. A unary choice is a binary one with equal branches, and its
   match a case with equal branches, with no rule of its own. A choice of n ≥ 3
   labels nests binary choices, and each inner choice needs a priority strictly
-  between the outer one and the continuations. Lost: n-ary choices whose
-  continuations lie at ρ + 1. Doubling every priority of a program keeps it
-  typed and makes room. The paper has no n-ary choice.
+  between the outer one and the continuations. Lost in version 2: n-ary choices
+  whose continuations lie at ρ + 1. Version 3 lifts this. An inner node carries
+  the priority of the outer node at a depth, and its rank lies strictly
+  between ρ and ρ + 1 (section 15.1, `ch3_mp3_deadlock_free`).
 - Every continuation rises at a match, at a sequence. Reason: the branch root
   x◁i is equivalent to the point of the branch only when the branch rises. Lost:
   programs whose branching partner can never select, and abstractions whose
@@ -698,13 +720,17 @@ and CfstDeadlock.v shows that no strict world types it. Milner's scheduler (A.5)
 is not typed by their repaired rules.
 
 Programs their repaired system types that version 2 does not translate:
-recursive functions whose body holds only for the first round's sequences
-(D3), segment functions with a second linear parameter or that send channels,
+segment functions with a second linear parameter or that send channels,
 programs that order the channel returned by a segment call against other
 finite channels, µ bodies with type variables, programs that discard a channel
 at Skip, n-ary choices without room between priorities, branchings whose
 continuation does not rise, and functions that return an unopened segment
-result.
+result. Recursive functions that type only at their first round are not in
+this list, because repair R8 rejects them for soundness (section 15.2).
+
+Version 3 translates n-ary choices without room and channels created after a
+segment call that are ordered against the returned channel in one direction.
+The other items stay, with the reasons above.
 
 ## Stage 3, the source semantics
 
@@ -782,3 +808,186 @@ follows a message.
   `mp2_deadlock_free`, so it is terminated or it reduces. Termination makes the
   source final. A reduction pairs two pending actions, and the source pairs the
   same two.
+
+## Stage 4, the world from the derivation
+
+### 15  Version 3
+
+The author approved Fix 1, a world built from the typing derivation in place of
+the rank world. Every comparison of a derivation was to become a fact between
+two points, and rounds of a recursion were to get counted instants as in
+Stream.v. The obligation was that the facts form a strict order. Version 3 is
+the result. Strictness fails across recursive calls (15.2), so D3 is a repair
+and not a loss. The other two losses need no world of facts in the cases that
+version 3 covers. The rank world gets room for them (15.1, 15.3). Section 15.4
+says what a world of facts would add and why its strictness is a global
+property.
+
+| File | Content |
+|---|---|
+| MPRounds.v | program 8 and its deadlock in their semantics, matching rates through version 2 |
+| MP3Types.v | priorities at a depth `PD`, the levels `PBB` below ⊥ and `PTT` above ⊤, positions `PL` and `PH` |
+| MP3World.v | ranks with a level and a subrank, the low chain `DLC`, the high chain above the ceiling |
+| MP3Typing.v | `brise` for inner nodes, rules `m_newlo` and `m_newhi`, `pmid` for packing and segment calls |
+| MP3Translate.v | `mp3_translate`, `mp3_deadlock_free` |
+| MP3Examples.v | the v2 examples, a choice with three labels, matching rates, rtA and rtB |
+| MP3Simulation.v | `mp3_deadlock_free_source` |
+
+Theorems, all closed under the global context.
+
+```
+Theorem mp3_translate Θ Γ e T ef e' :
+  mtyped Θ Γ e T ef e' →
+  ∀ ss Ψ B pts ins Δ Φ F, length ss = pc_nt Θ → Forall hcontractive ss →
+  good Ψ Θ B → pts_ok Ψ B pts → erel B ss pts ins Γ Δ → ub_below_s Wmp Ψ Φ (hiz B ef) F →
+  typed Wmp Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trs ss B pts T).
+
+Theorem mp3_deadlock_free e ef e' :
+  mtyped pc0 [] e MUnit ef e' → deadlock_free (∅, {[+ e' +]}).
+
+Theorem mp3_deadlock_free_source e ef e' :
+  mtyped pc0 [] e MUnit ef e' → mp_deadlock_free_src e.
+
+Theorem p8_not_deadlock_free : ¬ mp_deadlock_free_src p8_main.
+Theorem p8_not_mtyped : ¬ ∃ ef e', mtyped pc0 [] p8_main MUnit ef e'.     (version 2)
+```
+
+Each example has `∃ ef e', mtyped pc0 [] main MUnit ef e' ∧ deadlock_free (∅,
+{[+ e' +]})` and a source version.
+
+| Program | Theorems |
+|---|---|
+| receiveTree, the two streams, the repaired deadlock, T2 | `rt_mp3_deadlock_free` … `t2_mp3_deadlock_free`, `rt_deadlock_free_src3` … |
+| unequal increments with matching rates | `rr_mp2_deadlock_free`, `rr_deadlock_free_src`, `rr_mp3_deadlock_free`, `rr_deadlock_free_src3` |
+| a choice with three labels, continuations at ρ + 1 | `ch3_mp3_deadlock_free`, `ch3_deadlock_free_src3` |
+| receiveTree, then d below the floor | `rtA_mp3_deadlock_free`, `rtA_deadlock_free_src3` |
+| receiveTree, then d above the ceiling | `rtB_mp3_deadlock_free`, `rtB_deadlock_free_src3` |
+
+The core and the statements of soundness and the composition lemmas are
+unchanged. Version 2 is unchanged and builds.
+
+#### 15.1  n-ary choice
+
+An n-ary choice ⊕^ρ{ℓ₁, …, ℓₙ} nests binary choices. An inner node of the
+nesting carries the priority `PD ρ t`, the priority ρ at the depth t ≥ 1. Its
+value is the value of ρ, so every comparison of their rules reads it as ρ. Its
+rank is the rank of ρ with the depth as subrank. A rank at a finite priority z
+now has a level and a subrank. Lower points sit at level 0, channels at level 1
+with their depth, upper points at level 2. So an inner node lies above the outer
+node, below every upper point of ρ and below every channel at ρ + 1.
+
+A continuation K of a choice at a rises when its head lies above a, as before,
+or when its first choice is `PD a t` with t ≥ 1 (`brise`). The translation of
+the select and the match is unchanged. Only the proof that the branch root rises
+reads the depth (`ch_branch`).
+
+ch3_main selects the third label of ⊕¹{A: Close², B: Close², C: Close²}, written
+⊕¹(A, ⊕^{1·1}(B, C)). Their rules type it with every continuation at 2. Version
+2 needs a priority strictly between 1 and 2.
+
+#### 15.2  Rounds and program 8
+
+A round is one run of the body of a recursive function, from one call to the
+next. Their rules type the body once, under the sequences of the first call
+(the derivation for client, pp. 28 and 29). Program 8 shows that this is
+unsound.
+
+```
+client a b = let a = send () a in let (_, b) = receive b in client a b        (Listing 1.1)
+dsend b a  = let (_, a) = receive a in let b = send () b in
+             let b = send () b in dsend b a
+main = let (a, a′) = new Stream 1 4 in let (b, b′) = new Stream 2 2 in
+       fork (client a b′); dsend b a′
+```
+
+The first round of client acts at 1 while it holds b at 2, and at 2 while it
+holds a at 5. The first round of dsend acts at 1, 2 and 4 while it holds the
+other channel at 2, 5 and 5. All checks hold. In the run, client sends on a and
+dsend receives. dsend sends on b and client receives. Then client sends on a
+again and dsend sends on b again, and both wait forever.
+`p8_not_deadlock_free` runs the program in MP2Semantics.v to this state.
+`p8_not_mtyped` concludes that version 2 rejects it, because a derivation would
+make it deadlock free. In version 2 client's second round asks 5 < 4.
+
+The strictness argument has three parts.
+
+- Inside straight-line code every generated fact compares two priorities, so
+  the priorities rank the facts.
+- One recursive function on its own is strict. Rank an instant of round r by
+  the pair of r and the priority of the matching instant of the first round,
+  read lexicographically. A fact inside round r compares two first round
+  priorities, which their rules checked. A fact between round r and round r + 1
+  holds by the first component.
+- Two loops that share a channel each come with their own count of rounds, and
+  the two counts disagree when the loops advance the channel at different
+  rates. client advances a and b by one action per round, dsend advances a by
+  one and b by two. client's round 1 has a₁ ≺ b₁, dsend's round 0 has b₁ ≺ a₁.
+  The union is cyclic, and the program deadlocks.
+
+The exact condition is that the union of the round facts of all loops is
+acyclic. It is a property of the whole program. No check of one function at
+its first round decides it, because client is the same function in program 8 and
+in the deadlock free pairing with newclient. A sufficient condition per function
+is that every round types under its own sequences. This is repair R8, and the
+priority abstraction of version 2 already asks it. It keeps unequal increments
+when the rates match. `rr_main` replaces client by hrecv, which sends once on a
+and receives twice on b. Each round advances a by 4 and b by 2 · 2, every round
+types, and the program goes through versions 2 and 3.
+
+#### 15.3  Channels created after a segment call
+
+During a call of latent effect ⊤ the caller holds nothing finite (T-Let, p. 25,
+Fig. 4, p. 11). The returned channel c′ sits at an end point whose walks have
+ranks that depend on the data (`rt_rank_data`). The existential of the call
+bounds them by the floor and the ceiling of the anchor, and nothing finer holds
+at every tree.
+
+Version 3 adds two places for a channel d created after the call.
+
+- The low chain starts at the anchor slot B[RLow]. Its points rank KL j, below
+  every lower point of ⊥, so below the floor. A channel there (`m_newlo`, position
+  `PL`) acts with effect ⊥⁻ (`PBB`, value XBB) and counts as ⊥⁻ when held. It may
+  act while the caller holds c′, whose priority is ⊥, and nothing may act while
+  it is held.
+- The high chain starts at the successor of the ceiling, the point ε + 1 for the
+  upper point ε of the effect ⊤. Its points rank KU j, the junk of the ceiling.
+  A channel there (`m_newhi`, position `PH`) acts with effect ⊤⁺ (`PTT`, value
+  XTT) and counts as ⊤⁺ when held. The caller may act on c′, with effect ⊤,
+  while it holds d. After an action on d the caller holds nothing finite.
+
+The ranks gain KLL and KLH around the low chain and KV, KW and KX above the high
+chain. KV is the upper point of ⊤⁺, KW the lower point of a closure that holds
+nothing, which version 2 put at KU 0. A head written with ⊥⁻ or ⊤⁺ counts as ⊥
+or ⊤ (`xcl`), because channels at a sequence never act there. Effects with ⊤⁺
+lie above ⊤, so `hle` asks ⊤⁺ to stay out of an effect that it bounds by ⊤, and
+segment bodies and functions at a segment call carry no ⊤⁺. Channels on a chain
+are not packed into an existential and not passed to segment functions
+(`pmid`). They send and receive only unit.
+
+rtA_main creates d : Close⁵ after receiveTree returns c′ : Wait⁹, closes d while
+it holds c′ and then waits on c′. rtB_main creates d : Close¹², waits on c′
+while it holds d, then closes d. Their rules accept both, 5 < 9 and 9 < 12.
+Version 3 types rtA with d on the low chain and rtB with d on the high chain.
+
+A program that orders one d against c′ in both directions, for example
+c′ : !⁹; Wait¹³ and d : ?¹⁰; Close¹² interleaved, stays out. Each point of d
+would have to lie between two walks of c′, whose ranks the data fixes.
+
+#### 15.4  What a world of facts would add
+
+A world of facts orders the points by the facts that a derivation uses and by
+program order, and a strict world exists when those facts are acyclic. It
+covers what the rank world cannot. The post-call channel c′ can sit just above
+the actual end of the segment, with the channels created afterwards ordered
+against it by their static priorities, and the lockstep facts of a two channel
+segment function hold by construction. The proof obligation is acyclicity of
+the facts of the whole closed program. 15.2 shows that it fails for loops with
+different rates. For the post-call channel the argument would read the run.
+The segment instants have to precede c′, the channels compared with c′ after the
+call were created or received after it, and every comparison among them follows
+static priorities. A proof needs an invariant over all threads that relates the
+facts of each thread to the order of the run, which is the progress argument
+itself. Version 3 does not build this world. It keeps the rank world, whose
+strictness is free, and records the two cases that need the world of facts,
+two way interleaving after a segment call and two channel segment functions
+(U2), in section 13.

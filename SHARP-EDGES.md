@@ -1446,6 +1446,71 @@ name closes once. R-Com and R-Ch fire on any name. The final value of the main
 thread is shown to be a value, not to have a type of priority ⊤, because the
 simulation does not track types.
 
+**81. Mordido and Pérez, a recursive body must type at every round (Claude, 2026-11-01, theories/mp/MPRounds.v).**
+Their rules type the body of a recursive function once, under the sequences of
+its first call (pp. 28, 29). Program 8 types under these rules and deadlocks
+(`p8_not_deadlock_free`, closed). client of Listing 1.1 acts once on a and once
+on b per round. dsend receives once on a and sends twice on b per round. With
+the sequences 1 + 4k and 2 + 2k both first rounds type, and the run sticks in
+client's second round. A round is one run of the body from one call to the
+next.
+
+Fix 1 was to build the world from the derivation, with counted instants for
+rounds. Its strictness obligation fails here. One function alone is strict,
+ranked by its round and the priority of the matching first round instant. Two
+loops that advance a shared channel at different rates disagree on rounds, and
+the union of their facts is cyclic (a₁ ≺ b₁ from client's round 1, b₁ ≺ a₁
+from dsend's round 0). No check of one function at its first round separates
+program 8 from the deadlock free pairing of client with newclient, because
+client is the same in both. Repair R8 asks the body to type at every round.
+Version 2 already does, and `p8_not_mtyped` follows from
+`mp2_deadlock_free_source`. Unequal increments survive when every round
+advances all channels by one amount of priority (`rr_mp2_deadlock_free`, a
+loop with rates 1 and 2 and increments 4 and 2).
+
+**82. Mordido and Pérez version 3, n-ary choice by depth (Claude, 2026-11-01, theories/mp/MP3*.v).**
+An inner node of a nested n-ary choice carries `PD ρ t`, the priority ρ at the
+depth t ≥ 1. Its value is that of ρ, so the source comparisons read it as ρ,
+and its rank uses the depth as subrank. A rank at a finite priority became a
+triple of priority, level and subrank, with lower points at level 0, channels
+at level 1 and upper points at level 2. So the inner node lies strictly between
+ρ and ρ + 1 and below every upper point of ρ. `brise` lets a continuation rise
+either above ρ or to an inner node of the same choice. `pfin` stayed as it was,
+and a new `afin` admits `PD` for choices only, because instances of priority
+variables must stay plain integers. `ch3_mp3_deadlock_free` types a choice of
+three labels with every continuation at 1 + 1.
+
+**83. Mordido and Pérez version 3, channels created after a segment call (Claude, 2026-11-01, theories/mp/MP3*.v).**
+After receiveTree the returned channel c′ has walks whose ranks depend on the
+data (`rt_rank_data`), so only the floor and the ceiling of the anchor bound
+them. Version 3 gives channels created after the call two places outside that
+band. The low chain starts at the slot B[RLow] and ranks below every lower
+point of ⊥. The high chain starts at the successor of the ceiling, the point
+ε + 1 for the upper point ε of the effect ⊤. Their channels act with the new
+effects ⊥⁻ and ⊤⁺ and count as ⊥⁻ and ⊤⁺ when held. rtA closes d on the low
+chain while it holds c′, rtB waits on c′ while it holds d on the high chain
+(`rtA_mp3_deadlock_free`, `rtB_mp3_deadlock_free`, and the source versions).
+
+The ranks gained the low chain with its bounds and three ranks above the junk
+of the ceiling. The lower point of a closure that holds nothing moved from KU 0
+to the new KW, because an argument with effect ⊤⁺ may precede it. Folds of
+effects start at XBB and folds of lower bounds at XTT, the units of max and
+min. Heads written with ⊥⁻ or ⊤⁺ count as ⊥ or ⊤. `hle` keeps ⊤⁺ out of an
+effect it bounds by ⊤, so seven example proofs shelve that side condition
+until the derivation fixes the effect. `env_hi_below` and `ubs_part` take
+`pts_ok`, because an effect of ⊥⁻ before a held c′ goes through the floor.
+Channels on a chain send and receive only unit, are not packed into an
+existential and are not arguments of segment functions (`pmid`).
+
+Left out. A d ordered against c′ in both directions needs ranks between walks
+whose ranks the data fixes, so it needs a world built from facts. So does U2,
+a segment function over two channels, whose lockstep facts κ·w ≺ ι·w ≺ (κ·w)·s
+the core meets in TreeCopy.v and the rank world cannot meet with integer heads.
+The strictness of such a world is a property of the whole program, which entry
+81 shows is not checked by first round reasoning. The core, version 2 and the
+statements of soundness and composition are unchanged. 19 new results of
+version 3 and 4 of MPRounds.v are closed under the global context.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

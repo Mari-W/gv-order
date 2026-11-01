@@ -111,6 +111,14 @@ Version 2 in `mp/` supersedes fragment v1, with context-free session types, sess
 - `MP2Examples.v`: receiveTree with the tree channel, the two streams, the repaired classic deadlock and T2, each translated (`rt_mp2_deadlock_free`, `st_mp2_deadlock_free`, `df_mp2_deadlock_free`, `t2_mp2_deadlock_free`), and the rank of the tree channel after receiveTree, which depends on the size of the tree (`rt_rank_data`, SHARP-EDGES 79).
 - `MP2Semantics.v`: their reduction (Fig. 15) with repairs R4 and R5, and their deadlock freedom (Definition 1) for a source program.
 - `MP2Simulation.v`: a simulation between source configurations and translated processes, so every typed closed program is deadlock free in their semantics (`mp2_deadlock_free_source`, SHARP-EDGES 80, docs/extensions/adequacy/mordido-perez.md 14), with the four examples (`rt_deadlock_free_src` and the others).
+- `MPRounds.v`: program 8, two loops that type at their first round and deadlock in their semantics (`p8_not_deadlock_free`, `p8_not_mtyped`), and unequal increments with matching rates through version 2 (`rr_mp2_deadlock_free`, SHARP-EDGES 81).
+
+Version 3 in `mp/` extends version 2 with n-ary choices and with channels created after a segment call (SHARP-EDGES 82 and 83, docs/extensions/adequacy/mordido-perez.md 15).
+
+- `MP3Types.v`, `MP3World.v`, `MP3Typing.v`: priorities at a depth for inner nodes of a choice, the levels below ⊥ and above ⊤, the low chain and the high chain.
+- `MP3Translate.v`: the translation lemma and deadlock freedom (`mp3_translate`, `mp3_deadlock_free`).
+- `MP3Examples.v`: the examples of version 2, a choice with three labels (`ch3_mp3_deadlock_free`), matching rates (`rr_mp3_deadlock_free`), and a channel created after receiveTree below the floor or above the ceiling (`rtA_mp3_deadlock_free`, `rtB_mp3_deadlock_free`).
+- `MP3Simulation.v`: deadlock freedom in their semantics (`mp3_deadlock_free_source`) with every example (`ch3_deadlock_free_src3` and the others).
 
 `counterexamples/`
 
