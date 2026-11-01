@@ -46,6 +46,7 @@ theories/examples/ReceivedChain.v
 theories/examples/Forwarder.v
 theories/examples/Ordered.v
 theories/examples/FreshBetween.v
+theories/examples/FreshMany.v
 theories/examples/Rejected.v
 theories/counterexamples/DropCounter.v
 theories/pgv/PGVTypes.v
