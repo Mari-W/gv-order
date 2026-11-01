@@ -918,3 +918,113 @@ Proof.
   - rewrite Forall_forall in HL. by apply HL.
   - rewrite Forall_forall in HH. by apply HH.
 Qed.
+
+(** ** General constraints of E-NewFresh (sharp edges 93)
+
+    A constraint C of one variable ι (the variable 0) whose every fact
+    relates a point of the fresh channel to an outer point. A point of
+    the fresh channel has the root ι, so it is ι+k, (ι+b).i+k and so on.
+    [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
+    [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
+    point in the context of the rule. C may be infinite. *)
+
+Definition fresh_lo (C : bcs) (u p : point) : Prop :=
+  bc_facts C (FLt u p) ∧ fact_scoped (S (length (bc_env C))) (FLt u p) ∧
+  pt_root p = NVar 0 ∧ pt_root u ≠ NVar 0.
+
+Definition fresh_hi (C : bcs) (q v : point) : Prop :=
+  bc_facts C (FLt q v) ∧ fact_scoped (S (length (bc_env C))) (FLt q v) ∧
+  pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0.
+
+Definition fresh_ok (C : bcs) : Prop :=
+  ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
+    (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v).
+
+Definition fresh_outer (C : bcs) (u : point) : point := pt_inst (plist (pvar 0 :: bc_env C)) u.
+
+Lemma fresh_lo_inst σ C u p : fresh_lo (bcs_inst σ C) u p ↔ fresh_lo C u p.
+Proof. unfold fresh_lo. simpl. by rewrite length_fmap. Qed.
+
+Lemma fresh_hi_inst σ C q v : fresh_hi (bcs_inst σ C) q v ↔ fresh_hi C q v.
+Proof. unfold fresh_hi. simpl. by rewrite length_fmap. Qed.
+
+Lemma fresh_ok_inst σ C : fresh_ok C → fresh_ok (bcs_inst σ C).
+Proof.
+  intros H f Hf Hs. simpl in Hf, Hs. rewrite length_fmap in Hs.
+  destruct (H f Hf Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)].
+  - left. exists u, p. split; [done|]. by apply fresh_lo_inst.
+  - right. exists q, v. split; [done|]. by apply fresh_hi_inst.
+Qed.
+
+Lemma pn_vb_var k p : pn_vb k p → ∃ b, pn_root p = NVar b ∧ b < k.
+Proof. induction p as [c|b|q IH b' i]; simpl; [done|by exists b|exact IH]. Qed.
+
+Lemma pt_inst_outer σ d d' env u :
+  pn_vb (S (length env)) (pt_name u) → pt_root u ≠ NVar 0 →
+  pt_inst (plist (d :: (pt_inst σ <$> env))) u = pt_inst σ (pt_inst (plist (d' :: env)) u).
+Proof.
+  intros Hs Hr. rewrite pt_inst_comp. apply pt_inst_ext_root. intros b Hb.
+  pose proof (pn_vb_root _ _ _ Hs Hb) as Hlt.
+  destruct b as [|j]; [done|]. unfold compose, plist. simpl. rewrite list_lookup_fmap.
+  destruct (lookup_lt_is_Some_2 env j) as [y Hy]; [lia|]. by rewrite Hy.
+Qed.
+
+Lemma fresh_outer_inst σ C u :
+  pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →
+  fresh_outer (bcs_inst σ C) u = pt_inst σ (fresh_outer C u).
+Proof. intros Hs Hr. unfold fresh_outer. simpl. by apply pt_inst_outer. Qed.
+
+Lemma fresh_outer_skn W Ψ C u :
+  Forall (skn W Ψ) (bc_env C) → pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →
+  skn W Ψ (fresh_outer C u).
+Proof.
+  intros HK Hs Hr. destruct (pn_vb_var _ _ Hs) as ([|j] & Hb & Hlt); [done|].
+  destruct (lookup_lt_is_Some_2 (bc_env C) j) as [y Hy]; [lia|].
+  apply (skn_root W Ψ y); [|rewrite Forall_lookup in HK; by apply (HK j)].
+  unfold fresh_outer. rewrite pt_root_inst. unfold pt_root at 2. rewrite Hb.
+  unfold plist. simpl. by rewrite Hy.
+Qed.
+
+Lemma fresh_lo_skn W Ψ C u p : Forall (skn W Ψ) (bc_env C) → fresh_lo C u p → skn W Ψ (fresh_outer C u).
+Proof. intros HK (_ & [Hs _] & _ & Hr). by apply fresh_outer_skn. Qed.
+
+Lemma fresh_hi_skn W Ψ C q v : Forall (skn W Ψ) (bc_env C) → fresh_hi C q v → skn W Ψ (fresh_outer C v).
+Proof. intros HK (_ & [_ Hs] & _ & Hr). by apply fresh_outer_skn. Qed.
+
+Lemma pt_inst_unshift x z : pt_inst (plist [x]) (pt_inst (λ a', pvar (a' + 1)) z) = z.
+Proof.
+  rewrite pt_inst_comp. rewrite <-(pt_inst_pvar z) at 2. apply pt_inst_ext.
+  intros b. simpl. rewrite pt_inst_pvar_at. unfold plist. simpl.
+  replace (b + 1) with (S b) by lia. simpl. unfold pvar. f_equal. f_equal. lia.
+Qed.
+
+Lemma open1_comp x env f :
+  fact_map (pt_inst (plist [x])) (fact_map (pt_inst (pup 1 (plist env))) f)
+  = fact_map (pt_inst (plist (x :: env))) f.
+Proof.
+  assert (∀ z, pt_inst (plist [x]) (pt_inst (pup 1 (plist env)) z) = pt_inst (plist (x :: env)) z)
+    as E.
+  { intros z. rewrite pt_inst_comp. apply pt_inst_ext. intros b. unfold compose, pup.
+    destruct (decide (b < 1)).
+    - assert (b = 0) as -> by lia. by rewrite pt_inst_pvar_at.
+    - rewrite pt_inst_unshift. destruct b as [|b]; [lia|]. replace (S b - 1) with b by lia.
+      unfold plist. simpl. destruct (env !! b); [done|]. unfold pvar. repeat f_equal. }
+  destruct f; simpl; by rewrite !E.
+Qed.
+
+Lemma bcs_hold_fresh_intro (eq lt : point → point → Prop) C x :
+  (∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
+     fact_holds eq lt (fact_map (pt_inst (plist (x :: bc_env C))) f)) →
+  bcs_hold eq lt C [x].
+Proof. intros H g (f & Hf & Hs & ->). rewrite open1_comp. by apply H. Qed.
+
+(** A fact of a hypothesis (C, [x]) read off its raw fact. *)
+Lemma slt_hyp_fresh W Ψ C x u v :
+  (C, [x]) ∈ Ψ → bc_facts C (FLt u v) → fact_scoped (S (length (bc_env C))) (FLt u v) →
+  slt W Ψ (pt_inst (plist (x :: bc_env C)) u) (pt_inst (plist (x :: bc_env C)) v).
+Proof.
+  intros Hg Hf Hs. apply sl_h. exists C, [x]. split; [done|].
+  exists (fact_map (pt_inst (pup 1 (plist (bc_env C)))) (FLt u v)). split.
+  - exists (FLt u v). split_and!; [done|done|done].
+  - by rewrite open1_comp.
+Qed.

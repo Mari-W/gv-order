@@ -166,7 +166,7 @@ Proof.
     |Φ Ψ Θ Δ' Δ F e T Hwk _ IH
     |Φ Ψ Θ Δ U F e T Hu _ IH
     |Φ Ψ Θ Δ F e T T' _ _ IH
-    |Φ Ψ Θ Δ F e T Ss L H _ _ _ IH].
+    |Φ Ψ Θ Δ F e T Ss C _ _ _ _ IH].
   (* E-Unit *)
   - split_and!; simpl; [by rewrite dom_empty_L|done|].
     intros x Hx. exact (lenv_empty_no_avail _ _ HΔ (lenv_avail_lin_avail _ _ Hx)).
@@ -329,7 +329,7 @@ Proof.
     |Φ Ψ Θ Δ' Δ F e T Hwk H IH
     |Φ Ψ Θ Δ U F e T Hu H IH
     |Φ Ψ Θ Δ F e T T' Hteq H IH
-    |Φ Ψ Θ Δ F e T Ss L H HK Hbt Hb IH]; intros W1 ρ σ HW HW1 Hρ HΨ;
+    |Φ Ψ Θ Δ F e T Ss C HC HK Hbt Hb IH]; intros W1 ρ σ HW HW1 Hρ HΨ;
     pose proof HW1 as (HN & He & Hl & HS).
   - rewrite tenv_pinst_empty. apply sr_unit. by apply lenv_empty_pinst.
   - rewrite tenv_pinst_empty. apply sr_konst; [by apply lenv_empty_pinst|].
@@ -424,12 +424,14 @@ Proof.
   - cbn [lenv_pinst]. apply sr_contract; [by apply unlimited_pinst|by apply (IH W1 ρ σ)].
   - eapply sr_conv; [by apply (steq_teqW W W1 σ HW HW1 Ψ)|by apply IH].
   - apply (sr_newfresh W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) _ e (pinst_ty σ T) Ss
-             (pt_inst σ <$> L) (pt_inst σ <$> H)).
-    + rewrite <-fmap_app. apply Forall_fmap. eapply Forall_impl; [exact HK|].
-      intros x Hx. by apply (skn_pinst_known W W1 σ HW HW1 Ψ).
-    + intros l' h' Hl0 Hh0. apply list_elem_of_fmap in Hl0 as (l & -> & Hl0).
-      apply list_elem_of_fmap in Hh0 as (h & -> & Hh0).
-      apply (slt_pinst W W1 σ HW HW1 Ψ); [done|]. by apply Hbt.
+             (λ x p, ∃ u, fresh_lo C u p ∧ x = pt_inst σ (fresh_outer C u))
+             (λ q y, ∃ v, fresh_hi C q v ∧ y = pt_inst σ (fresh_outer C v))).
+    + intros x p (u & Hu & ->). split; [|apply Hu].
+      apply (skn_pinst_known W W1 σ HW HW1 Ψ); [done|]. by eapply fresh_lo_skn.
+    + intros q y (v & Hv & ->). split; [apply Hv|].
+      apply (skn_pinst_known W W1 σ HW HW1 Ψ); [done|]. by eapply fresh_hi_skn.
+    + intros x p q y (u & Hu & ->) (v & Hv & ->) Hpq.
+      apply (slt_pinst W W1 σ HW HW1 Ψ); [done|]. by apply (Hbt u p q v).
     + intros W2 a HW2 HL2 HH2 Ha2.
       set (σ' := pt_inst (plist [pconst a]) ∘ pup 1 σ).
       assert (∀ b, pt_inst σ' (pshift 1 b) = σ b) as Hsh
@@ -446,8 +448,8 @@ Proof.
       { unfold fhyps_pinst. rewrite <-map_fmap_compose. apply map_fmap_ext.
         intros i [u|] _; simpl; [|done]. f_equal. rewrite pt_inst_comp.
         apply pt_inst_ext. exact Hsh. }
-      assert (hyps_inst σ' (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
-              = hyps_inst σ Ψ ++ [(bcs_inst σ (fresh_bcs L H), [pconst a])]) as E4.
+      assert (hyps_inst σ' (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
+              = hyps_inst σ Ψ ++ [(bcs_inst σ C, [pconst a])]) as E4.
       { rewrite hyps_inst_app, hyps_comp, hyps_inst_single. f_equal.
         - apply hyps_inst_ext. exact Hsh.
         - f_equal. f_equal; first [apply (ids_plist [pconst a] σ)
@@ -457,7 +459,16 @@ Proof.
       * apply hyps_hold_app; [exact (hyps_hold_wext _ _ _ HW2 HΨ)|].
         intros C0 xs0 Hg. apply list_elem_of_singleton in Hg. injection Hg as -> ->.
         split; [|by apply Forall_singleton].
-        rewrite bcs_inst_fresh. by apply fresh_hold.
+        apply bcs_hold_fresh_intro. intros f Hf Hs. simpl in Hf, Hs. rewrite length_fmap in Hs.
+        destruct (HC f Hf Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)]; simpl.
+        -- pose proof Hu as (Hf' & [Hsu _] & Hp & Hu0).
+          rewrite (pt_inst_outer σ (pconst a) (pvar 0)) by done.
+          rewrite (pt_inst_ext_root _ (λ _, pconst a) p) by (intros b Hb0; rewrite Hp in Hb0; by injection Hb0 as <-).
+          apply (HL2 _ p). exists u. split; [exact Hu|reflexivity].
+        -- pose proof Hv as (Hf' & [_ Hsv] & Hq & Hv0).
+          rewrite (pt_inst_outer σ (pconst a) (pvar 0) _ v) by done.
+          rewrite (pt_inst_ext_root _ (λ _, pconst a) q) by (intros b Hb0; rewrite Hq in Hb0; by injection Hb0 as <-).
+          apply (HH2 q). exists v. split; [exact Hv|reflexivity].
 Qed.
 
 (** ** The substitution lemma on its own
@@ -514,7 +525,7 @@ Proof.
     |Φ Ψ Θ Δ' Δ F e T Hwk H IH
     |Φ Ψ Θ Δ U F e T Hu H IH
     |Φ Ψ Θ Δ F e T T' Hteq H IH
-    |Φ Ψ Θ Δ F e T Ss L H HK Hbt Hb IH]; intros σ Ψ' HΨ.
+    |Φ Ψ Θ Δ F e T Ss C HC HK Hbt Hb IH]; intros σ Ψ' HΨ.
   - rewrite tenv_pinst_empty. apply t_unit. by apply lenv_empty_pinst.
   - rewrite tenv_pinst_empty. apply t_konst; [by apply lenv_empty_pinst| |].
     + apply (konst_ty_pinst W W σ Hwf HWW (seqs W Ψ) _ (slt W Ψ) _ (skn W Ψ)); [| | |done|done].
@@ -592,16 +603,18 @@ Proof.
   - eapply t_wk; [by apply lenv_wk_pinst|by apply IH].
   - cbn [lenv_pinst]. apply t_contract; [by apply unlimited_pinst|by apply (IH σ Ψ')].
   - eapply t_conv; [by apply (steq_pinst_s W W σ Hwf HWW Ψ)|by apply IH].
-  - apply (t_newfresh W _ _ _ _ _ _ _ Ss (pt_inst σ <$> L) (pt_inst σ <$> H)).
-    + rewrite <-fmap_app. apply Forall_fmap. eapply Forall_impl; [exact HK|].
+  - apply (t_newfresh W _ _ _ _ _ _ _ Ss (bcs_inst σ C)).
+    + by apply fresh_ok_inst.
+    + simpl. apply Forall_fmap. eapply Forall_impl; [exact HK|].
       intros x Hx. by apply (skn_pinst_s W W σ Hwf HWW Ψ Ψ').
-    + intros l' h' Hl0 Hh0. apply list_elem_of_fmap in Hl0 as (l & -> & Hl0).
-      apply list_elem_of_fmap in Hh0 as (h & -> & Hh0).
-      apply (slt_pinst_s W W σ Hwf HWW Ψ Ψ'); [done|]. by apply Hbt.
-    + set (Ψt := hyps_inst (pshift 1) Ψ' ++
-                   [(bcs_inst (pshift 1) (fresh_bcs (pt_inst σ <$> L) (pt_inst σ <$> H)), ids 1)]).
+    + intros u p q v Hu Hv Hpq.
+      apply (proj1 (fresh_lo_inst σ C u p)) in Hu. apply (proj1 (fresh_hi_inst σ C q v)) in Hv.
+      pose proof Hu as (_ & [Hsu _] & _ & Hu0). pose proof Hv as (_ & [_ Hsv] & _ & Hv0).
+      rewrite (fresh_outer_inst σ C u Hsu Hu0), (fresh_outer_inst σ C v Hsv Hv0).
+      apply (slt_pinst_s W W σ Hwf HWW Ψ Ψ'); [done|]. by apply (Hbt u p q v).
+    + set (Ψt := hyps_inst (pshift 1) Ψ' ++ [(bcs_inst (pshift 1) (bcs_inst σ C), ids 1)]).
       assert (hyps_hold (seqs W Ψt) (slt W Ψt) (skn W Ψt)
-                (hyps_inst (pup 1 σ) (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])))
+                (hyps_inst (pup 1 σ) (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])))
         as HΨ'.
       { assert (hyps_hold (seqs W Ψt) (slt W Ψt) (skn W Ψt) (hyps_inst (pshift 1) Ψ')) as Hsub.
         { apply hyps_hold_sub. intros g Hg. apply elem_of_app. by left. }
@@ -615,7 +628,7 @@ Proof.
           + intros x Hx. by apply (skn_pinst_s W W (pshift 1) Hwf HWW Ψ').
         - rewrite hyps_inst_single. apply hyps_hold_sub. intros g Hg.
           apply list_elem_of_singleton in Hg as ->. apply elem_of_app. right.
-          apply list_elem_of_singleton. rewrite ids_pup, <-bcs_inst_fresh, !bcs_comp. f_equal.
+          apply list_elem_of_singleton. rewrite ids_pup, !bcs_comp. f_equal.
           apply bcs_inst_ext. intros a. unfold compose. apply pup_pshift. }
       pose proof (IH (pup 1 σ) _ HΨ') as Hb'.
       rewrite (fhyps_pinst_comp_ext (pup 1 σ) (pshift 1) (pshift 1) σ) in Hb' by apply pup_pshift.

@@ -74,22 +74,27 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ (Some U :: Δ) F (rename pred e) T
   | t_conv Φ Ψ Θ Δ F e T T' :                           (* E-Conv, ≈ up to Γ ⊢ ≡ *)
       steq W Ψ T T' → typed W Φ Ψ Θ Δ F e T → typed W Φ Ψ Θ Δ F e T'
-  | t_newfresh Φ Ψ Θ Δ F e T S L H :                    (* E-NewFresh *)
-      Forall (skn W Ψ) (L ++ H) →
-      (∀ l h, l ∈ L → h ∈ H → slt W Ψ l h) →
+  | t_newfresh Φ Ψ Θ Δ F e T S C :                      (* E-NewFresh *)
+      fresh_ok C →
+      Forall (skn W Ψ) (bc_env C) →
+      (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
+         slt W Ψ (fresh_outer C u) (fresh_outer C v)) →
       typed W (fhyps_pinst (pshift 1) Φ)
-        (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
+        (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
         (tenv_pinst (pshift 1) Θ)
         (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
         (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
       typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
 
-(** E-NewFresh (sharp edges 90). The fresh point ι is the point
+(** E-NewFresh (sharp edges 90, 93). The fresh point ι is the point
     variable 0 of the body, bound like the ιs of E-Exp, so Φ, Ψ, Θ, Δ,
     F and T shift past it and ι is free in none of them. The body
-    assumes the hypothesis C = L ≺ ι ≺ H ([fresh_bcs]) and holds the
-    two ends of the channel at ι. The points of L and H are known, and
-    every point of L lies below every point of H (betweenness). *)
+    assumes the hypothesis C, whose facts relate points of the fresh
+    channel (ι+k, ι.i, ι.i+k, …) to outer points ([fresh_ok]), and
+    holds the two ends of the channel at ι. The outer points are
+    known. Betweenness asks u ≺ v for every fact u ≺ p and q ≺ v of C
+    with q at or after p in program order of one name. [t_newfresh_lh]
+    is the form with lists, L ≺ ι ≺ H. *)
 
 (** E-Force is E-App at the constant force. The instance must meet the
     box's constraint, every fact read from W and the hypotheses Ψ
@@ -167,4 +172,32 @@ Proof.
   intros Hg Hh. apply sl_h. exists (bcs_inst σ (fresh_bcs L H)), [x]. split; [done|].
   rewrite bcs_inst_fresh. apply fresh_open. right. exists (pt_inst σ h).
   split; [by apply list_elem_of_fmap_2|done].
+Qed.
+
+(** E-NewFresh with lists: L ≺ ι ≺ H, every point of L below every
+    point of H (sharp edges 90). *)
+Lemma t_newfresh_lh W Φ Ψ Θ Δ F e T S L H :
+  Forall (skn W Ψ) (L ++ H) →
+  (∀ l h, l ∈ L → h ∈ H → slt W Ψ l h) →
+  typed W (fhyps_pinst (pshift 1) Φ)
+    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
+    (tenv_pinst (pshift 1) Θ)
+    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
+    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
+  typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
+Proof.
+  intros HK Hbt Hb. apply (t_newfresh W Φ Ψ Θ Δ F e T S (fresh_bcs L H)); [| | |done].
+  - intros f Hf Hs. destruct Hf as [(i & Hi & ->)|(j & Hj & ->)].
+    + left. eexists _, _. split; [done|]. split_and!; [left; by exists i|done|done|done].
+    + right. eexists _, _. split; [done|]. split_and!; [right; by exists j|done|done|done].
+  - done.
+  - intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) _.
+    destruct Hf as [(i & Hi & E)|(j & Hj & E)]; injection E as -> ->; [|done].
+    destruct Hf' as [(i' & Hi' & E)|(j & Hj & E)]; injection E as -> ->; [done|].
+    unfold fresh_outer. rewrite !pt_inst_pvar_at. unfold plist. simpl.
+    destruct (lookup_lt_is_Some_2 L i Hi) as [l Hl].
+    destruct (lookup_lt_is_Some_2 H j Hj) as [h Hh].
+    rewrite (lookup_app_l_Some _ _ _ _ Hl).
+    rewrite lookup_app_r by lia. replace (length L + j - length L) with j by lia. rewrite Hh.
+    apply Hbt; by eapply list_elem_of_lookup_2.
 Qed.

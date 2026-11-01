@@ -78,10 +78,12 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       sem_rules W Θ (Some U :: Δ) F (rename pred e) T
   | sr_conv Θ Δ F e T T' :                               (* E-Conv, ≈_W (sharp edges 67) *)
       teqW W T T' → sem_rules W Θ Δ F e T → sem_rules W Θ Δ F e T'
-  | sr_newfresh Θ Δ F e T S L H :                        (* E-NewFresh (sharp edges 90) *)
-      Forall (pt_known W) (L ++ H) → (∀ l h, l ∈ L → h ∈ H → w_lt W l h) →
-      (∀ W1 a, wext W W1 → Forall (λ l, w_lt W1 l (pconst a)) L →
-         Forall (λ h, w_lt W1 (pconst a) h) H → pt_known W1 (pconst a) →
+  | sr_newfresh Θ Δ F e T S (Lo Hi : point → point → Prop) : (* E-NewFresh (sharp edges 90, 93) *)
+      (∀ x p, Lo x p → pt_known W x ∧ pt_root p = NVar 0) →
+      (∀ q y, Hi q y → pt_root q = NVar 0 ∧ pt_known W y) →
+      (∀ x p q y, Lo x p → Hi q y → ple p q → w_lt W x y) →
+      (∀ W1 a, wext W W1 → (∀ x p, Lo x p → w_lt W1 x (pfresh a p)) →
+         (∀ q y, Hi q y → w_lt W1 (pfresh a q) y) → pt_known W1 (pconst a) →
          sem_rules W1 Θ (Some (TSess (dual S) (pconst a)) :: Some (TSess S (pconst a)) :: Δ) F e T) →
       sem_rules W Θ Δ F (LetP (App ENew EUnit) e) T.
 
@@ -123,7 +125,7 @@ Proof.
     |W Θ Δ' Δ F e T Hwk H IH
     |W Θ Δ U F e T Hu H IH
     |W Θ Δ F e T T' Hteq H IH
-    |W Θ Δ F e T S L H HK Hbt Hb IH]; intros Ht0 HW.
+    |W Θ Δ F e T S Lo Hi HL HH Hbt Hb IH]; intros Ht0 HW.
   - by apply sem_typed_unit.
   - by apply sem_typed_konst.
   - by apply sem_typed_var.
@@ -142,6 +144,6 @@ Proof.
   - eapply sem_typed_wk; [done|by apply IH].
   - apply sem_typed_contract; [done|by apply IH].
   - eapply sem_typed_tconv; [done|by apply IH].
-  - apply (sem_typed_newfresh W Θ Δ F e T S L H); [done|done|].
-    intros W1 a HW1 HL HH Ha. apply IH; [done..| |apply HW1]. by apply Hb.
+  - apply (sem_typed_newfresh W Θ Δ F e T S Lo Hi); [done|done|done|].
+    intros W1 a HW1 HL1 HH1 Ha. apply IH; [done..| |apply HW1]. by apply Hb.
 Qed.
