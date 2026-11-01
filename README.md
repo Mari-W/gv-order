@@ -84,6 +84,8 @@ has no axioms and no admitted proofs.
 - `RequestReply.v`, `Relay.v`, `TailCall.v`, `ReceivedChain.v`, `Forwarder.v`: recursive boxes with infinite constraints.
 - `Ordered.v`: a box whose constraint orders its two arguments.
 - `FreshBetween.v`: a box over ι ≺ κ that creates a channel between them with E-NewFresh (`fb_between_underivable`, `fb_deadlock_free_empty`).
+- `FreshMany.v`: the fresh channel acts three times between ι and κ, under the infinite constraint {ι ≺ δ} ∪ {δ+k ≺ κ} (`fm_deadlock_free`).
+- `FreshTools.v` and `SyncFresh.v`, `CycleFresh.v`, `SchedulerFresh.v`, `RequestReplyFresh.v`, `TailCallFresh.v`, `RelayFresh.v`: the closed examples retyped with fresh points in smaller worlds (`*_deadlock_free_fresh`).
 - `Rejected.v`: programs the static system rejects (`rr_call_underivable`).
 
 `counterexamples/`
@@ -119,7 +121,7 @@ has no axioms and no admitted proofs.
 - `pn_deadlock_free` (pn/PNTranslate.v): the translation of a closed program of type unit in fragment v1 of repaired Padovani and Novara is deadlock free. `fibo_deadlock_free` and `pipe_deadlock_free` (pn/PNExamples.v) apply it.
 - `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/.
-- E-NewFresh (`t_newfresh`, static/Typing.v) creates a channel at a fresh point ι with facts L ≺ ι ≺ H when every point of L lies below every point of H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 92).
+- E-NewFresh (`t_newfresh`, static/Typing.v) creates a channel at a fresh point ι with a constraint C that relates points of ι (ι+k, ι.i, …) to known points, when u ≺ v holds for every u ≺ p and q ≺ v of C with q at or after p in program order. `t_newfresh_lh` is the form L ≺ ι ≺ H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 96).
 
 ## Other documents
 

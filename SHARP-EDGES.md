@@ -906,7 +906,51 @@ empty world. A closed example can move its world facts into E-NewFresh this way
 when each fact relates the first point of a channel to points that exist when
 the channel is created. Facts on a later instant of the new channel, such as
 (b, 1) ≺ (a, 0), stay in the world. The existing examples were left as they
-are.
+are. Entry 93 lifts this restriction.
+
+**93. Facts on every point of the fresh channel (Claude, 2026-11-01, second stage).**
+The list form L ≺ ι ≺ H cannot type a fresh channel that acts several times
+while a later point waits (examples/FreshMany.v needs δ+k ≺ κ for k = 0, 1, 2).
+`t_newfresh` now takes a box constraint C of one variable whose every fact
+relates one point of ι (ι+k, (ι+b).i+k, and deeper carried points) to one outer
+point, in either direction (`fresh_ok`, `fresh_lo`, `fresh_hi`). C may be
+infinite. The list form is the lemma `t_newfresh_lh`, and FreshBetween.v uses
+it unchanged. Two choices. C has no fact between two points of ι, because then
+paths could run inside ι and C would need its own strictness. C has no ≡ fact
+(96). The semantic rule takes two relations Lo and Hi with the fresh point as
+the variable 0, so rules/ needs no box constraints, and `pfresh` puts the
+constant in.
+
+**94. The exact betweenness for points of the fresh channel (Claude, 2026-11-01).**
+For every fact u ≺ p and q ≺ v of C with q on the name of p at an offset at
+least that of p (`ple p q`), Γ ⊢ u ≺ v. A path through a enters at p, moves only
+along program order of one name, and leaves at q. Carried roots do not connect
+ι to ι.i in order, because a world relates a carried point to its base only
+through facts and C has none between points of ι. So "q reachable from p by
+program order or carried roots" in the task reduces to `ple p q`.
+`wext_fresh_between_gen` builds the world with a closed form `gblt` of four
+shapes and a sixteen-case transitivity proof. Betweenness closes the four cases
+in which a path leaves a after it entered.
+
+**95. Retyping the closed examples with fresh points (Claude, 2026-11-01).**
+Sync, cycle, scheduler and request/reply type in the empty world, tail call
+keeps the constant of its ceiling, and relay keeps the constant of c with its
+facts on its own carried points (SyncFresh.v, CycleFresh.v, SchedulerFresh.v,
+RequestReplyFresh.v, TailCallFresh.v, RelayFresh.v). Scheduler creates r₁ by
+E-Const at the fresh point of r₀, which gives the alias that link needs.
+Request/reply puts the infinite family {γ+k ≺ ε+k, ε+k ≺ γ+k+1} into C, and
+program order gives its betweenness. Delegation and received chain do not
+retype, because their facts relate a channel to its own carried points (93).
+Forwarder does not, because it aliases carried points of two channels for every
+k. Factory under □∀ι creates no channel in main. No box constraint gets
+simpler. fresh-points.md has the table.
+
+**96. One ≡ fact in E-NewFresh not done (Claude, 2026-11-01).**
+The optional part was to allow one fact ι ≡ x and to derive E-Const at x from
+it. An alias identifies every successor and carried point of ι with those of
+x, so the semantic world combines the alias world `W0'` of E-Const with `Wg`,
+and strictness and conservativity need a closed form for the combination. That
+is a second argument of the size of 94, so it stays open. E-Const is unchanged.
 
 ## From the earlier abandoned mechanization (spec §15)
 
