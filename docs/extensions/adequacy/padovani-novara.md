@@ -315,8 +315,8 @@ Theorem pn_deadlock_free e τ e' :
 
 Theorem pn_translate Γ e t τ e' :
   pn_typed Γ e t τ e' →
-  ∀ Ψ B k ins Δ Φ F, good Ψ B → erel B k ins Γ Δ → ub_below_s Wpn Ψ Φ (hiz B k τ) F →
-  typed Wpn Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trz B k t).
+  ∀ Ψ B k ins Δ Φ F, good Ψ B → erel B k ins Γ Δ → ub_below_s wnil Ψ Φ (hiz B k τ) F →
+  typed wnil Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trz B k t).
 
 Theorem fibo_deadlock_free :
   ∃ τ e', pn_typed [] fibo_main PUnit τ e' ∧ deadlock_free (∅, {[+ e' +]}).
@@ -353,11 +353,12 @@ inside level-⊤ arrows and leaves basic types alone (p10).
 
 #### 7.2  The world and the types
 
-`Wpn` (PNWorld.v) has one root constant. Levels become slots of a level anchor
-B. B[RAnc a] is the anchor shifted by a. B[RCh c] is the point of the channel
+Levels become slots of a level anchor B (PNWorld.v). B[RAnc a] is the anchor shifted by a. B[RCh c] is the point of the channel
 with code c, its message at offset 0 and its close at offset 1. B[RLo z] is the
 lower point of level z, B[RHi z] the upper point of level z and B[RTop] the
-ceiling for the latent effect ⊤. The root constant is the anchor of shift 0.
+ceiling for the latent effect ⊤. The program's one top-level point variable,
+under the constraint `Crel`, is the anchor of shift 0 (existentials.md part 6,
+sharp edges 110). Until 2026-11-01 it was the root constant of a world `Wpn`.
 Inside a box the anchor is the box's one point variable, and a force
 instantiates it with an anchor of the caller.
 
@@ -365,10 +366,10 @@ A denotation `den` reads points. It commutes with successor and slots and adds
 the anchor's shift to every level of its slots. The rank `rank` of a denotation
 is (level, instant) in ℤ × ℕ with a top element, read lexicographically.
 B[RLo z] ranks at (z, 0), the message of a channel of level z at (z, 1), its close at
-(z, 2), B[RHi z] at (z, 3) and B[RTop] at top. `Wpn` identifies two points of
-the root with one denotation and orders two with rising rank. `Wpn_strict`
-follows from `wgen_strict_den`, a new general lemma in ExampleTools.v next to
-`wgen_strict_by`, together with `zrank` and `wgen_strict_z` (decision 4).
+(z, 2), B[RHi z] at (z, 3) and B[RTop] at top. `Crel` identifies two points of
+the anchor with one denotation and orders two with rising rank. `Crel_acyclic`
+follows from `c0_acyclic_den` in ExampleTools.v, the argument of
+`wgen_strict_den` read on a top-level constraint (decision 4).
 
 `trz B k t` translates ⇑ᵏ t at the anchor B.
 
