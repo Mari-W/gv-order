@@ -183,6 +183,53 @@ Proof.
   intros x H. apply Hlt in H. exact (Hirr _ H).
 Qed.
 
+(** A top-level constraint is acyclic when a rank rises along program
+    order and along its ≺ facts and its ≡ facts keep the denotation
+    (sharp edges 110). *)
+Lemma c0_acyclic_den {D A} (R : A → A → Prop) n P (den : point → D)
+    (dsh : D → D) (dsl : D → nat → D) (r : D → A) :
+  (∀ a, ¬ R a a) → (∀ a b c, R a b → R b c → R a c) →
+  (∀ x, den (pt_shift 1 x) = dsh (den x)) →
+  (∀ x i, den (pt_slot x i) = dsl (den x) i) →
+  (∀ x y, P (FEq x y) → den x = den y) →
+  (∀ d, R (r d) (r (dsh d))) →
+  (∀ x y, P (FLt x y) → R (r (den x)) (r (den y))) →
+  c0_acyclic n (BCs [] P).
+Proof.
+  intros Hirr Htr Hs Hl HE Hr HL. split; [done|].
+  assert (∀ x y, geq (c0_eq n (BCs [] P)) x y → den x = den y) as Heq.
+  { induction 1 as [x y H| | | | |]; try congruence; rewrite ?Hs, ?Hl; try congruence.
+    apply bcs_open_nil in H as [H _]. by apply HE. }
+  assert (∀ x y, glt (c0_eq n (BCs [] P)) (c0_lt n (BCs [] P)) x y → R (r (den x)) (r (den y))) as Hlt.
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    - apply bcs_open_nil in H as [H _]. by apply HL.
+    - rewrite Hs. apply Hr.
+    - apply Heq in Hx, Hy. by rewrite Hx, <-Hy.
+    - by eapply Htr. }
+  intros p H. exact (Hirr _ (Hlt _ _ H)).
+Qed.
+
+(** The same with a rank into ℕ and no ≡ facts. *)
+Lemma c0_acyclic_rank n P (r : point → nat) :
+  (∀ x, r x < r (pt_shift 1 x)) →
+  (∀ x y, ¬ P (FEq x y)) → (∀ x y, P (FLt x y) → r x < r y) →
+  c0_acyclic n (BCs [] P).
+Proof.
+  intros Hr HE HL. apply (c0_acyclic_den lt n P id (pt_shift 1) pt_slot r); try done.
+  - intros a. lia.
+  - intros a b c. lia.
+  - intros x y H. by destruct (HE x y).
+Qed.
+
+(** A rank for top-level variables: w per variable index, one per step. *)
+Fixpoint pn_vidx (p : pname) : nat :=
+  match p with NVar a => a | NConst _ => 0 | NSlot q _ _ => pn_vidx q end.
+
+Definition vrank (w : nat) (x : point) : nat := w * pn_vidx (pt_name x) + pt_off x.
+
+Lemma vrank_shift w x : vrank w x < vrank w (pt_shift 1 x).
+Proof. unfold vrank, pt_shift. simpl. lia. Qed.
+
 (** The rank of a point is a weight per root constant, slots weighted
     by their base, plus a step per name times the offset. *)
 Fixpoint pn_rank (g : nat → nat) (h : nat → nat → nat → nat) (p : pname) : nat :=

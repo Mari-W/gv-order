@@ -294,7 +294,7 @@ Proof.
 Qed.
 
 (** Example 1 is deadlock free: its translation is a typed closed
-    thread at the strict world [Wpn]. *)
+    thread in the empty world under the top-level constraint [Crel]. *)
 Theorem fibo_deadlock_free :
   ∃ τ e', pn_typed [] fibo_main PUnit τ e' ∧ deadlock_free (∅, {[+ e' +]}).
 Proof.

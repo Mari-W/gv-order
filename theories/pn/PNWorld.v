@@ -1,4 +1,4 @@
-(** * The level world of Padovani and Novara
+(** * The level anchors of Padovani and Novara
 
     docs/extensions/adequacy/padovani-novara.md §7. Levels become points
     relative to a level anchor. An anchor B stands for a shift, and its
@@ -12,16 +12,18 @@
       the lower point of an arrow of level z, the upper point of a latent
       effect z and the ceiling for the latent effect ⊤.
 
-    The root constant (NConst 0, 0) is the anchor of shift 0 at the top
-    level. Inside a box the anchor is the box's one point variable,
-    which the force instantiates with an anchor of the caller.
+    At the top level the anchor is the program's one top-level point
+    variable, under the constraint [Crel]. Inside a box the anchor is
+    the box's one point variable, which the force instantiates with an
+    anchor of the caller. The constant [proot] only fills the anchor
+    of unlimited types, whose translation names no point.
 
     Points are read through a denotation [den] that commutes with
     successor and slots and adds the shift of the anchor to every level.
     The rank [rank] of a denotation is the level and the instant, in ℤ
-    with a top element. The world [Wpn] identifies two points of the
-    root with the same denotation and orders two with rising rank.
-    Strictness is immediate ([Wpn_strict]).
+    with a top element. The constraint [Crel] identifies two points of
+    the anchor with the same denotation and orders two with rising rank.
+    It is acyclic ([Crel_acyclic]).
 
     A box has the constraint [Crel], the same facts read relative to its
     variable. A force at the anchor B[RAnc a] meets it, because
@@ -223,33 +225,6 @@ Qed.
 Lemma zlt_shift a x y : zlt (zshift a x) (zshift a y) ↔ zlt x y.
 Proof. destruct x, y; simpl; lia. Qed.
 
-(** ** The world *)
-
-Definition rooted0 (x : point) : Prop := pt_root x = NConst 0.
-
-Definition Wpn : world :=
-  wgen {[NConst 0]}
-    (λ x y, rooted0 x ∧ rooted0 y ∧ den x = den y)
-    (λ x y, rooted0 x ∧ rooted0 y ∧ zlt (rank (den x)) (rank (den y))).
-
-Lemma Wpn_strict : strict Wpn.
-Proof.
-  apply (wgen_strict_den zlt _ _ _ den dsh dsl rank).
-  - apply zlt_irrefl.
-  - apply zlt_trans.
-  - intros p ->%elem_of_singleton. by exists 0.
-  - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
-  - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
-  - apply den_shift.
-  - apply den_slot.
-  - by intros x y (_ & _ & H).
-  - apply rank_dsh.
-  - by intros x y (_ & _ & H).
-Qed.
-
-Lemma Wpn_wf : world_wf Wpn.
-Proof. apply Wpn_strict. Qed.
-
 (** ** Box constraints
 
     [Crel] holds every fact between points of the box's variable that
@@ -264,6 +239,21 @@ Definition crel_fact (g : fact) : Prop :=
 
 Definition Crel : bcs := BCs [] crel_fact.
 Definition C0 : bcs := BCs [] (λ _, False).
+
+(** [Crel] is acyclic as the top-level constraint of a program over one
+    variable, because the rank rises along program order and along its
+    ≺ facts (sharp edges 110). *)
+Lemma Crel_acyclic : c0_acyclic 1 Crel.
+Proof.
+  apply (c0_acyclic_den zlt 1 crel_fact den dsh dsl rank).
+  - apply zlt_irrefl.
+  - apply zlt_trans.
+  - apply den_shift.
+  - apply den_slot.
+  - by intros x y (_ & _ & H).
+  - apply rank_dsh.
+  - by intros x y (_ & _ & H).
+Qed.
 
 (** ** Translation of types
 
@@ -447,25 +437,17 @@ Qed.
 
     [good Ψ B]: B is an anchor of shift 0, and Γ ⊢ ≡ and Γ ⊢ ≺ hold
     between two points of B's root whenever the denotation and the rank
-    say so. The root anchor is good in every context ([good_root]), and
-    the variable of a box is good in its body ([good_box]). *)
+    say so. The variable of a box is good in its body ([good_box]), and
+    so is the top-level variable of a program, which starts under the
+    same constraint [Crel] (sharp edges 110). *)
 
 Record good (Ψ : hyps) (B : point) : Prop := {
   gd_den : den B = DAnc 0 0;
-  gd_eq x y : pt_root x = pt_root B → pt_root y = pt_root B → den x = den y → seqs Wpn Ψ x y;
+  gd_eq x y : pt_root x = pt_root B → pt_root y = pt_root B → den x = den y → seqs wnil Ψ x y;
   gd_lt x y : pt_root x = pt_root B → pt_root y = pt_root B →
-    zlt (rank (den x)) (rank (den y)) → slt Wpn Ψ x y;
-  gd_kn x : pt_root x = pt_root B → skn Wpn Ψ x
+    zlt (rank (den x)) (rank (den y)) → slt wnil Ψ x y;
+  gd_kn x : pt_root x = pt_root B → skn wnil Ψ x
 }.
-
-Lemma good_root Ψ : good Ψ proot.
-Proof.
-  split.
-  - done.
-  - intros x y Hx Hy E. apply se_w, geq_base. done.
-  - intros x y Hx Hy E. apply sl_w, glt_base. done.
-  - intros x Hx. left. unfold pt_known. simpl. rewrite Hx. set_solver.
-Qed.
 
 Lemma pn_vb_var0 p : pn_root p = NVar 0 → pn_vb 1 p.
 Proof. induction p as [a|a|q IH b i]; simpl; [done|intros [=->]; lia|exact IH]. Qed.
@@ -529,7 +511,7 @@ Section facts.
   Qed.
 
   (** {B[RLo z]} ≼ every head at level z. *)
-  Lemma lo_below z h : hd_at z h → sle Wpn Ψ (rpt B (RLo z)) h.
+  Lemma lo_below z h : hd_at z h → sle wnil Ψ (rpt B (RLo z)) h.
   Proof.
     intros [Hr [Hd|Hd]].
     - left. apply (gd_eq _ _ HB); [done|done|]. by rewrite den_lo0.
@@ -538,7 +520,7 @@ Section facts.
 
   (** τ < z puts the upper point of τ below every head at level z. *)
   Lemma hi_below k τ z h u :
-    lvl_lt τ (LZ (z - k)) → hiz B k τ = Some u → hd_at z h → slt Wpn Ψ u h.
+    lvl_lt τ (LZ (z - k)) → hiz B k τ = Some u → hd_at z h → slt wnil Ψ u h.
   Proof.
     intros Hτ Hu [Hr Hd]. destruct τ as [|t|]; simpl in *; try done. injection Hu as <-.
     apply (gd_lt _ _ HB); [done|done|]. rewrite den_hi0.
@@ -546,7 +528,7 @@ Section facts.
   Qed.
 
   Lemma hi_below_lo k τ r u :
-    lvl_lt τ (LZ r) → hiz B k τ = Some u → slt Wpn Ψ u (loz B k r).
+    lvl_lt τ (LZ r) → hiz B k τ = Some u → slt wnil Ψ u (loz B k r).
   Proof.
     intros Hτ Hu. eapply (hi_below k τ (r + k)); [|done|].
     - by replace (r + k - k)%Z with r by lia.
@@ -555,7 +537,7 @@ Section facts.
 
   (** Upper points rise with the effect. *)
   Lemma hiz_mono k a b u :
-    lvl_le a b → hiz B k a = Some u → ∃ v, hiz B k b = Some v ∧ sle Wpn Ψ u v.
+    lvl_le a b → hiz B k a = Some u → ∃ v, hiz B k b = Some v ∧ sle wnil Ψ u v.
   Proof.
     intros Hab Hu. destruct a as [|x|], b as [|y|]; simpl in *; try done; injection Hu as <-;
       eexists; (split; [done|]).
@@ -568,14 +550,14 @@ Section facts.
   (** The two instants of a channel of level n lie below the upper point
       of n. *)
   Lemma ch_below_hi c n :
-    clev c = Some n → slt Wpn Ψ (rpt B (RCh c)) (rpt B (RHi n)).
+    clev c = Some n → slt wnil Ψ (rpt B (RCh c)) (rpt B (RHi n)).
   Proof.
     intros Hc. apply (gd_lt _ _ HB); [done|done|]. rewrite den_ch0, den_hi0. simpl.
     rewrite Hc. simpl. lia.
   Qed.
 
   Lemma ch1_below_hi c n :
-    clev c = Some n → slt Wpn Ψ (pt_shift 1 (rpt B (RCh c))) (rpt B (RHi n)).
+    clev c = Some n → slt wnil Ψ (pt_shift 1 (rpt B (RCh c))) (rpt B (RHi n)).
   Proof.
     intros Hc. apply (gd_lt _ _ HB); [done|done|]. rewrite den_shift, den_ch0, den_hi0. simpl.
     rewrite Hc. simpl. lia.
@@ -587,20 +569,20 @@ Section facts.
 
   Lemma ch_below_pay c c' n n' :
     cpay c = Some c' → clev c = Some n → clev c' = Some n' → (n < n')%Z →
-    slt Wpn Ψ (rpt B (RCh c)) (pt_slot (rpt B (RCh c)) 0) ∧
-    slt Wpn Ψ (pt_shift 1 (rpt B (RCh c))) (pt_slot (rpt B (RCh c)) 0).
+    slt wnil Ψ (rpt B (RCh c)) (pt_slot (rpt B (RCh c)) 0) ∧
+    slt wnil Ψ (pt_shift 1 (rpt B (RCh c))) (pt_slot (rpt B (RCh c)) 0).
   Proof.
     intros Hp Hc Hc' Hn. split; apply (gd_lt _ _ HB); try done;
       rewrite ?den_shift, (den_pay _ _ Hp), den_ch0; simpl; rewrite Hc, Hc'; simpl; lia.
   Qed.
 
-  Lemma pay_eq c c' : cpay c = Some c' → seqs Wpn Ψ (pt_slot (rpt B (RCh c)) 0) (rpt B (RCh c')).
+  Lemma pay_eq c c' : cpay c = Some c' → seqs wnil Ψ (pt_slot (rpt B (RCh c)) 0) (rpt B (RCh c')).
   Proof.
     intros Hc. apply (gd_eq _ _ HB); [done|done|]. by rewrite (den_pay _ _ Hc), den_ch0.
   Qed.
 
   (** A box at the anchor B[RAnc a] meets its constraint. *)
-  Lemma crel_hold a : bcs_hold (seqs Wpn Ψ) (slt Wpn Ψ) Crel [rpt B (RAnc a)].
+  Lemma crel_hold a : bcs_hold (seqs wnil Ψ) (slt wnil Ψ) Crel [rpt B (RAnc a)].
   Proof.
     intros g Hg. apply bcs_open_nil in Hg as [Hg _]. pose proof (den_anc0 a) as HX.
     assert (∀ x, pt_root x = NVar 0 → pt_root (pt_inst (plist [rpt B (RAnc a)]) x) = pt_root B)
@@ -612,16 +594,16 @@ Section facts.
       rewrite !(den_inst _ a) by done. by rewrite E.
   Qed.
 
-  Lemma anc_known a : Forall (skn Wpn Ψ) [rpt B (RAnc a)].
+  Lemma anc_known a : Forall (skn wnil Ψ) [rpt B (RAnc a)].
   Proof. apply Forall_singleton. by apply (gd_kn _ _ HB). Qed.
 
   (** The type at the anchor B[RAnc a] and offset k₁ is the type at B and
       offset k₁ + a, up to Γ ⊢ ≡. *)
   Lemma trz_anc a k1 k2 t :
-    (k1 + a = k2)%Z → steq Wpn Ψ (trz (rpt B (RAnc a)) k1 t) (trz B k2 t).
+    (k1 + a = k2)%Z → steq wnil Ψ (trz (rpt B (RAnc a)) k1 t) (trz B k2 t).
   Proof.
     pose proof (den_anc0 a) as HX.
-    assert (∀ c, seqs Wpn Ψ (rpt (rpt B (RAnc a)) (RCh c)) (rpt B (RCh (lshift a c)))) as Hch.
+    assert (∀ c, seqs wnil Ψ (rpt (rpt B (RAnc a)) (RCh c)) (rpt B (RCh (lshift a c)))) as Hch.
     { intros c. apply (gd_eq _ _ HB); [done|done|]. by rewrite (den_ch _ a HX), den_ch0. }
     revert k1 k2. induction t as [| | p t IH n|p m n|m t IH|t IH1 r σ s IH2]; intros k1 k2 Hk;
       try (apply teq_steq, teq_refl; fail); simpl.
@@ -639,7 +621,7 @@ Section facts.
   Qed.
 
   Lemma hiz_anc a k1 k2 σ :
-    (k1 + a = k2)%Z → opt_rel (seqs Wpn Ψ) (hiz (rpt B (RAnc a)) k1 σ) (hiz B k2 σ).
+    (k1 + a = k2)%Z → opt_rel (seqs wnil Ψ) (hiz (rpt B (RAnc a)) k1 σ) (hiz B k2 σ).
   Proof.
     pose proof (den_anc0 a) as HX. intros Hk. destruct σ as [|z|]; simpl; try done.
     - apply (gd_eq _ _ HB); [done|done|]. rewrite (den_hi _ a HX), den_hi0. zeq.

@@ -870,3 +870,212 @@ Qed.
 
 Theorem soundness W p T : strict W → ptyped W ∅ p T → deadlock_free p.
 Proof. intros HW Hp. apply (adequacy W T p). by apply fundamental_proc. Qed.
+
+(** ** Programs start under a creation constraint (sharp edges 109)
+
+    A source program starts with n top-level point variables 0, …, n-1
+    under one constraint C₀ over them, and it is typed in the empty
+    world [wnil] with the hypothesis (C₀, ids n). Knownness of a point
+    then comes from the hypothesis alone. C₀ has no outer points, so the
+    conservativity part of a creation constraint is empty and only
+    acyclicity remains ([c0_acyclic]). The run starts in the world
+    [wc0 n C₀], which realizes C₀ at the constants 0, …, n-1. It is the
+    construction of [wext_cc] against the empty world. *)
+
+Definition wnil : world := wgen ∅ (λ _ _, False) (λ _ _, False).
+
+Lemma wnil_strict : strict wnil.
+Proof.
+  split; [apply wgen_wf; [set_solver|done|done]|].
+  assert (∀ x y, geq (λ _ _ : point, False) x y → x = y) as Hq.
+  { induction 1; subst; done. }
+  assert (∀ x y, glt (λ _ _ : point, False) (λ _ _ : point, False) x y → pofs x y) as Hl.
+  { induction 1 as [x y []|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    - apply pofs_shift.
+    - apply Hq in Hx, Hy. by subst.
+    - by eapply pofs_trans. }
+  intros x H. exact (pofs_irrefl x (Hl x x H)).
+Qed.
+
+Definition c0_eq (n : nat) (C : bcs) : point → point → Prop := λ x y, bcs_open n C (FEq x y).
+Definition c0_lt (n : nat) (C : bcs) : point → point → Prop := λ x y, bcs_open n C (FLt x y).
+
+(** C₀ speaks of the top-level variables only, and its closure with
+    program order has no cycle. *)
+Definition c0_acyclic (n : nat) (C : bcs) : Prop :=
+  bc_env C = [] ∧ ∀ p, ¬ glt (c0_eq n C) (c0_lt n C) p p.
+
+Section c0_world.
+  Context (n : nat) (C : bcs).
+
+  Fixpoint c0_name (p : pname) : pname :=
+    match p with
+    | NVar a => if decide (a < n) then NConst a else NVar a
+    | NConst a => NConst a
+    | NSlot q b i => NSlot (c0_name q) b i
+    end.
+
+  Fixpoint c0_back (p : pname) : pname :=
+    match p with
+    | NConst a => if decide (a < n) then NVar a else NConst a
+    | NVar a => NVar a
+    | NSlot q b i => NSlot (c0_back q) b i
+    end.
+
+  Definition c0_pt (x : point) : point := Pt (c0_name (pt_name x)) (pt_off x).
+  Definition c0_bpt (x : point) : point := Pt (c0_back (pt_name x)) (pt_off x).
+
+  Definition c0_consts : list point := pconst <$> List.seq 0 n.
+
+  Lemma c0_back_name p : pn_vb n p → c0_back (c0_name p) = p.
+  Proof.
+    induction p as [a|a|q IH b i]; simpl; intros H; [done| |by rewrite IH].
+    rewrite decide_True by done. simpl. by rewrite decide_True.
+  Qed.
+
+  Lemma c0_name_root p : pn_vb n p → ∃ a, a < n ∧ pn_root (c0_name p) = NConst a.
+  Proof.
+    induction p as [a|a|q IH b i]; simpl; intros H; [done| |by apply IH].
+    rewrite decide_True by done. by exists a.
+  Qed.
+
+  Lemma plist_consts a : a < n → plist c0_consts a = pconst a.
+  Proof.
+    intros Ha. unfold plist, c0_consts. rewrite list_lookup_fmap, lookup_seq_lt by done. done.
+  Qed.
+
+  Lemma pn_inst_consts p : pn_vb n p → pn_inst (plist c0_consts) p = Pt (c0_name p) 0.
+  Proof.
+    induction p as [a|a|q IH b i]; simpl; intros H; [done| |].
+    - rewrite decide_True by done. by apply plist_consts.
+    - rewrite IH by done. done.
+  Qed.
+
+  Lemma pt_inst_consts x : pn_vb n (pt_name x) → pt_inst (plist c0_consts) x = c0_pt x.
+  Proof.
+    destruct x as [p o]. simpl. intros H. unfold pt_inst. simpl. rewrite pn_inst_consts by done.
+    done.
+  Qed.
+
+  (** Under the binder of n variables with no outer points, the facts of
+      C are about the variables themselves. *)
+  Lemma pn_inst_pup_vb σ p : pn_vb n p → pn_inst (pup n σ) p = Pt p 0.
+  Proof.
+    induction p as [a|a|q IH b i]; simpl; intros H; [done| |].
+    - unfold pup. by rewrite decide_True.
+    - rewrite IH by done. done.
+  Qed.
+
+  Lemma pt_inst_pup_vb σ x : pn_vb n (pt_name x) → pt_inst (pup n σ) x = x.
+  Proof.
+    destruct x as [p o]. simpl. intros H. unfold pt_inst. simpl. rewrite pn_inst_pup_vb by done.
+    unfold pt_shift. simpl. done.
+  Qed.
+
+  Lemma c0_open_vb g :
+    bc_env C = [] → bcs_open n C g →
+    fact_scoped n g ∧ bc_facts C g.
+  Proof.
+    intros Henv (f & Hf & Hs & ->). rewrite Henv in Hs. simpl in Hs. rewrite Nat.add_0_r in Hs.
+    destruct f as [x y|x y]; cbn [fact_map fact_scoped] in *; destruct Hs as [Hx Hy];
+      rewrite !(pt_inst_pup_vb (plist (bc_env C))) by done; done.
+  Qed.
+
+  Definition wc0 : world :=
+    wgen (list_to_set (NConst <$> List.seq 0 n))
+      (λ x y, ∃ x0 y0, c0_eq n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
+      (λ x y, ∃ x0 y0, c0_lt n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0).
+
+  Lemma c0_pt_known x : pn_vb n (pt_name x) → pt_root (c0_pt x) ∈ list_to_set (C:=gset pname) (NConst <$> List.seq 0 n).
+  Proof.
+    intros H. destruct (c0_name_root _ H) as (a & Ha & E). unfold pt_root, c0_pt. simpl.
+    rewrite E. apply elem_of_list_to_set, list_elem_of_fmap. exists a. split; [done|].
+    apply elem_of_seq. lia.
+  Qed.
+
+  Lemma wc0_strict : c0_acyclic n C → strict wc0.
+  Proof.
+    intros [Henv Hacy]. split.
+    - apply wgen_wf.
+      + intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
+      + intros x y (x0 & y0 & H & -> & ->). right.
+        destruct (c0_open_vb _ Henv H) as [[Hx Hy] _]. split; by apply c0_pt_known.
+      + intros x y (x0 & y0 & H & -> & ->). right.
+        destruct (c0_open_vb _ Henv H) as [[Hx Hy] _]. split; by apply c0_pt_known.
+    - destruct (gen_map (λ x y, ∃ x0 y0, c0_eq n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
+                  (λ x y, ∃ x0 y0, c0_lt n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
+                  (geq (c0_eq n C)) (glt (c0_eq n C) (c0_lt n C)) c0_bpt
+                  (theory_gen _ _)) as [_ Gl]; [done|done| | |].
+      + intros x y (x0 & y0 & H & -> & ->). destruct (c0_open_vb _ Henv H) as [[Hx Hy] _].
+        unfold c0_bpt, c0_pt. simpl. rewrite !c0_back_name by done.
+        destruct x0, y0. by apply geq_base.
+      + intros x y (x0 & y0 & H & -> & ->). destruct (c0_open_vb _ Henv H) as [[Hx Hy] _].
+        unfold c0_bpt, c0_pt. simpl. rewrite !c0_back_name by done.
+        destruct x0, y0. by apply glt_base.
+      + intros x Hx. exact (Hacy _ (Gl _ _ Hx)).
+  Qed.
+
+  Lemma wc0_ext : c0_acyclic n C → wext wnil wc0.
+  Proof.
+    intros HC. pose proof (wc0_strict HC) as HS.
+    destruct (gen_map (λ _ _, False) (λ _ _, False) (w_eq wc0) (w_lt wc0) id
+                (theory_world _ (proj1 HS))) as [Gq Gl]; [done|done|done|done|].
+    split_and!; [simpl; set_solver|exact Gq|exact Gl|done].
+  Qed.
+
+  Lemma wc0_holds : c0_acyclic n C →
+    hyps_hold (w_eq wc0) (w_lt wc0) (pt_known wc0) (hyps_inst (plist c0_consts) [(C, ids n)]).
+  Proof.
+    intros [Henv _] C' xs Hin. cbn in Hin. apply list_elem_of_singleton in Hin.
+    injection Hin as -> ->.
+    assert (pt_inst (plist c0_consts) <$> ids n = c0_consts) as Exs.
+    { unfold ids, c0_consts. rewrite <-list_fmap_compose. apply list_fmap_ext.
+      intros i a Ha. apply lookup_seq in Ha as [-> Ha]. simpl. unfold pt_inst. simpl.
+      rewrite plist_consts by lia. done. }
+    assert (bcs_inst (plist c0_consts) C = C) as EC.
+    { destruct C as [env fs]. unfold bcs_inst. simpl in *. by subst env. }
+    rewrite Exs, EC. split.
+    - intros g Hg. assert (length c0_consts = n) as Hl by (unfold c0_consts; by rewrite length_fmap, List.length_seq).
+      rewrite Hl in Hg. destruct (c0_open_vb _ Henv Hg) as [Hs _].
+      destruct g as [x y|x y]; destruct Hs as [Hx Hy]; simpl; rewrite !pt_inst_consts by done.
+      + apply glt_base. by exists x, y.
+      + apply geq_base. by exists x, y.
+    - apply Forall_forall. intros x Hx. unfold c0_consts in Hx.
+      apply list_elem_of_fmap in Hx as (a & -> & Ha). apply elem_of_seq in Ha.
+      unfold pt_known, pconst, pt_root. simpl. apply elem_of_list_to_set, list_elem_of_fmap.
+      exists a. split; [done|]. apply elem_of_seq. lia.
+  Qed.
+End c0_world.
+
+Lemma prim_pinst σ T : prim T → prim (pinst_ty σ T).
+Proof.
+  intros H. revert σ. induction H; intros σ; simpl;
+    [apply prim_unit|by apply prim_prod|by apply prim_sum|apply prim_box, IHprim].
+Qed.
+
+(** Soundness for source programs. A closed term typed in the empty
+    world under the top-level constraint C₀ over n point variables is
+    deadlock free, when C₀ is acyclic. *)
+Theorem soundness_source n C0 t T :
+  c0_acyclic n C0 → prim T →
+  typed wnil ∅ [(C0, ids n)] ∅ [] (∅, None) t T →
+  deadlock_free (∅, {[+ t +]}).
+Proof.
+  intros HC HT Ht.
+  pose proof (wc0_strict n C0 HC) as HS.
+  set (σ := plist (c0_consts n)).
+  assert (sem_rules (wc0 n C0) (tenv_pinst σ ∅) (lenv_pinst σ [])
+            (sf_inst (λ _, ∅) (sf_pinst σ (∅, None))) t (pinst_ty σ T)) as H.
+  { apply (typed_sem_rules _ _ _ _ _ _ _ _ Ht); [apply wnil_strict|by apply wc0_ext| |by apply wc0_holds].
+    intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty. }
+  rewrite tenv_pinst_empty in H.
+  assert (sf_inst (λ _, ∅) (sf_pinst σ (∅, None)) = ∅) as E.
+  { unfold sf_inst, sf_pinst. simpl. rewrite set_map_empty. set_solver. }
+  rewrite E in H.
+  apply (adequacy (wc0 n C0) (pinst_ty σ T)).
+  apply (Prel_term _ ∅ ∅ ∅); [by apply prim_pinst|done|done|set_solver| | |].
+  - intros c o Ho. by rewrite lookup_empty in Ho.
+  - intros c e1 e2 He. by rewrite lookup_empty in He.
+  - unfold tenv_of. rewrite fmap_empty, (left_id_L ∅ (∪)).
+    by apply sem_rules_fundamental.
+Qed.

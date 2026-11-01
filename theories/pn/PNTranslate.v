@@ -1,7 +1,7 @@
 (** * From derivations of Padovani and Novara to the static system
 
-    A derivation Γ ⊢ e : t & τ ⇝ e′ becomes a derivation of [typed] at
-    the level world [Wpn] ([pn_translate]). The lemma holds at every
+    A derivation Γ ⊢ e : t & τ ⇝ e′ becomes a derivation of [typed] in
+    the empty world [wnil] ([pn_translate]). The lemma holds at every
     anchor B whose facts the context Ψ provides ([good]), at every offset
     k (the shift ⇑ᵏ of the whole derivation), and at every frame F above
     the upper point of τ, as the PGV lemma reads its bound (PGVTranslate.v).
@@ -11,8 +11,10 @@
     the places [ins] where the environment Δ has extra unlimited or
     spent entries, and it types e′ renamed past them ([erel]).
 
-    [soundness] then makes every closed program of type unit deadlock
-    free ([pn_deadlock_free]). *)
+    [soundness_source] then makes every closed program of type unit
+    deadlock free ([pn_deadlock_free]). The program starts with one
+    top-level point variable under [Crel], which is its anchor
+    (sharp edges 110). *)
 
 From stdpp Require Import base gmap numbers.
 From LRGV Require Export pn.PNWorld.
@@ -373,7 +375,7 @@ Section heads.
 
   Lemma env_hi_below ins Γ Δ τ x h :
     erel B k ins Γ Δ → lvl_lt τ (olvl (env_lev Γ)) → hiz B k τ = Some x →
-    h ∈ lenv_heads Δ → slt Wpn Ψ x h.
+    h ∈ lenv_heads Δ → slt wnil Ψ x h.
   Proof.
     intros H Hτ Hx Hh. destruct (erel_heads _ _ _ _ _ _ H Hh) as (t & Ht & Hh').
     destruct (tlev t) as [z|] eqn:Ez; [|by rewrite heads_un in Hh'].
@@ -384,7 +386,7 @@ Section heads.
   Qed.
 
   Lemma env_lo_below ins Γ Δ z0 h :
-    erel B k ins Γ Δ → env_lev Γ = Some z0 → h ∈ lenv_heads Δ → sle Wpn Ψ (loz B k z0) h.
+    erel B k ins Γ Δ → env_lev Γ = Some z0 → h ∈ lenv_heads Δ → sle wnil Ψ (loz B k z0) h.
   Proof.
     intros H E0 Hh. destruct (erel_heads _ _ _ _ _ _ H Hh) as (t & Ht & Hh').
     destruct (tlev t) as [z|] eqn:Ez; [|by rewrite heads_un in Hh'].
@@ -393,9 +395,9 @@ Section heads.
   Qed.
 
   Lemma ubs_lvl Φ a b F :
-    lvl_le a b → ub_below_s Wpn Ψ Φ (hiz B k b) F → ub_below_s Wpn Ψ Φ (hiz B k a) F.
+    lvl_le a b → ub_below_s wnil Ψ Φ (hiz B k b) F → ub_below_s wnil Ψ Φ (hiz B k a) F.
   Proof.
-    intros Hab. apply (ubs_lower Wpn Wpn_wf). intros x Hx. by apply (hiz_mono Ψ B HB k a b).
+    intros Hab. apply (ubs_lower wnil (proj1 wnil_strict)). intros x Hx. by apply (hiz_mono Ψ B HB k a b).
   Qed.
 End heads.
 
@@ -447,7 +449,7 @@ Ltac var_others HΔ :=
 
 Section terms.
   Context (Ψ : hyps) (B : point) (HB : good Ψ B) (k : Z).
-  Abbreviation W := Wpn.
+  Abbreviation W := wnil.
 
   Definition chx (t : pty) (n : Z) : point := rpt B (RCh (PChan true (lshift k t) (n + k))).
 
@@ -492,7 +494,7 @@ Section terms.
       (TLolli None None (trz B k (PChan false t n))
          (TLolli (hiz B k (LZ n)) (Some (loz B k n)) (trz B k t) U)).
   Proof.
-    intros HΔ Hok Hn. pose proof Wpn_wf as HW.
+    intros HΔ Hok Hn. pose proof (proj1 wnil_strict) as HW.
     destruct (pay_conv t n Hok Hn) as (Hc1 & _ & Hh & Hs).
     set (x := chx t n). set (φ1 := fresh (dom Φ)).
     apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ None None φ1); [apply is_fresh|lbhb|].
@@ -535,7 +537,7 @@ Section terms.
     lenv_empty Δ0 → payok t → lvl_lt (LZ n) (olvl (tlev t)) →
     typed W Φ Ψ ∅ Δ0 F recv_tr (TLolli (hiz B k (LZ n)) None (trz B k (PChan true t n)) (trz B k t)).
   Proof.
-    intros HΔ Hok Hn. pose proof Wpn_wf as HW.
+    intros HΔ Hok Hn. pose proof (proj1 wnil_strict) as HW.
     destruct (pay_conv t n Hok Hn) as (_ & Hc2 & Hh & Hs).
     set (x := chx t n). set (φ := fresh (dom Φ)).
     apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ (hiz B k (LZ n)) None φ); [apply is_fresh|lbhb|].
@@ -578,7 +580,7 @@ Section terms.
     typed W Φ Ψ ∅ Δ0 F (fork_tr (match r with Some _ => false | None => true end))
       (TLolli None None (trz B k (PArr PUnit r σ PUnit)) U).
   Proof.
-    intros HΔ. pose proof Wpn_wf as HW. set (φ0 := fresh (dom Φ)).
+    intros HΔ. pose proof (proj1 wnil_strict) as HW. set (φ0 := fresh (dom Φ)).
     apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ None None φ0); [apply is_fresh|lbhb|].
     { simpl. by bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L. }
     set (Φ1 := <[φ0 := None]> Φ).
@@ -634,7 +636,7 @@ Section terms.
     typed W Φ Ψ ∅ Δ0 F (if b then inj1_tr else inj2_tr)
       (TLolli None None (trz B k (if b then t else s)) (trz B k (PSum t s))).
   Proof.
-    intros HΔ Ht Hs. pose proof Wpn_wf as HW. set (φ := fresh (dom Φ)).
+    intros HΔ Ht Hs. pose proof (proj1 wnil_strict) as HW. set (φ := fresh (dom Φ)).
     assert (un (if b then t else s)) as Hu by (by destruct b).
     destruct b; [unfold inj1_tr|unfold inj2_tr];
       (apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ None None φ); [apply is_fresh|lbhb|]);
@@ -676,7 +678,7 @@ Proof. destruct σ; simpl; zeq. Qed.
 (** ** Fold, unfold, wrap and unwrap *)
 
 Lemma pconv1_steq Ψ B k t t' :
-  pconv1 t t' → steq Wpn Ψ (trz B k t) (trz B k t') ∧ steq Wpn Ψ (trz B k t') (trz B k t).
+  pconv1 t t' → steq wnil Ψ (trz B k t) (trz B k t') ∧ steq wnil Ψ (trz B k t') (trz B k t).
 Proof.
   intros [p m n|m t0].
   - assert (seq (SMu (pol p 1 (TSess (SVar 0) (pvar 0)) SEnd))
@@ -687,7 +689,7 @@ Proof.
 Qed.
 
 Lemma pconv_typed Ψ B k Φ Δ F e t t' :
-  pconv t t' → typed Wpn Φ Ψ ∅ Δ F e (trz B k t) → typed Wpn Φ Ψ ∅ Δ F e (trz B k t').
+  pconv t t' → typed wnil Φ Ψ ∅ Δ F e (trz B k t) → typed wnil Φ Ψ ∅ Δ F e (trz B k t').
 Proof.
   induction 1 as [t|t t1 t2 H1 _ IH|t t1 t2 H1 _ IH]; intros He; [done| |].
   - apply IH. eapply t_conv; [|exact He]. exact (proj1 (pconv1_steq Ψ B k _ _ H1)).
@@ -698,10 +700,10 @@ Qed.
 
 Theorem pn_translate Γ e t τ e' :
   pn_typed Γ e t τ e' →
-  ∀ Ψ B k ins Δ Φ F, good Ψ B → erel B k ins Γ Δ → ub_below_s Wpn Ψ Φ (hiz B k τ) F →
-  typed Wpn Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trz B k t).
+  ∀ Ψ B k ins Δ Φ F, good Ψ B → erel B k ins Γ Δ → ub_below_s wnil Ψ Φ (hiz B k τ) F →
+  typed wnil Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trz B k t).
 Proof.
-  pose proof Wpn_wf as HW.
+  pose proof (proj1 wnil_strict) as HW.
   induction 1 as [Γ x t Hx
     |Γ HΓ
     |Γ e e' t s ρ He IH
@@ -718,28 +720,28 @@ Proof.
     |Γ e e' t t' τ He IH Hc];
     intros Ψ B k ins Δ Φ F HB HΔ HF.
   - (* T-Name *)
-    by apply (erel_var B k ins Γ Δ Wpn Φ Ψ F x t HW HΔ Hx).
+    by apply (erel_var B k ins Γ Δ wnil Φ Ψ F x t HW HΔ Hx).
   - (* () *)
-    rewrite rename_unitv. apply (tv_unitv Wpn HW). by apply (erel_unl B k ins Γ Δ).
+    rewrite rename_unitv. apply (tv_unitv wnil HW). by apply (erel_unl B k ins Γ Δ).
   - (* T-Fun *)
     destruct (env_lev Γ) as [z|] eqn:Ez; simpl.
     + (* a closure that holds channels *)
       rewrite ren_up. set (φ := fresh (dom Φ)).
-      apply (t_lam Wpn Φ Ψ ∅ Δ F _ _ _ (hiz B k ρ) (Some (loz B k z)) φ); [apply is_fresh|lbhb|].
+      apply (t_lam wnil Φ Ψ ∅ Δ F _ _ _ (hiz B k ρ) (Some (loz B k z)) φ); [apply is_fresh|lbhb|].
       * simpl. bclean; rewrite (tenv_heads0 _ HW), union_empty_l_L. intros y Hy.
         apply (env_lo_below Ψ B HB k ins Γ Δ z y HΔ Ez Hy).
       * apply IH; [done|by apply (er_keep _ _ (Some t))|apply (ubs_fresh _ HW)].
     + (* a closure of level ⊤ is a box *)
       rewrite ren_box. pose proof (env_lev_none Γ Ez) as HΓ.
       set (u := PArr t None ρ s). set (m := mneg u).
-      apply (tv_box Wpn HW _ _ _ _ _ 1 Crel None
+      apply (tv_box wnil HW _ _ _ _ _ 1 Crel None
                (TLolli (hiz (pvar 0) m ρ) None (trz (pvar 0) m t) (trz (pvar 0) m s)));
         [by apply (erel_unl B k ins Γ Δ)|done|].
       intros φ Hφ.
       set (Ψ' := hyps_inst (pshift 1) Ψ ++ [(Crel, ids 1)]).
       assert (good Ψ' (pvar 0)) as HB' by (apply good_box; unfold Ψ'; set_solver).
       set (Φ1 := <[φ := None]> (fhyps_pinst (pshift 1) Φ)). set (φ' := fresh (dom Φ1)).
-      apply (t_lam Wpn Φ1 Ψ' ∅ _ _ _ _ _ (hiz (pvar 0) m ρ) None φ'); [apply is_fresh|lbhb|].
+      apply (t_lam wnil Φ1 Ψ' ∅ _ _ _ _ _ (hiz (pvar 0) m ρ) None φ'); [apply is_fresh|lbhb|].
       * simpl. bclean; rewrite (tenv_heads0 _ HW), !union_empty_l_L. apply unl_heads, unl_pinst.
         by apply (erel_unl B k ins Γ Δ).
       * apply IH; [done| |apply (ubs_fresh _ HW)].
@@ -748,7 +750,7 @@ Proof.
         by apply (erel_pinst B k).
   - (* T-App *)
     cbn [rename]. destruct (erel_split B k ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
-    eapply (t_app Wpn Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (hiz B k σ) (Some (loz B k r)) (trz B k t)).
+    eapply (t_app wnil Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (hiz B k σ) (Some (loz B k r)) (trz B k t)).
     + by apply comp0.
     + done.
     + apply (ubs_lvl Ψ B HB k Φ σ (lvl_max σ (lvl_max τ1 τ2))); [apply lvl_le_max_l|done].
@@ -766,7 +768,7 @@ Proof.
     cbn [rename]. destruct (erel_split B k ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
     set (u := PArr t None σ s). set (m := mneg u). set (X := rpt B (RAnc (k + n - m))).
     set (Tb := TLolli (hiz (pvar 0) m σ) None (trz (pvar 0) m t) (trz (pvar 0) m s)).
-    eapply (t_app Wpn Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (hiz B k (lvl_sh n σ)) None (trz B k (lshift n t))).
+    eapply (t_app wnil Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (hiz B k (lvl_sh n σ)) None (trz B k (lshift n t))).
     + by apply comp0.
     + done.
     + apply (ubs_lvl Ψ B HB k Φ _ (lvl_max (lvl_sh n σ) (lvl_max τ1 τ2))); [apply lvl_le_max_l|done].
@@ -778,7 +780,7 @@ Proof.
         - done.
         - apply (trz_anc Ψ B HB). lia.
         - apply (trz_anc Ψ B HB). lia. }
-      eapply (typed_force Wpn Φ Ψ ∅ Δ1 _ _ 1 Crel None Tb [X]);
+      eapply (typed_force wnil Φ Ψ ∅ Δ1 _ _ 1 Crel None Tb [X]);
         [done|done|apply (crel_hold Ψ B HB)|apply (anc_known Ψ B HB)|done|].
       apply (IH1 Ψ B k ins Δ1); [done|done|]. apply (ubs_union _ HW).
       * apply (ubs_lvl Ψ B HB k Φ τ1 (lvl_max (lvl_sh n σ) (lvl_max τ1 τ2))); [|done].
@@ -793,20 +795,20 @@ Proof.
     assert (rename (upren (upren (λ x, 2 + x))) (rename (ren_of (false :: false :: ins)) e')
             = rename (ren_of (false :: false :: true :: true :: ins)) e') as ->.
     { rewrite rename_rename. apply rename_ext. by intros [|[|x]]. }
-    apply (t_new_at Wpn _ _ _ _ _ _ _ (sess (PChan true t n))
-             (rpt B (RCh (PChan true (lshift k t) (n + k))))); [apply Wpn_strict|by apply (gd_kn _ _ HB)|].
+    apply (t_new_at wnil _ _ _ _ _ _ _ (sess (PChan true t n))
+             (rpt B (RCh (PChan true (lshift k t) (n + k))))); [apply wnil_strict|by apply (gd_kn _ _ HB)|].
     apply IH; [done| |done].
     apply (er_keep _ _ (Some (PChan false t n))), (er_keep _ _ (Some (PChan true t n))).
     apply er_skip; [by left|]. apply er_skip; [by left|]. exact HΔ.
   - (* send e₁ e₂ *)
     cbn [rename]. rewrite rename_send.
     destruct (erel_split B k ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
-    eapply (t_app Wpn Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (hiz B k (LZ n)) (Some (loz B k n)) (trz B k t) U).
+    eapply (t_app wnil Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (hiz B k (LZ n)) (Some (loz B k n)) (trz B k t) U).
     + by apply comp0.
     + done.
     + apply (ubs_lvl Ψ B HB k Φ _ (lvl_max (LZ n) (lvl_max τ1 τ2))); [apply lvl_le_max_l|done].
     + bclean; rewrite (tenv_heads0 _ HW), union_empty_l_L.
-      apply (tv_app_closed Wpn HW _ _ _ _ _ _ None (trz B k (PChan false t n))); [bot_false|..].
+      apply (tv_app_closed wnil HW _ _ _ _ _ _ None (trz B k (PChan false t n))); [bot_false|..].
       * by apply (send_tr_typed Ψ B HB k); [apply lenv_empty_nones| |].
       * apply (IH1 Ψ B k ins Δ1); [done|done|]. apply (ubs_union _ HW).
         -- apply (ubs_lvl Ψ B HB k Φ τ1 (lvl_max (LZ n) (lvl_max τ1 τ2))); [|done].
@@ -820,13 +822,13 @@ Proof.
         by apply (hi_below_lo Ψ B HB k τ2 n x).
   - (* recv e *)
     cbn [rename]. rewrite rename_recv.
-    apply (tv_app_closed Wpn HW _ _ _ _ _ _ (hiz B k (LZ n)) (trz B k (PChan true t n))); [bot_false|..].
+    apply (tv_app_closed wnil HW _ _ _ _ _ _ (hiz B k (LZ n)) (trz B k (PChan true t n))); [bot_false|..].
     + by apply (recv_tr_typed Ψ B HB k); [apply lenv_empty_nones| |].
     + apply IH; [done|done|]. apply (ubs_lvl Ψ B HB k Φ τ (lvl_max (LZ n) τ)); [apply lvl_le_max_r|done].
     + apply (ubs_lvl Ψ B HB k Φ (LZ n) (lvl_max (LZ n) τ)); [apply lvl_le_max_l|done].
   - (* fork e *)
     cbn [rename]. rewrite rename_fork.
-    apply (tv_app_closed Wpn HW _ _ _ _ _ _ None (trz B k (PArr PUnit r σ PUnit))); [bot_false|..].
+    apply (tv_app_closed wnil HW _ _ _ _ _ _ None (trz B k (PArr PUnit r σ PUnit))); [bot_false|..].
     + apply (fork_tr_typed Ψ B HB k). apply lenv_empty_nones.
     + by apply IH.
     + done.
@@ -834,7 +836,7 @@ Proof.
     cbn [rename]. rewrite ren_up.
     set (u := PArr t None σ s). set (m := mneg u).
     set (Tb := TLolli (hiz (pvar 0) m σ) None (trz (pvar 0) m t) (trz (pvar 0) m s)).
-    apply (tv_box Wpn HW _ _ _ _ _ 1 Crel None Tb); [by apply (erel_unl B k ins Γ Δ)|done|].
+    apply (tv_box wnil HW _ _ _ _ _ 1 Crel None Tb); [by apply (erel_unl B k ins Γ Δ)|done|].
     intros φ Hφ.
     set (Ψ' := hyps_inst (pshift 1) Ψ ++ [(Crel, ids 1)]).
     assert ((Crel, [pvar 0]) ∈ Ψ') as HC by (unfold Ψ'; set_solver).
@@ -842,8 +844,8 @@ Proof.
     assert (ty_inst [pvar 0] Tb = Tb) as HTb.
     { unfold ty_inst, Tb. simpl. by rewrite hiz_pinst, !trz_pinst. }
     apply (t_conv _ _ _ _ _ _ _ (ty_inst [pvar 0] Tb)); [rewrite HTb; apply teq_steq, teq_refl|].
-    eapply (typed_force Wpn _ Ψ' ∅ _ _ _ 1 Crel None Tb [pvar 0]);
-      [done|done|exact (hyp_in_fact Wpn Ψ' Crel [pvar 0] HC)|exact (hyp_in_known Wpn Ψ' Crel [pvar 0] HC)|done|].
+    eapply (typed_force wnil _ Ψ' ∅ _ _ _ 1 Crel None Tb [pvar 0]);
+      [done|done|exact (hyp_in_fact wnil Ψ' Crel [pvar 0] HC)|exact (hyp_in_known wnil Ψ' Crel [pvar 0] HC)|done|].
     change (TBox 1 Crel (TLolli None None TUnit Tb)) with (trz (pvar 0) 0 u).
     apply IH; [done| |done].
     change (lenv_pinst (pshift 1) (Some (trz (pvar 0) 0 u) :: Δ))
@@ -852,25 +854,25 @@ Proof.
     apply (er_keep _ _ (Some u)). by apply (erel_pinst B k).
   - (* inj₁ e *)
     cbn [rename]. rewrite rename_inj1.
-    apply (tv_app_closed Wpn HW _ _ _ _ _ _ None (trz B k t)); [bot_false|..].
+    apply (tv_app_closed wnil HW _ _ _ _ _ _ None (trz B k t)); [bot_false|..].
     + by apply (inj_tr_typed Ψ B HB k _ _ _ t s true); [apply lenv_empty_nones| |].
     + by apply IH.
     + done.
   - (* inj₂ e *)
     cbn [rename]. rewrite rename_inj2.
-    apply (tv_app_closed Wpn HW _ _ _ _ _ _ None (trz B k s)); [bot_false|..].
+    apply (tv_app_closed wnil HW _ _ _ _ _ _ None (trz B k s)); [bot_false|..].
     + by apply (inj_tr_typed Ψ B HB k _ _ _ t s false); [apply lenv_empty_nones| |].
     + by apply IH.
     + done.
   - (* case *)
     cbn [rename]. rewrite !ren_up.
     destruct (erel_split B k ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
-    eapply (t_case Wpn Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ _ (trz proot 0 t) (trz proot 0 s));
+    eapply (t_case wnil Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ _ (trz proot 0 t) (trz proot 0 s));
       [by apply comp0|done| | |].
     + bclean; rewrite (tenv_heads0 _ HW), union_empty_l_L.
       assert (ty_inst [] (TSum (trz proot 0 t) (trz proot 0 s)) = TSum (trz proot 0 t) (trz proot 0 s))
         as <- by (unfold ty_inst; simpl; by rewrite !trz_pinst, (pt_inst_const _ proot 0)).
-      eapply (typed_force Wpn Φ Ψ ∅ Δ1 _ _ 0 C0 None _ []); [done|done| |done|done|].
+      eapply (typed_force wnil Φ Ψ ∅ Δ1 _ _ 0 C0 None _ []); [done|done| |done|done|].
       { intros g Hg. apply bcs_open_nil in Hg as [[] _]. }
       apply (IHe Ψ B k ins Δ1); [done|done|]. apply (ubs_union _ HW).
       * apply (ubs_lvl Ψ B HB k Φ τ1 (lvl_max τ1 τ2)); [apply lvl_le_max_l|done].
@@ -887,13 +889,15 @@ Qed.
 
 (** ** Deadlock freedom *)
 
-(** A closed program of type unit translates to a typed closed thread at
-    the strict world [Wpn], so it is deadlock free. *)
+(** A closed program of type unit translates to a thread typed in the
+    empty world under the top-level constraint [Crel] at the anchor of
+    its top-level variable, so it is deadlock free. *)
 Theorem pn_deadlock_free e τ e' :
   pn_typed [] e PUnit τ e' → deadlock_free (∅, {[+ e' +]}).
 Proof.
-  intros H. apply (soundness Wpn _ U Wpn_strict). apply ptyped_closed; [repeat constructor|].
+  intros H. apply (soundness_source 1 Crel _ U Crel_acyclic); [repeat constructor|].
   rewrite <-(rename_id e'), (rename_ext e' (λ x, x) (ren_of [])) by done.
-  apply (pn_translate [] e PUnit τ e' H [] proot 0 [] [] ∅ (∅, None)); [apply good_root|constructor|].
-  destruct (hiz proot 0 τ); [|done]. split; simpl; [set_solver|done].
+  apply (pn_translate [] e PUnit τ e' H [(Crel, ids 1)] (pvar 0) 0 [] [] ∅ (∅, None));
+    [apply good_box; by left|constructor|].
+  destruct (hiz (pvar 0) 0 τ); [|done]. split; simpl; [set_solver|done].
 Qed.
