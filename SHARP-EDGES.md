@@ -868,6 +868,46 @@ The translation is unchanged, and the theorem asks `fixlam` instead.
 padovani-novara.md §8 lists every deviation of the source semantics from the
 chapter. No core change.
 
+**90. A channel at a fresh point between known points (Claude, 2026-11-01, branch fresh-points). Numbers 72 to 89 are reserved on another branch.**
+No point built from existing names lies strictly between two given points, so a
+box over ι ≺ κ cannot create a channel between them
+(`fb_between_underivable`). E-NewFresh (`t_newfresh`, static/Typing.v) types
+let (x, y) = new ∗ in t with the channel at a fresh point ι and the facts
+L ≺ ι ≺ H for lists L and H of known points. Betweenness asks Γ ⊢ l ≺ h for
+every l ∈ L and h ∈ H, and it is the soundness condition. Without it the world
+of a run could hold h ≺ l and close a cycle through ι. Three choices. ι is a
+bound point variable, as the ιs of E-Exp are, so freshness is the binder and
+costs no side condition. The facts enter the body as one more box hypothesis
+(`fresh_bcs L H`, instance [ι]), so the fact theory, knownness and
+substitution need no new clause. C holds ≺ facts between ι itself and known
+points only, because ≡ to an old point is E-Const and no example needs facts
+on ι+k or ι.i. The fundamental case of `typed_sem_rules` instantiates ι with
+the constant that O-New picks. docs/extensions/fresh-points.md has the rule
+and the proof.
+
+**91. World extension already admits fresh points (Claude, 2026-11-01).**
+The task expected ⊑ₒ to change, because it seemed to add only facts among new
+points. It does not. Both `wext_fresh` and the ⊑ₒ of gvsharp-orders.lagda
+forbid only new facts between two old points and let the fresh constant relate
+to old ones, which E-Const uses for its alias (a, 0) ≡ ι. With betweenness the
+world W plus L ≺ (a, 0) ≺ H adds no fact between old points and stays strict
+(`wext_fresh_between`, rules/FreshRules.v, by the closed form `blt` of its
+order). So ⊑ₒ, `fresh_extension`, `wext_fresh_join` and the composition lemmas
+are unchanged, and so are the statements of `soundness`, `fundamental` and
+`fundamental_proc`.
+
+**92. Fresh points shrink the worlds of closed programs (Claude, 2026-11-01).**
+examples/FreshBetween.v types the box of 90 with L = [ι] and H = [κ] and closes
+it into a program with partners (`fb_deadlock_free`, at the world with the one
+fact (0, 0) ≺ (1, 0)). The same program types with E-NewFresh for its two
+top-level news, the second one above the first (L = [γ]). It then needs no
+constant and no fact, and `fb_deadlock_free_empty` applies `soundness` in the
+empty world. A closed example can move its world facts into E-NewFresh this way
+when each fact relates the first point of a channel to points that exist when
+the channel is created. Facts on a later instant of the new channel, such as
+(b, 1) ≺ (a, 0), stay in the world. The existing examples were left as they
+are.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

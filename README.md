@@ -66,6 +66,7 @@ has no axioms and no admitted proofs.
 - `Bind.v`: evaluation contexts (`Erel_bind`).
 - `TermRules.v`: one compositionality lemma per typing rule.
 - `BoxRules.v`: the rules that need the box, E-App, E-Force, E-Exp and E-Contract.
+- `FreshRules.v`: E-NewFresh, a channel at a fresh point between known points (`wext_fresh_between`, `sem_typed_newfresh`).
 - `SemanticRules.v`: the infinitary judgment of these rules and its fundamental theorem.
 
 `static/`, the static system (spec §9).
@@ -82,6 +83,7 @@ has no axioms and no admitted proofs.
 - `Factory.v`: the factory at one point and under □∀ι.
 - `RequestReply.v`, `Relay.v`, `TailCall.v`, `ReceivedChain.v`, `Forwarder.v`: recursive boxes with infinite constraints.
 - `Ordered.v`: a box whose constraint orders its two arguments.
+- `FreshBetween.v`: a box over ι ≺ κ that creates a channel between them with E-NewFresh (`fb_between_underivable`, `fb_deadlock_free_empty`).
 - `Rejected.v`: programs the static system rejects (`rr_call_underivable`).
 
 `counterexamples/`
@@ -116,7 +118,8 @@ has no axioms and no admitted proofs.
 - `pgv_deadlock_free` (pgv/PGVTranslate.v): a closed program of type 1 in the monotone fragment of repaired PGV is deadlock free.
 - `pn_deadlock_free` (pn/PNTranslate.v): the translation of a closed program of type unit in fragment v1 of repaired Padovani and Novara is deadlock free. `fibo_deadlock_free` and `pipe_deadlock_free` (pn/PNExamples.v) apply it.
 - `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
-- The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, one per file in examples/.
+- The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/.
+- E-NewFresh (`t_newfresh`, static/Typing.v) creates a channel at a fresh point ι with facts L ≺ ι ≺ H when every point of L lies below every point of H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 92).
 
 ## Other documents
 

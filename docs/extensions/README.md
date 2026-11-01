@@ -35,6 +35,9 @@ constraint fragments a tool can decide.
 
 These are open as well. None has an outline yet.
 
+- Fresh points. E-NewFresh creates a channel at a fresh point between known
+  points. It is mechanized on branch fresh-points ([fresh-points.md](fresh-points.md)).
+
 - Shared channels with acquire and release, in the style of Balzer, Toninho and
   Pfenning (ESOP 2019), whose types order the acquires by an acyclic order on
   worlds. The load balancer would then type statically.
