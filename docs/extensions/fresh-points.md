@@ -287,6 +287,11 @@ The four examples that keep their worlds do so for three reasons.
   the world needs the alias construction of E-Const (`W0'` in
   rules/TermRules.v) combined with `Wg`. That is a second closed-form
   argument, larger than the one for `Wg` (sharp edges 96).
+  2026-11-01, branch `exists`. Done there for the existential signature of
+  new. C may hold one alias ι ≡ x next to its ≺ facts, and every ≺ fact of C
+  must already hold of x. The world is then the alias world alone, so no
+  combined closed form was needed (docs/extensions/existentials.md part 4,
+  sharp edges 104).
 - A bare `new ∗` outside the let form at a fresh point. Its result type would
   have to bind ι, which no type former of the base system does.
 - Inference of L and H. The algorithmic system of algorithmic.md generates

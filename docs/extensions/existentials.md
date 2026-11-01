@@ -1,9 +1,10 @@
 # Existential points
 
-Branch `exists`, built on `fresh-points`, sharp edges 97 to 103. Part 1 adds
+Branch `exists`, built on `fresh-points`, sharp edges 97 to 104. Part 1 adds
 existential points to the base order-based relation. Part 2 makes ∀ a type
 former of its own and □ a plain modality over it. Part 3 adds the lower bound ⊥
-and deletes E-NewFresh as a rule. Each part sits in its own commits. The statements of `soundness`, `fundamental`, `fundamental_proc` and of
+and deletes E-NewFresh as a rule. Part 4 lets the constraint of new hold one
+alias ι ≡ x and moves every example to the existential signature. Each part sits in its own commits. The statements of `soundness`, `fundamental`, `fundamental_proc` and of
 every composition lemma are the same as on `fresh-points`.
 
 ## Part 1. Existential points
@@ -384,3 +385,129 @@ are lemmas.
   PNTranslate.v uses the tactics `bot_false`, `bclean` and `lbhb`.
 - `Factory.v` states its helper `Hreq` for every frame, because the second
   component of a pair is typed under `sf_unionb`.
+
+## Part 4. One signature for new, with an alias
+
+### The decision
+
+new keeps one signature, the existential one (decided 2026-11-01). Its
+constraint C may hold one alias ι ≡ x, with x a known outer point, next to its
+≺ facts. At C = {ι ≡ x}, E-Open on the result of new and E-Conv on the opened
+pair move the channel from ι to x. That is the old signature at a known point.
+
+```
+new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι        C of the allowed form, outer points known,
+                                          fresh_between
+```
+
+### The allowed form of C
+
+`fresh_lt C` is the form of part 1. Every fact relates one point of ι to one
+outer point by ≺. `fresh_eq C w` is the fact ι ≡ w with w an outer point. C is
+allowed (`fresh_ok`) when it has the form `fresh_lt`, or when there is one w
+with `fresh_eq C w` and every other fact of C is a ≺ fact of that form. The
+disjunction says which case holds, so the semantic proof builds its world by
+cases and needs no excluded middle. The alias is the plain point variable ι at
+offset 0. An alias ι+1 ≡ x is not allowed.
+
+### The condition on the context
+
+`fresh_between plt C` has three parts.
+
+- If C has the form `fresh_lt`, betweenness of sharp edges 94. Γ ⊢ u ≺ v for
+  every u ≺ p and q ≺ v of C with q at or after p in program order of one name.
+- For the alias ι ≡ w and every u ≺ p of C, Γ ⊢ u ≺ p[w/ι].
+- For the alias ι ≡ w and every q ≺ v of C, Γ ⊢ q[w/ι] ≺ v.
+
+p[w/ι] is `fresh_at C w p`. It puts the outer point w in place of ι, so ι+k
+becomes w+k and ι.i becomes w.i. With the alias ι has every fact of w. A fresh
+extension adds no fact between two known points, and every point of ι is
+identified with a known point. So every ≺ fact of C has to hold already of w.
+The two alias parts are therefore necessary in every world that holds the
+alias, and they imply betweenness whenever the fact theory is transitive and
+contains program order. That makes the condition the weakest one for the world
+model. At C = {ι ≡ x} C has no ≺ fact, both alias parts are empty, and new asks
+only that x is known, which `Forall pk (bc_env C)` says. That was the premise of
+the old signature.
+
+### The semantic proof
+
+`wext_fresh_new` in rules/TermRules.v builds the world at the fresh constant a.
+Without an alias it is the world of `wext_fresh_con` as before. With the alias
+ι ≡ w it is the alias world of the old signature, `wjoin (W0' a x) W` with x the
+point of w (`wext_fresh_alias`). In that world every point p[a/ι] is ≡ to
+p[x/ι], by successor and slot congruence (`pt_inst_alias_eq`). A fact u ≺ p of C
+holds because u ≺ p[x/ι] holds in W and W lies below the new world. The facts
+q ≺ v follow the same way, and ι ≡ w is the alias itself. `Erel_app_new` calls
+`wext_fresh_new` in place of `wext_fresh_con`, and the rest of its existential
+case is unchanged. No closed form of a combined order was needed, because the
+alias world already identifies the points of a with known points and C adds no
+fact between known points.
+
+### The old behaviour as a lemma
+
+```
+t_new_at : strict W → skn W Ψ x →
+           Θ; x : S̄@x, y : S@x, _, _, Δ ⊢^F_Γ e : T  ⟹  Θ; Δ ⊢^F_Γ let_new e : T
+```
+
+The lemma is in static/Fundamental.v, because it uses `typed_pinst`. It types
+⟨new ∗, ∗⟩ with `KTNewEx` at `alias_bcs x` = {ι ≡ x}, opens p with E-Open, reads
+ι ≡ x off the new hypothesis and converts the scrutinee of the inner let pair
+from S@ι ⊗ S̄@ι to S@x ⊗ S̄@x with E-Conv. The body is the old body shifted past
+ι by `typed_pinst`, which asks a strict world. The body sees the spent p and
+unit as two empty slots, as in part 1.
+
+### The examples
+
+Every base example creates its channels with `let_new_pair` and types them with
+`t_new_at`. The programs changed text, the statements of the deadlock-freedom
+theorems did not. The typing lemmas that call `t_new_at`, directly or through a
+box, take `strict W` in place of `world_wf W`.
+
+| File | Changed |
+|---|---|
+| Sync.v, Cycle.v, Delegation.v, Scheduler.v, RequestReply.v, TailCall.v | top-level news |
+| Factory.v | the new in `fac`, at (a,0) and at the box variable ι in `faca` |
+| Forwarder.v | `fprod` at ι.0, and the two top-level news |
+| ReceivedChain.v | `sch` at its carried point, and the top-level new |
+| Relay.v | `prod` at ι′, and the two top-level news |
+| SchedulerFresh.v | r₁ at the fresh point of r₀ |
+| RelayFresh.v, FreshBetween.v, FreshMany.v | the news at known points |
+| Rejected.v | the program texts, no proof |
+
+Ordered.v creates no channel. RelayFresh.v matches the environment of its body
+by shape and gained the two empty slots of the outer new.
+
+### What is not done
+
+The constructor `KTNew` is still in `konst_ty`. The translations from PGV
+(theories/pgv/PGVTranslate.v) and from Padovani and Novara
+(theories/pn/PNTranslate.v) still use it, and porting them is more than a
+mechanical change (sharp edges 104).
+
+- PGV. The translation is the identity on applied constants, and the PGV
+  examples prove deadlock freedom of the source term by
+  `pgv_deadlock_free_applied`, which asks the program to be its own
+  translation. A bare `App ENew e` has no type at S@x ⊗ S̄@x any more, so the
+  translation would have to map new to an encoded term. Then no PGV program
+  with new is its own translation, and `pgv_ex21_deadlock_free`,
+  `pgv_deleg_deadlock_free` and `pgv_link_deadlock_free` would need a
+  simulation or a changed statement.
+- PN. The relation `pn_typed` produces the target `LetP (App ENew EUnit) e′`,
+  and the simulation of PNSimulation.v relates it to the source step of new
+  (`newp`, the case `tr_new` and its step lemma). The encoded target takes four
+  steps where the source takes one or two, so `trel`, the forward simulation
+  `fwd` and the lemma `final` would each need new administrative forms.
+
+### What broke and how it was fixed
+
+- `fresh_ok` of part 1 is now `fresh_lt`, and `t_newfresh_open` takes
+  `fresh_lt C`. `fresh_lt_no_eq` and `fresh_between_lt` turn its premises into
+  those of `KTNewEx`, so the fresh examples kept their scripts.
+- `fresh_lo_shape`, `fresh_hi_shape`, `fresh_eq_shape`, `fresh_lt_shape` and
+  `fresh_ok_shape` in types/Types.v say that the form of C reads only its facts
+  and the length of its environment. `fresh_ok_inst` and `fresh_ok_sw` are now
+  one line each. `fresh_at_inst` and `fresh_at_sw` move the alias parts of the
+  condition in `konst_ty_pinst` and `konst_ty_sw`, and `fresh_between_mono` does
+  it in `konst_ty_mono`.

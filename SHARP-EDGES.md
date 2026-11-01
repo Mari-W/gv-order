@@ -1056,6 +1056,27 @@ program with the encoded let of new. The statements of soundness, fundamental,
 fundamental_proc and the composition lemmas are unchanged.
 docs/extensions/existentials.md, part 3.
 
+**104. One signature for new, with an alias ι ≡ x (Claude, 2026-11-01, branch exists).**
+The author decided that new keeps the existential signature alone, with one
+alias ι ≡ x allowed in its constraint next to the ≺ facts. `fresh_ok C` now
+says that C has the ≺ form of 93 (`fresh_lt`) or that form plus one fact
+ι ≡ w with w outer (`fresh_eq`). The condition `fresh_between` asks
+betweenness (94) without an alias, and with it u ≺ p[w/ι] and q[w/ι] ≺ v for
+every ≺ fact of C. The alias identifies every point of ι with a known point,
+and a fresh extension adds no fact between known points, so these facts must
+hold already. The condition is therefore the weakest one for the world model.
+At C = {ι ≡ x} it is empty and new asks only that x is known, the premise of
+the old signature. The semantic world is the alias world of the old signature
+(`wext_fresh_new`), which is why no second closed form was needed, against the
+estimate of 96. `t_new_at` (static/Fundamental.v) types `let_new e` from x
+known by E-Open, E-Conv on the opened pair and `typed_pinst`, and every example
+now creates its channels this way. `KTNew` is not deleted. The translations
+from PGV and from Padovani and Novara still use it. PGV proves deadlock freedom
+of its source programs by being the identity on applied new, and PN relates
+`LetP (App ENew EUnit) e` to the source step of new in its simulation. Both
+need more than a mechanical port, and that waits for the author.
+docs/extensions/existentials.md, part 4.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
