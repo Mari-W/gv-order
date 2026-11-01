@@ -53,6 +53,7 @@ theories/examples/CycleFresh.v
 theories/examples/SchedulerFresh.v
 theories/examples/RequestReplyFresh.v
 theories/examples/TailCallFresh.v
+theories/examples/RelayFresh.v
 theories/examples/Rejected.v
 theories/counterexamples/DropCounter.v
 theories/pgv/PGVTypes.v
