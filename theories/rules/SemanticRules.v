@@ -8,7 +8,7 @@
     [typed_sem_rules] (static/Fundamental.v). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export rules.BoxRules.
+From LRGV Require Export rules.FreshRules.
 
 Set Default Proof Using "All".
 
@@ -77,7 +77,13 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       sem_rules W Θ (Some U :: Some U :: Δ) F e T →
       sem_rules W Θ (Some U :: Δ) F (rename pred e) T
   | sr_conv Θ Δ F e T T' :                               (* E-Conv, ≈_W (sharp edges 67) *)
-      teqW W T T' → sem_rules W Θ Δ F e T → sem_rules W Θ Δ F e T'.
+      teqW W T T' → sem_rules W Θ Δ F e T → sem_rules W Θ Δ F e T'
+  | sr_newfresh Θ Δ F e T S L H :                        (* E-NewFresh (sharp edges 90) *)
+      Forall (pt_known W) (L ++ H) → (∀ l h, l ∈ L → h ∈ H → w_lt W l h) →
+      (∀ W1 a, wext W W1 → Forall (λ l, w_lt W1 l (pconst a)) L →
+         Forall (λ h, w_lt W1 (pconst a) h) H → pt_known W1 (pconst a) →
+         sem_rules W1 Θ (Some (TSess (dual S) (pconst a)) :: Some (TSess S (pconst a)) :: Δ) F e T) →
+      sem_rules W Θ Δ F (LetP (App ENew EUnit) e) T.
 
 (** E-Force is E-App at the constant force. *)
 Lemma sem_rules_force W Θ Δ F e m C ub T xs :
@@ -116,7 +122,8 @@ Proof.
     |W Δ F e m C ub T HΔ Hwf Hb IH
     |W Θ Δ' Δ F e T Hwk H IH
     |W Θ Δ U F e T Hu H IH
-    |W Θ Δ F e T T' Hteq H IH]; intros Ht0 HW.
+    |W Θ Δ F e T T' Hteq H IH
+    |W Θ Δ F e T S L H HK Hbt Hb IH]; intros Ht0 HW.
   - by apply sem_typed_unit.
   - by apply sem_typed_konst.
   - by apply sem_typed_var.
@@ -135,4 +142,6 @@ Proof.
   - eapply sem_typed_wk; [done|by apply IH].
   - apply sem_typed_contract; [done|by apply IH].
   - eapply sem_typed_tconv; [done|by apply IH].
+  - apply (sem_typed_newfresh W Θ Δ F e T S L H); [done|done|].
+    intros W1 a HW1 HL HH Ha. apply IH; [done..| |apply HW1]. by apply Hb.
 Qed.

@@ -73,7 +73,23 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ (Some U :: Some U :: Δ) F e T →
       typed W Φ Ψ Θ (Some U :: Δ) F (rename pred e) T
   | t_conv Φ Ψ Θ Δ F e T T' :                           (* E-Conv, ≈ up to Γ ⊢ ≡ *)
-      steq W Ψ T T' → typed W Φ Ψ Θ Δ F e T → typed W Φ Ψ Θ Δ F e T'.
+      steq W Ψ T T' → typed W Φ Ψ Θ Δ F e T → typed W Φ Ψ Θ Δ F e T'
+  | t_newfresh Φ Ψ Θ Δ F e T S L H :                    (* E-NewFresh *)
+      Forall (skn W Ψ) (L ++ H) →
+      (∀ l h, l ∈ L → h ∈ H → slt W Ψ l h) →
+      typed W (fhyps_pinst (pshift 1) Φ)
+        (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
+        (tenv_pinst (pshift 1) Θ)
+        (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
+        (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
+      typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
+
+(** E-NewFresh (sharp edges 90). The fresh point ι is the point
+    variable 0 of the body, bound like the ιs of E-Exp, so Φ, Ψ, Θ, Δ,
+    F and T shift past it and ι is free in none of them. The body
+    assumes the hypothesis C = L ≺ ι ≺ H ([fresh_bcs]) and holds the
+    two ends of the channel at ι. The points of L and H are known, and
+    every point of L lies below every point of H (betweenness). *)
 
 (** E-Force is E-App at the constant force. The instance must meet the
     box's constraint, every fact read from W and the hypotheses Ψ
@@ -135,3 +151,20 @@ Inductive ptyped (W : world) : senv → proc → ty → Prop :=
 
 Lemma ptyped_prim W Σ p T : ptyped W Σ p T → prim T.
 Proof. induction 1; auto. Qed.
+
+(** The facts of the hypothesis of E-NewFresh. *)
+Lemma slt_fresh_l W Ψ σ L H x l :
+  (bcs_inst σ (fresh_bcs L H), [x]) ∈ Ψ → l ∈ L → slt W Ψ (pt_inst σ l) x.
+Proof.
+  intros Hg Hl. apply sl_h. exists (bcs_inst σ (fresh_bcs L H)), [x]. split; [done|].
+  rewrite bcs_inst_fresh. apply fresh_open. left. exists (pt_inst σ l).
+  split; [by apply list_elem_of_fmap_2|done].
+Qed.
+
+Lemma slt_fresh_r W Ψ σ L H x h :
+  (bcs_inst σ (fresh_bcs L H), [x]) ∈ Ψ → h ∈ H → slt W Ψ x (pt_inst σ h).
+Proof.
+  intros Hg Hh. apply sl_h. exists (bcs_inst σ (fresh_bcs L H)), [x]. split; [done|].
+  rewrite bcs_inst_fresh. apply fresh_open. right. exists (pt_inst σ h).
+  split; [by apply list_elem_of_fmap_2|done].
+Qed.

@@ -802,3 +802,119 @@ Proof. apply fmap_empty. Qed.
 
 Lemma sf_pinst_fresh σ φ : sf_pinst σ (∅, Some φ) = (∅, Some φ).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
+
+(** ** Composition and extensionality for environments and frames *)
+
+Lemma tenv_pinst_comp τ σ Θ : tenv_pinst τ (tenv_pinst σ Θ) = tenv_pinst (pt_inst τ ∘ σ) Θ.
+Proof.
+  apply map_eq. intros c. unfold tenv_pinst. rewrite !lookup_fmap.
+  destruct (Θ !! c) as [[[s x]|[s1 x1] [s2 x2]]|]; simpl; rewrite ?pt_inst_comp; done.
+Qed.
+
+Lemma tenv_pinst_ext σ τ Θ : (∀ a, σ a = τ a) → tenv_pinst σ Θ = tenv_pinst τ Θ.
+Proof.
+  intros H. apply map_eq. intros c. unfold tenv_pinst. rewrite !lookup_fmap.
+  destruct (Θ !! c) as [[[s x]|[s1 x1] [s2 x2]]|]; simpl;
+    rewrite ?(pt_inst_ext σ τ); done.
+Qed.
+
+Lemma sf_pinst_comp τ σ F : sf_pinst τ (sf_pinst σ F) = sf_pinst (pt_inst τ ∘ σ) F.
+Proof.
+  destruct F as [P o]. unfold sf_pinst. simpl. f_equal.
+  apply set_eq. intros x. rewrite !elem_of_map. split.
+  - intros (y & -> & Hy). apply elem_of_map in Hy as (z & -> & Hz).
+    exists z. by rewrite pt_inst_comp.
+  - intros (z & -> & Hz). exists (pt_inst σ z). rewrite pt_inst_comp.
+    split; [done|]. by apply elem_of_map_2.
+Qed.
+
+Lemma sf_pinst_ext σ τ F : (∀ a, σ a = τ a) → sf_pinst σ F = sf_pinst τ F.
+Proof.
+  intros H. destruct F as [P o]. unfold sf_pinst. simpl. f_equal.
+  apply set_eq. intros x. rewrite !elem_of_map.
+  split; intros (y & -> & Hy); exists y; by rewrite (pt_inst_ext σ τ).
+Qed.
+
+(** ** The hypothesis of E-NewFresh (sharp edges 90)
+
+    [fresh_bcs L H] is the constraint of one point variable ι (the
+    variable 0 under the binder) with the facts l ≺ ι for l ∈ L and
+    ι ≺ h for h ∈ H. The points of L and H are its outer points. *)
+
+Definition fresh_facts (nL nH : nat) (f : fact) : Prop :=
+  (∃ i, i < nL ∧ f = FLt (pvar (S i)) (pvar 0)) ∨
+  (∃ j, j < nH ∧ f = FLt (pvar 0) (pvar (S (nL + j)))).
+
+Definition fresh_bcs (L H : list point) : bcs :=
+  BCs (L ++ H) (fresh_facts (length L) (length H)).
+
+Lemma bcs_inst_fresh σ L H :
+  bcs_inst σ (fresh_bcs L H) = fresh_bcs (pt_inst σ <$> L) (pt_inst σ <$> H).
+Proof. unfold bcs_inst, fresh_bcs. simpl. by rewrite fmap_app, !length_fmap. Qed.
+
+(** An outer point, opened under one binder and instantiated by [x],
+    is itself. *)
+Lemma pt_inst_open1 x env i y :
+  env !! i = Some y →
+  pt_inst (plist [x]) (pt_inst (pup 1 (plist env)) (pvar (S i))) = y.
+Proof.
+  intros Hy. rewrite pt_inst_pvar_at. unfold pup. rewrite decide_False by lia.
+  replace (S i - 1) with i by lia. unfold plist at 2. rewrite Hy.
+  rewrite pt_inst_comp. rewrite <-(pt_inst_pvar y) at 2. apply pt_inst_ext.
+  intros b. simpl. rewrite pt_inst_pvar_at. unfold plist. simpl.
+  replace (b + 1) with (S b) by lia. simpl.
+  unfold pvar. f_equal. f_equal. lia.
+Qed.
+
+Lemma pt_inst_open1_0 x env :
+  pt_inst (plist [x]) (pt_inst (pup 1 (plist env)) (pvar 0)) = x.
+Proof.
+  rewrite pt_inst_pvar_at. unfold pup. rewrite decide_True by lia.
+  rewrite pt_inst_pvar_at. done.
+Qed.
+
+(** The facts of [fresh_bcs L H] at the instance [x] are L ≺ x ≺ H. *)
+Lemma fresh_open x L H g :
+  (∃ g0, bcs_open 1 (fresh_bcs L H) g0 ∧ g = fact_map (pt_inst (plist [x])) g0) ↔
+  (∃ l, l ∈ L ∧ g = FLt l x) ∨ (∃ h, h ∈ H ∧ g = FLt x h).
+Proof.
+  split.
+  - intros (g0 & (f & Hf & Hs & ->) & ->).
+    destruct Hf as [(i & Hi & ->)|(j & Hj & ->)]; simpl.
+    + left. destruct (lookup_lt_is_Some_2 L i Hi) as [l Hl]. exists l.
+      split; [by eapply list_elem_of_lookup_2|].
+      rewrite (pt_inst_open1 x (L ++ H) i l) by (by apply lookup_app_l_Some).
+      by rewrite pt_inst_open1_0.
+    + right. destruct (lookup_lt_is_Some_2 H j Hj) as [h Hh]. exists h.
+      split; [by eapply list_elem_of_lookup_2|].
+      rewrite (pt_inst_open1 x (L ++ H) (length L + j) h).
+      * by rewrite pt_inst_open1_0.
+      * rewrite lookup_app_r by lia. by replace (length L + j - length L) with j by lia.
+  - intros [(l & Hl & ->)|(h & Hh & ->)].
+    + apply list_elem_of_lookup_1 in Hl as [i Hi].
+      exists (FLt (pt_inst (pup 1 (plist (L ++ H))) (pvar (S i)))
+                  (pt_inst (pup 1 (plist (L ++ H))) (pvar 0))). split.
+      * exists (FLt (pvar (S i)) (pvar 0)). split_and!; [|simpl|done].
+        -- left. exists i. split; [by eapply lookup_lt_Some|done].
+        -- pose proof (lookup_lt_Some _ _ _ Hi). rewrite length_app. lia.
+      * simpl. rewrite pt_inst_open1_0. rewrite (pt_inst_open1 x (L ++ H) i l); [done|].
+        by apply lookup_app_l_Some.
+    + apply list_elem_of_lookup_1 in Hh as [j Hj].
+      exists (FLt (pt_inst (pup 1 (plist (L ++ H))) (pvar 0))
+                  (pt_inst (pup 1 (plist (L ++ H))) (pvar (S (length L + j))))). split.
+      * exists (FLt (pvar 0) (pvar (S (length L + j)))). split_and!; [|simpl|done].
+        -- right. exists j. split; [by eapply lookup_lt_Some|done].
+        -- pose proof (lookup_lt_Some _ _ _ Hj). rewrite length_app. lia.
+      * simpl. rewrite pt_inst_open1_0. rewrite (pt_inst_open1 x (L ++ H) (length L + j) h); [done|].
+        rewrite lookup_app_r by lia. by replace (length L + j - length L) with j by lia.
+Qed.
+
+Lemma fresh_hold (eq lt : point → point → Prop) x L H :
+  Forall (λ l, lt l x) L → Forall (λ h, lt x h) H → bcs_hold eq lt (fresh_bcs L H) [x].
+Proof.
+  intros HL HH g Hg.
+  destruct (proj1 (fresh_open x L H (fact_map (pt_inst (plist [x])) g)) (ex_intro _ g (conj Hg eq_refl)))
+    as [(l & Hl & E)|(h & Hh & E)]; rewrite E; simpl.
+  - rewrite Forall_forall in HL. by apply HL.
+  - rewrite Forall_forall in HH. by apply HH.
+Qed.
