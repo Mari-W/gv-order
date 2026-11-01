@@ -28,7 +28,6 @@ theories/rules/Bind.v
 theories/rules/FreshWorlds.v
 theories/rules/TermRules.v
 theories/rules/BoxRules.v
-theories/rules/FreshRules.v
 theories/rules/ExRules.v
 theories/rules/SemanticRules.v
 theories/static/FactTheory.v

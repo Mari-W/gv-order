@@ -10,7 +10,7 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option nat)).
+Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option fslot)).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 Lemma fhyps_pinst_empty σ : fhyps_pinst σ ∅ = ∅.

@@ -23,14 +23,33 @@ Set Default Proof Using "All".
     x ≺ φ holds when x ≼ u in W for the hypothesis u ≺ φ. E-Exp types
     the body with the ιs as point variables (sharp edges 57). *)
 
-Notation sframe := (gset point * option nat)%type.
+(** The second component of a frame (sharp edges 103): a frame
+    variable φ ([FVar φ]), or the ⊥ flag with or without a frame
+    variable ([FBot o]). [None] is neither. The flag says that the
+    context holds an unopened existential with lower bound ⊥, so no
+    known point lies below everything the context holds. *)
+Inductive fslot := FVar (φ : nat) | FBot (o : option nat).
+
+Notation sframe := (gset point * option fslot)%type.
 Notation fhyps := (gmap nat (option point)).
 
-(** F[ρ]: replace the frame variable by a concrete frame. *)
+Definition fs_var (o : option fslot) : option nat :=
+  match o with Some (FVar φ) => Some φ | Some (FBot o') => o' | None => None end.
+
+Definition fs_bot (o : option fslot) : bool :=
+  match o with Some (FBot _) => true | _ => false end.
+
+(** F[ρ]: replace the frame variable by a concrete frame, and the flag
+    by the point [pbot] of relation/Worlds.v. *)
 Definition sf_inst (ρ : nat → gset point) (F : sframe) : gset point :=
-  F.1 ∪ match F.2 with Some φ => ρ φ | None => ∅ end.
+  F.1 ∪ match fs_var F.2 with Some φ => ρ φ | None => ∅ end ∪ bot_pts (fs_bot F.2).
 
 Definition sf_union (F : sframe) (X : gset point) : sframe := (F.1 ∪ X, F.2).
+
+(** F, X with the flag set when b holds: the points X and flag b are
+    the heads of what the context of a subterm holds. *)
+Definition sf_unionb (F : sframe) (X : gset point) (b : bool) : sframe :=
+  if b then (F.1 ∪ X, Some (FBot (fs_var F.2))) else sf_union F X.
 
 (** Hypotheses (sharp edges 58, 61, 65). Inside a box body the
     constraint of every enclosing box is a hypothesis (C, xs): every
@@ -162,6 +181,23 @@ Definition lb_below_h (W : world) (Ψ : hyps) (lb : option point)
     (H : gset point) : Prop :=
   match lb with None => H = ∅ | Some x => ∀ y, y ∈ H → sle W Ψ x y end.
 
+(** λ ≼ H with the flag b of H (sharp edges 103). A flagged H holds
+    something below no known point, so no lower point of an arrow lies
+    below it. *)
+Definition lb_below_hb (W : world) (Ψ : hyps) (lb : option point)
+    (H : gset point) (b : bool) : Prop :=
+  if b then False else lb_below_h W Ψ lb H.
+
+(** ℓ ≼ H for the lower bound of an existential, with the flag b of H.
+    ⊥ lies below everything. *)
+Definition lbx_below_h (W : world) (Ψ : hyps) (lb : lbound)
+    (H : gset point) (b : bool) : Prop :=
+  match lb with
+  | LBot => True
+  | LTop => H = ∅ ∧ b = false
+  | LPt x => (∀ y, y ∈ H → sle W Ψ x y) ∧ b = false
+  end.
+
 (** Without hypotheses the static ≡ and ≺ are those of W. *)
 Lemma seqs_nil W x y : world_wf W → seqs W [] x y → w_eq W x y.
 Proof.
@@ -283,20 +319,27 @@ Definition ub_below_s (W : world) (Ψ : hyps) (Φ : fhyps)
   match ub with
   | None => True
   | Some x => (∀ y, y ∈ F.1 → fl (FCtx W Ψ Φ) (NP x) (NP y)) ∧
-              (∀ φ, F.2 = Some φ → fl (FCtx W Ψ Φ) (NP x) (NV φ))
+              (∀ φ, fs_var F.2 = Some φ → fl (FCtx W Ψ Φ) (NP x) (NV φ)) ∧
+              fs_bot F.2 = false
   end.
 
 (** The frame variable part read as x ≼ u for the hypothesis u ≺ φ. *)
 Lemma ub_below_s_intro W Ψ Φ x P o :
   (∀ y, y ∈ P → slt W Ψ x y) →
-  match o with Some φ => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u | None => True end →
+  match o with
+  | Some (FVar φ) => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u
+  | Some (FBot _) => False
+  | None => True
+  end →
   ub_below_s W Ψ Φ (Some x) (P, o).
 Proof.
-  intros H1 H2. split; simpl.
+  intros H1 H2. split_and!; simpl.
   - intros y Hy. apply fl_points. by apply H1.
-  - intros φ ->. destruct H2 as (u & Hu & [Heq|Hlt]).
+  - intros φ Hφ. destruct o as [[φ'|o']|]; simpl in Hφ; [|done|done]. injection Hφ as ->.
+    destruct H2 as (u & Hu & [Heq|Hlt]).
     + apply (fl_eql (FCtx W Ψ Φ) _ u); [done|]. by apply (fl_v (FCtx W Ψ Φ)).
     + apply (fl_trans (FCtx W Ψ Φ) _ u); [by apply fl_points|]. by apply (fl_v (FCtx W Ψ Φ)).
+  - by destruct o as [[]|].
 Qed.
 
 (** ρ meets the hypotheses: {u} ≺_W ρ(φ) for every u ≺ φ in Φ. *)

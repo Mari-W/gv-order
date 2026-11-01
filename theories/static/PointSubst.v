@@ -327,6 +327,9 @@ Definition pt_scoped (k : nat) (x : point) : Prop := ∀ a, pt_root x = NVar a �
 Definition opt_scoped (k : nat) (o : option point) : Prop :=
   match o with Some x => pt_scoped k x | None => True end.
 
+Definition lb_scoped (k : nat) (lb : lbound) : Prop :=
+  match lb with LPt x => pt_scoped k x | _ => True end.
+
 (** The outer points of a constraint live outside its binder. *)
 Definition bcs_scoped (k : nat) (C : bcs) : Prop := Forall (pt_scoped k) (bc_env C).
 
@@ -338,7 +341,7 @@ Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   | TBoxM T1 => pscoped k T1
   | TAll n C T1 => bcs_scoped k C ∧ pscoped (n + k) T1
   | TSess _ x => pt_scoped k x
-  | TEx lb n C T1 => opt_scoped k lb ∧ bcs_scoped k C ∧ pscoped (n + k) T1
+  | TEx lb n C T1 => lb_scoped k lb ∧ bcs_scoped k C ∧ pscoped (n + k) T1
   end.
 
 Lemma pinst_ty_ext_scoped T : ∀ k σ τ,
@@ -362,7 +365,7 @@ Proof.
   - f_equal. eauto.
   - f_equal. eauto.
   - destruct HT as (Hlb & HC & H1). f_equal.
-    + destruct lb; simpl in *; [f_equal; eauto|done].
+    + destruct lb; simpl in *; [done|done|f_equal; eauto].
     + unfold bcs_inst. f_equal. apply list_fmap_ext. intros i x Hx.
       unfold bcs_scoped in HC. rewrite Forall_forall in HC. eapply Hpt; [|exact H].
       apply HC. by eapply list_elem_of_lookup_2.
@@ -405,7 +408,7 @@ Proof.
   - by rewrite IH1, IH2, set_map_union_L.
   - by rewrite set_map_empty.
   - by rewrite set_map_singleton_L.
-  - apply opt_heads_pinst.
+  - destruct lb; simpl; [by rewrite set_map_empty|by rewrite set_map_empty|by rewrite set_map_singleton_L].
   - by rewrite set_map_empty.
 Qed.
 
@@ -518,11 +521,11 @@ Section transfer.
   Proof.
     intros Heq Hlt Hpk Hk.
     destruct 1 as [S x Hx|ub lb|m P S x Hh|m P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK
-                  |S C u H H0 H1 H2];
+                  |S C H H0 H1];
       simpl in *.
     - constructor. by apply Hpk.
     - constructor.
-    - rewrite payload_pinst, pt_inst_shift by done. constructor.
+    - rewrite payload_pinst, pt_inst_shift by done. constructor. destruct (hbot P); [done|].
       intros h Hh'. rewrite <-payload_pinst, heads_pinst in Hh' by done.
       apply elem_of_map in Hh' as (h0 & -> & Hh0). by apply Hlt, Hh.
     - rewrite payload_pinst, pt_inst_shift by done. constructor.
@@ -539,10 +542,9 @@ Section transfer.
       rewrite <-E1, <-E2. constructor; [by rewrite length_fmap| |].
       + by apply (bcs_hold_inst peq _ plt).
       + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx. by apply Hpk.
-    - pose proof H2 as (_ & [Hs _] & _ & Hr).
-      assert (pt_inst (pup 1 σ) (pvar 0) = pvar 0) as ->
+    - assert (pt_inst (pup 1 σ) (pvar 0) = pvar 0) as ->
         by (rewrite pt_inst_pvar_at; unfold pup; by rewrite decide_True by lia).
-      rewrite <-fresh_outer_inst by done. constructor.
+      constructor.
       + by apply fresh_ok_inst.
       + simpl. apply Forall_fmap. eapply Forall_impl; [exact H0|]. intros x Hx. by apply Hpk.
       + intros u' p q v Hu Hv Hpq. apply (proj1 (fresh_lo_inst σ C u' p)) in Hu.
@@ -550,7 +552,6 @@ Section transfer.
         pose proof Hu as (_ & [Hs1 _] & _ & Hr1). pose proof Hv as (_ & [_ Hs2] & _ & Hr2).
         rewrite (fresh_outer_inst σ C u'), (fresh_outer_inst σ C v) by done.
         apply Hlt. by apply (H1 u' p q v).
-      + by apply (proj2 (fresh_lo_inst σ C u (pvar 0))).
   Qed.
 
   Lemma skn_pinst_known Ψ x :
@@ -658,6 +659,26 @@ Section transfer.
     - intros ->. apply set_map_empty.
   Qed.
 
+  Lemma lbx_below_h_pinst Ψ lb H b :
+    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) →
+    lbx_below_h W Ψ lb H b → lbx_below W1 (lb_map (pt_inst σ) lb) (set_map (pt_inst σ) H) b.
+  Proof.
+    intros HΨ. destruct lb as [| |x]; simpl; [|done|].
+    - intros [-> ->]. split; [apply set_map_empty|done].
+    - intros [Hl ->]. split; [|done]. intros y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0).
+      by apply (sle_pinst Ψ), Hl.
+  Qed.
+
+  Lemma lbx_below_h_pinst_s Ψ Ψ' lb H b :
+    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) →
+    lbx_below_h W Ψ lb H b → lbx_below_h W1 Ψ' (lb_map (pt_inst σ) lb) (set_map (pt_inst σ) H) b.
+  Proof.
+    intros HΨ. destruct lb as [| |x]; simpl; [|done|].
+    - intros [-> ->]. split; [apply set_map_empty|done].
+    - intros [Hl ->]. split; [|done]. intros y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0).
+      by apply (sle_pinst_s Ψ), Hl.
+  Qed.
+
   (** Composition of environments reads Γ ⊢ ≡ (sharp edges 65). *)
   Lemma tenv_comp_pinst_g Ψ Θ Θ1 Θ2 :
     hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) → tenv_comp (seqs W Ψ) Θ Θ1 Θ2 →
@@ -703,7 +724,7 @@ Section transfer.
     - destruct H as [? ?]. split; [|done].
       apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
     - destruct H as (<- & <- & <- & ?). split_and!; [|done|apply bcs_rel_refl|].
-      + destruct lb; simpl; [by left|done].
+      + destruct lb; simpl; [done|done|by left].
       + apply teq_teqW. by apply eqT_pinst.
     - destruct H as (<- & <- & ?). split_and!; [done|apply bcs_rel_refl|].
       apply teq_teqW. by apply eqT_pinst.
@@ -805,6 +826,13 @@ Qed.
 Lemma sf_pinst_union σ F X : sf_pinst σ (sf_union F X) = sf_union (sf_pinst σ F) (set_map (pt_inst σ) X).
 Proof. unfold sf_pinst, sf_union. simpl. by rewrite set_map_union_L. Qed.
 
+Lemma sf_pinst_unionb σ F X b :
+  sf_pinst σ (sf_unionb F X b) = sf_unionb (sf_pinst σ F) (set_map (pt_inst σ) X) b.
+Proof. destruct b; unfold sf_unionb, sf_pinst, sf_union; simpl; by rewrite set_map_union_L. Qed.
+
+Lemma lenv_bot_pinst σ Δ : lenv_bot (lenv_pinst σ Δ) = lenv_bot Δ.
+Proof. induction Δ as [|[T|] Δ IH]; simpl; [done| |done]. by rewrite hbot_pinst, IH. Qed.
+
 Lemma sf_pinst_pvar F : sf_pinst pvar F = F.
 Proof.
   destruct F as [P o]. unfold sf_pinst. simpl. f_equal.
@@ -817,16 +845,17 @@ Lemma ub_below_s_pinst W W1 σ Ψ Ψ' Φ ub F :
   world_wf W → wext W W1 → hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) → ub_below_s W Ψ Φ ub F →
   ub_below_s W1 Ψ' (fhyps_pinst σ Φ) (pt_inst σ <$> ub) (sf_pinst σ F).
 Proof.
-  intros HW HW1 HΨ. destruct ub as [x|]; [|done]. intros [HP Hφ].
+  intros HW HW1 HΨ. destruct ub as [x|]; [|done]. intros (HP & Hφ & Hb).
   assert (∀ a b, fl (FCtx W Ψ Φ) a b →
             fl (FCtx W1 Ψ' (fhyps_pinst σ Φ)) (node_inst σ a) (node_inst σ b)) as Hm.
   { refine (proj2 (fl_pinst W W1 σ HW HW1 Ψ Ψ' Φ _ HΨ _)). intros φ u Hu.
     apply (fl_v (FCtx W1 Ψ' (fhyps_pinst σ Φ))). simpl.
     unfold fhyps_pinst. by rewrite lookup_fmap, Hu. }
-  split.
+  split_and!.
   - intros y Hy. destruct F as [P o]. simpl in *.
     apply elem_of_map in Hy as (y0 & -> & Hy0). exact (Hm _ _ (HP y0 Hy0)).
   - intros φ Hφ'. destruct F as [P o]. simpl in *. exact (Hm _ _ (Hφ φ Hφ')).
+  - done.
 Qed.
 
 Lemma eqT_pinst ρ T : ∀ U σ, eqT ρ T U → eqT ρ (pinst_ty σ T) (pinst_ty σ U).
@@ -847,7 +876,7 @@ Qed.
 Lemma tenv_pinst_empty σ : tenv_pinst σ ∅ = ∅.
 Proof. apply fmap_empty. Qed.
 
-Lemma sf_pinst_fresh σ φ : sf_pinst σ (∅, Some φ) = (∅, Some φ).
+Lemma sf_pinst_fresh σ φ : sf_pinst σ (∅, Some (FVar φ)) = (∅, Some (FVar φ)).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 (** ** Composition and extensionality for environments and frames *)

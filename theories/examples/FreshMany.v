@@ -47,8 +47,7 @@ Proof.
   cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pvar 1)) None 1); [set_solver|cbn; set_solver|].
   eapply t_wk; [apply lwk_cons, lwk_drop; [done|constructor]|].
   cbn. tstep; [tstep|]. cbn.
-  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sdd fm_C (pvar 1) _ _ _
-           (fresh_lo_var1 (bc_env fm_C) fm_facts ltac:(done) ltac:(by unfold fm_facts; left)) _).
+  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sdd fm_C _ _ _ _).
   { intros f [->|[k ->]] Hs.
     - left. eexists _, _. split; [done|]. split_and!; [by left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [right; by exists k|done|done|done]. }
@@ -167,7 +166,7 @@ Qed.
     edges 99). *)
 Definition fm_main_ex : expr :=
   LetP (Pair fm_box EUnit) (LetU (Var 0)
-    (LetP (App ENew EUnit) (let_new_pair
+    (let_new_pair (let_new_pair
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 3)))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
         (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
@@ -178,18 +177,18 @@ Proof.
   tstep.
   { tstep; [tstep|apply fm_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_newfresh_lh W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
-  assert (∀ σ, sf_pinst σ (∅, None) = ((∅ : gset point), (None : option nat))) as Hsf
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
+  assert (∀ σ, sf_pinst σ (∅, None) = ((∅ : gset point), (None : option fslot))) as Hsf
     by (intros σ; unfold sf_pinst; simpl; by rewrite set_map_empty).
   rewrite tenv_pinst_empty, Hsf. cbn.
-  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: Some ?T :: []) _ _ _ => change T with fb_ty end.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] [] ltac:(done)).
+  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ => change T with fb_ty end.
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] []).
   { constructor; [|constructor]. right. exists (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 0], (pvar 0).
     split_and!; [by left|by left|done]. }
   { intros l h _ Hh. by apply elem_of_nil in Hh. }
   rewrite tenv_pinst_empty, Hsf. cbn.
   change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
-  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
+  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
     change T with fb_ty end.
   replace (fhyps_pinst (pshift 1) (fhyps_pinst (pshift 1) ∅)) with (∅ : fhyps)
     by (unfold fhyps_pinst; by rewrite !fmap_empty).

@@ -81,7 +81,7 @@ Lemma ubs_lower Φ a b F :
 Proof.
   intros Hab Hb. destruct a as [x|]; [|done].
   destruct (Hab x eq_refl) as (y & -> & [<-|Hxy]); [done|].
-  destruct Hb as [H1 H2]. split.
+  destruct Hb as (H1 & H2 & H3). split_and!; [| |done].
   - intros z Hz. eapply (fl_trans (FCtx Wpgv [] Φ)); [by apply fl_w|by apply H1].
   - intros φ Hφ. eapply (fl_trans (FCtx Wpgv [] Φ)); [by apply fl_w|by apply H2].
 Qed.
@@ -94,7 +94,7 @@ Lemma ubs_union Φ u F X :
   ub_below_s Wpgv [] Φ u F → (∀ x, u = Some x → ∀ h, h ∈ X → w_lt Wpgv x h) →
   ub_below_s Wpgv [] Φ u (sf_union F X).
 Proof.
-  destruct u as [x|]; [|done]. intros [H1 H2] HX. split; [|done]. simpl.
+  destruct u as [x|]; [|done]. intros (H1 & H2 & H3) HX. split_and!; [|done|done]. simpl.
   intros y [Hy|Hy]%elem_of_union; [by apply H1|]. apply fl_w. by apply (HX x).
 Qed.
 
@@ -152,7 +152,7 @@ Proof.
         - done.
         - by apply Hx.
         - apply t_konst; [done| |by apply tr_pscoped].
-          rewrite <-(payload_tr T0 x) at 1. apply KTSend.
+          rewrite <-(payload_tr T0 x) at 1. apply KTSend. rewrite hbot_tr.
           rewrite payload_tr. intros h Hh. apply sl_w. apply (ppt_below_hd _ (pr T0)); [|by apply heads_tr].
           done.
         - rewrite sf_union_empty. exact H2. }
@@ -200,13 +200,13 @@ Proof.
     simpl. rewrite Ek. set (φ := fresh (dom Φ)).
     eapply t_lam.
     + apply is_fresh.
-    + simpl. unfold tenv_heads. rewrite map_fold_empty, union_empty_l_L.
+    + simpl. unfold tenv_heads, lb_below_hb. rewrite map_fold_empty, union_empty_l_L, lenv_bot_tr.
       by apply lenv_heads_tr_empty.
     + eapply (konst_app ok k o T U _ (Some (tr_ty T) :: tr_env Γ) (None :: tr_env Γ)
                 (Some (tr_ty T) :: tr_env Γ)); [done|done| | | |].
       * constructor. by apply lenv_split_empty.
       * intros o' Ho'. apply elem_of_cons in Ho' as [->|Ho']; [done|by apply HΔ].
-      * split; simpl; [set_solver|]. intros φ' [=<-]. apply (fl_v (FCtx _ _ _)). simpl.
+      * split_and!; simpl; [set_solver| |done]. intros φ' [=<-]. apply (fl_v (FCtx _ _ _)). simpl.
         by rewrite lookup_insert_eq.
       * apply t_var. split; [done|]. intros [|y] T' Hy; simpl in Hy; [by simplify_eq|].
         apply list_elem_of_lookup_2 in Hy. by apply HΔ in Hy.
@@ -249,7 +249,7 @@ Proof.
     set (φ := fresh (dom Φ)).
     eapply t_lam.
     + apply is_fresh.
-    + unfold tenv_heads. rewrite map_fold_empty, union_empty_l_L.
+    + unfold tenv_heads, lb_below_hb. rewrite map_fold_empty, union_empty_l_L, lenv_bot_tr.
       destruct (pr_env Γ) as [|n|] eqn:EP; simpl.
       * intros y Hy. apply heads_tr_env in Hy. rewrite EP in Hy.
         destruct (lbp_below_hd PBot lbot y eq_refl Hy) as [<-|H]; [left; apply se_refl|].
@@ -259,7 +259,7 @@ Proof.
         right. by apply sl_w.
       * apply set_eq. intros y. split; [|set_solver]. intros Hy.
         apply heads_tr_env in Hy. rewrite EP in Hy. by apply hd_ok_top in Hy.
-    + apply IH. destruct (ubp q) as [u|] eqn:Eu; [|done]. split; simpl; [set_solver|].
+    + apply IH. destruct (ubp q) as [u|] eqn:Eu; [|done]. split_and!; simpl; [set_solver| |done].
       intros φ' [=<-]. apply (fl_v (FCtx _ _ _)). simpl. by rewrite lookup_insert_eq.
   - (* T-App *)
     assert (ub_below_s Wpgv [] Φ (ubp q) (sf_union F (opt_heads (lbp p')))) as HFN.
@@ -292,13 +292,13 @@ Proof.
       * by apply comp0.
       * by apply tr_env_split.
       * eapply ubs_prio; [|exact HF]. apply prio_le_max_r.
-      * rewrite (tenv_heads0 Wpgv HW), union_empty_l_L. by apply IHM.
+      * unfold sf_unionb; rewrite ?lenv_bot_tr, ?hbot_tr, (tenv_heads0 Wpgv HW), union_empty_l_L. by apply IHM.
       * by apply IHN.
   - (* T-LetUnit *)
     eapply (t_letu Wpgv Φ [] ∅ ∅ ∅ _ (tr_env Γ1) (tr_env Γ2)).
     + by apply comp0.
     + by apply tr_env_split.
-    + rewrite (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHM. apply ubs_union.
+    + unfold sf_unionb; rewrite ?lenv_bot_tr, ?hbot_tr, (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHM. apply ubs_union.
       * eapply ubs_prio; [|exact HF]. apply prio_le_max_l.
       * intros u Hu h Hh. by eapply ubp_below_env.
     + apply IHN. eapply ubs_prio; [|exact HF]. apply prio_le_max_r.
@@ -306,17 +306,17 @@ Proof.
     eapply (t_pair Wpgv Φ [] ∅ ∅ ∅ _ (tr_env Γ1) (tr_env Γ2)).
     + by apply comp0.
     + by apply tr_env_split.
-    + rewrite (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHM. apply ubs_union.
+    + unfold sf_unionb; rewrite ?lenv_bot_tr, ?hbot_tr, (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHM. apply ubs_union.
       * eapply ubs_prio; [|exact HF]. apply prio_le_max_l.
       * intros u Hu h Hh. by eapply ubp_below_env.
-    + apply IHN. apply ubs_union.
+    + unfold sf_unionb. rewrite hbot_tr. apply IHN. apply ubs_union.
       * eapply ubs_prio; [|exact HF]. apply prio_le_max_r.
       * intros u Hu h Hh. by eapply ubp_below_ty.
   - (* T-LetPair *)
     eapply (t_letp Wpgv Φ [] ∅ ∅ ∅ _ (tr_env Γ1) (tr_env Γ2)).
     + by apply comp0.
     + by apply tr_env_split.
-    + rewrite (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHM. apply ubs_union.
+    + unfold sf_unionb; rewrite ?lenv_bot_tr, ?hbot_tr, (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHM. apply ubs_union.
       * eapply ubs_prio; [|exact HF]. apply prio_le_max_l.
       * intros u Hu h Hh. eapply (ubp_below_env p (Some T' :: Some T :: Γ2)); [done|done|].
         simpl. rewrite !elem_of_union. by right; right.
@@ -329,7 +329,7 @@ Proof.
     eapply (t_case Wpgv Φ [] ∅ ∅ ∅ _ (tr_env Γ1) (tr_env Γ2)).
     + by apply comp0.
     + by apply tr_env_split.
-    + rewrite (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHL. apply ubs_union.
+    + unfold sf_unionb; rewrite ?lenv_bot_tr, ?hbot_tr, (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHL. apply ubs_union.
       * eapply ubs_prio; [|exact HF]. apply prio_le_max_l.
       * intros u Hu h Hh. by eapply ubp_below_env.
     + apply (IHM Φ F). eapply ubs_prio; [|exact HF]. apply prio_le_max_r.

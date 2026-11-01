@@ -128,6 +128,26 @@ Definition fact_scoped (k : nat) (g : fact) : Prop :=
     A fact whose variables lie beyond n + |bc_env| is not part of C. *)
 Record bcs := BCs { bc_env : list point; bc_facts : fact → Prop }.
 
+(** The lower bound of an existential (sharp edges 97, 103). [LTop]
+    is ⊤, the value holds nothing. [LBot] is ⊥, the value holds
+    channels at points not known from outside. [LPt x] says that every
+    channel of the value lies at or above x. ⊥ is no point. It occurs
+    only here, and a frame that holds such a value carries a flag
+    instead (static/FactTheory.v). *)
+Inductive lbound := LTop | LBot | LPt (x : point).
+
+Definition lb_map (f : point → point) (lb : lbound) : lbound :=
+  match lb with LPt x => LPt (f x) | LTop => LTop | LBot => LBot end.
+
+Lemma lb_map_ext f g lb : (∀ x, f x = g x) → lb_map f lb = lb_map g lb.
+Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
+
+Lemma lb_map_comp f g lb : lb_map f (lb_map g lb) = lb_map (f ∘ g) lb.
+Proof. by destruct lb. Qed.
+
+Lemma lb_map_id f lb : (∀ x, f x = x) → lb_map f lb = lb.
+Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
+
 (** ** Types
 
     The arrow carries an upper point β ([None] = ⊥: the call never
@@ -153,13 +173,13 @@ Inductive ty :=
                                       101) *)
 
   | TSess (S : sty) (x : point)   (* S@x *)
-  | TEx (lb : option point) (n : nat) (C : bcs) (T : ty)
+  | TEx (lb : lbound) (n : nat) (C : bcs) (T : ty)
                                    (* ∃^ℓ ι₀ … ιₙ₋₁. C. T — existential
-                                      points (sharp edges 97): the value
-                                      lies in T at some known instance
-                                      meeting C, and its channels lie at
-                                      or above the lower point ℓ ([None]
-                                      = ⊤: it holds nothing) *)
+                                      points (sharp edges 97, 103): the
+                                      value lies in T at some known
+                                      instance meeting C, and its
+                                      channels lie at or above the lower
+                                      bound ℓ, which is ⊤, ⊥ or a point *)
   | TAll (n : nat) (C : bcs) (T : ty)
                                    (* ∀ι₀ … ιₙ₋₁. C. T — the value lies
                                       in T at every known instance of
@@ -308,7 +328,7 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
       TAll n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   | TSess s x => TSess s (pt_inst σ x)
   | TEx lb n C T1 =>
-      TEx (pt_inst σ <$> lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
+      TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   end.
 
 (** T[xs/ιs]: instantiate the ∀ of a □ (or the ∃ of a payload) with a
@@ -491,14 +511,31 @@ Qed.
 Definition opt_heads (o : option point) : gset point :=
   match o with Some x => {[x]} | None => ∅ end.
 
+Definition lb_heads (lb : lbound) : gset point :=
+  match lb with LPt x => {[x]} | _ => ∅ end.
+
 Fixpoint heads (T : ty) : gset point :=
   match T with
   | TUnit | TBoxM _ | TAll _ _ _ => ∅
   | TLolli _ lb _ _ => opt_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
   | TSess _ x => {[x]}
-  | TEx lb _ _ _ => opt_heads lb
+  | TEx lb _ _ _ => lb_heads lb
   end.
+
+(** The ⊥ flag of a type (sharp edges 103): a value of the type may
+    hold an unopened existential with lower bound ⊥, whose channels lie
+    at points not known from outside. heads(T) is the set of points of
+    the heads of T, and the flag is the rest. *)
+Fixpoint hbot (T : ty) : bool :=
+  match T with
+  | TProd T1 U | TSum T1 U => hbot T1 || hbot U
+  | TEx LBot _ _ _ => true
+  | _ => false
+  end.
+
+Lemma hbot_pinst σ T : hbot (pinst_ty σ T) = hbot T.
+Proof. induction T; simpl; try done; try congruence. by destruct lb. Qed.
 
 (** ** Session-type substitution (§4.3)
 
@@ -1028,9 +1065,9 @@ Definition ple (p v : point) : Prop := pt_name p = pt_name v ∧ pt_off p ≤ pt
     (§9)
 
     new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι
-    new    : ∗ ⊸^⊥_⊤ ∃ι≽ℓ. C. S@ι ⊗ dual S@ι   C fresh, betweenness, ℓ ≺ ι in C (97)
+    new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C fresh, betweenness (97, 103)
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
-    send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι])
+    send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι]), no ⊥ flag
     recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
     close  : Close@ι ⊸^ι_⊤ ∗
     link   : S@ι ⊗ dual S@ι′ ⊸^⊥_⊤ ∗       ι ≡ ι′   (never blocks, sharp edges 68)
@@ -1054,7 +1091,7 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       konst_ty peq plt pk KSpawn
         (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)
   | KTSend m T S x :
-      (∀ h, h ∈ heads (payload_at m T x) → plt x h) →
+      (if hbot T then False else ∀ h, h ∈ heads (payload_at m T x) → plt x h) →
       konst_ty peq plt pk KSend
         (TLolli (Some x) None
            (TProd (payload_at m T x) (TSess (SSnd m T S) x))
@@ -1075,11 +1112,10 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       konst_ty peq plt pk KForce
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n C (TLolli ub None TUnit T))
            (ty_inst xs T))
-  | KTNewEx S C u :
+  | KTNewEx S C :
       fresh_ok C → Forall pk (bc_env C) →
-      (∀ u' p q v, fresh_lo C u' p → fresh_hi C q v → ple p q →
-         plt (fresh_outer C u') (fresh_outer C v)) →
-      fresh_lo C u (pvar 0) →
+      (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
+         plt (fresh_outer C u) (fresh_outer C v)) →
       konst_ty peq plt pk KNew
         (TLolli None None TUnit
-           (TEx (Some (fresh_outer C u)) 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))))).
+           (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))))).

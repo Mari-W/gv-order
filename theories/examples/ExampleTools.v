@@ -315,14 +315,15 @@ Section rules.
   Proof. intros H. eapply t_wk; [by apply nones_wk|]. apply t_unit, lenv_empty_nones. Qed.
 
   Lemma tv_app Φ Ψ Δ F e1 e2 ub lb T U :
-    sok e1 0 e2 0 Δ = true →
+    sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
     typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 (TLolli ub lb T U) →
     typed W Φ Ψ ∅ (lp e2 0 Δ) (sf_union F (opt_heads lb)) e2 T →
     ub_below_s W Ψ Φ ub F →
     typed W Φ Ψ ∅ Δ F (App e1 e2) U.
   Proof.
-    intros Hs H1 H2 Hu. eapply t_app; [apply comp0|by apply lp_split|exact Hu| |exact H2].
-    by rewrite tenv_heads0, union_empty_l_L.
+    intros Hs H1 H2 Hu. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply t_app; [apply comp0|by apply lp_split|exact Hu| |exact H2].
+    by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
   (** A constant applied: its type is given by [konst_ty], the
@@ -343,39 +344,42 @@ Section rules.
   Qed.
 
   Lemma tv_pair Φ Ψ Δ F e1 e2 T U :
-    sok e1 0 e2 0 Δ = true →
-    typed W Φ Ψ ∅ (lp e2 0 Δ) (sf_union F (heads T)) e2 U →
+    sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
+    typed W Φ Ψ ∅ (lp e2 0 Δ) (sf_unionb F (heads T) (hbot T)) e2 U →
     typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 T →
     typed W Φ Ψ ∅ Δ F (Pair e1 e2) (TProd T U).
   Proof.
-    intros Hs H2 H1. eapply t_pair; [apply comp0|by apply lp_split| |exact H2].
-    by rewrite tenv_heads0, union_empty_l_L.
+    intros Hs H2 H1. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply t_pair; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
   Lemma tv_letu Φ Ψ Δ F e1 e2 T :
-    sok e1 0 e2 0 Δ = true →
+    sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
     typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 TUnit →
     typed W Φ Ψ ∅ (lp e2 0 Δ) F e2 T →
     typed W Φ Ψ ∅ Δ F (LetU e1 e2) T.
   Proof.
-    intros Hs H1 H2. eapply t_letu; [apply comp0|by apply lp_split| |exact H2].
-    by rewrite tenv_heads0, union_empty_l_L.
+    intros Hs H1 H2. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply t_letu; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
   Lemma tv_letp Φ Ψ Δ F e1 e2 T1 T2 T :
-    sok e1 0 e2 2 Δ = true →
+    sok e1 0 e2 2 Δ && negb (lenv_bot (lp e2 2 Δ)) = true →
     typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 2 Δ))) e1 (TProd T1 T2) →
     typed W Φ Ψ ∅ (Some T2 :: Some T1 :: lp e2 2 Δ) F e2 T →
     typed W Φ Ψ ∅ Δ F (LetP e1 e2) T.
   Proof.
-    intros Hs H1 H2. eapply t_letp; [apply comp0|by apply lp_split| |exact H2].
-    by rewrite tenv_heads0, union_empty_l_L.
+    intros Hs H1 H2. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply t_letp; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
   Lemma tv_lam Φ Ψ Δ F e T U ub lb φ :
     φ ∉ dom Φ →
-    lb_below_h W Ψ lb (lenv_heads Δ) →
-    typed W (<[φ := ub]> Φ) Ψ ∅ (Some T :: Δ) (∅, Some φ) e U →
+    lb_below_hb W Ψ lb (lenv_heads Δ) (lenv_bot Δ) →
+    typed W (<[φ := ub]> Φ) Ψ ∅ (Some T :: Δ) (∅, Some (FVar φ)) e U →
     typed W Φ Ψ ∅ Δ F (Lam e) (TLolli ub lb T U).
   Proof. intros Hφ Hl H. eapply t_lam; [exact Hφ| |exact H]. by rewrite tenv_heads0, union_empty_l_L. Qed.
 
@@ -387,7 +391,11 @@ Section frames.
 
   Lemma ubs_intro Ψ Φ x P o :
     (∀ y, y ∈ P → slt W Ψ x y) →
-    match o with Some φ => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u | None => True end →
+    match o with
+    | Some (FVar φ) => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u
+    | Some (FBot _) => False
+    | None => True
+    end →
     ub_below_s W Ψ Φ (Some x) (P, o).
   Proof. apply ub_below_s_intro. Qed.
 

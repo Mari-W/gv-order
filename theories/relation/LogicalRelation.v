@@ -34,6 +34,13 @@ Definition opt_rel (R : point → point → Prop) (o o' : option point) : Prop :
   | _, _ => False
   end.
 
+Definition lb_rel (R : point → point → Prop) (lb lb' : lbound) : Prop :=
+  match lb, lb' with
+  | LPt x, LPt y => R x y
+  | LTop, LTop | LBot, LBot => True
+  | _, _ => False
+  end.
+
 (** Box constraints under a binder of n point variables: every fact of
     one has a fact of the other of the same kind with related points
     (sharp edges 65). *)
@@ -55,7 +62,7 @@ Fixpoint teqW (W : world) (T U : ty) : Prop :=
 
   | TSess s x, TSess r y => pteqW W x y ∧ seq s r
   | TEx lb n C T1, TEx lb' n' C' U1 =>
-      opt_rel (pteqW W) lb lb' ∧ n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW W T1 U1
+      lb_rel (pteqW W) lb lb' ∧ n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW W T1 U1
   | _, _ => False
   end.
 
@@ -145,7 +152,7 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TEx lb m C T1 =>
       (* V-Ex: a known instance meets C, the value lies in the body at
          it, and its channels lie at or above the lower point *)
-      lb_below W (pt_inst σ <$> lb) (tenv_heads Θ) ∧
+      lbx_below W (lb_map (pt_inst σ) lb) (tenv_heads Θ) false ∧
       ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧
         bcs_hold (w_eq W) (w_lt W) (bcs_inst σ C) xs ∧
         Vdef below n W Θ (pt_inst (plist xs) ∘ pup m σ) T1 v
@@ -603,8 +610,8 @@ Proof.
   - apply and_iff_compat_l. f_equiv. intros eb.
     do 2 apply and_iff_compat_l. by apply IH0.
   - by rewrite (tpt_inst_ext σ σ').
-  - assert (pt_inst σ <$> lb = pt_inst σ' <$> lb) as ->
-      by (destruct lb; simpl; [by rewrite (tpt_inst_ext σ σ')|done]).
+  - assert (lb_map (pt_inst σ) lb = lb_map (pt_inst σ') lb) as ->
+      by (apply lb_map_ext; intros; by apply tpt_inst_ext).
     rewrite (tbcs_ext σ σ') by done. apply and_iff_compat_l. f_equiv. intros xs.
     do 3 apply and_iff_compat_l. apply IH.
     intros a. simpl. by rewrite (tpup_ext m σ σ').
@@ -625,8 +632,8 @@ Proof.
   - apply and_iff_compat_l. f_equiv. intros eb.
     do 2 apply and_iff_compat_l. by apply IH0.
   - by rewrite tpt_inst_comp.
-  - assert (pt_inst τ <$> (pt_inst σ <$> lb) = pt_inst (pt_inst τ ∘ σ) <$> lb) as ->
-      by (destruct lb; simpl; [by rewrite tpt_inst_comp|done]).
+  - assert (lb_map (pt_inst τ) (lb_map (pt_inst σ) lb) = lb_map (pt_inst (pt_inst τ ∘ σ)) lb) as ->
+      by (rewrite lb_map_comp; apply lb_map_ext; intros; apply tpt_inst_comp).
     rewrite tbcs_comp. apply and_iff_compat_l. f_equiv. intros xs.
     do 3 apply and_iff_compat_l. rewrite IH. apply Vdef_ext.
     intros a. simpl. rewrite <-tpup_comp, tpt_inst_comp. done.
@@ -690,12 +697,12 @@ Qed.
 (** V-Ex (sharp edges 97). *)
 Lemma Vrel_ex_iff n W Θ lb m C T v :
   Vrel n W Θ (TEx lb m C T) v ↔
-  lb_below W lb (tenv_heads Θ) ∧
+  lbx_below W lb (tenv_heads Θ) false ∧
   ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧ bcs_hold (w_eq W) (w_lt W) C xs ∧
     Vrel n W Θ (ty_inst xs T) v.
 Proof.
   unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
-  assert (pt_inst pvar <$> lb = lb) as -> by (destruct lb; simpl; [by rewrite tpt_inst_pvar|done]).
+  assert (lb_map (pt_inst pvar) lb = lb) as -> by (destruct lb; simpl; [done|done|by rewrite tpt_inst_pvar]).
   rewrite tbcs_pvar. apply and_iff_compat_l. f_equiv. intros xs.
   do 3 (apply and_iff_compat_l). rewrite Vdef_plist.
   by rewrite (tinst_ext T (pup m pvar) pvar), tinst_pvar by apply tpup_pvar.

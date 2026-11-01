@@ -27,27 +27,27 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ {[c := One (s, k)]} Δ F (Chan c) (TSess s' y)
   | t_lam Φ Ψ Θ Δ F e T U ub lb φ :                     (* E-Abs *)
       φ ∉ dom Φ →
-      lb_below_h W Ψ lb (tenv_heads Θ ∪ lenv_heads Δ) →
-      typed W (<[φ := ub]> Φ) Ψ Θ (Some T :: Δ) (∅, Some φ) e U →
+      lb_below_hb W Ψ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
+      typed W (<[φ := ub]> Φ) Ψ Θ (Some T :: Δ) (∅, Some (FVar φ)) e U →
       typed W Φ Ψ Θ Δ F (Lam e) (TLolli ub lb T U)
   | t_app Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :       (* E-App *)
       tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_s W Ψ Φ ub F →
-      typed W Φ Ψ Θ1 Δ1 (sf_union F (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TLolli ub lb T U) →
+      typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 (TLolli ub lb T U) →
       typed W Φ Ψ Θ2 Δ2 (sf_union F (opt_heads lb)) e2 T →
       typed W Φ Ψ Θ Δ F (App e1 e2) U
   | t_pair Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :            (* E-Pair *)
       tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      typed W Φ Ψ Θ1 Δ1 (sf_union F (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 T →
-      typed W Φ Ψ Θ2 Δ2 (sf_union F (heads T)) e2 U →
+      typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T →
+      typed W Φ Ψ Θ2 Δ2 (sf_unionb F (heads T) (hbot T)) e2 U →
       typed W Φ Ψ Θ Δ F (Pair e1 e2) (TProd T U)
   | t_letu Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :              (* E-Let* *)
       tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      typed W Φ Ψ Θ1 Δ1 (sf_union F (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 TUnit →
+      typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit →
       typed W Φ Ψ Θ2 Δ2 F e2 T →
       typed W Φ Ψ Θ Δ F (LetU e1 e2) T
   | t_letp Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :        (* E-LetPair *)
       tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      typed W Φ Ψ Θ1 Δ1 (sf_union F (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TProd T1 T2) →
+      typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 (TProd T1 T2) →
       typed W Φ Ψ Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
       typed W Φ Ψ Θ Δ F (LetP e1 e2) T
   | t_inj1 Φ Ψ Θ Δ F e T U :                            (* E-Inj *)
@@ -56,7 +56,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ Δ F e U → typed W Φ Ψ Θ Δ F (Inj2 e) (TSum T U)
   | t_case Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T :      (* E-Case *)
       tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      typed W Φ Ψ Θ1 Δ1 (sf_union F (tenv_heads Θ2 ∪ lenv_heads Δ2)) e (TSum T1 T2) →
+      typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e (TSum T1 T2) →
       typed W Φ Ψ Θ2 (Some T1 :: Δ2) F e1 T →
       typed W Φ Ψ Θ2 (Some T2 :: Δ2) F e2 T →
       typed W Φ Ψ Θ Δ F (Case e e1 e2) T
@@ -64,7 +64,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       lenv_unl Δ → φ ∉ dom Φ →
       typed W (<[φ := ub]> (fhyps_pinst (pshift m) Φ))
         (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)]) ∅
-        (lenv_pinst (pshift m) (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) (∅, Some φ) e T →
+        (lenv_pinst (pshift m) (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) (∅, Some (FVar φ)) e T →
       typed W Φ Ψ ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T))
   | t_wk Φ Ψ Θ Δ' Δ F e T :                             (* E-Weak *)
       lenv_wk Δ' Δ → typed W Φ Ψ Θ Δ' F e T → typed W Φ Ψ Θ Δ F e T
@@ -74,20 +74,9 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ (Some U :: Δ) F (rename pred e) T
   | t_conv Φ Ψ Θ Δ F e T T' :                           (* E-Conv, ≈ up to Γ ⊢ ≡ *)
       steq W Ψ T T' → typed W Φ Ψ Θ Δ F e T → typed W Φ Ψ Θ Δ F e T'
-  | t_newfresh Φ Ψ Θ Δ F e T S C :                      (* E-NewFresh *)
-      fresh_ok C →
-      Forall (skn W Ψ) (bc_env C) →
-      (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
-         slt W Ψ (fresh_outer C u) (fresh_outer C v)) →
-      typed W (fhyps_pinst (pshift 1) Φ)
-        (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
-        (tenv_pinst (pshift 1) Θ)
-        (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
-        (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-      typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T
   | t_pack Φ Ψ Θ Δ F e lb m C T xs :                    (* E-Pack *)
       length xs = m → Forall (skn W Ψ) xs → bcs_hold (seqs W Ψ) (slt W Ψ) C xs →
-      lb_below_h W Ψ lb (heads (ty_inst xs T)) →
+      lbx_below_h W Ψ lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
       typed W Φ Ψ Θ Δ F e (ty_inst xs T) → typed W Φ Ψ Θ Δ F e (TEx lb m C T)
   | t_open Φ Ψ Θ Δ F e i lb m C T U :                   (* E-Open *)
       Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T →
@@ -106,21 +95,17 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       length xs = m → Forall (skn W Ψ) xs → bcs_hold (seqs W Ψ) (slt W Ψ) C xs →
       typed W Φ Ψ Θ Δ F e (TAll m C T) → typed W Φ Ψ Θ Δ F e (ty_inst xs T).
 
-(** E-NewFresh (sharp edges 90, 93). The fresh point ι is the point
-    variable 0 of the body, bound like the ιs of E-Exp, so Φ, Ψ, Θ, Δ,
-    F and T shift past it and ι is free in none of them. The body
-    assumes the hypothesis C, whose facts relate points of the fresh
-    channel (ι+k, ι.i, ι.i+k, …) to outer points ([fresh_ok]), and
-    holds the two ends of the channel at ι. The outer points are
-    known. Betweenness asks u ≺ v for every fact u ≺ p and q ≺ v of C
-    with q at or after p in program order of one name. [t_newfresh_lh]
-    is the form with lists, L ≺ ι ≺ H.
+(** The ⊥ flag (sharp edges 103). A subterm whose context holds an
+    unopened existential with lower bound ⊥ is typed under a frame with
+    the flag set ([sf_unionb]). Under the flag no call with an upper
+    point passes the gate, and E-Abs does not capture such a value.
 
     E-Pack and E-Open (sharp edges 97, 99). E-Open opens an
     existential hypothesis into fresh point variables 0, …, m-1 under
     its constraint, scoped like a box body. With the existential
     signature of new and a let that binds the result of new it gives
-    E-NewFresh ([t_newfresh_open] below).
+    E-NewFresh ([t_newfresh_open] below), which is no rule of its own
+    (sharp edges 103).
 
     E-Gen and E-Inst (sharp edges 101). ∀ is a type former of its own.
     E-Gen generalizes a value v over fresh point variables 0, …, m-1
@@ -206,35 +191,6 @@ Proof.
   split; [by apply list_elem_of_fmap_2|done].
 Qed.
 
-(** E-NewFresh with lists: L ≺ ι ≺ H, every point of L below every
-    point of H (sharp edges 90). *)
-Lemma t_newfresh_lh W Φ Ψ Θ Δ F e T S L H :
-  Forall (skn W Ψ) (L ++ H) →
-  (∀ l h, l ∈ L → h ∈ H → slt W Ψ l h) →
-  typed W (fhyps_pinst (pshift 1) Φ)
-    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
-    (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
-    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-  typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
-Proof.
-  intros HK Hbt Hb. apply (t_newfresh W Φ Ψ Θ Δ F e T S (fresh_bcs L H)); [| | |done].
-  - intros f Hf Hs. destruct Hf as [(i & Hi & ->)|(j & Hj & ->)].
-    + left. eexists _, _. split; [done|]. split_and!; [left; by exists i|done|done|done].
-    + right. eexists _, _. split; [done|]. split_and!; [right; by exists j|done|done|done].
-  - done.
-  - intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) _.
-    destruct Hf as [(i & Hi & E)|(j & Hj & E)]; injection E as -> ->; [|done].
-    destruct Hf' as [(i' & Hi' & E)|(j & Hj & E)]; injection E as -> ->; [done|].
-    unfold fresh_outer. rewrite !pt_inst_pvar_at. unfold plist. simpl.
-    destruct (lookup_lt_is_Some_2 L i Hi) as [l Hl].
-    destruct (lookup_lt_is_Some_2 H j Hj) as [h Hh].
-    rewrite (lookup_app_l_Some _ _ _ _ Hl).
-    rewrite lookup_app_r by lia. replace (length L + j - length L) with j by lia. rewrite Hh.
-    apply Hbt; by eapply list_elem_of_lookup_2.
-Qed.
-
-
 (** Splitting an environment of spent slots. *)
 Lemma lenv_split_nones_nones Δ : lenv_split (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ).
 Proof. induction Δ; simpl; constructor; done. Qed.
@@ -252,16 +208,21 @@ Definition let_new (e : expr) : expr :=
 Definition let_new_pair (e : expr) : expr :=
   let_new (rename (upren (upren (λ x, 2 + x))) e).
 
-(** E-NewFresh from the existential signature of new, E-LetPair,
-    E-Let*, E-Open on p and E-LetPair (sharp edges 97, 99). The lower
-    point of the existential is the outer point u of a fact u ≺ ι of
-    C. That fact is the one premise t_newfresh does not have. *)
-Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C u :
+(** E-NewFresh (sharp edges 90, 93, 103) from the existential
+    signature of new, E-LetPair, E-Let*, E-Open on p and E-LetPair. The
+    fresh point ι is the point variable 0 of the body, bound like the
+    ιs of E-Exp, so Φ, Ψ, Θ, Δ, F and T shift past it and ι is free in
+    none of them. The body assumes the hypothesis C, whose facts relate
+    points of the fresh channel (ι+k, ι.i, ι.i+k, …) to outer points
+    ([fresh_ok]), and holds the two ends of the channel at ι. The outer
+    points are known. Betweenness asks u ≺ v for every fact u ≺ p and
+    q ≺ v of C with q at or after p in program order of one name. The
+    lower bound of the existential is ⊥, so C needs no fact below ι. *)
+Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C :
   fresh_ok C →
   Forall (skn W Ψ) (bc_env C) →
-  (∀ u' p q v, fresh_lo C u' p → fresh_hi C q v → ple p q →
-     slt W Ψ (fresh_outer C u') (fresh_outer C v)) →
-  fresh_lo C u (pvar 0) →
+  (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
+     slt W Ψ (fresh_outer C u) (fresh_outer C v)) →
   typed W (fhyps_pinst (pshift 1) Φ)
     (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
     (tenv_pinst (pshift 1) Θ)
@@ -270,9 +231,8 @@ Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C u :
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
   typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
-  intros HC HK Hbt Hu Hb. unfold let_new.
-  set (X := TEx (Some (fresh_outer C u)) 1 C
-              (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
+  intros HC HK Hbt Hb. unfold let_new.
+  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
   (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
   apply (t_letp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply tenv_comp_empty_l, se_sym. }
@@ -295,7 +255,7 @@ Proof.
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence. }
   (* open p *)
-  apply (t_open W Φ Ψ Θ _ F _ 1 (Some (fresh_outer C u)) 1 C
+  apply (t_open W Φ Ψ Θ _ F _ 1 LBot 1 C
            (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))) T); [done|intros Hun; exact Hun|].
   cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
   change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
@@ -312,19 +272,9 @@ Proof.
     apply fmap_Some in Hy as (? & _ & ?). congruence.
 Qed.
 
-(** The fact (outer point 0) ≺ ι of a fresh constraint, the lower
-    point of the existential that E-NewFresh opens. *)
-Lemma fresh_lo_var1 (env : list point) (P : fact → Prop) :
-  env ≠ [] → P (FLt (pvar 1) (pvar 0)) → fresh_lo (BCs env P) (pvar 1) (pvar 0).
-Proof.
-  intros He HP. destruct env as [|x env]; [done|].
-  split; [done|]. split; [|done]. simpl. split; lia.
-Qed.
-
-(** The list form through the existential signature of new, for a
-    nonempty L, on the encoded let of new (sharp edges 97, 99). *)
+(** E-NewFresh with lists, L ≺ ι ≺ H, every point of L below every
+    point of H (sharp edges 90, 103). *)
 Lemma t_newfresh_lh_open W Φ Ψ Θ Δ F e T S L H :
-  L ≠ [] →
   Forall (skn W Ψ) (L ++ H) →
   (∀ l h, l ∈ L → h ∈ H → slt W Ψ l h) →
   typed W (fhyps_pinst (pshift 1) Φ)
@@ -335,8 +285,8 @@ Lemma t_newfresh_lh_open W Φ Ψ Θ Δ F e T S L H :
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
   typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
-  intros HL HK Hbt Hb.
-  apply (t_newfresh_open W Φ Ψ Θ Δ F e T S (fresh_bcs L H) (pvar 1)); [| | | |done].
+  intros HK Hbt Hb.
+  apply (t_newfresh_open W Φ Ψ Θ Δ F e T S (fresh_bcs L H)); [| | |done].
   - intros f Hf Hs. destruct Hf as [(i & Hi & ->)|(j & Hj & ->)].
     + left. eexists _, _. split; [done|]. split_and!; [left; by exists i|done|done|done].
     + right. eexists _, _. split; [done|]. split_and!; [right; by exists j|done|done|done].
@@ -350,6 +300,4 @@ Proof.
     rewrite (lookup_app_l_Some _ _ _ _ Hl).
     rewrite lookup_app_r by lia. replace (length L + j - length L) with j by lia. rewrite Hh.
     apply Hbt; by eapply list_elem_of_lookup_2.
-  - destruct L as [|l L]; [done|]. apply fresh_lo_var1; [done|].
-    left. exists 0. split; [simpl; lia|done].
 Qed.

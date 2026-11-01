@@ -231,12 +231,12 @@ Proof.
 Qed.
 
 Lemma Vrel_heads_above n W Θ T v :
-  world_wf W → Vrel n W Θ T v → heads_above W (heads T) Θ.
+  world_wf W → hbot T = false → Vrel n W Θ T v → heads_above W (heads T) Θ.
 Proof.
   intros HW. revert Θ v.
   induction T as [|ub lb T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1|s x|lb m C T1 IH1
                  |m C T1 IH1];
-    intros Θ v HV; simpl.
+    intros Θ v Hb HV; simpl; simpl in Hb; try apply orb_false_iff in Hb as [Hb1 Hb2].
   - apply Vrel_unit_iff in HV as [-> _]. apply heads_above_empty.
   - apply Vrel_lolli_iff in HV as [(eb & _ & _ & Hlb & _)|(k & T0 & _ & -> & _)];
       [|apply heads_above_empty].
@@ -257,10 +257,10 @@ Proof.
       exists x. split; [set_solver|]. left. by apply (wf_eq_sym _ HW).
     + rewrite lookup_singleton_ne in He by done. done.
   - apply Vrel_ex_iff in HV as [Hlb _].
-    intros k e He. destruct lb as [l|]; simpl in Hlb.
-    + exists l. split; [set_solver|]. apply Hlb. apply elem_of_tenv_heads_entry. eauto.
+    intros k e He. destruct lb as [| |l]; simpl in Hlb, Hb; [|done|].
     + exfalso. assert (e.2 ∈ tenv_heads Θ) as Hin by (apply elem_of_tenv_heads_entry; eauto).
-      rewrite Hlb in Hin. set_solver.
+      rewrite (proj1 Hlb) in Hin. set_solver.
+    + exists l. split; [set_solver|]. apply Hlb. apply elem_of_tenv_heads_entry. eauto.
   - apply Vrel_all_iff in HV as [-> _]. apply heads_above_empty.
 Qed.
 
@@ -273,14 +273,31 @@ Fixpoint lenv_heads (Δ : lenv) : gset point :=
   | Some T :: Δ' => heads T ∪ lenv_heads Δ'
   end.
 
+(** The ⊥ flag of an environment (sharp edges 103). *)
+Fixpoint lenv_bot (Δ : lenv) : bool :=
+  match Δ with
+  | [] => false
+  | None :: Δ' => lenv_bot Δ'
+  | Some T :: Δ' => hbot T || lenv_bot Δ'
+  end.
+
 Lemma grounding_heads n W Θ Δ γ :
-  world_wf W → grounding n W Θ Δ γ → heads_above W (lenv_heads Δ) Θ.
+  world_wf W → lenv_bot Δ = false → grounding n W Θ Δ γ → heads_above W (lenv_heads Δ) Θ.
 Proof.
-  intros HW. revert Θ γ. induction Δ as [|[T|] Δ IH]; intros Θ γ Hg; simpl in *.
+  intros HW. revert Θ γ. induction Δ as [|[T|] Δ IH]; intros Θ γ Hb Hg; simpl in *.
   - subst. apply heads_above_empty.
-  - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
+  - apply orb_false_iff in Hb as [Hb1 Hb2]. destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
     eapply heads_above_comp; [exact Hc|by eapply Vrel_heads_above|by eapply IH].
   - by eapply IH.
+Qed.
+
+(** With the flag, the frame holds [pbot]. *)
+Lemma heads_above_x_bot W H b Θ :
+  (b = false → heads_above W H Θ) → heads_above_x W (H ∪ bot_pts b) Θ.
+Proof.
+  intros Hh. destruct b; simpl.
+  - right. set_solver.
+  - left. eapply heads_above_sub; [|by apply Hh]. set_solver.
 Qed.
 
 Lemma grounding_mono n W W' Θ Δ γ :
@@ -474,7 +491,7 @@ Proof. intros HW. apply (wf_eq_sym _ (wext_wf _ _ HW)). Qed.
 
 Lemma sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 Th T (f : (nat → expr) → frame) :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → (∀ γ, frame_val (f γ)) →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 Th →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 Th →
   (∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' → grounding n W' Θ' Δ2 γ →
      ∀ W'' j Θ1' Θ3 v, wext W' W'' → j ≤ n → tenv_comp (w_eq W'') Θ3 Θ1' Θ'' →
        Vrel j W'' Θ1' Th v → Erel j W'' Θ3 T F (fill_frame (f γ) v)) →
@@ -486,11 +503,12 @@ Proof.
   destruct (grounding_split _ _ _ _ _ _ _ HW' Hsp Hg) as (Θ'1 & Θ'2 & Hc' & Hg1 & Hg2).
   pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW)) Hc) as HcW.
   destruct (comp_swap4 _ _ _ _ _ _ _ _ Hs Hc'' HcW Hc') as (A & B & HAB & HA & HB).
-  eapply (Erel_bind n (f γ) W' Θ'' A B Th T F (tenv_heads Θ2 ∪ lenv_heads Δ2)).
+  eapply (Erel_bind n (f γ) W' Θ'' A B Th T F (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))).
   - apply Hf.
   - apply HW.
   - done.
-  - eapply heads_above_comp; [exact HB|by apply heads_above_self|by eapply grounding_heads].
+  - apply heads_above_x_bot. intros Hb.
+    eapply heads_above_comp; [exact HB|by apply heads_above_self|by eapply grounding_heads].
   - by apply (He1 n W' Θ'1 A γ).
   - intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. by eapply (HK n W' Θ'2 B γ).
 Qed.
@@ -503,7 +521,7 @@ Proof.
   intros He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   change (Inj1 (subst γ e)) with (fill_frame FInj1 (subst γ e)).
   eapply (Erel_bind n FInj1 W' Θ'' Θ'' ∅ T _ F ∅); [done|apply HW|apply tenv_comp_empty_r|
-    apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
+    left; apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
   intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
   apply tenv_comp_empty_r_inv in Hc3 as ->. apply Vrel_Erel. simpl.
   apply Vrel_sum_iff. left. eauto.
@@ -515,7 +533,7 @@ Proof.
   intros He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   change (Inj2 (subst γ e)) with (fill_frame FInj2 (subst γ e)).
   eapply (Erel_bind n FInj2 W' Θ'' Θ'' ∅ U _ F ∅); [done|apply HW|apply tenv_comp_empty_r|
-    apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
+    left; apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
   intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
   apply tenv_comp_empty_r_inv in Hc3 as ->. apply Vrel_Erel. simpl.
   apply Vrel_sum_iff. right. eauto.
@@ -539,7 +557,7 @@ Qed.
 
 Lemma sem_typed_letu W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 TUnit →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 TUnit →
   sem_typed W Θ2 Δ2 F e2 T →
   sem_typed W Θ Δ F (LetU e1 e2) T.
 Proof.
@@ -577,7 +595,7 @@ Qed.
 
 Lemma sem_typed_letp W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TProd T1 T2) →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TProd T1 T2) →
   sem_typed W Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
   sem_typed W Θ Δ F (LetP e1 e2) T.
 Proof.
@@ -610,7 +628,7 @@ Qed.
 
 Lemma sem_typed_case W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e (TSum T1 T2) →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e (TSum T1 T2) →
   sem_typed W Θ2 (Some T1 :: Δ2) F e1 T →
   sem_typed W Θ2 (Some T2 :: Δ2) F e2 T →
   sem_typed W Θ Δ F (Case e e1 e2) T.
@@ -655,8 +673,8 @@ Qed.
 
 Lemma sem_typed_pair W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 T →
-  sem_typed W Θ2 Δ2 (F ∪ heads T) e2 U →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 T →
+  sem_typed W Θ2 Δ2 (F ∪ (heads T ∪ bot_pts (hbot T))) e2 U →
   sem_typed W Θ Δ F (Pair e1 e2) (TProd T U).
 Proof.
   intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
@@ -668,11 +686,11 @@ Proof.
   pose proof (wext_trans _ _ _ HW HW'') as HW2. pose proof (wext_sym _ _ HW2) as Hs.
   pose proof (Vrel_val _ _ _ _ _ HV1) as Hv1.
   change (Pair v1 (subst γ e2)) with (fill_frame (FPairR v1) (subst γ e2)).
-  eapply (Erel_bind j (FPairR v1) W'' Θ3 Θ'' Θ1' U (TProd T U) F (heads T)).
+  eapply (Erel_bind j (FPairR v1) W'' Θ3 Θ'' Θ1' U (TProd T U) F (heads T ∪ bot_pts (hbot T))).
   - done.
   - apply HW''.
   - by apply comp_comm.
-  - eapply Vrel_heads_above; [exact (wext_wf _ _ HW2)|exact HV1].
+  - apply heads_above_x_bot. intros Hb. eapply Vrel_heads_above; [exact (wext_wf _ _ HW2)|exact Hb|exact HV1].
   - exact (sem_typed_later _ _ _ _ _ _ n W' Θ' Θ'' γ W'' j He2 HW Hc' Hg HW'' Hj).
   - intros W3 j' Θ2' Θ4 v2 HW3 Hj' Hc4 HV2. apply Vrel_Erel. simpl.
     apply Vrel_prod_iff. exists v1, v2, Θ1', Θ2'. split_and!; [done| | |done].
@@ -720,11 +738,12 @@ Qed.
 
 Lemma sem_typed_lam W Θ Δ F e T U ub lb :
   term_wf Θ (Some T :: Δ) e →
+  lenv_bot Δ = false →
   lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
   (∀ W1 F', wext W W1 → ub_below W1 ub F' → sem_typed W1 Θ (Some T :: Δ) F' e U) →
   sem_typed W Θ Δ F (Lam e) (TLolli ub lb T U).
 Proof.
-  intros (Hfc & Hfv & Hrel) Hlb He n W' Θ' Θ'' γ HW Hc Hg. simpl.
+  intros (Hfc & Hfv & Hrel) Hbot Hlb He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   pose proof (wext_wf _ _ HW) as HW'. pose proof (wext_sym _ _ HW) as Hs.
   apply Vrel_Erel, Vrel_lolli_iff. left. exists (subst (up γ) e). split_and!; [done| | |].
   - rewrite (tenv_join_dom _ _ _ (proj1 Hc)). apply set_eq. intros ch. split.
@@ -745,7 +764,7 @@ Proof.
     { intros h (k & e0 & He0 & ->)%elem_of_tenv_heads_entry.
       destruct (comp_entry _ _ _ _ _ _ Hc He0) as [[k' Hk]|[k' Hk]].
       - left. apply elem_of_tenv_heads_entry. eauto.
-      - right. exact (grounding_heads _ _ _ _ _ HW' Hg _ _ Hk). }
+      - right. exact (grounding_heads _ _ _ _ _ HW' Hbot Hg _ _ Hk). }
     pose proof (lb_below_mono _ _ _ _ HW Hlb) as Hlb'.
     destruct lb as [l|]; simpl in *.
     + intros h Hin. destruct (Hh h Hin) as [Hin'|(h' & Hh' & Hle)].
@@ -812,7 +831,7 @@ Proof.
   intros HW HV1 HV2.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [S x Hx| | | | | | |S C u HC HK Hbt Hu]; subst;
+  inversion Hk as [S x Hx| | | | | | |S C HC HK Hbt]; subst;
     apply Vrel_unit_iff in HV as [-> ->]; (destruct n as [|n']; [apply Erel_0|]).
   (* new at a known point, aliased *)
   {
@@ -864,11 +883,7 @@ Proof.
       pose proof Hfr as (_ & _ & Hnames & _).
       apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [apply HWW'|exact HB]|].
       apply Vrel_ex_iff. split.
-      * intros y Hy. rewrite insert_empty in Hy. unfold tenv_heads in Hy.
-        rewrite map_fold_singleton in Hy. simpl in Hy.
-        assert (y = pconst a) as -> by set_solver.
-        right. pose proof (HLa u (pvar 0) Hu) as Hl. unfold pfresh in Hl.
-        by rewrite tpt_inst_pvar_at in Hl.
+      * done.
       * exists [pconst a]. split_and!.
         -- done.
         -- apply Forall_singleton. unfold pt_known. simpl. rewrite Hnames. set_solver.
@@ -1040,6 +1055,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [| |m T0 S x Hpay| | | | |]; subst.
+  destruct (hbot T0) eqn:Hpb; [done|].
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_prod_iff in HV as (w & vc & Θw & Θc & -> & Hc & HVw & HVc).
   apply Vrel_sess_iff in HVc as (c & s0 & k & -> & -> & Hs0 & Hk0).
@@ -1049,7 +1065,9 @@ Proof.
   pose proof (comp_single_ext _ _ _ _ _ Hc) as Hext.
   (* the payload's entries lie above x *)
   assert (∀ k' e', tenv_entry Θw k' = Some e' → w_lt W k e'.2) as Habove.
-  { intros k' e' He'. destruct (Vrel_heads_above _ _ _ _ _ HWf HVw _ _ He') as (h & Hh & Hle).
+  { intros k' e' He'.
+    assert (hbot (payload_at m T0 x) = false) as Hpb' by (unfold payload_at, ty_inst; by rewrite hbot_pinst).
+    destruct (Vrel_heads_above _ _ _ _ _ HWf Hpb' HVw _ _ He') as (h & Hh & Hle).
     eapply (wf_lt_eq _ HWf); [exact Hk0|eapply lt_le_W; [done|by apply Hpay|exact Hle]|apply HWf]. }
   (* the key of the sending end *)
   assert (∃ kc, tenv_entry Θ kc = Some (s0, k) ∧ kc.1 = c ∧
@@ -1192,7 +1210,7 @@ Definition app_good (ub lb : option point) (T U : ty) : Prop :=
 Lemma sem_typed_app_gen W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :
   app_good ub lb T U →
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TLolli ub lb T U) →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TLolli ub lb T U) →
   sem_typed W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
   sem_typed W Θ Δ F (App e1 e2) U.
 Proof.
@@ -1209,7 +1227,7 @@ Proof.
   - done.
   - apply HW''.
   - by apply comp_comm.
-  - eapply (Vrel_heads_above _ _ _ (TLolli ub lb T U)); [exact (wext_wf _ _ HW2)|exact HV1].
+  - left. eapply (Vrel_heads_above _ _ _ (TLolli ub lb T U)); [exact (wext_wf _ _ HW2)|done|exact HV1].
   - exact (sem_typed_later _ _ _ _ _ _ n W' Θ' Θ'' γ W'' j He2 HW Hc' Hg HW'' Hj).
   - intros W3 j' Θ2' Θ4 v2 HW3 Hj' Hc4 HV2.
     pose proof (wext_trans _ _ _ HW2 HW3) as HW4.

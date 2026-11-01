@@ -48,6 +48,16 @@ Section teqW.
     opt_rel (pteqW W) o o' → opt_rel (pteqW W) o' o'' → opt_rel (pteqW W) o o''.
   Proof. destruct o, o', o''; simpl; try done. apply pteqW_trans. Qed.
 
+  Lemma lb_rel_refl o : lb_rel (pteqW W) o o.
+  Proof. destruct o; simpl; [done|done|apply pteqW_refl]. Qed.
+
+  Lemma lb_rel_sym o o' : lb_rel (pteqW W) o o' → lb_rel (pteqW W) o' o.
+  Proof. destruct o, o'; simpl; try done. apply pteqW_sym. Qed.
+
+  Lemma lb_rel_trans o o' o'' :
+    lb_rel (pteqW W) o o' → lb_rel (pteqW W) o' o'' → lb_rel (pteqW W) o o''.
+  Proof. destruct o, o', o''; simpl; try done. apply pteqW_trans. Qed.
+
   Lemma fact_rel_refl g : fact_rel (pteqW W) g g.
   Proof. destruct g; simpl; split; apply pteqW_refl. Qed.
 
@@ -83,7 +93,7 @@ Section teqW.
   Lemma teqW_refl T : teqW W T T.
   Proof.
     induction T; simpl; repeat match goal with |- _ ∧ _ => split end;
-      auto using opt_rel_refl, pteqW_refl, seq_refl, bcs_rel_refl.
+      auto using opt_rel_refl, lb_rel_refl, pteqW_refl, seq_refl, bcs_rel_refl.
   Qed.
 
   Lemma teqW_sym T : ∀ U, teqW W T U → teqW W U T.
@@ -91,7 +101,7 @@ Section teqW.
     induction T; intros [] H; simpl in *; try done; try naive_solver.
     - destruct H as (? & ? & ? & ?). split_and!; auto using opt_rel_sym.
     - destruct H as [? ?]. split; [by apply pteqW_sym|by apply seq_sym].
-    - destruct H as (? & <- & ? & ?). split_and!; auto using opt_rel_sym, bcs_rel_sym.
+    - destruct H as (? & <- & ? & ?). split_and!; auto using lb_rel_sym, bcs_rel_sym.
     - destruct H as (<- & ? & ?). split_and!; auto using bcs_rel_sym.
   Qed.
 
@@ -102,7 +112,7 @@ Section teqW.
       split_and!; eauto using opt_rel_trans.
     - destruct H1 as [? ?], H2 as [? ?]. split; [by eapply pteqW_trans|by eapply seq_trans].
     - destruct H1 as (? & <- & ? & ?), H2 as (? & <- & ? & ?).
-      split_and!; eauto using opt_rel_trans, bcs_rel_trans.
+      split_and!; eauto using lb_rel_trans, bcs_rel_trans.
     - destruct H1 as (<- & ? & ?), H2 as (<- & ? & ?).
       split_and!; eauto using bcs_rel_trans.
   Qed.
@@ -180,7 +190,7 @@ Section teqW.
     - destruct ub; simpl; [by apply pteqW_inst_l|done].
     - destruct lb; simpl; [by apply pteqW_inst_l|done].
     - by apply pteqW_inst_l.
-    - destruct lb; simpl; [by apply pteqW_inst_l|done].
+    - destruct lb; simpl; [done|done|by apply pteqW_inst_l].
     - by apply bcs_rel_inst_l.
     - apply IHT. by apply pup_pteqW.
     - by apply bcs_rel_inst_l.
@@ -219,6 +229,16 @@ Lemma lb_below_conv W lb lb' H :
 Proof.
   intros HW Hr. destruct lb as [x|], lb' as [x'|]; simpl in *; try done.
   intros Hb y Hy. apply pteqW_eq in Hr; [|done].
+  destruct (Hb y Hy) as [He|Hl]; [left|right].
+  - eapply (wf_eq_trans _ HW); [|exact He]. by apply (wf_eq_sym _ HW).
+  - eapply (wf_lt_eq _ HW); [| exact Hl|apply HW]. by apply (wf_eq_sym _ HW).
+Qed.
+
+Lemma lbx_below_conv W lb lb' H f :
+  world_wf W → lb_rel (pteqW W) lb lb' → lbx_below W lb H f → lbx_below W lb' H f.
+Proof.
+  intros HW Hr. destruct lb as [| |x], lb' as [| |x']; simpl in *; try done.
+  intros [Hb ->]. split; [|done]. intros y Hy. apply pteqW_eq in Hr; [|done].
   destruct (Hb y Hy) as [He|Hl]; [left|right].
   - eapply (wf_eq_trans _ HW); [|exact He]. by apply (wf_eq_sym _ HW).
   - eapply (wf_lt_eq _ HW); [| exact Hl|apply HW]. by apply (wf_eq_sym _ HW).
@@ -317,7 +337,7 @@ Proof.
       + eapply (wf_eq_trans _ HW); [exact Hk|]. by apply pteqW_eq.
     - destruct Ht as (Hl & <- & HC & Ht).
       apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HCx & H)].
-      apply Vrel_ex_iff. split; [by eapply lb_below_conv|]. exists xs. split_and!; [done..| |].
+      apply Vrel_ex_iff. split; [by eapply lbx_below_conv|]. exists xs. split_and!; [done..| |].
       + eapply (bcs_hold_conv_sub W W C0' C0); [done|done|done| |done].
         rewrite Hxs. by apply bcs_rel_sym.
       + eapply (IHT1 (plist xs)); [done| |exact H]. by apply teqW_ty_inst.
@@ -797,7 +817,7 @@ Proof.
   - destruct H. split; auto.
   - auto.
   - destruct H as [<- ?]. split; [by left|done].
-  - destruct H as (<- & <- & <- & ?). split_and!; [apply opt_rel_refl|done|apply bcs_rel_refl|auto].
+  - destruct H as (<- & <- & <- & ?). split_and!; [apply lb_rel_refl|done|apply bcs_rel_refl|auto].
   - destruct H as (<- & <- & ?). split_and!; [done|apply bcs_rel_refl|auto].
 Qed.
 
@@ -821,6 +841,11 @@ Proof.
         + eapply (wf_lt_eq _ HW); [apply HW|exact Hl|exact Hyy].
       - apply set_eq. intros y'. split; [|set_solver]. intros Hy'.
         destruct (tconv_heads W HW Θ Θ' y' Hc Hy') as (y & Hy & _). set_solver. }
+    assert (∀ Θ Θ' lb, world_wf W → tconv W Θ Θ' → lbx_below W lb (tenv_heads Θ) false →
+              lbx_below W lb (tenv_heads Θ') false) as Hlbx.
+    { intros Θ Θ' lb HW Hc Hlb. destruct lb as [| |x]; simpl in *; [|done|].
+      - destruct Hlb as [Hlb _]. split; [|done]. by apply (Hlbc Θ Θ' None).
+      - destruct Hlb as [Hlb _]. split; [|done]. by apply (Hlbc Θ Θ' (Some x)). }
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
                    |T1 IHT0|s x|lb m C0 T1 IHT1|m C0 T1 IHT1] using ty_ind_ex;
       intros Θ Θ' v HW Hc HVv.
@@ -859,7 +884,7 @@ Proof.
       + eapply seq_trans; [by apply seq_sym|exact Hs0].
       + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|exact Hk].
     - apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HCx & H)].
-      apply Vrel_ex_iff. split; [by eapply Hlbc|]. exists xs. split_and!; [done..|].
+      apply Vrel_ex_iff. split; [by eapply Hlbx|]. exists xs. split_and!; [done..|].
       by apply (IHT1 (plist xs) Θ Θ').
     - apply Vrel_all_iff in HVv as (-> & HB).
       apply (tconv_empty W) in Hc as ->. by apply Vrel_all_iff. }

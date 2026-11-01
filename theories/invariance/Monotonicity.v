@@ -25,6 +25,13 @@ Proof.
   intros Hb y Hy. destruct (Hb y Hy); [left|right]; auto.
 Qed.
 
+Lemma lbx_below_mono W W' lb H f :
+  wext W W' → lbx_below W lb H f → lbx_below W' lb H f.
+Proof.
+  intros (_ & He & Hl & _). destruct lb as [| |x]; simpl; [done|done|].
+  intros [Hb ->]. split; [|done]. intros y Hy. destruct (Hb y Hy); [left|right]; auto.
+Qed.
+
 Lemma ub_below_mono W W' ub F :
   wext W W' → ub_below W ub F → ub_below W' ub F.
 Proof.
@@ -132,7 +139,7 @@ Proof.
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done..|].
       destruct HWW' as (_ & He & _). auto.
     - apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
-      apply Vrel_ex_iff. split; [by eapply lb_below_mono|]. exists xs. split_and!.
+      apply Vrel_ex_iff. split; [by eapply lbx_below_mono|]. exists xs. split_and!.
       + done.
       + eapply Forall_impl; [exact HK|]. intros x Hx. unfold pt_known in *.
         by apply HWW'.

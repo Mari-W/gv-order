@@ -49,8 +49,7 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|apply (KTNew _ _ _ Srl (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
   cbn.
-  refine (t_newfresh_open W _ _ ∅ _ _ _ _ SEnd relf_C (pvar 1) _ _ _
-           (fresh_lo_var1 (bc_env relf_C) relf_facts ltac:(done) ltac:(by unfold relf_facts; left)) _).
+  refine (t_newfresh_open W _ _ ∅ _ _ _ _ SEnd relf_C _ _ _ _).
   { intros f Hf Hs. destruct Hf as [-> | [-> | [-> | ->]]].
     - left. eexists _, _. split; [done|]. split_and!; [by left|done|done|done].
     - left. eexists _, _. split; [done|]. split_and!; [by right; left|done|done|done].

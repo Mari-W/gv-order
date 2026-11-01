@@ -3,10 +3,10 @@
     The fresh extension that places a new name a and relates its points
     to known points by two relations [Lo] (x ≺ p) and [Hi] (q ≺ y), and
     the substitution [pfresh] that puts a in place of the variable of a
-    fresh constraint. E-NewFresh (rules/FreshRules.v) and the
-    existential signature of new (rules/TermRules.v, sharp edges 93,
-    97) use them. The material moved here from rules/FreshRules.v
-    unchanged. *)
+    fresh constraint. The existential signature of new
+    (rules/TermRules.v, sharp edges 93, 97, 103) uses them. The
+    material moved here from rules/FreshRules.v, which went with the
+    rule E-NewFresh. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export rules.Bind.

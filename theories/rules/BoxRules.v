@@ -54,7 +54,7 @@ Proof. intros n W Θ Θ1 Θ2 F v1 v2 HW Hc HV1 HV2 Hub. by eapply Erel_app. Qed.
 
 Lemma sem_typed_app W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TLolli ub lb T U) →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TLolli ub lb T U) →
   sem_typed W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
   sem_typed W Θ Δ F (App e1 e2) U.
 Proof. apply sem_typed_app_gen, app_good_all. Qed.

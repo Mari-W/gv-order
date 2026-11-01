@@ -136,10 +136,10 @@ Lemma fa_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) �
   typed W ∅ [] ∅ [] (∅, None) fa_main TUnit.
 Proof.
   intros HW Ha Hb H1 H2. unfold fa_main.
-  assert (∀ P a, pt_known W (pc a 0) →
-    typed W ∅ [] ∅ [None; Some Tfa] (P, None) (App (App EForce (Var 1)) EUnit)
+  assert (∀ (F : sframe) a, pt_known W (pc a 0) →
+    typed W ∅ [] ∅ [None; Some Tfa] F (App (App EForce (Var 1)) EUnit)
       (TSess (SRcv 0 TUnit SEnd) (pc a 0))) as Hreq.
-  { intros P a Hk. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
+  { intros F a Hk. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
     cbn. apply (typed_force W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None Tfa_body [pc a 0]);
       [done|done| |constructor; [by left|constructor]|apply ubs_none|tstep].
     apply bcs_hold_intro. by intros ? []. }

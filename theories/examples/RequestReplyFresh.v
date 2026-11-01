@@ -23,7 +23,7 @@ Definition rrf_C : bcs := BCs [pvar 0] rrf_facts.
 (** [rr_main] with b bound by the encoded let of new (sharp edges
     99). *)
 Definition rr_main_ex : expr :=
-  LetP (Pair srv cli) (LetP (App ENew EUnit) (let_new_pair
+  LetP (Pair srv cli) (let_new_pair (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
@@ -33,10 +33,9 @@ Proof.
   tstep.
   { tstep; [apply cli_typed, HW|apply srv_typed, HW]. }
   cbn.
-  apply (t_newfresh_lh W _ _ ∅ _ _ _ _ Sa [] []); [constructor|set_solver|].
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sa [] []); [constructor|set_solver|].
   fresh_clean.
-  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sb rrf_C (pvar 1) _ _ _
-           (fresh_lo_var1 (bc_env rrf_C) rrf_facts ltac:(done) ltac:(by exists 0; left)) _).
+  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sb rrf_C _ _ _ _).
   { intros f [k [-> | ->]] Hs.
     - left. eexists _, _. split; [done|]. split_and!; [exists k; by left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [exists k; by right|done|done|done]. }
@@ -60,7 +59,7 @@ Proof.
   assert (Forall (skn W Ψ) [pvar 1; pvar 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|].
     constructor; [eapply skn_inst; [by right; left|by left|done]|constructor]. }
-  match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; Some ?D; Some ?E] _ _ _ =>
+  match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E] _ _ _ =>
     change A with (TSess (dual Sb) (pvar 0)); change B with (TSess Sb (pvar 0));
     change A' with (TSess (dual Sa) (pvar 1)); change B' with (TSess Sa (pvar 1));
     change D with (TBox 2 rq_C (TLolli None None TUnit cli_body));

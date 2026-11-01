@@ -21,6 +21,16 @@ Proof.
   - exists h. split; [done|]. right. by apply Hlt.
 Qed.
 
+(** The frame of e lies below the heads of Θ2, or it holds [pbot], the
+    point of the ⊥ flag (sharp edges 103). In the second case e may not
+    block, because no point lies below [pbot]. *)
+Definition heads_above_x (W : world) (H : gset point) (Θ2 : tenv) : Prop :=
+  heads_above W H Θ2 ∨ pbot ∈ H.
+
+Lemma heads_above_x_mono W W' H Θ2 :
+  wext W W' → heads_above_x W H Θ2 → heads_above_x W' H Θ2.
+Proof. intros HW [Hh|Hb]; [left; by eapply heads_above_mono|by right]. Qed.
+
 (** ** Composition, pointwise *)
 
 Lemma comp_lookup R Θ Θ1 Θ2 c :
@@ -111,7 +121,7 @@ Qed.
 (** With the comparisons of readiness in hand, the redex acts on no
     channel of the context. *)
 Lemma subjs_free_br n W Θ Θ1 Θ2 Th F H e σ e' :
-  strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → heads_above W H Θ2 →
+  strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → heads_above_x W H Θ2 →
   Erel (S n) W Θ1 Th (F ∪ H) e → below_rest W Θ1 (offered_t Θ1 e) (F ∪ H) →
   tstep e (LSess σ) e' → subjs σ ## dom Θ2.
 Proof.
@@ -137,6 +147,7 @@ Proof.
              exists e1; split_and!; [done|done|discriminate]
             |split; [done|by eexists]]).
   all: pose proof (proj2 (Hfr (c, false) e1 Hoff Hen)) as Hlt.
+  all: destruct Hh as [Hh|Hb]; [|by apply (no_lt_pbot W e1.2 HWf), Hlt, elem_of_union_r].
   all: assert (tenv_entry Θ2 (c, false) = Some e2) as Hen2 by (unfold tenv_entry; simpl; by rewrite Ho2).
   all: destruct (Hh _ _ Hen2) as (h & HhH & Hle).
   all: pose proof (Hlt h ltac:(set_solver)) as Hlh; unfold entry_head in Hlh; simpl in Hlh.
@@ -151,7 +162,7 @@ Qed.
     may act on the other end of a channel the context holds, because a
     term at a link compares nothing (sharp edges 68). *)
 Lemma subjs_free n W Θ Θ1 Θ2 Th F H e σ e' :
-  strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → heads_above W H Θ2 →
+  strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → heads_above_x W H Θ2 →
   Erel (S n) W Θ1 Th (F ∪ H) e → tstep e (LSess σ) e' → (∀ cd, σ ≠ SLink cd) →
   subjs σ ## dom Θ2.
 Proof.
@@ -283,7 +294,7 @@ Section bind_ready.
   Context (n : nat) (W : world) (Θ Θ1 Θ2 : tenv) (Th : ty) (F H : gset point).
   Context (f : frame) (e : expr).
   Context (Hf : frame_val f) (Hv : ¬ is_val e) (HW : strict W).
-  Context (Hc : tenv_comp (w_eq W) Θ Θ1 Θ2) (Hh : heads_above W H Θ2).
+  Context (Hc : tenv_comp (w_eq W) Θ Θ1 Θ2) (Hh : heads_above_x W H Θ2).
   Context (HE : Erel (S n) W Θ1 Th (F ∪ H) e).
 
   Section bind_ready_br.
@@ -341,7 +352,10 @@ Section bind_ready.
       destruct (br_down Hab k0 Hoff0) as [Hk0 Hk0f].
       rewrite (surjective_pairing k0), (entry_agree _ _ _ _ _ _ Hc) in Hent0 by done.
       rewrite <-surjective_pairing in Hent0.
-      destruct (Hab k0 ent0 Hk0 Hent0) as [H1 H2]. split.
+      destruct (Hab k0 ent0 Hk0 Hent0) as [H1 H2].
+      destruct Hh as [Hh'|Hb];
+        [|exfalso; by apply (no_lt_pbot W (entry_head k0 ent0) (proj1 HW)), H2, elem_of_union_r].
+      split.
       + intros [c b] ent Hent Hnot.
         destruct (decide (c ∈ dom Θ2)) as [Hin|Hnin].
         * assert (∃ h, h ∈ H ∧ w_le W h ent.2) as (h & HhH & Hle).
@@ -349,8 +363,8 @@ Section bind_ready.
           pose proof (Hj c) as Jc. unfold tenv_entry in Hent. simpl in Hent. rewrite Ho2 in Jc.
           destruct (Θ1 !! c) as [o1|] eqn:Ho1, (Θ !! c) as [o|] eqn:Ho;
             inversion Jc; subst; try done.
-          all: first [ (apply (Hh (c, b)); unfold tenv_entry; simpl; rewrite Ho2; done) | lazymatch type of Ho1 with _ = Some (One ?e1) => lazymatch type of Ho2 with _ = Some (One ?e2) =>
-                     destruct (Hh (c, false) e2) as (h & Hh1 & Hh2);
+          all: first [ (apply (Hh' (c, b)); unfold tenv_entry; simpl; rewrite Ho2; done) | lazymatch type of Ho1 with _ = Some (One ?e1) => lazymatch type of Ho2 with _ = Some (One ?e2) =>
+                     destruct (Hh' (c, false) e2) as (h & Hh1 & Hh2);
                        [unfold tenv_entry; simpl; by rewrite Ho2|];
                      destruct (Hd c e1 e2 Ho1 Ho2) as [Hq _];
                      exists h; split; [done|];
@@ -379,7 +393,7 @@ Qed.
 (** ** The bind lemma *)
 
 Lemma Erel_bind n : ∀ f W Θ Θ1 Θ2 Th T F H e,
-  frame_val f → strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → heads_above W H Θ2 →
+  frame_val f → strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → heads_above_x W H Θ2 →
   Erel n W Θ1 Th (F ∪ H) e →
   (∀ W' j Θ1' Θ' v, wext W W' → j ≤ n → tenv_comp (w_eq W') Θ' Θ1' Θ2 →
      Vrel j W' Θ1' Th v → Erel j W' Θ' T F (fill_frame f v)) →
@@ -430,7 +444,7 @@ Proof.
       destruct (comp_ext_back _ _ _ _ _ c _ Hcr' H2c Hextc) as [Hc1 Hext1].
       destruct (comp_assoc _ _ _ _ _ _ Hsym' Hcomp' Hc1) as [HX1 HX2].
       pose proof (Hcont W' j Θp _ _ HW' Hj Hext1 HX1 HV) as HEj.
-      eapply (IHn j); [lia|done|done|exact HX2|by eapply heads_above_mono|exact HEj|].
+      eapply (IHn j); [lia|done|done|exact HX2|by eapply heads_above_x_mono|exact HEj|].
       apply (HKd W' j); [done|done].
     + (* send *)
       assert (Θ2 !! c = None) as H2c.
@@ -478,7 +492,7 @@ Proof.
       * done.
       * pose proof (proj1 Hwf') as HW1'.
         eapply (IHn n'); [lia|done|exact (proj2 (proj2 (proj2 HW1')))|
-          |by eapply heads_above_mono|exact HE1'|].
+          |by eapply heads_above_x_mono|exact HE1'|].
         { apply comp_insert; [|done]. exact (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW1')) Hc). }
         apply (HKd W1' n'); [done|done].
     + (* spawn *)

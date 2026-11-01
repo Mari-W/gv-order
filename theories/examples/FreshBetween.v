@@ -46,7 +46,7 @@ Proof.
   cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pvar 1)) None 1); [set_solver|cbn; set_solver|].
   eapply t_wk; [apply lwk_cons, lwk_drop; [done|constructor]|].
   cbn. tstep; [tstep|]. cbn.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] [pvar 1] ltac:(done)).
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] [pvar 1]).
   { apply (skn_ids2 W _ fb_C); [by left|done|done]. }
   { intros l h Hl Hh. apply list_elem_of_singleton in Hl as ->.
     apply list_elem_of_singleton in Hh as ->. hyp0 (pvar 0) (pvar 1). }
@@ -246,7 +246,7 @@ Qed.
 
 Definition fb_main_ex : expr :=
   LetP (Pair fb_box EUnit) (LetU (Var 0)
-    (LetP (App ENew EUnit) (let_new_pair
+    (let_new_pair (let_new_pair
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 3)))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
         (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
@@ -257,18 +257,18 @@ Proof.
   tstep.
   { tstep; [tstep|apply fb_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_newfresh_lh W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
-  assert (∀ σ, sf_pinst σ (∅, None) = ((∅ : gset point), (None : option nat))) as Hsf
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
+  assert (∀ σ, sf_pinst σ (∅, None) = ((∅ : gset point), (None : option fslot))) as Hsf
     by (intros σ; unfold sf_pinst; simpl; by rewrite set_map_empty).
   rewrite tenv_pinst_empty, Hsf. cbn.
-  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: Some ?T :: []) _ _ _ => change T with fb_ty end.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] [] ltac:(done)).
+  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ => change T with fb_ty end.
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] []).
   { constructor; [|constructor]. right. exists (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 0], (pvar 0).
     split_and!; [by left|by left|done]. }
   { intros l h _ Hh. by apply elem_of_nil in Hh. }
   rewrite tenv_pinst_empty, Hsf. cbn.
   change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
-  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
+  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
     change T with fb_ty end.
   replace (fhyps_pinst (pshift 1) (fhyps_pinst (pshift 1) ∅)) with (∅ : fhyps)
     by (unfold fhyps_pinst; by rewrite !fmap_empty).

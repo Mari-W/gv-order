@@ -7,7 +7,7 @@
     hands out. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export rules.FreshRules.
+From LRGV Require Export rules.BoxRules.
 
 Set Default Proof Using "All".
 
@@ -62,7 +62,7 @@ Qed.
     and lie at or above the lower point, has type ∃ιs. C. T. *)
 Lemma sem_typed_pack W Θ Δ F e lb m C T xs :
   length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
-  lb_below W lb (heads (ty_inst xs T)) →
+  lbx_below W lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
   sem_typed W Θ Δ F e (ty_inst xs T) → sem_typed W Θ Δ F e (TEx lb m C T).
 Proof.
   intros Hxs HK HC Hlb He n W' Θ' Θ'' γ HW Hc Hg.
@@ -70,14 +70,15 @@ Proof.
   intros j W2 Θ2 v Hj HW2 HV. pose proof (wext_trans _ _ _ HW HW2) as HWW2.
   pose proof (wext_wf _ _ HWW2) as HW2f.
   apply Vrel_ex_iff. split; [|exists xs; split_and!; [done| | |done]].
-  - pose proof (Vrel_heads_above _ _ _ _ _ HW2f HV) as Hab.
-    pose proof (lb_below_mono _ _ _ _ HWW2 Hlb) as Hlb2.
-    destruct lb as [x|]; simpl in *.
-    + intros y (k & e0 & Hk & ->)%elem_of_tenv_heads_entry.
-      destruct (Hab k e0 Hk) as (h & Hh & Hle). eapply le_le_W; [done| |exact Hle]. by apply Hlb2.
-    + apply set_eq. intros y. split; [|set_solver].
+  - pose proof (lbx_below_mono _ _ _ _ _ HWW2 Hlb) as Hlb2.
+    destruct lb as [| |x]; simpl in *; [|done|].
+    + destruct Hlb2 as [Hlb2 Hb]. pose proof (Vrel_heads_above _ _ _ _ _ HW2f Hb HV) as Hab.
+      split; [|done]. apply set_eq. intros y. split; [|set_solver].
       intros (k & e0 & Hk & ->)%elem_of_tenv_heads_entry.
       destruct (Hab k e0 Hk) as (h & Hh & _). set_solver.
+    + destruct Hlb2 as [Hlb2 Hb]. pose proof (Vrel_heads_above _ _ _ _ _ HW2f Hb HV) as Hab.
+      split; [|done]. intros y (k & e0 & Hk & ->)%elem_of_tenv_heads_entry.
+      destruct (Hab k e0 Hk) as (h & Hh & Hle). eapply le_le_W; [done| |exact Hle]. by apply Hlb2.
   - eapply Forall_impl; [exact HK|]. intros x. unfold pt_known. destruct HWW2 as (? & _). set_solver.
   - destruct HWW2 as (_ & He2 & Hl2 & _). eapply bcs_hold_mono; [exact He2|exact Hl2|exact HC].
 Qed.
