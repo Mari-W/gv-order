@@ -529,8 +529,8 @@ Proof.
         by rewrite tenvswap_empty. }
   assert (∀ W Θ T v, Vrel n W Θ T v → Vrel n W (tenvswap a b Θ) T (eswap a b v)) as HV.
   { intros W Θ T. revert W Θ.
-    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m C0 T1 IHT1|s x
-                   |lb m C0 T1 IHT1] using ty_ind_ex;
+    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT0|s x
+                   |lb m C0 T1 IHT1|m C0 T1 IHT1] using ty_ind_ex;
       intros W Θ v HVv; simpl.
     - apply Vrel_unit_iff in HVv as [-> ->].
       apply Vrel_unit_iff. by rewrite tenvswap_empty.
@@ -543,11 +543,10 @@ Proof.
         apply Vrel_sum_iff; [left|right]; eexists; (split; [done|]).
       + by apply IHT1.
       + by apply IHU.
-    - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
-      apply Vrel_box_iff. rewrite tenvswap_empty. split; [done|].
+    - apply Vrel_boxm_iff in HVv as (-> & eb & -> & Hfc & H).
+      apply Vrel_boxm_iff. rewrite tenvswap_empty. split; [done|].
       exists (eswap a b eb). split_and!; [done|by rewrite fchans_eswap, Hfc, gswap_empty|].
-      intros W' xs Hx Hxs HC HK.
-      specialize (H _ xs Hx Hxs HC HK). apply (IHT1 (plist xs)) in H.
+      apply IHT0 in H.
       unfold thunk in H. simpl in H.
       by rewrite tenvswap_empty, eswap_rename, eswap_subst1 in H.
     - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs & Hx).
@@ -555,7 +554,15 @@ Proof.
       split_and!; [done|by rewrite tenvswap_singleton|done|done].
     - apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
       apply Vrel_ex_iff. split; [by rewrite tenv_heads_swap|].
-      exists xs. split_and!; [done..|]. by apply (IHT1 (plist xs)). }
+      exists xs. split_and!; [done..|]. by apply (IHT1 (plist xs)).
+    - apply Vrel_all_iff in HVv as (-> & Hv & Hfc & H).
+      apply Vrel_all_iff. rewrite tenvswap_empty. split_and!.
+      + done.
+      + apply is_val_of_true. rewrite is_val_eswap. by apply is_val_true.
+      + by rewrite fchans_eswap, Hfc, gswap_empty.
+      + intros W' xs Hx Hxs HC HK.
+        specialize (H _ xs Hx Hxs HC HK). apply (IHT1 (plist xs)) in H.
+        by rewrite tenvswap_empty in H. }
   split_and!; [exact HV| |].
   - (* term relation *)
     destruct n as [|n']; [intros; apply Erel_0|].

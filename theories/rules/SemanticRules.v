@@ -102,7 +102,16 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
          bcs_hold (w_eq W1) (w_lt W1) C xs →
          sem_rules W1 Θ2 (Some (ty_inst xs T2) :: Some (ty_inst xs T1) :: Δ2) F e2 T) →
-      sem_rules W Θ Δ F (LetP e1 e2) T.
+      sem_rules W Θ Δ F (LetP e1 e2) T
+  | sr_gen Δ F v m C T :                                 (* E-Gen (sharp edges 101) *)
+      is_val v → lenv_unl Δ → term_wf ∅ Δ v →
+      (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+         bcs_hold (w_eq W1) (w_lt W1) C xs →
+         sem_rules W1 ∅ Δ F v (ty_inst xs T)) →
+      sem_rules W ∅ Δ F v (TAll m C T)
+  | sr_inst Θ Δ F e m C T xs :                           (* E-Inst *)
+      length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+      sem_rules W Θ Δ F e (TAll m C T) → sem_rules W Θ Δ F e (ty_inst xs T).
 
 (** E-Force is E-App at the constant force. *)
 Lemma sem_rules_force W Θ Δ F e m C ub T xs :
@@ -145,7 +154,9 @@ Proof.
     |W Θ Δ F e T S Lo Hi HL HH Hbt Hb IH
     |W Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
     |W Θ Δ F e i lb m C T U Hi Hb IH
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T HΘ HΔ H1 IH1 Hb IH2]; intros Ht0 HW.
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T HΘ HΔ H1 IH1 Hb IH2
+    |W Δ F v m C T Hv Hu Hwf Hb IH
+    |W Θ Δ F e m C T xs Hxs HK HC H IH]; intros Ht0 HW.
   - by apply sem_typed_unit.
   - by apply sem_typed_konst.
   - by apply sem_typed_var.
@@ -171,4 +182,7 @@ Proof.
     intros W1 xs HW1 Hxs HK HC. apply IH; [done..| |apply HW1]. by apply Hb.
   - eapply sem_typed_openp; [done|done|by apply IH1|].
     intros W1 xs HW1 Hxs HK HC. apply IH2; [done..| |apply HW1]. by apply Hb.
+  - apply sem_typed_gen; [done..|].
+    intros W1 xs HW1 Hxs HK HC. apply IH; [done..| |apply HW1]. by apply Hb.
+  - eapply sem_typed_inst; [done..|by apply IH].
 Qed.

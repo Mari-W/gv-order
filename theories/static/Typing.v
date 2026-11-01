@@ -104,7 +104,16 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
         (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
         (tenv_pinst (pshift m) Θ2) (Some T2 :: Some T1 :: lenv_pinst (pshift m) Δ2)
         (sf_pinst (pshift m) F) e2 (pinst_ty (pshift m) T) →
-      typed W Φ Ψ Θ Δ F (LetP e1 e2) T.
+      typed W Φ Ψ Θ Δ F (LetP e1 e2) T
+  | t_gen Φ Ψ Δ F v m C T :                             (* E-Gen, values only *)
+      is_val v → lenv_unl Δ →
+      typed W (fhyps_pinst (pshift m) Φ)
+        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)]) ∅
+        (lenv_pinst (pshift m) Δ) (sf_pinst (pshift m) F) v T →
+      typed W Φ Ψ ∅ Δ F v (TAll m C T)
+  | t_inst Φ Ψ Θ Δ F e m C T xs :                       (* E-Inst *)
+      length xs = m → Forall (skn W Ψ) xs → bcs_hold (seqs W Ψ) (slt W Ψ) C xs →
+      typed W Φ Ψ Θ Δ F e (TAll m C T) → typed W Φ Ψ Θ Δ F e (ty_inst xs T).
 
 (** E-NewFresh (sharp edges 90, 93). The fresh point ι is the point
     variable 0 of the body, bound like the ιs of E-Exp, so Φ, Ψ, Θ, Δ,
@@ -121,7 +130,13 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
     its constraint, scoped like a box body. E-OpenPair opens the
     existential scrutinee of a let pair the same way. With the
     existential signature of new it gives E-NewFresh
-    ([t_newfresh_open] below). *)
+    ([t_newfresh_open] below).
+
+    E-Gen and E-Inst (sharp edges 101). ∀ is a type former of its own.
+    E-Gen generalizes a value v over fresh point variables 0, …, m-1
+    under C, scoped like a box body, when v holds no channel and its
+    environment is unlimited (the value restriction). E-Inst puts known
+    points that meet C in place of the ιs. *)
 
 (** E-Force is E-App at the constant force. The instance must meet the
     box's constraint, every fact read from W and the hypotheses Ψ

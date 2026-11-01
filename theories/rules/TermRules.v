@@ -234,7 +234,8 @@ Lemma Vrel_heads_above n W Θ T v :
   world_wf W → Vrel n W Θ T v → heads_above W (heads T) Θ.
 Proof.
   intros HW. revert Θ v.
-  induction T as [|ub lb T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1 T2 IH2|m T1 IH1|s x|lb m C T1 IH1];
+  induction T as [|ub lb T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1|s x|lb m C T1 IH1
+                 |m C T1 IH1];
     intros Θ v HV; simpl.
   - apply Vrel_unit_iff in HV as [-> _]. apply heads_above_empty.
   - apply Vrel_lolli_iff in HV as [(eb & _ & _ & Hlb & _)|(k & T0 & _ & -> & _)];
@@ -248,7 +249,7 @@ Proof.
   - apply Vrel_sum_iff in HV as [(v' & _ & H)|(v' & _ & H)].
     + eapply heads_above_sub; [|by eapply IH1]. set_solver.
     + eapply heads_above_sub; [|by eapply IH2]. set_solver.
-  - apply Vrel_box_empty in HV as ->. apply heads_above_empty.
+  - apply Vrel_boxm_iff in HV as [-> _]. apply heads_above_empty.
   - apply Vrel_sess_iff in HV as (c & s0 & k & _ & -> & _ & Hk).
     intros [c' b] e He. unfold tenv_entry in He. simpl in He.
     destruct (decide (c' = c)) as [->|Hne].
@@ -260,6 +261,7 @@ Proof.
     + exists l. split; [set_solver|]. apply Hlb. apply elem_of_tenv_heads_entry. eauto.
     + exfalso. assert (e.2 ∈ tenv_heads Θ) as Hin by (apply elem_of_tenv_heads_entry; eauto).
       rewrite Hlb in Hin. set_solver.
+  - apply Vrel_all_iff in HV as [-> _]. apply heads_above_empty.
 Qed.
 
 (** ** Grounding substitutions *)

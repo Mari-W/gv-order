@@ -90,9 +90,9 @@ Section teqW.
   Proof.
     induction T; intros [] H; simpl in *; try done; try naive_solver.
     - destruct H as (? & ? & ? & ?). split_and!; auto using opt_rel_sym.
-    - destruct H as (<- & ? & ?). split_and!; auto using bcs_rel_sym.
     - destruct H as [? ?]. split; [by apply pteqW_sym|by apply seq_sym].
     - destruct H as (? & <- & ? & ?). split_and!; auto using opt_rel_sym, bcs_rel_sym.
+    - destruct H as (<- & ? & ?). split_and!; auto using bcs_rel_sym.
   Qed.
 
   Lemma teqW_trans T : ∀ U V, teqW W T U → teqW W U V → teqW W T V.
@@ -100,11 +100,11 @@ Section teqW.
     induction T; intros [] [] H1 H2; simpl in *; try done; try naive_solver.
     - destruct H1 as (? & ? & ? & ?), H2 as (? & ? & ? & ?).
       split_and!; eauto using opt_rel_trans.
-    - destruct H1 as (<- & ? & ?), H2 as (<- & ? & ?).
-      split_and!; eauto using bcs_rel_trans.
     - destruct H1 as [? ?], H2 as [? ?]. split; [by eapply pteqW_trans|by eapply seq_trans].
     - destruct H1 as (? & <- & ? & ?), H2 as (? & <- & ? & ?).
       split_and!; eauto using opt_rel_trans, bcs_rel_trans.
+    - destruct H1 as (<- & ? & ?), H2 as (<- & ? & ?).
+      split_and!; eauto using bcs_rel_trans.
   Qed.
 
   Lemma pteqW_shift n x y : pteqW W x y → pteqW W (pt_shift n x) (pt_shift n y).
@@ -179,10 +179,10 @@ Section teqW.
       auto using seq_refl.
     - destruct ub; simpl; [by apply pteqW_inst_l|done].
     - destruct lb; simpl; [by apply pteqW_inst_l|done].
-    - by apply bcs_rel_inst_l.
-    - apply IHT. by apply pup_pteqW.
     - by apply pteqW_inst_l.
     - destruct lb; simpl; [by apply pteqW_inst_l|done].
+    - by apply bcs_rel_inst_l.
+    - apply IHT. by apply pup_pteqW.
     - by apply bcs_rel_inst_l.
     - apply IHT. by apply pup_pteqW.
   Qed.
@@ -195,10 +195,11 @@ Section teqW.
       + destruct lb, lb0; simpl in *; try done. by apply pteqW_inst_r.
     - destruct H. split; auto.
     - destruct H. split; auto.
-    - destruct H as (<- & HC & ?). split_and!; [done|by apply bcs_rel_inst_r|by apply IHT].
+    - by apply IHT.
     - destruct H as [? ?]. split; [by apply pteqW_inst_r|done].
     - destruct H as (Hl & <- & HC & ?). split_and!; [|done|by apply bcs_rel_inst_r|auto].
       destruct lb, lb0; simpl in *; try done. by apply pteqW_inst_r.
+    - destruct H as (<- & HC & ?). split_and!; [done|by apply bcs_rel_inst_r|by apply IHT].
   Qed.
 
   Lemma teqW_ty_inst xs T U : teqW W T U → teqW W (ty_inst xs T) (ty_inst xs U).
@@ -272,7 +273,7 @@ Proof.
   induction n as [n IHn] using lt_wf_ind.
   assert (∀ W Θ ub lb T1 T2 T' v, world_wf W → teqW W (TLolli ub lb T1 T2) T' →
             Vrel n W Θ (TLolli ub lb T1 T2) v → Vrel n W Θ T' v) as Hfun.
-  { intros W Θ ub lb T1 T2 [|ub' lb' T1' T2'| | | | |] v HW Ht HVv; simpl in Ht; try done.
+  { intros W Θ ub lb T1 T2 [|ub' lb' T1' T2'| | | | | |] v HW Ht HVv; simpl in Ht; try done.
       destruct Ht as (Hu & Hl & Ht1 & Ht2).
       apply Vrel_lolli_iff in HVv
         as [(eb & -> & Hsup & Hlb & HL)|(k & T0 & -> & -> & Hk & Ht)].
@@ -296,8 +297,8 @@ Proof.
             Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
   { intros W Θ T. revert W Θ.
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
-                   |m C0 T1 IHT1|s x|lb m C0 T1 IHT1] using ty_ind_ex;
-      intros W Θ [|ub' lb' T1' T2'|T1' T2'|T1' T2'|m' C0' T1'|s' x'|lb' m' C0' T1'] v HW Ht HVv;
+                   |T1 IHT0|s x|lb m C0 T1 IHT1|m C0 T1 IHT1] using ty_ind_ex;
+      intros W Θ [|ub' lb' T1' T2'|T1' T2'|T1' T2'|T1'|s' x'|lb' m' C0' T1'|m' C0' T1'] v HW Ht HVv;
       simpl in Ht; try done.
     - by eapply Hfun.
     - destruct Ht as [Ht1 Ht2].
@@ -306,14 +307,9 @@ Proof.
     - destruct Ht as [Ht1 Ht2].
       apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; [split; [done|by eapply IHT1]|split; [done|by eapply IHT2]].
-    - destruct Ht as (<- & HC & Ht).
-      apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
-      apply Vrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
-      intros W' xs HW' Hxs HCx HKx. pose proof (wext_wf _ _ HW') as HW'f.
-      eapply (IHT1 (plist xs)); [done| |].
-      + apply teqW_ty_inst. eapply teqW_mono; [|exact Ht]. intros. by eapply wext_eq.
-      + apply HK; [done..| |done].
-        eapply (bcs_hold_conv W W' C0 C0'); [done|done| |done]. by rewrite Hxs.
+    - apply Vrel_boxm_iff in HVv as (-> & eb & -> & Hfc & HK).
+      apply Vrel_boxm_iff. split; [done|]. exists eb. split_and!; [done|done|].
+      by eapply IHT0.
     - destruct Ht as [Hx Hs].
       apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hk).
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done|done| |].
@@ -324,7 +320,15 @@ Proof.
       apply Vrel_ex_iff. split; [by eapply lb_below_conv|]. exists xs. split_and!; [done..| |].
       + eapply (bcs_hold_conv_sub W W C0' C0); [done|done|done| |done].
         rewrite Hxs. by apply bcs_rel_sym.
-      + eapply (IHT1 (plist xs)); [done| |exact H]. by apply teqW_ty_inst. }
+      + eapply (IHT1 (plist xs)); [done| |exact H]. by apply teqW_ty_inst.
+    - destruct Ht as (<- & HC & Ht).
+      apply Vrel_all_iff in HVv as (-> & Hv & Hfc & HK).
+      apply Vrel_all_iff. split_and!; [done..|].
+      intros W' xs HW' Hxs HCx HKx. pose proof (wext_wf _ _ HW') as HW'f.
+      eapply (IHT1 (plist xs)); [done| |].
+      + apply teqW_ty_inst. eapply teqW_mono; [|exact Ht]. intros. by eapply wext_eq.
+      + apply HK; [done..| |done].
+        eapply (bcs_hold_conv W W' C0 C0'); [done|done| |done]. by rewrite Hxs. }
   split_and!; [exact HV| |].
   - destruct n as [|n']; [intros; apply Erel_0|].
     intros W Θ T T' F e HW Ht HE. revert T' HW Ht.
@@ -791,9 +795,10 @@ Proof.
   - destruct H as (-> & -> & ? & ?). split_and!; [apply opt_rel_refl..|auto|auto].
   - destruct H. split; auto.
   - destruct H. split; auto.
-  - destruct H as (<- & <- & ?). split_and!; [done|apply bcs_rel_refl|auto].
+  - auto.
   - destruct H as [<- ?]. split; [by left|done].
   - destruct H as (<- & <- & <- & ?). split_and!; [apply opt_rel_refl|done|apply bcs_rel_refl|auto].
+  - destruct H as (<- & <- & ?). split_and!; [done|apply bcs_rel_refl|auto].
 Qed.
 
 (** ** Environments up to ≈ leave V and E unchanged (Entry conversion) *)
@@ -817,7 +822,7 @@ Proof.
       - apply set_eq. intros y'. split; [|set_solver]. intros Hy'.
         destruct (tconv_heads W HW Θ Θ' y' Hc Hy') as (y & Hy & _). set_solver. }
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
-                   |m C0 T1 IHT1|s x|lb m C0 T1 IHT1] using ty_ind_ex;
+                   |T1 IHT0|s x|lb m C0 T1 IHT1|m C0 T1 IHT1] using ty_ind_ex;
       intros Θ Θ' v HW Hc HVv.
     - apply Vrel_unit_iff in HVv as [-> ->]. apply Vrel_unit_iff.
       split; [by apply (tconv_empty W)|done].
@@ -845,8 +850,8 @@ Proof.
       apply Vrel_prod_iff. exists v1, v2, Θ1', Θ2'. split_and!; eauto.
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
-    - apply Vrel_box_iff in HVv as (-> & HB).
-      apply (tconv_empty W) in Hc as ->. by apply Vrel_box_iff.
+    - apply Vrel_boxm_iff in HVv as (-> & HB).
+      apply (tconv_empty W) in Hc as ->. by apply Vrel_boxm_iff.
     - apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hk).
       destruct (tconv_singleton_inv W c _ Θ' Hc) as ([[s0' k']|] & -> & Ho); [|done].
       destruct Ho as [Hs Hkk]. simpl in *.
@@ -855,7 +860,9 @@ Proof.
       + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|exact Hk].
     - apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HCx & H)].
       apply Vrel_ex_iff. split; [by eapply Hlbc|]. exists xs. split_and!; [done..|].
-      by apply (IHT1 (plist xs) Θ Θ'). }
+      by apply (IHT1 (plist xs) Θ Θ').
+    - apply Vrel_all_iff in HVv as (-> & HB).
+      apply (tconv_empty W) in Hc as ->. by apply Vrel_all_iff. }
   split; [exact HV|].
   destruct n as [|n']; [intros; apply Erel_0|].
   intros W Θ Θ' T F e HW Hc HE. revert Θ' HW Hc.

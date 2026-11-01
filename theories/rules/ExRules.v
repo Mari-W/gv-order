@@ -156,3 +156,65 @@ Proof.
     { intros i. done. }
     eapply grounding_mono; [exact (wext_wf _ _ HW)|exact HW''|exact Hg].
 Qed.
+
+(** * ∀ apart from □ (sharp edges 101)
+
+    E-Gen generalizes a value that holds no channel over the points ιs
+    under the constraint C. E-Inst instantiates a term of type
+    ∀ιs. C. T at known points that meet C. *)
+
+Lemma is_val_subst_g γ e : is_val e → is_val (subst γ e).
+Proof.
+  revert γ. induction e; intros γ; simpl; try done; intros H.
+  all: try (apply andb_True in H as [H1 H2]; apply andb_True; split; auto).
+  all: auto.
+Qed.
+
+(** E-Gen, the value restriction: v is a value, its environment is
+    unlimited, and it is good at every instance that meets C in every
+    later world. *)
+Lemma sem_typed_gen W Δ F v m C T :
+  is_val v → lenv_unl Δ → term_wf ∅ Δ v →
+  (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+     bcs_hold (w_eq W1) (w_lt W1) C xs →
+     sem_typed W1 ∅ Δ F v (ty_inst xs T)) →
+  sem_typed W ∅ Δ F v (TAll m C T).
+Proof.
+  intros Hv Hu (Hfc & Hfv & _) He n W' Θ' Θ'' γ HW Hc Hg.
+  pose proof (wext_wf _ _ HW) as HW'.
+  pose proof (grounding_unl _ _ _ _ _ HW' Hu Hg) as ->.
+  apply tenv_comp_empty_inv in Hc as ->.
+  destruct n as [|n']; [apply Erel_0|].
+  apply Vrel_Erel. apply Vrel_all_iff. split_and!.
+  - done.
+  - by apply is_val_subst_g.
+  - assert (fchans (subst γ v) ⊆ fchans v ∪ dom (∅ : tenv)) as Hsub.
+    { apply fchans_subst. eapply allfv_mono; [|exact Hfv].
+      intros x (T' & Hx). by eapply grounding_fchans. }
+    rewrite Hfc, dom_empty_L in Hsub. set_solver.
+  - intros W2 xs HW2 Hxs HC HK.
+    pose proof (wext_trans _ _ _ HW HW2) as HWW2.
+    assert (Erel (S n') W2 ∅ (ty_inst xs T) F (subst γ v)) as HE.
+    { apply (He W2 xs HWW2 Hxs HK HC (S n') W2 ∅ ∅ γ).
+      - apply wext_refl. by destruct HWW2 as (_&_&_&?).
+      - apply tenv_comp_empty_r.
+      - eapply grounding_mono; [exact HW'|exact HW2|exact Hg]. }
+    apply Erel_S_iff in HE as (Hval & _ & _). apply Hval.
+    apply val_irred. by apply is_val_subst_g.
+Qed.
+
+(** E-Inst: a term of type ∀ιs. C. T has type T[xs/ιs] at known points
+    xs that meet C. *)
+Lemma sem_typed_inst W Θ Δ F e m C T xs :
+  length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+  sem_typed W Θ Δ F e (TAll m C T) → sem_typed W Θ Δ F e (ty_inst xs T).
+Proof.
+  intros Hxs HK HC He n W' Θ' Θ'' γ HW Hc Hg.
+  eapply Erel_Vsub; [by destruct HW as (_&_&_&?)| |by apply (He n W' Θ' Θ'' γ)].
+  intros j W2 Θ2 v Hj HW2 HV. pose proof (wext_trans _ _ _ HW HW2) as HWW2.
+  apply Vrel_all_iff in HV as (-> & _ & _ & H). apply H.
+  - apply wext_refl. by destruct HWW2 as (_&_&_&?).
+  - done.
+  - destruct HWW2 as (_ & He2 & Hl2 & _). eapply bcs_hold_mono; [exact He2|exact Hl2|exact HC].
+  - eapply Forall_impl; [exact HK|]. intros x. unfold pt_known. destruct HWW2 as (? & _). set_solver.
+Qed.

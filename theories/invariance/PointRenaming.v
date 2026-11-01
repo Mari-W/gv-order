@@ -49,7 +49,8 @@ Fixpoint tysw (a b : nat) (T : ty) : ty :=
       TLolli (ptsw a b <$> ub) (ptsw a b <$> lb) (tysw a b T1) (tysw a b U)
   | TProd T1 U => TProd (tysw a b T1) (tysw a b U)
   | TSum T1 U => TSum (tysw a b T1) (tysw a b U)
-  | TBox n C T1 => TBox n (bcs_sw a b C) (tysw a b T1)
+  | TBoxM T1 => TBoxM (tysw a b T1)
+  | TAll n C T1 => TAll n (bcs_sw a b C) (tysw a b T1)
   | TEx lb n C T1 => TEx (ptsw a b <$> lb) n (bcs_sw a b C) (tysw a b T1)
 
   | TSess s x => TSess (stysw a b s) (ptsw a b x)
@@ -265,9 +266,9 @@ Section points.
     induction T; intros σ; simpl; try done; f_equal; auto using bcs_inst_sw.
     - destruct ub; simpl; [by rewrite pt_inst_sw|done].
     - destruct lb; simpl; [by rewrite pt_inst_sw|done].
-    - rewrite IHT. apply pinst_ty_ext. intros i. apply pup_sw.
     - by rewrite pt_inst_sw.
     - destruct lb; simpl; [by rewrite pt_inst_sw|done].
+    - rewrite IHT. apply pinst_ty_ext. intros i. apply pup_sw.
     - rewrite IHT. apply pinst_ty_ext. intros i. apply pup_sw.
   Qed.
 
@@ -1178,8 +1179,8 @@ Proof.
   assert (∀ W W' Θ T v, wsame (wsw a b W) W' → Vrel n W Θ T v →
             Vrel n W' (tenvsw a b Θ) (tysw a b T) v) as HV.
   { intros W W' Θ T. revert W W' Θ.
-    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m C0 T1 IHT1|s x
-                   |lb m C0 T1 IHT1] using ty_ind_ex;
+    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT0|s x
+                   |lb m C0 T1 IHT1|m C0 T1 IHT1] using ty_ind_ex;
       intros W W' Θ v HS HVv.
     - apply Vrel_unit_iff in HVv as [-> ->].
       apply Vrel_unit_iff. by rewrite tenvsw_empty.
@@ -1192,18 +1193,10 @@ Proof.
         apply Vrel_sum_iff; [left|right]; eexists; (split; [done|]).
       + by apply (IHT1 W).
       + by apply (IHU W).
-    - simpl. apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
-      apply Vrel_box_iff. rewrite tenvsw_empty. split; [done|].
+    - simpl. apply Vrel_boxm_iff in HVv as (-> & eb & -> & Hfc & H).
+      apply Vrel_boxm_iff. rewrite tenvsw_empty. split; [done|].
       exists eb. split_and!; [done|done|].
-      intros W'' xs Hx Hxs HC HK.
-      assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
-      assert (bcs_hold (w_eq (wsw a b W'')) (w_lt (wsw a b W'')) C0 (ptsw a b <$> xs)) as HC'.
-      { rewrite <-(bcs_sw_involutive a b C0). by apply bcs_hold_sw. }
-      assert (Forall (pt_known (wsw a b W'')) (ptsw a b <$> xs)) as HK' by (by apply known_sw).
-      specialize (H _ (ptsw a b <$> xs) Hx' ltac:(by rewrite length_fmap) HC' HK').
-      apply (IHT1 (plist (ptsw a b <$> xs)) (wsw a b W'') W'') in H; [|apply Hrt].
-      fold (ty_inst (ptsw a b <$> xs) T1) in H.
-      by rewrite tenvsw_empty, ty_inst_sw, list_ptsw_involutive in H.
+      apply (IHT0 W W') in H; [|done]. by rewrite tenvsw_empty in H.
     - simpl. apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs & Hx).
       apply Vrel_sess_iff. exists c, (stysw a b s0), (ptsw a b k).
       split_and!.
@@ -1219,7 +1212,18 @@ Proof.
         * eapply Forall_impl; [by apply known_sw|]. intros x Hx.
           destruct HS as (Hn & _). unfold pt_known in *. by rewrite <-Hn.
         * eapply bcs_hold_mono; [| |by apply bcs_hold_sw]; intros ? ? ?; by apply HS.
-        * rewrite <-ty_inst_sw. by apply (IHT1 (plist xs) W). }
+        * rewrite <-ty_inst_sw. by apply (IHT1 (plist xs) W).
+    - simpl. apply Vrel_all_iff in HVv as (-> & Hv & Hfc & H).
+      apply Vrel_all_iff. rewrite tenvsw_empty. split_and!; [done|done|done|].
+      intros W'' xs Hx Hxs HC HK.
+      assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
+      assert (bcs_hold (w_eq (wsw a b W'')) (w_lt (wsw a b W'')) C0 (ptsw a b <$> xs)) as HC'.
+      { rewrite <-(bcs_sw_involutive a b C0). by apply bcs_hold_sw. }
+      assert (Forall (pt_known (wsw a b W'')) (ptsw a b <$> xs)) as HK' by (by apply known_sw).
+      specialize (H _ (ptsw a b <$> xs) Hx' ltac:(by rewrite length_fmap) HC' HK').
+      apply (IHT1 (plist (ptsw a b <$> xs)) (wsw a b W'') W'') in H; [|apply Hrt].
+      fold (ty_inst (ptsw a b <$> xs) T1) in H.
+      by rewrite tenvsw_empty, ty_inst_sw, list_ptsw_involutive in H. }
   split_and!; [exact HV| |].
   - (* term relation *)
     destruct n as [|n']; [intros; apply Erel_0|].
