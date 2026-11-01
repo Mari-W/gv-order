@@ -38,7 +38,7 @@ Definition plt (Θ : pctx) (ef : list prio) (lo : list lbi) : Prop :=
 
 (** σs ≤ σs′ for a latent effect. *)
 Definition hle (Θ : pctx) (ef ef' : list prio) : Prop :=
-  ef = [] ∨ PTop ∈ ef' ∨ (∃ l1 l2, ef' = l1 ++ ef ++ l2) ∨
+  ef = [] ∨ (PTop ∈ ef' ∧ PTT ∉ ef) ∨ PTT ∈ ef' ∨ (∃ l1 l2, ef' = l1 ++ ef ++ l2) ∨
   (ef' ≠ [] ∧ ∀ v ts, models Θ v ts → xlt (xmaxl v ef) (xmaxl v ef')).
 
 (** The effect is not ⊤. *)
@@ -85,7 +85,7 @@ Fixpoint tpure (k : nat) (T : mty) : Prop :=
   | MPoly Θ' T _ V => tpure (pc_nt Θ') T ∧ tpure (pc_nt Θ') V
   | MSeg _ k' Qa Qr => msc k' Qa ∧ msc k' Qr
   | MCh _ Q (PR _ _) => msc k Q
-  | MCh _ _ (PX _ _) | MEx _ _ => False
+  | MCh _ _ (PX _ _) | MCh _ _ (PL _) | MCh _ _ (PH _) | MEx _ _ => False
   | MArr T lo _ V => tpure k T ∧ tpure k V ∧ Forall (λ l, match l with LC Q _ _ => msc k Q | _ => True end) lo
   end.
 
@@ -107,8 +107,12 @@ Definition pos_eq (Θ : pctx) (Q : msty) (p : mpos) (Q' : msty) (p' : mpos) : Pr
   | PR h d, PR h' d' =>
       d = d' ∧ ∀ v ts, models Θ v ts → oeq (DCh (mclose v ts Q) (pclose v h) d) (DCh (mclose v ts Q') (pclose v h') d)
   | PX n w, PX n' w' => n = n' ∧ w = w'
+  | PL w, PL w' | PH w, PH w' => w = w'
   | _, _ => False
   end.
+
+(** A position between the floor and the ceiling. *)
+Definition pmid (p : mpos) : Prop := match p with PR _ _ | PX _ _ => True | _ => False end.
 
 Definition meq_ok (Θ : pctx) (Q : msty) (p : mpos) (Q' : msty) (p' : mpos) : Prop :=
   (∀ ss, length ss = pc_nt Θ → Forall hcontractive ss →
@@ -129,9 +133,16 @@ Definition selQ (pol : bool) (a : prio) (K1 K2 : msty) : msty :=
 Definition braQ (pol : bool) (a : prio) (K1 K2 : msty) : msty :=
   if pol then MSel a K1 K2 else MBra a K1 K2.
 
-Definition aeff (p : mpos) (a : prio) : prio := match p with PR _ _ => a | PX _ _ => PTop end.
-Definition pnext (p : mpos) : mpos := match p with PR h d => PR h d | PX n w => PX n (w ++ [WS]) end.
-Definition pbr (p : mpos) (b : bool) : mpos := match p with PR h d => PR h d | PX n w => PX n (w ++ [WB b]) end.
+Definition aeff (p : mpos) (a : prio) : prio :=
+  match p with PR _ _ => a | PX _ _ => PTop | PL _ => PBB | PH _ => PTT end.
+Definition pnext (p : mpos) : mpos :=
+  match p with
+  | PR h d => PR h d | PX n w => PX n (w ++ [WS]) | PL w => PL (w ++ [WS]) | PH w => PH (w ++ [WS])
+  end.
+Definition pbr (p : mpos) (b : bool) : mpos :=
+  match p with
+  | PR h d => PR h d | PX n w => PX n (w ++ [WB b]) | PL w => PL (w ++ [WB b]) | PH w => PH (w ++ [WB b])
+  end.
 
 Definition rpayty (p : mpos) (P : mpay) : mty :=
   match p, P with PX n w, MPChan pp Qp _ _ => MCh pp Qp (PX n (w ++ [WL 0])) | _, _ => payty P end.
@@ -139,13 +150,14 @@ Definition rpayty (p : mpos) (P : mpay) : mty :=
 Definition snd_ok (Θ : pctx) (p : mpos) (a : prio) (P : mpay) (K : msty) : Prop :=
   match p with
   | PR h d => pfin a ∧ plt Θ [a] (tprios (payty P)) ∧ plt Θ [a] [LC K h d]
-  | PX _ _ => P = MPUnit
+  | _ => P = MPUnit
   end.
 
 Definition rcv_ok (Θ : pctx) (p : mpos) (a : prio) (P : mpay) (K : msty) : Prop :=
   match p with
   | PR h d => pfin a ∧ plt Θ [a] (tprios (payty P)) ∧ plt Θ [a] [LC K h d]
   | PX _ _ => True
+  | _ => P = MPUnit
   end.
 
 (** The priority of the first choice of a continuation, through ;. *)
@@ -161,10 +173,10 @@ Definition brise (Θ : pctx) (a : prio) (K : msty) (h : prio) (d : Z) : Prop :=
 Definition br_ok (Θ : pctx) (p : mpos) (a : prio) (K1 K2 : msty) : Prop :=
   match p with
   | PR h d => afin a ∧ (plt Θ [a] [LC K1 h d; LC K2 h d] ∨ (brise Θ a K1 h d ∧ brise Θ a K2 h d))
-  | PX _ _ => True
+  | _ => True
   end.
 
-Definition end_ok (p : mpos) (a : prio) : Prop := match p with PR _ _ => pfin a | PX _ _ => True end.
+Definition end_ok (p : mpos) (a : prio) : Prop := match p with PR _ _ => pfin a | _ => True end.
 
 (** ** Environments *)
 
@@ -240,13 +252,14 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
   | m_fixseg Γ e e' pol k Qa Qr ef :                        (* a function over a segment *)
       menv_poly Γ → msc k Qa → msc k Qr →
       mtyped (Θany k) (Some (MCh pol Qa (PX 0 [])) :: Some (MSeg pol k Qa Qr) :: Γ) e (MEx pol Qr) ef e' →
+      PTT ∉ ef →
       mtyped Θ Γ (EBox (Lam e)) (MSeg pol k Qa Qr) [] (EBox (Lam e'))
   | m_appseg Γ Γ1 Γ2 e1 e2 e1' e2' pol k Qa Qr τs p ef1 ef2 : (* T-TApp, T-App at a segment *)
       msplit Γ Γ1 Γ2 →
       mtyped Θ Γ1 e1 (MSeg pol k Qa Qr) ef1 e1' →
       length τs = k → Forall (msc (pc_nt Θ)) τs → hcinst Θ τs → msc k Qa → msc k Qr →
-      mtyped Θ Γ2 e2 (MCh pol (tsub τs Qa) p) ef2 e2' →
-      plt Θ ef1 (envp Γ2) → pntop Θ ef2 →
+      mtyped Θ Γ2 e2 (MCh pol (tsub τs Qa) p) ef2 e2' → pmid p →
+      plt Θ ef1 (envp Γ2) → pntop Θ ef2 → PTT ∉ ef1 →
       mtyped Θ Γ (App e1 e2) (MEx pol (tsub τs Qr)) (ef1 ++ ef2 ++ [PTop])
         (App (App EForce e1') e2')
   | m_open Γ e e' i pol Q n V ef :                           (* the end point of a segment *)
@@ -254,7 +267,7 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
       mtyped Θ (<[i := Some (MCh pol Q (PX n []))]> Γ) e V ef e' →
       mtyped Θ Γ e V ef e'
   | m_pack Γ e e' pol Q p ef :                               (* a later end point *)
-      mtyped Θ Γ e (MCh pol Q p) ef e' →
+      mtyped Θ Γ e (MCh pol Q p) ef e' → pmid p →
       mtyped Θ Γ e (MEx pol Q) ef e'
   | m_let Γ Γ1 Γ2 e1 e2 e1' e2' T V ef1 ef2 :                (* T-Let *)
       msplit Γ Γ1 Γ2 →
@@ -270,6 +283,12 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
       mtyped Θ Γ (LetU e1 e2) V (ef1 ++ ef2) (LetU (App EForce e1') e2')
   | m_new Γ e e' Q n d V ef :                                (* T-New, T-NewPoly *)
       mtyped Θ (Some (MCh true Q (PR n d)) :: Some (MCh false Q (PR n d)) :: Γ) e V ef e' →
+      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (LetP (App ENew EUnit) e')
+  | m_newlo Γ e e' Q V ef :                                  (* new below the floor *)
+      mtyped Θ (Some (MCh true Q (PL [])) :: Some (MCh false Q (PL [])) :: Γ) e V ef e' →
+      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (LetP (App ENew EUnit) e')
+  | m_newhi Γ e e' Q V ef :                                  (* new above the ceiling *)
+      mtyped Θ (Some (MCh true Q (PH [])) :: Some (MCh false Q (PH [])) :: Γ) e V ef e' →
       mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (LetP (App ENew EUnit) e')
   | m_send Γ Γ1 Γ2 e1 e2 e1' e2' pol a P K p ef1 ef2 :       (* send, R1, R3 *)
       msplit Γ Γ1 Γ2 →

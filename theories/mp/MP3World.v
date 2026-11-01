@@ -41,7 +41,8 @@ Inductive ritem :=
   | RAnc (σ : list prio) (τ : list msty)
   | RCh (Q : msty) (h : prio) (d : Z)
   | RLo (l : list lbi)
-  | RHi (l : list prio).
+  | RHi (l : list prio)
+  | RLow.                                 (* the start of the low chain *)
 
 Global Instance ritem_eq_dec : EqDecision ritem.
 Proof. solve_decision. Defined.
@@ -51,11 +52,11 @@ Proof.
   apply (inj_countable'
     (λ r, match r with
           | RAnc σ τ => inl (inl (σ, τ)) | RCh Q h d => inl (inr (Q, h, d))
-          | RLo l => inr (inl l) | RHi l => inr (inr l)
-          end : (list prio * list msty + msty * prio * Z) + (list lbi + list prio))
+          | RLo l => inr (inl (inl l)) | RHi l => inr (inl (inr l)) | RLow => inr (inr ())
+          end : (list prio * list msty + msty * prio * Z) + ((list lbi + list prio) + unit))
     (λ s, match s with
           | inl (inl (σ, τ)) => RAnc σ τ | inl (inr (Q, h, d)) => RCh Q h d
-          | inr (inl l) => RLo l | inr (inr l) => RHi l
+          | inr (inl (inl l)) => RLo l | inr (inl (inr l)) => RHi l | inr (inr _) => RLow
           end)).
   by intros [].
 Qed.
@@ -75,29 +76,38 @@ Definition rpt (B : point) (r : ritem) : point := pt_slot B (encode_nat r).
     closure that holds nothing lies above the ceiling, so an argument
     of any effect may precede it. *)
 
-Inductive rk := KB (s j : Z) | KZ (z s j : Z) | KT (j : Z) | KH | KU (j : Z).
+(** Version 3 adds the low chain KL with its lower points KLL and its
+    upper point KLH below ⊥, and above the junk of the ceiling the
+    upper point KV of the high chain, the lower point KW of a closure
+    that holds nothing, and junk KX on top (section 15). *)
+Inductive rk := KLL (j : Z) | KL (j : Z) | KLH (j : Z) | KB (s j : Z) | KZ (z s j : Z) | KT (j : Z) | KH | KU (j : Z)
+              | KV | KW | KX (j : Z).
 
-Definition rlt (a b : rk) : Prop :=
+Definition rkey (a : rk) : Z * Z * Z * Z :=
+  match a with
+  | KLL j => (0, 0, 0, j) | KL j => (1, 0, 0, j) | KLH j => (2, 0, 0, j)
+  | KB s j => (3, 0, s, j) | KZ z s j => (4, z, s, j) | KT j => (5, 0, 0, j) | KH => (6, 0, 0, 0)
+  | KU j => (7, 0, 0, j) | KV => (8, 0, 0, 0) | KW => (9, 0, 0, 0) | KX j => (10, 0, 0, j)
+  end%Z.
+
+Definition lex4 (a b : Z * Z * Z * Z) : Prop :=
   match a, b with
-  | KB s j, KB s' j' => (s < s')%Z ∨ (s = s' ∧ (j < j')%Z)
-  | KB _ _, _ => True
-  | KZ z s j, KZ z' s' j' => (z < z')%Z ∨ (z = z' ∧ ((s < s')%Z ∨ (s = s' ∧ (j < j')%Z)))
-  | KZ _ _ _, (KT _ | KH | KU _) => True
-  | KT j, KT j' => (j < j')%Z
-  | KT _, (KH | KU _) => True
-  | KH, KU _ => True
-  | KU j, KU j' => (j < j')%Z
-  | _, _ => False
+  | (a1, a2, a3, a4), (b1, b2, b3, b4) =>
+      (a1 < b1 ∨ (a1 = b1 ∧ (a2 < b2 ∨ (a2 = b2 ∧ (a3 < b3 ∨ (a3 = b3 ∧ a4 < b4))))))%Z
   end.
 
+Definition rlt (a b : rk) : Prop := lex4 (rkey a) (rkey b).
+Arguments lex4 !a !b /.
+Arguments rlt a b /.
+
 Lemma rlt_irrefl a : ¬ rlt a a.
-Proof. destruct a; simpl; lia. Qed.
+Proof. unfold rlt, lex4. destruct (rkey a) as [[[]]]. lia. Qed.
 
 Lemma rlt_trans a b c : rlt a b → rlt b c → rlt a c.
-Proof. destruct a, b, c; simpl; lia. Qed.
+Proof. unfold rlt, lex4. destruct (rkey a) as [[[]]], (rkey b) as [[[]]], (rkey c) as [[[]]]. lia. Qed.
 
 Global Instance rlt_dec a b : Decision (rlt a b).
-Proof. destruct a, b; simpl; apply _. Defined.
+Proof. unfold rlt, lex4. destruct (rkey a) as [[[]]], (rkey b) as [[[]]]. apply _. Defined.
 
 (** ** Denotations *)
 
@@ -107,10 +117,12 @@ Inductive dn :=
   | DLo (x : ext) (n : nat)
   | DHi (x : ext) (n : nat)
   | DJ (j : Z)
-  | DU (j : Z).
+  | DU (j : Z)
+  | DLC (j : Z)                           (* the low chain *)
+  | DX (j : Z).                           (* junk on top *)
 
 Definition xrk (x : ext) (s j : Z) (t : rk) : rk :=
-  match x with XB => KB s j | XZ z => KZ z s j | XT => t end.
+  match x with XBB => KLH j | XB => KB s j | XZ z => KZ z s j | XT => t | XTT => KV end.
 
 (** The depth of a head, the subrank of a channel. *)
 Definition hdep (o : option prio) : Z := match o with Some a => Z.of_nat (pdep a) | None => 0 end.
@@ -124,15 +136,24 @@ Definition rank (d : dn) : rk :=
   match d with
   | DAnc _ _ => KT 0
   | DCh Q h dd => xrk (hext (vprio (hdt h dd Q).1)) 1 (hdep (vprio (hdt h dd Q).1)) (KT 1)
-  | DLo x n => xrk x 0 (- Z.of_nat n) (match n with 0 => KU 0 | _ => KT (- Z.of_nat n) end)
+  | DLo x n =>
+      match x with
+      | XBB => KLL (- Z.of_nat n) | XTT => match n with 0 => KW | _ => KU (- Z.of_nat n) end
+      | _ => xrk x 0 (- Z.of_nat n) (match n with 0 => KW | _ => KT (- Z.of_nat n) end)
+      end
   | DHi x n => xrk x 2 (Z.of_nat n) KH
   | DJ j => KT j
   | DU j => KU j
+  | DLC j => KL j
+  | DX j => KX j
   end.
 
 (** The junk just above a rank. *)
 Definition jnk (a : rk) : dn :=
-  match a with KT j => DJ (j + 1) | KH => DU 0 | KU j => DU (j + 1) | _ => DJ 0 end.
+  match a with
+  | KT j => DJ (j + 1) | KH => DU 0 | KU j => DU (j + 1)
+  | KV | KW => DX 0 | KX j => DX (j + 1) | _ => DJ 0
+  end.
 
 Lemma rlt_jnk a : rlt a (rank (jnk a)).
 Proof. destruct a; simpl; lia. Qed.
@@ -149,6 +170,7 @@ Definition dnext (d : dn) : dn :=
       | (Some (VSnd _ _ K), h') | (Some (VRcv _ _ K), h') => DCh K h' dd
       | _ => DJ 0
       end
+  | DLC j => DLC (j + 1)
   | _ => DJ 0
   end.
 
@@ -161,6 +183,7 @@ Definition dbr0 (d : dn) (b : bool) : dn :=
       | (Some (VSel _ K1 K2), h') | (Some (VBra _ K1 K2), h') => DCh (if b then K2 else K1) h' dd
       | _ => DJ 0
       end
+  | DLC j => DLC (j + 1)
   | _ => DJ 0
   end.
 
@@ -170,7 +193,7 @@ Definition evalZ (v : val) (ρ : prio) : Z :=
   match evalp v ρ with XZ z => z | _ => 0%Z end.
 
 Definition xminlb (v : val) (ts : list msty) (l : list lbi) : ext :=
-  foldr (λ i a, xmin (evlb v ts i) a) XT l.
+  foldr (λ i a, xmin (evlb v ts i) a) XTT l.
 
 Definition dsl (d : dn) (i : nat) : dn :=
   match d with
@@ -180,6 +203,7 @@ Definition dsl (d : dn) (i : nat) : dn :=
       | Some (RCh Q h dd) => DCh (mclose v ts Q) (pclose v h) dd
       | Some (RLo l) => DLo (xminlb v ts l) (length l)
       | Some (RHi l) => DHi (xmaxl v l) (hlen l)
+      | Some RLow => DLC 0
       | None => DJ 0
       end
   | DCh Q h dd =>
@@ -188,6 +212,8 @@ Definition dsl (d : dn) (i : nat) : dn :=
           DCh Qp hp dp
       | _, _ => DJ 0
       end
+  | DLC j => DLC (j + 1)
+  | DU j => DU (j + 1)
   | _ => DJ 0
   end.
 
@@ -421,6 +447,8 @@ Fixpoint tr (B : point) (pts : nat → point) (T : mty) : ty :=
   | MUnit => U
   | MCh p Q (PR h d) => TSess (polS p (ers Q)) (rpt B (RCh Q h d))
   | MCh p Q (PX n w) => TSess (polS p (ers Q)) (mwalk (pts n) w)
+  | MCh p Q (PL w) => TSess (polS p (ers Q)) (mwalk (rpt B RLow) w)
+  | MCh p Q (PH w) => TSess (polS p (ers Q)) (mwalk (pt_shift 1 (rpt B (RHi [PTop]))) w)
   | MEx p Q => TEx (Some (rpt B (RLo [LP PBot]))) 1 (Cex B) (TSess (polS p (ers Q)) (pvar 0))
   | MArr T lo ef V => TLolli (hiz B ef) (Some (rpt B (RLo lo))) (tr B pts T) (tr B pts V)
   | MPoly Θ T ef V =>
@@ -451,7 +479,7 @@ Proof. rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True by lia. Qed.
 
 Lemma tr_ext B pts pts' T : (∀ n, pts n = pts' n) → tr B pts T = tr B pts' T.
 Proof.
-  intros H. induction T as [|p Q [h d|n w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k Qa Qr];
+  intros H. induction T as [|p Q [h d|n w|w|w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k Qa Qr];
     simpl; try done; [by rewrite H|by rewrite IH1, IH2].
 Qed.
 
@@ -460,11 +488,13 @@ Proof. intros Ha. rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True. Q
 
 Lemma tr_pinst σ B pts T : pinst_ty σ (tr B pts T) = tr (pt_inst σ B) (pt_inst σ ∘ pts) T.
 Proof.
-  revert σ B pts. induction T as [|p Q [h d|n w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k Qa Qr];
+  revert σ B pts. induction T as [|p Q [h d|n w|w|w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k Qa Qr];
     intros σ B pts; simpl.
   - done.
   - by rewrite pt_inst_rpt.
   - by rewrite pt_inst_mwalk.
+  - by rewrite pt_inst_mwalk, pt_inst_rpt.
+  - by rewrite pt_inst_mwalk, pt_inst_shift, pt_inst_rpt.
   - by rewrite pt_inst_rpt, pup1_0.
   - by rewrite IH1, IH2, hiz_pinst, pt_inst_rpt.
   - rewrite IH1, IH2, hiz_pinst, pup1_0. unfold bcs_inst, Crel. simpl.

@@ -36,46 +36,52 @@ From LRGV Require Export types.SessionEquiv.
 
 (** ** Priorities *)
 
-Inductive prio := PBot | PTop | PZ (n : Z) | PV (j : nat) (n : Z) | PI (n : Z) | PD (ρ : prio) (t : nat).
+Inductive prio := PBot | PTop | PZ (n : Z) | PV (j : nat) (n : Z) | PI (n : Z) | PD (ρ : prio) (t : nat)
+                | PBB | PTT.
 
 Global Instance prio_eq_dec : EqDecision prio.
 Proof. solve_decision. Defined.
 
-(** Extended integers, the values of priorities. *)
-Inductive ext := XB | XZ (z : Z) | XT.
+(** Extended integers, the values of priorities. Version 3 adds XBB
+    below ⊥ and XTT above ⊤, the levels of channels created after a
+    segment call below the floor and above the ceiling (section 15). *)
+Inductive ext := XBB | XB | XZ (z : Z) | XT | XTT.
 
 Global Instance ext_eq_dec : EqDecision ext.
 Proof. solve_decision. Defined.
 
+Definition xc (a : ext) : Z := match a with XBB => 0 | XB => 1 | XZ _ => 2 | XT => 3 | XTT => 4 end.
+
 Definition xlt (a b : ext) : Prop :=
   match a, b with
-  | XB, XB => False
-  | XB, _ => True
   | XZ z, XZ z' => (z < z')%Z
-  | XZ _, XT => True
-  | _, _ => False
+  | _, _ => (xc a < xc b)%Z
   end.
 
 Definition xle (a b : ext) : Prop :=
   match a, b with
-  | XB, _ => True
   | XZ z, XZ z' => (z ≤ z')%Z
-  | _, XT => True
-  | _, _ => False
+  | _, _ => (xc a ≤ xc b)%Z
   end.
 
 Definition xmax (a b : ext) : ext :=
   match a, b with
-  | XB, x | x, XB => x
+  | XTT, _ | _, XTT => XTT
   | XT, _ | _, XT => XT
   | XZ z, XZ z' => XZ (Z.max z z')
+  | XZ z, _ | _, XZ z => XZ z
+  | XB, _ | _, XB => XB
+  | XBB, XBB => XBB
   end.
 
 Definition xmin (a b : ext) : ext :=
   match a, b with
-  | XT, x | x, XT => x
+  | XBB, _ | _, XBB => XBB
   | XB, _ | _, XB => XB
   | XZ z, XZ z' => XZ (Z.min z z')
+  | XZ z, _ | _, XZ z => XZ z
+  | XT, _ | _, XT => XT
+  | XTT, XTT => XTT
   end.
 
 (** A valuation of the priority variables of an abstraction. *)
@@ -88,6 +94,8 @@ Fixpoint evalp (v : val) (ρ : prio) : ext :=
   | PZ n | PI n => XZ n
   | PV j n => XZ (default 0%Z (v !! j) + n)
   | PD ρ _ => match evalp v ρ with XZ z => XZ z | _ => XZ 0 end
+  | PBB => XBB
+  | PTT => XTT
   end.
 
 Fixpoint padd (ρ : prio) (k : Z) : prio :=
@@ -114,8 +122,8 @@ Fixpoint pinI (h : prio) (ρ : prio) : prio :=
     strictly between ρ and every integer above ρ. Depths add up. *)
 Fixpoint pdep (ρ : prio) : nat := match ρ with PD ρ t => t + pdep ρ | _ => 0 end.
 
-Definition xmaxl (v : val) (l : list prio) : ext := foldr (λ ρ a, xmax (evalp v ρ) a) XB l.
-Definition xminl (v : val) (l : list prio) : ext := foldr (λ ρ a, xmin (evalp v ρ) a) XT l.
+Definition xmaxl (v : val) (l : list prio) : ext := foldr (λ ρ a, xmax (evalp v ρ) a) XBB l.
+Definition xminl (v : val) (l : list prio) : ext := foldr (λ ρ a, xmin (evalp v ρ) a) XTT l.
 
 Definition pfin (ρ : prio) : Prop :=
   match ρ with PZ _ | PV _ _ => True | _ => False end.
@@ -151,6 +159,7 @@ Fixpoint prio_enc (ρ : prio) : gen_tree Z :=
   | PZ n => GenNode 2 [GenLeaf n] | PV j n => GenNode 3 [GenLeaf (Z.of_nat j); GenLeaf n]
   | PI n => GenNode 4 [GenLeaf n]
   | PD ρ t => GenNode 5 [prio_enc ρ; GenLeaf (Z.of_nat t)]
+  | PBB => GenNode 6 [] | PTT => GenNode 7 []
   end.
 Fixpoint prio_dec (t : gen_tree Z) : prio :=
   match t with
@@ -159,6 +168,8 @@ Fixpoint prio_dec (t : gen_tree Z) : prio :=
   | GenNode 3 [GenLeaf j; GenLeaf n] => PV (Z.to_nat j) n
   | GenNode 4 [GenLeaf n] => PI n
   | GenNode 5 [r; GenLeaf t] => PD (prio_dec r) (Z.to_nat t)
+  | GenNode 6 [] => PBB
+  | GenNode 7 [] => PTT
   | _ => PBot
   end.
 
@@ -367,8 +378,13 @@ Definition vprio (o : option mhv) : option prio :=
 
 Definition mclose (v : val) (ts : list msty) (Q : msty) : msty := tsub ts (mmap (pclose v) Q).
 
+(** The levels below ⊥ and above ⊤ belong to the chains of section 15,
+    never to a channel at a sequence. A head written with them counts as
+    ⊥ or ⊤. *)
+Definition xcl (x : ext) : ext := match x with XBB => XB | XTT => XT | x => x end.
+
 Definition hext (o : option prio) : ext :=
-  match o with Some a => evalp [] a | None => XT end.
+  match o with Some a => xcl (evalp [] a) | None => XT end.
 
 Definition cprio (v : val) (ts : list msty) (Q : msty) (h : prio) (d : Z) : ext :=
   hext (vprio (hdt (pclose v h) d (mclose v ts Q)).1).
@@ -398,7 +414,9 @@ Proof. solve_decision. Defined.
 
 Inductive mpos :=
   | PR (h : prio) (d : Z)              (* the priority sequence h + k·d *)
-  | PX (n : nat) (w : list wstep).     (* the walk w from end point n *)
+  | PX (n : nat) (w : list wstep)      (* the walk w from end point n *)
+  | PL (w : list wstep)                (* the walk w on the low chain, below the floor *)
+  | PH (w : list wstep).               (* the walk w on the high chain, above the ceiling *)
 
 (** ** Functional types *)
 
@@ -440,6 +458,8 @@ Definition tprios (T : mty) : list lbi :=
   match T with
   | MCh _ Q (PR h d) => [LC Q h d]
   | MCh _ _ (PX _ _) | MEx _ _ => [LP PBot]
+  | MCh _ _ (PL _) => [LP PBB]
+  | MCh _ _ (PH _) => [LP PTT]
   | MArr _ lo _ _ => lo
   | _ => []
   end.

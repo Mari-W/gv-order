@@ -127,7 +127,7 @@ Ltac one_inst := let ss := fresh "ss" in let Hl := fresh "Hl" in let Hf := fresh
 
 Lemma receiveTree_typed Θ : ∃ e', mtyped Θ [] receiveTree rt_ty [] e'.
 Proof.
-  eexists. unfold receiveTree, rt_ty. eapply m_fixseg; [allun|cbn; split; [done|lia]|cbn; lia|].
+  eexists. unfold receiveTree, rt_ty. eapply m_fixseg; [allun|cbn; split; [done|lia]|cbn; lia| |shelve].
   (* match on the tree *)
   eapply (m_match _ _ [Some _; None] [None; Some _] _ _ _ _ _ _ false (PZ 0)
             (MSeq MSkip (MTV 0)) (MSeq (MSeq (MRcv (PZ 1) MPUnit) (MSeq TC TC)) (MTV 0)) (PX 0 []));
@@ -135,11 +135,11 @@ Proof.
   - eapply m_eq; [apply m_var; onlyun|]. split; [|split; done].
     one_inst. cbn. apply TDu_seq.
   - (* LeafC *)
-    eapply (m_sub _ _ _ _ _ [] [PTop]); [|right; left; set_solver].
-    eapply (m_pack _ _ _ _ _ _ (PX 0 [WB false])). eapply m_eq; [apply m_var; onlyun|]. split; [|split; done].
+    eapply (m_sub _ _ _ _ _ [] [PTop]); [|right; left; split; [set_solver|shelve]].
+    eapply (m_pack _ _ _ _ _ _ (PX 0 [WB false])); [|done]. eapply m_eq; [apply m_var; onlyun|]. split; [|split; done].
     one_inst. cbn. match goal with H : hcontractive _ |- _ => exact (seq_skip_l _ (hcontractive_contractive _ H)) end.
   - (* NodeC *)
-    eapply m_sub; [|right; left; set_solver].
+    eapply m_sub; [|right; left; split; [set_solver|shelve]].
     eapply (m_recv _ _ [Some _; None; None] [None; None; Some _] _ _ _ _ false (PZ 1) MPUnit
               (MSeq TC (MSeq TC (MTV 0))) (PX 0 [WB true])); [msp| |done| |apply plt_none].
     + eapply m_eq; [apply m_var; onlyun|]. split; [|split; done].
@@ -148,16 +148,17 @@ Proof.
       * eapply (m_appseg _ _ [None; None; None; None; Some _] [Some _; None; None; None; None] _ _ _ _
                   false 1 (MSeq TC (MTV 0)) (MTV 0) [MSeq TC (MTV 0)]);
           [msp|apply m_var; onlyun|done|apply Forall_singleton; cbn; split; [done|lia]| |cbn; split; [done|lia]|cbn; lia
-          |apply m_var; onlyun|apply plt_nil|apply pntop_nil].
+          |apply m_var; onlyun|done|apply plt_nil|apply pntop_nil|set_solver].
         one_inst. apply Forall_singleton. cbn.
         by apply hcontractive_seq; [apply TDu_hc|].
       * eapply (m_open _ _ _ _ 0 false (MSeq TC (MTV 0)) 1 (MEx false (MTV 0))); [done|cbn; set_solver|cbn; set_solver|].
         cbn. eapply (m_appseg _ _ [None; None; Some _; None; None; Some _] [Some _; None; None; None; None; None] _ _ _ _
                   false 1 (MSeq TC (MTV 0)) (MTV 0) [MTV 0]);
           [msp|apply m_var; onlyun|done|apply Forall_singleton; cbn; lia| |cbn; split; [done|lia]|cbn; lia
-          |apply m_var; onlyun|apply plt_nil|apply pntop_nil].
+          |apply m_var; onlyun|done|apply plt_nil|apply pntop_nil|set_solver].
         one_inst. apply Forall_singleton. done.
       * apply plt_none.
+  Unshelve. all: set_solver.
 Qed.
 
 (** A main program: one thread selects the tree Node(Leaf, Leaf) on a
@@ -220,7 +221,7 @@ Proof.
   - eapply (m_let _ _ [None; Some _; Some _] [None; None; Some _]); [msp| | |apply plt_none].
     + eapply (m_appseg _ _ [None; None; Some _] [None; Some _; None] _ _ _ _ false 1 (MSeq TC (MTV 0)) (MTV 0) [K0]);
         [msp|apply m_var; onlyun|done|by apply Forall_singleton| |cbn; split; [done|lia]|cbn; lia
-        |apply m_var; onlyun|apply plt_nil|apply pntop_nil].
+        |apply m_var; onlyun|done|apply plt_nil|apply pntop_nil|set_solver].
       intros ss Hl _. destruct ss; [|discriminate]. apply Forall_singleton. apply hcontractive_end.
     + eapply (m_open _ _ _ _ 0 false K0 0 MUnit); [done|cbn; set_solver|cbn; set_solver|].
       cbn. eapply (m_close _ _ _ _ false (PZ 9) true (PX 0 [])); [apply m_var; onlyun|done].
@@ -229,6 +230,96 @@ Qed.
 Theorem rt_mp3_deadlock_free : ∃ ef e', mtyped pc0 [] rt_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
 Proof.
   destruct rt_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp3_deadlock_free.
+Qed.
+
+(** ** A channel created after receiveTree (section 15)
+
+    After the call, c′ has type Wait⁹ in their system and acts with
+    effect ⊤ at an abstract position here. Their rules let the caller
+    create d and order it against c′ in either direction.
+
+      rtA: d : Close⁵.  close d while holding c′, then wait c′  (5 < 9)
+      rtB: d : Close¹². wait c′ while holding d, then close d  (9 < 12)
+
+    The partner of d runs in its own thread. rtA creates d below the
+    floor, so every point of d lies below every walk of c′. rtB creates
+    d above the ceiling, at the successor of the ceiling, so every walk
+    of c′ lies below every point of d. *)
+
+Definition QdA : msty := MEnd (PZ 5) false.
+Definition QdB : msty := MEnd (PZ 12) false.
+
+Definition rtA_cont : expr :=
+  LetP (App ENew EUnit) (LetU (App ESpawn (Lam (App EClos (Var 1))))
+    (LetU (App EClos (Var 1)) (App EClos (Var 2)))).
+Definition rtB_cont : expr :=
+  LetP (App ENew EUnit) (LetU (App ESpawn (Lam (App EClos (Var 1))))
+    (LetU (App EClos (Var 2)) (App EClos (Var 1)))).
+
+Definition rtd_main (k : expr) : expr :=
+  App (Lam (LetP (App ENew EUnit)
+    (LetU (App ESpawn (Lam rt_sender))
+          (App (Lam k) (App (Var 2) (Var 1)))))) receiveTree.
+
+Definition rtA_main : expr := rtd_main rtA_cont.
+Definition rtB_main : expr := rtd_main rtB_cont.
+
+Lemma rtd_main_typed k :
+  (∃ ef e', mtyped pc0 [Some (MCh false K0 (PX 0 [])); None; None; Some rt_ty] k MUnit ef e') →
+  ∃ ef e', mtyped pc0 [] (rtd_main k) MUnit ef e'.
+Proof.
+  intros (ef & ek & Hk).
+  destruct (receiveTree_typed pc0) as [er Hr]. destruct rt_sender_typed as (es & es' & Hs).
+  do 2 eexists. unfold rtd_main.
+  eapply (m_let _ _ [] []); [msp|exact Hr| |apply plt_nil].
+  eapply (m_new _ _ _ _ Qc (PZ 1) 2).
+  eapply (m_letu _ _ [Some _; None; None] [None; Some _; Some _]); [msp| | |apply plt_nil].
+  - eapply m_fork. eapply m_lam. exact Hs.
+  - eapply (m_let _ _ [None; Some _; Some _] [None; None; Some _]); [msp| | |apply plt_none].
+    + eapply (m_appseg _ _ [None; None; Some _] [None; Some _; None] _ _ _ _ false 1 (MSeq TC (MTV 0)) (MTV 0) [K0]);
+        [msp|apply m_var; onlyun|done|by apply Forall_singleton| |cbn; split; [done|lia]|cbn; lia
+        |apply m_var; onlyun|done|apply plt_nil|apply pntop_nil|set_solver].
+      intros ss Hl _. destruct ss; [|discriminate]. apply Forall_singleton. apply hcontractive_end.
+    + eapply (m_open _ _ _ _ 0 false K0 0 MUnit); [done|cbn; set_solver|cbn; set_solver|].
+      cbn. exact Hk.
+Qed.
+
+Lemma rtA_main_typed : ∃ ef e', mtyped pc0 [] rtA_main MUnit ef e'.
+Proof.
+  apply rtd_main_typed. do 2 eexists. unfold rtA_cont.
+  eapply (m_newlo _ _ _ _ QdA).
+  eapply (m_letu _ _ [Some _; None; None; None; None; None] [None; Some _; Some _; None; None; Some _]);
+    [msp| | |apply plt_nil].
+  - eapply m_fork. eapply m_lam.
+    eapply (m_close _ _ _ _ true (PZ 5) false (PL [])); [apply m_var; onlyun|done].
+  - eapply (m_letu _ _ [None; Some _; None; None; None; None] [None; None; Some _; None; None; Some _]); [msp| | |].
+    + eapply (m_close _ _ _ _ false (PZ 5) false (PL [])); [apply m_var; onlyun|done].
+    + eapply (m_close _ _ _ _ false (PZ 9) true (PX 0 [])); [apply m_var; onlyun|done].
+    + right. intros v ts _ l Hl. simpl in Hl. apply list_elem_of_singleton in Hl as ->. simpl. lia.
+Qed.
+
+Lemma rtB_main_typed : ∃ ef e', mtyped pc0 [] rtB_main MUnit ef e'.
+Proof.
+  apply rtd_main_typed. do 2 eexists. unfold rtB_cont.
+  eapply (m_newhi _ _ _ _ QdB).
+  eapply (m_letu _ _ [Some _; None; None; None; None; None] [None; Some _; Some _; None; None; Some _]);
+    [msp| | |apply plt_nil].
+  - eapply m_fork. eapply m_lam.
+    eapply (m_close _ _ _ _ true (PZ 12) false (PH [])); [apply m_var; onlyun|done].
+  - eapply (m_letu _ _ [None; None; Some _; None; None; None] [None; Some _; None; None; None; Some _]); [msp| | |].
+    + eapply (m_close _ _ _ _ false (PZ 9) true (PX 0 [])); [apply m_var; onlyun|done].
+    + eapply (m_close _ _ _ _ false (PZ 12) false (PH [])); [apply m_var; onlyun|done].
+    + right. intros v ts _ l Hl. simpl in Hl. apply list_elem_of_singleton in Hl as ->. simpl. lia.
+Qed.
+
+Theorem rtA_mp3_deadlock_free : ∃ ef e', mtyped pc0 [] rtA_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
+Proof.
+  destruct rtA_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp3_deadlock_free.
+Qed.
+
+Theorem rtB_mp3_deadlock_free : ∃ ef e', mtyped pc0 [] rtB_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
+Proof.
+  destruct rtB_main_typed as (ef & e' & H). exists ef, e'. split; [done|]. by eapply mp3_deadlock_free.
 Qed.
 
 (** ** Branches that order a channel differently (mordido-perez.md §9.5, T2)
@@ -280,11 +371,11 @@ Proof.
     eapply m_fork. eapply m_lam. unfold t2_T3.
     eapply (m_close _ _ _ _ true (PZ 3) false p01); [apply m_var; onlyun|done]. }
   (* T2 *)
-  unfold t2_T2. eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  unfold t2_T2. eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
   eapply (m_match _ _ [None; None; Some _; None] [None; Some _; None; None] _ _ _ _ _ _ true (PZ 1) t2K1 t2K2 p01);
     [msp|apply m_var; onlyun|split; [done|left; plt0]| | |plt0].
   - (* A *)
-    eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+    eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
     eapply (m_letu _ _ [None; None; Some _; None; None] [Some _; None; None; None; None]); [msp| | |].
     + eapply (m_close _ _ _ _ false (PZ 3) false p01); [apply m_var; onlyun|done].
     + eapply (m_recv _ _ [Some _; None; None; None; None] [None; None; None; None; None] _ _ _ _ true (PZ 5) MPUnit
@@ -292,7 +383,7 @@ Proof.
       eapply (m_close _ _ _ _ true (PZ 6) false p01); [apply m_var; onlyun|done].
     + plt0.
   - (* B *)
-    eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+    eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
     eapply (m_recv _ _ [Some _; None; None; None; None] [None; None; Some _; None; None] _ _ _ _ true (PZ 2) MPUnit
               (MEnd (PZ 6) false) p01); [msp|apply m_var; onlyun|split; [done|split; [apply plt_none|plt0]]| |plt0].
     eapply (m_letu _ _ [None; None; None; None; Some _; None; None] [Some _; Some _; None; None; None; None; None]);
@@ -300,6 +391,7 @@ Proof.
     + eapply (m_close _ _ _ _ false (PZ 3) false p01); [apply m_var; onlyun|done].
     + eapply (m_close _ _ _ _ true (PZ 6) false p01); [apply m_var; onlyun|done].
     + plt0.
+  Unshelve. all: set_solver.
 Qed.
 
 Theorem t2_mp3_deadlock_free : ∃ ef e', mtyped pc0 [] t2_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
@@ -349,13 +441,14 @@ Proof.
   unfold ch3_T2.
   eapply (m_match _ _ [Some _; None] [None; None] _ _ _ _ _ _ true (PZ 1) K3 Qi3 p01);
     [msp|apply m_var; onlyun|apply ch3_brok| | |apply plt_none].
-  - eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  - eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
     eapply (m_close _ _ _ _ true (PZ 2) false p01); [apply m_var; onlyun|done].
-  - eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  - eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
     eapply (m_match _ _ [Some _; None; None] [None; None; None] _ _ _ _ _ _ true (PD (PZ 1) 1) K3 K3 p01);
       [msp|apply m_var; onlyun|split; [done|left; plt0]| | |apply plt_none].
     + eapply (m_close _ _ _ _ true (PZ 2) false p01); [apply m_var; onlyun|done].
     + eapply (m_close _ _ _ _ true (PZ 2) false p01); [apply m_var; onlyun|done].
+  Unshelve. all: set_solver.
 Qed.
 
 Theorem ch3_mp3_deadlock_free : ∃ ef e', mtyped pc0 [] ch3_main MUnit ef e' ∧ deadlock_free (∅, {[+ e' +]}).
@@ -518,7 +611,7 @@ Proof.
   eexists. unfold client, cl_ty.
   eapply m_fix; [allun|apply tpure_cl|apply tpure_cl|exists [0%Z; 1%Z], []; split; [done|]; exists 0%Z, 1%Z; split; [done|]; unfold cl_lt; lia| |left; done].
   eapply m_lam.
-  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
   eapply (m_let _ _ [None; Some _; None] [Some _; None; Some _]); [msp| | |].
   - eapply (m_send _ _ [None; None; None] [None; Some _; None] _ _ _ _ false (PV 0 0) MPUnit stream (PR (PV 0 2) 2));
       [msp|apply m_unit; allun| |split; [done|split; [apply plt_none|plt_cl]]|apply plt_nil|apply plt_none].
@@ -533,6 +626,7 @@ Proof.
       * apply m_var; onlyun.
     + plt_cl.
   - plt_cl.
+  Unshelve. all: set_solver.
 Qed.
 
 Lemma newclient_typed Θ : ∃ e', mtyped Θ [] newclient (cl_ty ncl_lt) [] e'.
@@ -540,7 +634,7 @@ Proof.
   eexists. unfold newclient, cl_ty.
   eapply m_fix; [allun|apply tpure_cl|apply tpure_cl|exists [1%Z; 0%Z], []; split; [done|]; exists 1%Z, 0%Z; split; [done|]; unfold ncl_lt; lia| |left; done].
   eapply m_lam.
-  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
   eapply (m_recv _ _ [Some _; None; None] [None; Some _; Some _] _ _ _ _ true (PV 1 0) MPUnit stream (PR (PV 1 2) 2));
     [msp| |split; [done|split; [apply plt_none|plt_cl]]| |].
   - apply m_inst_st; [done|]. apply m_var; onlyun.
@@ -555,6 +649,7 @@ Proof.
       * apply m_var; onlyun.
     + plt_cl.
   - plt_cl.
+  Unshelve. all: set_solver.
 Qed.
 
 Lemma pok_main lt p q : lt p q → pinst_ok pc0 (cl_ctx lt) [PZ p; PZ q] [].
@@ -606,7 +701,7 @@ Lemma psend_typed Θ P pol a K p : snd_ok Θ p a P K →
           (MArr (MCh pol (sndQ pol a P K) p) (tprios (payty P) ++ []) [aeff p a] (MCh pol K (pnext p))) [] e'.
 Proof.
   intros Hok. eexists. eapply m_lam.
-  eapply (m_sub _ _ _ _ _ ([] ++ [] ++ [aeff p a])); [|right; right; left; by exists [], []].
+  eapply (m_sub _ _ _ _ _ ([] ++ [] ++ [aeff p a])); [|right; right; right; left; by exists [], []].
   eapply (m_send _ _ [None; Some _] [Some _; None]); [msp| | |exact Hok|apply plt_nil|].
   - apply m_var. split; [done|]. intros [|[|y]] t' Hy Hl; simpl in Hl; try done.
   - apply m_var. split; [done|]. intros [|[|y]] t' Hy Hl; simpl in Hl; try done.
@@ -630,7 +725,10 @@ Definition rt_wbig : list wstep :=
 Lemma rt_rank_data :
   rank (dwalk (DCh Qc (PZ 1) 2) rt_wsmall) = KZ 9 1 0 ∧
   ∀ z s j, rlt (KZ z s j) (rank (dwalk (DCh Qc (PZ 1) 2) rt_wbig)).
-Proof. split; [vm_compute; reflexivity|]. intros z j. vm_compute. done. Qed.
+Proof.
+  split; [vm_compute; reflexivity|]. intros z s j.
+  assert (rank (dwalk (DCh Qc (PZ 1) 2) rt_wbig) = KT 0) as -> by (vm_compute; reflexivity). simpl. lia.
+Qed.
 
 (** ** Unequal increments with matching rates (MPRounds.v, section 15) *)
 
@@ -705,7 +803,7 @@ Proof.
   eexists. unfold hrecv, rr_ty.
   eapply m_fix; [allun|apply (tpure_rr 0 4 2)|apply (tpure_rr 0 4 2)|exists [0%Z; 1%Z], []; split; [done|]; exists 0%Z, 1%Z; split; [done|]; unfold hr_lt; lia| |left; done].
   eapply m_lam.
-  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
   eapply (m_let _ _ [None; Some _; None] [Some _; None; Some _]); [msp| | |].
   - eapply (m_send _ _ [None; None; None] [None; Some _; None] _ _ _ _ false (PV 0 0) MPUnit stream (PR (PV 0 4) 4));
       [msp|apply m_unit; allun| |split; [done|split; [apply plt_none|plt_rr]]|apply plt_nil|apply plt_none].
@@ -727,6 +825,7 @@ Proof.
       * plt_rr.
     + plt_rr.
   - plt_rr.
+  Unshelve. all: set_solver.
 Qed.
 
 Lemma dsend_typed Θ : ∃ e', mtyped Θ [] dsend (rr_ty ds_lt 2 4) [] e'.
@@ -734,7 +833,7 @@ Proof.
   eexists. unfold dsend, rr_ty.
   eapply m_fix; [allun|apply (tpure_rr 0 2 4)|apply (tpure_rr 0 2 4)|exists [1%Z; 0%Z], []; split; [done|]; exists 1%Z, 0%Z; split; [done|]; unfold ds_lt; lia| |left; done].
   eapply m_lam.
-  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; set_solver].
+  eapply (m_sub _ _ _ _ _ _ [PTop]); [|right; left; split; [set_solver|shelve]].
   eapply (m_recv _ _ [Some _; None; None] [None; Some _; Some _] _ _ _ _ true (PV 1 0) MPUnit stream (PR (PV 1 4) 4));
     [msp| |split; [done|split; [apply plt_none|plt_rr]]| |].
   - apply (m_inst_std _ _ _ _ _ 1 0 4); [done|]. apply m_var; onlyun.
@@ -756,6 +855,7 @@ Proof.
       * plt_rr.
     + plt_rr.
   - plt_rr.
+  Unshelve. all: set_solver.
 Qed.
 
 Lemma rr_main_typed : ∃ ef e', mtyped pc0 [] rr_main MUnit ef e'.

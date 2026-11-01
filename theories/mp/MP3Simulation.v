@@ -301,6 +301,8 @@ Proof.
     + eapply trm_mono; [exact IHmtyped1|]. mono_split.
     + eapply trm_mono; [exact IHmtyped2|]. mono_split.
   - apply tr_new. eapply trm_mono; [exact IHmtyped|]. intros ? ? Hx; exact (mdenv_cons2 _ _ _ _ _ Hx).
+  - apply tr_new. eapply trm_mono; [exact IHmtyped|]. intros ? ? Hx; exact (mdenv_cons2 _ _ _ _ _ Hx).
+  - apply tr_new. eapply trm_mono; [exact IHmtyped|]. intros ? ? Hx; exact (mdenv_cons2 _ _ _ _ _ Hx).
   - eapply tr_send.
     + rewrite mode_payty in IHmtyped1. eapply trm_mono; [exact IHmtyped1|]. mono_split.
     + eapply trm_mono; [exact IHmtyped2|]. mono_split.
@@ -1235,3 +1237,9 @@ Proof. destruct ch3_main_typed as (ef & e' & H). exact (mp3_deadlock_free_source
 
 Theorem rr_deadlock_free_src3 : mp_deadlock_free_src rr_main.
 Proof. destruct rr_main_typed as (ef & e' & H). exact (mp3_deadlock_free_source _ _ _ H). Qed.
+
+Theorem rtA_deadlock_free_src3 : mp_deadlock_free_src rtA_main.
+Proof. destruct rtA_main_typed as (ef & e' & H). exact (mp3_deadlock_free_source _ _ _ H). Qed.
+
+Theorem rtB_deadlock_free_src3 : mp_deadlock_free_src rtB_main.
+Proof. destruct rtB_main_typed as (ef & e' & H). exact (mp3_deadlock_free_source _ _ _ H). Qed.
