@@ -154,6 +154,13 @@ Inductive ty :=
                                       outer points (sharp edges 65) *)
 
   | TSess (S : sty) (x : point)   (* S@x *)
+  | TEx (lb : option point) (n : nat) (C : bcs) (T : ty)
+                                   (* ∃^ℓ ι₀ … ιₙ₋₁. C. T — existential
+                                      points (sharp edges 97): the value
+                                      lies in T at some known instance
+                                      meeting C, and its channels lie at
+                                      or above the lower point ℓ ([None]
+                                      = ⊤: it holds nothing) *)
 with sty :=
   | SRcv (m : nat) (T : ty) (S : sty)
                                    (* ?(∃ι₀ … ιₘ₋₁. T).S *)
@@ -288,6 +295,8 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   | TBox n C T1 =>
       TBox n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   | TSess s x => TSess s (pt_inst σ x)
+  | TEx lb n C T1 =>
+      TEx (pt_inst σ <$> lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   end.
 
 (** T[xs/ιs]: instantiate the ∀ of a □ (or the ∃ of a payload) with a
@@ -297,6 +306,165 @@ Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
 (** The payload ∃ι₀ … ιₘ₋₁. T at the point x: P[x] = T[x[i]/ιᵢ]. *)
 Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
   ty_inst (slots x m) T.
+
+(** Composition and identity of point instantiation on types. The
+    relation instantiates the ∃ of [TEx] by composing substitutions
+    (relation/LogicalRelation.v, sharp edges 97). *)
+Section tinst.
+  Local Lemma tpt_shift_0 x : pt_shift 0 x = x.
+  Proof. destruct x as [p o]. unfold pt_shift. simpl. f_equal. lia. Qed.
+
+  Lemma tpt_inst_pvar_at σ a : pt_inst σ (pvar a) = σ a.
+  Proof. unfold pt_inst, pvar. simpl. apply tpt_shift_0. Qed.
+
+  Local Lemma tpt_inst_shift σ n x : pt_inst σ (pt_shift n x) = pt_shift n (pt_inst σ x).
+  Proof.
+    destruct x as [p o]. unfold pt_inst, pt_shift. simpl.
+    destruct (pn_inst σ p). simpl. f_equal. lia.
+  Qed.
+
+  Local Lemma tpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
+  Proof.
+    induction p as [a|a|p IH b i]; simpl; [done|done|].
+    assert (∀ x, pt_inst τ (pt_slot x i) = pt_slot (pt_inst τ x) i) as Hs
+      by (intros [q o]; done).
+    by rewrite Hs, tpt_inst_shift, IH.
+  Qed.
+
+  Lemma tpt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
+  Proof. unfold pt_inst at 2 3. by rewrite tpt_inst_shift, tpn_inst_comp. Qed.
+
+  Lemma tpt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
+  Proof.
+    intros H. destruct x as [p o]. unfold pt_inst. simpl. f_equal.
+    induction p as [a|a|p IH b i]; simpl; [done|apply H|by rewrite IH].
+  Qed.
+
+  Lemma tpt_inst_pvar x : pt_inst pvar x = x.
+  Proof.
+    destruct x as [p o]. unfold pt_inst. simpl. f_equal.
+    assert (pn_inst pvar p = Pt p 0) as ->; [|unfold pt_shift; simpl; f_equal; lia].
+    induction p as [a|a|p IH b i]; simpl; [done|done|]. by rewrite IH.
+  Qed.
+
+  Lemma tpup_ext n σ τ a : (∀ b, σ b = τ b) → pup n σ a = pup n τ a.
+  Proof. intros H. unfold pup. by rewrite H. Qed.
+
+  Lemma tpup_pvar n a : pup n pvar a = pvar a.
+  Proof.
+    unfold pup. destruct (decide (a < n)); [done|].
+    rewrite tpt_inst_pvar_at. unfold pvar. f_equal. f_equal. lia.
+  Qed.
+
+  Lemma tpup_comp τ σ n a : pt_inst (pup n τ) (pup n σ a) = pup n (pt_inst τ ∘ σ) a.
+  Proof.
+    unfold pup at 2 3. destruct (decide (a < n)).
+    - rewrite tpt_inst_pvar_at. unfold pup. by rewrite decide_True.
+    - change ((pt_inst τ ∘ σ) (a - n)) with (pt_inst τ (σ (a - n))).
+      rewrite !tpt_inst_comp. apply tpt_inst_ext. intros b. simpl.
+      rewrite tpt_inst_pvar_at. unfold pup. rewrite decide_False by lia.
+      by replace (b + n - n) with b by lia.
+  Qed.
+
+  Lemma tbcs_ext σ τ C : (∀ a, σ a = τ a) → bcs_inst σ C = bcs_inst τ C.
+  Proof.
+    intros H. destruct C as [env P]. unfold bcs_inst. simpl. f_equal.
+    apply list_fmap_ext. intros _ x _. by apply tpt_inst_ext.
+  Qed.
+
+  Lemma tbcs_comp τ σ C : bcs_inst τ (bcs_inst σ C) = bcs_inst (pt_inst τ ∘ σ) C.
+  Proof.
+    destruct C as [env P]. unfold bcs_inst. simpl. f_equal.
+    rewrite <-list_fmap_compose. apply list_fmap_ext. intros _ x _. apply tpt_inst_comp.
+  Qed.
+
+  Lemma tbcs_pvar C : bcs_inst pvar C = C.
+  Proof.
+    destruct C as [env P]. unfold bcs_inst. simpl. f_equal.
+    rewrite <-(list_fmap_id env) at 2. apply list_fmap_ext. intros _ x _. apply tpt_inst_pvar.
+  Qed.
+
+  Lemma tinst_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
+  Proof.
+    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                   | lb n C T1 IH]; intros σ τ H; simpl.
+    - done.
+    - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_ext
+               |destruct lb; simpl; f_equal; auto using tpt_inst_ext|auto|auto].
+    - f_equal; auto.
+    - f_equal; auto.
+    - f_equal; [by apply tbcs_ext|]. apply IH. intros a. by apply tpup_ext.
+    - f_equal. by apply tpt_inst_ext.
+    - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_ext|by apply tbcs_ext|].
+      apply IH. intros a. by apply tpup_ext.
+  Qed.
+
+  Lemma tinst_comp T : ∀ τ σ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
+  Proof.
+    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                   | lb n C T1 IH]; intros τ σ; simpl.
+    - done.
+    - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_comp
+               |destruct lb; simpl; f_equal; auto using tpt_inst_comp|auto|auto].
+    - f_equal; auto.
+    - f_equal; auto.
+    - f_equal; [apply tbcs_comp|]. rewrite IH. apply tinst_ext. intros a. apply tpup_comp.
+    - f_equal. apply tpt_inst_comp.
+    - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_comp|apply tbcs_comp|].
+      rewrite IH. apply tinst_ext. intros a. apply tpup_comp.
+  Qed.
+
+  Lemma tinst_pvar T : pinst_ty pvar T = T.
+  Proof.
+    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                   | lb n C T1 IH]; simpl.
+    - done.
+    - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_pvar
+               |destruct lb; simpl; f_equal; auto using tpt_inst_pvar|auto|auto].
+    - f_equal; auto.
+    - f_equal; auto.
+    - f_equal; [apply tbcs_pvar|]. rewrite (tinst_ext _ _ pvar); [done|apply tpup_pvar].
+    - f_equal. apply tpt_inst_pvar.
+    - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_pvar|apply tbcs_pvar|].
+      rewrite (tinst_ext _ _ pvar); [done|apply tpup_pvar].
+  Qed.
+End tinst.
+
+(** Induction on types in which the body of an existential is available
+    at every instance (sharp edges 97). The value relation reads an
+    existential at the instance of its witness. *)
+Fixpoint tsize (T : ty) : nat :=
+  match T with
+  | TUnit | TSess _ _ => 1
+  | TLolli _ _ T1 U | TProd T1 U | TSum T1 U => S (tsize T1 + tsize U)
+  | TBox _ _ T1 | TEx _ _ _ T1 => S (tsize T1)
+  end.
+
+Lemma tsize_pinst T : ∀ σ, tsize (pinst_ty σ T) = tsize T.
+Proof. induction T; intros σ; simpl; auto. Qed.
+
+Lemma ty_ind_ex (P : ty → Prop) :
+  P TUnit →
+  (∀ ub lb T, P T → ∀ U, P U → P (TLolli ub lb T U)) →
+  (∀ T, P T → ∀ U, P U → P (TProd T U)) →
+  (∀ T, P T → ∀ U, P U → P (TSum T U)) →
+  (∀ n C T, (∀ σ, P (pinst_ty σ T)) → P (TBox n C T)) →
+  (∀ s x, P (TSess s x)) →
+  (∀ lb n C T, (∀ σ, P (pinst_ty σ T)) → P (TEx lb n C T)) →
+  ∀ T, P T.
+Proof.
+  intros H1 H2 H3 H4 H5 H6 H7.
+  enough (∀ m T, tsize T < m → P T) as H by (intros T; apply (H (S (tsize T))); lia).
+  induction m as [|m IH]; intros T HT; [lia|].
+  destruct T; simpl in HT.
+  - done.
+  - apply H2; apply IH; lia.
+  - apply H3; apply IH; lia.
+  - apply H4; apply IH; lia.
+  - apply H5. intros σ. apply IH. rewrite tsize_pinst. lia.
+  - apply H6.
+  - apply H7. intros σ. apply IH. rewrite tsize_pinst. lia.
+Qed.
 
 (** ** Heads
 
@@ -312,6 +480,7 @@ Fixpoint heads (T : ty) : gset point :=
   | TLolli _ lb _ _ => opt_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
   | TSess _ x => {[x]}
+  | TEx lb _ _ _ => opt_heads lb
   end.
 
 (** ** Session-type substitution (§4.3)
@@ -331,6 +500,7 @@ Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   | TProd T1 U => TProd (sren_ty r T1) (sren_ty r U)
   | TSum T1 U => TSum (sren_ty r T1) (sren_ty r U)
   | TBox n C T1 => TBox n C (sren_ty r T1)
+  | TEx lb n C T1 => TEx lb n C (sren_ty r T1)
   | TSess s x => TSess (sren r s) x
   end
 with sren (r : nat → nat) (s : sty) : sty :=
@@ -358,6 +528,7 @@ Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   | TProd T1 U => TProd (sflip_ty k T1) (sflip_ty k U)
   | TSum T1 U => TSum (sflip_ty k T1) (sflip_ty k U)
   | TBox n C T1 => TBox n C (sflip_ty k T1)
+  | TEx lb n C T1 => TEx lb n C (sflip_ty k T1)
   | TSess s x => TSess (sflip k s) x
   end
 with sflip (k : nat) (s : sty) : sty :=
@@ -408,6 +579,7 @@ Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   | TProd T1 U => TProd (sinst_ty σ T1) (sinst_ty σ U)
   | TSum T1 U => TSum (sinst_ty σ T1) (sinst_ty σ U)
   | TBox n C T1 => TBox n C (sinst_ty σ T1)
+  | TEx lb n C T1 => TEx lb n C (sinst_ty σ T1)
   | TSess s x => TSess (sinst σ s) x
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
@@ -462,6 +634,7 @@ Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
   | TLolli _ _ T1 U | TProd T1 U | TSum T1 U =>
       sclosed_ty k T1 ∧ sclosed_ty k U
   | TBox _ _ T1 => sclosed_ty k T1
+  | TEx _ _ _ T1 => sclosed_ty k T1
   | TSess s _ => sclosed k s
   end
 with sclosed (k : nat) (s : sty) : Prop :=
@@ -795,10 +968,47 @@ Proof.
   rewrite !lookup_empty in H. by inversion H.
 Qed.
 
+(** The root name of a point: a slot ι[i] belongs to the name of ι
+    (relation/Worlds.v uses it for the support of a world). *)
+Fixpoint pn_root (p : pname) : pname :=
+  match p with
+  | NSlot q _ _ => pn_root q
+  | _ => p
+  end.
+
+Definition pt_root (x : point) : pname := pn_root (pt_name x).
+
+(** ** Constraints of a fresh point (sharp edges 93, 97)
+
+    A constraint C of one variable ι (the variable 0) whose every fact
+    relates a point of the fresh channel to an outer point. A point of
+    the fresh channel has the root ι, so it is ι+k, (ι+b).i+k and so on.
+    [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
+    [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
+    point in the context of the rule. C may be infinite. [ple p q]: p
+    and q have one name and the offset of p is at most that of q. *)
+
+Definition fresh_lo (C : bcs) (u p : point) : Prop :=
+  bc_facts C (FLt u p) ∧ fact_scoped (S (length (bc_env C))) (FLt u p) ∧
+  pt_root p = NVar 0 ∧ pt_root u ≠ NVar 0.
+
+Definition fresh_hi (C : bcs) (q v : point) : Prop :=
+  bc_facts C (FLt q v) ∧ fact_scoped (S (length (bc_env C))) (FLt q v) ∧
+  pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0.
+
+Definition fresh_ok (C : bcs) : Prop :=
+  ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
+    (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v).
+
+Definition fresh_outer (C : bcs) (u : point) : point := pt_inst (plist (pvar 0 :: bc_env C)) u.
+
+Definition ple (p v : point) : Prop := pt_name p = pt_name v ∧ pt_off p ≤ pt_off v.
+
 (** ** Type-indexed families of type signatures for constants
     (§9)
 
     new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι
+    new    : ∗ ⊸^⊥_⊤ ∃ι≽ℓ. C. S@ι ⊗ dual S@ι   C fresh, betweenness, ℓ ≺ ι in C (97)
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
     send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι])
     recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
@@ -844,4 +1054,12 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       length xs = n → bcs_hold peq plt C xs → Forall pk xs →
       konst_ty peq plt pk KForce
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n C (TLolli ub None TUnit T))
-           (ty_inst xs T)).
+           (ty_inst xs T))
+  | KTNewEx S C u :
+      fresh_ok C → Forall pk (bc_env C) →
+      (∀ u' p q v, fresh_lo C u' p → fresh_hi C q v → ple p q →
+         plt (fresh_outer C u') (fresh_outer C v)) →
+      fresh_lo C u (pvar 0) →
+      konst_ty peq plt pk KNew
+        (TLolli None None TUnit
+           (TEx (Some (fresh_outer C u)) 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))))).

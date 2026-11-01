@@ -21,7 +21,7 @@ Proof.
   { tstep; [tstep| |done|apply ubs_none].
     apply (KTNew _ _ _ Sd (pvar 0)). eapply skn_inst; [by left|by left|done]. }
   cbn.
-  apply (t_newfresh_lh W _ _ ∅ _ _ _ _ Sd [Pt (NVar 0) 1] []).
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sd [Pt (NVar 0) 1] [] ltac:(done)).
   { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
   { intros l h _ Hh. by apply elem_of_nil in Hh. }
   fresh_clean.

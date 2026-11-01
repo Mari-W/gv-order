@@ -84,7 +84,27 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
         (tenv_pinst (pshift 1) Θ)
         (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
         (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-      typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
+      typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T
+  | t_pack Φ Ψ Θ Δ F e lb m C T xs :                    (* E-Pack *)
+      length xs = m → Forall (skn W Ψ) xs → bcs_hold (seqs W Ψ) (slt W Ψ) C xs →
+      lb_below_h W Ψ lb (heads (ty_inst xs T)) →
+      typed W Φ Ψ Θ Δ F e (ty_inst xs T) → typed W Φ Ψ Θ Δ F e (TEx lb m C T)
+  | t_open Φ Ψ Θ Δ F e i lb m C T U :                   (* E-Open *)
+      Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T →
+      typed W (fhyps_pinst (pshift m) Φ)
+        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
+        (tenv_pinst (pshift m) Θ) (<[i := Some T]> (lenv_pinst (pshift m) Δ))
+        (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) →
+      typed W Φ Ψ Θ Δ F e U
+  | t_openp Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T : (* E-OpenPair *)
+      tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+      typed W Φ Ψ Θ1 Δ1 (sf_union F (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1
+        (TEx lb m C (TProd T1 T2)) →
+      typed W (fhyps_pinst (pshift m) Φ)
+        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
+        (tenv_pinst (pshift m) Θ2) (Some T2 :: Some T1 :: lenv_pinst (pshift m) Δ2)
+        (sf_pinst (pshift m) F) e2 (pinst_ty (pshift m) T) →
+      typed W Φ Ψ Θ Δ F (LetP e1 e2) T.
 
 (** E-NewFresh (sharp edges 90, 93). The fresh point ι is the point
     variable 0 of the body, bound like the ιs of E-Exp, so Φ, Ψ, Θ, Δ,
@@ -94,7 +114,14 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
     holds the two ends of the channel at ι. The outer points are
     known. Betweenness asks u ≺ v for every fact u ≺ p and q ≺ v of C
     with q at or after p in program order of one name. [t_newfresh_lh]
-    is the form with lists, L ≺ ι ≺ H. *)
+    is the form with lists, L ≺ ι ≺ H.
+
+    E-Pack, E-Open and E-OpenPair (sharp edges 97). E-Open opens an
+    existential hypothesis into fresh point variables 0, …, m-1 under
+    its constraint, scoped like a box body. E-OpenPair opens the
+    existential scrutinee of a let pair the same way. With the
+    existential signature of new it gives E-NewFresh
+    ([t_newfresh_open] below). *)
 
 (** E-Force is E-App at the constant force. The instance must meet the
     box's constraint, every fact read from W and the hypotheses Ψ
@@ -200,4 +227,76 @@ Proof.
     rewrite (lookup_app_l_Some _ _ _ _ Hl).
     rewrite lookup_app_r by lia. replace (length L + j - length L) with j by lia. rewrite Hh.
     apply Hbt; by eapply list_elem_of_lookup_2.
+Qed.
+
+
+(** E-NewFresh from the existential signature of new and E-OpenPair
+    (sharp edges 97). The lower point of the existential is the outer
+    point u of a fact u ≺ ι of C. That fact is the one premise
+    t_newfresh does not have. *)
+Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C u :
+  fresh_ok C →
+  Forall (skn W Ψ) (bc_env C) →
+  (∀ u' p q v, fresh_lo C u' p → fresh_hi C q v → ple p q →
+     slt W Ψ (fresh_outer C u') (fresh_outer C v)) →
+  fresh_lo C u (pvar 0) →
+  typed W (fhyps_pinst (pshift 1) Φ)
+    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
+    (tenv_pinst (pshift 1) Θ)
+    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
+    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
+  typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
+Proof.
+  intros HC HK Hbt Hu Hb.
+  apply (t_openp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ (Some (fresh_outer C u)) 1 C
+           (TSess S (pvar 0)) (TSess (dual S) (pvar 0))); [| | |exact Hb].
+  - apply tenv_comp_empty_l, se_sym.
+  - apply lenv_split_nones_l.
+  - eapply (t_app W Φ Ψ ∅ ∅ ∅ _ _ _ _ _ _ None None TUnit).
+    + apply tenv_comp_empty_r.
+    + apply lenv_split_nones_l.
+    + done.
+    + apply t_konst; [apply lenv_empty_nones| |done]. by apply KTNewEx.
+    + apply t_unit. apply lenv_empty_nones.
+Qed.
+
+(** The fact (outer point 0) ≺ ι of a fresh constraint, the lower
+    point of the existential that E-NewFresh opens. *)
+Lemma fresh_lo_var1 (env : list point) (P : fact → Prop) :
+  env ≠ [] → P (FLt (pvar 1) (pvar 0)) → fresh_lo (BCs env P) (pvar 1) (pvar 0).
+Proof.
+  intros He HP. destruct env as [|x env]; [done|].
+  split; [done|]. split; [|done]. simpl. split; lia.
+Qed.
+
+(** The list form through the existential signature of new, for a
+    nonempty L (sharp edges 97). *)
+Lemma t_newfresh_lh_open W Φ Ψ Θ Δ F e T S L H :
+  L ≠ [] →
+  Forall (skn W Ψ) (L ++ H) →
+  (∀ l h, l ∈ L → h ∈ H → slt W Ψ l h) →
+  typed W (fhyps_pinst (pshift 1) Φ)
+    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
+    (tenv_pinst (pshift 1) Θ)
+    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
+    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
+  typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
+Proof.
+  intros HL HK Hbt Hb.
+  apply (t_newfresh_open W Φ Ψ Θ Δ F e T S (fresh_bcs L H) (pvar 1)); [| | | |done].
+  - intros f Hf Hs. destruct Hf as [(i & Hi & ->)|(j & Hj & ->)].
+    + left. eexists _, _. split; [done|]. split_and!; [left; by exists i|done|done|done].
+    + right. eexists _, _. split; [done|]. split_and!; [right; by exists j|done|done|done].
+  - done.
+  - intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) _.
+    destruct Hf as [(i & Hi & E)|(j & Hj & E)]; injection E as -> ->; [|done].
+    destruct Hf' as [(i' & Hi' & E)|(j & Hj & E)]; injection E as -> ->; [done|].
+    unfold fresh_outer. rewrite !pt_inst_pvar_at. unfold plist. simpl.
+    destruct (lookup_lt_is_Some_2 L i Hi) as [l Hl].
+    destruct (lookup_lt_is_Some_2 H j Hj) as [h Hh].
+    rewrite (lookup_app_l_Some _ _ _ _ Hl).
+    rewrite lookup_app_r by lia. replace (length L + j - length L) with j by lia. rewrite Hh.
+    apply Hbt; by eapply list_elem_of_lookup_2.
+  - destruct L as [|l L]; [done|]. apply fresh_lo_var1; [done|].
+    left. exists 0. split; [simpl; lia|done].
 Qed.

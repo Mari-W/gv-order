@@ -102,46 +102,13 @@ Proof.
 Qed.
 
 Lemma pinst_ty_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
-Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
-    intros σ τ H; simpl.
-  - done.
-  - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_ext|destruct lb; simpl; f_equal; auto using pt_inst_ext|auto|auto].
-  - f_equal; auto.
-  - f_equal; auto.
-  - f_equal.
-    + by apply bcs_inst_ext.
-    + apply IH. intros a. by apply pup_ext.
-  - f_equal. by apply pt_inst_ext.
-Qed.
+Proof. apply tinst_ext. Qed.
 
 Lemma pinst_ty_comp T : ∀ τ σ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
-Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
-    intros τ σ; simpl.
-  - done.
-  - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_comp|destruct lb; simpl; f_equal; auto using pt_inst_comp|auto|auto].
-  - f_equal; auto.
-  - f_equal; auto.
-  - f_equal.
-    + apply bcs_comp.
-    + rewrite IH. apply pinst_ty_ext. intros a. apply pup_comp.
-  - f_equal. apply pt_inst_comp.
-Qed.
+Proof. apply tinst_comp. Qed.
 
 Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
-Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
-    simpl.
-  - done.
-  - f_equal; [destruct ub; simpl; f_equal; auto using pt_inst_pvar|destruct lb; simpl; f_equal; auto using pt_inst_pvar|auto|auto].
-  - f_equal; auto.
-  - f_equal; auto.
-  - f_equal.
-    + apply bcs_pvar.
-    + rewrite (pinst_ty_ext _ _ pvar); [done|apply pup_pvar].
-  - f_equal. apply pt_inst_pvar.
-Qed.
+Proof. apply tinst_pvar. Qed.
 
 (** Instantiating a list after lifting past it. *)
 Lemma plist_shift xs m b : length xs = m → plist xs (b + m) = pvar b.
@@ -370,6 +337,7 @@ Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   | TProd T1 U | TSum T1 U => pscoped k T1 ∧ pscoped k U
   | TBox n C T1 => bcs_scoped k C ∧ pscoped (n + k) T1
   | TSess _ x => pt_scoped k x
+  | TEx lb n C T1 => opt_scoped k lb ∧ bcs_scoped k C ∧ pscoped (n + k) T1
   end.
 
 Lemma pinst_ty_ext_scoped T : ∀ k σ τ,
@@ -381,7 +349,8 @@ Proof.
   assert (∀ k n σ τ, (∀ a, a < k → σ a = τ a) → ∀ a, a < n + k → pup n σ a = pup n τ a) as Hup.
   { intros k n σ τ H a Ha. unfold pup. destruct (decide (a < n)); [done|].
     rewrite H; [done|lia]. }
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                 | lb n C T1 IH];
     intros k σ τ HT H; simpl in *.
   - done.
   - destruct HT as (Hub & Hlb & H1 & H2).
@@ -395,6 +364,12 @@ Proof.
       apply HC. by eapply list_elem_of_lookup_2.
     + eapply IH; [done|]. by apply Hup.
   - f_equal. eauto.
+  - destruct HT as (Hlb & HC & H1). f_equal.
+    + destruct lb; simpl in *; [f_equal; eauto|done].
+    + unfold bcs_inst. f_equal. apply list_fmap_ext. intros i x Hx.
+      unfold bcs_scoped in HC. rewrite Forall_forall in HC. eapply Hpt; [|exact H].
+      apply HC. by eapply list_elem_of_lookup_2.
+    + eapply IH; [done|]. by apply Hup.
 Qed.
 
 Lemma payload_pinst σ m T x :
@@ -419,7 +394,8 @@ Proof. destruct o; simpl; [by rewrite set_map_singleton_L|by rewrite set_map_emp
 
 Lemma heads_pinst σ T : heads (pinst_ty σ T) = set_map (pt_inst σ) (heads T).
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                 | lb n C T1 IH];
     simpl.
   - by rewrite set_map_empty.
   - apply opt_heads_pinst.
@@ -427,6 +403,7 @@ Proof.
   - by rewrite IH1, IH2, set_map_union_L.
   - by rewrite set_map_empty.
   - by rewrite set_map_singleton_L.
+  - apply opt_heads_pinst.
 Qed.
 
 (** ** Facts survive substitution
@@ -458,6 +435,50 @@ Proof.
     destruct (Θ2 !! c) as [[e2'|]|] eqn:E2; simplify_eq/=.
     destruct (Hd c e1' e2' E1 E2) as [He Hs]. split; [|done]. by apply HR.
 Qed.
+
+(** ** General constraints of E-NewFresh (sharp edges 93)
+
+    A constraint C of one variable ι (the variable 0) whose every fact
+    relates a point of the fresh channel to an outer point. A point of
+    the fresh channel has the root ι, so it is ι+k, (ι+b).i+k and so on.
+    [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
+    [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
+    point in the context of the rule. C may be infinite. *)
+
+(** [fresh_lo], [fresh_hi], [fresh_ok] and [fresh_outer] live in
+    types/Types.v, because the existential signature of new reads them. *)
+
+Lemma fresh_lo_inst σ C u p : fresh_lo (bcs_inst σ C) u p ↔ fresh_lo C u p.
+Proof. unfold fresh_lo. simpl. by rewrite length_fmap. Qed.
+
+Lemma fresh_hi_inst σ C q v : fresh_hi (bcs_inst σ C) q v ↔ fresh_hi C q v.
+Proof. unfold fresh_hi. simpl. by rewrite length_fmap. Qed.
+
+Lemma fresh_ok_inst σ C : fresh_ok C → fresh_ok (bcs_inst σ C).
+Proof.
+  intros H f Hf Hs. simpl in Hf, Hs. rewrite length_fmap in Hs.
+  destruct (H f Hf Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)].
+  - left. exists u, p. split; [done|]. by apply fresh_lo_inst.
+  - right. exists q, v. split; [done|]. by apply fresh_hi_inst.
+Qed.
+
+Lemma pn_vb_var k p : pn_vb k p → ∃ b, pn_root p = NVar b ∧ b < k.
+Proof. induction p as [c|b|q IH b' i]; simpl; [done|by exists b|exact IH]. Qed.
+
+Lemma pt_inst_outer σ d d' env u :
+  pn_vb (S (length env)) (pt_name u) → pt_root u ≠ NVar 0 →
+  pt_inst (plist (d :: (pt_inst σ <$> env))) u = pt_inst σ (pt_inst (plist (d' :: env)) u).
+Proof.
+  intros Hs Hr. rewrite pt_inst_comp. apply pt_inst_ext_root. intros b Hb.
+  pose proof (pn_vb_root _ _ _ Hs Hb) as Hlt.
+  destruct b as [|j]; [done|]. unfold compose, plist. simpl. rewrite list_lookup_fmap.
+  destruct (lookup_lt_is_Some_2 env j) as [y Hy]; [lia|]. by rewrite Hy.
+Qed.
+
+Lemma fresh_outer_inst σ C u :
+  pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →
+  fresh_outer (bcs_inst σ C) u = pt_inst σ (fresh_outer C u).
+Proof. intros Hs Hr. unfold fresh_outer. simpl. by apply pt_inst_outer. Qed.
 
 Section transfer.
   Context (W W1 : world) (σ : nat → point).
@@ -493,7 +514,8 @@ Section transfer.
     konst_ty peq' plt' pk' k (pinst_ty σ T).
   Proof.
     intros Heq Hlt Hpk Hk.
-    destruct 1 as [S x Hx|ub lb|m P S x Hh|m P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK];
+    destruct 1 as [S x Hx|ub lb|m P S x Hh|m P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK
+                  |S C u H H0 H1 H2];
       simpl in *.
     - constructor. by apply Hpk.
     - constructor.
@@ -514,6 +536,18 @@ Section transfer.
       rewrite <-E1, <-E2. constructor; [by rewrite length_fmap| |].
       + by apply (bcs_hold_inst peq _ plt).
       + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx. by apply Hpk.
+    - pose proof H2 as (_ & [Hs _] & _ & Hr).
+      assert (pt_inst (pup 1 σ) (pvar 0) = pvar 0) as ->
+        by (rewrite pt_inst_pvar_at; unfold pup; by rewrite decide_True by lia).
+      rewrite <-fresh_outer_inst by done. constructor.
+      + by apply fresh_ok_inst.
+      + simpl. apply Forall_fmap. eapply Forall_impl; [exact H0|]. intros x Hx. by apply Hpk.
+      + intros u' p q v Hu Hv Hpq. apply (proj1 (fresh_lo_inst σ C u' p)) in Hu.
+        apply (proj1 (fresh_hi_inst σ C q v)) in Hv.
+        pose proof Hu as (_ & [Hs1 _] & _ & Hr1). pose proof Hv as (_ & [_ Hs2] & _ & Hr2).
+        rewrite (fresh_outer_inst σ C u'), (fresh_outer_inst σ C v) by done.
+        apply Hlt. by apply (H1 u' p q v).
+      + by apply (proj2 (fresh_lo_inst σ C u (pvar 0))).
   Qed.
 
   Lemma skn_pinst_known Ψ x :
@@ -645,6 +679,7 @@ Section transfer.
     - destruct H. split; auto.
     - destruct H as (<- & <- & ?). split_and!; [done|done|by apply eqT_pinst].
     - destruct H as [? ?]. split; [by apply (seqs_pinst_s Ψ)|done].
+    - destruct H as (<- & <- & <- & ?). split_and!; [done|done|done|by apply eqT_pinst].
   Qed.
 
   Lemma steq_teqW Ψ T : ∀ U,
@@ -664,6 +699,9 @@ Section transfer.
       apply teq_teqW. by apply eqT_pinst.
     - destruct H as [? ?]. split; [|done].
       apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
+    - destruct H as (<- & <- & <- & ?). split_and!; [|done|apply bcs_rel_refl|].
+      + destruct lb; simpl; [by left|done].
+      + apply teq_teqW. by apply eqT_pinst.
   Qed.
 End transfer.
 
@@ -788,13 +826,15 @@ Qed.
 
 Lemma eqT_pinst ρ T : ∀ U σ, eqT ρ T U → eqT ρ (pinst_ty σ T) (pinst_ty σ U).
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x];
-    intros [| ub' lb' U1 U2 | U1 U2 | U1 U2 | n' C' U1 | r y] σ; simpl; try done.
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n C T1 IH | s x
+                 | lb n C T1 IH];
+    intros [| ub' lb' U1 U2 | U1 U2 | U1 U2 | n' C' U1 | r y | lb' n' C' U1] σ; simpl; try done.
   - intros (-> & -> & H1 & H2). split_and!; auto.
   - intros [H1 H2]. split_and!; auto.
   - intros [H1 H2]. split_and!; auto.
   - intros (-> & -> & H1). split_and!; auto.
   - intros (-> & H). split_and!; auto.
+  - intros (-> & -> & -> & H1). split_and!; auto.
 Qed.
 
 Lemma tenv_pinst_empty σ : tenv_pinst σ ∅ = ∅.
@@ -918,61 +958,6 @@ Proof.
   - rewrite Forall_forall in HL. by apply HL.
   - rewrite Forall_forall in HH. by apply HH.
 Qed.
-
-(** ** General constraints of E-NewFresh (sharp edges 93)
-
-    A constraint C of one variable ι (the variable 0) whose every fact
-    relates a point of the fresh channel to an outer point. A point of
-    the fresh channel has the root ι, so it is ι+k, (ι+b).i+k and so on.
-    [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
-    [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
-    point in the context of the rule. C may be infinite. *)
-
-Definition fresh_lo (C : bcs) (u p : point) : Prop :=
-  bc_facts C (FLt u p) ∧ fact_scoped (S (length (bc_env C))) (FLt u p) ∧
-  pt_root p = NVar 0 ∧ pt_root u ≠ NVar 0.
-
-Definition fresh_hi (C : bcs) (q v : point) : Prop :=
-  bc_facts C (FLt q v) ∧ fact_scoped (S (length (bc_env C))) (FLt q v) ∧
-  pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0.
-
-Definition fresh_ok (C : bcs) : Prop :=
-  ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
-    (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v).
-
-Definition fresh_outer (C : bcs) (u : point) : point := pt_inst (plist (pvar 0 :: bc_env C)) u.
-
-Lemma fresh_lo_inst σ C u p : fresh_lo (bcs_inst σ C) u p ↔ fresh_lo C u p.
-Proof. unfold fresh_lo. simpl. by rewrite length_fmap. Qed.
-
-Lemma fresh_hi_inst σ C q v : fresh_hi (bcs_inst σ C) q v ↔ fresh_hi C q v.
-Proof. unfold fresh_hi. simpl. by rewrite length_fmap. Qed.
-
-Lemma fresh_ok_inst σ C : fresh_ok C → fresh_ok (bcs_inst σ C).
-Proof.
-  intros H f Hf Hs. simpl in Hf, Hs. rewrite length_fmap in Hs.
-  destruct (H f Hf Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)].
-  - left. exists u, p. split; [done|]. by apply fresh_lo_inst.
-  - right. exists q, v. split; [done|]. by apply fresh_hi_inst.
-Qed.
-
-Lemma pn_vb_var k p : pn_vb k p → ∃ b, pn_root p = NVar b ∧ b < k.
-Proof. induction p as [c|b|q IH b' i]; simpl; [done|by exists b|exact IH]. Qed.
-
-Lemma pt_inst_outer σ d d' env u :
-  pn_vb (S (length env)) (pt_name u) → pt_root u ≠ NVar 0 →
-  pt_inst (plist (d :: (pt_inst σ <$> env))) u = pt_inst σ (pt_inst (plist (d' :: env)) u).
-Proof.
-  intros Hs Hr. rewrite pt_inst_comp. apply pt_inst_ext_root. intros b Hb.
-  pose proof (pn_vb_root _ _ _ Hs Hb) as Hlt.
-  destruct b as [|j]; [done|]. unfold compose, plist. simpl. rewrite list_lookup_fmap.
-  destruct (lookup_lt_is_Some_2 env j) as [y Hy]; [lia|]. by rewrite Hy.
-Qed.
-
-Lemma fresh_outer_inst σ C u :
-  pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →
-  fresh_outer (bcs_inst σ C) u = pt_inst σ (fresh_outer C u).
-Proof. intros Hs Hr. unfold fresh_outer. simpl. by apply pt_inst_outer. Qed.
 
 Lemma fresh_outer_skn W Ψ C u :
   Forall (skn W Ψ) (bc_env C) → pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →

@@ -8,7 +8,7 @@
     [typed_sem_rules] (static/Fundamental.v). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export rules.FreshRules.
+From LRGV Require Export rules.ExRules.
 
 Set Default Proof Using "All".
 
@@ -85,7 +85,24 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       (∀ W1 a, wext W W1 → (∀ x p, Lo x p → w_lt W1 x (pfresh a p)) →
          (∀ q y, Hi q y → w_lt W1 (pfresh a q) y) → pt_known W1 (pconst a) →
          sem_rules W1 Θ (Some (TSess (dual S) (pconst a)) :: Some (TSess S (pconst a)) :: Δ) F e T) →
-      sem_rules W Θ Δ F (LetP (App ENew EUnit) e) T.
+      sem_rules W Θ Δ F (LetP (App ENew EUnit) e) T
+  | sr_pack Θ Δ F e lb m C T xs :                        (* E-Pack (sharp edges 97) *)
+      length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+      lb_below W lb (heads (ty_inst xs T)) →
+      sem_rules W Θ Δ F e (ty_inst xs T) → sem_rules W Θ Δ F e (TEx lb m C T)
+  | sr_open Θ Δ F e i lb m C T U :                       (* E-Open *)
+      Δ !! i = Some (Some (TEx lb m C T)) →
+      (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+         bcs_hold (w_eq W1) (w_lt W1) C xs →
+         sem_rules W1 Θ (<[i := Some (ty_inst xs T)]> Δ) F e U) →
+      sem_rules W Θ Δ F e U
+  | sr_openp Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T :    (* E-OpenPair *)
+      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TEx lb m C (TProd T1 T2)) →
+      (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+         bcs_hold (w_eq W1) (w_lt W1) C xs →
+         sem_rules W1 Θ2 (Some (ty_inst xs T2) :: Some (ty_inst xs T1) :: Δ2) F e2 T) →
+      sem_rules W Θ Δ F (LetP e1 e2) T.
 
 (** E-Force is E-App at the constant force. *)
 Lemma sem_rules_force W Θ Δ F e m C ub T xs :
@@ -125,7 +142,10 @@ Proof.
     |W Θ Δ' Δ F e T Hwk H IH
     |W Θ Δ U F e T Hu H IH
     |W Θ Δ F e T T' Hteq H IH
-    |W Θ Δ F e T S Lo Hi HL HH Hbt Hb IH]; intros Ht0 HW.
+    |W Θ Δ F e T S Lo Hi HL HH Hbt Hb IH
+    |W Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
+    |W Θ Δ F e i lb m C T U Hi Hb IH
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T HΘ HΔ H1 IH1 Hb IH2]; intros Ht0 HW.
   - by apply sem_typed_unit.
   - by apply sem_typed_konst.
   - by apply sem_typed_var.
@@ -146,4 +166,9 @@ Proof.
   - eapply sem_typed_tconv; [done|by apply IH].
   - apply (sem_typed_newfresh W Θ Δ F e T S Lo Hi); [done|done|done|].
     intros W1 a HW1 HL1 HH1 Ha. apply IH; [done..| |apply HW1]. by apply Hb.
+  - eapply sem_typed_pack; [done..|by apply IH].
+  - eapply sem_typed_open; [done|].
+    intros W1 xs HW1 Hxs HK HC. apply IH; [done..| |apply HW1]. by apply Hb.
+  - eapply sem_typed_openp; [done|done|by apply IH1|].
+    intros W1 xs HW1 Hxs HK HC. apply IH2; [done..| |apply HW1]. by apply Hb.
 Qed.

@@ -14,7 +14,7 @@ Proof.
   intros HW. unfold cycle_main.
   apply (t_newfresh_lh W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
   fresh_clean.
-  apply (t_newfresh_lh W _ _ ∅ _ _ _ _ SEnd [pvar 0] []).
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] [] ltac:(done)).
   { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
   { intros l h _ Hh. by apply elem_of_nil in Hh. }
   fresh_clean.

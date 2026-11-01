@@ -53,6 +53,8 @@ Fixpoint teqW (W : world) (T U : ty) : Prop :=
       n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW W T1 U1
 
   | TSess s x, TSess r y => pteqW W x y ∧ seq s r
+  | TEx lb n C T1, TEx lb' n' C' U1 =>
+      opt_rel (pteqW W) lb lb' ∧ n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW W T1 U1
   | _, _ => False
   end.
 
@@ -79,7 +81,10 @@ Record level := Level {
     - V-Box / V-All: ∀ appears only under □; a box is the thunk
       λ_. fix x.e, and it is good when the thunk is in V at every
       instance of its point variables that meets its constraint C, in
-      every future world (sharp edges 58, 63). *)
+      every future world (sharp edges 58, 63).
+    - V-Ex: the value is in V at some known instance of the bound
+      points that meets C, and its channels lie at or above the lower
+      point (sharp edges 97). *)
 
 (** The thunk a box !e stands for: applied to ∗ it unrolls once. *)
 Definition thunk (eb : expr) : expr := Lam (rename S (subst1 (EBox eb) eb)).
@@ -107,27 +112,37 @@ Definition Vfun (below : nat → level) (n : nat)
   | _ => False
   end.
 
+(** [Vdef] reads T under a point substitution σ, so that a binder
+    passes its instance to its body and the definition stays structural
+    (sharp edges 97). [Vrel] is [Vdef] at σ = pvar. *)
 Fixpoint Vdef (below : nat → level) (n : nat)
-    (W : world) (Θ : tenv) (T : ty) (v : expr) {struct T} : Prop :=
+    (W : world) (Θ : tenv) (σ : nat → point) (T : ty) (v : expr) {struct T} : Prop :=
   match T with
   | TUnit => Θ = ∅ ∧ v = EUnit
   | TSess s x =>
       ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
-        w_eq W k x
-  | TLolli ub lb T1 U => Vfun below n W Θ (TLolli ub lb T1 U) v
+        w_eq W k (pt_inst σ x)
+  | TLolli ub lb T1 U => Vfun below n W Θ (pinst_ty σ (TLolli ub lb T1 U)) v
   | TProd T1 U =>
       ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
-        Vdef below n W Θ1 T1 v1 ∧ Vdef below n W Θ2 U v2
+        Vdef below n W Θ1 σ T1 v1 ∧ Vdef below n W Θ2 σ U v2
   | TSum T1 U =>
-      (∃ v', v = Inj1 v' ∧ Vdef below n W Θ T1 v')
-      ∨ (∃ v', v = Inj2 v' ∧ Vdef below n W Θ U v')
+      (∃ v', v = Inj1 v' ∧ Vdef below n W Θ σ T1 v')
+      ∨ (∃ v', v = Inj2 v' ∧ Vdef below n W Θ σ U v')
   | TBox m C T1 =>
       (* V of the thunk at every instance of the ∀ that meets C and
          that the world knows, in every future world (sharp edges 63) *)
       Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
         ∀ W' xs, wext W W' → length xs = m →
-          bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
-          Vfun below n W' ∅ (ty_inst xs T1) (thunk eb)
+          bcs_hold (w_eq W') (w_lt W') (bcs_inst σ C) xs → Forall (pt_known W') xs →
+          Vdef below n W' ∅ (pt_inst (plist xs) ∘ pup m σ) T1 (thunk eb)
+  | TEx lb m C T1 =>
+      (* V-Ex: a known instance meets C, the value lies in the body at
+         it, and its channels lie at or above the lower point *)
+      lb_below W (pt_inst σ <$> lb) (tenv_heads Θ) ∧
+      ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧
+        bcs_hold (w_eq W) (w_lt W) (bcs_inst σ C) xs ∧
+        Vdef below n W Θ (pt_inst (plist xs) ∘ pup m σ) T1 v
   end.
 
 (** ** The cost of a step (sharp edges 45)
@@ -440,9 +455,9 @@ Definition Pdef (below : nat → level) (Vn : world → tenv → ty → expr →
   end.
 
 Definition mk_level (below : nat → level) (n : nat) : level :=
-  {| lV := Vdef below n;
-     lE := Edef below (Vdef below n) n;
-     lP := Pdef below (Vdef below n) n |}.
+  {| lV := λ W Θ T v, Vdef below n W Θ pvar T v;
+     lE := Edef below (λ W Θ T v, Vdef below n W Θ pvar T v) n;
+     lP := Pdef below (λ W Θ T v, Vdef below n W Θ pvar T v) n |}.
 
 Definition dummy_level : level :=
   {| lV := λ _ _ _ _, False; lE := λ _ _ _ _ _, False;
@@ -482,9 +497,9 @@ Lemma Prel_0 W Σ T p : Prel 0 W Σ T p.
 Proof. unfold Prel. rewrite level_at_eq. simpl. exact I. Qed.
 
 (** Members of the value relation are values. *)
-Lemma Vdef_val below n W Θ T v : Vdef below n W Θ T v → is_val v.
+Lemma Vdef_val below n W Θ σ T v : Vdef below n W Θ σ T v → is_val v.
 Proof.
-  induction T in Θ, v |- *; simpl.
+  induction T in Θ, v, σ |- *; simpl.
   - by intros [_ ->].
   - by intros [(eb & -> & _ & _)|(k & T0 & -> & _)].
   - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & H1 & H2).
@@ -492,6 +507,7 @@ Proof.
   - intros [(v' & -> & H)|(v' & -> & H)]; simpl; eauto.
   - by intros (-> & eb & -> & _).
   - by intros (c & s0 & k & -> & _).
+  - intros (_ & xs & _ & _ & _ & H). eauto.
 Qed.
 
 Lemma Vrel_val n W Θ T v : Vrel n W Θ T v → is_val v.
@@ -503,35 +519,36 @@ Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_val. Qed.
     compositionality of outputs — a component's decomposition may not
     park a restricted channel inside a value that never mentions it,
     or the channel's end would leak out of the composite unaccounted. *)
-Lemma Vdef_fchans below n W Θ T v :
-  Vdef below n W Θ T v → fchans v = dom Θ.
+Lemma Vdef_fchans below n W Θ σ T v :
+  Vdef below n W Θ σ T v → fchans v = dom Θ.
 Proof.
-  induction T in Θ, v |- *; simpl.
+  induction T in Θ, v, σ |- *; simpl.
   - intros [-> ->]. simpl. by rewrite dom_empty_L.
   - intros [(eb & -> & Hsup & _)|(k & T0 & -> & -> & _)]; simpl;
       [done|by rewrite dom_empty_L].
   - intros (v1 & v2 & Θ1 & Θ2 & -> & [Hj _] & H1 & H2). simpl.
-    rewrite (IHT1 _ _ H1), (IHT2 _ _ H2). by rewrite (tenv_join_dom _ _ _ Hj).
+    rewrite (IHT1 _ _ _ H1), (IHT2 _ _ _ H2). by rewrite (tenv_join_dom _ _ _ Hj).
   - intros [(v' & -> & H)|(v' & -> & H)]; simpl; eauto.
   - intros (-> & eb & -> & Hfc & _). simpl.
     rewrite Hfc. by rewrite dom_empty_L.
   - intros (c & s0 & k & -> & -> & _). simpl. by rewrite dom_singleton_L.
+  - intros (_ & xs & _ & _ & _ & H). eauto.
 Qed.
 
 Lemma Vrel_fchans n W Θ T v : Vrel n W Θ T v → fchans v = dom Θ.
 Proof. unfold Vrel. rewrite level_at_eq. apply Vdef_fchans. Qed.
 
 (** Values of primitive type own no channels. *)
-Lemma Vdef_prim_empty below n W Θ T v :
-  prim T → Vdef below n W Θ T v → Θ = ∅.
+Lemma Vdef_prim_empty below n W Θ σ T v :
+  prim T → Vdef below n W Θ σ T v → Θ = ∅.
 Proof.
-  intros Hp. revert Θ v. induction Hp; simpl.
-  - by intros ? ? [-> _].
-  - intros Θ v (v1 & v2 & Θ1 & Θ2 & -> & [Hj _] & H1 & H2).
-    rewrite (IHHp1 _ _ H1), (IHHp2 _ _ H2) in Hj.
+  intros Hp. revert Θ v σ. induction Hp; simpl.
+  - by intros ? ? ? [-> _].
+  - intros Θ v σ (v1 & v2 & Θ1 & Θ2 & -> & [Hj _] & H1 & H2).
+    rewrite (IHHp1 _ _ _ H1), (IHHp2 _ _ _ H2) in Hj.
     by apply tenv_join_empty.
-  - intros Θ v [(v' & -> & H)|(v' & -> & H)]; eauto.
-  - by intros Θ v (-> & _).
+  - intros Θ v σ [(v' & -> & H)|(v' & -> & H)]; eauto.
+  - by intros Θ v σ (-> & _).
 Qed.
 
 Lemma Vrel_prim_empty n W Θ T v : prim T → Vrel n W Θ T v → Θ = ∅.
@@ -551,7 +568,7 @@ Lemma Vrel_sess_iff n W Θ s x v :
   Vrel n W Θ (TSess s x) v ↔
   ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧
     w_eq W k x.
-Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
+Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. by rewrite tpt_inst_pvar. Qed.
 
 Lemma Vrel_prod_iff n W Θ T U v :
   Vrel n W Θ (TProd T U) v ↔
@@ -565,16 +582,59 @@ Lemma Vrel_sum_iff n W Θ T U v :
   ∨ (∃ v', v = Inj2 v' ∧ Vrel n W Θ U v').
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-(** A λ is in V only at an arrow type, where V is [Vfun]. *)
-Lemma Vrel_Vfun n W Θ U eb : Vrel n W Θ U (Lam eb) ↔ Vfun (levels n) n W Θ U (Lam eb).
+(** [Vdef] at σ is [Vdef] at the instance (sharp edges 97). *)
+Lemma Vdef_ext below n T : ∀ W Θ σ σ' v,
+  (∀ a, σ a = σ' a) → Vdef below n W Θ σ T v ↔ Vdef below n W Θ σ' T v.
 Proof.
-  unfold Vrel. rewrite (level_at_eq n). destruct U; cbn [mk_level lV Vdef Vfun]; try done.
-  - split; [intros [_ ?]|]; done.
-  - split; [intros (? & ? & ? & ? & ? & _)|]; done.
-  - split; [intros [(? & ? & _)|(? & ? & _)]|]; done.
-  - split; [intros (_ & ? & ? & _)|]; done.
-  - split; [intros (? & ? & ? & ? & _)|]; done.
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | m C T1 IH | s x
+                 | lb m C T1 IH]; intros W Θ σ σ' v Hs; cbn [Vdef].
+  - done.
+  - by rewrite (tinst_ext _ σ σ').
+  - setoid_rewrite (IH1 _ _ σ σ'); [|done..]. by setoid_rewrite (IH2 _ _ σ σ').
+  - setoid_rewrite (IH1 _ _ σ σ'); [|done..]. by setoid_rewrite (IH2 _ _ σ σ').
+  - rewrite (tbcs_ext σ σ') by done. apply and_iff_compat_l. f_equiv. intros eb.
+    do 2 apply and_iff_compat_l. 
+    do 6 (apply forall_proper; intros ?). apply IH. intros a. simpl. by rewrite (tpup_ext m σ σ').
+  - by rewrite (tpt_inst_ext σ σ').
+  - assert (pt_inst σ <$> lb = pt_inst σ' <$> lb) as ->
+      by (destruct lb; simpl; [by rewrite (tpt_inst_ext σ σ')|done]).
+    rewrite (tbcs_ext σ σ') by done. apply and_iff_compat_l. f_equiv. intros xs.
+    do 3 apply and_iff_compat_l. apply IH.
+    intros a. simpl. by rewrite (tpup_ext m σ σ').
 Qed.
+
+Lemma Vdef_comp below n T : ∀ W Θ σ τ v,
+  Vdef below n W Θ τ (pinst_ty σ T) v ↔ Vdef below n W Θ (pt_inst τ ∘ σ) T v.
+Proof.
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | m C T1 IH | s x
+                 | lb m C T1 IH]; intros W Θ σ τ v; cbn [Vdef pinst_ty].
+  - done.
+  - transitivity (Vfun below n W Θ (pinst_ty τ (pinst_ty σ (TLolli ub lb T1 U))) v); [done|].
+    by rewrite tinst_comp.
+  - setoid_rewrite IH1. by setoid_rewrite IH2.
+  - setoid_rewrite IH1. by setoid_rewrite IH2.
+  - rewrite tbcs_comp. apply and_iff_compat_l. f_equiv. intros eb.
+    do 2 apply and_iff_compat_l. 
+    do 6 (apply forall_proper; intros ?). rewrite IH. apply Vdef_ext.
+    intros a. simpl. rewrite <-tpup_comp, tpt_inst_comp. done.
+  - by rewrite tpt_inst_comp.
+  - assert (pt_inst τ <$> (pt_inst σ <$> lb) = pt_inst (pt_inst τ ∘ σ) <$> lb) as ->
+      by (destruct lb; simpl; [by rewrite tpt_inst_comp|done]).
+    rewrite tbcs_comp. apply and_iff_compat_l. f_equiv. intros xs.
+    do 3 apply and_iff_compat_l. rewrite IH. apply Vdef_ext.
+    intros a. simpl. rewrite <-tpup_comp, tpt_inst_comp. done.
+Qed.
+
+Lemma Vdef_inst below n W T Θ σ v :
+  Vdef below n W Θ σ T v ↔ Vdef below n W Θ pvar (pinst_ty σ T) v.
+Proof.
+  rewrite Vdef_comp. apply Vdef_ext. intros a. simpl. by rewrite tpt_inst_pvar.
+Qed.
+
+Lemma Vdef_plist below n W Θ σ m xs T v :
+  Vdef below n W Θ (pt_inst (plist xs) ∘ pup m σ) T v ↔
+  Vdef below n W Θ pvar (ty_inst xs (pinst_ty (pup m σ) T)) v.
+Proof. rewrite Vdef_inst. unfold ty_inst. by rewrite tinst_comp. Qed.
 
 (** V-Box: the thunk is in V at every admissible instance. *)
 Lemma Vrel_box_iff n W Θ m C T v :
@@ -584,8 +644,25 @@ Lemma Vrel_box_iff n W Θ m C T v :
       bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
       Vrel n W' ∅ (ty_inst xs T) (thunk eb).
 Proof.
-  unfold thunk. setoid_rewrite Vrel_Vfun.
-  unfold Vrel at 1. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done.
+  unfold Vrel. rewrite !(level_at_eq n). cbn [mk_level lV Vdef].
+  rewrite tbcs_pvar. apply and_iff_compat_l. f_equiv. intros eb.
+  do 2 apply and_iff_compat_l. 
+  do 6 (apply forall_proper; intros ?). rewrite Vdef_plist.
+  by rewrite (tinst_ext T (pup m pvar) pvar), tinst_pvar by apply tpup_pvar.
+Qed.
+
+(** V-Ex (sharp edges 97). *)
+Lemma Vrel_ex_iff n W Θ lb m C T v :
+  Vrel n W Θ (TEx lb m C T) v ↔
+  lb_below W lb (tenv_heads Θ) ∧
+  ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧ bcs_hold (w_eq W) (w_lt W) C xs ∧
+    Vrel n W Θ (ty_inst xs T) v.
+Proof.
+  unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
+  assert (pt_inst pvar <$> lb = lb) as -> by (destruct lb; simpl; [by rewrite tpt_inst_pvar|done]).
+  rewrite tbcs_pvar. apply and_iff_compat_l. f_equiv. intros xs.
+  do 3 (apply and_iff_compat_l). rewrite Vdef_plist.
+  by rewrite (tinst_ext T (pup m pvar) pvar), tinst_pvar by apply tpup_pvar.
 Qed.
 
 Lemma Vrel_box_empty n W Θ m C T v : Vrel n W Θ (TBox m C T) v → Θ = ∅.
@@ -608,7 +685,8 @@ Lemma Vrel_lolli_iff n W Θ ub lb T U v :
   ∨ (∃ k T0, v = Konst k ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) (pt_known W) k T0 ∧
        teqW W T0 (TLolli ub lb T U)).
 Proof.
-  unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef Vfun].
+  unfold Vrel, Erel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
+  rewrite tinst_pvar. cbn [Vfun].
   apply or_iff_compat_r.
   split; intros (eb & -> & Hsup & Hlb & H); exists eb; (split_and!; [done..|]);
     intros W' j Θ' Θ'' w F HW Hj Hc HV Hub.
@@ -1014,14 +1092,10 @@ Proof.
   apply (H W' j Θ' Θ'' w F); auto. lia.
 Qed.
 
-Lemma Vrel_down_lam n m W Θ T eb : m ≤ n → Vrel n W Θ T (Lam eb) → Vrel m W Θ T (Lam eb).
-Proof.
-  intros Hle. destruct T; try (rewrite Vrel_Vfun; done). by apply Vrel_down_lolli.
-Qed.
-
 Lemma Vrel_down n m W Θ T v : m ≤ n → Vrel n W Θ T v → Vrel m W Θ T v.
 Proof.
-  intros Hle. induction T in Θ, v |- *.
+  intros Hle. induction T as [|ub lb T1 IH1 U IH2|T1 IH1 U IH2|T1 IH1 U IH2|m0 C T1 IH|s x
+                             |lb m0 C T1 IH] in W, Θ, v |- * using ty_ind_ex.
   - rewrite !Vrel_unit_iff. done.
   - by apply Vrel_down_lolli.
   - rewrite !Vrel_prod_iff.
@@ -1032,9 +1106,10 @@ Proof.
   - rewrite !Vrel_box_iff.
     intros (-> & eb & -> & Hfc & H). split; [done|].
     exists eb. split_and!; [done|done|]. intros W' xs HW Hxs HC HK.
-    eapply Vrel_down_lam; [exact Hle|]. by apply H.
+    apply IH. by apply H.
   - rewrite !Vrel_sess_iff. done.
-
+  - rewrite !Vrel_ex_iff. intros [Hlb (xs & Hxs & HK & HC & HV)].
+    split; [done|]. exists xs. split_and!; [done..|]. by apply IH.
 Qed.
 
 Lemma Erel_down n m W Θ T F e :
@@ -1133,7 +1208,3 @@ Proof.
       * eapply Forall_impl; [exact HK|]. intros x Hx. apply HW', Hx.
 Qed.
 
-(** A λ is in V only at an arrow type. *)
-Lemma Vrel_lam_inv n W Θ T eb :
-  Vrel n W Θ T (Lam eb) → ∃ ub lb T1 U, T = TLolli ub lb T1 U.
-Proof. rewrite Vrel_Vfun. destruct T; try done. intros _. eauto. Qed.

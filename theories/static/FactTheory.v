@@ -178,9 +178,9 @@ Qed.
 (** ** Types up to Γ ⊢ ≡ (sharp edges 67)
 
     [steq W Ψ T U] is ≈ with the points of T outside session types and
-    boxes compared by Γ ⊢ ≡ ([seqs W Ψ]). A box is compared by ≈ with
-    its points on the nose, because its points live under the binder
-    of its ιs. E-Conv reads it. [teq_steq] makes ≈ a special case,
+    boxes compared by Γ ⊢ ≡ ([seqs W Ψ]). A box and an existential
+    are compared by ≈ with their points on the nose, because their
+    points live under the binder of their ιs. E-Conv reads it. [teq_steq] makes ≈ a special case,
     and [steq_teqW] carries it into ≈_W₁ of a world where the
     hypotheses hold. *)
 Fixpoint steq (W : world) (Ψ : hyps) (T U : ty) : Prop :=
@@ -193,6 +193,7 @@ Fixpoint steq (W : world) (Ψ : hyps) (T U : ty) : Prop :=
   | TSum T1 T2, TSum U1 U2 => steq W Ψ T1 U1 ∧ steq W Ψ T2 U2
   | TBox n C T1, TBox n' C' U1 => n = n' ∧ C = C' ∧ teq T1 U1
   | TSess s x, TSess r y => seqs W Ψ x y ∧ seq s r
+  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ teq T1 U1
   | _, _ => False
   end.
 

@@ -28,7 +28,8 @@ Proof.
   cbn.
   apply (t_newfresh_lh W _ _ ∅ _ _ _ _ Sa [] []); [constructor|set_solver|].
   fresh_clean.
-  apply (t_newfresh W _ _ ∅ _ _ _ _ Sb rrf_C).
+  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sb rrf_C (pvar 1) _ _ _
+           (fresh_lo_var1 (bc_env rrf_C) rrf_facts ltac:(done) ltac:(by exists 0; left)) _).
   { intros f [k [-> | ->]] Hs.
     - left. eexists _, _. split; [done|]. split_and!; [exists k; by left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [exists k; by right|done|done|done]. }

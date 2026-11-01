@@ -30,14 +30,7 @@ Record world := World {
 (** The root name of a point: a slot ι[i] belongs to the name of ι.
     The support is a set of root names (point constants), so that
     slot congruence does not need infinitely many slot names in a
-    finite support. *)
-Fixpoint pn_root (p : pname) : pname :=
-  match p with
-  | NSlot q _ _ => pn_root q
-  | _ => p
-  end.
-
-Definition pt_root (x : point) : pname := pn_root (pt_name x).
+    finite support. [pn_root] and [pt_root] live in types/Types.v. *)
 
 (** The root names of the points of a type, an environment and a
     frame, payloads of session types included. A point created at
@@ -56,8 +49,8 @@ Fixpoint ty_roots (T : ty) : gset pname :=
   | TLolli ub lb T1 U => opt_roots ub ∪ opt_roots lb ∪ ty_roots T1 ∪ ty_roots U
   | TProd T1 U | TSum T1 U => ty_roots T1 ∪ ty_roots U
   | TBox _ C T1 => bcs_roots C ∪ ty_roots T1
-
   | TSess s x => sty_roots s ∪ {[pt_root x]}
+  | TEx lb _ C T1 => opt_roots lb ∪ bcs_roots C ∪ ty_roots T1
   end
 with sty_roots (s : sty) : gset pname :=
   match s with

@@ -182,7 +182,7 @@ Proof.
   intros H. apply Vrel_lolli_iff in H as [(eb & ? & _)|(k & T0 & Hk & _ & Hkt & Heq)]; [done|].
   simplify_eq. inversion Hkt; subst.
   simpl in Heq. destruct Heq as (_ & _ & Hbox & Hres).
-  destruct T as [| | | | |s y]; simpl in Hbox; try naive_solver.
+  destruct T as [| | | | |s y|]; simpl in Hbox; try naive_solver.
   destruct Hbox as (Hn & _ & Hub & _ & _ & Hs & _).
   destruct ub; simpl in Hub; [done|].
   destruct Hs as [->|(_ & Hg & _)]; [|by destruct Hg].

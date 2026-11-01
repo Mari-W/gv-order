@@ -46,7 +46,8 @@ Proof.
   cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pvar 1)) None 1); [set_solver|cbn; set_solver|].
   eapply t_wk; [apply lwk_cons, lwk_drop; [done|constructor]|].
   cbn. tstep; [tstep|]. cbn.
-  apply (t_newfresh W _ _ ∅ _ _ _ _ Sdd fm_C).
+  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sdd fm_C (pvar 1) _ _ _
+           (fresh_lo_var1 (bc_env fm_C) fm_facts ltac:(done) ltac:(by unfold fm_facts; left)) _).
   { intros f [->|[k ->]] Hs.
     - left. eexists _, _. split; [done|]. split_and!; [by left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [right; by exists k|done|done|done]. }
@@ -172,7 +173,7 @@ Proof.
     by (intros σ; unfold sf_pinst; simpl; by rewrite set_map_empty).
   rewrite tenv_pinst_empty, Hsf. cbn.
   match goal with |- typed _ _ _ _ (_ :: _ :: _ :: Some ?T :: []) _ _ _ => change T with fb_ty end.
-  apply (t_newfresh_lh W _ _ ∅ _ _ _ _ SEnd [pvar 0] []).
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] [] ltac:(done)).
   { constructor; [|constructor]. right. exists (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 0], (pvar 0).
     split_and!; [by left|by left|done]. }
   { intros l h _ Hh. by apply elem_of_nil in Hh. }

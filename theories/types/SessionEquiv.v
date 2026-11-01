@@ -31,6 +31,7 @@ Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
   | TBox n C T1, TBox n' C' U1 => n = n' ∧ C = C' ∧ eqT ρ T1 U1
 
   | TSess s x, TSess r y => x = y ∧ ρ s r
+  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ eqT ρ T1 U1
   | _, _ => False
   end.
 
@@ -211,6 +212,8 @@ Proof.
     apply IHT. intros n. by destruct (H n) as (_ & _ & ?).
 
   - destruct (H 0) as (-> & _). split; [done|]. intros n. by destruct (H n).
+  - destruct (H 0) as (-> & -> & -> & _). split_and!; [done|done|done|].
+    apply IHT. intros n. by destruct (H n) as (_ & _ & _ & ?).
 Qed.
 
 (** ** ≈ is a congruence for [dual] *)

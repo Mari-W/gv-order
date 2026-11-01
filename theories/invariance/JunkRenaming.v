@@ -2482,7 +2482,8 @@ Proof.
   assert (∀ W Θ Θ' T v c d, strict W → c ≠ d → tenv_move W c d Θ Θ' →
             Vrel n W Θ T v → Vrel n W Θ' T (chsubst c d v)) as HV.
   { intros W Θ Θ' T. revert Θ Θ'.
-    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m T1 IHT1|s x];
+    induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m C0 T1 IHT1|s x
+                   |lb m C0 T1 IHT1] using ty_ind_ex;
       intros Θ Θ' v c d HW Hcd Hm HVv.
     - pose proof HVv as [-> _]%Vrel_unit_iff. by apply (Vrel_move_empty n W Θ').
     - pose proof HVv as [(eb & -> & Hfc & Hlb & HL)|(k & T0 & -> & -> & _)]%Vrel_lolli_iff;
@@ -2529,7 +2530,10 @@ Proof.
       rewrite chsubst_chan. apply Vrel_sess_iff. exists (csub c d c0), s0, k.
       split_and!; [done| |done|done].
       destruct (move_singleton W c d Hcd c0 _ Θ' Hm) as [[-> ->]|[Hne ->]];
-        [by rewrite csub_hit|by rewrite csub_ne]. }
+        [by rewrite csub_hit|by rewrite csub_ne].
+    - apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
+      apply Vrel_ex_iff. split; [by rewrite (move_heads W c d Hcd Θ Θ' Hm)|].
+      exists xs. split_and!; [done..|]. exact (IHT1 (plist xs) Θ Θ' v c d HW Hcd Hm H). }
   split; [exact HV|].
   intros W Θ Θ' T F e c d HW Hcd Hm HE.
   destruct n as [|n']; [apply Erel_0|].
