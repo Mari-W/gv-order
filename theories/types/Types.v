@@ -1053,7 +1053,7 @@ Definition fresh_hi (C : bcs) (q v : point) : Prop :=
   bc_facts C (FLt q v) ∧ fact_scoped (S (length (bc_env C))) (FLt q v) ∧
   pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0.
 
-Definition fresh_ok (C : bcs) : Prop :=
+Definition fresh_lt (C : bcs) : Prop :=
   ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
     (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v).
 
@@ -1061,11 +1061,102 @@ Definition fresh_outer (C : bcs) (u : point) : point := pt_inst (plist (pvar 0 :
 
 Definition ple (p v : point) : Prop := pt_name p = pt_name v ∧ pt_off p ≤ pt_off v.
 
+(** ** The alias of a fresh point (sharp edges 104)
+
+    [fresh_eq C w] is the fact ι ≡ w of C, with w an outer point. C is
+    of the allowed form ([fresh_ok]) when its facts are ≺ facts of the
+    form above ([fresh_lt]), or when they are such facts and one alias
+    ι ≡ w. Which of the two cases holds is part of the evidence, so the
+    semantic proof can build its world by cases without excluded
+    middle. [fresh_at C w p] reads a point p of the fresh channel with
+    the alias in place of ι, so ι+k becomes w+k and ι.i becomes w.i.
+
+    [fresh_between plt C] is the condition on the context. Without an
+    alias it is the betweenness of sharp edges 94. With the alias
+    ι ≡ w, the point ι has every fact of w, and a fresh extension adds
+    no fact between known points. So every ≺ fact of C must already hold
+    of w, that is u ≺ p[w/ι] for every u ≺ p and q[w/ι] ≺ v for every
+    q ≺ v of C. That condition is necessary in every world that holds
+    the alias, and it implies the betweenness of sharp edges 94. For
+    C = {ι ≡ w} it is empty, and w known is all that new asks. *)
+
+Definition fresh_eq (C : bcs) (w : point) : Prop :=
+  bc_facts C (FEq (pvar 0) w) ∧ pn_vb (S (length (bc_env C))) (pt_name w) ∧ pt_root w ≠ NVar 0.
+
+Definition fresh_ok (C : bcs) : Prop :=
+  fresh_lt C ∨
+  ∃ w, fresh_eq C w ∧
+    ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
+      (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v) ∨
+      f = FEq (pvar 0) w.
+
+Definition fresh_at (C : bcs) (w p : point) : point := pt_inst (λ _, fresh_outer C w) p.
+
+Definition fresh_between (plt : point → point → Prop) (C : bcs) : Prop :=
+  (fresh_lt C → ∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
+     plt (fresh_outer C u) (fresh_outer C v)) ∧
+  (∀ w u p, fresh_eq C w → fresh_lo C u p → plt (fresh_outer C u) (fresh_at C w p)) ∧
+  (∀ w q v, fresh_eq C w → fresh_hi C q v → plt (fresh_at C w q) (fresh_outer C v)).
+
+(** The form of C reads only its facts and the length of its
+    environment, so renaming and instantiating the outer points keeps it. *)
+Section fresh_shape.
+  Context (C C' : bcs) (Hf : bc_facts C = bc_facts C') (Hl : length (bc_env C) = length (bc_env C')).
+
+  Lemma fresh_lo_shape u p : fresh_lo C u p ↔ fresh_lo C' u p.
+  Proof. unfold fresh_lo. by rewrite Hf, Hl. Qed.
+
+  Lemma fresh_hi_shape q v : fresh_hi C q v ↔ fresh_hi C' q v.
+  Proof. unfold fresh_hi. by rewrite Hf, Hl. Qed.
+
+  Lemma fresh_eq_shape w : fresh_eq C w ↔ fresh_eq C' w.
+  Proof. unfold fresh_eq. by rewrite Hf, Hl. Qed.
+
+  Lemma fresh_lt_shape : fresh_lt C → fresh_lt C'.
+  Proof.
+    intros H f Hf' Hs. rewrite <-Hf in Hf'. rewrite <-Hl in Hs.
+    destruct (H f Hf' Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)].
+    - left. exists u, p. split; [done|]. by apply fresh_lo_shape.
+    - right. exists q, v. split; [done|]. by apply fresh_hi_shape.
+  Qed.
+
+  Lemma fresh_ok_shape : fresh_ok C → fresh_ok C'.
+  Proof.
+    intros [H|(w & Hw & H)]; [left; by apply fresh_lt_shape|right].
+    exists w. split; [by apply fresh_eq_shape|]. intros f Hf' Hs. rewrite <-Hf in Hf'. rewrite <-Hl in Hs.
+    destruct (H f Hf' Hs) as [(u & p & -> & Hu)|[(q & v & -> & Hv)| ->]].
+    - left. exists u, p. split; [done|]. by apply fresh_lo_shape.
+    - right; left. exists q, v. split; [done|]. by apply fresh_hi_shape.
+    - by right; right.
+  Qed.
+End fresh_shape.
+
+Lemma fresh_lt_no_eq C w : fresh_lt C → ¬ fresh_eq C w.
+Proof.
+  intros H (Hf & Hs & _).
+  destruct (H _ Hf) as [(? & ? & E & _)|(? & ? & E & _)]; [split; [cbn; lia|done]|discriminate|discriminate].
+Qed.
+
+(** Without an alias, [fresh_between] is the betweenness of sharp
+    edges 94. *)
+Lemma fresh_between_lt (plt : point → point → Prop) C :
+  fresh_lt C →
+  (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q → plt (fresh_outer C u) (fresh_outer C v)) →
+  fresh_between plt C.
+Proof.
+  intros HC Hbt. split_and!; [done|..]; intros w ? ? Hw; exfalso; by apply (fresh_lt_no_eq C w).
+Qed.
+
+Lemma fresh_between_mono (plt plt' : point → point → Prop) C :
+  (∀ x y, plt x y → plt' x y) → fresh_between plt C → fresh_between plt' C.
+Proof. intros H (H1 & H2 & H3). split_and!; eauto. Qed.
+
 (** ** Type-indexed families of type signatures for constants
     (§9)
 
-    new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι
-    new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C fresh, betweenness (97, 103)
+    new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι              (still used by PGV and PN, 104)
+    new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C fresh, at most one alias ι ≡ x,
+                                                  betweenness (97, 103, 104)
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
     send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι]), no ⊥ flag
     recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
@@ -1077,8 +1168,9 @@ Definition ple (p v : point) : Prop := pt_name p = pt_name v ∧ pt_off p ≤ pt
     relations: the world G generates for typing, a world W for the
     logical relation. Freshness of ι in [new] is a typing condition
     (static/). [pk] says which points the order knows: the point of
-    [new] must be one, so that the created point can be aliased to it
-    (sharp edges 49). force asks its instance known and every
+    [new] and the outer points of its constraint must be known, so
+    that the created point can be aliased to them (sharp edges 49,
+    104). force asks its instance known and every
     fact of the box's constraint at the instance (sharp edges 65). *)
 
 Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
@@ -1113,9 +1205,7 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n C (TLolli ub None TUnit T))
            (ty_inst xs T))
   | KTNewEx S C :
-      fresh_ok C → Forall pk (bc_env C) →
-      (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
-         plt (fresh_outer C u) (fresh_outer C v)) →
+      fresh_ok C → Forall pk (bc_env C) → fresh_between plt C →
       konst_ty peq plt pk KNew
         (TLolli None None TUnit
            (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))))).

@@ -214,12 +214,12 @@ Definition let_new_pair (e : expr) : expr :=
     ιs of E-Exp, so Φ, Ψ, Θ, Δ, F and T shift past it and ι is free in
     none of them. The body assumes the hypothesis C, whose facts relate
     points of the fresh channel (ι+k, ι.i, ι.i+k, …) to outer points
-    ([fresh_ok]), and holds the two ends of the channel at ι. The outer
+    ([fresh_lt]), and holds the two ends of the channel at ι. The outer
     points are known. Betweenness asks u ≺ v for every fact u ≺ p and
     q ≺ v of C with q at or after p in program order of one name. The
     lower bound of the existential is ⊥, so C needs no fact below ι. *)
 Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C :
-  fresh_ok C →
+  fresh_lt C →
   Forall (skn W Ψ) (bc_env C) →
   (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
      slt W Ψ (fresh_outer C u) (fresh_outer C v)) →
@@ -244,7 +244,8 @@ Proof.
       + apply tenv_comp_empty_r.
       + apply lenv_split_nones_l.
       + done.
-      + apply t_konst; [apply lenv_empty_nones| |done]. by apply KTNewEx.
+      + apply t_konst; [apply lenv_empty_nones| |done].
+        apply KTNewEx; [by left|done|by apply fresh_between_lt].
       + apply t_unit. apply lenv_empty_nones.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)

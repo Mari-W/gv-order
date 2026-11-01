@@ -59,7 +59,7 @@ Definition fwd : expr :=
       (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 8)) (Pair (Var 3) (Var 2))))))))))).
 
 Definition fprod : expr :=
-  EBox (Lam (LetP (App ENew EUnit)
+  EBox (Lam (let_new_pair
     (LetP (Pair (App ESend (Pair (Var 1) (Var 2))) EUnit) (LetU (Var 0)
       (LetU (App EClos (Var 2))
         (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Var 2)))))))))).
@@ -70,7 +70,7 @@ Definition fcons : expr :=
 
 Definition fw_main : expr :=
   LetP (Pair (Pair fprod fwd) fcons) (LetP (Var 1)
-    (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+    (let_new_pair (let_new_pair
       (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Var 3)))))
         (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 7)) (Var 1)))))
           (App (App EForce (Var 4)) (Pair (Var 3) (Var 1)))))))).
@@ -143,14 +143,13 @@ Proof.
   intros Hg Hx. apply Forall_singleton. apply (skn_in W Ψ fp_C [pvar 0] (pvar 0)); [done|by left|done].
 Qed.
 
-Lemma fprod_typed W F : world_wf W → typed W ∅ [] ∅ [] F fprod (TBox 1 fp_C (TLolli None None TUnit fprod_body)).
+Lemma fprod_typed W F : strict W → typed W ∅ [] ∅ [] F fprod (TBox 1 fp_C (TLolli None None TUnit fprod_body)).
 Proof.
-  intros HW. unfold fprod.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold fprod.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
   box_open1 fp_C fprod_body. cbn. unfold fprod_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
-  cbn. tstep.
-  { tstep; [tstep| |done|apply ubs_none]. apply (KTNew _ _ _ SEnd (svv 0 0)). skn_slot. }
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (svv 0 0) HWs); [skn_slot|].
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
@@ -218,10 +217,10 @@ Definition fw_facts (W : world) : Prop :=
        w_lt W (pc 0 k) (sl 0 k) ∧ w_lt W (sl 0 k) (pc 0 (S k)) ∧
        w_lt W (sl 1 k) (pc 1 (S k)).
 
-Lemma fw_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) → fw_facts W →
+Lemma fw_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) → fw_facts W →
   typed W ∅ [] ∅ [] (∅, None) fw_main TUnit.
 Proof.
-  intros HW Ha Hb H. unfold fw_main.
+  intros HWs Ha Hb H. pose proof (proj1 HWs) as HW. unfold fw_main.
   assert (bcs_hold (seqs W []) (slt W []) fw_C [pc 0 0; pc 1 0]) as HCf.
   { apply bcs_hold_intro. intros g (k & Hg) _. destruct (H k) as (A1 & A2 & A3 & A4 & _).
     destruct Hg as [-> | [-> | [-> | ->]]]; cbn;
@@ -239,11 +238,9 @@ Proof.
   assert (Forall (skn W []) [pc 0 0]) as HKa by (constructor; [by left|constructor]).
   assert (Forall (skn W []) [pc 1 0]) as HKb by (constructor; [by left|constructor]).
   tstep.
-  { tstep; [apply fcons_typed, HW|]. tstep; [apply fwd_typed, HW|apply fprod_typed, HW]. }
-  cbn. tstep; [tstep|]. cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sfi (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sfo (pc 1 0) (or_introl Hb))|done|apply ubs_none]. }
+  { tstep; [apply fcons_typed, HW|]. tstep; [apply fwd_typed, HW|apply fprod_typed, HWs]. }
+  cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sfi (pc 0 0) HWs (or_introl Ha)).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sfo (pc 1 0) HWs (or_introl Hb)).
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (sl 0 0)) (Some (pc 0 0)) 0); [set_solver| |].

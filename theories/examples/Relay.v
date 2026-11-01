@@ -74,14 +74,14 @@ Definition relay : expr :=
       (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 8)) (Pair (Var 3) (Var 1)))))))))))).
 
 Definition prod : expr :=
-  EBox (Lam (LetP (Var 0) (LetP (App ENew EUnit)
+  EBox (Lam (LetP (Var 0) (let_new_pair
     (LetP (Pair (App ESend (Pair (Var 1) (Var 3))) EUnit) (LetU (Var 0)
       (LetP (Pair (App ESend (Pair EUnit (Var 2))) EUnit) (LetU (Var 0)
         (LetU (App EClos (Var 6))
           (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 10)) (Pair (Var 4) (Var 2)))))))))))))).
 
 Definition rel_main : expr :=
-  LetP (Pair relay prod) (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  LetP (Pair relay prod) (let_new_pair (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
@@ -123,14 +123,13 @@ Proof.
     exists (sv 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma prod_typed W F : world_wf W → typed W ∅ [] ∅ [] F prod (TBox 2 rel_C (TLolli None None TUnit prod_body)).
+Lemma prod_typed W F : strict W → typed W ∅ [] ∅ [] F prod (TBox 2 rel_C (TLolli None None TUnit prod_body)).
 Proof.
-  intros HW. unfold prod.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold prod.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
   box_open rel_C prod_body. cbn. unfold prod_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
-  cbn. tstep; [tstep|]. cbn. tstep.
-  { tstep; [tstep| |done|apply ubs_none]. apply (KTNew _ _ _ Dr (sv 0)). skn_slot. }
+  cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Dr (sv 0) HWs); [skn_slot|].
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
@@ -217,24 +216,22 @@ Proof.
       destruct k; unfold rel_rank; cbn; lia.
 Qed.
 
-Lemma rel_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
+Lemma rel_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
   (∀ k, w_lt W (pc 0 k) (rel_ip k) ∧ w_lt W (pc 0 k) (rel_sl k) ∧
         w_lt W (rel_sl k) (pt_shift 1 (pc 0 k)) ∧ w_lt W (rel_sl k) (rel_ip k) ∧
         w_lt W (rel_ip k) (pt_shift 1 (pc 0 k)) ∧ w_lt W (rel_ip k) (pt_shift 1 (rel_sl k))) →
   typed W ∅ [] ∅ [] (∅, None) rel_main TUnit.
 Proof.
-  intros HW Ha Hb H. unfold rel_main.
+  intros HWs Ha Hb H. pose proof (proj1 HWs) as HW. unfold rel_main.
   assert (bcs_hold (seqs W []) (slt W []) rel_C [pc 0 0; pc 1 0]) as HC.
   { eapply bcs_hold_mono; [intros ? ? ?; by apply se_w|intros ? ? ?; by apply sl_w|by apply rel_hold_W]. }
   assert (Forall (skn W []) [pc 0 0; pc 1 0]) as HK.
   { constructor; [by left|constructor; [by left|constructor]]. }
   assert (w_lt W (pc 0 0) (pc 1 0)) as H0 by apply (H 0).
   tstep.
-  { tstep; [apply prod_typed, HW|apply relay_typed, HW]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Srl (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ SEnd (pc 1 0) (or_introl Hb))|done|apply ubs_none]. }
+  { tstep; [apply prod_typed, HWs|apply relay_typed, HW]. }
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Srl (pc 0 0) HWs (or_introl Ha)).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 1 0) HWs (or_introl Hb)).
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].

@@ -28,7 +28,7 @@ Definition Tfac_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (
 Definition Tfac : ty := TBox 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
 
 Definition fac : expr :=
-  EBox (Lam (LetU (Var 0) (LetP (App ENew EUnit)
+  EBox (Lam (LetU (Var 0) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (sendclose (Var 2))))) (Var 0))))).
 
 Definition request : expr := recvclose (App (App EForce (Var 1)) EUnit).
@@ -36,16 +36,15 @@ Definition request : expr := recvclose (App (App EForce (Var 1)) EUnit).
 Definition fac_main : expr :=
   LetP (Pair fac EUnit) (LetU (Var 0) (LetU request request)).
 
-Lemma fac_typed W : world_wf W → pt_known W (pc 0 0) →
+Lemma fac_typed W : strict W → pt_known W (pc 0 0) →
   typed W ∅ [] ∅ [] (∅, None) fac_main TUnit.
 Proof.
-  intros HW Ha. unfold fac_main.
+  intros HWs Ha. pose proof (proj1 HWs) as HW. unfold fac_main.
   tstep.
   { tstep; [tstep|].
     apply (t_box W _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|].
     cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
-    cbn. tstep; [tstep|]. cbn. tstep.
-    { tstep; [tstep|apply (KTNew _ _ _ Sd (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
+    cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 0) HWs (or_introl Ha)).
     cbn. tstep; [|tstep].
     tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pc 0 0)) 2); [set_solver| |].
@@ -107,15 +106,13 @@ Definition fa_main : expr :=
     (LetP (Pair (App (App EForce (Var 1)) EUnit) (App (App EForce (Var 1)) EUnit))
       (LetU (recvclose (Var 1)) (recvclose (Var 0))))).
 
-Lemma faca_typed W F : world_wf W → typed W ∅ [] ∅ [] F faca Tfa.
+Lemma faca_typed W F : strict W → typed W ∅ [] ∅ [] F faca Tfa.
 Proof.
-  intros HW. unfold faca, fac, Tfa.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold faca, fac, Tfa.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
-  cbn. tstep; [tstep|]. cbn. tstep.
-  { tstep; [tstep| |done|apply ubs_none].
-    apply (KTNew _ _ _ Sd (Pt (NVar 0) 0)). right.
-    eexists _, _, (pvar 0). split_and!; [by left|by left|done]. }
+  cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (Pt (NVar 0) 0) HWs).
+  { right. eexists _, _, (pvar 0). split_and!; [by left|by left|done]. }
   cbn. tstep; [|tstep].
   tstep; [|apply KTSpawn|done|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NVar 0) 1)) (Some (Pt (NVar 0) 0)) 2);
@@ -131,11 +128,11 @@ Proof.
     exists (Pt (NVar 0) 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma fa_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
+Lemma fa_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
   w_lt W (pc 0 0) (pc 1 0) → w_lt W (pc 0 1) (pc 1 0) →
   typed W ∅ [] ∅ [] (∅, None) fa_main TUnit.
 Proof.
-  intros HW Ha Hb H1 H2. unfold fa_main.
+  intros HWs Ha Hb H1 H2. pose proof (proj1 HWs) as HW. unfold fa_main.
   assert (∀ (F : sframe) a, pt_known W (pc a 0) →
     typed W ∅ [] ∅ [None; Some Tfa] F (App (App EForce (Var 1)) EUnit)
       (TSess (SRcv 0 TUnit SEnd) (pc a 0))) as Hreq.
@@ -144,7 +141,7 @@ Proof.
       [done|done| |constructor; [by left|constructor]|apply ubs_none|tstep].
     apply bcs_hold_intro. by intros ? []. }
   tstep.
-  { tstep; [tstep|apply faca_typed, HW]. }
+  { tstep; [tstep|apply faca_typed, HWs]. }
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [apply Hreq, Hb|apply Hreq, Ha]. }
   cbn. tstep.

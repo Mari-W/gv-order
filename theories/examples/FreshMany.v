@@ -122,21 +122,19 @@ Qed.
 
 Definition fm_main : expr :=
   LetP (Pair fm_box EUnit) (LetU (Var 0)
-    (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+    (let_new_pair (let_new_pair
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 3)))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
         (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
 
-Lemma fm_main_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
+Lemma fm_main_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
   w_lt W (pc 0 0) (pc 1 0) → typed W ∅ [] ∅ [] (∅, None) fm_main TUnit.
 Proof.
-  intros HW Ha Hb Hab. unfold fm_main.
+  intros HWs Ha Hb Hab. pose proof (proj1 HWs) as HW. unfold fm_main.
   tstep.
   { tstep; [tstep|apply fm_typed, HW]. }
-  cbn. tstep; [tstep|]. cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ SEnd (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ SEnd (pc 1 0) (or_introl Hb))|done|apply ubs_none]. }
+  cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 0 0) HWs (or_introl Ha)).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 1 0) HWs (or_introl Hb)).
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 0)) (Some (pc 0 0)) 0); [set_solver| |].

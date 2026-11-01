@@ -392,7 +392,7 @@ Section fresh_con.
 End fresh_con.
 
 Lemma wext_fresh_con W a C :
-  strict W → fresh_ok C → Forall (pt_known W) (bc_env C) →
+  strict W → fresh_lt C → Forall (pt_known W) (bc_env C) →
   (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
      w_lt W (fresh_outer C u) (fresh_outer C v)) →
   NConst a ∉ w_names W →

@@ -15,17 +15,15 @@ Set Default Proof Using "All".
 (** [sched_main] with r₂ bound by the encoded let of new (sharp
     edges 99). *)
 Definition sched_main_ex : expr :=
-  let_new_pair (LetP (App ENew EUnit) (let_new_pair
+  let_new_pair (let_new_pair (let_new_pair
     (LetU (App ESpawn ag1_thunk) (LetU (App ESpawn ag2_thunk) ag0)))).
 
-Lemma sched_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) sched_main_ex TUnit.
+Lemma sched_typed_fresh W : strict W → typed W ∅ [] ∅ [] (∅, None) sched_main_ex TUnit.
 Proof.
-  intros HW. unfold sched_main_ex.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold sched_main_ex.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sd [] []); [constructor|set_solver|].
   fresh_clean.
-  tstep.
-  { tstep; [tstep| |done|apply ubs_none].
-    apply (KTNew _ _ _ Sd (pvar 0)). eapply skn_inst; [by left|by left|done]. }
+  apply (t_new_at W _ _ _ _ _ _ _ Sd (pvar 0) HWs); [eapply skn_inst; [by left|by left|done]|].
   cbn.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sd [Pt (NVar 0) 1] []).
   { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }

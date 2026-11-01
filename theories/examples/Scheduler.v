@@ -32,15 +32,15 @@ Definition ag2_thunk : expr := Lam (LetU (Var 0) (LetU (recvclose (Var 3)) (send
 Definition ag0 : expr := LetU (sendclose (Var 5)) (recvclose (Var 0)).
 
 Definition sched_main : expr :=
-  LetP (App ENew EUnit) (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  let_new_pair (let_new_pair (let_new_pair
     (LetU (App ESpawn ag1_thunk) (LetU (App ESpawn ag2_thunk) ag0)))).
 
-Lemma sched_typed W : world_wf W →
+Lemma sched_typed W : strict W →
   pt_known W (pc 0 0) → pt_known W (pc 1 0) → pt_known W (pc 2 0) →
   w_eq W (pc 2 0) (pc 0 0) → w_lt W (pc 0 1) (pc 1 0) →
   typed W ∅ [] ∅ [] (∅, None) sched_main TUnit.
 Proof.
-  intros HW Ha Hb Hc Hca Hab.
+  intros HWs Ha Hb Hc Hca Hab. pose proof (proj1 HWs) as HW.
   assert (w_lt W (pc 0 0) (pc 1 0)) as Ha0b.
   { eapply (wf_lt_trans _ HW); [apply (wf_lt_po _ HW (pc 0 0))|exact Hab]. }
   assert (w_lt W (pc 2 0) (pc 1 0)) as Hc0b.
@@ -49,12 +49,9 @@ Proof.
   { eapply (wf_lt_eq _ HW); [apply (wf_eq_shift _ HW _ _ Hca)|exact Hab|apply (wf_eq_refl _ HW)]. }
   assert (w_lt W (pc 1 0) (pc 1 1)) as Hbb by apply (wf_lt_po _ HW (pc 1 0)).
   unfold sched_main.
-  tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sd (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sd (pc 2 0) (or_introl Hc))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sd (pc 1 0) (or_introl Hb))|done|apply ubs_none]. }
+  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 0) HWs (or_introl Ha)).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 2 0) HWs (or_introl Hc)).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 1 0) HWs (or_introl Hb)).
   cbn. tstep.
   { (* ag₁ = link ⟨r₁, r₀⟩ *)
     tstep.

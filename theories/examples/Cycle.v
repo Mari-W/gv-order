@@ -18,18 +18,16 @@ Definition cycle_thunk : expr :=
   Lam (LetU (Var 0) (LetU (App EClos (Var 3)) (App EClos (Var 1)))).
 
 Definition cycle_main : expr :=
-  LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  let_new_pair (let_new_pair
     (LetU (App ESpawn cycle_thunk) (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
 
-Lemma cycle_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
+Lemma cycle_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
   w_lt W (pc 0 0) (pc 1 0) →
   typed W ∅ [] ∅ [] (∅, None) cycle_main TUnit.
 Proof.
-  intros HW Ha Hb Hab. unfold cycle_main.
-  tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ SEnd (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ SEnd (pc 1 0) (or_introl Hb))|done|apply ubs_none]. }
+  intros HWs Ha Hb Hab. pose proof (proj1 HWs) as HW. unfold cycle_main.
+  apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 0 0) HWs (or_introl Ha)).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 1 0) HWs (or_introl Hb)).
   cbn. tstep.
   { tstep.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].

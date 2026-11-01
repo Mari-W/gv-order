@@ -108,7 +108,9 @@ Qed.
                 let () = spawn (λu. let () = u in let () = close d′ in close c′) in
                 let () = close c in close d
 
-    Say new puts c at x and d at y. The main thread closes c while it
+    Say new puts c at x and d at y. With the one signature of new, x
+    and y are the points E-Open binds, aliased or not to known points
+    by the constraint of new (sharp edges 104). The main thread closes c while it
     holds d, so E-Let* puts y into the frame of close c and E-App asks
     x ≺ y (ub_below_s). The thunk closes d′ while it holds c′, so its
     body asks y ≺ x. E-Conv keeps points (eqT compares them by
@@ -134,12 +136,12 @@ Qed.
     no fact, and the program stays rejected. *)
 
 Definition blocked_main : expr :=
-  LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  let_new_pair (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (App EClos (Var 1)) (App EClos (Var 3))))))
       (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
 
 Definition badlink_main : expr :=
-  LetP (App ENew EUnit) (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  let_new_pair (let_new_pair (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App ELink (Pair (Var 6) (Var 4))))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (App EClos (Var 1)) (App EClos (Var 3))))))
         (LetU (App EClos (Var 4)) (App EClos (Var 1))))))).

@@ -44,7 +44,7 @@ Definition cli : expr :=
       (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 8)) (Pair (Var 4) (Var 1)))))))))))).
 
 Definition rr_main : expr :=
-  LetP (Pair srv cli) (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  LetP (Pair srv cli) (let_new_pair (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
@@ -133,21 +133,19 @@ Lemma rq_hold_W W :
   bcs_hold (w_eq W) (w_lt W) rq_C [pc 0 0; pc 1 0].
 Proof. intros H1 H2. apply bcs_hold_intro. intros g (k & [-> | ->]) _; [apply H1|apply H2]. Qed.
 
-Lemma rr_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
+Lemma rr_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
   (∀ k, w_lt W (pc 0 k) (pc 1 k)) → (∀ k, w_lt W (pc 1 k) (pc 0 (S k))) →
   typed W ∅ [] ∅ [] (∅, None) rr_main TUnit.
 Proof.
-  intros HW Ha Hb H1 H2. unfold rr_main.
+  intros HWs Ha Hb H1 H2. pose proof (proj1 HWs) as HW. unfold rr_main.
   assert (bcs_hold (seqs W []) (slt W []) rq_C [pc 0 0; pc 1 0]) as HC.
   { eapply bcs_hold_mono; [intros ? ? ?; by apply se_w|intros ? ? ?; by apply sl_w|by apply rq_hold_W]. }
   assert (Forall (skn W []) [pc 0 0; pc 1 0]) as HK.
   { constructor; [by left|constructor; [by left|constructor]]. }
   tstep.
   { tstep; [apply cli_typed, HW|apply srv_typed, HW]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sa (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sb (pc 1 0) (or_introl Hb))|done|apply ubs_none]. }
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sa (pc 0 0) HWs (or_introl Ha)).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sb (pc 1 0) HWs (or_introl Hb)).
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].

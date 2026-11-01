@@ -19,16 +19,15 @@ Definition sync_thunk : expr :=
   Lam (LetU (Var 0) (App EClos (App ESend (Pair EUnit (Var 2))))).
 
 Definition sync_main : expr :=
-  LetP (App ENew EUnit)
+  let_new_pair
     (LetU (App ESpawn sync_thunk)
       (LetP (App ERecv (Var 0)) (LetU (Var 1) (App EClos (Var 0))))).
 
-Lemma sync_typed W : world_wf W → pt_known W (pc 0 0) →
+Lemma sync_typed W : strict W → pt_known W (pc 0 0) →
   typed W ∅ [] ∅ [] (∅, None) sync_main TUnit.
 Proof.
-  intros HW Ha. unfold sync_main.
-  tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Ssync (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
+  intros HWs Ha. pose proof (proj1 HWs) as HW. unfold sync_main, let_new_pair.
+  apply (t_new_at W _ _ _ _ _ _ _ Ssync (pc 0 0) HWs (or_introl Ha)).
   cbn. tstep.
   { cbn. tstep.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pc 0 0)) 0); [set_solver| |].

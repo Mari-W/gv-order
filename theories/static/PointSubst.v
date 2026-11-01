@@ -461,12 +461,13 @@ Lemma fresh_hi_inst σ C q v : fresh_hi (bcs_inst σ C) q v ↔ fresh_hi C q v.
 Proof. unfold fresh_hi. simpl. by rewrite length_fmap. Qed.
 
 Lemma fresh_ok_inst σ C : fresh_ok C → fresh_ok (bcs_inst σ C).
-Proof.
-  intros H f Hf Hs. simpl in Hf, Hs. rewrite length_fmap in Hs.
-  destruct (H f Hf Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)].
-  - left. exists u, p. split; [done|]. by apply fresh_lo_inst.
-  - right. exists q, v. split; [done|]. by apply fresh_hi_inst.
-Qed.
+Proof. apply fresh_ok_shape; [done|]. simpl. by rewrite length_fmap. Qed.
+
+Lemma fresh_lt_inst σ C : fresh_lt (bcs_inst σ C) → fresh_lt C.
+Proof. apply fresh_lt_shape; [done|]. simpl. by rewrite length_fmap. Qed.
+
+Lemma fresh_eq_inst σ C w : fresh_eq (bcs_inst σ C) w ↔ fresh_eq C w.
+Proof. apply fresh_eq_shape; [done|]. simpl. by rewrite length_fmap. Qed.
 
 Lemma pn_vb_var k p : pn_vb k p → ∃ b, pn_root p = NVar b ∧ b < k.
 Proof. induction p as [c|b|q IH b' i]; simpl; [done|by exists b|exact IH]. Qed.
@@ -485,6 +486,14 @@ Lemma fresh_outer_inst σ C u :
   pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →
   fresh_outer (bcs_inst σ C) u = pt_inst σ (fresh_outer C u).
 Proof. intros Hs Hr. unfold fresh_outer. simpl. by apply pt_inst_outer. Qed.
+
+Lemma fresh_at_inst σ C w p :
+  pn_vb (S (length (bc_env C))) (pt_name w) → pt_root w ≠ NVar 0 →
+  fresh_at (bcs_inst σ C) w p = pt_inst σ (fresh_at C w p).
+Proof.
+  intros Hs Hr. unfold fresh_at. rewrite pt_inst_comp. apply pt_inst_ext. intros b.
+  unfold compose. by apply fresh_outer_inst.
+Qed.
 
 Section transfer.
   Context (W W1 : world) (σ : nat → point).
@@ -547,11 +556,23 @@ Section transfer.
       constructor.
       + by apply fresh_ok_inst.
       + simpl. apply Forall_fmap. eapply Forall_impl; [exact H0|]. intros x Hx. by apply Hpk.
-      + intros u' p q v Hu Hv Hpq. apply (proj1 (fresh_lo_inst σ C u' p)) in Hu.
-        apply (proj1 (fresh_hi_inst σ C q v)) in Hv.
-        pose proof Hu as (_ & [Hs1 _] & _ & Hr1). pose proof Hv as (_ & [_ Hs2] & _ & Hr2).
-        rewrite (fresh_outer_inst σ C u'), (fresh_outer_inst σ C v) by done.
-        apply Hlt. by apply (H1 u' p q v).
+      + destruct H1 as (Hb1 & Hb2 & Hb3). split_and!.
+        * intros Hlt' u' p q v Hu Hv Hpq. apply fresh_lt_inst in Hlt'.
+          apply (proj1 (fresh_lo_inst σ C u' p)) in Hu.
+          apply (proj1 (fresh_hi_inst σ C q v)) in Hv.
+          pose proof Hu as (_ & [Hs1 _] & _ & Hr1). pose proof Hv as (_ & [_ Hs2] & _ & Hr2).
+          rewrite (fresh_outer_inst σ C u'), (fresh_outer_inst σ C v) by done.
+          apply Hlt. by apply (Hb1 Hlt' u' p q v).
+        * intros w u' p Hw Hu. apply (proj1 (fresh_eq_inst σ C w)) in Hw.
+          apply (proj1 (fresh_lo_inst σ C u' p)) in Hu.
+          pose proof Hu as (_ & [Hs1 _] & _ & Hr1). pose proof Hw as (_ & Hsw & Hrw).
+          rewrite (fresh_outer_inst σ C u'), (fresh_at_inst σ C w p) by done.
+          apply Hlt. by apply (Hb2 w u' p).
+        * intros w q v Hw Hv. apply (proj1 (fresh_eq_inst σ C w)) in Hw.
+          apply (proj1 (fresh_hi_inst σ C q v)) in Hv.
+          pose proof Hv as (_ & [_ Hs2] & _ & Hr2). pose proof Hw as (_ & Hsw & Hrw).
+          rewrite (fresh_at_inst σ C w q), (fresh_outer_inst σ C v) by done.
+          apply Hlt. by apply (Hb3 w q v).
   Qed.
 
   Lemma skn_pinst_known Ψ x :

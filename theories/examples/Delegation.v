@@ -28,26 +28,24 @@ Definition deleg_thunk : expr :=
     (LetU (App EClos (App ESend (Pair EUnit (Var 1)))) (App EClos (Var 0))))).
 
 Definition deleg_main : expr :=
-  LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  let_new_pair (let_new_pair
     (LetU (App ESpawn deleg_thunk)
       (LetP (Pair (App ESend (Pair (Var 1) (Var 3))) EUnit)
         (LetU (Var 0)
           (LetP (App ERecv (Var 2))
             (LetU (Var 1) (LetU (App EClos (Var 0)) (App EClos (Var 3))))))))).
 
-Lemma deleg_typed W : world_wf W → pt_known W (pc 0 0) →
+Lemma deleg_typed W : strict W → pt_known W (pc 0 0) →
   w_lt W (pc 0 0) (ps 0) → w_lt W (ps 1) (pc 0 1) →
   typed W ∅ [] ∅ [] (∅, None) deleg_main TUnit.
 Proof.
-  intros HW Ha H1 H2.
+  intros HWs Ha H1 H2. pose proof (proj1 HWs) as HW.
   assert (w_lt W (ps 0) (pc 0 1)) as H3.
   { eapply (wf_lt_trans _ HW); [apply (wf_lt_po _ HW (ps 0))|exact H2]. }
   assert (pt_known W (ps 0)) as Hs by exact Ha.
   unfold deleg_main.
-  tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sdel (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sd (ps 0) (or_introl Hs))|done|apply ubs_none]. }
+  apply (t_new_at W _ _ _ _ _ _ _ Sdel (pc 0 0) HWs (or_introl Ha)).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (ps 0) HWs (or_introl Hs)).
   cbn. tstep.
   { tstep.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pc 0 0)) 0); [set_solver| |].

@@ -962,12 +962,13 @@ Section ready.
   Proof. unfold fresh_hi, bcs_sw. simpl. by rewrite length_fmap. Qed.
 
   Lemma fresh_ok_sw C : fresh_ok C → fresh_ok (bcs_sw a b C).
-  Proof.
-    intros H f Hf Hs. simpl in Hf, Hs. rewrite length_fmap in Hs.
-    destruct (H f Hf Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)].
-    - left. exists u, p. split; [done|]. by apply fresh_lo_sw.
-    - right. exists q, v. split; [done|]. by apply fresh_hi_sw.
-  Qed.
+  Proof. apply fresh_ok_shape; [done|]. simpl. by rewrite length_fmap. Qed.
+
+  Lemma fresh_lt_sw C : fresh_lt (bcs_sw a b C) → fresh_lt C.
+  Proof. apply fresh_lt_shape; [done|]. simpl. by rewrite length_fmap. Qed.
+
+  Lemma fresh_eq_sw C w : fresh_eq (bcs_sw a b C) w ↔ fresh_eq C w.
+  Proof. apply fresh_eq_shape; [done|]. simpl. by rewrite length_fmap. Qed.
 
   Lemma fresh_outer_sw C u :
     pn_vb (S (length (bc_env C))) (pt_name u) →
@@ -976,6 +977,16 @@ Section ready.
     intros Hu. unfold fresh_outer. rewrite pt_inst_sw.
     replace (ptsw a b u) with u by (destruct u; unfold ptsw; simpl in *; by rewrite (pn_vb_sw a b _ _ Hu)).
     apply pt_inst_ext. intros i. unfold compose. rewrite plist_sw. done.
+  Qed.
+
+  (** A point of the fresh channel read with the alias in place of ι. *)
+  Lemma fresh_at_sw C w p :
+    pn_vb (S (length (bc_env C))) (pt_name w) → pn_vb (S (length (bc_env C))) (pt_name p) →
+    ptsw a b (fresh_at C w p) = fresh_at (bcs_sw a b C) w p.
+  Proof.
+    intros Hw Hp. unfold fresh_at. rewrite pt_inst_sw.
+    replace (ptsw a b p) with p by (destruct p; unfold ptsw; simpl in *; by rewrite (pn_vb_sw a b _ _ Hp)).
+    apply pt_inst_ext. intros i. unfold compose. by apply fresh_outer_sw.
   Qed.
 
   Lemma konst_ty_sw W k T :
@@ -1003,11 +1014,22 @@ Section ready.
       constructor.
       + by apply fresh_ok_sw.
       + by apply known_sw.
-      + intros u' p q v Hu Hv Hpq. apply (proj1 (fresh_lo_sw C u' p)) in Hu.
-        apply (proj1 (fresh_hi_sw C q v)) in Hv.
-        pose proof Hu as (_ & [Hs1 _] & _). pose proof Hv as (_ & [_ Hs2] & _).
-        rewrite <-(fresh_outer_sw C u') by exact Hs1. rewrite <-(fresh_outer_sw C v) by exact Hs2.
-        apply wsw_lt. by apply (H1 u' p q v).
+      + destruct H1 as (Hb1 & Hb2 & Hb3). split_and!.
+        * intros Hlt u' p q v Hu Hv Hpq. apply fresh_lt_sw in Hlt.
+          apply (proj1 (fresh_lo_sw C u' p)) in Hu. apply (proj1 (fresh_hi_sw C q v)) in Hv.
+          pose proof Hu as (_ & [Hs1 _] & _). pose proof Hv as (_ & [_ Hs2] & _).
+          rewrite <-(fresh_outer_sw C u') by exact Hs1. rewrite <-(fresh_outer_sw C v) by exact Hs2.
+          apply wsw_lt. by apply (Hb1 Hlt u' p q v).
+        * intros w u' p Hw Hu. apply (proj1 (fresh_eq_sw C w)) in Hw.
+          apply (proj1 (fresh_lo_sw C u' p)) in Hu.
+          pose proof Hu as (_ & [Hs1 Hs2] & _). pose proof Hw as (_ & Hsw & _).
+          rewrite <-(fresh_outer_sw C u') by exact Hs1. rewrite <-(fresh_at_sw C w p) by done.
+          apply wsw_lt. by apply (Hb2 w u' p).
+        * intros w q v Hw Hv. apply (proj1 (fresh_eq_sw C w)) in Hw.
+          apply (proj1 (fresh_hi_sw C q v)) in Hv.
+          pose proof Hv as (_ & [Hs1 Hs2] & _). pose proof Hw as (_ & Hsw & _).
+          rewrite <-(fresh_at_sw C w q) by done. rewrite <-(fresh_outer_sw C v) by exact Hs2.
+          apply wsw_lt. by apply (Hb3 w q v).
   Qed.
 
   Lemma pteqW_sw W x y : pteqW W x y → pteqW (wsw a b W) (ptsw a b x) (ptsw a b y).
@@ -1071,6 +1093,7 @@ Proof.
   - by eapply bcs_hold_mono.
   - by eapply Forall_impl.
   - by eapply Forall_impl.
+  - by eapply fresh_between_mono.
 Qed.
 
 Lemma teqW_mono W1 W2 T : ∀ U,

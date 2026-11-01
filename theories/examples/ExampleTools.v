@@ -6,6 +6,12 @@
     world with the facts it needs ([*_typed]), then at one explicit
     strict world, and [soundness] gives [*_deadlock_free].
 
+    A program text let (c, d) = new ∗ in t in a comment stands for the
+    encoded let of new, [let_new_pair t] (sharp edges 99, 104). A
+    channel at a known point x is typed by [t_new_at], new at the
+    constraint {ι ≡ x}. The typing lemmas take a strict world, because
+    [t_new_at] instantiates the body past ι.
+
     This file holds what several examples share. Strict worlds come from
     a rank, splitting of linear environments by occurrence, derived
     rules for Θ = ∅ with the tactics that apply them, and a few worlds,

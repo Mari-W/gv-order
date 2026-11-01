@@ -41,13 +41,13 @@ Definition rch : expr :=
     (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 4)) (Var 2)))))))).
 
 Definition sch : expr :=
-  EBox (Lam (LetP (App ENew EUnit)
+  EBox (Lam (let_new_pair
     (LetP (Pair (App ESend (Pair (Var 1) (Var 2))) EUnit) (LetU (Var 0)
       (LetU (App EClos (Var 1))
         (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Var 3)))))))))).
 
 Definition ch_main : expr :=
-  LetP (Pair rch sch) (LetP (App ENew EUnit)
+  LetP (Pair rch sch) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 
@@ -104,18 +104,17 @@ Proof.
     exists (pt_shift 1 chs). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma sch_typed W F : world_wf W → typed W ∅ [] ∅ [] F sch (TBox 1 ch_C (TLolli None None TUnit sch_body)).
+Lemma sch_typed W F : strict W → typed W ∅ [] ∅ [] F sch (TBox 1 ch_C (TLolli None None TUnit sch_body)).
 Proof.
-  intros HW. unfold sch.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold sch.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
   box_open1 ch_C sch_body. cbn. unfold sch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (ch_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 0) chs) as Hlt.
   { intros Ψ Hg. apply (sl_trans _ _ _ (pv 0 1)); [apply (slt_po W _ (pv 0 0) HW)|].
     eapply (sl_hyp0 _ _ _ _ (pv 0 1) chs); [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
-  cbn. tstep.
-  { tstep; [tstep| |done|apply ubs_none]. apply (KTNew _ _ _ Sch chs).
-    right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sch chs HWs).
+  { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
@@ -144,19 +143,18 @@ Proof.
     exists (pt_shift 1 chs). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma ch_typed W : world_wf W → pt_known W (pc 0 0) →
+Lemma ch_typed W : strict W → pt_known W (pc 0 0) →
   (∀ n, w_lt W (Pt (chc n) 1) (Pt (chc (S n)) 0)) →
   typed W ∅ [] ∅ [] (∅, None) ch_main TUnit.
 Proof.
-  intros HW Ha H. unfold ch_main.
+  intros HWs Ha H. pose proof (proj1 HWs) as HW. unfold ch_main.
   assert (bcs_hold (seqs W []) (slt W []) ch_C [pc 0 0]) as HC.
   { apply bcs_hold_intro. intros g (n & ->) _. apply sl_w. cbn [fact_map fact_holds].
     unfold pt_inst. cbn [pt_name pt_off]. rewrite !chc_inst. apply H. }
   assert (Forall (skn W []) [pc 0 0]) as HK by (constructor; [by left|constructor]).
   tstep.
-  { tstep; [apply sch_typed, HW|apply rch_typed, HW]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sch (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
+  { tstep; [apply sch_typed, HWs|apply rch_typed, HW]. }
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sch (pc 0 0) HWs (or_introl Ha)).
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pc 0 0)) 0); [set_solver| |].

@@ -186,6 +186,56 @@ Proof.
   - apply wjoin_l. exact (W0'_alias a x W HW Hx Ha).
 Qed.
 
+(** ** The world of the existential new (sharp edges 97, 104)
+
+    Without an alias in C the fresh constant a lies between known
+    points ([wext_fresh_con]). With the alias ι ≡ w the world is the
+    alias world above, which identifies every point of a with the
+    corresponding point of w. Every ≺ fact of C then holds because it
+    holds of w in W ([fresh_between]). *)
+
+Lemma pn_inst_alias_eq W y z n : world_wf W → w_eq W y z →
+  w_eq W (pn_inst (λ _, y) n) (pn_inst (λ _, z) n).
+Proof.
+  intros HW H. induction n as [c|v|q IH b i]; simpl.
+  - apply (wf_eq_refl _ HW).
+  - done.
+  - apply (wf_eq_slot _ HW). by apply wf_eq_shift_n.
+Qed.
+
+Lemma pt_inst_alias_eq W y z p : world_wf W → w_eq W y z →
+  w_eq W (pt_inst (λ _, y) p) (pt_inst (λ _, z) p).
+Proof. intros HW H. unfold pt_inst. apply wf_eq_shift_n; [done|]. by apply pn_inst_alias_eq. Qed.
+
+Lemma wext_fresh_new W a C :
+  strict W → fresh_ok C → Forall (pt_known W) (bc_env C) → fresh_between (w_lt W) C →
+  NConst a ∉ w_names W →
+  ∃ W', wext_fresh W {[NConst a]} W' ∧ bcs_hold (w_eq W') (w_lt W') C [pconst a].
+Proof.
+  intros HW [HC|(w & Hw & HC)] HK (Hbt & Hlo & Hhi) Ha.
+  - destruct (wext_fresh_con W a C HW HC HK (Hbt HC) Ha) as (W' & Hfr & HCa & _).
+    by exists W'.
+  - pose proof Hw as (Hwf & Hs & Hr).
+    assert (pt_known W (fresh_outer C w)) as Hx by (by apply fresh_outer_known).
+    destruct (wext_fresh_alias W a (fresh_outer C w) HW Hx Ha) as (W' & Hfr & Hal).
+    pose proof (proj1 Hfr) as HWW'. pose proof (wext_wf _ _ HWW') as HW'.
+    assert (∀ p, w_eq W' (pfresh a p) (fresh_at C w p)) as Hp.
+    { intros p. unfold pfresh, fresh_at. by apply pt_inst_alias_eq. }
+    destruct HWW' as (_ & _ & Hl & _).
+    exists W'. split; [done|].
+    apply bcs_hold_fresh_con. intros f Hf Hsf.
+    destruct (HC f Hf Hsf) as [(u & p & -> & Hu)|[(q & v & -> & Hv)| ->]]; simpl.
+    + pose proof Hu as (_ & _ & Hp0 & Hr0).
+      rewrite (fresh_outer_at C a u), (fresh_point_at C a p) by done.
+      eapply (wf_lt_eq _ HW'); [apply (wf_eq_refl _ HW')| |apply (wf_eq_sym _ HW'), Hp].
+      apply Hl. by apply (Hlo w u p).
+    + pose proof Hv as (_ & _ & Hq0 & Hr0).
+      rewrite (fresh_point_at C a q), (fresh_outer_at C a v) by done.
+      eapply (wf_lt_eq _ HW'); [apply Hp| |apply (wf_eq_refl _ HW')].
+      apply Hl. by apply (Hhi w q v).
+    + rewrite tpt_inst_pvar_at, (fresh_outer_at C a w) by done. exact Hal.
+Qed.
+
 (** ** Heads of values
 
     The semantic condition behind the frames of E-App and E-Pair: the
@@ -873,8 +923,8 @@ Proof.
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | |c| | | | | | | |]; subst. simpl. intros _.
     destruct (fresh_const (w_names W ∪ ty_roots U ∪ frame_roots F)) as [a Ha].
-    destruct (wext_fresh_con W a C HW HC HK Hbt ltac:(clear -Ha; set_solver))
-      as (W' & Hfr & HCa & HLa).
+    destruct (wext_fresh_new W a C HW HC HK Hbt ltac:(clear -Ha; set_solver))
+      as (W' & Hfr & HCa).
     exists a, S, (dual S), W'. split_and!.
     + unfold tenv_roots. rewrite map_fold_empty. clear -Ha. set_solver.
     + apply sdual_dual.

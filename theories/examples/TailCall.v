@@ -32,7 +32,7 @@ Definition tcr : expr :=
   EBox (Lam (LetP (App ERecv (Var 0)) (LetU (Var 1) (App (App EForce (Var 3)) (Var 0))))).
 
 Definition tc_main : expr :=
-  LetP (Pair tcs tcr) (LetP (App ENew EUnit)
+  LetP (Pair tcs tcr) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 
@@ -87,19 +87,18 @@ Proof.
     exists (pv 1 0). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma tc_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
+Lemma tc_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
   (∀ k, w_lt W (pc 0 k) (pc 1 0)) →
   typed W ∅ [] ∅ [] (∅, None) tc_main TUnit.
 Proof.
-  intros HW Ha Hz H. unfold tc_main.
+  intros HWs Ha Hz H. pose proof (proj1 HWs) as HW. unfold tc_main.
   assert (bcs_hold (seqs W []) (slt W []) tc_C [pc 0 0; pc 1 0]) as HC.
   { apply bcs_hold_intro. intros g (k & ->) _. apply sl_w, H. }
   assert (Forall (skn W []) [pc 0 0; pc 1 0]) as HK.
   { constructor; [by left|constructor; [by left|constructor]]. }
   tstep.
   { tstep; [apply tcr_typed, HW|apply tcs_typed, HW]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sb (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sb (pc 0 0) HWs (or_introl Ha)).
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].
