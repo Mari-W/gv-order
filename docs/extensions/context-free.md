@@ -138,8 +138,15 @@ and logged in SHARP-EDGES.
    the bind lemma.
 3. Stage C. Boxes over session variables K6 and existential points K7 in the
    relation and in the static system, then the fundamental theorem.
-4. Stage D. Examples sendTree and recvTree, a stream, and a tree server that
-   recurses on both subtrees, each with a closed deadlock_free proof.
+4. Stage D. Examples from the literature, each with a closed deadlock_free
+   proof, or a precise reason why it falls outside.
+   - sendTree and recvTree (Thiemann and Vasconcelos 2016, pp. 2–3).
+   - The binary tree channel with polymorphism per node, the stream of
+     Listing 1.1, the classic deadlock scenario (rejected), and Milner's
+     scheduler A.5 (Mordido and Pérez 2026, pp. 3–5, 37–38).
+   - Further CFST examples from the papers store ([EXAMPLE] facts) and from
+     FreeST, for instance an arithmetic expression server.
+   - A tree server that recurses on both subtrees.
 
 Stages A and B cost the most. Each stage ends with a full build, closed Print
 Assumptions and a report.
