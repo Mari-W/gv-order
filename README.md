@@ -66,8 +66,7 @@ has no axioms and no admitted proofs.
 - `Bind.v`: evaluation contexts (`Erel_bind`).
 - `TermRules.v`: one compositionality lemma per typing rule.
 - `BoxRules.v`: the rules that need the box, E-App, E-Force, E-Exp and E-Contract.
-- `FreshWorlds.v`: the world of a fresh constraint, shared by E-NewFresh and the existential signature of new (`wext_fresh_between_gen`, `wext_fresh_con`).
-- `FreshRules.v`: E-NewFresh, a channel at a fresh point between known points (`wext_fresh_between`, `sem_typed_newfresh`).
+- `FreshWorlds.v`: the world of a fresh constraint, used by the existential signature of new (`wext_fresh_between_gen`, `wext_fresh_con`).
 - `ExRules.v`: E-Pack and E-Open for existential points (`sem_typed_pack`, `sem_typed_open`), and E-Gen and E-Inst for ∀ (`sem_typed_gen`, `sem_typed_inst`).
 - `SemanticRules.v`: the infinitary judgment of these rules and its fundamental theorem.
 
@@ -87,7 +86,7 @@ has no axioms and no admitted proofs.
 - `Ordered.v`: a box whose constraint orders its two arguments.
 - `FreshBetween.v`: a box over ι ≺ κ that creates a channel between them with E-NewFresh (`fb_between_underivable`, `fb_deadlock_free_empty`).
 - `FreshMany.v`: the fresh channel acts three times between ι and κ, under the infinite constraint {ι ≺ δ} ∪ {δ+k ≺ κ} (`fm_deadlock_free`).
-- `FreshTools.v` and `SyncFresh.v`, `CycleFresh.v`, `SchedulerFresh.v`, `RequestReplyFresh.v`, `TailCallFresh.v`, `RelayFresh.v`: the closed examples retyped with fresh points in smaller worlds (`*_deadlock_free_fresh`).
+- `FreshTools.v` and `SyncFresh.v`, `CycleFresh.v`, `SchedulerFresh.v`, `RequestReplyFresh.v`, `TailCallFresh.v`, `RelayFresh.v`: the closed examples retyped with fresh points in smaller worlds, as copies `*_main_ex` that bind each fresh channel by the encoded let of new (`*_deadlock_free_fresh`).
 - `Rejected.v`: programs the static system rejects (`rr_call_underivable`).
 
 `counterexamples/`
@@ -123,8 +122,8 @@ has no axioms and no admitted proofs.
 - `pn_deadlock_free` (pn/PNTranslate.v): the translation of a closed program of type unit in fragment v1 of repaired Padovani and Novara is deadlock free. `fibo_deadlock_free` and `pipe_deadlock_free` (pn/PNExamples.v) apply it.
 - `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/.
-- E-NewFresh (`t_newfresh`, static/Typing.v) creates a channel at a fresh point ι with a constraint C that relates points of ι (ι+k, ι.i, …) to known points, when u ≺ v holds for every u ≺ p and q ≺ v of C with q at or after p in program order. `t_newfresh_lh` is the form L ≺ ι ≺ H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 96).
-- Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open and V-Ex, and the signature new : ∗ ⊸^⊥_⊤ ∃^ℓ ι. C. S@ι ⊗ S̄@ι. E-NewFresh follows from it for the encoded term let p = new ∗ in let (x, y) = p in t (`let_new`) when C has a fact below ι (`t_newfresh_open`) and stays a rule otherwise (docs/extensions/existentials.md, sharp edges 97 to 100).
+- E-NewFresh (`t_newfresh_open`, static/Typing.v) creates a channel at a fresh point ι with a constraint C that relates points of ι (ι+k, ι.i, …) to known points, when u ≺ v holds for every u ≺ p and q ≺ v of C with q at or after p in program order. `t_newfresh_lh_open` is the form L ≺ ι ≺ H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 96). E-NewFresh is a lemma on the encoded term let p = new ∗ in let (x, y) = p in t (`let_new`), not a rule (sharp edges 103).
+- Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open and V-Ex, where the lower bound ℓ is ⊤, ⊥ or a point, and the signature new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι. A frame carries a flag for a held ∃^⊥, under which no call with an upper point passes the gate (docs/extensions/existentials.md, sharp edges 97 to 100 and 103).
 - □T and ∀ιs. C. T are two type formers (`TBoxM`, `TAll`, types/Types.v) with V-□, V-∀, E-Gen for values and E-Inst. `TBox n C T` is notation for □(∀ιs. C. T), and the V-Box of the bundled box is their composite (`Vrel_box_iff`). E-Exp stays a rule (docs/extensions/existentials.md part 2, sharp edges 101 and 102).
 
 ## Other documents

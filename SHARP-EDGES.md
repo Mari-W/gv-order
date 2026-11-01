@@ -980,6 +980,11 @@ with no fact below ι itself (SyncFresh.v, the first channel of CycleFresh.v,
 TailCallFresh.v) need it. A bottom point in the point syntax would remove the
 premise, and that is a decision on the syntax.
 
+2026-11-01, later. The author approved a ⊥ marker that is no point. The lower
+bound of ∃ is ⊤, ⊥ or a point, and ⊥ occurs only in that slot. A frame carries
+a flag for a held ∃^⊥ in place of a point. new takes ∃^⊥, the premise
+`fresh_lo C u ι` is gone, and E-NewFresh is no rule (103).
+
 **99. E-OpenPair opens the scrutinee of a let pair (Claude, 2026-11-01).**
 E-Open of `cfst` opens a variable of Δ. The term of E-NewFresh is
 let (x, y) = new ∗ in t, and no variable of it has existential type, so E-Open
@@ -1032,6 +1037,24 @@ not close, and the ∀ cannot sit outside it as a separate E-Gen. The thunk also
 ignores its argument of type ∗, which is linear, so E-Abs cannot type it. E-Exp
 is therefore the introduction of □ at a ∀ over a thunk type, with its premise
 unchanged. E-Force was a lemma (`typed_force`) and stays one.
+
+**103. The lower bound ⊥ and the flag of frames, E-NewFresh goes (Claude, 2026-11-01, branch exists).**
+The lower bound of `TEx` is `lbound := LTop | LBot | LPt x`. ⊥ says nothing
+about where the channels of the value lie, and every value meets it. heads of
+∃^⊥ is empty and sets the ⊥ flag (`hbot`, `lenv_bot`), which the second
+component of a static frame carries (`fslot`, `sf_unionb`). A set of heads with
+the flag lies below no known point. So the gate fails for every upper point
+under the flag, E-Abs does not capture an unopened ∃^⊥, send does not carry
+one, and E-Pack at ⊤ or a point asks the flag off. These are the old premises
+read with the flag, and no rule has a premise of a new kind. Semantically the
+flag is the point `pbot` with a variable root, below which no point lies in a
+well-formed world, and `Erel_bind` accepts it in place of a bound on the
+context. new takes ∃^⊥, so `t_newfresh_open` and `t_newfresh_lh_open` have the
+premises of the old rules. `t_newfresh`, `t_newfresh_lh`, `sr_newfresh` and
+rules/FreshRules.v are deleted, and every fresh example types a copy of its
+program with the encoded let of new. The statements of soundness, fundamental,
+fundamental_proc and the composition lemmas are unchanged.
+docs/extensions/existentials.md, part 3.
 
 ## From the earlier abandoned mechanization (spec §15)
 
