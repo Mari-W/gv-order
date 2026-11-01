@@ -22,7 +22,10 @@
     the family and round k+1 for round k, so C[ι+1, ι[0]+1] ⊆ C
     ([rel_sub]). At ((a,0), (b,0)) round k is C₀((a,k), [rel_ip] k),
     with rel_ip 0 = (b,0) and rel_ip (k+1) = (a,k)[0]+1. [Wrel] orders
-    them by the ranks 3k+3, 3k+4+4o for (a,k)[0]+o, and 5 for (b,0). *)
+    them by the ranks 3k+3, 3k+4+4o for (a,k)[0]+o, and 5 for (b,0).
+
+    In the empty world c is created with the facts of its own rounds and
+    d with the four facts of round 0 that mention it (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -216,35 +219,116 @@ Proof.
       destruct k; unfold rel_rank; cbn; lia.
 Qed.
 
-Lemma rel_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
-  (∀ k, w_lt W (pc 0 k) (rel_ip k) ∧ w_lt W (pc 0 k) (rel_sl k) ∧
-        w_lt W (rel_sl k) (pt_shift 1 (pc 0 k)) ∧ w_lt W (rel_sl k) (rel_ip k) ∧
-        w_lt W (rel_ip k) (pt_shift 1 (pc 0 k)) ∧ w_lt W (rel_ip k) (pt_shift 1 (rel_sl k))) →
-  typed W ∅ [] ∅ [] (∅, None) rel_main TUnit.
+(** Both channels come from creation constraints (sharp edges 105).
+    c is created with the facts of its own rounds, which stay inside
+    its name: ι ≺ ι[0], ι[0] ≺ ι+1 and every later round C₀(ι+k+1,
+    ι+k[0]+1). The ranks of [Wrel] order them. d is created at a fresh
+    point ε with the four facts of round 0 that mention it,
+
+      {ι ≺ ε,  ι[0] ≺ ε,  ε ≺ ι+1,  ε ≺ ι[0]+1},
+
+    whose betweenness program order and the facts of c give. *)
+Definition relc_P (g : fact) : Prop :=
+  g = FLt (pv 0 0) (sv 0) ∨ g = FLt (sv 0) (pv 0 1) ∨
+  ∃ k, c0 (pv 0 (S k)) (Pt (NSlot (NVar 0) k 0) 1) g.
+Definition relc_C : bcs := BCs [] relc_P.
+
+(** The constraint of d: the variable 0 is ε, 1 is ι, 2 is ι[0]. *)
+Definition reld_facts (g : fact) : Prop :=
+  g = FLt (pvar 1) (pvar 0) ∨ g = FLt (pvar 2) (pvar 0) ∨
+  g = FLt (pvar 0) (pv 1 1) ∨ g = FLt (pvar 0) (pv 2 1).
+Definition reld_C : bcs := BCs [pvar 0; sv 0] reld_facts.
+
+Definition relv_base (p : pname) : nat :=
+  match p with NVar 0 => 3 | NSlot (NVar 0) k 0 => 3 * k + 4 | _ => 0 end.
+Definition relv_step (p : pname) : nat :=
+  match p with NVar 0 => 3 | NSlot (NVar 0) _ 0 => 4 | _ => 1 end.
+Definition relv_rank (x : point) : nat := relv_base (pt_name x) + relv_step (pt_name x) * pt_off x.
+
+Lemma relc_ok peq plt : cc_ok peq plt relc_C.
 Proof.
-  intros HWs Ha Hb H. pose proof (proj1 HWs) as HW. unfold rel_main.
-  assert (bcs_hold (seqs W []) (slt W []) rel_C [pc 0 0; pc 1 0]) as HC.
-  { eapply bcs_hold_mono; [intros ? ? ?; by apply se_w|intros ? ? ?; by apply sl_w|by apply rel_hold_W]. }
-  assert (Forall (skn W []) [pc 0 0; pc 1 0]) as HK.
-  { constructor; [by left|constructor; [by left|constructor]]. }
-  assert (w_lt W (pc 0 0) (pc 1 0)) as H0 by apply (H 0).
+  apply (cc_ok_inner peq plt relc_P (λ x y, relv_rank x < relv_rank y)).
+  - intros x y z; lia.
+  - intros x; lia.
+  - intros x _. unfold relv_rank, pt_shift. cbn.
+    assert (0 < relv_step (pt_name x)) by (unfold relv_step; repeat case_match; lia). nia.
+  - intros g [-> | [-> | (k & Hg)]] _; [eexists _, _; split; [done|]; unfold relv_rank; cbn; lia..|].
+    unfold c0 in Hg. repeat destruct Hg as [->|Hg]; subst;
+      eexists _, _; (split; [done|]); unfold relv_rank; cbn; lia.
+Qed.
+
+Lemma rel_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) rel_main TUnit.
+Proof.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold rel_main.
   tstep.
   { tstep; [apply prod_typed, HWs|apply relay_typed, HW]. }
-  cbn. apply (t_new_at W _ _ _ _ _ _ _ Srl (pc 0 0) HWs (or_introl Ha)).
-  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 1 0) HWs (or_introl Hb)).
-  cbn. tstep.
+  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Srl relc_C); [apply relc_ok|constructor|].
+  fresh_clean.
+  change (bcs_inst (pshift 1) relc_C) with relc_C.
+  assert (slt W [(relc_C, [pvar 0])] (pv 0 0) (sv 0)) as Hc1.
+  { eapply (sl_hyp0 _ _ _ _ (pv 0 0) (sv 0)); [by left|by left|cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W [(relc_C, [pvar 0])] (sv 0) (pv 0 1)) as Hc2.
+  { eapply (sl_hyp0 _ _ _ _ (sv 0) (pv 0 1)); [by left|by right; left|cbn; lia|reflexivity|reflexivity]. }
+  refine (t_newfresh_open W _ _ ∅ _ _ _ _ SEnd reld_C _ _ _ _).
+  { intros f Hf Hs. destruct Hf as [-> | [-> | [-> | ->]]].
+    - left. eexists _, _. split; [done|]. split_and!; [by left|done|done|done].
+    - left. eexists _, _. split; [done|]. split_and!; [by right; left|done|done|done].
+    - right. eexists _, _. split; [done|]. split_and!; [by right; right; left|done|done|done].
+    - right. eexists _, _. split; [done|]. split_and!; [by right; right; right|done|done|done]. }
+  { constructor; [eapply skn_inst; [by left|by left|done]|].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  { intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) _.
+    destruct Hf as [E|[E|[E|E]]]; injection E as -> ->; try done;
+    destruct Hf' as [E|[E|[E|E]]]; injection E as -> ->; try done; unfold fresh_outer; cbn;
+      first [apply (slt_po W _ (pv 0 0) HW)|apply (slt_po W _ (sv 0) HW)|exact Hc2
+            |eapply sl_trans; [exact Hc1|apply (slt_po W _ (sv 0) HW)]]. }
+  fresh_clean.
+  match goal with |- typed _ _ ?Ψ0 _ _ _ _ _ => set (Ψ := Ψ0) end.
+  assert (∀ u v, reld_facts (FLt u v) → fact_scoped 3 (FLt u v) →
+            slt W Ψ (pt_inst (plist [pvar 0; pv 1 0; Pt (NSlot (NVar 1) 0 0) 0]) u)
+                    (pt_inst (plist [pvar 0; pv 1 0; Pt (NSlot (NVar 1) 0 0) 0]) v)) as Hd.
+  { intros u v Hf Hs. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) reld_C) (pvar 0) u v);
+      [by right; left|done|done]. }
+  assert (∀ g, relc_P g → fact_scoped 1 g →
+            fact_holds (seqs W Ψ) (slt W Ψ) (fact_map (pt_inst (plist [pv 1 0])) g)) as Hc.
+  { intros [x y|x y] Hg Hs; cbn.
+    - eapply (sl_hyp0 _ _ _ _ x y); [by left|exact Hg|exact Hs|reflexivity|reflexivity].
+    - eapply (se_hyp0 _ _ _ _ x y); [by left|exact Hg|exact Hs|reflexivity|reflexivity]. }
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) rel_C [pv 1 0; pvar 0]) as HC.
+  { apply bcs_hold_intro. intros g [Hg|(k & Hg)] Hs.
+    - unfold c0 in Hg. repeat destruct Hg as [->|Hg]; subst; cbn.
+      + apply (Hd (pvar 1) (pvar 0)); [by left|cbn; lia].
+      + apply (Hc (FLt (pv 0 0) (sv 0))); [by left|cbn; lia].
+      + apply (Hc (FLt (sv 0) (pv 0 1))); [by right; left|cbn; lia].
+      + apply (Hd (pvar 2) (pvar 0)); [by right; left|cbn; lia].
+      + apply (Hd (pvar 0) (pv 1 1)); [by right; right; left|cbn; lia].
+      + apply (Hd (pvar 0) (pv 2 1)); [by right; right; right|cbn; lia].
+    - assert (fact_map (pt_inst (plist [pv 1 0; pvar 0])) g = fact_map (pt_inst (plist [pv 1 0])) g) as ->.
+      { unfold c0 in Hg. repeat destruct Hg as [->|Hg]; subst; done. }
+      apply Hc; [by right; right; exists k|].
+      unfold c0 in Hg. repeat destruct Hg as [->|Hg]; subst; cbn; lia. }
+  assert (Forall (skn W Ψ) [pv 1 0; pvar 0]) as HK.
+  { constructor; [eapply skn_inst; [by left|by left|done]|].
+    constructor; [eapply skn_inst; [by right; left|by left|done]|constructor]. }
+  assert (slt W Ψ (pv 1 0) (pvar 0)) as H1 by (apply (Hd (pvar 1) (pvar 0)); [by left|cbn; lia]).
+  match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E] _ _ _ =>
+    change A with (TSess (dual SEnd) (pvar 0)); change B with (TSess SEnd (pvar 0));
+    change A' with (TSess (dual Srl) (pv 1 0)); change B' with (TSess Srl (pv 1 0));
+    change D with (TBox 2 rel_C (TLolli None None TUnit prod_body));
+    change E with (TBox 2 rel_C (TLolli None None TUnit relay_body)) end.
+  tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].
-    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; by apply sl_w]. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pv 1 0)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact H1]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 2 rel_C None relay_body [pc 0 0; pc 1 0]);
+    - apply (typed_force W _ _ _ _ _ _ 2 rel_C None relay_body [pv 1 0; pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 1 0). split; [done|]. apply sle_refl, HW. }
+      exists (pvar 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rel_C None prod_body [pc 0 0; pc 1 0]);
+  - apply (typed_force W _ _ _ _ _ _ 2 rel_C None prod_body [pv 1 0; pvar 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
@@ -252,9 +336,6 @@ Qed.
 
 Lemma rel_deadlock_free : deadlock_free (∅, {[+ rel_main +]}).
 Proof.
-  apply (soundness Wrel _ TUnit Wrel_strict).
-  apply ptyped_closed; [constructor|]. apply rel_typed; [apply Wrel_strict| | |].
-  - unfold pt_known, Wrel. simpl. set_solver.
-  - unfold pt_known, Wrel. simpl. set_solver.
-  - intros k. split_and!; apply glt_base; exists k; naive_solver.
+  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed; [constructor|]. apply rel_typed, Wpo_strict.
 Qed.

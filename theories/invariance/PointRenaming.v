@@ -14,7 +14,7 @@
     relations by induction on the step index. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export relation.LogicalRelation.
+From LRGV Require Export relation.LogicalRelation relation.Creation.
 
 (** ** The transposition on constants, names and points *)
 
@@ -1009,25 +1009,18 @@ Section ready.
       destruct ub as [p|]; simpl; [|done]. rewrite pt_inst_sw. f_equal.
       apply pt_inst_ext. intros i. symmetry. apply plist_sw.
     - assert (ptsw a b (pvar 0) = pvar 0) as -> by done.
-      constructor.
-      + by apply fresh_ok_sw.
-      + by apply known_sw.
-      + destruct H1 as (Hb1 & Hb2 & Hb3). split_and!.
-        * intros Hlt u' p q v Hu Hv Hpq. apply fresh_lt_sw in Hlt.
-          apply (proj1 (fresh_lo_sw C u' p)) in Hu. apply (proj1 (fresh_hi_sw C q v)) in Hv.
-          pose proof Hu as (_ & [Hs1 _] & _). pose proof Hv as (_ & [_ Hs2] & _).
-          rewrite <-(fresh_outer_sw C u') by exact Hs1. rewrite <-(fresh_outer_sw C v) by exact Hs2.
-          apply wsw_lt. by apply (Hb1 Hlt u' p q v).
-        * intros w u' p Hw Hu. apply (proj1 (fresh_eq_sw C w)) in Hw.
-          apply (proj1 (fresh_lo_sw C u' p)) in Hu.
-          pose proof Hu as (_ & [Hs1 Hs2] & _). pose proof Hw as (_ & Hsw & _).
-          rewrite <-(fresh_outer_sw C u') by exact Hs1. rewrite <-(fresh_at_sw C w p) by done.
-          apply wsw_lt. by apply (Hb2 w u' p).
-        * intros w q v Hw Hv. apply (proj1 (fresh_eq_sw C w)) in Hw.
-          apply (proj1 (fresh_hi_sw C q v)) in Hv.
-          pose proof Hv as (_ & [Hs1 Hs2] & _). pose proof Hw as (_ & Hsw & _).
-          rewrite <-(fresh_at_sw C w q) by done. rewrite <-(fresh_outer_sw C v) by exact Hs2.
-          apply wsw_lt. by apply (Hb3 w q v).
+      constructor; [|by apply known_sw].
+      apply (cc_ok_transfer (w_eq W) (w_lt W) (w_eq (wsw a b W)) (w_lt (wsw a b W)) C (bcs_sw a b C)
+               (ptsw a b)); try done.
+      + intros p Hp. rewrite pt_root_sw, Hp. done.
+      + intros x Hx. rewrite pt_root_sw. destruct (pt_root x) as [c|c|q o i]; simpl; done.
+      + intros p q _ _ E. by rewrite <-(ptsw_involutive a b p), E, ptsw_involutive.
+      + intros y Hy. exists (ptsw a b y). rewrite ptsw_involutive, pt_root_sw, Hy. by split.
+      + intros x y (x0 & y0 & Hxy & -> & ->). apply geq_base.
+        exists (ptsw a b x0), (ptsw a b y0). rewrite !pt_inst_sw. split_and!; [by apply wsw_eq|done|done].
+      + intros x y (x0 & y0 & Hxy & -> & ->). apply glt_base.
+        exists (ptsw a b x0), (ptsw a b y0). rewrite !pt_inst_sw. split_and!; [by apply wsw_lt|done|done].
+      + intros g Hg. by apply bcs_open_sw.
   Qed.
 
   Lemma pteqW_sw W x y : pteqW W x y → pteqW (wsw a b W) (ptsw a b x) (ptsw a b y).
@@ -1090,8 +1083,8 @@ Proof.
   - destruct (hbot T); [done|]. eauto.
   - by eapply bcs_hold_mono.
   - by eapply Forall_impl.
+  - by eapply cc_ok_mono.
   - by eapply Forall_impl.
-  - by eapply fresh_between_mono.
 Qed.
 
 Lemma teqW_mono W1 W2 T : ∀ U,

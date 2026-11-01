@@ -820,13 +820,27 @@ Proof.
     + intros w q v _ (Hf & _). discriminate Hf.
 Qed.
 
+(** The alias {ι ≡ x} is a creation constraint in every context. *)
+Lemma cc_ok_alias peq plt x : cc_ok peq plt (alias_bcs x).
+Proof.
+  apply cc_ok_fresh.
+  - assert (fresh_eq (alias_bcs x) (pvar 1)) as Hw by (split_and!; [done|cbn; lia|done]).
+    right. exists (pvar 1). split; [done|]. intros f Hf _. by right; right.
+  - split_and!.
+    + intros Hlt. exfalso. apply (fresh_lt_no_eq (alias_bcs x) (pvar 1)); [done|].
+      split_and!; [done|cbn; lia|done].
+    + intros w u p _ (Hf & _). discriminate Hf.
+    + intros w q v _ (Hf & _). discriminate Hf.
+Qed.
+
 Lemma t_new_at W Φ Ψ Θ Δ F e T S x :
   strict W → skn W Ψ x →
   typed W Φ Ψ Θ (Some (TSess (dual S) x) :: Some (TSess S x) :: None :: None :: Δ) F e T →
   typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
   intros HW Hx Hb. unfold let_new.
-  destruct (alias_bcs_ok W Ψ x Hx) as (HC & HK & Hbt).
+  destruct (alias_bcs_ok W Ψ x Hx) as (_ & HK & _).
+  pose proof (cc_ok_alias (seqs W Ψ) (slt W Ψ) x) as HC.
   set (C := alias_bcs x).
   set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
   (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)

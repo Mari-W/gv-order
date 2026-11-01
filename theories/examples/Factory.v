@@ -14,7 +14,16 @@
 
     f is used twice (contraction at □). Both sessions live at (a,0), so
     the client must finish one before it requests the next. Holding
-    both while it blocks on one would ask (a,0) ≺ (a,0). *)
+    both while it blocks on one would ask (a,0) ≺ (a,0).
+
+    Both programs of this file keep a world with constants (sharp
+    edges 105). main creates no channel, so it knows no point, and the
+    box creates its channels. fac returns its session at a point that
+    its type names, and main passes the result of force straight to
+    recv, so no E-Open can hide the point behind ∃. In fa_main the two
+    sessions come from two calls of the box. Neither is in scope when
+    the other is created, and fa_main needs (a,0) ≺ (b,0) and
+    (a,1) ≺ (b,0) between them, which no creation constraint can state. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.

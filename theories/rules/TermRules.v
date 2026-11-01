@@ -5,7 +5,7 @@
     frame F ∪ H, where H holds the heads of the rest of the term. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export rules.FreshWorlds.
+From LRGV Require Export rules.FreshWorlds relation.Creation.
 
 Set Default Proof Using "All".
 
@@ -881,10 +881,10 @@ Proof.
   intros HW HV1 HV2.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [| | | | | |S C HC HK Hbt]; subst.
+  inversion Hk as [| | | | | |S C HC HK]; subst.
   apply Vrel_unit_iff in HV as [-> ->]. destruct n as [|n']; [apply Erel_0|].
-  (* new at a fresh point a, packed (sharp edges 97). With the alias
-     ι ≡ x the world of [wext_fresh_new] identifies a with x (104). *)
+  (* new at a fresh point a, packed (sharp edges 97). The world is W with
+     the facts of C at a, a fresh extension by [cc_ok] (105). *)
   assert (tstep (App ENew EUnit) (LNew "c") (Pair (Chan "c") (Chan "c"))) as Hst0
     by apply TStepHead, HeadNew.
   apply Erel_S_iff. split_and!.
@@ -893,8 +893,7 @@ Proof.
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | |c| | | | | | | |]; subst. simpl. intros _.
     destruct (fresh_const (w_names W ∪ ty_roots U ∪ frame_roots F)) as [a Ha].
-    destruct (wext_fresh_new W a C HW HC HK Hbt ltac:(clear -Ha; set_solver))
-      as (W' & Hfr & HCa).
+    destruct (wext_cc W a C HW HC HK ltac:(clear -Ha; set_solver)) as (W' & Hfr & HCa).
     exists a, S, (dual S), W'. split_and!.
     + unfold tenv_roots. rewrite map_fold_empty. clear -Ha. set_solver.
     + apply sdual_dual.

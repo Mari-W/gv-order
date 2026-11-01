@@ -13,7 +13,12 @@
     creates d at s itself, so the alias of the spec is the choice of
     the point of [new]. send asks (a,0) ≺ (s,0) (KTSend, {ι} ≺ heads of
     the payload), which the sender also needs because it holds d′ at s.
-    ⟨send ⟨d, c⟩, ∗⟩ stands for a let of one variable. *)
+    ⟨send ⟨d, c⟩, ∗⟩ stands for a let of one variable.
+
+    The program types in the empty world. c is created with the creation
+    constraint {ι ≺ ι[0], ι[0]+1 ≺ ι+1}, two facts between ι and its own
+    carried point, and d by the alias at ι[0] (sharp edges 105). The
+    points (a,k) and s above are ι+k and ι[0]. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -35,73 +40,85 @@ Definition deleg_main : expr :=
           (LetP (App ERecv (Var 2))
             (LetU (Var 1) (LetU (App EClos (Var 0)) (App EClos (Var 3))))))))).
 
-Lemma deleg_typed W : strict W → pt_known W (pc 0 0) →
-  w_lt W (pc 0 0) (ps 0) → w_lt W (ps 1) (pc 0 1) →
-  typed W ∅ [] ∅ [] (∅, None) deleg_main TUnit.
+(** The creation constraint of c: ι ≺ ι[0] and ι[0]+1 ≺ ι+1. Both facts
+    stay inside ι, and the rank 10·k for ι+k and 5 + o for ι[0]+o
+    orders them (sharp edges 105). *)
+Abbreviation sd k := (Pt (NSlot (NVar 0) 0 0) k).
+
+Definition dl_P (g : fact) : Prop := g = FLt (pv 0 0) (sd 0) ∨ g = FLt (sd 1) (pv 0 1).
+Definition dl_C : bcs := BCs [] dl_P.
+
+Definition dl_rank (x : point) : nat :=
+  match pt_name x with
+  | NVar 0 => 10 * pt_off x
+  | NSlot (NVar 0) 0 0 => 5 + pt_off x
+  | _ => pt_off x
+  end.
+
+Lemma dl_ok peq plt : cc_ok peq plt dl_C.
 Proof.
-  intros HWs Ha H1 H2. pose proof (proj1 HWs) as HW.
-  assert (w_lt W (ps 0) (pc 0 1)) as H3.
-  { eapply (wf_lt_trans _ HW); [apply (wf_lt_po _ HW (ps 0))|exact H2]. }
-  assert (pt_known W (ps 0)) as Hs by exact Ha.
-  unfold deleg_main.
-  apply (t_new_at W _ _ _ _ _ _ _ Sdel (pc 0 0) HWs (or_introl Ha)).
-  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (ps 0) HWs (or_introl Hs)).
+  apply (cc_ok_inner peq plt dl_P (λ x y, dl_rank x < dl_rank y)).
+  - intros x y z; lia.
+  - intros x; lia.
+  - intros [n o] _. unfold dl_rank, pt_shift. simpl. repeat case_match; lia.
+  - intros g [-> | ->] _; eexists _, _; (split; [done|]); cbn; lia.
+Qed.
+
+Lemma deleg_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) deleg_main TUnit.
+Proof.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold deleg_main.
+  apply (t_new_open W _ _ ∅ _ _ _ _ Sdel dl_C); [apply dl_ok|constructor|].
+  fresh_clean.
+  set (Ψ := [(dl_C, [pvar 0])]).
+  assert (slt W Ψ (pv 0 0) (sd 0)) as H1.
+  { eapply (sl_hyp0 _ _ _ _ (pv 0 0) (sd 0)); [by left|by left|cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W Ψ (sd 1) (pv 0 1)) as H2.
+  { eapply (sl_hyp0 _ _ _ _ (sd 1) (pv 0 1)); [by left|by right|cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W Ψ (sd 0) (pv 0 1)) as H3.
+  { eapply sl_trans; [apply (slt_po W _ (sd 0) HW)|exact H2]. }
+  apply (t_new_at W _ _ _ _ _ _ _ Sd (sd 0) HWs); [eapply skn_inst; [by left|by left|done]|].
   cbn. tstep.
   { tstep.
-    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pc 0 0)) 0); [set_solver| |].
+    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn. tstep.
-      + tstep; [tstep|apply (KTRecv _ _ _ 1 (TSess Sd (pvar 0)) SEnd (pc 0 0))|kscope|].
+      + tstep; [tstep|apply (KTRecv _ _ _ 1 (TSess Sd (pvar 0)) SEnd (pv 0 0))|kscope|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pc 0 1). split; [done|]. right. apply (slt_po W _ (pc 0 0) HW).
+        exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
       + cbn. tstep.
         * tstep.
-          -- tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (ps 0)); cbn; set_solver|done|].
+          -- tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (sd 0)); cbn; set_solver|done|].
              ++ tstep; tstep.
-             ++ apply ubs_intro; [intros y Hy; mem_cases Hy; by apply sl_w|].
-                exists (pc 0 1). split; [done|]. right. by apply sl_w.
+             ++ apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
+                exists (pv 0 1). split; [done|]. right. done.
           -- apply KTClos.
           -- done.
-          -- apply ubs_intro; [intros y Hy; mem_cases Hy; by apply sl_w|].
-             exists (pc 0 1). split; [done|]. right. by apply sl_w.
+          -- apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
+             exists (pv 0 1). split; [done|]. right. done.
         * tstep; [tstep|apply KTClos|done|].
           apply ubs_intro; [intros y Hy; mem_cases Hy|].
-          exists (pc 0 1). split; [done|]. apply sle_refl, HW.
+          exists (pv 0 1). split; [done|]. apply sle_refl, HW.
     - apply KTSpawn.
     - done.
     - apply ubs_none. }
   cbn. tstep.
   { tstep; [tstep|].
-    tstep; [|apply (KTSend _ _ _ 1 (TSess Sd (pvar 0)) SEnd (pc 0 0))| |].
+    tstep; [|apply (KTSend _ _ _ 1 (TSess Sd (pvar 0)) SEnd (pv 0 0))| |].
     - tstep; tstep.
-    - cbn. intros h Hh. mem_cases Hh. by apply sl_w.
+    - cbn. intros h Hh. mem_cases Hh. done.
     - kscope.
-    - apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. by apply sl_w. }
+    - apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. done. }
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep|apply KTRecv|kscope|].
-    apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. by apply sl_w. }
+    apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. done. }
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
-    apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. by apply sl_w. }
+    apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. done. }
   tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-Qed.
-
-Definition Wdeleg : world := Wfacts [0] [(pc 0 0, ps 0); (ps 1, pc 0 1)].
-
-Definition kdel (p : pname) : nat := match p with NConst _ => 10 | _ => 1 end.
-
-Lemma Wdeleg_strict : strict Wdeleg.
-Proof.
-  apply (Wfacts_strict _ _ kdel (λ _, 0) (λ _ _ _, 15)); [intros []; cbn; lia| |].
-  - repeat apply Forall_cons_2; try apply Forall_nil_2; cbn; set_solver.
-  - repeat apply Forall_cons_2; try apply Forall_nil_2; cbn; lia.
 Qed.
 
 Lemma deleg_deadlock_free : deadlock_free (∅, {[+ deleg_main +]}).
 Proof.
-  apply (soundness Wdeleg _ TUnit Wdeleg_strict).
-  apply ptyped_closed; [constructor|]. apply deleg_typed; [apply Wdeleg_strict| | |].
-  - apply Wfacts_known. set_solver.
-  - apply Wfacts_lt. set_solver.
-  - apply Wfacts_lt. set_solver.
+  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed; [constructor|]. apply deleg_typed, Wpo_strict.
 Qed.

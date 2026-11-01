@@ -183,56 +183,7 @@ Definition fb_main : expr :=
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
         (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
 
-Lemma fb_main_typed W : strict W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
-  w_lt W (pc 0 0) (pc 1 0) → typed W ∅ [] ∅ [] (∅, None) fb_main TUnit.
-Proof.
-  intros HWs Ha Hb Hab. pose proof (proj1 HWs) as HW. unfold fb_main.
-  tstep.
-  { tstep; [tstep|apply fb_typed, HW]. }
-  cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 0 0) HWs (or_introl Ha)).
-  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 1 0) HWs (or_introl Hb)).
-  cbn. tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 0)) (Some (pc 0 0)) 0); [set_solver| |].
-    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
-    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
-    apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pc 0 0). split; [done|apply sle_refl, HW]. }
-  cbn. tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 1 0)) 0); [set_solver| |].
-    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
-    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
-    apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pc 1 0). split; [done|apply sle_refl, HW]. }
-  cbn. eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 1 0)) None
-                 (TProd (TSess SEnd (pc 0 0)) (TSess SEnd (pc 1 0))) TUnit); [reflexivity| | |].
-  - change (TLolli (Some (pc 1 0)) None (TProd (TSess SEnd (pc 0 0)) (TSess SEnd (pc 1 0))) TUnit)
-      with (ty_inst [pc 0 0; pc 1 0] fb_body).
-    apply (typed_force W _ _ _ _ _ _ 2 fb_C None fb_body [pc 0 0; pc 1 0]); [done|done| | |apply ubs_none|tstep].
-    + apply bcs_hold_intro. intros g -> _. cbn. by apply sl_w.
-    + constructor; [by left|constructor; [by left|constructor]].
-  - cbn. tstep; tstep.
-  - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-Qed.
 
-Definition Wfb : world := Wfacts [0; 1] [(pc 0 0, pc 1 0)].
-
-Lemma Wfb_strict : strict Wfb.
-Proof.
-  apply (Wfacts_strict _ _ (λ _, 1) (λ a, 10 * a) (λ _ _ _, 0)); [lia| |].
-  - repeat constructor; cbn; set_solver.
-  - repeat constructor; cbn; lia.
-Qed.
-
-Lemma fb_deadlock_free : deadlock_free (∅, {[+ fb_main +]}).
-Proof.
-  apply (soundness Wfb _ TUnit Wfb_strict).
-  apply ptyped_closed; [constructor|]. apply fb_main_typed; [apply Wfb_strict| | |].
-  - apply Wfacts_known. set_solver.
-  - apply Wfacts_known. set_solver.
-  - apply Wfacts_lt. set_solver.
-Qed.
 
 (** ** The same program in the empty world
 
@@ -303,6 +254,14 @@ Qed.
 
 (** The empty world: no constant, no fact. *)
 Lemma fb_deadlock_free_empty : deadlock_free (∅, {[+ fb_main_ex +]}).
+Proof.
+  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed; [constructor|]. apply fb_main_typed_fresh, Wpo_strict.
+Qed.
+
+(** [fb_main] is the program [fb_main_ex], so it types in the empty
+    world too (sharp edges 105). *)
+Lemma fb_deadlock_free : deadlock_free (∅, {[+ fb_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
   apply ptyped_closed; [constructor|]. apply fb_main_typed_fresh, Wpo_strict.

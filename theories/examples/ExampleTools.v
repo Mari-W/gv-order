@@ -548,3 +548,57 @@ Ltac box_open1 C T :=
     with [Some (pinst_ty (pshift 1) (TBox 1 C (TLolli None None TUnit T)))];
   rewrite (pinst_closed _ (TBox 1 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
 
+(** ** Creation constraints in the examples (sharp edges 105)
+
+    Every example creates its channels in the empty world. A channel's
+    order facts are the creation constraint of its new, and later code
+    reads them as hypotheses. *)
+
+Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option fslot)).
+Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
+
+Lemma fhyps_pinst_empty σ : fhyps_pinst σ ∅ = ∅.
+Proof. unfold fhyps_pinst. by rewrite fmap_empty. Qed.
+
+(** A point is known when its root is the root of an instance point
+    of a hypothesis. *)
+Lemma skn_inst W Ψ C xs y x : (C, xs) ∈ Ψ → y ∈ xs → pt_root x = pt_root y → skn W Ψ x.
+Proof. intros Hg Hy E. right. by exists C, xs, y. Qed.
+
+(** After E-NewFresh at the top level: Θ, F and Φ are empty. *)
+Ltac fresh_clean :=
+  rewrite ?tenv_pinst_empty, ?sf_pinst_none, ?fhyps_pinst_empty; cbn;
+  rewrite ?fhyps_pinst_empty.
+
+(** A creation constraint whose facts are ≺ facts between points of ι
+    is acyclic and conservative when an order R inside ι contains
+    program order and the facts. *)
+Lemma pn_vb1_root x : pn_vb 1 (pt_name x) → pt_root x = NVar 0.
+Proof. intros H. destruct (pn_vb_var _ _ H) as (b & Hb & Hlt). unfold pt_root. rewrite Hb. f_equal. lia. Qed.
+
+Lemma cc_ok_inner peq plt P (R : point → point → Prop) :
+  (∀ x y z, R x y → R y z → R x z) → (∀ x, ¬ R x x) →
+  (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 x)) →
+  (∀ g, P g → fact_scoped 1 g → ∃ x y, g = FLt x y ∧ R x y) →
+  cc_ok peq plt (BCs [] P).
+Proof.
+  intros Ht Hi Hp HP.
+  apply (cc_model peq plt (BCs [] P) id R (λ _ _, False) (λ _ _, False)).
+  - done.
+  - done.
+  - done.
+  - intros x y i E. unfold id in *. by subst.
+  - exact Ht.
+  - exact Hp.
+  - exact Hi.
+  - intros ? ? ? ? [].
+  - intros a b Hg. apply bcs_open_nil in Hg as [Hg Hs]. destruct (HP _ Hg Hs) as (? & ? & E & _). discriminate E.
+  - intros a b Hg. apply bcs_open_nil in Hg as [Hg Hs].
+    destruct (HP _ Hg Hs) as (x & y & E & Hxy). injection E as <- <-.
+    destruct Hs as [Ha Hb]. right; right; right. unfold id.
+    split_and!; [by apply pn_vb1_root|by apply pn_vb1_root|by left].
+Qed.
+
+(** A ≺ fact of a hypothesis without outer points, as a tactic. *)
+Ltac hmem := hnf; eexists; repeat (first [left; reflexivity|right]); reflexivity.
+

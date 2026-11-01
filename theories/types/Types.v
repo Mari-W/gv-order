@@ -1151,11 +1151,70 @@ Lemma fresh_between_mono (plt plt' : point → point → Prop) C :
   (∀ x y, plt x y → plt' x y) → fresh_between plt C → fresh_between plt' C.
 Proof. intros H (H1 & H2 & H3). split_and!; eauto. Qed.
 
+(** ** The closure of a set of facts
+
+    [geq E] is the least congruence for successor and slots that
+    contains E, and [glt E L] the least transitive relation that
+    contains L and program order and is closed under [geq E]. They are
+    the fact theory read as a closure. relation/Worlds.v builds the
+    world [wgen] from them. *)
+
+Inductive geq (E : point → point → Prop) : point → point → Prop :=
+  | geq_base x y : E x y → geq E x y
+  | geq_refl x : geq E x x
+  | geq_sym x y : geq E x y → geq E y x
+  | geq_trans x y z : geq E x y → geq E y z → geq E x z
+  | geq_shift x y : geq E x y → geq E (pt_shift 1 x) (pt_shift 1 y)
+  | geq_slot x y i : geq E x y → geq E (pt_slot x i) (pt_slot y i).
+
+Inductive glt (E L : point → point → Prop) : point → point → Prop :=
+  | glt_base x y : L x y → glt E L x y
+  | glt_po x : glt E L x (pt_shift 1 x)
+  | glt_eq x x' y y' : geq E x x' → glt E L x' y' → geq E y' y → glt E L x y
+  | glt_trans x y z : glt E L x y → glt E L y z → glt E L x z.
+
+(** ** Creation constraints (static-system.md §5, sharp edges 105)
+
+    The constraint C of [new] is a box constraint of one variable ι, the
+    variable 0. Its facts relate points of ι to each other and to outer
+    points, by ≺ and by ≡, finitely or infinitely many. [cc_up R] reads
+    the facts of the context Γ under the binder of ι, so the outer points
+    shift past it. [cc_eq] and [cc_lt] add the facts of C, which is
+    Γ + C. The judgment Γ ⊢ … is the closure [geq], [glt].
+
+    [cc_ok] asks two things. Acyclic: every cycle of Γ + C comes from a
+    cycle of Γ, so Γ + C ⊬ p ≺ p whenever Γ is acyclic. Conservative:
+    Γ + C derives a fact between two points without root ι only when Γ
+    derives it. The semantic proof extends a world by the facts of C at
+    the fresh name, and conservativity is what makes that a fresh
+    extension ⊑ₒ (relation/Creation.v). *)
+
+Definition cc_up (R : point → point → Prop) : point → point → Prop :=
+  λ x y, ∃ x0 y0, R x0 y0 ∧ x = pt_inst (λ a, pvar (a + 1)) x0 ∧ y = pt_inst (λ a, pvar (a + 1)) y0.
+
+Definition cc_eq (peq : point → point → Prop) (C : bcs) : point → point → Prop :=
+  λ x y, cc_up peq x y ∨ bcs_open 1 C (FEq x y).
+
+Definition cc_lt (plt : point → point → Prop) (C : bcs) : point → point → Prop :=
+  λ x y, cc_up plt x y ∨ bcs_open 1 C (FLt x y).
+
+Definition cc_acyclic (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  ∀ p, glt (cc_eq peq C) (cc_lt plt C) p p → ∃ x, glt (cc_up peq) (cc_up plt) x x.
+
+Definition cc_conservative (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  (∀ x y, pt_root x ≠ NVar 0 → pt_root y ≠ NVar 0 →
+     geq (cc_eq peq C) x y → geq (cc_up peq) x y) ∧
+  (∀ x y, pt_root x ≠ NVar 0 → pt_root y ≠ NVar 0 →
+     glt (cc_eq peq C) (cc_lt plt C) x y → glt (cc_up peq) (cc_up plt) x y).
+
+Definition cc_ok (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  cc_acyclic peq plt C ∧ cc_conservative peq plt C.
+
 (** ** Type-indexed families of type signatures for constants
     (§9)
 
-    new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C fresh, at most one alias ι ≡ x,
-                                                  betweenness (97, 103, 104)
+    new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C acyclic and conservative
+                                                  (97, 103, 105)
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
     send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι]), no ⊥ flag
     recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
@@ -1167,8 +1226,9 @@ Proof. intros H (H1 & H2 & H3). split_and!; eauto. Qed.
     relations: the world G generates for typing, a world W for the
     logical relation. Freshness of ι in [new] is a typing condition
     (static/). [pk] says which points the order knows: the outer
-    points of the constraint of [new] must be known, so that the
-    created point can be aliased to them (sharp edges 49, 104). new
+    points of the constraint of [new] must be known, so that the world
+    of a run can state the facts of C about them (sharp edges 49, 105).
+    The order relations enter [cc_ok] through their closure. new
     at a known point x is the alias ι ≡ x ([t_new_at] in
     static/Fundamental.v). force asks its instance known and every
     fact of the box's constraint at the instance (sharp edges 65). *)
@@ -1201,7 +1261,7 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n C (TLolli ub None TUnit T))
            (ty_inst xs T))
   | KTNewEx S C :
-      fresh_ok C → Forall pk (bc_env C) → fresh_between plt C →
+      cc_ok peq plt C → Forall pk (bc_env C) →
       konst_ty peq plt pk KNew
         (TLolli None None TUnit
            (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))))).

@@ -156,19 +156,8 @@ Qed.
     [wgen N E L]: the least world with support N whose ≡ contains E and
     whose ≺ contains L. *)
 
-Inductive geq (E : prel) : prel :=
-  | geq_base x y : E x y → geq E x y
-  | geq_refl x : geq E x x
-  | geq_sym x y : geq E x y → geq E y x
-  | geq_trans x y z : geq E x y → geq E y z → geq E x z
-  | geq_shift x y : geq E x y → geq E (pt_shift 1 x) (pt_shift 1 y)
-  | geq_slot x y i : geq E x y → geq E (pt_slot x i) (pt_slot y i).
-
-Inductive glt (E L : prel) : prel :=
-  | glt_base x y : L x y → glt E L x y
-  | glt_po x : glt E L x (pt_shift 1 x)
-  | glt_eq x x' y y' : geq E x x' → glt E L x' y' → geq E y' y → glt E L x y
-  | glt_trans x y z : glt E L x y → glt E L y z → glt E L x z.
+(** [geq] and [glt] live in types/Types.v, because the premise of
+    [new] reads them (sharp edges 105). *)
 
 Definition wgen (N : gset pname) (E L : prel) : world :=
   World N (geq E) (glt E L).

@@ -10,21 +10,9 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option fslot)).
-Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
-
-Lemma fhyps_pinst_empty σ : fhyps_pinst σ ∅ = ∅.
-Proof. unfold fhyps_pinst. by rewrite fmap_empty. Qed.
-
-(** A point is known when its root is the root of an instance point
-    of a hypothesis. *)
-Lemma skn_inst W Ψ C xs y x : (C, xs) ∈ Ψ → y ∈ xs → pt_root x = pt_root y → skn W Ψ x.
-Proof. intros Hg Hy E. right. by exists C, xs, y. Qed.
-
-(** After E-NewFresh at the top level: Θ, F and Φ are empty. *)
-Ltac fresh_clean :=
-  rewrite ?tenv_pinst_empty, ?sf_pinst_none, ?fhyps_pinst_empty; cbn;
-  rewrite ?fhyps_pinst_empty.
+(** [sf_pinst_none], [fhyps_pinst_empty], [skn_inst] and [fresh_clean]
+    moved to examples/ExampleTools.v, because the base examples use
+    them too (sharp edges 105). *)
 
 (** The empty world. *)
 Lemma Wpo_nil_strict : strict (Wpo []).

@@ -209,11 +209,9 @@ Proof. induction Δ; simpl; constructor; done. Qed.
     points are known. Betweenness asks u ≺ v for every fact u ≺ p and
     q ≺ v of C with q at or after p in program order of one name. The
     lower bound of the existential is ⊥, so C needs no fact below ι. *)
-Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C :
-  fresh_lt C →
+Lemma t_new_open W Φ Ψ Θ Δ F e T S C :
+  cc_ok (seqs W Ψ) (slt W Ψ) C →
   Forall (skn W Ψ) (bc_env C) →
-  (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
-     slt W Ψ (fresh_outer C u) (fresh_outer C v)) →
   typed W (fhyps_pinst (pshift 1) Φ)
     (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
     (tenv_pinst (pshift 1) Θ)
@@ -222,7 +220,7 @@ Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C :
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
   typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
-  intros HC HK Hbt Hb. unfold let_new.
+  intros HC HK Hb. unfold let_new.
   set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
   (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
   apply (t_letp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
@@ -236,7 +234,7 @@ Proof.
       + apply lenv_split_nones_l.
       + done.
       + apply t_konst; [apply lenv_empty_nones| |done].
-        apply KTNewEx; [by left|done|by apply fresh_between_lt].
+        by apply KTNewEx.
       + apply t_unit. apply lenv_empty_nones.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)
@@ -262,6 +260,25 @@ Proof.
   - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence.
+Qed.
+
+(** The constraint of sharp edges 93 with betweenness is a creation
+    constraint ([cc_ok_fresh]). *)
+Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C :
+  fresh_lt C →
+  Forall (skn W Ψ) (bc_env C) →
+  (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
+     slt W Ψ (fresh_outer C u) (fresh_outer C v)) →
+  typed W (fhyps_pinst (pshift 1) Φ)
+    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
+    (tenv_pinst (pshift 1) Θ)
+    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: None :: None ::
+       lenv_pinst (pshift 1) Δ)
+    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
+  typed W Φ Ψ Θ Δ F (let_new e) T.
+Proof.
+  intros HC HK Hbt Hb. apply (t_new_open W Φ Ψ Θ Δ F e T S C); [|done|done].
+  apply cc_ok_fresh; [by left|by apply fresh_between_lt].
 Qed.
 
 (** E-NewFresh with lists, L ≺ ι ≺ H, every point of L below every
