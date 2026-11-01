@@ -994,8 +994,6 @@ Section ready.
     konst_ty (w_eq (wsw a b W)) (w_lt (wsw a b W)) (pt_known (wsw a b W)) k (tysw a b T).
   Proof.
     destruct 1; simpl; rewrite ?dual_sw.
-    - constructor. unfold pt_known in *. simpl.
-      by rewrite pt_root_sw, elem_of_names_sw.
     - constructor.
     - rewrite payload_at_sw. constructor. rewrite hbot_sw. destruct (hbot T); [done|]. intros h Hh.
       rewrite <-payload_at_sw, heads_sw in Hh.

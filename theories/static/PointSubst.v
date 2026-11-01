@@ -529,10 +529,9 @@ Section transfer.
     konst_ty peq' plt' pk' k (pinst_ty σ T).
   Proof.
     intros Heq Hlt Hpk Hk.
-    destruct 1 as [S x Hx|ub lb|m P S x Hh|m P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK
+    destruct 1 as [ub lb|m P S x Hh|m P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK
                   |S C H H0 H1];
       simpl in *.
-    - constructor. by apply Hpk.
     - constructor.
     - rewrite payload_pinst, pt_inst_shift by done. constructor. destruct (hbot P); [done|].
       intros h Hh'. rewrite <-payload_pinst, heads_pinst in Hh' by done.

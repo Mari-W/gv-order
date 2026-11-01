@@ -1154,7 +1154,6 @@ Proof. intros H (H1 & H2 & H3). split_and!; eauto. Qed.
 (** ** Type-indexed families of type signatures for constants
     (§9)
 
-    new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι              (still used by PGV and PN, 104)
     new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C fresh, at most one alias ι ≡ x,
                                                   betweenness (97, 103, 104)
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
@@ -1167,18 +1166,15 @@ Proof. intros H (H1 & H2 & H3). split_and!; eauto. Qed.
     The side conditions on points are read in an order given as two
     relations: the world G generates for typing, a world W for the
     logical relation. Freshness of ι in [new] is a typing condition
-    (static/). [pk] says which points the order knows: the point of
-    [new] and the outer points of its constraint must be known, so
-    that the created point can be aliased to them (sharp edges 49,
-    104). force asks its instance known and every
+    (static/). [pk] says which points the order knows: the outer
+    points of the constraint of [new] must be known, so that the
+    created point can be aliased to them (sharp edges 49, 104). new
+    at a known point x is the alias ι ≡ x ([t_new_at] in
+    static/Fundamental.v). force asks its instance known and every
     fact of the box's constraint at the instance (sharp edges 65). *)
 
 Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
     : konst → ty → Prop :=
-  | KTNew S x :
-      pk x →
-      konst_ty peq plt pk KNew
-        (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) x)))
   | KTSpawn ub lb :
       konst_ty peq plt pk KSpawn
         (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)

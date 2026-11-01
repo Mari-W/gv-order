@@ -195,18 +195,9 @@ Qed.
 Lemma lenv_split_nones_nones Δ : lenv_split (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ).
 Proof. induction Δ; simpl; constructor; done. Qed.
 
-(** The encoded let of new (sharp edges 99). The calculus has no let
-    of a single variable, so let p = new ∗ in let ⟨a, b⟩ = p in e is a
-    let pair on ⟨new ∗, ∗⟩ that drops the unit. p is variable 1 of the
-    middle body, and e sees a and b at 1 and 0 and the spent p and unit
-    at 3 and 2. *)
-Definition let_new (e : expr) : expr :=
-  LetP (Pair (App ENew EUnit) EUnit) (LetU (Var 0) (LetP (Var 1) e)).
-
-(** The same program with e indexed as the body of a let pair, a at 1,
-    b at 0 and the outer variables from 2. The examples write this. *)
-Definition let_new_pair (e : expr) : expr :=
-  let_new (rename (upren (upren (λ x, 2 + x))) e).
+(** [let_new] and [let_new_pair], the encoded let of new, are in
+    lang/Syntax.v, because the translations of PGV and of Padovani and
+    Novara produce them too. *)
 
 (** E-NewFresh (sharp edges 90, 93, 103) from the existential
     signature of new, E-LetPair, E-Let*, E-Open on p and E-LetPair. The

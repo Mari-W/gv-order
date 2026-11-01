@@ -13,7 +13,9 @@
     - Every source step is matched by target steps, the corresponding
       step plus administrative ones ([fwd]). After a message both ends
       close at once ([fwd] at [SOut] and [SIn]), so the extra close
-      never blocks.
+      never blocks. At new the target creates the channel inside the
+      encoded let of new and takes two β steps to the let pair of the
+      two ends ([tr_new] to [tr_newp]).
     - When the source is stuck, administrative steps bring every target
       thread to a value or to a pending send or receive ([final]).
 
@@ -21,7 +23,7 @@
     fix λf.λx.e ([fixlam]). padovani-novara.md §8 explains why. *)
 
 From stdpp Require Import base gmap gmultiset relations.
-From LRGV Require Import lang.Safety.
+From LRGV Require Import lang.ThreadSim.
 From LRGV Require Export pn.PNSemantics pn.PNTranslate pn.PNExamples.
 
 Set Default Proof Using "All".
@@ -99,9 +101,6 @@ Notation injbox1 t := (EBox (Inj1 (rename S t))).
 Notation injbox2 t := (EBox (Inj2 (rename S t))).
 Notation unf b := (subst (up (EBox (Lam b) .: Var)) b).
 
-Definition newp (Ξ : chan → mode) (mc : mode) (p : expr) : Prop :=
-  p = App ENew EUnit ∨ ∃ a, p = Pair (Chan a) (Chan a) ∧ Ξ a = mc.
-
 (** ** The relation *)
 
 Inductive trel (Ξ : chan → mode) : (nat → option mode) → expr → expr → mode → Prop :=
@@ -129,10 +128,14 @@ Inductive trel (Ξ : chan → mode) : (nat → option mode) → expr → expr �
   | tr_appb M s1 s2 t1 t2 m1 m2 :
       trel Ξ M s1 t1 (MBox m1 m2) → trel Ξ M s2 t2 m1 →
       trel Ξ M (App s1 s2) (App (App EForce t1) t2) m2
-  | tr_new M p e e' mc m :
-      chanm mc → newp Ξ mc p →
+  | tr_new M e e' mc m :
+      chanm mc →
       trel Ξ (Some mc .: Some mc .: M) e e' m →
-      trel Ξ M (LetP p e) (LetP p e') m
+      trel Ξ M (LetP (App ENew EUnit) e) (let_new_pair e') m
+  | tr_newp M a e e' mc m :
+      chanm mc → Ξ a = mc →
+      trel Ξ (Some mc .: Some mc .: M) e e' m →
+      trel Ξ M (LetP (Pair (Chan a) (Chan a)) e) (LetP (Pair (Chan a) (Chan a)) e') m
   | tr_send M s1 s2 t1 t2 mc :
       chanm mc → trel Ξ M s1 t1 mc → trel Ξ M s2 t2 (pay mc) →
       trel Ξ M (App (App ESend s1) s2) (App (App send_tr t1) t2) MUnit
@@ -258,9 +261,6 @@ Qed.
 
 (** ** The relation under renaming and substitution *)
 
-Lemma newp_closed Ξ mc p : newp Ξ mc p → (∀ r, rename r p = p) ∧ (∀ σ, subst σ p = p).
-Proof. by intros [->|(a & -> & _)]. Qed.
-
 Lemma trel_rename Ξ M s t m :
   trel Ξ M s t m → ∀ M' r, (∀ x mx, M x = Some mx → M' (r x) = Some mx) →
   trel Ξ M' (rename r s) (rename r t) m.
@@ -279,8 +279,9 @@ Proof.
   - rewrite rn_boxlam, rn_unf. apply tr_fixu. eauto.
   - eapply tr_app; eauto.
   - eapply tr_appb; eauto.
-  - destruct (newp_closed _ _ _ H0) as [Hp _]. rewrite !Hp.
-    eapply tr_new; [done|done|]. eauto.
+  - pose proof (rename_let_new_pair r e') as E. simpl in E. rewrite E.
+    eapply tr_new; [done|]. eauto.
+  - eapply tr_newp; [done|done|]. eauto.
   - eapply tr_send; eauto.
   - rewrite rn_S. eapply tr_send1; eauto. by rewrite is_val_rename.
   - eapply tr_recv; eauto.
@@ -315,8 +316,9 @@ Proof.
   - rewrite sb_boxlam, sb_unf. apply tr_fixu. eauto 10.
   - eapply tr_app; eauto.
   - eapply tr_appb; eauto.
-  - destruct (newp_closed _ _ _ H0) as [_ Hp]. rewrite !Hp.
-    eapply tr_new; [done|done|]. eauto 10.
+  - pose proof (subst_let_new_pair σ' e') as E. simpl in E. rewrite E.
+    eapply tr_new; [done|]. eauto 10.
+  - eapply tr_newp; [done|done|]. eauto 10.
   - eapply tr_send; eauto.
   - rewrite sb_S. eapply tr_send1; eauto. by apply is_val_subst.
   - eapply tr_recv; eauto.
@@ -344,9 +346,9 @@ Proof.
   - constructor. apply IHtrel. intros c Hc. apply HΞ. by apply fchans_subst_sup.
   - eapply tr_app; [apply IHtrel1|apply IHtrel2]; set_solver.
   - eapply tr_appb; [apply IHtrel1|apply IHtrel2]; set_solver.
-  - eapply tr_new; [done| |apply IHtrel; set_solver].
-    destruct H0 as [->|(a & -> & <-)]; [by left|right; exists a; split; [done|]].
-    apply HΞ. simpl. set_solver.
+  - eapply tr_new; [done|apply IHtrel; set_solver].
+  - eapply tr_newp; [done| |apply IHtrel; set_solver].
+    rewrite HΞ; [done|set_solver].
   - eapply tr_send; [done|apply IHtrel1|apply IHtrel2]; set_solver.
   - eapply tr_send1; [done|done|apply IHtrel1|apply IHtrel2]; set_solver.
   - eapply tr_recv; [done|apply IHtrel]; set_solver.
@@ -365,6 +367,7 @@ Proof.
   induction 1; simpl; rewrite ?fchans_rename; try set_solver.
   all: try (pose proof (fchans_subst_sup (up (EBox (Lam b) .: Var)) b); set_solver).
   all: try (destruct p; simpl; rewrite ?fchans_rename; set_solver).
+  all: unfold let_new_pair, let_new; simpl; rewrite ?fchans_rename; set_solver.
 Qed.
 
 Lemma trel_mono Ξ M s t m :
@@ -460,7 +463,7 @@ Proof.
     + specialize (IHpn_typed2 ltac:(done)). rewrite mode_lshift in IHpn_typed2.
       eapply trel_mono; [exact IHpn_typed2|]. intros. by eapply menv_split_r.
   - splitf.
-    eapply (tr_new _ _ _ _ _ (mchan (pmode t))); [apply chanm_mchan|by left|].
+    eapply (tr_new _ _ _ _ (mchan (pmode t))); [apply chanm_mchan|].
     eapply trel_mono; [by apply IHpn_typed|]. intros [|[|x]] mx; done.
   - splitf.
     eapply (tr_send _ _ _ _ _ _ (mchan (pmode t))); [apply chanm_mchan| |].
@@ -492,8 +495,6 @@ Qed.
 Definition M0 : nat → option mode := λ _, None.
 Definition xi_ok (Ξ : chan → mode) : Prop := ∀ a, chanm (Ξ a).
 
-Notation bstar := (rtc (λ x y, tstep x LBeta y)).
-
 Lemma trel_konst Ξ M k t m : trel Ξ M (Konst k) t m → False.
 Proof. inversion 1. Qed.
 
@@ -505,9 +506,6 @@ Proof.
   intros H Hv. destruct s1 as [| | [] | | | | | | | | | |]; try done.
   inversion H; subst; eauto using trel_konst.
 Qed.
-
-Lemma bstar_val t t' : is_val t → bstar t t' → t' = t.
-Proof. intros Hv H. inversion H; subst; [done|]. exfalso. eauto using val_no_tstep. Qed.
 
 Ltac closedtac := match goal with
   | HM : ∀ x, ?M x = None, H : ?M _ = Some _ |- _ => rewrite HM in H; discriminate
@@ -650,9 +648,8 @@ Proof.
     destruct (IHtrel2 HM) as [Hv2|(α & s' & ?)]; [|eexists _, _; by apply SSAppR].
     destruct (src_canon _ _ _ _ _ H HM Hxi Hv1) as [b ->].
     eexists _, _. by apply SSHead, SHApp.
-  - right. destruct H0 as [->|(a & -> & _)].
-    + eexists _, _. apply SSLetP, SSHead, (SHNew inhabitant).
-    + eexists _, _. by apply SSHead, SHLetP.
+  - right. eexists _, _. apply SSLetP, SSHead, (SHNew inhabitant).
+  - right. eexists _, _. by apply SSHead, SHLetP.
   - right. destruct (IHtrel1 HM) as [Hv1|(α & s' & ?)];
       [|eexists _, _; apply SSAppL, SSAppR; [done|eassumption]].
     destruct (IHtrel2 HM) as [Hv2|(α & s' & ?)]; [|eexists _, _; by apply SSAppR].
@@ -744,7 +741,8 @@ Definition post (Ξ : chan → mode) (M : nat → option mode) (α : slab) (t : 
     (Q : (chan → mode) → expr → Prop) : Prop :=
   match α with
   | SBeta => ∃ t', bstar t t' ∧ Q Ξ t'
-  | SNew a => ∃ mc t0 t', chanm mc ∧ bstar t t0 ∧ tstep t0 (LNew a) t' ∧ Q (upd Ξ a mc) t'
+  | SNew a => ∃ mc t0 t1 t', chanm mc ∧ bstar t t0 ∧ tstep t0 (LNew a) t1 ∧ bstar t1 t' ∧
+      Q (upd Ξ a mc) t'
   | SSpawn v => ∃ t0 w t1 tn t', bstar t t0 ∧ tstep t0 (LSpawn w) t1 ∧
       bstar (App w EUnit) tn ∧ Rsp Ξ M (App v EUnit) tn ∧ bstar t1 t' ∧ Q Ξ t'
   | SOut a v => ∃ t0 w t1 t2 t', bstar t t0 ∧ tstep t0 (LSess (SSend a w)) t1 ∧
@@ -754,34 +752,14 @@ Definition post (Ξ : chan → mode) (M : nat → option mode) (α : slab) (t : 
          tstep t1' (LSess (SClos a)) t2 ∧ bstar t2 t' ∧ Q Ξ t')
   end.
 
-Definition ectx (K : expr → expr) : Prop := ∀ e α e', tstep e α e' → tstep (K e) α (K e').
-
-Lemma ectx_appl e2 : ectx (λ x, App x e2).
-Proof. intros ???. apply TStepAppL. Qed.
-Lemma ectx_appr v : is_val v → ectx (λ x, App v x).
-Proof. intros ????. by apply TStepAppR. Qed.
-Lemma ectx_case e1 e2 : ectx (λ x, Case x e1 e2).
-Proof. intros ???. apply TStepCase. Qed.
-Lemma ectx_comp K1 K2 : ectx K1 → ectx K2 → ectx (λ x, K1 (K2 x)).
-Proof. intros H1 H2 ???. auto. Qed.
-Lemma ectx_appl2 v e2 : is_val v → ectx (λ x, App (App v x) e2).
-Proof. intros Hv ???. intros. by apply TStepAppL, TStepAppR. Qed.
-Lemma ectx_case2 e1 e2 : ectx (λ x, Case (App EForce x) e1 e2).
-Proof. intros ???. intros. by apply TStepCase, TStepAppR. Qed.
-Lemma ectx_id : ectx (λ x, x).
-Proof. by intros ???. Qed.
-
-Lemma bstar_ectx K e e' : ectx K → bstar e e' → bstar (K e) (K e').
-Proof. intros HK. apply rtc_congruence. intros. by apply HK. Qed.
-
 Lemma post_ectx Ξ M α t Q Q' K :
   ectx K → post Ξ M α t Q → (∀ Ξ' t', xok Ξ α Ξ' → Q Ξ' t' → Q' Ξ' (K t')) →
   post Ξ M α (K t) Q'.
 Proof.
   intros HK Hp HQ. destruct α; simpl in *.
   - destruct Hp as (t' & Hs & Hq). exists (K t'). split; [by apply bstar_ectx|]. by apply HQ.
-  - destruct Hp as (mc & t0 & t' & Hc & Hs & Ht & Hq).
-    exists mc, (K t0), (K t'). split_and!; [done|by apply bstar_ectx|by apply HK|].
+  - destruct Hp as (mc & t0 & t1 & t' & Hc & Hs & Ht & Hs1 & Hq).
+    exists mc, (K t0), (K t1), (K t'). split_and!; [done|by apply bstar_ectx|by apply HK|by apply bstar_ectx|].
     apply HQ; [by exists mc|done].
   - destruct Hp as (t0 & w & t1 & tn & t' & Hs & Ht & Hn & Hr & Hs' & Hq).
     exists (K t0), w, (K t1), tn, (K t'). split_and!; try done; try by apply bstar_ectx.
@@ -804,7 +782,8 @@ Lemma post_pre Ξ M α t t0 Q : bstar t t0 → post Ξ M α t0 Q → post Ξ M �
 Proof.
   intros H0 Hp. destruct α; simpl in *.
   - destruct Hp as (t' & Hs & Hq). eexists. split; [by etrans|done].
-  - destruct Hp as (mc & t1 & t' & Hc & Hs & Ht & Hq). eexists _, _, _. split_and!; [done|by etrans|done|done].
+  - destruct Hp as (mc & t1 & t2 & t' & Hc & Hs & Ht & Hs2 & Hq).
+    eexists _, _, _, _. split_and!; [done|by etrans|done|done|done].
   - destruct Hp as (t1 & w & t2 & tn & t' & Hs & ?). eexists _, _, _, _, _. split; [by etrans|done].
   - destruct Hp as (t1 & w & t2 & t3 & t' & Hs & ?). eexists _, _, _, _, _. split; [by etrans|done].
   - destruct Hp as (t1 & Hs & Hw). eexists. split; [by etrans|done].
@@ -887,7 +866,7 @@ Proof.
   induction 1 as [M x m Hx|M|M a|M b b' m1 m2 Hb IH|M b b' m1 m2 Hb IH
     |M b b' m1 m2 Hb IH|M b b' m1 m2 Hb IH
     |M s1 s2 t1 t2 m1 m2 H1 IH1 H2 IH2|M s1 s2 t1 t2 m1 m2 H1 IH1 H2 IH2
-    |M p e e' mc m Hc Hp He IH
+    |M e e' mc m Hc He IH|M a e e' mc m Hc Ha He IH
     |M s1 s2 t1 t2 mc Hc H1 IH1 H2 IH2|M s1 s2 t1 t2 mc Hc Hv1 H1 IH1 H2 IH2
     |M s t mc Hc H IH|M s t mc Hc Hv H IH
     |M p s t H IH|M p s t Hv H IH
@@ -953,25 +932,31 @@ Proof.
       * apply IH2; [done|done|exact Hst2|fresh_sub Hfr].
       * intros Ξ' t' Hx Hq. eapply tr_app; [|exact Hq].
         eapply trel_sib; [exact Hx| |apply tr_lam, Hb]. fresh_sub Hfr.
-  (* let a = new() in e *)
-  - apply sinv_letp in Hst as [Hh|(p' & Hstp & ->)].
-    + inversion Hh as [| |u v e0 Hu Hv| | | | | |]; subst.
-      destruct Hp as [?|(a & [= -> ->] & <-)]; [done|].
-      simpl. exists (subst2 (Chan a) (Chan a) e'). split.
-      * by apply rtc_once, TStepHead, HeadLetP.
-      * eapply trel_subst; [exact He|]. intros [|[|x]] mx; simpl.
-        { intros [= <-]. apply tr_chan. }
-        { intros [= <-]. apply tr_chan. }
-        by rewrite HM.
-    + destruct Hp as [->|(a & -> & _)]; [|by apply sinv_pair in Hstp].
-      apply sinv_new in Hstp as (a & -> & ->).
-      simpl. exists mc, (LetP (App ENew EUnit) e'), (LetP (Pair (Chan a) (Chan a)) e').
-      split_and!; [done|apply rtc_refl|apply TStepLetP, TStepHead, HeadNew|].
-      eapply tr_new; [done| |].
-      * right. exists a. split; [done|]. unfold upd. by rewrite decide_True.
-      * eapply trel_xi; [exact He|]. intros c Hcf. unfold upd.
-        destruct (decide (c = a)) as [->|]; [|done].
-        exfalso. apply (Hfr a eq_refl). simpl. set_solver.
+  (* let a = new() in e. The target creates the channel inside the
+     encoded let of new and takes two β steps to the let pair. *)
+  - apply sinv_letp in Hst as [Hh|(p' & Hstp & ->)]; [inversion Hh|].
+    apply sinv_new in Hstp as (a & -> & ->).
+    set (e'' := rename (upren (upren (λ x, 2 + x))) e').
+    simpl. exists mc, (let_new_pair e'),
+      (LetP (Pair (Pair (Chan a) (Chan a)) EUnit) (LetU (Var 0) (LetP (Var 1) e''))),
+      (LetP (Pair (Chan a) (Chan a)) e').
+    split_and!; [done|apply rtc_refl|apply TStepLetP, TStepPairL, TStepHead, HeadNew| |].
+    + eapply rtc_l; [apply TStepHead, HeadLetP; done|].
+      unfold subst2. cbn [subst scons]. unfold e''. rewrite let_new_body.
+      apply rtc_once, TStepHead, HeadLetU.
+    + eapply tr_newp; [done|unfold upd; by rewrite decide_True|].
+      eapply trel_xi; [exact He|]. intros c Hcf. unfold upd.
+      destruct (decide (c = a)) as [->|]; [|done].
+      exfalso. apply (Hfr a eq_refl). simpl. set_solver.
+  (* the let pair of the two ends *)
+  - apply sinv_letp in Hst as [Hh|(p' & Hstp & ->)]; [|by apply sinv_pair in Hstp].
+    inversion Hh as [| |u v e0 Hu Hv| | | | | |]; subst.
+    simpl. exists (subst2 (Chan a) (Chan a) e'). split.
+    + by apply rtc_once, TStepHead, HeadLetP.
+    + eapply trel_subst; [exact He|]. intros [|[|x]] mx; simpl.
+      { intros [= <-]. apply tr_chan. }
+      { intros [= <-]. apply tr_chan. }
+      by rewrite HM.
   (* send *)
   - apply sinv_app in Hst as [Hh|[(e1' & Hst1 & ->)|(Hv1 & s2' & Hst2 & ->)]].
     + inversion Hh as [| | | | | | |a v Hv|]; subst.
@@ -1125,110 +1110,6 @@ Proof.
   intros [H|(t0 & -> & H)] HΞ; [left|right; eexists; split; [done|]]; by eapply trel_xi.
 Qed.
 
-(** Multisets of threads related one to one. *)
-Inductive mrel (P : expr → expr → Prop) : gmultiset expr → gmultiset expr → Prop :=
-  | mrel_nil : mrel P ∅ ∅
-  | mrel_cons s t Es Et : P s t → mrel P Es Et → mrel P ({[+ s +]} ⊎ Es) ({[+ t +]} ⊎ Et).
-
-Lemma mrel_flip P Es Et : mrel P Es Et → mrel (flip P) Et Es.
-Proof. induction 1; by constructor. Qed.
-
-Lemma mrel_extract P Es Et0 t :
-  mrel P Es (Et0 ⊎ {[+ t +]}) → ∃ Es0 s, Es = Es0 ⊎ {[+ s +]} ∧ P s t ∧ mrel P Es0 Et0.
-Proof.
-  intros H. remember (Et0 ⊎ {[+ t +]}) as Et eqn:HEt. revert Et0 HEt.
-  induction H as [|s1 t1 Es1 Et1 HP Hm IH]; intros Et0 HEt.
-  - exfalso. multiset_solver.
-  - destruct (decide (t1 = t)) as [->|Hne].
-    + exists Es1, s1. split_and!; [multiset_solver|done|].
-      assert (Et1 = Et0) as -> by multiset_solver. done.
-    + assert (t ∈ Et1) as Ht by multiset_solver.
-      destruct (gmultiset_split1 _ _ Ht) as [Et2 ->].
-      destruct (IH Et2 eq_refl) as (Es2 & s & -> & HPs & Hm2).
-      exists ({[+ s1 +]} ⊎ Es2), s. split_and!; [multiset_solver|done|].
-      assert (Et0 = {[+ t1 +]} ⊎ Et2) as -> by multiset_solver. by constructor.
-Qed.
-
-Lemma mrel_extract_l P Es0 s Et :
-  mrel P (Es0 ⊎ {[+ s +]}) Et → ∃ Et0 t, Et = Et0 ⊎ {[+ t +]} ∧ P s t ∧ mrel P Es0 Et0.
-Proof.
-  intros H. apply mrel_flip in H. destruct (mrel_extract _ _ _ _ H) as (Et0 & t & -> & Hp & Hm).
-  exists Et0, t. split_and!; [done|done|]. apply mrel_flip in Hm.
-  by induction Hm; constructor.
-Qed.
-
-Lemma mrel_snoc P s t Es Et : P s t → mrel P Es Et → mrel P (Es ⊎ {[+ s +]}) (Et ⊎ {[+ t +]}).
-Proof.
-  intros. rewrite (comm_L (⊎) Es), (comm_L (⊎) Et). by constructor.
-Qed.
-
-Lemma mrel_impl P P' Es Et : (∀ s t, s ∈ Es → P s t → P' s t) → mrel P Es Et → mrel P' Es Et.
-Proof.
-  intros HP H. induction H; constructor.
-  - apply HP; [multiset_solver|done].
-  - apply IHmrel. intros. apply HP; [multiset_solver|done].
-Qed.
-
-Lemma mrel_elem_l P Es Et s : mrel P Es Et → s ∈ Es → ∃ t, t ∈ Et ∧ P s t.
-Proof.
-  induction 1 as [|s1 t1 Es Et HP Hm IH]; [multiset_solver|].
-  rewrite gmultiset_elem_of_disj_union, gmultiset_elem_of_singleton.
-  intros [->|Hs]; [exists t1; split; [multiset_solver|done]|].
-  destruct (IH Hs) as (t & ? & ?). exists t. split; [multiset_solver|done].
-Qed.
-
-Lemma mrel_elem_r P Es Et t : mrel P Es Et → t ∈ Et → ∃ s, s ∈ Es ∧ P s t.
-Proof.
-  induction 1 as [|s1 t1 Es Et HP Hm IH]; [multiset_solver|].
-  rewrite gmultiset_elem_of_disj_union, gmultiset_elem_of_singleton.
-  intros [->|Ht]; [exists s1; split; [multiset_solver|done]|].
-  destruct (IH Ht) as (s & ? & ?). exists s. split; [multiset_solver|done].
-Qed.
-
-Lemma mrel_echans P Es Et :
-  (∀ s t, P s t → fchans t ⊆ fchans s) → mrel P Es Et → echans Et ⊆ echans Es.
-Proof.
-  intros HP Hm c. rewrite !elem_of_echans. intros (t & Ht & Hc).
-  destruct (mrel_elem_r _ _ _ _ Hm Ht) as (s & Hs & Hst). exists s. split; [done|].
-  by apply (HP _ _ Hst).
-Qed.
-
-Lemma bstar_fchans t t' : bstar t t' → fchans t' ⊆ fchans t.
-Proof.
-  induction 1 as [|x y z Hxy _ IH]; [done|]. apply tstep_fchans in Hxy. simpl in Hxy. set_solver.
-Qed.
-
-(** β steps of single threads. *)
-Definition msb (E E' : gmultiset expr) : Prop :=
-  ∃ E0 e e', tstep e LBeta e' ∧ E = E0 ⊎ {[+ e +]} ∧ E' = E0 ⊎ {[+ e' +]}.
-
-Lemma msb_bstar E t t' : bstar t t' → rtc msb (E ⊎ {[+ t +]}) (E ⊎ {[+ t' +]}).
-Proof.
-  induction 1 as [|x y z Hxy _ IH]; [done|]. eapply rtc_l; [|exact IH]. by exists E, x, y.
-Qed.
-
-Lemma msb_frame F E E' : rtc msb E E' → rtc msb (F ⊎ E) (F ⊎ E').
-Proof.
-  induction 1 as [|x y z (E0 & e & e' & Hst & -> & ->) _ IH]; [done|].
-  eapply rtc_l; [|exact IH]. exists (F ⊎ E0), e, e'. split_and!; [done|multiset_solver..].
-Qed.
-
-Lemma msb_pred C E E' : rtc msb E E' → pred_star (C, E) (C, E').
-Proof.
-  induction 1 as [|x y z (E0 & e & e' & Hst & -> & ->) _ IH]; [done|].
-  eapply rtc_l; [|exact IH]. by apply PStepBeta.
-Qed.
-
-Lemma bstar_proc C E t t' : bstar t t' → pred_star (C, E ⊎ {[+ t +]}) (C, E ⊎ {[+ t' +]}).
-Proof. intros. by apply msb_pred, msb_bstar. Qed.
-
-Lemma bstar_proc2 C E F t t' :
-  bstar t t' → pred_star (C, E ⊎ {[+ t +]} ⊎ F) (C, E ⊎ {[+ t' +]} ⊎ F).
-Proof.
-  intros H. assert (∀ x, E ⊎ {[+ x +]} ⊎ F = (E ⊎ F) ⊎ {[+ x +]}) as HE by (intros; multiset_solver).
-  rewrite !HE. by apply bstar_proc.
-Qed.
-
 (** The process relation. Both sides restrict the same names, and Ξ
     gives every channel a channel mode. *)
 Definition prel (p q : proc) : Prop :=
@@ -1246,11 +1127,12 @@ Proof.
     split; [done|]. exists Ξ. split; [done|]. by apply mrel_snoc.
   - destruct (mrel_extract_l _ _ _ _ Hm) as (Et0 & t & -> & HR & Hm0).
     destruct (fwd_rt _ _ _ _ _ HR Hxi Hst ltac:(by intros ? [= <-]))
-      as (mc & t0 & t' & Hc & Hs0 & Ht & Hq).
+      as (mc & t0 & tn & t' & Hc & Hs0 & Ht & Hs1 & Hq).
     exists (C ∪ {[a]}, Et0 ⊎ {[+ t' +]}). split.
-    + eapply rtc_r; [by apply bstar_proc|]. apply PStepNew; [done|done| |].
+    + eapply rtc_trans; [by apply bstar_proc|]. eapply rtc_l; [apply PStepNew; [done|done| |]|].
       * pose proof (mrel_echans _ _ _ (Rt_fchans Ξ) Hm0). set_solver.
       * apply bstar_fchans in Hs0. apply Rt_fchans in HR. set_solver.
+      * by apply bstar_proc.
     + split; [done|]. exists (upd Ξ a mc). split; [by apply xi_ok_upd|].
       apply mrel_snoc; [done|]. eapply mrel_impl; [|exact Hm0].
       intros s t1 Hin HR1. eapply Rt_xi; [exact HR1|]. intros c Hcs. unfold upd.
@@ -1300,12 +1182,6 @@ Definition cls (s t : expr) : Prop :=
   (∃ a v s'' w, src_step s (SOut a v) s'' ∧ act t = Some (ASend a w)) ∨
   (∃ a v s'', src_step s (SIn a v) s'' ∧ act t = Some (ARecv a)).
 
-Lemma act_val e : is_val e → act e = None.
-Proof.
-  induction e; simpl; intros Hv; try done; auto.
-  apply andb_True in Hv as [H1 H2]. rewrite (is_val_true _ H1). auto.
-Qed.
-
 Lemma classify Ξ C E s t :
   xi_ok Ξ → src_irred (C, E ⊎ {[+ s +]}) → Rt Ξ s t → ∃ t', bstar t t' ∧ cls s t'.
 Proof.
@@ -1348,21 +1224,6 @@ Proof.
     left. destruct α as [|[]| |]; simpl in Ho; try done. destruct Ho as [-> ->]. eauto 10.
   - destruct (act_step _ _ _ Hst) as (x & Hx & Ho). rewrite Hact in Hx. injection Hx as <-.
     right. destruct α as [|[]| |]; simpl in Ho; try done. destruct Ho as [-> _]. eauto 10.
-Qed.
-
-Lemma normalize P P' Es Et :
-  mrel P Es Et → (∀ s t, s ∈ Es → P s t → ∃ t', bstar t t' ∧ P' s t') →
-  ∃ Et', rtc msb Et Et' ∧ mrel P' Es Et'.
-Proof.
-  induction 1 as [|s t Es Et HP Hm IH]; intros HPP.
-  - exists ∅. split; [done|constructor].
-  - destruct (HPP s t) as (t' & Hs & HP'); [multiset_solver|done|].
-    destruct IH as (Et' & Hst & Hm').
-    { intros s0 t0 Hin. apply HPP. multiset_solver. }
-    exists ({[+ t' +]} ⊎ Et'). split; [|by constructor].
-    apply (rtc_trans _ ({[+ t' +]} ⊎ Et)).
-    + rewrite (comm_L (⊎) {[+ t +]}), (comm_L (⊎) {[+ t' +]}). by apply msb_bstar.
-    + by apply msb_frame.
 Qed.
 
 Lemma final p q :

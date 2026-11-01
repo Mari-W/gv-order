@@ -5,11 +5,15 @@
     frame F above u_p ([pgv_translate]). [soundness] then makes every
     closed program of type 1 deadlock free ([pgv_deadlock_free]).
 
-    The term changes in one place. The upper point of our send, recv
-    and close is the channel's point, and PGV's is u_o. An unapplied
-    send, recv, close or wait therefore becomes λz. k z ([pgv_eta]).
-    An applied one stays, so a program that applies every such constant
-    is its own translation ([pgv_deadlock_free_applied]).
+    The term changes in two places ([pgv_eta]). The upper point of our
+    send, recv and close is the channel's point, and PGV's is u_o. An
+    unapplied send, recv, close or wait therefore becomes λz. k z, and
+    an applied one stays. Our new has the existential signature alone
+    (sharp edges 104), so PGV's new becomes λz. let ∗ = z in let ⟨a, b⟩
+    = new ∗ in ⟨a, b⟩ on the encoded let of new ([new_tr]), typed at
+    the protocol point of its session by the alias ι ≡ x ([t_new_at]).
+    pgv/PGVSimulation.v carries deadlock freedom back to the program
+    itself.
 
     PGV's bound p corresponds to frames. A side condition p < pr(Δ)
     puts u_p below every head of Δ, q < p′ puts u_q below ℓ_p′, and the
@@ -25,10 +29,24 @@ Set Default Proof Using "All".
 Definition comm (k : konst) : bool :=
   match k with KSend | KRecv | KClos => true | _ => false end.
 
+(** PGV's new, λz. let ∗ = z in let ⟨a, b⟩ = new ∗ in ⟨a, b⟩. *)
+Definition new_tr : expr := Lam (LetU (Var 0) (let_new_pair (Pair (Var 1) (Var 0)))).
+
+(** The translation of an unapplied constant. *)
+Definition kon_eta (k : konst) : expr :=
+  match k with
+  | KSend | KRecv | KClos => Lam (App (Konst k) (Var 0))
+  | KNew => new_tr
+  | _ => Konst k
+  end.
+
+Lemma kon_eta_comm k : comm k = true → kon_eta k = Lam (App (Konst k) (Var 0)).
+Proof. by destruct k. Qed.
+
 Fixpoint pgv_eta (e : expr) : expr :=
   match e with
-  | Konst k => if comm k then Lam (App (Konst k) (Var 0)) else Konst k
-  | App (Konst k) e2 => App (Konst k) (pgv_eta e2)
+  | Konst k => kon_eta k
+  | App (Konst k) e2 => App (if comm k then Konst k else kon_eta k) (pgv_eta e2)
   | App e1 e2 => App (pgv_eta e1) (pgv_eta e2)
   | Lam e => Lam (pgv_eta e)
   | Pair e1 e2 => Pair (pgv_eta e1) (pgv_eta e2)
@@ -188,7 +206,39 @@ Proof.
     + rewrite sf_union_empty. exact H2.
 Qed.
 
-(** A constant of PGV is a constant here, or λz. k z. *)
+(** PGV's new at the session S. *)
+Lemma new_tr_typed Φ Γ F S :
+  penv_empty Γ →
+  typed Wpgv Φ [] ∅ (tr_env Γ) F new_tr
+    (TLolli None None TUnit (TProd (TSess (tr_sty S) (ppt S)) (TSess (dual (tr_sty S)) (ppt S)))).
+Proof.
+  intros HΓ. pose proof (tr_env_empty Γ HΓ) as HΔ.
+  set (S' := tr_sty S). set (x := ppt S). set (φ := fresh (dom Φ)).
+  unfold new_tr. eapply (t_lam _ _ _ _ _ _ _ _ _ _ _ φ).
+  - apply is_fresh.
+  - unfold tenv_heads, lb_below_hb. rewrite map_fold_empty, union_empty_l_L, lenv_bot_tr.
+    by apply lenv_heads_tr_empty.
+  - eapply (t_letu Wpgv _ [] ∅ ∅ ∅ _ (Some TUnit :: tr_env Γ) (None :: tr_env Γ)).
+    + apply comp0, Wpgv_wf.
+    + by apply lsplit_l, lenv_split_empty.
+    + apply t_var. split; [done|]. intros [|y] T' Hy; simpl in Hy; [by simplify_eq|].
+      apply list_elem_of_lookup_2 in Hy. by apply HΔ in Hy.
+    + change (let_new_pair (Pair (Var 1) (Var 0))) with (let_new (Pair (Var 1) (Var 0))).
+      apply (t_new_at Wpgv _ _ _ _ _ _ _ S' x Wpgv_strict); [left; by apply pgv_known|].
+      assert (∀ y T', (None :: None :: None :: tr_env Γ) !! y = Some (Some T') → False) as Hn.
+      { intros [|[|[|y]]] T' Hy; simpl in Hy; try done.
+        apply list_elem_of_lookup_2 in Hy. by apply HΔ in Hy. }
+      eapply (t_pair Wpgv _ [] ∅ ∅ ∅ _ (None :: Some (TSess S' x) :: None :: None :: None :: tr_env Γ)
+                (Some (TSess (dual S') x) :: None :: None :: None :: None :: tr_env Γ)).
+      * apply comp0, Wpgv_wf.
+      * apply lsplit_r, lsplit_l, lsplit_none, lsplit_none, lsplit_none, lenv_split_empty, HΔ.
+      * apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
+        exfalso. by apply (Hn y T').
+      * apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
+        exfalso. by apply (Hn y T').
+Qed.
+
+(** A constant of PGV is a constant here, λz. k z or [new_tr]. *)
 Lemma konst_tr ok k T Φ Γ F :
   (∀ s, ok s → top_mono s) → penv_empty Γ → pgv_konst ok k T →
   typed Wpgv Φ [] ∅ (tr_env Γ) F (pgv_eta (Konst k)) (tr_ty T).
@@ -197,7 +247,7 @@ Proof.
   destruct (comm k) eqn:Ek.
   - destruct T as [| | |p q T U|]; try by inversion Hk.
     destruct (pgv_konst_comm _ _ _ _ _ _ Hk Ek) as [-> [o ->]].
-    simpl. rewrite Ek. set (φ := fresh (dom Φ)).
+    simpl. rewrite (kon_eta_comm k Ek). set (φ := fresh (dom Φ)).
     eapply t_lam.
     + apply is_fresh.
     + simpl. unfold tenv_heads, lb_below_hb. rewrite map_fold_empty, union_empty_l_L, lenv_bot_tr.
@@ -211,8 +261,7 @@ Proof.
       * apply t_var. split; [done|]. intros [|y] T' Hy; simpl in Hy; [by simplify_eq|].
         apply list_elem_of_lookup_2 in Hy. by apply HΔ in Hy.
   - destruct Hk as [S|p q| | | | |S]; simpl in Ek |- *; try done.
-    + apply t_konst; [done| |done]. rewrite tr_sty_dual, ppt_dual.
-      apply KTNew. left. by apply pgv_known.
+    + rewrite tr_sty_dual, ppt_dual. by apply new_tr_typed.
     + apply t_konst; [done|apply KTSpawn|done].
     + apply t_konst; [done| |done]. rewrite tr_sty_dual, ppt_dual.
       apply KTLink. apply se_refl.
@@ -279,12 +328,12 @@ Proof.
       destruct (comm k) eqn:E; [left; eauto|right; intros (? & [=<-] & ?); congruence]. }
     + (* an applied send, recv, close or wait *)
       destruct (pgv_konst_inv _ _ _ _ _ HM) as (-> & HΓ1 & Hk).
-      destruct (pgv_konst_comm _ _ _ _ _ _ Hk Ek) as [-> [o ->]].
+      destruct (pgv_konst_comm _ _ _ _ _ _ Hk Ek) as [-> [o ->]]. rewrite Ek.
       eapply (konst_app ok k o T U Φ _ (tr_env Γ1) (tr_env Γ2)); [done|done| |by apply tr_env_empty| |].
       * by apply tr_env_split.
       * apply (ubs_prio _ (PNat o) (prio_max (prio_max PBot q) (PNat o)) F); [apply prio_le_max_r|exact HF].
       * apply IHN. rewrite <-(sf_union_empty F). simpl in HFN. exact HFN.
-    + assert (match M with Konst k => App (Konst k) (pgv_eta N)
+    + assert (match M with Konst k => App (if comm k then Konst k else kon_eta k) (pgv_eta N)
               | _ => App (pgv_eta M) (pgv_eta N) end = App (pgv_eta M) (pgv_eta N)) as ->.
       { destruct M; try done. simpl. destruct (comm k) eqn:Ek; [|done].
         exfalso. apply HMk. by exists k. }

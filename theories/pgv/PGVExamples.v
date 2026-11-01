@@ -1,8 +1,9 @@
 (** * Examples of PGV, deadlock free through the translation
 
     Each program is typed in the fragment of repaired PGV
-    ([pgv_frag]), and [pgv_deadlock_free_applied] gives deadlock
-    freedom of the program itself.
+    ([pgv_frag]), and [pgv_deadlock_free_source] (PGVSimulation.v)
+    gives deadlock freedom of the program itself. The programs create
+    their channels with new, so none of them is its own translation.
 
     - [ex21]: Example 2.1 of Kokke and Dardha (pdf p. 4). Two threads
       share two channels. PGV types it and GV does not.
@@ -15,7 +16,7 @@
     fail at the step the repairs name ([cx1_rejected], [cx2_rejected]). *)
 
 From stdpp Require Import base list.
-From LRGV Require Export pgv.PGVTranslate.
+From LRGV Require Export pgv.PGVSimulation.
 
 Set Default Proof Using "All".
 
@@ -178,7 +179,7 @@ Proof.
 Qed.
 
 Theorem pgv_ex21_deadlock_free : deadlock_free (∅, {[+ ex21 +]}).
-Proof. destruct ex21_typed as [p H]. by apply (pgv_deadlock_free_applied _ p). Qed.
+Proof. destruct ex21_typed as [p H]. by apply (pgv_deadlock_free_source _ p). Qed.
 
 (** ** Delegation
 
@@ -211,7 +212,7 @@ Proof.
 Qed.
 
 Theorem pgv_deleg_deadlock_free : deadlock_free (∅, {[+ deleg +]}).
-Proof. destruct deleg_typed as [p H]. by apply (pgv_deadlock_free_applied _ p). Qed.
+Proof. destruct deleg_typed as [p H]. by apply (pgv_deadlock_free_source _ p). Qed.
 
 (** ** Link
 
@@ -238,7 +239,7 @@ Proof.
 Qed.
 
 Theorem pgv_link_deadlock_free : deadlock_free (∅, {[+ lnk +]}).
-Proof. destruct lnk_typed as [p H]. by apply (pgv_deadlock_free_applied _ p). Qed.
+Proof. destruct lnk_typed as [p H]. by apply (pgv_deadlock_free_source _ p). Qed.
 
 (** ** The counterexamples fail where the repairs say
 

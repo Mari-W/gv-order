@@ -787,17 +787,17 @@ Proof.
     + rewrite sf_union_empty. apply (IH2 Ψ B k ins Δ2); [done|done|].
       apply (ubs_lvl Ψ B HB k Φ τ2 (lvl_max (lvl_sh n σ) (lvl_max τ1 τ2))); [|done].
       eapply lvl_le_trans; [apply lvl_le_max_r|apply lvl_le_max_r].
-  - (* let a = new() in e *)
-    cbn [rename]. rewrite ren_up2.
-    eapply (t_letp Wpn Φ Ψ ∅ ∅ ∅ Δ (lenv_nones Δ) Δ F _ _ (trz B k (PChan true t n))
-              (trz B k (PChan false t n))); [by apply comp0|apply lenv_split_nones_l| |].
-    + apply (tv_app_closed Wpn HW _ _ _ _ _ _ None TUnit); [bot_false|..].
-      * apply t_konst; [apply lenv_empty_nones| |done].
-        apply (KTNew _ _ _ (sess (PChan true t n)) (rpt B (RCh (PChan true (lshift k t) (n + k))))).
-        by apply (gd_kn _ _ HB).
-      * apply t_unit, lenv_empty_nones.
-      * done.
-    + apply IH; [done| |done]. apply (er_keep _ _ (Some _)), (er_keep _ _ (Some _)), HΔ.
+  - (* let a = new() in e, new at the known point of a by the alias
+       ι ≡ x ([t_new_at]). The body skips the spent p and unit. *)
+    rewrite rename_let_new_pair, ren_up2. unfold let_new_pair.
+    assert (rename (upren (upren (λ x, 2 + x))) (rename (ren_of (false :: false :: ins)) e')
+            = rename (ren_of (false :: false :: true :: true :: ins)) e') as ->.
+    { rewrite rename_rename. apply rename_ext. by intros [|[|x]]. }
+    apply (t_new_at Wpn _ _ _ _ _ _ _ (sess (PChan true t n))
+             (rpt B (RCh (PChan true (lshift k t) (n + k))))); [apply Wpn_strict|by apply (gd_kn _ _ HB)|].
+    apply IH; [done| |done].
+    apply (er_keep _ _ (Some (PChan false t n))), (er_keep _ _ (Some (PChan true t n))).
+    apply er_skip; [by left|]. apply er_skip; [by left|]. exact HΔ.
   - (* send e₁ e₂ *)
     cbn [rename]. rewrite rename_send.
     destruct (erel_split B k ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).

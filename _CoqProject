@@ -5,6 +5,7 @@ theories/lang/Semantics.v
 theories/lang/Safety.v
 theories/lang/ChannelSwap.v
 theories/lang/Harmony.v
+theories/lang/ThreadSim.v
 theories/types/Types.v
 theories/types/SessionEquiv.v
 theories/types/LinearEnv.v
@@ -61,6 +62,7 @@ theories/pgv/PGVTypes.v
 theories/pgv/PGVTyping.v
 theories/pgv/PGVWorld.v
 theories/pgv/PGVTranslate.v
+theories/pgv/PGVSimulation.v
 theories/pgv/PGVExamples.v
 theories/pn/PNTypes.v
 theories/pn/PNTyping.v
