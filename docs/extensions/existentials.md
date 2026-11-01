@@ -39,22 +39,37 @@ xs known in Γ     C[xs/ιs] holds in Γ     ℓ ≼_Γ heads(T[xs/ιs])
 Θ; Δ[i ↦ T] ⊢^F_{Γ, C} t : U        ιs not free in Θ, Δ, F, U
 ──────────────────────────────────────────────────────────── E-Open
 Θ; Δ ⊢^F_Γ t : U
-
-
-Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)}_Γ t₁ : ∃^ℓ ιs. C. T₁ ⊗ T₂
-Θ₂; Δ₂, x : T₁, y : T₂ ⊢^F_{Γ, C} t₂ : U     ιs not free in Θ₂, Δ₂, F, U
-──────────────────────────────────────────────────────────── E-OpenPair
-Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F_Γ let (x, y) = t₁ in t₂ : U
 ```
 
-The constructors are `t_pack`, `t_open` and `t_openp` in static/Typing.v. E-Open
-and E-OpenPair bind the ιs as the point variables 0, …, n-1 of the premise and
-shift everything else past them, as E-Exp does for the ιs of a box. C enters
-the premise as one more box hypothesis with the ιs as its instance. E-Open
-opens a variable of Δ in place and comes from `cfst`. E-OpenPair is new. It
-opens the scrutinee of a let pair, and E-NewFresh needs exactly this form,
-because its term `let (x, y) = new ∗ in t` binds no variable of existential
-type (sharp edges 99).
+The constructors are `t_pack` and `t_open` in static/Typing.v. E-Open binds the
+ιs as the point variables 0, …, n-1 of the premise and shifts everything else
+past them, as E-Exp does for the ιs of a box. C enters the premise as one more
+box hypothesis with the ιs as its instance. E-Open opens a variable of Δ in
+place and comes from `cfst`.
+
+### Opening the result of a let pair
+
+A first version had a rule E-OpenPair that opened the existential scrutinee of
+a let pair, so that `let (x, y) = new ∗ in t` typed directly. It is gone,
+because a let that binds the result of new reaches the same judgment with
+E-Open (sharp edges 99). The program is
+
+```
+let p = new ∗ in let (x, y) = p in t
+```
+
+The calculus has no let of one variable, so the Rocq term `let_new` in
+static/Typing.v binds p with a let pair on ⟨new ∗, ∗⟩ and drops the unit.
+
+```
+let_new e = let (p, w) = ⟨new ∗, ∗⟩ in let ∗ = w in let (x, y) = p in e
+```
+
+E-LetPair binds p at ∃^ℓ ι. C. S@ι ⊗ S̄@ι and w at ∗, E-Let* drops w, E-Open
+opens p in place, and E-LetPair splits it. The body e sees x and y at 1 and 0
+and the spent p and w as two empty slots at 3 and 2. `let_new_pair e` takes a
+body e indexed as under one let pair and shifts its outer variables past the
+two slots. The examples write this form.
 
 Channel creation gets a second signature. The first one, at a known point x, is
 unchanged.
@@ -90,11 +105,11 @@ existential over an arrow (sharp edges 100).
 
 ### Semantic rules
 
-rules/ExRules.v proves the three rules good, `sem_typed_pack`,
-`sem_typed_open` and `sem_typed_openp`. E-Pack moves E along `Erel_Vsub`, which
-turns E at T into E at T′ when every later value of T is a value of T′. E-Open
-and E-OpenPair read the witness off V-Ex and hand it to the premise, which is
-good at every instance that meets C in every later world.
+rules/ExRules.v proves the two rules good, `sem_typed_pack` and
+`sem_typed_open`. E-Pack moves E along `Erel_Vsub`, which turns E at T into E
+at T′ when every later value of T is a value of T′. E-Open reads the witness off
+V-Ex and hands it to the premise, which is good at every instance that meets C
+in every later world.
 
 The existential signature of new is a second case of `Erel_app_new` in
 rules/TermRules.v. At O-New the relation picks a fresh constant a. The case
@@ -106,17 +121,25 @@ instance [(a, 0)].
 
 ### What became derived
 
-E-NewFresh follows from the existential signature of new and E-OpenPair
-whenever C has a fact u ≺ ι for the fresh point ι itself.
+E-NewFresh for the term `let_new e` follows from the existential signature of
+new, E-LetPair, E-Let* and E-Open whenever C has a fact u ≺ ι for the fresh
+point ι itself.
 
 ```
-t_newfresh_open    : premises of t_newfresh  and  fresh_lo C u ι  ⟹  E-NewFresh
-t_newfresh_lh_open : premises of t_newfresh_lh  and  L ≠ []        ⟹  E-NewFresh, list form
+t_newfresh_open    : premises of t_newfresh  and  fresh_lo C u ι  ⟹  ⊢ let_new e
+t_newfresh_lh_open : premises of t_newfresh_lh  and  L ≠ []        ⟹  ⊢ let_new e, list form
 ```
 
-Both are lemmas in static/Typing.v. The proof types `new ∗` by E-App at the
-signature `KTNewEx` with ℓ = u and opens the result with E-OpenPair. The body
-premise is the premise of `t_newfresh` without change.
+Both are lemmas in static/Typing.v. The proof types ⟨new ∗, ∗⟩ by E-Pair, with
+`new ∗` by E-App at the signature `KTNewEx` with ℓ = u, and continues as in the
+section on opening above. The body premise is the premise of `t_newfresh` with
+two empty slots between the channel ends and the outer environment.
+
+```
+Θ; x : S̄@ι, y : S@ι, _, _, Δ ⊢^F_{Γ, C} e : T
+```
+
+No other premise changes.
 
 `t_newfresh` stays a primitive rule. The derivation needs the premise
 `fresh_lo C u ι`, a fact u ≺ ι in C, and `t_newfresh` does not have it. The task
@@ -125,7 +148,11 @@ said to stop at such a premise and report it (sharp edges 98).
 ### The fresh-points examples
 
 Every fresh-points example compiles. The ones whose constraint has a fact
-below the fresh point itself now go through the derived lemmas.
+below the fresh point itself now go through the derived lemmas. Each of them
+types a copy of its program in which that channel is bound by `let_new_pair`
+(`cycle_main_ex`, `sched_main_ex`, `rr_main_ex`, `rel_main_ex`, `fb_main_ex`,
+`fm_main_ex`). The boxes `fb_box` and `fm_box` use `let_new_pair` in place, so
+`fb_main` and `fm_main` contain them too.
 
 | File | Fresh channel | Rule now |
 |---|---|---|

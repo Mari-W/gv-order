@@ -988,6 +988,19 @@ cannot reach the result of new. E-OpenPair takes a scrutinee of type
 C, the ιs bound like the ιs of E-Exp. Its semantic proof is the one of E-LetPair
 with the witness read off V-Ex (`sem_typed_openp`). E-Open is kept as well.
 
+2026-11-01, later. E-OpenPair is removed, because it is encodable. The program
+let p = new ∗ in let (x, y) = p in t types with a let, E-Open on p and
+E-LetPair. The calculus has no let of one variable, so `let_new` binds p with a
+let pair on ⟨new ∗, ∗⟩ and drops the unit with E-Let*. `t_newfresh_open` and
+`t_newfresh_lh_open` now type `let_new e` with the same premises, the body
+seeing the spent p and unit as two empty slots. The let λp. t applied to new ∗
+would not do. E-Abs asks a lower bound below every head of the captured
+environment and restarts the frame of the body, two premises the old lemmas did
+not have. The examples that used the lemmas type copies of their programs with
+`let_new_pair`. `t_openp`, `sr_openp` and `sem_typed_openp` are gone, and the
+statements of soundness, fundamental, fundamental_proc and the composition
+lemmas are unchanged.
+
 **100. V-Box reads its thunk through the body (Claude, 2026-11-01).**
 V-Box read the thunk of a box with the arrow relation `Vfun` at the instantiated
 body, and `Vrel_box_iff` turned that into V through `Vrel_Vfun`, which says a λ
