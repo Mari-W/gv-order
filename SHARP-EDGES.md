@@ -997,6 +997,29 @@ lies in V only at an arrow type. A λ now lies in V at ∃ over an arrow, so
 substitution argument of 97. `Vrel_box_iff` keeps its statement word for word.
 For the thunk types the static system builds the two readings agree.
 
+**101. ∀ apart from □ (Claude, 2026-11-01, branch exists).**
+□T (`TBoxM`) and ∀ιs. C. T (`TAll`) are two type formers, and
+`TBox n C T` is a notation for □(∀ιs. C. T), so the examples compile unchanged.
+V-□ puts the thunk of the box in V at T. V-∀ puts a value with no channel in V
+at every known instance that meets C in every later world. `Vrel_box_iff` keeps
+its statement as the composite of the two. E-Gen generalizes a value over the ιs
+under C with an unlimited environment and an empty term environment, E-Inst
+instantiates at known points that meet C. V-∀ asks the value to hold no channel
+and to be a value, because a ∀ with no admissible instance would otherwise admit
+every term. With that the restriction "∀ only directly under □" is not needed
+by any proof and is dropped. docs/extensions/existentials.md, part 2.
+
+**102. E-Exp stays a rule (Claude, 2026-11-01).**
+The task asked to derive E-Exp from rules for □ and ∀. It does not split. The
+semantic E-Exp is an induction on the step index in which the box is used at
+its own type □(∀ιs. C. ∗ ⊸^u_⊤ T) at smaller indices only, and the smaller index
+comes from the thunk arrow under the ∀. A general introduction of □ whose
+premise types the thunk sees the box at the same index, so the induction does
+not close, and the ∀ cannot sit outside it as a separate E-Gen. The thunk also
+ignores its argument of type ∗, which is linear, so E-Abs cannot type it. E-Exp
+is therefore the introduction of □ at a ∀ over a thunk type, with its premise
+unchanged. E-Force was a lemma (`typed_force`) and stays one.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

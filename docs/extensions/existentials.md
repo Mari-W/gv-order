@@ -1,6 +1,6 @@
 # Existential points
 
-Branch `exists`, built on `fresh-points`, sharp edges 97 to 100. Part 1 adds
+Branch `exists`, built on `fresh-points`, sharp edges 97 to 102. Part 1 adds
 existential points to the base order-based relation. Part 2 makes ∀ a type
 former of its own and □ a plain modality over it. Each part sits in its own
 commits. The statements of `soundness`, `fundamental`, `fundamental_proc` and of
@@ -168,3 +168,107 @@ below the fresh point itself now go through the derived lemmas.
   of the fresh constraint (`Wg`, `wext_fresh_between_gen`, `pfresh`) moved
   unchanged from rules/FreshRules.v into the new rules/FreshWorlds.v, which
   rules/TermRules.v imports.
+
+## Part 2. ∀ apart from □
+
+### The type formers
+
+```
+T ::= … | □T | ∀ι₀ … ιₙ₋₁. C. T
+```
+
+□T is the type of a box whose thunk lies in T. A box !e stands for its thunk
+λ_. e[!e/x], so □ is a modality over any type and binds nothing. ∀ιs. C. T is the
+type of a value that lies in T at every known instance of the ιs that meets C,
+in every later world. The constructors are `TBoxM` and `TAll` in
+types/Types.v. The boxes of the static system have type □(∀ιs. C. ∗ ⊸^u_⊤ U),
+and `TBox n C T` is now a notation for `TBoxM (TAll n C T)`. Every example
+builds its box types through that notation and compiles without an edit.
+
+### The value clauses
+
+```
+V^W_n⟦Θ ⊢ □T⟧         = { !e | Θ = ∅, e has no channel, thunk(e) ∈ V^W_n⟦∅ ⊢ T⟧ }
+
+V^W_n⟦Θ ⊢ ∀ιs. C. T⟧  = { v | Θ = ∅, v is a value with no channel, and
+                              v ∈ V^{W′}_n⟦∅ ⊢ T[xs/ιs]⟧ for every W′ ⊒ W and
+                              every xs known in W′ that meets C in W′ }
+```
+
+`Vrel_boxm_iff` and `Vrel_all_iff` in relation/LogicalRelation.v state them.
+The V-Box of the bundled box is the composite of the two. `Vrel_box_iff`, the
+lemma every box proof uses, keeps its statement word for word and is now a
+consequence of `Vrel_boxm_iff` and `Vrel_all_iff`.
+
+V-∀ asks the value to hold no channel and to be a value. Without these two
+conjuncts a ∀ whose constraint no instance meets would admit every term, and
+`Vrel_val`, `Vrel_fchans` and `Vrel_heads_above` would fail. With them
+heads(∀ιs. C. T) = ∅, as for □.
+
+### The rules
+
+```
+v a value     Δ unlimited
+∅; Δ ⊢^F_{Γ, C} v : T        ιs not free in Δ, F
+──────────────────────────────────────────────── E-Gen
+∅; Δ ⊢^F_Γ v : ∀ιs. C. T
+
+
+Θ; Δ ⊢^F_Γ t : ∀ιs. C. T     xs known in Γ     C[xs/ιs] holds in Γ
+──────────────────────────────────────────────── E-Inst
+Θ; Δ ⊢^F_Γ t : T[xs/ιs]
+```
+
+The constructors are `t_gen` and `t_inst` in static/Typing.v, and
+`sem_typed_gen` and `sem_typed_inst` in rules/ExRules.v prove them good. E-Gen
+binds the ιs like E-Exp and E-Open. The value restriction follows Flanagan and
+Abadi (1999, Section 5.1), where the body of a polymorphic abstraction over lock
+types must be a value. The premise "v is a value" is the syntactic `is_val v`, and λ, a box, a
+constant, ∗, a channel and pairs and injections of values qualify. A variable
+does not. The semantic proof reads the premise at index n + 1 of the step
+index. At a value E there gives V, and at index 0 E holds of every term. The
+environment is unlimited and the term environment is empty because a ∀ value
+holds no channel.
+
+E-Exp and the signature of force are unchanged in text. Through the notation
+they read
+
+```
+E-Exp  : … ⊢ !e : □(∀ιs. C. ∗ ⊸^u_⊤ T)
+force  : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[xs/ιs]}_⊤ T[xs/ιs]        xs known, C[xs/ιs] holds
+```
+
+### What became derived and what did not
+
+- V-Box of the bundled box (`Vrel_box_iff`) is derived from V-□ and V-∀. The
+  semantic E-Exp (`sem_typed_box`) and the semantics of force go through it
+  and did not change.
+- E-Force stays the lemma `typed_force`, E-App at the signature of force, as
+  before.
+- E-Exp stays a primitive rule (sharp edges 102). It is the introduction of □
+  at a type ∀ιs. C. ∗ ⊸^u_⊤ T, and it does not split into an introduction of □
+  and E-Gen. Three things block the split. The body of a box names the box
+  itself at its full type □(∀ιs. C. …), and the semantic proof is an induction
+  on the step index that needs this name only at smaller indices. An
+  introduction of □ over an arbitrary T, whose premise types the thunk, only
+  knows the thunk at the same index. The ∀ then has to sit inside that
+  induction, so it cannot be a separate E-Gen around it. Last, the thunk λ_. e
+  ignores its argument of type ∗, and ∗ is linear, so E-Abs does not type the
+  thunk.
+- The restriction "∀ only directly under □" is gone. No proof needed it. A ∀
+  elsewhere is a value with no channel, which V-∀ states and E-Gen guarantees.
+
+### What broke and how it was fixed
+
+- Every function on types has a case for □ and one for ∀ in place of the
+  bundled box (`pinst_ty`, `heads`, `ty_roots`, `sren_ty`, `sflip_ty`,
+  `sinst_ty`, `sclosed_ty`, `tysw`, `eqT`, `teqW`, `steq`, `pscoped`). The
+  old box case moved to ∀, and the case for □ recurses on its body.
+- `ty_ind_ex` gives the hypothesis for the body of □ directly and for the body
+  of ∀ at every instance. The eight invariance inductions of part 1 now prove
+  the □ case from the body and the ∀ case at the instance. The old box case
+  becomes the ∀ case almost unchanged.
+- Proofs whose bullets followed the order of the cases of the bundled box had
+  their bullets reordered, because `naive_solver` now closes the □ case.
+- Intro patterns over `ty` name eight branches.
+
