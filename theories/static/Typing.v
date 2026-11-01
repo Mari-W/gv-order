@@ -96,15 +96,6 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
         (tenv_pinst (pshift m) Θ) (<[i := Some T]> (lenv_pinst (pshift m) Δ))
         (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) →
       typed W Φ Ψ Θ Δ F e U
-  | t_openp Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T : (* E-OpenPair *)
-      tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      typed W Φ Ψ Θ1 Δ1 (sf_union F (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1
-        (TEx lb m C (TProd T1 T2)) →
-      typed W (fhyps_pinst (pshift m) Φ)
-        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
-        (tenv_pinst (pshift m) Θ2) (Some T2 :: Some T1 :: lenv_pinst (pshift m) Δ2)
-        (sf_pinst (pshift m) F) e2 (pinst_ty (pshift m) T) →
-      typed W Φ Ψ Θ Δ F (LetP e1 e2) T
   | t_gen Φ Ψ Δ F v m C T :                             (* E-Gen, values only *)
       is_val v → lenv_unl Δ →
       typed W (fhyps_pinst (pshift m) Φ)
@@ -125,12 +116,11 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
     with q at or after p in program order of one name. [t_newfresh_lh]
     is the form with lists, L ≺ ι ≺ H.
 
-    E-Pack, E-Open and E-OpenPair (sharp edges 97). E-Open opens an
+    E-Pack and E-Open (sharp edges 97, 99). E-Open opens an
     existential hypothesis into fresh point variables 0, …, m-1 under
-    its constraint, scoped like a box body. E-OpenPair opens the
-    existential scrutinee of a let pair the same way. With the
-    existential signature of new it gives E-NewFresh
-    ([t_newfresh_open] below).
+    its constraint, scoped like a box body. With the existential
+    signature of new and a let that binds the result of new it gives
+    E-NewFresh ([t_newfresh_open] below).
 
     E-Gen and E-Inst (sharp edges 101). ∀ is a type former of its own.
     E-Gen generalizes a value v over fresh point variables 0, …, m-1
@@ -245,10 +235,27 @@ Proof.
 Qed.
 
 
-(** E-NewFresh from the existential signature of new and E-OpenPair
-    (sharp edges 97). The lower point of the existential is the outer
-    point u of a fact u ≺ ι of C. That fact is the one premise
-    t_newfresh does not have. *)
+(** Splitting an environment of spent slots. *)
+Lemma lenv_split_nones_nones Δ : lenv_split (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ).
+Proof. induction Δ; simpl; constructor; done. Qed.
+
+(** The encoded let of new (sharp edges 99). The calculus has no let
+    of a single variable, so let p = new ∗ in let ⟨a, b⟩ = p in e is a
+    let pair on ⟨new ∗, ∗⟩ that drops the unit. p is variable 1 of the
+    middle body, and e sees a and b at 1 and 0 and the spent p and unit
+    at 3 and 2. *)
+Definition let_new (e : expr) : expr :=
+  LetP (Pair (App ENew EUnit) EUnit) (LetU (Var 0) (LetP (Var 1) e)).
+
+(** The same program with e indexed as the body of a let pair, a at 1,
+    b at 0 and the outer variables from 2. The examples write this. *)
+Definition let_new_pair (e : expr) : expr :=
+  let_new (rename (upren (upren (λ x, 2 + x))) e).
+
+(** E-NewFresh from the existential signature of new, E-LetPair,
+    E-Let*, E-Open on p and E-LetPair (sharp edges 97, 99). The lower
+    point of the existential is the outer point u of a fact u ≺ ι of
+    C. That fact is the one premise t_newfresh does not have. *)
 Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C u :
   fresh_ok C →
   Forall (skn W Ψ) (bc_env C) →
@@ -258,21 +265,51 @@ Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C u :
   typed W (fhyps_pinst (pshift 1) Φ)
     (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
     (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
+    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: None :: None ::
+       lenv_pinst (pshift 1) Δ)
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-  typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
+  typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
-  intros HC HK Hbt Hu Hb.
-  apply (t_openp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ (Some (fresh_outer C u)) 1 C
-           (TSess S (pvar 0)) (TSess (dual S) (pvar 0))); [| | |exact Hb].
+  intros HC HK Hbt Hu Hb. unfold let_new.
+  set (X := TEx (Some (fresh_outer C u)) 1 C
+              (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
+  (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
+  apply (t_letp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
+  { apply tenv_comp_empty_l, se_sym. }
+  { apply lenv_split_nones_l. }
+  { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
+    - apply tenv_comp_empty_r.
+    - apply lenv_split_nones_nones.
+    - eapply (t_app W Φ Ψ ∅ ∅ ∅ _ _ _ _ _ _ None None TUnit).
+      + apply tenv_comp_empty_r.
+      + apply lenv_split_nones_l.
+      + done.
+      + apply t_konst; [apply lenv_empty_nones| |done]. by apply KTNewEx.
+      + apply t_unit. apply lenv_empty_nones.
+    - apply t_unit. apply lenv_empty_nones. }
+  (* let ∗ = w *)
+  apply (t_letu W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
+  { apply tenv_comp_empty_l, se_sym. }
+  { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
+  { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
+    exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
+    apply fmap_Some in Hy as (? & _ & ?). congruence. }
+  (* open p *)
+  apply (t_open W Φ Ψ Θ _ F _ 1 (Some (fresh_outer C u)) 1 C
+           (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))) T); [done|intros Hun; exact Hun|].
+  cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
+  change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
+  (* let ⟨a, b⟩ = p *)
+  apply (t_letp W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
+           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))
+              :: lenv_nones (lenv_pinst (pshift 1) Δ))
+           (None :: None :: lenv_pinst (pshift 1) Δ)
+           _ _ _ (TSess S (pvar 0)) (TSess (dual S) (pvar 0))); [| | |exact Hb].
   - apply tenv_comp_empty_l, se_sym.
-  - apply lenv_split_nones_l.
-  - eapply (t_app W Φ Ψ ∅ ∅ ∅ _ _ _ _ _ _ None None TUnit).
-    + apply tenv_comp_empty_r.
-    + apply lenv_split_nones_l.
-    + done.
-    + apply t_konst; [apply lenv_empty_nones| |done]. by apply KTNewEx.
-    + apply t_unit. apply lenv_empty_nones.
+  - apply lsplit_none, lsplit_l, lenv_split_nones_l.
+  - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
+    exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
+    apply fmap_Some in Hy as (? & _ & ?). congruence.
 Qed.
 
 (** The fact (outer point 0) ≺ ι of a fresh constraint, the lower
@@ -285,7 +322,7 @@ Proof.
 Qed.
 
 (** The list form through the existential signature of new, for a
-    nonempty L (sharp edges 97). *)
+    nonempty L, on the encoded let of new (sharp edges 97, 99). *)
 Lemma t_newfresh_lh_open W Φ Ψ Θ Δ F e T S L H :
   L ≠ [] →
   Forall (skn W Ψ) (L ++ H) →
@@ -293,9 +330,10 @@ Lemma t_newfresh_lh_open W Φ Ψ Θ Δ F e T S L H :
   typed W (fhyps_pinst (pshift 1) Φ)
     (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
     (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: lenv_pinst (pshift 1) Δ)
+    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: None :: None ::
+       lenv_pinst (pshift 1) Δ)
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-  typed W Φ Ψ Θ Δ F (LetP (App ENew EUnit) e) T.
+  typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
   intros HL HK Hbt Hb.
   apply (t_newfresh_open W Φ Ψ Θ Δ F e T S (fresh_bcs L H) (pvar 1)); [| | | |done].

@@ -9,9 +9,15 @@ From LRGV Require Export examples.FreshTools examples.Cycle.
 
 Set Default Proof Using "All".
 
-Lemma cycle_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) cycle_main TUnit.
+(** [cycle_main] with d bound by the encoded let of new (sharp edges
+    99). let p = new ∗ in let (d, d′) = p in … *)
+Definition cycle_main_ex : expr :=
+  LetP (App ENew EUnit) (let_new_pair
+    (LetU (App ESpawn cycle_thunk) (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
+
+Lemma cycle_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) cycle_main_ex TUnit.
 Proof.
-  intros HW. unfold cycle_main.
+  intros HW. unfold cycle_main_ex.
   apply (t_newfresh_lh W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
   fresh_clean.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] [] ltac:(done)).
@@ -43,7 +49,7 @@ Proof.
   tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Lemma cycle_deadlock_free_fresh : deadlock_free (∅, {[+ cycle_main +]}).
+Lemma cycle_deadlock_free_fresh : deadlock_free (∅, {[+ cycle_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
   apply ptyped_closed; [constructor|]. apply cycle_typed_fresh, Wpo_nil_strict.

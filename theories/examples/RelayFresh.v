@@ -32,10 +32,17 @@ Definition rel_own (W : world) : Prop :=
         w_lt W (rel_ip (S k)) (pt_shift 1 (pc 0 (S k))) ∧
         w_lt W (rel_ip (S k)) (pt_shift 1 (rel_sl (S k)))).
 
+(** [rel_main] with d bound by the encoded let of new (sharp edges
+    99). *)
+Definition rel_main_ex : expr :=
+  LetP (Pair relay prod) (LetP (App ENew EUnit) (let_new_pair
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
+      (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
+
 Lemma rel_typed_fresh W : world_wf W → pt_known W (pc 0 0) → rel_own W →
-  typed W ∅ [] ∅ [] (∅, None) rel_main TUnit.
+  typed W ∅ [] ∅ [] (∅, None) rel_main_ex TUnit.
 Proof.
-  intros HW Ha [Hown Hrnd]. unfold rel_main.
+  intros HW Ha [Hown Hrnd]. unfold rel_main_ex.
   destruct (Hown 0) as [Ha0s Hsa1].
   tstep.
   { tstep; [apply prod_typed, HW|apply relay_typed, HW]. }
@@ -84,7 +91,7 @@ Proof.
     - apply (HcS k). exact (c0_inst _ _ _ _ Hg). }
   assert (Forall (skn W Ψ) [pc 0 0; pvar 0]) as HK.
   { constructor; [by left|constructor; [eapply skn_inst; [by left|by left|done]|constructor]]. }
-  match goal with |- typed _ _ _ _ [Some ?A; Some ?B; Some ?A'; Some ?B'; Some ?D; Some ?E] _ _ _ =>
+  match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; Some ?D; Some ?E] _ _ _ =>
     change A with (TSess (dual SEnd) (pvar 0)); change B with (TSess SEnd (pvar 0));
     change A' with (TSess (dual Srl) (pc 0 0)); change B' with (TSess Srl (pc 0 0));
     change D with (TBox 2 rel_C (TLolli None None TUnit prod_body));
@@ -127,7 +134,7 @@ Proof.
       destruct k; unfold rel_rank; cbn; lia.
 Qed.
 
-Lemma rel_deadlock_free_fresh : deadlock_free (∅, {[+ rel_main +]}).
+Lemma rel_deadlock_free_fresh : deadlock_free (∅, {[+ rel_main_ex +]}).
 Proof.
   apply (soundness Wrel1 _ TUnit Wrel1_strict).
   apply ptyped_closed; [constructor|]. apply rel_typed_fresh; [apply Wrel1_strict| |split].

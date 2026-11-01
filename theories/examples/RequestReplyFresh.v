@@ -20,9 +20,16 @@ Definition rrf_facts (g : fact) : Prop :=
   ∃ k, g = FLt (pv 1 k) (pv 0 k) ∨ g = FLt (pv 0 k) (pv 1 (S k)).
 Definition rrf_C : bcs := BCs [pvar 0] rrf_facts.
 
-Lemma rr_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) rr_main TUnit.
+(** [rr_main] with b bound by the encoded let of new (sharp edges
+    99). *)
+Definition rr_main_ex : expr :=
+  LetP (Pair srv cli) (LetP (App ENew EUnit) (let_new_pair
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
+      (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
+
+Lemma rr_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) rr_main_ex TUnit.
 Proof.
-  intros HW. unfold rr_main.
+  intros HW. unfold rr_main_ex.
   tstep.
   { tstep; [apply cli_typed, HW|apply srv_typed, HW]. }
   cbn.
@@ -53,7 +60,7 @@ Proof.
   assert (Forall (skn W Ψ) [pvar 1; pvar 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|].
     constructor; [eapply skn_inst; [by right; left|by left|done]|constructor]. }
-  match goal with |- typed _ _ _ _ [Some ?A; Some ?B; Some ?A'; Some ?B'; Some ?D; Some ?E] _ _ _ =>
+  match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; Some ?D; Some ?E] _ _ _ =>
     change A with (TSess (dual Sb) (pvar 0)); change B with (TSess Sb (pvar 0));
     change A' with (TSess (dual Sa) (pvar 1)); change B' with (TSess Sa (pvar 1));
     change D with (TBox 2 rq_C (TLolli None None TUnit cli_body));
@@ -76,7 +83,7 @@ Proof.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Lemma rr_deadlock_free_fresh : deadlock_free (∅, {[+ rr_main +]}).
+Lemma rr_deadlock_free_fresh : deadlock_free (∅, {[+ rr_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
   apply ptyped_closed; [constructor|]. apply rr_typed_fresh, Wpo_nil_strict.

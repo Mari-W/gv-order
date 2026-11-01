@@ -12,9 +12,15 @@ From LRGV Require Export examples.FreshTools examples.Scheduler.
 
 Set Default Proof Using "All".
 
-Lemma sched_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) sched_main TUnit.
+(** [sched_main] with r₂ bound by the encoded let of new (sharp
+    edges 99). *)
+Definition sched_main_ex : expr :=
+  LetP (App ENew EUnit) (LetP (App ENew EUnit) (let_new_pair
+    (LetU (App ESpawn ag1_thunk) (LetU (App ESpawn ag2_thunk) ag0)))).
+
+Lemma sched_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) sched_main_ex TUnit.
 Proof.
-  intros HW. unfold sched_main.
+  intros HW. unfold sched_main_ex.
   apply (t_newfresh_lh W _ _ ∅ _ _ _ _ Sd [] []); [constructor|set_solver|].
   fresh_clean.
   tstep.
@@ -85,7 +91,7 @@ Proof.
   apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Lemma sched_deadlock_free_fresh : deadlock_free (∅, {[+ sched_main +]}).
+Lemma sched_deadlock_free_fresh : deadlock_free (∅, {[+ sched_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
   apply ptyped_closed; [constructor|]. apply sched_typed_fresh, Wpo_nil_strict.

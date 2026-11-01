@@ -2,7 +2,7 @@
 
     many : □(∀ι κ. {ι ≺ κ}. ∗ ⊸^⊥_⊤ Close@ι ⊗ Close@κ ⊸^κ_⊤ ∗)
     many = !(f = λp. let (c, e) = p in
-                     let (d, d′) = new ∗ in
+                     let q = new ∗ in let (d, d′) = q in
                      let () = spawn (λu. let () = u in
                                          let (v, d′) = recv d′ in let () = v in
                                          recvclose d′) in
@@ -14,7 +14,8 @@
     infinite constraint {ι ≺ δ} ∪ {δ+k ≺ κ ∣ k ∈ ℕ}. Betweenness asks
     ι ≺ κ for the facts ι ≺ δ and δ+k ≺ κ, because δ+k lies after δ in
     program order, and the box hypothesis gives it (sharp edges 93).
-    The list form L ≺ ι ≺ H could not state δ+1 ≺ κ. *)
+    The list form L ≺ ι ≺ H could not state δ+1 ≺ κ. E-Open on q opens
+    the existential result of new (sharp edges 99). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.FreshBetween.
@@ -25,7 +26,7 @@ Set Default Proof Using "All".
 Definition Sdd : sty := SSnd 0 TUnit (SSnd 0 TUnit SEnd).
 
 Definition fm_box : expr :=
-  EBox (Lam (LetP (Var 0) (LetP (App ENew EUnit)
+  EBox (Lam (LetP (Var 0) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0)
                        (LetP (App ERecv (Var 1)) (LetU (Var 1) (recvclose (Var 0)))))))
     (LetU (App EClos (Var 3))
@@ -162,9 +163,18 @@ Proof.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Lemma fm_main_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) fm_main TUnit.
+(** main in the empty world, e bound by the encoded let of new (sharp
+    edges 99). *)
+Definition fm_main_ex : expr :=
+  LetP (Pair fm_box EUnit) (LetU (Var 0)
+    (LetP (App ENew EUnit) (let_new_pair
+      (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 3)))))
+      (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
+        (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
+
+Lemma fm_main_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) fm_main_ex TUnit.
 Proof.
-  intros HW. unfold fm_main.
+  intros HW. unfold fm_main_ex.
   tstep.
   { tstep; [tstep|apply fm_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
@@ -179,7 +189,7 @@ Proof.
   { intros l h _ Hh. by apply elem_of_nil in Hh. }
   rewrite tenv_pinst_empty, Hsf. cbn.
   change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
-  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
+  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
     change T with fb_ty end.
   replace (fhyps_pinst (pshift 1) (fhyps_pinst (pshift 1) ∅)) with (∅ : fhyps)
     by (unfold fhyps_pinst; by rewrite !fmap_empty).
@@ -224,7 +234,7 @@ Proof.
 Qed.
 
 (** The empty world. *)
-Lemma fm_deadlock_free_empty : deadlock_free (∅, {[+ fm_main +]}).
+Lemma fm_deadlock_free_empty : deadlock_free (∅, {[+ fm_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
   apply ptyped_closed; [constructor|]. apply fm_main_typed_fresh, Wpo_strict.

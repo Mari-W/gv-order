@@ -24,7 +24,7 @@ Proof. rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True by lia. Qed.
 Lemma plist1_pup_pvar0 x σ : pt_inst (pt_inst (plist [x]) ∘ pup 1 σ) (pvar 0) = x.
 Proof. rewrite pt_inst_pvar_at. unfold compose, pup. rewrite decide_True by lia. by rewrite pt_inst_pvar_at. Qed.
 
-(** ** Helpers for E-Pack, E-Open and E-OpenPair (sharp edges 97) *)
+(** ** Helpers for E-Pack and E-Open (sharp edges 97) *)
 
 Lemma lenv_pinst_insert σ Δ i o :
   lenv_pinst σ (<[i := o]> Δ) = <[i := pinst_ty σ <$> o]> (lenv_pinst σ Δ).
@@ -212,7 +212,6 @@ Proof.
     |Φ Ψ Θ Δ F e T Ss C _ _ _ _ IH
     |Φ Ψ Θ Δ F e lb m C T xs _ _ _ _ _ IH
     |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu _ IH
-    |Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T HΘ HΔ _ IH1 _ IH2
     |Φ Ψ Δ F v m C T Hv Hu _ IH
     |Φ Ψ Θ Δ F e m C T xs _ _ _ _ IH].
   (* E-Unit *)
@@ -350,25 +349,6 @@ Proof.
     + rewrite Hfc. unfold tenv_pinst. by rewrite dom_fmap_L.
     + eapply allfv_mono; [|exact Hfv]. intros x. by apply (open_avail _ _ _ lb m C).
     + intros x Hx. apply Hrv. by apply (open_avail_lin _ _ _ lb m C).
-  (* E-OpenPair *)
-  - destruct IH1 as (Hfc1 & Hfv1 & Hrv1). destruct IH2 as (Hfc2 & Hfv2 & Hrv2).
-    split_and!.
-    + simpl. rewrite (tenv_join_dom _ _ _ (proj1 HΘ)), Hfc1, Hfc2.
-      unfold tenv_pinst. rewrite dom_fmap_L. set_solver.
-    + simpl. split.
-      * eapply allfv_mono; [|exact Hfv1]. intros x (T' & ?).
-        exists T'. eauto using lenv_split_lookup_l.
-      * eapply allfv_mono; [|exact Hfv2]. intros [|[|x]]; simpl; [done|done|].
-        intros (T' & HT'). change (lenv_pinst (pshift m) Δ2 !! x = Some (Some T')) in HT'.
-        rewrite lenv_pinst_lookup in HT'.
-        destruct (Δ2 !! x) as [[T0|]|] eqn:E; simpl in HT'; simplify_eq.
-        exists T0. eauto using lenv_split_lookup_r.
-    + intros x (T' & Hx & Hnb). simpl.
-      destruct (lenv_split_lookup_inv _ _ _ _ _ HΔ Hx) as [Hx1|Hx2].
-      * left. apply Hrv1. exists T'. auto.
-      * right. apply (Hrv2 (S (S x))).
-        exists (pinst_ty (pshift m) T'). simpl. rewrite lenv_pinst_lookup, Hx2.
-        split; [done|]. by rewrite unlimited_pinst_iff.
   (* E-Gen *)
   - exact (proj1 (term_wf_lenv_pinst _ _ _ _) IH).
   (* E-Inst *)
@@ -410,7 +390,6 @@ Proof.
     |Φ Ψ Θ Δ F e T Ss C HC HK Hbt Hb IH
     |Φ Ψ Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
     |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu Hb IH
-    |Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T HΘ HΔ H1 IH1 Hb IH2
     |Φ Ψ Δ F v m C T Hv Hu Hb IH
     |Φ Ψ Θ Δ F e m C T xs Hxs HK HC H IH]; intros W1 ρ σ HW HW1 Hρ HΨ;
     pose proof HW1 as (HN & He & Hl & HS).
@@ -596,42 +575,6 @@ Proof.
     + exact (inst_ok_mono _ _ _ _ HW2 Hρ).
     + apply hyps_hold_app; [exact (hyps_hold_wext _ _ _ HW2 HΨ)|].
       intros C0 xs0 Hg. apply list_elem_of_singleton in Hg. injection Hg as -> ->. done.
-  - (* E-OpenPair *)
-    apply (sr_openp W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
-             _ _ _ (pt_inst σ <$> lb) m (bcs_inst σ C) (pinst_ty (pup m σ) T1)
-             (pinst_ty (pup m σ) T2)).
-    + by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ).
-    + by apply lenv_split_pinst.
-    + frame_pinst. change (TEx (pt_inst σ <$> lb) m (bcs_inst σ C)
-                     (TProd (pinst_ty (pup m σ) T1) (pinst_ty (pup m σ) T2)))
-        with (pinst_ty σ (TEx lb m C (TProd T1 T2))). by apply (IH1 W1 ρ σ).
-    + intros W2 xs HW2 Hxs HK' HC'. subst m.
-      set (σ' := pt_inst (plist xs) ∘ pup (length xs) σ).
-      assert (∀ a, pt_inst σ' (pshift (length xs) a) = σ a) as Hsh
-        by (intros a; by apply plist_pup_shift).
-      pose proof (IH2 W2 ρ σ' HW (wext_trans _ _ _ HW1 HW2)) as Hb'.
-      rewrite tenv_pinst_comp, (tenv_pinst_ext _ σ) in Hb' by exact Hsh.
-      rewrite !lenv_pinst_cons_some, lenv_pinst_comp, (lenv_pinst_ext _ σ) in Hb' by exact Hsh.
-      rewrite sf_pinst_comp, (sf_pinst_ext _ σ) in Hb' by exact Hsh.
-      rewrite (pinst_ty_comp T σ' (pshift (length xs))), (pinst_ty_ext T _ σ) in Hb' by exact Hsh.
-      assert (fhyps_pinst σ' (fhyps_pinst (pshift (length xs)) Φ) = fhyps_pinst σ Φ) as E3.
-      { unfold fhyps_pinst. rewrite <-map_fmap_compose. apply map_fmap_ext.
-        intros j [u|] _; simpl; [|done]. f_equal. rewrite pt_inst_comp.
-        apply pt_inst_ext. exact Hsh. }
-      assert (hyps_inst σ' (hyps_inst (pshift (length xs)) Ψ ++
-                [(bcs_inst (pshift (length xs)) C, ids (length xs))])
-              = hyps_inst σ Ψ ++ [(bcs_inst σ C, xs)]) as E4.
-      { rewrite hyps_inst_app, hyps_comp, hyps_inst_single. f_equal.
-        - apply hyps_inst_ext. exact Hsh.
-        - f_equal. f_equal; [|apply ids_plist].
-          rewrite bcs_comp. apply bcs_inst_ext. exact Hsh. }
-      rewrite E3, E4 in Hb'.
-      assert (∀ U, pinst_ty σ' U = ty_inst xs (pinst_ty (pup (length xs) σ) U)) as E2.
-      { intros U. unfold ty_inst, σ'. by rewrite pinst_ty_comp. }
-      rewrite !E2 in Hb'. apply Hb'.
-      * exact (inst_ok_mono _ _ _ _ HW2 Hρ).
-      * apply hyps_hold_app; [exact (hyps_hold_wext _ _ _ HW2 HΨ)|].
-        intros C0 xs0 Hg. apply list_elem_of_singleton in Hg. injection Hg as -> ->. done.
   - (* E-Gen *)
     cbn [pinst_ty]. rewrite tenv_pinst_empty.
     apply (sr_gen W1 _ _ _ m (bcs_inst σ C) (pinst_ty (pup m σ) T)).
@@ -763,7 +706,6 @@ Proof.
     |Φ Ψ Θ Δ F e T Ss C HC HK Hbt Hb IH
     |Φ Ψ Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
     |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu Hb IH
-    |Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T HΘ HΔ H1 IH1 Hb IH2
     |Φ Ψ Δ F v m C T Hv Hu Hb IH
     |Φ Ψ Θ Δ F e m C T xs Hxs HK HC H IH]; intros σ Ψ' HΨ.
   - rewrite tenv_pinst_empty. apply t_unit. by apply lenv_empty_pinst.
@@ -911,27 +853,6 @@ Proof.
         by apply pup_pshift.
       rewrite (pinst_ty_comp U), (pinst_ty_ext U _ (pt_inst (pshift m) ∘ σ)), <-pinst_ty_comp in H
         by apply pup_pshift.
-      exact H.
-  - (* E-OpenPair *)
-    apply (t_openp W _ _ _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
-             _ _ _ (pt_inst σ <$> lb) m (bcs_inst σ C) (pinst_ty (pup m σ) T1)
-             (pinst_ty (pup m σ) T2)).
-    + by apply (tenv_comp_pinst_s W W σ Hwf HWW Ψ Ψ').
-    + by apply lenv_split_pinst.
-    + frame_pinst. change (TEx (pt_inst σ <$> lb) m (bcs_inst σ C)
-                     (TProd (pinst_ty (pup m σ) T1) (pinst_ty (pup m σ) T2)))
-        with (pinst_ty σ (TEx lb m C (TProd T1 T2))). by apply (IH1 σ Ψ').
-    + pose proof (IH2 (pup m σ) _ (hyps_hold_open W Ψ Ψ' σ m C HW HΨ)) as H.
-      rewrite (fhyps_pinst_comp_ext (pup m σ) (pshift m) (pshift m) σ) in H by apply pup_pshift.
-      rewrite tenv_pinst_comp, (tenv_pinst_ext _ (pt_inst (pshift m) ∘ σ)), <-tenv_pinst_comp in H
-        by apply pup_pshift.
-      rewrite !lenv_pinst_cons_some in H.
-      rewrite lenv_pinst_comp, (lenv_pinst_ext _ (pt_inst (pshift m) ∘ σ)), <-lenv_pinst_comp in H
-        by apply pup_pshift.
-      rewrite sf_pinst_comp, (sf_pinst_ext _ (pt_inst (pshift m) ∘ σ)), <-sf_pinst_comp in H
-        by apply pup_pshift.
-      rewrite (pinst_ty_comp T (pup m σ) (pshift m)), (pinst_ty_ext T _ (pt_inst (pshift m) ∘ σ)),
-        <-pinst_ty_comp in H by apply pup_pshift.
       exact H.
   - (* E-Gen *)
     cbn [pinst_ty]. rewrite tenv_pinst_empty.

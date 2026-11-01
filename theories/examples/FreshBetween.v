@@ -2,7 +2,7 @@
 
     between : □(∀ι κ. {ι ≺ κ}. ∗ ⊸^⊥_⊤ Close@ι ⊗ Close@κ ⊸^κ_⊤ ∗)
     between = !(f = λp. let (c, e) = p in
-                        let (d, d′) = new ∗ in
+                        let q = new ∗ in let (d, d′) = q in
                         let () = spawn (λu. let () = u in close d′) in
                         let () = close c in let () = close d in close e)
 
@@ -12,6 +12,8 @@
     ι ≺ κ, and a carried root of ι or κ is unrelated to both. E-NewFresh
     creates d at a fresh point δ with ι ≺ δ ≺ κ, which betweenness
     allows because the box hypothesis gives ι ≺ κ (sharp edges 90).
+    new returns ∃δ. C. Close@δ ⊗ Close@δ, and E-Open on q opens it
+    (sharp edges 99).
 
     main creates c at (0, 0) and e at (1, 0) in the world with
     (0, 0) ≺ (1, 0), spawns the partners that close the other ends,
@@ -31,7 +33,7 @@ Definition fb_body : ty :=
 Definition fb_ty : ty := TBox 2 fb_C (TLolli None None TUnit fb_body).
 
 Definition fb_box : expr :=
-  EBox (Lam (LetP (Var 0) (LetP (App ENew EUnit)
+  EBox (Lam (LetP (Var 0) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
     (LetU (App EClos (Var 3))
     (LetU (App EClos (Var 1))
@@ -240,11 +242,18 @@ Qed.
     point γ with no facts (L and H empty), e at a fresh point ε with
     γ ≺ ε (L = [γ], H empty, betweenness holds vacuously). Then main
     needs no constant and no fact, and the world of [soundness] is
-    empty. *)
+    empty. e is bound by the encoded let of new (sharp edges 99). *)
 
-Lemma fb_main_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) fb_main TUnit.
+Definition fb_main_ex : expr :=
+  LetP (Pair fb_box EUnit) (LetU (Var 0)
+    (LetP (App ENew EUnit) (let_new_pair
+      (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 3)))))
+      (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
+        (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
+
+Lemma fb_main_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) fb_main_ex TUnit.
 Proof.
-  intros HW. unfold fb_main.
+  intros HW. unfold fb_main_ex.
   tstep.
   { tstep; [tstep|apply fb_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
@@ -259,7 +268,7 @@ Proof.
   { intros l h _ Hh. by apply elem_of_nil in Hh. }
   rewrite tenv_pinst_empty, Hsf. cbn.
   change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
-  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
+  match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
     change T with fb_ty end.
   replace (fhyps_pinst (pshift 1) (fhyps_pinst (pshift 1) ∅)) with (∅ : fhyps)
     by (unfold fhyps_pinst; by rewrite !fmap_empty).
@@ -295,7 +304,7 @@ Proof.
 Qed.
 
 (** The empty world: no constant, no fact. *)
-Lemma fb_deadlock_free_empty : deadlock_free (∅, {[+ fb_main +]}).
+Lemma fb_deadlock_free_empty : deadlock_free (∅, {[+ fb_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
   apply ptyped_closed; [constructor|]. apply fb_main_typed_fresh, Wpo_strict.

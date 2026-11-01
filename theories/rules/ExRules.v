@@ -2,8 +2,7 @@
 
     E-Pack puts a term of type T[xs/ιs] at known points xs that meet C
     into ∃ιs. C. T. E-Open uses a hypothesis of type ∃ιs. C. T at a
-    fresh instance that meets C. E-OpenPair opens the existential
-    scrutinee of a let pair. Each continuation is good at every
+    fresh instance that meets C. Each continuation is good at every
     instance that meets C in every later world, which is what V-Ex
     hands out. *)
 
@@ -116,45 +115,6 @@ Proof.
   destruct (grounding_open _ _ _ _ _ _ _ _ _ _ Hi Hg) as (xs & Hxs & HK & HC & Hg').
   apply (He W' xs HW Hxs HK HC n W' Θ' Θ'' γ); [|done|done].
   apply wext_refl. by destruct HW as (_&_&_&?).
-Qed.
-
-(** E-OpenPair: the scrutinee of a let pair has type ∃ιs. C. T₁ ⊗ T₂,
-    and the body is good at every instance that meets C. *)
-Lemma sem_typed_openp W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 lb m C T1 T2 T :
-  tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TEx lb m C (TProd T1 T2)) →
-  (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
-     bcs_hold (w_eq W1) (w_lt W1) C xs →
-     sem_typed W1 Θ2 (Some (ty_inst xs T2) :: Some (ty_inst xs T1) :: Δ2) F e2 T) →
-  sem_typed W Θ Δ F (LetP e1 e2) T.
-Proof.
-  intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
-  change (LetP (subst γ e1) (subst (up (up γ)) e2))
-    with (fill_frame (FLetP (subst (up (up γ)) e2)) (subst γ e1)).
-  eapply (sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 (TEx lb m C (TProd T1 T2)) T
-            (λ γ, FLetP (subst (up (up γ)) e2)));
-    [done|done|done|done| |done|done|done].
-  clear dependent Θ' Θ'' n γ W'.
-  intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. simpl.
-  pose proof (wext_trans _ _ _ HW HW'') as HW2.
-  apply Vrel_ex_iff in HV as [_ (xs & Hxs & HK & HC & HV)].
-  unfold ty_inst in HV. cbn [pinst_ty] in HV.
-  apply Vrel_prod_iff in HV as (v1 & v2 & Θa & Θb & -> & Hcab & HV1 & HV2).
-  pose proof (Vrel_val _ _ _ _ _ HV1) as Hv1. pose proof (Vrel_val _ _ _ _ _ HV2) as Hv2.
-  pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW'')) Hc') as Hc'W.
-  destruct (comp_bind2 _ _ _ _ _ _ _ _ (wext_sym _ _ HW2) Hc3 Hcab Hc'W) as (X & A & HX & HXA & HA).
-  apply (Erel_det_beta _ _ _ _ _ _ (subst2 v1 v2 (subst (up (up γ)) e2))).
-  - by apply TStepHead, HeadLetP.
-  - intros α e'' Hst. apply tstep_letp_inv in Hst as [(e1' & Hst & _)|(u & w & Heq & _ & _ & -> & ->)].
-    + exfalso. eapply val_no_tstep; [exact Hst|]. simpl. by apply andb_True.
-    + by injection Heq as -> ->.
-  - rewrite subst2_subst.
-    apply (He2 W'' xs HW2 Hxs HK HC j W'' X Θ3); [apply wext_refl; by destruct HW2 as (_&_&_&?)|done|].
-    exists Θb, A. split_and!; [done|done|].
-    exists Θa, Θ'. split_and!; [done|done|].
-    eapply grounding_ext; [|eapply grounding_down; [exact Hj|]].
-    { intros i. done. }
-    eapply grounding_mono; [exact (wext_wf _ _ HW)|exact HW''|exact Hg].
 Qed.
 
 (** * ∀ apart from □ (sharp edges 101)
