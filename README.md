@@ -66,7 +66,9 @@ has no axioms and no admitted proofs.
 - `Bind.v`: evaluation contexts (`Erel_bind`).
 - `TermRules.v`: one compositionality lemma per typing rule.
 - `BoxRules.v`: the rules that need the box, E-App, E-Force, E-Exp and E-Contract.
+- `FreshWorlds.v`: the world of a fresh constraint, shared by E-NewFresh and the existential signature of new (`wext_fresh_between_gen`, `wext_fresh_con`).
 - `FreshRules.v`: E-NewFresh, a channel at a fresh point between known points (`wext_fresh_between`, `sem_typed_newfresh`).
+- `ExRules.v`: E-Pack, E-Open and E-OpenPair for existential points (`sem_typed_pack`, `sem_typed_open`, `sem_typed_openp`).
 - `SemanticRules.v`: the infinitary judgment of these rules and its fundamental theorem.
 
 `static/`, the static system (spec §9).
@@ -122,6 +124,7 @@ has no axioms and no admitted proofs.
 - `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/.
 - E-NewFresh (`t_newfresh`, static/Typing.v) creates a channel at a fresh point ι with a constraint C that relates points of ι (ι+k, ι.i, …) to known points, when u ≺ v holds for every u ≺ p and q ≺ v of C with q at or after p in program order. `t_newfresh_lh` is the form L ≺ ι ≺ H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 96).
+- Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open, E-OpenPair and V-Ex, and the signature new : ∗ ⊸^⊥_⊤ ∃^ℓ ι. C. S@ι ⊗ S̄@ι. E-NewFresh follows from it when C has a fact below ι (`t_newfresh_open`) and stays a rule otherwise (docs/extensions/existentials.md, sharp edges 97 to 100).
 
 ## Other documents
 

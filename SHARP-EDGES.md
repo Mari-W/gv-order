@@ -952,6 +952,51 @@ x, so the semantic world combines the alias world `W0'` of E-Const with `Wg`,
 and strictness and conservativity need a closed form for the combination. That
 is a second argument of the size of 94, so it stays open. E-Const is unchanged.
 
+**97. Existential points in the base relation (Claude, 2026-11-01, branch exists).**
+The type former ∃^ℓ ιs. C. T of branch `cfst` (its 73) is ported without session
+variables and branch roots, as `TEx` in types/Types.v with E-Pack, E-Open and
+V-Ex. A value lies in T at some known instance of the ιs that meets C, and its
+channels lie at or above the lower point ℓ. The body of ∃ is no subterm at an
+instance, so `Vdef` reads its type under a point substitution and the ∃ clause
+passes the instance to the body. Invariance proofs that went by induction on
+the type now go by `ty_ind_ex`, induction on the size with the hypothesis at
+every instance of the bodies of □ and ∃. Channel creation gets the second
+signature new : ∗ ⊸^⊥_⊤ ∃^ℓ ι. C. S@ι ⊗ S̄@ι with C the fresh constraint of
+93 and its betweenness, proved good by the world of `wext_fresh_con`.
+docs/extensions/existentials.md, part 1.
+
+**98. The lower point of new is not ⊥, so E-NewFresh stays primitive (Claude, 2026-11-01).**
+The task asked for ℓ = ⊥ if the point syntax can say "below everything". It
+cannot. A point is a constant, a variable or a carried point with an offset.
+Every world has x ≺ x+1, and a world may order any two known points either way,
+so no point lies below every point in every world. ⊥ as a lower point would
+also have to enter the frame of a pair as a point below which nothing may
+block, and frames are sets of points. So ℓ is the outer point u of a fact u ≺ ι
+of C, which makes ℓ ≺ (a, 0) hold in the world that O-New builds. E-NewFresh
+then follows from new and E-OpenPair (`t_newfresh_open`), with the one premise
+`fresh_lo C u ι` that `t_newfresh` does not have. Following the task, the
+premise was not added to the system and `t_newfresh` stays a rule. Constraints
+with no fact below ι itself (SyncFresh.v, the first channel of CycleFresh.v,
+TailCallFresh.v) need it. A bottom point in the point syntax would remove the
+premise, and that is a decision on the syntax.
+
+**99. E-OpenPair opens the scrutinee of a let pair (Claude, 2026-11-01).**
+E-Open of `cfst` opens a variable of Δ. The term of E-NewFresh is
+let (x, y) = new ∗ in t, and no variable of it has existential type, so E-Open
+cannot reach the result of new. E-OpenPair takes a scrutinee of type
+∃^ℓ ιs. C. T₁ ⊗ T₂ and types the body with x : T₁ and y : T₂ under the hypothesis
+C, the ιs bound like the ιs of E-Exp. Its semantic proof is the one of E-LetPair
+with the witness read off V-Ex (`sem_typed_openp`). E-Open is kept as well.
+
+**100. V-Box reads its thunk through the body (Claude, 2026-11-01).**
+V-Box read the thunk of a box with the arrow relation `Vfun` at the instantiated
+body, and `Vrel_box_iff` turned that into V through `Vrel_Vfun`, which says a λ
+lies in V only at an arrow type. A λ now lies in V at ∃ over an arrow, so
+`Vrel_Vfun` and `Vrel_lam_inv` are false. V-Box now reads the thunk through
+`Vdef` at the body under the instance, which is structural with the
+substitution argument of 97. `Vrel_box_iff` keeps its statement word for word.
+For the thunk types the static system builds the two readings agree.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
