@@ -1197,6 +1197,24 @@ W stays as a parameter. Every source theorem except the PGV translation fixes
 it to the empty world, and knownness at source level comes from hypotheses.
 This replaces 108 for Factory and PN.
 
+**120. The factory types in the empty world through E-Pack (Claude, 2026-11-01, branch exists-factory).**
+Numbered 120 to stay clear of the entries another agent adds on branch
+`exists`. examples/FactoryEx.v types the box `fac` of Factory.v at an
+existential result, □(∀ζ. ∗ ⊸^⊥_⊤ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ι), and
+at the same type with no ∀ and the empty constraint. The constraint of the
+existential is the creation constraint of the new inside the box, and E-Pack
+at ⊥ takes the fresh point as its witness. The client calls the box without
+∀ first, opens the handle p, calls the box with ∀ at ζ = p, opens the handle
+q, and uses p while it holds q. The hypothesis of the second E-Open gives
+p ≺ q and p+1 ≺ q. `fx_deadlock_free` holds in `Wpo []`. This answers the
+second half of 107 for the factory pattern. A fact between the sessions of
+two calls needs no world when the second call takes the point of the first
+as a parameter and the result hides its own point behind ∃. Factory.v keeps
+its programs. They pass the result of force straight to recv, so nothing can
+open it. `fx_no_first_call` records that the first call of the parametric box
+has no instance at the start of main in the empty world. No rule or
+statement changed. docs/extensions/existentials.md, part 5.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

@@ -676,6 +676,46 @@ top-level variables.
   between two channels of which neither is in scope at the other's
   creation.
 
+### The factory with an existential result
+
+examples/FactoryEx.v types the factory pattern in the empty world (sharp
+edges 120). The box mk is the term `fac` of Factory.v. It creates a channel,
+spawns a worker that sends ∗ on one end and closes it, and returns the other
+end. The result type hides the point of the handle behind ∃, and E-Pack
+introduces it. No other example uses E-Pack.
+
+```
+mk : □(∗ ⊸^⊥_⊤ ∃^⊥ ι. {}. (?∗.Close)@ι)                        Tmk0
+mk : □(∀ζ. ∗ ⊸^⊥_⊤ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ι)      Tmk1
+
+main = let (g, f) = ⟨mk, mk⟩ in
+       let p = (force g) ∗ in
+       let q = (force f) ∗ in
+       let () = recvclose p in recvclose q
+```
+
+The two types share one term. At each type new creates the channel with the
+constraint of the existential as its creation constraint, {} at Tmk0 and
+{ζ ≺ ι, ζ+1 ≺ ι} at Tmk1, both in the list form of `t_newfresh_lh_open`. The
+body packs c′ at ⊥ with the opened fresh point as the witness, and the
+hypothesis of new proves the constraint at that witness (`hyp_in_fact`).
+
+The let of one variable is the let pair on ⟨e, ∗⟩ and a let ∗, as in
+`let_new`. main opens each handle with E-Open right after its let pair, so no
+unopened ∃^⊥ sits in a later context. The first call needs no point, because
+Tmk0 has no ∀. The second call instantiates ζ with the point of p, which the
+hypothesis of the first E-Open makes known. Opening q gives p ≺ q and
+p+1 ≺ q, the two facts that recv and close on p need while main holds q.
+`fx_deadlock_free` applies `soundness` in `Wpo []`.
+
+The existential is what makes this work. Without it the result type names the
+point of the handle. At the type of `faca` that point is the box variable, and
+the first call needs a known instance at the start of main, where the empty
+world knows no point and no hypothesis exists (`fx_no_first_call`). At the
+type of `fac` the point is a constant, which the empty world does not know
+either. Factory.v keeps its programs and worlds. The pattern itself no longer
+needs W.
+
 ### The translations
 
 Neither translation can produce creation constraints in place of its world

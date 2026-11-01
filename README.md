@@ -83,6 +83,7 @@ has no axioms and no admitted proofs.
 - `ExampleTools.v`: strict worlds from ranks, derived rules and tactics.
 - `Sync.v`, `Cycle.v`, `Delegation.v`, `Scheduler.v`: first-order examples.
 - `Factory.v`: the factory at one top-level point and under □∀ι, both under a top-level constraint.
+- `FactoryEx.v`: the factory with an existential result, introduced by E-Pack. The client holds two handles at once and uses them in order, in the empty world (`fx_deadlock_free`).
 - `RequestReply.v`, `Relay.v`, `TailCall.v`, `ReceivedChain.v`, `Forwarder.v`: recursive boxes with infinite constraints.
 - `Ordered.v`: a box whose constraint orders its two arguments.
 - `FreshBetween.v`: a box over ι ≺ κ that creates a channel between them with E-NewFresh (`fb_between_underivable`, `fb_deadlock_free_empty`).

@@ -41,6 +41,7 @@ theories/examples/Cycle.v
 theories/examples/Delegation.v
 theories/examples/Scheduler.v
 theories/examples/Factory.v
+theories/examples/FactoryEx.v
 theories/examples/RequestReply.v
 theories/examples/Relay.v
 theories/examples/TailCall.v
