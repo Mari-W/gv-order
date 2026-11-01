@@ -1,13 +1,14 @@
 # Existential points
 
-Branch `exists`, built on `fresh-points`, sharp edges 97 to 109. Part 1 adds
+Branch `exists`, built on `fresh-points`, sharp edges 97 to 112. Part 1 adds
 existential points to the base order-based relation. Part 2 made ∀ a type
 former of its own and □ a plain modality over it, and that split was undone
 on 2026-11-01. Part 3 adds the lower bound ⊥
 and deletes E-NewFresh as a rule. Part 4 lets the constraint of new hold one
 alias ι ≡ x and moves every example to the existential signature. Part 5 makes
 the constraint of new any acyclic and conservative set of facts and moves the
-examples to the empty world. Each part sits in its own commits. The statements of `soundness`, `fundamental`, `fundamental_proc` and of
+examples to the empty world. Part 6 starts every source program under a
+creation constraint C₀ over top-level point variables. Each part sits in its own commits. The statements of `soundness`, `fundamental`, `fundamental_proc` and of
 every composition lemma are the same as on `fresh-points`.
 
 ## Part 1. Existential points
@@ -661,7 +662,8 @@ needs the infinite family of aliases (γ+k)[0] ≡ (ε+k)[0] between the payload
 slots of the new channel and of the older one. Its model reads (ε+k)[0] as
 (γ+k)[0].
 
-One example resists. Factory.v keeps its worlds.
+One example resisted here. Factory.v kept its worlds until part 6 gave it
+top-level variables.
 
 - `fac_main`. main creates no channel and so knows no point. The box fac
   returns its session at a point that its type names, and main passes the
@@ -704,7 +706,8 @@ without a change that the task forbids.
 
 ### W stays
 
-W is not removed from `typed` and `ptyped`. The PGV translation needs the
+Part 6 moved Factory and PN to a constraint at program start, and only PGV
+keeps a world. W is not removed from `typed` and `ptyped`. The PGV translation needs the
 global points of priorities, the PN translation needs one root anchor, and
 Factory needs a point that main does not create. `soundness` keeps its
 premise `strict W`.
@@ -724,3 +727,105 @@ premise `strict W`.
   because the base examples use them.
 - The typing lemmas of the examples lost their premises on W. They keep
   `strict W` or `world_wf W`, because `t_new_at` and the tactics read it.
+
+## Part 6. A creation constraint at program start
+
+### The decision
+
+A source program starts with top-level point variables ā = 0, …, n-1 under
+one constraint C₀ over them (decided 2026-11-01). C₀ states the facts that a
+world W stated before, over variables in place of constants. The program is
+typed in the empty world `wnil` (static/Fundamental.v) with the hypothesis
+(C₀, ā) in Ψ, so a point is known only when its root is a variable of a
+hypothesis. Source typing names no constant.
+
+### The theorem
+
+```
+soundness_source :  c0_acyclic n C₀  →  prim T  →
+                    typed wnil ∅ [(C₀, ids n)] ∅ [] (∅, None) t T  →
+                    deadlock_free (∅, {[+ t +]})
+```
+
+`c0_acyclic n C₀` says two things. C₀ has no outer points (`bc_env C₀ = []`),
+and the closure of its facts with program order, `glt (c0_eq n C₀)
+(c0_lt n C₀)`, relates no point to itself. C₀ against the empty context has
+nothing to be conservative over, so acyclicity is the whole creation
+condition. `prim T` is the premise that P-Term already asks of a closed
+thread (`ptyped_closed`). `soundness` keeps its statement and is the
+theorem for configurations.
+
+The proof starts the run in the world `wc0 n C₀`. Its names are the constants
+0, …, n-1, and its facts are the facts of C₀ with the variable j read as the
+constant j. This is the construction of `wext_cc` against the empty world.
+`wc0_strict` reads a cycle of `wc0 n C₀` back to a cycle of C₀ through the map
+that sends the constant j to the variable j (`gen_map`). `wc0_holds` shows
+that C₀ holds at the constants, and `wc0_ext` that `wnil` lies below
+`wc0 n C₀`. `typed_sem_rules` then instantiates the variables by the
+constants, and `sem_rules_fundamental`, `Prel_term` and `adequacy` finish.
+
+### The programs that needed a world
+
+| Program | n | C₀ | Anchor or session points |
+|---|---|---|---|
+| `fac_main` (Factory.v) | 1 | no fact (`Cfac`) | the session of every call at a |
+| `fa_main` (Factory.v) | 2 | a ≺ b, a+1 ≺ b (`Cfa`) | force at a and at b |
+| PN translation (PNTranslate.v) | 1 | `Crel` | the anchor B = a |
+
+`fac_deadlock_free`, `fa_deadlock_free` and `pn_deadlock_free` apply
+`soundness_source`. Their statements did not change. The acyclicity proofs
+are ranks. `c0_acyclic_rank` (examples/ExampleTools.v) takes a rank into ℕ
+that rises along program order and along every ≺ fact, and `vrank w` gives
+the variable j the weight w·j. `Crel_acyclic` (pn/PNWorld.v) uses
+`c0_acyclic_den` with the denotation and rank that `Wpn_strict` used.
+
+PN needed no new argument. `pn_translate` holds at every anchor B with
+`good Ψ B`, and the variable of a box is good under (`Crel`, ids 1)
+(`good_box`). The top-level variable starts under the same hypothesis, so
+`pn_deadlock_free` calls `pn_translate` at B = a, Ψ = [(Crel, ids 1)]. The
+world `Wpn`, its strictness and `good_root` are deleted. `pn_translate`
+reads `wnil` in place of `Wpn` and is otherwise unchanged. The constant
+`proot` stays as the anchor of unlimited types, whose translation names no
+point (`trz_un`).
+
+### PGV stays at its world
+
+The PGV translation cannot move to C₀ without a change to the translation of
+types. PGV puts global points into payloads. A payload of send or recv may
+name only its own bound slots and constants, because point instantiation does
+not enter session types (`kscoped`, `pscoped m P` in static/Typing.v). The
+payload of a delegation is `tr_ty (PSess s) = S@ppt s`, and the payload of a
+function carries the bounds `upt n` and `lpt n`. With the protocol points
+rooted at a top-level variable these payloads would hold a free variable
+inside a session type, and `t_konst` rejects them. Relativizing every global
+point of a payload to a slot of the carrier, with C₀ aliasing the slot to the
+global point, changes `tr_sty` and the payload lemmas of PGVWorld.v and
+PGVTranslate.v. That is a redesign of the translation, not a move of facts,
+so it waits for the author (sharp edges 111). `pgv_translate` keeps `typed
+Wpgv Φ []`, and `pgv_deadlock_free` keeps `soundness Wpgv`. No statement of
+PGV changed.
+
+### W stays in `typed`
+
+The world parameter stays in `typed` and `ptyped` (sharp edges 112). P-Term
+types a running thread whose environment holds channels at constants. Its
+premise `tenv_dual (w_eq W)` and the premise Γ ⊢ k ≡ y of `t_chan` read the
+facts of these constants from W. A source judgment without W
+would need a second judgment for configurations or a reading of their points
+as variables, and `typed` with its world occurs about 460 times in 36 files,
+`fundamental_proc` among them. Every source theorem fixes W to the empty world
+(`wnil`, or `Wpo []` in the examples, which also has no names and no facts), except the
+PGV translation. Knownness of points at source level comes only from
+hypotheses.
+
+### What broke and how it was fixed
+
+- Factory.v. `Tfac_body` names the top-level variable `pv 0 0` in place of
+  the constant `pc 0 0`. `fac_typed` and `fa_typed` take no world and no
+  premise. `faca_typed` holds under every Ψ and reads the knownness of its
+  box variable from the last hypothesis. The facts a ≺ b and a+1 ≺ b come
+  from the hypothesis through `sl_hyp0`. `Wfa` and `Wfa_strict` are deleted.
+- PNWorld.v. `good` reads `wnil`. PNTranslate.v replaces `Wpn` by `wnil` and
+  `Wpn_strict` by `wnil_strict`.
+- static/Fundamental.v gained `wnil`, `wnil_strict`, `c0_eq`, `c0_lt`,
+  `c0_acyclic`, the section `c0_world` and `prim_pinst`.

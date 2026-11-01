@@ -76,13 +76,13 @@ has no axioms and no admitted proofs.
 - `FactTheory.v`: frames, box hypotheses and the judgments Γ ⊢ x ≡ y and Γ ⊢ a ≺ b.
 - `PointSubst.v`: substitution of points and the transport of facts along it.
 - `Typing.v`: the typing judgments `typed` and `ptyped`.
-- `Fundamental.v`: `fundamental`, `fundamental_proc` and `soundness`.
+- `Fundamental.v`: `fundamental`, `fundamental_proc`, `soundness` and `soundness_source`.
 
 `examples/`, the examples of spec §13.
 
 - `ExampleTools.v`: strict worlds from ranks, derived rules and tactics.
 - `Sync.v`, `Cycle.v`, `Delegation.v`, `Scheduler.v`: first-order examples.
-- `Factory.v`: the factory at one point and under □∀ι.
+- `Factory.v`: the factory at one top-level point and under □∀ι, both under a top-level constraint.
 - `RequestReply.v`, `Relay.v`, `TailCall.v`, `ReceivedChain.v`, `Forwarder.v`: recursive boxes with infinite constraints.
 - `Ordered.v`: a box whose constraint orders its two arguments.
 - `FreshBetween.v`: a box over ι ≺ κ that creates a channel between them with E-NewFresh (`fb_between_underivable`, `fb_deadlock_free_empty`).
@@ -107,7 +107,7 @@ has no axioms and no admitted proofs.
 
 - `PNTypes.v`: levels, channel, arrow, recursive and wrapped types, the level |t| and the shift ⇑ⁿ.
 - `PNTyping.v`: Table 2 with T-App-Poly on our terms, repaired fix, as a judgment that also yields the translated term (`pn_typed`).
-- `PNWorld.v`: the level world `Wpn` of anchors and ranks into ℤ with a top element, its strictness and the translation of types.
+- `PNWorld.v`: anchors and ranks into ℤ with a top element, the constraint `Crel` and its acyclicity (`Crel_acyclic`), and the translation of types.
 - `PNTranslate.v`: derivations become `typed` derivations at every anchor and offset (`pn_translate`, `pn_deadlock_free`).
 - `PNExamples.v`: parallel Fibonacci and the signal pipe, both deadlock free.
 - `PNSemantics.v`: the reduction semantics of the chapter on the source syntax and Definition 1 (`src_pstep`, `pn_deadlock_free_src`), §8.
@@ -116,6 +116,7 @@ has no axioms and no admitted proofs.
 ## Main results
 
 - `soundness` (static/Fundamental.v): a typed closed process at a strict world is deadlock free.
+- `soundness_source` (static/Fundamental.v): a closed term typed in the empty world `wnil` under a top-level constraint C₀ over n point variables is deadlock free when C₀ is acyclic (`c0_acyclic`). The run starts in `wc0 n C₀`, the facts of C₀ at fresh constants (docs/extensions/existentials.md part 6, sharp edges 110).
 - `fundamental`, `fundamental_proc` (static/Fundamental.v): typed terms and processes are semantically typed.
 - `adequacy` (relation/LogicalRelation.v): a semantically typed closed process is deadlock free.
 - `Prel_term`, `Prel_indep` (composition/PTerm.v), `Prel_connect` (composition/PConnect.v), `Prel_connect_n` (composition/PConnectN.v), `Prel_internalize` (composition/Internalize.v).
@@ -125,7 +126,7 @@ has no axioms and no admitted proofs.
 - `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/.
 - E-NewFresh (`t_newfresh_open`, static/Typing.v) creates a channel at a fresh point ι with a constraint C that relates points of ι (ι+k, ι.i, …) to known points, when u ≺ v holds for every u ≺ p and q ≺ v of C with q at or after p in program order. `t_newfresh_lh_open` is the form L ≺ ι ≺ H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 96). E-NewFresh is a lemma on the encoded term let p = new ∗ in let (x, y) = p in t (`let_new`), not a rule (sharp edges 103).
-- Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open and V-Ex, where the lower bound ℓ is ⊤, ⊥ or a point, and the signature new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι. C is any set of facts between points of ι and outer points, by ≺ and ≡, that is acyclic and conservative over the context (`cc_ok`, sharp edges 105 and 106). relation/Creation.v proves it sound (`interp`, `wext_cc`, `cc_ok_transfer`), and `cc_model` proves it for concrete constraints. `t_new_at` (static/Fundamental.v) gives new at a known point on the encoded let, and `t_new_open` (static/Typing.v) new under any creation constraint. Every example that creates its channels in main types in the empty world, Factory keeps its worlds, and the translations from PGV and PN still need theirs, so W stays in the judgment (sharp edges 107 and 108). A frame carries a flag for a held ∃^⊥, under which no call with an upper point passes the gate (docs/extensions/existentials.md, sharp edges 97 to 100 and 103).
+- Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open and V-Ex, where the lower bound ℓ is ⊤, ⊥ or a point, and the signature new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι. C is any set of facts between points of ι and outer points, by ≺ and ≡, that is acyclic and conservative over the context (`cc_ok`, sharp edges 105 and 106). relation/Creation.v proves it sound (`interp`, `wext_cc`, `cc_ok_transfer`), and `cc_model` proves it for concrete constraints. `t_new_at` (static/Fundamental.v) gives new at a known point on the encoded let, and `t_new_open` (static/Typing.v) new under any creation constraint. Every example types in the empty world. Factory and the PN translation start under a top-level constraint C₀ (`soundness_source`). The PGV translation keeps its world `Wpgv`, because its payloads hold global points (sharp edges 107, 108, 110 to 112). W stays as a parameter of `typed` for configurations. A frame carries a flag for a held ∃^⊥, under which no call with an upper point passes the gate (docs/extensions/existentials.md, sharp edges 97 to 100 and 103).
 - The box type □(∀ιs. C. T) is one type former (`TBox`, types/Types.v), so ∀ occurs only directly under □. Part 2 of docs/extensions/existentials.md had split it into □ and ∀ with E-Gen and E-Inst. No program used the two rules, and the split was undone (sharp edges 109). The rules beyond `orders-lr` are E-Pack and E-Open.
 
 ## Other documents

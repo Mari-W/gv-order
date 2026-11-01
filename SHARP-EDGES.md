@@ -1142,6 +1142,8 @@ no creation constraint sees both. PN is relative to an anchor, but the top
 level anchor is the root constant of `Wpn`, and both examples force a box
 there before their first new. Factory also needs a point that main does not
 create. So W is not removed, and `soundness` keeps `strict W`.
+*Amended 2026-11-01 (110 to 112).* Factory and PN start under a top-level
+constraint C₀. Only the PGV translation keeps a world.
 
 **109. ∀ is bundled with □ again (author's decision, 2026-11-01, branch exists).**
 The split of 101 is undone. No program uses E-Gen or E-Inst, because every
@@ -1156,6 +1158,44 @@ E-OpenPair). `typed` has 18 constructors, and the two beyond `orders-lr` are
 E-Pack and E-Open. No statement of soundness, fundamental, fundamental_proc,
 adequacy, a composition lemma, an example or a translation changed.
 docs/extensions/existentials.md, part 2.
+
+**110. A creation constraint at program start (author's decision, 2026-11-01, branch exists).**
+A source program starts with top-level point variables 0, …, n-1 under one
+constraint C₀ and is typed in the empty world `wnil` with the hypothesis
+(C₀, ids n). `soundness_source` (static/Fundamental.v) reads
+`c0_acyclic n C₀ → prim T → typed wnil ∅ [(C₀, ids n)] ∅ [] (∅, None) t T →
+deadlock_free (∅, {[+ t +]})`. `c0_acyclic` asks that C₀ have no outer
+points and that the closure of its facts with program order have no cycle.
+Against the empty context conservativity is empty. The run starts in
+`wc0 n C₀`, which holds the facts of C₀ at the constants 0, …, n-1, built as
+`wext_cc` builds the world of new. Factory and the PN translation moved to
+C₀. `fac_main` starts with one variable and no fact, `fa_main` with two and
+a ≺ b, a+1 ≺ b, and PN with one variable under `Crel`, its top-level anchor.
+`Wfa`, `Wpn`, `Wpn_strict` and `good_root` are deleted. `pn_translate` reads
+`wnil` in place of `Wpn`. No statement of `soundness`, `fundamental`,
+`fundamental_proc`, `adequacy`, an example deadlock theorem or a PN theorem
+other than `pn_translate` changed, and no typing rule was added.
+docs/extensions/existentials.md, part 6.
+
+**111. The PGV translation keeps its world (Claude, 2026-11-01).**
+A payload of send and recv names only its own slots and constants, because
+point instantiation does not enter session types (`kscoped`). PGV's payloads
+hold global points, the protocol point of a delegated channel
+(`tr_ty (PSess s) = S@ppt s`) and the bounds `upt n`, `lpt n` of a function.
+Rooted at a top-level variable these are free variables inside a session
+type, and E-Const rejects them. Moving PGV to C₀ needs payloads relative to
+their carrier, with C₀ aliasing each slot to its global point. That changes
+`tr_sty` and the payload lemmas, a redesign the task did not allow. The work
+stopped there, and `pgv_translate` keeps `typed Wpgv Φ []`.
+
+**112. W stays in `typed` (Claude, 2026-11-01).**
+P-Term types running threads whose channels sit at constants, and its
+premise `tenv_dual (w_eq W)` and the premise of E-Ch read their facts from W.
+Removing W from `typed` needs a second judgment for configurations, or
+configurations at point variables, and touches about 460 uses in 36 files.
+W stays as a parameter. Every source theorem except the PGV translation fixes
+it to the empty world, and knownness at source level comes from hypotheses.
+This replaces 108 for Factory and PN.
 
 ## From the earlier abandoned mechanization (spec §15)
 
