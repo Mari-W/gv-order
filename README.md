@@ -27,6 +27,7 @@ has no axioms and no admitted proofs.
 - `Syntax.v`: terms with de Bruijn variables and channel names.
 - `Semantics.v`: the labelled term semantics and the process LTS.
 - `Safety.v`: deadlock freedom and the other process properties, and progress.
+- `ThreadSim.v`: threads related one to one and runs of β steps, shared by the simulations of pgv/ and pn/.
 - `ChannelSwap.v`: transpositions of channel names commute with the LTS.
 - `Harmony.v`: a reduction semantics for soups agrees with the LTS (`harmony`).
 
@@ -99,6 +100,7 @@ has no axioms and no admitted proofs.
 - `PGVTyping.v`: the schemas and Fig. 2 on our terms with repairs R1 and R2 (`pgv_typed`, `pgv_frag`).
 - `PGVWorld.v`: the protocol-point world `Wpgv`, its strictness and the translation of types.
 - `PGVTranslate.v`: PGV derivations become `typed` derivations (`pgv_translate`, `pgv_deadlock_free`).
+- `PGVSimulation.v`: the simulation of a program by its translation, and deadlock freedom of the program itself (`rel`, `fwd`, `final`, `pgv_deadlock_free_source`).
 - `PGVExamples.v`: Example 2.1 of the paper, a delegation, a link, and the two counterexamples rejected.
 
 `pn/`, adequacy for Padovani and Novara, FORTE 2015 (docs/extensions/adequacy/padovani-novara.md §7).
@@ -118,12 +120,12 @@ has no axioms and no admitted proofs.
 - `adequacy` (relation/LogicalRelation.v): a semantically typed closed process is deadlock free.
 - `Prel_term`, `Prel_indep` (composition/PTerm.v), `Prel_connect` (composition/PConnect.v), `Prel_connect_n` (composition/PConnectN.v), `Prel_internalize` (composition/Internalize.v).
 - `Erel_bind` (rules/Bind.v).
-- `pgv_deadlock_free` (pgv/PGVTranslate.v): a closed program of type 1 in the monotone fragment of repaired PGV is deadlock free.
+- `pgv_deadlock_free` (pgv/PGVTranslate.v): the translation of a closed program of type 1 in the monotone fragment of repaired PGV is deadlock free, and by `pgv_deadlock_free_source` (pgv/PGVSimulation.v) so is the program itself. The examples of pgv/PGVExamples.v apply the latter.
 - `pn_deadlock_free` (pn/PNTranslate.v): the translation of a closed program of type unit in fragment v1 of repaired Padovani and Novara is deadlock free. `fibo_deadlock_free` and `pipe_deadlock_free` (pn/PNExamples.v) apply it.
 - `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/.
 - E-NewFresh (`t_newfresh_open`, static/Typing.v) creates a channel at a fresh point ι with a constraint C that relates points of ι (ι+k, ι.i, …) to known points, when u ≺ v holds for every u ≺ p and q ≺ v of C with q at or after p in program order. `t_newfresh_lh_open` is the form L ≺ ι ≺ H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 96). E-NewFresh is a lemma on the encoded term let p = new ∗ in let (x, y) = p in t (`let_new`), not a rule (sharp edges 103).
-- Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open and V-Ex, where the lower bound ℓ is ⊤, ⊥ or a point, and the signature new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι. C may hold one alias ι ≡ x with x known, and `t_new_at` (static/Fundamental.v) gives new at a known point on the encoded let. Every example uses it. `KTNew` remains only for the PGV and PN translations (sharp edges 104). A frame carries a flag for a held ∃^⊥, under which no call with an upper point passes the gate (docs/extensions/existentials.md, sharp edges 97 to 100 and 103).
+- Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open and V-Ex, where the lower bound ℓ is ⊤, ⊥ or a point, and the signature new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι. C may hold one alias ι ≡ x with x known, and `t_new_at` (static/Fundamental.v) gives new at a known point on the encoded let. Every example and both translations use it, and there is no other signature for new (sharp edges 104). A frame carries a flag for a held ∃^⊥, under which no call with an upper point passes the gate (docs/extensions/existentials.md, sharp edges 97 to 100 and 103).
 - □T and ∀ιs. C. T are two type formers (`TBoxM`, `TAll`, types/Types.v) with V-□, V-∀, E-Gen for values and E-Inst. `TBox n C T` is notation for □(∀ιs. C. T), and the V-Box of the bundled box is their composite (`Vrel_box_iff`). E-Exp stays a rule (docs/extensions/existentials.md part 2, sharp edges 101 and 102).
 
 ## Other documents
