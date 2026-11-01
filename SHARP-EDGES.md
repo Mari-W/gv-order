@@ -1026,6 +1026,7 @@ instantiates at known points that meet C. V-∀ asks the value to hold no channe
 and to be a value, because a ∀ with no admissible instance would otherwise admit
 every term. With that the restriction "∀ only directly under □" is not needed
 by any proof and is dropped. docs/extensions/existentials.md, part 2.
+*Undone 2026-11-01 (109).*
 
 **102. E-Exp stays a rule (Claude, 2026-11-01).**
 The task asked to derive E-Exp from rules for □ and ∀. It does not split. The
@@ -1141,6 +1142,20 @@ no creation constraint sees both. PN is relative to an anchor, but the top
 level anchor is the root constant of `Wpn`, and both examples force a box
 there before their first new. Factory also needs a point that main does not
 create. So W is not removed, and `soundness` keeps `strict W`.
+
+**109. ∀ is bundled with □ again (author's decision, 2026-11-01, branch exists).**
+The split of 101 is undone. No program uses E-Gen or E-Inst, because every
+∀ enters by E-Exp and leaves by force, and the fewest rules are the goal.
+The box type is one constructor `TBox n C T` again, so ∀ occurs only directly
+under □ by the syntax of types. `TBoxM`, `TAll`, `t_gen`, `t_inst`, `sr_gen`,
+`sr_inst`, `sem_typed_gen`, `sem_typed_inst`, `Vrel_boxm_iff`, `Vrel_all_iff`
+and `fchans_thunk` are deleted. V-Box has its bundled clause again, and
+`Vrel_box_iff` keeps its statement. The revert of bb3591f needed only the
+merge with parts 3 to 5 (the lower bound ⊥ in the ∃ cases and the deleted
+E-OpenPair). `typed` has 18 constructors, and the two beyond `orders-lr` are
+E-Pack and E-Open. No statement of soundness, fundamental, fundamental_proc,
+adequacy, a composition lemma, an example or a translation changed.
+docs/extensions/existentials.md, part 2.
 
 ## From the earlier abandoned mechanization (spec §15)
 

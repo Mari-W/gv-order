@@ -1,8 +1,9 @@
 # Existential points
 
-Branch `exists`, built on `fresh-points`, sharp edges 97 to 108. Part 1 adds
-existential points to the base order-based relation. Part 2 makes ∀ a type
-former of its own and □ a plain modality over it. Part 3 adds the lower bound ⊥
+Branch `exists`, built on `fresh-points`, sharp edges 97 to 109. Part 1 adds
+existential points to the base order-based relation. Part 2 made ∀ a type
+former of its own and □ a plain modality over it, and that split was undone
+on 2026-11-01. Part 3 adds the lower bound ⊥
 and deletes E-NewFresh as a rule. Part 4 lets the constraint of new hold one
 alias ι ≡ x and moves every example to the existential signature. Part 5 makes
 the constraint of new any acyclic and conservative set of facts and moves the
@@ -196,6 +197,21 @@ channels are bound by `let_new_pair` (`sync_main_ex`, `tc_main_ex`,
 
 ## Part 2. ∀ apart from □
 
+### Undone (2026-11-01)
+
+The author decided to undo the split. No program uses E-Gen or E-Inst. Every
+∀ of every example and translation enters by E-Exp and leaves by force, and
+the fewest rules that keep the expressiveness are the goal. The type former
+is again the bundled box □(∀ιs. C. T), the constructor `TBox n C T` in
+types/Types.v. ∀ occurs only directly under □, and the syntax of types now
+states this. `TBoxM`, `TAll`, `t_gen`, `t_inst`, `sr_gen`, `sr_inst`,
+`sem_typed_gen`, `sem_typed_inst`, `Vrel_boxm_iff`, `Vrel_all_iff` and
+`fchans_thunk` are deleted. V-Box has its bundled clause again, and
+`Vrel_box_iff` keeps its statement. The statements of `soundness`,
+`fundamental`, `fundamental_proc`, `adequacy`, the composition lemmas, the
+examples and the translations did not change. The rest of this part records
+the split as it was (sharp edges 109).
+
 ### The type formers
 
 ```
@@ -365,8 +381,9 @@ flag of the payload off its signature.
 
 ### The rules beyond orders-lr
 
-`typed` has 20 constructors, `orders-lr` has 16. The four beyond are E-Pack,
-E-Open, E-Gen and E-Inst. `konst_ty` has 8 signatures, `orders-lr` has 7, and
+`typed` has 18 constructors, `orders-lr` has 16. The two beyond are E-Pack
+and E-Open. E-Gen and E-Inst were two more until the split of part 2 was
+undone. `konst_ty` has 8 signatures, `orders-lr` has 7, and
 the one beyond is the existential signature of new. E-NewFresh and E-OpenPair
 are lemmas.
 

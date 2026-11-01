@@ -153,7 +153,7 @@ Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
     The arrow carries an upper point β ([None] = ⊥: the call never
     blocks) and a lower point λ ([None] = ⊤: the closure holds
     nothing). □ binds n point variables, so ∀ occurs only directly
-    under □ (sharp edges 101, undone 2026-11-01). ∃ binds n, and a
+    under □ (sharp edges 109). ∃ binds n, and a
     payload binds m. Session types are unannotated: the only points
     inside them are those of payloads, all bound by the payload's ∃, so
     point instantiation never enters a session type. *)

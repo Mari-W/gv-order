@@ -68,7 +68,7 @@ has no axioms and no admitted proofs.
 - `Bind.v`: evaluation contexts (`Erel_bind`).
 - `TermRules.v`: one compositionality lemma per typing rule.
 - `BoxRules.v`: the rules that need the box, E-App, E-Force, E-Exp and E-Contract.
-- `ExRules.v`: E-Pack and E-Open for existential points (`sem_typed_pack`, `sem_typed_open`), and E-Gen and E-Inst for ∀ (`sem_typed_gen`, `sem_typed_inst`).
+- `ExRules.v`: E-Pack and E-Open for existential points (`sem_typed_pack`, `sem_typed_open`).
 - `SemanticRules.v`: the infinitary judgment of these rules and its fundamental theorem.
 
 `static/`, the static system (spec §9).
@@ -126,7 +126,7 @@ has no axioms and no admitted proofs.
 - The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/.
 - E-NewFresh (`t_newfresh_open`, static/Typing.v) creates a channel at a fresh point ι with a constraint C that relates points of ι (ι+k, ι.i, …) to known points, when u ≺ v holds for every u ≺ p and q ≺ v of C with q at or after p in program order. `t_newfresh_lh_open` is the form L ≺ ι ≺ H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 96). E-NewFresh is a lemma on the encoded term let p = new ∗ in let (x, y) = p in t (`let_new`), not a rule (sharp edges 103).
 - Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open and V-Ex, where the lower bound ℓ is ⊤, ⊥ or a point, and the signature new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι. C is any set of facts between points of ι and outer points, by ≺ and ≡, that is acyclic and conservative over the context (`cc_ok`, sharp edges 105 and 106). relation/Creation.v proves it sound (`interp`, `wext_cc`, `cc_ok_transfer`), and `cc_model` proves it for concrete constraints. `t_new_at` (static/Fundamental.v) gives new at a known point on the encoded let, and `t_new_open` (static/Typing.v) new under any creation constraint. Every example that creates its channels in main types in the empty world, Factory keeps its worlds, and the translations from PGV and PN still need theirs, so W stays in the judgment (sharp edges 107 and 108). A frame carries a flag for a held ∃^⊥, under which no call with an upper point passes the gate (docs/extensions/existentials.md, sharp edges 97 to 100 and 103).
-- □T and ∀ιs. C. T are two type formers (`TBoxM`, `TAll`, types/Types.v) with V-□, V-∀, E-Gen for values and E-Inst. `TBox n C T` is notation for □(∀ιs. C. T), and the V-Box of the bundled box is their composite (`Vrel_box_iff`). E-Exp stays a rule (docs/extensions/existentials.md part 2, sharp edges 101 and 102).
+- The box type □(∀ιs. C. T) is one type former (`TBox`, types/Types.v), so ∀ occurs only directly under □. Part 2 of docs/extensions/existentials.md had split it into □ and ∀ with E-Gen and E-Inst. No program used the two rules, and the split was undone (sharp edges 109). The rules beyond `orders-lr` are E-Pack and E-Open.
 
 ## Other documents
 
