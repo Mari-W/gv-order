@@ -62,6 +62,7 @@ theories/examples/LitTools.v
 theories/examples/MilnerSched.v
 theories/examples/KobForwarder.v
 theories/examples/FactServer.v
+theories/examples/Stream.v
 theories/counterexamples/DropCounter.v
 theories/pgv/PGVTypes.v
 theories/pgv/PGVTyping.v
