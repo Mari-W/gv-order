@@ -1215,6 +1215,66 @@ open it. `fx_no_first_call` records that the first call of the parametric box
 has no instance at the start of main in the empty world. No rule or
 statement changed. docs/extensions/existentials.md, part 5.
 
+**121. Program order is a rule of the fact theory (Claude, 2026-11-02, branch exists).**
+Numbered 121 to 124 to stay clear of 113 to 119, which another agent may
+use. The static ≺ took program order from the world law `wf_lt_po` through
+`fl_w`, so a derivation that reads x ≺ x+1 read a world. `fl` gained the rule
+`fl_po`, Γ ⊢ x ≺ x + 1 for every point with no premise, and the fact is now
+derived from the hypotheses alone. The law stays in `world_wf`, because the
+logical relation reads program order from the world of a run. The universal
+disjunct of `po_or_supp` is same name with a greater offset, wider than one
+step, so `sl_po_n` and `sl_pofs` recover it by transitivity and the rule
+keeps its one-step shape. `fl_map` has one more generator and its four users
+got one more case. The extension is conservative, it adds a derivable fact
+and removes none, and `slt_nil` still reads a hypothesis-free static fact
+back as a fact of W. No statement changed.
+
+**122. A source judgment without a world (author's decision, 2026-11-02, branch exists).**
+`styped` (static/Source.v) types a self-contained single-threaded source
+program and reads no world. Its type is
+`fhyps → hyps → lenv → sframe → expr → ty → Prop`, so Θ is gone too, which
+is what makes E-Ch inapplicable and the frames of the composing rules lose
+the heads of Θ. Every rule of `typed` for a form without channel constants
+is mirrored and no rule is added. The fact theory of the hypotheses is
+`heqs Ψ` and `hfl Ψ Φ`, `seqs` and `fl` without the world generators, and
+knownness is `hyp_known Ψ`, a point rooted at an instance point of a
+hypothesis. That is the reading of knownness in static-system.md before
+worlds entered the static system. A world is a don't-care for such a
+derivation because a well-formed world relates two points only by program
+order or between two points of its support, every support name is a
+constant, and a source derivation names no constant (`wf_eq_supp`,
+`wf_lt_supp`, `wf_names_const`). `fundamental`, `fundamental_proc`,
+`adequacy` and `soundness` keep their statements, and `typed` keeps W for the
+process layer. This narrows 112 to configurations.
+docs/extensions/existentials.md, part 7.
+
+**123. Both directions of the embedding are needed (Claude, 2026-11-02, branch exists).**
+`styped_typed` sends a source derivation into `typed` at every world and asks
+nothing of the world, not even well-formedness. `typed_styped` sends a
+derivation in a well-formed world of empty support back, which covers `wnil`
+and the `Wpo []` of the examples, and `styped_iff` is the equivalence. The
+development uses both. `soundness_source` takes `styped` and applies
+`styped_typed` at `wnil`, and the examples build their derivation with the
+rules and tactics of `typed` in `Wpo []` and read it back with
+`typed_styped`. Rebuilding twenty example derivations with the rules of
+`styped` would need a second copy of the tactic layer of
+examples/ExampleTools.v, and the equivalence makes the two derivations the
+same claim. The component lemmas for boxes keep `typed`, because they are
+steps inside a derivation whose whole-program lemma converts at its end.
+
+**124. A creation constraint needs no world (Claude, 2026-11-02, branch exists).**
+`cc_ok` is not monotone in its two relations by its shape. Acyclicity asks
+that every cycle of Γ + C come from a cycle of Γ, and conservativity that
+every fact of Γ + C between points off ι be a fact of Γ, and a larger Γ makes
+both hypotheses easier as well as both conclusions. `cc_ok_mono`
+(relation/Creation.v) proves it monotone anyway through `cc_ok_transfer` and
+`interp`, which cut a path through ι and insert the shortcut that
+conservativity gives. So `new` in the source judgment checks its constraint
+against `heqs Ψ` and `hlt Ψ`, the hypotheses alone, and both directions of
+the embedding carry the premise. The ∃ rules carry over through
+`bcs_hold_mono` and `konst_ty_mono`. No premise of `new` or of E-Pack
+changed.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

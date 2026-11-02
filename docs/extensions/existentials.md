@@ -869,3 +869,144 @@ hypotheses.
   `Wpn_strict` by `wnil_strict`.
 - static/Fundamental.v gained `wnil`, `wnil_strict`, `c0_eq`, `c0_lt`,
   `c0_acyclic`, the section `c0_world` and `prim_pinst`.
+
+## Part 7. A source judgment without a world
+
+### The decision
+
+Source typing drops the world (author's decision, 2026-11-02). The judgment
+for a self-contained single-threaded program is `styped`
+(theories/static/Source.v), the judgment Δ ⊢^F_Γ t : T of static-system.md
+with Γ built from the hypotheses Ψ and the frame hypotheses Φ alone. Its Rocq
+type carries no world and no channel environment.
+
+```
+styped : fhyps → hyps → lenv → sframe → expr → ty → Prop
+```
+
+`typed` keeps its world and its Θ for the process layer. E-Ch, P-Term and
+P-Connect read the facts of channel constants from W, and `soundness`,
+`fundamental`, `fundamental_proc` and `adequacy` keep their statements
+(sharp edges 112, 121).
+
+### Why the world was a don't-care
+
+A well-formed world relates two points only in two ways. Either the points
+share a name and the offset grows, or both roots lie in the support
+(`wf_eq_supp`, `wf_lt_supp` in relation/Worlds.v). Every support name is a
+point constant (`wf_names_const`), and a world knows a point when its root is
+in the support (`pt_known`). A point rooted at a point variable is therefore
+related by no world beyond program order, and no world knows it.
+
+A source derivation mentions no channel constant. Its Θ stays empty, and every
+point it mentions is rooted at a variable of an enclosing binder, a box's ιs,
+the ι of a creation constraint, or a top-level variable of C₀. The world
+reaches the rules through `seqs W Ψ`, `slt W Ψ`, `skn W Ψ`, `steq W Ψ`,
+`ub_below_s`, `lb_below_hb`, `lbx_below_h`, `tenv_comp (seqs W Ψ)` and
+`konst_ty (seqs W Ψ) (slt W Ψ) (skn W Ψ)`, and on such a derivation each of
+them reads from W only program order, which is now a rule.
+
+### Program order is a rule
+
+`fl` gained the rule `fl_po`, which gives Γ ⊢ x ≺ x + 1 for every point x with
+no premise on W (sharp edges 121). The world law `wf_lt_po` stays, because the
+logical relation reads program order from the world of a run. The universal
+disjunct of `po_or_supp` is wider than one step, so `sl_po_n` and `sl_pofs`
+recover every later offset of one name by transitivity. `fl_map` carries one
+more generator, and the four proofs that map a derivation discharge it, point
+substitution, frame instantiation, and the two underivability arguments of
+Rejected.v and FreshBetween.v, where program order already lay inside the
+invariant.
+
+The change is conservative. It adds a derivable fact and removes none, and
+`slt_nil` still reads a hypothesis-free fact back as a fact of W.
+
+### The fact theory of the hypotheses
+
+`heqs Ψ` and `hfl Ψ Φ` are `seqs` and `fl` without the world generators.
+`hlt Ψ` is `hfl Ψ ∅` between two points and `hle Ψ` its reflexive form.
+Knownness is `hyp_known Ψ`, a point whose root is the root of an instance
+point of a hypothesis, which is the reading of knownness in static-system.md
+before worlds entered the static system. `hsteq`, `hlb_below_h`,
+`hlb_below_hb`, `hlbx_below_h` and `hub_below_s` mirror the four side
+conditions that read facts.
+
+The creation constraint of `new` needs no world. `cc_ok` reads two relations
+and asks that Γ + C be acyclic and conservative over Γ, and the source
+judgment passes `heqs Ψ` and `hlt Ψ`. `cc_ok_mono` (relation/Creation.v)
+carries it in both directions along an inclusion of the two relations, so
+nothing in the premise of `new` had to change. The ∃ rules carry over the same
+way through `bcs_hold_mono` and `konst_ty_mono`.
+
+### The rules
+
+Every rule of `typed` for a form without channel constants is mirrored, and no
+rule is added. E-Unit, E-Const, E-LVar, E-Abs, E-App, E-Pair, E-LetPair,
+E-Let∗, E-Inj, E-Case, E-Exp, E-Weak, E-Contract, E-Conv, E-Pack and E-Open
+become `st_unit`, `st_konst`, `st_var`, `st_lam`, `st_app`, `st_pair`,
+`st_letp`, `st_letu`, `st_inj1`, `st_inj2`, `st_case`, `st_box`, `st_wk`,
+`st_contract`, `st_conv`, `st_pack` and `st_open`. No premise changed beyond
+dropping the world and Θ. The frames of the composing rules lose the heads of
+Θ, which are the heads of the empty environment.
+
+### The embedding
+
+```
+styped_typed :  styped Φ Ψ Δ F e T  →  typed W Φ Ψ ∅ Δ F e T
+typed_styped :  world_wf W  →  w_names W = ∅  →
+                typed W Φ Ψ Θ Δ F e T  →  Θ = ∅  →  styped Φ Ψ Δ F e T
+styped_iff   :  world_wf W  →  w_names W = ∅  →
+                (styped Φ Ψ Δ F e T  ↔  typed W Φ Ψ ∅ Δ F e T)
+```
+
+`styped_typed` holds at every world and asks nothing of it, not even
+well-formedness, because the facts of the hypotheses are facts of every
+world's static theory and program order is a rule. `typed_styped` holds at
+every well-formed world of empty support, which covers `wnil` and the `Wpo []`
+of the examples. The two directions give the equivalence.
+
+Both directions were needed. The examples build their derivations with the
+rules and tactics of `typed` and read them back with `typed_styped`, and
+`soundness_source` sends a source derivation into `typed wnil` with
+`styped_typed`. `styped_wnil` (static/Fundamental.v) and `styped_Wpo`
+(examples/ExampleTools.v) are the two instances of `typed_styped` the
+development uses.
+
+### The theorems that moved
+
+```
+soundness_source :  c0_acyclic n C₀  →  prim T  →
+                    styped ∅ [(C₀, ids n)] [] (∅, None) t T  →
+                    deadlock_free (∅, {[+ t +]})
+```
+
+| Theorem | Before | Now |
+|---|---|---|
+| `soundness_source` | `typed wnil ∅ [(C₀, ids n)] ∅ [] (∅, None) t T` | `styped ∅ [(C₀, ids n)] [] (∅, None) t T` |
+| every whole-program typing lemma of examples/ | `typed W ∅ [] ∅ [] (∅, None) t TUnit` under `world_wf W` or `strict W` | `styped ∅ [] [] (∅, None) t TUnit` |
+| `fac_typed`, `fa_typed` | `typed wnil ∅ [(C, ids n)] ∅ []` | `styped ∅ [(C, ids n)] []` |
+| `pn_translate_source` | inside `pn_deadlock_free` | `styped ∅ [(Crel, ids 1)] [] (∅, None) e' U` |
+| `soundness`, `fundamental`, `fundamental_proc`, `adequacy` | with W | unchanged |
+| `pgv_translate`, `pgv_deadlock_free` | `typed Wpgv` | unchanged |
+
+Twenty whole-program typing lemmas moved, one per example file. The component
+lemmas for boxes (`faca_typed`, `fwd_typed`, `srv_typed`, `mk0_typed`,
+`ordered_typed` and the others) keep `typed` at an arbitrary world, because
+they are steps inside a derivation that the whole-program lemma converts at
+its end. No deadlock-freedom statement changed.
+
+### What broke and how it was fixed
+
+- `fl_map` has a fourteenth hypothesis, the program-order generator. The four
+  proofs that use it got one more case, and `Rejected.v` got `rr_R_po`.
+- static/Fundamental.v reads `From LRGV Require Export static.Source`, so the
+  source judgment is in scope wherever `typed` is.
+- examples/ExampleTools.v gained `Wpo_nil_names`, `Wpo_nil_strict'`,
+  `styped_Wpo` and `ptyped_closed_s`, the closed-thread lemma for a source
+  derivation. The deadlock-freedom proofs of the examples call it in place of
+  `ptyped_closed`.
+- The typing lemmas of the examples lost their world parameter, so their
+  proofs open with `apply styped_Wpo` and bind W and its well-formedness to
+  `Wpo []` themselves. The scripts are otherwise unchanged.
+- pn/PNTranslate.v splits `pn_deadlock_free` into `pn_translate_source` and
+  the application of `soundness_source`.
