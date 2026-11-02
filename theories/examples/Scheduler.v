@@ -1,7 +1,10 @@
 (** * scheduler: typable
 
-    Milner's scheduler with three agents on a ring r₀, r₁, r₂, as a
-    closed program.
+    A reduced variant of Milner's cyclic scheduler, three agents on a
+    ring r₀, r₁, r₂, as a closed program. It has no collectors, and one
+    of its agents is a [link]. Dardha and Gay's Example 1
+    (dardha2018new p. 3) in full, k agents in a ring with one collector
+    each, is examples/MilnerSched.v.
 
       ag₀ = let () = close (send ⟨∗, r₀⟩) in recvclose r₂          (main)
       ag₁ = link ⟨r₁, r₀⟩                                          (spawned)

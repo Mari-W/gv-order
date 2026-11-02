@@ -58,6 +58,8 @@ theories/examples/RequestReplyFresh.v
 theories/examples/TailCallFresh.v
 theories/examples/RelayFresh.v
 theories/examples/Rejected.v
+theories/examples/LitTools.v
+theories/examples/MilnerSched.v
 theories/counterexamples/DropCounter.v
 theories/pgv/PGVTypes.v
 theories/pgv/PGVTyping.v
