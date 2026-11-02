@@ -60,6 +60,7 @@ theories/examples/RelayFresh.v
 theories/examples/Rejected.v
 theories/examples/LitTools.v
 theories/examples/MilnerSched.v
+theories/examples/KobForwarder.v
 theories/counterexamples/DropCounter.v
 theories/pgv/PGVTypes.v
 theories/pgv/PGVTyping.v

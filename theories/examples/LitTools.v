@@ -55,3 +55,74 @@ Ltac po_gate HW u := apply ubs_intro; [po_frame HW|po_fvar HW u].
 
 (** The same at the top level, where the frame has no variable. *)
 Ltac po_gate0 HW := apply ubs_intro; [po_frame HW|done].
+
+(** ** Chains of carried roots
+
+    A recursive server that creates one channel per call places it at a
+    carried root of the channel it answers on, so the points of every
+    round sit on one root and no creation constraint names an outer
+    point. ι.0ⁿ is the n-fold first carried root of the point variable 0
+    (slots counted from 0 in Rocq). *)
+
+Fixpoint slotv (n : nat) : pname :=
+  match n with 0 => NVar 0 | S m => NSlot (slotv m) 0 0 end.
+
+Abbreviation pcr := (Pt (NSlot (NVar 0) 0 0) 0).
+
+(** Instantiating ι by ι.0 moves every point of the chain one level
+    deeper, which is what the recursive [force] does. *)
+Lemma slotv_inst n : pn_inst (plist [pcr]) (slotv n) = Pt (slotv (S n)) 0.
+Proof. induction n as [|n IH]; [done|]. cbn [slotv pn_inst]. by rewrite IH. Qed.
+
+(** The depth of a name in carried roots. *)
+Fixpoint sdepth (p : pname) : nat :=
+  match p with NSlot q _ _ => S (sdepth q) | _ => 0 end.
+
+Lemma sdepth_slotv n : sdepth (slotv n) = n.
+Proof. induction n as [|n IH]; [done|]. cbn. by rewrite IH. Qed.
+
+(** Two strict orders on points, read lexicographically on depth and
+    offset. [dlt] puts a deeper carried root below a shallower one, the
+    order of a server whose fresh channel answers before the channel it
+    was called on. [ult] is the opposite, the order of a producer that
+    sends its fresh channel on. Neither has a rank in ℕ, because the
+    depth is unbounded in both directions. *)
+Definition dlt (x y : point) : Prop :=
+  sdepth (pt_name y) < sdepth (pt_name x) ∨
+  (sdepth (pt_name x) = sdepth (pt_name y) ∧ pt_off x < pt_off y).
+
+Definition ult (x y : point) : Prop :=
+  sdepth (pt_name x) < sdepth (pt_name y) ∨
+  (sdepth (pt_name x) = sdepth (pt_name y) ∧ pt_off x < pt_off y).
+
+Lemma dlt_trans x y z : dlt x y → dlt y z → dlt x z.
+Proof. unfold dlt. lia. Qed.
+Lemma dlt_irrefl x : ¬ dlt x x.
+Proof. unfold dlt. lia. Qed.
+Lemma dlt_po x : dlt x (pt_shift 1 x).
+Proof. unfold dlt, pt_shift. cbn. lia. Qed.
+
+Lemma ult_trans x y z : ult x y → ult y z → ult x z.
+Proof. unfold ult. lia. Qed.
+Lemma ult_irrefl x : ¬ ult x x.
+Proof. unfold ult. lia. Qed.
+Lemma ult_po x : ult x (pt_shift 1 x).
+Proof. unfold ult, pt_shift. cbn. lia. Qed.
+
+(** A creation constraint whose facts are ≺ facts inside ι that fall or
+    rise along the depth. *)
+Lemma cc_ok_dlt peq plt P :
+  (∀ g, P g → fact_scoped 1 g → ∃ x y, g = FLt x y ∧ dlt x y) →
+  cc_ok peq plt (BCs [] P).
+Proof.
+  intros HP. apply (cc_ok_inner peq plt P dlt);
+    [exact dlt_trans|exact dlt_irrefl|intros x _; apply dlt_po|exact HP].
+Qed.
+
+Lemma cc_ok_ult peq plt P :
+  (∀ g, P g → fact_scoped 1 g → ∃ x y, g = FLt x y ∧ ult x y) →
+  cc_ok peq plt (BCs [] P).
+Proof.
+  intros HP. apply (cc_ok_inner peq plt P ult);
+    [exact ult_trans|exact ult_irrefl|intros x _; apply ult_po|exact HP].
+Qed.
