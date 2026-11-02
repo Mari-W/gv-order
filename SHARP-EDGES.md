@@ -1274,6 +1274,81 @@ against `heqs Ψ` and `hlt Ψ`, the hypotheses alone, and both directions of
 the embedding carry the premise. The ∃ rules carry over through
 `bcs_hold_mono` and `konst_ty_mono`. No premise of `new` or of E-Pack
 changed.
+**130. Programs from the literature, typed natively (Claude, 2026-11-02, branch exists-examples).**
+Numbered 130 to stay clear of the entries another agent adds on branch
+`exists`, which uses 105 to 112, and of 120 on `exists-factory`. This range
+uses 130 to 135. An audit found that almost every example is our own program
+and that the literature reached the development only through the PGV and
+Padovani–Novara translations, so the order facts of a published program came
+from the translation's world. Four programs now have a native derivation.
+examples/MilnerSched.v is Dardha and Gay's Example 1 in full with k = 3
+(dardha2018new p. 3), examples/KobForwarder.v is Kobayashi's Example 2
+(kobayashi2006new p. 11), examples/FactServer.v is his factorial server
+(p. 2), which is also Padovani's (3) (padovani2014deadlock p. 2), and
+examples/Stream.v is Padovani's (4) (p. 2). All four type in `Wpo []`.
+examples/LitTools.v holds the shared tools. No typing rule was added and no
+statement changed, apart from one comment in Scheduler.v and one in Ordered.v.
+docs/extensions/literature-examples.md.
+
+**131. One root carries a whole topology (Claude, 2026-11-02).**
+The full scheduler has six channels and needs them totally ordered. Chaining
+six creation constraints, each naming the previous point, nests `bcs_inst`
+six deep and makes every fact a composition of shifts. Instead the first `new`
+takes a fresh ι with the empty constraint and `t_new_at` puts the other five at
+ι+2, ι+4, ι+6, ι+8 and ι+10, which the hypothesis of the first `new` makes
+known. Every fact is then program order. The same device gives the points of
+Dardha and Gay's priority assignment (dardha2018new p. 9), two of whose
+priorities coincide for the two ends of one channel. A creation constraint is
+needed only where a program wants facts that program order does not give.
+
+**132. A recursive server places each round at a carried root (Claude, 2026-11-02).**
+A server that creates one channel per call needs that channel ordered against
+the channel the call acts on. A creation constraint {κ + k ≺ ι} with the box
+variable ι as an outer point does it, and a hypothesis with outer points has no
+lemma like `sl_hyp0`. The three recursive servers instead place the fresh
+channel at ι.0, the first carried root, by `t_new_at`, and state the order in
+the box constraint, which names ι alone. For the forwarder and the factorial
+server ι.0 carries no payload, the use of a carried point that TailCall.v's
+ceiling makes. For `stream` the fresh channel is the payload, so ι.0 is where
+sender and receiver name it alike. The list form of `t_newfresh_lh_open` would
+not do, because it states κ ≺ ι and not κ+1 ≺ ι, and the server closes the
+fresh channel before it answers.
+
+**133. A constraint that falls along the depth has no rank in ℕ (Claude, 2026-11-02).**
+The two servers order each round strictly below its caller, so the rank of
+ι.0ⁿ falls as n grows, and no function into ℕ does that for every n.
+`cc_ok_inner` asks only for a transitive irreflexive relation containing
+program order, so `dlt` of LitTools.v reads a point lexicographically as its
+depth, reversed, and its offset. `ult` is the same with the depth not reversed,
+for the producer of `stream`, which orders each round above its caller.
+ReceivedChain.v's rank 2·depth + offset covers its own facts and not these.
+
+**134. The congruences of ≡ buy finiteness, not expressiveness (Claude, 2026-11-02).**
+No example derived a fact by `se_shift` or `se_slot`. Scheduler.v gets its
+successor alias from the world's closure field `wf_eq_shift` and lifts it with
+`se_w`, and Forwarder.v states its carried-root alias fact by fact.
+examples/Congruence.v is the smallest program we found whose derivation uses
+both, a box over ι ≡ ι′ that sends a channel held at ι′.0 on a channel at ι and
+closes it at ι+1 against a channel at ι′+2. Neither rule is forced by any
+program, because a fact a congruence derives can be stated in the constraint
+the alias came from. Conservativity is the one thing that could force a
+congruence, since a creation constraint may not relate two points outside the
+new channel, but that fact then comes from a context which is again a
+constraint or a world. The rules let one alias between base points stand for
+one alias per offset and per carried root, and at every depth that is the
+difference between a finite constraint and an infinite one.
+
+**135. Three rejections became theorems, the step from the program did not (Claude, 2026-11-02).**
+The reversed scheduler agent, the bad `link` and `ordered` without its
+constraint were arguments in comments. examples/Rejected.v now proves
+`sched_rev_underivable`, `ms_rev_underivable`, `badlink_underivable` and
+`ord_no_constraint`. The three cycle lemmas take acyclicity of the fact theory
+as a hypothesis, which `slt_acyclic_nil` discharges for a theory with no
+hypotheses, and which holds for every context a typable closed program meets,
+because `soundness` takes a strict world and `cc_acyclic` carries a cycle of
+Γ + C down to Γ. The step from "the program has no derivation" to "these facts
+fail" stays a comment. A theorem for it needs typing derivations inverted, and
+the development avoids inversion. So the range used is 130 to 135.
 
 ## From the earlier abandoned mechanization (spec §15)
 
