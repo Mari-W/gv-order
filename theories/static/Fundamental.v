@@ -6,7 +6,7 @@
     [fundamental], [fundamental_proc] and [soundness] follow. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export static.Typing.
+From LRGV Require Export static.Source.
 
 Set Default Proof Using "All".
 
