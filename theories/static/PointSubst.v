@@ -726,6 +726,7 @@ Section transfer.
     - intros x x' b Hx H. exact (fl_eql (FCtx W1 Ψ' Φ') _ _ _ Hx H).
     - intros a y y' H Hy. exact (fl_eqr (FCtx W1 Ψ' Φ') _ _ _ H Hy).
     - intros a y b. exact (fl_trans (FCtx W1 Ψ' Φ') _ _ _).
+    - intros x. rewrite pt_inst_shift. apply (fl_po (FCtx W1 Ψ' Φ')).
   Qed.
 
   Lemma seqs_pinst_s Ψ Ψ' x y :

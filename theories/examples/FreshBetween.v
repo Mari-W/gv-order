@@ -132,7 +132,7 @@ Proof.
     refine (proj2 (fl_map (FCtx W [(fb_C, ids 2)] ∅)
       (λ x y, x = y ∨ (fb_isvar x = false ∧ fb_isvar y = false))
       (λ a b, match a, b with NP x, NP y => fb_R x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H1 H2; unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H1 H2; unfold id; simpl.
     - intros x1 y1 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
       split; by apply (fb_isvar_const W).
     - intros x1 y1 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
@@ -155,7 +155,10 @@ Proof.
       revert H0. unfold fb_R. rewrite Hy, Hy', !andb_false_r. cbn. tauto.
     - intros [x1|] y1 [z1|]; try done. unfold fb_R.
       destruct (fb_isvar x1), (fb_isvar y1), (fb_isvar z1); simpl;
-        intuition (try discriminate; eauto using fb_A_trans). }
+        intuition (try discriminate; eauto using fb_A_trans).
+    - intros x1. unfold fb_R. rewrite <-(fb_isvar_name x1 (pt_shift 1 x1)) by done.
+      destruct (fb_isvar x1); simpl; [|done].
+      left. unfold pt_shift. simpl. split; [done|lia]. }
   apply HR in H1, H2. unfold fb_R in H1, H2. simpl in H1.
   destruct (fb_isvar x) eqn:Hx; simpl in H1, H2; [|by destruct H1].
   destruct H1 as [[Hn Ho]|[_ Hn]], H2 as [[Hn' Ho']|[-> Hn']]; simpl in *.

@@ -131,7 +131,7 @@ Proof.
             ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') as Hm.
   { refine (proj2 (fl_map _ (w_eq W1)
       (λ a b, ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
     - intros x0 y0 H. by apply He.
     - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
     - apply (wf_eq_refl _ Hwf).
@@ -147,7 +147,8 @@ Proof.
     - intros a y y' H Hy a' ? Ha' ->.
       exact (wf_lt_eq _ Hwf a' a' y y' (wf_eq_refl _ Hwf a') (H a' y' Ha' eq_refl) Hy).
     - intros a y b H1 H2 a' b' Ha' Hb'.
-      exact (wf_lt_trans _ Hwf a' y b' (H1 a' y Ha' eq_refl) (H2 y b' eq_refl Hb')). }
+      exact (wf_lt_trans _ Hwf a' y b' (H1 a' y Ha' eq_refl) (H2 y b' eq_refl Hb')).
+    - intros x0 ? ? -> ->. apply (wf_lt_po _ Hwf). }
   intros y Hy. unfold sf_inst in Hy. rewrite Hb in Hy. simpl in Hy.
   rewrite union_empty_r_L in Hy. apply elem_of_union in Hy as [Hy|Hy].
   - exact (Hm _ _ (HP y Hy) x y eq_refl eq_refl).

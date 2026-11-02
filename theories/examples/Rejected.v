@@ -47,6 +47,14 @@ Definition rr_C1 (g : fact) : Prop :=
 Lemma isvar_const W x : world_wf W → pt_root x ∈ w_names W → isvar x = false.
 Proof. intros HW Hx. unfold isvar. by destruct (wf_names_const _ HW _ Hx) as [a ->]. Qed.
 
+(** Program order lies in [rr_R]: the rank grows with the offset. *)
+Lemma rr_R_po x : rr_R x (pt_shift 1 x).
+Proof.
+  unfold rr_R, isvar, pt_shift, pt_root, rr_rank. destruct x as [p o]. simpl.
+  destruct (pn_root p); simpl; try (split; reflexivity).
+  destruct p as [a0|[|[|k]]|q b i]; simpl; lia.
+Qed.
+
 Lemma rr_call_underivable W : world_wf W →
   ¬ slt W [(BCs [] rr_C1, ids 2)] (pt_shift 1 (pvar 0)) (pt_shift 1 (pvar 1)).
 Proof.
@@ -56,7 +64,7 @@ Proof.
     refine (proj2 (fl_map (FCtx W [(BCs [] rr_C1, ids 2)] ∅)
       (λ x y, x = y ∨ (isvar x = false ∧ isvar y = false))
       (λ a b, match a, b with NP x, NP y => rr_R x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
     - intros x0 y0 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
       split; by apply (isvar_const W).
     - intros x0 y0 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
@@ -80,7 +88,8 @@ Proof.
     - intros [x0|] y0 y' H0 HQ; [|done]. destruct HQ as [<-|[Hy' Hy]]; [done|].
       revert H0. unfold rr_R. rewrite Hy, Hy', !andb_false_r. cbn. tauto.
     - intros [x0|] y0 [z0|]; try done. unfold rr_R.
-      destruct (isvar x0), (isvar y0), (isvar z0); simpl; intuition (try lia; try discriminate). }
+      destruct (isvar x0), (isvar y0), (isvar z0); simpl; intuition (try lia; try discriminate).
+    - intros x0. apply rr_R_po. }
   apply HR in H. vm_compute in H. lia.
 Qed.
 
