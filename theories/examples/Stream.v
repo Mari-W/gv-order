@@ -179,9 +179,10 @@ Proof.
     exists (pt_shift 1 pcr). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma st_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) st_main TUnit.
+Lemma st_typed : styped ∅ [] [] (∅, None) st_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold st_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main.
   tstep.
   { tstep; [apply stprod_typed, HWs|apply stcons_typed, HW]. }
   cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sst st_C); [apply st_ok|constructor|].
@@ -215,5 +216,5 @@ Qed.
 Theorem st_deadlock_free : deadlock_free (∅, {[+ st_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply st_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply st_typed].
 Qed.

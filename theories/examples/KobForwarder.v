@@ -169,9 +169,10 @@ Proof.
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma fw_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) fw_main TUnit.
+Lemma fw_typed : styped ∅ [] [] (∅, None) fw_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold fw_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fw_main.
   eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 fw_C (TLolli None None TUnit fw_body)) TUnit);
     [reflexivity| |].
   { tstep; [tstep|apply fwsrv_typed, HWs]. }
@@ -207,5 +208,5 @@ Qed.
 Theorem fw_deadlock_free_kob : deadlock_free (∅, {[+ fw_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply fw_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply fw_typed].
 Qed.

@@ -109,9 +109,10 @@ Ltac ms_recv HW u :=
   | cbn; tstep; [tstep|]; cbn; tstep; [tstep|apply KTClos|done|];
     po_gate HW (pv 0 u) ].
 
-Lemma ms_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) ms_main TUnit.
+Lemma ms_typed : styped ∅ [] [] (∅, None) ms_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold ms_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ms_main.
   (* the ring channel of A_0 at a fresh ι, then five channels at ι+2k *)
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sd [] []); [constructor|set_solver|].
   fresh_clean.
@@ -178,5 +179,5 @@ Qed.
 Theorem ms_deadlock_free : deadlock_free (∅, {[+ ms_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply ms_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply ms_typed].
 Qed.
