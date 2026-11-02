@@ -1348,7 +1348,31 @@ hypotheses, and which holds for every context a typable closed program meets,
 because `soundness` takes a strict world and `cc_acyclic` carries a cycle of
 Γ + C down to Γ. The step from "the program has no derivation" to "these facts
 fail" stays a comment. A theorem for it needs typing derivations inverted, and
-the development avoids inversion. So the range used is 130 to 135.
+the development avoids inversion. So the range used is 130 to 136.
+
+**136. The literature whole programs state the source judgment (Claude, 2026-11-02, branch exists).**
+Entry 130 landed on branch `exists-examples`, where `styped` did not exist, so
+its five whole-program lemmas stated `typed W` under the premise `strict W`.
+`ms_typed`, `fw_typed`, `fc_typed`, `st_typed` and `cg_typed` now state
+`styped ∅ [] [] (∅, None) e TUnit`, which is the convention entry 123 records
+for a self-contained program, and which the other twenty whole-program lemmas
+already followed. Each proof opens with `apply styped_Wpo`, poses
+`Wpo_nil_strict'` as `HWs` and runs `set (W := Wpo []) in *`, which turns the
+abstract world the body was written for into the one world the lemma is about.
+No tactic of any of the five bodies changed, including the `t_new_at` steps of
+MilnerSched.v and Congruence.v, which take `strict W` as an argument, and the
+`fcsrv_typed`, `fwsrv_typed` and `stprod_typed` applications, which take it as
+a premise. The five deadlock-freedom theorems keep their statements byte for
+byte and go through `ptyped_closed_s` instead of `ptyped_closed`, which leaves
+`ptyped_closed` with no user in theories/examples/. The component lemmas
+`fwsrv_typed`, `fcsrv_typed`, `stprod_typed`, `stcons_typed` and `cgbox_typed`
+keep `typed` at an arbitrary world, as do the sixteen other component lemmas
+of examples/ and `faca_typed` of examples/Factory.v, which types a box value
+at `wnil` against an arbitrary hypothesis context and whose whole-program
+lemma `fa_typed` converts. The remaining three users of `typed` in examples/
+are tools and not programs, `ptyped_closed` and `tv_case` and `ordered_force`.
+No typing rule was added and no other statement changed.
+docs/extensions/literature-examples.md.
 
 ## From the earlier abandoned mechanization (spec §15)
 

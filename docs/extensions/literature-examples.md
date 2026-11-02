@@ -222,3 +222,24 @@ ms_rev_underivable        badlink_underivable  ord_no_constraint
 No typing rule was added and no existing statement changed. `examples/Scheduler.v`
 and `examples/Ordered.v` changed one comment each, and `_CoqProject` lists the
 five new files. Sharp edges 130 to 135 record the decisions.
+
+## The world-free judgment, 2026-11-02
+
+The five whole-program lemmas now state `styped`, the source judgment of
+static/Source.v, which carries no world and no channel-constant context Θ.
+`ms_typed`, `fw_typed`, `fc_typed`, `st_typed` and `cg_typed` read
+`styped ∅ [] [] (∅, None) e TUnit`, the form the paper presents for a
+self-contained source program. They were written before `styped` existed and
+stated `typed W` under the premise `strict W`, which made them the only five
+whole-program lemmas in examples/ out of step with the other twenty. Each
+proof opens with `styped_Wpo` of examples/ExampleTools.v, poses
+`Wpo_nil_strict'` and fixes `W := Wpo []`, so the derivation is still built
+with the rules and tactics of `typed` and read back by `typed_styped`. No
+tactic of any of the five bodies changed.
+
+The component lemmas `fwsrv_typed`, `fcsrv_typed`, `stprod_typed`,
+`stcons_typed` and `cgbox_typed` keep `typed` at an arbitrary world. A box is
+a step inside a derivation, and the whole-program lemma that uses it converts
+at its end. The five deadlock-freedom theorems keep their statements and reach
+`soundness` through `ptyped_closed_s`, which composes `ptyped_closed` with
+`styped_typed`. Sharp edge 136.
