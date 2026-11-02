@@ -5,7 +5,8 @@
 
     close c blocks at ι while the body still holds d at ι′, so E-App
     asks ι ≺ ι′. Program order relates nothing between two point
-    variables, so without the constraint the box does not type. With it
+    variables, so without the constraint the box does not type, which
+    [ord_no_constraint] (examples/Rejected.v) proves. With it
     the fact is the hypothesis itself. A caller forces the box at
     ((a, 0), (a, 1)), where program order meets the constraint. *)
 

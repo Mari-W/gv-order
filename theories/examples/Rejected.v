@@ -145,3 +145,116 @@ Definition badlink_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App ELink (Pair (Var 6) (Var 4))))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (App EClos (Var 1)) (App EClos (Var 3))))))
         (LetU (App EClos (Var 4)) (App EClos (Var 1))))))).
+
+(** ** The three rejections above as theorems
+
+    Each argument above names the facts a derivation of the program
+    would have to supply. The lemmas below show that those facts do not
+    hold together.
+
+    Two of them close a cycle, so they are stated for any Γ whose ≺ has
+    no cycle. Every Γ that a derivation of a closed typable program
+    meets is of that kind. [soundness] takes a strict world, and every
+    creation constraint is acyclic relative to the context it is read in
+    ([cc_acyclic], types/Types.v), so a cycle in Γ + C is already a
+    cycle in Γ, and by induction in the world. [slt_acyclic_nil]
+    discharges the hypothesis for Γ = W. The step from "the program has
+    no derivation" to "these facts fail" is the one the comments make by
+    hand, and making it a theorem means inverting derivations, which the
+    development avoids. *)
+
+Lemma slt_acyclic_nil W : strict W → ∀ p, ¬ slt W [] p p.
+Proof. intros [HW Hs] p H. apply (Hs p). by apply slt_nil. Qed.
+
+(** The reversed agent of examples/Scheduler.v. ag₀ receives on r₂ at y
+    while it holds r₀ at x, so it asks y ≺ x. ag₂ receives on r₁ at z
+    while it holds r₂ at y, so it asks z ≺ y. link ⟨r₁, r₀⟩ asks
+    z ≡ x. The three give z ≺ z. *)
+Lemma sched_rev_underivable W Ψ x y z :
+  (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ y x ∧ slt W Ψ z y ∧ seqs W Ψ z x).
+Proof.
+  intros Hacy (Hyx & Hzy & Hzx). apply (Hacy z).
+  eapply sl_trans; [exact Hzy|]. eapply sl_eqr; [exact Hyx|by apply se_sym].
+Qed.
+
+(** The reversed agent of examples/MilnerSched.v. With r_i the point of
+    the ring channel between A_i and A_{i+1}, a reversed A_0 receives on
+    d_0 at r_2 while it holds c_0 at r_0 and asks r_2 ≺ r_0. A_1 asks
+    r_0 ≺ r_1 and A_2 asks r_1 ≺ r_2. The three give r_0 ≺ r_0. *)
+Lemma ms_rev_underivable W Ψ r0 r1 r2 :
+  (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ r2 r0 ∧ slt W Ψ r0 r1 ∧ slt W Ψ r1 r2).
+Proof.
+  intros Hacy (H20 & H01 & H12). apply (Hacy r0).
+  eapply sl_trans; [exact H01|]. by eapply sl_trans.
+Qed.
+
+(** The bad link of [badlink_main]. link ⟨c₁, d₁⟩ asks x ≡ y, the main
+    thread closes c₂ at x while it holds e₂ at z and asks x ≺ z, and the
+    second thunk closes e₃ at z while it holds d₃ at y and asks z ≺ y.
+    The three give x ≺ x. *)
+Lemma badlink_underivable W Ψ x y z :
+  (∀ p, ¬ slt W Ψ p p) → ¬ (seqs W Ψ x y ∧ slt W Ψ x z ∧ slt W Ψ z y).
+Proof.
+  intros Hacy (Hxy & Hxz & Hzy). apply (Hacy x).
+  eapply sl_eqr; [|by apply se_sym]. by eapply sl_trans.
+Qed.
+
+(** ** [ordered] without its constraint: the body does not type
+
+      ordered = !(f = λp. let (c, d) = p in let () = close c in close d)
+              : □(∀ι ι′. {}.^⊥ Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗)
+
+    close c blocks at ι while the body still holds d at ι′, so E-App
+    asks ι ≺ ι′ (examples/Ordered.v). With the empty constraint the
+    fact theory derives no fact between two points with distinct
+    variable roots. The model below sends ≺ to program order on one
+    name between points with a variable root, and to the full relation
+    between points with a constant root. ≡ goes to equality, or to the
+    pair of constant roots. A well-formed world relates points with a
+    variable root by program order only ([wf_lt_supp]) and identifies
+    them only when they are equal ([wf_eq_supp]), the one hypothesis has
+    no fact, and ι and ι′ have the names NVar 0 and NVar 1, so no
+    derived fact puts ι below ι′. *)
+
+Definition ord0_C : bcs := BCs [] (λ _, False).
+
+Definition ord_R (x y : point) : Prop :=
+  if isvar x && isvar y then pt_name x = pt_name y ∧ pt_off x < pt_off y
+  else isvar x = false ∧ isvar y = false.
+
+Lemma isvar_name x y : pt_name x = pt_name y → isvar x = isvar y.
+Proof. intros E. unfold isvar, pt_root. by rewrite E. Qed.
+
+Lemma ord_no_constraint W : world_wf W → ¬ slt W [(ord0_C, ids 2)] (pvar 0) (pvar 1).
+Proof.
+  intros HW H.
+  assert (∀ x y, slt W [(ord0_C, ids 2)] x y → ord_R x y) as HR.
+  { intros x0 y0 Hxy. change (match NP x0, NP y0 with NP x, NP y => ord_R x y | _, _ => True end).
+    refine (proj2 (fl_map (FCtx W [(ord0_C, ids 2)] ∅)
+      (λ x y, x = y ∨ (isvar x = false ∧ isvar y = false))
+      (λ a b, match a, b with NP x, NP y => ord_R x y | _, _ => True end) id id
+      _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
+    - intros x1 y1 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
+      split; by apply (isvar_const W).
+    - intros x1 y1 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
+      injection Hg as -> ->. by apply bcs_open_nil in Hg0 as [[] _].
+    - by left.
+    - intros x1 y1 [->|[? ?]]; [by left|by right].
+    - intros x1 y1 z1 [->|[? ?]] [->|[? ?]]; [by left|by right|by right|by right].
+    - intros x1 y1 [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
+    - intros x1 y1 i [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
+    - intros x1 y1 Hxy. unfold ord_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]|[Hx Hy]].
+      + rewrite (isvar_name x1 y1 Hn). destruct (isvar y1); simpl; [by split|done].
+      + rewrite (isvar_const W x1), (isvar_const W y1); done.
+    - intros x1 y1 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
+      injection Hg as -> ->. by apply bcs_open_nil in Hg0 as [[] _].
+    - intros φ u Hu. by rewrite lookup_empty in Hu.
+    - intros x1 x' [y1|] HQ H0; [|done]. destruct HQ as [->|[Hx Hx']]; [done|].
+      revert H0. unfold ord_R. rewrite Hx, Hx'. cbn. tauto.
+    - intros [x1|] y1 y' H0 HQ; [|done]. destruct HQ as [<-|[Hy' Hy]]; [done|].
+      revert H0. unfold ord_R. rewrite Hy, Hy', !andb_false_r. cbn. tauto.
+    - intros [x1|] y1 [z1|]; try done. unfold ord_R.
+      destruct (isvar x1), (isvar y1), (isvar z1); simpl;
+        intuition (try discriminate; try lia); try congruence. }
+  apply HR in H. unfold ord_R in H. cbn in H. destruct H as [Hn _]. discriminate.
+Qed.

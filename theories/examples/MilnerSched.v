@@ -53,7 +53,8 @@
 
     The reversed agent is rejected. If A_0 waits on d_0 before sending
     on c_0 the derivation asks ι+8 ≺ ι, while A_1 asks ι ≺ ι+4 and A_2
-    asks ι+4 ≺ ι+8, and the three give a cycle.
+    asks ι+4 ≺ ι+8, and the three give a cycle
+    ([ms_rev_underivable], examples/Rejected.v).
 
     examples/Scheduler.v has a reduced variant, three agents without
     collectors and one of them a [link]. *)

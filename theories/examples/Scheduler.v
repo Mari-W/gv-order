@@ -23,7 +23,8 @@
     E-Let* and E-App ask (b,0) ≺ (a,0), while ag₂ asks (c,0) ≺ (b,0), and
     (c,0) ≡ (a,0) closes the cycle (a,0) ≺ (b,0) ≺ (a,0). No strict world
     has all three, and link needs the alias whatever points [new] picks
-    for r₀ and r₁.
+    for r₀ and r₁. [sched_rev_underivable] (examples/Rejected.v) proves
+    that the three facts do not hold together.
 
     The program types in the empty world. r₀ is created at γ with no
     fact, r₁ by the alias at γ, which gives the alias that link needs,
