@@ -126,3 +126,22 @@ Proof.
   intros HP. apply (cc_ok_inner peq plt P ult);
     [exact ult_trans|exact ult_irrefl|intros x _; apply ult_po|exact HP].
 Qed.
+
+(** ** E-Case for Θ = ∅
+
+    The scrutinee takes the bindings it occurs in and both branches take
+    the rest, so [sok] is checked against the first branch and the
+    second branch runs under the same environment. A branch that leaves
+    a □ binding unused weakens it away at its leaves. *)
+Lemma tv_case W Φ Ψ Δ F e e1 e2 T1 T2 T :
+  world_wf W →
+  sok e 0 e1 1 Δ && negb (lenv_bot (lp e1 1 Δ)) = true →
+  typed W Φ Ψ ∅ (lp e 0 Δ) (sf_union F (lenv_heads (lp e1 1 Δ))) e (TSum T1 T2) →
+  typed W Φ Ψ ∅ (Some T1 :: lp e1 1 Δ) F e1 T →
+  typed W Φ Ψ ∅ (Some T2 :: lp e1 1 Δ) F e2 T →
+  typed W Φ Ψ ∅ Δ F (Case e e1 e2) T.
+Proof.
+  intros HW Hs He H1 H2. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+  eapply t_case; [apply (comp0 W HW)|by apply lp_split| |exact H1|exact H2].
+  by rewrite Hb, (tenv_heads0 W HW), union_empty_l_L.
+Qed.
