@@ -234,6 +234,13 @@ Definition ord_R (x y : point) : Prop :=
 Lemma isvar_name x y : pt_name x = pt_name y → isvar x = isvar y.
 Proof. intros E. unfold isvar, pt_root. by rewrite E. Qed.
 
+(** Program order lies in [ord_R]: the offset grows and the root stays. *)
+Lemma ord_R_po x : ord_R x (pt_shift 1 x).
+Proof.
+  unfold ord_R, isvar, pt_shift, pt_root. destruct x as [p o]. simpl.
+  destruct (pn_root p); simpl; split; (reflexivity || lia).
+Qed.
+
 Lemma ord_no_constraint W : world_wf W → ¬ slt W [(ord0_C, ids 2)] (pvar 0) (pvar 1).
 Proof.
   intros HW H.
@@ -242,7 +249,7 @@ Proof.
     refine (proj2 (fl_map (FCtx W [(ord0_C, ids 2)] ∅)
       (λ x y, x = y ∨ (isvar x = false ∧ isvar y = false))
       (λ a b, match a, b with NP x, NP y => ord_R x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
     - intros x1 y1 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
       split; by apply (isvar_const W).
     - intros x1 y1 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
@@ -264,6 +271,7 @@ Proof.
       revert H0. unfold ord_R. rewrite Hy, Hy', !andb_false_r. cbn. tauto.
     - intros [x1|] y1 [z1|]; try done. unfold ord_R.
       destruct (isvar x1), (isvar y1), (isvar z1); simpl;
-        intuition (try discriminate; try lia); try congruence. }
+        intuition (try discriminate; try lia); try congruence.
+    - intros x1. apply ord_R_po. }
   apply HR in H. unfold ord_R in H. cbn in H. destruct H as [Hn _]. discriminate.
 Qed.
