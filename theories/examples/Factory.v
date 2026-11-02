@@ -45,9 +45,9 @@ Definition fac_main : expr :=
 (** fac_main starts with one top-level variable a and no fact. *)
 Definition Cfac : bcs := BCs [] (λ _, False).
 
-Lemma fac_typed : typed wnil ∅ [(Cfac, ids 1)] ∅ [] (∅, None) fac_main TUnit.
+Lemma fac_typed : styped ∅ [(Cfac, ids 1)] [] (∅, None) fac_main TUnit.
 Proof.
-  set (W := wnil). pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold fac_main.
+  apply styped_wnil. set (W := wnil). pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold fac_main.
   tstep.
   { tstep; [tstep|].
     apply (t_box W _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|].
@@ -142,9 +142,9 @@ Qed.
 Definition fa_fact (g : fact) : Prop := g = FLt (pv 0 0) (pv 1 0) ∨ g = FLt (pv 0 1) (pv 1 0).
 Definition Cfa : bcs := BCs [] fa_fact.
 
-Lemma fa_typed : typed wnil ∅ [(Cfa, ids 2)] ∅ [] (∅, None) fa_main TUnit.
+Lemma fa_typed : styped ∅ [(Cfa, ids 2)] [] (∅, None) fa_main TUnit.
 Proof.
-  set (W := wnil). set (Ψ := [(Cfa, ids 2)]).
+  apply styped_wnil. set (W := wnil). set (Ψ := [(Cfa, ids 2)]).
   pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold fa_main.
   assert (∀ x y, fa_fact (FLt x y) → slt W Ψ x y) as Hf.
   { intros x y Hxy. apply (sl_hyp0 W Ψ fa_fact (ids 2) x y); [by left|done| | |].

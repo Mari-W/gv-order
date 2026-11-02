@@ -898,6 +898,18 @@ Proof.
   intros x H. exact (pofs_irrefl x (Hl x x H)).
 Qed.
 
+Lemma wnil_names : w_names wnil = ∅.
+Proof. done. Qed.
+
+(** A derivation in the empty world is a source derivation, because the
+    empty world supports no fact beyond equality and program order
+    (static/Source.v). *)
+Lemma styped_wnil Φ Ψ Δ F e T : typed wnil Φ Ψ ∅ Δ F e T → styped Φ Ψ Δ F e T.
+Proof.
+  intros H.
+  eapply (typed_styped wnil); [apply wnil_strict|apply wnil_names|exact H|done].
+Qed.
+
 Definition c0_eq (n : nat) (C : bcs) : point → point → Prop := λ x y, bcs_open n C (FEq x y).
 Definition c0_lt (n : nat) (C : bcs) : point → point → Prop := λ x y, bcs_open n C (FLt x y).
 
@@ -1054,15 +1066,17 @@ Proof.
     [apply prim_unit|by apply prim_prod|by apply prim_sum|apply prim_box, IHprim].
 Qed.
 
-(** Soundness for source programs. A closed term typed in the empty
-    world under the top-level constraint C₀ over n point variables is
-    deadlock free, when C₀ is acyclic. *)
+(** Soundness for source programs. A closed term of the source
+    judgment under the top-level constraint C₀ over n point variables is
+    deadlock free, when C₀ is acyclic. The judgment reads no world
+    (static/Source.v), and the two worlds of the proof, [wnil] for the
+    facts and [wc0 n C₀] for the run, are internal to it. *)
 Theorem soundness_source n C0 t T :
   c0_acyclic n C0 → prim T →
-  typed wnil ∅ [(C0, ids n)] ∅ [] (∅, None) t T →
+  styped ∅ [(C0, ids n)] [] (∅, None) t T →
   deadlock_free (∅, {[+ t +]}).
 Proof.
-  intros HC HT Ht.
+  intros HC HT Hs. pose proof (styped_typed wnil _ _ _ _ _ _ Hs) as Ht.
   pose proof (wc0_strict n C0 HC) as HS.
   set (σ := plist (c0_consts n)).
   assert (sem_rules (wc0 n C0) (tenv_pinst σ ∅) (lenv_pinst σ [])

@@ -16,11 +16,11 @@ Definition sync_main_ex : expr :=
     (LetU (App ESpawn sync_thunk)
       (LetP (App ERecv (Var 0)) (LetU (Var 1) (App EClos (Var 0))))).
 
-Lemma sync_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) sync_main_ex TUnit.
-Proof. exact (sync_typed W). Qed.
+Lemma sync_typed_fresh : styped ∅ [] [] (∅, None) sync_main_ex TUnit.
+Proof. exact sync_typed. Qed.
 
 Lemma sync_deadlock_free_fresh : deadlock_free (∅, {[+ sync_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
-  apply ptyped_closed; [constructor|]. apply sync_typed_fresh, Wpo_nil_strict.
+  apply ptyped_closed_s; [constructor|apply sync_typed_fresh].
 Qed.

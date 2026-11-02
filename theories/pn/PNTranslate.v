@@ -889,15 +889,22 @@ Qed.
 
 (** ** Deadlock freedom *)
 
-(** A closed program of type unit translates to a thread typed in the
-    empty world under the top-level constraint [Crel] at the anchor of
-    its top-level variable, so it is deadlock free. *)
-Theorem pn_deadlock_free e τ e' :
-  pn_typed [] e PUnit τ e' → deadlock_free (∅, {[+ e' +]}).
+(** A closed program of type unit translates to a thread of the source
+    judgment under the top-level constraint [Crel] at the anchor of its
+    top-level variable (static/Source.v), so it is deadlock free. *)
+Theorem pn_translate_source e τ e' :
+  pn_typed [] e PUnit τ e' → styped ∅ [(Crel, ids 1)] [] (∅, None) e' U.
 Proof.
-  intros H. apply (soundness_source 1 Crel _ U Crel_acyclic); [repeat constructor|].
+  intros H. apply styped_wnil.
   rewrite <-(rename_id e'), (rename_ext e' (λ x, x) (ren_of [])) by done.
   apply (pn_translate [] e PUnit τ e' H [(Crel, ids 1)] (pvar 0) 0 [] [] ∅ (∅, None));
     [apply good_box; by left|constructor|].
   destruct (hiz (pvar 0) 0 τ); [|done]. split; simpl; [set_solver|done].
+Qed.
+
+Theorem pn_deadlock_free e τ e' :
+  pn_typed [] e PUnit τ e' → deadlock_free (∅, {[+ e' +]}).
+Proof.
+  intros H. apply (soundness_source 1 Crel _ U Crel_acyclic);
+    [repeat constructor|by apply (pn_translate_source e τ e')].
 Qed.

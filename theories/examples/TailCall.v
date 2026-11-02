@@ -111,9 +111,10 @@ Proof.
   - intros g [k ->] _. eexists _, _. split; [done|]. unfold lexlt, tcc_rank. simpl. left. lia.
 Qed.
 
-Lemma tc_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) tc_main TUnit.
+Lemma tc_typed : styped ∅ [] [] (∅, None) tc_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold tc_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tc_main.
   tstep.
   { tstep; [apply tcr_typed, HW|apply tcs_typed, HW]. }
   cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sb tcc_C); [apply tcc_ok|constructor|].
@@ -150,5 +151,5 @@ Qed.
 Lemma tc_deadlock_free : deadlock_free (∅, {[+ tc_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply tc_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply tc_typed].
 Qed.

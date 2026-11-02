@@ -169,9 +169,10 @@ Proof.
     change (chv (S n)) with (NSlot (chv n) 0 0). cbn [chv_depth]. rewrite chv_depth_chv. lia.
 Qed.
 
-Lemma ch_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) ch_main TUnit.
+Lemma ch_typed : styped ∅ [] [] (∅, None) ch_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold ch_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ch_main.
   tstep.
   { tstep; [apply sch_typed, HWs|apply rch_typed, HW]. }
   cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sch ch_C); [apply ch_ok|constructor|].
@@ -204,5 +205,5 @@ Qed.
 Lemma ch_deadlock_free : deadlock_free (∅, {[+ ch_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply ch_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply ch_typed].
 Qed.

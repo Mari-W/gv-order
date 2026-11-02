@@ -210,9 +210,10 @@ Proof.
       eexists _, _; (split; [done|]); unfold relv_rank; cbn; lia.
 Qed.
 
-Lemma rel_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) rel_main TUnit.
+Lemma rel_typed : styped ∅ [] [] (∅, None) rel_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold rel_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold rel_main.
   tstep.
   { tstep; [apply prod_typed, HWs|apply relay_typed, HW]. }
   cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Srl relc_C); [apply relc_ok|constructor|].
@@ -290,5 +291,5 @@ Qed.
 Lemma rel_deadlock_free : deadlock_free (∅, {[+ rel_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply rel_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply rel_typed].
 Qed.

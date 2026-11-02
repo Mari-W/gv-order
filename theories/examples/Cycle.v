@@ -25,9 +25,10 @@ Definition cycle_main : expr :=
   let_new_pair (let_new_pair
     (LetU (App ESpawn cycle_thunk) (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
 
-Lemma cycle_typed W : world_wf W → typed W ∅ [] ∅ [] (∅, None) cycle_main TUnit.
+Lemma cycle_typed : styped ∅ [] [] (∅, None) cycle_main TUnit.
 Proof.
-  intros HW. unfold cycle_main.
+  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
+  set (W := Wpo []) in *. unfold cycle_main.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
   fresh_clean.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] []).
@@ -62,5 +63,5 @@ Qed.
 Lemma cycle_deadlock_free : deadlock_free (∅, {[+ cycle_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply cycle_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply cycle_typed].
 Qed.

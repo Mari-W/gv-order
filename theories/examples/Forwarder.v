@@ -343,9 +343,10 @@ Proof.
   - by rewrite open1_comp.
 Qed.
 
-Lemma fw_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) fw_main TUnit.
+Lemma fw_typed : styped ∅ [] [] (∅, None) fw_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold fw_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fw_main.
   tstep.
   { tstep; [apply fcons_typed, HW|]. tstep; [apply fwd_typed, HW|apply fprod_typed, HWs]. }
   cbn. tstep; [tstep|]. cbn.
@@ -424,5 +425,5 @@ Qed.
 Lemma fw_deadlock_free : deadlock_free (∅, {[+ fw_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply fw_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply fw_typed].
 Qed.

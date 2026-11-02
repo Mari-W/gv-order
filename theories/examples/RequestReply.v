@@ -134,9 +134,10 @@ Definition rrf_facts (g : fact) : Prop :=
   ∃ k, g = FLt (pv 1 k) (pv 0 k) ∨ g = FLt (pv 0 k) (pv 1 (S k)).
 Definition rrf_C : bcs := BCs [pvar 0] rrf_facts.
 
-Lemma rr_typed W : world_wf W → typed W ∅ [] ∅ [] (∅, None) rr_main TUnit.
+Lemma rr_typed : styped ∅ [] [] (∅, None) rr_main TUnit.
 Proof.
-  intros HW. unfold rr_main.
+  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
+  set (W := Wpo []) in *. unfold rr_main.
   tstep.
   { tstep; [apply cli_typed, HW|apply srv_typed, HW]. }
   cbn.
@@ -192,5 +193,5 @@ Qed.
 Lemma rr_deadlock_free : deadlock_free (∅, {[+ rr_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply rr_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply rr_typed].
 Qed.

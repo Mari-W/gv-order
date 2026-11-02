@@ -136,9 +136,10 @@ Definition fm_main_ex : expr :=
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
         (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
 
-Lemma fm_main_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) fm_main_ex TUnit.
+Lemma fm_main_typed_fresh : styped ∅ [] [] (∅, None) fm_main_ex TUnit.
 Proof.
-  intros HW. unfold fm_main_ex.
+  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
+  set (W := Wpo []) in *. unfold fm_main_ex.
   tstep.
   { tstep; [tstep|apply fm_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
@@ -192,7 +193,7 @@ Qed.
 Lemma fm_deadlock_free_empty : deadlock_free (∅, {[+ fm_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply fm_main_typed_fresh, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply fm_main_typed_fresh].
 Qed.
 
 (** [fm_main] is the program [fm_main_ex], so it types in the empty
@@ -200,5 +201,5 @@ Qed.
 Lemma fm_deadlock_free : deadlock_free (∅, {[+ fm_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply fm_main_typed_fresh, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply fm_main_typed_fresh].
 Qed.

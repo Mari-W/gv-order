@@ -203,9 +203,10 @@ Definition fb_main_ex : expr :=
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
         (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
 
-Lemma fb_main_typed_fresh W : world_wf W → typed W ∅ [] ∅ [] (∅, None) fb_main_ex TUnit.
+Lemma fb_main_typed_fresh : styped ∅ [] [] (∅, None) fb_main_ex TUnit.
 Proof.
-  intros HW. unfold fb_main_ex.
+  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
+  set (W := Wpo []) in *. unfold fb_main_ex.
   tstep.
   { tstep; [tstep|apply fb_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
@@ -259,7 +260,7 @@ Qed.
 Lemma fb_deadlock_free_empty : deadlock_free (∅, {[+ fb_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply fb_main_typed_fresh, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply fb_main_typed_fresh].
 Qed.
 
 (** [fb_main] is the program [fb_main_ex], so it types in the empty
@@ -267,5 +268,5 @@ Qed.
 Lemma fb_deadlock_free : deadlock_free (∅, {[+ fb_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply fb_main_typed_fresh, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply fb_main_typed_fresh].
 Qed.

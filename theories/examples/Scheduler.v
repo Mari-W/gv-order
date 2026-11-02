@@ -40,9 +40,10 @@ Definition sched_main : expr :=
   let_new_pair (let_new_pair (let_new_pair
     (LetU (App ESpawn ag1_thunk) (LetU (App ESpawn ag2_thunk) ag0)))).
 
-Lemma sched_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) sched_main TUnit.
+Lemma sched_typed : styped ∅ [] [] (∅, None) sched_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold sched_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold sched_main.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sd [] []); [constructor|set_solver|].
   fresh_clean.
   apply (t_new_at W _ _ _ _ _ _ _ Sd (pvar 0) HWs); [eapply skn_inst; [by left|by left|done]|].
@@ -114,5 +115,5 @@ Qed.
 Lemma sched_deadlock_free : deadlock_free (∅, {[+ sched_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply sched_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply sched_typed].
 Qed.

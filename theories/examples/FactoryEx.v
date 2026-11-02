@@ -120,9 +120,10 @@ Definition fx_main : expr :=
     (LetP (Pair (App (App EForce (Var 2)) EUnit) EUnit) (LetU (Var 0)
       (LetU (recvclose (Var 3)) (recvclose (Var 1))))))).
 
-Lemma fx_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) fx_main TUnit.
+Lemma fx_typed : styped ∅ [] [] (∅, None) fx_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold fx_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fx_main.
   (* let (g, f) = ⟨mk, mk⟩ *)
   eapply (tv_letp W HW _ _ _ _ _ _ Tmk0 Tmk1); [reflexivity| |].
   { tstep; [apply mk1_typed, HWs|apply mk0_typed, HWs]. }
@@ -174,7 +175,7 @@ Qed.
 Theorem fx_deadlock_free : deadlock_free (∅, {[+ fx_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply fx_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply fx_typed].
 Qed.
 
 (** ** Why the existential

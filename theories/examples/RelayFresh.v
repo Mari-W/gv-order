@@ -18,11 +18,11 @@ Definition rel_main_ex : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-Lemma rel_typed_fresh W : strict W → typed W ∅ [] ∅ [] (∅, None) rel_main_ex TUnit.
-Proof. exact (rel_typed W). Qed.
+Lemma rel_typed_fresh : styped ∅ [] [] (∅, None) rel_main_ex TUnit.
+Proof. exact rel_typed. Qed.
 
 Lemma rel_deadlock_free_fresh : deadlock_free (∅, {[+ rel_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
-  apply ptyped_closed; [constructor|]. apply rel_typed_fresh, Wpo_nil_strict.
+  apply ptyped_closed_s; [constructor|apply rel_typed_fresh].
 Qed.

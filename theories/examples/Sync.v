@@ -25,9 +25,10 @@ Definition sync_main : expr :=
     (LetU (App ESpawn sync_thunk)
       (LetP (App ERecv (Var 0)) (LetU (Var 1) (App EClos (Var 0))))).
 
-Lemma sync_typed W : world_wf W → typed W ∅ [] ∅ [] (∅, None) sync_main TUnit.
+Lemma sync_typed : styped ∅ [] [] (∅, None) sync_main TUnit.
 Proof.
-  intros HW. unfold sync_main, let_new_pair.
+  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
+  set (W := Wpo []) in *. unfold sync_main, let_new_pair.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Ssync [] []); [constructor|set_solver|].
   fresh_clean.
   tstep.
@@ -56,5 +57,5 @@ Qed.
 Lemma sync_deadlock_free : deadlock_free (∅, {[+ sync_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply sync_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply sync_typed].
 Qed.

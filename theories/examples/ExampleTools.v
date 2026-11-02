@@ -472,6 +472,12 @@ Proof.
   unfold tenv_of. rewrite fmap_empty, (left_id_L ∅ (∪)). exact Ht.
 Qed.
 
+(** A closed thread of the source judgment is a closed process in
+    every world. *)
+Lemma ptyped_closed_s W t T :
+  prim T → styped ∅ [] [] (∅, None) t T → ptyped W ∅ (∅, {[+ t +]}) T.
+Proof. intros HT Ht. apply ptyped_closed; [done|by apply styped_typed]. Qed.
+
 (** Membership in a concrete frame: one goal per point. *)
 Ltac mem_cases H :=
   cbn in H; rewrite ?elem_of_union, ?elem_of_singleton in H;
@@ -501,6 +507,24 @@ Proof.
   - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
   - intros x. apply prank_shift. lia.
 Qed.
+
+(** The empty world of the examples supports no name. *)
+Lemma Wpo_nil_names : w_names (Wpo []) = ∅.
+Proof. done. Qed.
+
+Lemma Wpo_nil_strict' : strict (Wpo []).
+Proof. apply Wpo_strict. Qed.
+
+(** A derivation in the empty world is a source derivation
+    (static/Source.v). The examples build their derivation with the
+    rules of [typed] in the world [Wpo []] and read it back here. *)
+Lemma styped_Wpo Φ Ψ Δ F e T : typed (Wpo []) Φ Ψ ∅ Δ F e T → styped Φ Ψ Δ F e T.
+Proof.
+  intros H.
+  eapply (typed_styped (Wpo []));
+    [apply (proj1 Wpo_nil_strict')|apply Wpo_nil_names|exact H|done].
+Qed.
+
 
 (** The world with program order and the facts [L] on the constants [cs]. *)
 Definition Wfacts (cs : list nat) (L : list (point * point)) : world :=

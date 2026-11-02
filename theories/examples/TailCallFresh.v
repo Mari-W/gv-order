@@ -17,11 +17,11 @@ Definition tc_main_ex : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 
-Lemma tc_typed_fresh W : strict W → typed W ∅ [] ∅ [] (∅, None) tc_main_ex TUnit.
-Proof. exact (tc_typed W). Qed.
+Lemma tc_typed_fresh : styped ∅ [] [] (∅, None) tc_main_ex TUnit.
+Proof. exact tc_typed. Qed.
 
 Lemma tc_deadlock_free_fresh : deadlock_free (∅, {[+ tc_main_ex +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
-  apply ptyped_closed; [constructor|]. apply tc_typed_fresh, Wpo_nil_strict.
+  apply ptyped_closed_s; [constructor|apply tc_typed_fresh].
 Qed.

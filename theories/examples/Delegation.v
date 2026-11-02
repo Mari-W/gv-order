@@ -64,9 +64,10 @@ Proof.
   - intros g [-> | ->] _; eexists _, _; (split; [done|]); cbn; lia.
 Qed.
 
-Lemma deleg_typed W : strict W → typed W ∅ [] ∅ [] (∅, None) deleg_main TUnit.
+Lemma deleg_typed : styped ∅ [] [] (∅, None) deleg_main TUnit.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold deleg_main.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold deleg_main.
   apply (t_new_open W _ _ ∅ _ _ _ _ Sdel dl_C); [apply dl_ok|constructor|].
   fresh_clean.
   set (Ψ := [(dl_C, [pvar 0])]).
@@ -120,5 +121,5 @@ Qed.
 Lemma deleg_deadlock_free : deadlock_free (∅, {[+ deleg_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply deleg_typed, Wpo_strict.
+  apply ptyped_closed_s; [constructor|apply deleg_typed].
 Qed.
