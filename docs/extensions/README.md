@@ -31,6 +31,13 @@ length. They exercise the infinite constraints of 65 and need C.
 A is optional for this work. It types examples automatically and fixes which
 constraint fragments a tool can decide.
 
+## Programs from the literature
+
+[literature-examples.md](literature-examples.md) records the programs of the
+deadlock-freedom literature that now have a derivation in this system, written as
+their papers write them, with the page of each source, the file and theorem, the
+simplifications our calculus forces, and the rejections turned into theorems.
+
 ## Smaller extensions
 
 These are open as well. None has an outline yet.
