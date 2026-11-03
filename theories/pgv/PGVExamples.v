@@ -117,7 +117,7 @@ Section rules.
     pgv_typed ok Γ (prio_max p q) (LetP M N) U.
   Proof. intros Hs HM HN Hp. eapply pt_letp; [by apply plp_split|done..]. Qed.
 
-  (** new at the session type S. *)
+  (** PGV's new at the session type S. *)
   Lemma pv_new Γ S :
     pnone Γ = true →
     pgv_typed ok Γ PBot (App (Konst KNew) EUnit) (PProd (PSess S) (PSess (pdual S))).
@@ -146,7 +146,7 @@ Ltac pstep :=
   | |- _ = _ => side
   end.
 
-(** new at S, then the body. *)
+(** PGV's new at S, then the body. *)
 Ltac pnew S := eapply pv_letp; [reflexivity|apply (pv_new _ _ S); reflexivity| |side]; cbn [pdual].
 
 (** ** Example 2.1 (p. 4)

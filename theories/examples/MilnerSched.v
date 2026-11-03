@@ -16,14 +16,15 @@
     closed by c_i and d_{(i+1) mod 3} being the two ends of one channel,
     so A_0 reads on d_0 what A_2 wrote on c_2.
 
-    Here:
+    Written here as
 
-      A_0 = let () = close (send ⟨∗, c_0⟩) in                      (main)
-            let () = recvclose d_0 in close (send ⟨∗, a_0⟩)
-      A_i = let () = recvclose d_i in                              (spawned)
-            let () = close (send ⟨∗, a_i⟩) in close (send ⟨∗, c_i⟩)
+      A_0 = close (send ⟨∗, c_0⟩);                                 (main)
+            recvclose d_0; close (send ⟨∗, a_0⟩)
+      A_i = recvclose d_i;                                         (spawned)
+            close (send ⟨∗, a_i⟩); close (send ⟨∗, c_i⟩)
       P_i = recvclose b_i                                          (spawned)
-      recvclose r = let (x, r) = recv r in let () = x in close r
+      recvclose r = let (v : ∗, r′ : Close@(x+1)) = recv r in v; close r′
+                                                                   r at x
 
       c_i, a_i : (!∗.Close)@…        d_i, b_i : (?∗.Close)@…
 
@@ -35,10 +36,10 @@
     communication. The program runs one round, as theirs does.
 
     Points. The six channels sit at the points of one root. The first
-    [new] creates the ring channel of A_0 at a fresh ι with the empty
-    creation constraint, and every later channel is created by
-    [t_new_at] at ι+2k, a point the hypothesis of the first [new] makes
-    known. Reading the two ends of a channel as one point:
+    new writes new ι { } ∗ for the ring channel of A_0, and every later
+    channel comes from new κ { κ ≡ ι+2k }, a point the hypothesis of the
+    first new makes known. Reading the two ends of a channel as one
+    point,
 
       c_0, d_1 : ι      a_1, b_1 : ι+2    c_1, d_2 : ι+4
       a_2, b_2 : ι+6    c_2, d_0 : ι+8    a_0, b_0 : ι+10
@@ -92,8 +93,8 @@ Definition ms_main : expr :=
           (LetU (App ESpawn ms_col1)
             (LetU (App ESpawn ms_col2) ms_ag0)))))))))).
 
-(** A send and a close on one channel at (0, j), inside a λ whose upper
-    point is (0, u). *)
+(** A send and a close on one channel at ι+j, inside a λ whose upper
+    point is ι+u. *)
 Ltac ms_send HW j u :=
   unfold sendclose; tstep;
   [ tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 j)); cbn; set_solver|];
@@ -112,7 +113,7 @@ Lemma ms_typed : styped ∅ [] [] (∅, None) ms_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
   pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ms_main.
-  (* the ring channel of A_0 at a fresh ι, then five channels at ι+2k *)
+  (* new ι { } for the ring channel of A_0, then new κ { κ ≡ ι+2k } five times *)
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sd [] []); [constructor|set_solver|].
   fresh_clean.
   apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 2) HWs);

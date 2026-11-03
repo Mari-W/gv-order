@@ -1,24 +1,26 @@
 (** * Dropping a fresh conservative extension fails (sharp edges 54)
 
-    The claim: if W′ places a fresh constant μ over W and adds nothing
-    between old points, then V and E at W′ give V and E at W for
+    The claim is that if W′ places a fresh constant μ over W and adds
+    nothing between old points, then V and E at W′ give V and E at W for
     environments, types and frames without μ. It fails at V-Const. The
     witness T₀ of a constant is existential, and force's instance xs
     may use μ.
 
     b = 0 and μ = 1. W knows b and has only program order. W′ adds the
-    alias (μ,1) ≡ (b,0) and places μ ([Wm_fresh]). force is in V^{W′}
-    at □(∀ι. Close@(ι+1)) ⊸ Close@(b,0) with xs = [(μ,0)], and in no
-    V^W at that type, because no point x of W has x+1 ≡_W (b,0). This is
-    why E-Abs and E-Exp use a frame variable φ instead of a fresh point
-    (static/FactTheory.v). *)
+    alias μ+1 ≡ b and places μ ([Wm_fresh]). force is in V^{W′} at
+
+      □(∀ι. { }. ∗ ⊸^⊥_⊤ Close@(ι+1)) ⊸^⊥_⊤ Close@b
+
+    with xs = [μ], and in no V^W at that type, because no point x of W
+    has x+1 ≡_W b. This is why E-Abs and E-Exp use a frame variable φ
+    instead of a fresh point (static/FactTheory.v). *)
 From stdpp Require Import base gmap.
 From LRGV Require Import relation.LogicalRelation.
 
 Definition b0 : nat := 0.
 Definition mu : nat := 1.
 
-(* canonical representative: b-points move onto the μ line, one later *)
+(* canonical representative, b-points move onto the μ line one later *)
 Fixpoint cnm (p : pname) (o : nat) : point :=
   match p with
   | NConst a => if decide (a = b0) then Pt (NConst mu) (S o) else Pt (NConst a) o
@@ -149,7 +151,7 @@ Proof.
       { destruct (cnm_inj p 0 p' 0) as [? _]; [set_solver|set_solver| |done].
         destruct (cnm p 0) eqn:E1, (cnm p' 0) eqn:E2.
         rewrite (cnm_name p o 0), (cnm_name p' o' 0), E1, E2 in Hn. simpl in Hn. subst.
-        (* same name; offsets at 0 agree because they depend on the name only *)
+        (* same name, and offsets at 0 agree because they depend on the name only *)
         pose proof (cnm_off p 0) as H1. pose proof (cnm_off p' 0) as H2.
         rewrite E1 in H1. rewrite E2 in H2. simpl in *.
         destruct p, p'; simpl in *; repeat case_decide; simplify_eq/=; try done; set_solver. }

@@ -28,8 +28,8 @@ three rejection arguments that were comments into theorems.
 
 `examples/LitTools.v` holds what the four literature files share. Program order
 over a gap (`slt_po_lt`), the gate tactics, the chain of carried roots
-`slotv` with the two strict orders `dlt` and `ult` on depth and offset, the two
-creation-constraint wrappers `cc_ok_dlt` and `cc_ok_ult`, and `tv_case`, E-Case
+`slotv` with the strict order `ult` on depth and offset, its
+creation-constraint wrapper `cc_ok_ult`, and `tv_case`, E-Case
 for a linear scrutinee with Θ empty.
 
 ## Milner's cyclic scheduler
@@ -97,9 +97,10 @@ the recursive `force` reads C again one level deeper.
 
 Neither constraint has a rank in ℕ. The depth grows without bound and the order
 runs along it, in one direction for the servers and in the other for the
-producer. `dlt` and `ult` of `examples/LitTools.v` read a point lexicographically
-as its depth and its offset, once with the depth reversed and once not, and both
-are irreflexive and transitive, which is all `cc_ok_inner` asks.
+producer. A rank in ℤ covers both. `fw_rank` of `examples/KobForwarder.v` and
+`fc_rank` of `examples/FactServer.v` are −2·depth + offset, and `ult` of
+`examples/LitTools.v` reads depth and offset unreversed for the producer. Each is
+irreflexive and transitive, which is all `cc_ok_inner` asks.
 
 An alternative for the two servers is a creation constraint {κ + k ≺ ι} with the
 box variable ι as an outer point. The chain of carried roots keeps every fact

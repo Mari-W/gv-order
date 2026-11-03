@@ -1,6 +1,6 @@
 (** * Padovani's stream: typable
 
-    Example (4) of Padovani (padovani2014deadlock p. 2):
+    Example (4) of Padovani (padovani2014deadlock p. 2) reads
 
       *stream?(x,y^h).(ν a^k)(y!<x,a> | stream!<x+1,a>)
 
@@ -11,29 +11,37 @@
     and that polymorphism over the replicated channel stream is what
     types the program (padovani2014deadlock p. 2).
 
-    Here:
+    Written here as
 
-      Sst   = µα. ?⟨κ⟩(∗ ⊗ α@κ).Close
-      C     = {ι.0ⁿ + 1 ≺ ι.0ⁿ⁺¹  ∣  n ∈ ℕ}                  (slots from 0)
+      Sst    = µα. ?(∗ ⊗ α@self.0).Close
+      C      = {ι.0ⁿ + 1 ≺ ι.0ⁿ⁺¹  ∣  n ∈ ℕ}
+
       stprod : □(∀ι. C. ∗ ⊸^⊥_⊤ (S̄st@ι ⊸^{ι+1}_⊤ ∗))
-      stprod = !(g = λc. let (e, e′) = new ∗ in
-                        let (c, u) = ⟨send ⟨⟨∗, e⟩, c⟩, ∗⟩ in let () = u in
-                        let () = close c in
-                        spawn (λw. let () = w in (force g) e′))
+      stprod = ! g ∀ι { C }. λ^{ι+1}_⊤ c : S̄st@ι.
+                   let (e : Sst@ι.0, e′ : S̄st@ι.0) = new κ { κ ≡ ι.0 } ∗ in
+                   let c₁ : Close@(ι+1) = send ⟨⟨∗, e⟩, c⟩ in
+                   close c₁;
+                   spawn (λ^{ι.0+1}_{ι.0} ∗. (force g [ι.0]) e′)
+
       stcons : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sst@ι ⊸^{ι+1}_⊤ ∗))
-      stcons = !(h = λc. let (p, c) = recv c in let (v, d) = p in let () = v in
-                        let () = close c in
-                        spawn (λw. let () = w in (force h) d))
-      st_main = let (q, r) = ⟨stcons, stprod⟩ in let (c, c′) = new ∗ in
-                let () = spawn (λu. let () = u in (force r) c′) in (force q) c
+      stcons = ! h ∀ι { C }. λ^{ι+1}_⊤ c : Sst@ι.
+                   let (p : ∗ ⊗ Sst@ι.0, c₁ : Close@(ι+1)) = recv c in
+                   let (v : ∗, d : Sst@ι.0) = p in
+                   v;
+                   close c₁;
+                   spawn (λ^{ι.0+1}_{ι.0} ∗. (force h [ι.0]) d)
+
+      st_main = let (c : Sst@ι, c′ : S̄st@ι) = new ι { C } ∗ in
+                spawn (λ^{ι+1}_{ι} ∗. (force stprod [ι]) c′);
+                (force stcons [ι]) c
 
     Simplifications. The calculus has no replicated channels, so the
     replicated input *stream?(x,y).Q is the box stprod and the output
     stream!<x+1,a> is a spawned call. It has no integers, so x is ∗ and
-    the successor x+1 is ∗ again, which is why the payload is ∗ ⊗ α@κ
-    and not a number and a channel. Padovani's outputs do not block, so
-    his (4) runs with no consumer; ours is synchronous, so stcons reads
-    the stream and closes each round. One round of the session is one
+    the successor x+1 is ∗ again, which is why the payload is
+    ∗ ⊗ α@self.0 and not a number and a channel. Padovani's outputs do
+    not block, so his (4) runs with no consumer. Ours is synchronous, so
+    stcons reads the stream and closes each round. One round of the session is one
     message and a close, which is where Padovani's a takes over from y.
 
     Points. The fresh continuation of a round sits at ι.0, the first
@@ -46,7 +54,9 @@
 
     examples/ReceivedChain.v is the same shape with a bare channel as
     the payload, and the file is ours. This one is Padovani's program,
-    with his pair. *)
+    with his pair.
+
+      ∅; · ⊢^∅ st_main : ∗   so   thread st_main is deadlock free *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.LitTools.

@@ -14,13 +14,16 @@
     constraint, holds a channel c at ι that sends one channel, a channel
     e at ι′.0, and a channel d at ι′+2.
 
-      Scg = !⟨κ⟩(Close@κ).Close
-      C   = {ι ≡ ι′,  ι′ ≺ ι′.0}                             (slots from 0)
+      Scg = !(Close@self.0).Close
+      C   = {ι ≡ ι′,  ι′ ≺ ι′.0}
       cg : □(∀ι ι′. C. ∗ ⊸^⊥_⊤
                ((Scg@ι ⊗ Close@ι′.0) ⊗ Close@(ι′+2) ⊸^{ι′+2}_{ι} ∗))
-      cg = !(f = λp. let (q, d) = p in let (c, e) = q in
-                    let (c, w) = ⟨send ⟨e, c⟩, ∗⟩ in let () = w in
-                    let () = close c in close d)
+      cg = ! f ∀ι ι′ { C }. λ^{ι′+2}_{ι} p.
+               let (q, d) = p in
+               let (c, e) = q in
+               let c₁ = send ⟨e, c⟩ in
+               close c₁;
+               close d
 
     The two steps that need a congruence:
 
@@ -29,7 +32,7 @@
                          ι′.0 ≡ ι.0, which is [se_slot] of ι ≡ ι′.
                          send's own premise ι ≺ ι.0 reads ι ≡ ι′ ≺ ι′.0
                          and the same alias of the carried roots.
-      close c at ι+1     the frame holds d at ι′+2, so E-App asks
+      close c₁ at ι+1    the frame holds d at ι′+2, so E-App asks
                          ι+1 ≺ ι′+2. The hypothesis states no fact at
                          ι+1. [se_shift] of ι ≡ ι′ gives ι+1 ≡ ι′+1, and
                          program order gives ι′+1 ≺ ι′+2.
@@ -37,16 +40,17 @@
     The caller instantiates both variables by one point γ, where the
     alias is reflexivity.
 
-      cg_main = let (g, w) = ⟨cg, ∗⟩ in let () = w in
-                let (c, c′) = new ∗ in            C_c = {γ ≺ γ.0, γ.0 ≺ γ+1}
-                let (e, e′) = new ∗ in            at γ.0
-                let (d, d′) = new ∗ in            at γ+2
-                let () = spawn (λu. let () = u in
-                           let (x, c′) = recv c′ in
-                           let () = close x in close c′) in
-                let () = spawn (λu. let () = u in close e′) in
-                let () = spawn (λu. let () = u in close d′) in
-                (force g) ⟨⟨c, e⟩, d⟩
+      cg_main = let g = cg in
+                let (c, c′) = new γ { γ ≺ γ.0, γ.0 ≺ γ+1 } ∗ in
+                let (e, e′) = new κ { κ ≡ γ.0 } ∗ in
+                let (d, d′) = new κ′ { κ′ ≡ γ+2 } ∗ in
+                spawn (λ^{γ+1}_{γ} ∗.
+                         let (x, c′₁) = recv c′ in
+                         close x;
+                         close c′₁);
+                spawn (λ^{γ.0}_{γ.0} ∗. close e′);
+                spawn (λ^{γ+2}_{γ+2} ∗. close d′);
+                (force g [γ, γ]) ⟨⟨c, e⟩, d⟩
 
     What the congruences are worth. Neither rule is forced by any
     program. A derivation that uses [se_slot] at x.j ≡ y.j can state
@@ -66,7 +70,7 @@ From LRGV Require Export examples.LitTools.
 
 Set Default Proof Using "All".
 
-(** !⟨κ⟩(Close@κ).Close, one channel sent and then a close. *)
+(** !(Close@self.0).Close, one channel sent and then a close. *)
 Definition Scg : sty := SSnd (TSess SEnd (pvar 0)) SEnd.
 
 Abbreviation cgs a := (Pt (NSlot (NVar a) 0 0) 0).
@@ -165,7 +169,7 @@ Proof.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hd; by left|].
       exists (pv 1 2). split; [done|]. right. apply Hd. by left. }
   cbn. tstep; [tstep|]. cbn. tstep.
-  { (* close c at ι+1 against d at ι′+2 *)
+  { (* close c₁ at ι+1 against d at ι′+2 *)
     tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hcd; by left|].
     exists (pv 1 2). split; [done|]. right. apply Hcd. by left. }

@@ -21,7 +21,7 @@ Set Default Proof Using "All".
     frames and in the hypotheses Φ, never in a type, an environment or
     the world, so it is never a point that [new] or force could alias.
     x ≺ φ holds when x ≼ u in W for the hypothesis u ≺ φ. E-Exp types
-    the body with the ιs as point variables (sharp edges 57). *)
+    the body with the ῑ as point variables (sharp edges 57). *)
 
 (** The second component of a frame (sharp edges 103): a frame
     variable φ ([FVar φ]), or the ⊥ flag with or without a frame
@@ -53,7 +53,7 @@ Definition sf_unionb (F : sframe) (X : gset point) (b : bool) : sframe :=
 
 (** Hypotheses (sharp edges 58, 61, 65). Inside a box body the
     constraint of every enclosing box is a hypothesis (C, xs): every
-    fact of C[xs/ιs] holds. The body's own hypothesis has the ιs as
+    fact of C[x̄/ῑ] holds. The body's own hypothesis has the ῑ as
     instance. The points of an instance are known, so new may create a
     channel at a point with the root of an instance point (sharp edges
     59). *)
@@ -74,7 +74,7 @@ Definition hyps_inst (σ : nat → point) (Ψ : hyps) : hyps :=
 Definition hyps_hold (eq lt : point → point → Prop) (pk : point → Prop) (Ψ : hyps) : Prop :=
   ∀ C xs, (C, xs) ∈ Ψ → bcs_hold eq lt C xs ∧ Forall pk xs.
 
-(** The ιs of a box body, as an instance. *)
+(** The ῑ of a box body, as an instance. *)
 Definition ids (m : nat) : list point := pvar <$> List.seq 0 m.
 
 (** ** One fact theory (sharp edges 64, 65)
@@ -246,7 +246,7 @@ Qed.
     [steq W Ψ T U] is ≈ with the points of T outside session types and
     boxes compared by Γ ⊢ ≡ ([seqs W Ψ]). A box and an existential
     are compared by ≈ with their points on the nose, because their
-    points live under the binder of their ιs. E-Conv reads it. [teq_steq] makes ≈ a special case,
+    points live under the binder of their ῑ. E-Conv reads it. [teq_steq] makes ≈ a special case,
     and [steq_teqW] carries it into ≈_W₁ of a world where the
     hypotheses hold. *)
 Fixpoint steq (W : world) (Ψ : hyps) (T U : ty) : Prop :=

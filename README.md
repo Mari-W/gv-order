@@ -90,7 +90,7 @@ has no axioms and no admitted proofs.
 - `FreshBetween.v`: a box over ι ≺ κ that creates a channel between them with E-NewFresh (`fb_between_underivable`, `fb_deadlock_free_empty`).
 - `FreshMany.v`: the fresh channel acts three times between ι and κ, under the infinite constraint {ι ≺ δ} ∪ {δ+k ≺ κ} (`fm_deadlock_free`).
 - `FreshTools.v` and `SyncFresh.v`, `CycleFresh.v`, `SchedulerFresh.v`, `RequestReplyFresh.v`, `TailCallFresh.v`, `RelayFresh.v`: the closed examples retyped with fresh points in smaller worlds, as copies `*_main_ex` that bind each fresh channel by the encoded let of new (`*_deadlock_free_fresh`).
-- `LitTools.v`: the shared tools of the examples taken from the literature. Program order over a gap, the gate tactics, the chain of carried roots `slotv` with the orders `dlt` and `ult` and their creation-constraint wrappers, and `tv_case`.
+- `LitTools.v`: the shared tools of the examples taken from the literature. Program order over a gap, the gate tactics, the chain of carried roots `slotv` with the ascending order `ult` and its creation-constraint wrapper `cc_ok_ult`, and `tv_case`.
 - `MilnerSched.v`: Milner's cyclic scheduler of Dardha and Gay, Example 1 in full with k = 3 agents and their collectors, every channel at a point of one root (`ms_deadlock_free`).
 - `KobForwarder.v`: Kobayashi's recursive forwarder server, Example 2, as a recursive box whose fresh reply channel sits at the first carried root of the channel it answers on (`fw_deadlock_free_kob`).
 - `FactServer.v`: the factorial server of Kobayashi and of Padovani, the same shape with the branch on the received value (`fc_deadlock_free`).

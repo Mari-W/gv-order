@@ -1,22 +1,35 @@
 (** * tail call with a ceiling: typable, sequential (SHARP-EDGES 65)
 
-      C = {ι+k ≺ ζ ∣ k ∈ ℕ}
+      Sb  = µα. !∗.α
+      C   = {ι+k ≺ ζ ∣ k ∈ ℕ}            the box constraint
+      C₀  = {ι+k ≺ ι.0 ∣ k ∈ ℕ}          the creation constraint of tc_main
+
       snd : □(∀ι ζ. C. ∗ ⊸^⊥_⊤ (Sb@ι ⊸^ζ_⊤ ∗))
-      snd = !(f = λc. (force f) (send ⟨∗, c⟩))
+      snd = ! f ∀ι ζ { C }. λ^ζ_⊤ c : Sb@ι.
+                (force f [ι+1, ζ]) (send ⟨∗, c⟩)
+
       rcv : □(∀ι ζ. C. ∗ ⊸^⊥_⊤ (S̄b@ι ⊸^ζ_⊤ ∗))
-      rcv = !(g = λc. let (x, c) = recv c in let () = x in (force g) c)
-      tc_main = let (s, r) = ⟨snd, rcv⟩ in let (c, c′) = new ∗ in
-                let () = spawn (λu. let () = u in (force r) c′) in (force s) c
+      rcv = ! g ∀ι ζ { C }. λ^ζ_⊤ c : S̄b@ι.
+                let (x : ∗, c₁ : S̄b@(ι+1)) = recv c in
+                x;
+                (force g [ι+1, ζ]) c₁
+
+      tc_main = let (c : Sb@ι, c′ : S̄b@ι) = new ι { C₀ } ∗ in
+                spawn (λ^{ι.0}_{ι} ∗. (force rcv [ι, ι.0]) c′);
+                (force snd [ι, ι.0]) c
 
     Both recursions are tail calls, no spawn. The body of each λ runs
-    under the frame variable μ with ζ ≺ μ. The send and the receive
-    block at ι and ask ι ≺ μ, which is ι ≺ ζ ≺ μ. The tail call at
-    (ι+1, ζ) has upper point ζ and asks ζ ≺ μ, the frame hypothesis.
-    Its force asks C[ι+1, ζ] ⊆ C ([tc_sub]).
+    under the frame variable φ with ζ ≺ φ. The send and the receive
+    block at ι and ask ι ≺ φ, which is ι ≺ ζ ≺ φ. The tail call at
+    [ι+1, ζ] has upper point ζ and asks ζ ≺ φ, the frame hypothesis.
+    Its force asks C[ι+1, ζ / ι, ζ] ⊆ C ([tc_sub]).
 
-    In the empty world main creates c with {ι+k ≺ ι[0] ∣ k ∈ ℕ} and
-    forces at (ι, ι[0]). The ceiling is the carried point ι[0], which no
-    channel occupies (sharp edges 105). *)
+    tc_main creates c by new ι { C₀ } and forces both boxes at [ι, ι.0].
+    The ceiling is the carried root ι.0, which no channel occupies.
+
+      ∅; · ⊢^∅ tc_main : ∗   so   thread tc_main is deadlock free
+
+    (sharp edges 105) *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -87,11 +100,11 @@ Proof.
     exists (pv 1 0). split; [done|]. apply sle_refl, HW.
 Qed.
 
-(** main creates c with the creation constraint {ι+k ≺ ζ ∣ k ∈ ℕ}, where
-    the ceiling ζ is the carried point ι[0]. Sb carries no channel, so
-    ζ is no channel point. It is a point of ι, known through the
-    hypothesis of new. Every fact stays inside ι, and the pair rank
-    (0, k) for ι+k and (1, o) for ζ+o orders them (sharp edges 105). *)
+(** tc_main creates c by new ι { ι+k ≺ ζ ∣ k ∈ ℕ }, where the ceiling ζ
+    is the carried root ι.0. Sb carries no channel, so ζ is no channel
+    point. It is a point of ι, known through the hypothesis of new.
+    Every fact stays inside ι, and the pair rank (0, k) for ι+k and
+    (1, o) for ζ+o orders them (sharp edges 105). *)
 Abbreviation tcz := (Pt (NSlot (NVar 0) 0 0) 0).
 
 Definition tcc_P (g : fact) : Prop := ∃ k, g = FLt (pv 0 k) tcz.

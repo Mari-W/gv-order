@@ -1,17 +1,18 @@
 (** * cycle: typable
 
-    cycle = let (c, c′) = new ∗ in let (d, d′) = new ∗ in
-            let () = spawn (λu. let () = u in let () = close c′ in close d′) in
-            let () = close c in close d
+    cycle = let (c, c′) = new γ { } ∗ in
+            let (d, d′) = new ε { γ ≺ ε } ∗ in
+            spawn (λ^ε_γ ∗. close c′; close d′);
+            close c;
+            close d
 
-    c, c′ : Close@(a,0) and d, d′ : Close@(b,0). Both threads close c
-    while they hold d, so both need (a,0) ≺ (b,0).
+    c, c′ : Close@γ and d, d′ : Close@ε. Both threads close c while they
+    hold d, so both need γ ≺ ε.
     The paper's P-Connect over {c, d} is here the closed program that
     creates both channels.
 
     The program types in the empty world. c is created with no fact and
-    d with the creation constraint γ ≺ ε, where γ and ε are the points of
-    c and d (sharp edges 105). *)
+    d with the creation constraint γ ≺ ε (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.

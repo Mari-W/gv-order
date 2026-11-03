@@ -2,15 +2,15 @@
 
     [sync_main] of Sync.v, its channel created by E-NewFresh with no
     facts. The world loses its one constant and becomes empty. The
-    channel is bound by the encoded let of new, so the program is the
-    copy [sync_main_ex] (sharp edges 99, 103). *)
+    channel is bound by the encoded let of new ι { } ∗, so the program
+    is the copy [sync_main_ex] (sharp edges 99, 103). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.FreshTools examples.Sync.
 
 Set Default Proof Using "All".
 
-(** [sync_main] with c bound by the encoded let of new. *)
+(** [sync_main] with c bound by the encoded let of new ι { } ∗. *)
 Definition sync_main_ex : expr :=
   let_new_pair
     (LetU (App ESpawn sync_thunk)

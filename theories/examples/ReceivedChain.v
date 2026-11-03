@@ -1,28 +1,41 @@
 (** * received chain: typable, recursion on a received channel (SHARP-EDGES 65)
 
-      Sch = μX. ?(∃κ. X@κ).Close
-      C = {ι[0]ⁿ + 1 ≺ ι[0]ⁿ⁺¹ ∣ n ∈ ℕ}      ι[0]ⁿ = ι[0]…[0] (n times, slots from 0)
+      Sch = µα. ?(α@self.0).Close
+      C   = {ι.0ⁿ + 1 ≺ ι.0ⁿ⁺¹ ∣ n ∈ ℕ}        ι.0ⁿ = ι.0.0…0, n times
+
       rch : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sch@ι ⊸^{ι+1}_⊤ ∗))
-      rch = !(f = λc. let (d, c) = recv c in let () = close c in
-                     spawn (λw. let () = w in (force f) d))
+      rch = ! f ∀ι { C }. λ^{ι+1}_⊤ c : Sch@ι.
+                let (d : Sch@ι.0, c₁ : Close@(ι+1)) = recv c in
+                close c₁;
+                spawn (λ^{ι.0+1}_{ι.0} ∗. (force f [ι.0]) d)
+
       sch : □(∀ι. C. ∗ ⊸^⊥_⊤ (S̄ch@ι ⊸^{ι+1}_⊤ ∗))
-      sch = !(g = λc. let (e, e′) = new ∗ in let (c, u) = ⟨send ⟨e, c⟩, ∗⟩ in let () = u in
-                     let () = close c in spawn (λw. let () = w in (force g) e′))
-      ch_main = let (r, s) = ⟨rch, sch⟩ in let (c, c′) = new ∗ in
-                let () = spawn (λu. let () = u in (force s) c′) in (force r) c
+      sch = ! g ∀ι { C }. λ^{ι+1}_⊤ c : S̄ch@ι.
+                let (e : Sch@ι.0, e′ : S̄ch@ι.0) = new κ { κ ≡ ι.0 } ∗ in
+                let c₁ : Close@(ι+1) = send ⟨e, c⟩ in
+                close c₁;
+                spawn (λ^{ι.0+1}_{ι.0} ∗. (force g [ι.0]) e′)
 
-    The receiver closes c at ι+1 while the thunk holds d at ι[0], the
-    fact ι+1 ≺ ι[0] of C at n = 0. The call forces f at ι[0], and
-    C[ι[0]/ι] is C without its first fact ([ch_sub]). The sender creates
-    e at ι[0] with new, sends it at ι while it holds e′ at ι[0], which
-    asks ι ≺ ι[0], derived from ι ≺ ι+1 ≺ ι[0]. The upper point ι+1 of the
-    λ covers both blocking points. A tail call would need a ceiling, as
-    in the tail-call example.
+      ch_main = let (c : Sch@ι, c′ : S̄ch@ι) = new ι { C } ∗ in
+                spawn (λ^{ι+1}_{ι} ∗. (force sch [ι]) c′);
+                (force rch [ι]) c
 
-    In the empty world main creates c with the box constraint itself as
-    its creation constraint and forces both boxes at its point. Every
-    fact stays inside ι, ordered by the rank 2·depth + offset (sharp
-    edges 105). *)
+    The receiver closes c at ι+1 while the thunk holds d at ι.0, the
+    fact ι+1 ≺ ι.0 of C at n = 0. The call forces f at ι.0, and
+    C[ι.0/ι] is C without its first fact ([ch_sub]). The sender creates
+    e at ι.0 by new κ { κ ≡ ι.0 }, sends it at ι while it holds e′ at
+    ι.0, which asks ι ≺ ι.0, derived from ι ≺ ι+1 ≺ ι.0. The upper point
+    ι+1 of the λ covers both blocking points. A tail call would need a
+    ceiling, as in the tail-call example.
+
+    ch_main creates c with the box constraint itself as its creation
+    constraint and forces both boxes at its point. Every fact stays
+    inside ι, ordered by the rank 2·depth + offset.
+
+      ∅; · ⊢^∅ ch_main : ∗   so   thread ch_main is deadlock free
+
+    docs/examples/recursion-blackboard.md writes the same program out
+    with every premise (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -141,9 +154,9 @@ Proof.
     exists (pt_shift 1 chs). split; [done|]. apply sle_refl, HW.
 Qed.
 
-(** main creates c with the box constraint itself as its creation
-    constraint. Every fact stays inside ι, ordered by the rank
-    2·depth + offset (sharp edges 105). *)
+(** ch_main creates c by new ι { C }, the box constraint itself. Every
+    fact stays inside ι, ordered by the rank 2·depth + offset (sharp
+    edges 105). *)
 Fixpoint chv_depth (p : pname) : option nat :=
   match p with
   | NVar 0 => Some 0

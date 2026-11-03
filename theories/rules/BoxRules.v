@@ -10,8 +10,8 @@ Set Default Proof Using "All".
 
 (** ** Applying force
 
-    force : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[xs/ιs]}_⊤ T[xs/ιs], at an instance xs
-    with C[xs/ιs] in W (sharp edges 58). Its upper point is the box's,
+    force : □(∀ῑ. C. ∗ ⊸^u_⊤ T) ⊸^{u[x̄/ῑ]}_⊤ T[x̄/ῑ], at an instance x̄
+    with C[x̄/ῑ] in W (sharp edges 58). Its upper point is the box's,
     instantiated, so the frame of the application is one V-Box
     accepts, and the instance meets the box's constraint. *)
 

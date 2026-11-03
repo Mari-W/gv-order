@@ -11,11 +11,11 @@ Set Default Proof Using "All".
 
 (** ** Point substitution (sharp edges 56, 57)
 
-    The body of a box is typed once, with the box's ιs as the point
+    The body of a box is typed once, with the box's ῑ as the point
     variables 0, …, m-1 and every outer point variable shifted past
     them. [typed_sem_rules] substitutes points for the variables. A
-    payload needs no binder: its point variables are slots of the
-    carrier, so substitution commutes with [payload_at]
+    payload needs no binder. Its point variables are the carrier's
+    markers self.j, so substitution commutes with [payload_at]
     unconditionally. *)
 
 Definition pshift (m : nat) : nat → point := λ a, pvar (a + m).
@@ -186,9 +186,9 @@ Lemma bcs_hold_intro (eq lt : point → point → Prop) P xs :
   bcs_hold eq lt (BCs [] P) xs.
 Proof. intros H g Hg. apply bcs_open_nil in Hg as [? ?]. auto. Qed.
 
-(** A recursive call. The force at ys gets C[ys/ιs] from the body's
+(** A recursive call. The force at ȳ gets C[ȳ/ῑ] from the body's
     own hypothesis (C, xs) when every fact of the instance is a fact of
-    the hypothesis, C[ys/ιs] ⊆ C[xs/ιs] (sharp edges 65). No rule of
+    the hypothesis, C[ȳ/ῑ] ⊆ C[x̄/ῑ] (sharp edges 65). No rule of
     its own is needed. *)
 Lemma bcs_hold_sub W Ψ C xs ys :
   (C, xs) ∈ Ψ →
@@ -228,7 +228,7 @@ Proof.
 Qed.
 
 (** The recursive call for a constraint without outer points, whose
-    body hypothesis is C at its own ιs: C[ys/ιs] ⊆ C. *)
+    body hypothesis is C at its own ῑ, so C[ȳ/ῑ] ⊆ C. *)
 Lemma bcs_hold_self W Ψ P ys :
   (BCs [] P, ids (length ys)) ∈ Ψ → Forall (λ y, pn_vb (length ys) (pt_name y)) ys →
   (∀ g, P g → fact_scoped (length ys) g → P (fact_map (pt_inst (plist ys)) g)) →

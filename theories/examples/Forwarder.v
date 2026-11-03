@@ -1,34 +1,44 @@
 (** * forwarder in a box: typable, recursive (SHARP-EDGES 67)
 
-      Si = μX. ?(∃κ. Close@κ).X       So = μX. !(∃κ. Close@κ).X
-      Cf = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1,  ι′+k ≺ (ι′+k)[0],
-            (ι+k)[0] ≡ (ι′+k)[0]  ∣  k ∈ ℕ}                  (slots from 0)
-      Cp = {ι+k ≺ (ι+k)[0],  (ι+k)[0] ≺ ι+k+1  ∣  k ∈ ℕ}
+      Si = µα. ?(Close@self.0).α      So = µα. !(Close@self.0).α
+      Cf = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1,  ι′+k ≺ (ι′+k).0,
+            (ι+k).0 ≡ (ι′+k).0  ∣  k ∈ ℕ}
+      Cp = {ι+k ≺ (ι+k).0,  (ι+k).0 ≺ ι+k+1  ∣  k ∈ ℕ}
       fwd   : □(∀ι ι′. Cf. ∗ ⊸^⊥_⊤ (Si@ι ⊗ So@ι′ ⊸^{ι′}_⊤ ∗))
-      fwd   = !(f = λp. let (a, b) = p in let (d, a) = recv a in
-                       let (b, u) = ⟨send ⟨d, b⟩, ∗⟩ in let () = u in
-                       spawn (λw. let () = w in (force f) ⟨a, b⟩))
-      fprod : □(∀ι. Cp. ∗ ⊸^⊥_⊤ (S̄i@ι ⊸^{ι[0]}_⊤ ∗))
-      fprod = !(g = λc. let (e, e′) = new ∗ in let (c, u) = ⟨send ⟨e, c⟩, ∗⟩ in
-                       let () = u in let () = close e′ in
-                       spawn (λw. let () = w in (force g) c))
-      fcons : □(∀ι. Cp. ∗ ⊸^⊥_⊤ (S̄o@ι ⊸^{ι[0]}_⊤ ∗))
-      fcons = !(h = λc. let (d, c) = recv c in let () = close d in
-                       spawn (λw. let () = w in (force h) c))
+      fwd   = ! f ∀ι ι′ { Cf }. λ^{ι′}_⊤ p.
+                  let (a, b) = p in
+                  let (d, a₁) = recv a in
+                  let b₁ = send ⟨d, b⟩ in
+                  spawn (λ^{ι′+1}_{ι+1} ∗. (force f [ι+1, ι′+1]) ⟨a₁, b₁⟩)
+      fprod : □(∀ι. Cp. ∗ ⊸^⊥_⊤ (S̄i@ι ⊸^{ι.0}_⊤ ∗))
+      fprod = ! g ∀ι { Cp }. λ^{ι.0}_⊤ c.
+                  let (e, e′) = new κ { κ ≡ ι.0 } ∗ in
+                  let c₁ = send ⟨e, c⟩ in
+                  close e′;
+                  spawn (λ^{(ι+1).0}_{ι+1} ∗. (force g [ι+1]) c₁)
+      fcons : □(∀ι. Cp. ∗ ⊸^⊥_⊤ (S̄o@ι ⊸^{ι.0}_⊤ ∗))
+      fcons = ! h ∀ι { Cp }. λ^{ι.0}_⊤ c.
+                  let (d, c₁) = recv c in
+                  close d;
+                  spawn (λ^{(ι+1).0}_{ι+1} ∗. (force h [ι+1]) c₁)
       fw_main = let ((p, f), h) = ⟨⟨fprod, fwd⟩, fcons⟩ in
-                let (a, a′) = new ∗ in let (b, b′) = new ∗ in
-                let () = spawn (λw. let () = w in (force p) a′) in
-                let () = spawn (λw. let () = w in (force h) b′) in (force f) ⟨a, b⟩
+                let (a, a′) = new γ { Cp[γ/ι] } ∗ in
+                let (b, b′) = new ε { Cb } ∗ in
+                spawn (λ^{γ.0}_{γ} ∗. (force p [γ]) a′);
+                spawn (λ^{ε.0}_{ε} ∗. (force h [ε]) b′);
+                (force f [γ, ε]) ⟨a, b⟩
 
-    recv a gives d the type Close@ι[0], and send at ι′ asks Close@ι′[0].
+    recv a gives d the type Close@ι.0, and send at ι′ asks Close@ι′.0.
     E-Conv up to Γ ⊢ ≡ ([t_conv] with [steq]) moves d along the fact
-    ι[0] ≡ ι′[0] of Cf ([se_hyp0]). The producer creates e at ι[0], the
-    slot its payload must live at. The recursive calls ask Cf and Cp one
-    round later, which C contains ([fw_sub], [fp_sub]).
+    ι.0 ≡ ι′.0 of Cf ([se_hyp0]). The producer creates e at ι.0, the
+    carried root its payload must live at. The recursive calls ask Cf
+    and Cp one round later, which each constraint contains ([fw_sub],
+    [fp_sub]).
 
     In the empty world main creates a with the producer constraint fp_C
-    and b with the facts that relate it to a, the alias family
-    (γ+k)[0] ≡ (ε+k)[0] included ([fwb_ok], sharp edges 105). *)
+    and b with Cb, which is Cf[γ/ι, ε/ι′] together with the family
+    (ε+k).0 ≺ ε+k+1 that the consumer needs. The alias family
+    (γ+k).0 ≡ (ε+k).0 is part of it ([fwb_ok], sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -36,7 +46,6 @@ From LRGV Require Export examples.ExampleTools.
 Set Default Proof Using "All".
 
 Abbreviation svv a k := (Pt (NSlot (NVar a) k 0) 0).
-Abbreviation sl a k := (Pt (NSlot (NConst a) k 0) 0).
 
 Definition Sfi : sty := SMu (SRcv (TSess SEnd (pvar 0)) (SVar 0)).
 Definition Sfo : sty := SMu (SSnd (TSess SEnd (pvar 0)) (SVar 0)).
@@ -115,7 +124,7 @@ Proof.
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0))
               (TProd (TSess SEnd (svv 1 0)) (TSess (SSnd (TSess SEnd (pvar 0)) Sfo) (pv 1 0)))).
     - tstep; [eapply t_conv; [|tstep]; conv_sess|].
-      (* the alias: d : Close@ι[0] becomes Close@ι′[0] along ι[0] ≡ ι′[0] *)
+      (* the alias, d : Close@ι.0 becomes Close@ι′.0 along ι.0 ≡ ι′.0 *)
       eapply t_conv; [|tstep]. split; [|apply seq_refl].
       eapply (se_hyp0 _ _ _ _ (svv 0 0) (svv 1 0)); [by left|fmem|cbn; lia|reflexivity|reflexivity].
     - apply (KTSend _ _ _ (TSess SEnd (pvar 0)) Sfo (pv 1 0)).
@@ -213,10 +222,10 @@ Qed.
     whose facts stay inside γ. b is created at ε with the facts that
     relate it to a and the constraint of the consumer,
 
-      Cb = {γ+k ≺ ε+k,  ε+k ≺ γ+k+1,  ε+k ≺ (ε+k)[0],
-            (γ+k)[0] ≡ (ε+k)[0],  (ε+k)[0] ≺ ε+k+1  ∣  k ∈ ℕ}.
+      Cb = {γ+k ≺ ε+k,  ε+k ≺ γ+k+1,  ε+k ≺ (ε+k).0,
+            (γ+k).0 ≡ (ε+k).0,  (ε+k).0 ≺ ε+k+1  ∣  k ∈ ℕ}.
 
-    Its model reads (ε+k)[0] as (γ+k)[0], orders the points of ε by
+    Its model reads (ε+k).0 as (γ+k).0, orders the points of ε by
     their offsets, and the facts that enter and leave ε close through
     program order and fp_C at γ. *)
 
@@ -242,8 +251,8 @@ Proof.
   - intros g (k & [-> | ->]) _; eexists _, _; (split; [done|]); unfold fwa_rank; cbn; lia.
 Qed.
 
-(** The map of the model: (ε+k)[0] and everything carried there go to
-    (γ+k)[0]. *)
+(** The map of the model. (ε+k).0 and everything carried there go to
+    (γ+k).0. *)
 Fixpoint fwb_name (p : pname) : pname :=
   match p with
   | NSlot (NVar 0) k 0 => NSlot (NVar 1) k 0

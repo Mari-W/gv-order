@@ -17,9 +17,9 @@ From LRGV Require Export lang.Semantics lang.Safety types.Types types.SessionEqu
 (** ** Types up to aliases
 
     T ≈_W U: T ≈ U up to aliases of ground points in W. The constants'
-    signatures are read up to it (V-Const), because a payload type
-    P[x] names the slots of the channel's own point x, and aliased
-    points must type the same values. Points that are not ground
+    signatures are read up to it (V-Const), because a payload P
+    writes P[x/self] = T[x.j / self.j] over the channel's own point x,
+    and aliased points must type the same values. Points that are not ground
     (point variables, possibly bound) are compared by equality, so
     instantiating them preserves the relation. *)
 Definition pt_ground (x : point) : Prop := ∃ a, pn_root (pt_name x) = NConst a.
@@ -226,7 +226,7 @@ Qed.
 
 (** The obligation of a step e --α--> e' at index n, given the value
     and term relations below n ([Vlow], [Elow]) and at n ([Vn], [En]).
-    At new, the created channel gets a point (a, 0) with a fresh for W
+    At new, the created channel gets a point a with the name a fresh for W
     and for the points of Θ, T and F, and W grows by a fresh extension
     placing a. The name c is only required to be new to Θ, so that the
     continuation environment can be formed. A link with c = d is a

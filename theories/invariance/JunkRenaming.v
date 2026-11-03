@@ -1572,14 +1572,14 @@ Proof.
       * (* new *)
         apply echsubst_decomp in HeqE as (F & f & -> & -> & ->).
         destruct (decide (c = b)) as [->|Hcb].
-        { (* new at b: the substitution was trivial *)
+        { (* new allocates b, so the substitution was trivial *)
           assert (x ∉ fchans f) as Hxf by (intros Hx; by apply Hce, fchans_chsubst_hit).
           assert (x ∉ echans F) as HxF by (intros Hx; by apply HcF, echans_echsubst_hit).
           rewrite (chsubst_id x b f) in Hts, Hce by done.
           rewrite (echsubst_id x b F) in HcF |- * by done.
           exact (Hstep_tau _ (PStepNew C F f b e'' Hts HcC HcF Hce) Hd). }
         destruct (decide (c = x)) as [->|Hcx].
-        { (* new at x: freshen through z, then transpose back *)
+        { (* new allocates x, so freshen through z, then transpose back *)
           destruct (exist_fresh (C ∪ dom Σ ∪ echans F ∪ fchans f ∪ {[x; b]})) as [z Hz].
           destruct (tstep_chsubst_new_inv x b f x e'' Hts z) as (f0 & Hf0 & ->);
             [set_solver..|].

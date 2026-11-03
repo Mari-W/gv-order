@@ -1,32 +1,51 @@
 (** * relay: typable, recursive (SHARP-EDGES 65)
 
-      S = μX. ?(∃ι. D@ι).X      D = ?∗.Close
-      C₀(x, y) = {x ≺ y, x ≺ x[0], x[0] ≺ x+1, x[0] ≺ y, y ≺ x+1, y ≺ x[0]+1}
-      C = C₀(ι, ι′) ∪ {C₀(ι+k+1, ι+k[0]+1) ∣ k ∈ ℕ}       (slots from 0)
-      relay : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (S@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗))
-      relay = !(f = λp. let (c, d) = p in let (e, c) = recv c in
-                       let (v, e) = recv e in let () = v in let () = close d in
-                       spawn (λw. let () = w in (force f) ⟨c, e⟩))
-      prod  : the same box over S̄ ⊗ Close
-      prod  = !(g = λp. let (c, d) = p in let (e, e′) = new ∗ in
-                       let (c, u) = ⟨send ⟨e, c⟩, ∗⟩ in let () = u in
-                       let (e′, u) = ⟨send ⟨∗, e′⟩, ∗⟩ in let () = u in let () = close d in
-                       spawn (λw. let () = w in (force g) ⟨c, e′⟩))
-      rel_main = let (r, g) = ⟨relay, prod⟩ in let (c, c′) = new ∗ in let (d, d′) = new ∗ in
-                 let () = spawn (λw. let () = w in (force r) ⟨c, d⟩) in (force g) ⟨c′, d′⟩
+      Srl = µα. ?(Dr@self.0).α        Dr = ?∗.Close
+
+      C₀(x, y) = {x ≺ y, x ≺ x.0, x.0 ≺ x+1, x.0 ≺ y, y ≺ x+1, y ≺ x.0+1}
+      C        = C₀(ι, ι′) ∪ {C₀(ι+k+1, (ι+k).0+1) ∣ k ∈ ℕ}
+
+      relay : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (Srl@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗))
+      relay = ! f ∀ι ι′ { C }. λ^{ι′}_⊤ p.
+                  let (c : Srl@ι, d : Close@ι′) = p in
+                  let (e : Dr@ι.0, c₁ : Srl@(ι+1)) = recv c in
+                  let (v : ∗, e₁ : Close@(ι.0+1)) = recv e in
+                  v;
+                  close d;
+                  spawn (λ^{ι.0+1}_{ι.0} ∗. (force f [ι+1, ι.0+1]) ⟨c₁, e₁⟩)
+
+      prod  : the same box over S̄rl ⊗ Close
+      prod  = ! g ∀ι ι′ { C }. λ^{ι′}_⊤ p.
+                  let (c : S̄rl@ι, d : Close@ι′) = p in
+                  let (e : Dr@ι.0, e′ : D̄r@ι.0) = new κ { κ ≡ ι.0 } ∗ in
+                  let c₁ : S̄rl@(ι+1) = send ⟨e, c⟩ in
+                  let e′₁ : Close@(ι.0+1) = send ⟨∗, e′⟩ in
+                  close d;
+                  spawn (λ^{ι.0+1}_{ι.0} ∗. (force g [ι+1, ι.0+1]) ⟨c₁, e′₁⟩)
+
+      Cc = {γ ≺ γ.0, γ.0 ≺ γ+1} ∪ {C₀(γ+k+1, (γ+k).0+1) ∣ k ∈ ℕ}
+      Cd = {γ ≺ ε, γ.0 ≺ ε, ε ≺ γ+1, ε ≺ γ.0+1}
+
+      rel_main = let (c : Srl@γ, c′ : S̄rl@γ) = new γ { Cc } ∗ in
+                 let (d : Close@ε, d′ : Close@ε) = new ε { Cd } ∗ in
+                 spawn (λ^ε_γ ∗. (force relay [γ, ε]) ⟨c, d⟩);
+                 (force prod [γ, ε]) ⟨c′, d′⟩
 
     The relay is §8.2's with a spawn in place of the tail call, which
-    removes the ceiling. prod creates e at ι[0], the slot its payload
-    must live at, so it needs new under □∀ (59) and ι ≺ ι[0] for its
-    send. The call at (ι+1, ι[0]+1) asks C there, which is round 0 of
-    the family and round k+1 for round k, so C[ι+1, ι[0]+1] ⊆ C
-    ([rel_sub]). main forces both boxes at (γ, ε), the points of c and
-    d. Round 0 is C₀(γ, ε) and round k+1 is C₀(γ+k+1, γ+k[0]+1).
+    removes the ceiling. prod creates e at ι.0, the carried root its
+    payload must live at, so it needs new under □∀ (59) and ι ≺ ι.0 for
+    its send. The call at [ι+1, ι.0+1] asks C there, which is round 0 of
+    the family and round k+1 for round k, so C[ι+1, ι.0+1 / ι, ι′] ⊆ C
+    ([rel_sub]). rel_main forces both boxes at [γ, ε], the points of c
+    and d. Round 0 is C₀(γ, ε) and round k+1 is C₀(γ+k+1, (γ+k).0+1).
 
-    main types in the empty world. c is created with the facts of its
-    own rounds, ordered by the ranks 3k+3 for γ+k and 3k+4+4o for
-    γ+k[0]+o, and d with the four facts of round 0 that mention it
-    (sharp edges 105). *)
+    c is created with the facts of its own rounds, ordered by the ranks
+    3k+3 for γ+k and 3k+4+4o for (γ+k).0+o, and d with the four facts of
+    round 0 that mention it.
+
+      ∅; · ⊢^∅ rel_main : ∗   so   thread rel_main is deadlock free
+
+    (sharp edges 105) *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -54,8 +73,8 @@ Proof.
     repeat (first [left; reflexivity|right]); reflexivity.
 Qed.
 
-(** C[ι+1, ι[0]+1] ⊆ C: round 0 goes to round 0 of the family, round
-    k+1 to round k+2. *)
+(** C[ι+1, ι.0+1 / ι, ι′] ⊆ C. Round 0 goes to round 0 of the family and
+    round k+1 to round k+2. *)
 Lemma rel_sub g : rel_P g → fact_scoped 2 g → rel_P (fact_map (pt_inst (plist [pv 0 1; sv 1])) g).
 Proof.
   intros [Hg|(k & Hg)] _; right.
@@ -171,11 +190,11 @@ Qed.
 
 (** Both channels come from creation constraints (sharp edges 105).
     c is created with the facts of its own rounds, which stay inside
-    its name: ι ≺ ι[0], ι[0] ≺ ι+1 and every later round C₀(ι+k+1,
-    ι+k[0]+1). The ranks [relv_rank] order them. d is created at a fresh
-    point ε with the four facts of round 0 that mention it,
+    its name, γ ≺ γ.0, γ.0 ≺ γ+1 and every later round
+    C₀(γ+k+1, (γ+k).0+1). The ranks [relv_rank] order them. d is created
+    at a fresh point ε with the four facts of round 0 that mention it,
 
-      {ι ≺ ε,  ι[0] ≺ ε,  ε ≺ ι+1,  ε ≺ ι[0]+1},
+      {γ ≺ ε,  γ.0 ≺ ε,  ε ≺ γ+1,  ε ≺ γ.0+1},
 
     whose betweenness program order and the facts of c give. *)
 Definition relc_P (g : fact) : Prop :=
@@ -183,7 +202,7 @@ Definition relc_P (g : fact) : Prop :=
   ∃ k, c0 (pv 0 (S k)) (Pt (NSlot (NVar 0) k 0) 1) g.
 Definition relc_C : bcs := BCs [] relc_P.
 
-(** The constraint of d: the variable 0 is ε, 1 is ι, 2 is ι[0]. *)
+(** The constraint of d. The variable 0 is ε, 1 is γ, 2 is γ.0. *)
 Definition reld_facts (g : fact) : Prop :=
   g = FLt (pvar 1) (pvar 0) ∨ g = FLt (pvar 2) (pvar 0) ∨
   g = FLt (pvar 0) (pv 1 1) ∨ g = FLt (pvar 0) (pv 2 1).

@@ -1,21 +1,25 @@
 (** * Example: a fresh channel that acts several times between two points
 
     many : □(∀ι κ. {ι ≺ κ}. ∗ ⊸^⊥_⊤ Close@ι ⊗ Close@κ ⊸^κ_⊤ ∗)
-    many = !(f = λp. let (c, e) = p in
-                     let q = new ∗ in let (d, d′) = q in
-                     let () = spawn (λu. let () = u in
-                                         let (v, d′) = recv d′ in let () = v in
-                                         recvclose d′) in
-                     let () = close c in
-                     let () = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)
+    Cδ   = {ι ≺ δ} ∪ {δ+k ≺ κ ∣ k ∈ ℕ}
+    many = ! f ∀ι κ { ι ≺ κ }. λ^κ_⊤ p.
+               let (c, e) = p in
+               let (d, d′) = new δ { Cδ } ∗ in
+               spawn (λ^{δ+2}_{δ} ∗.
+                        let (v, d′₁) = recv d′ in
+                        v;
+                        recvclose d′₁);
+               close c;
+               close (send ⟨∗, send ⟨∗, d⟩⟩);
+               close e
 
     d acts at δ, δ+1 and δ+2 while the thread holds e at κ, and close c
     at ι holds d at δ. The general E-NewFresh creates d with the
-    infinite constraint {ι ≺ δ} ∪ {δ+k ≺ κ ∣ k ∈ ℕ}. Betweenness asks
-    ι ≺ κ for the facts ι ≺ δ and δ+k ≺ κ, because δ+k lies after δ in
-    program order, and the box hypothesis gives it (sharp edges 93).
-    The list form L ≺ ι ≺ H could not state δ+1 ≺ κ. E-Open on q opens
-    the existential result of new (sharp edges 99). *)
+    infinite constraint Cδ. Betweenness asks ι ≺ κ for the facts ι ≺ δ
+    and δ+k ≺ κ, because δ+k lies after δ in program order, and the box
+    hypothesis gives it (sharp edges 93). The list form L ≺ ι ≺ H could
+    not state δ+1 ≺ κ. E-Open opens the existential result of new
+    (sharp edges 99). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.FreshBetween.

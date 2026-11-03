@@ -786,8 +786,8 @@ Proof.
     + rewrite sf_union_empty. apply (IH2 Ψ B k ins Δ2); [done|done|].
       apply (ubs_lvl Ψ B HB k Φ τ2 (lvl_max (lvl_sh n σ) (lvl_max τ1 τ2))); [|done].
       eapply lvl_le_trans; [apply lvl_le_max_r|apply lvl_le_max_r].
-  - (* let a = new() in e, new at the known point of a by the alias
-       ι ≡ x ([t_new_at]). The body skips the spent p and unit. *)
+  - (* let a = new() in e, which becomes new κ { κ ≡ x } ∗ at the known
+       point x of a ([t_new_at]). The body skips the spent p and unit. *)
     rewrite rename_let_new_pair, ren_up2. unfold let_new_pair.
     assert (rename (upren (upren (λ x, 2 + x))) (rename (ren_of (false :: false :: ins)) e')
             = rename (ren_of (false :: false :: true :: true :: ins)) e') as ->.

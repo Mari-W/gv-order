@@ -17,8 +17,8 @@
       type #[t]ⁿ becomes two variables, its ? end at index 1 and its ! end
       at index 0, because our variables are linear and our new returns
       both ends. The translation is the encoded let of new
-      [let_new_pair e′] (lang/Syntax.v), which types new at a known
-      point by the alias ι ≡ x (sharp edges 104).
+      [let_new_pair e′] (lang/Syntax.v), which writes new κ { κ ≡ x } ∗
+      at the known point x of a (sharp edges 104).
     - send e₁ e₂, recv e and fork e are [App (App ESend e₁) e₂],
       [App ERecv e] and [App ESpawn e]. Constants appear only applied.
       An unapplied constant is η-expanded by the programmer, with the

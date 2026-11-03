@@ -1,32 +1,40 @@
 (** * delegation: typable
 
-    delegation = let (c, c′) = new ∗ in let (d, d′) = new ∗ in
-                 let () = spawn (λu. let () = u in let (e, c′) = recv c′ in
-                                     let () = close (send ⟨∗, e⟩) in close c′) in
-                 let (c, u) = ⟨send ⟨d, c⟩, ∗⟩ in let () = u in
-                 let (x, d′) = recv d′ in let () = x in let () = close d′ in close c
+    S⁰   = !∗.Close                        the delegated protocol
+    Sdel = !(S⁰@self.0).Close              the carrier
 
-    c : !(∃ι. (!∗.Close)@ι).Close@(a,0). The receiver gets d at the slot
-    (a,0)[0], written s below, and acts on it while it holds c′ at
-    (a,1), so it needs (s,0) ≺ (a,1) and (s,1) ≺ (a,1): this is the
-    spec's c[k][1] ≺ (c,k+1), slots counted from 0 here. The sender
-    creates d at s itself, so the alias of the spec is the choice of
-    the point of [new]. send asks (a,0) ≺ (s,0) (KTSend, {ι} ≺ heads of
-    the payload), which the sender also needs because it holds d′ at s.
-    ⟨send ⟨d, c⟩, ∗⟩ stands for a let of one variable.
+    delegation = let (c, c′) = new ι { ι ≺ ι.0, ι.0+1 ≺ ι+1 } ∗ in
+                 let (d, d′) = new κ { κ ≡ ι.0 } ∗ in
+                 spawn (λ^{ι+1}_{ι} ∗.
+                          let (e, c′₁) = recv c′ in
+                          close (send ⟨∗, e⟩);
+                          close c′₁);
+                 let c₁ = send ⟨d, c⟩ in
+                 let (x, d₁) = recv d′ in
+                 x;
+                 close d₁;
+                 close c₁
+
+    c : Sdel@ι. The receiver gets d at the carried root ι.0 and acts on
+    it while it holds c′ at ι+1, so it needs ι.0 ≺ ι+1 and ι.0+1 ≺ ι+1.
+    The sender creates d at ι.0 itself, so the alias of the spec is the
+    choice of the point of [new]. send asks ι ≺ ι.0 (KTSend, the send's
+    point precedes every head of the payload), which the sender also
+    needs because it holds d′ at ι.0. The full derivation is
+    docs/examples/delegation-derivation.md.
 
     The program types in the empty world. c is created with the creation
-    constraint {ι ≺ ι[0], ι[0]+1 ≺ ι+1}, two facts between ι and its own
-    carried point, and d by the alias at ι[0] (sharp edges 105). The
-    points (a,k) and s above are ι+k and ι[0]. *)
+    constraint {ι ≺ ι.0, ι.0+1 ≺ ι+1}, two facts between ι and its own
+    carried root, and d with {κ ≡ ι.0} (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
+(** !(S⁰@self.0).Close with S⁰ = !∗.Close, the carrier of the delegated
+    channel. *)
 Definition Sdel : sty := SSnd (TSess Sd (pvar 0)) SEnd.
-Abbreviation ps k := (Pt (NSlot (NConst 0) 0 0) k).
 
 Definition deleg_thunk : expr :=
   Lam (LetU (Var 0) (LetP (App ERecv (Var 3))
@@ -40,8 +48,8 @@ Definition deleg_main : expr :=
           (LetP (App ERecv (Var 2))
             (LetU (Var 1) (LetU (App EClos (Var 0)) (App EClos (Var 3))))))))).
 
-(** The creation constraint of c: ι ≺ ι[0] and ι[0]+1 ≺ ι+1. Both facts
-    stay inside ι, and the rank 10·k for ι+k and 5 + o for ι[0]+o
+(** The creation constraint of c, {ι ≺ ι.0, ι.0+1 ≺ ι+1}. Both facts
+    stay inside ι, and the rank 10·k for ι+k and 5 + o for ι.0+o
     orders them (sharp edges 105). *)
 Abbreviation sd k := (Pt (NSlot (NVar 0) 0 0) k).
 

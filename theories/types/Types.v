@@ -1,32 +1,32 @@
 (** * Types, session types, duality, environments (§2.2, Fig. 5 top)
 
-    T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs. C. T) | ∃^ℓ ιs. C. T
-    S    ::= ?P.S | !P.S | Close | µα.S | α | α̅      P ::= T, points self.j
-    β    ::= ι | ⊥        λ ::= ι | ⊤
-    ι    ::= (p, b)       p ::= a | point variable | p[b][i]   (no channels) *)
+    T, U ::= ∗ | T ⊸^u_ℓ U | T ⊗ U | T ⊕ U | S@x | □(∀ῑ. C. T) | ∃^ℓ ῑ. C. T
+    S    ::= !T.S | ?T.S | Close | µα.S | α | ᾱ       a payload writes self.j
+    u    ::= x | ⊥        ℓ ::= x | ⊤ | ⊥
+    x    ::= n + k        n ::= a | ι | x.j             (no channels) *)
 
 From stdpp Require Import base strings gmap countable.
 From LRGV Require Export lang.Syntax.
 
 (** ** Points
 
-    One sort of names (decision N). A point (p, b) is a name p with an
-    offset b. A name is a point constant, a point variable (de Bruijn,
-    bound by ∀ under □ or by ∃), or the slot p[b][i], "the i-th point
-    carried at (p, b)". A payload binds nothing: its variable j is
-    slot j of the carrier, written self.j in the paper. Worlds and
-    environments use ground
-    points (constants and their slots), static types also use
-    variables. No point mentions a channel, so renaming channels
-    changes no type and no world.
+    One sort of names (decision N). A point n + k is a name n with an
+    offset k, and n + 0 is written n. A name is a point constant a, a
+    point variable ι (de Bruijn, bound by ∀ under □ or by ∃), or a
+    carried root x.j, the j-th channel carried by the message sent at
+    x. A payload binds nothing. Its variable j is the marker self.j of
+    the carrier. Worlds and environments use ground points (constants
+    and their carried roots), static types also use variables. No point
+    mentions a channel, so renaming channels changes no type and no
+    world.
 
-    A slot writes the name and offset of its base unpacked, so that
-    names are not mutual with points. *)
+    A carried root writes the name and offset of its base unpacked, so
+    that names are not mutual with points. *)
 
 Inductive pname :=
   | NConst (a : nat)
   | NVar (a : nat)
-  | NSlot (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
+  | NSlot (p : pname) (b : nat) (i : nat).   (* (p + b).i *)
 
 Record point := Pt { pt_name : pname; pt_off : nat }.
 
@@ -61,7 +61,7 @@ Proof.
   by intros [].
 Qed.
 
-(** x + n, x[i], the variable a, and the constant a at offset 0. *)
+(** x + n, x.i, the variable ι, and the constant a at offset 0. *)
 Definition pt_shift (n : nat) (x : point) : point :=
   Pt (pt_name x) (pt_off x + n).
 Definition pt_slot (x : point) (i : nat) : point :=
@@ -117,7 +117,7 @@ Definition fact_scoped (k : nat) (g : fact) : Prop :=
 
 (** The constraint of a box (sharp edges 65): any set of positive facts,
     finite or infinite. It is a closure: the facts [bc_facts] speak of
-    variables only, 0, …, n-1 for the box's ιs and n + j for the j-th
+    variables only, 0, …, n-1 for the box's ῑ and n + j for the j-th
     point of [bc_env], which lives outside the binder and carries the
     outer point variables and constants. Substitution and renaming act
     on [bc_env] alone and never touch the predicate, so their equations
@@ -169,7 +169,7 @@ Inductive ty :=
                                       u lives on the arrow under the
                                       binder (sharp edges 52, 63); the
                                       constraint C is a set of facts
-                                      x ≺ y and x ≡ y over the ιs and
+                                      x ≺ y and x ≡ y over the ῑ and
                                       outer points (sharp edges 65) *)
 
   | TSess (S : sty) (x : point)   (* S@x *)
@@ -182,14 +182,14 @@ Inductive ty :=
                                       bound ℓ, which is ⊤, ⊥ or a point *)
 with sty :=
   | SRcv (T : ty) (S : sty)        (* ?T.S — the point variables of T
-                                      are slots of the carrier, pvar j
-                                      is self.j in the paper *)
+                                      are the carrier's markers, pvar j
+                                      is self.j *)
   | SSnd (T : ty) (S : sty)        (* !T.S — same reading of T *)
   | SEnd                           (* Close *)
   | SMu (S : sty)                  (* µα.S — binds one session variable *)
   | SVar (a : nat)                 (* α — de Bruijn *)
-  | SVarD (a : nat).               (* α̅ — the dual of what α stands for;
-                                      never written in source types, it
+  | SVarD (a : nat).               (* ᾱ — the dual of what α stands for.
+                                      Never written in source types, it
                                       enters only through [dual] *)
 
 Scheme ty_mut_ind := Induction for ty Sort Prop
@@ -205,13 +205,13 @@ Combined Scheme ty_sty_mut_ind from ty_mut_ind, sty_mut_ind.
 Definition bcs_inst (σ : nat → point) (C : bcs) : bcs :=
   BCs (pt_inst σ <$> bc_env C) (bc_facts C).
 
-(** The facts of C under its binder of n point variables: the ιs are
+(** The facts of C under its binder of n point variables. The ῑ are
     the variables 0, …, n-1 and the outer points are shifted past them. *)
 Definition bcs_open (n : nat) (C : bcs) (g : fact) : Prop :=
   ∃ f, bc_facts C f ∧ fact_scoped (n + length (bc_env C)) f ∧
     g = fact_map (pt_inst (pup n (plist (bc_env C)))) f.
 
-(** C holds at the instance xs: every fact of C[xs/ιs] holds, ≺ in [lt]
+(** C holds at the instance x̄, so every fact of C[x̄/ῑ] holds, ≺ in [lt]
     and ≡ in [eq] (sharp edges 65). *)
 Definition bcs_hold (eq lt : point → point → Prop) (C : bcs) (xs : list point) : Prop :=
   ∀ g, bcs_open (length xs) C g → fact_holds eq lt (fact_map (pt_inst (plist xs)) g).
@@ -318,7 +318,7 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
       TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   end.
 
-(** T[xs/ιs]: instantiate the ∀ of a □ with a list of points. *)
+(** T[x̄/ῑ], the ∀ of a □ instantiated with a list of points. *)
 Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
 
 (** The payload T at the point x: P[x] = T[x[j]/ιⱼ]. Every point
@@ -1005,8 +1005,8 @@ Proof.
   rewrite !lookup_empty in H. by inversion H.
 Qed.
 
-(** The root name of a point: a slot ι[i] belongs to the name of ι
-    (relation/Worlds.v uses it for the support of a world). *)
+(** The root name of a point. A carried root x.i belongs to the name
+    of x (relation/Worlds.v uses it for the support of a world). *)
 Fixpoint pn_root (p : pname) : pname :=
   match p with
   | NSlot q _ _ => pn_root q
@@ -1193,14 +1193,15 @@ Definition cc_ok (peq plt : point → point → Prop) (C : bcs) : Prop :=
 (** ** Type-indexed families of type signatures for constants
     (§9)
 
-    new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C acyclic and conservative
+    new    : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι     C acyclic and conservative
                                                   (97, 103, 105)
-    spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
-    send   : (P[ι] ⊗ (!P.S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι]), no ⊥ flag
-    recv   : (?P.S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
-    close  : Close@ι ⊸^ι_⊤ ∗
-    link   : S@ι ⊗ dual S@ι′ ⊸^⊥_⊤ ∗       ι ≡ ι′   (never blocks, sharp edges 68)
-    force  : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]   C[ιs′/ιs]   (52, 58, 63)
+    spawn  : (∗ ⊸^u_ℓ ∗) ⊸^⊥_⊤ ∗
+    send   : P[x/self] ⊗ (!P.S)@x ⊸^x_⊤ S@(x+1)     x ≺ every head of
+                                                  P[x/self], no ⊥ flag
+    recv   : (?P.S)@x ⊸^x_⊤ P[x/self] ⊗ S@(x+1)
+    close  : Close@x ⊸^x_⊤ ∗
+    link   : S@x ⊗ S̄@y ⊸^⊥_⊤ ∗              x ≡ y   (never blocks, sharp edges 68)
+    force  : □(∀ῑ. C. ∗ ⊸^u_⊤ T) ⊸^{u[x̄/ῑ]}_⊤ T[x̄/ῑ]   C[x̄/ῑ]   (52, 58, 63)
 
     The side conditions on points are read in an order given as two
     relations: the world G generates for typing, a world W for the
@@ -1208,8 +1209,8 @@ Definition cc_ok (peq plt : point → point → Prop) (C : bcs) : Prop :=
     (static/). [pk] says which points the order knows: the outer
     points of the constraint of [new] must be known, so that the world
     of a run can state the facts of C about them (sharp edges 49, 105).
-    The order relations enter [cc_ok] through their closure. new
-    at a known point x is the alias ι ≡ x ([t_new_at] in
+    The order relations enter [cc_ok] through their closure.
+    new κ { κ ≡ x } puts the channel at a known point x ([t_new_at] in
     static/Fundamental.v). force asks its instance known and every
     fact of the box's constraint at the instance (sharp edges 65). *)
 

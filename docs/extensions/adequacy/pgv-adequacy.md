@@ -188,8 +188,9 @@ indexed by a code of S, the same for S and its dual. The bound points ℓ_p and 
 are slots of (a,1) and (a,2). The generators make (S's point)+1 ≡ the point of the
 continuation, and they order points by rank 3·pr(S)+1 for protocols, 3p for ℓ_p
 and 3q+2 for u_q. A payload needs no carried points. Its points are constants,
-which E-Const at send allows (kscoped only bounds point variables). Strictness
-comes from a denotation of points that respects successor and slots, with the rank
+which E-Const at send allows, because E-Const asks nothing of the payload beyond
+send's precedence premise. Strictness
+comes from a denotation of points that respects successor and carried roots, with the rank
 read on denotations. A canonical map into points, as in ExampleTools.v, cannot
 serve. It has to commute with successor, so it would identify any two protocols
 with the same continuation, whatever their priorities.

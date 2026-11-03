@@ -380,25 +380,24 @@ induction, because typing reads W only through ≡, ≺ and pt_known, and these 
 fundamental, fundamental_proc and soundness are re-proved through ifundamental and are
 closed under the global context. E-Abs now has finitely many premises. E-Exp keeps the
 quantifier over the instance xs of the box's ιs, though no longer over worlds and frames.
-Typing the body with ιs as point variables needs a substitution lemma for derivations, and
-that lemma fails without a scoping invariant the static system lacks. KTSend and KTRecv
-type send and recv at payload_at m T x = T[x[i]/ιᵢ], and T[σ][slots (σ x) m] = T[slots x m][σ]
-holds only when the payload T has no free point variable beyond its m binders. Nothing in
-Types.v or Static.v enforces that (sclosed_ty covers session variables only). The body's Δ
-and the recursive □ would also need shifting past the m new variables, which Static.v never
-does now. The fix is a point-scoping predicate on types, a premise of E-Const for send and
-recv, and composition lemmas for pinst_ty with plist and pup. It changes no semantic
-statement. The world itself causes no trouble, because a strict W relates point variables
+Typing the body with ῑ as point variables needs a substitution lemma for derivations.
+KTSend and KTRecv type send and recv at payload_at T x = T[x.j/self.j]. A payload binds
+nothing, its point variables are the carrier's markers self.j, so the substitution is total
+and pinst_ty σ (payload_at T x) = payload_at T (pt_inst σ x) holds with no side condition
+(payload_pinst in static/PointSubst.v). E-Const therefore carries no scoping premise. The
+body's Δ and the recursive □ shift past the m new variables by pshift m, and pinst_ty
+composes with plist and pup unconditionally. No semantic statement changed. The world itself causes no trouble, because a strict W relates point variables
 by program order only and the substitution preserves program order.
 
 **57. E-Exp types the box body once, with ιs as point variables (resolves 56, Claude, 2026-10-30).**
 E-Exp has one premise. The body is typed with the box's ιs as the point variables 0, …, m−1.
 The hypotheses Φ, the environment □Δ and the recursive binding □(∀ιs.^u T) are shifted past
-them by pshift m. The fresh φ gets the hypothesis u itself, which may mention ιs. E-Const asks
-of send and recv that the payload ∃ιs.T be scoped by its m binders (kscoped, pscoped m T).
-§4 already says "all points of T bound", and pscoped also admits constants, so it rejects no
-payload the spec types. pscoped looks at the payload's top level only. A payload nested in
-the continuation is checked when its own send or recv is typed. typed_pinst substitutes
+them by pshift m. The fresh φ gets the hypothesis u itself, which may mention ῑ. E-Const asks
+nothing of the payload beyond send's precedence premise. A payload has no binder and no slot
+count. Its only points are the markers self.j, which payload_at replaces by the carried
+roots x.j, so every payload the spec types is scoped by construction. pscoped survives in
+static/PointSubst.v as the closedness predicate the PGV translation uses, not as a premise of
+any rule. typed_pinst substitutes
 points for point variables in a derivation at the same strict W. typed_ityped does that and
 frame instantiation in one induction. At a box it substitutes plist xs after pup m σ, which
 undoes the shift (plist_pup_shift). force needs no scoping, because pup lifts σ under the ∀ of
@@ -1178,8 +1177,8 @@ other than `pn_translate` changed, and no typing rule was added.
 docs/extensions/existentials.md, part 6.
 
 **111. The PGV translation keeps its world (Claude, 2026-11-01).**
-A payload of send and recv names only its own slots and constants, because
-point instantiation does not enter session types (`kscoped`). PGV's payloads
+A payload of send and recv names only its own markers self.j and constants, because
+point instantiation does not enter session types. PGV's payloads
 hold global points, the protocol point of a delegated channel
 (`tr_ty (PSess s) = S@ppt s`) and the bounds `upt n`, `lpt n` of a function.
 Rooted at a top-level variable these are free variables inside a session
@@ -1317,11 +1316,13 @@ fresh channel before it answers.
 **133. A constraint that falls along the depth has no rank in ℕ (Claude, 2026-11-02).**
 The two servers order each round strictly below its caller, so the rank of
 ι.0ⁿ falls as n grows, and no function into ℕ does that for every n.
-`cc_ok_inner` asks only for a transitive irreflexive relation containing
-program order, so `dlt` of LitTools.v reads a point lexicographically as its
-depth, reversed, and its offset. `ult` is the same with the depth not reversed,
-for the producer of `stream`, which orders each round above its caller.
-ReceivedChain.v's rank 2·depth + offset covers its own facts and not these.
+`cc_ok_inner` asks only for transitivity, irreflexivity, program order and the
+facts, never for well-foundedness, so a rank in ℤ serves as well as one in ℕ.
+`fw_rank` of KobForwarder.v and `fc_rank` of FactServer.v are −2·depth + offset,
+which falls along the depth the way the two servers do. `ult` of LitTools.v is
+the ascending direction, for the producer of `stream`, which orders each round
+above its caller. ReceivedChain.v's rank 2·depth + offset covers its own facts
+and not these.
 
 **134. The congruences of ≡ buy finiteness, not expressiveness (Claude, 2026-11-02).**
 No example derived a fact by `se_shift` or `se_slot`. Scheduler.v gets its

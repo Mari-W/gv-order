@@ -2,13 +2,13 @@
 
     docs/extensions/adequacy/padovani-novara.md §7. Levels become points
     relative to a level anchor. An anchor B stands for a shift, and its
-    slots B[r] are the points of one level relative to it.
+    carried roots B.r are the points of one level relative to it.
 
-    - B[RAnc a] is the anchor shifted by a.
-    - B[RCh c] is the point of a channel with code c (PNTypes.chres). The
+    - B.(RAnc a) is the anchor shifted by a.
+    - B.(RCh c) is the point of a channel with code c (PNTypes.chres). The
       message is at offset 0 and the close at offset 1.
-    - B[RLo z] lies at or below every head of level z, B[RHi z] above
-      every action of level z, and B[RTop] above every level. They are
+    - B.(RLo z) lies at or below every head of level z, B.(RHi z) above
+      every action of level z, and B.(RTop) above every level. They are
       the lower point of an arrow of level z, the upper point of a latent
       effect z and the ceiling for the latent effect ⊤.
 
@@ -19,14 +19,15 @@
     of unlimited types, whose translation names no point.
 
     Points are read through a denotation [den] that commutes with
-    successor and slots and adds the shift of the anchor to every level.
+    successor and carried roots and adds the shift of the anchor to
+    every level.
     The rank [rank] of a denotation is the level and the instant, in ℤ
     with a top element. The constraint [Crel] identifies two points of
     the anchor with the same denotation and orders two with rising rank.
     It is acyclic ([Crel_acyclic]).
 
     A box has the constraint [Crel], the same facts read relative to its
-    variable. A force at the anchor B[RAnc a] meets it, because
+    variable. A force at the anchor B.(RAnc a) meets it, because
     instantiation adds a to every level ([den_inst]). *)
 
 From stdpp Require Import base gmap countable numbers.
@@ -71,7 +72,7 @@ Inductive dn :=
   | DLo (z : Z) (o : nat)
   | DHi (z : Z) (o : nat)
   | DTop (o : nat)
-  | DJ (d : dn) (i o : nat).   (* any other slot *)
+  | DJ (d : dn) (i o : nat).   (* any other carried root *)
 
 Definition dsh (d : dn) : dn :=
   match d with
@@ -261,13 +262,13 @@ Qed.
 
     - unit is the box □(∗ ⊸ ∗), and a sum of unlimited types the box of
       the sum of their translations, read at the root anchor.
-    - p[t]ⁿ is (pP.Close)@B[RCh c] with c the code of the channel. A
-      channel payload sits at slot 0 of the channel's point, an
-      unlimited payload mentions no slot.
-    - μα.p[⌈α⌉ᵐ]ⁿ is (µα. p(α@self.0).Close)@B[RCh c].
+    - p[t]ⁿ is (pP.Close)@B.(RCh c) with c the code of the channel. A
+      channel payload sits at the marker self.0, an unlimited payload
+      names no marker.
+    - μα.p[⌈α⌉ᵐ]ⁿ is (µα. p(α@self.0).Close)@B.(RCh c).
     - ⌈t⌉ᵐ is ⇑ᵐ t. wrap and unwrap are erased.
-    - t →^{ρ,σ} s with ρ ∈ ℤ is T ⊸^{B[RHi σ]}_{B[RLo ρ]} U.
-    - t →^{⊤,σ} s is □(∀ι. Crel. ∗ ⊸^⊥_⊤ (T ⊸^{ι[RHi σ]}_⊤ U)) with T, U
+    - t →^{ρ,σ} s with ρ ∈ ℤ is T ⊸^{B.(RHi σ)}_{B.(RLo ρ)} U.
+    - t →^{⊤,σ} s is □(∀ι. Crel. ∗ ⊸^⊥_⊤ (T ⊸^{ι.(RHi σ)}_⊤ U)) with T, U
       read at the anchor ι, shifted down by the first finite level of the
       arrow. Shifted copies of one arrow get one box. *)
 
@@ -405,8 +406,8 @@ Proof. apply trz_sess_lshift. Qed.
 
 (** ** Substitution of points
 
-    Every point of [trz B k t] is a slot of B, a slot of the variable of
-    an inner box, or a slot of the root. *)
+    Every point of [trz B k t] is a carried root of B, of the variable
+    of an inner box, or of the root. *)
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
 Proof. apply pt_inst_slot. Qed.
@@ -508,7 +509,7 @@ Section facts.
     - right. destruct (rank (den h)); simpl in *; lia.
   Qed.
 
-  (** {B[RLo z]} ≼ every head at level z. *)
+  (** {B.(RLo z)} ≼ every head at level z. *)
   Lemma lo_below z h : hd_at z h → sle wnil Ψ (rpt B (RLo z)) h.
   Proof.
     intros [Hr [Hd|Hd]].
@@ -561,7 +562,7 @@ Section facts.
     rewrite Hc. simpl. lia.
   Qed.
 
-  (** The payload of a channel sits at the first slot of its point. *)
+  (** The payload of a channel sits at the first carried root of its point. *)
   Lemma den_pay c c' : cpay c = Some c' → den (pt_slot (rpt B (RCh c)) 0) = DCh c' 0.
   Proof. intros Hc. rewrite den_slot, den_ch0. simpl. by rewrite Hc. Qed.
 
@@ -579,7 +580,7 @@ Section facts.
     intros Hc. apply (gd_eq _ _ HB); [done|done|]. by rewrite (den_pay _ _ Hc), den_ch0.
   Qed.
 
-  (** A box at the anchor B[RAnc a] meets its constraint. *)
+  (** A box at the anchor B.(RAnc a) meets its constraint. *)
   Lemma crel_hold a : bcs_hold (seqs wnil Ψ) (slt wnil Ψ) Crel [rpt B (RAnc a)].
   Proof.
     intros g Hg. apply bcs_open_nil in Hg as [Hg _]. pose proof (den_anc0 a) as HX.
@@ -595,7 +596,7 @@ Section facts.
   Lemma anc_known a : Forall (skn wnil Ψ) [rpt B (RAnc a)].
   Proof. apply Forall_singleton. by apply (gd_kn _ _ HB). Qed.
 
-  (** The type at the anchor B[RAnc a] and offset k₁ is the type at B and
+  (** The type at the anchor B.(RAnc a) and offset k₁ is the type at B and
       offset k₁ + a, up to Γ ⊢ ≡. *)
   Lemma trz_anc a k1 k2 t :
     (k1 + a = k2)%Z → steq wnil Ψ (trz (rpt B (RAnc a)) k1 t) (trz B k2 t).

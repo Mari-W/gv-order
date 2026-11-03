@@ -1,6 +1,6 @@
 (** * Kobayashi's recursive forwarder server: typable
 
-    Example 2 of Kobayashi (kobayashi2006new p. 11):
+    Example 2 of Kobayashi (kobayashi2006new p. 11) reads
 
       P = *f?r. (if b then r!true else (ν r′) (f!r′ | r′?x. r!x))
 
@@ -11,45 +11,53 @@
     r′ ≺ r in the creation order, and he notes that without it the
     process has no type (p. 11).
 
-    Here:
+    Written here as
 
-      Sr   = !∗.Close
-      C    = {ι.0ⁿ⁺¹ ≺ ι.0ⁿ,  ι.0ⁿ⁺¹ + 1 ≺ ι.0ⁿ  ∣  n ∈ ℕ}   (slots from 0)
-      fwsrv : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sr@ι ⊸^{ι+1}_⊤ ∗))
-      fwsrv = !(f = λr. case inj₂ ∗ of
-                  x. let () = x in close (send ⟨∗, r⟩)
-                | y. let () = y in
-                     let (p, q) = new ∗ in
-                     let () = spawn (λu. let () = u in (force f) p) in
-                     let () = recvclose q in close (send ⟨∗, r⟩))
-      fw_main = let (s, w) = ⟨fwsrv, ∗⟩ in let () = w in
-                let (c, c′) = new ∗ in
-                let () = spawn (λu. let () = u in (force s) c) in
+      Sd    = !∗.Close
+      C     = {ι.0ⁿ⁺¹ ≺ ι.0ⁿ,  ι.0ⁿ⁺¹ + 1 ≺ ι.0ⁿ  ∣  n ∈ ℕ}
+
+      fwsrv : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sd@ι ⊸^{ι+1}_⊤ ∗))
+      fwsrv = ! f ∀ι { C }. λ^{ι+1}_⊤ r : Sd@ι.
+                  case inj₂ ∗ of
+                    x. x; close (send ⟨∗, r⟩)
+                  | y. y;
+                       let (p : Sd@ι.0, q : S̄d@ι.0) = new κ { κ ≡ ι.0 } ∗ in
+                       spawn (λ^{ι.0+1}_{ι.0} ∗. (force f [ι.0]) p);
+                       recvclose q;
+                       close (send ⟨∗, r⟩)
+
+      fw_main = let (c : Sd@ι, c′ : S̄d@ι) = new ι { C } ∗ in
+                spawn (λ^{ι+1}_{ι} ∗. (force fwsrv [ι]) c);
                 recvclose c′
+
+      recvclose r = let (v : ∗, r′ : Close@(x+1)) = recv r in v; close r′
+                                                            r at x
 
     Simplifications. The calculus has no replicated channels, so the
     replicated input *f?r.Q is the box fwsrv and the output f!r′ is a
-    spawned call (force f) p. It has no booleans, so b is the closed
+    spawned call (force f [ι.0]) p. It has no booleans, so b is the closed
     value inj₂ ∗ of ∗ ⊕ ∗ and every run takes the recursive branch,
     while E-Case types both branches. It has no integers, so the
     answer true and the forwarded value x are ∗ and the reply session
     is !∗.Close, one message and a close. Kobayashi's r′?x.r!x receives
-    and sends again, which this program does; [link] would merge the two
+    and sends again, which this program does. [link] would merge the two
     sessions in one step and is not his program.
 
     Points. The fresh reply channel of a call sits at ι.0, the first
-    carried root of the channel the call answers on, created by
-    [t_new_at] at that point. The reply session carries no channel, so
-    ι.0 holds no payload, as the ceiling of examples/TailCall.v does
-    not. C orders every round strictly below the one that called it, and
-    the recursion descends along the depth, so C[ι.0/ι] ⊆ C ([fw_sub]).
-    A creation constraint {κ + k ≺ ι} with the outer point ι would do
-    the same job; the chain keeps every fact inside one root, as the
-    other examples in the empty world do.
+    carried root of the channel the call answers on, and
+    new κ { κ ≡ ι.0 } creates it there. The reply session carries no
+    channel, so ι.0 holds no payload, as the ceiling of
+    examples/TailCall.v does not. C orders every round strictly below
+    the one that called it, and the recursion descends along the depth,
+    so C[ι.0/ι] ⊆ C ([fw_sub]). A creation constraint {κ + k ≺ ι} with
+    the outer point ι would do the same job. The chain keeps every fact
+    inside one root, as the other examples do.
 
     Acyclicity. The depth grows without bound and the order falls
     along it, so the rank −2·depth + offset lands in ℤ, not ℕ. Every
-    fact of C and program order rise along it ([fw_ok]). *)
+    fact of C and program order rise along it ([fw_ok]).
+
+      ∅; · ⊢^∅ fw_main : ∗   so   thread fw_main is deadlock free *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.LitTools.
@@ -79,7 +87,7 @@ Definition fw_main : expr :=
       (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 4)) (Var 2)))))
         (recvclose (Var 0))))).
 
-(** C[ι.0/ι] ⊆ C: round n goes to round n+1. *)
+(** C[ι.0/ι] ⊆ C. Round n goes to round n+1. *)
 Lemma fw_sub g : fw_P g → fact_scoped 1 g → fw_P (fact_map (pt_inst (plist [pcr])) g).
 Proof.
   intros (n & [-> | ->]) _; exists (S n); [left|right];
@@ -122,7 +130,7 @@ Proof.
   { apply (comp0 W HW). }
   { apply lenv_split_nones_l. }
   { apply t_inj2. apply (tv_unit W HW); reflexivity. }
-  - (* the answer at once: send r at ι, close r at ι+1 *)
+  - (* the answer at once, send r at ι and close r at ι+1 *)
     cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
     + tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
@@ -135,7 +143,7 @@ Proof.
     apply (t_new_at W _ _ _ _ _ _ _ Sd pcr HWs).
     { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
     cbn. tstep.
-    { (* spawn (force f) p *)
+    { (* spawn (force f [ι.0]) p *)
       tstep; [|apply KTSpawn|apply ubs_none].
       eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 pcr)) (Some pcr) 2);
         [set_solver| |].

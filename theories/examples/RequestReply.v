@@ -1,26 +1,43 @@
 (** * request/reply: typable, recursive (SHARP-EDGES 65)
 
-    C states every round at once:
+    C states every round at once.
 
-      C = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1  ∣  k ∈ ℕ}
+      Sa  = µα. ?∗.α        Sb = µα. !∗.α
+      C   = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1  ∣  k ∈ ℕ}
+
       srv : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (Sa@ι ⊗ Sb@ι′ ⊸^{ι′}_⊤ ∗))
-      srv = !(f = λp. let (a, b) = p in let (x, a) = recv a in let () = x in
-                     spawn (λv. let () = v in (force f) ⟨a, send ⟨∗, b⟩⟩))
+      srv = ! f ∀ι ι′ { C }. λ^{ι′}_⊤ p.
+                let (a : Sa@ι, b : Sb@ι′) = p in
+                let (x : ∗, a₁ : Sa@(ι+1)) = recv a in
+                x;
+                spawn (λ^{ι′+1}_{ι′} ∗. (force f [ι+1, ι′+1]) ⟨a₁, send ⟨∗, b⟩⟩)
+
       cli : the same box over the dual sessions
-      cli = !(f = λp. let (a, b) = p in let (a, u) = ⟨send ⟨∗, a⟩, ∗⟩ in let () = u in
-                     let (x, b) = recv b in let () = x in
-                     spawn (λv. let () = v in (force f) ⟨a, b⟩))
-      main = let (s, c) = ⟨srv, cli⟩ in let (a, a′) = new ∗ in let (b, b′) = new ∗ in
-             let () = spawn (λu. let () = u in (force s) ⟨a, b⟩) in (force c) ⟨a′, b′⟩
+      cli = ! g ∀ι ι′ { C }. λ^{ι′}_⊤ p.
+                let (a : S̄a@ι, b : S̄b@ι′) = p in
+                let a₁ : S̄a@(ι+1) = send ⟨∗, a⟩ in
+                let (x : ∗, b₁ : S̄b@(ι′+1)) = recv b in
+                x;
+                spawn (λ^{ι′+1}_{ι′} ∗. (force g [ι+1, ι′+1]) ⟨a₁, b₁⟩)
 
-    The recursive force at (ι+1, ι′+1) asks C there, and C[ι+1, ι′+1] ⊆ C,
-    so the body's own hypothesis gives it ([bcs_hold_self]). The send in
-    the server's thunk blocks at ι′ while the pair holds a at ι+1, the
-    fact ι′ ≺ ι+1 of C.
+      Cb = {γ+k ≺ ε+k,  ε+k ≺ γ+k+1  ∣  k ∈ ℕ}
 
-    In the empty world main creates a at γ with no fact and b at ε with
-    the creation constraint {γ+k ≺ ε+k, ε+k ≺ γ+k+1 ∣ k ∈ ℕ}, and forces
-    both boxes at (γ, ε) (sharp edges 105). *)
+      rr_main = let (a : Sa@γ, a′ : S̄a@γ) = new γ { } ∗ in
+                let (b : Sb@ε, b′ : S̄b@ε) = new ε { Cb } ∗ in
+                spawn (λ^ε_γ ∗. (force srv [γ, ε]) ⟨a, b⟩);
+                (force cli [γ, ε]) ⟨a′, b′⟩
+
+    The recursive force at [ι+1, ι′+1] asks C there, and
+    C[ι+1, ι′+1 / ι, ι′] ⊆ C, so the body's own hypothesis gives it
+    ([bcs_hold_self]). The send in the server's thunk blocks at ι′ while
+    the pair holds a at ι+1, the fact ι′ ≺ ι+1 of C.
+
+    rr_main creates a at γ with no fact and b at ε by new ε { Cb }, then
+    forces both boxes at [γ, ε].
+
+      ∅; · ⊢^∅ rr_main : ∗   so   thread rr_main is deadlock free
+
+    (sharp edges 105) *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -50,7 +67,7 @@ Definition rr_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-(** C[ι+1, ι′+1] ⊆ C. *)
+(** C[ι+1, ι′+1 / ι, ι′] ⊆ C. *)
 Lemma rq_step g : rq_P g → fact_scoped 2 g → rq_P (fact_map (pt_inst (plist [pv 0 1; pv 1 1])) g).
 Proof. intros (k & [-> | ->]) _; exists (S k); [by left|by right]. Qed.
 
@@ -125,7 +142,7 @@ Proof.
     exists (pv 1 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-(** The constraint of b: the variable 0 is ε, the variable 1 is γ. *)
+(** The constraint of b. The variable 0 is ε, the variable 1 is γ. *)
 Definition rrf_facts (g : fact) : Prop :=
   ∃ k, g = FLt (pv 1 k) (pv 0 k) ∨ g = FLt (pv 0 k) (pv 1 (S k)).
 Definition rrf_C : bcs := BCs [pvar 0] rrf_facts.

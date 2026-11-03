@@ -7,11 +7,12 @@
 
     The term changes in two places ([pgv_eta]). The upper point of our
     send, recv and close is the channel's point, and PGV's is u_o. An
-    unapplied send, recv, close or wait therefore becomes λz. k z, and
-    an applied one stays. Our new has the existential signature alone
-    (sharp edges 104), so PGV's new becomes λz. let ∗ = z in let ⟨a, b⟩
-    = new ∗ in ⟨a, b⟩ on the encoded let of new ([new_tr]), typed at
-    the protocol point of its session by the alias ι ≡ x ([t_new_at]).
+    unapplied send, recv, close or wait therefore becomes λ^u_ℓ z. k z,
+    and an applied one stays. Our new has the existential signature
+    alone (sharp edges 104), so PGV's new becomes
+    λ^⊥_⊤ ∗. let (a, a′) = new κ { κ ≡ x } ∗ in ⟨a, a′⟩ on the encoded
+    let of new ([new_tr]), with x the protocol point of its session
+    ([t_new_at]).
     pgv/PGVSimulation.v carries deadlock freedom back to the program
     itself.
 
@@ -29,7 +30,7 @@ Set Default Proof Using "All".
 Definition comm (k : konst) : bool :=
   match k with KSend | KRecv | KClos => true | _ => false end.
 
-(** PGV's new, λz. let ∗ = z in let ⟨a, b⟩ = new ∗ in ⟨a, b⟩. *)
+(** PGV's new, λ^⊥_⊤ ∗. let (a, a′) = new κ { κ ≡ x } ∗ in ⟨a, a′⟩. *)
 Definition new_tr : expr := Lam (LetU (Var 0) (let_new_pair (Pair (Var 1) (Var 0)))).
 
 (** The translation of an unapplied constant. *)
@@ -206,7 +207,7 @@ Proof.
     + rewrite sf_union_empty. exact H2.
 Qed.
 
-(** PGV's new at the session S. *)
+(** PGV's new at the protocol point of the session S. *)
 Lemma new_tr_typed Φ Γ F S :
   penv_empty Γ →
   typed Wpgv Φ [] ∅ (tr_env Γ) F new_tr

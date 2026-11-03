@@ -249,7 +249,7 @@ Proof.
       destruct (mlev t); try done; by rewrite IH1, IH2.
 Qed.
 
-(** ** Countability (codes are slot indices of points) *)
+(** ** Countability (codes are carried-root indices of points) *)
 
 Global Instance lvl_eq_dec : EqDecision lvl.
 Proof. solve_decision. Defined.
