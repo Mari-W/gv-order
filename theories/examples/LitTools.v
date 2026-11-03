@@ -81,26 +81,15 @@ Fixpoint sdepth (p : pname) : nat :=
 Lemma sdepth_slotv n : sdepth (slotv n) = n.
 Proof. induction n as [|n IH]; [done|]. cbn. by rewrite IH. Qed.
 
-(** Two strict orders on points, read lexicographically on depth and
-    offset. [dlt] puts a deeper carried root below a shallower one, the
-    order of a server whose fresh channel answers before the channel it
-    was called on. [ult] is the opposite, the order of a producer that
-    sends its fresh channel on. Neither has a rank in ℕ, because the
-    depth is unbounded in both directions. *)
-Definition dlt (x y : point) : Prop :=
-  sdepth (pt_name y) < sdepth (pt_name x) ∨
-  (sdepth (pt_name x) = sdepth (pt_name y) ∧ pt_off x < pt_off y).
-
+(** A strict order on points, read lexicographically on depth and
+    offset. [ult] puts a deeper carried root above a shallower one, the
+    order of a producer that sends its fresh channel on. A server whose
+    fresh channel answers before the channel it was called on orders
+    the other way and uses the rank −2·depth + offset in ℤ instead
+    (examples/FactServer.v, examples/KobForwarder.v). *)
 Definition ult (x y : point) : Prop :=
   sdepth (pt_name x) < sdepth (pt_name y) ∨
   (sdepth (pt_name x) = sdepth (pt_name y) ∧ pt_off x < pt_off y).
-
-Lemma dlt_trans x y z : dlt x y → dlt y z → dlt x z.
-Proof. unfold dlt. lia. Qed.
-Lemma dlt_irrefl x : ¬ dlt x x.
-Proof. unfold dlt. lia. Qed.
-Lemma dlt_po x : dlt x (pt_shift 1 x).
-Proof. unfold dlt, pt_shift. cbn. lia. Qed.
 
 Lemma ult_trans x y z : ult x y → ult y z → ult x z.
 Proof. unfold ult. lia. Qed.
@@ -109,16 +98,8 @@ Proof. unfold ult. lia. Qed.
 Lemma ult_po x : ult x (pt_shift 1 x).
 Proof. unfold ult, pt_shift. cbn. lia. Qed.
 
-(** A creation constraint whose facts are ≺ facts inside ι that fall or
-    rise along the depth. *)
-Lemma cc_ok_dlt peq plt P :
-  (∀ g, P g → fact_scoped 1 g → ∃ x y, g = FLt x y ∧ dlt x y) →
-  cc_ok peq plt (BCs [] P).
-Proof.
-  intros HP. apply (cc_ok_inner peq plt P dlt);
-    [exact dlt_trans|exact dlt_irrefl|intros x _; apply dlt_po|exact HP].
-Qed.
-
+(** A creation constraint whose facts are ≺ facts inside ι that rise
+    along the depth. *)
 Lemma cc_ok_ult peq plt P :
   (∀ g, P g → fact_scoped 1 g → ∃ x y, g = FLt x y ∧ ult x y) →
   cc_ok peq plt (BCs [] P).

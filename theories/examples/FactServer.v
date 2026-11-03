@@ -49,7 +49,8 @@
     examples/KobForwarder.v, and the two programs differ in where the
     branch comes from: there the server tests a boolean of its own, here
     it tests the value it was called with. The order falls along the
-    depth, so C has no rank in ℕ and [dlt] orders it ([fc_ok]). *)
+    depth, so the rank −2·depth + offset lands in ℤ, not ℕ, which
+    [cc_ok_inner] does not mind ([fc_ok]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.LitTools.
@@ -91,10 +92,20 @@ Qed.
 Lemma fc_call W Ψ : (fc_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) fc_C [pcr].
 Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact fc_sub]. Qed.
 
+(** The order falls along the depth, so the rank is −2·depth + offset
+    in ℤ. [cc_ok_inner] asks for transitivity, irreflexivity and
+    program order, never for well-foundedness. *)
+Definition fc_rank (x : point) : Z :=
+  (-2 * Z.of_nat (sdepth (pt_name x)) + Z.of_nat (pt_off x))%Z.
+
 Lemma fc_ok peq plt : cc_ok peq plt fc_C.
 Proof.
-  apply cc_ok_dlt. intros g [n [-> | ->]] _; eexists _, _; split; [done| |done|];
-    left; cbn; rewrite !sdepth_slotv; lia.
+  apply (cc_ok_inner peq plt fc_P (λ x y, (fc_rank x < fc_rank y)%Z)).
+  - intros x y z; lia.
+  - intros x; lia.
+  - intros [n o] _. unfold fc_rank, pt_shift. cbn [pt_name pt_off]. lia.
+  - intros g [n [-> | ->]] _; eexists _, _; (split; [done|]);
+      unfold fc_rank; cbn [pt_name pt_off]; rewrite !sdepth_slotv; lia.
 Qed.
 
 Lemma fcsrv_typed W F :

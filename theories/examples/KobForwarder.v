@@ -47,9 +47,8 @@
     the same job; the chain keeps every fact inside one root, as the
     other examples in the empty world do.
 
-    Acyclicity. C has no rank in ℕ, because the depth grows without
-    bound and the order falls along it. [dlt] reads a point
-    lexicographically as its depth, reversed, and its offset, and every
+    Acyclicity. The depth grows without bound and the order falls
+    along it, so the rank −2·depth + offset lands in ℤ, not ℕ. Every
     fact of C and program order rise along it ([fw_ok]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -90,10 +89,18 @@ Qed.
 Lemma fw_call W Ψ : (fw_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) fw_C [pcr].
 Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact fw_sub]. Qed.
 
+(** As in examples/FactServer.v, the rank −2·depth + offset in ℤ. *)
+Definition fw_rank (x : point) : Z :=
+  (-2 * Z.of_nat (sdepth (pt_name x)) + Z.of_nat (pt_off x))%Z.
+
 Lemma fw_ok peq plt : cc_ok peq plt fw_C.
 Proof.
-  apply cc_ok_dlt. intros g [n [-> | ->]] _; eexists _, _; split; [done| |done|];
-    left; cbn; rewrite !sdepth_slotv; lia.
+  apply (cc_ok_inner peq plt fw_P (λ x y, (fw_rank x < fw_rank y)%Z)).
+  - intros x y z; lia.
+  - intros x; lia.
+  - intros [n o] _. unfold fw_rank, pt_shift. cbn [pt_name pt_off]. lia.
+  - intros g [n [-> | ->]] _; eexists _, _; (split; [done|]);
+      unfold fw_rank; cbn [pt_name pt_off]; rewrite !sdepth_slotv; lia.
 Qed.
 
 Lemma fwsrv_typed W F :
