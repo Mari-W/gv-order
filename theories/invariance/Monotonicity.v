@@ -80,13 +80,13 @@ Proof.
   intros α e' Hst. specialize (Hstep α e' Hst).
   destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
   - by apply IHj.
-  - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
-    exists Θ1, m, U, s, k. split; [done|].
+  - destruct Hstep as (Θ1 & U & s & k & Hhd & H).
+    exists Θ1, U, s, k. split; [done|].
     intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HVw.
     apply IHj; [done|]. by apply (H W' j Θ2 Θ1c Θ').
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+  - destruct Hstep as (Θr & Θ1 & Θ2 & U & s & k & Θ' &
                        Hhd & Hc & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done. by apply (proj2 HE').
+    exists Θr, Θ1, Θ2, U, s, k, Θ'. split_and!; try done. by apply (proj2 HE').
   - destruct Hstep as (Θ1 & k & Hhd & HE').
     exists Θ1, k. split; [done|]. by apply (proj2 HE').
   - destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
@@ -159,13 +159,13 @@ Proof.
     intros α e' Hst. specialize (Hstep α e' Hst).
     destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
     + eapply HEj; [lia|done|done|exact Hstep].
-    + destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
-      exists Θ1, m, U, s, k. split; [done|].
+    + destruct Hstep as (Θ1 & U & s & k & Hhd & H).
+      exists Θ1, U, s, k. split; [done|].
       intros W'' j Θ2 Θ1c Θ' HW' Hj Hext Hc HVw.
       apply (H W'' j Θ2 Θ1c Θ'); [by eapply wext_trans|done..].
-    + destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+    + destruct Hstep as (Θr & Θ1 & Θ2 & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').
-      exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
+      exists Θr, Θ1, Θ2, U, s, k, Θ'. split_and!; try done.
       * eapply tenv_comp_mono; [|exact Hc]. by destruct HWW' as (_ & ? & _).
       * eapply HV; done.
       * exact (proj2 HE' W' HW HWW').
@@ -222,13 +222,13 @@ Proof.
         * by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
         * by destruct Hfr'' as ((_ & _ & _ & ?) & _). }
       intros Hl Hd. exact (proj2 (Hlink Hl Hd) W' HW HWW').
-    + destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
-      exists Σ1, m, U, s, k. split_and!; [done|done|].
+    + destruct Hstep as (Σ1 & U & s & k & Hhd & Hc & H).
+      exists Σ1, U, s, k. split_and!; [done|done|].
       intros W'' j Θ2 HW' Hj Hfr Hok HVw.
       apply (H W'' j Θ2); [by eapply wext_trans|done..].
-    + destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
+    + destruct Hstep as (Σ0 & Σv & U & s & k & Σe & Θe & Hhd &
                          ? & ? & ? & ? & Hsp & ? & HVw & HP').
-      exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done.
+      exists Σ0, Σv, U, s, k, Σe, Θe. split_and!; try done.
       * eapply send_split_mono; [|exact Hsp]. by destruct HWW' as (_ & ? & _).
       * eapply HV; done.
       * exact (proj2 HP' W' HW HWW').

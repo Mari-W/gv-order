@@ -96,7 +96,7 @@ Definition ms_main : expr :=
     point is (0, u). *)
 Ltac ms_send HW j u :=
   unfold sendclose; tstep;
-  [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 j)); cbn; set_solver|done|];
+  [ tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 j)); cbn; set_solver|done|];
     po_gate HW (pv 0 u)
   | apply KTClos
   | done
@@ -159,7 +159,7 @@ Proof.
   (* A_0: send c_0 at ι, recv d_0 at ι+8, send a_0 at ι+10 *)
   cbn. unfold ms_ag0. tstep.
   { unfold sendclose. tstep.
-    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+    - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
       po_gate0 HW.
     - apply KTClos.
     - done.
@@ -169,7 +169,7 @@ Proof.
     - tstep; [tstep|apply KTRecv|kscope|]. po_gate0 HW.
     - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|]. po_gate0 HW. }
   cbn. unfold sendclose. tstep.
-  - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 10)); cbn; set_solver|done|].
+  - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 10)); cbn; set_solver|done|].
     po_gate0 HW.
   - apply KTClos.
   - done.

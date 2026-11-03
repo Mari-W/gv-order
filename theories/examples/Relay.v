@@ -33,8 +33,8 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Definition Dr : sty := SRcv 0 TUnit SEnd.
-Definition Srl : sty := SMu (SRcv 1 (TSess Dr (Pt (NVar 0) 0)) (SVar 0)).
+Definition Dr : sty := SRcv TUnit SEnd.
+Definition Srl : sty := SMu (SRcv (TSess Dr (Pt (NVar 0) 0)) (SVar 0)).
 
 Abbreviation sv o := (Pt (NSlot (NVar 0) 0 0) o).
 
@@ -97,7 +97,7 @@ Proof.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SRcv 1 (TSess Dr (Pt (NVar 0) 0)) Srl) (pv 0 0))).
+              (TSess (SRcv (TSess Dr (Pt (NVar 0) 0)) Srl) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -137,18 +137,18 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd (TSess Dr (sv 0)) (TSess (SSnd 1 (TSess Dr (Pt (NVar 0) 0)) (dual Srl)) (pv 0 0)))).
+              (TProd (TSess Dr (sv 0)) (TSess (SSnd (TSess Dr (Pt (NVar 0) 0)) (dual Srl)) (pv 0 0)))).
     - tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
-    - apply (KTSend _ _ _ 1 (TSess Dr (Pt (NVar 0) 0)) (dual Srl) (pv 0 0)).
+    - apply (KTSend _ _ _ (TSess Dr (Pt (NVar 0) 0)) (dual Srl) (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. hyp0 (pv 0 0) (sv 0).
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; first [hyp0 (pv 0 0) (sv 0)|hyp0 (pv 0 0) (pv 1 0)]|].
       exists (pv 1 0). split; [done|]. right. hyp0 (pv 0 0) (pv 1 0). }
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep|].
-    eapply (tv_appk W HW _ _ _ _ KSend _ (Some (sv 0)) (TProd TUnit (TSess (SSnd 0 TUnit SEnd) (sv 0)))).
+    eapply (tv_appk W HW _ _ _ _ KSend _ (Some (sv 0)) (TProd TUnit (TSess (SSnd TUnit SEnd) (sv 0)))).
     - tstep; tstep.
-    - apply (KTSend _ _ _ 0 TUnit SEnd (sv 0)). cbn. set_solver.
+    - apply (KTSend _ _ _ TUnit SEnd (sv 0)). cbn. set_solver.
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; first [hyp0 (sv 0) (pv 0 1)|hyp0 (sv 0) (pv 1 0)]|].
       exists (pv 1 0). split; [done|]. right. hyp0 (sv 0) (pv 1 0). }

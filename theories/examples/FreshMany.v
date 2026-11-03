@@ -23,7 +23,7 @@ From LRGV Require Export examples.FreshBetween.
 Set Default Proof Using "All".
 
 (** !∗.!∗.Close *)
-Definition Sdd : sty := SSnd 0 TUnit (SSnd 0 TUnit SEnd).
+Definition Sdd : sty := SSnd TUnit (SSnd TUnit SEnd).
 
 Definition fm_box : expr :=
   EBox (Lam (LetP (Var 0) (let_new_pair
@@ -99,12 +99,12 @@ Proof.
     eapply (tv_appk W HW _ _ _ _ KClos _ (Some δ2) (TSess SEnd δ2) TUnit);
       [|apply KTClos|done|].
     - eapply (tv_appk W HW _ _ _ _ KSend _ (Some δ1)
-                (TProd TUnit (TSess (SSnd 0 TUnit SEnd) δ1)) (TSess SEnd δ2));
-        [|apply (KTSend _ _ _ 0 TUnit SEnd δ1); cbn; set_solver|kscope|].
+                (TProd TUnit (TSess (SSnd TUnit SEnd) δ1)) (TSess SEnd δ2));
+        [|apply (KTSend _ _ _ TUnit SEnd δ1); cbn; set_solver|kscope|].
       + tstep; [|tstep].
         eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pvar 0))
-                  (TProd TUnit (TSess Sdd (pvar 0))) (TSess (SSnd 0 TUnit SEnd) δ1));
-          [|apply (KTSend _ _ _ 0 TUnit (SSnd 0 TUnit SEnd) (pvar 0)); cbn; set_solver|kscope|].
+                  (TProd TUnit (TSess Sdd (pvar 0))) (TSess (SSnd TUnit SEnd) δ1));
+          [|apply (KTSend _ _ _ TUnit (SSnd TUnit SEnd) (pvar 0)); cbn; set_solver|kscope|].
         * tstep; [tstep|tstep].
         * apply ubs_intro; [intros y Hy; mem_cases Hy; apply (Hδκ 0)|].
           exists (pvar 2). split; [done|right; apply (Hδκ 0)].

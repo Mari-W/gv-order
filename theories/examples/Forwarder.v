@@ -38,8 +38,8 @@ Set Default Proof Using "All".
 Abbreviation svv a k := (Pt (NSlot (NVar a) k 0) 0).
 Abbreviation sl a k := (Pt (NSlot (NConst a) k 0) 0).
 
-Definition Sfi : sty := SMu (SRcv 1 (TSess SEnd (pvar 0)) (SVar 0)).
-Definition Sfo : sty := SMu (SSnd 1 (TSess SEnd (pvar 0)) (SVar 0)).
+Definition Sfi : sty := SMu (SRcv (TSess SEnd (pvar 0)) (SVar 0)).
+Definition Sfo : sty := SMu (SSnd (TSess SEnd (pvar 0)) (SVar 0)).
 
 Definition fw_P (g : fact) : Prop :=
   ∃ k, g = FLt (pv 0 k) (pv 1 k) ∨ g = FLt (pv 1 k) (pv 0 (S k)) ∨
@@ -105,7 +105,7 @@ Proof.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SRcv 1 (TSess SEnd (pvar 0)) Sfi) (pv 0 0))).
+              (TSess (SRcv (TSess SEnd (pvar 0)) Sfi) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -114,12 +114,12 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0))
-              (TProd (TSess SEnd (svv 1 0)) (TSess (SSnd 1 (TSess SEnd (pvar 0)) Sfo) (pv 1 0)))).
+              (TProd (TSess SEnd (svv 1 0)) (TSess (SSnd (TSess SEnd (pvar 0)) Sfo) (pv 1 0)))).
     - tstep; [eapply t_conv; [|tstep]; conv_sess|].
       (* the alias: d : Close@ι[0] becomes Close@ι′[0] along ι[0] ≡ ι′[0] *)
       eapply t_conv; [|tstep]. split; [|apply seq_refl].
       eapply (se_hyp0 _ _ _ _ (svv 0 0) (svv 1 0)); [by left|fmem|cbn; lia|reflexivity|reflexivity].
-    - apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) Sfo (pv 1 0)).
+    - apply (KTSend _ _ _ (TSess SEnd (pvar 0)) Sfo (pv 1 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. fhyp (pv 1 0) (svv 1 0).
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; fhyp (pv 1 0) (pv 0 1)|].
@@ -154,9 +154,9 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd (TSess SEnd (svv 0 0)) (TSess (SSnd 1 (TSess SEnd (pvar 0)) (dual Sfi)) (pv 0 0)))).
+              (TProd (TSess SEnd (svv 0 0)) (TSess (SSnd (TSess SEnd (pvar 0)) (dual Sfi)) (pv 0 0)))).
     - tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
-    - apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) (dual Sfi) (pv 0 0)).
+    - apply (KTSend _ _ _ (TSess SEnd (pvar 0)) (dual Sfi) (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. fhyp (pv 0 0) (svv 0 0).
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; fhyp (pv 0 0) (svv 0 0)|].
@@ -187,7 +187,7 @@ Proof.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SRcv 1 (TSess SEnd (pvar 0)) (dual Sfo)) (pv 0 0))).
+              (TSess (SRcv (TSess SEnd (pvar 0)) (dual Sfo)) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.

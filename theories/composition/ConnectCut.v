@@ -301,7 +301,7 @@ Section steps.
     assert (proc_step (C1, E1) (PSess (SSend c w)) (C1 ∖ fchans w, F1 ⊎ {[+ e' +]})) as Hst1.
     { rewrite HE. apply (PStepSession C1 F1 e (SSend c w) e' Hst). simpl. clear -Hc. set_solver. }
     pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hst1) as Hc1. simpl in Hc1.
-    destruct Hc1 as (Σ0 & Σv & mm & U & s & k & Σe & Θe & (s0 & HΣa & Hu) & Hd0v & Hc0 & Hcv
+    destruct Hc1 as (Σ0 & Σv & U & s & k & Σe & Θe & (s0 & HΣa & Hu) & Hd0v & Hc0 & Hcv
                      & HdΘ & Hsplit & HΘΣ & HV & HP1').
     pose proof (Vrel_fchans _ _ _ _ _ HV) as Hfw.
     unfold tenv_of in Hfw. rewrite dom_union_L, dom_fmap_L in Hfw.
@@ -314,7 +314,7 @@ Section steps.
     rewrite dom_union_L, HC0 in HdΣa, HΘΣ.
     assert (dom Θe ⊆ C1) as HΘC1 by (rewrite HdΘ; clear; set_solver).
     set (Σv' := Σv ∖ ΣC). set (Σvc := Σv ∩ ΣC).
-    exists ((Σ0 ∖ ΣC) ∪ Σ2), Σv', mm, U, s, k, (Σe ∪ (ΣC' ∩ Σv)), (Θe ∪ tenv_of Σvc).
+    exists ((Σ0 ∖ ΣC) ∪ Σ2), Σv', U, s, k, (Σe ∪ (ΣC' ∩ Σv)), (Θe ∪ tenv_of Σvc).
     split_and!.
     - exists s0. split; [|done]. apply map_eq. intros r.
       pose proof (f_equal (lookup r) HΣa) as Hr.
@@ -443,7 +443,7 @@ Section steps.
       as Hst1.
     { rewrite HE. apply (PStepSession C1 F1 e (SRecv c w) e' Hst). simpl. clear -Hc. set_solver. }
     pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hst1) as Hc1. simpl in Hc1.
-    destruct Hc1 as (Σ1a & mm & U & s & k & (s0 & HΣa & Hu) & Hc1a & Hcont).
+    destruct Hc1 as (Σ1a & U & s & k & (s0 & HΣa & Hu) & Hc1a & Hcont).
     assert (c ∈ dom Σ1) as HcΣ1.
     { assert (c ∈ dom (Σ1 ∪ ΣC)) as H by (rewrite HΣa, dom_insert_L; clear; set_solver).
       rewrite dom_union_L, HC0 in H. clear -H Hc. set_solver. }
@@ -454,7 +454,7 @@ Section steps.
     assert (Σ1a !! c = None) as H1ac by (by apply not_elem_of_dom).
     assert (dom Σ1 ∪ C0 = {[c]} ∪ dom Σ1a) as HdΣa.
     { rewrite <-HC0, <-dom_union_L, HΣa, dom_insert_L. done. }
-    exists (Σ1a ∖ ΣC ∪ Σ2), mm, U, s, k. split_and!.
+    exists (Σ1a ∖ ΣC ∪ Σ2), U, s, k. split_and!.
     - exists s0. split; [|done]. apply map_eq. intros r.
       pose proof (f_equal (lookup r) HΣa) as Hr.
       destruct (decide (r = c)) as [->|Hrc].

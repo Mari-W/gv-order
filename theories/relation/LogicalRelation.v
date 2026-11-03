@@ -251,17 +251,17 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
         Vn W Θ1 (TLolli ub lb TUnit TUnit) w ∧
         at_cost Elow En n (tcost α) W Θ2 T F e'
   | LSess (SRecv c w) =>                               (* O-Recv *)
-      ∃ Θ1 m U s k,
-        tenv_hd Θ c (SRcv m U s) k Θ1 ∧
+      ∃ Θ1 U s k,
+        tenv_hd Θ c (SRcv U s) k Θ1 ∧
         ∀ W' j Θ2 Θ1c Θ', wext W W' → j ≤ nlower n (tcost α) →
           tenv_ext Θ1 c (s, pt_shift 1 k) Θ1c →
           tenv_comp (w_eq W') Θ' Θ1c Θ2 →
-          Vlow j W' Θ2 (payload_at m U k) w →
+          Vlow j W' Θ2 (payload_at U k) w →
           Elow j W' Θ' T F e'
   | LSess (SSend c w) =>                               (* O-Send *)
-      ∃ Θr Θ1 Θ2 m U s k Θ',
-        tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
-        Vn W Θ2 (payload_at m U k) w ∧
+      ∃ Θr Θ1 Θ2 U s k Θ',
+        tenv_hd Θ c (SSnd U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
+        Vn W Θ2 (payload_at U k) w ∧
         tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
   | LSess (SClos c) =>                                 (* O-Close *)
@@ -357,12 +357,12 @@ Definition Psend_case (Vn : world → tenv → ty → expr → Prop)
     (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (p : proc) (c : chan) (w : expr) (p' : proc)
     : Prop :=
-  ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
-    senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
+  ∃ Σ0 Σv U s k (Σe : senv) (Θe : tenv),
+    senv_hd Σ c (SSnd U s) k (Σ0 ∪ Σv) ∧
     Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
     dom Θe = fchans w ∩ p.1 ∧ send_split W Σe Θe ∧
     dom Θe ## dom Σ ∧
-    Vn W (tenv_of Σv ∪ Θe) (payload_at m U k) w ∧
+    Vn W (tenv_of Σv ∪ Θe) (payload_at U k) w ∧
     X W (<[c := (s, pt_shift 1 k)]> (Σ0 ∪ Σe)) T p'.
 
 Definition Pclos_case (X : world → senv → ty → proc → Prop)
@@ -408,11 +408,11 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
       Ptau_case (at_cost Plow Pn n (pcost π)) W Σ T p' ∧
       (ptau_link p p' → Plinktau_case Pn W Σ T p')
   | PSess (SRecv c w) =>                               (* Q-Recv *)
-      ∃ Σ1 m U s k,
-        senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
+      ∃ Σ1 U s k,
+        senv_hd Σ c (SRcv U s) k Σ1 ∧ c ∉ dom Σ1 ∧
         ∀ W' j Θ2, wext W W' → j ≤ nlower n (pcost π) → dom Θ2 ## p.1 →
           recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
-          Vlow j W' Θ2 (payload_at m U k) w →
+          Vlow j W' Θ2 (payload_at U k) w →
           Plow j W' (recv_env (<[c := (s, pt_shift 1 k)]> Σ1) Θ2) T
             (p'.1 ∪ recv_back (<[c := (s, pt_shift 1 k)]> Σ1) Θ2, p'.2)
   | PSess (SSend c w) =>                               (* Q-Send *)
@@ -733,11 +733,11 @@ Proof.
   intros HVl HV HEl HE.
   destruct α as [|[c w|c w|c|cd]|c|w]; cbn [Eobl at_cost tcost scost nlower pred] in *.
   - intros H. apply HEl; [lia|exact H].
-  - intros (Θ1 & m & U & s & k & Hhd & H). exists Θ1, m, U, s, k. split; [done|].
+  - intros (Θ1 & U & s & k & Hhd & H). exists Θ1, U, s, k. split; [done|].
     intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV'.
     apply HEl; [lia|]. apply (H W' j Θ2 Θ1c Θ'); try done. apply HVl; [lia|done].
-  - intros (Θr&Θ1&Θ2&m&U&s&k&Θ'&?&?&?&?&HX).
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; auto.
+  - intros (Θr&Θ1&Θ2&U&s&k&Θ'&?&?&?&?&HX).
+    exists Θr, Θ1, Θ2, U, s, k, Θ'. split_and!; auto.
   - intros (Θ1&k&?&HX). exists Θ1, k. split; auto.
   - intros (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; auto.
@@ -765,11 +765,11 @@ Proof.
     + intros Hd. destruct (H1 Hd) as (N&W'&?&?&HX). exists N, W'.
       split_and!; [done|done|]. apply HPl; [lia|exact HX].
     + intros Hl Hd. apply HP; [by right|]. exact (H2 Hl Hd).
-  - intros (Σ1 & m & U & s & k & Hhd & Hc & H). exists Σ1, m, U, s, k.
+  - intros (Σ1 & U & s & k & Hhd & Hc & H). exists Σ1, U, s, k.
     split_and!; [done|done|]. intros W' j Θ2 HW Hj Hfr Hdu HV'.
     apply HPl; [lia|]. apply (H W' j Θ2); try done. apply HVl; [lia|done].
-  - intros (Σ0&Σv&m&U&s&k&Σe&Θe&?&?&?&?&?&?&?&?&HX).
-    exists Σ0, Σv, m, U, s, k, Σe, Θe.
+  - intros (Σ0&Σv&U&s&k&Σe&Θe&?&?&?&?&?&?&?&?&HX).
+    exists Σ0, Σv, U, s, k, Σe, Θe.
     split_and!; try done; first [apply HP; [by left|exact HX]|auto].
   - intros (Σ1&k&?&?&HX). exists Σ1, k. split_and!; try done; first [apply HP; [by left|exact HX]|auto].
   - intros (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
@@ -959,9 +959,9 @@ Lemma Prel_S_empty_no_sess n W T p σ p' :
 Proof.
   intros HP Hp. pose proof (Prel_S_step _ _ _ _ _ _ _ HP Hp) as Hstep.
   destruct σ as [c w|c w|c|cd]; simpl in Hstep.
-  - destruct Hstep as (Σ1 & m & U & s & k & Heq & _).
+  - destruct Hstep as (Σ1 & U & s & k & Heq & _).
     exact (senv_hd_not_empty _ _ _ _ Heq).
-  - destruct Hstep as (?&?&?&?&?&?&?&?&Heq&_).
+  - destruct Hstep as (?&?&?&?&?&?&?&Heq&_).
     exact (senv_hd_not_empty _ _ _ _ Heq).
   - destruct Hstep as (Σ1 & k & Heq & _).
     exact (senv_hd_not_empty _ _ _ _ Heq).
@@ -1132,12 +1132,12 @@ Proof.
   - intros α e' Hst. specialize (H2 α e' Hst).
     destruct α as [|[c w|c w|c|cd]|c|w]; simpl in H2 |- *.
     + eapply IH; [|exact H2]. lia.
-    + destruct H2 as (Θ1 & m & U & s & k & Hhd & H2).
-      eexists _, _, _, _, _. split; [done|].
+    + destruct H2 as (Θ1 & U & s & k & Hhd & H2).
+      eexists _, _, _, _. split; [done|].
       intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV. apply (H2 W' j Θ2 Θ1c Θ'); auto. lia.
-    + destruct H2 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+    + destruct H2 as (Θr & Θ1 & Θ2 & U & s & k & Θ' &
                       Hhd & Hc & HV & Hext & HE').
-      eexists _, _, _, _, _, _, _, _. split_and!; eauto.
+      eexists _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * exact (proj2 HE').
     + destruct H2 as (Θ1 & k & Hhd & HE').
@@ -1169,12 +1169,12 @@ Proof.
       * intros Hd. destruct (H2 Hd) as (N & W' & ? & ? & ?).
         exists N, W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
       * intros Hlk. eapply Plinktau_case_mono; [|exact (Hl Hlk)]. by intros ? ? ? ? [_ ?].
-    + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
-      eexists _, _, _, _, _. split_and!; [done|done|].
+    + destruct H2 as (Σ1 & U & s & k & Hhd & Hc & H2).
+      eexists _, _, _, _. split_and!; [done|done|].
       intros W' j Θ2 HW Hj Hfr Hdu HV. apply (H2 W' j Θ2); auto. lia.
-    + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
+    + destruct H2 as (Σ0 & Σv & U & s & k & Σe & Θe & Hhd &
                       ? & ? & ? & ? & ? & ? & HV & HP0).
-      eexists _, _, _, _, _, _, _, _. split_and!; eauto.
+      eexists _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * exact (proj2 HP0).
     + destruct H2 as (Σ1 & k & Hhd & ? & HP').

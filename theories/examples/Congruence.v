@@ -67,7 +67,7 @@ From LRGV Require Export examples.LitTools.
 Set Default Proof Using "All".
 
 (** !⟨κ⟩(Close@κ).Close, one channel sent and then a close. *)
-Definition Scg : sty := SSnd 1 (TSess SEnd (pvar 0)) SEnd.
+Definition Scg : sty := SSnd (TSess SEnd (pvar 0)) SEnd.
 
 Abbreviation cgs a := (Pt (NSlot (NVar a) 0 0) 0).
 
@@ -160,7 +160,7 @@ Proof.
     - tstep; [tstep|].
       (* e : Close@ι′.0 becomes Close@ι.0 along ι′.0 ≡ ι.0 *)
       eapply t_conv; [|tstep]. split; [|apply seq_refl]. apply Hslot. by left.
-    - apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) SEnd (pv 0 0)).
+    - apply (KTSend _ _ _ (TSess SEnd (pvar 0)) SEnd (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. apply HsendP. by left.
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hd; by left|].

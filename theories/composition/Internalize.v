@@ -28,28 +28,28 @@ Local Ltac sset :=
 
 (** ** Duality at the head, with payloads and continuations *)
 
-Lemma sdual_snd_inv s r m T s' :
-  sdual s r → unfoldS s = SSnd m T s' →
-  ∃ U r', unfoldS r = SRcv m U r' ∧ teq T U ∧ sdual s' r'.
+Lemma sdual_snd_inv s r T s' :
+  sdual s r → unfoldS s = SSnd T s' →
+  ∃ U r', unfoldS r = SRcv U r' ∧ teq T U ∧ sdual s' r'.
 Proof.
-  intros H Hs. destruct (sdual_snd s r m T s' H Hs) as (U & r' & Hr).
+  intros H Hs. destruct (sdual_snd s r T s' H Hs) as (U & r' & Hr).
   exists U, r'. split; [done|]. split.
   - apply eqT_all. intros n. specialize (H (S n)). simpl in H. unfold dual_step in H.
-    rewrite Hs, Hr in H. by destruct H as (_ & ? & _).
+    rewrite Hs, Hr in H. by destruct H as (? & _).
   - intros n. specialize (H (S n)). simpl in H. unfold dual_step in H.
-    rewrite Hs, Hr in H. by destruct H as (_ & _ & ?).
+    rewrite Hs, Hr in H. by destruct H as (_ & ?).
 Qed.
 
-Lemma sdual_rcv_inv s r m T s' :
-  sdual s r → unfoldS s = SRcv m T s' →
-  ∃ U r', unfoldS r = SSnd m U r' ∧ teq T U ∧ sdual s' r'.
+Lemma sdual_rcv_inv s r T s' :
+  sdual s r → unfoldS s = SRcv T s' →
+  ∃ U r', unfoldS r = SSnd U r' ∧ teq T U ∧ sdual s' r'.
 Proof.
-  intros H Hs. destruct (sdual_rcv s r m T s' H Hs) as (U & r' & Hr).
+  intros H Hs. destruct (sdual_rcv s r T s' H Hs) as (U & r' & Hr).
   exists U, r'. split; [done|]. split.
   - apply eqT_all. intros n. specialize (H (S n)). simpl in H. unfold dual_step in H.
-    rewrite Hs, Hr in H. by destruct H as (_ & ? & _).
+    rewrite Hs, Hr in H. by destruct H as (? & _).
   - intros n. specialize (H (S n)). simpl in H. unfold dual_step in H.
-    rewrite Hs, Hr in H. by destruct H as (_ & _ & ?).
+    rewrite Hs, Hr in H. by destruct H as (_ & ?).
 Qed.
 
 Lemma sdual_unique s r r' : sdual s r → sdual s r' → seq r r'.
@@ -345,15 +345,15 @@ Section ready.
     all: simpl in Hs1, Hs2; destruct Hs1 as [Hc1 Hs1], Hs2 as [Hc2 Hs2];
       simpl in Hc1, Hc2; subst c1 c2.
     (* the heads of the two entries *)
-    all: first [destruct Hs1 as (e & m & T & s & He1 & Hu1)
+    all: first [destruct Hs1 as (e & T & s & He1 & Hu1)
                |destruct Hs1 as (e & He1 & Hu1 & _)];
-         first [destruct Hs2 as (e' & m' & T' & s' & He2 & Hu2)
+         first [destruct Hs2 as (e' & T' & s' & He2 & Hu2)
                |destruct Hs2 as (e' & He2 & Hu2 & _)].
     all: rewrite entry_c in He1; rewrite entry_d in He2;
       injection He1 as <-; injection He2 as <-; simpl in Hu1, Hu2.
     (* mismatched heads contradict duality *)
-    all: try (destruct (sdual_rcv _ _ _ _ _ Hdu Hu1) as (? & ? & Hx); congruence).
-    all: try (destruct (sdual_snd _ _ _ _ _ Hdu Hu1) as (? & ? & Hx); congruence).
+    all: try (destruct (sdual_rcv _ _ _ _ Hdu Hu1) as (? & ? & Hx); congruence).
+    all: try (destruct (sdual_snd _ _ _ _ Hdu Hu1) as (? & ? & Hx); congruence).
     all: try (pose proof (sdual_end _ _ Hdu Hu1) as Hx; congruence).
     - (* receive on c, send on d *)
       destruct (two_threads C E _ _ _ _ H1 H2) as (F & e1 & e1' & e2 & e2' & -> & Hst1 & Hst2).
@@ -654,8 +654,8 @@ Lemma Pcase_gen_mono_at (X Y : world → senv → ty → proc → Prop) n' W Σ 
 Proof.
   intros HXY. destruct π as [|[c w|c w|c|cd]]; simpl; try done.
   - intros [H1 H2]. split; [done|]. intros Hl Hd. apply HXY. by apply H2.
-  - intros (Σ0&Σv&m&U&s&k&Σe&Θe&?&?&?&?&?&?&?&?&HX).
-    exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; auto.
+  - intros (Σ0&Σv&U&s&k&Σe&Θe&?&?&?&?&?&?&?&?&HX).
+    exists Σ0, Σv, U, s, k, Σe, Θe. split_and!; auto.
   - intros (Σ1&k&?&?&HX). exists Σ1, k. split_and!; auto.
   - intros (c0&d0&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
     exists c0, d0, Σ1, sc, sd, kc, kd. split_and!; auto.
@@ -711,10 +711,10 @@ Section internalize.
       assert (a ≠ d ∧ a ∉ C) as [Had HaC] by sset.
       pose proof (Hstep _ _ (PStepSession C F e (SRecv a (eswap c z w')) f Hf
                     ltac:(simpl; sset))) as Hp.
-      simpl in Hp. destruct Hp as (Σ1 & m & U & s & k & (s0 & HΣ & Hu) & Ha1 & H).
+      simpl in Hp. destruct Hp as (Σ1 & U & s & k & (s0 & HΣ & Hu) & Ha1 & H).
       destruct (fusedP_peel c d Hcd Σ sc sd kc kd Σ1 a (s0, k) HcΣ HdΣ Hc0c Had HΣ Ha1)
         as [-> HΣ'].
-      exists (delete a Σ), m, U, s, k. split_and!.
+      exists (delete a Σ), U, s, k. split_and!.
       { exists s0. done. }
       { rewrite dom_delete_L. sset. }
       intros W' j Θ2 HW' Hj HΘ2 Hok HVw.
@@ -854,7 +854,7 @@ Section internalize.
       pose proof (Hstep _ _ (PStepSession C F e (SSend a w0) f Hf
                     ltac:(cbn [subjs]; clear -HaC; set_solver))) as Hp.
       cbn [Pcase_gen] in Hp.
-      destruct Hp as (Σ0 & Σv & m & U & s & k & Σe & Θe & (s0 & HΣ & Hu) & Hdj & Ha0 & Hav &
+      destruct Hp as (Σ0 & Σv & U & s & k & Σe & Θe & (s0 & HΣ & Hu) & Hdj & Ha0 & Hav &
                       Hdom & Hsplit & HdΘΣ & HV & HP1 & HΦ).
       cbn [fst snd sentc] in Hdom, HP1, HΦ.
       assert (a ∉ dom (Σ0 ∪ Σv)) as Ha01
@@ -884,7 +884,7 @@ Section internalize.
         { rewrite Hfw. apply not_elem_of_dom in Hvc, Hvd, HcΘe, HdΘe.
           clear -Hvc Hvd HcΘe HdΘe. set_solver. }
         rewrite (chsubst_id c d w0) by done.
-        exists Σ0', Σv', m, U, s, k, Σe, Θe. split_and!.
+        exists Σ0', Σv', U, s, k, Σe, Θe. split_and!.
         + by exists s0.
         + done.
         + clear -HaR. set_solver.
@@ -906,7 +906,7 @@ Section internalize.
               clear -H0c H0d HcΣe HdΣe Hc0c Had; set_solver.
       - (* the end c is sent *)
         assert (c ∈ fchans w0) as Hcw by (rewrite Hfw, dom_insert_L; clear; set_solver).
-        exists Σ0', Σv', m, U, s, k, (<[d := (sd, kd)]> Σe), (<[d := One (sc, kc)]> Θe).
+        exists Σ0', Σv', U, s, k, (<[d := (sd, kd)]> Σe), (<[d := One (sc, kc)]> Θe).
         split_and!.
         + by exists s0.
         + done.
@@ -948,7 +948,7 @@ Section internalize.
         { rewrite Hfw, dom_insert_L. apply not_elem_of_dom in Hvc, HcΘe.
           clear -Hvc HcΘe Hcd. set_solver. }
         rewrite (chsubst_id c d w0) by done.
-        exists Σ0', Σv', m, U, s, k, (<[d := (sc, kc)]> Σe), (<[d := One (sd, kd)]> Θe).
+        exists Σ0', Σv', U, s, k, (<[d := (sc, kc)]> Σe), (<[d := One (sd, kd)]> Θe).
         split_and!.
         + by exists s0.
         + done.
@@ -984,7 +984,7 @@ Section internalize.
           * done.
       - (* both ends are sent *)
         assert (c ∈ fchans w0) as Hcw by (rewrite Hfw, dom_insert_L; clear; set_solver).
-        exists Σ0', Σv', m, U, s, k, Σe, (<[d := Both (sc, kc) (sd, kd)]> Θe).
+        exists Σ0', Σv', U, s, k, Σe, (<[d := Both (sc, kc) (sd, kd)]> Θe).
         split_and!.
         + by exists s0.
         + done.
@@ -1044,7 +1044,7 @@ Section internalize.
           by multiset_solver.
         apply PStepSession; [done|]. cbn [subjs]. clear -Hc0C. set_solver. }
       pose proof (Hstep _ _ Hst1) as Hp. cbn [Pcase_gen] in Hp.
-      destruct Hp as (Σ0 & Σv & m & U & s & k & Σe & Θe & (s0 & HΣ & Hu) & Hdj & Ha0 & Hav &
+      destruct Hp as (Σ0 & Σv & U & s & k & Σe & Θe & (s0 & HΣ & Hu) & Hdj & Ha0 & Hav &
                       Hdom & Hsplit & HdΘΣ & HV & HP1 & _).
       cbn [fst snd sentc] in Hdom, HP1.
       assert (Hl : ∀ y, fusedP c d Σ sc sd kc kd !! y = (<[c0 := (s0, k)]> (Σ0 ∪ Σv)) !! y)
@@ -1064,7 +1064,7 @@ Section internalize.
           by multiset_solver.
         apply PStepSession; [done|]. cbn [subjs]. clear -Hc1C. set_solver. }
       pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hst2) as Hp2. cbn [Pcase_gen] in Hp2.
-      destruct Hp2 as (Σ1 & m' & U' & s' & k' & (s1 & HΣ1 & Hu1) & Hc1Σ1 & Hrecv).
+      destruct Hp2 as (Σ1 & U' & s' & k' & (s1 & HΣ1 & Hu1) & Hc1Σ1 & Hrecv).
       cbn [fst snd sentc] in Hrecv. rewrite difference_empty_L in Hrecv.
       set (Σp1 := <[c0 := (s, pt_shift 1 k)]> (Σ0 ∪ Σe)) in *.
       assert (Hl1 : ∀ y, Σp1 !! y = (<[c1 := (s1, k')]> Σ1) !! y) by (intros; by rewrite HΣ1).
@@ -1080,19 +1080,19 @@ Section internalize.
         simpl in H1. injection H1 as ->. rewrite Hl, lookup_insert_ne by done.
         by apply lookup_union_Some_l. }
       (* the payload types agree, the continuations are dual *)
-      assert (m' = m ∧ teq U U' ∧
+      assert (teq U U' ∧
               ((c0 = c ∧ c1 = d ∧ sdual s s') ∨ (c0 = d ∧ c1 = c ∧ sdual s' s)) ∧
-              w_eq W k k') as (-> & HUU & Hcont & Hkk).
+              w_eq W k k') as (HUU & Hcont & Hkk).
       { destruct Hcc as [[-> ->]|[-> ->]].
         - rewrite fusedP_c in E0. rewrite (fusedP_d c d Hcd) in E1.
           injection E0 as -> ->. injection E1 as -> ->.
-          destruct (sdual_snd_inv _ _ _ _ _ Hdu Hu) as (U2 & r' & Hr & HU2 & Hsr).
-          rewrite Hu1 in Hr. injection Hr as -> -> ->. split_and!; [done|done| |done].
+          destruct (sdual_snd_inv _ _ _ _ Hdu Hu) as (U2 & r' & Hr & HU2 & Hsr).
+          rewrite Hu1 in Hr. injection Hr as -> ->. split_and!; [done| |done].
           left. done.
         - rewrite (fusedP_d c d Hcd) in E0. rewrite fusedP_c in E1.
           injection E0 as -> ->. injection E1 as -> ->.
-          destruct (sdual_rcv_inv _ _ _ _ _ Hdu Hu1) as (U2 & r' & Hr & HU2 & Hsr).
-          rewrite Hu in Hr. injection Hr as -> -> ->. split_and!; [done|by apply teq_sym| |].
+          destruct (sdual_rcv_inv _ _ _ _ Hdu Hu1) as (U2 & r' & Hr & HU2 & Hsr).
+          rewrite Hu in Hr. injection Hr as -> ->. split_and!; [by apply teq_sym| |].
           + right. done.
           + by apply (wf_eq_sym _ HWf). }
       set (Σr := <[c1 := (s', pt_shift 1 k')]> Σ1).
@@ -1128,10 +1128,10 @@ Section internalize.
       assert (dom (tenv_of Σv ∪ Θe) ## C ∖ fchans w0) as Hg2.
       { rewrite dom_union_L. unfold tenv_of. rewrite dom_fmap_L, Hdom.
         clear -HΣvC. set_solver. }
-      assert (Vrel n' W (tenv_of Σv ∪ Θe) (payload_at m U' k') w0) as HV2.
+      assert (Vrel n' W (tenv_of Σv ∪ Θe) (payload_at U' k') w0) as HV2.
       { eapply Vrel_tconv; [done| |eapply Vrel_down; [|exact HV]; lia].
         eapply (teqW_trans W HWf); [apply (teqW_payload W HWf); exact Hkk|].
-        apply teq_teqW, teq_ty_inst, HUU. }
+        apply teq_teqW, teq_payload, HUU. }
       pose proof (send_recv_ok W Σr Σv Σe Θe C) as Sok.
       pose proof (send_recv_back W Σr Σv Σe Θe C) as Sback.
       pose proof (send_recv_env_v Σr Σv Θe Hrv) as Sv.

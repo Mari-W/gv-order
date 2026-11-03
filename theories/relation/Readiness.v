@@ -34,9 +34,9 @@ From LRGV Require Export lang.Safety relation.Worlds.
 Definition selects (Θ : tenv) (σ : slabel) (k : ekey) : Prop :=
   match σ with
   | SSend c _ =>
-      k.1 = c ∧ ∃ e m T s, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SSnd m T s
+      k.1 = c ∧ ∃ e T s, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SSnd T s
   | SRecv c _ =>
-      k.1 = c ∧ ∃ e m T s, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SRcv m T s
+      k.1 = c ∧ ∃ e T s, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SRcv T s
   | SClos c =>
       k.1 = c ∧ ∃ e, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SEnd ∧
         (k.2 = true →

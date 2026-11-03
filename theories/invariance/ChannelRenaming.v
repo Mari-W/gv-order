@@ -316,12 +316,12 @@ Section ready.
     selects Θ σ k → selects (tenvswap a b Θ) (slswap a b σ) (kswap a b k).
   Proof.
     destruct σ as [c v|c v|c|cd]; simpl.
-    - intros (Hk & e & m & T & s & He & Hu). split; [by rewrite Hk|].
-      exists e, m, T, s.
+    - intros (Hk & e & T & s & He & Hu). split; [by rewrite Hk|].
+      exists e, T, s.
       rewrite tenv_entry_swap, He. split; [done|]. simpl.
       done.
-    - intros (Hk & e & m & T & s & He & Hu). split; [by rewrite Hk|].
-      exists e, m, T, s.
+    - intros (Hk & e & T & s & He & Hu). split; [by rewrite Hk|].
+      exists e, T, s.
       rewrite tenv_entry_swap, He. split; [done|]. simpl.
       done.
     - intros (Hk & e & He & Hu & Ht). split; [by rewrite Hk|].
@@ -572,9 +572,9 @@ Proof.
     destruct (tlswap a b α) as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
     + by apply (IHE n' ltac:(lia)).
     + (* recv *)
-      destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
-      exists (tenvswap a b Θ1), m, U, s, k.
-      split; [by apply (tenv_hd_swap a b _ _ (SRcv m U s))|].
+      destruct Hstep as (Θ1 & U & s & k & Hhd & H).
+      exists (tenvswap a b Θ1), U, s, k.
+      split; [by apply (tenv_hd_swap a b _ _ (SRcv U s))|].
       intros W' j Θ2 Θ1c Θ' Hx Hj Hext Hc HVw.
       apply (tenv_comp_swap a b) in Hc.
       apply (tenv_ext_swap a b) in Hext. rewrite tenvswap_involutive, cswap_involutive in Hext.
@@ -582,12 +582,12 @@ Proof.
       pose proof (H _ _ _ _ _ Hx Hj Hext Hc HVw) as HE'.
       apply (IHE j ltac:(lia)) in HE'. by rewrite tenvswap_involutive in HE'.
     + (* send *)
-      destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+      destruct Hstep as (Θr & Θ1 & Θ2 & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').
-      exists (tenvswap a b Θr), (tenvswap a b Θ1), (tenvswap a b Θ2), m,
+      exists (tenvswap a b Θr), (tenvswap a b Θ1), (tenvswap a b Θ2),
         U, s, k, (tenvswap a b Θ').
       split_and!.
-      * by apply (tenv_hd_swap a b _ _ (SSnd m U s)).
+      * by apply (tenv_hd_swap a b _ _ (SSnd U s)).
       * by apply tenv_comp_swap.
       * by apply HV.
       * by apply (tenv_ext_swap a b _ _ (s, pt_shift 1 k)).
@@ -664,10 +664,10 @@ Proof.
       rewrite !pswap_involutive in Hl.
       exact (proj2 (Hlink Hl (Hdd Hd))).
     + (* recv *)
-      destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
-      exists (senvswap a b Σ1), m, U, s, k.
+      destruct Hstep as (Σ1 & U & s & k & Hhd & Hc & H).
+      exists (senvswap a b Σ1), U, s, k.
       split_and!.
-      * by apply (senv_hd_swap a b _ _ (SRcv m U s)).
+      * by apply (senv_hd_swap a b _ _ (SRcv U s)).
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
       * intros W' j Θ2 Hx Hj Hfr Hok HVw.
         assert (dom (tenvswap a b Θ2) ## p.1) as Hfr'.
@@ -685,12 +685,12 @@ Proof.
           senvswap_insert in H.
         exact H.
     + (* send *)
-      destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
+      destruct Hstep as (Σ0 & Σv & U & s & k & Σe & Θe & Hhd &
                          Hd0v & Hc0 & Hcv & Hdom & Hsplit & HdΣ & HVw & HP').
-      exists (senvswap a b Σ0), (senvswap a b Σv), m, U,
+      exists (senvswap a b Σ0), (senvswap a b Σv), U,
         s, k, (senvswap a b Σe), (tenvswap a b Θe).
       split_and!.
-      * rewrite <-senvswap_union. by apply (senv_hd_swap a b _ _ (SSnd m U s)).
+      * rewrite <-senvswap_union. by apply (senv_hd_swap a b _ _ (SSnd U s)).
       * by apply senvswap_disjoint.
       * rewrite dom_senvswap. by rewrite elem_of_gswap.
       * rewrite dom_senvswap. by rewrite elem_of_gswap.

@@ -136,10 +136,10 @@ Proof.
   all: try (exists σ, e'; split; [done|];
             destruct σ as [c0 w|c0 w|c0|cd]; simpl in Hc1, Hstep |- *;
             [apply elem_of_singleton in Hc1; subst c0;
-             destruct Hstep as (Θ1r & m & U & s & k & Hhd & _);
+             destruct Hstep as (Θ1r & U & s & k & Hhd & _);
              destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [_ Hu]; split; [done|]; eauto 10
             |apply elem_of_singleton in Hc1; subst c0;
-             destruct Hstep as (Θr & ? & ? & m & U & s & k & ? & Hhd & _);
+             destruct Hstep as (Θr & ? & ? & U & s & k & ? & Hhd & _);
              destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [_ Hu]; split; [done|]; eauto 10
             |apply elem_of_singleton in Hc1; subst c0;
              destruct Hstep as (Θr & k & Hhd & _);
@@ -434,9 +434,9 @@ Proof.
     + (* receive *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
-      destruct Hcase as (Θ1r & m & U & s & k & (s0 & Hext & Hu) & Hcont).
+      destruct Hcase as (Θ1r & U & s & k & (s0 & Hext & Hu) & Hcont).
       destruct (comp_ext _ _ _ _ _ c _ Hc H2c Hext) as [Hcr Hextr].
-      exists (partial_alter (λ _, Θ1r !! c) c Θ), m, U, s, k. split; [by exists s0|].
+      exists (partial_alter (λ _, Θ1r !! c) c Θ), U, s, k. split; [by exists s0|].
       intros W' j Θp Θrc Θ' HW' Hj Hextc Hcomp' HV.
       pose proof (proj2 (proj2 (proj2 HW'))) as HWs'.
       assert (∀ x y, w_eq W' x y → w_eq W' y x) as Hsym' by apply (wf_eq_sym _ (proj1 HWs')).
@@ -449,11 +449,11 @@ Proof.
     + (* send *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
-      destruct Hcase as (Θ1r & A & B & m & U & s & k & Θ1' & (s0 & Hext & Hu) & HcAB & HV & Hext' & HE' & HΦ).
+      destruct Hcase as (Θ1r & A & B & U & s & k & Θ1' & (s0 & Hext & Hu) & HcAB & HV & Hext' & HE' & HΦ).
       destruct (comp_ext _ _ _ _ _ c _ Hc H2c Hext) as [Hcr Hextr].
       destruct (comp_assoc _ _ _ _ _ _ Hsym Hcr HcAB) as [HX1 HX2].
       set (X := tjoin_as (partial_alter (λ _, Θ1r !! c) c Θ) A Θ2) in *.
-      exists (partial_alter (λ _, Θ1r !! c) c Θ), X, B, m, U, s, k,
+      exists (partial_alter (λ _, Θ1r !! c) c Θ), X, B, U, s, k,
         (partial_alter (λ _, Θ1' !! c) c X).
       split_and!; [by exists s0|done|done| |].
       * eapply ext_transfer; [exact Hext'|by apply (comp_lookup _ _ _ _ _ HX1)|

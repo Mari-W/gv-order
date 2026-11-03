@@ -15,7 +15,7 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Definition Ssync : sty := SSnd 0 TUnit SEnd.
+Definition Ssync : sty := SSnd TUnit SEnd.
 
 Definition sync_thunk : expr :=
   Lam (LetU (Var 0) (App EClos (App ESend (Pair EUnit (Var 2))))).
@@ -37,7 +37,7 @@ Proof.
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
       tstep.
-      + tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (pvar 0)); cbn; set_solver|done|].
+      + tstep; [|apply (KTSend _ _ _ TUnit SEnd (pvar 0)); cbn; set_solver|done|].
         * tstep; tstep.
         * apply ubs_intro; [intros y Hy; mem_cases Hy|].
           exists (Pt (NVar 0) 1). split; [done|]. right. apply (slt_po W _ (pvar 0) HW).

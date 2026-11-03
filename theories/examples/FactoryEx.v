@@ -49,7 +49,7 @@ From LRGV Require Export examples.Factory.
 Set Default Proof Using "All".
 
 (** ?∗.Close, the end the client holds. *)
-Definition Sr : sty := SRcv 0 TUnit SEnd.
+Definition Sr : sty := SRcv TUnit SEnd.
 
 Definition mk : expr := fac.
 
@@ -81,7 +81,7 @@ Ltac mk_tail HW :=
       [set_solver| |];
     [ intros y Hy; mem_cases Hy; apply sle_refl, HW
     | cbn; tstep; [tstep|]; cbn; unfold sendclose; tstep;
-      [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|done|];
+      [ tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|done|];
         apply ubs_intro; [intros y Hy; mem_cases Hy|];
         exists (Pt (NVar 0) 1); split; [done|]; right; apply (slt_po _ _ (Pt (NVar 0) 0) HW)
       | apply KTClos

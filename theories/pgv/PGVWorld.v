@@ -228,8 +228,8 @@ Fixpoint tr_ty (T : pty) : ty :=
   end
 with tr_sty (s : psty) : sty :=
   match s with
-  | PSnd _ T s' => SSnd 0 (tr_ty T) (tr_sty s')
-  | PRcv _ T s' => SRcv 0 (tr_ty T) (tr_sty s')
+  | PSnd _ T s' => SSnd (tr_ty T) (tr_sty s')
+  | PRcv _ T s' => SRcv (tr_ty T) (tr_sty s')
   | PEndS _ | PEndR _ => SEnd
   end.
 
@@ -256,9 +256,9 @@ Proof.
   - destruct p; simpl; try done; intros a Ha; done.
 Qed.
 
-Lemma payload_tr T x : payload_at 0 (tr_ty T) x = tr_ty T.
+Lemma payload_tr T x : payload_at (tr_ty T) x = tr_ty T.
 Proof.
-  unfold payload_at, ty_inst. rewrite (pinst_closed _ _ (tr_pscoped T)). done.
+  unfold payload_at. rewrite (pinst_closed _ _ (tr_pscoped T)). done.
 Qed.
 
 (** ** Heads of translated types

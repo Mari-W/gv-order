@@ -30,13 +30,13 @@ Proof.
   intros α e' Hst. specialize (Hstep α e' Hst).
   destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
   - eapply HEj; [lia|by apply wext_refl|exact Hstep].
-  - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
-    exists Θ1, m, U, s, k. split; [done|].
+  - destruct Hstep as (Θ1 & U & s & k & Hhd & H).
+    exists Θ1, U, s, k. split; [done|].
     intros W' j Θ2 Θ1c Θ' HW' Hj Hext Hc HVw.
     eapply HEj; [lia|exact HW'|by apply (H W' j Θ2 Θ1c Θ')].
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+  - destruct Hstep as (Θr & Θ1 & Θ2 & U & s & k & Θ' &
                        Hhd & Hc & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done. exact (proj2 HE' T' HW HV).
+    exists Θr, Θ1, Θ2, U, s, k, Θ'. split_and!; try done. exact (proj2 HE' T' HW HV).
   - destruct Hstep as (Θ1 & k & Hhd & HE').
     exists Θ1, k. split; [done|]. exact (proj2 HE' T' HW HV).
   - destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &

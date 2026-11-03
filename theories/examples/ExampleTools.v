@@ -554,7 +554,7 @@ Proof. intros H. unfold pt_known. simpl. apply elem_of_list_to_set, list_elem_of
 Ltac kscope := cbn; repeat split; try done; intros ? Hv; injection Hv; lia.
 
 (** !∗.Close *)
-Definition Sd : sty := SSnd 0 TUnit SEnd.
+Definition Sd : sty := SSnd TUnit SEnd.
 
 Definition sendclose (v : expr) : expr := App EClos (App ESend (Pair EUnit v)).
 Definition recvclose (v : expr) : expr := LetP (App ERecv v) (LetU (Var 1) (App EClos (Var 0))).
@@ -581,8 +581,8 @@ Ltac vb_list := repeat (apply Forall_cons; split); try (apply Forall_nil; done);
 
 Abbreviation pv a k := (Pt (NVar a) k).
 
-Definition Sa : sty := SMu (SRcv 0 TUnit (SVar 0)).
-Definition Sb : sty := SMu (SSnd 0 TUnit (SVar 0)).
+Definition Sa : sty := SMu (SRcv TUnit (SVar 0)).
+Definition Sb : sty := SMu (SSnd TUnit (SVar 0)).
 
 (** Closed boxes: no outer point variable, so substitution fixes them. *)
 Lemma pinst_closed σ T : pscoped 0 T → pinst_ty σ T = T.

@@ -275,9 +275,9 @@ Section steps2.
       as Hs2 by (rewrite HE2; apply PStepSession; [done|simpl; clear -Hc2; set_solver]).
     pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hs1) as Hc1'. simpl in Hc1'.
     pose proof (Prel_S_step _ _ _ _ _ _ _ HP2 Hs2) as Hc2'. simpl in Hc2'.
-    destruct Hc1' as (Σ0 & Σv & mm & U & s & k & Σe & Θe & (s0 & HΣa & Hu) & Hd0v & Hc0 & Hcv
+    destruct Hc1' as (Σ0 & Σv & U & s & k & Σe & Θe & (s0 & HΣa & Hu) & Hd0v & Hc0 & Hcv
                      & HdΘ & Hsplit & HΘΣ & HV & HP1').
-    destruct Hc2' as (Σ2a & mm' & U' & s' & k' & (r0 & HΣb & Hu') & Hc2a & Hcont).
+    destruct Hc2' as (Σ2a & U' & s' & k' & (r0 & HΣb & Hu') & Hc2a & Hcont).
     pose proof (Vrel_fchans _ _ _ _ _ HV) as Hfw.
     unfold tenv_of in Hfw. rewrite dom_union_L, dom_fmap_L in Hfw.
     assert (dom Σe ⊆ dom Θe) as HΣeΘ by apply Hsplit.
@@ -297,8 +297,8 @@ Section steps2.
     { pose proof (f_equal (lookup c) HΣb) as H. rewrite lookup_insert_eq, lookup_union, H2c in H.
       by rewrite (left_id_L None (∪)) in H. }
     destruct (Hcut c _ _ HCc HC'c) as [Hkk Hdu]. simpl in Hkk, Hdu.
-    destruct (sdual_snd_inv s0 r0 mm U s Hdu Hu) as (U2 & r' & Hr0 & HUU & Hss).
-    rewrite Hu' in Hr0. injection Hr0 as <- <- <-.
+    destruct (sdual_snd_inv s0 r0 U s Hdu Hu) as (U2 & r' & Hr0 & HUU & Hss).
+    rewrite Hu' in Hr0. injection Hr0 as <- <-.
     set (Θ2 := tenv_of Σv ∪ Θe).
     set (Σr2 := <[c := (s', pt_shift 1 k')]> Σ2a).
     assert (dom Σv ## dom Θe) as HvΘ by (clear -HdΣa HΘC1 HC1Σ1 HC10; set_solver).
@@ -338,8 +338,8 @@ Section steps2.
         rewrite (left_id_L None (∪)) in H. injection H as ->. simpl in Hb.
         destruct Hb as (_ & ? & ?). done.
       - rewrite HDr2, HDo, HDΘ2. clear -HΣeΘ HΘC1 HC1Σ2 HC10. set_solver. }
-    assert (Vrel n' W Θ2 (payload_at mm' U' k') v) as HV'.
-    { eapply Vrel_payload; [apply HW'|exact Hkk|]. eapply Vrel_teq; [by apply teq_ty_inst|].
+    assert (Vrel n' W Θ2 (payload_at U' k') v) as HV'.
+    { eapply Vrel_payload; [apply HW'|exact Hkk|]. eapply Vrel_teq; [by apply teq_payload|].
       eapply Vrel_down; [|exact HV]. lia. }
     pose proof (Hcont W n' Θ2 (wext_refl W HW') (le_n _)
                   ltac:(rewrite HDΘ2; clear -HdΣa HΘC1 HC12 HC2Σ1 HC20; set_solver) Hrok HV') as HP2'.

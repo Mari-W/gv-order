@@ -54,7 +54,7 @@ Fixpoint ty_roots (T : ty) : gset pname :=
   end
 with sty_roots (s : sty) : gset pname :=
   match s with
-  | SRcv _ T s' | SSnd _ T s' => ty_roots T ∪ sty_roots s'
+  | SRcv T s' | SSnd T s' => ty_roots T ∪ sty_roots s'
   | SMu s' => sty_roots s'
   | SEnd | SVar _ | SVarD _ => ∅
   end.

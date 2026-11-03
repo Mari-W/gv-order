@@ -700,10 +700,10 @@ Section level.
     Pcase n' W Σ T (C0, {[+ t +]}) (PSess (SRecv c w)) (C0, {[+ t' +]}).
   Proof.
     intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
-    destruct Hc as (Θ1 & m0 & U & s & k & Hhd & Hcont).
+    destruct Hc as (Θ1 & U & s & k & Hhd & Hcont).
     destruct (hd_iface _ _ _ _ _ _ _ _ Hok HcC Hhd) as (s0 & HΣc & Hu & ->).
     pose proof (ΘB_none_of _ _ _ _ _ Hok HcC) as HBc.
-    exists (delete c Σ), m0, U, s, k. split_and!.
+    exists (delete c Σ), U, s, k. split_and!.
     - exists s0. split; [|done]. by rewrite insert_delete_id.
     - by rewrite dom_delete_L; clear; set_solver.
     - intros W' j Θ2 HW' Hj Hd Hrok HV. cbn [nlower pcost scost pred] in Hj.
@@ -736,7 +736,7 @@ Section level.
     Pcase n' W Σ T (C0, {[+ t +]}) (PSess (SSend c w)) (C0 ∖ fchans w, {[+ t' +]}).
   Proof.
     intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
-    destruct Hc as (Θr & Θ1 & Θ2 & m0 & U & s & k & Θ' & Hhd & Hcomp & HV & Hext & HE').
+    destruct Hc as (Θr & Θ1 & Θ2 & U & s & k & Θ' & Hhd & Hcomp & HV & Hext & HE').
     destruct (hd_iface _ _ _ _ _ _ _ _ Hok HcC Hhd) as (s0 & HΣc & Hu & ->).
     pose proof (ΘB_none_of _ _ _ _ _ Hok HcC) as HBc.
     assert (tok W (delete c Σ) ΘB C0) as Hok0 by (eapply tok_sub; [apply delete_subseteq|exact Hok]).
@@ -749,7 +749,7 @@ Section level.
         rewrite ?lookup_delete_eq in HH; congruence. }
     assert (Θ' = <[c := One (s, pt_shift 1 k)]> Θ1) as ->.
     { destruct Hext as [(_ & ->)|(e' & HH & _)]; [done|congruence]. }
-    exists (mdrop (delete c Σ) Θ2), (mkeep (delete c Σ) Θ2), m0, U, s, k,
+    exists (mdrop (delete c Σ) Θ2), (mkeep (delete c Σ) Θ2), U, s, k,
       (tenv_ones (mkeep Θ1 ΘB)), (mkeep Θ2 ΘB). split_and!.
     - exists s0. split; [|done]. rewrite <-HΣeq. by rewrite insert_delete_id.
     - done.

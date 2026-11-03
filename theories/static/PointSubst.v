@@ -14,8 +14,9 @@ Set Default Proof Using "All".
     The body of a box is typed once, with the box's ιs as the point
     variables 0, …, m-1 and every outer point variable shifted past
     them. [typed_sem_rules] substitutes points for the variables. A
-    payload ∃ιs.T is scoped: its points are constants or among its m
-    binders, so substitution commutes with [payload_at]. *)
+    payload needs no binder: its point variables are slots of the
+    carrier, so substitution commutes with [payload_at]
+    unconditionally. *)
 
 Definition pshift (m : nat) : nat → point := λ a, pvar (a + m).
 
@@ -375,22 +376,17 @@ Proof.
     + eapply IH; [done|]. by apply Hup.
 Qed.
 
-Lemma payload_pinst σ m T x :
-  pscoped m T → pinst_ty σ (payload_at m T x) = payload_at m T (pt_inst σ x).
+Lemma payload_pinst σ T x :
+  pinst_ty σ (payload_at T x) = payload_at T (pt_inst σ x).
 Proof.
-  intros HT. unfold payload_at, ty_inst. rewrite pinst_ty_comp.
-  apply (pinst_ty_ext_scoped T m); [done|]. intros a Ha. simpl. unfold plist, slots.
-  rewrite !list_lookup_fmap, !lookup_seq_lt by done. simpl. apply pt_inst_slot.
+  unfold payload_at. rewrite pinst_ty_comp.
+  apply pinst_ty_ext. intros a. simpl. apply pt_inst_slot.
 Qed.
 
-(** E-Const asks the payload of send and recv to be scoped by its m
-    binders (§4: "P ::= ∃ιs. T, all points of T bound"). *)
-Definition kscoped (k : konst) (T : ty) : Prop :=
-  match k, T with
-  | KSend, TLolli _ _ (TProd _ (TSess (SSnd m P _) _)) _ => pscoped m P
-  | KRecv, TLolli _ _ (TSess (SRcv m P _) _) _ => pscoped m P
-  | _, _ => True
-  end.
+(** E-Const asks nothing of the payload of send and recv: every point
+    variable of P is a slot of the carrier, so [payload_at] is a total
+    substitution. *)
+Definition kscoped (k : konst) (T : ty) : Prop := True.
 
 Lemma opt_heads_pinst σ o : opt_heads (pt_inst σ <$> o) = set_map (pt_inst σ) (opt_heads o).
 Proof. destruct o; simpl; [by rewrite set_map_singleton_L|by rewrite set_map_empty]. Qed.
@@ -656,7 +652,7 @@ Section transfer.
     konst_ty peq' plt' pk' k (pinst_ty σ T).
   Proof.
     intros Heq Hlt Hpk Hk.
-    destruct 1 as [ub lb|m P S x Hh|m P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK
+    destruct 1 as [ub lb|P S x Hh|P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK
                   |S C H H0];
       simpl in *.
     - constructor.

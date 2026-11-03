@@ -64,16 +64,16 @@ Qed.
 
 Definition eq_step (τ : sty → sty → Prop) (s r : sty) : Prop :=
   match unfoldS s, unfoldS r with
-  | SRcv m T s', SRcv m' U r' => m = m' ∧ eqT τ T U ∧ τ s' r'
-  | SSnd m T s', SSnd m' U r' => m = m' ∧ eqT τ T U ∧ τ s' r'
+  | SRcv T s', SRcv U r' => eqT τ T U ∧ τ s' r'
+  | SSnd T s', SSnd U r' => eqT τ T U ∧ τ s' r'
   | SEnd, SEnd => True
   | u, v => u = v
   end.
 
 Definition dual_step (τ δ : sty → sty → Prop) (s r : sty) : Prop :=
   match unfoldS s, unfoldS r with
-  | SRcv m T s', SSnd m' U r' => m = m' ∧ eqT τ T U ∧ δ s' r'
-  | SSnd m T s', SRcv m' U r' => m = m' ∧ eqT τ T U ∧ δ s' r'
+  | SRcv T s', SSnd U r' => eqT τ T U ∧ δ s' r'
+  | SSnd T s', SRcv U r' => eqT τ T U ∧ δ s' r'
   | SEnd, SEnd => True
   | u, v => u = dual v
   end.
@@ -86,7 +86,7 @@ Lemma eq_step_mono τ τ' s r :
 Proof.
   unfold eq_step. intros Hτ.
   destruct (unfoldS s), (unfoldS r); try done;
-    intros (? & ? & ?); split_and!; eauto using eqT_mono.
+    intros (? & ?); split_and!; eauto using eqT_mono.
 Qed.
 
 Lemma dual_step_mono τ τ' δ δ' s r :
@@ -95,7 +95,7 @@ Lemma dual_step_mono τ τ' δ δ' s r :
 Proof.
   unfold dual_step. intros Hτ Hδ.
   destruct (unfoldS s), (unfoldS r); try done;
-    intros (? & ? & ?); split_and!; eauto using eqT_mono.
+    intros (? & ?); split_and!; eauto using eqT_mono.
 Qed.
 
 (** ** The approximations *)
@@ -156,7 +156,7 @@ Proof.
   induction n as [|n IH]; intros s r H; [done|].
   unfold aeq in *; fold aeq in *. unfold eq_step in *.
   destruct (unfoldS s), (unfoldS r); try (by symmetry);
-    try done; destruct H as (-> & ? & ?); split_and!; eauto using eqT_sym.
+    try done; destruct H as (? & ?); split_and!; eauto using eqT_sym.
 Qed.
 
 Lemma aeq_trans n : ∀ s r t, aeq n s r → aeq n r t → aeq n s t.
@@ -164,7 +164,7 @@ Proof.
   induction n as [|n IH]; intros s r t H1 H2; [done|].
   unfold aeq in *; fold aeq in *. unfold eq_step in *.
   destruct (unfoldS s), (unfoldS r), (unfoldS t); try congruence;
-    try done; destruct H1 as (-> & ? & ?), H2 as (-> & ? & ?);
+    try done; destruct H1 as (? & ?), H2 as (? & ?);
     split_and!; eauto using eqT_trans.
 Qed.
 
@@ -224,7 +224,7 @@ Proof.
   unfold aeq in *; fold aeq in *. unfold eq_step in *.
   rewrite <-!dual_unfoldS.
   destruct (unfoldS s), (unfoldS r); simpl in *; try congruence;
-    try done; destruct H as (-> & ? & ?); split_and!; auto.
+    try done; destruct H as (? & ?); split_and!; auto.
 Qed.
 
 Lemma seq_dual s r : seq s r → seq (dual s) (dual r).
@@ -238,7 +238,7 @@ Proof.
   unfold adual in *; fold adual in *. unfold dual_step in *.
   destruct (unfoldS s), (unfoldS r); try done;
     try (by rewrite H, dual_involutive);
-    try done; destruct H as (-> & ? & ?); split_and!; eauto using aeqT_sym.
+    try done; destruct H as (? & ?); split_and!; eauto using aeqT_sym.
 Qed.
 
 Lemma sdual_sym s r : sdual s r → sdual r s.
@@ -271,7 +271,7 @@ Proof.
   unfold adual in *; fold adual in *. unfold dual_step in *.
   destruct (unfoldS s), (unfoldS s'), (unfoldS t); simpl in *;
     try done; try congruence;
-    try done; destruct He as (-> & ? & ?), Hd as (-> & ? & ?);
+    try done; destruct He as (? & ?), Hd as (? & ?);
     split_and!; eauto using aeqT_sym, aeqT_trans.
 Qed.
 
@@ -290,7 +290,7 @@ Proof.
   unfold adual in H; fold adual in H. unfold dual_step in H.
   unfold aeq; fold aeq. unfold eq_step. rewrite <-dual_unfoldS.
   destruct (unfoldS s), (unfoldS r); simpl in *; try congruence;
-    try done; destruct H as (-> & ? & ?); split_and!; auto.
+    try done; destruct H as (? & ?); split_and!; auto.
 Qed.
 
 Lemma sdual_seq_dual s r : sdual s r ↔ seq s (dual r).
@@ -308,51 +308,51 @@ Qed.
     to ≈: it recovers a head, exactly as [senv_hd] does for a type it
     knows up to [unfoldS]. *)
 
-Lemma aeq_S_rcv n s r m T r' :
-  aeq (S n) s r → unfoldS r = SRcv m T r' →
-  ∃ U s', unfoldS s = SRcv m U s' ∧ eqT (aeq n) U T ∧ aeq n s' r'.
+Lemma aeq_S_rcv n s r T r' :
+  aeq (S n) s r → unfoldS r = SRcv T r' →
+  ∃ U s', unfoldS s = SRcv U s' ∧ eqT (aeq n) U T ∧ aeq n s' r'.
 Proof.
   unfold aeq; fold aeq. unfold eq_step. intros H Hr. rewrite Hr in H.
-  destruct (unfoldS s) as [m' U s'|m' U s'| |x|a|a]; try discriminate;
-    destruct H as (-> & ? & ?); by exists U, s'.
+  destruct (unfoldS s) as [U s'|U s'| |x|a|a]; try discriminate;
+    destruct H as (? & ?); by exists U, s'.
 Qed.
 
-Lemma aeq_S_snd n s r m T r' :
-  aeq (S n) s r → unfoldS r = SSnd m T r' →
-  ∃ U s', unfoldS s = SSnd m U s' ∧ eqT (aeq n) U T ∧ aeq n s' r'.
+Lemma aeq_S_snd n s r T r' :
+  aeq (S n) s r → unfoldS r = SSnd T r' →
+  ∃ U s', unfoldS s = SSnd U s' ∧ eqT (aeq n) U T ∧ aeq n s' r'.
 Proof.
   unfold aeq; fold aeq. unfold eq_step. intros H Hr. rewrite Hr in H.
-  destruct (unfoldS s) as [m' U s'|m' U s'| |x|a|a]; try discriminate;
-    destruct H as (-> & ? & ?); by exists U, s'.
+  destruct (unfoldS s) as [U s'|U s'| |x|a|a]; try discriminate;
+    destruct H as (? & ?); by exists U, s'.
 Qed.
 
-Lemma seq_rcv_inv s r m T r' :
-  seq s r → unfoldS r = SRcv m T r' →
-  ∃ U s', unfoldS s = SRcv m U s' ∧ teq U T ∧ seq s' r'.
+Lemma seq_rcv_inv s r T r' :
+  seq s r → unfoldS r = SRcv T r' →
+  ∃ U s', unfoldS s = SRcv U s' ∧ teq U T ∧ seq s' r'.
 Proof.
   intros Hs Hr.
-  destruct (aeq_S_rcv 0 s r m T r' (Hs 1) Hr) as (U & s' & Es & _ & _).
+  destruct (aeq_S_rcv 0 s r T r' (Hs 1) Hr) as (U & s' & Es & _ & _).
   exists U, s'. split; [done|]. split.
   - apply eqT_all. intros n.
-    destruct (aeq_S_rcv n s r m T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
+    destruct (aeq_S_rcv n s r T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
     rewrite Es in Es0. by simplify_eq.
   - intros n.
-    destruct (aeq_S_rcv n s r m T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
+    destruct (aeq_S_rcv n s r T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
     rewrite Es in Es0. by simplify_eq.
 Qed.
 
-Lemma seq_snd_inv s r m T r' :
-  seq s r → unfoldS r = SSnd m T r' →
-  ∃ U s', unfoldS s = SSnd m U s' ∧ teq U T ∧ seq s' r'.
+Lemma seq_snd_inv s r T r' :
+  seq s r → unfoldS r = SSnd T r' →
+  ∃ U s', unfoldS s = SSnd U s' ∧ teq U T ∧ seq s' r'.
 Proof.
   intros Hs Hr.
-  destruct (aeq_S_snd 0 s r m T r' (Hs 1) Hr) as (U & s' & Es & _ & _).
+  destruct (aeq_S_snd 0 s r T r' (Hs 1) Hr) as (U & s' & Es & _ & _).
   exists U, s'. split; [done|]. split.
   - apply eqT_all. intros n.
-    destruct (aeq_S_snd n s r m T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
+    destruct (aeq_S_snd n s r T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
     rewrite Es in Es0. by simplify_eq.
   - intros n.
-    destruct (aeq_S_snd n s r m T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
+    destruct (aeq_S_snd n s r T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
     rewrite Es in Es0. by simplify_eq.
 Qed.
 
@@ -361,7 +361,7 @@ Proof.
   intros Hs Hr. specialize (Hs 1).
   unfold aeq in Hs; fold aeq in Hs. unfold eq_step in Hs.
   rewrite Hr in Hs.
-  by destruct (unfoldS s) as [m U s'|m U s'| |x|a|a].
+  by destruct (unfoldS s) as [U s'|U s'| |x|a|a].
 Qed.
 
 (** ** Term-level environments with both ends

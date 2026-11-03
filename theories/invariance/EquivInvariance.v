@@ -22,6 +22,10 @@ Qed.
 Lemma teq_ty_inst xs T U : teq T U → teq (ty_inst xs T) (ty_inst xs U).
 Proof. apply eqT_pinst. Qed.
 
+(** The payload is a point instantiation, so ≈ passes through it. *)
+Lemma teq_payload x T U : teq T U → teq (payload_at T x) (payload_at U x).
+Proof. apply eqT_pinst. Qed.
+
 (** ≈_W absorbs ≈ on the right. *)
 Lemma teqW_teq_r W T : ∀ U U', teqW W T U → teq U U' → teqW W T U'.
 Proof.
@@ -97,13 +101,13 @@ Proof.
   intros α e' Hst. specialize (Hstep α e' Hst).
   destruct α as [|[c w|c w|c|cd]|c|w]; simpl in Hstep |- *.
   - eapply HEj; [lia|done|exact Hteq|exact Hstep].
-  - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
-    exists Θ1, m, U, s, k. split; [done|].
+  - destruct Hstep as (Θ1 & U & s & k & Hhd & H).
+    exists Θ1, U, s, k. split; [done|].
     intros W' j Θ2 Θ1c Θ' HW0 Hj Hext Hc HVw.
     eapply HEj; [lia|apply HW0|exact Hteq|]. by apply (H W' j Θ2 Θ1c Θ').
-  - destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
+  - destruct Hstep as (Θr & Θ1 & Θ2 & U & s & k & Θ' &
                        Hhd & Hc & HVw & Hext & HE').
-    exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
+    exists Θr, Θ1, Θ2, U, s, k, Θ'. split_and!; try done.
     exact (proj2 HE' T' HW Hteq).
   - destruct Hstep as (Θ1 & k & Hhd & HE').
     exists Θ1, k. split; [done|].

@@ -261,10 +261,10 @@ Qed.
 
     - unit is the box □(∗ ⊸ ∗), and a sum of unlimited types the box of
       the sum of their translations, read at the root anchor.
-    - p[t]ⁿ is (p(∃ιs. P).Close)@B[RCh c] with c the code of the channel.
-      A channel payload sits at the first slot of the channel's point
-      (one binder), an unlimited payload needs no binder.
-    - μα.p[⌈α⌉ᵐ]ⁿ is (µα. p(∃ι. α@ι).Close)@B[RCh c].
+    - p[t]ⁿ is (pP.Close)@B[RCh c] with c the code of the channel. A
+      channel payload sits at slot 0 of the channel's point, an
+      unlimited payload mentions no slot.
+    - μα.p[⌈α⌉ᵐ]ⁿ is (µα. p(α@self.0).Close)@B[RCh c].
     - ⌈t⌉ᵐ is ⇑ᵐ t. wrap and unwrap are erased.
     - t →^{ρ,σ} s with ρ ∈ ℤ is T ⊸^{B[RHi σ]}_{B[RLo ρ]} U.
     - t →^{⊤,σ} s is □(∀ι. Crel. ∗ ⊸^⊥_⊤ (T ⊸^{ι[RHi σ]}_⊤ U)) with T, U
@@ -283,25 +283,23 @@ Definition hiz (B : point) (k : Z) (σ : lvl) : option point :=
 Definition Ubox (T : ty) : ty := TBox 0 C0 (TLolli None None TUnit T).
 Definition U : ty := Ubox TUnit.
 
-Definition pol (p : bool) (m : nat) (T : ty) (s : sty) : sty :=
-  if p then SRcv m T s else SSnd m T s.
+Definition pol (p : bool) (T : ty) (s : sty) : sty :=
+  if p then SRcv T s else SSnd T s.
 
 (** The offset of the body of a box: minus the first finite level. *)
 Definition mneg (t : pty) : Z := (- default 0 (mlev t))%Z.
-
-Definition pbind (t : pty) : nat := if chanlike t then 1 else 0.
 
 Fixpoint trz (B : point) (k : Z) (t : pty) {struct t} : ty :=
   match t with
   | PUnit => U
   | PSum t1 t2 => Ubox (TSum (trz proot 0 t1) (trz proot 0 t2))
   | PChan p t1 n =>
-      TSess (pol p (pbind t1)
+      TSess (pol p
                (if chanlike t1 then TSess (sess t1) (pvar 0)
                 else if un_b t1 then trz proot 0 t1 else TUnit) SEnd)
         (rpt B (RCh (PChan true (lshift k t1) (n + k))))
   | PRec p m n =>
-      TSess (SMu (pol p 1 (TSess (SVar 0) (pvar 0)) SEnd))
+      TSess (SMu (pol p (TSess (SVar 0) (pvar 0)) SEnd))
         (rpt B (RCh (PChan true (PDisp m (PRec p m (n + k))) (n + k))))
   | PDisp m t1 => trz B (k + m) t1
   | PArr t1 (Some r) σ t2 => TLolli (hiz B k σ) (Some (loz B k r)) (trz B k t1) (trz B k t2)
@@ -313,10 +311,10 @@ Fixpoint trz (B : point) (k : Z) (t : pty) {struct t} : ty :=
 with sess (t : pty) {struct t} : sty :=
   match t with
   | PChan p t1 _ =>
-      pol p (pbind t1)
+      pol p
         (if chanlike t1 then TSess (sess t1) (pvar 0)
          else if un_b t1 then trz proot 0 t1 else TUnit) SEnd
-  | PRec p _ _ => SMu (pol p 1 (TSess (SVar 0) (pvar 0)) SEnd)
+  | PRec p _ _ => SMu (pol p (TSess (SVar 0) (pvar 0)) SEnd)
   | PDisp _ t1 => sess t1
   | _ => SEnd
   end.
@@ -325,7 +323,7 @@ with sess (t : pty) {struct t} : sty :=
 Definition ppay (t : pty) : ty :=
   if chanlike t then TSess (sess t) (pvar 0) else if un_b t then trz proot 0 t else TUnit.
 
-Lemma sess_chan p t n : sess (PChan p t n) = pol p (pbind t) (ppay t) SEnd.
+Lemma sess_chan p t n : sess (PChan p t n) = pol p (ppay t) SEnd.
 Proof. done. Qed.
 
 (** A channel type is a session at the point of its code. *)
@@ -377,9 +375,9 @@ Proof.
       destruct (chanlike t); [done|]. destruct (un_b t) eqn:E; [|done].
       apply trz_un. by apply un_b_un. }
     split.
-    + intros B k j. rewrite Ej, lshift_lshift. unfold pbind. rewrite chanlike_lshift. fold (ppay t).
+    + intros B k j. rewrite Ej, lshift_lshift. fold (ppay t).
       do 3 f_equal. zeq.
-    + intros j. rewrite Ej. unfold pbind. by rewrite chanlike_lshift.
+    + intros j. by rewrite Ej.
   - split; [|done]. intros B k j. do 4 f_equal; zeq.
   - destruct IH as [IH1 IH2]. split; [|done]. intros B k j. rewrite IH1. f_equal. lia.
   - destruct IH1 as [IH1 _], IH2 as [IH2 _]. split; [|by destruct r].

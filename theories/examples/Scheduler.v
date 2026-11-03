@@ -92,7 +92,7 @@ Proof.
           apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
           exists (pv 0 1). split; [done|]. right. done.
       + unfold sendclose. tstep.
-        * tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pvar 0)); cbn; set_solver|done|].
+        * tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pvar 0)); cbn; set_solver|done|].
           apply ubs_intro; [intros y Hy; mem_cases Hy|].
           exists (pv 0 1). split; [done|]. right. done.
         * apply KTClos.
@@ -105,7 +105,7 @@ Proof.
   (* ag₀ *)
   cbn. unfold ag0, sendclose, recvclose. tstep.
   { tstep.
-    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pvar 1)); cbn; set_solver|done|].
+    - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pvar 1)); cbn; set_solver|done|].
       apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. done.
     - apply KTClos.
     - done.

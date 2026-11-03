@@ -53,7 +53,7 @@ From LRGV Require Export examples.LitTools.
 
 Set Default Proof Using "All".
 
-Definition Sst : sty := SMu (SRcv 1 (TProd TUnit (TSess (SVar 0) (pvar 0))) SEnd).
+Definition Sst : sty := SMu (SRcv (TProd TUnit (TSess (SVar 0) (pvar 0))) SEnd).
 
 Definition st_P (g : fact) : Prop :=
   ∃ n, g = FLt (Pt (slotv n) 1) (Pt (slotv (S n)) 0).
@@ -110,7 +110,7 @@ Proof.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SRcv 1 (TProd TUnit (TSess Sst (pvar 0))) SEnd) (pv 0 0))).
+              (TSess (SRcv (TProd TUnit (TSess Sst (pvar 0))) SEnd) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -152,10 +152,10 @@ Proof.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
               (TProd (TProd TUnit (TSess Sst pcr))
-                 (TSess (SSnd 1 (TProd TUnit (TSess Sst (pvar 0))) SEnd) (pv 0 0)))).
+                 (TSess (SSnd (TProd TUnit (TSess Sst (pvar 0))) SEnd) (pv 0 0)))).
     - tstep; [|tstep; [tstep|apply (tv_unit W HW); reflexivity]].
       eapply t_conv; [|tstep]. conv_sess.
-    - apply (KTSend _ _ _ 1 (TProd TUnit (TSess Sst (pvar 0))) SEnd (pv 0 0)).
+    - apply (KTSend _ _ _ (TProd TUnit (TSess Sst (pvar 0))) SEnd (pv 0 0)).
       intros h Hh. cbn in Hh. assert (h = pcr) as -> by set_solver. apply Hlt. by left.
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hlt; by left|].

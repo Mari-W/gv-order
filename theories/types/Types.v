@@ -1,7 +1,7 @@
 (** * Types, session types, duality, environments (§2.2, Fig. 5 top)
 
     T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs. C. T) | ∃^ℓ ιs. C. T
-    S    ::= ?P.S | !P.S | Close | µα.S | α | α̅      P ::= ∃ιs. T
+    S    ::= ?P.S | !P.S | Close | µα.S | α | α̅      P ::= T, points self.j
     β    ::= ι | ⊥        λ ::= ι | ⊤
     ι    ::= (p, b)       p ::= a | point variable | p[b][i]   (no channels) *)
 
@@ -12,8 +12,10 @@ From LRGV Require Export lang.Syntax.
 
     One sort of names (decision N). A point (p, b) is a name p with an
     offset b. A name is a point constant, a point variable (de Bruijn,
-    bound by ∀ under □ or by ∃ in a payload), or the slot p[b][i], "the
-    i-th point carried at (p, b)". Worlds and environments use ground
+    bound by ∀ under □ or by ∃), or the slot p[b][i], "the i-th point
+    carried at (p, b)". A payload binds nothing: its variable j is
+    slot j of the carrier, written self.j in the paper. Worlds and
+    environments use ground
     points (constants and their slots), static types also use
     variables. No point mentions a channel, so renaming channels
     changes no type and no world.
@@ -88,10 +90,6 @@ Definition pup (m : nat) (σ : nat → point) : nat → point :=
     a list, and shifts the variables beyond it down. *)
 Definition plist (xs : list point) : nat → point :=
   λ a, match xs !! a with Some x => x | None => pvar (a - length xs) end.
-
-(** The slots x[0], …, x[m-1] of a point. *)
-Definition slots (x : point) (m : nat) : list point :=
-  (λ i, pt_slot x i) <$> seq 0 m.
 
 (** Facts of a constraint: x ≺ y and x ≡ y (sharp edges 65). *)
 Inductive fact := FLt (x y : point) | FEq (x y : point).
@@ -183,10 +181,10 @@ Inductive ty :=
                                       channels lie at or above the lower
                                       bound ℓ, which is ⊤, ⊥ or a point *)
 with sty :=
-  | SRcv (m : nat) (T : ty) (S : sty)
-                                   (* ?(∃ι₀ … ιₘ₋₁. T).S *)
-  | SSnd (m : nat) (T : ty) (S : sty)
-                                   (* !(∃ι₀ … ιₘ₋₁. T).S *)
+  | SRcv (T : ty) (S : sty)        (* ?T.S — the point variables of T
+                                      are slots of the carrier, pvar j
+                                      is self.j in the paper *)
+  | SSnd (T : ty) (S : sty)        (* !T.S — same reading of T *)
   | SEnd                           (* Close *)
   | SMu (S : sty)                  (* µα.S — binds one session variable *)
   | SVar (a : nat)                 (* α — de Bruijn *)
@@ -320,13 +318,14 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
       TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   end.
 
-(** T[xs/ιs]: instantiate the ∀ of a □ (or the ∃ of a payload) with a
-    list of points. *)
+(** T[xs/ιs]: instantiate the ∀ of a □ with a list of points. *)
 Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
 
-(** The payload ∃ι₀ … ιₘ₋₁. T at the point x: P[x] = T[x[i]/ιᵢ]. *)
-Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
-  ty_inst (slots x m) T.
+(** The payload T at the point x: P[x] = T[x[j]/ιⱼ]. Every point
+    variable of T is a slot of the carrier, so the substitution is
+    total and no binder counts them. *)
+Definition payload_at (T : ty) (x : point) : ty :=
+  pinst_ty (pt_slot x) T.
 
 (** Composition and identity of point instantiation on types. The
     relation instantiates the ∃ of [TEx] by composing substitutions
@@ -543,8 +542,8 @@ Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   end
 with sren (r : nat → nat) (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SRcv m (sren_ty r T) (sren r s')
-  | SSnd m T s' => SSnd m (sren_ty r T) (sren r s')
+  | SRcv T s' => SRcv (sren_ty r T) (sren r s')
+  | SSnd T s' => SSnd (sren_ty r T) (sren r s')
   | SEnd => SEnd
   | SMu s' => SMu (sren (upren r) s')
   | SVar a => SVar (r a)
@@ -571,8 +570,8 @@ Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   end
 with sflip (k : nat) (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SRcv m (sflip_ty k T) (sflip k s')
-  | SSnd m T s' => SSnd m (sflip_ty k T) (sflip k s')
+  | SRcv T s' => SRcv (sflip_ty k T) (sflip k s')
+  | SSnd T s' => SSnd (sflip_ty k T) (sflip k s')
   | SEnd => SEnd
   | SMu s' => SMu (sflip (S k) s')
   | SVar a => if decide (a = k) then SVarD a else SVar a
@@ -597,8 +596,8 @@ with sflip (k : nat) (s : sty) : sty :=
 
 Fixpoint dual (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SSnd m T (dual s')
-  | SSnd m T s' => SRcv m T (dual s')
+  | SRcv T s' => SSnd T (dual s')
+  | SSnd T s' => SRcv T (dual s')
   | SEnd => SEnd
   | SMu s' => SMu (sflip 0 (dual s'))
   | SVar a => SVarD a
@@ -622,8 +621,8 @@ Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
   match s with
-  | SRcv m T s' => SRcv m (sinst_ty σ T) (sinst σ s')
-  | SSnd m T s' => SSnd m (sinst_ty σ T) (sinst σ s')
+  | SRcv T s' => SRcv (sinst_ty σ T) (sinst σ s')
+  | SSnd T s' => SSnd (sinst_ty σ T) (sinst σ s')
   | SEnd => SEnd
   | SMu s' => SMu (sinst (sty_up σ) s')
   | SVar a => σ a
@@ -658,10 +657,10 @@ Definition unfoldS (s : sty) : sty := unfoldN (mu_depth s) s.
 Lemma unfoldS_hd u : mu_depth u = 0 → unfoldS u = u.
 Proof. unfold unfoldS. by intros ->. Qed.
 
-Lemma mu_depth_rcv m T s : mu_depth (SRcv m T s) = 0.
+Lemma mu_depth_rcv T s : mu_depth (SRcv T s) = 0.
 Proof. done. Qed.
 
-Lemma mu_depth_snd m T s : mu_depth (SSnd m T s) = 0.
+Lemma mu_depth_snd T s : mu_depth (SSnd T s) = 0.
 Proof. done. Qed.
 
 (** ** Closedness of session variables *)
@@ -677,7 +676,7 @@ Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
   end
 with sclosed (k : nat) (s : sty) : Prop :=
   match s with
-  | SRcv _ T s' | SSnd _ T s' => sclosed_ty k T ∧ sclosed k s'
+  | SRcv T s' | SSnd T s' => sclosed_ty k T ∧ sclosed k s'
   | SEnd => True
   | SMu s' => sclosed (S k) s'
   | SVar a | SVarD a => a < k
@@ -720,7 +719,7 @@ Definition sflip_comm := proj2 sflip_comm_mut.
 
 Lemma sflip_dual s : ∀ j, sflip j (dual s) = dual (sflip j s).
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros j; simpl; f_equal;
+  induction s as [T s IH|T s IH| |s IH|a|a]; intros j; simpl; f_equal;
     auto.
   - rewrite <-IH. apply sflip_comm. lia.
   - repeat (case_decide; simpl); congruence.
@@ -729,19 +728,19 @@ Qed.
 
 Lemma sflip_mu_depth s : ∀ k, mu_depth (sflip k s) = mu_depth s.
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros k; simpl; auto;
+  induction s as [T s IH|T s IH| |s IH|a|a]; intros k; simpl; auto;
     case_decide; done.
 Qed.
 
 Lemma dual_involutive s : dual (dual s) = s.
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; simpl; f_equal; auto.
+  induction s as [T s IH|T s IH| |s IH|a|a]; simpl; f_equal; auto.
   rewrite <-sflip_dual, sflip_sflip. exact IH.
 Qed.
 
 Lemma dual_mu_depth s : mu_depth (dual s) = mu_depth s.
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; simpl; auto.
+  induction s as [T s IH|T s IH| |s IH|a|a]; simpl; auto.
   by rewrite sflip_mu_depth, IH.
 Qed.
 
@@ -782,7 +781,7 @@ Qed.
 
 Lemma dual_sren s : ∀ r, dual (sren r s) = sren r (dual s).
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros r; simpl; f_equal;
+  induction s as [T s IH|T s IH| |s IH|a|a]; intros r; simpl; f_equal;
     auto.
   rewrite IH. apply (proj2 sflip_sren_iff_mut).
   intros [|a]; simpl; unfold compose; split; intros; simplify_eq; done.
@@ -820,7 +819,7 @@ Qed.
 
 Lemma dual_sinst s : ∀ σ, dual (sinst σ s) = sinst σ (dual s).
 Proof.
-  induction s as [m T s IH|m T s IH| |s IH|a|a]; intros σ; simpl; f_equal;
+  induction s as [T s IH|T s IH| |s IH|a|a]; intros σ; simpl; f_equal;
     auto.
   - rewrite IH. apply (proj2 sflip_sinst_mut); [done|].
     intros [|a] Ha; simpl; [lia|]. unfold compose.
@@ -864,7 +863,7 @@ Qed.
 Lemma dual_unfoldN k : ∀ s, dual (unfoldN k s) = unfoldN k (dual s).
 Proof.
   induction k as [|k IH]; intros s; simpl; [done|].
-  destruct s as [m T s'|m T s'| |s'|a|a]; simpl; try done.
+  destruct s as [T s'|T s'| |s'|a|a]; simpl; try done.
   by rewrite IH, dual_unroll.
 Qed.
 
@@ -1219,17 +1218,17 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
   | KTSpawn ub lb :
       konst_ty peq plt pk KSpawn
         (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)
-  | KTSend m T S x :
-      (if hbot T then False else ∀ h, h ∈ heads (payload_at m T x) → plt x h) →
+  | KTSend T S x :
+      (if hbot T then False else ∀ h, h ∈ heads (payload_at T x) → plt x h) →
       konst_ty peq plt pk KSend
         (TLolli (Some x) None
-           (TProd (payload_at m T x) (TSess (SSnd m T S) x))
+           (TProd (payload_at T x) (TSess (SSnd T S) x))
            (TSess S (pt_shift 1 x)))
-  | KTRecv m T S x :
+  | KTRecv T S x :
       konst_ty peq plt pk KRecv
         (TLolli (Some x) None
-           (TSess (SRcv m T S) x)
-           (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))
+           (TSess (SRcv T S) x)
+           (TProd (payload_at T x) (TSess S (pt_shift 1 x))))
   | KTClos x :
       konst_ty peq plt pk KClos (TLolli (Some x) None (TSess SEnd x) TUnit)
   | KTLink S x x' :

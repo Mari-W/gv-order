@@ -1261,8 +1261,8 @@ Proof.
   intros HP Hst Hd.
   pose proof (Prel_S_step _ _ _ _ _ _ _ HP (PStepSession C E0 e σ e' Hst Hd)) as Hc.
   destruct σ as [c w|c w|c|cd]; simpl in Hc |- *.
-  - destruct Hc as (Σ1 & m & U & s & k & Hhd & _). apply senv_hd_dom in Hhd. set_solver.
-  - destruct Hc as (?&?&?&?&?&?&?&?&Hhd&_). apply senv_hd_dom in Hhd. set_solver.
+  - destruct Hc as (Σ1 & U & s & k & Hhd & _). apply senv_hd_dom in Hhd. set_solver.
+  - destruct Hc as (?&?&?&?&?&?&?&Hhd&_). apply senv_hd_dom in Hhd. set_solver.
   - destruct Hc as (Σ1 & k & Hhd & _). apply senv_hd_dom in Hhd. set_solver.
   - destruct Hc as (c & d & Σ1 & sc & sd & kc & kd & -> & _ & -> & _).
     rewrite !dom_insert_L. set_solver.
@@ -1759,8 +1759,8 @@ Proof.
             simpl; sset. }
         rewrite csub_ne in Hc0 by done. subst c0.
         destruct (Hstep _ _ (PStepSession C F e (SRecv c (eswap x z w')) f Hf Hd))
-          as (Σ1 & m & U & s & k & Hhd & Hc1 & H).
-        exists Σ1, m, U, s, k. split_and!; [done|done|].
+          as (Σ1 & U & s & k & Hhd & Hc1 & H).
+        exists Σ1, U, s, k. split_and!; [done|done|].
         intros W' j Θ2' HW' Hj Hfr Hok HVw.
         assert (x ∉ dom (<[c := (s, pt_shift 1 k)]> Σ1)) as HxΣr.
         { apply senv_hd_dom in Hhd. rewrite dom_insert_L. sset. }
@@ -1776,7 +1776,7 @@ Proof.
           by apply (elem_of_disjoint _ _) in Hfr; apply (Hfr y). }
         assert (recv_ok W' Σr Θ2) as Hok2.
         { apply (recv_ok_swap x z) in Hok. rewrite senvswap_fix in Hok by done. done. }
-        assert (Vrel j W' Θ2 (payload_at m U k) (eswap x z w')) as HVw2 by (by apply Vrel_swap).
+        assert (Vrel j W' Θ2 (payload_at U k) (eswap x z w')) as HVw2 by (by apply Vrel_swap).
         pose proof (H W' j Θ2 HW' Hj Hfr2 Hok2 HVw2) as HP1.
         cbn [sentc fst snd] in HP1. rewrite ?difference_empty_L in HP1.
         assert (x ∉ dom Θ2) as HxΘ2.
@@ -1817,14 +1817,14 @@ Proof.
         { intros ->. apply (Hoff F e (SSend x w0) f); [done|done| |]; simpl; sset. }
         rewrite csub_ne in Hc0 by done. subst c0.
         destruct (Hstep _ _ (PStepSession C F e (SSend c w0) f Hf Hd))
-          as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd & Hd0v & Hc0' & Hcv & Hdom & Hsplit &
+          as (Σ0 & Σv & U & s & k & Σe & Θe & Hhd & Hd0v & Hc0' & Hcv & Hdom & Hsplit &
               HdΣ & HVw & HP').
         assert (x ∉ fchans w0) as Hxw.
         { rewrite (Vrel_fchans _ _ _ _ _ HVw), dom_union_L.
           unfold tenv_of. rewrite dom_fmap_L. apply senv_hd_dom in Hhd.
           rewrite dom_union_L in Hhd. sset. }
         rewrite (chsubst_id x b w0) by done.
-        exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done.
+        exists Σ0, Σv, U, s, k, Σe, Θe. split_and!; try done.
         refine (imp4 _ _ _ _ _ _ (proj2 HP' _ _ eq_refl b) (λ HP', _) _ _ _ _).
         { by rewrite echsubst_disj_union1 in HP'. }
         { rewrite dom_insert_L, dom_union_L. apply senv_hd_dom in Hhd.
@@ -1921,9 +1921,9 @@ Lemma Erel_subjs n W Θ T F e σ e' :
 Proof.
   intros HE Hst. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc.
   destruct σ as [c w|c w|c|cd]; simpl in Hc |- *.
-  - destruct Hc as (Θ1 & m & U & s & k & (s0 & Hext & _) & _).
+  - destruct Hc as (Θ1 & U & s & k & (s0 & Hext & _) & _).
     destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; rewrite dom_insert_L; set_solver.
-  - destruct Hc as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & (s0 & Hext & _) & _).
+  - destruct Hc as (Θr & Θ1 & Θ2 & U & s & k & Θ' & (s0 & Hext & _) & _).
     destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; rewrite dom_insert_L; set_solver.
   - destruct Hc as (Θ1 & k & (s0 & Hext & _) & _).
     destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; rewrite dom_insert_L; set_solver.
@@ -1945,9 +1945,9 @@ Proof.
     - exists false, s. unfold tenv_entry. simpl. by rewrite lookup_insert_eq.
     - exists true, s. unfold tenv_entry. simpl. by rewrite lookup_insert_eq. }
   destruct σ as [c w|c w|c|cd]; simpl in Hstep.
-  - destruct Hstep as (Θ1 & m & U & s & k & Hh & _). destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
+  - destruct Hstep as (Θ1 & U & s & k & Hh & _). destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
     exists (c, b), (SRecv c w), e'. split; [done|]. split; [done|]. eauto 10.
-  - destruct Hstep as (Θr & ? & ? & m & U & s & k & ? & Hh & _).
+  - destruct Hstep as (Θr & ? & ? & U & s & k & ? & Hh & _).
     destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
     exists (c, b), (SSend c w), e'. split; [done|]. split; [done|]. eauto 10.
   - destruct Hstep as (Θ1 & k & Hh & _). destruct (Hhd _ _ _ _ Hh) as (b & s0 & He & Hu).
@@ -2594,12 +2594,12 @@ Proof.
         as (c0 & f & Hc0 & Hf & ->); [done|set_solver|set_solver|set_solver|done|set_solver|].
       assert (Hok0 : move_ok c d Θ c0) by (eapply Hok; [exact Hf|intros ? [=]|simpl; by apply elem_of_singleton]).
       pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
-      destruct Hc1 as (Θ1 & m & U & s & k & Hhd & H).
+      destruct Hc1 as (Θ1 & U & s & k & Hhd & H).
       assert (Hok1 : move_ok c d Θ1 c0)
         by (destruct Hhd as (? & Hx0 & _); exact (move_ok_ext c d Θ1 c0 _ Θ Hcd Hx0 Hok0)).
       destruct (move_hd W c d Hcd Θ Θ' c0 _ k Θ1 Hm Hhd Hok0) as (Θ1' & Hhd' & Hm1).
       rewrite Hc0 in Hhd'.
-      exists Θ1', m, U, s, k. split; [done|].
+      exists Θ1', U, s, k. split; [done|].
       intros W' j Θ2 Θ1c' Θ'' HW' Hj Hext Hcomp HVw.
       cbn [nlower tcost scost pred] in Hj.
       assert (strict W') as HW'' by (by destruct HW' as (_ & _ & _ & ?)).
@@ -2631,7 +2631,7 @@ Proof.
       injection Hα as Hc0 Hw0. subst c' w'.
       assert (Hok0 : move_ok c d Θ c0) by (eapply Hok; [exact Hf|intros ? [=]|simpl; by apply elem_of_singleton]).
       pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
-      destruct Hc1 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ'' & Hhd & Hsp & HVw & Hext & HE').
+      destruct Hc1 as (Θr & Θ1 & Θ2 & U & s & k & Θ'' & Hhd & Hsp & HVw & Hext & HE').
       assert (Hokr : move_ok c d Θr c0)
         by (destruct Hhd as (? & Hx0 & _); exact (move_ok_ext c d Θr c0 _ Θ Hcd Hx0 Hok0)).
       destruct (move_hd W c d Hcd Θ Θ' c0 _ k Θr Hm Hhd Hok0) as (Θr' & Hhd' & Hmr).
@@ -2639,7 +2639,7 @@ Proof.
         as (Θ1' & Θ2' & Hm1 & Hm2 & Hsp').
       destruct (move_ext W c d Hcd Θ1 Θ1' c0 _ Θ'' Hm1 Hext (move_ok_comp c d _ Θr Θ1 Θ2 c0 Hsp Hokr))
         as (Θ3 & Hext' & Hm3).
-      exists Θr', Θ1', Θ2', m, U, s, k, Θ3. split_and!; [done|done| |done|].
+      exists Θr', Θ1', Θ2', U, s, k, Θ3. split_and!; [done|done| |done|].
       * exact (HV W Θ2 Θ2' _ w0 c d HW Hcd Hm2 HVw).
       * exact (proj2 HE' Θ3 HW Hm3).
     + (* close *)

@@ -25,7 +25,7 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Definition Sdel : sty := SSnd 1 (TSess Sd (pvar 0)) SEnd.
+Definition Sdel : sty := SSnd (TSess Sd (pvar 0)) SEnd.
 Abbreviation ps k := (Pt (NSlot (NConst 0) 0 0) k).
 
 Definition deleg_thunk : expr :=
@@ -83,12 +83,12 @@ Proof.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn. tstep.
-      + tstep; [tstep|apply (KTRecv _ _ _ 1 (TSess Sd (pvar 0)) SEnd (pv 0 0))|kscope|].
+      + tstep; [tstep|apply (KTRecv _ _ _ (TSess Sd (pvar 0)) SEnd (pv 0 0))|kscope|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
         exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
       + cbn. tstep.
         * tstep.
-          -- tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (sd 0)); cbn; set_solver|done|].
+          -- tstep; [|apply (KTSend _ _ _ TUnit SEnd (sd 0)); cbn; set_solver|done|].
              ++ tstep; tstep.
              ++ apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
                 exists (pv 0 1). split; [done|]. right. done.
@@ -104,7 +104,7 @@ Proof.
     - apply ubs_none. }
   cbn. tstep.
   { tstep; [tstep|].
-    tstep; [|apply (KTSend _ _ _ 1 (TSess Sd (pvar 0)) SEnd (pv 0 0))| |].
+    tstep; [|apply (KTSend _ _ _ (TSess Sd (pvar 0)) SEnd (pv 0 0))| |].
     - tstep; tstep.
     - cbn. intros h Hh. mem_cases Hh. done.
     - kscope.

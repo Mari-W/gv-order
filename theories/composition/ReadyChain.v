@@ -110,20 +110,20 @@ Qed.
 
 (** ** Duality at the head *)
 
-Lemma sdual_snd s r m T s' : sdual s r → unfoldS s = SSnd m T s' →
-  ∃ U r', unfoldS r = SRcv m U r'.
+Lemma sdual_snd s r T s' : sdual s r → unfoldS s = SSnd T s' →
+  ∃ U r', unfoldS r = SRcv U r'.
 Proof.
   intros H Hs. specialize (H 1). simpl in H. unfold dual_step in H.
   rewrite Hs in H. destruct (unfoldS r); simpl in H; try done;
-    try (destruct H as (-> & _); by eexists _, _).
+    try (by eexists _, _).
 Qed.
 
-Lemma sdual_rcv s r m T s' : sdual s r → unfoldS s = SRcv m T s' →
-  ∃ U r', unfoldS r = SSnd m U r'.
+Lemma sdual_rcv s r T s' : sdual s r → unfoldS s = SRcv T s' →
+  ∃ U r', unfoldS r = SSnd U r'.
 Proof.
   intros H Hs. specialize (H 1). simpl in H. unfold dual_step in H.
   rewrite Hs in H. destruct (unfoldS r); simpl in H; try done;
-    try (destruct H as (-> & _); by eexists _, _).
+    try (by eexists _, _).
 Qed.
 
 Lemma sdual_end s r : sdual s r → unfoldS s = SEnd → unfoldS r = SEnd.
@@ -150,8 +150,8 @@ Qed.
 Lemma selects_entry Θ σ k : selects Θ σ k → ∃ e, tenv_entry Θ k = Some e.
 Proof.
   destruct σ; simpl.
-  - intros (_ & e & _ & _ & _ & ? & _). eauto.
-  - intros (_ & e & _ & _ & _ & ? & _). eauto.
+  - intros (_ & e & _ & _ & ? & _). eauto.
+  - intros (_ & e & _ & _ & ? & _). eauto.
   - intros (_ & e & ? & _). eauto.
   - intros (_ & ?). done.
 Qed.
@@ -166,10 +166,10 @@ Lemma selects_agree Θ Θ' σ k :
 Proof.
   intros Hag. destruct k as [c b]. simpl in Hag.
   destruct σ as [d v|d v|d|cd]; simpl.
-  - intros (Hk & e & m & T & s & He & Hu). split; [done|].
-    exists e, m, T, s. by rewrite <-Hag.
-  - intros (Hk & e & m & T & s & He & Hu). split; [done|].
-    exists e, m, T, s. by rewrite <-Hag.
+  - intros (Hk & e & T & s & He & Hu). split; [done|].
+    exists e, T, s. by rewrite <-Hag.
+  - intros (Hk & e & T & s & He & Hu). split; [done|].
+    exists e, T, s. by rewrite <-Hag.
   - intros (Hk & e & He & Hu & Ht). simpl in Hk. subst d. split; [done|].
     exists e. rewrite <-Hag. split_and!; [done|done|].
     intros Hb e' He'. apply (Ht Hb e'). by rewrite Hag.
@@ -319,20 +319,20 @@ Section connect.
 
   Lemma sel_recv Σ' d v c b :
     selects (tenv_of Σ') (SRecv d v) (c, b) →
-    d = c ∧ ∃ e m T s, Σ' !! c = Some e ∧ unfoldS e.1 = SRcv m T s.
+    d = c ∧ ∃ e T s, Σ' !! c = Some e ∧ unfoldS e.1 = SRcv T s.
   Proof.
-    intros (Hk & e & m & T & s & He & Hu). simpl in Hk.
+    intros (Hk & e & T & s & He & Hu). simpl in Hk.
     apply tenv_entry_of_key in He as [_ He]. simpl in He. split; [done|].
-    by exists e, m, T, s.
+    by exists e, T, s.
   Qed.
 
   Lemma sel_send Σ' d v c b :
     selects (tenv_of Σ') (SSend d v) (c, b) →
-    d = c ∧ ∃ e m T s, Σ' !! c = Some e ∧ unfoldS e.1 = SSnd m T s.
+    d = c ∧ ∃ e T s, Σ' !! c = Some e ∧ unfoldS e.1 = SSnd T s.
   Proof.
-    intros (Hk & e & m & T & s & He & Hu). simpl in Hk.
+    intros (Hk & e & T & s & He & Hu). simpl in Hk.
     apply tenv_entry_of_key in He as [_ He]. simpl in He. split; [done|].
-    by exists e, m, T, s.
+    by exists e, T, s.
   Qed.
 
   Lemma sel_clos Σ' d c b :
@@ -363,9 +363,9 @@ Section connect.
               rewrite <-soup_comm in Hq'; exact (Hs _ Hq')).
     all: repeat match goal with
          | H : selects _ (SRecv _ _) _ |- _ =>
-             apply sel_recv in H as (-> & ? & ? & ? & ? & ? & ?)
+             apply sel_recv in H as (-> & ? & ? & ? & ? & ?)
          | H : selects _ (SSend _ _) _ |- _ =>
-             apply sel_send in H as (-> & ? & ? & ? & ? & ? & ?)
+             apply sel_send in H as (-> & ? & ? & ? & ? & ?)
          | H : selects _ (SClos _) _ |- _ =>
              apply sel_clos in H as (-> & ? & ? & ?)
          end.
@@ -376,23 +376,23 @@ Section connect.
              destruct (Hcut _ _ _ H1 H2) as [_ Hdu]
          end.
     - (* recv / recv *)
-      match goal with H : unfoldS _ = SRcv _ _ _ |- _ =>
-        destruct (sdual_rcv _ _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
+      match goal with H : unfoldS _ = SRcv _ _ |- _ =>
+        destruct (sdual_rcv _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
     - (* recv / send *)
       destruct (msg_tau _ _ _ _ C _ _ _ _ _ Hst2 Hst1) as [q' Hq'].
       rewrite <-soup_comm in Hq'. exact (Hs _ Hq').
     - (* recv / close *)
-      match goal with H : unfoldS _ = SRcv _ _ _ |- _ =>
-        destruct (sdual_rcv _ _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
+      match goal with H : unfoldS _ = SRcv _ _ |- _ =>
+        destruct (sdual_rcv _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
     - (* send / recv *)
       destruct (msg_tau _ _ _ _ C _ _ _ _ _ Hst1 Hst2) as [q' Hq'].
       exact (Hs _ Hq').
     - (* send / send *)
-      match goal with H : unfoldS _ = SSnd _ _ _ |- _ =>
-        destruct (sdual_snd _ _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
+      match goal with H : unfoldS _ = SSnd _ _ |- _ =>
+        destruct (sdual_snd _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
     - (* send / close *)
-      match goal with H : unfoldS _ = SSnd _ _ _ |- _ =>
-        destruct (sdual_snd _ _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
+      match goal with H : unfoldS _ = SSnd _ _ |- _ =>
+        destruct (sdual_snd _ _ _ _ Hdu H) as (? & ? & ?) end. congruence.
     - (* close / recv *)
       match goal with H : unfoldS _ = SEnd |- _ =>
         pose proof (sdual_end _ _ Hdu H) end. congruence.
@@ -787,13 +787,13 @@ Section term.
       destruct a; simpl in Ha, Ha'; try done; destruct σ'; try done).
     all: first
       [ solve [ (* recv/recv or send/send: both ends with one polarity *)
-          destruct Hsel as (_ & ? & ? & ? & ? & Hs1 & Hu1);
-          destruct Hsel' as (_ & ? & ? & ? & ? & Hs2 & Hu2);
+          destruct Hsel as (_ & ? & ? & ? & Hs1 & Hu1);
+          destruct Hsel' as (_ & ? & ? & ? & Hs2 & Hu2);
           rewrite Hself in Hs1; rewrite Hother in Hs2;
           injection Hs1 as <-; injection Hs2 as <-;
           destruct b; try apply sdual_sym in Hdu;
-          first [ destruct (sdual_rcv _ _ _ _ _ Hdu ltac:(eassumption)) as (? & ? & ?)
-                | destruct (sdual_snd _ _ _ _ _ Hdu ltac:(eassumption)) as (? & ? & ?) ];
+          first [ destruct (sdual_rcv _ _ _ _ Hdu ltac:(eassumption)) as (? & ? & ?)
+                | destruct (sdual_snd _ _ _ _ Hdu ltac:(eassumption)) as (? & ? & ?) ];
           congruence ]
       | solve [ (* close/close: only the first end is selected *)
           destruct Hsel as (Hk1 & ? & Hs1 & Hu1 & Ht1);

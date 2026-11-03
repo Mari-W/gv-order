@@ -132,8 +132,8 @@ Proof. done. Qed.
 Lemma lenv_bot_cons_some T Δ : lenv_bot (Some T :: Δ) = hbot T || lenv_bot Δ.
 Proof. done. Qed.
 
-Lemma hbot_payload m T x : hbot (payload_at m T x) = hbot T.
-Proof. unfold payload_at, ty_inst. apply hbot_pinst. Qed.
+Lemma hbot_payload T x : hbot (payload_at T x) = hbot T.
+Proof. unfold payload_at. apply hbot_pinst. Qed.
 
 Ltac bot_extra := fail.
 
@@ -459,16 +459,15 @@ Section terms.
   (** A payload of fragment v1 against the payload of send and recv. *)
   Lemma pay_conv t n :
     payok t → lvl_lt (LZ n) (olvl (tlev t)) →
-    steq W Ψ (trz B k t) (payload_at (pbind t) (ppay t) (chx t n)) ∧
-    steq W Ψ (payload_at (pbind t) (ppay t) (chx t n)) (trz B k t) ∧
-    (∀ h, h ∈ heads (payload_at (pbind t) (ppay t) (chx t n)) →
-       slt W Ψ (chx t n) h ∧ slt W Ψ (pt_shift 1 (chx t n)) h) ∧
-    pscoped (pbind t) (ppay t).
+    steq W Ψ (trz B k t) (payload_at (ppay t) (chx t n)) ∧
+    steq W Ψ (payload_at (ppay t) (chx t n)) (trz B k t) ∧
+    (∀ h, h ∈ heads (payload_at (ppay t) (chx t n)) →
+       slt W Ψ (chx t n) h ∧ slt W Ψ (pt_shift 1 (chx t n)) h).
   Proof.
-    intros Hok Hn. unfold pbind, ppay. destruct (chanlike t) eqn:Ec.
+    intros Hok Hn. unfold ppay. destruct (chanlike t) eqn:Ec.
     - destruct (chres_chanlike k t Ec) as [c' Hc']. rewrite (trz_chanlike B k t c' Hc').
-      assert (payload_at 1 (TSess (sess t) (pvar 0)) (chx t n) = TSess (sess t) (pt_slot (chx t n) 0))
-        as -> by (unfold payload_at, ty_inst; simpl; by rewrite pt_inst_pvar_at).
+      assert (payload_at (TSess (sess t) (pvar 0)) (chx t n) = TSess (sess t) (pt_slot (chx t n) 0))
+        as -> by (unfold payload_at; simpl; by rewrite pt_inst_pvar_at).
       assert (cpay (PChan true (lshift k t) (n + k)) = Some c') as Hp.
       { simpl. rewrite chres_lshift. by replace (0 + k)%Z with k by lia. }
       pose proof (pay_eq Ψ B HB _ _ Hp) as He.
@@ -478,14 +477,12 @@ Section terms.
       + split; [done|apply seq_refl].
       + intros h Hh. simpl in Hh. apply elem_of_singleton in Hh as ->.
         apply (ch_below_pay Ψ B HB _ c' (n + k) (z + k)); [done|done|done|lia].
-      + simpl. intros a Ha. injection Ha as <-. lia.
     - destruct Hok as [Hok|Hun]; [congruence|]. pose proof Hun as Hb. apply un_b_un in Hb. rewrite Hb.
-      assert (payload_at 0 (trz proot 0 t) (chx t n) = trz B k t) as ->.
-      { unfold payload_at, ty_inst. rewrite trz_pinst, (pt_inst_const _ proot 0) by done.
+      assert (payload_at (trz proot 0 t) (chx t n) = trz B k t) as ->.
+      { unfold payload_at. rewrite trz_pinst, (pt_inst_const _ proot 0) by done.
         by apply trz_un. }
-      split_and!; [apply teq_steq, teq_refl|apply teq_steq, teq_refl| |].
-      + intros h Hh. by rewrite heads_un in Hh.
-      + apply pscoped_trz. intros a Ha. done.
+      split_and!; [apply teq_steq, teq_refl|apply teq_steq, teq_refl|].
+      intros h Hh. by rewrite heads_un in Hh.
   Qed.
 
   Lemma send_tr_typed Φ Δ0 F t n :
@@ -495,7 +492,7 @@ Section terms.
          (TLolli (hiz B k (LZ n)) (Some (loz B k n)) (trz B k t) U)).
   Proof.
     intros HΔ Hok Hn. pose proof (proj1 wnil_strict) as HW.
-    destruct (pay_conv t n Hok Hn) as (Hc1 & _ & Hh & Hs).
+    destruct (pay_conv t n Hok Hn) as (Hc1 & _ & Hh).
     set (x := chx t n). set (φ1 := fresh (dom Φ)).
     apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ None None φ1); [apply is_fresh|lbhb|].
     { simpl. by bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L. }
@@ -520,10 +517,10 @@ Section terms.
     { apply t_konst; [apply lenv_empty_nones|apply KTClos|done]. }
     rewrite sf_union_empty.
     eapply (t_app W Φ2 Ψ ∅ ∅ ∅ E (lenv_nones E) E Fr _ _ (Some x) None
-              (TProd (payload_at (pbind t) (ppay t) x) (TSess (SSnd (pbind t) (ppay t) SEnd) x))).
+              (TProd (payload_at (ppay t) x) (TSess (SSnd (ppay t) SEnd) x))).
     { by apply comp0. } { apply lenv_split_nones_l. }
     { apply Hub. apply (ch_below_hi Ψ B HB). apply clev_chx. }
-    { apply t_konst; [apply lenv_empty_nones| |done]. apply (KTSend _ _ _ (pbind t) (ppay t) SEnd x).
+    { apply t_konst; [apply lenv_empty_nones| |done]. apply (KTSend _ _ _ (ppay t) SEnd x).
       rewrite hbot_ppay. intros h' Hh'. by apply Hh. }
     rewrite sf_union_empty.
     eapply (t_pair W Φ2 Ψ ∅ ∅ ∅ E (Some (trz B k t) :: None :: Δ0)
@@ -538,14 +535,14 @@ Section terms.
     typed W Φ Ψ ∅ Δ0 F recv_tr (TLolli (hiz B k (LZ n)) None (trz B k (PChan true t n)) (trz B k t)).
   Proof.
     intros HΔ Hok Hn. pose proof (proj1 wnil_strict) as HW.
-    destruct (pay_conv t n Hok Hn) as (_ & Hc2 & Hh & Hs).
+    destruct (pay_conv t n Hok Hn) as (_ & Hc2 & Hh).
     set (x := chx t n). set (φ := fresh (dom Φ)).
     apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ (hiz B k (LZ n)) None φ); [apply is_fresh|lbhb|].
     { simpl. by bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L. }
     set (Φ1 := <[φ := hiz B k (LZ n)]> Φ).
     assert (Φ1 !! φ = Some (Some (rpt B (RHi (n + k))))) as Hφ by (unfold Φ1; by rewrite lookup_insert_eq).
     set (E := Some (trz B k (PChan true t n)) :: Δ0).
-    set (P := payload_at (pbind t) (ppay t) x).
+    set (P := payload_at (ppay t) x).
     eapply (t_letp W Φ1 Ψ ∅ ∅ ∅ E E (lenv_nones E) _ _ _ P (TSess SEnd (pt_shift 1 x)));
       [by apply comp0|apply lenv_split_nones_r| |].
     - bclean; rewrite (tenv_heads0 W HW), nones_heads, union_empty_l_L, sf_union_empty.
@@ -681,8 +678,8 @@ Lemma pconv1_steq Ψ B k t t' :
   pconv1 t t' → steq wnil Ψ (trz B k t) (trz B k t') ∧ steq wnil Ψ (trz B k t') (trz B k t).
 Proof.
   intros [p m n|m t0].
-  - assert (seq (SMu (pol p 1 (TSess (SVar 0) (pvar 0)) SEnd))
-              (pol p 1 (TSess (SMu (pol p 1 (TSess (SVar 0) (pvar 0)) SEnd)) (pvar 0)) SEnd)) as Hs
+  - assert (seq (SMu (pol p (TSess (SVar 0) (pvar 0)) SEnd))
+              (pol p (TSess (SMu (pol p (TSess (SVar 0) (pvar 0)) SEnd)) (pvar 0)) SEnd)) as Hs
       by (apply seq_unf; destruct p; reflexivity).
     split; (split; [apply se_refl|]); [exact Hs|by apply seq_sym].
   - simpl. rewrite trz_lshift. split; apply teq_steq, teq_refl.

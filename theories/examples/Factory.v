@@ -30,7 +30,7 @@ Set Default Proof Using "All".
 Lemma pvar_unknown W a : world_wf W → ¬ pt_known W (pvar a).
 Proof. intros HW Hk. destruct (wf_names_const _ HW _ Hk) as [b Hb]. done. Qed.
 
-Definition Tfac_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (pv 0 0)).
+Definition Tfac_body : ty := TLolli None None TUnit (TSess (SRcv TUnit SEnd) (pv 0 0)).
 Definition Tfac : ty := TBox 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
 
 Definition fac : expr :=
@@ -59,7 +59,7 @@ Proof.
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 2); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
-    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+    - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
     - apply KTClos.
@@ -105,7 +105,7 @@ Proof. apply (soundness_source 1 Cfac _ TUnit Cfac_acyclic); [constructor|apply 
     used while y waits, so a ≺ b and a+1 ≺ b, the facts of the
     top-level constraint [Cfa]. *)
 
-Definition Tfa_body : ty := TLolli None None TUnit (TSess (SRcv 0 TUnit SEnd) (Pt (NVar 0) 0)).
+Definition Tfa_body : ty := TLolli None None TUnit (TSess (SRcv TUnit SEnd) (Pt (NVar 0) 0)).
 Definition Tfa : ty := TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
 
 Definition faca : expr := fac.
@@ -128,7 +128,7 @@ Proof.
     [set_solver| |].
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
-  - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|done|].
+  - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (Pt (NVar 0) 1). split; [done|]. right. apply (slt_po W _ (Pt (NVar 0) 0) HW).
   - apply KTClos.
@@ -155,7 +155,7 @@ Proof.
   assert (slt W Ψ (pv 0 1) (pv 1 0)) as H2 by (apply Hf; by right).
   assert (∀ (F : sframe) a, a < 2 →
     typed W ∅ Ψ ∅ [None; Some Tfa] F (App (App EForce (Var 1)) EUnit)
-      (TSess (SRcv 0 TUnit SEnd) (pv a 0))) as Hreq.
+      (TSess (SRcv TUnit SEnd) (pv a 0))) as Hreq.
   { intros F a Ha. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
     cbn. apply (typed_force W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None Tfa_body [pv a 0]);
       [done|done| | |apply ubs_none|tstep].

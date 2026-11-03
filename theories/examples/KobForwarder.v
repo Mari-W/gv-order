@@ -117,7 +117,7 @@ Proof.
   { apply t_inj2. apply (tv_unit W HW); reflexivity. }
   - (* the answer at once: send r at ι, close r at ι+1 *)
     cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
-    + tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+    + tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
     + apply KTClos.
@@ -160,7 +160,7 @@ Proof.
         exists (pv 0 1). split; [done|]. right.
         eapply sl_trans; [apply Hq1; by left|apply (slt_po W _ (pv 0 0) HW)]. }
     cbn. unfold sendclose. tstep.
-    + tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+    + tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
     + apply KTClos.
