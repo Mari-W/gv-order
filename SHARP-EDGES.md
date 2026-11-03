@@ -1318,7 +1318,7 @@ The two servers order each round strictly below its caller, so the rank of
 ι.0ⁿ falls as n grows, and no function into ℕ does that for every n.
 `cc_ok_inner` asks only for transitivity, irreflexivity, program order and the
 facts, never for well-foundedness, so a rank in ℤ serves as well as one in ℕ.
-`fw_rank` of KobForwarder.v and `fc_rank` of FactServer.v are −2·depth + offset,
+`kfw_rank` of KobForwarder.v and `fc_rank` of FactServer.v are −2·depth + offset,
 which falls along the depth the way the two servers do. `ult` of LitTools.v is
 the ascending direction, for the producer of `stream`, which orders each round
 above its caller. ReceivedChain.v's rank 2·depth + offset covers its own facts
@@ -1354,7 +1354,7 @@ the development avoids inversion. So the range used is 130 to 136.
 **136. The literature whole programs state the source judgment (Claude, 2026-11-02, branch exists).**
 Entry 130 landed on branch `exists-examples`, where `styped` did not exist, so
 its five whole-program lemmas stated `typed W` under the premise `strict W`.
-`ms_typed`, `fw_typed`, `fc_typed`, `st_typed` and `cg_typed` now state
+`ms_typed`, `kfw_typed`, `fc_typed`, `st_typed` and `cg_typed` now state
 `styped ∅ [] [] (∅, None) e TUnit`, which is the convention entry 123 records
 for a self-contained program, and which the other twenty whole-program lemmas
 already followed. Each proof opens with `apply styped_Wpo`, poses

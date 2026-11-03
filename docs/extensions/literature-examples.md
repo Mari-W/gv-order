@@ -17,7 +17,7 @@ three rejection arguments that were comments into theorems.
 | Program | Source | Rocq file | Theorem | Result |
 |---|---|---|---|---|
 | Milner's cyclic scheduler, k = 3 agents with collectors | Dardha and Gay, Example 1 (dardha2018new p. 3), priorities on p. 9 | `examples/MilnerSched.v` | `ms_typed`, `ms_deadlock_free` | typed |
-| recursive forwarder server | Kobayashi, Example 2 (kobayashi2006new p. 11) | `examples/KobForwarder.v` | `fwsrv_typed`, `fw_typed`, `fw_deadlock_free_kob` | typed |
+| recursive forwarder server | Kobayashi, Example 2 (kobayashi2006new p. 11) | `examples/KobForwarder.v` | `fwsrv_typed`, `kfw_typed`, `kfw_deadlock_free` | typed |
 | factorial server | Kobayashi (kobayashi2006new p. 2), Padovani (3) (padovani2014deadlock p. 2) | `examples/FactServer.v` | `fcsrv_typed`, `fc_typed`, `fc_deadlock_free` | typed |
 | `stream` | Padovani (4) (padovani2014deadlock p. 2) | `examples/Stream.v` | `stprod_typed`, `stcons_typed`, `st_typed`, `st_deadlock_free` | typed |
 | a box that needs both congruences of ≡ | ours | `examples/Congruence.v` | `cgbox_typed`, `cg_typed`, `cg_deadlock_free` | typed |
@@ -97,7 +97,7 @@ the recursive `force` reads C again one level deeper.
 
 Neither constraint has a rank in ℕ. The depth grows without bound and the order
 runs along it, in one direction for the servers and in the other for the
-producer. A rank in ℤ covers both. `fw_rank` of `examples/KobForwarder.v` and
+producer. A rank in ℤ covers both. `kfw_rank` of `examples/KobForwarder.v` and
 `fc_rank` of `examples/FactServer.v` are −2·depth + offset, and `ult` of
 `examples/LitTools.v` reads depth and offset unreversed for the producer. Each is
 irreflexive and transitive, which is all `cc_ok_inner` asks.
@@ -212,7 +212,7 @@ their own program and point at the lemma.
 
 ```
 ms_typed                  ms_deadlock_free
-fwsrv_typed               fw_typed            fw_deadlock_free_kob
+fwsrv_typed               kfw_typed           kfw_deadlock_free
 fcsrv_typed               fc_typed            fc_deadlock_free
 stprod_typed              stcons_typed        st_typed             st_deadlock_free
 cgbox_typed               cg_typed            cg_deadlock_free
@@ -228,7 +228,7 @@ five new files. Sharp edges 130 to 135 record the decisions.
 
 The five whole-program lemmas now state `styped`, the source judgment of
 static/Source.v, which carries no world and no channel-constant context Θ.
-`ms_typed`, `fw_typed`, `fc_typed`, `st_typed` and `cg_typed` read
+`ms_typed`, `kfw_typed`, `fc_typed`, `st_typed` and `cg_typed` read
 `styped ∅ [] [] (∅, None) e TUnit`, the form the paper presents for a
 self-contained source program. They were written before `styped` existed and
 stated `typed W` under the premise `strict W`, which made them the only five

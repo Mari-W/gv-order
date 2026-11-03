@@ -26,9 +26,9 @@
                        recvclose q;
                        close (send ⟨∗, r⟩)
 
-      fw_main = let (c : Sd@ι, c′ : S̄d@ι) = new ι { C } ∗ in
-                spawn (λ^{ι+1}_{ι} ∗. (force fwsrv [ι]) c);
-                recvclose c′
+      kfw_main = let (c : Sd@ι, c′ : S̄d@ι) = new ι { C } ∗ in
+                 spawn (λ^{ι+1}_{ι} ∗. (force fwsrv [ι]) c);
+                 recvclose c′
 
       recvclose r = let (v : ∗, r′ : Close@(x+1)) = recv r in v; close r′
                                                             r at x
@@ -49,28 +49,28 @@
     channel, so ι.0 holds no payload, as the ceiling of
     examples/TailCall.v does not. C orders every round strictly below
     the one that called it, and the recursion descends along the depth,
-    so C[ι.0/ι] ⊆ C ([fw_sub]). A creation constraint {κ + k ≺ ι} with
+    so C[ι.0/ι] ⊆ C ([kfw_sub]). A creation constraint {κ + k ≺ ι} with
     the outer point ι would do the same job. The chain keeps every fact
     inside one root, as the other examples do.
 
     Acyclicity. The depth grows without bound and the order falls
     along it, so the rank −2·depth + offset lands in ℤ, not ℕ. Every
-    fact of C and program order rise along it ([fw_ok]).
+    fact of C and program order rise along it ([kfw_ok]).
 
-      ∅; · ⊢^∅ fw_main : ∗   so   thread fw_main is deadlock free *)
+      ∅; · ⊢^∅ kfw_main : ∗   so   thread kfw_main is deadlock free *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.LitTools.
 
 Set Default Proof Using "All".
 
-Definition fw_P (g : fact) : Prop :=
+Definition kfw_P (g : fact) : Prop :=
   ∃ n, g = FLt (Pt (slotv (S n)) 0) (Pt (slotv n) 0) ∨
        g = FLt (Pt (slotv (S n)) 1) (Pt (slotv n) 0).
 
-Definition fw_C : bcs := BCs [] fw_P.
+Definition kfw_C : bcs := BCs [] kfw_P.
 
-Definition fw_body : ty :=
+Definition kfw_body : ty :=
   TLolli (Some (pv 0 1)) None (TSess Sd (pv 0 0)) TUnit.
 
 Definition fwsrv : expr :=
@@ -81,48 +81,48 @@ Definition fwsrv : expr :=
         (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 5)) (Var 2)))))
           (LetU (recvclose (Var 0)) (sendclose (Var 3)))))))).
 
-Definition fw_main : expr :=
+Definition kfw_main : expr :=
   LetP (Pair fwsrv EUnit) (LetU (Var 0)
     (let_new_pair
       (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 4)) (Var 2)))))
         (recvclose (Var 0))))).
 
 (** C[ι.0/ι] ⊆ C. Round n goes to round n+1. *)
-Lemma fw_sub g : fw_P g → fact_scoped 1 g → fw_P (fact_map (pt_inst (plist [pcr])) g).
+Lemma kfw_sub g : kfw_P g → fact_scoped 1 g → kfw_P (fact_map (pt_inst (plist [pcr])) g).
 Proof.
   intros (n & [-> | ->]) _; exists (S n); [left|right];
     cbn [fact_map]; unfold pt_inst; cbn [pt_name pt_off]; by rewrite !slotv_inst.
 Qed.
 
-Lemma fw_call W Ψ : (fw_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) fw_C [pcr].
-Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact fw_sub]. Qed.
+Lemma kfw_call W Ψ : (kfw_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) kfw_C [pcr].
+Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact kfw_sub]. Qed.
 
 (** As in examples/FactServer.v, the rank −2·depth + offset in ℤ. *)
-Definition fw_rank (x : point) : Z :=
+Definition kfw_rank (x : point) : Z :=
   (-2 * Z.of_nat (sdepth (pt_name x)) + Z.of_nat (pt_off x))%Z.
 
-Lemma fw_ok peq plt : cc_ok peq plt fw_C.
+Lemma kfw_ok peq plt : cc_ok peq plt kfw_C.
 Proof.
-  apply (cc_ok_inner peq plt fw_P (λ x y, (fw_rank x < fw_rank y)%Z)).
+  apply (cc_ok_inner peq plt kfw_P (λ x y, (kfw_rank x < kfw_rank y)%Z)).
   - intros x y z; lia.
   - intros x; lia.
-  - intros [n o] _. unfold fw_rank, pt_shift. cbn [pt_name pt_off]. lia.
+  - intros [n o] _. unfold kfw_rank, pt_shift. cbn [pt_name pt_off]. lia.
   - intros g [n [-> | ->]] _; eexists _, _; (split; [done|]);
-      unfold fw_rank; cbn [pt_name pt_off]; rewrite !sdepth_slotv; lia.
+      unfold kfw_rank; cbn [pt_name pt_off]; rewrite !sdepth_slotv; lia.
 Qed.
 
 Lemma fwsrv_typed W F :
-  strict W → typed W ∅ [] ∅ [] F fwsrv (TBox 1 fw_C (TLolli None None TUnit fw_body)).
+  strict W → typed W ∅ [] ∅ [] F fwsrv (TBox 1 kfw_C (TLolli None None TUnit kfw_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold fwsrv.
   apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
-  box_open1 fw_C fw_body. cbn. unfold fw_body.
+  box_open1 kfw_C kfw_body. cbn. unfold kfw_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   (* the two facts of C at n = 0 *)
-  assert (∀ Ψ, (fw_C, [pvar 0]) ∈ Ψ → slt W Ψ pcr (pv 0 0)) as Hq.
+  assert (∀ Ψ, (kfw_C, [pvar 0]) ∈ Ψ → slt W Ψ pcr (pv 0 0)) as Hq.
   { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (slotv 1) 0) (Pt (slotv 0) 0));
       [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
-  assert (∀ Ψ, (fw_C, [pvar 0]) ∈ Ψ → slt W Ψ (pt_shift 1 pcr) (pv 0 0)) as Hq1.
+  assert (∀ Ψ, (kfw_C, [pvar 0]) ∈ Ψ → slt W Ψ (pt_shift 1 pcr) (pv 0 0)) as Hq1.
   { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (slotv 1) 1) (Pt (slotv 0) 0));
       [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
   (* case inj₂ ∗ *)
@@ -150,9 +150,9 @@ Proof.
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
       eapply tv_app; [exact HW|reflexivity| | |].
-      - apply (typed_force W _ _ _ _ _ _ 1 fw_C None fw_body [pcr]);
+      - apply (typed_force W _ _ _ _ _ _ 1 kfw_C None kfw_body [pcr]);
           [done|done| | |apply ubs_none|tstep].
-        + apply fw_call. by left.
+        + apply kfw_call. by left.
         + constructor; [right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]
                        |constructor].
       - tstep.
@@ -182,18 +182,18 @@ Proof.
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma fw_typed : styped ∅ [] [] (∅, None) fw_main TUnit.
+Lemma kfw_typed : styped ∅ [] [] (∅, None) kfw_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fw_main.
-  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 fw_C (TLolli None None TUnit fw_body)) TUnit);
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold kfw_main.
+  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 kfw_C (TLolli None None TUnit kfw_body)) TUnit);
     [reflexivity| |].
   { tstep; [tstep|apply fwsrv_typed, HWs]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fw_C); [apply fw_ok|constructor|].
+  apply (t_new_open W _ _ ∅ _ _ _ _ Sd kfw_C); [apply kfw_ok|constructor|].
   fresh_clean.
-  set (Ψ := [(fw_C, [pvar 0])]).
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) fw_C [pvar 0]) as HC.
+  set (Ψ := [(kfw_C, [pvar 0])]).
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) kfw_C [pvar 0]) as HC.
   { apply bcs_hold_self; [by left|vb_list|]. intros g Hg Hs.
     change (plist [pvar 0]) with (plist (ids 1)).
     destruct g as [x y|x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids. }
@@ -206,7 +206,7 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 fw_C None fw_body [pvar 0]);
+    - apply (typed_force W _ _ _ _ _ _ 1 kfw_C None kfw_body [pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|].
       tstep.
     - tstep.
@@ -218,8 +218,8 @@ Proof.
     apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Theorem fw_deadlock_free_kob : deadlock_free (∅, {[+ fw_main +]}).
+Theorem kfw_deadlock_free : deadlock_free (∅, {[+ kfw_main +]}).
 Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply fw_typed].
+  apply ptyped_closed_s; [constructor|apply kfw_typed].
 Qed.
