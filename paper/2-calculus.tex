@@ -2,81 +2,74 @@
 \label{sec:calculus}
 
 \subsection{Syntax and Semantics}
-The subject of our study is the language \OurLang,
-which is loosely based on the formulation of GV by \citet{conf/esop/LindleyM15}.
-\OurLang\ is a concurrent \lcalc\ equipped with primitives for
-synchronous message passing.
 
-The syntax of \OurLang\ is shown in \cref{fig:syntax}.
-Variables and channels are ranged over by $\tLVA,
-\tLVB$ and $\ch, \chB$, respectively.
-\OurLang\ includes constants for the concurrency primitives:
-$\tApp{\tFork}{(\tAbs{\tLVA}{\tm})}$
-  creates a new channel~$\ch$ and spawns a thread
-  running~$\tm$ with~$\tLVA$ bound to~$\ch$, and returns~$\ch$;
-$\tApp{\tRecv}{\ch}$
-  receives a message over~$\ch$, and
-  returns the pair $ \tPair{\val}{\ch'} $ of the message $\val$
-  and the continuation channel~$\ch'$;
-$\tApp{\tSend}{\tPair{\val}{\ch}}$
-  sends a value $\val$ over the channel~$\ch$,
-  and returns the continuation channel;
-$\tApp{\tClos}{\ch}$
-  closes channel~$\ch$.
-Values consist of the unit~$\tUnit$, constants, abstractions, and pairs.
-Terms $\tm$ are standard;
-in examples, we use the standard abbreviation
-$ \tLetS{\vr}{\tm_1}{\tm_2} $
-for
-$ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
-
+\Cref{fig:syntax} gives the syntax of \OurLang, a concurrent \lcalc\ with
+synchronous message passing, loosely based on the formulation of GV by
+\citet{conf/esop/LindleyM15}.
+Variables are ranged over by $\vr, \vrB$ and channels by $\ch, \chB$.
+$\tApp{\tNew}{\tUnit}$ creates a channel and returns both of its ends,
+$\tApp{\tSpawn}{\val}$ runs $\tApp{\val}{\tUnit}$ in a new thread,
+$\tApp{\tRecv}{\ch}$ receives a message on $\ch$ and returns it with the
+continuation channel,
+$\tApp{\tSend}{\tPair{\val}{\ch}}$ sends $\val$ on $\ch$,
+$\tApp{\tClos}{\ch}$ closes $\ch$,
+$\tApp{\tLink}{\tPair{\ch}{\chB}}$ forwards between two ends, and
+$\tApp{\tForce}{\tBoxP{\vr}{\tm}}$ unrolls a box.
+A box $\tBoxP{\vr}{\tm}$ binds $\vr$ to itself in $\tm$, which is the
+only form of recursion in the calculus.
 
 \begin{figure}[thp]
-  % \textbf{Constants $\cst$, values $\val$, terms $\tm$, evaluation contexts $\ectx$, session labels $\sigma$, term labels $\lambda$}
+  \adjustfigure[]
+  \rulesection*{Constants $\cst$, values $\val$, terms $\tm$ (\rocq{expr})}
   \begin{align*}
     \cst &::=
-      \tFork \sepr
-      \tRecv \sepr
-      \tSend \sepr
-      \tClos
+      \tNew \sepr \tSpawn \sepr \tRecv \sepr \tSend \sepr
+      \tClos \sepr \tLink \sepr \tForce
     & \text{(constants)}
     \\
     \val &::=
-      \tUnit \sepr
-      \cst \sepr
-      \ch \sepr
-      \tAbs{\tLVA}{\tm} \sepr
-      \tPair{\val}{\val}
+      \tUnit \sepr \cst \sepr \ch \sepr \tAbs{\vr}{\tm} \sepr
+      \tBoxP{\vr}{\tm} \sepr \tPair{\val}{\val} \sepr \tInj{i}{\val}
     & \text{(values)}
     \\
     \tm &::=
-      \tLVA \sepr
-      \val \sepr
-      \tApp{\tm}{\tm} \sepr
-      \tPair{\tm}{\tm} \sepr
-      \tLet*{\tm}{\tm} \sepr
-      \tLet[\tLVA][\tLVA]{\tm}{\tm}
+      \vr \sepr \val \sepr \tApp{\tm}{\tm} \sepr \tPair{\tm}{\tm} \sepr
+      \tLet*{\tm}{\tm} \sepr \tLet[\vr][\vrB]{\tm}{\tm}
+    \\ & \qquad {}\sepr
+      \tInj{i}{\tm} \sepr \tCase{\tm}{\ivx}{\tm}{\ivy}{\tm}
     & \text{(terms)}
   \end{align*}
+  \rulesection{Derived forms}
+  \begin{align*}
+    \tSeq{\tm_1}{\tm_2} &:= \tLet*{\tm_1}{\tm_2}
+    &
+    \tAbs{\tUnit}{\tm} &:= \tAbs{\ivx}{\tLet*{\ivx}{\tm}}
+    &
+    \tLetS{\vr}{\tm_1}{\tm_2} &:= \tApp{(\tAbs{\vr}{\tm_2})}{\tm_1}
+  \end{align*}
+  \rulesectionend
   \caption{Syntax of \OurLang (\rocq{expr})}
-  \Description{Grammars for the constants, values and terms of GV-sharp.}
+  \Description{Grammars for the constants, values and terms of GV-sharp,
+    and three derived forms.}
   \label{fig:syntax}
 \end{figure}
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Session labels $\sigma$, term labels $\lambda$, Evaluation contexts $\ectx$ (\rocq{slabel})}
+  \rulesection*{Session labels $\sigma$, term labels $\lambda$, evaluation contexts $\ectx$ (\rocq{slabel}, \rocq{tlabel})}
   \begin{align*}
     \sigma &::=
       \lRecv{\ch}{\val} \sepr
       \lSend{\ch}{\val} \sepr
-      \lTerm{\ch}
+      \lTerm{\ch} \sepr
+      \lLink{\ch}{\chB}
     & \text{(session labels)}
     \\
     \lambda &::=
       \beta \sepr
       \sigma \sepr
-      \lFork{\ch}{\val}
+      \lNew{\ch} \sepr
+      \lSpawnL{\val}
     & \text{(term labels)}
     \\
     \ectx &::=
@@ -86,13 +79,16 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
       \tPair{\ectx}{\tm} \sepr
       \tPair{\val}{\ectx} \sepr
       \tLet*{\ectx}{\tm} \sepr
-      \tLet[\tLVA][\tLVA]{\ectx}{\tm}
+      \tLet[\vr][\vrB]{\ectx}{\tm}
+    \\ & \qquad {}\sepr
+      \tInj{1}{\ectx} \sepr \tInj{2}{\ectx} \sepr
+      \tCase{\ectx}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2}
     & \text{(eval.\ contexts)}
   \end{align*}
   \rulesection{Labelled reductions for terms (\rocq{tstep})}
   \begin{proofrules}
     \infer*[lab=T-Act-App]{}{
-      \tApp{(\tAbs{\tLVA}{\tm})}{\val} \trans{\beta} \tSub{\tm}{\val}{\tLVA}
+      \tApp{(\tAbs{\vr}{\tm})}{\val} \trans{\beta} \tSub{\tm}{\val}{\vr}
     } \label{rule:T-Act-App}
     \and
     \infer*[lab=T-Act-Let*]{}{
@@ -100,12 +96,24 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
     } \label{rule:T-Act-Let*}
     \and
     \infer*[lab=T-Act-LetPair]{}{
-      \tLet[\tLVA][\tLVB]{\tPair{\valB}{\val}}{\tm} \trans{\beta} \tSub{\tSub{\tm}{\valB}{\tLVA}}{\val}{\tLVB}
+      \tLet[\vr][\vrB]{\tPair{\valB}{\val}}{\tm} \trans{\beta} \tSub{\tSub{\tm}{\valB}{\vr}}{\val}{\vrB}
     } \label{rule:T-Act-LetPair}
     \and
-    \infer*[lab=T-Act-Fork]{}{
-      \tApp{\tFork}{\val} \trans{\lFork{\ch}{\val}} \ch
-    } \label{rule:T-Act-Fork}
+    \infer*[lab=T-Act-Case]{}{
+      \tCase{(\tInj{\asTm{i}}{\val})}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} \trans{\beta} \tSub{\tm_{\asTm{i}}}{\val}{\ivx_{\asTm{i}}}
+    } \label{rule:T-Act-Case}
+    \and
+    \infer*[lab=T-Act-Force]{}{
+      \tApp{\tForce}{\tBoxP{\vr}{\tm}} \trans{\beta} \tSub{\tm}{\tBoxP{\vr}{\tm}}{\vr}
+    } \label{rule:T-Act-Force}
+    \and
+    \infer*[lab=T-Act-New]{}{
+      \tApp{\tNew}{\tUnit} \trans{\lNew{\ch}} \tPair{\ch}{\ch}
+    } \label{rule:T-Act-New}
+    \and
+    \infer*[lab=T-Act-Spawn]{}{
+      \tApp{\tSpawn}{\val} \trans{\lSpawnL{\val}} \tUnit
+    } \label{rule:T-Act-Spawn}
     \and
     \infer*[lab=T-Act-Recv]{}{
       \tApp{\tRecv}{\ch} \trans{\lRecv{\ch}{\val}} \tPair{\val}{\ch}
@@ -119,6 +127,10 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
       \tApp{\tClos}{\ch} \trans{\lTerm{\ch}} \tUnit
     } \label{rule:T-Act-Close}
     \and
+    \infer*[lab=T-Act-Link]{}{
+      \tApp{\tLink}{\tPair{\ch}{\chB}} \trans{\lLink{\ch}{\chB}} \tUnit
+    } \label{rule:T-Act-Link}
+    \and
     \infer*[lab=T-Act-Ctx]{
       \tm \trans{\lambda} \tm'
     }{
@@ -127,244 +139,100 @@ $ \tApp{(\tAbs{\tLVA}{\tm_2})}{\tm_1} $.
   \end{proofrules}
   \rulesectionend
   \caption{Semantics of \OurLang\ terms}
-  \Description{Grammars for evaluation contexts, session labels and term labels, and the seven axioms plus one congruence rule of the labelled term reduction relation.}
+  \Description{Grammars for evaluation contexts, session labels and term
+    labels, and the eleven axioms plus one congruence rule of the
+    labelled term reduction relation.}
   \label{fig:term-semantics}
 \end{figure}
 
-
-The semantics of \OurLang\ is a standard reduction semantics
-$\proc \sred \proc'$ for closed processes.
-The full definition is given in
-\cref{sec:app-harmony}, \cref{fig:red-semantics}.
-The reduction semantics is the ``ground truth'' specification of the
-behavior of closed processes.
-The end-to-end property that the type system/logical relation aims to prove
-is deadlock-freedom with respect to the reduction semantics.
-
-In order to define the logical relation, which inherently needs to
-constrain the potential behavior of an open process interacting with
-an environment, we define a \emph{labelled transition system} (LTS) semantics.
-As we prove in \cref{thm:harmony}, the internal transitions of the LTS are in perfect correspondence to the reduction steps, allowing us to transfer
-results on the LTS to properties of reductions.
-%%%
-We construct the LTS on processes by first defining an LTS on terms,
-where the labels represent the concurrency effects.
-
-\paragraph{Term semantics}
-The semantics of terms is shown in \cref{fig:term-semantics},
-which defines a labelled relation
-$\tm \trans{\lambda} \tm$.
-Bindings and substitutions work as standard:
-we let $\fv (\tm)$ denote the free variables of a term
-and $\tSub{\tm}{\val}{\tLVA}$ the capture-avoiding
-substitution of variable $\tLVA$ by (closed) $\val$ in $\tm$.
-All channels in a term are considered free; terms can only bind variables,
-and we write $\fchans(\tm)$ for the set of free channels of a term.
-We define the subjects of a term label $\fc(\lambda)$, \ie the channels
-the label acts on:
-  $\fc(\beta) = \fc(\lFork{\ch}{\val}) = \emptyset$,
-  $\fc(\lRecv{\ch}{\val}) =
-  \fc(\lSend{\ch}{\val}) = %\fc(\lWait{\ch}) =
-  \fc(\lTerm{\ch}) =
-  \set{\ch}$.
-%%%
-Labels~$\lambda$ record the effect taking place.
-The label $\beta$ indicate a pure functional reduction.
-Communication effects are recorded by session labels~$\sigma$:
-$\lRecv{\ch}{\val}$ for receiving value~$\val$ on~$\ch$,
-$\lSend{\ch}{\val}$ for sending value~$\val$ on~$\ch$, and
-$\lTerm{\ch}$ for terminating the connection on $\ch$.
-A fork generates a label~$\lFork{\ch}{\val}$,
-recording the new channel~$\ch$ and
-the code to run in the forked thread~$\val$.
-A $\lFork{\ch}{\val}$ label binds $\ch$;
-as is standard, we assume bound names of labels are chosen fresh for whatever is in scope: when a term or process is considered at an interface $\senv$, this means $\ch\notin\dom(\senv)$.
-The rule~\ref{rule:T-Act-Ctx} uses standard call-by-value evaluation contexts.
-
-We define GV-style \emph{term reduction} $\tm \redu \tm'$ as
-the pure steps $\tm \trans{\beta} \tm'$
-and write $\redu[*]$ for its transitive, reflexive closure.
+Both ends of a channel carry one name: \ref{rule:T-Act-New} returns the
+pair $\tPair{\ch}{\ch}$. The subjects of a label are
+$\fc(\beta) = \fc(\lNew{\ch}) = \fc(\lSpawnL{\val}) = \emptyset$,
+$\fc(\lRecv{\ch}{\val}) = \fc(\lSend{\ch}{\val}) = \fc(\lTerm{\ch}) = \set{\ch}$
+and $\fc(\lLink{\ch}{\chB}) = \set{\ch,\chB}$, and the channels a label
+sends away are $\sent(\lSend{\ch}{\val}) = \fchans(\val)$ and
+$\emptyset$ otherwise.
+A forwarding label carries an unordered pair, so
+$\lLink{\ch}{\chB} = \lLink{\chB}{\ch}$, and
+$\tApp{\tLink}{\tPair{\ch}{\ch}}$ emits the singleton
+$\lLinkSingle{\ch}$.
+We write $\tm \redu \tm'$ for $\tm \trans{\beta} \tm'$ and $\redu[*]$ for
+its reflexive transitive closure.
 
 
-\paragraph{Process semantics}
-We now define how the term semantics is lifted to an operational semantics
-for processes, \ie a network of threads connected via channels.
-Although we aim to capture the same reduction semantics,
-we deviate from~\citet{conf/esop/LindleyM15} in two technical ways.
-First, we equip processes with an LTS semantics,
-as opposed to just reductions.
-This move facilitates the formulation of our logical relation
-in \cref{sec:logicalRelation}.
-Second, we describe processes using a flat ``thread pool'' representation,
-as opposed to \picalc\ terms using restriction and parallel.
-More specifically, a process $p$ consists of a pair $(C,E)$ where
-$C$ is a finite set of (restricted) channels
-and~$E$ is a finite multiset of closed terms
-running in parallel.
-We write $S_1 \disjoint S_2$ and $S_1 \cupdot S_2$ to denote
-disjointness and disjoint union of sets $S_1$ and $S_2$, respectively,
-and $E_1 \uplus E_2$ for multiset union.
-
+A \emph{process} $\proc$ is a pair $(\chset, \pool)$ of a finite set of
+restricted channels $\chset$ and a finite multiset of closed terms
+$\pool$ running in parallel.
+We write $S_1 \disjoint S_2$ and $S_1 \cupdot S_2$ for disjointness and
+disjoint union of sets, and $\pool_1 \uplus \pool_2$ for multiset union.
 \Cref{fig:proc-semantics} defines the labelled transition relation
-$(\chset,\pool) \trans{\pi} (\chset,\pool)$ between processes.
-A process $(C,E)$ might represent the full network, or some sub-network of
-the global state. In the latter case, terms in~$E$ may use channels that do not
-appear in~$C$ to communicate with the environment. 
-Rule \ref{rule:P-Act-Fork} interprets the fork labels~$ \lFork{\ch}{\val} $
-by adding a fresh name $\ch$ to~$C$ and adding a thread
-running~$\val$ applied to~$\ch$.
-Rule \ref{rule:P-Act-Beta} lets a thread take an internal $\tau$~step
-to execute a $\beta$~reduction of the term it is running.
-Communication labels are interpreted by the \ref{rule:P-Act-Msg} rule,
-which matches a send $\lSend{\ch}{\val}$
-in one thread with a receive $\lRecv{\ch}{\val}$ of another.
-Similarly, \ref{rule:P-Act-Close} makes two close actions on the same
-restricted channel match.
-In the case of \ref{rule:P-Act-Close} the channel to be closed needs to be
-restricted because closing has the side-effect of removing the channel from
-the restrictions.
-\ed{we could add: ``it would be possible to modify the rule so closing on a free channel recorded the side-effect some other way, but we picked this way for simplicity, given that the LTS is not used to induce a behavioural equivalence but as a stepping stone for the logical relation definition.''}
-
-The \ref{rule:P-Act-Session} rule lifts communication effects~$\sigma$
-happening on a channel shared with the environment
-($\fc(\sigma) \disjoint \chset$).
-When~$\sigma$ is a send action, the sent message may refer to names that
-are private, \ie names in~$C$: these names escape the local scope
-and become shared with the environment.
-The rule implements this in the spirit of the \textsc{Open} rule of the standard LTS for the \picalc~\cite{lts-pi}:
-the sent channels are removed from the local scope~$C$,
-so that the continuation process sees them as free channel names.
-The sent channels are computed from the label by the $\sent$ function,
-defined as $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$, and
-$\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
-% We denote the channels that are extruded from the internal scope due to a
-% an communication effect~$\sigma$ by $\sent(\sigma)$:
-%   $\sent(\lRecv{\ch}{\val}) = \sent(\lTerm{\ch}) = \emptyset$,
-%   $\sent(\lSend{\ch}{\val}) = \fchans(\val)$.
+$(\chset,\pool) \trans{\pi} (\chset,\pool)$.
+A process may represent a whole network or a sub-network, in which case
+the terms of $\pool$ use channels outside $\chset$ to talk to the
+environment.
+\Cref{rule:P-Act-Session} lifts every offer on a channel shared with the
+environment, forwarding included, and removes the sent channels from
+$\chset$ in the spirit of the \textsc{Open} rule of the standard LTS for
+the \picalc~\cite{lts-pi}.
 
 \begin{remark}
 \label{rm:sentc}
-The choice of computing the sent channels \emph{syntactically} is not a
-neutral choice. While in the pure \picalc, every message \emph{is} a channel name, in \OurLang\ a message is an arbitrary value.
-For example, sending a value $\val = (\tAbs{\tLVA}{\asTm{\Omega}\ \ch})$,
-where $\asTm{\Omega}$ is a diverging term,
-does not actually share $\ch$: the receiver will never be able to perform
-any action on it.
-Nevertheless, the LTS would see $\ch \in \sent(\val)$ and thus remove it
-from the local scope.
-To precisely capture these pathological cases one would need
-to semantically determine the sent channels.
-This sound approximation of the send transitions is a pragmatic choice
-which simplifies the LTS definition, at the price of needing some mild
-syntactic conditions in the logical relation
-(see \cref{rm:vabs}).
+Computing the sent channels \emph{syntactically} is not a neutral
+choice. In the pure \picalc\ every message is a channel name, while in
+\OurLang\ a message is an arbitrary value. Sending
+$\val = (\tAbs{\vr}{\asTm{\Omega}\ \ch})$ with $\asTm{\Omega}$ diverging
+does not share $\ch$, and still $\ch \in \sent(\val)$, so the LTS
+removes it from the local scope. This sound approximation buys a simpler
+LTS at the price of two syntactic side conditions in the logical
+relation (\cref{rm:vabs}).
 \end{remark}
-
-
-It may seem odd that while \cref{rule:P-Act-Session} removes the extruded
-channels from the private ones, there is no analog of \picalc' \textsc{Close}
-rule, which would re-introduce the sent channels as private once the
-sent is consumed by a corresponding receive.
-The reason is that, unlike standard \picalc, our \ref{rule:P-Act-Msg} rule
-makes two \emph{terms} synchronize, not two processes with their own individual scope. Therefore whatever channel $\ch$ sent with $\val$ is bound in $C$, it will stay in $C$, making $\ch$ in scope of the receiving term.
-The following lemma shows that the expected communication rule on processes can be derived from ours.
-
-\begin{lemma}[Internalizing communication \rocq{internalize_comm}]
-\label{lem:internalize}
-  Suppose that $(\chset_1, \pool_1) \trans{\lSend{\ch}{\val}} (\chset_1', \pool_1')$ and $(\chset_2, \pool_2) \trans{\lRecv{\ch}{\val}} (\chset_2', \pool_2')$ with $C_1 \disjoint C_2$.
-  It then holds that $(\chset_1 \cupdot \chset_2, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2, \pool_1' \uplus \pool_2')$.
-\end{lemma}
-% \begin{proof}
-%   As $c \not\in C_1 \cupdot C_2$, both assumed transitions happen by \ref{rule:P-Act-Session}.
-%
-%   Rule inversion on $(C_1, E_1)$ yields
-%   \begin{align}
-%     E_1 &= E_1'' \uplus \mset{\tm} \\
-%         & \tm \trans{\lSend{\ch}{\val}} \tm' \label{eq:1}\\
-%     C_1' & = C_1 \setminus \sent(\lSend{\ch}{\val}) = C_1 \setminus \fchans(\val) \\
-%     E_1' & = E_1'' \uplus \mset{\tm'}
-%   \end{align}
-%   Rule inversion on $(C_2, E_2)$ yields
-%   \begin{align}
-%     E_2 & = E_2'' \uplus \mset{\tmB} \\
-%         & \tmB \trans{\lRecv{\ch}{\val}} \tmB' \label{eq:2}\\
-%     C_2' & = C_2 \setminus \sent(\lRecv{\ch}{\val}) = C_2 \setminus \emptyset \\
-%     E_2' & = E_2'' \uplus \mset{\tmB'}
-%   \end{align}
-%   Hence we can apply \ref{rule:P-Act-Msg} from the assumptions~(\cref{eq:1}) and~(\cref{eq:2}) to conclude
-%   \begin{align}
-%     (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm, \tmB})
-%     & \trans{\tau} (\chset_1 \cupdot \chset_2 \cupdot \set{\ch}, \pool_1'' \uplus \pool_2'' \uplus \mset{\tm', \tmB'})
-%   \end{align}
-%   Note that the channel set is left \emph{unchanged} by \ref{rule:P-Act-Msg}:
-%   the channels $\fchans(\val)$ that \ref{rule:P-Act-Session} extrudes
-%   from $C_1$ remain in scope of the combined process, since the
-%   receiver is now part of it.
-% \end{proof}
-
-The same applies to the other synchronizing action, closing a channel, with the side-effect of removing the closed channel from the restricted channels.
-
-\begin{lemma}[Internalizing a close \rocq{internalize_close}]
-\label{lem:internalize-close}
-  Suppose that $(\chset_1, \pool_1) \trans{\lClos{\ch}} (\chset_1, \pool_1')$ and $(\chset_2, \pool_2) \trans{\lClos{\ch}} (\chset_2, \pool_2')$ with $C_1 \disjoint C_2$ and $c \not\in C_1 \cupdot C_2$.
-  It then holds that $(\chset_1 \cupdot \chset_2 \cupdot \{\ch\}, \pool_1 \uplus \pool_2) \trans{\tau} (\chset_1 \cupdot \chset_2, \pool_1' \uplus \pool_2')$.
-\end{lemma}
-
-
-
-The move to an ``open-world'' LTS semantics is a technical device to define
-the logical relation, and should not be thought as a way to induce a behavioral equivalences.
-The following result allows us to transfer results on the LTS
-to properties of reductions so that what needs to be trusted for the claims on the behavioral guarantees of the logical relation is only the reduction semantics and not the LTS.
 
 \begin{theorem}[Harmony \rocq{harmony}]
   \label{thm:harmony}
   $\proc \trans{\tau} \proc'$
   if and only if
   $\proc \sred \proc'$
-  (as defined in \cref{sec:app-harmony}, \cref{fig:red-semantics}).
+  (\cref{sec:app-harmony}, \cref{fig:red-semantics}).
 \end{theorem}
 
-
-By virtue of this correspondence,
-transitions of the form $\proc \trans{\tau} \proc'$
-are abbreviated as $\proc \redu \proc'$,
-and called \emph{process reductions}.
-We write $\trans{}[*]$ for the transitive, reflexive closure of process reductions.
-
-
+Transitions $\proc \trans{\tau} \proc'$ are written $\proc \redu \proc'$
+and called process reductions, with $\trans{}[*]$ for the reflexive
+transitive closure.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  % TODO(mathpartir): this heading *is* the content (the label grammar),
-  % not a title for what follows.  Its trailing \par\medskip was dropped
-  % in favour of \rulesection's own spacing; check you like the result.
-  % \textbf{Process labels $\pi$}
-  % \begin{align*}
-  % \pi &::= \tau \sepr \sigma
-  % \end{align*}
   \rulesection{Labelled reductions for processes (\rocq{plabel})}
-  %
   \begin{align*}
     \pi &::= \tau \sepr \sigma
     \qquad \text{(process labels)}
   \end{align*}
-  % Process labels $\pi ::= \tau \sepr \sigma$
-  %
   \begin{proofrules}
-    \infer*[lab=P-Act-Fork]{
-      \ch~\text{fresh}
-      \\
-      \smash{\tm \trans{\lFork{\ch}{\val}} \tm'}
+    \infer*[lab=P-Act-Session]{
+      \tm \trans{\sigma} \tm' \\
+      \fc(\sigma) \disjoint \chset
     }{
-      (\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm', \tApp{\val}{\ch}})
-    } \label{rule:P-Act-Fork}
+      (\chset, \pool \uplus \mset{\tm}) \trans{\sigma} (\chset \setminus \sent(\sigma), \pool \uplus \mset{\tm'})
+    } \label{rule:P-Act-Session}
     \and
     \infer*[lab=P-Act-Beta]{
       \tm \trans{\beta} \tm'
     }{
       (\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset, \pool \uplus \mset{\tm'})
     } \label{rule:P-Act-Beta}
+    \and
+    \infer*[lab=P-Act-New]{
+      \ch~\text{fresh}
+      \\
+      \smash{\tm \trans{\lNew{\ch}} \tm'}
+    }{
+      (\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm'})
+    } \label{rule:P-Act-New}
+    \and
+    \infer*[lab=P-Act-Spawn]{
+      \smash{\tm \trans{\lSpawnL{\val}} \tm'}
+    }{
+      (\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tApp{\val}{\tUnit}})
+    } \label{rule:P-Act-Spawn}
     \and
     \infer*[lab=P-Act-Msg]{
       \tm \trans{\lSend{\ch}{\val}} \tm' \\
@@ -375,550 +243,718 @@ We write $\trans{}[*]$ for the transitive, reflexive closure of process reductio
     \and
     \infer*[lab=P-Act-Close]{
       \tm \trans{\lTerm{\ch}} \tm' \\
-      \tmB \trans{\lTerm{\ch}} \tmB'
+      \tmB \trans{\lTerm{\ch}} \tmB' \\
+      \ch \in \chset
     }{
-      (\chset \cupdot \set{\ch}, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset, \pool \uplus \mset{\tm', \tmB'})
+      (\chset, \pool \uplus \mset{\tm, \tmB}) \trans{\tau} (\chset \setminus \set{\ch}, \pool \uplus \mset{\tm', \tmB'})
     } \label{rule:P-Act-Close}
     \and
-    \infer*[lab=P-Act-Session]{
-      \tm \trans{\sigma} \tm' \\
-      \fc(\sigma) \disjoint \chset
+    \infer*[lab=P-Act-Link]{
+      \tm \trans{\lLink{\ch}{\chB}} \tm' \\
+      \ch \in \chset
     }{
-      (\chset, \pool \uplus \mset{\tm}) \trans{\sigma} (\chset \setminus \sent(\sigma), \pool \uplus \mset{\tm'})
-    } \label{rule:P-Act-Session}
+      (\chset, \pool \uplus \mset{\tm}) \trans{\tau} (\chset \setminus \set{\ch}, \tSub{(\pool \uplus \mset{\tm'})}{\chB}{\ch})
+    } \label{rule:P-Act-Link}
   \end{proofrules}
   \rulesectionend
   \caption{LTS semantics of \OurLang\ processes}
-  \Description{The grammar of process labels and the five rules of the process labelled transition relation: one lifting an external offer, and one each for beta steps, forks, matched messages and matched closes.}
+  \Description{The grammar of process labels and the seven rules of the
+    process labelled transition relation: one lifting an external offer,
+    and one each for beta steps, channel creation, spawning, matched
+    messages, matched closes and forwarding.}
   \label{fig:proc-semantics}
 \end{figure}
 
-\begin{example}[Forked exchange \rocq{sync_reduces}]
-\label{ex:sync}
-  As a first example, consider this reduction sequence:
-  \begin{align*}
-    \asPrId{sync} := {}
-    & (\set{},\mset{ 
-      \tLet[\tLVB][\tLVA]{\tApp{\tRecv}{(\tApp{\tFork}{\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}}})}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-       })
-    \\
-    \redu {}
-    & (\set{ \ch },\mset{ 
-      \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{\ch})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-      , 
-      \tApp{(\tAbs{\tLVA}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\tLVA}})}})}{\ch}
-       })
-    \\
-    \redu {}
-    & (\set{ \ch },\mset{ 
-      \tLet[\tLVB][\tLVA]{(\tApp{\tRecv}{\ch})}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-      , 
-      {\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\ch}})}}
-       })
-    \\
-    \redu {}
-    & (\set{ \ch },\mset{ 
-      \tLet[\tLVB][\tLVA]{\tPair{\tUnit}{\ch}}{\tLet*{\tLVB}{\tApp{\tClos}{\tLVA}}}
-      , 
-      {\tApp{\tClos}{\ch}}
-       })
-    \\
-    \redu {}
-    & (\set{ \ch },\mset{ 
-      {\tLet*{\tUnit}{\tApp{\tClos}{\ch}}}
-      , 
-      {\tApp{\tClos}{\ch}}
-       })
-    \\
-    \redu {}
-    & (\set{ \ch },\mset{ 
-      {{\tApp{\tClos}{\ch}}}
-      , 
-      {\tApp{\tClos}{\ch}}
-       })
-    \\
-    \redu {}
-    & (\set{ },\mset{ 
-      \tUnit
-      , 
-      \tUnit
-       })
-  \end{align*}
-  The initial (closed) process $\asPrId{sync}$
-  has a fork in evaluation position,
-  which creates a new channel~$\ch$ and a new thread.
-  After a~$\beta$ reduction in the new thread,
-  the first thread has a receive on~$\ch$ in evaluation position,
-  and the second a send on~$\ch$.
-  By \ref{rule:P-Act-Msg} the two actions are matched and the message~$\tUnit$
-  is exchanged.
-  After deconstructing the received value, the two threads synchronously close
-  the channel, bringing the whole process to a graceful termination.
-\end{example}
-
-The $\tFork$ primitive is modelled after the
-Curry-Howard correspondence implementing the Cut rule of Linear Logic.
-By design, in typed GV processes the communication topology is constrained:
-it is acyclic,
-every pair of processes can share at most one channel,
-and every channel is shared by exactly two processes.
-It is important to note that in untyped \OurLang,
-we can violate these constraints in two major ways:
-first, nothing in the semantics prevents multiple use of variables
-(thus channels can be shared by more than two processes); and
-second, we are free to pick arbitrary processes as initial configurations
-for reductions.
-The logical relation we define in \cref{sec:logicalRelation}
-will consider untyped processes and accept only well-behaved ones
-(even if they violate the above topological constraints).
-
-
-\begin{example}[Cyclic topology \rocq{cycle_proc}]
-\label{ex:cyclic}
-  The process $\asPrId{cycle}$ below consists of two threads
-  sharing two channels~$\ch$ and $\chB$,
-  but uses them in a safe way:
-  \begin{align}
-    \asPrId{cycle} := {}
-    & (\set{\ch, \chB} , \mset{
-      \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}} ,
-      \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}})
-    \tag{$p_0$}
-    \\
-    \redu {}%\proc_1 = &
-    & (\set{\chB} , \mset{
-      \tLet*{\tUnit}{\tApp{\tClos}{\chB}} ,
-      \tLet*{\tUnit}{\tApp{\tClos}{\chB}}})
-    \tag{$p_1$}
-    \\
-    \redu {}
-    & (\set{\chB} , \mset{
-      {\tApp{\tClos}{\chB}} ,
-      \tLet*{\tUnit}{\tApp{\tClos}{\chB}}})
-    \tag{$p_2$}
-    \\
-    \redu {}
-    & (\set{\chB} , \mset{
-      {\tApp{\tClos}{\chB}} ,
-      {\tApp{\tClos}{\chB}}})
-    \tag{$p_3$}
-    \\
-    \redu {}
-    & (\set{} , \mset{
-      {\tUnit} , {\tUnit}})
-    \tag{$p_4$}
-  \end{align}
-\end{example}
-
 \paragraph{Properties of processes}
-We now formalize the notion of \emph{deadlock freedom}.
-We begin by specifying which processes we consider as having terminated
-successfully.
-As forked threads are never joined, we expect them to reduce to unit;
-we however allow the initial thread to evaluate to some meaningful value,
-which, by convention, is considered the value computed by the whole program.%
-\footnote{This design decision is from \citet{conf/esop/LindleyM15}. The
-  rest of the development does \emph{not} fundamentally depend on it.} 
+Forked threads are never joined, so they are expected to reduce to unit,
+while the initial thread may evaluate to the value computed by the whole
+program.\footnote{This design decision is from
+  \citet{conf/esop/LindleyM15}. The rest of the development does
+  \emph{not} depend on it.}
+
+\begin{definition}[Irreducible terms and processes \rocq{irred}]
+We write $\irred \tm$ if there are no $\lambda, \tm'$ with
+$\tm \trans{\lambda} \tm'$, and $\irred \proc$ if there are no
+$\pi, \proc'$ with $\proc \trans{\pi} \proc'$.
+\end{definition}
 
 \begin{definition}[Terminated process \rocq{terminated}]
 \label{def:terminated}
-  A process $\proc$ is \emph{terminated} if,
+  A process $\proc$ is \emph{terminated} if
   $\proc = (\asPrOp{\emptyset}, \mset{\val,\tUnit,\dots,\tUnit})$
   for some~$\val$.
-  % and
-  % $\forall \tm \in \pool.\,\tm = \tUnit$.
 \end{definition}
-
-% \ed{Safety is unattainable for open processes: one has no control over received values}
-% \begin{definition}[Safety]
-% \label{def:safety}
-% Every process is \emph{\pre 0-safe}.
-% Given $n\in\Nat$, a process $\proc$ is \emph{\pre (n+1)-safe} just if:
-% \begin{enumerate}
-% \item\label{def:safety:terminated} $\proc$ is terminated,
-% or
-% \item\label{def:safety:trans} there are $\proc',\pi$ such that $\proc \trans{\pi} \proc'$ and $\proc'$ is $n$-safe.
-% \end{enumerate}
-% We say $\proc$ is \emph{safe} if $\proc$ is $n$-safe for every $n \in \Nat$.
-% \end{definition}
 
 \begin{definition}[Safe process \rocq{safe}]
 \label{def:safe}
-  A process $\proc$ is \emph{safe} if it is terminated,
-  or if there is some~$\proc'$ such that
-  $\proc \redu \proc'$.
+  A process $\proc$ is \emph{safe} if it is terminated, or if
+  $\proc \redu \proc'$ for some~$\proc'$.
 \end{definition}
 
-\begin{definition}[Deadlock Freedom \rocq{deadlock_free}]
+\begin{definition}[Deadlock freedom \rocq{deadlock_free}]
   \label{def:df}
-  A process $\proc$ is \emph{deadlock free},
-  if ${\forall p'.\,\proc \redu[*] \proc'}$ implies $p'$ is safe.
+  A process $\proc$ is \emph{deadlock free} if
+  ${\forall \proc'.\,\proc \redu[*] \proc'}$ implies $\proc'$ is safe.
 \end{definition}
 
-\begin{example}[The forked exchange is deadlock free \rocq{sync_deadlock_free}]
-\label{ex:sync-fine}
-  The initial process $\proc$ of Example~\ref{ex:sync} is
-  safe and deadlock free:
-  the displayed reduction sequence is the only one,
-  and every reachable process can either take a further reduction or it is terminated.
-\end{example}
-
-\begin{example}[Deadlocked process \rocq{blocked_not_deadlock_free}]
-\label{ex:deadlock}
-  Consider the following process:
-  \[
-    \asPrId{blocked} := (
-      \set{ \ch,\chB },
-      \mset{
-        \tLet*{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}},
-        \tLet*{\tApp{\tClos}{\chB}}{\tApp{\tClos}{\ch}}
-      }
-    )
-  \]
-  Clearly $\asPrId{blocked}$ cannot take any further steps
-  as the first thread is waiting to close~$\ch$,
-  but the second thread wants to first close~$\chB$,
-  a classic example of deadlock.
-  In fact this process is not safe, and thus any process leading to it
-  would not be deadlock free.
-\end{example}
-
-\begin{example}[The cyclic topology is deadlock free \rocq{cycle_deadlock_free}]
-\label{ex:cyclic-df}
-  Although the topology of $p_0$ in Example~\ref{ex:cyclic} is cyclic,
-  the process has exactly one reduction sequence $p_0 \trans{}[*] p_4$
-  and~$p_4$ has gracefully terminated.
-  Therefore all~$p_0,\dots,p_4$ are safe and thus deadlock free.
-\end{example}
-
-While deadlock freedom is our ultimate correctness criterion for closed
-processes, it is unclear, a priori, what criterion one should apply
-to open processes so that they can be composed safely, in particular
-without imposing restrictive topology constraints.
-The next example shows an open process which does not run into deadlock,
-albeit it does not follow the usual discipline on channels.
-
-\begin{example}[Load balancer \rocq{lb}]
-\label{ex:load-balancer}
-  Consider an open process~$(\emptyset,\mset{\asTmId{lb}})$
-  which replies to requests on a channel~$\ch$ shared with the environment,
-  by delegating the two expected answers to two worker threads.
-  We can represent such a process in \OurLang\ as follows.
-  % The minipage shenanigans are there so we don't need to interleave
-  % the lines of the programs in a single align* environment
-  \begin{center}
-  \vspace{-2\abovedisplayskip}%
-  \def\aquad{\phantom{\tAbs{\asTm{s}}{\ }}}
-  \begin{minipage}[t]{0.44\textwidth}%
-    \begin{align*}
-      \asTmId{lb} := {}
-        & \tLetS{\asTm{w}_1}{\tApp{\tFork}{\asTmId{worker}}}{}\\
-        & \tLetS{\asTm{w}_2}{\tApp{\tFork}{\asTmId{worker}}}{\asTmId{srv}}
+\begin{example}[An exchange between two threads \rocq{sync_main}]
+\label{ex:sync}
+  \begin{align*}
+    \asTmId{sync} := {}
+      & \tLetS{\tPair{\ch}{\chB}}{\tApp{\tNew}{\tUnit}}{}
+        \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\ch}})}})}}{}
       \\
-      \asTmId{worker} := {}&
-        \tAbs{\asTm{s}}{\ }
-                 \tLet[\asTm{m}][\asTm{s}]{\tApp{\tRecv}{\asTm{s}}}{}\\
-        & \tLet*{\asTm{m}}{}\\
-        & \tLetS{\ch}{\tApp{\tSend}{\tPair{\tUnit}{\ch}}}{}\\
-        & \tApp{\tClos}{\asTm{s}}
-    \end{align*}
-  \end{minipage}\hfill%
-  \begin{minipage}[t]{0.44\textwidth}%
-    \begin{align*}
-      \asTmId{srv} := {}
-        & \tLet[\asTm{m}][\ch]{\tApp{\tRecv}{\ch}}{}\\
-        & \tLet*{\asTm{m}}{}\\
-        & \tLetS{\asTm{w}_1}{\tApp{\tSend}{\tPair{\tUnit}{\asTm{w}_1}}}{}\\
-        & \tLetS{\asTm{w}_2}{\tApp{\tSend}{\tPair{\tUnit}{\asTm{w}_2}}}{}\\
-        & \tLet*{\tApp{\tClos}{\asTm{w}_1}}{}\\
-        & \tLet*{\tApp{\tClos}{\asTm{w}_2}}{}\\
-        & \tApp{\tClos}{\ch}
-    \end{align*}
-  \end{minipage}
-  \end{center}
-  Four internal reductions
-  (a fork and a $\beta$~step for each worker)
-  reduce the process
-  $p_0=(\emptyset,\mset{\asTmId{lb}})$
-  to
-  \[
-    p_1 =
-    (\set{\asTm{w}_1,\asTm{w}_2}, \mset{
-     \asTmId{srv},
-     \tApp{\asTmId{worker}}{\asTm{w}_1}, \tApp{\asTmId{worker}}{\asTm{w}_2} })
-  \]
-  This process violates several invariants of typable GV processes.
-  First, all three processes share channel $\ch$ with the environment.
-  Second, there is a genuine race on $\ch$ when both workers are ready
-  to send their message back.
-
-  Nevertheless, it is possible for the process to act safely.
-  For example:
-  \[
-    p_1 \trans{\lRecv{\ch}{\tUnit}}
-        \redu[*]
-        \trans{\lSend{\ch}{\tUnit}}
-        \redu[*]
-        \trans{\lSend{\ch}{\tUnit}}
-        \redu[*]
-        \trans{\lClos{\ch}}
-        \redu[*]
-    (\emptyset, \mset{\tUnit,\tUnit,\tUnit})
-  \]
-  Although two distinct interleavings can generate that behavior,
-  the environment would not be able to distinguish them.
-  Of course, a non well-behaved environment can derail the execution of $p_1$.
-  For instance, $p_1 \trans{\lRecv{\ch}{\tAbs{\ivx}{\ivx}}} p$ leads to
-  an irreducible but not terminated~$p$.
+      & \tLet[\ivx][\chB]{\tApp{\tRecv}{\chB}}{\tSeq{\ivx}{\tApp{\tClos}{\chB}}}
+  \end{align*}
+  The spawned thread sends $\tUnit$ on $\ch$ and closes it, the main
+  thread receives on $\chB$ and closes it. The process
+  $(\emptyset, \mset{\asTmId{sync}})$ has exactly one reduction sequence,
+  and it ends terminated, so it is safe and deadlock free
+  (\rocq{sync_deadlock_free}).
 \end{example}
 
+\begin{example}[A cyclic topology \rocq{cycle_main}]
+\label{ex:cyclic}
+  \begin{align*}
+    \asTmId{cycle} := {}
+      & \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNew}{\tUnit}}{}
+        \tLetS{\tPair{\chB}{\chB'}}{\tApp{\tNew}{\tUnit}}{}
+      \\
+      & \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tSeq{\tApp{\tClos}{\ch'}}{\tApp{\tClos}{\chB'}}})}}{}
+        \tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}
+  \end{align*}
+  Two threads share the two channels $\ch$ and $\chB$, so the topology
+  is cyclic. Both threads close $\ch$ before $\chB$, the process has
+  exactly one reduction sequence, and it is deadlock free
+  (\rocq{cycle_deadlock_free}).
+\end{example}
 
-\subsection{Syntactic Session Typing}
+\begin{example}[A deadlocked process \rocq{blocked_main}]
+\label{ex:deadlock}
+  Reversing the two closes of one thread of \cref{ex:cyclic} gives
+  \begin{align*}
+    \asTmId{blocked} := {}
+      & \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNew}{\tUnit}}{}
+        \tLetS{\tPair{\chB}{\chB'}}{\tApp{\tNew}{\tUnit}}{}
+      \\
+      & \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tSeq{\tApp{\tClos}{\chB'}}{\tApp{\tClos}{\ch'}}})}}{}
+        \tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}
+  \end{align*}
+  After the two creations and the spawn the process is irreducible and
+  not terminated: one thread waits to close $\ch$, the other waits to
+  close $\chB$. It is not safe, so no process that reaches it is
+  deadlock free.
+\end{example}
+
+\subsection{The Static System}
 \label{sec:syntacticTyping}
 \label{sec:syntacticTyping:typeSys}
 
-% Semantic typing provides an intuitive yet formal definition of what it means for a process to be safe.
-% However, using semantic typing to verify the safety of a process is
-% tedious if not intractable: it entails checking for membership in sets
-% defined inductively on (the length of) sequences of labeled transitions.
-
-% The compositionality of our logical relation (\cref{sec:logicalRelation:compositionality}) ameliorates safety verification by breaking down processes and terms into smaller parts that can be verified more efficiently.
-% Another way of describing the significance of compositionality is that it provides a \emph{syntactic} angle towards safety, namely that of \emph{syntactic type checking}.
-% Indeed, from \cref{lem:comp:abs,lem:comp:app,lem:comp:pair,lem:comp:letUnit,lem:comp:let,lem:comp:term,lem:comp:independent,lem:comp:connect} we are able to extract a syntactic session-typing system that guarantees safety and deadlock freedom.
-
-This section presents a type system for \OurLang,
-which closely resembles existing type systems for GV
-based on the Curry-Howard correspondence.
-Our goal is to demonstrate its soundness by justifying its rules with
-the more liberal logical relation of \cref{sec:logicalRelation}.
+Types carry \emph{points}. A point is a name with a natural offset, a
+channel type is $\sAt{\sty}{\pntA}$, and the $k$-th action of a channel
+at $\pntA$ happens at $\poff{\pntA}{k}$. \Cref{fig:points} gives points,
+facts and constraints, \cref{fig:types} the types, and
+\cref{fig:facts} the fact theory the rules read every side condition
+from.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Types $\ty$, session types $\sty$, session environments $\senv$, linear environments $\lenv$ (\rocq{ty})}
+  \rulesection*{Names $\pnm$, points $\pntA$, facts $\fact$, constraints $\cstr$ (\rocq{point}, \rocq{fact}, \rocq{bcs})}
   \begin{align*}
-    \ty,\tyB &::= \tyUnit \sepr \lFunc{\ty}{\tyB} \sepr \lPair{\ty}{\tyB} \sepr \sty
-    &
-    \senv &::= \tEmpty \sepr \ch:\sty \sepr \senv,\senv
+    \pnm &::= \pcst \sepr \pviA \sepr \pslot{\pntA}{j}
+    & \text{(a constant, a point variable, the $j$-th channel carried at $\pntA$)}
     \\
-    \sty &::= \sRecv{\ty}{\sty} \sepr \sSend{\ty}{\sty} \sepr \sTerm
+    \pntA &::= \poff{\pnm}{k}
+    & \text{(the $k$-th action of $\pnm$, $k \in \Nat$; $\poff{\pnm}{0}$ is written $\pnm$)}
+    \\
+    \fact &::= \fLt{\pntA}{\pntB} \sepr \fEq{\pntA}{\pntB}
+    & \text{($\pntA$ acts before $\pntB$; $\pntA$ and $\pntB$ are one point)}
+    \\
+    \cstr &\subseteq \{\fact\}
+    & \text{(a set of facts, finite or infinite, under a binder $\pvivec$)}
+  \end{align*}
+  \rulesection{Roots}
+  \begin{align*}
+    \rootof(\poff{\pviA}{k}) &= \pviA
     &
-    \lenv &::= \tEmpty \sepr \tLVA:\ty \sepr
-                     \lenv, \lenv
+    \rootof(\poff{\pslot{\pntA}{j}}{k}) &= \rootof(\pntA)
+    &
+    \rootof(\poff{\pcst}{k}) &= \pcst
+  \end{align*}
+  \rulesectionend
+  \caption{Points, facts and constraints}
+  \Description{The grammars of names, points, facts and constraints, and
+    the three equations defining the root of a point.}
+  \label{fig:points}
+\end{figure}
+
+A channel at $\pntA$ acts there and moves to $\poff{\pntA}{1}$. A
+message sent at $\pntA$ carries its $j$-th channel at $\pslot{\pntA}{j}$.
+Every point of a judgment is built from a point variable or a constant.
+$\pvivec$ stands for a sequence $\pviA_1 \dots \pviA_m$ of point
+variables and $\pntvec$ for a sequence of points, and
+$\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Types $\ty$, session types $\sty$, bounds $\ubd, \lbd$ (\rocq{ty})}
+  \begin{align*}
+    \ty,\tyB &::= \tyUnit \sepr \lPair{\ty}{\tyB} \sepr \lSum{\ty}{\tyB}
+      \sepr \ty \lolli{\ubd}{\lbd} \tyB \sepr \sAt{\sty}{\pntA}
+      \sepr \tyBox{\pvivec}{\cstr}{\ty} \sepr \tyEx{\lbd}{\pvivec}{\cstr}{\ty}
+    \\
+    \sty &::= \sSend{\ty}{\sty} \sepr \sRecv{\ty}{\sty} \sepr \sTerm
+      \sepr \tyMu\tvar.\sty \sepr \tvar \sepr \dual{\tvar}
+    \\
+    \ubd &::= \pBot \sepr \pntA
+    & \lbd &::= \pTop \sepr \pBot \sepr \pntA
   \end{align*}
   \rulesection{Session duality $\dual{\sty}$ (\rocq{dual})}
   \begin{align*}
-    \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
-    &
     \dual{\sSend{\ty}{\sty}} &= \sRecv{\ty}{\dual{\sty}}
     &
+    \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
+    &
     \dual{\sTerm} &= \sTerm
+    \\
+    \dual{\tvar} &= \dual{\tvar}
+    &
+    \dual{\dual{\tvar}} &= \tvar
+    &
+    \dual{\tyMu\tvar.\sty} &= \tyMu\tvar.\,\sflipop_{\tvar}(\dual{\sty})
   \end{align*}
-% \caption{Types and session types for \OurLang}
-% \label{fig:types}
-% \end{figure}
-%
-% \begin{figure}[tp]
-  % \rulesection{Linear variable environments $\lenv$}
-  % \begin{align*}
-  %   \lenv &::= \tEmpty \sepr \tLVA:\ty \sepr
-  %                    \lenv, \lenv
-  % \end{align*}
-  \rulesection{Type-indexed families of type signatures for constants $\cst:\ty$}
+  \rulesection{Payloads (\rocq{payload_at})}
   \begin{align*}
-    \tFork &{}:\lFunc{(\lFunc{\sty}{\tyUnit})}{\dual{\sty}}
-    &
-    \tSend &{}:\lFunc{(\lPair{\ty}{\sSend{\ty}{\sty}})}{\sty}
-    &
-    \tRecv &{}:\lFunc{\sRecv{\ty}{\sty}}{\lPair{\ty}{\sty}}
-    &
-    \tClos &{}:\lFunc{\sTerm}{\tyUnit}
+    \tysub{\ty}{\pntA}{\pself} &= \tysub{\ty}{\pslot{\pntA}{j}}{\pslot{\pself}{j}}
   \end{align*}
-  \rulesection{Typing rules for terms $\senv ; \lenv \types \tm : \ty$ (\rocq{typed})}
+  \rulesectionend
+  \caption{Types, session types and duality}
+  \Description{The grammars of types, session types and the two kinds of
+    bound; the six equations of session duality; and the definition of a
+    payload instantiated at a point.}
+  \label{fig:types}
+\end{figure}
+
+A channel of type $\sAt{\sty}{\pntA}$ runs $\sty$ and acts next at
+$\pntA$. The arrow $\ty \lolli{\ubd}{\lbd} \tyB$ carries the latest
+point at which a call may block, $\pBot$ for never, and a lower bound on
+the points of the channels the closure holds, $\pTop$ for none. Arrows
+take $\lbd \in \set{\pTop} \cup \{\pntA\}$ and only existentials take
+$\lbd = \pBot$. $\tyBox{\pvivec}{\cstr}{\ty}$ is replicable, holds no
+channel, and is usable at every choice of points for $\pvivec$ that
+satisfies $\cstr$. $\tyEx{\lbd}{\pvivec}{\cstr}{\ty}$ is $\ty$ at some
+such choice.
+
+\begin{definition}[Payload \rocq{payload_at}]
+\label{def:payload}
+  The type $\ty$ in $\sSend{\ty}{\sty}$ and $\sRecv{\ty}{\sty}$ mentions
+  no point other than the markers $\pslot{\pself}{0}, \pslot{\pself}{1},
+  \dots$, and a send or receive at $\pntA$ fills $\pslot{\pself}{j}$
+  with $\pslot{\pntA}{j}$, written $\tysub{\ty}{\pntA}{\pself}$.
+\end{definition}
+
+Sender and receiver name the carried channels alike, so a message
+carries no point. $\dual{\tvar}$ is the dual polarity of $\tvar$, the
+dual of whatever $\tvar$ stands for. Source types never contain
+$\dual{\tvar}$: it arises only from duality, and dualizing
+$\tyMu\tvar.\sty$ swaps the polarities of its own variable so that
+unfolding commutes with duality (\cref{sec:app-duality}).
+
+\paragraph{Contexts and the judgment}
+A linear environment $\lenv ::= \tEmpty \sepr \lenv, \vr : \ty$ is
+linear except at $\Box$ types. The facts $\fctx$ assumed by a judgment
+are facts $\fact$ over points together with facts $\fLt{\ubd}{\pfv}$ for
+frame variables $\pfv$. Nodes are
+$\pnode ::= \pntA \sepr \pfv \sepr \pBot$, and a frame $\frm$ is a
+finite set of nodes. The judgment
+\[
+  \fctx; \lenv \typesF{\frm} \tm : \ty
+  \qquad(\rocq{styped})
+\]
+says that $\tm$ uses exactly $\lenv$ and has type $\ty$, and that the
+rest of the program holds the nodes of $\frm$ while $\tm$ runs. A frame
+variable $\pfv$ stands for whatever the caller of a function holds, and
+$\pBot$ for channels at points not known here.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Aliasing $\fctx \types \fEq{\pntA}{\pntB}$ (\rocq{seqs})}
+  \begin{proofrules}
+    \infer*[lab=A-Hyp]{
+      (\fEq{\pntA}{\pntB}) \in \fctx
+    }{
+      \fctx \types \fEq{\pntA}{\pntB}
+    } \label{rule:A-Hyp}
+    \and
+    \infer*[lab=A-Refl]{}{
+      \fctx \types \fEq{\pntA}{\pntA}
+    } \label{rule:A-Refl}
+    \and
+    \infer*[lab=A-Sym]{
+      \fctx \types \fEq{\pntA}{\pntB}
+    }{
+      \fctx \types \fEq{\pntB}{\pntA}
+    } \label{rule:A-Sym}
+    \and
+    \infer*[lab=A-Trans]{
+      \fctx \types \fEq{\pntA}{\pntB} \\
+      \fctx \types \fEq{\pntB}{\pntC}
+    }{
+      \fctx \types \fEq{\pntA}{\pntC}
+    } \label{rule:A-Trans}
+    \and
+    \infer*[lab=A-Shift]{
+      \fctx \types \fEq{\pntA}{\pntB}
+    }{
+      \fctx \types \fEq{\poff{\pntA}{1}}{\poff{\pntB}{1}}
+    } \label{rule:A-Shift}
+    \and
+    \infer*[lab=A-Slot]{
+      \fctx \types \fEq{\pntA}{\pntB}
+    }{
+      \fctx \types \fEq{\pslot{\pntA}{j}}{\pslot{\pntB}{j}}
+    } \label{rule:A-Slot}
+  \end{proofrules}
+  \rulesection{Precedence $\fctx \types \fLt{\pnode}{\pnode'}$ (\rocq{fl})}
+  \begin{proofrules}
+    \infer*[lab=O-Po]{}{
+      \fctx \types \fLt{\pntA}{\poff{\pntA}{1}}
+    } \label{rule:O-Po}
+    \and
+    \infer*[lab=O-Hyp]{
+      (\fLt{\pnode}{\pnode'}) \in \fctx
+    }{
+      \fctx \types \fLt{\pnode}{\pnode'}
+    } \label{rule:O-Hyp}
+    \and
+    \infer*[lab=O-EqL]{
+      \fctx \types \fEq{\pntA}{\pntA'} \\
+      \fctx \types \fLt{\pntA'}{\pnode}
+    }{
+      \fctx \types \fLt{\pntA}{\pnode}
+    } \label{rule:O-EqL}
+    \and
+    \infer*[lab=O-EqR]{
+      \fctx \types \fLt{\pnode}{\pntB'} \\
+      \fctx \types \fEq{\pntB'}{\pntB}
+    }{
+      \fctx \types \fLt{\pnode}{\pntB}
+    } \label{rule:O-EqR}
+    \and
+    \infer*[lab=O-Trans]{
+      \fctx \types \fLt{\pnode}{\pntB} \\
+      \fctx \types \fLt{\pntB}{\pnode'}
+    }{
+      \fctx \types \fLt{\pnode}{\pnode'}
+    } \label{rule:O-Trans}
+  \end{proofrules}
+  \rulesection{Heads, lower bounds, precedence of a frame (\rocq{heads})}
+  \begin{align*}
+    \heads(\sAt{\sty}{\pntA}) &= \set{\pntA}
+    &
+    \heads(\ty \lolli{\ubd}{\lbd} \tyB) &= \heads(\tyEx{\lbd}{\pvivec}{\cstr}{\ty}) = \set{\lbd}
+    \\
+    \heads(\lPair{\ty}{\tyB}) &= \heads(\lSum{\ty}{\tyB}) = \heads(\ty) \cup \heads(\tyB)
+    \\
+    \heads(\tyUnit) &= \heads(\tyBox{\pvivec}{\cstr}{\ty}) = \emptyset
+  \end{align*}
+  with $\pTop$ contributing nothing, and
+  $\heads(\lenv) = \bigcup \set{\heads(\ty) \mid \vr : \ty \in \lenv}$.
+  \begin{align*}
+    \fctx \types \fLe{\lbd}{N}
+    &\quad\text{iff}\quad
+    \lbd = \pTop \text{ and } N = \emptyset,
+    \text{ or } \lbd = \pBot,
+    \\ & \qquad\qquad
+    \text{ or } \lbd = \pntA \text{ and }
+      \fctx \types \fEq{\pntA}{\pnode} \text{ or } \fctx \types \fLt{\pntA}{\pnode}
+      \text{ for every } \pnode \in N
+    \\
+    \fctx \types \fLt{\ubd}{\frm}
+    &\quad\text{iff}\quad
+    \ubd = \pBot,
+    \text{ or } \ubd = \pntA \text{ and }
+      \fctx \types \fLt{\pntA}{\pnode} \text{ for every } \pnode \in \frm
+  \end{align*}
+  \rulesectionend
+  \caption{The fact theory}
+  \Description{Six rules for aliasing, five rules for precedence, the
+    heads of a type and of an environment, and the two derived
+    judgments relating a bound to a set of nodes.}
+  \label{fig:facts}
+\end{figure}
+
+\Cref{rule:O-Po} is program order, and it relates two points of one name
+only. No rule derives $\fLt{\pnode}{\pBot}$, so a $\pBot$ node in $N$ or
+in $\frm$ makes both derived judgments fail for a point: no closure,
+message, packed value or blocking call coexists with an unopened
+existential at $\pBot$.
+
+\paragraph{Term rules}
+\Cref{fig:typeSys,fig:typeSysPoints} give the term rules. $\lenv_1 \cdot \lenv_2$ splits
+$\lenv$ and copies variables of $\Box$ type to both sides. The first
+subterm of every composite runs while the rest holds its channels, so it
+is typed under $\frm$ grown by the heads of that rest.
+\ref{rule:E-Abs} types the body under the frame $\set{\pfv}$ and assumes
+$\fLt{\ubd}{\pfv}$, so every call in the body precedes $\ubd$, and
+\ref{rule:E-App} checks that $\ubd$ precedes what the caller holds. The
+two checks meet at $\ubd$.
+\ref{rule:E-Exp} is the one recursive rule and the only rule that binds
+$\forall$: $\forall$ appears only directly under $\Box$, because a value
+that holds channels has fixed points.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Typing rules for terms $\fctx ; \lenv \typesF{\frm} \tm : \ty$ (\rocq{styped})}
   \begin{proofrules}
     \infer*[lab=E-Unit]{}{
-      \tEmpty ; \tEmpty \types \tUnit : \tyUnit
+      \fctx ; \tEmpty \typesF{\frm} \tUnit : \tyUnit
     } \label{rule:E-Unit}
     \and
     \infer*[lab=E-Const]{
-      \cst : \lFunc{\ty}{\tyB}
+      \cst : \ty \text{ an instance of a signature under } \fctx
     }{
-      \tEmpty ; \tEmpty \types \cst : \lFunc{\ty}{\tyB}
+      \fctx ; \tEmpty \typesF{\frm} \cst : \ty
     } \label{rule:E-Const}
     \and
-    \infer*[lab=E-LVar]{}{
-      \tEmpty ; \tLVA:\ty \types \tLVA : \ty
-    } \label{rule:E-LVar}
-    \and
-    \infer*[lab=E-Ch]{}{
-      \ch:\sty ; \tEmpty \types \ch : \sty
-    } \label{rule:E-Ch}
+    \infer*[lab=E-Var]{}{
+      \fctx ; \vr : \ty \typesF{\frm} \vr : \ty
+    } \label{rule:E-Var}
     \and
     \infer*[lab=E-Abs]{
-      \senv ; \lenv , \tLVA:\ty \types \tm : \tyB
+      \pfv \text{ fresh} \\
+      \fctx \types \fLe{\lbd}{\heads(\lenv)} \\
+      \fctx, \fLt{\ubd}{\pfv} ; \lenv , \vr : \ty \typesF{\set{\pfv}} \tm : \tyB
     }{
-      \senv ; \lenv \types \tAbs{\tLVA}{\tm} : \lFunc{\ty}{\tyB}
+      \fctx ; \lenv \typesF{\frm} \tAbs{\vr}{\tm} : \ty \lolli{\ubd}{\lbd} \tyB
     } \label{rule:E-Abs}
     \and
     \infer*[lab=E-App]{
-      \senv_1 ; \lenv_1 \types \tm_1 : \lFunc{\ty}{\tyB} \\
-      \senv_2 ; \lenv_2 \types \tm_2 : \ty
+      \fctx \types \fLt{\ubd}{\frm} \\
+      \fctx ; \lenv_1 \typesF{\frm \cup \heads(\lenv_2)} \tm_1 : \ty \lolli{\ubd}{\lbd} \tyB \\
+      \fctx ; \lenv_2 \typesF{\frm \cup \set{\lbd}} \tm_2 : \ty
     }{
-      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tApp{\tm_1}{\tm_2} : \tyB
+      \fctx ; \lenv_1 \cdot \lenv_2 \typesF{\frm} \tApp{\tm_1}{\tm_2} : \tyB
     } \label{rule:E-App}
     \and
     \infer*[lab=E-Pair]{
-      \senv_1 ; \lenv_1 \types \tm_1 : \ty \\
-      \senv_2 ; \lenv_2 \types \tm_2 : \tyB
+      \fctx ; \lenv_1 \typesF{\frm \cup \heads(\lenv_2)} \tm_1 : \ty \\
+      \fctx ; \lenv_2 \typesF{\frm \cup \heads(\ty)} \tm_2 : \tyB
     }{
-      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tPair{\tm_1}{\tm_2} : \lPair{\ty}{\tyB}
+      \fctx ; \lenv_1 \cdot \lenv_2 \typesF{\frm} \tPair{\tm_1}{\tm_2} : \lPair{\ty}{\tyB}
     } \label{rule:E-Pair}
     \and
-    \infer*[lab=E-Let*]{
-      \senv_1 ; \lenv_1 \types \tm_1 : \tyUnit \\
-      \senv_2 ; \lenv_2 \types \tm_2 : \ty
+    \infer*[lab=E-LetPair]{
+      \fctx ; \lenv_1 \typesF{\frm \cup \heads(\lenv_2)} \tm_1 : \lPair{\tyB}{\tyC} \\
+      \fctx ; \lenv_2 , \vr : \tyB , \vrB : \tyC \typesF{\frm} \tm_2 : \ty
     }{
-      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet*{\tm_1}{\tm_2} : \ty
+      \fctx ; \lenv_1 \cdot \lenv_2 \typesF{\frm} \tLet[\vr][\vrB]{\tm_1}{\tm_2} : \ty
+    } \label{rule:E-LetPair}
+    \and
+    \infer*[lab=E-Let*]{
+      \fctx ; \lenv_1 \typesF{\frm \cup \heads(\lenv_2)} \tm_1 : \tyUnit \\
+      \fctx ; \lenv_2 \typesF{\frm} \tm_2 : \ty
+    }{
+      \fctx ; \lenv_1 \cdot \lenv_2 \typesF{\frm} \tLet*{\tm_1}{\tm_2} : \ty
     } \label{rule:E-Let*}
     \and
-    \infer*[lab=E-LetPair]{
-      \senv_1 ; \lenv_1 \types \tm_1 : \lPair{\tyB}{\tyC} \\
-      \senv_2 ; \lenv_2 , \tLVA:\tyB , \tLVB:\tyC \types \tm_2 : \ty
+    \infer*[lab=E-Inj]{
+      \fctx ; \lenv \typesF{\frm} \tm : \ty_{\asTy{i}}
     }{
-      \senv_1 , \senv_2 ; \lenv_1 , \lenv_2 \types \tLet[\tLVA][\tLVB]{\tm_1}{\tm_2} : \ty
-    } \label{rule:E-LetPair}
+      \fctx ; \lenv \typesF{\frm} \tInj{\asTm{i}}{\tm} : \lSum{\ty_1}{\ty_2}
+    } \label{rule:E-Inj}
+    \and
+    \infer*[lab=E-Case]{
+      \fctx ; \lenv_1 \typesF{\frm \cup \heads(\lenv_2)} \tm : \lSum{\ty_1}{\ty_2} \\
+      \fctx ; \lenv_2 , \ivx_1 : \ty_1 \typesF{\frm} \tm_1 : \tyB \\
+      \fctx ; \lenv_2 , \ivx_2 : \ty_2 \typesF{\frm} \tm_2 : \tyB
+    }{
+      \fctx ; \lenv_1 \cdot \lenv_2 \typesF{\frm} \tCase{\tm}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} : \tyB
+    } \label{rule:E-Case}
+  \end{proofrules}
+  \rulesectionend
+  \caption{Typing rules for terms: variables, functions and data}
+  \Description{Ten term typing rules, for the unit, constants,
+    variables, abstraction, application, pairs, their elimination,
+    sequencing, injections and case.}
+  \label{fig:typeSys}
+\end{figure}
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Structural rules and rules for points, $\fctx ; \lenv \typesF{\frm} \tm : \ty$ (\rocq{styped})}
+  \begin{proofrules}
+    \infer*[lab=E-Weak]{
+      \fctx ; \lenv \typesF{\frm} \tm : \ty \\
+      \lenv' \text{ only } \Box \text{ types}
+    }{
+      \fctx ; \lenv , \lenv' \typesF{\frm} \tm : \ty
+    } \label{rule:E-Weak}
+    \and
+    \infer*[lab=E-Contract]{
+      \fctx ; \lenv , \ivx : \tBox{\ty} , \ivy : \tBox{\ty} \typesF{\frm} \tm : \tyB
+    }{
+      \fctx ; \lenv , \ivx : \tBox{\ty} \typesF{\frm} \tSub{\tm}{\ivx}{\ivy} : \tyB
+    } \label{rule:E-Contract}
+    \and
+    \infer*[lab=E-Conv]{
+      \fctx ; \lenv \typesF{\frm} \tm : \ty \\
+      \ty \approx \ty' \text{ up to } \fctx \types {\equiv}
+    }{
+      \fctx ; \lenv \typesF{\frm} \tm : \ty'
+    } \label{rule:E-Conv}
+    \and
+    \infer*[lab=E-Exp]{
+      \lenv \text{ only } \Box \text{ types} \\
+      \pvivec, \pfv \text{ fresh} \\\\
+      \fctx, \cstr, \fLt{\ubd}{\pfv} ;
+        \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}
+        \typesF{\set{\pfv}} \tm : \ty
+    }{
+      \fctx ; \lenv \typesF{\frm} \tBoxP{\vr}{\tm}
+        : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}
+    } \label{rule:E-Exp}
+    \and
+    \infer*[lab=E-Pack]{
+      \fctx \types \tysub{\cstr}{\pntvec}{\pvivec} \\
+      \fctx \types \fLe{\lbd}{\heads(\tysub{\ty}{\pntvec}{\pvivec})} \\
+      \fctx ; \lenv \typesF{\frm} \tm : \tysub{\ty}{\pntvec}{\pvivec}
+    }{
+      \fctx ; \lenv \typesF{\frm} \tm : \tyEx{\lbd}{\pvivec}{\cstr}{\ty}
+    } \label{rule:E-Pack}
+    \and
+    \infer*[lab=E-Open]{
+      \vr : \tyEx{\lbd}{\pvivec}{\cstr}{\ty} \in \lenv \\
+      \pvivec \text{ fresh, not in } \tyB \\
+      \fctx, \cstr ; \lenv[\vr : \ty] \typesF{\frm} \tm : \tyB
+    }{
+      \fctx ; \lenv \typesF{\frm} \tm : \tyB
+    } \label{rule:E-Open}
+  \end{proofrules}
+  \rulesectionend
+  \caption{Typing rules for terms: structure and points}
+  \Description{Six term typing rules, for weakening, contraction,
+    conversion, a box, packing and opening an existential.}
+  \label{fig:typeSysPoints}
+\end{figure}
+
+\paragraph{Signatures}
+\Cref{fig:signatures} gives the type-indexed family of signatures the
+constants are instantiated from. An action that may block happens at a
+point $\pntA$, so $\tSend$, $\tRecv$ and $\tClos$ have upper bound
+$\pntA$, and \ref{rule:E-App} then requires
+$\fctx \types \fLt{\pntA}{\frm}$. $\tLink$ and $\tSpawn$ never block, so
+their upper bound is $\pBot$. $\tNew$ puts both ends of a channel at one
+point $\pviA$ and returns an existential, so a channel starts at a point
+placed by its creation constraint and not by a global number.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Type-indexed families of type signatures for constants $\cst : \ty$ (\rocq{konst_ty})}
+  \begin{align*}
+    \tNew &{}: \tyUnit \lolli{\pBot}{\pTop}
+      \tyEx{\pBot}{\pviA}{\cstr}{\lPair{\sAt{\sty}{\pviA}}{\sAt{\dual{\sty}}{\pviA}}}
+    & & \cstr \text{ a creation constraint}
+    \\
+    \tSpawn &{}: (\tyUnit \lolli{\ubd}{\lbd} \tyUnit) \lolli{\pBot}{\pTop} \tyUnit
+    \\
+    \tSend &{}: \lPair{\tysub{\ty}{\pntA}{\pself}}{\sAt{(\sSend{\ty}{\sty})}{\pntA}}
+      \lolli{\pntA}{\pTop} \sAt{\sty}{(\poff{\pntA}{1})}
+    & & \fctx \types \fLt{\pntA}{\pnode} \text{ for every }
+        \pnode \in \heads(\tysub{\ty}{\pntA}{\pself})
+    \\
+    \tRecv &{}: \sAt{(\sRecv{\ty}{\sty})}{\pntA}
+      \lolli{\pntA}{\pTop} \lPair{\tysub{\ty}{\pntA}{\pself}}{\sAt{\sty}{(\poff{\pntA}{1})}}
+    \\
+    \tClos &{}: \sAt{\sTerm}{\pntA} \lolli{\pntA}{\pTop} \tyUnit
+    \\
+    \tLink &{}: \lPair{\sAt{\sty}{\pntA}}{\sAt{\dual{\sty}}{\pntB}}
+      \lolli{\pBot}{\pTop} \tyUnit
+    & & \fctx \types \fEq{\pntA}{\pntB}
+    \\
+    \tForce &{}: \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}
+      \lolli{\tysub{\ubd}{\pntvec}{\pvivec}}{\pTop} \tysub{\ty}{\pntvec}{\pvivec}
+    & & \fctx \types \tysub{\cstr}{\pntvec}{\pvivec}
+  \end{align*}
+  \rulesectionend
+  \caption{Signatures of the constants}
+  \Description{The seven type signatures, with the side conditions on
+    points that each one reads from the fact theory.}
+  \label{fig:signatures}
+\end{figure}
+
+\begin{definition}[Creation constraint \rocq{cc_ok}]
+\label{def:creation}
+  A point of $\pviA$ is a point with root $\pviA$. A constraint $\cstr$
+  over one bound variable $\pviA$ is a \emph{creation constraint} under
+  $\fctx$ when it is
+  \begin{itemize}
+    \item \emph{acyclic}:
+      $\fctx, \cstr \nvdash \fLt{\pntA}{\pntA}$ for every point $\pntA$;
+      and
+    \item \emph{conservative}:
+      $\fctx, \cstr \types \fLt{\pntA}{\pntB}$ implies
+      $\fctx \types \fLt{\pntA}{\pntB}$, and
+      $\fctx, \cstr \types \fEq{\pntA}{\pntB}$ implies
+      $\fctx \types \fEq{\pntA}{\pntB}$, for all points
+      $\pntA, \pntB$ without root $\pviA$.
+  \end{itemize}
+\end{definition}
+
+A new channel may sit anywhere the context leaves room, and it may not
+order or identify two points the context already has.
+$\cstr = \set{\fEq{\pviA}{\pntA}}$ places the channel at $\pntA$, and
+$\cstr = \set{\fLt{\ubd}{\pviA}, \fLt{\pviA}{\asTy{v}}}$ places it
+between $\ubd$ and $\asTy{v}$, which conservativity allows only when
+$\fctx \types \fLt{\ubd}{\asTy{v}}$. We write
+$\tNewC{\pviA}{\cstr}$ for $\tNew$ at a fresh point $\pviA$ under
+$\cstr$, $\tBoxA{\vr}{\pvivec}{\cstr}{\tm}$ for the box of
+\ref{rule:E-Exp}, $\tAbsA{\ubd}{\lbd}{\vr}{\tm}$ for the abstraction of
+\ref{rule:E-Abs}, and $\tForceA{\vr}{\pntvec}$ for the instantiation of
+\ref{rule:E-Const} at $\tForce$. The derived form
+$\tLetS{\tPair{\ch}{\chB}}{\tApp{\tNew}{\tUnit}}{\tm}$ unfolds to
+\ref{rule:E-LetPair}, \ref{rule:E-Pair}, \ref{rule:E-App},
+\ref{rule:E-Let*}, \ref{rule:E-Open} and \ref{rule:E-LetPair}
+(\rocq{t_new_open}).
+
+\paragraph{Processes}
+\Cref{fig:procTypeSys} types processes. All return types are
+\emph{primitive} (\rocq{prim}), so a thread cannot avoid closing its
+channels by returning them. \ref{rule:P-Connect} composes two processes
+that interact in a dual way on the channels of $\senv_{\asTy{C}}$ and
+subsumes the mix rule at $\senv_{\asTy{C}} = \tEmpty$.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Primitive types $\primitive \ty$ (\rocq{prim})}
+  \begin{proofrules}
+    \infer*{}{
+      \primitive \tyUnit
+    }
+    \and
+    \infer*{
+      \primitive \tyB \\ \primitive \tyC
+    }{
+      \primitive \lPair{\tyB}{\tyC}
+    }
+    \and
+    \infer*{
+      \primitive \tyB \\ \primitive \tyC
+    }{
+      \primitive \lSum{\tyB}{\tyC}
+    }
+    \and
+    \infer*{
+      \primitive \tyB
+    }{
+      \primitive \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \tyB}
+    }
   \end{proofrules}
   \rulesection{Typing rules for processes $\senv \types \proc : \ty$ (\rocq{ptyped})}
   \begin{proofrules}
     \infer*[lab=P-Term]{
       \primitive \ty \\
-      \senv ; \tEmpty \types \tm : \ty
+      \senv , \senv_{\asTy{B}} ; \tEmpty \typesF{\emptyset} \tm : \ty \\
+      \dom(\senv_{\asTy{B}}) = \chset \text{ and } \senv_{\asTy{B}}
+        \text{ holds both ends, dual at aliased points}
     }{
-      \senv \types (\asPrOp{\emptyset} , \mset{\tm}) : \ty
+      \senv \types (\chset , \mset{\tm}) : \ty
     } \label{rule:P-Term}
     \and
-    \infer*[lab=P-Independent]{
-      \senv_1 \types (\chset_1,\pool_1) : \ty \\
-      \senv_2 \types (\chset_2,\pool_2) : \tyUnit
-    }{
-      \senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2, \pool_1 \uplus \pool_2) : \ty
-    } \label{rule:P-Independent}
-    \and
     \infer*[lab=P-Connect]{
-      \senv_1 , \ch:\sty \types (\chset_1 , \pool_1) : \ty \\
-      \senv_2 , \ch:\dual{\sty} \types (\chset_2 , \pool_2) : \tyUnit
+      \senv_1 , \senv_{\asTy{C}} \types (\chset_1 , \pool_1) : \ty \\
+      \senv_2 , \dual{\senv_{\asTy{C}}} \types (\chset_2 , \pool_2) : \tyUnit \\
+      \dom(\senv_{\asTy{C}}) = \chset_0
     }{
-      \senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2 \cupdot \set{\ch} , \pool_1 \uplus \pool_2) : \ty
+      \senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2 \cupdot \chset_0 , \pool_1 \uplus \pool_2) : \ty
     } \label{rule:P-Connect}
   \end{proofrules}
   \rulesectionend
-  \caption{Typing for terms and processes}
-  \Description{Grammars for types, session types, session environments and linear variable environments; the definition of session duality; the type signatures of the four constants; nine typing rules for terms and three for processes.}
-  \label{fig:typeSys}
+  \caption{Typing for processes}
+  \Description{The four rules defining primitive types and the two
+    process typing rules.}
+  \label{fig:procTypeSys}
 \end{figure}
 
-\Cref{fig:typeSys} defines the syntax of types $\ty$ and session
-environments $\senv$.
-Types $\ty$ comprise
-the unit type ($\tyUnit$),
-linear implication ($\lFunc{\ty}{\tyB}$),
-linear products ($\lPair{\ty}{\tyB}$), and
-session types.
-Session types $\sty$ include
-input ($\sRecv{\ty}{\sty}$),
-output ($\sSend{\ty}{\sty}$), and
-closed channels ($\sTerm$).
-Session environments $\senv$ are finite maps from
-channels $\ch$ to session types.
-We write $\dom(\senv)$ to denote the set of channels appearing in $\senv$.
-Session duality $\dual{\sty}$ swaps the direction of
-communication, as usual.
-We write $\dual{\senv}$ for duality applied pointwise to every entry of
-$\senv$.
+\paragraph{Soundness}
+A program starts under one constraint $\cstr_0$ over the top-level point
+variables it begins with. A program that creates all its channels with
+$\tNew$ takes $\cstr_0 = \emptyset$. A program that wants a global
+order, such as the translation of a priority system, states it in
+$\cstr_0$ and aliases its channels to the variables $\cstr_0$ speaks of.
 
-\Cref{fig:typeSys} also gives the typing rules for terms and processes.
-The constants are given type signatures that reflect their intended usage.
-Specifically, they all act linearly in their arguments.
-Term-typing judgments are of the form
-$\senv ; \lenv \types \tm : \ty$, declaring that
-term $\tm$ is of type~$\ty$ when given resources
-of the types specified in the type environment $\senv ; \lenv$.
-Since terms manipulate both channels and linear variables,
-the judgment includes both a session environment $\senv$
-and variable environment $\lenv$.
-Each assignment
-$\tLVA:\ty$ in $\lenv$ is a promise for correct
-behavior when $\tLVA$ is replaced by a value behaving as
-$\ty$.
+\begin{theorem}[Soundness for source programs \rocq{soundness_source}]
+\label{thm:soundness-source}
+  If $\cstr_0$ is acyclic, $\primitive \ty$ and
+  $\cstr_0 ; \tEmpty \typesF{\emptyset} \tm : \ty$, then the thread
+  $(\emptyset, \mset{\tm})$ is deadlock free.
+\end{theorem}
 
-The type judgment for processes takes the form
-$\senv \types (\chset, \pool) : \ty$.
-As every term in~$E$ is expected to be closed, the judgment
-is only parameterized by a session environment $\senv$.
-The type~$\ty$ is the type of the value computed by the ``main'' thread of~$E$.
-We implicitly assume that $\senv$ and $\chset$
-do not share channels, as the $C$ indicates the channels restricted to $E$.
+Acyclicity of $\cstr_0$ is the acyclicity half of
+\cref{def:creation}, checked against the empty context. The judgment of
+\cref{thm:soundness-source} carries no world and no channel environment.
+The world-carrying judgment $\senv \types \proc : \ty$ of
+\cref{fig:procTypeSys} and the logical relation of
+\cref{sec:logicalRelation} sit behind it, and the two agree on the
+derivations of a source program (\rocq{styped_typed},
+\rocq{typed_styped}).
 
-The \ref{rule:P-Term} rule types a single thread by checking that the declared
-type is in fact the type of the expression it is running, and that such expression can be typed in the empty variable environment (\ie it is closed).
-Additionally, we ensure a thread cannot avoid closing its channels
-by just returning them: All return types must be \emph{primitive types}:
-%
-\begin{proofrules}
-  \infer*{}{
-    \primitive \tyUnit
-  }
-  \and
-  \infer*{
-    \primitive \tyB \\
-    \primitive \tyC
-  }{
-    \primitive \lPair{\tyB}{\tyC}
-  }
-\end{proofrules}
+\begin{example}[Delegation \rocq{deleg_main}]
+\label{ex:delegation}
+  One channel carries another, and the delegated session runs strictly
+  inside the gap between the carrier's two actions. The two protocols
+  are
+  \begin{align*}
+    \sty^0 &= \sSend{\tyUnit}{\sTerm}
+    & \sty &= \sSend{(\sAt{\sty^0}{\pslot{\pself}{0}})}{\sTerm}
+  \end{align*}
+  and the program, with every annotation inlined, is
+  \begin{align*}
+    \asTmId{deleg} := {}
+      & \tLetS{\tPair{\ch : \sAt{\sty}{\pviA}}{\ch' : \sAt{\dual{\sty}}{\pviA}}}{%
+          \tApp{\tNewC{\pviA}{\fLt{\pviA}{\pslot{\pviA}{0}},\ %
+            \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}}}}{\tUnit}}{}
+      \\
+      & \tLetS{\tPair{\chB : \sAt{\sty^0}{\pslot{\pviA}{0}}}{%
+          \chB' : \sAt{(\sRecv{\tyUnit}{\sTerm})}{\pslot{\pviA}{0}}}}{%
+          \tApp{\tNewC{\pviB}{\fEq{\pviB}{\pslot{\pviA}{0}}}}{\tUnit}}{}
+      \\
+      & \tSeq{\tApp{\tSpawn}{\asTmId{K}}}{}
+        \tLetS{\ch_1 : \sAt{\sTerm}{(\poff{\pviA}{1})}}{\tApp{\tSend}{\tPair{\chB}{\ch}}}{}
+      \\
+      & \tLet[\ivx][\chB_1]{\tApp{\tRecv}{\chB'}}{}
+        \tSeq{\ivx}{\tSeq{\tApp{\tClos}{\chB_1}}{\tApp{\tClos}{\ch_1}}}
+      \\
+    \asTmId{K} := {}
+      & \tAbsA{\poff{\pviA}{1}}{\pviA}{\tUnit}{}
+        \tLet[\asTm{e}][\ch'_1]{\tApp{\tRecv}{\ch'}}{}
+        \tSeq{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}})}}{\tApp{\tClos}{\ch'_1}}
+  \end{align*}
+  The creation constraint of $\ch$ puts the delegated session strictly
+  inside the gap between the carrier's two actions, and the second
+  $\tNew$ creates $\chB$ at the carried root of a message the carrier
+  has not sent yet. The order is one chain,
+  \[
+    \fLt{\pviA}{{}} \pslot{\pviA}{0}
+    \prec \poff{\pslot{\pviA}{0}}{1}
+    \prec \poff{\pviA}{1}
+    \prec \pfv ,
+  \]
+  built from two facts of the first $\tNew$, program order, and the
+  frame hypothesis \ref{rule:E-Abs} adds for the spawned thread. The
+  rank $\poff{\pviA}{k} \mapsto 10k$ and
+  $\poff{\pslot{\pviA}{0}}{o} \mapsto 5+o$ witnesses acyclicity.
+  \Cref{sec:app-delegation} lists every blocking action with the premise
+  it owes. The judgment is
+  $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{deleg} : \tyUnit$
+  (\rocq{deleg_typed}), so $\asTmId{deleg}$ is deadlock free
+  (\rocq{deleg_deadlock_free}).
 
-Rule \ref{rule:P-Connect} composes two processes that interact in a dual way
-on exactly one channel,
-similar to well-known session-typing rules
-derived from linear logic's cut rule~\cite{DBLP:journals/tcs/Girard87}.
-Rule \ref{rule:P-Independent} composes two processes that
-do not interact at all, similar to typing rules derived
-from linear logic's mix rule.
-This latter rule is important to account for processes
-that were previously composed by \ref{rule:P-Connect}
-but whose connecting channel has been closed since.
-
-\begin{example}[Syntactic typability of the examples \rocq{sync_typed}]
-\label{ex:typing}
-  The process $\asPrId{sync}$ of Example~\ref{ex:sync} is typable
-  in an empty context $\tEmpty \types \asPrId{sync} : \tyUnit$.
-  %%
-  The closed $\asPrId{cycle}$ process of Example~\ref{ex:cyclic} is harmless
-  but \emph{not} typable:
-  as the two threads share $ \ch $,
-  we must apply \ref{rule:P-Connect}, which forces us to partition
-  the remaining channels (in this case $\set{\asPr{d}}$)
-  to give to the two threads.
-  As $\asPr{d}$ is used by both threads, one of the sub-derivations
-  would need to fail.
-  The same happens if one tries to apply \ref{rule:P-Connect} on
-  $\asPr{d}$ first.
-  %%
-  For the same reasons, the $\asPrId{blocked}$ process of Example~\ref{ex:deadlock}
-  is also not typable, although in this case, desirably so.
-  %%
-  The load balancer process $(\emptyset,\mset{\asTmId{lb}})$
-  of Example~\ref{ex:load-balancer} is also rejected by the type system
-  as it violates linearity of channels in several ways,
-  although intuitively it could be seen as respecting
-  a $ \ch : \sRecv{\tyUnit}{\sSend{\tyUnit}{\sSend{\tyUnit}{\sTerm}}} $ interface.
+  A priority system cannot type this program. The carrier typed
+  $\sSend{}{}^0.\sRecv{}{}^1$ leaves no integer between its two actions,
+  and the number of actions the delegated session performs is not known
+  where the carrier is typed.
 \end{example}
-
-
-In syntactic approaches to types, one would now turn to proving
-that deadlocks are not typable, and that typing is invariant under transitions.
-What we instead set out to do is to give a \emph{semantic} account
-of the typing judgment which implies deadlock freedom. Then we can validate the
-syntactic rules against semantic typing and obtain deadlock freedom via this route.
 
 %%% Local Variables:
 %%% mode: latex
