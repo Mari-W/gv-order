@@ -155,11 +155,14 @@ the point variables its box binds.
         (\sAt{\sty_{\asTy{r}}}{\pviA} \lolli{\poff{\pviA}{1}}{\pTop} \tyUnit)}
   \end{align*}
   The order descends along the slot depth, and the depth grows without
-  bound, so there is no rank in $\Nat$: the rank
+  bound, so there is no rank in $\Nat$. The rank
   $-2 \cdot \mathit{depth} + \mathit{offset}$ lands in $\mathbb{Z}$
-  (\rocq{fw_ok}). Strictness asks only irreflexivity and transitivity,
-  so a descending chain is admitted.
-  The program is deadlock free (\rocq{fw_deadlock_free_kob}).
+  (\rocq{kfw_ok}). Strictness asks only irreflexivity and transitivity,
+  so a descending chain is admitted. The recursive call asks
+  $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which $\cstr$ contains
+  (\rocq{kfw_sub}), and the whole program types
+  (\rocq{kfw_typed}) and is deadlock free
+  (\rocq{kfw_deadlock_free}).
 \end{example}
 
 \begin{example}[The factorial server \rocq{fcsrv}]

@@ -14,8 +14,14 @@ fulfils three goals.
       \implies
       \senv \proves \proc : \ty
     $;
-  \item It contains safe but untypable processes.
+  \item It is defined on untyped processes and constrains a process only
+    at its external interface, so a safe process that the static system
+    refuses can belong to it.
 \end{enumerate}
+Goal (3) is a property of the definition. No example in this paper
+establishes membership for a process that the static system refuses, and
+every example of \cref{sec:examples} goes through
+\cref{th:fundamental}.
 
 
 \subsection{Worlds and Readiness}
