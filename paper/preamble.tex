@@ -220,7 +220,12 @@
 \def\sWait{\tyOp{Close}}
 \def\sTerm{\tyOp{Close}}
 \def\tEmpty{{\color{cTy}{}\cdot{}}}
-\NewDocumentCommand\dual{m}{{\color{cTy}\overline{#1}}}
+% Duality is an operation on session types; \dualv is the *syntax* of a
+% dualized type variable (Types.v, SVarD).  One macro for both made
+% dual(alpha) = alpha-bar print as a tautology.
+\NewDocumentCommand\dual{m}{{{\color{cTy}\mathit{dual}}(#1)}}
+\NewDocumentCommand\dualv{m}{{\color{cTy}\overline{#1}}}
+\def\tyFact{\tyOp{Fact}}
 \def\ptype{\operatorname{ptype}}
 \def\primitive{\operatorname{prim}}
 
@@ -313,6 +318,14 @@
 \NewDocumentCommand\tAbsA{mmmm}{{{\color{cTm}\uplambda}^{#1}_{#2}#3{\color{cTm}.}#4}}
 \NewDocumentCommand\typesF{m}{\mathrel{\color{black}\ltxvdash^{#1}}}
 \NewDocumentCommand\provesF{m}{\mathrel{\color{black}\vDash^{#1}}}
+% The source judgment (styped) carries a frame and no world; the
+% world-carrying judgments (typed, ptyped) carry a world as well.
+\NewDocumentCommand\typesW{m}{\mathrel{\color{black}\ltxvdash_{#1}}}
+\NewDocumentCommand\typesFW{mm}{\mathrel{\color{black}\ltxvdash^{#1}_{#2}}}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\strict}{strict}
+\NewDocumentCommand\wrest{mm}{{#1}\mathord{\restriction_{#2}}}
+\newcommand{\wjoinsym}{\mathbin{\sqcup}}
 % Labels of the two new primitives
 \NewDocumentCommand\lNew{m}{{(\nu{#1})}}
 \NewDocumentCommand\lSpawnL{m}{{{\Uparrow}{#1}}}
@@ -323,6 +336,13 @@
 \DeclareMetaVar\wrld{Ty}{W}
 \DeclareMetaVar\tenv{Ty}{\Theta}
 \DeclareMathOperator{\readyop}{ready}
+\DeclareMathOperator{\belowrestop}{below\_rest}
+\DeclareMathOperator{\aboveofferedop}{above\_offered}
+\DeclareMathOperator{\ents}{ents}
+\DeclareMathOperator{\hd}{hd}
+\DeclareMathOperator{\offered}{offered}
+\DeclareSortSymbol\entry{Ty}{\mathord}{\eta}
+\NewDocumentCommand\tenvof{m}{{\tenv(#1)}}
 \RequirePackage{stmaryrd}
 \NewDocumentCommand\lrVW{mmm}{{V^{#1}_{#2}\llbracket{#3}\rrbracket}}
 \NewDocumentCommand\lrEW{mmmm}{{E^{#1}_{#2}\llbracket{#3}\rrbracket^{#4}}}

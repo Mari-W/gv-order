@@ -78,34 +78,6 @@
 }
 \email{weidner@cs.uni-freiburg.de}
 
-\begin{abstract}
-  % Deadlock freedom is a fundamental correctness property of concurrent systems.
-  Due to its global nature, deadlock freedom is hard to ensure compositionally.
-  Session Types based on a Curry-Howard correspondence with Linear Logic
-  achieve compositional deadlock freedom by imposing quite stringent
-  constraints on the communication topologies that can be constructed.
-  All soundness proofs of such session type systems in the literature
-  hinge on topological constraints, making it impossible to safely compose
-  typable processes with processes that violate these constraints, but
-  which are safe nevertheless.
-
-  In this work, we present a new account of session types
-  through a logical relation that is
-  \begin{enumerate*}[(i)]
-    \item Compositional (\ie validates all the type system rules);
-    \item Semantic (\ie expresses the meaning of a judgment entirely as constraints on the behavior of untyped processes); and
-    \item Liberal (\ie it constrains a process only at its external interface, and leaves the internal communication topology free).
-  \end{enumerate*}
-  We establish adequacy of the relation for deadlock freedom.
-  The calculus has sums, recursion through a thunk that names itself,
-  and forwarding, and
-  its types carry an abstract order on the actions of a channel in place
-  of numeric priorities, which types cyclic communication topologies.
-  We exercise the type system the relation validates on programs that no
-  priority system types, and we state the programs it refuses.
-  All our results are mechanized in Rocq.
-\end{abstract}
-
 \ccsdesc[500]{Theory of computation~Type theory}
 \ccsdesc[500]{Theory of computation~Program semantics}
 \ccsdesc[300]{Theory of computation~Process calculi}

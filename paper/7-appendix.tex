@@ -136,8 +136,8 @@ then creates that payload there.
   \begin{align*}
     \sty &::= \sRecv{\ty}{\sty} \sepr \sSend{\ty}{\sty} \sepr
                    \sTerm \sepr \tyMu\tvar.\sty \sepr
-                   \tvar \sepr \dual{\tvar}
-    % & \text{($\dual{\tvar}$ never occurs in a source type)}
+                   \tvar \sepr \dualv{\tvar}
+    % & \text{($\dualv{\tvar}$ never occurs in a source type)}
   \end{align*}
   \rulesection{Duality $\dual{\sty}$}
   \begin{align*}
@@ -146,12 +146,15 @@ then creates that payload there.
     \dual{\sSend{\ty}{\sty}} &= \sRecv{\ty}{\dual{\sty}}
     &
     \dual{\sTerm} &= \sTerm
+    \\
+    \dual{\tvar} &= \dualv{\tvar}
+    &
+    \dual{\dualv{\tvar}} &= \tvar
     &
     \dual{\tyMu\tvar.\sty} &= \tyMu\tvar.\,\sflipop_{\tvar}(\dual{\sty})
-    \span\span\span
   \end{align*}
   Duality exchanges \emph{every} variable $\tvar$ with 
-  $\dual{\tvar}$; $\sflipop_\alpha$ does the same swap, but only for the
+  $\dualv{\tvar}$; $\sflipop_\alpha$ does the same swap, but only for the
   designated variable $\tvar$, leaving every other variable alone. 
 
   \rulesection{Equivalence $\ty \approx \tyB, \sty \approx \styB$, coinductively}
@@ -293,7 +296,7 @@ then creates that payload there.
 cannot descend into the body. Under $\tyMu\tvar.\sty$ the binder stands
 for the dual protocol, so occurrences of $\tvar$ that denote the
 original type must change polarity. That is why the grammar carries a
-dualized variable $\dual{\tvar}$ (\rocq{SVarD}) and why the $\mu$ case
+dualized variable $\dualv{\tvar}$ (\rocq{SVarD}) and why the $\mu$ case
 applies $\sflipop_\alpha$ (\rocq{sflip_ty}) to the dualized body. Tail
 occurrences, which continue as the session itself, come back as
 $\tvar$, while occurrences inside a payload keep the polarity they were
@@ -335,6 +338,16 @@ evaluation contexts of that figure.
   if and only if
   $\tm \trans{\beta} \tm'$.
 \end{lemma}
+
+\begin{proof}
+  The two relations agree at the head, where a $\beta$-redex of
+  $\redu[\mathsf{V}]$ is a head step labelled $\beta$ and conversely
+  (\rocq{head_red_head_step}, \rocq{head_step_beta_head_red}). Left to
+  right, filling a labelled step into an evaluation context is a
+  labelled step (\rocq{fill_tstep}). Right to left, a labelled step
+  decomposes into an evaluation context around a head step
+  (\rocq{tstep_fill_decomp}).
+\end{proof}
 
 \paragraph{Reduction semantics for processes}
 \Cref{fig:red-semantics} gives $\proc \sred \proc'$. A thread takes a
@@ -395,19 +408,38 @@ interacting redexes, these rules find them syntactically.
 \end{figure}
 
 \paragraph{Harmony}
-Both directions of \cref{thm:harmony} rest on the correspondence between
+
+\begin{proof}[Proof of \cref{thm:harmony}]
+Both directions rest on the correspondence between
 the congruence closure of the labelled semantics and evaluation
-contexts. Filling a labelled step into a context is a labelled step, and
+contexts. Filling a labelled step into a context is a labelled step
+(\rocq{fill_tstep}), and
 every labelled step decomposes into an evaluation context around a head
-step. \Cref{rule:R-Lift} then matches \ref{rule:P-Act-Beta} by
+step (\rocq{tstep_fill_decomp}).
+
+Forward (\rocq{harmony_forward}), by cases on the reduction.
+\Cref{rule:R-Lift} matches \ref{rule:P-Act-Beta} by
 \cref{lem:vred-reduction}, and each interaction rule matches the process
-rule that consumes the corresponding labels. 
+rule that consumes the corresponding labels.
 \ref{rule:R-New} with \ref{rule:P-Act-New},
 \ref{rule:R-Spawn} with \ref{rule:P-Act-Spawn},
 \ref{rule:R-Com} with \ref{rule:P-Act-Msg},
 \ref{rule:R-Close} with \ref{rule:P-Act-Close}, and
-\ref{rule:R-Link} with \ref{rule:P-Act-Link}, whose unordered label pair
-accounts for the two orientations of the rule.
+\ref{rule:R-Link} with \ref{rule:P-Act-Link}. Filling the head step of
+the redex the rule names into its context supplies the label each
+process rule asks for.
+
+Backward (\rocq{harmony_backward}), by cases on the $\tau$ transition.
+Decompose each label of the premises into a context around a head step,
+invert the head step to recover the redex, and apply the reduction rule
+of the same name. \Cref{rule:P-Act-Link} is the one case that needs
+care, because its label carries an unordered pair. Inverting the head
+step gives the pair in the order the term writes it
+(\rocq{head_step_link_inv}), and the two solutions of the set equation
+give the two orientations of \ref{rule:R-Link}
+(\rocq{upair_eq_inv}). A term that names one channel twice makes the
+two ends coincide and the rule fires degenerately.
+\end{proof}
 
 %%% Local Variables:
 %%% mode: latex

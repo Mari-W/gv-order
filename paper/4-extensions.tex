@@ -68,8 +68,8 @@ the point variables its box binds.
   (\rocq{ch_typed}) and $\asTmId{chain}$ is deadlock free
   (\rocq{ch_deadlock_free}).
 
-  $\dual{\tvar}$ earns its place here:
-  $\dual{\styB} = \tyMu\tvar. \sSend{(\sAt{\dual{\tvar}}{\pslot{\pself}{0}})}{\sTerm}$,
+  $\dualv{\tvar}$ earns its place here:
+  $\dual{\styB} = \tyMu\tvar. \sSend{(\sAt{\dualv{\tvar}}{\pslot{\pself}{0}})}{\sTerm}$,
   so the sender's payload is the dual of its own recursion variable,
   unfolding gives back $\sSend{(\sAt{\styB}{\pslot{\pself}{0}})}{\sTerm}$,
   and the sender sends a channel at $\styB$ while keeping
@@ -248,6 +248,23 @@ program meets (\rocq{slt_acyclic_nil}).
   world.
 \end{theorem}
 
+\begin{proof}
+  A model refutes the fact. Send $\fLt{}{}$ to the relation
+  $\asTy{R}$ that compares the rank below when both points have a
+  variable root and holds between any two points with constant roots,
+  and send $\fEq{}{}$ to equality on points with a variable root and to
+  the same unconditional relation elsewhere (\rocq{rr_R},
+  \rocq{rr_rank}). Every rule of the fact logic is sound for that pair,
+  which is one obligation per rule (\rocq{fl_map}). A well-formed world
+  relates two points with a variable root by program order alone and
+  identifies them only when equal, and a point whose root the world
+  supports is a point constant (\rocq{isvar_const},
+  \rocq{world_wf}). Program order raises the offset and so raises the
+  rank (\rocq{rr_R_po}). The two facts of $\cstr_1$ hold in the model by
+  computation. Mapping the asked fact gives
+  $\asTy{R}(\poff{\pviA}{1}, \poff{\pviA'}{1})$, which reads $20 < 16$.
+\end{proof}
+
 The rank $10(k+1)$ for $\poff{\pviA}{k}$ and $15+k$ for
 $\poff{\pviA'}{k}$ satisfies $\cstr_1$ and program order and puts
 $\poff{\pviA'}{1}$ below $\poff{\pviA}{1}$. A constraint is the
@@ -269,8 +286,23 @@ invariant of a recursion, so it has to state every round at once, as
   $\pviA'$, so \ref{rule:E-App} asks $\fLt{\pviA}{\pviA'}$. With
   $\cstr = \emptyset$ the fact theory derives no fact between two points
   with distinct variable roots, so the box does not type. With
-  $\cstr = \set{\fLt{\pviA}{\pviA'}}$ it does (\rocq{ordered_typed}).
+  $\cstr = \set{\fLt{\pviA}{\pviA'}}$ it does, in the world-carrying
+  judgment at every well-formed world (\rocq{ordered_typed}).
 \end{theorem}
+
+\begin{proof}
+  Again a model (\rocq{ord_R}, \rocq{fl_map}). Send $\fLt{}{}$ to the
+  relation that holds between two points with a variable root when
+  their roots agree and the offset grows, and between any two points
+  with constant roots. Send $\fEq{}{}$ to equality on the first kind and
+  to the unconditional relation on the second. Program order keeps the
+  root and raises the offset, so it lies in the model
+  (\rocq{ord_R_po}), a point whose root the world supports is a
+  constant (\rocq{isvar_const}), and the empty constraint contributes no
+  fact (\rocq{bcs_open_nil}). The names of $\pviA$ and $\pviA'$ are the
+  variables $0$ and $1$, so they differ, and the model refutes
+  $\fLt{\pviA}{\pviA'}$.
+\end{proof}
 
 \begin{theorem}[A reversed agent \rocq{sched_rev_underivable}, \rocq{ms_rev_underivable}]
 \label{thm:rej-sched}
@@ -284,6 +316,19 @@ invariant of a recursion, so it has to state every round at once, as
   $\fLt{\asTy{r}_1}{\asTy{r}_2}$.
 \end{theorem}
 
+\begin{proof}
+  Both are closures of the three facts in $\fctx$. In the reduced
+  scheduler, transitivity of $\fLt{}{}$ takes
+  $\fLt{\pntC}{\pntB}$ and $\fLt{\pntB}{\pntA}$ to
+  $\fLt{\pntC}{\pntA}$, and closure of $\fLt{}{}$ under $\fEq{}{}$ on
+  the right takes that and $\fEq{\pntC}{\pntA}$ to $\fLt{\pntC}{\pntC}$
+  (\rocq{sl_trans}, \rocq{sl_eqr}, \rocq{se_sym}). In Milner's
+  scheduler two uses of transitivity give
+  $\fLt{\asTy{r}_0}{\asTy{r}_0}$. Either conclusion contradicts the
+  hypothesis that $\fLt{}{}$ of $\fctx$ has no cycle, which a strict
+  world discharges (\rocq{slt_acyclic_nil}).
+\end{proof}
+
 \begin{theorem}[A cyclic forwarding \rocq{badlink_underivable}]
 \label{thm:rej-link}
   For $\asTmId{badlink}$ (\rocq{badlink_main}), with $\ch$ at $\pntA$,
@@ -292,6 +337,13 @@ invariant of a recursion, so it has to state every round at once, as
   the second thunk asks $\fLt{\pntC}{\pntB}$. The three give
   $\fLt{\pntA}{\pntA}$. The program deadlocks after the forwarding.
 \end{theorem}
+
+\begin{proof}
+  Transitivity takes $\fLt{\pntA}{\pntC}$ and $\fLt{\pntC}{\pntB}$ to
+  $\fLt{\pntA}{\pntB}$, and closure under $\fEq{\pntA}{\pntB}$ on the
+  right gives $\fLt{\pntA}{\pntA}$ (\rocq{sl_trans}, \rocq{sl_eqr},
+  \rocq{se_sym}), against the hypothesis on $\fctx$.
+\end{proof}
 
 The deadlocked $\asTmId{blocked}$ of \cref{ex:deadlock}
 (\rocq{blocked_main}) is rejected for the same reason. Whatever points
@@ -311,16 +363,56 @@ written, not only its image.
 \label{thm:pgv}
   Every closed program of the fragment of
   \citet{KokkeD23} cut out by \rocq{pgv_mono} in \rocq{pgv_typed} is deadlock free. The
-  fragment is all of PGV except $\asPrOp{0}$ and $\asTmId{absurd}$, with
+  fragment is all of PGV except $\asTy{0}$ and $\asTmId{absurd}$, with
   monotone, payload-bounded session types and the premise
   $q < \mathit{pr}(\ty)$ at their pair rule.
 \end{theorem}
 
+\begin{proof}
+  Two halves. First, the translation types. One fixed world $\wrld_{\mathrm{PGV}}$
+  ranks the points of the image lexicographically by the priority a
+  session type carries, and it is strict (\rocq{Wpgv},
+  \rocq{Wpgv_strict}). Induction on the PGV derivation types the
+  translated term in that world (\rocq{pgv_translate}), where PGV's
+  bound $p$ becomes a frame. \Cref{th:soundness} then makes the
+  translation of a closed program deadlock free
+  (\rocq{ptyped_closed}, \rocq{pgv_deadlock_free}).
+
+  Second, the translation changes the term only at an unapplied
+  communication constant, which it wraps in a $\lambda$
+  (\rocq{pgv_eta}), so deadlock freedom carries back. A congruence
+  relates a term to its translation and contains that wrapping
+  (\rocq{rel}, \rocq{rel_eta}). Every reduction of $\asTm{M}$ is matched
+  by one or more reductions of the translation
+  (\rocq{sim_step}, \rocq{sim_star}). When no thread of $\asTm{M}$ takes a $\beta$,
+  $\tNew$ or $\tSpawn$ step, $\beta$ steps bring every thread of the
+  translation to the action of its thread in $\asTm{M}$ (\rocq{norm}),
+  so a step of the translation is a step of $\asTm{M}$
+  (\rocq{final}). A stuck $\asTm{M}$ would leave the translation stuck.
+\end{proof}
+
+The fragment leaves out the empty type $\asTy{0}$ of
+\citet{KokkeD23} and its eliminator $\asTmId{absurd}$
+(\rocq{pgv_typed}). \OurLang\ has no empty type, so neither form has an
+image.
+
+PGV's send schema puts no condition on its payload, and our fragment
+adds $o < \mathit{pr}(\ty)$ for $\sSend{\ty}{\sty}$ at priority $o$. The
+embedding is what found the gap. Without that condition a closed PGV
+program types and deadlocks, and the \OurLang\ premise $\tSend$ owes,
+$\fLt{\pntA}{\pnode}$ for every head $\pnode$ of the payload, is the
+same requirement. Their pair rule compares the bound of the left
+component with the environment of the right one and asks nothing of the
+left component's type, which costs a second program, and the fragment
+adds $q < \mathit{pr}(\ty)$ there. \ref{rule:E-Pair} types the right
+component under $\frm$ grown by $\heads(\ty)$, which is that premise.
+Both programs are rejected here for every choice of the fragment's
+predicate (\rocq{cx1_rejected}, \rocq{cx2_rejected}).
+
 Example~2.1 of \citet{KokkeD23} is among the mechanized programs
 (\rocq{pgv_ex21_deadlock_free}), their delegation example is
 \rocq{pgv_deleg_deadlock_free}, and their forwarding example is
-\rocq{pgv_link_deadlock_free}. Their two rejected programs stay rejected
-in the fragment (\rocq{cx1_rejected}, \rocq{cx2_rejected}).
+\rocq{pgv_link_deadlock_free}.
 
 \begin{theorem}[Padovani and Novara \rocq{pn_deadlock_free_source}]
 \label{thm:pn}
@@ -328,8 +420,50 @@ in the fragment (\rocq{cx1_rejected}, \rocq{cx2_rejected}).
   has the form $\tFixI{\asTm{f}}{\tAbs{\ivx}{\tm}}$ is deadlock free.
 \end{theorem}
 
+\begin{proof}
+  The same two halves. The translation of a closed program is typable in
+  the source judgment under one top-level constraint over one point
+  variable (\rocq{pn_translate_source}), that constraint is acyclic
+  (\rocq{Crel}, \rocq{Crel_acyclic}), and
+  \cref{thm:soundness-source} makes the translation deadlock free
+  (\rocq{pn_deadlock_free}).
+
+  Carrying that back is a simulation. A relation ties a source term to
+  its target at the shape of the P\&N type the translation reads, it
+  holds of every translation the typing produces, and it is closed under
+  substitution (\rocq{trel}, \rocq{trel_of_typed},
+  \rocq{trel_subst}). Every source step is matched by the corresponding
+  target step together with administrative ones (\rocq{fwd_rt}), and a
+  related source term is a value or steps (\rocq{src_progress}), which
+  turns deadlock freedom of the target into deadlock freedom of the
+  source in the semantics of \citet{PadovaniN15}
+  (\rocq{pn_deadlock_free_src}). The restriction on $\asTmId{fix}$ is
+  what keeps the relation closed under the unfolding of a recursive
+  definition (\rocq{fixlam}).
+\end{proof}
+
 Their $\asTmId{fibo}$ and their signal pipe are mechanized
 (\rocq{fibo_deadlock_free_src}, \rocq{pipe_deadlock_free_src}).
+
+\Citet{PadovaniN15} measure the same two bounds with numbers. A channel
+type $p[t]^n$ carries a level $n$, the arrow $t \to^{\rho,\sigma} s$
+carries the least level of a channel in the closure and the greatest
+level the call acts on, and their $\asTmId{new}$, $\asTmId{send}$ and
+$\asTmId{recv}$ each ask $n < \lvert t \rvert$, with
+$\lvert t \rvert$ the level of $t$. Our $\lbd$ and $\ubd$ carry the
+arrow's two bounds as points, and the premise $\tSend$ owes,
+$\fLt{\pntA}{\pnode}$ for every head $\pnode$ of the payload, is
+$n < \lvert t \rvert$ with the arithmetic removed. An abstract order
+subsumes that condition rather than meeting it. Level polymorphism in
+their system is the shift $\mathord{\Uparrow}^n$, admitted at a function
+of level $\top$ only, and every shift is a fresh number. Here one
+constraint $\cstr$ over the point variables of a $\Box$ states the facts
+its instances owe, and a $\tForce$ at any instance that satisfies
+$\cstr$ is legal, so the one constraint the translation writes covers
+every shift the source takes, the unboundedly many of a recursive
+definition included (\rocq{Crel}, \rocq{crel_hold}). A $\Box$ binds the
+$\forall$ and holds no channel, which is the part their level $\top$
+plays.
 
 %%% Local Variables:
 %%% mode: latex

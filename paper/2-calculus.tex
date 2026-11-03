@@ -195,6 +195,11 @@ relation (\cref{rm:vabs}).
   (\cref{sec:app-harmony}, \cref{fig:red-semantics}).
 \end{theorem}
 
+\begin{proof}
+  \Cref{sec:app-harmony}, after the reduction semantics it compares the
+  LTS with.
+\end{proof}
+
 Transitions $\proc \trans{\tau} \proc'$ are written $\proc \redu \proc'$
 and called process reductions, with $\trans{}[*]$ for the reflexive
 transitive closure.
@@ -367,10 +372,10 @@ from.
     \pntA &::= \poff{\pnm}{k}
     & \text{(the $k$-th action of $\pnm$, $k \in \Nat$; $\poff{\pnm}{0}$ is written $\pnm$)}
     \\
-    \fact &::= \fLt{\pntA}{\pntB} \sepr \fEq{\pntA}{\pntB}
+    \fact \in \tyFact &::= \fLt{\pntA}{\pntB} \sepr \fEq{\pntA}{\pntB}
     & \text{($\pntA$ acts before $\pntB$; $\pntA$ and $\pntB$ are one point)}
     \\
-    \cstr &\subseteq \{\fact\}
+    \cstr &\subseteq \tyFact
     & \text{(a set of facts, finite or infinite, under a binder $\pvivec$)}
   \end{align*}
   \rulesection{Roots}
@@ -404,7 +409,7 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
       \sepr \tyBox{\pvivec}{\cstr}{\ty} \sepr \tyEx{\lbd}{\pvivec}{\cstr}{\ty}
     \\
     \sty &::= \sSend{\ty}{\sty} \sepr \sRecv{\ty}{\sty} \sepr \sTerm
-      \sepr \tyMu\tvar.\sty \sepr \tvar \sepr \dual{\tvar}
+      \sepr \tyMu\tvar.\sty \sepr \tvar \sepr \dualv{\tvar}
     \\
     \ubd &::= \pBot \sepr \pntA
     & \lbd &::= \pTop \sepr \pBot \sepr \pntA
@@ -417,12 +422,28 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
     &
     \dual{\sTerm} &= \sTerm
     \\
-    \dual{\tvar} &= \dual{\tvar}
+    \dual{\tvar} &= \dualv{\tvar}
     &
-    \dual{\dual{\tvar}} &= \tvar
+    \dual{\dualv{\tvar}} &= \tvar
     &
     \dual{\tyMu\tvar.\sty} &= \tyMu\tvar.\,\sflipop_{\tvar}(\dual{\sty})
   \end{align*}
+  \rulesection{Point substitution $\tysub{\pntA}{\pntvec}{\pvivec}$, $\tysub{\ty}{\pntvec}{\pvivec}$ (\rocq{pt_inst}, \rocq{pinst_ty})}
+  \begin{align*}
+    \tysub{(\poff{\pviA_i}{k})}{\pntvec}{\pvivec} &= \poff{\pntA_i}{k}
+    &
+    \tysub{(\poff{\pcst}{k})}{\pntvec}{\pvivec} &= \poff{\pcst}{k}
+    &
+    \tysub{(\poff{\pslot{\pntB}{j}}{k})}{\pntvec}{\pvivec}
+      &= \poff{\pslot{(\tysub{\pntB}{\pntvec}{\pvivec})}{j}}{k}
+    \\
+    \tysub{(\sAt{\sty}{\pntB})}{\pntvec}{\pvivec}
+      &= \sAt{\sty}{(\tysub{\pntB}{\pntvec}{\pvivec})}
+    \span\span\span\span
+  \end{align*}
+  and structurally on the other type formers, mapping over the bounds
+  $\ubd$ and $\lbd$ of an arrow and of an existential, and going under
+  the binder of a $\Box$ and of an $\exists$ (\rocq{pup}).
   \rulesection{Payloads (\rocq{payload_at})}
   \begin{align*}
     \tysub{\ty}{\pntA}{\pself} &= \tysub{\ty}{\pslot{\pntA}{j}}{\pslot{\pself}{j}}
@@ -453,16 +474,42 @@ such choice.
   with $\pslot{\pntA}{j}$, written $\tysub{\ty}{\pntA}{\pself}$.
 \end{definition}
 
+\begin{remark}
+\label{rm:payload}
+  A marker of a payload is a self-marker by construction, so no rule
+  enforces \cref{def:payload}. Point substitution replaces the
+  variables $\pvivec$, and $\pslot{\pself}{j}$ is no variable, so no
+  enclosing $\Box$ or $\exists$ touches it. Point substitution also
+  stops at a channel type, by the clause
+  $\tysub{(\sAt{\sty}{\pntB})}{\pntvec}{\pvivec} =
+    \sAt{\sty}{(\tysub{\pntB}{\pntvec}{\pvivec})}$ of \cref{fig:types},
+  so it never reaches inside a payload at all (\rocq{pinst_ty}).
+
+  Session substitution does reach inside a payload, because unfolding
+  $\tyMu\tvar.\sRecv{(\sAt{\tvar}{\pslot{\pself}{0}})}{\sTerm}$ has to
+  rewrite the $\tvar$ under the carrier. It rewrites session variables
+  and nothing else, and the point a channel type hangs on stays put
+  (\rocq{sinst_ty}, and the same shape in \rocq{sren_ty} and
+  \rocq{sflip_ty}), so unfolding leaves every marker alone. The
+  property the proofs use is
+  $\tysub{(\tysub{\ty}{\pntA}{\pself})}{\pntvec}{\pvivec}
+    = \tysub{\ty}{(\tysub{\pntA}{\pntvec}{\pvivec})}{\pself}$
+  (\rocq{payload_pinst}), which holds with no side condition because
+  $\tysub{\ty}{\pntA}{\pself}$ is a total substitution.
+\end{remark}
+
 Sender and receiver name the carried channels alike, so a message
-carries no point. $\dual{\tvar}$ is the dual polarity of $\tvar$, the
+carries no point. $\dualv{\tvar}$ is the dual polarity of $\tvar$, the
 dual of whatever $\tvar$ stands for. Source types never contain
-$\dual{\tvar}$: it arises only from duality, and dualizing
+$\dualv{\tvar}$: it arises only from duality, and dualizing
 $\tyMu\tvar.\sty$ swaps the polarities of its own variable so that
 unfolding commutes with duality (\cref{sec:app-duality}).
 
 \paragraph{Contexts and the judgment}
 A linear environment $\lenv ::= \tEmpty \sepr \lenv, \vr : \ty$ is
-linear except at $\Box$ types. The facts $\fctx$ assumed by a judgment
+linear except at $\Box$ types. $\lenv[\vr : \ty]$ updates $\lenv$, which
+already binds $\vr$, so that $\vr$ has type $\ty$, and it extends
+nothing. The facts $\fctx$ assumed by a judgment
 are facts $\fact$ over points together with facts $\fLt{\ubd}{\pfv}$ for
 frame variables $\pfv$. Nodes are
 $\pnode ::= \pntA \sepr \pfv \sepr \pBot$, and a frame $\frm$ is a
@@ -747,11 +794,20 @@ $\fctx \types \fLt{\pntA}{\frm}$. $\tLink$ and $\tSpawn$ never block, so
 their upper bound is $\pBot$. $\tNew$ puts both ends of a channel at one
 point $\pviA$ and returns an existential, so a channel starts at a point
 placed by its creation constraint and not by a global number.
+$\tLink$ asks $\fEq{\pntA}{\pntB}$ because forwarding merges two
+sessions into one conduit, and the actions of the merged channel need a
+single position. Under $\fLt{\pntA}{\pntB}$ they would have two. The
+condition is not an artefact of the static rule, \ref{rule:O-Link} of
+the logical relation requires the world to alias the two points as well.
+Whether a weaker condition that coerces one position into the other
+would work is open.
 
 \begin{figure}[tp]
   \adjustfigure[]
   \rulesection*{Type-indexed families of type signatures for constants $\cst : \ty$ (\rocq{konst_ty})}
   \begin{align*}
+    & & & \text{side conditions the instance discharges}
+    \\
     \tNew &{}: \tyUnit \lolli{\pBot}{\pTop}
       \tyEx{\pBot}{\pviA}{\cstr}{\lPair{\sAt{\sty}{\pviA}}{\sAt{\dual{\sty}}{\pviA}}}
     & & \cstr \text{ a creation constraint}
@@ -824,6 +880,20 @@ channels by returning them. \ref{rule:P-Connect} composes two processes
 that interact in a dual way on the channels of $\senv_{\asTy{C}}$ and
 subsumes the mix rule at $\senv_{\asTy{C}} = \tEmpty$.
 
+The process judgment $\senv \typesW{\wrld} \proc : \ty$ carries a world
+$\wrld$, and so does the term judgment
+$\tenv ; \lenv \typesFW{\frm}{\wrld} \tm : \ty$ that
+\ref{rule:P-Term} reads (\rocq{typed}). Neither is the judgment
+$\fctx ; \lenv \typesF{\frm} \tm : \ty$ of
+\cref{fig:typeSys,fig:typeSysPoints}, which carries facts and no world.
+\Cref{sec:worlds} defines worlds, \cref{sec:logicalRelation:relation}
+defines the term environment $\tenv$, and \rocq{styped_typed} embeds
+every source derivation into the world-carrying judgment at the empty
+world. The restricted channels of \ref{rule:P-Term} are the domain of
+$\tenv_{\asTy{B}}$, which holds both ends of each of them, so a thread
+that owns a whole channel is typed without the channel appearing in its
+interface.
+
 \begin{figure}[tp]
   \adjustfigure[]
   \rulesection*{Primitive types $\primitive \ty$ (\rocq{prim})}
@@ -850,23 +920,23 @@ subsumes the mix rule at $\senv_{\asTy{C}} = \tEmpty$.
       \primitive \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \tyB}
     }
   \end{proofrules}
-  \rulesection{Typing rules for processes $\senv \types \proc : \ty$ (\rocq{ptyped})}
+  \rulesection{Typing rules for processes $\senv \typesW{\wrld} \proc : \ty$ (\rocq{ptyped})}
   \begin{proofrules}
     \infer*[lab=P-Term]{
       \primitive \ty \\
-      \senv , \senv_{\asTy{B}} ; \tEmpty \typesF{\emptyset} \tm : \ty \\
-      \dom(\senv_{\asTy{B}}) = \chset \text{ and } \senv_{\asTy{B}}
-        \text{ holds both ends, dual at aliased points}
+      \tenv_{\asTy{B}} \text{ holds both ends of each of its channels,
+        dual at aliased points} \\
+      \senv , \tenv_{\asTy{B}} ; \tEmpty \typesFW{\emptyset}{\wrld} \tm : \ty
     }{
-      \senv \types (\chset , \mset{\tm}) : \ty
+      \senv \typesW{\wrld} (\dom(\tenv_{\asTy{B}}) , \mset{\tm}) : \ty
     } \label{rule:P-Term}
     \and
     \infer*[lab=P-Connect]{
-      \senv_1 , \senv_{\asTy{C}} \types (\chset_1 , \pool_1) : \ty \\
-      \senv_2 , \dual{\senv_{\asTy{C}}} \types (\chset_2 , \pool_2) : \tyUnit \\
+      \senv_1 , \senv_{\asTy{C}} \typesW{\wrld} (\chset_1 , \pool_1) : \ty \\
+      \senv_2 , \dual{\senv_{\asTy{C}}} \typesW{\wrld} (\chset_2 , \pool_2) : \tyUnit \\
       \dom(\senv_{\asTy{C}}) = \chset_0
     }{
-      \senv_1 , \senv_2 \types (\chset_1 \cupdot \chset_2 \cupdot \chset_0 , \pool_1 \uplus \pool_2) : \ty
+      \senv_1 , \senv_2 \typesW{\wrld} (\chset_1 \cupdot \chset_2 \cupdot \chset_0 , \pool_1 \uplus \pool_2) : \ty
     } \label{rule:P-Connect}
   \end{proofrules}
   \rulesectionend
@@ -882,6 +952,12 @@ variables it begins with. A program that creates all its channels with
 $\tNew$ takes $\cstr_0 = \emptyset$. A program that wants a global
 order, such as the translation of a priority system, states it in
 $\cstr_0$ and aliases its channels to the variables $\cstr_0$ speaks of.
+The source programs of this paper name no point constant. Their points
+are the variables that $\cstr_0$, a $\Box$ and an $\exists$ bind, and
+\cref{thm:soundness-source} supplies the constants itself
+(\rocq{c0_consts}). For such a program $\tysub{\ty}{\pntA}{\pself}$ is
+the only way a payload acquires a point. A translated program may name
+constants, and the image of PGV does (\rocq{proot}).
 
 \begin{theorem}[Soundness for source programs \rocq{soundness_source}]
 \label{thm:soundness-source}
@@ -890,14 +966,34 @@ $\cstr_0$ and aliases its channels to the variables $\cstr_0$ speaks of.
   $(\emptyset, \mset{\tm})$ is deadlock free.
 \end{theorem}
 
+\begin{proof}
+  The proof builds the world the run needs out of $\cstr_0$. Embed the
+  source derivation into the world-carrying judgment at the empty world,
+  which supports no fact beyond equality and program order
+  (\rocq{wnil}, \rocq{wnil_strict}, \rocq{styped_typed}). Let $n$ be the
+  number of top-level point variables and send each of them to its own
+  point constant. Acyclicity of $\cstr_0$ makes the world generated by
+  the image of $\cstr_0$ under that map strict (\rocq{wc0},
+  \rocq{wc0_strict}), it extends the empty world (\rocq{wc0_ext}), and
+  the hypothesis $(\cstr_0, \pvivec)$ holds in it at those constants
+  (\rocq{wc0_holds}). Instantiating the derivation along the map
+  therefore yields the infinitary judgment in that world
+  (\rocq{typed_sem_rules}, \rocq{c0_consts}), hence a semantic judgment
+  (\rocq{sem_rules_fundamental}). One thread with nothing restricted is
+  a process of the relation (\rocq{Prel_term}), and
+  \cref{thm:adequacy} concludes. Point instantiation preserves
+  $\primitive$ (\rocq{prim_pinst}), which \rocq{Prel_term} needs.
+\end{proof}
+
 Acyclicity of $\cstr_0$ is the acyclicity half of
 \cref{def:creation}, checked against the empty context. The judgment of
 \cref{thm:soundness-source} carries no world and no channel environment.
-The world-carrying judgment $\senv \types \proc : \ty$ of
+The world-carrying judgment $\senv \typesW{\wrld} \proc : \ty$ of
 \cref{fig:procTypeSys} and the logical relation of
-\cref{sec:logicalRelation} sit behind it, and the two agree on the
-derivations of a source program (\rocq{styped_typed},
-\rocq{typed_styped}).
+\cref{sec:logicalRelation} sit behind it. \rocq{styped_typed} bridges
+them, taking a source derivation to the world-carrying term judgment at
+any world and at the empty term environment, and \rocq{typed_styped}
+comes back from a world with empty support.
 
 \begin{example}[Delegation \rocq{deleg_main}]
 \label{ex:delegation}
