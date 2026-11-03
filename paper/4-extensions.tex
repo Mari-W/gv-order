@@ -111,7 +111,8 @@ the point variables its box binds.
     \\ & \qquad
       \tLetS{\vrB_1}{\tApp{\tSend}{\tPair{\chB}{\vrB}}}{}
     \\ & \qquad
-      \tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\poff{\pviA}{1}\ \poff{\pviA'}{1}})}{\tPair{\vr_1}{\vrB_1}}})}
+      \tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\poff{\pviA}{1}\ \poff{\pviA'}{1}})}{%
+        \tPair{\vr_1}{\vrB_1}}})}
   \end{align*}
   The receive at $\pviA$ gives $\chB$ the type
   $\sAt{\sTerm}{\pslot{\pviA}{0}}$, and the send at $\pviA'$ asks for
@@ -252,12 +253,15 @@ invariant of a recursion, so it has to state every round at once, as
 
 \begin{theorem}[A box needs its constraint \rocq{ord_no_constraint}]
 \label{thm:rej-ord}
-  Let $\asTmId{ordered} = \tBoxP{\asTm{f}}{\tAbs{\asTm{p}}{%
-    \tLet[\ch][\chB]{\asTm{p}}{\tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}}}}$,
-  at the type
-  $\tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{\pBot}{\pTop}
-    (\lPair{\sAt{\sTerm}{\pviA}}{\sAt{\sTerm}{\pviA'}}
-      \lolli{\pviA'}{\pTop} \tyUnit)}$.
+  Let
+  \begin{align*}
+    \asTmId{ordered} &= \tBoxP{\asTm{f}}{\tAbs{\asTm{p}}{%
+      \tLet[\ch][\chB]{\asTm{p}}{\tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}}}}
+    \\
+    &: \tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{\pBot}{\pTop}
+      (\lPair{\sAt{\sTerm}{\pviA}}{\sAt{\sTerm}{\pviA'}}
+        \lolli{\pviA'}{\pTop} \tyUnit)}
+  \end{align*}
   Closing $\ch$ blocks at $\pviA$ while the body still holds $\chB$ at
   $\pviA'$, so \ref{rule:E-App} asks $\fLt{\pviA}{\pviA'}$. With
   $\cstr = \emptyset$ the fact theory derives no fact between two points
