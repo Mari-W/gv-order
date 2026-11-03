@@ -374,7 +374,7 @@ Proof.
     exact (wext_wf _ _ HW).
 Qed.
 
-(** ** E-Let* *)
+(** ** E-Let∗ *)
 
 Lemma sem_typed_letu W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
@@ -654,8 +654,9 @@ Proof.
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [| | | | | |S C HC HK]; subst.
   apply Vrel_unit_iff in HV as [-> ->]. destruct n as [|n']; [apply Erel_0|].
-  (* new at a fresh point a, packed (sharp edges 97). The world is W with
-     the facts of C at a, a fresh extension by [cc_ok] (105). *)
+  (* new creates the channel at a fresh point a and packs it
+     (sharp edges 97). The world is W with the facts of C at a, a fresh
+     extension by [cc_ok] (105). *)
   assert (tstep (App ENew EUnit) (LNew "c") (Pair (Chan "c") (Chan "c"))) as Hst0
     by apply TStepHead, HeadNew.
   apply Erel_S_iff. split_and!.

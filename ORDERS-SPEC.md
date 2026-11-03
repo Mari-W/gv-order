@@ -532,8 +532,9 @@ them by bcs_open and bcs_hold_sub.
 Rocq (static/, sharp edges 53, 56): typed W Φ Θ Δ F e T and ptyped W Σ p T, indexed by the
 world W. The fresh μ of E-Abs and E-Exp is a frame variable φ with the hypothesis u ≺ φ
 in Φ, at the same W. E-Exp types the body once with ιs as point variables 0, …, m−1 and Φ, □Δ
-and the recursive binding shifted past them (57). E-Const asks kscoped of send and recv. The
-other rules as in §9. typed_pinst substitutes points for point variables. typed_ityped does that
+and the recursive binding shifted past them (57). E-Const asks nothing of the payload beyond
+send's precedence premise, because a payload has no binder and its only points are the
+markers self.j. The other rules as in §9. typed_pinst substitutes points for point variables. typed_ityped does that
 and instantiates φ at any later world into the infinitary judgment of 53. Every well-formed W
 is closed under the substitutions at recursive calls, because W knows constants only and
 relates points with a variable root by reflexivity and program order.

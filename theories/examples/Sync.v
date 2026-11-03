@@ -1,14 +1,19 @@
 (** * sync: typable
 
-    sync = let (c, d) = new ∗ in
-           let () = spawn (λu. let () = u in close (send ⟨∗, c⟩)) in
-           let (x, d) = recv d in let () = x in close d
+      S    = !∗.Close
+      sync = let (c : S@ι, c′ : S̄@ι) = new ι { } ∗ in
+             spawn (λ^{ι+1}_{ι} ∗. close (send ⟨∗, c⟩));
+             let (x : ∗, c′₁ : Close@(ι+1)) = recv c′ in
+             x;
+             close c′₁
 
-    c : !∗.Close@ι and d : ?∗.Close@ι, with ι created by new with no
-    facts. Each thread holds one end only, so no fact beyond program
-    order is needed. The thunk blocks at ι and ι+1, its upper point is
-    ι+1, its lower point ι. The program types in the empty world
-    (sharp edges 105). *)
+    The creation constraint of ι is empty. Each thread holds one end
+    only, so no fact beyond program order is needed. The thunk blocks at
+    ι and ι+1, its upper point is ι+1 and its lower point ι.
+
+      ∅; · ⊢^∅ sync : ∗        so        thread sync is deadlock free
+
+    (sharp edges 105) *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.

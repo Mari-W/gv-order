@@ -4,7 +4,7 @@
     enter through the world W they generate, so both judgments are
     indexed by W. The fresh μ of E-Abs and E-Exp is a frame variable φ
     with the one hypothesis u ≺ φ (sharp edges 54, 56). E-Exp types the
-    body once, with the box's ιs as point variables 0, …, m-1 (sharp
+    body once, with the box's ῑ as point variables 0, …, m-1 (sharp
     edges 57). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -40,7 +40,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T →
       typed W Φ Ψ Θ2 Δ2 (sf_unionb F (heads T) (hbot T)) e2 U →
       typed W Φ Ψ Θ Δ F (Pair e1 e2) (TProd T U)
-  | t_letu Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :              (* E-Let* *)
+  | t_letu Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :              (* E-Let∗ *)
       tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
       typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit →
       typed W Φ Ψ Θ2 Δ2 F e2 T →
@@ -185,9 +185,9 @@ Proof. induction Δ; simpl; constructor; done. Qed.
     Novara produce them too. *)
 
 (** E-NewFresh (sharp edges 90, 93, 103) from the existential
-    signature of new, E-LetPair, E-Let*, E-Open on p and E-LetPair. The
+    signature of new, E-LetPair, E-Let∗, E-Open on p and E-LetPair. The
     fresh point ι is the point variable 0 of the body, bound like the
-    ιs of E-Exp, so Φ, Ψ, Θ, Δ, F and T shift past it and ι is free in
+    ῑ of E-Exp, so Φ, Ψ, Θ, Δ, F and T shift past it and ι is free in
     none of them. The body assumes the hypothesis C, whose facts relate
     points of the fresh channel (ι+k, ι.i, ι.i+k, …) to outer points
     ([fresh_lt]), and holds the two ends of the channel at ι. The outer
@@ -207,7 +207,7 @@ Lemma t_new_open W Φ Ψ Θ Δ F e T S C :
 Proof.
   intros HC HK Hb. unfold let_new.
   set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
-  (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
+  (* let (p, w) = ⟨new ∗, ∗⟩ *)
   apply (t_letp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply tenv_comp_empty_l, se_sym. }
   { apply lenv_split_nones_l. }

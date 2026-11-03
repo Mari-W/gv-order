@@ -1,7 +1,7 @@
 (** * Existential points, semantically (sharp edges 97)
 
-    E-Pack puts a term of type T[xs/ιs] at known points xs that meet C
-    into ∃ιs. C. T. E-Open uses a hypothesis of type ∃ιs. C. T at a
+    E-Pack puts a term of type T[x̄/ῑ] at known points x̄ that meet C
+    into ∃ῑ. C. T. E-Open uses a hypothesis of type ∃ῑ. C. T at a
     fresh instance that meets C. Each continuation is good at every
     instance that meets C in every later world, which is what V-Ex
     hands out. *)
@@ -58,8 +58,8 @@ Proof.
     eapply HEj; [lia|by apply wext_refl|exact HE'].
 Qed.
 
-(** E-Pack: a term of type T[xs/ιs], at known points xs that meet C
-    and lie at or above the lower point, has type ∃ιs. C. T. *)
+(** E-Pack: a term of type T[x̄/ῑ], at known points x̄ that meet C
+    and lie at or above the lower point, has type ∃ῑ. C. T. *)
 Lemma sem_typed_pack W Θ Δ F e lb m C T xs :
   length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
   lbx_below W lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
@@ -103,7 +103,7 @@ Proof.
       exists xs. by split_and!.
 Qed.
 
-(** E-Open: a hypothesis of type ∃ιs. C. T may be used at a fresh
+(** E-Open: a hypothesis of type ∃ῑ. C. T may be used at a fresh
     instance that meets C, in every later world. *)
 Lemma sem_typed_open W Θ Δ F e i lb m C T U :
   Δ !! i = Some (Some (TEx lb m C T)) →

@@ -117,8 +117,8 @@ Proof. induction S; simpl; rewrite ?spr_dual; naive_solver. Qed.
 
 (** ** Decidable equality and countability
 
-    The protocol points of the world (PGVWorld.v) are slots indexed by
-    a code of a session type. *)
+    The protocol points of the world (PGVWorld.v) are carried roots
+    a.j indexed by a code j of a session type. *)
 
 Global Instance prio_eq_dec : EqDecision prio.
 Proof. solve_decision. Defined.

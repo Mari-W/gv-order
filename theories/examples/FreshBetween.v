@@ -1,10 +1,13 @@
 (** * Example: a channel created between two box arguments (E-NewFresh)
 
     between : □(∀ι κ. {ι ≺ κ}. ∗ ⊸^⊥_⊤ Close@ι ⊗ Close@κ ⊸^κ_⊤ ∗)
-    between = !(f = λp. let (c, e) = p in
-                        let q = new ∗ in let (d, d′) = q in
-                        let () = spawn (λu. let () = u in close d′) in
-                        let () = close c in let () = close d in close e)
+    between = ! f ∀ι κ { ι ≺ κ }. λ^κ_⊤ p.
+                  let (c, e) = p in
+                  let (d, d′) = new δ { ι ≺ δ, δ ≺ κ } ∗ in
+                  spawn (λ^δ_δ ∗. close d′);
+                  close c;
+                  close d;
+                  close e
 
     close c blocks at ι while the thread holds d and e, close d blocks
     at the point δ of d while it holds e. So δ needs ι ≺ δ ≺ κ. No
@@ -12,13 +15,13 @@
     ι ≺ κ, and a carried root of ι or κ is unrelated to both. E-NewFresh
     creates d at a fresh point δ with ι ≺ δ ≺ κ, which betweenness
     allows because the box hypothesis gives ι ≺ κ (sharp edges 90).
-    new returns ∃δ. C. Close@δ ⊗ Close@δ, and E-Open on q opens it
-    (sharp edges 99).
+    new returns ∃^⊥ δ. {ι ≺ δ, δ ≺ κ}. Close@δ ⊗ Close@δ, and E-Open
+    opens it (sharp edges 99).
 
-    main creates c at (0, 0) and e at (1, 0) in the world with
-    (0, 0) ≺ (1, 0), spawns the partners that close the other ends,
-    and calls the box on c and e. [fb_deadlock_free] gets deadlock
-    freedom from [soundness]. *)
+    main creates c at a fresh γ with no facts and e at a fresh ε with
+    γ ≺ ε, spawns the partners that close the other ends, and calls the
+    box on c and e. [fb_deadlock_free] gets deadlock freedom from
+    [soundness]. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -67,7 +70,7 @@ Proof.
       [by right; left|by left]. }
   assert (slt W Ψ (pvar 1) (pvar 2)) as Hικ by hyp0 (pvar 0) (pvar 1).
   tstep.
-  { (* spawn (λu. let () = u in close d′) *)
+  { (* spawn (λ^δ_δ ∗. close d′) *)
     tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 2); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
@@ -170,14 +173,15 @@ Qed.
 
 (** ** The closed program
 
-      main = let (f, u) = ⟨between, ∗⟩ in let () = u in
-             let (c, c′) = new ∗ in let (e, e′) = new ∗ in
-             let () = spawn (λu. let () = u in close c′) in
-             let () = spawn (λu. let () = u in close e′) in
-             (force f) ⟨c, e⟩
+      main = let f = between in
+             let (c, c′) = new γ { } ∗ in
+             let (e, e′) = new ε { γ ≺ ε } ∗ in
+             spawn (λ^γ_γ ∗. close c′);
+             spawn (λ^ε_ε ∗. close e′);
+             (force f [γ, ε]) ⟨c, e⟩
 
-    c lives at (0, 0) and e at (1, 0). The world orders them, so force
-    meets the box constraint at ((0, 0), (1, 0)). *)
+    c lives at γ and e at ε, and the creation constraint of e orders
+    them, so force meets the box constraint at (γ, ε). *)
 
 Definition fb_main : expr :=
   LetP (Pair fb_box EUnit) (LetU (Var 0)

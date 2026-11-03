@@ -832,8 +832,8 @@ point (`trz_un`).
 
 The PGV translation cannot move to C₀ without a change to the translation of
 types. PGV puts global points into payloads. A payload of send or recv may
-name only its own bound slots and constants, because point instantiation does
-not enter session types (`kscoped`, `pscoped m P` in static/Typing.v). The
+name only its own markers self.j and constants, because point instantiation
+does not enter session types. The
 payload of a delegation is `tr_ty (PSess s) = S@ppt s`, and the payload of a
 function carries the bounds `upt n` and `lpt n`. With the protocol points
 rooted at a top-level variable these payloads would hold a free variable

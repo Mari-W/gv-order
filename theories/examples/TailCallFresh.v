@@ -1,17 +1,17 @@
 (** * tail call with a fresh point
 
-    [tc_main] of TailCall.v. TailCall.v now creates c in the empty world
-    with the creation constraint {ι+k ≺ ι[0] ∣ k ∈ ℕ}, whose ceiling is
-    the carried point ι[0] (sharp edges 105). Before, the ceiling was
-    the constant (1, 0) of the world. This file keeps the copy
-    [tc_main_ex] of the program and its theorem. *)
+    [tc_main] of TailCall.v. TailCall.v now writes
+    new ι { ι+k ≺ ι.0 ∣ k ∈ ℕ } for c, whose ceiling is the carried root
+    ι.0 (sharp edges 105). Before, the ceiling was a constant b of the
+    world. This file keeps the copy [tc_main_ex] of the program and its
+    theorem. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.FreshTools examples.TailCall.
 
 Set Default Proof Using "All".
 
-(** [tc_main] with c bound by the encoded let of new. *)
+(** [tc_main] with c bound by the encoded let of new ι { C₀ } ∗. *)
 Definition tc_main_ex : expr :=
   LetP (Pair tcs tcr) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))

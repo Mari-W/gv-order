@@ -1,13 +1,14 @@
 (** * The protocol-point world of PGV
 
     docs/extensions/adequacy/pgv-adequacy.md §6. One root constant a.
-    The protocol point of a session type S is the slot a[code S], with
-    one code for S and its dual. The bound points are ℓ_n = (a,1)[n]
-    and u_n = (a,2)[n], with ℓ_⊥ = (a,3)[0] and u_⊤ = (a,4)[0].
+    The protocol point of a session type S is the carried root
+    a.(code S), with one code for S and its dual. The bound points are
+    ℓ_n = (a+1).n and u_n = (a+2).n, with ℓ_⊥ = (a+3).0 and
+    u_⊤ = (a+4).0.
 
     Points are read through a denotation [den] that commutes with
-    successor and slots. On a protocol point it is the session type up
-    to duality, and the successor of a monotone !ᵒT.S or ?ᵒT.S is the
+    successor and carried roots. On a protocol point it is the session
+    type up to duality, and the successor of a monotone !ᵒT.S or ?ᵒT.S is the
     point of S. The rank [drank] of a denotation is 3·pr(S)+2 for a
     protocol, 3n+1 for ℓ_n, 3n+3 for u_n, below everything for ℓ_⊥ and
     above everything for u_⊤. The world identifies two points of the
@@ -63,8 +64,8 @@ Inductive dn :=
   | DC (a b : nat)                (* the constant a at offset b *)
   | DV (a b : nat)                (* the variable a at offset b *)
   | DP (s : psty) (k : nat)       (* a protocol point, k steps on *)
-  | DS (b i k : nat)              (* (a,b)[i] at offset k, b ≠ 0 *)
-  | DJ (d : dn) (i k : nat).      (* any other slot *)
+  | DS (b i k : nat)              (* (a+b).i at offset k, b ≠ 0 *)
+  | DJ (d : dn) (i k : nat).      (* any other carried root *)
 
 Definition dsh (d : dn) : dn :=
   match d with

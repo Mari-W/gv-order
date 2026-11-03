@@ -1,11 +1,10 @@
 (** * Shared tools for the examples taken from the literature
 
     The literature examples place every channel at a point of one root.
-    The first [new] of a program creates a fresh point variable ι with
-    the empty creation constraint, and every later channel is created by
-    [t_new_at] at ι+k, which the hypothesis of the first [new] makes
-    known. The facts these programs need are then ι+j ≺ ι+k for j < k,
-    which program order gives ([slt_po_lt]).
+    The first new of a program writes new ι { } ∗, and every later
+    channel comes from new κ { κ ≡ ι+k }, which the hypothesis of the
+    first new makes known. The facts these programs need are then
+    ι+j ≺ ι+k for j < k, which program order gives ([slt_po_lt]).
 
     A file that needs facts between points of two roots states them in
     the creation constraint of the second channel, as the examples on
@@ -16,7 +15,7 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-(** Program order over a gap: j < k gives (a, j) ≺ (a, k). *)
+(** Program order over a gap. j < k gives a+j ≺ a+k. *)
 Lemma slt_po_lt W Ψ a j k : world_wf W → j < k → slt W Ψ (Pt a j) (Pt a k).
 Proof.
   intros HW Hjk.
@@ -33,7 +32,7 @@ Proof.
 Qed.
 
 (** A point of the first root is known from the hypothesis of the first
-    [new]. *)
+    new. *)
 Lemma skn_root0 W Ψ C j :
   (C, [pvar 0]) ∈ Ψ → skn W Ψ (Pt (NVar 0) j).
 Proof.
@@ -61,8 +60,8 @@ Ltac po_gate0 HW := apply ubs_intro; [po_frame HW|done].
     A recursive server that creates one channel per call places it at a
     carried root of the channel it answers on, so the points of every
     round sit on one root and no creation constraint names an outer
-    point. ι.0ⁿ is the n-fold first carried root of the point variable 0
-    (slots counted from 0 in Rocq). *)
+    point. ι.0ⁿ is the n-fold first carried root of the point variable
+    ι. *)
 
 Fixpoint slotv (n : nat) : pname :=
   match n with 0 => NVar 0 | S m => NSlot (slotv m) 0 0 end.

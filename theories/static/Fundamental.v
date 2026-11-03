@@ -268,7 +268,7 @@ Proof.
       destruct (lenv_split_lookup_inv _ _ _ _ _ HΔ Hx) as [Hx1|Hx2].
       * left. apply Hrv1. exists T'. auto.
       * right. apply Hrv2. exists T'. auto.
-  (* E-Let* *)
+  (* E-Let∗ *)
   - destruct IH1 as (Hfc1 & Hfv1 & Hrv1). destruct IH2 as (Hfc2 & Hfv2 & Hrv2).
     split_and!.
     + simpl. rewrite (tenv_join_dom _ _ _ (proj1 HΘ)). set_solver.
@@ -355,7 +355,7 @@ Ltac frame_pinst :=
 (** Frame instantiation and point substitution in one induction: the
     frame variables become frames above their hypotheses at a later
     world W₁, the point variables become points by σ. A box body is
-    typed with its ιs as variables, so the box case substitutes the
+    typed with its ῑ as variables, so the box case substitutes the
     instance xs there and the outer σ beyond (plist_pup_shift). *)
 Lemma typed_sem_rules W Φ Ψ Θ Δ F e T :
   typed W Φ Ψ Θ Δ F e T →
@@ -711,14 +711,14 @@ Proof.
       exact H.
 Qed.
 
-(** ** new at a known point (sharp edges 104)
+(** ** new κ { κ ≡ x }, a channel at a known point (sharp edges 104)
 
-    new has the one existential signature. At C = {ι ≡ x} it gives the
-    old signature at a known point x on the encoded let of new. E-Open
-    puts ι ≡ x into the hypotheses, E-Conv moves the opened pair from ι
-    to x, and the body is the old one with the point variables shifted
-    past ι ([typed_pinst]). The only premise on the context is that x
-    is known, as for the old signature. *)
+    new has the one existential signature. The creation constraint
+    { κ ≡ x } puts the channel at the known point x on the encoded let
+    of new. E-Open puts κ ≡ x into the hypotheses, E-Conv moves the
+    opened pair from κ to x, and the body is the old one with the point
+    variables shifted past κ ([typed_pinst]). The only premise on the
+    context is that x is known. *)
 
 Definition alias_bcs (x : point) : bcs := BCs [x] (λ f, f = FEq (pvar 0) (pvar 1)).
 
@@ -761,7 +761,7 @@ Proof.
   pose proof (cc_ok_alias (seqs W Ψ) (slt W Ψ) x) as HC.
   set (C := alias_bcs x).
   set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
-  (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
+  (* let (p, w) = ⟨new ∗, ∗⟩ *)
   apply (t_letp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply tenv_comp_empty_l, se_sym. }
   { apply lenv_split_nones_l. }

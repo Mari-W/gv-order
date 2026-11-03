@@ -5,23 +5,27 @@
     is now an existential, so the point of the handle is hidden, and
     E-Pack introduces it at the lower bound ⊥.
 
-      mk   = !(f = λu. let () = u in let p = new ∗ in let (c, c′) = p in
-                       let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
+      body = λ^⊥_⊤ ∗.
+                 let (c, c′) = new ι { Cι } ∗ in
+                 spawn (λ^{ι+1}_{ι} ∗. close (send ⟨∗, c⟩));
+                 c′
 
-      mk   : □(∗ ⊸^⊥_⊤ ∃^⊥ ι. {}. (?∗.Close)@ι)                         (Tmk0)
-      mk   : □(∀ζ. ∗ ⊸^⊥_⊤ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ι)       (Tmk1)
+      mk   = ! f. body
+           : □(∗ ⊸^⊥_⊤ ∃^⊥ ι. { }. (?∗.Close)@ι)                       (Tmk0)
+      mk   = ! f ∀ζ { }. body
+           : □(∀ζ. ∗ ⊸^⊥_⊤ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ι)      (Tmk1)
 
       main = let (g, f) = ⟨mk, mk⟩ in
              let p = (force g) ∗ in
-             let q = (force f) ∗ in
-             let () = recvclose p in recvclose q
+             let q = (force f [ι_p]) ∗ in
+             recvclose p;
+             recvclose q
 
-    The two types share the term. At Tmk0 new creates the channel with
-    the empty creation constraint. At Tmk1 it creates it with the
-    constraint {ζ ≺ ι, ζ+1 ≺ ι}, where ζ is the box variable. Both are
-    the list form L ≺ ι of [t_newfresh_lh_open] with no upper points,
-    so betweenness holds with nothing to check. The body
-    returns c′ packed with E-Pack at the instance [ι], and the
+    The two types share the body. At Tmk0 Cι is the empty creation
+    constraint. At Tmk1 it is {ζ ≺ ι, ζ+1 ≺ ι}, where ζ is the box
+    variable. Both are the list form L ≺ ι of [t_newfresh_lh_open] with
+    no upper points, so betweenness holds with nothing to check. The
+    body returns c′ packed with E-Pack at the instance [ι], and the
     constraint of the existential is the creation constraint itself, so
     the hypothesis of new proves it.
 
@@ -29,11 +33,12 @@
     let ∗, as in [let_new]. main opens p with E-Open right after the
     let pair, before the let ∗, so that no unopened ∃^⊥ sits in the
     context of a later premise. The first call needs no point, because
-    Tmk0 has no ∀. The second call instantiates ζ with the point of p,
-    which the hypothesis of the first E-Open makes known. Opening q
-    gives p ≺ q and p+1 ≺ q, and these are the two facts that recv and
-    close on p need while main holds q. main creates no channel and
-    types in the empty world [Wpo []] ([fx_deadlock_free]).
+    Tmk0 has no ∀. The second call instantiates ζ with ι_p, the point
+    of p, which the hypothesis of the first E-Open makes known. Opening
+    q gives ι_p ≺ ι_q and ι_p+1 ≺ ι_q, and these are the two facts that
+    recv and close on p need while main holds q. main creates no
+    channel and types in the empty world [Wpo []]
+    ([fx_deadlock_free]).
 
     Factory.v needs a world with constants for the same pattern (sharp
     edges 107). Without the existential, the result type of the box
@@ -137,7 +142,7 @@ Proof.
     [done|intros Hun; exact Hun|].
   fresh_clean.
   tstep; [tstep|]. cbn.
-  (* let q = (force f) ∗ at ζ = ι_p, opened at once *)
+  (* let q = (force f [ι_p]) ∗, opened at once *)
   eapply (tv_letp W HW _ _ _ _ _ _ (Tmk_res [pvar 0; Pt (NVar 0) 1]) TUnit); [reflexivity| |].
   { tstep; [tstep|].
     eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].

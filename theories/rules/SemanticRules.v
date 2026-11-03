@@ -44,7 +44,7 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 T →
       sem_rules W Θ2 Δ2 (F ∪ (heads T ∪ bot_pts (hbot T))) e2 U →
       sem_rules W Θ Δ F (Pair e1 e2) (TProd T U)
-  | sr_letu Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :                  (* E-Let* *)
+  | sr_letu Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :                  (* E-Let∗ *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
       sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 TUnit →
       sem_rules W Θ2 Δ2 F e2 T →

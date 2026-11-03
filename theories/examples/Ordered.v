@@ -1,14 +1,18 @@
 (** * Example: a box that needs ι ≺ ι′ between its arguments (58)
 
-    ordered : □(∀ι ι′. {ι ≺ ι′}.^⊥ Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗)
-    ordered = !(f = λp. let (c, d) = p in let () = close c in close d)
+      C       = {ι ≺ ι′}
+      ordered : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗))
+      ordered = ! f ∀ι ι′ { C }. λ^{ι′}_⊤ p.
+                    let (c : Close@ι, d : Close@ι′) = p in
+                    close c;
+                    close d
 
     close c blocks at ι while the body still holds d at ι′, so E-App
     asks ι ≺ ι′. Program order relates nothing between two point
     variables, so without the constraint the box does not type, which
     [ord_no_constraint] (examples/Rejected.v) proves. With it
-    the fact is the hypothesis itself. A caller forces the box at
-    ((a, 0), (a, 1)), where program order meets the constraint. *)
+    the fact is the hypothesis itself. A caller runs force ordered
+    [a, a+1], where program order meets the constraint. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -66,8 +70,8 @@ Proof.
     destruct y as [|[|y]]; simplify_eq/=.
 Qed.
 
-(** Forcing at ((a, 0), (a, 1)): (a, 0) ≺ (a, 1) by program order, and
-    both points are known when a is (59). *)
+(** force ordered [a, a+1] owes a ≺ a+1, which is program order. Both
+    points are known when a is (59). *)
 Lemma ordered_force W F a : world_wf W → pt_known W (Pt (NConst a) 0) →
   typed W ∅ [] ∅ [] (F, None) (App EForce ord_box)
     (ty_inst [Pt (NConst a) 0; Pt (NConst a) 1] ord_body).

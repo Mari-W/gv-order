@@ -174,7 +174,7 @@ Inductive styped : fhyps → hyps → lenv → sframe → expr → ty → Prop :
       styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) e1 T →
       styped Φ Ψ Δ2 (sf_unionb F (heads T) (hbot T)) e2 U →
       styped Φ Ψ Δ F (Pair e1 e2) (TProd T U)
-  | st_letu Φ Ψ Δ Δ1 Δ2 F e1 e2 T :                     (* E-Let* *)
+  | st_letu Φ Ψ Δ Δ1 Δ2 F e1 e2 T :                     (* E-Let∗ *)
       lenv_split Δ Δ1 Δ2 →
       styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit →
       styped Φ Ψ Δ2 F e2 T →

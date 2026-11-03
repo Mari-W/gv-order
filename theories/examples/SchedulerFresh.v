@@ -1,19 +1,18 @@
 (** * scheduler with fresh points
 
-    [sched_main] of Scheduler.v. r₀ is created at a fresh γ with no
-    facts. r₁ needs the alias (r₁,0) ≡ (r₀,0) for the link, so the old
-    rule E-Const creates it at γ itself, which the hypothesis of r₀
-    makes known. r₂ is created at a fresh ε with γ+1 ≺ ε (L = [γ+1]).
-    The world of Scheduler.v had three constants, one alias and one
-    fact. Here it is empty. *)
+    [sched_main] of Scheduler.v. r₀ comes from new γ { } ∗. r₁ needs the
+    alias r₁ ≡ r₀ for the link, so new κ { κ ≡ γ } ∗ puts it at γ
+    itself, which the hypothesis of r₀ makes known. r₂ comes from
+    new ε { γ+1 ≺ ε } ∗ (L = [γ+1]). An earlier version held three
+    world constants, one alias and one fact. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.FreshTools examples.Scheduler.
 
 Set Default Proof Using "All".
 
-(** [sched_main] with r₂ bound by the encoded let of new (sharp
-    edges 99). *)
+(** [sched_main] with r₂ bound by the encoded let of
+    new ε { γ+1 ≺ ε } ∗ (sharp edges 99). *)
 Definition sched_main_ex : expr :=
   let_new_pair (let_new_pair (let_new_pair
     (LetU (App ESpawn ag1_thunk) (LetU (App ESpawn ag2_thunk) ag0)))).

@@ -11,23 +11,28 @@ Set Default Proof Using "All".
 
 (** ** request/reply with one round only: the call does not type (SHARP-EDGES 60, 65)
 
-    The server answers every request on a with a reply on b, forever:
+    The server answers every request on a with a reply on b, forever.
 
-      Sa = μX. ?∗.X      Sb = μX. !∗.X
-      srv = !(f = λp. let (a, b) = p in let (x, a) = recv a in let () = x in
-                     spawn (λv. let () = v in (force f) ⟨a, send ⟨∗, b⟩⟩))
+      Sa  = µα. ?∗.α        Sb = µα. !∗.α
+      C   = {ι ≺ ι′, ι′ ≺ ι+1}                   one round only
+
+      srv = ! f ∀ι ι′ { C }. λ^{ι′}_⊤ p.
+                let (a : Sa@ι, b : Sb@ι′) = p in
+                let (x : ∗, a₁ : Sa@(ι+1)) = recv a in
+                x;
+                spawn (λ^{ι′+1}_{ι′} ∗. (force f [ι+1, ι′+1]) ⟨a₁, send ⟨∗, b⟩⟩)
 
     recv a blocks at ι while the body holds b at ι′ and asks ι ≺ ι′.
     send b blocks at ι′ while it holds a at ι+1 and asks ι′ ≺ ι+1. With
-    the one-round constraint {ι ≺ ι′, ι′ ≺ ι+1} the recursive force at
-    (ι+1, ι′+1) asks ι+1 ≺ ι′+1, and the fact theory does not derive it.
-    Its ≡ relates points with a variable root by equality only, its ≺
-    closes the hypotheses under ≡ and transitivity, and a world_wf W
-    relates points with a variable root by program order only. The rank
-    10(k+1) for (ι,k) and 15+k for (ι′,k) meets the hypotheses and
-    program order but puts ι′+1 below ι+1 ([rr_call_underivable]). C is
-    the invariant of the recursion, so it has to state every round at
-    once, which the typed version below does. *)
+    the one-round constraint C the recursive force at [ι+1, ι′+1] asks
+    ι+1 ≺ ι′+1, and the fact theory does not derive it. Its ≡ relates
+    points with a variable root by equality only, its ≺ closes the
+    hypotheses under ≡ and transitivity, and a world_wf W relates points
+    with a variable root by program order only. The rank 10(k+1) for ι+k
+    and 15+k for ι′+k meets the hypotheses and program order but puts
+    ι′+1 below ι+1 ([rr_call_underivable]). C is the invariant of the
+    recursion, so it has to state every round at once, which the typed
+    version below does. *)
 
 Definition isvar (x : point) : bool := match pt_root x with NVar _ => true | _ => false end.
 
@@ -47,7 +52,8 @@ Definition rr_C1 (g : fact) : Prop :=
 Lemma isvar_const W x : world_wf W → pt_root x ∈ w_names W → isvar x = false.
 Proof. intros HW Hx. unfold isvar. by destruct (wf_names_const _ HW _ Hx) as [a ->]. Qed.
 
-(** Program order lies in [rr_R]: the rank grows with the offset. *)
+(** Program order lies in [rr_R], where the rank grows with the
+    offset. *)
 Lemma rr_R_po x : rr_R x (pt_shift 1 x).
 Proof.
   unfold rr_R, isvar, pt_shift, pt_root, rr_rank. destruct x as [p o]. simpl.
@@ -95,54 +101,64 @@ Qed.
 
 (** ** relay with a one-round constraint: the call does not type (SHARP-EDGES 60)
 
-      S = μX. ?(∃ι. D@ι).X     D = ?∗.Close
-      r = !(f = λp. let (c, d) = p in let (e, c) = recv c in
-                   let (v, e) = recv e in let () = v in
-                   let () = close d in (force f) ⟨c, e⟩)
-        : □(∀ι ι′. C.^⊥ S@ι ⊗ Close@ι′ ⊸ ∗)
+      Srl = µα. ?(Dr@self.0).α        Dr = ?∗.Close
 
-    The body blocks at ι holding d at ι′, at ι[0] holding c at ι+1 and
-    d at ι′, and at ι′ holding c at ι+1 and e at ι[0]+1. So C needs
-    ι ≺ ι′, ι[0] ≺ ι+1, ι[0] ≺ ι′, ι′ ≺ ι+1 and ι′ ≺ ι[0]+1 (slots
-    counted from 0). The call instantiates (ι, ι′) by (ι+1, ι[0]+1) and
-    asks C there, among others ι+1 ≺ ι[0]+1. C relates ι+1 and ι[0]+1
-    only through ι′, which lies below both. The rank of
-    [rr_call_underivable] adapts: put ι[0]+1 below ι+1. Shift-invariant
-    facts do not help here, because the step ι′ ↦ ι[0]+1 is no shift.
-    Relay.v types the relay with a constraint for every round.
+      r : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (Srl@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗))
+      r = ! f ∀ι ι′ { C }. λ^{ι′}_⊤ p.
+              let (c : Srl@ι, d : Close@ι′) = p in
+              let (e : Dr@ι.0, c₁ : Srl@(ι+1)) = recv c in
+              let (v : ∗, e₁ : Close@(ι.0+1)) = recv e in
+              v;
+              close d;
+              (force f [ι+1, ι.0+1]) ⟨c₁, e₁⟩
+
+    The body blocks at ι holding d at ι′, at ι.0 holding c at ι+1 and
+    d at ι′, and at ι′ holding c at ι+1 and e at ι.0+1. So C needs
+    ι ≺ ι′, ι.0 ≺ ι+1, ι.0 ≺ ι′, ι′ ≺ ι+1 and ι′ ≺ ι.0+1. The call
+    instantiates ι, ι′ by ι+1, ι.0+1 and asks C there, among others
+    ι+1 ≺ ι.0+1. C relates ι+1 and ι.0+1 only through ι′, which lies
+    below both. The rank of [rr_call_underivable] adapts by putting
+    ι.0+1 below ι+1. Shift-invariant facts do not help here, because the
+    step ι′ ↦ ι.0+1 is no shift. Relay.v types the relay with a
+    constraint for every round.
 
     ** blocked: rejected
 
-      blocked = let (c, c′) = new ∗ in let (d, d′) = new ∗ in
-                let () = spawn (λu. let () = u in let () = close d′ in close c′) in
-                let () = close c in close d
+      blocked = let (c : Close@x, c′ : Close@x) = new ι { … } ∗ in
+                let (d : Close@y, d′ : Close@y) = new κ { … } ∗ in
+                spawn (λ^y_x ∗. close d′; close c′);
+                close c;
+                close d
 
     Say new puts c at x and d at y. With the one signature of new, x
     and y are the points E-Open binds, aliased or not to known points
-    by the constraint of new (sharp edges 104). The main thread closes c while it
-    holds d, so E-Let* puts y into the frame of close c and E-App asks
-    x ≺ y (ub_below_s). The thunk closes d′ while it holds c′, so its
-    body asks y ≺ x. E-Conv keeps points (eqT compares them by
-    equality) and E-Weak drops only unlimited bindings, so every
+    by the constraint of new (sharp edges 104). The main thread closes c
+    while it holds d, so E-Let∗ puts y into the frame of close c and
+    E-App asks x ≺ y (ub_below_s). The thunk closes d′ while it holds
+    c′, so its body asks y ≺ x. E-Conv keeps points (eqT compares them
+    by equality) and E-Weak drops only unlimited bindings, so every
     derivation asks both facts, and x ≺ y ≺ x contradicts strictness.
     This holds for every choice of x and y, x = y included.
 
     ** bad link: rejected
 
-      badlink = let (c₁, c₂) = new ∗ in let (d₁, d₃) = new ∗ in let (e₂, e₃) = new ∗ in
-                let () = spawn (λu. let () = u in link ⟨c₁, d₁⟩) in
-                let () = spawn (λu. let () = u in let () = close e₃ in close d₃) in
-                let () = close c₂ in close e₂
+      badlink = let (c₁ : Close@x, c₂ : Close@x) = new ι { … } ∗ in
+                let (d₁ : Close@y, d₃ : Close@y) = new κ { … } ∗ in
+                let (e₂ : Close@z, e₃ : Close@z) = new ν { … } ∗ in
+                spawn (λ^⊥_x ∗. link ⟨c₁, d₁⟩);
+                spawn (λ^{y+1}_z ∗. close e₃; close d₃);
+                close c₂;
+                close e₂
 
-    With c at x, d at y and e at z: link asks x ≡ y (KTLink), the main
-    thread closes c₂ while it holds e₂ and asks x ≺ z, the second
+    With c at x, d at y and e at z, link asks x ≡ y (KTLink), the main
+    thread closes c₂ while it holds e₂ and asks x ≺ z, and the second
     thunk closes e₃ while it holds d₃ and asks z ≺ y. Then
     x ≺ z ≺ y ≡ x, and wf_lt_eq gives x ≺ x. This is the spec's
-    (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0). The program deadlocks: after the
-    link the main thread waits on c₂ for d₃, and the second thread
-    waits on e₃ for e₂. The argument reads only the alias of KTLink.
-    link has upper point ⊥ (sharp edges 68), so the link thunk asks
-    no fact, and the program stays rejected. *)
+    c ≺ e ≺ d ≡ c. The program deadlocks. After the link the main thread
+    waits on c₂ for d₃, and the second thread waits on e₃ for e₂. The
+    argument reads only the alias of KTLink. link has upper point ⊥
+    (sharp edges 68), so the link thunk asks no fact, and the program
+    stays rejected. *)
 
 Definition blocked_main : expr :=
   let_new_pair (let_new_pair
@@ -210,8 +226,11 @@ Qed.
 
 (** ** [ordered] without its constraint: the body does not type
 
-      ordered = !(f = λp. let (c, d) = p in let () = close c in close d)
-              : □(∀ι ι′. {}.^⊥ Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗)
+      ordered : □(∀ι ι′. { }. ∗ ⊸^⊥_⊤ (Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗))
+      ordered = ! f ∀ι ι′ { }. λ^{ι′}_⊤ p.
+                    let (c : Close@ι, d : Close@ι′) = p in
+                    close c;
+                    close d
 
     close c blocks at ι while the body still holds d at ι′, so E-App
     asks ι ≺ ι′ (examples/Ordered.v). With the empty constraint the
@@ -234,7 +253,8 @@ Definition ord_R (x y : point) : Prop :=
 Lemma isvar_name x y : pt_name x = pt_name y → isvar x = isvar y.
 Proof. intros E. unfold isvar, pt_root. by rewrite E. Qed.
 
-(** Program order lies in [ord_R]: the offset grows and the root stays. *)
+(** Program order lies in [ord_R], where the offset grows and the root
+    stays. *)
 Lemma ord_R_po x : ord_R x (pt_shift 1 x).
 Proof.
   unfold ord_R, isvar, pt_shift, pt_root. destruct x as [p o]. simpl.

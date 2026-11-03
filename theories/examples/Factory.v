@@ -3,14 +3,18 @@
     [fac] creates every session at one top-level point variable a.
     [faca] is the same body under □∀ι and creates the session at the
     point variable ι. No well-formed world knows a point variable
-    ([pvar_unknown]), so new at a and at ι types through the knownness
-    of an instance of a hypothesis (sharp edges 59, 61, 110).
+    ([pvar_unknown]), so new κ { κ ≡ a } and new κ { κ ≡ ι } type
+    through the knownness of an instance of a hypothesis (sharp
+    edges 59, 61, 110).
 
-      fac  = !(f = λu. let () = u in let (c, c′) = new ∗ in
-                       let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
+      fac  = ! f. λ^⊥_⊤ ∗.
+                 let (c, c′) = new κ { κ ≡ a } ∗ in
+                 spawn (λ^{a+1}_{a} ∗. close (send ⟨∗, c⟩));
+                 c′
            : □(∗ ⊸^⊥_⊤ (?∗.Close)@a)
-      main = let (f, u) = ⟨fac, ∗⟩ in let () = u in
-             let () = recvclose ((force f) ∗) in recvclose ((force f) ∗)
+      main = let f = fac in
+             recvclose ((force f) ∗);
+             recvclose ((force f) ∗)
 
     f is used twice (contraction at □). Both sessions live at a, so the
     client must finish one before it requests the next. Holding both
@@ -90,12 +94,13 @@ Proof. apply (soundness_source 1 Cfac _ TUnit Cfac_acyclic); [constructor|apply 
 
 (** ** factory under □∀ι: typable (SHARP-EDGES 61)
 
-      faca : □(∀ι. ∗ ⊸^⊥_⊤ (?∗.Close)@ι)      (the body of fac, new at ι)
-      fa_main = let (f, u) = ⟨faca, ∗⟩ in let () = u in
-                let (x, y) = ⟨(force f) ∗, (force f) ∗⟩ in
-                let () = recvclose x in recvclose y
+      faca : □(∀ι. { }. ∗ ⊸^⊥_⊤ (?∗.Close)@ι)   the body of fac at ι
+      fa_main = let f = faca in
+                let (x, y) = ⟨(force f [a]) ∗, (force f [b]) ∗⟩ in
+                recvclose x;
+                recvclose y
 
-    new in the body creates the channel at the point variable ι. The
+    new κ { κ ≡ ι } in the body creates the channel at ι. The
     static system reads ι as known, because it is a point of the body's
     own instance (skn, hyp_known), and force asks the instance known in
     the world. main forces at the top-level variables a and b and

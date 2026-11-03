@@ -21,17 +21,20 @@
     Here:
 
       Sr   = !∗.Close
-      C    = {ι.0ⁿ⁺¹ ≺ ι.0ⁿ,  ι.0ⁿ⁺¹ + 1 ≺ ι.0ⁿ  ∣  n ∈ ℕ}   (slots from 0)
+      C    = {ι.0ⁿ⁺¹ ≺ ι.0ⁿ,  ι.0ⁿ⁺¹ + 1 ≺ ι.0ⁿ  ∣  n ∈ ℕ}
       fact : □(∀ι. C. ∗ ⊸^⊥_⊤ ((∗ ⊕ ∗) ⊗ Sr@ι ⊸^{ι+1}_⊤ ∗))
-      fact = !(f = λnr. let (n, r) = nr in case n of
-                 x. let () = x in close (send ⟨∗, r⟩)
-               | y. let () = y in
-                    let (p, q) = new ∗ in
-                    let () = spawn (λu. let () = u in (force f) ⟨inj₂ ∗, p⟩) in
-                    let () = recvclose q in close (send ⟨∗, r⟩))
-      fc_main = let (g, w) = ⟨fact, ∗⟩ in let () = w in
-                let (c, c′) = new ∗ in
-                let () = spawn (λu. let () = u in (force g) ⟨inj₂ ∗, c⟩) in
+      fact = ! f ∀ι { C }. λ^{ι+1}_⊤ nr.
+                 let (n, r) = nr in
+                 case n of
+                   x. x; close (send ⟨∗, r⟩)
+                 | y. y;
+                      let (p, q) = new κ { κ ≡ ι.0 } ∗ in
+                      spawn (λ^{ι.0+1}_{ι.0} ∗. (force f [ι.0]) ⟨inj₂ ∗, p⟩);
+                      recvclose q;
+                      close (send ⟨∗, r⟩)
+      fc_main = let g = fact in
+                let (c, c′) = new ι { C } ∗ in
+                spawn (λ^{ι+1}_{ι} ∗. (force g [ι]) ⟨inj₂ ∗, c⟩);
                 recvclose c′
 
     Simplifications. The calculus has no replicated channels, so the

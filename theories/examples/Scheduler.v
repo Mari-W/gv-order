@@ -6,30 +6,36 @@
     (dardha2018new p. 3) in full, k agents in a ring with one collector
     each, is examples/MilnerSched.v.
 
-      ag₀ = let () = close (send ⟨∗, r₀⟩) in recvclose r₂          (main)
-      ag₁ = link ⟨r₁, r₀⟩                                          (spawned)
-      ag₂ = let () = recvclose r₁ in close (send ⟨∗, r₂⟩)          (spawned)
-      recvclose r = let (x, r) = recv r in let () = x in close r
+      Sd  = !∗.Close
+      ag₀ = close (send ⟨∗, r₀⟩); recvclose r₂           (main)
+      ag₁ = link ⟨r₁, r₀⟩                                (spawned)
+      ag₂ = recvclose r₁; close (send ⟨∗, r₂⟩)           (spawned)
+      recvclose r = let (v : ∗, r′ : Close@(x+1)) = recv r in v; close r′
+                                                         r at x
 
-    r₀ lives at (a,0), r₂ at (b,0) and r₁ at (c,0). link asks
-    (c,0) ≡ (a,0) (KTLink), the spec's (r₁,0) ≡ (r₀,0). ag₀ holds r₂ while
-    it sends and closes r₀, so it needs (a,1) ≺ (b,0). ag₂ holds r₂ while
-    it receives on and closes r₁, so it needs (c,0) ≺ (b,0) and
-    (c,1) ≺ (b,0), which follow through the alias and successor
-    congruence. The world has the alias and (a,1) ≺ (b,0).
+    The three channels come from
 
-    Reversed ag₀ = let () = recvclose r₂ in close (send ⟨∗, r₀⟩) is
-    rejected: it receives on r₂ at (b,0) while it holds r₀ at (a,0), so
-    E-Let* and E-App ask (b,0) ≺ (a,0), while ag₂ asks (c,0) ≺ (b,0), and
-    (c,0) ≡ (a,0) closes the cycle (a,0) ≺ (b,0) ≺ (a,0). No strict world
-    has all three, and link needs the alias whatever points [new] picks
-    for r₀ and r₁. [sched_rev_underivable] (examples/Rejected.v) proves
-    that the three facts do not hold together.
+      let (r₀, …) = new γ { } ∗          r₀ at γ
+      let (r₁, …) = new κ { κ ≡ γ } ∗    r₁ at γ
+      let (r₂, …) = new ε { γ+1 ≺ ε } ∗  r₂ at ε
 
-    The program types in the empty world. r₀ is created at γ with no
-    fact, r₁ by the alias at γ, which gives the alias that link needs,
-    and r₂ at ε with γ+1 ≺ ε (sharp edges 105). The points (a,0), (b,0)
-    and (c,0) above are γ, ε and γ. *)
+    link asks γ ≡ γ (KTLink), the spec's r₁ ≡ r₀. ag₀ holds r₂ while it
+    sends and closes r₀, so it needs γ+1 ≺ ε. ag₂ holds r₂ while it
+    receives on and closes r₁, so it needs γ ≺ ε and γ+1 ≺ ε, which
+    follow through the alias and successor congruence. The λ of ag₁ is
+    λ^γ_γ ∗ and the λ of ag₂ is λ^{ε+1}_γ ∗.
+
+    Reversed ag₀ = recvclose r₂; close (send ⟨∗, r₀⟩) is rejected. It
+    receives on r₂ at ε while it holds r₀ at γ, so E-Let∗ and E-App ask
+    ε ≺ γ, while ag₂ asks γ ≺ ε, and γ ≡ γ closes the cycle γ ≺ ε ≺ γ. No
+    strict order has all three, and link needs the alias whatever points
+    new picks for r₀ and r₁. [sched_rev_underivable]
+    (examples/Rejected.v) proves that the three facts do not hold
+    together.
+
+      ∅; · ⊢^∅ sched_main : ∗   so   thread sched_main is deadlock free
+
+    (sharp edges 105) *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -78,7 +84,7 @@ Proof.
     - apply KTSpawn.
     - apply ubs_none. }
   cbn. tstep.
-  { (* ag₂ = let () = recvclose r₁ in close (send ⟨∗, r₂⟩) *)
+  { (* ag₂ = recvclose r₁; close (send ⟨∗, r₂⟩) *)
     tstep.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pvar 1)) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; done]. }
