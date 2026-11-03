@@ -68,24 +68,24 @@ Proof.
   assert (slt W Ψ (pvar 1) (pvar 2)) as Hικ by hyp0 (pvar 0) (pvar 1).
   tstep.
   { (* spawn (λu. let () = u in close d′) *)
-    tstep; [|apply KTSpawn|done|apply ubs_none].
+    tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 2); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
-    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pvar 0). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* close c at ι, holding d at δ and e at κ *)
-    tstep; [tstep|apply KTClos|done|].
+    tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
     exists (pvar 2). split; [done|by right]. }
   cbn. tstep.
   { (* close d at δ, holding e at κ *)
-    tstep; [tstep|apply KTClos|done|].
+    tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
     exists (pvar 2). split; [done|by right]. }
   (* close e at κ *)
-  tstep; [tstep|apply KTClos|done|].
+  tstep; [tstep|apply KTClos|].
   apply ubs_intro; [intros y Hy; mem_cases Hy|].
   exists (pvar 2). split; [done|apply sle_refl, HW].
 Qed.
@@ -230,17 +230,17 @@ Proof.
   assert (slt W Ψ (pvar 1) (pvar 0)) as Hγε.
   { apply (slt_fresh_l W Ψ (pshift 1) [pvar 0] [] (pvar 0) (pvar 0)); [by right; left|by left]. }
   tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
+  { tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
-    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pvar 1). split; [done|apply sle_refl, HW]. }
   cbn. tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
+  { tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
-    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pvar 0). split; [done|apply sle_refl, HW]. }
   cbn. eapply (tv_app W HW _ _ _ _ _ _ (Some (pvar 0)) None

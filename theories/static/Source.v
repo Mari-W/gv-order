@@ -154,7 +154,7 @@ Inductive styped : fhyps → hyps → lenv → sframe → expr → ty → Prop :
       lenv_empty Δ →
       styped Φ Ψ Δ F EUnit TUnit
   | st_konst Φ Ψ Δ F k T :                              (* E-Const *)
-      lenv_empty Δ → konst_ty (heqs Ψ) (hlt Ψ) (hyp_known Ψ) k T → kscoped k T →
+      lenv_empty Δ → konst_ty (heqs Ψ) (hlt Ψ) (hyp_known Ψ) k T →
       styped Φ Ψ Δ F (Konst k) T
   | st_var Φ Ψ Δ F x T :                                (* E-LVar *)
       lenv_only Δ x T →
@@ -303,7 +303,7 @@ Theorem styped_typed W Φ Ψ Δ F e T :
 Proof.
   induction 1.
   - by apply t_unit.
-  - apply t_konst; [done| |done]. by apply hkonst_ty.
+  - apply t_konst; [done|]. by apply hkonst_ty.
   - by apply t_var.
   - eapply t_lam; [done| |exact IHstyped].
     rewrite tenv_heads_empty, (left_id_L ∅ (∪)). by apply hlb_below_hb_lb.
@@ -439,7 +439,7 @@ Theorem typed_styped W Φ Ψ Θ Δ F e T :
 Proof.
   intros HW HN Ht. induction Ht; intros HΘ.
   - by apply st_unit.
-  - apply st_konst; [done| |done]. by eapply konst_ty_h.
+  - apply st_konst; [done|]. by eapply konst_ty_h.
   - by apply st_var.
   - exfalso. apply (f_equal dom) in HΘ.
     rewrite dom_singleton_L, dom_empty_L in HΘ. set_solver.

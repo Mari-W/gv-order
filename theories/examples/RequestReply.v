@@ -68,10 +68,9 @@ Proof.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (SRcv TUnit Sa) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
-    - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 0) (pv 1 0)|].
       exists (pv 1 0). split; [done|]. right. hyp0 (pv 0 0) (pv 1 0). }
-  cbn. tstep; [tstep|]. cbn. tstep; [|apply KTSpawn|done|apply ubs_none].
+  cbn. tstep; [tstep|]. cbn. tstep; [|apply KTSpawn|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 1)) (Some (pv 1 0)) 2); [set_solver| |].
   { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; hyp0 (pv 1 0) (pv 0 1)]. }
   cbn. tstep; [tstep|]. cbn.
@@ -84,7 +83,6 @@ Proof.
     + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0)) (TProd TUnit (TSess (SSnd TUnit Sb) (pv 1 0)))).
       * tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
       * apply (KTSend _ _ _ TUnit Sb (pv 1 0)). cbn. set_solver.
-      * kscope.
       * apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 1 0) (pv 0 1)|].
         exists (pv 1 1). split; [done|]. right. apply (slt_po W _ (pv 1 0) HW).
     + tstep.
@@ -104,17 +102,15 @@ Proof.
               (TProd TUnit (TSess (SSnd TUnit (dual Sa)) (pv 0 0)))).
     - tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
     - apply (KTSend _ _ _ TUnit (dual Sa) (pv 0 0)). cbn. set_solver.
-    - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 0) (pv 1 0)|].
       exists (pv 1 0). split; [done|]. right. hyp0 (pv 0 0) (pv 1 0). }
   cbn. tstep; [tstep|]. cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 1 0)) (TSess (SRcv TUnit (dual Sb)) (pv 1 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
-    - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 1 0) (pv 0 1)|].
       exists (pv 1 0). split; [done|]. apply sle_refl, HW. }
-  cbn. tstep; [tstep|]. cbn. tstep; [|apply KTSpawn|done|apply ubs_none].
+  cbn. tstep; [tstep|]. cbn. tstep; [|apply KTSpawn|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 1)) (Some (pv 1 0)) 2); [set_solver| |].
   { intros y Hy. mem_cases Hy;
       first [right; hyp0 (pv 1 0) (pv 0 1)|right; apply (slt_po W _ (pv 1 0) HW)]. }
@@ -173,7 +169,7 @@ Proof.
     change D with (TBox 2 rq_C (TLolli None None TUnit cli_body));
     change E with (TBox 2 rq_C (TLolli None None TUnit srv_body)) end.
   tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
+  { tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 1)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply (Hlo 0)]. }
     cbn. tstep; [tstep|]. cbn.

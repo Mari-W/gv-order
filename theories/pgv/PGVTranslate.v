@@ -169,7 +169,7 @@ Proof.
         - apply comp0, Wpgv_wf.
         - done.
         - by apply Hx.
-        - apply t_konst; [done| |done].
+        - apply t_konst; [done|].
           rewrite <-(payload_tr T0 x) at 1. apply KTSend. rewrite hbot_tr.
           rewrite payload_tr. intros h Hh. apply sl_w. apply (ppt_below_hd _ (pr T0)); [|by apply heads_tr].
           done.
@@ -185,7 +185,7 @@ Proof.
         - apply comp0, Wpgv_wf.
         - done.
         - by apply Hx.
-        - apply t_konst; [done|apply KTRecv|done].
+        - apply t_konst; [done|apply KTRecv].
         - rewrite sf_union_empty. exact H2. }
     rewrite payload_tr. simpl. split; [apply teq_steq, teq_refl|].
     split; [|apply seq_refl]. apply se_w, pgv_eq; [done|done|].
@@ -195,14 +195,14 @@ Proof.
     + apply comp0, Wpgv_wf.
     + done.
     + by apply Hx.
-    + apply t_konst; [done|apply KTClos|done].
+    + apply t_konst; [done|apply KTClos].
     + rewrite sf_union_empty. exact H2.
   - (* wait *)
     eapply (t_app Wpgv Φ [] ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (Some (ppt (PEndR o))) None).
     + apply comp0, Wpgv_wf.
     + done.
     + by apply Hx.
-    + apply t_konst; [done|apply KTClos|done].
+    + apply t_konst; [done|apply KTClos].
     + rewrite sf_union_empty. exact H2.
 Qed.
 
@@ -262,8 +262,8 @@ Proof.
         apply list_elem_of_lookup_2 in Hy. by apply HΔ in Hy.
   - destruct Hk as [S|p q| | | | |S]; simpl in Ek |- *; try done.
     + rewrite tr_sty_dual, ppt_dual. by apply new_tr_typed.
-    + apply t_konst; [done|apply KTSpawn|done].
-    + apply t_konst; [done| |done]. rewrite tr_sty_dual, ppt_dual.
+    + apply t_konst; [done|apply KTSpawn].
+    + apply t_konst; [done|]. rewrite tr_sty_dual, ppt_dual.
       apply KTLink. apply se_refl.
 Qed.
 

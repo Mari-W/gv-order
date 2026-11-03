@@ -117,11 +117,10 @@ Proof.
   { apply t_inj2. apply (tv_unit W HW); reflexivity. }
   - (* the answer at once: send r at ι, close r at ι+1 *)
     cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
-    + tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+    + tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
     + apply KTClos.
-    + done.
     + apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
   - (* the fresh reply channel at ι.0, the call, the forward *)
@@ -130,7 +129,7 @@ Proof.
     { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
     cbn. tstep.
     { (* spawn (force f) p *)
-      tstep; [|apply KTSpawn|done|apply ubs_none].
+      tstep; [|apply KTSpawn|apply ubs_none].
       eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 pcr)) (Some pcr) 2);
         [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
@@ -147,24 +146,23 @@ Proof.
     cbn. tstep.
     { (* recvclose q at ι.0 and ι.0+1, holding r at ι *)
       unfold recvclose. tstep.
-      - tstep; [tstep|apply KTRecv|kscope|].
+      - tstep; [tstep|apply KTRecv|].
         apply ubs_intro;
           [intros y Hy; mem_cases Hy;
            first [apply Hq; by left|apply Hq1; by left|apply (slt_po W _ pcr HW)]|].
         exists (pv 0 1). split; [done|]. right.
         eapply sl_trans; [apply Hq; by left|apply (slt_po W _ (pv 0 0) HW)].
-      - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+      - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
         apply ubs_intro;
           [intros y Hy; mem_cases Hy;
            first [apply Hq1; by left|apply Hq; by left]|].
         exists (pv 0 1). split; [done|]. right.
         eapply sl_trans; [apply Hq1; by left|apply (slt_po W _ (pv 0 0) HW)]. }
     cbn. unfold sendclose. tstep.
-    + tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+    + tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
     + apply KTClos.
-    + done.
     + apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
 Qed.
@@ -187,7 +185,7 @@ Proof.
   assert (Forall (skn W Ψ) [pvar 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   cbn. tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
+  { tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
@@ -200,8 +198,8 @@ Proof.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. unfold recvclose. tstep.
-  - tstep; [tstep|apply KTRecv|kscope|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-  - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+  - tstep; [tstep|apply KTRecv|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+  - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 

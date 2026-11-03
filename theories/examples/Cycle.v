@@ -45,19 +45,18 @@ Proof.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 1)) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; done]. }
       cbn. tstep; [tstep|]. cbn. tstep.
-      + tstep; [tstep|apply KTClos|done|].
+      + tstep; [tstep|apply KTClos|].
         apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
         exists (pvar 0). split; [done|]. right. done.
-      + tstep; [tstep|apply KTClos|done|].
+      + tstep; [tstep|apply KTClos|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
         exists (pvar 0). split; [done|]. apply sle_refl, HW.
     - apply KTSpawn.
-    - done.
     - apply ubs_none. }
   cbn. tstep.
-  { tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [|done].
+  { tstep; [tstep|apply KTClos|]. apply ubs_intro; [|done].
     intros y Hy. mem_cases Hy. done. }
-  tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+  tstep; [tstep|apply KTClos|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
 Lemma cycle_deadlock_free : deadlock_free (∅, {[+ cycle_main +]}).

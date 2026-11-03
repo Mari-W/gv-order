@@ -17,7 +17,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       lenv_empty Δ →
       typed W Φ Ψ ∅ Δ F EUnit TUnit
   | t_konst Φ Ψ Δ F k T :                               (* E-Const *)
-      lenv_empty Δ → konst_ty (seqs W Ψ) (slt W Ψ) (skn W Ψ) k T → kscoped k T →
+      lenv_empty Δ → konst_ty (seqs W Ψ) (slt W Ψ) (skn W Ψ) k T →
       typed W Φ Ψ ∅ Δ F (Konst k) T
   | t_var Φ Ψ Δ F x T :                                 (* E-LVar *)
       lenv_only Δ x T →
@@ -112,7 +112,7 @@ Proof.
   - apply tenv_comp_empty_l, se_sym.
   - apply lenv_split_nones_l.
   - exact Hub.
-  - apply t_konst; [apply lenv_empty_nones| |done]. by constructor.
+  - apply t_konst; [apply lenv_empty_nones|]. by constructor.
   - destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L.
 Qed.
 
@@ -218,7 +218,7 @@ Proof.
       + apply tenv_comp_empty_r.
       + apply lenv_split_nones_l.
       + done.
-      + apply t_konst; [apply lenv_empty_nones| |done].
+      + apply t_konst; [apply lenv_empty_nones|].
         by apply KTNewEx.
       + apply t_unit. apply lenv_empty_nones.
     - apply t_unit. apply lenv_empty_nones. }

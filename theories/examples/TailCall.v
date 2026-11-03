@@ -58,7 +58,6 @@ Proof.
   - eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0)) (TProd TUnit (TSess (SSnd TUnit Sb) (pv 0 0)))).
     + tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
     + apply (KTSend _ _ _ TUnit Sb (pv 0 0)). cbn. set_solver.
-    + kscope.
     + apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 1 0). split; [done|]. right. hyp0 (pv 0 0) (pv 1 0).
   - apply ubs_intro; [intros y Hy; mem_cases Hy|].
@@ -75,7 +74,6 @@ Proof.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (SRcv TUnit (dual Sb)) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
-    - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 1 0). split; [done|]. right. hyp0 (pv 0 0) (pv 1 0). }
   cbn. tstep; [tstep|]. cbn.
@@ -131,7 +129,7 @@ Proof.
     change B with (TBox 2 tc_C (TLolli None None TUnit tcr_body));
     change D with (TBox 2 tc_C (TLolli None None TUnit tcs_body)) end.
   tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
+  { tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some tcz) (Some (pvar 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.

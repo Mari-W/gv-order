@@ -55,31 +55,29 @@ Proof.
     cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 0) HWs).
     { right. exists Cfac, [pv 0 0], (pv 0 0). split_and!; [by left|by left|done]. }
     cbn. tstep; [|tstep].
-    tstep; [|apply KTSpawn|done|apply ubs_none].
+    tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 2); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
-    - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+    - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pv 0 0)); cbn; set_solver|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
     - apply KTClos.
-    - done.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   assert (∀ P, (∀ y, y ∈ P → False) →
     typed W ∅ [(Cfac, ids 1)] ∅ [None; Some Tfac] (P, None) request TUnit) as Hreq.
   { intros P HP. unfold request, recvclose. tstep.
-    - tstep; [| | |].
+    - tstep; [| |].
       + eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
         cbn. apply (typed_force W _ _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body []);
           [done|done| |constructor|apply ubs_none|tstep].
         apply bcs_hold_intro. by intros ? [].
       + apply KTRecv.
-      + kscope.
       + apply ubs_intro; [|done]. intros y Hy. cbn in Hy.
         rewrite elem_of_union in Hy. destruct Hy as [Hy|Hy]; [by destruct (HP y)|set_solver].
-    - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
       apply ubs_intro; [|done]. intros y Hy. by destruct (HP y). }
   tstep; apply Hreq; cbn; set_solver.
 Qed.
@@ -123,16 +121,15 @@ Proof.
   cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (Pt (NVar 0) 0) HWs).
   { right. eexists _, _, (pvar 0). split_and!; [apply elem_of_app; right; by left|by left|done]. }
   cbn. tstep; [|tstep].
-  tstep; [|apply KTSpawn|done|apply ubs_none].
+  tstep; [|apply KTSpawn|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NVar 0) 1)) (Some (Pt (NVar 0) 0)) 2);
     [set_solver| |].
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
-  - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|done|].
+  - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (Pt (NVar 0) 1). split; [done|]. right. apply (slt_po W _ (Pt (NVar 0) 0) HW).
   - apply KTClos.
-  - done.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (Pt (NVar 0) 1). split; [done|]. apply sle_refl, HW.
 Qed.
@@ -168,13 +165,13 @@ Proof.
   { tstep; [apply (Hreq _ 1); lia|apply (Hreq _ 0); lia]. }
   cbn. tstep.
   - unfold recvclose. tstep.
-    + tstep; [tstep|apply KTRecv|kscope|].
+    + tstep; [tstep|apply KTRecv|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
-    + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
   - unfold recvclose. tstep.
-    + tstep; [tstep|apply KTRecv|kscope|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-    + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    + tstep; [tstep|apply KTRecv|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+    + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 

@@ -73,10 +73,9 @@ Proof.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy; apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
-      tstep; [tstep; tstep|apply (KTLink _ _ _ Sd (pvar 1) (pvar 1) (se_refl _ _ _))|done|].
+      tstep; [tstep; tstep|apply (KTLink _ _ _ Sd (pvar 1) (pvar 1) (se_refl _ _ _))|].
       apply ubs_none.
     - apply KTSpawn.
-    - done.
     - apply ubs_none. }
   cbn. tstep.
   { (* ag₂ = let () = recvclose r₁ in close (send ⟨∗, r₂⟩) *)
@@ -85,34 +84,31 @@ Proof.
       { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; done]. }
       cbn. tstep; [tstep|]. cbn. tstep.
       + unfold recvclose. tstep.
-        * tstep; [tstep|apply KTRecv|kscope|].
+        * tstep; [tstep|apply KTRecv|].
           apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
           exists (pv 0 1). split; [done|]. right. done.
-        * cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+        * cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
           apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
           exists (pv 0 1). split; [done|]. right. done.
       + unfold sendclose. tstep.
-        * tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pvar 0)); cbn; set_solver|done|].
+        * tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pvar 0)); cbn; set_solver|].
           apply ubs_intro; [intros y Hy; mem_cases Hy|].
           exists (pv 0 1). split; [done|]. right. done.
         * apply KTClos.
-        * done.
         * apply ubs_intro; [intros y Hy; mem_cases Hy|].
           exists (pv 0 1). split; [done|]. apply sle_refl, HW.
     - apply KTSpawn.
-    - done.
     - apply ubs_none. }
   (* ag₀ *)
   cbn. unfold ag0, sendclose, recvclose. tstep.
   { tstep.
-    - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pvar 1)); cbn; set_solver|done|].
+    - tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (pvar 1)); cbn; set_solver|].
       apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. done.
     - apply KTClos.
-    - done.
     - apply ubs_intro; [|done]. intros y Hy. mem_cases Hy. done. }
   cbn. tstep.
-  { tstep; [tstep|apply KTRecv|kscope|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
-  cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+  { tstep; [tstep|apply KTRecv|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
+  cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
   apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 

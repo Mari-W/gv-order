@@ -514,13 +514,13 @@ Section terms.
     eapply (t_app W Φ2 Ψ ∅ ∅ ∅ E (lenv_nones E) E Fr _ _ (Some (pt_shift 1 x)) None).
     { by apply comp0. } { apply lenv_split_nones_l. }
     { apply Hub. apply (ch1_below_hi Ψ B HB). apply clev_chx. }
-    { apply t_konst; [apply lenv_empty_nones|apply KTClos|done]. }
+    { apply t_konst; [apply lenv_empty_nones|apply KTClos]. }
     rewrite sf_union_empty.
     eapply (t_app W Φ2 Ψ ∅ ∅ ∅ E (lenv_nones E) E Fr _ _ (Some x) None
               (TProd (payload_at (ppay t) x) (TSess (SSnd (ppay t) SEnd) x))).
     { by apply comp0. } { apply lenv_split_nones_l. }
     { apply Hub. apply (ch_below_hi Ψ B HB). apply clev_chx. }
-    { apply t_konst; [apply lenv_empty_nones| |done]. apply (KTSend _ _ _ (ppay t) SEnd x).
+    { apply t_konst; [apply lenv_empty_nones|]. apply (KTSend _ _ _ (ppay t) SEnd x).
       rewrite hbot_ppay. intros h' Hh'. by apply Hh. }
     rewrite sf_union_empty.
     eapply (t_pair W Φ2 Ψ ∅ ∅ ∅ E (Some (trz B k t) :: None :: Δ0)
@@ -550,7 +550,7 @@ Section terms.
       { by apply comp0. } { apply lenv_split_nones_l. }
       { apply ub_below_s_intro; [simpl; set_solver|]. exists (rpt B (RHi (n + k))). split; [done|right].
         apply (ch_below_hi Ψ B HB). apply clev_chx. }
-      { apply t_konst; [apply lenv_empty_nones|apply KTRecv|done]. }
+      { apply t_konst; [apply lenv_empty_nones|apply KTRecv]. }
       rewrite sf_union_empty. apply tv_var_unl; [done|done|].
       intros [|y] T' Hne Hy; [done|]. exfalso. simpl in Hy. by eapply empty_lookup.
     - set (N := lenv_nones E).
@@ -567,7 +567,7 @@ Section terms.
             rewrite union_empty_l_L, union_empty_r_L in Hy. by apply Hh.
           - exists (rpt B (RHi (n + k))). split; [done|right].
             apply (ch1_below_hi Ψ B HB). apply clev_chx. }
-        { apply t_konst; [apply lenv_empty_nones|apply KTClos|done]. }
+        { apply t_konst; [apply lenv_empty_nones|apply KTClos]. }
         rewrite sf_union_empty. apply tv_var_unl; [done|done|var_others HN].
       + eapply t_conv; [exact Hc2|]. apply tv_var_unl; [done|done|var_others HN].
   Qed.
@@ -592,7 +592,7 @@ Section terms.
     set (lb := match r with Some z => Some (loz B k z) | None => None end).
     eapply (t_app W Φ1 Ψ ∅ ∅ ∅ E (lenv_nones E) E _ _ _ None None (TLolli ub lb TUnit TUnit)).
     { by apply comp0. } { apply lenv_split_nones_l. } { done. }
-    { apply t_konst; [apply lenv_empty_nones|apply KTSpawn|done]. }
+    { apply t_konst; [apply lenv_empty_nones|apply KTSpawn]. }
     set (φ := fresh (dom Φ1)).
     apply (t_lam W Φ1 Ψ ∅ E _ _ _ _ ub lb φ); [apply is_fresh|lbhb|].
     { simpl. bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L, union_empty_r_L by done.

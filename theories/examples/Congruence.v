@@ -162,15 +162,14 @@ Proof.
       eapply t_conv; [|tstep]. split; [|apply seq_refl]. apply Hslot. by left.
     - apply (KTSend _ _ _ (TSess SEnd (pvar 0)) SEnd (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. apply HsendP. by left.
-    - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hd; by left|].
       exists (pv 1 2). split; [done|]. right. apply Hd. by left. }
   cbn. tstep; [tstep|]. cbn. tstep.
   { (* close c at ι+1 against d at ι′+2 *)
-    tstep; [tstep|apply KTClos|done|].
+    tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hcd; by left|].
     exists (pv 1 2). split; [done|]. right. apply Hcd. by left. }
-  tstep; [tstep|apply KTClos|done|].
+  tstep; [tstep|apply KTClos|].
   apply ubs_intro; [intros y Hy; mem_cases Hy|].
   exists (pv 1 2). split; [done|]. apply sle_refl, HW.
 Qed.
@@ -201,7 +200,7 @@ Proof.
   { eapply skn_inst; [by left|by left|done]. }
   cbn. tstep.
   { (* the receiver of c: recv at γ, close the payload at γ.0, close at γ+1 *)
-    tstep; [|apply KTSpawn|done|apply ubs_none].
+    tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
@@ -211,32 +210,31 @@ Proof.
     { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (dual Scg) (pv 0 0))).
       - tstep.
       - apply KTRecv.
-      - kscope.
       - apply ubs_intro; [intros y Hy; mem_cases Hy|].
         exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW). }
     cbn. tstep.
-    { tstep; [tstep|apply KTClos|done|].
+    { tstep; [tstep|apply KTClos|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hsg|].
       exists (pv 0 1). split; [done|]. right. exact Hsg. }
-    tstep; [tstep|apply KTClos|done|].
+    tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { (* close e′ at γ.0 *)
-    tstep; [|apply KTSpawn|done|apply ubs_none].
+    tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (cgs 0)) (Some (cgs 0)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
-    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (cgs 0). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { (* close d′ at γ+2 *)
-    tstep; [|apply KTSpawn|done|apply ubs_none].
+    tstep; [|apply KTSpawn|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 2)) (Some (pv 0 2)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
-    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pv 0 2). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].

@@ -76,16 +76,15 @@ Ltac mk_pack :=
     variable 0 of the body of new, c at 1 and c′ at 0. *)
 Ltac mk_tail HW :=
   cbn; tstep;
-  [ tstep; [|apply KTSpawn|done|apply ubs_none];
+  [ tstep; [|apply KTSpawn|apply ubs_none];
     eapply (tv_lam _ HW _ _ _ _ _ TUnit TUnit (Some (Pt (NVar 0) 1)) (Some (Pt (NVar 0) 0)) 2);
       [set_solver| |];
     [ intros y Hy; mem_cases Hy; apply sle_refl, HW
     | cbn; tstep; [tstep|]; cbn; unfold sendclose; tstep;
-      [ tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|done|];
+      [ tstep; [tstep; tstep|apply (KTSend _ _ _ TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|];
         apply ubs_intro; [intros y Hy; mem_cases Hy|];
         exists (Pt (NVar 0) 1); split; [done|]; right; apply (slt_po _ _ (Pt (NVar 0) 0) HW)
       | apply KTClos
-      | done
       | apply ubs_intro; [intros y Hy; mem_cases Hy|];
         exists (Pt (NVar 0) 1); split; [done|]; apply sle_refl, HW ] ]
   | mk_pack ].
@@ -161,14 +160,14 @@ Proof.
   tstep.
   - (* recvclose p at ι_p, holding q at ι_q *)
     unfold recvclose. tstep.
-    + tstep; [tstep|apply KTRecv|kscope|].
+    + tstep; [tstep|apply KTRecv|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; exact H0|done].
-    + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; exact H1|done].
   - (* recvclose q *)
     unfold recvclose. tstep.
-    + tstep; [tstep|apply KTRecv|kscope|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-    + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    + tstep; [tstep|apply KTRecv|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+    + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 

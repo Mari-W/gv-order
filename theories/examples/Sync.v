@@ -37,20 +37,18 @@ Proof.
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
       tstep.
-      + tstep; [|apply (KTSend _ _ _ TUnit SEnd (pvar 0)); cbn; set_solver|done|].
+      + tstep; [|apply (KTSend _ _ _ TUnit SEnd (pvar 0)); cbn; set_solver|].
         * tstep; tstep.
         * apply ubs_intro; [intros y Hy; mem_cases Hy|].
           exists (Pt (NVar 0) 1). split; [done|]. right. apply (slt_po W _ (pvar 0) HW).
       + apply KTClos.
-      + done.
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
         exists (Pt (NVar 0) 1). split; [done|]. apply sle_refl, HW.
     - apply KTSpawn.
-    - done.
     - apply ubs_none. }
   cbn. tstep.
-  { tstep; [tstep|apply KTRecv|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
-  cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+  { tstep; [tstep|apply KTRecv|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
+  cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|].
   apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 

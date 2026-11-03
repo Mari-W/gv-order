@@ -203,7 +203,7 @@ Lemma typed_term_wf_s W Φ Ψ Θ Δ F e T : typed W Φ Ψ Θ Δ F e T → term_w
 Proof.
   unfold term_wf. induction 1 as
     [Φ Ψ Δ F HΔ
-    |Φ Ψ Δ F k T HΔ Hk _
+    |Φ Ψ Δ F k T HΔ Hk
     |Φ Ψ Δ F x T Ho
     |Φ Ψ Δ F c s k s' y HΔ _ _
     |Φ Ψ Θ Δ F e T U ub lb φ _ _ _ IH
@@ -365,7 +365,7 @@ Lemma typed_sem_rules W Φ Ψ Θ Δ F e T :
 Proof.
   induction 1 as
     [Φ Ψ Δ F HΔ
-    |Φ Ψ Δ F k T HΔ Hk Hks
+    |Φ Ψ Δ F k T HΔ Hk
     |Φ Ψ Δ F x T Ho
     |Φ Ψ Δ F c s k s' y HΔ Hs Hk
     |Φ Ψ Θ Δ F e T U ub lb φ Hφ Hlb Hb IH
@@ -385,7 +385,7 @@ Proof.
     pose proof HW1 as (HN & He & Hl & HS).
   - rewrite tenv_pinst_empty. apply sr_unit. by apply lenv_empty_pinst.
   - rewrite tenv_pinst_empty. apply sr_konst; [by apply lenv_empty_pinst|].
-    apply (konst_ty_pinst W W1 σ HW HW1 (seqs W Ψ) _ (slt W Ψ) _ (skn W Ψ)); [| | |done|done].
+    apply (konst_ty_pinst W W1 σ HW HW1 (seqs W Ψ) _ (slt W Ψ) _ (skn W Ψ)); [| | |done].
     + intros x y Hxy. by apply (seqs_pinst W W1 σ HW HW1 Ψ).
     + intros x y Hxy. by apply (slt_pinst W W1 σ HW HW1 Ψ).
     + intros x Hx. by apply (skn_pinst_known W W1 σ HW HW1 Ψ).
@@ -529,10 +529,6 @@ Qed.
     the same world. [typed_sem_rules] composes this substitution with
     frame instantiation; the fundamental theorem needs only that. *)
 
-Lemma kscoped_pinst peq plt pk k T σ :
-  konst_ty peq plt pk k T → kscoped k T → kscoped k (pinst_ty σ T).
-Proof. destruct 1; simpl; auto. Qed.
-
 Lemma fhyps_pinst_insert σ Φ φ u :
   fhyps_pinst σ (<[φ := u]> Φ) = <[φ := pt_inst σ <$> u]> (fhyps_pinst σ Φ).
 Proof. unfold fhyps_pinst. by rewrite fmap_insert. Qed.
@@ -589,7 +585,7 @@ Proof.
   intros HW. pose proof (proj1 HW) as Hwf. pose proof (wext_refl _ HW) as HWW.
   induction 1 as
     [Φ Ψ Δ F HΔ
-    |Φ Ψ Δ F k T HΔ Hk Hks
+    |Φ Ψ Δ F k T HΔ Hk
     |Φ Ψ Δ F x T Ho
     |Φ Ψ Δ F c s k s' y HΔ Hs Hk
     |Φ Ψ Θ Δ F e T U ub lb φ Hφ Hlb Hb IH
@@ -607,12 +603,11 @@ Proof.
     |Φ Ψ Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
     |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu Hb IH]; intros σ Ψ' HΨ.
   - rewrite tenv_pinst_empty. apply t_unit. by apply lenv_empty_pinst.
-  - rewrite tenv_pinst_empty. apply t_konst; [by apply lenv_empty_pinst| |].
-    + apply (konst_ty_pinst W W σ Hwf HWW (seqs W Ψ) _ (slt W Ψ) _ (skn W Ψ)); [| | |done|done].
-      * intros x y Hxy. by apply (seqs_pinst_s W W σ Hwf HWW Ψ).
-      * intros x y Hxy. by apply (slt_pinst_s W W σ Hwf HWW Ψ).
-      * intros x Hx. by apply (skn_pinst_s W W σ Hwf HWW Ψ).
-    + by apply (kscoped_pinst (seqs W Ψ) (slt W Ψ) (skn W Ψ)).
+  - rewrite tenv_pinst_empty. apply t_konst; [by apply lenv_empty_pinst|].
+    apply (konst_ty_pinst W W σ Hwf HWW (seqs W Ψ) _ (slt W Ψ) _ (skn W Ψ)); [| | |done].
+    + intros x y Hxy. by apply (seqs_pinst_s W W σ Hwf HWW Ψ).
+    + intros x y Hxy. by apply (slt_pinst_s W W σ Hwf HWW Ψ).
+    + intros x Hx. by apply (skn_pinst_s W W σ Hwf HWW Ψ).
   - rewrite tenv_pinst_empty. apply t_var. by apply lenv_only_pinst.
   - unfold tenv_pinst. rewrite map_fmap_singleton. simpl.
     apply t_chan; [by apply lenv_empty_pinst|done|by apply (seqs_pinst_s W W σ Hwf HWW Ψ)].
@@ -777,7 +772,7 @@ Proof.
       + apply tenv_comp_empty_r.
       + apply lenv_split_nones_l.
       + done.
-      + apply t_konst; [apply lenv_empty_nones| |done]. by apply KTNewEx.
+      + apply t_konst; [apply lenv_empty_nones|]. by apply KTNewEx.
       + apply t_unit. apply lenv_empty_nones.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)

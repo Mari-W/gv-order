@@ -383,11 +383,6 @@ Proof.
   apply pinst_ty_ext. intros a. simpl. apply pt_inst_slot.
 Qed.
 
-(** E-Const asks nothing of the payload of send and recv: every point
-    variable of P is a slot of the carrier, so [payload_at] is a total
-    substitution. *)
-Definition kscoped (k : konst) (T : ty) : Prop := True.
-
 Lemma opt_heads_pinst σ o : opt_heads (pt_inst σ <$> o) = set_map (pt_inst σ) (opt_heads o).
 Proof. destruct o; simpl; [by rewrite set_map_singleton_L|by rewrite set_map_empty]. Qed.
 
@@ -648,10 +643,10 @@ Section transfer.
     (∀ x y, peq x y → peq' (pt_inst σ x) (pt_inst σ y)) →
     (∀ x y, plt x y → plt' (pt_inst σ x) (pt_inst σ y)) →
     (∀ x, pk x → pk' (pt_inst σ x)) →
-    kscoped k T → konst_ty peq plt pk k T →
+    konst_ty peq plt pk k T →
     konst_ty peq' plt' pk' k (pinst_ty σ T).
   Proof.
-    intros Heq Hlt Hpk Hk.
+    intros Heq Hlt Hpk.
     destruct 1 as [ub lb|P S x Hh|P S x|x|S x x' Hxx'|n C ub P xs Hxs HC HK
                   |S C H H0];
       simpl in *.

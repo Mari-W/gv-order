@@ -384,15 +384,14 @@ Section rules.
   Lemma tv_appk Φ Ψ Δ F k e2 ub T U :
     typed W Φ Ψ ∅ Δ F e2 T →
     konst_ty (seqs W Ψ) (slt W Ψ) (skn W Ψ) k (TLolli ub None T U) →
-    kscoped k (TLolli ub None T U) →
     ub_below_s W Ψ Φ ub F →
     typed W Φ Ψ ∅ Δ F (App (Konst k) e2) U.
   Proof.
-    intros H2 Hk Hks Hu. eapply (t_app W Φ Ψ ∅ ∅ ∅ Δ (lenv_nones Δ) Δ F _ _ ub None).
+    intros H2 Hk Hu. eapply (t_app W Φ Ψ ∅ ∅ ∅ Δ (lenv_nones Δ) Δ F _ _ ub None).
     - apply comp0.
     - apply lenv_split_nones_l.
     - exact Hu.
-    - apply t_konst; [apply lenv_empty_nones|done|done].
+    - apply t_konst; [apply lenv_empty_nones|done].
     - destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L.
   Qed.
 
@@ -492,7 +491,7 @@ Ltac tstep :=
   | |- typed _ _ _ _ _ _ (LetU _ _) _ => apply tv_letu; [assumption|reflexivity| |]
   | |- typed _ _ _ _ _ _ (LetP _ _) _ => eapply tv_letp; [assumption|reflexivity| |]
   | |- typed _ _ _ _ _ _ (Pair _ _) _ => eapply tv_pair; [assumption|reflexivity| |]
-  | |- typed _ _ _ _ _ _ (App (Konst _) _) _ => eapply tv_appk; [assumption| | | |]
+  | |- typed _ _ _ _ _ _ (App (Konst _) _) _ => eapply tv_appk; [assumption| | |]
   end.
 
 Abbreviation pc a k := (Pt (NConst a) k).
@@ -549,9 +548,6 @@ Proof. intros H. by apply glt_base. Qed.
 
 Lemma Wfacts_known cs L a : a ∈ cs → pt_known (Wfacts cs L) (pc a 0).
 Proof. intros H. unfold pt_known. simpl. apply elem_of_list_to_set, list_elem_of_fmap. eauto. Qed.
-
-(** E-Const at send and recv: the payload is scoped by its binders. *)
-Ltac kscope := cbn; repeat split; try done; intros ? Hv; injection Hv; lia.
 
 (** !∗.Close *)
 Definition Sd : sty := SSnd TUnit SEnd.
