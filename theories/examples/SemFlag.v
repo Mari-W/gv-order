@@ -330,3 +330,130 @@ Corollary sf_underivable_top n C Φ Δ F T i j s1 x s2 y :
   Δ !! i = Some (Some (TSess s1 x)) → Δ !! j = Some (Some (TSess s2 y)) → i ≠ j →
   ¬ styped Φ [(C, ids n)] Δ F (sf_body i j) T.
 Proof. intros HC. apply sf_underivable. by apply c0_irrefl. Qed.
+
+(** ** Semantic typing
+
+    A term that takes a deterministic β-step to a semantically typed
+    term is semantically typed ([Erel_det_beta]). *)
+
+Definition det_beta (e e' : expr) : Prop :=
+  tstep e LBeta e' ∧ ∀ α e'', tstep e α e'' → α = LBeta ∧ e'' = e'.
+
+Lemma sem_typed_det_beta W Θ Δ F e e' T :
+  (∀ γ, det_beta (subst γ e) (subst γ e')) →
+  sem_typed W Θ Δ F e' T → sem_typed W Θ Δ F e T.
+Proof.
+  intros Hd He n W' Θ' Θ'' γ HW Hc Hg. destruct (Hd γ) as [Hs Hdet].
+  eapply Erel_det_beta; [exact Hs|exact Hdet|]. by apply (He n W' Θ' Θ'' γ).
+Qed.
+
+Lemma det_beta_case e e' a b : det_beta e e' → det_beta (Case e a b) (Case e' a b).
+Proof.
+  intros [Hs Hd]. split; [by apply TStepCase|].
+  intros α e'' H. apply tstep_case_inv in H as [(f & Hf & ->)|[(v & -> & Hv & _)|(v & -> & Hv & _)]].
+  - by destruct (Hd _ _ Hf) as [-> ->].
+  - exfalso. eapply val_no_tstep; [exact Hs|exact Hv].
+  - exfalso. eapply val_no_tstep; [exact Hs|exact Hv].
+Qed.
+
+Lemma det_beta_app_lam e v e' : is_val v → e' = subst1 v e → det_beta (App (Lam e) v) e'.
+Proof.
+  intros Hv ->. split; [by apply TStepHead, HeadApp|].
+  intros α e'' H. apply app_val_step in H; [|done|done]. by inversion H; subst.
+Qed.
+
+Lemma det_beta_case1 v a b e' : is_val v → e' = subst1 v a → det_beta (Case (Inj1 v) a b) e'.
+Proof.
+  intros Hv ->. split; [by apply TStepHead, HeadCase1|].
+  intros α e'' H. apply tstep_case_inv in H as [(f & Hf & _)|[(u & Hu & _ & -> & ->)|(u & Hu & _)]].
+  - exfalso. by eapply val_no_tstep.
+  - by injection Hu as ->.
+  - done.
+Qed.
+
+Lemma det_beta_case2 v a b e' : is_val v → e' = subst1 v b → det_beta (Case (Inj2 v) a b) e'.
+Proof.
+  intros Hv ->. split; [by apply TStepHead, HeadCase2|].
+  intros α e'' H. apply tstep_case_inv in H as [(f & Hf & _)|[(u & Hu & _)|(u & Hu & _ & -> & ->)]].
+  - exfalso. by eapply val_no_tstep.
+  - done.
+  - by injection Hu as ->.
+Qed.
+
+(** The context of the component: c : Close@x at 0, d : Close@y at 1. *)
+Definition sf_ctx (x y : point) : lenv := [Some (TSess SEnd x); Some (TSess SEnd y)].
+
+(** The first arm is typed by the static system when x ≺ y. *)
+Lemma sf_arm_typed W x y :
+  world_wf W → w_lt W x y → typed W ∅ [] ∅ (sf_ctx x y) (∅, None) (sf_arm 0 1) TUnit.
+Proof.
+  intros HW Hxy. unfold sf_arm, sf_ctx.
+  apply tv_letu; [exact HW|reflexivity| |].
+  - eapply (tv_appk W HW _ _ _ _ _ _ (Some x) (TSess SEnd x)).
+    + apply tv_var; [exact HW|done|reflexivity].
+    + apply KTClos.
+    + done.
+    + apply ubs_intro; [|done]. intros z Hz. mem_cases Hz. by apply sl_w.
+  - eapply (tv_appk W HW _ _ _ _ _ _ (Some y) (TSess SEnd y)).
+    + apply tv_var; [exact HW|done|reflexivity].
+    + apply KTClos.
+    + done.
+    + apply ubs_intro; [|done]. intros z Hz. mem_cases Hz.
+Qed.
+
+Lemma sf_arm_sem W x y :
+  strict W → w_lt W x y → sem_typed W ∅ (sf_ctx x y) ∅ (sf_arm 0 1) TUnit.
+Proof. intros HW Hxy. apply fundamental; [|done]. by apply sf_arm_typed; [apply HW|]. Qed.
+
+(** The component is semantically typed: the flag reduces to inj₁ ∗ in
+    three β-steps, and the case then takes the first arm. *)
+Theorem sf_sem_typed W x y :
+  strict W → w_lt W x y → sem_typed W ∅ (sf_ctx x y) ∅ (sf_body 0 1) TUnit.
+Proof.
+  intros HW Hxy.
+  apply (sem_typed_det_beta _ _ _ _ _
+           (Case (Case (Inj2 EUnit) (Inj2 (Var 0)) (Inj1 (Var 0))) (sf_arm 1 2) (sf_arm 2 1))).
+  { intros γ. apply det_beta_case, det_beta_app_lam; done. }
+  apply (sem_typed_det_beta _ _ _ _ _ (Case (Inj1 EUnit) (sf_arm 1 2) (sf_arm 2 1))).
+  { intros γ. apply det_beta_case, det_beta_case2; done. }
+  apply (sem_typed_det_beta _ _ _ _ _ (sf_arm 0 1)); [|by apply sf_arm_sem].
+  intros γ. apply det_beta_case1; [done|]. cbn [subst]. rewrite subst1_subst. done.
+Qed.
+
+(** ** The closed configuration
+
+    The thread holds c and d as channel constants, c at x and d at y.
+    The partner holds the other ends and closes c, then d. *)
+
+Definition sf_thread : expr := Case sf_flag (cc2 chc chd) (cc2 chd chc).
+
+Definition sf_γ : nat → expr := Chan chc .: Chan chd .: Var.
+
+Lemma sf_thread_subst : subst sf_γ (sf_body 0 1) = sf_thread.
+Proof. reflexivity. Qed.
+
+Lemma sf_ground n W x y :
+  world_wf W → grounding n W (db_Θ x y) (sf_ctx x y) sf_γ.
+Proof.
+  intros HW. cbn [grounding sf_ctx].
+  exists {[chc := One (SEnd, x)]}, {[chd := One (SEnd, y)]}. split.
+  { apply comp_comm; [apply (wf_eq_sym _ HW)|apply db_comp_cd]. }
+  split.
+  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  exists {[chd := One (SEnd, y)]}, ∅. split; [apply tenv_comp_empty_r|]. split.
+  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  done.
+Qed.
+
+Lemma sf_thread_closed γ : subst γ sf_thread = sf_thread.
+Proof. reflexivity. Qed.
+
+Theorem sf_thread_sem W x y :
+  strict W → w_lt W x y → sem_typed W (db_Θ x y) [] ∅ sf_thread TUnit.
+Proof.
+  intros HW Hxy n W' Θ' Θ'' γ HW' Hc Hg. cbn [grounding] in Hg. subst Θ'.
+  apply tenv_comp_empty_r_inv in Hc as ->. rewrite sf_thread_closed, <-sf_thread_subst.
+  apply (sf_sem_typed W x y HW Hxy n W' (db_Θ x y) (db_Θ x y) sf_γ HW').
+  - apply tenv_comp_empty_l, (wf_eq_sym _ (proj1 (proj2 (proj2 (proj2 HW'))))).
+  - apply sf_ground, (proj1 (proj2 (proj2 (proj2 HW')))).
+Qed.
