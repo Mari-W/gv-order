@@ -82,6 +82,10 @@ theories/examples/FactServer.v
 theories/examples/Stream.v
 theories/examples/Congruence.v
 theories/examples/ChoiceEnc.v
+theories/examples/ChoiceNegative.v
+theories/examples/ChoiceTranslate.v
+theories/examples/ChoiceTranslateEx.v
+theories/examples/ExPayload.v
 theories/examples/OptionPayload.v
 theories/examples/lit/LitLib.v
 theories/examples/lit/LitRejected.v
