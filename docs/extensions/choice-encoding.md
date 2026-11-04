@@ -125,8 +125,10 @@ looks at ends in its syntax-directed rule. The proof reads each fact off the
 upper point of an application and the heads of its future. E-Conv relates points
 by ≡, so the two facts come out up to ≡, and the closure of hlt under ≡ closes the
 cycle δ ≺ x[0] ≺ δ for the point x of the receive on c′. The theorems quantify over the context
-after the two news. The news themselves are not inverted, because E-Open of the
-created existential may sit anywhere in the derivation.
+after the two news. The closed term of the negative control is the term of
+`choice_main`, which `choice_typed` types with Sch, so no statement about the
+closed term can express the negative control. The type Sch₀ enters at the
+instance of new, and the theorems start from the context that the news produce.
 
 ## A recursive choice
 
