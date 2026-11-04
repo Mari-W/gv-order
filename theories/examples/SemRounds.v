@@ -401,3 +401,134 @@ Proof.
       * eapply (wf_eq_trans _ HWf'); [exact Hpd'|]. apply (eq_shift_at W' _ (py k)); [done| |apply py_shift].
         exact (wext_eq _ _ _ _ HW' Hy).
 Qed.
+
+(** ** The closed configuration
+
+    The thread starts in round 0 with c at (0, 0) and d at (1, 0). Two
+    receivers (alt_R of DataAlternate.v) hold the other ends. *)
+
+Definition rthr : expr := rthread 0 0 chc chd.
+Definition rrecv (c : chan) : expr := App (App EForce alt_R) (Chan c).
+
+Definition rΘ : tenv := <[chd := One (Sb, py 0)]> {[chc := One (Sb, px 0)]}.
+
+Lemma rΘ_comp R : tenv_comp R rΘ {[chd := One (Sb, py 0)]} {[chc := One (Sb, px 0)]}.
+Proof.
+  split.
+  - intros c. unfold rΘ. destruct (decide (c = chd)) as [->|Hd].
+    + rewrite lookup_insert_eq, lookup_singleton_eq, lookup_singleton_ne by done. constructor.
+    + rewrite lookup_insert_ne, lookup_singleton_ne by done.
+      destruct (decide (c = chc)) as [->|Hc].
+      * rewrite lookup_singleton_eq. constructor.
+      * rewrite lookup_singleton_ne by done. constructor.
+  - intros c e1 e2 H1 H2. apply lookup_singleton_Some in H1 as [<- _].
+    by rewrite lookup_singleton_ne in H2.
+Qed.
+
+Theorem rthr_sem : sem_typed rW rΘ [] ∅ rthr TUnit.
+Proof.
+  intros n W' Θ' Θ'' γ HW Hc Hg. cbn [grounding] in Hg. subst Θ'.
+  apply tenv_comp_empty_r_inv in Hc as ->. pose proof (wext_wf _ _ HW) as HWf.
+  change (subst γ rthr) with rthr.
+  apply (rthread_Erel n W' 0 0 0 chc chd Sb Sb (px 0) (py 0)); try done;
+    [apply seq_refl|apply seq_refl|apply (wf_eq_refl _ HWf)|apply (wf_eq_refl _ HWf)|].
+  apply comp_comm; [apply (wf_eq_sym _ HWf)|apply rΘ_comp].
+Qed.
+
+(** A receiver on c at the point (a, 0), typed by the static system. *)
+Lemma rrecv_typed W c a :
+  world_wf W → pt_known W (Pt (NConst a) 0) →
+  typed W ∅ [] {[c := One (Sa, Pt (NConst a) 0)]} [] (∅, None) (rrecv c) TUnit.
+Proof.
+  intros HW Hk. unfold rrecv.
+  eapply (t_app W ∅ [] _ ∅ {[c := One (Sa, Pt (NConst a) 0)]} [] [] [] _ _ _
+            (Some (Pt (NConst a) 0)) None (TSess Sa (Pt (NConst a) 0))).
+  - apply tenv_comp_empty_l. intros ? ?. apply se_sym.
+  - constructor.
+  - apply ubs_intro; [|done]. intros z Hz. cbn in Hz. set_solver.
+  - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [Pt (NConst a) 0]);
+      [done|done| | |apply ubs_none|apply alt_R_typed, HW].
+    + apply bcs_hold_intro. intros g [].
+    + constructor; [by left|constructor].
+  - apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl].
+Qed.
+
+Lemma Sb_Sa : sdual Sb Sa.
+Proof. pose proof (sdual_dual Sb) as H. assert (dual Sb = Sa) as E by reflexivity. by rewrite E in H. Qed.
+
+Lemma rknown a : a = 0 ∨ a = 1 → pt_known rW (Pt (NConst a) 0).
+Proof. intros [->| ->]; unfold pt_known; cbn; set_solver. Qed.
+
+Definition rconfig : proc := ({[chc; chd]}, {[+ rthr; rrecv chc; rrecv chd +]}).
+
+(** The mixed derivation: the thread is a semantic leaf, the two
+    receivers are syntactic leaves, and two cuts join them. *)
+Theorem rounds_mixed : mptyped rW ∅ rconfig TUnit.
+Proof.
+  pose proof rW_strict as HW. pose proof (proj1 HW) as HWf.
+  assert (chc ≠ chd) as Hcd by done.
+  assert (mptyped rW ({[chd := (Sb, py 0)]} ∪ ∅) (∅ ∪ ∅ ∪ {[chc]}, {[+ rthr +]} ⊎ {[+ rrecv chc +]}) TUnit)
+    as P1.
+  { apply (mp_connect rW {[chd := (Sb, py 0)]} ∅ {[chc := (Sb, px 0)]} {[chc := (Sa, px 0)]} {[chc]}
+             ∅ ∅ {[+ rthr +]} {[+ rrecv chc +]} TUnit).
+    - apply (mp_sem_thread rW _ ∅ ∅); [constructor|done|done|set_solver| | |].
+      + intros c o Ho. by rewrite lookup_empty in Ho.
+      + intros c e1 e2 He. by rewrite lookup_empty in He.
+      + assert (tenv_of ({[chd := (Sb, py 0)]} ∪ {[chc := (Sb, px 0)]}) ∪ ∅ = rΘ) as ->.
+        { rewrite (right_id_L ∅ (∪)). unfold tenv_of, rΘ.
+          by rewrite <-insert_union_singleton_l, fmap_insert, map_fmap_singleton. }
+        apply rthr_sem.
+    - rewrite (left_id_L ∅ (∪)). apply mp_syn.
+      apply (pt_term rW {[chc := (Sa, px 0)]} ∅ ∅); [constructor|done|set_solver| | |].
+      + intros c o Ho. by rewrite lookup_empty in Ho.
+      + intros c e1 e2 He. by rewrite lookup_empty in He.
+      + unfold tenv_of. rewrite map_fmap_singleton, (right_id_L ∅ (∪)).
+        apply rrecv_typed; [done|apply rknown; by left].
+    - apply dom_singleton_L.
+    - apply dom_singleton_L.
+    - intros c e e' He He'. apply lookup_singleton_Some in He as [<- <-].
+      apply lookup_singleton_Some in He' as [_ <-]. split; [apply (wf_eq_refl _ HWf)|apply Sb_Sa].
+    - set_solver.
+    - set_solver.
+    - apply map_disjoint_singleton_l. by rewrite lookup_singleton_ne.
+    - apply map_disjoint_empty_l.
+    - apply map_disjoint_empty_r.
+    - set_solver.
+    - set_solver.
+    - set_solver.
+    - set_solver.
+    - set_solver. }
+  rewrite (right_id_L ∅ (∪)) in P1.
+  assert (rconfig = ((∅ ∪ ∅ ∪ {[chc]}) ∪ ∅ ∪ {[chd]},
+                     ({[+ rthr +]} ⊎ {[+ rrecv chc +]}) ⊎ {[+ rrecv chd +]})) as ->.
+  { unfold rconfig. f_equal; try set_solver; try multiset_solver. }
+  assert ((∅ : senv) = ∅ ∪ ∅) as E by by rewrite (left_id_L ∅ (∪)).
+  rewrite E at 1.
+  apply (mp_connect rW ∅ ∅ {[chd := (Sb, py 0)]} {[chd := (Sa, py 0)]} {[chd]}
+           (∅ ∪ ∅ ∪ {[chc]}) ∅ ({[+ rthr +]} ⊎ {[+ rrecv chc +]}) {[+ rrecv chd +]} TUnit).
+  - by rewrite (left_id_L ∅ (∪)).
+  - rewrite (left_id_L ∅ (∪)). apply mp_syn.
+    apply (pt_term rW {[chd := (Sa, py 0)]} ∅ ∅); [constructor|done|set_solver| | |].
+    + intros c o Ho. by rewrite lookup_empty in Ho.
+    + intros c e1 e2 He. by rewrite lookup_empty in He.
+    + unfold tenv_of. rewrite map_fmap_singleton, (right_id_L ∅ (∪)).
+      apply rrecv_typed; [done|apply rknown; by right].
+  - apply dom_singleton_L.
+  - apply dom_singleton_L.
+  - intros c e e' He He'. apply lookup_singleton_Some in He as [<- <-].
+    apply lookup_singleton_Some in He' as [_ <-]. split; [apply (wf_eq_refl _ HWf)|apply Sb_Sa].
+  - set_solver.
+  - set_solver.
+  - apply map_disjoint_empty_l.
+  - apply map_disjoint_empty_l.
+  - apply map_disjoint_empty_l.
+  - set_solver.
+  - set_solver.
+  - set_solver.
+  - set_solver.
+  - set_solver.
+Qed.
+
+(** The configuration is deadlock free, by the mixed derivation. *)
+Theorem rounds_deadlock_free : deadlock_free rconfig.
+Proof. exact (mixed_soundness rW rconfig TUnit rW_strict rounds_mixed). Qed.
