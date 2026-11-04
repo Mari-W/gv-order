@@ -11,6 +11,19 @@ From LRGV Require Export composition.ConnectCut.
     orientations of a configuration can be passed uniformly. *)
 Set Default Proof Using "All".
 
+(** Drop hypotheses that [mpoint] does not use, so that its rewriting
+    in every hypothesis stays cheap. *)
+Ltac mtrim :=
+  repeat match goal with
+  | H : ?P |- _ =>
+      lazymatch type of P with Prop => idtac | _ => fail end;
+      lazymatch P with
+      | _ ##ₘ _ => fail | dom _ ## dom _ => fail | _ ∈ dom _ => fail
+      | _ ∉ dom _ => fail | _ !! _ = _ => fail | _ ∨ _ => fail | _ ≠ _ => fail
+      | _ => clear H
+      end
+  end.
+
 Lemma senv_roots_union Σ1 Σ2 : senv_roots (Σ1 ∪ Σ2) ⊆ senv_roots Σ1 ∪ senv_roots Σ2.
 Proof.
   intros x. unfold senv_roots. rewrite elem_of_union, !elem_of_tenv_roots.
@@ -460,7 +473,7 @@ Section steps2.
     exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
     assert (Σ1 ∪ Σ2 = Σ1n ∪ Σ2n) as ->.
     { apply map_eq. intros r. pose proof (f_equal (lookup r) HΣa) as Hr.
-      subst Σ1n Σ2n. destruct (decide (r = c)) as [->|Hrc]; mpoint. }
+      subst Σ1n Σ2n. destruct (decide (r = c)) as [->|Hrc]; mtrim; mpoint. }
     assert (C = (C1 ∖ fchans v) ∪ (C2 ∪ B2) ∪ ((C0 ∖ dom Σv) ∪ dom Σe)) as ->.
     { assert (C1 = (C1 ∖ fchans v) ∪ dom Σe ∪ (dom Θe ∖ dom Σe)) as HC1e.
       { clear -HΣeΘ HdΘ. apply set_eq. intros x.
@@ -481,7 +494,7 @@ Section steps2.
       assert (ΣC' !! r = None ∨ is_Some (ΣC !! r)) as HCC.
       { destruct (ΣC' !! r) eqn:Hq; [right|by left]. apply elem_of_dom. rewrite HC0, <-HC0'.
         by eapply elem_of_dom_2. }
-      unfold recv_env. subst Σr2. destruct (decide (r = c)) as [->|Hrc]; mpoint.
+      unfold recv_env. subst Σr2. destruct (decide (r = c)) as [->|Hrc]; mtrim; mpoint.
       all: destruct HCC as [?|[? ?]]; congruence. }
     apply (conn_at_world n' W Σ1n Σ2n ΣC1n ΣC2n _ _ _ _ _ (le_n _) (wext_refl W HW')).
     - assert (dom Σ1n = dom Σ0 ∖ C0) as HD1 by (subst Σ1n; by rewrite dom_difference_L, HC0).
@@ -567,7 +580,7 @@ Section steps2.
       { assert (Σe ##ₘ Σ0) as He0.
         { apply map_disjoint_dom. clear -He1 H0a HC1Σ1 HC10. set_solver. }
         apply map_eq. intros r. subst Σ1n ΣC1n.
-        destruct (decide (r = c)) as [->|Hrc]; mpoint. }
+        destruct (decide (r = c)) as [->|Hrc]; mtrim; mpoint. }
       eapply Prel_down; [|exact HP1']. lia.
     - assert (Σ2n ∪ ΣC2n = recv_env Σr2 Θ2) as -> by (subst ΣC2n; by apply map_difference_union).
       exact HP2'.
