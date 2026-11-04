@@ -125,7 +125,23 @@ is O-Recv, which quantifies over every received value, against a resolution
 that travels with a value.
 
 I did not edit SHARP-EDGES.md. Other branches add numbered entries there, and
-the revision of entry 4 is the author's decision.
+the revision of entry 4 is the author's decision. Proposed text, to replace
+the body of entry 4.
+
+> A component that acts on two external channels in an order chosen by a
+> value it receives needs both orders, one per branch. In a closed program
+> this types. The receiver gives the value a sum type whose side for the
+> other branch carries an unsatisfiable fact about payload points, and E-Open
+> makes the dead branch typable under inconsistent hypotheses
+> (examples/DataBranch.v, db_typed). A component whose interface types the
+> value at ∗ ⊕ ∗, or at a sum whose two sides one world realizes together,
+> has no derivation under realizable hypotheses (db_component_unrealizable,
+> db_component_sides, db_rnode_unrealizable). A case node that runs every
+> round with an alternating live branch types through a state that carries
+> the pattern (examples/DataAlternate.v). Open: a pattern that is not
+> eventually periodic (conjecture, docs/extensions/data-dependent-worlds.md).
+> Decision: deferred. Pending choices with an owner are the candidate
+> extension (same file, section 4.4).
 
 ## Open problems
 
