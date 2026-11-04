@@ -26,7 +26,7 @@ the point variables its box binds.
   \begin{align*}
     \asTmId{rch} := {}
       & \tBoxA{\asTm{f}}{\pviA}{\cstr}{}
-        \tAbsA{\poff{\pviA}{1}}{\pTop}{\ch : \sAt{\styB}{\pviA}}{}
+        \tAbsA{\poff{\pviA}{1}}{}{\ch : \sAt{\styB}{\pviA}}{}
         \tLet[\chB][\ch_1]{\tApp{\tRecv}{\ch}}{}
       \\ & \quad
         \tSeq{\tApp{\tClos}{\ch_1}}{}
@@ -34,7 +34,7 @@ the point variables its box binds.
       \\
     \asTmId{sch} := {}
       & \tBoxA{\asTm{g}}{\pviA}{\cstr}{}
-        \tAbsA{\poff{\pviA}{1}}{\pTop}{\ch : \sAt{\dual{\styB}}{\pviA}}{}
+        \tAbsA{\poff{\pviA}{1}}{}{\ch : \sAt{\dual{\styB}}{\pviA}}{}
         \tLetS{\tPair{\asTm{e}}{\asTm{e}'}}{\tApp{\tNewC{\pviB}{\fEq{\pviB}{\pslot{\pviA}{0}}}}{\tUnit}}{}
       \\ & \quad
         \tLetS{\ch_1}{\tApp{\tSend}{\tPair{\asTm{e}}{\ch}}}{}
@@ -99,13 +99,13 @@ the point variables its box binds.
       \;\mid\; k \in \Nat \,}
     \\
     \asTmId{fwd} &{}: \tyBox{\pviA \pviA'}{\cstr_{\asTy{f}}}{%
-      \tyUnit \lolli{\pBot}{\pTop}
+      \tyUnit \lolli{}{}
         (\lPair{\sAt{\sty_{\asTy{i}}}{\pviA}}{\sAt{\sty_{\asTy{o}}}{\pviA'}}
-          \lolli{\pviA'}{\pTop} \tyUnit)}
+          \lolli{\pviA'}{} \tyUnit)}
     \\
     \asTmId{fwd} &{}=
       \tBoxA{\asTm{f}}{\pviA \pviA'}{\cstr_{\asTy{f}}}{}
-      \tAbsA{\pviA'}{\pTop}{\asTm{p}}{}
+      \tAbsA{\pviA'}{}{\asTm{p}}{}
       \tLet[\vr][\vrB]{\asTm{p}}{}
       \tLet[\chB][\vr_1]{\tApp{\tRecv}{\vr}}{}
     \\ & \qquad
@@ -120,8 +120,8 @@ the point variables its box binds.
   $\fctx \types {\equiv}$ moves $\chB$ along the alias
   $\fEq{\pslot{\pviA}{0}}{\pslot{\pviA'}{0}}$ of $\cstr_{\asTy{f}}$.
   This is the one place in the development where an alias between two
-  carried roots is needed, and $\cstr_{\asTy{f}}$ is indexed by the
-  offset rather than by the slot depth. The recursive call asks
+  payload points is needed, and $\cstr_{\asTy{f}}$ is indexed by the
+  offset rather than by the payload depth. The recursive call asks
   $\cstr_{\asTy{f}}$ one round later, which $\cstr_{\asTy{f}}$ contains
   (\rocq{fw_sub}). A producer and a consumer complete the program
   (\rocq{fprod_typed}, \rocq{fcons_typed}), and
@@ -141,7 +141,7 @@ the point variables its box binds.
   derivation needs the fresh channel strictly below the one it answers
   on, and he notes that without that fact the process has no type.
   Here the fresh reply channel of a call sits at $\pslot{\pviA}{0}$, the
-  first carried root of the channel the call answers on, and
+  first payload point of the channel the call answers on, and
   \begin{align*}
     \sty_{\asTy{r}} &= \sSend{\tyUnit}{\sTerm}
     &
@@ -151,18 +151,18 @@ the point variables its box binds.
       \;\mid\; n \in \Nat \,}
     \\
     \asTmId{fwsrv} &{}: \tyBox{\pviA}{\cstr}{%
-      \tyUnit \lolli{\pBot}{\pTop}
-        (\sAt{\sty_{\asTy{r}}}{\pviA} \lolli{\poff{\pviA}{1}}{\pTop} \tyUnit)}
+      \tyUnit \lolli{}{}
+        (\sAt{\sty_{\asTy{r}}}{\pviA} \lolli{\poff{\pviA}{1}}{} \tyUnit)}
   \end{align*}
-  The order descends along the slot depth, and the depth grows without
+  The order descends along the payload depth, and the depth grows without
   bound, so there is no rank in $\Nat$. The rank
   $-2 \cdot \mathit{depth} + \mathit{offset}$ lands in $\mathbb{Z}$
-  (\rocq{kfw_ok}). Strictness asks only irreflexivity and transitivity,
+  (\rocq{KobForwarder.fw_ok}). Strictness asks only irreflexivity and transitivity,
   so a descending chain is admitted. The recursive call asks
   $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which $\cstr$ contains
-  (\rocq{kfw_sub}), and the whole program types
-  (\rocq{kfw_typed}) and is deadlock free
-  (\rocq{kfw_deadlock_free}).
+  (\rocq{KobForwarder.fw_sub}), and the whole program types
+  (\rocq{KobForwarder.fw_typed}) and is deadlock free
+  (\rocq{fw_deadlock_free_kob}).
 \end{example}
 
 \begin{example}[The factorial server \rocq{fcsrv}]
@@ -179,9 +179,9 @@ the point variables its box binds.
   is the one of \cref{ex:kobfwd}, and
   \[
     \asTmId{fact} : \tyBox{\pviA}{\cstr}{%
-      \tyUnit \lolli{\pBot}{\pTop}
+      \tyUnit \lolli{}{}
         (\lPair{(\lSum{\tyUnit}{\tyUnit})}{\sAt{\sty_{\asTy{r}}}{\pviA}}
-          \lolli{\poff{\pviA}{1}}{\pTop} \tyUnit)}
+          \lolli{\poff{\pviA}{1}}{} \tyUnit)}
   \]
   \Cref{rule:E-Case} types both branches, and the program is deadlock
   free (\rocq{fc_deadlock_free}).
@@ -278,9 +278,9 @@ invariant of a recursion, so it has to state every round at once, as
     \asTmId{ordered} &= \tBoxP{\asTm{f}}{\tAbs{\asTm{p}}{%
       \tLet[\ch][\chB]{\asTm{p}}{\tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}}}}
     \\
-    &: \tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{\pBot}{\pTop}
+    &: \tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{}{}
       (\lPair{\sAt{\sTerm}{\pviA}}{\sAt{\sTerm}{\pviA'}}
-        \lolli{\pviA'}{\pTop} \tyUnit)}
+        \lolli{\pviA'}{} \tyUnit)}
   \end{align*}
   Closing $\ch$ blocks at $\pviA$ while the body still holds $\chB$ at
   $\pviA'$, so \ref{rule:E-App} asks $\fLt{\pviA}{\pviA'}$. With
@@ -352,7 +352,80 @@ $\fLt{\pntA}{\pntB}$ and the thunk asks $\fLt{\pntB}{\pntA}$, and
 \ref{rule:E-Conv} keeps points while \ref{rule:E-Weak} drops only
 unlimited bindings, so every derivation asks both.
 
-\subsection{Priority Systems Embedded}
+\section{Extensions}
+\label{sec:ext}
+
+\subsection{Choice}
+\label{sec:ext-choice}
+
+The mechanized core has binary choice as primitive session types
+$\oplus\{\sty_1, \sty_2\}$ and $\&\{\sty_1, \sty_2\}$ with the constants
+$\asTmId{select}_1$, $\asTmId{select}_2$ and $\asTmId{branch}$
+(\rocq{konst_sig}). A choice at $\pntA$ continues at the payload point
+$\pslot{\pntA}{i}$ of the branch $i$ it picks, with $i \in \set{0,1}$,
+\begin{align*}
+  \asTmId{select}_i &{}: \forall \pntA.\, \set{\fLt{\pntA}{\pslot{\pntA}{i}}}
+    \Rightarrow \sAt{\oplus\{\sty_0, \sty_1\}}{\pntA}
+    \lolli{\pntA}{} \sAt{\sty_i}{\pslot{\pntA}{i}}
+  \\
+  \asTmId{branch} &{}: \forall \pntA.\,
+    \set{\fLt{\pntA}{\pslot{\pntA}{0}}, \fLt{\pntA}{\pslot{\pntA}{1}}}
+    \Rightarrow \sAt{\&\{\sty_0, \sty_1\}}{\pntA}
+    \lolli{\pntA}{} \lSum{\sAt{\sty_0}{\pslot{\pntA}{0}}}{\sAt{\sty_1}{\pslot{\pntA}{1}}}
+\end{align*}
+The two branches get two points, so one branch may order a channel below
+the continuation and the other above it. A branch that orders two
+channels against the other branch types (\rocq{bo_deadlock_free}).
+The term semantics labels a pick on $\ch$ with $\ch \triangleleft i$ and
+$\ch \triangleright i$, which \textsc{P-Act-Choice} synchronizes, and the
+logical relation has the clauses \textsc{O-Select}, \textsc{O-Branch},
+\textsc{Q-Select} and \textsc{Q-Branch} (\rocq{Eobl}, \rocq{Pobl}).
+% TODO(author): prose
+
+Choice is also encodable from sums and delegation. A selection sends
+$\tInj{i}{}$ of a fresh channel whose arm lies at $\pslot{\pntA}{i}$, and a
+branch receives and cases (\rocq{sel1_typed}, \rocq{sel2_typed},
+\rocq{branch_typed}, \rocq{choice_deadlock_free}).
+
+\subsection{Context-Free Session Types}
+\label{sec:ext-cfst}
+
+Context-free session types add $\asTy{Skip}$ and sequential composition
+$\sty;\sty$ to session types, and a $\Box$ binds session variables
+besides points (\rocq{ty}, \rocq{TBox}). \ref{rule:E-Exp} types the body
+at every hereditarily contractive instance of its session variables, and
+\ref{rule:E-Conv} converts up to bisimilarity. No fact rule is new.
+A recursive function over a context-free protocol acts at the walks of
+its starting point $\pntA$,
+\[
+  \mathit{walks}(\pntA) = \set{\pntA\, w \mid w \in (+1 \mid [0] \mid [1])^*}
+\]
+where $+1$ follows an action and $[i]$ follows branch $i$ of a choice. A
+ceiling $\zeta$ is an ordinary point variable above every walk, and the
+box constraint states the ceiling and the facts each choice owes for all
+walks at once,
+\[
+  \cstr = \set{\fLt{q}{\zeta},\ \fLt{q}{\pslot{q}{0}},\ \fLt{q}{\pslot{q}{1}}
+    \mid q \in \mathit{walks}(\pviA)} .
+\]
+The type of $\asTmId{sendTree}$ of \citet{ThiemannV16} has upper bound
+$\zeta$ and returns the continuation at an existential point above the
+segment (\rocq{sendTree_ty}). The mechanized programs copy and drain a
+tree received on a channel (\rocq{tree_deadlock_free}), run Milner's
+cyclic scheduler (\rocq{sch_deadlock_free}), treeSum and the arithmetic
+server of \citet{ThiemannV16} (\rocq{ts_deadlock_free},
+\rocq{as_deadlock_free}), and a repaired classic deadlock
+(\rocq{dlfix_deadlock_free}). The classic deadlock itself has no
+derivation (\rocq{dl_untypable}).
+
+The ceiling is coarse. The program
+$\tSeq{\tApp{\asTmId{sendTree}}{\tPair{t}{\ch}}}{\tSeq{\tApp{\tClos}{\chB}}{\tApp{\tSend}{\tPair{v}{\ch}}}}$
+needs $\chB$ between the end of the segment and the continuation of
+$\ch$, and the ceiling of the segment does not separate the two. The
+system of \citet{MordidoP} does not type it either.
+% TODO(author): prose
+
+\section{Subsumption}
 \label{sec:ex-priority}
 
 Two priority-based systems translate into \OurLang, and the translation
@@ -374,7 +447,7 @@ written, not only its image.
   session type carries, and it is strict (\rocq{Wpgv},
   \rocq{Wpgv_strict}). Induction on the PGV derivation types the
   translated term in that world (\rocq{pgv_translate}), where PGV's
-  bound $p$ becomes a frame. \Cref{th:soundness} then makes the
+  bound $p$ becomes a future. \Cref{th:soundness} then makes the
   translation of a closed program deadlock free
   (\rocq{ptyped_closed}, \rocq{pgv_deadlock_free}).
 
@@ -409,6 +482,13 @@ component under $\frm$ grown by $\heads(\ty)$, which is that premise.
 Both programs are rejected here for every choice of the fragment's
 predicate (\rocq{cx1_rejected}, \rocq{cx2_rejected}).
 
+The theorem covers monotone sessions. A falling session, whose
+priorities decrease along a channel, types in repaired PGV
+(\rocq{fall2_typed}, \rocq{fallxy_typed}). The program of
+\rocq{fallxy_typed} defeats every translation that reads points off
+session types alone, and its typing in \OurLang\ is not mechanized.
+% TODO(author): falling sessions open
+
 Example~2.1 of \citet{KokkeD23} is among the mechanized programs
 (\rocq{pgv_ex21_deadlock_free}), their delegation example is
 \rocq{pgv_deleg_deadlock_free}, and their forwarding example is
@@ -416,8 +496,9 @@ Example~2.1 of \citet{KokkeD23} is among the mechanized programs
 
 \begin{theorem}[Padovani and Novara \rocq{pn_deadlock_free_source}]
 \label{thm:pn}
-  Every closed program of \citet{PadovaniN15} whose every $\asTmId{fix}$
-  has the form $\tFixI{\asTm{f}}{\tAbs{\ivx}{\tm}}$ is deadlock free.
+  Every closed program of type unit of \citet{PadovaniN15}, typed in
+  their Table~2 with T-App-Poly and the repaired $\asTmId{fix}$
+  (\rocq{pn_typed}), is deadlock free in their semantics.
 \end{theorem}
 
 \begin{proof}
@@ -437,13 +518,17 @@ Example~2.1 of \citet{KokkeD23} is among the mechanized programs
   related source term is a value or steps (\rocq{src_progress}), which
   turns deadlock freedom of the target into deadlock freedom of the
   source in the semantics of \citet{PadovaniN15}
-  (\rocq{pn_deadlock_free_src}). The restriction on $\asTmId{fix}$ is
-  what keeps the relation closed under the unfolding of a recursive
-  definition (\rocq{fixlam}).
+  (\rocq{pn_deadlock_free_src}). A $\asTmId{fix}$ runs its body at every
+  source unfolding, and the target forces its box at the same moment
+  (\rocq{tr_fix}), so the relation is closed under unfolding for every
+  body.
 \end{proof}
 
 Their $\asTmId{fibo}$ and their signal pipe are mechanized
-(\rocq{fibo_deadlock_free_src}, \rocq{pipe_deadlock_free_src}).
+(\rocq{fibo_deadlock_free_src}, \rocq{pipe_deadlock_free_src}), and so
+are three fixes whose body is no $\lambda$
+(\rocq{div_deadlock_free_src}, \rocq{divsend_deadlock_free_src},
+\rocq{fixfork_deadlock_free_src}).
 
 \Citet{PadovaniN15} measure the same two bounds with numbers. A channel
 type $p[t]^n$ carries a level $n$, the arrow $t \to^{\rho,\sigma} s$
@@ -464,6 +549,15 @@ every shift the source takes, the unboundedly many of a recursive
 definition included (\rocq{Crel}, \rocq{crel_hold}). A $\Box$ binds the
 $\forall$ and holds no channel, which is the part their level $\top$
 plays.
+
+The context-free system of \citet{MordidoP} assigns priorities to the
+actions of a context-free session type. We relate it to \OurLang\
+informally. A priority becomes a point, the sequence of priorities their
+$\asTmId{new}$ assigns to a channel becomes the offsets of its point, and
+their top effect becomes a ceiling (\cref{sec:ext-cfst}). Their examples
+type here, the tree channel, the two streams and the repaired classic
+deadlock (\cref{sec:ext-cfst}).
+% TODO(author): prose
 
 %%% Local Variables:
 %%% mode: latex

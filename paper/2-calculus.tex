@@ -366,8 +366,8 @@ from.
   \adjustfigure[]
   \rulesection*{Names $\pnm$, points $\pntA$, facts $\fact$, constraints $\cstr$ (\rocq{point}, \rocq{fact}, \rocq{bcs})}
   \begin{align*}
-    \pnm &::= \pcst \sepr \pviA \sepr \pslot{\pntA}{j}
-    & \text{(a constant, a point variable, the $j$-th channel carried at $\pntA$)}
+    \pnm &::= \pviA \sepr \pcst \sepr \pslot{\pntA}{j}
+    & \text{(a variable, a constant at run time, a payload point)}
     \\
     \pntA &::= \poff{\pnm}{k}
     & \text{(the $k$-th action of $\pnm$, $k \in \Nat$; $\poff{\pnm}{0}$ is written $\pnm$)}
@@ -393,9 +393,11 @@ from.
   \label{fig:points}
 \end{figure}
 
-A channel at $\pntA$ acts there and moves to $\poff{\pntA}{1}$. A
-message sent at $\pntA$ carries its $j$-th channel at $\pslot{\pntA}{j}$.
-Every point of a judgment is built from a point variable or a constant.
+A channel at $\pntA$ acts there and moves to $\poff{\pntA}{1}$. The
+$j$-th channel of the message sent at $\pntA$ sits at the payload point
+$\pslot{\pntA}{j}$. A source program names point variables only.
+Constants $\pcst$ arise at run time, where a world (\cref{sec:worlds})
+states the facts between them.
 $\pvivec$ stands for a sequence $\pviA_1 \dots \pviA_m$ of point
 variables and $\pntvec$ for a sequence of points, and
 $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
@@ -411,8 +413,8 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
     \sty &::= \sSend{\ty}{\sty} \sepr \sRecv{\ty}{\sty} \sepr \sTerm
       \sepr \tyMu\tvar.\sty \sepr \tvar \sepr \dualv{\tvar}
     \\
-    \ubd &::= \pBot \sepr \pntA
-    & \lbd &::= \pTop \sepr \pBot \sepr \pntA
+    \ubd &::= \pAbs \sepr \pntA
+    & \lbd &::= \pAbs \sepr \pBot \sepr \pntA
   \end{align*}
   \rulesection{Session duality $\dual{\sty}$ (\rocq{dual})}
   \begin{align*}
@@ -458,9 +460,11 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
 
 A channel of type $\sAt{\sty}{\pntA}$ runs $\sty$ and acts next at
 $\pntA$. The arrow $\ty \lolli{\ubd}{\lbd} \tyB$ carries the latest
-point at which a call may block, $\pBot$ for never, and a lower bound on
-the points of the channels the closure holds, $\pTop$ for none. Arrows
-take $\lbd \in \set{\pTop} \cup \{\pntA\}$ and only existentials take
+point at which a call may block, absent ($\pAbs$) when it never blocks,
+and a lower bound on the points of the channels the closure holds, absent
+when it holds none and $\pBot$ when they are unknown. We omit an absent
+bound, so $\ty \lolli{}{} \tyB$ never blocks and holds nothing. Arrows
+take an absent $\lbd$ or a point, and only existentials take
 $\lbd = \pBot$. $\tyBox{\pvivec}{\cstr}{\ty}$ is replicable, holds no
 channel, and is usable at every choice of points for $\pvivec$ that
 satisfies $\cstr$. $\tyEx{\lbd}{\pvivec}{\cstr}{\ty}$ is $\ty$ at some
@@ -506,22 +510,33 @@ $\tyMu\tvar.\sty$ swaps the polarities of its own variable so that
 unfolding commutes with duality (\cref{sec:app-duality}).
 
 \paragraph{Contexts and the judgment}
-A linear environment $\lenv ::= \tEmpty \sepr \lenv, \vr : \ty$ is
+A variable context $\lenv ::= \tEmpty \sepr \lenv, \vr : \ty$ is
 linear except at $\Box$ types. $\lenv[\vr : \ty]$ updates $\lenv$, which
 already binds $\vr$, so that $\vr$ has type $\ty$, and it extends
-nothing. The facts $\fctx$ assumed by a judgment
-are facts $\fact$ over points together with facts $\fLt{\ubd}{\pfv}$ for
-frame variables $\pfv$. Nodes are
-$\pnode ::= \pntA \sepr \pfv \sepr \pBot$, and a frame $\frm$ is a
-finite set of nodes. The judgment
+nothing. The fact context $\fctx$ holds facts $\fact$ over points and
+facts $\fLt{\ubd}{\pfv}$ for future variables $\pfv$. It is static, and
+it may be inconsistent in dead code. A term channel environment $\tenv$
+gives each channel the entries $\ch : \sAt{\sty}{\pntA}$ of the ends it
+holds, possibly both. Nodes are $\pnode ::= \pntA \sepr \pfv \sepr
+\pBot$, and a future $\frm$ is a finite set of nodes. The judgment
 \[
-  \fctx; \lenv \typesF{\frm} \tm : \ty
-  \qquad(\rocq{styped})
+  \tenv ; \fctx ; \lenv \typesF{\frm} \tm : \ty
+  \qquad(\rocq{typed})
 \]
-says that $\tm$ uses exactly $\lenv$ and has type $\ty$, and that the
-rest of the program holds the nodes of $\frm$ while $\tm$ runs. A frame
-variable $\pfv$ stands for whatever the caller of a function holds, and
-$\pBot$ for channels at points not known here.
+says that $\tm$ uses exactly $\tenv$ and $\lenv$ and has type $\ty$, and
+that the thread still acts on the nodes of $\frm$ after $\tm$. The future
+$\frm$ is what a blocking action of $\tm$ checks against. A future
+variable $\pfv$ stands for what the caller of a function still acts on,
+and $\pBot$ for channels at points not known here. A deadlock is a cycle
+of threads, each blocked on a point $\pntA$ while it still needs a point
+$\pntB$ that the next thread blocks on, and the check of a blocking
+action against its future turns that cycle into a cycle of $\fLt{}{}$.
+
+A source program has $\tenv = \emptyset$ and no constant in $\fctx$
+(\rocq{styped}). The rules below present this source case and write
+$\fctx ; \lenv \typesF{\frm} \tm : \ty$. The same judgment types a
+running thread, with the world as the ground part of $\fctx$ and its
+channels in $\tenv$ (\cref{sec:app-proc}).
 
 \begin{figure}[tp]
   \adjustfigure[]
@@ -556,11 +571,11 @@ $\pBot$ for channels at points not known here.
       \fctx \types \fEq{\poff{\pntA}{1}}{\poff{\pntB}{1}}
     } \label{rule:A-Shift}
     \and
-    \infer*[lab=A-Slot]{
+    \infer*[lab=A-Payload]{
       \fctx \types \fEq{\pntA}{\pntB}
     }{
       \fctx \types \fEq{\pslot{\pntA}{j}}{\pslot{\pntB}{j}}
-    } \label{rule:A-Slot}
+    } \label{rule:A-Payload}
   \end{proofrules}
   \rulesection{Precedence $\fctx \types \fLt{\pnode}{\pnode'}$ (\rocq{fl})}
   \begin{proofrules}
@@ -595,7 +610,7 @@ $\pBot$ for channels at points not known here.
       \fctx \types \fLt{\pnode}{\pnode'}
     } \label{rule:O-Trans}
   \end{proofrules}
-  \rulesection{Heads, lower bounds, precedence of a frame (\rocq{heads})}
+  \rulesection{Heads, lower bounds, precedence of a future (\rocq{heads})}
   \begin{align*}
     \heads(\sAt{\sty}{\pntA}) &= \set{\pntA}
     &
@@ -605,12 +620,12 @@ $\pBot$ for channels at points not known here.
     \\
     \heads(\tyUnit) &= \heads(\tyBox{\pvivec}{\cstr}{\ty}) = \emptyset
   \end{align*}
-  with $\pTop$ contributing nothing, and
+  with an absent bound contributing nothing, and
   $\heads(\lenv) = \bigcup \set{\heads(\ty) \mid \vr : \ty \in \lenv}$.
   \begin{align*}
     \fctx \types \fLe{\lbd}{N}
     &\quad\text{iff}\quad
-    \lbd = \pTop \text{ and } N = \emptyset,
+    \lbd \text{ absent and } N = \emptyset,
     \text{ or } \lbd = \pBot,
     \\ & \qquad\qquad
     \text{ or } \lbd = \pntA \text{ and }
@@ -619,7 +634,7 @@ $\pBot$ for channels at points not known here.
     \\
     \fctx \types \fLt{\ubd}{\frm}
     &\quad\text{iff}\quad
-    \ubd = \pBot,
+    \ubd \text{ absent},
     \text{ or } \ubd = \pntA \text{ and }
       \fctx \types \fLt{\pntA}{\pnode} \text{ for every } \pnode \in \frm
   \end{align*}
@@ -642,7 +657,7 @@ existential at $\pBot$.
 $\lenv$ and copies variables of $\Box$ type to both sides. The first
 subterm of every composite runs while the rest holds its channels, so it
 is typed under $\frm$ grown by the heads of that rest.
-\ref{rule:E-Abs} types the body under the frame $\set{\pfv}$ and assumes
+\ref{rule:E-Abs} types the body under the future $\set{\pfv}$ and assumes
 $\fLt{\ubd}{\pfv}$, so every call in the body precedes $\ubd$, and
 \ref{rule:E-App} checks that $\ubd$ precedes what the caller holds. The
 two checks meet at $\ubd$.
@@ -652,16 +667,18 @@ that holds channels has fixed points.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Typing rules for terms $\fctx ; \lenv \typesF{\frm} \tm : \ty$ (\rocq{styped})}
+  \rulesection*{Typing rules for source terms $\fctx ; \lenv \typesF{\frm} \tm : \ty$ (\rocq{typed}, \rocq{styped})}
   \begin{proofrules}
     \infer*[lab=E-Unit]{}{
       \fctx ; \tEmpty \typesF{\frm} \tUnit : \tyUnit
     } \label{rule:E-Unit}
     \and
     \infer*[lab=E-Const]{
-      \cst : \ty \text{ an instance of a signature under } \fctx
+      \cst : \forall \pntvec.\, \cstr \Rightarrow \ty \\
+      \fctx \types \tysub{\cstr}{\vec{\pntA}}{\pntvec} \\
+      \vec{\pntA} \text{ known}
     }{
-      \fctx ; \tEmpty \typesF{\frm} \cst : \ty
+      \fctx ; \tEmpty \typesF{\frm} \cst : \tysub{\ty}{\vec{\pntA}}{\pntvec}
     } \label{rule:E-Const}
     \and
     \infer*[lab=E-Var]{}{
@@ -729,21 +746,8 @@ that holds channels has fixed points.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Structural rules and rules for points, $\fctx ; \lenv \typesF{\frm} \tm : \ty$ (\rocq{styped})}
+  \rulesection*{Conversion and rules for points, $\fctx ; \lenv \typesF{\frm} \tm : \ty$ (\rocq{typed})}
   \begin{proofrules}
-    \infer*[lab=E-Weak]{
-      \fctx ; \lenv \typesF{\frm} \tm : \ty \\
-      \lenv' \text{ only } \Box \text{ types}
-    }{
-      \fctx ; \lenv , \lenv' \typesF{\frm} \tm : \ty
-    } \label{rule:E-Weak}
-    \and
-    \infer*[lab=E-Contract]{
-      \fctx ; \lenv , \ivx : \tBox{\ty} , \ivy : \tBox{\ty} \typesF{\frm} \tm : \tyB
-    }{
-      \fctx ; \lenv , \ivx : \tBox{\ty} \typesF{\frm} \tSub{\tm}{\ivx}{\ivy} : \tyB
-    } \label{rule:E-Contract}
-    \and
     \infer*[lab=E-Conv]{
       \fctx ; \lenv \typesF{\frm} \tm : \ty \\
       \ty \approx \ty' \text{ up to } \fctx \types {\equiv}
@@ -755,11 +759,11 @@ that holds channels has fixed points.
       \lenv \text{ only } \Box \text{ types} \\
       \pvivec, \pfv \text{ fresh} \\\\
       \fctx, \cstr, \fLt{\ubd}{\pfv} ;
-        \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}
+        \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}
         \typesF{\set{\pfv}} \tm : \ty
     }{
       \fctx ; \lenv \typesF{\frm} \tBoxP{\vr}{\tm}
-        : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}
+        : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}
     } \label{rule:E-Exp}
     \and
     \infer*[lab=E-Pack]{
@@ -779,63 +783,74 @@ that holds channels has fixed points.
     } \label{rule:E-Open}
   \end{proofrules}
   \rulesectionend
-  \caption{Typing rules for terms: structure and points}
-  \Description{Six term typing rules, for weakening, contraction,
-    conversion, a box, packing and opening an existential.}
+  \caption{Typing rules for terms: conversion and points}
+  \Description{Four term typing rules, for conversion, a box, packing
+    and opening an existential.}
   \label{fig:typeSysPoints}
 \end{figure}
 
-\paragraph{Signatures}
-\Cref{fig:signatures} gives the type-indexed family of signatures the
-constants are instantiated from. An action that may block happens at a
-point $\pntA$, so $\tSend$, $\tRecv$ and $\tClos$ have upper bound
-$\pntA$, and \ref{rule:E-App} then requires
-$\fctx \types \fLt{\pntA}{\frm}$. $\tLink$ and $\tSpawn$ never block, so
-their upper bound is $\pBot$. $\tNew$ puts both ends of a channel at one
-point $\pviA$ and returns an existential, so a channel starts at a point
-placed by its creation constraint and not by a global number.
-$\tLink$ asks $\fEq{\pntA}{\pntB}$ because forwarding merges two
-sessions into one conduit, and the actions of the merged channel need a
-single position. Under $\fLt{\pntA}{\pntB}$ they would have two. The
-condition is not an artefact of the static rule, \ref{rule:O-Link} of
-the logical relation requires the world to alias the two points as well.
-Whether a weaker condition that coerces one position into the other
-would work is open.
+\paragraph{Constants}
+A constant has a constrained type-indexed scheme
+$\cst : \forall \pntvec.\, \cstr \Rightarrow \ty$
+(\cref{fig:signatures}, \rocq{konst_sig}). \ref{rule:E-Const} instantiates
+$\pntvec$ with known points $\vec{\pntA}$ and proves the instance
+constraint $\fctx \types \tysub{\cstr}{\vec{\pntA}}{\pntvec}$
+(\rocq{konst_ty}). A point is known when $\fctx$ binds its root, through
+the creation constraint $\cstr_0$ of the program, a $\Box$ or an
+$\exists$, or when the world supports it (\rocq{skn}). An action that may block happens at a point $\pntA$,
+so $\tSend$, $\tRecv$ and $\tClos$ have upper bound $\pntA$, and
+\ref{rule:E-App} then requires $\fctx \types \fLt{\pntA}{\frm}$. $\tLink$
+and $\tSpawn$ never block, so their upper bound is absent. $\tSend$ owes
+$\fLt{\pntA}{\pnode}$ for every head $\pnode$ of its payload, the
+channels it hands over. $\tLink$ asks $\fEq{\pntA}{\pntB}$. Forwarding
+merges two sessions into one conduit, and the actions of the merged
+channel need a single position. \ref{rule:O-Link} of the logical relation
+requires the world to alias the two points as well. % TODO(author): prose
+
+$\tNew$ is the one constant outside the schemes. It puts both ends of a
+channel at a fresh point $\pviA$ and returns an existential whose
+introduction premise is that its constraint $\cstr$ is a creation
+constraint (\cref{def:creation}) over known outer points. A channel thus
+starts at a point placed by its creation constraint and not by a global
+number.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Type-indexed families of type signatures for constants $\cst : \ty$ (\rocq{konst_ty})}
+  \rulesection*{Schemes of the constants $\cst : \forall \pntvec.\, \cstr \Rightarrow \ty$ (\rocq{konst_sig}, \rocq{konst_ty})}
   \begin{align*}
-    & & & \text{side conditions the instance discharges}
+    \tSpawn &{}: (\tyUnit \lolli{\ubd}{\lbd} \tyUnit) \lolli{}{} \tyUnit
     \\
-    \tNew &{}: \tyUnit \lolli{\pBot}{\pTop}
+    \tSend &{}: \forall \pntA.\,
+      \set{\fLt{\pntA}{\pnode} \mid \pnode \in \heads(\tysub{\ty}{\pntA}{\pself})}
+      \Rightarrow
+      \lPair{\tysub{\ty}{\pntA}{\pself}}{\sAt{(\sSend{\ty}{\sty})}{\pntA}}
+      \lolli{\pntA}{} \sAt{\sty}{(\poff{\pntA}{1})}
+    \\
+    \tRecv &{}: \forall \pntA.\, \sAt{(\sRecv{\ty}{\sty})}{\pntA}
+      \lolli{\pntA}{} \lPair{\tysub{\ty}{\pntA}{\pself}}{\sAt{\sty}{(\poff{\pntA}{1})}}
+    \\
+    \tClos &{}: \forall \pntA.\, \sAt{\sTerm}{\pntA} \lolli{\pntA}{} \tyUnit
+    \\
+    \tLink &{}: \forall \pntA \pntB.\, \set{\fEq{\pntA}{\pntB}} \Rightarrow
+      \lPair{\sAt{\sty}{\pntA}}{\sAt{\dual{\sty}}{\pntB}} \lolli{}{} \tyUnit
+    \\
+    \tForce &{}: \forall \pntvec.\, \tysub{\cstr}{\pntvec}{\pvivec} \Rightarrow
+      \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}
+      \lolli{\tysub{\ubd}{\pntvec}{\pvivec}}{} \tysub{\ty}{\pntvec}{\pvivec}
+  \end{align*}
+  An empty constraint is omitted. The payload of $\tSend$ has no head
+  $\pBot$.
+  \rulesection{Creation of a channel}
+  \begin{align*}
+    \tNew &{}: \tyUnit \lolli{}{}
       \tyEx{\pBot}{\pviA}{\cstr}{\lPair{\sAt{\sty}{\pviA}}{\sAt{\dual{\sty}}{\pviA}}}
-    & & \cstr \text{ a creation constraint}
-    \\
-    \tSpawn &{}: (\tyUnit \lolli{\ubd}{\lbd} \tyUnit) \lolli{\pBot}{\pTop} \tyUnit
-    \\
-    \tSend &{}: \lPair{\tysub{\ty}{\pntA}{\pself}}{\sAt{(\sSend{\ty}{\sty})}{\pntA}}
-      \lolli{\pntA}{\pTop} \sAt{\sty}{(\poff{\pntA}{1})}
-    & & \fctx \types \fLt{\pntA}{\pnode} \text{ for every }
-        \pnode \in \heads(\tysub{\ty}{\pntA}{\pself})
-    \\
-    \tRecv &{}: \sAt{(\sRecv{\ty}{\sty})}{\pntA}
-      \lolli{\pntA}{\pTop} \lPair{\tysub{\ty}{\pntA}{\pself}}{\sAt{\sty}{(\poff{\pntA}{1})}}
-    \\
-    \tClos &{}: \sAt{\sTerm}{\pntA} \lolli{\pntA}{\pTop} \tyUnit
-    \\
-    \tLink &{}: \lPair{\sAt{\sty}{\pntA}}{\sAt{\dual{\sty}}{\pntB}}
-      \lolli{\pBot}{\pTop} \tyUnit
-    & & \fctx \types \fEq{\pntA}{\pntB}
-    \\
-    \tForce &{}: \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}
-      \lolli{\tysub{\ubd}{\pntvec}{\pvivec}}{\pTop} \tysub{\ty}{\pntvec}{\pvivec}
-    & & \fctx \types \tysub{\cstr}{\pntvec}{\pvivec}
+    & & \cstr \text{ a creation constraint under } \fctx
   \end{align*}
   \rulesectionend
-  \caption{Signatures of the constants}
-  \Description{The seven type signatures, with the side conditions on
-    points that each one reads from the fact theory.}
+  \caption{Schemes of the constants}
+  \Description{The schemes of spawn, send, recv, close, link and force,
+    each with the constraint its instance proves, and the signature of new
+    with its creation constraint.}
   \label{fig:signatures}
 \end{figure}
 
@@ -873,127 +888,18 @@ $\tLetS{\tPair{\ch}{\chB}}{\tApp{\tNew}{\tUnit}}{\tm}$ unfolds to
 \ref{rule:E-Let*}, \ref{rule:E-Open} and \ref{rule:E-LetPair}
 (\rocq{t_new_open}).
 
-\paragraph{Processes}
-\Cref{fig:procTypeSys} types processes. All return types are
-\emph{primitive} (\rocq{prim}), so a thread cannot avoid closing its
-channels by returning them. \ref{rule:P-Connect} composes two processes
-that interact in a dual way on the channels of $\senv_{\asTy{C}}$ and
-subsumes the mix rule at $\senv_{\asTy{C}} = \tEmpty$.
-
-The process judgment $\senv \typesW{\wrld} \proc : \ty$ carries a world
-$\wrld$, and so does the term judgment
-$\tenv ; \lenv \typesFW{\frm}{\wrld} \tm : \ty$ that
-\ref{rule:P-Term} reads (\rocq{typed}). Neither is the judgment
-$\fctx ; \lenv \typesF{\frm} \tm : \ty$ of
-\cref{fig:typeSys,fig:typeSysPoints}, which carries facts and no world.
-\Cref{sec:worlds} defines worlds, \cref{sec:logicalRelation:relation}
-defines the term environment $\tenv$, and \rocq{styped_typed} embeds
-every source derivation into the world-carrying judgment at the empty
-world. The restricted channels of \ref{rule:P-Term} are the domain of
-$\tenv_{\asTy{B}}$, which holds both ends of each of them, so a thread
-that owns a whole channel is typed without the channel appearing in its
-interface.
-
-\begin{figure}[tp]
-  \adjustfigure[]
-  \rulesection*{Primitive types $\primitive \ty$ (\rocq{prim})}
-  \begin{proofrules}
-    \infer*{}{
-      \primitive \tyUnit
-    }
-    \and
-    \infer*{
-      \primitive \tyB \\ \primitive \tyC
-    }{
-      \primitive \lPair{\tyB}{\tyC}
-    }
-    \and
-    \infer*{
-      \primitive \tyB \\ \primitive \tyC
-    }{
-      \primitive \lSum{\tyB}{\tyC}
-    }
-    \and
-    \infer*{
-      \primitive \tyB
-    }{
-      \primitive \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \tyB}
-    }
-  \end{proofrules}
-  \rulesection{Typing rules for processes $\senv \typesW{\wrld} \proc : \ty$ (\rocq{ptyped})}
-  \begin{proofrules}
-    \infer*[lab=P-Term]{
-      \primitive \ty \\
-      \tenv_{\asTy{B}} \text{ holds both ends of each of its channels,
-        dual at aliased points} \\
-      \senv , \tenv_{\asTy{B}} ; \tEmpty \typesFW{\emptyset}{\wrld} \tm : \ty
-    }{
-      \senv \typesW{\wrld} (\dom(\tenv_{\asTy{B}}) , \mset{\tm}) : \ty
-    } \label{rule:P-Term}
-    \and
-    \infer*[lab=P-Connect]{
-      \senv_1 , \senv_{\asTy{C}} \typesW{\wrld} (\chset_1 , \pool_1) : \ty \\
-      \senv_2 , \dual{\senv_{\asTy{C}}} \typesW{\wrld} (\chset_2 , \pool_2) : \tyUnit \\
-      \dom(\senv_{\asTy{C}}) = \chset_0
-    }{
-      \senv_1 , \senv_2 \typesW{\wrld} (\chset_1 \cupdot \chset_2 \cupdot \chset_0 , \pool_1 \uplus \pool_2) : \ty
-    } \label{rule:P-Connect}
-  \end{proofrules}
-  \rulesectionend
-  \caption{Typing for processes}
-  \Description{The four rules defining primitive types and the two
-    process typing rules.}
-  \label{fig:procTypeSys}
-\end{figure}
-
-\paragraph{Soundness}
+\paragraph{The creation constraint of a program}
 A program starts under one constraint $\cstr_0$ over the top-level point
-variables it begins with. A program that creates all its channels with
-$\tNew$ takes $\cstr_0 = \emptyset$. A program that wants a global
-order, such as the translation of a priority system, states it in
-$\cstr_0$ and aliases its channels to the variables $\cstr_0$ speaks of.
-The source programs of this paper name no point constant. Their points
-are the variables that $\cstr_0$, a $\Box$ and an $\exists$ bind, and
-\cref{thm:soundness-source} supplies the constants itself
-(\rocq{c0_consts}). For such a program $\tysub{\ty}{\pntA}{\pself}$ is
-the only way a payload acquires a point. A translated program may name
-constants, and the image of PGV does (\rocq{proot}).
-
-\begin{theorem}[Soundness for source programs \rocq{soundness_source}]
-\label{thm:soundness-source}
-  If $\cstr_0$ is acyclic, $\primitive \ty$ and
-  $\cstr_0 ; \tEmpty \typesF{\emptyset} \tm : \ty$, then the thread
-  $(\emptyset, \mset{\tm})$ is deadlock free.
-\end{theorem}
-
-\begin{proof}
-  The proof builds the world the run needs out of $\cstr_0$. Embed the
-  source derivation into the world-carrying judgment at the empty world,
-  which supports no fact beyond equality and program order
-  (\rocq{wnil}, \rocq{wnil_strict}, \rocq{styped_typed}). Let $n$ be the
-  number of top-level point variables and send each of them to its own
-  point constant. Acyclicity of $\cstr_0$ makes the world generated by
-  the image of $\cstr_0$ under that map strict (\rocq{wc0},
-  \rocq{wc0_strict}), it extends the empty world (\rocq{wc0_ext}), and
-  the hypothesis $(\cstr_0, \pvivec)$ holds in it at those constants
-  (\rocq{wc0_holds}). Instantiating the derivation along the map
-  therefore yields the infinitary judgment in that world
-  (\rocq{typed_sem_rules}, \rocq{c0_consts}), hence a semantic judgment
-  (\rocq{sem_rules_fundamental}). One thread with nothing restricted is
-  a process of the relation (\rocq{Prel_term}), and
-  \cref{thm:adequacy} concludes. Point instantiation preserves
-  $\primitive$ (\rocq{prim_pinst}), which \rocq{Prel_term} needs.
-\end{proof}
-
-Acyclicity of $\cstr_0$ is the acyclicity half of
-\cref{def:creation}, checked against the empty context. The judgment of
-\cref{thm:soundness-source} carries no world and no channel environment.
-The world-carrying judgment $\senv \typesW{\wrld} \proc : \ty$ of
-\cref{fig:procTypeSys} and the logical relation of
-\cref{sec:logicalRelation} sit behind it. \rocq{styped_typed} bridges
-them, taking a source derivation to the world-carrying term judgment at
-any world and at the empty term environment, and \rocq{typed_styped}
-comes back from a world with empty support.
+variables it begins with, its creation constraint. A program that creates
+all its channels with $\tNew$ takes $\cstr_0 = \emptyset$. A program that
+wants a global order, such as the translation of a priority system,
+states it in $\cstr_0$ and aliases its channels to the variables
+$\cstr_0$ speaks of. A source program names no point constant. Its points
+are the variables that $\cstr_0$, a $\Box$ and an $\exists$ bind. For
+such a program $\tysub{\ty}{\pntA}{\pself}$ is the only way a payload
+acquires a point. \Cref{thm:soundness-source} asks $\cstr_0$ to be a
+creation constraint against the empty context, which is acyclicity of
+$\cstr_0$ (\rocq{c0_creation_ok}).
 
 \begin{example}[Delegation \rocq{deleg_main}]
 \label{ex:delegation}
@@ -1028,7 +934,7 @@ comes back from a world with empty support.
   \end{align*}
   The creation constraint of $\ch$ puts the delegated session strictly
   inside the gap between the carrier's two actions, and the second
-  $\tNew$ creates $\chB$ at the carried root of a message the carrier
+  $\tNew$ creates $\chB$ at the payload point of a message the carrier
   has not sent yet. The order is one chain,
   \[
     \fLt{\pviA}{{}} \pslot{\pviA}{0}
@@ -1037,7 +943,7 @@ comes back from a world with empty support.
     \prec \pfv ,
   \]
   built from two facts of the first $\tNew$, program order, and the
-  frame hypothesis \ref{rule:E-Abs} adds for the spawned thread. The
+  future hypothesis \ref{rule:E-Abs} adds for the spawned thread. The
   rank $\poff{\pviA}{k} \mapsto 10k$ and
   $\poff{\pslot{\pviA}{0}}{o} \mapsto 5+o$ witnesses acyclicity.
   \Cref{sec:app-delegation} lists every blocking action with the premise
@@ -1046,10 +952,61 @@ comes back from a world with empty support.
   (\rocq{deleg_typed}), so $\asTmId{deleg}$ is deadlock free
   (\rocq{deleg_deadlock_free}).
 
-  A priority system cannot type this program. The carrier typed
-  $\sSend{}{}^0.\sRecv{}{}^1$ leaves no integer between its two actions,
-  and the number of actions the delegated session performs is not known
-  where the carrier is typed.
+  A priority system types this program when the priorities of the
+  carrier leave a gap. With the carrier at $\sSend{}{}^0.\sRecv{}{}^{10}$
+  the delegated session takes priorities $1$ and $2$. The gap fixes in
+  advance how many actions the delegated session may take. The creation
+  constraint fixes only their order relative to the carrier.
+  % TODO(author): prose
+\end{example}
+
+\begin{example}[A channel or nothing \rocq{some_main}, \rocq{none_main}]
+\label{ex:option}
+  A message carries a channel or nothing. With
+  $\sty^0 = \sSend{\tyUnit}{\sTerm}$ the protocol is
+  $\sSend{(\lSum{\sAt{\sty^0}{\pslot{\pself}{0}}}{\tyUnit})}{\sTerm}$,
+  and the receiver $\asTmId{R}$ cases on what arrives,
+  \begin{align*}
+    \asTmId{R} := {}
+      & \tAbsA{\poff{\pviA}{1}}{\pviA}{\tUnit}{}
+        \tLet[\asTm{m}][\ch'_1]{\tApp{\tRecv}{\ch'}}{}
+        \tCase{\asTm{m}}{\asTm{e}}{\tSeq{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}})}}{\tApp{\tClos}{\ch'_1}}}{\asTm{u}}{\tSeq{\asTm{u}}{\tApp{\tClos}{\ch'_1}}}
+  \end{align*}
+  The program $\asTmId{some}$ sends $\tInj{1}{\chB}$ for a channel $\chB$
+  created at $\pslot{\pviA}{0}$, and $\asTmId{none}$ sends
+  $\tInj{2}{\tUnit}$. Both create the carrier under
+  $\set{\fLt{\pviA}{\pslot{\pviA}{0}},
+    \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}}}$. The heads of a sum
+  are the heads of both arms, so $\asTmId{none}$ owes
+  $\fLt{\pviA}{\pslot{\pviA}{0}}$ although it sends no channel, and
+  \ref{rule:E-Case} types both arms of $\asTmId{R}$. Both programs are
+  deadlock free (\rocq{some_deadlock_free}, \rocq{none_deadlock_free}),
+  and so is $\asTmId{some}$ with the spawn moved before the creation of
+  $\chB$ (\rocq{some_swapped_deadlock_free}).
+\end{example}
+
+\begin{example}[Request and reply \rocq{rr_main}]
+\label{ex:rr}
+  A server answers every request on $\asTm{a}$ with a reply on
+  $\asTm{b}$, forever, and a client asks and waits in the same rhythm.
+  Both are boxes over the constraint
+  \[
+    \cstr = \set{\fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
+      \fLt{\poff{\pviA'}{k}}{\poff{\pviA}{k+1}} \mid k \in \Nat}
+  \]
+  and the server has type
+  $\tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{}{}
+    (\lPair{\sAt{\sty_a}{\pviA}}{\sAt{\sty_b}{\pviA'}} \lolli{\pviA'}{} \tyUnit)}$
+  with $\sty_a = \tyMu\tvar.\sRecv{\tyUnit}{\tvar}$ and
+  $\sty_b = \tyMu\tvar.\sSend{\tyUnit}{\tvar}$. After one round the body
+  calls itself at $(\poff{\pviA}{1}, \poff{\pviA'}{1})$, and
+  $\tysub{\cstr}{\poff{\pviA}{1}, \poff{\pviA'}{1}}{\pviA, \pviA'}
+  \subseteq \cstr$, so the hypothesis of the body proves the instance
+  constraint of $\tForce$. The program creates $\asTm{a}$ with no fact and
+  $\asTm{b}$ under the infinite creation constraint that states $\cstr$ at
+  their two points (\rocq{rr_typed}), and it is deadlock free
+  (\rocq{rr_deadlock_free}). A constraint that states one round only does
+  not type the recursive call (\cref{thm:rej-rr}).
 \end{example}
 
 %%% Local Variables:

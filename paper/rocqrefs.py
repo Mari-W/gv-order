@@ -64,6 +64,8 @@ def declarations():
     """name -> (path relative to root, module name, 1-based line)
 
     Top-level declarations, plus the constructors of every Inductive.
+    Each is also registered as File.name, for names that several files
+    declare (the bare name resolves to the first file in path order).
     Constructors are indented and start with '|'; a non-indented line
     ends the block, except for the 'with ...' of a mutual definition.
     """
@@ -83,6 +85,9 @@ def declarations():
                 m = DECL.match(line) or (in_inductive and CTOR.match(line))
                 if m and m.group(1) not in out:
                     out[m.group(1)] = (rel, base, i)
+                # File.name disambiguates a name declared in several files
+                if m and (base + '.' + m.group(1)) not in out:
+                    out[base + '.' + m.group(1)] = (rel, base, i)
     return out
 
 

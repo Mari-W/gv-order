@@ -60,11 +60,129 @@
 % The reduction sequence is similar to the one shown for the first
 % example in \cref{sec:safe-process}.
 
+\section{Typing Running Threads and Processes}
+\label{sec:app-proc}
+
+The term judgment $\tenv ; \fctx ; \lenv \typesF{\frm} \tm : \ty$ of
+\cref{sec:syntacticTyping} also types a running thread. Its fact context
+then has a ground part, the world $\wrld$ of the configuration
+(\cref{sec:worlds}), whose facts relate point constants, and $\tenv$ holds
+the channels of the thread. In Rocq the fact context is the triple of the
+world, the box hypotheses and the future hypotheses (\rocq{fctx}), and a
+source program is the instance at the empty world and $\tenv = \emptyset$
+(\rocq{styped}, \rocq{wnil}). The world is irrelevant to a derivation
+with $\tenv = \emptyset$ (\rocq{typed_world_transfer}), so a source
+derivation holds at every world (\rocq{styped_typed}). Soundness asks the
+ground part to be acyclic, which is strictness of $\wrld$
+(\cref{th:soundness}) or acyclicity of $\cstr_0$
+(\cref{thm:soundness-source}).
+
+With channels, every composite rule of
+\cref{fig:typeSys} splits $\tenv$ as it splits $\lenv$, and adds the
+heads of the second part of $\tenv$ to the future of its first subterm.
+\ref{rule:E-Ch} reads a channel from $\tenv$, up to aliasing. Weakening
+and contraction act on variables of $\Box$ type.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Channels and structural rules (\rocq{typed})}
+  \begin{proofrules}
+    \infer*[lab=E-Ch]{
+      \sty \approx \sty' \\
+      \fctx \types \fEq{\pntA}{\pntB}
+    }{
+      \ch : \sAt{\sty}{\pntA} ; \fctx ; \tEmpty \typesF{\frm} \ch : \sAt{\sty'}{\pntB}
+    } \label{rule:E-Ch}
+    \and
+    \infer*[lab=E-Weak]{
+      \fctx ; \lenv \typesF{\frm} \tm : \ty \\
+      \lenv' \text{ only } \Box \text{ types}
+    }{
+      \fctx ; \lenv , \lenv' \typesF{\frm} \tm : \ty
+    } \label{rule:E-Weak}
+    \and
+    \infer*[lab=E-Contract]{
+      \fctx ; \lenv , \ivx : \tBox{\ty} , \ivy : \tBox{\ty} \typesF{\frm} \tm : \tyB
+    }{
+      \fctx ; \lenv , \ivx : \tBox{\ty} \typesF{\frm} \tSub{\tm}{\ivx}{\ivy} : \tyB
+    } \label{rule:E-Contract}
+  \end{proofrules}
+  \rulesectionend
+  \caption{Typing rules for channels, weakening and contraction}
+  \Description{E-Ch reads a channel from the channel environment, E-Weak
+    drops unlimited variables and E-Contract duplicates them.}
+  \label{fig:typeSysStruct}
+\end{figure}
+
+\Cref{fig:procTypeSys} types processes. All return types are
+\emph{primitive} (\rocq{prim}), so a thread cannot avoid closing its
+channels by returning them. \ref{rule:P-Term} types a thread with the
+world as the ground part of its fact context. Its restricted channels are
+the domain of $\tenv_{\asTy{B}}$, which holds both ends of each of them,
+so a thread that owns a whole channel is typed without the channel
+appearing in its interface $\senv$. \ref{rule:P-Connect} composes two
+processes that interact in a dual way on the channels of
+$\senv_{\asTy{C}}$ and subsumes the mix rule at
+$\senv_{\asTy{C}} = \tEmpty$.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Primitive types $\primitive \ty$ (\rocq{prim})}
+  \begin{proofrules}
+    \infer*{}{
+      \primitive \tyUnit
+    }
+    \and
+    \infer*{
+      \primitive \tyB \\ \primitive \tyC
+    }{
+      \primitive \lPair{\tyB}{\tyC}
+    }
+    \and
+    \infer*{
+      \primitive \tyB \\ \primitive \tyC
+    }{
+      \primitive \lSum{\tyB}{\tyC}
+    }
+    \and
+    \infer*{
+      \primitive \tyB
+    }{
+      \primitive \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \tyB}
+    }
+  \end{proofrules}
+  \rulesection{Typing rules for processes $\senv \typesW{\wrld} \proc : \ty$ (\rocq{ptyped})}
+  \begin{proofrules}
+    \infer*[lab=P-Term]{
+      \primitive \ty \\
+      \tenv_{\asTy{B}} \text{ holds both ends of each of its channels,
+        dual at aliased points} \\
+      \senv , \tenv_{\asTy{B}} ; \wrld ; \tEmpty \typesF{\emptyset} \tm : \ty
+    }{
+      \senv \typesW{\wrld} (\dom(\tenv_{\asTy{B}}) , \mset{\tm}) : \ty
+    } \label{rule:P-Term}
+    \and
+    \infer*[lab=P-Connect]{
+      \senv_1 , \senv_{\asTy{C}} \typesW{\wrld} (\chset_1 , \pool_1) : \ty \\
+      \senv_2 , \dual{\senv_{\asTy{C}}} \typesW{\wrld} (\chset_2 , \pool_2) : \tyUnit \\
+      \dom(\senv_{\asTy{C}}) = \chset_0
+    }{
+      \senv_1 , \senv_2 \typesW{\wrld} (\chset_1 \cupdot \chset_2 \cupdot \chset_0 , \pool_1 \uplus \pool_2) : \ty
+    } \label{rule:P-Connect}
+  \end{proofrules}
+  \rulesectionend
+  \caption{Typing for processes}
+  \Description{The four rules defining primitive types and the two
+    process typing rules.}
+  \label{fig:procTypeSys}
+\end{figure}
+
+
 \section{The Order Obligations of the Delegation Example}
 \label{sec:app-delegation}
 
 \Cref{tab:deleg} lists every blocking action of $\asTmId{deleg}$
-(\cref{ex:delegation}), the point $\ubd$ it blocks at, the frame the rest
+(\cref{ex:delegation}), the point $\ubd$ it blocks at, the future the rest
 of the thread still holds, and the premise
 $\fctx \types \fLt{\ubd}{\frm}$ that \ref{rule:E-App} owes for it. Five
 facts discharge all of them.
@@ -87,7 +205,7 @@ facts discharge all of them.
   \label{tab:deleg}
   \begin{tabular}{llll}
     \toprule
-    Action & $\ubd$ & Frame & Premise \\
+    Action & $\ubd$ & Future & Premise \\
     \midrule
     \multicolumn{4}{l}{\emph{main thread}} \\
     $\tApp{\tSend}{\tPair{\chB}{\ch}}$
@@ -101,9 +219,9 @@ facts discharge all of them.
     $\tApp{\tClos}{\ch_1}$
       & $\poff{\pviA}{1}$ & $\emptyset$ & vacuous \\
     $\tApp{\tSpawn}{\asTmId{K}}$
-      & $\pBot$ & $\set{\pviA, \pslot{\pviA}{0}}$ & $\pBot$ never blocks \\
+      & absent & $\set{\pviA, \pslot{\pviA}{0}}$ & an absent bound never blocks \\
     $\tApp{\tNewC{\pviB}{\dots}}{\tUnit}$
-      & $\pBot$ & $\set{\pviA}$ & $\cstr$ acyclic and conservative \\
+      & absent & $\set{\pviA}$ & $\cstr$ acyclic and conservative \\
     \midrule
     \multicolumn{4}{l}{\emph{spawned thread, under both constraints and $\fLt{\poff{\pviA}{1}}{\pfv}$}} \\
     $\tApp{\tRecv}{\ch'}$

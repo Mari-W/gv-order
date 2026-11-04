@@ -35,7 +35,7 @@ points of a running program stand in.
   A world $\wrld$ is a finite set of names, its \emph{support}, together
   with two relations $\fEq{}{}$ and $\fLt{}{}$ on points. It is
   \emph{well formed} when $\fEq{}{}$ is an equivalence closed under
-  successor and slot congruence, $\fLt{}{}$ is transitive, closed under
+  successor and payload congruence, $\fLt{}{}$ is transitive, closed under
   $\fEq{}{}$ on both sides and contains program order
   $\fLt{\pntA}{\poff{\pntA}{1}}$, every support name is a point
   constant, and outside the support only reflexivity and program order
@@ -54,7 +54,12 @@ points of a running program stand in.
   whose roots avoid $N$.
 \end{definition}
 
-Only $\tNew$ extends the world, and it extends it freshly. The two
+Only $\tNew$ extends the world, and it extends it freshly. A creation
+constraint is exactly what a fresh extension can realize: if $\cstr$ is a
+creation constraint under the facts of a strict $\wrld$ over points
+$\wrld$ knows, then some $\wrld \wextfresh \wrld'$ placing a fresh
+constant $\pcst$ satisfies $\tysub{\cstr}{\pcst}{\pviA}$
+(\rocq{wext_cc}). The two
 results below are what makes a composed run strict. Write
 $\supp(\wrld)$ for the support of $\wrld$, write
 $\wrld_1 \wjoinsym \wrld_2$ for the world on
@@ -168,8 +173,8 @@ $\fLt{\heads(\ch)}{\heads(\ch)}$.
 
 The two clauses are asymmetric. A term owes $\belowrestop$, which puts
 every offered entry below every unoffered one and below every point of
-the frame. A process owes only $\aboveofferedop$, which puts every
-unoffered entry above some offered one, and a process has no frame. A
+the future. A process owes only $\aboveofferedop$, which puts every
+unoffered entry above some offered one, and a process has no future. A
 forwarding never blocks, so a term or process at a forwarding redex
 compares nothing, and only the process clause lets a forwarding redex
 discharge the condition on values as well.
@@ -253,9 +258,9 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
         \text{ with } \wrld' \types \tysub{\cstr}{\pntvec}{\pvivec} \st
       \\
       \tAbs{\tUnit}{\tSub{\tm}{\tBoxP{\vr}{\tm}}{\vr}} \in
-        \lrVW{\wrld'}{n}{\tEmpty \types \tysub{(\tyUnit \lolli{\ubd}{\pTop} \ty)}{\pntvec}{\pvivec}}
+        \lrVW{\wrld'}{n}{\tEmpty \types \tysub{(\tyUnit \lolli{\ubd}{} \ty)}{\pntvec}{\pvivec}}
     }{
-      \tBoxP{\vr}{\tm} \in \lrVW{\wrld}{n}{\tEmpty \types \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}}
+      \tBoxP{\vr}{\tm} \in \lrVW{\wrld}{n}{\tEmpty \types \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}}
     } \label{rule:V-Box}
     \and
     \infer*[lab=V-Ex]{
@@ -631,7 +636,7 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
 
 \begin{proof}
   A $\lambda$ is a value, and a value of the value relation belongs to
-  the term relation at every frame (\rocq{Vrel_Erel}), so the goal is
+  the term relation at every future (\rocq{Vrel_Erel}), so the goal is
   \ref{rule:V-Abs} for $\tAbs{\vr}{\tm\gamma}$ under a grounding
   substitution $\gamma$. It has three premises.
   \begin{enumerate*}[(i)]
@@ -645,21 +650,21 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
       $\gamma$ substitutes for a hypothesis of $\lenv$, which lies at or
       above that hypothesis's head (\rocq{grounding_heads}), and
     \item the body at every later world, every smaller index, every
-      argument of the value relation and every frame above $\ubd$, which
-      is the hypothesis read at that world and frame.
+      argument of the value relation and every future above $\ubd$, which
+      is the hypothesis read at that world and future.
   \end{enumerate*}
 \end{proof}
 
 \begin{lemma}[Compositionality: \ref{rule:E-Exp} \rocq{sem_typed_box}]
   \label{lem:comp:exp}
   If
-  $\tEmpty ; \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}
+  $\tEmpty ; \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}
      \provesF{\set{\pfv}}_{\wrld} \tm : \ty$
   with $\lenv$ of $\Box$ types only and
-  $\mathit{wf}(\tEmpty ; \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}, \tm)$,
+  $\mathit{wf}(\tEmpty ; \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}, \tm)$,
   then
   $\tEmpty ; \lenv \provesF{\frm}_{\wrld} \tBoxP{\vr}{\tm}
-    : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{\pTop} \ty}$.
+    : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}$.
 \end{lemma}
 
 \begin{proof}
@@ -824,11 +829,12 @@ component.
 
 \begin{theorem}[Fundamental property \rocq{fundamental}, \rocq{fundamental_proc}]
 \label{th:fundamental}
-  Typing implies semantic typing, at every strict world.
+  Typing implies semantic typing, at every strict world. The fact context
+  of the term case is the world alone.
   \begin{itemize}
     \item
       $
-        \tenv ; \lenv \typesFW{\frm}{\wrld} \tm : \ty
+        \tenv ; \wrld ; \lenv \typesF{\frm} \tm : \ty
         \implies
         \tenv ; \lenv \provesF{\frm}_{\wrld} \tm : \ty
       $
@@ -846,16 +852,16 @@ component.
   per rule. \Cref{tab:compositionality} names the declaration for each.
 
   The term case runs in two stages. One induction on
-  $\tenv ; \lenv \typesFW{\frm}{\wrld} \tm : \ty$ instantiates the frame
+  $\tenv ; \fctx ; \lenv \typesF{\frm} \tm : \ty$ instantiates the future
   variables and substitutes points, and lands in an infinitary judgment
   with one constructor per rule of the static system
   (\rocq{typed_sem_rules}, \rocq{sem_rules}). The constructors for
   $\lambda$ and $\Box$ carry their bodies at every later world, under
-  every frame above the upper point, and for a $\Box$ at every
+  every future above the upper point, and for a $\Box$ at every
   admissible instance of its constraint, which is what the two
   compositionality lemmas above ask for. A second induction on that
   judgment applies one lemma per constructor
-  (\rocq{sem_rules_fundamental}). A closed derivation has no frame
+  (\rocq{sem_rules_fundamental}). A closed derivation has no future
   variable and no hypothesis, so the identity substitution discharges
   the two stages' side conditions (\rocq{typed_sem_rules_closed}).
 
@@ -879,10 +885,36 @@ component.
 \end{proof}
 
 \Cref{thm:soundness-source} is \cref{th:soundness} for a source program.
-The judgment of \cref{fig:typeSys,fig:typeSysPoints} reads no world, the
-acyclic $\cstr_0$ supplies a strict world that realizes it, and
-\rocq{styped_typed} embeds the derivation into the world-carrying
-judgment \cref{th:soundness} speaks about (\rocq{soundness_source}).
+A source derivation reads no ground fact, the creation constraint
+$\cstr_0$ supplies a strict world that realizes it, and the derivation
+moves to that world (\rocq{styped_typed}).
+
+\begin{theorem}[Soundness for source programs \rocq{soundness_source}]
+\label{thm:soundness-source}
+  If $\cstr_0$ is a creation constraint against the empty context,
+  $\primitive \ty$ and $\cstr_0 ; \tEmpty \typesF{\emptyset} \tm : \ty$,
+  then the thread $(\emptyset, \mset{\tm})$ is deadlock free.
+\end{theorem}
+
+\begin{proof}
+  The proof builds the world the run needs out of $\cstr_0$. Embed the
+  source derivation into the empty world, which supports no fact beyond
+  equality and program order (\rocq{wnil}, \rocq{wnil_strict},
+  \rocq{styped_typed}). A creation constraint against the empty context
+  is acyclic (\rocq{c0_creation_ok}). Let $n$ be the
+  number of top-level point variables and send each of them to its own
+  point constant. Acyclicity of $\cstr_0$ makes the world generated by
+  the image of $\cstr_0$ under that map strict (\rocq{wc0},
+  \rocq{wc0_strict}), it extends the empty world (\rocq{wc0_ext}), and
+  the hypothesis $(\cstr_0, \pvivec)$ holds in it at those constants
+  (\rocq{wc0_holds}). Instantiating the derivation along the map
+  therefore yields the infinitary judgment in that world
+  (\rocq{typed_sem_rules}, \rocq{c0_consts}), hence a semantic judgment
+  (\rocq{sem_rules_fundamental}). One thread with nothing restricted is
+  a process of the relation (\rocq{Prel_term}), and
+  \cref{thm:adequacy} concludes. Point instantiation preserves
+  $\primitive$ (\rocq{prim_pinst}), which \rocq{Prel_term} needs.
+\end{proof}
 
 %%% Local Variables:
 %%% mode: latex

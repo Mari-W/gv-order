@@ -274,7 +274,7 @@
 % \newcommand{\sent}{sentc}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Points, facts, constraints, frames.  Points and the order on them
+%% Points, facts, constraints, futures.  Points and the order on them
 %% are type-level objects, so they carry cTy.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \DeclareMetaVar\pntA{Ty}{x}    \DeclareMetaVar\pntB{Ty}{y}
@@ -291,12 +291,15 @@
 \DeclareSortSymbol\fact{Ty}{\mathord}{g}
 \def\pBot{{\color{cTy}\bot}}
 \def\pTop{{\color{cTy}\top}}
+% an absent bound, written in grammars only
+\def\pAbs{{\color{cTy}\cdot}}
 \def\pvivec{{\color{cTy}\bar{\iota}}}
 \def\pntvec{{\color{cTy}\bar{x}}}
 \def\pself{{\color{cTy}\mathsf{self}}}
-% x + k, x.j, x ≺ y, x ≡ y, {ℓ} ≼ N
+% x + k, x[j] (payload point), x ≺ y, x ≡ y, {ℓ} ≼ N
 \NewDocumentCommand\poff{mm}{{#1}\mathbin{{\color{cTy}+}}{#2}}
-\NewDocumentCommand\pslot{mm}{{#1}{\color{cTy}.}{#2}}
+\NewDocumentCommand\pslot{mm}{{#1}\mathopen{\color{cTy}[}{#2}\mathclose{\color{cTy}]}}
+\let\ppay\pslot
 \NewDocumentCommand\fLt{mm}{{#1}\mathrel{{\color{cTy}\prec}}{#2}}
 \NewDocumentCommand\fEq{mm}{{#1}\mathrel{{\color{cTy}\equiv}}{#2}}
 \NewDocumentCommand\fLe{mm}{{#1}\mathrel{{\color{cTy}\preccurlyeq}}{#2}}
@@ -308,7 +311,7 @@
 \NewDocumentCommand\tyBox{mmm}{{{\color{cTy}\Box}(\mathord{\color{cTy}\forall}#1{\color{cTy}.}\,#2{\color{cTy}.}\,#3)}}
 \NewDocumentCommand\tyEx{mmmm}{{\mathord{\color{cTy}\exists}^{#1}#2{\color{cTy}.}\,#3{\color{cTy}.}\,#4}}
 \NewDocumentCommand\tysub{mmm}{{#1}\mathopen{{\color{cTy}[}}#2{\color{cTy}/}#3\mathclose{{\color{cTy}]}}}
-% new, spawn, boxes, force, and the frame-indexed judgment
+% new, spawn, boxes, force, and the future-indexed judgment
 \def\tNew{\tOp{new}}
 \def\tSpawn{\tOp{spawn}}
 \NewDocumentCommand\tNewC{mm}{{\tNew\,#1\,\mathopen{{\color{cTm}\{}}#2\mathclose{{\color{cTm}\}}}}}
@@ -316,10 +319,10 @@
 \NewDocumentCommand\tBoxA{mmmm}{{{\color{cTm}!}#1\,\mathord{\color{cTy}\forall}#2\,\mathopen{{\color{cTm}\{}}#3\mathclose{{\color{cTm}\}}}{\color{cTm}.}\,#4}}
 \NewDocumentCommand\tForceA{mm}{{\tForce\,#1\,[#2]}}
 \NewDocumentCommand\tAbsA{mmmm}{{{\color{cTm}\uplambda}^{#1}_{#2}#3{\color{cTm}.}#4}}
-\NewDocumentCommand\typesF{m}{\mathrel{\color{black}\ltxvdash^{#1}}}
+\NewDocumentCommand\typesF{m}{\mathrel{\color{black}\ltxvdash_{#1}}}
 \NewDocumentCommand\provesF{m}{\mathrel{\color{black}\vDash^{#1}}}
-% The source judgment (styped) carries a frame and no world; the
-% world-carrying judgments (typed, ptyped) carry a world as well.
+% The term judgment (typed) carries a future; the process judgment
+% (ptyped) carries a world.
 \NewDocumentCommand\typesW{m}{\mathrel{\color{black}\ltxvdash_{#1}}}
 \NewDocumentCommand\typesFW{mm}{\mathrel{\color{black}\ltxvdash^{#1}_{#2}}}
 \DeclareMathOperator{\supp}{supp}
@@ -329,7 +332,7 @@
 % Labels of the two new primitives
 \NewDocumentCommand\lNew{m}{{(\nu{#1})}}
 \NewDocumentCommand\lSpawnL{m}{{{\Uparrow}{#1}}}
-% The logical relation now reads a world and a frame
+% The logical relation reads a world and a future
 \makeatletter
 \NewDocumentCommand\lrTermF{mmm}{{\@lr{E}{#1}{#2}^{#3}}}
 \makeatother
@@ -357,3 +360,4 @@
 %%% mode: latex
 %%% TeX-master: "main"
 %%% End:
+
