@@ -418,6 +418,19 @@ server of \citet{ThiemannV16} (\rocq{ts_deadlock_free},
 (\rocq{dlfix_deadlock_free}). The classic deadlock itself has no
 derivation (\rocq{dl_untypable}).
 
+A channel created after a segment call is placed by its creation
+constraint relative to the point the call returns. The program of
+\rocq{si_deadlock_free} orders such a channel against the returned
+channel in both directions, and the program of \rocq{sd_deadlock_free}
+creates it at the payload point of the returned channel and sends it
+there. Both type and are deadlock free.
+% TODO(author): prose
+
+Dropping a channel at $\asTy{Skip}$, which \citet{MordidoP} allow, ends
+in a restricted name that no thread mentions. Such a process is not
+terminated in our semantics, so the program that drops it is not deadlock
+free (\rocq{sd_not_deadlock_free}).
+
 The ceiling is coarse. The program
 $\tSeq{\tApp{\asTmId{sendTree}}{\tPair{t}{\ch}}}{\tSeq{\tApp{\tClos}{\chB}}{\tApp{\tSend}{\tPair{v}{\ch}}}}$
 needs $\chB$ between the end of the segment and the continuation of

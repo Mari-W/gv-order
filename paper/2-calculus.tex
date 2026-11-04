@@ -473,15 +473,15 @@ such choice.
 \begin{definition}[Payload \rocq{payload_at}]
 \label{def:payload}
   The type $\ty$ in $\sSend{\ty}{\sty}$ and $\sRecv{\ty}{\sty}$ mentions
-  no point other than the markers $\pslot{\pself}{0}, \pslot{\pself}{1},
+  no point other than the relative points $\pslot{\pself}{0}, \pslot{\pself}{1},
   \dots$, and a send or receive at $\pntA$ fills $\pslot{\pself}{j}$
   with $\pslot{\pntA}{j}$, written $\tysub{\ty}{\pntA}{\pself}$.
 \end{definition}
 
 \begin{remark}
 \label{rm:payload}
-  A marker of a payload is a self-marker by construction, so no rule
-  enforces \cref{def:payload}. Point substitution replaces the
+  A payload names points only relative to the action that sends it, so
+  no rule enforces \cref{def:payload}. Point substitution replaces the
   variables $\pvivec$, and $\pslot{\pself}{j}$ is no variable, so no
   enclosing $\Box$ or $\exists$ touches it. Point substitution also
   stops at a channel type, by the clause
@@ -494,7 +494,7 @@ such choice.
   rewrite the $\tvar$ under the carrier. It rewrites session variables
   and nothing else, and the point a channel type hangs on stays put
   (\rocq{sinst_ty}, and the same shape in \rocq{sren_ty} and
-  \rocq{sflip_ty}), so unfolding leaves every marker alone. The
+  \rocq{sflip_ty}), so unfolding leaves every relative point alone. The
   property the proofs use is
   $\tysub{(\tysub{\ty}{\pntA}{\pself})}{\pntvec}{\pvivec}
     = \tysub{\ty}{(\tysub{\pntA}{\pntvec}{\pvivec})}{\pself}$
