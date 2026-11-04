@@ -26,7 +26,7 @@
     one. The design note lists what those need. *)
 
 From stdpp Require Import base gmap.
-From LRGV Require Export relation.Worlds.
+From LRGV Require Export relation.Worlds relation.Creation.
 
 Set Default Proof Using "All".
 
@@ -458,4 +458,118 @@ Proof.
       * apply (glt_rank nof nof (rk (if b then 0 else 1)) x0 y0) in H; [done|by intros ?? []|by intros ?? []|apply rk_po].
       * apply Hp in H. destruct H as [-> ->]. unfold rk. destruct b; simpl;
           repeat case_decide; simplify_eq; lia.
+Qed.
+
+(** ** Creating a channel with a pending choice
+
+    new places a fresh name a under one of two creation constraints C₀
+    and C₁, chosen later by the owner. Both constraints state ≺ facts
+    only. The base world places a with no fact, and the choice holds the
+    facts of C₀ and of C₁ at a. If each Cᵢ is a creation constraint at
+    every choice vector of the old choices, the result is a fresh
+    extension at every choice vector ([pfresh_new]). The proof calls
+    [wext_cc] once per choice vector and alternative, so the creation
+    check costs 2^k calls for k pending choices. *)
+
+Definition Dlt (a : nat) (C : bcs) : prel :=
+  λ x y, ∃ x0 y0, bcs_open 1 C (FLt x0 y0) ∧
+    x = pt_inst (plist [pconst a]) x0 ∧ y = pt_inst (plist [pconst a]) y0.
+
+Definition Wnew (W : world) (a : nat) : world :=
+  wgen (w_names W ∪ {[NConst a]}) (w_eq W) (w_lt W).
+
+Lemma pn_root_inst' σ p :
+  pt_root (pn_inst σ p) = match pn_root p with NVar a => pt_root (σ a) | q => q end.
+Proof. induction p as [a|a|p IH b i]; simpl; [done|done|exact IH..]. Qed.
+
+Lemma pt_root_inst' σ x :
+  pt_root (pt_inst σ x) = match pt_root x with NVar a => pt_root (σ a) | q => q end.
+Proof. destruct x as [p o]. exact (pn_root_inst' σ p). Qed.
+
+Lemma Dlt_supp W a C x y :
+  world_wf W → Forall (pt_known W) (bc_env C) → Dlt a C x y →
+  pt_root x ∈ w_names W ∪ {[NConst a]} ∧ pt_root y ∈ w_names W ∪ {[NConst a]}.
+Proof.
+  intros HW HK (x0 & y0 & Hg & -> & ->).
+  assert (∀ z, pt_root z = NVar 0 ∨ pt_root z ∈ w_names W →
+            pt_root (pt_inst (plist [pconst a]) z) ∈ w_names W ∪ {[NConst a]}) as Hz.
+  { intros z [Hr|Hr]; rewrite pt_root_inst'.
+    - rewrite Hr. cbn. set_solver.
+    - destruct (wf_names_const _ HW _ Hr) as [c Hc]. rewrite Hc in Hr |- *. set_solver. }
+  split; apply Hz; eapply bcs_open1_root; [done|done|exact Hg|by left|done|done|exact Hg|by right].
+Qed.
+
+Lemma Wnew_wf W a : world_wf W → NConst a ∉ w_names W → world_wf (Wnew W a).
+Proof.
+  intros HW Ha. apply wgen_wf.
+  - intros p Hp. apply elem_of_union in Hp as [Hp|Hp]; [by apply HW|].
+    apply elem_of_singleton in Hp as ->. by exists a.
+  - intros x y H. eapply eq_or_supp_mono; [|by apply HW]. set_solver.
+  - intros x y H. eapply po_or_supp_mono; [|by apply HW]. set_solver.
+Qed.
+
+Theorem pfresh_new W P a C0 C1 :
+  pvalid W P → NConst a ∉ w_names W →
+  Forall (pt_known W) (bc_env C0) → Forall (pt_known W) (bc_env C1) →
+  (∀ ch (b : bool), length ch = length P →
+     cc_ok (w_eq (at_choice W P ch)) (w_lt (at_choice W P ch)) (if b then C1 else C0)) →
+  pfresh W P {[NConst a]} (Wnew W a) [(Dlt a C0, Dlt a C1)].
+Proof.
+  intros (HW & HP & Hs) Ha HK0 HK1 Hcc.
+  assert (supported (w_names W ∪ {[NConst a]}) (P ++ [(Dlt a C0, Dlt a C1)])) as Hsup.
+  { intros i c b x y Hi Hside. destruct (decide (i < length P)) as [Hl|Hl].
+    - rewrite lookup_app_l in Hi by done. destruct (HP i c b x y Hi Hside). set_solver.
+    - rewrite lookup_app_r in Hi by lia. destruct (i - length P) as [|j]; [|by destruct j].
+      injection Hi as <-. destruct b; simpl in Hside;
+        [apply (Dlt_supp W a C1 x y HW HK1 Hside)|apply (Dlt_supp W a C0 x y HW HK0 Hside)]. }
+  split_and!; [by apply Wnew_wf|exact Hsup|].
+  intros ch chn Hch Hchn. destruct chn as [|b [|]]; try discriminate Hchn.
+  set (Wc := at_choice W P ch).
+  assert (strict Wc) as HWc by (by apply Hs).
+  destruct (wext_cc Wc a (if b then C1 else C0) HWc (Hcc ch b Hch))
+    as (W2 & [(Hn2 & He2 & Hl2 & HS2) [HN [Hnames Hold]]] & Hhold).
+  { destruct b; [exact HK1|exact HK0]. }
+  { exact Ha. }
+  set (Wt := at_choice (Wnew W a) (P ++ [(Dlt a C0, Dlt a C1)]) (ch ++ [b])).
+  pose proof (proj1 HS2) as HW2.
+  assert (world_wf Wt) as HWt by (apply at_choice_wf; [by apply Wnew_wf|exact Hsup]).
+  (* Wt lies in W2 *)
+  assert (∀ x y, w_eq W x y → w_eq W2 x y) as HeW.
+  { intros x y H. apply He2, at_choice_eq, H. }
+  assert (∀ x y, w_lt W x y → w_lt W2 x y) as HlW.
+  { intros x y H. apply Hl2, at_choice_lt, H. }
+  assert (∀ x y, w_eq (Wnew W a) x y → w_eq W2 x y) as HeN.
+  { apply (wgen_into_eq _ _ _ W2 HW2); [exact HeW|exact HlW]. }
+  assert (∀ x y, w_lt (Wnew W a) x y → w_lt W2 x y) as HlN.
+  { apply (wgen_into _ _ _ W2 HW2); [exact HeW|exact HlW]. }
+  assert (∀ x y, pick (P ++ [(Dlt a C0, Dlt a C1)]) (ch ++ [b]) x y → w_lt W2 x y) as Hpk.
+  { intros x y (i & c & b' & Hi & Hc & Hside). destruct (decide (i < length P)) as [Hl|Hl].
+    - rewrite lookup_app_l in Hi by done. rewrite lookup_app_l in Hc by lia.
+      apply Hl2, at_choice_pick. by exists i, c, b'.
+    - rewrite lookup_app_r in Hi by lia. rewrite lookup_app_r in Hc by lia.
+      rewrite Hch in Hc. destruct (i - length P) as [|j]; [|by destruct j].
+      injection Hi as <-. injection Hc as <-.
+      destruct b; simpl in Hside; destruct Hside as (x0 & y0 & Hg & -> & ->);
+        exact (Hhold (FLt x0 y0) Hg). }
+  assert (∀ x y, w_eq Wt x y → w_eq W2 x y) as HeT.
+  { apply (wgen_into_eq _ _ _ W2 HW2); [exact HeN|]. intros x y [H|H]; [by apply HlN|by apply Hpk]. }
+  assert (∀ x y, w_lt Wt x y → w_lt W2 x y) as HlT.
+  { apply (wgen_into _ _ _ W2 HW2); [exact HeN|]. intros x y [H|H]; [by apply HlN|by apply Hpk]. }
+  assert (strict Wt) as HSt by (apply (strict_sub _ W2); done).
+  (* Wc lies in Wt *)
+  assert (∀ x y, w_eq W x y → w_eq Wt x y) as HeWt.
+  { intros x y H. apply at_choice_eq. by apply geq_base. }
+  assert (∀ x y, w_lt W x y → w_lt Wt x y) as HlWt.
+  { intros x y H. apply at_choice_lt. apply glt_base. done. }
+  assert (∀ x y, pick P ch x y → w_lt Wt x y) as HpWt.
+  { intros x y H. apply at_choice_pick. by apply pick_app_l. }
+  split_and!.
+  - split_and!.
+    + simpl. set_solver.
+    + apply (wgen_into_eq _ _ _ Wt HWt); [exact HeWt|]. intros x y [H|H]; [by apply HlWt|by apply HpWt].
+    + apply (wgen_into _ _ _ Wt HWt); [exact HeWt|]. intros x y [H|H]; [by apply HlWt|by apply HpWt].
+    + exact HSt.
+  - exact HN.
+  - done.
+  - intros x y Hx Hy. split; intros H; apply (Hold x y Hx Hy); [by apply HeT|by apply HlT].
 Qed.

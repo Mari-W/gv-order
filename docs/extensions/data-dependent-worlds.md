@@ -247,7 +247,8 @@ choice ([db_pending_valid]).
 
 Proofs that change. Worlds.v gains the definitions of BranchWorlds.v.
 Creation.v has to build `pfresh` from cc_ok at every choice vector, which is
-`wext_cc` once per vector. LogicalRelation.v and every file above it carry the
+`wext_cc` once per vector ([pfresh_new] does it for one binary choice with
+≺ facts). LogicalRelation.v and every file above it carry the
 pending world and an ownership set in E and P. Monotonicity.v replaces
 [wext_fresh_join] by [pjoin_fresh]. ConnectCut.v and PConnect.v split
 ownership as they split channel ends. Adequacy resolves the remaining choices
@@ -280,8 +281,8 @@ vector, and its ownership is the discipline channel ends already follow.
 
 ## 5 Prototype
 
-theories/relation/BranchWorlds.v, on top of relation/Worlds.v only. Every
-theorem is closed under the global context.
+theories/relation/BranchWorlds.v, on top of relation/Worlds.v and
+relation/Creation.v. Every theorem is closed under the global context.
 
 | Theorem | Content |
 |---|---|
@@ -289,12 +290,18 @@ theorem is closed under the global context.
 | `resolve_pext` | resolving is a pending extension |
 | `pjoin_fresh` | a fresh extension with new choices, joined with a pending extension, is fresh at every choice vector |
 | `pjoin_valid` | the join is a valid pending world |
+| `pfresh_new` | new with a pending choice between two ≺-only creation constraints C₀, C₁ is a fresh extension at every choice vector, given cc_ok of each Cᵢ at every old choice vector |
 | `unguarded_extensions_conflict` | two extensions between existing points have a join that is not strict |
 | `db_pending_valid` | the two orders of db_main form a valid pending choice |
 
-Not done. The relation with pending worlds and ownership, the typing rules,
-and the creation check per choice vector. The prototype shows that the lemma
-the monotonicity proof needs survives, which is the step 4.2 fails at.
+Not done. The relation with pending worlds and ownership, and the typing
+rules. The prototype covers the three world-level steps the relation needs.
+Creation gives a fresh extension at every choice vector ([pfresh_new], the
+analogue of ⊑ₒ), resolution is an extension ([resolve_valid],
+[resolve_pext]), and a fresh extension joins with any extension
+([pjoin_fresh], [pjoin_valid], the analogue of [wext_fresh_join] that
+monotonicity uses). The step 4.2 fails at survives. [pfresh_new] restricts
+the alternatives to ≺ facts and one choice per new.
 
 ## 6 Open problems
 
