@@ -1,7 +1,8 @@
 # Worlds that depend on data
 
-State of 2026-11-04, branch claude/data-dependent-worlds-9rgdfr. Files:
-theories/examples/DataBranch.v, theories/relation/BranchWorlds.v.
+State of 2026-11-04, branch claude/data-dependent-worlds-9rgdfr. The Rocq
+files are theories/examples/DataBranch.v, theories/examples/DataAlternate.v
+and theories/relation/BranchWorlds.v.
 
 ## Summary
 
@@ -16,8 +17,12 @@ under inconsistent hypotheses.
 What does not type is the case node with a bit that carries no fact. With
 z : ∗ ⊕ ∗, c : Close@x and d : Close@y, the node has no derivation under any
 hypotheses that a strict world realizes ([db_component_unrealizable], Rocq,
-proved through the logical relation). So one world per component is a limit
-of components whose interface fixes a fact-free bit. A closed program that
+proved through the logical relation). With facts on both sides of the bit it
+has no derivation either, as long as one world realizes both sides
+([db_component_sides]). So one world per component is a limit of components
+whose interface fixes a bit that does not separate the two orders. A case node
+that runs every round with the live branch alternating types
+([alt_typed]). A closed program that
 fails needs a case node that runs once per round with an order pattern that
 is not eventually periodic (conjecture, section 3).
 
@@ -66,8 +71,8 @@ db_case is the case node of db_main literally, and db_ctx x y k is the
 context [db_typed_false] reaches it with, except that db_ctx types the bit
 at ∗ ⊕ ∗. db_rnode is the receive of db_main with everything after it, and
 db_rctx x y z k holds d, c and e : ?(∗ ⊕ ∗).Close@z in the positions the
-derivation of db_main gives them. [df_keep] replaces every case by the case whose two branches are
-the branch the run takes. It reflects deadlock freedom for a program that
+derivation of db_main gives them. [df_keep] replaces every case by the case
+whose two branches are the branch the run takes. It reflects deadlock freedom for a program that
 never builds the other injection. It is a tool for programs whose dead branch
 does not type. db_main does not need it.
 
@@ -102,19 +107,18 @@ the live inr branch reads y ≺ x and the dead inl branch derives
 x ≺ z[0]+5 ≺ z[0]+1 ≺ y.
 
 The hypotheses of the dead branch are not realizable, and the soundness proof
-needs no change. They have to be. [db_component_sides] shows that the case
-node with the bit at ∃{C₁}.∗ ⊕ ∃{C₂}.∗ has no derivation when one strict world
-realizes the hypotheses, C₁ and C₂ together. A derivation of the node needs
-one side of the bit that no world realizes with the rest. The logical relation reads a value of ∃{z[0]+5 ≺ z[0]+1}.∗
-only in a world with that fact, and a strict world has none.
+needs no change. The logical relation reads a value of
+∃{z[0]+5 ≺ z[0]+1}.∗ only in a world with that fact, and a strict world has
+none. The dead side has to be unrealizable. [db_component_sides] shows that
+the case node with the bit at ∃{C₁}.∗ ⊕ ∃{C₂}.∗ has no derivation when one
+strict world realizes the hypotheses, C₁ and C₂ together.
 
 The trick generalizes, by the same steps and without a Rocq proof, to every
 branch whose other side is dead in every run and whose payload, or a
 top-level point, offers an anchor that the creation constraints of the
-ordered channels can refer to. A source program may start
-with any number of top-level points under an acyclic C₀ (sharp edges 148), and
-every hypothesis context contains them, so a closed program always has
-anchors.
+ordered channels can refer to. A source program may start with any number
+of top-level points under an acyclic C₀ (sharp edges 148), and every
+hypothesis context contains them, so a closed program always has anchors.
 
 ## 3 The limit that remains
 
@@ -220,8 +224,9 @@ provided Γ + Γ_i is acyclic. Frames are those of E-Case.
 ──────────────────────────────────────────────────────────── E-Case-Grow
 Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F_Γ case e of x. e₁ | x. e₂ : T
 ```
- The relation lets the β step of a case extend
-the world by Γ_i, an extension that is not fresh. The receiver half exists
+
+The relation lets the β step of a case extend the world by Γ_i, an extension
+that is not fresh. The receiver half exists
 today. A payload ∃{Γ_i}.T_i on the i-th side of a sum gives the branch Γ_i
 by E-Open, which is how db_main types. What is new is the chooser half. It
 adds facts that do not hold yet.
@@ -255,8 +260,8 @@ W ⊑ W_v for every v
 
 (S ∥ P)[v] fixes the value S sends. The premise ranges over values, so the
 rule is semantic in S, which a syntactic system has to approximate by the
-constants S can send. The relation of the composite is a disjunction of relations
-at the worlds W_v. Adequacy holds, because a run sends one value and stays in
+constants S can send. The relation of the composite is a disjunction of
+relations at the worlds W_v. Adequacy holds, because a run sends one value and stays in
 one W_v. Monotonicity holds disjunct by disjunct. Composition with a third
 component needs that component related at every W_v, so the outside sees only
 the facts common to all W_v, and the rule has to know the values the sender
@@ -312,17 +317,17 @@ fresh at every choice vector (`pfresh`), joined with any pending extension,
 which may resolve old choices and create new ones, is a fresh extension at
 every choice vector ([pjoin_fresh]) and a valid pending world
 ([pjoin_valid]). Two creations from one pending world join to a valid pending
-world ([pcreate_join]). The proof applies
-[wext_fresh_join] at the choice vector the extension lies above, so the hard
-lemma of the current development carries over unchanged. ⊑ₒ becomes "fresh
+world ([pcreate_join]). The proof applies [wext_fresh_join] at the choice
+vector the extension lies above, so the hard lemma of the current development
+carries over unchanged. ⊑ₒ becomes "fresh
 at every choice vector". The two orders of db_main form one valid pending
 choice ([db_pending_valid]).
 
 Proofs that change. Worlds.v gains the definitions of BranchWorlds.v.
 Creation.v has to build `pfresh` from cc_ok at every choice vector, which is
 `wext_cc` once per vector ([pfresh_new] does it for one binary choice with
-≺ facts). LogicalRelation.v and every file above it carry the
-pending world and an ownership set in E and P. Monotonicity.v replaces
+≺ facts). LogicalRelation.v and every file above it carry the pending world
+and an ownership set in E and P. Monotonicity.v replaces
 [wext_fresh_join] by [pjoin_fresh]. ConnectCut.v and PConnect.v split
 ownership as they split channel ends. Adequacy resolves the remaining choices
 arbitrarily at the end of a run, which validity keeps strict.
