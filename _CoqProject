@@ -9,6 +9,7 @@ theories/lang/ThreadSim.v
 theories/types/Types.v
 theories/types/SessionEquiv.v
 theories/types/LinearEnv.v
+theories/types/SinstFusion.v
 theories/relation/Worlds.v
 theories/relation/Creation.v
 theories/relation/Readiness.v
@@ -72,6 +73,8 @@ theories/examples/cfst/BranchOrder.v
 theories/examples/cfst/SkipDrop.v
 theories/examples/cfst/SegmentInterleave.v
 theories/examples/cfst/SegmentDeleg.v
+theories/examples/cfst/FirstAction.v
+theories/examples/cfst/MuVar.v
 theories/examples/LitTools.v
 theories/examples/MilnerSched.v
 theories/examples/KobForwarder.v
