@@ -70,6 +70,7 @@ theories/examples/cfst/TreeSum.v
 theories/examples/cfst/ArithServer.v
 theories/examples/cfst/BranchOrder.v
 theories/examples/cfst/SkipDrop.v
+theories/examples/cfst/SegmentInterleave.v
 theories/examples/LitTools.v
 theories/examples/MilnerSched.v
 theories/examples/KobForwarder.v
