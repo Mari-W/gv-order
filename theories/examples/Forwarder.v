@@ -35,8 +35,8 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Abbreviation svv a k := (Pt (NSlot (NVar a) k 0) 0).
-Abbreviation sl a k := (Pt (NSlot (NConst a) k 0) 0).
+Abbreviation svv a k := (Pt (NPayload (NVar a) k 0) 0).
+Abbreviation sl a k := (Pt (NPayload (NConst a) k 0) 0).
 
 Definition Sfi : sty := SMu (SSeq (SRcv 1 (TSess SEnd (pvar 0))) (SVar 0)).
 Definition Sfo : sty := SMu (SSeq (SSnd 1 (TSess SEnd (pvar 0))) (SVar 0)).
@@ -100,7 +100,7 @@ Ltac fhyp x y :=
 Lemma fwd_typed W F : world_wf W → typed W ∅ [] ∅ [] F fwd (TBox 2 0 fw_C (TLolli None None TUnit fwd_body)).
 Proof.
   intros HW. unfold fwd.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open fw_C fwd_body. cbn. unfold fwd_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
@@ -147,10 +147,10 @@ Qed.
 Lemma fprod_typed W F : strict W → typed W ∅ [] ∅ [] F fprod (TBox 1 0 fp_C (TLolli None None TUnit fprod_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold fprod.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fp_C fprod_body. cbn. unfold fprod_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
-  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (svv 0 0) HWs); [skn_slot|].
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (svv 0 0) HWs); [skn_payload|].
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
@@ -182,7 +182,7 @@ Qed.
 Lemma fcons_typed W F : world_wf W → typed W ∅ [] ∅ [] F fcons (TBox 1 0 fp_C (TLolli None None TUnit fcons_body)).
 Proof.
   intros HW. unfold fcons.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fp_C fcons_body. cbn. unfold fcons_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
@@ -233,7 +233,7 @@ Definition fwb_C : bcs := BCs [pvar 0] fwb_P.
 Definition fwa_rank (x : point) : nat :=
   match pt_name x with
   | NVar 0 => 2 * pt_off x
-  | NSlot (NVar 0) k 0 => 2 * k + 1 + 2 * pt_off x
+  | NPayload (NVar 0) k 0 => 2 * k + 1 + 2 * pt_off x
   | _ => pt_off x
   end.
 
@@ -250,8 +250,8 @@ Qed.
     (γ+k)[0]. *)
 Fixpoint fwb_name (p : pname) : pname :=
   match p with
-  | NSlot (NVar 0) k 0 => NSlot (NVar 1) k 0
-  | NSlot q k i => NSlot (fwb_name q) k i
+  | NPayload (NVar 0) k 0 => NPayload (NVar 1) k 0
+  | NPayload q k i => NPayload (fwb_name q) k i
   | _ => p
   end.
 
@@ -294,15 +294,15 @@ Proof.
            (λ q v, ∃ k, (q = pv 0 k ∧ v = pv 1 (S k)) ∨ (q = pv 0 k ∧ v = svv 1 k))).
   - intros [n o] Hn. unfold fwb_phi, pt_root in *. simpl in *. by rewrite fwb_name_old.
   - done.
-  - intros [n o] i Hr. unfold fwb_phi, pt_slot, pt_root in *. simpl in *.
+  - intros [n o] i Hr. unfold fwb_phi, pt_payload, pt_root in *. simpl in *.
     destruct n as [c|[|c]|q k i']; destruct i; simpl in *; try done.
-  - intros [n o] [n' o'] i E. unfold fwb_phi, pt_slot in *. cbn [pt_name pt_off] in *.
+  - intros [n o] [n' o'] i E. unfold fwb_phi, pt_payload in *. cbn [pt_name pt_off] in *.
     injection E as E1 <-.
     destruct (decide (n = NVar 0)) as [->|Hn].
     + cbn [fwb_name] in E1. symmetry in E1. apply fwb_name_var0 in E1 as ->. done.
     + destruct (decide (n' = NVar 0)) as [->|Hn'].
       * cbn [fwb_name] in E1. apply fwb_name_var0 in E1 as ->. done.
-      * assert (∀ m, m ≠ NVar 0 → fwb_name (NSlot m o i) = NSlot (fwb_name m) o i) as Hs.
+      * assert (∀ m, m ≠ NVar 0 → fwb_name (NPayload m o i) = NPayload (fwb_name m) o i) as Hs.
         { intros m Hm. destruct m as [c|[|c]|q k j]; destruct i; simpl; done. }
         rewrite (Hs n), (Hs n') by done. by rewrite E1.
   - apply pofs_trans.
@@ -395,7 +395,7 @@ Proof.
     change G with (TBox 1 0 fp_C (TLolli None None TUnit fcons_body)) end.
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NSlot (NVar 1) 0 0) 0)) (Some (pv 1 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NPayload (NVar 1) 0 0) 0)) (Some (pv 1 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
@@ -403,7 +403,7 @@ Proof.
         [done|done|exact HCa|exact HKa|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (Pt (NSlot (NVar 1) 0 0) 0). split; [done|]. apply sle_refl, HW. }
+      exists (Pt (NPayload (NVar 1) 0 0) 0). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (svv 0 0)) (Some (pvar 0)) 0); [set_solver| |].

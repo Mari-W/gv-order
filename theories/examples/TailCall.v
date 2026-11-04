@@ -9,9 +9,9 @@
                 let () = spawn (λu. let () = u in (force r) c′) in (force s) c
 
     Both recursions are tail calls, no spawn. The body of each λ runs
-    under the frame variable μ with ζ ≺ μ. The send and the receive
+    under the future variable μ with ζ ≺ μ. The send and the receive
     block at ι and ask ι ≺ μ, which is ι ≺ ζ ≺ μ. The tail call at
-    (ι+1, ζ) has upper point ζ and asks ζ ≺ μ, the frame hypothesis.
+    (ι+1, ζ) has upper point ζ and asks ζ ≺ μ, the future hypothesis.
     Its force asks C[ι+1, ζ] ⊆ C ([tc_sub]).
 
     In the empty world main creates c with {ι+k ≺ ι[0] ∣ k ∈ ℕ} and
@@ -47,7 +47,7 @@ Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact tc_sub]. Qed.
 Lemma tcs_typed W F : world_wf W → typed W ∅ [] ∅ [] F tcs (TBox 2 0 tc_C (TLolli None None TUnit tcs_body)).
 Proof.
   intros HW. unfold tcs.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open tc_C tcs_body. cbn. unfold tcs_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
@@ -68,7 +68,7 @@ Qed.
 Lemma tcr_typed W F : world_wf W → typed W ∅ [] ∅ [] F tcr (TBox 2 0 tc_C (TLolli None None TUnit tcr_body)).
 Proof.
   intros HW. unfold tcr.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open tc_C tcr_body. cbn. unfold tcr_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
@@ -94,13 +94,13 @@ Qed.
     ζ is no channel point. It is a point of ι, known through the
     hypothesis of new. Every fact stays inside ι, and the pair rank
     (0, k) for ι+k and (1, o) for ζ+o orders them (sharp edges 105). *)
-Abbreviation tcz := (Pt (NSlot (NVar 0) 0 0) 0).
+Abbreviation tcz := (Pt (NPayload (NVar 0) 0 0) 0).
 
 Definition tcc_P (g : fact) : Prop := ∃ k, g = FLt (pv 0 k) tcz.
 Definition tcc_C : bcs := BCs [] tcc_P.
 
 Definition tcc_rank (x : point) : nat * nat :=
-  (match pt_name x with NSlot (NVar 0) 0 0 => 1 | _ => 0 end, pt_off x).
+  (match pt_name x with NPayload (NVar 0) 0 0 => 1 | _ => 0 end, pt_off x).
 
 Lemma tcc_ok peq plt : cc_ok peq plt tcc_C.
 Proof.

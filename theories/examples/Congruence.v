@@ -1,7 +1,7 @@
 (** * A derivation that uses the congruences of ≡: typable
 
     The fact theory closes ≡ under successor and under x ↦ x[i]
-    ([se_shift], [se_slot], static-system.md §3). No example before this
+    ([se_shift], [se_payload], static-system.md §3). No example before this
     one derives a fact by either rule. examples/Scheduler.v needs
     c+1 ≡ a+1 from its alias c ≡ a, and it derives that inside the world
     through the closure field [wf_eq_shift] and lifts it with [se_w], so
@@ -26,10 +26,10 @@
 
       send ⟨e, c⟩ at ι   the payload of c at ι is Close@ι[0], and e is
                          Close@ι′[0]. E-Conv moves it along
-                         ι′[0] ≡ ι[0], which is [se_slot] of ι ≡ ι′.
+                         ι′[0] ≡ ι[0], which is [se_payload] of ι ≡ ι′.
                          send's own premise ι ≺ ι[0] reads ι ≡ ι′ ≺ ι′[0]
                          and the same alias of the payload points.
-      close c at ι+1     the frame holds d at ι′+2, so E-App asks
+      close c at ι+1     the future holds d at ι′+2, so E-App asks
                          ι+1 ≺ ι′+2. The hypothesis states no fact at
                          ι+1. [se_shift] of ι ≡ ι′ gives ι+1 ≡ ι′+1, and
                          program order gives ι′+1 ≺ ι′+2.
@@ -49,7 +49,7 @@
                 (force g) ⟨⟨c, e⟩, d⟩
 
     What the congruences are worth. Neither rule is forced by any
-    program. A derivation that uses [se_slot] at x[j] ≡ y[j] can state
+    program. A derivation that uses [se_payload] at x[j] ≡ y[j] can state
     that fact in the constraint it read x ≡ y from, and a derivation
     that uses [se_shift] at x+1 ≡ y+1 can state that one. The two rules
     are what lets a constraint carry one alias between base points in
@@ -69,10 +69,10 @@ Set Default Proof Using "All".
 (** !⟨κ⟩(Close@κ).Close, one channel sent and then a close. *)
 Definition Scg : sty := SSeq (SSnd 1 (TSess SEnd (pvar 0))) SEnd.
 
-Abbreviation cgs a := (Pt (NSlot (NVar a) 0 0) 0).
+Abbreviation cgs a := (Pt (NPayload (NVar a) 0 0) 0).
 
 Definition cg_P (g : fact) : Prop :=
-  g = FEq (pvar 0) (pvar 1) ∨ g = FLt (pvar 1) (Pt (NSlot (NVar 1) 0 0) 0).
+  g = FEq (pvar 0) (pvar 1) ∨ g = FLt (pvar 1) (Pt (NPayload (NVar 1) 0 0) 0).
 
 Definition cg_C : bcs := BCs [] cg_P.
 
@@ -105,7 +105,7 @@ Definition cg_main : expr :=
 Definition cg_rank (x : point) : nat :=
   match pt_name x with
   | NVar 0 => 3 * pt_off x
-  | NSlot (NVar 0) 0 0 => 1 + pt_off x
+  | NPayload (NVar 0) 0 0 => 1 + pt_off x
   | _ => pt_off x
   end.
 
@@ -123,20 +123,20 @@ Lemma cgbox_typed W F :
   world_wf W → typed W ∅ [] ∅ [] F cgbox (TBox 2 0 cg_C (TLolli None None TUnit cg_body)).
 Proof.
   intros HW. unfold cgbox.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open cg_C cg_body. cbn. unfold cg_body.
   (* the facts of C and what the congruences give *)
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → seqs W Ψ (pv 0 0) (pv 1 0)) as Heq.
   { intros Ψ Hg. eapply (se_hyp0 _ _ _ _ (pvar 0) (pvar 1));
       [exact Hg|by left|cbn; lia|reflexivity|reflexivity]. }
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 1 0) (cgs 1)) as Hs.
-  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (pvar 1) (Pt (NSlot (NVar 1) 0 0) 0));
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (pvar 1) (Pt (NPayload (NVar 1) 0 0) 0));
       [exact Hg|by right|cbn; lia|reflexivity|reflexivity]. }
-  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → seqs W Ψ (cgs 1) (cgs 0)) as Hslot.
-  { intros Ψ Hg. apply (se_slot W Ψ (pv 1 0) (pv 0 0) 0), se_sym, Heq, Hg. }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → seqs W Ψ (cgs 1) (cgs 0)) as Hpayload.
+  { intros Ψ Hg. apply (se_payload W Ψ (pv 1 0) (pv 0 0) 0), se_sym, Heq, Hg. }
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 0) (cgs 0)) as HsendP.
   { intros Ψ Hg. eapply sl_eql; [by apply Heq|].
-    eapply sl_eqr; [by apply Hs|by apply Hslot]. }
+    eapply sl_eqr; [by apply Hs|by apply Hpayload]. }
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 0) (cgs 1)) as Hlo.
   { intros Ψ Hg. eapply sl_eql; [by apply Heq|by apply Hs]. }
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 0) (pv 1 2)) as Hd.
@@ -159,7 +159,7 @@ Proof.
               (TProd (TSess SEnd (cgs 0)) (TSess Scg (pv 0 0)))).
     - tstep; [tstep|].
       (* e : Close@ι′[0] becomes Close@ι[0] along ι′[0] ≡ ι[0] *)
-      eapply t_conv; [|tstep]. split; [|apply seq_refl]. apply Hslot. by left.
+      eapply t_conv; [|tstep]. split; [|apply seq_refl]. apply Hpayload. by left.
     - apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) SEnd (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. apply HsendP. by left.
     - kscope.

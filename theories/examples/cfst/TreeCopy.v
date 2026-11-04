@@ -110,7 +110,7 @@ Proof. intros Hs. by apply seq_skip_l, hcontractive_contractive. Qed.
 
 (** The point x[i]+k of a point variable x = a, where a choice at x
     continues (K11). *)
-Abbreviation psl a i k := (Pt (NSlot (NVar a) 0 (bidx i)) k).
+Abbreviation psl a i k := (Pt (NPayload (NVar a) 0 (bidx i)) k).
 
 Definition drain_body : ty :=
   TLolli (Some (pv 1 0)) None (TSess (SSeq TreeD (SVar 0)) (pv 0 0)) send_after.
@@ -157,7 +157,7 @@ Ltac hypab env xs w i :=
 Lemma drain_typed W F : world_wf W → typed W ∅ [] ∅ [] F drain drain_ty.
 Proof.
   intros HW. unfold drain, drain_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
   intros ss Hss Hhc. destruct ss as [|s [|]]; try discriminate Hss.
   rewrite Forall_singleton in Hhc. fold drain_ty.
   change (lenv_pinst (pshift 2) [Some drain_ty]) with [Some (pinst_ty (pshift 2) drain_ty)].
@@ -330,7 +330,7 @@ Qed.
 Lemma copy_typed W F : world_wf W → typed W ∅ [] ∅ [] F copy copy_ty.
 Proof.
   intros HW. unfold copy, copy_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
   intros ss Hss Hhc. destruct ss as [|sb [|sa [|]]]; try discriminate Hss.
   apply Forall_cons in Hhc as [Hb Hhc]. rewrite Forall_singleton in Hhc. rename Hhc into Ha.
   fold copy_ty.
@@ -592,7 +592,7 @@ Proof.
   - intros a b (f & (w & [-> | (i & ->)]) & _ & E); cbn [fact_map] in E;
       rewrite ?wstep_inst, ?pwalk_inst in E; injection E as -> ->.
     + right; right. rewrite pwalk_root. split; cbn; done.
-    + left. rewrite ?pt_slot_root, ?wstep_root, pwalk_root. split_and!; [cbn; done|cbn; done|].
+    + left. rewrite ?pt_payload_root, ?wstep_root, pwalk_root. split_and!; [cbn; done|cbn; done|].
       split; [rewrite pwalk_root; cbn; done|]. by exists [Some i].
   - intros u p q v (f & (w & [-> | (i & ->)]) & _ & E); cbn [fact_map] in E;
       rewrite ?wstep_inst, ?pwalk_inst in E; injection E as -> ->; rewrite pwalk_root; cbn; done.
@@ -629,7 +629,7 @@ Proof.
   - intros a b (f & (w & [-> | [(s & ->) | ->]]) & _ & E); discriminate E.
   - intros a b (f & (w & [-> | [(s & ->) | ->]]) & _ & E); cbn [fact_map] in E;
       rewrite ?wstep_inst, ?pwalk_inst in E; injection E as -> ->; right;
-      rewrite ?pt_slot_root, ?wstep_root, ?pwalk_root; cbn; auto.
+      rewrite ?pt_payload_root, ?wstep_root, ?pwalk_root; cbn; auto.
   - intros u p q v (f & (w & [-> | [(s & ->) | ->]]) & _ & E) (f' & (w' & [-> | [(s' & ->) | ->]]) & _ & E')
       Hu Hp Hq Hv Hpq; cbn [fact_map] in E, E'; rewrite ?wstep_inst, ?pwalk_inst in E;
       rewrite ?wstep_inst, ?pwalk_inst in E'; injection E as -> ->; injection E' as -> ->;

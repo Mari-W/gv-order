@@ -35,7 +35,7 @@ Record theory (E L : prel) : Prop := {
   th_sym x y : E x y → E y x;
   th_trans x y z : E x y → E y z → E x z;
   th_shift x y : E x y → E (pt_shift 1 x) (pt_shift 1 y);
-  th_slot x y i : E x y → E (pt_slot x i) (pt_slot y i);
+  th_payload x y i : E x y → E (pt_payload x i) (pt_payload y i);
   th_lt_trans x y z : L x y → L y z → L x z;
   th_lt_eq x x' y y' : E x x' → L x' y' → E y' y → L x y;
   th_po x : L x (pt_shift 1 x)
@@ -51,7 +51,7 @@ Proof.
   - apply (wf_eq_sym _ HW).
   - apply (wf_eq_trans _ HW).
   - apply (wf_eq_shift _ HW).
-  - apply (wf_eq_slot _ HW).
+  - apply (wf_eq_payload _ HW).
   - apply (wf_lt_trans _ HW).
   - apply (wf_lt_eq _ HW).
   - apply (wf_lt_po _ HW).
@@ -113,7 +113,7 @@ Qed.
 Lemma gen_map E L E' L' (f : point → point) :
   theory E' L' →
   (∀ x, f (pt_shift 1 x) = pt_shift 1 (f x)) →
-  (∀ x i, f (pt_slot x i) = pt_slot (f x) i) →
+  (∀ x i, f (pt_payload x i) = pt_payload (f x) i) →
   (∀ x y, E x y → E' (f x) (f y)) → (∀ x y, L x y → L' (f x) (f y)) →
   (∀ x y, geq E x y → E' (f x) (f y)) ∧ (∀ x y, glt E L x y → L' (f x) (f y)).
 Proof.
@@ -125,7 +125,7 @@ Proof.
     - by apply (th_sym _ _ HT).
     - by eapply (th_trans _ _ HT).
     - rewrite !Hs. by apply (th_shift _ _ HT).
-    - rewrite !Hl. by apply (th_slot _ _ HT). }
+    - rewrite !Hl. by apply (th_payload _ _ HT). }
   split; [done|].
   induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
   - auto.
@@ -197,7 +197,7 @@ Section interp.
   Context (KE KL : prel) (HK : theory KE KL).
   Context (g : point → point).
   Context (Hgs : ∀ x, g (pt_shift 1 x) = pt_shift 1 (g x)).
-  Context (Hgl : ∀ x i, g (pt_slot x i) = pt_slot (g x) i).
+  Context (Hgl : ∀ x i, g (pt_payload x i) = pt_payload (g x) i).
   Context (Hg1 : ∀ p, pt_root p = NVar 0 → pt_root (g p) = rt).
   Context (Hg2 : ∀ x, pt_root x ≠ NVar 0 → pt_root (g x) ≠ rt).
   Context (Hg3 : ∀ p q, pt_root p = NVar 0 → pt_root q = NVar 0 → g p = g q → p = q).
@@ -330,23 +330,23 @@ Section interp.
           first [by apply (th_shift _ _ HK)|by apply (th_shift _ _ HT)].
   Qed.
 
-  Lemma V_slot x y i : V false x y → V false (pt_slot x i) (pt_slot y i).
+  Lemma V_payload x y i : V false x y → V false (pt_payload x i) (pt_payload y i).
   Proof.
     intros [(Hx & Hy & H)|[(p & w & b1 & b2 & Hp & -> & Hw & Hy & H1 & H2 & Hb)
            |[(q & w & b1 & b2 & Hq & -> & Hw & Hx & H1 & H2 & Hb)|(p & q & Hp & Hq & -> & -> & H)]]].
-    - left. split_and!; [done|done|by apply (th_slot _ _ HT)].
-    - destruct b1, b2; try done. right; left. exists (pt_slot p i), (pt_slot w i), false, false.
+    - left. split_and!; [done|done|by apply (th_payload _ _ HT)].
+    - destruct b1, b2; try done. right; left. exists (pt_payload p i), (pt_payload w i), false, false.
       rewrite Hgl. split_and!; try done; simpl in *;
-        [by apply (th_slot _ _ HK)|rewrite Hgl; by apply (th_slot _ _ HT)].
-    - destruct b1, b2; try done. right; right; left. exists (pt_slot q i), (pt_slot w i), false, false.
+        [by apply (th_payload _ _ HK)|rewrite Hgl; by apply (th_payload _ _ HT)].
+    - destruct b1, b2; try done. right; right; left. exists (pt_payload q i), (pt_payload w i), false, false.
       rewrite Hgl. split_and!; try done; simpl in *;
-        [rewrite Hgl; by apply (th_slot _ _ HT)|by apply (th_slot _ _ HK)].
-    - right; right; right. exists (pt_slot p i), (pt_slot q i). rewrite !Hgl. split_and!; try done.
+        [rewrite Hgl; by apply (th_payload _ _ HT)|by apply (th_payload _ _ HK)].
+    - right; right; right. exists (pt_payload p i), (pt_payload q i). rewrite !Hgl. split_and!; try done.
       destruct H as [H|(w & w' & b1 & b2 & b3 & Hw & Hw' & H1 & H2 & H3 & Hb)].
-      + left. simpl in *. by apply (th_slot _ _ HK).
-      + destruct b1, b2, b3; try done. right. exists (pt_slot w i), (pt_slot w' i), false, false, false.
+      + left. simpl in *. by apply (th_payload _ _ HK).
+      + destruct b1, b2, b3; try done. right. exists (pt_payload w i), (pt_payload w' i), false, false, false.
         rewrite !Hgl. split_and!; try done; simpl in *;
-          first [by apply (th_slot _ _ HK)|by apply (th_slot _ _ HT)].
+          first [by apply (th_payload _ _ HK)|by apply (th_payload _ _ HT)].
   Qed.
 
   Lemma V_pofs x y : pofs x y → Nt x → V true x y.
@@ -387,7 +387,7 @@ Section interp.
       - by apply V_sym.
       - exact (V_trans false false _ _ _ IH1 IH2).
       - by apply V_shift.
-      - by apply V_slot. }
+      - by apply V_payload. }
     split; [done|].
     induction 1 as [x y [H|H]|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - destruct (decide (Nt x)) as [Hx|Hx]; [apply V_pofs; auto|].
@@ -465,8 +465,8 @@ Section model.
   Context (φ : point → point) (R Lo Hi : prel).
   Context (Hφo : ∀ x, pt_root x ≠ NVar 0 → φ x = x).
   Context (Hφs : ∀ x, φ (pt_shift 1 x) = pt_shift 1 (φ x)).
-  Context (Hφl : ∀ x i, pt_root (φ x) ≠ NVar 0 → φ (pt_slot x i) = pt_slot (φ x) i).
-  Context (Hφr : ∀ x y i, φ x = φ y → φ (pt_slot x i) = φ (pt_slot y i)).
+  Context (Hφl : ∀ x i, pt_root (φ x) ≠ NVar 0 → φ (pt_payload x i) = pt_payload (φ x) i).
+  Context (Hφr : ∀ x y i, φ x = φ y → φ (pt_payload x i) = φ (pt_payload y i)).
   Context (HRt : ∀ x y z, R x y → R y z → R x z).
   Context (HRp : ∀ p, pt_root p = NVar 0 → R p (pt_shift 1 p)).
   Context (HRi : ∀ p, ¬ R p p).
@@ -584,7 +584,7 @@ Section model.
         { rewrite (Hφr x y i (cc_eq_new peq _ _ IH (or_introl Hx))). apply geq_refl. }
         destruct (decide (pt_root (φ y) = NVar 0)) as [Hy|Hy].
         { rewrite (Hφr x y i (cc_eq_new peq _ _ IH (or_intror Hy))). apply geq_refl. }
-        rewrite !Hφl by done. by apply geq_slot. }
+        rewrite !Hφl by done. by apply geq_payload. }
     split; [done|].
     induction 1 as [x y [H|H]|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - destruct (cc_up_root _ _ _ H) as [Hx Hy]. rewrite !Hφo by done.
@@ -626,7 +626,7 @@ Proof. intros H. apply geq_base. by exists x, y. Qed.
 
 Lemma cc_ok_transfer peq plt peq' plt' C C' (f : point → point) :
   (∀ x, f (pt_shift 1 x) = pt_shift 1 (f x)) →
-  (∀ x i, f (pt_slot x i) = pt_slot (f x) i) →
+  (∀ x i, f (pt_payload x i) = pt_payload (f x) i) →
   (∀ p, pt_root p = NVar 0 → pt_root (f p) = NVar 0) →
   (∀ x, pt_root x ≠ NVar 0 → pt_root (f x) ≠ NVar 0) →
   (∀ p q, pt_root p = NVar 0 → pt_root q = NVar 0 → f p = f q → p = q) →
@@ -694,18 +694,18 @@ Section world.
     | NVar 0 => NConst a
     | NVar (S k) => NVar k
     | NConst c => if decide (c = a) then NVar 0 else NConst c
-    | NSlot _ _ _ => p
+    | NPayload _ _ _ => p
     end.
 
   Fixpoint ga_name (p : pname) : pname :=
-    match p with NSlot q b i => NSlot (ga_name q) b i | _ => ga_root p end.
+    match p with NPayload q b i => NPayload (ga_name q) b i | _ => ga_root p end.
 
   Definition ga (x : point) : point := Pt (ga_name (pt_name x)) (pt_off x).
 
   Lemma ga_shift x : ga (pt_shift 1 x) = pt_shift 1 (ga x).
   Proof. done. Qed.
 
-  Lemma ga_slot x i : ga (pt_slot x i) = pt_slot (ga x) i.
+  Lemma ga_payload x i : ga (pt_payload x i) = pt_payload (ga x) i.
   Proof. done. Qed.
 
   Lemma ga_name_root p : pn_root (ga_name p) = ga_root (pn_root p).
@@ -742,7 +742,7 @@ Section world.
     { induction n as [c|c|q IH b i]; simpl in *.
       - injection Hn as ->. by exists (NVar 0).
       - done.
-      - destruct (IH Hn) as (p & Hp & <-). by exists (NSlot p b i). }
+      - destruct (IH Hn) as (p & Hp & <-). by exists (NPayload p b i). }
     by exists (Pt p o).
   Qed.
 
@@ -836,14 +836,14 @@ Proof.
       unfold pofs, ga, pt_inst, pt_shift. simpl. split; [done|lia].
     - rewrite (proj2 (Hup x0) Hx), (proj2 (Hup y0) Hy). done. }
   destruct (gen_map (cc_up (w_eq W)) (cc_up (w_lt W)) (w_eq W) (w_lt W) (ga a) (theory_world W HW)
-              (ga_shift a) (ga_slot a) Mq Ml) as [Gq Gl].
+              (ga_shift a) (ga_payload a) Mq Ml) as [Gq Gl].
   destruct (interp (w_eq W) (w_lt W) (theory_world W HW) (NConst a)
               ltac:(intros x y H Hr; destruct (wf_eq_supp _ HW _ _ H) as [?|[Hx Hy]]; [done|];
                     exfalso; destruct Hr as [Hr|Hr]; rewrite <-Hr in *; by apply Ha)
               ltac:(intros x y H Hr; destruct (wf_lt_supp _ HW _ _ H) as [?%ppo_pofs|[Hx Hy]]; [done|];
                     exfalso; destruct Hr as [Hr|Hr]; rewrite <-Hr in *; by apply Ha)
               (geq (cc_eq (w_eq W) C)) (glt (cc_eq (w_eq W) C) (cc_lt (w_lt W) C)) (theory_gen _ _)
-              (ga a) (ga_shift a) (ga_slot a) (ga_root_new a) (ga_root_old a) (ga_inj_new a)
+              (ga a) (ga_shift a) (ga_payload a) (ga_root_new a) (ga_root_old a) (ga_inj_new a)
               (ga_surj_new a)
               ltac:(intros x y Hx Hy H; apply Gq; by apply Hce)
               ltac:(intros x y Hx Hy H; apply Gl; by apply Hcl)

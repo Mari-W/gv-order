@@ -50,7 +50,7 @@ Proof.
   apply styped_wnil. set (W := wnil). pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold fac_main.
   tstep.
   { tstep; [tstep|].
-    apply (t_box W _ _ _ _ _ 0 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|box_k0].
+    apply (t_exp W _ _ _ _ _ 0 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|box_k0].
     cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
     cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 0) HWs).
     { right. exists Cfac, [pv 0 0], (pv 0 0). split_and!; [by left|by left|done]. }
@@ -118,7 +118,7 @@ Definition fa_main : expr :=
 Lemma faca_typed Ψ F : typed wnil ∅ Ψ ∅ [] F faca Tfa.
 Proof.
   set (W := wnil). pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold faca, fac, Tfa.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (Pt (NVar 0) 0) HWs).
   { right. eexists _, _, (pvar 0). split_and!; [apply elem_of_app; right; by left|by left|done]. }
@@ -153,7 +153,7 @@ Proof.
     - apply pt_inst_ids. destruct Hxy as [[= -> ->]|[= -> ->]]; cbn; lia. }
   assert (slt W Ψ (pv 0 0) (pv 1 0)) as H1 by (apply Hf; by left).
   assert (slt W Ψ (pv 0 1) (pv 1 0)) as H2 by (apply Hf; by right).
-  assert (∀ (F : sframe) a, a < 2 →
+  assert (∀ (F : sfuture) a, a < 2 →
     typed W ∅ Ψ ∅ [None; Some Tfa] F (App (App EForce (Var 1)) EUnit)
       (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv a 0))) as Hreq.
   { intros F a Ha. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].

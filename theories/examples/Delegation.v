@@ -26,7 +26,7 @@ From LRGV Require Export examples.ExampleTools.
 Set Default Proof Using "All".
 
 Definition Sdel : sty := SSeq (SSnd 1 (TSess Sd (pvar 0))) SEnd.
-Abbreviation ps k := (Pt (NSlot (NConst 0) 0 0) k).
+Abbreviation ps k := (Pt (NPayload (NConst 0) 0 0) k).
 
 Definition deleg_thunk : expr :=
   Lam (LetU (Var 0) (LetP (App ERecv (Var 3))
@@ -43,7 +43,7 @@ Definition deleg_main : expr :=
 (** The creation constraint of c: ι ≺ ι[0] and ι[0]+1 ≺ ι+1. Both facts
     stay inside ι, and the rank 10·k for ι+k and 5 + o for ι[0]+o
     orders them (sharp edges 105). *)
-Abbreviation sd k := (Pt (NSlot (NVar 0) 0 0) k).
+Abbreviation sd k := (Pt (NPayload (NVar 0) 0 0) k).
 
 Definition dl_P (g : fact) : Prop := g = FLt (pv 0 0) (sd 0) ∨ g = FLt (sd 1) (pv 0 1).
 Definition dl_C : bcs := BCs [] dl_P.
@@ -51,7 +51,7 @@ Definition dl_C : bcs := BCs [] dl_P.
 Definition dl_rank (x : point) : nat :=
   match pt_name x with
   | NVar 0 => 10 * pt_off x
-  | NSlot (NVar 0) 0 0 => 5 + pt_off x
+  | NPayload (NVar 0) 0 0 => 5 + pt_off x
   | _ => pt_off x
   end.
 

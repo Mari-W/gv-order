@@ -56,7 +56,7 @@ Set Default Proof Using "All".
 Definition Sst : sty := SMu (SSeq (SRcv 1 (TProd TUnit (TSess (SVar 0) (pvar 0)))) SEnd).
 
 Definition st_P (g : fact) : Prop :=
-  ∃ n, g = FLt (Pt (slotv n) 1) (Pt (slotv (S n)) 0).
+  ∃ n, g = FLt (Pt (payloadv n) 1) (Pt (payloadv (S n)) 0).
 
 Definition st_C : bcs := BCs [] st_P.
 
@@ -83,7 +83,7 @@ Definition st_main : expr :=
 Lemma st_sub g : st_P g → fact_scoped 1 g → st_P (fact_map (pt_inst (plist [pcr])) g).
 Proof.
   intros (n & ->) _. exists (S n). cbn [fact_map]. unfold pt_inst. cbn [pt_name pt_off].
-  by rewrite !slotv_inst.
+  by rewrite !payloadv_inst.
 Qed.
 
 Lemma st_call W Ψ : (st_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pcr].
@@ -92,7 +92,7 @@ Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact st_sub]. Qed.
 Lemma st_ok peq plt : cc_ok peq plt st_C.
 Proof.
   apply cc_ok_ult. intros g [n ->] _. eexists _, _. split; [done|].
-  left. cbn. rewrite !sdepth_slotv. lia.
+  left. cbn. rewrite !sdepth_payloadv. lia.
 Qed.
 
 Lemma skn_st W Ψ x : (st_C, [pvar 0]) ∈ Ψ → pt_root x = NVar 0 → Forall (skn W Ψ) [x].
@@ -105,7 +105,7 @@ Lemma stcons_typed W F :
   world_wf W → typed W ∅ [] ∅ [] F stcons (TBox 1 0 st_C (TLolli None None TUnit stc_body)).
 Proof.
   intros HW. unfold stcons.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 st_C stc_body. cbn. unfold stc_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
@@ -119,7 +119,7 @@ Proof.
   cbn. eapply (tv_letp W HW _ _ _ _ _ _ TUnit (TSess Sst pcr)); [reflexivity|tstep|].
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
-    apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 1) (Pt (NSlot (NVar 0) 0 0) 0)|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 1) (Pt (NPayload (NVar 0) 0 0) 0)|].
     exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   tstep; [|apply KTSpawn|done|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 pcr)) (Some pcr) 2);
@@ -140,7 +140,7 @@ Lemma stprod_typed W F :
   strict W → typed W ∅ [] ∅ [] F stprod (TBox 1 0 st_C (TLolli None None TUnit stp_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold stprod.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 st_C stp_body. cbn. unfold stp_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (st_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 0) pcr) as Hlt.
@@ -162,7 +162,7 @@ Proof.
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW). }
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
-    apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 1) (Pt (NSlot (NVar 0) 0 0) 0)|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 1) (Pt (NPayload (NVar 0) 0 0) 0)|].
     exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   tstep; [|apply KTSpawn|done|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 pcr)) (Some pcr) 2);

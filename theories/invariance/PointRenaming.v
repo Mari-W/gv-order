@@ -2,7 +2,7 @@
 
     A transposition a ↔ b of point constants, applied to a world, to
     the points and session types of an environment, to a type and to
-    a frame, maps the logical relation to itself ([rel_psw]). Terms
+    a future, maps the logical relation to itself ([rel_psw]). Terms
     and processes mention no points, so they stay as they are.
 
     Consequences: the point a term or a process creates at [new] can
@@ -34,7 +34,7 @@ Fixpoint pnsw (a b : nat) (p : pname) : pname :=
   match p with
   | NConst x => NConst (nswap a b x)
   | NVar x => NVar x
-  | NSlot q o i => NSlot (pnsw a b q) o i
+  | NPayload q o i => NPayload (pnsw a b q) o i
   end.
 
 Definition ptsw (a b : nat) (x : point) : point :=
@@ -90,7 +90,7 @@ Section points.
   Lemma ptsw_shift n x : ptsw a b (pt_shift n x) = pt_shift n (ptsw a b x).
   Proof. done. Qed.
 
-  Lemma ptsw_slot x i : ptsw a b (pt_slot x i) = pt_slot (ptsw a b x) i.
+  Lemma ptsw_payload x i : ptsw a b (pt_payload x i) = pt_payload (ptsw a b x) i.
   Proof. done. Qed.
 
   Lemma ppo_sw_1 x y : ppo x y → ppo (ptsw a b x) (ptsw a b y).
@@ -278,7 +278,7 @@ Section points.
   Lemma pn_inst_sw σ p :
     ptsw a b (pn_inst σ p) = pn_inst (ptsw a b ∘ σ) (pnsw a b p).
   Proof.
-    induction p; simpl; try done. by rewrite ptsw_slot, ptsw_shift, IHp.
+    induction p; simpl; try done. by rewrite ptsw_payload, ptsw_shift, IHp.
   Qed.
 
   Lemma pt_inst_sw σ x :
@@ -396,12 +396,12 @@ Section points.
     rewrite !fmap_cons, !union_list_cons, IH, set_map_union_L, pt_root_sw. set_solver.
   Qed.
 
-  Lemma slots_sw x m : ptsw a b <$> slots x m = slots (ptsw a b x) m.
-  Proof. unfold slots. rewrite <-list_fmap_compose. by apply list_fmap_ext. Qed.
+  Lemma payload_pts_sw x m : ptsw a b <$> payload_pts x m = payload_pts (ptsw a b x) m.
+  Proof. unfold payload_pts. rewrite <-list_fmap_compose. by apply list_fmap_ext. Qed.
 
   Lemma payload_at_sw m T x :
     tysw a b (payload_at m T x) = payload_at m (tysw a b T) (ptsw a b x).
-  Proof. unfold payload_at. by rewrite ty_inst_sw, slots_sw. Qed.
+  Proof. unfold payload_at. by rewrite ty_inst_sw, payload_pts_sw. Qed.
 
   Lemma heads_sw T : heads (tysw a b T) = set_map (ptsw a b) (heads T).
   Proof.
@@ -522,7 +522,7 @@ Section wsw.
     - apply HW.
     - apply HW.
     - rewrite !ptsw_shift. apply HW.
-    - rewrite !ptsw_slot. apply HW.
+    - rewrite !ptsw_payload. apply HW.
     - apply HW.
     - apply HW.
     - rewrite ptsw_shift. apply HW.
@@ -606,7 +606,7 @@ Section wsw.
   Qed.
 End wsw.
 
-(** Points and frames moved by a transposition. *)
+(** Points and futures moved by a transposition. *)
 Lemma lb_below_wsame W1 W2 lb H :
   wsame W1 W2 → lb_below W1 lb H → lb_below W2 lb H.
 Proof.
@@ -911,7 +911,7 @@ Section envs.
   Qed.
 End envs.
 
-(** ** Readiness, frames, constants *)
+(** ** Readiness, futures, constants *)
 
 Section ready.
   Context (a b : nat).
@@ -1085,9 +1085,9 @@ Section ready.
       rewrite !ptsw_involutive. auto.
     - rewrite payload_at_sw. apply KTRecv.
     - apply KTClos.
-    - apply KTSel1; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
-    - apply KTSel2; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
-    - apply KTBra; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
+    - apply KTSel1; simpl; by rewrite ?ptsw_payload, ?ptsw_involutive.
+    - apply KTSel2; simpl; by rewrite ?ptsw_payload, ?ptsw_involutive.
+    - apply KTBra; simpl; by rewrite ?ptsw_payload, ?ptsw_involutive.
     - apply KTLink. simpl. by rewrite !ptsw_involutive.
     - rewrite sinst_slist_sw, ty_inst_sw.
       replace (ptsw a b <$> (pt_inst (plist xs) <$> ub))
@@ -1153,7 +1153,7 @@ Section ready.
   Proof. apply teqW_r_sw, seq_sw. Qed.
 End ready.
 
-(** World equivalence leaves readiness, frames and constants alone. *)
+(** World equivalence leaves readiness, futures and constants alone. *)
 Lemma above_offered_wsame W1 W2 Θ off :
   wsame W1 W2 → above_offered W1 Θ off → above_offered W2 Θ off.
 Proof.
@@ -1239,10 +1239,10 @@ Section misc.
       apply elem_of_map. exists x. done.
   Qed.
 
-  Lemma frame_roots_sw F :
-    frame_roots (set_map (ptsw a b) F) = set_map (pnsw a b) (frame_roots F).
+  Lemma future_roots_sw F :
+    future_roots (set_map (ptsw a b) F) = set_map (pnsw a b) (future_roots F).
   Proof.
-    unfold frame_roots. apply set_eq. intros p. rewrite !elem_of_map. split.
+    unfold future_roots. apply set_eq. intros p. rewrite !elem_of_map. split.
     - intros (x & -> & Hx). apply elem_of_map in Hx as (y & -> & Hy).
       exists (pt_root y). rewrite pt_root_sw. split; [done|]. by apply elem_of_map_2.
     - intros (q & -> & Hq). apply elem_of_map in Hq as (y & -> & Hy).
@@ -1433,7 +1433,7 @@ Proof.
       exists (tenvsw a b Θr), (stysw a b s1), (stysw a b s2), (ptsw a b k), (tenvsw a b Θ').
       split_and!.
       * by apply (tenv_hd_sw a b _ _ (SPlus s1 s2)).
-      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_slot k (bidx i))) in Hext.
+      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_payload k (bidx i))) in Hext.
         unfold esw in Hext; simpl in Hext. by rewrite sbranch_map in Hext.
       * by apply (proj2 HE').
     + (* branch *)
@@ -1441,14 +1441,14 @@ Proof.
       exists (tenvsw a b Θr), (stysw a b s1), (stysw a b s2), (ptsw a b k), (tenvsw a b Θ').
       split_and!.
       * by apply (tenv_hd_sw a b _ _ (SWith s1 s2)).
-      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_slot k (bidx i))) in Hext.
+      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_payload k (bidx i))) in Hext.
         unfold esw in Hext; simpl in Hext. by rewrite sbranch_map in Hext.
       * by apply (IHE n' ltac:(lia) W).
     + (* new *)
       intros Hc. rewrite dom_tenvsw in Hc.
       destruct (Hstep Hc) as (a0 & s & s' & W1 & Ha & Hdu & Hfr & HE').
       exists (nswap a b a0), (stysw a b s), (stysw a b s'), (wsw a b W1). split_and!.
-      * rewrite tenv_roots_sw, (proj1 (roots_sw_mut a b)), frame_roots_sw,
+      * rewrite tenv_roots_sw, (proj1 (roots_sw_mut a b)), future_roots_sw,
           <-!set_map_union_L.
         apply (not_elem_of_names_sw a b (NConst a0)). done.
       * by apply sdual_sw.
@@ -1649,7 +1649,7 @@ Section fixed.
   Qed.
 
   Lemma set_ptsw_fix F :
-    NConst a ∉ frame_roots F → NConst b ∉ frame_roots F → set_map (ptsw a b) F = F.
+    NConst a ∉ future_roots F → NConst b ∉ future_roots F → set_map (ptsw a b) F = F.
   Proof.
     intros Ha Hb. apply set_eq. intros x. rewrite elem_of_map. split.
     - intros (y & -> & Hy). rewrite ptsw_fix; [done| |];
@@ -1723,8 +1723,8 @@ End fixed.
     that is fresh for the world and for the points of Θ, T and F. *)
 Lemma Erel_new_rename n W W1 Θ T F e c s s' a0 a1 :
   world_wf W → wext_fresh W {[NConst a0]} W1 →
-  NConst a0 ∉ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F →
-  NConst a1 ∉ w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F →
+  NConst a0 ∉ tenv_roots Θ ∪ ty_roots T ∪ future_roots F →
+  NConst a1 ∉ w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F →
   Erel n W1 (<[c := Both (s, pconst a0) (s', pconst a0)]> Θ) T F e →
   ∃ W1', wext_fresh W {[NConst a1]} W1' ∧
     Erel n W1' (<[c := Both (stysw a0 a1 s, pconst a1) (stysw a0 a1 s', pconst a1)]> Θ)

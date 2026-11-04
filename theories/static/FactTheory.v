@@ -1,6 +1,6 @@
-(** * Frames, hypotheses and the fact theory of the static system (spec §9)
+(** * Futures, hypotheses and the fact theory of the static system (spec §9)
 
-    Static frames, box hypotheses, and the two judgments Γ ⊢ x ≡ y
+    Static futures, box hypotheses, and the two judgments Γ ⊢ x ≡ y
     ([seqs]) and Γ ⊢ a ≺ b ([fl], [slt]) from which the static system
     reads every fact (sharp edges 64, 65). [steq] is ≈ up to Γ ⊢ ≡
     (sharp edges 67). *)
@@ -10,45 +10,45 @@ From LRGV Require Export rules.SemanticRules.
 
 Set Default Proof Using "All".
 
-(** ** Static frames and hypotheses (sharp edges 54, 56)
+(** ** Static futures and hypotheses (sharp edges 54, 56)
 
-    E-Abs and E-Exp type the body under the frame {φ} for a fresh
-    frame variable φ, with the single hypothesis u ≺ φ. A fresh point
+    E-Abs and E-Exp type the body under the future {φ} for a fresh
+    future variable φ, with the single hypothesis u ≺ φ. A fresh point
     would not do, because a world that adds a fresh point cannot be
-    dropped again (counterexamples/DropCounter.v). A frame is a set of
-    points and at most one frame variable. The body of λ or box starts
+    dropped again (counterexamples/DropCounter.v). A future is a set of
+    points and at most one future variable. The body of λ or box starts
     at {φ} and the other rules only add points. φ occurs only in
-    frames and in the hypotheses Φ, never in a type, an environment or
+    futures and in the hypotheses Φ, never in a type, an environment or
     the world, so it is never a point that [new] or force could alias.
     x ≺ φ holds when x ≼ u in W for the hypothesis u ≺ φ. E-Exp types
     the body with the ιs as point variables (sharp edges 57). *)
 
-(** The second component of a frame (sharp edges 103): a frame
-    variable φ ([FVar φ]), or the ⊥ flag with or without a frame
+(** The second component of a future (sharp edges 103): a future
+    variable φ ([FVar φ]), or the ⊥ flag with or without a future
     variable ([FBot o]). [None] is neither. The flag says that the
     context holds an unopened existential with lower bound ⊥, so no
     known point lies below everything the context holds. *)
-Inductive fslot := FVar (φ : nat) | FBot (o : option nat).
+Inductive futrest := FVar (φ : nat) | FBot (o : option nat).
 
-Notation sframe := (gset point * option fslot)%type.
+Notation sfuture := (gset point * option futrest)%type.
 Notation fhyps := (gmap nat (option point)).
 
-Definition fs_var (o : option fslot) : option nat :=
+Definition fs_var (o : option futrest) : option nat :=
   match o with Some (FVar φ) => Some φ | Some (FBot o') => o' | None => None end.
 
-Definition fs_bot (o : option fslot) : bool :=
+Definition fs_bot (o : option futrest) : bool :=
   match o with Some (FBot _) => true | _ => false end.
 
-(** F[ρ]: replace the frame variable by a concrete frame, and the flag
+(** F[ρ]: replace the future variable by a concrete future, and the flag
     by the point [pbot] of relation/Worlds.v. *)
-Definition sf_inst (ρ : nat → gset point) (F : sframe) : gset point :=
+Definition sf_inst (ρ : nat → gset point) (F : sfuture) : gset point :=
   F.1 ∪ match fs_var F.2 with Some φ => ρ φ | None => ∅ end ∪ bot_pts (fs_bot F.2).
 
-Definition sf_union (F : sframe) (X : gset point) : sframe := (F.1 ∪ X, F.2).
+Definition sf_union (F : sfuture) (X : gset point) : sfuture := (F.1 ∪ X, F.2).
 
 (** F, X with the flag set when b holds: the points X and flag b are
     the heads of what the context of a subterm holds. *)
-Definition sf_unionb (F : sframe) (X : gset point) (b : bool) : sframe :=
+Definition sf_unionb (F : sfuture) (X : gset point) (b : bool) : sfuture :=
   if b then (F.1 ∪ X, Some (FBot (fs_var F.2))) else sf_union F X.
 
 (** Hypotheses (sharp edges 58, 61, 65). Inside a box body the
@@ -83,13 +83,13 @@ Definition ids (m : nat) : list point := pvar <$> List.seq 0 m.
     the context Γ = (W, Ψ, Φ). Γ ⊢ x ≡ y ([seqs]) is the least
     congruence for successor and x ↦ x[i] that contains ≡ of W and
     the ≡ facts of the hypotheses. Γ ⊢ a ≺ b ([fl]) is over nodes,
-    which are points and frame variables. It has program order
+    which are points and future variables. It has program order
     x ≺ x + 1 ([fl_po]), the order of W, the ≺ facts of the hypotheses
-    and u ≺ φ for every frame hypothesis of Φ, and it is closed under
+    and u ≺ φ for every future hypothesis of Φ, and it is closed under
     Γ ⊢ ≡ and under transitivity through points. Without hypotheses the
     two are ≡ and ≺ of W ([seqs_nil], [slt_nil]). [fl_map] carries
     derivations of both along a map of the generators, and it is the one
-    lemma behind point substitution and frame instantiation.
+    lemma behind point substitution and future instantiation.
 
     Program order is a rule of its own and reads no world, so the
     source judgment of static/Source.v derives it from the hypotheses
@@ -110,7 +110,7 @@ Inductive seqs (W : world) (Ψ : hyps) : point → point → Prop :=
   | se_sym x y : seqs W Ψ x y → seqs W Ψ y x
   | se_trans x y z : seqs W Ψ x y → seqs W Ψ y z → seqs W Ψ x z
   | se_shift x y : seqs W Ψ x y → seqs W Ψ (pt_shift 1 x) (pt_shift 1 y)
-  | se_slot x y i : seqs W Ψ x y → seqs W Ψ (pt_slot x i) (pt_slot y i).
+  | se_payload x y i : seqs W Ψ x y → seqs W Ψ (pt_payload x i) (pt_payload y i).
 
 Inductive fl (Γ : fctx) : node → node → Prop :=
   | fl_w x y : w_lt (fc_W Γ) x y → fl Γ (NP x) (NP y)
@@ -131,7 +131,7 @@ Lemma fl_map Γ (Q : point → point → Prop) (R : node → node → Prop)
   (∀ x y, Q (fp x) (fp y) → Q (fp y) (fp x)) →
   (∀ x y z, Q (fp x) (fp y) → Q (fp y) (fp z) → Q (fp x) (fp z)) →
   (∀ x y, Q (fp x) (fp y) → Q (fp (pt_shift 1 x)) (fp (pt_shift 1 y))) →
-  (∀ x y i, Q (fp x) (fp y) → Q (fp (pt_slot x i)) (fp (pt_slot y i))) →
+  (∀ x y i, Q (fp x) (fp y) → Q (fp (pt_payload x i)) (fp (pt_payload y i))) →
   (∀ x y, w_lt (fc_W Γ) x y → R (f (NP x)) (f (NP y))) →
   (∀ x y, hyp_fact (fc_hyps Γ) (FLt x y) → R (f (NP x)) (f (NP y))) →
   (∀ φ u, fc_fv Γ !! φ = Some (Some u) → R (f (NP u)) (f (NV φ))) →
@@ -238,7 +238,7 @@ Proof.
   - by apply (wf_eq_sym _ HW).
   - by eapply (wf_eq_trans _ HW).
   - by apply (wf_eq_shift _ HW).
-  - by apply (wf_eq_slot _ HW).
+  - by apply (wf_eq_payload _ HW).
 Qed.
 
 (** ** Types up to Γ ⊢ ≡ (sharp edges 67)
@@ -285,7 +285,7 @@ Proof.
   - apply (wf_eq_sym _ HW).
   - apply (wf_eq_trans _ HW).
   - apply (wf_eq_shift _ HW).
-  - apply (wf_eq_slot _ HW).
+  - apply (wf_eq_payload _ HW).
   - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
   - intros x0 x' [] Hx H; [|done].
     eapply (wf_lt_eq _ HW); [exact Hx|exact H|apply (wf_eq_refl _ HW)].
@@ -343,9 +343,9 @@ Proof.
   - right. exists C, xs, z. split_and!; [done|done|congruence].
 Qed.
 
-(** {u} ≺ F, one judgment for the points of F and its frame variable. *)
+(** {u} ≺ F, one judgment for the points of F and its future variable. *)
 Definition ub_below_s (W : world) (Ψ : hyps) (Φ : fhyps)
-    (ub : option point) (F : sframe) : Prop :=
+    (ub : option point) (F : sfuture) : Prop :=
   match ub with
   | None => True
   | Some x => (∀ y, y ∈ F.1 → fl (FCtx W Ψ Φ) (NP x) (NP y)) ∧
@@ -353,7 +353,7 @@ Definition ub_below_s (W : world) (Ψ : hyps) (Φ : fhyps)
               fs_bot F.2 = false
   end.
 
-(** The frame variable part read as x ≼ u for the hypothesis u ≺ φ. *)
+(** The future variable part read as x ≼ u for the hypothesis u ≺ φ. *)
 Lemma ub_below_s_intro W Ψ Φ x P o :
   (∀ y, y ∈ P → slt W Ψ x y) →
   match o with

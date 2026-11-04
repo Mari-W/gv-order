@@ -2,7 +2,7 @@
 
     teq T T' moves V, E and semantic typing from T to T' ([Vrel_teq],
     [Erel_teq], [sem_typed_teq]) in every well-formed world and under
-    every frame. At [new] the fresh point is renamed away from the
+    every future. At [new] the fresh point is renamed away from the
     points of the converted type ([Erel_new_rename]).
 
     V and E are proved together by strong induction on the step index,
@@ -129,7 +129,7 @@ Proof.
   - (* O-New: rename the new point away from the points of T' *)
     intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
     destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
-                           ∪ frame_roots F)) as [a1 Ha1].
+                           ∪ future_roots F)) as [a1 Ha1].
     destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
                 ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
     exists a1, (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
@@ -151,7 +151,7 @@ Lemma Erel_teq n W Θ T T' F e :
 Proof. apply (proj2 (Vrel_Erel_teq n)). Qed.
 
 (** The compositionality lemma for E-Conv: semantic typing transports
-    along ≈, under any world and frame. *)
+    along ≈, under any world and future. *)
 Lemma sem_typed_teq W Θ Δ F e T T' :
   teq T T' → sem_typed W Θ Δ F e T → sem_typed W Θ Δ F e T'.
 Proof.

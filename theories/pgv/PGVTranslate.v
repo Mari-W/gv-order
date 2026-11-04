@@ -2,7 +2,7 @@
 
     A derivation Γ ⊢^p M : T of the fragment ([pgv_frag]) becomes a
     derivation of [typed] at the protocol-point world [Wpgv], at every
-    frame F above u_p ([pgv_translate]). [soundness] then makes every
+    future F above u_p ([pgv_translate]). [soundness] then makes every
     closed program of type 1 deadlock free ([pgv_deadlock_free]).
 
     The term changes in two places ([pgv_eta]). The upper point of our
@@ -15,7 +15,7 @@
     pgv/PGVSimulation.v carries deadlock freedom back to the program
     itself.
 
-    PGV's bound p corresponds to frames. A side condition p < pr(Δ)
+    PGV's bound p corresponds to futures. A side condition p < pr(Δ)
     puts u_p below every head of Δ, q < p′ puts u_q below ℓ_p′, and the
     lower bound pr(Γ) of T-Lam is at or below every head of Γ. *)
 
@@ -87,12 +87,12 @@ Proof.
   rewrite (H o) by set_solver. constructor. apply IH. intros o' Ho'. apply H. set_solver.
 Qed.
 
-(** ** Frames *)
+(** ** Futures *)
 
 Lemma sf_union_empty F : sf_union F ∅ = F.
 Proof. destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L. Qed.
 
-(** A lower upper point stays below the frame. *)
+(** A lower upper point stays below the future. *)
 Lemma ubs_lower Φ a b F :
   (∀ x, a = Some x → ∃ y, b = Some y ∧ (x = y ∨ w_lt Wpgv x y)) →
   ub_below_s Wpgv [] Φ b F → ub_below_s Wpgv [] Φ a F.
@@ -107,7 +107,7 @@ Qed.
 Lemma ubs_prio Φ a b F : prio_le a b → ub_below_s Wpgv [] Φ (ubp b) F → ub_below_s Wpgv [] Φ (ubp a) F.
 Proof. intros Hab. apply ubs_lower. intros x Hx. by eapply ubp_mono. Qed.
 
-(** Adding points above the upper point keeps it below the frame. *)
+(** Adding points above the upper point keeps it below the future. *)
 Lemma ubs_union Φ u F X :
   ub_below_s Wpgv [] Φ u F → (∀ x, u = Some x → ∀ h, h ∈ X → w_lt Wpgv x h) →
   ub_below_s Wpgv [] Φ u (sf_union F X).
@@ -169,7 +169,7 @@ Proof.
         - apply comp0, Wpgv_wf.
         - done.
         - by apply Hx.
-        - apply t_konst; [done| |by apply tr_pscoped].
+        - apply t_const; [done| |by apply tr_pscoped].
           rewrite <-(payload_tr T0 x) at 1. apply KTSend. rewrite hbot_tr.
           rewrite payload_tr. intros h Hh. apply sl_w. apply (ppt_below_hd _ (pr T0)); [|by apply heads_tr].
           done.
@@ -185,7 +185,7 @@ Proof.
         - apply comp0, Wpgv_wf.
         - done.
         - by apply Hx.
-        - apply t_konst; [done|apply KTRecv|by apply tr_pscoped].
+        - apply t_const; [done|apply KTRecv|by apply tr_pscoped].
         - rewrite sf_union_empty. exact H2. }
     rewrite payload_tr. simpl. split; [apply teq_steq, teq_refl|].
     split; [|apply seq_refl]. apply se_w, pgv_eq; [done|done|].
@@ -195,14 +195,14 @@ Proof.
     + apply comp0, Wpgv_wf.
     + done.
     + by apply Hx.
-    + apply t_konst; [done|apply KTClos|done].
+    + apply t_const; [done|apply KTClos|done].
     + rewrite sf_union_empty. exact H2.
   - (* wait *)
     eapply (t_app Wpgv Φ [] ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (Some (ppt (PEndR o))) None).
     + apply comp0, Wpgv_wf.
     + done.
     + by apply Hx.
-    + apply t_konst; [done|apply KTClos|done].
+    + apply t_const; [done|apply KTClos|done].
     + rewrite sf_union_empty. exact H2.
 Qed.
 
@@ -214,11 +214,11 @@ Lemma new_tr_typed Φ Γ F S :
 Proof.
   intros HΓ. pose proof (tr_env_empty Γ HΓ) as HΔ.
   set (S' := tr_sty S). set (x := ppt S). set (φ := fresh (dom Φ)).
-  unfold new_tr. eapply (t_lam _ _ _ _ _ _ _ _ _ _ _ φ).
+  unfold new_tr. eapply (t_abs _ _ _ _ _ _ _ _ _ _ _ φ).
   - apply is_fresh.
   - unfold tenv_heads, lb_below_hb. rewrite map_fold_empty, union_empty_l_L, lenv_bot_tr.
     by apply lenv_heads_tr_empty.
-  - eapply (t_letu Wpgv _ [] ∅ ∅ ∅ _ (Some TUnit :: tr_env Γ) (None :: tr_env Γ)).
+  - eapply (t_letstar Wpgv _ [] ∅ ∅ ∅ _ (Some TUnit :: tr_env Γ) (None :: tr_env Γ)).
     + apply comp0, Wpgv_wf.
     + by apply lsplit_l, lenv_split_empty.
     + apply t_var. split; [done|]. intros [|y] T' Hy; simpl in Hy; [by simplify_eq|].
@@ -248,7 +248,7 @@ Proof.
   - destruct T as [| | |p q T U|]; try by inversion Hk.
     destruct (pgv_konst_comm _ _ _ _ _ _ Hk Ek) as [-> [o ->]].
     simpl. rewrite (kon_eta_comm k Ek). set (φ := fresh (dom Φ)).
-    eapply t_lam.
+    eapply t_abs.
     + apply is_fresh.
     + simpl. unfold tenv_heads, lb_below_hb. rewrite map_fold_empty, union_empty_l_L, lenv_bot_tr.
       by apply lenv_heads_tr_empty.
@@ -262,8 +262,8 @@ Proof.
         apply list_elem_of_lookup_2 in Hy. by apply HΔ in Hy.
   - destruct Hk as [S|p q| | | | |S]; simpl in Ek |- *; try done.
     + rewrite tr_sty_dual, ppt_dual. by apply new_tr_typed.
-    + apply t_konst; [done|apply KTSpawn|done].
-    + apply t_konst; [done| |done]. rewrite tr_sty_dual, ppt_dual.
+    + apply t_const; [done|apply KTSpawn|done].
+    + apply t_const; [done| |done]. rewrite tr_sty_dual, ppt_dual.
       apply KTLink. apply se_refl.
 Qed.
 
@@ -296,7 +296,7 @@ Proof.
     apply t_unit. by apply tr_env_empty.
   - (* T-Lam *)
     set (φ := fresh (dom Φ)).
-    eapply t_lam.
+    eapply t_abs.
     + apply is_fresh.
     + unfold tenv_heads, lb_below_hb. rewrite map_fold_empty, union_empty_l_L, lenv_bot_tr.
       destruct (pr_env Γ) as [|n|] eqn:EP; simpl.
@@ -344,7 +344,7 @@ Proof.
       * unfold sf_unionb; rewrite ?lenv_bot_tr, ?hbot_tr, (tenv_heads0 Wpgv HW), union_empty_l_L. by apply IHM.
       * by apply IHN.
   - (* T-LetUnit *)
-    eapply (t_letu Wpgv Φ [] ∅ ∅ ∅ _ (tr_env Γ1) (tr_env Γ2)).
+    eapply (t_letstar Wpgv Φ [] ∅ ∅ ∅ _ (tr_env Γ1) (tr_env Γ2)).
     + by apply comp0.
     + by apply tr_env_split.
     + unfold sf_unionb; rewrite ?lenv_bot_tr, ?hbot_tr, (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHM. apply ubs_union.
@@ -362,7 +362,7 @@ Proof.
       * eapply ubs_prio; [|exact HF]. apply prio_le_max_r.
       * intros u Hu h Hh. by eapply ubp_below_ty.
   - (* T-LetPair *)
-    eapply (t_letp Wpgv Φ [] ∅ ∅ ∅ _ (tr_env Γ1) (tr_env Γ2)).
+    eapply (t_letpair Wpgv Φ [] ∅ ∅ ∅ _ (tr_env Γ1) (tr_env Γ2)).
     + by apply comp0.
     + by apply tr_env_split.
     + unfold sf_unionb; rewrite ?lenv_bot_tr, ?hbot_tr, (tenv_heads0 Wpgv HW), union_empty_l_L. apply IHM. apply ubs_union.

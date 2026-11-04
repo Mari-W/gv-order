@@ -93,7 +93,7 @@ Ltac mk_tail HW :=
 Lemma mk0_typed W F : strict W → typed W ∅ [] ∅ [] F mk Tmk0.
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold mk, fac, Tmk0, Tmk.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn.
   apply (t_newfresh_lh_open W _ _ _ _ _ _ _ Sd [] []); [constructor|set_solver|].
@@ -103,11 +103,11 @@ Qed.
 Lemma mk1_typed W F : strict W → typed W ∅ [] ∅ [] F mk Tmk1.
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold mk, fac, Tmk1, Tmk.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn.
   apply (t_newfresh_lh_open W _ _ _ _ _ _ _ Sd [pvar 0; Pt (NVar 0) 1] []).
-  { constructor; [skn_slot|constructor; [skn_slot|constructor]]. }
+  { constructor; [skn_payload|constructor; [skn_payload|constructor]]. }
   { intros l h _ Hh. by apply elem_of_nil in Hh. }
   mk_tail HW.
 Qed.
@@ -144,7 +144,7 @@ Proof.
     eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
     apply (typed_force0 W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None
              (TLolli None None TUnit (Tmk_res [pvar 0; Pt (NVar 0) 1])) [pvar 0]);
-      [done|done| |constructor; [skn_slot|constructor]|apply ubs_none|tstep].
+      [done|done| |constructor; [skn_payload|constructor]|apply ubs_none|tstep].
     apply bcs_hold_intro. by intros ? []. }
   apply (t_open W _ _ _ _ _ _ 1 LBot 1 (fresh_bcs [pvar 0; Pt (NVar 0) 1] [])
            (TSess Sr (pvar 0)) TUnit); [done|intros Hun; exact Hun|].

@@ -40,21 +40,21 @@ Proof.
   intros Hg. eapply (skn_inst W Ψ C [pvar 0] (pvar 0)); [exact Hg|by left|done].
 Qed.
 
-(** One goal per point of a concrete frame, each by program order. *)
-Ltac po_frame HW := intros ? Hy; mem_cases Hy; (apply slt_po_lt; [exact HW|cbn; lia]).
+(** One goal per point of a concrete future, each by program order. *)
+Ltac po_future HW := intros ? Hy; mem_cases Hy; (apply slt_po_lt; [exact HW|cbn; lia]).
 
-(** The frame variable of the enclosing λ, at its upper point u. *)
+(** The future variable of the enclosing λ, at its upper point u. *)
 Ltac po_fvar HW u := exists u; split; [done|apply sle_po_le; [exact HW|cbn; lia]].
 
 (** The lower point of a λ against the heads it captures. *)
 Ltac lb_po HW := intros ? Hy; mem_cases Hy; (apply sle_po_le; [exact HW|cbn; lia]).
 
-(** A blocking call whose frame is concrete points and the frame
+(** A blocking call whose future is concrete points and the future
     variable of the enclosing λ at u. *)
-Ltac po_gate HW u := apply ubs_intro; [po_frame HW|po_fvar HW u].
+Ltac po_gate HW u := apply ubs_intro; [po_future HW|po_fvar HW u].
 
-(** The same at the top level, where the frame has no variable. *)
-Ltac po_gate0 HW := apply ubs_intro; [po_frame HW|done].
+(** The same at the top level, where the future has no variable. *)
+Ltac po_gate0 HW := apply ubs_intro; [po_future HW|done].
 
 (** ** Chains of payload points ι[0]ⁿ
 
@@ -64,21 +64,21 @@ Ltac po_gate0 HW := apply ubs_intro; [po_frame HW|done].
     point. ι[0]ⁿ = ι[0]…[0] (n times) for the point variable ι = 0,
     with positions counted from 0 in Rocq. *)
 
-Fixpoint slotv (n : nat) : pname :=
-  match n with 0 => NVar 0 | S m => NSlot (slotv m) 0 0 end.
+Fixpoint payloadv (n : nat) : pname :=
+  match n with 0 => NVar 0 | S m => NPayload (payloadv m) 0 0 end.
 
-Abbreviation pcr := (Pt (NSlot (NVar 0) 0 0) 0).
+Abbreviation pcr := (Pt (NPayload (NVar 0) 0 0) 0).
 
 (** Instantiating ι by ι[0] moves every point of the chain one level
     deeper, which is what the recursive [force] does. *)
-Lemma slotv_inst n : pn_inst (plist [pcr]) (slotv n) = Pt (slotv (S n)) 0.
-Proof. induction n as [|n IH]; [done|]. cbn [slotv pn_inst]. by rewrite IH. Qed.
+Lemma payloadv_inst n : pn_inst (plist [pcr]) (payloadv n) = Pt (payloadv (S n)) 0.
+Proof. induction n as [|n IH]; [done|]. cbn [payloadv pn_inst]. by rewrite IH. Qed.
 
 (** The depth of a name, the number of steps x ↦ x[i] in it. *)
 Fixpoint sdepth (p : pname) : nat :=
-  match p with NSlot q _ _ => S (sdepth q) | _ => 0 end.
+  match p with NPayload q _ _ => S (sdepth q) | _ => 0 end.
 
-Lemma sdepth_slotv n : sdepth (slotv n) = n.
+Lemma sdepth_payloadv n : sdepth (payloadv n) = n.
 Proof. induction n as [|n IH]; [done|]. cbn. by rewrite IH. Qed.
 
 (** Two strict orders on points, read lexicographically on depth and

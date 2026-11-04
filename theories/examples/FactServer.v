@@ -57,8 +57,8 @@ From LRGV Require Export examples.LitTools.
 Set Default Proof Using "All".
 
 Definition fc_P (g : fact) : Prop :=
-  ∃ n, g = FLt (Pt (slotv (S n)) 0) (Pt (slotv n) 0) ∨
-       g = FLt (Pt (slotv (S n)) 1) (Pt (slotv n) 0).
+  ∃ n, g = FLt (Pt (payloadv (S n)) 0) (Pt (payloadv n) 0) ∨
+       g = FLt (Pt (payloadv (S n)) 1) (Pt (payloadv n) 0).
 
 Definition fc_C : bcs := BCs [] fc_P.
 
@@ -85,7 +85,7 @@ Definition fc_main : expr :=
 Lemma fc_sub g : fc_P g → fact_scoped 1 g → fc_P (fact_map (pt_inst (plist [pcr])) g).
 Proof.
   intros (n & [-> | ->]) _; exists (S n); [left|right];
-    cbn [fact_map]; unfold pt_inst; cbn [pt_name pt_off]; by rewrite !slotv_inst.
+    cbn [fact_map]; unfold pt_inst; cbn [pt_name pt_off]; by rewrite !payloadv_inst.
 Qed.
 
 Lemma fc_call W Ψ : (fc_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) fc_C [pcr].
@@ -94,21 +94,21 @@ Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact fc_sub]. Qed.
 Lemma fc_ok peq plt : cc_ok peq plt fc_C.
 Proof.
   apply cc_ok_dlt. intros g [n [-> | ->]] _; eexists _, _; split; [done| |done|];
-    left; cbn; rewrite !sdepth_slotv; lia.
+    left; cbn; rewrite !sdepth_payloadv; lia.
 Qed.
 
 Lemma fcsrv_typed W F :
   strict W → typed W ∅ [] ∅ [] F fcsrv (TBox 1 0 fc_C (TLolli None None TUnit fc_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold fcsrv.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fc_C fc_body. cbn. unfold fc_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ pcr (pv 0 0)) as Hq.
-  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (slotv 1) 0) (Pt (slotv 0) 0));
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (payloadv 1) 0) (Pt (payloadv 0) 0));
       [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
   assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ (pt_shift 1 pcr) (pv 0 0)) as Hq1.
-  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (slotv 1) 1) (Pt (slotv 0) 0));
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (payloadv 1) 1) (Pt (payloadv 0) 0));
       [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
   cbn. eapply (tv_letp W HW _ _ _ _ _ _ (TSum TUnit TUnit) (TSess Sd (pv 0 0)));
     [reflexivity|tstep|].

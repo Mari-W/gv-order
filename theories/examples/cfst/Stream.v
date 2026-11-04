@@ -88,7 +88,7 @@ Lemma client_typed W F : world_wf W →
   typed W ∅ [] ∅ [] F client (TBox 3 0 st_C (TLolli None None TUnit cl_body)).
 Proof.
   intros HW. unfold client.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open3 st_C cl_body. cbn. unfold cl_body.
   pose proof (λ k, st_facts W [(st_C, [pv 0 0; pv 1 0; pv 2 0])] k ltac:(by left)) as H0.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
@@ -122,7 +122,7 @@ Lemma newclient_typed W F : world_wf W →
   typed W ∅ [] ∅ [] F newclient (TBox 3 0 st_C (TLolli None None TUnit ncl_body)).
 Proof.
   intros HW. unfold newclient.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open3 st_C ncl_body. cbn. unfold ncl_body.
   pose proof (λ k, st_facts W [(st_C, [pv 0 0; pv 1 0; pv 2 0])] k ltac:(by left)) as H0.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].

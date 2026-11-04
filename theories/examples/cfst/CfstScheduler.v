@@ -109,7 +109,7 @@ Proof. split; [constructor|]. unfold wk_body. body_scope. Qed.
 Lemma worker_typed W F : world_wf W → typed W ∅ [] ∅ [] F worker wk_ty.
 Proof.
   intros HW. unfold worker, wk_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   fold wk_ty.
   change (lenv_pinst (pshift 2) [Some wk_ty]) with [Some (pinst_ty (pshift 2) wk_ty)].
   rewrite (pinst_closed _ wk_ty) by apply wk_ty_pscoped.
@@ -152,7 +152,7 @@ Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact fl_step]. Qed.
 Lemma follower_typed W F : world_wf W → typed W ∅ [] ∅ [] F follower fl_ty.
 Proof.
   intros HW. unfold follower, fl_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   fold fl_ty.
   change (lenv_pinst (pshift 4) [Some fl_ty]) with [Some (pinst_ty (pshift 4) fl_ty)].
   rewrite (pinst_closed _ fl_ty) by apply fl_ty_pscoped.

@@ -30,7 +30,7 @@ From LRGV Require Export lang.Syntax.
 Inductive pname :=
   | NConst (a : nat)
   | NVar (a : nat)
-  | NSlot (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
+  | NPayload (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
 
 Record point := Pt { pt_name : pname; pt_off : nat }.
 
@@ -43,13 +43,13 @@ Proof.
     match p with
     | NConst a => GenNode 1 [GenLeaf a]
     | NVar a => GenLeaf a
-    | NSlot p b i => GenNode 0 [go p; GenLeaf b; GenLeaf i]
+    | NPayload p b i => GenNode 0 [go p; GenLeaf b; GenLeaf i]
     end).
   set (dec := fix go t : pname :=
     match t with
     | GenNode 1 [GenLeaf a] => NConst a
     | GenLeaf a => NVar a
-    | GenNode 0 [t; GenLeaf b; GenLeaf i] => NSlot (go t) b i
+    | GenNode 0 [t; GenLeaf b; GenLeaf i] => NPayload (go t) b i
     | _ => NVar 0
     end).
   apply (inj_countable' enc dec).
@@ -68,8 +68,12 @@ Qed.
 (** x + n, x[i], the variable a, and the constant a at offset 0. *)
 Definition pt_shift (n : nat) (x : point) : point :=
   Pt (pt_name x) (pt_off x + n).
-Definition pt_slot (x : point) (i : nat) : point :=
-  Pt (NSlot (pt_name x) (pt_off x) i) 0.
+Definition pt_payload (x : point) (i : nat) : point :=
+  Pt (NPayload (pt_name x) (pt_off x) i) 0.
+(** The payload point p[j] and the offset p + k, written x ·[ j ] and
+    x +ₚ k, the paper's p[j] and p+k. *)
+Notation "x ·[ j ]" := (pt_payload x j) (at level 2, j at level 200, left associativity, format "x ·[ j ]").
+Notation "x +ₚ k" := (pt_shift k x) (at level 50, left associativity).
 (** The index j of x[j] for branch i: x[0] for the first branch ([false]),
     x[1] for the second ([true]) (K11). *)
 Definition bidx (i : bool) : nat := if i then 1 else 0.
@@ -82,7 +86,7 @@ Fixpoint pn_inst (σ : nat → point) (p : pname) : point :=
   match p with
   | NConst a => Pt (NConst a) 0
   | NVar a => σ a
-  | NSlot p b i => pt_slot (pt_shift b (pn_inst σ p)) i
+  | NPayload p b i => pt_payload (pt_shift b (pn_inst σ p)) i
   end.
 
 Definition pt_inst (σ : nat → point) (x : point) : point :=
@@ -99,8 +103,8 @@ Definition plist (xs : list point) : nat → point :=
   λ a, match xs !! a with Some x => x | None => pvar (a - length xs) end.
 
 (** The points x[0], …, x[m-1] of a point x. *)
-Definition slots (x : point) (m : nat) : list point :=
-  (λ i, pt_slot x i) <$> seq 0 m.
+Definition payload_pts (x : point) (m : nat) : list point :=
+  (λ i, pt_payload x i) <$> seq 0 m.
 
 (** Facts of a constraint: x ≺ y and x ≡ y (sharp edges 65). *)
 Inductive fact := FLt (x y : point) | FEq (x y : point).
@@ -122,7 +126,7 @@ Definition fact_rel (R : point → point → Prop) (g g' : fact) : Prop :=
 (** The root of a name is a variable below k. *)
 Fixpoint pn_vb (k : nat) (p : pname) : Prop :=
   match p with
-  | NConst _ => False | NVar a => a < k | NSlot q _ _ => pn_vb k q
+  | NConst _ => False | NVar a => a < k | NPayload q _ _ => pn_vb k q
   end.
 
 Definition fact_scoped (k : nat) (g : fact) : Prop :=
@@ -144,7 +148,7 @@ Record bcs := BCs { bc_env : list point; bc_facts : fact → Prop }.
     unknown point: the value holds channels at points not known from
     outside, and no point lies below ⊥. [LPt x] says that every
     channel of the value lies at or above x. ⊥ is no point. It occurs
-    only here, and a frame that holds such a value carries a flag
+    only here, and a future that holds such a value carries a flag
     instead (static/FactTheory.v). The lower bound of an arrow is an
     optional point, [None] when the closure holds no channel, and its
     upper bound is an optional point, [None] when a call never blocks. *)
@@ -267,7 +271,7 @@ Section bcs_open.
   Local Lemma bpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
   Proof.
     induction p as [a|a|p IH b i]; simpl; [done|done|].
-    assert (∀ x, pt_inst τ (pt_slot x i) = pt_slot (pt_inst τ x) i) as Hs
+    assert (∀ x, pt_inst τ (pt_payload x i) = pt_payload (pt_inst τ x) i) as Hs
       by (intros [q o]; done).
     by rewrite Hs, bpt_inst_shift, IH.
   Qed.
@@ -344,7 +348,7 @@ Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
 
 (** The payload ∃ι₀ … ιₘ₋₁. T at the point x: P[x] = T[x[i]/ιᵢ]. *)
 Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
-  ty_inst (slots x m) T.
+  ty_inst (payload_pts x m) T.
 
 (** Composition and identity of point instantiation on types. The
     relation instantiates the ∃ of [TEx] by composing substitutions
@@ -365,7 +369,7 @@ Section tinst.
   Local Lemma tpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
   Proof.
     induction p as [a|a|p IH b i]; simpl; [done|done|].
-    assert (∀ x, pt_inst τ (pt_slot x i) = pt_slot (pt_inst τ x) i) as Hs
+    assert (∀ x, pt_inst τ (pt_payload x i) = pt_payload (pt_inst τ x) i) as Hs
       by (intros [q o]; done).
     by rewrite Hs, tpt_inst_shift, IH.
   Qed.
@@ -1337,7 +1341,7 @@ Qed.
     (relation/Worlds.v uses it for the support of a world). *)
 Fixpoint pn_root (p : pname) : pname :=
   match p with
-  | NSlot q _ _ => pn_root q
+  | NPayload q _ _ => pn_root q
   | _ => p
   end.
 
@@ -1378,7 +1382,7 @@ Inductive ppo : point → point → Prop :=
 Fixpoint pn_size (p : pname) : nat :=
   match p with
   | NConst _ | NVar _ => 0
-  | NSlot q b _ => pn_size q + b + 1
+  | NPayload q b _ => pn_size q + b + 1
   end.
 
 Definition pt_size (x : point) : nat := pn_size (pt_name x) + pt_off x.
@@ -1529,7 +1533,7 @@ Inductive geq (E : point → point → Prop) : point → point → Prop :=
   | geq_sym x y : geq E x y → geq E y x
   | geq_trans x y z : geq E x y → geq E y z → geq E x z
   | geq_shift x y : geq E x y → geq E (pt_shift 1 x) (pt_shift 1 y)
-  | geq_slot x y i : geq E x y → geq E (pt_slot x i) (pt_slot y i).
+  | geq_payload x y i : geq E x y → geq E (pt_payload x i) (pt_payload y i).
 
 Inductive glt (E L : point → point → Prop) : point → point → Prop :=
   | glt_base x y : L x y → glt E L x y
@@ -1701,17 +1705,17 @@ Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :
       konst_sig KClos (TLolli (Some x) None (TSess SEnd x) TUnit) (λ _, False) []
   | KSSel1 S1 S2 x :
       konst_sig KSel1
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_slot x 0)))
-        (λ g, g = FLt x (pt_slot x 0)) []
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_payload x 0)))
+        (λ g, g = FLt x (pt_payload x 0)) []
   | KSSel2 S1 S2 x :
       konst_sig KSel2
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_slot x 1)))
-        (λ g, g = FLt x (pt_slot x 1)) []
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_payload x 1)))
+        (λ g, g = FLt x (pt_payload x 1)) []
   | KSBra S1 S2 x :
       konst_sig KBra
         (TLolli (Some x) None (TSess (SWith S1 S2) x)
-           (TSum (TSess S1 (pt_slot x 0)) (TSess S2 (pt_slot x 1))))
-        (λ g, g = FLt x (pt_slot x 0) ∨ g = FLt x (pt_slot x 1)) []
+           (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))
+        (λ g, g = FLt x (pt_payload x 0) ∨ g = FLt x (pt_payload x 1)) []
   | KSLink S x x' :
       konst_sig KLink
         (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
@@ -1777,22 +1781,22 @@ Section konst_intro.
   Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
 
   Lemma KTSel1 S1 S2 x :
-    plt x (pt_slot x 0) →
+    plt x (pt_payload x 0) →
     konst_ty peq plt pk KSel1
-      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_slot x 0))).
+      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_payload x 0))).
   Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
 
   Lemma KTSel2 S1 S2 x :
-    plt x (pt_slot x 1) →
+    plt x (pt_payload x 1) →
     konst_ty peq plt pk KSel2
-      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_slot x 1))).
+      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_payload x 1))).
   Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
 
   Lemma KTBra S1 S2 x :
-    plt x (pt_slot x 0) → plt x (pt_slot x 1) →
+    plt x (pt_payload x 0) → plt x (pt_payload x 1) →
     konst_ty peq plt pk KBra
       (TLolli (Some x) None (TSess (SWith S1 S2) x)
-         (TSum (TSess S1 (pt_slot x 0)) (TSess S2 (pt_slot x 1)))).
+         (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1)))).
   Proof. intros H0 H1. eapply KTSig; [constructor| |constructor]. by intros g [->| ->]. Qed.
 
   Lemma KTLink S x x' :
@@ -1824,13 +1828,13 @@ Lemma konst_ty_case (peq plt : point → point → Prop) (pk : point → Prop)
                          (TSess (SSeq (SRcv m T) S) x)
                          (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))) →
   (∀ x, P KClos (TLolli (Some x) None (TSess SEnd x) TUnit)) →
-  (∀ S1 S2 x, plt x (pt_slot x 0) →
-     P KSel1 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_slot x 0)))) →
-  (∀ S1 S2 x, plt x (pt_slot x 1) →
-     P KSel2 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_slot x 1)))) →
-  (∀ S1 S2 x, plt x (pt_slot x 0) → plt x (pt_slot x 1) →
+  (∀ S1 S2 x, plt x (pt_payload x 0) →
+     P KSel1 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_payload x 0)))) →
+  (∀ S1 S2 x, plt x (pt_payload x 1) →
+     P KSel2 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_payload x 1)))) →
+  (∀ S1 S2 x, plt x (pt_payload x 0) → plt x (pt_payload x 1) →
      P KBra (TLolli (Some x) None (TSess (SWith S1 S2) x)
-               (TSum (TSess S1 (pt_slot x 0)) (TSess S2 (pt_slot x 1))))) →
+               (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))) →
   (∀ S x x', peq x x' → P KLink (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)) →
   (∀ n k C ub T xs ss, length xs = n → bcs_hold peq plt C xs → Forall pk xs →
      length ss = k → Forall hcontractive ss →

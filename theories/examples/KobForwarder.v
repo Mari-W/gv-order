@@ -58,8 +58,8 @@ From LRGV Require Export examples.LitTools.
 Set Default Proof Using "All".
 
 Definition fw_P (g : fact) : Prop :=
-  ∃ n, g = FLt (Pt (slotv (S n)) 0) (Pt (slotv n) 0) ∨
-       g = FLt (Pt (slotv (S n)) 1) (Pt (slotv n) 0).
+  ∃ n, g = FLt (Pt (payloadv (S n)) 0) (Pt (payloadv n) 0) ∨
+       g = FLt (Pt (payloadv (S n)) 1) (Pt (payloadv n) 0).
 
 Definition fw_C : bcs := BCs [] fw_P.
 
@@ -84,7 +84,7 @@ Definition fw_main : expr :=
 Lemma fw_sub g : fw_P g → fact_scoped 1 g → fw_P (fact_map (pt_inst (plist [pcr])) g).
 Proof.
   intros (n & [-> | ->]) _; exists (S n); [left|right];
-    cbn [fact_map]; unfold pt_inst; cbn [pt_name pt_off]; by rewrite !slotv_inst.
+    cbn [fact_map]; unfold pt_inst; cbn [pt_name pt_off]; by rewrite !payloadv_inst.
 Qed.
 
 Lemma fw_call W Ψ : (fw_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) fw_C [pcr].
@@ -93,22 +93,22 @@ Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact fw_sub]. Qed.
 Lemma fw_ok peq plt : cc_ok peq plt fw_C.
 Proof.
   apply cc_ok_dlt. intros g [n [-> | ->]] _; eexists _, _; split; [done| |done|];
-    left; cbn; rewrite !sdepth_slotv; lia.
+    left; cbn; rewrite !sdepth_payloadv; lia.
 Qed.
 
 Lemma fwsrv_typed W F :
   strict W → typed W ∅ [] ∅ [] F fwsrv (TBox 1 0 fw_C (TLolli None None TUnit fw_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold fwsrv.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fw_C fw_body. cbn. unfold fw_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   (* the two facts of C at n = 0 *)
   assert (∀ Ψ, (fw_C, [pvar 0]) ∈ Ψ → slt W Ψ pcr (pv 0 0)) as Hq.
-  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (slotv 1) 0) (Pt (slotv 0) 0));
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (payloadv 1) 0) (Pt (payloadv 0) 0));
       [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
   assert (∀ Ψ, (fw_C, [pvar 0]) ∈ Ψ → slt W Ψ (pt_shift 1 pcr) (pv 0 0)) as Hq1.
-  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (slotv 1) 1) (Pt (slotv 0) 0));
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (payloadv 1) 1) (Pt (payloadv 0) 0));
       [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
   (* case inj₂ ∗ *)
   eapply (t_case W _ _ ∅ ∅ ∅ _ _ _ _ _ _ _ TUnit TUnit TUnit).

@@ -1,6 +1,6 @@
 (** * The fundamental theorem and soundness of the static system
 
-    [typed_sem_rules] instantiates the frame variables and substitutes
+    [typed_sem_rules] instantiates the future variables and substitutes
     points in one induction, and yields the infinitary judgment of
     SemanticRules.v. [typed_pinst] is the substitution lemma on its own.
     [fundamental], [fundamental_proc] and [soundness] follow. *)
@@ -112,9 +112,9 @@ Proof.
   apply HΔ in Hx. done.
 Qed.
 
-(** ** Frame instantiation
+(** ** Future instantiation
 
-    Replacing the frame variables by concrete frames that meet the
+    Replacing the future variables by concrete futures that meet the
     hypotheses, at any later world, turns a derivation into one of the
     infinitary judgment. Monotonicity in W is folded in: typing reads W
     only through facts, and facts survive W ⊑ W₁. *)
@@ -122,14 +122,14 @@ Qed.
 Lemma sf_inst_union ρ F X : sf_inst ρ (sf_union F X) = sf_inst ρ F ∪ X.
 Proof. destruct F as [P o]; unfold sf_inst, sf_union; simpl; set_solver. Qed.
 
-(** The flag of a frame stands for [pbot] (sharp edges 103). *)
+(** The flag of a future stands for [pbot] (sharp edges 103). *)
 Lemma sf_inst_unionb ρ F X b : sf_inst ρ (sf_unionb F X b) = sf_inst ρ F ∪ (X ∪ bot_pts b).
 Proof.
   destruct b; unfold sf_unionb; [|rewrite sf_inst_union; simpl; set_solver].
   destruct F as [P o]; unfold sf_inst; simpl. destruct o as [[]|]; simpl; set_solver.
 Qed.
 
-(** Frame instantiation: a node stands for the points it denotes. *)
+(** Future instantiation: a node stands for the points it denotes. *)
 Definition node_den (ρ : nat → gset point) (a : node) (z : point) : Prop :=
   match a with NP x => z = x | NV φ => z ∈ ρ φ end.
 
@@ -150,7 +150,7 @@ Proof.
     - apply (wf_eq_sym _ Hwf).
     - apply (wf_eq_trans _ Hwf).
     - apply (wf_eq_shift _ Hwf).
-    - apply (wf_eq_slot _ Hwf).
+    - apply (wf_eq_payload _ Hwf).
     - intros x0 y0 H ? ? -> ->. by apply Hl.
     - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
     - intros φ u Hu ? b' -> Hb'. exact (Hρ φ (Some u) Hu b' Hb').
@@ -360,13 +360,13 @@ Proof.
     + intros x Hx. apply Hrv. by apply (open_avail_lin _ _ _ lb m C).
 Qed.
 
-Ltac frame_pinst :=
+Ltac future_pinst :=
   rewrite ?tenv_heads_pinst, ?lenv_heads_pinst, ?heads_pinst, ?opt_heads_pinst,
     ?lenv_bot_pinst, ?hbot_pinst,
     <-?set_map_union_L, <-?sf_inst_unionb, <-?sf_inst_union, <-?sf_pinst_unionb, <-?sf_pinst_union.
 
-(** Frame instantiation and point substitution in one induction: the
-    frame variables become frames above their hypotheses at a later
+(** Future instantiation and point substitution in one induction: the
+    future variables become futures above their hypotheses at a later
     world W₁, the point variables become points by σ. A box body is
     typed with its ιs as variables, so the box case substitutes the
     instance xs there and the outer σ beyond (plist_pup_shift). *)
@@ -424,24 +424,24 @@ Proof.
     + apply (ub_below_s_inst W1 W1 (fhyps_pinst σ Φ)); [apply HS|exact (wext_refl _ HS)|done|].
       apply (ub_below_s_pinst W W1 σ Ψ []); [done|done| |done].
       by apply (hyps_hold_ground W W1 σ HW HW1).
-    + frame_pinst. by apply (IH1 W1 ρ σ).
-    + frame_pinst. by apply IH2.
+    + future_pinst. by apply (IH1 W1 ρ σ).
+    + future_pinst. by apply IH2.
   - cbn [pinst_ty].
     apply (sr_pair W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
     + by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ).
     + by apply lenv_split_pinst.
-    + frame_pinst. by apply IH1.
-    + frame_pinst. by apply IH2.
+    + future_pinst. by apply IH1.
+    + future_pinst. by apply IH2.
   - apply (sr_letu W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
     + by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ).
     + by apply lenv_split_pinst.
-    + frame_pinst. by apply (IH1 W1 ρ σ).
+    + future_pinst. by apply (IH1 W1 ρ σ).
     + by apply IH2.
   - apply (sr_letp W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
              _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)).
     + by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ).
     + by apply lenv_split_pinst.
-    + frame_pinst. by apply (IH1 W1 ρ σ).
+    + future_pinst. by apply (IH1 W1 ρ σ).
     + by apply (IH2 W1 ρ σ).
   - cbn [pinst_ty]. apply sr_inj1. by apply IH.
   - cbn [pinst_ty]. apply sr_inj2. by apply IH.
@@ -449,7 +449,7 @@ Proof.
              _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)).
     + by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ).
     + by apply lenv_split_pinst.
-    + frame_pinst. by apply (IH0 W1 ρ σ).
+    + future_pinst. by apply (IH0 W1 ρ σ).
     + by apply (IH1 W1 ρ σ).
     + by apply (IH2 W1 ρ σ).
   - cbn [pinst_ty]. rewrite tenv_pinst_empty. apply sr_box; [by apply lenv_unl_pinst| |].
@@ -542,7 +542,7 @@ Qed.
 
     Instantiating point variables by points preserves derivations at
     the same world. [typed_sem_rules] composes this substitution with
-    frame instantiation; the fundamental theorem needs only that. *)
+    future instantiation; the fundamental theorem needs only that. *)
 
 Lemma kscoped_pinst peq plt pk k T σ :
   konst_ty peq plt pk k T → kscoped k T → kscoped k (pinst_ty σ T).
@@ -622,7 +622,7 @@ Proof.
     |Φ Ψ Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
     |Φ Ψ Θ Δ F e i lb m C T U Hi Hnu Hb IH]; intros σ Ψ' HΨ.
   - rewrite tenv_pinst_empty. apply t_unit. by apply lenv_empty_pinst.
-  - rewrite tenv_pinst_empty. apply t_konst; [by apply lenv_empty_pinst| |].
+  - rewrite tenv_pinst_empty. apply t_const; [by apply lenv_empty_pinst| |].
     + apply (konst_ty_pinst W W σ Hwf HWW (seqs W Ψ) _ (slt W Ψ) _ (skn W Ψ)); [| | |done|done].
       * intros x y Hxy. by apply (seqs_pinst_s W W σ Hwf HWW Ψ).
       * intros x y Hxy. by apply (slt_pinst_s W W σ Hwf HWW Ψ).
@@ -630,8 +630,8 @@ Proof.
     + by apply (kscoped_pinst (seqs W Ψ) (slt W Ψ) (skn W Ψ)).
   - rewrite tenv_pinst_empty. apply t_var. by apply lenv_only_pinst.
   - unfold tenv_pinst. rewrite map_fmap_singleton. simpl.
-    apply t_chan; [by apply lenv_empty_pinst|done|by apply (seqs_pinst_s W W σ Hwf HWW Ψ)].
-  - cbn [pinst_ty]. apply (t_lam W _ _ _ _ _ _ _ _ _ _ φ).
+    apply t_ch; [by apply lenv_empty_pinst|done|by apply (seqs_pinst_s W W σ Hwf HWW Ψ)].
+  - cbn [pinst_ty]. apply (t_abs W _ _ _ _ _ _ _ _ _ _ φ).
     + by rewrite fhyps_pinst_dom.
     + rewrite tenv_heads_pinst, lenv_heads_pinst, <-set_map_union_L, lenv_bot_pinst.
       unfold lb_below_hb in *. destruct (lenv_bot Δ); [done|].
@@ -642,24 +642,24 @@ Proof.
     + by apply (tenv_comp_pinst_s W W σ Hwf HWW Ψ Ψ').
     + by apply lenv_split_pinst.
     + by apply (ub_below_s_pinst W W σ Ψ Ψ').
-    + frame_pinst. by apply (IH1 σ Ψ').
-    + frame_pinst. by apply IH2.
+    + future_pinst. by apply (IH1 σ Ψ').
+    + future_pinst. by apply IH2.
   - cbn [pinst_ty].
     apply (t_pair W _ _ _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
     + by apply (tenv_comp_pinst_s W W σ Hwf HWW Ψ Ψ').
     + by apply lenv_split_pinst.
-    + frame_pinst. by apply IH1.
-    + frame_pinst. by apply IH2.
-  - apply (t_letu W _ _ _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
+    + future_pinst. by apply IH1.
+    + future_pinst. by apply IH2.
+  - apply (t_letstar W _ _ _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)).
     + by apply (tenv_comp_pinst_s W W σ Hwf HWW Ψ Ψ').
     + by apply lenv_split_pinst.
-    + frame_pinst. by apply (IH1 σ Ψ').
+    + future_pinst. by apply (IH1 σ Ψ').
     + by apply IH2.
-  - apply (t_letp W _ _ _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
+  - apply (t_letpair W _ _ _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
              _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)).
     + by apply (tenv_comp_pinst_s W W σ Hwf HWW Ψ Ψ').
     + by apply lenv_split_pinst.
-    + frame_pinst. by apply (IH1 σ Ψ').
+    + future_pinst. by apply (IH1 σ Ψ').
     + by apply (IH2 σ Ψ').
   - cbn [pinst_ty]. apply t_inj1. by apply IH.
   - cbn [pinst_ty]. apply t_inj2. by apply IH.
@@ -667,11 +667,11 @@ Proof.
              _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)).
     + by apply (tenv_comp_pinst_s W W σ Hwf HWW Ψ Ψ').
     + by apply lenv_split_pinst.
-    + frame_pinst. by apply (IH0 σ Ψ').
+    + future_pinst. by apply (IH0 σ Ψ').
     + by apply (IH1 σ Ψ').
     + by apply (IH2 σ Ψ').
   - cbn [pinst_ty]. rewrite tenv_pinst_empty.
-    apply (t_box W _ _ _ _ _ _ _ _ _ _ φ); [by apply lenv_unl_pinst|by rewrite fhyps_pinst_dom|].
+    apply (t_exp W _ _ _ _ _ _ _ _ _ _ φ); [by apply lenv_unl_pinst|by rewrite fhyps_pinst_dom|].
     intros ss Hss Hsc.
     set (Ψt := hyps_inst (pshift m) Ψ' ++ [(bcs_inst (pshift m) (bcs_inst σ C), ids m)]).
     assert (hyps_hold (seqs W Ψt) (slt W Ψt) (skn W Ψt)
@@ -697,7 +697,7 @@ Proof.
     rewrite lenv_pinst_comp, (lenv_pinst_ext _ (pt_inst (pshift m) ∘ σ)), <-lenv_pinst_comp in H
       by apply pup_pshift.
     exact H.
-  - eapply t_wk; [by apply lenv_wk_pinst|by apply IH].
+  - eapply t_weak; [by apply lenv_wk_pinst|by apply IH].
   - cbn [lenv_pinst]. apply t_contract; [by apply unlimited_pinst|by apply (IH σ Ψ')].
   - eapply t_conv; [by apply (steq_pinst_s W W σ Hwf HWW Ψ)|by apply IH].
   - (* E-Pack *)
@@ -783,7 +783,7 @@ Proof.
   set (C := alias_bcs x).
   set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
   (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
-  apply (t_letp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
+  apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply tenv_comp_empty_l, se_sym. }
   { apply lenv_split_nones_l. }
   { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
@@ -793,11 +793,11 @@ Proof.
       + apply tenv_comp_empty_r.
       + apply lenv_split_nones_l.
       + done.
-      + apply t_konst; [apply lenv_empty_nones| |done]. by apply KTNewEx.
+      + apply t_const; [apply lenv_empty_nones| |done]. by apply KTNewEx.
       + apply t_unit. apply lenv_empty_nones.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)
-  apply (t_letu W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
+  apply (t_letstar W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
   { apply tenv_comp_empty_l, se_sym. }
   { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
   { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
@@ -818,7 +818,7 @@ Proof.
     exists (FEq (pvar 0) (pvar 1)). split_and!; [done|cbn; lia|].
     simpl. rewrite !pt_inst_pvar_at. done. }
   (* let ⟨a, b⟩ = p, the pair moved from ι to x *)
-  apply (t_letp W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
+  apply (t_letpair W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
            (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))
               :: lenv_nones (lenv_pinst (pshift 1) Δ))
            (None :: None :: lenv_pinst (pshift 1) Δ)
@@ -835,7 +835,7 @@ Proof.
     exact (typed_pinst W _ _ _ _ _ _ _ HW Hb (pshift 1) Ψ1 HΨ).
 Qed.
 
-(** A closed derivation: no frame variables, no hypotheses, and the
+(** A closed derivation: no future variables, no hypotheses, and the
     identity substitution. *)
 Lemma typed_sem_rules_closed W Θ Δ F e T :
   strict W → typed W ∅ [] Θ Δ (F, None) e T → sem_rules W Θ Δ F e T.
@@ -899,32 +899,9 @@ Proof. intros HW Hp. apply (adequacy W T p). by apply fundamental_proc. Qed.
     [wc0 n C₀], which realizes C₀ at the constants 0, …, n-1. It is the
     construction of [wext_cc] against the empty world. *)
 
-Definition wnil : world := wgen ∅ (λ _ _, False) (λ _ _, False).
-
-Lemma wnil_strict : strict wnil.
-Proof.
-  split; [apply wgen_wf; [set_solver|done|done]|].
-  assert (∀ x y, geq (λ _ _ : point, False) x y → x = y) as Hq.
-  { induction 1; subst; done. }
-  assert (∀ x y, glt (λ _ _ : point, False) (λ _ _ : point, False) x y → pofs x y) as Hl.
-  { induction 1 as [x y []|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
-    - apply pofs_shift.
-    - apply Hq in Hx, Hy. by subst.
-    - by eapply pofs_trans. }
-  intros x H. exact (pofs_irrefl x (Hl x x H)).
-Qed.
-
-Lemma wnil_names : w_names wnil = ∅.
-Proof. done. Qed.
-
-(** A derivation in the empty world is a source derivation, because the
-    empty world supports no fact beyond equality and program order
-    (static/Source.v). *)
+(** [wnil] and the source instance [styped] are in static/Source.v. *)
 Lemma styped_wnil Φ Ψ Δ F e T : typed wnil Φ Ψ ∅ Δ F e T → styped Φ Ψ Δ F e T.
-Proof.
-  intros H.
-  eapply (typed_styped wnil); [apply wnil_strict|apply wnil_names|exact H|done].
-Qed.
+Proof. intros H. exact H. Qed.
 
 Definition c0_eq (n : nat) (C : bcs) : point → point → Prop := λ x y, bcs_open n C (FEq x y).
 Definition c0_lt (n : nat) (C : bcs) : point → point → Prop := λ x y, bcs_open n C (FLt x y).
@@ -941,14 +918,14 @@ Section c0_world.
     match p with
     | NVar a => if decide (a < n) then NConst a else NVar a
     | NConst a => NConst a
-    | NSlot q b i => NSlot (c0_name q) b i
+    | NPayload q b i => NPayload (c0_name q) b i
     end.
 
   Fixpoint c0_back (p : pname) : pname :=
     match p with
     | NConst a => if decide (a < n) then NVar a else NConst a
     | NVar a => NVar a
-    | NSlot q b i => NSlot (c0_back q) b i
+    | NPayload q b i => NPayload (c0_back q) b i
     end.
 
   Definition c0_pt (x : point) : point := Pt (c0_name (pt_name x)) (pt_off x).

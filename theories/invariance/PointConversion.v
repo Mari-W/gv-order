@@ -151,16 +151,16 @@ Section teqW.
     intros H. apply w_eq_pteqW. apply wf_eq_shift_n; [done|]. by apply pteqW_eq.
   Qed.
 
-  Lemma pteqW_slot x y i : pteqW W x y → pteqW W (pt_slot x i) (pt_slot y i).
+  Lemma pteqW_payload x y i : pteqW W x y → pteqW W (pt_payload x i) (pt_payload y i).
   Proof.
-    intros H. apply w_eq_pteqW. apply (wf_eq_slot _ HW). by apply pteqW_eq.
+    intros H. apply w_eq_pteqW. apply (wf_eq_payload _ HW). by apply pteqW_eq.
   Qed.
 
   (** A ground point is fixed by instantiation. *)
   Lemma pn_inst_ground σ p a : pn_root p = NConst a → pn_inst σ p = Pt p 0.
   Proof.
     induction p; simpl; intros H; try done; rewrite IHp by done;
-      unfold pt_slot, pt_shift; simpl; by rewrite ?Nat.add_0_l.
+      unfold pt_payload, pt_shift; simpl; by rewrite ?Nat.add_0_l.
   Qed.
 
   Lemma pt_inst_ground σ x : pt_ground x → pt_inst σ x = x.
@@ -180,7 +180,7 @@ Section teqW.
   Proof.
     intros H. destruct x as [p o]. unfold pt_inst. simpl. apply pteqW_shift.
     induction p; simpl; [by left|apply H|].
-    apply pteqW_slot, pteqW_shift, IHp.
+    apply pteqW_payload, pteqW_shift, IHp.
   Qed.
 
   Lemma pup_pteqW m σ τ :
@@ -255,10 +255,10 @@ Section teqW.
 
   Lemma teqW_payload m U x y : w_eq W x y → teqW W (payload_at m U x) (payload_at m U y).
   Proof.
-    intros H. apply teqW_pinst_l. intros i. unfold plist, slots.
+    intros H. apply teqW_pinst_l. intros i. unfold plist, payload_pts.
     rewrite !list_lookup_fmap, !length_fmap, length_seq.
     destruct (List.seq 0 m !! i); simpl; [|by left].
-    apply pteqW_slot. by apply w_eq_pteqW.
+    apply pteqW_payload. by apply w_eq_pteqW.
   Qed.
 End teqW.
 
@@ -431,7 +431,7 @@ Proof.
     + (* O-New: rename the new point away from the points of T' *)
       intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
       destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
-                             ∪ frame_roots F)) as [a1 Ha1].
+                             ∪ future_roots F)) as [a1 Ha1].
       destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
                   ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
       exists a1, (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
@@ -1031,9 +1031,9 @@ Proof.
       as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
     destruct (seq_plus_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
       [by apply seq_sym|done|].
-    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_slot k (bidx i))
-                (sbranch i s1' s2', pt_slot k' (bidx i)) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
-    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_slot _ HW). }
+    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_payload k (bidx i))
+                (sbranch i s1' s2', pt_payload k' (bidx i)) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
+    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW). }
     exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
     exact (proj2 HE' _ HW Hc3).
   - (* O-Branch *)
@@ -1042,16 +1042,16 @@ Proof.
       as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
     destruct (seq_with_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
       [by apply seq_sym|done|].
-    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_slot k (bidx i))
-                (sbranch i s1' s2', pt_slot k' (bidx i)) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
-    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_slot _ HW). }
+    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_payload k (bidx i))
+                (sbranch i s1' s2', pt_payload k' (bidx i)) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
+    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW). }
     exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
     eapply HEj; [lia|done|exact Hc3|exact HE'].
   - (* O-New: rename the new point away from the points of Θ' *)
     intros Hc0. rewrite <-(tconv_dom W Θ Θ' Hc) in Hc0.
     destruct (Hstep Hc0) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
     destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ tenv_roots Θ' ∪ ty_roots T
-                           ∪ frame_roots F)) as [a1 Ha1].
+                           ∪ future_roots F)) as [a1 Ha1].
     destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
                 ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
     exists a1, (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
@@ -1400,7 +1400,7 @@ Proof.
       [by apply seq_sym|done|].
     exists Σ1', s1', s2', k'. split_and!; [by exists s0'|done|].
     apply (proj2 HP'); [done|]. apply sconv_insert; [done|].
-    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_slot _ HW).
+    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW).
   - (* Q-Branch *)
     destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc1 & HP').
     destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)
@@ -1409,5 +1409,5 @@ Proof.
       [by apply seq_sym|done|].
     exists Σ1', s1', s2', k'. split_and!; [by exists s0'|done|].
     eapply HPj; [lia|done| |exact HP']. apply sconv_insert; [done|].
-    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_slot _ HW).
+    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW).
 Qed.

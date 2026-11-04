@@ -57,7 +57,7 @@ Proof.
 Qed.
 
 Definition proot : point := Pt (NConst 0) 0.
-Definition rpt (B : point) (r : ritem) : point := pt_slot B (encode_nat r).
+Definition rpt (B : point) (r : ritem) : point := pt_payload B (encode_nat r).
 
 (** ** Ranks
 
@@ -208,7 +208,7 @@ Proof. induction n; simpl; congruence. Qed.
 Fixpoint denN (f : pname → dn) (p : pname) : dn :=
   match p with
   | NConst _ | NVar _ => f p
-  | NSlot q b i => dsl (dshN b (denN f q)) i
+  | NPayload q b i => dsl (dshN b (denN f q)) i
   end.
 
 Definition den (f : pname → dn) (x : point) : dn := dshN (pt_off x) (denN f (pt_name x)).
@@ -219,7 +219,7 @@ Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r.
 Lemma den_shiftN f n x : den f (pt_shift n x) = dshN n (den f x).
 Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
 
-Lemma den_slot f x i : den f (pt_slot x i) = dsl (den f x) i.
+Lemma den_payload f x i : den f (pt_payload x i) = dsl (den f x) i.
 Proof. done. Qed.
 
 
@@ -237,8 +237,8 @@ Fixpoint mwalk (x : point) (u : list wstep) : point :=
   match u with
   | [] => x
   | WS :: u => mwalk (pt_shift 1 x) u
-  | WB b :: u => mwalk (pt_slot x (bidx b)) u
-  | WL i :: u => mwalk (pt_slot x i) u
+  | WB b :: u => mwalk (pt_payload x (bidx b)) u
+  | WL i :: u => mwalk (pt_payload x i) u
   end.
 
 Lemma mwalk_app x u u' : mwalk x (u ++ u') = mwalk (mwalk x u) u'.
@@ -255,7 +255,7 @@ Fixpoint dwalk (d : dn) (u : list wstep) : dn :=
 Lemma den_mwalk f x u : den f (mwalk x u) = dwalk (den f x) u.
 Proof.
   revert x. induction u as [|[|b|i] u IH]; intros x; simpl; [done| | |];
-    rewrite IH; [by rewrite den_shift|by rewrite den_slot|by rewrite den_slot].
+    rewrite IH; [by rewrite den_shift|by rewrite den_payload|by rewrite den_payload].
 Qed.
 
 Definition oeq (d d' : dn) : Prop := ∀ u, rank (dwalk d u) = rank (dwalk d' u).
@@ -293,7 +293,7 @@ Lemma wgen_strict_oeq N E L (dnt : point → dn) :
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, dnt (pt_shift 1 x) = dsh (dnt x)) →
-  (∀ x i, dnt (pt_slot x i) = dsl (dnt x) i) →
+  (∀ x i, dnt (pt_payload x i) = dsl (dnt x) i) →
   (∀ x y, E x y → oeq (dnt x) (dnt y)) →
   (∀ x y, L x y → rlt (rank (dnt x)) (rank (dnt y))) →
   strict (wgen N E L).
@@ -330,7 +330,7 @@ Proof.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - apply den_shift.
-  - apply den_slot.
+  - apply den_payload.
   - by intros x y (_ & _ & H).
   - by intros x y (_ & _ & H).
 Qed.
@@ -348,8 +348,8 @@ Lemma den_pn_inst f g σ a p :
 Proof.
   intros Hp Hg. induction p as [c|c|q IH b i]; simpl in Hp; try discriminate.
   - injection Hp as ->. simpl. by rewrite Hg.
-  - change (pn_inst σ (NSlot q b i)) with (pt_slot (pt_shift b (pn_inst σ q)) i).
-    rewrite den_slot, den_shiftN, IH by done. done.
+  - change (pn_inst σ (NPayload q b i)) with (pt_payload (pt_shift b (pn_inst σ q)) i).
+    rewrite den_payload, den_shiftN, IH by done. done.
 Qed.
 
 Lemma den_inst f g σ a x :
@@ -399,7 +399,7 @@ Definition Θany (k : nat) : pctx := PCtx 0 k (λ _ _, True).
 Definition pex_fact (κ b : nat) (g : fact) : Prop :=
   (∃ u, g = FLt (mwalk (pvar κ) u) (rpt (pvar b) (RHi [PTop]))) ∨
   (∃ u, g = FLt (rpt (pvar b) (RLo [LP PBot])) (mwalk (pvar κ) u)) ∨
-  (∃ u i, g = FLt (mwalk (pvar κ) u) (pt_slot (mwalk (pvar κ) u) i)).
+  (∃ u i, g = FLt (mwalk (pvar κ) u) (pt_payload (mwalk (pvar κ) u) i)).
 
 Definition Cseg (k : nat) : bcs := BCs [] (λ g, pex_fact 0 1 g ∨ crel_fact (Θany k) (NVar 1) g).
 Definition Cex (B : point) : bcs := BCs [B] (pex_fact 0 1).
@@ -430,12 +430,12 @@ Fixpoint tr (B : point) (pts : nat → point) (T : mty) : ty :=
   end.
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
-Proof. apply pt_inst_slot. Qed.
+Proof. apply pt_inst_payload. Qed.
 
 Lemma pt_inst_mwalk σ x u : pt_inst σ (mwalk x u) = mwalk (pt_inst σ x) u.
 Proof.
   revert x. induction u as [|[|b|i] u IH]; intros x; simpl; [done| | |]; rewrite IH;
-    [by rewrite pt_inst_shift|by rewrite pt_inst_slot|by rewrite pt_inst_slot].
+    [by rewrite pt_inst_shift|by rewrite pt_inst_payload|by rewrite pt_inst_payload].
 Qed.
 
 Lemma hiz_pinst σ B ef : pt_inst σ <$> hiz B ef = hiz (pt_inst σ B) ef.

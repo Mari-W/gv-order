@@ -2,7 +2,7 @@
 
     One lemma per typing rule of §9, on top of the bind lemma
     (Bind.v). The elimination rules run their head subterm under the
-    frame F ∪ H, where H holds the heads of the rest of the term. *)
+    future F ∪ H, where H holds the heads of the rest of the term. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export rules.Bind relation.Creation.
@@ -11,7 +11,7 @@ Set Default Proof Using "All".
 
 (** ** Heads of values
 
-    The semantic condition behind the frames of E-App and E-Pair: the
+    The semantic condition behind the futures of E-App and E-Pair: the
     environment of a value of type T lies at or above heads(T). For
     a closure it is the lower point ({ℓ} ≼ heads(Θ), V-Abs), for a
     channel its point, and nothing for ∗, □ and constants. *)
@@ -112,7 +112,7 @@ Proof.
   - by eapply IH.
 Qed.
 
-(** With the flag, the frame holds [pbot]. *)
+(** With the flag, the future holds [pbot]. *)
 Lemma heads_above_x_bot W H b Θ :
   (b = false → heads_above W H Θ) → heads_above_x W (H ∪ bot_pts b) Θ.
 Proof.
@@ -664,7 +664,7 @@ Proof.
   - intros _ Hs. exfalso. exact (Hs _ _ Hst0).
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | |c| | | | | | | | | | |]; subst. simpl. intros _.
-    destruct (fresh_const (w_names W ∪ ty_roots U ∪ frame_roots F)) as [a Ha].
+    destruct (fresh_const (w_names W ∪ ty_roots U ∪ future_roots F)) as [a Ha].
     destruct (wext_cc W a C HW HC HK ltac:(clear -Ha; set_solver)) as (W' & Hfr & HCa).
     exists a, S, (dual S), W'. split_and!.
     + unfold tenv_roots. rewrite map_fold_empty. clear -Ha. set_solver.
@@ -717,7 +717,7 @@ Proof.
     apply Vrel_Erel. eapply Vrel_tconv; [apply HW|exact HB|]. by apply Vrel_unit_iff.
 Qed.
 
-(** Readiness and frame of a term holding one end, which it offers. *)
+(** Readiness and future of a term holding one end, which it offers. *)
 Lemma entry_single c o k' e' :
   tenv_entry {[c := One o]} k' = Some e' → k' = (c, false) ∧ e' = o.
 Proof.
@@ -828,7 +828,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SPlus S1 S2) x ∧
-            B = TSess (sbranch b S1 S2) (pt_slot x (bidx b))) as (S1 & S2 & x & -> & -> & ->).
+            B = TSess (sbranch b S1 S2) (pt_payload x (bidx b))) as (S1 & S2 & x & -> & -> & ->).
   { destruct b; simpl in Hk; inversion Hk as [kq Tq Gq xq Hsig|]; subst; inversion Hsig; subst; eauto 10. }
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
@@ -847,12 +847,12 @@ Proof.
   - intros α e' Hst. apply app_val_step in Hst; [|by destruct b|done].
     assert (α = LSess (SSel c b) ∧ e' = Chan c) as [-> ->]
       by (destruct b; inversion Hst; subst; done).
-    simpl. exists ∅, s1, s2, k, {[c := One (sbranch b s1 s2, pt_slot k (bidx b))]}. split_and!.
+    simpl. exists ∅, s1, s2, k, {[c := One (sbranch b s1 s2, pt_payload k (bidx b))]}. split_and!.
     + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
     + left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|].
-      apply Vrel_sess_iff. exists c, (sbranch b s1 s2), (pt_slot k (bidx b)).
-      split_and!; [done|done|by destruct b|by apply (wf_eq_slot _ HWf)].
+      apply Vrel_sess_iff. exists c, (sbranch b s1 s2), (pt_payload k (bidx b)).
+      split_and!; [done|done|by destruct b|by apply (wf_eq_payload _ HWf)].
 Qed.
 
 (** branch (K4): it waits like receive, at cost 1, and returns the
@@ -865,7 +865,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SWith S1 S2) x ∧
-            B = TSum (TSess S1 (pt_slot x (bidx false))) (TSess S2 (pt_slot x (bidx true))))
+            B = TSum (TSess S1 (pt_payload x (bidx false))) (TSess S2 (pt_payload x (bidx true))))
     as (S1 & S2 & x & -> & -> & ->)
     by (inversion Hk as [kq Tq Gq xq Hsig|]; subst; inversion Hsig; subst; eauto 10).
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
@@ -884,13 +884,13 @@ Proof.
       eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | | | | | | | | |c' b'| | | |]; subst. simpl.
-    exists ∅, s1, s2, k, {[c := One (sbranch b' s1 s2, pt_slot k (bidx b'))]}. split_and!.
+    exists ∅, s1, s2, k, {[c := One (sbranch b' s1 s2, pt_payload k (bidx b'))]}. split_and!.
     + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
     + left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [|exact HB]; done|].
       apply Vrel_sum_iff. destruct b'; [right|left]; eexists; (split; [done|]);
-        apply Vrel_sess_iff; eexists _, _, (pt_slot k (bidx _));
-        (split_and!; [done|done|done|by apply (wf_eq_slot _ HWf)]).
+        apply Vrel_sess_iff; eexists _, _, (pt_payload k (bidx _));
+        (split_and!; [done|done|done|by apply (wf_eq_payload _ HWf)]).
 Qed.
 
 (** Θ = Θ1, c : e as a composition with a singleton. *)

@@ -29,7 +29,7 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Fixpoint chv (n : nat) : pname := match n with 0 => NVar 0 | S m => NSlot (chv m) 0 0 end.
+Fixpoint chv (n : nat) : pname := match n with 0 => NVar 0 | S m => NPayload (chv m) 0 0 end.
 
 Definition Sch : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0))) SEnd).
 
@@ -54,7 +54,7 @@ Definition ch_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 
-Abbreviation chs := (Pt (NSlot (NVar 0) 0 0) 0).
+Abbreviation chs := (Pt (NPayload (NVar 0) 0 0) 0).
 
 Lemma chv_inst n : pn_inst (plist [chs]) (chv n) = Pt (chv (S n)) 0.
 Proof. induction n as [|n IH]; [done|]. cbn [chv pn_inst]. by rewrite IH. Qed.
@@ -76,7 +76,7 @@ Qed.
 Lemma rch_typed W F : world_wf W → typed W ∅ [] ∅ [] F rch (TBox 1 0 ch_C (TLolli None None TUnit rch_body)).
 Proof.
   intros HW. unfold rch.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 ch_C rch_body. cbn. unfold rch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
@@ -88,7 +88,7 @@ Proof.
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW). }
   cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
-    apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 1) (Pt (NSlot (NVar 0) 0 0) 0)|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 1) (Pt (NPayload (NVar 0) 0 0) 0)|].
     exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   tstep; [|apply KTSpawn|done|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 chs)) (Some chs) 2); [set_solver| |].
@@ -107,7 +107,7 @@ Qed.
 Lemma sch_typed W F : strict W → typed W ∅ [] ∅ [] F sch (TBox 1 0 ch_C (TLolli None None TUnit sch_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold sch.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 ch_C sch_body. cbn. unfold sch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (ch_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 0) chs) as Hlt.
@@ -127,7 +127,7 @@ Proof.
       exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW). }
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
-    apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 1) (Pt (NSlot (NVar 0) 0 0) 0)|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy; hyp0 (pv 0 1) (Pt (NPayload (NVar 0) 0 0) 0)|].
     exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   tstep; [|apply KTSpawn|done|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 chs)) (Some chs) 2); [set_solver| |].
@@ -149,7 +149,7 @@ Qed.
 Fixpoint chv_depth (p : pname) : option nat :=
   match p with
   | NVar 0 => Some 0
-  | NSlot q 0 0 => match chv_depth q with Some n => Some (S n) | None => None end
+  | NPayload q 0 0 => match chv_depth q with Some n => Some (S n) | None => None end
   | _ => None
   end.
 
@@ -166,7 +166,7 @@ Proof.
   - intros x; lia.
   - intros [n o] _. unfold ch_rank, pt_shift. simpl. case_match; lia.
   - intros g [n ->] _. eexists _, _. split; [done|]. unfold ch_rank. cbn [pt_name pt_off].
-    change (chv (S n)) with (NSlot (chv n) 0 0). cbn [chv_depth]. rewrite chv_depth_chv. lia.
+    change (chv (S n)) with (NPayload (chv n) 0 0). cbn [chv_depth]. rewrite chv_depth_chv. lia.
 Qed.
 
 Lemma ch_typed : styped ∅ [] [] (∅, None) ch_main TUnit.

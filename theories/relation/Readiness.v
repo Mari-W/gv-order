@@ -1,4 +1,4 @@
-(** * Readiness and frames (§6)
+(** * Readiness and futures (§6)
 
     The gate of the logical relation's step clauses. A stable term or
     process (no internal step left) must either be done, or offer some
@@ -8,10 +8,10 @@
     of c and blocking on one of them holds the other entry unoffered and
     would need head(c) ≺ head(c).
 
-    For a term, readiness and the frame are one condition (sharp edges
+    For a term, readiness and the future are one condition (sharp edges
     63). Every offered head lies below every head the term holds and
-    does not offer, and below every point of the frame F, the points
-    the context of the term still has to use. A process has no frame
+    does not offer, and below every point of the future F, the points
+    the context of the term still has to use. A process has no future
     and keeps the condition above. The term form at F = ∅ would be
     false for processes, because two ready components that offer at
     unrelated points compose to a process that is not (sharp edges 63).
@@ -101,17 +101,17 @@ Definition ready_p (W : world) (Σ : senv) (p : proc) : Prop :=
 
 (** ** Basic facts *)
 
-Lemma below_rest_frame W Θ off F F' :
+Lemma below_rest_future W Θ off F F' :
   F' ⊆ F → below_rest W Θ off F → below_rest W Θ off F'.
 Proof.
   intros HF H k e Ho He. destruct (H k e Ho He) as [H1 H2].
   split; [done|]. intros y Hy. apply H2. set_solver.
 Qed.
 
-Lemma ready_t_frame W Θ t F F' : F' ⊆ F → ready_t W Θ F t → ready_t W Θ F' t.
+Lemma ready_t_future W Θ t F F' : F' ⊆ F → ready_t W Θ F t → ready_t W Θ F' t.
 Proof.
   intros HF H Hs. destruct (H Hs) as [? [?|?]]. split; [done|by left].
-  split; [done|]. right. by eapply below_rest_frame.
+  split; [done|]. right. by eapply below_rest_future.
 Qed.
 
 (** The relation between the two forms of readiness. With an offered

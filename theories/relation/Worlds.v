@@ -33,7 +33,7 @@ Record world := World {
     finite support. [pn_root] and [pt_root] live in types/Types.v. *)
 
 (** The root names of the points of a type, an environment and a
-    frame, payloads of session types included. A point created at
+    future, payloads of session types included. A point created at
     [new] avoids them (decision O1). *)
 Definition opt_roots (o : option point) : gset pname :=
   match o with Some x => {[pt_root x]} | None => ∅ end.
@@ -71,12 +71,12 @@ Definition ends_roots (o : ends) : gset pname :=
 Definition tenv_roots (Θ : tenv) : gset pname :=
   map_fold (λ _ o X, ends_roots o ∪ X) ∅ Θ.
 Definition senv_roots (Σ : senv) : gset pname := tenv_roots (tenv_of Σ).
-Definition frame_roots (F : gset point) : gset pname := set_map pt_root F.
+Definition future_roots (F : gset point) : gset pname := set_map pt_root F.
 
 Lemma pt_root_shift n x : pt_root (pt_shift n x) = pt_root x.
 Proof. done. Qed.
 
-Lemma pt_root_slot x i : pt_root (pt_slot x i) = pt_root x.
+Lemma pt_root_payload x i : pt_root (pt_payload x i) = pt_root x.
 Proof. done. Qed.
 
 (** Program order [ppo] lives in types/Types.v, because [ple] reads it. *)
@@ -94,7 +94,7 @@ Record world_wf (W : world) : Prop := {
   wf_eq_sym x y : w_eq W x y → w_eq W y x;
   wf_eq_trans x y z : w_eq W x y → w_eq W y z → w_eq W x z;
   wf_eq_shift x y : w_eq W x y → w_eq W (pt_shift 1 x) (pt_shift 1 y);
-  wf_eq_slot x y i : w_eq W x y → w_eq W (pt_slot x i) (pt_slot y i);
+  wf_eq_payload x y i : w_eq W x y → w_eq W (pt_payload x i) (pt_payload y i);
   wf_lt_trans x y z : w_lt W x y → w_lt W y z → w_lt W x z;
   wf_lt_eq x x' y y' : w_eq W x x' → w_lt W x' y' → w_eq W y' y → w_lt W x y;
   wf_lt_po x : w_lt W x (pt_shift 1 x);
@@ -136,11 +136,11 @@ Definition lbx_below (W : world) (lb : lbound) (H : gset point) (b : bool) : Pro
   | LPt x => (∀ y, y ∈ H → w_le W x y) ∧ b = false
   end.
 
-(** The point that stands for the ⊥ flag in a frame of the logical
+(** The point that stands for the ⊥ flag in a future of the logical
     relation (sharp edges 103). Its root is a variable, which no world
     knows, so in a well-formed world no point lies below it, and a term
-    under a frame that holds it may not block. It is a device of the
-    soundness proof and occurs in no type, world or static frame. *)
+    under a future that holds it may not block. It is a device of the
+    soundness proof and occurs in no type, world or static future. *)
 Definition pbot : point := Pt (NVar 0) 0.
 
 Definition bot_pts (b : bool) : gset point := if b then {[pbot]} else ∅.
@@ -205,7 +205,7 @@ Proof.
   - apply geq_sym.
   - apply geq_trans.
   - apply geq_shift.
-  - apply geq_slot.
+  - apply geq_payload.
   - apply glt_trans.
   - apply glt_eq.
   - apply glt_po.
@@ -292,7 +292,7 @@ Proof.
     destruct Hs1 as [->|[??]], Hs2 as [->|[??]]; [by left|by right..].
   - intros x y [? Hs]. split; [by apply (wf_eq_shift _ HW)|].
     destruct Hs as [->|[??]]; [by left|by right].
-  - intros x y i [? Hs]. split; [by apply (wf_eq_slot _ HW)|].
+  - intros x y i [? Hs]. split; [by apply (wf_eq_payload _ HW)|].
     destruct Hs as [->|[??]]; [by left|by right].
   - intros x y z [? Hs1] [? Hs2]. split; [by eapply (wf_lt_trans _ HW)|].
     destruct Hs1 as [H1|[H1 H1']], Hs2 as [H2|[H2 H2']].
@@ -482,14 +482,14 @@ Section join_paths.
     destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_shift.
   Qed.
 
-  Lemma jpath_slot x y i :
-    jpath false x y → jpath false (pt_slot x i) (pt_slot y i).
+  Lemma jpath_payload x y i :
+    jpath false x y → jpath false (pt_payload x i) (pt_payload y i).
   Proof.
     remember false as b eqn:Hb. induction 1 as [|b1 b2 x y z Hs Hp IH];
       [constructor|].
     destruct b1, b2; try discriminate.
     change false with (false || false). econstructor; [|by apply IH].
-    destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_slot.
+    destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_payload.
   Qed.
 
   Lemma join_jpath :
@@ -503,7 +503,7 @@ Section join_paths.
       - by apply jpath_rev.
       - change false with (false || false). by eapply jpath_app.
       - by apply jpath_shift.
-      - by apply jpath_slot. }
+      - by apply jpath_payload. }
     split; [done|]. simpl.
     induction 1 as [x y Hb|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - by apply jpath_one.
@@ -699,7 +699,7 @@ Proof.
   intros HW HE HL.
   assert (∀ x y, geq E x y → w_eq W x y) as Heq.
   { induction 1; eauto using wf_eq_refl, wf_eq_sym, wf_eq_trans,
-      wf_eq_shift, wf_eq_slot. }
+      wf_eq_shift, wf_eq_payload. }
   split; [done|]. induction 1; eauto using wf_lt_trans, wf_lt_po.
   eapply (wf_lt_eq _ HW); eauto.
 Qed.

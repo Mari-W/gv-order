@@ -56,7 +56,7 @@ Proof.
 Qed.
 
 Definition proot : point := Pt (NConst 0) 0.
-Definition rpt (B : point) (r : ritem) : point := pt_slot B (encode_nat r).
+Definition rpt (B : point) (r : ritem) : point := pt_payload B (encode_nat r).
 
 Lemma pt_root_rpt B r : pt_root (rpt B r) = pt_root B.
 Proof. done. Qed.
@@ -109,7 +109,7 @@ Fixpoint denN (p : pname) : dn :=
   | NConst 0 | NVar 0 => DAnc 0 0
   | NConst a => DC a 0
   | NVar a => DV a 0
-  | NSlot p b i => dsl (dshN b (denN p)) i
+  | NPayload p b i => dsl (dshN b (denN p)) i
   end.
 
 Definition den (x : point) : dn := dshN (pt_off x) (denN (pt_name x)).
@@ -123,7 +123,7 @@ Proof. induction n; simpl; congruence. Qed.
 Lemma den_shiftN n x : den (pt_shift n x) = dshN n (den x).
 Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
 
-Lemma den_slot x i : den (pt_slot x i) = dsl (den x) i.
+Lemma den_payload x i : den (pt_payload x i) = dsl (den x) i.
 Proof. done. Qed.
 
 Lemma den_proot : den proot = DAnc 0 0.
@@ -136,15 +136,15 @@ Section den_rpt.
   Context (B : point) (a : Z) (HB : den B = DAnc a 0).
 
   Lemma den_anc b : den (rpt B (RAnc b)) = DAnc (a + b) 0.
-  Proof. unfold rpt. rewrite den_slot, HB. simpl. by rewrite decode_encode_nat. Qed.
+  Proof. unfold rpt. rewrite den_payload, HB. simpl. by rewrite decode_encode_nat. Qed.
   Lemma den_ch c : den (rpt B (RCh c)) = DCh (lshift a c) 0.
-  Proof. unfold rpt. rewrite den_slot, HB. simpl. by rewrite decode_encode_nat. Qed.
+  Proof. unfold rpt. rewrite den_payload, HB. simpl. by rewrite decode_encode_nat. Qed.
   Lemma den_lo z : den (rpt B (RLo z)) = DLo (z + a) 0.
-  Proof. unfold rpt. rewrite den_slot, HB. simpl. by rewrite decode_encode_nat. Qed.
+  Proof. unfold rpt. rewrite den_payload, HB. simpl. by rewrite decode_encode_nat. Qed.
   Lemma den_hi z : den (rpt B (RHi z)) = DHi (z + a) 0.
-  Proof. unfold rpt. rewrite den_slot, HB. simpl. by rewrite decode_encode_nat. Qed.
+  Proof. unfold rpt. rewrite den_payload, HB. simpl. by rewrite decode_encode_nat. Qed.
   Lemma den_top : den (rpt B RTop) = DTop 0.
-  Proof. unfold rpt. rewrite den_slot, HB. simpl. by rewrite decode_encode_nat. Qed.
+  Proof. unfold rpt. rewrite den_payload, HB. simpl. by rewrite decode_encode_nat. Qed.
 End den_rpt.
 
 (** ** Shifting a denotation *)
@@ -181,8 +181,8 @@ Lemma den_inst_pn X a p :
 Proof.
   intros HX. induction p as [c|[|c]|p IH b i]; intros Hp; simpl in Hp; try discriminate.
   - change (pn_inst (plist [X]) (NVar 0)) with X. rewrite HX. simpl. zeq.
-  - change (pn_inst (plist [X]) (NSlot p b i)) with (pt_slot (pt_shift b (pn_inst (plist [X]) p)) i).
-    rewrite den_slot, den_shiftN, IH by done. simpl. by rewrite dshift_dsl, dshift_dshN.
+  - change (pn_inst (plist [X]) (NPayload p b i)) with (pt_payload (pt_shift b (pn_inst (plist [X]) p)) i).
+    rewrite den_payload, den_shiftN, IH by done. simpl. by rewrite dshift_dsl, dshift_dshN.
 Qed.
 
 Lemma den_inst X a x :
@@ -249,7 +249,7 @@ Proof.
   - apply zlt_irrefl.
   - apply zlt_trans.
   - apply den_shift.
-  - apply den_slot.
+  - apply den_payload.
   - by intros x y (_ & _ & H).
 
   - apply rank_dsh.
@@ -412,7 +412,7 @@ Proof. apply trz_sess_lshift. Qed.
     of the variable of an inner box, or a payload point of the root. *)
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
-Proof. apply pt_inst_slot. Qed.
+Proof. apply pt_inst_payload. Qed.
 
 Lemma hiz_pinst σ B k s : pt_inst σ <$> hiz B k s = hiz (pt_inst σ B) k s.
 Proof. destruct s; simpl; try done; by rewrite pt_inst_rpt. Qed.
@@ -565,19 +565,19 @@ Section facts.
   Qed.
 
   (** The payload of a channel at x sits at x[0]. *)
-  Lemma den_pay c c' : cpay c = Some c' → den (pt_slot (rpt B (RCh c)) 0) = DCh c' 0.
-  Proof. intros Hc. rewrite den_slot, den_ch0. simpl. by rewrite Hc. Qed.
+  Lemma den_pay c c' : cpay c = Some c' → den (pt_payload (rpt B (RCh c)) 0) = DCh c' 0.
+  Proof. intros Hc. rewrite den_payload, den_ch0. simpl. by rewrite Hc. Qed.
 
   Lemma ch_below_pay c c' n n' :
     cpay c = Some c' → clev c = Some n → clev c' = Some n' → (n < n')%Z →
-    slt wnil Ψ (rpt B (RCh c)) (pt_slot (rpt B (RCh c)) 0) ∧
-    slt wnil Ψ (pt_shift 1 (rpt B (RCh c))) (pt_slot (rpt B (RCh c)) 0).
+    slt wnil Ψ (rpt B (RCh c)) (pt_payload (rpt B (RCh c)) 0) ∧
+    slt wnil Ψ (pt_shift 1 (rpt B (RCh c))) (pt_payload (rpt B (RCh c)) 0).
   Proof.
     intros Hp Hc Hc' Hn. split; apply (gd_lt _ _ HB); try done;
       rewrite ?den_shift, (den_pay _ _ Hp), den_ch0; simpl; rewrite Hc, Hc'; simpl; lia.
   Qed.
 
-  Lemma pay_eq c c' : cpay c = Some c' → seqs wnil Ψ (pt_slot (rpt B (RCh c)) 0) (rpt B (RCh c')).
+  Lemma pay_eq c c' : cpay c = Some c' → seqs wnil Ψ (pt_payload (rpt B (RCh c)) 0) (rpt B (RCh c')).
   Proof.
     intros Hc. apply (gd_eq _ _ HB); [done|done|]. by rewrite (den_pay _ _ Hc), den_ch0.
   Qed.

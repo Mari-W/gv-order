@@ -41,11 +41,11 @@ Proof. destruct s; simpl; naive_solver. Qed.
 (** ** Points *)
 
 Definition proot : point := Pt (NConst 0) 0.
-Definition ppt (s : psty) : point := pt_slot proot (encode_nat (canon s)).
-Definition lpt (n : nat) : point := pt_slot (pt_shift 1 proot) n.
-Definition upt (n : nat) : point := pt_slot (pt_shift 2 proot) n.
-Definition lbot : point := pt_slot (pt_shift 3 proot) 0.
-Definition utop : point := pt_slot (pt_shift 4 proot) 0.
+Definition ppt (s : psty) : point := pt_payload proot (encode_nat (canon s)).
+Definition lpt (n : nat) : point := pt_payload (pt_shift 1 proot) n.
+Definition upt (n : nat) : point := pt_payload (pt_shift 2 proot) n.
+Definition lbot : point := pt_payload (pt_shift 3 proot) 0.
+Definition utop : point := pt_payload (pt_shift 4 proot) 0.
 
 (** The lower point of a lower bound (⊤ is none) and the upper point of
     an upper bound (⊥ is none). *)
@@ -94,7 +94,7 @@ Fixpoint denN (p : pname) : dn :=
   match p with
   | NConst a => DC a 0
   | NVar a => DV a 0
-  | NSlot p b i => dsl (dshN b (denN p)) i
+  | NPayload p b i => dsl (dshN b (denN p)) i
   end.
 
 Definition den (x : point) : dn := dshN (pt_off x) (denN (pt_name x)).
@@ -102,7 +102,7 @@ Definition den (x : point) : dn := dshN (pt_off x) (denN (pt_name x)).
 Lemma den_shift x : den (pt_shift 1 x) = dsh (den x).
 Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r. Qed.
 
-Lemma den_slot x i : den (pt_slot x i) = dsl (den x) i.
+Lemma den_payload x i : den (pt_payload x i) = dsl (den x) i.
 Proof. done. Qed.
 
 Lemma dshN_DC k a b : dshN k (DC a b) = DC a (k + b).
@@ -178,7 +178,7 @@ Proof.
   assert (∀ x y, geq E x y → den x = den y) as Heq.
   { induction 1 as [x y (_ & _ & H)| | | | x y _ IH | x y i _ IH]; try congruence.
     - by rewrite !den_shift, IH.
-    - by rewrite !den_slot, IH. }
+    - by rewrite !den_payload, IH. }
   split.
   - apply wgen_wf.
     + intros p ->%elem_of_singleton. by exists 0.

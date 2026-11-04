@@ -2,7 +2,7 @@
 
     Running K[e] runs e while e is not a value, with the context's
     environment Θ2 inert, and hands over to the continuation once e is a
-    value. The frame of e must lie below the heads of Θ2 ([heads_above]),
+    value. The future of e must lie below the heads of Θ2 ([heads_above]),
     so that every entry of Θ2 sits above whatever e offers. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -21,7 +21,7 @@ Proof.
   - exists h. split; [done|]. right. by apply Hlt.
 Qed.
 
-(** The frame of e lies below the heads of Θ2, or it holds [pbot], the
+(** The future of e lies below the heads of Θ2, or it holds [pbot], the
     point of the ⊥ flag (sharp edges 103). In the second case e may not
     block, because no point lies below [pbot]. *)
 Definition heads_above_x (W : world) (H : gset point) (Θ2 : tenv) : Prop :=
@@ -517,8 +517,8 @@ Proof.
       { rewrite (tenv_join_dom _ _ _ (proj1 Hc)) in HcΘ.
         split; apply not_elem_of_dom; clear -HcΘ; set_solver. }
       destruct (Hcase ltac:(by apply not_elem_of_dom)) as (a0 & s & s' & W1 & Hfr0 & Hdd & Hwf & HE1).
-      destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F ∪
-                  tenv_roots Θ1 ∪ ty_roots Th ∪ frame_roots (F ∪ H))) as [a1 Ha1].
+      destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∪
+                  tenv_roots Θ1 ∪ ty_roots Th ∪ future_roots (F ∪ H))) as [a1 Ha1].
       destruct (Erel_new_rename n' W W1 Θ1 Th (F ∪ H) e' c s s' a0 a1 (proj1 HW) Hwf Hfr0
                   ltac:(clear -Ha1; set_solver) HE1) as (W1' & Hwf' & HE1').
       exists a1, (stysw a0 a1 s), (stysw a0 a1 s'), W1'. split_and!.

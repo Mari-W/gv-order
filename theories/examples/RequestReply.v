@@ -61,7 +61,7 @@ Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact rq_step]. Qed.
 Lemma srv_typed W F : world_wf W → typed W ∅ [] ∅ [] F srv (TBox 2 0 rq_C (TLolli None None TUnit srv_body)).
 Proof.
   intros HW. unfold srv.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rq_C srv_body. cbn. unfold srv_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
@@ -95,7 +95,7 @@ Qed.
 Lemma cli_typed W F : world_wf W → typed W ∅ [] ∅ [] F cli (TBox 2 0 rq_C (TLolli None None TUnit cli_body)).
 Proof.
   intros HW. unfold cli.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rq_C cli_body. cbn. unfold cli_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.

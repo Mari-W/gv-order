@@ -104,7 +104,7 @@ Qed.
 
 (** The point κ[B][i] of a point variable κ = a, where the choice
     between Add and Mult continues. *)
-Abbreviation pop a i := (Pt (NSlot (NSlot (NVar a) 0 1) 0 (bidx i)) 0).
+Abbreviation pop a i := (Pt (NPayload (NPayload (NVar a) 0 1) 0 (bidx i)) 0).
 
 (** ** receiveEval *)
 
@@ -144,7 +144,7 @@ Qed.
 Lemma reval_typed W F : world_wf W → typed W ∅ [] ∅ [] F reval reval_ty.
 Proof.
   intros HW. unfold reval, reval_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
   intros ss Hss Hhc. destruct ss as [|s [|]]; try discriminate Hss.
   rewrite Forall_singleton in Hhc. fold reval_ty.
   change (lenv_pinst (pshift 2) [Some reval_ty]) with [Some (pinst_ty (pshift 2) reval_ty)].

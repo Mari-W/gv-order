@@ -2,7 +2,7 @@
 
     The claim: if W′ places a fresh constant μ over W and adds nothing
     between old points, then V and E at W′ give V and E at W for
-    environments, types and frames without μ. It fails at V-Const. The
+    environments, types and futures without μ. It fails at V-Const. The
     witness T₀ of a constant is existential, and force's instance xs
     may use μ.
 
@@ -10,7 +10,7 @@
     alias (μ,1) ≡ (b,0) and places μ ([Wm_fresh]). force is in V^{W′}
     at □(∀ι. Close@(ι+1)) ⊸ Close@(b,0) with xs = [(μ,0)], and in no
     V^W at that type, because no point x of W has x+1 ≡_W (b,0). This is
-    why E-Abs and E-Exp use a frame variable φ instead of a fresh point
+    why E-Abs and E-Exp use a future variable φ instead of a fresh point
     (static/FactTheory.v). *)
 From stdpp Require Import base gmap.
 From LRGV Require Import relation.LogicalRelation.
@@ -23,7 +23,7 @@ Fixpoint cnm (p : pname) (o : nat) : point :=
   match p with
   | NConst a => if decide (a = b0) then Pt (NConst mu) (S o) else Pt (NConst a) o
   | NVar a => Pt (NVar a) o
-  | NSlot q o' i => Pt (NSlot (pt_name (cnm q o')) (pt_off (cnm q o')) i) o
+  | NPayload q o' i => Pt (NPayload (pt_name (cnm q o')) (pt_off (cnm q o')) i) o
   end.
 Definition cpt (x : point) : point := cnm (pt_name x) (pt_off x).
 
@@ -37,7 +37,7 @@ Proof.
   destruct x as [p o]. unfold cpt, pt_shift. simpl.
   destruct p; simpl; repeat case_decide; simpl; repeat f_equal; lia.
 Qed.
-Lemma cpt_slot x i : cpt (pt_slot x i) = pt_slot (cpt x) i.
+Lemma cpt_payload x i : cpt (pt_payload x i) = pt_payload (cpt x) i.
 Proof. done. Qed.
 
 Lemma cnm_root p o :
@@ -65,7 +65,7 @@ Fixpoint cinvn (p : pname) (o : nat) : point :=
   match p with
   | NConst a => if decide (a = mu) then Pt (NConst b0) (o - 1) else Pt (NConst a) o
   | NVar a => Pt (NVar a) o
-  | NSlot q o' i => Pt (NSlot (pt_name (cinvn q o')) (pt_off (cinvn q o')) i) o
+  | NPayload q o' i => Pt (NPayload (pt_name (cinvn q o')) (pt_off (cinvn q o')) i) o
   end.
 Definition cinv (x : point) : point := cinvn (pt_name x) (pt_off x).
 
@@ -73,7 +73,7 @@ Definition cinv (x : point) : point := cinvn (pt_name x) (pt_off x).
 Fixpoint pn_boff (p : pname) (o : nat) : nat :=
   match p with
   | NConst _ | NVar _ => o
-  | NSlot q o' _ => pn_boff q o'
+  | NPayload q o' _ => pn_boff q o'
   end.
 Definition cq (x : point) : Prop :=
   pt_root x = NConst mu → 1 ≤ pn_boff (pt_name x) (pt_off x).
@@ -160,7 +160,7 @@ Proof.
   - naive_solver.
   - intros x y z. congruence.
   - intros x y H. by rewrite !cpt_shift, H.
-  - intros x y i H. by rewrite !cpt_slot, H.
+  - intros x y i H. by rewrite !cpt_payload, H.
   - intros x y z ? ?. by eapply ppo_trans.
   - intros x x' y y' -> ? <-. done.
   - intros x. rewrite cpt_shift. apply ppo_po.

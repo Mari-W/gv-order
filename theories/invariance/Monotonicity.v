@@ -1,10 +1,10 @@
-(** * Monotonicity in the world and frame weakening (§10)
+(** * Monotonicity in the world and future weakening (§10)
 
       W ⊑ W′  ⇒  V^W ⊆ V^{W′},  E^W ⊆ E^{W′},  P^W ⊆ P^{W′}
                                     ([Vrel_mono], [Erel_mono], [Prel_mono])
-      F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧  ([Erel_frame])
+      F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧  ([Erel_future])
 
-    Facts only ever help: ready, the frame and every alias the relation
+    Facts only ever help: ready, the future and every alias the relation
     asks for are positive in ≡ and ≺, and the clauses that quantify
     over future worlds see fewer of them from a larger world. The
     clauses that need an argument are O-New and Q-Tau: the points the
@@ -63,9 +63,9 @@ Proof.
   intros Hs. split_and!; [simpl; set_solver|apply wjoin_l|apply wjoin_l|done].
 Qed.
 
-(** ** Frame weakening *)
+(** ** Future weakening *)
 
-Lemma Erel_frame n W Θ T F F' e :
+Lemma Erel_future n W Θ T F F' e :
   F' ⊆ F → Erel n W Θ T F e → Erel n W Θ T F' e.
 Proof.
   revert W Θ T F F' e.
@@ -76,7 +76,7 @@ Proof.
   assert (∀ j W0 Θ0 T0 e0, j ≤ n → Erel j W0 Θ0 T0 F e0 → Erel j W0 Θ0 T0 F' e0)
     as IHj by (intros; eapply IH; [lia|done|done]).
   apply Erel_S_iff. split_and!; [done| |].
-  { intros Hirr. eapply ready_t_frame; [exact HF|]. by apply Hrdy. }
+  { intros Hirr. eapply ready_t_future; [exact HF|]. by apply Hrdy. }
   intros α e' Hst. specialize (Hstep α e' Hst).
   destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hstep |- *.
   - by apply IHj.
@@ -98,7 +98,7 @@ Proof.
     exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by apply IHj.
   - intros Hc. destruct (Hstep Hc) as (a & s & s' & W' & Ha & ? & ? & HE').
     exists a, s, s', W'. split_and!; [|done|done|by apply IHj].
-    assert (frame_roots F' ⊆ frame_roots F) by (unfold frame_roots; set_solver).
+    assert (future_roots F' ⊆ future_roots F) by (unfold future_roots; set_solver).
     set_solver.
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|]. by apply IHj.
@@ -186,7 +186,7 @@ Proof.
     + (* O-New: rename the new point away from W', then join *)
       intros Hc.
       destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
-      destruct (fresh_const (w_names W' ∪ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F))
+      destruct (fresh_const (w_names W' ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F))
         as [a1 Ha1].
       assert (w_names W ⊆ w_names W') by (by destruct HWW').
       destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha

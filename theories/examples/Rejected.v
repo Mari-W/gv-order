@@ -120,7 +120,7 @@ Qed.
     Say new puts c at x and d at y. With the one signature of new, x
     and y are the points E-Open binds, aliased or not to known points
     by the constraint of new (sharp edges 104). The main thread closes c while it
-    holds d, so E-Let* puts y into the frame of close c and E-App asks
+    holds d, so E-Let* puts y into the future of close c and E-App asks
     x ≺ y (ub_below_s). The thunk closes d′ while it holds c′, so its
     body asks y ≺ x. E-Conv keeps points (eqT compares them by
     equality) and E-Weak drops only unlimited bindings, so every

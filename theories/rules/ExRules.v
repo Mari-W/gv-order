@@ -50,7 +50,7 @@ Proof.
   - (* O-New: rename the new point away from the points of T' *)
     intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
     destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
-                           ∪ frame_roots F)) as [a1 Ha1].
+                           ∪ future_roots F)) as [a1 Ha1].
     destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 (proj1 HW) Hfr Ha
                 ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
     exists a1, (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.

@@ -29,16 +29,16 @@ Definition ord_box : expr :=
 Lemma ordered_typed W F : world_wf W → typed W ∅ [] ∅ [] F ord_box ord_ty.
 Proof.
   intros HW. unfold ord_box, ord_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. set (Bx := TBox 2 _ _ _).
   set (Ψ := [(_, _)]). set (Tc := TSess SEnd (pvar 0)). set (Td := TSess SEnd (pvar 1)).
   unfold ord_body. fold Tc Td.
-  apply (t_lam W _ _ _ _ _ _ _ _ _ _ 1); [set_solver|done|].
-  apply (t_letp W _ _ ∅ ∅ ∅ _ [Some (TProd Tc Td); None] [None; Some Bx] _ _ _ Tc Td).
+  apply (t_abs W _ _ _ _ _ _ _ _ _ _ 1); [set_solver|done|].
+  apply (t_letpair W _ _ ∅ ∅ ∅ _ [Some (TProd Tc Td); None] [None; Some Bx] _ _ _ Tc Td).
   { apply tenv_comp_empty_l. intros ? ?. apply se_sym. }
   { repeat constructor. }
   { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simplify_eq/=; done. }
-  apply (t_letu W _ _ ∅ ∅ ∅ _ [None; Some Tc; None; None] [Some Td; None; None; Some Bx]).
+  apply (t_letstar W _ _ ∅ ∅ ∅ _ [None; Some Tc; None; None] [Some Td; None; None; Some Bx]).
   { apply tenv_comp_empty_l. intros ? ?. apply se_sym. }
   { repeat constructor. }
   { eapply (t_app W _ _ ∅ ∅ ∅ _ (lenv_nones _) _ _ _ _ (Some (pvar 0)) None Tc TUnit).
@@ -50,10 +50,10 @@ Proof.
         eapply (sl_hyp0 W _ _ _ (pvar 0) (pvar 1)); [by left|done|cbn; lia|done|done].
       + exists (pvar 1). split; [done|]. right.
         eapply (sl_hyp0 W _ _ _ (pvar 0) (pvar 1)); [by left|done|cbn; lia|done|done].
-    - apply t_konst; [apply lenv_empty_nones|apply KTClos|done].
+    - apply t_const; [apply lenv_empty_nones|apply KTClos|done].
     - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simplify_eq/=; try done.
       destruct y as [|[|y]]; simplify_eq/=. }
-  eapply t_wk; [apply (lwk_cons _ [None; None; None]), lwk_cons, lwk_cons, lwk_drop;
+  eapply t_weak; [apply (lwk_cons _ [None; None; None]), lwk_cons, lwk_cons, lwk_drop;
                 [done|constructor]|].
   eapply (t_app W _ _ ∅ ∅ ∅ _ (lenv_nones _) _ _ _ _ (Some (pvar 1)) None Td TUnit).
   - apply tenv_comp_empty_l. intros ? ?. apply se_sym.
@@ -61,7 +61,7 @@ Proof.
   - apply ub_below_s_intro.
     + intros y Hy. simpl in Hy. set_solver.
     + exists (pvar 1). split; [done|]. left. apply se_refl.
-  - apply t_konst; [apply lenv_empty_nones|apply KTClos|done].
+  - apply t_const; [apply lenv_empty_nones|apply KTClos|done].
   - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simplify_eq/=; try done.
     destruct y as [|[|y]]; simplify_eq/=.
 Qed.

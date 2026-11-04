@@ -2,7 +2,7 @@
 
     [sem_rules] collects the lemmas of TermRules.v and BoxRules.v as the
     rules of an infinitary judgment. The bodies of λ and box are typed
-    in every later world, under every frame above the upper point, and
+    in every later world, under every future above the upper point, and
     for a box at every admissible instance. [sem_rules_fundamental] is
     one rule per lemma. The static system reaches it through
     [typed_sem_rules] (static/Fundamental.v). *)
@@ -15,7 +15,7 @@ Set Default Proof Using "All".
 (** ** The infinitary judgment
 
     The reading of sharp edges 53: the bodies of λ and box are typed in
-    every later world and under every frame above the upper point. *)
+    every later world and under every future above the upper point. *)
 
 Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty → Prop :=
   | sr_unit Δ F :                                        (* E-Unit *)

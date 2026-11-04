@@ -12,7 +12,7 @@ Set Default Proof Using "All".
 
     force : □(∀ιs. C. ∗ ⊸^u T) ⊸^{u[xs/ιs]} T[xs/ιs], at an instance xs
     with C[xs/ιs] in W (sharp edges 58). Its upper point is the box's,
-    instantiated, so the frame of the application is one V-Box
+    instantiated, so the future of the application is one V-Box
     accepts, and the instance meets the box's constraint. *)
 
 Lemma Erel_app_force n W Θ ub lb T U F v2 :
@@ -62,7 +62,7 @@ Lemma sem_typed_app W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :
 Proof. apply sem_typed_app_gen, app_good_all. Qed.
 
 (** ** E-Force: force applied to a box, at an instance xs whose upper
-    point lies below the frame. *)
+    point lies below the future. *)
 
 Definition lenv_nones (Δ : lenv) : lenv := (λ _, None) <$> Δ.
 
@@ -120,7 +120,7 @@ Qed.
 
     The body is good, in every later world, at every instance xs of the
     box's point variables that meets its constraint C (sharp edges 58),
-    and under every frame above the instantiated upper point (sharp
+    and under every future above the instantiated upper point (sharp
     edges 52). The box is then a value at every
     index, by induction on the index (the recursive occurrence is the
     box itself, one level down). *)

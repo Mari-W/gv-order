@@ -55,7 +55,7 @@ Definition none_main : expr :=
   let_new_pair (LetU (App ESpawn (op_R 1)) (App EClos (App ESend (Pair (Inj2 EUnit) (Var 1))))).
 
 (** The creation constraint of c: ι ≺ ι[0] and ι[0]+1 ≺ ι+1. *)
-Abbreviation sd k := (Pt (NSlot (NVar 0) 0 0) k).
+Abbreviation sd k := (Pt (NPayload (NVar 0) 0 0) k).
 
 Definition op_P (g : fact) : Prop := g = FLt (pv 0 0) (sd 0) ∨ g = FLt (sd 1) (pv 0 1).
 Definition op_C : bcs := BCs [] op_P.
@@ -63,7 +63,7 @@ Definition op_C : bcs := BCs [] op_P.
 Definition op_rank (x : point) : nat :=
   match pt_name x with
   | NVar 0 => 10 * pt_off x
-  | NSlot (NVar 0) 0 0 => 5 + pt_off x
+  | NPayload (NVar 0) 0 0 => 5 + pt_off x
   | _ => pt_off x
   end.
 
@@ -95,7 +95,7 @@ Ltac op_facts W HW :=
       by (eapply sl_trans; [apply (slt_po W _ (sd 0) HW)|exact H2])
   end.
 
-Ltac op_ub_frame HW :=
+Ltac op_ub_future HW :=
   apply ubs_intro; [intros y Hy; mem_cases Hy; done|];
   exists (pv 0 1); split; [done|]; first [right; done|apply sle_refl, HW].
 
@@ -103,12 +103,12 @@ Ltac op_arm1 W HW :=
   cbn; tstep;
   [ tstep;
     [ tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (sd 0)); cbn; set_solver|done|];
-      [ tstep; tstep | op_ub_frame HW ]
-    | apply KTClos | done | op_ub_frame HW ]
-  | tstep; [tstep|apply KTClos|done|op_ub_frame HW] ].
+      [ tstep; tstep | op_ub_future HW ]
+    | apply KTClos | done | op_ub_future HW ]
+  | tstep; [tstep|apply KTClos|done|op_ub_future HW] ].
 
 Ltac op_arm2 W HW :=
-  cbn; tstep; [tstep|]; tstep; [tstep|apply KTClos|done|op_ub_frame HW].
+  cbn; tstep; [tstep|]; tstep; [tstep|apply KTClos|done|op_ub_future HW].
 
 Ltac op_R W HW :=
   tstep; [|apply KTSpawn|done|apply ubs_none];

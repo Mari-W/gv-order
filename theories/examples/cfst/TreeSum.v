@@ -136,7 +136,7 @@ Qed.
 Lemma tsum_typed W F : world_wf W → typed W ∅ [] ∅ [] F tsum tsum_ty.
 Proof.
   intros HW. unfold tsum, tsum_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
   intros ss Hss Hhc. destruct ss as [|s [|]]; try discriminate Hss.
   rewrite Forall_singleton in Hhc. fold tsum_ty.
   change (lenv_pinst (pshift 2) [Some tsum_ty]) with [Some (pinst_ty (pshift 2) tsum_ty)].

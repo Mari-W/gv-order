@@ -187,7 +187,7 @@ Proof.
   - rewrite <-E. destruct f; simpl; by rewrite !pt_inst_env.
 Qed.
 
-(** Frame variable lookups after E-Open. *)
+(** Future variable lookups after E-Open. *)
 Ltac fv_look := rewrite ?lookup_fmap; simplify_map_eq; reflexivity.
 
 (** Scoping of a concrete fact, and membership in a concrete list. *)
@@ -280,7 +280,7 @@ Qed.
 Lemma pwalk_size x w : pt_size (pwalk x w) = pt_size x + length w.
 Proof.
   revert x. induction w as [|[i|] w IH]; intros x; simpl; [lia| |];
-    rewrite IH; unfold pt_size, pt_slot, pt_shift; simpl; lia.
+    rewrite IH; unfold pt_size, pt_payload, pt_shift; simpl; lia.
 Qed.
 
 (** The order of a channel along its walks. y is above x when a walk
@@ -302,7 +302,7 @@ Qed.
 Lemma wlt_po x : pt_root x = NVar 0 → wlt x (pt_shift 1 x).
 Proof. intros Hx. split; [done|]. by exists [None]. Qed.
 
-Lemma pt_slot_root x i : pt_root (pt_slot x i) = pt_root x.
+Lemma pt_payload_root x i : pt_root (pt_payload x i) = pt_root x.
 Proof. done. Qed.
 
 Lemma pwalk_snoc x w s : pwalk x (w ++ [s]) = wstep (pwalk x w) s.

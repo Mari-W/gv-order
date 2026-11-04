@@ -270,8 +270,8 @@ Section steps2.
     exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
     assert (F1 ⊎ F2 ⊎ {[+ e' +]} ⊎ {[+ f' +]} = (F1 ⊎ {[+ e' +]}) ⊎ (F2 ⊎ {[+ f' +]})) as ->
       by multiset_solver.
-    apply (conn_at_world n' W Σ1 Σ2 (<[c := (sbranch i s1 s2, pt_slot k1 (bidx i))]> ΣC)
-             (<[c := (sbranch i r1 r2, pt_slot k2 (bidx i))]> ΣC') C0 C1 C2
+    apply (conn_at_world n' W Σ1 Σ2 (<[c := (sbranch i s1 s2, pt_payload k1 (bidx i))]> ΣC)
+             (<[c := (sbranch i r1 r2, pt_payload k2 (bidx i))]> ΣC') C0 C1 C2
              _ _ (le_n _) (wext_refl W HW')).
     - split; try done.
       + by apply map_disjoint_insert_r.
@@ -280,16 +280,16 @@ Section steps2.
       + rewrite dom_insert_L, HC0'. clear -HcC0. set_solver.
       + intros r x y Hx Hy. destruct (decide (r = c)) as [->|Hrc].
         * rewrite lookup_insert_eq in Hx, Hy. injection Hx as <-. injection Hy as <-. simpl.
-          split; [by apply (wf_eq_slot _ (proj1 HW'))|by apply sdual_sbranch].
+          split; [by apply (wf_eq_payload _ (proj1 HW'))|by apply sdual_sbranch].
         * rewrite lookup_insert_ne in Hx, Hy by done. by apply (Hcut r).
-    - assert (Σ1 ∪ <[c := (sbranch i s1 s2, pt_slot k1 (bidx i))]> ΣC =
-              <[c := (sbranch i s1 s2, pt_slot k1 (bidx i))]> Σ1a) as ->.
+    - assert (Σ1 ∪ <[c := (sbranch i s1 s2, pt_payload k1 (bidx i))]> ΣC =
+              <[c := (sbranch i s1 s2, pt_payload k1 (bidx i))]> Σ1a) as ->.
       { rewrite HE1a. apply map_eq. intros r. destruct (decide (r = c)) as [->|Hrc].
         - rewrite lookup_union, !lookup_insert_eq, H1c. by rewrite (left_id_L None (∪)).
         - rewrite lookup_union, !lookup_insert_ne, lookup_union, lookup_delete_ne by done. done. }
       eapply Prel_down; [|exact HP1']. lia.
-    - assert (Σ2 ∪ <[c := (sbranch i r1 r2, pt_slot k2 (bidx i))]> ΣC' =
-              <[c := (sbranch i r1 r2, pt_slot k2 (bidx i))]> Σ2a) as ->; [|exact HP2'].
+    - assert (Σ2 ∪ <[c := (sbranch i r1 r2, pt_payload k2 (bidx i))]> ΣC' =
+              <[c := (sbranch i r1 r2, pt_payload k2 (bidx i))]> Σ2a) as ->; [|exact HP2'].
       rewrite HE2a. apply map_eq. intros r. destruct (decide (r = c)) as [->|Hrc].
       + rewrite lookup_union, !lookup_insert_eq, H2c. by rewrite (left_id_L None (∪)).
       + rewrite lookup_union, !lookup_insert_ne, lookup_union, lookup_delete_ne by done. done.

@@ -3,7 +3,7 @@
     A derivation Γ ⊢ e : t & τ ⇝ e′ becomes a derivation of [typed] in
     the empty world [wnil] ([pn_translate]). The lemma holds at every
     anchor B whose facts the context Ψ provides ([good]), at every offset
-    k (the shift ⇑ᵏ of the whole derivation), and at every frame F above
+    k (the shift ⇑ᵏ of the whole derivation), and at every future F above
     the upper point of τ, as the PGV lemma reads its bound (PGVTranslate.v).
 
     The static system has no renaming lemma, and the body of a box sees
@@ -184,7 +184,7 @@ Ltac lbhb := unfold lb_below_hb;
   try match goal with |- context [lenv_bot ?D] =>
     replace (lenv_bot D) with false by (symmetry; bot_false) end; simpl.
 
-(** Drop the flag of every frame whose flag is false. *)
+(** Drop the flag of every future whose flag is false. *)
 Ltac bclean :=
   repeat match goal with |- context [sf_unionb ?F ?X ?b] =>
     rewrite (sf_unionb_false F X b) by bot_false end.
@@ -195,10 +195,10 @@ Section rules.
   Lemma tv_var_unl Φ Ψ Δ F x T :
     Δ !! x = Some (Some T) → (∀ y T', y ≠ x → Δ !! y = Some (Some T') → unlimited T') →
     typed W Φ Ψ ∅ Δ F (Var x) T.
-  Proof. intros H1 H2. eapply t_wk; [by apply lonly_wk_unl|]. apply t_var. by apply lonly_only. Qed.
+  Proof. intros H1 H2. eapply t_weak; [by apply lonly_wk_unl|]. apply t_var. by apply lonly_only. Qed.
 
   Lemma tv_unit_unl Φ Ψ Δ F : lenv_unl Δ → typed W Φ Ψ ∅ Δ F EUnit TUnit.
-  Proof. intros H. eapply t_wk; [by apply unl_wk|]. apply t_unit, lenv_empty_nones. Qed.
+  Proof. intros H. eapply t_weak; [by apply unl_wk|]. apply t_unit, lenv_empty_nones. Qed.
 
   (** E-Exp for a closed constraint. *)
   Lemma tv_box Φ Ψ Δ F e m C ub T :
@@ -208,7 +208,7 @@ Section rules.
         (lenv_pinst (pshift m) (Some (TBox m 0 C (TLolli ub None TUnit T)) :: Δ)) (∅, Some (FVar φ)) e T) →
     typed W Φ Ψ ∅ Δ F (EBox e) (TBox m 0 C (TLolli ub None TUnit T)).
   Proof.
-    intros HΔ HC H. set (φ := fresh (dom Φ)). apply (t_box W Φ Ψ Δ F e m 0 C ub T φ); [done|apply is_fresh|].
+    intros HΔ HC H. set (φ := fresh (dom Φ)). apply (t_exp W Φ Ψ Δ F e m 0 C ub T φ); [done|apply is_fresh|].
     intros ss Hss _. destruct ss; [|discriminate Hss]. rewrite sinst_slist_nil.
     assert (bcs_inst (pshift m) C = C) as -> by (destruct C; simpl in *; by subst).
     apply H, is_fresh.
@@ -263,7 +263,7 @@ Section rules.
     - intros φ Hφ. eapply (fl_trans (FCtx W Ψ Φ)); [apply fl_points; exact Hxy|by apply H2].
   Qed.
 
-  (** The upper point of a frame variable's own hypothesis. *)
+  (** The upper point of a future variable's own hypothesis. *)
   Lemma ubs_hyp Ψ Φ φ x u :
     Φ !! φ = Some (Some u) → sle W Ψ x u → ub_below_s W Ψ Φ (Some x) (∅, Some (FVar φ)).
   Proof.
@@ -543,7 +543,7 @@ Section terms.
   Proof.
     intros Hok Hn. unfold pbind, ppay. destruct (chanlike t) eqn:Ec.
     - destruct (chres_chanlike k t Ec) as [c' Hc']. rewrite (trz_chanlike B k t c' Hc').
-      assert (payload_at 1 (TSess (sess t) (pvar 0)) (chx t n) = TSess (sess t) (pt_slot (chx t n) 0))
+      assert (payload_at 1 (TSess (sess t) (pvar 0)) (chx t n) = TSess (sess t) (pt_payload (chx t n) 0))
         as -> by (unfold payload_at, ty_inst; simpl; by rewrite pt_inst_pvar_at).
       assert (cpay (PChan true (lshift k t) (n + k)) = Some c') as Hp.
       { simpl. rewrite chres_lshift. by replace (0 + k)%Z with k by lia. }
@@ -573,17 +573,17 @@ Section terms.
     intros HΔ Hok Hn. pose proof (proj1 wnil_strict) as HW.
     destruct (pay_conv t n Hok Hn) as (Hc1 & _ & Hh & Hs).
     set (x := chx t n). set (φ1 := fresh (dom Φ)).
-    apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ None None φ1); [apply is_fresh|lbhb|].
+    apply (t_abs W Φ Ψ ∅ Δ0 F _ _ _ None None φ1); [apply is_fresh|lbhb|].
     { simpl. by bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L. }
     set (Φ1 := <[φ1 := None]> Φ). set (φ2 := fresh (dom Φ1)).
-    apply (t_lam W Φ1 Ψ ∅ _ _ _ _ _ (hiz B k (LZ n)) (Some (loz B k n)) φ2); [apply is_fresh|lbhb|].
+    apply (t_abs W Φ1 Ψ ∅ _ _ _ _ _ (hiz B k (LZ n)) (Some (loz B k n)) φ2); [apply is_fresh|lbhb|].
     { simpl. bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L, union_empty_r_L by done.
       intros y Hy. apply elem_of_singleton in Hy as ->. apply (lo_below Ψ B HB).
       split; [done|right]. unfold x, chx. rewrite (den_ch0 Ψ B HB). simpl. lia. }
     set (Φ2 := <[φ2 := hiz B k (LZ n)]> Φ1).
     assert (Φ2 !! φ2 = Some (Some (rpt B (RHi (n + k))))) as Hφ2 by (unfold Φ2; by rewrite lookup_insert_eq).
     set (E := Some (trz B k t) :: Some (trz B k (PChan false t n)) :: Δ0).
-    eapply (t_letu W Φ2 Ψ ∅ ∅ ∅ E E (lenv_nones E)); [by apply comp0|apply lenv_split_nones_r| |].
+    eapply (t_letstar W Φ2 Ψ ∅ ∅ ∅ E E (lenv_nones E)); [by apply comp0|apply lenv_split_nones_r| |].
     2:{ apply tv_unitv; [done|apply nones_unl]. }
     bclean; rewrite (tenv_heads0 W HW), nones_heads, union_empty_l_L.
     set (Fr := sf_union (∅, Some (FVar φ2)) ∅).
@@ -593,13 +593,13 @@ Section terms.
     eapply (t_app W Φ2 Ψ ∅ ∅ ∅ E (lenv_nones E) E Fr _ _ (Some (pt_shift 1 x)) None).
     { by apply comp0. } { apply lenv_split_nones_l. }
     { apply Hub. apply (ch1_below_hi Ψ B HB). apply clev_chx. }
-    { apply t_konst; [apply lenv_empty_nones|apply KTClos|done]. }
+    { apply t_const; [apply lenv_empty_nones|apply KTClos|done]. }
     rewrite sf_union_empty.
     eapply (t_app W Φ2 Ψ ∅ ∅ ∅ E (lenv_nones E) E Fr _ _ (Some x) None
               (TProd (payload_at (pbind t) (ppay t) x) (TSess (SSeq (SSnd (pbind t) (ppay t)) SEnd) x))).
     { by apply comp0. } { apply lenv_split_nones_l. }
     { apply Hub. apply (ch_below_hi Ψ B HB). apply clev_chx. }
-    { apply t_konst; [apply lenv_empty_nones| |done]. apply (KTSend _ _ _ (pbind t) (ppay t) SEnd x).
+    { apply t_const; [apply lenv_empty_nones| |done]. apply (KTSend _ _ _ (pbind t) (ppay t) SEnd x).
       rewrite hbot_ppay. intros h' Hh'. by apply Hh. }
     rewrite sf_union_empty.
     eapply (t_pair W Φ2 Ψ ∅ ∅ ∅ E (Some (trz B k t) :: None :: Δ0)
@@ -616,25 +616,25 @@ Section terms.
     intros HΔ Hok Hn. pose proof (proj1 wnil_strict) as HW.
     destruct (pay_conv t n Hok Hn) as (_ & Hc2 & Hh & Hs).
     set (x := chx t n). set (φ := fresh (dom Φ)).
-    apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ (hiz B k (LZ n)) None φ); [apply is_fresh|lbhb|].
+    apply (t_abs W Φ Ψ ∅ Δ0 F _ _ _ (hiz B k (LZ n)) None φ); [apply is_fresh|lbhb|].
     { simpl. by bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L. }
     set (Φ1 := <[φ := hiz B k (LZ n)]> Φ).
     assert (Φ1 !! φ = Some (Some (rpt B (RHi (n + k))))) as Hφ by (unfold Φ1; by rewrite lookup_insert_eq).
     set (E := Some (trz B k (PChan true t n)) :: Δ0).
     set (P := payload_at (pbind t) (ppay t) x).
-    eapply (t_letp W Φ1 Ψ ∅ ∅ ∅ E E (lenv_nones E) _ _ _ P (TSess SEnd (pt_shift 1 x)));
+    eapply (t_letpair W Φ1 Ψ ∅ ∅ ∅ E E (lenv_nones E) _ _ _ P (TSess SEnd (pt_shift 1 x)));
       [by apply comp0|apply lenv_split_nones_r| |].
     - bclean; rewrite (tenv_heads0 W HW), nones_heads, union_empty_l_L, sf_union_empty.
       eapply (t_app W Φ1 Ψ ∅ ∅ ∅ E (lenv_nones E) E _ _ _ (Some x) None).
       { by apply comp0. } { apply lenv_split_nones_l. }
       { apply ub_below_s_intro; [simpl; set_solver|]. exists (rpt B (RHi (n + k))). split; [done|right].
         apply (ch_below_hi Ψ B HB). apply clev_chx. }
-      { apply t_konst; [apply lenv_empty_nones|apply KTRecv|done]. }
+      { apply t_const; [apply lenv_empty_nones|apply KTRecv|done]. }
       rewrite sf_union_empty. apply tv_var_unl; [done|done|].
       intros [|y] T' Hne Hy; [done|]. exfalso. simpl in Hy. by eapply empty_lookup.
     - set (N := lenv_nones E).
       assert (lenv_empty N) as HN by apply lenv_empty_nones.
-      eapply (t_letu W Φ1 Ψ ∅ ∅ ∅ _ (Some (TSess SEnd (pt_shift 1 x)) :: None :: N)
+      eapply (t_letstar W Φ1 Ψ ∅ ∅ ∅ _ (Some (TSess SEnd (pt_shift 1 x)) :: None :: N)
                 (None :: Some P :: N)); [by apply comp0| | |].
       { constructor. constructor. by apply lenv_split_empty'. }
       + bclean; rewrite (tenv_heads0 W HW), union_empty_l_L.
@@ -646,7 +646,7 @@ Section terms.
             rewrite union_empty_l_L, union_empty_r_L in Hy. by apply Hh.
           - exists (rpt B (RHi (n + k))). split; [done|right].
             apply (ch1_below_hi Ψ B HB). apply clev_chx. }
-        { apply t_konst; [apply lenv_empty_nones|apply KTClos|done]. }
+        { apply t_const; [apply lenv_empty_nones|apply KTClos|done]. }
         rewrite sf_union_empty. apply tv_var_unl; [done|done|var_others HN].
       + eapply t_conv; [exact Hc2|]. apply tv_var_unl; [done|done|var_others HN].
   Qed.
@@ -657,12 +657,12 @@ Section terms.
       (TLolli None None (trz B k (PArr PUnit r σ PUnit)) U).
   Proof.
     intros HΔ. pose proof (proj1 wnil_strict) as HW. set (φ0 := fresh (dom Φ)).
-    apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ None None φ0); [apply is_fresh|lbhb|].
+    apply (t_abs W Φ Ψ ∅ Δ0 F _ _ _ None None φ0); [apply is_fresh|lbhb|].
     { simpl. by bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L. }
     set (Φ1 := <[φ0 := None]> Φ).
     set (fT := trz B k (PArr PUnit r σ PUnit)).
     set (E := Some fT :: Δ0).
-    eapply (t_letu W Φ1 Ψ ∅ ∅ ∅ E E (lenv_nones E)); [by apply comp0|apply lenv_split_nones_r| |].
+    eapply (t_letstar W Φ1 Ψ ∅ ∅ ∅ E E (lenv_nones E)); [by apply comp0|apply lenv_split_nones_r| |].
     2:{ apply tv_unitv; [done|apply nones_unl]. }
     (* the thunk's points *)
     set (ub := match r with
@@ -671,15 +671,15 @@ Section terms.
     set (lb := match r with Some z => Some (loz B k z) | None => None end).
     eapply (t_app W Φ1 Ψ ∅ ∅ ∅ E (lenv_nones E) E _ _ _ None None (TLolli ub lb TUnit TUnit)).
     { by apply comp0. } { apply lenv_split_nones_l. } { done. }
-    { apply t_konst; [apply lenv_empty_nones|apply KTSpawn|done]. }
+    { apply t_const; [apply lenv_empty_nones|apply KTSpawn|done]. }
     set (φ := fresh (dom Φ1)).
-    apply (t_lam W Φ1 Ψ ∅ E _ _ _ _ ub lb φ); [apply is_fresh|lbhb|].
+    apply (t_abs W Φ1 Ψ ∅ E _ _ _ _ ub lb φ); [apply is_fresh|lbhb|].
     { simpl. bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L, union_empty_r_L by done.
       unfold fT, lb. destruct r as [z|]; simpl.
       - intros y Hy. apply elem_of_singleton in Hy as ->. left. apply se_refl.
       - done. }
     set (Φ2 := <[φ := ub]> Φ1).
-    eapply (t_letu W Φ2 Ψ ∅ ∅ ∅ _ (Some TUnit :: None :: Δ0) (None :: Some fT :: Δ0));
+    eapply (t_letstar W Φ2 Ψ ∅ ∅ ∅ _ (Some TUnit :: None :: Δ0) (None :: Some fT :: Δ0));
       [by apply comp0| | |].
     { constructor. constructor. by apply lenv_split_empty'. }
     { apply tv_var_unl; [done|done|var_others HΔ]. }
@@ -715,7 +715,7 @@ Section terms.
     intros HΔ Ht Hs. pose proof (proj1 wnil_strict) as HW. set (φ := fresh (dom Φ)).
     assert (un (if b then t else s)) as Hu by (by destruct b).
     destruct b; [unfold inj1_tr|unfold inj2_tr];
-      (apply (t_lam W Φ Ψ ∅ Δ0 F _ _ _ None None φ); [apply is_fresh|lbhb|]);
+      (apply (t_abs W Φ Ψ ∅ Δ0 F _ _ _ None None φ); [apply is_fresh|lbhb|]);
       try (simpl; by bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L);
       simpl; unfold Ubox; (apply (tv_box W HW); [|done|]);
       try (intros o [->|Ho]%elem_of_cons; [right; eexists; split; [done|by apply trz_unlimited]
@@ -786,7 +786,7 @@ Proof.
   - by apply se_sym.
   - by eapply se_trans.
   - by apply se_shift.
-  - by apply se_slot.
+  - by apply se_payload.
 Qed.
 
 Lemma fl_sub Γ Ψ' a b :
@@ -843,7 +843,7 @@ Proof.
     destruct (env_lev Γ) as [z|] eqn:Ez; simpl.
     + (* a closure that holds channels *)
       rewrite ren_up. set (φ := fresh (dom Φ)).
-      apply (t_lam wnil Φ Ψ ∅ Δ F _ _ _ (hiz B k ρ) (Some (loz B k z)) φ); [apply is_fresh|lbhb|].
+      apply (t_abs wnil Φ Ψ ∅ Δ F _ _ _ (hiz B k ρ) (Some (loz B k z)) φ); [apply is_fresh|lbhb|].
       * simpl. bclean; rewrite (tenv_heads0 _ HW), union_empty_l_L. intros y Hy.
         apply (env_lo_below Ψ B HB k ins Γ Δ z y HΔ Ez Hy).
       * apply IH; [done|by apply (er_keep _ _ (Some t))|apply (ubs_fresh _ HW)].
@@ -857,7 +857,7 @@ Proof.
       set (Ψ' := hyps_inst (pshift 1) Ψ ++ [(Crel, ids 1)]).
       assert (good Ψ' (pvar 0)) as HB' by (apply good_box; unfold Ψ'; set_solver).
       set (Φ1 := <[φ := None]> (fhyps_pinst (pshift 1) Φ)). set (φ' := fresh (dom Φ1)).
-      apply (t_lam wnil Φ1 Ψ' ∅ _ _ _ _ _ (hiz (pvar 0) m ρ) None φ'); [apply is_fresh|lbhb|].
+      apply (t_abs wnil Φ1 Ψ' ∅ _ _ _ _ _ (hiz (pvar 0) m ρ) None φ'); [apply is_fresh|lbhb|].
       * simpl. bclean; rewrite (tenv_heads0 _ HW), !union_empty_l_L. apply unl_heads, unl_pinst.
         by apply (erel_unl B k ins Γ Δ).
       * apply IH; [done| |apply (ubs_fresh _ HW)].

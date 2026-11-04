@@ -1,11 +1,12 @@
-(** * The source judgment, without a world (static-system.md §2)
+(** * The source instance of the term judgment (static-system.md §2)
 
-    [styped Φ Ψ Δ F t T] is the judgment Δ ⊢^F_Γ t : T of
-    static-system.md for a self-contained single-threaded source
-    program. Γ is the hypotheses Ψ and the frame hypotheses Φ, and no
-    world occurs in the signature.
+    There is one term judgment, [typed] (static/Typing.v). [styped Φ Ψ Δ
+    F t T] is its instance at Θ = ∅ and the empty world [wnil], the
+    judgment of a self-contained single-threaded source program. Γ is
+    then the hypotheses Ψ and the future hypotheses Φ, and no constant
+    occurs in it.
 
-    Why a world is a don't-care here. A well-formed world relates two
+    Why the world is a don't-care there. A well-formed world relates two
     points only when both roots lie in its support ([wf_eq_supp],
     [wf_lt_supp]), or when the two points share a name and the offset
     grows. Every support name is a point constant ([wf_names_const]),
@@ -14,14 +15,11 @@
     has no channel constants, its typing environment Θ stays empty, and
     every point it mentions is rooted at a variable bound by an
     enclosing binder. Program order is a rule of the fact theory
-    ([fl_po]), so the world reaches such a derivation nowhere.
-
-    The source judgment therefore drops both the world and Θ. It is a
-    restriction of [typed], not a new rule set: [styped_typed] sends
-    every derivation to one in [typed] at an arbitrary world, and
-    [typed_styped] sends every derivation in a world with empty support
-    back. Channel constants (E-Ch) and the process layer
-    ([ptyped], P-Term, P-Connect) keep [typed] and its world. *)
+    ([fl_po]). [typed_world_transfer] moves a derivation with Θ = ∅ from
+    a world of empty support to any world, so [styped_typed] sends a
+    source derivation to every world, and [typed_styped] reads one back.
+    Channel constants (E-Ch) and the process layer ([ptyped], P-Term,
+    P-Connect) use worlds with constants. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export static.Typing.
@@ -41,7 +39,7 @@ Inductive heqs (Ψ : hyps) : point → point → Prop :=
   | he_sym x y : heqs Ψ x y → heqs Ψ y x
   | he_trans x y z : heqs Ψ x y → heqs Ψ y z → heqs Ψ x z
   | he_shift x y : heqs Ψ x y → heqs Ψ (pt_shift 1 x) (pt_shift 1 y)
-  | he_slot x y i : heqs Ψ x y → heqs Ψ (pt_slot x i) (pt_slot y i).
+  | he_payload x y i : heqs Ψ x y → heqs Ψ (pt_payload x i) (pt_payload y i).
 
 Inductive hfl (Ψ : hyps) (Φ : fhyps) : node → node → Prop :=
   | hl_h x y : hyp_fact Ψ (FLt x y) → hfl Ψ Φ (NP x) (NP y)
@@ -78,7 +76,7 @@ Proof. apply hl_po. Qed.
 Lemma hlt_trans Ψ x y z : hlt Ψ x y → hlt Ψ y z → hlt Ψ x z.
 Proof. exact (hl_trans Ψ ∅ (NP x) y (NP z)). Qed.
 
-(** A fact between two points holds under any frame hypotheses. *)
+(** A fact between two points holds under any future hypotheses. *)
 Lemma hfl_weaken Ψ Φ a b : hfl Ψ ∅ a b → hfl Ψ Φ a b.
 Proof.
   induction 1.
@@ -109,7 +107,7 @@ Definition hlbx_below_h (Ψ : hyps) (lb : lbound) (H : gset point) (b : bool) : 
   | LPt x => (∀ y, y ∈ H → hle Ψ x y) ∧ b = false
   end.
 
-Definition hub_below_s (Ψ : hyps) (Φ : fhyps) (ub : option point) (F : sframe) : Prop :=
+Definition hub_below_s (Ψ : hyps) (Φ : fhyps) (ub : option point) (F : sfuture) : Prop :=
   match ub with
   | None => True
   | Some x => (∀ y, y ∈ F.1 → hfl Ψ Φ (NP x) (NP y)) ∧
@@ -142,85 +140,43 @@ Proof.
   - destruct H as [<- ?]. split; [apply he_refl|done].
 Qed.
 
-(** ** The source judgment
+(** ** The empty world and the source instance
 
-    Every rule of [typed] for a form without channel constants, minus
-    the world and minus Θ. E-Ch is gone. The frames of the composing
-    rules lose the heads of Θ, which are those of the empty
-    environment. *)
+    There is one term judgment, [typed W Φ Ψ Θ Δ F t T] (static/Typing.v),
+    Θ ; Γ ; Δ ⊢_F t : T of the paper. Its fact context Γ is the world W
+    (the ground facts between point constants), the hypotheses Ψ and the
+    future hypotheses Φ, read through [FCtx W Ψ Φ]. A source program is
+    the instance with Θ = ∅ and the empty world [wnil], so Γ mentions no
+    constant. [styped] abbreviates that instance, it is no second rule
+    set. A running thread is typed by P-Term with Γ := W.
 
-Inductive styped : fhyps → hyps → lenv → sframe → expr → ty → Prop :=
-  | st_unit Φ Ψ Δ F :                                   (* E-Unit *)
-      lenv_empty Δ →
-      styped Φ Ψ Δ F EUnit TUnit
-  | st_konst Φ Ψ Δ F k T :                              (* E-Const *)
-      lenv_empty Δ → konst_ty (heqs Ψ) (hlt Ψ) (hyp_known Ψ) k T → kscoped k T →
-      styped Φ Ψ Δ F (Konst k) T
-  | st_var Φ Ψ Δ F x T :                                (* E-LVar *)
-      lenv_only Δ x T →
-      styped Φ Ψ Δ F (Var x) T
-  | st_lam Φ Ψ Δ F e T U ub lb φ :                      (* E-Abs *)
-      φ ∉ dom Φ →
-      hlb_below_hb Ψ lb (lenv_heads Δ) (lenv_bot Δ) →
-      styped (<[φ := ub]> Φ) Ψ (Some T :: Δ) (∅, Some (FVar φ)) e U →
-      styped Φ Ψ Δ F (Lam e) (TLolli ub lb T U)
-  | st_app Φ Ψ Δ Δ1 Δ2 F e1 e2 ub lb T U :              (* E-App *)
-      lenv_split Δ Δ1 Δ2 → hub_below_s Ψ Φ ub F →
-      styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) e1 (TLolli ub lb T U) →
-      styped Φ Ψ Δ2 (sf_union F (opt_heads lb)) e2 T →
-      styped Φ Ψ Δ F (App e1 e2) U
-  | st_pair Φ Ψ Δ Δ1 Δ2 F e1 e2 T U :                   (* E-Pair *)
-      lenv_split Δ Δ1 Δ2 →
-      styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) e1 T →
-      styped Φ Ψ Δ2 (sf_unionb F (heads T) (hbot T)) e2 U →
-      styped Φ Ψ Δ F (Pair e1 e2) (TProd T U)
-  | st_letu Φ Ψ Δ Δ1 Δ2 F e1 e2 T :                     (* E-Let* *)
-      lenv_split Δ Δ1 Δ2 →
-      styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit →
-      styped Φ Ψ Δ2 F e2 T →
-      styped Φ Ψ Δ F (LetU e1 e2) T
-  | st_letp Φ Ψ Δ Δ1 Δ2 F e1 e2 T1 T2 T :               (* E-LetPair *)
-      lenv_split Δ Δ1 Δ2 →
-      styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) e1 (TProd T1 T2) →
-      styped Φ Ψ (Some T2 :: Some T1 :: Δ2) F e2 T →
-      styped Φ Ψ Δ F (LetP e1 e2) T
-  | st_inj1 Φ Ψ Δ F e T U :                             (* E-Inj *)
-      styped Φ Ψ Δ F e T → styped Φ Ψ Δ F (Inj1 e) (TSum T U)
-  | st_inj2 Φ Ψ Δ F e T U :
-      styped Φ Ψ Δ F e U → styped Φ Ψ Δ F (Inj2 e) (TSum T U)
-  | st_case Φ Ψ Δ Δ1 Δ2 F e e1 e2 T1 T2 T :             (* E-Case *)
-      lenv_split Δ Δ1 Δ2 →
-      styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) e (TSum T1 T2) →
-      styped Φ Ψ (Some T1 :: Δ2) F e1 T →
-      styped Φ Ψ (Some T2 :: Δ2) F e2 T →
-      styped Φ Ψ Δ F (Case e e1 e2) T
-  | st_box Φ Ψ Δ F e m k C ub T φ :                     (* E-Exp *)
-      lenv_unl Δ → φ ∉ dom Φ →
-      (∀ ss, length ss = k → Forall hcontractive ss →
-         styped (<[φ := ub]> (fhyps_pinst (pshift m) Φ))
-           (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
-           (lenv_pinst (pshift m) (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ))
-           (∅, Some (FVar φ)) e (sinst_ty (slist ss) T)) →
-      styped Φ Ψ Δ F (EBox e) (TBox m k C (TLolli ub None TUnit T))
-  | st_wk Φ Ψ Δ' Δ F e T :                              (* E-Weak *)
-      lenv_wk Δ' Δ → styped Φ Ψ Δ' F e T → styped Φ Ψ Δ F e T
-  | st_contract Φ Ψ Δ U F e T :                         (* E-Contract *)
-      unlimited U →
-      styped Φ Ψ (Some U :: Some U :: Δ) F e T →
-      styped Φ Ψ (Some U :: Δ) F (rename pred e) T
-  | st_conv Φ Ψ Δ F e T T' :                            (* E-Conv *)
-      hsteq Ψ T T' → styped Φ Ψ Δ F e T → styped Φ Ψ Δ F e T'
-  | st_pack Φ Ψ Δ F e lb m C T xs :                     (* E-Pack *)
-      length xs = m → Forall (hyp_known Ψ) xs → bcs_hold (heqs Ψ) (hlt Ψ) C xs →
-      hlbx_below_h Ψ lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
-      styped Φ Ψ Δ F e (ty_inst xs T) → styped Φ Ψ Δ F e (TEx lb m C T)
-  | st_open Φ Ψ Δ F e i lb m C T U :                    (* E-Open *)
-      Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T →
-      styped (fhyps_pinst (pshift m) Φ)
-        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
-        (<[i := Some T]> (lenv_pinst (pshift m) Δ))
-        (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) →
-      styped Φ Ψ Δ F e U.
+    The source instance reads no ground fact: the world is a don't-care
+    for a derivation with Θ = ∅ ([typed_world_transfer] below), because a
+    well-formed world of empty support relates points only by program
+    order, which is a rule of the fact theory ([fl_po]), and every point
+    of a source derivation is rooted at a variable. *)
+
+Definition wnil : world := wgen ∅ (λ _ _, False) (λ _ _, False).
+
+Lemma wnil_strict : strict wnil.
+Proof.
+  split; [apply wgen_wf; [set_solver|done|done]|].
+  assert (∀ x y, geq (λ _ _ : point, False) x y → x = y) as Hq.
+  { induction 1; subst; done. }
+  assert (∀ x y, glt (λ _ _ : point, False) (λ _ _ : point, False) x y → pofs x y) as Hl.
+  { induction 1 as [x y []|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    - apply pofs_shift.
+    - apply Hq in Hx, Hy. by subst.
+    - by eapply pofs_trans. }
+  intros x H. exact (pofs_irrefl x (Hl x x H)).
+Qed.
+
+Lemma wnil_names : w_names wnil = ∅.
+Proof. done. Qed.
+
+(** The source instance Θ = ∅ ; Ψ, Φ ; Δ ⊢_F t : T of the one judgment. *)
+Definition styped (Φ : fhyps) (Ψ : hyps) (Δ : lenv) (F : sfuture) (e : expr) (T : ty) : Prop :=
+  typed wnil Φ Ψ ∅ Δ F e T.
 
 (** ** From the source judgment into [typed], at every world
 
@@ -294,42 +250,10 @@ Qed.
 Lemma tenv_heads_empty : tenv_heads ∅ = ∅.
 Proof. unfold tenv_heads. by rewrite map_fold_empty. Qed.
 
-(** The frames of a composing rule, with Θ empty. *)
+(** The futures of a composing rule, with Θ empty. *)
 Lemma sf_unionb_tenv0 F X b :
   sf_unionb F (tenv_heads ∅ ∪ X) b = sf_unionb F X b.
 Proof. by rewrite tenv_heads_empty, (left_id_L ∅ (∪)). Qed.
-
-Theorem styped_typed W Φ Ψ Δ F e T :
-  styped Φ Ψ Δ F e T → typed W Φ Ψ ∅ Δ F e T.
-Proof.
-  induction 1.
-  - by apply t_unit.
-  - apply t_konst; [done| |done]. by apply hkonst_ty.
-  - by apply t_var.
-  - eapply t_lam; [done| |exact IHstyped].
-    rewrite tenv_heads_empty, (left_id_L ∅ (∪)). by apply hlb_below_hb_lb.
-  - eapply t_app; [apply tenv_comp_empty_r|done|by apply hub_below_s_ub| |done].
-    by rewrite sf_unionb_tenv0.
-  - eapply t_pair; [apply tenv_comp_empty_r|done| |done].
-    by rewrite sf_unionb_tenv0.
-  - eapply t_letu; [apply tenv_comp_empty_r|done| |done].
-    by rewrite sf_unionb_tenv0.
-  - eapply t_letp; [apply tenv_comp_empty_r|done| |done].
-    by rewrite sf_unionb_tenv0.
-  - by apply t_inj1.
-  - by apply t_inj2.
-  - eapply t_case; [apply tenv_comp_empty_r|done| |done|done].
-    by rewrite sf_unionb_tenv0.
-  - eapply t_box; [done|done|]. intros ss Hss Hsc. by apply H2.
-  - by eapply t_wk.
-  - by apply t_contract.
-  - eapply t_conv; [by apply hsteq_steq|done].
-  - eapply t_pack; [done| | | |done].
-    + eapply Forall_impl; [done|]. intros x. apply hyp_known_skn.
-    + eapply bcs_hold_mono; [apply heqs_seqs|apply hlt_slt|done].
-    + by apply hlbx_below_h_lbx.
-  - eapply t_open; [done|done|]. rewrite tenv_pinst_empty. exact IHstyped.
-Qed.
 
 (** ** From [typed] in a world of empty support back
 
@@ -364,7 +288,7 @@ Section collapse.
     - by apply he_sym.
     - by eapply he_trans.
     - by apply he_shift.
-    - by apply he_slot.
+    - by apply he_payload.
   Qed.
 
   Lemma fl_hfl Ψ Φ a b : fl (FCtx W Ψ Φ) a b → hfl Ψ Φ a b.
@@ -435,47 +359,62 @@ Proof.
   split; apply dom_empty_iff_L; set_solver.
 Qed.
 
-Theorem typed_styped W Φ Ψ Θ Δ F e T :
-  world_wf W → w_names W = ∅ → typed W Φ Ψ Θ Δ F e T → Θ = ∅ → styped Φ Ψ Δ F e T.
+(** The world is a don't-care for a derivation with Θ = ∅: a derivation
+    in a well-formed world of empty support is one in every world. Each
+    side condition passes through the fact theory of the hypotheses
+    alone ([heqs], [hfl]). *)
+Theorem typed_world_transfer W1 W2 Φ Ψ Θ Δ F e T :
+  world_wf W1 → w_names W1 = ∅ → typed W1 Φ Ψ Θ Δ F e T → Θ = ∅ →
+  typed W2 Φ Ψ ∅ Δ F e T.
 Proof.
   intros HW HN Ht. induction Ht; intros HΘ.
-  - by apply st_unit.
-  - apply st_konst; [done| |done]. by eapply konst_ty_h.
-  - by apply st_var.
+  - by apply t_unit.
+  - apply t_const; [done| |done]. apply hkonst_ty. by apply (konst_ty_h W1 HW HN).
+  - by apply t_var.
   - exfalso. apply (f_equal dom) in HΘ.
     rewrite dom_singleton_L, dom_empty_L in HΘ. set_solver.
-  - subst Θ. eapply st_lam; [done| |by apply IHHt].
-    rewrite tenv_heads_empty, (left_id_L ∅ (∪)) in H0.
-    by eapply lb_below_hb_hlb.
+  - subst Θ. eapply t_abs; [done| |by apply IHHt].
+    apply hlb_below_hb_lb. by apply (lb_below_hb_hlb W1 HW HN).
   - subst Θ. destruct (tenv_comp_empty_both _ _ _ H) as [-> ->].
-    eapply st_app; [done|by eapply ub_below_s_hub| |by apply IHHt2].
-    rewrite sf_unionb_tenv0 in IHHt1. by apply IHHt1.
+    eapply t_app; [apply tenv_comp_empty_r|done| |by apply IHHt1|by apply IHHt2].
+    apply hub_below_s_ub. by apply (ub_below_s_hub W1 HW HN).
   - subst Θ. destruct (tenv_comp_empty_both _ _ _ H) as [-> ->].
-    eapply st_pair; [done| |by apply IHHt2].
-    rewrite sf_unionb_tenv0 in IHHt1. by apply IHHt1.
+    eapply t_pair; [apply tenv_comp_empty_r|done|by apply IHHt1|by apply IHHt2].
   - subst Θ. destruct (tenv_comp_empty_both _ _ _ H) as [-> ->].
-    eapply st_letu; [done| |by apply IHHt2].
-    rewrite sf_unionb_tenv0 in IHHt1. by apply IHHt1.
+    eapply t_letstar; [apply tenv_comp_empty_r|done|by apply IHHt1|by apply IHHt2].
   - subst Θ. destruct (tenv_comp_empty_both _ _ _ H) as [-> ->].
-    eapply st_letp; [done| |by apply IHHt2].
-    rewrite sf_unionb_tenv0 in IHHt1. by apply IHHt1.
-  - by apply st_inj1, IHHt.
-  - by apply st_inj2, IHHt.
+    eapply t_letpair; [apply tenv_comp_empty_r|done|by apply IHHt1|by apply IHHt2].
+  - by apply t_inj1, IHHt.
+  - by apply t_inj2, IHHt.
   - subst Θ. destruct (tenv_comp_empty_both _ _ _ H) as [-> ->].
-    eapply st_case; [done| |by apply IHHt2|by apply IHHt3].
-    rewrite sf_unionb_tenv0 in IHHt1. by apply IHHt1.
-  - eapply st_box; [done|done|]. intros ss Hss Hsc. by apply H2.
-  - eapply st_wk; [done|by apply IHHt].
-  - by apply st_contract, IHHt.
-  - eapply st_conv; [by eapply steq_hsteq|by apply IHHt].
-  - eapply st_pack; [done| | | |by apply IHHt].
-    + eapply Forall_impl; [done|]. intros x. by eapply skn_hyp_known.
-    + eapply bcs_hold_mono; [by eapply seqs_heqs|by eapply slt_hlt|done].
-    + by eapply lbx_below_h_hlbx.
-  - subst Θ. eapply st_open; [done|done|]. apply IHHt. apply tenv_pinst_empty.
+    eapply t_case; [apply tenv_comp_empty_r|done|by apply IHHt1|by apply IHHt2|by apply IHHt3].
+  - eapply t_exp; [done|done|]. intros ss Hss Hsc. by apply H2.
+  - eapply t_weak; [done|by apply IHHt].
+  - by apply t_contract, IHHt.
+  - eapply t_conv; [apply hsteq_steq; by apply (steq_hsteq W1 HW HN)|by apply IHHt].
+  - eapply t_pack; [done| | | |by apply IHHt].
+    + eapply Forall_impl; [done|]. intros x Hx. apply hyp_known_skn.
+      by apply (skn_hyp_known W1 HW HN).
+    + eapply bcs_hold_mono; [| |done].
+      * intros x y Hxy. apply heqs_seqs. by apply (seqs_heqs W1 HW HN).
+      * intros x y Hxy. apply hlt_slt. by apply (slt_hlt W1 HW HN).
+    + apply hlbx_below_h_lbx. by apply (lbx_below_h_hlbx W1 HW HN).
+  - subst Θ. eapply t_open; [done|done|]. rewrite tenv_pinst_empty.
+    apply IHHt. apply tenv_pinst_empty.
 Qed.
 
-(** The two judgments agree on the derivations of a source program. *)
+(** The source instance holds in every world. *)
+Theorem styped_typed W Φ Ψ Δ F e T :
+  styped Φ Ψ Δ F e T → typed W Φ Ψ ∅ Δ F e T.
+Proof.
+  intros H. apply (typed_world_transfer wnil W _ _ ∅); [apply wnil_strict|apply wnil_names|exact H|done].
+Qed.
+
+Theorem typed_styped W Φ Ψ Θ Δ F e T :
+  world_wf W → w_names W = ∅ → typed W Φ Ψ Θ Δ F e T → Θ = ∅ → styped Φ Ψ Δ F e T.
+Proof. intros HW HN Ht HΘ. by apply (typed_world_transfer W wnil _ _ Θ). Qed.
+
+(** The source instance agrees with the judgment at every world of empty support. *)
 Corollary styped_iff W Φ Ψ Δ F e T :
   world_wf W → w_names W = ∅ →
   styped Φ Ψ Δ F e T ↔ typed W Φ Ψ ∅ Δ F e T.

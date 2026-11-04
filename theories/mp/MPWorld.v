@@ -64,7 +64,7 @@ Proof.
 Qed.
 
 Definition proot : point := Pt (NConst 0) 0.
-Definition rpt (B : point) (r : ritem) : point := pt_slot B (encode_nat r).
+Definition rpt (B : point) (r : ritem) : point := pt_payload B (encode_nat r).
 
 (** ** Ranks
 
@@ -181,7 +181,7 @@ Fixpoint denN (v : val) (p : pname) : dn :=
   | NConst 0 => DAnc []
   | NVar 0 => DAnc v
   | NConst _ | NVar _ => DJ 0
-  | NSlot q b i => dsl (dshN b (denN v q)) i
+  | NPayload q b i => dsl (dshN b (denN v q)) i
   end.
 
 Definition den (v : val) (x : point) : dn := dshN (pt_off x) (denN v (pt_name x)).
@@ -195,15 +195,15 @@ Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r.
 Lemma den_shiftN v n x : den v (pt_shift n x) = dshN n (den v x).
 Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
 
-Lemma den_slot v x i : den v (pt_slot x i) = dsl (den v x) i.
+Lemma den_payload v x i : den v (pt_payload x i) = dsl (den v x) i.
 Proof. done. Qed.
 
 Definition dchoice (d : dn) : Prop :=
   match d with DCh (MSel _ _ _) _ _ | DCh (MBra _ _ _) _ _ => True | _ => False end.
 
-Lemma den_br v x i : dchoice (den v x) → den v (pt_slot x (bidx i)) = dbr (den v x) i.
+Lemma den_br v x i : dchoice (den v x) → den v (pt_payload x (bidx i)) = dbr (den v x) i.
 Proof.
-  intros H. rewrite den_slot. destruct (den v x) as [|[]| | |]; simpl in H; try done; by destruct i.
+  intros H. rewrite den_payload. destruct (den v x) as [|[]| | |]; simpl in H; try done; by destruct i.
 Qed.
 
 Lemma den_proot v : den v proot = DAnc [].
@@ -228,7 +228,7 @@ Lemma wgen_strict_dn {D A} (R : A → A → Prop) N E L (dnt : point → D)
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, dnt (pt_shift 1 x) = dS (dnt x)) →
-  (∀ x i, dnt (pt_slot x i) = dL (dnt x) i) →
+  (∀ x i, dnt (pt_payload x i) = dL (dnt x) i) →
   (∀ x y, E x y → dnt x = dnt y) →
   (∀ d, R (r d) (r (dS d))) →
   (∀ x y, L x y → R (r (dnt x)) (r (dnt y))) →
@@ -264,7 +264,7 @@ Proof.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - apply den_shift.
-  - apply den_slot.
+  - apply den_payload.
   - by intros x y (_ & _ & H).
   - apply rank_dsh.
   - by intros x y (_ & _ & H).
@@ -283,8 +283,8 @@ Lemma den_inst_pn v w X p :
 Proof.
   intros HX. induction p as [c|[|c]|q IH b i]; intros Hp; simpl in Hp; try discriminate.
   - exact HX.
-  - change (pn_inst (plist [X]) (NSlot q b i)) with (pt_slot (pt_shift b (pn_inst (plist [X]) q)) i).
-    rewrite den_slot, den_shiftN, IH by done. done.
+  - change (pn_inst (plist [X]) (NPayload q b i)) with (pt_payload (pt_shift b (pn_inst (plist [X]) q)) i).
+    rewrite den_payload, den_shiftN, IH by done. done.
 Qed.
 
 Lemma den_inst v w X x :
@@ -371,7 +371,7 @@ Fixpoint tr (B : point) (T : mty) : ty :=
   end.
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
-Proof. apply pt_inst_slot. Qed.
+Proof. apply pt_inst_payload. Qed.
 
 Lemma hiz_pinst σ B ef : pt_inst σ <$> hiz B ef = hiz (pt_inst σ B) ef.
 Proof. destruct ef; simpl; [done|]. by rewrite pt_inst_rpt. Qed.
@@ -506,13 +506,13 @@ Section facts.
   Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
 
   Lemma den_anc v σ : models Θ v → den v (rpt B (RAnc σ)) = DAnc (evalZ v <$> σ).
-  Proof. intros Hv. unfold rpt. rewrite den_slot, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
+  Proof. intros Hv. unfold rpt. rewrite den_payload, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
   Lemma den_ch v Q h d : models Θ v → den v (rpt B (RCh Q h d)) = dch (mmap (pclose v) Q) (pclose v h) d.
-  Proof. intros Hv. unfold rpt. rewrite den_slot, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
+  Proof. intros Hv. unfold rpt. rewrite den_payload, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
   Lemma den_lo v l : models Θ v → den v (rpt B (RLo l)) = DLo (xminl v l) (length l).
-  Proof. intros Hv. unfold rpt. rewrite den_slot, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
+  Proof. intros Hv. unfold rpt. rewrite den_payload, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
   Lemma den_hi v l : models Θ v → den v (rpt B (RHi l)) = DHi (xmaxl v l) (hlen l).
-  Proof. intros Hv. unfold rpt. rewrite den_slot, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
+  Proof. intros Hv. unfold rpt. rewrite den_payload, (gd_den _ _ _ HB v Hv). simpl. by rewrite decode_encode_nat. Qed.
 
   Lemma rank_ch v Q h d : models Θ v →
     rank (den v (rpt B (RCh Q h d))) = xrk (evalp v (chead Q h d)) 1 (KT 1).

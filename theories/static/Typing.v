@@ -2,7 +2,7 @@
 
     Θ; Δ ⊢^F_G t : T ([typed]) and Σ ⊢_G p : T ([ptyped]). The facts G
     enter through the world W they generate, so both judgments are
-    indexed by W. The fresh μ of E-Abs and E-Exp is a frame variable φ
+    indexed by W. The fresh μ of E-Abs and E-Exp is a future variable φ
     with the one hypothesis u ≺ φ (sharp edges 54, 56). E-Exp types the
     body once, with the box's ιs as point variables 0, …, m-1 (sharp
     edges 57), and at every hereditarily contractive instance of its
@@ -15,20 +15,20 @@ From LRGV Require Export static.PointSubst.
 
 Set Default Proof Using "All".
 
-Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → expr → ty → Prop :=
+Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sfuture → expr → ty → Prop :=
   | t_unit Φ Ψ Δ F :                                    (* E-Unit *)
       lenv_empty Δ →
       typed W Φ Ψ ∅ Δ F EUnit TUnit
-  | t_konst Φ Ψ Δ F k T :                               (* E-Const *)
+  | t_const Φ Ψ Δ F k T :                               (* E-Const *)
       lenv_empty Δ → konst_ty (seqs W Ψ) (slt W Ψ) (skn W Ψ) k T → kscoped k T →
       typed W Φ Ψ ∅ Δ F (Konst k) T
   | t_var Φ Ψ Δ F x T :                                 (* E-LVar *)
       lenv_only Δ x T →
       typed W Φ Ψ ∅ Δ F (Var x) T
-  | t_chan Φ Ψ Δ F c s k s' y :                         (* E-Ch, ι′ ≡_Γ ι *)
+  | t_ch Φ Ψ Δ F c s k s' y :                         (* E-Ch, ι′ ≡_Γ ι *)
       lenv_empty Δ → seq s s' → seqs W Ψ k y →
       typed W Φ Ψ {[c := One (s, k)]} Δ F (Chan c) (TSess s' y)
-  | t_lam Φ Ψ Θ Δ F e T U ub lb φ :                     (* E-Abs *)
+  | t_abs Φ Ψ Θ Δ F e T U ub lb φ :                     (* E-Abs *)
       φ ∉ dom Φ →
       lb_below_hb W Ψ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
       typed W (<[φ := ub]> Φ) Ψ Θ (Some T :: Δ) (∅, Some (FVar φ)) e U →
@@ -43,12 +43,12 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T →
       typed W Φ Ψ Θ2 Δ2 (sf_unionb F (heads T) (hbot T)) e2 U →
       typed W Φ Ψ Θ Δ F (Pair e1 e2) (TProd T U)
-  | t_letu Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :              (* E-Let* *)
+  | t_letstar Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :              (* E-Let* *)
       tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
       typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit →
       typed W Φ Ψ Θ2 Δ2 F e2 T →
       typed W Φ Ψ Θ Δ F (LetU e1 e2) T
-  | t_letp Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :        (* E-LetPair *)
+  | t_letpair Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :        (* E-LetPair *)
       tenv_comp (seqs W Ψ) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
       typed W Φ Ψ Θ1 Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 (TProd T1 T2) →
       typed W Φ Ψ Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
@@ -63,7 +63,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ2 (Some T1 :: Δ2) F e1 T →
       typed W Φ Ψ Θ2 (Some T2 :: Δ2) F e2 T →
       typed W Φ Ψ Θ Δ F (Case e e1 e2) T
-  | t_box Φ Ψ Δ F e m k C ub T φ :                      (* E-Exp *)
+  | t_exp Φ Ψ Δ F e m k C ub T φ :                      (* E-Exp *)
       lenv_unl Δ → φ ∉ dom Φ →
       (∀ ss, length ss = k → Forall hcontractive ss →
          typed W (<[φ := ub]> (fhyps_pinst (pshift m) Φ))
@@ -71,7 +71,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
            (lenv_pinst (pshift m) (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ)) (∅, Some (FVar φ)) e
            (sinst_ty (slist ss) T)) →
       typed W Φ Ψ ∅ Δ F (EBox e) (TBox m k C (TLolli ub None TUnit T))
-  | t_wk Φ Ψ Θ Δ' Δ F e T :                             (* E-Weak *)
+  | t_weak Φ Ψ Θ Δ' Δ F e T :                             (* E-Weak *)
       lenv_wk Δ' Δ → typed W Φ Ψ Θ Δ' F e T → typed W Φ Ψ Θ Δ F e T
   | t_contract Φ Ψ Θ Δ U F e T :                        (* E-Contract *)
       unlimited U →
@@ -92,7 +92,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sframe → ex
       typed W Φ Ψ Θ Δ F e U.
 
 (** The ⊥ flag (sharp edges 103). A subterm whose context holds an
-    unopened existential with lower bound ⊥ is typed under a frame with
+    unopened existential with lower bound ⊥ is typed under a future with
     the flag set ([sf_unionb]). Under the flag no call with an upper
     point passes the gate, and E-Abs does not capture such a value.
 
@@ -118,7 +118,7 @@ Proof.
   - apply tenv_comp_empty_l, se_sym.
   - apply lenv_split_nones_l.
   - exact Hub.
-  - apply t_konst; [apply lenv_empty_nones| |done]. by apply KTForce.
+  - apply t_const; [apply lenv_empty_nones| |done]. by apply KTForce.
   - destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L.
 Qed.
 
@@ -214,7 +214,7 @@ Proof.
   intros HC HK Hb. unfold let_new.
   set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
   (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
-  apply (t_letp W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
+  apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply tenv_comp_empty_l, se_sym. }
   { apply lenv_split_nones_l. }
   { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
@@ -224,12 +224,12 @@ Proof.
       + apply tenv_comp_empty_r.
       + apply lenv_split_nones_l.
       + done.
-      + apply t_konst; [apply lenv_empty_nones| |done].
+      + apply t_const; [apply lenv_empty_nones| |done].
         by apply KTNewEx.
       + apply t_unit. apply lenv_empty_nones.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)
-  apply (t_letu W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
+  apply (t_letstar W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
   { apply tenv_comp_empty_l, se_sym. }
   { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
   { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
@@ -241,7 +241,7 @@ Proof.
   cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
   change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
   (* let ⟨a, b⟩ = p *)
-  apply (t_letp W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
+  apply (t_letpair W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
            (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))
               :: lenv_nones (lenv_pinst (pshift 1) Δ))
            (None :: None :: lenv_pinst (pshift 1) Δ)

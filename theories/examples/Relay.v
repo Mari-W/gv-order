@@ -36,21 +36,21 @@ Set Default Proof Using "All".
 Definition Dr : sty := SSeq (SRcv 0 TUnit) SEnd.
 Definition Srl : sty := SMu (SSeq (SRcv 1 (TSess Dr (Pt (NVar 0) 0))) (SVar 0)).
 
-Abbreviation sv o := (Pt (NSlot (NVar 0) 0 0) o).
+Abbreviation sv o := (Pt (NPayload (NVar 0) 0 0) o).
 
 Definition c0 (x y : point) (g : fact) : Prop :=
-  g = FLt x y ∨ g = FLt x (pt_slot x 0) ∨ g = FLt (pt_slot x 0) (pt_shift 1 x) ∨
-  g = FLt (pt_slot x 0) y ∨ g = FLt y (pt_shift 1 x) ∨ g = FLt y (pt_shift 1 (pt_slot x 0)).
+  g = FLt x y ∨ g = FLt x (pt_payload x 0) ∨ g = FLt (pt_payload x 0) (pt_shift 1 x) ∨
+  g = FLt (pt_payload x 0) y ∨ g = FLt y (pt_shift 1 x) ∨ g = FLt y (pt_shift 1 (pt_payload x 0)).
 
 Definition rel_P (g : fact) : Prop :=
-  c0 (pv 0 0) (pv 1 0) g ∨ ∃ k, c0 (pv 0 (S k)) (Pt (NSlot (NVar 0) k 0) 1) g.
+  c0 (pv 0 0) (pv 1 0) g ∨ ∃ k, c0 (pv 0 (S k)) (Pt (NPayload (NVar 0) k 0) 1) g.
 
 Definition rel_C : bcs := BCs [] rel_P.
 
 Lemma c0_inst σ x y g : c0 x y g → c0 (pt_inst σ x) (pt_inst σ y) (fact_map (pt_inst σ) g).
 Proof.
   unfold c0. intros [-> | [-> | [-> | [-> | [-> | ->]]]]]; cbn [fact_map];
-    rewrite ?pt_inst_slot, ?pt_inst_shift, ?pt_inst_slot;
+    rewrite ?pt_inst_payload, ?pt_inst_shift, ?pt_inst_payload;
     repeat (first [left; reflexivity|right]); reflexivity.
 Qed.
 
@@ -92,7 +92,7 @@ Definition rel_main : expr :=
 Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 0 rel_C (TLolli None None TUnit relay_body)).
 Proof.
   intros HW. unfold relay.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rel_C relay_body. cbn. unfold relay_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
@@ -130,10 +130,10 @@ Qed.
 Lemma prod_typed W F : strict W → typed W ∅ [] ∅ [] F prod (TBox 2 0 rel_C (TLolli None None TUnit prod_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold prod.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rel_C prod_body. cbn. unfold prod_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
-  cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Dr (sv 0) HWs); [skn_slot|].
+  cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Dr (sv 0) HWs); [skn_payload|].
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
@@ -183,7 +183,7 @@ Qed.
     whose betweenness program order and the facts of c give. *)
 Definition relc_P (g : fact) : Prop :=
   g = FLt (pv 0 0) (sv 0) ∨ g = FLt (sv 0) (pv 0 1) ∨
-  ∃ k, c0 (pv 0 (S k)) (Pt (NSlot (NVar 0) k 0) 1) g.
+  ∃ k, c0 (pv 0 (S k)) (Pt (NPayload (NVar 0) k 0) 1) g.
 Definition relc_C : bcs := BCs [] relc_P.
 
 (** The constraint of d: the variable 0 is ε, 1 is ι, 2 is ι[0]. *)
@@ -193,9 +193,9 @@ Definition reld_facts (g : fact) : Prop :=
 Definition reld_C : bcs := BCs [pvar 0; sv 0] reld_facts.
 
 Definition relv_base (p : pname) : nat :=
-  match p with NVar 0 => 3 | NSlot (NVar 0) k 0 => 3 * k + 4 | _ => 0 end.
+  match p with NVar 0 => 3 | NPayload (NVar 0) k 0 => 3 * k + 4 | _ => 0 end.
 Definition relv_step (p : pname) : nat :=
-  match p with NVar 0 => 3 | NSlot (NVar 0) _ 0 => 4 | _ => 1 end.
+  match p with NVar 0 => 3 | NPayload (NVar 0) _ 0 => 4 | _ => 1 end.
 Definition relv_rank (x : point) : nat := relv_base (pt_name x) + relv_step (pt_name x) * pt_off x.
 
 Lemma relc_ok peq plt : cc_ok peq plt relc_C.
@@ -239,8 +239,8 @@ Proof.
   fresh_clean.
   match goal with |- typed _ _ ?Ψ0 _ _ _ _ _ => set (Ψ := Ψ0) end.
   assert (∀ u v, reld_facts (FLt u v) → fact_scoped 3 (FLt u v) →
-            slt W Ψ (pt_inst (plist [pvar 0; pv 1 0; Pt (NSlot (NVar 1) 0 0) 0]) u)
-                    (pt_inst (plist [pvar 0; pv 1 0; Pt (NSlot (NVar 1) 0 0) 0]) v)) as Hd.
+            slt W Ψ (pt_inst (plist [pvar 0; pv 1 0; Pt (NPayload (NVar 1) 0 0) 0]) u)
+                    (pt_inst (plist [pvar 0; pv 1 0; Pt (NPayload (NVar 1) 0 0) 0]) v)) as Hd.
   { intros u v Hf Hs. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) reld_C) (pvar 0) u v);
       [by right; left|done|done]. }
   assert (∀ g, relc_P g → fact_scoped 1 g →

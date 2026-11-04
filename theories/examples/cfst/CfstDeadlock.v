@@ -11,7 +11,7 @@
     Pérez reject it because f ⟨a, b′⟩ needs p < q and f ⟨b, a′⟩ needs
     q < p. The same two facts are what our system cannot meet. Let α
     and β be the points of a and b. The receive in the first thread
-    blocks at α while the frame holds b′ at β, so E-App asks α ≺ β. The
+    blocks at α while the future holds b′ at β, so E-App asks α ≺ β. The
     second thread asks β ≺ α. No acyclic context has both.
 
     We prove the rejection without an inversion of derivations. The

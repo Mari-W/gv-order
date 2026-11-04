@@ -33,7 +33,7 @@
     types the program under the top-level constraint
     {a+1 ≺ a[1], a[1] ≺ δ, δ ≺ a[0], δ ≺ a[1]+1}, and [choice_deadlock_free]
     follows from [soundness_source]. With both arms at a[0] the two facts
-    are δ ≺ a[0] and a[0] ≺ δ, a cycle ([same_slot_cycle]). *)
+    are δ ≺ a[0] and a[0] ≺ δ, a cycle ([same_payload_cycle]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -60,8 +60,8 @@ Definition sel2 : expr :=
 Definition branch (e e1 e2 : expr) : expr :=
   LetP (App ERecv e) (LetU (App EClos (Var 0)) (Case (Var 1) e1 e2)).
 
-Abbreviation sl0 x := (pt_slot x 0).
-Abbreviation sl1 x := (pt_slot x 1).
+Abbreviation sl0 x := (pt_payload x 0).
+Abbreviation sl1 x := (pt_payload x 1).
 
 (** ** Environments of unlimited bindings *)
 
@@ -101,7 +101,7 @@ Lemma lenv_bot_nones Δ : lenv_bot (lenv_nones Δ) = false.
 Proof. induction Δ; simpl; done. Qed.
 
 (** Knownness of x[i] is that of x: they share a root. *)
-Lemma skn_slot W Ψ x i : skn W Ψ x → skn W Ψ (pt_slot x i).
+Lemma skn_payload W Ψ x i : skn W Ψ x → skn W Ψ (pt_payload x i).
 Proof. intros [H|(C & xs & y & Hg & Hy & E)]; [by left|right; by exists C, xs, y]. Qed.
 
 (** ** Selection is a derived form
@@ -127,16 +127,16 @@ Section sel.
   Lemma sel_typed (i : nat) (inj : expr → expr) Φ Ψ Δ F S1 S2 S x :
     (i = 0 ∧ inj = Inj1 ∧ S = S1) ∨ (i = 1 ∧ inj = Inj2 ∧ S = S2) →
     skn W Ψ x → allunl Δ = true →
-    slt W Ψ x (sl0 x) → slt W Ψ x (sl1 x) → slt W Ψ (pt_shift 1 x) (pt_slot x i) →
+    slt W Ψ x (sl0 x) → slt W Ψ x (sl1 x) → slt W Ψ (pt_shift 1 x) (pt_payload x i) →
     typed W Φ Ψ ∅ Δ F
       (Lam (let_new (LetU (App EClos (App ESend (Pair (inj (Var 0)) (Var 4)))) (Var 1))))
-      (TLolli (Some (pt_shift 1 x)) None (TSess (Sch S1 S2) x) (TSess S (pt_slot x i))).
+      (TLolli (Some (pt_shift 1 x)) None (TSess (Sch S1 S2) x) (TSess S (pt_payload x i))).
   Proof.
     intros Hi Hx Hu H0 H1 Hc. pose proof (proj1 HWs) as HW.
     set (φ := fresh (dom Φ)).
     apply (tv_lam W HW _ _ _ _ _ _ _ _ _ φ); [apply is_fresh|unl Hu; done|].
-    apply (t_new_at W _ _ _ _ _ _ _ S (pt_slot x i) HWs); [by apply skn_slot|].
-    assert (slt W Ψ x (pt_slot x i)) as Hxi by (destruct Hi as [(-> & _)|(-> & _)]; done).
+    apply (t_new_at W _ _ _ _ _ _ _ S (pt_payload x i) HWs); [by apply skn_payload|].
+    assert (slt W Ψ x (pt_payload x i)) as Hxi by (destruct Hi as [(-> & _)|(-> & _)]; done).
     destruct Hi as [(-> & -> & ->)|(-> & -> & ->)].
     all: apply tv_letu; [exact HW|unl Hu; reflexivity| |];
       [|apply tv_var; [exact HW|unl Hu; reflexivity|unl Hu; reflexivity]].
@@ -184,11 +184,11 @@ Lemma branch_typed W Φ Ψ Δ Δ1 Δ2 F e e1 e2 T1 T2 T x :
 Proof.
   intros HW Hs He Hr Hc H1 H2. unfold branch.
   set (P := TSum (TSess T1 (sl0 x)) (TSess T2 (sl1 x))).
-  apply (t_letp W Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ P (TSess SEnd (pt_shift 1 x))); [apply (comp0 W HW)|exact Hs| |].
+  apply (t_letpair W Φ Ψ ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ P (TSess SEnd (pt_shift 1 x))); [apply (comp0 W HW)|exact Hs| |].
   { rewrite (tenv_heads0 W HW), (left_id_L ∅ (∪)).
     apply (tv_appk W HW _ _ _ _ _ _ (Some x) (TSess (Sbr T1 T2) x)); [exact He| |kscope|exact Hr].
     apply (KTRecv _ _ _ 2 (TSum (TSess T1 (pvar 0)) (TSess T2 (pvar 1))) SEnd x). }
-  apply (t_letu W Φ Ψ ∅ ∅ ∅ _ (Some (TSess SEnd (pt_shift 1 x)) :: None :: lenv_nones Δ2)
+  apply (t_letstar W Φ Ψ ∅ ∅ ∅ _ (Some (TSess SEnd (pt_shift 1 x)) :: None :: lenv_nones Δ2)
            (None :: Some P :: Δ2)); [apply (comp0 W HW)| | |].
   { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
   { rewrite (tenv_heads0 W HW), (left_id_L ∅ (∪)).
@@ -228,8 +228,8 @@ Qed.
 
 Abbreviation pa k := (pv 0 k).
 Abbreviation pd k := (pv 1 k).
-Abbreviation pa0 k := (Pt (NSlot (NVar 0) 0 0) k).
-Abbreviation pa1 k := (Pt (NSlot (NVar 0) 0 1) k).
+Abbreviation pa0 k := (Pt (NPayload (NVar 0) 0 0) k).
+Abbreviation pa1 k := (Pt (NPayload (NVar 0) 0 1) k).
 
 Definition ch_fact (g : fact) : Prop :=
   g = FLt (pa 1) (pa1 0) ∨ g = FLt (pa1 0) (pd 0) ∨ g = FLt (pd 0) (pa0 0) ∨ g = FLt (pd 0) (pa1 1).
@@ -251,9 +251,9 @@ Lemma ch_rank_ok : c0_acyclic 2 Cch.
 Proof.
   set (r := λ x : point, match pt_name x with
     | NVar 0 => 10 * pt_off x
-    | NSlot (NVar 0) 0 1 => 15 + 10 * pt_off x
+    | NPayload (NVar 0) 0 1 => 15 + 10 * pt_off x
     | NVar 1 => 17 + 10 * pt_off x
-    | NSlot (NVar 0) 0 0 => 20 + 10 * pt_off x
+    | NPayload (NVar 0) 0 0 => 20 + 10 * pt_off x
     | _ => 10 * pt_off x
     end).
   apply (c0_acyclic_rank 2 _ r).
@@ -350,7 +350,7 @@ Proof. apply (soundness_source 2 Cch _ TUnit (c0_acyclic_creation _ _ ch_rank_ok
 
     The program [choice_main] with c : Sch₀@a and the payload of one
     point. Both arms receive k at a[0]. Branch A closes d while it holds
-    k and asks δ ≺ a[0] (E-Let* puts a[0] into the frame of close d,
+    k and asks δ ≺ a[0] (E-Let* puts a[0] into the future of close d,
     E-App asks the upper point δ below it). Branch B receives on k at
     a[0] while it holds d and asks a[0] ≺ δ. E-Case types both arms in
     the same context, and the type of k comes from the payload, so the
@@ -365,14 +365,14 @@ Proof. apply (soundness_source 2 Cch _ TUnit (c0_acyclic_creation _ _ ch_rank_ok
 Definition Sch0 : sty :=
   SSeq (SSnd 1 (TSum (TSess (dual Sd) (pvar 0)) (TSess (dual Sd) (pvar 0)))) SEnd.
 
-Lemma same_slot_cycle W Ψ (k δ : point) :
+Lemma same_payload_cycle W Ψ (k δ : point) :
   (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ δ k ∧ slt W Ψ k δ).
 Proof. intros Hacy [H1 H2]. apply (Hacy δ). by eapply sl_trans. Qed.
 
 (** No top-level constraint that [soundness_source] accepts states the
     two facts of the shared point: a top-level C with δ ≺ a[0] and
     a[0] ≺ δ fails [c0_acyclic]. *)
-Lemma same_slot_not_acyclic P :
+Lemma same_payload_not_acyclic P :
   P (FLt (pd 0) (pa0 0)) → P (FLt (pa0 0) (pd 0)) → ¬ c0_acyclic 2 (BCs [] P).
 Proof.
   intros H1 H2 [_ Hacy]. apply (Hacy (pd 0)).
@@ -418,20 +418,20 @@ Qed.
 Definition Rs : sty := SMu (Sbr (SSeq (SSnd 0 TUnit) (SVar 0)) SEnd).
 
 Fixpoint cvp (n : nat) : point :=
-  match n with 0 => pvar 0 | S m => pt_shift 1 (pt_slot (cvp m) 0) end.
+  match n with 0 => pvar 0 | S m => pt_shift 1 (pt_payload (cvp m) 0) end.
 
 Definition lp_P (g : fact) : Prop :=
   ∃ n, g = FLt (pt_shift 1 (cvp n)) (sl0 (cvp n)) ∨ g = FLt (pt_shift 1 (cvp n)) (sl1 (cvp n)).
 Definition lp_C : bcs := BCs [] lp_P.
 
-Lemma pt_inst_slot σ x i : pt_inst σ (pt_slot x i) = pt_slot (pt_inst σ x) i.
+Lemma pt_inst_payload σ x i : pt_inst σ (pt_payload x i) = pt_payload (pt_inst σ x) i.
 Proof. destruct x as [p o]. done. Qed.
 
 Lemma cvp_inst n : pt_inst (plist [cvp 1]) (cvp n) = cvp (S n).
 Proof.
   induction n as [|n IH]; [done|].
-  change (cvp (S n)) with (pt_shift 1 (pt_slot (cvp n) 0)).
-  by rewrite pt_inst_shift, pt_inst_slot, IH.
+  change (cvp (S n)) with (pt_shift 1 (pt_payload (cvp n) 0)).
+  by rewrite pt_inst_shift, pt_inst_payload, IH.
 Qed.
 
 Lemma cvp_vb n : pn_vb 1 (pt_name (cvp n)).
@@ -440,13 +440,13 @@ Proof. induction n as [|n IH]; cbn; [lia|exact IH]. Qed.
 Lemma lp_sub g : lp_P g → fact_scoped 1 g → lp_P (fact_map (pt_inst (plist [cvp 1])) g).
 Proof.
   intros (n & [-> | ->]) _; exists (S n); cbn [fact_map];
-    rewrite pt_inst_shift, pt_inst_slot, cvp_inst; [left|right]; done.
+    rewrite pt_inst_shift, pt_inst_payload, cvp_inst; [left|right]; done.
 Qed.
 
-Lemma lp_fact W Ψ n i : (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (pt_shift 1 (cvp n)) (pt_slot (cvp n) i).
+Lemma lp_fact W Ψ n i : (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (pt_shift 1 (cvp n)) (pt_payload (cvp n) i).
 Proof.
   intros Hg Hi. pose proof (cvp_vb n) as Hv.
-  apply (sl_hyp0 W Ψ lp_P (ids 1) (pt_shift 1 (cvp n)) (pt_slot (cvp n) i)); [done| | | |].
+  apply (sl_hyp0 W Ψ lp_P (ids 1) (pt_shift 1 (cvp n)) (pt_payload (cvp n) i)); [done| | | |].
   - exists n. destruct i as [|[|]]; [by left|by right|lia].
   - split; cbn; done.
   - by apply pt_inst_ids.
@@ -471,7 +471,7 @@ Proof. induction n as [|n IH]; [done|]. exact IH. Qed.
 
 (** Selection at round n asks p_n ≺ p_n[0], p_n ≺ p_n[1] and
     p_n + 1 ≺ p_n[i], all from C and program order. *)
-Lemma lp_sel W Ψ n i : world_wf W → (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (cvp n) (pt_slot (cvp n) i).
+Lemma lp_sel W Ψ n i : world_wf W → (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (cvp n) (pt_payload (cvp n) i).
 Proof. intros HW Hg Hi. eapply sl_trans; [apply (slt_po W _ _ HW)|by apply lp_fact]. Qed.
 
 Definition srv_body : ty := TLolli (Some (sl1 (pv 0 0))) None (TSess Rs (pv 0 0)) TUnit.
@@ -486,7 +486,7 @@ Definition srv : expr := EBox (Lam (branch (Var 0) next_arm stop_arm)).
 Lemma srv_typed W Ψ F : world_wf W → typed W ∅ Ψ ∅ [] F srv Tsrv.
 Proof.
   intros HW. unfold srv, Tsrv.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 lp_C srv_body. cbn.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ' := Q) end.
   assert ((lp_C, ids 1) ∈ Ψ') as Hg by (apply elem_of_app; right; by left).
@@ -537,7 +537,7 @@ Definition loop_main : expr :=
       client))).
 
 Definition lp_rank_n : pname → nat :=
-  fix h p := match p with NSlot q b _ => h q + b + 2 | _ => 0 end.
+  fix h p := match p with NPayload q b _ => h q + b + 2 | _ => 0 end.
 
 Lemma lp_acyclic : c0_acyclic 1 lp_C.
 Proof.

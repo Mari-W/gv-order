@@ -61,15 +61,15 @@ Definition bo_main : expr :=
 (** The creation constraint of c, over ι = 0, is ι ≺ ι[A], ι ≺ ι[B] and
     ι[B] ≺ ι[A]. The rank of a point is ten times its size plus 5 on the
     name of ι[A], so ι = 0, ι[B] = 10 and ι[A] = 15. *)
-Abbreviation sA k := (Pt (NSlot (NVar 0) 0 0) k).
-Abbreviation sB k := (Pt (NSlot (NVar 0) 0 1) k).
+Abbreviation sA k := (Pt (NPayload (NVar 0) 0 0) k).
+Abbreviation sB k := (Pt (NPayload (NVar 0) 0 1) k).
 
 Definition boc_P (g : fact) : Prop :=
   g = FLt (pv 0 0) (sA 0) ∨ g = FLt (pv 0 0) (sB 0) ∨ g = FLt (sB 0) (sA 0).
 Definition boc_C : bcs := BCs [] boc_P.
 
 Definition boc_rank (x : point) : nat :=
-  10 * pt_size x + if decide (pt_name x = NSlot (NVar 0) 0 0) then 5 else 0.
+  10 * pt_size x + if decide (pt_name x = NPayload (NVar 0) 0 0) then 5 else 0.
 
 Lemma boc_ok peq plt : cc_ok peq plt boc_C.
 Proof.
@@ -84,8 +84,8 @@ Qed.
     c[B] ≺ δ ≺ c[B]+1 and δ ≺ c[A]. It derives c[B] ≺ c[A] between the
     outer points, which the constraint of c states. *)
 Definition bod_P (g : fact) : Prop :=
-  g = FLt (Pt (NSlot (NVar 1) 0 1) 0) (pv 0 0) ∨ g = FLt (pv 0 0) (Pt (NSlot (NVar 1) 0 1) 1) ∨
-  g = FLt (pv 0 0) (Pt (NSlot (NVar 1) 0 0) 0).
+  g = FLt (Pt (NPayload (NVar 1) 0 1) 0) (pv 0 0) ∨ g = FLt (pv 0 0) (Pt (NPayload (NVar 1) 0 1) 1) ∨
+  g = FLt (pv 0 0) (Pt (NPayload (NVar 1) 0 0) 0).
 Definition bod_C : bcs := BCs [pvar 0] bod_P.
 
 Lemma bod_ok W : cc_ok (seqs W [(boc_C, [pvar 0])]) (slt W [(boc_C, [pvar 0])]) bod_C.
@@ -97,14 +97,14 @@ Proof.
     destruct Hf as [-> | [-> | ->]]; injection E as -> ->; cbn in Hu; try done.
     destruct Hf' as [-> | [-> | ->]]; injection E' as -> ->; cbn in Hv; try done.
     + apply (glt_ofs _ _ _ 0 1). lia.
-    + apply (glt_up _ _ (Pt (NSlot (NVar 0) 0 1) 0) (Pt (NSlot (NVar 0) 0 0) 0)).
+    + apply (glt_up _ _ (Pt (NPayload (NVar 0) 0 1) 0) (Pt (NPayload (NVar 0) 0 0) 0)).
       eapply (sl_hyp0 _ _ _ _ (sB 0) (sA 0)); [by left|by right; right|cbn; lia|reflexivity|reflexivity].
 Qed.
 
 (** After both [new]s d is 0 and c is 1. The points of c after the
     choice are c[A]+k and c[B]+k. *)
-Abbreviation bA k := (Pt (NSlot (NVar 1) 0 0) k).
-Abbreviation bB k := (Pt (NSlot (NVar 1) 0 1) k).
+Abbreviation bA k := (Pt (NPayload (NVar 1) 0 0) k).
+Abbreviation bB k := (Pt (NPayload (NVar 1) 0 1) k).
 
 Lemma bo_typed : styped ∅ [] [] (∅, None) bo_main TUnit.
 Proof.

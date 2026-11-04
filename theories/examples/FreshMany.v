@@ -43,9 +43,9 @@ Definition fm_C : bcs := BCs [pvar 0; pvar 1] fm_facts.
 Lemma fm_typed W F : world_wf W → typed W ∅ [] ∅ [] F fm_box fb_ty.
 Proof.
   intros HW. unfold fm_box, fb_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pvar 1)) None 1); [set_solver|cbn; set_solver|].
-  eapply t_wk; [apply lwk_cons, lwk_drop; [done|constructor]|].
+  eapply t_weak; [apply lwk_cons, lwk_drop; [done|constructor]|].
   cbn. tstep; [tstep|]. cbn.
   refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sdd fm_C _ _ _ _).
   { intros f [->|[k ->]] Hs.
@@ -144,7 +144,7 @@ Proof.
   { tstep; [tstep|apply fm_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
-  assert (∀ σ, sf_pinst σ (∅, None) = ((∅ : gset point), (None : option fslot))) as Hsf
+  assert (∀ σ, sf_pinst σ (∅, None) = ((∅ : gset point), (None : option futrest))) as Hsf
     by (intros σ; unfold sf_pinst; simpl; by rewrite set_map_empty).
   rewrite tenv_pinst_empty, Hsf. cbn.
   match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ => change T with fb_ty end.

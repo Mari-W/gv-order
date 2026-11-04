@@ -88,7 +88,7 @@ Record level := Level {
       the type names.
     - V-Abs: the closure holds only above its lower point
       ({λ} ≼ heads(Θ)); applied in any future world to an argument,
-      it is a good term under any frame above its upper point. The
+      it is a good term under any future above its upper point. The
       argument's environment may hold the other ends of channels the
       closure holds ([tenv_comp]).
     - V-Const: the constant's signature is read in W, up to ≈_W.
@@ -253,7 +253,7 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
       at_cost Elow En n (tcost α) W Θ T F e'
   | LNew c =>                                          (* O-New *)
       c ∉ dom Θ →
-      ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ frame_roots F ∧
+      ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∧
         sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
         at_cost Elow En n (tcost α) W'
           (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
@@ -285,11 +285,11 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
         at_cost Elow En n (tcost α) W Θ1 T F e'
   | LSess (SSel c b) =>                                (* O-Select *)
       ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SPlus s1 s2) k Θr ∧
-        tenv_ext Θr c (sbranch b s1 s2, pt_slot k (bidx b)) Θ' ∧
+        tenv_ext Θr c (sbranch b s1 s2, pt_payload k (bidx b)) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
   | LSess (SBra c b) =>                                (* O-Branch *)
       ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SWith s1 s2) k Θr ∧
-        tenv_ext Θr c (sbranch b s1 s2, pt_slot k (bidx b)) Θ' ∧
+        tenv_ext Θr c (sbranch b s1 s2, pt_payload k (bidx b)) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
   end.
 
@@ -394,7 +394,7 @@ Definition Pchoice_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (c : chan) (b : bool)
     (u : sty → sty → sty) (p' : proc) : Prop :=
   ∃ Σ1 s1 s2 k, senv_hd Σ c (u s1 s2) k Σ1 ∧ c ∉ dom Σ1 ∧
-    X W (<[c := (sbranch b s1 s2, pt_slot k (bidx b))]> Σ1) T p'.
+    X W (<[c := (sbranch b s1 s2, pt_payload k (bidx b))]> Σ1) T p'.
 
 (** c = d cannot reach the interface: Σ holds one end per channel. *)
 Definition Plink_case (X : world → senv → ty → proc → Prop)
@@ -972,8 +972,8 @@ Lemma Erel_S_step n W Θ T F e α e' :
   Erel (S n) W Θ T F e → tstep e α e' → Ecase n W Θ T F α e'.
 Proof. intros HE Hst. apply Erel_S_iff in HE as (_ & _ & H). auto. Qed.
 
-(** TLR-VAL: values in V are in E, under any frame: a value does not
-    step, so neither readiness nor the frame is asked of it. *)
+(** TLR-VAL: values in V are in E, under any future: a value does not
+    step, so neither readiness nor the future is asked of it. *)
 Lemma Vrel_Erel n W Θ T F v : Vrel n W Θ T v → Erel n W Θ T F v.
 Proof.
   intros HV. assert (is_val v) by eauto using Vrel_val.
@@ -1088,7 +1088,7 @@ Qed.
     are covered by Θ; the grounding substitution brings its own Θ',
     composed with Θ (Θ'' = Θ, Θ'). The two may overlap in dual ends at
     aliased points, because a bound variable may hold the other end of
-    a channel of Θ (sharp edges 50). F is the frame, and F = ∅ is the
+    a channel of Θ (sharp edges 50). F is the future, and F = ∅ is the
     paper's judgment (Def. 3.3) plus readiness.
 
     The judgment is purely semantic: it says nothing about the syntax
@@ -1252,7 +1252,7 @@ Qed.
 
 (** V-Box at a thunk type ∗ ⊸^u T, read as the box of sharp edge 52:
     the unrolled body is in E at every lower index, admissible instance
-    and frame above the instantiated upper point. *)
+    and future above the instantiated upper point. *)
 Lemma Vrel_box_thunk_iff n W Θ m k C ub T v :
   Vrel n W Θ (TBox m k C (TLolli ub None TUnit T)) v ↔
   Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧

@@ -32,7 +32,7 @@ Set Default Proof Using "All".
 
 Lemma geq_cn (E : prel) (cn : point → point) x y :
   (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
-  (∀ x y i, cn x = cn y → cn (pt_slot x i) = cn (pt_slot y i)) →
+  (∀ x y i, cn x = cn y → cn (pt_payload x i) = cn (pt_payload y i)) →
   (∀ x y, E x y → cn x = cn y) →
   geq E x y → cn x = cn y.
 Proof. intros Hs Hl HE. induction 1; try congruence; auto. Qed.
@@ -43,7 +43,7 @@ Lemma wgen_strict_by {A} (R : A → A → Prop) N E L (cn : point → point) (r 
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
-  (∀ x y i, cn x = cn y → cn (pt_slot x i) = cn (pt_slot y i)) →
+  (∀ x y i, cn x = cn y → cn (pt_payload x i) = cn (pt_payload y i)) →
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, R (r x) (r (pt_shift 1 x))) →
   (∀ x y, L x y → R (r (cn x)) (r (cn y))) →
@@ -59,9 +59,9 @@ Proof.
   intros x H. apply Hlt in H. exact (Hirr _ H).
 Qed.
 
-Lemma slot_respect (cn : point → point) :
-  (∀ x i, cn (pt_slot x i) = pt_slot (cn x) i) →
-  ∀ x y i, cn x = cn y → cn (pt_slot x i) = cn (pt_slot y i).
+Lemma payload_respect (cn : point → point) :
+  (∀ x i, cn (pt_payload x i) = pt_payload (cn x) i) →
+  ∀ x y i, cn x = cn y → cn (pt_payload x i) = cn (pt_payload y i).
 Proof. intros Hl x y i E. by rewrite !Hl, E. Qed.
 
 Lemma wgen_strict N E L (cn : point → point) (r : point → nat) :
@@ -69,7 +69,7 @@ Lemma wgen_strict N E L (cn : point → point) (r : point → nat) :
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
-  (∀ x i, cn (pt_slot x i) = pt_slot (cn x) i) →
+  (∀ x i, cn (pt_payload x i) = pt_payload (cn x) i) →
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, r x < r (pt_shift 1 x)) →
   (∀ x y, L x y → r (cn x) < r (cn y)) →
@@ -77,7 +77,7 @@ Lemma wgen_strict N E L (cn : point → point) (r : point → nat) :
 Proof.
   intros HN HE HL Hs Hl Hc Hr HLr.
   apply (wgen_strict_by lt N E L cn r); [intros a; lia|intros a b c; lia|exact HN|exact HE
-    |exact HL|exact Hs|by apply slot_respect|exact Hc|exact Hr|exact HLr].
+    |exact HL|exact Hs|by apply payload_respect|exact Hc|exact Hr|exact HLr].
 Qed.
 
 (** Strictness when ≡ relates payload points (Forwarder.v). The map [cn]
@@ -87,7 +87,7 @@ Lemma wgen_strict_cong N E L (cn : point → point) (r : point → nat) :
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
-  (∀ x y i, cn x = cn y → cn (pt_slot x i) = cn (pt_slot y i)) →
+  (∀ x y i, cn x = cn y → cn (pt_payload x i) = cn (pt_payload y i)) →
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, r x < r (pt_shift 1 x)) →
   (∀ x y, L x y → r (cn x) < r (cn y)) →
@@ -106,7 +106,7 @@ Lemma wgen_strict_lex N E L (cn : point → point) (r : point → nat * nat) :
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
-  (∀ x i, cn (pt_slot x i) = pt_slot (cn x) i) →
+  (∀ x i, cn (pt_payload x i) = pt_payload (cn x) i) →
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, lexlt (r x) (r (pt_shift 1 x))) →
   (∀ x y, L x y → lexlt (r (cn x)) (r (cn y))) →
@@ -115,7 +115,7 @@ Proof.
   intros HN HE HL Hs Hl Hc Hr HLr.
   apply (wgen_strict_by lexlt N E L cn r); [intros a; unfold lexlt; lia
     |intros a b c; unfold lexlt; lia|exact HN|exact HE
-    |exact HL|exact Hs|by apply slot_respect|exact Hc|exact Hr|exact HLr].
+    |exact HL|exact Hs|by apply payload_respect|exact Hc|exact Hr|exact HLr].
 Qed.
 
 (** ** Ranks into ℤ with a top element
@@ -146,7 +146,7 @@ Lemma wgen_strict_z N E L (cn : point → point) (r : point → zrank) :
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
-  (∀ x y i, cn x = cn y → cn (pt_slot x i) = cn (pt_slot y i)) →
+  (∀ x y i, cn x = cn y → cn (pt_payload x i) = cn (pt_payload y i)) →
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, zlt (r x) (r (pt_shift 1 x))) →
   (∀ x y, L x y → zlt (r (cn x)) (r (cn y))) →
@@ -165,7 +165,7 @@ Lemma wgen_strict_den {D A} (R : A → A → Prop) N E L (den : point → D)
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, den (pt_shift 1 x) = dsh (den x)) →
-  (∀ x i, den (pt_slot x i) = dsl (den x) i) →
+  (∀ x i, den (pt_payload x i) = dsl (den x) i) →
   (∀ x y, E x y → den x = den y) →
   (∀ d, R (r d) (r (dsh d))) →
   (∀ x y, L x y → R (r (den x)) (r (den y))) →
@@ -190,7 +190,7 @@ Lemma c0_acyclic_den {D A} (R : A → A → Prop) n P (den : point → D)
     (dsh : D → D) (dsl : D → nat → D) (r : D → A) :
   (∀ a, ¬ R a a) → (∀ a b c, R a b → R b c → R a c) →
   (∀ x, den (pt_shift 1 x) = dsh (den x)) →
-  (∀ x i, den (pt_slot x i) = dsl (den x) i) →
+  (∀ x i, den (pt_payload x i) = dsl (den x) i) →
   (∀ x y, P (FEq x y) → den x = den y) →
   (∀ d, R (r d) (r (dsh d))) →
   (∀ x y, P (FLt x y) → R (r (den x)) (r (den y))) →
@@ -215,7 +215,7 @@ Lemma c0_acyclic_rank n P (r : point → nat) :
   (∀ x y, ¬ P (FEq x y)) → (∀ x y, P (FLt x y) → r x < r y) →
   c0_acyclic n (BCs [] P).
 Proof.
-  intros Hr HE HL. apply (c0_acyclic_den lt n P id (pt_shift 1) pt_slot r); try done.
+  intros Hr HE HL. apply (c0_acyclic_den lt n P id (pt_shift 1) pt_payload r); try done.
   - intros a. lia.
   - intros a b c. lia.
   - intros x y H. by destruct (HE x y).
@@ -223,7 +223,7 @@ Qed.
 
 (** A rank for top-level variables: w per variable index, one per step. *)
 Fixpoint pn_vidx (p : pname) : nat :=
-  match p with NVar a => a | NConst _ => 0 | NSlot q _ _ => pn_vidx q end.
+  match p with NVar a => a | NConst _ => 0 | NPayload q _ _ => pn_vidx q end.
 
 Definition vrank (w : nat) (x : point) : nat := w * pn_vidx (pt_name x) + pt_off x.
 
@@ -236,7 +236,7 @@ Fixpoint pn_rank (g : nat → nat) (h : nat → nat → nat → nat) (p : pname)
   match p with
   | NConst a => g a
   | NVar _ => 0
-  | NSlot q b i => h (pn_rank g h q) b i
+  | NPayload q b i => h (pn_rank g h q) b i
   end.
 
 Definition prank (k : pname → nat) (g : nat → nat) (h : nat → nat → nat → nat) (x : point) : nat :=
@@ -362,10 +362,10 @@ Section rules.
 
   Lemma tv_var Φ Ψ Δ F x T :
     Δ !! x = Some (Some T) → oku x Δ = true → typed W Φ Ψ ∅ Δ F (Var x) T.
-  Proof. intros H1 H2. eapply t_wk; [by apply lonly_wk|]. apply t_var. by apply lonly_only. Qed.
+  Proof. intros H1 H2. eapply t_weak; [by apply lonly_wk|]. apply t_var. by apply lonly_only. Qed.
 
   Lemma tv_unit Φ Ψ Δ F : allunl Δ = true → typed W Φ Ψ ∅ Δ F EUnit TUnit.
-  Proof. intros H. eapply t_wk; [by apply nones_wk|]. apply t_unit, lenv_empty_nones. Qed.
+  Proof. intros H. eapply t_weak; [by apply nones_wk|]. apply t_unit, lenv_empty_nones. Qed.
 
   Lemma tv_app Φ Ψ Δ F e1 e2 ub lb T U :
     sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
@@ -392,7 +392,7 @@ Section rules.
     - apply comp0.
     - apply lenv_split_nones_l.
     - exact Hu.
-    - apply t_konst; [apply lenv_empty_nones|done|done].
+    - apply t_const; [apply lenv_empty_nones|done|done].
     - destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L.
   Qed.
 
@@ -414,7 +414,7 @@ Section rules.
     typed W Φ Ψ ∅ Δ F (LetU e1 e2) T.
   Proof.
     intros Hs H1 H2. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
-    eapply t_letu; [apply comp0|by apply lp_split| |exact H2].
+    eapply t_letstar; [apply comp0|by apply lp_split| |exact H2].
     by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
@@ -425,7 +425,7 @@ Section rules.
     typed W Φ Ψ ∅ Δ F (LetP e1 e2) T.
   Proof.
     intros Hs H1 H2. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
-    eapply t_letp; [apply comp0|by apply lp_split| |exact H2].
+    eapply t_letpair; [apply comp0|by apply lp_split| |exact H2].
     by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
@@ -434,12 +434,12 @@ Section rules.
     lb_below_hb W Ψ lb (lenv_heads Δ) (lenv_bot Δ) →
     typed W (<[φ := ub]> Φ) Ψ ∅ (Some T :: Δ) (∅, Some (FVar φ)) e U →
     typed W Φ Ψ ∅ Δ F (Lam e) (TLolli ub lb T U).
-  Proof. intros Hφ Hl H. eapply t_lam; [exact Hφ| |exact H]. by rewrite tenv_heads0, union_empty_l_L. Qed.
+  Proof. intros Hφ Hl H. eapply t_abs; [exact Hφ| |exact H]. by rewrite tenv_heads0, union_empty_l_L. Qed.
 
 End rules.
 
-(** {u} ≺ F, split into the points of F and the frame variable. *)
-Section frames.
+(** {u} ≺ F, split into the points of F and the future variable. *)
+Section futures.
   Context (W : world).
 
   Lemma ubs_intro Ψ Φ x P o :
@@ -460,7 +460,7 @@ Section frames.
 
   Lemma slt_po Ψ x : world_wf W → slt W Ψ x (pt_shift 1 x).
   Proof. intros HW. apply sl_w, (wf_lt_po _ HW). Qed.
-End frames.
+End futures.
 
 (** p at or before q in program order is a later offset of one name. *)
 Lemma ple_inv p q : ple p q → pt_name p = pt_name q ∧ pt_off p ≤ pt_off q.
@@ -476,7 +476,7 @@ Qed.
     points reachable from ι are the ends of the walks from ι. Ceilings
     over a segment quantify over walks. *)
 Definition wstep (x : point) (s : option bool) : point :=
-  match s with None => pt_shift 1 x | Some i => pt_slot x (bidx i) end.
+  match s with None => pt_shift 1 x | Some i => pt_payload x (bidx i) end.
 
 Fixpoint pwalk (x : point) (w : list (option bool)) : point :=
   match w with [] => x | s :: w' => pwalk (wstep x s) w' end.
@@ -485,7 +485,7 @@ Lemma pwalk_app x u v : pwalk x (u ++ v) = pwalk (pwalk x u) v.
 Proof. revert x. induction u; intros x; simpl; auto. Qed.
 
 Lemma wstep_inst σ x s : pt_inst σ (wstep x s) = wstep (pt_inst σ x) s.
-Proof. destruct s; simpl; [apply pt_inst_slot|apply pt_inst_shift]. Qed.
+Proof. destruct s; simpl; [apply pt_inst_payload|apply pt_inst_shift]. Qed.
 
 Lemma pwalk_inst σ x w : pt_inst σ (pwalk x w) = pwalk (pt_inst σ x) w.
 Proof. revert x. induction w as [|s w IH]; intros x; simpl; [done|]. by rewrite IH, wstep_inst. Qed.
@@ -523,7 +523,7 @@ Lemma ptyped_closed_s W t T :
   prim T → styped ∅ [] [] (∅, None) t T → ptyped W ∅ (∅, {[+ t +]}) T.
 Proof. intros HT Ht. apply ptyped_closed; [done|by apply styped_typed]. Qed.
 
-(** Membership in a concrete frame: one goal per point. *)
+(** Membership in a concrete future: one goal per point. *)
 Ltac mem_cases H :=
   cbn in H; rewrite ?elem_of_union, ?elem_of_singleton in H;
   repeat match type of H with _ ∨ _ => destruct H as [H|H] end;
@@ -669,7 +669,7 @@ Qed.
 
 Ltac conv_sess := apply teq_steq; split; first [done|apply seq_unf; done].
 
-Ltac skn_slot := right; eexists _, _, (pvar 0); split_and!; [by left|by left|done].
+Ltac skn_payload := right; eexists _, _, (pvar 0); split_and!; [by left|by left|done].
 
 Ltac box_open1 C T :=
   try change (bcs_inst (pshift 1) C) with C;
@@ -683,7 +683,7 @@ Ltac box_open1 C T :=
     order facts are the creation constraint of its new, and later code
     reads them as hypotheses. *)
 
-Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option fslot)).
+Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option futrest)).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 Lemma fhyps_pinst_empty σ : fhyps_pinst σ ∅ = ∅.

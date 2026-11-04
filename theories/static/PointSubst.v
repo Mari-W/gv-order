@@ -1,7 +1,7 @@
 (** * Point substitution (spec §9, sharp edges 56, 57, 65)
 
     Substituting points for point variables in types, constraints,
-    environments, hypotheses and frames, and the transport of every
+    environments, hypotheses and futures, and the transport of every
     fact of the static system along a substitution. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -31,13 +31,13 @@ Proof.
   destruct (pn_inst σ p). simpl. f_equal. lia.
 Qed.
 
-Lemma pt_inst_slot σ x i : pt_inst σ (pt_slot x i) = pt_slot (pt_inst σ x) i.
-Proof. destruct x as [p o]. unfold pt_inst, pt_slot, pt_shift. simpl. done. Qed.
+Lemma pt_inst_payload σ x i : pt_inst σ (pt_payload x i) = pt_payload (pt_inst σ x) i.
+Proof. destruct x as [p o]. unfold pt_inst, pt_payload, pt_shift. simpl. done. Qed.
 
 Lemma pn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
 Proof.
   induction p as [a|a|p IH b i]; simpl; [done|done|].
-  by rewrite pt_inst_slot, pt_inst_shift, IH.
+  by rewrite pt_inst_payload, pt_inst_shift, IH.
 Qed.
 
 Lemma pt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
@@ -385,8 +385,8 @@ Lemma payload_pinst σ m T x :
   pscoped m T → pinst_ty σ (payload_at m T x) = payload_at m T (pt_inst σ x).
 Proof.
   intros HT. unfold payload_at, ty_inst. rewrite pinst_ty_comp.
-  apply (pinst_ty_ext_scoped T m); [done|]. intros a Ha. simpl. unfold plist, slots.
-  rewrite !list_lookup_fmap, !lookup_seq_lt by done. simpl. apply pt_inst_slot.
+  apply (pinst_ty_ext_scoped T m); [done|]. intros a Ha. simpl. unfold plist, payload_pts.
+  rewrite !list_lookup_fmap, !lookup_seq_lt by done. simpl. apply pt_inst_payload.
 Qed.
 
 (** E-Const asks the payload of send and recv to be scoped by its m
@@ -545,7 +545,7 @@ Lemma cc_ok_pinst σ peq plt peq' plt' C :
 Proof.
   intros He Hl. apply (cc_ok_transfer peq plt peq' plt' C (bcs_inst σ C) (pt_inst (pup 1 σ))).
   - intros x. apply pt_inst_shift.
-  - intros x i. apply pt_inst_slot.
+  - intros x i. apply pt_inst_payload.
   - intros p Hp. rewrite pt_inst_new; [done|apply pup1_0|done].
   - intros x Hx. rewrite pt_root_inst. destruct (pt_root x) as [c|[|k]|q b i]; try done.
 
@@ -608,8 +608,8 @@ Proof.
     apply (cc_model peq plt C (pt_inst τ) pofs (λ _ _, False) (λ _ _, False)).
     + exact Hτo.
     + intros x. apply pt_inst_shift.
-    + intros x i _. apply pt_inst_slot.
-    + intros x y i E. rewrite !pt_inst_slot. by rewrite E.
+    + intros x i _. apply pt_inst_payload.
+    + intros x y i E. rewrite !pt_inst_payload. by rewrite E.
     + apply pofs_trans.
     + intros p _. apply pofs_shift.
     + apply pofs_irrefl.
@@ -672,9 +672,9 @@ Section transfer.
       apply elem_of_map in Hh' as (h0 & -> & Hh0). by apply Hlt, Hh.
     - rewrite payload_pinst, pt_inst_shift by done. apply KTRecv.
     - apply KTClos.
-    - rewrite pt_inst_slot. apply KTSel1. rewrite <-pt_inst_slot. by apply Hlt.
-    - rewrite pt_inst_slot. apply KTSel2. rewrite <-pt_inst_slot. by apply Hlt.
-    - rewrite !pt_inst_slot. apply KTBra; rewrite <-pt_inst_slot; by apply Hlt.
+    - rewrite pt_inst_payload. apply KTSel1. rewrite <-pt_inst_payload. by apply Hlt.
+    - rewrite pt_inst_payload. apply KTSel2. rewrite <-pt_inst_payload. by apply Hlt.
+    - rewrite !pt_inst_payload. apply KTBra; rewrite <-pt_inst_payload; by apply Hlt.
     - apply KTLink. by apply Heq.
     - assert (∀ a, pt_inst (plist (pt_inst σ <$> xs)) (pup n σ a) = pt_inst σ (plist xs a))
         as Hc by (intros a; by apply plist_pup_comm).
@@ -729,7 +729,7 @@ Section transfer.
     - intros x y. apply se_sym.
     - intros x y z. apply se_trans.
     - intros x y H. rewrite !pt_inst_shift. by apply se_shift.
-    - intros x y i H. rewrite !pt_inst_slot. by apply se_slot.
+    - intros x y i H. rewrite !pt_inst_payload. by apply se_payload.
     - intros x y H. apply (fl_w (FCtx W1 Ψ' Φ')). by apply pinst_lt.
     - intros x y Hxy. apply fl_points. exact (hyp_fact_inst _ _ _ σ Ψ (FLt x y) HΨ Hxy).
     - exact HΦ.
@@ -871,13 +871,13 @@ Section transfer.
   Qed.
 End transfer.
 
-(** ** Substitution in environments, hypotheses and frames *)
+(** ** Substitution in environments, hypotheses and futures *)
 
 Definition lenv_pinst (σ : nat → point) (Δ : lenv) : lenv := fmap (M:=option) (pinst_ty σ) <$> Δ.
 
 Definition fhyps_pinst (σ : nat → point) (Φ : fhyps) : fhyps := fmap (M:=option) (pt_inst σ) <$> Φ.
 
-Definition sf_pinst (σ : nat → point) (F : sframe) : sframe := (set_map (pt_inst σ) F.1, F.2).
+Definition sf_pinst (σ : nat → point) (F : sfuture) : sfuture := (set_map (pt_inst σ) F.1, F.2).
 
 Lemma unlimited_pinst σ U : unlimited U → unlimited (pinst_ty σ U).
 Proof. by destruct U. Qed.
@@ -1004,7 +1004,7 @@ Proof. apply fmap_empty. Qed.
 Lemma sf_pinst_fresh σ φ : sf_pinst σ (∅, Some (FVar φ)) = (∅, Some (FVar φ)).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
-(** ** Composition and extensionality for environments and frames *)
+(** ** Composition and extensionality for environments and futures *)
 
 Lemma tenv_pinst_comp τ σ Θ : tenv_pinst τ (tenv_pinst σ Θ) = tenv_pinst (pt_inst τ ∘ σ) Θ.
 Proof.
