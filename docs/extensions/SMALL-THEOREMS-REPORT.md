@@ -66,6 +66,8 @@ theories/examples/ChoiceNegative.v.
 | `body0_underivable` | the same for spawn T1, spawn T3 and T2 |
 | `body0_underivable_top` | the same with Ψ = [(C₀, ιs)] for every C₀ that `c0_acyclic` accepts |
 | `c0_irrefl` | c0_acyclic C₀ makes hlt [(C₀, ιs)] irreflexive |
+| `negative_new_at` | with Sch₀ in place of Sch, the premise of `t_new_at` at a and δ (the route of `choice_typed`) has no derivation under any acyclic C₀ |
+| `t2i_underivable`, `bodyg_underivable` | the same results for c′ at any variable i and any spawned thunks |
 
 Plain means that no binding is unlimited or existential, so E-Weak, E-Contract
 and E-Open cannot fire. The proof inverts the receive on c′, reads the payload
@@ -102,10 +104,11 @@ filled in when it ends.
 - The negative control is stated after the two news. The closed term of the
   negative control is the term of `choice_main`, which `choice_typed` types with
   Sch, so no statement about the closed term can express it. The type Sch₀
-  enters at the instance of new. I did not invert the news, because E-Open of
-  the created existential may sit anywhere in the derivation, and I did not
-  prove that the context t_new_at produces from an acyclic C₀ has an
-  irreflexive hlt (it adds ≡ facts on fresh variables only, conjecture).
+  enters at the instance of new. `negative_new_at` covers the route through
+  `t_new_at`, which keeps the top-level hypothesis. A derivation that opens the
+  existential of a new elsewhere in the term is not covered, because E-Open may
+  sit anywhere in the derivation and the context then holds an existential
+  binding, which the inversion excludes.
 - The translation covers the fragment above. Recursive session types that need
   E-Conv up to unfolding, and boxes with session variables, are outside. The
   recursive server of choice-encoding.md is outside.

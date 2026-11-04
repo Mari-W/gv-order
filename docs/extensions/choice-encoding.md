@@ -129,6 +129,11 @@ after the two news. The closed term of the negative control is the term of
 `choice_main`, which `choice_typed` types with Sch, so no statement about the
 closed term can express the negative control. The type Sch₀ enters at the
 instance of new, and the theorems start from the context that the news produce.
+`negative_new_at` covers the route of `choice_typed`. `t_new_at` at a and at δ
+types the body under the top-level hypothesis with the two ends of each channel
+at its point, and with Sch₀ in place of Sch that premise has no derivation under
+any acyclic top-level constraint. A derivation that opens the existential of a
+new elsewhere in the term is not covered.
 
 ## A recursive choice
 
@@ -178,6 +183,7 @@ depth that grows at each carried point by the offset of its base plus 2
 | `t2_underivable` | T2 with both arms at one payload point has no derivation in an irreflexive context | closed |
 | `body0_underivable` | the same for spawn T1, spawn T3 and T2 | closed |
 | `body0_underivable_top` | the same under every acyclic top-level constraint | closed |
+| `negative_new_at` | the premise of `t_new_at` twice with Sch₀ is underivable under every acyclic top-level constraint | closed |
 | `choice_translate` | the translation of the fragment preserves `styped` | closed |
 | `choice_translate_df` | the translation of a closed program of the fragment is deadlock free | closed |
 | `tr_breaks_seq` | two ≈-equal session types whose translations are not ≈-equal | closed |
