@@ -113,6 +113,8 @@ has no axioms and no admitted proofs.
 - `SkipDrop.v`: a program of Mordido and Pérez that drops both ends of a channel at Skip ends in a restricted name that no thread mentions, so it is not deadlock free under `terminated` (`sd_not_deadlock_free`, SHARP-EDGES 151).
 - `SegmentInterleave.v`: a channel created after treeSum returns and ordered against the returned channel in both directions, under a local creation constraint (`si_deadlock_free`, SHARP-EDGES 152).
 - `SegmentDeleg.v`: a channel created at the payload point of the channel treeSum returns and sent on it (`sd_deadlock_free`, SHARP-EDGES 152).
+- `FirstAction.v`: a channel held by the caller and sent at the first action of a segment function, under the box constraint ι ≡ κ[0] (`fa_deadlock_free`, mordido-perez.md, addendum of 2026-11-04).
+- `MuVar.v`: a loop over µβ. &(a, ?∗;β), a µ body that mentions the session variable a of the box, unfolded with `unroll_up` of types/SinstFusion.v (`lp_deadlock_free`).
 
 The context-free work runs on the core of branch `exists` since 2026-11-04 (docs/extensions/context-free.md, section "Ported to the exists core", SHARP-EDGES 141 to 145). theories/pgv and theories/pn are in the build again.
 
