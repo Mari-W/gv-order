@@ -2220,6 +2220,36 @@ choice at x[i] in the signatures of select and branch, in O-Select,
 O-Branch, Q-Select and Q-Branch, and writes payload points from position 0
 as Rocq does.
 
+**151. Dropping a channel at Skip needs a change of the semantics (Claude, 2026-11-04, branch cfst-gaps).**
+Mordido and Pérez drop a channel at Skip, because Skip has priority ⊤ and
+their split copies types of priority ⊤ (Fig. 12, p. 24). Their structural
+congruence then removes the restriction (Fig. 15, p. 30). Our semantics
+keeps a restricted name until a close or a link releases it, and
+`terminated` asks for no restricted name. examples/cfst/SkipDrop.v runs
+`sd_main` to ({a}, {[+ ∗; ∗ +]}), which makes no step
+(`sd_not_deadlock_free`). So a structural rule plus a relation that counts
+a Skip entry as finished cannot prove `soundness` as stated. Either
+`terminated` accepts restricted names that no thread mentions, or a step
+releases them. Both change the statement that every theorem concludes, so
+the author decides. The relation then needs E-Stop and P-Stop to accept
+Skip entries beside the value, readiness to skip them, and a weakening
+lemma that absorbs a Skip end a message brings in. No example of the paper
+drops a channel.
+
+**152. Channels after a segment call type natively (Claude, 2026-11-04, branch cfst-gaps).**
+Version 3 of theories/mp loses a channel created after a segment call when
+the program orders it against the returned channel in both directions, and
+sends of a channel on the returned channel. The core types both.
+examples/cfst/SegmentInterleave.v creates d after treeSum returns c′ at κ′,
+under {κ′ ≺ δ, δ+1 ≺ κ′+1, δ+1 ≺ z}. Each fact relates δ to a known point,
+so `cc_ok` is a local check (`sid_ok`), unlike the global strictness of a
+world of facts that stopped version 3 (mordido-perez.md 15.4).
+examples/cfst/SegmentDeleg.v creates d at κ′[0] with `t_new_at` and sends
+it on c′. The existential of treeSum already states κ′ ≺ κ′[0]. Both
+programs have closed `si_deadlock_free` and `sd_deadlock_free` through
+`soundness_source`. Moving the translation itself to creation constraints
+means giving up `Wmp`, and was not done (entry 145).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
