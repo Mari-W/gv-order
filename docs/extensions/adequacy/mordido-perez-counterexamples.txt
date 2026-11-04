@@ -1,0 +1,423 @@
+Closed programs of Mordido and Pérez that type and get stuck, and the repairs
+
+Source. A. Mordido and J. A. Pérez, Deadlock-Free Context-Free Session Types,
+LNCS 2026, DOI 10.1007/978-3-032-28187-6_11, read in the arXiv copy
+2506.20356v4 (indexed as mordido2026deadlockfree). Page numbers are pdf pages
+of that copy, which match its printed numbers. Types and priorities are Fig. 1
+on p. 6, values and expressions Fig. 3 on p. 8, priority of types Fig. 4 and
+constant types Fig. 5 on p. 11, typing rules Fig. 6 on p. 12 and Figs. 13, 14
+on pp. 25-26, configuration typing Fig. 7 on p. 14, context split Fig. 12 on
+p. 24, reduction Fig. 15 on p. 30, Definition 1 and Theorem 3 on p. 16. Every
+program was checked by hand against these rules. None is machine checked.
+
+Notation. → with bounds ρ,σ and multiplicity m is written ->[ρ,σ]m. un and lin
+are the multiplicities. A priority set |T| is read as on p. 10. "ρ < |Γ|" asks
+ρ below every element. Annotations of constants are written out, as on p. 28.
+e1; e2 abbreviates let _ = e1 in e2 at type Unit (p. 9).
+
+Reading of fork. Fig. 5 gives fork the thunk type Unit ->[ι1,ι2]un Unit. T-AbsUn
+then forbids a thunk that captures a channel, and no example of the paper types.
+The examples write linear thunks (p. 4, p. 38) and the derivation on p. 39 types
+them with T-AbsLin. Programs 2, 3 and 5 read fork with a linear thunk
+Unit ->[ι1,ι2]lin Unit. Programs 1 and 4 use no fork.
+
+Programs 1 and 2 share one cause, the type of a partial send. Program 3 is a
+payload that sits below its carrier, the counterpart of PGV's missing send
+condition (pgv-counterexamples.txt, program 2). Programs 4 and 5 are progress
+failures of the semantics and say nothing about priorities.
+
+
+=====================================================================
+1. A partial send drops its payload
+=====================================================================
+
+Program.
+
+  let (x, y) = new X in
+  let f = send{1}[X]{0}{7}[Close^7] x in
+  let (u, y) = receive{⊤}[Unit]{1}{2}[Wait^2] y in
+  wait{2} y
+
+  X = !^1 Unit; Close^2        dual X = ?^1 Unit; Wait^2
+
+Why it types.
+
+  new X is T-New (unr X ≠ Skip). T-LetPair binds x : X and y : dual X. The
+  sequence is ε, so Ψ stays empty.
+  send{1}[X]{0}{7}[Close^7] is T-Const followed by T-PApp and T-TApp. α :: 1
+  needs 1 ∈ |X| = {1}. ι2 = 0 lies in (⊥, 1). ι3 = 7 lies in (0, ⊤] and
+  7 ∈ |Close^7|. Its type is X ->[⊤,⊥]un (!^0 X; Close^7 ->[⊤,0]lin Close^7)
+  (Fig. 5, p. 11).
+  Applying it to x is T-App with ⊥ < |x : X| = 1 and ⊥ < ⊤. The result has type
+  F = !^0 X; Close^7 ->[⊤,0]lin Close^7 and effect ⊥.
+  T-Let asks ⊥ < |y| = 1. The body is typed with f : F in its context.
+  |F| = ⊤ by Fig. 4, so context split copies f to both sides (S-Top) and every
+  leaf accepts it (T-Var and T-Const ask the rest of the context at ⊤). The
+  body never uses f.
+  receive on y has effect 1. T-LetPair asks 1 < |Γ2|, and Γ2 holds only f at
+  ⊤. wait{2} y is T-App. The program has type Unit, so C-Main applies with
+  Ψ = ε.
+
+Why it gets stuck.
+
+  R-New gives (νxy^ε) •⟨…⟩. send{1}[X]{0}{7}[Close^7] x is a value (Fig. 3,
+  p. 8), so E-LetElim substitutes it for f, which does not occur. x is gone.
+  The thread is receive{…} y in an evaluation context. R-Com needs a send on x
+  in a parallel thread, and there is none. No other rule applies, and the thread
+  is no value. The configuration is irreducible and not ≡ •⟨v⟩, against
+  Definition 1 and Theorem 3 (p. 16).
+
+  Lemma 6 (p. 32) states |Γ| = |T| for every value. The value send{…}x has
+  |Γ| = |X| = 1 and |T| = ⊤, so Lemma 6 fails at it, and type preservation for
+  E-LetElim fails with it (Lemma 2.2 on p. 31 would need |X| = ⊤).
+
+
+=====================================================================
+2. A partial send hides its payload from the order
+=====================================================================
+
+Program 1 discards the payload. This one uses every channel linearly and
+deadlocks by a cycle of priorities.
+
+Program.
+
+  let (x, y) = new X in
+  let (b, b′) = new B in
+  fork{1}{6} (λlin _:Unit.
+      let (u, y) = receive{⊤}[Unit]{1}{2}[Wait^2] y in wait{2} y;
+      let b′ = send{⊤}[Unit]{5}{6}[Close^6] () b′ in close{6} b′);
+  let f = send{1}[X]{0}{7}[Close^7] x in
+  let (u, b) = receive{⊤}[Unit]{5}{6}[Wait^6] b in
+  wait{6} b;
+  let (d, d′) = new D in
+  fork{0}{7} (λlin _:Unit.
+      let (x, d′) = receive{1}[X]{0}{7}[Wait^7] d′ in
+      let x = send{⊤}[Unit]{1}{2}[Close^2] () x in close{2} x; wait{7} d′);
+  let d = f d in close{7} d
+
+  X = !^1 Unit; Close^2      B = ?^5 Unit; Wait^6      D = !^0 X; Close^7
+
+Why it types.
+
+  First child, holding y : ?^1 Unit; Wait^2 and b′ : !^5 Unit; Close^6.
+  receive on y has effect 1 and 1 < |b′| = 5. wait y has effect 2 < 5. send on
+  b′ has effect 5 with nothing else held, then close at 6. Its thunk has lower
+  bound |Γ| = 1 and effect 6 (T-AbsLin), so fork{1}{6} applies.
+  Second child, holding d′ : ?^0 X; Wait^7. receive{1}[X]{0}{7}[Wait^7] needs
+  1 ∈ |X| and 0 < 1. T-LetPair asks 0 < |Γ2| with Γ2 empty, and it asks nothing
+  of the bound x and d′. send on x has effect 1 < |d′| = 7, close x has effect
+  2 < 7, then wait d′ at 7.
+  Main thread. Each fork has effect ⊥, so every T-Let around a fork holds. f has
+  type F = !^0 X; Close^7 ->[⊤,0]lin Close^7 and |F| = ⊤, as in program 1.
+  receive on b has effect 5, and T-LetPair asks 5 < |Γ2| where Γ2 holds only f
+  at ⊤. wait b has effect 6 < ⊤. f d is T-App with ⊥ < |d| = 0 and ⊥ < ⊤, its
+  effect is 0, and close d follows at 7. The type is Unit.
+
+Why it deadlocks.
+
+  After both news and the first fork, E-LetElim substitutes the value send{…}x
+  for f. Main blocks on receive b. Its partner b′ sends only after the first
+  child receives on y. The first child blocks on receive y. Its partner x sits
+  inside the value send{…}x in main's continuation and is sent to the second
+  child only after main passes receive b. The second child is not forked yet.
+  No rule applies and main is no value, against Theorem 3 (p. 16).
+
+  The cycle is main at 5 holding x at 1 inside f, and the first child acting on
+  y at 1 before b′ at 5. The type of f reports ⊤ instead of 1, so T-LetPair
+  compares 5 with ⊤.
+
+  Our system rejects it. Our send takes the pair ⟨v, c⟩, so no partial send
+  exists. Written as λc. send ⟨x, c⟩, the closure has lower point (x,0), main
+  needs (b,0) ≺ (x,0) at its receive, and the first child needs (x,0) ≺ (b,0).
+
+
+=====================================================================
+3. A polymorphic payload sits below its carrier
+=====================================================================
+
+The program reads fork as above, keeps the printed send, and assumes repair R5
+below. Under the printed E-PInst it is stuck already by program 5. With R5 it
+deadlocks by a cycle of priorities that the rules accept.
+
+Program.
+
+  let (c′, c) = new P 1 10 in                 Ψ: c′ ↦ π̄, c ↦ π̄,  π̄ = [1, 11, 21, …]
+  let (d, d′) = new D in
+  let (e, e′) = new E in
+  fork{1}{8} (λlin _:Unit.
+      let d = send{11}[P]{3}{8}[Close^8] c′ d in close{8} d);
+  fork{2}{8} (λlin _:Unit.
+      let (u, e′) = receive{⊤}[Unit]{2}{7}[Wait^7] e′ in
+      let (c′, d′) = receive{11}[P]{3}{8}[Wait^8] d′ in
+      let c′ = send{⊤}[Unit]{1}{6}[Close^6] () (inst c′) in
+      close{6} c′; wait{7} e′; wait{8} d′);
+  let (u, c) = receive{⊤}[Unit]{1}{6}[Wait^6] (inst c) in
+  let e = send{⊤}[Unit]{2}{7}[Close^7] () e in
+  wait{6} c; close{7} e
+
+  P = ∀^S ι^(⊥,⊤). !^ι Unit; Close^(ι+5)       dual P = ∀^S ι^(⊥,⊤). ?^ι Unit; Wait^(ι+5)
+  D = !^3 P; Close^8                            E = !^2 Unit; Close^7
+
+Why it types.
+
+  new P 1 10 is T-NewPoly with the sequence π̄ = [1, 11, 21, …], and T-LetPair
+  maps c′ : P and c : dual P to π̄. new D and new E are T-New. D is well formed
+  (F-MsgOut, the ∀^S binder occurs once and under an empty Θ).
+  T-App hands the full map Ψ to both premises (p. 13), so both thunks see
+  c′ ↦ π̄. |P| is the union of |!^ρ Unit; Close^(ρ+5)| over ρ ∈ Ψ(c′), which is
+  {1, 11, 21, …} (Fig. 4).
+  First child, holding c′ and d. T-TApp at α :: 11 asks 11 ∈ |P|, which holds.
+  ι2 = 3 lies in (⊥, 11). The payload c′ is passed at type P without inst, so
+  the payload argument asks only ⊥ < |c′| = 1. The send has effect 3, then
+  close d at 8.
+  Second child, holding e′ : ?^2 Unit; Wait^7 and d′ : ?^3 P; Wait^8. receive
+  on e′ has effect 2 < |d′| = 3. receive{11}[P]{3}{8}[Wait^8] needs 11 ∈ |P| and
+  3 < 11. T-LetPair asks 3 < |e′| = 7 and nothing of the bound c′ and d′.
+  inst c′ is T-Inst with ρ = ⌈Ψ(c′)⟫ = 1, giving !^1 Unit; Close^6. The send has
+  effect 1, below |d′| = 8 and |e′| = 7, and T-Let pops 1 from c′. close c′ at 6,
+  wait e′ at 7 and wait d′ at 8 each lie below what is still held.
+  Main thread, holding c and e. inst c gives ?^1 Unit; Wait^6. receive has
+  effect 1 < |e| = 2. send on e has effect 2 < |c| = 6. wait c at 6 < |e| = 7,
+  then close e at 7. Each fork has effect ⊥. The type is Unit.
+
+  The received variable is named c′, and the second thunk is typed under the
+  map that holds c′ ↦ π̄. The paper names variables after channels in the same
+  way (let c1 = send () (inst c1), p. 4) and α-renames formal parameters to the
+  concrete endpoints (p. 28).
+
+Why it deadlocks.
+
+  Main blocks on receive c, whose partner c′ is the payload of the first child.
+  The first child blocks on sending over d, because the second child receives
+  on d′ only after e′. The second child blocks on receive e′, because main sends
+  on e only after receiving on c. No rule applies and main is no value, against
+  Theorem 3 (p. 16).
+
+  The payload c′ acts next at 1, and the carrier d acts at 3. T-TApp asks only
+  11 ∈ |P|, and |P| holds every element of the sequence. The same check with a
+  monomorphic payload asks the one priority of the payload above the carrier,
+  and the program would fail. Our send premise {ι} ≺ heads(P[ι]) gives
+  (d,0) ≺ (c,0), main gives (c,0) ≺ (e,0), and the second child gives
+  (e,0) ≺ (d,0), a cycle.
+
+  A reading in which a received channel has no entry in Ψ makes inst c′
+  untypable in the second child and rejects the program. Under that reading no
+  received polymorphic channel can ever act, and none of the paper's examples
+  sends one.
+
+
+=====================================================================
+4. fix never reduces
+=====================================================================
+
+Program.
+
+  fix{⊤}[Unit] (λun f : (Unit ->[⊤,⊥]un Unit). f) ()
+
+Why it types.
+
+  T-Const gives fix its type of Fig. 5. T-PApp at ⊤ ∈ [⊥, ⊤]. T-TApp at
+  α := Unit asks ⊤ ∈ |Unit| = {⊤}. The result has type
+  ((Unit -> Unit) -> (Unit -> Unit)) -> (Unit -> Unit), all arrows ->[⊤,⊥]un.
+  The λ is T-AbsUn in the empty context, and its body f is T-Var. Both
+  applications are T-App with every side condition of the form ⊥ < ⊤. The type
+  is Unit and the effect ⊥, so C-Main applies with Ψ = ε.
+
+Why it gets stuck.
+
+  The evaluation context reaches fix{⊤}. fix is a constant, but fix{⊤} is not
+  among the values of Fig. 3 (p. 8), which list the partial applications of
+  close, wait, fork, send and receive only. E-PApp needs Λι.v. Fig. 15 (p. 30),
+  stated as complete, has no rule for fix at all. The thread is irreducible and
+  no value, against Theorem 2 (p. 15) and Theorem 3 (p. 16). Adding fix{σ} and
+  fix{σ}[T] as values moves the failure to fix{σ}[T] v, which matches no rule
+  either. Every program gets stuck once its evaluation reaches fix.
+
+  The type of fix also limits recursion to unrestricted functions α -> α with
+  latent effect ⊥. client of Listing 1.1 has type
+  Stream ->[⊤,⊥]un dual Stream ->[p,⊤]lin Unit, which is no instance, so no
+  recursive example of the paper is a use of fix as printed.
+
+
+=====================================================================
+5. An instantiated channel never synchronizes
+=====================================================================
+
+Program.
+
+  let (x, y) = new Q 1 1 in
+  fork{1}{1} (λlin _:Unit. close{1} (inst x));
+  wait{1} (inst y)
+
+  Q = ∀^S ι^(⊥,⊤). Close^ι       dual Q = ∀^S ι^(⊥,⊤). Wait^ι
+
+Why it types.
+
+  T-NewPoly maps x and y to [1, 2, 3, …]. inst x is T-Inst at ρ = 1 and has type
+  Close^1. close{1} (inst x) is T-App with effect 1. The thunk has lower bound
+  |x| = 1 and effect 1, so fork{1}{1} applies. fork has effect ⊥ < |y| = 1.
+  inst y has type Wait^1, and wait{1} (inst y) has type Unit.
+
+Why it gets stuck.
+
+  After R-NewPoly and R-Fork, E-PInst rewrites inst x to x{1} and inst y to y{1}
+  (p. 30). The threads are close{1} x{1} and wait{1} y{1}. R-Close matches
+  close{_} on an endpoint name and wait{_} on the other (p. 30), and x{1} is no
+  endpoint name. No rule reduces x{σ}, a runtime value (p. 9). Neither thread is
+  an action in the sense of p. 15, so neither is ready, and both are stuck,
+  against Theorem 2 (p. 15) and Theorem 3 (p. 16). The same holds for send,
+  receive and select on an instantiated channel, which covers every action on a
+  polymorphic channel in the paper's examples.
+
+
+=====================================================================
+6. Repairs
+=====================================================================
+
+R1. The arrow left after a send's payload carries the payload's priority.
+
+      send : ∀ι1.∀α^ι1.∀ι2^(⊥,ι1).∀ι3^(ι2,⊤].∀β^ι3.
+             α ->[⊤,⊥]un !^ι2 α; β ->[ι1,ι2]lin β
+
+    Lemma 6 then holds at send{…}v whenever |T| is a singleton. Programs 1 and 2
+    fail. In program 1, f has priority 1 and cannot be dropped. In program 2,
+    T-LetPair after receive b asks 5 < |f| = 1. Taking the channel first, as
+    Padovani and Novara do, or the pair of payload and channel, as we do, has
+    the same effect.
+
+R2. fork takes a linear thunk, Unit ->[ι1,ι2]lin Unit, as the examples and the
+    derivation on p. 39 already do.
+
+R3. The payload check reads the payload, not its type. Either polymorphic
+    session types do not occur in payloads, which every example obeys, or send
+    and receive ask ι2 < ⌈Ψ(x)⟫ for every polymorphic channel x of the payload
+    in place of ι1 ∈ |T|. Program 3 fails under both.
+
+R4. Recursion gets a reduction rule and a general type. Either a binder
+    rec f. λx.e with Γ unrestricted, typed at any arrow T ->[ρ,σ]m U, and
+    rec f. λx.e → λx.e[rec f. λx.e/f], or fix only in the form fix (λf.λx.e)
+    with fix (λf.λx.e) → λx.e[fix (λf.λx.e)/f], as repair R2 for Padovani and
+    Novara (padovani-novara-counterexamples.txt). Program 4 is then excluded by
+    the grammar.
+
+R5. Priority instantiation leaves no trace at run time. E-PInst becomes
+    inst x → x. Priorities are already erased everywhere else in the semantics.
+    Alternatively R-Com, R-Ch and R-Close match x{σ} as x. Program 5 then
+    terminates.
+
+No repair touches T-Let, T-LetPair, T-Pair or T-App.
+
+
+=====================================================================
+Program 6 (stage 2). A branching ignores what the thread holds
+=====================================================================
+
+Found while mechanizing the translation (mordido-perez.md 12). It reads fork
+with a linear thunk (R2) and uses a unary choice.
+
+Program.
+
+  let (c, c′) = new C in
+  let (d, d′) = new D in
+  fork{3}{7} (λlin _:Unit.
+      match c′ with { L → λlin c′:Wait^7. wait{3} d′; wait{7} c′ });
+  close{3} d;
+  let c = select L c in close{7} c
+
+  C = ⊕^5{L: Close^7}      dual C = &^5{L: Wait^7}      D = Close^3
+
+Why it types.
+
+  The child holds c′ and d′. T-Match (Fig. 14, p. 26) types the scrutinee c′
+  with effect ⊥ under Γ1 = c′, so ρ1 < |Γ2| is ⊥ < |d′| = 3. The branch is
+  T-AbsLin with lower bound |Γ2| = 3. Its body waits on d′ at 3, where T-Let
+  asks 3 < |c′| = 7, then on c′ at 7. The match has effect ⊥ ⊔ 7 ⊔ 5. No
+  premise of T-Match compares the 5 of the branching with |Γ2| = 3. The thunk
+  has lower bound 3 and effect 7.
+  Main holds c and d. close d has effect 3 < |c| = 5. select L c is T-Sel with
+  5 < |Close^7| = 7, then close c at 7. The type is Unit.
+
+Why it deadlocks.
+
+  Main blocks on close d, whose partner d′ waits only inside the branch. The
+  child blocks on the match, whose partner selects only after close d. No rule
+  applies and main is no value, against Theorem 3 (p. 16).
+
+Repair R6. T-Match asks ρ < |Γ2|, the condition T-App puts on the effect of an
+argument. The child then needs 5 < 3 and the program is rejected. The rule
+m_match of theories/mp/MPTyping.v has the condition.
+
+
+=====================================================================
+Program 7 (stage 2, version 2). A channel at priority ⊤ is dropped
+=====================================================================
+
+Found while lifting the restrictions of fragment v1 (mordido-perez.md 12). It
+reads fork with a linear thunk (R2).
+
+Program.
+
+  let (x, y) = new (Close^⊤) in
+  fork{⊤}{⊤} (λlin _:Unit. wait{⊤} y);
+  ()
+
+Why it types.
+
+  close and wait take ι ∈ (⊥, ⊤] (Fig. 5, p. 11), so Close^⊤ and Wait^⊤ are
+  session types of actions at ⊤. The thunk captures y with |Wait^⊤| = ⊤, so it
+  has lower bound ⊤ and effect ⊤, and fork accepts ι1 = ⊤ ∈ (⊥, ⊤] and
+  ι2 = ⊤ ∈ [⊥, ⊤]. fork has effect ⊥, so T-Let holds. The last expression () is
+  T-Const, which asks |Γ| = ⊤, and |x : Close^⊤| = ⊤. Context split treats a type
+  of priority ⊤ as unrestricted (S-Top, Fig. 12, p. 24), so x is never used.
+
+Why it deadlocks.
+
+  The child waits on y forever, because main never closes x and ends with ().
+  The final configuration is not •⟨v⟩ alone, against Definition 1 and
+  Theorem 3 (p. 16).
+
+Repair R7. A channel is linear at every priority, and action priorities at a
+sequence are finite. In theories/mp/MP2Typing.v msplit copies only units and
+abstractions, and m_close asks pfin ρ at a sequence.
+
+
+Program 8 (stage 4, version 3). Two loops type at their first round and deadlock
+================================================================================
+
+Found while building the world from the derivation (mordido-perez.md 15.2). It
+reads fork with a linear thunk (R2) and the payload check per channel (R3).
+
+Program.
+
+  client a b = let a = send () (inst a) in
+               let (_, b) = receive (inst b) in client{next a} a b      (Listing 1.1, p. 4)
+  dsend b a  = let (_, a) = receive (inst a) in
+               let b = send () (inst b) in
+               let b = send () (inst b) in dsend{next b} b a
+  main = let (a, a') = new Stream 1 4 () in
+         let (b, b') = new Stream 2 2 () in
+         fork (λlin _:Unit. client{next a} a b');
+         dsend{next b} b a'
+
+Why it types.
+
+  Their rules check a recursive body once, under the map of the first call
+  (pp. 28, 29). The first round of client sends on a at 1 while it holds b at 2,
+  and receives on b at 2 while it holds a at 1 + 4 = 5. The first round of dsend
+  receives on a at 1 while it holds b at 2, and sends on b at 2 and at 4 while it
+  holds a at 5. Every check of T-Let and T-LetPair holds, 1 < 2 < 5 and
+  1 < 2 < 4 < 5. The recursive calls check only the call site.
+
+Why it deadlocks.
+
+  client sends a and dsend receives it. dsend sends b and client receives it.
+  client starts its second round and sends on a. dsend sends on b a second
+  time. Neither partner receives, and the configuration is stuck before any
+  value. theories/mp/MPRounds.v runs it in their semantics
+  (p8_not_deadlock_free).
+
+Repair R8. A recursive body types at every round, under the sequences that the
+round reaches. In version 2 and version 3 the priority abstraction of a
+recursive function holds at every valuation that a recursive call reaches, and
+client's second round would need 5 < 4 (p8_not_mtyped).
+

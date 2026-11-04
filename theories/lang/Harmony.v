@@ -84,6 +84,18 @@ Inductive red : proc → proc → Prop :=
              ⊎ {[+ fill K' (App EClos (Chan c)) +]})
           (C ∖ {[c]},
            E ⊎ {[+ fill K EUnit +]} ⊎ {[+ fill K' EUnit +]})
+  | RedChoice1 C E K K' c :                             (* CHOICE, i = 1 *)
+      ectx_val K → ectx_val K' →
+      red (C, E ⊎ {[+ fill K (App ESel1 (Chan c)) +]}
+             ⊎ {[+ fill K' (App EBra (Chan c)) +]})
+          (C, E ⊎ {[+ fill K (Chan c) +]}
+             ⊎ {[+ fill K' (Inj1 (Chan c)) +]})
+  | RedChoice2 C E K K' c :                             (* CHOICE, i = 2 *)
+      ectx_val K → ectx_val K' →
+      red (C, E ⊎ {[+ fill K (App ESel2 (Chan c)) +]}
+             ⊎ {[+ fill K' (App EBra (Chan c)) +]})
+          (C, E ⊎ {[+ fill K (Chan c) +]}
+             ⊎ {[+ fill K' (Inj2 (Chan c)) +]})
   | RedLinkL C E K c d :                                (* LINK *)
       (* the paper's rule: the removed end is restricted and the whole
          resulting configuration is substituted; the two rules are the
@@ -180,6 +192,7 @@ Proof.
   destruct 1 as
     [C E e e' Hv|C E K c HK Hc1 Hc2 Hc3|C E K v HK Hval
     |C E K K' v c HK HK' Hval|C E K K' c HK HK' Hc
+    |C E K K' c HK HK'|C E K K' c HK HK'
     |C E K c d HK Hc|C E K c d HK Hd].
   - apply PStepBeta. by apply vred_reduction.
   - apply PStepNew; [|done|done|done].
@@ -192,6 +205,12 @@ Proof.
   - eapply PStepClose; [..|done].
     + apply fill_tstep; [done|]. apply TStepHead. apply HeadClos.
     + apply fill_tstep; [done|]. apply TStepHead. apply HeadClos.
+  - eapply (PStepChoice _ _ _ false).
+    + apply fill_tstep; [done|]. apply TStepHead. apply HeadSel1.
+    + apply fill_tstep; [done|]. apply TStepHead. apply (HeadBra _ false).
+  - eapply (PStepChoice _ _ _ true).
+    + apply fill_tstep; [done|]. apply TStepHead. apply HeadSel2.
+    + apply fill_tstep; [done|]. apply TStepHead. apply (HeadBra _ true).
   - apply PStepLink; [|done].
     apply fill_tstep; [done|]. apply TStepHead. by apply HeadLink.
   - apply PStepLink; [|done].
@@ -245,6 +264,17 @@ Proof.
     end.
     inversion Hh; subst. inversion Hh'; subst.
     by apply RedClose.
+  - (* P-Act-Choice *)
+    match goal with H : tstep _ (LSess (SSel _ _)) _ |- _ =>
+      apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh)
+    end.
+    match goal with H : tstep _ (LSess (SBra _ _)) _ |- _ =>
+      apply tstep_fill_decomp in H
+        as (K' & fh & fh' & HK' & -> & -> & Hh')
+    end.
+    inversion Hh; subst; inversion Hh'; subst.
+    + by apply RedChoice1.
+    + by apply RedChoice2.
   - (* P-Act-Link: recover the orientation of the pair *)
     match goal with H : tstep _ (LSess (SLink _)) _ |- _ =>
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh)

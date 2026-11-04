@@ -24,8 +24,8 @@ has no axioms and no admitted proofs.
 
 `lang/`, the calculus.
 
-- `Syntax.v`: terms with de Bruijn variables and channel names.
-- `Semantics.v`: the labelled term semantics and the process LTS.
+- `Syntax.v`: terms with de Bruijn variables and channel names, the constants select₁, select₂ and branch included.
+- `Semantics.v`: the labelled term semantics and the process LTS, with the choice labels c◁i, c▷i and P-Act-Choice.
 - `Safety.v`: deadlock freedom and the other process properties, and progress.
 - `ThreadSim.v`: threads related one to one and runs of β steps, shared by the simulations of pgv/ and pn/.
 - `ChannelSwap.v`: transpositions of channel names commute with the LTS.
@@ -33,8 +33,8 @@ has no axioms and no admitted proofs.
 
 `types/`, the types.
 
-- `Types.v`: types, session types, points, constraints, duality, environments.
-- `SessionEquiv.v`: coinductive session equivalence ≈ and duality ⊥.
+- `Types.v`: types with boxes over points and session variables and existential points, context-free session types (Skip, ;, !P, ?P, ⊕, &, Close, μ), their head normal form `unfoldS` (unr), points, constraints, duality, environments.
+- `SessionEquiv.v`: bisimilarity ≈ on heads, the laws of ; and μ, and duality ⊥.
 - `LinearEnv.v`: linear variable environments, splitting and weakening.
 
 `relation/`, the logical relation.
@@ -42,7 +42,7 @@ has no axioms and no admitted proofs.
 - `Worlds.v`: worlds, their facts ≡ and ≺, extension and strictness.
 - `Creation.v`: creation constraints. The closed form of T + C (`interp`), the world of new (`wext_cc`), transfer of `cc_ok` (`cc_ok_transfer`) and the model lemma (`cc_model`).
 - `Readiness.v`: readiness of terms (with a frame) and of processes.
-- `LogicalRelation.v`: V, E and P, semantic typing, and `adequacy`.
+- `LogicalRelation.v`: V, E and P with O-Select, O-Branch, Q-Select and Q-Branch, V-Box over session instances and V-Ex, semantic typing, and `adequacy`.
 
 `invariance/`, properties of the relation (spec §10).
 
@@ -97,6 +97,46 @@ has no axioms and no admitted proofs.
 - `Stream.v`: Padovani's `stream`, a producer that sends a fresh continuation each round, with a consumer (`st_deadlock_free`).
 - `Congruence.v`: a box whose derivation needs both congruences of ≡, one alias between base points read at a carried point x[i] and at the successor (`cg_deadlock_free`).
 - `Rejected.v`: programs the static system rejects (`rr_call_underivable`, `sched_rev_underivable`, `ms_rev_underivable`, `badlink_underivable`, `ord_no_constraint`).
+- `SendTreeType.v`: the type of sendTree with the coarse ceiling over walks through x+1 and x[i], a smoke test (SHARP-EDGES 73, 142).
+
+`examples/cfst/`, the examples of context-free session types (SHARP-EDGES 74, 75, 142 and 144). Since K11 a choice moves its channel from x to x[i] and owes x ≺ x[i], and ceilings range over the walks from a point. Every example states a whole-program `styped` derivation, creates its channels with the existential new under a creation constraint, and proves deadlock freedom with `soundness_source`.
+
+- `CfstTools.v`: hereditary contractiveness by depth, congruences of ≈, case and E-Open for Θ = ∅, facts of constraints with outer points, the ceiling C₀, the lockstep creation constraints and `cc_ok_out` for constraints with outer points.
+- `TreeCopy.v`: recvTree as `drain` and sendTree after recvTree as `copy`, both with polymorphic recursion and existential points, run on a fixed tree (`tree_deadlock_free`).
+- `Stream.v`: the two streams of Mordido and Pérez in a cycle (`st_deadlock_free`).
+- `CfstDeadlock.v`: their classic deadlock is not deadlock free and so has no `styped` derivation (`dl_untypable`, `dl_untypable_source`). Its repair types (`dlfix_deadlock_free`).
+- `CfstScheduler.v`: Milner's cyclic scheduler with three schedulers and three workers, each channel created under a rank constraint against the earlier ones (`sch_deadlock_free`).
+- `TreeSum.v`: treeSum of Thiemann and Vasconcelos (Listing 2) with the reply after both subtrees, serving the client transform on a fixed tree (`ts_deadlock_free`).
+- `ArithServer.v`: their arithmetic expression server (Listing 3) with binary choices and its fixed client (`as_deadlock_free`).
+- `BranchOrder.v`: a branch that orders two channels against the other branch, typable with the branch points x[0] and x[1] of K11 and not under K5 (`bo_deadlock_free`, SHARP-EDGES 76, 144).
+
+The context-free work runs on the core of branch `exists` since 2026-11-04 (docs/extensions/context-free.md, section "Ported to the exists core", SHARP-EDGES 141 to 145). theories/pgv and theories/pn are in the build again.
+
+`mp/`, Mordido and Pérez in fragment v1 with repairs R1 to R6 (SHARP-EDGES 77, docs/extensions/adequacy/mordido-perez.md 12 and 13).
+
+- `MPTypes.v`, `MPTyping.v`: their types and typing on our terms, the judgment yields the translated term.
+- `MPWorld.v`: anchors for valuations, channel points named by their type in head form, the box constraint over every valuation.
+- `MPTranslate.v`: the translation lemma and deadlock freedom of every closed program (`mp_translate`, `mp_deadlock_free`).
+- `MPExamples.v`: the two streams typed in the source judgment and translated (`st_mp_deadlock_free`).
+
+Version 2 in `mp/` supersedes fragment v1, with context-free session types, session type variables and functions over unbounded segments (SHARP-EDGES 78, docs/extensions/adequacy/mordido-perez.md 12 and 13).
+
+- `MP2Types.v`, `MP2Typing.v`: their types and typing with Skip, ;, type variables and segment functions, the judgment yields the translated term.
+- `MP2World.v`: denotations of raw session types, observational equivalence of points, the ceiling above junk, the box constraints of abstractions and segments.
+- `MP2Translate.v`: the translation lemma and deadlock freedom of every closed program (`mp2_translate`, `mp2_deadlock_free`).
+- `MP2Examples.v`: receiveTree with the tree channel, the two streams, the repaired classic deadlock and T2, each translated (`rt_mp2_deadlock_free`, `st_mp2_deadlock_free`, `df_mp2_deadlock_free`, `t2_mp2_deadlock_free`), and the rank of the tree channel after receiveTree, which depends on the size of the tree (`rt_rank_data`, SHARP-EDGES 79).
+- `MP2Semantics.v`: their reduction (Fig. 15) with repairs R4 and R5, and their deadlock freedom (Definition 1) for a source program.
+- `MP2Simulation.v`: a simulation between source configurations and translated processes, so every typed closed program is deadlock free in their semantics (`mp2_deadlock_free_source`, SHARP-EDGES 80, docs/extensions/adequacy/mordido-perez.md 14), with the four examples (`rt_deadlock_free_src` and the others).
+- `MPRounds.v`: program 8, two loops that type at their first round and deadlock in their semantics (`p8_not_deadlock_free`, `p8_not_mtyped`), and unequal increments with matching rates through version 2 (`rr_mp2_deadlock_free`, SHARP-EDGES 81).
+
+Version 3 in `mp/` extends version 2 with n-ary choices and with channels created after a segment call (SHARP-EDGES 82 and 83, docs/extensions/adequacy/mordido-perez.md 15).
+
+- `MP3Types.v`, `MP3World.v`, `MP3Typing.v`: priorities at a depth for inner nodes of a choice, the levels below ⊥ and above ⊤, the low chain and the high chain.
+- `MP3Translate.v`: the translation lemma and deadlock freedom (`mp3_translate`, `mp3_deadlock_free`).
+- `MP3Examples.v`: the examples of version 2, a choice with three labels (`ch3_mp3_deadlock_free`), matching rates (`rr_mp3_deadlock_free`), and a channel created after receiveTree below the floor or above the ceiling (`rtA_mp3_deadlock_free`, `rtB_mp3_deadlock_free`).
+- `MP3Simulation.v`: deadlock freedom in their semantics (`mp3_deadlock_free_source`) with every example (`ch3_deadlock_free_src3` and the others).
+
+theories/mp stays at its world `Wmp` on the merged core. Translated new is `let_new_pair` typed by `t_new_at`, and segment constraints state x ≺ x[i] along every walk (SHARP-EDGES 145).
 
 `counterexamples/`
 
@@ -133,12 +173,12 @@ has no axioms and no admitted proofs.
 - `pgv_deadlock_free` (pgv/PGVTranslate.v): the translation of a closed program of type 1 in the monotone fragment of repaired PGV is deadlock free, and by `pgv_deadlock_free_source` (pgv/PGVSimulation.v) so is the program itself. The examples of pgv/PGVExamples.v apply the latter.
 - `pn_deadlock_free` (pn/PNTranslate.v): the translation of a closed program of type unit in fragment v1 of repaired Padovani and Novara is deadlock free. `fibo_deadlock_free` and `pipe_deadlock_free` (pn/PNExamples.v) apply it.
 - `pn_deadlock_free_source` (pn/PNSimulation.v): such a program whose fixes are all fix λf.λx.e is deadlock free in the semantics of the chapter (Definition 1). `fibo_deadlock_free_src` and `pipe_deadlock_free_src` apply it.
-- The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/.
+- The examples: `sync_deadlock_free`, `cycle_deadlock_free`, `deleg_deadlock_free`, `sched_deadlock_free`, `fac_deadlock_free`, `fa_deadlock_free`, `rr_deadlock_free`, `rel_deadlock_free`, `tc_deadlock_free`, `ch_deadlock_free`, `fw_deadlock_free`, `fb_deadlock_free`, one per file in examples/. Also `tree_deadlock_free`, `st_deadlock_free`, `dlfix_deadlock_free`, `sch_deadlock_free`, `ts_deadlock_free`, `as_deadlock_free`, `bo_deadlock_free` and `dl_untypable` in examples/cfst/.
 - The examples from the literature, each typed as its paper writes it and each stated in the world-free `styped`: `ms_deadlock_free` (Milner's cyclic scheduler of Dardha and Gay, Example 1 in full), `fw_deadlock_free_kob` (Kobayashi's recursive forwarder server, Example 2), `fc_deadlock_free` (the factorial server of Kobayashi and of Padovani), `st_deadlock_free` (Padovani's `stream`). `cg_deadlock_free` is the first derivation that uses the congruences of ≡ (docs/extensions/literature-examples.md, sharp edges 130 to 136).
 - E-NewFresh (`t_newfresh_open`, static/Typing.v) creates a channel at a fresh point ι with a constraint C that relates points of ι (ι+k, ι[i], …) to known points, when u ≺ v holds for every u ≺ p and q ≺ v of C with q at or after p in program order. `t_newfresh_lh_open` is the form L ≺ ι ≺ H. World extension is unchanged (docs/extensions/fresh-points.md, sharp edges 90 to 96). E-NewFresh is a lemma on the encoded term let p = new ∗ in let (x, y) = p in t (`let_new`), not a rule (sharp edges 103).
 - Existential points ∃^ℓ ιs. C. T (`TEx`, types/Types.v) with E-Pack, E-Open and V-Ex, where the lower bound ℓ is ⊤, ⊥ or a point, and the signature new : ∗ ⊸^⊥_⊤ ∃^⊥ ι. C. S@ι ⊗ S̄@ι. C is any set of facts between points of ι and outer points, by ≺ and ≡, that is acyclic and conservative over the context (`cc_ok`, sharp edges 105 and 106). relation/Creation.v proves it sound (`interp`, `wext_cc`, `cc_ok_transfer`), and `cc_model` proves it for concrete constraints. `t_new_at` (static/Fundamental.v) gives new at a known point on the encoded let, and `t_new_open` (static/Typing.v) new under any creation constraint. Every example types in the empty world. Factory and the PN translation start under a top-level constraint C₀ (`soundness_source`). The PGV translation keeps its world `Wpgv`, because its payloads hold global points (sharp edges 107, 108, 110 to 112). W stays as a parameter of `typed` for configurations, and source programs type in the world-free `styped` (static/Source.v, sharp edges 122). A frame carries a flag for a held ∃^⊥, under which no call with an upper point passes the gate (docs/extensions/existentials.md, sharp edges 97 to 100 and 103).
-- Session choice is a derived form. `sel1_typed`, `sel2_typed` and `branch_typed` (examples/ChoiceEnc.v) type selection as sending inj_i of a fresh channel whose arm lies at x[i], and branching as a receive and a case. `choice_deadlock_free` is T1 ∥ T2 ∥ T3 of mordido-perez.md §9.5 on branch cfst, whose two branches need opposite orders against d, and `loop_deadlock_free` a recursive choice server. No rule of the core changes (docs/extensions/choice-encoding.md, sharp edges 137).
-- A payload of a channel or nothing. `some_deadlock_free`, `some_swapped_deadlock_free` and `none_deadlock_free` (examples/OptionPayload.v) send inj₁ of a channel at ι[0] or inj₂ ∗ on !((S⁰@self[0]) ⊕ ∗).Close. The heads of a sum include both arms, so `none` owes ι ≺ ι[0] and the creation constraint of `some` (sharp edges 138).
+- Session choice is a derived form. `sel1_typed`, `sel2_typed` and `branch_typed` (examples/ChoiceEnc.v) type selection as sending inj_i of a fresh channel whose arm lies at x[i], and branching as a receive and a case. `choice_deadlock_free` is T1 ∥ T2 ∥ T3 of mordido-perez.md §9.5, whose two branches need opposite orders against d, and `loop_deadlock_free` a recursive choice server. No rule of the core changes (docs/extensions/choice-encoding.md, sharp edges 137).
+- A payload of a channel or nothing. `some_deadlock_free`, `some_swapped_deadlock_free` and `none_deadlock_free` (examples/OptionPayload.v) send inj₁ of a channel at ι[0] or inj₂ ∗ on !((S⁰@self[0]) ⊕ ∗).Close. The heads of a sum include both arms, so `none` owes ι ≺ ι[0] and the creation constraint of `some` (sharp edges 140).
 - The box type □(∀ιs. C. T) is one type former (`TBox`, types/Types.v), so ∀ occurs only directly under □. Part 2 of docs/extensions/existentials.md had split it into □ and ∀ with E-Gen and E-Inst. No program used the two rules, and the split was undone (sharp edges 109). The rules beyond `orders-lr` are E-Pack and E-Open.
 
 ## Other documents

@@ -22,14 +22,14 @@ Proof.
   intros HW HV1 HV2 Hub.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hu & HB & HV).
-  inversion Hk as [| | | | |m C1 ub1 T1 xs Hxs HC1 HK1|]; subst.
+  inversion Hk as [| | | | | | | |m kk C1 ub1 T1 xs ss Hxs HC1 HK1 Hss Hsc|]; subst.
   apply Vrel_box_thunk_iff in HV as (-> & eb & -> & Hfc & HK).
   destruct n as [|n']; [apply Erel_0|].
   apply (Erel_det_beta_S _ _ _ _ _ _ (subst1 (EBox eb) eb)).
   - by apply TStepHead, HeadForce.
   - intros α e'' Hst. apply app_val_step in Hst; [|done|done]. by inversion Hst.
   - eapply Erel_tconv; [apply HW|exact HB|].
-    apply (HK W n' xs F); [by apply wext_refl|lia|done|done|done|].
+    apply (HK W n' xs ss F); [by apply wext_refl|lia|done|done|done|done|done|].
     eapply ub_below_conv; [apply HW| |exact Hub]. by apply opt_rel_sym; [apply HW|].
 Qed.
 
@@ -72,13 +72,14 @@ Proof.
   induction Δ as [|[T|] Δ IH]; unfold lenv_nones; simpl; constructor; auto.
 Qed.
 
-Lemma sem_typed_force W Θ Δ F e m C ub T xs :
+Lemma sem_typed_force W Θ Δ F e m k C ub T xs ss :
   world_wf W → length xs = m → bcs_hold (w_eq W) (w_lt W) C xs → Forall (pt_known W) xs →
+  length ss = k → Forall hcontractive ss →
   ub_below W (pt_inst (plist xs) <$> ub) F →
-  sem_typed W Θ Δ F e (TBox m C (TLolli ub None TUnit T)) →
-  sem_typed W Θ Δ F (App EForce e) (ty_inst xs T).
+  sem_typed W Θ Δ F e (TBox m k C (TLolli ub None TUnit T)) →
+  sem_typed W Θ Δ F (App EForce e) (sinst_ty (slist ss) (ty_inst xs T)).
 Proof.
-  intros HW Hxs HC HK Hub He.
+  intros HW Hxs HC HK Hss Hsc Hub He.
   eapply (sem_typed_app W Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ _ None).
   - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
   - apply lenv_split_nones_l.
@@ -134,12 +135,14 @@ Proof.
   - apply (IH _ (γ ∘ S)); [|done]. intros o Ho. apply Hu. by right.
 Qed.
 
-Lemma sem_typed_box W Δ F e m C ub T :
-  lenv_unl Δ → term_wf ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) e →
-  (∀ W1 xs F', wext W W1 → length xs = m → bcs_hold (w_eq W1) (w_lt W1) C xs →
+Lemma sem_typed_box W Δ F e m k C ub T :
+  lenv_unl Δ → term_wf ∅ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ) e →
+  (∀ W1 xs ss F', wext W W1 → length xs = m → length ss = k → Forall hcontractive ss →
+     bcs_hold (w_eq W1) (w_lt W1) C xs →
      Forall (pt_known W1) xs → ub_below W1 (pt_inst (plist xs) <$> ub) F' →
-     sem_typed W1 ∅ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ) F' e (ty_inst xs T)) →
-  sem_typed W ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T)).
+     sem_typed W1 ∅ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ) F' e
+       (sinst_ty (slist ss) (ty_inst xs T))) →
+  sem_typed W ∅ Δ F (EBox e) (TBox m k C (TLolli ub None TUnit T)).
 Proof.
   intros Hu (Hfc & Hfv & _) He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   pose proof (wext_wf _ _ HW) as HW'.
@@ -153,20 +156,22 @@ Proof.
       - intros (T' & Hx). unfold compose. rewrite fchans_rename. by eapply grounding_fchans. }
     rewrite Hfc, dom_empty_L in Hsub. set_solver. }
   assert (∀ j W2, j ≤ n → wext W' W2 →
-            Vrel j W2 ∅ (TBox m C (TLolli ub None TUnit T)) (EBox (subst (up γ) e))) as Hbox.
+            Vrel j W2 ∅ (TBox m k C (TLolli ub None TUnit T)) (EBox (subst (up γ) e))) as Hbox.
   { induction j as [j IHj] using lt_wf_ind. intros W2 Hj HW2.
     apply Vrel_box_thunk_iff. split; [done|]. exists (subst (up γ) e). split_and!; [done|done|].
-    intros W3 k xs F' HW3 Hk Hxs HC HKn Hub. rewrite subst1_subst.
+    intros W3 i xs ss F' HW3 Hi Hxs Hss Hsc HC HKn Hub. rewrite subst1_subst.
     pose proof (wext_trans _ _ _ HW2 HW3) as HW23.
     pose proof (wext_trans _ _ _ HW HW23) as HWW3.
-    apply (He W3 xs F' HWW3 Hxs HC HKn Hub k W3 ∅ ∅).
+    apply (He W3 xs ss F' HWW3 Hxs Hss Hsc HC HKn Hub i W3 ∅ ∅).
     - apply wext_refl, HWW3.
     - apply tenv_comp_empty_r.
     - exists ∅, ∅. split_and!.
       + apply tenv_comp_empty_r.
-      + apply (IHj k Hk W3); [lia|exact HW23].
+      + apply (IHj i Hi W3); [lia|exact HW23].
       + eapply grounding_ext;
           [|eapply grounding_down; [|eapply grounding_mono; [exact HW'|exact HW23|exact Hg]]];
           [done|lia]. }
   apply Hbox; [done|]. apply wext_refl, HW.
 Qed.
+
+(** E-Pack and E-Open are in rules/ExRules.v. *)

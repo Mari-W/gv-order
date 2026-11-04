@@ -72,6 +72,13 @@ Proof. unfold pofs, pt_shift. simpl. split; [done|lia]. Qed.
 Lemma pofs_root x y : pofs x y → pt_root x = pt_root y.
 Proof. unfold pofs, pt_root. intros [-> _]. done. Qed.
 
+(** Program order of a world is [ppo], which is [pofs]. *)
+Lemma ppo_pofs x y : ppo x y → pofs x y.
+Proof. induction 1; [apply pofs_shift|by eapply pofs_trans]. Qed.
+
+Lemma pofs_ppo x y : pofs x y → ppo x y.
+Proof. intros [Hn Ho]. by apply ppo_same. Qed.
+
 Lemma pt_shift_S k x : pt_shift 1 (pt_shift k x) = pt_shift (S k) x.
 Proof. unfold pt_shift. simpl. f_equal. lia. Qed.
 
@@ -823,7 +830,7 @@ Proof.
     rewrite (proj2 (Hup x0) Hx), (proj2 (Hup y0) Hy). done. }
   assert (∀ x y, cc_up (w_lt W) x y → w_lt W (ga a x) (ga a y)) as Ml.
   { intros x y (x0 & y0 & H & -> & ->).
-    destruct (wf_lt_supp _ HW _ _ H) as [Hp|[Hx Hy]].
+    destruct (wf_lt_supp _ HW _ _ H) as [Hp%ppo_pofs|[Hx Hy]].
     - apply (th_pofs _ _ (ga a (pt_inst (λ b, pvar (b + 1)) x0)) _ (theory_world W HW)).
       destruct x0 as [p o], y0 as [q o']. destruct Hp as [Hn Ho]. simpl in *. subst q.
       unfold pofs, ga, pt_inst, pt_shift. simpl. split; [done|lia].
@@ -833,7 +840,7 @@ Proof.
   destruct (interp (w_eq W) (w_lt W) (theory_world W HW) (NConst a)
               ltac:(intros x y H Hr; destruct (wf_eq_supp _ HW _ _ H) as [?|[Hx Hy]]; [done|];
                     exfalso; destruct Hr as [Hr|Hr]; rewrite <-Hr in *; by apply Ha)
-              ltac:(intros x y H Hr; destruct (wf_lt_supp _ HW _ _ H) as [?|[Hx Hy]]; [done|];
+              ltac:(intros x y H Hr; destruct (wf_lt_supp _ HW _ _ H) as [?%ppo_pofs|[Hx Hy]]; [done|];
                     exfalso; destruct Hr as [Hr|Hr]; rewrite <-Hr in *; by apply Ha)
               (geq (cc_eq (w_eq W) C)) (glt (cc_eq (w_eq W) C) (cc_lt (w_lt W) C)) (theory_gen _ _)
               (ga a) (ga_shift a) (ga_slot a) (ga_root_new a) (ga_root_old a) (ga_inj_new a)

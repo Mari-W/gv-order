@@ -3,9 +3,11 @@
 Session choice is a derived form of the core. A selection sends the injection of
 a fresh continuation channel, and the payload type puts the left arm at the
 point self[0] and the right arm at self[1]. Each branch of a choice then has a
-point of its own, which is what the branch roots x◁i of branch cfst add as a new
-name (data-dependent.md on cfst, sharp edges 76 on cfst). The program T1 ∥ T2 ∥
-T3 that motivated branch roots types with the encoding and is deadlock free.
+point of its own, which is what the branch points x◁i of K10 added as a new
+name (data-dependent.md, sharp edges 76). The program T1 ∥ T2 ∥ T3 that
+motivated branch points types with the encoding and is deadlock free. K11
+(sharp edges 142) later dropped x◁i and lets the native choice continue at
+x[i] as well.
 Everything is in theories/examples/ChoiceEnc.v, and no rule, constant or
 definition of the core changes.
 
@@ -48,8 +50,7 @@ context, as E-Case demands, and each sees its continuation at its own point.
 
 ## T1 ∥ T2 ∥ T3
 
-The program is T2 of mordido-perez.md §9.5, as data-dependent.md writes it,
-both on cfst.
+The program is T2 of mordido-perez.md §9.5, as data-dependent.md writes it.
 
 ```
 c : ⊕{A: !∗.Close, B: !∗.Close}      d : Close
@@ -167,9 +168,9 @@ depth that grows at each carried point by the offset of its base plus 2
 
 "closed" means Print Assumptions answers "Closed under the global context".
 
-## Cost against branch roots
+## Cost against branch points
 
-Branch roots add the name former x◁i (NBr), the two world laws x ≡ y ⇒ x◁i ≡
+Branch points add the name former x◁i (NBr), the two world laws x ≡ y ⇒ x◁i ≡
 y◁i and x ≺ x◁i with their counterparts in generated worlds, and the session
 types ⊕ and & with O-Select, O-Branch, Q-Select and Q-Branch. The encoding needs
 none of them. x[i] already exists, and its laws are those of carried points.
@@ -179,4 +180,6 @@ extra `new` and one extra close of the carrier, so a choice creates a channel
 and the continuation is a different channel from the carrier. Each selection
 also asks x+1 ≺ x[i] and each branch asks x+1 ≺ x[0] and x+1 ≺ x[1], facts that
 a native choice at x◁i does not ask because program order gives x ≺ x◁i. In the
-two programs above these facts went into the constraint or followed from it.
+two programs above these facts went into the constraint or followed from it. Under
+K11 the native choice continues at x[i] too and asks x ≺ x[i] as a side
+condition of select and branch (sharp edges 142).

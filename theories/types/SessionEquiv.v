@@ -3,8 +3,8 @@
     S ≈ R ([seq]), its congruence T ≈ U through the type grammar
     ([teq]), and the duality S ⊥ R ([sdual]). The rules follow the
     coinductive model of Thiemann's dual-session development
-    (github.com/peterthiemann/dual-session). GV♯ has no choice former,
-    so the ⊕ and & rules are the ! and ? rules at a [TSum] payload.
+    (github.com/peterthiemann/dual-session), extended to the context-free
+    session types of K1 (Skip, ;, ⊕ and &), whose heads [unfoldS] computes.
 
     ≈ and ⊥ are ∀ n of a depth-n approximation ([aeq], [adual]) instead
     of a cofix, which would have to be guarded through [unfoldS] and the
@@ -28,8 +28,10 @@ Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
       ub = ub' ∧ lb = lb' ∧ eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TProd T1 T2, TProd U1 U2 => eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TSum T1 T2, TSum U1 U2 => eqT ρ T1 U1 ∧ eqT ρ T2 U2
-  | TBox n C T1, TBox n' C' U1 => n = n' ∧ C = C' ∧ eqT ρ T1 U1
-
+  | TBox n k C T1, TBox n' k' C' U1 =>
+      (* a body over session variables compares on the nose: ≈ of open
+         session types is not closed under their instances (sharp edges 73) *)
+      n = n' ∧ k = k' ∧ C = C' ∧ match k with 0 => eqT ρ T1 U1 | S _ => T1 = U1 end
   | TSess s x, TSess r y => x = y ∧ ρ s r
   | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ eqT ρ T1 U1
   | _, _ => False
@@ -38,64 +40,132 @@ Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
 Lemma eqT_mono ρ ρ' T : ∀ U,
   (∀ s r, ρ s r → ρ' s r) → eqT ρ T U → eqT ρ' T U.
 Proof.
-  induction T; intros [] Hρ; simpl; naive_solver.
+  induction T; intros [] Hρ; simpl; repeat case_match; naive_solver.
 Qed.
 
 Lemma eqT_refl ρ T : (∀ s, ρ s s) → eqT ρ T T.
-Proof. intros Hρ. induction T; simpl; auto. Qed.
+Proof. intros Hρ. induction T; simpl; repeat case_match; auto. Qed.
 
 Lemma eqT_sym ρ T : ∀ U,
   (∀ s r, ρ s r → ρ r s) → eqT ρ T U → eqT ρ U T.
 Proof.
-  induction T; intros [] Hρ; simpl; naive_solver.
+  induction T; intros [] Hρ; simpl; repeat case_match; naive_solver.
 Qed.
 
 Lemma eqT_trans ρ T : ∀ U V,
   (∀ s r t, ρ s r → ρ r t → ρ s t) →
   eqT ρ T U → eqT ρ U V → eqT ρ T V.
 Proof.
-  induction T; intros [] []; simpl; naive_solver.
+  induction T; intros [] []; simpl; repeat case_match; naive_solver.
 Qed.
 
 (** ** Parts 2 and 3: the one-step unfoldings
 
-    Both relations observe their arguments through [unfoldS], so that
-    µα.S and S[µα.S/α] are indistinguishable by construction. *)
+    Both relations observe their arguments through the head normal form
+    [unfoldS] (unr, K3), read through the view [hd] below, so that
+    µα.S and S[µα.S/α], Skip;S and S, and ⊕(S₁, S₂);S and ⊕(S₁;S, S₂;S)
+    are indistinguishable whenever the heads exist. The LTS of Thiemann
+    and Vasconcelos (Fig. 5) is deterministic, so a bisimulation
+    compares exactly these heads, the action of the head and the
+    continuations. *)
+
+(** Reading a head off [hd]. *)
+Lemma unfoldS_rcv_iff s m T r : unfoldS s = SSeq (SRcv m T) r ↔ hd s = HRcv m T r.
+Proof.
+  split; [intros H; by rewrite (hd_of _ _ H)|]. intros H. by rewrite unfoldS_unview, H.
+Qed.
+
+Lemma unfoldS_snd_iff s m T r : unfoldS s = SSeq (SSnd m T) r ↔ hd s = HSnd m T r.
+Proof.
+  split; [intros H; by rewrite (hd_of _ _ H)|]. intros H. by rewrite unfoldS_unview, H.
+Qed.
+
+Lemma unfoldS_plus_iff s s1 s2 : unfoldS s = SPlus s1 s2 ↔ hd s = HPlus s1 s2.
+Proof.
+  split; [intros H; by rewrite (hd_of _ _ H)|]. intros H. by rewrite unfoldS_unview, H.
+Qed.
+
+Lemma unfoldS_with_iff s s1 s2 : unfoldS s = SWith s1 s2 ↔ hd s = HWith s1 s2.
+Proof.
+  split; [intros H; by rewrite (hd_of _ _ H)|]. intros H. by rewrite unfoldS_unview, H.
+Qed.
+
+Lemma unfoldS_end_iff s : unfoldS s = SEnd ↔ hd s = HEnd.
+Proof.
+  split; [intros H; by rewrite (hd_of _ _ H)|]. intros H. by rewrite unfoldS_unview, H.
+Qed.
+
+(** A stuck head is no head. *)
+Lemma view_stuck u v : view u = HStuck v → u = v ∧ ¬ hnf_shape u.
+Proof.
+  destruct u as [| | | | | | |o r| |]; simpl; intros H; try done;
+    try (injection H as <-; split; [done|]; simpl; tauto).
+  destruct o; simpl in H; try done; injection H as <-; split; simpl; tauto.
+Qed.
+
+Lemma hd_stuck s u : hd s = HStuck u → u = unfoldS s ∧ ¬ contractive s.
+Proof.
+  unfold hd, contractive. intros H. apply view_stuck in H as [<- Hn]. done.
+Qed.
+
+Definition vdual (h : hview) : hview :=
+  match h with
+  | HSkip => HSkip
+  | HRcv m T s => HSnd m T (dual s)
+  | HSnd m T s => HRcv m T (dual s)
+  | HVar a s => HVarD a (dual s)
+  | HVarD a s => HVar a (dual s)
+  | HPlus a b => HWith (dual a) (dual b)
+  | HWith a b => HPlus (dual a) (dual b)
+  | HEnd => HEnd
+  | HStuck u => HStuck (dual u)
+  end.
+
+Lemma view_dual u : view (dual u) = vdual (view u).
+Proof. destruct u as [| | | | | | |o r| |]; try done. by destruct o. Qed.
+
+Lemma hd_dual s : hd (dual s) = vdual (hd s).
+Proof. unfold hd. by rewrite <-dual_unfoldS, view_dual. Qed.
 
 Definition eq_step (τ : sty → sty → Prop) (s r : sty) : Prop :=
-  match unfoldS s, unfoldS r with
-  | SRcv m T s', SRcv m' U r' => m = m' ∧ eqT τ T U ∧ τ s' r'
-  | SSnd m T s', SSnd m' U r' => m = m' ∧ eqT τ T U ∧ τ s' r'
-  | SEnd, SEnd => True
-  | u, v => u = v
+  match hd s, hd r with
+  | HSkip, HSkip | HEnd, HEnd => True
+  | HRcv m T s', HRcv m' U r' | HSnd m T s', HSnd m' U r' =>
+      m = m' ∧ eqT τ T U ∧ τ s' r'
+  | HVar a s', HVar a' r' | HVarD a s', HVarD a' r' => a = a' ∧ τ s' r'
+  | HPlus s1 s2, HPlus r1 r2 | HWith s1 s2, HWith r1 r2 => τ s1 r1 ∧ τ s2 r2
+  | HStuck u, HStuck v => u = v
+  | _, _ => False
   end.
 
 Definition dual_step (τ δ : sty → sty → Prop) (s r : sty) : Prop :=
-  match unfoldS s, unfoldS r with
-  | SRcv m T s', SSnd m' U r' => m = m' ∧ eqT τ T U ∧ δ s' r'
-  | SSnd m T s', SRcv m' U r' => m = m' ∧ eqT τ T U ∧ δ s' r'
-  | SEnd, SEnd => True
-  | u, v => u = dual v
+  match hd s, hd r with
+  | HSkip, HSkip | HEnd, HEnd => True
+  | HRcv m T s', HSnd m' U r' | HSnd m T s', HRcv m' U r' =>
+      m = m' ∧ eqT τ T U ∧ δ s' r'
+  | HVar a s', HVarD a' r' | HVarD a s', HVar a' r' => a = a' ∧ δ s' r'
+  | HPlus s1 s2, HWith r1 r2 | HWith s1 s2, HPlus r1 r2 => δ s1 r1 ∧ δ s2 r2
+  | HStuck u, HStuck v => u = dual v
+  | _, _ => False
   end.
 
-(** The single place the 36-way split on the two head normal forms is
-    performed; everything below reuses these. *)
+(** The case splits on the heads are performed by [hd_cases]. *)
+
+Ltac hd_cases s := destruct (hd s) as [|?m ?T ?s'|?m ?T ?s'|?a ?s'|?a ?s'|?s1 ?s2|?s1 ?s2| |?u].
 
 Lemma eq_step_mono τ τ' s r :
   (∀ a b, τ a b → τ' a b) → eq_step τ s r → eq_step τ' s r.
 Proof.
-  unfold eq_step. intros Hτ.
-  destruct (unfoldS s), (unfoldS r); try done;
-    intros (? & ? & ?); split_and!; eauto using eqT_mono.
+  unfold eq_step. intros Hτ. hd_cases s; hd_cases r; try done;
+    intuition eauto using eqT_mono.
 Qed.
 
 Lemma dual_step_mono τ τ' δ δ' s r :
   (∀ a b, τ a b → τ' a b) → (∀ a b, δ a b → δ' a b) →
   dual_step τ δ s r → dual_step τ' δ' s r.
 Proof.
-  unfold dual_step. intros Hτ Hδ.
-  destruct (unfoldS s), (unfoldS r); try done;
-    intros (? & ? & ?); split_and!; eauto using eqT_mono.
+  unfold dual_step. intros Hτ Hδ. hd_cases s; hd_cases r; try done;
+    intuition eauto using eqT_mono.
 Qed.
 
 (** ** The approximations *)
@@ -148,24 +218,23 @@ Lemma aeq_refl n : ∀ s, aeq n s s.
 Proof.
   induction n as [|n IH]; intros s; [done|].
   unfold aeq; fold aeq. unfold eq_step.
-  destruct (unfoldS s); try done; split_and!; auto using eqT_refl.
+  hd_cases s; try done; split_and!; auto using eqT_refl.
 Qed.
 
 Lemma aeq_sym n : ∀ s r, aeq n s r → aeq n r s.
 Proof.
   induction n as [|n IH]; intros s r H; [done|].
   unfold aeq in *; fold aeq in *. unfold eq_step in *.
-  destruct (unfoldS s), (unfoldS r); try (by symmetry);
-    try done; destruct H as (-> & ? & ?); split_and!; eauto using eqT_sym.
+  hd_cases s; hd_cases r; try done; try (by symmetry);
+    intuition (subst; eauto using eqT_sym).
 Qed.
 
 Lemma aeq_trans n : ∀ s r t, aeq n s r → aeq n r t → aeq n s t.
 Proof.
   induction n as [|n IH]; intros s r t H1 H2; [done|].
   unfold aeq in *; fold aeq in *. unfold eq_step in *.
-  destruct (unfoldS s), (unfoldS r), (unfoldS t); try congruence;
-    try done; destruct H1 as (-> & ? & ?), H2 as (-> & ? & ?);
-    split_and!; eauto using eqT_trans.
+  hd_cases s; hd_cases r; try done; hd_cases t; try done; try congruence;
+    intuition (subst; eauto using eqT_trans).
 Qed.
 
 (** The payload congruence at a fixed depth, packaged so that the
@@ -208,12 +277,48 @@ Proof.
   - destruct (H 0) as (-> & -> & _). split_and!; [done|done| |].
     + apply IHT1. intros n. by destruct (H n) as (_ & _ & ? & _).
     + apply IHT2. intros n. by destruct (H n) as (_ & _ & _ & ?).
-  - destruct (H 0) as (-> & -> & _). split_and!; [done|done|].
-    apply IHT. intros n. by destruct (H n) as (_ & _ & ?).
-
+  - destruct (H 0) as (-> & -> & -> & H0). split_and!; [done|done|done|].
+    destruct k0; [|done].
+    apply IHT. intros n. by destruct (H n) as (_ & _ & _ & ?).
   - destruct (H 0) as (-> & _). split; [done|]. intros n. by destruct (H n).
   - destruct (H 0) as (-> & -> & -> & _). split_and!; [done|done|done|].
     apply IHT. intros n. by destruct (H n) as (_ & _ & _ & ?).
+Qed.
+
+(** ≈ is its own one-step unfolding. *)
+Lemma seq_step s r : seq s r → eq_step seq s r.
+Proof.
+  intros H. pose proof (H 1) as H1. unfold aeq, eq_step in H1 |- *.
+  pose proof (λ n, H (S n)) as HS. unfold aeq in HS; fold aeq in HS.
+  unfold eq_step in HS.
+  hd_cases s; hd_cases r; try done.
+  - destruct H1 as (-> & _). split_and!; [done| |].
+    + apply eqT_all. intros n. by destruct (HS n) as (_ & ? & _).
+    + intros n. by destruct (HS n) as (_ & _ & ?).
+  - destruct H1 as (-> & _). split_and!; [done| |].
+    + apply eqT_all. intros n. by destruct (HS n) as (_ & ? & _).
+    + intros n. by destruct (HS n) as (_ & _ & ?).
+  - destruct H1 as (-> & _). split; [done|]. intros n. by destruct (HS n).
+  - destruct H1 as (-> & _). split; [done|]. intros n. by destruct (HS n).
+  - split; intros n; by destruct (HS n).
+  - split; intros n; by destruct (HS n).
+Qed.
+
+(** Two types with the same head are equivalent. *)
+Lemma seq_unf s r : unfoldS s = unfoldS r → seq s r.
+Proof.
+  intros E n. destruct n as [|n]; [done|]. unfold aeq; fold aeq. unfold eq_step.
+  rewrite (hd_of r _ (eq_sym E)). fold (hd s).
+  hd_cases s; try done; split_and!; auto using eqT_refl, aeq_refl.
+Qed.
+
+(** ≈ preserves contractiveness. *)
+Lemma seq_contractive s r : seq s r → contractive s → contractive r.
+Proof.
+  intros H Hs. specialize (H 1). unfold aeq, eq_step in H.
+  destruct (hd s) eqn:Es; destruct (hd r) eqn:Er; try done;
+    try (apply hd_stuck in Es as [_ Hn]; by destruct Hn);
+    unfold contractive; rewrite unfoldS_unview, Er; done.
 Qed.
 
 (** ** ≈ is a congruence for [dual] *)
@@ -222,9 +327,9 @@ Lemma aeq_dual n : ∀ s r, aeq n s r → aeq n (dual s) (dual r).
 Proof.
   induction n as [|n IH]; intros s r H; [done|].
   unfold aeq in *; fold aeq in *. unfold eq_step in *.
-  rewrite <-!dual_unfoldS.
-  destruct (unfoldS s), (unfoldS r); simpl in *; try congruence;
-    try done; destruct H as (-> & ? & ?); split_and!; auto.
+  rewrite !hd_dual.
+  hd_cases s; hd_cases r; simpl in *; try done; try congruence;
+    intuition (subst; auto).
 Qed.
 
 Lemma seq_dual s r : seq s r → seq (dual s) (dual r).
@@ -236,9 +341,9 @@ Lemma adual_sym n : ∀ s r, adual n s r → adual n r s.
 Proof.
   induction n as [|n IH]; intros s r H; [done|].
   unfold adual in *; fold adual in *. unfold dual_step in *.
-  destruct (unfoldS s), (unfoldS r); try done;
+  hd_cases s; hd_cases r; try done;
     try (by rewrite H, dual_involutive);
-    try done; destruct H as (-> & ? & ?); split_and!; eauto using aeqT_sym.
+    intuition (subst; eauto using aeqT_sym).
 Qed.
 
 Lemma sdual_sym s r : sdual s r → sdual r s.
@@ -251,8 +356,8 @@ Proof. intros H n. by apply adual_sym. Qed.
 Lemma adual_dual n : ∀ s, adual n (dual s) s.
 Proof.
   induction n as [|n IH]; intros s; [done|].
-  unfold adual; fold adual. unfold dual_step. rewrite <-dual_unfoldS.
-  destruct (unfoldS s); simpl; try done;
+  unfold adual; fold adual. unfold dual_step. rewrite hd_dual.
+  hd_cases s; simpl; try done;
     split_and!; auto using eqT_refl, aeq_refl.
 Qed.
 
@@ -269,10 +374,8 @@ Proof.
   induction n as [|n IH]; intros s s' t He Hd; [done|].
   unfold aeq in He; fold aeq in He. unfold eq_step in He.
   unfold adual in *; fold adual in *. unfold dual_step in *.
-  destruct (unfoldS s), (unfoldS s'), (unfoldS t); simpl in *;
-    try done; try congruence;
-    try done; destruct He as (-> & ? & ?), Hd as (-> & ? & ?);
-    split_and!; eauto using aeqT_sym, aeqT_trans.
+  hd_cases s; hd_cases s'; try done; hd_cases t; try done; try congruence;
+    intuition (subst; eauto using aeqT_sym, aeqT_trans).
 Qed.
 
 Lemma sdual_seq_l s s' t : seq s s' → sdual s t → sdual s' t.
@@ -288,9 +391,9 @@ Lemma adual_aeq_dual n : ∀ s r, adual n s r → aeq n s (dual r).
 Proof.
   induction n as [|n IH]; intros s r H; [done|].
   unfold adual in H; fold adual in H. unfold dual_step in H.
-  unfold aeq; fold aeq. unfold eq_step. rewrite <-dual_unfoldS.
-  destruct (unfoldS s), (unfoldS r); simpl in *; try congruence;
-    try done; destruct H as (-> & ? & ?); split_and!; auto.
+  unfold aeq; fold aeq. unfold eq_step. rewrite hd_dual.
+  hd_cases s; hd_cases r; simpl in *; try done;
+    intuition (subst; auto).
 Qed.
 
 Lemma sdual_seq_dual s r : sdual s r ↔ seq s (dual r).
@@ -308,60 +411,306 @@ Qed.
     to ≈: it recovers a head, exactly as [senv_hd] does for a type it
     knows up to [unfoldS]. *)
 
-Lemma aeq_S_rcv n s r m T r' :
-  aeq (S n) s r → unfoldS r = SRcv m T r' →
-  ∃ U s', unfoldS s = SRcv m U s' ∧ eqT (aeq n) U T ∧ aeq n s' r'.
-Proof.
-  unfold aeq; fold aeq. unfold eq_step. intros H Hr. rewrite Hr in H.
-  destruct (unfoldS s) as [m' U s'|m' U s'| |x|a|a]; try discriminate;
-    destruct H as (-> & ? & ?); by exists U, s'.
-Qed.
-
-Lemma aeq_S_snd n s r m T r' :
-  aeq (S n) s r → unfoldS r = SSnd m T r' →
-  ∃ U s', unfoldS s = SSnd m U s' ∧ eqT (aeq n) U T ∧ aeq n s' r'.
-Proof.
-  unfold aeq; fold aeq. unfold eq_step. intros H Hr. rewrite Hr in H.
-  destruct (unfoldS s) as [m' U s'|m' U s'| |x|a|a]; try discriminate;
-    destruct H as (-> & ? & ?); by exists U, s'.
-Qed.
-
 Lemma seq_rcv_inv s r m T r' :
-  seq s r → unfoldS r = SRcv m T r' →
-  ∃ U s', unfoldS s = SRcv m U s' ∧ teq U T ∧ seq s' r'.
+  seq s r → unfoldS r = SSeq (SRcv m T) r' →
+  ∃ U s', unfoldS s = SSeq (SRcv m U) s' ∧ teq U T ∧ seq s' r'.
 Proof.
-  intros Hs Hr.
-  destruct (aeq_S_rcv 0 s r m T r' (Hs 1) Hr) as (U & s' & Es & _ & _).
-  exists U, s'. split; [done|]. split.
-  - apply eqT_all. intros n.
-    destruct (aeq_S_rcv n s r m T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
-    rewrite Es in Es0. by simplify_eq.
-  - intros n.
-    destruct (aeq_S_rcv n s r m T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
-    rewrite Es in Es0. by simplify_eq.
+  intros Hs Hr. pose proof (seq_step _ _ Hs) as H. unfold eq_step in H.
+  rewrite (hd_of _ _ Hr) in H. rewrite unfoldS_unview.
+  hd_cases s; try done. destruct H as (-> & ? & ?). by eexists _, _.
 Qed.
 
 Lemma seq_snd_inv s r m T r' :
-  seq s r → unfoldS r = SSnd m T r' →
-  ∃ U s', unfoldS s = SSnd m U s' ∧ teq U T ∧ seq s' r'.
+  seq s r → unfoldS r = SSeq (SSnd m T) r' →
+  ∃ U s', unfoldS s = SSeq (SSnd m U) s' ∧ teq U T ∧ seq s' r'.
 Proof.
-  intros Hs Hr.
-  destruct (aeq_S_snd 0 s r m T r' (Hs 1) Hr) as (U & s' & Es & _ & _).
-  exists U, s'. split; [done|]. split.
-  - apply eqT_all. intros n.
-    destruct (aeq_S_snd n s r m T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
-    rewrite Es in Es0. by simplify_eq.
-  - intros n.
-    destruct (aeq_S_snd n s r m T r' (Hs (S n)) Hr) as (? & ? & Es0 & ? & ?).
-    rewrite Es in Es0. by simplify_eq.
+  intros Hs Hr. pose proof (seq_step _ _ Hs) as H. unfold eq_step in H.
+  rewrite (hd_of _ _ Hr) in H. rewrite unfoldS_unview.
+  hd_cases s; try done. destruct H as (-> & ? & ?). by eexists _, _.
+Qed.
+
+Lemma seq_plus_inv s r r1 r2 :
+  seq s r → unfoldS r = SPlus r1 r2 →
+  ∃ s1 s2, unfoldS s = SPlus s1 s2 ∧ seq s1 r1 ∧ seq s2 r2.
+Proof.
+  intros Hs Hr. pose proof (seq_step _ _ Hs) as H. unfold eq_step in H.
+  rewrite (hd_of _ _ Hr) in H. rewrite unfoldS_unview.
+  hd_cases s; try done. destruct H. by eexists _, _.
+Qed.
+
+Lemma seq_with_inv s r r1 r2 :
+  seq s r → unfoldS r = SWith r1 r2 →
+  ∃ s1 s2, unfoldS s = SWith s1 s2 ∧ seq s1 r1 ∧ seq s2 r2.
+Proof.
+  intros Hs Hr. pose proof (seq_step _ _ Hs) as H. unfold eq_step in H.
+  rewrite (hd_of _ _ Hr) in H. rewrite unfoldS_unview.
+  hd_cases s; try done. destruct H. by eexists _, _.
 Qed.
 
 Lemma seq_end_inv s r : seq s r → unfoldS r = SEnd → unfoldS s = SEnd.
 Proof.
-  intros Hs Hr. specialize (Hs 1).
-  unfold aeq in Hs; fold aeq in Hs. unfold eq_step in Hs.
-  rewrite Hr in Hs.
-  by destruct (unfoldS s) as [m U s'|m U s'| |x|a|a].
+  intros Hs Hr. pose proof (seq_step _ _ Hs) as H. unfold eq_step in H.
+  rewrite (hd_of _ _ Hr) in H. rewrite unfoldS_unview.
+  by hd_cases s.
+Qed.
+
+(** ⊥ is its own one-step unfolding. *)
+Lemma sdual_step s r : sdual s r → dual_step seq sdual s r.
+Proof.
+  intros Hd. apply sdual_seq_dual in Hd. pose proof (seq_step _ _ Hd) as H.
+  unfold eq_step in H. unfold dual_step. rewrite hd_dual in H.
+  hd_cases s; hd_cases r; simpl in *; try done;
+    try (destruct H as (-> & ? & ?); split_and!; [done|done|];
+         apply sdual_seq_dual; by rewrite ?dual_involutive);
+    try (destruct H as (-> & ?); split; [done|];
+         apply sdual_seq_dual; by rewrite ?dual_involutive);
+    try (destruct H; split; apply sdual_seq_dual; by rewrite ?dual_involutive).
+Qed.
+
+(** Inversion of ⊥ at the heads of both sides. *)
+Lemma sdual_snd_rcv s r m T s' m' U r' :
+  sdual s r → unfoldS s = SSeq (SSnd m T) s' → unfoldS r = SSeq (SRcv m' U) r' →
+  m = m' ∧ teq T U ∧ sdual s' r'.
+Proof.
+  intros H Hs Hr. pose proof (sdual_step _ _ H) as Hd. unfold dual_step in Hd.
+  by rewrite (hd_of _ _ Hs), (hd_of _ _ Hr) in Hd.
+Qed.
+
+Lemma sdual_rcv_snd s r m T s' m' U r' :
+  sdual s r → unfoldS s = SSeq (SRcv m T) s' → unfoldS r = SSeq (SSnd m' U) r' →
+  m = m' ∧ teq T U ∧ sdual s' r'.
+Proof.
+  intros H Hs Hr. pose proof (sdual_step _ _ H) as Hd. unfold dual_step in Hd.
+  by rewrite (hd_of _ _ Hs), (hd_of _ _ Hr) in Hd.
+Qed.
+
+Lemma sdual_plus_with s r s1 s2 r1 r2 :
+  sdual s r → unfoldS s = SPlus s1 s2 → unfoldS r = SWith r1 r2 → sdual s1 r1 ∧ sdual s2 r2.
+Proof.
+  intros H Hs Hr. pose proof (sdual_step _ _ H) as Hd. unfold dual_step in Hd.
+  by rewrite (hd_of _ _ Hs), (hd_of _ _ Hr) in Hd.
+Qed.
+
+Lemma sdual_with_plus s r s1 s2 r1 r2 :
+  sdual s r → unfoldS s = SWith s1 s2 → unfoldS r = SPlus r1 r2 → sdual s1 r1 ∧ sdual s2 r2.
+Proof.
+  intros H Hs Hr. pose proof (sdual_step _ _ H) as Hd. unfold dual_step in Hd.
+  by rewrite (hd_of _ _ Hs), (hd_of _ _ Hr) in Hd.
+Qed.
+
+Lemma sdual_sbranch b s1 s2 r1 r2 :
+  sdual s1 r1 → sdual s2 r2 → sdual (sbranch b s1 s2) (sbranch b r1 r2).
+Proof. by destruct b. Qed.
+
+(** The kind of a head, and what duality does to it. *)
+Inductive hkind := KdSkip | KdRcv | KdSnd | KdVar | KdVarD | KdPlus | KdWith | KdEnd | KdStuck.
+
+Definition kind (h : hview) : hkind :=
+  match h with
+  | HSkip => KdSkip | HRcv _ _ _ => KdRcv | HSnd _ _ _ => KdSnd | HVar _ _ => KdVar
+  | HVarD _ _ => KdVarD | HPlus _ _ => KdPlus | HWith _ _ => KdWith | HEnd => KdEnd
+  | HStuck _ => KdStuck
+  end.
+
+Definition kdual (k : hkind) : hkind :=
+  match k with
+  | KdRcv => KdSnd | KdSnd => KdRcv | KdVar => KdVarD | KdVarD => KdVar
+  | KdPlus => KdWith | KdWith => KdPlus | k => k
+  end.
+
+Lemma sdual_kind s r : sdual s r → kind (hd r) = kdual (kind (hd s)).
+Proof.
+  intros H. specialize (H 1). simpl in H. unfold dual_step in H.
+  hd_cases s; hd_cases r; done.
+Qed.
+
+(** ** Laws of sequential composition (Lemma 3.4 of Thiemann and
+    Vasconcelos) and of µ (Lemma 3.5)
+
+    The laws hold for contractive types, as in the paper, which states
+    them for well-formed types. Skip;S ≈ S and µα.S ≈ S[µα.S/α] need
+    the head of S, S;Skip ≈ S and associativity need it hereditarily
+    ([hcontractive]), because their bisimulations visit the
+    continuations. Distribution of a choice over ; and Close;S ≈ Close
+    hold for every type. *)
+
+(** Hereditary contractiveness: every type reachable from S by actions
+    has a head. *)
+Lemma hcontractive_contractive s : hcontractive s → contractive s.
+Proof.
+  intros H. specialize (H 1). simpl in H. unfold hc_step in H.
+  unfold contractive. rewrite unfoldS_unview.
+  destruct (hd s) eqn:E; done.
+Qed.
+
+Lemma hcontractive_step s : hcontractive s →
+  match hd s with
+  | HSkip | HEnd => True
+  | HRcv _ _ s' | HSnd _ _ s' | HVar _ s' | HVarD _ s' => hcontractive s'
+  | HPlus a b | HWith a b => hcontractive a ∧ hcontractive b
+  | HStuck _ => False
+  end.
+Proof.
+  intros H. pose proof (λ n, H (S n)) as HS. simpl in HS. unfold hc_step in HS.
+  specialize (H 1). simpl in H. unfold hc_step in H.
+  destruct (hd s); try done; try (intros n; apply HS).
+  all: split; intros n; apply HS.
+Qed.
+
+Lemma sfuel_sinst s : ∀ σ, sfuel s ≤ sfuel (sinst σ s).
+Proof.
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2];
+    intros σ; simpl; try lia.
+  - specialize (IH (sty_up σ)). lia.
+  - apply sfuel_pos.
+  - rewrite sfuel_dual. apply sfuel_pos.
+  - specialize (IH1 σ). specialize (IH2 σ). lia.
+Qed.
+
+(** The head of S₁;S₂ from the heads of S₁ and S₂. *)
+Lemma unfoldS_seq_skip s1 s2 :
+  unfoldS s1 = SSkip → contractive s2 → unfoldS (SSeq s1 s2) = unfoldS s2.
+Proof.
+  intros H1 H2. unfold unfoldS at 1. simpl.
+  rewrite (unfoldS_unrN s1 (sfuel s1 + sfuel s2)) by (rewrite ?H1; simpl; lia).
+  rewrite H1. by rewrite (unfoldS_unrN s2 (sfuel s1 + sfuel s2)) by (done || lia).
+Qed.
+
+Lemma unfoldS_seq_hd s1 s2 :
+  contractive s1 → unfoldS s1 ≠ SSkip → unfoldS (SSeq s1 s2) = hseq (unfoldS s1) s2.
+Proof.
+  intros H1 Hne. unfold unfoldS at 1. simpl.
+  rewrite (unfoldS_unrN s1 (sfuel s1 + sfuel s2)) by (done || lia).
+  destruct (unfoldS s1); done.
+Qed.
+
+Lemma contractive_seq s1 s2 : contractive s1 → unfoldS s1 ≠ SSkip → contractive (SSeq s1 s2).
+Proof.
+  intros H1 Hne. unfold contractive. rewrite unfoldS_seq_hd by done.
+  by apply hseq_shape.
+Qed.
+
+Lemma seq_skip_l s : contractive s → seq (SSeq SSkip s) s.
+Proof. intros H. apply seq_unf. by apply unfoldS_seq_skip. Qed.
+
+Lemma seq_choice_dist_plus s1 s2 s3 :
+  seq (SSeq (SPlus s1 s2) s3) (SPlus (SSeq s1 s3) (SSeq s2 s3)).
+Proof.
+  apply seq_unf. rewrite unfoldS_seq_hd; [|done|done]. by rewrite unfoldS_plus.
+Qed.
+
+Lemma seq_choice_dist_with s1 s2 s3 :
+  seq (SSeq (SWith s1 s2) s3) (SWith (SSeq s1 s3) (SSeq s2 s3)).
+Proof.
+  apply seq_unf. rewrite unfoldS_seq_hd; [|done|done]. by rewrite unfoldS_with.
+Qed.
+
+Lemma seq_close_seq s : seq (SSeq SEnd s) SEnd.
+Proof. apply seq_unf. by rewrite unfoldS_seq_hd. Qed.
+
+Lemma seq_mu s : contractive (SMu s) → seq (SMu s) (unroll s).
+Proof.
+  intros H. apply seq_unf. destruct (unfoldS_cases (SMu s)) as [[E _]|[_ E]].
+  - simpl in E. symmetry. unfold unfoldS at 1.
+    rewrite (unrN_mono _ (sfuel (unroll s)) _ _ E) by apply sfuel_sinst.
+    done.
+  - exfalso. unfold contractive in H. rewrite E in H. done.
+Qed.
+
+(** The head of S₁;S₂ as a function of the head of S₁. *)
+Lemma hd_seq x y : contractive x → contractive y →
+  hd (SSeq x y) = match hd x with HSkip => hd y | h => view (hseq (unview h) y) end.
+Proof.
+  intros Hx Hy. unfold hd at 1. pose proof (unfoldS_unview x) as Ux.
+  destruct (hd x) eqn:E;
+    try (rewrite unfoldS_seq_hd; [by rewrite Ux|done|by rewrite Ux]).
+  - rewrite unfoldS_seq_skip; [done|by rewrite Ux|done].
+  - exfalso. apply hd_stuck in E as [_ Hn]. by apply Hn.
+Qed.
+
+Lemma contractive_seq2 x y : contractive x → contractive y → contractive (SSeq x y).
+Proof.
+  intros Hx Hy. pose proof (unfoldS_unview x) as Ux.
+  destruct (hd x) eqn:E; try (apply contractive_seq; [done|by rewrite Ux]).
+  - unfold contractive. by rewrite unfoldS_seq_skip.
+  - exfalso. apply hd_stuck in E as [_ Hn]. by apply Hn.
+Qed.
+
+Lemma hcontractive_skip : hcontractive SSkip.
+Proof. intros [|n]; done. Qed.
+
+(** The continuation of an atom after ;. *)
+Definition sk (r y : sty) : sty := match r with SSkip => y | _ => SSeq r y end.
+
+Lemma hseq_atom o r y : satom o → hseq (SSeq o r) y = SSeq o (sk r y).
+Proof. by destruct r. Qed.
+
+Lemma sk_cases r y : (r = SSkip ∧ sk r y = y) ∨ sk r y = SSeq r y.
+Proof. destruct r; first [by left | by right]. Qed.
+
+Lemma eq_step_hd τ s r : (∀ a, τ a a) → hd s = hd r → eq_step τ s r.
+Proof.
+  intros Hτ E. unfold eq_step. rewrite <-E.
+  hd_cases s; try done; split_and!; auto using eqT_refl.
+Qed.
+
+Lemma seq_skip_r s : hcontractive s → seq (SSeq s SSkip) s.
+Proof.
+  intros Hs.
+  set (R := λ a b, (∃ x, hcontractive x ∧ a = SSeq x SSkip ∧ b = x) ∨ seq a b).
+  assert (∀ a, R a a) as Hrefl by (intros; right; apply seq_refl).
+  apply (seq_coind R); [|by left; eauto].
+  intros a b [(x & Hx & -> & ->)|Hab];
+    [|eapply eq_step_mono; [|by apply seq_step]; intros; by right].
+  pose proof (hcontractive_step _ Hx) as Hst.
+  pose proof (hcontractive_contractive _ Hx) as Hc.
+  assert (∀ r, hcontractive r → R (sk r SSkip) r) as Hk.
+  { intros r Hr. destruct (sk_cases r SSkip) as [[-> ->]| ->]; [done|left; eauto]. }
+  unfold eq_step. rewrite hd_seq by (done || apply hcontractive_contractive, hcontractive_skip).
+  destruct (hd x) as [|m T s'|m T s'|a s'|a s'|s1 s2|s1 s2| |u]; cbn [unview]; try done;
+    try (rewrite hseq_atom by exact I; simpl; split_and!; auto using eqT_refl);
+    try (simpl; destruct Hst; split; left; by eauto).
+Qed.
+
+Lemma seq_assoc a b c : hcontractive a → hcontractive b → hcontractive c →
+  seq (SSeq (SSeq a b) c) (SSeq a (SSeq b c)).
+Proof.
+  intros Ha Hb Hc.
+  set (R := λ X Y, (∃ a b c, hcontractive a ∧ hcontractive b ∧ hcontractive c ∧
+                     X = SSeq (SSeq a b) c ∧ Y = SSeq a (SSeq b c)) ∨ seq X Y).
+  assert (∀ a, R a a) as Hrefl by (intros; right; apply seq_refl).
+  apply (seq_coind R); [|left; by eauto 10].
+  intros X Y [(a' & b' & c' & Ha' & Hb' & Hc' & -> & ->)|HXY];
+    [|eapply eq_step_mono; [|by apply seq_step]; intros; by right].
+  clear a b c Ha Hb Hc. rename a' into a, b' into b, c' into c.
+  rename Ha' into Ha, Hb' into Hb, Hc' into Hc.
+  pose proof (hcontractive_contractive _ Ha) as Ca.
+  pose proof (hcontractive_contractive _ Hb) as Cb.
+  pose proof (hcontractive_contractive _ Hc) as Cc.
+  pose proof (hcontractive_step _ Ha) as Sa.
+  assert (∀ r, hcontractive r → R (sk (sk r b) c) (sk r (SSeq b c))) as Hk.
+  { intros r Hr. destruct r; try (left; by eauto 10). simpl.
+    destruct (sk_cases b c) as [[-> ->]| ->]; [|done].
+    right. apply seq_sym, seq_skip_l. done. }
+  assert (contractive (SSeq a b)) as Cab by by apply contractive_seq2.
+  assert (contractive (SSeq b c)) as Cbc by by apply contractive_seq2.
+  destruct (hd a) as [|m T s'|m T s'|x s'|x s'|s1 s2|s1 s2| |u] eqn:Eha.
+  { apply eq_step_hd; [done|].
+    rewrite (hd_seq (SSeq a b) c), (hd_seq a (SSeq b c)), (hd_seq a b), Eha by done.
+    by rewrite (hd_seq b c) by done. }
+  all: unfold eq_step.
+  all: rewrite (hd_seq (SSeq a b) c), (hd_seq a (SSeq b c)), (hd_seq a b), Eha by done.
+  all: cbn [unview]; try done.
+  - rewrite (hseq_atom (SRcv m T)) by exact I. cbn [view unview].
+    rewrite !hseq_atom by exact I. cbn [view]. split_and!; auto using eqT_refl.
+  - rewrite (hseq_atom (SSnd m T)) by exact I. cbn [view unview].
+    rewrite !hseq_atom by exact I. cbn [view]. split_and!; auto using eqT_refl.
+  - rewrite (hseq_atom (SVar x)) by exact I. cbn [view unview].
+    rewrite !hseq_atom by exact I. cbn [view]. auto.
+  - rewrite (hseq_atom (SVarD x)) by exact I. cbn [view unview].
+    rewrite !hseq_atom by exact I. cbn [view]. auto.
+  - destruct Sa. simpl. split; left; by eauto 10.
+  - destruct Sa. simpl. split; left; by eauto 10.
 Qed.
 
 (** ** Term-level environments with both ends

@@ -14,7 +14,8 @@ Definition chan := string.
     thunk (they replace the paper's fork, which did both at once). *)
 Inductive konst :=
   | KNew | KSpawn | KRecv | KSend | KClos | KLink
-  | KForce.
+  | KForce
+  | KSel1 | KSel2 | KBra.          (* select₁, select₂ and branch (K4) *)
 
 Inductive expr :=
   | Var (x : nat)
@@ -44,6 +45,15 @@ Notation ELink := (Konst KLink).
 (** force is simply a function: forcing is application, so it needs no
     evaluation context of its own.  force (!e) —β→ e[!e/x]. *)
 Notation EForce := (Konst KForce).
+(** Binary choice (K4 of docs/extensions/context-free.md). select₁ c and
+    select₂ c pick a branch of c, branch c waits for the pick and
+    returns c in the matching injection, so case does the dispatch. *)
+Notation ESel1 := (Konst KSel1).
+Notation ESel2 := (Konst KSel2).
+Notation EBra := (Konst KBra).
+
+(** The selection constant of a branch: select₁ for false, select₂ for true. *)
+Definition ksel (b : bool) : konst := if b then KSel2 else KSel1.
 
 (** ** Values *)
 
@@ -68,11 +78,11 @@ Proof.
   apply (inj_countable'
     (λ k, match k with
           | KNew => 0 | KSpawn => 1 | KRecv => 2 | KSend => 3 | KClos => 4
-          | KLink => 5 | KForce => 6
+          | KLink => 5 | KForce => 6 | KSel1 => 7 | KSel2 => 8 | KBra => 9
           end)
     (λ n, match n with
           | 0 => KNew | 1 => KSpawn | 2 => KRecv | 3 => KSend | 4 => KClos
-          | 5 => KLink | _ => KForce
+          | 5 => KLink | 6 => KForce | 7 => KSel1 | 8 => KSel2 | _ => KBra
           end)).
   by intros [].
 Qed.

@@ -868,6 +868,649 @@ The translation is unchanged, and the theorem asks `fixlam` instead.
 padovani-novara.md §8 lists every deviation of the source semantics from the
 chapter. No core change.
 
+**72. Context-free session types, stages A and B (Claude, 2026-10-31, branch cfst).**
+The core now runs on the session types of K1 (docs/extensions/context-free.md).
+The statements of soundness, the fundamental theorems, adequacy, Prel_connect,
+Prel_connect_n, Prel_term, Prel_indep, Prel_internalize and Erel_bind are
+unchanged. Only the session types inside them changed.
+
+Syntax (K1, Types.v). sty has SSkip, SSeq, SSnd m T and SRcv m T without
+continuation, SPlus and SWith for binary ⊕ and &, SEnd, SMu, SVar and SVarD.
+dual swaps SSnd and SRcv, SPlus and SWith, distributes over SSeq and keeps the
+polarized variables. dual_unfoldS still holds unconditionally.
+
+Head normal form (K3). unfoldS is unr of Thiemann and Vasconcelos (§3.3,
+Lemma 3.8). It returns Skip, SSeq o S′ with o one of SSnd, SRcv, SVar, SVarD,
+SPlus, SWith or Close. A lone !P, ?P or variable reads as itself followed by
+Skip, a choice followed by S takes S into both branches, and Close;S is Close
+(K2). unr terminates only on contractive types, and a Rocq function must be
+total. unrN therefore counts fuel, one unit per ; and µ on the spine
+(sfuel), and unfoldS returns the type itself when no head appears. A stuck
+type is never in head form, so no clause of the relation applies to it, as
+before for µα.α. We call S contractive when unfoldS S is a head, which is
+"unr(S) is defined" of Lemma 3.8. On a closed type that is contractive in the
+sense of Fig. 3, unr never reaches a recursion variable, so it explores only
+the syntax of S and the fuel suffices. That characterization is argued here
+and not mechanized. Deviation from K3. Contractiveness is the semantic
+condition, not the syntactic judgment of Fig. 3.
+
+Bisimilarity (K3, SessionEquiv.v). ≈ and ⊥ keep their form, ∀ n of a
+depth-n approximation, and read the head through a view hd (hview). The LTS
+of Fig. 5 is deterministic, so a bisimulation compares exactly the action of
+the head and the continuations, which eq_step does. We do not define the LTS
+of Fig. 5 itself. The laws are lemmas, seq_skip_l (S contractive),
+seq_skip_r and seq_assoc (hereditarily contractive, hcontractive, because
+their bisimulations visit the continuations), seq_choice_dist_plus,
+seq_choice_dist_with and seq_close_seq (every type), seq_mu (µα.S
+contractive). The paper states its laws for well-formed types. New
+inversions seq_plus_inv and seq_with_inv, and the kind of a head (hkind) with
+sdual_kind, which turns every head mismatch across ⊥ into a discriminate.
+
+Choice in the calculus (K4, Syntax.v, Semantics.v). Constants KSel1, KSel2
+and KBra, labels SSel c b and SBra c b with b = false for branch 1. select_i c
+steps to c by c◁i, branch c steps to inj_i c by c▷i for both i. P-Act-Choice
+is a τ of a selection and a branch on one channel, free or restricted, like
+P-Act-Msg. Harmony has the reduction rules RedChoice1 and RedChoice2 and still
+holds. Progress (Safety.v) has the actions ASel and ABra. The signatures are
+KTSel1, KTSel2 (⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@(ι+1)) and KTBra
+(&(S₁, S₂)@ι ⊸^ι_⊤ S₁@(ι+1) + S₂@(ι+1)). Two constructors instead of one
+indexed by the branch keep inversion on konst_ty clean.
+
+The relation (K4, K5). selects offers the ⊕ entry for c◁i and the & entry for
+c▷i. O-Select asks Θ = Θr, c : S@k with unfoldS S = ⊕(S₁, S₂) and the
+successor at the same index with c : Sᵢ@(k+1) (a giving step, cost 0, like
+send). O-Branch is the same at index n − 1 (cost 1, like receive, without a
+payload and so without the quantification over later worlds). Q-Select and
+Q-Branch (Pchoice_case) are the process forms. Every action moves the instant
+by one, and Skip and ; move nothing, because unfoldS removes them before a
+clause reads the head. A small choice. O-Branch is stated at W and n − 1,
+because no payload arrives, while O-Recv quantifies over W′ ⊒ W and j ≤ n − 1
+for its payload.
+
+What changed in the proofs. Every case analysis on labels gained the two
+labels. PointRenaming, ChannelRenaming, PointConversion, EquivInvariance and
+Monotonicity carry the new clauses. In ReadyChain cut_not_both closes every
+mismatch by sdual_kind and selects_kind, choice_tau synchronizes a selection
+with a branch (bra_retarget), and no_cut_offer uses the kinds as well.
+In JunkRenaming both labels are deterministic under substitution, rel_fuse moves
+the entry like send, Prel_junk gets the internal choice. In Internalize a choice
+on the fused channel is a free c◁i of p followed by its d▷i (choice_case),
+external choices are ext_sel and ext_bra. ConnectCut and ConnectSteps have
+ext_choice for an interface channel (iface_lower for the branch at n − 1),
+cross_choice for a selection meeting a branch across the cut, which updates
+both cut ends, tau_choice inside one component. PTerm has case_choice. In Bind
+select works like send and branch like receive. TermRules has Erel_app_sel and
+Erel_app_bra. In the static system the constants type by E-Const at their
+signatures, conversion is E-Conv up to the new ≈ and Γ ⊢ ≡.
+
+Branch layout (K9). theories/pgv and theories/pn are out of _CoqProject and
+not ported. The examples port by rewriting !P.S to !P;S and ?P.S to ?P;S.
+
+No deviation from K1, K2, K4, K5 or K9. The deviation from K3 is the one
+above. K6, K7 and K8 belong to stage C.
+
+**73. Context-free session types, stage C (Claude, 2026-10-31, branch cfst).**
+Boxes bind session variables (K6), a new type former binds points
+existentially (K7), and the type of sendTree is expressible with the coarse
+ceiling (K8). The statements of soundness, the fundamental theorems, adequacy,
+Prel_connect, Prel_connect_n, Prel_term, Prel_indep, Prel_internalize and
+Erel_bind are unchanged. No obstruction came up.
+
+Boxes over session variables (K6, Types.v). TBox n k C T binds n points and k
+session variables. sinst_ty lifts its substitution k times under the box, as
+under k µ's, and sclosed_ty counts the k binders. Point instantiation never
+enters a session type, so pinst_ty and sinst_ty commute on the nose
+(pinst_sinst). force instantiates both binders. KTForce takes points xs with
+C[xs] and session types ss, length ss = k and every s in ss hereditarily
+contractive, and gives the type
+T[xs/ιs][ss/αs] for the result.
+
+V-Box (LogicalRelation.v). The thunk is in V at every later world, every
+instance xs of the points that meets C, and every list ss of hereditarily
+contractive session types. The instances need not be closed. A free session
+variable in a head relates nothing, because V-Chan and the step clauses read
+only heads that unfoldS produces. Contractiveness is needed, because the laws
+that E-Conv uses (seq_skip_l, seq_assoc) hold only for hereditarily
+contractive types (entry 72). K6 says closed. We quantify over contractive ones
+and require nothing else. The recursion of V stays well founded. V-Box reads
+the instantiated body only through Vfun at the levels below n, and Vlam (V at
+an arrow) is a clause of the lower level, so the size of ss never matters.
+
+≈ on box bodies. ≈ and ⊥ of open session types are not closed under
+substitution. µY. X;Y and µY. X;(X;Y) are bisimilar, both X;X;X;… with X read
+as a head. The instance X := Skip is hereditarily contractive, yet it turns
+both into types without a head, which unr leaves stuck and which relate only
+when equal. A contractive instance can make a contractive type non-contractive.
+eqT therefore compares the body of a box
+with k > 0 by equality, and teqW (≈ up to aliases in W) becomes teqW_r ρ with
+the session types compared by ρ. teqW is teqW_r ≈. A box body with k > 0
+uses teqW_r (=), which aliasing points cannot break (teqW_r_pinst_l) and
+session instances keep (teqW_eq_sinst). Conversion inside a box body with
+session variables happens at each instance, in the infinitary premise below.
+
+E-Exp (Typing.v). The body is typed once with the ιs as point variables 0, …,
+m−1, as before, and at every hereditarily contractive instance ss of the αs,
+at type T[ss/αs]. Deviation from K6, which asked for the αs as variables in
+the body. With the αs as variables the substitution lemma for session
+variables would need ≈ and ⊥ closed under instances, which fails as above.
+The premise is infinitary in ss and finitary in points. typed_term_wf_s picks
+the instance Closeᵏ (slist_witness). typed_sem_rules and typed_pinst
+instantiate ss in the premise and use pinst_sinst. The examples have k = 0,
+use the tactic box_k0 for the one empty instance and typed_force0 for force.
+
+Existential points (K7). TEx lb n C T is ∃ι₀ … ιₙ₋₁ ≽ lb. C. T. Deviation from
+K7. The former carries a lower point lb. Every closure and every value that
+holds channels needs a lower bound of its heads for the frame discipline, and
+heads(∃ι≽lb. C. T) is {lb}. lb = None is ⊤ and forces an empty environment,
+as on ⊸. V⟦TEx lb n C T⟧ holds when lb ≼ heads(Θ) and some known xs of length
+n with C[xs] in W carry the value in V⟦T[xs/ιs]⟧ (Vrel_ex_iff). C is any set
+of positive facts, as for boxes.
+
+Making V structural at ∃. T[xs/ιs] is not a subterm of the existential, so
+Vdef carries a point substitution σ and reads T under it (Vdef_ext, Vdef_comp,
+Vdef_inst). Proofs by induction on types use ty_ind_ex, whose ∃ case gets the
+hypothesis at every instance, by induction on tsize, which point
+instantiation keeps. A λ can now be in V at an existential type, so the old
+Vrel_Vfun is false. Vlam, V restricted to arrows, replaces it in V-Box and in
+the invariance proofs.
+
+Invariance. V is monotone at ∃ (Monotonicity.v), invariant under point
+swaps (PointRenaming.v), channel swaps, moves and junk collapse
+(ChannelRenaming.v, JunkRenaming.v), ≈ (EquivInvariance.v) and ≈ up to aliases
+(PointConversion.v). bcs_hold_conv_sub is the alias transport of a constraint
+without a later world.
+
+E-Pack and E-Open. sem_typed_pack (BoxRules.v) turns a term of type T[xs/ιs]
+into one of type ∃ιs≽lb. C. T when xs is known, C[xs] holds and lb ≼
+heads(T[xs/ιs]). It rests on Erel_Vsub, E closed under any inclusion of V that
+holds in every later world, with the point created at new renamed away from
+the target type as in Erel_tconv. sem_typed_open opens a hypothesis i of type
+∃ιs≽lb. C. T and asks the term at every later world and every known instance
+that meets C, with hypothesis i at T[xs/ιs] (grounding_open). sem_rules has
+sr_pack and sr_open. The static E-Pack asks xs known in Γ, Γ ⊢ C[xs] and
+Γ ⊢ lb ≼ heads(T[xs/ιs]). The static E-Open shifts Φ, Ψ, Θ, Δ, F and U past
+n new point variables, adds the hypothesis (C, ιs) to Ψ like a box body, and
+retypes hypothesis i at T. Two deviations from K7. E-Open is a rule on the
+environment without a term former, because the existential has no runtime
+content. E-Open asks T not unlimited, so that relevance (term_wf) carries
+over from the opened hypothesis to the existential one, which is never
+unlimited. E-Conv compares boxes and existentials by ≈ with their points on
+the nose (steq).
+
+The coarse ceiling (K8, examples/SendTreeType.v). The type is
+
+    TreeC = µX. ⊕(Skip, !∗;X;X)
+    C  = {ι+k ≺ ζ ∣ k}
+    C′ = {ι ≺ ι′} ∪ {ι′+k ≺ ζ ∣ k}
+    sendTree : □(∀ι ζ α. C. ∗ ⊸^⊥_⊤ ((TreeC;α)@ι ⊸^ζ_⊤ ∃ι′≽ι. C′. α@ι′))
+
+C′ needs ι ≺ ι′, which holds because every path through TreeC selects at
+least once, and ι′ below the ceiling for every offset. ι is the lower point of
+the existential. The file proves the type closed in points and in session
+variables, computes its instance at α := Close, shows that C′ at ι′ gives
+C[ι′/ι] for the next call (send_C_after), and that the instant after a select
+stays in C (send_C_shift). The sketch's argument Tree has no counterpart,
+because the calculus has no recursive data types, and !Int is !∗. The term
+and its derivation are stage D.
+
+**74. Context-free session types, stage D, examples (Claude, 2026-10-31, branch cfst).**
+Every example of stage D is a closed program in theories/examples/cfst/. The
+typed ones get deadlock_free from soundness at an explicit strict world. The
+one rejected example gets a proof that no strict world types it. The core is
+unchanged. CfstTools.v adds general lemmas only, hereditary contractiveness
+by induction on the depth (hc_ind, ahc_seq, hcontractive_seq), congruences of
+≈ under a prefix and under ⊕ and &, the derived rules tv_case and tv_open for
+Θ = ∅, and the facts of a constraint whose environment holds outer points
+(bcs_hold_env, sl_hyp).
+
+Simplifications that hold for all examples. The calculus has no recursive
+data types and no integers, a decided constraint. Int and () become ∗, and a
+tree is never a value. It travels on a channel or is fixed by the program's own
+choices. A unary choice {Start: S} of Mordido and Pérez becomes !∗;S, and its
+branch becomes a receive. K4 gives select the readiness and cost of send and
+branch those of receive, so the relation sees the same synchronizations.
+
+Tree serialization (Thiemann and Vasconcelos 2016, pp. 2–3, TreeCopy.v).
+Typed. drain is recvTree without the tree it builds. It reads a TreeD;β
+channel, where TreeD = dual TreeC, recurses on both subtrees and returns
+∃κ′≽κ. C′. β@κ′, the dual of the type of SendTreeType.v. drain is also the
+binary tree channel of Mordido and Pérez (p. 5), with one point per node in
+place of one priority per node. copy is recvTree followed by sendTree on a
+second channel, fused. It instantiates both continuations at TreeD;β and
+TreeC;α for the left call and at β and α for the right one, which is the
+polymorphic recursion of Thiemann and Vasconcelos (p. 3). The node branch
+reassociates (?∗;(TreeD;TreeD));β to ?∗;(TreeD;(TreeD;β)) by seq_assoc and
+seq_rcv_cong, as the paper does on p. 3. The coarse ceiling of K8 suffices
+for both. copy needs more than the ceiling, the zigzag κ+k ≺ ι+k ≺ κ+k+1
+between its two channels. It holds for every k, because a node costs two
+instants on each channel and a leaf one, so the two channels advance in
+lockstep and D[κ+n, ι+n] ⊆ D. The existential result states the zigzag again
+at κ′, ι′, and E-Open makes it a hypothesis for the right call. The result of
+the right call has lower point κ′, so the code opens it and packs it again
+at κ, through κ ≺ κ+2 ≺ κ′ ≺ κ″ (an η-expanded identity λr. r). The main
+program sends the fixed tree Node(Leaf, Leaf) on a, copies it from a to b
+and drains it from b, in the world (a,k) ≺ (b,k) ≺ (a,k+1) and (a,k),
+(b,k) ≺ (z,0), strict by the ranks (0, 2k), (0, 2k+1) and (1, k).
+Simplification. sendTree on a tree value and recvTree into a tree value need
+a data type, so copy and drain stand in for them. The transform and treeSum
+pair (Listing 2) and the arithmetic server (Listing 3) have the same shape
+as copy and drain plus a reply after the subtrees, and are not mechanized.
+
+The data-dependent case of K8 stays outside. sendTree t c; close d; send v c
+needs (d,0) ≺ (c,n) with n the size of t, and no example of stage D needs it.
+copy holds both channels and acts on both inside the segment, but the
+lockstep removes the dependency, because the offset n is the same on both
+channels and only the difference of the offsets enters the facts.
+
+Two streams (Mordido and Pérez, Listings 1.1 and 1.2, Stream.v). Typed. client
+sends on w1 and receives on r2, newclient receives on r1 and sends on w2, both
+by tail calls under the coarse ceiling. The priority sequences [1, 3, 5, …] and
+[2, 4, 6, …] of new become the facts (1,k) ≺ (2,k) ≺ (1,k+1) of the world.
+The protocol is regular.
+
+The classic deadlock (Mordido and Pérez, p. 3, CfstDeadlock.v). Rejected. f
+receives on its first channel and then sends on the second, and the program
+runs f ⟨a, b′⟩ and f ⟨b, a′⟩ in parallel. The receive of the first thread
+blocks at (a,0) with b′ at (b,0) in the frame, so E-App asks (a,0) ≺ (b,0).
+The second asks (b,0) ≺ (a,0). The proof does not invert derivations.
+dl_not_deadlock_free runs the program to the state where both threads wait on
+a receive and shows that it has no τ step and is not terminated.
+dl_untypable then follows from soundness. No strict world types the program.
+The repair of Mordido and Pérez, g sends first and receives afterwards, types
+in the lockstep world (dlfix_deadlock_free).
+
+Milner's scheduler (Mordido and Pérez, A.5, pp. 37–39, CfstScheduler.v).
+Typed. Three followers in a ring with three workers, k = 3 as in the paper.
+The follower is a recursive box over its three channels and a ceiling. Its
+constraint holds, for every round r, twelve facts that put each action of a
+round below the two channels the follower still holds, at the instants 2r and
+2r+1, and the ceiling above everything. The constraint needs the parity of
+the instant. No rank a·k + b of the instants meets it, already for one
+follower, because π+2r ≺ ω+2r and ω+2r+1 ≺ π+2r+1 force b_π < b_ω < b_π.
+The world of the closed program therefore has the rank 9⌊k/2⌋ + b(X, k mod 2),
+checked first by a script on eight rounds and then in Rocq (Wsch_strict). The
+leader acts twice on A1 and C1 and then runs the follower at (C3, A1, C1) with
+the instants (0, 2, 2), so the ring is not uniform, and the world lists the
+facts of the three follower instances and the eight facts of the leader.
+Mordido and Pérez fix the sequences n + 6k at new (n = 1, 3, 5 for the worker
+channels, 2, 4, 6 for the scheduler channels). We need no such choice.
+Simplifications. The unary choices become sends and receives of ∗ (above).
+Both semantics are synchronous (Fig. 15, p. 30). A.5 starts from the
+asynchronous scheduler of van den Heuvel and Pérez, but its own reductions
+R-Com, R-Ch and R-Close pair both sides in one step.
+
+Issues. None of the examples needed a change of the core. Typing derivations
+with E-Open pass the shifted context in normal form to tv_open and check the
+equations by reflexivity. The transform and treeSum pair and the arithmetic
+server of Thiemann and Vasconcelos are not mechanized (above).
+
+**75. Context-free session types, the remote tree sum and the arithmetic server (Claude, 2026-10-31, branch cfst).**
+Listings 2 and 3 of Thiemann and Vasconcelos (pp. 3–4) type without data
+types, and the core is unchanged. This closes the gap that entry 74 left.
+TreeSum.v and ArithServer.v prove both closed programs deadlock free
+(ts_deadlock_free, as_deadlock_free) at the strict world Wsum. Wsum has
+(a,k) ≺ (z,0) for every k and the ranks (0, k) for a and (1, k) for z. Int
+becomes ∗, and a tree or a term is never a value.
+
+The remote tree sum (Listing 2, TreeSum.v). Typed.
+
+    XformC = µX. ⊕(Skip, (!∗;(X;X));?∗)        XformD = dual XformC
+    treeSum : □(∀κ ζ β. C. ∗ ⊸^⊥_⊤ ((XformD;β)@κ ⊸^ζ_⊤ ∃κ′≽κ. C′. β@κ′))
+    C  = {κ+k ≺ ζ ∣ k}      C′ = {κ ≺ κ′} ∪ {κ′+k ≺ ζ ∣ k}
+
+The type is the one of drain with XformD for TreeD. The node branch
+reassociates ((?∗;(XformD;XformD));!∗);β to ?∗;(XformD;(XformD;(!∗;β))) by
+three uses of seq_assoc. The left call instantiates β at XformD;(!∗;β), the
+right call at !∗;β. The reply after the subtrees is what drain lacks. The
+right call returns ∃κ″≽κ′. C′. (!∗;β)@κ″. The code opens it, sends on the
+channel at κ″, which C′ puts below ζ, and packs at κ with the witness κ″+1.
+The pack needs κ ≺ κ+2 ≺ κ′ ≺ κ″ ≺ κ″+1 and κ″+1+k ≺ ζ, the second from C′
+at k+1. The coarse ceiling suffices, because the reply acts on the channel
+of the segment and on no other. The client is transform specialised to
+aTree = Node 3 Leaf (Node 4 Leaf Leaf). It makes ten actions at (a,0), …,
+(a,9), and the two replies arrive at (a,7) and (a,8).
+
+The arithmetic server (Listing 3, ArithServer.v). Typed.
+
+    TermC = µX. ⊕(!∗, ⊕(X;X, X;X))           TermD = dual TermC
+    receiveEval : the type of treeSum with TermD for XformD
+
+Const is select₁, Add is select₂ select₁ and Mult is select₂ select₂. The
+Const branch receives and packs at κ+2. Add and Mult run the code of drain
+after two branches, where drain has a branch and a receive, so the left call
+sits at κ+2 as in drain. The derivation distributes the inner choice over β
+by seq_choice_dist_with before it reassociates. computeService runs
+receiveEval on TermD;(!∗;Close), sends the result and closes. The client is
+the paper's, Add (Const 5) (Mult (Const 7) (Const 9)) and a receive, twelve
+actions at (a,0), …, (a,11).
+
+Differences from the paper. treeSum and receiveEval return the channel
+alone, not int ⊗ β, and the reply carries ∗ for x+l+r. Add and Mult run the
+same code, because no value tells them apart. The ternary choice of TermChan
+nests as binary choices (K1). Both programs end the session with close,
+where the paper discards a channel of type skip with fst (p. 4). transform
+reads a tree value, and here the client is a straight-line program that the
+tree fixes. XformChan writes !int;XformChan;XformChan;?int, and we bracket it
+as (!∗;(X;X));?∗, which ≈ identifies with every other bracketing.
+
+Nothing failed to type. The only new lemma is tv_case_same in
+ArithServer.v, case with two equal branches.
+
+**76. Branch points for session choice, K10 (Claude, 2026-10-31, branch cfst).**
+K10 replaces K5 for choices, as approved by the author. K5 put both
+continuations of a choice at ι+1, so a thread that orders c against d
+differently per branch needed both orders in one world. Program T2 of
+docs/extensions/adequacy/mordido-perez.md §9.5 is the witness. Its branch A
+needs (d,0) ≺ ι+1 and its branch B needs ι+1 ≺ (d,0). A branch point x◁i now
+names the point of c after branch i was picked at x, as the carried point x[i]
+names a message position.
+
+Definitions. The point syntax gains a fourth name former, and the world laws
+gain two fields.
+
+    pname  ::= … | NBr p b i            pt_br x i = (NBr (name x) (off x) i, 0)
+    wf_eq_br  x ≡ y → x◁i ≡ y◁i         wf_lt_br  x ≺ x◁i
+    geq_br, glt_br                      the same two rules in generated worlds
+    ppo    the closure of x ≺ x+1 and x ≺ x◁i under transitivity
+    selectᵢ : ⊕(S₁,S₂)@ι ⊸^ι_⊤ Sᵢ@(ι◁i)
+    branch  : &(S₁,S₂)@ι ⊸^ι_⊤ S₁@(ι◁1) + S₂@(ι◁2)
+    O-Select, O-Branch, Q-Select, Q-Branch   the entry moves to (sbranch b s₁ s₂, k◁b)
+    se_br  Γ ⊢ x ≡ y → Γ ⊢ x◁i ≡ y◁i     fl_map takes the matching hypothesis
+
+Branch i = 1 is the label [false] and i = 2 is [true], as in c◁i. The costs
+stay. Program order used to be "same name, smaller offset" in po_or_supp and
+in univ. Both now read ppo, and pt_size, which rises by one along each step,
+makes ppo irreflexive. pn_inst, pn_vb, pn_root, the point transposition and
+the alias map of new get the branch case like the case of x[i]. No premise of
+the relation is syntactic, and the statements of soundness, fundamental,
+adequacy, Prel_connect, Prel_connect_n, Prel_term, Prel_indep,
+Prel_internalize and Erel_bind are unchanged. Their proofs change at the
+choice steps only, where wf_eq_shift becomes wf_eq_br (PointConversion.v,
+ConnectSteps.v, Internalize.v, TermRules.v).
+
+The examples of the core. The rank lemmas of ExampleTools.v split in two.
+wgen_strict_br takes ranks that rise along branch points. wgen_strict_by and
+its instances first erase x◁i to x+1 (pt_erase), so every world without
+branch facts keeps its rank. Their ≡ and ≺ hypotheses now read the erased
+points, which cbn computes away on concrete facts. Rejected.v reads its hand
+rank through pt_erase. DropCounter.v needs the converse of its alias map on
+the μ line (cinv), because the fresh world has to reflect ppo onto the old one.
+
+Walks. A walk is a list of steps, each a successor or a branch point, and ι·w
+is its end from ι (pwalk). The ceilings of K8 become ceilings over the walks.
+
+    send_C  = {ι·w ≺ ζ ∣ w}           after_C = {ι ≺ ι′} ∪ {ι′·w ≺ ζ ∣ w}
+    copy_C  = {κ·w ≺ ι·w, ι·w ≺ (κ·w)·s, κ·w ≺ ζ, ι·w ≺ ζ ∣ w, s}
+
+drain, copy, treeSum and receiveEval keep their shapes with k replaced by w.
+The left recursive call sits at κ◁2+1 and meets C through the walk
+[◁2, +1] followed by w. Copy's zigzag relates the points of its two channels
+at the same walk, because the select copies the branch it just took. The
+closed worlds rank a point by its size. Wcopy has a·w ≺ b·w ≺ (a·w)·s and
+a·w, b·w ≺ (z,0), with ranks (0, 2n), (0, 2n+1) and (1, n) for a point of
+size n. Wsum has a·w ≺ (z,0). The clients and the producer act at the points
+of a fixed walk (tsp, asp). Stream.v, CfstDeadlock.v and CfstScheduler.v use
+no choice and keep their constraints. They needed only the extra case of a
+pattern on names.
+
+receiveEval got longer. Add and Mult used to run the same code at κ+2, typed
+once by tv_case_same. Now they run at (κ◁2)◁1 and (κ◁2)◁2, two different
+points, so the proof types the code once for an arbitrary label i and uses it
+for both branches. tv_case_same is gone.
+
+BranchOrder.v types T1, T2 and T3 and proves them deadlock free
+(bo_deadlock_free) at the world ι ≺ ι◁B ≺ (d,0) ≺ ι◁A and (d,0) ≺ ι◁B+1. The
+rank is ten times the size, plus 12 on d and 5 on ι◁A. Under K5 the same
+program needs the cycle ι+1 ≺ (d,0) ≺ ι+1, so no strict world types it.
+
+Nothing failed. The core, the old examples and the seven ported files build
+with Print Assumptions closed for the 38 earlier results and the five new ones.
+
+**77. Adequacy for repaired Mordido and Pérez, fragment v1 (Claude, 2026-10-31, theories/mp/).**
+Every closed program of unit type in fragment v1 of Mordido and Pérez with
+repairs R1 to R6 translates to a deadlock-free program (`mp_deadlock_free`,
+closed under the global context). The two streams of Listings 1.1 and 1.2 go
+through the general translation (`st_mp_deadlock_free`). The judgment
+`mtyped Θ Γ e T σs e′` is their typing on our terms and yields the translated
+term, as `pn_typed` does for Padovani and Novara. The core is unchanged.
+
+Model. The priority map Ψ moves into the types (D3). A channel type is a
+session type with the sequence h + k·d of its channel, and inst unfolds
+µβ.∀^S ι.S at the head with ι := h and pops the sequence to h + d. A priority
+abstraction ∀ιs∈Θ. T →^{⊤,σ}_un U names the heads of its channel parameters
+as priority variables, and Θ is a list of strict inequalities between affine
+priorities. Effects are lists read as their maximum and lower bounds lists
+read as their minimum, so ⊔ and |Γ| need no symbolic join.
+
+World. A box over one point variable, the anchor, stands for every valuation
+of Θ. The carried points of an anchor are the anchor of an instance, the channel of
+a type and sequence, the lower point of a list and the upper point of a list.
+A point denotes a valuation, a channel in head form, a level or junk. A
+successor, a branch point and the carried point x[0] of a channel denote the
+continuation, the chosen branch and the payload, so the denotation follows
+the type and branch priorities map to ranks of branch points (D2). A
+continuation whose priority does not rise denotes junk ranked on top, so the
+rank rises along program order and along x ≺ x◁i (`wgen_strict_dn`, a copy
+of `wgen_strict_den` that reads branch points). The box constraint `Crel Θ`
+holds every fact between points of the anchor that holds at every valuation
+of Θ, and a force at the anchor of an instance σs meets it when σs
+instantiates Θ (`crel_hold`). Recursive calls need no shift uniformity and
+`new` may occur anywhere, because a channel point is named by its type.
+
+Two subranks were needed. ≼ must hold uniformly over valuations, and min ρs
+and max σs tie with other points at some valuations only. A lower point has
+the subrank −|ρs|, so a closure that captures a closure with fewer entries
+lies strictly below it. An upper point has the subrank |σs|, or 0 when ⊤ is
+in σs, and the effect order `hle` admits a segment, an effect with ⊤ or a
+strictly smaller one.
+
+A sixth defect. T-Match (Fig. 14, p. 26) never compares the priority of the
+branching with the channels the branches hold. A thread that matches at 5
+while it holds a channel at 3 types, and deadlocks against a partner that
+acts at 3 first (program 6 of mordido-perez-counterexamples.txt). Repair R6
+asks ρ < |Γ₂|, the check T-App makes for an argument. Our rule `m_match` has it.
+
+Restrictions and the losses they cause are in the restriction log of
+docs/extensions/adequacy/mordido-perez.md. The main ones are no session type
+variables and no existential sequence positions, so the tree channel stays
+outside, continuation-carrying binary session types without Skip and ;, and
+payloads unit or channels. The scheduler, the classic deadlock, T2 and the
+rejection of the counterexamples are not mechanized yet.
+
+**78. Adequacy for repaired Mordido and Pérez, version 2 (Claude, 2026-10-31, theories/mp/MP2*.v).**
+Every closed program of unit type in version 2 of Mordido and Pérez with
+repairs R1 to R7 translates to a deadlock-free program (`mp2_deadlock_free`,
+closed under the global context). Version 2 has context-free session types
+with Skip and ;, session type variables, and functions over unbounded
+segments. receiveTree with the tree channel, the two streams and the repaired
+classic deadlock go through the general translation, and so does T2. The core
+is unchanged.
+
+Points by observation. A channel point denotes its raw session type and the
+head of its sequence. Two points are equivalent when every walk from them
+reaches equal ranks (`oeq`), a congruence for successors, branch points and
+carried points that the rank respects. T-Eq then keeps the point without a canonical
+form of context-free session types. `wgen_strict_oeq` generalizes the
+strictness lemma of version 1 to such an equivalence.
+
+The ceiling on top. Junk must stay below the ceiling, so the ranks are ⊥,
+integers, junk and ⊤, then the ceiling, then the junk of the ceiling. An upper
+point with ⊤ is the ceiling. The lower point of a closure that holds nothing
+lies above the ceiling, so an argument of effect ⊤ may precede it.
+
+Segments without an anchor. A recursive call on the end point of an earlier
+call needs the priority of that end point, which the caller cannot name. An
+existential anchor does not help, because the callee's constraint cannot
+mention facts of the caller's valuation, and an anchor from the callee's
+valuation cannot express the caller's session type variables. The box of a
+function over a segment therefore binds the channel point and the caller's
+anchor, with the coarse ceiling and floor of every walk as constraint. Its body
+is typed at every valuation, and a channel at an abstract position acts with
+effect ⊤. The rank world forces this. A continuation after an unbounded
+segment either falls below the segment or sits at a position that depends on
+the data.
+
+Two findings about the paper. Close^⊤ types and can be dropped, because a
+channel of priority ⊤ is unrestricted (program 7, repair R7). Milner's
+scheduler is not typed by the repaired rules. Its follower selects Next on succ
+at 8 while it holds prev at 8. The bound ∀α :: ρ of a session type variable
+constrains nothing (Fig. 4, p. 10), and receiveTree types only because T-Match
+does not check that a continuation rises.
+
+The restriction log is section 13 of docs/extensions/adequacy/mordido-perez.md.
+The rejection of the counterexamples by the source judgment is not mechanized.
+
+**79. Ranks inside unbounded calls, an attempt (Claude, 2026-10-31, theories/mp/MP2Examples.v).**
+The plan was to give the instants of a segment function their real ranks. A
+segment is the part of a session that one call of a recursive function
+consumes, and its length depends on the data, as the whole tree does in
+receiveTree. The rank of an instant was to come from its remaining session type
+and the valuation. The box was to hold the static set of every κ·w ≺ ι·w′ whose
+head priorities compare that way, a carried point was to rank at its payload's
+priority, and the ceiling was to stay only for the latent effect ⊤ toward the
+caller. None of the three losses of section 13 is lifted. Version 2 is
+unchanged except for one lemma.
+
+The rank of an instant is not a function of its remaining type. The world gives
+a continuation that does not rise junk, ranked above every finite level, and
+whether the continuation after a segment rises depends on the length of the
+segment. `rt_rank_data` takes the channel of rt_main, of type TreeChannel; Wait⁹
+with sequence 1 + 2k. After Node(Leaf, Leaf) the walk reaches Wait⁹ at rank 9.
+After a tree with four nodes on its left spine the last leaf sits at 17 and
+Wait⁹ is junk. No fact fixed when receiveTree is defined can put the returned
+channel below a finite priority, so acting on it while holding a channel of
+finite priority stays out of reach (loss c). Their rules accept that
+continuation, which runs below the segment for large data.
+
+Three obstacles stand behind the other losses.
+
+- A fact about an existential point holds at every head and at every instance
+  of the type variables, because the predicate of a box is fixed where the
+  function is defined and the core instantiates only points and session
+  variables. The anchor can carry the instance in the carried point B[RAnc [] τs], so an
+  item whose denotation reads the type may still depend on it. Equality never
+  crosses roots. The carried point of a walk of an existential point equals no point of
+  the anchor at every head, so a channel of the anchor cannot be sent at an
+  abstract position (loss b).
+- The core asks κ·w ≺ (κ·w)[0] before a send at κ·w. This holds only at walks that
+  are not junk, and a recursive call on an end point cannot discharge it,
+  because the caller knows only the floor and the ceiling of that end point's
+  walks.
+- Two channel parameters have two unknown heads. After a call both depend on
+  the data, independently unless one existential returns both, and version 2
+  has no product results. Inside the body an action at an abstract position has
+  effect ⊤, and no second channel lies above ⊤ (loss a).
+
+One part of loss c is sound but not done. Holding the returned channel while
+acting on another channel below its priority is fine in the rank world, because
+junk lies above every finite level. It needs a lower bound for the instants of
+the returned channel at every head. That asks for positions PX n w h d whose
+head is written relative to the end point (PI k for the head of n plus k), an
+invariant that the walk is junk or equals the position's channel at every
+concrete head, a symbolic walk that computes the bound, a fixed increment in
+MSeg, and an existential whose anchor is B[RAnc [] τs] with the facts
+X[RLw Q u] ≺ κ·u. This redesigns positions and was left out.
+
+The paper types a copy over two tree channels with a pair result, as it types
+receiveTree. T-Inst reads the sequence Ψ(x) of the parameter's name and T-AbsLin
+leaves Ψ unchanged (p. 25), so the body is checked under fixed sequences for
+both parameters. Section 13 of docs/extensions/adequacy/mordido-perez.md keeps
+the three losses with these reasons.
+
+**80. Mordido and Pérez, deadlock freedom in their semantics (Claude, 2026-10-31, theories/mp/MP2Semantics.v, MP2Simulation.v).**
+Every closed program of unit type in the repaired source system is deadlock free
+in their semantics (`mp2_deadlock_free_source`, closed under the global
+context). MP2Semantics.v models Fig. 15 (p. 30) on flat configurations with
+synchronous R-Com, R-Ch and R-Close, R-New and R-NewPoly as one rule, R-Fork,
+the β rule of repair R4 and the erasure of inst (R5). Definition 1 (p. 16) is
+`mp_deadlock_free_src`. The four programs of section 12 follow in the source
+semantics. The core and the translation are unchanged.
+
+The simulation forces no premise on programs. Padovani and Novara needed every
+fix to be fix λf.λx.e (SHARP-EDGES 71). Here repair R4 already makes recursion
+rec f. λx.e, and `mtyped` yields no other form.
+
+Three points shaped the proof. The translation is close to the identity, so a
+related source value always has a target value, and only one administrative
+form enters the relation, a translated recursive function after its force and
+before its argument is a value. Both semantics are synchronous, so a message, a
+choice and a close each match one target step. The relation does not record
+whether a channel carries unit or a channel next, so it cannot rule out a source
+thread stuck on () where a channel is expected. `tri` shows that the target of
+such a thread reaches a term that offers nothing, and `final` needs nothing more,
+because the target then cannot reduce through that thread either.
+
+The model departs from Fig. 15 in three places, listed in section 14 of
+docs/extensions/adequacy/mordido-perez.md. R-Close drops the restriction, so a
+name closes once. R-Com and R-Ch fire on any name. The final value of the main
+thread is shown to be a value, not to have a type of priority ⊤, because the
+simulation does not track types.
+
+**81. Mordido and Pérez, a recursive body must type at every round (Claude, 2026-11-01, theories/mp/MPRounds.v).**
+Their rules type the body of a recursive function once, under the sequences of
+its first call (pp. 28, 29). Program 8 types under these rules and deadlocks
+(`p8_not_deadlock_free`, closed). client of Listing 1.1 acts once on a and once
+on b per round. dsend receives once on a and sends twice on b per round. With
+the sequences 1 + 4k and 2 + 2k both first rounds type, and the run sticks in
+client's second round. A round is one run of the body from one call to the
+next.
+
+Fix 1 was to build the world from the derivation, with counted instants for
+rounds. Its strictness obligation fails here. One function alone is strict,
+ranked by its round and the priority of the matching first round instant. Two
+loops that advance a shared channel at different rates disagree on rounds, and
+the union of their facts is cyclic (a₁ ≺ b₁ from client's round 1, b₁ ≺ a₁
+from dsend's round 0). No check of one function at its first round separates
+program 8 from the deadlock free pairing of client with newclient, because
+client is the same in both. Repair R8 asks the body to type at every round.
+Version 2 already does, and `p8_not_mtyped` follows from
+`mp2_deadlock_free_source`. Unequal increments survive when every round
+advances all channels by one amount of priority (`rr_mp2_deadlock_free`, a
+loop with rates 1 and 2 and increments 4 and 2).
+
+**82. Mordido and Pérez version 3, n-ary choice by depth (Claude, 2026-11-01, theories/mp/MP3*.v).**
+An inner node of a nested n-ary choice carries `PD ρ t`, the priority ρ at the
+depth t ≥ 1. Its value is that of ρ, so the source comparisons read it as ρ,
+and its rank uses the depth as subrank. A rank at a finite priority became a
+triple of priority, level and subrank, with lower points at level 0, channels
+at level 1 and upper points at level 2. So the inner node lies strictly between
+ρ and ρ + 1 and below every upper point of ρ. `brise` lets a continuation rise
+either above ρ or to an inner node of the same choice. `pfin` stayed as it was,
+and a new `afin` admits `PD` for choices only, because instances of priority
+variables must stay plain integers. `ch3_mp3_deadlock_free` types a choice of
+three labels with every continuation at 1 + 1.
+
+**83. Mordido and Pérez version 3, channels created after a segment call (Claude, 2026-11-01, theories/mp/MP3*.v).**
+After receiveTree the returned channel c′ has walks whose ranks depend on the
+data (`rt_rank_data`), so only the floor and the ceiling of the anchor bound
+them. Version 3 gives channels created after the call two places outside that
+band. The low chain starts at the carried point B[RLow] and ranks below every lower
+point of ⊥. The high chain starts at the successor of the ceiling, the point
+ε + 1 for the upper point ε of the effect ⊤. Their channels act with the new
+effects ⊥⁻ and ⊤⁺ and count as ⊥⁻ and ⊤⁺ when held. rtA closes d on the low
+chain while it holds c′, rtB waits on c′ while it holds d on the high chain
+(`rtA_mp3_deadlock_free`, `rtB_mp3_deadlock_free`, and the source versions).
+
+The ranks gained the low chain with its bounds and three ranks above the junk
+of the ceiling. The lower point of a closure that holds nothing moved from KU 0
+to the new KW, because an argument with effect ⊤⁺ may precede it. Folds of
+effects start at XBB and folds of lower bounds at XTT, the units of max and
+min. Heads written with ⊥⁻ or ⊤⁺ count as ⊥ or ⊤. `hle` keeps ⊤⁺ out of an
+effect it bounds by ⊤, so seven example proofs shelve that side condition
+until the derivation fixes the effect. `env_hi_below` and `ubs_part` take
+`pts_ok`, because an effect of ⊥⁻ before a held c′ goes through the floor.
+Channels on a chain send and receive only unit, are not packed into an
+existential and are not arguments of segment functions (`pmid`).
+
+Left out. A d ordered against c′ in both directions needs ranks between walks
+whose ranks the data fixes, so it needs a world built from facts. So does U2,
+a segment function over two channels, whose lockstep facts κ·w ≺ ι·w ≺ (κ·w)·s
+the core meets in TreeCopy.v and the rank world cannot meet with integer heads.
+The strictness of such a world is a property of the whole program, which entry
+81 shows is not checked by first round reasoning. The core, version 2 and the
+statements of soundness and composition are unchanged. 19 new results of
+version 3 and 4 of MPRounds.v are closed under the global context.
+
 **90. A channel at a fresh point between known points (Claude, 2026-11-01, branch fresh-points). Numbers 72 to 89 are reserved on another branch.**
 No point built from existing names lies strictly between two given points, so a
 box over ι ≺ κ cannot create a channel between them
@@ -954,7 +1597,7 @@ is a second argument of the size of 94, so it stays open. E-Const is unchanged.
 
 **97. Existential points in the base relation (Claude, 2026-11-01, branch exists).**
 The type former ∃^ℓ ιs. C. T of branch `cfst` (its 73) is ported without session
-variables and branch roots, as `TEx` in types/Types.v with E-Pack, E-Open and
+variables and branch points, as `TEx` in types/Types.v with E-Pack, E-Open and
 V-Ex. A value lies in T at some known instance of the ιs that meets C, and its
 channels lie at or above the lower point ℓ. The body of ∃ is no subterm at an
 instance, so `Vdef` reads its type under a point substitution and the ∃ clause
@@ -1377,10 +2020,10 @@ docs/extensions/literature-examples.md.
 **137. Session choice is a derived form (Claude, 2026-11-04, branch choice-encoding).**
 A selection sends inj_i of a fresh continuation channel, and the payload type
 ∃ι₀ ι₁. S₁@ι₀ ⊕ S₂@ι₁ puts arm i at x[i] for a carrier at x. The two branches
-of a choice then get two points, which is what the branch roots x◁i of entry
-76 on cfst add as a name. examples/ChoiceEnc.v derives sel_i and branch as
+of a choice then get two points, which is what the branch points x◁i of entry
+76 add as a name. examples/ChoiceEnc.v derives sel_i and branch as
 typing lemmas (`sel1_typed`, `sel2_typed`, `branch_typed`) and types T1 ∥ T2 ∥
-T3 of mordido-perez.md §9.5 (on cfst) under {a+1 ≺ a[1], a[1] ≺ δ, δ ≺ a[0], δ ≺ a[1]+1}
+T3 of mordido-perez.md §9.5 under {a+1 ≺ a[1], a[1] ≺ δ, δ ≺ a[0], δ ≺ a[1]+1}
 (`choice_typed`, `choice_deadlock_free`). Branch A asks δ ≺ a[0] and branch B
 asks a[1] ≺ δ. With both arms at a[0] the two facts are δ ≺ a[0] ≺ δ, and
 `same_slot_not_acyclic` shows that no acyclic top-level constraint states them.
@@ -1391,7 +2034,7 @@ It costs one `new` and one close per selection, a channel per choice at run
 time, and the facts x+1 ≺ x[i] that the close of the carrier asks. No rule,
 constant or definition of the core changed (docs/extensions/choice-encoding.md).
 
-**138. A payload of a channel or nothing owes the facts of the channel (Claude, 2026-11-04, branch exists).**
+**140. A payload of a channel or nothing owes the facts of the channel (Claude, 2026-11-04, branch exists).**
 The carrier O = !((S⁰@self[0]) ⊕ ∗).Close sends either a channel at ι[0] or
 unit. examples/OptionPayload.v types three programs against one receiver R.
 `some` sends inj₁ d with d created at the alias κ ≡ ι[0], `some_swapped`
@@ -1405,6 +2048,62 @@ constraint `op_C0` with 0 variables (`some_typed`, `some_swapped_typed`,
 `none_typed`). `soundness_source` gives `some_deadlock_free`,
 `some_swapped_deadlock_free` and `none_deadlock_free`. The facts matched the
 expectation, and no rule of the core changed.
+
+**141. Merging `exists` into `cfst` (Claude, 2026-11-04, branch cfst).**
+The merge took the core of `exists` and kept the context-free additions.
+Types.v has `TBox n k C T` and `TEx lb n C T` with `lb : lbound`. Every
+conflict over the existential resolved to the `exists` form, because
+`exists` had ported K7 and generalized it, which is K12 of
+docs/extensions/context-free.md. Every conflict over boxes resolved to the
+`cfst` form (K13). The duplicate rules E-Pack and E-Open of
+rules/BoxRules.v went, and rules/ExRules.v keeps `cfst`'s `Erel_Vsub` with
+the choice labels. static/Fundamental.v was rebuilt from the `exists` file
+with the session instances of E-Exp added, because the two branches had
+added the same cases in two places. static/FactTheory.v and
+static/Source.v are the `exists` files with the box comparison of `cfst`.
+
+**142. A choice continues at x[i] (author's decision, 2026-11-04, branch cfst, K11).**
+K10 named the point after a choice x◁i and added two world laws. K11 puts
+the continuation at the payload point x[i], which has congruence already,
+and drops the name and its laws. The logical relation never used
+x ≺ x◁i, only the congruence, so no semantic lemma lost anything. The
+fact x ≺ x[i] moved into the signatures of select and branch as a side
+condition read by `plt`, which `konst_ty_mono`, `konst_ty_sw` and
+`konst_ty_pinst` carry like the condition of send. Creation.v,
+FactTheory.v and Source.v needed no rule for choice, because program
+order is again one step x ≺ x+1.
+
+**143. Program order lives in Types.v (Claude, 2026-11-04).**
+`ple` reads program order, and `ple` sits in types/Types.v next to the
+betweenness of a fresh channel, so `ppo` moved there from
+relation/Worlds.v. `ple p v` is p = v ∨ ppo p v. relation/Creation.v keeps
+`pofs`, a later offset of one name, and `ppo_pofs` and `pofs_ppo` turn one
+into the other. The examples read `ple` through `ple_inv`.
+
+**144. Creation constraints have to state facts in advance (Claude, 2026-11-04, examples/cfst).**
+A creation constraint is conservative over the context. When a later
+channel's constraint derives a fact between points of earlier channels,
+an earlier constraint has to state that fact already. BranchOrder.v
+creates c with ι[1] ≺ ι[0], which d's constraint derives through
+c[1] ≺ δ ≺ c[0]. TreeCopy.v creates a with α·w ≺ (α·w)[i] along every
+walk w. In CfstScheduler.v the facts of the old world do not split into
+conservative constraints, and each channel is created with a rank
+constraint against all earlier channels. Points that no channel occupies,
+the ceilings of the coarse segments, are top-level variables of
+C₀ = ∅. Every example of examples/cfst/ states a whole-program `styped`
+derivation and has a closed deadlock-freedom theorem. T2 of
+data-dependent.md types under K11.
+
+**145. Mordido and Pérez on the merged core (Claude, 2026-11-04, theories/mp).**
+The translation stays at its world `Wmp`, as PGV does (entry 111),
+because its facts come from ranks of denotations. Translated new is
+`let_new_pair` typed by `t_new_at`, and the simulations take the β steps of
+the encoding after the new step. Under K11 a channel at the end of a
+segment needs x ≺ x[i], which only segment and existential constraints
+supply, so `pex_fact` states it along every walk and `dsl` guards every
+payload point that is no anchor. A payload point is junk unless the
+payload lies above its carrier, which R1 and R3 already ensure. No
+statement changed.
 
 ## From the earlier abandoned mechanization (spec §15)
 

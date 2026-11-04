@@ -164,7 +164,7 @@ Proof.
     set (x := ppt (PSnd o T0 S)).
     eapply t_conv.
     2:{ eapply (t_app Wpgv Φ [] ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (Some x) None
-                  (TProd (tr_ty T0) (TSess (SSnd 0 (tr_ty T0) (tr_sty S)) x))
+                  (TProd (tr_ty T0) (TSess (SSeq (SSnd 0 (tr_ty T0)) (tr_sty S)) x))
                   (TSess (tr_sty S) (pt_shift 1 x))).
         - apply comp0, Wpgv_wf.
         - done.
@@ -180,7 +180,7 @@ Proof.
     set (x := ppt (PRcv o T0 S)).
     eapply t_conv.
     2:{ eapply (t_app Wpgv Φ [] ∅ ∅ ∅ Δ Δ1 Δ2 F _ _ (Some x) None
-                  (TSess (SRcv 0 (tr_ty T0) (tr_sty S)) x)
+                  (TSess (SSeq (SRcv 0 (tr_ty T0)) (tr_sty S)) x)
                   (TProd (payload_at 0 (tr_ty T0) x) (TSess (tr_sty S) (pt_shift 1 x)))).
         - apply comp0, Wpgv_wf.
         - done.

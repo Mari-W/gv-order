@@ -53,7 +53,7 @@ From LRGV Require Export examples.LitTools.
 
 Set Default Proof Using "All".
 
-Definition Sst : sty := SMu (SRcv 1 (TProd TUnit (TSess (SVar 0) (pvar 0))) SEnd).
+Definition Sst : sty := SMu (SSeq (SRcv 1 (TProd TUnit (TSess (SVar 0) (pvar 0)))) SEnd).
 
 Definition st_P (g : fact) : Prop :=
   ∃ n, g = FLt (Pt (slotv n) 1) (Pt (slotv (S n)) 0).
@@ -102,15 +102,15 @@ Proof.
 Qed.
 
 Lemma stcons_typed W F :
-  world_wf W → typed W ∅ [] ∅ [] F stcons (TBox 1 st_C (TLolli None None TUnit stc_body)).
+  world_wf W → typed W ∅ [] ∅ [] F stcons (TBox 1 0 st_C (TLolli None None TUnit stc_body)).
 Proof.
   intros HW. unfold stcons.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 st_C stc_body. cbn. unfold stc_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SRcv 1 (TProd TUnit (TSess Sst (pvar 0))) SEnd) (pv 0 0))).
+              (TSess (SSeq (SRcv 1 (TProd TUnit (TSess Sst (pvar 0)))) SEnd) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -127,7 +127,7 @@ Proof.
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 st_C None stc_body [pcr]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stc_body [pcr]);
       [done|done| | |apply ubs_none|tstep].
     + apply st_call. by left.
     + apply (skn_st W _ pcr); [by left|done].
@@ -137,10 +137,10 @@ Proof.
 Qed.
 
 Lemma stprod_typed W F :
-  strict W → typed W ∅ [] ∅ [] F stprod (TBox 1 st_C (TLolli None None TUnit stp_body)).
+  strict W → typed W ∅ [] ∅ [] F stprod (TBox 1 0 st_C (TLolli None None TUnit stp_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold stprod.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 st_C stp_body. cbn. unfold stp_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (st_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 0) pcr) as Hlt.
@@ -152,7 +152,7 @@ Proof.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
               (TProd (TProd TUnit (TSess Sst pcr))
-                 (TSess (SSnd 1 (TProd TUnit (TSess Sst (pvar 0))) SEnd) (pv 0 0)))).
+                 (TSess (SSeq (SSnd 1 (TProd TUnit (TSess Sst (pvar 0)))) SEnd) (pv 0 0)))).
     - tstep; [|tstep; [tstep|apply (tv_unit W HW); reflexivity]].
       eapply t_conv; [|tstep]. conv_sess.
     - apply (KTSend _ _ _ 1 (TProd TUnit (TSess Sst (pvar 0))) SEnd (pv 0 0)).
@@ -170,7 +170,7 @@ Proof.
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 st_C None stp_body [pcr]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stp_body [pcr]);
       [done|done| | |apply ubs_none|tstep].
     + apply st_call. by left.
     + apply (skn_st W _ pcr); [by left|done].
@@ -201,13 +201,13 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 st_C None stp_body [pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stp_body [pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 st_C None stc_body [pvar 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stc_body [pvar 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

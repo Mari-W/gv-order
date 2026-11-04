@@ -29,7 +29,7 @@ From LRGV Require Export examples.LitTools.
 Set Default Proof Using "All".
 
 (** O = !((S⁰@self[0]) ⊕ ∗).Close with S⁰ = !∗.Close. *)
-Definition So : sty := SSnd 1 (TSum (TSess Sd (pvar 0)) TUnit) SEnd.
+Definition So : sty := SSeq (SSnd 1 (TSum (TSess Sd (pvar 0)) TUnit)) SEnd.
 
 (** R with c′ at the index k of the thunk's context. In each arm the
     payload component is 0 and c₁′ is 1. *)

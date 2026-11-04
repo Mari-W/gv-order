@@ -1247,6 +1247,7 @@ Proof.
   - exfalso. unfold preduction in Hred.
     inversion Hred as [|C0 E0 e e' Hste|C0 E0 e c e' Hste|C0 E0 e v e' Hste
                       |C0 E0 c v e e' f f' Hse Hsf|C0 E0 c e e' f f' Hse Hsf Hc
+                      |C0 E0 c b e e' f f' Hse Hsf Hc
                       |C0 E0 e c d e' Hste]; subst.
     + destruct (mrel_extract _ _ _ _ Hm') as (Es0 & s & -> & Hc & _).
       destruct (cls_step _ _ _ _ Hc Hste) as [(? & ? & ? & ? & _ & [=])|(? & ? & ? & ? & _ & [=])].
@@ -1265,6 +1266,9 @@ Proof.
       match type of Hse' with src_step _ (SOut ?ch _) _ => destruct (decide (ch ∈ C)) end.
       * eapply Hirr. by eapply SPCommRes.
       * eapply Hirr. by eapply SPCommFree.
+    + destruct (mrel_extract _ _ _ _ Hm') as (Es1 & sf & -> & Hcf & Hm1).
+      destruct (mrel_extract _ _ _ _ Hm1) as (Es0 & se & -> & Hce & _).
+      destruct (cls_step _ _ _ _ Hce Hse) as [(? & ? & ? & ? & _ & [=])|(? & ? & ? & ? & _ & [=])].
     + destruct (mrel_extract _ _ _ _ Hm') as (Es1 & sf & -> & Hcf & Hm1).
       destruct (mrel_extract _ _ _ _ Hm1) as (Es0 & se & -> & Hce & _).
       destruct (cls_step _ _ _ _ Hce Hse) as [(? & ? & ? & ? & _ & [=])|(? & ? & ? & ? & _ & [=])].

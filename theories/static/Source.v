@@ -125,7 +125,7 @@ Fixpoint hsteq (Ψ : hyps) (T U : ty) : Prop :=
       hsteq Ψ T1 U1 ∧ hsteq Ψ T2 U2
   | TProd T1 T2, TProd U1 U2 => hsteq Ψ T1 U1 ∧ hsteq Ψ T2 U2
   | TSum T1 T2, TSum U1 U2 => hsteq Ψ T1 U1 ∧ hsteq Ψ T2 U2
-  | TBox n C T1, TBox n' C' U1 => n = n' ∧ C = C' ∧ teq T1 U1
+  | TBox _ _ _ _, TBox _ _ _ _ => teq T U
   | TSess s x, TSess r y => heqs Ψ x y ∧ seq s r
   | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ teq T1 U1
   | _, _ => False
@@ -194,13 +194,14 @@ Inductive styped : fhyps → hyps → lenv → sframe → expr → ty → Prop :
       styped Φ Ψ (Some T1 :: Δ2) F e1 T →
       styped Φ Ψ (Some T2 :: Δ2) F e2 T →
       styped Φ Ψ Δ F (Case e e1 e2) T
-  | st_box Φ Ψ Δ F e m C ub T φ :                       (* E-Exp *)
+  | st_box Φ Ψ Δ F e m k C ub T φ :                     (* E-Exp *)
       lenv_unl Δ → φ ∉ dom Φ →
-      styped (<[φ := ub]> (fhyps_pinst (pshift m) Φ))
-        (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
-        (lenv_pinst (pshift m) (Some (TBox m C (TLolli ub None TUnit T)) :: Δ))
-        (∅, Some (FVar φ)) e T →
-      styped Φ Ψ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T))
+      (∀ ss, length ss = k → Forall hcontractive ss →
+         styped (<[φ := ub]> (fhyps_pinst (pshift m) Φ))
+           (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])
+           (lenv_pinst (pshift m) (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ))
+           (∅, Some (FVar φ)) e (sinst_ty (slist ss) T)) →
+      styped Φ Ψ Δ F (EBox e) (TBox m k C (TLolli ub None TUnit T))
   | st_wk Φ Ψ Δ' Δ F e T :                              (* E-Weak *)
       lenv_wk Δ' Δ → styped Φ Ψ Δ' F e T → styped Φ Ψ Δ F e T
   | st_contract Φ Ψ Δ U F e T :                         (* E-Contract *)
@@ -319,7 +320,7 @@ Proof.
   - by apply t_inj2.
   - eapply t_case; [apply tenv_comp_empty_r|done| |done|done].
     by rewrite sf_unionb_tenv0.
-  - by eapply t_box.
+  - eapply t_box; [done|done|]. intros ss Hss Hsc. by apply H2.
   - by eapply t_wk.
   - by apply t_contract.
   - eapply t_conv; [by apply hsteq_steq|done].
@@ -347,7 +348,7 @@ Section collapse.
 
   Lemma w_lt_nil x y : w_lt W x y → pofs x y.
   Proof.
-    intros H. destruct (wf_lt_supp _ HW _ _ H) as [[Hn Ho]|[Hx _]]; [by split|].
+    intros H. destruct (wf_lt_supp _ HW _ _ H) as [Hp|[Hx _]]; [by apply ppo_pofs|].
     rewrite HN in Hx. by apply not_elem_of_empty in Hx.
   Qed.
 
@@ -463,7 +464,7 @@ Proof.
   - subst Θ. destruct (tenv_comp_empty_both _ _ _ H) as [-> ->].
     eapply st_case; [done| |by apply IHHt2|by apply IHHt3].
     rewrite sf_unionb_tenv0 in IHHt1. by apply IHHt1.
-  - eapply st_box; [done|done|by apply IHHt].
+  - eapply st_box; [done|done|]. intros ss Hss Hsc. by apply H2.
   - eapply st_wk; [done|by apply IHHt].
   - by apply st_contract, IHHt.
   - eapply st_conv; [by eapply steq_hsteq|by apply IHHt].

@@ -31,7 +31,7 @@ Set Default Proof Using "All".
 
 Fixpoint chv (n : nat) : pname := match n with 0 => NVar 0 | S m => NSlot (chv m) 0 0 end.
 
-Definition Sch : sty := SMu (SRcv 1 (TSess (SVar 0) (pvar 0)) SEnd).
+Definition Sch : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0))) SEnd).
 
 Definition ch_P (g : fact) : Prop := ∃ n, g = FLt (Pt (chv n) 1) (Pt (chv (S n)) 0).
 Definition ch_C : bcs := BCs [] ch_P.
@@ -73,14 +73,14 @@ Proof.
   intros Hg Hx. apply Forall_singleton. apply (skn_in W Ψ ch_C [pvar 0] (pvar 0)); [done|by left|done].
 Qed.
 
-Lemma rch_typed W F : world_wf W → typed W ∅ [] ∅ [] F rch (TBox 1 ch_C (TLolli None None TUnit rch_body)).
+Lemma rch_typed W F : world_wf W → typed W ∅ [] ∅ [] F rch (TBox 1 0 ch_C (TLolli None None TUnit rch_body)).
 Proof.
   intros HW. unfold rch.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 ch_C rch_body. cbn. unfold rch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
-  { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (SRcv 1 (TSess Sch (pvar 0)) SEnd) (pv 0 0))).
+  { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (SSeq (SRcv 1 (TSess Sch (pvar 0))) SEnd) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -95,7 +95,7 @@ Proof.
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 ch_C None rch_body [chs]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None rch_body [chs]);
       [done|done| | |apply ubs_none|tstep].
     + apply ch_call. by left.
     + apply (skn_ch W _ chs); [by left|done].
@@ -104,10 +104,10 @@ Proof.
     exists (pt_shift 1 chs). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma sch_typed W F : strict W → typed W ∅ [] ∅ [] F sch (TBox 1 ch_C (TLolli None None TUnit sch_body)).
+Lemma sch_typed W F : strict W → typed W ∅ [] ∅ [] F sch (TBox 1 0 ch_C (TLolli None None TUnit sch_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold sch.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 ch_C sch_body. cbn. unfold sch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (ch_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 0) chs) as Hlt.
@@ -118,7 +118,7 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd (TSess Sch chs) (TSess (SSnd 1 (TSess Sch (pvar 0)) SEnd) (pv 0 0)))).
+              (TProd (TSess Sch chs) (TSess (SSeq (SSnd 1 (TSess Sch (pvar 0))) SEnd) (pv 0 0)))).
     - tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
     - apply (KTSend _ _ _ 1 (TSess Sch (pvar 0)) SEnd (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. apply Hlt. by left.
@@ -134,7 +134,7 @@ Proof.
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 ch_C None sch_body [chs]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None sch_body [chs]);
       [done|done| | |apply ubs_none|tstep].
     + apply ch_call. by left.
     + apply (skn_ch W _ chs); [by left|done].
@@ -190,13 +190,13 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 ch_C None sch_body [pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None sch_body [pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 ch_C None rch_body [pvar 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None rch_body [pvar 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

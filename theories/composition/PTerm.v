@@ -731,6 +731,34 @@ Section level.
       rewrite <-Hsz. by apply (tstep_giving_size _ _ _ Hst).
   Qed.
 
+  Lemma case_choice c i t' (bra : bool) :
+    tstep t (LSess (if bra then SBra c i else SSel c i)) t' → c ∉ C0 →
+    Pchoice_case (if bra then Prel n' else Prel (S n')) W Σ T c i
+      (if bra then SWith else SPlus) (C0, {[+ t' +]}).
+  Proof.
+    intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc0.
+    assert (∃ Θr s1 s2 k Θ', tenv_hd (tenv_of Σ ∪ ΘB) c ((if bra then SWith else SPlus) s1 s2) k Θr ∧
+              tenv_ext Θr c (sbranch i s1 s2, pt_slot k (bidx i)) Θ' ∧
+              (if bra then Erel n' else Erel (S n')) W Θ' T ∅ t') as Hc
+      by (destruct bra; exact Hc0).
+    clear Hc0. destruct Hc as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
+    destruct (hd_iface _ _ _ _ _ _ _ _ Hok HcC Hhd) as (s0 & HΣc & Hu & ->).
+    pose proof (ΘB_none_of _ _ _ _ _ Hok HcC) as HBc.
+    assert (Θ' = tenv_of (<[c := (sbranch i s1 s2, pt_slot k (bidx i))]> (delete c Σ)) ∪ ΘB) as ->.
+    { rewrite <-ins_one by done.
+      destruct Hext as [(_ & ->)|(e' & HH & _)]; [done|]. exfalso. revert HH. tlk.
+      rewrite HBc. simpl. by rewrite ounion_None. }
+    assert (tok W (<[c := (sbranch i s1 s2, pt_slot k (bidx i))]> (delete c Σ)) ΘB C0) as Hok1.
+    { apply tok_insert; [done|]. eapply tok_sub; [|exact Hok]. apply delete_subseteq. }
+    exists (delete c Σ), s1, s2, k. split_and!.
+    - exists s0. split; [|done]. by rewrite insert_delete_id.
+    - by rewrite dom_delete_L; clear; set_solver.
+    - destruct bra.
+      + exact (IHo n' T (le_n _) HT W _ ΘB C0 t' Hok1 HE').
+      + apply (IHi W _ ΘB C0); [|exact Hok1|exact HE'].
+        rewrite <-Hsz. by apply (tstep_giving_size _ _ _ Hst).
+  Qed.
+
   Lemma case_send c w t' :
     tstep t (LSess (SSend c w)) t' → c ∉ C0 →
     Pcase n' W Σ T (C0, {[+ t +]}) (PSess (SSend c w)) (C0 ∖ fchans w, {[+ t' +]}).
@@ -924,11 +952,13 @@ Section level.
       destruct (single_step _ _ _ _ Hst) as
         [(σ & t' & -> & Hs & Hsub & ->)|[(t' & -> & Hs & ->)|[(c & t' & -> & Hs & Hc & _ & ->)
         |[(v & t' & -> & Hs & ->)|(c & d & t' & -> & Hs & Hc & ->)]]]].
-      + destruct σ as [c w|c w|c|cd]; simpl in Hsub |- *.
+      + destruct σ as [c w|c w|c|cd|c i|c i]; simpl in Hsub |- *.
         * rewrite difference_empty_L. apply case_recv; [done|clear -Hsub; set_solver].
         * apply case_send; [done|clear -Hsub; set_solver].
         * rewrite difference_empty_L. apply case_close; [done|clear -Hsub; set_solver].
         * rewrite difference_empty_L. by apply case_slink.
+        * rewrite difference_empty_L. apply (case_choice c i t' false); [done|clear -Hsub; set_solver].
+        * rewrite difference_empty_L. apply (case_choice c i t' true); [done|clear -Hsub; set_solver].
       + by apply case_beta.
       + by apply case_new.
       + by apply case_spawn.

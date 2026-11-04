@@ -97,10 +97,10 @@ Proof.
 Qed.
 
 Lemma fwsrv_typed W F :
-  strict W → typed W ∅ [] ∅ [] F fwsrv (TBox 1 fw_C (TLolli None None TUnit fw_body)).
+  strict W → typed W ∅ [] ∅ [] F fwsrv (TBox 1 0 fw_C (TLolli None None TUnit fw_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold fwsrv.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fw_C fw_body. cbn. unfold fw_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   (* the two facts of C at n = 0 *)
@@ -136,7 +136,7 @@ Proof.
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
       eapply tv_app; [exact HW|reflexivity| | |].
-      - apply (typed_force W _ _ _ _ _ _ 1 fw_C None fw_body [pcr]);
+      - apply (typed_force0 W _ _ _ _ _ _ 1 fw_C None fw_body [pcr]);
           [done|done| | |apply ubs_none|tstep].
         + apply fw_call. by left.
         + constructor; [right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]
@@ -173,7 +173,7 @@ Lemma fw_typed : styped ∅ [] [] (∅, None) fw_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
   pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fw_main.
-  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 fw_C (TLolli None None TUnit fw_body)) TUnit);
+  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 0 fw_C (TLolli None None TUnit fw_body)) TUnit);
     [reflexivity| |].
   { tstep; [tstep|apply fwsrv_typed, HWs]. }
   cbn. tstep; [tstep|]. cbn.
@@ -193,7 +193,7 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 fw_C None fw_body [pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 fw_C None fw_body [pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|].
       tstep.
     - tstep.

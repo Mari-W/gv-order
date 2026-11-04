@@ -131,6 +131,8 @@ Definition slswap (a b : chan) (σ : slabel) : slabel :=
   | SSend c v => SSend (cswap a b c) (eswap a b v)
   | SClos c => SClos (cswap a b c)
   | SLink cd => SLink (gswap a b cd)
+  | SSel c i => SSel (cswap a b c) i
+  | SBra c i => SBra (cswap a b c) i
   end.
 
 Definition tlswap (a b : chan) (α : tlabel) : tlabel :=
@@ -160,6 +162,7 @@ Lemma head_step_eswap a b e α e' :
   head_step (eswap a b e) (tlswap a b α) (eswap a b e').
 Proof.
   destruct 1; simpl; rewrite ?eswap_subst1, ?eswap_subst2, ?gswap_upair;
+    try (match goal with |- context [inj_of ?i] => destruct i; simpl; constructor; done end);
     constructor; rewrite ?is_val_eswap; done.
 Qed.
 
@@ -287,6 +290,11 @@ Proof.
     + by apply (tstep_eswap a b) in H.
     + by apply (tstep_eswap a b) in H0.
     + by rewrite elem_of_gswap.
+  - (* choice *)
+    rewrite !msswap_disj_union, !msswap_singleton.
+    eapply PStepChoice.
+    + by apply (tstep_eswap a b) in H.
+    + by apply (tstep_eswap a b) in H0.
   - (* link *)
     rewrite (msswap_disj_union a b E), msswap_singleton, gswap_difference,
       gswap_singleton, echsubst_msswap, msswap_disj_union, msswap_singleton.

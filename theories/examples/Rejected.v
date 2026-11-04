@@ -74,7 +74,7 @@ Proof.
     - intros x0 y0 z0 [->|[? ?]] [->|[? ?]]; [by left|by right|by right|by right].
     - intros x0 y0 [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
     - intros x0 y0 i [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
-    - intros x0 y0 Hxy. unfold rr_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]|[Hx Hy]].
+    - intros x0 y0 Hxy. unfold rr_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]%ppo_pofs|[Hx Hy]].
       + destruct x0 as [p o], y0 as [q o']. simpl in *. subst q. unfold isvar, rr_rank, pt_root. simpl.
         destruct (pn_root p) eqn:Hr; simpl; [done| |done].
         destruct p as [|[|[|]]|]; simpl in *; try lia; simplify_eq.
@@ -259,7 +259,7 @@ Proof.
     - intros x1 y1 z1 [->|[? ?]] [->|[? ?]]; [by left|by right|by right|by right].
     - intros x1 y1 [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
     - intros x1 y1 i [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
-    - intros x1 y1 Hxy. unfold ord_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]|[Hx Hy]].
+    - intros x1 y1 Hxy. unfold ord_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]%ppo_pofs|[Hx Hy]].
       + rewrite (isvar_name x1 y1 Hn). destruct (isvar y1); simpl; [by split|done].
       + rewrite (isvar_const W x1), (isvar_const W y1); done.
     - intros x1 y1 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.

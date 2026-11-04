@@ -263,7 +263,7 @@ Fixpoint occ (x : nat) (e : expr) : bool :=
   | Case e e1 e2 => occ x e || occ (S x) e1 || occ (S x) e2
   end.
 
-Definition unlb (T : ty) : bool := match T with TBox _ _ _ => true | _ => false end.
+Definition unlb (T : ty) : bool := match T with TBox _ _ _ _ => true | _ => false end.
 
 Lemma unlb_unl T : unlb T = true → unlimited T.
 Proof. by destruct T. Qed.
@@ -462,6 +462,51 @@ Section frames.
   Proof. intros HW. apply sl_w, (wf_lt_po _ HW). Qed.
 End frames.
 
+(** p at or before q in program order is a later offset of one name. *)
+Lemma ple_inv p q : ple p q → pt_name p = pt_name q ∧ pt_off p ≤ pt_off q.
+Proof.
+  intros [->|H]; [split; [done|lia]|].
+  induction H as [z|x y z _ [??] _ [??]]; [unfold pt_shift; simpl; split; [done|lia]|split; [congruence|lia]].
+Qed.
+
+(** ** Walks (K11)
+
+    A walk is a list of steps from a point: [None] is the successor
+    x+1 and [Some i] the point x[bidx i] where a choice continues. The
+    points reachable from ι are the ends of the walks from ι. Ceilings
+    over a segment quantify over walks. *)
+Definition wstep (x : point) (s : option bool) : point :=
+  match s with None => pt_shift 1 x | Some i => pt_slot x (bidx i) end.
+
+Fixpoint pwalk (x : point) (w : list (option bool)) : point :=
+  match w with [] => x | s :: w' => pwalk (wstep x s) w' end.
+
+Lemma pwalk_app x u v : pwalk x (u ++ v) = pwalk (pwalk x u) v.
+Proof. revert x. induction u; intros x; simpl; auto. Qed.
+
+Lemma wstep_inst σ x s : pt_inst σ (wstep x s) = wstep (pt_inst σ x) s.
+Proof. destruct s; simpl; [apply pt_inst_slot|apply pt_inst_shift]. Qed.
+
+Lemma pwalk_inst σ x w : pt_inst σ (pwalk x w) = pwalk (pt_inst σ x) w.
+Proof. revert x. induction w as [|s w IH]; intros x; simpl; [done|]. by rewrite IH, wstep_inst. Qed.
+
+Lemma wstep_root x s : pt_root (wstep x s) = pt_root x.
+Proof. by destruct s. Qed.
+
+Lemma pwalk_root x w : pt_root (pwalk x w) = pt_root x.
+Proof. revert x. induction w as [|s w IH]; intros x; simpl; [done|]. by rewrite IH, wstep_root. Qed.
+
+Lemma wstep_vb k x s : pn_vb k (pt_name x) → pn_vb k (pt_name (wstep x s)).
+Proof. by destruct s. Qed.
+
+Lemma pwalk_vb k x w : pn_vb k (pt_name x) → pn_vb k (pt_name (pwalk x w)).
+Proof. revert x. induction w as [|s w IH]; intros x Hx; simpl; [done|]. apply IH, wstep_vb, Hx. Qed.
+
+(** Scoping and instances of facts whose points are walks. *)
+Ltac fscw := cbn [fact_scoped]; repeat split; repeat first [apply wstep_vb|apply pwalk_vb]; cbn; lia.
+Ltac piw := rewrite ?wstep_inst, ?pwalk_inst; reflexivity.
+Ltac fmw := cbn [fact_map]; rewrite ?wstep_inst, ?pwalk_inst; reflexivity.
+
 (** A closed thread is a closed process. *)
 Lemma ptyped_closed W t T :
   prim T → typed W ∅ [] ∅ [] (∅, None) t T → ptyped W ∅ (∅, {[+ t +]}) T.
@@ -554,16 +599,12 @@ Proof. intros H. unfold pt_known. simpl. apply elem_of_list_to_set, list_elem_of
 Ltac kscope := cbn; repeat split; try done; intros ? Hv; injection Hv; lia.
 
 (** !∗.Close *)
-Definition Sd : sty := SSnd 0 TUnit SEnd.
+Definition Sd : sty := SSeq (SSnd 0 TUnit) SEnd.
 
 Definition sendclose (v : expr) : expr := App EClos (App ESend (Pair EUnit v)).
 Definition recvclose (v : expr) : expr := LetP (App ERecv v) (LetU (Var 1) (App EClos (Var 0))).
 
-Lemma seq_unf s r : unfoldS s = unfoldS r → seq s r.
-Proof.
-  intros E [|n]; [done|]. cbn [aeq]. unfold eq_step. rewrite E.
-  destruct (unfoldS r); try done; split_and!; auto using eqT_refl, aeq_refl.
-Qed.
+(** [seq_unf] (types/SessionEquiv.v) relates two types with one head. *)
 
 Lemma skn_in W Ψ C ys y x : (C, ys) ∈ Ψ → y ∈ ys → pt_root x = pt_root y → skn W Ψ x.
 Proof. intros Hg Hy E. right. by exists C, ys, y. Qed.
@@ -581,8 +622,25 @@ Ltac vb_list := repeat (apply Forall_cons; split); try (apply Forall_nil; done);
 
 Abbreviation pv a k := (Pt (NVar a) k).
 
-Definition Sa : sty := SMu (SRcv 0 TUnit (SVar 0)).
-Definition Sb : sty := SMu (SSnd 0 TUnit (SVar 0)).
+Definition Sa : sty := SMu (SSeq (SRcv 0 TUnit) (SVar 0)).
+Definition Sb : sty := SMu (SSeq (SSnd 0 TUnit) (SVar 0)).
+
+(** A box without session variables: its body is typed at the one
+    empty instance. *)
+Ltac box_k0 :=
+  let ss := fresh "ss" in let Hss := fresh "Hss" in
+  intros ss Hss ?; destruct ss; [|discriminate Hss]; rewrite sinst_slist_nil.
+
+(** E-Force at a box without session variables. *)
+Lemma typed_force0 W Φ Ψ Θ Δ F e m C ub T xs :
+  world_wf W → length xs = m → bcs_hold (seqs W Ψ) (slt W Ψ) C xs → Forall (skn W Ψ) xs →
+  ub_below_s W Ψ Φ (pt_inst (plist xs) <$> ub) F →
+  typed W Φ Ψ Θ Δ F e (TBox m 0 C (TLolli ub None TUnit T)) →
+  typed W Φ Ψ Θ Δ F (App EForce e) (ty_inst xs T).
+Proof.
+  intros. rewrite <-(sinst_slist_nil (ty_inst xs T)).
+  by eapply (typed_force W Φ Ψ Θ Δ F e m 0 C ub T xs []).
+Qed.
 
 (** Closed boxes: no outer point variable, so substitution fixes them. *)
 Lemma pinst_closed σ T : pscoped 0 T → pinst_ty σ T = T.
@@ -597,9 +655,9 @@ Ltac body_scope := cbn; repeat split; intros ? Hv; injection Hv; lia.
     the box type itself. *)
 Ltac box_open C T :=
   try change (bcs_inst (pshift 2) C) with C;
-  change (lenv_pinst (pshift 2) [Some (TBox 2 C (TLolli None None TUnit T))])
-    with [Some (pinst_ty (pshift 2) (TBox 2 C (TLolli None None TUnit T)))];
-  rewrite (pinst_closed _ (TBox 2 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
+  change (lenv_pinst (pshift 2) [Some (TBox 2 0 C (TLolli None None TUnit T))])
+    with [Some (pinst_ty (pshift 2) (TBox 2 0 C (TLolli None None TUnit T)))];
+  rewrite (pinst_closed _ (TBox 2 0 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
 
 Lemma skn_ids2 W Ψ C x y :
   (C, [pvar 0; pvar 1]) ∈ Ψ → pt_root x = NVar 0 → pt_root y = NVar 1 → Forall (skn W Ψ) [x; y].
@@ -615,9 +673,9 @@ Ltac skn_slot := right; eexists _, _, (pvar 0); split_and!; [by left|by left|don
 
 Ltac box_open1 C T :=
   try change (bcs_inst (pshift 1) C) with C;
-  change (lenv_pinst (pshift 1) [Some (TBox 1 C (TLolli None None TUnit T))])
-    with [Some (pinst_ty (pshift 1) (TBox 1 C (TLolli None None TUnit T)))];
-  rewrite (pinst_closed _ (TBox 1 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
+  change (lenv_pinst (pshift 1) [Some (TBox 1 0 C (TLolli None None TUnit T))])
+    with [Some (pinst_ty (pshift 1) (TBox 1 0 C (TLolli None None TUnit T)))];
+  rewrite (pinst_closed _ (TBox 1 0 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
 
 (** ** Creation constraints in the examples (sharp edges 105)
 

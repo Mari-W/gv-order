@@ -33,8 +33,8 @@ From LRGV Require Export examples.ExampleTools.
 
 Set Default Proof Using "All".
 
-Definition Dr : sty := SRcv 0 TUnit SEnd.
-Definition Srl : sty := SMu (SRcv 1 (TSess Dr (Pt (NVar 0) 0)) (SVar 0)).
+Definition Dr : sty := SSeq (SRcv 0 TUnit) SEnd.
+Definition Srl : sty := SMu (SSeq (SRcv 1 (TSess Dr (Pt (NVar 0) 0))) (SVar 0)).
 
 Abbreviation sv o := (Pt (NSlot (NVar 0) 0 0) o).
 
@@ -89,15 +89,15 @@ Definition rel_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 rel_C (TLolli None None TUnit relay_body)).
+Lemma relay_typed W F : world_wf W → typed W ∅ [] ∅ [] F relay (TBox 2 0 rel_C (TLolli None None TUnit relay_body)).
 Proof.
   intros HW. unfold relay.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rel_C relay_body. cbn. unfold relay_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SRcv 1 (TSess Dr (Pt (NVar 0) 0)) Srl) (pv 0 0))).
+              (TSess (SSeq (SRcv 1 (TSess Dr (Pt (NVar 0) 0))) Srl) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -117,7 +117,7 @@ Proof.
       first [right; hyp0 (sv 0) (pv 0 1)|right; apply (slt_po W _ (sv 0) HW)]. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rel_C None relay_body [pv 0 1; sv 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rel_C None relay_body [pv 0 1; sv 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply rel_call. by left.
     + apply Forall_cons. split; [|apply Forall_singleton];
@@ -127,17 +127,17 @@ Proof.
     exists (sv 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma prod_typed W F : strict W → typed W ∅ [] ∅ [] F prod (TBox 2 rel_C (TLolli None None TUnit prod_body)).
+Lemma prod_typed W F : strict W → typed W ∅ [] ∅ [] F prod (TBox 2 0 rel_C (TLolli None None TUnit prod_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold prod.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rel_C prod_body. cbn. unfold prod_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Dr (sv 0) HWs); [skn_slot|].
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd (TSess Dr (sv 0)) (TSess (SSnd 1 (TSess Dr (Pt (NVar 0) 0)) (dual Srl)) (pv 0 0)))).
+              (TProd (TSess Dr (sv 0)) (TSess (SSeq (SSnd 1 (TSess Dr (Pt (NVar 0) 0))) (dual Srl)) (pv 0 0)))).
     - tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
     - apply (KTSend _ _ _ 1 (TSess Dr (Pt (NVar 0) 0)) (dual Srl) (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. hyp0 (pv 0 0) (sv 0).
@@ -146,7 +146,7 @@ Proof.
       exists (pv 1 0). split; [done|]. right. hyp0 (pv 0 0) (pv 1 0). }
   cbn. tstep; [tstep|]. cbn. tstep.
   { tstep; [tstep|].
-    eapply (tv_appk W HW _ _ _ _ KSend _ (Some (sv 0)) (TProd TUnit (TSess (SSnd 0 TUnit SEnd) (sv 0)))).
+    eapply (tv_appk W HW _ _ _ _ KSend _ (Some (sv 0)) (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) SEnd) (sv 0)))).
     - tstep; tstep.
     - apply (KTSend _ _ _ 0 TUnit SEnd (sv 0)). cbn. set_solver.
     - kscope.
@@ -162,7 +162,7 @@ Proof.
       first [right; hyp0 (sv 0) (pv 0 1)|right; apply (slt_po W _ (sv 0) HW)]. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rel_C None prod_body [pv 0 1; sv 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rel_C None prod_body [pv 0 1; sv 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply rel_call. by left.
     + apply Forall_cons. split; [|apply Forall_singleton];
@@ -268,21 +268,21 @@ Proof.
   match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E] _ _ _ =>
     change A with (TSess (dual SEnd) (pvar 0)); change B with (TSess SEnd (pvar 0));
     change A' with (TSess (dual Srl) (pv 1 0)); change B' with (TSess Srl (pv 1 0));
-    change D with (TBox 2 rel_C (TLolli None None TUnit prod_body));
-    change E with (TBox 2 rel_C (TLolli None None TUnit relay_body)) end.
+    change D with (TBox 2 0 rel_C (TLolli None None TUnit prod_body));
+    change E with (TBox 2 0 rel_C (TLolli None None TUnit relay_body)) end.
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pv 1 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact H1]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 2 rel_C None relay_body [pv 1 0; pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 2 rel_C None relay_body [pv 1 0; pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pvar 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 rel_C None prod_body [pv 1 0; pvar 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rel_C None prod_body [pv 1 0; pvar 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

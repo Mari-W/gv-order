@@ -257,7 +257,7 @@ Fixpoint steq (W : world) (Ψ : hyps) (T U : ty) : Prop :=
       steq W Ψ T1 U1 ∧ steq W Ψ T2 U2
   | TProd T1 T2, TProd U1 U2 => steq W Ψ T1 U1 ∧ steq W Ψ T2 U2
   | TSum T1 T2, TSum U1 U2 => steq W Ψ T1 U1 ∧ steq W Ψ T2 U2
-  | TBox n C T1, TBox n' C' U1 => n = n' ∧ C = C' ∧ teq T1 U1
+  | TBox _ _ _ _, TBox _ _ _ _ => teq T U
   | TSess s x, TSess r y => seqs W Ψ x y ∧ seq s r
   | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ teq T1 U1
   | _, _ => False

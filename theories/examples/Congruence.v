@@ -67,7 +67,7 @@ From LRGV Require Export examples.LitTools.
 Set Default Proof Using "All".
 
 (** !⟨κ⟩(Close@κ).Close, one channel sent and then a close. *)
-Definition Scg : sty := SSnd 1 (TSess SEnd (pvar 0)) SEnd.
+Definition Scg : sty := SSeq (SSnd 1 (TSess SEnd (pvar 0))) SEnd.
 
 Abbreviation cgs a := (Pt (NSlot (NVar a) 0 0) 0).
 
@@ -120,10 +120,10 @@ Proof.
 Qed.
 
 Lemma cgbox_typed W F :
-  world_wf W → typed W ∅ [] ∅ [] F cgbox (TBox 2 cg_C (TLolli None None TUnit cg_body)).
+  world_wf W → typed W ∅ [] ∅ [] F cgbox (TBox 2 0 cg_C (TLolli None None TUnit cg_body)).
 Proof.
   intros HW. unfold cgbox.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open cg_C cg_body. cbn. unfold cg_body.
   (* the facts of C and what the congruences give *)
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → seqs W Ψ (pv 0 0) (pv 1 0)) as Heq.
@@ -179,7 +179,7 @@ Lemma cg_typed : styped ∅ [] [] (∅, None) cg_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
   pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold cg_main.
-  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 2 cg_C (TLolli None None TUnit cg_body)) TUnit);
+  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 2 0 cg_C (TLolli None None TUnit cg_body)) TUnit);
     [reflexivity| |].
   { tstep; [tstep|apply cgbox_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
@@ -240,7 +240,7 @@ Proof.
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pv 0 2). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 cg_C None cg_body [pvar 0; pvar 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 cg_C None cg_body [pvar 0; pvar 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep; [tstep|tstep; [tstep|tstep]].
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

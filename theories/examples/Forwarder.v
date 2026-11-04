@@ -38,8 +38,8 @@ Set Default Proof Using "All".
 Abbreviation svv a k := (Pt (NSlot (NVar a) k 0) 0).
 Abbreviation sl a k := (Pt (NSlot (NConst a) k 0) 0).
 
-Definition Sfi : sty := SMu (SRcv 1 (TSess SEnd (pvar 0)) (SVar 0)).
-Definition Sfo : sty := SMu (SSnd 1 (TSess SEnd (pvar 0)) (SVar 0)).
+Definition Sfi : sty := SMu (SSeq (SRcv 1 (TSess SEnd (pvar 0))) (SVar 0)).
+Definition Sfo : sty := SMu (SSeq (SSnd 1 (TSess SEnd (pvar 0))) (SVar 0)).
 
 Definition fw_P (g : fact) : Prop :=
   ∃ k, g = FLt (pv 0 k) (pv 1 k) ∨ g = FLt (pv 1 k) (pv 0 (S k)) ∨
@@ -97,15 +97,15 @@ Ltac fmem := hnf; eexists; repeat (first [left; reflexivity|right]); reflexivity
 Ltac fhyp x y :=
   eapply (sl_hyp0 _ _ _ _ x y); [by left|fmem|cbn; lia|reflexivity|reflexivity].
 
-Lemma fwd_typed W F : world_wf W → typed W ∅ [] ∅ [] F fwd (TBox 2 fw_C (TLolli None None TUnit fwd_body)).
+Lemma fwd_typed W F : world_wf W → typed W ∅ [] ∅ [] F fwd (TBox 2 0 fw_C (TLolli None None TUnit fwd_body)).
 Proof.
   intros HW. unfold fwd.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open fw_C fwd_body. cbn. unfold fwd_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SRcv 1 (TSess SEnd (pvar 0)) Sfi) (pv 0 0))).
+              (TSess (SSeq (SRcv 1 (TSess SEnd (pvar 0))) Sfi) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -114,7 +114,7 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0))
-              (TProd (TSess SEnd (svv 1 0)) (TSess (SSnd 1 (TSess SEnd (pvar 0)) Sfo) (pv 1 0)))).
+              (TProd (TSess SEnd (svv 1 0)) (TSess (SSeq (SSnd 1 (TSess SEnd (pvar 0))) Sfo) (pv 1 0)))).
     - tstep; [eapply t_conv; [|tstep]; conv_sess|].
       (* the alias: d : Close@ι[0] becomes Close@ι′[0] along ι[0] ≡ ι′[0] *)
       eapply t_conv; [|tstep]. split; [|apply seq_refl].
@@ -130,7 +130,7 @@ Proof.
   { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; fhyp (pv 0 1) (pv 1 1)]. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 fw_C None fwd_body [pv 0 1; pv 1 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 fw_C None fwd_body [pv 0 1; pv 1 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply fw_call. by left.
     + apply (skn_ids2 W _ fw_C); [by left|done|done].
@@ -144,17 +144,17 @@ Proof.
   intros Hg Hx. apply Forall_singleton. apply (skn_in W Ψ fp_C [pvar 0] (pvar 0)); [done|by left|done].
 Qed.
 
-Lemma fprod_typed W F : strict W → typed W ∅ [] ∅ [] F fprod (TBox 1 fp_C (TLolli None None TUnit fprod_body)).
+Lemma fprod_typed W F : strict W → typed W ∅ [] ∅ [] F fprod (TBox 1 0 fp_C (TLolli None None TUnit fprod_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold fprod.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fp_C fprod_body. cbn. unfold fprod_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (svv 0 0) HWs); [skn_slot|].
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd (TSess SEnd (svv 0 0)) (TSess (SSnd 1 (TSess SEnd (pvar 0)) (dual Sfi)) (pv 0 0)))).
+              (TProd (TSess SEnd (svv 0 0)) (TSess (SSeq (SSnd 1 (TSess SEnd (pvar 0))) (dual Sfi)) (pv 0 0)))).
     - tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
     - apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) (dual Sfi) (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. fhyp (pv 0 0) (svv 0 0).
@@ -170,7 +170,7 @@ Proof.
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 fp_C None fprod_body [pv 0 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 fp_C None fprod_body [pv 0 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply fp_call. by left.
     + apply (skn_fp W _ (pv 0 1)); [by left|done].
@@ -179,15 +179,15 @@ Proof.
     exists (svv 0 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma fcons_typed W F : world_wf W → typed W ∅ [] ∅ [] F fcons (TBox 1 fp_C (TLolli None None TUnit fcons_body)).
+Lemma fcons_typed W F : world_wf W → typed W ∅ [] ∅ [] F fcons (TBox 1 0 fp_C (TLolli None None TUnit fcons_body)).
 Proof.
   intros HW. unfold fcons.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fp_C fcons_body. cbn. unfold fcons_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SRcv 1 (TSess SEnd (pvar 0)) (dual Sfo)) (pv 0 0))).
+              (TSess (SSeq (SRcv 1 (TSess SEnd (pvar 0))) (dual Sfo)) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
     - kscope.
@@ -202,7 +202,7 @@ Proof.
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 1 fp_C None fcons_body [pv 0 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 fp_C None fcons_body [pv 0 1]);
       [done|done| | |apply ubs_none|tstep].
     + apply fp_call. by left.
     + apply (skn_fp W _ (pv 0 1)); [by left|done].
@@ -390,16 +390,16 @@ Proof.
   match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E; Some ?G; None] _ _ _ =>
     change A with (TSess (dual Sfo) (pvar 0)); change B with (TSess Sfo (pvar 0));
     change A' with (TSess (dual Sfi) (pv 1 0)); change B' with (TSess Sfi (pv 1 0));
-    change D with (TBox 2 fw_C (TLolli None None TUnit fwd_body));
-    change E with (TBox 1 fp_C (TLolli None None TUnit fprod_body));
-    change G with (TBox 1 fp_C (TLolli None None TUnit fcons_body)) end.
+    change D with (TBox 2 0 fw_C (TLolli None None TUnit fwd_body));
+    change E with (TBox 1 0 fp_C (TLolli None None TUnit fprod_body));
+    change G with (TBox 1 0 fp_C (TLolli None None TUnit fcons_body)) end.
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NSlot (NVar 1) 0 0) 0)) (Some (pv 1 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 fp_C None fprod_body [pv 1 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 fp_C None fprod_body [pv 1 0]);
         [done|done|exact HCa|exact HKa|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
@@ -410,13 +410,13 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 fp_C None fcons_body [pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 fp_C None fcons_body [pvar 0]);
         [done|done|exact HCb|exact HKb|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (svv 0 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force W _ _ _ _ _ _ 2 fw_C None fwd_body [pv 1 0; pvar 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 fw_C None fwd_body [pv 1 0; pvar 0]);
       [done|done|exact HCf|exact HK|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

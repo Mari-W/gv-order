@@ -43,9 +43,9 @@ Set Default Proof Using "All".
 (** ** The encoding *)
 
 Definition Sch (S1 S2 : sty) : sty :=
-  SSnd 2 (TSum (TSess (dual S1) (pvar 0)) (TSess (dual S2) (pvar 1))) SEnd.
+  SSeq (SSnd 2 (TSum (TSess (dual S1) (pvar 0)) (TSess (dual S2) (pvar 1)))) SEnd.
 Definition Sbr (T1 T2 : sty) : sty :=
-  SRcv 2 (TSum (TSess T1 (pvar 0)) (TSess T2 (pvar 1))) SEnd.
+  SSeq (SRcv 2 (TSum (TSess T1 (pvar 0)) (TSess T2 (pvar 1)))) SEnd.
 
 Lemma dual_Sch S1 S2 : dual (Sch S1 S2) = Sbr (dual S1) (dual S2).
 Proof. done. Qed.
@@ -363,7 +363,7 @@ Proof. apply (soundness_source 2 Cch _ TUnit ch_rank_ok); [constructor|apply cho
     the two arms share. *)
 
 Definition Sch0 : sty :=
-  SSnd 1 (TSum (TSess (dual Sd) (pvar 0)) (TSess (dual Sd) (pvar 0))) SEnd.
+  SSeq (SSnd 1 (TSum (TSess (dual Sd) (pvar 0)) (TSess (dual Sd) (pvar 0)))) SEnd.
 
 Lemma same_slot_cycle W Ψ (k δ : point) :
   (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ δ k ∧ slt W Ψ k δ).
@@ -415,7 +415,7 @@ Qed.
     C[p_1/ι] is C without its first round ([lp_sub]). The program
     starts under C as its top-level constraint. *)
 
-Definition Rs : sty := SMu (Sbr (SSnd 0 TUnit (SVar 0)) SEnd).
+Definition Rs : sty := SMu (Sbr (SSeq (SSnd 0 TUnit) (SVar 0)) SEnd).
 
 Fixpoint cvp (n : nat) : point :=
   match n with 0 => pvar 0 | S m => pt_shift 1 (pt_slot (cvp m) 0) end.
@@ -475,7 +475,7 @@ Lemma lp_sel W Ψ n i : world_wf W → (lp_C, ids 1) ∈ Ψ → i < 2 → slt W 
 Proof. intros HW Hg Hi. eapply sl_trans; [apply (slt_po W _ _ HW)|by apply lp_fact]. Qed.
 
 Definition srv_body : ty := TLolli (Some (sl1 (pv 0 0))) None (TSess Rs (pv 0 0)) TUnit.
-Definition Tsrv : ty := TBox 1 lp_C (TLolli None None TUnit srv_body).
+Definition Tsrv : ty := TBox 1 0 lp_C (TLolli None None TUnit srv_body).
 
 Definition next_arm : expr :=
   App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 5)) (App ESend (Pair EUnit (Var 1)))))).
@@ -486,7 +486,7 @@ Definition srv : expr := EBox (Lam (branch (Var 0) next_arm stop_arm)).
 Lemma srv_typed W Ψ F : world_wf W → typed W ∅ Ψ ∅ [] F srv Tsrv.
 Proof.
   intros HW. unfold srv, Tsrv.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 lp_C srv_body. cbn.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ' := Q) end.
   assert ((lp_C, ids 1) ∈ Ψ') as Hg by (apply elem_of_app; right; by left).
@@ -494,7 +494,7 @@ Proof.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn.
   eapply (branch_typed W _ _ _ [Some (TSess Rs (pv 0 0)); Some Tsrv] [None; Some Tsrv]
-            _ _ _ _ (SSnd 0 TUnit Rs) SEnd _ (pv 0 0) HW).
+            _ _ _ _ (SSeq (SSnd 0 TUnit) Rs) SEnd _ (pv 0 0) HW).
   { apply lsplit_l, lsplit_unl; [done|constructor]. }
   { eapply t_conv; [|tstep]. conv_sess. }
   { apply ubs_intro; [intros y Hy; mem_cases Hy|].
@@ -508,7 +508,7 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    + apply (typed_force W _ _ _ _ _ _ 1 lp_C None srv_body [cvp 1]);
+    + apply (typed_force0 W _ _ _ _ _ _ 1 lp_C None srv_body [cvp 1]);
         [done|done|by apply lp_call|constructor; [apply (skn_v0 W _ lp_C); [done|apply cvp_root]|constructor]
         |apply ubs_none|tstep].
     + tstep; [|apply (KTSend _ _ _ 0 TUnit Rs (sl0 (pv 0 0))); cbn; set_solver|done|].
@@ -562,7 +562,7 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 lp_C None srv_body [pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 lp_C None srv_body [pvar 0]);
         [done|done|by apply lp_self|constructor; [by apply (skn_v0 W _ lp_C)|constructor]|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
@@ -573,7 +573,7 @@ Proof.
   tstep.
   { tstep; [|apply KTRecv| |].
     - eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
-      + apply (sel1_typed W HWs _ _ _ _ (SRcv 0 TUnit (dual Rs)) SEnd (cvp 0)); [apply Hk|reflexivity|
+      + apply (sel1_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (cvp 0)); [apply Hk|reflexivity|
           apply (lp_sel W Ψ 0 0); [done|done|lia]|apply (lp_sel W Ψ 0 1); [done|done|lia]|apply (lp_fact W Ψ 0 0); [done|lia]].
       + eapply t_conv; [|tstep]. conv_sess.
     - kscope.
@@ -583,7 +583,7 @@ Proof.
   tstep.
   { tstep; [|apply KTRecv| |].
     - eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
-      + apply (sel1_typed W HWs _ _ _ _ (SRcv 0 TUnit (dual Rs)) SEnd (cvp 1)); [apply Hk|reflexivity|
+      + apply (sel1_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (cvp 1)); [apply Hk|reflexivity|
           apply (lp_sel W Ψ 1 0); [done|done|lia]|apply (lp_sel W Ψ 1 1); [done|done|lia]|apply (lp_fact W Ψ 1 0); [done|lia]].
       + eapply t_conv; [|tstep]. conv_sess.
     - kscope.
@@ -593,7 +593,7 @@ Proof.
   tstep; [|apply KTClos|done|]; cycle 1.
   { apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
   eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
-  - apply (sel2_typed W HWs _ _ _ _ (SRcv 0 TUnit (dual Rs)) SEnd (cvp 2)); [apply Hk|reflexivity|
+  - apply (sel2_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (cvp 2)); [apply Hk|reflexivity|
       apply (lp_sel W Ψ 2 0); [done|done|lia]|apply (lp_sel W Ψ 2 1); [done|done|lia]|apply (lp_fact W Ψ 2 1); [done|lia]].
   - eapply t_conv; [|tstep]. conv_sess.
 Qed.

@@ -48,22 +48,29 @@ Definition bcs_rel (R : point → point → Prop) (n : nat) (C C' : bcs) : Prop 
   (∀ g, bcs_open n C g → ∃ g', bcs_open n C' g' ∧ fact_rel R g g') ∧
   (∀ g', bcs_open n C' g' → ∃ g, bcs_open n C g ∧ fact_rel R g g').
 
-Fixpoint teqW (W : world) (T U : ty) : Prop :=
+(** Types up to aliases in W, with the session types compared by ρ.
+    [teqW W] takes ρ = ≈. The body of a box with k > 0 session
+    variables is compared with ρ = equality on session types, because
+    ≈ of open session types is not closed under instances (sharp
+    edges 73). *)
+Fixpoint teqW_r (ρ : sty → sty → Prop) (W : world) (T U : ty) : Prop :=
   match T, U with
   | TUnit, TUnit => True
   | TLolli ub lb T1 T2, TLolli ub' lb' U1 U2 =>
       opt_rel (pteqW W) ub ub' ∧ opt_rel (pteqW W) lb lb' ∧
-      teqW W T1 U1 ∧ teqW W T2 U2
-  | TProd T1 T2, TProd U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
-  | TSum T1 T2, TSum U1 U2 => teqW W T1 U1 ∧ teqW W T2 U2
-  | TBox n C T1, TBox n' C' U1 =>
-      n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW W T1 U1
-
-  | TSess s x, TSess r y => pteqW W x y ∧ seq s r
+      teqW_r ρ W T1 U1 ∧ teqW_r ρ W T2 U2
+  | TProd T1 T2, TProd U1 U2 => teqW_r ρ W T1 U1 ∧ teqW_r ρ W T2 U2
+  | TSum T1 T2, TSum U1 U2 => teqW_r ρ W T1 U1 ∧ teqW_r ρ W T2 U2
+  | TBox n k C T1, TBox n' k' C' U1 =>
+      n = n' ∧ k = k' ∧ bcs_rel (pteqW W) n C C' ∧
+      match k with 0 => teqW_r ρ W T1 U1 | S _ => teqW_r eq W T1 U1 end
+  | TSess s x, TSess r y => pteqW W x y ∧ ρ s r
   | TEx lb n C T1, TEx lb' n' C' U1 =>
-      lb_rel (pteqW W) lb lb' ∧ n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW W T1 U1
+      lb_rel (pteqW W) lb lb' ∧ n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW_r ρ W T1 U1
   | _, _ => False
   end.
+
+Notation teqW W := (teqW_r seq W).
 
 (** ** The three relations, level by level *)
 
@@ -119,9 +126,9 @@ Definition Vfun (below : nat → level) (n : nat)
   | _ => False
   end.
 
-(** [Vdef] reads T under a point substitution σ, so that a binder
-    passes its instance to its body and the definition stays structural
-    (sharp edges 97). [Vrel] is [Vdef] at σ = pvar. *)
+(** [Vdef] reads T under a point substitution σ, so that an existential
+    passes the instance of its witness to its body and the definition
+    stays structural (sharp edges 73). [Vrel] is [Vdef] at σ = pvar. *)
 Fixpoint Vdef (below : nat → level) (n : nat)
     (W : world) (Θ : tenv) (σ : nat → point) (T : ty) (v : expr) {struct T} : Prop :=
   match T with
@@ -136,16 +143,19 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TSum T1 U =>
       (∃ v', v = Inj1 v' ∧ Vdef below n W Θ σ T1 v')
       ∨ (∃ v', v = Inj2 v' ∧ Vdef below n W Θ σ U v')
-  | TBox m C T1 =>
+  | TBox m k C T1 =>
       (* V of the thunk at every instance of the ∀ that meets C and
-         that the world knows, in every future world (sharp edges 63) *)
+         that the world knows, and at every hereditarily contractive
+         session instance of the αs, in every future world (sharp
+         edges 63, 73) *)
       Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-        ∀ W' xs, wext W W' → length xs = m →
+        ∀ W' xs ss, wext W W' → length xs = m → length ss = k → Forall hcontractive ss →
           bcs_hold (w_eq W') (w_lt W') (bcs_inst σ C) xs → Forall (pt_known W') xs →
-          Vdef below n W' ∅ (pt_inst (plist xs) ∘ pup m σ) T1 (thunk eb)
+          Vfun below n W' ∅ (sinst_ty (slist ss) (ty_inst xs (pinst_ty (pup m σ) T1)))
+            (thunk eb)
   | TEx lb m C T1 =>
       (* V-Ex: a known instance meets C, the value lies in the body at
-         it, and its channels lie at or above the lower point *)
+         it, and its channels lie at or above the lower point (K7) *)
       lbx_below W (lb_map (pt_inst σ) lb) (tenv_heads Θ) false ∧
       ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧
         bcs_hold (w_eq W) (w_lt W) (bcs_inst σ C) xs ∧
@@ -154,10 +164,11 @@ Fixpoint Vdef (below : nat → level) (n : nat)
 
 (** ** The cost of a step (sharp edges 45)
 
-    Send, close and link are giving steps: they cost nothing and keep
-    the index. Every other step costs one. A step taken at index n
+    Send, select, close and link are giving steps: they cost nothing and
+    keep the index. Every other step costs one, receive and branch
+    included (K4). A step taken at index n
     carries its obligation at index n − cost. *)
-Definition scost (σ : slabel) : nat := match σ with SRecv _ _ => 1 | _ => 0 end.
+Definition scost (σ : slabel) : nat := match σ with SRecv _ _ | SBra _ _ => 1 | _ => 0 end.
 Definition tcost (α : tlabel) : nat := match α with LSess σ => scost σ | _ => 1 end.
 Definition pcost (π : plabel) : nat := match π with PSess σ => scost σ | PTau => 1 end.
 
@@ -207,7 +218,7 @@ Qed.
 
 (** Giving steps of a thread shrink it. *)
 Definition giving (σ : slabel) : Prop :=
-  match σ with SRecv _ _ => False | _ => True end.
+  match σ with SRecv _ _ | SBra _ _ => False | _ => True end.
 
 Lemma tstep_giving_size e σ e' : tstep e (LSess σ) e' → giving σ → esize e' < esize e.
 Proof.
@@ -220,7 +231,7 @@ Qed.
 (** A step that costs nothing shrinks the term. *)
 Lemma tcost_giving α e e' : tstep e α e' → tcost α = 0 → esize e' < esize e.
 Proof.
-  intros Hst Hc. destruct α as [|[c w|c w|c|cd]|c|w]; try discriminate Hc;
+  intros Hst Hc. destruct α as [|[c w|c w|c|cd|c b|c b]|c|w]; try discriminate Hc;
     by apply (tstep_giving_size _ _ _ Hst).
 Qed.
 
@@ -252,7 +263,7 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
         at_cost Elow En n (tcost α) W Θ2 T F e'
   | LSess (SRecv c w) =>                               (* O-Recv *)
       ∃ Θ1 m U s k,
-        tenv_hd Θ c (SRcv m U s) k Θ1 ∧
+        tenv_hd Θ c (SSeq (SRcv m U) s) k Θ1 ∧
         ∀ W' j Θ2 Θ1c Θ', wext W W' → j ≤ nlower n (tcost α) →
           tenv_ext Θ1 c (s, pt_shift 1 k) Θ1c →
           tenv_comp (w_eq W') Θ' Θ1c Θ2 →
@@ -260,7 +271,7 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
           Elow j W' Θ' T F e'
   | LSess (SSend c w) =>                               (* O-Send *)
       ∃ Θr Θ1 Θ2 m U s k Θ',
-        tenv_hd Θ c (SSnd m U s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
+        tenv_hd Θ c (SSeq (SSnd m U) s) k Θr ∧ tenv_comp (w_eq W) Θr Θ1 Θ2 ∧
         Vn W Θ2 (payload_at m U k) w ∧
         tenv_ext Θ1 c (s, pt_shift 1 k) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
@@ -272,6 +283,14 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
         tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
         sdual sd sc ∧ w_eq W kc kd ∧
         at_cost Elow En n (tcost α) W Θ1 T F e'
+  | LSess (SSel c b) =>                                (* O-Select *)
+      ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SPlus s1 s2) k Θr ∧
+        tenv_ext Θr c (sbranch b s1 s2, pt_slot k (bidx b)) Θ' ∧
+        at_cost Elow En n (tcost α) W Θ' T F e'
+  | LSess (SBra c b) =>                                (* O-Branch *)
+      ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SWith s1 s2) k Θr ∧
+        tenv_ext Θr c (sbranch b s1 s2, pt_slot k (bidx b)) Θ' ∧
+        at_cost Elow En n (tcost α) W Θ' T F e'
   end.
 
 (** Term relation at level n' + 1 with fuel k, given [below] and the
@@ -358,7 +377,7 @@ Definition Psend_case (Vn : world → tenv → ty → expr → Prop)
     (W : world) (Σ : senv) (T : ty) (p : proc) (c : chan) (w : expr) (p' : proc)
     : Prop :=
   ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
-    senv_hd Σ c (SSnd m U s) k (Σ0 ∪ Σv) ∧
+    senv_hd Σ c (SSeq (SSnd m U) s) k (Σ0 ∪ Σv) ∧
     Σ0 ##ₘ Σv ∧ c ∉ dom Σ0 ∧ c ∉ dom Σv ∧
     dom Θe = fchans w ∩ p.1 ∧ send_split W Σe Θe ∧
     dom Θe ## dom Σ ∧
@@ -368,6 +387,14 @@ Definition Psend_case (Vn : world → tenv → ty → expr → Prop)
 Definition Pclos_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (c : chan) (p' : proc) : Prop :=
   ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧ X W Σ1 T p'.
+
+(** Q-Select (u = ⊕) and Q-Branch (u = &): the entry of c moves to the
+    branch b at the branch root k◁b (K10). *)
+Definition Pchoice_case (X : world → senv → ty → proc → Prop)
+    (W : world) (Σ : senv) (T : ty) (c : chan) (b : bool)
+    (u : sty → sty → sty) (p' : proc) : Prop :=
+  ∃ Σ1 s1 s2 k, senv_hd Σ c (u s1 s2) k Σ1 ∧ c ∉ dom Σ1 ∧
+    X W (<[c := (sbranch b s1 s2, pt_slot k (bidx b))]> Σ1) T p'.
 
 (** c = d cannot reach the interface: Σ holds one end per channel. *)
 Definition Plink_case (X : world → senv → ty → proc → Prop)
@@ -409,7 +436,7 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
       (ptau_link p p' → Plinktau_case Pn W Σ T p')
   | PSess (SRecv c w) =>                               (* Q-Recv *)
       ∃ Σ1 m U s k,
-        senv_hd Σ c (SRcv m U s) k Σ1 ∧ c ∉ dom Σ1 ∧
+        senv_hd Σ c (SSeq (SRcv m U) s) k Σ1 ∧ c ∉ dom Σ1 ∧
         ∀ W' j Θ2, wext W W' → j ≤ nlower n (pcost π) → dom Θ2 ## p.1 →
           recv_ok W' (<[c := (s, pt_shift 1 k)]> Σ1) Θ2 →
           Vlow j W' Θ2 (payload_at m U k) w →
@@ -421,6 +448,10 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
       Pclos_case (at_cost Plow Pn n (pcost π)) W Σ T c p'
   | PSess (SLink cd) =>                                (* Q-Link *)
       Plink_case (at_cost Plow Pn n (pcost π)) W Σ T cd p'
+  | PSess (SSel c b) =>                                (* Q-Select *)
+      Pchoice_case (at_cost Plow Pn n (pcost π)) W Σ T c b SPlus p'
+  | PSess (SBra c b) =>                                (* Q-Branch *)
+      Pchoice_case (at_cost Plow Pn n (pcost π)) W Σ T c b SWith p'
   end.
 
 (** Process relation at level n' + 1 with fuel k. Every clause is
@@ -589,19 +620,53 @@ Lemma Vrel_sum_iff n W Θ T U v :
   ∨ (∃ v', v = Inj2 v' ∧ Vrel n W Θ U v').
 Proof. unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef]. done. Qed.
 
-(** [Vdef] at σ is [Vdef] at the instance (sharp edges 97). *)
-Lemma Vdef_ext below n T : ∀ W Θ σ σ' v,
+(** V at an arrow type: the thunk of a box lies in it at every instance.
+    An existential may also hold a λ, so [Vlam] is V restricted to arrow
+    types (sharp edges 73). *)
+Definition Vlam (n : nat) (W : world) (Θ : tenv) (U : ty) (v : expr) : Prop :=
+  Vfun (levels n) n W Θ U v.
+
+Lemma Vlam_iff n W Θ U v :
+  Vlam n W Θ U v ↔ (∃ ub lb T1 U1, U = TLolli ub lb T1 U1) ∧ Vrel n W Θ U v.
+Proof.
+  unfold Vlam, Vrel. rewrite (level_at_eq n). destruct U; cbn [mk_level lV Vdef Vfun];
+    try (split; [done|by intros [(? & ? & ? & ? & ?) _]]).
+  rewrite tinst_pvar. split; [intros H; split; [eauto|done]|by intros [_ H]].
+Qed.
+
+Lemma Vlam_inv n W Θ U v : Vlam n W Θ U v → ∃ ub lb T1 U1, U = TLolli ub lb T1 U1.
+Proof. by intros [? _]%Vlam_iff. Qed.
+
+(** V-Box: the thunk is in V at every admissible instance. *)
+Lemma Vrel_box_iff n W Θ m k C T v :
+  Vrel n W Θ (TBox m k C T) v ↔
+  Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
+    ∀ W' xs ss, wext W W' → length xs = m → length ss = k → Forall hcontractive ss →
+      bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
+      Vlam n W' ∅ (sinst_ty (slist ss) (ty_inst xs T)) (thunk eb).
+Proof.
+  unfold Vlam.
+  unfold Vrel at 1. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
+  rewrite tbcs_pvar. rewrite (tinst_ext T (pup m pvar) pvar) by apply tpup_pvar.
+  by rewrite tinst_pvar.
+Qed.
+
+Lemma Vrel_box_empty n W Θ m k C T v : Vrel n W Θ (TBox m k C T) v → Θ = ∅.
+
+Proof. intros [-> _]%Vrel_box_iff. done. Qed.
+
+(** [Vdef] at σ is [Vdef] at the instance (sharp edges 73). *)
+Lemma Vdef_ext below n W T : ∀ Θ σ σ' v,
   (∀ a, σ a = σ' a) → Vdef below n W Θ σ T v ↔ Vdef below n W Θ σ' T v.
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | m C T1 IH | s x
-                 | lb m C T1 IH]; intros W Θ σ σ' v Hs; cbn [Vdef].
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | m k C T1 IH | s x
+                 | lb m C T1 IH]; intros Θ σ σ' v Hs; cbn [Vdef].
   - done.
   - by rewrite (tinst_ext _ σ σ').
-  - setoid_rewrite (IH1 _ _ σ σ'); [|done..]. by setoid_rewrite (IH2 _ _ σ σ').
-  - setoid_rewrite (IH1 _ _ σ σ'); [|done..]. by setoid_rewrite (IH2 _ _ σ σ').
-  - rewrite (tbcs_ext σ σ') by done. apply and_iff_compat_l. f_equiv. intros eb.
-    do 2 apply and_iff_compat_l. 
-    do 6 (apply forall_proper; intros ?). apply IH. intros a. simpl. by rewrite (tpup_ext m σ σ').
+  - setoid_rewrite (IH1 _ σ σ'); [|done..]. by setoid_rewrite (IH2 _ σ σ').
+  - setoid_rewrite (IH1 _ σ σ'); [|done..]. by setoid_rewrite (IH2 _ σ σ').
+  - rewrite (tbcs_ext σ σ'), (tinst_ext T1 (pup m σ) (pup m σ')); [done| |done].
+    intros a. by apply tpup_ext.
   - by rewrite (tpt_inst_ext σ σ').
   - assert (lb_map (pt_inst σ) lb = lb_map (pt_inst σ') lb) as ->
       by (apply lb_map_ext; intros; by apply tpt_inst_ext).
@@ -610,20 +675,19 @@ Proof.
     intros a. simpl. by rewrite (tpup_ext m σ σ').
 Qed.
 
-Lemma Vdef_comp below n T : ∀ W Θ σ τ v,
+Lemma Vdef_comp below n W T : ∀ Θ σ τ v,
   Vdef below n W Θ τ (pinst_ty σ T) v ↔ Vdef below n W Θ (pt_inst τ ∘ σ) T v.
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | m C T1 IH | s x
-                 | lb m C T1 IH]; intros W Θ σ τ v; cbn [Vdef pinst_ty].
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | m k C T1 IH | s x
+                 | lb m C T1 IH]; intros Θ σ τ v; cbn [Vdef pinst_ty].
   - done.
   - transitivity (Vfun below n W Θ (pinst_ty τ (pinst_ty σ (TLolli ub lb T1 U))) v); [done|].
     by rewrite tinst_comp.
   - setoid_rewrite IH1. by setoid_rewrite IH2.
   - setoid_rewrite IH1. by setoid_rewrite IH2.
-  - rewrite tbcs_comp. apply and_iff_compat_l. f_equiv. intros eb.
-    do 2 apply and_iff_compat_l. 
-    do 6 (apply forall_proper; intros ?). rewrite IH. apply Vdef_ext.
-    intros a. simpl. rewrite <-tpup_comp, tpt_inst_comp. done.
+  - rewrite tbcs_comp, tinst_comp.
+    rewrite (tinst_ext T1 (pt_inst (pup m τ) ∘ pup m σ) (pup m (pt_inst τ ∘ σ))); [done|].
+    intros a. apply tpup_comp.
   - by rewrite tpt_inst_comp.
   - assert (lb_map (pt_inst τ) (lb_map (pt_inst σ) lb) = lb_map (pt_inst (pt_inst τ ∘ σ)) lb) as ->
       by (rewrite lb_map_comp; apply lb_map_ext; intros; apply tpt_inst_comp).
@@ -638,27 +702,7 @@ Proof.
   rewrite Vdef_comp. apply Vdef_ext. intros a. simpl. by rewrite tpt_inst_pvar.
 Qed.
 
-Lemma Vdef_plist below n W Θ σ m xs T v :
-  Vdef below n W Θ (pt_inst (plist xs) ∘ pup m σ) T v ↔
-  Vdef below n W Θ pvar (ty_inst xs (pinst_ty (pup m σ) T)) v.
-Proof. rewrite Vdef_inst. unfold ty_inst. by rewrite tinst_comp. Qed.
-
-(** V-Box: the thunk is in V at every admissible instance. *)
-Lemma Vrel_box_iff n W Θ m C T v :
-  Vrel n W Θ (TBox m C T) v ↔
-  Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-    ∀ W' xs, wext W W' → length xs = m →
-      bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
-      Vrel n W' ∅ (ty_inst xs T) (thunk eb).
-Proof.
-  unfold Vrel. rewrite !(level_at_eq n). cbn [mk_level lV Vdef].
-  rewrite tbcs_pvar. apply and_iff_compat_l. f_equiv. intros eb.
-  do 2 apply and_iff_compat_l. 
-  do 6 (apply forall_proper; intros ?). rewrite Vdef_plist.
-  by rewrite (tinst_ext T (pup m pvar) pvar), tinst_pvar by apply tpup_pvar.
-Qed.
-
-(** V-Ex (sharp edges 97). *)
+(** V-Ex (K7, sharp edges 73). *)
 Lemma Vrel_ex_iff n W Θ lb m C T v :
   Vrel n W Θ (TEx lb m C T) v ↔
   lbx_below W lb (tenv_heads Θ) false ∧
@@ -667,14 +711,12 @@ Lemma Vrel_ex_iff n W Θ lb m C T v :
 Proof.
   unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
   assert (lb_map (pt_inst pvar) lb = lb) as -> by (destruct lb; simpl; [done|done|by rewrite tpt_inst_pvar]).
+
   rewrite tbcs_pvar. apply and_iff_compat_l. f_equiv. intros xs.
-  do 3 (apply and_iff_compat_l). rewrite Vdef_plist.
-  by rewrite (tinst_ext T (pup m pvar) pvar), tinst_pvar by apply tpup_pvar.
+  do 3 (apply and_iff_compat_l). rewrite Vdef_inst. unfold ty_inst.
+  rewrite (tinst_ext T (pt_inst (plist xs) ∘ pup m pvar) (plist xs)); [done|].
+  intros a. simpl. by rewrite tpup_pvar, tpt_inst_pvar_at.
 Qed.
-
-Lemma Vrel_box_empty n W Θ m C T v : Vrel n W Θ (TBox m C T) v → Θ = ∅.
-
-Proof. intros [-> _]%Vrel_box_iff. done. Qed.
 
 (** Values at an unlimited type own no channels. One case per
     modality; the structural rules only ever need this much. *)
@@ -731,7 +773,7 @@ Lemma Eobl_mono Vl1 Vl2 V1 V2 El1 El2 E1 E2 n W Θ T F α e' :
   Eobl Vl1 V1 El1 E1 (S n) W Θ T F α e' → Eobl Vl2 V2 El2 E2 (S n) W Θ T F α e'.
 Proof.
   intros HVl HV HEl HE.
-  destruct α as [|[c w|c w|c|cd]|c|w]; cbn [Eobl at_cost tcost scost nlower pred] in *.
+  destruct α as [|[c w|c w|c|cd|c b|c b]|c|w]; cbn [Eobl at_cost tcost scost nlower pred] in *.
   - intros H. apply HEl; [lia|exact H].
   - intros (Θ1 & m & U & s & k & Hhd & H). exists Θ1, m, U, s, k. split; [done|].
     intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV'.
@@ -741,6 +783,9 @@ Proof.
   - intros (Θ1&k&?&HX). exists Θ1, k. split; auto.
   - intros (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
     exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; auto.
+  - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; auto.
+  - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'.
+    split_and!; [done|done|]. apply HEl; [lia|exact HX].
   - intros H Hc. destruct (H Hc) as (a&s&s'&W'&?&?&?&HX).
     exists a, s, s', W'. split_and!; try done. apply HEl; [lia|exact HX].
   - intros (Θ1&Θ2&ub&lb&?&?&HX). exists Θ1, Θ2, ub, lb.
@@ -760,7 +805,7 @@ Lemma Pobl_mono Vl1 Vl2 V1 V2 Pl1 Pl2 P1 P2 n W Σ T p π p' :
   Pobl Vl1 V1 Pl1 P1 (S n) W Σ T p π p' → Pobl Vl2 V2 Pl2 P2 (S n) W Σ T p π p'.
 Proof.
   intros HVl HV HPl HP.
-  destruct π as [|[c w|c w|c|cd]]; cbn [Pobl at_cost pcost scost nlower pred] in *.
+  destruct π as [|[c w|c w|c|cd|c b|c b]]; cbn [Pobl at_cost pcost scost nlower pred] in *.
   - intros [H1 H2]. split.
     + intros Hd. destruct (H1 Hd) as (N&W'&?&?&HX). exists N, W'.
       split_and!; [done|done|]. apply HPl; [lia|exact HX].
@@ -775,6 +820,10 @@ Proof.
   - intros (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
     exists c, d, Σ1, sc, sd, kc, kd.
     split_and!; try done; first [apply HP; [by left|exact HX]|auto].
+  - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k.
+    split_and!; try done. apply HP; [by left|exact HX].
+  - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k.
+    split_and!; try done. apply HPl; [lia|exact HX].
 Qed.
 
 Lemma Ecase_gen_mono X Y n' W Θ T F α e' :
@@ -958,7 +1007,7 @@ Lemma Prel_S_empty_no_sess n W T p σ p' :
   Prel (S n) W ∅ T p → proc_step p (PSess σ) p' → False.
 Proof.
   intros HP Hp. pose proof (Prel_S_step _ _ _ _ _ _ _ HP Hp) as Hstep.
-  destruct σ as [c w|c w|c|cd]; simpl in Hstep.
+  destruct σ as [c w|c w|c|cd|c b|c b]; simpl in Hstep.
   - destruct Hstep as (Σ1 & m & U & s & k & Heq & _).
     exact (senv_hd_not_empty _ _ _ _ Heq).
   - destruct Hstep as (?&?&?&?&?&?&?&?&Heq&_).
@@ -968,6 +1017,10 @@ Proof.
   - (* link: both ends must be in Σ *)
     destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd & _ & _ & Heq & _).
     exact (insert_non_empty _ _ _ (eq_sym Heq)).
+  - destruct Hstep as (Σ1 & s1 & s2 & k & Heq & _).
+    exact (senv_hd_not_empty _ _ _ _ Heq).
+  - destruct Hstep as (Σ1 & s1 & s2 & k & Heq & _).
+    exact (senv_hd_not_empty _ _ _ _ Heq).
 Qed.
 
 (** ** Semantic judgments (Defs. 3.2 and 3.3) *)
@@ -1099,10 +1152,15 @@ Proof.
   apply (H W' j Θ' Θ'' w F); auto. lia.
 Qed.
 
+Lemma Vlam_down n m W Θ T v : m ≤ n → Vlam n W Θ T v → Vlam m W Θ T v.
+Proof.
+  intros Hle. rewrite !Vlam_iff. intros [(ub & lb & T1 & U1 & ->) H]. split; [eauto|].
+  by apply (Vrel_down_lolli n).
+Qed.
+
 Lemma Vrel_down n m W Θ T v : m ≤ n → Vrel n W Θ T v → Vrel m W Θ T v.
 Proof.
-  intros Hle. induction T as [|ub lb T1 IH1 U IH2|T1 IH1 U IH2|T1 IH1 U IH2|m0 C T1 IH|s x
-                             |lb m0 C T1 IH] in W, Θ, v |- * using ty_ind_ex.
+  intros Hle. induction T in Θ, v |- * using ty_ind_ex.
   - rewrite !Vrel_unit_iff. done.
   - by apply Vrel_down_lolli.
   - rewrite !Vrel_prod_iff.
@@ -1112,11 +1170,11 @@ Proof.
     intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
   - rewrite !Vrel_box_iff.
     intros (-> & eb & -> & Hfc & H). split; [done|].
-    exists eb. split_and!; [done|done|]. intros W' xs HW Hxs HC HK.
-    apply IH. by apply H.
+    exists eb. split_and!; [done|done|]. intros W' xs ss HW Hxs Hss Hsc HC HK.
+    eapply Vlam_down; [exact Hle|]. by apply H.
   - rewrite !Vrel_sess_iff. done.
   - rewrite !Vrel_ex_iff. intros [Hlb (xs & Hxs & HK & HC & HV)].
-    split; [done|]. exists xs. split_and!; [done..|]. by apply IH.
+    split; [done|]. exists xs. split_and!; [done..|]. by apply H.
 Qed.
 
 Lemma Erel_down n m W Θ T F e :
@@ -1130,7 +1188,7 @@ Proof.
   - intros He. eapply Vrel_down; [|by apply H1]. lia.
   - done.
   - intros α e' Hst. specialize (H2 α e' Hst).
-    destruct α as [|[c w|c w|c|cd]|c|w]; simpl in H2 |- *.
+    destruct α as [|[c w|c w|c|cd|c b|c b]|c|w]; simpl in H2 |- *.
     + eapply IH; [|exact H2]. lia.
     + destruct H2 as (Θ1 & m & U & s & k & Hhd & H2).
       eexists _, _, _, _, _. split; [done|].
@@ -1145,6 +1203,10 @@ Proof.
     + destruct H2 as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                       -> & ? & ? & ? & ? & HE').
       eexists _, _, _, _, _, _, _, _. split_and!; [done..|]. exact (proj2 HE').
+    + destruct H2 as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      eexists _, _, _, _, _. split_and!; [done..|]. exact (proj2 HE').
+    + destruct H2 as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      eexists _, _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
     + intros Hc. destruct (H2 Hc) as (a & s & s' & W' & ? & ? & ? & HE').
       eexists _, _, _, _. split_and!; [done|done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Θ1 & Θ2 & ub & lb & ? & HV & HE').
@@ -1164,7 +1226,7 @@ Proof.
     eexists _, _. split_and!; eauto. eapply Vrel_down; [|exact HV]. lia.
   - done.
   - intros π p' Hst. specialize (H2 π p' Hst).
-    destruct π as [|[c w|c w|c|cd]]; simpl in H2 |- *.
+    destruct π as [|[c w|c w|c|cd|c b|c b]]; simpl in H2 |- *.
     + destruct H2 as [H2 Hl]. split.
       * intros Hd. destruct (H2 Hd) as (N & W' & ? & ? & ?).
         exists N, W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
@@ -1182,35 +1244,41 @@ Proof.
     + destruct H2 as (c & d & Σ1 & sc & sd & kc & kd &
                       -> & ? & -> & ? & ? & ? & ? & HP').
       eexists _, _, _, _, _, _, _. split_and!; [done..|]. exact (proj2 HP').
+    + destruct H2 as (Σ1 & s1 & s2 & k & ? & ? & HP').
+      eexists _, _, _, _. split_and!; [done..|]. exact (proj2 HP').
+    + destruct H2 as (Σ1 & s1 & s2 & k & ? & ? & HP').
+      eexists _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
 Qed.
 
 (** V-Box at a thunk type ∗ ⊸^u_⊤ T, read as the box of sharp edge 52:
     the unrolled body is in E at every lower index, admissible instance
     and frame above the instantiated upper point. *)
-Lemma Vrel_box_thunk_iff n W Θ m C ub T v :
-  Vrel n W Θ (TBox m C (TLolli ub None TUnit T)) v ↔
+Lemma Vrel_box_thunk_iff n W Θ m k C ub T v :
+  Vrel n W Θ (TBox m k C (TLolli ub None TUnit T)) v ↔
   Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
-    ∀ W' j xs F, wext W W' → j < n → length xs = m →
+    ∀ W' j xs ss F, wext W W' → j < n → length xs = m → length ss = k →
+      Forall hcontractive ss →
       bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
       ub_below W' (pt_inst (plist xs) <$> ub) F →
-      Erel j W' ∅ (ty_inst xs T) F (subst1 (EBox eb) eb).
+      Erel j W' ∅ (sinst_ty (slist ss) (ty_inst xs T)) F (subst1 (EBox eb) eb).
 Proof.
   rewrite Vrel_box_iff. apply and_iff_compat_l.
   split; intros (eb & -> & Hfc & H); exists eb; (split_and!; [done..|]).
-  - intros W' j xs F HW Hj Hxs HC HK HF.
-    specialize (H W' xs HW Hxs HC HK). cbn in H.
+  - intros W' j xs ss F HW Hj Hxs Hss Hsc HC HK HF.
+    specialize (H W' xs ss HW Hxs Hss Hsc HC HK). apply Vlam_iff in H as [_ H]. cbn in H.
     apply Vrel_lolli_iff in H as [(eb' & Heb & _ & _ & H)|(? & ? & ? & _)]; [|done].
     injection Heb as <-. rewrite <-(thunk_app EUnit eb).
     apply (H W' j ∅ ∅ EUnit F); [apply wext_refl, HW|done|apply tenv_comp_empty_r|
       by apply Vrel_unit_iff|done].
-  - intros W' xs HW Hxs HC HK. cbn. apply Vrel_lolli_iff. left.
+  - intros W' xs ss HW Hxs Hss Hsc HC HK. apply Vlam_iff. split; [cbn; eauto|].
+    cbn. apply Vrel_lolli_iff. left.
     exists (rename S (subst1 (EBox eb) eb)). split; [done|]. split; [|split].
     + rewrite fchans_rename, dom_empty_L. apply set_eq. intros c. split; [|set_solver].
       intros Hc%fchans_subst1_sub. simpl in Hc. set_solver.
     + simpl. unfold tenv_heads. by rewrite map_fold_empty.
     + intros W'' j Θ' Θ'' w F HW' Hj Hc HV HF.
       apply Vrel_unit_iff in HV as [-> ->]. apply tenv_comp_empty_r_inv in Hc as ->.
-      rewrite thunk_app. apply H; [by eapply wext_trans|done|done| | |done].
+      rewrite thunk_app. apply H; [by eapply wext_trans|done|done|done|done| | |done].
       * eapply bcs_hold_mono; [| |exact HC]; apply HW'.
       * eapply Forall_impl; [exact HK|]. intros x Hx. apply HW', Hx.
 Qed.

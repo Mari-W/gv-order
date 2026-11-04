@@ -24,6 +24,18 @@ Proof. rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True by lia. Qed.
 Lemma plist1_pup_pvar0 x σ : pt_inst (pt_inst (plist [x]) ∘ pup 1 σ) (pvar 0) = x.
 Proof. rewrite pt_inst_pvar_at. unfold compose, pup. rewrite decide_True by lia. by rewrite pt_inst_pvar_at. Qed.
 
+(** ** Helpers for E-Exp over session variables (K6, sharp edges 73) *)
+
+Lemma hcontractive_end : hcontractive SEnd.
+Proof. intros [|n]; [done|]. by cbn. Qed.
+
+(** Every session arity has a hereditarily contractive instance. *)
+Lemma slist_witness k : ∃ ss, length ss = k ∧ Forall hcontractive ss.
+Proof.
+  exists (replicate k SEnd). split; [apply length_replicate|].
+  apply Forall_replicate, hcontractive_end.
+Qed.
+
 (** ** Helpers for E-Pack and E-Open (sharp edges 97) *)
 
 Lemma lenv_pinst_insert σ Δ i o :
@@ -214,7 +226,7 @@ Proof.
     |Φ Ψ Θ Δ F e T U _ IH
     |Φ Ψ Θ Δ F e T U _ IH
     |Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ _ IH0 _ IH1 _ IH2
-    |Φ Ψ Δ F e m C ub T φ HΔ _ _ IH
+    |Φ Ψ Δ F e m k C ub T φ HΔ Hφ Hb IH
     |Φ Ψ Θ Δ' Δ F e T Hwk _ IH
     |Φ Ψ Θ Δ U F e T Hu _ IH
     |Φ Ψ Θ Δ F e T T' _ _ IH
@@ -318,7 +330,8 @@ Proof.
       * left. apply Hrv0. exists T'. auto.
       * right. left. apply (Hrv1 (S x)). exists T'. auto.
   (* E-Exp *)
-  - destruct (proj1 (term_wf_lenv_pinst _ _ _ _) IH) as (Hfc & Hfv & Hrv).
+  - destruct (slist_witness k) as (ss & Hss & Hsc).
+    destruct (proj1 (term_wf_lenv_pinst _ _ _ _) (IH ss Hss Hsc)) as (Hfc & Hfv & Hrv).
     split_and!; simpl; [done| |].
     + eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
       * intros _. done.
@@ -376,7 +389,7 @@ Proof.
     |Φ Ψ Θ Δ F e T U H IH
     |Φ Ψ Θ Δ F e T U H IH
     |Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ H0 IH0 H1 IH1 H2 IH2
-    |Φ Ψ Δ F e m C ub T φ HΔ Hφ Hb IH
+    |Φ Ψ Δ F e m k C ub T φ HΔ Hφ Hb IH
     |Φ Ψ Θ Δ' Δ F e T Hwk H IH
     |Φ Ψ Θ Δ U F e T Hu H IH
     |Φ Ψ Θ Δ F e T T' Hteq H IH
@@ -440,19 +453,21 @@ Proof.
     + by apply (IH1 W1 ρ σ).
     + by apply (IH2 W1 ρ σ).
   - cbn [pinst_ty]. rewrite tenv_pinst_empty. apply sr_box; [by apply lenv_unl_pinst| |].
-    { pose proof (typed_term_wf_s _ _ _ _ _ _ _ _ Hb) as Hwf.
+    { destruct (slist_witness k) as (ss0 & Hss0 & Hsc0).
+      pose proof (typed_term_wf_s _ _ _ _ _ _ _ _ (Hb ss0 Hss0 Hsc0)) as Hwf.
       rewrite term_wf_lenv_pinst in Hwf.
-      change (term_wf ∅ (lenv_pinst σ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) e).
+      change (term_wf ∅ (lenv_pinst σ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ)) e).
       by rewrite term_wf_lenv_pinst. }
-    intros W2 xs F' HW2 Hxs HC HK Hub'. subst m.
+    intros W2 xs ss F' HW2 Hxs Hss Hsc HC HK Hub'. subst m.
     assert (∀ a, pt_inst (pt_inst (plist xs) ∘ pup (length xs) σ) (pshift (length xs) a) = σ a) as Hsh
       by (intros a; by apply plist_pup_shift).
     set (m := length xs).
-    assert (lenv_pinst (pt_inst (plist xs) ∘ pup m σ) (lenv_pinst (pshift m) (Some (TBox m C (TLolli ub None TUnit T)) :: Δ))
-            = lenv_pinst σ (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) as E1.
+    assert (lenv_pinst (pt_inst (plist xs) ∘ pup m σ) (lenv_pinst (pshift m) (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ))
+            = lenv_pinst σ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ)) as E1.
     { rewrite lenv_pinst_comp. apply lenv_pinst_ext. exact Hsh. }
-    assert (pinst_ty (pt_inst (plist xs) ∘ pup m σ) T = ty_inst xs (pinst_ty (pup m σ) T)) as E2.
-    { unfold ty_inst. by rewrite pinst_ty_comp. }
+    assert (pinst_ty (pt_inst (plist xs) ∘ pup m σ) (sinst_ty (slist ss) T)
+            = sinst_ty (slist ss) (ty_inst xs (pinst_ty (pup m σ) T))) as E2.
+    { unfold ty_inst. by rewrite pinst_sinst, pinst_ty_comp. }
     assert (fhyps_pinst (pt_inst (plist xs) ∘ pup m σ) (fhyps_pinst (pshift m) Φ)
             = fhyps_pinst σ Φ) as E3.
     { unfold fhyps_pinst. rewrite <-map_fmap_compose. apply map_fmap_ext.
@@ -465,7 +480,7 @@ Proof.
       - apply hyps_inst_ext. exact Hsh.
       - f_equal. f_equal; [|apply ids_plist].
         rewrite bcs_comp. apply bcs_inst_ext. exact Hsh. }
-    pose proof (IH W2 (λ ψ, if decide (ψ = φ) then F' else ρ ψ)
+    pose proof (IH ss Hss Hsc W2 (λ ψ, if decide (ψ = φ) then F' else ρ ψ)
                   (pt_inst (plist xs) ∘ pup m σ) HW (wext_trans _ _ _ HW1 HW2)) as Hb'.
     fold m in Hb'. rewrite tenv_pinst_empty, sf_pinst_fresh, sf_inst_fresh, E1, E2, E4 in Hb'.
     apply Hb'.
@@ -600,7 +615,7 @@ Proof.
     |Φ Ψ Θ Δ F e T U H IH
     |Φ Ψ Θ Δ F e T U H IH
     |Φ Ψ Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ H0 IH0 H1 IH1 H2 IH2
-    |Φ Ψ Δ F e m C ub T φ HΔ Hφ Hb IH
+    |Φ Ψ Δ F e m k C ub T φ HΔ Hφ Hb IH
     |Φ Ψ Θ Δ' Δ F e T Hwk H IH
     |Φ Ψ Θ Δ U F e T Hu H IH
     |Φ Ψ Θ Δ F e T T' Hteq H IH
@@ -656,7 +671,8 @@ Proof.
     + by apply (IH1 σ Ψ').
     + by apply (IH2 σ Ψ').
   - cbn [pinst_ty]. rewrite tenv_pinst_empty.
-    apply (t_box W _ _ _ _ _ _ _ _ _ φ); [by apply lenv_unl_pinst|by rewrite fhyps_pinst_dom|].
+    apply (t_box W _ _ _ _ _ _ _ _ _ _ φ); [by apply lenv_unl_pinst|by rewrite fhyps_pinst_dom|].
+    intros ss Hss Hsc.
     set (Ψt := hyps_inst (pshift m) Ψ' ++ [(bcs_inst (pshift m) (bcs_inst σ C), ids m)]).
     assert (hyps_hold (seqs W Ψt) (slt W Ψt) (skn W Ψt)
               (hyps_inst (pup m σ) (hyps_inst (pshift m) Ψ ++ [(bcs_inst (pshift m) C, ids m)])))
@@ -675,8 +691,8 @@ Proof.
         apply list_elem_of_singleton in Hg as ->. apply elem_of_app. right.
         apply list_elem_of_singleton. rewrite ids_pup, !bcs_comp. f_equal.
         apply bcs_inst_ext. intros a. unfold compose. apply pup_pshift. }
-    pose proof (IH (pup m σ) _ HΨ') as H.
-    rewrite tenv_pinst_empty, sf_pinst_fresh, fhyps_pinst_insert in H.
+    pose proof (IH ss Hss Hsc (pup m σ) _ HΨ') as H.
+    rewrite tenv_pinst_empty, sf_pinst_fresh, fhyps_pinst_insert, pinst_sinst in H.
     rewrite (fhyps_pinst_comp_ext (pup m σ) (pshift m) (pshift m) σ) in H by apply pup_pshift.
     rewrite lenv_pinst_comp, (lenv_pinst_ext _ (pt_inst (pshift m) ∘ σ)), <-lenv_pinst_comp in H
       by apply pup_pshift.
@@ -1033,6 +1049,7 @@ Section c0_world.
     intros HC. pose proof (wc0_strict HC) as HS.
     destruct (gen_map (λ _ _, False) (λ _ _, False) (w_eq wc0) (w_lt wc0) id
                 (theory_world _ (proj1 HS))) as [Gq Gl]; [done|done|done|done|].
+
     split_and!; [simpl; set_solver|exact Gq|exact Gl|done].
   Qed.
 

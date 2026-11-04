@@ -228,8 +228,8 @@ Fixpoint tr_ty (T : pty) : ty :=
   end
 with tr_sty (s : psty) : sty :=
   match s with
-  | PSnd _ T s' => SSnd 0 (tr_ty T) (tr_sty s')
-  | PRcv _ T s' => SRcv 0 (tr_ty T) (tr_sty s')
+  | PSnd _ T s' => SSeq (SSnd 0 (tr_ty T)) (tr_sty s')
+  | PRcv _ T s' => SSeq (SRcv 0 (tr_ty T)) (tr_sty s')
   | PEndS _ | PEndR _ => SEnd
   end.
 
