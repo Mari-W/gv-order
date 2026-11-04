@@ -48,8 +48,8 @@ payload names a point, not a channel (§4).
 **7. The sequencing lemmas need an upper bound.**
 In let () = t₁ in t₂, ready for the whole thread needs t₁ to block below the
 channels t₂ holds, and E⟦t₁⟧ alone does not say where t₁ blocks.
-Decision: E carries a frame F, an input, and F = ∅ is the paper's E. It is a
-parameter of E, not a separate relation, so that E and the frame condition pick
+Decision: E carries a future F (then called frame), an input, and F = ∅ is the paper's E. It is a
+parameter of E, not a separate relation, so that E and the future condition pick
 the same world extension at new. Arrows keep two points (§6, §7, §9).
 
 **8. fork imposed a tree.**
@@ -73,7 +73,7 @@ Decision: O-Link allows c = d at term level, and both entries leave. At process
 level it cannot reach the interface (§7).
 
 **12. The static system needs a bound, but not where it first sat.**
-The bound on terms became a frame passed down the derivation. Arrows keep their
+The bound on terms became a future (then called frame) passed down the derivation. Arrows keep their
 two points (§9).
 
 ## Mechanization
