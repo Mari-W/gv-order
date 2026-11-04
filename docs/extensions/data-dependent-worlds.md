@@ -206,7 +206,16 @@ which facts gives 4.4.
 ### 4.2 Growth at internal choices, facts learned with the label
 
 E-Case-Grow types branch i under Γ + Γ_i with Γ_i between existing points,
-provided Γ + Γ_i is acyclic. The relation lets the β step of a case extend
+provided Γ + Γ_i is acyclic. Frames are those of E-Case.
+
+```
+Θ₁; Δ₁ ⊢_Γ e : T₁ ⊕ T₂
+Θ₂; Δ₂, x : T₁ ⊢^F_{Γ ∪ Γ₀} e₁ : T     Θ₂; Δ₂, x : T₂ ⊢^F_{Γ ∪ Γ₁} e₂ : T
+Γ ∪ Γ₀ acyclic     Γ ∪ Γ₁ acyclic
+──────────────────────────────────────────────────────────── E-Case-Grow
+Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F_Γ case e of x. e₁ | x. e₂ : T
+```
+ The relation lets the β step of a case extend
 the world by Γ_i, an extension that is not fresh. The receiver half exists
 today. A payload ∃{Γ_i}.T_i on the i-th side of a sum gives the branch Γ_i
 by E-Open, which is how db_main types. What is new is the chooser half. It
@@ -215,7 +224,8 @@ adds facts that do not hold yet.
 Unguarded growth is unsound. K₁ holds c and d, K₂ holds their other ends, K₁
 branches on its bit and closes c then d in branch inl, K₂ branches on its own
 bit and closes d then c in branch inl. Each types with growth, x ≺ y in K₁ and
-y ≺ x in K₂. With both bits inl the composition deadlocks. In the relation,
+y ≺ x in K₂. With both bits inl the composition deadlocks. After the two case
+steps it is the program blocked of examples/Rejected.v. In the relation,
 monotonicity fails at the growth step. The step extends W to W ∪ {x ≺ y}, a
 future W′ of another component holds y ≺ x, and W ∪ {x ≺ y} ⊔ W′ has a cycle.
 [unguarded_extensions_conflict] (BranchWorlds.v) checks this. Two extensions
@@ -229,7 +239,18 @@ decision, which gives 4.4.
 
 P-Split types a composition whose cut carries the bit by one derivation per
 value the sender may send, each in its own world, and composes the outside
-with the meet. The relation of the composite is a disjunction of relations
+with the meet.
+
+```
+for every value v that S sends on c     ⊢_{W_v} Σ, Σ_c ▷ (S ∥ P)[v] : T
+W ⊑ W_v for every v
+──────────────────────────────────────────────────────────── P-Split
+⊢_W Σ ▷ (νc)(S ∥ P) : T
+```
+
+(S ∥ P)[v] fixes the value S sends. The premise ranges over values, so the
+rule is semantic in S, which a syntactic system has to approximate by the
+constants S can send. The relation of the composite is a disjunction of relations
 at the worlds W_v. Adequacy holds, because a run sends one value and stays in
 one W_v. Monotonicity holds disjunct by disjunct. Composition with a third
 component needs that component related at every W_v, so the outside sees only
@@ -250,7 +271,26 @@ through spawn and messages. E-Case-Resolve types branch i of a case under
 Γ + Γ_i when Δ owns π, and consumes the ownership. A sender can resolve and
 pack, so the receiver learns Γ_i with the label through the existing E-Open.
 The creation check asks cc_ok for every choice vector of the pending choices
-in scope, 2^k checks for k choices, each the existing cc_ok.
+in scope, 2^k checks for k choices, each the existing cc_ok. Frames are those
+of E-Case, and Γ ⊕ ch is Γ with the side ch picks of each pending choice.
+
+```
+cc_ok(Γ ⊕ ch, C ∪ Γ_b)   for every choice vector ch of Γ and b ∈ {0, 1}
+Θ; Δ, a : S@ι, b : S̄@ι, own π ⊢^F_{Γ, C, π : {Γ₀ | Γ₁}} t : T      ι fresh
+──────────────────────────────────────────────────────────── E-New-Choice
+Θ; Δ ⊢^F_Γ let (a, b) = new ∗ in t : T
+
+π : {Γ₀ | Γ₁} ∈ Γ     Θ₁; Δ₁ ⊢_Γ e : T₁ ⊕ T₂
+Θ₂; Δ₂, x : T₁ ⊢^F_{Γ ∪ Γ₀} e₁ : T     Θ₂; Δ₂, x : T₂ ⊢^F_{Γ ∪ Γ₁} e₂ : T
+──────────────────────────────────────────────────────────── E-Case-Resolve
+Θ₁, Θ₂; Δ₁, Δ₂, own π ⊢^F_Γ case e of x. e₁ | x. e₂ : T
+```
+
+own π is a linear ghost entry of unit type. E-Spawn and E-Send move it like
+any linear entry, and P-Connect splits the owned choices between the two
+components. With own π for the choice {x ≺ y | y ≺ x} in Δ, the case node of
+db_main types by E-Case-Resolve with x ≺ y in the inl branch and y ≺ x in
+the inr branch, and the bit stays at ∗ ⊕ ∗.
 
 The world becomes a pending world (W, P). A choice vector ch picks a side of
 every choice, `at_choice W P ch` is W with the picked facts, and (W, P) is
