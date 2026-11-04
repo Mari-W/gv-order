@@ -174,3 +174,11 @@ the body of entry 4.
   instance, aperiodic ones do not. Neither direction is checked.
 - Mechanizing the inversion from db_main to db_rnode.
 - Inferring the dead-side facts and anchors of section 2 of the note.
+
+## Final build record
+
+Clean build of commit 1e1aab4 from a fresh clone, `rocq makefile` then
+`make -j4` with `ulimit -s 1000000`. 118 files compiled, exit 0, no errors.
+A `Print Assumptions` run over the 24 theorems listed above prints "Closed
+under the global context" for each. The commit that adds this section
+changes only this report.
