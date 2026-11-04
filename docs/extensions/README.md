@@ -29,7 +29,13 @@ the continuation and polymorphic recursion, and their segments have data-depende
 length. They exercise the infinite constraints of 65 and need C.
 
 A is optional for this work. It types examples automatically and fixes which
-constraint fragments a tool can decide.
+constraint fragments a tool can decide. The algorithmic investigation of
+2026-11-04 has three files. [algorithmic-bidir.md](algorithmic-bidir.md) is the
+bidirectional system with the bounds and the future as effects, mechanized for
+the non-recursive core in theories/algorithmic/.
+[algorithmic-decidable.md](algorithmic-decidable.md) is the decidable fragments
+of the fact theory with the decision procedures. [ALGORITHMIC-REPORT.md](ALGORITHMIC-REPORT.md)
+is the report.
 
 ## Programs from the literature
 
