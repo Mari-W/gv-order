@@ -35,7 +35,7 @@ jobs:
 
       - name: Restore opam switch
         id: opam-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.opam
           key: opam-${{ runner.os }}-ocaml-5.3.0-${{ hashFiles('spo-lr-df.opam', 'spo-lr-df.opam.locked') }}
@@ -48,6 +48,14 @@ jobs:
           opam repo add -y rocq-released https://rocq-prover.org/opam/released
           opam install -y --deps-only --locked .
           opam clean -a -c -s --logs
+
+      # Saved before the build, so a failing build keeps the switch.
+      - name: Save opam switch
+        if: steps.opam-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.opam
+          key: ${{ steps.opam-cache.outputs.cache-primary-key }}
 
       - name: Toolchain
         run: |
