@@ -343,3 +343,32 @@ Qed.
 
 Theorem choice_deadlock_free : deadlock_free (∅, {[+ choice_main +]}).
 Proof. apply (soundness_source 2 Cch _ TUnit ch_rank_ok); [constructor|apply choice_typed]. Qed.
+
+(** ** Negative control: both arms at one slot
+
+      Sch₀ = !(∃ι₀. (?∗.Close)@ι₀ ⊕ (?∗.Close)@ι₀).Close
+
+    The program [choice_main] with c : Sch₀@a and the payload of one
+    point. Both arms receive k at a.0. Branch A closes d while it holds
+    k and asks δ ≺ a.0 (E-Let* puts a.0 into the frame of close d,
+    E-App asks the upper point δ below it). Branch B receives on k at
+    a.0 while it holds d and asks a.0 ≺ δ. E-Case types both arms in
+    the same context, and the type of k comes from the payload, so the
+    two facts speak of the same two points. E-Conv keeps points (eqT
+    compares them by equality) and E-Weak drops only unlimited
+    bindings, so every derivation asks both facts. Every Γ that the
+    derivation of a closed program meets has an acyclic ≺, by the
+    argument of examples/Rejected.v, and δ ≺ a.0 ≺ δ is a cycle. The
+    choice of the slot plays no role: the lemma holds for every point
+    the two arms share. *)
+
+Definition Sch0 : sty :=
+  SSnd 1 (TSum (TSess (dual Sd) (pvar 0)) (TSess (dual Sd) (pvar 0))) SEnd.
+
+Lemma same_slot_cycle W Ψ (k δ : point) :
+  (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ δ k ∧ slt W Ψ k δ).
+Proof. intros Hacy [H1 H2]. apply (Hacy δ). by eapply sl_trans. Qed.
+
+(** With separate slots the same two facts are δ ≺ a.0 and a.1 ≺ δ,
+    and the top-level constraint [Cch] holds both without a cycle
+    ([ch_rank_ok]). *)
