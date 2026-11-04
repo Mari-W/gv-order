@@ -56,3 +56,5 @@ paper/*.pdf
 /docs/extensions/algorithmic-smt.md
 /docs/extensions/egg-smt-demo.md
 /tools/
+
+__pycache__/

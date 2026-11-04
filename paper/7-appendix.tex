@@ -70,9 +70,10 @@ then has a ground part, the world $\wrld$ of the configuration
 the channels of the thread. In Rocq the fact context is the triple of the
 world, the box hypotheses and the future hypotheses (\rocq{fctx}), and a
 source program is the instance at the empty world and $\tenv = \emptyset$
-(\rocq{styped}, \rocq{wnil}). The world is irrelevant to a derivation
-with $\tenv = \emptyset$ (\rocq{typed_world_transfer}), so a source
-derivation holds at every world (\rocq{styped_typed}). Soundness asks the
+(\rocq{styped}, \rocq{wnil}). A derivation with $\tenv = \emptyset$ at a
+well-formed world of empty support holds at every world
+(\rocq{typed_world_transfer}), so a source derivation holds at every
+world (\rocq{styped_typed}). Soundness asks the
 ground part to be acyclic, which is strictness of $\wrld$
 (\cref{th:soundness}) or acyclicity of $\cstr_0$
 (\cref{thm:soundness-source}).
@@ -164,8 +165,9 @@ $\senv_{\asTy{C}} = \tEmpty$.
     \and
     \infer*[lab=P-Connect]{
       \senv_1 , \senv_{\asTy{C}} \typesW{\wrld} (\chset_1 , \pool_1) : \ty \\
-      \senv_2 , \dual{\senv_{\asTy{C}}} \typesW{\wrld} (\chset_2 , \pool_2) : \tyUnit \\
-      \dom(\senv_{\asTy{C}}) = \chset_0
+      \senv_2 , \senv'_{\asTy{C}} \typesW{\wrld} (\chset_2 , \pool_2) : \tyUnit \\
+      \dom(\senv_{\asTy{C}}) = \dom(\senv'_{\asTy{C}}) = \chset_0 \\
+      \senv'_{\asTy{C}} \text{ dual to } \senv_{\asTy{C}} \text{ at aliased points}
     }{
       \senv_1 , \senv_2 \typesW{\wrld} (\chset_1 \cupdot \chset_2 \cupdot \chset_0 , \pool_1 \uplus \pool_2) : \ty
     } \label{rule:P-Connect}
@@ -424,7 +426,9 @@ a channel end would no longer be the dual of the type of the other end.
 Duality also has a relational reading $\sty \isdual \styB$. The two agree:
 $\sty \isdual \styB$ holds iff
 $\sty \approx \dual{\styB}$ (\rocq{sdual_seq_dual})
-\cite{DBLP:journals/corr/abs-2004-01322}. 
+\cite{DBLP:journals/corr/abs-2004-01322}.
+Under $\Box$ and $\exists$ the equivalence identifies two points only
+when they are equal (\rocq{steq}).
 
 \section{Reduction Semantics and Harmony}
 \label{sec:app-harmony}
@@ -473,7 +477,8 @@ pure step (\ref{rule:R-Lift}); a $\tNew$ restricts a fresh channel and
 hands both ends to the thread (\ref{rule:R-New}); a $\tSpawn$ starts a
 thread (\ref{rule:R-Spawn}); a send and a receive on the same channel
 synchronize (\ref{rule:R-Com}); two closes on the same restricted
-channel retire it (\ref{rule:R-Close}); and a forwarder fuses a
+channel retire it (\ref{rule:R-Close}); a selection and a branch on
+the same channel synchronize (\ref{rule:R-Choice}); and a forwarder fuses a
 restricted end with its partner by substitution (\ref{rule:R-Link}, and
 symmetrically for the other end of the pair). Where the LTS of
 \cref{fig:proc-semantics} lets the term transitions surface the
@@ -509,6 +514,12 @@ interacting redexes, these rules find them syntactically.
       (\chset, \pool \uplus \mset{\ectx[\tApp{\tClos}{\ch}], \ectx'[\tApp{\tClos}{\ch}]}) \sred (\chset \setminus \set{\ch}, \pool \uplus \mset{\ectx[\tUnit], \ectx'[\tUnit]})
     } \label{rule:R-Close}
     \and
+    \infer*[lab=R-Choice]{
+      i \in \set{0,1}
+    }{
+      (\chset, \pool \uplus \mset{\ectx[\tApp{\asTmId{select}_i}{\ch}], \ectx'[\tApp{\asTmId{branch}}{\ch}]}) \sred (\chset, \pool \uplus \mset{\ectx[\ch], \ectx'[\tInj{i+1}{\ch}]})
+    } \label{rule:R-Choice}
+    \and
     \infer*[lab=R-Link]{
       \ch \in \chset
     }{
@@ -517,11 +528,12 @@ interacting redexes, these rules find them syntactically.
   \end{proofrules}
   \rulesectionend
   \caption{Reduction semantics: pure steps, creation, spawning,
-    communication, closing and forwarding, with no labels}
-  \Description{Six reduction rules for process soups: lifting a pure
+    communication, closing, choice and forwarding, with no labels}
+  \Description{Seven reduction rules for process soups: lifting a pure
     term step, creating a fresh channel, spawning a thread,
     communication between a send and a receive redex, closing a channel
-    from both ends, and forwarding by substitution.}
+    from both ends, a selection meeting a branch, and forwarding by
+    substitution.}
   \label{fig:red-semantics}
 \end{figure}
 
@@ -542,7 +554,8 @@ rule that consumes the corresponding labels.
 \ref{rule:R-New} with \ref{rule:P-Act-New},
 \ref{rule:R-Spawn} with \ref{rule:P-Act-Spawn},
 \ref{rule:R-Com} with \ref{rule:P-Act-Msg},
-\ref{rule:R-Close} with \ref{rule:P-Act-Close}, and
+\ref{rule:R-Close} with \ref{rule:P-Act-Close},
+\ref{rule:R-Choice} with \textsc{P-Act-Choice}, and
 \ref{rule:R-Link} with \ref{rule:P-Act-Link}. Filling the head step of
 the redex the rule names into its context supplies the label each
 process rule asks for.

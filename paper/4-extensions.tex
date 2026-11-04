@@ -2,7 +2,7 @@
 \label{sec:extensions}
 \label{sec:examples}
 
-Every program in this section is mechanized with a closed deadlock
+Every typed program in this section is mechanized with a closed deadlock
 freedom proof. The protocols are written with the recursive session
 types of \cref{fig:types}, and every constraint is a set of facts over
 the point variables its box binds.
@@ -155,9 +155,9 @@ the point variables its box binds.
         (\sAt{\sty_{\asTy{r}}}{\pviA} \lolli{\poff{\pviA}{1}}{} \tyUnit)}
   \end{align*}
   The order descends along the payload depth, and the depth grows without
-  bound, so there is no rank in $\Nat$. The rank
-  $-2 \cdot \mathit{depth} + \mathit{offset}$ lands in $\mathbb{Z}$
-  (\rocq{KobForwarder.fw_ok}). Strictness asks only irreflexivity and transitivity,
+  bound, so there is no rank in $\Nat$. The lexicographic order on the
+  reversed depth and the offset contains every fact of $\cstr$ and
+  program order (\rocq{KobForwarder.fw_ok}). Strictness asks only irreflexivity and transitivity,
   so a descending chain is admitted. The recursive call asks
   $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which $\cstr$ contains
   (\rocq{KobForwarder.fw_sub}), and the whole program types
@@ -233,8 +233,8 @@ A system that only showed what types would be worth less. Each
 rejection below names the facts a derivation would have to supply, and
 each is a theorem that those facts do not hold together. Two of them
 close a cycle, so they are stated for every $\fctx$ whose $\fLt{}{}$ has
-no cycle, which is every $\fctx$ a derivation of a closed typable
-program meets (\rocq{slt_acyclic_nil}).
+no cycle. A strict world without hypotheses is such a $\fctx$
+(\rocq{slt_acyclic_nil}).
 
 \begin{theorem}[One round is not enough \rocq{rr_call_underivable}]
 \label{thm:rej-rr}
@@ -284,8 +284,8 @@ invariant of a recursion, so it has to state every round at once, as
   \end{align*}
   Closing $\ch$ blocks at $\pviA$ while the body still holds $\chB$ at
   $\pviA'$, so \ref{rule:E-App} asks $\fLt{\pviA}{\pviA'}$. With
-  $\cstr = \emptyset$ the fact theory derives no fact between two points
-  with distinct variable roots, so the box does not type. With
+  $\cstr = \emptyset$ the fact theory does not derive
+  $\fLt{\pviA}{\pviA'}$ at any well-formed world. With
   $\cstr = \set{\fLt{\pviA}{\pviA'}}$ it does, in the world-carrying
   judgment at every well-formed world (\rocq{ordered_typed}).
 \end{theorem}
@@ -326,7 +326,7 @@ invariant of a recursion, so it has to state every round at once, as
   scheduler two uses of transitivity give
   $\fLt{\asTy{r}_0}{\asTy{r}_0}$. Either conclusion contradicts the
   hypothesis that $\fLt{}{}$ of $\fctx$ has no cycle, which a strict
-  world discharges (\rocq{slt_acyclic_nil}).
+  world without hypotheses discharges (\rocq{slt_acyclic_nil}).
 \end{proof}
 
 \begin{theorem}[A cyclic forwarding \rocq{badlink_underivable}]
@@ -335,7 +335,7 @@ invariant of a recursion, so it has to state every round at once, as
   $\chB$ at $\pntB$ and $\asTm{e}$ at $\pntC$, the $\tLink$ asks
   $\fEq{\pntA}{\pntB}$, the main thread asks $\fLt{\pntA}{\pntC}$ and
   the second thunk asks $\fLt{\pntC}{\pntB}$. The three give
-  $\fLt{\pntA}{\pntA}$. The program deadlocks after the forwarding.
+  $\fLt{\pntA}{\pntA}$.
 \end{theorem}
 
 \begin{proof}
@@ -344,6 +344,9 @@ invariant of a recursion, so it has to state every round at once, as
   right gives $\fLt{\pntA}{\pntA}$ (\rocq{sl_trans}, \rocq{sl_eqr},
   \rocq{se_sym}), against the hypothesis on $\fctx$.
 \end{proof}
+
+The program deadlocks after the forwarding. The mechanization argues
+the deadlock in a comment and proves only the rejection.
 
 The deadlocked $\asTmId{blocked}$ of \cref{ex:deadlock}
 (\rocq{blocked_main}) is rejected for the same reason. Whatever points
@@ -359,8 +362,8 @@ unlimited bindings, so every derivation asks both.
 \label{sec:ext-choice}
 
 The mechanized core has binary choice as primitive session types
-$\oplus\{\sty_1, \sty_2\}$ and $\&\{\sty_1, \sty_2\}$ with the constants
-$\asTmId{select}_1$, $\asTmId{select}_2$ and $\asTmId{branch}$
+$\oplus\{\sty_0, \sty_1\}$ and $\&\{\sty_0, \sty_1\}$ with the constants
+$\asTmId{select}_0$, $\asTmId{select}_1$ and $\asTmId{branch}$
 (\rocq{konst_sig}). A choice at $\pntA$ continues at the payload point
 $\pslot{\pntA}{i}$ of the branch $i$ it picks, with $i \in \set{0,1}$,
 \begin{align*}
@@ -383,7 +386,7 @@ logical relation has the clauses \textsc{O-Select}, \textsc{O-Branch},
 % TODO(author): prose
 
 Choice is also encodable from sums and delegation. A selection sends
-$\tInj{i}{}$ of a fresh channel whose arm lies at $\pslot{\pntA}{i}$, and a
+$\tInj{i+1}{}$ of a fresh channel whose arm $i$ lies at $\pslot{\pntA}{i}$, and a
 branch receives and cases (\rocq{sel1_typed}, \rocq{sel2_typed},
 \rocq{branch_typed}, \rocq{choice_deadlock_free}).
 
@@ -441,17 +444,18 @@ system of \citet{MordidoP} does not type it either.
 \section{Subsumption}
 \label{sec:ex-priority}
 
-Two priority-based systems translate into \OurLang, and the translation
-makes every closed program of the source system deadlock free as
-written, not only its image.
+A mechanized fragment of each of two priority-based systems translates
+into \OurLang, and the translation makes every closed program of unit
+type in the fragment deadlock free as written, not only its image.
 
 \begin{theorem}[A fragment of PGV \rocq{pgv_deadlock_free_source}]
 \label{thm:pgv}
-  Every closed program of the fragment of
+  Every closed program of type $\tyUnit$ of the fragment of
   \citet{KokkeD23} cut out by \rocq{pgv_mono} in \rocq{pgv_typed} is deadlock free. The
-  fragment is all of PGV except $\asTy{0}$ and $\asTmId{absurd}$, with
-  monotone, payload-bounded session types and the premise
-  $q < \mathit{pr}(\ty)$ at their pair rule.
+  fragment is PGV without $\asTy{0}$ and $\asTmId{absurd}$, with the
+  premise $o < \mathit{pr}(\ty)$ at send and receive, the premise
+  $q < \mathit{pr}(\ty)$ at their pair rule, and monotone session types
+  at every send and receive.
 \end{theorem}
 
 \begin{proof}
@@ -460,7 +464,7 @@ written, not only its image.
   session type carries, and it is strict (\rocq{Wpgv},
   \rocq{Wpgv_strict}). Induction on the PGV derivation types the
   translated term in that world (\rocq{pgv_translate}), where PGV's
-  bound $p$ becomes a future. \Cref{th:soundness} then makes the
+  bound $p$ becomes a point below the future. \Cref{th:soundness} then makes the
   translation of a closed program deadlock free
   (\rocq{ptyped_closed}, \rocq{pgv_deadlock_free}).
 
@@ -469,12 +473,12 @@ written, not only its image.
   (\rocq{pgv_eta}), so deadlock freedom carries back. A congruence
   relates a term to its translation and contains that wrapping
   (\rocq{rel}, \rocq{rel_eta}). Every reduction of $\asTm{M}$ is matched
-  by one or more reductions of the translation
-  (\rocq{sim_step}, \rocq{sim_star}). When no thread of $\asTm{M}$ takes a $\beta$,
+  by a sequence of reductions of the translation
+  (\rocq{PGVSimulation.sim_step}, \rocq{PGVSimulation.sim_star}). When no thread of $\asTm{M}$ takes a $\beta$,
   $\tNew$ or $\tSpawn$ step, $\beta$ steps bring every thread of the
   translation to the action of its thread in $\asTm{M}$ (\rocq{norm}),
   so a step of the translation is a step of $\asTm{M}$
-  (\rocq{final}). A stuck $\asTm{M}$ would leave the translation stuck.
+  (\rocq{PGVSimulation.final}). A stuck $\asTm{M}$ would leave the translation stuck.
 \end{proof}
 
 The fragment leaves out the empty type $\asTy{0}$ of
@@ -483,7 +487,8 @@ The fragment leaves out the empty type $\asTy{0}$ of
 image.
 
 PGV's send schema puts no condition on its payload, and our fragment
-adds $o < \mathit{pr}(\ty)$ for $\sSend{\ty}{\sty}$ at priority $o$. The
+adds $o < \mathit{pr}(\ty)$ for $\sSend{\ty}{\sty}$ and
+$\sRecv{\ty}{\sty}$ at priority $o$. The
 embedding is what found the gap. Without that condition a closed PGV
 program types and deadlocks, and the \OurLang\ premise $\tSend$ owes,
 $\fLt{\pntA}{\pnode}$ for every head $\pnode$ of the payload, is the
@@ -492,8 +497,8 @@ component with the environment of the right one and asks nothing of the
 left component's type, which costs a second program, and the fragment
 adds $q < \mathit{pr}(\ty)$ there. \ref{rule:E-Pair} types the right
 component under $\frm$ grown by $\heads(\ty)$, which is that premise.
-Both programs are rejected here for every choice of the fragment's
-predicate (\rocq{cx1_rejected}, \rocq{cx2_rejected}).
+PGV with both premises rejects both programs for every choice of the
+fragment's predicate (\rocq{cx1_rejected}, \rocq{cx2_rejected}).
 
 The theorem covers monotone sessions. A falling session, whose
 priorities decrease along a channel, types in repaired PGV
@@ -503,22 +508,24 @@ session types alone, and its typing in \OurLang\ is not mechanized.
 % TODO(author): falling sessions open
 
 Example~2.1 of \citet{KokkeD23} is among the mechanized programs
-(\rocq{pgv_ex21_deadlock_free}), their delegation example is
-\rocq{pgv_deleg_deadlock_free}, and their forwarding example is
-\rocq{pgv_link_deadlock_free}.
+(\rocq{pgv_ex21_deadlock_free}), and so are a delegation program
+(\rocq{pgv_deleg_deadlock_free}) and a forwarding program
+(\rocq{pgv_link_deadlock_free}) of our own.
 
 \begin{theorem}[Padovani and Novara \rocq{pn_deadlock_free_source}]
 \label{thm:pn}
   Every closed program of type unit of \citet{PadovaniN15}, typed in
   their Table~2 with T-App-Poly and the repaired $\asTmId{fix}$
-  (\rocq{pn_typed}), is deadlock free in their semantics.
+  (\rocq{pn_typed}), is deadlock free in their semantics. In the
+  fragment of \rocq{pn_typed} constants occur applied and sums range
+  over unlimited types.
 \end{theorem}
 
 \begin{proof}
   The same two halves. The translation of a closed program is typable in
   the source judgment under one top-level constraint over one point
   variable (\rocq{pn_translate_source}), that constraint is acyclic
-  (\rocq{Crel}, \rocq{Crel_acyclic}), and
+  (\rocq{PNWorld.Crel}, \rocq{Crel_acyclic}), and
   \cref{thm:soundness-source} makes the translation deadlock free
   (\rocq{pn_deadlock_free}).
 
@@ -527,13 +534,13 @@ Example~2.1 of \citet{KokkeD23} is among the mechanized programs
   holds of every translation the typing produces, and it is closed under
   substitution (\rocq{trel}, \rocq{trel_of_typed},
   \rocq{trel_subst}). Every source step is matched by the corresponding
-  target step together with administrative ones (\rocq{fwd_rt}), and a
+  target step together with administrative ones (\rocq{PNSimulation.fwd_rt}), and a
   related source term is a value or steps (\rocq{src_progress}), which
   turns deadlock freedom of the target into deadlock freedom of the
   source in the semantics of \citet{PadovaniN15}
   (\rocq{pn_deadlock_free_src}). A $\asTmId{fix}$ runs its body at every
   source unfolding, and the target forces its box at the same moment
-  (\rocq{tr_fix}), so the relation is closed under unfolding for every
+  (\rocq{PNSimulation.tr_fix}), so the relation is closed under unfolding for every
   body.
 \end{proof}
 
@@ -559,7 +566,7 @@ constraint $\cstr$ over the point variables of a $\Box$ states the facts
 its instances owe, and a $\tForce$ at any instance that satisfies
 $\cstr$ is legal, so the one constraint the translation writes covers
 every shift the source takes, the unboundedly many of a recursive
-definition included (\rocq{Crel}, \rocq{crel_hold}). A $\Box$ binds the
+definition included (\rocq{PNWorld.Crel}, \rocq{PNWorld.crel_hold}). A $\Box$ binds the
 $\forall$ and holds no channel, which is the part their level $\top$
 plays.
 
@@ -568,8 +575,9 @@ actions of a context-free session type. We relate it to \OurLang\
 informally. A priority becomes a point, the sequence of priorities their
 $\asTmId{new}$ assigns to a channel becomes the offsets of its point, and
 their top effect becomes a ceiling (\cref{sec:ext-cfst}). Their examples
-type here, the tree channel, the two streams and the repaired classic
-deadlock (\cref{sec:ext-cfst}).
+type here, the tree channel (\rocq{tree_deadlock_free}), the two streams
+(\rocq{client_typed}, \rocq{newclient_typed}) and the repaired classic
+deadlock (\rocq{dlfix_deadlock_free}).
 % TODO(author): prose
 
 %%% Local Variables:

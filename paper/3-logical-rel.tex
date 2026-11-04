@@ -39,7 +39,8 @@ points of a running program stand in.
   $\fEq{}{}$ on both sides and contains program order
   $\fLt{\pntA}{\poff{\pntA}{1}}$, every support name is a point
   constant, and outside the support only reflexivity and program order
-  hold. It is \emph{strict} when $\fLt{}{}$ is irreflexive.
+  hold. It is \emph{strict} when it is well formed and $\fLt{}{}$ is
+  irreflexive.
   $\wrld$ \emph{knows} $\pntA$ when $\rootof(\pntA)$ is in its support
   (\rocq{pt_known}).
 \end{definition}
@@ -241,7 +242,7 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
       \fchans(\tm) = \dom(\tenv) \\
       \wrld \types \fLe{\lbd}{\heads(\tenv)}
       \\\\
-      \forall \wrld' \wextsym \wrld,\ j < n,\ \tenv'',\
+      \forall \wrld' \mathrel{\sqsupseteq} \wrld,\ j < n,\ \tenv'',\
         \val \in \lrVW{\wrld'}{j}{\tenv' \types \ty},\
         \frm \text{ with } \wrld' \types \fLt{\ubd}{\frm}
       \\
@@ -254,7 +255,7 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
     \infer*[lab=V-Box]{
       \fchans(\tm) = \emptyset
       \\\\
-      \forall \wrld' \wextsym \wrld,\ \pntvec \text{ known to } \wrld'
+      \forall \wrld' \mathrel{\sqsupseteq} \wrld,\ \pntvec \text{ known to } \wrld'
         \text{ with } \wrld' \types \tysub{\cstr}{\pntvec}{\pvivec} \st
       \\
       \tAbs{\tUnit}{\tSub{\tm}{\tBoxP{\vr}{\tm}}{\vr}} \in
@@ -308,7 +309,7 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
     \infer*[lab=O-New]{
       \ch \notin \dom(\tenv) \implies
       \exists\, \pcst \text{ fresh for } \wrld, \tenv, \ty, \frm,\
-        \sty,\ \wrld \wextfresh \wrld' \text{ placing } \pcst \st
+        \exists \sty,\ \wrld \wextfresh \wrld' \text{ placing } \pcst \st
       \\
       \tm' \in \lrEW{\wrld'}{n \cost{\lambda}}{\tenv , \ch : \sAt{\sty}{\pcst} \cdot \sAt{\dual{\sty}}{\pcst} \types \ty}{\frm}
     }{
@@ -323,7 +324,7 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
     } \label{rule:O-Spawn}
     \and
     \infer*[lab=O-Recv]{
-      \forall \wrld' \wextsym \wrld,\ j \le n \cost{\lambda},\ \tenv_2,\
+      \forall \wrld' \mathrel{\sqsupseteq} \wrld,\ j \le n \cost{\lambda},\ \tenv_2,\
         \val \in \lrVW{\wrld'}{j}{\tenv_2 \types \tysub{\tyB}{\pntA}{\pself}} \st
       \\
       \tm' \in \lrEW{\wrld'}{j}{(\tenv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})}) \cdot \tenv_2 \types \ty}{\frm}
@@ -374,8 +375,9 @@ type.
   The side conditions on free channels of \ref{rule:V-Abs} and
   \ref{rule:V-Box} are needed because the LTS decides which channels a
   send extrudes by looking at the channels the sent value mentions
-  syntactically (\cref{rm:sentc}). They are the only syntactic
-  conditions in the relation, and they rule out a sent value that
+  syntactically (\cref{rm:sentc}). They and the condition on
+  $\fchans(\val)$ in \ref{rule:Q-Send} are the only syntactic
+  conditions in the relation. The two side conditions rule out a sent value that
   mentions channels in dead code which the continuation of the send
   still uses.
 \end{remark}
@@ -415,8 +417,9 @@ type.
     } \label{rule:Q-Tau}
     \and
     \infer*[lab=Q-Recv]{
-      \forall \wrld' \wextsym \wrld,\ j \le n \cost{\pi},\ \tenv_2
-        \text{ with } \dom(\tenv_2) \disjoint \proc.1,\
+      \forall \wrld' \mathrel{\sqsupseteq} \wrld,\ j \le n \cost{\pi},\ \tenv_2
+        \text{ with } \dom(\tenv_2) \disjoint \proc.1
+        \text{ and } \mathit{ok}_{\wrld'}(\senv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})}, \tenv_2),\
         \val \in \lrVW{\wrld'}{j}{\tenv_2 \types \tysub{\tyB}{\pntA}{\pself}} \st
       \\
       (\proc'.1 \cup B, \proc'.2) \in
@@ -427,6 +430,7 @@ type.
     \and
     \infer*[lab=Q-Send]{
       \dom(\tenv_{\asTy{e}}) = \fchans(\val) \cap \proc.1 \\
+      \dom(\tenv_{\asTy{e}}) \disjoint \dom(\senv_0 , \senv_{\asTy{v}}) \cup \set{\ch} \\
       \tenv_{\asTy{e}} \text{ and } \senv_{\asTy{e}} \text{ are dual at aliased points}
       \\\\
       \val \in \lrVW{\wrld}{n}{\senv_{\asTy{v}} , \tenv_{\asTy{e}} \types \tysub{\tyB}{\pntA}{\pself}}
@@ -466,7 +470,12 @@ In \ref{rule:Q-Recv} the message may bring the other end of a channel
 the receiver already holds, or both ends of a fresh one. Those channels
 $B$ become restricted in the continuation and their entries leave both
 environments, which the operation $\senv \mathbin{\triangleright} \tenv_2$
-performs (\rocq{recv_back}, \rocq{recv_env}).
+performs (\rocq{recv_back}, \rocq{recv_env}). The premise
+$\mathit{ok}_{\wrld'}(\senv, \tenv_2)$ asks that every single end in
+$\tenv_2$ be dual to the end of its channel in $\senv$ at an aliased
+point, that the two ends of a channel arriving whole be dual at aliased
+points, and that such a channel be absent from $\senv$
+(\rocq{recv_ok}).
 \Cref{rule:Q-Send} is where a private channel becomes part of the
 external interface. The restricted channels the message carries are
 $\dom(\tenv_{\asTy{e}}) = \fchans(\val) \cap \chset$; the ends that
@@ -508,7 +517,7 @@ a grounding substitution.
   The judgment $\tenv ; \lenv \provesF{\frm}_{\wrld} \tm : \ty$ holds if
   \[
     \forall n \in \Nat.\,
-      \forall \wrld' \wextsym \wrld.\,
+      \forall \wrld' \mathrel{\sqsupseteq} \wrld.\,
         \forall \tenv'', \gamma \in \lrGW{\wrld'}{n}{\tenv' ; \lenv}
           \text{ with } \tenv'' = \tenv \cdot \tenv'.\,
           \tm\gamma \in \lrEW{\wrld'}{n}{\tenv'' \types \ty}{\frm}
@@ -523,7 +532,10 @@ a grounding substitution.
 The judgment is purely semantic. It says nothing about the syntax of
 $\tm$ beyond what the term relation says about its behaviour. The two
 syntactic conditions of \cref{rm:vabs} live in a separate predicate
-$\mathit{wf}(\tenv; \lenv, \tm)$ (\rocq{term_wf}), which holds of every
+$\mathit{wf}(\tenv; \lenv, \tm)$ (\rocq{term_wf}). It asks that the free
+channels of $\tm$ be $\dom(\tenv)$, that every free variable of $\tm$
+be bound in $\lenv$ and that $\tm$ mention every variable of $\lenv$ at
+a type that is not unlimited. It holds of every
 syntactically typed term (\rocq{typed_term_wf_s}) and enters as a
 premise of exactly the two compositionality lemmas that build a
 suspended computation.
@@ -627,7 +639,9 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
 
 \begin{lemma}[Compositionality: \ref{rule:E-Abs} \rocq{sem_typed_lam}]
   \label{lem:comp:abs}
-  If $\tenv ; \lenv , \vr : \ty \provesF{\set{\pfv}}_{\wrld} \tm : \tyB$
+  If $\tenv ; \lenv , \vr : \ty \provesF{\frm'}_{\wrld'} \tm : \tyB$ for
+  every $\wrld' \mathrel{\sqsupseteq} \wrld$ and every $\frm'$ with
+  $\wrld' \types \fLt{\ubd}{\frm'}$,
   and $\wrld \types \fLe{\lbd}{\heads(\tenv) \cup \heads(\lenv)}$ and
   $\mathit{wf}(\tenv ; \lenv , \vr : \ty, \tm)$, then
   $\tenv ; \lenv \provesF{\frm}_{\wrld} \tAbs{\vr}{\tm}
@@ -659,7 +673,10 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
   \label{lem:comp:exp}
   If
   $\tEmpty ; \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}
-     \provesF{\set{\pfv}}_{\wrld} \tm : \ty$
+     \provesF{\frm'}_{\wrld'} \tm : \tysub{\ty}{\pntvec}{\pvivec}$
+  for every $\wrld' \mathrel{\sqsupseteq} \wrld$, every $\pntvec$ known to
+  $\wrld'$ with $\wrld' \types \tysub{\cstr}{\pntvec}{\pvivec}$ and every
+  $\frm'$ with $\wrld' \types \fLt{\tysub{\ubd}{\pntvec}{\pvivec}}{\frm'}$,
   with $\lenv$ of $\Box$ types only and
   $\mathit{wf}(\tEmpty ; \lenv , \vr : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}, \tm)$,
   then
@@ -689,7 +706,7 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
   index available.
 \end{proof}
 
-\begin{lemma}[Compositionality: \ref{rule:P-Connect} \rocq{Prel_connect}]
+\begin{lemma}[Compositionality: \ref{rule:P-Connect} \rocq{conn_all}, \rocq{Prel_connect}]
   \label{lem:comp:connect}
   If $\primitive \ty$, the two interfaces
   $\senv_{\asTy{C}}$ and $\dual{\senv_{\asTy{C}}}$ are dual at aliased
@@ -697,7 +714,7 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
   $(\chset_1, \pool_1) \in \lrPW{\wrld}{n}{\senv_1 , \senv_{\asTy{C}} \types \ty}$,
   $(\chset_2, \pool_2) \in \lrPW{\wrld}{n}{\senv_2 , \dual{\senv_{\asTy{C}}} \types \tyUnit}$,
   the restricted channels of each component avoid the interface of the
-  other, and $\wrld \sqcup \wrld$ is strict, then
+  other, and $\wrld$ is strict, then
   \[
     (\chset_1 \cupdot \chset_2 \cupdot \dom(\senv_{\asTy{C}}),
      \pool_1 \uplus \pool_2)
@@ -706,10 +723,11 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
 \end{lemma}
 
 \begin{proof}
-  The statement above reads both components in one world. The
-  declaration reads them in $\wrld_1$ and $\wrld_2$ and delivers the
-  composite in $\wrld_1 \sqcup \wrld_2$, which the statement recovers at
-  $\wrld_1 = \wrld_2 = \wrld$. Monotonicity of the process relation in
+  The statement above is \rocq{conn_all}, which reads both components
+  in one strict world at one index. \rocq{Prel_connect} reads them
+  semantically typed in $\wrld_1$ and $\wrld_2$, requires
+  $\wrld_1 \sqcup \wrld_2$ strict and delivers the composite in
+  $\wrld_1 \sqcup \wrld_2$. Monotonicity of the process relation in
   the world lifts each component to the join before anything else
   happens (\rocq{Prel_mono}, \rocq{wext_join_l}), and its clause for a
   fresh extension is \cref{thm:fresh-extension}
@@ -722,7 +740,7 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
   two (\rocq{ctys_sym}, \rocq{cut_ok_sym}).
 
   Induction is on the index and, inside it, on the size of the composed
-  soup. The outer induction is on $n$ (\rocq{conn_at}). At $n = 0$ the
+  soup. The outer induction is on $n$ (\rocq{conn_at}, \rocq{conn_all}). At $n = 0$ the
   goal is \ref{rule:P-Zero}. At $n+1$ an inner well-founded induction
   runs on the summed size of the terms of
   $\pool_1 \uplus \pool_2$ (\rocq{conn_lt}, \rocq{msize}). The inner
@@ -867,7 +885,7 @@ component.
 
   The process case is induction on $\senv \typesW{\wrld} \proc : \ty$ with two
   rules. \Cref{rule:P-Term} is \rocq{Prel_term} applied to the term case,
-  and \ref{rule:P-Connect} is \cref{lem:comp:connect} at
+  and \ref{rule:P-Connect} is \rocq{Prel_connect} at
   $\wrld_1 = \wrld_2 = \wrld$, which lands in $\wrld \sqcup \wrld$ and
   comes back to $\wrld$ by monotonicity, because $\wrld \sqcup \wrld$
   lies below $\wrld$ (\rocq{wext_join_self}, \rocq{Prel_mono}).

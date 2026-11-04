@@ -313,8 +313,7 @@ $\pi, \proc'$ with $\proc \trans{\pi} \proc'$.
   \end{align*}
   The spawned thread sends $\tUnit$ on $\ch$ and closes it, the main
   thread receives on $\chB$ and closes it. The process
-  $(\emptyset, \mset{\asTmId{sync}})$ has exactly one reduction sequence,
-  and it ends terminated, so it is safe and deadlock free
+  $(\emptyset, \mset{\asTmId{sync}})$ is deadlock free
   (\rocq{sync_deadlock_free}).
 \end{example}
 
@@ -329,9 +328,8 @@ $\pi, \proc'$ with $\proc \trans{\pi} \proc'$.
         \tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}
   \end{align*}
   Two threads share the two channels $\ch$ and $\chB$, so the topology
-  is cyclic. Both threads close $\ch$ before $\chB$, the process has
-  exactly one reduction sequence, and it is deadlock free
-  (\rocq{cycle_deadlock_free}).
+  is cyclic. Both threads close $\ch$ before $\chB$, and the process is
+  deadlock free (\rocq{cycle_deadlock_free}).
 \end{example}
 
 \begin{example}[A deadlocked process \rocq{blocked_main}]
@@ -345,10 +343,12 @@ $\pi, \proc'$ with $\proc \trans{\pi} \proc'$.
       & \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tSeq{\tApp{\tClos}{\chB'}}{\tApp{\tClos}{\ch'}}})}}{}
         \tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}
   \end{align*}
-  After the two creations and the spawn the process is irreducible and
+  After the two creations, the spawn and the pure steps that follow,
+  the process is irreducible and
   not terminated: one thread waits to close $\ch$, the other waits to
   close $\chB$. It is not safe, so no process that reaches it is
-  deadlock free.
+  deadlock free. The mechanization states the term and does not prove
+  the deadlock.
 \end{example}
 
 \subsection{The Static System}
@@ -480,8 +480,9 @@ such choice.
 
 \begin{remark}
 \label{rm:payload}
-  A payload names points only relative to the action that sends it, so
-  no rule enforces \cref{def:payload}. Point substitution replaces the
+  \ref{rule:E-Const} checks \cref{def:payload} for the payload of
+  $\tSend$ and $\tRecv$ (\rocq{kscoped}), and no other rule breaks
+  it. Point substitution replaces the
   variables $\pvivec$, and $\pslot{\pself}{j}$ is no variable, so no
   enclosing $\Box$ or $\exists$ touches it. Point substitution also
   stops at a channel type, by the clause
@@ -498,8 +499,8 @@ such choice.
   property the proofs use is
   $\tysub{(\tysub{\ty}{\pntA}{\pself})}{\pntvec}{\pvivec}
     = \tysub{\ty}{(\tysub{\pntA}{\pntvec}{\pvivec})}{\pself}$
-  (\rocq{payload_pinst}), which holds with no side condition because
-  $\tysub{\ty}{\pntA}{\pself}$ is a total substitution.
+  (\rocq{payload_pinst}), which holds for every payload $\ty$ that
+  meets \cref{def:payload}.
 \end{remark}
 
 Sender and receiver name the carried channels alike, so a message
@@ -518,7 +519,8 @@ facts $\fLt{\ubd}{\pfv}$ for future variables $\pfv$. It is static, and
 it may be inconsistent in dead code. A term channel environment $\tenv$
 gives each channel the entries $\ch : \sAt{\sty}{\pntA}$ of the ends it
 holds, possibly both. Nodes are $\pnode ::= \pntA \sepr \pfv \sepr
-\pBot$, and a future $\frm$ is a finite set of nodes. The judgment
+\pBot$, and a future $\frm$ is a finite set of nodes with at most one
+future variable. The judgment
 \[
   \tenv ; \fctx ; \lenv \typesF{\frm} \tm : \ty
   \qquad(\rocq{typed})
@@ -654,7 +656,9 @@ existential at $\pBot$.
 
 \paragraph{Term rules}
 \Cref{fig:typeSys,fig:typeSysPoints} give the term rules. $\lenv_1 \cdot \lenv_2$ splits
-$\lenv$ and copies variables of $\Box$ type to both sides. The first
+$\lenv$ and copies variables of $\Box$ type to both sides.
+\ref{rule:E-Weak} and \ref{rule:E-Contract} (\cref{sec:app-proc}) drop
+and duplicate variables of $\Box$ type. The first
 subterm of every composite runs while the rest holds its channels, so it
 is typed under $\frm$ grown by the heads of that rest.
 \ref{rule:E-Abs} types the body under the future $\set{\pfv}$ and assumes
@@ -676,7 +680,7 @@ that holds channels has fixed points.
     \infer*[lab=E-Const]{
       \cst : \forall \pntvec.\, \cstr \Rightarrow \ty \\
       \fctx \types \tysub{\cstr}{\vec{\pntA}}{\pntvec} \\
-      \vec{\pntA} \text{ known}
+      \vec{\pntA} \text{ known if } \cst = \tForce
     }{
       \fctx ; \tEmpty \typesF{\frm} \cst : \tysub{\ty}{\vec{\pntA}}{\pntvec}
     } \label{rule:E-Const}
@@ -767,7 +771,8 @@ that holds channels has fixed points.
     } \label{rule:E-Exp}
     \and
     \infer*[lab=E-Pack]{
-      \fctx \types \tysub{\cstr}{\pntvec}{\pvivec} \\
+      \pntvec \text{ known} \\
+      \fctx \types \tysub{\cstr}{\pntvec}{\pvivec} \\\\
       \fctx \types \fLe{\lbd}{\heads(\tysub{\ty}{\pntvec}{\pvivec})} \\
       \fctx ; \lenv \typesF{\frm} \tm : \tysub{\ty}{\pntvec}{\pvivec}
     }{
@@ -776,6 +781,7 @@ that holds channels has fixed points.
     \and
     \infer*[lab=E-Open]{
       \vr : \tyEx{\lbd}{\pvivec}{\cstr}{\ty} \in \lenv \\
+      \ty \text{ not a } \Box \text{ type} \\\\
       \pvivec \text{ fresh, not in } \tyB \\
       \fctx, \cstr ; \lenv[\vr : \ty] \typesF{\frm} \tm : \tyB
     }{
@@ -793,9 +799,9 @@ that holds channels has fixed points.
 A constant has a constrained type-indexed scheme
 $\cst : \forall \pntvec.\, \cstr \Rightarrow \ty$
 (\cref{fig:signatures}, \rocq{konst_sig}). \ref{rule:E-Const} instantiates
-$\pntvec$ with known points $\vec{\pntA}$ and proves the instance
+$\pntvec$ with points $\vec{\pntA}$ and proves the instance
 constraint $\fctx \types \tysub{\cstr}{\vec{\pntA}}{\pntvec}$
-(\rocq{konst_ty}). A point is known when $\fctx$ binds its root, through
+(\rocq{konst_ty}). Only $\tForce$ asks its instance to be known. A point is known when $\fctx$ binds its root, through
 the creation constraint $\cstr_0$ of the program, a $\Box$ or an
 $\exists$, or when the world supports it (\rocq{skn}). An action that may block happens at a point $\pntA$,
 so $\tSend$, $\tRecv$ and $\tClos$ have upper bound $\pntA$, and
@@ -860,8 +866,9 @@ number.
   over one bound variable $\pviA$ is a \emph{creation constraint} under
   $\fctx$ when it is
   \begin{itemize}
-    \item \emph{acyclic}:
-      $\fctx, \cstr \nvdash \fLt{\pntA}{\pntA}$ for every point $\pntA$;
+    \item \emph{acyclic relative to $\fctx$}, meaning that
+      $\fctx, \cstr \types \fLt{\pntA}{\pntA}$ for some point $\pntA$
+      implies $\fctx \types \fLt{\pntB}{\pntB}$ for some point $\pntB$;
       and
     \item \emph{conservative}:
       $\fctx, \cstr \types \fLt{\pntA}{\pntB}$ implies
@@ -898,8 +905,8 @@ $\cstr_0$ speaks of. A source program names no point constant. Its points
 are the variables that $\cstr_0$, a $\Box$ and an $\exists$ bind. For
 such a program $\tysub{\ty}{\pntA}{\pself}$ is the only way a payload
 acquires a point. \Cref{thm:soundness-source} asks $\cstr_0$ to be a
-creation constraint against the empty context, which is acyclicity of
-$\cstr_0$ (\rocq{c0_creation_ok}).
+creation constraint against the empty context, which holds exactly when
+$\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
 
 \begin{example}[Delegation \rocq{deleg_main}]
 \label{ex:delegation}
@@ -953,10 +960,13 @@ $\cstr_0$ (\rocq{c0_creation_ok}).
   (\rocq{deleg_deadlock_free}).
 
   A priority system types this program when the priorities of the
-  carrier leave a gap. With the carrier at $\sSend{}{}^0.\sRecv{}{}^{10}$
-  the delegated session takes priorities $1$ and $2$. The gap fixes in
-  advance how many actions the delegated session may take. The creation
-  constraint fixes only their order relative to the carrier.
+  carrier leave a gap. With the carrier's send at priority $0$ and its
+  close at priority $10$ the delegated send and close take priorities
+  $1$ and $2$. Any finite delegated session of at most nine actions fits
+  this gap, and a delegated session of unbounded length fits no gap. The
+  creation constraint fixes only the order of the delegated actions
+  relative to the carrier and bounds neither their number nor their
+  priorities.
   % TODO(author): prose
 \end{example}
 
