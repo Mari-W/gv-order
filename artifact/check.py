@@ -186,6 +186,11 @@ def targets():
             if r == rel and l == dline:
                 kind = k
         add(kind, name, rel, 'paper')
+        # A name declared in several files: check every declaration, as
+        # the paper's link picks one by path order.
+        for k, r, _ in by_name.get(name, []):
+            if r != rel:
+                add(k, name, r, 'paper (same name)')
     return sel, errors, unresolved
 
 

@@ -9,7 +9,7 @@ Padovani and Novara, Mordido and Pérez) and proves their programs deadlock
 free through the embedding.
 
 The development has no axioms and no admitted proofs. `make check` verifies
-this for 420 declarations by `Print Assumptions` (section 3).
+this for 452 declarations by `Print Assumptions` (section 3).
 
 ## 1. Requirements
 
@@ -93,7 +93,7 @@ with `rocq makefile -f _CoqProject -o Makefile`.
 and no errors. Warnings are expected. `make check` ends with
 
 ```
-420 names checked, 420 closed, 0 open; report in _build/check/report.txt
+452 names checked, 452 closed, 0 open; report in _build/check/report.txt
 OK: every checked name is closed under the global context
 ```
 
@@ -193,16 +193,43 @@ enclosing section.
 
 ### 4.2 Names that occur in more than one file
 
-The table follows the paper's links, which take the first file in
-`_CoqProject` order. A few names are declared in several files, for
-example `st_deadlock_free` in `theories/examples/Stream.v` and
-`theories/examples/cfst/Stream.v`. `make check` checks the paper's
-choice and, for the deadlock freedom theorems, every declaration of the
-name.
+The table follows the paper's links, which take the first file in sorted
+path order. 18 names cited by the paper are declared in more than one
+file, and for these the link can point at a file other than the one the
+text means. Read the "Element" column to pick the intended file.
+
+| Name | Declared in (the table shows the first) |
+|---|---|
+| `Crel` | `mp/MP2World.v`, `mp/MP3World.v`, `mp/MPWorld.v`, `pn/PNWorld.v` |
+| `crel_hold` | `mp/MP2Translate.v`, `mp/MP3Translate.v`, `mp/MPWorld.v`, `pn/PNWorld.v` |
+| `deleg_main`, `deleg_typed` | `examples/Delegation.v`, `pgv/PGVExamples.v` |
+| `ends` | `composition/PConnectN.v`, `types/Types.v` |
+| `ext_close`, `ext_recv`, `ext_send` | `composition/ConnectCut.v`, `composition/Internalize.v` |
+| `ext_link`, `link_give` | `composition/ConnectSteps.v`, `composition/Internalize.v` |
+| `final`, `sim_star`, `sim_step` | `mp/MP2Simulation.v`, `mp/MP3Simulation.v`, `pgv/PGVSimulation.v`, `pn/PNSimulation.v` |
+| `fwd_rt` | `mp/MP2Simulation.v`, `mp/MP3Simulation.v`, `pn/PNSimulation.v` |
+| `fw_main`, `fw_sub`, `fw_typed` | `examples/Forwarder.v`, `examples/KobForwarder.v` |
+| `proot` | `mp/MP2World.v`, `mp/MP3World.v`, `mp/MPWorld.v`, `pgv/PGVWorld.v`, `pn/PNWorld.v` |
+
+Paths are relative to `theories/`. `make check` checks every declaration
+of these names.
 
 ### 4.3 References without a declaration
 
-UNRESOLVED
+Five references of `paper/4-extensions.tex` name no declaration of this
+commit. `python3 paper/rocqrefs.py check` reports them too.
+
+| Paper | Reference | Declaration meant |
+|---|---|---|
+| 4-extensions.tex:160 | `kfw_ok` | `fw_ok` in `theories/examples/KobForwarder.v` |
+| 4-extensions.tex:163 | `kfw_sub` | `fw_sub` in `theories/examples/KobForwarder.v` |
+| 4-extensions.tex:164 | `kfw_typed` | `fw_typed` in `theories/examples/KobForwarder.v` |
+| 4-extensions.tex:165 | `kfw_deadlock_free` | `fw_deadlock_free_kob` in `theories/examples/KobForwarder.v` |
+| 4-extensions.tex:442 | `fixlam` | none. Commit 7f61a5c removed the lemma when `fix` became general |
+
+Commit 38dc79c renamed the KobForwarder declarations to a `kfw_` prefix,
+and a later change on `main` restored the `fw_` names. `make check` checks
+the four declarations of the third column under their current names.
 
 ### 4.4 The table
 
