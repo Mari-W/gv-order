@@ -13,7 +13,7 @@
     because a fresh extension made by one component joins with any
     extension made by another and stays strict ([wext_fresh_join],
     relation/Worlds.v). An extension that adds facts between existing
-    points breaks it ([unguarded_join_cycle]). Pending choices restore
+    points breaks it ([unguarded_extensions_conflict]). Pending choices restore
     it ([pjoin_valid], [pjoin_fresh]). A fresh extension that adds new
     pending choices, joined with an extension that resolves old ones,
     is again a valid pending world and a fresh extension at every
@@ -609,4 +609,77 @@ Proof.
   intros HV H1 H2 HN.
   apply (pjoin_valid W P N1 W1 Pn1 W2 (P ++ Pn2)); [done|done| |by eapply pfresh_valid|done].
   by eapply pfresh_pext.
+Qed.
+
+(** ** Why resolution needs an owner
+
+    Resolving is a pending extension ([resolve_pext]), so two components
+    that both resolve the same choice, in opposite ways, produce two
+    extensions whose join has a cycle ([unowned_resolutions_conflict]).
+    Two components that resolve distinct choices, each the one it owns,
+    join to a world that is strict at every choice vector
+    ([owned_resolutions_join]). Ownership of a choice is what the
+    amalgamation step at a resolution needs. *)
+
+Theorem unowned_resolutions_conflict :
+  pext W0 Pcd (resolve W0 Pcd 0 false) (resolve_P Pcd 0 false) ∧
+  pext W0 Pcd (resolve W0 Pcd 0 true) (resolve_P Pcd 0 true) ∧
+  ¬ strict (wjoin (resolve W0 Pcd 0 false) (resolve W0 Pcd 0 true)).
+Proof.
+  split_and!; [apply resolve_pext; [apply db_pending_valid|cbn; lia]..|].
+  intros [HJ Hi]. apply (Hi xc). apply (wf_lt_trans _ HJ _ xd).
+  - apply (proj2 (wjoin_l _ _)). apply glt_base. right. exists (only xc xd, only xd xc). by split.
+  - apply (proj2 (wjoin_r _ _)). apply glt_base. right. exists (only xc xd, only xd xc). by split.
+Qed.
+
+Theorem owned_resolutions_join W P i j b b' ch :
+  pvalid W P → i ≠ j → length ch = length P →
+  strict (at_choice (wjoin (resolve W P i b) (resolve W P j b'))
+                    (resolve_P (resolve_P P i b) j b') ch).
+Proof.
+  intros (HW & HP & Hs) Hij Hch.
+  set (ch2 := <[i := b]> (<[j := b']> ch)).
+  set (Wt := at_choice W P ch2).
+  assert (length ch2 = length P) as Hl2 by (unfold ch2; by rewrite !length_insert).
+  assert (strict Wt) as HSt by (by apply Hs).
+  pose proof (proj1 HSt) as HWt.
+  assert (∀ c x y, P !! i = Some c → side c b x y → w_lt Wt x y) as Hsi.
+  { intros c x y Hc Hs'. apply at_choice_pick. exists i, c, b. split_and!; [done| |done].
+    unfold ch2. apply list_lookup_insert_eq. rewrite length_insert. by apply lookup_lt_Some in Hc; lia. }
+  assert (∀ c x y, P !! j = Some c → side c b' x y → w_lt Wt x y) as Hsj.
+  { intros c x y Hc Hs'. apply at_choice_pick. exists j, c, b'. split_and!; [done| |done].
+    unfold ch2. rewrite list_lookup_insert_ne by done. apply list_lookup_insert_eq.
+    by apply lookup_lt_Some in Hc; lia. }
+  assert (∀ x y, w_eq W x y → w_eq Wt x y) as HeW by (intros; by apply at_choice_eq).
+  assert (∀ x y, w_lt W x y → w_lt Wt x y) as HlW by (intros; by apply at_choice_lt).
+  assert (∀ x y, w_lt (resolve W P i b) x y → w_lt Wt x y) as Hri.
+  { apply (wgen_into _ _ _ Wt HWt); [done|]. intros x y [H|(c & Hc & H)]; [by apply HlW|by eapply Hsi]. }
+  assert (∀ x y, w_eq (resolve W P i b) x y → w_eq Wt x y) as Hrie.
+  { apply (wgen_into_eq _ _ _ Wt HWt); [done|]. intros x y [H|(c & Hc & H)]; [by apply HlW|by eapply Hsi]. }
+  assert (∀ x y, w_lt (resolve W P j b') x y → w_lt Wt x y) as Hrj.
+  { apply (wgen_into _ _ _ Wt HWt); [done|]. intros x y [H|(c & Hc & H)]; [by apply HlW|by eapply Hsj]. }
+  assert (∀ x y, w_eq (resolve W P j b') x y → w_eq Wt x y) as Hrje.
+  { apply (wgen_into_eq _ _ _ Wt HWt); [done|]. intros x y [H|(c & Hc & H)]; [by apply HlW|by eapply Hsj]. }
+  assert (∀ x y, w_eq (wjoin (resolve W P i b) (resolve W P j b')) x y → w_eq Wt x y) as HeJ.
+  { apply (wgen_into_eq _ _ _ Wt HWt); intros x y [H|H]; auto. }
+  assert (∀ x y, w_lt (wjoin (resolve W P i b) (resolve W P j b')) x y → w_lt Wt x y) as HlJ.
+  { apply (wgen_into _ _ _ Wt HWt); intros x y [H|H]; auto. }
+  apply (strict_sub _ Wt).
+  - apply at_choice_wf.
+    + apply wjoin_wf; apply resolve_wf; done.
+    + simpl. intros k c b0 x y Hk Hside.
+      destruct (resolve_supported W _ j b' (resolve_supported W P i b HP) k c b0 x y Hk Hside).
+      set_solver.
+  - done.
+  - apply (wgen_into _ _ _ Wt HWt); [done|].
+    intros x y [H|(k & c & b0 & Hk & Hc & Hside)]; [by apply HlJ|].
+    rewrite !resolve_P_lookup in Hk.
+    destruct (decide (k = j)) as [->|Hkj].
+    + rewrite decide_False in Hk by done. destruct (P !! j) as [c0|] eqn:Hj; [|done].
+      injection Hk as <-. destruct b0; simpl in Hside; by eapply Hsj.
+    + destruct (decide (k = i)) as [->|Hki].
+      * destruct (P !! i) as [c0|] eqn:Hi'; [|done]. injection Hk as <-.
+        destruct b0; simpl in Hside; by eapply Hsi.
+      * apply at_choice_pick. exists k, c, b0. split_and!; [done| |done].
+        unfold ch2. by rewrite !list_lookup_insert_ne.
 Qed.
