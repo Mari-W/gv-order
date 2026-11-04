@@ -169,10 +169,11 @@ Section rules.
     lenv_unl Δ → bc_env C = [] →
     (∀ φ, φ ∉ dom Φ →
       typed W (<[φ := ub]> (fhyps_pinst (pshift m) Φ)) (hyps_inst (pshift m) Ψ ++ [(C, ids m)]) ∅
-        (lenv_pinst (pshift m) (Some (TBox m C (TLolli ub None TUnit T)) :: Δ)) (∅, Some (FVar φ)) e T) →
-    typed W Φ Ψ ∅ Δ F (EBox e) (TBox m C (TLolli ub None TUnit T)).
+        (lenv_pinst (pshift m) (Some (TBox m 0 C (TLolli ub None TUnit T)) :: Δ)) (∅, Some (FVar φ)) e T) →
+    typed W Φ Ψ ∅ Δ F (EBox e) (TBox m 0 C (TLolli ub None TUnit T)).
   Proof.
-    intros HΔ HC H. set (φ := fresh (dom Φ)). apply (t_box W Φ Ψ Δ F e m C ub T φ); [done|apply is_fresh|].
+    intros HΔ HC H. set (φ := fresh (dom Φ)). apply (t_box W Φ Ψ Δ F e m 0 C ub T φ); [done|apply is_fresh|].
+    intros ss Hss _. destruct ss; [|discriminate Hss]. rewrite sinst_slist_nil.
     assert (bcs_inst (pshift m) C = C) as -> by (destruct C; simpl in *; by subst).
     apply H, is_fresh.
   Qed.
@@ -609,7 +610,7 @@ Section terms.
     { apply tv_var_unl; [done|done|var_others HΔ]. }
     assert (ub_below_s W Ψ Φ2 ub (∅, Some (FVar φ))) as Hub by apply (ubs_fresh W HW).
     destruct r as [z|]; simpl.
-    - eapply (typed_force W Φ2 Ψ ∅ _ _ _ 0 C0 None TUnit []); [done|done| |done|done|].
+    - eapply (typed_force0 W Φ2 Ψ ∅ _ _ _ 0 C0 None TUnit []); [done|done| |done|done|].
       { intros g Hg. apply bcs_open_nil in Hg as [[] _]. }
       eapply (t_app W Φ2 Ψ ∅ ∅ ∅ _ (None :: Some fT :: Δ0) (lenv_nones (None :: Some fT :: Δ0))
                 _ _ _ (hiz B k σ) (Some (loz B k z)) U U).
@@ -617,7 +618,7 @@ Section terms.
       { apply tv_var_unl; [done|done|var_others HΔ]. }
       { apply tv_unitv; [done|apply nones_unl]. }
     - set (m := mneg (PArr PUnit None σ PUnit)). set (X := rpt B (RAnc 0)).
-      eapply (typed_force W Φ2 Ψ ∅ _ _ _ 0 C0 None TUnit []); [done|done| |done|done|].
+      eapply (typed_force0 W Φ2 Ψ ∅ _ _ _ 0 C0 None TUnit []); [done|done| |done|done|].
       { intros g Hg. apply bcs_open_nil in Hg as [[] _]. }
       eapply (t_app W Φ2 Ψ ∅ ∅ ∅ _ (None :: Some fT :: Δ0) (lenv_nones (None :: Some fT :: Δ0))
                 _ _ _ (hiz X m σ) None U U).
@@ -626,7 +627,7 @@ Section terms.
       assert (ty_inst [X] (TLolli (hiz (pvar 0) m σ) None (trz (pvar 0) m PUnit) (trz (pvar 0) m PUnit))
               = TLolli (hiz X m σ) None U U) as <-.
       { unfold ty_inst. simpl. rewrite hiz_pinst. by rewrite pt_inst_pvar_at. }
-      eapply (typed_force W Φ2 Ψ ∅ _ _ _ 1 Crel None); [done|done|apply (crel_hold Ψ B HB)
+      eapply (typed_force0 W Φ2 Ψ ∅ _ _ _ 1 Crel None); [done|done|apply (crel_hold Ψ B HB)
         |apply (anc_known Ψ B HB)|done|].
       apply tv_var_unl; [done|done|var_others HΔ].
   Qed.
@@ -780,7 +781,7 @@ Proof.
         - done.
         - apply (trz_anc Ψ B HB). lia.
         - apply (trz_anc Ψ B HB). lia. }
-      eapply (typed_force wnil Φ Ψ ∅ Δ1 _ _ 1 Crel None Tb [X]);
+      eapply (typed_force0 wnil Φ Ψ ∅ Δ1 _ _ 1 Crel None Tb [X]);
         [done|done|apply (crel_hold Ψ B HB)|apply (anc_known Ψ B HB)|done|].
       apply (IH1 Ψ B k ins Δ1); [done|done|]. apply (ubs_union _ HW).
       * apply (ubs_lvl Ψ B HB k Φ τ1 (lvl_max (lvl_sh n σ) (lvl_max τ1 τ2))); [|done].
@@ -844,9 +845,9 @@ Proof.
     assert (ty_inst [pvar 0] Tb = Tb) as HTb.
     { unfold ty_inst, Tb. simpl. by rewrite hiz_pinst, !trz_pinst. }
     apply (t_conv _ _ _ _ _ _ _ (ty_inst [pvar 0] Tb)); [rewrite HTb; apply teq_steq, teq_refl|].
-    eapply (typed_force wnil _ Ψ' ∅ _ _ _ 1 Crel None Tb [pvar 0]);
+    eapply (typed_force0 wnil _ Ψ' ∅ _ _ _ 1 Crel None Tb [pvar 0]);
       [done|done|exact (hyp_in_fact wnil Ψ' Crel [pvar 0] HC)|exact (hyp_in_known wnil Ψ' Crel [pvar 0] HC)|done|].
-    change (TBox 1 Crel (TLolli None None TUnit Tb)) with (trz (pvar 0) 0 u).
+    change (TBox 1 0 Crel (TLolli None None TUnit Tb)) with (trz (pvar 0) 0 u).
     apply IH; [done| |done].
     change (lenv_pinst (pshift 1) (Some (trz (pvar 0) 0 u) :: Δ))
       with (Some (pinst_ty (pshift 1) (trz (pvar 0) 0 u)) :: lenv_pinst (pshift 1) Δ).
@@ -872,7 +873,7 @@ Proof.
     + bclean; rewrite (tenv_heads0 _ HW), union_empty_l_L.
       assert (ty_inst [] (TSum (trz proot 0 t) (trz proot 0 s)) = TSum (trz proot 0 t) (trz proot 0 s))
         as <- by (unfold ty_inst; simpl; by rewrite !trz_pinst, (pt_inst_const _ proot 0)).
-      eapply (typed_force wnil Φ Ψ ∅ Δ1 _ _ 0 C0 None _ []); [done|done| |done|done|].
+      eapply (typed_force0 wnil Φ Ψ ∅ Δ1 _ _ 0 C0 None _ []); [done|done| |done|done|].
       { intros g Hg. apply bcs_open_nil in Hg as [[] _]. }
       apply (IHe Ψ B k ins Δ1); [done|done|]. apply (ubs_union _ HW).
       * apply (ubs_lvl Ψ B HB k Φ τ1 (lvl_max τ1 τ2)); [apply lvl_le_max_l|done].

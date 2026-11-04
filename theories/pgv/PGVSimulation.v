@@ -174,12 +174,16 @@ Definition post (α : tlabel) (t : expr) (Q : expr → Prop) : Prop :=
 Lemma post_ectx α t Q Q' K :
   ectx K → post α t Q → (∀ t', Q t' → Q' (K t')) → post α (K t) Q'.
 Proof.
-  intros HK Hp HQ. destruct α as [|[c v|c v|c|cd]|c|v]; simpl in *.
+  intros HK Hp HQ. destruct α as [|[c v|c v|c|cd|c b|c b]|c|v]; simpl in *.
   - destruct Hp as (t' & Hs & Hq). exists (K t'). split; [by apply bstar_ectx|auto].
   - destruct Hp as (t0 & Hs & Hw). exists (K t0). split; [by apply bstar_ectx|].
     intros w Hv Hr. destruct (Hw w Hv Hr) as (t1 & H1 & Hq). exists (K t1). split; [by apply HK|auto].
   - destruct Hp as (w & t0 & t1 & Hr & Hs & H1 & Hq). exists w, (K t0), (K t1).
     split_and!; [done|by apply bstar_ectx|by apply HK|auto].
+  - destruct Hp as (t0 & t1 & Hs & H1 & Hq). exists (K t0), (K t1).
+    split_and!; [by apply bstar_ectx|by apply HK|auto].
+  - destruct Hp as (t0 & t1 & Hs & H1 & Hq). exists (K t0), (K t1).
+    split_and!; [by apply bstar_ectx|by apply HK|auto].
   - destruct Hp as (t0 & t1 & Hs & H1 & Hq). exists (K t0), (K t1).
     split_and!; [by apply bstar_ectx|by apply HK|auto].
   - destruct Hp as (t0 & t1 & Hs & H1 & Hq). exists (K t0), (K t1).
@@ -234,7 +238,7 @@ Qed.
 Lemma fwd_head s t α s' : rel s t → head_step s α s' → post α t (rel s').
 Proof.
   intros Hr Hh.
-  destruct Hh as [e v Hv|e|u v e Hu Hv|c|v Hv|c v Hv|v c Hv|c|v e1 e2 Hv|v e1 e2 Hv|e|c d]; simpl.
+  destruct Hh as [e v Hv|e|u v e Hu Hv|c|v Hv|c v Hv|v c Hv|c|c|c|c b|v e1 e2 Hv|v e1 e2 Hv|e|c d]; simpl.
   - (* β *)
     destruct (rel_app_l _ _ _ Hr) as (t1 & t2 & -> & H1 & H2).
     destruct (rel_lam_l _ _ H1) as (b' & -> & Hb).
@@ -280,6 +284,21 @@ Proof.
     destruct (rel_app_l _ _ _ Hr) as (t1 & t2 & -> & H1 & H2). apply rel_chan_l in H2 as ->.
     exists (App EClos (Chan c)), EUnit.
     split_and!; [by apply konst_pre|apply TStepHead, HeadClos|constructor].
+  - (* select₁ *)
+    destruct (rel_app_l _ _ _ Hr) as (t1 & t2 & -> & H1 & H2). apply rel_chan_l in H2 as ->.
+    assert (t1 = ESel1) as -> by (by destruct (rel_konst_inv _ _ H1) as [->| ->]).
+    exists (App ESel1 (Chan c)), (Chan c).
+    split_and!; [apply rtc_refl|apply TStepHead, HeadSel1|apply rel_refl].
+  - (* select₂ *)
+    destruct (rel_app_l _ _ _ Hr) as (t1 & t2 & -> & H1 & H2). apply rel_chan_l in H2 as ->.
+    assert (t1 = ESel2) as -> by (by destruct (rel_konst_inv _ _ H1) as [->| ->]).
+    exists (App ESel2 (Chan c)), (Chan c).
+    split_and!; [apply rtc_refl|apply TStepHead, HeadSel2|apply rel_refl].
+  - (* branch *)
+    destruct (rel_app_l _ _ _ Hr) as (t1 & t2 & -> & H1 & H2). apply rel_chan_l in H2 as ->.
+    assert (t1 = EBra) as -> by (by destruct (rel_konst_inv _ _ H1) as [->| ->]).
+    exists (App EBra (Chan c)), (inj_of b (Chan c)).
+    split_and!; [apply rtc_refl|apply TStepHead, HeadBra|apply rel_refl].
   - (* case, left *)
     destruct (rel_case_l _ _ _ _ Hr) as (t0 & e1' & e2' & -> & H0 & H1 & H2).
     destruct (rel_inj1_l _ _ H0) as (w & -> & Hw).
@@ -354,6 +373,7 @@ Proof.
   intros Hs (HC & Hm). simpl in HC, Hm. subst Cq.
   inversion Hs as [|C0 E e e' Hst|C0 E e c e' Hst HcC HcE Hce|C0 E e v e' Hst
                   |C0 E c v e e' f f' Hse Hsf|C0 E c e e' f f' Hse Hsf HcC
+                  |C0 E c b e e' f f' Hse Hsf
                   |C0 E e c d e' Hst HcC]; subst.
   - (* β *)
     destruct (mrel_extract_l _ _ _ _ Hm) as (Et0 & t & -> & HR & Hm0).
@@ -393,6 +413,15 @@ Proof.
     exists (C ∖ {[c]}, Et0 ⊎ {[+ te1 +]} ⊎ {[+ tf1 +]}). split.
     + eapply rtc_trans; [by apply bstar_proc2|]. eapply rtc_trans; [by apply bstar_proc|].
       apply rtc_once. by eapply PStepClose.
+    + split; [done|]. apply mrel_snoc; [done|]. by apply mrel_snoc.
+  - (* choice *)
+    destruct (mrel_extract_l _ _ _ _ Hm) as (Et1 & tf & -> & HRf & Hm1).
+    destruct (mrel_extract_l _ _ _ _ Hm1) as (Et0 & te & -> & HRe & Hm0).
+    destruct (fwd _ _ _ _ HRe Hse) as (te0 & te1 & Hse0 & Hte & Hqe).
+    destruct (fwd _ _ _ _ HRf Hsf) as (tf0 & tf1 & Hsf0 & Htf & Hqf).
+    exists (C, Et0 ⊎ {[+ te1 +]} ⊎ {[+ tf1 +]}). split.
+    + eapply rtc_trans; [by apply bstar_proc2|]. eapply rtc_trans; [by apply bstar_proc|].
+      apply rtc_once. by eapply PStepChoice.
     + split; [done|]. apply mrel_snoc; [done|]. by apply mrel_snoc.
   - (* link *)
     destruct (mrel_extract_l _ _ _ _ Hm) as (Et0 & t & -> & HR & Hm0).
@@ -492,14 +521,16 @@ Qed.
 (** An action is a step. *)
 Lemma act_some_step e a : act e = Some a → ∃ α e', tstep e α e'.
 Proof.
-  intros H. destruct a as [| |v|c|c v|c|c d].
+  intros H. destruct a as [| |v|c|c v|c|c d|c b|c].
   all: first [ destruct (act_offer e _ LBeta H I) as [e' ?]
              | destruct (act_offer e _ (LNew inhabitant) H I) as [e' ?]
              | destruct (act_offer e _ (LSpawn v) H eq_refl) as [e' ?]
              | destruct (act_offer e _ (LSess (SRecv c EUnit)) H (conj eq_refl I)) as [e' ?]
              | destruct (act_offer e _ (LSess (SSend c v)) H (conj eq_refl eq_refl)) as [e' ?]
              | destruct (act_offer e _ (LSess (SClos c)) H eq_refl) as [e' ?]
-             | destruct (act_offer e _ (LSess (SLink {[c; d]})) H eq_refl) as [e' ?] ];
+             | destruct (act_offer e _ (LSess (SLink {[c; d]})) H eq_refl) as [e' ?]
+             | destruct (act_offer e _ (LSess (SSel c b)) H (conj eq_refl eq_refl)) as [e' ?]
+             | destruct (act_offer e _ (LSess (SBra c false)) H eq_refl) as [e' ?] ];
     eauto.
 Qed.
 
@@ -519,7 +550,9 @@ Lemma act_konst_some k u a :
   (∃ c x, k = KSend ∧ u = Pair x (Chan c) ∧ a = ASend c x) ∨
   (∃ c, k = KClos ∧ u = Chan c ∧ a = AClos c) ∨
   (∃ c d, k = KLink ∧ u = Pair (Chan c) (Chan d) ∧ a = ALink c d) ∨
-  (∃ e, k = KForce ∧ u = EBox e ∧ a = ABeta).
+  (∃ e, k = KForce ∧ u = EBox e ∧ a = ABeta) ∨
+  (∃ c, u = Chan c ∧ ((k = KSel1 ∧ a = ASel c false) ∨ (k = KSel2 ∧ a = ASel c true) ∨
+                      (k = KBra ∧ a = ABra c))).
 Proof.
   intros Hu H. simpl in H. rewrite (is_val_true _ Hu) in H.
   destruct k; destruct u as [| | | | | |u1 u2| | | | | |]; simpl in H; try discriminate H;
@@ -534,7 +567,7 @@ Proof.
   destruct (act (App (Konst k) v)) as [a|] eqn:Ea.
   - destruct (act_konst_some _ _ _ Hv Ea)
       as [(-> & ->)|[(-> & ->)|[(c & -> & -> & ->)|[(c & x & -> & -> & ->)
-         |[(c & -> & -> & ->)|[(c & d & -> & -> & ->)|(e & -> & -> & ->)]]]]]].
+         |[(c & -> & -> & ->)|[(c & d & -> & -> & ->)|[(e & -> & -> & ->)|(c & -> & Hc)]]]]]]].
     + left. right; left. done.
     + left. right; right. by eexists.
     + right. apply rel_chan_l in Hr as ->. apply aligned_app. by rewrite Ea.
@@ -547,13 +580,14 @@ Proof.
     + right. destruct (rel_pair_l _ _ _ Hr) as (c' & d' & -> & Hc & Hd).
       apply rel_chan_l in Hc as ->. apply rel_chan_l in Hd as ->. apply aligned_app. by rewrite Ea.
     + left. by left.
+    + right. apply rel_chan_l in Hr as ->. apply aligned_app. by rewrite Ea.
   - right. apply aligned_app. rewrite Ea.
     destruct (act (App (Konst k) w)) as [b|] eqn:Eb; [|done]. exfalso.
     assert (∀ α e', tstep (App (Konst k) v) α e' → False) as Hn.
     { intros α e' Hst. destruct (act_step _ _ _ Hst) as (? & ? & _). congruence. }
     destruct (act_konst_some _ _ _ Hw Eb)
       as [(-> & ->)|[(-> & ->)|[(c & -> & -> & ->)|[(c & x & -> & -> & ->)
-         |[(c & -> & -> & ->)|[(c & d & -> & -> & ->)|(e & -> & -> & ->)]]]]]].
+         |[(c & -> & -> & ->)|[(c & d & -> & -> & ->)|[(e & -> & -> & ->)|(c & -> & Hc)]]]]]]].
     + apply rel_unit_r in Hr as ->. apply (Hn _ _ (TStepHead _ _ _ (HeadNew inhabitant))).
     + apply (Hn _ _ (TStepHead _ _ _ (HeadSpawn v Hv))).
     + apply rel_chan_r in Hr as ->. apply (Hn _ _ (TStepHead _ _ _ (HeadRecv c EUnit I))).
@@ -564,6 +598,10 @@ Proof.
       apply rel_chan_r in Hc as ->. apply rel_chan_r in Hd as ->.
       apply (Hn _ _ (TStepHead _ _ _ (HeadLink c d))).
     + destruct (rel_box_r _ _ Hr) as (e0 & ->). apply (Hn _ _ (TStepHead _ _ _ (HeadForce e0))).
+    + apply rel_chan_r in Hr as ->.
+      destruct Hc as [[-> _]|[[-> _]|[-> _]]];
+        [apply (Hn _ _ (TStepHead _ _ _ (HeadSel1 c)))|apply (Hn _ _ (TStepHead _ _ _ (HeadSel2 c)))
+        |apply (Hn _ _ (TStepHead _ _ _ (HeadBra c false)))].
 Qed.
 
 Lemma head_konst k t1 v w :
@@ -587,7 +625,7 @@ Proof.
     rewrite act_letu_val by done.
     destruct (act (App ENew v)) as [a|] eqn:Ea; [|done].
     destruct (act_konst_some _ _ _ Hv Ea) as [(_ & ?)|[(? & _)|[(? & ? & _)|[(? & ? & ? & _)
-      |[(? & ? & _)|[(? & ? & ? & _)|(? & ? & _)]]]]]]; done.
+      |[(? & ? & _)|[(? & ? & ? & _)|[(? & ? & _)|(? & ? & [[? _]|[[? _]|[? _]]])]]]]]]]; done.
   - destruct (head_same k v w Hr Hv) as [?|Ha]; [by left|right].
     exists (App (Konst k) w). split; [|done].
     replace (kon_eta k) with (Konst k) by (destruct k; try reflexivity; simpl in Ek; congruence).
@@ -773,6 +811,7 @@ Proof.
       right. unfold preduction in Hred.
       inversion Hred as [|C0 E0 e e' Hste|C0 E0 e c e' Hste|C0 E0 e v e' Hste
                         |C0 E0 c v e e' f f' Hse Hsf|C0 E0 c e e' f f' Hse Hsf Hc
+                        |C0 E0 c b e e' f f' Hse Hsf
                         |C0 E0 e c d e' Hste Hc]; subst.
       * destruct (mrel_extract _ _ _ _ Hm') as (Es0 & s & -> & (Hns & Ha) & _).
         destruct (aligned_step _ _ _ _ Ha Hste) as (a & b & Ea & Hk & Ho).
@@ -791,7 +830,7 @@ Proof.
         destruct (aligned_step _ _ _ _ Hae Hse) as (ae & be & Eae & Hke & Hoe).
         destruct (aligned_step _ _ _ _ Haf Hsf) as (af & bf & Eaf & Hkf & Hof).
         apply offers_send in Hoe as ->. apply offers_recv in Hof as ->.
-        destruct ae as [| | |?|c0 v0|?|? ?]; simpl in Hke; try discriminate Hke.
+        destruct ae as [| | |?|c0 v0|?|? ?|? ?|?]; simpl in Hke; try discriminate Hke.
         injection Hke as ->.
         destruct af; simpl in Hkf; try discriminate Hkf. injection Hkf as ->.
         destruct (act_offer se (ASend c v0) (LSess (SSend c v0)) Eae (conj eq_refl eq_refl))
@@ -809,9 +848,21 @@ Proof.
         destruct (act_offer se (AClos c) (LSess (SClos c)) Eae eq_refl) as [se' Hse'].
         destruct (act_offer sf (AClos c) (LSess (SClos c)) Eaf eq_refl) as [sf' Hsf'].
         eexists. by eapply PStepClose.
+      * destruct (mrel_extract _ _ _ _ Hm') as (Es1 & sf & -> & (_ & Haf) & Hm1).
+        destruct (mrel_extract _ _ _ _ Hm1) as (Es0 & se & -> & (_ & Hae) & _).
+        destruct (aligned_step _ _ _ _ Hae Hse) as (ae & be & Eae & Hke & Hoe).
+        destruct (aligned_step _ _ _ _ Haf Hsf) as (af & bf & Eaf & Hkf & Hof).
+        destruct be; simpl in Hoe; try done. destruct Hoe as [-> ->].
+        destruct bf; simpl in Hof; try done. subst.
+        destruct ae; simpl in Hke; try discriminate Hke. injection Hke as -> ->.
+        destruct af; simpl in Hkf; try discriminate Hkf. injection Hkf as ->.
+        destruct (act_offer se (ASel c b) (LSess (SSel c b)) Eae (conj eq_refl eq_refl))
+          as [se' Hse'].
+        destruct (act_offer sf (ABra c) (LSess (SBra c b)) Eaf eq_refl) as [sf' Hsf'].
+        eexists. by eapply PStepChoice.
       * destruct (mrel_extract _ _ _ _ Hm') as (Es0 & s & -> & (_ & Ha) & _).
         destruct (aligned_step _ _ _ _ Ha Hste) as (a & b & Ea & Hk & Ho).
-        destruct b as [| | | | | |c0 d0]; simpl in Ho; try done.
+        destruct b as [| | | | | |c0 d0| |]; simpl in Ho; try done.
         destruct a; simpl in Hk; try discriminate Hk. injection Hk as -> ->.
         destruct (act_offer s (ALink c0 d0) (LSess (SLink {[c; d]})) Ea Ho) as [s' Hs'].
         eexists. by apply PStepLink.

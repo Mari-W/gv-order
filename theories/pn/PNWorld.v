@@ -281,7 +281,7 @@ Definition hiz (B : point) (k : Z) (σ : lvl) : option point :=
   | LTop => Some (rpt B RTop)
   end.
 
-Definition Ubox (T : ty) : ty := TBox 0 C0 (TLolli None None TUnit T).
+Definition Ubox (T : ty) : ty := TBox 0 0 C0 (TLolli None None TUnit T).
 Definition U : ty := Ubox TUnit.
 
 Definition pol (p : bool) (m : nat) (T : ty) (s : sty) : sty :=
@@ -307,7 +307,7 @@ Fixpoint trz (B : point) (k : Z) (t : pty) {struct t} : ty :=
   | PDisp m t1 => trz B (k + m) t1
   | PArr t1 (Some r) σ t2 => TLolli (hiz B k σ) (Some (loz B k r)) (trz B k t1) (trz B k t2)
   | PArr t1 None σ t2 =>
-      TBox 1 Crel (TLolli None None TUnit
+      TBox 1 0 Crel (TLolli None None TUnit
         (TLolli (hiz (pvar 0) (mneg t) σ) None
            (trz (pvar 0) (mneg t) t1) (trz (pvar 0) (mneg t) t2)))
   end
@@ -614,7 +614,7 @@ Section facts.
     - split; [|apply seq_refl]. eapply se_trans; [apply Hch|]. simpl.
       replace (n + k1 + a)%Z with (n + k2)%Z by lia. apply se_refl.
     - apply IH. lia.
-    - destruct r as [r|]; [|split_and!; [done|done|apply teq_refl]]. simpl. split_and!; try (apply IH1 || apply IH2; lia).
+    - destruct r as [r|]; [|apply teq_refl]. simpl. split_and!; try (apply IH1 || apply IH2; lia).
       + destruct σ as [|z|]; simpl; try done.
         * apply (gd_eq _ _ HB); [done|done|]. rewrite (den_hi _ a HX), den_hi0. zeq.
         * apply (gd_eq _ _ HB); [done|done|]. by rewrite (den_top _ a HX), (den_top B 0 gden).
