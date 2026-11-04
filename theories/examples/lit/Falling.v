@@ -6,8 +6,8 @@
     [fallxy_typed]). No translation that reads a point off a session
     type covers [fallxy] (§8.2), and the section states that a
     derivation with a fresh point per [new] exists without giving it.
-    This file gives both derivations in the core, with [styped] and
-    [soundness_source].
+    This file gives both derivations in the core ([fall2_styped],
+    [fallxy_styped]) and deadlock freedom through [soundness_source].
 
     [fall2] is the pair of threads of §2.
 
@@ -32,7 +32,7 @@
       partner1 y = λu. let () = u in let (v, y) = recv y in let () = v in close (send ⟨∗, y⟩)
       partner2 y = λu. let () = u in recvclose y
 
-    x and c have S1 = !∗.?∗.Close and b and d have S2 = !∗.Close.
+    x and c have S1 = !∗.?∗.Close ([FS1]) and b and d have S2 = !∗.Close.
     With x at ξ, b at β, c at γ and d at δ, the thread X asks β ≺ ξ at
     its send on b, and ξ ≺ β+1, ξ+1 ≺ β+1 and ξ+2 ≺ β+1 at its actions
     on x while it holds b. The main thread asks γ+1 ≺ δ at its receive
@@ -71,9 +71,9 @@ From LRGV Require Import examples.cfst.CfstTools.
 Set Default Proof Using "All".
 
 (** !∗.?∗.Close *)
-Definition S1 : sty := SSeq (SSnd 0 TUnit) (SSeq (SRcv 0 TUnit) SEnd).
+Definition FS1 : sty := SSeq (SSnd 0 TUnit) (SSeq (SRcv 0 TUnit) SEnd).
 
-(** The partner of S1 and of S2 = Sd on the channel variable k. *)
+(** The partner of FS1 and of S2 = Sd on the channel variable k. *)
 Definition partner1 (k : nat) : expr :=
   Lam (LetU (Var 0) (LetP (App ERecv (Var k)) (LetU (Var 1) (sendclose (Var 0))))).
 Definition partner2 (k : nat) : expr :=
@@ -113,7 +113,7 @@ Definition fallxy_main : expr :=
             (LetP (Pair (App ESend (Pair EUnit (Var 1))) EUnit) (LetU (Var 0)
               (let_new_pair (LetU (App ESpawn (partner2 1)) fx_tail)))))))))).
 
-(** A partner of S1 on the point (a, 0), spawned. *)
+(** A partner of FS1 on the point (a, 0), spawned. *)
 Ltac fx_partner1 HW a :=
   tstep;
   [ tstep; [|apply KTSpawn|done|apply ubs_none];
@@ -140,23 +140,23 @@ Ltac fx_partner2 HW a :=
 
 (** ** The creation constraints *)
 
-Definition e_C : bcs := BCs [] (λ _, False).
+Definition fx0_C : bcs := BCs [] (λ _, False).
 
-Lemma e_ok peq plt : cc_ok peq plt e_C.
+Lemma fx0_ok peq plt : cc_ok peq plt fx0_C.
 Proof.
-  apply (cc_ok_out _ _ e_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
+  apply (cc_ok_out _ _ fx0_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
   - intros a b (f & [] & _).
   - intros a b (f & [] & _).
   - intros u p q v (f & [] & _).
 Qed.
 
 (** b at 0 under x at 1. *)
-Definition fb_P (g : fact) : Prop := g = FLt (pv 0 0) (pv 1 0) ∨ g = FLt (pv 1 2) (pv 0 1).
-Definition fb_C : bcs := BCs [pvar 0] fb_P.
+Definition fxb_P (g : fact) : Prop := g = FLt (pv 0 0) (pv 1 0) ∨ g = FLt (pv 1 2) (pv 0 1).
+Definition fxb_C : bcs := BCs [pvar 0] fxb_P.
 
-Lemma fb_ok peq plt : cc_ok peq plt fb_C.
+Lemma fxb_ok peq plt : cc_ok peq plt fxb_C.
 Proof.
-  apply (cc_ok_out _ _ fb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
+  apply (cc_ok_out _ _ fxb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
   - intros a b (f & [-> | ->] & _ & E); discriminate E.
   - intros a b (f & [-> | ->] & _ & E); injection E as -> ->; cbn; auto.
   - intros u p q v (f & [-> | ->] & _ & E) (f' & [-> | ->] & _ & E') Hu Hp Hq Hv Hpq;
@@ -165,13 +165,13 @@ Proof.
 Qed.
 
 (** d at 0 under c at 1. *)
-Definition fd_P (g : fact) : Prop :=
+Definition fxd_P (g : fact) : Prop :=
   g = FLt (pv 1 1) (pv 0 0) ∨ g = FLt (pv 0 0) (pv 1 2) ∨ g = FLt (pv 1 2) (pv 0 1).
-Definition fd_C : bcs := BCs [pvar 0] fd_P.
+Definition fxd_C : bcs := BCs [pvar 0] fxd_P.
 
-Lemma fd_ok peq plt : cc_ok peq plt fd_C.
+Lemma fxd_ok peq plt : cc_ok peq plt fxd_C.
 Proof.
-  apply (cc_ok_out _ _ fd_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
+  apply (cc_ok_out _ _ fxd_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
   - intros a b (f & [-> | [-> | ->]] & _ & E); discriminate E.
   - intros a b (f & [-> | [-> | ->]] & _ & E); injection E as -> ->; cbn; auto.
   - intros u p q v (f & [-> | [-> | ->]] & _ & E) (f' & [-> | [-> | ->]] & _ & E') Hu Hp Hq Hv Hpq;
@@ -180,25 +180,25 @@ Proof.
     + destruct Hpq as [Hpq|[_ Hpq]]; [discriminate Hpq|cbn in Hpq; lia].
 Qed.
 
-Lemma fallxy_typed : styped ∅ [] [] (∅, None) fallxy_main TUnit.
+Lemma fallxy_styped : styped ∅ [] [] (∅, None) fallxy_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
   pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fallxy_main.
-  apply (t_new_open W _ _ ∅ _ _ _ _ S1 e_C); [apply e_ok|constructor|].
+  apply (t_new_open W _ _ ∅ _ _ _ _ FS1 fx0_C); [apply fx0_ok|constructor|].
   fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fb_C); [apply fb_ok|..].
+  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fxb_C); [apply fxb_ok|..].
   { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ S1 e_C); [apply e_ok|constructor|].
+  apply (t_new_open W _ _ ∅ _ _ _ _ FS1 fx0_C); [apply fx0_ok|constructor|].
   fresh_clean.
   change (pt_inst (pshift 1) (pt_inst (pshift 1) (pvar 0))) with (pv 2 0).
   change (pt_inst (pshift 1) (pvar 0)) with (pv 1 0).
   match goal with |- typed _ _ ?G _ _ _ _ _ => set (Ψ := G) end.
   assert (slt W Ψ (pv 1 0) (pv 2 0)) as Hbx.
-  { eapply (sl_hyp W Ψ [pvar 2] fb_P [pvar 1] (FLt (pv 0 0) (pv 1 0)));
+  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 0 0) (pv 1 0)));
       [by right; left|by left|fsc|reflexivity]. }
   assert (slt W Ψ (pv 2 2) (pv 1 1)) as Hxb.
-  { eapply (sl_hyp W Ψ [pvar 2] fb_P [pvar 1] (FLt (pv 1 2) (pv 0 1)));
+  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 1 2) (pv 0 1)));
       [by right; left|by right|fsc|reflexivity]. }
   assert (slt W Ψ (pv 2 0) (pv 1 1)) as Hx0.
   { eapply sl_trans; [|exact Hxb]. apply slt_po_lt; [exact HW|lia]. }
@@ -231,7 +231,7 @@ Proof.
           -- eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 1 1)) (TSess SEnd (pv 1 1))); [tstep|apply KTClos|done|].
              apply ubs_intro; [intros y Hy; mem_cases Hy|].
              exists (pv 1 1). split; [done|]. apply sle_refl, HW.
-      + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 2 0)) (TProd TUnit (TSess S1 (pv 2 0)))).
+      + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 2 0)) (TProd TUnit (TSess FS1 (pv 2 0)))).
         * tstep; tstep.
         * apply (KTSend _ _ _ 0 TUnit (SSeq (SRcv 0 TUnit) SEnd) (pv 2 0)). cbn. set_solver.
         * kscope.
@@ -251,27 +251,27 @@ Proof.
   (* the main thread: send on c at γ, then d under its constraint *)
   tstep.
   { tstep; [tstep|].
-    eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0)) (TProd TUnit (TSess S1 (pv 0 0)))).
+    eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0)) (TProd TUnit (TSess FS1 (pv 0 0)))).
     - tstep; tstep.
     - apply (KTSend _ _ _ 0 TUnit (SSeq (SRcv 0 TUnit) SEnd) (pv 0 0)). cbn. set_solver.
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
   cbn. tstep; [tstep|]. cbn.
   change (pt_shift 1 (pv 0 0)) with (pv 0 1).
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fd_C); [apply fd_ok|..].
+  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fxd_C); [apply fxd_ok|..].
   { constructor; [eapply skn_inst; [by right; right; left|by left|done]|constructor]. }
   fresh_clean.
   change (pt_inst (pshift 1) (pv 0 1)) with (pv 1 1).
   clear Hbx Hxb Hx0 Hx1.
   match goal with |- typed _ _ ?G _ _ _ _ _ => set (Ψ' := G) end.
   assert (slt W Ψ' (pv 1 1) (pv 0 0)) as Hcd.
-  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fd_P [pvar 0] (FLt (pv 1 1) (pv 0 0)));
+  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 1 1) (pv 0 0)));
       [by right; right; right; left|by left|fsc|reflexivity]. }
   assert (slt W Ψ' (pv 0 0) (pv 1 2)) as Hdc.
-  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fd_P [pvar 0] (FLt (pv 0 0) (pv 1 2)));
+  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 0 0) (pv 1 2)));
       [by right; right; right; left|by right; left|fsc|reflexivity]. }
   assert (slt W Ψ' (pv 1 2) (pv 0 1)) as Hcd2.
-  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fd_P [pvar 0] (FLt (pv 1 2) (pv 0 1)));
+  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 1 2) (pv 0 1)));
       [by right; right; right; left|by right; right|fsc|reflexivity]. }
   fx_partner2 HW 0. cbn.
   (* receive on c at γ+1 while d waits at δ *)
@@ -298,11 +298,11 @@ Proof.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Lemma fall2_typed : styped ∅ [] [] (∅, None) fall2_main TUnit.
+Lemma fall2_styped : styped ∅ [] [] (∅, None) fall2_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
   pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fall2_main.
-  apply (t_new_open W _ _ ∅ _ _ _ _ S1 e_C); [apply e_ok|constructor|].
+  apply (t_new_open W _ _ ∅ _ _ _ _ FS1 fx0_C); [apply fx0_ok|constructor|].
   fresh_clean.
   fx_partner1 HW 0. cbn.
   eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 0 2)) None (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 0 1)) TUnit);
@@ -311,7 +311,7 @@ Proof.
     cbn. tstep.
     + tstep; [tstep|apply KTRecv|kscope|]. po_gate HW (pv 0 2).
     + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|]. po_gate HW (pv 0 2).
-  - eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0)) (TProd TUnit (TSess S1 (pv 0 0)))).
+  - eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0)) (TProd TUnit (TSess FS1 (pv 0 0)))).
     + tstep; tstep.
     + apply (KTSend _ _ _ 0 TUnit (SSeq (SRcv 0 TUnit) SEnd) (pv 0 0)). cbn. set_solver.
     + kscope.
@@ -322,7 +322,7 @@ Qed.
 (** ** Deadlock freedom, through [soundness_source] *)
 
 Theorem fall2_deadlock_free : deadlock_free (∅, {[+ fall2_main +]}).
-Proof. apply (soundness_source_nil _ TUnit); [constructor|apply fall2_typed]. Qed.
+Proof. apply (soundness_source_nil _ TUnit); [constructor|apply fall2_styped]. Qed.
 
 Theorem fallxy_deadlock_free : deadlock_free (∅, {[+ fallxy_main +]}).
-Proof. apply (soundness_source_nil _ TUnit); [constructor|apply fallxy_typed]. Qed.
+Proof. apply (soundness_source_nil _ TUnit); [constructor|apply fallxy_styped]. Qed.
