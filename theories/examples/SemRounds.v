@@ -277,3 +277,53 @@ Proof.
       eapply seq_trans; [exact Hs|apply Sb_unf].
   - exact HF.
 Qed.
+
+(** One round: send on f, then on g, and continue with Q. The first send
+    needs f ≺ g, the second g ≺ f+1. *)
+Lemma Erel_round n W Θ f g s1 s2 pf pg Q :
+  strict W → tenv_comp (w_eq W) Θ {[f := One (s1, pf)]} {[g := One (s2, pg)]} →
+  seq s1 Sb → seq s2 Sb → w_lt W pf pg → w_lt W pg (pt_shift 1 pf) →
+  (∀ W' j f' g' s1' s2' pf' pg' Θ', wext W W' → j ≤ n →
+     tenv_comp (w_eq W') Θ' {[f' := One (s1', pf')]} {[g' := One (s2', pg')]} →
+     seq s1' Sb → seq s2' Sb → w_eq W' pf' (pt_shift 1 pf) → w_eq W' pg' (pt_shift 1 pg) →
+     Erel j W' Θ' TUnit ∅ (subst2 (Chan f') (Chan g') Q)) →
+  Erel n W Θ TUnit ∅ (LetP (Pair (rsend (Chan f)) (rsend (Chan g))) Q).
+Proof.
+  intros HW Hc Hs1 Hs2 Hfg Hgf HK. pose proof (proj1 HW) as HWf.
+  set (Th := TProd (TSess Sb (pt_shift 1 pf)) (TSess Sb (pt_shift 1 pg))).
+  change (LetP ?e Q) with (fill_frame (FLetP Q) e).
+  apply (Erel_bind n (FLetP Q) W Θ Θ ∅ Th TUnit ∅ ∅);
+    [done|done|apply tenv_comp_empty_r|left; apply heads_above_empty| |].
+  - change (Pair ?a ?b) with (fill_frame (FPairL b) a).
+    apply (Erel_bind n (FPairL (rsend (Chan g))) W Θ {[f := One (s1, pf)]} {[g := One (s2, pg)]}
+             (TSess Sb (pt_shift 1 pf)) Th (∅ ∪ ∅) {[pg]});
+      [done|done|done|left; by apply heads_above_one| |].
+    + apply Erel_rsend; [done|done|]. intros z Hz. assert (z = pg) as -> by set_solver. done.
+    + intros W' j Θ1' Θ' v HW' Hj Hc' HV.
+      apply Vrel_sess_iff in HV as (f' & s1' & pf' & -> & -> & Hs1' & Hpf').
+      pose proof (wext_wf _ _ HW') as HWf'. pose proof (proj2 (proj2 (proj2 HW'))) as HWs'.
+      change (fill_frame (FPairL (rsend (Chan g))) (Chan f'))
+        with (fill_frame (FPairR (Chan f')) (rsend (Chan g))).
+      apply (Erel_bind j (FPairR (Chan f')) W' Θ' {[g := One (s2, pg)]} {[f' := One (s1', pf')]}
+               (TSess Sb (pt_shift 1 pg)) Th (∅ ∪ ∅) {[pf']});
+        [done|done|apply comp_comm; [apply (wf_eq_sym _ HWf')|exact Hc']
+        |left; by apply heads_above_one| |].
+      * apply Erel_rsend; [done|done|]. intros z Hz. assert (z = pf') as -> by set_solver.
+        eapply (wf_lt_eq _ HWf'); [apply (wf_eq_refl _ HWf')| |apply (wf_eq_sym _ HWf'), Hpf'].
+        apply (proj1 (proj2 (proj2 HW'))). exact Hgf.
+      * intros W'' j' Θ1'' Θ'' v HW'' Hj' Hc'' HV.
+        apply Vrel_sess_iff in HV as (g' & s2' & pg' & -> & -> & Hs2' & Hpg').
+        apply Vrel_Erel. apply Vrel_prod_iff.
+        exists (Chan f'), (Chan g'), {[f' := One (s1', pf')]}, {[g' := One (s2', pg')]}.
+        split_and!; [done| | |].
+        -- apply comp_comm; [apply (wf_eq_sym _ (wext_wf _ _ HW''))|exact Hc''].
+        -- apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|done|]. exact (wext_eq _ _ _ _ HW'' Hpf').
+        -- apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|done|exact Hpg'].
+  - intros W' j Θ1' Θ' v HW' Hj Hc' HV.
+    apply tenv_comp_empty_r_inv in Hc' as ->.
+    apply Vrel_prod_iff in HV as (v1 & v2 & Θa & Θb & -> & Hab & Ha & Hb).
+    apply Vrel_sess_iff in Ha as (f' & s1' & pf' & -> & -> & Hs1' & Hpf').
+    apply Vrel_sess_iff in Hb as (g' & s2' & pg' & -> & -> & Hs2' & Hpg').
+    eapply Erel_dstep; [by apply det_beta_letp|].
+    by apply (HK W' j f' g' s1' s2' pf' pg').
+Qed.
