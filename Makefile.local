@@ -1,0 +1,8 @@
+# Hooks into the generated Makefile (included by it).
+
+# Build everything, then check that the main results, every deadlock
+# freedom theorem, the PGV/PN/MP theorems and every declaration cited by
+# paper/*.tex are closed under the global context.  See ARTIFACT.md.
+.PHONY: check
+check: all
+	python3 artifact/check.py --rocq "$(COQBIN)rocq"
