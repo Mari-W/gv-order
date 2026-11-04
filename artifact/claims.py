@@ -13,6 +13,8 @@ caption or rule section on its line, else the enclosing (sub)section.
 
 import glob
 import importlib.util
+
+sys.dont_write_bytecode = True  # do not leave paper/__pycache__ behind
 import os
 import re
 import sys

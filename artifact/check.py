@@ -28,6 +28,8 @@ import subprocess
 import sys
 import importlib.util
 
+sys.dont_write_bytecode = True  # do not leave paper/__pycache__ behind
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, '_build', 'check')
 
