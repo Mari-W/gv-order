@@ -724,8 +724,9 @@ Qed.
 
 (** The same node with a bit whose sides carry facts C₁ and C₂. It has
     no derivation when one strict world realizes the hypotheses, C₁ and
-    C₂ together. So a derivation needs one side of the bit to be
-    unrealizable with the rest, which is what [db_typed] does. *)
+    C₂ together. So a derivation needs the two sides not to be
+    realizable together with the hypotheses. [db_typed] makes one side
+    unrealizable. *)
 
 Definition db_ctx2 (C1 C2 : bcs) (x y : point) (k : nat) : lenv :=
   [None; Some (TSum (TEx LNone 0 C1 TUnit) (TEx LNone 0 C2 TUnit)); None;

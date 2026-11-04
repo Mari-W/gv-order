@@ -1,8 +1,8 @@
 # Worlds that depend on data
 
 State of 2026-11-04, branch claude/data-dependent-worlds-9rgdfr. The Rocq
-files are theories/examples/DataBranch.v, theories/examples/DataAlternate.v
-and theories/relation/BranchWorlds.v.
+files are theories/examples/DataBranch.v, theories/examples/DataAlternate.v,
+theories/examples/GrowDeadlock.v and theories/relation/BranchWorlds.v.
 
 ## Summary
 
@@ -19,19 +19,24 @@ z : ∗ ⊕ ∗, c : Close@x and d : Close@y, the node has no derivation under a
 hypotheses that a strict world realizes ([db_component_unrealizable], Rocq,
 proved through the logical relation). With facts on both sides of the bit it
 has no derivation either, as long as one world realizes both sides
-([db_component_sides]). So one world per component is a limit of components
+([db_component_sides]). So one world per component is a limit of a case node
 whose interface fixes a bit that does not separate the two orders. A case node
-that runs every round with the live branch alternating types
-([alt_typed]). A closed program that
-fails needs a case node that runs once per round with an order pattern that
-is not eventually periodic (conjecture, section 3).
+that runs every round with the live branch alternating types ([alt_typed]).
+Section 3 conjectures that the closed programs that fail are those whose case
+node runs once per round with an order pattern that is not eventually
+periodic.
 
 Of the candidates, pending choices with an owner (section 4.4) are the one to
-pursue. They type the fact-free component when it owns the choice, they keep
-the relation monotone, and their amalgamation lemma reduces to the existing
-[wext_fresh_join] at every choice vector ([pjoin_fresh], [pjoin_valid], Rocq,
-axiom free). An unguarded extension between existing points breaks
-amalgamation ([unguarded_extensions_conflict], Rocq).
+pursue. The fact-free case node would type under their rule E-Case-Resolve
+when it owns the choice (argued). Their world-level lemmas hold in Rocq.
+Amalgamation of a creation with any extension reduces to the existing
+[wext_fresh_join] at every choice vector ([pjoin_fresh], [pjoin_valid]), and
+two components that resolve distinct choices they own join to a strict world
+([owned_resolutions_join]). Two components that resolve the same choice in
+opposite ways do not ([unowned_resolutions_conflict]), and neither do two
+unguarded extensions between existing points
+([unguarded_extensions_conflict]). The logical relation with ownership is not
+built, so monotonicity of the relation itself is not proved.
 
 ## 1 The program
 
@@ -59,10 +64,11 @@ context.
 | `db_typed b` | `styped ∅ [] [] (∅, None) (db_main b) TUnit` |
 | `db_deadlock_free b` | `deadlock_free (∅, {[+ db_main b +]})`, from `soundness` |
 | `db_component_unrealizable` | `styped Φ Ψ (db_ctx x y k) F db_case T → ¬ realizable Φ Ψ` |
-| `db_component_untyped_top` | the same at the hypotheses `[(C0, ids n)]` of a source program |
+| `db_component_untyped_top` | `creation_ok n nofact nofact (λ _, False) C0 → ¬ styped ∅ [(C0, ids n)] (db_ctx x y k) F db_case T` |
 | `db_component_sides` | `styped Φ Ψ (db_ctx2 C1 C2 x y k) F db_case T → ¬ realizable2 Φ Ψ C1 C2`, the bit at ∃{C₁}.∗ ⊕ ∃{C₂}.∗ |
 | `db_rnode_unrealizable` | `styped Φ Ψ (db_rctx x y z k) F db_rnode T → ¬ realizable Φ Ψ` |
-| `db_rnode_untyped_top` | the same at the hypotheses `[(C0, ids n)]` |
+| `db_rnode_untyped_top` | the same for db_rnode at db_rctx |
+| `grow_not_df` | GrowDeadlock.v, the composition of 4.2 is not deadlock free |
 | `db_main_shape b` | db_main b is three lets of new, three spawns and db_rnode |
 | `alt_typed`, `alt_deadlock_free` | DataAlternate.v, a case node that runs every round with the live branch alternating types and is deadlock free |
 | `df_keep` | `okb b e → deadlock_free (∅, {[+ keep b e +]}) → deadlock_free (∅, {[+ e +]})` |
@@ -92,7 +98,7 @@ Four facts make the derivation work.
    and only boxes are unlimited (types/Types.v, `unlimited`). So the inr
    branch opens u and gains z[0]+5 ≺ z[0]+1.
 2. A session payload type mentions only payload points. `pinst_ty` does not
-   enter `TSess`, so Tz cannot name x or y. The fact is about z[0], and the
+   enter the session type of `TSess`, so Tz cannot name x or y. The fact is about z[0], and the
    creation constraints anchor c and d to it. c is created with
    {z+1, z[0]+1} ≺ ι ≺ {z[0]+5}, d with {z+1, x} ≺ ι ≺ {z[0]+5}.
 3. Betweenness of E-NewFresh asks z+1 ≺ z[0]+5. The creation constraint of e
@@ -109,9 +115,10 @@ x ≺ z[0]+5 ≺ z[0]+1 ≺ y.
 The hypotheses of the dead branch are not realizable, and the soundness proof
 needs no change. The logical relation reads a value of
 ∃{z[0]+5 ≺ z[0]+1}.∗ only in a world with that fact, and a strict world has
-none. The dead side has to be unrealizable. [db_component_sides] shows that
-the case node with the bit at ∃{C₁}.∗ ⊕ ∃{C₂}.∗ has no derivation when one
-strict world realizes the hypotheses, C₁ and C₂ together.
+none. The two sides must not be realizable together with the hypotheses.
+[db_component_sides] shows that the case node with the bit at
+∃{C₁}.∗ ⊕ ∃{C₂}.∗ has no derivation when one strict world realizes the
+hypotheses, C₁ and C₂ together.
 
 The trick generalizes, by the same steps and without a Rocq proof, to every
 branch whose other side is dead in every run and whose payload, or a
@@ -132,8 +139,9 @@ asks σy ≺ σx. W is strict, which refutes both.
 
 Two readings of the limit.
 
-- Fixed interface. A component typed against an interface that types the
-  bit at ∗ ⊕ ∗ does not type, whatever the hypotheses. This is the
+- Fixed interface. The case node of db_main typed against an interface that
+  types the bit at ∗ ⊕ ∗ does not type under any hypotheses a strict world
+  realizes. This is the
   compositional statement. P-Connect composes components that agree on an
   interface, and a translation from a system whose session types carry no
   facts (GV, priority systems) fixes the payload at ∗ ⊕ ∗.
@@ -143,7 +151,7 @@ Two readings of the limit.
   in V⟦∗ ⊕ ∗⟧, so both bits reach the case in one world. What remains by
   hand is the step from db_main to that node, an inversion through three
   lets of new and three spawns ([db_main_shape]). The context of the node
-  holds d, c and e and otherwise spent or unlimited entries. Its hypotheses
+  holds d, c and e and otherwise spent entries. Its hypotheses
   are C₀ and the creation constraints of e, c and d, opened by E-Open on the
   results of new, because new's existential is the only one the path meets.
   The hypotheses are realizable, by the world `wc0` and the fresh extensions
@@ -151,9 +159,9 @@ Two readings of the limit.
   E-Conv, E-Open and E-Contract is not mechanized, as for the programs of
   examples/Rejected.v.
 
-A closed counterexample needs a case node that runs more than once, with the
-live branch changing between runs. A node that runs once has a dead branch,
-and section 2 types it. A node in a box runs once per instance, and its
+The following is an argument, not a proof. A closed counterexample needs a
+case node that runs more than once, with the live branch changing between
+runs. A node that runs once has a dead branch, and section 2 types it. A node in a box runs once per instance, and its
 facts come from three sources. The box constraint holds at every instance,
 so it cannot say which branch a round takes. Creation constraints of
 channels created in the box body are uniform in the same way. The bit's type
@@ -170,16 +178,19 @@ opens its side, sends, and packs the other side at (ι+1, κ+1), which the
 opened facts give. The box constraint of K is empty, and main packs the first
 state from the creation constraint of d. The case node runs once per round
 and both branches are live. The same construction applies to every pattern
-whose futures, read relative to the round, take finitely many values, which
+whose suffixes, read relative to the round, take finitely many values, which
 are the eventually periodic patterns. That generalization is not checked.
 
-Conjecture. A closed program whose consumer orders c and d in round k by
-P(k), for P computed by a recursive generator and not eventually periodic,
-is deadlock free with independent partners for c and d, and has no
-derivation. The argument for the second half. Each round needs the order of
+Conjecture, in two directions. (i) A closed program fails to type for this
+reason only when a case node runs once per round with an order pattern that
+is not eventually periodic. The argument above is for this direction. (ii) A
+closed program whose consumer orders c and d in round k by P(k), for P
+computed by a recursive generator and not eventually periodic, is deadlock
+free with independent partners for c and d, and has no derivation. The
+argument for the second half of (ii). Each round needs the order of
 round k as a fact relative to the consumer's instance. The generator's state
 has a fixed type, so it carries finitely many relative fact sets, while the
-futures of P relative to k take infinitely many values. Facts about concrete
+suffixes of P relative to k take infinitely many values. Facts about concrete
 rounds sit in the creation constraints of main, and a box body cannot name
 the concrete round its instance stands for. What would refute it is a way to
 pass facts about the concrete points x+k into the k-th instance of a box, for
@@ -191,7 +202,7 @@ calculus, and both halves of the claim need proofs this work did not attempt.
 
 Each candidate is judged on the same points. The typing rules it changes.
 The logical relation, in particular monotonicity (Monotonicity.v needs
-[wext_fresh_join] at O-New and Q-Tau), amalgamation of two futures of one
+[wext_fresh_join] at O-New and Q-Tau), amalgamation of two extensions of one
 world, and the conservative-extension assumption ⊑ₒ at new. The proofs that
 break and why. Whether the fact-free component of section 3 becomes typable.
 
@@ -215,7 +226,7 @@ which facts gives 4.4.
 ### 4.2 Growth at internal choices, facts learned with the label
 
 E-Case-Grow types branch i under Γ + Γ_i with Γ_i between existing points,
-provided Γ + Γ_i is acyclic. Frames are those of E-Case.
+provided Γ + Γ_i is acyclic. Futures are those of E-Case.
 
 ```
 Θ₁; Δ₁ ⊢_Γ e : T₁ ⊕ T₂
@@ -236,12 +247,13 @@ branches on its bit and closes c then d in branch inl, K₂ branches on its own
 bit and closes d then c in branch inl. Each types with growth, x ≺ y in K₁ and
 y ≺ x in K₂. With both bits inl the composition deadlocks. After the two case
 steps it is the program blocked of examples/Rejected.v. In the relation,
-monotonicity fails at the growth step. The step extends W to W ∪ {x ≺ y}, a
-future W′ of another component holds y ≺ x, and W ∪ {x ≺ y} ⊔ W′ has a cycle.
+monotonicity fails at the growth step. The step extends W to W ∪ {x ≺ y}, an
+extension W′ made by another component holds y ≺ x, and W ∪ {x ≺ y} ⊔ W′ has a cycle.
 [unguarded_extensions_conflict] (BranchWorlds.v) checks this. Two extensions
 of the world over {0, 1} with only program order, one adding (0,0) ≺ (1,0)
 and one adding (1,0) ≺ (0,0), are both extensions and their join is not
-strict. ⊑ₒ fails at the growth step by definition. The fact-free component
+strict. examples/GrowDeadlock.v checks the deadlock of the composition
+([grow_not_df]). ⊑ₒ fails at the growth step by definition. The fact-free component
 types, and so does the deadlocking composition. Growth needs an owner of the
 decision, which gives 4.4.
 
@@ -282,8 +294,8 @@ through spawn and messages. E-Case-Resolve types branch i of a case under
 Γ + Γ_i when Δ owns π, and consumes the ownership. A sender can resolve and
 pack, so the receiver learns Γ_i with the label through the existing E-Open.
 The creation check asks cc_ok for every choice vector of the pending choices
-in scope, 2^k checks for k choices, each the existing cc_ok. Frames are those
-of E-Case, and Γ ⊕ ch is Γ with the side ch picks of each pending choice.
+in scope, 2^k checks for k choices, each the existing cc_ok. Futures are
+those of E-Case, and Γ ⊕ ch is Γ with the side ch picks of each pending choice.
 
 ```
 cc_ok(Γ ⊕ ch, C ∪ Γ_b)   for every choice vector ch of Γ and b ∈ {0, 1}
@@ -300,7 +312,7 @@ cc_ok(Γ ⊕ ch, C ∪ Γ_b)   for every choice vector ch of Γ and b ∈ {0, 1}
 own π is a linear ghost entry of unit type. E-Spawn and E-Send move it like
 any linear entry, and P-Connect splits the owned choices between the two
 components. With own π for the choice {x ≺ y | y ≺ x} in Δ, the case node of
-db_main types by E-Case-Resolve with x ≺ y in the inl branch and y ≺ x in
+db_main would type by E-Case-Resolve with x ≺ y in the inl branch and y ≺ x in
 the inr branch, and the bit stays at ∗ ⊕ ∗.
 
 The world becomes a pending world (W, P). A choice vector ch picks a side of
@@ -310,18 +322,24 @@ reads every choice vector of the choices it does not own and may resolve the
 choices it owns at a β step. Resolution keeps validity ([resolve_valid]) and
 is an extension, a choice vector ch′ of the result lying above <[i := b]> ch′
 ([resolve_pext]). A third component therefore stays related across a
-resolution by plain monotonicity, choice vector by choice vector.
+resolution by plain monotonicity, choice vector by choice vector. Two
+components may not both resolve one choice. Resolving it to false and to true
+are both extensions, and their join has a cycle
+([unowned_resolutions_conflict]). Resolutions of distinct choices join to a
+world that is strict at every choice vector ([owned_resolutions_join]). This
+is where ownership enters the amalgamation step.
 
 Amalgamation. A fresh extension that places new names and new pending choices,
 fresh at every choice vector (`pfresh`), joined with any pending extension,
-which may resolve old choices and create new ones, is a fresh extension at
-every choice vector ([pjoin_fresh]) and a valid pending world
+which may resolve old choices and create new ones, gives at every choice
+vector a join of the two choice worlds that is a fresh extension
+([pjoin_fresh]), and the pending world of the join lies in it and is valid
 ([pjoin_valid]). Two creations from one pending world join to a valid pending
 world ([pcreate_join]). The proof applies [wext_fresh_join] at the choice
 vector the extension lies above, so the hard lemma of the current development
-carries over unchanged. ⊑ₒ becomes "fresh
-at every choice vector". The two orders of db_main form one valid pending
-choice ([db_pending_valid]).
+carries over unchanged. ⊑ₒ becomes "fresh at every choice vector". Two
+orders of two points with no other facts form one valid pending choice
+([db_pending_valid]).
 
 Proofs that change. Worlds.v gains the definitions of BranchWorlds.v.
 Creation.v has to build `pfresh` from cc_ok at every choice vector, which is
@@ -332,8 +350,8 @@ and an ownership set in E and P. Monotonicity.v replaces
 ownership as they split channel ends. Adequacy resolves the remaining choices
 arbitrarily at the end of a run, which validity keeps strict.
 
-The fact-free component types when its context owns the choice between x ≺ y
-and y ≺ x. Its interface then states the ownership, so
+The fact-free case node would type when its context owns the choice between
+x ≺ y and y ≺ x (argued, the rule is not built). Its interface then states the ownership, so
 [db_component_unrealizable], whose context owns nothing, stays true. A
 component that branches on a fact-free bit about points whose order another
 component owns still does not type, and it should not, because the owner may
@@ -347,10 +365,10 @@ value of a variable is a choice owned by whoever cases on that variable.
 
 | Candidate | Fact-free component | Sound | Monotonicity, amalgamation | Cost |
 |---|---|---|---|---|
-| 4.1 branch-indexed worlds | types | only with owners (4.4) | per index, product of all histories | every file above Worlds.v, infinite index sets |
-| 4.2 growth at choices | types | no (4.2) | fails ([unguarded_extensions_conflict]) | small, unsound |
-| 4.3 split at extrusion | no | yes | per disjunct | process layer only |
-| 4.4 pending choices with owner | types with ownership | yes, at the world level | [pjoin_fresh], [pjoin_valid] | every file above Worlds.v, 2^k creation checks |
+| 4.1 branch-indexed worlds | would type | only with owners (4.4), argued | per index, product of all histories | every file above Worlds.v, infinite index sets |
+| 4.2 growth at choices | would type | no ([grow_not_df]) | fails ([unguarded_extensions_conflict]) | small, unsound |
+| 4.3 split at extrusion | no | argued, not proved | per disjunct, argued | process layer only |
+| 4.4 pending choices with owner | would type with ownership | argued, world-level lemmas proved | [pjoin_fresh], [pjoin_valid], [owned_resolutions_join] at the world level | every file above Worlds.v, 2^k creation checks |
 | status quo, dead-side facts | no | yes | unchanged | none, but needs anchors and annotation |
 
 4.4 is the one to pursue. It is 4.1 restricted to choices declared at new and
@@ -366,13 +384,15 @@ relation/Creation.v. Every theorem is closed under the global context.
 |---|---|
 | `resolve_valid` | resolving a choice keeps a pending world valid |
 | `resolve_pext` | resolving is a pending extension |
-| `pjoin_fresh` | a fresh extension with new choices, joined with a pending extension, is fresh at every choice vector |
-| `pjoin_valid` | the join is a valid pending world |
+| `pjoin_fresh` | at every choice vector, the join of the choice worlds of a fresh extension with new choices and of a pending extension is a fresh extension |
+| `pjoin_valid` | the pending world of the join is valid |
 | `pfresh_pext`, `pfresh_valid` | a creation with new choices is a pending extension and valid |
 | `pcreate_join` | two creations from one pending world, each with new choices, join to a valid pending world |
-| `pfresh_new` | new with a pending choice between two ≺-only creation constraints C₀, C₁ is a fresh extension at every choice vector, given cc_ok of each Cᵢ at every old choice vector |
-| `unguarded_extensions_conflict` | two extensions between existing points have a join that is not strict |
-| `db_pending_valid` | the two orders of db_main form a valid pending choice |
+| `pfresh_new` | new with a pending choice that records the ≺ facts of two creation constraints C₀, C₁ is a fresh extension at every choice vector, given cc_ok of each Cᵢ at every old choice vector |
+| `unguarded_extensions_conflict` | there are two extensions between existing points whose join is not strict |
+| `unowned_resolutions_conflict` | resolving one choice to false and to true gives two extensions whose join is not strict |
+| `owned_resolutions_join` | resolutions of two distinct choices join to a world strict at every choice vector |
+| `db_pending_valid` | two orders of two points with no other facts form a valid pending choice |
 
 Not done. The relation with pending worlds and ownership, and the typing
 rules. The prototype covers the three world-level steps the relation needs.
@@ -380,8 +400,10 @@ Creation gives a fresh extension at every choice vector ([pfresh_new], the
 analogue of ⊑ₒ), resolution is an extension ([resolve_valid],
 [resolve_pext]), and a fresh extension joins with any extension
 ([pjoin_fresh], [pjoin_valid], the analogue of [wext_fresh_join] that
-monotonicity uses). The step 4.2 fails at survives. [pfresh_new] restricts
-the alternatives to ≺ facts and one choice per new.
+monotonicity uses). For resolutions, amalgamation holds for distinct owned
+choices and fails for one choice resolved twice, so the relation needs
+ownership, which it does not model yet. [pfresh_new] keeps the ≺ facts of the
+alternatives and handles one choice per new.
 
 ## 6 Open problems
 

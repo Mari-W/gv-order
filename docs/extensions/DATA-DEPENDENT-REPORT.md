@@ -16,25 +16,30 @@ whose interface fixes a fact-free bit. The case node with z : ∗ ⊕ ∗, and t
 receive with e : ?(∗ ⊕ ∗).Close, have no derivation under any hypotheses a
 strict world realizes (`db_component_unrealizable`, `db_rnode_unrealizable`,
 proved through the logical relation). Facts on both sides of the bit do not
-help as long as one world realizes both sides (`db_component_sides`). A case
-node that runs every round with the live branch alternating types
-(`alt_typed`). A closed program that fails needs a case node that runs once
-per round with an order pattern that is not eventually periodic
-(conjecture, section 3 of the note). Of the four candidates,
-pending choices with an owner are the one to pursue, and the world-level
-lemmas the relation needs from them hold in Rocq (`resolve_valid`,
-`resolve_pext`, `pfresh_new`, `pjoin_fresh`, `pjoin_valid`, `pcreate_join`).
+help as long as one world realizes both sides together with the hypotheses
+(`db_component_sides`). A case node that runs every round with the live
+branch alternating types (`alt_typed`). Section 3 of the note conjectures, in
+both directions, that the closed programs that fail are those whose case node
+runs once per round with an order pattern that is not eventually periodic.
+Of the four candidates, pending choices with an owner (4.4 of the note) are
+the one to pursue. Their world-level lemmas hold in Rocq (`resolve_valid`,
+`resolve_pext`, `pfresh_new`, `pjoin_fresh`, `pjoin_valid`, `pcreate_join`,
+`owned_resolutions_join`). Two components that resolve one choice in opposite
+ways conflict (`unowned_resolutions_conflict`), which is why the owner is
+needed. The logical relation with ownership is not built, so its
+monotonicity is not proved.
 
 ## Files
 
 | File | Content |
 |---|---|
 | theories/examples/DataBranch.v | the program, its derivation, the non-derivability theorems, the keep simulation |
+| theories/examples/GrowDeadlock.v | the composition of note 4.2 is not deadlock free |
 | theories/examples/DataAlternate.v | a case node that runs every round, both branches live, typed through a state that carries the alternating pattern |
 | theories/relation/BranchWorlds.v | prototype of pending-choice worlds |
-| docs/extensions/data-dependent-worlds.md | design note, candidates (a) to (d) and more |
+| docs/extensions/data-dependent-worlds.md | design note, candidates 4.1 to 4.4 |
 | docs/extensions/data-dependent.md | one targeted edit in item 1 (Branches) pointing to the note |
-| _CoqProject | the three new files registered |
+| _CoqProject | the four new files registered |
 
 No existing Rocq file, theorem statement or rule changed.
 
@@ -81,13 +86,21 @@ BranchWorlds.v
 |---|---|
 | `resolve_valid` | resolving a pending choice keeps a pending world valid |
 | `resolve_pext` | resolving is a pending extension |
-| `pfresh_new` | new with a pending choice between two ≺-only creation constraints is fresh at every choice vector, given cc_ok of each at every old choice vector |
-| `pjoin_fresh` | a fresh extension with new choices, joined with any pending extension, is fresh at every choice vector (reduces to `wext_fresh_join`) |
-| `pjoin_valid` | that join is a valid pending world |
+| `pfresh_new` | new with a pending choice that records the ≺ facts of two creation constraints is fresh at every choice vector, given cc_ok of each at every old choice vector |
+| `pjoin_fresh` | at every choice vector, the join of the choice worlds of a fresh extension with new choices and of any pending extension is a fresh extension (reduces to `wext_fresh_join`) |
+| `pjoin_valid` | the pending world of that join is valid |
 | `pfresh_pext`, `pfresh_valid` | a creation with new choices is a pending extension and valid |
 | `pcreate_join` | two creations from one pending world, each with new choices, join to a valid pending world |
-| `unguarded_extensions_conflict` | two extensions that add opposite facts between existing points have a join that is not strict |
-| `db_pending_valid` | the two orders of db_main form one valid pending choice |
+| `unguarded_extensions_conflict` | there are two extensions that add opposite facts between existing points whose join is not strict |
+| `unowned_resolutions_conflict` | resolving one choice to false and to true gives two extensions whose join is not strict |
+| `owned_resolutions_join` | resolutions of two distinct choices join to a world strict at every choice vector |
+| `db_pending_valid` | two orders of two points with no other facts form one valid pending choice |
+
+GrowDeadlock.v
+
+| Theorem | Statement |
+|---|---|
+| `grow_not_df` | `¬ deadlock_free grow_proc`, the two components of note 4.2 with both bits inl |
 
 ## What is by hand
 
@@ -100,22 +113,22 @@ same step by hand for its programs. Section 3 of the note gives the argument.
 ## Build
 
 Full build green with Rocq 9.2.0 and stdpp 1.13.0 (stdpp from the MPI-SWS
-GitLab mirror, the GitHub archive was blocked by the proxy). The final clean
-build from a fresh clone is recorded at the end of this report.
+GitLab mirror, the GitHub archive was blocked by the proxy). Clean build from a
+fresh clone, `make -j4`, exit 0, recorded in the final section.
 
 ## Verdict per candidate
 
 | Candidate | Verdict |
 |---|---|
-| (a) branch-indexed worlds | types the fact-free component, unsound without an owner of each index, the index set is the product of all branch histories |
-| (b) growth at internal choices, facts learned with the label | the receiver half exists today (payload ∃{Γᵢ}.T and E-Open, which is how db_main types). The chooser half without an owner is unsound. Two components that add opposite facts compose to a deadlock, and the monotonicity step fails (`unguarded_extensions_conflict`) |
-| (c) a second composition rule splitting at extrusion | sound as a design (proof not attempted), lives in the process layer, types closed compositions, which already type, and not the fact-free component behind an interface |
-| (d) pending choices with an owner, also guarded facts and disjunctive Γ | recommended. Types the fact-free component when it owns the choice. Amalgamation and ⊑ₒ reduce to the existing lemmas at every choice vector (prototype). Cost is an ownership discipline like channel ends and 2^k creation checks for k pending choices |
+| 4.1 branch-indexed worlds | types the fact-free component, unsound without an owner of each index, the index set is the product of all branch histories |
+| 4.2 growth at internal choices, facts learned with the label | the receiver half exists today (payload ∃{Γᵢ}.T and E-Open, which is how db_main types). The chooser half without an owner is unsound. Two components that add opposite facts compose to a deadlock (`grow_not_df`), and the monotonicity step fails (`unguarded_extensions_conflict`) |
+| 4.3 a second composition rule splitting at extrusion | argued sound, proof not attempted, lives in the process layer, types closed compositions, which already type, and not the fact-free component behind an interface |
+| 4.4 pending choices with an owner, also guarded facts and disjunctive Γ | recommended. Would type the fact-free case node when it owns the choice (argued, rule not built). Amalgamation of creations and ⊑ₒ reduce to the existing lemmas at every choice vector, and resolutions of distinct owned choices join (prototype). Cost is an ownership discipline like channel ends and 2^k creation checks for k pending choices |
 
 ## Recommendation
 
 Do not change the system for db_main. It types. Record in SHARP-EDGES 4 that
-the limit concerns components whose interface fixes a fact-free bit, with
+the limit concerns a case node whose interface fixes a fact-free bit, with
 db_component_unrealizable and db_rnode_unrealizable as the statements, and
 db_typed as the reason the closed program is not a counterexample. If
 interfaces with fact-free bits matter (translations from GV or from priority
@@ -133,26 +146,31 @@ the body of entry 4.
 > this types. The receiver gives the value a sum type whose side for the
 > other branch carries an unsatisfiable fact about payload points, and E-Open
 > makes the dead branch typable under inconsistent hypotheses
-> (examples/DataBranch.v, db_typed). A component whose interface types the
-> value at ∗ ⊕ ∗, or at a sum whose two sides one world realizes together,
-> has no derivation under realizable hypotheses (db_component_unrealizable,
-> db_component_sides, db_rnode_unrealizable). A case node that runs every
-> round with an alternating live branch types through a state that carries
-> the pattern (examples/DataAlternate.v). Open: a pattern that is not
-> eventually periodic (conjecture, docs/extensions/data-dependent-worlds.md).
-> Decision: deferred. Pending choices with an owner are the candidate
-> extension (same file, section 4.4).
+> (examples/DataBranch.v, db_typed). The case node of that program, with an
+> interface that types the value at ∗ ⊕ ∗ or at a sum whose two sides one
+> world realizes together with the hypotheses, has no derivation under
+> realizable hypotheses (db_component_unrealizable, db_component_sides,
+> db_rnode_unrealizable). A case node that runs every round with an
+> alternating live branch types through a state that carries the pattern
+> (examples/DataAlternate.v). Open problem. A pattern that is not eventually
+> periodic (conjecture, docs/extensions/data-dependent-worlds.md).
+> Witness: examples/DataBranch.v, db_component_unrealizable.
+> Decision: deferred by the author (§14). Pending choices with an owner are
+> the candidate extension (same file, section 4.4).
 
 ## Open problems
 
 - The logical relation with pending worlds and ownership, and the typing
-  rules E-Case-Resolve and creation with choices. Not started.
+  rules E-Case-Resolve and creation with choices. Not started. Monotonicity
+  of the relation under resolution needs ownership (`unowned_resolutions_conflict`,
+  `owned_resolutions_join` give the world-level picture).
 - Pending choices in recursion. A box that creates a choice per round needs
   infinitely many pending choices, and choice vectors become functions.
-- The closed-program conjecture (section 3 of the note). A closed program
-  fails only when a case node runs once per round with an order pattern that
-  is not eventually periodic. The alternating pattern types (alt_typed).
+- The closed-program conjecture (section 3 of the note), in both directions.
+  Closed programs fail only when a case node runs once per round with an
+  order pattern that is not eventually periodic, and such a program with a
+  recursive generator fails. The alternating pattern types (alt_typed).
   Periodic patterns fit in finitely many fact sets relative to a box
-  instance, aperiodic ones do not. The general claim is not checked.
+  instance, aperiodic ones do not. Neither direction is checked.
 - Mechanizing the inversion from db_main to db_rnode.
 - Inferring the dead-side facts and anchors of section 2 of the note.
