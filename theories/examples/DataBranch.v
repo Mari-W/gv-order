@@ -42,6 +42,11 @@
       strict world has no cycle. [db_component_untyped_top] instantiates
       it at the hypotheses a source program starts with.
 
+    - [db_rnode_unrealizable] : the same for the receive of db_main and
+      everything after it ([db_main_shape]), with e at the session type
+      ?(∗ ⊕ ∗).Close. O-Recv of the relation quantifies over every
+      payload in V⟦∗ ⊕ ∗⟧, so both bits reach the case in one world.
+
     - [df_keep] : replacing every case by the case whose branches are
       both the branch a run takes reflects deadlock freedom, for a
       program that never builds the other injection. It is a tool for
@@ -1044,3 +1049,171 @@ Proof.
   apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
   apply ptyped_closed_s; [constructor|apply db_typed].
 Qed.
+
+(** ** The receiving component with a fact-free session type
+
+    The same limit with the channel in the interface instead of the
+    bit. db_rnode is the receive of db_main with what follows it, in the
+    context the derivation of db_main reaches it with: d at 1, c at 5
+    and e at 9, where e has the session type ?(∗ ⊕ ∗).Close. O-Recv of
+    the relation quantifies over every payload in V⟦∗ ⊕ ∗⟧, so both
+    bits reach the case in the same world. *)
+
+Definition Se0 : sty := SSeq (SRcv 0 (TSum TUnit TUnit)) SEnd.
+
+Definition db_rnode : expr := LetP (App ERecv (Var 9)) (LetU (App EClos (Var 0)) db_case).
+
+Definition db_rctx (x y z : point) (k : nat) : lenv :=
+  [None; Some (TSess SEnd y); None; None; None; Some (TSess SEnd x); None; None; None;
+   Some (TSess Se0 z)] ++ replicate k None.
+
+Definition che : chan := "e".
+
+Definition db_Θ3 (x y z : point) : tenv :=
+  <[chd := One (SEnd, y)]> (<[chc := One (SEnd, x)]> {[che := One (Se0, z)]}).
+
+Definition db_ρ : nat → expr :=
+  λ i, match i with 1 => Chan chd | 5 => Chan chc | 9 => Chan che | _ => EUnit end.
+
+Lemma tenv_comp_insert1 R Θ c a :
+  Θ !! c = None → tenv_comp R (<[c := One a]> Θ) {[c := One a]} Θ.
+Proof.
+  intros Hc. split.
+  - intros c'. destruct (decide (c' = c)) as [->|Hne].
+    + rewrite lookup_insert_eq, lookup_singleton_eq, Hc. constructor.
+    + rewrite lookup_insert_ne, lookup_singleton_ne by done. destruct (Θ !! c'); constructor.
+  - intros c' e1 e2 H1 H2. apply lookup_singleton_Some in H1 as [<- _]. congruence.
+Qed.
+
+Lemma db_rground n W x y z k :
+  world_wf W →
+  grounding n W (db_Θ3 x y z)
+    ([None; Some (TSess SEnd y); None; None; None; Some (TSess SEnd x); None; None; None;
+      Some (TSess Se0 z)] ++ replicate k None) db_ρ.
+Proof.
+  intros HW. cbn [grounding app].
+  exists {[chd := One (SEnd, y)]}, (<[chc := One (SEnd, x)]> {[che := One (Se0, z)]}).
+  split; [apply tenv_comp_insert1; by rewrite lookup_insert_ne, lookup_singleton_ne|]. split.
+  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  exists {[chc := One (SEnd, x)]}, {[che := One (Se0, z)]}.
+  split; [apply tenv_comp_insert1; by rewrite lookup_singleton_ne|]. split.
+  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  exists {[che := One (Se0, z)]}, ∅. split; [apply tenv_comp_empty_r|]. split.
+  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  apply grounding_nones.
+Qed.
+
+(** The head of an environment with one end of c. *)
+Lemma tenv_hd_one Θ c u k Θ1 s k' :
+  tenv_hd Θ c u k Θ1 → Θ !! c = Some (One (s, k')) →
+  Θ1 = delete c Θ ∧ k = k' ∧ unfoldS s = u.
+Proof.
+  intros (s0 & [[Hn ->]|(e' & He' & [-> | ->])] & Hu) Hc.
+  - rewrite lookup_insert_eq in Hc. injection Hc as -> ->.
+    split_and!; [|done|done]. by rewrite delete_insert_eq, delete_id.
+  - by rewrite lookup_insert_eq in Hc.
+  - by rewrite lookup_insert_eq in Hc.
+Qed.
+
+Lemma db_Θ3_e x y z : db_Θ3 x y z !! che = Some (One (Se0, z)).
+Proof. unfold db_Θ3. by rewrite !lookup_insert_ne, lookup_singleton_eq. Qed.
+
+Lemma db_Θ3_del x y z : delete che (db_Θ3 x y z) = db_Θ x y.
+Proof.
+  unfold db_Θ3, db_Θ. apply map_eq. intros c.
+  destruct (decide (c = che)) as [->|He].
+  - rewrite lookup_delete_eq, !lookup_insert_ne, lookup_singleton_ne by done. done.
+  - rewrite lookup_delete_ne by done.
+    destruct (decide (c = chd)) as [->|Hd]; [by rewrite !lookup_insert_eq|].
+    rewrite !(lookup_insert_ne _ chd) by done.
+    destruct (decide (c = chc)) as [->|Hc]; [by rewrite lookup_insert_eq, lookup_singleton_eq|].
+    by rewrite lookup_insert_ne, !lookup_singleton_ne.
+Qed.
+
+Lemma db_rnode_subst :
+  subst db_ρ db_rnode =
+    LetP (App ERecv (Chan che)) (subst (up (up db_ρ)) (LetU (App EClos (Var 0)) db_case)).
+Proof. done. Qed.
+
+Lemma db_rnode_body b :
+  subst2 (bit b) (Chan che) (subst (up (up db_ρ)) (LetU (App EClos (Var 0)) db_case)) =
+    LetU (App EClos (Chan che)) (subst (db_γ b) db_case).
+Proof. by destruct b. Qed.
+
+Lemma db_rnode_lt W T F (b : bool) x y z :
+  strict W →
+  Erel 6 W (db_Θ3 x y z) T F (subst db_ρ db_rnode) →
+  if b then w_lt W y x else w_lt W x y.
+Proof.
+  intros HWs HE. rewrite db_rnode_subst in HE.
+  (* the receive, at the payload bit b *)
+  eapply Erel_S_step in HE;
+    [|apply TStepLetP, TStepHead, (HeadRecv che (bit b)); by destruct b].
+  cbn [Ecase_gen Eobl] in HE. destruct HE as (Θ1 & m & U & s & k & Hhd & HE).
+  destruct (tenv_hd_one _ _ _ _ _ _ _ Hhd (db_Θ3_e x y z)) as (-> & -> & Hu).
+  rewrite db_Θ3_del in HE. cbn in Hu. injection Hu as <- <- <-.
+  assert (db_Θ x y !! che = None) as Hn.
+  { unfold db_Θ. by rewrite lookup_insert_ne, lookup_singleton_ne. }
+  set (Θe := <[che := One (SEnd, pt_shift 1 z)]> (db_Θ x y)).
+  pose proof (HE W 5 ∅ Θe Θe) as HE'. clear HE. rename HE' into HE.
+  specialize (HE (wext_refl _ HWs)). specialize (HE ltac:(cbn; lia)).
+  specialize (HE ltac:(left; by split)). specialize (HE (tenv_comp_empty_r _ _)).
+  assert (Vrel 5 W ∅ (payload_at 0 (TSum TUnit TUnit) z) (bit b)) as Hv.
+  { apply Vrel_sum_iff. destruct b; [right|left]; eexists; (split; [done|]); by apply Vrel_unit_iff. }
+  specialize (HE Hv).
+  (* the β step of the pair *)
+  eapply Erel_S_step in HE; [|apply TStepHead, HeadLetP; [by destruct b|done]].
+  cbn [Ecase_gen Eobl at_cost tcost nlower pred] in HE. rewrite db_rnode_body in HE.
+  (* the close of e, a giving step at the same index *)
+  eapply Erel_S_step in HE; [|apply TStepLetU, TStepHead, HeadClos].
+  cbn [Ecase_gen Eobl at_cost tcost scost] in HE. destruct HE as (Θ2 & k2 & Hhd2 & HE).
+  destruct (tenv_hd_one _ _ _ _ _ _ _ Hhd2 (lookup_insert_eq _ _ _)) as (-> & _ & _).
+  unfold Θe in HE. rewrite delete_insert_eq, delete_id in HE by done.
+  (* the β step of let () *)
+  eapply Erel_S_step in HE; [|apply TStepHead, HeadLetU].
+  cbn [Ecase_gen Eobl at_cost tcost nlower pred] in HE.
+  by apply (db_case_lt W T F b x y).
+Qed.
+
+Theorem db_rnode_unrealizable Φ Ψ F T x y z k :
+  styped Φ Ψ (db_rctx x y z k) F db_rnode T → ¬ realizable Φ Ψ.
+Proof.
+  intros Hs (W & σ & ρ & HWs & Hρ & HΨ).
+  pose proof (proj1 HWs) as HW.
+  pose proof (styped_typed W _ _ _ _ _ _ Hs) as Ht.
+  pose proof (typed_sem_rules _ _ _ _ _ _ _ _ Ht W ρ σ HW (wext_refl _ HWs) Hρ HΨ) as Hr.
+  apply sem_rules_fundamental in Hr; [|done].
+  rewrite tenv_pinst_empty in Hr.
+  set (Θ := db_Θ3 (pt_inst σ x) (pt_inst σ y) (pt_inst σ z)).
+  assert (Erel 6 W Θ (pinst_ty σ T) (sf_inst ρ (sf_pinst σ F)) (subst db_ρ db_rnode)) as HE.
+  { apply (Hr 6 W Θ Θ db_ρ).
+    - apply wext_refl, HWs.
+    - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
+    - unfold db_rctx, lenv_pinst. rewrite fmap_app, fmap_replicate. cbn.
+      apply db_rground, HW. }
+  pose proof (db_rnode_lt _ _ _ true _ _ _ HWs HE) as H1.
+  pose proof (db_rnode_lt _ _ _ false _ _ _ HWs HE) as H2.
+  apply (proj2 HWs (pt_inst σ x)). exact (wf_lt_trans _ HW _ _ _ H2 H1).
+Qed.
+
+Corollary db_rnode_untyped_top n C0 F T x y z k :
+  creation_ok n nofact nofact (λ _, False) C0 →
+  ¬ styped ∅ [(C0, ids n)] (db_rctx x y z k) F db_rnode T.
+Proof.
+  intros HC Hs. apply c0_creation_ok in HC.
+  apply (db_rnode_unrealizable _ _ _ _ _ _ _ _ Hs).
+  exists (wc0 n C0), (plist (c0_consts n)), (λ _, ∅). split_and!.
+  - by apply wc0_strict.
+  - intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty.
+  - by apply wc0_holds.
+Qed.
+
+(** db_rnode is the tail of db_main after the three lets of new and the
+    three spawns. *)
+Lemma db_main_shape b :
+  db_main b = let_new (let_new (let_new
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 5)))))
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (App ESend (Pair (bit b) (Var 9)))))))
+      db_rnode))))).
+Proof. by destruct b. Qed.

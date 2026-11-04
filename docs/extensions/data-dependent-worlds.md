@@ -55,11 +55,16 @@ context.
 | `db_deadlock_free b` | `deadlock_free (∅, {[+ db_main b +]})`, from `soundness` |
 | `db_component_unrealizable` | `styped Φ Ψ (db_ctx x y k) F db_case T → ¬ realizable Φ Ψ` |
 | `db_component_untyped_top` | the same at the hypotheses `[(C0, ids n)]` of a source program |
+| `db_rnode_unrealizable` | `styped Φ Ψ (db_rctx x y z k) F db_rnode T → ¬ realizable Φ Ψ` |
+| `db_rnode_untyped_top` | the same at the hypotheses `[(C0, ids n)]` |
+| `db_main_shape b` | db_main b is three lets of new, three spawns and db_rnode |
 | `df_keep` | `okb b e → deadlock_free (∅, {[+ keep b e +]}) → deadlock_free (∅, {[+ e +]})` |
 
 db_case is the case node of db_main literally, and db_ctx x y k is the
 context [db_typed_false] reaches it with, except that db_ctx types the bit
-at ∗ ⊕ ∗. [df_keep] replaces every case by the case whose two branches are
+at ∗ ⊕ ∗. db_rnode is the receive of db_main with everything after it, and
+db_rctx x y z k holds d, c and e : ?(∗ ⊕ ∗).Close@z in the positions the
+derivation of db_main gives them. [df_keep] replaces every case by the case whose two branches are
 the branch the run takes. It reflects deadlock freedom for a program that
 never builds the other injection. It is a tool for programs whose dead branch
 does not type. db_main does not need it.
@@ -122,16 +127,18 @@ Two readings of the limit.
   compositional statement. P-Connect composes components that agree on an
   interface, and a translation from a system whose session types carry no
   facts (GV, priority systems) fixes the payload at ∗ ⊕ ∗.
-- Fixed session types. db_main with e : ?(∗ ⊕ ∗).Close does not type. The
-  argument by hand. The context of the case node holds z, d and c and
-  otherwise spent or unlimited entries. Its hypotheses are C₀ and the
-  creation constraints of e, c and d, opened by E-Open on the results of new.
-  No other E-Open applies on the path, because the only existential the path
-  meets is the one of new, and u has type ∗. The hypotheses are realizable,
-  by the world `wc0` and the fresh extensions `wext_cc` builds in the
-  soundness proof. db_component_unrealizable then refutes the node. The
-  inversion of a derivation of db_main down to its case node, through E-Weak,
-  E-Conv, E-Open and E-Contract, is not mechanized, as for the programs of
+- Fixed session types. db_main with e : ?(∗ ⊕ ∗).Close does not type.
+  [db_rnode_unrealizable] proves it for the receive and everything after
+  it, under any realizable hypotheses. O-Recv quantifies over every payload
+  in V⟦∗ ⊕ ∗⟧, so both bits reach the case in one world. What remains by
+  hand is the step from db_main to that node, an inversion through three
+  lets of new and three spawns ([db_main_shape]). The context of the node
+  holds d, c and e and otherwise spent or unlimited entries. Its hypotheses
+  are C₀ and the creation constraints of e, c and d, opened by E-Open on the
+  results of new, because new's existential is the only one the path meets.
+  The hypotheses are realizable, by the world `wc0` and the fresh extensions
+  `wext_cc` builds in the soundness proof. The inversion through E-Weak,
+  E-Conv, E-Open and E-Contract is not mechanized, as for the programs of
   examples/Rejected.v.
 
 A closed counterexample needs a branch that is live under both bits under
