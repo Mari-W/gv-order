@@ -4,12 +4,12 @@ This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
 `paper/orders-plan.pdf`). Notation follows the paper (`paper/2-calculus.tex`,
 `paper/3-logical-rel.tex`, `paper/4-extensions.tex`). Rules marked unchanged
-are the paper's as they stand. The others add points, worlds or frames to the
+are the paper's as they stand. The others add points, worlds or futures to the
 paper's rule of the same name, or have no counterpart in the paper. The paper's
 fork, P-Act-Fork, O-Fork, extrusion split (𝒯, T-Nil, T-Cons, Q-Twice),
 P-Independent and P-Res have no counterpart here.
 
-The frame F is an input parameter of E. F = ∅ is exactly the paper's E. It is
+The future F is an input parameter of E. F = ∅ is exactly the paper's E. It is
 part of E (not a separate relation) so that E and readiness use the same world
 extension at every `new`.
 
@@ -161,7 +161,7 @@ carrier     instants (p, b),  p a point constant or a payload point x[i] of one.
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
 successor congruence   x ≡ y  ⇒  x+1 ≡ y+1     (aliased instants stay aliased)
-carried congruence     x ≡ y  ⇒  x[i] ≡ y[i]      (equal instants carry the same message)
+payload congruence     x ≡ y  ⇒  x[i] ≡ y[i]      (equal instants carry the same message)
 x ≼ y       x ≺ y or x ≡ y
 F ≺ F′      every element of F is ≺ every element of F′       (no point lies below ⊥)
 
@@ -170,7 +170,7 @@ W ⊑ₒ W′     W ⊑ W′ and W′ adds nothing between old instants    (only
 W₁ ⊔ W₂     (≡₁ ∪ ≡₂)* with (≺₁ ∪ ≺₂)⁺ on the classes
 ```
 
-## 6  Readiness and frames
+## 6  Readiness and futures
 
 ```
 entries(Θ)   one entry per end:  c : S@x  (twice for a channel whose both ends Θ holds)
@@ -203,10 +203,15 @@ therefore a link redex of the composite, and without one the components meet
 the old condition.
 
 A term offers the entries of one redex, so its readiness can ask every offered
-head below every other head and below the frame F, the points the context still
+head below every other head and below the future F, the points the context still
 has to use. A process offers the redexes of all its threads at once, and two
 threads may offer at unrelated points. Its readiness therefore asks only some
-offered head below each held one, and it has no frame (sharp edges 63).
+offered head below each held one, and it has no future (sharp edges 63).
+
+The future F of a thread is the set of points it still acts on later. A
+blocking action at u checks u ≺ F. A deadlock is a cycle of threads, each
+blocked on some p while still needing some q that the next thread blocks on,
+and the check u ≺ F turns such a cycle into a cycle of ≺.
 
 ready counts entries, not names: a thread holding both ends of c and blocking
 on one of them must hold the other entry not offered, so it needs
@@ -353,26 +358,37 @@ Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y 
 Θ; Δ ⊨_W t : T     ≔   Θ; Δ ⊨^∅_W t : T                  (the paper's judgement, plus ready)
 ```
 
-## 9  Static typing   Θ; Δ ⊢^F_{W,Ψ} t : T
+## 9  Static typing   Θ ; Γ ; Δ ⊢_F t : T
+
+There is one term judgment (`typed`, static/Typing.v). Its fact context
+Γ = (W, Ψ, Φ) holds the ground facts W between point constants, the
+hypotheses Ψ and the future hypotheses Φ. A source program is the instance
+Θ = ∅, W = ∅ (`styped`, static/Source.v, the definition
+`typed wnil Φ Ψ ∅ Δ F t T`), so its Γ mentions no constant. P-Term types a
+running thread with the world of the configuration as the ground part of Γ,
+and E-Ch reads Θ. Soundness asks the ground part acyclic (strictness of W,
+or C₀ a creation constraint against ∅ for a source program). The hypotheses
+Ψ may be inconsistent in dead code. `typed_world_transfer` moves a
+derivation with Θ = ∅ between a world of empty support and any world.
 
 ```
 W          a well-formed world over point constants, the index of the judgment
 Ψ          hypotheses (C, xs) of the enclosing boxes (E-Exp below)
-Φ          frame hypotheses u ≺ φ of the enclosing λs and boxes (E-Abs, E-Exp)
+Φ          future hypotheses u ≺ φ of the enclosing λs and boxes (E-Abs, E-Exp)
 Γ ⊢ a ≺ b, Γ ⊢ x ≡ y
-           the one fact theory, Γ = (W, Ψ, Φ), a and b points or frame variables (sharp edges 64, 65).
+           the one fact theory, Γ = (W, Ψ, Φ), a and b points or future variables (sharp edges 64, 65).
            Generators: the facts of W,  every fact of C[xs/ιs] for a hypothesis (C, xs) in Ψ,
-           u ≺ φ for every frame hypothesis. ≡ is the least congruence (successor and carried)
+           u ≺ φ for every future hypothesis. ≡ is the least congruence (successor and payload)
            containing the ≡ generators. ≺ contains program order and the ≺ generators and is
            closed under ≡ and under transitivity through points. With Ψ = Φ = ∅ it is W
            (the ground case). Side conditions are entailments, with no decision procedure
            asked for (§16).
            One lemma carries a derivation along a map of the generators. It gives point
-           substitution (typed_pinst) and frame instantiation into a world (typed_sem_rules).
+           substitution (typed_pinst) and future instantiation into a world (typed_sem_rules).
 ≺_Γ, ≡_Γ   Γ ⊢ x ≺ y and Γ ⊢ x ≡ y between points. They do not depend on Φ. Every comparison
            of points in the static system reads them: E-Ch, link, E-Conv (which moves the payload
            of send and recv), duality of composed ends.
-{u} ≺ F    Γ ⊢ u ≺ a for every point and the frame variable a of F.
+{u} ≺ F    Γ ⊢ u ≺ a for every point and the future variable a of F.
 known      a point is known when W knows it or its root is a root of an instance point of a
            hypothesis in Ψ (sharp edges 59).
 
@@ -412,7 +428,7 @@ E-Const    (T, G, xs) an instance of k    Γ ⊢ G    xs known   ⇒   ·; · �
            (Γ ⊢ G asks every fact of G, as force asks C[ιs′/ιs]. For new the premise is creation_ok)
 E-LVar     ·; x : T ⊢^F x : T
 E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_Γ ι
-E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ a fresh frame variable, only hypothesis u ≺ μ (sharp edges 56)
+E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ a fresh future variable, only hypothesis u ≺ μ (sharp edges 56)
            {ℓ} ≼_Γ heads(Θ, Δ)  (Rocq asks no freshness of ℓ)
            ⇒   Θ; Δ ⊢^F λx.t : T ⊸^u_ℓ U
 E-App      Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T ⊸^u_ℓ U     Θ₂; Δ₂ ⊢^{F ∪ {ℓ}} t₂ : T     {u} ≺_Γ F
@@ -426,7 +442,7 @@ E-LetPair  Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂    
 E-Inj      Θ; Δ ⊢^F t : Tᵢ   ⇒   Θ; Δ ⊢^F injᵢ t : T₁ + T₂
 E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊢^F tᵢ : U  (i = 1, 2)
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F case t of … : U
-E-Exp      ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
+E-Exp      ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh future variable, only u ≺ μ)
            ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C. ∗ ⊸^u T)                   (sharp edges 57, 58, 63, 65)
            Ψ: the constraints of the enclosing boxes with their instances, hypotheses (C, xs).
            Every side condition of the static system is read in Γ (58, 64, 65).
@@ -483,8 +499,8 @@ Renaming points   a bijective renaming of point constants applied to the world, 
 Type point conversion  ι ≡_W ι′ ⇒ V/E/P with ι in a type ⇔ with ι′ in its place
                   (send and recv use it to move between P[x] and the sender's own points)
 Entry conversion  x ≡_W y  ⇒  (t ∈ E^W_n⟦Θ, c : S@x ⊢ T ≺ F⟧ ⇔ t ∈ E^W_n⟦Θ, c : S@y ⊢ T ≺ F⟧),
-                  likewise for P (P-Term's link case; uses carried congruence for payloads)
-Frame weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
+                  likewise for P (P-Term's link case; uses payload congruence for payloads)
+Future weakening   F′ ⊆ F  ⇒  E^W_n⟦Θ ⊢ T ≺ F⟧ ⊆ E^W_n⟦Θ ⊢ T ≺ F′⟧
 Prel_steps, Prel_safe            unchanged (the paper's)
 ```
 
@@ -526,7 +542,7 @@ E-Weak      Θ; Δ ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t : U
 E-Contract  Θ; Δ, x : □T, y : □T ⊨^F t : U   ⇒   Θ; Δ, x : □T ⊨^F t[x/y] : U
 E-Conv      Θ; Δ ⊨^F t : T,   T ≈_W T′   ⇒   Θ; Δ ⊨^F t : T′          (sharp edges 67)
             Rocq: the elimination rules go through Erel_bind (rules/Bind.v, sharp edges 48). The hole runs
-            under frame F ∪ H, where every entry of the context's environment lies at or above H.
+            under future F ∪ H, where every entry of the context's environment lies at or above H.
             The semantic condition behind H: the environment of v ∈ V⟦Θ ⊢ T⟧ lies at or above
             heads(T) (Vrel_heads_above, rules/TermRules.v), and a grounding's environment at or above
             heads(Δ) (grounding_heads). Typing then needs nothing extra.
@@ -617,12 +633,12 @@ Rocq state. Rocq implements sharp edges 65 (sharp edges 66, 297c45f, d3dfbe4). A
 is a closure BCs env P, a predicate P on facts over variables closed by its outer points env,
 and substitution acts on env. Its roots are the finitely many roots of env. The static ≡ is
 seqs W Ψ, and fl_map transfers it together with the static ≺. Rocq writes the payload point x[i]
-as pt_slot x i, with positions from 0 as in this file. The paragraphs below
+as pt_payload x i, with positions from 0 as in this file. The paragraphs below
 describe the earlier refactors. Where they mention steps and words, sharp edges 66 replaces
 them by bcs_open and bcs_hold_sub.
 
 Rocq (static/, sharp edges 53, 56): typed W Φ Θ Δ F e T and ptyped W Σ p T, indexed by the
-world W. The fresh μ of E-Abs and E-Exp is a frame variable φ with the hypothesis u ≺ φ
+world W. The fresh μ of E-Abs and E-Exp is a future variable φ with the hypothesis u ≺ φ
 in Φ, at the same W. E-Exp types the body once with ιs as point variables 0, …, m−1 and Φ, □Δ
 and the recursive binding shifted past them (57). E-Const asks kscoped of send and recv. The
 other rules as in §9. typed_pinst substitutes points for point variables. typed_ityped does that
@@ -632,7 +648,7 @@ relates points with a variable root by reflexivity and program order.
 fundamental (terms), fundamental_proc (processes, P-Connect by Prel_connect with W₁ = W₂ = W),
 soundness (strict W, ptyped W ∅ p T ⇒ deadlock_free p, via adequacy). All closed under the
 global context.
-A frame variable needs no lemma about dropping a fresh conservative extension, which is false
+A future variable needs no lemma about dropping a fresh conservative extension, which is false
 at V-Const (sharp edges 54, 56, DropCounter.v).
 Constrained boxes (58): typed W Φ Ψ Θ Δ F e T carries the hypotheses Ψ, and slt W Ψ is the
 static ≺. E-Exp extends the shifted Ψ by C. typed_pinst asks Ψ[σ] in slt W Ψ′, typed_ityped
@@ -689,7 +705,7 @@ The three programs below are the ones 65 expected. Rocq types all three.
 
 ```
 tail call       typable, no spawn              □(∀ι ζ. {ι+k ≺ ζ ∣ k ∈ ℕ}. ∗ ⊸ (S@ι ⊸^ζ ∗)),
-                                               the tail call at (ι+1, ζ) asks ζ ≺ μ, a frame hypothesis,
+                                               the tail call at (ι+1, ζ) asks ζ ≺ μ, a future hypothesis,
                                                the world has (a,k) ≺ (z,0) for every k (tc_deadlock_free)
 forwarder       typable, recursion by spawn    receives d on one channel and sends it on another inside a box,
                                                C ∋ (ι+k)[1] ≡ (ι′+k)[1], E-Conv moves d from D@ι[1] to D@ι′[1]
@@ -719,7 +735,7 @@ An earlier order design was mechanized and abandoned. What it taught, and how th
 - The old cut only composed when the composite's external interface carried no ordering, because a leastness-shaped gate is not invariant under external steps. Here ready is checked per state by each component, and P-Connect combines them state by state with the chain argument. This is the central claim and the main risk; report early if it does not go through.
 - Step preservation of the cut was left open in three cases: rendezvous with payload migration (handled here by Q-Recv stating its continuation with the returning channels restricted), link with an external survivor (the paper's substitution, plus Entry conversion; worlds name no channels), mixed extrusion (no plain/ordered mix here). Report early if any of them resists.
 - Term-level ∀-introduction got stuck (instantiation needed an order-indistinguishable world copy). Here ∀ appears only directly under □, on values, and is an intersection over instances.
-- The frame/window condition holds for offered entries only; a condition on all pending heads is false (recv returns a continuation above its own instant).
+- The future/window condition holds for offered entries only; a condition on all pending heads is false (recv returns a continuation above its own instant).
 - A closure without a lower bound must hold nothing (an absent ℓ forces Σ = ∅).
 - Unrolling under ≈ needs contractiveness (the paper already assumes it). Counters live in Σ, not in types, so unrolling never has to advance an annotation.
 - Constants are typed through their signatures, one compositionality lemma per constant.

@@ -622,8 +622,8 @@ its instance, which holds whenever the instance of C is contained in C. C is
 the invariant of the recursion and states the facts of every round at once.
 ≡ in C lets a box body delegate a channel it did not create, so the static
 system reads ≡ from Γ as a congruence over W and the hypotheses. Slots are
-renamed payload points, written x[i] with positions from 1, and §4 of the spec
-states why they exist. The infinite sets give three programs the old design
+renamed payload points, written x[i] (positions from 1 then, from 0 since
+entry 150), and §4 of the spec states why they exist. The infinite sets give three programs the old design
 rejected: a tail call with a ceiling ζ and {ι+k ≺ ζ ∣ k ∈ ℕ}, a forwarder
 inside a box, and recursion on a received channel. None is checked in Rocq
 yet. Decidability moves to §16 as a question about a fragment, with the
@@ -695,8 +695,8 @@ missing rule is E-Conv up to ≈ with points compared by Γ ⊢ ≡. Its semanti
 side would be rel_tconv along ≈ of W₁ after seqs_pinst. It is a change of
 the static system and waits for the author.
 
-Positions stay 0-based in Rocq (pt_slot x i, slots x m = x[0], …, x[m−1]). The
-spec's x[i] with i ≥ 1 is pt_slot x (i−1).
+Positions stay 0-based in Rocq (pt_payload x i, slots x m = x[0], …, x[m−1]). The
+spec's x[i] with i ≥ 1 is pt_payload x (i−1).
 
 **67. E-Conv up to Γ ⊢ ≡ (decided by the author 2026-10-30, Rocq done).**
 E-Conv now converts T to T′ when they agree up to ≈ and Γ ⊢ ≡ relates
@@ -1687,7 +1687,7 @@ unchanged. E-Force was a lemma (`typed_force`) and stays one.
 The lower bound of `TEx` is `lbound := LTop | LBot | LPt x`. ⊥ says nothing
 about where the channels of the value lie, and every value meets it. heads of
 ∃^⊥ is empty and sets the ⊥ flag (`hbot`, `lenv_bot`), which the second
-component of a static frame carries (`fslot`, `sf_unionb`). A set of heads with
+component of a static frame carries (`futrest`, `sf_unionb`). A set of heads with
 the flag lies below no known point. So the gate fails for every upper point
 under the flag, E-Abs does not capture an unopened ∃^⊥, send does not carry
 one, and E-Pack at ⊤ or a point asks the flag off. These are the old premises
@@ -1876,7 +1876,7 @@ back as a fact of W. No statement changed.
 **122. A source judgment without a world (author's decision, 2026-11-02, branch exists).**
 `styped` (static/Source.v) types a self-contained single-threaded source
 program and reads no world. Its type is
-`fhyps → hyps → lenv → sframe → expr → ty → Prop`, so Θ is gone too, which
+`fhyps → hyps → lenv → sfuture → expr → ty → Prop`, so Θ is gone too, which
 is what makes E-Ch inapplicable and the frames of the composing rules lose
 the heads of Θ. Every rule of `typed` for a form without channel constants
 is mirrored and no rule is added. The fact theory of the hypotheses is
@@ -1968,7 +1968,7 @@ for the producer of `stream`, which orders each round above its caller.
 ReceivedChain.v's rank 2·depth + offset covers its own facts and not these.
 
 **134. The congruences of ≡ buy finiteness, not expressiveness (Claude, 2026-11-02).**
-No example derived a fact by `se_shift` or `se_slot`. Scheduler.v gets its
+No example derived a fact by `se_shift` or `se_payload`. Scheduler.v gets its
 successor alias from the world's closure field `wf_eq_shift` and lifts it with
 `se_w`, and Forwarder.v states its carried-root alias fact by fact.
 examples/Congruence.v is the smallest program we found whose derivation uses
@@ -2027,13 +2027,17 @@ typing lemmas (`sel1_typed`, `sel2_typed`, `branch_typed`) and types T1 ∥ T2 �
 T3 of mordido-perez.md §9.5 under {a+1 ≺ a[1], a[1] ≺ δ, δ ≺ a[0], δ ≺ a[1]+1}
 (`choice_typed`, `choice_deadlock_free`). Branch A asks δ ≺ a[0] and branch B
 asks a[1] ≺ δ. With both arms at a[0] the two facts are δ ≺ a[0] ≺ δ, and
-`same_slot_not_acyclic` shows that no acyclic top-level constraint states them.
+`same_payload_not_acyclic` shows that no acyclic top-level constraint states them.
 A recursive server &{Next: !∗.X, Stop: Close} types through a box with the
 infinite constraint {p_n + 1 ≺ p_n[0], p_n + 1 ≺ p_n[1] ∣ n ∈ ℕ}
 (`loop_deadlock_free`). The encoding saves the name x◁i and its two world laws.
 It costs one `new` and one close per selection, a channel per choice at run
 time, and the facts x+1 ≺ x[i] that the close of the carrier asks. No rule,
 constant or definition of the core changed (docs/extensions/choice-encoding.md).
+Since entry 142 choice is primitive again: select_i : ⊕{S₁,S₂}@x ⊸^x S_i@x[i]
+owes x ≺ x[i] and branch owes x ≺ x[0] and x ≺ x[1]. The encoding of this entry
+stays as a remark that choice is encodable from sums and delegation
+(examples/ChoiceEnc.v).
 
 **138. Falling sessions need a point per channel (Claude, 2026-11-04, branch pgv-falling).**
 The PGV translation reads the point of a channel off its session type. For
@@ -2143,7 +2147,7 @@ lemma is E_F = E_∅ ∩ ⋂_{q ∈ F} E_{{q}}, because the empty intersection i
 everything. Readiness splits that way. relation/FutureConj.v proves
 `below_rest_conj` and `ready_t_conj`, and the link disjunct of `ready_t`
 falls to induction on the finite set F, without a classical axiom. The
-inclusion from left to right is `Erel_frame`. The other inclusion fails to
+inclusion from left to right is `Erel_future`. The other inclusion fails to
 go through, because the term relation makes its existential choices once
 for each future. O-New picks a fresh name a and a world W′ for E_{{q₁}} and
 others for E_{{q₂}}. `Erel_new_rename` moves both runs to one name, but the
@@ -2219,6 +2223,27 @@ stays where it names the K10 construct x◁i. ORDERS-SPEC now continues a
 choice at x[i] in the signatures of select and branch, in O-Select,
 O-Branch, Q-Select and Q-Branch, and writes payload points from position 0
 as Rocq does.
+
+**151. One term judgment, and payload and future in Rocq (Claude, 2026-11-04, branch paper-phases).**
+The inductive `styped` of static/Source.v duplicated every rule of `typed`
+without the world and without Θ. It is now the definition
+`styped Φ Ψ Δ F t T := typed wnil Φ Ψ ∅ Δ F t T`, the source instance of
+the one judgment Θ ; Γ ; Δ ⊢_F t : T, with Γ = (W, Ψ, Φ) read through
+`FCtx`. This is the cheapest faithful merge. Γ keeps its three Rocq
+components, the ground facts W, the box hypotheses Ψ and the future
+hypotheses Φ, because every lemma of the fact theory, of point
+substitution and of the fundamental theorem is stated over them, and
+fusing them into one constraint would rework PointSubst.v and
+Fundamental.v. The paper writes one Γ. `typed_world_transfer` moves a
+derivation with Θ = ∅ from a world of empty support to any world, through
+the fact theory of the hypotheses alone (`heqs`, `hfl`), and replaces the
+two inductions of `styped_typed` and `typed_styped`, which keep their
+statements. `soundness` and `soundness_source` keep their statements.
+Soundness asks the ground part acyclic (W strict, or C₀ a creation
+constraint against ∅). The hypotheses may be inconsistent in dead code.
+In the same step every identifier with slot became payload, the future of
+a term lost the name frame, and the typing constructors took the rule
+names of the paper (docs/RENAMES.md, scripts/rename-phase3.py).
 
 ## From the earlier abandoned mechanization (spec §15)
 
