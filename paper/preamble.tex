@@ -135,7 +135,7 @@
 \def\tSend{\tOp{send}}
 \def\tWait{\tOp{wait}}
 \def\tTerm{\tOp{term}}
-\def\tClos{\tOp{clos}}
+\def\tClos{\tOp{close}}
 \def\tLink{\tOp{link}}
 \def\tFixOp{\tOp{fix}}
 \def\tForce{\tOp{force}}
@@ -220,7 +220,12 @@
 \def\sWait{\tyOp{Close}}
 \def\sTerm{\tyOp{Close}}
 \def\tEmpty{{\color{cTy}{}\cdot{}}}
-\NewDocumentCommand\dual{m}{{\color{cTy}\overline{#1}}}
+% Duality is an operation on session types; \dualv is the *syntax* of a
+% dualized type variable (Types.v, SVarD).  One macro for both made
+% dual(alpha) = alpha-bar print as a tautology.
+\NewDocumentCommand\dual{m}{{{\color{cTy}\mathit{dual}}(#1)}}
+\NewDocumentCommand\dualv{m}{{\color{cTy}\overline{#1}}}
+\def\tyFact{\tyOp{Fact}}
 \def\ptype{\operatorname{ptype}}
 \def\primitive{\operatorname{prim}}
 
@@ -267,6 +272,85 @@
 
 \DeclareMathOperator{\sent}{sentc}
 % \newcommand{\sent}{sentc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Points, facts, constraints, frames.  Points and the order on them
+%% are type-level objects, so they carry cTy.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DeclareMetaVar\pntA{Ty}{x}    \DeclareMetaVar\pntB{Ty}{y}
+\DeclareMetaVar\pntC{Ty}{z}
+\DeclareMetaVar\pnm{Ty}{n}     \DeclareMetaVar\pcst{Ty}{a}
+\DeclareMetaVar\cstr{Ty}{C}    \DeclareMetaVar\frm{Ty}{F}
+\DeclareMetaVar\fctx{Ty}{\Gamma}
+\DeclareMetaVar\ubd{Ty}{u}
+\DeclareSortSymbol\pviA{Ty}{\mathord}{\iota}
+\DeclareSortSymbol\pviB{Ty}{\mathord}{\kappa}
+\DeclareSortSymbol\pfv{Ty}{\mathord}{\varphi}
+\DeclareSortSymbol\pnode{Ty}{\mathord}{\nu}
+\DeclareSortSymbol\lbd{Ty}{\mathord}{\ell}
+\DeclareSortSymbol\fact{Ty}{\mathord}{g}
+\def\pBot{{\color{cTy}\bot}}
+\def\pTop{{\color{cTy}\top}}
+\def\pvivec{{\color{cTy}\bar{\iota}}}
+\def\pntvec{{\color{cTy}\bar{x}}}
+\def\pself{{\color{cTy}\mathsf{self}}}
+% x + k, x.j, x ≺ y, x ≡ y, {ℓ} ≼ N
+\NewDocumentCommand\poff{mm}{{#1}\mathbin{{\color{cTy}+}}{#2}}
+\NewDocumentCommand\pslot{mm}{{#1}{\color{cTy}.}{#2}}
+\NewDocumentCommand\fLt{mm}{{#1}\mathrel{{\color{cTy}\prec}}{#2}}
+\NewDocumentCommand\fEq{mm}{{#1}\mathrel{{\color{cTy}\equiv}}{#2}}
+\NewDocumentCommand\fLe{mm}{{#1}\mathrel{{\color{cTy}\preccurlyeq}}{#2}}
+\DeclareMathOperator{\heads}{heads}
+\DeclareMathOperator{\rootof}{root}
+% S@x, the annotated arrow, the box type, the existential
+\NewDocumentCommand\sAt{mm}{{#1}{\color{cTy}@}{#2}}
+\NewDocumentCommand\lolli{mm}{\mathrel{{\color{cTy}\multimap}^{#1}_{#2}}}
+\NewDocumentCommand\tyBox{mmm}{{{\color{cTy}\Box}(\mathord{\color{cTy}\forall}#1{\color{cTy}.}\,#2{\color{cTy}.}\,#3)}}
+\NewDocumentCommand\tyEx{mmmm}{{\mathord{\color{cTy}\exists}^{#1}#2{\color{cTy}.}\,#3{\color{cTy}.}\,#4}}
+\NewDocumentCommand\tysub{mmm}{{#1}\mathopen{{\color{cTy}[}}#2{\color{cTy}/}#3\mathclose{{\color{cTy}]}}}
+% new, spawn, boxes, force, and the frame-indexed judgment
+\def\tNew{\tOp{new}}
+\def\tSpawn{\tOp{spawn}}
+\NewDocumentCommand\tNewC{mm}{{\tNew\,#1\,\mathopen{{\color{cTm}\{}}#2\mathclose{{\color{cTm}\}}}}}
+\NewDocumentCommand\tBoxP{mm}{{{\color{cTm}!}#1{\color{cTm}.}\,#2}}
+\NewDocumentCommand\tBoxA{mmmm}{{{\color{cTm}!}#1\,\mathord{\color{cTy}\forall}#2\,\mathopen{{\color{cTm}\{}}#3\mathclose{{\color{cTm}\}}}{\color{cTm}.}\,#4}}
+\NewDocumentCommand\tForceA{mm}{{\tForce\,#1\,[#2]}}
+\NewDocumentCommand\tAbsA{mmmm}{{{\color{cTm}\uplambda}^{#1}_{#2}#3{\color{cTm}.}#4}}
+\NewDocumentCommand\typesF{m}{\mathrel{\color{black}\ltxvdash^{#1}}}
+\NewDocumentCommand\provesF{m}{\mathrel{\color{black}\vDash^{#1}}}
+% The source judgment (styped) carries a frame and no world; the
+% world-carrying judgments (typed, ptyped) carry a world as well.
+\NewDocumentCommand\typesW{m}{\mathrel{\color{black}\ltxvdash_{#1}}}
+\NewDocumentCommand\typesFW{mm}{\mathrel{\color{black}\ltxvdash^{#1}_{#2}}}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\strict}{strict}
+\NewDocumentCommand\wrest{mm}{{#1}\mathord{\restriction_{#2}}}
+\newcommand{\wjoinsym}{\mathbin{\sqcup}}
+% Labels of the two new primitives
+\NewDocumentCommand\lNew{m}{{(\nu{#1})}}
+\NewDocumentCommand\lSpawnL{m}{{{\Uparrow}{#1}}}
+% The logical relation now reads a world and a frame
+\makeatletter
+\NewDocumentCommand\lrTermF{mmm}{{\@lr{E}{#1}{#2}^{#3}}}
+\makeatother
+\DeclareMetaVar\wrld{Ty}{W}
+\DeclareMetaVar\tenv{Ty}{\Theta}
+\DeclareMathOperator{\readyop}{ready}
+\DeclareMathOperator{\belowrestop}{below\_rest}
+\DeclareMathOperator{\aboveofferedop}{above\_offered}
+\DeclareMathOperator{\ents}{ents}
+\DeclareMathOperator{\hd}{hd}
+\DeclareMathOperator{\offered}{offered}
+\DeclareSortSymbol\entry{Ty}{\mathord}{\eta}
+\NewDocumentCommand\tenvof{m}{{\tenv(#1)}}
+\RequirePackage{stmaryrd}
+\NewDocumentCommand\lrVW{mmm}{{V^{#1}_{#2}\llbracket{#3}\rrbracket}}
+\NewDocumentCommand\lrEW{mmmm}{{E^{#1}_{#2}\llbracket{#3}\rrbracket^{#4}}}
+\NewDocumentCommand\lrPW{mmm}{{P^{#1}_{#2}\llbracket{#3}\rrbracket}}
+\NewDocumentCommand\lrGW{mmm}{{G^{#1}_{#2}\llbracket{#3}\rrbracket}}
+\NewDocumentCommand\cost{m}{\mathbin{\ominus}#1}
+\newcommand{\wextsym}{\mathrel{\sqsubseteq}}
+\newcommand{\wextfresh}{\mathrel{\sqsubseteq_{\mathrm{o}}}}
 
 
 %%% Local Variables:

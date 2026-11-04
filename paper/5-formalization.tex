@@ -2,10 +2,11 @@
 \section{Mechanization}
 \label{sec:mechanization}
 
-Everything this paper states is mechanized in Rocq: the calculus of
-\cref{sec:calculus}, the logical relation of \cref{sec:logicalRelation}, the
-extensions of \cref{sec:extensions}, and all examples. The development is built
-on top of the \texttt{std++} library and does not admit any axiom.
+Everything this paper states is mechanized in Rocq: the calculus and the
+static system of \cref{sec:calculus}, the logical relation of
+\cref{sec:logicalRelation}, every example of \cref{sec:examples} and the two
+embeddings of \cref{sec:ex-priority}. The development is built on top of the
+\texttt{std++} library and does not admit any axiom.
 
 The conception of the semantics, type system, logical relation, examples and sketches of the soundness arguments were all done without the use of AI.
 The mechanization was produced with the aid of generative AI
@@ -14,52 +15,44 @@ in several refinements starting from the manually written definitions and proof 
 We thoroughly audited the definitions for accuracy against their hand-written versions.
 \ed{\pt! \mw! please check you agree with this characterization}
 
-The artifact comprises roughly $17{,}300$ lines (non-blank, non-comment) of
-Rocq across 30 files, containing about $300$ definitions and $850$ lemmas and
-theorems.
-% \Cref{tab:mechanization} shows the distribution of LOC over
-% components of the formalization.
-\ed{To be honest I don't think the table adds useful information. I think the interesting aspect is how much of it is examples.}
-A significant portion of the code ($\sim40\%$) is spent fully working out examples.
-The source of complexity is the semantic typing proofs, which need to reason
-about the LTS directly. To tame the combinatorial explosion, the proofs use a simple invariant-based method. The semantic proofs are still much harder than they need to be, as is to be expected, which would call for using a program logic layer to perform them in a more scalable way. We leave this exploration for future work.
+The artifact comprises $29{,}450$ lines (non-blank, non-comment) of Rocq
+across 79 files, containing $810$ definitions and $2{,}110$ lemmas and
+theorems. \Cref{tab:mechanization} gives the distribution over
+components.
+The examples, the rejections and the two embeddings take $8{,}450$ lines,
+$29\%$ of the development.
+The source of complexity is the semantic typing proofs, which reason about
+the LTS directly. To tame the combinatorial explosion, the proofs use an
+invariant-based method. A program logic layer would carry them more
+scalably, and we leave that exploration for future work.
 
-% \begin{table}[t]
-%   \caption{Lines of Rocq by component.}
-%   \label{tab:mechanization}
-%   \begin{tabular}{lr}
-%     \toprule
-%     Component                                                                                 & LOC          \\
-%     \midrule
-%     Syntax, types, syntactic typing, substitution boilerplate (\cref{fig:syntax,fig:typeSys}) & 1,829        \\
-%     Labelled semantics and harmony (\cref{fig:term-semantics,fig:proc-semantics})             & 618          \\
-%     The logical relation (\cref{fig:logrel-rules-term,fig:logrel-rules-proc})                 & 642          \\
-%     Safety and adequacy                                                                       & 442          \\
-%     Compositionality for terms                                                                & 1,117        \\
-%     Compositionality for processes                                                            & 3,003        \\
-%     Other                                                                                     & 2,643        \\
-%     Examples                                                                                  & 7,025        \\
-%     \midrule
-%     Total                                                                                     & $\sim$17,300 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
+\begin{table}[t]
+  \caption{Lines of Rocq by component.}
+  \label{tab:mechanization}
+  \begin{tabular}{lr}
+    \toprule
+    Component                                                                      & LOC          \\
+    \midrule
+    Syntax, labelled semantics, harmony, safety (\cref{fig:syntax,fig:term-semantics,fig:proc-semantics}) & 1,947        \\
+    Types, payloads, duality, environments (\cref{fig:types})                      & 1,104        \\
+    Points, the fact theory, the static system, soundness (\cref{fig:facts,fig:typeSys,fig:typeSysPoints,fig:signatures}) & 2,722        \\
+    Worlds, readiness, creation constraints, the logical relation (\cref{fig:logrel-rules-value,fig:logrel-rules-term,fig:logrel-rules-proc}) & 2,293        \\
+    Compositionality for terms (\cref{tab:compositionality})                       & 1,715        \\
+    Compositionality for processes (\cref{lem:comp:connect})                       & 5,142        \\
+    Invariance under renaming, point substitution and conversion                   & 6,079        \\
+    Examples and rejections (\cref{sec:examples})                                  & 3,563        \\
+    The two embeddings (\cref{sec:ex-priority})                                    & 4,885        \\
+    \midrule
+    Total                                                                          & 29,450       \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-% The main proof work is done in \ref{rule:P-Connect} (\cref{lem:comp:connect}),
-% which alone accounts for $2{,}041$ lines of the $3{,}003$ for the
-% compositionality theorem of processes. Connecting two processes over a channel
-% is the linear-logic cut, and it is the only place where membership in the
-% logical relation for the combined process is hard to maintain.
-
-% We also spend a lot of code to formalize examples, nearly $41\%$ of the
-% development. This is not incidental, since a process is admitted by the
-% relation only if every transition it can take discharges its obligation, so an
-% example is a proof about a whole reachable state space. The load balancer of
-% \cref{ex:load-balancer} takes $2{,}270$ lines and the leader election of
-% \cref{sec:extension:-sums} $1{,}981$ lines to conclude membership in the
-% logical relation.
-
-% \mw{TODO: explain invariant method @emanuele}
+The main proof work is \ref{rule:P-Connect} (\cref{lem:comp:connect}).
+Connecting two processes on a set of channels is the linear-logic cut,
+and it is the only place where membership of the combined process in the
+relation is hard to maintain: it has to keep the composed world strict,
+which is what \cref{thm:amalgamation,thm:fresh-extension} are for.
 
 %%% Local Variables:
 %%% mode: latex

@@ -60,158 +60,84 @@
 % The reduction sequence is similar to the one shown for the first
 % example in \cref{sec:safe-process}.
 
-\section{Reductions for leader election example}
-\label{sec:reduct-lead-elect}
+\section{The Order Obligations of the Delegation Example}
+\label{sec:app-delegation}
 
-As an example, we trace the reduction sequence starting from $p_0$  where $\tm_0$
-communicates first with $\tm_1$.
-\begin{itemize}
-\item $\tau$ transition (internal communication) to
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTmId{true}}{\chB}})}
-      \\
-      \tm_1 &=
-                    \tLet[\tLVB][\chB]{\tPair{\asTmId{false}}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
-      \\
-      \tm_2 &=
-                    \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\item $\tau$ transition ($\beta$ pair elimination) to
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tApp{\tClos}{(\tApp{\tSend}{\tPair{\asTmId{true}}{\chB}})}
-      \\
-      \tm_1 &=
-                    {\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
-      \\
-      \tm_2 &=
-                    \tLet[\tLVB][\chB]{\tApp{\tRecv}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\item $\tau$ transition (internal communication) to
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tApp{\tClos}{\chB}
-      \\
-      \tm_1 &=
-                    {\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
-      \\
-      \tm_2 &=
-                    \tLet[\tLVB][\chB]{\tPair{\asTmId{true}}{\chB}}{\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\tLVB}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\item $\tau$ transition ($\beta$ pair elimination) to
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tApp{\tClos}{\chB}
-      \\
-      \tm_1 &=
-                    {\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
-      \\
-      \tm_2 &=
-                    {\tLet*{\tApp{\tClos}{\asTmId{cs}}}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\item $\tau$ transition (internal communication, closing $\asTmId{cs}$,
-  new $C = \set{\ch, \chB}$)
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tApp{\tClos}{\chB}
-      \\
-      \tm_1 &=
-                    {\tLet*{\tUnit}{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
-      \\
-      \tm_2 &=
-                    {\tLet*{\tUnit}{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\item $\tau$ transitions (2x $\beta$ unit)
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tApp{\tClos}{\chB}
-      \\
-      \tm_1 &=
-                    {{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
-      \\
-      \tm_2 &=
-                    {{\tLet*{\tApp{\tClos}{\chB}}{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\item $\tau$ transition (internal communication, closing $\chB$,
-  new $C = \set{\ch}$)
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tUnit
-      \\
-      \tm_1 &=
-                    {{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
-      \\
-      \tm_2 &=
-                    {{\tLet*{\tUnit}{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\item $\tau$ transition (unit elim)
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tUnit
-      \\
-      \tm_1 &=
-                    {{\tIf{\asTmId{false}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{left}~\ch)}}{\tUnit}}}
-      \\
-      \tm_2 &=
-                    {{{\tIf{\asTmId{true}}{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\item $\tau$ transitions (2x $\beta$ bool)
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tUnit
-      \\
-      \tm_1 &=
-                    {{{\tUnit}}}
-      \\
-      \tm_2 &=
-                    {{{{\tApp{\tClos}{(\asTmId{select}~\asTmId{right}~\ch)}}}}}
-    \end{align*}
-  \end{small}
-\item There are two remaining labeled transitions: $\lSend{\ch}{\asTmId{right}}$
-  followed by $\lTerm{\ch}$. The resulting process is terminated and is
-  an element of $\lrProc{n}{\tEmpty \vdash \tyUnit}$:
-  \begin{small}
-    \begin{align*}
-      \tm_0 &=
-                    \tUnit
-      \\
-      \tm_1 &=
-                    {{{\tUnit}}}
-      \\
-      \tm_2 &=
-                    {{{{\tUnit}}}}
-    \end{align*}
-  \end{small}
-\end{itemize}
+\Cref{tab:deleg} lists every blocking action of $\asTmId{deleg}$
+(\cref{ex:delegation}), the point $\ubd$ it blocks at, the frame the rest
+of the thread still holds, and the premise
+$\fctx \types \fLt{\ubd}{\frm}$ that \ref{rule:E-App} owes for it. Five
+facts discharge all of them.
+\begin{align*}
+  \fLt{\pviA}{\pslot{\pviA}{0}} &\quad\text{from the first } \tNew
+  &
+  \fLt{\pslot{\pviA}{0}}{\poff{\pslot{\pviA}{0}}{1}} &\quad\text{program order}
+  \\
+  \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}} &\quad\text{from the first } \tNew
+  &
+  \fLt{\poff{\pviA}{1}}{\pfv} &\quad\text{from \ref{rule:E-Abs}}
+  \\
+  \fEq{\pviB}{\pslot{\pviA}{0}} &\quad\text{from the second } \tNew
+  \span\span
+\end{align*}
+
+\begin{table}[htp]
+  \caption{Every blocking action of $\asTmId{deleg}$ and the premise it
+    owes.}
+  \label{tab:deleg}
+  \begin{tabular}{llll}
+    \toprule
+    Action & $\ubd$ & Frame & Premise \\
+    \midrule
+    \multicolumn{4}{l}{\emph{main thread}} \\
+    $\tApp{\tSend}{\tPair{\chB}{\ch}}$
+      & $\pviA$ & $\set{\pslot{\pviA}{0}}$ & $\fLt{\pviA}{\pslot{\pviA}{0}}$ \\
+    \quad and the payload of the send
+      & $\pviA$ & $\heads \set{\pslot{\pviA}{0}}$ & $\fLt{\pviA}{\pslot{\pviA}{0}}$ \\
+    $\tApp{\tRecv}{\chB'}$
+      & $\pslot{\pviA}{0}$ & $\set{\poff{\pviA}{1}}$ & $\fLt{\pslot{\pviA}{0}}{\poff{\pviA}{1}}$ \\
+    $\tApp{\tClos}{\chB_1}$
+      & $\poff{\pslot{\pviA}{0}}{1}$ & $\set{\poff{\pviA}{1}}$ & $\fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}}$ \\
+    $\tApp{\tClos}{\ch_1}$
+      & $\poff{\pviA}{1}$ & $\emptyset$ & vacuous \\
+    $\tApp{\tSpawn}{\asTmId{K}}$
+      & $\pBot$ & $\set{\pviA, \pslot{\pviA}{0}}$ & $\pBot$ never blocks \\
+    $\tApp{\tNewC{\pviB}{\dots}}{\tUnit}$
+      & $\pBot$ & $\set{\pviA}$ & $\cstr$ acyclic and conservative \\
+    \midrule
+    \multicolumn{4}{l}{\emph{spawned thread, under both constraints and $\fLt{\poff{\pviA}{1}}{\pfv}$}} \\
+    $\tApp{\tRecv}{\ch'}$
+      & $\pviA$ & $\set{\pfv}$ & $\fLt{\pviA}{\pfv}$ \\
+    $\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}}$
+      & $\pslot{\pviA}{0}$ & $\set{\pfv, \poff{\pviA}{1}}$ & $\fLt{\pslot{\pviA}{0}}{{}}$ both \\
+    $\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}})}$
+      & $\poff{\pslot{\pviA}{0}}{1}$ & $\set{\pfv, \poff{\pviA}{1}}$ & $\fLt{\poff{\pslot{\pviA}{0}}{1}}{{}}$ both \\
+    $\tApp{\tClos}{\ch'_1}$
+      & $\poff{\pviA}{1}$ & $\set{\pfv}$ & $\fLt{\poff{\pviA}{1}}{\pfv}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Program order carries half the chain and no more. $\fLt{\pntA}{\poff{\pntA}{1}}$
+holds for every point, and only between points of one name. $\pviA$ and
+$\pslot{\pviA}{0}$ carry different names, which is why
+$\fLt{\pviA}{\pslot{\pviA}{0}}$ is written in the creation constraint.
+The constraint is written at the $\tNew$ of the carrier, not at the
+send: $\tNew$ commits to where the payload will live at the moment it
+creates the channel the payload will travel on, and the second $\tNew$
+then creates that payload there.
+
 \section{Duality and Equivalence of Recursive Session Types}
 \label{sec:app-duality}
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Session types $\sty$, extending \cref{sec:extens-recurs-ii}}
+  \rulesection*{Session types $\sty$ (\cref{fig:types})}
   \begin{align*}
     \sty &::= \sRecv{\ty}{\sty} \sepr \sSend{\ty}{\sty} \sepr
                    \sTerm \sepr \tyMu\tvar.\sty \sepr
-                   \tvar \sepr \dual{\tvar}
-    % & \text{($\dual{\tvar}$ never occurs in a source type)}
+                   \tvar \sepr \dualv{\tvar}
+    % & \text{($\dualv{\tvar}$ never occurs in a source type)}
   \end{align*}
   \rulesection{Duality $\dual{\sty}$}
   \begin{align*}
@@ -220,12 +146,15 @@ communicates first with $\tm_1$.
     \dual{\sSend{\ty}{\sty}} &= \sRecv{\ty}{\dual{\sty}}
     &
     \dual{\sTerm} &= \sTerm
+    \\
+    \dual{\tvar} &= \dualv{\tvar}
+    &
+    \dual{\dualv{\tvar}} &= \tvar
     &
     \dual{\tyMu\tvar.\sty} &= \tyMu\tvar.\,\sflipop_{\tvar}(\dual{\sty})
-    \span\span\span
   \end{align*}
   Duality exchanges \emph{every} variable $\tvar$ with 
-  $\dual{\tvar}$; $\sflipop_\alpha$ does the same swap, but only for the
+  $\dualv{\tvar}$; $\sflipop_\alpha$ does the same swap, but only for the
   designated variable $\tvar$, leaving every other variable alone. 
 
   \rulesection{Equivalence $\ty \approx \tyB, \sty \approx \styB$, coinductively}
@@ -236,9 +165,11 @@ communicates first with $\tm_1$.
     \and
     \infer*{
       \ty \approx \ty' \\
-      \tyB \approx \tyB'
+      \tyB \approx \tyB' \\
+      \fctx \types \fEq{\ubd}{\ubd'} \\
+      \fctx \types \fEq{\lbd}{\lbd'}
     }{
-      \lFunc{\ty}{\tyB} \approx {\lFunc{\ty'}{\tyB'}}
+      \ty \lolli{\ubd}{\lbd} \tyB \approx \ty' \lolli{\ubd'}{\lbd'} \tyB'
     }
     \and
     \infer*{
@@ -247,19 +178,45 @@ communicates first with $\tm_1$.
     }{
       \lPair{\ty}{\tyB} \approx {\lPair{\ty'}{\tyB'}}
     }
+    \and
+    \infer*{
+      \ty \approx \ty' \\
+      \tyB \approx \tyB'
+    }{
+      \lSum{\ty}{\tyB} \approx {\lSum{\ty'}{\tyB'}}
+    }
+    \and
+    \infer*{
+      \sty \approx \styB \\
+      \fctx \types \fEq{\pntA}{\pntB}
+    }{
+      \sAt{\sty}{\pntA} \approx \sAt{\styB}{\pntB}
+    }
+    \and
+    \infer*{
+      \ty \approx \ty'
+    }{
+      \tyBox{\pvivec}{\cstr}{\ty} \approx \tyBox{\pvivec}{\cstr}{\ty'}
+    }
+    \and
+    \infer*{
+      \ty \approx \ty'
+    }{
+      \tyEx{\lbd}{\pvivec}{\cstr}{\ty} \approx \tyEx{\lbd}{\pvivec}{\cstr}{\ty'}
+    }
     \\
     \infer*[lab=Eq-Recv]{
       \ty \approx \tyB \\
       \sty \approx \styB
     }{
-      \sRecv{\ty}{\sty} \approx \sSend{\tyB}{\styB}
+      \sRecv{\ty}{\sty} \approx \sRecv{\tyB}{\styB}
     } \label{rule:Eq-Recv}
     \and
     \infer*[lab=Eq-Send]{
       \ty \approx \tyB \\
       \sty \approx \styB
     }{
-      \sSend{\ty}{\sty} \approx \sRecv{\tyB}{\styB}
+      \sSend{\ty}{\sty} \approx \sSend{\tyB}{\styB}
     } \label{rule:Eq-Send}
     \and
     \infer*[lab=Eq-Close]{}{
@@ -328,25 +285,23 @@ communicates first with $\tm_1$.
     \quad \rocq{dual}}
   \Description{The grammar of recursive session types with polarized
     variables, the duality function including its case for the
-    recursive binder, the eight coinductive rules for type equivalence, the five
+    recursive binder, the coinductive rules for type equivalence, the five
     rules of coinductive relational duality, and the three facts relating the
     two presentations.}
   \label{fig:duality}
 \end{figure}
 
-\Cref{fig:duality} provides the definitions for
-\cref{sec:extens-recurs-ii}. Duality
-\cite{LindleyM16} is a function on types, and on a recursive
-type it cannot simply descend into the body: under $\tyMu\tvar.\sty$ the
-binder stands for the dual protocol, so occurrences of $\tvar$
-that were meant to denote the original type one must change polarity. This is why the
-grammar carries a dualized variable $\dual{\tvar}$ (\rocq{SVarD}) and
-why the $\mu$ case applies $\sflipop_\alpha$ (\rocq{sflip_ty}) to the dualized
-body: tail occurrences, which continue as the session itself, come back as
+\Cref{fig:duality} provides the definitions for \cref{fig:types}. Duality
+\cite{LindleyM16} is a function on types, and on a recursive type it
+cannot descend into the body. Under $\tyMu\tvar.\sty$ the binder stands
+for the dual protocol, so occurrences of $\tvar$ that denote the
+original type must change polarity. That is why the grammar carries a
+dualized variable $\dualv{\tvar}$ (\rocq{SVarD}) and why the $\mu$ case
+applies $\sflipop_\alpha$ (\rocq{sflip_ty}) to the dualized body. Tail
+occurrences, which continue as the session itself, come back as
 $\tvar$, while occurrences inside a payload keep the polarity they were
-given. Taking $\dual{\tvar} = \tvar$ instead is unsound, and
-the type of a channel end would no longer be the dual of the type of the other
-end.
+given. Taking $\dual{\tvar} = \tvar$ instead is unsound, and the type of
+a channel end would no longer be the dual of the type of the other end.
 
 Duality also has a relational reading $\sty \isdual \styB$. The two agree:
 $\sty \isdual \styB$ holds iff
@@ -355,44 +310,25 @@ $\sty \approx \dual{\styB}$ (\rocq{sdual_seq_dual})
 
 \section{Reduction Semantics and Harmony}
 \label{sec:app-harmony}
-Our operational semantics is a labeled transition system, and
-\emph{reduction} is defined as its $\tau$-fragment
-(\cref{sec:calculus}). This appendix shows that nothing hinges on
-that presentation choice: we define a conventional, self-contained
-reduction semantics on processes --- call-by-value evaluation
-contexts, $\beta$-redexes, and one rule per interaction, with no
-labels anywhere --- and prove that it coincides with $\tau$-reduction
-(\cref{thm:harmony}).
-
-\paragraph{Evaluation contexts}
-Evaluation contexts extend the contexts of
-\cref{fig:term-semantics} by  including all extensions of \cref{sec:extensions}.
-\begin{align*}
-  \ectx ::={} & \hole
-  \sepr \tApp{\ectx}{\tm}
-  \sepr \tApp{\val}{\ectx}
-  \sepr \tPair{\ectx}{\tm}
-  \sepr \tPair{\val}{\ectx}
-  \sepr \tLet*{\ectx}{\tm} \\
-  & \sepr \tLet[\vr][\vrB]{\ectx}{\tm}
-  \sepr \tInj{1}{\ectx}
-  \sepr \tInj{2}{\ectx}
-  \sepr \tCase{\ectx}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2}
-\end{align*}
+Our operational semantics is a labelled transition system, and
+\emph{reduction} is its $\tau$-fragment (\cref{sec:calculus}). This
+appendix defines a conventional, self-contained reduction semantics on
+processes, with call-by-value evaluation contexts, $\beta$-redexes and
+one rule per interaction, and no labels anywhere, and it coincides with
+$\tau$-reduction (\cref{thm:harmony}).
 
 \paragraph{Pure reduction}
-The label-free term reduction
-$\tm \redu[\mathsf{V}] \tm'$ consists of the
-$\beta$-redexes, closed under evaluation contexts. It collects the term
-reductions of the base calculus and the extensions.
+The label-free term reduction $\tm \redu[\mathsf{V}] \tm'$ consists of
+the $\beta$-redexes of \cref{fig:term-semantics}, closed under the
+evaluation contexts of that figure.
 \begin{align*}
-  \tApp{(\tAbs{\ivx}{\tm})}{\val} & \redu[\mathsf{V}] \tSub{\tm}{\val}{\ivx}
+  \tApp{(\tAbs{\vr}{\tm})}{\val} & \redu[\mathsf{V}] \tSub{\tm}{\val}{\vr}
   & \tLet*{\tUnit}{\tm} & \redu[\mathsf{V}] \tm
   \\
   \tLet[\vr][\vrB]{\tPair{\valB}{\val}}{\tm} & \redu[\mathsf{V}] \tSub{\tSub{\tm}{\valB}{\vr}}{\val}{\vrB}
   & \tCase{(\tInj{\asTm{i}}{\val})}{\ivx_1}{\tm_1}{\ivx_2}{\tm_2} & \redu[\mathsf{V}] \tSub{\tm_{\asTm{i}}}{\val}{\ivx_{\asTm{i}}}
   \\
-  \tApp{\tForce}{\IExp{(\ivx = \tm)}} & \redu[\mathsf{V}] \tSub{\tm}{\IExp{(\ivx = \tm)}}{\ivx}
+  \tApp{\tForce}{\tBoxP{\vr}{\tm}} & \redu[\mathsf{V}] \tSub{\tm}{\tBoxP{\vr}{\tm}}{\vr}
   & \ectx[\tm] & \redu[\mathsf{V}] \ectx[\tm'] \quad \text{if } \tm \redu[\mathsf{V}] \tm'
 \end{align*}
 
@@ -403,30 +339,31 @@ reductions of the base calculus and the extensions.
   $\tm \trans{\beta} \tm'$.
 \end{lemma}
 
-\paragraph{Reduction semantics for processes}
-\Cref{fig:red-semantics} gives the reduction semantics
-$\proc \sred \proc'$: a thread takes a pure step
-(\ref{rule:R-Lift}); a fork spawns a thread and restricts a fresh
-channel (\ref{rule:R-Fork}); a send and a receive on the same
-restricted channel synchronize (\ref{rule:R-Com}); two closes on the
-same restricted channel retire it (\ref{rule:R-Close}); and a
-forwarder fuses a restricted end with its partner by substitution
-(\ref{rule:R-Link}, and symmetrically for the other end of the
-pair). Interactions happen under evaluation contexts in the
-participating threads; where
-the LTS of \cref{fig:proc-semantics} lets the term transitions
-surface the interacting redexes, these rules find them
-syntactically.
+\begin{proof}
+  The two relations agree at the head, where a $\beta$-redex of
+  $\redu[\mathsf{V}]$ is a head step labelled $\beta$ and conversely
+  (\rocq{head_red_head_step}, \rocq{head_step_beta_head_red}). Left to
+  right, filling a labelled step into an evaluation context is a
+  labelled step (\rocq{fill_tstep}). Right to left, a labelled step
+  decomposes into an evaluation context around a head step
+  (\rocq{tstep_fill_decomp}).
+\end{proof}
 
-\pt{TODO: one direction is simple; what about the converse?}
-This reduction semantics is still different from the semantics of
-\citet{conf/esop/LindleyM15}, which works on structured process terms. However,
-it is easy to relate structured process terms to a formulation based
-on a soup of processes like ours.
+\paragraph{Reduction semantics for processes}
+\Cref{fig:red-semantics} gives $\proc \sred \proc'$. A thread takes a
+pure step (\ref{rule:R-Lift}); a $\tNew$ restricts a fresh channel and
+hands both ends to the thread (\ref{rule:R-New}); a $\tSpawn$ starts a
+thread (\ref{rule:R-Spawn}); a send and a receive on the same channel
+synchronize (\ref{rule:R-Com}); two closes on the same restricted
+channel retire it (\ref{rule:R-Close}); and a forwarder fuses a
+restricted end with its partner by substitution (\ref{rule:R-Link}, and
+symmetrically for the other end of the pair). Where the LTS of
+\cref{fig:proc-semantics} lets the term transitions surface the
+interacting redexes, these rules find them syntactically.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Reduction semantics $\proc \sred \proc'$}
+  \rulesection*{Reduction semantics $\proc \sred \proc'$ (\rocq{red})}
   \begin{proofrules}
     \infer*[lab=R-Lift]{
       \tm \redu[\mathsf{V}] \tm'
@@ -434,11 +371,15 @@ on a soup of processes like ours.
       (\chset, \pool \uplus \mset{\tm}) \sred (\chset, \pool \uplus \mset{\tm'})
     } \label{rule:R-Lift}
     \and
-    \infer*[lab=R-Fork]{
+    \infer*[lab=R-New]{
       \ch \text{ fresh}
     }{
-      (\chset, \pool \uplus \mset{\ectx[\tApp{\tFork}{\val}]}) \sred (\chset \cupdot \set{\ch}, \pool \uplus \mset{\ectx[\ch], \tApp{\val}{\ch}})
-    } \label{rule:R-Fork}
+      (\chset, \pool \uplus \mset{\ectx[\tApp{\tNew}{\tUnit}]}) \sred (\chset \cupdot \set{\ch}, \pool \uplus \mset{\ectx[\tPair{\ch}{\ch}]})
+    } \label{rule:R-New}
+    \and
+    \infer*[lab=R-Spawn]{}{
+      (\chset, \pool \uplus \mset{\ectx[\tApp{\tSpawn}{\val}]}) \sred (\chset, \pool \uplus \mset{\ectx[\tUnit], \tApp{\val}{\tUnit}})
+    } \label{rule:R-Spawn}
     \and
     \infer*[lab=R-Com]{}{
       (\chset, \pool \uplus \mset{\ectx[\tApp{\tSend}{\tPair{\val}{\ch}}], \ectx'[\tApp{\tRecv}{\ch}]}) \sred (\chset, \pool \uplus \mset{\ectx[\ch], \ectx'[\tPair{\val}{\ch}]})
@@ -457,29 +398,48 @@ on a soup of processes like ours.
     } \label{rule:R-Link}
   \end{proofrules}
   \rulesectionend
-  \caption{Reduction semantics: pure steps, fork, communication,
-    closing, and forwarding, with no labels \quad \rocq{red}}
-  \Description{Five reduction rules for process soups: lifting a pure
-    term step, forking with a fresh channel, communication between a
-    send and a receive redex, closing a channel from both ends, and
-    forwarding by substitution.}
+  \caption{Reduction semantics: pure steps, creation, spawning,
+    communication, closing and forwarding, with no labels}
+  \Description{Six reduction rules for process soups: lifting a pure
+    term step, creating a fresh channel, spawning a thread,
+    communication between a send and a receive redex, closing a channel
+    from both ends, and forwarding by substitution.}
   \label{fig:red-semantics}
 \end{figure}
 
 \paragraph{Harmony}
-Both directions of \cref{thm:harmony} rest on the correspondence
-between the congruence closure of the labeled semantics and
-evaluation contexts: filling a labeled step into a context is a
-labeled step, and conversely every labeled step decomposes into an
-evaluation context around a head step.
-\Cref{rule:R-Lift} then matches
-\ref{rule:P-Act-Beta} by \cref{lem:vred-reduction}, and each
-interaction rule matches the process rule that consumes the
-corresponding labels: \ref{rule:R-Fork} with
-\ref{rule:P-Act-Fork}, \ref{rule:R-Com} with \ref{rule:P-Act-Msg},
+
+\begin{proof}[Proof of \cref{thm:harmony}]
+Both directions rest on the correspondence between
+the congruence closure of the labelled semantics and evaluation
+contexts. Filling a labelled step into a context is a labelled step
+(\rocq{fill_tstep}), and
+every labelled step decomposes into an evaluation context around a head
+step (\rocq{tstep_fill_decomp}).
+
+Forward (\rocq{harmony_forward}), by cases on the reduction.
+\Cref{rule:R-Lift} matches \ref{rule:P-Act-Beta} by
+\cref{lem:vred-reduction}, and each interaction rule matches the process
+rule that consumes the corresponding labels.
+\ref{rule:R-New} with \ref{rule:P-Act-New},
+\ref{rule:R-Spawn} with \ref{rule:P-Act-Spawn},
+\ref{rule:R-Com} with \ref{rule:P-Act-Msg},
 \ref{rule:R-Close} with \ref{rule:P-Act-Close}, and
-\ref{rule:R-Link} with \ref{rule:P-Act-Link}, whose unordered label
-pair accounts for the two orientations of the rule.
+\ref{rule:R-Link} with \ref{rule:P-Act-Link}. Filling the head step of
+the redex the rule names into its context supplies the label each
+process rule asks for.
+
+Backward (\rocq{harmony_backward}), by cases on the $\tau$ transition.
+Decompose each label of the premises into a context around a head step,
+invert the head step to recover the redex, and apply the reduction rule
+of the same name. \Cref{rule:P-Act-Link} is the one case that needs
+care, because its label carries an unordered pair. Inverting the head
+step gives the pair in the order the term writes it
+(\rocq{head_step_link_inv}), and the two solutions of the set equation
+give the two orientations of \ref{rule:R-Link}
+(\rocq{upair_eq_inv}). A term that names one channel twice makes the
+two ends coincide and the rule fires degenerately.
+\end{proof}
 
 %%% Local Variables:
 %%% mode: latex
