@@ -1,0 +1,16 @@
+opam-version: "2.0"
+name: "spo-lr-df"
+version: "dev"
+synopsis: "Deadlock freedom by strict partial orders and a logical relation, in Rocq"
+maintainer: "weidner@cs.uni-freiburg.de"
+authors: ["weidner@cs.uni-freiburg.de"]
+homepage: "https://github.com/Mari-W/spo-lr-df"
+build: [
+  [make "-j%{jobs}%"]
+]
+depends: [
+  "ocaml" {>= "4.14"}
+  "rocq-core" {= "9.2.0"}
+  "rocq-stdlib" {= "9.2.0"}
+  "rocq-stdpp" {= "1.13.0"}
+]

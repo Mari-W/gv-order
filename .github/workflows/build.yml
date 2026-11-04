@@ -1,0 +1,84 @@
+# Build the development and check that its claims are axiom free.
+# The opam switch (OCaml 5.3.0, rocq-core 9.2.0, rocq-stdlib 9.2.0,
+# rocq-stdpp 1.13.0, from spo-lr-df.opam.locked) is cached between runs.
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      docker:
+        description: "Also run the Docker build"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  opam:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            opam build-essential m4 pkg-config libgmp-dev unzip patch
+
+      - name: Restore opam switch
+        id: opam-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-${{ runner.os }}-ocaml-5.3.0-${{ hashFiles('spo-lr-df.opam', 'spo-lr-df.opam.locked') }}
+
+      - name: Create opam switch
+        if: steps.opam-cache.outputs.cache-hit != 'true'
+        run: |
+          opam init -y --bare --disable-sandboxing --no-setup
+          opam switch create -y default ocaml-base-compiler.5.3.0
+          opam repo add -y rocq-released https://rocq-prover.org/opam/released
+          opam install -y --deps-only --locked .
+          opam clean -a -c -s --logs
+
+      - name: Toolchain
+        run: |
+          eval "$(opam env)"
+          opam list
+          rocq --version
+
+      - name: Build
+        run: |
+          eval "$(opam env)"
+          ulimit -s 1000000
+          make -j"$(nproc)" || make -j"$(nproc)"
+
+      - name: Check assumptions
+        run: |
+          eval "$(opam env)"
+          make check
+
+      - name: Upload assumption report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: assumption-report
+          path: _build/check/report.txt
+          if-no-files-found: ignore
+
+  docker:
+    if: github.event_name == 'workflow_dispatch' && inputs.docker
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker build (builds and runs make check)
+        run: docker build -t spo-lr-df .
