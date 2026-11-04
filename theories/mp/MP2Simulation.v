@@ -14,7 +14,8 @@
     - Every source step is matched by target steps, the corresponding
       step plus administrative β steps ([fwd]). Communication is
       synchronous on both sides, so a message, a choice and a close
-      each match one target step.
+      each match one target step. new matches new ∗ followed by the two
+      administrative β steps of the encoded let [let_new_pair].
     - When the source is stuck, administrative steps bring every target
       thread to a value, to the matching pending action, or to a term
       that offers nothing ([classify]).
@@ -84,7 +85,7 @@ Inductive trm : (nat → option md) → expr → expr → md → Prop :=
       trm M (LetU s1 s2) (LetU (App EForce t1) t2) m
   | tr_new M e e' m :
       trm (Some MdD .: Some MdD .: M) e e' m →
-      trm M (LetP (App ENew EUnit) e) (LetP (App ENew EUnit) e') m
+      trm M (LetP (App ENew EUnit) e) (let_new_pair e') m
   | tr_letp M s1 s2 t1 t2 e e' m :
       trm M s1 t1 MdD → trm M s2 t2 MdD → trm (Some MdD .: Some MdD .: M) e e' m →
       trm M (LetP (Pair s1 s2) e) (LetP (Pair t1 t2) e') m
@@ -166,7 +167,8 @@ Proof.
   - eapply tr_appb; eauto.
   - rewrite rn_forced. eapply tr_appf; eauto.
   - eapply tr_letu; eauto.
-  - eapply tr_new. eauto.
+  - change (trm M' (rename r (LetP (App ENew EUnit) e)) (rename r (let_new_pair e')) m).
+    rewrite rename_let_new_pair. eapply tr_new. eauto.
   - eapply tr_letp; eauto.
   - eapply tr_recv; eauto.
   - eapply tr_send; eauto.
@@ -197,7 +199,8 @@ Proof.
   - eapply tr_appb; eauto.
   - rewrite sb_forced. eapply tr_appf; eauto 10.
   - eapply tr_letu; eauto.
-  - eapply tr_new. eauto 10.
+  - change (trm M' (subst σ (LetP (App ENew EUnit) e)) (subst σ' (let_new_pair e')) m).
+    rewrite subst_let_new_pair. eapply tr_new. eauto 10.
   - eapply tr_letp; eauto 10.
   - eapply tr_recv; eauto 10.
   - eapply tr_send; eauto.
@@ -221,6 +224,7 @@ Proof.
     { apply fchans_subst. apply allfv_forall. intros [|[|x]]; simpl; [set_solver| |set_solver].
       unfold compose. rewrite fchans_rename. simpl. set_solver. }
     set_solver.
+  - rewrite fchans_rename. set_solver.
 Qed.
 
 (** ** Every translation is related *)
@@ -599,7 +603,7 @@ Definition Rsp (s t : expr) : Prop := ∃ t0, t = App EForce t0 ∧ trm M0 s t0 
 Definition post (α : slab) (t : expr) (Q : expr → Prop) : Prop :=
   match α with
   | SBeta => ∃ t', bstar t t' ∧ Q t'
-  | SNew a => ∃ t0 t', bstar t t0 ∧ tstep t0 (LNew a) t' ∧ Q t'
+  | SNew a => ∃ t0 t1 t', bstar t t0 ∧ tstep t0 (LNew a) t1 ∧ bstar t1 t' ∧ Q t'
   | SSpawn v => ∃ t0 w t1 tn t', bstar t t0 ∧ tstep t0 (LSpawn w) t1 ∧
       bstar (App w EUnit) tn ∧ Rsp (App v EUnit) tn ∧ bstar t1 t' ∧ Q t'
   | SOut a v => ∃ t0 w t1, bstar t t0 ∧ tstep t0 (LSess (SSend a w)) t1 ∧ trm M0 v w MdD ∧ Q t1
@@ -615,8 +619,8 @@ Lemma post_ectx α t Q Q' K :
 Proof.
   intros HK Hp HQ. destruct α; simpl in *.
   - destruct Hp as (t' & Hs & Hq). exists (K t'). split; [by apply bstar_ectx|auto].
-  - destruct Hp as (t0 & t' & Hs & Ht & Hq). exists (K t0), (K t').
-    split_and!; [by apply bstar_ectx|by apply HK|auto].
+  - destruct Hp as (t0 & t1 & t' & Hs & Ht & Hs' & Hq). exists (K t0), (K t1), (K t').
+    split_and!; [by apply bstar_ectx|by apply HK|by apply bstar_ectx|auto].
   - destruct Hp as (t0 & w & t1 & tn & t' & Hs & Ht & Hn & Hr & Hs' & Hq).
     exists (K t0), w, (K t1), tn, (K t'). split_and!; try done; try (by apply bstar_ectx); [by apply HK|auto].
   - destruct Hp as (t0 & w & t1 & Hs & Ht & Hr & Hq). exists (K t0), w, (K t1).
@@ -635,7 +639,7 @@ Lemma post_pre α t t0 Q : bstar t t0 → post α t0 Q → post α t Q.
 Proof.
   intros H0 Hp. destruct α; simpl in *.
   - destruct Hp as (t' & Hs & Hq). eexists. split; [by etrans|done].
-  - destruct Hp as (t1 & t' & Hs & ?). eexists _, _. split; [by etrans|done].
+  - destruct Hp as (t1 & t2 & t' & Hs & ?). eexists _, _, _. split; [by etrans|done].
   - destruct Hp as (t1 & w & t2 & tn & t' & Hs & ?). eexists _, _, _, _, _. split; [by etrans|done].
   - destruct Hp as (t1 & w & t2 & Hs & ?). eexists _, _, _. split; [by etrans|done].
   - destruct Hp as (t1 & Hs & Hw). eexists. split; [by etrans|done].
@@ -747,9 +751,13 @@ Proof.
   - (* new *)
     apply sinv_letp in Hst as [Hh|(p' & Hstp & ->)]; [inversion Hh|].
     apply sinv_app in Hstp as [Hh|[(? & Hk & _)|(_ & ? & Hk & _)]].
-    + inversion Hh; subst; selc. simpl. eexists _, _.
-      split_and!; [apply rtc_refl|apply TStepLetP, TStepHead, HeadNew|].
-      apply tr_letp; [apply tr_chan|apply tr_chan|exact He].
+    + (* new ∗, then the two administrative β steps of [let_new_pair] *)
+      inversion Hh; subst; selc. simpl. eexists _, _, _.
+      split_and!; [apply rtc_refl|apply TStepLetP, TStepPairL, TStepHead, HeadNew| |].
+      * eapply rtc_l; [apply TStepHead, HeadLetP; done|].
+        apply rtc_once. apply TStepHead, HeadLetU.
+      * unfold subst2. simpl. rewrite let_new_body.
+        apply tr_letp; [apply tr_chan|apply tr_chan|exact He].
     + by apply sinv_konst in Hk.
     + exfalso. eapply src_val_no_step; [|exact Hk]; done.
   - (* let (x, y) = (u, v) *)
@@ -980,9 +988,10 @@ Proof.
     exists (C, Et0 ⊎ {[+ t' +]}). split; [by apply bstar_proc|].
     split; [done|]. by apply mrel_snoc.
   - destruct (mrel_extract_l _ _ _ _ Hm) as (Et0 & t & -> & HR & Hm0).
-    destruct (fwd_rt _ _ _ _ HR Hst) as (t0 & t' & Hs0 & Ht & Hq).
+    destruct (fwd_rt _ _ _ _ HR Hst) as (t0 & t1 & t' & Hs0 & Ht & Hs1 & Hq).
     exists (C ∪ {[a]}, Et0 ⊎ {[+ t' +]}). split.
-    + eapply rtc_r; [by apply bstar_proc|]. apply PStepNew; [done|done| |].
+    + eapply rtc_trans; [|by apply bstar_proc].
+      eapply rtc_r; [by apply bstar_proc|]. apply PStepNew; [done|done| |].
       * pose proof (mrel_echans _ _ _ Rt_fchans Hm0). set_solver.
       * apply bstar_fchans in Hs0. apply Rt_fchans in HR. set_solver.
     + split; [done|]. by apply mrel_snoc.

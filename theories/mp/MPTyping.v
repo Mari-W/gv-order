@@ -17,7 +17,9 @@
       index 1 (repair R4 in the λ form). Without f it is T-PAbs followed
       by T-AbsUn.
     - let (x, y) = new S n₁ n₂ in e is [LetP (App ENew EUnit) e], with
-      the end of type S at index 1 and its dual at index 0.
+      the end of type S at index 1 and its dual at index 0. The
+      translation emits the encoded let of the existential new,
+      [let_new_pair e′].
     - send e₁ e₂ is [App ESend (Pair e₁ e₂)], let (x, c) = receive e in
       e′ is [LetP (App ERecv e) e′], close and wait are [App EClos e].
     - select ℓᵢ e is [App ESel1 e] or [App ESel2 e], and
@@ -151,7 +153,7 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
   | m_new Γ e e' Q n d V ef :                                (* T-New, T-NewPoly *)
       mwf Q → pfin n →
       mtyped Θ (Some (MChan true Q n d) :: Some (MChan false Q n d) :: Γ) e V ef e' →
-      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (LetP (App ENew EUnit) e')
+      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (let_new_pair e')
   | m_send Γ Γ1 Γ2 e1 e2 e1' e2' pol Q h d a P K ef1 ef2 :   (* send, R1, R3 *)
       msplit Γ Γ1 Γ2 →
       mtyped Θ Γ1 e1 (payty P) ef1 e1' →

@@ -21,7 +21,8 @@
     A point denotes ([den]) a valuation, a channel, a lower or upper
     level, or junk, given a denotation of its root. A channel denotes
     its session type with the head of its sequence, and its head form
-    [hdt] gives the successor, the branch roots and the payload slot.
+    [hdt] gives the successor, the payload slot and the slots x[0],
+    x[1] where a choice continues (K11).
     Two points are equivalent when every walk from them reaches points
     of equal rank ([oeq]), so the equivalences of context-free session
     types (T-Eq) identify points. The rank is the priority of the head.
@@ -195,6 +196,26 @@ Definition evalZ (v : val) (ρ : prio) : Z :=
 Definition xminlb (v : val) (ts : list msty) (l : list lbi) : ext :=
   foldr (λ i a, xmin (evlb v ts i) a) XTT l.
 
+(** The slots of a point other than an anchor: the payload of a
+    message at slot 0, the branches x[0] and x[1] of a choice (K11), the
+    next point of the low chain. A slot of a point that is no anchor
+    rises above it ([dsl]), junk when it would not, so a walk rises at
+    every slot and an abstract end point may assume x ≺ x[i]. *)
+Definition dsl0 (d : dn) (i : nat) : dn :=
+  match d with
+  | DCh Q h dd =>
+      match i, hdt h dd Q with
+      | 0, (Some (VSnd _ (MPChan _ Qp hp dp) _), _) | 0, (Some (VRcv _ (MPChan _ Qp hp dp) _), _) =>
+          DCh Qp hp dp
+      | 0, (Some (VSel _ _ _), _) | 0, (Some (VBra _ _ _), _) => dbr0 d false
+      | 1, (Some (VSel _ _ _), _) | 1, (Some (VBra _ _ _), _) => dbr0 d true
+      | _, _ => DJ 0
+      end
+  | DLC j => DLC (j + 1)
+  | DU j => DU (j + 1)
+  | _ => DJ 0
+  end.
+
 Definition dsl (d : dn) (i : nat) : dn :=
   match d with
   | DAnc v ts =>
@@ -206,19 +227,16 @@ Definition dsl (d : dn) (i : nat) : dn :=
       | Some RLow => DLC 0
       | None => DJ 0
       end
-  | DCh Q h dd =>
-      match i, hdt h dd Q with
-      | 0, (Some (VSnd _ (MPChan _ Qp hp dp) _), _) | 0, (Some (VRcv _ (MPChan _ Qp hp dp) _), _) =>
-          DCh Qp hp dp
-      | _, _ => DJ 0
-      end
-  | DLC j => DLC (j + 1)
-  | DU j => DU (j + 1)
-  | _ => DJ 0
+  | _ => guard d (dsl0 d i)
   end.
 
 Lemma guard_rise d d' : rlt (rank d) (rank (guard d d')).
 Proof. unfold guard. case_decide; [done|]. apply rlt_jnk. Qed.
+
+Definition danc (d : dn) : Prop := match d with DAnc _ _ => True | _ => False end.
+
+Lemma dsl_rise d i : ¬ danc d → rlt (rank d) (rank (dsl d i)).
+Proof. intros H. destruct d; simpl in H; try done; apply guard_rise. Qed.
 
 Fixpoint dshN (n : nat) (d : dn) : dn :=
   match n with 0 => d | S n => dsh (dshN n d) end.
@@ -231,7 +249,6 @@ Fixpoint denN (f : pname → dn) (p : pname) : dn :=
   match p with
   | NConst _ | NVar _ => f p
   | NSlot q b i => dsl (dshN b (denN f q)) i
-  | NBr q b i => dbr (dshN b (denN f q)) i
   end.
 
 Definition den (f : pname → dn) (x : point) : dn := dshN (pt_off x) (denN f (pt_name x)).
@@ -245,13 +262,11 @@ Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Na
 Lemma den_slot f x i : den f (pt_slot x i) = dsl (den f x) i.
 Proof. done. Qed.
 
-Lemma den_br f x i : den f (pt_br x i) = dbr (den f x) i.
-Proof. done. Qed.
 
 (** Points that share a root denote alike under denotations that agree
     on the root. *)
 Lemma denN_root f g p : f (pn_root p) = g (pn_root p) → denN f p = denN g p.
-Proof. induction p as [a|a|q IH b i|q IH b i]; simpl; try done; intros H; by rewrite IH. Qed.
+Proof. induction p as [a|a|q IH b i]; simpl; try done; intros H; by rewrite IH. Qed.
 
 Lemma den_root f g x : f (pt_root x) = g (pt_root x) → den f x = den g x.
 Proof. intros H. unfold den. by rewrite (denN_root f g). Qed.
@@ -262,7 +277,7 @@ Fixpoint mwalk (x : point) (u : list wstep) : point :=
   match u with
   | [] => x
   | WS :: u => mwalk (pt_shift 1 x) u
-  | WB b :: u => mwalk (pt_br x b) u
+  | WB b :: u => mwalk (pt_slot x (bidx b)) u
   | WL i :: u => mwalk (pt_slot x i) u
   end.
 
@@ -273,14 +288,14 @@ Fixpoint dwalk (d : dn) (u : list wstep) : dn :=
   match u with
   | [] => d
   | WS :: u => dwalk (dsh d) u
-  | WB b :: u => dwalk (dbr d b) u
+  | WB b :: u => dwalk (dsl d (bidx b)) u
   | WL i :: u => dwalk (dsl d i) u
   end.
 
 Lemma den_mwalk f x u : den f (mwalk x u) = dwalk (den f x) u.
 Proof.
   revert x. induction u as [|[|b|i] u IH]; intros x; simpl; [done| | |];
-    rewrite IH; [by rewrite den_shift|by rewrite den_br|by rewrite den_slot].
+    rewrite IH; [by rewrite den_shift|by rewrite den_slot|by rewrite den_slot].
 Qed.
 
 Definition oeq (d d' : dn) : Prop := ∀ u, rank (dwalk d u) = rank (dwalk d' u).
@@ -295,8 +310,6 @@ Lemma oeq_rank d d' : oeq d d' → rank d = rank d'.
 Proof. intros H. apply (H []). Qed.
 Lemma oeq_dsh d d' : oeq d d' → oeq (dsh d) (dsh d').
 Proof. intros H u. apply (H (WS :: u)). Qed.
-Lemma oeq_dbr d d' b : oeq d d' → oeq (dbr d b) (dbr d' b).
-Proof. intros H u. apply (H (WB b :: u)). Qed.
 Lemma oeq_dsl d d' i : oeq d d' → oeq (dsl d i) (dsl d' i).
 Proof. intros H u. apply (H (WL i :: u)). Qed.
 Lemma oeq_dshN n d d' : oeq d d' → oeq (dshN n d) (dshN n d').
@@ -309,8 +322,8 @@ Proof.
   intros E u. destruct u as [|[|b|i] u]; simpl.
   - by rewrite E.
   - unfold dsh, guard. simpl. rewrite E. done.
-  - unfold dbr, guard. simpl. rewrite E. done.
-  - simpl. rewrite E. done.
+  - destruct b; simpl; unfold dbr, guard; simpl; rewrite E; reflexivity.
+  - simpl. unfold dbr, guard. simpl. rewrite E. reflexivity.
 Qed.
 
 (** ** Strictness through a denotation and an equivalence *)
@@ -321,22 +334,19 @@ Lemma wgen_strict_oeq N E L (dnt : point → dn) :
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, dnt (pt_shift 1 x) = dsh (dnt x)) →
   (∀ x i, dnt (pt_slot x i) = dsl (dnt x) i) →
-  (∀ x i, dnt (pt_br x i) = dbr (dnt x) i) →
   (∀ x y, E x y → oeq (dnt x) (dnt y)) →
   (∀ x y, L x y → rlt (rank (dnt x)) (rank (dnt y))) →
   strict (wgen N E L).
 Proof.
-  intros HN HE HL Hs Hl Hb Hc HLr. split; [by apply wgen_wf|].
+  intros HN HE HL Hs Hl Hc HLr. split; [by apply wgen_wf|].
   assert (∀ x y, geq E x y → oeq (dnt x) (dnt y)) as Heq.
-  { induction 1; try (by apply Hc); [apply oeq_refl|by apply oeq_sym|by eapply oeq_trans| | |].
+  { induction 1; try (by apply Hc); [apply oeq_refl|by apply oeq_sym|by eapply oeq_trans| |].
     - rewrite !Hs. by apply oeq_dsh.
-    - rewrite !Hl. by apply oeq_dsl.
-    - rewrite !Hb. by apply oeq_dbr. }
+    - rewrite !Hl. by apply oeq_dsl. }
   assert (∀ x y, glt E L x y → rlt (rank (dnt x)) (rank (dnt y))) as Hlt.
-  { induction 1 as [x y H|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - by apply HLr.
     - rewrite Hs. apply guard_rise.
-    - rewrite Hb. apply guard_rise.
     - apply Heq, oeq_rank in Hx, Hy. by rewrite Hx, <-Hy.
     - by eapply rlt_trans. }
   intros x H. apply Hlt in H. exact (rlt_irrefl _ H).
@@ -361,7 +371,6 @@ Proof.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - apply den_shift.
   - apply den_slot.
-  - apply den_br.
   - by intros x y (_ & _ & H).
   - by intros x y (_ & _ & H).
 Qed.
@@ -377,12 +386,10 @@ Proof. apply Wmp_strict. Qed.
 Lemma den_pn_inst f g σ a p :
   pn_root p = NVar a → g (NVar a) = den f (σ a) → den f (pn_inst σ p) = denN g p.
 Proof.
-  intros Hp Hg. induction p as [c|c|q IH b i|q IH b i]; simpl in Hp; try discriminate.
+  intros Hp Hg. induction p as [c|c|q IH b i]; simpl in Hp; try discriminate.
   - injection Hp as ->. simpl. by rewrite Hg.
   - change (pn_inst σ (NSlot q b i)) with (pt_slot (pt_shift b (pn_inst σ q)) i).
     rewrite den_slot, den_shiftN, IH by done. done.
-  - change (pn_inst σ (NBr q b i)) with (pt_br (pt_shift b (pn_inst σ q)) i).
-    rewrite den_br, den_shiftN, IH by done. done.
 Qed.
 
 Lemma den_inst f g σ a x :
@@ -402,7 +409,7 @@ Definition ianc (B : point) (v : val) (ts : list msty) (p : pname) : dn :=
 Definition isroot (B : point) : Prop := pt_off B = 0 ∧ pn_root (pt_name B) = pt_name B.
 
 Lemma pn_root_cases p : ∃ a, pn_root p = NConst a ∨ pn_root p = NVar a.
-Proof. induction p as [a|a|q IH b i|q IH b i]; simpl; eauto. Qed.
+Proof. induction p as [a|a|q IH b i]; simpl; eauto. Qed.
 
 Lemma den_ianc B v ts : isroot B → den (ianc B v ts) B = DAnc v ts.
 Proof.
@@ -427,10 +434,12 @@ Definition Crel (Θ : pctx) : bcs := BCs [] (crel_fact Θ (NVar 0)).
 Definition Θany (k : nat) : pctx := PCtx 0 k (λ _ _, True).
 
 (** The coarse ceiling and the floor of the walks from κ, with the
-    upper and the lower point of the anchor b. *)
+    upper and the lower point of the anchor b, and the rise of every
+    walk at a slot, which gives x ≺ x[i] at a choice (K11). *)
 Definition pex_fact (κ b : nat) (g : fact) : Prop :=
   (∃ u, g = FLt (mwalk (pvar κ) u) (rpt (pvar b) (RHi [PTop]))) ∨
-  (∃ u, g = FLt (rpt (pvar b) (RLo [LP PBot])) (mwalk (pvar κ) u)).
+  (∃ u, g = FLt (rpt (pvar b) (RLo [LP PBot])) (mwalk (pvar κ) u)) ∨
+  (∃ u i, g = FLt (mwalk (pvar κ) u) (pt_slot (mwalk (pvar κ) u) i)).
 
 Definition Cseg (k : nat) : bcs := BCs [] (λ g, pex_fact 0 1 g ∨ crel_fact (Θany k) (NVar 1) g).
 Definition Cex (B : point) : bcs := BCs [B] (pex_fact 0 1).
@@ -449,7 +458,7 @@ Fixpoint tr (B : point) (pts : nat → point) (T : mty) : ty :=
   | MCh p Q (PX n w) => TSess (polS p (ers Q)) (mwalk (pts n) w)
   | MCh p Q (PL w) => TSess (polS p (ers Q)) (mwalk (rpt B RLow) w)
   | MCh p Q (PH w) => TSess (polS p (ers Q)) (mwalk (pt_shift 1 (rpt B (RHi [PTop]))) w)
-  | MEx p Q => TEx (Some (rpt B (RLo [LP PBot]))) 1 (Cex B) (TSess (polS p (ers Q)) (pvar 0))
+  | MEx p Q => TEx (LPt (rpt B (RLo [LP PBot]))) 1 (Cex B) (TSess (polS p (ers Q)) (pvar 0))
   | MArr T lo ef V => TLolli (hiz B ef) (Some (rpt B (RLo lo))) (tr B pts T) (tr B pts V)
   | MPoly Θ T ef V =>
       TBox 1 (pc_nt Θ) (Crel Θ)
@@ -459,7 +468,7 @@ Fixpoint tr (B : point) (pts : nat → point) (T : mty) : ty :=
       TBox 2 k (Cseg k)
         (TLolli None None TUnit
            (TLolli (Some (rpt (pvar 1) (RHi [PTop]))) None (TSess (polS p (ers Qa)) (pvar 0))
-              (TEx (Some (rpt (pvar 1) (RLo [LP PBot]))) 1 (Cex (pvar 1)) (TSess (polS p (ers Qr)) (pvar 0)))))
+              (TEx (LPt (rpt (pvar 1) (RLo [LP PBot]))) 1 (Cex (pvar 1)) (TSess (polS p (ers Qr)) (pvar 0)))))
   end.
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
@@ -468,7 +477,7 @@ Proof. apply pt_inst_slot. Qed.
 Lemma pt_inst_mwalk σ x u : pt_inst σ (mwalk x u) = mwalk (pt_inst σ x) u.
 Proof.
   revert x. induction u as [|[|b|i] u IH]; intros x; simpl; [done| | |]; rewrite IH;
-    [by rewrite pt_inst_shift|by rewrite pt_inst_br|by rewrite pt_inst_slot].
+    [by rewrite pt_inst_shift|by rewrite pt_inst_slot|by rewrite pt_inst_slot].
 Qed.
 
 Lemma hiz_pinst σ B ef : pt_inst σ <$> hiz B ef = hiz (pt_inst σ B) ef.
@@ -543,7 +552,7 @@ Proof.
 Qed.
 
 Lemma pn_vb_var p a k : pn_root p = NVar a → a < k → pn_vb k p.
-Proof. induction p as [c|c|q IH b i|q IH b i]; simpl; [done|intros [=->]; done|exact IH|exact IH]. Qed.
+Proof. induction p as [c|c|q IH b i]; simpl; [done|intros [=->]; done|exact IH]. Qed.
 
 Lemma good_hyp Ψ Θ C m a :
   (∃ v ts, models Θ v ts) → (C, ids m) ∈ Ψ → a < m →

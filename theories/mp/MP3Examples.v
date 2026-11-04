@@ -332,7 +332,7 @@ Qed.
       main = new c, new d, fork T1, fork T3, T2
 
     The two branches of T2 order c′ and d′ in opposite ways. Version 1
-    already typed it through branch roots; here it runs through the
+    already typed it through the points of its branches; here it runs through the
     version 2 judgment. *)
 
 Definition t2K1 : msty := MSeq (MSnd (PZ 5) MPUnit) (MEnd (PZ 6) false).

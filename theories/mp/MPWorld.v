@@ -18,15 +18,16 @@
     valuation. Inside a box the anchor is its one point variable.
 
     A point denotes ([den]) the valuation of an anchor, a channel in
-    head form, a lower or upper level, or junk. A successor and a
-    branch root of a channel denote the continuation after its head
-    action and the chosen branch, and the first slot the payload it
-    carries. The rank is the priority of the head, with lower points
+    head form, a lower or upper level, or junk. A successor of a
+    channel denotes the continuation after its head action. The first
+    slot of a message denotes the payload it carries, and the slots 0
+    and 1 of a choice its two branches x[0] and x[1] (K11). The rank is the priority of the head, with lower points
     below and upper points above it. Two channels with the same
     denotation share a point. A continuation whose priority does not
     rise denotes junk ranked on top, so the rank rises along the program
-    order of every point. The world [Wmp] identifies root points with
-    one denotation and orders root points of rising rank.
+    order of every point and from a choice to each of its branches. The
+    world [Wmp] identifies root points with one denotation and orders
+    root points of rising rank, so it states x ≺ x[i] at every choice.
 
     A box has the constraint [Crel Θ], every fact between points of its
     anchor that holds at every valuation of Θ. A force at B[RAnc σs]
@@ -147,8 +148,11 @@ Definition dbr (d : dn) (b : bool) : dn :=
            | _ => DJ 0
            end).
 
+(** The slots of a choice are its branches, x[0] and x[1] (K11). *)
 Definition dsl (d : dn) (i : nat) : dn :=
   match d with
+  | DCh (MSel _ _ _) _ _ | DCh (MBra _ _ _) _ _ =>
+      match i with 0 => dbr d false | 1 => dbr d true | _ => DJ 0 end
   | DAnc v =>
       match decode_nat i with
       | Some (RAnc σ) => DAnc (evalZ v <$> σ)
@@ -178,7 +182,6 @@ Fixpoint denN (v : val) (p : pname) : dn :=
   | NVar 0 => DAnc v
   | NConst _ | NVar _ => DJ 0
   | NSlot q b i => dsl (dshN b (denN v q)) i
-  | NBr q b i => dbr (dshN b (denN v q)) i
   end.
 
 Definition den (v : val) (x : point) : dn := dshN (pt_off x) (denN v (pt_name x)).
@@ -195,8 +198,13 @@ Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Na
 Lemma den_slot v x i : den v (pt_slot x i) = dsl (den v x) i.
 Proof. done. Qed.
 
-Lemma den_br v x i : den v (pt_br x i) = dbr (den v x) i.
-Proof. done. Qed.
+Definition dchoice (d : dn) : Prop :=
+  match d with DCh (MSel _ _ _) _ _ | DCh (MBra _ _ _) _ _ => True | _ => False end.
+
+Lemma den_br v x i : dchoice (den v x) → den v (pt_slot x (bidx i)) = dbr (den v x) i.
+Proof.
+  intros H. rewrite den_slot. destruct (den v x) as [|[]| | |]; simpl in H; try done; by destruct i.
+Qed.
 
 Lemma den_proot v : den v proot = DAnc [].
 Proof. done. Qed.
@@ -206,36 +214,33 @@ Proof. done. Qed.
 
 (** Root points do not depend on the valuation. *)
 Lemma denN_const v v' p : pn_root p = NConst 0 → denN v p = denN v' p.
-Proof. induction p as [[|a]|a|q IH b i|q IH b i]; simpl; try done; intros Hp; by rewrite IH. Qed.
+Proof. induction p as [[|a]|a|q IH b i]; simpl; try done; intros Hp; by rewrite IH. Qed.
 
 Lemma den_const v v' x : pt_root x = NConst 0 → den v x = den v' x.
 Proof. intros H. unfold den. by rewrite (denN_const v v'). Qed.
 
-(** ** Strictness through a denotation that sees branch roots *)
+(** ** Strictness through a denotation *)
 
 Lemma wgen_strict_dn {D A} (R : A → A → Prop) N E L (dnt : point → D)
-    (dS : D → D) (dL : D → nat → D) (dB : D → bool → D) (r : D → A) :
+    (dS : D → D) (dL : D → nat → D) (r : D → A) :
   (∀ a, ¬ R a a) → (∀ a b c, R a b → R b c → R a c) →
   (∀ p, p ∈ N → ∃ a, p = NConst a) →
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, dnt (pt_shift 1 x) = dS (dnt x)) →
   (∀ x i, dnt (pt_slot x i) = dL (dnt x) i) →
-  (∀ x i, dnt (pt_br x i) = dB (dnt x) i) →
   (∀ x y, E x y → dnt x = dnt y) →
   (∀ d, R (r d) (r (dS d))) →
-  (∀ d i, R (r d) (r (dB d i))) →
   (∀ x y, L x y → R (r (dnt x)) (r (dnt y))) →
   strict (wgen N E L).
 Proof.
-  intros Hirr Htr HN HE HL Hs Hl Hb Hc Hr Hrb HLr. split; [by apply wgen_wf|].
+  intros Hirr Htr HN HE HL Hs Hl Hc Hr HLr. split; [by apply wgen_wf|].
   assert (∀ x y, geq E x y → dnt x = dnt y) as Heq.
-  { induction 1; try congruence; auto; rewrite ?Hs, ?Hl, ?Hb; congruence. }
+  { induction 1; try congruence; auto; rewrite ?Hs, ?Hl; congruence. }
   assert (∀ x y, glt E L x y → R (r (dnt x)) (r (dnt y))) as Hlt.
-  { induction 1 as [x y H|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - by apply HLr.
     - rewrite Hs. apply Hr.
-    - rewrite Hb. apply Hrb.
     - apply Heq in Hx, Hy. by rewrite Hx, <-Hy.
     - by eapply Htr. }
   intros x H. apply Hlt in H. exact (Hirr _ H).
@@ -252,7 +257,7 @@ Definition Wmp : world :=
 
 Lemma Wmp_strict : strict Wmp.
 Proof.
-  apply (wgen_strict_dn rlt _ _ _ (den []) dsh dsl dbr rank).
+  apply (wgen_strict_dn rlt _ _ _ (den []) dsh dsl rank).
   - apply rlt_irrefl.
   - apply rlt_trans.
   - intros p ->%elem_of_singleton. by exists 0.
@@ -260,10 +265,8 @@ Proof.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - apply den_shift.
   - apply den_slot.
-  - apply den_br.
   - by intros x y (_ & _ & H).
   - apply rank_dsh.
-  - apply rank_dbr.
   - by intros x y (_ & _ & H).
 Qed.
 
@@ -278,12 +281,10 @@ Proof. apply Wmp_strict. Qed.
 Lemma den_inst_pn v w X p :
   den v X = DAnc w → pn_root p = NVar 0 → den v (pn_inst (plist [X]) p) = denN w p.
 Proof.
-  intros HX. induction p as [c|[|c]|q IH b i|q IH b i]; intros Hp; simpl in Hp; try discriminate.
+  intros HX. induction p as [c|[|c]|q IH b i]; intros Hp; simpl in Hp; try discriminate.
   - exact HX.
   - change (pn_inst (plist [X]) (NSlot q b i)) with (pt_slot (pt_shift b (pn_inst (plist [X]) q)) i).
     rewrite den_slot, den_shiftN, IH by done. done.
-  - change (pn_inst (plist [X]) (NBr q b i)) with (pt_br (pt_shift b (pn_inst (plist [X]) q)) i).
-    rewrite den_br, den_shiftN, IH by done. done.
 Qed.
 
 Lemma den_inst v w X x :
@@ -431,7 +432,7 @@ Proof.
 Qed.
 
 Lemma pn_vb_var0 p : pn_root p = NVar 0 → pn_vb 1 p.
-Proof. induction p as [a|a|q IH b i|q IH b i]; simpl; [done|intros [=->]; lia|exact IH|exact IH]. Qed.
+Proof. induction p as [a|a|q IH b i]; simpl; [done|intros [=->]; lia|exact IH]. Qed.
 
 Lemma good_box Ψ Θ : (Crel Θ, ids 1) ∈ Ψ → good Ψ Θ (pvar 0).
 Proof.

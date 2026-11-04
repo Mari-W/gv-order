@@ -12,8 +12,9 @@
     derivation Θ | Γ ⊢ e : T ⋄ σs also yields the term e′ of the static
     system it translates to, so the judgment is [mtyped Θ Γ e T σs e′].
 
-    Source terms are the terms of lang/Syntax.v as in version 1. Two
-    rules are new.
+    Source terms are the terms of lang/Syntax.v as in version 1, and
+    new translates to the encoded let of the existential new,
+    [let_new_pair e′]. Two rules are new.
 
     - rec f. Λαs. λx.e over a segment ([m_fixseg]) types e under any
       valuation, with x at an abstract position.
@@ -283,13 +284,13 @@ Inductive mtyped (Θ : pctx) : menv → expr → mty → list prio → expr → 
       mtyped Θ Γ (LetU e1 e2) V (ef1 ++ ef2) (LetU (App EForce e1') e2')
   | m_new Γ e e' Q n d V ef :                                (* T-New, T-NewPoly *)
       mtyped Θ (Some (MCh true Q (PR n d)) :: Some (MCh false Q (PR n d)) :: Γ) e V ef e' →
-      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (LetP (App ENew EUnit) e')
+      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (let_new_pair e')
   | m_newlo Γ e e' Q V ef :                                  (* new below the floor *)
       mtyped Θ (Some (MCh true Q (PL [])) :: Some (MCh false Q (PL [])) :: Γ) e V ef e' →
-      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (LetP (App ENew EUnit) e')
+      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (let_new_pair e')
   | m_newhi Γ e e' Q V ef :                                  (* new above the ceiling *)
       mtyped Θ (Some (MCh true Q (PH [])) :: Some (MCh false Q (PH [])) :: Γ) e V ef e' →
-      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (LetP (App ENew EUnit) e')
+      mtyped Θ Γ (LetP (App ENew EUnit) e) V ef (let_new_pair e')
   | m_send Γ Γ1 Γ2 e1 e2 e1' e2' pol a P K p ef1 ef2 :       (* send, R1, R3 *)
       msplit Γ Γ1 Γ2 →
       mtyped Θ Γ1 e1 (payty P) ef1 e1' →
