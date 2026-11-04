@@ -80,6 +80,9 @@ theories/examples/Stream.v
 theories/examples/Congruence.v
 theories/examples/ChoiceEnc.v
 theories/examples/OptionPayload.v
+theories/examples/lit/LitLib.v
+theories/examples/lit/LitRejected.v
+theories/examples/lit/Falling.v
 theories/counterexamples/DropCounter.v
 theories/pgv/PGVTypes.v
 theories/pgv/PGVTyping.v
