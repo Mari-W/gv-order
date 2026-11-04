@@ -10,6 +10,11 @@ or on choices it makes at run time.
 1. Branches. A component that picks the order of two external actions at run
    time needs both orders. One world per component cannot hold both, so the
    composition is deadlock free but not derivable (sharp edges 4, deferred).
+   Revised 2026-11-04 in [data-dependent-worlds.md](data-dependent-worlds.md).
+   The closed program of this description types, with an unsatisfiable fact
+   on the dead side of the bit (theories/examples/DataBranch.v, db_typed).
+   The case node does not type when its interface gives the bit no fact
+   (db_component_unrealizable).
 2. Rounds. A recursion orders the points of round k by a formula in k. Free
    constraints state these facts as infinite sets (sharp edges 65), with the
    round counter bound in set-builder notation.
