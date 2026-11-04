@@ -457,3 +457,97 @@ Proof.
   - apply tenv_comp_empty_l, (wf_eq_sym _ (proj1 (proj2 (proj2 (proj2 HW'))))).
   - apply sf_ground, (proj1 (proj2 (proj2 (proj2 HW')))).
 Qed.
+
+(** The partner close c; close d is typed by the static system. *)
+Lemma tenv_heads_one c e : tenv_heads {[c := One e]} = {[e.2]}.
+Proof. unfold tenv_heads. rewrite map_fold_singleton. simpl. set_solver. Qed.
+
+Lemma cc2_typed W x y :
+  world_wf W → w_lt W x y → typed W ∅ [] (db_Θ x y) [] (∅, None) (cc2 chc chd) TUnit.
+Proof.
+  intros HW Hxy. unfold cc2.
+  eapply (t_letstar W ∅ [] (db_Θ x y) {[chc := One (SEnd, x)]} {[chd := One (SEnd, y)]}
+            [] [] []).
+  - apply comp_comm; [intros ? ?; apply se_sym|apply db_comp_cd].
+  - constructor.
+  - eapply (t_app W ∅ [] _ ∅ {[chc := One (SEnd, x)]} [] [] [] _ _ _ (Some x) None (TSess SEnd x)).
+    + apply tenv_comp_empty_l. intros ? ?. apply se_sym.
+    + constructor.
+    + apply ubs_intro; [|done]. intros z Hz. rewrite tenv_heads_one in Hz. mem_cases Hz.
+      by apply sl_w.
+    + apply t_const; [intros o Ho; by apply elem_of_nil in Ho|apply KTClos|done].
+    + apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl].
+  - eapply (t_app W ∅ [] _ ∅ {[chd := One (SEnd, y)]} [] [] [] _ _ _ (Some y) None (TSess SEnd y)).
+    + apply tenv_comp_empty_l. intros ? ?. apply se_sym.
+    + constructor.
+    + apply ubs_intro; [|done]. intros z Hz. mem_cases Hz.
+    + apply t_const; [intros o Ho; by apply elem_of_nil in Ho|apply KTClos|done].
+    + apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl].
+Qed.
+
+(** The interface of each side: c at x and d at y, both Close. *)
+Definition sf_Σ (x y : point) : senv := <[chd := (SEnd, y)]> {[chc := (SEnd, x)]}.
+
+Lemma sf_Σ_tenv x y : tenv_of (sf_Σ x y) ∪ ∅ = db_Θ x y.
+Proof.
+  rewrite (right_id_L ∅ (∪)). unfold tenv_of, sf_Σ, db_Θ.
+  by rewrite fmap_insert, map_fmap_singleton.
+Qed.
+
+Lemma sf_Σ_dual W x y c e e' :
+  world_wf W → sf_Σ x y !! c = Some e → sf_Σ x y !! c = Some e' →
+  w_eq W e.2 e'.2 ∧ sdual e.1 e'.1.
+Proof.
+  intros HW He He'. rewrite He in He'. injection He' as <-. split; [apply (wf_eq_refl _ HW)|].
+  unfold sf_Σ in He. apply lookup_insert_Some in He as [(_ & <-)|(_ & He)];
+    [|apply lookup_singleton_Some in He as [_ <-]]; apply (sdual_dual SEnd).
+Qed.
+
+(** The configuration: the thread and the partner over the cut {c, d}. *)
+Definition sf_config : proc := ({[chc; chd]}, {[+ sf_thread; cc2 chc chd +]}).
+
+(** A mixed derivation of the configuration. The thread is a semantic
+    leaf, the partner a syntactic one. *)
+Theorem sf_mixed W x y : strict W → w_lt W x y → mptyped W ∅ sf_config TUnit.
+Proof.
+  intros HW Hxy. pose proof (proj1 HW) as HWf.
+  assert (sf_config = (∅ ∪ ∅ ∪ dom (sf_Σ x y), {[+ sf_thread +]} ⊎ {[+ cc2 chc chd +]})) as ->.
+  { unfold sf_config, sf_Σ. f_equal. all: rewrite !dom_insert_L, dom_singleton_L; set_solver. }
+  assert ((∅ : senv) = ∅ ∪ ∅) as E by by rewrite (left_id_L ∅ (∪)).
+  rewrite E at 1.
+  apply (mp_connect W ∅ ∅ (sf_Σ x y) (sf_Σ x y) (dom (sf_Σ x y)) ∅ ∅
+           {[+ sf_thread +]} {[+ cc2 chc chd +]} TUnit); try done.
+  - rewrite (left_id_L ∅ (∪)).
+    apply (mp_sem_thread W (sf_Σ x y) ∅ ∅); [constructor|done|done|set_solver| | |].
+    + intros c o Ho. by rewrite lookup_empty in Ho.
+    + intros c e1 e2 He. by rewrite lookup_empty in He.
+    + rewrite sf_Σ_tenv. by apply sf_thread_sem.
+  - rewrite (left_id_L ∅ (∪)). apply mp_syn.
+    apply (pt_term W (sf_Σ x y) ∅ ∅); [constructor|done|set_solver| | |].
+    + intros c o Ho. by rewrite lookup_empty in Ho.
+    + intros c e1 e2 He. by rewrite lookup_empty in He.
+    + rewrite sf_Σ_tenv. by apply cc2_typed.
+  - intros c e e' He He'. by apply (sf_Σ_dual W x y c).
+  - apply map_disjoint_empty_l.
+  - apply map_disjoint_empty_l.
+Qed.
+
+(** A strict world with x ≺ y: c at the constant point 0, d at 1. *)
+Definition sf_W : world := Wfacts [0; 1] [(pc 0 0, pc 1 0)].
+
+Lemma sf_W_strict : strict sf_W.
+Proof.
+  apply (Wfacts_strict _ _ (λ _, 1) id (λ _ _ _, 0)); [lia| |].
+  - repeat constructor; cbn; set_solver.
+  - repeat constructor; cbn; lia.
+Qed.
+
+Lemma sf_W_lt : w_lt sf_W (pc 0 0) (pc 1 0).
+Proof. apply Wfacts_lt. set_solver. Qed.
+
+(** The configuration is deadlock free, by the mixed derivation. *)
+Theorem sf_deadlock_free : deadlock_free sf_config.
+Proof.
+  apply (mixed_soundness sf_W sf_config TUnit sf_W_strict).
+  apply (sf_mixed sf_W (pc 0 0) (pc 1 0) sf_W_strict sf_W_lt).
+Qed.
