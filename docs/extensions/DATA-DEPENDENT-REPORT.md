@@ -48,6 +48,7 @@ DataBranch.v
 | `db_deadlock_free` | `∀ b, deadlock_free (∅, {[+ db_main b +]})`, from `soundness` |
 | `db_component_unrealizable` | `styped Φ Ψ (db_ctx x y k) F db_case T → ¬ realizable Φ Ψ` |
 | `db_component_untyped_top` | `creation_ok n nofact nofact (λ _, False) C0 → ¬ styped ∅ [(C0, ids n)] (db_ctx x y k) F db_case T` |
+| `db_component_sides` | `styped Φ Ψ (db_ctx2 C1 C2 x y k) F db_case T → ¬ realizable2 Φ Ψ C1 C2`, the bit at ∃{C₁}.∗ ⊕ ∃{C₂}.∗ |
 | `db_rnode_unrealizable` | `styped Φ Ψ (db_rctx x y z k) F db_rnode T → ¬ realizable Φ Ψ` |
 | `db_rnode_untyped_top` | the same at `[(C0, ids n)]` |
 | `db_main_shape` | db_main b is three lets of new, three spawns and db_rnode |

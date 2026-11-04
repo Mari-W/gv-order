@@ -55,6 +55,7 @@ context.
 | `db_deadlock_free b` | `deadlock_free (∅, {[+ db_main b +]})`, from `soundness` |
 | `db_component_unrealizable` | `styped Φ Ψ (db_ctx x y k) F db_case T → ¬ realizable Φ Ψ` |
 | `db_component_untyped_top` | the same at the hypotheses `[(C0, ids n)]` of a source program |
+| `db_component_sides` | `styped Φ Ψ (db_ctx2 C1 C2 x y k) F db_case T → ¬ realizable2 Φ Ψ C1 C2`, the bit at ∃{C₁}.∗ ⊕ ∃{C₂}.∗ |
 | `db_rnode_unrealizable` | `styped Φ Ψ (db_rctx x y z k) F db_rnode T → ¬ realizable Φ Ψ` |
 | `db_rnode_untyped_top` | the same at the hypotheses `[(C0, ids n)]` |
 | `db_main_shape b` | db_main b is three lets of new, three spawns and db_rnode |
@@ -101,7 +102,10 @@ the live inr branch reads y ≺ x and the dead inl branch derives
 x ≺ z[0]+5 ≺ z[0]+1 ≺ y.
 
 The hypotheses of the dead branch are not realizable, and the soundness proof
-needs no change. The logical relation reads a value of ∃{z[0]+5 ≺ z[0]+1}.∗
+needs no change. They have to be. [db_component_sides] shows that the case
+node with the bit at ∃{C₁}.∗ ⊕ ∃{C₂}.∗ has no derivation when one strict world
+realizes the hypotheses, C₁ and C₂ together. A derivation of the node needs
+one side of the bit that no world realizes with the rest. The logical relation reads a value of ∃{z[0]+5 ≺ z[0]+1}.∗
 only in a world with that fact, and a strict world has none.
 
 The trick generalizes, by the same steps and without a Rocq proof, to every

@@ -722,6 +722,63 @@ Proof.
   apply (proj2 HWs (pt_inst σ x)). exact (wf_lt_trans _ HW _ _ _ H2 H1).
 Qed.
 
+(** The same node with a bit whose sides carry facts C₁ and C₂. It has
+    no derivation when one strict world realizes the hypotheses, C₁ and
+    C₂ together. So a derivation needs one side of the bit to be
+    unrealizable with the rest, which is what [db_typed] does. *)
+
+Definition db_ctx2 (C1 C2 : bcs) (x y : point) (k : nat) : lenv :=
+  [None; Some (TSum (TEx LNone 0 C1 TUnit) (TEx LNone 0 C2 TUnit)); None;
+   Some (TSess SEnd y); None; None; None; Some (TSess SEnd x)] ++ replicate k None.
+
+Definition realizable2 (Φ : fhyps) (Ψ : hyps) (C1 C2 : bcs) : Prop :=
+  ∃ W σ ρ, strict W ∧ inst_ok W (fhyps_pinst σ Φ) ρ ∧
+    hyps_hold (w_eq W) (w_lt W) (pt_known W) (hyps_inst σ Ψ) ∧
+    bcs_hold (w_eq W) (w_lt W) (bcs_inst σ C1) [] ∧
+    bcs_hold (w_eq W) (w_lt W) (bcs_inst σ C2) [].
+
+Lemma tenv_heads_nil : tenv_heads ∅ = ∅.
+Proof. unfold tenv_heads. by rewrite map_fold_empty. Qed.
+
+Lemma db_ground2 n W b C1 C2 x y k :
+  world_wf W → bcs_hold (w_eq W) (w_lt W) C1 [] → bcs_hold (w_eq W) (w_lt W) C2 [] →
+  grounding n W (db_Θ x y)
+    ([None; Some (TSum (TEx LNone 0 C1 TUnit) (TEx LNone 0 C2 TUnit)); None;
+      Some (TSess SEnd y); None; None; None; Some (TSess SEnd x)] ++ replicate k None) (db_γ b).
+Proof.
+  intros HW H1 H2. cbn [grounding app].
+  exists ∅, (db_Θ x y). split; [apply tenv_comp_empty_l, (wf_eq_sym _ HW)|]. split.
+  { apply Vrel_sum_iff. destruct b; [right|left]; eexists; (split; [done|]);
+      apply Vrel_ex_iff; (split; [rewrite tenv_heads_nil; by split|]);
+      exists []; split_and!; first [done|by apply Forall_nil|by apply Vrel_unit_iff]. }
+  exists {[chd := One (SEnd, y)]}, {[chc := One (SEnd, x)]}. split; [apply db_comp_cd|]. split.
+  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  exists {[chc := One (SEnd, x)]}, ∅. split; [apply tenv_comp_empty_r|]. split.
+  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  apply grounding_nones.
+Qed.
+
+Theorem db_component_sides Φ Ψ F T x y k C1 C2 :
+  styped Φ Ψ (db_ctx2 C1 C2 x y k) F db_case T → ¬ realizable2 Φ Ψ C1 C2.
+Proof.
+  intros Hs (W & σ & ρ & HWs & Hρ & HΨ & H1 & H2).
+  pose proof (proj1 HWs) as HW.
+  pose proof (styped_typed W _ _ _ _ _ _ Hs) as Ht.
+  pose proof (typed_sem_rules _ _ _ _ _ _ _ _ Ht W ρ σ HW (wext_refl _ HWs) Hρ HΨ) as Hr.
+  apply sem_rules_fundamental in Hr; [|done].
+  rewrite tenv_pinst_empty in Hr.
+  assert (∀ b, Erel 3 W (db_Θ (pt_inst σ x) (pt_inst σ y)) (pinst_ty σ T)
+                 (sf_inst ρ (sf_pinst σ F)) (subst (db_γ b) db_case)) as HE.
+  { intros b. apply (Hr 3 W (db_Θ (pt_inst σ x) (pt_inst σ y)) (db_Θ (pt_inst σ x) (pt_inst σ y)) (db_γ b)).
+    - apply wext_refl, HWs.
+    - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
+    - unfold db_ctx2, lenv_pinst. rewrite fmap_app, fmap_replicate. cbn.
+      by apply db_ground2. }
+  pose proof (db_case_lt _ _ _ true _ _ (HE true)) as Hl1.
+  pose proof (db_case_lt _ _ _ false _ _ (HE false)) as Hl2.
+  apply (proj2 HWs (pt_inst σ x)). exact (wf_lt_trans _ HW _ _ _ Hl2 Hl1).
+Qed.
+
 (** The hypotheses of a source program are realizable. A program
     starts under a creation constraint C₀ over n top-level points, and
     the world wc0 n C₀ realizes it ([soundness_source]). So the case
