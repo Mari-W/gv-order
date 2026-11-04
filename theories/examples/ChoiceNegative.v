@@ -105,7 +105,7 @@ Proof. destruct T, U; simpl; done. Qed.
     [styped_sd] is [styped] with only the rules whose conclusion fixes
     the term. Its premises are full [styped] derivations. *)
 
-Inductive styped_sd : fhyps → hyps → lenv → sframe → expr → ty → Prop :=
+Inductive styped_sd : fhyps → hyps → lenv → sfuture → expr → ty → Prop :=
   | sd_unit Φ Ψ Δ F :
       lenv_empty Δ →
       styped_sd Φ Ψ Δ F EUnit TUnit
@@ -352,7 +352,7 @@ Lemma t2_recv Φ Ψ Δ F a i T1 T2 :
   plain Δ → (∀ U, Δ !! i = Some (Some U) → U = TSess Sbr0 a) →
   styped Φ Ψ Δ F (App ERecv (Var i)) (TProd T1 T2) →
   ∃ x r1 y1 r2 y2 r y, T1 = TSum (TSess r1 y1) (TSess r2 y2) ∧ T2 = TSess r y ∧
-    heqs Ψ (pt_slot x 0) y1 ∧ heqs Ψ (pt_slot x 0) y2.
+    heqs Ψ (pt_payload x 0) y1 ∧ heqs Ψ (pt_payload x 0) y2.
 Proof.
   intros Hp Hc H.
   destruct (inv_kv _ _ _ _ _ _ _ H Hp) as (ub & lb & A & U & K & V & _ & HK & HKA & HV & HVA & _ & HU).
@@ -373,7 +373,7 @@ Proof.
   destruct P2 as [| | | | |s2 z2|]; cbn [eqT] in HP2; try contradiction.
   destruct HP1 as [-> _], HP2 as [-> _].
   assert (payload_at 1 (TSum (TSess s1 (pvar 0)) (TSess s2 (pvar 0))) x
-          = TSum (TSess s1 (pt_slot x 0)) (TSess s2 (pt_slot x 0))) as E by reflexivity.
+          = TSum (TSess s1 (pt_payload x 0)) (TSess s2 (pt_payload x 0))) as E by reflexivity.
   rewrite E in HT.
   destruct T1 as [| | |T11 T12| | |]; cbn [hsteq] in HT; try (exfalso; destruct HT as [HT _]; exact HT).
   destruct HT as [[H1 H2] HT2].
@@ -452,10 +452,10 @@ Proof.
   { eapply hub_fact; [exact Hub'|]. apply sf_unionb_fst.
     eapply lenv_heads_lookup; [exact Hd'|]. simpl. set_solver. }
   (* δ ≺ x[0] ≺ δ *)
-  assert (hlt Ψ δ (pt_slot x 0)) as G1.
+  assert (hlt Ψ δ (pt_payload x 0)) as G1.
   { eapply hlt_eqs; [|apply he_sym; exact (he_trans _ _ _ _ Hy1 Hz1)|exact F1].
     eapply he_trans; [exact Hδw|]. eapply he_trans; [apply he_sym; exact Hxw|exact Hxc]. }
-  assert (hlt Ψ (pt_slot x 0) δ) as G2.
+  assert (hlt Ψ (pt_payload x 0) δ) as G2.
   { eapply hlt_eqs; [|apply he_refl|exact F2].
     eapply he_trans; [exact (he_trans _ _ _ _ Hy2 Hz2)|].
     eapply he_trans; [exact Hzw'|]. eapply he_trans; [apply he_sym; exact Hxw'|exact Hxr]. }
@@ -526,7 +526,7 @@ Proof.
   - by apply geq_sym.
   - by eapply geq_trans.
   - by apply geq_shift.
-  - by apply geq_slot.
+  - by apply geq_payload.
 Qed.
 
 Lemma hfl_c0 n C Φ a b :

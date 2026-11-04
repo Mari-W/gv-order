@@ -137,7 +137,7 @@ Qed.
 Lemma alt_K_typed W F : world_wf W → typed W ∅ [] ∅ [] F alt_K alt_K_ty.
 Proof.
   intros HW. unfold alt_K, alt_K_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   change (lenv_pinst (pshift 2) [Some (TBox 2 0 alt_KC (TLolli None None TUnit alt_K_body))])
     with [Some (pinst_ty (pshift 2) alt_K_ty)].
   rewrite (pinst_closed _ alt_K_ty alt_K_ty_scoped).
@@ -290,7 +290,7 @@ Proof. cbn. repeat split; try apply Forall_nil; try (intros ? Hv; injection Hv; 
 Lemma alt_R_typed W F : world_wf W → typed W ∅ [] ∅ [] F alt_R alt_R_ty.
 Proof.
   intros HW. unfold alt_R, alt_R_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   change (lenv_pinst (pshift 1) [Some (TBox 1 0 alt_RC (TLolli None None TUnit alt_R_body))])
     with [Some (pinst_ty (pshift 1) alt_R_ty)].
   rewrite (pinst_closed _ alt_R_ty alt_R_ty_scoped).

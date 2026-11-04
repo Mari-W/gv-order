@@ -813,7 +813,7 @@ Qed.
     payload points. For b = true the roles of the two sides swap. *)
 
 (** ι[0] + k *)
-Definition sl0 (a k : nat) : point := Pt (NSlot (NVar a) 0 0) k.
+Definition sl0 (a k : nat) : point := Pt (NPayload (NVar a) 0 0) k.
 
 Definition Ce : bcs := BCs [] (λ g, g = FLt (pv 0 1) (sl0 0 5)).
 Definition Cdead : bcs := BCs [pvar 0] (λ g, g = FLt (pv 0 5) (pv 0 1)).
@@ -929,7 +929,7 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
-  cbn. set (Cd := bcs_inst (plist [pt_slot (pvar 2) 0]) Cdead).
+  cbn. set (Cd := bcs_inst (plist [pt_payload (pvar 2) 0]) Cdead).
   eapply (tv_case W _ _ _ _ _ _ _ TUnit (TEx LNone 0 Cd TUnit) TUnit); [exact HW|reflexivity|tstep| |].
   - (* inl closes c, then d *)
     cbn. tstep; [tstep|]. cbn. tstep.
@@ -1059,7 +1059,7 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
-  cbn. set (Cd := bcs_inst (plist [pt_slot (pvar 2) 0]) Cdead).
+  cbn. set (Cd := bcs_inst (plist [pt_payload (pvar 2) 0]) Cdead).
   eapply (tv_case W _ _ _ _ _ _ _ (TEx LNone 0 Cd TUnit) TUnit TUnit); [exact HW|reflexivity|tstep| |].
   - (* inl opens the payload, which states z[0]+5 ≺ z[0]+1 *)
     cbn. apply (t_open W _ _ _ _ _ _ 0 LNone 0 Cd TUnit TUnit); [done|intros Hu; exact Hu|].

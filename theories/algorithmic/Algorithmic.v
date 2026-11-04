@@ -27,7 +27,7 @@
     Effects. The future F is an input of every mode (inherited), the
     upper point of an arrow is checked against it at every application
     ([ub_constr]), and the lower point of a λ is checked against the
-    heads of the captured environment. The frame variable φ of a λ body
+    heads of the captured environment. The future variable φ of a λ body
     is the counter n, so no freshness oracle is needed. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -84,11 +84,11 @@ Proof.
   - rewrite Forall_cons. by rewrite IH.
 Qed.
 
-(** {u} ≺ F, resolved against the frame hypotheses Φ: u below every
-    point of F, and u ≼ u′ for the hypothesis u′ ≺ φ of the frame
-    variable φ of F. A frame with the ⊥ flag, or whose frame variable
+(** {u} ≺ F, resolved against the future hypotheses Φ: u below every
+    point of F, and u ≼ u′ for the hypothesis u′ ≺ φ of the future
+    variable φ of F. A future with the ⊥ flag, or whose future variable
     has no hypothesis, admits no call with an upper point. *)
-Definition ub_constr (Φ : fhyps) (ub : option point) (F : sframe) : constr :=
+Definition ub_constr (Φ : fhyps) (ub : option point) (F : sfuture) : constr :=
   match ub with
   | None => CTrue
   | Some u =>
@@ -275,7 +275,7 @@ Fixpoint pscopedb (k : nat) (T : ty) : bool :=
 
     The scheme of the constant is read off A (spec §9). The head of the
     session type is its head normal form [hd]. *)
-Definition konst_app (Φ : fhyps) (F : sframe) (k : konst) (A : ty) : option (ty * constr) :=
+Definition konst_app (Φ : fhyps) (F : sfuture) (k : konst) (A : ty) : option (ty * constr) :=
   match k, A with
   | KSpawn, TLolli _ _ TUnit TUnit => Some (TUnit, CTrue)
   | KSend, TProd P (TSess s x) =>
@@ -305,20 +305,20 @@ Definition konst_app (Φ : fhyps) (F : sframe) (k : konst) (A : ty) : option (ty
   | KSel1, TSess s x =>
       match hd s with
       | HPlus s1 s2 =>
-          Some (TSess s1 (pt_slot x 0), CAnd (CAtom (ALt x (pt_slot x 0))) (ub_constr Φ (Some x) F))
+          Some (TSess s1 (pt_payload x 0), CAnd (CAtom (ALt x (pt_payload x 0))) (ub_constr Φ (Some x) F))
       | _ => None
       end
   | KSel2, TSess s x =>
       match hd s with
       | HPlus s1 s2 =>
-          Some (TSess s2 (pt_slot x 1), CAnd (CAtom (ALt x (pt_slot x 1))) (ub_constr Φ (Some x) F))
+          Some (TSess s2 (pt_payload x 1), CAnd (CAtom (ALt x (pt_payload x 1))) (ub_constr Φ (Some x) F))
       | _ => None
       end
   | KBra, TSess s x =>
       match hd s with
       | HWith s1 s2 =>
-          Some (TSum (TSess s1 (pt_slot x 0)) (TSess s2 (pt_slot x 1)),
-                cands [CAtom (ALt x (pt_slot x 0)); CAtom (ALt x (pt_slot x 1)); ub_constr Φ (Some x) F])
+          Some (TSum (TSess s1 (pt_payload x 0)) (TSess s2 (pt_payload x 1)),
+                cands [CAtom (ALt x (pt_payload x 0)); CAtom (ALt x (pt_payload x 1)); ub_constr Φ (Some x) F])
       | _ => None
       end
   | KLink, TProd (TSess s x) (TSess r y) =>
@@ -331,9 +331,9 @@ Definition unshift_ty (U : ty) : ty := pinst_ty (λ a, pvar (a - 1)) U.
 
 (** ** Synthesis
 
-    n is the next free frame variable: every frame variable of Φ is
+    n is the next free future variable: every future variable of Φ is
     below n. *)
-Fixpoint synth (n : nat) (Φ : fhyps) (Δ : lenv) (F : sframe) (a : aexpr) : option (ty * constr) :=
+Fixpoint synth (n : nat) (Φ : fhyps) (Δ : lenv) (F : sfuture) (a : aexpr) : option (ty * constr) :=
   match a with
   | AVar x =>
       match lenv_onlyb x Δ with Some T => Some (T, CTrue) | None => None end

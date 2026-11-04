@@ -267,7 +267,7 @@ Qed.
 Definition kplain (k : konst) : Prop :=
   match k with KSel1 | KSel2 | KBra | KForce => False | _ => True end.
 
-Inductive fstyped : fhyps → hyps → lenv → sframe → expr → ty → Prop :=
+Inductive fstyped : fhyps → hyps → lenv → sfuture → expr → ty → Prop :=
   | f_unit Φ Ψ Δ F :
       lenv_empty Δ →
       fstyped Φ Ψ Δ F EUnit TUnit
@@ -275,18 +275,18 @@ Inductive fstyped : fhyps → hyps → lenv → sframe → expr → ty → Prop 
       kplain k → lenv_empty Δ → konst_ty (heqs Ψ) (hlt Ψ) (hyp_known Ψ) k T → kscoped k T →
       fstyped Φ Ψ Δ F (Konst k) T
   | f_sel1 Φ Ψ Δ F S1 S2 x :
-      lenv_empty Δ → hyp_known Ψ x → hlt Ψ x (pt_slot x 0) → hlt Ψ x (pt_slot x 1) →
+      lenv_empty Δ → hyp_known Ψ x → hlt Ψ x (pt_payload x 0) → hlt Ψ x (pt_payload x 1) →
       fstyped Φ Ψ Δ F (Konst KSel1)
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_slot x 0)))
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_payload x 0)))
   | f_sel2 Φ Ψ Δ F S1 S2 x :
-      lenv_empty Δ → hyp_known Ψ x → hlt Ψ x (pt_slot x 0) → hlt Ψ x (pt_slot x 1) →
+      lenv_empty Δ → hyp_known Ψ x → hlt Ψ x (pt_payload x 0) → hlt Ψ x (pt_payload x 1) →
       fstyped Φ Ψ Δ F (Konst KSel2)
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_slot x 1)))
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_payload x 1)))
   | f_bra Φ Ψ Δ F S1 S2 x :
-      lenv_empty Δ → hlt Ψ x (pt_slot x 0) → hlt Ψ x (pt_slot x 1) →
+      lenv_empty Δ → hlt Ψ x (pt_payload x 0) → hlt Ψ x (pt_payload x 1) →
       fstyped Φ Ψ Δ F (Konst KBra)
         (TLolli (Some x) None (TSess (SWith S1 S2) x)
-           (TSum (TSess S1 (pt_slot x 0)) (TSess S2 (pt_slot x 1))))
+           (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))
   | f_force Φ Ψ Δ F n C ub T xs :
       lenv_empty Δ → length xs = n → bcs_hold (heqs Ψ) (hlt Ψ) C xs → Forall (hyp_known Ψ) xs →
       fstyped Φ Ψ Δ F (Konst KForce)
@@ -408,13 +408,13 @@ Section enc.
     skn W Ψ x → allunl Δ = true →
     slt W Ψ x (sl0 x) → slt W Ψ x (sl1 x) →
     typed W Φ Ψ ∅ Δ F (selE inj)
-      (TLolli (Some x) None (TSess (Sch S1 S2) x) (TSess S (pt_slot x i))).
+      (TLolli (Some x) None (TSess (Sch S1 S2) x) (TSess S (pt_payload x i))).
   Proof.
     intros Hi Hx Hu H0 H1. pose proof (proj1 HWs) as HW.
     set (φ := fresh (dom Φ)).
     apply (tv_lam W HW _ _ _ _ _ _ _ _ _ φ); [apply is_fresh|unl Hu; done|].
-    apply (t_new_at W _ _ _ _ _ _ _ S (pt_slot x i) HWs); [by apply skn_slot|].
-    assert (slt W Ψ x (pt_slot x i)) as Hxi by (destruct Hi as [(-> & _)|(-> & _)]; done).
+    apply (t_new_at W _ _ _ _ _ _ _ S (pt_payload x i) HWs); [by apply skn_payload|].
+    assert (slt W Ψ x (pt_payload x i)) as Hxi by (destruct Hi as [(-> & _)|(-> & _)]; done).
     assert (∀ y, y ∈ heads (payload_at 2 (TSum (TSess (dual S1) (pvar 0)) (TSess (dual S2) (pvar 1))) x) →
               slt W Ψ x y) as Hpay.
     { intros y Hy. mem_cases Hy; done. }

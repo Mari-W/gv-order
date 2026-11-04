@@ -37,7 +37,7 @@ From LRGV Require Import examples.cfst.CfstTools.
 Set Default Proof Using "All".
 
 Abbreviation pa k := (pv 0 k).
-Abbreviation pa0 k := (Pt (NSlot (NVar 0) 0 0) k).
+Abbreviation pa0 k := (Pt (NPayload (NVar 0) 0 0) k).
 
 (** ** The payload *)
 
@@ -50,7 +50,7 @@ Definition Cx_at (x : point) : bcs := BCs [x] (λ g, g = FLt (pvar 1) (pvar 0)).
 
 Lemma pay_at x :
   payload_at 1 Pay x =
-  TProd (TSess SEnd (pt_slot x 0)) (TEx (LPt (pt_slot x 0)) 1 (Cx_at (pt_slot x 0)) (TSess Sd (pvar 0))).
+  TProd (TSess SEnd (pt_payload x 0)) (TEx (LPt (pt_payload x 0)) 1 (Cx_at (pt_payload x 0)) (TSess Sd (pvar 0))).
 Proof. reflexivity. Qed.
 
 (** ** The program *)
@@ -76,7 +76,7 @@ Definition C0x : bcs := BCs [] ex_fact.
 Lemma ex_rank_ok : c0_acyclic 1 C0x.
 Proof.
   set (r := λ x : point, match pt_name x with
-    | NSlot (NVar 0) 0 0 => 15 + 10 * pt_off x
+    | NPayload (NVar 0) 0 0 => 15 + 10 * pt_off x
     | _ => 10 * pt_off x
     end).
   apply (c0_acyclic_rank 1 _ r).
@@ -171,11 +171,11 @@ Proof.
       [constructor; [exact Ka0|constructor]|intros l h _ Hh; by apply elem_of_nil in Hh|].
     rewrite tenv_pinst_empty, sf_pinst_empty. cbn.
     match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ' := Q) end.
-    assert (slt W Ψ' (pv 1 1) (Pt (NSlot (NVar 1) 0 0) 0)) as F1'.
+    assert (slt W Ψ' (pv 1 1) (Pt (NPayload (NVar 1) 0 0) 0)) as F1'.
     { apply (sl_hyp0 W Ψ' ex_fact [pvar 1] (pa 1) (pa0 0)); [by left|done|split; cbn; lia|done|done]. }
-    assert (slt W Ψ' (Pt (NSlot (NVar 1) 0 0) 0) (pvar 0)) as G.
+    assert (slt W Ψ' (Pt (NPayload (NVar 1) 0 0) 0) (pvar 0)) as G.
     { apply (slt_fresh_l W Ψ' (pshift 1) [pa0 0] [] (pvar 0) (pa0 0)); [by right; left|by left]. }
-    assert (slt W Ψ' (pv 1 0) (Pt (NSlot (NVar 1) 0 0) 0)) as F0'.
+    assert (slt W Ψ' (pv 1 0) (Pt (NPayload (NVar 1) 0 0) 0)) as F0'.
     { eapply sl_trans; [apply (slt_po W _ (pv 1 0) HW)|exact F1']. }
     assert (skn W Ψ' (pvar 0)) as Kv.
     { right. eexists _, (ids 1), (pvar 0). split_and!; [by right; left|by left|done]. }
@@ -196,8 +196,8 @@ Proof.
       tstep; [|apply (KTClos _ _ _ (pv 1 1))|done|].
       - tstep; [|apply (KTSend _ _ _ 1 Pay SEnd (pv 1 0))|exact pay_scoped|].
         + rewrite pay_at. tstep; [tstep|]. tstep; [|tstep].
-          eapply (t_pack W _ _ _ _ _ _ (LPt (Pt (NSlot (NVar 1) 0 0) 0)) 1
-                    (Cx_at (Pt (NSlot (NVar 1) 0 0) 0)) (TSess Sd (pvar 0)) [pvar 0]).
+          eapply (t_pack W _ _ _ _ _ _ (LPt (Pt (NPayload (NVar 1) 0 0) 0)) 1
+                    (Cx_at (Pt (NPayload (NVar 1) 0 0) 0)) (TSess Sd (pvar 0)) [pvar 0]).
           * done.
           * constructor; [exact Kv|constructor].
           * apply bcs_hold_env. intros f -> _. cbn. exact G.
@@ -205,13 +205,13 @@ Proof.
           * cbn. tstep.
         + rewrite pay_at. cbn. intros h Hh. mem_cases Hh; exact F0'.
         + apply ubs_intro; [intros y Hy; mem_cases Hy; exact F0'|].
-          exists (Pt (NSlot (NVar 1) 0 0) 0). split; [done|]. right. exact F0'.
+          exists (Pt (NPayload (NVar 1) 0 0) 0). split; [done|]. right. exact F0'.
       - apply ubs_intro; [intros y Hy; mem_cases Hy; exact F1'|].
-        exists (Pt (NSlot (NVar 1) 0 0) 0). split; [done|]. right. exact F1'. }
+        exists (Pt (NPayload (NVar 1) 0 0) 0). split; [done|]. right. exact F1'. }
     (* close k₁ *)
     tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (Pt (NSlot (NVar 1) 0 0) 0). split; [done|]. apply sle_refl, HW. }
+    exists (Pt (NPayload (NVar 1) 0 0) 0). split; [done|]. apply sle_refl, HW. }
   (* the client *)
   cbn. unfold client. tstep.
   { tstep; [tstep|apply KTRecv|exact pay_scoped|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
@@ -221,10 +221,10 @@ Proof.
   eapply (tv_open W _ _ _ _ _ 0); [reflexivity|intros []|reflexivity|reflexivity|reflexivity|reflexivity|reflexivity|].
   cbn. rewrite ?sf_pinst_empty.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ'' := Q) end.
-  assert (slt W Ψ'' (Pt (NSlot (NVar 1) 0 0) 0) (pvar 0)) as H0.
-  { assert ((bcs_inst (pshift 1) (Cx_at (pt_slot (pa 0) 0)), [pvar 0]) ∈ Ψ'') as Hin by (by right; left).
-    assert (bcs_open 1 (bcs_inst (pshift 1) (Cx_at (pt_slot (pa 0) 0)))
-              (fact_map (pt_inst (pup 1 (plist [pt_inst (pshift 1) (pt_slot (pa 0) 0)])))
+  assert (slt W Ψ'' (Pt (NPayload (NVar 1) 0 0) 0) (pvar 0)) as H0.
+  { assert ((bcs_inst (pshift 1) (Cx_at (pt_payload (pa 0) 0)), [pvar 0]) ∈ Ψ'') as Hin by (by right; left).
+    assert (bcs_open 1 (bcs_inst (pshift 1) (Cx_at (pt_payload (pa 0) 0)))
+              (fact_map (pt_inst (pup 1 (plist [pt_inst (pshift 1) (pt_payload (pa 0) 0)])))
                  (FLt (pvar 1) (pvar 0)))) as Ho.
     { exists (FLt (pvar 1) (pvar 0)). split_and!; [done|split; cbn; lia|done]. }
     apply (hyp_in_fact W Ψ'' _ _ Hin) in Ho. exact Ho. }

@@ -200,9 +200,9 @@ Lemma cn_rank_ok : c0_acyclic 2 Cn.
 Proof.
   set (r := λ x : point, match pt_name x with
     | NVar 0 => 10 * pt_off x
-    | NSlot (NVar 0) 0 1 => 15 + 10 * pt_off x
+    | NPayload (NVar 0) 0 1 => 15 + 10 * pt_off x
     | NVar 1 => 17 + 10 * pt_off x
-    | NSlot (NVar 0) 0 0 => 20 + 10 * pt_off x
+    | NPayload (NVar 0) 0 0 => 20 + 10 * pt_off x
     | _ => 10 * pt_off x
     end).
   apply (c0_acyclic_rank 2 _ r).
@@ -235,7 +235,7 @@ Proof.
   { intros x y Hxy. eapply (hlt_hyp0 _ _ _ x y); [exact Hin|exact Hxy| |done|done].
     destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; cbn; lia. }
   set (a := pv 2 0). set (δ := pv 3 0).
-  set (a0 := Pt (NSlot (NVar 2) 0 0) 0). set (a1 := Pt (NSlot (NVar 2) 0 1) 0).
+  set (a0 := Pt (NPayload (NVar 2) 0 0) 0). set (a1 := Pt (NPayload (NVar 2) 0 1) 0).
   assert (hlt Ψ2 a a1) as F1 by (apply (Hf (pa 0) (pa1 0)); by left).
   assert (hlt Ψ2 a1 δ) as F2 by (apply (Hf (pa1 0) (pd 0)); by right; left).
   assert (hlt Ψ2 δ a0) as F3 by (apply (Hf (pd 0) (pa0 0)); by right; right; left).

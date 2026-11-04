@@ -41,7 +41,7 @@ Definition FaS (s : sty) : sty := SSeq (SSnd 1 (TSess SEnd (pvar 0))) (SSeq Xfor
 
 (** C with κ = 0, ι = 1 and ζ = 2 under the box binder. *)
 Definition fa_P (g : fact) : Prop :=
-  walk_P (pv 0 0) (pv 2 0) g ∨ g = FEq (pv 1 0) (pt_slot (pv 0 0) 0).
+  walk_P (pv 0 0) (pv 2 0) g ∨ g = FEq (pv 1 0) (pt_payload (pv 0 0) 0).
 Definition fa_C : bcs := BCs [] fa_P.
 
 Definition fa_res : ty := TEx (LPt (pv 0 1)) 1 (BCs [pv 0 1; pv 2 0] after_P) (TSess (SVar 0) (pv 0 0)).
@@ -75,7 +75,7 @@ Qed.
 Lemma fa_typed W Ψ F : world_wf W → typed W ∅ Ψ ∅ [None; Some tsum_ty] F fa fa_ty.
 Proof.
   intros HW. unfold fa, fa_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0).
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0).
   { intros o Ho. rewrite elem_of_cons, list_elem_of_singleton in Ho.
     destruct Ho as [-> | ->]; [by left|right; by eexists]. }
   { set_solver. }
@@ -97,8 +97,8 @@ Proof.
   assert (∀ w i, slt W Ψ' (pwalk (pv 0 0) w) (wstep (pwalk (pv 0 0) w) (Some i))) as Hb.
   { intros w i. eapply (sl_hyp0 _ _ fa_P _ (pwalk (pv 0 0) w) (wstep (pwalk (pv 0 0) w) (Some i)));
       [exact Hg|left; exists w; right; by exists i|fscw|piw|piw]. }
-  assert (seqs W Ψ' (pv 1 0) (pt_slot (pv 0 0) 0)) as He.
-  { eapply (se_hyp0 _ _ fa_P _ (pv 1 0) (pt_slot (pv 0 0) 0)); [exact Hg|by right|fsc|reflexivity|reflexivity]. }
+  assert (seqs W Ψ' (pv 1 0) (pt_payload (pv 0 0) 0)) as He.
+  { eapply (se_hyp0 _ _ fa_P _ (pv 1 0) (pt_payload (pv 0 0) 0)); [exact Hg|by right|fsc|reflexivity|reflexivity]. }
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn.
   eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 0)) None (TSess (SSeq XformD s) (pv 0 1))); [reflexivity| | |].
@@ -113,7 +113,7 @@ Proof.
     + by apply Forall_singleton.
   - (* send ⟨d, c⟩ at κ, d moved from ι to κ[0] *)
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd (TSess SEnd (pt_slot (pv 0 0) 0)) (TSess (FaS s) (pv 0 0)))).
+              (TProd (TSess SEnd (pt_payload (pv 0 0) 0)) (TSess (FaS s) (pv 0 0)))).
     + tstep; [tstep|].
       apply (t_conv W _ _ _ _ _ _ (TSess SEnd (pv 1 0))); [split; [exact He|apply seq_refl]|tstep].
     + apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) (SSeq XformD s) (pv 0 0)). cbn.
@@ -340,7 +340,7 @@ Qed.
 Lemma fac_typed W Ψ F : world_wf W → typed W ∅ Ψ ∅ [None; Some tsum_ty] F fac fac_ty.
 Proof.
   intros HW. unfold fac, fac_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0).
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0).
   { intros o Ho. rewrite elem_of_cons, list_elem_of_singleton in Ho.
     destruct Ho as [-> | ->]; [by left|right; by eexists]. }
   { set_solver. }
@@ -363,8 +363,8 @@ Proof.
   assert (∀ w i, slt W Ψ' (pwalk (pv 0 0) w) (wstep (pwalk (pv 0 0) w) (Some i))) as Hb.
   { intros w i. eapply (sl_hyp0 _ _ fa_P _ (pwalk (pv 0 0) w) (wstep (pwalk (pv 0 0) w) (Some i)));
       [exact Hg|left; exists w; right; by exists i|fscw|piw|piw]. }
-  assert (seqs W Ψ' (pv 1 0) (pt_slot (pv 0 0) 0)) as He.
-  { eapply (se_hyp0 _ _ fa_P _ (pv 1 0) (pt_slot (pv 0 0) 0)); [exact Hg|by right|fsc|reflexivity|reflexivity]. }
+  assert (seqs W Ψ' (pv 1 0) (pt_payload (pv 0 0) 0)) as He.
+  { eapply (se_hyp0 _ _ fa_P _ (pv 1 0) (pt_payload (pv 0 0) 0)); [exact Hg|by right|fsc|reflexivity|reflexivity]. }
   eapply (tv_lam W HW _ _ _ _ _ _ _ None None 1); [set_solver|cbn; set_solver|].
   cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 2 0)) (Some (pv 0 0)) 2); [set_solver| |].
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
@@ -379,7 +379,7 @@ Proof.
       constructor; [apply (skn_inst W Ψ' fa_C (ids 3) (pvar 2)); [exact Hg|cbn; set_solver|done]|constructor].
     + by apply Forall_singleton.
   - eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
-              (TProd (TSess SEnd (pt_slot (pv 0 0) 0)) (TSess (FaS s) (pv 0 0)))).
+              (TProd (TSess SEnd (pt_payload (pv 0 0) 0)) (TSess (FaS s) (pv 0 0)))).
     + tstep; [tstep|].
       apply (t_conv W _ _ _ _ _ _ (TSess SEnd (pv 1 0))); [split; [exact He|apply seq_refl]|tstep].
     + apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) (SSeq XformD s) (pv 0 0)). cbn.
