@@ -69,7 +69,7 @@ Definition pt_shift (n : nat) (x : point) : point :=
   Pt (pt_name x) (pt_off x + n).
 Definition pt_slot (x : point) (i : nat) : point :=
   Pt (NSlot (pt_name x) (pt_off x) i) 0.
-(** The slot index of branch i: x[0] for the first branch ([false]),
+(** The index j of x[j] for branch i: x[0] for the first branch ([false]),
     x[1] for the second ([true]) (K11). *)
 Definition bidx (i : bool) : nat := if i then 1 else 0.
 Definition pvar (a : nat) : point := Pt (NVar a) 0.

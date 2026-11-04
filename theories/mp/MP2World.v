@@ -3,7 +3,7 @@
     docs/extensions/adequacy/mordido-perez.md, section 12. Priorities
     become points relative to an anchor, as in version 1. An anchor
     stands for a valuation of the priority variables and the session
-    type variables of the enclosing abstraction, and its slots are
+    type variables of the enclosing abstraction, and its carried points are
 
     - B[RAnc σs τs], the anchor of the instance σs, τs read in B's
       valuation, at which a priority abstraction is forced;
@@ -16,8 +16,8 @@
     A point denotes ([den]) a valuation, a channel, a lower or upper
     level, or junk, given a denotation of its root. A channel denotes
     its session type with the head of its sequence, and its head form
-    [hdt] gives the successor, the payload slot and the slots x[0],
-    x[1] where a choice continues (K11).
+    [hdt] gives the successor, the payload point x[0] of a message and
+    the points x[0], x[1] where a choice continues (K11).
     Two points are equivalent when every walk from them reaches points
     of equal rank ([oeq]), so the equivalences of context-free session
     types (T-Eq) identify points. The rank is the priority of the head.
@@ -158,11 +158,12 @@ Definition evalZ (v : val) (ρ : prio) : Z :=
 Definition xminlb (v : val) (ts : list msty) (l : list lbi) : ext :=
   foldr (λ i a, xmin (evlb v ts i) a) XT l.
 
-(** The slots of a point other than an anchor: the payload of a
-    message at slot 0, the branches x[0] and x[1] of a choice (K11), the
-    next point of the low chain. A slot of a point that is no anchor
-    rises above it ([dsl]), junk when it would not, so a walk rises at
-    every slot and an abstract end point may assume x ≺ x[i]. *)
+(** The points x[i] of a point x other than an anchor: the payload of
+    a message at x[0], the branches x[0] and x[1] of a choice (K11), the
+    next point of the low chain. A point x[i] of a point x that is no
+    anchor rises above x ([dsl]), junk when it would not, so a walk
+    rises at every step to x[i] and an abstract end point may assume
+    x ≺ x[i]. *)
 Definition dsl0 (d : dn) (i : nat) : dn :=
   match d with
   | DCh Q h dd =>
@@ -394,7 +395,7 @@ Definition Θany (k : nat) : pctx := PCtx 0 k (λ _ _, True).
 
 (** The coarse ceiling and the floor of the walks from κ, with the
     upper and the lower point of the anchor b, and the rise of every
-    walk at a slot, which gives x ≺ x[i] at a choice (K11). *)
+    walk at every step to x[i], which gives x ≺ x[i] at a choice (K11). *)
 Definition pex_fact (κ b : nat) (g : fact) : Prop :=
   (∃ u, g = FLt (mwalk (pvar κ) u) (rpt (pvar b) (RHi [PTop]))) ∨
   (∃ u, g = FLt (rpt (pvar b) (RLo [LP PBot])) (mwalk (pvar κ) u)) ∨

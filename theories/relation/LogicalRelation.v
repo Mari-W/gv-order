@@ -389,7 +389,7 @@ Definition Pclos_case (X : world → senv → ty → proc → Prop)
   ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧ X W Σ1 T p'.
 
 (** Q-Select (u = ⊕) and Q-Branch (u = &): the entry of c moves to the
-    branch b at the branch root k◁b (K10). *)
+    branch b at k[b] (K11). *)
 Definition Pchoice_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (c : chan) (b : bool)
     (u : sty → sty → sty) (p' : proc) : Prop :=

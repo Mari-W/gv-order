@@ -585,8 +585,9 @@ End ceil.
 Lemma pt_root_mwalk x u : pt_root (mwalk x u) = pt_root x.
 Proof. revert x. induction u as [|[] u IH]; intros x; simpl; [done|..]; by rewrite IH. Qed.
 
-(** Every walk from a channel rises at a slot: its slots are no
-    anchor slots ([dsl_rise]). This gives x ≺ x[i] at a choice (K11). *)
+(** Every walk from a channel rises at every step to x[i], because no
+    such x[i] is a carried point of the anchor ([dsl_rise]). This gives
+    x ≺ x[i] at a choice (K11). *)
 Section rise.
   Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
 
@@ -602,7 +603,7 @@ Section rise.
 End rise.
 
 (** End points: known, between the floor and the ceiling, and rising
-    at every slot. *)
+    at every step to x[i]. *)
 Definition pts_ok (Ψ : hyps) (B : point) (pts : nat → point) : Prop :=
   ∀ n, skn Wmp Ψ (pts n) ∧
        (∀ u, slt Wmp Ψ (mwalk (pts n) u) (ceil B) ∧ slt Wmp Ψ (floor B) (mwalk (pts n) u)) ∧
@@ -957,7 +958,7 @@ Section chan.
     apply Hr. destruct b; set_solver.
   Qed.
 
-  (** The payload lies above its message, so the payload slot is the
+  (** The payload lies above its message, so the payload point x[0] is the
       point of the payload channel. *)
   Lemma ch_pay pol a pp Qp hp dp K Q h d :
     (Q = sndQ pol a (MPChan pp Qp hp dp) K ∨ Q = rcvQ pol a (MPChan pp Qp hp dp) K) →

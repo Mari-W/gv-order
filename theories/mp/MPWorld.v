@@ -4,7 +4,7 @@
     become points relative to an anchor, as levels do for Padovani and
     Novara (pn/PNWorld.v on branch orders-lr). An anchor stands for a
     valuation of the priority variables of the enclosing abstraction,
-    and its slots are
+    and its carried points are
 
     - B[RAnc σs], the anchor of the valuation σs read in B's valuation,
       the instance at which a priority abstraction is forced;
@@ -19,9 +19,9 @@
 
     A point denotes ([den]) the valuation of an anchor, a channel in
     head form, a lower or upper level, or junk. A successor of a
-    channel denotes the continuation after its head action. The first
-    slot of a message denotes the payload it carries, and the slots 0
-    and 1 of a choice its two branches x[0] and x[1] (K11). The rank is the priority of the head, with lower points
+    channel denotes the continuation after its head action. The point
+    x[0] of a message denotes the payload it carries, and the points
+    x[0] and x[1] of a choice its two branches (K11). The rank is the priority of the head, with lower points
     below and upper points above it. Two channels with the same
     denotation share a point. A continuation whose priority does not
     rise denotes junk ranked on top, so the rank rises along the program
@@ -148,7 +148,7 @@ Definition dbr (d : dn) (b : bool) : dn :=
            | _ => DJ 0
            end).
 
-(** The slots of a choice are its branches, x[0] and x[1] (K11). *)
+(** The points x[0] and x[1] of a choice are its branches (K11). *)
 Definition dsl (d : dn) (i : nat) : dn :=
   match d with
   | DCh (MSel _ _ _) _ _ | DCh (MBra _ _ _) _ _ =>

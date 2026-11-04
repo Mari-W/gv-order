@@ -596,7 +596,7 @@ Section chan.
     rewrite den_br by (rewrite den_x by done; by destruct HQ as [-> | ->]). apply rank_dbr.
   Qed.
 
-  (** The payload slot is the point of the payload channel. *)
+  (** The payload point x[0] is the point of the payload channel. *)
   Lemma ch_pay a pp Qp hp dp K :
     (Q1 = MSnd a (MPChan pp Qp hp dp) K ∨ Q1 = MRcv a (MPChan pp Qp hp dp) K) →
     seqs Wmp Ψ (pt_slot x 0) (rpt B (RCh Qp hp dp)).

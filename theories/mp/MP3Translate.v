@@ -679,8 +679,9 @@ Section chains.
   Proof. intros Hl. apply (gd_lt _ _ _ HB); [apply root_low|apply root_low|]. intros v ts _. rewrite !den_low. simpl. lia. Qed.
 End chains.
 
-(** Every walk from a channel rises at a slot: its slots are no
-    anchor slots ([dsl_rise]). This gives x ≺ x[i] at a choice (K11). *)
+(** Every walk from a channel rises at every step to x[i], because no
+    such x[i] is a carried point of the anchor ([dsl_rise]). This gives
+    x ≺ x[i] at a choice (K11). *)
 Section rise.
   Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
 
@@ -707,7 +708,7 @@ Section rise.
 End rise.
 
 (** End points: known, between the floor and the ceiling, and rising
-    at every slot. *)
+    at every step to x[i]. *)
 Definition pts_ok (Ψ : hyps) (B : point) (pts : nat → point) : Prop :=
   ∀ n, skn Wmp Ψ (pts n) ∧
        (∀ u, slt Wmp Ψ (mwalk (pts n) u) (ceil B) ∧ slt Wmp Ψ (floor B) (mwalk (pts n) u)) ∧
@@ -1234,7 +1235,7 @@ Section chan.
       destruct (afin_evalp v a Hfin) as [z ->]. apply xrk_dep; [done|done|lia].
   Qed.
 
-  (** The payload lies above its message, so the payload slot is the
+  (** The payload lies above its message, so the payload point x[0] is the
       point of the payload channel. *)
   Lemma ch_pay pol a pp Qp hp dp K Q h d :
     (Q = sndQ pol a (MPChan pp Qp hp dp) K ∨ Q = rcvQ pol a (MPChan pp Qp hp dp) K) →
