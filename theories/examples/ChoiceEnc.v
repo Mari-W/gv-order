@@ -372,3 +372,220 @@ Proof. intros Hacy [H1 H2]. apply (Hacy δ). by eapply sl_trans. Qed.
 (** With separate slots the same two facts are δ ≺ a.0 and a.1 ≺ δ,
     and the top-level constraint [Cch] holds both without a cycle
     ([ch_rank_ok]). *)
+
+(** ** Stage 2: a recursive choice
+
+      R = μX. &{Next: !∗.X, Stop: Close} = μX. Sbr (!∗.X) Close
+      srv : □(∀ι. C. ∗ ⊸^⊥_⊤ (R@ι ⊸^{ι.1}_⊤ ∗))
+      srv = !(f = λc. branch c { k ⇒ spawn (λw. let () = w in (force f) (send ⟨∗, k⟩))
+                               | k ⇒ close k })
+      loop_main = let (f, u) = ⟨srv, ∗⟩ in let () = u in
+                  let (c, c′) = new ∗ at a in
+                  let () = spawn (λw. let () = w in (force f) c) in
+                  let (x, c₂) = recv (sel₁ c′) in let () = x in
+                  let (x, c₃) = recv (sel₁ c₂) in let () = x in
+                  close (sel₂ c₃)
+
+    Round n runs at the point p_n with p_0 = a and p_{n+1} = p_n.0 + 1:
+    Next hands over k at p_n.0, the server sends ∗ on it, and the
+    continuation lies at p_n.0 + 1. The client does two Next and one
+    Stop.
+
+    The body of srv receives at ι and closes the carrier at ι+1 while it
+    holds the sum, which asks ι+1 ≺ ι.0 and ι+1 ≺ ι.1. Stop closes k at
+    ι.1, so the upper point of the body is ι.1. Next sends at ι.0 in a
+    thread that then forces f at ι.0+1, whose upper point is
+    (ι.0+1).1. So the thread asks ι.0 ≺ (ι.0+1).1 and the call asks
+    the constraint at ι.0+1. The constraint C is the two facts at every
+    round, an infinite constraint as in examples/ReceivedChain.v:
+
+      C = {p_n + 1 ≺ p_n.0, p_n + 1 ≺ p_n.1 ∣ n ∈ ℕ}
+
+    C[p_1/ι] is C without its first round ([lp_sub]). The program
+    starts under C as its top-level constraint. *)
+
+Definition Rs : sty := SMu (Sbr (SSnd 0 TUnit (SVar 0)) SEnd).
+
+Fixpoint cvp (n : nat) : point :=
+  match n with 0 => pvar 0 | S m => pt_shift 1 (pt_slot (cvp m) 0) end.
+
+Definition lp_P (g : fact) : Prop :=
+  ∃ n, g = FLt (pt_shift 1 (cvp n)) (sl0 (cvp n)) ∨ g = FLt (pt_shift 1 (cvp n)) (sl1 (cvp n)).
+Definition lp_C : bcs := BCs [] lp_P.
+
+Lemma pt_inst_slot σ x i : pt_inst σ (pt_slot x i) = pt_slot (pt_inst σ x) i.
+Proof. destruct x as [p o]. done. Qed.
+
+Lemma cvp_inst n : pt_inst (plist [cvp 1]) (cvp n) = cvp (S n).
+Proof.
+  induction n as [|n IH]; [done|].
+  change (cvp (S n)) with (pt_shift 1 (pt_slot (cvp n) 0)).
+  by rewrite pt_inst_shift, pt_inst_slot, IH.
+Qed.
+
+Lemma cvp_vb n : pn_vb 1 (pt_name (cvp n)).
+Proof. induction n as [|n IH]; cbn; [lia|exact IH]. Qed.
+
+Lemma lp_sub g : lp_P g → fact_scoped 1 g → lp_P (fact_map (pt_inst (plist [cvp 1])) g).
+Proof.
+  intros (n & [-> | ->]) _; exists (S n); cbn [fact_map];
+    rewrite pt_inst_shift, pt_inst_slot, cvp_inst; [left|right]; done.
+Qed.
+
+Lemma lp_fact W Ψ n i : (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (pt_shift 1 (cvp n)) (pt_slot (cvp n) i).
+Proof.
+  intros Hg Hi. pose proof (cvp_vb n) as Hv.
+  apply (sl_hyp0 W Ψ lp_P (ids 1) (pt_shift 1 (cvp n)) (pt_slot (cvp n) i)); [done| | | |].
+  - exists n. destruct i as [|[|]]; [by left|by right|lia].
+  - split; cbn; done.
+  - by apply pt_inst_ids.
+  - by apply pt_inst_ids.
+Qed.
+
+Lemma lp_call W Ψ : (lp_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) lp_C [cvp 1].
+Proof. intros Hg. apply bcs_hold_self; [done|constructor; [apply (cvp_vb 1)|constructor]|exact lp_sub]. Qed.
+
+Lemma lp_self W Ψ : (lp_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) lp_C [pvar 0].
+Proof.
+  intros Hg. apply bcs_hold_self; [done|vb_list|]. intros g Hg' Hs.
+  change (plist [pvar 0]) with (plist (ids 1)).
+  destruct g as [x y|x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids.
+Qed.
+
+Lemma skn_v0 W Ψ C x : (C, ids 1) ∈ Ψ → pt_root x = NVar 0 → skn W Ψ x.
+Proof. intros Hg Hx. right. exists C, (ids 1), (pvar 0). split_and!; [done|by left|done]. Qed.
+
+Lemma cvp_root n : pt_root (cvp n) = NVar 0.
+Proof. induction n as [|n IH]; [done|]. exact IH. Qed.
+
+(** Selection at round n asks p_n ≺ p_n.0, p_n ≺ p_n.1 and
+    p_n + 1 ≺ p_n.i, all from C and program order. *)
+Lemma lp_sel W Ψ n i : world_wf W → (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (cvp n) (pt_slot (cvp n) i).
+Proof. intros HW Hg Hi. eapply sl_trans; [apply (slt_po W _ _ HW)|by apply lp_fact]. Qed.
+
+Definition srv_body : ty := TLolli (Some (sl1 (pv 0 0))) None (TSess Rs (pv 0 0)) TUnit.
+Definition Tsrv : ty := TBox 1 lp_C (TLolli None None TUnit srv_body).
+
+Definition next_arm : expr :=
+  App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 5)) (App ESend (Pair EUnit (Var 1)))))).
+Definition stop_arm : expr := App EClos (Var 0).
+
+Definition srv : expr := EBox (Lam (branch (Var 0) next_arm stop_arm)).
+
+Lemma srv_typed W Ψ F : world_wf W → typed W ∅ Ψ ∅ [] F srv Tsrv.
+Proof.
+  intros HW. unfold srv, Tsrv.
+  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  box_open1 lp_C srv_body. cbn.
+  match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ' := Q) end.
+  assert ((lp_C, ids 1) ∈ Ψ') as Hg by (apply elem_of_app; right; by left).
+  unfold srv_body.
+  eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
+  cbn.
+  eapply (branch_typed W _ _ _ [Some (TSess Rs (pv 0 0)); Some Tsrv] [None; Some Tsrv]
+            _ _ _ _ (SSnd 0 TUnit Rs) SEnd _ (pv 0 0) HW).
+  { apply lsplit_l, lsplit_unl; [done|constructor]. }
+  { eapply t_conv; [|tstep]. conv_sess. }
+  { apply ubs_intro; [intros y Hy; mem_cases Hy|].
+    exists (sl1 (pv 0 0)). split; [done|]. right.
+    eapply sl_trans; [apply (slt_po W _ (pv 0 0) HW)|apply (lp_fact W Ψ' 0 1 Hg); lia]. }
+  { apply ubs_intro; [intros y Hy; mem_cases Hy; apply (lp_fact W Ψ' 0 _ Hg); lia|].
+    exists (sl1 (pv 0 0)). split; [done|]. right. apply (lp_fact W Ψ' 0 1 Hg); lia. }
+  - (* Next *)
+    unfold next_arm. tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (sl1 (cvp 1))) (Some (sl0 (pv 0 0))) 2); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn.
+    eapply tv_app; [exact HW|reflexivity| | |].
+    + apply (typed_force W _ _ _ _ _ _ 1 lp_C None srv_body [cvp 1]);
+        [done|done|by apply lp_call|constructor; [apply (skn_v0 W _ lp_C); [done|apply cvp_root]|constructor]
+        |apply ubs_none|tstep].
+    + tstep; [|apply (KTSend _ _ _ 0 TUnit Rs (sl0 (pv 0 0))); cbn; set_solver|done|].
+      * tstep; tstep.
+      * apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (sl1 (cvp 1)). split; [done|]. right.
+        eapply sl_trans; [apply (slt_po W _ _ HW)|].
+        eapply sl_trans; [apply (slt_po W _ (cvp 1) HW)|apply (lp_fact W Ψ' 1 1 Hg); lia].
+    + apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (sl1 (cvp 1)). split; [done|]. apply sle_refl, HW.
+  - (* Stop *)
+    unfold stop_arm. tstep; [tstep|apply KTClos|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy|].
+    exists (sl1 (pv 0 0)). split; [done|]. apply sle_refl, HW.
+Qed.
+
+Definition client : expr :=
+  LetP (App ERecv (App sel1 (Var 0)))
+    (LetU (Var 1)
+      (LetP (App ERecv (App sel1 (Var 0)))
+        (LetU (Var 1) (App EClos (App sel2 (Var 0)))))).
+
+Definition loop_main : expr :=
+  LetP (Pair srv EUnit) (LetU (Var 0) (let_new_pair
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 4)) (Var 2)))))
+      client))).
+
+Definition lp_rank_n : pname → nat :=
+  fix h p := match p with NSlot q b _ => h q + b + 2 | _ => 0 end.
+
+Lemma lp_acyclic : c0_acyclic 1 lp_C.
+Proof.
+  apply (c0_acyclic_rank 1 _ (λ x, lp_rank_n (pt_name x) + pt_off x)).
+  - intros [p o]. cbn. lia.
+  - by intros ? ? [n [?|?]].
+  - intros x y [n [[= -> ->]|[= -> ->]]]; cbn; lia.
+Qed.
+
+Lemma loop_typed : styped ∅ [(lp_C, ids 1)] [] (∅, None) loop_main TUnit.
+Proof.
+  apply styped_wnil. set (W := wnil). set (Ψ := [(lp_C, ids 1)]).
+  pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold loop_main.
+  assert ((lp_C, ids 1) ∈ Ψ) as Hg by by left.
+  tstep.
+  { tstep; [tstep|apply srv_typed, HW]. }
+  cbn. tstep; [tstep|]. cbn.
+  apply (t_new_at W _ _ _ _ _ _ _ Rs (pv 0 0) HWs); [by apply (skn_v0 W _ lp_C)|]. cbn.
+  tstep.
+  { tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (sl1 (pv 0 0))) (Some (pv 0 0)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn.
+    eapply tv_app; [exact HW|reflexivity| | |].
+    - apply (typed_force W _ _ _ _ _ _ 1 lp_C None srv_body [pvar 0]);
+        [done|done|by apply lp_self|constructor; [by apply (skn_v0 W _ lp_C)|constructor]|apply ubs_none|tstep].
+    - tstep.
+    - apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (sl1 (pv 0 0)). split; [done|]. apply sle_refl, HW. }
+  cbn. unfold client.
+  assert (∀ n, skn W Ψ (cvp n)) as Hk by (intros n; apply (skn_v0 W _ lp_C); [done|apply cvp_root]).
+  (* round 0: Next *)
+  tstep.
+  { tstep; [|apply KTRecv| |].
+    - eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+      + apply (sel1_typed W HWs _ _ _ _ (SRcv 0 TUnit (dual Rs)) SEnd (cvp 0)); [apply Hk|reflexivity|
+          apply (lp_sel W Ψ 0 0); [done|done|lia]|apply (lp_sel W Ψ 0 1); [done|done|lia]|apply (lp_fact W Ψ 0 0); [done|lia]].
+      + eapply t_conv; [|tstep]. conv_sess.
+    - kscope.
+    - apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
+  cbn. tstep; [tstep|]. cbn.
+  (* round 1: Next *)
+  tstep.
+  { tstep; [|apply KTRecv| |].
+    - eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+      + apply (sel1_typed W HWs _ _ _ _ (SRcv 0 TUnit (dual Rs)) SEnd (cvp 1)); [apply Hk|reflexivity|
+          apply (lp_sel W Ψ 1 0); [done|done|lia]|apply (lp_sel W Ψ 1 1); [done|done|lia]|apply (lp_fact W Ψ 1 0); [done|lia]].
+      + eapply t_conv; [|tstep]. conv_sess.
+    - kscope.
+    - apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
+  cbn. tstep; [tstep|]. cbn.
+  (* round 2: Stop *)
+  tstep; [|apply KTClos|done|]; cycle 1.
+  { apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
+  eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+  - apply (sel2_typed W HWs _ _ _ _ (SRcv 0 TUnit (dual Rs)) SEnd (cvp 2)); [apply Hk|reflexivity|
+      apply (lp_sel W Ψ 2 0); [done|done|lia]|apply (lp_sel W Ψ 2 1); [done|done|lia]|apply (lp_fact W Ψ 2 1); [done|lia]].
+  - eapply t_conv; [|tstep]. conv_sess.
+Qed.
+
+Theorem loop_deadlock_free : deadlock_free (∅, {[+ loop_main +]}).
+Proof. apply (soundness_source 1 lp_C _ TUnit lp_acyclic); [constructor|apply loop_typed]. Qed.
