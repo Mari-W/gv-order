@@ -34,10 +34,11 @@ Hardware and time, measured on 4 cores of an Intel Xeon at 2.10 GHz with
 | `make check` after the build | 7.5 min | 1.9 GB |
 | `docker build .` from scratch (all of the above) | DOCKER_TIME | |
 
-Peak memory is the largest resident set of one `rocq` process. With `-jN`
-up to N processes run at once. 8 GB of memory and 10 GB of disk suffice
-for the Docker build. The longest files compile sequentially, so more than
-4 cores barely shortens the build.
+Peak memory per process is the largest resident set of one `rocq`
+process. With `-jN` up to N processes run at once, and the whole machine
+used at most 2.6 GB during `make -j4`. The build used 16 min of CPU time
+in 13 min of wall clock, so 4 cores ran 1.2 processes on average and the
+long files on the dependency chain set the wall clock. DISK_LINE
 
 ## 2. Getting started
 
@@ -81,8 +82,8 @@ rocq-core 9.2.0, rocq-stdlib 9.2.0 and rocq-stdpp 1.13.0 and leave the
 rest free. The lockfile takes rocq-stdpp from the upstream GitLab archive
 of tag `stdpp-1.13.0` (`pin-depends`).
 
-Two notes on the build. The large stack (`ulimit -s 1000000`, about 1 GB)
-is needed by a few deep proof terms. Do not use `ulimit -s unlimited`. If
+Two notes on the build. The development asks for a large stack
+(`ulimit -s 1000000`, about 1 GB). Do not use `ulimit -s unlimited`. If
 `rocq` still dies with a segmentation fault from the stack, run `make`
 again, which resumes. If `Makefile.conf` is missing, `make` regenerates it
 with `rocq makefile -f _CoqProject -o Makefile`.
@@ -117,7 +118,7 @@ It also fails if `theories/` contains `Admitted.`, `admit.` or a top-level
 `Axiom`, `Parameter` or `Conjecture`, or if a name of the core list does
 not exist. The checked names are
 
-- the core results by name: `soundness`, `soundness_source`,
+- the core results `soundness`, `soundness_source`,
   `fundamental`, `fundamental_proc`, `sem_rules_fundamental`, `adequacy`,
   `styped_typed`, `typed_styped`, `styped_iff`, `harmony`, the process
   composition lemmas `Prel_term`, `Prel_indep`, `Prel_connect`,
@@ -148,7 +149,7 @@ each name is included. `_build/check/report.txt` lists every name with
 | A closed source program under an acyclic top-level constraint is deadlock free | `soundness_source` | `theories/static/Fundamental.v` |
 | Fundamental property, terms and processes | `fundamental`, `fundamental_proc` | `theories/static/Fundamental.v` |
 | Fundamental property of the semantic rules | `sem_rules_fundamental` | `theories/rules/SemanticRules.v` |
-| Adequacy: a semantically typed closed process is deadlock free | `adequacy` | `theories/relation/LogicalRelation.v` |
+| Adequacy, a semantically typed closed process is deadlock free | `adequacy` | `theories/relation/LogicalRelation.v` |
 | The source judgment and the world-carrying judgment agree | `styped_typed`, `typed_styped`, `styped_iff` | `theories/static/Source.v` |
 | Reduction semantics and LTS agree | `harmony` | `theories/lang/Harmony.v` |
 | PGV programs are deadlock free | `pgv_translate`, `pgv_deadlock_free`, `pgv_deadlock_free_source` | `theories/pgv/PGVTranslate.v`, `theories/pgv/PGVSimulation.v` |
