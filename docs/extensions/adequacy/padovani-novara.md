@@ -5,7 +5,8 @@ Notation: this file predates 2026-11-04 and writes p.j for the point now written
 Status. Stage 1 done on 2026-10-30. Stage 2 done on 2026-10-30 in
 theories/pn/ (section 7), with the general theorem `pn_deadlock_free` and both
 examples closed under the global context. Stage 3 done on 2026-10-30, a
-simulation back to the source semantics of the paper (section 8). Same procedure as for PGV
+simulation back to the source semantics of the paper (section 8). Stage 4 done on
+2026-11-04, the theorem in the source semantics for every fix (section 9). Same procedure as for PGV
 (pgv-adequacy.md). Study first, then model the system on our terms and
 translate it into the static system.
 
@@ -460,7 +461,7 @@ report (hal-00954364v1), one per line, with its location.
 - PNTyping.v `pn_send`, `pn_recv`, `pn_fork`, `pn_fix`. Constants appear only applied. T-Const covers () alone. Unapplied send, recv and fork are η-expanded by the programmer, with the same type (send = λc.λv.send c v has ![t]ⁿ → t →^{n,n} unit).
 - PNTyping.v `pn_send`. The partial application send e₁, a value of type t →^{n,n} unit on p5, exists only inside send e₁ e₂. The rule is the composite of two T-App.
 - PNTyping.v `pn_send`, `pn_recv`, `pn_fork`. Each rule takes one instance of the schema. T-App-Poly on a constant is T-App at the shifted instance, because every schema is closed under ⇑ⁿ. The model has no separate rule for it.
-- PNTyping.v `pn_fix`. fix stands only as fix λf.e (repair R2) at an arrow of level ⊤, Γ unlimited, e of effect ⊥. This is exactly what T-App of fix : (t → t) → t to λf.e gives when t is an arrow of level ⊤.
+- PNTyping.v `pn_fix`. fix stands only as fix λf.e (repair R2) at an arrow of level ⊤, Γ unlimited, e of effect ⊥. This is exactly what T-App of fix : (t → t) → t to λf.e gives when t is an arrow of level ⊤. Since 2026-11-04 t is any type (section 9).
 - PNTyping.v `pn_app`, `pn_app_top`. T-App asks ρ ∈ ℤ. T-App at ρ = ⊤ is T-App-Poly at the shift 0 (`pn_app_top`), and its translation forces.
 - PNTyping.v `pn_conv`, `pconv`. wrap and unwrap are erased from the syntax. A conversion relates μα.p[⌈α⌉ᵐ]ⁿ and its unfolding, and ⌈t⌉ᵐ and ⇑ᵐ t, in both directions and at the top of a type only. The chapter's types are trees, equal everywhere, and wrap and unwrap are constants (p13). Conversions inside payloads are not modelled.
 - PNTypes.v `PRec`. Recursive types are only μα.p[⌈α⌉ᵐ]ⁿ, the channel that carries a later copy of itself. Other infinite types are left out, recursion through arrows among them. This also excludes the stuck program fix fix of section 4, which needs s = s → s.
@@ -650,7 +651,7 @@ translation of fix, one that runs e′ once and shares its value.
 - PNSemantics.v. wrap and unwrap are erased (section 7.5), so unwrap (wrap v) → v is no step.
 - PNSemantics.v `SHRecv`. A receive steps with any value as label, and the process rule pairs it with the sender's value, as Table 1 does.
 - PNSemantics.v `pn_deadlock_free_src`. Definition 1 is stated for closed programs ⟨e⟩ only, as the theorem of section 7.
-- PNSimulation.v `pn_deadlock_free_source`. The theorem needs `fixlam e` (section 8.5).
+- PNSimulation.v `pn_deadlock_free_source`. The theorem needs `fixlam e` (section 8.5). Section 9 removes the premise.
 
 #### 8.7  Other findings
 
@@ -659,6 +660,82 @@ translation of fix, one that runs e′ once and shares its value.
 - The simulation stutters on both sides. The source unfolding of fix takes no target step (`tr_fixu`), and the target forces of a fix box take no source step.
 - Rocq 9.2 warns that `Notation` for an abbreviation is deprecated. The administrative forms in PNSimulation.v use `Notation` like the rest of the development.
 - No core change for the simulation. lang/, types/, relation/, invariance/, composition/, rules/, static/ and the earlier files of theories/pn/ were untouched. Since sharp edges 104 (2026-11-01) the encoded let of new is in lang/Syntax.v and the thread tools of the simulation (`bstar`, `ectx`, `mrel`, `msb`) are in lang/ThreadSim.v, shared with pgv/PGVSimulation.v.
+
+## Stage 4 results
+
+### 9  Every fix (2026-11-04, branch pn-fix)
+
+`pn_deadlock_free_source` now covers every closed program of fragment v1 with
+fix λf.e at any type t, for any body e that the rule types. The premise
+`fixlam` is gone, and so is the restriction of t to arrows of level ⊤. This is
+the chapter's fix under repair R2 of padovani-novara-counterexamples.txt. All
+other restrictions of section 7.5 stay.
+
+```
+Theorem pn_deadlock_free_source e τ e' :
+  pn_typed [] e PUnit τ e' → pn_deadlock_free_src e.
+
+pn_fix Γ e e' t :
+  penv_un Γ → pn_typed (Some t :: Γ) e t LBot e' →
+  pn_typed Γ (EBox e) t LBot (App EForce (EBox (subst thk e')))
+```
+
+#### 9.1  No counterexample
+
+The failure of section 8.5 was operational. The source runs e at every
+evaluation of the fix, the old target ran e′ at every force of f. A recursive
+box of ours runs its body at every force, so the target can force exactly when
+the source unfolds. The typing of e needs nothing new. e has effect ⊥ and an
+unlimited environment, which is what the body of a box asks. We found no
+program that the chapter types under R2 and that this translation misses.
+
+#### 9.2  The translation
+
+fix λf.e becomes force (box f. e′[force f/f]). `thk` in PNTyping.v maps the
+index 0 to force 0 and leaves the others. Evaluating the fix forces the box
+once and runs e′ with f bound to the box. Each occurrence of f is a force of
+the box, so each evaluation of f runs e′ again, as each evaluation of the
+substituted fix λf.e does in the source.
+
+The box has type □(∗ ⊸ [t]) with no binder and the empty constraint `C0`
+(`Ubox` in PNWorld.v). Its body is typed at the anchor of the context, because
+e has effect ⊥ and the box adds no point variable. The translation lemma
+`pn_translate` types e′ under the substitution `sub_of ins` in place of the
+renaming `ren_of ins`. The new flag `IT` marks the variable of an enclosing
+fix, its entry in Δ is the box (`er_thunk`), and its occurrences are forces
+(`erel_var`). `good_sub` carries an anchor into the body, whose hypotheses
+gain the empty instance of `C0`.
+
+#### 9.3  The simulation
+
+`tr_fix` relates the source fix EBox e to force (box (e′[thk])) at the mode
+of t. The source unfolding and the target force are one step each, and
+`force_thk` shows that the force substitutes the related pair for f. The
+stuttering form `tr_fixu`, the notations `fixbox` and `unf`, the lemmas
+`sb_unf` and `rn_unf`, and `fixlam` are gone. `sb_thk`, `rn_thk` and
+`fchans_thk` replace them in `trel_subst`, `trel_rename` and `trel_fchans`.
+`val_stutter` keeps its statement, and no target value now relates to a source
+that steps.
+
+#### 9.4  Examples
+
+PNExamples.v types three closed programs whose fixes have no λ body, and
+PNSimulation.v gives deadlock freedom in the source semantics.
+
+| Program | Source | Theorem |
+|---|---|---|
+| ⟨fix λx.x⟩ at unit | pdf p. 14, the diverging thread | `div_deadlock_free_src` |
+| let a = new() in (fork λ_.recv a); send a (fix λx.x) | pdf p. 14, a send whose message diverges | `divsend_deadlock_free_src` |
+| let g = fix λf.(λ_.λx.x) (fork λ_.()) in (g ()); (g ()) | the program of section 8.5, called twice | `fixfork_deadlock_free_src` |
+
+The two examples of the chapter, Example 1 and Example 2, write every fix as
+fix λf.λx.e (p5, p13). The first two rows are the chapter's own fixes with a
+body that is no λ. The third forks one thread in the source and in the target.
+
+Print Assumptions. `pn_translate`, `pn_deadlock_free`,
+`pn_deadlock_free_source`, `fibo_deadlock_free_src`, `pipe_deadlock_free_src`,
+`div_deadlock_free_src`, `divsend_deadlock_free_src` and
+`fixfork_deadlock_free_src` are closed under the global context.
 
 ## Stage 2, model and translate (after the author has seen stage 1)
 

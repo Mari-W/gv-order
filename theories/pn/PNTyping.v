@@ -11,8 +11,10 @@
 
     - Var, λ (Lam), application (App) and () (EUnit) as in the paper.
     - fix λf.e is [EBox e], f the index 0 of e (repair R2 of
-      padovani-novara-counterexamples.txt). The type of f is an arrow of
-      level ⊤.
+      padovani-novara-counterexamples.txt), at any type t. Its
+      translation runs the body once whenever the source unfolds, as
+      the source does: fix λf.e becomes force (box f. e′) with every
+      occurrence of f in e′ forced ([thk]).
     - let a = new() in e is [LetP (App ENew EUnit) e]. The name a of
       type #[t]ⁿ becomes two variables, its ? end at index 1 and its ! end
       at index 0, because our variables are linear and our new returns
@@ -99,6 +101,11 @@ Definition fork_tr (poly : bool) : expr :=
 Definition inj1_tr : expr := Lam (EBox (Inj1 (Var 1))).
 Definition inj2_tr : expr := Lam (EBox (Inj2 (Var 1))).
 
+(** Inside the box of a fix, every occurrence of f (the index 0) is
+    forced, so that each evaluation of f runs the body again, as the
+    source unfolding of fix λf.e does. *)
+Definition thk : nat → expr := App EForce (Var 0) .: (λ x, Var (S x)).
+
 (** A λ of level ⊤ becomes a box. Inside the box the index 0 is the box
     itself, so the body skips it. *)
 Definition lam_tr (r : option Z) (e : expr) : expr :=
@@ -152,10 +159,10 @@ Inductive pn_typed : penv → expr → pty → lvl → expr → Prop :=
       pn_typed Γ e (PArr PUnit r σ PUnit) τ e' →
       pn_typed Γ (App ESpawn e) PUnit τ
         (App (fork_tr (match r with Some _ => false | None => true end)) e')
-  | pn_fix Γ e e' t σ s :                                    (* fix λf.e *)
+  | pn_fix Γ e e' t :                                        (* fix λf.e *)
       penv_un Γ →
-      pn_typed (Some (PArr t None σ s) :: Γ) e (PArr t None σ s) LBot e' →
-      pn_typed Γ (EBox e) (PArr t None σ s) LBot (EBox (App EForce e'))
+      pn_typed (Some t :: Γ) e t LBot e' →
+      pn_typed Γ (EBox e) t LBot (App EForce (EBox (subst thk e')))
   | pn_inj1 Γ e e' t s τ :
       pn_typed Γ e t τ e' → un t → un s →
       pn_typed Γ (Inj1 e) (PSum t s) τ (App inj1_tr e')

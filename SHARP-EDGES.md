@@ -865,6 +865,7 @@ step, and a related target never offers a close. fix λf.e with e no λ breaks t
 simulation. The source runs e once at the unfolding, the target runs e′ at every
 force, and an effect in e (fork is pure) then gives different thread pools.
 The translation is unchanged, and the theorem asks `fixlam` instead.
+Entry 139 removed the restriction.
 padovani-novara.md §8 lists every deviation of the source semantics from the
 chapter. No core change.
 
@@ -1404,6 +1405,20 @@ because a fact between two older points is global (creation constraints are
 conservative). That theorem is open, and no counterexample turned up
 (pgv-adequacy.md §8). The fragment of `pgv_deadlock_free_source` is
 unchanged.
+
+**139. A fix runs its body at every unfolding, in the target too (Claude, 2026-11-04, branch pn-fix).**
+`pn_deadlock_free_source` no longer asks `fixlam`, and fix λf.e types at any
+type t, as repair R2 of padovani-novara-counterexamples.txt allows. Entry 71
+traced the restriction to the box !(f = force e′), which ran e′ at every force
+of f while the source runs e at every evaluation of the fix. The translation is
+now force (box f. e′[force f/f]) (`thk` in PNTyping.v). Forcing the box runs e′
+once, and every occurrence of f is forced, so each evaluation of f runs e′
+again. The source unfolding and the target force are one step each (`tr_fix`,
+`force_thk`), and the stuttering form `tr_fixu` is gone. The translation lemma
+types e′ under a substitution `sub_of ins` in place of a renaming, with a flag
+`IT` for the variable of an enclosing fix, whose entry in Δ is the box □(∗ ⊸
+[t]) of 0 binders (`er_thunk`). Three new examples have fixes whose body is no
+λ (padovani-novara.md §9). No core change.
 
 ## From the earlier abandoned mechanization (spec §15)
 
