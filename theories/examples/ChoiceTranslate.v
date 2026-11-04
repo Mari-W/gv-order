@@ -237,6 +237,32 @@ Proof.
   - injection H as -> -> -> ->. split_and!; [done|done|done|apply teq_refl].
 Qed.
 
+(** E-Conv needs the restriction. ⊕(Skip, Skip);!∗.Close ≈ ⊕(Skip;!∗.Close, Skip;!∗.Close),
+    and their translations differ in the payload of the first message. *)
+Lemma seq_of_hd a b : hd a = hd b → seq a b.
+Proof.
+  intros H n. destruct n as [|n]; [done|]. simpl. unfold eq_step. rewrite H.
+  destruct (hd b); try done; repeat split; try (apply eqT_refl; intros s0; apply seq_refl); try apply seq_refl.
+Qed.
+
+Lemma tr_breaks_seq :
+  seq (SSeq (SPlus SSkip SSkip) Sd) (SPlus (SSeq SSkip Sd) (SSeq SSkip Sd)) ∧
+  ¬ seq (tr_sty (SSeq (SPlus SSkip SSkip) Sd)) (tr_sty (SPlus (SSeq SSkip Sd) (SSeq SSkip Sd))).
+Proof.
+  split; [by apply seq_of_hd|].
+  intros H. apply seq_step in H. unfold eq_step in H.
+  change (hd (tr_sty (SSeq (SPlus SSkip SSkip) Sd)))
+    with (HSnd 2 (TSum (TSess SSkip (pvar 0)) (TSess SSkip (pvar 1))) (SSeq SEnd Sd)) in H.
+  change (hd (tr_sty (SPlus (SSeq SSkip Sd) (SSeq SSkip Sd))))
+    with (HSnd 2 (TSum (TSess (SSeq SSkip (SSeq (SRcv 0 TUnit) SEnd)) (pvar 0))
+                       (TSess (SSeq SSkip (SSeq (SRcv 0 TUnit) SEnd)) (pvar 1))) SEnd) in H.
+  destruct H as (_ & [[_ Hs] _] & _).
+  apply seq_step in Hs. unfold eq_step in Hs.
+  change (hd SSkip) with HSkip in Hs.
+  change (hd (SSeq SSkip (SSeq (SRcv 0 TUnit) SEnd))) with (HRcv 0 TUnit SEnd) in Hs.
+  exact Hs.
+Qed.
+
 (** The constants other than selection, branch and force. *)
 Definition kplain (k : konst) : Prop :=
   match k with KSel1 | KSel2 | KBra | KForce => False | _ => True end.
