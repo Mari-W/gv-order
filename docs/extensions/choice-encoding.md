@@ -178,6 +178,7 @@ depth that grows at each carried point by the offset of its base plus 2
 | `body0_underivable_top` | the same under every acyclic top-level constraint | closed |
 | `choice_translate` | the translation of the fragment preserves `styped` | closed |
 | `choice_translate_df` | the translation of a closed program of the fragment is deadlock free | closed |
+| `tr_breaks_seq` | two ≈-equal session types whose translations are not ≈-equal | closed |
 | `native_fstyped` | T1 ∥ T2 ∥ T3 with select₁ and branch lies in the fragment | closed |
 | `native_deadlock_free`, `translated_deadlock_free` | the program and its translation are deadlock free | closed |
 | `srv_typed` | typing of the recursive server | closed |
@@ -214,7 +215,7 @@ restrictions.
 
 | Restriction | Reason |
 |---|---|
-| E-Conv compares session types syntactically and points by ≡ (`hsteq0`) | the translation does not commute with ⊕(S₁, S₂);S ≈ ⊕(S₁;S, S₂;S) |
+| E-Conv compares session types syntactically and points by ≡ (`hsteq0`) | the translation does not preserve ≈. ⊕(Skip, Skip);!∗.Close ≈ ⊕(Skip;!∗.Close, Skip;!∗.Close), and the payloads of their translations differ (`tr_breaks_seq`) |
 | □ and force bind no session variable | a box is typed at every instance of its session variables, and most instances are no translation |
 | selectᵢ at x asks x known, x ≺ x[0] and x ≺ x[1] | selᵢ creates k at x[i] and sends a payload with the heads x[0] and x[1] |
 
