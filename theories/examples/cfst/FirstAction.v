@@ -28,7 +28,8 @@
     fa takes c and d as a pair. Mordido and Pérez pass them as two
     curried arguments and check the send at the call with the concrete
     sequence of c, 5 < 12 (p. 39). The core checks it once in the body
-    of fa, against the box constraint. *)
+    of fa, against the box constraint. The curried form fac at the end
+    of the file types too ([fac_deadlock_free]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.cfst.TreeSum.
