@@ -484,9 +484,9 @@ Lemma fchans_subst e : ∀ γ (D : gset chan),
   fchans (subst γ e) ⊆ fchans e ∪ D.
 Proof.
   induction e; simpl; intros γ D HP;
-    try (destruct HP as [H1 H2];
-         specialize (IHe1 _ _ H1); specialize (IHe2 _ _ H2); set_solver);
-    try set_solver.
+    [set_solver|set_solver|set_solver|set_solver| | | | | | | | |];
+    [|destruct HP as [H1 H2];
+      specialize (IHe1 _ _ H1); specialize (IHe2 _ _ H2); set_solver ..| |set_solver|set_solver| | ].
   - (* Lam *)
     apply (IHe (up γ) D). eapply allfv_mono; [|done]. intros [|x]; simpl.
     + intros _. set_solver.

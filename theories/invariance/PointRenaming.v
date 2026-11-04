@@ -405,8 +405,9 @@ Section points.
 
   Lemma heads_sw T : heads (tysw a b T) = set_map (ptsw a b) (heads T).
   Proof.
-    induction T; simpl; rewrite ?IHT1, ?IHT2; try set_solver.
-    all: destruct lb; simpl; set_solver.
+    induction T; simpl; rewrite ?IHT1, ?IHT2;
+      [set_solver|destruct lb; simpl; set_solver|set_solver|set_solver|set_solver|set_solver
+      |destruct lb; simpl; set_solver].
   Qed.
 
   Lemma hbot_sw T : hbot (tysw a b T) = hbot T.
@@ -417,10 +418,11 @@ Section points.
     (∀ s, sty_roots (stysw a b s) = set_map (pnsw a b) (sty_roots s)).
   Proof.
     apply ty_sty_mut_ind; intros; simpl; rewrite ?H, ?H0, ?pt_root_sw, ?bcs_roots_sw;
-      try set_solver.
-    all: try (destruct ub, lb; simpl; rewrite ?pt_root_sw; set_solver).
-    all: try (destruct ub; simpl; rewrite ?pt_root_sw; set_solver).
-    all: destruct lb; simpl; rewrite ?set_map_singleton_L, ?set_map_empty, ?pt_root_sw; set_solver.
+      [set_solver|destruct ub, lb; simpl; rewrite ?pt_root_sw; set_solver
+      |set_solver|set_solver|set_solver|set_solver
+      |destruct lb; simpl; rewrite ?set_map_singleton_L, ?set_map_empty, ?pt_root_sw; set_solver
+      |set_solver|set_solver|set_solver|set_solver|set_solver
+      |set_solver|set_solver|set_solver|set_solver|set_solver].
   Qed.
 End points.
 
