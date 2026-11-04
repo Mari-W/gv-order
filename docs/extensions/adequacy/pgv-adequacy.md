@@ -288,3 +288,105 @@ What section 6 got wrong or left open.
 - link is in since sharp edges 68 made our link non-blocking, with upper point
   ⊥ like PGV's. The objection of section 6 to link no longer applies.
 
+
+## 8  Falling sessions (2026-11-04, branch pgv-falling)
+
+Falling sessions are still outside the mechanized result. The point of a
+channel cannot be a function of its PGV session type once sessions fall, and
+every translation that gives each channel its own point needs one acyclicity
+theorem that is open. No counterexample to subsumption turned up.
+
+### 8.1  Two falling programs that PGV types
+
+theories/pgv/PGVFalling.v types two closed programs in repaired PGV
+(`fall2_typed`, `fallxy_typed`, both `pgv_rep`). `S1_not_mono` shows that
+they lie outside `pgv_frag`. `fall2` is the program of section 2. `fallxy`
+uses S1 = !⁵1.?⁰1.end⁶? and S2 = !³1.end⁸! twice each.
+
+```
+let (x, x̄) = new () in let (b, b̄) = new () in let (c, c̄) = new () in
+spawn (λ(). let b = send ((), b) in let x = send ((), x) in
+            let ((), x) = recv x in wait x; close b);
+spawn (partner x̄); spawn (partner b̄); spawn (partner c̄);
+let c = send ((), c) in let (d, d̄) = new () in spawn (partner d̄);
+let z = recv c in let ((), c) = z in let d = send ((), d) in wait c; close d
+```
+
+Thread X sends on b at 3 while it holds x at 5. Main receives on c at 0 while
+it holds d at 3, after its send on c at 5. Every thread holds at most two
+channels and talks only to its partners, so the program is deadlock free.
+
+### 8.2  Points read off the session type fail
+
+Let pt(S) be the point of a session type S in any translation, with
+pt(S1) + 1 ≡ pt(S1′) for the continuation S1′ = ?⁰1.end⁶?, as the type of x
+after its send requires. X needs pt(S2) ≺ pt(S1) and main needs
+pt(S1′) ≺ pt(S2). Program order closes the cycle
+
+```
+pt(S1) ≺ pt(S1) + 1 ≡ pt(S1′) ≺ pt(S2) ≺ pt(S1).
+```
+
+So no world, fixed or built per program, types `fallxy` through a
+translation of types alone. `Wpgv` is one such translation. The point has to
+depend on the channel, for example on the occurrence of new that created it.
+Each new runs at most once, because PGV has no recursion and every function
+is linear.
+
+This is no gap of our system. With a fresh point per new, creation
+constraints {ι_b ≺ x} at b and {c + 1 ≺ ι_d} at d state the four facts
+without a cycle. That derivation is believed and not mechanized.
+
+### 8.3  What a translation with a point per channel needs
+
+The translation of types then carries points as annotations that flow through
+the derivation, into function types, payloads and the two branches of a case.
+Two channels that reach one position, such as the results of the two
+branches, get one point or an existential. The facts go into a world built
+per program or into the creation constraints of the news. Either way the
+proof needs one theorem.
+
+> The facts that the derivation states, over all branches, together with
+> program order, contain no cycle.
+
+The statement has to cover branches that never run. A fact between two points
+that both exist before a case is global in our system. A creation constraint
+is conservative, so no later new adds it. E-Open adds only facts that already
+hold at the witness. The two branches of a case therefore have to agree on
+every fact between older points. The argument of section 5, that one run
+orders its facts in time, says nothing about a branch the run skips.
+
+### 8.4  Why no counterexample turned up
+
+A counterexample needs a cycle through a falling step (y, i) ≺ (y, i+1). Some
+thread acts on (y, i+1) while it holds a point a, and somewhere a fact leads
+from a back to (y, i). Three properties of repaired PGV blocked every
+construction tried.
+
+1. A thread that holds two channels acts on them in the order of their
+   current priorities. The order is the same in both branches of a case.
+2. After a thread acts at priority o, every channel it receives has priority
+   above o. The carrier lies above o by the check, and R1 puts the payload
+   above the carrier. A closure that the thread holds at that moment
+   captures only channels above o, by its lower bound.
+3. After a thread acts at o on a falling session, it holds the continuation
+   at some priority o′ below o. Until it acts on or gives away that
+   continuation, every action of the thread lies below o′. A spawned thread
+   that takes the continuation can talk only through channels that the
+   parent held above o or created after the action.
+
+The attempts tried were two branches that hand x and y to other threads in
+opposite orders, a round trip of y through a second thread, and a fresh
+channel created after the falling step to carry y back. Each failed at one of
+the three properties, with some instant that would have to lie both above and
+below one priority. These properties are the shape a proof of the theorem of
+8.3 would take, but they are no proof.
+
+### 8.5  The decision this leaves
+
+Two routes stay open. One is a translation with a point per channel that
+takes the acyclicity of 8.3 as a premise, which gives subsumption relative
+to that premise. The other is a proof of the theorem, which is a research
+question because it must reason about branches that no run takes. Both
+rewrite `tr_ty`, `pgv_translate` and the world of PGVWorld.v. Neither touches
+the core.

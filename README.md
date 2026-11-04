@@ -110,6 +110,7 @@ has no axioms and no admitted proofs.
 - `PGVTranslate.v`: PGV derivations become `typed` derivations (`pgv_translate`, `pgv_deadlock_free`).
 - `PGVSimulation.v`: the simulation of a program by its translation, and deadlock freedom of the program itself (`rel`, `fwd`, `final`, `pgv_deadlock_free_source`).
 - `PGVExamples.v`: Example 2.1 of the paper, a delegation, a link, and the two counterexamples rejected.
+- `PGVFalling.v`: two closed programs with falling sessions typed in repaired PGV (`fall2_typed`, `fallxy_typed`). `fallxy` shows that no translation that reads points off session types covers falling sessions (pgv-adequacy.md §8).
 
 `pn/`, adequacy for Padovani and Novara, FORTE 2015 (docs/extensions/adequacy/padovani-novara.md §7).
 

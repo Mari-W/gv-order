@@ -1391,6 +1391,20 @@ It costs one `new` and one close per selection, a channel per choice at run
 time, and the facts x+1 ≺ x[i] that the close of the carrier asks. No rule,
 constant or definition of the core changed (docs/extensions/choice-encoding.md).
 
+**138. Falling sessions need a point per channel (Claude, 2026-11-04, branch pgv-falling).**
+The PGV translation reads the point of a channel off its session type. For
+falling sessions no such reading works, in any world. pgv/PGVFalling.v types
+`fallxy` in repaired PGV (`fallxy_typed`). It uses S1 = !⁵1.?⁰1.end⁶? on x and c
+and S2 = !³1.end⁸! on b and d. One thread sends on b before x, and main
+receives on c at 0 before it sends on d. With points read off types this
+gives pt(S1) ≺ pt(S1)+1 ≡ pt(S1′) ≺ pt(S2) ≺ pt(S1). A fresh point per new
+avoids the cycle. A translation with such points needs the facts of all
+branches, also branches that never run, to be acyclic with program order,
+because a fact between two older points is global (creation constraints are
+conservative). That theorem is open, and no counterexample turned up
+(pgv-adequacy.md §8). The fragment of `pgv_deadlock_free_source` is
+unchanged.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
