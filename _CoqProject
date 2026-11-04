@@ -66,6 +66,7 @@ theories/examples/FactServer.v
 theories/examples/Stream.v
 theories/examples/Congruence.v
 theories/examples/ChoiceEnc.v
+theories/examples/OptionPayload.v
 theories/counterexamples/DropCounter.v
 theories/pgv/PGVTypes.v
 theories/pgv/PGVTyping.v

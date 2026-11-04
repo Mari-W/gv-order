@@ -1391,6 +1391,21 @@ It costs one `new` and one close per selection, a channel per choice at run
 time, and the facts x+1 ≺ x[i] that the close of the carrier asks. No rule,
 constant or definition of the core changed (docs/extensions/choice-encoding.md).
 
+**138. A payload of a channel or nothing owes the facts of the channel (Claude, 2026-11-04, branch exists).**
+The carrier O = !((S⁰@self[0]) ⊕ ∗).Close sends either a channel at ι[0] or
+unit. examples/OptionPayload.v types three programs against one receiver R.
+`some` sends inj₁ d with d created at the alias κ ≡ ι[0], `some_swapped`
+spawns R before it creates d, and `none` sends inj₂ ∗. KTSend asks ι ≺ h for
+every h in the heads of the payload type, and `heads` of a sum is the union
+of both arms, so `none` owes ι ≺ ι[0] for a channel it never sends. E-Case
+types both arms of R, so the arm inj₁ asks ι[0] ≺ ι+1 and ι[0]+1 ≺ ι+1 in
+`none` as well, while R holds c₁′ at ι+1. All three programs create c under
+{ι ≺ ι[0], ι[0]+1 ≺ ι+1} (`op_ok`) and type under the empty top-level
+constraint `op_C0` with 0 variables (`some_typed`, `some_swapped_typed`,
+`none_typed`). `soundness_source` gives `some_deadlock_free`,
+`some_swapped_deadlock_free` and `none_deadlock_free`. The facts matched the
+expectation, and no rule of the core changed.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
