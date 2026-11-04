@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check that the claims of the development are closed under the global context.
 
-    python3 artifact/check.py [--rocq ROCQ] [--list]
+    python3 artifact/check.py [--rocq ROCQ] [--list] [--only REGEX]
 
 Run it from the repository root after `make`.  It
 
@@ -202,6 +202,9 @@ def main():
     if '--rocq' in argv:
         rocq = argv[argv.index('--rocq') + 1]
     sel, errors, unresolved = targets()
+    if '--only' in argv:
+        pat = re.compile(argv[argv.index('--only') + 1])
+        sel = {fq: why for fq, why in sel.items() if pat.search(fq)}
     if '--list' in argv:
         for fq, why in sel.items():
             print('%s\t%s' % (fq, ', '.join(why)))
@@ -220,7 +223,7 @@ def main():
             f.write('Redirect "_build/check/a%04d" Print Assumptions %s.\n'
                     % (i, fq))
     cmd = [rocq, 'c', '-R', os.path.join(ROOT, 'theories'), 'LRGV',
-           '-w', '-notation-overridden',
+           '-w', '-notation-overridden,-default-output-directory',
            os.path.join(OUT, 'Check.v')]
     print('checking %d names: %s' % (len(names), ' '.join(cmd[:2] + ['...'])))
     r = subprocess.run(cmd, cwd=ROOT)
