@@ -1,7 +1,7 @@
 (** * received chain: typable, recursion on a received channel (SHARP-EDGES 65)
 
       Sch = μX. ?(∃κ. X@κ).Close
-      C = {ι[0]ⁿ + 1 ≺ ι[0]ⁿ⁺¹ ∣ n ∈ ℕ}      ι[0]ⁿ = ι[0]…[0] (n times, slots from 0)
+      C = {ι[0]ⁿ + 1 ≺ ι[0]ⁿ⁺¹ ∣ n ∈ ℕ}      ι[0]ⁿ = ι[0]…[0] (n times, positions from 0)
       rch : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sch@ι ⊸^{ι+1}_⊤ ∗))
       rch = !(f = λc. let (d, c) = recv c in let () = close c in
                      spawn (λw. let () = w in (force f) d))

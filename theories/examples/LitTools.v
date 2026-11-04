@@ -56,25 +56,25 @@ Ltac po_gate HW u := apply ubs_intro; [po_frame HW|po_fvar HW u].
 (** The same at the top level, where the frame has no variable. *)
 Ltac po_gate0 HW := apply ubs_intro; [po_frame HW|done].
 
-(** ** Chains of carried roots
+(** ** Chains of carried points ι[0]ⁿ
 
     A recursive server that creates one channel per call places it at a
-    carried root of the channel it answers on, so the points of every
+    point ι[i] of the channel ι it answers on, so the points of every
     round sit on one root and no creation constraint names an outer
-    point. ι.0ⁿ is the n-fold first carried root of the point variable 0
-    (slots counted from 0 in Rocq). *)
+    point. ι[0]ⁿ = ι[0]…[0] (n times) for the point variable ι = 0,
+    with positions counted from 0 in Rocq. *)
 
 Fixpoint slotv (n : nat) : pname :=
   match n with 0 => NVar 0 | S m => NSlot (slotv m) 0 0 end.
 
 Abbreviation pcr := (Pt (NSlot (NVar 0) 0 0) 0).
 
-(** Instantiating ι by ι.0 moves every point of the chain one level
+(** Instantiating ι by ι[0] moves every point of the chain one level
     deeper, which is what the recursive [force] does. *)
 Lemma slotv_inst n : pn_inst (plist [pcr]) (slotv n) = Pt (slotv (S n)) 0.
 Proof. induction n as [|n IH]; [done|]. cbn [slotv pn_inst]. by rewrite IH. Qed.
 
-(** The depth of a name in carried roots. *)
+(** The depth of a name, the number of steps x ↦ x[i] in it. *)
 Fixpoint sdepth (p : pname) : nat :=
   match p with NSlot q _ _ => S (sdepth q) | _ => 0 end.
 
@@ -82,7 +82,7 @@ Lemma sdepth_slotv n : sdepth (slotv n) = n.
 Proof. induction n as [|n IH]; [done|]. cbn. by rewrite IH. Qed.
 
 (** Two strict orders on points, read lexicographically on depth and
-    offset. [dlt] puts a deeper carried root below a shallower one, the
+    offset. [dlt] puts a deeper carried point below a shallower one, the
     order of a server whose fresh channel answers before the channel it
     was called on. [ult] is the opposite, the order of a producer that
     sends its fresh channel on. Neither has a rank in ℕ, because the

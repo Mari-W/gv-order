@@ -2,7 +2,7 @@
 
     A world W = (≡, ≺) relates instants (p, b), i.e. points. ≡ is an
     equivalence of aliases with successor congruence (x ≡ y gives
-    x+1 ≡ y+1) and slot congruence (x ≡ y gives x[i] ≡ y[i]), and ≺
+    x+1 ≡ y+1) and carried congruence (x ≡ y gives x[i] ≡ y[i]), and ≺
     is a transitive order on ≡-classes that contains program order
     (p, b) ≺ (p, b+1). A world is strict when ≺ is irreflexive. Worlds
     are the Kripke index of the logical relation.
@@ -27,9 +27,9 @@ Record world := World {
   w_lt : prel
 }.
 
-(** The root name of a point: a slot ι[i] belongs to the name of ι.
+(** The root name of a point: ι[i] belongs to the name of ι.
     The support is a set of root names (point constants), so that
-    slot congruence does not need infinitely many slot names in a
+    carried congruence does not need infinitely many names ι[i] in a
     finite support. [pn_root] and [pt_root] live in types/Types.v. *)
 
 (** The root names of the points of a type, an environment and a

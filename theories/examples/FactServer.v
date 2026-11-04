@@ -21,7 +21,7 @@
     Here:
 
       Sr   = !∗.Close
-      C    = {ι.0ⁿ⁺¹ ≺ ι.0ⁿ,  ι.0ⁿ⁺¹ + 1 ≺ ι.0ⁿ  ∣  n ∈ ℕ}   (slots from 0)
+      C    = {ι[0]ⁿ⁺¹ ≺ ι[0]ⁿ,  ι[0]ⁿ⁺¹ + 1 ≺ ι[0]ⁿ  ∣  n ∈ ℕ}   (positions from 0)
       fact : □(∀ι. C. ∗ ⊸^⊥_⊤ ((∗ ⊕ ∗) ⊗ Sr@ι ⊸^{ι+1}_⊤ ∗))
       fact = !(f = λnr. let (n, r) = nr in case n of
                  x. let () = x in close (send ⟨∗, r⟩)
@@ -43,8 +43,8 @@
     types both branches. The reply session is !∗.Close, one message and
     a close.
 
-    Points. The fresh reply channel of a call sits at ι.0, the first
-    carried root of the channel the call answers on, and C orders every
+    Points. The fresh reply channel of a call sits at ι[0], the point of the first
+    channel carried by the message the call answers on, and C orders every
     round strictly below the one that called it. This is the shape of
     examples/KobForwarder.v, and the two programs differ in where the
     branch comes from: there the server tests a boolean of its own, here
@@ -122,7 +122,7 @@ Proof.
     + done.
     + apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
-  - (* n > 0: the fresh reply channel at ι.0, the call, the answer *)
+  - (* n > 0: the fresh reply channel at ι[0], the call, the answer *)
     cbn. tstep; [tstep|]. cbn.
     apply (t_new_at W _ _ _ _ _ _ _ Sd pcr HWs).
     { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }

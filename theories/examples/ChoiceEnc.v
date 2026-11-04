@@ -3,16 +3,16 @@
     PGV encodes S₁ ⊕ S₂ as !(S₁ + S₂).end (Kokke and Dardha,
     Prioritise the Best Variation, p. 6). Here the payload of the
     carrier binds two points, and each arm of the sum lies at its own
-    slot:
+    point:
 
       Sch S₁ S₂ = !(∃ι₀ ι₁. (dual S₁)@ι₀ ⊕ (dual S₂)@ι₁).Close
       Sbr T₁ T₂ = ?(∃ι₀ ι₁. T₁@ι₀ ⊕ T₂@ι₁).Close = dual (Sch (dual T₁) (dual T₂))
 
-    At a carrier point x the arm i lies at the slot x.i. The derived
+    At a carrier point x the arm i lies at x[i]. The derived
     forms use only new, send, recv, close, the sum and its case:
 
-      sel₁ = λc. let (k, k′) = new ∗ at x.0 in let () = close (send ⟨inj₁ k′, c⟩) in k
-      sel₂ = λc. let (k, k′) = new ∗ at x.1 in let () = close (send ⟨inj₂ k′, c⟩) in k
+      sel₁ = λc. let (k, k′) = new ∗ at x[0] in let () = close (send ⟨inj₁ k′, c⟩) in k
+      sel₂ = λc. let (k, k′) = new ∗ at x[1] in let () = close (send ⟨inj₂ k′, c⟩) in k
       branch c e₁ e₂ = let (p, c) = recv c in let () = close c in case p e₁ e₂
 
     [sel1_typed], [sel2_typed] and [branch_typed] are their typing
@@ -27,13 +27,13 @@
       T2 = branch c′ { k ⇒ close d; recv k; close k | k ⇒ recv k; close d; close k }
       T3 = close d′
 
-    Branch A closes d while it holds k at a.0 and asks δ ≺ a.0.
-    Branch B receives on k at a.1 while it holds d and asks a.1 ≺ δ.
+    Branch A closes d while it holds k at a[0] and asks δ ≺ a[0].
+    Branch B receives on k at a[1] while it holds d and asks a[1] ≺ δ.
     The two facts name two points, so they do not meet. [choice_typed]
     types the program under the top-level constraint
-    {a+1 ≺ a.1, a.1 ≺ δ, δ ≺ a.0, δ ≺ a.1+1}, and [choice_deadlock_free]
-    follows from [soundness_source]. With both arms at a.0 the two facts
-    are δ ≺ a.0 and a.0 ≺ δ, a cycle ([same_slot_cycle]). *)
+    {a+1 ≺ a[1], a[1] ≺ δ, δ ≺ a[0], δ ≺ a[1]+1}, and [choice_deadlock_free]
+    follows from [soundness_source]. With both arms at a[0] the two facts
+    are δ ≺ a[0] and a[0] ≺ δ, a cycle ([same_slot_cycle]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -100,16 +100,16 @@ Proof. induction Δ; simpl; done. Qed.
 Lemma lenv_bot_nones Δ : lenv_bot (lenv_nones Δ) = false.
 Proof. induction Δ; simpl; done. Qed.
 
-(** Knownness of a slot is that of its base: they share a root. *)
+(** Knownness of x[i] is that of x: they share a root. *)
 Lemma skn_slot W Ψ x i : skn W Ψ x → skn W Ψ (pt_slot x i).
 Proof. intros [H|(C & xs & y & Hg & Hy & E)]; [by left|right; by exists C, xs, y]. Qed.
 
 (** ** Selection is a derived form
 
-    sel_i takes the carrier at x and returns the continuation at x.i.
+    sel_i takes the carrier at x and returns the continuation at x[i].
     It blocks at x (send) and at x+1 (close), so its upper point is
-    x+1. send asks {x} ≺ {x.0, x.1}, and close c asks x+1 ≺ x.i,
-    because sel_i holds k at x.i. *)
+    x+1. send asks {x} ≺ {x[0], x[1]}, and close c asks x+1 ≺ x[i],
+    because sel_i holds k at x[i]. *)
 
 Section sel.
   Context (W : world) (HWs : strict W).
@@ -169,8 +169,8 @@ End sel.
 
     branch receives the sum at x while the context holds Δ₂, closes the
     carrier at x+1 while it holds the sum and Δ₂, and continues in the
-    arm i with the continuation at x.i. The sum has the heads x.0 and
-    x.1, so the close asks x+1 ≺ x.0 and x+1 ≺ x.1 whatever the arm. *)
+    arm i with the continuation at x[i]. The sum has the heads x[0] and
+    x[1], so the close asks x+1 ≺ x[0] and x+1 ≺ x[1] whatever the arm. *)
 
 Lemma branch_typed W Φ Ψ Δ Δ1 Δ2 F e e1 e2 T1 T2 T x :
   world_wf W → lenv_split Δ Δ1 Δ2 →
@@ -215,13 +215,13 @@ Qed.
     c : (Sch Sd Sd)@a and d : Close@δ, with a and δ the top-level
     variables 0 and 1. The facts each step asks:
 
-      T1   send on c at a         a ≺ a.0, a ≺ a.1 (KTSend), a ≺ a.0 (holds k)
-           close c at a+1         a+1 ≺ a.0 (holds k)
+      T1   send on c at a         a ≺ a[0], a ≺ a[1] (KTSend), a ≺ a[0] (holds k)
+           close c at a+1         a+1 ≺ a[0] (holds k)
       T2   recv c′ at a           a ≺ δ (holds d)
-           close c′ at a+1        a+1 ≺ δ, a+1 ≺ a.0, a+1 ≺ a.1 (holds d and the sum)
-           branch A, close d      δ ≺ a.0 (holds k)
-           branch B, recv k       a.1 ≺ δ (holds d)
-           branch B, close d      δ ≺ a.1+1 (holds k)
+           close c′ at a+1        a+1 ≺ δ, a+1 ≺ a[0], a+1 ≺ a[1] (holds d and the sum)
+           branch A, close d      δ ≺ a[0] (holds k)
+           branch B, recv k       a[1] ≺ δ (holds d)
+           branch B, close d      δ ≺ a[1]+1 (holds k)
 
     The top-level constraint states four of them, and program order and
     transitivity give the rest. *)
@@ -323,7 +323,7 @@ Proof.
   { tstep. }
   { apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
   { apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
-  - (* branch A: close d, then receive on k at a.0 *)
+  - (* branch A: close d, then receive on k at a[0] *)
     cbn. unfold t2_arm1, recvclose. tstep.
     + tstep; [tstep|apply (KTClos _ _ _ (pd 0))|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
@@ -331,7 +331,7 @@ Proof.
       * tstep; [tstep|apply KTRecv|kscope|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
       * cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-  - (* branch B: receive on k at a.1, then close d *)
+  - (* branch B: receive on k at a[1], then close d *)
     cbn. unfold t2_arm2. tstep.
     + tstep; [tstep|apply KTRecv|kscope|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
@@ -344,22 +344,22 @@ Qed.
 Theorem choice_deadlock_free : deadlock_free (∅, {[+ choice_main +]}).
 Proof. apply (soundness_source 2 Cch _ TUnit ch_rank_ok); [constructor|apply choice_typed]. Qed.
 
-(** ** Negative control: both arms at one slot
+(** ** Negative control: both arms at one point
 
       Sch₀ = !(∃ι₀. (?∗.Close)@ι₀ ⊕ (?∗.Close)@ι₀).Close
 
     The program [choice_main] with c : Sch₀@a and the payload of one
-    point. Both arms receive k at a.0. Branch A closes d while it holds
-    k and asks δ ≺ a.0 (E-Let* puts a.0 into the frame of close d,
+    point. Both arms receive k at a[0]. Branch A closes d while it holds
+    k and asks δ ≺ a[0] (E-Let* puts a[0] into the frame of close d,
     E-App asks the upper point δ below it). Branch B receives on k at
-    a.0 while it holds d and asks a.0 ≺ δ. E-Case types both arms in
+    a[0] while it holds d and asks a[0] ≺ δ. E-Case types both arms in
     the same context, and the type of k comes from the payload, so the
     two facts speak of the same two points. E-Conv keeps points (eqT
     compares them by equality) and E-Weak drops only unlimited
     bindings, so every derivation asks both facts. Every Γ that the
     derivation of a closed program meets has an acyclic ≺, by the
-    argument of examples/Rejected.v, and δ ≺ a.0 ≺ δ is a cycle. The
-    choice of the slot plays no role: the lemma holds for every point
+    argument of examples/Rejected.v, and δ ≺ a[0] ≺ δ is a cycle. The
+    choice of the point plays no role: the lemma holds for every point
     the two arms share. *)
 
 Definition Sch0 : sty :=
@@ -370,8 +370,8 @@ Lemma same_slot_cycle W Ψ (k δ : point) :
 Proof. intros Hacy [H1 H2]. apply (Hacy δ). by eapply sl_trans. Qed.
 
 (** No top-level constraint that [soundness_source] accepts states the
-    two facts of the shared point: a top-level C with δ ≺ a.0 and
-    a.0 ≺ δ fails [c0_acyclic]. *)
+    two facts of the shared point: a top-level C with δ ≺ a[0] and
+    a[0] ≺ δ fails [c0_acyclic]. *)
 Lemma same_slot_not_acyclic P :
   P (FLt (pd 0) (pa0 0)) → P (FLt (pa0 0) (pd 0)) → ¬ c0_acyclic 2 (BCs [] P).
 Proof.
@@ -380,14 +380,14 @@ Proof.
     apply bcs_open_nil; split; [done| |done|]; cbn; lia.
 Qed.
 
-(** With separate slots the same two facts are δ ≺ a.0 and a.1 ≺ δ,
+(** With separate points a[0] and a[1] the same two facts are δ ≺ a[0] and a[1] ≺ δ,
     and the top-level constraint [Cch] holds both without a cycle
     ([ch_rank_ok]). *)
 
 (** ** Stage 2: a recursive choice
 
       R = μX. &{Next: !∗.X, Stop: Close} = μX. Sbr (!∗.X) Close
-      srv : □(∀ι. C. ∗ ⊸^⊥_⊤ (R@ι ⊸^{ι.1}_⊤ ∗))
+      srv : □(∀ι. C. ∗ ⊸^⊥_⊤ (R@ι ⊸^{ι[1]}_⊤ ∗))
       srv = !(f = λc. branch c { k ⇒ spawn (λw. let () = w in (force f) (send ⟨∗, k⟩))
                                | k ⇒ close k })
       loop_main = let (f, u) = ⟨srv, ∗⟩ in let () = u in
@@ -397,20 +397,20 @@ Qed.
                   let (x, c₃) = recv (sel₁ c₂) in let () = x in
                   close (sel₂ c₃)
 
-    Round n runs at the point p_n with p_0 = a and p_{n+1} = p_n.0 + 1:
-    Next hands over k at p_n.0, the server sends ∗ on it, and the
-    continuation lies at p_n.0 + 1. The client does two Next and one
+    Round n runs at the point p_n with p_0 = a and p_{n+1} = p_n[0] + 1:
+    Next hands over k at p_n[0], the server sends ∗ on it, and the
+    continuation lies at p_n[0] + 1. The client does two Next and one
     Stop.
 
     The body of srv receives at ι and closes the carrier at ι+1 while it
-    holds the sum, which asks ι+1 ≺ ι.0 and ι+1 ≺ ι.1. Stop closes k at
-    ι.1, so the upper point of the body is ι.1. Next sends at ι.0 in a
-    thread that then forces f at ι.0+1, whose upper point is
-    (ι.0+1).1. So the thread asks ι.0 ≺ (ι.0+1).1 and the call asks
-    the constraint at ι.0+1. The constraint C is the two facts at every
+    holds the sum, which asks ι+1 ≺ ι[0] and ι+1 ≺ ι[1]. Stop closes k at
+    ι[1], so the upper point of the body is ι[1]. Next sends at ι[0] in a
+    thread that then forces f at ι[0]+1, whose upper point is
+    (ι[0]+1)[1]. So the thread asks ι[0] ≺ (ι[0]+1)[1] and the call asks
+    the constraint at ι[0]+1. The constraint C is the two facts at every
     round, an infinite constraint as in examples/ReceivedChain.v:
 
-      C = {p_n + 1 ≺ p_n.0, p_n + 1 ≺ p_n.1 ∣ n ∈ ℕ}
+      C = {p_n + 1 ≺ p_n[0], p_n + 1 ≺ p_n[1] ∣ n ∈ ℕ}
 
     C[p_1/ι] is C without its first round ([lp_sub]). The program
     starts under C as its top-level constraint. *)
@@ -469,8 +469,8 @@ Proof. intros Hg Hx. right. exists C, (ids 1), (pvar 0). split_and!; [done|by le
 Lemma cvp_root n : pt_root (cvp n) = NVar 0.
 Proof. induction n as [|n IH]; [done|]. exact IH. Qed.
 
-(** Selection at round n asks p_n ≺ p_n.0, p_n ≺ p_n.1 and
-    p_n + 1 ≺ p_n.i, all from C and program order. *)
+(** Selection at round n asks p_n ≺ p_n[0], p_n ≺ p_n[1] and
+    p_n + 1 ≺ p_n[i], all from C and program order. *)
 Lemma lp_sel W Ψ n i : world_wf W → (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (cvp n) (pt_slot (cvp n) i).
 Proof. intros HW Hg Hi. eapply sl_trans; [apply (slt_po W _ _ HW)|by apply lp_fact]. Qed.
 

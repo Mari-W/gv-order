@@ -2,7 +2,7 @@
 
       S = μX. ?(∃ι. D@ι).X      D = ?∗.Close
       C₀(x, y) = {x ≺ y, x ≺ x[0], x[0] ≺ x+1, x[0] ≺ y, y ≺ x+1, y ≺ x[0]+1}
-      C = C₀(ι, ι′) ∪ {C₀(ι+k+1, ι+k[0]+1) ∣ k ∈ ℕ}       (slots from 0)
+      C = C₀(ι, ι′) ∪ {C₀(ι+k+1, (ι+k)[0]+1) ∣ k ∈ ℕ}       (positions from 0)
       relay : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (S@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗))
       relay = !(f = λp. let (c, d) = p in let (e, c) = recv c in
                        let (v, e) = recv e in let () = v in let () = close d in
@@ -16,16 +16,16 @@
                  let () = spawn (λw. let () = w in (force r) ⟨c, d⟩) in (force g) ⟨c′, d′⟩
 
     The relay is §8.2's with a spawn in place of the tail call, which
-    removes the ceiling. prod creates e at ι[0], the slot its payload
+    removes the ceiling. prod creates e at ι[0], the point its payload
     must live at, so it needs new under □∀ (59) and ι ≺ ι[0] for its
     send. The call at (ι+1, ι[0]+1) asks C there, which is round 0 of
     the family and round k+1 for round k, so C[ι+1, ι[0]+1] ⊆ C
     ([rel_sub]). main forces both boxes at (γ, ε), the points of c and
-    d. Round 0 is C₀(γ, ε) and round k+1 is C₀(γ+k+1, γ+k[0]+1).
+    d. Round 0 is C₀(γ, ε) and round k+1 is C₀(γ+k+1, (γ+k)[0]+1).
 
     main types in the empty world. c is created with the facts of its
     own rounds, ordered by the ranks 3k+3 for γ+k and 3k+4+4o for
-    γ+k[0]+o, and d with the four facts of round 0 that mention it
+    (γ+k)[0]+o, and d with the four facts of round 0 that mention it
     (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -175,7 +175,7 @@ Qed.
 (** Both channels come from creation constraints (sharp edges 105).
     c is created with the facts of its own rounds, which stay inside
     its name: ι ≺ ι[0], ι[0] ≺ ι+1 and every later round C₀(ι+k+1,
-    ι+k[0]+1). The ranks [relv_rank] order them. d is created at a fresh
+    (ι+k)[0]+1). The ranks [relv_rank] order them. d is created at a fresh
     point ε with the four facts of round 0 that mention it,
 
       {ι ≺ ε,  ι[0] ≺ ε,  ε ≺ ι+1,  ε ≺ ι[0]+1},

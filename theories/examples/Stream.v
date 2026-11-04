@@ -14,7 +14,7 @@
     Here:
 
       Sst   = µα. ?⟨κ⟩(∗ ⊗ α@κ).Close
-      C     = {ι.0ⁿ + 1 ≺ ι.0ⁿ⁺¹  ∣  n ∈ ℕ}                  (slots from 0)
+      C     = {ι[0]ⁿ + 1 ≺ ι[0]ⁿ⁺¹  ∣  n ∈ ℕ}                  (positions from 0)
       stprod : □(∀ι. C. ∗ ⊸^⊥_⊤ (S̄st@ι ⊸^{ι+1}_⊤ ∗))
       stprod = !(g = λc. let (e, e′) = new ∗ in
                         let (c, u) = ⟨send ⟨⟨∗, e⟩, c⟩, ∗⟩ in let () = u in
@@ -36,12 +36,12 @@
     the stream and closes each round. One round of the session is one
     message and a close, which is where Padovani's a takes over from y.
 
-    Points. The fresh continuation of a round sits at ι.0, the first
-    carried root of the channel it travels on, so sender and receiver
-    name it alike. send asks ι ≺ ι.0, and the close of the round at
+    Points. The fresh continuation of a round sits at ι[0], the point of the first
+    channel carried by the message it travels on, so sender and receiver
+    name it alike. send asks ι ≺ ι[0], and the close of the round at
     ι+1 runs while the next round's channel is held, which asks
-    ι+1 ≺ ι.0. C states that for every depth, and the recursive call
-    forces at ι.0, where C[ι.0/ι] ⊆ C ([st_sub]). The order rises along
+    ι+1 ≺ ι[0]. C states that for every depth, and the recursive call
+    forces at ι[0], where C[ι[0]/ι] ⊆ C ([st_sub]). The order rises along
     the depth, and [ult] of LitTools.v orders it ([st_ok]).
 
     examples/ReceivedChain.v is the same shape with a bare channel as

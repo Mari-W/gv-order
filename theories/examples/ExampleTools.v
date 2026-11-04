@@ -80,8 +80,8 @@ Proof.
     |exact HL|exact Hs|by apply slot_respect|exact Hc|exact Hr|exact HLr].
 Qed.
 
-(** Strictness when ≡ relates slots (Forwarder.v). The map [cn] has to
-    respect slots and need not commute with them. *)
+(** Strictness when ≡ relates carried points (Forwarder.v). The map [cn]
+    has to respect x ↦ x[i] and need not commute with it. *)
 Lemma wgen_strict_cong N E L (cn : point → point) (r : point → nat) :
   (∀ p, p ∈ N → ∃ a, p = NConst a) →
   (∀ x y, E x y → eq_or_supp N x y) →
@@ -154,7 +154,7 @@ Lemma wgen_strict_z N E L (cn : point → point) (r : point → zrank) :
 Proof. apply wgen_strict_by; [apply zlt_irrefl|apply zlt_trans]. Qed.
 
 (** Strictness through a denotation of points that commutes with
-    successor and slots. ≡ facts relate points with one denotation, and
+    successor and x ↦ x[i]. ≡ facts relate points with one denotation, and
     the rank of a denotation rises along successor and along ≺ facts.
     The denotation need not be a point, so aliases need no
     representative (pn/PNWorld.v). *)
@@ -230,8 +230,8 @@ Definition vrank (w : nat) (x : point) : nat := w * pn_vidx (pt_name x) + pt_off
 Lemma vrank_shift w x : vrank w x < vrank w (pt_shift 1 x).
 Proof. unfold vrank, pt_shift. simpl. lia. Qed.
 
-(** The rank of a point is a weight per root constant, slots weighted
-    by their base, plus a step per name times the offset. *)
+(** The rank of a point is a weight per root constant, a carried point
+    weighted by its base, plus a step per name times the offset. *)
 Fixpoint pn_rank (g : nat → nat) (h : nat → nat → nat → nat) (p : pname) : nat :=
   match p with
   | NConst a => g a

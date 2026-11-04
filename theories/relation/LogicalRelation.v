@@ -18,7 +18,7 @@ From LRGV Require Export lang.Semantics lang.Safety types.Types types.SessionEqu
 
     T ≈_W U: T ≈ U up to aliases of ground points in W. The constants'
     signatures are read up to it (V-Const), because a payload type
-    P[x] names the slots of the channel's own point x, and aliased
+    P[x] names the points x[i] of the channel's own point x, and aliased
     points must type the same values. Points that are not ground
     (point variables, possibly bound) are compared by equality, so
     instantiating them preserves the relation. *)

@@ -2,7 +2,7 @@
 
     docs/extensions/adequacy/padovani-novara.md §7. Levels become points
     relative to a level anchor. An anchor B stands for a shift, and its
-    slots B[r] are the points of one level relative to it.
+    carried points B[r] are the points of one level relative to it.
 
     - B[RAnc a] is the anchor shifted by a.
     - B[RCh c] is the point of a channel with code c (PNTypes.chres). The
@@ -19,7 +19,7 @@
     of unlimited types, whose translation names no point.
 
     Points are read through a denotation [den] that commutes with
-    successor and slots and adds the shift of the anchor to every level.
+    successor and x ↦ x[i] and adds the shift of the anchor to every level.
     The rank [rank] of a denotation is the level and the instant, in ℤ
     with a top element. The constraint [Crel] identifies two points of
     the anchor with the same denotation and orders two with rising rank.
@@ -71,7 +71,7 @@ Inductive dn :=
   | DLo (z : Z) (o : nat)
   | DHi (z : Z) (o : nat)
   | DTop (o : nat)
-  | DJ (d : dn) (i o : nat).   (* any other slot *)
+  | DJ (d : dn) (i o : nat).   (* any other carried point *)
 
 Definition dsh (d : dn) : dn :=
   match d with
@@ -262,7 +262,7 @@ Qed.
     - unit is the box □(∗ ⊸ ∗), and a sum of unlimited types the box of
       the sum of their translations, read at the root anchor.
     - p[t]ⁿ is (p(∃ιs. P).Close)@B[RCh c] with c the code of the channel.
-      A channel payload sits at the first slot of the channel's point
+      A channel payload sits at x[0] for the channel's point x
       (one binder), an unlimited payload needs no binder.
     - μα.p[⌈α⌉ᵐ]ⁿ is (µα. p(∃ι. α@ι).Close)@B[RCh c].
     - ⌈t⌉ᵐ is ⇑ᵐ t. wrap and unwrap are erased.
@@ -407,8 +407,8 @@ Proof. apply trz_sess_lshift. Qed.
 
 (** ** Substitution of points
 
-    Every point of [trz B k t] is a slot of B, a slot of the variable of
-    an inner box, or a slot of the root. *)
+    Every point of [trz B k t] is a carried point B[i], a carried point
+    of the variable of an inner box, or a carried point of the root. *)
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
 Proof. apply pt_inst_slot. Qed.
@@ -563,7 +563,7 @@ Section facts.
     rewrite Hc. simpl. lia.
   Qed.
 
-  (** The payload of a channel sits at the first slot of its point. *)
+  (** The payload of a channel at x sits at x[0]. *)
   Lemma den_pay c c' : cpay c = Some c' → den (pt_slot (rpt B (RCh c)) 0) = DCh c' 0.
   Proof. intros Hc. rewrite den_slot, den_ch0. simpl. by rewrite Hc. Qed.
 

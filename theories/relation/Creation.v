@@ -101,7 +101,7 @@ Proof.
   - rewrite <-(pt_shift_S k x), <-(pt_shift_S k (f x)). by rewrite Hs, IH.
 Qed.
 
-(** A map that commutes with successor and slots carries the closure of
+(** A map that commutes with successor and x ↦ x[i] carries the closure of
     generators into every theory that holds their images. *)
 Lemma gen_map E L E' L' (f : point → point) :
   theory E' L' →

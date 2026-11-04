@@ -9,7 +9,7 @@
     close c blocks at ι while the thread holds d and e, close d blocks
     at the point δ of d while it holds e. So δ needs ι ≺ δ ≺ κ. No
     point built from ι and κ lies there. ι + 1 ≺ κ does not follow from
-    ι ≺ κ, and a carried root of ι or κ is unrelated to both. E-NewFresh
+    ι ≺ κ, and a point ι[i] or κ[i] is unrelated to both. E-NewFresh
     creates d at a fresh point δ with ι ≺ δ ≺ κ, which betweenness
     allows because the box hypothesis gives ι ≺ κ (sharp edges 90).
     new returns ∃δ. C. Close@δ ⊗ Close@δ, and E-Open on q opens it

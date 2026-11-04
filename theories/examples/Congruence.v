@@ -1,34 +1,34 @@
 (** * A derivation that uses the congruences of ≡: typable
 
-    The fact theory closes ≡ under successor and under carried roots
+    The fact theory closes ≡ under successor and under x ↦ x[i]
     ([se_shift], [se_slot], static-system.md §3). No example before this
     one derives a fact by either rule. examples/Scheduler.v needs
     c+1 ≡ a+1 from its alias c ≡ a, and it derives that inside the world
     through the closure field [wf_eq_shift] and lifts it with [se_w], so
     the static rule stays unused. examples/Forwarder.v states its alias
-    of carried roots fact by fact in a constraint instead of deriving
+    of carried points fact by fact in a constraint instead of deriving
     it.
 
     The box below is the smallest program we found whose derivation uses
     both rules. It takes two point variables ι and ι′ aliased by its
     constraint, holds a channel c at ι that sends one channel, a channel
-    e at ι′.0, and a channel d at ι′+2.
+    e at ι′[0], and a channel d at ι′+2.
 
       Scg = !⟨κ⟩(Close@κ).Close
-      C   = {ι ≡ ι′,  ι′ ≺ ι′.0}                             (slots from 0)
+      C   = {ι ≡ ι′,  ι′ ≺ ι′[0]}                             (positions from 0)
       cg : □(∀ι ι′. C. ∗ ⊸^⊥_⊤
-               ((Scg@ι ⊗ Close@ι′.0) ⊗ Close@(ι′+2) ⊸^{ι′+2}_{ι} ∗))
+               ((Scg@ι ⊗ Close@ι′[0]) ⊗ Close@(ι′+2) ⊸^{ι′+2}_{ι} ∗))
       cg = !(f = λp. let (q, d) = p in let (c, e) = q in
                     let (c, w) = ⟨send ⟨e, c⟩, ∗⟩ in let () = w in
                     let () = close c in close d)
 
     The two steps that need a congruence:
 
-      send ⟨e, c⟩ at ι   the payload of c at ι is Close@ι.0, and e is
-                         Close@ι′.0. E-Conv moves it along
-                         ι′.0 ≡ ι.0, which is [se_slot] of ι ≡ ι′.
-                         send's own premise ι ≺ ι.0 reads ι ≡ ι′ ≺ ι′.0
-                         and the same alias of the carried roots.
+      send ⟨e, c⟩ at ι   the payload of c at ι is Close@ι[0], and e is
+                         Close@ι′[0]. E-Conv moves it along
+                         ι′[0] ≡ ι[0], which is [se_slot] of ι ≡ ι′.
+                         send's own premise ι ≺ ι[0] reads ι ≡ ι′ ≺ ι′[0]
+                         and the same alias of the carried points.
       close c at ι+1     the frame holds d at ι′+2, so E-App asks
                          ι+1 ≺ ι′+2. The hypothesis states no fact at
                          ι+1. [se_shift] of ι ≡ ι′ gives ι+1 ≡ ι′+1, and
@@ -38,8 +38,8 @@
     alias is reflexivity.
 
       cg_main = let (g, w) = ⟨cg, ∗⟩ in let () = w in
-                let (c, c′) = new ∗ in            C_c = {γ ≺ γ.0, γ.0 ≺ γ+1}
-                let (e, e′) = new ∗ in            at γ.0
+                let (c, c′) = new ∗ in            C_c = {γ ≺ γ[0], γ[0] ≺ γ+1}
+                let (e, e′) = new ∗ in            at γ[0]
                 let (d, d′) = new ∗ in            at γ+2
                 let () = spawn (λu. let () = u in
                            let (x, c′) = recv c′ in
@@ -49,11 +49,11 @@
                 (force g) ⟨⟨c, e⟩, d⟩
 
     What the congruences are worth. Neither rule is forced by any
-    program. A derivation that uses [se_slot] at x.j ≡ y.j can state
+    program. A derivation that uses [se_slot] at x[j] ≡ y[j] can state
     that fact in the constraint it read x ≡ y from, and a derivation
     that uses [se_shift] at x+1 ≡ y+1 can state that one. The two rules
     are what lets a constraint carry one alias between base points in
-    place of one alias per offset and per carried root, and for an alias
+    place of one alias per offset and per carried point, and for an alias
     at every depth that is the difference between a finite constraint
     and an infinite one. A creation constraint cannot state a fact
     between two points that both lie outside the new channel, so an
@@ -86,7 +86,7 @@ Definition cgbox : expr :=
     (LetP (Pair (App ESend (Pair (Var 0) (Var 1))) EUnit) (LetU (Var 0)
       (LetU (App EClos (Var 1)) (App EClos (Var 4)))))))).
 
-(** The creation constraint of c in main, {γ ≺ γ.0, γ.0 ≺ γ+1}. *)
+(** The creation constraint of c in main, {γ ≺ γ[0], γ[0] ≺ γ+1}. *)
 Definition cgc_P (g : fact) : Prop :=
   g = FLt (pvar 0) (cgs 0) ∨ g = FLt (cgs 0) (pv 0 1).
 
@@ -101,7 +101,7 @@ Definition cg_main : expr :=
           (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
             (App (App EForce (Var 7)) (Pair (Pair (Var 5) (Var 3)) (Var 1)))))))))).
 
-(** γ at 3k, γ.0 at 1+k: the two facts and program order rise. *)
+(** γ at 3k, γ[0] at 1+k: the two facts and program order rise. *)
 Definition cg_rank (x : point) : nat :=
   match pt_name x with
   | NVar 0 => 3 * pt_off x
@@ -158,7 +158,7 @@ Proof.
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
               (TProd (TSess SEnd (cgs 0)) (TSess Scg (pv 0 0)))).
     - tstep; [tstep|].
-      (* e : Close@ι′.0 becomes Close@ι.0 along ι′.0 ≡ ι.0 *)
+      (* e : Close@ι′[0] becomes Close@ι[0] along ι′[0] ≡ ι[0] *)
       eapply t_conv; [|tstep]. split; [|apply seq_refl]. apply Hslot. by left.
     - apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) SEnd (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. apply HsendP. by left.
@@ -200,7 +200,7 @@ Proof.
   cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pv 0 2) HWs).
   { eapply skn_inst; [by left|by left|done]. }
   cbn. tstep.
-  { (* the receiver of c: recv at γ, close the payload at γ.0, close at γ+1 *)
+  { (* the receiver of c: recv at γ, close the payload at γ[0], close at γ+1 *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0);
       [set_solver| |].
@@ -222,7 +222,7 @@ Proof.
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
-  { (* close e′ at γ.0 *)
+  { (* close e′ at γ[0] *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (cgs 0)) (Some (cgs 0)) 0);
       [set_solver| |].

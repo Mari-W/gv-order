@@ -2,7 +2,7 @@
 
       Si = μX. ?(∃κ. Close@κ).X       So = μX. !(∃κ. Close@κ).X
       Cf = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1,  ι′+k ≺ (ι′+k)[0],
-            (ι+k)[0] ≡ (ι′+k)[0]  ∣  k ∈ ℕ}                  (slots from 0)
+            (ι+k)[0] ≡ (ι′+k)[0]  ∣  k ∈ ℕ}                  (positions from 0)
       Cp = {ι+k ≺ (ι+k)[0],  (ι+k)[0] ≺ ι+k+1  ∣  k ∈ ℕ}
       fwd   : □(∀ι ι′. Cf. ∗ ⊸^⊥_⊤ (Si@ι ⊗ So@ι′ ⊸^{ι′}_⊤ ∗))
       fwd   = !(f = λp. let (a, b) = p in let (d, a) = recv a in
@@ -23,7 +23,7 @@
     recv a gives d the type Close@ι[0], and send at ι′ asks Close@ι′[0].
     E-Conv up to Γ ⊢ ≡ ([t_conv] with [steq]) moves d along the fact
     ι[0] ≡ ι′[0] of Cf ([se_hyp0]). The producer creates e at ι[0], the
-    slot its payload must live at. The recursive calls ask Cf and Cp one
+    point its payload must live at. The recursive calls ask Cf and Cp one
     round later, which C contains ([fw_sub], [fp_sub]).
 
     In the empty world main creates a with the producer constraint fp_C

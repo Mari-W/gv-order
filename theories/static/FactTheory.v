@@ -81,7 +81,7 @@ Definition ids (m : nat) : list point := pvar <$> List.seq 0 m.
 
     Every fact the static system reads comes from two judgments over
     the context Γ = (W, Ψ, Φ). Γ ⊢ x ≡ y ([seqs]) is the least
-    congruence for successor and carried roots that contains ≡ of W and
+    congruence for successor and x ↦ x[i] that contains ≡ of W and
     the ≡ facts of the hypotheses. Γ ⊢ a ≺ b ([fl]) is over nodes,
     which are points and frame variables. It has program order
     x ≺ x + 1 ([fl_po]), the order of W, the ≺ facts of the hypotheses

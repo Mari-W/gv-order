@@ -103,7 +103,7 @@ Qed.
 
     The body blocks at ι holding d at ι′, at ι[0] holding c at ι+1 and
     d at ι′, and at ι′ holding c at ι+1 and e at ι[0]+1. So C needs
-    ι ≺ ι′, ι[0] ≺ ι+1, ι[0] ≺ ι′, ι′ ≺ ι+1 and ι′ ≺ ι[0]+1 (slots
+    ι ≺ ι′, ι[0] ≺ ι+1, ι[0] ≺ ι′, ι′ ≺ ι+1 and ι′ ≺ ι[0]+1 (positions
     counted from 0). The call instantiates (ι, ι′) by (ι+1, ι[0]+1) and
     asks C there, among others ι+1 ≺ ι[0]+1. C relates ι+1 and ι[0]+1
     only through ι′, which lies below both. The rank of

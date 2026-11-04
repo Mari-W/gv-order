@@ -443,7 +443,7 @@ Qed.
 
     A constraint C of one variable ι (the variable 0) whose every fact
     relates a point of the fresh channel to an outer point. A point of
-    the fresh channel has the root ι, so it is ι+k, (ι+b).i+k and so on.
+    the fresh channel has the root ι, so it is ι+k, (ι+b)[i]+k and so on.
     [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
     [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
     point in the context of the rule. C may be infinite. *)

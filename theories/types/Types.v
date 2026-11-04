@@ -3,7 +3,7 @@
     T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs. C. T) | ∃^ℓ ιs. C. T
     S    ::= ?P.S | !P.S | Close | µα.S | α | α̅      P ::= ∃ιs. T
     β    ::= ι | ⊥        λ ::= ι | ⊤
-    ι    ::= (p, b)       p ::= a | point variable | p[b][i]   (no channels) *)
+    ι    ::= (p, b)       p ::= a | point variable | (p, b)[i]   (no channels) *)
 
 From stdpp Require Import base strings gmap countable.
 From LRGV Require Export lang.Syntax.
@@ -12,13 +12,13 @@ From LRGV Require Export lang.Syntax.
 
     One sort of names (decision N). A point (p, b) is a name p with an
     offset b. A name is a point constant, a point variable (de Bruijn,
-    bound by ∀ under □ or by ∃ in a payload), or the slot p[b][i], "the
-    i-th point carried at (p, b)". Worlds and environments use ground
-    points (constants and their slots), static types also use
+    bound by ∀ under □ or by ∃ in a payload), or (p, b)[i], "the point
+    of the i-th channel carried by the message sent at (p, b)". Worlds and environments use ground
+    points (constants and their carried points), static types also use
     variables. No point mentions a channel, so renaming channels
     changes no type and no world.
 
-    A slot writes the name and offset of its base unpacked, so that
+    The name of (p, b)[i] writes p and b unpacked, so that
     names are not mutual with points. *)
 
 Inductive pname :=
@@ -89,7 +89,7 @@ Definition pup (m : nat) (σ : nat → point) : nat → point :=
 Definition plist (xs : list point) : nat → point :=
   λ a, match xs !! a with Some x => x | None => pvar (a - length xs) end.
 
-(** The slots x[0], …, x[m-1] of a point. *)
+(** The points x[0], …, x[m-1] of a point x. *)
 Definition slots (x : point) (m : nat) : list point :=
   (λ i, pt_slot x i) <$> seq 0 m.
 
@@ -1006,7 +1006,7 @@ Proof.
   rewrite !lookup_empty in H. by inversion H.
 Qed.
 
-(** The root name of a point: a slot ι[i] belongs to the name of ι
+(** The root name of a point: ι[i] belongs to the name of ι
     (relation/Worlds.v uses it for the support of a world). *)
 Fixpoint pn_root (p : pname) : pname :=
   match p with
@@ -1020,7 +1020,7 @@ Definition pt_root (x : point) : pname := pn_root (pt_name x).
 
     A constraint C of one variable ι (the variable 0) whose every fact
     relates a point of the fresh channel to an outer point. A point of
-    the fresh channel has the root ι, so it is ι+k, (ι+b).i+k and so on.
+    the fresh channel has the root ι, so it is ι+k, (ι+b)[i]+k and so on.
     [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
     [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
     point in the context of the rule. C may be infinite. [ple p q]: p
@@ -1050,7 +1050,7 @@ Definition ple (p v : point) : Prop := pt_name p = pt_name v ∧ pt_off p ≤ pt
     ι ≡ w. Which of the two cases holds is part of the evidence, so the
     semantic proof can build its world by cases without excluded
     middle. [fresh_at C w p] reads a point p of the fresh channel with
-    the alias in place of ι, so ι+k becomes w+k and ι.i becomes w.i.
+    the alias in place of ι, so ι+k becomes w+k and ι[i] becomes w[i].
 
     [fresh_between plt C] is the condition on the context. Without an
     alias it is the betweenness of sharp edges 94. With the alias
@@ -1134,7 +1134,7 @@ Proof. intros H (H1 & H2 & H3). split_and!; eauto. Qed.
 
 (** ** The closure of a set of facts
 
-    [geq E] is the least congruence for successor and slots that
+    [geq E] is the least congruence for successor and x ↦ x[i] that
     contains E, and [glt E L] the least transitive relation that
     contains L and program order and is closed under [geq E]. They are
     the fact theory read as a closure. relation/Worlds.v builds the

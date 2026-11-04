@@ -14,7 +14,7 @@
     Here:
 
       Sr   = !∗.Close
-      C    = {ι.0ⁿ⁺¹ ≺ ι.0ⁿ,  ι.0ⁿ⁺¹ + 1 ≺ ι.0ⁿ  ∣  n ∈ ℕ}   (slots from 0)
+      C    = {ι[0]ⁿ⁺¹ ≺ ι[0]ⁿ,  ι[0]ⁿ⁺¹ + 1 ≺ ι[0]ⁿ  ∣  n ∈ ℕ}   (positions from 0)
       fwsrv : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sr@ι ⊸^{ι+1}_⊤ ∗))
       fwsrv = !(f = λr. case inj₂ ∗ of
                   x. let () = x in close (send ⟨∗, r⟩)
@@ -37,12 +37,12 @@
     and sends again, which this program does; [link] would merge the two
     sessions in one step and is not his program.
 
-    Points. The fresh reply channel of a call sits at ι.0, the first
-    carried root of the channel the call answers on, created by
+    Points. The fresh reply channel of a call sits at ι[0], the point of the first
+    channel carried by the message the call answers on, created by
     [t_new_at] at that point. The reply session carries no channel, so
-    ι.0 holds no payload, as the ceiling of examples/TailCall.v does
+    ι[0] holds no payload, as the ceiling of examples/TailCall.v does
     not. C orders every round strictly below the one that called it, and
-    the recursion descends along the depth, so C[ι.0/ι] ⊆ C ([fw_sub]).
+    the recursion descends along the depth, so C[ι[0]/ι] ⊆ C ([fw_sub]).
     A creation constraint {κ + k ≺ ι} with the outer point ι would do
     the same job; the chain keeps every fact inside one root, as the
     other examples in the empty world do.
@@ -80,7 +80,7 @@ Definition fw_main : expr :=
       (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 4)) (Var 2)))))
         (recvclose (Var 0))))).
 
-(** C[ι.0/ι] ⊆ C: round n goes to round n+1. *)
+(** C[ι[0]/ι] ⊆ C: round n goes to round n+1. *)
 Lemma fw_sub g : fw_P g → fact_scoped 1 g → fw_P (fact_map (pt_inst (plist [pcr])) g).
 Proof.
   intros (n & [-> | ->]) _; exists (S n); [left|right];
@@ -124,7 +124,7 @@ Proof.
     + done.
     + apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
-  - (* the fresh reply channel at ι.0, the call, the forward *)
+  - (* the fresh reply channel at ι[0], the call, the forward *)
     cbn. tstep; [tstep|]. cbn.
     apply (t_new_at W _ _ _ _ _ _ _ Sd pcr HWs).
     { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
@@ -145,7 +145,7 @@ Proof.
       - apply ubs_intro; [intros y Hy; mem_cases Hy|].
         exists (pt_shift 1 pcr). split; [done|]. apply sle_refl, HW. }
     cbn. tstep.
-    { (* recvclose q at ι.0 and ι.0+1, holding r at ι *)
+    { (* recvclose q at ι[0] and ι[0]+1, holding r at ι *)
       unfold recvclose. tstep.
       - tstep; [tstep|apply KTRecv|kscope|].
         apply ubs_intro;

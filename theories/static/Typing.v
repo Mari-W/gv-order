@@ -176,7 +176,7 @@ Proof.
   split; [by apply list_elem_of_fmap_2|done].
 Qed.
 
-(** Splitting an environment of spent slots. *)
+(** Splitting an environment of spent entries. *)
 Lemma lenv_split_nones_nones Δ : lenv_split (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ).
 Proof. induction Δ; simpl; constructor; done. Qed.
 
@@ -189,7 +189,7 @@ Proof. induction Δ; simpl; constructor; done. Qed.
     fresh point ι is the point variable 0 of the body, bound like the
     ιs of E-Exp, so Φ, Ψ, Θ, Δ, F and T shift past it and ι is free in
     none of them. The body assumes the hypothesis C, whose facts relate
-    points of the fresh channel (ι+k, ι.i, ι.i+k, …) to outer points
+    points of the fresh channel (ι+k, ι[i], ι[i]+k, …) to outer points
     ([fresh_lt]), and holds the two ends of the channel at ι. The outer
     points are known. Betweenness asks u ≺ v for every fact u ≺ p and
     q ≺ v of C with q at or after p in program order of one name. The
