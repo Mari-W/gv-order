@@ -341,13 +341,16 @@ Proof. done. Qed.
 Lemma hd_rcv m P S : hd (SSeq (SRcv m P) S) = HRcv m P S.
 Proof. unfold hd. by rewrite unfoldS_rcv. Qed.
 
-Definition t2 : expr := branch (Var 2) t2_arm1 t2_arm2.
+(** T2 with c′ at the variable i. [choice_main] has i = 2, and the
+    context of [t_new_at] twice has i = 4. *)
+Definition t2i (i : nat) : expr := branch (Var i) t2_arm1 t2_arm2.
+Definition t2 : expr := t2i 2.
 
 (** The receive on c′ at a point x: the sum it binds has both arms at
     points equal to x[0]. *)
-Lemma t2_recv Φ Ψ Δ F a T1 T2 :
-  plain Δ → (∀ U, Δ !! 2 = Some (Some U) → U = TSess Sbr0 a) →
-  styped Φ Ψ Δ F (App ERecv (Var 2)) (TProd T1 T2) →
+Lemma t2_recv Φ Ψ Δ F a i T1 T2 :
+  plain Δ → (∀ U, Δ !! i = Some (Some U) → U = TSess Sbr0 a) →
+  styped Φ Ψ Δ F (App ERecv (Var i)) (TProd T1 T2) →
   ∃ x r1 y1 r2 y2 r y, T1 = TSum (TSess r1 y1) (TSess r2 y2) ∧ T2 = TSess r y ∧
     heqs Ψ (pt_slot x 0) y1 ∧ heqs Ψ (pt_slot x 0) y2.
 Proof.
@@ -381,17 +384,17 @@ Proof.
   exists x, r1, y1, r2, y2, r, y. by split_and!.
 Qed.
 
-Theorem t2_underivable Φ Ψ Δ F T a :
-  (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! 2 = Some (Some U) → U = TSess Sbr0 a) →
-  ¬ styped Φ Ψ Δ F t2 T.
+Theorem t2i_underivable Φ Ψ Δ F T a i :
+  (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! i = Some (Some U) → U = TSess Sbr0 a) →
+  ¬ styped Φ Ψ Δ F (t2i i) T.
 Proof.
-  intros Hacy Hp Hc H. unfold t2, branch in H.
+  intros Hacy Hp Hc H. unfold t2i, branch in H.
   (* let (p, c) = recv c′ *)
   destruct (inv_letp _ _ _ _ _ _ _ H Hp) as (Δ1 & Δ2 & T1 & T2 & T0 & Hs & H1 & H2).
   destruct (plain_split _ _ _ Hs Hp) as [Hp1 Hp2].
-  assert (∀ U, Δ1 !! 2 = Some (Some U) → U = TSess Sbr0 a) as Hc1
+  assert (∀ U, Δ1 !! i = Some (Some U) → U = TSess Sbr0 a) as Hc1
     by (intros U HU; apply Hc; by eapply lenv_split_lookup_l).
-  destruct (t2_recv _ _ _ _ _ _ _ Hp1 Hc1 H1) as (x & r1 & y1 & r2 & y2 & r & y & -> & -> & Hy1 & Hy2).
+  destruct (t2_recv _ _ _ _ _ _ _ _ Hp1 Hc1 H1) as (x & r1 & y1 & r2 & y2 & r & y & -> & -> & Hy1 & Hy2).
   assert (plain (Some (TSess r y) :: Some (TSum (TSess r1 y1) (TSess r2 y2)) :: Δ2)) as Hpb
     by (apply plain_some; [intros []|intros []|apply plain_some; [intros []|intros []|exact Hp2]]).
   (* let () = close c *)
@@ -466,23 +469,36 @@ Qed.
     The two spawns take a part of the context, and T2 runs in the rest.
     c′ is in the rest or nowhere, so T2 is underivable in either case. *)
 
-Definition body0 : expr :=
-  LetU (App ESpawn t1_thunk) (LetU (App ESpawn t3_thunk) t2).
+Theorem t2_underivable Φ Ψ Δ F T a :
+  (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! 2 = Some (Some U) → U = TSess Sbr0 a) →
+  ¬ styped Φ Ψ Δ F t2 T.
+Proof. apply t2i_underivable. Qed.
+
+(** The body with any two spawned thunks: they are never inverted. *)
+Definition bodyg (i : nat) (e1 e3 : expr) : expr :=
+  LetU (App ESpawn e1) (LetU (App ESpawn e3) (t2i i)).
+
+Definition body0 : expr := bodyg 2 t1_thunk t3_thunk.
+
+Theorem bodyg_underivable Φ Ψ Δ F T a i e1 e3 :
+  (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! i = Some (Some U) → U = TSess Sbr0 a) →
+  ¬ styped Φ Ψ Δ F (bodyg i e1 e3) T.
+Proof.
+  intros Hacy Hp Hc H. unfold bodyg in H.
+  destruct (inv_letu _ _ _ _ _ _ _ H Hp) as (Δ1 & Δ2 & T1 & Hs & _ & H2).
+  destruct (plain_split _ _ _ Hs Hp) as [_ Hp2].
+  assert (∀ U, Δ2 !! i = Some (Some U) → U = TSess Sbr0 a) as Hc2
+    by (intros U HU; apply Hc; by eapply lenv_split_lookup_r).
+  destruct (inv_letu _ _ _ _ _ _ _ H2 Hp2) as (Δ3 & Δ4 & T2' & Hs' & _ & H4).
+  destruct (plain_split _ _ _ Hs' Hp2) as [_ Hp4].
+  refine (t2i_underivable _ _ _ _ _ a i Hacy Hp4 _ H4).
+  intros U HU. apply Hc2. by eapply lenv_split_lookup_r.
+Qed.
 
 Theorem body0_underivable Φ Ψ Δ F T a :
   (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! 2 = Some (Some U) → U = TSess Sbr0 a) →
   ¬ styped Φ Ψ Δ F body0 T.
-Proof.
-  intros Hacy Hp Hc H. unfold body0 in H.
-  destruct (inv_letu _ _ _ _ _ _ _ H Hp) as (Δ1 & Δ2 & T1 & Hs & _ & H2).
-  destruct (plain_split _ _ _ Hs Hp) as [_ Hp2].
-  assert (∀ U, Δ2 !! 2 = Some (Some U) → U = TSess Sbr0 a) as Hc2
-    by (intros U HU; apply Hc; by eapply lenv_split_lookup_r).
-  destruct (inv_letu _ _ _ _ _ _ _ H2 Hp2) as (Δ3 & Δ4 & T2' & Hs' & _ & H4).
-  destruct (plain_split _ _ _ Hs' Hp2) as [_ Hp4].
-  refine (t2_underivable _ _ _ _ _ a Hacy Hp4 _ H4).
-  intros U HU. apply Hc2. by eapply lenv_split_lookup_r.
-Qed.
+Proof. apply bodyg_underivable. Qed.
 
 (** ** Top-level constraints
 
@@ -537,3 +553,30 @@ Corollary body0_underivable_top n C Φ Δ F T a :
   c0_acyclic n C → plain Δ → (∀ U, Δ !! 2 = Some (Some U) → U = TSess Sbr0 a) →
   ¬ styped Φ [(C, ids n)] Δ F body0 T.
 Proof. intros HC. apply body0_underivable. by apply c0_irrefl. Qed.
+
+(** ** The route of [choice_typed]
+
+    [choice_typed] creates c at a and d at δ with [t_new_at], which types
+    the body under the same hypotheses with the two ends of each channel
+    at its point. With Sch₀ in place of Sch the premise of the two
+    [t_new_at] steps is the judgment below, and it has no derivation for
+    any acyclic top-level constraint. The two thunks are whatever the
+    renaming of [let_new_pair] makes of T1 and T3. *)
+
+Lemma choice_main_new : ∃ e1 e3, choice_main = let_new (let_new (bodyg 4 e1 e3)).
+Proof. eexists _, _. unfold choice_main, let_new_pair, bodyg, t2i. cbn. reflexivity. Qed.
+
+Definition Δnew : lenv :=
+  [Some (TSess (dual SEnd) (pd 0)); Some (TSess SEnd (pd 0)); None; None;
+   Some (TSess (dual Sch0) (pa 0)); Some (TSess Sch0 (pa 0)); None; None].
+
+Theorem negative_new_at C Φ F T e1 e3 :
+  c0_acyclic 2 C → ¬ styped Φ [(C, ids 2)] Δnew F (bodyg 4 e1 e3) T.
+Proof.
+  intros HC. apply (bodyg_underivable _ _ _ _ _ (pa 0) 4).
+  - by apply c0_irrefl.
+  - intros i U HU. unfold Δnew in HU.
+    destruct i as [|[|[|[|[|[|[|[|i]]]]]]]]; simpl in HU; try discriminate;
+      injection HU as <-; split; intros [].
+  - intros U HU. unfold Δnew in HU. simpl in HU. injection HU as <-. reflexivity.
+Qed.
