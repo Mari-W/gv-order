@@ -15,8 +15,9 @@ the live branch. The limit of one world per component is real for a component
 whose interface fixes a fact-free bit. The case node with z : ∗ ⊕ ∗, and the
 receive with e : ?(∗ ⊕ ∗).Close, have no derivation under any hypotheses a
 strict world realizes (`db_component_unrealizable`, `db_rnode_unrealizable`,
-proved through the logical relation). I found no closed program that fails
-for this reason (conjecture in section 3 of the note). Of the four candidates,
+proved through the logical relation). A closed program that fails needs a
+case node that runs once per round with an order pattern that is not
+eventually periodic (conjecture, section 3 of the note). Of the four candidates,
 pending choices with an owner are the one to pursue, and the world-level
 lemmas the relation needs from them hold in Rocq (`resolve_valid`,
 `resolve_pext`, `pfresh_new`, `pjoin_fresh`, `pjoin_valid`).
@@ -114,10 +115,10 @@ the revision of entry 4 is the author's decision.
   rules E-Case-Resolve and creation with choices. Not started.
 - Pending choices in recursion. A box that creates a choice per round needs
   infinitely many pending choices, and choice vectors become functions.
-- The closed-program conjecture. Every closed program whose only obstacle is
-  the order of a branch on data types, with anchors from payload points or
-  top-level points. A counterexample would be a loop whose round k needs an
-  order that depends on data computed from fact-free input in a way no
-  creation constraint indexed by k can state.
+- The closed-program conjecture (section 3 of the note). A closed program
+  fails only when a case node runs once per round with an order pattern that
+  is not eventually periodic. Periodic patterns fit in finitely many fact
+  sets relative to a box instance, aperiodic ones do not. Neither half is
+  checked.
 - Mechanizing the inversion from db_main to db_rnode.
 - Inferring the dead-side facts and anchors of section 2 of the note.

@@ -17,9 +17,9 @@ What does not type is the case node with a bit that carries no fact. With
 z : ∗ ⊕ ∗, c : Close@x and d : Close@y, the node has no derivation under any
 hypotheses that a strict world realizes ([db_component_unrealizable], Rocq,
 proved through the logical relation). So one world per component is a limit
-of components whose interface fixes a fact-free bit. I found no closed
-program that fails for this reason, and section 3 says why such a program is
-hard to build.
+of components whose interface fixes a fact-free bit. A closed program that
+fails needs a case node that runs once per round with an order pattern that
+is not eventually periodic (conjecture, section 3).
 
 Of the candidates, pending choices with an owner (section 4.4) are the one to
 pursue. They type the fact-free component when it owns the choice, they keep
@@ -141,17 +141,38 @@ Two readings of the limit.
   E-Conv, E-Open and E-Contract is not mechanized, as for the programs of
   examples/Rejected.v.
 
-A closed counterexample needs a branch that is live under both bits under
-one hypothesis context, with a bit that carries no usable fact. Each live
-branch then needs its order from the static facts, and the two orders form a
-cycle. Every constant that becomes a bit is typed at a site that knows the
-top-level points, and a case that builds a bit from another bit can pass the
-facts along with E-Open and E-Pack. I did not find a closed program where
-neither works. Conjecture. Every closed program whose only obstacle is the
-order of a branch on data types, possibly with infinitely many top-level
-points for recursion. A counterexample would be a recursion whose round k
-needs an order that depends on data computed in round k from fact-free input
-and that no box constraint can relate to the anchors.
+A closed counterexample needs a case node that runs more than once, with the
+live branch changing between runs. A node that runs once has a dead branch,
+and section 2 types it. A node in a box runs once per instance, and its
+facts come from three sources. The box constraint holds at every instance,
+so it cannot say which branch a round takes. Creation constraints of
+channels created in the box body are uniform in the same way. The bit's type
+carries facts relative to the instance, and a fixed type has finitely many
+sides, so it carries finitely many fact sets relative to the instance.
+
+A generator that alternates the bit types (argued here, not checked in
+Rocq). Its state is a sum whose sides
+carry the alternating pattern from the current round on, one side starting
+with x ≺ y and one with y ≺ x, as an infinite constraint relative to the
+instance (sharp edges 65). The next round needs the other side, which the
+opened facts give after the shift of the instance. The origin packs the
+first state from the creation constraints. The same construction applies to
+every pattern whose futures, read relative to the round, take finitely many
+values, which are the eventually periodic patterns.
+
+Conjecture. A closed program whose consumer orders c and d in round k by
+P(k), for P computed by a recursive generator and not eventually periodic,
+is deadlock free with independent partners for c and d, and has no
+derivation. The argument for the second half. Each round needs the order of
+round k as a fact relative to the consumer's instance. The generator's state
+has a fixed type, so it carries finitely many relative fact sets, while the
+futures of P relative to k take infinitely many values. Facts about concrete
+rounds sit in the creation constraints of main, and a box body cannot name
+the concrete round its instance stands for. What would refute it is a way to
+pass facts about the concrete points x+k into the k-th instance of a box, for
+example an equality between an instance point and x+k that holds for every
+k. I have not built such a program. It needs an unbounded counter in the
+calculus, and both halves of the claim need proofs this work did not attempt.
 
 ## 4 Candidates
 
