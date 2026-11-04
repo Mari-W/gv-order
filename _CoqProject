@@ -114,3 +114,5 @@ theories/mp/MP3Typing.v
 theories/mp/MP3Translate.v
 theories/mp/MP3Examples.v
 theories/mp/MP3Simulation.v
+theories/algorithmic/Algorithmic.v
+theories/algorithmic/Soundness.v
