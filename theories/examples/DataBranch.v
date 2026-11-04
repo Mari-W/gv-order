@@ -50,7 +50,7 @@
     out for db_main. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export examples.LitTools.
+From LRGV Require Export examples.LitTools lang.ThreadSim.
 
 Set Default Proof Using "All".
 
@@ -125,14 +125,17 @@ Proof. induction e; intros r; simpl; f_equal; auto. all: destruct b; auto. Qed.
 Lemma keep_up b σ x : keep b (up σ x) = up (keep b ∘ σ) x.
 Proof. destruct x; simpl; [done|]. unfold compose. by rewrite keep_rename. Qed.
 
+Lemma keep_up2 b σ x : keep b (up (up σ) x) = up (up (keep b ∘ σ)) x.
+Proof. rewrite keep_up. apply up_ext. intros. apply keep_up. Qed.
+
 Lemma keep_subst b e : ∀ σ, keep b (subst σ e) = subst (keep b ∘ σ) (keep b e).
 Proof.
   induction e; intros σ; simpl; f_equal; auto.
-  all: try (rewrite IHe; apply subst_ext; intros; apply keep_up).
-  - rewrite IHe2. apply subst_ext. intros x. rewrite keep_up. apply up_ext. intros. apply keep_up.
-  - rewrite IHe1. apply subst_ext. intros; apply keep_up.
-  - destruct b; [rewrite IHe3|rewrite IHe2]; apply subst_ext; intros; apply keep_up.
-  - destruct b; [rewrite IHe3|rewrite IHe2]; apply subst_ext; intros; apply keep_up.
+  all: try destruct b.
+  all: repeat match goal with
+    | IH : ∀ σ, keep _ (subst σ ?e) = _ |- context [keep _ (subst ?s ?e)] => rewrite (IH s)
+    end.
+  all: apply subst_ext; intros; first [apply keep_up2|apply keep_up].
 Qed.
 
 Lemma keep_subst1 b v e : keep b (subst1 v e) = subst1 (keep b v) (keep b e).
@@ -201,7 +204,6 @@ Proof.
       repeat match goal with H : _ ∧ _ |- _ => destruct H end;
       split; try done; try (intros; by apply okb_subst1);
       try (intros; by apply okb_subst2); try naive_solver.
-    + intros. apply okb_subst1; [simpl|]; done.
   - destruct Hok as [H1 H2]. destruct (IHtstep H1) as [Hc Hl]. split; [|done].
     intros Hv. split; [by apply Hc|done].
   - destruct Hok as [H1 H2]. destruct (IHtstep H2) as [Hc Hl]. split; [|done].
@@ -272,6 +274,24 @@ Proof. destruct e; simpl; try congruence. eauto. Qed.
 Lemma keep_inv_inj2 b e u : keep b e = Inj2 u → ∃ u', e = Inj2 u'.
 Proof. destruct e; simpl; try congruence. eauto. Qed.
 
+Ltac kinv :=
+  repeat match goal with
+  | H : Konst _ = keep _ _ |- _ => symmetry in H
+  | H : Chan _ = keep _ _ |- _ => symmetry in H
+  | H : EUnit = keep _ _ |- _ => symmetry in H
+  | H : Lam _ = keep _ _ |- _ => symmetry in H
+  | H : EBox _ = keep _ _ |- _ => symmetry in H
+  | H : Pair _ _ = keep _ _ |- _ => symmetry in H
+  | H : keep _ _ = Konst _ |- _ => apply keep_inv_konst in H; subst
+  | H : keep _ _ = Chan _ |- _ => apply keep_inv_chan in H; subst
+  | H : keep _ _ = EUnit |- _ => apply keep_inv_unit in H; subst
+  | H : keep _ _ = Lam _ |- _ => destruct (keep_inv_lam _ _ _ H) as [? ->]; clear H
+  | H : keep _ _ = EBox _ |- _ => destruct (keep_inv_box _ _ _ H) as [? ->]; clear H
+  | H : keep _ _ = Pair _ _ |- _ =>
+      let u := fresh "u" in let v := fresh "v" in
+      destruct (keep_inv_pair _ _ _ _ H) as (u & v & -> & ? & ?); clear H
+  end.
+
 (** Labels up to their values. *)
 Definition lshape (α : tlabel) : tlabel :=
   match α with
@@ -297,34 +317,22 @@ Proof.
     + destruct (IHe1 _ _ Hs) as (α' & e' & ? & ? & ?). eexists _, _. split; [by apply TStepAppL|done].
     + rewrite is_val_keep in Hv. destruct (IHe2 _ _ Hs) as (α' & e' & ? & ? & ?).
       eexists _, _. split; [by apply TStepAppR|done].
-    + rewrite is_val_keep in Hv1, Hv2. inversion Hh; subst.
-      * destruct (keep_inv_lam _ _ _ H0) as [e0 ->]. eexists _, _.
-        split; [apply TStepHead; by constructor|]. split; [done|]. intros; discriminate.
-      * apply keep_inv_konst in H0 as ->. apply keep_inv_unit in H1 as ->.
-        eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
-      * apply keep_inv_konst in H0 as ->.
-        eexists _, _. split; [apply TStepHead; by constructor|]. split; [done|]. intros; discriminate.
-      * apply keep_inv_konst in H0 as ->. apply keep_inv_chan in H1 as ->.
-        eexists _, _. split; [apply TStepHead; apply (HeadRecv c EUnit); done|]. split; [done|].
+    + rewrite is_val_keep in Hv1, Hv2. inversion Hh; subst; kinv.
+      * eexists _, _. split; [apply TStepHead; constructor; by rewrite <-(is_val_keep b)|].
+        split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; by constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; apply (HeadRecv _ EUnit); done|]. split; [done|].
         intros; discriminate.
-      * apply keep_inv_konst in H0 as ->. destruct (keep_inv_pair _ _ _ _ H1) as (u' & v' & -> & Hu & Hc).
-        apply keep_inv_chan in Hc as ->. simpl in Hv2. apply andb_True in Hv2 as [Hv2 _].
-        rewrite <-Hu, is_val_keep in Hv2.
+      * simpl in Hv2. apply andb_True in Hv2 as [Hv2 _].
         eexists _, _. split; [apply TStepHead; by constructor|]. split; [done|].
         intros c' v [= -> <-]. eauto.
-      * apply keep_inv_konst in H0 as ->. apply keep_inv_chan in H1 as ->.
-        eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
-      * apply keep_inv_konst in H0 as ->. apply keep_inv_chan in H1 as ->.
-        eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
-      * apply keep_inv_konst in H0 as ->. apply keep_inv_chan in H1 as ->.
-        eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
-      * apply keep_inv_konst in H0 as ->. apply keep_inv_chan in H1 as ->.
-        eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
-      * apply keep_inv_konst in H0 as ->. destruct (keep_inv_box _ _ _ H1) as [e0 ->].
-        eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
-      * apply keep_inv_konst in H0 as ->. destruct (keep_inv_pair _ _ _ _ H1) as (u' & v' & -> & Hu & Hv).
-        apply keep_inv_chan in Hu as ->. apply keep_inv_chan in Hv as ->.
-        eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
   - apply tstep_pair_inv in Hst as [(e1' & Hs & ->)|(Hv & e2' & Hs & ->)].
     + destruct (IHe1 _ _ Hs) as (α' & e' & ? & ? & ?). eexists _, _. split; [by apply TStepPairL|done].
     + rewrite is_val_keep in Hv. destruct (IHe2 _ _ Hs) as (α' & e' & ? & ? & ?).
@@ -391,10 +399,8 @@ Qed.
 Lemma kthr_fchans b s t : kthr b s t → fchans t ⊆ fchans s.
 Proof. intros [_ ->]. apply fchans_keep. Qed.
 
-Ltac kextract H :=
-  let Es0 := fresh "Es" in let s := fresh "s" in let Hok := fresh "Hok" in
-  let Hm := fresh "Hm" in
-  destruct (mrel_extract_l _ _ _ _ H) as (? & ? & -> & [Hok ->] & Hm).
+Ltac kextract H Hok Hm' :=
+  destruct (mrel_extract_l _ _ _ _ H) as (? & ? & -> & [Hok ->] & Hm').
 
 Lemma krel_step b p p' q :
   krel b p q → preduction p p' → ∃ q', preduction q q' ∧ krel b p' q'.
@@ -409,24 +415,24 @@ Proof.
      |C0 E c bb e e' f f' He Hf E1 E2
      |C0 E e c d e' Hs Hc E1 E2]; subst.
   - (* β *)
-    kextract Hm. destruct (okb_step _ _ _ _ Hs Hok) as [Hc _].
+    kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hs Hok) as [Hc _].
     eexists. split; [apply PStepBeta, (keep_step _ _ _ _ Hs Hok)|].
     split; [done|]. simpl. apply mrel_snoc; [|done]. split; [by apply Hc|done].
   - (* new *)
-    kextract Hm. destruct (okb_step _ _ _ _ Hs Hok) as [Hk _].
+    kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hs Hok) as [Hk _].
     eexists. split.
     + apply PStepNew; [apply (keep_step _ _ _ _ Hs Hok)|done| |].
-      * intros Hin. apply (mrel_echans _ _ _ (kthr_fchans b)) in Hm. set_solver.
-      * pose proof (fchans_keep b e). set_solver.
+      * intros Hin. apply Hc2. by apply (mrel_echans _ _ _ (kthr_fchans b) Hm1).
+      * intros Hin. apply Hc3. by apply (fchans_keep b e).
     + split; [done|]. simpl. apply mrel_snoc; [|done]. split; [by apply Hk|done].
   - (* spawn *)
-    kextract Hm. destruct (okb_step _ _ _ _ Hs Hok) as [Hk Hv].
+    kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hs Hok) as [Hk Hv].
     eexists. split; [apply PStepSpawn, (keep_step _ _ _ _ Hs Hok)|].
     split; [done|]. simpl. apply mrel_snoc; [|apply mrel_snoc; [|done]].
     + split; [simpl; by split|done].
     + split; [by apply Hk|done].
   - (* message *)
-    kextract Hm. rename Hok into Hokf. kextract Hm.
+    kextract Hm Hokf Hm1. kextract Hm1 Hok Hm2.
     destruct (okb_step _ _ _ _ He Hok) as [Hke Hv].
     destruct (okb_step _ _ _ _ Hf Hokf) as [Hkf _].
     eexists. split.
@@ -435,7 +441,7 @@ Proof.
       * split; [by apply Hkf|done].
       * split; [by apply Hke|done].
   - (* close *)
-    kextract Hm. rename Hok into Hokf. kextract Hm.
+    kextract Hm Hokf Hm1. kextract Hm1 Hok Hm2.
     destruct (okb_step _ _ _ _ He Hok) as [Hke _].
     destruct (okb_step _ _ _ _ Hf Hokf) as [Hkf _].
     eexists. split.
@@ -444,9 +450,9 @@ Proof.
       * split; [by apply Hkf|done].
       * split; [by apply Hke|done].
   - (* choice: an okb thread takes no branch step *)
-    kextract Hm. destruct (okb_step _ _ _ _ Hf Hok) as [_ []].
+    kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hf Hok) as [_ []].
   - (* link *)
-    kextract Hm. destruct (okb_step _ _ _ _ Hs Hok) as [Hk _].
+    kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hs Hok) as [Hk _].
     eexists. split; [apply PStepLink; [apply (keep_step _ _ _ _ Hs Hok)|done]|].
     split; [done|]. simpl. apply mrel_echsubst, mrel_snoc; [|done]. split; [by apply Hk|done].
 Qed.
@@ -470,9 +476,7 @@ Proof. apply keep_reflect. Qed.
 
 Ltac lshape_inv H :=
   match type of H with
-  | lshape ?a = _ =>
-      destruct a as [|[?|?|?|?|? ?|? ?]|?|?]; simpl in H; try discriminate H;
-      try injection H as <-; try injection H as <- <-
+  | lshape ?a = _ => destruct a as [|[]| |]; simpl in H; simplify_eq
   end.
 
 Lemma krel_progress b p q q' :
@@ -642,7 +646,7 @@ Proof.
   { intros α t Hs. by rewrite (cc2_step _ _ _ _ Hs). }
   { destruct Hl as (cd & t & Hs). apply cc2_step in Hs. discriminate. }
   assert (offered_t Θ (cc2 i j) (i, false)) as Hoff.
-  { exists (SClos i), _. split; [apply cc2_can|]. simpl. split; [done|].
+  { exists (SClos i), (LetU EUnit (App EClos (Chan j))). split; [apply cc2_can|]. simpl. split; [done|].
     exists (SEnd, x). unfold tenv_entry. simpl. rewrite Hi. split_and!; [done|done|discriminate]. }
   destruct (Hb (i, false) (SEnd, x) Hoff) as [H1 _].
   { unfold tenv_entry. simpl. by rewrite Hi. }
@@ -653,28 +657,37 @@ Proof.
 Qed.
 
 (** One run of the related case at the bit b reaches a ready check. *)
+Lemma db_case_subst b :
+  subst (db_γ b) db_case = Case (bit b) (LetU (Var 0) (cc2 chc chd)) (LetU (Var 0) (cc2 chd chc)).
+Proof. by destruct b. Qed.
+
+Lemma db_Θ_swap x y : db_Θ x y = <[chc := One (SEnd, x)]> {[chd := One (SEnd, y)]}.
+Proof.
+  unfold db_Θ. apply map_eq. intros c.
+  destruct (decide (c = chd)) as [->|Hd]; [|destruct (decide (c = chc)) as [->|Hc]].
+  - by rewrite lookup_insert_eq, lookup_insert_ne, lookup_singleton_eq.
+  - by rewrite lookup_insert_ne, lookup_singleton_eq, lookup_insert_eq.
+  - by rewrite !lookup_insert_ne, !lookup_singleton_ne.
+Qed.
+
+Ltac ebeta HE st :=
+  eapply Erel_S_step in HE; [|apply TStepHead; st];
+  cbn [Ecase_gen Eobl at_cost tcost nlower pred] in HE.
+
 Lemma db_case_lt W T F b x y :
-  world_wf W →
   Erel 3 W (db_Θ x y) T F (subst (db_γ b) db_case) →
   if b then w_lt W y x else w_lt W x y.
 Proof.
-  intros HW HE. cbn in HE.
-  destruct b.
-  - eapply Erel_S_step in HE; [|apply TStepHead, HeadCase2; done]. cbn in HE.
-    eapply Erel_S_step in HE; [|apply TStepHead, HeadLetU]. cbn in HE.
+  intros HE. rewrite db_case_subst in HE. destruct b.
+  - ebeta HE ltac:(by apply HeadCase2). change (subst1 EUnit (LetU (Var 0) (cc2 chd chc)))
+      with (LetU EUnit (cc2 chd chc)) in HE.
+    ebeta HE ltac:(apply HeadLetU).
     apply Erel_S_iff in HE as (_ & HR & _).
-    assert (db_Θ x y = <[chd := One (SEnd, y)]> {[chc := One (SEnd, x)]}) as E by done.
-    (* close d first: rewrite the environment with d inserted last *)
-    assert (db_Θ x y = <[chc := One (SEnd, x)]> {[chd := One (SEnd, y)]}) as E'.
-    { unfold db_Θ. apply map_eq. intros c.
-      destruct (decide (c = chd)) as [->|Hd]; [|destruct (decide (c = chc)) as [->|Hc]].
-      - rewrite lookup_insert_eq, lookup_insert_ne, lookup_singleton_eq by done. done.
-      - rewrite lookup_insert_ne, lookup_singleton_eq, lookup_insert_eq by done. done.
-      - by rewrite !lookup_insert_ne, !lookup_singleton_ne by done. }
-    rewrite E' in HR. apply (cc2_ready W F chd chc y x); [done|]. apply HR.
+    rewrite db_Θ_swap in HR. apply (cc2_ready W F chd chc y x); [done|]. apply HR.
     intros Hirr. apply (Hirr _ _ (cc2_can _ _)).
-  - eapply Erel_S_step in HE; [|apply TStepHead, HeadCase1; done]. cbn in HE.
-    eapply Erel_S_step in HE; [|apply TStepHead, HeadLetU]. cbn in HE.
+  - ebeta HE ltac:(by apply HeadCase1). change (subst1 EUnit (LetU (Var 0) (cc2 chc chd)))
+      with (LetU EUnit (cc2 chc chd)) in HE.
+    ebeta HE ltac:(apply HeadLetU).
     apply Erel_S_iff in HE as (_ & HR & _).
     apply (cc2_ready W F chc chd x y); [done|]. apply HR.
     intros Hirr. apply (Hirr _ _ (cc2_can _ _)).
@@ -691,14 +704,14 @@ Proof.
   rewrite tenv_pinst_empty in Hr.
   assert (∀ b, Erel 3 W (db_Θ (pt_inst σ x) (pt_inst σ y)) (pinst_ty σ T)
                  (sf_inst ρ (sf_pinst σ F)) (subst (db_γ b) db_case)) as HE.
-  { intros b. apply (Hr 3 W _ (db_Θ (pt_inst σ x) (pt_inst σ y))).
+  { intros b. apply (Hr 3 W (db_Θ (pt_inst σ x) (pt_inst σ y)) (db_Θ (pt_inst σ x) (pt_inst σ y)) (db_γ b)).
     - apply wext_refl, HWs.
     - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
     - unfold db_ctx, lenv_pinst. rewrite fmap_app, fmap_replicate. cbn.
       apply db_ground, HW. }
-  pose proof (db_case_lt _ _ _ true _ _ HW (HE true)) as H1.
-  pose proof (db_case_lt _ _ _ false _ _ HW (HE false)) as H2.
-  apply (proj2 HWs (pt_inst σ x)). by eapply (wf_lt_trans _ HW).
+  pose proof (db_case_lt _ _ _ true _ _ (HE true)) as H1.
+  pose proof (db_case_lt _ _ _ false _ _ (HE false)) as H2.
+  apply (proj2 HWs (pt_inst σ x)). exact (wf_lt_trans _ HW _ _ _ H2 H1).
 Qed.
 
 (** The hypotheses of a source program are realizable: a program
