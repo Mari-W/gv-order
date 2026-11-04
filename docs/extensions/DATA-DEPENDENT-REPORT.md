@@ -15,23 +15,26 @@ the live branch. The limit of one world per component is real for a component
 whose interface fixes a fact-free bit. The case node with z : ∗ ⊕ ∗, and the
 receive with e : ?(∗ ⊕ ∗).Close, have no derivation under any hypotheses a
 strict world realizes (`db_component_unrealizable`, `db_rnode_unrealizable`,
-proved through the logical relation). A closed program that fails needs a
-case node that runs once per round with an order pattern that is not
-eventually periodic (conjecture, section 3 of the note). Of the four candidates,
+proved through the logical relation). Facts on both sides of the bit do not
+help as long as one world realizes both sides (`db_component_sides`). A case
+node that runs every round with the live branch alternating types
+(`alt_typed`). A closed program that fails needs a case node that runs once
+per round with an order pattern that is not eventually periodic
+(conjecture, section 3 of the note). Of the four candidates,
 pending choices with an owner are the one to pursue, and the world-level
 lemmas the relation needs from them hold in Rocq (`resolve_valid`,
-`resolve_pext`, `pfresh_new`, `pjoin_fresh`, `pjoin_valid`).
+`resolve_pext`, `pfresh_new`, `pjoin_fresh`, `pjoin_valid`, `pcreate_join`).
 
 ## Files
 
 | File | Content |
 |---|---|
-| theories/examples/DataBranch.v | the program, its derivation, the two non-derivability theorems, the keep simulation |
+| theories/examples/DataBranch.v | the program, its derivation, the non-derivability theorems, the keep simulation |
 | theories/examples/DataAlternate.v | a case node that runs every round, both branches live, typed through a state that carries the alternating pattern |
 | theories/relation/BranchWorlds.v | prototype of pending-choice worlds |
 | docs/extensions/data-dependent-worlds.md | design note, candidates (a) to (d) and more |
 | docs/extensions/data-dependent.md | one targeted edit in item 1 (Branches) pointing to the note |
-| _CoqProject | the two new files registered |
+| _CoqProject | the three new files registered |
 
 No existing Rocq file, theorem statement or rule changed.
 
@@ -67,8 +70,8 @@ current round on, as facts relative to K's instance.
 
 `realizable Φ Ψ` says that some strict world W and instance σ make every
 hypothesis of Ψ hold and put every variable of Φ, the hypotheses on the
-future, below some point set.
-db_case is the case node of db_main, db_rnode its receive with everything
+future, below some point set. `realizable2 Φ Ψ C1 C2` asks in addition that
+C1 and C2 hold in W under σ. db_case is the case node of db_main, db_rnode its receive with everything
 after it. db_ctx and db_rctx are the contexts the derivation of db_main gives
 these nodes, with the bit, or e's payload, typed at ∗ ⊕ ∗.
 
@@ -106,7 +109,7 @@ build from a fresh clone is recorded at the end of this report.
 |---|---|
 | (a) branch-indexed worlds | types the fact-free component, unsound without an owner of each index, the index set is the product of all branch histories |
 | (b) growth at internal choices, facts learned with the label | the receiver half exists today (payload ∃{Γᵢ}.T and E-Open, which is how db_main types). The chooser half without an owner is unsound. Two components that add opposite facts compose to a deadlock, and the monotonicity step fails (`unguarded_extensions_conflict`) |
-| (c) a second composition rule splitting at extrusion | sound, touches only the process layer, types closed compositions, which already type, and not the fact-free component behind an interface |
+| (c) a second composition rule splitting at extrusion | sound as a design (proof not attempted), lives in the process layer, types closed compositions, which already type, and not the fact-free component behind an interface |
 | (d) pending choices with an owner, also guarded facts and disjunctive Γ | recommended. Types the fact-free component when it owns the choice. Amalgamation and ⊑ₒ reduce to the existing lemmas at every choice vector (prototype). Cost is an ownership discipline like channel ends and 2^k creation checks for k pending choices |
 
 ## Recommendation
