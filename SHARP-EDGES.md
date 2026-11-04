@@ -865,6 +865,7 @@ step, and a related target never offers a close. fix λf.e with e no λ breaks t
 simulation. The source runs e once at the unfolding, the target runs e′ at every
 force, and an effect in e (fork is pure) then gives different thread pools.
 The translation is unchanged, and the theorem asks `fixlam` instead.
+Entry 139 removed the restriction.
 padovani-novara.md §8 lists every deviation of the source semantics from the
 chapter. No core change.
 
@@ -2033,6 +2034,34 @@ infinite constraint {p_n + 1 ≺ p_n[0], p_n + 1 ≺ p_n[1] ∣ n ∈ ℕ}
 It costs one `new` and one close per selection, a channel per choice at run
 time, and the facts x+1 ≺ x[i] that the close of the carrier asks. No rule,
 constant or definition of the core changed (docs/extensions/choice-encoding.md).
+
+**138. Falling sessions need a point per channel (Claude, 2026-11-04, branch pgv-falling).**
+The PGV translation reads the point of a channel off its session type. For
+falling sessions no such reading works, in any world. pgv/PGVFalling.v types
+`fallxy` in repaired PGV (`fallxy_typed`). It uses S1 = !⁵1.?⁰1.end⁶? on x and c
+and S2 = !³1.end⁸! on b and d. One thread sends on b before x, and main
+receives on c at 0 before it sends on d. With points read off types this
+gives pt(S1) ≺ pt(S1)+1 ≡ pt(S1′) ≺ pt(S2) ≺ pt(S1). A fresh point per new
+avoids the cycle. A translation with such points needs the facts of all
+branches, also branches that never run, to be acyclic with program order,
+because a fact between two older points is global (creation constraints are
+conservative). That theorem is open, and no counterexample turned up
+(pgv-adequacy.md §8). The fragment of `pgv_deadlock_free_source` is
+unchanged.
+
+**139. A fix runs its body at every unfolding, in the target too (Claude, 2026-11-04, branch pn-fix).**
+`pn_deadlock_free_source` no longer asks `fixlam`, and fix λf.e types at any
+type t, as repair R2 of padovani-novara-counterexamples.txt allows. Entry 71
+traced the restriction to the box !(f = force e′), which ran e′ at every force
+of f while the source runs e at every evaluation of the fix. The translation is
+now force (box f. e′[force f/f]) (`thk` in PNTyping.v). Forcing the box runs e′
+once, and every occurrence of f is forced, so each evaluation of f runs e′
+again. The source unfolding and the target force are one step each (`tr_fix`,
+`force_thk`), and the stuttering form `tr_fixu` is gone. The translation lemma
+types e′ under a substitution `sub_of ins` in place of a renaming, with a flag
+`IT` for the variable of an enclosing fix, whose entry in Δ is the box □(∗ ⊸
+[t]) of 0 binders (`er_thunk`). Three new examples have fixes whose body is no
+λ (padovani-novara.md §9). No core change.
 
 **140. A payload of a channel or nothing owes the facts of the channel (Claude, 2026-11-04, branch exists).**
 The carrier O = !((S⁰@self[0]) ⊕ ∗).Close sends either a channel at ι[0] or

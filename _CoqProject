@@ -83,6 +83,7 @@ theories/pgv/PGVWorld.v
 theories/pgv/PGVTranslate.v
 theories/pgv/PGVSimulation.v
 theories/pgv/PGVExamples.v
+theories/pgv/PGVFalling.v
 theories/pn/PNTypes.v
 theories/pn/PNTyping.v
 theories/pn/PNWorld.v

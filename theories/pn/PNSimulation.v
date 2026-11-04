@@ -19,8 +19,10 @@
     - When the source is stuck, administrative steps bring every target
       thread to a value or to a pending send or receive ([final]).
 
-    The theorem [pn_deadlock_free_source] needs every fix to be
-    fix λf.λx.e ([fixlam]). padovani-novara.md §8 explains why. *)
+    A fix runs its body once at every source unfolding, and the target
+    forces its box at the same moment ([tr_fix]), so the theorem
+    [pn_deadlock_free_source] covers every fix λf.e
+    (padovani-novara.md §9). *)
 
 From stdpp Require Import base gmap gmultiset relations.
 From LRGV Require Import lang.ThreadSim.
@@ -83,10 +85,8 @@ Definition fmode (p : bool) : mode := if p then MBox MUnit MUnit else MFn MUnit 
 
     [send1 t] is send_tr applied to the channel t, [recv1 t] is recv_tr
     applied to t, [fork1 p t] is fork_tr applied to the thunk t and
-    [fthunk p t] the thunk it spawns. [boxlam b] is a λ of level ⊤,
-    [fixbox b] the translation of fix λf.λx.b, [injbox1 t] the
-    injection after its λ. [unf b] is the source body of fix λf.λx.b
-    after one unfolding. *)
+    [fthunk p t] the thunk it spawns. [boxlam b] is a λ of level ⊤ and
+    [injbox1 t] the injection after its λ. *)
 
 Notation send1 t :=
   (Lam (LetU (App EClos (App ESend (Pair (Var 0) (rename S t)))) unitv)).
@@ -96,10 +96,8 @@ Notation fthunk p t :=
   (Lam (LetU (Var 0) (App EForce (App (if p then App EForce (rename S t) else rename S t) unitv)))).
 Notation fork1 p t := (LetU (App ESpawn (fthunk p t)) unitv).
 Notation boxlam b := (EBox (Lam (rename (upren S) b))).
-Notation fixbox b := (EBox (App EForce (boxlam b))).
 Notation injbox1 t := (EBox (Inj1 (rename S t))).
 Notation injbox2 t := (EBox (Inj2 (rename S t))).
-Notation unf b := (subst (up (EBox (Lam b) .: Var)) b).
 
 (** ** The relation *)
 
@@ -116,12 +114,9 @@ Inductive trel (Ξ : chan → mode) : (nat → option mode) → expr → expr �
   | tr_blam M b b' m1 m2 :
       trel Ξ (Some m1 .: M) b b' m2 →
       trel Ξ M (Lam b) (boxlam b') (MBox m1 m2)
-  | tr_fix M b b' m1 m2 :
-      trel Ξ (Some m1 .: Some (MBox m1 m2) .: M) b b' m2 →
-      trel Ξ M (EBox (Lam b)) (fixbox b') (MBox m1 m2)
-  | tr_fixu M b b' m1 m2 :
-      trel Ξ (Some m1 .: Some (MBox m1 m2) .: M) b b' m2 →
-      trel Ξ M (Lam (unf b)) (fixbox b') (MBox m1 m2)
+  | tr_fix M e e' m :
+      trel Ξ (Some m .: M) e e' m →
+      trel Ξ M (EBox e) (App EForce (EBox (subst thk e'))) m
   | tr_app M s1 s2 t1 t2 m1 m2 :
       trel Ξ M s1 t1 (MFn m1 m2) → trel Ξ M s2 t2 m1 →
       trel Ξ M (App s1 s2) (App t1 t2) m2
@@ -210,23 +205,25 @@ Proof.
   - rewrite IHe3. apply subst_ext. by intros [|x].
 Qed.
 
-Lemma sb_unf σ b :
-  subst (up σ) (unf b) = unf (subst (up (up σ)) b).
+Lemma sb_thk σ e : subst (up σ) (subst thk e) = subst thk (subst (up σ) e).
 Proof.
-  rewrite !subst_subst. apply subst_ext. intros [|[|y]]; [done| |].
-  - change (up (EBox (Lam b) .: Var) 1) with (rename S (EBox (Lam b))).
-    by rewrite sb_S.
-  - transitivity (rename S (σ y)); [done|].
-    change (up (up σ) (S (S y))) with (rename S (rename S (σ y))).
-    by rewrite sb_S, subst_scons_S.
+  rewrite !subst_subst. apply subst_ext. intros [|y]; [done|].
+  change (subst (up σ) (Var (S y)) = subst thk (rename S (σ y))).
+  rewrite subst_rename. simpl. rewrite rename_as_subst. by apply subst_ext.
 Qed.
 
-Lemma rn_unf r b :
-  rename (upren r) (unf b) = unf (rename (upren (upren r)) b).
+Lemma rn_thk r e : rename (upren r) (subst thk e) = subst thk (rename (upren r) e).
+Proof. rewrite rename_subst, subst_rename. apply subst_ext. by intros [|x]. Qed.
+
+(** The force of the box of a fix substitutes the fix for f. *)
+Lemma force_thk e :
+  subst1 (EBox (subst thk e)) (subst thk e) = subst (App EForce (EBox (subst thk e)) .: Var) e.
+Proof. unfold subst1. rewrite subst_subst. apply subst_ext. by intros [|x]. Qed.
+
+Lemma fchans_thk e : fchans (subst thk e) ⊆ fchans e.
 Proof.
-  rewrite rename_subst, subst_rename. apply subst_ext. intros [|[|y]]; [done| |done].
-  change (up (EBox (Lam b) .: Var) 1) with (rename S (EBox (Lam b))).
-  by rewrite rn_S.
+  pose proof (fchans_subst e thk ∅) as H. rewrite union_empty_r_L in H. apply H.
+  apply allfv_forall. intros [|x]; simpl; set_solver.
 Qed.
 
 Lemma rename_unitv r : rename r unitv = unitv.
@@ -275,8 +272,7 @@ Proof.
   - apply tr_chan.
   - apply tr_lam. eauto.
   - rewrite rn_boxlam. apply tr_blam. eauto.
-  - rewrite rn_boxlam. apply tr_fix. eauto.
-  - rewrite rn_boxlam, rn_unf. apply tr_fixu. eauto.
+  - rewrite rn_thk. apply tr_fix. eauto.
   - eapply tr_app; eauto.
   - eapply tr_appb; eauto.
   - pose proof (rename_let_new_pair r e') as E. simpl in E. rewrite E.
@@ -312,8 +308,7 @@ Proof.
   - apply tr_chan.
   - apply tr_lam. eauto.
   - rewrite sb_boxlam. apply tr_blam. eauto.
-  - rewrite sb_boxlam. apply tr_fix. eauto 10.
-  - rewrite sb_boxlam, sb_unf. apply tr_fixu. eauto 10.
+  - rewrite sb_thk. apply tr_fix. eauto 10.
   - eapply tr_app; eauto.
   - eapply tr_appb; eauto.
   - pose proof (subst_let_new_pair σ' e') as E. simpl in E. rewrite E.
@@ -343,7 +338,6 @@ Proof.
   - constructor. auto.
   - constructor. auto.
   - constructor. auto.
-  - constructor. apply IHtrel. intros c Hc. apply HΞ. by apply fchans_subst_sup.
   - eapply tr_app; [apply IHtrel1|apply IHtrel2]; set_solver.
   - eapply tr_appb; [apply IHtrel1|apply IHtrel2]; set_solver.
   - eapply tr_new; [done|apply IHtrel; set_solver].
@@ -365,7 +359,7 @@ Qed.
 Lemma trel_fchans Ξ M s t m : trel Ξ M s t m → fchans t ⊆ fchans s.
 Proof.
   induction 1; simpl; rewrite ?fchans_rename; try set_solver.
-  all: try (pose proof (fchans_subst_sup (up (EBox (Lam b) .: Var)) b); set_solver).
+  all: try (pose proof (fchans_thk e'); set_solver).
   all: try (destruct p; simpl; rewrite ?fchans_rename; set_solver).
   all: unfold let_new_pair, let_new; simpl; rewrite ?fchans_rename; set_solver.
 Qed.
@@ -378,17 +372,6 @@ Proof.
 Qed.
 
 (** ** Every translation is related *)
-
-(** fix λf.e with e a λ, everywhere in the term. *)
-Fixpoint fixlam (e : expr) : bool :=
-  match e with
-  | EBox (Lam b) => fixlam b
-  | EBox _ => false
-  | Lam e | Inj1 e | Inj2 e => fixlam e
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fixlam e1 && fixlam e2
-  | Case e e1 e2 => fixlam e && fixlam e1 && fixlam e2
-  | _ => true
-  end.
 
 Definition menv (Γ : penv) : nat → option mode :=
   λ x, match Γ !! x with Some (Some t) => Some (pmode t) | _ => None end.
@@ -448,40 +431,33 @@ Qed.
 Ltac splitf := repeat match goal with H : Is_true (_ && _) |- _ => apply andb_True in H as [? ?] end.
 
 Lemma trel_of_typed Ξ Γ e t τ e' :
-  pn_typed Γ e t τ e' → fixlam e → trel Ξ (menv Γ) e e' (pmode t).
+  pn_typed Γ e t τ e' → trel Ξ (menv Γ) e e' (pmode t).
 Proof.
-  induction 1; simpl; intros Hf.
+  induction 1; simpl.
   - constructor. unfold menv. by destruct H as [-> _].
   - constructor.
   - unfold lam_tr. destruct (env_lev Γ); simpl; [apply tr_lam|apply tr_blam];
       (eapply trel_mono; [by apply IHpn_typed|]); intros [|x] mx; done.
-  - splitf. eapply tr_app.
+  - eapply tr_app.
     + eapply trel_mono; [by apply IHpn_typed1|]. intros. by eapply menv_split_l.
     + eapply trel_mono; [by apply IHpn_typed2|]. intros. by eapply menv_split_r.
-  - splitf. rewrite mode_lshift. eapply tr_appb.
+  - rewrite mode_lshift. eapply tr_appb.
     + eapply trel_mono; [by apply IHpn_typed1|]. intros. by eapply menv_split_l.
-    + specialize (IHpn_typed2 ltac:(done)). rewrite mode_lshift in IHpn_typed2.
+    + rewrite mode_lshift in IHpn_typed2.
       eapply trel_mono; [exact IHpn_typed2|]. intros. by eapply menv_split_r.
-  - splitf.
-    eapply (tr_new _ _ _ _ (mchan (pmode t))); [apply chanm_mchan|].
+  - eapply (tr_new _ _ _ _ (mchan (pmode t))); [apply chanm_mchan|].
     eapply trel_mono; [by apply IHpn_typed|]. intros [|[|x]] mx; done.
-  - splitf.
-    eapply (tr_send _ _ _ _ _ _ (mchan (pmode t))); [apply chanm_mchan| |].
+  - eapply (tr_send _ _ _ _ _ _ (mchan (pmode t))); [apply chanm_mchan| |].
     + eapply trel_mono; [by apply IHpn_typed1|]. intros. by eapply menv_split_l.
     + rewrite pay_mchan.
       eapply trel_mono; [by apply IHpn_typed2|]. intros. by eapply menv_split_r.
-  - splitf. rewrite <-(pay_mchan (pmode t)).
+  - rewrite <-(pay_mchan (pmode t)).
     apply tr_recv; [apply chanm_mchan|]. by apply IHpn_typed.
-  - splitf. apply tr_fork.
-    specialize (IHpn_typed Hf). by destruct r.
-  - destruct e as [| | | |b| | | | | | | |]; try done.
-    destruct (pn_typed_lam_inv _ _ _ _ _ H0) as [b0 ->].
-    simpl in *. rewrite env_lev_un in * by done. simpl in *.
-    destruct (trel_blam_inv _ _ _ _ _ (IHpn_typed Hf)) as (m1 & m2 & [= <- <-] & Hb).
-    apply tr_fix. eapply trel_mono; [done|]. intros [|[|x]] mx; done.
+  - apply tr_fork. by destruct r.
+  - apply tr_fix. eapply trel_mono; [by apply IHpn_typed|]. intros [|x] mx; done.
   - apply tr_inj1. auto.
   - apply tr_inj2. auto.
-  - splitf. eapply tr_case.
+  - eapply tr_case.
     + eapply trel_mono; [by apply IHpn_typed1|]. intros. by eapply menv_split_l.
     + eapply trel_mono; [by apply IHpn_typed2|].
       intros [|x] mx; simpl; [done|]. intros. by eapply menv_split_r.
@@ -574,20 +550,6 @@ Proof.
   - exists b, b', (boxlam b'). split_and!; try done.
     apply rtc_once. apply TStepHead.
     rewrite <-(lam_force_eq (boxlam b') b') at 2. apply HeadForce.
-  - eexists _, (subst (up (fixbox b' .: Var)) b'), (fixbox b'). split_and!; try done.
-    + eapply rtc_l; [apply TStepHead, HeadForce|].
-      change (subst1 (fixbox b') (App EForce (boxlam b')))
-        with (App EForce (EBox (Lam (subst (up (up (fixbox b' .: Var))) (rename (upren S) b'))))).
-      rewrite sb_boxlam. apply rtc_once. apply TStepHead.
-      rewrite <-(lam_force_eq (boxlam (subst (up (fixbox b' .: Var)) b'))
-                  (subst (up (fixbox b' .: Var)) b')) at 2.
-      apply HeadForce.
-    + eapply trel_subst; [done|]. intros [|[|x]] mx; simpl.
-      * intros [= <-]. by constructor.
-      * intros [= <-]. unfold compose.
-        match goal with Hb : trel _ (Some _ .: Some _ .: M) b b' _ |- _ =>
-          refine (trel_rename _ M _ _ _ (tr_fix _ _ _ _ _ _ Hb) _ S _); done end.
-      * by rewrite HM.
 Qed.
 
 Lemma chan_norm Ξ M s t mc :
@@ -616,16 +578,15 @@ Proof.
   inversion Hr; subst; simpl in *; try done; try closedtac; try chantac; eauto 10.
 Qed.
 
-(** A target value related to a source that steps is a fix, which
-    unfolds in the source alone. *)
+(** A target value related to a source that steps does not occur. The
+    lemma keeps the form it had while a fix unfolded in the source
+    alone. *)
 Lemma val_stutter Ξ M s w m α s' :
   trel Ξ M s w m → (∀ x, M x = None) → is_val w → src_step s α s' →
   α = SBeta ∧ trel Ξ M s' w m.
 Proof.
   intros H. revert α s'. induction H; intros α s' HM Hw Hst; simpl in Hw; try done.
   all: try (exfalso; apply src_step_not_val in Hst; done).
-  - inversion Hst as [? ? ? Hh| | | | | |]; subst. inversion Hh; subst.
-    split; [done|]. exact (tr_fixu _ _ _ _ _ _ H).
   - inversion Hst as [? ? ? Hh| | | | | |]; subst; [inversion Hh|].
     match goal with Hi : src_step s _ _ |- _ => destruct (IHtrel _ _ HM H Hi) as [-> ?] end.
     split; [done|]. by apply tr_inj1b.
@@ -864,7 +825,7 @@ Lemma fwd Ξ M s t m :
   post Ξ M α t (λ Ξ' t', trel Ξ' M s' t' m).
 Proof.
   induction 1 as [M x m Hx|M|M a|M b b' m1 m2 Hb IH|M b b' m1 m2 Hb IH
-    |M b b' m1 m2 Hb IH|M b b' m1 m2 Hb IH
+    |M e0 e0' m He0 IH
     |M s1 s2 t1 t2 m1 m2 H1 IH1 H2 IH2|M s1 s2 t1 t2 m1 m2 H1 IH1 H2 IH2
     |M e e' mc m Hc He IH|M a e e' mc m Hc Ha He IH
     |M s1 s2 t1 t2 mc Hc H1 IH1 H2 IH2|M s1 s2 t1 t2 mc Hc Hv1 H1 IH1 H2 IH2
@@ -879,10 +840,13 @@ Proof.
   - by apply src_step_not_val in Hst.
   - by apply src_step_not_val in Hst.
   - by apply src_step_not_val in Hst.
-  (* fix λf.λx.b unfolds in the source alone *)
+  (* fix λf.e unfolds in the source, and the target forces its box *)
   - inversion Hst as [? ? ? Hh| | | | | |]; subst. inversion Hh; subst.
-    simpl. eexists. split; [apply rtc_refl|]. exact (tr_fixu _ _ _ _ _ _ Hb).
-  - by apply src_step_not_val in Hst.
+    simpl. exists (subst1 (EBox (subst thk e0')) (subst thk e0')). split.
+    + apply rtc_once, TStepHead, HeadForce.
+    + rewrite force_thk. eapply trel_subst; [exact He0|]. intros [|x] mx; simpl.
+      * intros [= <-]. by apply tr_fix.
+      * by rewrite HM.
   (* application *)
   - apply sinv_app in Hst as [Hh|[(s1' & Hst1 & ->)|(Hv1 & s2' & Hst2 & ->)]].
     + inversion Hh; subst; try (exfalso; by eauto using trel_konst, trel_app_send).
@@ -1279,12 +1243,12 @@ Qed.
 (** ** The theorem *)
 
 Theorem pn_deadlock_free_source e τ e' :
-  pn_typed [] e PUnit τ e' → fixlam e → pn_deadlock_free_src e.
+  pn_typed [] e PUnit τ e' → pn_deadlock_free_src e.
 Proof.
-  intros Ht Hf q Hq Hirr.
+  intros Ht q Hq Hirr.
   set (Ξ0 := λ _ : chan, MRecC).
   assert (trel Ξ0 M0 e e' MUnit) as Hr.
-  { eapply trel_mono; [exact (trel_of_typed Ξ0 _ _ _ _ _ Ht Hf)|].
+  { eapply trel_mono; [exact (trel_of_typed Ξ0 _ _ _ _ _ Ht)|].
     intros x mx. unfold menv. by destruct x. }
   assert (prel (∅, {[+ e +]}) (∅, {[+ e' +]})) as Hp.
   { split; [done|]. exists Ξ0. split; [by intros a|].
@@ -1300,10 +1264,21 @@ Qed.
 
 Theorem fibo_deadlock_free_src : pn_deadlock_free_src fibo_main.
 Proof.
-  destruct fibo_typed as (τ & e' & H). apply (pn_deadlock_free_source _ τ e' H). done.
+  destruct fibo_typed as (τ & e' & H). exact (pn_deadlock_free_source _ τ e' H).
 Qed.
 
 Theorem pipe_deadlock_free_src : pn_deadlock_free_src pipe_main.
 Proof.
-  destruct pipe_main_typed as (τ & e' & H). apply (pn_deadlock_free_source _ τ e' H). done.
+  destruct pipe_main_typed as (τ & e' & H). exact (pn_deadlock_free_source _ τ e' H).
 Qed.
+
+(** The fixes of pdf p. 14 and a fix whose body forks, none of them a
+    λ, in the source semantics. *)
+Theorem div_deadlock_free_src : pn_deadlock_free_src div_main.
+Proof. destruct div_typed as (τ & e' & H). exact (pn_deadlock_free_source _ τ e' H). Qed.
+
+Theorem divsend_deadlock_free_src : pn_deadlock_free_src divsend_main.
+Proof. destruct divsend_typed as (τ & e' & H). exact (pn_deadlock_free_source _ τ e' H). Qed.
+
+Theorem fixfork_deadlock_free_src : pn_deadlock_free_src fixfork_main.
+Proof. destruct fixfork_typed as (τ & e' & H). exact (pn_deadlock_free_source _ τ e' H). Qed.

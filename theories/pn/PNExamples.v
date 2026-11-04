@@ -449,3 +449,88 @@ Proof.
   destruct pipe_main_typed as (τ & e' & H). exists τ, e'. split; [done|].
   by apply (pn_deadlock_free pipe_main τ).
 Qed.
+
+(** ** Fixes whose body is no abstraction
+
+    The chapter uses two such fixes after Theorem 2 (pdf p. 14): the
+    diverging thread ⟨fix λx.x⟩ and the thread ⟨send a (fix λx.x)⟩,
+    which never uses a because the evaluation of the message diverges.
+    Both fixes have type unit. [fixfork_main] adds a fix of arrow type
+    whose body forks a thread before it returns a λ, and calls the fix
+    twice. The source runs that body once, when the fix is evaluated,
+    and so does the translation. *)
+
+(** ⟨fix λx.x⟩ *)
+Definition div_main : expr := EBox (Var 0).
+
+Lemma div_typed : ∃ τ e', pn_typed [] div_main PUnit τ e'.
+Proof. eexists _, _. apply pn_fix; [by apply allun_un|]. pfin. Qed.
+
+(** let a = new() in (fork λ_.recv a); send a (fix λx.x)
+
+    Under the λ of the sequence: 0 = _, 1 = a!, 2 = a?. *)
+Definition divsend_main : expr :=
+  LetP (App ENew EUnit)
+    (App (Lam (App (App ESend (Var 1)) (EBox (Var 0))))
+         (App ESpawn (Lam (App ERecv (Var 2))))).
+
+Lemma divsend_typed : ∃ τ e', pn_typed [] divsend_main PUnit τ e'.
+Proof.
+  eexists _, _. eapply (pn_new _ _ _ PUnit 0); [lv|by right|].
+  eapply pn_app'; [reflexivity| | | | |].
+  - simpl. pfunu. eapply pn_send'; [reflexivity|pfin| | | | | |].
+    + simpl. apply pn_fix; [by apply allun_un|]. pfin.
+    + lvs.
+    + by right.
+    + lvs.
+    + lvs.
+    + lvs.
+  - simpl. pstep. pfunu. pfin.
+  - lvs.
+  - lvs.
+  - lvs.
+Qed.
+
+(** let g = fix λf.(λ_.λx.x) (fork λ_.()) in (g ()); (g ())
+
+    g : unit → unit. The body of the fix is an application, so the fix
+    is no λ. *)
+Definition fixfork_pn : expr :=
+  EBox (App (Lam (Lam (Var 0))) (App ESpawn (Lam EUnit))).
+
+Definition fixfork_main : expr :=
+  App (Lam (App (Lam (App (Var 1) EUnit)) (App (Var 0) EUnit))) fixfork_pn.
+
+Definition uu : pty := PArr PUnit None LBot PUnit.
+
+Lemma fixfork_pn_typed : ∃ e', pn_typed [] fixfork_pn uu LBot e'.
+Proof.
+  eexists. apply pn_fix; [by apply allun_un|].
+  eapply (pn_poly' _ _ _ _ _ PUnit LBot uu _ _ _ _ 0); [reflexivity| | | | | |].
+  - simpl. pfunu. pfunu. pfin.
+  - simpl. pstep. pfunu. pfin.
+  - lvs.
+  - lvs.
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+Lemma fixfork_typed : ∃ τ e', pn_typed [] fixfork_main PUnit τ e'.
+Proof.
+  destruct fixfork_pn_typed as [fe Hf].
+  eexists _, _. eapply (pn_poly' _ _ _ _ _ uu LBot PUnit _ _ _ _ 0); [reflexivity| | | | | |].
+  - simpl. eapply (pn_fun' _ _ _ _ uu); [|reflexivity|reflexivity|reflexivity].
+    eapply (pn_poly' _ _ _ _ _ PUnit LBot PUnit _ _ _ _ 0); [reflexivity| | | | | |].
+    + simpl. pfunu.
+      eapply (pn_poly' _ _ _ _ _ PUnit LBot PUnit _ _ _ _ 0); [reflexivity|pfin|simpl; pfin|lvs|lvs|lvs|lvs].
+    + simpl. eapply (pn_poly' _ _ _ _ _ PUnit LBot PUnit _ _ _ _ 0); [reflexivity|pfin|simpl; pfin|lvs|lvs|lvs|lvs].
+    + lvs.
+    + lvs.
+    + lvs.
+    + lvs.
+  - simpl. exact Hf.
+  - lvs.
+  - lvs.
+  - lvs.
+  - lvs.
+Qed.
