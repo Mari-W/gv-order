@@ -12,10 +12,12 @@
     Add and Mult branches run the same code.
 
       receiveEval : □(∀κ ζ β. C. ∗ ⊸^⊥_⊤ ((TermD;β)@κ ⊸^ζ_⊤ ∃κ′≽κ. C′. β@κ′))
-      C  = {κ·w ≺ ζ ∣ w}      C′ = {κ ≺ κ′} ∪ {κ′·w ≺ ζ ∣ w}
+      C  = {κ·w ≺ ζ, κ·w ≺ (κ·w)[i] ∣ w, i}
+      C′ = {κ ≺ κ′} ∪ C[κ′/κ]
 
-    Add and Mult run the same code, at the two branch roots (κ◁2)◁1 and
-    (κ◁2)◁2 (K10). The proof types it once for both.
+    Add and Mult run the same code, at the two points κ[B][A] and
+    κ[B][B] where the inner choice continues (K11). The proof types it
+    once for both.
 
     computeService runs receiveEval on TermD;(!∗;Close) and sends the
     result. The client is the paper's, Add (Const 5) (Mult (Const 7)
@@ -100,8 +102,9 @@ Proof.
   apply seq_with_cong; apply seq_assoc; auto using TermD_hc.
 Qed.
 
-(** The branch root (κ◁2)◁i of a point variable κ = a. *)
-Abbreviation pop a i := (Pt (NBr (NBr (NVar a) 0 true) 0 i) 0).
+(** The point κ[B][i] of a point variable κ = a, where the choice
+    between Add and Mult continues. *)
+Abbreviation pop a i := (Pt (NSlot (NSlot (NVar a) 0 1) 0 (bidx i)) 0).
 
 (** ** receiveEval *)
 
@@ -132,7 +135,7 @@ Qed.
 Lemma reval_inst x z s :
   sinst_ty (slist [s]) (ty_inst [x; z] reval_body) =
   TLolli (Some z) None (TSess (SSeq TermD s) x)
-    (TEx (Some x) 1 (BCs [x; z] after_P) (TSess s (pv 0 0))).
+    (TEx (LPt x) 1 (BCs [x; z] after_P) (TSess s (pv 0 0))).
 Proof.
   destruct x as [p o], z as [q r]. cbn. unfold bcs_inst, pup. cbn.
   unfold pt_inst, pt_shift. cbn. rewrite !Nat.add_0_r. done.
@@ -152,54 +155,56 @@ Proof.
   - eapply (tv_appk W HW _ _ _ _ KBra _ (Some (pv 0 0))
               (TSess (SWith (SSeq (SRcv 0 TUnit) s) (SSeq OpD s)) (pv 0 0))).
     + eapply t_conv; [|tstep]. apply teq_steq. split; [done|apply TermD_seq].
-    + apply KTBra.
+    + apply KTBra; [hypb ([] : list (option bool)) false|hypb ([] : list (option bool)) true].
     + done.
     + apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 1 0). split; [done|]. right. hypw ([] : list (option bool)).
-  - (* Const: receive, then pack at κ◁1+1 *)
-    cbn. apply (t_pack W _ _ _ _ _ _ (Some (pv 0 0)) 1 after_C (TSess s (pv 0 0)) [pbr 0 0 false 1]).
+  - (* Const: receive, then pack at κ[A]+1 *)
+    cbn. apply (t_pack W _ _ _ _ _ _ (LPt (pv 0 0)) 1 after_C (TSess s (pv 0 0)) [psl 0 false 1]).
     + done.
     + apply Forall_singleton. apply (skn_in W _ send_C [pvar 0; pvar 1] (pvar 0)); [by left|by left|done].
-    + unfold after_C. apply bcs_hold_env. intros f [-> | (w & ->)] _; cbn [fact_map fact_holds].
-      * eapply sl_trans; [apply (slt_br W _ (pv 0 0) false HW)|apply (slt_po W _ (pbr 0 0 false 0) HW)].
-      * rewrite pwalk_inst. hypw (Some false :: None :: w).
-    + intros y Hy. mem_cases Hy. right.
-      eapply sl_trans; [apply (slt_br W _ (pv 0 0) false HW)|apply (slt_po W _ (pbr 0 0 false 0) HW)].
+    + unfold after_C. apply bcs_hold_env. intros f [-> | (w & [-> | (i & ->)])] _;
+        cbn [fact_map fact_holds]; rewrite ?wstep_inst, ?pwalk_inst.
+      * eapply sl_trans; [hypb ([] : list (option bool)) false|apply (slt_po W _ (psl 0 false 0) HW)].
+      * hypw (Some false :: None :: w).
+      * hypb (Some false :: None :: w) i.
+    + split; [|done]. intros y Hy. mem_cases Hy. right.
+      eapply sl_trans; [hypb ([] : list (option bool)) false|apply (slt_po W _ (psl 0 false 0) HW)].
     + cbn. tstep.
-      { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pbr 0 0 false 0)) (TSess (SSeq (SRcv 0 TUnit) s) (pbr 0 0 false 0))).
+      { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (psl 0 false 0)) (TSess (SSeq (SRcv 0 TUnit) s) (psl 0 false 0))).
         - tstep.
         - apply KTRecv.
         - kscope.
         - apply ubs_intro; [intros y Hy; mem_cases Hy|].
           exists (pv 1 0). split; [done|]. right. hypw [Some false]. }
       cbn. tstep; [tstep|]. tstep.
-  - (* Add or Mult: the same code at the branch roots (κ◁2)◁1 and (κ◁2)◁2 *)
+  - (* Add or Mult: the same code at κ[B][A] and κ[B][B] *)
     cbn.
     match goal with |- typed ?W' ?Φ ?Ψ _ ?Δ ?F (Case _ ?e1 ?e2) ?T =>
       assert (∀ i, typed W' Φ Ψ ∅ (Some (TSess (SSeq TermD (SSeq TermD s)) (pop 0 i))
                                      :: lp (Lam (Pair e1 e2)) 0 Δ) F e1 T) as Hop end.
     2:{ eapply (tv_case W HW _ _ _ _ _ _ _ (TSess (SSeq TermD (SSeq TermD s)) (pop 0 false))
                   (TSess (SSeq TermD (SSeq TermD s)) (pop 0 true))); [reflexivity| |apply Hop|apply Hop].
-        eapply (tv_appk W HW _ _ _ _ KBra _ (Some (pbr 0 0 true 0))
-                  (TSess (SWith (SSeq TermD (SSeq TermD s)) (SSeq TermD (SSeq TermD s))) (pbr 0 0 true 0))).
+        eapply (tv_appk W HW _ _ _ _ KBra _ (Some (psl 0 true 0))
+                  (TSess (SWith (SSeq TermD (SSeq TermD s)) (SSeq TermD (SSeq TermD s))) (psl 0 true 0))).
         - eapply t_conv; [|tstep]. apply teq_steq. split; [done|by apply opD_seq].
-        - apply KTBra.
+        - apply KTBra; [hypb [Some true] false|hypb [Some true] true].
         - done.
         - apply ubs_intro; [intros y Hy; mem_cases Hy|].
           exists (pv 1 0). split; [done|]. right. hypw [Some true]. }
     intros i. unfold reval_op. cbn.
-    set (R1 := TEx (Some (pop 0 i)) 1 (BCs [pop 0 i; pv 1 0] after_P) (TSess (SSeq TermD s) (pv 0 0))).
+    set (R1 := TEx (LPt (pop 0 i)) 1 (BCs [pop 0 i; pv 1 0] after_P) (TSess (SSeq TermD s) (pv 0 0))).
     eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 0)) None R1); [reflexivity| | |].
     + eapply (tv_lam W HW _ _ _ _ _ R1 _ (Some (pv 1 0)) None 2); [set_solver|cbn; set_solver|].
-      cbn. apply (tv_open W _ _ _ _ _ 0 (Some (pop 0 i)) 1 (BCs [pop 0 i; pv 1 0] after_P)
+      cbn. apply (tv_open W _ _ _ _ _ 0 (LPt (pop 0 i)) 1 (BCs [pop 0 i; pv 1 0] after_P)
                   (TSess (SSeq TermD s) (pv 0 0)) _
                   (<[2:=Some (pv 2 0)]> (<[1:=Some (pv 2 0)]> (<[0:=None]> ∅)))
                   [(send_C, [pv 1 0; pv 2 0]); (BCs [pop 1 i; pv 2 0] after_P, [pv 0 0])]
                   [Some (TSess (SSeq TermD s) (pv 0 0)); None; None; None; Some reval_ty]
-                  (∅, Some 2)
-                  (TEx (Some (pv 1 0)) 1 (BCs [pv 1 0; pv 2 0] after_P) (TSess s (pv 0 0))));
+                  (∅, Some (FVar 2))
+                  (TEx (LPt (pv 1 0)) 1 (BCs [pv 1 0; pv 2 0] after_P) (TSess s (pv 0 0))));
         [reflexivity|intros []|reflexivity|reflexivity|reflexivity|apply sf_pinst_empty|reflexivity|].
-      set (R2 := TEx (Some (pv 0 0)) 1 (BCs [pv 0 0; pv 2 0] after_P) (TSess s (pv 0 0))).
+      set (R2 := TEx (LPt (pv 0 0)) 1 (BCs [pv 0 0; pv 2 0] after_P) (TSess s (pv 0 0))).
       assert (∀ Ψ, (BCs [pop 1 i; pv 2 0] after_P, [pv 0 0]) ∈ Ψ → (send_C, [pv 1 0; pv 2 0]) ∈ Ψ →
                    Forall (skn W Ψ) [pv 0 0; pv 2 0]) as Hkn.
       { intros Ψ H1 H2. apply Forall_cons. split; [|apply Forall_singleton].
@@ -207,41 +212,47 @@ Proof.
         - apply (skn_in W Ψ send_C [pv 1 0; pv 2 0] (pv 2 0)); [exact H2|by right; left|done]. }
       eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 0)) None R2); [reflexivity| | |].
       * eapply (tv_lam W HW _ _ _ _ _ R2 _ (Some (pv 2 0)) None 3); [set_solver|cbn; set_solver|].
-        cbn. apply (tv_open W _ _ _ _ _ 0 (Some (pv 0 0)) 1 (BCs [pv 0 0; pv 2 0] after_P)
+        cbn. apply (tv_open W _ _ _ _ _ 0 (LPt (pv 0 0)) 1 (BCs [pv 0 0; pv 2 0] after_P)
                   (TSess s (pv 0 0)) _
                   (<[3:=Some (pv 3 0)]> (<[2:=Some (pv 3 0)]> (<[1:=Some (pv 3 0)]> (<[0:=None]> ∅))))
                   [(send_C, [pv 2 0; pv 3 0]); (BCs [pop 2 i; pv 3 0] after_P, [pv 1 0]);
                    (BCs [pv 1 0; pv 3 0] after_P, [pv 0 0])]
                   [Some (TSess s (pv 0 0)); None; None; None; None; Some reval_ty]
-                  (∅, Some 3)
-                  (TEx (Some (pv 2 0)) 1 (BCs [pv 2 0; pv 3 0] after_P) (TSess s (pv 0 0))));
+                  (∅, Some (FVar 3))
+                  (TEx (LPt (pv 2 0)) 1 (BCs [pv 2 0; pv 3 0] after_P) (TSess s (pv 0 0))));
           [reflexivity|intros []|reflexivity|reflexivity|reflexivity|apply sf_pinst_empty|reflexivity|].
         assert (slt W [(send_C, [pv 2 0; pv 3 0]); (BCs [pop 2 i; pv 3 0] after_P, [pv 1 0]);
                        (BCs [pv 1 0; pv 3 0] after_P, [pv 0 0])] (pv 2 0) (pv 0 0)) as Hch.
-        { eapply sl_trans; [apply (slt_br W _ (pv 2 0) true HW)|].
-          eapply sl_trans; [apply (slt_br W _ (pbr 2 0 true 0) i HW)|].
+        { apply (sl_trans _ _ _ (psl 2 true 0)).
+          { eapply (sl_hyp0 _ _ send_P _ (pv 0 0) (wstep (pv 0 0) (Some true)));
+              [inlist|exists []; right; by exists true|fscw|reflexivity|reflexivity]. }
+          apply (sl_trans _ _ _ (pop 2 i)).
+          { eapply (sl_hyp0 _ _ send_P _ (pwalk (pv 0 0) [Some true]) (wstep (pwalk (pv 0 0) [Some true]) (Some i)));
+              [inlist|exists [Some true]; right; by exists i|fscw|reflexivity|reflexivity]. }
           eapply sl_trans.
           - eapply (sl_hyp W _ [pop 2 i; pv 3 0] after_P [pv 1 0] (FLt (pv 1 0) (pv 0 0)));
               [inlist|by left|fsc|reflexivity].
           - eapply (sl_hyp W _ [pv 1 0; pv 3 0] after_P [pv 0 0] (FLt (pv 1 0) (pv 0 0)));
               [inlist|by left|fsc|reflexivity]. }
-        apply (t_pack W _ _ _ _ _ _ (Some (pv 2 0)) 1 (BCs [pv 2 0; pv 3 0] after_P) (TSess s (pv 0 0)) [pv 0 0]).
+        apply (t_pack W _ _ _ _ _ _ (LPt (pv 2 0)) 1 (BCs [pv 2 0; pv 3 0] after_P) (TSess s (pv 0 0)) [pv 0 0]).
         -- done.
         -- apply Forall_singleton.
            apply (skn_in W _ (BCs [pv 1 0; pv 3 0] after_P) [pv 0 0] (pv 0 0)); [inlist|by left|done].
-        -- apply bcs_hold_env. intros f [-> | (w & ->)] _; cbn [fact_map fact_holds]; [exact Hch|].
-           eapply (sl_hyp W _ [pv 1 0; pv 3 0] after_P [pv 0 0] (FLt (pwalk (pv 0 0) w) (pv 2 0)));
-             [inlist|right; by exists w|fscw|fmw].
-        -- intros y Hy. mem_cases Hy. by right.
+        -- apply bcs_hold_env. intros f [-> | (w & [-> | (j & ->)])] _;
+             cbn [fact_map fact_holds]; rewrite ?wstep_inst, ?pwalk_inst; [exact Hch| |].
+           ++ hypaw [pv 1 0; pv 3 0] [pv 0 0] w.
+           ++ hypab [pv 1 0; pv 3 0] [pv 0 0] w j.
+        -- split; [|done]. intros y Hy. mem_cases Hy. by right.
         -- cbn. tstep.
       * eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 0)) None (TSess (SSeq TermD s) (pv 0 0)) R2);
           [reflexivity| | |].
         -- unfold R2. rewrite <-(reval_inst (pv 0 0) (pv 2 0) s).
            apply (typed_force W _ _ _ _ _ _ 2 1 send_C None reval_body [pv 0 0; pv 2 0] [s]);
              [done|done| | |done| |apply ubs_none|tstep].
-           ++ apply bcs_hold_intro. intros g (w & ->) _. cbn [fact_map fact_holds].
-              eapply (sl_hyp W _ [pop 1 i; pv 2 0] after_P [pv 0 0] (FLt (pwalk (pv 0 0) w) (pv 2 0)));
-                [inlist|right; by exists w|fscw|fmw].
+           ++ apply bcs_hold_intro. intros g (w & [-> | (j & ->)]) _;
+                cbn [fact_map fact_holds]; rewrite ?wstep_inst, ?pwalk_inst.
+              ** hypaw [pop 1 i; pv 2 0] [pv 0 0] w.
+              ** hypab [pop 1 i; pv 2 0] [pv 0 0] w j.
            ++ apply Hkn; inlist.
            ++ by apply Forall_singleton.
         -- tstep.
@@ -254,8 +265,8 @@ Proof.
       * unfold R1. rewrite <-(reval_inst (pop 0 i) (pv 1 0) (SSeq TermD s)).
         apply (typed_force W _ _ _ _ _ _ 2 1 send_C None reval_body [pop 0 i; pv 1 0] [SSeq TermD s]);
           [done|done| | |done| |apply ubs_none|tstep].
-        -- apply bcs_hold_self; [by left|vb_list|]. intros g (w & ->) _.
-           exists (Some true :: Some i :: w). fmw.
+        -- apply bcs_hold_self; [by left|vb_list|]. intros g (w & [-> | (j & ->)]) _;
+             exists (Some true :: Some i :: w); [left|right; exists j]; fmw.
         -- apply (skn_ids2 W _ send_C); [by left|done|done].
         -- apply Forall_singleton, hcontractive_seq; [apply TermD_hc|done].
       * tstep.
@@ -277,16 +288,17 @@ Qed.
     The spawned thread is computeService. The client sends Add (Const 5)
     (Mult (Const 7) (Const 9)) with ∗ for the constants and receives the
     result. The ends have type TermC;(?∗;Close) and TermD;(!∗;Close) at
-    (a,0), the client acts at the points [asp k] of its walk from
-    (a,0), and z is the ceiling of receiveEval, in the world Wsum of
-    TreeSum.v. *)
+    the point α of c, and the client acts at the points [asp k] of its
+    walk from α. As in TreeSum.v the top-level point z is the ceiling of
+    receiveEval, and c is created with the facts of C at α and z
+    ([tca_C] of TreeCopy.v). *)
 
 (** The client's walk: Op, Add, Const, send 5, Op, Mult, Const, send 7,
     Const, send 9, recv. *)
 Definition as_cw : list (option bool) :=
   [Some true; Some false; Some false; None; Some true; Some true; Some false; None;
    Some false; None; None].
-Definition asp (k : nat) : point := pwalk (pc 0 0) (take k as_cw).
+Definition asp (k : nat) : point := pwalk (pv 0 0) (take k as_cw).
 
 Definition as_srv : expr :=
   LetU (Var 0) (App (Lam (App EClos (App ESend (Pair EUnit (Var 0)))))
@@ -299,40 +311,51 @@ Definition as_cli : expr :=
     (LetU (Var 1) (App EClos (Var 0))).
 
 Definition as_go : expr :=
-  LetP (Pair reval reval) (LetP (App ENew EUnit) (LetU (App ESpawn (Lam as_srv)) as_cli)).
+  LetP (Pair reval reval) (let_new_pair (LetU (App ESpawn (Lam as_srv)) as_cli)).
 
 (** The client's continuation, the reply. *)
 Definition as_Q : sty := SSeq (SRcv 0 TUnit) SEnd.
 
-Lemma as_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
-  (∀ w, w_lt W (pwalk (pc 0 0) w) (pc 1 0)) → typed W ∅ [] ∅ [] (∅, None) as_go TUnit.
+(** After the [new] a is 0 and z is 1. *)
+Lemma as_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) as_go TUnit.
 Proof.
-  intros HW Ha Hz Haz. unfold as_go.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold as_go.
   assert (hcontractive as_Q) as HQ by (apply hcontractive_seq; [apply hcontractive_rcv|apply hcontractive_end]).
   assert (hcontractive (SSeq TermC as_Q)) as HQ' by (apply hcontractive_seq; [apply TermC_hc|exact HQ]).
   tstep.
-  { tstep; apply reval_typed, HW. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ (SSeq TermC as_Q) (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
+  { tstep; apply typed_hyps_wk; [exact HWs|apply reval_typed, HW|exact HWs|apply reval_typed, HW]. }
+  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ (SSeq TermC as_Q) tca_C); [apply tca_ok|..].
+  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  fresh_clean.
+  set (Ψ := [(top_C0, [pvar 1]); (BCs [pvar 1] send_P, [pvar 0])]).
+  assert (∀ w, slt W Ψ (pwalk (pv 0 0) w) (pv 1 0)) as Haz.
+  { intros w. eapply (sl_hyp W Ψ [pvar 1] send_P [pvar 0] (FLt (pwalk (pv 0 0) w) (pv 1 0)));
+      [inlist|exists w; by left|fscw|fmw]. }
+  assert (∀ w i, slt W Ψ (pwalk (pv 0 0) w) (wstep (pwalk (pv 0 0) w) (Some i))) as Haa.
+  { intros w i. eapply (sl_hyp W Ψ [pvar 1] send_P [pvar 0]
+                          (FLt (pwalk (pv 0 0) w) (wstep (pwalk (pv 0 0) w) (Some i))));
+      [inlist|exists w; right; by exists i|fscw|fmw]. }
   cbn. tstep.
   { (* computeService *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 0)) (Some (pv 0 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     unfold as_srv. cbn. tstep; [tstep|]. cbn.
-    set (RD := TEx (Some (pc 0 0)) 1 (BCs [pc 0 0; pc 1 0] after_P) (TSess (SSeq (SSnd 0 TUnit) SEnd) (pv 0 0))).
-    eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 1 0)) None RD); [reflexivity| | |].
-    - eapply (tv_lam W HW _ _ _ _ _ RD _ (Some (pc 1 0)) None 1); [set_solver|cbn; set_solver|].
-      cbn. apply (tv_open W _ _ _ _ _ 0 (Some (pc 0 0)) 1 (BCs [pc 0 0; pc 1 0] after_P)
+    set (RD := TEx (LPt (pv 0 0)) 1 (BCs [pv 0 0; pv 1 0] after_P) (TSess (SSeq (SSnd 0 TUnit) SEnd) (pv 0 0))).
+    eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 0)) None RD); [reflexivity| | |].
+    - eapply (tv_lam W HW _ _ _ _ _ RD _ (Some (pv 1 0)) None 1); [set_solver|cbn; set_solver|].
+      cbn. apply (tv_open W _ _ _ _ _ 0 (LPt (pv 0 0)) 1 (BCs [pv 0 0; pv 1 0] after_P)
                   (TSess (SSeq (SSnd 0 TUnit) SEnd) (pv 0 0)) _
-                  (<[1:=Some (pc 1 0)]> (<[0:=Some (pc 1 0)]> ∅))
-                  [(BCs [pc 0 0; pc 1 0] after_P, [pv 0 0])]
-                  [Some (TSess (SSeq (SSnd 0 TUnit) SEnd) (pv 0 0)); None; None; None; Some reval_ty; Some reval_ty]
-                  (∅, Some 1) TUnit);
+                  (<[1:=Some (pv 2 0)]> (<[0:=Some (pv 2 0)]> ∅))
+                  [(top_C0, [pvar 2]); (BCs [pvar 2] send_P, [pvar 1]); (BCs [pv 1 0; pv 2 0] after_P, [pv 0 0])]
+                  [Some (TSess (SSeq (SSnd 0 TUnit) SEnd) (pv 0 0)); None; None; None; None; None;
+                   Some reval_ty; Some reval_ty]
+                  (∅, Some (FVar 1)) TUnit);
         [reflexivity|intros []|reflexivity|reflexivity|reflexivity|apply sf_pinst_empty|reflexivity|].
-      assert (∀ w, slt W [(BCs [pc 0 0; pc 1 0] after_P, [pv 0 0])] (pwalk (pv 0 0) w) (pc 1 0)) as Hz'.
-      { intros w. eapply (sl_hyp W _ [pc 0 0; pc 1 0] after_P [pv 0 0] (FLt (pwalk (pv 0 0) w) (pv 2 0)));
-          [by left|right; by exists w|fscw|fmw]. }
+      assert (∀ w, slt W [(top_C0, [pvar 2]); (BCs [pvar 2] send_P, [pvar 1]); (BCs [pv 1 0; pv 2 0] after_P, [pv 0 0])]
+                     (pwalk (pv 0 0) w) (pv 2 0)) as Hz'.
+      { intros w. hypaw [pv 1 0; pv 2 0] [pv 0 0] w. }
       eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 0 1)) (TSess SEnd (pv 0 1)));
         [|apply KTClos|done|apply ubs_intro; [intros y Hy; mem_cases Hy|]].
       + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
@@ -341,22 +364,23 @@ Proof.
         * apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)). cbn. set_solver.
         * kscope.
         * apply ubs_intro; [intros y Hy; mem_cases Hy|].
-          exists (pc 1 0). split; [done|]. right. apply (Hz' []).
-      + exists (pc 1 0). split; [done|]. right. apply (Hz' [None]).
-    - eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 1 0)) None
-                (TSess (SSeq TermD (SSeq (SSnd 0 TUnit) SEnd)) (pc 0 0)) RD); [reflexivity| | |].
-      + unfold RD. rewrite <-(reval_inst (pc 0 0) (pc 1 0) (SSeq (SSnd 0 TUnit) SEnd)).
-        apply (typed_force W _ _ _ _ _ _ 2 1 send_C None reval_body [pc 0 0; pc 1 0] [SSeq (SSnd 0 TUnit) SEnd]);
+          exists (pv 2 0). split; [done|]. right. apply (Hz' []).
+      + exists (pv 2 0). split; [done|]. right. apply (Hz' [None]).
+    - eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 0)) None
+                (TSess (SSeq TermD (SSeq (SSnd 0 TUnit) SEnd)) (pv 0 0)) RD); [reflexivity| | |].
+      + unfold RD. rewrite <-(reval_inst (pv 0 0) (pv 1 0) (SSeq (SSnd 0 TUnit) SEnd)).
+        apply (typed_force W _ _ _ _ _ _ 2 1 send_C None reval_body [pv 0 0; pv 1 0] [SSeq (SSnd 0 TUnit) SEnd]);
           [done|done| | |done| |apply ubs_none|tstep].
-        * apply bcs_hold_intro. intros g (w & ->) _. cbn [fact_map fact_holds].
-          rewrite pwalk_inst. apply sl_w, Haz.
-        * constructor; [by left|constructor; [by left|constructor]].
+        * apply bcs_hold_intro. intros g (w & [-> | (i & ->)]) _; cbn [fact_map fact_holds];
+            rewrite ?wstep_inst, ?pwalk_inst; [apply Haz|apply Haa].
+        * constructor; [eapply skn_inst; [by right; left|by left|done]|].
+          constructor; [eapply skn_inst; [by left|by left|done]|constructor].
         * apply Forall_singleton, hcontractive_seq; [apply hcontractive_snd|apply hcontractive_end].
       + tstep.
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pc 1 0). split; [done|]. apply sle_refl, HW.
+        exists (pv 1 0). split; [done|]. apply sle_refl, HW.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 1 0). split; [done|]. apply sle_refl, HW. }
+      exists (pv 1 0). split; [done|]. apply sle_refl, HW. }
   (* the client *)
   unfold as_cli. cbn. tstep.
   - eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (asp 10)) (TSess as_Q (asp 10)));
@@ -369,7 +393,7 @@ Proof.
     tstep; [|tstep].
     eapply (tv_appk W HW _ _ _ _ KSel1 _ (Some (asp 8))
               (TSess (SPlus (SSeq (SSnd 0 TUnit) as_Q) (SSeq OpC as_Q)) (asp 8)));
-      [|apply KTSel1|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+      [|apply KTSel1, (Haa (take 8 as_cw) false)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
     (* asp 8: TermC;Q after the send of 7 *)
     apply (t_conv W _ _ _ _ _ _ (TSess (SSeq TermC as_Q) (asp 8))).
     { apply teq_steq. split; [done|apply TermC_seq]. }
@@ -381,18 +405,18 @@ Proof.
     tstep; [|tstep].
     eapply (tv_appk W HW _ _ _ _ KSel1 _ (Some (asp 6))
               (TSess (SPlus (SSeq (SSnd 0 TUnit) (SSeq TermC as_Q)) (SSeq OpC (SSeq TermC as_Q))) (asp 6)));
-      [|apply KTSel1|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+      [|apply KTSel1, (Haa (take 6 as_cw) false)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
     (* asp 6: TermC;(TermC;Q) after Mult *)
     apply (t_conv W _ _ _ _ _ _ (TSess (SSeq TermC (SSeq TermC as_Q)) (asp 6))).
     { apply teq_steq. split; [done|apply TermC_seq]. }
     eapply (tv_appk W HW _ _ _ _ KSel2 _ (Some (asp 5))
               (TSess (SPlus (SSeq TermC (SSeq TermC as_Q)) (SSeq TermC (SSeq TermC as_Q))) (asp 5)));
-      [|apply KTSel2|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+      [|apply KTSel2, (Haa (take 5 as_cw) true)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
     apply (t_conv W _ _ _ _ _ _ (TSess (SSeq OpC as_Q) (asp 5))).
     { apply teq_steq. split; [done|by apply opC_seq]. }
     eapply (tv_appk W HW _ _ _ _ KSel2 _ (Some (asp 4))
               (TSess (SPlus (SSeq (SSnd 0 TUnit) as_Q) (SSeq OpC as_Q)) (asp 4)));
-      [|apply KTSel2|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+      [|apply KTSel2, (Haa (take 4 as_cw) true)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
     (* asp 4: TermC;Q after the send of 5 *)
     apply (t_conv W _ _ _ _ _ _ (TSess (SSeq TermC as_Q) (asp 4))).
     { apply teq_steq. split; [done|apply TermC_seq]. }
@@ -404,18 +428,18 @@ Proof.
     tstep; [|tstep].
     eapply (tv_appk W HW _ _ _ _ KSel1 _ (Some (asp 2))
               (TSess (SPlus (SSeq (SSnd 0 TUnit) (SSeq TermC as_Q)) (SSeq OpC (SSeq TermC as_Q))) (asp 2)));
-      [|apply KTSel1|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+      [|apply KTSel1, (Haa (take 2 as_cw) false)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
     (* asp 2: TermC;(TermC;Q) after Add *)
     apply (t_conv W _ _ _ _ _ _ (TSess (SSeq TermC (SSeq TermC as_Q)) (asp 2))).
     { apply teq_steq. split; [done|apply TermC_seq]. }
     eapply (tv_appk W HW _ _ _ _ KSel1 _ (Some (asp 1))
               (TSess (SPlus (SSeq TermC (SSeq TermC as_Q)) (SSeq TermC (SSeq TermC as_Q))) (asp 1)));
-      [|apply KTSel1|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+      [|apply KTSel1, (Haa (take 1 as_cw) false)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
     apply (t_conv W _ _ _ _ _ _ (TSess (SSeq OpC as_Q) (asp 1))).
     { apply teq_steq. split; [done|by apply opC_seq]. }
-    eapply (tv_appk W HW _ _ _ _ KSel2 _ (Some (pc 0 0))
-              (TSess (SPlus (SSeq (SSnd 0 TUnit) as_Q) (SSeq OpC as_Q)) (pc 0 0)));
-      [|apply KTSel2|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
+    eapply (tv_appk W HW _ _ _ _ KSel2 _ (Some (pv 0 0))
+              (TSess (SPlus (SSeq (SSnd 0 TUnit) as_Q) (SSeq OpC as_Q)) (pv 0 0)));
+      [|apply KTSel2, (Haa [] true)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
     eapply t_conv; [|tstep]. apply teq_steq. split; [done|apply TermC_seq].
   - (* the result and close *)
     cbn. tstep; [tstep|]. cbn.
@@ -423,11 +447,5 @@ Proof.
       [tstep|apply KTClos|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
 Qed.
 
-Lemma as_deadlock_free : deadlock_free (∅, {[+ as_go +]}).
-Proof.
-  apply (soundness Wsum _ TUnit Wsum_strict).
-  apply ptyped_closed; [constructor|]. apply as_typed; [apply Wsum_strict| | |].
-  - unfold pt_known, Wsum. simpl. set_solver.
-  - unfold pt_known, Wsum. simpl. set_solver.
-  - intros w. apply glt_base. by exists w.
-Qed.
+Theorem as_deadlock_free : deadlock_free (∅, {[+ as_go +]}).
+Proof. apply (soundness_source 1 top_C0 _ TUnit top_acyclic); [constructor|apply as_typed]. Qed.

@@ -2,9 +2,14 @@
 
     Hereditary contractiveness by induction on the depth, closure of it
     under ;, congruences of ≈ for the prefixes the examples rewrite
-    under, a derived rule for case with Θ = ∅, and the facts of a
-    hypothesis whose constraint has outer points. All lemmas are
-    general. None of them changes a core definition. *)
+    under, a derived rule for case with Θ = ∅, the facts of a
+    hypothesis whose constraint has outer points, closed boxes under
+    more hypotheses, and creation constraints with outer points
+    ([cc_ok_out]) with the orders along walks and offsets that prove
+    them. The whole programs start under the ceiling of [top_C0], and
+    Stream.v and CfstDeadlock.v create the lockstep pair [lsa_C],
+    [lsb_C]. All lemmas are general. None of them changes a core
+    definition. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -112,14 +117,16 @@ Section rules.
   Context (W : world) (HW : world_wf W).
 
   Lemma tv_case Φ Ψ Δ F e e1 e2 T1 T2 T :
-    sok e 0 (Lam (Pair e1 e2)) 0 Δ = true →
+    sok e 0 (Lam (Pair e1 e2)) 0 Δ && negb (lenv_bot (lp (Lam (Pair e1 e2)) 0 Δ)) = true →
     typed W Φ Ψ ∅ (lp e 0 Δ) (sf_union F (lenv_heads (lp (Lam (Pair e1 e2)) 0 Δ))) e (TSum T1 T2) →
     typed W Φ Ψ ∅ (Some T1 :: lp (Lam (Pair e1 e2)) 0 Δ) F e1 T →
     typed W Φ Ψ ∅ (Some T2 :: lp (Lam (Pair e1 e2)) 0 Δ) F e2 T →
     typed W Φ Ψ ∅ Δ F (Case e e1 e2) T.
   Proof.
-    intros Hs H H1 H2. eapply (t_case W Φ Ψ ∅ ∅ ∅); [apply (comp0 W HW)|by apply lp_split| |exact H1|exact H2].
-    by rewrite (tenv_heads0 W), union_empty_l_L.
+    intros Hs H H1 H2. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply (t_case W Φ Ψ ∅ ∅ ∅ Δ (lp e 0 Δ) (lp (Lam (Pair e1 e2)) 0 Δ));
+      [apply (comp0 W HW)|by apply lp_split| |exact H1|exact H2].
+    by rewrite Hb, (tenv_heads0 W), union_empty_l_L.
   Qed.
 End rules.
 
@@ -180,36 +187,6 @@ Proof.
   - rewrite <-E. destruct f; simpl; by rewrite !pt_inst_env.
 Qed.
 
-(** ** The lockstep world
-
-    Two channels a = 0 and b = 1 that alternate, (a,k) ≺ (b,k) ≺
-    (a,k+1), and a ceiling z = 2 above both: (a,k), (b,k) ≺ (z,0).
-    TreeCopy.v and Stream.v run in it. *)
-
-Definition tree_L (x y : point) : Prop :=
-  ∃ k, (x = pc 0 k ∧ y = pc 1 k) ∨ (x = pc 1 k ∧ y = pc 0 (S k)) ∨
-       (x = pc 0 k ∧ y = pc 2 0) ∨ (x = pc 1 k ∧ y = pc 2 0).
-
-Definition Wtree : world := wgen (list_to_set (NConst <$> [0; 1; 2])) (λ _ _, False) tree_L.
-
-(** The ranks (0, 2k) for (a,k), (0, 2k+1) for (b,k) and (1, k) for (z,k). *)
-Definition tree_rank (x : point) : nat * nat :=
-  match pt_root x with
-  | NConst 2 => (1, pt_off x)
-  | NConst 1 => (0, 2 * pt_off x + 1)
-  | _ => (0, 2 * pt_off x)
-  end.
-
-Lemma Wtree_strict : strict Wtree.
-Proof.
-  apply (wgen_strict_lex _ _ _ id tree_rank); try done.
-  - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
-  - intros x y (k & [[-> ->]|[[-> ->]|[[-> ->]|[-> ->]]]]); right; rewrite !elem_of_list_to_set; cbn; set_solver.
-  - intros x. unfold lexlt, tree_rank, pt_shift, pt_root. cbn.
-    destruct (pn_root (pt_name x)) as [[|[|[|a]]]| | |]; cbn; right; split; try done; lia.
-  - intros x y (k & [[-> ->]|[[-> ->]|[[-> ->]|[-> ->]]]]); unfold lexlt, tree_rank, id; cbn; lia.
-Qed.
-
 (** Frame variable lookups after E-Open. *)
 Ltac fv_look := rewrite ?lookup_fmap; simplify_map_eq; reflexivity.
 
@@ -224,3 +201,179 @@ Ltac cstep :=
   | |- typed _ _ _ _ _ _ (Case _ _ _) _ => eapply tv_case; [assumption|reflexivity| | |]
   | _ => tstep
   end.
+
+(** ** Closed boxes under more hypotheses
+
+    A term typed without hypotheses and without free variables types
+    under any hypotheses. The whole programs type their boxes once and
+    use them under the hypothesis of the ceiling. *)
+Lemma sf_pinst_pvar F : sf_pinst pvar F = F.
+Proof.
+  destruct F as [P o]. unfold sf_pinst. simpl. f_equal.
+  apply set_eq. intros x. rewrite elem_of_map. split.
+  - intros (y & -> & Hy). by rewrite pt_inst_pvar.
+  - intros Hx. exists x. by rewrite pt_inst_pvar.
+Qed.
+
+Lemma typed_hyps_wk W Ψ F e T : strict W → typed W ∅ [] ∅ [] F e T → typed W ∅ Ψ ∅ [] F e T.
+Proof.
+  intros HW H. pose proof (typed_pinst W _ _ _ _ _ _ _ HW H pvar Ψ) as H'.
+  rewrite fhyps_pinst_empty, tenv_pinst_empty, sf_pinst_pvar, pinst_ty_pvar in H'.
+  apply H'. intros C xs Hm. by apply elem_of_nil in Hm.
+Qed.
+
+(** ** Creation constraints with outer points
+
+    A creation constraint whose facts enter the fresh channel from an
+    outer point (u ≺ p), leave it to an outer point (q ≺ v), or order
+    two points of the channel along an order R. It is acyclic and
+    conservative when R contains program order and every entering fact
+    u ≺ p and leaving fact q ≺ v with p at or below q in R give u ≺ v in
+    the context. *)
+Lemma cc_ok_out peq plt C (R : point → point → Prop) :
+  (∀ x y z, R x y → R y z → R x z) → (∀ x, ¬ R x x) →
+  (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 x)) →
+  (∀ a b, ¬ bcs_open 1 C (FEq a b)) →
+  (∀ a b, bcs_open 1 C (FLt a b) →
+     (pt_root a = NVar 0 ∧ pt_root b = NVar 0 ∧ R a b) ∨
+     (pt_root a ≠ NVar 0 ∧ pt_root b = NVar 0) ∨ (pt_root a = NVar 0 ∧ pt_root b ≠ NVar 0)) →
+  (∀ u p q v, bcs_open 1 C (FLt u p) → bcs_open 1 C (FLt q v) →
+     pt_root u ≠ NVar 0 → pt_root p = NVar 0 → pt_root q = NVar 0 → pt_root v ≠ NVar 0 →
+     (p = q ∨ R p q) → glt (cc_up peq) (cc_up plt) u v) →
+  cc_ok peq plt C.
+Proof.
+  intros Ht Hi Hp He Hc HB.
+  apply (cc_model peq plt C id R
+           (λ u p, bcs_open 1 C (FLt u p) ∧ pt_root u ≠ NVar 0 ∧ pt_root p = NVar 0)
+           (λ q v, bcs_open 1 C (FLt q v) ∧ pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0)).
+  - done.
+  - done.
+  - done.
+  - intros x y i E. unfold id in *. by subst.
+  - exact Ht.
+  - exact Hp.
+  - exact Hi.
+  - intros u p q v (H1 & Hu & Hp') (H2 & Hq & Hv) Hpq. by apply (HB u p q v).
+  - intros a b H. by destruct (He a b H).
+  - intros a b H. unfold id. destruct (Hc a b H) as [(Ha & Hb & Hr)|[(Ha & Hb)|(Ha & Hb)]].
+    + right; right; right. split_and!; [done|done|by left].
+    + right; left. split_and!; [done|done|]. exists a, b. split; [done|split; [left; apply geq_refl|by left]].
+    + right; right; left. split_and!; [done|done|]. exists a, b. split; [done|split; [by left|left; apply geq_refl]].
+Qed.
+
+(** A fact of the context, seen under the binder of the fresh point. *)
+Lemma glt_up peq plt x y :
+  plt x y → glt (cc_up peq) (cc_up plt) (pt_inst (λ a, pvar (a + 1)) x) (pt_inst (λ a, pvar (a + 1)) y).
+Proof. intros H. apply glt_base. by exists x, y. Qed.
+
+(** Program order along offsets. *)
+Lemma glt_ofs E L p j k : j < k → glt E L (Pt p j) (Pt p k).
+Proof.
+  intros Hjk. induction Hjk as [|k _ IH].
+  - pose proof (glt_po E L (Pt p j)) as H. unfold pt_shift in H. simpl in H.
+    by rewrite Nat.add_1_r in H.
+  - eapply glt_trans; [exact IH|]. pose proof (glt_po E L (Pt p k)) as H.
+    unfold pt_shift in H. simpl in H. by rewrite Nat.add_1_r in H.
+Qed.
+
+(** A walk that is not empty climbs in the size of the point. *)
+Lemma pwalk_size x w : pt_size (pwalk x w) = pt_size x + length w.
+Proof.
+  revert x. induction w as [|[i|] w IH]; intros x; simpl; [lia| |];
+    rewrite IH; unfold pt_size, pt_slot, pt_shift; simpl; lia.
+Qed.
+
+(** The order of a channel along its walks. y is above x when a walk
+    that is not empty leads from x to y. *)
+Definition wlt (x y : point) : Prop := pt_root x = NVar 0 ∧ ∃ v, v ≠ [] ∧ y = pwalk x v.
+
+Lemma wlt_trans x y z : wlt x y → wlt y z → wlt x z.
+Proof.
+  intros [Hx (u & Hu & ->)] [_ (v & Hv & ->)]. split; [done|].
+  exists (u ++ v). split; [by destruct u|by rewrite pwalk_app].
+Qed.
+
+Lemma wlt_irrefl x : ¬ wlt x x.
+Proof.
+  intros [_ (v & Hv & E)]. apply (f_equal pt_size) in E. rewrite pwalk_size in E.
+  destruct v; [done|simpl in E; lia].
+Qed.
+
+Lemma wlt_po x : pt_root x = NVar 0 → wlt x (pt_shift 1 x).
+Proof. intros Hx. split; [done|]. by exists [None]. Qed.
+
+Lemma pt_slot_root x i : pt_root (pt_slot x i) = pt_root x.
+Proof. done. Qed.
+
+Lemma pwalk_snoc x w s : pwalk x (w ++ [s]) = wstep (pwalk x w) s.
+Proof. by rewrite pwalk_app. Qed.
+
+Lemma wlt_walk x w v : pt_root x = NVar 0 → v ≠ [] → wlt (pwalk x w) (pwalk x (w ++ v)).
+Proof. intros Hx Hv. split; [by rewrite pwalk_root|]. exists v. split; [done|by rewrite pwalk_app]. Qed.
+
+(** A chain of steps that each hold climbs along a walk. *)
+Lemma walk_chain (L : point → point → Prop) x :
+  (∀ y z w, L y z → L z w → L y w) →
+  (∀ u s, L (pwalk x u) (wstep (pwalk x u) s)) →
+  ∀ v u, v ≠ [] → L (pwalk x u) (pwalk x (u ++ v)).
+Proof.
+  intros Ht Hs v. induction v as [|s v IH]; intros u Hv; [done|].
+  destruct v as [|s' v].
+  - rewrite pwalk_snoc. apply Hs.
+  - replace (u ++ s :: s' :: v) with ((u ++ [s]) ++ s' :: v) by (by rewrite <-app_assoc).
+    eapply Ht; [|apply IH; done]. rewrite pwalk_snoc. apply Hs.
+Qed.
+
+(** The order of a channel along its offsets. *)
+Definition olt (x y : point) : Prop := pt_name x = pt_name y ∧ pt_off x < pt_off y.
+
+Lemma olt_trans x y z : olt x y → olt y z → olt x z.
+Proof. intros [??] [??]. split; [congruence|lia]. Qed.
+
+Lemma olt_irrefl x : ¬ olt x x.
+Proof. intros [_ ?]. lia. Qed.
+
+Lemma olt_po x : olt x (pt_shift 1 x).
+Proof. split; [done|simpl; lia]. Qed.
+
+(** ** A ceiling and the lockstep pair
+
+    The whole programs start under one top-level point variable z = 0
+    with no fact. No channel occupies z, and the recursions use it as
+    their ceiling. *)
+Definition top_C0 : bcs := BCs [] (λ _, False).
+
+Lemma top_acyclic : c0_acyclic 1 top_C0.
+Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []]. Qed.
+
+(** The first channel a of a lockstep pair, created under z = 1 with
+    a+k ≺ z for every k. *)
+Definition lsa_P (g : fact) : Prop := ∃ k, g = FLt (pv 0 k) (pv 1 0).
+Definition lsa_C : bcs := BCs [pvar 0] lsa_P.
+
+Lemma lsa_ok peq plt : cc_ok peq plt lsa_C.
+Proof.
+  apply (cc_ok_out _ _ lsa_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
+  - intros a b (f & (k & ->) & _ & E). discriminate E.
+  - intros a b (f & (k & ->) & _ & E). injection E as -> ->. cbn. auto.
+  - intros u p q v (f & (k & ->) & _ & E). injection E as -> ->. cbn. done.
+Qed.
+
+(** The second channel b, created under a = 1 and z = 2 with
+    a+k ≺ b+k ≺ a+k+1 and b+k ≺ z for every k. *)
+Definition lsb_P (g : fact) : Prop :=
+  ∃ k, g = FLt (pv 1 k) (pv 0 k) ∨ g = FLt (pv 0 k) (pv 1 (S k)) ∨ g = FLt (pv 0 k) (pv 2 0).
+Definition lsb_C : bcs := BCs [pvar 0; pvar 1] lsb_P.
+
+Lemma lsb_ok W Ψ : (BCs [pvar 1] lsa_P, [pvar 0]) ∈ Ψ → cc_ok (seqs W Ψ) (slt W Ψ) lsb_C.
+Proof.
+  intros Hg.
+  apply (cc_ok_out _ _ lsb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
+  - intros a b (f & (k & [-> | [-> | ->]]) & _ & E); discriminate E.
+  - intros a b (f & (k & [-> | [-> | ->]]) & _ & E); injection E as -> ->; cbn; auto.
+  - intros u p q v (f & (k & [-> | [-> | ->]]) & _ & E) (f' & (j & [-> | [-> | ->]]) & _ & E') Hu Hp Hq Hv Hpq;
+      injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done.
+    + apply glt_ofs. destruct Hpq as [[= ->]|[_ Hpq]]; cbn in *; lia.
+    + apply (glt_up _ _ (pv 0 k) (pv 1 0)).
+      eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pv 0 k) (pv 1 0))); [done|by exists k|fsc|reflexivity].
+Qed.

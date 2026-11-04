@@ -12,12 +12,16 @@
              let (w1, r1) = new ∗ in let (w2, r2) = new ∗ in
              spawn (λu. (force cl) ⟨w1, r2⟩); (force ncl) ⟨w2, r1⟩
 
-    Channel 1 is a and channel 2 is b of the lockstep world. Mordido and
-    Pérez fix the priority sequences [1, 3, 5, …] and [2, 4, 6, …] at
-    new. Here the world holds the same interleaving as facts, and the
-    instants of each channel count its actions. The protocol is
-    regular. The example shows that the cyclic two-thread network with
-    one stream in each direction types. Unit () becomes ∗. *)
+    The program starts under one top-level point z with no fact, the
+    ceiling of both recursions, which no channel occupies. Channel 1 is
+    a and channel 2 is b. a is created with a+k ≺ z for every k, and b
+    with a+k ≺ b+k ≺ a+k+1 and b+k ≺ z ([lsa_C], [lsb_C] of
+    CfstTools.v). Mordido and Pérez fix the priority sequences
+    [1, 3, 5, …] and [2, 4, 6, …] at new. Here the creation constraints
+    state the same interleaving as facts, and the instants of each
+    channel count its actions. The protocol is regular. The example
+    shows that the cyclic two-thread network with one stream in each
+    direction types. Unit () becomes ∗. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.cfst.CfstTools.
@@ -44,7 +48,7 @@ Definition newclient : expr :=
     (App (App EForce (Var 5)) (Pair (App ESend (Pair EUnit (Var 3))) (Var 0))))))).
 
 Definition st_main : expr :=
-  LetP (Pair client newclient) (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  LetP (Pair client newclient) (let_new_pair (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 1))))))
       (App (App EForce (Var 4)) (Pair (Var 1) (Var 2)))))).
 
@@ -146,51 +150,55 @@ Proof.
     exists (pv 2 0). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma st_typed W : world_wf W →
-  pt_known W (pc 0 0) → pt_known W (pc 1 0) → pt_known W (pc 2 0) →
-  (∀ k, w_lt W (pc 0 k) (pc 1 k)) → (∀ k, w_lt W (pc 1 k) (pc 0 (S k))) →
-  (∀ k, w_lt W (pc 0 k) (pc 2 0)) → (∀ k, w_lt W (pc 1 k) (pc 2 0)) →
-  typed W ∅ [] ∅ [] (∅, None) st_main TUnit.
+(** After both [new]s b is 0, a is 1 and the ceiling z is 2. *)
+Lemma st_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) st_main TUnit.
 Proof.
-  intros HW Ha Hb Hz Hab Hba Haz Hbz. unfold st_main.
-  assert (bcs_hold (seqs W []) (slt W []) st_C [pc 0 0; pc 1 0; pc 2 0]) as HC.
-  { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn; apply sl_w;
-      first [apply Hab|apply Hba|apply Haz|apply Hbz]. }
-  assert (Forall (skn W []) [pc 0 0; pc 1 0; pc 2 0]) as HK.
-  { constructor; [by left|constructor; [by left|constructor; [by left|constructor]]]. }
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main.
   tstep.
-  { tstep; [apply newclient_typed, HW|apply client_typed, HW]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sb (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sb (pc 1 0) (or_introl Hb))|done|apply ubs_none]. }
+  { tstep; apply typed_hyps_wk; [exact HWs|apply newclient_typed, HW|exact HWs|apply client_typed, HW]. }
+  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sb lsa_C); [apply lsa_ok|..].
+  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  fresh_clean.
+  apply (t_new_open W _ _ ∅ _ _ _ _ Sb lsb_C); [apply lsb_ok; by right; left|..].
+  { constructor; [eapply skn_inst; [by right; left|by left|done]|].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  fresh_clean.
+  set (Ψ := [(top_C0, [pvar 2]); (BCs [pvar 2] lsa_P, [pvar 1]); (BCs [pvar 1; pvar 2] lsb_P, [pvar 0])]).
+  assert (∀ k, slt W Ψ (pv 1 k) (pv 0 k) ∧ slt W Ψ (pv 0 k) (pv 1 (S k)) ∧
+               slt W Ψ (pv 1 k) (pv 2 0) ∧ slt W Ψ (pv 0 k) (pv 2 0)) as Hf.
+  { intros k. split_and!.
+    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pv 1 k) (pv 0 k)));
+        [by right; right; left|exists k; by left|fsc|reflexivity].
+    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pv 0 k) (pv 1 (S k))));
+        [by right; right; left|exists k; by right; left|fsc|reflexivity].
+    - eapply (sl_hyp W Ψ [pvar 2] lsa_P [pvar 1] (FLt (pv 0 k) (pv 1 0)));
+        [by right; left|by exists k|fsc|reflexivity].
+    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pv 0 k) (pv 2 0)));
+        [by right; right; left|exists k; by right; right|fsc|reflexivity]. }
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pv 1 0; pv 0 0; pv 2 0]) as HC.
+  { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn; apply Hf. }
+  assert (Forall (skn W Ψ) [pv 1 0; pv 0 0; pv 2 0]) as HK.
+  { constructor; [eapply skn_inst; [by right; left|by left|done]|].
+    constructor; [eapply skn_inst; [by right; right; left|by left|done]|].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 2 0)) (Some (pc 0 0)) 0); [set_solver| |].
-    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply sl_w, (Hab 0)]. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 0)) (Some (pv 1 0)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply (Hf 0)]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None cl_body [pc 0 0; pc 1 0; pc 2 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None cl_body [pv 1 0; pv 0 0; pv 2 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 2 0). split; [done|]. apply sle_refl, HW. }
+      exists (pv 2 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None ncl_body [pc 0 0; pc 1 0; pc 2 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None ncl_body [pv 1 0; pv 0 0; pv 2 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Lemma st_deadlock_free : deadlock_free (∅, {[+ st_main +]}).
-Proof.
-  apply (soundness Wtree _ TUnit Wtree_strict).
-  apply ptyped_closed; [constructor|]. apply st_typed; [apply Wtree_strict| | | | | | |].
-  - unfold pt_known, Wtree. simpl. set_solver.
-  - unfold pt_known, Wtree. simpl. set_solver.
-  - unfold pt_known, Wtree. simpl. set_solver.
-  - intros k. apply glt_base. exists k. by left.
-  - intros k. apply glt_base. exists k. by right; left.
-  - intros k. apply glt_base. exists k. by right; right; left.
-  - intros k. apply glt_base. exists k. by right; right; right.
-Qed.
+Theorem st_deadlock_free : deadlock_free (∅, {[+ st_main +]}).
+Proof. apply (soundness_source 1 top_C0 _ TUnit top_acyclic); [constructor|apply st_typed]. Qed.
