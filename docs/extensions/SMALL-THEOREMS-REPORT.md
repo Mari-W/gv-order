@@ -99,8 +99,13 @@ outside the message, derived or primitive.
 
 ## Build
 
-A clean `make -j4` of the branch in a fresh checkout is running. This section is
-filled in when it ends.
+Green. A clean `make -j4` of a fresh `git archive` of commit adb9ed7 (Rocq 9.2.0,
+stdpp 1.13.0, OCaml 5.2.1) built all 118 files and ended with exit status 0.
+The only Rocq file changed after adb9ed7 is ExPayload.v, and an incremental
+`make -j4` on top of that build recompiled it with exit status 0. A second
+`make` reported nothing to do. One `Print Assumptions` file over the 22 main
+theorems of this report, compiled against that build, printed "Closed under the
+global context" 22 times.
 
 ## Not done
 
