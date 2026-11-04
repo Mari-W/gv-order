@@ -14,7 +14,7 @@ All edits sit inside proof bodies, except one new tactic `mtrim` in ConnectSteps
 |---|---|---:|---:|---|
 | lang/Syntax.v | `fchans_subst` | 23.8 | 2.6 | per-constructor goal selectors replace `try (...; set_solver); try set_solver`, whose failing branches cost 20 s |
 | invariance/PointRenaming.v | `heads_sw`, `roots_sw_mut` | 24.0 | 2.2 | per-constructor goal selectors replace failing `try set_solver` passes |
-| composition/ConnectSteps.v | `cross_msg` | 111.5 | 62.3 | new tactic `mtrim` clears hypotheses that `mpoint` never uses before the three `mpoint` calls, so `rewrite ... in *` runs over 30 hypotheses instead of 90 |
+| composition/ConnectSteps.v | `cross_msg` | 111.5 | 62.3 | new tactic `mtrim` clears hypotheses that `mpoint` never uses before the three `mpoint` calls, so its `rewrite ... in *` skips the large relational hypotheses |
 | composition/PConnect.v | `conn_level` | 58.7 | 2.9 | `clear -HΣs` before each `multiset_solver`, which otherwise processes the whole context |
 
 ## Per file, before and after
