@@ -32,6 +32,7 @@
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
+From LRGV Require Export static.SourceRules.
 
 Set Default Proof Using "All".
 

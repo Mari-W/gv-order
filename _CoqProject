@@ -38,6 +38,7 @@ theories/static/FactTheory.v
 theories/static/PointSubst.v
 theories/static/Typing.v
 theories/static/Source.v
+theories/static/SourceRules.v
 theories/static/Fundamental.v
 theories/examples/ExampleTools.v
 theories/examples/Sync.v
@@ -130,4 +131,5 @@ theories/mp/MP3Examples.v
 theories/mp/MP3Simulation.v
 theories/algorithmic/Algorithmic.v
 theories/algorithmic/Soundness.v
+theories/algorithmic/Solver.v
 theories/algorithmic/Examples.v

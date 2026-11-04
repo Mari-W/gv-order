@@ -24,6 +24,7 @@
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ChoiceEnc.
+From LRGV Require Import static.SourceRules.
 
 Set Default Proof Using "All".
 
@@ -166,13 +167,16 @@ Lemma sd_of Φ Ψ Δ F e T :
   styped Φ Ψ Δ F e T → plain Δ →
   ∃ T0, styped_sd Φ Ψ Δ F e T0 ∧ (hsteq Ψ T0 T ∨ is_ex T).
 Proof.
-  induction 1; intros Hp;
-    try (eexists; split; [econstructor; eassumption|left; apply hsteq_refl]).
-  - (* E-Weak *) rewrite (wk_plain _ _ H Hp) in IHstyped. by apply IHstyped.
+  intros Hd. apply styped_sderiv in Hd. induction Hd; intros Hp;
+    try (eexists; split;
+         [econstructor;
+          first [eassumption|apply sderiv_styped; eassumption
+                |intros; apply sderiv_styped; auto]|left; apply hsteq_refl]).
+  - (* E-Weak *) rewrite (wk_plain _ _ H Hp) in IHHd. by apply IHHd.
   - (* E-Contract *) exfalso. destruct (Hp 0 U eq_refl) as [Hn _]. by apply Hn.
-  - (* E-Conv *) destruct (IHstyped Hp) as (T0 & Hsd & HT0). exists T0. split; [done|].
+  - (* E-Conv *) destruct (IHHd Hp) as (T0 & Hsd & HT0). exists T0. split; [done|].
     destruct HT0 as [Hq|Hx]; [left; by eapply hsteq_trans|right; by eapply hsteq_ex].
-  - (* E-Pack *) destruct (IHstyped Hp) as (T0 & Hsd & _). exists T0. split; [done|right; exact I].
+  - (* E-Pack *) destruct (IHHd Hp) as (T0 & Hsd & _). exists T0. split; [done|right; exact I].
   - (* E-Open *) exfalso. destruct (Hp i _ H) as [_ Hn]. by apply Hn.
 Qed.
 

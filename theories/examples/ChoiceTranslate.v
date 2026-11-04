@@ -42,6 +42,7 @@
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ChoiceEnc.
+From LRGV Require Import static.SourceRules.
 
 Set Default Proof Using "All".
 
