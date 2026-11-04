@@ -1374,6 +1374,23 @@ are tools and not programs, `ptyped_closed` and `tv_case` and `ordered_force`.
 No typing rule was added and no other statement changed.
 docs/extensions/literature-examples.md.
 
+**137. Session choice is a derived form (Claude, 2026-11-04, branch choice-encoding).**
+A selection sends inj_i of a fresh continuation channel, and the payload type
+∃ι₀ ι₁. S₁@ι₀ ⊕ S₂@ι₁ puts arm i at x[i] for a carrier at x. The two branches
+of a choice then get two points, which is what the branch roots x◁i of entry
+76 on cfst add as a name. examples/ChoiceEnc.v derives sel_i and branch as
+typing lemmas (`sel1_typed`, `sel2_typed`, `branch_typed`) and types T1 ∥ T2 ∥
+T3 of mordido-perez.md §9.5 (on cfst) under {a+1 ≺ a[1], a[1] ≺ δ, δ ≺ a[0], δ ≺ a[1]+1}
+(`choice_typed`, `choice_deadlock_free`). Branch A asks δ ≺ a[0] and branch B
+asks a[1] ≺ δ. With both arms at a[0] the two facts are δ ≺ a[0] ≺ δ, and
+`same_slot_not_acyclic` shows that no acyclic top-level constraint states them.
+A recursive server &{Next: !∗.X, Stop: Close} types through a box with the
+infinite constraint {p_n + 1 ≺ p_n[0], p_n + 1 ≺ p_n[1] ∣ n ∈ ℕ}
+(`loop_deadlock_free`). The encoding saves the name x◁i and its two world laws.
+It costs one `new` and one close per selection, a channel per choice at run
+time, and the facts x+1 ≺ x[i] that the close of the carrier asks. No rule,
+constant or definition of the core changed (docs/extensions/choice-encoding.md).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

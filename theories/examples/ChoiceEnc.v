@@ -369,6 +369,17 @@ Lemma same_slot_cycle W Ψ (k δ : point) :
   (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ δ k ∧ slt W Ψ k δ).
 Proof. intros Hacy [H1 H2]. apply (Hacy δ). by eapply sl_trans. Qed.
 
+(** No top-level constraint that [soundness_source] accepts states the
+    two facts of the shared point: a top-level C with δ ≺ a.0 and
+    a.0 ≺ δ fails [c0_acyclic]. *)
+Lemma same_slot_not_acyclic P :
+  P (FLt (pd 0) (pa0 0)) → P (FLt (pa0 0) (pd 0)) → ¬ c0_acyclic 2 (BCs [] P).
+Proof.
+  intros H1 H2 [_ Hacy]. apply (Hacy (pd 0)).
+  apply (glt_trans _ _ _ (pa0 0)); apply glt_base; unfold c0_lt;
+    apply bcs_open_nil; split; [done| |done|]; cbn; lia.
+Qed.
+
 (** With separate slots the same two facts are δ ≺ a.0 and a.1 ≺ δ,
     and the top-level constraint [Cch] holds both without a cycle
     ([ch_rank_ok]). *)
