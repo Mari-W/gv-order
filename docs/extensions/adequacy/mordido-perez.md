@@ -1219,6 +1219,7 @@ Theorem lp_deadlock_free : deadlock_free (∅, {[+ lp_go +]}).
 Lemma fa_typed W Ψ F : world_wf W → typed W ∅ Ψ ∅ [None; Some tsum_ty] F fa fa_ty.
 Lemma fa_go_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) fa_go TUnit.   (examples/cfst/FirstAction.v)
 Theorem fa_deadlock_free : deadlock_free (∅, {[+ fa_go +]}).
+Theorem fac_deadlock_free : deadlock_free (∅, {[+ fac_go +]}).
 ```
 
 lp. loop is a box over κ, ζ and one session variable a with the
@@ -1242,7 +1243,9 @@ payload point α[0] and runs the tree client of TreeSum.v from α+1. Each
 end of d is closed in a thread of its own. Their rules pass c and d as two
 curried arguments and check 5 < 12 at the call (p. 39). The core checks
 the send once, in the body of fa against its constraint. The curried form
-is not mechanized.
+fac types too (`fac_typed`, `fac_go_typed`, `fac_deadlock_free`). Applied
+to c, fac returns a closure with the lower point κ, and only the second
+application carries the upper point ζ.
 
 So fa_main is no gap of the core, and lp_main needed one lemma about
 session substitution and no change of a rule.
