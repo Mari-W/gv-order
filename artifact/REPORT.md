@@ -24,7 +24,7 @@ What was tested
 | `docker run` of the image | shell in the built tree, Rocq 9.2 |
 | `actionlint` 1.7.7 on the workflow | no findings |
 | GitHub Actions run 9, no cache | passed, 34 min |
-| GitHub Actions run 10, cached switch | CI_RESULT |
+| GitHub Actions run 10, cached switch | passed, 20.5 min (switch restored in 5 s) |
 
 Two deviations from the plain setup in this sandbox. Docker Hub
 rate limited the pull of `ubuntu:24.04`, so the Docker test used the same

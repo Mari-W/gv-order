@@ -34,7 +34,7 @@ Hardware and time, measured on 4 cores of an Intel Xeon at 2.10 GHz with
 | `make check` after the build | 7.5 min | 1.9 GB |
 | `docker build .` from scratch (all of the above) | 33 min (10.5 min opam, 21.5 min `make` and `make check`) | |
 | GitHub Actions, `ubuntu-24.04` runner, no cache | 34 min (17.5 min opam switch, 10 min `make`, 6 min `make check`) | |
-| GitHub Actions with the cached opam switch | CI_CACHED | |
+| GitHub Actions with the cached opam switch | 20.5 min (5 s cache restore, 12.5 min `make`, 7.5 min `make check`) | |
 
 Peak memory per process is the largest resident set of one `rocq`
 process. With `-jN` up to N processes run at once, and the whole machine
