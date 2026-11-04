@@ -101,13 +101,13 @@ u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥:
 S    ::= ?P.S | !P.S | Close | μX.S | X                                 session types, unannotated
 P    ::= ∃ιs. T           payload, all points of T bound                sugar: !(S₁ ⊗ S₂).S binds them implicitly
 x, ι ::= (p, b)           a point, the instant b of the root p: p after b actions
-p    ::= a | ι-variable | x.i        root: point constant, bound point variable, carried root
-x.i                       carried root, i ≥ 1: the i-th channel carried by the message of the action
-                          that leaves x. As a point, x.i also stands for (x.i, 0).
+p    ::= a | ι-variable | x[i]        root: point constant, bound point variable, carried point
+x[i]                       i ≥ 1: the point of the i-th channel carried by the message of the action
+                          that leaves x. As a point, x[i] also stands for (x[i], 0).
 x + n ≔ (p, b + n)  for x = (p, b)
-         (c,k).1 reads "the first channel carried by c's message at its action k", and
-         (c,k).1 + 2 is that channel after two of its own actions.
-         Why carried roots exist (sharp edges 5): a receiver plans the order of a channel it has
+         (c,k)[1] reads "the first channel carried by c's message at its action k", and
+         (c,k)[1] + 2 is that channel after two of its own actions.
+         Why x[i] exists (sharp edges 5): a receiver plans the order of a channel it has
          not received yet, without knowing which channel the sender picks. It names the arriving
          channel by its position in the message. The sender must put the channel it sends at
          that point, by aliasing its point there or by creating it there with new. The world
@@ -132,11 +132,11 @@ heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 ## 5  Worlds
 
 ```
-carrier     instants (p, b),  p a point constant or a carried root of one. No channel names.
+carrier     instants (p, b),  p a point constant or a point x[i] carried by one. No channel names.
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
 successor congruence   x ≡ y  ⇒  x+1 ≡ y+1     (aliased instants stay aliased)
-carried congruence     x ≡ y  ⇒  x.i ≡ y.i      (equal instants carry the same message)
+carried congruence     x ≡ y  ⇒  x[i] ≡ y[i]      (equal instants carry the same message)
 x ≼ y       x ≺ y or x ≡ y
 F ≺ F′      every element of F is ≺ every element of F′       (frames, ⊥ and ⊤ as expected)
 
@@ -213,11 +213,11 @@ V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C[xs/ιs] hol
           (≈_W relates two constraints when each fact of one has a fact of the other with
            points up to ≡_W)
 
-payload at x           P[x] ≔ T[x.1, …, x.m / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.
+payload at x           P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.
                        A plain substitution, no quantifier on either side. The sender's channels
                        satisfy it up to ≡ (V-Chan), so the sender must have put them at the carried points.
 names                  one sort, points. Worlds and environments use ground points (constants and their
-                       carried roots). Static types also use bound point variables.
+                       carried points x[i]). Static types also use bound point variables.
 
 E-Zero    t ∈ E^W_0⟦Θ ⊢ T ≺ F⟧
 E-Stop    v ∈ V^W_{n+1}⟦Θ ⊢ T⟧   ⇒   v ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
@@ -524,8 +524,8 @@ Soundness       · ⊢_W p : T,  W strict   ⇒   p deadlock free
 Rocq state. Rocq implements sharp edges 65 (sharp edges 66, 297c45f, d3dfbe4). A constraint
 is a closure BCs env P, a predicate P on facts over variables closed by its outer points env,
 and substitution acts on env. Its roots are the finitely many roots of env. The static ≡ is
-seqs W Ψ, and fl_map transfers it together with the static ≺. Rocq writes carried roots as
-slots p[b][i] with positions from 0, so the spec's x.i is the slot i−1. The paragraphs below
+seqs W Ψ, and fl_map transfers it together with the static ≺. Rocq writes the point x[i] as
+pt_slot x (i−1), with positions from 0, so the spec's x[i] is Rocq's x[i−1]. The paragraphs below
 describe the earlier refactors. Where they mention steps and words, sharp edges 66 replaces
 them by bcs_open and bcs_hold_sub.
 
@@ -560,8 +560,8 @@ the global context.
 E-Conv up to ≈_Γ (67): t_conv asks steq W Ψ T T′, and teq_steq gives the old premise.
 steq_teqW maps it to ≈_{W₁} under an instance, sr_conv takes ≈_W, and sem_typed_tconv is
 rel_tconv in every later world. The forwarder types (fw_deadlock_free). Its world relates
-slots by ≡, so its strictness uses wgen_strict_cong, whose name map respects slots without
-commuting with them. The eleven deadlock_free examples and the four theorems stay closed.
+carried points by ≡, so its strictness uses wgen_strict_cong, whose name map respects x ↦ x[i]
+without commuting with it. The eleven deadlock_free examples and the four theorems stay closed.
 Non-blocking link (68): Readiness.v adds link_t and link_p and the link disjuncts of §6.
 konst_ty types link as TLolli None None, and Erel_app_link is ready by its link redex.
 ReadyChain.v proves the old chain argument as ready_connect_core for components without a
@@ -586,9 +586,9 @@ factory         typable                        new at ι under □∀ι, two ses
 leader election semantic                       breaks linearity, unchanged
 scheduler       typable                        (r₁,0) ≡ (r₀,0) from the link,  reversed ag₀ rejected
 request/reply   typable, recursive             C = {ι+k ≺ ι′+k, ι′+k ≺ ι+k+1 ∣ k ∈ ℕ}, call at (ι+1, ι′+1)
-relay           typable, recursive             C over ι+k and (ι+k).1, call at (ι+1, ι.1+1),
+relay           typable, recursive             C over ι+k and (ι+k)[1], call at (ι+1, ι[1]+1),
                                                producer creates its payload at the carried point
-delegation      typable                        receiver: (c,k).1 ≺ (c,k+1),  sender aliases d to (c,k).1
+delegation      typable                        receiver: (c,k)[1] ≺ (c,k+1),  sender aliases d to (c,k)[1]
 bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0)
 ```
 
@@ -600,17 +600,17 @@ tail call       typable, no spawn              □(∀ι ζ. {ι+k ≺ ζ ∣ k 
                                                the tail call at (ι+1, ζ) asks ζ ≺ μ, a frame hypothesis,
                                                the world has (a,k) ≺ (z,0) for every k (tc_deadlock_free)
 forwarder       typable, recursion by spawn    receives d on one channel and sends it on another inside a box,
-                                               C ∋ (ι+k).1 ≡ (ι′+k).1, E-Conv moves d from D@ι.1 to D@ι′.1
+                                               C ∋ (ι+k)[1] ≡ (ι′+k)[1], E-Conv moves d from D@ι[1] to D@ι′[1]
                                                (sharp edges 67, fw_deadlock_free)
-received chain  typable, recursion by spawn    call at ι.1, C = {ι.1ⁿ + 1 ≺ ι.1ⁿ⁺¹ ∣ n ∈ ℕ},
-                                               ι.1ⁿ = ι.1.….1 (n times), upper point ι+1 (ch_deadlock_free)
+received chain  typable, recursion by spawn    call at ι[1], C = {ι[1]ⁿ + 1 ≺ ι[1]ⁿ⁺¹ ∣ n ∈ ℕ},
+                                               ι[1]ⁿ = ι[1]…[1] (n times), upper point ι+1 (ch_deadlock_free)
 ```
 
-The forwarder failed at send before sharp edges 67. recv gives d the type D@ι.1 and send at ι′
-asks D@ι′.1. E-Conv compared points by equality then, so the fact ι.1 ≡ ι′.1 of C was never read.
+The forwarder failed at send before sharp edges 67. recv gives d the type D@ι[1] and send at ι′
+asks D@ι′[1]. E-Conv compared points by equality then, so the fact ι[1] ≡ ι′[1] of C was never read.
 E-Conv up to ≈_Γ reads it. In the closed program a producer sends fresh channels on a, the
 forwarder passes them from a to b, and a consumer closes them. The producer and the consumer
-share C = {ι+k ≺ (ι+k).1, (ι+k).1 ≺ ι+k+1 ∣ k ∈ ℕ}, and the world has (a,k).1 ≡ (b,k).1 for
+share C = {ι+k ≺ (ι+k)[1], (ι+k)[1] ≺ ι+k+1 ∣ k ∈ ℕ}, and the world has (a,k)[1] ≡ (b,k)[1] for
 every k.
 
 ## 14  Open
@@ -641,7 +641,7 @@ Decidability comes later, for an algorithmic system over a fragment of the const
 Decidability. A candidate fragment is the counter language of docs/extensions/algorithmic.md (section on decidability): facts
 ∀κ̄. x ≺ y whose coordinates are constants or κ + n, with each counter at most once per side.
 That document decides strictness of the generated world under further side conditions and
-shows undecidability without them. It writes forced invariants as C = ⋃ₖ C₀[σᵏ(ιs)] and carried roots as x.i.
+shows undecidability without them. It writes forced invariants as C = ⋃ₖ C₀[σᵏ(ιs)] and carried points as x[i].
 
 An algorithmic type system. The static system of §9 is declarative. Missing for an algorithm:
 - choosing facts: rules emit facts instead of checking them

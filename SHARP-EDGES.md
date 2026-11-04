@@ -35,13 +35,13 @@ Decision: deferred by the author (§14).
 **5. A receiver must plan before the channel has a name.**
 After receiving d, ready needs facts about d, but the receiver's world is fixed
 before d exists.
-Decision: slots c[k][i] name "what c carries at its k-th action". The sender
-aliases the payload to the slot, the receiver states facts about the slot, and
+Decision: points (c,k)[i] name "what c carries at its k-th action". The sender
+aliases the payload to that point, the receiver states facts about it, and
 P-Connect checks that they agree (§4, §7). An earlier version used swap
 invariance instead of aliases and was unreadable.
 
 **6. Closures hide the channels they capture.**
-A sent closure shows no channels in its type, so they get no slot.
+A sent closure shows no channels in its type, so they get no carried point.
 Decision: arrow types carry an upper and a lower point. A placeholder in a
 payload names a point, not a channel (§4).
 
@@ -120,7 +120,7 @@ points and Entry conversion (§10).
 
 **38. Consequences of points-only worlds (Claude, delegated).**
 Payloads become a plain substitution P[x] = T[x[1..m]/ιs]. The ∃xs at the sender
-and ∀xs at the receiver existed only because slots of channel instants could not
+and ∀xs at the receiver existed only because carried points of channel instants could not
 occur in types. Successor congruence x ≡ y ⇒ x+1 ≡ y+1 becomes a world law,
 because entries now move along their points and Entry conversion must survive an
 action. It replaces the separate alias notation. Arrows are written T ⊸^u_ℓ U
@@ -136,7 +136,7 @@ points of Θ, T, F (Q-Tau: of Σ, T). A prover can always pick a globally fresh
 constant. Rejected: a scoping invariant roots(Θ, T, F) ⊆ names(W) (O2), which
 threads through every statement. Also from this round: V-Const reads the
 signature up to ≡_W, because payloads by substitution fix recv's payload at the
-slots of the session point and Type point conversion must move them (§7).
+points x[i] of the session point x and Type point conversion must move them (§7).
 
 **40. Overlaps of environments at aliased points, not equal ones.**
 Θ₁, Σ₂ (and Θ = Θ₁, Θ₂, the both-ends condition of Θ, recv_ok and the
@@ -348,7 +348,7 @@ of monotonicity either. At O-New the world can alias the new point to μ, so the
 of that world to the old names and a leaves the no-alias class, and V-Const then needs a
 new witness for xs. Options: (A) keep the "every" premises of 53 (status quo, sound,
 closed). (B) prove the no-alias lemma by rebuilding witnesses, mapping μ into unused
-slots of the point new creates. This is a different proof, and its truth is open. (C) change
+carried points x[i] of the point x new creates. This is a different proof, and its truth is open. (C) change
 V-Const, for instance by asking pt_known W of force's xs as 49 does for new. This changes
 the relation and needs the author. Static.v is unchanged.
 
@@ -432,7 +432,7 @@ and the box case meets the body's hypotheses from Ψ[σ] in W₁ and C[xs] in W�
 Without hypotheses slt W [] is ≺_W (slt_nil).
 
 C has ≺ facts only (Claude, delegated). An ≡ hypothesis on point variables would also have
-to enter ≡, with successor and slot congruence and the duality checks of tenv_comp and E-Ch,
+to enter ≡, with successor and carried congruence and the duality checks of tenv_comp and E-Ch,
 and the static ≡ is ≡_W at every one of those places. No example so far needs one. The
 infinitary it_box now carries term_wf of the body, because an unsatisfiable C makes its
 premise vacuous and ityped_term_wf had read term_wf off one instance.
@@ -442,7 +442,7 @@ Example in Static.v: ordered = !(f = λp. let (c, d) = p in let () = close c in 
 □(∀ι ι′. {ι ≺ ι′}.^⊥ Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗) (ordered_typed). close c blocks at ι while the
 body holds d at ι′, which needs the hypothesis. ordered_force forces it at ((a, 0), (a, 1)),
 where program order meets C. The relay of docs/DECIDABILITY.md §8.2 still does not type. Its
-recursive call at (ι+1, ι[1]+1, ζ) asks ι+1 ≺ ι[1]+1, and neither W nor C relates a slot of ι
+recursive call at (ι+1, ι[1]+1, ζ) asks ι+1 ≺ ι[1]+1, and neither W nor C relates a point ι[i]
 to ι. The ceiling also fails, because ι ≺ ζ in C does not give ι+1 ≺ ζ.
 
 **59. new in a box body cannot create a channel at a point variable (Claude, 2026-10-30). Resolved by 61 (option B).**
@@ -451,8 +451,8 @@ so that each request yields a session at a point the caller picks. It does not t
 pt_known W ι of the point of new (49). A well-formed world knows constants only
 (wf_names_const), so it knows no point variable (pvar_unknown in OrdExamples.v). No other rule
 gives a value of type S@ι in a box body. E-Conv compares points by equality (eqT), E-Ch needs
-a channel of Θ and E-Exp types the body with Θ = ∅, and a received payload lives at the slots
-of the receiving point. OrdExamples.v types the factory at one constant point instead
+a channel of Θ and E-Exp types the body with Θ = ∅, and a received payload lives at the points
+x[i] of the receiving point x. OrdExamples.v types the factory at one constant point instead
 (fac_typed, fac_deadlock_free). Its client uses the box twice but holds one session at a
 time, because two sessions at (a, 0) held together ask (a, 0) ≺ (a, 0). Options, none
 mechanized. (A) Keep it, so a factory serves its sessions in sequence. (B) V-Box quantifies
@@ -537,7 +537,7 @@ both lemmas.
 an instance point of a hypothesis. KTNew reads skn in the static system and pt_known in V-Const.
 V-Box quantifies over known instances only, rather than deriving knownness elsewhere (Claude,
 delegated). skn_pinst moves skn to pt_known W₁ in typed_ityped, because the instance points of
-every hypothesis are known there and a point and its slots and shifts share a root. The top level
+every hypothesis are known there and a point x and its points x[i] and shifts share a root. The top level
 has no hypotheses, so a closed program creates channels at known constants as before.
 ordered_force gained the premise that W knows (a, 0).
 
@@ -622,7 +622,7 @@ its instance, which holds whenever the instance of C is contained in C. C is
 the invariant of the recursion and states the facts of every round at once.
 ≡ in C lets a box body delegate a channel it did not create, so the static
 system reads ≡ from Γ as a congruence over W and the hypotheses. Slots are
-renamed carried roots, written x.i with positions from 1, and §4 of the spec
+renamed carried roots, written x[i] with positions from 1, and §4 of the spec
 states why they exist. The infinite sets give three programs the old design
 rejected: a tail call with a ceiling ζ and {ι+k ≺ ζ ∣ k ∈ ℕ}, a forwarder
 inside a box, and recursion on a received channel. None is checked in Rocq
@@ -651,7 +651,7 @@ the same kind with points related by ≈_W, in both directions.
 bcs_hold_conv moves a constraint along it.
 
 The fact theory has a second judgment seqs W Ψ, the least congruence for
-successor and slots that contains ≡ of W and the ≡ facts of the
+successor and x ↦ x[i] that contains ≡ of W and the ≡ facts of the
 hypotheses. fl is closed under it. fl_map maps both judgments along one
 map of the generators and concludes their conjunction. fl_pinst,
 seqs_pinst and slt_pinst are its instances. E-Const reads konst_ty at
@@ -672,7 +672,7 @@ call at (ι+1, ι′+1) is rq_step. rr_call_underivable now states that the
 one-round constraint {ι ≺ ι′, ι′ ≺ ι+1} does not give ι+1 ≺ ι′+1, by a
 rank that meets the hypotheses, program order and ≡, which relates
 points with variable roots by equality only. The relay has
-C = C₀(ι, ι′) ∪ {C₀(ι+k+1, ι+k[0]+1) ∣ k} with slots from 0. Its call at
+C = C₀(ι, ι′) ∪ {C₀(ι+k+1, (ι+k)[0]+1) ∣ k} with positions from 0. Its call at
 (ι+1, ι[0]+1) maps round 0 to round 0 of the family and round k+1 to
 round k+2 (rel_sub). The tail call (tc_deadlock_free) types without spawn
 under {ι+k ≺ ζ ∣ k}. Its world has (a,k) ≺ (z,0) for every k, which no
@@ -695,8 +695,8 @@ missing rule is E-Conv up to ≈ with points compared by Γ ⊢ ≡. Its semanti
 side would be rel_tconv along ≈ of W₁ after seqs_pinst. It is a change of
 the static system and waits for the author.
 
-Slots stay 0-based in Rocq (pt_slot x i, slots x m = x[0], …, x[m−1]). The
-spec's carried root x.i with i ≥ 1 is pt_slot x (i−1).
+Positions stay 0-based in Rocq (pt_slot x i, slots x m = x[0], …, x[m−1]). The
+spec's x[i] with i ≥ 1 is pt_slot x (i−1).
 
 **67. E-Conv up to Γ ⊢ ≡ (decided by the author 2026-10-30, Rocq done).**
 E-Conv now converts T to T′ when they agree up to ≈ and Γ ⊢ ≡ relates
@@ -724,10 +724,10 @@ The recursive call at (ι+1, ι′+1) asks Cf one round later, which Cf
 contains. fw_main runs a producer, the forwarder and a consumer over
 two channels a and b. The producer and the consumer share
 Cp = {ι+k ≺ (ι+k)[0], (ι+k)[0] ≺ ι+k+1 ∣ k}, and the producer creates
-its payload at the slot with new. The world Wfw has (b,k)[0] ≡ (a,k)[0]
-for every k. wgen_strict needs a name map that commutes with slots, and
+its payload at (ι+k)[0] with new. The world Wfw has (b,k)[0] ≡ (a,k)[0]
+for every k. wgen_strict needs a name map that commutes with x ↦ x[i], and
 no such map identifies (b,k)[0] with (a,k)[0] without identifying (b,k)
-with (a,k). wgen_strict_cong asks only that the map respects slots,
+with (a,k). wgen_strict_cong asks only that the map respects x ↦ x[i],
 cn x = cn y ⇒ cn x[i] = cn y[i]. fw_cn reads (b,k)[0] as (a,k)[0] at
 every depth, and the rank orders (a,k), (b,k), (a,k)[0] by 3k, 3k+1,
 3k+2. fw_deadlock_free is closed under the global context.
@@ -830,7 +830,7 @@ global context), and so are parallel Fibonacci and the signal pipe
 (`fibo_deadlock_free`, `pipe_deadlock_free`). The judgment `pn_typed` is Table 2
 with T-App-Poly on our terms and yields the translated term, because the
 translation needs types. A function of level ⊤ becomes a box over one point
-variable, the level anchor, and every level is a slot of the anchor. Shifted
+variable, the level anchor, and every level is a carried point of the anchor. Shifted
 copies of one arrow get one box type, normalized by the arrow's first finite
 level. The box constraint is the infinite set of facts that a denotation and a
 rank give between points of the variable, and a force at the anchor B[RAnc a]
@@ -881,7 +881,7 @@ costs no side condition. The facts enter the body as one more box hypothesis
 (`fresh_bcs L H`, instance [ι]), so the fact theory, knownness and
 substitution need no new clause. C holds ≺ facts between ι itself and known
 points only, because ≡ to an old point is E-Const and no example needs facts
-on ι+k or ι.i. The fundamental case of `typed_sem_rules` instantiates ι with
+on ι+k or ι[i]. The fundamental case of `typed_sem_rules` instantiates ι with
 the constant that O-New picks. docs/extensions/fresh-points.md has the rule
 and the proof.
 
@@ -912,7 +912,7 @@ are. Entry 93 lifts this restriction.
 The list form L ≺ ι ≺ H cannot type a fresh channel that acts several times
 while a later point waits (examples/FreshMany.v needs δ+k ≺ κ for k = 0, 1, 2).
 `t_newfresh` now takes a box constraint C of one variable whose every fact
-relates one point of ι (ι+k, (ι+b).i+k, and deeper carried points) to one outer
+relates one point of ι (ι+k, (ι+b)[i]+k, and deeper carried points) to one outer
 point, in either direction (`fresh_ok`, `fresh_lo`, `fresh_hi`). C may be
 infinite. The list form is the lemma `t_newfresh_lh`, and FreshBetween.v uses
 it unchanged. Two choices. C has no fact between two points of ι, because then
@@ -924,10 +924,10 @@ constant in.
 **94. The exact betweenness for points of the fresh channel (Claude, 2026-11-01).**
 For every fact u ≺ p and q ≺ v of C with q on the name of p at an offset at
 least that of p (`ple p q`), Γ ⊢ u ≺ v. A path through a enters at p, moves only
-along program order of one name, and leaves at q. Carried roots do not connect
-ι to ι.i in order, because a world relates a carried point to its base only
+along program order of one name, and leaves at q. Carried points do not connect
+ι to ι[i] in order, because a world relates a carried point to its base only
 through facts and C has none between points of ι. So "q reachable from p by
-program order or carried roots" in the task reduces to `ple p q`.
+program order or carried points" in the task reduces to `ple p q`.
 `wext_fresh_between_gen` builds the world with a closed form `gblt` of four
 shapes and a sixteen-case transitivity proof. Betweenness closes the four cases
 in which a path leaves a after it entered.
@@ -981,7 +981,7 @@ TailCallFresh.v) need it. A bottom point in the point syntax would remove the
 premise, and that is a decision on the syntax.
 
 2026-11-01, later. The author approved a ⊥ marker that is no point. The lower
-bound of ∃ is ⊤, ⊥ or a point, and ⊥ occurs only in that slot. A frame carries
+bound of ∃ is ⊤, ⊥ or a point, and ⊥ occurs only in that position. A frame carries
 a flag for a held ∃^⊥ in place of a point. new takes ∃^⊥, the premise
 `fresh_lo C u ι` is gone, and E-NewFresh is no rule (103).
 
@@ -998,7 +998,7 @@ let p = new ∗ in let (x, y) = p in t types with a let, E-Open on p and
 E-LetPair. The calculus has no let of one variable, so `let_new` binds p with a
 let pair on ⟨new ∗, ∗⟩ and drops the unit with E-Let*. `t_newfresh_open` and
 `t_newfresh_lh_open` now type `let_new e` with the same premises, the body
-seeing the spent p and unit as two empty slots. The let λp. t applied to new ∗
+seeing the spent p and unit as two empty entries. The let λp. t applied to new ∗
 would not do. E-Abs asks a lower bound below every head of the captured
 environment and restarts the frame of the body, two premises the old lemmas did
 not have. The examples that used the lemmas type copies of their programs with
@@ -1178,13 +1178,13 @@ other than `pn_translate` changed, and no typing rule was added.
 docs/extensions/existentials.md, part 6.
 
 **111. The PGV translation keeps its world (Claude, 2026-11-01).**
-A payload of send and recv names only its own slots and constants, because
+A payload of send and recv names only its own points x[i] and constants, because
 point instantiation does not enter session types (`kscoped`). PGV's payloads
 hold global points, the protocol point of a delegated channel
 (`tr_ty (PSess s) = S@ppt s`) and the bounds `upt n`, `lpt n` of a function.
 Rooted at a top-level variable these are free variables inside a session
 type, and E-Const rejects them. Moving PGV to C₀ needs payloads relative to
-their carrier, with C₀ aliasing each slot to its global point. That changes
+their carrier, with C₀ aliasing each carried point to its global point. That changes
 `tr_sty` and the payload lemmas, a redesign the task did not allow. The work
 stopped there, and `pgv_translate` keeps `typed Wpgv Φ []`.
 
@@ -1301,22 +1301,22 @@ Dardha and Gay's priority assignment (dardha2018new p. 9), two of whose
 priorities coincide for the two ends of one channel. A creation constraint is
 needed only where a program wants facts that program order does not give.
 
-**132. A recursive server places each round at a carried root (Claude, 2026-11-02).**
+**132. A recursive server places each round at a carried point (Claude, 2026-11-02).**
 A server that creates one channel per call needs that channel ordered against
 the channel the call acts on. A creation constraint {κ + k ≺ ι} with the box
 variable ι as an outer point does it, and a hypothesis with outer points has no
 lemma like `sl_hyp0`. The three recursive servers instead place the fresh
-channel at ι.0, the first carried root, by `t_new_at`, and state the order in
+channel at ι[0], the point of the first channel carried at ι, by `t_new_at`, and state the order in
 the box constraint, which names ι alone. For the forwarder and the factorial
-server ι.0 carries no payload, the use of a carried point that TailCall.v's
-ceiling makes. For `stream` the fresh channel is the payload, so ι.0 is where
+server ι[0] carries no payload, the use of a carried point that TailCall.v's
+ceiling makes. For `stream` the fresh channel is the payload, so ι[0] is where
 sender and receiver name it alike. The list form of `t_newfresh_lh_open` would
 not do, because it states κ ≺ ι and not κ+1 ≺ ι, and the server closes the
 fresh channel before it answers.
 
 **133. A constraint that falls along the depth has no rank in ℕ (Claude, 2026-11-02).**
 The two servers order each round strictly below its caller, so the rank of
-ι.0ⁿ falls as n grows, and no function into ℕ does that for every n.
+ι[0]ⁿ falls as n grows, and no function into ℕ does that for every n.
 `cc_ok_inner` asks only for a transitive irreflexive relation containing
 program order, so `dlt` of LitTools.v reads a point lexicographically as its
 depth, reversed, and its offset. `ult` is the same with the depth not reversed,
@@ -1328,14 +1328,14 @@ No example derived a fact by `se_shift` or `se_slot`. Scheduler.v gets its
 successor alias from the world's closure field `wf_eq_shift` and lifts it with
 `se_w`, and Forwarder.v states its carried-root alias fact by fact.
 examples/Congruence.v is the smallest program we found whose derivation uses
-both, a box over ι ≡ ι′ that sends a channel held at ι′.0 on a channel at ι and
+both, a box over ι ≡ ι′ that sends a channel held at ι′[0] on a channel at ι and
 closes it at ι+1 against a channel at ι′+2. Neither rule is forced by any
 program, because a fact a congruence derives can be stated in the constraint
 the alias came from. Conservativity is the one thing that could force a
 congruence, since a creation constraint may not relate two points outside the
 new channel, but that fact then comes from a context which is again a
 constraint or a world. The rules let one alias between base points stand for
-one alias per offset and per carried root, and at every depth that is the
+one alias per offset and per carried point, and at every depth that is the
 difference between a finite constraint and an infinite one.
 
 **135. Three rejections became theorems, the step from the program did not (Claude, 2026-11-02).**
@@ -1417,10 +1417,10 @@ nothing about d. The paper gets this from invariance under channel substitution,
 which fails once names carry order facts. The fix made c and d aliases at an
 internal link.
 
-**20. (C) Worlds lacked slot congruence, and old names could carry stale facts.**
+**20. (C) Worlds lacked carried congruence, and old names could carry stale facts.**
 Worlds lacked x ≡ y ⇒ x[i] ≡ y[i], so renaming along an alias failed, and a
-received name the world already knew inherited stale facts. The fix made slot
-congruence a world law and required received channels to be unknown to W. Slot
+received name the world already knew inherited stale facts. The fix made carried
+congruence a world law and required received channels to be unknown to W. Carried
 congruence survives in the current design.
 
 **21. One Q-Tau instead of special rules.**
@@ -1450,7 +1450,7 @@ renaming. V and E stayed monotone over well-formed worlds.
 **27. (F) Renaming private names must not touch types.**
 P-Connect renamed private names, and renaming touched names that types mention,
 so the renamed process left its interface. Decision F2 kept channel names out of
-types, with points in types as bound variables, point constants and their slots.
+types, with points in types as bound variables, point constants and their carried points.
 The current design keeps this.
 
 **28. P is not monotone in the world, even up to renaming.**
