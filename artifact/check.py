@@ -49,6 +49,16 @@ CORE = [
     'mp3_translate', 'mp3_deadlock_free', 'mp3_deadlock_free_source',
 ]
 
+# \rocq{...} references of the paper that name no declaration, and the
+# declaration they mean (see ARTIFACT.md, section 4.3).  These are checked
+# too, if the target exists.
+PAPER_RENAMED = {
+    'kfw_ok': 'LRGV.examples.KobForwarder.fw_ok',
+    'kfw_sub': 'LRGV.examples.KobForwarder.fw_sub',
+    'kfw_typed': 'LRGV.examples.KobForwarder.fw_typed',
+    'kfw_deadlock_free': 'LRGV.examples.KobForwarder.fw_deadlock_free_kob',
+}
+
 PROOF_KINDS = ('Lemma', 'Theorem', 'Corollary', 'Example')
 
 DECL = re.compile(
@@ -159,8 +169,16 @@ def targets():
     unresolved = []
     for tex, line, name in paper_refs(rr):
         if name not in pdecls:
-            unresolved.append('%s:%d: \\rocq{%s} has no declaration'
-                              % (tex, line, name))
+            fq = PAPER_RENAMED.get(name)
+            mod, _, short = (fq or '..').rpartition('.')
+            rel = os.path.join('theories', *mod.split('.')[1:]) + '.v'
+            if fq and any(r == rel for _, r, _ in by_name.get(short, [])):
+                sel.setdefault(fq, []).append('paper (as %s)' % name)
+                note = ', checked as ' + fq
+            else:
+                note = ''
+            unresolved.append('%s:%d: \\rocq{%s} has no declaration%s'
+                              % (tex, line, name, note))
             continue
         rel, _, dline = pdecls[name]
         kind = 'ctor'
