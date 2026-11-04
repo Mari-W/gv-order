@@ -1056,11 +1056,11 @@ store with its page.
 | drop at Skip | `sd_main`, SkipDrop.v | type it | no, the run keeps a restricted name | needs a decision |
 | second linear parameter (U2) | `copy`, TreeCopy.v | type it | `tree_deadlock_free` | translation artefact |
 | channel after a call, both directions | `si_go`, SegmentInterleave.v | type it | `si_deadlock_free` | translation artefact |
-| µ body with a type variable | `lp_main` below | type it | no restriction, not mechanized | translation artefact |
+| µ body with a type variable | `lp_go`, MuVar.v | type it | `lp_deadlock_free` | translation artefact |
 | unopened segment result | `rt2_main` below | type it | drain's λr. r | translation artefact |
 | channel held across a call, sent after it | `hc_main` below | reject it | | no gap |
 | channel created after a call, sent on the returned channel | `sd_go`, SegmentDeleg.v | type it | `sd_deadlock_free` | translation artefact |
-| held channel sent at the first action | `fa_main` below | type it | not mechanized | see below |
+| held channel sent at the first action | `fa_go`, FirstAction.v | type it | `fa_deadlock_free` | translation artefact |
 | held channel sent where the data decides | `ll_main` below | reject it | no | no gap |
 
 ### Dropping a channel at Skip
@@ -1199,3 +1199,50 @@ the carrier's priority grows by at least one per level of the tree while
 the priority of d stays fixed. Their rules as printed check only the first
 round (pp. 28, 29), and section 15.2 shows why that is unsound. So ll is no
 gap. fa stays open until an example types it in the core.
+
+### Addendum (2026-11-04), the two open programs type
+
+Branch `claude/cfst-open-examples-ftovnz` types both programs in the core
+with a whole-program `styped` derivation and proves deadlock freedom with
+`soundness_source`. No definition of the core and no statement of an
+existing theorem changed. Every theorem below is closed under the global
+context.
+
+```
+Lemma sinst_sren σ r s : sinst σ (sren r s) = sinst (σ ∘ r) s.     (types/SinstFusion.v)
+Lemma unroll_up b s : sinst (SMu b .: SVar) (sren S s) = s.
+
+Lemma lp_typed W F : world_wf W → typed W ∅ [] ∅ [] F lp lp_ty.   (examples/cfst/MuVar.v)
+Lemma lp_go_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) lp_go TUnit.
+Theorem lp_deadlock_free : deadlock_free (∅, {[+ lp_go +]}).
+
+Lemma fa_typed W Ψ F : world_wf W → typed W ∅ Ψ ∅ [None; Some tsum_ty] F fa fa_ty.
+Lemma fa_go_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) fa_go TUnit.   (examples/cfst/FirstAction.v)
+Theorem fa_deadlock_free : deadlock_free (∅, {[+ fa_go +]}).
+```
+
+lp. loop is a box over κ, ζ and one session variable a with the
+constraint and the result of treeSum. Its channel has type µβ. &(a, ?∗;β)
+at κ. The body is typed at every hereditarily contractive instance s of
+a, where the µ body holds sren S s. Unrolling substitutes the µ for β, and
+`unroll_up` turns the substituend back into s (`LpI_unroll`). Done packs
+the channel at κ[0], More receives at κ[1], calls loop at κ[1]+1, opens the
+result and packs it again at κ. lp_go runs loop at a := Close against a
+client that sends one More and then Done. The priority abstraction ∀^S ι
+of their type has no counterpart inside a session type of the core. Its
+role goes to the points of the walk and the facts of the box constraint.
+
+fa. fa is a box over κ, ι, ζ and a with the constraint
+C = {ι ≡ κ[0]} ∪ {κ·w ≺ ζ, κ·w ≺ (κ·w)[i] ∣ w, i}. It takes c at κ and d at
+ι as a pair, moves d to κ[0] with E-Conv and the fact ι ≡ κ[0], sends it
+on c at κ and calls treeSum at κ+1. The caller creates d at the payload
+point α[0] of its channel c at α and forces fa at [α; α[0]; z], where
+ι ≡ κ[0] holds by reflexivity. The other end of c receives d at its own
+payload point α[0] and runs the tree client of TreeSum.v from α+1. Each
+end of d is closed in a thread of its own. Their rules pass c and d as two
+curried arguments and check 5 < 12 at the call (p. 39). The core checks
+the send once, in the body of fa against its constraint. The curried form
+is not mechanized.
+
+So fa_main is no gap of the core, and lp_main needed one lemma about
+session substitution and no change of a rule.
