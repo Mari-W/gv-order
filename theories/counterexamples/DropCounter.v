@@ -39,8 +39,6 @@ Proof.
 Qed.
 Lemma cpt_slot x i : cpt (pt_slot x i) = pt_slot (cpt x) i.
 Proof. done. Qed.
-Lemma cpt_br x i : cpt (pt_br x i) = pt_br (cpt x) i.
-Proof. done. Qed.
 
 Lemma cnm_root p o :
   pt_root (cnm p o) = if decide (pn_root p = NConst b0) then NConst mu else pn_root p.
@@ -49,7 +47,6 @@ Proof.
   - unfold pt_root. repeat case_decide; simpl; subst; try done; congruence.
   - done.
   - unfold pt_root in *. simpl. apply IH.
-  - unfold pt_root in *. simpl. apply IH.
 Qed.
 
 (* off μ, cpt is injective *)
@@ -57,10 +54,8 @@ Lemma cnm_inj p o p' o' :
   pn_root p ≠ NConst mu → pn_root p' ≠ NConst mu → cnm p o = cnm p' o' → p = p' ∧ o = o'.
 Proof.
   revert o p' o'. induction p as [a|a|q IH oq i]; intros o p' o' Hr Hr' E;
-    destruct p' as [a'|a'|q' oq' i'|q' oq' i']; simpl in *;
+    destruct p' as [a'|a'|q' oq' i']; simpl in *;
     repeat case_decide; simplify_eq/=; try done; try (split; congruence).
-  - destruct (IH oq q' oq' Hr Hr') as [-> ->]; [|done].
-    destruct (cnm q oq) eqn:E1, (cnm q' oq') eqn:E2. simpl in *. by subst.
   - destruct (IH oq q' oq' Hr Hr') as [-> ->]; [|done].
     destruct (cnm q oq) eqn:E1, (cnm q' oq') eqn:E2. simpl in *. by subst.
 Qed.
@@ -92,7 +87,6 @@ Proof.
     + rewrite ?decide_False by (intros ->; done). done.
   - done.
   - rewrite IH by done. done.
-  - rewrite IH by done. done.
 Qed.
 
 Lemma cq_cpt x : pt_root x ≠ NConst mu → cq (cpt x).
@@ -102,25 +96,21 @@ Proof.
   - repeat case_decide; simpl; [lia|congruence].
   - discriminate.
   - apply IH, Hm.
-  - apply IH, Hm.
 Qed.
 
 Lemma cinv_ppo x y : ppo x y → cq x → ppo (cinv x) (cinv y).
 Proof.
   assert (∀ z, cq z → cq (pt_shift 1 z)) as Hqs.
-  { intros [[| | |] o]; unfold cq, pt_root; simpl; intros H Hr; try (apply H, Hr); lia. }
-  assert (∀ z i, cq z → cq (pt_br z i)) as Hqb.
-  { intros [p o] i. unfold cq, pt_root. simpl. done. }
+  { intros [[| |] o]; unfold cq, pt_root; simpl; intros H Hr; try (apply H, Hr); lia. }
   assert (∀ x y, ppo x y → cq x → cq y) as Hq.
   { induction 1; auto. }
-  induction 1 as [z|z i|x y z H1 IH1 _ IH2]; intros Hz.
-  - destruct z as [[a| | |] o]; unfold cinv, pt_shift; simpl;
+  induction 1 as [z|x y z H1 IH1 _ IH2]; intros Hz.
+  - destruct z as [[a| |] o]; unfold cinv, pt_shift; simpl;
       [|apply ppo_po..].
     destruct (decide (a = mu)) as [->|Ha].
     + unfold cq, pt_root in Hz. simpl in Hz. specialize (Hz eq_refl).
       replace (o + 1 - 1) with (o - 1 + 1) by lia. apply (ppo_po (Pt (NConst b0) (o - 1))).
     + apply (ppo_po (Pt (NConst a) o)).
-  - apply (ppo_br (cinv z) i).
   - eapply ppo_trans; [by apply IH1|]. apply IH2. by eapply Hq.
 Qed.
 
@@ -139,11 +129,9 @@ Proof.
   - naive_solver.
   - naive_solver.
   - naive_solver.
-  - naive_solver.
   - intros x y z ? ?. by eapply ppo_trans.
   - naive_solver.
   - apply ppo_po.
-  - apply ppo_br.
   - intros x y ->. by left.
   - intros x y H. by left.
   - intros p Hp. set_solver.
@@ -173,11 +161,9 @@ Proof.
   - intros x y z. congruence.
   - intros x y H. by rewrite !cpt_shift, H.
   - intros x y i H. by rewrite !cpt_slot, H.
-  - intros x y i H. by rewrite !cpt_br, H.
   - intros x y z ? ?. by eapply ppo_trans.
   - intros x x' y y' -> ? <-. done.
   - intros x. rewrite cpt_shift. apply ppo_po.
-  - intros x i. rewrite cpt_br. apply ppo_br.
   - intros x y H. unfold eq_or_supp.
     destruct (decide (pt_root x = NConst b0 ∨ pt_root x = NConst mu)) as [Hx|Hx];
     destruct (decide (pt_root y = NConst b0 ∨ pt_root y = NConst mu)) as [Hy|Hy].
@@ -204,7 +190,7 @@ Proof.
   - split_and!; simpl.
     + set_solver.
     + by intros x y ->.
-    + intros x y Hp. apply ppo_map; [apply cpt_shift|apply cpt_br|done].
+    + intros x y Hp. apply ppo_map; [apply cpt_shift|done].
     + exact Wm_strict.
   - simpl. set_solver.
   - done.

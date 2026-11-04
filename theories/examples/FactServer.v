@@ -98,10 +98,10 @@ Proof.
 Qed.
 
 Lemma fcsrv_typed W F :
-  strict W → typed W ∅ [] ∅ [] F fcsrv (TBox 1 fc_C (TLolli None None TUnit fc_body)).
+  strict W → typed W ∅ [] ∅ [] F fcsrv (TBox 1 0 fc_C (TLolli None None TUnit fc_body)).
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold fcsrv.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fc_C fc_body. cbn. unfold fc_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ pcr (pv 0 0)) as Hq.
@@ -133,7 +133,7 @@ Proof.
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
       eapply tv_app; [exact HW|reflexivity| | |].
-      - apply (typed_force W _ _ _ _ _ _ 1 fc_C None fc_body [pcr]);
+      - apply (typed_force0 W _ _ _ _ _ _ 1 fc_C None fc_body [pcr]);
           [done|done| | |apply ubs_none|tstep].
         + apply fc_call. by left.
         + constructor; [right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]
@@ -169,7 +169,7 @@ Lemma fc_typed : styped ∅ [] [] (∅, None) fc_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
   pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fc_main.
-  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 fc_C (TLolli None None TUnit fc_body)) TUnit);
+  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 0 fc_C (TLolli None None TUnit fc_body)) TUnit);
     [reflexivity| |].
   { tstep; [tstep|apply fcsrv_typed, HWs]. }
   cbn. tstep; [tstep|]. cbn.
@@ -189,7 +189,7 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force W _ _ _ _ _ _ 1 fc_C None fc_body [pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 fc_C None fc_body [pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; [tstep|apply t_inj2, (tv_unit W HW); reflexivity].
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].

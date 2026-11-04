@@ -31,7 +31,7 @@ Lemma pvar_unknown W a : world_wf W → ¬ pt_known W (pvar a).
 Proof. intros HW Hk. destruct (wf_names_const _ HW _ Hk) as [b Hb]. done. Qed.
 
 Definition Tfac_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 0 0)).
-Definition Tfac : ty := TBox 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
+Definition Tfac : ty := TBox 0 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
 
 Definition fac : expr :=
   EBox (Lam (LetU (Var 0) (let_new_pair
@@ -50,7 +50,7 @@ Proof.
   apply styped_wnil. set (W := wnil). pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold fac_main.
   tstep.
   { tstep; [tstep|].
-    apply (t_box W _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|].
+    apply (t_box W _ _ _ _ _ 0 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|box_k0].
     cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
     cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 0) HWs).
     { right. exists Cfac, [pv 0 0], (pv 0 0). split_and!; [by left|by left|done]. }
@@ -106,7 +106,7 @@ Proof. apply (soundness_source 1 Cfac _ TUnit Cfac_acyclic); [constructor|apply 
     top-level constraint [Cfa]. *)
 
 Definition Tfa_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (Pt (NVar 0) 0)).
-Definition Tfa : ty := TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
+Definition Tfa : ty := TBox 1 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
 
 Definition faca : expr := fac.
 

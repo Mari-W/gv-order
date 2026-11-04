@@ -23,7 +23,7 @@ From LRGV Require Export examples.FreshBetween.
 Set Default Proof Using "All".
 
 (** !∗.!∗.Close *)
-Definition Sdd : sty := SSnd 0 TUnit (SSnd 0 TUnit SEnd).
+Definition Sdd : sty := SSeq (SSnd 0 TUnit) (SSeq (SSnd 0 TUnit) SEnd).
 
 Definition fm_box : expr :=
   EBox (Lam (LetP (Var 0) (let_new_pair
@@ -43,7 +43,7 @@ Definition fm_C : bcs := BCs [pvar 0; pvar 1] fm_facts.
 Lemma fm_typed W F : world_wf W → typed W ∅ [] ∅ [] F fm_box fb_ty.
 Proof.
   intros HW. unfold fm_box, fb_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pvar 1)) None 1); [set_solver|cbn; set_solver|].
   eapply t_wk; [apply lwk_cons, lwk_drop; [done|constructor]|].
   cbn. tstep; [tstep|]. cbn.
@@ -99,12 +99,12 @@ Proof.
     eapply (tv_appk W HW _ _ _ _ KClos _ (Some δ2) (TSess SEnd δ2) TUnit);
       [|apply KTClos|done|].
     - eapply (tv_appk W HW _ _ _ _ KSend _ (Some δ1)
-                (TProd TUnit (TSess (SSnd 0 TUnit SEnd) δ1)) (TSess SEnd δ2));
+                (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) SEnd) δ1)) (TSess SEnd δ2));
         [|apply (KTSend _ _ _ 0 TUnit SEnd δ1); cbn; set_solver|kscope|].
       + tstep; [|tstep].
         eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pvar 0))
-                  (TProd TUnit (TSess Sdd (pvar 0))) (TSess (SSnd 0 TUnit SEnd) δ1));
-          [|apply (KTSend _ _ _ 0 TUnit (SSnd 0 TUnit SEnd) (pvar 0)); cbn; set_solver|kscope|].
+                  (TProd TUnit (TSess Sdd (pvar 0))) (TSess (SSeq (SSnd 0 TUnit) SEnd) δ1));
+          [|apply (KTSend _ _ _ 0 TUnit (SSeq (SSnd 0 TUnit) SEnd) (pvar 0)); cbn; set_solver|kscope|].
         * tstep; [tstep|tstep].
         * apply ubs_intro; [intros y Hy; mem_cases Hy; apply (Hδκ 0)|].
           exists (pvar 2). split; [done|right; apply (Hδκ 0)].
@@ -180,7 +180,7 @@ Proof.
                  (TProd (TSess SEnd (pvar 1)) (TSess SEnd (pvar 0))) TUnit); [reflexivity| | |].
   - change (TLolli (Some (pvar 0)) None (TProd (TSess SEnd (pvar 1)) (TSess SEnd (pvar 0))) TUnit)
       with (ty_inst [pvar 1; pvar 0] fb_body).
-    apply (typed_force W _ _ _ _ _ _ 2 fb_C None fb_body [pvar 1; pvar 0]); [done|done| | |apply ubs_none|tstep].
+    apply (typed_force0 W _ _ _ _ _ _ 2 fb_C None fb_body [pvar 1; pvar 0]); [done|done| | |apply ubs_none|tstep].
     + apply bcs_hold_intro. intros g -> _. exact Hγε.
     + constructor; [|constructor; [|constructor]].
       * right. eexists _, [pvar 1], (pvar 1). split_and!; [by left|by left|done].

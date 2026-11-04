@@ -30,7 +30,7 @@ Definition fb_C : bcs := BCs [] (λ g, g = FLt (pvar 0) (pvar 1)).
 Definition fb_body : ty :=
   TLolli (Some (pvar 1)) None (TProd (TSess SEnd (pvar 0)) (TSess SEnd (pvar 1))) TUnit.
 
-Definition fb_ty : ty := TBox 2 fb_C (TLolli None None TUnit fb_body).
+Definition fb_ty : ty := TBox 2 0 fb_C (TLolli None None TUnit fb_body).
 
 Definition fb_box : expr :=
   EBox (Lam (LetP (Var 0) (let_new_pair
@@ -42,7 +42,7 @@ Definition fb_box : expr :=
 Lemma fb_typed W F : world_wf W → typed W ∅ [] ∅ [] F fb_box fb_ty.
 Proof.
   intros HW. unfold fb_box, fb_ty.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pvar 1)) None 1); [set_solver|cbn; set_solver|].
   eapply t_wk; [apply lwk_cons, lwk_drop; [done|constructor]|].
   cbn. tstep; [tstep|]. cbn.
@@ -142,7 +142,7 @@ Proof.
     - intros x1 y1 z1 [->|[? ?]] [->|[? ?]]; [by left|by right|by right|by right].
     - intros x1 y1 [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
     - intros x1 y1 i [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
-    - intros x1 y1 Hxy. unfold fb_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]|[Hx Hy]].
+    - intros x1 y1 Hxy. unfold fb_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]%ppo_pofs|[Hx Hy]].
       + rewrite (fb_isvar_name x1 y1 Hn). destruct (fb_isvar y1); simpl; [left; by split|done].
       + rewrite (fb_isvar_const W x1), (fb_isvar_const W y1); done.
     - intros x1 y1 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
@@ -247,7 +247,7 @@ Proof.
                  (TProd (TSess SEnd (pvar 1)) (TSess SEnd (pvar 0))) TUnit); [reflexivity| | |].
   - change (TLolli (Some (pvar 0)) None (TProd (TSess SEnd (pvar 1)) (TSess SEnd (pvar 0))) TUnit)
       with (ty_inst [pvar 1; pvar 0] fb_body).
-    apply (typed_force W _ _ _ _ _ _ 2 fb_C None fb_body [pvar 1; pvar 0]); [done|done| | |apply ubs_none|tstep].
+    apply (typed_force0 W _ _ _ _ _ _ 2 fb_C None fb_body [pvar 1; pvar 0]); [done|done| | |apply ubs_none|tstep].
     + apply bcs_hold_intro. intros g -> _. exact Hγε.
     + constructor; [|constructor; [|constructor]].
       * right. eexists _, [pvar 1], (pvar 1). split_and!; [by left|by left|done].

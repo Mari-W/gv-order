@@ -49,7 +49,7 @@ From LRGV Require Export examples.Factory.
 Set Default Proof Using "All".
 
 (** ?∗.Close, the end the client holds. *)
-Definition Sr : sty := SRcv 0 TUnit SEnd.
+Definition Sr : sty := SSeq (SRcv 0 TUnit) SEnd.
 
 Definition mk : expr := fac.
 
@@ -57,7 +57,7 @@ Definition mk : expr := fac.
 Definition Tmk_res (L : list point) : ty := TEx LBot 1 (fresh_bcs L []) (TSess Sr (pvar 0)).
 
 Definition Tmk (m : nat) (L : list point) : ty :=
-  TBox m (BCs [] (λ _, False)) (TLolli None None TUnit (TLolli None None TUnit (Tmk_res L))).
+  TBox m 0 (BCs [] (λ _, False)) (TLolli None None TUnit (TLolli None None TUnit (Tmk_res L))).
 
 Definition Tmk0 : ty := Tmk 0 [].
 Definition Tmk1 : ty := Tmk 1 [pvar 0; Pt (NVar 0) 1].
@@ -93,7 +93,7 @@ Ltac mk_tail HW :=
 Lemma mk0_typed W F : strict W → typed W ∅ [] ∅ [] F mk Tmk0.
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold mk, fac, Tmk0, Tmk.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn.
   apply (t_newfresh_lh_open W _ _ _ _ _ _ _ Sd [] []); [constructor|set_solver|].
@@ -103,7 +103,7 @@ Qed.
 Lemma mk1_typed W F : strict W → typed W ∅ [] ∅ [] F mk Tmk1.
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold mk, fac, Tmk1, Tmk.
-  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn.
   apply (t_newfresh_lh_open W _ _ _ _ _ _ _ Sd [pvar 0; Pt (NVar 0) 1] []).
@@ -131,7 +131,7 @@ Proof.
   cbn. eapply (tv_letp W HW _ _ _ _ _ _ (Tmk_res []) TUnit); [reflexivity| |].
   { tstep; [tstep|].
     eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-    apply (typed_force W _ _ _ _ _ _ 0 (BCs [] (λ _, False)) None (TLolli None None TUnit (Tmk_res [])) []);
+    apply (typed_force0 W _ _ _ _ _ _ 0 (BCs [] (λ _, False)) None (TLolli None None TUnit (Tmk_res [])) []);
       [done|done| |constructor|apply ubs_none|tstep].
     apply bcs_hold_intro. by intros ? []. }
   apply (t_open W _ _ _ _ _ _ 1 LBot 1 (fresh_bcs [] []) (TSess Sr (pvar 0)) TUnit);
@@ -142,7 +142,7 @@ Proof.
   eapply (tv_letp W HW _ _ _ _ _ _ (Tmk_res [pvar 0; Pt (NVar 0) 1]) TUnit); [reflexivity| |].
   { tstep; [tstep|].
     eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-    apply (typed_force W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None
+    apply (typed_force0 W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None
              (TLolli None None TUnit (Tmk_res [pvar 0; Pt (NVar 0) 1])) [pvar 0]);
       [done|done| |constructor; [skn_slot|constructor]|apply ubs_none|tstep].
     apply bcs_hold_intro. by intros ? []. }
@@ -195,7 +195,7 @@ Qed.
 Lemma fx_no_first_call ub T :
   ¬ konst_ty (seqs (Wpo []) []) (slt (Wpo []) []) (skn (Wpo []) []) KForce (TLolli ub None Tfa T).
 Proof.
-  intros Hk. inversion Hk as [| | | | |n C ub' T' xs Hn _ HK| ]; subst.
+  intros Hk. inversion Hk as [| | | | | | | |n k C ub' T' xs ss Hn _ HK _ _| ]; subst.
   destruct xs as [|x xs]; [done|]. apply Forall_cons in HK as [Hx _].
   by apply (Wpo_nil_unknown x).
 Qed.

@@ -250,7 +250,6 @@ Proof.
   - apply zlt_trans.
   - apply den_shift.
   - apply den_slot.
-  - intros [p k] i. done.
   - by intros x y (_ & _ & H).
 
   - apply rank_dsh.

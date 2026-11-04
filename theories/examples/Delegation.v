@@ -6,10 +6,10 @@
                  let (c, u) = ⟨send ⟨d, c⟩, ∗⟩ in let () = u in
                  let (x, d′) = recv d′ in let () = x in let () = close d′ in close c
 
-    c : !(∃ι. (!∗.Close)@ι).Close@(a,0). The receiver gets d at the slot
+    c : !(∃ι. (!∗.Close)@ι).Close@(a,0). The receiver gets d at the point
     (a,0)[0], written s below, and acts on it while it holds c′ at
     (a,1), so it needs (s,0) ≺ (a,1) and (s,1) ≺ (a,1): this is the
-    spec's c[k][1] ≺ (c,k+1), slots counted from 0 here. The sender
+    spec's (c,k)[1] ≺ (c,k+1), with positions counted from 0 here. The sender
     creates d at s itself, so the alias of the spec is the choice of
     the point of [new]. send asks (a,0) ≺ (s,0) (KTSend, {ι} ≺ heads of
     the payload), which the sender also needs because it holds d′ at s.

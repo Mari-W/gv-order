@@ -148,7 +148,7 @@ Proof.
     - left. eexists _, _. split; [done|]. split_and!; [exists k; by left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [exists k; by right|done|done|done]. }
   { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
-  { intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) [_ Hpq].
+  { intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) [_ Hpq]%ple_inv.
     destruct Hf as [k [E|E]]; injection E as -> ->; [|done].
     destruct Hf' as [k' [E|E]]; injection E as -> ->; [done|].
     cbn in Hpq. unfold fresh_outer. cbn. apply sl_w, wf_lt_same; [done|done|cbn; lia]. }
