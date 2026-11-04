@@ -71,7 +71,7 @@ x ≡ (p, a) and y ≡ (p, a′). The segment is strict, that is some step is a
 program-order step, iff a < a′.
 
 Proof. Two consecutive segments x ≡ (p, a) ≤ (p, a′) ≡ (q, b) ≤ (q, b′) ≡ y
-fuse: (p, a′) ≡ (q, b) gives (p, a′ + k) ≡ (q, b + k) for k = b′ − b by
+fuse, because (p, a′) ≡ (q, b) gives (p, a′ + k) ≡ (q, b + k) for k = b′ − b by
 successor congruence, so x ≡ (p, a) ≤ (p, a′ + k) ≡ y. Induction on the
 number of segments. ∎
 
@@ -98,8 +98,8 @@ from x to x, strict only if a < a′ for one name, which contradicts x ≡ x and
 Lemma 1 under consistency. Conversely every closed walk of the fact graph is a
 derivation. ∎
 
-Entailment. Γ ⊢ x ≺ y for points x, y over mentioned names: add x and y to M
-and search for a walk from x to y through a strict edge. Γ ⊢ x ≡ y: Lemma 1.
+Entailment. For Γ ⊢ x ≺ y with x, y over mentioned names, add x and y to M
+and search for a walk from x to y through a strict edge. Γ ⊢ x ≡ y is Lemma 1.
 
 Cost. The alias structure costs O(|N|³) for the Floyd–Warshall pass and one
 congruence round per added edge, at most |N|² rounds. The fact graph has |M|
@@ -130,7 +130,7 @@ its instances). Necessity. If R has a cycle, Γ + C has one through points of
 and Γ ⊬ u ≺ v, then Γ + C derives u ≺ v between two outer points that Γ does
 not derive, so conservativity fails. ∎
 
-The second condition is finite: Lo and Hi are finite, p ≼_R q is Theorem 1 on
+The second condition is finite. Lo and Hi are finite, p ≼_R q is Theorem 1 on
 the ι names, and Γ ⊢ u ≺ v is entailment in 𝔇₁.
 
 Shape B, one alias. C is the single fact ι ≡ w with w an outer point. Then
@@ -174,7 +174,7 @@ of a payload name is outside 𝔇₂ (Section 4).
 Alias schemas add nothing. ∀k. (p, k+a) ≡ (q, k+b) and the ground alias
 (p, a) ≡ (q, b) generate the same theory, by successor congruence. So the
 alias structure of 𝔇₂ is that of 𝔇₁, Lemma 1 applies, and the rest of this
-section assumes the ≡ facts have been resolved: every name is its class
+section assumes the ≡ facts have been resolved. Every name is its class
 representative, a point below its threshold to the representative is kept as a
 separate vertex (finitely many per name), and potentials have been added to
 the offsets. [derived] This leaves a graph of the same shape with the same
@@ -182,14 +182,14 @@ cycles, because Lemma 2 fuses every ≡ step with its neighbouring program-order
 steps into one offset comparison.
 
 After resolution the generated order is the reachability relation of the
-infinite graph 𝔊 with vertices (p, o), p ∈ N, o ∈ ℕ, and edges: program order
+infinite graph 𝔊 with vertices (p, o), p ∈ N, o ∈ ℕ, and the following edges. Program order
 (p, o) → (p, o+1), shift edges (p, o) → (q, o+δ) for o ≥ a, fan-down edges
 (p, o) → (q, c) for o ≥ a, fan-up edges (q, c) → (p, o) for o ≥ a, and ground
 edges. Every edge is strict. Strictness of the order is acyclicity of 𝔊.
 
 ### 2.1  Uniform schemas
 
-𝔇₂ᵘ: shift schemas only, besides program order. The guards are the only
+𝔇₂ᵘ is the subfragment with shift schemas only, besides program order. The guards are the only
 constants. Let 𝔊ᵘ be the finite weighted graph on N with an edge p → q of
 weight δ per shift schema and a loop of weight 1 per name.
 
@@ -204,7 +204,7 @@ component. Conversely let W be a closed walk of weight 0 in a component. Lift
 it from an offset o₀ larger than every guard plus the length of W times the
 largest |δ|. Every intermediate offset stays above every guard, so every edge
 applies, and the lift closes. For the second statement, a closed walk of weight
-0 contains a simple cycle, and removing it leaves a shorter closed walk; so the
+0 contains a simple cycle, and removing it leaves a shorter closed walk, so the
 walk is a sum of simple cycles with weights of both signs or a zero one.
 Conversely take simple cycles A and B in one component with weights α ≥ 0 and
 β ≤ 0, and a closed walk P that visits a vertex of A and a vertex of B, of
@@ -212,10 +212,10 @@ weight π. If α = 0 or β = 0 the cycle itself has weight 0. Otherwise let
 g = gcd(α, |β|). Choose t ≥ 1 with g | tπ, for instance t = g, and integers m,
 n with mα + nβ = −tπ. The solutions form the line (m₀ + j|β|/g, n₀ + jα/g), so
 some solution has m, n ≥ 1. Traverse P t times, A m times and B n times along
-P, which is a closed walk of weight 0. Decision: compute the components, and in
+P, which is a closed walk of weight 0. The decision computes the components, and in
 each decide whether all simple cycles have positive weight and whether all have
 negative weight. All simple cycles of a component have weight ≥ 1 iff the
-weights w′ = |N|·w − 1 admit no negative cycle, decided by Bellman–Ford, since
+weights w′ = |N|·w − 1 admit no negative cycle, decided by Bellman–Ford, because
 a simple cycle has at most |N| edges. Likewise for ≤ −1. ∎
 
 Request and reply {ι+k ≺ ι′+k, ι′+k ≺ ι+k+1} is uniform with weights 0 and 1
@@ -225,10 +225,10 @@ constraint of b in rr_main, which has the same shape.
 
 ### 2.2  Monotone schemas with constants
 
-𝔇₂ᵐ: shifts with δ ≥ 0, fan-downs, fan-ups and ground facts. Let B be the
+𝔇₂ᵐ is the subfragment with shifts of δ ≥ 0, fan-downs, fan-ups and ground facts. Let B be the
 largest constant that occurs. The abstraction 𝔊^B has vertices (p, v) with
 v ∈ {0, …, B} ∪ {⊤}, where ⊤ stands for any offset above B, and an edge for
-every edge of 𝔊 whose source value matches, with the target abstracted: a
+every edge of 𝔊 whose source value matches, with the target abstracted. A
 target above B becomes ⊤, a shift or program order from ⊤ stays at ⊤, a
 fan-down from ⊤ goes to its constant, a fan-up into offsets above B goes to ⊤
 and into offsets ≤ B goes to every such exact value.
@@ -245,12 +245,12 @@ abstract one and closes at the exact vertex. If the cycle stays in ⊤ vertices,
 its edges are shifts and program order among names, and the concrete offset
 after one round has grown by the total weight σ ≥ 0. If σ = 0 it closes at any
 offset above B. If σ > 0 it does not close, but then the cycle in 𝔊^B is not
-realizable, so this case must be excluded: for the ⊤ part the procedure
+realizable, so this case must be excluded. For the ⊤ part the procedure
 applies Theorem 3 to the subgraph of shift edges and program order, asking for
 a zero-weight closed walk, which under δ ≥ 0 means a cycle of shift edges of
 weight 0 that uses no program-order edge. ∎
 
-The two procedures combine: 𝔊 has a cycle iff 𝔊^B restricted to walks that
+The two procedures combine. 𝔊 has a cycle iff 𝔊^B restricted to walks that
 touch an exact vertex has one, or the zero-weight condition of Theorem 3 holds
 on the shift edges.
 
@@ -275,7 +275,7 @@ beyond decidability. [guess] The bound is polynomial, by the same bounded
 abstraction as Theorem 4 together with a reachability procedure for the ⊤
 region, which is reachability in a one-counter net.
 
-Entailment of a ground fact x ≺ y in 𝔇₂ reduces to strictness: with Γ strict,
+Entailment of a ground fact x ≺ y in 𝔇₂ reduces to strictness. With Γ strict,
 x ≼ y iff Γ ∪ {y ≺ x} is not strict (algorithmic.md, Lemma 6), and 𝔇₂ is
 closed under adding a ground fact. Entailment of a whole schema
 ∀k. (p, k+a) ≺ (q, k+b), which a force of a box asks, is the question whether
@@ -295,7 +295,7 @@ index of a payload name, which is outside 𝔇₂. The chain
 
 Words. Fix a bound on payload indices, say j < m. A walk is a word over the
 alphabet Σ = {s, c₀, …, c_{m−1}}, where s is the successor and c_j the payload
-point [j]. Every point rooted at r is (r, w) for one walk w: (r, ε) is (r, 0),
+point [j]. Every point rooted at r is (r, w) for one walk w, where (r, ε) is (r, 0),
 (r, w s) is (r, w)+1 and (r, w c_j) is (r, w)[j]. The encoding is a bijection
 between points with roots in a finite set of roots and words r·w.
 
@@ -438,7 +438,7 @@ the same two-counter encoding with the clock in one coordinate. Not shown.
 ### 5.3  Where a certificate takes over
 
 Outside 𝔇₁ to 𝔇₃, and inside them when the decision procedure is too slow,
-the development's own route is a ranking certificate: a map from points into
+the development's own route is a ranking certificate, a map from points into
 ℕ, ℤ or a lexicographic product that every fact and every program-order step
 raises. `cc_ok_inner`, `wgen_strict`, `wgen_strict_lex` and `wgen_strict_z` of
 examples/ExampleTools.v are the checkers, and algorithmic-smt.md and
@@ -447,6 +447,6 @@ the development, with a lexicographic level for the ceilings and a piecewise
 rank for the ground delegation round trip. A certificate is checked in Rocq by
 `lia`. The certificate route is sound and incomplete, the fragments are
 complete for their questions. The boundary between the two is the decision
-procedure's domain: a constraint in 𝔇₁ needs no certificate, a constraint in
+procedure's domain. A constraint in 𝔇₁ needs no certificate, a constraint in
 𝔇₃ needs one only when the prefix-recognizable check is not implemented, and a
 constraint with two independent counters needs one always.

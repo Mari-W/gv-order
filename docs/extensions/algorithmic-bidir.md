@@ -404,8 +404,8 @@ creation constraints of the news. The following procedure chooses them.
 [derived] Step 6 succeeds whenever step 4 does not reject. Every ≺ and ≡ atom
 of 𝒜 is a fact of its slice or follows from the slices in scope by the closure
 rules. Every slice C_ι is a creation constraint over the slices outside it.
-Acyclicity: Γ_ι + C_ι is a subset of 𝒢 and 𝒢 has no cycle. Conservativity: a
-fact between two points with roots other than ι derivable from Γ_ι + C_ι is a
+Acyclicity holds because Γ_ι + C_ι is a subset of 𝒢 and 𝒢 has no cycle.
+Conservativity holds because a fact between two points with roots other than ι derivable from Γ_ι + C_ι is a
 fact of 𝒢 between points in scope at ι, so it lies in the slice of its
 innermost root, which is outside ι, and that slice is part of Γ_ι. The known
 atoms hold because every root in scope is an instance point of a hypothesis.
@@ -424,7 +424,7 @@ variable of Φ below the counter, and let Ψ be a hypothesis context in which �
 holds. Then Γ ; Δ ⊢_F t : T is derivable in `styped` with Γ = (Ψ, Φ).
 
 The proof is by induction on t. Each rule of Section 4 is the declarative rule
-of the same name with the guesses filled in: the occurrence split is a
+of the same name with the guesses filled in. The occurrence split is a
 `lenv_split`, the gate atoms give `hub_below_s`, the lower-bound atom gives
 `hlb_below_hb`, a successful match gives `hsteq` and hence E-Conv, the head
 normal form gives E-Conv with ≈, and the atoms of a constant give its scheme
