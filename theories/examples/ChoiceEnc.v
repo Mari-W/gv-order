@@ -202,3 +202,144 @@ Proof.
   apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
   apply list_elem_of_lookup_2, lenv_empty_nones in Hy. discriminate.
 Qed.
+
+(** ** T1 ∥ T2 ∥ T3
+
+      choice = let (c, c′) = new ∗ at a in let (d, d′) = new ∗ at δ in
+               let () = spawn (λu. let () = u in close (send ⟨∗, sel₁ c⟩)) in
+               let () = spawn (λu. let () = u in close d′) in
+               branch c′ { k ⇒ let () = close d in recvclose k
+                         | k ⇒ let (x, k) = recv k in let () = x in
+                               let () = close d in close k }
+
+    c : (Sch Sd Sd)@a and d : Close@δ, with a and δ the top-level
+    variables 0 and 1. The facts each step asks:
+
+      T1   send on c at a         a ≺ a.0, a ≺ a.1 (KTSend), a ≺ a.0 (holds k)
+           close c at a+1         a+1 ≺ a.0 (holds k)
+      T2   recv c′ at a           a ≺ δ (holds d)
+           close c′ at a+1        a+1 ≺ δ, a+1 ≺ a.0, a+1 ≺ a.1 (holds d and the sum)
+           branch A, close d      δ ≺ a.0 (holds k)
+           branch B, recv k       a.1 ≺ δ (holds d)
+           branch B, close d      δ ≺ a.1+1 (holds k)
+
+    The top-level constraint states four of them, and program order and
+    transitivity give the rest. *)
+
+Abbreviation pa k := (pv 0 k).
+Abbreviation pd k := (pv 1 k).
+Abbreviation pa0 k := (Pt (NSlot (NVar 0) 0 0) k).
+Abbreviation pa1 k := (Pt (NSlot (NVar 0) 0 1) k).
+
+Definition ch_fact (g : fact) : Prop :=
+  g = FLt (pa 1) (pa1 0) ∨ g = FLt (pa1 0) (pd 0) ∨ g = FLt (pd 0) (pa0 0) ∨ g = FLt (pd 0) (pa1 1).
+Definition Cch : bcs := BCs [] ch_fact.
+
+Definition t1_thunk : expr := Lam (LetU (Var 0) (sendclose (App sel1 (Var 4)))).
+Definition t3_thunk : expr := Lam (LetU (Var 0) (App EClos (Var 1))).
+Definition t2_arm1 : expr := LetU (App EClos (Var 4)) (recvclose (Var 0)).
+Definition t2_arm2 : expr :=
+  LetP (App ERecv (Var 0)) (LetU (Var 1) (LetU (App EClos (Var 6)) (App EClos (Var 0)))).
+
+Definition choice_main : expr :=
+  let_new_pair (let_new_pair
+    (LetU (App ESpawn t1_thunk)
+      (LetU (App ESpawn t3_thunk)
+        (branch (Var 2) t2_arm1 t2_arm2)))).
+
+Lemma ch_rank_ok : c0_acyclic 2 Cch.
+Proof.
+  set (r := λ x : point, match pt_name x with
+    | NVar 0 => 10 * pt_off x
+    | NSlot (NVar 0) 0 1 => 15 + 10 * pt_off x
+    | NVar 1 => 17 + 10 * pt_off x
+    | NSlot (NVar 0) 0 0 => 20 + 10 * pt_off x
+    | _ => 10 * pt_off x
+    end).
+  apply (c0_acyclic_rank 2 _ r).
+  - intros [p o]. unfold r, pt_shift. simpl. repeat case_match; lia.
+  - by intros ? ? [?|[?|[?|?]]].
+  - intros x y [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; unfold r; cbn; lia.
+Qed.
+
+Lemma choice_typed : styped ∅ [(Cch, ids 2)] [] (∅, None) choice_main TUnit.
+Proof.
+  apply styped_wnil. set (W := wnil). set (Ψ := [(Cch, ids 2)]).
+  pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold choice_main.
+  assert (∀ x y, ch_fact (FLt x y) → slt W Ψ x y) as Hf.
+  { intros x y Hxy. apply (sl_hyp0 W Ψ ch_fact (ids 2) x y); [by left|done| | |].
+    - destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; cbn; lia.
+    - apply pt_inst_ids. destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; cbn; lia.
+    - apply pt_inst_ids. destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; cbn; lia. }
+  assert (slt W Ψ (pa 1) (pa1 0)) as F1 by (apply Hf; by left).
+  assert (slt W Ψ (pa1 0) (pd 0)) as F2 by (apply Hf; by right; left).
+  assert (slt W Ψ (pd 0) (pa0 0)) as F3 by (apply Hf; by right; right; left).
+  assert (slt W Ψ (pd 0) (pa1 1)) as F4 by (apply Hf; by right; right; right).
+  assert (slt W Ψ (pa 0) (pa 1)) as P0 by apply (slt_po W _ (pa 0) HW).
+  assert (slt W Ψ (pa0 0) (pa0 1)) as P1 by apply (slt_po W _ (pa0 0) HW).
+  assert (slt W Ψ (pa 1) (pd 0)) as D1 by (eapply sl_trans; [exact F1|exact F2]).
+  assert (slt W Ψ (pa 0) (pd 0)) as D2 by (eapply sl_trans; [exact P0|exact D1]).
+  assert (slt W Ψ (pa 1) (pa0 0)) as D3 by (eapply sl_trans; [exact D1|exact F3]).
+  assert (slt W Ψ (pa 0) (pa0 0)) as D4 by (eapply sl_trans; [exact P0|exact D3]).
+  assert (slt W Ψ (pa 0) (pa1 0)) as D5 by (eapply sl_trans; [exact P0|exact F1]).
+  assert (slt W Ψ (pa 1) (pa0 1)) as D6 by (eapply sl_trans; [exact D3|exact P1]).
+  assert (skn W Ψ (pa 0)) as Ka by (right; exists Cch, (ids 2), (pvar 0); split_and!; [by left|by left|done]).
+  assert (skn W Ψ (pd 0)) as Kd by (right; exists Cch, (ids 2), (pvar 1); split_and!; [by left|by right; left|done]).
+  apply (t_new_at W _ _ _ _ _ _ _ (Sch Sd Sd) (pa 0) HWs Ka). cbn.
+  apply (t_new_at W _ _ _ _ _ _ _ SEnd (pd 0) HWs Kd). cbn.
+  (* T1 *)
+  tstep.
+  { tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pa0 1)) (Some (pa 0)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
+    - tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (pa0 0)); cbn; set_solver|done|].
+      + eapply tv_pair; [exact HW|reflexivity| |tstep].
+        eapply tv_app; [exact HW|reflexivity| |tstep|].
+        * apply (sel1_typed W HWs _ _ _ _ Sd Sd (pa 0)); [exact Ka|reflexivity|exact D4|exact D5|exact D3].
+        * apply ubs_intro; [intros y Hy; mem_cases Hy|].
+          exists (pa0 1). split; [done|]. right. exact D6.
+      + apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (pa0 1). split; [done|]. right. exact P1.
+    - apply (KTClos _ _ _ (pa0 1)).
+    - done.
+    - apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pa0 1). split; [done|]. apply sle_refl, HW. }
+  (* T3 *)
+  cbn. tstep.
+  { tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pd 0)) (Some (pd 0)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn.
+    tstep; [tstep|apply (KTClos _ _ _ (pd 0))|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy|].
+    exists (pd 0). split; [done|]. apply sle_refl, HW. }
+  (* T2 *)
+  cbn.
+  eapply (branch_typed W _ _ _ [None; None; None; None; Some _; None; None; None]
+                               [None; Some _; None; None; None; None; None; None]
+                               _ _ _ _ (dual Sd) (dual Sd) _ (pa 0) HW).
+  { repeat constructor. }
+  { tstep. }
+  { apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
+  { apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
+  - (* branch A: close d, then receive on k at a.0 *)
+    cbn. unfold t2_arm1, recvclose. tstep.
+    + tstep; [tstep|apply (KTClos _ _ _ (pd 0))|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
+    + cbn. tstep.
+      * tstep; [tstep|apply KTRecv|kscope|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+      * cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+        apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+  - (* branch B: receive on k at a.1, then close d *)
+    cbn. unfold t2_arm2. tstep.
+    + tstep; [tstep|apply KTRecv|kscope|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
+    + cbn. tstep; [tstep|]. cbn. tstep.
+      * tstep; [tstep|apply (KTClos _ _ _ (pd 0))|done|].
+        apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
+      * tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+Qed.
+
+Theorem choice_deadlock_free : deadlock_free (∅, {[+ choice_main +]}).
+Proof. apply (soundness_source 2 Cch _ TUnit ch_rank_ok); [constructor|apply choice_typed]. Qed.
