@@ -112,9 +112,21 @@ Two lemmas make the cycle formal. `same_slot_cycle` says that δ ≺ k and k ≺
 cannot both hold where ≺ is irreflexive, for every k the two arms share.
 `same_slot_not_acyclic` says that a top-level constraint holding δ ≺ a[0] and
 a[0] ≺ δ fails `c0_acyclic`, so `soundness_source` accepts no such constraint.
-The step from the program to the two facts is the argument above and is not a
-theorem. An underivability proof in the style of examples/Rejected.v would need
-inversion over the derivation of the whole term.
+theories/examples/ChoiceNegative.v turns the argument into an underivability
+proof by inversion. `t2_underivable` says that T2 has no `styped` derivation in a
+context whose ≺ is irreflexive, for every point a of c′ : (dual Sch₀)@a and every
+type of the other bindings, as long as no binding is unlimited or existential
+(`plain`). `body0_underivable` says the same of the body after the two news,
+spawn T1, spawn T3 and T2, and `body0_underivable_top` instantiates the context
+with a top-level constraint that `c0_acyclic` accepts. E-Weak, E-Contract and
+E-Open cannot fire in a plain context, and E-Conv and E-Pack change only the
+type of the conclusion (`sd_of`), so the derivation of every subterm the proof
+looks at ends in its syntax-directed rule. The proof reads each fact off the
+upper point of an application and the heads of its future. E-Conv relates points
+by ≡, so the two facts come out up to ≡, and the closure of hlt under ≡ closes the
+cycle δ ≺ x[0] ≺ δ for the point x of the receive on c′. The theorems quantify over the context
+after the two news. The news themselves are not inverted, because E-Open of the
+created existential may sit anywhere in the derivation.
 
 ## A recursive choice
 
@@ -161,12 +173,56 @@ depth that grows at each carried point by the offset of its base plus 2
 | `choice_deadlock_free` | T1 ∥ T2 ∥ T3 is deadlock free | closed |
 | `same_slot_cycle` | the two facts of one shared point close a cycle | closed |
 | `same_slot_not_acyclic` | no acyclic top-level constraint states them | closed |
+| `t2_underivable` | T2 with both arms at one payload point has no derivation in an irreflexive context | closed |
+| `body0_underivable` | the same for spawn T1, spawn T3 and T2 | closed |
+| `body0_underivable_top` | the same under every acyclic top-level constraint | closed |
+| `choice_translate` | the translation of the fragment preserves `styped` | closed |
+| `choice_translate_df` | the translation of a closed program of the fragment is deadlock free | closed |
 | `srv_typed` | typing of the recursive server | closed |
 | `lp_acyclic` | the infinite constraint C is acyclic | closed |
 | `loop_typed` | `styped` of the client with the server under C | closed |
 | `loop_deadlock_free` | the client with the server is deadlock free | closed |
 
 "closed" means Print Assumptions answers "Closed under the global context".
+
+## Primitive choice translates into the encoding
+
+theories/examples/ChoiceTranslate.v translates programs that use select₁,
+select₂ and branch into programs that use Sch and Sbr, and `choice_translate`
+proves that the translation preserves typing. The translation of types replaces
+⊕(S₁, S₂) by Sch S₁ S₂ and &(T₁, T₂) by Sbr T₁ T₂ everywhere, and it commutes with
+duality (`tr_dual`) and with point instantiation (`tr_pinst`). The translation of
+terms replaces the three constants by closed λ-terms.
+
+```
+selᵢ = λc. let (k, k′) = new ∗ at x[i] in
+           let (c, ()) = ⟨send ⟨injᵢ k′, c⟩, ∗⟩ in
+           let () = spawn (λu. let () = u in close c) in k
+bra  = λc. let (p, c) = recv c in
+           let () = spawn (λu. let () = u in close c) in p
+```
+
+The close of the carrier runs in a thread of its own, so selᵢ and bra keep the
+upper point x of the constants. `selE_typed` asks x known, x ≺ x[0] and
+x ≺ x[1], because the send orders the carrier below both points of the sum.
+`braE_typed` asks no fact.
+
+The theorem holds on a fragment of `styped` (`fstyped`), with three
+restrictions.
+
+| Restriction | Reason |
+|---|---|
+| E-Conv compares session types syntactically and points by ≡ (`hsteq0`) | the translation does not commute with ⊕(S₁, S₂);S ≈ ⊕(S₁;S, S₂;S) |
+| □ and force bind no session variable | a box is typed at every instance of its session variables, and most instances are no translation |
+| selectᵢ at x asks x known, x ≺ x[0] and x ≺ x[1] | selᵢ creates k at x[i] and sends a payload with the heads x[0] and x[1] |
+
+Every other rule is in the fragment, among them E-Open, E-Pack, E-Weak,
+E-Contract, new with any creation constraint, and boxes without session
+variables. `fstyped_styped` embeds the fragment in `styped`. The translation keeps
+the hypotheses, so a closed program of the fragment and its translation share
+their top-level constraint, and `choice_translate_df` gives deadlock freedom of
+the translation by `soundness_source`. The fragment excludes the recursive
+server above, whose derivation converts Rs to its unfolding.
 
 ## Cost against branch points
 
