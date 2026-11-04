@@ -4,8 +4,9 @@ A message whose payload introduces facts at the send is a derived form. The
 payload of a send is a type, and an existential ∃^ℓ ι⃗. C. T is a type. The
 sender packs with E-Pack and proves C at its instance. The receiver opens with
 E-Open and assumes C about fresh points. No rule, constant or definition of the
-core changes. The example is theories/examples/ExPayload.v, with the closed
-theorems `ex_typed` and `ex_deadlock_free`.
+core changes. theories/examples/ExPayload.v states the derived rules
+(`send_ex`, `recv_ex`) and types an example (`ex_typed`, `ex_deadlock_free`).
+Every theorem there is closed.
 
 ## The derived rules
 
@@ -35,6 +36,10 @@ payload.
 ───────────────────────────────────────────────────────── Recv-∃
 Γ ; Δ, c : (?P;S)@x ⊢ let (y, c) = recv c in e : U
 ```
+
+`send_ex` and `recv_ex` in ExPayload.v state the two rules for `styped`, with
+the futures of the premises written out, and prove them from E-Pack, E-App,
+E-Pair, E-LetPair, E-Open and the two signatures.
 
 E-Open adds C[x][ι⃗′/ι⃗] as a hypothesis with the ι⃗′ as its instance, so
 the receiver also knows the ι⃗′. With n = 0 the existential binds no point and

@@ -85,6 +85,61 @@ Proof.
   - intros x y [= -> ->]. unfold r. cbn. lia.
 Qed.
 
+(** ** The derived rules
+
+    Send-∃ is E-Pack of the value followed by the send signature. The
+    send asks x ≺ ℓ for the lower bound ℓ of the packed payload, and
+    E-Pack asks ℓ at or below every head of the value. Recv-∃ is the
+    receive signature, E-LetPair and E-Open of the bound payload, which
+    adds C at fresh points as a hypothesis. *)
+
+Lemma sf_union_none F : sf_union F (opt_heads None) = F.
+Proof. destruct F as [P o]. unfold sf_union. cbn. by rewrite union_empty_r_L. Qed.
+
+Lemma send_ex Φ Ψ Δ Δ1 Δ2 F v c m P S x l n C T ys :
+  payload_at m P x = TEx (LPt l) n C T → hbot P = false → pscoped m P →
+  lenv_split Δ Δ1 Δ2 →
+  length ys = n → Forall (hyp_known Ψ) ys → bcs_hold (heqs Ψ) (hlt Ψ) C ys →
+  (∀ y, y ∈ heads (ty_inst ys T) → hle Ψ l y) → hbot (ty_inst ys T) = false →
+  hlt Ψ x l → hub_below_s Ψ Φ (Some x) F →
+  styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) v (ty_inst ys T) →
+  styped Φ Ψ Δ2 (sf_union F {[l]}) c (TSess (SSeq (SSnd m P) S) x) →
+  styped Φ Ψ Δ F (App ESend (Pair v c)) (TSess S (pt_shift 1 x)).
+Proof.
+  intros Hpay Hb Hsc Hs Hn HK HC Hl Hbt Hxl Hub Hv Hc.
+  eapply (st_app Φ Ψ Δ (lenv_nones Δ) Δ F _ _ (Some x) None
+            (TProd (payload_at m P x) (TSess (SSeq (SSnd m P) S) x))).
+  - apply lenv_split_nones_l.
+  - exact Hub.
+  - apply st_konst; [apply lenv_empty_nones| |exact Hsc].
+    apply KTSend. rewrite Hb. intros h Hh. rewrite Hpay in Hh. cbn in Hh.
+    apply elem_of_singleton in Hh as ->. exact Hxl.
+  - rewrite sf_union_none. eapply (st_pair _ _ _ Δ1 Δ2); [exact Hs| |].
+    + rewrite Hpay. eapply st_pack; [exact Hn|exact HK|exact HC|split; [exact Hl|exact Hbt]|exact Hv].
+    + rewrite Hpay. exact Hc.
+Qed.
+
+Lemma recv_ex Φ Ψ Δ Δ1 Δ2 F c e m P S x lb n C T U :
+  payload_at m P x = TEx lb n C T → ¬ unlimited T → pscoped m P →
+  lenv_split Δ Δ1 Δ2 →
+  hub_below_s Ψ Φ (Some x) (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) →
+  styped Φ Ψ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) c (TSess (SSeq (SRcv m P) S) x) →
+  styped (fhyps_pinst (pshift n) Φ) (hyps_inst (pshift n) Ψ ++ [(bcs_inst (pshift n) C, ids n)])
+    (<[1 := Some T]> (lenv_pinst (pshift n)
+       (Some (TSess S (pt_shift 1 x)) :: Some (TEx lb n C T) :: Δ2)))
+    (sf_pinst (pshift n) F) e (pinst_ty (pshift n) U) →
+  styped Φ Ψ Δ F (LetP (App ERecv c) e) U.
+Proof.
+  intros Hpay Hu Hsc Hs Hub Hc He.
+  eapply (st_letp Φ Ψ Δ Δ1 Δ2 F _ _ (payload_at m P x) (TSess S (pt_shift 1 x))); [exact Hs| |].
+  - eapply (st_app _ _ Δ1 (lenv_nones Δ1) Δ1 _ _ _ (Some x) None (TSess (SSeq (SRcv m P) S) x)).
+    + apply lenv_split_nones_l.
+    + exact Hub.
+    + apply st_konst; [apply lenv_empty_nones|apply KTRecv|exact Hsc].
+    + rewrite sf_union_none. exact Hc.
+  - rewrite Hpay. eapply (st_open _ _ _ _ _ 1); [done|exact Hu|exact He].
+Qed.
+
 (** ** Typing *)
 
 Lemma pay_scoped : pscoped 1 Pay.

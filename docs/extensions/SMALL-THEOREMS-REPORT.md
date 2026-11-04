@@ -81,6 +81,8 @@ theories/examples/ExPayload.v and docs/extensions/existential-payloads.md.
 
 | Theorem | Statement |
 |---|---|
+| `send_ex` | Send-∃ for `styped`: E-Pack at ys, then send, asks x ≺ ℓ |
+| `recv_ex` | Recv-∃ for `styped`: receive, E-LetPair and E-Open on the payload |
 | `ex_rank_ok` | the top-level constraint {a+1 ≺ a[0]} is acyclic |
 | `ex_typed` | styped of the server and client program under it |
 | `ex_deadlock_free` | the program is deadlock free, by `soundness_source` |
@@ -90,7 +92,7 @@ The server creates k₁ at a[0] and k₂ at a fresh v with {a[0] ≺ v}, and sen
 The client opens the existential and uses the opened fact a[0] ≺ v′ to close k₁′
 while it holds k₂′. The doc gives the derived rules Send-∃ (E-Pack plus the send
 signature, asking x ≺ ℓ) and Recv-∃ (the receive signature, E-LetPair and
-E-Open). The answer is a derived form. The boundary is the type language. A payload
+E-Open), proved in Rocq as `send_ex` and `recv_ex`. The answer is a derived form. The boundary is the type language. A payload
 type mentions only payload binders, so no message carries a fact about the
 carrier point or about channels outside the message, derived or primitive.
 
@@ -112,5 +114,3 @@ filled in when it ends.
 - The translation covers the fragment above. Recursive session types that need
   E-Conv up to unfolding, and boxes with session variables, are outside. The
   recursive server of choice-encoding.md is outside.
-- The derived rules Send-∃ and Recv-∃ are written in the doc and used in the
-  example. They are not stated as general Rocq lemmas.
