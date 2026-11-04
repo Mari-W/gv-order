@@ -24,8 +24,8 @@ ys known    Γ ⊢ C[x][ys/ι⃗]    Γ ⊢ ℓ[x] ≼ heads(T[x][ys/ι⃗])
 
 The first four premises are E-Pack at the instance ys. The fifth is the fact
 set of `KSSend`, x ≺ h for every h ∈ heads(P[x]), and heads(P[x]) = {ℓ[x]}.
-The send never asks x below the channels inside the value. It asks x ≺ ℓ[x],
-and E-Pack asks ℓ[x] at or below every head of the value.
+The send does not ask x below the channels inside the packed value. It asks
+x ≺ ℓ[x], and E-Pack asks ℓ[x] at or below every head of the value.
 
 The receive is the receive signature, E-LetPair and E-Open on the bound
 payload.
@@ -97,10 +97,10 @@ gives no point above v′. I did not try the spawned variant in Rocq.
 
 ## Derived form or rule
 
-A derived form. Every payload that a session type can state, with facts over
-payload points and over points bound in the payload, types by Send-∃ and
-Recv-∃, and the semantic side needs nothing new because E-Pack, E-Open, send and
-recv are already sound.
+A derived form. Send-∃ and Recv-∃ are compositions of E-Pack, E-Open, E-LetPair
+and the send and receive signatures, so a payload with facts over payload points
+and over points bound in the payload needs no new rule. The semantic side needs
+nothing new either, because `soundness_source` covers every `styped` derivation.
 
 The boundary is the type language. A payload type mentions payload binders only,
 and a session type carries no other point (types/Types.v, "point instantiation
