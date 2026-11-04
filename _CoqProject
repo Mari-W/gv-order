@@ -12,6 +12,7 @@ theories/types/LinearEnv.v
 theories/relation/Worlds.v
 theories/relation/Creation.v
 theories/relation/Readiness.v
+theories/relation/BranchWorlds.v
 theories/relation/FutureConj.v
 theories/relation/LogicalRelation.v
 theories/invariance/PointRenaming.v
@@ -76,6 +77,7 @@ theories/examples/LitTools.v
 theories/examples/MilnerSched.v
 theories/examples/KobForwarder.v
 theories/examples/FactServer.v
+theories/examples/DataBranch.v
 theories/examples/Stream.v
 theories/examples/Congruence.v
 theories/examples/ChoiceEnc.v

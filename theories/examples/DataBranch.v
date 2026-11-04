@@ -1,4 +1,4 @@
-(** * A branch on a received bit: deadlock free, not derivable (SHARP-EDGES 4)
+(** * A branch on a received bit (SHARP-EDGES 4, docs/extensions/data-dependent-worlds.md)
 
     db_main b creates three channels, e first, then c, then d, spawns
     a closer for the other end of c, a closer for the other end of d
@@ -17,37 +17,41 @@
     The inl branch closes c while it holds d, the inr branch closes d
     while it holds c. With c at x and d at y, E-App asks x ≺ y in the
     first branch and y ≺ x in the second, and E-Case types both
-    branches under one Γ.
+    branches under one Γ. SHARP-EDGES 4 records such a program as
+    deadlock free and not derivable. It is derivable.
 
     What is proved here.
 
-    - [db_deadlock_free] : db_main b is deadlock free for both bits.
-      The proof replaces every case by the case whose two branches are
-      the branch the run takes ([keep]). The run never builds the other
-      injection ([okb]), so [keep] is a simulation of every run and
-      reflects safety ([df_keep]). keep b (db_main b) orders both
-      branches the same way and types ([db_keep_typed]), so it is
-      deadlock free by [soundness_source].
+    - [db_typed] : db_main b has a source derivation for both bits, with
+      no top-level points. The receiver gives the bit a type whose side
+      for the other bit carries an unsatisfiable fact about the payload
+      points of the receive, ∗ ⊕ ∃{z[0]+5 ≺ z[0]+1}.∗ for b = false.
+      E-Open in the dead branch adds the fact, and the creation
+      constraints anchor c and d to z[0]+1 and z[0]+5, so the dead
+      branch derives the reverse order. The static facts give the order
+      of the live branch. [db_deadlock_free] follows from [soundness].
 
-    - [db_component_unrealizable] : the component
+    - [db_component_unrealizable] : the case node of db_main, with the
+      bit typed at ∗ ⊕ ∗ (no fact on either side), c : Close@x and
+      d : Close@y, has no source derivation under any hypotheses Φ, Ψ
+      that a strict world realizes. The proof is semantic. A derivation
+      gives the case node in the logical relation at every realizing
+      world (the fundamental theorem), and both inl ∗ and inr ∗ lie in
+      V⟦∗ ⊕ ∗⟧. Readiness of close c; close d asks x ≺ y in the world,
+      readiness of close d; close c asks y ≺ x in the same world, and a
+      strict world has no cycle. [db_component_untyped_top] instantiates
+      it at the hypotheses a source program starts with.
 
-        K = case z of inl u ⇒ let () = u in close c; close d
-                    | inr u ⇒ let () = u in close d; close c
+    - [df_keep] : replacing every case by the case whose branches are
+      both the branch a run takes reflects deadlock freedom, for a
+      program that never builds the other injection. It is a tool for
+      programs whose dead branch does not type. db_main does not need
+      it.
 
-      with z : ∗ ⊕ ∗, c : Close@x and d : Close@y has no source
-      derivation under any hypotheses Φ, Ψ that some strict world
-      realizes. The proof is semantic. A derivation gives K in the
-      logical relation at every realizing world (the fundamental
-      theorem), and both inl ∗ and inr ∗ lie in V⟦∗ ⊕ ∗⟧. Readiness of
-      close c; close d then asks x ≺ y in the world, readiness of
-      close d; close c asks y ≺ x in the same world, and a strict world
-      has no cycle.
-
-    The step from db_main to K is an inversion of the derivation of
-    db_main down to its case node, which the development does not
-    mechanize (examples/Rejected.v gives the same argument by hand for
-    its programs). docs/extensions/data-dependent-worlds.md spells it
-    out for db_main. *)
+    So one world per component limits a component whose interface types
+    the bit without facts. A closed program whose bit comes from a
+    constant puts the facts on the bit. The design note discusses what
+    this means for the candidates. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.LitTools lang.ThreadSim.
@@ -77,11 +81,6 @@ Definition db_spawns (b : bool) (rest : expr) : expr :=
 
 Definition db_main (b : bool) : expr :=
   let_new_pair (let_new_pair (let_new_pair (db_spawns b (db_tail 6 4 4 6)))).
-
-(** The program with both branches ordered as the branch for b. *)
-Definition db_same (b : bool) : expr :=
-  let_new_pair (let_new_pair (let_new_pair
-    (db_spawns b (if b then db_tail 4 6 4 6 else db_tail 6 4 6 4)))).
 
 (** ** Keeping one branch of every case
 
@@ -557,16 +556,17 @@ Qed.
 (** ** The component has no derivation under realizable hypotheses
 
     db_case is the case node of db_main, in the context the run gives
-    it: the received bit z at 1, d at 3 and c at 5, every other entry
-    spent. A world W realizes Φ and Ψ when an instance σ of the point
+    it: the received bit z at 1, d at 3 and c at 7, every other entry
+    spent ([db_typed_false] reaches this node with this context, except
+    that it gives z a type with a fact). A world W realizes Φ and Ψ when an instance σ of the point
     variables makes every hypothesis of Ψ hold in W and puts every
     frame variable of Φ below a set of points ρ. *)
 
-Definition db_case : expr := Case (Var 1) (db_branch 6 4) (db_branch 4 6).
+Definition db_case : expr := Case (Var 1) (db_branch 8 4) (db_branch 4 8).
 
 Definition db_ctx (x y : point) (k : nat) : lenv :=
-  [None; Some (TSum TUnit TUnit); None; Some (TSess SEnd y); None; Some (TSess SEnd x)]
-    ++ replicate k None.
+  [None; Some (TSum TUnit TUnit); None; Some (TSess SEnd y); None; None; None;
+   Some (TSess SEnd x)] ++ replicate k None.
 
 Definition realizable (Φ : fhyps) (Ψ : hyps) : Prop :=
   ∃ W σ ρ, strict W ∧ inst_ok W (fhyps_pinst σ Φ) ρ ∧
@@ -579,7 +579,7 @@ Definition db_Θ (x y : point) : tenv :=
   <[chd := One (SEnd, y)]> {[chc := One (SEnd, x)]}.
 
 Definition db_γ (b : bool) : nat → expr :=
-  λ i, match i with 1 => bit b | 3 => Chan chd | 5 => Chan chc | _ => EUnit end.
+  λ i, match i with 1 => bit b | 3 => Chan chd | 7 => Chan chc | _ => EUnit end.
 
 Lemma db_comp_cd R x y :
   tenv_comp R (db_Θ x y) {[chd := One (SEnd, y)]} {[chc := One (SEnd, x)]}.
@@ -604,8 +604,8 @@ Proof. unfold lenv_pinst. by rewrite fmap_replicate. Qed.
 Lemma db_ground n W b x y k :
   world_wf W →
   grounding n W (db_Θ x y)
-    ([None; Some (TSum TUnit TUnit); None; Some (TSess SEnd y); None; Some (TSess SEnd x)]
-       ++ replicate k None) (db_γ b).
+    ([None; Some (TSum TUnit TUnit); None; Some (TSess SEnd y); None; None; None;
+      Some (TSess SEnd x)] ++ replicate k None) (db_γ b).
 Proof.
   intros HW. cbn [grounding app].
   exists ∅, (db_Θ x y). split; [apply tenv_comp_empty_l, (wf_eq_sym _ HW)|]. split.
@@ -729,4 +729,315 @@ Proof.
   - by apply wc0_strict.
   - intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty.
   - by apply wc0_holds.
+Qed.
+
+(** ** db_main types: the dead branch learns a fact from the bit
+
+    The receiver types the bit at ∗ ⊕ ∃{z[0]+5 ≺ z[0]+1}.∗ (for b =
+    false), where z is the point of the receive on e and z[0] its first
+    payload point. The second side of the sum has no value in a strict
+    world, and the sender never builds it. E-Open in the inr branch adds
+    z[0]+5 ≺ z[0]+1 to the hypotheses, and with the creation constraints
+    that give d below z[0]+5 and c above z[0]+1 it derives y ≺ x, the
+    order the inr branch needs. The inl branch reads x ≺ y from the
+    creation constraint of d. So one world (the facts of the three
+    creation constraints) types both branches, and the hypotheses of the
+    dead branch are not realizable. The creation constraint of e states
+    z+1 ≺ z[0]+5, so that c and d can be created between z+1 and the
+    payload points. For b = true the roles of the two sides swap. *)
+
+(** ι[0] + k *)
+Definition sl0 (a k : nat) : point := Pt (NSlot (NVar a) 0 0) k.
+
+Definition Ce : bcs := BCs [] (λ g, g = FLt (pv 0 1) (sl0 0 5)).
+Definition Cdead : bcs := BCs [pvar 0] (λ g, g = FLt (pv 0 5) (pv 0 1)).
+Definition Tz : ty := TSum TUnit (TEx LNone 0 Cdead TUnit).
+Definition Se : sty := SSeq (SRcv 1 Tz) SEnd.
+Definition Tz_t : ty := TSum (TEx LNone 0 Cdead TUnit) TUnit.
+Definition Se_t : sty := SSeq (SRcv 1 Tz_t) SEnd.
+
+Definition rkv (x : point) : nat :=
+  2 * pt_off x + match pt_name x with NVar _ => 0 | _ => 1 end.
+
+Lemma Ce_ok peq plt : cc_ok peq plt Ce.
+Proof.
+  apply (cc_ok_inner peq plt _ (λ x y, rkv x < rkv y)); [intros; lia|intros; lia| |].
+  - intros x _. unfold rkv, pt_shift. simpl. destruct (pt_name x); lia.
+  - intros g -> _. eexists _, _. split; [done|]. cbn. lia.
+Qed.
+
+Lemma sl_fresh_l W Ψ L H x l : (fresh_bcs L H, [x]) ∈ Ψ → l ∈ L → slt W Ψ l x.
+Proof.
+  intros Hg Hl. apply sl_h. exists (fresh_bcs L H), [x]. split; [done|].
+  apply fresh_open. left. by exists l.
+Qed.
+
+Lemma sl_fresh_r W Ψ L H x h : (fresh_bcs L H, [x]) ∈ Ψ → h ∈ H → slt W Ψ x h.
+Proof.
+  intros Hg Hh. apply sl_h. exists (fresh_bcs L H), [x]. split; [done|].
+  apply fresh_open. right. by exists h.
+Qed.
+
+Lemma db_typed_false : styped ∅ [] [] (∅, None) (db_main false) TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
+  set (W := Wpo []) in *. unfold db_main, let_new_pair.
+  apply (t_new_open W _ _ ∅ _ _ _ _ Se Ce); [apply Ce_ok|constructor|].
+  fresh_clean.
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pv 0 1; sl0 0 1] [sl0 0 5]).
+  { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done);
+      (eapply skn_inst; [by left|by left|done]). }
+  { intros l h Hl Hh. apply list_elem_of_singleton in Hh as ->.
+    rewrite elem_of_cons, list_elem_of_singleton in Hl. destruct Hl as [->| ->].
+    - hyp0 (pv 0 1) (sl0 0 5).
+    - apply slt_po_lt; [exact HW|lia]. }
+  fresh_clean.
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pv 1 1; pvar 0] [sl0 1 5]).
+  { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done).
+    - eapply skn_inst; [by left|by left|done].
+    - eapply skn_inst; [by right; left|by left|done].
+    - eapply skn_inst; [by left|by left|done]. }
+  { intros l h Hl Hh. apply list_elem_of_singleton in Hh as ->.
+    rewrite elem_of_cons, list_elem_of_singleton in Hl. destruct Hl as [->| ->].
+    - hyp0 (pv 0 1) (sl0 0 5).
+    - apply (slt_fresh_r W _ (pshift 1) [pv 0 1; sl0 0 1] [sl0 0 5] (pvar 0) (sl0 0 5));
+        [by right; left|by left]. }
+  fresh_clean.
+  rewrite !bcs_inst_fresh.
+  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pvar 0))) with (pvar 2).
+  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
+  change (bcs_inst (pshift 1) (bcs_inst (pshift 1) (bcs_inst (pshift 1) Ce))) with Ce.
+  cbn [fmap list_fmap].
+  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pv 0 1))) with (pv 2 1).
+  change (pt_inst (pshift 1) (pt_inst (pshift 1) (sl0 0 1))) with (sl0 2 1).
+  change (pt_inst (pshift 1) (pt_inst (pshift 1) (sl0 0 5))) with (sl0 2 5).
+  change (pt_inst (pshift 1) (pv 1 1)) with (pv 2 1).
+  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
+  change (pt_inst (pshift 1) (sl0 1 5)) with (sl0 2 5).
+  set (Ψ := [(Ce, [pvar 2]); (fresh_bcs [pv 2 1; sl0 2 1] [sl0 2 5], [pvar 1]);
+             (fresh_bcs [pv 2 1; pvar 1] [sl0 2 5], [pvar 0])]).
+  assert (slt W Ψ (pv 2 1) (pvar 1)) as Hz1x.
+  { apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [sl0 2 5]); [by right; left|by left]. }
+  assert (slt W Ψ (pv 2 1) (pvar 0)) as Hz1y.
+  { apply (sl_fresh_l _ _ [pv 2 1; pvar 1] [sl0 2 5]); [by right; right; left|by left]. }
+  assert (slt W Ψ (pvar 1) (pvar 0)) as Hxy.
+  { apply (sl_fresh_l _ _ [pv 2 1; pvar 1] [sl0 2 5]); [by right; right; left|by right; left]. }
+  assert (slt W Ψ (pvar 2) (pvar 1)) as Hzx.
+  { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1x]. }
+  assert (slt W Ψ (pvar 2) (pvar 0)) as Hzy.
+  { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1y]. }
+  tstep.
+  { (* spawn (λu. let () = u in close c′) *)
+    tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy|].
+    exists (pvar 1). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+  cbn. tstep.
+  { (* spawn (λu. let () = u in close d′) *)
+    tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy|].
+    exists (pvar 0). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+  cbn. tstep.
+  { (* spawn the sender of inl ∗ *)
+    tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 1)) (Some (pvar 2)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn. tstep.
+    - tstep; [|apply (KTSend _ _ _ 1 Tz SEnd (pvar 2)); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
+      + tstep; first [tstep|cbn; apply t_inj1, (tv_unit W HW); reflexivity].
+      + apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (pv 2 1). split; [done|]. right. apply (slt_po W _ (pvar 2) HW).
+    - apply KTClos.
+    - done.
+    - apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pv 2 1). split; [done|]. apply sle_refl, HW. }
+  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (payload_at 1 Tz (pvar 2)) (TSess SEnd (pv 2 1)));
+    [reflexivity| |].
+  { tstep; [tstep|apply KTRecv|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
+  cbn. tstep.
+  { tstep; [tstep|apply KTClos|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
+  cbn. set (Cd := bcs_inst (plist [pt_slot (pvar 2) 0]) Cdead).
+  eapply (tv_case W _ _ _ _ _ _ _ TUnit (TEx LNone 0 Cd TUnit) TUnit); [exact HW|reflexivity|tstep| |].
+  - (* inl: close c, then d *)
+    cbn. tstep; [tstep|]. cbn. tstep.
+    + tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
+    + tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+  - (* inr: open the payload, which states z[0]+5 ≺ z[0]+1 *)
+    cbn. apply (t_open W _ _ _ _ _ _ 0 LNone 0 Cd TUnit TUnit); [done|intros Hu; exact Hu|].
+    replace (hyps_inst (pshift 0) Ψ) with Ψ by reflexivity.
+    rewrite fhyps_pinst_empty, tenv_pinst_empty, sf_pinst_none.
+    change (pinst_ty (pshift 0) TUnit) with TUnit.
+    replace (lenv_pinst (pshift 0) _) with
+      [Some (TEx LNone 0 Cd TUnit); None; None; None;
+           Some (TSess SEnd (pvar 0)); None; None; None;
+           Some (TSess SEnd (pvar 1)); None; None; None; None; None; None] by reflexivity.
+    cbn [insert list_insert].
+    set (Ψ' := Ψ ++ [(bcs_inst (pshift 0) Cd, ids 0)]).
+    assert (slt W Ψ' (sl0 2 5) (sl0 2 1)) as Hdead.
+    { apply sl_h. exists (bcs_inst (pshift 0) Cd), []. split.
+      { unfold Ψ'. apply elem_of_app. right. by left. }
+      exists (FLt (sl0 2 5) (sl0 2 1)). split; [|reflexivity].
+      exists (FLt (pv 0 5) (pv 0 1)). split_and!; [done| |reflexivity].
+      cbn. lia. }
+    assert (slt W Ψ' (pvar 0) (pvar 1)) as Hyx.
+    { eapply sl_trans.
+      { apply (sl_fresh_r _ _ [pv 2 1; pvar 1] [sl0 2 5]); [|by left].
+        apply elem_of_app. left. by right; right; left. }
+      eapply sl_trans; [exact Hdead|].
+      apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [sl0 2 5]); [|by right; left].
+      apply elem_of_app. left. by right; left. }
+    tstep; [tstep|]. cbn. tstep.
+    + tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
+    + tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+Qed.
+
+Lemma db_typed_true : styped ∅ [] [] (∅, None) (db_main true) TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
+  set (W := Wpo []) in *. unfold db_main, let_new_pair.
+  apply (t_new_open W _ _ ∅ _ _ _ _ Se_t Ce); [apply Ce_ok|constructor|].
+  fresh_clean.
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pv 0 1; sl0 0 1] [sl0 0 5]).
+  { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done);
+      (eapply skn_inst; [by left|by left|done]). }
+  { intros l h Hl Hh. apply list_elem_of_singleton in Hh as ->.
+    rewrite elem_of_cons, list_elem_of_singleton in Hl. destruct Hl as [->| ->].
+    - hyp0 (pv 0 1) (sl0 0 5).
+    - apply slt_po_lt; [exact HW|lia]. }
+  fresh_clean.
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pv 1 1; sl0 1 1] [pvar 0; sl0 1 5]).
+  { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done).
+    - eapply skn_inst; [by left|by left|done].
+    - eapply skn_inst; [by left|by left|done].
+    - eapply skn_inst; [by right; left|by left|done].
+    - eapply skn_inst; [by left|by left|done]. }
+  { intros l h Hl Hh.
+    rewrite elem_of_cons, list_elem_of_singleton in Hl, Hh.
+    destruct Hl as [->| ->], Hh as [->| ->].
+    - apply (slt_fresh_l W _ (pshift 1) [pv 0 1; sl0 0 1] [sl0 0 5] (pvar 0) (pv 0 1));
+        [by right; left|by left].
+    - hyp0 (pv 0 1) (sl0 0 5).
+    - apply (slt_fresh_l W _ (pshift 1) [pv 0 1; sl0 0 1] [sl0 0 5] (pvar 0) (sl0 0 1));
+        [by right; left|by right; left].
+    - apply slt_po_lt; [exact HW|lia]. }
+  fresh_clean.
+  rewrite !bcs_inst_fresh.
+  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pvar 0))) with (pvar 2).
+  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
+  change (bcs_inst (pshift 1) (bcs_inst (pshift 1) (bcs_inst (pshift 1) Ce))) with Ce.
+  cbn [fmap list_fmap].
+  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pv 0 1))) with (pv 2 1).
+  change (pt_inst (pshift 1) (pt_inst (pshift 1) (sl0 0 1))) with (sl0 2 1).
+  change (pt_inst (pshift 1) (pt_inst (pshift 1) (sl0 0 5))) with (sl0 2 5).
+  change (pt_inst (pshift 1) (pv 1 1)) with (pv 2 1).
+  change (pt_inst (pshift 1) (sl0 1 1)) with (sl0 2 1).
+  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
+  change (pt_inst (pshift 1) (sl0 1 5)) with (sl0 2 5).
+  set (Ψ := [(Ce, [pvar 2]); (fresh_bcs [pv 2 1; sl0 2 1] [sl0 2 5], [pvar 1]);
+             (fresh_bcs [pv 2 1; sl0 2 1] [pvar 1; sl0 2 5], [pvar 0])]).
+  assert (slt W Ψ (pv 2 1) (pvar 1)) as Hz1x.
+  { apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [sl0 2 5]); [by right; left|by left]. }
+  assert (slt W Ψ (pv 2 1) (pvar 0)) as Hz1y.
+  { apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [pvar 1; sl0 2 5]); [by right; right; left|by left]. }
+  assert (slt W Ψ (pvar 0) (pvar 1)) as Hyx.
+  { apply (sl_fresh_r _ _ [pv 2 1; sl0 2 1] [pvar 1; sl0 2 5]); [by right; right; left|by left]. }
+  assert (slt W Ψ (pvar 2) (pvar 1)) as Hzx.
+  { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1x]. }
+  assert (slt W Ψ (pvar 2) (pvar 0)) as Hzy.
+  { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1y]. }
+  tstep.
+  { (* spawn (λu. let () = u in close c′) *)
+    tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy|].
+    exists (pvar 1). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+  cbn. tstep.
+  { (* spawn (λu. let () = u in close d′) *)
+    tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy|].
+    exists (pvar 0). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+  cbn. tstep.
+  { (* spawn the sender of inr ∗ *)
+    tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 1)) (Some (pvar 2)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn. tstep.
+    - tstep; [|apply (KTSend _ _ _ 1 Tz_t SEnd (pvar 2)); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
+      + tstep; first [tstep|cbn; apply t_inj2, (tv_unit W HW); reflexivity].
+      + apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (pv 2 1). split; [done|]. right. apply (slt_po W _ (pvar 2) HW).
+    - apply KTClos.
+    - done.
+    - apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pv 2 1). split; [done|]. apply sle_refl, HW. }
+  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (payload_at 1 Tz_t (pvar 2)) (TSess SEnd (pv 2 1)));
+    [reflexivity| |].
+  { tstep; [tstep|apply KTRecv|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
+  cbn. tstep.
+  { tstep; [tstep|apply KTClos|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
+  cbn. set (Cd := bcs_inst (plist [pt_slot (pvar 2) 0]) Cdead).
+  eapply (tv_case W _ _ _ _ _ _ _ (TEx LNone 0 Cd TUnit) TUnit TUnit); [exact HW|reflexivity|tstep| |].
+  - (* inl: open the payload, which states z[0]+5 ≺ z[0]+1 *)
+    cbn. apply (t_open W _ _ _ _ _ _ 0 LNone 0 Cd TUnit TUnit); [done|intros Hu; exact Hu|].
+    replace (hyps_inst (pshift 0) Ψ) with Ψ by reflexivity.
+    rewrite fhyps_pinst_empty, tenv_pinst_empty, sf_pinst_none.
+    change (pinst_ty (pshift 0) TUnit) with TUnit.
+    replace (lenv_pinst (pshift 0) _) with
+      [Some (TEx LNone 0 Cd TUnit); None; None; None;
+           Some (TSess SEnd (pvar 0)); None; None; None;
+           Some (TSess SEnd (pvar 1)); None; None; None; None; None; None] by reflexivity.
+    cbn [insert list_insert].
+    set (Ψ' := Ψ ++ [(bcs_inst (pshift 0) Cd, ids 0)]).
+    assert (slt W Ψ' (sl0 2 5) (sl0 2 1)) as Hdead.
+    { apply sl_h. exists (bcs_inst (pshift 0) Cd), []. split.
+      { unfold Ψ'. apply elem_of_app. right. by left. }
+      exists (FLt (sl0 2 5) (sl0 2 1)). split; [|reflexivity].
+      exists (FLt (pv 0 5) (pv 0 1)). split_and!; [done| |reflexivity].
+      cbn. lia. }
+    assert (slt W Ψ' (pvar 1) (pvar 0)) as Hxy.
+    { eapply sl_trans.
+      { apply (sl_fresh_r _ _ [pv 2 1; sl0 2 1] [sl0 2 5]); [|by left].
+        apply elem_of_app. left. by right; left. }
+      eapply sl_trans; [exact Hdead|].
+      apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [pvar 1; sl0 2 5]); [|by right; left].
+      apply elem_of_app. left. by right; right; left. }
+    tstep; [tstep|]. cbn. tstep.
+    + tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
+    + tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+  - (* inr: close d, then c *)
+    cbn. tstep; [tstep|]. cbn. tstep.
+    + tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
+    + tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+Qed.
+
+Theorem db_typed b : styped ∅ [] [] (∅, None) (db_main b) TUnit.
+Proof. destruct b; [apply db_typed_true|apply db_typed_false]. Qed.
+
+(** Deadlock freedom for both bits, from [soundness]. *)
+Theorem db_deadlock_free b : deadlock_free (∅, {[+ db_main b +]}).
+Proof.
+  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed_s; [constructor|apply db_typed].
 Qed.
