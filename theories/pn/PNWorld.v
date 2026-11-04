@@ -110,7 +110,6 @@ Fixpoint denN (p : pname) : dn :=
   | NConst a => DC a 0
   | NVar a => DV a 0
   | NSlot p b i => dsl (dshN b (denN p)) i
-  | NBr p b _ => dsh (dshN b (denN p))
   end.
 
 Definition den (x : point) : dn := dshN (pt_off x) (denN (pt_name x)).

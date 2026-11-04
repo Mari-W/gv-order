@@ -81,8 +81,7 @@ Definition ids (m : nat) : list point := pvar <$> List.seq 0 m.
 
     Every fact the static system reads comes from two judgments over
     the context Γ = (W, Ψ, Φ). Γ ⊢ x ≡ y ([seqs]) is the least
-    congruence for successor, carried roots and branch roots (K10) that
-    contains ≡ of W and
+    congruence for successor and x ↦ x[i] that contains ≡ of W and
     the ≡ facts of the hypotheses. Γ ⊢ a ≺ b ([fl]) is over nodes,
     which are points and frame variables. It has program order
     x ≺ x + 1 ([fl_po]), the order of W, the ≺ facts of the hypotheses
@@ -111,8 +110,7 @@ Inductive seqs (W : world) (Ψ : hyps) : point → point → Prop :=
   | se_sym x y : seqs W Ψ x y → seqs W Ψ y x
   | se_trans x y z : seqs W Ψ x y → seqs W Ψ y z → seqs W Ψ x z
   | se_shift x y : seqs W Ψ x y → seqs W Ψ (pt_shift 1 x) (pt_shift 1 y)
-  | se_slot x y i : seqs W Ψ x y → seqs W Ψ (pt_slot x i) (pt_slot y i)
-  | se_br x y i : seqs W Ψ x y → seqs W Ψ (pt_br x i) (pt_br y i).
+  | se_slot x y i : seqs W Ψ x y → seqs W Ψ (pt_slot x i) (pt_slot y i).
 
 Inductive fl (Γ : fctx) : node → node → Prop :=
   | fl_w x y : w_lt (fc_W Γ) x y → fl Γ (NP x) (NP y)
@@ -121,8 +119,7 @@ Inductive fl (Γ : fctx) : node → node → Prop :=
   | fl_eql x x' b : seqs (fc_W Γ) (fc_hyps Γ) x x' → fl Γ (NP x') b → fl Γ (NP x) b
   | fl_eqr a y y' : fl Γ a (NP y') → seqs (fc_W Γ) (fc_hyps Γ) y' y → fl Γ a (NP y)
   | fl_trans a y b : fl Γ a (NP y) → fl Γ (NP y) b → fl Γ a b
-  | fl_po x : fl Γ (NP x) (NP (pt_shift 1 x))       (* program order *)
-  | fl_br x i : fl Γ (NP x) (NP (pt_br x i)).       (* branch roots, K10 *)
+  | fl_po x : fl Γ (NP x) (NP (pt_shift 1 x)).      (* program order *)
 
 (** A map of the generators maps every derived fact, ≡ along [fp] into
     Q and ≺ along [f] into R. *)
@@ -135,7 +132,6 @@ Lemma fl_map Γ (Q : point → point → Prop) (R : node → node → Prop)
   (∀ x y z, Q (fp x) (fp y) → Q (fp y) (fp z) → Q (fp x) (fp z)) →
   (∀ x y, Q (fp x) (fp y) → Q (fp (pt_shift 1 x)) (fp (pt_shift 1 y))) →
   (∀ x y i, Q (fp x) (fp y) → Q (fp (pt_slot x i)) (fp (pt_slot y i))) →
-  (∀ x y i, Q (fp x) (fp y) → Q (fp (pt_br x i)) (fp (pt_br y i))) →
   (∀ x y, w_lt (fc_W Γ) x y → R (f (NP x)) (f (NP y))) →
   (∀ x y, hyp_fact (fc_hyps Γ) (FLt x y) → R (f (NP x)) (f (NP y))) →
   (∀ φ u, fc_fv Γ !! φ = Some (Some u) → R (f (NP u)) (f (NV φ))) →
@@ -143,11 +139,10 @@ Lemma fl_map Γ (Q : point → point → Prop) (R : node → node → Prop)
   (∀ a y y', R (f a) (f (NP y')) → Q (fp y') (fp y) → R (f a) (f (NP y))) →
   (∀ a y b, R (f a) (f (NP y)) → R (f (NP y)) (f b) → R (f a) (f b)) →
   (∀ x, R (f (NP x)) (f (NP (pt_shift 1 x)))) →
-  (∀ x i, R (f (NP x)) (f (NP (pt_br x i)))) →
   (∀ x y, seqs (fc_W Γ) (fc_hyps Γ) x y → Q (fp x) (fp y)) ∧
   (∀ a b, fl Γ a b → R (f a) (f b)).
 Proof.
-  intros Hew Heh Her Hes Het Hesh Hesl Hesb Hw Hh Hv Hl Hr Ht Hpo Hbr.
+  intros Hew Heh Her Hes Het Hesh Hesl Hw Hh Hv Hl Hr Ht Hpo.
   assert (∀ x y, seqs (fc_W Γ) (fc_hyps Γ) x y → Q (fp x) (fp y)) as Hq
     by (induction 1; eauto).
   split; [done|]. induction 1; eauto.
@@ -174,9 +169,6 @@ Proof. exact (fl_trans (FCtx W Ψ ∅) (NP x) y (NP z)). Qed.
 Lemma sl_po W Ψ x : slt W Ψ x (pt_shift 1 x).
 Proof. exact (fl_po (FCtx W Ψ ∅) x). Qed.
 
-Lemma sl_br W Ψ x i : slt W Ψ x (pt_br x i).
-Proof. exact (fl_br (FCtx W Ψ ∅) x i). Qed.
-
 Lemma sl_po_n W Ψ x k : slt W Ψ x (pt_shift (S k) x).
 Proof.
   induction k as [|k IH]; [apply sl_po|].
@@ -186,9 +178,10 @@ Qed.
 (** Every later offset of one name, by the rule and transitivity. *)
 Lemma sl_pofs W Ψ x y : pofs x y → slt W Ψ x y.
 Proof.
-  induction 1 as [z|z i|]; [apply sl_po|apply sl_br|by eapply sl_trans].
+  intros [Hn Ho]. destruct x as [p o], y as [q o']. simpl in *. subst q.
+  replace o' with (o + S (o' - o - 1)) by lia.
+  exact (sl_po_n W Ψ (Pt p o) (o' - o - 1)).
 Qed.
-
 
 Lemma fl_points W Ψ Φ x y : fl (FCtx W Ψ Φ) (NP x) (NP y) ↔ slt W Ψ x y.
 Proof.
@@ -196,16 +189,15 @@ Proof.
   - intros H. change (match NP x, NP y with NP x, NP y => slt W Ψ x y | _, _ => True end).
     refine (proj2 (fl_map (FCtx W Ψ Φ) (seqs W Ψ)
       (λ a b, match a, b with NP x, NP y => slt W Ψ x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); unfold id; simpl; eauto using seqs.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); unfold id; simpl; eauto using seqs.
     + apply sl_w.
     + apply sl_h.
     + intros x0 x' [] ? ?; [by eapply sl_eql|done].
     + intros [] y0 y' ? ?; [by eapply sl_eqr|done].
     + intros [] y0 []; try done. apply sl_trans.
     + intros x0. apply sl_po.
-    + intros x0 i. apply sl_br.
   - refine (proj2 (fl_map (FCtx W Ψ ∅) (seqs W Ψ) (fl (FCtx W Ψ Φ)) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _); unfold id; simpl; eauto using seqs.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _); unfold id; simpl; eauto using seqs.
     + exact (fl_w (FCtx W Ψ Φ)).
     + exact (fl_h (FCtx W Ψ Φ)).
     + intros φ u H. by rewrite lookup_empty in H.
@@ -213,7 +205,6 @@ Proof.
     + exact (fl_eqr (FCtx W Ψ Φ)).
     + exact (fl_trans (FCtx W Ψ Φ)).
     + exact (fl_po (FCtx W Ψ Φ)).
-    + exact (fl_br (FCtx W Ψ Φ)).
 Qed.
 
 Definition lb_below_h (W : world) (Ψ : hyps) (lb : option point)
@@ -240,7 +231,7 @@ Definition lbx_below_h (W : world) (Ψ : hyps) (lb : lbound)
 (** Without hypotheses the static ≡ and ≺ are those of W. *)
 Lemma seqs_nil W x y : world_wf W → seqs W [] x y → w_eq W x y.
 Proof.
-  intros HW. induction 1 as [x y H|x y (? & ? & H & _)| | | | | |].
+  intros HW. induction 1 as [x y H|x y (? & ? & H & _)| | | | |].
   - done.
   - by apply elem_of_nil in H.
   - apply (wf_eq_refl _ HW).
@@ -248,7 +239,6 @@ Proof.
   - by eapply (wf_eq_trans _ HW).
   - by apply (wf_eq_shift _ HW).
   - by apply (wf_eq_slot _ HW).
-  - by apply (wf_eq_br _ HW).
 Qed.
 
 (** ** Types up to Γ ⊢ ≡ (sharp edges 67)
@@ -289,14 +279,13 @@ Proof.
   intros HW H. change (match NP x, NP y with NP x, NP y => w_lt W x y | _, _ => True end).
   refine (proj2 (fl_map (FCtx W [] ∅) (w_eq W)
     (λ a b, match a, b with NP x, NP y => w_lt W x y | _, _ => True end) id id
-    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); clear H; unfold id; simpl; try done.
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); clear H; unfold id; simpl; try done.
   - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
   - apply (wf_eq_refl _ HW).
   - apply (wf_eq_sym _ HW).
   - apply (wf_eq_trans _ HW).
   - apply (wf_eq_shift _ HW).
   - apply (wf_eq_slot _ HW).
-  - apply (wf_eq_br _ HW).
   - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
   - intros x0 x' [] Hx H; [|done].
     eapply (wf_lt_eq _ HW); [exact Hx|exact H|apply (wf_eq_refl _ HW)].
@@ -304,7 +293,6 @@ Proof.
     eapply (wf_lt_eq _ HW); [apply (wf_eq_refl _ HW)|exact H|exact Hy].
   - intros [] y0 []; try done. apply (wf_lt_trans _ HW).
   - intros x0. apply (wf_lt_po _ HW).
-  - intros x0 i. apply (wf_lt_br _ HW).
 Qed.
 
 (** A hypothesis of Ψ holds in the static ≡ and ≺, and its instance

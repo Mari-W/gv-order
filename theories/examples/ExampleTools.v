@@ -57,7 +57,7 @@ Lemma wgen_strict_br {A} (R : A → A → Prop) N E L (cn : point → point) (r 
 Proof.
   intros Hirr Htr HN HE HL Hs Hl Hb Hc Hr Hrb HLr. split; [by apply wgen_wf|].
   assert (∀ x y, glt E L x y → R (r (cn x)) (r (cn y))) as Hlt.
-  { induction 1 as [x y H|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - by apply HLr.
     - rewrite Hs. apply Hr.
     - apply Hrb.
@@ -73,7 +73,6 @@ Fixpoint pn_erase (p : pname) : point :=
   | NConst a => Pt (NConst a) 0
   | NVar a => Pt (NVar a) 0
   | NSlot q b i => pt_slot (pt_shift b (pn_erase q)) i
-  | NBr q b _ => pt_shift (S b) (pn_erase q)
   end.
 
 Definition pt_erase (x : point) : point := pt_shift (pt_off x) (pn_erase (pt_name x)).
@@ -88,7 +87,7 @@ Lemma pt_erase_br x i : pt_erase (pt_br x i) = pt_shift 1 (pt_erase x).
 Proof. unfold pt_erase, pt_br, pt_shift. simpl. f_equal. lia. Qed.
 
 Fixpoint pn_nobr (p : pname) : Prop :=
-  match p with NConst _ | NVar _ => True | NSlot q _ _ => pn_nobr q | NBr _ _ _ => False end.
+  match p with NConst _ | NVar _ => True | NSlot q _ _ => pn_nobr q => False end.
 
 Lemma pn_erase_nobr p : pn_nobr p → pn_erase p = Pt p 0.
 Proof.
@@ -239,7 +238,7 @@ Proof.
   { induction 1; try congruence; auto;
       rewrite ?pt_erase_shift, ?pt_erase_slot, ?pt_erase_br, ?Hs, ?Hl; congruence. }
   assert (∀ x y, glt E L x y → R (r (den (pt_erase x))) (r (den (pt_erase y)))) as Hlt.
-  { induction 1 as [x y H|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - by apply HLr.
     - rewrite pt_erase_shift, Hs. apply Hr.
     - rewrite pt_erase_br, Hs. apply Hr.
@@ -267,7 +266,7 @@ Proof.
   { induction 1 as [x y H| | | | | |]; try congruence; rewrite ?Hs, ?Hl, ?Hb; try congruence.
     apply bcs_open_nil in H as [H _]. by apply HE. }
   assert (∀ x y, glt (c0_eq n (BCs [] P)) (c0_lt n (BCs [] P)) x y → R (r (den x)) (r (den y))) as Hlt.
-  { induction 1 as [x y H|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - apply bcs_open_nil in H as [H _]. by apply HL.
     - rewrite Hs. apply Hr.
     - rewrite Hb. apply Hr.
@@ -291,7 +290,7 @@ Qed.
 
 (** A rank for top-level variables: w per variable index, one per step. *)
 Fixpoint pn_vidx (p : pname) : nat :=
-  match p with NVar a => a | NConst _ => 0 | NSlot q _ _ | NBr q _ _ => pn_vidx q end.
+  match p with NVar a => a | NConst _ => 0 | NSlot q _ _ => pn_vidx q end.
 
 
 Definition vrank (w : nat) (x : point) : nat := w * pn_vidx (pt_name x) + pt_off x.
@@ -307,7 +306,7 @@ Fixpoint pn_rank (g : nat → nat) (h : nat → nat → nat → nat) (p : pname)
   | NConst a => g a
   | NVar _ => 0
   | NSlot q b i => h (pn_rank g h q) b i
-  | NBr q _ _ => pn_rank g h q
+  => pn_rank g h q
   end.
 
 Definition prank (k : pname → nat) (g : nat → nat) (h : nat → nat → nat → nat) (x : point) : nat :=

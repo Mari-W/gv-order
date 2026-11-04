@@ -143,7 +143,7 @@ Proof.
             ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') as Hm.
   { refine (proj2 (fl_map _ (w_eq W1)
       (λ a b, ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
     - intros x0 y0 H. by apply He.
     - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
     - apply (wf_eq_refl _ Hwf).
@@ -151,7 +151,6 @@ Proof.
     - apply (wf_eq_trans _ Hwf).
     - apply (wf_eq_shift _ Hwf).
     - apply (wf_eq_slot _ Hwf).
-    - apply (wf_eq_br _ Hwf).
     - intros x0 y0 H ? ? -> ->. by apply Hl.
     - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
     - intros φ u Hu ? b' -> Hb'. exact (Hρ φ (Some u) Hu b' Hb').
@@ -161,8 +160,7 @@ Proof.
       exact (wf_lt_eq _ Hwf a' a' y y' (wf_eq_refl _ Hwf a') (H a' y' Ha' eq_refl) Hy).
     - intros a y b H1 H2 a' b' Ha' Hb'.
       exact (wf_lt_trans _ Hwf a' y b' (H1 a' y Ha' eq_refl) (H2 y b' eq_refl Hb')).
-    - intros x0 ? ? -> ->. apply (wf_lt_po _ Hwf).
-    - intros x0 i ? ? -> ->. apply (wf_lt_br _ Hwf). }
+    - intros x0 ? ? -> ->. apply (wf_lt_po _ Hwf). }
   intros y Hy. unfold sf_inst in Hy. rewrite Hb in Hy. simpl in Hy.
   rewrite union_empty_r_L in Hy. apply elem_of_union in Hy as [Hy|Hy].
   - exact (Hm _ _ (HP y Hy) x y eq_refl eq_refl).
@@ -909,9 +907,8 @@ Proof.
   assert (∀ x y, geq (λ _ _ : point, False) x y → x = y) as Hq.
   { induction 1; subst; done. }
   assert (∀ x y, glt (λ _ _ : point, False) (λ _ _ : point, False) x y → pofs x y) as Hl.
-  { induction 1 as [x y []|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y []|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
     - apply pofs_shift.
-    - apply pofs_br.
     - apply Hq in Hx, Hy. by subst.
     - by eapply pofs_trans. }
   intros x H. exact (pofs_irrefl x (Hl x x H)).
@@ -945,7 +942,6 @@ Section c0_world.
     | NVar a => if decide (a < n) then NConst a else NVar a
     | NConst a => NConst a
     | NSlot q b i => NSlot (c0_name q) b i
-    | NBr q b i => NBr (c0_name q) b i
     end.
 
   Fixpoint c0_back (p : pname) : pname :=
@@ -953,7 +949,6 @@ Section c0_world.
     | NConst a => if decide (a < n) then NVar a else NConst a
     | NVar a => NVar a
     | NSlot q b i => NSlot (c0_back q) b i
-    | NBr q b i => NBr (c0_back q) b i
     end.
 
   Definition c0_pt (x : point) : point := Pt (c0_name (pt_name x)) (pt_off x).
@@ -963,13 +958,13 @@ Section c0_world.
 
   Lemma c0_back_name p : pn_vb n p → c0_back (c0_name p) = p.
   Proof.
-    induction p as [a|a|q IH b i|q IH b i]; simpl; intros H; [done| |by rewrite IH|by rewrite IH].
+    induction p as [a|a|q IH b i]; simpl; intros H; [done| |by rewrite IH].
     rewrite decide_True by done. simpl. by rewrite decide_True.
   Qed.
 
   Lemma c0_name_root p : pn_vb n p → ∃ a, a < n ∧ pn_root (c0_name p) = NConst a.
   Proof.
-    induction p as [a|a|q IH b i|q IH b i]; simpl; intros H; [done| |by apply IH|by apply IH].
+    induction p as [a|a|q IH b i]; simpl; intros H; [done| |by apply IH].
     rewrite decide_True by done. by exists a.
   Qed.
 
@@ -980,9 +975,8 @@ Section c0_world.
 
   Lemma pn_inst_consts p : pn_vb n p → pn_inst (plist c0_consts) p = Pt (c0_name p) 0.
   Proof.
-    induction p as [a|a|q IH b i|q IH b i]; simpl; intros H; [done| | |].
+    induction p as [a|a|q IH b i]; simpl; intros H; [done| |].
     - rewrite decide_True by done. by apply plist_consts.
-    - rewrite IH by done. done.
     - rewrite IH by done. done.
   Qed.
 
@@ -996,9 +990,8 @@ Section c0_world.
       C are about the variables themselves. *)
   Lemma pn_inst_pup_vb σ p : pn_vb n p → pn_inst (pup n σ) p = Pt p 0.
   Proof.
-    induction p as [a|a|q IH b i|q IH b i]; simpl; intros H; [done| | |].
+    induction p as [a|a|q IH b i]; simpl; intros H; [done| |].
     - unfold pup. by rewrite decide_True.
-    - rewrite IH by done. done.
     - rewrite IH by done. done.
   Qed.
 
@@ -1041,7 +1034,7 @@ Section c0_world.
     - destruct (gen_map (λ x y, ∃ x0 y0, c0_eq n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
                   (λ x y, ∃ x0 y0, c0_lt n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
                   (geq (c0_eq n C)) (glt (c0_eq n C) (c0_lt n C)) c0_bpt
-                  (theory_gen _ _)) as [_ Gl]; [done|done|done| | |].
+                  (theory_gen _ _)) as [_ Gl]; [done|done| | |].
       + intros x y (x0 & y0 & H & -> & ->). destruct (c0_open_vb _ Henv H) as [[Hx Hy] _].
         unfold c0_bpt, c0_pt. simpl. rewrite !c0_back_name by done.
         destruct x0, y0. by apply geq_base.
@@ -1055,7 +1048,7 @@ Section c0_world.
   Proof.
     intros HC. pose proof (wc0_strict HC) as HS.
     destruct (gen_map (λ _ _, False) (λ _ _, False) (w_eq wc0) (w_lt wc0) id
-                (theory_world _ (proj1 HS))) as [Gq Gl]; [done|done|done|done|done|].
+                (theory_world _ (proj1 HS))) as [Gq Gl]; [done|done|done|done|].
 
     split_and!; [simpl; set_solver|exact Gq|exact Gl|done].
   Qed.

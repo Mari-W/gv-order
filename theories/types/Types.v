@@ -5,8 +5,7 @@
                                                     P ::= ∃ιs. T
     (context-free session types, K1 of docs/extensions/context-free.md)
     β    ::= ι | ⊥        λ ::= ι | ⊤
-    ι    ::= (p, b)       p ::= a | point variable | p[b][i] | p[b]◁i
-                                                         (no channels) *)
+    ι    ::= (p, b)       p ::= a | point variable | p[b][i]   (no channels) *)
 
 From stdpp Require Import base strings gmap countable.
 From LRGV Require Export lang.Syntax.
@@ -16,22 +15,21 @@ From LRGV Require Export lang.Syntax.
     One sort of names (decision N). A point (p, b) is a name p with an
     offset b. A name is a point constant, a point variable (de Bruijn,
     bound by ∀ under □ or by ∃ in a payload), or the slot p[b][i], "the
-    i-th point carried at (p, b)", or the branch root p[b]◁i, "the point
-    of a channel after branch i was picked at (p, b)" (K10 of
+    i-th point carried at (p, b)". The channel continues at p[b][i]
+    after branch i was picked at (p, b), the same point the i-th channel
+    of a message sent at (p, b) gets (K11 of
     docs/extensions/context-free.md). Worlds and environments use
-    ground points (constants, their slots and branch roots), static
-    types also use variables. No point mentions a channel, so renaming
-    channels changes no type and no world.
+    ground points (constants and their slots), static types also use
+    variables. No point mentions a channel, so renaming channels
+    changes no type and no world.
 
-    A slot and a branch root write the name and offset of their base
-    unpacked, so that names are not mutual with points. Branch i = 1
-    is [false] and i = 2 is [true], as in the labels c◁i. *)
+    A slot writes the name and offset of its base unpacked, so that
+    names are not mutual with points. *)
 
 Inductive pname :=
   | NConst (a : nat)
   | NVar (a : nat)
-  | NSlot (p : pname) (b : nat) (i : nat)    (* (p, b)[i] *)
-  | NBr (p : pname) (b : nat) (i : bool).    (* (p, b)◁i *)
+  | NSlot (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
 
 Record point := Pt { pt_name : pname; pt_off : nat }.
 
@@ -45,18 +43,16 @@ Proof.
     | NConst a => GenNode 1 [GenLeaf a]
     | NVar a => GenLeaf a
     | NSlot p b i => GenNode 0 [go p; GenLeaf b; GenLeaf i]
-    | NBr p b i => GenNode 2 [go p; GenLeaf b; GenLeaf (if i then 1 else 0)]
     end).
   set (dec := fix go t : pname :=
     match t with
     | GenNode 1 [GenLeaf a] => NConst a
     | GenLeaf a => NVar a
     | GenNode 0 [t; GenLeaf b; GenLeaf i] => NSlot (go t) b i
-    | GenNode 2 [t; GenLeaf b; GenLeaf j] => NBr (go t) b (bool_decide (j = 1))
     | _ => NVar 0
     end).
   apply (inj_countable' enc dec).
-  intros p; induction p as [| |? IH|? IH b []]; simpl; try congruence; by rewrite IH.
+  intros p; induction p; simpl; congruence.
 Qed.
 
 Global Instance point_eq_dec : EqDecision point.
@@ -73,9 +69,9 @@ Definition pt_shift (n : nat) (x : point) : point :=
   Pt (pt_name x) (pt_off x + n).
 Definition pt_slot (x : point) (i : nat) : point :=
   Pt (NSlot (pt_name x) (pt_off x) i) 0.
-(** x◁i: the point after branch i was picked at x (K10). *)
-Definition pt_br (x : point) (i : bool) : point :=
-  Pt (NBr (pt_name x) (pt_off x) i) 0.
+(** The slot index of branch i: x[0] for the first branch ([false]),
+    x[1] for the second ([true]) (K11). *)
+Definition bidx (i : bool) : nat := if i then 1 else 0.
 Definition pvar (a : nat) : point := Pt (NVar a) 0.
 Definition pconst (a : nat) : point := Pt (NConst a) 0.
 
@@ -86,7 +82,6 @@ Fixpoint pn_inst (σ : nat → point) (p : pname) : point :=
   | NConst a => Pt (NConst a) 0
   | NVar a => σ a
   | NSlot p b i => pt_slot (pt_shift b (pn_inst σ p)) i
-  | NBr p b i => pt_br (pt_shift b (pn_inst σ p)) i
   end.
 
 Definition pt_inst (σ : nat → point) (x : point) : point :=
@@ -126,7 +121,7 @@ Definition fact_rel (R : point → point → Prop) (g g' : fact) : Prop :=
 (** The root of a name is a variable below k. *)
 Fixpoint pn_vb (k : nat) (p : pname) : Prop :=
   match p with
-  | NConst _ => False | NVar a => a < k | NSlot q _ _ | NBr q _ _ => pn_vb k q
+  | NConst _ => False | NVar a => a < k | NSlot q _ _ => pn_vb k q
   end.
 
 Definition fact_scoped (k : nat) (g : fact) : Prop :=
@@ -267,13 +262,10 @@ Section bcs_open.
 
   Local Lemma bpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
   Proof.
-    induction p as [a|a|p IH b i|p IH b i]; simpl; [done|done| |].
-    - assert (∀ x, pt_inst τ (pt_slot x i) = pt_slot (pt_inst τ x) i) as Hs
-        by (intros [q o]; done).
-      by rewrite Hs, bpt_inst_shift, IH.
-    - assert (∀ x, pt_inst τ (pt_br x i) = pt_br (pt_inst τ x) i) as Hs
-        by (intros [q o]; done).
-      by rewrite Hs, bpt_inst_shift, IH.
+    induction p as [a|a|p IH b i]; simpl; [done|done|].
+    assert (∀ x, pt_inst τ (pt_slot x i) = pt_slot (pt_inst τ x) i) as Hs
+      by (intros [q o]; done).
+    by rewrite Hs, bpt_inst_shift, IH.
   Qed.
 
   Local Lemma bpt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
@@ -283,13 +275,13 @@ Section bcs_open.
     pn_vb k (pt_name x) → (∀ a, a < k → σ a = τ a) → pt_inst σ x = pt_inst τ x.
   Proof.
     intros Hx H. destruct x as [p o]. unfold pt_inst. simpl in *. f_equal.
-    induction p as [a|a|p IH b i|p IH b i]; simpl in *; [done|by apply H|by rewrite IH..].
+    induction p as [a|a|p IH b i]; simpl in *; [done|by apply H|by rewrite IH..].
   Qed.
 
   Local Lemma bpt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
   Proof.
     intros H. destruct x as [p o]. unfold pt_inst. simpl. f_equal.
-    induction p as [a|a|p IH b i|p IH b i]; simpl; [done|apply H|by rewrite IH..].
+    induction p as [a|a|p IH b i]; simpl; [done|apply H|by rewrite IH..].
   Qed.
 
   Local Lemma bpup_plist σ n env a :
@@ -368,13 +360,10 @@ Section tinst.
 
   Local Lemma tpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
   Proof.
-    induction p as [a|a|p IH b i|p IH b i]; simpl; [done|done| |].
-    - assert (∀ x, pt_inst τ (pt_slot x i) = pt_slot (pt_inst τ x) i) as Hs
-        by (intros [q o]; done).
-      by rewrite Hs, tpt_inst_shift, IH.
-    - assert (∀ x, pt_inst τ (pt_br x i) = pt_br (pt_inst τ x) i) as Hs
-        by (intros [q o]; done).
-      by rewrite Hs, tpt_inst_shift, IH.
+    induction p as [a|a|p IH b i]; simpl; [done|done|].
+    assert (∀ x, pt_inst τ (pt_slot x i) = pt_slot (pt_inst τ x) i) as Hs
+      by (intros [q o]; done).
+    by rewrite Hs, tpt_inst_shift, IH.
   Qed.
 
   Lemma tpt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
@@ -383,14 +372,14 @@ Section tinst.
   Lemma tpt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
   Proof.
     intros H. destruct x as [p o]. unfold pt_inst. simpl. f_equal.
-    induction p as [a|a|p IH b i|p IH b i]; simpl; [done|apply H|by rewrite IH..].
+    induction p as [a|a|p IH b i]; simpl; [done|apply H|by rewrite IH..].
   Qed.
 
   Lemma tpt_inst_pvar x : pt_inst pvar x = x.
   Proof.
     destruct x as [p o]. unfold pt_inst. simpl. f_equal.
     assert (pn_inst pvar p = Pt p 0) as ->; [|unfold pt_shift; simpl; f_equal; lia].
-    induction p as [a|a|p IH b i|p IH b i]; simpl; [done|done|by rewrite IH..].
+    induction p as [a|a|p IH b i]; simpl; [done|done|by rewrite IH..].
   Qed.
 
   Lemma tpup_ext n σ τ a : (∀ b, σ b = τ b) → pup n σ a = pup n τ a.
@@ -1344,7 +1333,7 @@ Qed.
     (relation/Worlds.v uses it for the support of a world). *)
 Fixpoint pn_root (p : pname) : pname :=
   match p with
-  | NSlot q _ _ | NBr q _ _ => pn_root q
+  | NSlot q _ _ => pn_root q
   | _ => p
   end.
 
@@ -1376,32 +1365,30 @@ Definition fresh_outer (C : bcs) (u : point) : point := pt_inst (plist (pvar 0 :
 
 (** ** Program order
 
-    x ≺ x+1 and x ≺ x◁i, closed under transitivity (K10). It holds in
-    every world, and a size that rises along both steps makes it
-    irreflexive. *)
+    x ≺ x+1, closed under transitivity. It holds in every world, and a
+    size that rises along successors makes it irreflexive. *)
 Inductive ppo : point → point → Prop :=
   | ppo_po x : ppo x (pt_shift 1 x)
-  | ppo_br x i : ppo x (pt_br x i)
   | ppo_trans x y z : ppo x y → ppo y z → ppo x z.
 
 Fixpoint pn_size (p : pname) : nat :=
   match p with
   | NConst _ | NVar _ => 0
-  | NSlot q b _ | NBr q b _ => pn_size q + b + 1
+  | NSlot q b _ => pn_size q + b + 1
   end.
 
 Definition pt_size (x : point) : nat := pn_size (pt_name x) + pt_off x.
 
 Lemma ppo_size x y : ppo x y → pt_size x < pt_size y.
 Proof.
-  unfold pt_size. induction 1; simpl; [lia|lia|lia].
+  unfold pt_size. induction 1; simpl; [lia|lia].
 Qed.
 
 Lemma ppo_irrefl x : ¬ ppo x x.
 Proof. intros H%ppo_size. lia. Qed.
 
 Lemma ppo_root x y : ppo x y → pt_root x = pt_root y.
-Proof. induction 1; [done|done|congruence]. Qed.
+Proof. induction 1; [done|congruence]. Qed.
 
 Lemma ppo_same x y : pt_name x = pt_name y → pt_off x < pt_off y → ppo x y.
 Proof.
@@ -1415,18 +1402,16 @@ Proof.
     apply ppo_po.
 Qed.
 
-(** A map on points that commutes with successor and branch roots
-    preserves program order. *)
+(** A map on points that commutes with successor preserves program
+    order. *)
 Lemma ppo_map (f : point → point) x y :
   (∀ z, f (pt_shift 1 z) = pt_shift 1 (f z)) →
-  (∀ z i, f (pt_br z i) = pt_br (f z) i) →
   ppo x y → ppo (f x) (f y).
 Proof.
-  intros Hs Hb. induction 1 as [z|z i|]; [rewrite Hs; apply ppo_po
-    |rewrite Hb; apply ppo_br|by eapply ppo_trans].
+  intros Hs. induction 1 as [z|]; [rewrite Hs; apply ppo_po|by eapply ppo_trans].
 Qed.
 
-(** p at or before v in program order, along successors and branch roots. *)
+(** p at or before v in program order. *)
 Definition ple (p v : point) : Prop := p = v ∨ ppo p v.
 
 Lemma ple_same p v : pt_name p = pt_name v → pt_off p ≤ pt_off v → ple p v.
@@ -1540,13 +1525,11 @@ Inductive geq (E : point → point → Prop) : point → point → Prop :=
   | geq_sym x y : geq E x y → geq E y x
   | geq_trans x y z : geq E x y → geq E y z → geq E x z
   | geq_shift x y : geq E x y → geq E (pt_shift 1 x) (pt_shift 1 y)
-  | geq_slot x y i : geq E x y → geq E (pt_slot x i) (pt_slot y i)
-  | geq_br x y i : geq E x y → geq E (pt_br x i) (pt_br y i).
+  | geq_slot x y i : geq E x y → geq E (pt_slot x i) (pt_slot y i).
 
 Inductive glt (E L : point → point → Prop) : point → point → Prop :=
   | glt_base x y : L x y → glt E L x y
   | glt_po x : glt E L x (pt_shift 1 x)
-  | glt_br x i : glt E L x (pt_br x i)
   | glt_eq x x' y y' : geq E x x' → glt E L x' y' → geq E y' y → glt E L x y
   | glt_trans x y z : glt E L x y → glt E L y z → glt E L x z.
 
@@ -1595,8 +1578,8 @@ Definition cc_ok (peq plt : point → point → Prop) (C : bcs) : Prop :=
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
     send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι]), no ⊥ flag
     recv   : (?P;S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
-    selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@(ι◁i)                      (K10)
-    branch : &(S₁, S₂)@ι ⊸^ι_⊤ S₁@(ι◁1) + S₂@(ι◁2)
+    selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@ι[i]          ι ≺ ι[i]           (K11)
+    branch : &(S₁, S₂)@ι ⊸^ι_⊤ S₁@ι[0] + S₂@ι[1]   ι ≺ ι[0], ι ≺ ι[1]
     close  : Close@ι ⊸^ι_⊤ ∗
     link   : S@ι ⊗ dual S@ι′ ⊸^⊥_⊤ ∗       ι ≡ ι′   (never blocks, sharp edges 68)
     force  : □(∀ιs αs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs][ss/αs]
@@ -1646,15 +1629,18 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
   | KTClos x :
       konst_ty peq plt pk KClos (TLolli (Some x) None (TSess SEnd x) TUnit)
   | KTSel1 S1 S2 x :
+      plt x (pt_slot x 0) →
       konst_ty peq plt pk KSel1
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_br x false)))
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_slot x 0)))
   | KTSel2 S1 S2 x :
+      plt x (pt_slot x 1) →
       konst_ty peq plt pk KSel2
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_br x true)))
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_slot x 1)))
   | KTBra S1 S2 x :
+      plt x (pt_slot x 0) → plt x (pt_slot x 1) →
       konst_ty peq plt pk KBra
         (TLolli (Some x) None (TSess (SWith S1 S2) x)
-           (TSum (TSess S1 (pt_br x false)) (TSess S2 (pt_br x true))))
+           (TSum (TSess S1 (pt_slot x 0)) (TSess S2 (pt_slot x 1))))
   | KTLink S x x' :
       peq x x' →
       konst_ty peq plt pk KLink

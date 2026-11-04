@@ -41,8 +41,7 @@ Inductive heqs (Ψ : hyps) : point → point → Prop :=
   | he_sym x y : heqs Ψ x y → heqs Ψ y x
   | he_trans x y z : heqs Ψ x y → heqs Ψ y z → heqs Ψ x z
   | he_shift x y : heqs Ψ x y → heqs Ψ (pt_shift 1 x) (pt_shift 1 y)
-  | he_slot x y i : heqs Ψ x y → heqs Ψ (pt_slot x i) (pt_slot y i)
-  | he_br x y i : heqs Ψ x y → heqs Ψ (pt_br x i) (pt_br y i).
+  | he_slot x y i : heqs Ψ x y → heqs Ψ (pt_slot x i) (pt_slot y i).
 
 Inductive hfl (Ψ : hyps) (Φ : fhyps) : node → node → Prop :=
   | hl_h x y : hyp_fact Ψ (FLt x y) → hfl Ψ Φ (NP x) (NP y)
@@ -50,8 +49,7 @@ Inductive hfl (Ψ : hyps) (Φ : fhyps) : node → node → Prop :=
   | hl_eql x x' b : heqs Ψ x x' → hfl Ψ Φ (NP x') b → hfl Ψ Φ (NP x) b
   | hl_eqr a y y' : hfl Ψ Φ a (NP y') → heqs Ψ y' y → hfl Ψ Φ a (NP y)
   | hl_trans a y b : hfl Ψ Φ a (NP y) → hfl Ψ Φ (NP y) b → hfl Ψ Φ a b
-  | hl_po x : hfl Ψ Φ (NP x) (NP (pt_shift 1 x))
-  | hl_br x i : hfl Ψ Φ (NP x) (NP (pt_br x i)).
+  | hl_po x : hfl Ψ Φ (NP x) (NP (pt_shift 1 x)).
 
 Definition hlt (Ψ : hyps) (x y : point) : Prop := hfl Ψ ∅ (NP x) (NP y).
 
@@ -66,7 +64,9 @@ Qed.
 (** Program order between two points of one name. *)
 Lemma hl_pofs Ψ Φ x y : pofs x y → hfl Ψ Φ (NP x) (NP y).
 Proof.
-  induction 1 as [z|z i|]; [apply hl_po|apply hl_br|by eapply hl_trans].
+  intros [Hn Ho]. destruct x as [p o], y as [q o']. simpl in *. subst q.
+  replace o' with (o + S (o' - o - 1)) by lia.
+  exact (hl_po_n Ψ Φ (Pt p o) (o' - o - 1)).
 Qed.
 
 Lemma hlt_pofs Ψ x y : pofs x y → hlt Ψ x y.
@@ -88,9 +88,7 @@ Proof.
   - by eapply hl_eqr.
   - by eapply hl_trans.
   - apply hl_po.
-  - apply hl_br.
 Qed.
-
 
 Lemma hlt_hfl Ψ Φ x y : hlt Ψ x y → hfl Ψ Φ (NP x) (NP y).
 Proof. apply hfl_weaken. Qed.
@@ -241,7 +239,6 @@ Proof.
   - eapply (fl_eqr (FCtx W Ψ Φ)); [done|by apply heqs_seqs].
   - eapply (fl_trans (FCtx W Ψ Φ)); [exact IHhfl1|exact IHhfl2].
   - apply fl_po.
-  - apply fl_br.
 Qed.
 
 Lemma hlt_slt W Ψ x y : hlt Ψ x y → slt W Ψ x y.
@@ -351,7 +348,7 @@ Section collapse.
 
   Lemma w_lt_nil x y : w_lt W x y → pofs x y.
   Proof.
-    intros H. destruct (wf_lt_supp _ HW _ _ H) as [Hp|[Hx _]]; [exact Hp|].
+    intros H. destruct (wf_lt_supp _ HW _ _ H) as [Hp|[Hx _]]; [by apply ppo_pofs|].
     rewrite HN in Hx. by apply not_elem_of_empty in Hx.
   Qed.
 
@@ -368,7 +365,6 @@ Section collapse.
     - by eapply he_trans.
     - by apply he_shift.
     - by apply he_slot.
-    - by apply he_br.
   Qed.
 
   Lemma fl_hfl Ψ Φ a b : fl (FCtx W Ψ Φ) a b → hfl Ψ Φ a b.
@@ -381,9 +377,7 @@ Section collapse.
     - eapply hl_eqr; [done|by apply seqs_heqs].
     - by eapply hl_trans.
     - apply hl_po.
-    - apply hl_br.
   Qed.
-
 
   Lemma slt_hlt Ψ x y : slt W Ψ x y → hlt Ψ x y.
   Proof. intros H. by apply fl_hfl in H. Qed.
@@ -471,7 +465,6 @@ Proof.
     eapply st_case; [done| |by apply IHHt2|by apply IHHt3].
     rewrite sf_unionb_tenv0 in IHHt1. by apply IHHt1.
   - eapply st_box; [done|done|]. intros ss Hss Hsc. by apply H2.
-
   - eapply st_wk; [done|by apply IHHt].
   - by apply st_contract, IHHt.
   - eapply st_conv; [by eapply steq_hsteq|by apply IHHt].

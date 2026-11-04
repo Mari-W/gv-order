@@ -35,7 +35,6 @@ Fixpoint pnsw (a b : nat) (p : pname) : pname :=
   | NConst x => NConst (nswap a b x)
   | NVar x => NVar x
   | NSlot q o i => NSlot (pnsw a b q) o i
-  | NBr q o i => NBr (pnsw a b q) o i
   end.
 
 Definition ptsw (a b : nat) (x : point) : point :=
@@ -94,11 +93,8 @@ Section points.
   Lemma ptsw_slot x i : ptsw a b (pt_slot x i) = pt_slot (ptsw a b x) i.
   Proof. done. Qed.
 
-  Lemma ptsw_br x i : ptsw a b (pt_br x i) = pt_br (ptsw a b x) i.
-  Proof. done. Qed.
-
   Lemma ppo_sw_1 x y : ppo x y → ppo (ptsw a b x) (ptsw a b y).
-  Proof. apply ppo_map; [intros; apply ptsw_shift|intros; apply ptsw_br]. Qed.
+  Proof. apply ppo_map. intros; apply ptsw_shift. Qed.
 
   Lemma ppo_sw x y : ppo (ptsw a b x) (ptsw a b y) ↔ ppo x y.
   Proof.
@@ -282,8 +278,7 @@ Section points.
   Lemma pn_inst_sw σ p :
     ptsw a b (pn_inst σ p) = pn_inst (ptsw a b ∘ σ) (pnsw a b p).
   Proof.
-    induction p; simpl; try done; [by rewrite ptsw_slot, ptsw_shift, IHp|].
-    by rewrite ptsw_br, ptsw_shift, IHp.
+    induction p; simpl; try done. by rewrite ptsw_slot, ptsw_shift, IHp.
   Qed.
 
   Lemma pt_inst_sw σ x :
@@ -455,11 +450,9 @@ Proof.
   - intros x y z. rewrite <-!He. apply HW.
   - intros x y. rewrite <-!He. apply HW.
   - intros x y i. rewrite <-!He. apply HW.
-  - intros x y i. rewrite <-!He. apply HW.
   - intros x y z. rewrite <-!Hl. apply HW.
   - intros x x' y y'. rewrite <-!He, <-!Hl. apply HW.
   - intros x. apply Hl, HW.
-  - intros x i. apply Hl, HW.
   - intros x y. rewrite <-He, <-Hn. apply HW.
   - intros x y. rewrite <-Hl, <-Hn. apply HW.
   - intros p. rewrite <-Hn. apply HW.
@@ -530,11 +523,9 @@ Section wsw.
     - apply HW.
     - rewrite !ptsw_shift. apply HW.
     - rewrite !ptsw_slot. apply HW.
-    - rewrite !ptsw_br. apply HW.
     - apply HW.
     - apply HW.
     - rewrite ptsw_shift. apply HW.
-    - rewrite ptsw_br. apply HW.
     - intros H. apply (wf_eq_supp _ HW) in H as [H|[Hx Hy]].
       + left. by apply (ptsw_inj a b).
       + right. rewrite !elem_of_names_sw', <-!pt_root_sw. done.
@@ -1094,9 +1085,9 @@ Section ready.
       rewrite !ptsw_involutive. auto.
     - rewrite payload_at_sw. constructor.
     - constructor.
-    - constructor.
-    - constructor.
-    - constructor.
+    - constructor; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
+    - constructor; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
+    - constructor; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
     - constructor. simpl. by rewrite !ptsw_involutive.
     - rewrite sinst_slist_sw, ty_inst_sw.
       replace (ptsw a b <$> (pt_inst (plist xs) <$> ub))
@@ -1111,7 +1102,7 @@ Section ready.
       apply (cc_ok_transfer (w_eq W) (w_lt W) (w_eq (wsw a b W)) (w_lt (wsw a b W)) C (bcs_sw a b C)
                (ptsw a b)); try done.
       + intros p Hp. rewrite pt_root_sw, Hp. done.
-      + intros x Hx. rewrite pt_root_sw. destruct (pt_root x) as [c|c|q o i|q o i]; simpl; done.
+      + intros x Hx. rewrite pt_root_sw. destruct (pt_root x) as [c|c|q o i]; simpl; done.
 
       + intros p q _ _ E. by rewrite <-(ptsw_involutive a b p), E, ptsw_involutive.
       + intros y Hy. exists (ptsw a b y). rewrite ptsw_involutive, pt_root_sw, Hy. by split.
@@ -1445,7 +1436,7 @@ Proof.
       exists (tenvsw a b Θr), (stysw a b s1), (stysw a b s2), (ptsw a b k), (tenvsw a b Θ').
       split_and!.
       * by apply (tenv_hd_sw a b _ _ (SPlus s1 s2)).
-      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_br k i)) in Hext.
+      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_slot k (bidx i))) in Hext.
         unfold esw in Hext; simpl in Hext. by rewrite sbranch_map in Hext.
       * by apply (proj2 HE').
     + (* branch *)
@@ -1453,7 +1444,7 @@ Proof.
       exists (tenvsw a b Θr), (stysw a b s1), (stysw a b s2), (ptsw a b k), (tenvsw a b Θ').
       split_and!.
       * by apply (tenv_hd_sw a b _ _ (SWith s1 s2)).
-      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_br k i)) in Hext.
+      * apply (tenv_ext_sw a b _ _ (sbranch i s1 s2, pt_slot k (bidx i))) in Hext.
         unfold esw in Hext; simpl in Hext. by rewrite sbranch_map in Hext.
       * by apply (IHE n' ltac:(lia) W).
     + (* new *)
@@ -1599,7 +1590,6 @@ Section fixed.
   Proof.
     induction p; simpl; intros Ha Hb; try done.
     - f_equal. apply nswap_ne; congruence.
-    - f_equal. by apply IHp.
     - f_equal. by apply IHp.
   Qed.
 

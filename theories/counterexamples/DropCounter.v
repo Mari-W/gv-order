@@ -24,7 +24,6 @@ Fixpoint cnm (p : pname) (o : nat) : point :=
   | NConst a => if decide (a = b0) then Pt (NConst mu) (S o) else Pt (NConst a) o
   | NVar a => Pt (NVar a) o
   | NSlot q o' i => Pt (NSlot (pt_name (cnm q o')) (pt_off (cnm q o')) i) o
-  | NBr q o' i => Pt (NBr (pt_name (cnm q o')) (pt_off (cnm q o')) i) o
   end.
 Definition cpt (x : point) : point := cnm (pt_name x) (pt_off x).
 
@@ -46,7 +45,7 @@ Proof. done. Qed.
 Lemma cnm_root p o :
   pt_root (cnm p o) = if decide (pn_root p = NConst b0) then NConst mu else pn_root p.
 Proof.
-  revert o. induction p as [a|a|q IH o' i|q IH o' i]; intros o; simpl.
+  revert o. induction p as [a|a|q IH o' i]; intros o; simpl.
   - unfold pt_root. repeat case_decide; simpl; subst; try done; congruence.
   - done.
   - unfold pt_root in *. simpl. apply IH.
@@ -57,7 +56,7 @@ Qed.
 Lemma cnm_inj p o p' o' :
   pn_root p ≠ NConst mu → pn_root p' ≠ NConst mu → cnm p o = cnm p' o' → p = p' ∧ o = o'.
 Proof.
-  revert o p' o'. induction p as [a|a|q IH oq i|q IH oq i]; intros o p' o' Hr Hr' E;
+  revert o p' o'. induction p as [a|a|q IH oq i]; intros o p' o' Hr Hr' E;
     destruct p' as [a'|a'|q' oq' i'|q' oq' i']; simpl in *;
     repeat case_decide; simplify_eq/=; try done; try (split; congruence).
   - destruct (IH oq q' oq' Hr Hr') as [-> ->]; [|done].
@@ -72,7 +71,6 @@ Fixpoint cinvn (p : pname) (o : nat) : point :=
   | NConst a => if decide (a = mu) then Pt (NConst b0) (o - 1) else Pt (NConst a) o
   | NVar a => Pt (NVar a) o
   | NSlot q o' i => Pt (NSlot (pt_name (cinvn q o')) (pt_off (cinvn q o')) i) o
-  | NBr q o' i => Pt (NBr (pt_name (cinvn q o')) (pt_off (cinvn q o')) i) o
   end.
 Definition cinv (x : point) : point := cinvn (pt_name x) (pt_off x).
 
@@ -80,7 +78,7 @@ Definition cinv (x : point) : point := cinvn (pt_name x) (pt_off x).
 Fixpoint pn_boff (p : pname) (o : nat) : nat :=
   match p with
   | NConst _ | NVar _ => o
-  | NSlot q o' _ | NBr q o' _ => pn_boff q o'
+  | NSlot q o' _ => pn_boff q o'
   end.
 Definition cq (x : point) : Prop :=
   pt_root x = NConst mu → 1 ≤ pn_boff (pt_name x) (pt_off x).
@@ -88,7 +86,7 @@ Definition cq (x : point) : Prop :=
 Lemma cinv_cpt x : pt_root x ≠ NConst mu → cinv (cpt x) = x.
 Proof.
   destruct x as [p o]. unfold cinv, cpt, pt_root. simpl. revert o.
-  induction p as [a|a|q IH oq i|q IH oq i]; intros o Hm; simpl in *.
+  induction p as [a|a|q IH oq i]; intros o Hm; simpl in *.
   - destruct (decide (a = b0)) as [->|Hb]; simpl.
     + f_equal. lia.
     + rewrite ?decide_False by (intros ->; done). done.
@@ -100,7 +98,7 @@ Qed.
 Lemma cq_cpt x : pt_root x ≠ NConst mu → cq (cpt x).
 Proof.
   destruct x as [p o]. unfold cq, cpt, pt_root. simpl. revert o.
-  induction p as [a|a|q IH oq i|q IH oq i]; intros o Hm; simpl in *.
+  induction p as [a|a|q IH oq i]; intros o Hm; simpl in *.
   - repeat case_decide; simpl; [lia|congruence].
   - discriminate.
   - apply IH, Hm.
@@ -163,7 +161,7 @@ Proof. unfold cpt. rewrite cnm_root. unfold pt_root. intros H. by case_decide. Q
 Lemma cpt_out_id x : pt_root x ≠ NConst b0 → pt_root x ≠ NConst mu → cpt x = x.
 Proof.
   destruct x as [p o]. unfold cpt, pt_root. simpl. revert o.
-  induction p as [a|a|q IH oq i|q IH oq i]; intros o Hb Hm; simpl in *; repeat case_decide; subst; try done;
+  induction p as [a|a|q IH oq i]; intros o Hb Hm; simpl in *; repeat case_decide; subst; try done;
     rewrite IH by done; done.
 Qed.
 

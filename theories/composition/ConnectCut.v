@@ -692,16 +692,16 @@ Section steps.
     - rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
       clear -Hc1a HcΣ1 Hd12. set_solver.
     - rewrite insert_union_l.
-      assert (<[c := (sbranch i s1 s2, pt_br k i)]> (Σ1a ∖ ΣC) ##ₘ ΣC) as Hdj.
+      assert (<[c := (sbranch i s1 s2, pt_slot k (bidx i))]> (Σ1a ∖ ΣC) ##ₘ ΣC) as Hdj.
       { apply map_disjoint_insert_l. split; [done|]. by apply map_disjoint_difference_l1. }
-      assert (dom (<[c := (sbranch i s1 s2, pt_br k i)]> (Σ1a ∖ ΣC)) ⊆ dom Σ1) as Hdm.
+      assert (dom (<[c := (sbranch i s1 s2, pt_slot k (bidx i))]> (Σ1a ∖ ΣC)) ⊆ dom Σ1) as Hdm.
       { rewrite dom_insert_L, dom_difference_L. intros r Hr.
         apply elem_of_union in Hr as [->%elem_of_singleton|Hr]; [done|].
         assert (r ∈ dom (Σ1 ∪ ΣC)) as H.
         { rewrite HΣa, dom_insert_L. clear -Hr. set_solver. }
         rewrite dom_union_L in H. clear -H Hr. set_solver. }
-      assert (<[c := (sbranch i s1 s2, pt_br k i)]> (Σ1a ∖ ΣC) ∪ ΣC =
-              <[c := (sbranch i s1 s2, pt_br k i)]> Σ1a) as Hre
+      assert (<[c := (sbranch i s1 s2, pt_slot k (bidx i))]> (Σ1a ∖ ΣC) ∪ ΣC =
+              <[c := (sbranch i s1 s2, pt_slot k (bidx i))]> Σ1a) as Hre
         by (by rewrite <-insert_union_l, HΣre).
       destruct bra.
       + apply iface_lower; [done|done|]. by rewrite Hre.

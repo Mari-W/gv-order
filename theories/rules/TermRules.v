@@ -827,7 +827,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SPlus S1 S2) x ∧
-            B = TSess (sbranch b S1 S2) (pt_br x b)) as (S1 & S2 & x & -> & -> & ->).
+            B = TSess (sbranch b S1 S2) (pt_slot x (bidx b))) as (S1 & S2 & x & -> & -> & ->).
   { destruct b; simpl in Hk; inversion Hk; subst; eauto 10. }
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
@@ -846,12 +846,12 @@ Proof.
   - intros α e' Hst. apply app_val_step in Hst; [|by destruct b|done].
     assert (α = LSess (SSel c b) ∧ e' = Chan c) as [-> ->]
       by (destruct b; inversion Hst; subst; done).
-    simpl. exists ∅, s1, s2, k, {[c := One (sbranch b s1 s2, pt_br k b)]}. split_and!.
+    simpl. exists ∅, s1, s2, k, {[c := One (sbranch b s1 s2, pt_slot k (bidx b))]}. split_and!.
     + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
     + left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|].
-      apply Vrel_sess_iff. exists c, (sbranch b s1 s2), (pt_br k b).
-      split_and!; [done|done|by destruct b|by apply (wf_eq_br _ HWf)].
+      apply Vrel_sess_iff. exists c, (sbranch b s1 s2), (pt_slot k (bidx b)).
+      split_and!; [done|done|by destruct b|by apply (wf_eq_slot _ HWf)].
 Qed.
 
 (** branch (K4): it waits like receive, at cost 1, and returns the
@@ -864,7 +864,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SWith S1 S2) x ∧
-            B = TSum (TSess S1 (pt_br x false)) (TSess S2 (pt_br x true)))
+            B = TSum (TSess S1 (pt_slot x (bidx false))) (TSess S2 (pt_slot x (bidx true))))
     as (S1 & S2 & x & -> & -> & ->) by (inversion Hk; subst; eauto 10).
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
@@ -882,13 +882,13 @@ Proof.
       eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | | | | | | | | |c' b'| | | |]; subst. simpl.
-    exists ∅, s1, s2, k, {[c := One (sbranch b' s1 s2, pt_br k b')]}. split_and!.
+    exists ∅, s1, s2, k, {[c := One (sbranch b' s1 s2, pt_slot k (bidx b'))]}. split_and!.
     + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
     + left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [|exact HB]; done|].
       apply Vrel_sum_iff. destruct b'; [right|left]; eexists; (split; [done|]);
-        apply Vrel_sess_iff; eexists _, _, (pt_br k _);
-        (split_and!; [done|done|done|by apply (wf_eq_br _ HWf)]).
+        apply Vrel_sess_iff; eexists _, _, (pt_slot k (bidx _));
+        (split_and!; [done|done|done|by apply (wf_eq_slot _ HWf)]).
 Qed.
 
 (** Θ = Θ1, c : e as a composition with a singleton. *)
