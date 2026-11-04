@@ -292,3 +292,14 @@ and `fundamental_proc` have closed `Print Assumptions`.
 
 SHARP-EDGES 141 to 145 have the details.
 
+## Gaps against Mordido and Pérez (2026-11-04)
+
+No decision changed. Two programs that version 3 of theories/mp loses type
+in the core. SegmentInterleave.v orders a channel created after treeSum
+against the returned channel in both directions, and SegmentDeleg.v sends a
+channel on the returned channel. Dropping a channel at Skip needs either
+`terminated` to accept restricted names that no thread mentions or a step
+that releases them, so it waits for the author (SkipDrop.v, SHARP-EDGES
+151). docs/extensions/adequacy/mordido-perez.md, section "Gaps checked
+against the core", has the full list.
+

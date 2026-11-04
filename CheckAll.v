@@ -31,6 +31,9 @@ Require LRGV.examples.cfst.ArithServer.
 Require LRGV.examples.cfst.BranchOrder.
 Require LRGV.examples.cfst.CfstDeadlock.
 Require LRGV.examples.cfst.CfstScheduler.
+Require LRGV.examples.cfst.SegmentDeleg.
+Require LRGV.examples.cfst.SegmentInterleave.
+Require LRGV.examples.cfst.SkipDrop.
 Require LRGV.examples.cfst.Stream.
 Require LRGV.examples.cfst.TreeCopy.
 Require LRGV.examples.cfst.TreeSum.
@@ -168,6 +171,11 @@ Print Assumptions LRGV.examples.cfst.CfstScheduler.worker_typed.
 Print Assumptions LRGV.examples.cfst.CfstScheduler.follower_typed.
 Print Assumptions LRGV.examples.cfst.CfstScheduler.sch_typed.
 Print Assumptions LRGV.examples.cfst.CfstScheduler.sch_deadlock_free.
+Print Assumptions LRGV.examples.cfst.SegmentDeleg.sd_typed.
+Print Assumptions LRGV.examples.cfst.SegmentDeleg.sd_deadlock_free.
+Print Assumptions LRGV.examples.cfst.SegmentInterleave.si_typed.
+Print Assumptions LRGV.examples.cfst.SegmentInterleave.si_deadlock_free.
+Print Assumptions LRGV.examples.cfst.SkipDrop.sd_not_deadlock_free.
 Print Assumptions LRGV.examples.cfst.Stream.client_typed.
 Print Assumptions LRGV.examples.cfst.Stream.newclient_typed.
 Print Assumptions LRGV.examples.cfst.Stream.st_typed.

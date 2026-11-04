@@ -86,5 +86,4 @@ definition `typed wnil Φ Ψ ∅ Δ F t T`, the source instance of the one
 judgment `typed`. `wnil`, `wnil_strict` and `wnil_names` moved from
 `static/Fundamental.v` to `static/Source.v`. `typed_world_transfer` is new
 and replaces the two inductions of `styped_typed` and `typed_styped`, which
-remain as corollaries with the same statements (docs/SHARP-EDGES.md, entry
-on the merge).
+remain as corollaries with the same statements (docs/SHARP-EDGES.md, entry 153).
