@@ -327,3 +327,77 @@ Proof.
     eapply Erel_dstep; [by apply det_beta_letp|].
     by apply (HK W' j f' g' s1' s2' pf' pg').
 Qed.
+
+(** ** The thread through the recursion *)
+
+Lemma px_shift k : pt_shift 1 (px k) = px (S k).
+Proof. unfold pt_shift, px. simpl. f_equal. lia. Qed.
+
+Lemma py_shift k : pt_shift 1 (py k) = py (S k).
+Proof. unfold pt_shift, py. simpl. f_equal. lia. Qed.
+
+(** A fact of rW between points aliased in a later world. *)
+Lemma rW_lt_at W u v x y : wext rW W → rfacts u v → w_eq W x u → w_eq W y v → w_lt W x y.
+Proof.
+  intros Hw Huv Hx Hy. pose proof (wext_wf _ _ Hw) as HWf.
+  eapply (wf_lt_eq _ HWf); [exact Hx| |apply (wf_eq_sym _ HWf), Hy].
+  apply (proj1 (proj2 (proj2 Hw))). by apply rW_lt.
+Qed.
+
+Lemma eq_shift_at W x p q :
+  wext rW W → w_eq W x p → pt_shift 1 p = q → w_eq W (pt_shift 1 x) q.
+Proof. intros Hw Hx <-. apply (wf_eq_shift _ (wext_wf _ _ Hw)), Hx. Qed.
+
+(** The thread in round k with state (a, b) = rst k, c at a point
+    aliased to (0, k) and d at one aliased to (1, k), lies in the
+    relation at every index, in every world above rW. *)
+Theorem rthread_Erel n : ∀ W k a b c d s1 s2 xk yk Θ,
+  wext rW W → rst k = (a, b) → seq s1 Sb → seq s2 Sb →
+  w_eq W xk (px k) → w_eq W yk (py k) →
+  tenv_comp (w_eq W) Θ {[c := One (s1, xk)]} {[d := One (s2, yk)]} →
+  Erel n W Θ TUnit ∅ (rthread a b c d).
+Proof.
+  induction n as [n IH] using lt_wf_ind.
+  intros W k a b c d s1 s2 xk yk Θ Hw Hk Hs1 Hs2 Hx Hy Hc.
+  destruct n as [|n']; [apply Erel_0|].
+  pose proof (proj2 (proj2 (proj2 Hw))) as HW. pose proof (proj1 HW) as HWf.
+  apply rthread_head.
+  destruct a as [|a].
+  - (* d first *)
+    assert (rdfirst k = true) as Hd by (unfold rdfirst; by rewrite Hk).
+    eapply Erel_dstep; [apply det_beta_case1; [done|]|].
+    { unfold zKj, round_z. cbn. rewrite !subst_num. reflexivity. }
+    eapply Erel_dstep; [apply det_beta_letu|].
+    unfold round_z. apply (Erel_round n' W Θ d c s2 s1 yk xk); [done| |done|done| | |].
+    + apply comp_comm; [apply (wf_eq_sym _ HWf)|exact Hc].
+    + apply (rW_lt_at W (py k) (px k)); [done| |done|done]. exists k. rewrite Hd. by left.
+    + apply (rW_lt_at W (px k) (py (S k))); [done| |done|by apply (eq_shift_at W _ (py k)); [| |apply py_shift]].
+      exists k. rewrite Hd. by right.
+    + intros W' j d' c' s2' s1' pd' pc' Θ' HW' Hj Hc' Hs2' Hs1' Hpd' Hpc'.
+      match goal with |- Erel _ _ _ _ _ ?e => assert (e = rthread (S b) 0 c' d') as -> end.
+      { unfold subst2, rthread. cbn. rewrite !subst_num. reflexivity. }
+      pose proof (wext_trans _ _ _ Hw HW') as Hw'. pose proof (wext_wf _ _ Hw') as HWf'.
+      apply (IH j ltac:(lia) W' (S k) (S b) 0 c' d' s1' s2' pc' pd' Θ'); [done|by simpl; rewrite Hk|done|done| | |].
+      * eapply (wf_eq_trans _ HWf'); [exact Hpc'|]. apply (eq_shift_at W' _ (px k)); [done| |apply px_shift].
+        exact (wext_eq _ _ _ _ HW' Hx).
+      * eapply (wf_eq_trans _ HWf'); [exact Hpd'|]. apply (eq_shift_at W' _ (py k)); [done| |apply py_shift].
+        exact (wext_eq _ _ _ _ HW' Hy).
+      * apply comp_comm; [apply (wf_eq_sym _ HWf')|exact Hc'].
+  - (* c first *)
+    assert (rdfirst k = false) as Hd by (unfold rdfirst; by rewrite Hk).
+    eapply Erel_dstep; [apply det_beta_case2; [apply num_val|]|].
+    { unfold sKj, round_s. cbn. rewrite !rename_num. reflexivity. }
+    unfold round_s. apply (Erel_round n' W Θ c d s1 s2 xk yk); [done|done|done|done| | |].
+    + apply (rW_lt_at W (px k) (py k)); [done| |done|done]. exists k. rewrite Hd. by left.
+    + apply (rW_lt_at W (py k) (px (S k))); [done| |done|by apply (eq_shift_at W _ (px k)); [| |apply px_shift]].
+      exists k. rewrite Hd. by right.
+    + intros W' j c' d' s1' s2' pc' pd' Θ' HW' Hj Hc' Hs1' Hs2' Hpc' Hpd'.
+      match goal with |- Erel _ _ _ _ _ ?e => assert (e = rthread a (S b) c' d') as -> end.
+      { unfold subst2, rthread. cbn. rewrite !subst_num. reflexivity. }
+      pose proof (wext_trans _ _ _ Hw HW') as Hw'. pose proof (wext_wf _ _ Hw') as HWf'.
+      apply (IH j ltac:(lia) W' (S k) a (S b) c' d' s1' s2' pc' pd' Θ'); [done|by simpl; rewrite Hk|done|done| | |done].
+      * eapply (wf_eq_trans _ HWf'); [exact Hpc'|]. apply (eq_shift_at W' _ (px k)); [done| |apply px_shift].
+        exact (wext_eq _ _ _ _ HW' Hx).
+      * eapply (wf_eq_trans _ HWf'); [exact Hpd'|]. apply (eq_shift_at W' _ (py k)); [done| |apply py_shift].
+        exact (wext_eq _ _ _ _ HW' Hy).
+Qed.
