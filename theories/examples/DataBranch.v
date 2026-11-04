@@ -3,7 +3,7 @@
     db_main b creates three channels, e first, then c, then d, spawns
     a closer for the other end of c, a closer for the other end of d
     and a sender of the bit b on the other end of e, receives the bit,
-    closes e and branches on it:
+    closes e and branches on it.
 
       db_main b =
         let (e, e′) = new ∗ in let (c, c′) = new ∗ in let (d, d′) = new ∗ in
@@ -62,13 +62,16 @@ Set Default Proof Using "All".
 
 Definition bit (b : bool) : expr := if b then Inj2 EUnit else Inj1 EUnit.
 
-(** One branch: drop the unit payload, close i, then close j. *)
+(** One branch drops the unit payload, closes i, then closes j. *)
 Definition db_branch (i j : nat) : expr :=
   LetU (Var 0) (LetU (App EClos (Var i)) (App EClos (Var j))).
 
-(** After the three lets of new: d′ = 0, d = 1, c′ = 2, c = 3, e′ = 4,
-    e = 5. After the let of the received pair: e = 0, z = 1, d = 3,
-    c = 5. Inside a branch: u = 0, z = 2, d = 4, c = 6. *)
+(** Indices as the body of the three lets of new sees them, with the
+    convention of [let_new_pair] (a at 1, b at 0, outer from 2). d′ is
+    0, d 1, c′ 2, c 3, e′ 4 and e 5. After the let of the received pair
+    e is 0, z 1, d 3 and c 5, and inside a branch u is 0, z 2, d 4 and
+    c 6. [let_new_pair] renames them, and db_main holds the case node
+    [db_case] below. *)
 Definition db_tail (i1 j1 i2 j2 : nat) : expr :=
   LetP (App ERecv (Var 5))
     (LetU (App EClos (Var 0)) (Case (Var 1) (db_branch i1 j1) (db_branch i2 j2))).
@@ -448,7 +451,7 @@ Proof.
     + split; [done|]. simpl. apply mrel_snoc; [|apply mrel_snoc; [|done]].
       * split; [by apply Hkf|done].
       * split; [by apply Hke|done].
-  - (* choice: an okb thread takes no branch step *)
+  - (* choice, which an okb thread never takes *)
     kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hf Hok) as [_ []].
   - (* link *)
     kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hs Hok) as [Hk _].
@@ -556,8 +559,8 @@ Qed.
 (** ** The component has no derivation under realizable hypotheses
 
     db_case is the case node of db_main, in the context the run gives
-    it: the received bit z at 1, d at 3 and c at 7, every other entry
-    spent ([db_typed_false] reaches this node with this context, except
+    it. The received bit z is at 1, d at 3 and c at 7, and every other
+    entry is spent ([db_typed_false] reaches this node with this context, except
     that it gives z a type with a fact). A world W realizes Φ and Ψ when an instance σ of the point
     variables makes every hypothesis of Ψ hold in W and puts every
     frame variable of Φ below a set of points ρ. *)
@@ -617,7 +620,7 @@ Proof.
   apply grounding_nones.
 Qed.
 
-(** close i; close j steps only by closing i. *)
+(** [cc2 i j] steps only by closing i. *)
 Definition cc2 (i j : chan) : expr := LetU (App EClos (Chan i)) (App EClos (Chan j)).
 
 Lemma cc2_step i j α t : tstep (cc2 i j) α t → α = LSess (SClos i).
@@ -632,7 +635,7 @@ Qed.
 Lemma cc2_can i j : tstep (cc2 i j) (LSess (SClos i)) (LetU EUnit (App EClos (Chan j))).
 Proof. apply TStepLetU, TStepHead, HeadClos. Qed.
 
-(** Readiness of close i; close j, holding i at x and j at y, is x ≺ y. *)
+(** Readiness of [cc2 i j], holding i at x and j at y, gives x ≺ y. *)
 Lemma cc2_ready W F i j x y :
   i ≠ j →
   ready_t W (<[j := One (SEnd, y)]> {[i := One (SEnd, x)]}) F (cc2 i j) → w_lt W x y.
@@ -714,7 +717,7 @@ Proof.
   apply (proj2 HWs (pt_inst σ x)). exact (wf_lt_trans _ HW _ _ _ H2 H1).
 Qed.
 
-(** The hypotheses of a source program are realizable: a program
+(** The hypotheses of a source program are realizable. A program
     starts under a creation constraint C₀ over n top-level points, and
     the world wc0 n C₀ realizes it ([soundness_source]). So the case
     node of db_main does not type at any context the program starts
@@ -731,7 +734,7 @@ Proof.
   - by apply wc0_holds.
 Qed.
 
-(** ** db_main types: the dead branch learns a fact from the bit
+(** ** db_main types, and the dead branch learns a fact from the bit
 
     The receiver types the bit at ∗ ⊕ ∃{z[0]+5 ≺ z[0]+1}.∗ (for b =
     false), where z is the point of the receive on e and z[0] its first
@@ -865,13 +868,13 @@ Proof.
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
   cbn. set (Cd := bcs_inst (plist [pt_slot (pvar 2) 0]) Cdead).
   eapply (tv_case W _ _ _ _ _ _ _ TUnit (TEx LNone 0 Cd TUnit) TUnit); [exact HW|reflexivity|tstep| |].
-  - (* inl: close c, then d *)
+  - (* inl closes c, then d *)
     cbn. tstep; [tstep|]. cbn. tstep.
     + tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
     + tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-  - (* inr: open the payload, which states z[0]+5 ≺ z[0]+1 *)
+  - (* inr opens the payload, which states z[0]+5 ≺ z[0]+1 *)
     cbn. apply (t_open W _ _ _ _ _ _ 0 LNone 0 Cd TUnit TUnit); [done|intros Hu; exact Hu|].
     replace (hyps_inst (pshift 0) Ψ) with Ψ by reflexivity.
     rewrite fhyps_pinst_empty, tenv_pinst_empty, sf_pinst_none.
@@ -995,7 +998,7 @@ Proof.
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
   cbn. set (Cd := bcs_inst (plist [pt_slot (pvar 2) 0]) Cdead).
   eapply (tv_case W _ _ _ _ _ _ _ (TEx LNone 0 Cd TUnit) TUnit TUnit); [exact HW|reflexivity|tstep| |].
-  - (* inl: open the payload, which states z[0]+5 ≺ z[0]+1 *)
+  - (* inl opens the payload, which states z[0]+5 ≺ z[0]+1 *)
     cbn. apply (t_open W _ _ _ _ _ _ 0 LNone 0 Cd TUnit TUnit); [done|intros Hu; exact Hu|].
     replace (hyps_inst (pshift 0) Ψ) with Ψ by reflexivity.
     rewrite fhyps_pinst_empty, tenv_pinst_empty, sf_pinst_none.
@@ -1024,7 +1027,7 @@ Proof.
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
     + tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-  - (* inr: close d, then c *)
+  - (* inr closes d, then c *)
     cbn. tstep; [tstep|]. cbn. tstep.
     + tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].

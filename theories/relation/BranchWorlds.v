@@ -1,12 +1,12 @@
 (** * Worlds with pending choices (prototype, docs/extensions/data-dependent-worlds.md)
 
-    A prototype of candidate (d) of the design note: a world W together
+    A prototype of section 4.4 of the design note. A world W comes together
     with a list P of pending binary choices. Each choice is a pair of
     alternative sets of ≺ facts. A choice vector ch picks one side of
     every choice, and [at_choice W P ch] is the world W with the picked
     facts added. A pending world is valid when every choice vector gives
     a strict world. A component that branches on data resolves a choice
-    ([resolve]): its world gains the facts of the branch it takes, which
+    ([resolve]). Its world gains the facts of the branch it takes, which
     may relate points that existed before.
 
     The critical lemma is amalgamation. The relation is monotone only
@@ -14,7 +14,7 @@
     extension made by another and stays strict ([wext_fresh_join],
     relation/Worlds.v). An extension that adds facts between existing
     points breaks it ([unguarded_join_cycle]). Pending choices restore
-    it ([pjoin_valid], [pjoin_fresh]): a fresh extension that adds new
+    it ([pjoin_valid], [pjoin_fresh]). A fresh extension that adds new
     pending choices, joined with an extension that resolves old ones,
     is again a valid pending world and a fresh extension at every
     choice vector. The proof reduces the pending case to
@@ -96,7 +96,7 @@ Proof. intros HW HE HL. apply (wgen_in_world W E L HW HE HL). Qed.
 (** ** Resolving a choice
 
     The component that owns choice i takes side b. Its world gains the
-    facts of that side, and the choice becomes trivial: both of its
+    facts of that side, and the choice becomes trivial. Both of its
     sides are the side taken. Choice vectors keep their length. *)
 
 Definition resolve (W : world) (P : list pchoice) (i : nat) (b : bool) : world :=
@@ -181,7 +181,7 @@ Proof.
       * apply at_choice_wf; [by apply resolve_wf|by apply resolve_supported].
       * apply Hs. by rewrite length_insert.
       * by apply resolve_at_incl.
-    + (* i is out of range: P !! i = None and nothing changes *)
+    + (* i is out of range, so P !! i = None and nothing changes *)
       assert (P !! i = None) as HPi by (apply lookup_ge_None; lia).
       set (Wt := at_choice W P ch).
       assert (world_wf Wt) as HWt by (by apply at_choice_wf).
@@ -202,7 +202,7 @@ Qed.
 
 (** ** Extensions of pending worlds
 
-    (W, P) ⊑ (W′, P′): every choice vector of P′ lies above some choice
+    (W, P) ⊑ (W′, P′) when every choice vector of P′ lies above some choice
     vector of P. Resolving choice i to b is such an extension, with the
     choice vector ch′ above <[i := b]> ch′. *)
 
@@ -248,7 +248,7 @@ Proof.
   by rewrite length_resolve_P.
 Qed.
 
-(** A fresh extension of a pending world: new names N and new pending
+(** A fresh extension of a pending world places new names N and new pending
     choices Pn, fresh at every choice vector. *)
 Definition pfresh (W : world) (P : list pchoice) (N : gset pname)
     (W1 : world) (Pn : list pchoice) : Prop :=
@@ -347,7 +347,7 @@ Qed.
     Two names c = 0 and d = 1 with no facts beyond program order. One
     component adds (0,0) ≺ (1,0) to its world, another adds
     (1,0) ≺ (0,0). Each is an extension of the common world, and their
-    join is not strict. This is the step of candidate (b) of the design
+    join is not strict. This is the step of section 4.2 of the design
     note without the pending choice, and the reason the monotonicity
     proof needs fresh extensions ([wext_fresh_join]). Declared as one
     pending choice, both alternatives are valid and each component
@@ -429,7 +429,7 @@ Proof.
   - apply (proj2 (wjoin_r Wcd Wdc)). apply glt_base. by split.
 Qed.
 
-(** The two orders as one pending choice: valid, and resolved either
+(** The two orders as one pending choice. It is valid, and resolved either
     way by the component that branches. *)
 Definition Pcd : list pchoice := [(only xc xd, only xd xc)].
 
