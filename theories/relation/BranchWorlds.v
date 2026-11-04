@@ -341,3 +341,121 @@ Proof.
           with (i - length P') by lia. by replace (i - length ch') with (i - length P') in Hc by lia.
       * done.
 Qed.
+
+(** ** Why the choice has to be pending
+
+    Two names c = 0 and d = 1 with no facts beyond program order. One
+    component adds (0,0) ≺ (1,0) to its world, another adds
+    (1,0) ≺ (0,0). Each is an extension of the common world, and their
+    join is not strict. This is the step of candidate (b) of the design
+    note without the pending choice, and the reason the monotonicity
+    proof needs fresh extensions ([wext_fresh_join]). Declared as one
+    pending choice, both alternatives are valid and each component
+    resolves it ([db_pending_valid]). *)
+
+Definition N2 : gset pname := {[NConst 0; NConst 1]}.
+Definition xc : point := Pt (NConst 0) 0.
+Definition xd : point := Pt (NConst 1) 0.
+
+Definition only (a b : point) : prel := λ x y, x = a ∧ y = b.
+Definition nof : prel := λ _ _, False.
+
+Definition W0 : world := wgen N2 nof nof.
+Definition Wcd : world := wgen N2 nof (only xc xd).
+Definition Wdc : world := wgen N2 nof (only xd xc).
+
+Lemma geq_eqonly E x y : (∀ x y, E x y → x = y) → geq E x y → x = y.
+Proof. intros HE. induction 1; subst; eauto. Qed.
+
+Lemma glt_rank E L (r : point → nat) x y :
+  (∀ x y, E x y → x = y) → (∀ x y, L x y → r x < r y) → (∀ x, r x < r (pt_shift 1 x)) →
+  glt E L x y → r x < r y.
+Proof.
+  intros HE HL Hp. induction 1 as [| |x x' y y' Hx _ IH Hy|]; [auto|auto| |lia].
+  apply (geq_eqonly E) in Hx, Hy; [|done..]. by subst.
+Qed.
+
+Definition rk (a : nat) (x : point) : nat :=
+  2 * pt_off x + if decide (pt_name x = NConst a) then 1 else 0.
+
+Lemma rk_po a x : rk a x < rk a (pt_shift 1 x).
+Proof. unfold rk, pt_shift. simpl. case_decide; lia. Qed.
+
+Lemma N2_wf L : (∀ x y, L x y → pt_root x ∈ N2 ∧ pt_root y ∈ N2) → world_wf (wgen N2 nof L).
+Proof.
+  intros HL. apply wgen_wf; [|by intros ?? []|intros x y H; right; by apply HL].
+  intros p Hp. unfold N2 in Hp. apply elem_of_union in Hp as [Hp|Hp];
+    apply elem_of_singleton in Hp as ->; eauto.
+Qed.
+
+Lemma only_supp a b :
+  pt_root a ∈ N2 → pt_root b ∈ N2 → ∀ x y, only a b x y → pt_root x ∈ N2 ∧ pt_root y ∈ N2.
+Proof. intros Ha Hb x y [-> ->]. done. Qed.
+
+Lemma xc_N2 : pt_root xc ∈ N2.
+Proof. unfold N2, xc, pt_root. simpl. set_solver. Qed.
+Lemma xd_N2 : pt_root xd ∈ N2.
+Proof. unfold N2, xd, pt_root. simpl. set_solver. Qed.
+
+Lemma Wcd_strict : strict Wcd.
+Proof.
+  split; [apply N2_wf, only_supp; [apply xc_N2|apply xd_N2]|].
+  intros x Hx. apply (glt_rank nof (only xc xd) (rk 1)) in Hx; [lia|by intros ?? []| |apply rk_po].
+  intros ?? [-> ->]. unfold rk. simpl. repeat case_decide; simplify_eq; lia.
+Qed.
+
+Lemma Wdc_strict : strict Wdc.
+Proof.
+  split; [apply N2_wf, only_supp; [apply xd_N2|apply xc_N2]|].
+  intros x Hx. apply (glt_rank nof (only xd xc) (rk 0)) in Hx; [lia|by intros ?? []| |apply rk_po].
+  intros ?? [-> ->]. unfold rk. simpl. repeat case_decide; simplify_eq; lia.
+Qed.
+
+Lemma W0_ext L : strict (wgen N2 nof L) → wext W0 (wgen N2 nof L).
+Proof.
+  intros HS. split_and!.
+  - done.
+  - intros x y H. exact H.
+  - apply (proj2 (wgen_incl nof nof nof L (λ x y H, geq_base _ _ _ H) (λ x y H, False_ind _ H))).
+  - done.
+Qed.
+
+Theorem unguarded_extensions_conflict :
+  wext W0 Wcd ∧ wext W0 Wdc ∧ ¬ strict (wjoin Wcd Wdc).
+Proof.
+  split_and!; [apply W0_ext, Wcd_strict|apply W0_ext, Wdc_strict|].
+  intros [HJ Hi]. apply (Hi xc). apply (wf_lt_trans _ HJ _ xd).
+  - apply (proj2 (wjoin_l Wcd Wdc)). apply glt_base. by split.
+  - apply (proj2 (wjoin_r Wcd Wdc)). apply glt_base. by split.
+Qed.
+
+(** The two orders as one pending choice: valid, and resolved either
+    way by the component that branches. *)
+Definition Pcd : list pchoice := [(only xc xd, only xd xc)].
+
+Lemma W0_wf : world_wf W0.
+Proof. apply N2_wf. by intros ?? []. Qed.
+
+Theorem db_pending_valid : pvalid W0 Pcd.
+Proof.
+  split_and!; [apply W0_wf| |].
+  - intros i c b x y Hi Hs. destruct i as [|[]]; [|done|done]. injection Hi as <-.
+    destruct b; simpl in Hs; destruct Hs as [-> ->];
+      split; first [apply xc_N2|apply xd_N2].
+  - intros ch Hch. destruct ch as [|b [|]]; try discriminate Hch.
+    assert (∀ x y, pick Pcd [b] x y ↔ only (if b then xd else xc) (if b then xc else xd) x y) as Hp.
+    { intros x y. split.
+      - intros (i & c & b' & Hi & Hc & Hs). destruct i as [|[]]; try done.
+        injection Hi as <-. injection Hc as <-. by destruct b.
+      - intros H. exists 0, (only xc xd, only xd xc), b. by destruct b. }
+    split; [apply at_choice_wf; [apply W0_wf|]|].
+    { intros i c b' x y Hi Hs. destruct i as [|[]]; [|done|done]. injection Hi as <-.
+      destruct b'; simpl in Hs; destruct Hs as [-> ->]; split; first [apply xc_N2|apply xd_N2]. }
+    intros x Hx.
+    apply (glt_rank (w_eq W0) _ (rk (if b then 0 else 1))) in Hx; [lia| | |apply rk_po].
+    + intros ?? H. by apply (geq_eqonly nof) in H; [|intros ?? []].
+    + intros x0 y0 [H|H].
+      * apply (glt_rank nof nof (rk (if b then 0 else 1)) x0 y0) in H; [done|by intros ?? []|by intros ?? []|apply rk_po].
+      * apply Hp in H. destruct H as [-> ->]. unfold rk. destruct b; simpl;
+          repeat case_decide; simplify_eq; lia.
+Qed.
