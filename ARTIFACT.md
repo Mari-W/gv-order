@@ -32,13 +32,15 @@ Hardware and time, measured on 4 cores of an Intel Xeon at 2.10 GHz with
 | opam switch with OCaml and the dependencies | 10 min (3 min OCaml, 7 min Rocq and stdpp) | |
 | `make -j4` from a clean tree | 13 min (16 min CPU time) | 1.0 GB per process, 2.6 GB in all |
 | `make check` after the build | 7.5 min | 1.9 GB |
-| `docker build .` from scratch (all of the above) | DOCKER_TIME | |
+| `docker build .` from scratch (all of the above) | 33 min (10.5 min opam, 21.5 min `make` and `make check`) | |
+| GitHub Actions, `ubuntu-24.04` runner, no cache | 36 min (17.5 min opam switch, 10 min `make`, CHECK_CI) | |
+| GitHub Actions with the cached opam switch | CI_CACHED | |
 
 Peak memory per process is the largest resident set of one `rocq`
 process. With `-jN` up to N processes run at once, and the whole machine
 used at most 2.6 GB during `make -j4`. The build used 16 min of CPU time
 in 13 min of wall clock, so 4 cores ran 1.2 processes on average and the
-long files on the dependency chain set the wall clock. DISK_LINE
+long files on the dependency chain set the wall clock. The Docker image takes 2.3 GB of disk.
 
 ## 2. Getting started
 
@@ -100,6 +102,15 @@ OK: every checked name is closed under the global context
 
 and prints 5 warnings for references in `paper/4-extensions.tex` that name
 no declaration (section 4.3).
+
+### 2.4 Continuous integration
+
+`.github/workflows/build.yml` runs on every push and pull request. It
+installs opam from Ubuntu 24.04, restores the opam switch from the Actions
+cache, keyed by the hash of `spo-lr-df.opam` and `spo-lr-df.opam.locked`,
+creates and saves it on a miss, runs `make` and `make check`, and uploads
+`_build/check/report.txt`. A manual run (`workflow_dispatch`) with the
+input `docker` also runs the Docker build. The workflow needs no secrets.
 
 ## 3. Step-by-step instructions: checking the claims
 
