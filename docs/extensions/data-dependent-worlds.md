@@ -104,9 +104,10 @@ The hypotheses of the dead branch are not realizable, and the soundness proof
 needs no change. The logical relation reads a value of ∃{z[0]+5 ≺ z[0]+1}.∗
 only in a world with that fact, and a strict world has none.
 
-The trick generalizes to every branch whose other side is dead in every run
-and whose payload, or a top-level point, offers an anchor that the creation
-constraints of the ordered channels can refer to. A source program may start
+The trick generalizes, by the same steps and without a Rocq proof, to every
+branch whose other side is dead in every run and whose payload, or a
+top-level point, offers an anchor that the creation constraints of the
+ordered channels can refer to. A source program may start
 with any number of top-level points under an acyclic C₀ (sharp edges 148), and
 every hypothesis context contains them, so a closed program always has
 anchors.
@@ -259,8 +260,9 @@ sends, which a component typed against an interface does not.
 
 The rule types db_main without the dead fact of section 2, which closed
 programs do not need. It does not type the fact-free component, whose sender
-sits behind the interface. Its proofs touch only the process layer (PTerm,
-PConnect, the adequacy chain), which is its one advantage.
+sits behind the interface. Its soundness proof would live in the process
+layer (PTerm, PConnect, the adequacy chain), which is its one advantage. I
+did not attempt it.
 
 ### 4.4 Pending choices with an owner (recommended)
 
