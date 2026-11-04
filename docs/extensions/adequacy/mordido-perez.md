@@ -734,6 +734,10 @@ Version 3 translates n-ary choices without room and channels created after a
 segment call that are ordered against the returned channel in one direction.
 The other items stay, with the reasons above.
 
+The section "Gaps checked against the core (2026-11-04)" below sorts the
+remaining items into translation artefacts, core limits and programs their
+rules reject.
+
 ## Stage 3, the source semantics
 
 ### 14  Deadlock freedom in their semantics
@@ -1036,3 +1040,162 @@ theories/mp build, and no theorem changed its statement. `mp_translate`,
   come from PN on `exists`.
 
 SHARP-EDGES 145 has the details.
+
+## Gaps checked against the core (2026-11-04)
+
+Branch `cfst-gaps` checks the items of section 13 that the repaired rules
+type and versions 2 and 3 do not translate. An item counts as a gap of the
+core only for a concrete program that their repaired rules type and the core
+does not. Three such programs now type in the core with a whole-program
+`styped` derivation and `soundness_source`. One item needs a change of the
+semantics, which waits for the author. Every claim about the paper is in the
+store with its page.
+
+| Item | Concrete program | Their rules | Core | Status |
+|---|---|---|---|---|
+| drop at Skip | `sd_main`, SkipDrop.v | type it | no, the run keeps a restricted name | needs a decision |
+| second linear parameter (U2) | `copy`, TreeCopy.v | type it | `tree_deadlock_free` | translation artefact |
+| channel after a call, both directions | `si_go`, SegmentInterleave.v | type it | `si_deadlock_free` | translation artefact |
+| µ body with a type variable | `lp_main` below | type it | no restriction, not mechanized | translation artefact |
+| unopened segment result | `rt2_main` below | type it | drain's λr. r | translation artefact |
+| channel held across a call, sent after it | `hc_main` below | reject it | | no gap |
+| channel created after a call, sent on the returned channel | `sd_go`, SegmentDeleg.v | type it | `sd_deadlock_free` | translation artefact |
+| held channel sent at the first action | `fa_main` below | type it | not mechanized | see below |
+| held channel sent where the data decides | `ll_main` below | reject it | no | no gap |
+
+### Dropping a channel at Skip
+
+```
+sd_main = let (x, y) = new (!∗;Skip) in
+          spawn (λu. let () = u in (λ_. ∗) (send ⟨∗, x⟩));
+          let (_, _) = recv y in ∗
+```
+
+Their rules type it. Skip has priority ⊤ (Fig. 4, p. 11), S-Top copies a
+type of priority ⊤ into both halves of a split (Fig. 12, p. 24), and T-Var
+and T-Const accept a rest of priority ⊤ (pp. 12, 25). Their structural
+congruence removes the restriction once no thread mentions its endpoints
+(Fig. 15, p. 30), so the run ends in •⟨()⟩.
+
+Our semantics keeps a restricted name until a close or a link releases it,
+and `terminated` asks for no restricted name. `sd_not_deadlock_free` runs
+`sd_main` to ({a}, {[+ ∗; ∗ +]}), which makes no step and is not terminated.
+So no typing rule alone can let a thread drop a channel at Skip, and the
+change reaches the statement of `soundness`. Two ways are open.
+
+1. `terminated` accepts restricted names that no thread mentions. This is
+   what their ≡ does. E-Stop and P-Stop then accept entries at Skip next to
+   the value, and readiness skips entries at Skip, because they offer
+   nothing and their partner is at Skip too.
+2. A process step releases a restricted name that no thread mentions. The
+   relation needs the same changes, and every simulation of theories/pgv,
+   theories/pn and theories/mp gains a case.
+
+Either way the weakening lemma has to absorb a Skip end that a message
+brings in, because the partner may delegate its end at Skip. No example of
+the paper drops a channel. Each ends its channels with Close or Wait.
+SHARP-EDGES 151 has the details.
+
+### Segment functions with a second linear parameter
+
+The core types `copy` (TreeCopy.v, `tree_deadlock_free`), so U2 is an
+artefact of the translation. The plan was to build the lockstep facts into
+the creation constraint of each new, where `cc_ok` is a local check. The
+translation states its result at the world `Wmp` with `typed`, and every
+fact it uses comes from a rank of a denotation. Facts from creation
+constraints need `styped` with the facts of the derivation as hypotheses,
+which is the redesign that SHARP-EDGES 145 declined. It is not done.
+
+### A channel ordered against the returned channel in both directions
+
+SegmentInterleave.v types the program of section 15.3 with treeSum as the
+segment function. The server gets c′ at κ′, creates d at δ under the
+creation constraint {κ′ ≺ δ, δ+1 ≺ κ′+1, δ+1 ≺ z}, sends on c′ while it
+holds d, receives on d and closes d while it holds c′, and closes c′. Each
+fact relates δ to a known point, and the only fact it derives between known
+points is κ′ ≺ κ′+1, so `cc_ok` holds (`sid_ok`). Their rules type the same
+program with c′ : !⁹;Wait¹³ and d : ?¹⁰;Close¹² (T-Let, p. 25).
+
+### µ bodies with a type variable
+
+```
+loop : ∀p ∈ (⊥,⊤). ∀a :: p. (µβ.∀^S ι.&^ι{Done: a, More: ?^{ι+1}Unit;β}) → a
+loop c = match inst c with { Done c → c,
+                             More c → let (_, c) = receive c in loop{next c}[a] c }
+lp_main = let (x, y) = new (µβ.∀^S ι.⊕^ι{Done: Close⁵⁰, More: !^{ι+1}Unit;β}) 1 2 in
+          fork (λ_. close (select Done (inst (send () (select More (inst x))))));
+          wait (loop{1}[Wait⁵⁰] y)
+```
+
+F-PAbsS keeps ∆ when it forms ∀^S ι.S, and F-Rec forms µγ.T under ∆ (Fig. 9,
+p. 22), so the body may mention a. The checks at the sequence [1, 3, 5, …]
+are 1 < 2 < 3 < 50. The core has no rule that excludes the program. Session
+instantiation goes under µ with `sty_up`, and V-Box ranges over hereditarily
+contractive instances. The loss comes from the translation, where an
+instance of a with its own ∀^S would nest ∀^S. A mechanized example is
+missing. Unfolding the instantiated µ needs a fusion lemma for `sinst` after
+`sren`, which types/Types.v does not have.
+
+### Returning an unopened segment result
+
+```
+rt2 : ∀p ∈ (⊥,⊤). ∀a :: p. TreeChannel;a → (Tree, a)
+rt2 c = receiveTree{p}[a] c
+rt2_main = rt_main with rt2 in place of receiveTree
+```
+
+T-AbsLin and T-App type rt2 at the type of receiveTree (p. 25). The core
+already returns the result of a segment call. drain returns the result of
+its second recursive call through λr. r, which opens it and packs it again
+at its own lower point (TreeCopy.v), and treeSum does the same around its
+reply. The translation can open the result at the call and pack it with the
+caller's lower point. Versions 2 and 3 do not, because their priority
+abstractions return no unopened segment result.
+
+### Handing over a channel on the channel a call returns
+
+```
+hc_main = let (d, d′) = new (Close¹²) in let (t, c′) = receiveTree{1}[!⁹Close¹²;Wait¹³] c in
+          close (send d c′) …
+```
+
+Their rules reject it. receiveTree has latent effect ⊤ (p. 21), and T-Let
+asks the effect of the call below the priority of everything the
+continuation holds (ρ₁ < |Γ₂|, p. 25), so d at 12 cannot be held across the
+call. A channel created after the call can be sent. SegmentDeleg.v creates
+d at the payload point κ′[0] of the returned channel and sends it on c′. The
+send owes κ′ ≺ κ′[0], which the existential of treeSum states along every
+walk. The client receives d at (α·w)[0] and closes it in a thread of its
+own. Their rules type this program with d at 12 and c′ : !⁹(Close¹²);Wait¹³,
+because the send asks 9 < 12 (Fig. 5, p. 11).
+
+### Handing over a held channel inside a segment function
+
+A held channel d enters a function as a second linear parameter. In the core
+a send asks the payload's point to be the payload point of the carrier
+(O-Send reads `payload_at`). Two programs differ in where the send happens.
+
+```
+fa c d = let c = send d (inst c) in receiveTree{next c}[a] c
+fa_main = … d created at 12, c : !⁵(Close¹²);TreeChannel;Wait⁹⁹ …
+```
+
+The send is the first action of c. Their rules check it at the call with the
+concrete sequence of c, 5 < 12 (p. 39). The core needs the box constraint of
+fa to state ι ≡ κ[0] for the point ι of d, and the caller creates d at κ[0].
+This is not mechanized.
+
+```
+ll c d = match inst c with { Leaf c → send d c,
+                             Node c → let c = ll{next c}[TreeL;a] c d in receiveTree{next c}[a] c }
+```
+
+ll sends d at the leftmost leaf, so the walk of the send depends on the tree.
+The core cannot type it, because d has one point and the payload point
+(κ·w)[0] depends on the walk w. Their repaired rules reject it too. The
+payload check of send asks the carrier's priority below the payload's
+(ι₂ ∈ (⊥, ι₁), Fig. 5, p. 11). Repair R8 asks the check at every round, and
+the carrier's priority grows by at least one per level of the tree while
+the priority of d stays fixed. Their rules as printed check only the first
+round (pp. 28, 29), and section 15.2 shows why that is unsound. So ll is no
+gap. fa stays open until an example types it in the core.
