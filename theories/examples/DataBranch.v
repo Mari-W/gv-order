@@ -568,7 +568,7 @@ Qed.
     entry is spent ([db_typed_false] reaches this node with this context, except
     that it gives z a type with a fact). A world W realizes Φ and Ψ when an instance σ of the point
     variables makes every hypothesis of Ψ hold in W and puts every
-    frame variable of Φ below a set of points ρ. *)
+    variable of Φ (the hypotheses on the future) below a set of points ρ. *)
 
 Definition db_case : expr := Case (Var 1) (db_branch 8 4) (db_branch 4 8).
 

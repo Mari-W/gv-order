@@ -1,7 +1,7 @@
 # Report: worlds that depend on data
 
 Branch claude/data-dependent-worlds-9rgdfr, started from main at b621661.
-Design note: [data-dependent-worlds.md](data-dependent-worlds.md).
+The design note is [data-dependent-worlds.md](data-dependent-worlds.md).
 
 ## Result in one paragraph
 
@@ -52,7 +52,8 @@ DataBranch.v
 | `df_keep` | `okb b e → deadlock_free (∅, {[+ keep b e +]}) → deadlock_free (∅, {[+ e +]})` |
 
 `realizable Φ Ψ` says that some strict world W and instance σ make every
-hypothesis of Ψ hold and put every frame variable of Φ below some point set.
+hypothesis of Ψ hold and put every variable of Φ, the hypotheses on the
+future, below some point set.
 db_case is the case node of db_main, db_rnode its receive with everything
 after it. db_ctx and db_rctx are the contexts the derivation of db_main gives
 these nodes, with the bit, or e's payload, typed at ∗ ⊕ ∗.
