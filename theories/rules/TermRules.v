@@ -5,192 +5,9 @@
     frame F ∪ H, where H holds the heads of the rest of the term. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export rules.Bind.
+From LRGV Require Export rules.Bind relation.Creation.
 
 Set Default Proof Using "All".
-
-(** ** Aliasing a fresh point to a known one
-
-    new at type S@x ⊗ S′@x creates its channel at a fresh point (a, 0)
-    and must alias it to x (sharp edges 49). The world W0' below knows
-    only the root r of x and a, and identifies the a-rooted points with
-    their images under a ↦ x. Joined with W, it is a fresh extension of
-    W placing a. *)
-
-Section alias.
-  Context (a : nat) (x : point).
-
-  Fixpoint acn (p : pname) : point :=
-    match p with
-    | NConst c => if decide (c = a) then x else Pt (NConst c) 0
-    | NVar v => Pt (NVar v) 0
-    | NSlot q b i => pt_slot (pt_shift b (acn q)) i
-    | NBr q b i => pt_br (pt_shift b (acn q)) i
-    end.
-
-  Definition acanon (y : point) : point := pt_shift (pt_off y) (acn (pt_name y)).
-
-  Lemma acn_id p : pn_root p ≠ NConst a → acn p = Pt p 0.
-  Proof.
-    induction p as [c|v|q IH b i|q IH b i]; simpl; intros Hr.
-    - rewrite decide_False; [done|]. intros ->. by apply Hr.
-    - done.
-    - rewrite IH by done. unfold pt_slot, pt_shift. simpl. done.
-    - rewrite IH by done. unfold pt_br, pt_shift. simpl. done.
-  Qed.
-
-  Lemma acanon_id y : pt_root y ≠ NConst a → acanon y = y.
-  Proof.
-    intros Hr. unfold acanon. rewrite acn_id by done. destruct y. unfold pt_shift. simpl. done.
-  Qed.
-
-  Lemma acn_root p :
-    pt_root (acn p) = if decide (pn_root p = NConst a) then pt_root x else pn_root p.
-  Proof.
-    induction p as [c|v|q IH b i|q IH b i]; simpl.
-    - destruct (decide (c = a)) as [->|Hc].
-      + by rewrite decide_True.
-      + rewrite decide_False; [done|congruence].
-    - done.
-    - rewrite pt_root_slot, pt_root_shift. exact IH.
-    - rewrite pt_root_br, pt_root_shift. exact IH.
-  Qed.
-
-  Lemma acanon_root y :
-    pt_root (acanon y) = if decide (pt_root y = NConst a) then pt_root x else pt_root y.
-  Proof. unfold acanon. rewrite pt_root_shift. apply acn_root. Qed.
-
-  Lemma acanon_shift y : acanon (pt_shift 1 y) = pt_shift 1 (acanon y).
-  Proof. unfold acanon, pt_shift. simpl. f_equal. lia. Qed.
-
-  Lemma acanon_slot y i : acanon (pt_slot y i) = pt_slot (acanon y) i.
-  Proof.
-    unfold acanon, pt_slot, pt_shift. simpl. repeat f_equal; try lia.
-  Qed.
-
-  Lemma acanon_br y i : acanon (pt_br y i) = pt_br (acanon y) i.
-  Proof.
-    unfold acanon, pt_br, pt_shift. simpl. repeat f_equal; try lia.
-  Qed.
-
-  Lemma acanon_ppo y z : ppo y z → ppo (acanon y) (acanon z).
-  Proof. apply ppo_map; [apply acanon_shift|apply acanon_br]. Qed.
-
-  Definition W0 : world :=
-    World {[pt_root x]} (λ y z, y = z) ppo.
-
-  Definition W0' : world :=
-    World ({[pt_root x]} ∪ {[NConst a]}) (λ y z, acanon y = acanon z)
-      (λ y z, ppo (acanon y) (acanon z)).
-
-  Context (W : world) (HW : strict W) (Hx : pt_known W x) (Ha : NConst a ∉ w_names W).
-
-  Lemma root_x_ne : pt_root x ≠ NConst a.
-  Proof. intros He. apply Ha. unfold pt_known in Hx. by rewrite <-He. Qed.
-
-  Lemma W0_wf : world_wf W0.
-  Proof.
-    split; simpl.
-    - done.
-    - done.
-    - intros; congruence.
-    - intros; congruence.
-    - intros; congruence.
-    - intros; congruence.
-    - intros y z w H1 H2. by eapply ppo_trans.
-    - intros y y' z z' -> H <-. done.
-    - intros y. apply ppo_po.
-    - intros y i. apply ppo_br.
-    - intros y z ->. by left.
-    - intros y z H. by left.
-    - intros p ->%elem_of_singleton. exact (wf_names_const _ (proj1 HW) _ Hx).
-  Qed.
-
-  Lemma W0_ext : wext W0 W.
-  Proof.
-    split_and!; simpl.
-    - by apply singleton_subseteq_l.
-    - intros y z ->. apply (wf_eq_refl _ (proj1 HW)).
-    - intros y z Hp. by apply wf_lt_ppo; [apply HW|].
-    - done.
-  Qed.
-
-  Lemma acanon_supp y z :
-    pt_root (acanon y) = pt_root (acanon z) → y ≠ z ∨ True →
-    (pt_root y = NConst a ∨ pt_root z = NConst a) →
-    pt_root y ∈ ({[pt_root x]} ∪ {[NConst a]} : gset pname) ∧
-    pt_root z ∈ ({[pt_root x]} ∪ {[NConst a]} : gset pname).
-  Proof.
-    intros Hr _ Hyz.
-    rewrite !acanon_root in Hr.
-    destruct (decide (pt_root y = NConst a)) as [Hy|Hy],
-             (decide (pt_root z = NConst a)) as [Hz|Hz]; set_solver.
-  Qed.
-
-  Lemma W0'_wf : world_wf W0'.
-  Proof.
-    split; cbn [w_eq w_lt w_names W0'].
-    - done.
-    - done.
-    - intros; congruence.
-    - intros y z H. by rewrite !acanon_shift, H.
-    - intros y z i H. by rewrite !acanon_slot, H.
-    - intros y z i H. by rewrite !acanon_br, H.
-    - intros y z w H1 H2. by eapply ppo_trans.
-    - intros y y' z z' H1 H2 H4.
-      change (acanon y = acanon y') in H1. change (acanon z' = acanon z) in H4.
-      change (ppo (acanon y) (acanon z)). by rewrite H1, <-H4.
-    - intros y. rewrite acanon_shift. apply ppo_po.
-    - intros y i. rewrite acanon_br. apply ppo_br.
-    - intros y z H. unfold eq_or_supp.
-      destruct (decide (pt_root y = NConst a ∨ pt_root z = NConst a)) as [Hyz|Hyz].
-      + right. apply acanon_supp; [by rewrite H|by right|done].
-      + left. rewrite !acanon_id in H by naive_solver. done.
-    - intros y z Hp. unfold po_or_supp.
-      destruct (decide (pt_root y = NConst a ∨ pt_root z = NConst a)) as [Hyz|Hyz].
-      + right. apply acanon_supp; [by apply ppo_root|by right|done].
-      + left. rewrite !acanon_id in Hp by naive_solver. done.
-    - intros p [Hp|Hp]%elem_of_union; apply elem_of_singleton in Hp as ->; [|by eexists].
-      exact (wf_names_const _ (proj1 HW) _ Hx).
-  Qed.
-
-  Lemma W0'_strict : strict W0'.
-  Proof. split; [apply W0'_wf|]. intros y H. exact (ppo_irrefl _ H). Qed.
-
-  Lemma W0_fresh : wext_fresh W0 {[NConst a]} W0'.
-  Proof.
-    pose proof root_x_ne as Hne.
-    split_and!.
-    - split_and!; cbn [w_eq w_lt w_names W0 W0'].
-      + set_solver.
-      + intros y z ->. done.
-      + intros y z Hp. by apply acanon_ppo.
-      + apply W0'_strict.
-    - simpl. set_solver.
-    - done.
-    - intros y z Hy Hz.
-      assert (pt_root y ≠ NConst a) by (clear -Hy; set_solver).
-      assert (pt_root z ≠ NConst a) by (clear -Hz; set_solver).
-      cbn [w_eq w_lt W0 W0']. rewrite !acanon_id by done. done.
-  Qed.
-
-  Lemma W0'_alias : w_eq W0' (pconst a) x.
-  Proof.
-    simpl. rewrite (acanon_id x) by apply root_x_ne.
-    unfold acanon, pconst. simpl. rewrite decide_True by done.
-    destruct x. unfold pt_shift. simpl. f_equal. lia.
-  Qed.
-End alias.
-
-Lemma wext_fresh_alias W a x :
-  strict W → pt_known W x → NConst a ∉ w_names W →
-  ∃ W', wext_fresh W {[NConst a]} W' ∧ w_eq W' (pconst a) x.
-Proof.
-  intros HW Hx Ha. exists (wjoin (W0' a x) W). split.
-  - apply (wext_fresh_join (W0 x)); [exact (W0_wf a x W HW Hx Ha)|exact (W0_fresh a x W HW Hx Ha)|
-      exact (W0_ext a x W HW Hx Ha)|set_solver].
-  - apply wjoin_l. exact (W0'_alias a x W HW Hx Ha).
-Qed.
 
 (** ** Heads of values
 
@@ -237,12 +54,11 @@ Proof.
 Qed.
 
 Lemma Vrel_heads_above n W Θ T v :
-  world_wf W → Vrel n W Θ T v → heads_above W (heads T) Θ.
+  world_wf W → hbot T = false → Vrel n W Θ T v → heads_above W (heads T) Θ.
 Proof.
   intros HW. revert Θ v.
-  induction T as [|ub lb T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1 T2 IH2|m kk C0 T1 IH1|s x
-                 |lb m C0 T1 IH1];
-    intros Θ v HV; simpl.
+  induction T as [|ub lb T1 IH1 T2 IH2|T1 IH1 T2 IH2|T1 IH1 T2 IH2|m kk C T1 IH1|s x|lb m C T1 IH1];
+    intros Θ v Hb HV; simpl; simpl in Hb; try apply orb_false_iff in Hb as [Hb1 Hb2].
   - apply Vrel_unit_iff in HV as [-> _]. apply heads_above_empty.
   - apply Vrel_lolli_iff in HV as [(eb & _ & _ & Hlb & _)|(k & T0 & _ & -> & _)];
       [|apply heads_above_empty].
@@ -263,10 +79,10 @@ Proof.
       exists x. split; [set_solver|]. left. by apply (wf_eq_sym _ HW).
     + rewrite lookup_singleton_ne in He by done. done.
   - apply Vrel_ex_iff in HV as [Hlb _].
-    intros k e He. destruct lb as [l|]; simpl in Hlb.
-    + exists l. split; [set_solver|]. apply Hlb. apply elem_of_tenv_heads_entry. eauto.
+    intros k e He. destruct lb as [| |l]; simpl in Hlb, Hb; [|done|].
     + exfalso. assert (e.2 ∈ tenv_heads Θ) as Hin by (apply elem_of_tenv_heads_entry; eauto).
-      rewrite Hlb in Hin. set_solver.
+      rewrite (proj1 Hlb) in Hin. set_solver.
+    + exists l. split; [set_solver|]. apply Hlb. apply elem_of_tenv_heads_entry. eauto.
 Qed.
 
 (** ** Grounding substitutions *)
@@ -278,14 +94,31 @@ Fixpoint lenv_heads (Δ : lenv) : gset point :=
   | Some T :: Δ' => heads T ∪ lenv_heads Δ'
   end.
 
+(** The ⊥ flag of an environment (sharp edges 103). *)
+Fixpoint lenv_bot (Δ : lenv) : bool :=
+  match Δ with
+  | [] => false
+  | None :: Δ' => lenv_bot Δ'
+  | Some T :: Δ' => hbot T || lenv_bot Δ'
+  end.
+
 Lemma grounding_heads n W Θ Δ γ :
-  world_wf W → grounding n W Θ Δ γ → heads_above W (lenv_heads Δ) Θ.
+  world_wf W → lenv_bot Δ = false → grounding n W Θ Δ γ → heads_above W (lenv_heads Δ) Θ.
 Proof.
-  intros HW. revert Θ γ. induction Δ as [|[T|] Δ IH]; intros Θ γ Hg; simpl in *.
+  intros HW. revert Θ γ. induction Δ as [|[T|] Δ IH]; intros Θ γ Hb Hg; simpl in *.
   - subst. apply heads_above_empty.
-  - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
+  - apply orb_false_iff in Hb as [Hb1 Hb2]. destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
     eapply heads_above_comp; [exact Hc|by eapply Vrel_heads_above|by eapply IH].
   - by eapply IH.
+Qed.
+
+(** With the flag, the frame holds [pbot]. *)
+Lemma heads_above_x_bot W H b Θ :
+  (b = false → heads_above W H Θ) → heads_above_x W (H ∪ bot_pts b) Θ.
+Proof.
+  intros Hh. destruct b; simpl.
+  - right. set_solver.
+  - left. eapply heads_above_sub; [|by apply Hh]. set_solver.
 Qed.
 
 Lemma grounding_mono n W W' Θ Δ γ :
@@ -479,7 +312,7 @@ Proof. intros HW. apply (wf_eq_sym _ (wext_wf _ _ HW)). Qed.
 
 Lemma sem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 Th T (f : (nat → expr) → frame) :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → (∀ γ, frame_val (f γ)) →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 Th →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 Th →
   (∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' → grounding n W' Θ' Δ2 γ →
      ∀ W'' j Θ1' Θ3 v, wext W' W'' → j ≤ n → tenv_comp (w_eq W'') Θ3 Θ1' Θ'' →
        Vrel j W'' Θ1' Th v → Erel j W'' Θ3 T F (fill_frame (f γ) v)) →
@@ -491,11 +324,12 @@ Proof.
   destruct (grounding_split _ _ _ _ _ _ _ HW' Hsp Hg) as (Θ'1 & Θ'2 & Hc' & Hg1 & Hg2).
   pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW)) Hc) as HcW.
   destruct (comp_swap4 _ _ _ _ _ _ _ _ Hs Hc'' HcW Hc') as (A & B & HAB & HA & HB).
-  eapply (Erel_bind n (f γ) W' Θ'' A B Th T F (tenv_heads Θ2 ∪ lenv_heads Δ2)).
+  eapply (Erel_bind n (f γ) W' Θ'' A B Th T F (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))).
   - apply Hf.
   - apply HW.
   - done.
-  - eapply heads_above_comp; [exact HB|by apply heads_above_self|by eapply grounding_heads].
+  - apply heads_above_x_bot. intros Hb.
+    eapply heads_above_comp; [exact HB|by apply heads_above_self|by eapply grounding_heads].
   - by apply (He1 n W' Θ'1 A γ).
   - intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. by eapply (HK n W' Θ'2 B γ).
 Qed.
@@ -508,7 +342,7 @@ Proof.
   intros He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   change (Inj1 (subst γ e)) with (fill_frame FInj1 (subst γ e)).
   eapply (Erel_bind n FInj1 W' Θ'' Θ'' ∅ T _ F ∅); [done|apply HW|apply tenv_comp_empty_r|
-    apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
+    left; apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
   intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
   apply tenv_comp_empty_r_inv in Hc3 as ->. apply Vrel_Erel. simpl.
   apply Vrel_sum_iff. left. eauto.
@@ -520,7 +354,7 @@ Proof.
   intros He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   change (Inj2 (subst γ e)) with (fill_frame FInj2 (subst γ e)).
   eapply (Erel_bind n FInj2 W' Θ'' Θ'' ∅ U _ F ∅); [done|apply HW|apply tenv_comp_empty_r|
-    apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
+    left; apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
   intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
   apply tenv_comp_empty_r_inv in Hc3 as ->. apply Vrel_Erel. simpl.
   apply Vrel_sum_iff. right. eauto.
@@ -544,7 +378,7 @@ Qed.
 
 Lemma sem_typed_letu W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 TUnit →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 TUnit →
   sem_typed W Θ2 Δ2 F e2 T →
   sem_typed W Θ Δ F (LetU e1 e2) T.
 Proof.
@@ -582,7 +416,7 @@ Qed.
 
 Lemma sem_typed_letp W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TProd T1 T2) →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TProd T1 T2) →
   sem_typed W Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
   sem_typed W Θ Δ F (LetP e1 e2) T.
 Proof.
@@ -615,7 +449,7 @@ Qed.
 
 Lemma sem_typed_case W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e (TSum T1 T2) →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e (TSum T1 T2) →
   sem_typed W Θ2 (Some T1 :: Δ2) F e1 T →
   sem_typed W Θ2 (Some T2 :: Δ2) F e2 T →
   sem_typed W Θ Δ F (Case e e1 e2) T.
@@ -660,8 +494,8 @@ Qed.
 
 Lemma sem_typed_pair W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 T →
-  sem_typed W Θ2 Δ2 (F ∪ heads T) e2 U →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 T →
+  sem_typed W Θ2 Δ2 (F ∪ (heads T ∪ bot_pts (hbot T))) e2 U →
   sem_typed W Θ Δ F (Pair e1 e2) (TProd T U).
 Proof.
   intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
@@ -673,11 +507,11 @@ Proof.
   pose proof (wext_trans _ _ _ HW HW'') as HW2. pose proof (wext_sym _ _ HW2) as Hs.
   pose proof (Vrel_val _ _ _ _ _ HV1) as Hv1.
   change (Pair v1 (subst γ e2)) with (fill_frame (FPairR v1) (subst γ e2)).
-  eapply (Erel_bind j (FPairR v1) W'' Θ3 Θ'' Θ1' U (TProd T U) F (heads T)).
+  eapply (Erel_bind j (FPairR v1) W'' Θ3 Θ'' Θ1' U (TProd T U) F (heads T ∪ bot_pts (hbot T))).
   - done.
   - apply HW''.
   - by apply comp_comm.
-  - eapply Vrel_heads_above; [exact (wext_wf _ _ HW2)|exact HV1].
+  - apply heads_above_x_bot. intros Hb. eapply Vrel_heads_above; [exact (wext_wf _ _ HW2)|exact Hb|exact HV1].
   - exact (sem_typed_later _ _ _ _ _ _ n W' Θ' Θ'' γ W'' j He2 HW Hc' Hg HW'' Hj).
   - intros W3 j' Θ2' Θ4 v2 HW3 Hj' Hc4 HV2. apply Vrel_Erel. simpl.
     apply Vrel_prod_iff. exists v1, v2, Θ1', Θ2'. split_and!; [done| | |done].
@@ -725,11 +559,12 @@ Qed.
 
 Lemma sem_typed_lam W Θ Δ F e T U ub lb :
   term_wf Θ (Some T :: Δ) e →
+  lenv_bot Δ = false →
   lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
   (∀ W1 F', wext W W1 → ub_below W1 ub F' → sem_typed W1 Θ (Some T :: Δ) F' e U) →
   sem_typed W Θ Δ F (Lam e) (TLolli ub lb T U).
 Proof.
-  intros (Hfc & Hfv & Hrel) Hlb He n W' Θ' Θ'' γ HW Hc Hg. simpl.
+  intros (Hfc & Hfv & Hrel) Hbot Hlb He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   pose proof (wext_wf _ _ HW) as HW'. pose proof (wext_sym _ _ HW) as Hs.
   apply Vrel_Erel, Vrel_lolli_iff. left. exists (subst (up γ) e). split_and!; [done| | |].
   - rewrite (tenv_join_dom _ _ _ (proj1 Hc)). apply set_eq. intros ch. split.
@@ -750,7 +585,7 @@ Proof.
     { intros h (k & e0 & He0 & ->)%elem_of_tenv_heads_entry.
       destruct (comp_entry _ _ _ _ _ _ Hc He0) as [[k' Hk]|[k' Hk]].
       - left. apply elem_of_tenv_heads_entry. eauto.
-      - right. exact (grounding_heads _ _ _ _ _ HW' Hg _ _ Hk). }
+      - right. exact (grounding_heads _ _ _ _ _ HW' Hbot Hg _ _ Hk). }
     pose proof (lb_below_mono _ _ _ _ HW Hlb) as Hlb'.
     destruct lb as [l|]; simpl in *.
     + intros h Hin. destruct (Hh h Hin) as [Hin'|(h' & Hh' & Hle)].
@@ -817,9 +652,10 @@ Proof.
   intros HW HV1 HV2.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [S x Hx| | | | | | | | |]; subst.
-  apply Vrel_unit_iff in HV as [-> ->].
-  destruct n as [|n']; [apply Erel_0|].
+  inversion Hk as [| | | | | | | | |S C HC HK]; subst.
+  apply Vrel_unit_iff in HV as [-> ->]. destruct n as [|n']; [apply Erel_0|].
+  (* new at a fresh point a, packed (sharp edges 97). The world is W with
+     the facts of C at a, a fresh extension by [cc_ok] (105). *)
   assert (tstep (App ENew EUnit) (LNew "c") (Pair (Chan "c") (Chan "c"))) as Hst0
     by apply TStepHead, HeadNew.
   apply Erel_S_iff. split_and!.
@@ -828,27 +664,36 @@ Proof.
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | |c| | | | | | | | | | |]; subst. simpl. intros _.
     destruct (fresh_const (w_names W ∪ ty_roots U ∪ frame_roots F)) as [a Ha].
-    destruct (wext_fresh_alias W a x HW Hx ltac:(clear -Ha; set_solver)) as (W' & Hfr & Hal).
+    destruct (wext_cc W a C HW HC HK ltac:(clear -Ha; set_solver)) as (W' & Hfr & HCa).
     exists a, S, (dual S), W'. split_and!.
     + unfold tenv_roots. rewrite map_fold_empty. clear -Ha. set_solver.
     + apply sdual_dual.
     + done.
     + pose proof (proj1 Hfr) as HWW'. pose proof (wext_wf _ _ HWW') as HW'.
+      pose proof Hfr as (_ & _ & Hnames & _).
       apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [apply HWW'|exact HB]|].
-      apply Vrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, pconst a)]},
-        {[c := One (dual S, pconst a)]}. split_and!.
+      apply Vrel_ex_iff. split.
       * done.
-      * split.
-        -- intros c'. rewrite insert_empty. destruct (decide (c' = c)) as [->|Hne].
-           ++ rewrite !lookup_singleton_eq. constructor.
-           ++ rewrite !lookup_singleton_ne by done. constructor.
-        -- intros c' e1 e2 H1 H2. destruct (decide (c' = c)) as [->|Hne];
-             [|by rewrite lookup_singleton_ne in H1].
-           rewrite lookup_singleton_eq in H1, H2. simplify_eq. simpl.
-           split; [apply (wf_eq_refl _ HW')|apply sdual_dual].
-      * apply Vrel_sess_iff. exists c, S, (pconst a). split_and!; [done|done|apply seq_refl|done].
-      * apply Vrel_sess_iff. exists c, (dual S), (pconst a).
-        split_and!; [done|done|apply seq_refl|done].
+      * exists [pconst a]. split_and!.
+        -- done.
+        -- apply Forall_singleton. unfold pt_known. simpl. rewrite Hnames. set_solver.
+        -- done.
+        -- unfold ty_inst. cbn [pinst_ty]. rewrite tpt_inst_pvar_at. simpl.
+           apply Vrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, pconst a)]},
+             {[c := One (dual S, pconst a)]}. split_and!.
+           ++ done.
+           ++ split.
+              ** intros c'. rewrite insert_empty. destruct (decide (c' = c)) as [->|Hne].
+                 --- rewrite !lookup_singleton_eq. constructor.
+                 --- rewrite !lookup_singleton_ne by done. constructor.
+              ** intros c' e1 e2 H1 H2. destruct (decide (c' = c)) as [->|Hne];
+                   [|by rewrite lookup_singleton_ne in H1].
+                 rewrite lookup_singleton_eq in H1, H2. simplify_eq. simpl.
+                 split; [apply (wf_eq_refl _ HW')|apply sdual_dual].
+           ++ apply Vrel_sess_iff. exists c, S, (pconst a).
+              split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW')].
+           ++ apply Vrel_sess_iff. exists c, (dual S), (pconst a).
+              split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW')].
 Qed.
 
 Lemma Erel_app_spawn n W Θ ub lb T U F v2 :
@@ -858,7 +703,7 @@ Proof.
   intros HW HV1 HV2.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [|ub1 lb1| | | | | | | |]; subst.
+  inversion Hk as [ub1 lb1| | | | | | | | |]; subst.
   pose proof (Vrel_val _ _ _ _ _ HV) as Hv.
   destruct n as [|n']; [apply Erel_0|].
   assert (tstep (App ESpawn v2) (LSpawn v2) EUnit) as Hst0 by by apply TStepHead, HeadSpawn.
@@ -911,7 +756,7 @@ Proof.
   intros HW HV1 HV2 Hub0. pose proof (proj1 HW) as HWf.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [| |m T0 S x| | | | | | |]; subst.
+  inversion Hk as [|m T0 S x| | | | | | | |]; subst.
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
   destruct (seq_rcv_inv _ _ _ _ _ Hs0 (unfoldS_rcv _ _ _))
@@ -951,7 +796,7 @@ Proof.
   intros HW HV1 HV2 Hub0. pose proof (proj1 HW) as HWf.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [| | | |x| | | | |]; subst.
+  inversion Hk as [| | |x| | | | | |]; subst.
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
   pose proof (seq_end_inv _ _ Hs0 eq_refl) as Hu0.
@@ -1072,7 +917,8 @@ Proof.
   intros HW HV1 HV2 Hub0. pose proof (proj1 HW) as HWf.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [| |m T0 S x Hpay| | | | | | |]; subst.
+  inversion Hk as [|m T0 S x Hpay| | | | | | | |]; subst.
+  destruct (hbot T0) eqn:Hpb; [done|].
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_prod_iff in HV as (w & vc & Θw & Θc & -> & Hc & HVw & HVc).
   apply Vrel_sess_iff in HVc as (c & s0 & k & -> & -> & Hs0 & Hk0).
@@ -1082,7 +928,9 @@ Proof.
   pose proof (comp_single_ext _ _ _ _ _ Hc) as Hext.
   (* the payload's entries lie above x *)
   assert (∀ k' e', tenv_entry Θw k' = Some e' → w_lt W k e'.2) as Habove.
-  { intros k' e' He'. destruct (Vrel_heads_above _ _ _ _ _ HWf HVw _ _ He') as (h & Hh & Hle).
+  { intros k' e' He'.
+    assert (hbot (payload_at m T0 x) = false) as Hpb' by (unfold payload_at, ty_inst; by rewrite hbot_pinst).
+    destruct (Vrel_heads_above _ _ _ _ _ HWf Hpb' HVw _ _ He') as (h & Hh & Hle).
     eapply (wf_lt_eq _ HWf); [exact Hk0|eapply lt_le_W; [done|by apply Hpay|exact Hle]|apply HWf]. }
   (* the key of the sending end *)
   assert (∃ kc, tenv_entry Θ kc = Some (s0, k) ∧ kc.1 = c ∧
@@ -1162,7 +1010,8 @@ Proof.
   intros HW HV1 HV2 Hub0. pose proof (proj1 HW) as HWf.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [| | | | | | | |S x x' Hxx'|]; subst.
+  inversion Hk as [| | | | | | |S x x' Hxx'| |]; subst.
+
   apply Vrel_prod_iff in HV as (vc & vd & Θc & Θd & -> & Hc & HVc & HVd).
   apply Vrel_sess_iff in HVc as (c & sc & kc & -> & -> & Hsc & Hkc).
   apply Vrel_sess_iff in HVd as (d & sd & kd & -> & -> & Hsd & Hkd).
@@ -1227,7 +1076,7 @@ Definition app_good (ub lb : option point) (T U : ty) : Prop :=
 Lemma sem_typed_app_gen W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :
   app_good ub lb T U →
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
-  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TLolli ub lb T U) →
+  sem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TLolli ub lb T U) →
   sem_typed W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
   sem_typed W Θ Δ F (App e1 e2) U.
 Proof.
@@ -1244,7 +1093,7 @@ Proof.
   - done.
   - apply HW''.
   - by apply comp_comm.
-  - eapply (Vrel_heads_above _ _ _ (TLolli ub lb T U)); [exact (wext_wf _ _ HW2)|exact HV1].
+  - left. eapply (Vrel_heads_above _ _ _ (TLolli ub lb T U)); [exact (wext_wf _ _ HW2)|done|exact HV1].
   - exact (sem_typed_later _ _ _ _ _ _ n W' Θ' Θ'' γ W'' j He2 HW Hc' Hg HW'' Hj).
   - intros W3 j' Θ2' Θ4 v2 HW3 Hj' Hc4 HV2.
     pose proof (wext_trans _ _ _ HW2 HW3) as HW4.

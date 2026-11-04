@@ -228,8 +228,8 @@ Fixpoint tr_ty (T : pty) : ty :=
   end
 with tr_sty (s : psty) : sty :=
   match s with
-  | PSnd _ T s' => SSnd 0 (tr_ty T) (tr_sty s')
-  | PRcv _ T s' => SRcv 0 (tr_ty T) (tr_sty s')
+  | PSnd _ T s' => SSeq (SSnd 0 (tr_ty T)) (tr_sty s')
+  | PRcv _ T s' => SSeq (SRcv 0 (tr_ty T)) (tr_sty s')
   | PEndS _ | PEndR _ => SEnd
   end.
 
@@ -237,6 +237,14 @@ Lemma tr_sty_dual s : tr_sty (pdual s) = dual (tr_sty s).
 Proof. induction s; simpl; by f_equal. Qed.
 
 Definition tr_env (Γ : penv) : lenv := fmap (M:=option) tr_ty <$> Γ.
+
+(** A translated type holds no existential, so it has no ⊥ flag
+    (sharp edges 103). *)
+Lemma hbot_tr T : hbot (tr_ty T) = false.
+Proof. induction T; simpl; try done. by rewrite IHT1, IHT2. by rewrite IHT1, IHT2. Qed.
+
+Lemma lenv_bot_tr Γ : lenv_bot (tr_env Γ) = false.
+Proof. induction Γ as [|[T|] Γ IH]; simpl; [done| |done]. by rewrite hbot_tr, IH. Qed.
 
 (** Every point of a translated type is a constant, so a payload of
     send and recv needs no binder and is its own instance. *)

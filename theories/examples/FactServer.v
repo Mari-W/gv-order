@@ -1,0 +1,207 @@
+(** * Kobayashi's and Padovani's factorial server: typable
+
+    Kobayashi's running example (kobayashi2006new p. 2):
+
+      *fact?(n,r). if n=0 then r!1 else new r1 in (fact!(n-1,r1) | r1?x.r!(x*n))
+
+    Padovani's (3) is the same program with priorities
+    (padovani2014deadlock p. 2):
+
+      *fact?(x,y^h). if x=0 then y!<1> else (ν a^k)(fact!<x-1,a> | a?(z).y!<x*z>)
+
+    The server receives a number and a reply channel. At zero it answers
+    at once. Otherwise it creates a fresh reply channel, calls itself on
+    it, blocks on the answer and sends its own. Padovani notes that the
+    fresh channel a stands in y's position, so a monomorphic system
+    wants h = k while the blocking input wants k < h, and that
+    polymorphism over the replicated channel is what types the program
+    (padovani2014deadlock p. 2). Kobayashi needs r1 ≺ r in the creation
+    order for the same reason (kobayashi2006new p. 11).
+
+    Here:
+
+      Sr   = !∗.Close
+      C    = {ι.0ⁿ⁺¹ ≺ ι.0ⁿ,  ι.0ⁿ⁺¹ + 1 ≺ ι.0ⁿ  ∣  n ∈ ℕ}   (slots from 0)
+      fact : □(∀ι. C. ∗ ⊸^⊥_⊤ ((∗ ⊕ ∗) ⊗ Sr@ι ⊸^{ι+1}_⊤ ∗))
+      fact = !(f = λnr. let (n, r) = nr in case n of
+                 x. let () = x in close (send ⟨∗, r⟩)
+               | y. let () = y in
+                    let (p, q) = new ∗ in
+                    let () = spawn (λu. let () = u in (force f) ⟨inj₂ ∗, p⟩) in
+                    let () = recvclose q in close (send ⟨∗, r⟩))
+      fc_main = let (g, w) = ⟨fact, ∗⟩ in let () = w in
+                let (c, c′) = new ∗ in
+                let () = spawn (λu. let () = u in (force g) ⟨inj₂ ∗, c⟩) in
+                recvclose c′
+
+    Simplifications. The calculus has no replicated channels, so the
+    replicated input *fact?(n,r).Q is the box fact and the output
+    fact!(n-1,r1) is a spawned call. It has no integers, so n is a value
+    of ∗ ⊕ ∗, the test n = 0 is E-Case on it, and the answers 1 and x*n
+    are ∗. The recursive call passes inj₂ ∗ in place of n-1, which the
+    calculus cannot compute, so the run recurses for ever while E-Case
+    types both branches. The reply session is !∗.Close, one message and
+    a close.
+
+    Points. The fresh reply channel of a call sits at ι.0, the first
+    carried root of the channel the call answers on, and C orders every
+    round strictly below the one that called it. This is the shape of
+    examples/KobForwarder.v, and the two programs differ in where the
+    branch comes from: there the server tests a boolean of its own, here
+    it tests the value it was called with. The order falls along the
+    depth, so C has no rank in ℕ and [dlt] orders it ([fc_ok]). *)
+
+From stdpp Require Import base strings gmap gmultiset relations.
+From LRGV Require Export examples.LitTools.
+
+Set Default Proof Using "All".
+
+Definition fc_P (g : fact) : Prop :=
+  ∃ n, g = FLt (Pt (slotv (S n)) 0) (Pt (slotv n) 0) ∨
+       g = FLt (Pt (slotv (S n)) 1) (Pt (slotv n) 0).
+
+Definition fc_C : bcs := BCs [] fc_P.
+
+Definition fc_body : ty :=
+  TLolli (Some (pv 0 1)) None
+    (TProd (TSum TUnit TUnit) (TSess Sd (pv 0 0))) TUnit.
+
+Definition fcsrv : expr :=
+  EBox (Lam (LetP (Var 0) (Case (Var 1)
+    (LetU (Var 0) (sendclose (Var 1)))
+    (LetU (Var 0)
+      (let_new_pair
+        (LetU (App ESpawn (Lam (LetU (Var 0)
+                 (App (App EForce (Var 7)) (Pair (Inj2 EUnit) (Var 2))))))
+          (LetU (recvclose (Var 0)) (sendclose (Var 3))))))))).
+
+Definition fc_main : expr :=
+  LetP (Pair fcsrv EUnit) (LetU (Var 0)
+    (let_new_pair
+      (LetU (App ESpawn (Lam (LetU (Var 0)
+               (App (App EForce (Var 4)) (Pair (Inj2 EUnit) (Var 2))))))
+        (recvclose (Var 0))))).
+
+Lemma fc_sub g : fc_P g → fact_scoped 1 g → fc_P (fact_map (pt_inst (plist [pcr])) g).
+Proof.
+  intros (n & [-> | ->]) _; exists (S n); [left|right];
+    cbn [fact_map]; unfold pt_inst; cbn [pt_name pt_off]; by rewrite !slotv_inst.
+Qed.
+
+Lemma fc_call W Ψ : (fc_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) fc_C [pcr].
+Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact fc_sub]. Qed.
+
+Lemma fc_ok peq plt : cc_ok peq plt fc_C.
+Proof.
+  apply cc_ok_dlt. intros g [n [-> | ->]] _; eexists _, _; split; [done| |done|];
+    left; cbn; rewrite !sdepth_slotv; lia.
+Qed.
+
+Lemma fcsrv_typed W F :
+  strict W → typed W ∅ [] ∅ [] F fcsrv (TBox 1 fc_C (TLolli None None TUnit fc_body)).
+Proof.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold fcsrv.
+  apply (t_box W _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|].
+  box_open1 fc_C fc_body. cbn. unfold fc_body.
+  eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
+  assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ pcr (pv 0 0)) as Hq.
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (slotv 1) 0) (Pt (slotv 0) 0));
+      [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
+  assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ (pt_shift 1 pcr) (pv 0 0)) as Hq1.
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (slotv 1) 1) (Pt (slotv 0) 0));
+      [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
+  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (TSum TUnit TUnit) (TSess Sd (pv 0 0)));
+    [reflexivity|tstep|].
+  cbn. eapply (tv_case W _ _ _ _ _ _ _ TUnit TUnit TUnit); [exact HW|reflexivity|tstep| |].
+  - (* n = 0: answer at once *)
+    cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
+    + tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
+    + apply KTClos.
+    + done.
+    + apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pv 0 1). split; [done|]. apply sle_refl, HW.
+  - (* n > 0: the fresh reply channel at ι.0, the call, the answer *)
+    cbn. tstep; [tstep|]. cbn.
+    apply (t_new_at W _ _ _ _ _ _ _ Sd pcr HWs).
+    { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
+    cbn. tstep.
+    { tstep; [|apply KTSpawn|done|apply ubs_none].
+      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 pcr)) (Some pcr) 2);
+        [set_solver| |].
+      { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+      cbn. tstep; [tstep|]. cbn.
+      eapply tv_app; [exact HW|reflexivity| | |].
+      - apply (typed_force W _ _ _ _ _ _ 1 fc_C None fc_body [pcr]);
+          [done|done| | |apply ubs_none|tstep].
+        + apply fc_call. by left.
+        + constructor; [right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]
+                       |constructor].
+      - tstep; [tstep|apply t_inj2, (tv_unit W HW); reflexivity].
+      - apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (pt_shift 1 pcr). split; [done|]. apply sle_refl, HW. }
+    cbn. tstep.
+    { unfold recvclose. tstep.
+      - tstep; [tstep|apply KTRecv|kscope|].
+        apply ubs_intro;
+          [intros y Hy; mem_cases Hy;
+           first [apply Hq; by left|apply Hq1; by left|apply (slt_po W _ pcr HW)]|].
+        exists (pv 0 1). split; [done|]. right.
+        eapply sl_trans; [apply Hq; by left|apply (slt_po W _ (pv 0 0) HW)].
+      - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+        apply ubs_intro;
+          [intros y Hy; mem_cases Hy;
+           first [apply Hq1; by left|apply Hq; by left]|].
+        exists (pv 0 1). split; [done|]. right.
+        eapply sl_trans; [apply Hq1; by left|apply (slt_po W _ (pv 0 0) HW)]. }
+    cbn. unfold sendclose. tstep.
+    + tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
+    + apply KTClos.
+    + done.
+    + apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pv 0 1). split; [done|]. apply sle_refl, HW.
+Qed.
+
+Lemma fc_typed : styped ∅ [] [] (∅, None) fc_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fc_main.
+  eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 fc_C (TLolli None None TUnit fc_body)) TUnit);
+    [reflexivity| |].
+  { tstep; [tstep|apply fcsrv_typed, HWs]. }
+  cbn. tstep; [tstep|]. cbn.
+  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fc_C); [apply fc_ok|constructor|].
+  fresh_clean.
+  set (Ψ := [(fc_C, [pvar 0])]).
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) fc_C [pvar 0]) as HC.
+  { apply bcs_hold_self; [by left|vb_list|]. intros g Hg Hs.
+    change (plist [pvar 0]) with (plist (ids 1)).
+    destruct g as [x y|x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids. }
+  assert (Forall (skn W Ψ) [pvar 0]) as HK.
+  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  cbn. tstep.
+  { tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0);
+      [set_solver| |].
+    { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+    cbn. tstep; [tstep|]. cbn.
+    eapply tv_app; [exact HW|reflexivity| | |].
+    - apply (typed_force W _ _ _ _ _ _ 1 fc_C None fc_body [pvar 0]);
+        [done|done|exact HC|exact HK|apply ubs_none|tstep].
+    - tstep; [tstep|apply t_inj2, (tv_unit W HW); reflexivity].
+    - apply ubs_intro; [intros y Hy; mem_cases Hy|].
+      exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
+  cbn. unfold recvclose. tstep.
+  - tstep; [tstep|apply KTRecv|kscope|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+  - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
+    apply ubs_intro; [intros y Hy; mem_cases Hy|done].
+Qed.
+
+Theorem fc_deadlock_free : deadlock_free (∅, {[+ fc_main +]}).
+Proof.
+  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed_s; [constructor|apply fc_typed].
+Qed.

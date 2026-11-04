@@ -315,8 +315,8 @@ Theorem pn_deadlock_free e τ e' :
 
 Theorem pn_translate Γ e t τ e' :
   pn_typed Γ e t τ e' →
-  ∀ Ψ B k ins Δ Φ F, good Ψ B → erel B k ins Γ Δ → ub_below_s Wpn Ψ Φ (hiz B k τ) F →
-  typed Wpn Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trz B k t).
+  ∀ Ψ B k ins Δ Φ F, good Ψ B → erel B k ins Γ Δ → ub_below_s wnil Ψ Φ (hiz B k τ) F →
+  typed wnil Φ Ψ ∅ Δ F (rename (ren_of ins) e') (trz B k t).
 
 Theorem fibo_deadlock_free :
   ∃ τ e', pn_typed [] fibo_main PUnit τ e' ∧ deadlock_free (∅, {[+ e' +]}).
@@ -353,11 +353,12 @@ inside level-⊤ arrows and leaves basic types alone (p10).
 
 #### 7.2  The world and the types
 
-`Wpn` (PNWorld.v) has one root constant. Levels become slots of a level anchor
-B. B[RAnc a] is the anchor shifted by a. B[RCh c] is the point of the channel
+Levels become slots of a level anchor B (PNWorld.v). B[RAnc a] is the anchor shifted by a. B[RCh c] is the point of the channel
 with code c, its message at offset 0 and its close at offset 1. B[RLo z] is the
 lower point of level z, B[RHi z] the upper point of level z and B[RTop] the
-ceiling for the latent effect ⊤. The root constant is the anchor of shift 0.
+ceiling for the latent effect ⊤. The program's one top-level point variable,
+under the constraint `Crel`, is the anchor of shift 0 (existentials.md part 6,
+sharp edges 110). Until 2026-11-01 it was the root constant of a world `Wpn`.
 Inside a box the anchor is the box's one point variable, and a force
 instantiates it with an anchor of the caller.
 
@@ -365,10 +366,10 @@ A denotation `den` reads points. It commutes with successor and slots and adds
 the anchor's shift to every level of its slots. The rank `rank` of a denotation
 is (level, instant) in ℤ × ℕ with a top element, read lexicographically.
 B[RLo z] ranks at (z, 0), the message of a channel of level z at (z, 1), its close at
-(z, 2), B[RHi z] at (z, 3) and B[RTop] at top. `Wpn` identifies two points of
-the root with one denotation and orders two with rising rank. `Wpn_strict`
-follows from `wgen_strict_den`, a new general lemma in ExampleTools.v next to
-`wgen_strict_by`, together with `zrank` and `wgen_strict_z` (decision 4).
+(z, 2), B[RHi z] at (z, 3) and B[RTop] at top. `Crel` identifies two points of
+the anchor with one denotation and orders two with rising rank. `Crel_acyclic`
+follows from `c0_acyclic_den` in ExampleTools.v, the argument of
+`wgen_strict_den` read on a top-level constraint (decision 4).
 
 `trz B k t` translates ⇑ᵏ t at the anchor B.
 
@@ -406,7 +407,7 @@ inserted unlimited or spent entries of Δ (`erel`).
 | T-Fun, \|Γ\| = ⊤ | E-Exp then E-Abs with ℓ = ⊤, body at anchor ι and offset −m | □Δ, heads ∅ |
 | T-App, ρ ∈ ℤ | E-App | τ₁ < \|Γ₂\| puts hi(τ₁) below heads(Δ₂), τ₂ < ρ puts hi(τ₂) below ℓ |
 | T-App-Poly at n | E-Force at B[RAnc k+n+m], E-Conv, E-App | Crel holds at the anchor, the forced arrow converts to ⇑ⁿ by ≡ of the denotation |
-| let a = new() in e | E-LetPair over E-App of new | the point B[RCh c] is known |
+| let a = new() in e | `t_new_at` on `let_new_pair e′`, E-LetPair over E-App of new at the alias ι ≡ B[RCh c], E-Let*, E-Open, E-Conv and E-LetPair | the point B[RCh c] is known |
 | send e₁ e₂ | E-App of `send_tr` = λc.λv. send (v, c) ; close | hi(n) above both instants, payload above the carrier |
 | recv e | E-App of `recv_tr` = λc. let (v, c′) = recv c in close c′ ; v | the close lies below the payload's head |
 | fork e | E-App of `fork_tr` = λf. spawn (λz. z ; force (f ∗)) ; ∗ | spawn's upper point ⊥ is P&N's masking |
@@ -449,7 +450,7 @@ report (hal-00954364v1), one per line, with its location.
 - PNTyping.v `pn_inj1`, `pn_inj2`, `pn_case`. Both components of a sum must be unlimited. A sum of linear types is not typable.
 - PNTyping.v `pn_case`. The side condition τ₁ < |Γ₂| and the result effect τ₁ ⊔ τ₂ are our choice, by analogy with let as application (p5) and T-Split of the report (TR p7). Both branches have one effect τ₂.
 - PNTypes.v `PChan`. Polarities are ? and !. The full polarity # is no type of a variable.
-- PNTyping.v `pn_new`. new appears only as let a = new() in e, applied to the literal (). The name a of type #[t]ⁿ becomes two variables, its ? end at index 1 and its ! end at index 0, because our new returns both ends and our variables are linear. The rule is T-App on (λa.e)(new ()), whose side conditions hold trivially.
+- PNTyping.v `pn_new`. new appears only as let a = new() in e, applied to the literal (). The name a of type #[t]ⁿ becomes two variables, its ? end at index 1 and its ! end at index 0, because our new returns both ends and our variables are linear. The rule is T-App on (λa.e)(new ()), whose side conditions hold trivially. The translation is the encoded let of new `let_new_pair e′`, because our new has the existential signature alone (sharp edges 104).
 - PNTyping.v. new is no value. λ_.new () has no type in the model, while the chapter types it at unit → #[t]ⁿ.
 - PNTyping.v `pn_split`. + on variables merges no polarities. A linear variable goes to one side and an unlimited one to both. p[t]ⁿ + q[t]ⁿ arises only for names.
 - PNTyping.v. Names, runtime typing, T-New and T-Par are not modelled. The theorem covers closed programs ⟨e⟩, as for PGV.
@@ -560,6 +561,9 @@ plus the forms that administrative steps reach before a source step. These are
 `tr_fixu` (fix λf.λx.b unfolded in the source while the target keeps the box),
 `tr_send1` (send_tr after its first β), `tr_recv1`, `tr_fork1` (recv_tr and
 fork_tr after their β), and `tr_inj1b`, `tr_inj2b` (the injection after its λ).
+New has two rules. `tr_new` relates let a = new() in e to the encoded let
+`let_new_pair e′`, and `tr_newp` relates the let pair of the two ends of one
+name on both sides.
 It needs no typing of the source after a step, so no subject reduction for
 `pn_typed`, which has no names, is needed.
 
@@ -587,6 +591,10 @@ These are the target steps that no source step accounts for.
   recv_tr and of fork_tr, β of inj₁ and inj₂ (`val_norm`, `send_from_send1`,
   `recv_from_recv1`, `spawn_from_fork1`).
 - force of the box of a sum before case (`fwd`, case `tr_case`).
+- After new creates the channel inside ⟨new ∗, ∗⟩, the let pair on
+  ⟨⟨a, a⟩, ∗⟩ and the let ∗ of the encoded let, which reach the let pair of
+  the two ends (`fwd`, case `tr_new`). `post` admits β steps after a new step
+  for them.
 - After a message, β of the receiver's let, both closes, and the two `let ∗`
   that follow (`send_from_send1`, `recv_from_recv1`).
 - In a spawned thread, the β of the thunk, `let ∗`, and at the end force of
@@ -648,7 +656,7 @@ translation of fix, one that runs e′ once and shares its value.
 - `mchan` identifies a channel that carries the recursive channel with the recursive channel itself. Both have payload mode MRecC, so the identification loses nothing that the relation reads.
 - The simulation stutters on both sides. The source unfolding of fix takes no target step (`tr_fixu`), and the target forces of a fix box take no source step.
 - Rocq 9.2 warns that `Notation` for an abbreviation is deprecated. The administrative forms in PNSimulation.v use `Notation` like the rest of the development.
-- No core change. lang/, types/, relation/, invariance/, composition/, rules/, static/ and the earlier files of theories/pn/ are untouched.
+- No core change for the simulation. lang/, types/, relation/, invariance/, composition/, rules/, static/ and the earlier files of theories/pn/ were untouched. Since sharp edges 104 (2026-11-01) the encoded let of new is in lang/Syntax.v and the thread tools of the simulation (`bstar`, `ectx`, `mrel`, `msb`) are in lang/ThreadSim.v, shared with pgv/PGVSimulation.v.
 
 ## Stage 2, model and translate (after the author has seen stage 1)
 

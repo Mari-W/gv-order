@@ -14,7 +14,7 @@
     relations by induction on the step index. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export relation.LogicalRelation.
+From LRGV Require Export relation.LogicalRelation relation.Creation.
 
 (** ** The transposition on constants, names and points *)
 
@@ -51,7 +51,7 @@ Fixpoint tysw (a b : nat) (T : ty) : ty :=
   | TProd T1 U => TProd (tysw a b T1) (tysw a b U)
   | TSum T1 U => TSum (tysw a b T1) (tysw a b U)
   | TBox n k C T1 => TBox n k (bcs_sw a b C) (tysw a b T1)
-  | TEx lb n C T1 => TEx (ptsw a b <$> lb) n (bcs_sw a b C) (tysw a b T1)
+  | TEx lb n C T1 => TEx (lb_map (ptsw a b) lb) n (bcs_sw a b C) (tysw a b T1)
 
   | TSess s x => TSess (stysw a b s) (ptsw a b x)
   end
@@ -126,6 +126,10 @@ Section points.
     ptsw a b <$> (ptsw a b <$> o) = o.
   Proof. destruct o; simpl; by rewrite ?ptsw_involutive. Qed.
 
+  Lemma ptsw_lb_involutive (lb : lbound) :
+    lb_map (ptsw a b) (lb_map (ptsw a b) lb) = lb.
+  Proof. destruct lb; simpl; by rewrite ?ptsw_involutive. Qed.
+
   Lemma bcs_sw_involutive C : bcs_sw a b (bcs_sw a b C) = C.
   Proof.
     destruct C as [env P]. unfold bcs_sw. simpl. f_equal.
@@ -137,7 +141,7 @@ Section points.
     (∀ T, tysw a b (tysw a b T) = T) ∧ (∀ s, stysw a b (stysw a b s) = s).
   Proof.
     apply ty_sty_mut_ind; intros; simpl; f_equal;
-      rewrite ?ptsw_fmap_involutive, ?ptsw_involutive, ?bcs_sw_involutive; done.
+      rewrite ?ptsw_fmap_involutive, ?ptsw_lb_involutive, ?ptsw_involutive, ?bcs_sw_involutive; done.
   Qed.
 
   Lemma tysw_involutive T : tysw a b (tysw a b T) = T.
@@ -307,7 +311,7 @@ Section points.
     - destruct ub; simpl; [by rewrite (pt_inst_ext σ τ)|done].
     - destruct lb; simpl; [by rewrite (pt_inst_ext σ τ)|done].
     - by apply pt_inst_ext.
-    - destruct lb; simpl; [by rewrite (pt_inst_ext σ τ)|done].
+    - destruct lb; simpl; [done|done|by rewrite (pt_inst_ext σ τ)].
   Qed.
 
   Lemma pup_sw m σ i : ptsw a b (pup m σ i) = pup m (ptsw a b ∘ σ) i.
@@ -331,7 +335,7 @@ Section points.
     - destruct lb; simpl; [by rewrite pt_inst_sw|done].
     - rewrite IHT. apply pinst_ty_ext. intros i. apply pup_sw.
     - by rewrite pt_inst_sw.
-    - destruct lb; simpl; [by rewrite pt_inst_sw|done].
+    - destruct lb; simpl; [done|done|by rewrite pt_inst_sw].
     - rewrite IHT. apply pinst_ty_ext. intros i. apply pup_sw.
   Qed.
 
@@ -410,6 +414,9 @@ Section points.
     all: destruct lb; simpl; set_solver.
   Qed.
 
+  Lemma hbot_sw T : hbot (tysw a b T) = hbot T.
+  Proof. induction T; simpl; try done; try congruence. by destruct lb. Qed.
+
   Lemma roots_sw_mut :
     (∀ T, ty_roots (tysw a b T) = set_map (pnsw a b) (ty_roots T)) ∧
     (∀ s, sty_roots (stysw a b s) = set_map (pnsw a b) (sty_roots s)).
@@ -418,8 +425,7 @@ Section points.
       try set_solver.
     all: try (destruct ub, lb; simpl; rewrite ?pt_root_sw; set_solver).
     all: try (destruct ub; simpl; rewrite ?pt_root_sw; set_solver).
-    all: destruct lb; simpl; rewrite ?pt_root_sw; set_solver.
-
+    all: destruct lb; simpl; rewrite ?set_map_singleton_L, ?set_map_empty, ?pt_root_sw; set_solver.
   Qed.
 End points.
 
@@ -579,6 +585,16 @@ Section wsw.
       by apply Hold.
   Qed.
 
+  Lemma lbx_below_sw W lb H f :
+    lbx_below W lb H f →
+    lbx_below (wsw a b W) (lb_map (ptsw a b) lb) (set_map (ptsw a b) H) f.
+  Proof.
+    destruct lb as [| |x]; simpl; [|done|].
+    - intros [-> ->]. split; [set_solver|done].
+    - intros [Hb ->]. split; [|done]. intros y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0).
+      unfold w_le. simpl. rewrite !ptsw_involutive. by apply Hb.
+  Qed.
+
   Lemma lb_below_sw W lb H :
     lb_below W lb H →
     lb_below (wsw a b W) (ptsw a b <$> lb) (set_map (ptsw a b) H).
@@ -605,6 +621,13 @@ Lemma lb_below_wsame W1 W2 lb H :
 Proof.
   intros (_ & He & Hl). destruct lb; simpl; [|done].
   intros Hb y Hy. destruct (Hb y Hy); [left; by apply He|right; by apply Hl].
+Qed.
+
+Lemma lbx_below_wsame W1 W2 lb H f :
+  wsame W1 W2 → lbx_below W1 lb H f → lbx_below W2 lb H f.
+Proof.
+  intros (_ & He & Hl). destruct lb; simpl; [done|done|].
+  intros [Hb ->]. split; [|done]. intros y Hy. destruct (Hb y Hy); [left; by apply He|right; by apply Hl].
 Qed.
 
 (** ** Environments *)
@@ -1023,15 +1046,49 @@ Section ready.
     unfold pt_known in *. simpl. by rewrite pt_root_sw, elem_of_names_sw.
   Qed.
 
+  (** The fresh constraint of the existential new commutes with the
+      transposition (sharp edges 97). *)
+  Lemma fresh_lo_sw C u p : fresh_lo (bcs_sw a b C) u p ↔ fresh_lo C u p.
+  Proof. unfold fresh_lo, bcs_sw. simpl. by rewrite length_fmap. Qed.
+
+  Lemma fresh_hi_sw C q v : fresh_hi (bcs_sw a b C) q v ↔ fresh_hi C q v.
+  Proof. unfold fresh_hi, bcs_sw. simpl. by rewrite length_fmap. Qed.
+
+  Lemma fresh_ok_sw C : fresh_ok C → fresh_ok (bcs_sw a b C).
+  Proof. apply fresh_ok_shape; [done|]. simpl. by rewrite length_fmap. Qed.
+
+  Lemma fresh_lt_sw C : fresh_lt (bcs_sw a b C) → fresh_lt C.
+  Proof. apply fresh_lt_shape; [done|]. simpl. by rewrite length_fmap. Qed.
+
+  Lemma fresh_eq_sw C w : fresh_eq (bcs_sw a b C) w ↔ fresh_eq C w.
+  Proof. apply fresh_eq_shape; [done|]. simpl. by rewrite length_fmap. Qed.
+
+  Lemma fresh_outer_sw C u :
+    pn_vb (S (length (bc_env C))) (pt_name u) →
+    ptsw a b (fresh_outer C u) = fresh_outer (bcs_sw a b C) u.
+  Proof.
+    intros Hu. unfold fresh_outer. rewrite pt_inst_sw.
+    replace (ptsw a b u) with u by (destruct u; unfold ptsw; simpl in *; by rewrite (pn_vb_sw a b _ _ Hu)).
+    apply pt_inst_ext. intros i. unfold compose. rewrite plist_sw. done.
+  Qed.
+
+  (** A point of the fresh channel read with the alias in place of ι. *)
+  Lemma fresh_at_sw C w p :
+    pn_vb (S (length (bc_env C))) (pt_name w) → pn_vb (S (length (bc_env C))) (pt_name p) →
+    ptsw a b (fresh_at C w p) = fresh_at (bcs_sw a b C) w p.
+  Proof.
+    intros Hw Hp. unfold fresh_at. rewrite pt_inst_sw.
+    replace (ptsw a b p) with p by (destruct p; unfold ptsw; simpl in *; by rewrite (pn_vb_sw a b _ _ Hp)).
+    apply pt_inst_ext. intros i. unfold compose. by apply fresh_outer_sw.
+  Qed.
+
   Lemma konst_ty_sw W k T :
     konst_ty (w_eq W) (w_lt W) (pt_known W) k T →
     konst_ty (w_eq (wsw a b W)) (w_lt (wsw a b W)) (pt_known (wsw a b W)) k (tysw a b T).
   Proof.
     destruct 1; simpl; rewrite ?dual_sw.
-    - constructor. unfold pt_known in *. simpl.
-      by rewrite pt_root_sw, elem_of_names_sw.
     - constructor.
-    - rewrite payload_at_sw. constructor. intros h Hh.
+    - rewrite payload_at_sw. constructor. rewrite hbot_sw. destruct (hbot T); [done|]. intros h Hh.
       rewrite <-payload_at_sw, heads_sw in Hh.
       apply elem_of_map in Hh as (h0 & -> & Hh0). simpl.
       rewrite !ptsw_involutive. auto.
@@ -1049,6 +1106,20 @@ Section ready.
         apply Forall_fmap. eapply Forall_impl; [done|]. intros s Hs. by apply hcontractive_sw. }
       destruct ub as [p|]; simpl; [|done]. rewrite pt_inst_sw. f_equal.
       apply pt_inst_ext. intros i. symmetry. apply plist_sw.
+    - assert (ptsw a b (pvar 0) = pvar 0) as -> by done.
+      constructor; [|by apply known_sw].
+      apply (cc_ok_transfer (w_eq W) (w_lt W) (w_eq (wsw a b W)) (w_lt (wsw a b W)) C (bcs_sw a b C)
+               (ptsw a b)); try done.
+      + intros p Hp. rewrite pt_root_sw, Hp. done.
+      + intros x Hx. rewrite pt_root_sw. destruct (pt_root x) as [c|c|q o i|q o i]; simpl; done.
+
+      + intros p q _ _ E. by rewrite <-(ptsw_involutive a b p), E, ptsw_involutive.
+      + intros y Hy. exists (ptsw a b y). rewrite ptsw_involutive, pt_root_sw, Hy. by split.
+      + intros x y (x0 & y0 & Hxy & -> & ->). apply geq_base.
+        exists (ptsw a b x0), (ptsw a b y0). rewrite !pt_inst_sw. split_and!; [by apply wsw_eq|done|done].
+      + intros x y (x0 & y0 & Hxy & -> & ->). apply glt_base.
+        exists (ptsw a b x0), (ptsw a b y0). rewrite !pt_inst_sw. split_and!; [by apply wsw_lt|done|done].
+      + intros g Hg. by apply bcs_open_sw.
   Qed.
 
   Lemma pteqW_sw W x y : pteqW W x y → pteqW (wsw a b W) (ptsw a b x) (ptsw a b y).
@@ -1116,7 +1187,10 @@ Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) (pk pk' : poi
   konst_ty peq plt pk k T → konst_ty peq' plt' pk' k T.
 Proof.
   intros He Hl Hk. destruct 1; econstructor; eauto.
+  - destruct (hbot T); [done|]. eauto.
   - by eapply bcs_hold_mono.
+  - by eapply Forall_impl.
+  - by eapply cc_ok_mono.
   - by eapply Forall_impl.
 Qed.
 
@@ -1261,21 +1335,22 @@ Proof.
     split; [simpl; eauto|by eapply Hfun]. }
   assert (∀ W W' Θ T v, wsame (wsw a b W) W' → Vrel n W Θ T v →
             Vrel n W' (tenvsw a b Θ) (tysw a b T) v) as HV.
-  { intros W W' Θ T. revert Θ.
+  { intros W W' Θ T. revert W W' Θ.
     induction T as [|ub lb T1 IHT1 U IHU|T1 IHT1 U IHU|T1 IHT1 U IHU|m kk C0 T1 IHT1|s x
                    |lb m C0 T1 IHT1] using ty_ind_ex;
-      intros Θ v HS HVv.
+      intros W W' Θ v HS HVv.
+
     - apply Vrel_unit_iff in HVv as [-> ->].
       apply Vrel_unit_iff. by rewrite tenvsw_empty.
     - by eapply Hfun.
     - simpl. apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hc & H1 & H2).
       apply Vrel_prod_iff.
       exists v1, v2, (tenvsw a b Θ1), (tenvsw a b Θ2).
-      split_and!; [done|eapply tenv_comp_mono; [|by apply tenv_comp_sw]; intros ? ? ?; by apply HS|by apply IHT1|by apply IHU].
+      split_and!; [done|eapply tenv_comp_mono; [|by apply tenv_comp_sw]; intros ? ? ?; by apply HS|by apply (IHT1 W)|by apply (IHU W)].
     - simpl. apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; eexists; (split; [done|]).
-      + by apply IHT1.
-      + by apply IHU.
+      + by apply (IHT1 W).
+      + by apply (IHU W).
     - simpl. apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & H).
       apply Vrel_box_iff. rewrite tenvsw_empty. split; [done|].
       exists eb. split_and!; [done|done|].
@@ -1300,14 +1375,16 @@ Proof.
       + destruct HS as (_ & He & _). apply He. by apply wsw_eq.
     - simpl. apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
       apply Vrel_ex_iff. split.
-      + rewrite tenv_heads_sw. eapply lb_below_wsame; [exact HS|]. by apply lb_below_sw.
+      + rewrite tenv_heads_sw. eapply lbx_below_wsame; [exact HS|]. by apply lbx_below_sw.
+
       + exists (ptsw a b <$> xs). split_and!.
         * by rewrite length_fmap.
         * eapply Forall_impl; [by apply known_sw|]. intros x Hx.
           destruct HS as (Hn & _). unfold pt_known in *. by rewrite <-Hn.
         * eapply bcs_hold_mono; [| |by apply bcs_hold_sw]; intros ? ? ?; by apply HS.
-        * rewrite <-ty_inst_sw. by apply (IHT1 (plist xs)). }
+        * rewrite <-ty_inst_sw. by apply (IHT1 (plist xs) W). }
   split_and!; [exact HV| |].
+
   - (* term relation *)
     destruct n as [|n']; [intros; apply Erel_0|].
     intros W W' Θ T F e HS HE. revert W' HS.
@@ -1548,7 +1625,7 @@ Section fixed.
       try (apply ptsw_fix; set_solver); try (apply bcs_sw_fix; set_solver).
     - destruct ub; simpl; [|done]. f_equal. apply ptsw_fix; set_solver.
     - destruct lb; simpl; [|done]. f_equal. apply ptsw_fix; set_solver.
-    - destruct lb; simpl; [|done]. f_equal. apply ptsw_fix; set_solver.
+    - destruct lb; simpl; [done|done|]. f_equal. apply ptsw_fix; rewrite ?set_map_singleton_L in *; set_solver.
   Qed.
 
   Lemma tysw_fix T

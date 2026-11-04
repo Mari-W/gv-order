@@ -23,14 +23,33 @@ Set Default Proof Using "All".
     x ≺ φ holds when x ≼ u in W for the hypothesis u ≺ φ. E-Exp types
     the body with the ιs as point variables (sharp edges 57). *)
 
-Notation sframe := (gset point * option nat)%type.
+(** The second component of a frame (sharp edges 103): a frame
+    variable φ ([FVar φ]), or the ⊥ flag with or without a frame
+    variable ([FBot o]). [None] is neither. The flag says that the
+    context holds an unopened existential with lower bound ⊥, so no
+    known point lies below everything the context holds. *)
+Inductive fslot := FVar (φ : nat) | FBot (o : option nat).
+
+Notation sframe := (gset point * option fslot)%type.
 Notation fhyps := (gmap nat (option point)).
 
-(** F[ρ]: replace the frame variable by a concrete frame. *)
+Definition fs_var (o : option fslot) : option nat :=
+  match o with Some (FVar φ) => Some φ | Some (FBot o') => o' | None => None end.
+
+Definition fs_bot (o : option fslot) : bool :=
+  match o with Some (FBot _) => true | _ => false end.
+
+(** F[ρ]: replace the frame variable by a concrete frame, and the flag
+    by the point [pbot] of relation/Worlds.v. *)
 Definition sf_inst (ρ : nat → gset point) (F : sframe) : gset point :=
-  F.1 ∪ match F.2 with Some φ => ρ φ | None => ∅ end.
+  F.1 ∪ match fs_var F.2 with Some φ => ρ φ | None => ∅ end ∪ bot_pts (fs_bot F.2).
 
 Definition sf_union (F : sframe) (X : gset point) : sframe := (F.1 ∪ X, F.2).
+
+(** F, X with the flag set when b holds: the points X and flag b are
+    the heads of what the context of a subterm holds. *)
+Definition sf_unionb (F : sframe) (X : gset point) (b : bool) : sframe :=
+  if b then (F.1 ∪ X, Some (FBot (fs_var F.2))) else sf_union F X.
 
 (** Hypotheses (sharp edges 58, 61, 65). Inside a box body the
     constraint of every enclosing box is a hypothesis (C, xs): every
@@ -65,13 +84,21 @@ Definition ids (m : nat) : list point := pvar <$> List.seq 0 m.
     congruence for successor, carried roots and branch roots (K10) that
     contains ≡ of W and
     the ≡ facts of the hypotheses. Γ ⊢ a ≺ b ([fl]) is over nodes,
-    which are points and frame variables. It has the order of W, the ≺
-    facts of the hypotheses and u ≺ φ for every frame hypothesis of Φ,
-    and it is closed under Γ ⊢ ≡ and under transitivity through
-    points. Without hypotheses the two are ≡ and ≺ of W ([seqs_nil],
-    [slt_nil]). [fl_map] carries derivations of both along a map of
-    the generators, and it is the one lemma behind point substitution
-    and frame instantiation. *)
+    which are points and frame variables. It has program order
+    x ≺ x + 1 ([fl_po]), the order of W, the ≺ facts of the hypotheses
+    and u ≺ φ for every frame hypothesis of Φ, and it is closed under
+    Γ ⊢ ≡ and under transitivity through points. Without hypotheses the
+    two are ≡ and ≺ of W ([seqs_nil], [slt_nil]). [fl_map] carries
+    derivations of both along a map of the generators, and it is the one
+    lemma behind point substitution and frame instantiation.
+
+    Program order is a rule of its own and reads no world, so the
+    source judgment of static/Source.v derives it from the hypotheses
+    alone. The world law [wf_lt_po] states the same fact for every
+    well-formed world and stays, because the logical relation reads it
+    from the world of a run. The rule gives the single step x ≺ x + 1.
+    Any later offset of one name follows by transitivity
+    ([sl_po_n], [sl_pofs]). *)
 
 Inductive node := NP (x : point) | NV (φ : nat).
 
@@ -93,7 +120,9 @@ Inductive fl (Γ : fctx) : node → node → Prop :=
   | fl_v φ u : fc_fv Γ !! φ = Some (Some u) → fl Γ (NP u) (NV φ)
   | fl_eql x x' b : seqs (fc_W Γ) (fc_hyps Γ) x x' → fl Γ (NP x') b → fl Γ (NP x) b
   | fl_eqr a y y' : fl Γ a (NP y') → seqs (fc_W Γ) (fc_hyps Γ) y' y → fl Γ a (NP y)
-  | fl_trans a y b : fl Γ a (NP y) → fl Γ (NP y) b → fl Γ a b.
+  | fl_trans a y b : fl Γ a (NP y) → fl Γ (NP y) b → fl Γ a b
+  | fl_po x : fl Γ (NP x) (NP (pt_shift 1 x))       (* program order *)
+  | fl_br x i : fl Γ (NP x) (NP (pt_br x i)).       (* branch roots, K10 *)
 
 (** A map of the generators maps every derived fact, ≡ along [fp] into
     Q and ≺ along [f] into R. *)
@@ -113,10 +142,12 @@ Lemma fl_map Γ (Q : point → point → Prop) (R : node → node → Prop)
   (∀ x x' b, Q (fp x) (fp x') → R (f (NP x')) (f b) → R (f (NP x)) (f b)) →
   (∀ a y y', R (f a) (f (NP y')) → Q (fp y') (fp y) → R (f a) (f (NP y))) →
   (∀ a y b, R (f a) (f (NP y)) → R (f (NP y)) (f b) → R (f a) (f b)) →
+  (∀ x, R (f (NP x)) (f (NP (pt_shift 1 x)))) →
+  (∀ x i, R (f (NP x)) (f (NP (pt_br x i)))) →
   (∀ x y, seqs (fc_W Γ) (fc_hyps Γ) x y → Q (fp x) (fp y)) ∧
   (∀ a b, fl Γ a b → R (f a) (f b)).
 Proof.
-  intros Hew Heh Her Hes Het Hesh Hesl Hesb Hw Hh Hv Hl Hr Ht.
+  intros Hew Heh Her Hes Het Hesh Hesl Hesb Hw Hh Hv Hl Hr Ht Hpo Hbr.
   assert (∀ x y, seqs (fc_W Γ) (fc_hyps Γ) x y → Q (fp x) (fp y)) as Hq
     by (induction 1; eauto).
   split; [done|]. induction 1; eauto.
@@ -139,31 +170,72 @@ Proof. exact (fl_eqr (FCtx W Ψ ∅) (NP x) y y'). Qed.
 Lemma sl_trans W Ψ x y z : slt W Ψ x y → slt W Ψ y z → slt W Ψ x z.
 Proof. exact (fl_trans (FCtx W Ψ ∅) (NP x) y (NP z)). Qed.
 
+(** Program order needs no world and no hypothesis. *)
+Lemma sl_po W Ψ x : slt W Ψ x (pt_shift 1 x).
+Proof. exact (fl_po (FCtx W Ψ ∅) x). Qed.
+
+Lemma sl_br W Ψ x i : slt W Ψ x (pt_br x i).
+Proof. exact (fl_br (FCtx W Ψ ∅) x i). Qed.
+
+Lemma sl_po_n W Ψ x k : slt W Ψ x (pt_shift (S k) x).
+Proof.
+  induction k as [|k IH]; [apply sl_po|].
+  eapply sl_trans; [exact IH|]. rewrite <-(pt_shift_S (S k) x). apply sl_po.
+Qed.
+
+(** Every later offset of one name, by the rule and transitivity. *)
+Lemma sl_pofs W Ψ x y : pofs x y → slt W Ψ x y.
+Proof.
+  induction 1 as [z|z i|]; [apply sl_po|apply sl_br|by eapply sl_trans].
+Qed.
+
+
 Lemma fl_points W Ψ Φ x y : fl (FCtx W Ψ Φ) (NP x) (NP y) ↔ slt W Ψ x y.
 Proof.
   split.
   - intros H. change (match NP x, NP y with NP x, NP y => slt W Ψ x y | _, _ => True end).
     refine (proj2 (fl_map (FCtx W Ψ Φ) (seqs W Ψ)
       (λ a b, match a, b with NP x, NP y => slt W Ψ x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); unfold id; simpl; eauto using seqs.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); unfold id; simpl; eauto using seqs.
     + apply sl_w.
     + apply sl_h.
     + intros x0 x' [] ? ?; [by eapply sl_eql|done].
     + intros [] y0 y' ? ?; [by eapply sl_eqr|done].
     + intros [] y0 []; try done. apply sl_trans.
+    + intros x0. apply sl_po.
+    + intros x0 i. apply sl_br.
   - refine (proj2 (fl_map (FCtx W Ψ ∅) (seqs W Ψ) (fl (FCtx W Ψ Φ)) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _); unfold id; simpl; eauto using seqs.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _); unfold id; simpl; eauto using seqs.
     + exact (fl_w (FCtx W Ψ Φ)).
     + exact (fl_h (FCtx W Ψ Φ)).
     + intros φ u H. by rewrite lookup_empty in H.
     + exact (fl_eql (FCtx W Ψ Φ)).
     + exact (fl_eqr (FCtx W Ψ Φ)).
     + exact (fl_trans (FCtx W Ψ Φ)).
+    + exact (fl_po (FCtx W Ψ Φ)).
+    + exact (fl_br (FCtx W Ψ Φ)).
 Qed.
 
 Definition lb_below_h (W : world) (Ψ : hyps) (lb : option point)
     (H : gset point) : Prop :=
   match lb with None => H = ∅ | Some x => ∀ y, y ∈ H → sle W Ψ x y end.
+
+(** λ ≼ H with the flag b of H (sharp edges 103). A flagged H holds
+    something below no known point, so no lower point of an arrow lies
+    below it. *)
+Definition lb_below_hb (W : world) (Ψ : hyps) (lb : option point)
+    (H : gset point) (b : bool) : Prop :=
+  if b then False else lb_below_h W Ψ lb H.
+
+(** ℓ ≼ H for the lower bound of an existential, with the flag b of H.
+    ⊥ lies below everything. *)
+Definition lbx_below_h (W : world) (Ψ : hyps) (lb : lbound)
+    (H : gset point) (b : bool) : Prop :=
+  match lb with
+  | LBot => True
+  | LTop => H = ∅ ∧ b = false
+  | LPt x => (∀ y, y ∈ H → sle W Ψ x y) ∧ b = false
+  end.
 
 (** Without hypotheses the static ≡ and ≺ are those of W. *)
 Lemma seqs_nil W x y : world_wf W → seqs W [] x y → w_eq W x y.
@@ -182,10 +254,9 @@ Qed.
 (** ** Types up to Γ ⊢ ≡ (sharp edges 67)
 
     [steq W Ψ T U] is ≈ with the points of T outside session types and
-    boxes compared by Γ ⊢ ≡ ([seqs W Ψ]). A box is compared by ≈ with
-    its points on the nose, because its points live under the binder
-    of its ιs, and so is an existential. E-Conv reads it. [teq_steq]
-    makes ≈ a special case,
+    boxes compared by Γ ⊢ ≡ ([seqs W Ψ]). A box and an existential
+    are compared by ≈ with their points on the nose, because their
+    points live under the binder of their ιs. E-Conv reads it. [teq_steq] makes ≈ a special case,
     and [steq_teqW] carries it into ≈_W₁ of a world where the
     hypotheses hold. *)
 Fixpoint steq (W : world) (Ψ : hyps) (T U : ty) : Prop :=
@@ -198,7 +269,7 @@ Fixpoint steq (W : world) (Ψ : hyps) (T U : ty) : Prop :=
   | TSum T1 T2, TSum U1 U2 => steq W Ψ T1 U1 ∧ steq W Ψ T2 U2
   | TBox _ _ _ _, TBox _ _ _ _ => teq T U
   | TSess s x, TSess r y => seqs W Ψ x y ∧ seq s r
-  | TEx _ _ _ _, TEx _ _ _ _ => teq T U
+  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ teq T1 U1
   | _, _ => False
   end.
 
@@ -218,7 +289,7 @@ Proof.
   intros HW H. change (match NP x, NP y with NP x, NP y => w_lt W x y | _, _ => True end).
   refine (proj2 (fl_map (FCtx W [] ∅) (w_eq W)
     (λ a b, match a, b with NP x, NP y => w_lt W x y | _, _ => True end) id id
-    _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); clear H; unfold id; simpl; try done.
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); clear H; unfold id; simpl; try done.
   - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
   - apply (wf_eq_refl _ HW).
   - apply (wf_eq_sym _ HW).
@@ -232,6 +303,8 @@ Proof.
   - intros [] y0 y' H Hy; [|done].
     eapply (wf_lt_eq _ HW); [apply (wf_eq_refl _ HW)|exact H|exact Hy].
   - intros [] y0 []; try done. apply (wf_lt_trans _ HW).
+  - intros x0. apply (wf_lt_po _ HW).
+  - intros x0 i. apply (wf_lt_br _ HW).
 Qed.
 
 (** A hypothesis of Ψ holds in the static ≡ and ≺, and its instance
@@ -288,20 +361,27 @@ Definition ub_below_s (W : world) (Ψ : hyps) (Φ : fhyps)
   match ub with
   | None => True
   | Some x => (∀ y, y ∈ F.1 → fl (FCtx W Ψ Φ) (NP x) (NP y)) ∧
-              (∀ φ, F.2 = Some φ → fl (FCtx W Ψ Φ) (NP x) (NV φ))
+              (∀ φ, fs_var F.2 = Some φ → fl (FCtx W Ψ Φ) (NP x) (NV φ)) ∧
+              fs_bot F.2 = false
   end.
 
 (** The frame variable part read as x ≼ u for the hypothesis u ≺ φ. *)
 Lemma ub_below_s_intro W Ψ Φ x P o :
   (∀ y, y ∈ P → slt W Ψ x y) →
-  match o with Some φ => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u | None => True end →
+  match o with
+  | Some (FVar φ) => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u
+  | Some (FBot _) => False
+  | None => True
+  end →
   ub_below_s W Ψ Φ (Some x) (P, o).
 Proof.
-  intros H1 H2. split; simpl.
+  intros H1 H2. split_and!; simpl.
   - intros y Hy. apply fl_points. by apply H1.
-  - intros φ ->. destruct H2 as (u & Hu & [Heq|Hlt]).
+  - intros φ Hφ. destruct o as [[φ'|o']|]; simpl in Hφ; [|done|done]. injection Hφ as ->.
+    destruct H2 as (u & Hu & [Heq|Hlt]).
     + apply (fl_eql (FCtx W Ψ Φ) _ u); [done|]. by apply (fl_v (FCtx W Ψ Φ)).
     + apply (fl_trans (FCtx W Ψ Φ) _ u); [by apply fl_points|]. by apply (fl_v (FCtx W Ψ Φ)).
+  - by destruct o as [[]|].
 Qed.
 
 (** ρ meets the hypotheses: {u} ≺_W ρ(φ) for every u ≺ φ in Φ. *)

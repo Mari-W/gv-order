@@ -8,7 +8,7 @@
     [typed_sem_rules] (static/Fundamental.v). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export rules.BoxRules.
+From LRGV Require Export rules.ExRules.
 
 Set Default Proof Using "All".
 
@@ -31,27 +31,27 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       lenv_empty Δ → seq s s' → w_eq W k y →
       sem_rules W {[c := One (s, k)]} Δ F (Chan c) (TSess s' y)
   | sr_lam Θ Δ F e T U ub lb :                           (* E-Abs *)
-      term_wf Θ (Some T :: Δ) e → lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
+      term_wf Θ (Some T :: Δ) e → lenv_bot Δ = false → lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
       (∀ W1 F', wext W W1 → ub_below W1 ub F' → sem_rules W1 Θ (Some T :: Δ) F' e U) →
       sem_rules W Θ Δ F (Lam e) (TLolli ub lb T U)
   | sr_app Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :           (* E-App *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
-      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TLolli ub lb T U) →
+      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TLolli ub lb T U) →
       sem_rules W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
       sem_rules W Θ Δ F (App e1 e2) U
   | sr_pair Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :                (* E-Pair *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 T →
-      sem_rules W Θ2 Δ2 (F ∪ heads T) e2 U →
+      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 T →
+      sem_rules W Θ2 Δ2 (F ∪ (heads T ∪ bot_pts (hbot T))) e2 U →
       sem_rules W Θ Δ F (Pair e1 e2) (TProd T U)
   | sr_letu Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :                  (* E-Let* *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 TUnit →
+      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 TUnit →
       sem_rules W Θ2 Δ2 F e2 T →
       sem_rules W Θ Δ F (LetU e1 e2) T
   | sr_letp Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :            (* E-LetPair *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e1 (TProd T1 T2) →
+      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TProd T1 T2) →
       sem_rules W Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
       sem_rules W Θ Δ F (LetP e1 e2) T
   | sr_inj1 Θ Δ F e T U :                                (* E-Inj *)
@@ -60,7 +60,7 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
       sem_rules W Θ Δ F e U → sem_rules W Θ Δ F (Inj2 e) (TSum T U)
   | sr_case Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T :          (* E-Case *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2)) e (TSum T1 T2) →
+      sem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e (TSum T1 T2) →
       sem_rules W Θ2 (Some T1 :: Δ2) F e1 T →
       sem_rules W Θ2 (Some T2 :: Δ2) F e2 T →
       sem_rules W Θ Δ F (Case e e1 e2) T
@@ -72,24 +72,25 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
          sem_rules W1 ∅ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ) F' e
            (sinst_ty (slist ss) (ty_inst xs T))) →
       sem_rules W ∅ Δ F (EBox e) (TBox m k C (TLolli ub None TUnit T))
-  | sr_pack Θ Δ F e lb m C T xs :                        (* E-Pack *)
-      length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
-      lb_below W lb (heads (ty_inst xs T)) →
-      sem_rules W Θ Δ F e (ty_inst xs T) → sem_rules W Θ Δ F e (TEx lb m C T)
-  | sr_open Θ Δ F e i lb m C T U :                       (* E-Open *)
-      Δ !! i = Some (Some (TEx lb m C T)) →
-      (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
-         bcs_hold (w_eq W1) (w_lt W1) C xs →
-         sem_rules W1 Θ (<[i := Some (ty_inst xs T)]> Δ) F e U) →
-      sem_rules W Θ Δ F e U
-  | sr_wk Θ Δ' Δ F e T :                                 (* E-Weak *)
+  | sr_wk
+ Θ Δ' Δ F e T :                                 (* E-Weak *)
       lenv_wk Δ' Δ → sem_rules W Θ Δ' F e T → sem_rules W Θ Δ F e T
   | sr_contract Θ Δ U F e T :                            (* E-Contract *)
       unlimited U →
       sem_rules W Θ (Some U :: Some U :: Δ) F e T →
       sem_rules W Θ (Some U :: Δ) F (rename pred e) T
   | sr_conv Θ Δ F e T T' :                               (* E-Conv, ≈_W (sharp edges 67) *)
-      teqW W T T' → sem_rules W Θ Δ F e T → sem_rules W Θ Δ F e T'.
+      teqW W T T' → sem_rules W Θ Δ F e T → sem_rules W Θ Δ F e T'
+  | sr_pack Θ Δ F e lb m C T xs :                        (* E-Pack (sharp edges 97) *)
+      length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+      lbx_below W lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
+      sem_rules W Θ Δ F e (ty_inst xs T) → sem_rules W Θ Δ F e (TEx lb m C T)
+  | sr_open Θ Δ F e i lb m C T U :                       (* E-Open *)
+      Δ !! i = Some (Some (TEx lb m C T)) →
+      (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+         bcs_hold (w_eq W1) (w_lt W1) C xs →
+         sem_rules W1 Θ (<[i := Some (ty_inst xs T)]> Δ) F e U) →
+      sem_rules W Θ Δ F e U.
 
 (** E-Force is E-App at the constant force. *)
 Lemma sem_rules_force W Θ Δ F e m k C ub T xs ss :
@@ -118,7 +119,7 @@ Proof.
     |W Δ F k T HΔ Hk
     |W Δ F x T Ho
     |W Δ F c s k s' y HΔ Hs Hk
-    |W Θ Δ F e T U ub lb Hwf Hlb Hb IH
+    |W Θ Δ F e T U ub lb Hwf Hbot Hlb Hb IH
     |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U HΘ HΔ Hub H1 IH1 H2 IH2
     |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U HΘ HΔ H1 IH1 H2 IH2
     |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T HΘ HΔ H1 IH1 H2 IH2
@@ -127,16 +128,16 @@ Proof.
     |W Θ Δ F e T U H IH
     |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ H0 IH0 H1 IH1 H2 IH2
     |W Δ F e m k C ub T HΔ Hwf Hb IH
-    |W Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
-    |W Θ Δ F e i lb m C T U Hi Hb IH
     |W Θ Δ' Δ F e T Hwk H IH
     |W Θ Δ U F e T Hu H IH
-    |W Θ Δ F e T T' Hteq H IH]; intros Ht0 HW.
+    |W Θ Δ F e T T' Hteq H IH
+    |W Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
+    |W Θ Δ F e i lb m C T U Hi Hb IH]; intros Ht0 HW.
   - by apply sem_typed_unit.
   - by apply sem_typed_konst.
   - by apply sem_typed_var.
   - by apply sem_typed_chan.
-  - apply sem_typed_lam; [done|done|].
+  - apply sem_typed_lam; [done|done|done|].
     + intros W1 F' HW1 Hub'. apply IH; [done|done| |apply HW1]. by apply Hb.
   - eapply sem_typed_app; [done|done|done|by apply IH1|by apply IH2].
   - eapply sem_typed_pair; [done|done|by apply IH1|by apply IH2].
@@ -147,10 +148,11 @@ Proof.
   - eapply sem_typed_case; [done|done|by apply IH0|by apply IH1|by apply IH2].
   - apply sem_typed_box; [done|done|].
     intros W1 xs ss F' HW1 Hxs Hss Hsc HC HK Hub'. apply IH; [done..| |apply HW1]. by apply Hb.
+  - eapply sem_typed_wk
+; [done|by apply IH].
+  - apply sem_typed_contract; [done|by apply IH].
+  - eapply sem_typed_tconv; [done|by apply IH].
   - eapply sem_typed_pack; [done..|by apply IH].
   - eapply sem_typed_open; [done|].
     intros W1 xs HW1 Hxs HK HC. apply IH; [done..| |apply HW1]. by apply Hb.
-  - eapply sem_typed_wk; [done|by apply IH].
-  - apply sem_typed_contract; [done|by apply IH].
-  - eapply sem_typed_tconv; [done|by apply IH].
 Qed.

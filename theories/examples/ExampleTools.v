@@ -6,6 +6,12 @@
     world with the facts it needs ([*_typed]), then at one explicit
     strict world, and [soundness] gives [*_deadlock_free].
 
+    A program text let (c, d) = new ∗ in t in a comment stands for the
+    encoded let of new, [let_new_pair t] (sharp edges 99, 104). A
+    channel at a known point x is typed by [t_new_at], new at the
+    constraint {ι ≡ x}. The typing lemmas take a strict world, because
+    [t_new_at] instantiates the body past ι.
+
     This file holds what several examples share. Strict worlds come from
     a rank, splitting of linear environments by occurrence, derived
     rules for Θ = ∅ with the tactics that apply them, and a few worlds,
@@ -242,6 +248,57 @@ Proof.
   intros x H. apply Hlt in H. exact (Hirr _ H).
 Qed.
 
+(** A top-level constraint is acyclic when a rank rises along program
+    order and along its ≺ facts and its ≡ facts keep the denotation
+    (sharp edges 110). *)
+Lemma c0_acyclic_den {D A} (R : A → A → Prop) n P (den : point → D)
+    (dsh : D → D) (dsl : D → nat → D) (r : D → A) :
+  (∀ a, ¬ R a a) → (∀ a b c, R a b → R b c → R a c) →
+  (∀ x, den (pt_shift 1 x) = dsh (den x)) →
+  (∀ x i, den (pt_slot x i) = dsl (den x) i) →
+  (∀ x i, den (pt_br x i) = dsh (den x)) →
+  (∀ x y, P (FEq x y) → den x = den y) →
+  (∀ d, R (r d) (r (dsh d))) →
+  (∀ x y, P (FLt x y) → R (r (den x)) (r (den y))) →
+  c0_acyclic n (BCs [] P).
+Proof.
+  intros Hirr Htr Hs Hl Hb HE Hr HL. split; [done|].
+  assert (∀ x y, geq (c0_eq n (BCs [] P)) x y → den x = den y) as Heq.
+  { induction 1 as [x y H| | | | | |]; try congruence; rewrite ?Hs, ?Hl, ?Hb; try congruence.
+    apply bcs_open_nil in H as [H _]. by apply HE. }
+  assert (∀ x y, glt (c0_eq n (BCs [] P)) (c0_lt n (BCs [] P)) x y → R (r (den x)) (r (den y))) as Hlt.
+  { induction 1 as [x y H|x|x i|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    - apply bcs_open_nil in H as [H _]. by apply HL.
+    - rewrite Hs. apply Hr.
+    - rewrite Hb. apply Hr.
+    - apply Heq in Hx, Hy. by rewrite Hx, <-Hy.
+    - by eapply Htr. }
+  intros p H. exact (Hirr _ (Hlt _ _ H)).
+Qed.
+
+(** The same with a rank into ℕ and no ≡ facts. *)
+Lemma c0_acyclic_rank n P (r : point → nat) :
+  (∀ x, r x < r (pt_shift 1 x)) →
+  (∀ x y, ¬ P (FEq x y)) → (∀ x y, P (FLt x y) → r (pt_erase x) < r (pt_erase y)) →
+  c0_acyclic n (BCs [] P).
+Proof.
+  intros Hr HE HL.
+  apply (c0_acyclic_den lt n P pt_erase (pt_shift 1) pt_slot r);
+    first [exact pt_erase_shift|exact pt_erase_slot|exact pt_erase_br|done
+          |intros a; lia|intros a b c; lia|intros x y H; by destruct (HE x y)].
+
+Qed.
+
+(** A rank for top-level variables: w per variable index, one per step. *)
+Fixpoint pn_vidx (p : pname) : nat :=
+  match p with NVar a => a | NConst _ => 0 | NSlot q _ _ | NBr q _ _ => pn_vidx q end.
+
+
+Definition vrank (w : nat) (x : point) : nat := w * pn_vidx (pt_name x) + pt_off x.
+
+Lemma vrank_shift w x : vrank w x < vrank w (pt_shift 1 x).
+Proof. unfold vrank, pt_shift. simpl. lia. Qed.
+
 (** The rank of a point is a weight per root constant, slots weighted
     by their base, plus a step per name times the offset. [wgen_strict]
     erases branch roots before it ranks, so their case is arbitrary. *)
@@ -382,14 +439,15 @@ Section rules.
   Proof. intros H. eapply t_wk; [by apply nones_wk|]. apply t_unit, lenv_empty_nones. Qed.
 
   Lemma tv_app Φ Ψ Δ F e1 e2 ub lb T U :
-    sok e1 0 e2 0 Δ = true →
+    sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
     typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 (TLolli ub lb T U) →
     typed W Φ Ψ ∅ (lp e2 0 Δ) (sf_union F (opt_heads lb)) e2 T →
     ub_below_s W Ψ Φ ub F →
     typed W Φ Ψ ∅ Δ F (App e1 e2) U.
   Proof.
-    intros Hs H1 H2 Hu. eapply t_app; [apply comp0|by apply lp_split|exact Hu| |exact H2].
-    by rewrite tenv_heads0, union_empty_l_L.
+    intros Hs H1 H2 Hu. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply t_app; [apply comp0|by apply lp_split|exact Hu| |exact H2].
+    by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
   (** A constant applied: its type is given by [konst_ty], the
@@ -410,39 +468,42 @@ Section rules.
   Qed.
 
   Lemma tv_pair Φ Ψ Δ F e1 e2 T U :
-    sok e1 0 e2 0 Δ = true →
-    typed W Φ Ψ ∅ (lp e2 0 Δ) (sf_union F (heads T)) e2 U →
+    sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
+    typed W Φ Ψ ∅ (lp e2 0 Δ) (sf_unionb F (heads T) (hbot T)) e2 U →
     typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 T →
     typed W Φ Ψ ∅ Δ F (Pair e1 e2) (TProd T U).
   Proof.
-    intros Hs H2 H1. eapply t_pair; [apply comp0|by apply lp_split| |exact H2].
-    by rewrite tenv_heads0, union_empty_l_L.
+    intros Hs H2 H1. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply t_pair; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
   Lemma tv_letu Φ Ψ Δ F e1 e2 T :
-    sok e1 0 e2 0 Δ = true →
+    sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
     typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 0 Δ))) e1 TUnit →
     typed W Φ Ψ ∅ (lp e2 0 Δ) F e2 T →
     typed W Φ Ψ ∅ Δ F (LetU e1 e2) T.
   Proof.
-    intros Hs H1 H2. eapply t_letu; [apply comp0|by apply lp_split| |exact H2].
-    by rewrite tenv_heads0, union_empty_l_L.
+    intros Hs H1 H2. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply t_letu; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
   Lemma tv_letp Φ Ψ Δ F e1 e2 T1 T2 T :
-    sok e1 0 e2 2 Δ = true →
+    sok e1 0 e2 2 Δ && negb (lenv_bot (lp e2 2 Δ)) = true →
     typed W Φ Ψ ∅ (lp e1 0 Δ) (sf_union F (lenv_heads (lp e2 2 Δ))) e1 (TProd T1 T2) →
     typed W Φ Ψ ∅ (Some T2 :: Some T1 :: lp e2 2 Δ) F e2 T →
     typed W Φ Ψ ∅ Δ F (LetP e1 e2) T.
   Proof.
-    intros Hs H1 H2. eapply t_letp; [apply comp0|by apply lp_split| |exact H2].
-    by rewrite tenv_heads0, union_empty_l_L.
+    intros Hs H1 H2. apply andb_true_iff in Hs as [Hs Hb]. apply negb_true_iff in Hb.
+    eapply t_letp; [apply comp0|by apply lp_split| |exact H2].
+    by rewrite Hb, tenv_heads0, union_empty_l_L.
   Qed.
 
   Lemma tv_lam Φ Ψ Δ F e T U ub lb φ :
     φ ∉ dom Φ →
-    lb_below_h W Ψ lb (lenv_heads Δ) →
-    typed W (<[φ := ub]> Φ) Ψ ∅ (Some T :: Δ) (∅, Some φ) e U →
+    lb_below_hb W Ψ lb (lenv_heads Δ) (lenv_bot Δ) →
+    typed W (<[φ := ub]> Φ) Ψ ∅ (Some T :: Δ) (∅, Some (FVar φ)) e U →
     typed W Φ Ψ ∅ Δ F (Lam e) (TLolli ub lb T U).
   Proof. intros Hφ Hl H. eapply t_lam; [exact Hφ| |exact H]. by rewrite tenv_heads0, union_empty_l_L. Qed.
 
@@ -454,7 +515,11 @@ Section frames.
 
   Lemma ubs_intro Ψ Φ x P o :
     (∀ y, y ∈ P → slt W Ψ x y) →
-    match o with Some φ => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u | None => True end →
+    match o with
+    | Some (FVar φ) => ∃ u, Φ !! φ = Some (Some u) ∧ sle W Ψ x u
+    | Some (FBot _) => False
+    | None => True
+    end →
     ub_below_s W Ψ Φ (Some x) (P, o).
   Proof. apply ub_below_s_intro. Qed.
 
@@ -542,6 +607,12 @@ Proof.
   unfold tenv_of. rewrite fmap_empty, (left_id_L ∅ (∪)). exact Ht.
 Qed.
 
+(** A closed thread of the source judgment is a closed process in
+    every world. *)
+Lemma ptyped_closed_s W t T :
+  prim T → styped ∅ [] [] (∅, None) t T → ptyped W ∅ (∅, {[+ t +]}) T.
+Proof. intros HT Ht. apply ptyped_closed; [done|by apply styped_typed]. Qed.
+
 (** Membership in a concrete frame: one goal per point. *)
 Ltac mem_cases H :=
   cbn in H; rewrite ?elem_of_union, ?elem_of_singleton in H;
@@ -571,6 +642,24 @@ Proof.
   - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
   - intros x. apply prank_shift. lia.
 Qed.
+
+(** The empty world of the examples supports no name. *)
+Lemma Wpo_nil_names : w_names (Wpo []) = ∅.
+Proof. done. Qed.
+
+Lemma Wpo_nil_strict' : strict (Wpo []).
+Proof. apply Wpo_strict. Qed.
+
+(** A derivation in the empty world is a source derivation
+    (static/Source.v). The examples build their derivation with the
+    rules of [typed] in the world [Wpo []] and read it back here. *)
+Lemma styped_Wpo Φ Ψ Δ F e T : typed (Wpo []) Φ Ψ ∅ Δ F e T → styped Φ Ψ Δ F e T.
+Proof.
+  intros H.
+  eapply (typed_styped (Wpo []));
+    [apply (proj1 Wpo_nil_strict')|apply Wpo_nil_names|exact H|done].
+Qed.
+
 
 (** The world with program order and the facts [L] on the constants [cs]. *)
 Definition Wfacts (cs : list nat) (L : list (point * point)) : world :=
@@ -677,4 +766,58 @@ Ltac box_open1 C T :=
   change (lenv_pinst (pshift 1) [Some (TBox 1 0 C (TLolli None None TUnit T))])
     with [Some (pinst_ty (pshift 1) (TBox 1 0 C (TLolli None None TUnit T)))];
   rewrite (pinst_closed _ (TBox 1 0 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
+
+(** ** Creation constraints in the examples (sharp edges 105)
+
+    Every example creates its channels in the empty world. A channel's
+    order facts are the creation constraint of its new, and later code
+    reads them as hypotheses. *)
+
+Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option fslot)).
+Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
+
+Lemma fhyps_pinst_empty σ : fhyps_pinst σ ∅ = ∅.
+Proof. unfold fhyps_pinst. by rewrite fmap_empty. Qed.
+
+(** A point is known when its root is the root of an instance point
+    of a hypothesis. *)
+Lemma skn_inst W Ψ C xs y x : (C, xs) ∈ Ψ → y ∈ xs → pt_root x = pt_root y → skn W Ψ x.
+Proof. intros Hg Hy E. right. by exists C, xs, y. Qed.
+
+(** After E-NewFresh at the top level: Θ, F and Φ are empty. *)
+Ltac fresh_clean :=
+  rewrite ?tenv_pinst_empty, ?sf_pinst_none, ?fhyps_pinst_empty; cbn;
+  rewrite ?fhyps_pinst_empty.
+
+(** A creation constraint whose facts are ≺ facts between points of ι
+    is acyclic and conservative when an order R inside ι contains
+    program order and the facts. *)
+Lemma pn_vb1_root x : pn_vb 1 (pt_name x) → pt_root x = NVar 0.
+Proof. intros H. destruct (pn_vb_var _ _ H) as (b & Hb & Hlt). unfold pt_root. rewrite Hb. f_equal. lia. Qed.
+
+Lemma cc_ok_inner peq plt P (R : point → point → Prop) :
+  (∀ x y z, R x y → R y z → R x z) → (∀ x, ¬ R x x) →
+  (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 x)) →
+  (∀ g, P g → fact_scoped 1 g → ∃ x y, g = FLt x y ∧ R x y) →
+  cc_ok peq plt (BCs [] P).
+Proof.
+  intros Ht Hi Hp HP.
+  apply (cc_model peq plt (BCs [] P) id R (λ _ _, False) (λ _ _, False)).
+  - done.
+  - done.
+  - done.
+  - intros x y i E. unfold id in *. by subst.
+  - exact Ht.
+  - exact Hp.
+  - exact Hi.
+  - intros ? ? ? ? [].
+  - intros a b Hg. apply bcs_open_nil in Hg as [Hg Hs]. destruct (HP _ Hg Hs) as (? & ? & E & _). discriminate E.
+  - intros a b Hg. apply bcs_open_nil in Hg as [Hg Hs].
+    destruct (HP _ Hg Hs) as (x & y & E & Hxy). injection E as <- <-.
+    destruct Hs as [Ha Hb]. right; right; right. unfold id.
+    split_and!; [by apply pn_vb1_root|by apply pn_vb1_root|by left].
+Qed.
+
+(** A ≺ fact of a hypothesis without outer points, as a tactic. *)
+Ltac hmem := hnf; eexists; repeat (first [left; reflexivity|right]); reflexivity.
 

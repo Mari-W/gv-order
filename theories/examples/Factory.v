@@ -1,20 +1,26 @@
 (** * factory: a box that yields a fresh session per request
 
-    [fac] creates every session at one constant point (a,0). [faca] is
-    the same body under □∀ι and creates the session at the point
-    variable ι. No well-formed world knows a point variable
-    ([pvar_unknown]), so new at ι types through the knownness of the
-    box's own instance (sharp edges 59, 61).
+    [fac] creates every session at one top-level point variable a.
+    [faca] is the same body under □∀ι and creates the session at the
+    point variable ι. No well-formed world knows a point variable
+    ([pvar_unknown]), so new at a and at ι types through the knownness
+    of an instance of a hypothesis (sharp edges 59, 61, 110).
 
       fac  = !(f = λu. let () = u in let (c, c′) = new ∗ in
                        let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
-           : □(∗ ⊸^⊥_⊤ (?∗.Close)@(a,0))
+           : □(∗ ⊸^⊥_⊤ (?∗.Close)@a)
       main = let (f, u) = ⟨fac, ∗⟩ in let () = u in
              let () = recvclose ((force f) ∗) in recvclose ((force f) ∗)
 
-    f is used twice (contraction at □). Both sessions live at (a,0), so
-    the client must finish one before it requests the next. Holding
-    both while it blocks on one would ask (a,0) ≺ (a,0). *)
+    f is used twice (contraction at □). Both sessions live at a, so the
+    client must finish one before it requests the next. Holding both
+    while it blocks on one would ask a ≺ a.
+
+    Both programs start under a top-level constraint (sharp edges 110)
+    and type in the empty world. fac_main starts with one variable a and
+    no fact. fa_main starts with two variables a and b and the facts
+    a ≺ b and a+1 ≺ b, which the world [Wfa] stated over constants
+    before. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -24,11 +30,11 @@ Set Default Proof Using "All".
 Lemma pvar_unknown W a : world_wf W → ¬ pt_known W (pvar a).
 Proof. intros HW Hk. destruct (wf_names_const _ HW _ Hk) as [b Hb]. done. Qed.
 
-Definition Tfac_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (pc 0 0)).
-Definition Tfac : ty := TBox 0 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
+Definition Tfac_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 0 0)).
+Definition Tfac : ty := TBox 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfac_body).
 
 Definition fac : expr :=
-  EBox (Lam (LetU (Var 0) (LetP (App ENew EUnit)
+  EBox (Lam (LetU (Var 0) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (sendclose (Var 2))))) (Var 0))))).
 
 Definition request : expr := recvclose (App (App EForce (Var 1)) EUnit).
@@ -36,31 +42,33 @@ Definition request : expr := recvclose (App (App EForce (Var 1)) EUnit).
 Definition fac_main : expr :=
   LetP (Pair fac EUnit) (LetU (Var 0) (LetU request request)).
 
-Lemma fac_typed W : world_wf W → pt_known W (pc 0 0) →
-  typed W ∅ [] ∅ [] (∅, None) fac_main TUnit.
+(** fac_main starts with one top-level variable a and no fact. *)
+Definition Cfac : bcs := BCs [] (λ _, False).
+
+Lemma fac_typed : styped ∅ [(Cfac, ids 1)] [] (∅, None) fac_main TUnit.
 Proof.
-  intros HW Ha. unfold fac_main.
+  apply styped_wnil. set (W := wnil). pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold fac_main.
   tstep.
   { tstep; [tstep|].
-    apply (t_box W _ _ _ _ _ 0 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|box_k0].
+    apply (t_box W _ _ _ _ _ 0 (BCs [] (λ _, False)) None Tfac_body 0); [by apply allunl_unl|set_solver|].
     cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
-    cbn. tstep; [tstep|]. cbn. tstep.
-    { tstep; [tstep|apply (KTNew _ _ _ Sd (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
+    cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 0) HWs).
+    { right. exists Cfac, [pv 0 0], (pv 0 0). split_and!; [by left|by left|done]. }
     cbn. tstep; [|tstep].
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pc 0 0)) 2); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 2); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
-    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pc 0 0)); cbn; set_solver|done|].
+    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 0 1). split; [done|]. right. apply (slt_po W _ (pc 0 0) HW).
+      exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
     - apply KTClos.
     - done.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 0 1). split; [done|]. apply sle_refl, HW. }
+      exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   assert (∀ P, (∀ y, y ∈ P → False) →
-    typed W ∅ [] ∅ [None; Some Tfac] (P, None) request TUnit) as Hreq.
+    typed W ∅ [(Cfac, ids 1)] ∅ [None; Some Tfac] (P, None) request TUnit) as Hreq.
   { intros P HP. unfold request, recvclose. tstep.
     - tstep; [| | |].
       + eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
@@ -76,12 +84,11 @@ Proof.
   tstep; apply Hreq; cbn; set_solver.
 Qed.
 
+Lemma Cfac_acyclic : c0_acyclic 1 Cfac.
+Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []]. Qed.
+
 Lemma fac_deadlock_free : deadlock_free (∅, {[+ fac_main +]}).
-Proof.
-  apply (soundness (Wpo [0]) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed; [constructor|]. apply fac_typed; [apply Wpo_strict|].
-  unfold pt_known, Wpo. simpl. set_solver.
-Qed.
+Proof. apply (soundness_source 1 Cfac _ TUnit Cfac_acyclic); [constructor|apply fac_typed]. Qed.
 
 (** ** factory under □∀ι: typable (SHARP-EDGES 61)
 
@@ -93,12 +100,13 @@ Qed.
     new in the body creates the channel at the point variable ι. The
     static system reads ι as known, because it is a point of the body's
     own instance (skn, hyp_known), and force asks the instance known in
-    the world. main forces at (a,0) and (b,0) and holds both sessions,
-    which the one-point factory could not: x is used while y waits, so
-    (a,0) ≺ (b,0) and (a,1) ≺ (b,0). *)
+    the world. main forces at the top-level variables a and b and
+    holds both sessions, which the one-point factory could not: x is
+    used while y waits, so a ≺ b and a+1 ≺ b, the facts of the
+    top-level constraint [Cfa]. *)
 
 Definition Tfa_body : ty := TLolli None None TUnit (TSess (SSeq (SRcv 0 TUnit) SEnd) (Pt (NVar 0) 0)).
-Definition Tfa : ty := TBox 1 0 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
+Definition Tfa : ty := TBox 1 (BCs [] (λ _, False)) (TLolli None None TUnit Tfa_body).
 
 Definition faca : expr := fac.
 
@@ -107,15 +115,13 @@ Definition fa_main : expr :=
     (LetP (Pair (App (App EForce (Var 1)) EUnit) (App (App EForce (Var 1)) EUnit))
       (LetU (recvclose (Var 1)) (recvclose (Var 0))))).
 
-Lemma faca_typed W F : world_wf W → typed W ∅ [] ∅ [] F faca Tfa.
+Lemma faca_typed Ψ F : typed wnil ∅ Ψ ∅ [] F faca Tfa.
 Proof.
-  intros HW. unfold faca, fac, Tfa.
+  set (W := wnil). pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold faca, fac, Tfa.
   apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
-  cbn. tstep; [tstep|]. cbn. tstep.
-  { tstep; [tstep| |done|apply ubs_none].
-    apply (KTNew _ _ _ Sd (Pt (NVar 0) 0)). right.
-    eexists _, _, (pvar 0). split_and!; [by left|by left|done]. }
+  cbn. tstep; [tstep|]. cbn. apply (t_new_at W _ _ _ _ _ _ _ Sd (Pt (NVar 0) 0) HWs).
+  { right. eexists _, _, (pvar 0). split_and!; [apply elem_of_app; right; by left|by left|done]. }
   cbn. tstep; [|tstep].
   tstep; [|apply KTSpawn|done|apply ubs_none].
   eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NVar 0) 1)) (Some (Pt (NVar 0) 0)) 2);
@@ -131,49 +137,52 @@ Proof.
     exists (Pt (NVar 0) 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma fa_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
-  w_lt W (pc 0 0) (pc 1 0) → w_lt W (pc 0 1) (pc 1 0) →
-  typed W ∅ [] ∅ [] (∅, None) fa_main TUnit.
+(** fa_main starts with the top-level variables a = 0 and b = 1 under
+    a ≺ b and a+1 ≺ b. *)
+Definition fa_fact (g : fact) : Prop := g = FLt (pv 0 0) (pv 1 0) ∨ g = FLt (pv 0 1) (pv 1 0).
+Definition Cfa : bcs := BCs [] fa_fact.
+
+Lemma fa_typed : styped ∅ [(Cfa, ids 2)] [] (∅, None) fa_main TUnit.
 Proof.
-  intros HW Ha Hb H1 H2. unfold fa_main.
-  assert (∀ P a, pt_known W (pc a 0) →
-    typed W ∅ [] ∅ [None; Some Tfa] (P, None) (App (App EForce (Var 1)) EUnit)
-      (TSess (SSeq (SRcv 0 TUnit) SEnd) (pc a 0))) as Hreq.
-  { intros P a Hk. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-    cbn. apply (typed_force0 W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None Tfa_body [pc a 0]);
-      [done|done| |constructor; [by left|constructor]|apply ubs_none|tstep].
-    apply bcs_hold_intro. by intros ? []. }
+  apply styped_wnil. set (W := wnil). set (Ψ := [(Cfa, ids 2)]).
+  pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold fa_main.
+  assert (∀ x y, fa_fact (FLt x y) → slt W Ψ x y) as Hf.
+  { intros x y Hxy. apply (sl_hyp0 W Ψ fa_fact (ids 2) x y); [by left|done| | |].
+    - destruct Hxy as [[= -> ->]|[= -> ->]]; cbn; lia.
+    - apply pt_inst_ids. destruct Hxy as [[= -> ->]|[= -> ->]]; cbn; lia.
+    - apply pt_inst_ids. destruct Hxy as [[= -> ->]|[= -> ->]]; cbn; lia. }
+  assert (slt W Ψ (pv 0 0) (pv 1 0)) as H1 by (apply Hf; by left).
+  assert (slt W Ψ (pv 0 1) (pv 1 0)) as H2 by (apply Hf; by right).
+  assert (∀ (F : sframe) a, a < 2 →
+    typed W ∅ Ψ ∅ [None; Some Tfa] F (App (App EForce (Var 1)) EUnit)
+      (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv a 0))) as Hreq.
+  { intros F a Ha. eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
+    cbn. apply (typed_force0 W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None Tfa_body [pv a 0]);
+      [done|done| | |apply ubs_none|tstep].
+    - apply bcs_hold_intro. by intros ? [].
+    - constructor; [|constructor]. right. exists Cfa, (ids 2), (pvar a). split_and!; [by left| |done].
+      unfold ids. apply list_elem_of_fmap. exists a. split; [done|]. apply elem_of_seq. lia. }
   tstep.
-  { tstep; [tstep|apply faca_typed, HW]. }
+  { tstep; [tstep|apply faca_typed]. }
   cbn. tstep; [tstep|]. cbn. tstep.
-  { tstep; [apply Hreq, Hb|apply Hreq, Ha]. }
+  { tstep; [apply (Hreq _ 1); lia|apply (Hreq _ 0); lia]. }
   cbn. tstep.
   - unfold recvclose. tstep.
     + tstep; [tstep|apply KTRecv|kscope|].
-      apply ubs_intro; [intros y Hy; mem_cases Hy; by apply sl_w|done].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
     + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
-      apply ubs_intro; [intros y Hy; mem_cases Hy; by apply sl_w|done].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
   - unfold recvclose. tstep.
     + tstep; [tstep|apply KTRecv|kscope|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
     + cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Definition Wfa : world := Wfacts [0; 1] [(pc 0 0, pc 1 0); (pc 0 1, pc 1 0)].
-
-Lemma Wfa_strict : strict Wfa.
+Lemma Cfa_acyclic : c0_acyclic 2 Cfa.
 Proof.
-  apply (Wfacts_strict _ _ (λ _, 1) (λ a, 10 * a) (λ _ _ _, 0)); [lia| |].
-  - repeat constructor; cbn; set_solver.
-  - repeat constructor; cbn; lia.
+  apply (c0_acyclic_rank 2 _ (vrank 10)); [apply vrank_shift|by intros ? ? [?|?]|].
+  intros x y [[= -> ->]|[= -> ->]]; cbn; lia.
 Qed.
 
 Lemma fa_deadlock_free : deadlock_free (∅, {[+ fa_main +]}).
-Proof.
-  apply (soundness Wfa _ TUnit Wfa_strict).
-  apply ptyped_closed; [constructor|]. apply fa_typed; [apply Wfa_strict| | | |].
-  - apply Wfacts_known. set_solver.
-  - apply Wfacts_known. set_solver.
-  - apply Wfacts_lt. set_solver.
-  - apply Wfacts_lt. set_solver.
-Qed.
+Proof. apply (soundness_source 2 Cfa _ TUnit Cfa_acyclic); [constructor|apply fa_typed]. Qed.

@@ -62,10 +62,10 @@ Proof.
     - destruct T'; unfold teq in Hteq; simpl in Hteq; try done. eauto.
     - by eapply Hfun. }
   assert (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
-  { intros W Θ T. revert Θ.
+  { intros W Θ T. revert W Θ.
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
                    |m kk C0 T1 IHT1|s x|lb m C0 T1 IHT1] using ty_ind_ex;
-      intros Θ T' v Hteq HVv; destruct T'; unfold teq in Hteq; simpl in Hteq; try done.
+      intros W Θ T' v Hteq HVv; destruct T'; unfold teq in Hteq; simpl in Hteq; try done.
     - by eapply Hfun.
     - (* ⊗ *)
       destruct Hteq as [Hteq1 Hteq2].
@@ -91,7 +91,7 @@ Proof.
       destruct Hteq as (<- & <- & <- & Hteq).
       apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
       apply Vrel_ex_iff. split; [done|]. exists xs. split_and!; [done..|].
-      apply (IHT1 (plist xs) _ _ _ (teq_ty_inst xs _ _ Hteq) H). }
+      eapply (IHT1 (plist xs)); [|exact H]. by apply teq_ty_inst. }
   split; [exact HV|].
   destruct n as [|n']; [intros; apply Erel_0|].
   intros W Θ T T' F e HW Hteq HE. revert T' HW Hteq.

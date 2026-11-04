@@ -1,6 +1,6 @@
 (** * Types, session types, duality, environments (§2.2, Fig. 5 top)
 
-    T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs. T)
+    T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs αs. C. T) | ∃^ℓ ιs. C. T
     S    ::= Skip | S;S | ?P | !P | ⊕(S, S) | &(S, S) | Close | µα.S | α | α̅
                                                     P ::= ∃ιs. T
     (context-free session types, K1 of docs/extensions/context-free.md)
@@ -143,12 +143,33 @@ Definition fact_scoped (k : nat) (g : fact) : Prop :=
     A fact whose variables lie beyond n + |bc_env| is not part of C. *)
 Record bcs := BCs { bc_env : list point; bc_facts : fact → Prop }.
 
+(** The lower bound of an existential (sharp edges 97, 103). [LTop]
+    is ⊤, the value holds nothing. [LBot] is ⊥, the value holds
+    channels at points not known from outside. [LPt x] says that every
+    channel of the value lies at or above x. ⊥ is no point. It occurs
+    only here, and a frame that holds such a value carries a flag
+    instead (static/FactTheory.v). *)
+Inductive lbound := LTop | LBot | LPt (x : point).
+
+Definition lb_map (f : point → point) (lb : lbound) : lbound :=
+  match lb with LPt x => LPt (f x) | LTop => LTop | LBot => LBot end.
+
+Lemma lb_map_ext f g lb : (∀ x, f x = g x) → lb_map f lb = lb_map g lb.
+Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
+
+Lemma lb_map_comp f g lb : lb_map f (lb_map g lb) = lb_map (f ∘ g) lb.
+Proof. by destruct lb. Qed.
+
+Lemma lb_map_id f lb : (∀ x, f x = x) → lb_map f lb = lb.
+Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
+
 (** ** Types
 
     The arrow carries an upper point β ([None] = ⊥: the call never
     blocks) and a lower point λ ([None] = ⊤: the closure holds
-    nothing). □ binds n point variables (∀ only directly under □), a
-    payload binds m (∃). Session types are unannotated: the only points
+    nothing). □ binds n point variables, so ∀ occurs only directly
+    under □ (sharp edges 109). ∃ binds n, and a
+    payload binds m. Session types are unannotated: the only points
     inside them are those of payloads, all bound by the payload's ∃, so
     point instantiation never enters a session type. *)
 
@@ -171,13 +192,13 @@ Inductive ty :=
                                       0, …, k-1 of T (K6, sharp edges 73) *)
 
   | TSess (S : sty) (x : point)   (* S@x *)
-  | TEx (lb : option point) (n : nat) (C : bcs) (T : ty)
+  | TEx (lb : lbound) (n : nat) (C : bcs) (T : ty)
                                    (* ∃^ℓ ι₀ … ιₙ₋₁. C. T — existential
-                                      points (K7, sharp edges 73): the
-                                      value lies in T at some instance
-                                      meeting C, and its channels lie at
-                                      or above the lower point ℓ ([None]
-                                      = ⊤: it holds nothing) *)
+                                      points (sharp edges 97, 103): the
+                                      value lies in T at some known
+                                      instance meeting C, and its
+                                      channels lie at or above the lower
+                                      bound ℓ, which is ⊤, ⊥ or a point *)
 with sty :=
   | SRcv (m : nat) (T : ty)        (* ?(∃ι₀ … ιₘ₋₁. T), no continuation *)
   | SSnd (m : nat) (T : ty)        (* !(∃ι₀ … ιₘ₋₁. T), no continuation *)
@@ -318,7 +339,7 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
       TBox n k (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   | TSess s x => TSess s (pt_inst σ x)
   | TEx lb n C T1 =>
-      TEx (pt_inst σ <$> lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
+      TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   end.
 
 (** T[xs/ιs]: instantiate the ∀ of a □ (or the ∃ of a payload) with a
@@ -499,14 +520,31 @@ Qed.
 Definition opt_heads (o : option point) : gset point :=
   match o with Some x => {[x]} | None => ∅ end.
 
+Definition lb_heads (lb : lbound) : gset point :=
+  match lb with LPt x => {[x]} | _ => ∅ end.
+
 Fixpoint heads (T : ty) : gset point :=
   match T with
   | TUnit | TBox _ _ _ _ => ∅
   | TLolli _ lb _ _ => opt_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
   | TSess _ x => {[x]}
-  | TEx lb _ _ _ => opt_heads lb
+  | TEx lb _ _ _ => lb_heads lb
   end.
+
+(** The ⊥ flag of a type (sharp edges 103): a value of the type may
+    hold an unopened existential with lower bound ⊥, whose channels lie
+    at points not known from outside. heads(T) is the set of points of
+    the heads of T, and the flag is the rest. *)
+Fixpoint hbot (T : ty) : bool :=
+  match T with
+  | TProd T1 U | TSum T1 U => hbot T1 || hbot U
+  | TEx LBot _ _ _ => true
+  | _ => false
+  end.
+
+Lemma hbot_pinst σ T : hbot (pinst_ty σ T) = hbot T.
+Proof. induction T; simpl; try done; try congruence. by destruct lb. Qed.
 
 (** ** Session-type substitution (§4.3)
 
@@ -1302,12 +1340,260 @@ Proof.
   rewrite !lookup_empty in H. by inversion H.
 Qed.
 
+(** The root name of a point: a slot ι[i] belongs to the name of ι
+    (relation/Worlds.v uses it for the support of a world). *)
+Fixpoint pn_root (p : pname) : pname :=
+  match p with
+  | NSlot q _ _ | NBr q _ _ => pn_root q
+  | _ => p
+  end.
+
+Definition pt_root (x : point) : pname := pn_root (pt_name x).
+
+(** ** Constraints of a fresh point (sharp edges 93, 97)
+
+    A constraint C of one variable ι (the variable 0) whose every fact
+    relates a point of the fresh channel to an outer point. A point of
+    the fresh channel has the root ι, so it is ι+k, (ι+b).i+k and so on.
+    [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
+    [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
+    point in the context of the rule. C may be infinite. [ple p q]: p
+    and q have one name and the offset of p is at most that of q. *)
+
+Definition fresh_lo (C : bcs) (u p : point) : Prop :=
+  bc_facts C (FLt u p) ∧ fact_scoped (S (length (bc_env C))) (FLt u p) ∧
+  pt_root p = NVar 0 ∧ pt_root u ≠ NVar 0.
+
+Definition fresh_hi (C : bcs) (q v : point) : Prop :=
+  bc_facts C (FLt q v) ∧ fact_scoped (S (length (bc_env C))) (FLt q v) ∧
+  pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0.
+
+Definition fresh_lt (C : bcs) : Prop :=
+  ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
+    (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v).
+
+Definition fresh_outer (C : bcs) (u : point) : point := pt_inst (plist (pvar 0 :: bc_env C)) u.
+
+(** ** Program order
+
+    x ≺ x+1 and x ≺ x◁i, closed under transitivity (K10). It holds in
+    every world, and a size that rises along both steps makes it
+    irreflexive. *)
+Inductive ppo : point → point → Prop :=
+  | ppo_po x : ppo x (pt_shift 1 x)
+  | ppo_br x i : ppo x (pt_br x i)
+  | ppo_trans x y z : ppo x y → ppo y z → ppo x z.
+
+Fixpoint pn_size (p : pname) : nat :=
+  match p with
+  | NConst _ | NVar _ => 0
+  | NSlot q b _ | NBr q b _ => pn_size q + b + 1
+  end.
+
+Definition pt_size (x : point) : nat := pn_size (pt_name x) + pt_off x.
+
+Lemma ppo_size x y : ppo x y → pt_size x < pt_size y.
+Proof.
+  unfold pt_size. induction 1; simpl; [lia|lia|lia].
+Qed.
+
+Lemma ppo_irrefl x : ¬ ppo x x.
+Proof. intros H%ppo_size. lia. Qed.
+
+Lemma ppo_root x y : ppo x y → pt_root x = pt_root y.
+Proof. induction 1; [done|done|congruence]. Qed.
+
+Lemma ppo_same x y : pt_name x = pt_name y → pt_off x < pt_off y → ppo x y.
+Proof.
+  destruct x as [p a], y as [q b]; simpl. intros <- Ho.
+  replace b with (a + S (b - a - 1)) by lia. generalize (b - a - 1) as k.
+  intros k. induction k as [|k IH].
+  - replace (a + 1) with (pt_off (pt_shift 1 (Pt p a))) by (simpl; lia).
+    apply ppo_po.
+  - eapply ppo_trans; [exact IH|].
+    replace (a + S (S k)) with (pt_off (pt_shift 1 (Pt p (a + S k)))) by (simpl; lia).
+    apply ppo_po.
+Qed.
+
+(** A map on points that commutes with successor and branch roots
+    preserves program order. *)
+Lemma ppo_map (f : point → point) x y :
+  (∀ z, f (pt_shift 1 z) = pt_shift 1 (f z)) →
+  (∀ z i, f (pt_br z i) = pt_br (f z) i) →
+  ppo x y → ppo (f x) (f y).
+Proof.
+  intros Hs Hb. induction 1 as [z|z i|]; [rewrite Hs; apply ppo_po
+    |rewrite Hb; apply ppo_br|by eapply ppo_trans].
+Qed.
+
+(** p at or before v in program order, along successors and branch roots. *)
+Definition ple (p v : point) : Prop := p = v ∨ ppo p v.
+
+Lemma ple_same p v : pt_name p = pt_name v → pt_off p ≤ pt_off v → ple p v.
+Proof.
+  intros Hn Ho. destruct (decide (pt_off p = pt_off v)) as [E|E].
+  - left. destruct p, v. simpl in *. by subst.
+  - right. apply ppo_same; [done|lia].
+Qed.
+
+(** ** The alias of a fresh point (sharp edges 104)
+
+    [fresh_eq C w] is the fact ι ≡ w of C, with w an outer point. C is
+    of the allowed form ([fresh_ok]) when its facts are ≺ facts of the
+    form above ([fresh_lt]), or when they are such facts and one alias
+    ι ≡ w. Which of the two cases holds is part of the evidence, so the
+    semantic proof can build its world by cases without excluded
+    middle. [fresh_at C w p] reads a point p of the fresh channel with
+    the alias in place of ι, so ι+k becomes w+k and ι.i becomes w.i.
+
+    [fresh_between plt C] is the condition on the context. Without an
+    alias it is the betweenness of sharp edges 94. With the alias
+    ι ≡ w, the point ι has every fact of w, and a fresh extension adds
+    no fact between known points. So every ≺ fact of C must already hold
+    of w, that is u ≺ p[w/ι] for every u ≺ p and q[w/ι] ≺ v for every
+    q ≺ v of C. That condition is necessary in every world that holds
+    the alias, and it implies the betweenness of sharp edges 94. For
+    C = {ι ≡ w} it is empty, and w known is all that new asks. *)
+
+Definition fresh_eq (C : bcs) (w : point) : Prop :=
+  bc_facts C (FEq (pvar 0) w) ∧ pn_vb (S (length (bc_env C))) (pt_name w) ∧ pt_root w ≠ NVar 0.
+
+Definition fresh_ok (C : bcs) : Prop :=
+  fresh_lt C ∨
+  ∃ w, fresh_eq C w ∧
+    ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
+      (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v) ∨
+      f = FEq (pvar 0) w.
+
+Definition fresh_at (C : bcs) (w p : point) : point := pt_inst (λ _, fresh_outer C w) p.
+
+Definition fresh_between (plt : point → point → Prop) (C : bcs) : Prop :=
+  (fresh_lt C → ∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
+     plt (fresh_outer C u) (fresh_outer C v)) ∧
+  (∀ w u p, fresh_eq C w → fresh_lo C u p → plt (fresh_outer C u) (fresh_at C w p)) ∧
+  (∀ w q v, fresh_eq C w → fresh_hi C q v → plt (fresh_at C w q) (fresh_outer C v)).
+
+(** The form of C reads only its facts and the length of its
+    environment, so renaming and instantiating the outer points keeps it. *)
+Section fresh_shape.
+  Context (C C' : bcs) (Hf : bc_facts C = bc_facts C') (Hl : length (bc_env C) = length (bc_env C')).
+
+  Lemma fresh_lo_shape u p : fresh_lo C u p ↔ fresh_lo C' u p.
+  Proof. unfold fresh_lo. by rewrite Hf, Hl. Qed.
+
+  Lemma fresh_hi_shape q v : fresh_hi C q v ↔ fresh_hi C' q v.
+  Proof. unfold fresh_hi. by rewrite Hf, Hl. Qed.
+
+  Lemma fresh_eq_shape w : fresh_eq C w ↔ fresh_eq C' w.
+  Proof. unfold fresh_eq. by rewrite Hf, Hl. Qed.
+
+  Lemma fresh_lt_shape : fresh_lt C → fresh_lt C'.
+  Proof.
+    intros H f Hf' Hs. rewrite <-Hf in Hf'. rewrite <-Hl in Hs.
+    destruct (H f Hf' Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)].
+    - left. exists u, p. split; [done|]. by apply fresh_lo_shape.
+    - right. exists q, v. split; [done|]. by apply fresh_hi_shape.
+  Qed.
+
+  Lemma fresh_ok_shape : fresh_ok C → fresh_ok C'.
+  Proof.
+    intros [H|(w & Hw & H)]; [left; by apply fresh_lt_shape|right].
+    exists w. split; [by apply fresh_eq_shape|]. intros f Hf' Hs. rewrite <-Hf in Hf'. rewrite <-Hl in Hs.
+    destruct (H f Hf' Hs) as [(u & p & -> & Hu)|[(q & v & -> & Hv)| ->]].
+    - left. exists u, p. split; [done|]. by apply fresh_lo_shape.
+    - right; left. exists q, v. split; [done|]. by apply fresh_hi_shape.
+    - by right; right.
+  Qed.
+End fresh_shape.
+
+Lemma fresh_lt_no_eq C w : fresh_lt C → ¬ fresh_eq C w.
+Proof.
+  intros H (Hf & Hs & _).
+  destruct (H _ Hf) as [(? & ? & E & _)|(? & ? & E & _)]; [split; [cbn; lia|done]|discriminate|discriminate].
+Qed.
+
+(** Without an alias, [fresh_between] is the betweenness of sharp
+    edges 94. *)
+Lemma fresh_between_lt (plt : point → point → Prop) C :
+  fresh_lt C →
+  (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q → plt (fresh_outer C u) (fresh_outer C v)) →
+  fresh_between plt C.
+Proof.
+  intros HC Hbt. split_and!; [done|..]; intros w ? ? Hw; exfalso; by apply (fresh_lt_no_eq C w).
+Qed.
+
+Lemma fresh_between_mono (plt plt' : point → point → Prop) C :
+  (∀ x y, plt x y → plt' x y) → fresh_between plt C → fresh_between plt' C.
+Proof. intros H (H1 & H2 & H3). split_and!; eauto. Qed.
+
+(** ** The closure of a set of facts
+
+    [geq E] is the least congruence for successor and slots that
+    contains E, and [glt E L] the least transitive relation that
+    contains L and program order and is closed under [geq E]. They are
+    the fact theory read as a closure. relation/Worlds.v builds the
+    world [wgen] from them. *)
+
+Inductive geq (E : point → point → Prop) : point → point → Prop :=
+  | geq_base x y : E x y → geq E x y
+  | geq_refl x : geq E x x
+  | geq_sym x y : geq E x y → geq E y x
+  | geq_trans x y z : geq E x y → geq E y z → geq E x z
+  | geq_shift x y : geq E x y → geq E (pt_shift 1 x) (pt_shift 1 y)
+  | geq_slot x y i : geq E x y → geq E (pt_slot x i) (pt_slot y i)
+  | geq_br x y i : geq E x y → geq E (pt_br x i) (pt_br y i).
+
+Inductive glt (E L : point → point → Prop) : point → point → Prop :=
+  | glt_base x y : L x y → glt E L x y
+  | glt_po x : glt E L x (pt_shift 1 x)
+  | glt_br x i : glt E L x (pt_br x i)
+  | glt_eq x x' y y' : geq E x x' → glt E L x' y' → geq E y' y → glt E L x y
+  | glt_trans x y z : glt E L x y → glt E L y z → glt E L x z.
+
+(** ** Creation constraints (static-system.md §5, sharp edges 105)
+
+    The constraint C of [new] is a box constraint of one variable ι, the
+    variable 0. Its facts relate points of ι to each other and to outer
+    points, by ≺ and by ≡, finitely or infinitely many. [cc_up R] reads
+    the facts of the context Γ under the binder of ι, so the outer points
+    shift past it. [cc_eq] and [cc_lt] add the facts of C, which is
+    Γ + C. The judgment Γ ⊢ … is the closure [geq], [glt].
+
+    [cc_ok] asks two things. Acyclic: every cycle of Γ + C comes from a
+    cycle of Γ, so Γ + C ⊬ p ≺ p whenever Γ is acyclic. Conservative:
+    Γ + C derives a fact between two points without root ι only when Γ
+    derives it. The semantic proof extends a world by the facts of C at
+    the fresh name, and conservativity is what makes that a fresh
+    extension ⊑ₒ (relation/Creation.v). *)
+
+Definition cc_up (R : point → point → Prop) : point → point → Prop :=
+  λ x y, ∃ x0 y0, R x0 y0 ∧ x = pt_inst (λ a, pvar (a + 1)) x0 ∧ y = pt_inst (λ a, pvar (a + 1)) y0.
+
+Definition cc_eq (peq : point → point → Prop) (C : bcs) : point → point → Prop :=
+  λ x y, cc_up peq x y ∨ bcs_open 1 C (FEq x y).
+
+Definition cc_lt (plt : point → point → Prop) (C : bcs) : point → point → Prop :=
+  λ x y, cc_up plt x y ∨ bcs_open 1 C (FLt x y).
+
+Definition cc_acyclic (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  ∀ p, glt (cc_eq peq C) (cc_lt plt C) p p → ∃ x, glt (cc_up peq) (cc_up plt) x x.
+
+Definition cc_conservative (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  (∀ x y, pt_root x ≠ NVar 0 → pt_root y ≠ NVar 0 →
+     geq (cc_eq peq C) x y → geq (cc_up peq) x y) ∧
+  (∀ x y, pt_root x ≠ NVar 0 → pt_root y ≠ NVar 0 →
+     glt (cc_eq peq C) (cc_lt plt C) x y → glt (cc_up peq) (cc_up plt) x y).
+
+Definition cc_ok (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  cc_acyclic peq plt C ∧ cc_conservative peq plt C.
+
 (** ** Type-indexed families of type signatures for constants
     (§9)
 
-    new    : ∗ ⊸^⊥_⊤ S@ι ⊗ dual S@ι
+    new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C acyclic and conservative
+                                                  (97, 103, 105)
     spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
-    send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι])
+    send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι]), no ⊥ flag
     recv   : (?P;S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
     selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@(ι◁i)                      (K10)
     branch : &(S₁, S₂)@ι ⊸^ι_⊤ S₁@(ι◁1) + S₂@(ι◁2)
@@ -1319,9 +1605,12 @@ Qed.
     The side conditions on points are read in an order given as two
     relations: the world G generates for typing, a world W for the
     logical relation. Freshness of ι in [new] is a typing condition
-    (static/). [pk] says which points the order knows: the point of
-    [new] must be one, so that the created point can be aliased to it
-    (sharp edges 49). force asks its instance known and every
+    (static/). [pk] says which points the order knows: the outer
+    points of the constraint of [new] must be known, so that the world
+    of a run can state the facts of C about them (sharp edges 49, 105).
+    The order relations enter [cc_ok] through their closure. new
+    at a known point x is the alias ι ≡ x ([t_new_at] in
+    static/Fundamental.v). force asks its instance known and every
     fact of the box's constraint at the instance (sharp edges 65). *)
 
 (** T[ss/αs]: the session variable i goes to the i-th session type of a
@@ -1340,15 +1629,11 @@ Proof. by destruct b. Qed.
 
 Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
     : konst → ty → Prop :=
-  | KTNew S x :
-      pk x →
-      konst_ty peq plt pk KNew
-        (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) x)))
   | KTSpawn ub lb :
       konst_ty peq plt pk KSpawn
         (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)
   | KTSend m T S x :
-      (∀ h, h ∈ heads (payload_at m T x) → plt x h) →
+      (if hbot T then False else ∀ h, h ∈ heads (payload_at m T x) → plt x h) →
       konst_ty peq plt pk KSend
         (TLolli (Some x) None
            (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) S) x))
@@ -1379,4 +1664,9 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       length ss = k → Forall hcontractive ss →
       konst_ty peq plt pk KForce
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
-           (sinst_ty (slist ss) (ty_inst xs T))).
+           (sinst_ty (slist ss) (ty_inst xs T)))
+  | KTNewEx S C :
+      cc_ok peq plt C → Forall pk (bc_env C) →
+      konst_ty peq plt pk KNew
+        (TLolli None None TUnit
+           (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))))).

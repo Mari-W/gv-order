@@ -32,9 +32,8 @@ Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
       (* a body over session variables compares on the nose: ≈ of open
          session types is not closed under their instances (sharp edges 73) *)
       n = n' ∧ k = k' ∧ C = C' ∧ match k with 0 => eqT ρ T1 U1 | S _ => T1 = U1 end
-  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ eqT ρ T1 U1
-
   | TSess s x, TSess r y => x = y ∧ ρ s r
+  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ eqT ρ T1 U1
   | _, _ => False
   end.
 

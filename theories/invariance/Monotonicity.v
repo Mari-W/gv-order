@@ -25,6 +25,13 @@ Proof.
   intros Hb y Hy. destruct (Hb y Hy); [left|right]; auto.
 Qed.
 
+Lemma lbx_below_mono W W' lb H f :
+  wext W W' → lbx_below W lb H f → lbx_below W' lb H f.
+Proof.
+  intros (_ & He & Hl & _). destruct lb as [| |x]; simpl; [done|done|].
+  intros [Hb ->]. split; [|done]. intros y Hy. destruct (Hb y Hy); [left|right]; auto.
+Qed.
+
 Lemma ub_below_mono W W' ub F :
   wext W W' → ub_below W ub F → ub_below W' ub F.
 Proof.
@@ -108,10 +115,10 @@ Proof.
   induction n as [n IHn] using lt_wf_ind.
   assert (∀ W W' Θ T v, world_wf W → wext W W' →
             Vrel n W Θ T v → Vrel n W' Θ T v) as HV.
-  { intros W W' Θ T. revert Θ.
+  { intros W W' Θ T. revert W W' Θ.
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
                    |m kk C T1 IHT1|s x|lb m C T1 IHT1] using ty_ind_ex;
-      intros Θ v HW HWW' HVv.
+      intros W W' Θ v HW HWW' HVv.
     - by apply Vrel_unit_iff in HVv; apply Vrel_unit_iff.
     - apply Vrel_lolli_iff in HVv
         as [(eb & -> & Hsup & Hlb & HL)|(k & T0 & -> & -> & Hk & Ht)].
@@ -136,11 +143,11 @@ Proof.
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done..|].
       destruct HWW' as (_ & He & _). auto.
     - apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
-      apply Vrel_ex_iff. split; [by eapply lb_below_mono|]. exists xs. split_and!; [done| | |].
+      apply Vrel_ex_iff. split; [by eapply lbx_below_mono|]. exists xs. split_and!; [done| | |].
       + eapply Forall_impl; [exact HK|]. destruct HWW' as (Hn & _). unfold pt_known.
         intros x Hx. by apply Hn.
       + eapply bcs_hold_mono; [| |exact HC]; by destruct HWW' as (_ & ? & ? & _).
-      + by apply (IHT1 (plist xs)). }
+      + by apply (IHT1 (plist xs) W). }
   split_and!; [exact HV| |].
   - destruct n as [|n']; [intros; apply Erel_0|].
     intros W W' Θ T F e HW HWW' HE. revert W' HW HWW'.

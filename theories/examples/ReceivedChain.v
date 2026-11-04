@@ -17,8 +17,12 @@
     e at ι[0] with new, sends it at ι while it holds e′ at ι[0], which
     asks ι ≺ ι[0], derived from ι ≺ ι+1 ≺ ι[0]. The upper point ι+1 of the
     λ covers both blocking points. A tail call would need a ceiling, as
-    in the tail-call example. [Wch] has (a,0)[0]ⁿ + 1 ≺ (a,0)[0]ⁿ⁺¹,
-    strict by the rank 2·depth + offset. *)
+    in the tail-call example.
+
+    In the empty world main creates c with the box constraint itself as
+    its creation constraint and forces both boxes at its point. Every
+    fact stays inside ι, ordered by the rank 2·depth + offset (sharp
+    edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -26,7 +30,6 @@ From LRGV Require Export examples.ExampleTools.
 Set Default Proof Using "All".
 
 Fixpoint chv (n : nat) : pname := match n with 0 => NVar 0 | S m => NSlot (chv m) 0 0 end.
-Fixpoint chc (n : nat) : pname := match n with 0 => NConst 0 | S m => NSlot (chc m) 0 0 end.
 
 Definition Sch : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0))) SEnd).
 
@@ -41,13 +44,13 @@ Definition rch : expr :=
     (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 4)) (Var 2)))))))).
 
 Definition sch : expr :=
-  EBox (Lam (LetP (App ENew EUnit)
+  EBox (Lam (let_new_pair
     (LetP (Pair (App ESend (Pair (Var 1) (Var 2))) EUnit) (LetU (Var 0)
       (LetU (App EClos (Var 1))
         (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Var 3)))))))))).
 
 Definition ch_main : expr :=
-  LetP (Pair rch sch) (LetP (App ENew EUnit)
+  LetP (Pair rch sch) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 
@@ -55,9 +58,6 @@ Abbreviation chs := (Pt (NSlot (NVar 0) 0 0) 0).
 
 Lemma chv_inst n : pn_inst (plist [chs]) (chv n) = Pt (chv (S n)) 0.
 Proof. induction n as [|n IH]; [done|]. cbn [chv pn_inst]. by rewrite IH. Qed.
-
-Lemma chc_inst n : pn_inst (plist [pc 0 0]) (chv n) = Pt (chc n) 0.
-Proof. induction n as [|n IH]; [done|]. cbn [chv chc pn_inst]. by rewrite IH. Qed.
 
 Lemma ch_sub g : ch_P g → fact_scoped 1 g → ch_P (fact_map (pt_inst (plist [chs])) g).
 Proof.
@@ -104,18 +104,17 @@ Proof.
     exists (pt_shift 1 chs). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma sch_typed W F : world_wf W → typed W ∅ [] ∅ [] F sch (TBox 1 0 ch_C (TLolli None None TUnit sch_body)).
+Lemma sch_typed W F : strict W → typed W ∅ [] ∅ [] F sch (TBox 1 0 ch_C (TLolli None None TUnit sch_body)).
 Proof.
-  intros HW. unfold sch.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold sch.
   apply (t_box W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 ch_C sch_body. cbn. unfold sch_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   assert (∀ Ψ, (ch_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 0) chs) as Hlt.
   { intros Ψ Hg. apply (sl_trans _ _ _ (pv 0 1)); [apply (slt_po W _ (pv 0 0) HW)|].
     eapply (sl_hyp0 _ _ _ _ (pv 0 1) chs); [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
-  cbn. tstep.
-  { tstep; [tstep| |done|apply ubs_none]. apply (KTNew _ _ _ Sch chs).
-    right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sch chs HWs).
+  { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
@@ -144,62 +143,67 @@ Proof.
     exists (pt_shift 1 chs). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma ch_typed W : world_wf W → pt_known W (pc 0 0) →
-  (∀ n, w_lt W (Pt (chc n) 1) (Pt (chc (S n)) 0)) →
-  typed W ∅ [] ∅ [] (∅, None) ch_main TUnit.
+(** main creates c with the box constraint itself as its creation
+    constraint. Every fact stays inside ι, ordered by the rank
+    2·depth + offset (sharp edges 105). *)
+Fixpoint chv_depth (p : pname) : option nat :=
+  match p with
+  | NVar 0 => Some 0
+  | NSlot q 0 0 => match chv_depth q with Some n => Some (S n) | None => None end
+  | _ => None
+  end.
+
+Definition ch_rank (x : point) : nat :=
+  match chv_depth (pt_name x) with Some n => 2 * n + pt_off x | None => pt_off x end.
+
+Lemma chv_depth_chv n : chv_depth (chv n) = Some n.
+Proof. induction n as [|n IH]; [done|]. simpl. by rewrite IH. Qed.
+
+Lemma ch_ok peq plt : cc_ok peq plt ch_C.
 Proof.
-  intros HW Ha H. unfold ch_main.
-  assert (bcs_hold (seqs W []) (slt W []) ch_C [pc 0 0]) as HC.
-  { apply bcs_hold_intro. intros g (n & ->) _. apply sl_w. cbn [fact_map fact_holds].
-    unfold pt_inst. cbn [pt_name pt_off]. rewrite !chc_inst. apply H. }
-  assert (Forall (skn W []) [pc 0 0]) as HK by (constructor; [by left|constructor]).
+  apply (cc_ok_inner peq plt ch_P (λ x y, ch_rank x < ch_rank y)).
+  - intros x y z; lia.
+  - intros x; lia.
+  - intros [n o] _. unfold ch_rank, pt_shift. simpl. case_match; lia.
+  - intros g [n ->] _. eexists _, _. split; [done|]. unfold ch_rank. cbn [pt_name pt_off].
+    change (chv (S n)) with (NSlot (chv n) 0 0). cbn [chv_depth]. rewrite chv_depth_chv. lia.
+Qed.
+
+Lemma ch_typed : styped ∅ [] [] (∅, None) ch_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ch_main.
   tstep.
-  { tstep; [apply sch_typed, HW|apply rch_typed, HW]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sch (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
+  { tstep; [apply sch_typed, HWs|apply rch_typed, HW]. }
+  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sch ch_C); [apply ch_ok|constructor|].
+  fresh_clean.
+  set (Ψ := [(ch_C, [pvar 0])]).
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) ch_C [pvar 0]) as HC.
+  { apply bcs_hold_self; [by left|vb_list|]. intros g Hg Hs.
+    change (plist [pvar 0]) with (plist (ids 1)).
+    destruct g as [x y|x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids. }
+  assert (Forall (skn W Ψ) [pvar 0]) as HK.
+  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pc 0 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None sch_body [pc 0 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None sch_body [pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 0 1). split; [done|]. apply sle_refl, HW. }
+      exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None rch_body [pc 0 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 ch_C None rch_body [pvar 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Definition ch_L (x y : point) : Prop := ∃ n, x = Pt (chc n) 1 ∧ y = Pt (chc (S n)) 0.
-
-Definition Wch : world := wgen (list_to_set (NConst <$> [0])) (λ _ _, False) ch_L.
-
-Lemma chc_root n : pn_root (chc n) = NConst 0.
-Proof. induction n; simpl; auto. Qed.
-
-Lemma Wch_strict : strict Wch.
-Proof.
-  apply (wgen_strict _ _ _ id (prank (λ _, 1) (λ _, 0) (λ r _ _, r + 2))); try done.
-  - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
-  - intros x y (n & -> & ->); right; unfold pt_root; cbn [pt_name]; rewrite !chc_root;
-      rewrite !elem_of_list_to_set; cbn; set_solver.
-  - intros x. apply prank_shift. lia.
-  - assert (∀ n, pn_rank (λ _, 0) (λ r _ _, r + 2) (chc n) = 2 * n) as Hr
-      by (induction n as [|n IH]; cbn; lia).
-    assert (∀ n, pn_nobr (chc n)) as Hb by (induction n; simpl; auto).
-    intros x y (n & -> & ->). rewrite !pt_erase_nobr by apply Hb.
-    unfold id, prank. cbn [pt_name pt_off]. rewrite !Hr. lia.
-Qed.
-
 Lemma ch_deadlock_free : deadlock_free (∅, {[+ ch_main +]}).
 Proof.
-  apply (soundness Wch _ TUnit Wch_strict).
-  apply ptyped_closed; [constructor|]. apply ch_typed; [apply Wch_strict| |].
-  - unfold pt_known, Wch. simpl. set_solver.
-  - intros n. apply glt_base. by exists n.
+  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed_s; [constructor|apply ch_typed].
 Qed.

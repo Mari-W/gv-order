@@ -34,6 +34,13 @@ Definition opt_rel (R : point → point → Prop) (o o' : option point) : Prop :
   | _, _ => False
   end.
 
+Definition lb_rel (R : point → point → Prop) (lb lb' : lbound) : Prop :=
+  match lb, lb' with
+  | LPt x, LPt y => R x y
+  | LTop, LTop | LBot, LBot => True
+  | _, _ => False
+  end.
+
 (** Box constraints under a binder of n point variables: every fact of
     one has a fact of the other of the same kind with related points
     (sharp edges 65). *)
@@ -59,7 +66,7 @@ Fixpoint teqW_r (ρ : sty → sty → Prop) (W : world) (T U : ty) : Prop :=
       match k with 0 => teqW_r ρ W T1 U1 | S _ => teqW_r eq W T1 U1 end
   | TSess s x, TSess r y => pteqW W x y ∧ ρ s r
   | TEx lb n C T1, TEx lb' n' C' U1 =>
-      opt_rel (pteqW W) lb lb' ∧ n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW_r ρ W T1 U1
+      lb_rel (pteqW W) lb lb' ∧ n = n' ∧ bcs_rel (pteqW W) n C C' ∧ teqW_r ρ W T1 U1
   | _, _ => False
   end.
 
@@ -88,7 +95,10 @@ Record level := Level {
     - V-Box / V-All: ∀ appears only under □; a box is the thunk
       λ_. fix x.e, and it is good when the thunk is in V at every
       instance of its point variables that meets its constraint C, in
-      every future world (sharp edges 58, 63). *)
+      every future world (sharp edges 58, 63).
+    - V-Ex: the value is in V at some known instance of the bound
+      points that meets C, and its channels lie at or above the lower
+      point (sharp edges 97). *)
 
 (** The thunk a box !e stands for: applied to ∗ it unrolls once. *)
 Definition thunk (eb : expr) : expr := Lam (rename S (subst1 (EBox eb) eb)).
@@ -146,7 +156,7 @@ Fixpoint Vdef (below : nat → level) (n : nat)
   | TEx lb m C T1 =>
       (* V-Ex: a known instance meets C, the value lies in the body at
          it, and its channels lie at or above the lower point (K7) *)
-      lb_below W (pt_inst σ <$> lb) (tenv_heads Θ) ∧
+      lbx_below W (lb_map (pt_inst σ) lb) (tenv_heads Θ) false ∧
       ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧
         bcs_hold (w_eq W) (w_lt W) (bcs_inst σ C) xs ∧
         Vdef below n W Θ (pt_inst (plist xs) ∘ pup m σ) T1 v
@@ -658,8 +668,8 @@ Proof.
   - rewrite (tbcs_ext σ σ'), (tinst_ext T1 (pup m σ) (pup m σ')); [done| |done].
     intros a. by apply tpup_ext.
   - by rewrite (tpt_inst_ext σ σ').
-  - assert (pt_inst σ <$> lb = pt_inst σ' <$> lb) as ->
-      by (destruct lb; simpl; [by rewrite (tpt_inst_ext σ σ')|done]).
+  - assert (lb_map (pt_inst σ) lb = lb_map (pt_inst σ') lb) as ->
+      by (apply lb_map_ext; intros; by apply tpt_inst_ext).
     rewrite (tbcs_ext σ σ') by done. apply and_iff_compat_l. f_equiv. intros xs.
     do 3 apply and_iff_compat_l. apply IH.
     intros a. simpl. by rewrite (tpup_ext m σ σ').
@@ -679,8 +689,8 @@ Proof.
     rewrite (tinst_ext T1 (pt_inst (pup m τ) ∘ pup m σ) (pup m (pt_inst τ ∘ σ))); [done|].
     intros a. apply tpup_comp.
   - by rewrite tpt_inst_comp.
-  - assert (pt_inst τ <$> (pt_inst σ <$> lb) = pt_inst (pt_inst τ ∘ σ) <$> lb) as ->
-      by (destruct lb; simpl; [by rewrite tpt_inst_comp|done]).
+  - assert (lb_map (pt_inst τ) (lb_map (pt_inst σ) lb) = lb_map (pt_inst (pt_inst τ ∘ σ)) lb) as ->
+      by (rewrite lb_map_comp; apply lb_map_ext; intros; apply tpt_inst_comp).
     rewrite tbcs_comp. apply and_iff_compat_l. f_equiv. intros xs.
     do 3 apply and_iff_compat_l. rewrite IH. apply Vdef_ext.
     intros a. simpl. rewrite <-tpup_comp, tpt_inst_comp. done.
@@ -695,12 +705,13 @@ Qed.
 (** V-Ex (K7, sharp edges 73). *)
 Lemma Vrel_ex_iff n W Θ lb m C T v :
   Vrel n W Θ (TEx lb m C T) v ↔
-  lb_below W lb (tenv_heads Θ) ∧
+  lbx_below W lb (tenv_heads Θ) false ∧
   ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧ bcs_hold (w_eq W) (w_lt W) C xs ∧
     Vrel n W Θ (ty_inst xs T) v.
 Proof.
   unfold Vrel. rewrite (level_at_eq n). cbn [mk_level lV Vdef].
-  assert (pt_inst pvar <$> lb = lb) as -> by (destruct lb; simpl; [by rewrite tpt_inst_pvar|done]).
+  assert (lb_map (pt_inst pvar) lb = lb) as -> by (destruct lb; simpl; [done|done|by rewrite tpt_inst_pvar]).
+
   rewrite tbcs_pvar. apply and_iff_compat_l. f_equiv. intros xs.
   do 3 (apply and_iff_compat_l). rewrite Vdef_inst. unfold ty_inst.
   rewrite (tinst_ext T (pt_inst (plist xs) ∘ pup m pvar) (plist xs)); [done|].

@@ -176,6 +176,19 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
 Definition subst1 (v : expr) (e : expr) : expr := subst (v .: Var) e.
 Definition subst2 (u v : expr) (e : expr) : expr := subst (v .: u .: Var) e.
 
+(** The encoded let of new (sharp edges 99). The calculus has no let
+    of a single variable, so let p = new ∗ in let ⟨a, b⟩ = p in e is a
+    let pair on ⟨new ∗, ∗⟩ that drops the unit. p is variable 1 of the
+    middle body, and e sees a and b at 1 and 0 and the spent p and unit
+    at 3 and 2. *)
+Definition let_new (e : expr) : expr :=
+  LetP (Pair (App ENew EUnit) EUnit) (LetU (Var 0) (LetP (Var 1) e)).
+
+(** The same program with e indexed as the body of a let pair, a at 1,
+    b at 0 and the outer variables from 2. The examples write this. *)
+Definition let_new_pair (e : expr) : expr :=
+  let_new (rename (upren (upren (λ x, 2 + x))) e).
+
 (** ** Closedness and free channels *)
 
 Fixpoint closed_at (n : nat) (e : expr) : bool :=
@@ -305,6 +318,30 @@ Proof.
   intros [|[|x]]; simpl; [done..|]. unfold compose.
   rewrite !subst_rename.
   etrans; [apply subst_ext; by intros y|]. apply subst_ids.
+Qed.
+
+(** ** The encoded let of new under renaming and substitution *)
+
+Lemma rename_let_new_pair r e :
+  rename r (let_new_pair e) = let_new_pair (rename (upren (upren r)) e).
+Proof.
+  unfold let_new_pair, let_new. simpl. do 3 f_equal.
+  rewrite !rename_rename. apply rename_ext. by intros [|[|x]].
+Qed.
+
+Lemma subst_let_new_pair σ e :
+  subst σ (let_new_pair e) = let_new_pair (subst (up (up σ)) e).
+Proof.
+  unfold let_new_pair, let_new. simpl. do 3 f_equal.
+  rewrite subst_rename, rename_subst. apply subst_ext. intros [|[|x]]; simpl; [done..|].
+  unfold compose. by rewrite !rename_rename.
+Qed.
+
+(** The first β of the encoded let after new gives the body back. *)
+Lemma let_new_body u v e :
+  subst (up (up (v .: u .: Var))) (rename (upren (upren (λ x, 2 + x))) e) = e.
+Proof.
+  rewrite subst_rename. etrans; [|apply subst_ids]. apply subst_ext. by intros [|[|x]].
 Qed.
 
 (** ** Free-variable predicates

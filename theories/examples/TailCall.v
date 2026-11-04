@@ -12,9 +12,11 @@
     under the frame variable μ with ζ ≺ μ. The send and the receive
     block at ι and ask ι ≺ μ, which is ι ≺ ζ ≺ μ. The tail call at
     (ι+1, ζ) has upper point ζ and asks ζ ≺ μ, the frame hypothesis.
-    Its force asks C[ι+1, ζ] ⊆ C ([tc_sub]). main forces at ((a,0), (z,0))
-    in [Wtc], where (a,k) ≺ (z,0) for every k, strict by the rank (0,k)
-    for (a,k) and (1,k) for (z,k). *)
+    Its force asks C[ι+1, ζ] ⊆ C ([tc_sub]).
+
+    In the empty world main creates c with {ι+k ≺ ι[0] ∣ k ∈ ℕ} and
+    forces at (ι, ι[0]). The ceiling is the carried point ι[0], which no
+    channel occupies (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -32,7 +34,7 @@ Definition tcr : expr :=
   EBox (Lam (LetP (App ERecv (Var 0)) (LetU (Var 1) (App (App EForce (Var 3)) (Var 0))))).
 
 Definition tc_main : expr :=
-  LetP (Pair tcs tcr) (LetP (App ENew EUnit)
+  LetP (Pair tcs tcr) (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 
@@ -87,58 +89,67 @@ Proof.
     exists (pv 1 0). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma tc_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
-  (∀ k, w_lt W (pc 0 k) (pc 1 0)) →
-  typed W ∅ [] ∅ [] (∅, None) tc_main TUnit.
+(** main creates c with the creation constraint {ι+k ≺ ζ ∣ k ∈ ℕ}, where
+    the ceiling ζ is the carried point ι[0]. Sb carries no channel, so
+    ζ is no channel point. It is a point of ι, known through the
+    hypothesis of new. Every fact stays inside ι, and the pair rank
+    (0, k) for ι+k and (1, o) for ζ+o orders them (sharp edges 105). *)
+Abbreviation tcz := (Pt (NSlot (NVar 0) 0 0) 0).
+
+Definition tcc_P (g : fact) : Prop := ∃ k, g = FLt (pv 0 k) tcz.
+Definition tcc_C : bcs := BCs [] tcc_P.
+
+Definition tcc_rank (x : point) : nat * nat :=
+  (match pt_name x with NSlot (NVar 0) 0 0 => 1 | _ => 0 end, pt_off x).
+
+Lemma tcc_ok peq plt : cc_ok peq plt tcc_C.
 Proof.
-  intros HW Ha Hz H. unfold tc_main.
-  assert (bcs_hold (seqs W []) (slt W []) tc_C [pc 0 0; pc 1 0]) as HC.
-  { apply bcs_hold_intro. intros g (k & ->) _. apply sl_w, H. }
-  assert (Forall (skn W []) [pc 0 0; pc 1 0]) as HK.
-  { constructor; [by left|constructor; [by left|constructor]]. }
+  apply (cc_ok_inner peq plt tcc_P (λ x y, lexlt (tcc_rank x) (tcc_rank y))).
+  - unfold lexlt. intros x y z; lia.
+  - unfold lexlt. intros x; lia.
+  - intros [n o] _. unfold lexlt, tcc_rank, pt_shift. simpl. right. split; [done|lia].
+  - intros g [k ->] _. eexists _, _. split; [done|]. unfold lexlt, tcc_rank. simpl. left. lia.
+Qed.
+
+Lemma tc_typed : styped ∅ [] [] (∅, None) tc_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tc_main.
   tstep.
   { tstep; [apply tcr_typed, HW|apply tcs_typed, HW]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sb (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
+  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sb tcc_C); [apply tcc_ok|constructor|].
+  fresh_clean.
+  set (Ψ := [(tcc_C, [pvar 0])]).
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) tc_C [pvar 0; tcz]) as HC.
+  { apply bcs_hold_intro. intros g (k & ->) _. cbn.
+    eapply (sl_hyp0 _ _ _ _ (pv 0 k) tcz); [by left|by exists k|cbn; lia|reflexivity|reflexivity]. }
+  assert (Forall (skn W Ψ) [pvar 0; tcz]) as HK.
+  { constructor; [eapply skn_inst; [by left|by left|done]|].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  match goal with |- typed _ _ _ _ [Some ?A; _; None; None; Some ?B; Some ?D] _ _ _ =>
+    change A with (TSess (dual Sb) (pvar 0));
+    change B with (TBox 2 0 tc_C (TLolli None None TUnit tcr_body));
+    change D with (TBox 2 0 tc_C (TLolli None None TUnit tcs_body)) end.
+  tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some tcz) (Some (pvar 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcr_body [pc 0 0; pc 1 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcr_body [pvar 0; tcz]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 1 0). split; [done|]. apply sle_refl, HW. }
+      exists tcz. split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcs_body [pc 0 0; pc 1 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcs_body [pvar 0; tcz]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Definition tc_L (x y : point) : Prop := ∃ k, x = pc 0 k ∧ y = pc 1 0.
-
-Definition Wtc : world := wgen (list_to_set (NConst <$> [0; 1])) (λ _ _, False) tc_L.
-
-Definition tc_rank (x : point) : nat * nat :=
-  (match pt_root x with NConst 1 => 1 | _ => 0 end, pt_off x).
-
-Lemma Wtc_strict : strict Wtc.
-Proof.
-  apply (wgen_strict_lex _ _ _ id tc_rank); try done.
-  - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
-  - intros x y (k & -> & ->); right; rewrite !elem_of_list_to_set; cbn; set_solver.
-  - intros x. unfold lexlt, tc_rank, pt_shift. cbn. right. split; [done|lia].
-  - intros x y (k & -> & ->). unfold lexlt, tc_rank, id. cbn. left. lia.
-Qed.
-
 Lemma tc_deadlock_free : deadlock_free (∅, {[+ tc_main +]}).
 Proof.
-  apply (soundness Wtc _ TUnit Wtc_strict).
-  apply ptyped_closed; [constructor|]. apply tc_typed; [apply Wtc_strict| | |].
-  - unfold pt_known, Wtc. simpl. set_solver.
-  - unfold pt_known, Wtc. simpl. set_solver.
-  - intros k. apply glt_base. by exists k.
+  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed_s; [constructor|apply tc_typed].
 Qed.

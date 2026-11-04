@@ -1511,6 +1511,512 @@ The strictness of such a world is a property of the whole program, which entry
 statements of soundness and composition are unchanged. 19 new results of
 version 3 and 4 of MPRounds.v are closed under the global context.
 
+**90. A channel at a fresh point between known points (Claude, 2026-11-01, branch fresh-points). Numbers 72 to 89 are reserved on another branch.**
+No point built from existing names lies strictly between two given points, so a
+box over ι ≺ κ cannot create a channel between them
+(`fb_between_underivable`). E-NewFresh (`t_newfresh`, static/Typing.v) types
+let (x, y) = new ∗ in t with the channel at a fresh point ι and the facts
+L ≺ ι ≺ H for lists L and H of known points. Betweenness asks Γ ⊢ l ≺ h for
+every l ∈ L and h ∈ H, and it is the soundness condition. Without it the world
+of a run could hold h ≺ l and close a cycle through ι. Three choices. ι is a
+bound point variable, as the ιs of E-Exp are, so freshness is the binder and
+costs no side condition. The facts enter the body as one more box hypothesis
+(`fresh_bcs L H`, instance [ι]), so the fact theory, knownness and
+substitution need no new clause. C holds ≺ facts between ι itself and known
+points only, because ≡ to an old point is E-Const and no example needs facts
+on ι+k or ι.i. The fundamental case of `typed_sem_rules` instantiates ι with
+the constant that O-New picks. docs/extensions/fresh-points.md has the rule
+and the proof.
+
+**91. World extension already admits fresh points (Claude, 2026-11-01).**
+The task expected ⊑ₒ to change, because it seemed to add only facts among new
+points. It does not. Both `wext_fresh` and the ⊑ₒ of gvsharp-orders.lagda
+forbid only new facts between two old points and let the fresh constant relate
+to old ones, which E-Const uses for its alias (a, 0) ≡ ι. With betweenness the
+world W plus L ≺ (a, 0) ≺ H adds no fact between old points and stays strict
+(`wext_fresh_between`, rules/FreshRules.v, by the closed form `blt` of its
+order). So ⊑ₒ, `fresh_extension`, `wext_fresh_join` and the composition lemmas
+are unchanged, and so are the statements of `soundness`, `fundamental` and
+`fundamental_proc`.
+
+**92. Fresh points shrink the worlds of closed programs (Claude, 2026-11-01).**
+examples/FreshBetween.v types the box of 90 with L = [ι] and H = [κ] and closes
+it into a program with partners (`fb_deadlock_free`, at the world with the one
+fact (0, 0) ≺ (1, 0)). The same program types with E-NewFresh for its two
+top-level news, the second one above the first (L = [γ]). It then needs no
+constant and no fact, and `fb_deadlock_free_empty` applies `soundness` in the
+empty world. A closed example can move its world facts into E-NewFresh this way
+when each fact relates the first point of a channel to points that exist when
+the channel is created. Facts on a later instant of the new channel, such as
+(b, 1) ≺ (a, 0), stay in the world. The existing examples were left as they
+are. Entry 93 lifts this restriction.
+
+**93. Facts on every point of the fresh channel (Claude, 2026-11-01, second stage).**
+The list form L ≺ ι ≺ H cannot type a fresh channel that acts several times
+while a later point waits (examples/FreshMany.v needs δ+k ≺ κ for k = 0, 1, 2).
+`t_newfresh` now takes a box constraint C of one variable whose every fact
+relates one point of ι (ι+k, (ι+b).i+k, and deeper carried points) to one outer
+point, in either direction (`fresh_ok`, `fresh_lo`, `fresh_hi`). C may be
+infinite. The list form is the lemma `t_newfresh_lh`, and FreshBetween.v uses
+it unchanged. Two choices. C has no fact between two points of ι, because then
+paths could run inside ι and C would need its own strictness. C has no ≡ fact
+(96). The semantic rule takes two relations Lo and Hi with the fresh point as
+the variable 0, so rules/ needs no box constraints, and `pfresh` puts the
+constant in.
+
+**94. The exact betweenness for points of the fresh channel (Claude, 2026-11-01).**
+For every fact u ≺ p and q ≺ v of C with q on the name of p at an offset at
+least that of p (`ple p q`), Γ ⊢ u ≺ v. A path through a enters at p, moves only
+along program order of one name, and leaves at q. Carried roots do not connect
+ι to ι.i in order, because a world relates a carried point to its base only
+through facts and C has none between points of ι. So "q reachable from p by
+program order or carried roots" in the task reduces to `ple p q`.
+`wext_fresh_between_gen` builds the world with a closed form `gblt` of four
+shapes and a sixteen-case transitivity proof. Betweenness closes the four cases
+in which a path leaves a after it entered.
+
+**95. Retyping the closed examples with fresh points (Claude, 2026-11-01).**
+Sync, cycle, scheduler and request/reply type in the empty world, tail call
+keeps the constant of its ceiling, and relay keeps the constant of c with its
+facts on its own carried points (SyncFresh.v, CycleFresh.v, SchedulerFresh.v,
+RequestReplyFresh.v, TailCallFresh.v, RelayFresh.v). Scheduler creates r₁ by
+E-Const at the fresh point of r₀, which gives the alias that link needs.
+Request/reply puts the infinite family {γ+k ≺ ε+k, ε+k ≺ γ+k+1} into C, and
+program order gives its betweenness. Delegation and received chain do not
+retype, because their facts relate a channel to its own carried points (93).
+Forwarder does not, because it aliases carried points of two channels for every
+k. Factory under □∀ι creates no channel in main. No box constraint gets
+simpler. fresh-points.md has the table.
+
+**96. One ≡ fact in E-NewFresh not done (Claude, 2026-11-01).**
+The optional part was to allow one fact ι ≡ x and to derive E-Const at x from
+it. An alias identifies every successor and carried point of ι with those of
+x, so the semantic world combines the alias world `W0'` of E-Const with `Wg`,
+and strictness and conservativity need a closed form for the combination. That
+is a second argument of the size of 94, so it stays open. E-Const is unchanged.
+
+**97. Existential points in the base relation (Claude, 2026-11-01, branch exists).**
+The type former ∃^ℓ ιs. C. T of branch `cfst` (its 73) is ported without session
+variables and branch roots, as `TEx` in types/Types.v with E-Pack, E-Open and
+V-Ex. A value lies in T at some known instance of the ιs that meets C, and its
+channels lie at or above the lower point ℓ. The body of ∃ is no subterm at an
+instance, so `Vdef` reads its type under a point substitution and the ∃ clause
+passes the instance to the body. Invariance proofs that went by induction on
+the type now go by `ty_ind_ex`, induction on the size with the hypothesis at
+every instance of the bodies of □ and ∃. Channel creation gets the second
+signature new : ∗ ⊸^⊥_⊤ ∃^ℓ ι. C. S@ι ⊗ S̄@ι with C the fresh constraint of
+93 and its betweenness, proved good by the world of `wext_fresh_con`.
+docs/extensions/existentials.md, part 1.
+
+**98. The lower point of new is not ⊥, so E-NewFresh stays primitive (Claude, 2026-11-01).**
+The task asked for ℓ = ⊥ if the point syntax can say "below everything". It
+cannot. A point is a constant, a variable or a carried point with an offset.
+Every world has x ≺ x+1, and a world may order any two known points either way,
+so no point lies below every point in every world. ⊥ as a lower point would
+also have to enter the frame of a pair as a point below which nothing may
+block, and frames are sets of points. So ℓ is the outer point u of a fact u ≺ ι
+of C, which makes ℓ ≺ (a, 0) hold in the world that O-New builds. E-NewFresh
+then follows from new and E-OpenPair (`t_newfresh_open`), with the one premise
+`fresh_lo C u ι` that `t_newfresh` does not have. Following the task, the
+premise was not added to the system and `t_newfresh` stays a rule. Constraints
+with no fact below ι itself (SyncFresh.v, the first channel of CycleFresh.v,
+TailCallFresh.v) need it. A bottom point in the point syntax would remove the
+premise, and that is a decision on the syntax.
+
+2026-11-01, later. The author approved a ⊥ marker that is no point. The lower
+bound of ∃ is ⊤, ⊥ or a point, and ⊥ occurs only in that slot. A frame carries
+a flag for a held ∃^⊥ in place of a point. new takes ∃^⊥, the premise
+`fresh_lo C u ι` is gone, and E-NewFresh is no rule (103).
+
+**99. E-OpenPair opens the scrutinee of a let pair (Claude, 2026-11-01).**
+E-Open of `cfst` opens a variable of Δ. The term of E-NewFresh is
+let (x, y) = new ∗ in t, and no variable of it has existential type, so E-Open
+cannot reach the result of new. E-OpenPair takes a scrutinee of type
+∃^ℓ ιs. C. T₁ ⊗ T₂ and types the body with x : T₁ and y : T₂ under the hypothesis
+C, the ιs bound like the ιs of E-Exp. Its semantic proof is the one of E-LetPair
+with the witness read off V-Ex (`sem_typed_openp`). E-Open is kept as well.
+
+2026-11-01, later. E-OpenPair is removed, because it is encodable. The program
+let p = new ∗ in let (x, y) = p in t types with a let, E-Open on p and
+E-LetPair. The calculus has no let of one variable, so `let_new` binds p with a
+let pair on ⟨new ∗, ∗⟩ and drops the unit with E-Let*. `t_newfresh_open` and
+`t_newfresh_lh_open` now type `let_new e` with the same premises, the body
+seeing the spent p and unit as two empty slots. The let λp. t applied to new ∗
+would not do. E-Abs asks a lower bound below every head of the captured
+environment and restarts the frame of the body, two premises the old lemmas did
+not have. The examples that used the lemmas type copies of their programs with
+`let_new_pair`. `t_openp`, `sr_openp` and `sem_typed_openp` are gone, and the
+statements of soundness, fundamental, fundamental_proc and the composition
+lemmas are unchanged.
+
+**100. V-Box reads its thunk through the body (Claude, 2026-11-01).**
+V-Box read the thunk of a box with the arrow relation `Vfun` at the instantiated
+body, and `Vrel_box_iff` turned that into V through `Vrel_Vfun`, which says a λ
+lies in V only at an arrow type. A λ now lies in V at ∃ over an arrow, so
+`Vrel_Vfun` and `Vrel_lam_inv` are false. V-Box now reads the thunk through
+`Vdef` at the body under the instance, which is structural with the
+substitution argument of 97. `Vrel_box_iff` keeps its statement word for word.
+For the thunk types the static system builds the two readings agree.
+
+**101. ∀ apart from □ (Claude, 2026-11-01, branch exists).**
+□T (`TBoxM`) and ∀ιs. C. T (`TAll`) are two type formers, and
+`TBox n C T` is a notation for □(∀ιs. C. T), so the examples compile unchanged.
+V-□ puts the thunk of the box in V at T. V-∀ puts a value with no channel in V
+at every known instance that meets C in every later world. `Vrel_box_iff` keeps
+its statement as the composite of the two. E-Gen generalizes a value over the ιs
+under C with an unlimited environment and an empty term environment, E-Inst
+instantiates at known points that meet C. V-∀ asks the value to hold no channel
+and to be a value, because a ∀ with no admissible instance would otherwise admit
+every term. With that the restriction "∀ only directly under □" is not needed
+by any proof and is dropped. docs/extensions/existentials.md, part 2.
+*Undone 2026-11-01 (109).*
+
+**102. E-Exp stays a rule (Claude, 2026-11-01).**
+The task asked to derive E-Exp from rules for □ and ∀. It does not split. The
+semantic E-Exp is an induction on the step index in which the box is used at
+its own type □(∀ιs. C. ∗ ⊸^u_⊤ T) at smaller indices only, and the smaller index
+comes from the thunk arrow under the ∀. A general introduction of □ whose
+premise types the thunk sees the box at the same index, so the induction does
+not close, and the ∀ cannot sit outside it as a separate E-Gen. The thunk also
+ignores its argument of type ∗, which is linear, so E-Abs cannot type it. E-Exp
+is therefore the introduction of □ at a ∀ over a thunk type, with its premise
+unchanged. E-Force was a lemma (`typed_force`) and stays one.
+
+**103. The lower bound ⊥ and the flag of frames, E-NewFresh goes (Claude, 2026-11-01, branch exists).**
+The lower bound of `TEx` is `lbound := LTop | LBot | LPt x`. ⊥ says nothing
+about where the channels of the value lie, and every value meets it. heads of
+∃^⊥ is empty and sets the ⊥ flag (`hbot`, `lenv_bot`), which the second
+component of a static frame carries (`fslot`, `sf_unionb`). A set of heads with
+the flag lies below no known point. So the gate fails for every upper point
+under the flag, E-Abs does not capture an unopened ∃^⊥, send does not carry
+one, and E-Pack at ⊤ or a point asks the flag off. These are the old premises
+read with the flag, and no rule has a premise of a new kind. Semantically the
+flag is the point `pbot` with a variable root, below which no point lies in a
+well-formed world, and `Erel_bind` accepts it in place of a bound on the
+context. new takes ∃^⊥, so `t_newfresh_open` and `t_newfresh_lh_open` have the
+premises of the old rules. `t_newfresh`, `t_newfresh_lh`, `sr_newfresh` and
+rules/FreshRules.v are deleted, and every fresh example types a copy of its
+program with the encoded let of new. The statements of soundness, fundamental,
+fundamental_proc and the composition lemmas are unchanged.
+docs/extensions/existentials.md, part 3.
+
+**104. One signature for new, with an alias ι ≡ x (Claude, 2026-11-01, branch exists).**
+The author decided that new keeps the existential signature alone, with one
+alias ι ≡ x allowed in its constraint next to the ≺ facts. `fresh_ok C` now
+says that C has the ≺ form of 93 (`fresh_lt`) or that form plus one fact
+ι ≡ w with w outer (`fresh_eq`). The condition `fresh_between` asks
+betweenness (94) without an alias, and with it u ≺ p[w/ι] and q[w/ι] ≺ v for
+every ≺ fact of C. The alias identifies every point of ι with a known point,
+and a fresh extension adds no fact between known points, so these facts must
+hold already. The condition is therefore the weakest one for the world model.
+At C = {ι ≡ x} it is empty and new asks only that x is known, the premise of
+the old signature. The semantic world is the alias world of the old signature
+(`wext_fresh_new`), which is why no second closed form was needed, against the
+estimate of 96. `t_new_at` (static/Fundamental.v) types `let_new e` from x
+known by E-Open, E-Conv on the opened pair and `typed_pinst`, and every example
+now creates its channels this way. `KTNew` is not deleted. The translations
+from PGV and from Padovani and Novara still use it. PGV proves deadlock freedom
+of its source programs by being the identity on applied new, and PN relates
+`LetP (App ENew EUnit) e` to the source step of new in its simulation. Both
+need more than a mechanical port, and that waits for the author.
+docs/extensions/existentials.md, part 4.
+*Amended 2026-11-01 (Claude, branch exists).* The author approved the port, and
+`KTNew` is deleted. `konst_ty` has one constructor for new and `Erel_app_new`
+one case. PN translates let a = new() in e to `let_new_pair e′`, typed by
+`t_new_at` at the point B[RCh c]. Its simulation has `tr_new` for the encoded
+let and `tr_newp` for the let pair of the two ends, and `post` at a new step
+admits the two β steps that follow the channel. PGV translates new to
+`new_tr` = λz. let ∗ = z in let ⟨a, b⟩ = new ∗ in ⟨a, b⟩, typed by `t_new_at`
+at the protocol point of S. pgv/PGVSimulation.v relates every program to its
+translation by the congruence generated by k ~ `kon_eta k` and proves
+`pgv_deadlock_free_source`, so the three PGV examples keep their statements.
+No statement of soundness, fundamental, fundamental_proc, a composition lemma
+or a theorem of PGV or PN changed, and no typing rule was added.
+docs/extensions/existentials.md, part 4.
+
+**105. Creation constraints of the general form (Claude, 2026-11-01, branch exists).**
+The author approved the experiment of static-system.md §5. The constraint C
+of new is any set of ≺ and ≡ facts, finite or infinite, between points of ι
+and outer points. new asks `cc_ok`, which says that Γ + C is acyclic and
+conservative over Γ (types/Types.v). `fresh_ok` and `fresh_between` are no
+longer premises. `KTNewEx` takes `cc_ok peq plt C` and the outer points known.
+The run-time world is W with the facts of C at the fresh constant
+(`wext_cc`, relation/Creation.v). Its proof is one closed form of T + C
+(`interp`) in which a path enters the fresh name at most twice, because
+conservativity closes every detour through it. The same lemma moves `cc_ok`
+along world extension, renaming and substitution (`cc_ok_transfer`). The two
+forms of part 4 follow from `cc_model` (`cc_ok_fresh`, `cc_ok_alias`), and
+`t_new_at` kept its statement. rules/FreshWorlds.v and the alias world of
+rules/TermRules.v are gone. No typing rule was added, and the statements of
+soundness, fundamental, fundamental_proc and the composition lemmas did not
+change. docs/extensions/existentials.md, part 5.
+
+**106. Acyclicity relative to Γ (Claude, 2026-11-01).**
+static-system.md asks Γ + C ⊬ p ≺ p. `cc_acyclic` asks that every cycle of
+Γ + C be a cycle of Γ. The two agree when Γ is acyclic, and soundness only
+meets acyclic Γ, because the world of a run is strict. The relative form is
+needed for `typed_pinst`. A substitution may send the hypotheses of a box
+into a cyclic context, and the absolute form would then fail for a C that
+did not change. The relative form transfers, by `interp` at the target
+theory.
+
+**107. The examples in the empty world (Claude, 2026-11-01).**
+Every example that creates its channels in main types in `Wpo []`, and its
+deadlock theorem kept its statement. Delegation, received chain and relay
+state facts between ι and its carried points in C, such as ι ≺ ι[0].
+Forwarder states the infinite family (γ+k)[0] ≡ (ε+k)[0] in the constraint
+of b. Tail call takes its ceiling at the carried point ι[0], which no
+channel occupies, because Sb carries none. Factory resists. In `fac_main`
+main creates no channel, so no point is known, and the box returns its
+session at a point that its type names, straight into recv with no variable
+to open. In `fa_main` main needs (a,0) ≺ (b,0) and (a,1) ≺ (b,0) between
+the sessions of two box calls, and neither is in scope when the other is
+created. The table is in existentials.md, part 5.
+
+**108. W stays in the static judgment (Claude, 2026-11-01).**
+Stage 2 of the experiment asked whether the translations from PGV and from
+Padovani and Novara can produce creation constraints in place of their
+worlds. They cannot without a change to a statement. PGV fixes the point of
+a channel by its session type (`tr_ty`, `ppt`) and the bounds of a function
+by global priorities, and its new is a value whose type names the point
+outside any binder. A function typed before a channel exists is compared by
+the gate of E-App with the point of a channel created inside another λ, and
+no creation constraint sees both. PN is relative to an anchor, but the top
+level anchor is the root constant of `Wpn`, and both examples force a box
+there before their first new. Factory also needs a point that main does not
+create. So W is not removed, and `soundness` keeps `strict W`.
+*Amended 2026-11-01 (110 to 112).* Factory and PN start under a top-level
+constraint C₀. Only the PGV translation keeps a world.
+
+**109. ∀ is bundled with □ again (author's decision, 2026-11-01, branch exists).**
+The split of 101 is undone. No program uses E-Gen or E-Inst, because every
+∀ enters by E-Exp and leaves by force, and the fewest rules are the goal.
+The box type is one constructor `TBox n C T` again, so ∀ occurs only directly
+under □ by the syntax of types. `TBoxM`, `TAll`, `t_gen`, `t_inst`, `sr_gen`,
+`sr_inst`, `sem_typed_gen`, `sem_typed_inst`, `Vrel_boxm_iff`, `Vrel_all_iff`
+and `fchans_thunk` are deleted. V-Box has its bundled clause again, and
+`Vrel_box_iff` keeps its statement. The revert of bb3591f needed only the
+merge with parts 3 to 5 (the lower bound ⊥ in the ∃ cases and the deleted
+E-OpenPair). `typed` has 18 constructors, and the two beyond `orders-lr` are
+E-Pack and E-Open. No statement of soundness, fundamental, fundamental_proc,
+adequacy, a composition lemma, an example or a translation changed.
+docs/extensions/existentials.md, part 2.
+
+**110. A creation constraint at program start (author's decision, 2026-11-01, branch exists).**
+A source program starts with top-level point variables 0, …, n-1 under one
+constraint C₀ and is typed in the empty world `wnil` with the hypothesis
+(C₀, ids n). `soundness_source` (static/Fundamental.v) reads
+`c0_acyclic n C₀ → prim T → typed wnil ∅ [(C₀, ids n)] ∅ [] (∅, None) t T →
+deadlock_free (∅, {[+ t +]})`. `c0_acyclic` asks that C₀ have no outer
+points and that the closure of its facts with program order have no cycle.
+Against the empty context conservativity is empty. The run starts in
+`wc0 n C₀`, which holds the facts of C₀ at the constants 0, …, n-1, built as
+`wext_cc` builds the world of new. Factory and the PN translation moved to
+C₀. `fac_main` starts with one variable and no fact, `fa_main` with two and
+a ≺ b, a+1 ≺ b, and PN with one variable under `Crel`, its top-level anchor.
+`Wfa`, `Wpn`, `Wpn_strict` and `good_root` are deleted. `pn_translate` reads
+`wnil` in place of `Wpn`. No statement of `soundness`, `fundamental`,
+`fundamental_proc`, `adequacy`, an example deadlock theorem or a PN theorem
+other than `pn_translate` changed, and no typing rule was added.
+docs/extensions/existentials.md, part 6.
+
+**111. The PGV translation keeps its world (Claude, 2026-11-01).**
+A payload of send and recv names only its own slots and constants, because
+point instantiation does not enter session types (`kscoped`). PGV's payloads
+hold global points, the protocol point of a delegated channel
+(`tr_ty (PSess s) = S@ppt s`) and the bounds `upt n`, `lpt n` of a function.
+Rooted at a top-level variable these are free variables inside a session
+type, and E-Const rejects them. Moving PGV to C₀ needs payloads relative to
+their carrier, with C₀ aliasing each slot to its global point. That changes
+`tr_sty` and the payload lemmas, a redesign the task did not allow. The work
+stopped there, and `pgv_translate` keeps `typed Wpgv Φ []`.
+
+**112. W stays in `typed` (Claude, 2026-11-01).**
+P-Term types running threads whose channels sit at constants, and its
+premise `tenv_dual (w_eq W)` and the premise of E-Ch read their facts from W.
+Removing W from `typed` needs a second judgment for configurations, or
+configurations at point variables, and touches about 460 uses in 36 files.
+W stays as a parameter. Every source theorem except the PGV translation fixes
+it to the empty world, and knownness at source level comes from hypotheses.
+This replaces 108 for Factory and PN.
+
+**120. The factory types in the empty world through E-Pack (Claude, 2026-11-01, branch exists-factory).**
+Numbered 120 to stay clear of the entries another agent adds on branch
+`exists`. examples/FactoryEx.v types the box `fac` of Factory.v at an
+existential result, □(∀ζ. ∗ ⊸^⊥_⊤ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ι), and
+at the same type with no ∀ and the empty constraint. The constraint of the
+existential is the creation constraint of the new inside the box, and E-Pack
+at ⊥ takes the fresh point as its witness. The client calls the box without
+∀ first, opens the handle p, calls the box with ∀ at ζ = p, opens the handle
+q, and uses p while it holds q. The hypothesis of the second E-Open gives
+p ≺ q and p+1 ≺ q. `fx_deadlock_free` holds in `Wpo []`. This answers the
+second half of 107 for the factory pattern. A fact between the sessions of
+two calls needs no world when the second call takes the point of the first
+as a parameter and the result hides its own point behind ∃. Factory.v keeps
+its programs. They pass the result of force straight to recv, so nothing can
+open it. `fx_no_first_call` records that the first call of the parametric box
+has no instance at the start of main in the empty world. No rule or
+statement changed. docs/extensions/existentials.md, part 5.
+
+**121. Program order is a rule of the fact theory (Claude, 2026-11-02, branch exists).**
+Numbered 121 to 124 to stay clear of 113 to 119, which another agent may
+use. The static ≺ took program order from the world law `wf_lt_po` through
+`fl_w`, so a derivation that reads x ≺ x+1 read a world. `fl` gained the rule
+`fl_po`, Γ ⊢ x ≺ x + 1 for every point with no premise, and the fact is now
+derived from the hypotheses alone. The law stays in `world_wf`, because the
+logical relation reads program order from the world of a run. The universal
+disjunct of `po_or_supp` is same name with a greater offset, wider than one
+step, so `sl_po_n` and `sl_pofs` recover it by transitivity and the rule
+keeps its one-step shape. `fl_map` has one more generator and its four users
+got one more case. The extension is conservative, it adds a derivable fact
+and removes none, and `slt_nil` still reads a hypothesis-free static fact
+back as a fact of W. No statement changed.
+
+**122. A source judgment without a world (author's decision, 2026-11-02, branch exists).**
+`styped` (static/Source.v) types a self-contained single-threaded source
+program and reads no world. Its type is
+`fhyps → hyps → lenv → sframe → expr → ty → Prop`, so Θ is gone too, which
+is what makes E-Ch inapplicable and the frames of the composing rules lose
+the heads of Θ. Every rule of `typed` for a form without channel constants
+is mirrored and no rule is added. The fact theory of the hypotheses is
+`heqs Ψ` and `hfl Ψ Φ`, `seqs` and `fl` without the world generators, and
+knownness is `hyp_known Ψ`, a point rooted at an instance point of a
+hypothesis. That is the reading of knownness in static-system.md before
+worlds entered the static system. A world is a don't-care for such a
+derivation because a well-formed world relates two points only by program
+order or between two points of its support, every support name is a
+constant, and a source derivation names no constant (`wf_eq_supp`,
+`wf_lt_supp`, `wf_names_const`). `fundamental`, `fundamental_proc`,
+`adequacy` and `soundness` keep their statements, and `typed` keeps W for the
+process layer. This narrows 112 to configurations.
+docs/extensions/existentials.md, part 7.
+
+**123. Both directions of the embedding are needed (Claude, 2026-11-02, branch exists).**
+`styped_typed` sends a source derivation into `typed` at every world and asks
+nothing of the world, not even well-formedness. `typed_styped` sends a
+derivation in a well-formed world of empty support back, which covers `wnil`
+and the `Wpo []` of the examples, and `styped_iff` is the equivalence. The
+development uses both. `soundness_source` takes `styped` and applies
+`styped_typed` at `wnil`, and the examples build their derivation with the
+rules and tactics of `typed` in `Wpo []` and read it back with
+`typed_styped`. Rebuilding twenty example derivations with the rules of
+`styped` would need a second copy of the tactic layer of
+examples/ExampleTools.v, and the equivalence makes the two derivations the
+same claim. The component lemmas for boxes keep `typed`, because they are
+steps inside a derivation whose whole-program lemma converts at its end.
+
+**124. A creation constraint needs no world (Claude, 2026-11-02, branch exists).**
+`cc_ok` is not monotone in its two relations by its shape. Acyclicity asks
+that every cycle of Γ + C come from a cycle of Γ, and conservativity that
+every fact of Γ + C between points off ι be a fact of Γ, and a larger Γ makes
+both hypotheses easier as well as both conclusions. `cc_ok_mono`
+(relation/Creation.v) proves it monotone anyway through `cc_ok_transfer` and
+`interp`, which cut a path through ι and insert the shortcut that
+conservativity gives. So `new` in the source judgment checks its constraint
+against `heqs Ψ` and `hlt Ψ`, the hypotheses alone, and both directions of
+the embedding carry the premise. The ∃ rules carry over through
+`bcs_hold_mono` and `konst_ty_mono`. No premise of `new` or of E-Pack
+changed.
+**130. Programs from the literature, typed natively (Claude, 2026-11-02, branch exists-examples).**
+Numbered 130 to stay clear of the entries another agent adds on branch
+`exists`, which uses 105 to 112, and of 120 on `exists-factory`. This range
+uses 130 to 135. An audit found that almost every example is our own program
+and that the literature reached the development only through the PGV and
+Padovani–Novara translations, so the order facts of a published program came
+from the translation's world. Four programs now have a native derivation.
+examples/MilnerSched.v is Dardha and Gay's Example 1 in full with k = 3
+(dardha2018new p. 3), examples/KobForwarder.v is Kobayashi's Example 2
+(kobayashi2006new p. 11), examples/FactServer.v is his factorial server
+(p. 2), which is also Padovani's (3) (padovani2014deadlock p. 2), and
+examples/Stream.v is Padovani's (4) (p. 2). All four type in `Wpo []`.
+examples/LitTools.v holds the shared tools. No typing rule was added and no
+statement changed, apart from one comment in Scheduler.v and one in Ordered.v.
+docs/extensions/literature-examples.md.
+
+**131. One root carries a whole topology (Claude, 2026-11-02).**
+The full scheduler has six channels and needs them totally ordered. Chaining
+six creation constraints, each naming the previous point, nests `bcs_inst`
+six deep and makes every fact a composition of shifts. Instead the first `new`
+takes a fresh ι with the empty constraint and `t_new_at` puts the other five at
+ι+2, ι+4, ι+6, ι+8 and ι+10, which the hypothesis of the first `new` makes
+known. Every fact is then program order. The same device gives the points of
+Dardha and Gay's priority assignment (dardha2018new p. 9), two of whose
+priorities coincide for the two ends of one channel. A creation constraint is
+needed only where a program wants facts that program order does not give.
+
+**132. A recursive server places each round at a carried root (Claude, 2026-11-02).**
+A server that creates one channel per call needs that channel ordered against
+the channel the call acts on. A creation constraint {κ + k ≺ ι} with the box
+variable ι as an outer point does it, and a hypothesis with outer points has no
+lemma like `sl_hyp0`. The three recursive servers instead place the fresh
+channel at ι.0, the first carried root, by `t_new_at`, and state the order in
+the box constraint, which names ι alone. For the forwarder and the factorial
+server ι.0 carries no payload, the use of a carried point that TailCall.v's
+ceiling makes. For `stream` the fresh channel is the payload, so ι.0 is where
+sender and receiver name it alike. The list form of `t_newfresh_lh_open` would
+not do, because it states κ ≺ ι and not κ+1 ≺ ι, and the server closes the
+fresh channel before it answers.
+
+**133. A constraint that falls along the depth has no rank in ℕ (Claude, 2026-11-02).**
+The two servers order each round strictly below its caller, so the rank of
+ι.0ⁿ falls as n grows, and no function into ℕ does that for every n.
+`cc_ok_inner` asks only for a transitive irreflexive relation containing
+program order, so `dlt` of LitTools.v reads a point lexicographically as its
+depth, reversed, and its offset. `ult` is the same with the depth not reversed,
+for the producer of `stream`, which orders each round above its caller.
+ReceivedChain.v's rank 2·depth + offset covers its own facts and not these.
+
+**134. The congruences of ≡ buy finiteness, not expressiveness (Claude, 2026-11-02).**
+No example derived a fact by `se_shift` or `se_slot`. Scheduler.v gets its
+successor alias from the world's closure field `wf_eq_shift` and lifts it with
+`se_w`, and Forwarder.v states its carried-root alias fact by fact.
+examples/Congruence.v is the smallest program we found whose derivation uses
+both, a box over ι ≡ ι′ that sends a channel held at ι′.0 on a channel at ι and
+closes it at ι+1 against a channel at ι′+2. Neither rule is forced by any
+program, because a fact a congruence derives can be stated in the constraint
+the alias came from. Conservativity is the one thing that could force a
+congruence, since a creation constraint may not relate two points outside the
+new channel, but that fact then comes from a context which is again a
+constraint or a world. The rules let one alias between base points stand for
+one alias per offset and per carried root, and at every depth that is the
+difference between a finite constraint and an infinite one.
+
+**135. Three rejections became theorems, the step from the program did not (Claude, 2026-11-02).**
+The reversed scheduler agent, the bad `link` and `ordered` without its
+constraint were arguments in comments. examples/Rejected.v now proves
+`sched_rev_underivable`, `ms_rev_underivable`, `badlink_underivable` and
+`ord_no_constraint`. The three cycle lemmas take acyclicity of the fact theory
+as a hypothesis, which `slt_acyclic_nil` discharges for a theory with no
+hypotheses, and which holds for every context a typable closed program meets,
+because `soundness` takes a strict world and `cc_acyclic` carries a cycle of
+Γ + C down to Γ. The step from "the program has no derivation" to "these facts
+fail" stays a comment. A theorem for it needs typing derivations inverted, and
+the development avoids inversion. So the range used is 130 to 136.
+
+**136. The literature whole programs state the source judgment (Claude, 2026-11-02, branch exists).**
+Entry 130 landed on branch `exists-examples`, where `styped` did not exist, so
+its five whole-program lemmas stated `typed W` under the premise `strict W`.
+`ms_typed`, `fw_typed`, `fc_typed`, `st_typed` and `cg_typed` now state
+`styped ∅ [] [] (∅, None) e TUnit`, which is the convention entry 123 records
+for a self-contained program, and which the other twenty whole-program lemmas
+already followed. Each proof opens with `apply styped_Wpo`, poses
+`Wpo_nil_strict'` as `HWs` and runs `set (W := Wpo []) in *`, which turns the
+abstract world the body was written for into the one world the lemma is about.
+No tactic of any of the five bodies changed, including the `t_new_at` steps of
+MilnerSched.v and Congruence.v, which take `strict W` as an argument, and the
+`fcsrv_typed`, `fwsrv_typed` and `stprod_typed` applications, which take it as
+a premise. The five deadlock-freedom theorems keep their statements byte for
+byte and go through `ptyped_closed_s` instead of `ptyped_closed`, which leaves
+`ptyped_closed` with no user in theories/examples/. The component lemmas
+`fwsrv_typed`, `fcsrv_typed`, `stprod_typed`, `stcons_typed` and `cgbox_typed`
+keep `typed` at an arbitrary world, as do the sixteen other component lemmas
+of examples/ and `faca_typed` of examples/Factory.v, which types a box value
+at `wnil` against an arbitrary hypothesis context and whose whole-program
+lemma `fa_typed` converts. The remaining three users of `typed` in examples/
+are tools and not programs, `ptyped_closed` and `tv_case` and `ordered_force`.
+No typing rule was added and no other statement changed.
+docs/extensions/literature-examples.md.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

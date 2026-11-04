@@ -16,7 +16,9 @@
     - let a = new() in e is [LetP (App ENew EUnit) e]. The name a of
       type #[t]ⁿ becomes two variables, its ? end at index 1 and its ! end
       at index 0, because our variables are linear and our new returns
-      both ends.
+      both ends. The translation is the encoded let of new
+      [let_new_pair e′] (lang/Syntax.v), which types new at a known
+      point by the alias ι ≡ x (sharp edges 104).
     - send e₁ e₂, recv e and fork e are [App (App ESend e₁) e₂],
       [App ERecv e] and [App ESpawn e]. Constants appear only applied.
       An unapplied constant is η-expanded by the programmer, with the
@@ -133,7 +135,7 @@ Inductive pn_typed : penv → expr → pty → lvl → expr → Prop :=
   | pn_new Γ e e' t n s τ :                                  (* let a = new() in e *)
       lvl_lt (LZ n) (olvl (tlev t)) → payok t →
       pn_typed (Some (PChan false t n) :: Some (PChan true t n) :: Γ) e s τ e' →
-      pn_typed Γ (LetP (App ENew EUnit) e) s τ (LetP (App ENew EUnit) e')
+      pn_typed Γ (LetP (App ENew EUnit) e) s τ (let_new_pair e')
   | pn_send Γ Γ1 Γ2 e1 e2 e1' e2' t n τ1 τ2 :               (* send e₁ e₂ *)
       pn_split Γ Γ1 Γ2 →
       pn_typed Γ1 e1 (PChan false t n) τ1 e1' →

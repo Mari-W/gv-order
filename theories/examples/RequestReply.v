@@ -16,9 +16,11 @@
     The recursive force at (ι+1, ι′+1) asks C there, and C[ι+1, ι′+1] ⊆ C,
     so the body's own hypothesis gives it ([bcs_hold_self]). The send in
     the server's thunk blocks at ι′ while the pair holds a at ι+1, the
-    fact ι′ ≺ ι+1 of C. main forces both boxes at ((a,0), (b,0)), where
-    C is (a,k) ≺ (b,k) and (b,k) ≺ (a,k+1) for every k, the facts of
-    [Wrr]. *)
+    fact ι′ ≺ ι+1 of C.
+
+    In the empty world main creates a at γ with no fact and b at ε with
+    the creation constraint {γ+k ≺ ε+k, ε+k ≺ γ+k+1 ∣ k ∈ ℕ}, and forces
+    both boxes at (γ, ε) (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -44,7 +46,7 @@ Definition cli : expr :=
       (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 8)) (Pair (Var 4) (Var 1)))))))))))).
 
 Definition rr_main : expr :=
-  LetP (Pair srv cli) (LetP (App ENew EUnit) (LetP (App ENew EUnit)
+  LetP (Pair srv cli) (let_new_pair (let_new_pair
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
@@ -127,67 +129,69 @@ Proof.
     exists (pv 1 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-(** C at ((a,0), (b,0)) is the facts of [Wrr]. *)
-Lemma rq_hold_W W :
-  (∀ k, w_lt W (pc 0 k) (pc 1 k)) → (∀ k, w_lt W (pc 1 k) (pc 0 (S k))) →
-  bcs_hold (w_eq W) (w_lt W) rq_C [pc 0 0; pc 1 0].
-Proof. intros H1 H2. apply bcs_hold_intro. intros g (k & [-> | ->]) _; [apply H1|apply H2]. Qed.
+(** The constraint of b: the variable 0 is ε, the variable 1 is γ. *)
+Definition rrf_facts (g : fact) : Prop :=
+  ∃ k, g = FLt (pv 1 k) (pv 0 k) ∨ g = FLt (pv 0 k) (pv 1 (S k)).
+Definition rrf_C : bcs := BCs [pvar 0] rrf_facts.
 
-Lemma rr_typed W : world_wf W → pt_known W (pc 0 0) → pt_known W (pc 1 0) →
-  (∀ k, w_lt W (pc 0 k) (pc 1 k)) → (∀ k, w_lt W (pc 1 k) (pc 0 (S k))) →
-  typed W ∅ [] ∅ [] (∅, None) rr_main TUnit.
+Lemma rr_typed : styped ∅ [] [] (∅, None) rr_main TUnit.
 Proof.
-  intros HW Ha Hb H1 H2. unfold rr_main.
-  assert (bcs_hold (seqs W []) (slt W []) rq_C [pc 0 0; pc 1 0]) as HC.
-  { eapply bcs_hold_mono; [intros ? ? ?; by apply se_w|intros ? ? ?; by apply sl_w|by apply rq_hold_W]. }
-  assert (Forall (skn W []) [pc 0 0; pc 1 0]) as HK.
-  { constructor; [by left|constructor; [by left|constructor]]. }
+  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
+  set (W := Wpo []) in *. unfold rr_main.
   tstep.
   { tstep; [apply cli_typed, HW|apply srv_typed, HW]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sa (pc 0 0) (or_introl Ha))|done|apply ubs_none]. }
-  cbn. tstep.
-  { tstep; [tstep|apply (KTNew _ _ _ Sb (pc 1 0) (or_introl Hb))|done|apply ubs_none]. }
-  cbn. tstep.
+  cbn.
+  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sa [] []); [constructor|set_solver|].
+  fresh_clean.
+  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sb rrf_C _ _ _ _).
+  { intros f [k [-> | ->]] Hs.
+    - left. eexists _, _. split; [done|]. split_and!; [exists k; by left|done|done|done].
+    - right. eexists _, _. split; [done|]. split_and!; [exists k; by right|done|done|done]. }
+  { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
+  { intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) [_ Hpq].
+    destruct Hf as [k [E|E]]; injection E as -> ->; [|done].
+    destruct Hf' as [k' [E|E]]; injection E as -> ->; [done|].
+    cbn in Hpq. unfold fresh_outer. cbn. apply sl_w, wf_lt_same; [done|done|cbn; lia]. }
+  fresh_clean.
+  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
+  set (Ψ := [(bcs_inst (pshift 1) (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 1]);
+             (bcs_inst (pshift 1) rrf_C, [pvar 0])]).
+  assert (∀ k, slt W Ψ (pv 1 k) (pv 0 k)) as Hlo.
+  { intros k. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) rrf_C) (pvar 0) (pv 1 k) (pv 0 k));
+      [by right; left|exists k; by left|cbn; lia]. }
+  assert (∀ k, slt W Ψ (pv 0 k) (pv 1 (S k))) as Hhi.
+  { intros k. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) rrf_C) (pvar 0) (pv 0 k) (pv 1 (S k)));
+      [by right; left|exists k; by right|cbn; lia]. }
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) rq_C [pvar 1; pvar 0]) as HC.
+  { apply bcs_hold_intro. intros g (k & [-> | ->]) _; cbn; [apply Hlo|apply Hhi]. }
+  assert (Forall (skn W Ψ) [pvar 1; pvar 0]) as HK.
+  { constructor; [eapply skn_inst; [by left|by left|done]|].
+    constructor; [eapply skn_inst; [by right; left|by left|done]|constructor]. }
+  match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E] _ _ _ =>
+    change A with (TSess (dual Sb) (pvar 0)); change B with (TSess Sb (pvar 0));
+    change A' with (TSess (dual Sa) (pvar 1)); change B' with (TSess Sa (pvar 1));
+    change D with (TBox 2 0 rq_C (TLolli None None TUnit cli_body));
+    change E with (TBox 2 0 rq_C (TLolli None None TUnit srv_body)) end.
+  tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].
-    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; by apply sl_w]. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 1)) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply (Hlo 0)]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None srv_body [pc 0 0; pc 1 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None srv_body [pvar 1; pvar 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pc 1 0). split; [done|]. apply sle_refl, HW. }
+      exists (pvar 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None cli_body [pc 0 0; pc 1 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None cli_body [pvar 1; pvar 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Definition rr_L (x y : point) : Prop :=
-  ∃ k, (x = pc 0 k ∧ y = pc 1 k) ∨ (x = pc 1 k ∧ y = pc 0 (S k)).
-
-(** The uniform facts (a,k) ≺ (b,k) ≺ (a,k+1), strict by the ranks
-    2(k+1) and 2(k+1)+1. *)
-Definition Wrr : world := wgen (list_to_set (NConst <$> [0; 1])) (λ _ _, False) rr_L.
-
-Lemma Wrr_strict : strict Wrr.
-Proof.
-  apply (wgen_strict _ _ _ id (prank (λ _, 2) (λ a, a) (λ _ _ _, 0))); try done.
-  - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
-  - intros x y (k & [[-> ->]|[-> ->]]); right; rewrite !elem_of_list_to_set; cbn; set_solver.
-  - intros x. apply prank_shift. lia.
-  - intros x y (k & [[-> ->]|[-> ->]]); unfold id, prank; cbn; lia.
-Qed.
-
 Lemma rr_deadlock_free : deadlock_free (∅, {[+ rr_main +]}).
 Proof.
-  apply (soundness Wrr _ TUnit Wrr_strict).
-  apply ptyped_closed; [constructor|]. apply rr_typed; [apply Wrr_strict| | | |].
-  - unfold pt_known, Wrr. simpl. set_solver.
-  - unfold pt_known, Wrr. simpl. set_solver.
-  - intros k. apply glt_base. exists k. by left.
-  - intros k. apply glt_base. exists k. by right.
+  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
+  apply ptyped_closed_s; [constructor|apply rr_typed].
 Qed.
