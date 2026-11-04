@@ -81,8 +81,8 @@ theories/examples/ExPayload.v and docs/extensions/existential-payloads.md.
 
 | Theorem | Statement |
 |---|---|
-| `send_ex` | Send-∃ for `styped`: E-Pack at ys, then send, asks x ≺ ℓ |
-| `recv_ex` | Recv-∃ for `styped`: receive, E-LetPair and E-Open on the payload |
+| `send_ex` | Send-∃ for `styped`, E-Pack at ys and then send, asking x ≺ ℓ |
+| `recv_ex` | Recv-∃ for `styped`, receive, E-LetPair and E-Open on the payload |
 | `ex_rank_ok` | the top-level constraint {a+1 ≺ a[0]} is acyclic |
 | `ex_typed` | styped of the server and client program under it |
 | `ex_deadlock_free` | the program is deadlock free, by `soundness_source` |
