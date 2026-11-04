@@ -1,6 +1,6 @@
 # GV♯ with orders: a tour
 
-Paper draft `paper-orders` (5bbf52a) and the mechanization on `exists`. Rocq names in `code`.
+The mechanization and the paper draft on `main` of spo-lr-df. Rocq names in `code`.
 
 ---
 
@@ -718,7 +718,7 @@ branch A owes  δ ≺ a[0]          branch B owes  a[1] ≺ δ ≺ a[1]+1
 ```
 
 - one shared continuation point would give a cycle, two points do not
-- status: on `cfst` with every example (`bo_deadlock_free` for T1–T3), being merged into `exists`
+- status: on `main` with every example (`bo_deadlock_free` for T1–T3)
 
 ### Context-free session types
 
@@ -756,7 +756,7 @@ sendTree = box f ∀ι ζ α {C}. λ^ζ ⟨t : Tree, c : (TreeC;α)@ι⟩.
 - typed: tree copy and drain, two streams, Milner's scheduler, treeSum, the arithmetic server; the classic deadlock rejected
 - outside: `sendTree t c; close d; send v c`, where `d` must sit between the segment's end and the continuation. Mordido–Pérez cannot type it either
 - `q ≺ q[i]` is what `select` owes at every walk point, so the box constraint states it once for all of them
-- status: ported to the `exists` core on `cfst` (6cf4f54), being merged into `exists`. Mordido–Pérez v1–v3 translations closed (`mp3_deadlock_free_source`)
+- status: on `main`. Mordido–Pérez v1–v3 translations closed (`mp3_deadlock_free_source`)
 
 ---
 
