@@ -204,10 +204,10 @@ Qed.
 
     (W, P) ⊑ (W′, P′) when every choice vector of P′ lies above some choice
     vector of P. Resolving choice i to b is such an extension, with the
-    choice vector ch′ above <[i := b]> ch′. *)
+    choice vector ch′ above <[i := b]> ch′ ([resolve_pext]). So is a
+    fresh extension that adds choices ([pfresh_pext]). *)
 
 Definition pext (W : world) (P : list pchoice) (W' : world) (P' : list pchoice) : Prop :=
-  length P' = length P ∧
   ∀ ch', length ch' = length P' → ∃ ch, length ch = length P ∧
     wext (at_choice W P ch) (at_choice W' P' ch').
 
@@ -240,7 +240,7 @@ Qed.
 Theorem resolve_pext W P i b :
   pvalid W P → i < length P → pext W P (resolve W P i b) (resolve_P P i b).
 Proof.
-  intros HV Hi. pose proof HV as (HW & HP & _). split; [apply length_resolve_P|].
+  intros HV Hi. pose proof HV as (HW & HP & _).
   intros ch' Hch. rewrite length_resolve_P in Hch. exists (<[i := b]> ch').
   split; [by rewrite length_insert|].
   destruct (resolve_at_incl_rev W P i b ch' HW HP) as [He Hl].
@@ -256,6 +256,18 @@ Definition pfresh (W : world) (P : list pchoice) (N : gset pname)
   ∀ ch chn, length ch = length P → length chn = length Pn →
     wext_fresh (at_choice W P ch) N (at_choice W1 (P ++ Pn) (ch ++ chn)).
 
+(** Another component's creation is a pending extension, so the join
+    below covers a future that creates choices of its own. *)
+Lemma pfresh_pext W P N W1 Pn : pfresh W P N W1 Pn → pext W P W1 (P ++ Pn).
+Proof.
+  intros (_ & _ & Hfr) ch Hl. rewrite length_app in Hl.
+  exists (take (length P) ch). split; [rewrite length_take; lia|].
+  rewrite <-(take_drop (length P) ch) at 2.
+  apply (Hfr (take (length P) ch) (drop (length P) ch)).
+  - rewrite length_take. lia.
+  - rewrite length_drop. lia.
+Qed.
+
 (** ** Amalgamation
 
     A fresh extension with new pending choices, joined with any pending
@@ -268,7 +280,7 @@ Theorem pjoin_fresh W P N W1 Pn W' P' :
       wext_fresh (at_choice W' P' ch') N
         (wjoin (at_choice W1 (P ++ Pn) (ch ++ chn)) (at_choice W' P' ch')).
 Proof.
-  intros (HW & HP & _) (_ & _ & Hfr) [Hlen Hext] HN ch' chn Hch' Hchn.
+  intros (HW & HP & _) (_ & _ & Hfr) Hext HN ch' chn Hch' Hchn.
   destruct (Hext ch' Hch') as (ch & Hch & Hwx).
   exists ch. split; [done|].
   apply (wext_fresh_join (at_choice W P ch)); [by apply at_choice_wf|by apply Hfr|done|done].
@@ -289,7 +301,6 @@ Theorem pjoin_valid W P N W1 Pn W' P' :
 Proof.
   intros HV Hf Hx HV' HN.
   pose proof Hf as (HW1 & HP1 & _). pose proof HV' as (HW' & HP' & _).
-  pose proof Hx as [Hlen _].
   split_and!.
   - by apply wjoin_wf.
   - intros i c b x y Hi Hs. simpl. destruct (decide (i < length P')) as [Hl|Hl].
@@ -572,4 +583,30 @@ Proof.
   - exact HN.
   - done.
   - intros x y Hx Hy. split; intros H; apply (Hold x y Hx Hy); [by apply HeT|by apply HlT].
+Qed.
+
+(** ** Two creations at once
+
+    A fresh extension with new choices is valid, and two of them, made by
+    two components from one pending world, join to a valid pending world.
+    This is the case of the monotonicity proof where the other
+    component's future creates choices too. *)
+
+Lemma pfresh_valid W P N W1 Pn : pvalid W P → pfresh W P N W1 Pn → pvalid W1 (P ++ Pn).
+Proof.
+  intros _ (HW1 & HP1 & Hfr). split_and!; [done|done|].
+  intros ch Hl. rewrite length_app in Hl.
+  rewrite <-(take_drop (length P) ch).
+  apply (Hfr (take (length P) ch) (drop (length P) ch)).
+  - rewrite length_take. lia.
+  - rewrite length_drop. lia.
+Qed.
+
+Theorem pcreate_join W P N1 W1 Pn1 N2 W2 Pn2 :
+  pvalid W P → pfresh W P N1 W1 Pn1 → pfresh W P N2 W2 Pn2 → N1 ## w_names W2 →
+  pvalid (wjoin W1 W2) ((P ++ Pn2) ++ Pn1).
+Proof.
+  intros HV H1 H2 HN.
+  apply (pjoin_valid W P N1 W1 Pn1 W2 (P ++ Pn2)); [done|done| |by eapply pfresh_valid|done].
+  by eapply pfresh_pext.
 Qed.

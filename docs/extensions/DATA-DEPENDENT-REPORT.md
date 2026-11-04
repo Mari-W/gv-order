@@ -80,6 +80,8 @@ BranchWorlds.v
 | `pfresh_new` | new with a pending choice between two ≺-only creation constraints is fresh at every choice vector, given cc_ok of each at every old choice vector |
 | `pjoin_fresh` | a fresh extension with new choices, joined with any pending extension, is fresh at every choice vector (reduces to `wext_fresh_join`) |
 | `pjoin_valid` | that join is a valid pending world |
+| `pfresh_pext`, `pfresh_valid` | a creation with new choices is a pending extension and valid |
+| `pcreate_join` | two creations from one pending world, each with new choices, join to a valid pending world |
 | `unguarded_extensions_conflict` | two extensions that add opposite facts between existing points have a join that is not strict |
 | `db_pending_valid` | the two orders of db_main form one valid pending choice |
 
