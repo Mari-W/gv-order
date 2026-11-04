@@ -178,6 +178,8 @@ depth that grows at each carried point by the offset of its base plus 2
 | `body0_underivable_top` | the same under every acyclic top-level constraint | closed |
 | `choice_translate` | the translation of the fragment preserves `styped` | closed |
 | `choice_translate_df` | the translation of a closed program of the fragment is deadlock free | closed |
+| `native_fstyped` | T1 ∥ T2 ∥ T3 with select₁ and branch lies in the fragment | closed |
+| `native_deadlock_free`, `translated_deadlock_free` | the program and its translation are deadlock free | closed |
 | `srv_typed` | typing of the recursive server | closed |
 | `lp_acyclic` | the infinite constraint C is acyclic | closed |
 | `loop_typed` | `styped` of the client with the server under C | closed |
@@ -223,6 +225,14 @@ the hypotheses, so a closed program of the fragment and its translation share
 their top-level constraint, and `choice_translate_df` gives deadlock freedom of
 the translation by `soundness_source`. The fragment excludes the recursive
 server above, whose derivation converts Rs to its unfolding.
+
+theories/examples/ChoiceTranslateEx.v writes T1 ∥ T2 ∥ T3 with select₁ and
+branch and c : ⊕{A: !∗.Close, B: !∗.Close}. `native_fstyped` types it in the
+fragment under {a ≺ a[1], a[1] ≺ δ, δ ≺ a[0], δ ≺ a[1]+1}, acyclic by the same
+rank as Cch (`cn_rank_ok`). The native select asks a ≺ a[0], and the fragment
+asks a ≺ a[1] as well, which the constraint states. `native_deadlock_free` is
+deadlock freedom of the program, and `translated_deadlock_free` is deadlock
+freedom of its translation under the same constraint.
 
 ## Cost against branch points
 
