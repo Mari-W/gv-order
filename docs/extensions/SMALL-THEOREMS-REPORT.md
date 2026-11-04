@@ -92,9 +92,10 @@ The server creates k₁ at a[0] and k₂ at a fresh v with {a[0] ≺ v}, and sen
 The client opens the existential and uses the opened fact a[0] ≺ v′ to close k₁′
 while it holds k₂′. The doc gives the derived rules Send-∃ (E-Pack plus the send
 signature, asking x ≺ ℓ) and Recv-∃ (the receive signature, E-LetPair and
-E-Open), proved in Rocq as `send_ex` and `recv_ex`. The answer is a derived form. The boundary is the type language. A payload
-type mentions only payload binders, so no message carries a fact about the
-carrier point or about channels outside the message, derived or primitive.
+E-Open), proved in Rocq as `send_ex` and `recv_ex`. The answer is a derived
+form. The boundary is the type language. A payload type mentions only payload
+binders, so no message carries a fact about the carrier point or about channels
+outside the message, derived or primitive.
 
 ## Build
 
