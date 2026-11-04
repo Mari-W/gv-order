@@ -128,6 +128,33 @@ and logged in SHARP-EDGES.
   from ι, the points reached by successors and branch roots. The program T2 of
   data-dependent.md types in BranchOrder.v and did not under K5. SHARP-EDGES 76
   has the details.
+- K11. A choice continues at the point of a payload (2026-11-04, decided by
+  the author, replaces K10). selectᵢ moves the entry of c from x to x[i],
+  the same point the i-th channel of a message sent at x gets, with
+  x[0] for the first branch and x[1] for the second. branch returns
+  S₁@x[0] + S₂@x[1]. The name x◁i is gone, with its congruence and its
+  program-order law. x[i] already has congruence. Program order does not
+  relate x and x[i], so selectᵢ owes x ≺ x[i] and branch owes x ≺ x[0] and
+  x ≺ x[1] in their signatures, the way send owes x ≺ heads(P[x]). The
+  programs state these facts in creation constraints or box constraints.
+  Walks for ceilings go through x+1 and x[i]. Choice stays primitive. On
+  branch `exists`, docs/extensions/choice-encoding.md derives it from sums
+  and delegation with the arms at self[0] and self[1].
+- K12. K7 is replaced by the existential of branch `exists` (2026-11-04).
+  ∃^ℓ ιs. C. T has a lower bound ℓ that is ⊤, ⊥ or a point, E-Pack asks
+  the ⊥ flag of the packed type to be off unless ℓ = ⊥, and new has the one
+  signature ∗ ⊸ ∃^⊥ ι. C. (S@ι ⊗ S̄@ι) with C a creation constraint. A
+  segment function returns ∃^ℓ ι′. C′. α@ι′ with ℓ = ι and the ceiling facts
+  in C′.
+- K13. V-Box keeps the reading of K6 (2026-11-04). The thunk lies in the
+  arrow relation at the instance sinst(ss, T[xs/ιs]). Branch `exists` reads
+  the thunk through V at the body under a point substitution, so that V
+  stays structural. A session instance is no point substitution, so that
+  reading would need a second substitution argument in V and its
+  composition laws for session types. K6 already shows that the arrow
+  reading is sound with existentials, because `Vrel_box_iff` states it with
+  `Vlam` and no proof needs a λ in V at a type other than an arrow.
+- K9 no longer holds. theories/pgv and theories/pn are in the build again.
 
 ## Order of work
 
@@ -197,3 +224,69 @@ Findings.
   the coarse ceiling. The arithmetic server is drain with two branches in
   place of a branch and a receive. Both return the channel without the
   integer, and Int becomes ∗ (SHARP-EDGES 75).
+
+## Ported to the exists core (2026-11-04)
+
+Branch `cfst` now runs on the core of branch `exists` (merge commit
+b88b23b), with the context-free additions on top. The source judgment
+`styped`, `soundness_source`, existential points with a lower bound,
+creation constraints and the empty world come from `exists`. Session
+syntax K1, head normal forms and bisimilarity K3, choice K4, boxes over
+session variables K6 and the coarse ceiling K8 come from `cfst`. K10 gave
+way to K11 and K7 to K12. `soundness`, `soundness_source`, `fundamental`
+and `fundamental_proc` have closed `Print Assumptions`.
+
+### What changed
+
+- `ty` has `TBox n k C T` with k session variables and `TEx lb n C T` with
+  `lb : lbound`. `ty_ind_ex` gives the body of ∃ at every instance and the
+  body of □ directly, as K13 needs.
+- `konst_ty` has ten signatures. KTNew is gone, KTNewEx is the existential
+  new, and KTSel1, KTSel2 and KTBra owe x ≺ x[i] (K11).
+- Program order `ppo` moved to types/Types.v, and `ple p v` reads
+  p = v ∨ ppo p v. Betweenness for a fresh channel compares points along
+  program order.
+- The rules E-Pack and E-Open are those of `exists` in rules/ExRules.v.
+  `Erel_Vsub` there has the cases of the choice labels.
+- `styped` has `st_box` over session instances and `hsteq` compares boxes
+  by ≈ on the nose, as `steq` does.
+- Every example of examples/cfst/ states a whole-program `styped`
+  derivation, creates its channels with `let_new_pair` under a creation
+  constraint, and proves deadlock freedom with `soundness_source` or with
+  `soundness (Wpo [])` and `ptyped_closed_s`. A ceiling that no channel
+  occupies is the top-level variable of C₀ = ∅.
+- PGV and Padovani–Novara build again. Their translations write S;S for
+  send and receive, and their simulations gained the choice labels and the
+  choice communication. No statement changed.
+
+### What broke and how it was fixed
+
+- Creation.v, written for program order of one name, had to accept the
+  laws of K10 during the merge. K11 removed them again, and the file is the
+  one of `exists` with two lemmas `ppo_pofs` and `pofs_ppo` that move between
+  `ppo` and offsets of one name.
+- The ⊥ flag reached cfst's tools. `tv_case` asks the flag of the shared
+  context to be off, and the frames of the examples are `Some (FVar φ)`.
+- Conservativity makes an earlier channel state facts in advance. In
+  BranchOrder.v the constraint of d derives c[1] ≺ c[0], so c is created
+  with {ι ≺ ι[0], ι ≺ ι[1], ι[1] ≺ ι[0]}. T2 still types under K11. In
+  TreeCopy.v channel a states α·w ≺ (α·w)[i] along every walk w, because
+  the zigzag of b derives these facts between points of a.
+- The facts of the scheduler's world do not split into conservative
+  creation constraints, because the constraint of C1 derives facts between
+  A1 and A2 that no earlier constraint states. Each channel is created with
+  a rank constraint that orders its instants against every instant of each
+  earlier channel. It states more facts than the world did, and two
+  instants of equal rank on different channels stay unrelated.
+- Under K11 a branch owes κ ≺ κ[i], so the box constraints of drain,
+  treeSum and receiveEval contain κ·w ≺ (κ·w)[i] along every walk. The
+  zigzag of copy derives these facts, so its constraint did not change.
+- A box typed under Ψ = [] has to type under the hypothesis of C₀.
+  `typed_hyps_wk` in CfstTools.v does it with `typed_pinst` at the identity.
+- The classic deadlock had to switch to `let_new_pair`. The old let on new
+  does not type, because new returns an existential. `dl_untypable` now says
+  that no `styped` derivation exists in the empty world, and
+  `dl_untypable_source` says the same under every acyclic C₀.
+
+SHARP-EDGES 137 to 141 have the details.
+

@@ -106,3 +106,7 @@ choice and kept their constraints.
 - Whether offsets as terms keep the static fact theory first order.
 - Which examples need it beyond the scheduler variant with a run-time order and
   tree serialization.
+
+Since K11 (2026-11-04) the continuation of branch i at x is x[i], and
+select and branch owe x ≺ x[i]. T2 still types (theories/examples/cfst/
+BranchOrder.v), with c created under {ι ≺ ι[0], ι ≺ ι[1], ι[1] ≺ ι[0]}.

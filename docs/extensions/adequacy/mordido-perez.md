@@ -991,3 +991,46 @@ itself. Version 3 does not build this world. It keeps the rank world, whose
 strictness is free, and records the two cases that need the world of facts,
 two way interleaving after a segment call and two channel segment functions
 (U2), in section 13.
+
+## Ported to the exists core (2026-11-04)
+
+Versions 1 to 3 run on the merged core of branch `cfst` (docs/extensions/
+context-free.md, section "Ported to the exists core"). All 19 files of
+theories/mp build, and no theorem changed its statement. `mp_translate`,
+`mp_deadlock_free`, `mp2_translate`, `mp2_deadlock_free`,
+`mp2_deadlock_free_source`, `mp3_translate`, `mp3_deadlock_free`,
+`mp3_deadlock_free_source` and the 29 example theorems have closed
+`Print Assumptions`.
+
+### What changed
+
+- The translation stays at its world `Wmp`. Every fact it uses comes from
+  the rank of a denotation through `good` at `Wmp`. Moving it to `styped`
+  would mean passing every rank comparison as a hypothesis, which is a
+  redesign of the translation. PGV makes the same choice on `exists`
+  (SHARP-EDGES 111).
+- Translated new is `let_new_pair e′`, typed by `t_new_at` at the point
+  `rpt B (RCh Q n d)` of the channel. In version 3 the channels below the
+  floor and above the ceiling use the first points of the low and high
+  chains.
+- The simulations relate source new to `let_new_pair`. `post` at a new step
+  allows β steps after it, so the target runs new ∗ and the two lets of the
+  encoding before the relation holds again, as PN does on `exists`.
+- Under K11 a choice continues at x[i]. `dsl` gives the points 0 and 1 of a
+  choice its two branches, and the world states x ≺ x[i] through the rank.
+
+### What broke and how it was fixed
+
+- Channels at the end of a segment need x ≺ x[i] too, and only the segment
+  and existential constraints can supply it. `pex_fact` gained the family
+  `mwalk κ u ≺ (mwalk κ u)[i]` for every walk u. `dsl` guards every point
+  that is no anchor, so each of its payload points rises (`dsl_rise`).
+- A payload point is junk unless the payload lies above its carrier. So
+  `ch_pay` takes the premise of R1 and R3 that the payload lies above,
+  which `snd_ok` and `rcv_ok` already provide. `pts_ok` and `cseg_hold`
+  gained the same conjunct.
+- Lower bounds `Some x` became `LPt x`, and E-Pack asks the ⊥ flag of the
+  packed type to be off. The flag tactics `bot_false`, `lbhb` and `bclean`
+  come from PN on `exists`.
+
+SHARP-EDGES 141 has the details.

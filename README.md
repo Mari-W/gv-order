@@ -97,18 +97,20 @@ has no axioms and no admitted proofs.
 - `Stream.v`: Padovani's `stream`, a producer that sends a fresh continuation each round, with a consumer (`st_deadlock_free`).
 - `Congruence.v`: a box whose derivation needs both congruences of ≡, one alias between base points read at a carried root and at the successor (`cg_deadlock_free`).
 - `Rejected.v`: programs the static system rejects (`rr_call_underivable`, `sched_rev_underivable`, `ms_rev_underivable`, `badlink_underivable`, `ord_no_constraint`).
-- `SendTreeType.v`: the type of sendTree with the coarse ceiling over walks, a smoke test (SHARP-EDGES 73, 76).
+- `SendTreeType.v`: the type of sendTree with the coarse ceiling over walks through x+1 and x[i], a smoke test (SHARP-EDGES 73, 138).
 
-`examples/cfst/`, the examples of context-free session types (SHARP-EDGES 74, 75 and 76). Since K10 a choice moves its channel to a branch root x◁i, and ceilings range over the walks from a point.
+`examples/cfst/`, the examples of context-free session types (SHARP-EDGES 74, 75, 138 and 140). Since K11 a choice moves its channel from x to x[i] and owes x ≺ x[i], and ceilings range over the walks from a point. Every example states a whole-program `styped` derivation, creates its channels with the existential new under a creation constraint, and proves deadlock freedom with `soundness_source`.
 
-- `CfstTools.v`: hereditary contractiveness by depth, congruences of ≈, case and E-Open for Θ = ∅, facts of constraints with outer points, the lockstep world.
+- `CfstTools.v`: hereditary contractiveness by depth, congruences of ≈, case and E-Open for Θ = ∅, facts of constraints with outer points, the ceiling C₀, the lockstep creation constraints and `cc_ok_out` for constraints with outer points.
 - `TreeCopy.v`: recvTree as `drain` and sendTree after recvTree as `copy`, both with polymorphic recursion and existential points, run on a fixed tree (`tree_deadlock_free`).
 - `Stream.v`: the two streams of Mordido and Pérez in a cycle (`st_deadlock_free`).
-- `CfstDeadlock.v`: their classic deadlock is not deadlock free and so has no typing at any strict world (`dl_untypable`). Its repair types (`dlfix_deadlock_free`).
-- `CfstScheduler.v`: Milner's cyclic scheduler with three schedulers and three workers (`sch_deadlock_free`).
+- `CfstDeadlock.v`: their classic deadlock is not deadlock free and so has no `styped` derivation (`dl_untypable`, `dl_untypable_source`). Its repair types (`dlfix_deadlock_free`).
+- `CfstScheduler.v`: Milner's cyclic scheduler with three schedulers and three workers, each channel created under a rank constraint against the earlier ones (`sch_deadlock_free`).
 - `TreeSum.v`: treeSum of Thiemann and Vasconcelos (Listing 2) with the reply after both subtrees, serving the client transform on a fixed tree (`ts_deadlock_free`).
 - `ArithServer.v`: their arithmetic expression server (Listing 3) with binary choices and its fixed client (`as_deadlock_free`).
-- `BranchOrder.v`: a branch that orders two channels against the other branch, typable with branch roots and not under K5 (`bo_deadlock_free`, SHARP-EDGES 76).
+- `BranchOrder.v`: a branch that orders two channels against the other branch, typable with the branch points x[0] and x[1] of K11 and not under K5 (`bo_deadlock_free`, SHARP-EDGES 76, 140).
+
+The context-free work runs on the core of branch `exists` since 2026-11-04 (docs/extensions/context-free.md, section "Ported to the exists core", SHARP-EDGES 137 to 141). theories/pgv and theories/pn are in the build again.
 
 `mp/`, Mordido and Pérez in fragment v1 with repairs R1 to R6 (SHARP-EDGES 77, docs/extensions/adequacy/mordido-perez.md 12 and 13).
 
@@ -133,6 +135,8 @@ Version 3 in `mp/` extends version 2 with n-ary choices and with channels create
 - `MP3Translate.v`: the translation lemma and deadlock freedom (`mp3_translate`, `mp3_deadlock_free`).
 - `MP3Examples.v`: the examples of version 2, a choice with three labels (`ch3_mp3_deadlock_free`), matching rates (`rr_mp3_deadlock_free`), and a channel created after receiveTree below the floor or above the ceiling (`rtA_mp3_deadlock_free`, `rtB_mp3_deadlock_free`).
 - `MP3Simulation.v`: deadlock freedom in their semantics (`mp3_deadlock_free_source`) with every example (`ch3_deadlock_free_src3` and the others).
+
+theories/mp stays at its world `Wmp` on the merged core. Translated new is `let_new_pair` typed by `t_new_at`, and segment constraints state x ≺ x[i] along every walk (SHARP-EDGES 141).
 
 `counterexamples/`
 

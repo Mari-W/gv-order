@@ -2017,6 +2017,62 @@ are tools and not programs, `ptyped_closed` and `tv_case` and `ordered_force`.
 No typing rule was added and no other statement changed.
 docs/extensions/literature-examples.md.
 
+**137. Merging `exists` into `cfst` (Claude, 2026-11-04, branch cfst).**
+The merge took the core of `exists` and kept the context-free additions.
+Types.v has `TBox n k C T` and `TEx lb n C T` with `lb : lbound`. Every
+conflict over the existential resolved to the `exists` form, because
+`exists` had ported K7 and generalized it, which is K12 of
+docs/extensions/context-free.md. Every conflict over boxes resolved to the
+`cfst` form (K13). The duplicate rules E-Pack and E-Open of
+rules/BoxRules.v went, and rules/ExRules.v keeps `cfst`'s `Erel_Vsub` with
+the choice labels. static/Fundamental.v was rebuilt from the `exists` file
+with the session instances of E-Exp added, because the two branches had
+added the same cases in two places. static/FactTheory.v and
+static/Source.v are the `exists` files with the box comparison of `cfst`.
+
+**138. A choice continues at x[i] (author's decision, 2026-11-04, branch cfst, K11).**
+K10 named the point after a choice x◁i and added two world laws. K11 puts
+the continuation at the payload point x[i], which has congruence already,
+and drops the name and its laws. The logical relation never used
+x ≺ x◁i, only the congruence, so no semantic lemma lost anything. The
+fact x ≺ x[i] moved into the signatures of select and branch as a side
+condition read by `plt`, which `konst_ty_mono`, `konst_ty_sw` and
+`konst_ty_pinst` carry like the condition of send. Creation.v,
+FactTheory.v and Source.v needed no rule for choice, because program
+order is again one step x ≺ x+1.
+
+**139. Program order lives in Types.v (Claude, 2026-11-04).**
+`ple` reads program order, and `ple` sits in types/Types.v next to the
+betweenness of a fresh channel, so `ppo` moved there from
+relation/Worlds.v. `ple p v` is p = v ∨ ppo p v. relation/Creation.v keeps
+`pofs`, a later offset of one name, and `ppo_pofs` and `pofs_ppo` turn one
+into the other. The examples read `ple` through `ple_inv`.
+
+**140. Creation constraints have to state facts in advance (Claude, 2026-11-04, examples/cfst).**
+A creation constraint is conservative over the context. When a later
+channel's constraint derives a fact between points of earlier channels,
+an earlier constraint has to state that fact already. BranchOrder.v
+creates c with ι[1] ≺ ι[0], which d's constraint derives through
+c[1] ≺ δ ≺ c[0]. TreeCopy.v creates a with α·w ≺ (α·w)[i] along every
+walk w. In CfstScheduler.v the facts of the old world do not split into
+conservative constraints, and each channel is created with a rank
+constraint against all earlier channels. Points that no channel occupies,
+the ceilings of the coarse segments, are top-level variables of
+C₀ = ∅. Every example of examples/cfst/ states a whole-program `styped`
+derivation and has a closed deadlock-freedom theorem. T2 of
+data-dependent.md types under K11.
+
+**141. Mordido and Pérez on the merged core (Claude, 2026-11-04, theories/mp).**
+The translation stays at its world `Wmp`, as PGV does (entry 111),
+because its facts come from ranks of denotations. Translated new is
+`let_new_pair` typed by `t_new_at`, and the simulations take the β steps of
+the encoding after the new step. Under K11 a channel at the end of a
+segment needs x ≺ x[i], which only segment and existential constraints
+supply, so `pex_fact` states it along every walk and `dsl` guards every
+payload point that is no anchor. A payload point is junk unless the
+payload lies above its carrier, which R1 and R3 already ensure. No
+statement changed.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
