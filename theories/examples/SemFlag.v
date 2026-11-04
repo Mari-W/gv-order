@@ -22,9 +22,9 @@
 
     - [sf_sem_typed] : the same open term, in the context c : Close@x,
       d : Close@y, is semantically typed in every strict world with
-      x ≺ y. The proof runs the three β-steps of the flag
-      ([sem_typed_det_beta]) and ends in the first arm, which the static
-      system types.
+      x ≺ y. The proof runs the two β-steps of the flag and the β-step
+      of the case ([sem_typed_det_beta]) and ends in the first arm, which
+      the static system types.
 
     - [sf_deadlock_free] : the configuration of the thread sf, with c
       and d as channel constants, and the partner close c; close d on
@@ -406,7 +406,7 @@ Lemma sf_arm_sem W x y :
 Proof. intros HW Hxy. apply fundamental; [|done]. by apply sf_arm_typed; [apply HW|]. Qed.
 
 (** The component is semantically typed: the flag reduces to inj₁ ∗ in
-    three β-steps, and the case then takes the first arm. *)
+    two β-steps, and a third step takes the first arm. *)
 Theorem sf_sem_typed W x y :
   strict W → w_lt W x y → sem_typed W ∅ (sf_ctx x y) ∅ (sf_body 0 1) TUnit.
 Proof.
