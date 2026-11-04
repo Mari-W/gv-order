@@ -305,8 +305,10 @@ resolution by plain monotonicity, choice vector by choice vector.
 
 Amalgamation. A fresh extension that places new names and new pending choices,
 fresh at every choice vector (`pfresh`), joined with any pending extension,
-which may resolve old choices, is a fresh extension at every choice vector
-([pjoin_fresh]) and a valid pending world ([pjoin_valid]). The proof applies
+which may resolve old choices and create new ones, is a fresh extension at
+every choice vector ([pjoin_fresh]) and a valid pending world
+([pjoin_valid]). Two creations from one pending world join to a valid pending
+world ([pcreate_join]). The proof applies
 [wext_fresh_join] at the choice vector the extension lies above, so the hard
 lemma of the current development carries over unchanged. ⊑ₒ becomes "fresh
 at every choice vector". The two orders of db_main form one valid pending
