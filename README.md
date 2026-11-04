@@ -1,4 +1,4 @@
-# Deadlock freedom for GV♯ with an order-based logical relation
+# SPO-LR-DF: deadlock freedom by strict partial orders and a logical relation
 
 This repository holds a Rocq development of a step-indexed logical relation
 for GV♯, indexed by worlds of points and their order, and the deadlock freedom
@@ -185,8 +185,8 @@ theories/mp stays at its world `Wmp` on the merged core. Translated new is `let_
 
 ## Other documents
 
-- `ORDERS-SPEC.md` is the design specification. Section numbers in the code refer to it.
-- `SHARP-EDGES.md` is the decision log. Comments of the form "sharp edges N" point to entry N.
-- `gvsharp-orders.lagda` is the literate description of the system.
-- `docs/` holds the notes on decidability and the design reviews.
-- `paper/` holds the paper of the system before the order-based port.
+- `docs/ORDERS-SPEC.md` is the design specification. Section numbers in the code refer to it.
+- `docs/SHARP-EDGES.md` is the decision log. Comments of the form "sharp edges N" point to entry N.
+- `docs/TOUR.md` is a guided tour of the system with examples, rules, the logical relation and the main statements.
+- `docs/extensions/` holds the extensions and the adequacy studies, `docs/history/` the design reviews.
+- `paper/` holds the draft of the paper on this system.

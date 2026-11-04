@@ -49,3 +49,10 @@ rocq_mcp_cache*
 *.ps
 paper/*.pdf
 !paper/rocq-logo.pdf
+
+# Working documents and local editor helpers. Kept in the tree, out of the repo.
+/docs/system/
+/docs/examples/
+/docs/extensions/algorithmic-smt.md
+/docs/extensions/egg-smt-demo.md
+/tools/

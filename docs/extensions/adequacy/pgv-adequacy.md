@@ -174,6 +174,10 @@ counterexample to subsumption has turned up.
 
 ## 6  Proposed fragment and plan for the Rocq part
 
+This section keeps the plan as written before the mechanization. Section 7 is
+authoritative. Link is included there (sharp edges 68), and the ranks are
+3·pr(S)+2, 3n+1 and 3n+3 with (0, 0) for ℓ_⊥ and (1, 0) for u_⊤.
+
 Fragment v1, "repaired monotone PGV". All of PGV except 0 and absurd and link,
 with three restrictions.
 
