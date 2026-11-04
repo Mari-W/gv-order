@@ -15,12 +15,12 @@
 
       Sst   = µα. ?⟨κ⟩(∗ ⊗ α@κ).Close
       C     = {ι[0]ⁿ + 1 ≺ ι[0]ⁿ⁺¹  ∣  n ∈ ℕ}                  (positions from 0)
-      stprod : □(∀ι. C. ∗ ⊸^⊥_⊤ (S̄st@ι ⊸^{ι+1}_⊤ ∗))
+      stprod : □(∀ι. C. ∗ ⊸ (S̄st@ι ⊸^{ι+1} ∗))
       stprod = !(g = λc. let (e, e′) = new ∗ in
                         let (c, u) = ⟨send ⟨⟨∗, e⟩, c⟩, ∗⟩ in let () = u in
                         let () = close c in
                         spawn (λw. let () = w in (force g) e′))
-      stcons : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sst@ι ⊸^{ι+1}_⊤ ∗))
+      stcons : □(∀ι. C. ∗ ⊸ (Sst@ι ⊸^{ι+1} ∗))
       stcons = !(h = λc. let (p, c) = recv c in let (v, d) = p in let () = v in
                         let () = close c in
                         spawn (λw. let () = w in (force h) d))

@@ -224,7 +224,7 @@ Definition lbx_below_h (W : world) (Ψ : hyps) (lb : lbound)
     (H : gset point) (b : bool) : Prop :=
   match lb with
   | LBot => True
-  | LTop => H = ∅ ∧ b = false
+  | LNone => H = ∅ ∧ b = false
   | LPt x => (∀ y, y ∈ H → sle W Ψ x y) ∧ b = false
   end.
 

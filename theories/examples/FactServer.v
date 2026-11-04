@@ -22,7 +22,7 @@
 
       Sr   = !∗.Close
       C    = {ι[0]ⁿ⁺¹ ≺ ι[0]ⁿ,  ι[0]ⁿ⁺¹ + 1 ≺ ι[0]ⁿ  ∣  n ∈ ℕ}   (positions from 0)
-      fact : □(∀ι. C. ∗ ⊸^⊥_⊤ ((∗ ⊕ ∗) ⊗ Sr@ι ⊸^{ι+1}_⊤ ∗))
+      fact : □(∀ι. C. ∗ ⊸ ((∗ ⊕ ∗) ⊗ Sr@ι ⊸^{ι+1} ∗))
       fact = !(f = λnr. let (n, r) = nr in case n of
                  x. let () = x in close (send ⟨∗, r⟩)
                | y. let () = y in

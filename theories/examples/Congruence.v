@@ -6,7 +6,7 @@
     c+1 ≡ a+1 from its alias c ≡ a, and it derives that inside the world
     through the closure field [wf_eq_shift] and lifts it with [se_w], so
     the static rule stays unused. examples/Forwarder.v states its alias
-    of carried points fact by fact in a constraint instead of deriving
+    of payload points fact by fact in a constraint instead of deriving
     it.
 
     The box below is the smallest program we found whose derivation uses
@@ -16,7 +16,7 @@
 
       Scg = !⟨κ⟩(Close@κ).Close
       C   = {ι ≡ ι′,  ι′ ≺ ι′[0]}                             (positions from 0)
-      cg : □(∀ι ι′. C. ∗ ⊸^⊥_⊤
+      cg : □(∀ι ι′. C. ∗ ⊸
                ((Scg@ι ⊗ Close@ι′[0]) ⊗ Close@(ι′+2) ⊸^{ι′+2}_{ι} ∗))
       cg = !(f = λp. let (q, d) = p in let (c, e) = q in
                     let (c, w) = ⟨send ⟨e, c⟩, ∗⟩ in let () = w in
@@ -28,7 +28,7 @@
                          Close@ι′[0]. E-Conv moves it along
                          ι′[0] ≡ ι[0], which is [se_slot] of ι ≡ ι′.
                          send's own premise ι ≺ ι[0] reads ι ≡ ι′ ≺ ι′[0]
-                         and the same alias of the carried points.
+                         and the same alias of the payload points.
       close c at ι+1     the frame holds d at ι′+2, so E-App asks
                          ι+1 ≺ ι′+2. The hypothesis states no fact at
                          ι+1. [se_shift] of ι ≡ ι′ gives ι+1 ≡ ι′+1, and
@@ -53,7 +53,7 @@
     that fact in the constraint it read x ≡ y from, and a derivation
     that uses [se_shift] at x+1 ≡ y+1 can state that one. The two rules
     are what lets a constraint carry one alias between base points in
-    place of one alias per offset and per carried point, and for an alias
+    place of one alias per offset and per payload point, and for an alias
     at every depth that is the difference between a finite constraint
     and an infinite one. A creation constraint cannot state a fact
     between two points that both lie outside the new channel, so an

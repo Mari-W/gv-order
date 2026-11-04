@@ -2,7 +2,7 @@
 
     docs/extensions/adequacy/padovani-novara.md §7. Levels become points
     relative to a level anchor. An anchor B stands for a shift, and its
-    carried points B[r] are the points of one level relative to it.
+    payload points B[r] are the points of one level relative to it.
 
     - B[RAnc a] is the anchor shifted by a.
     - B[RCh c] is the point of a channel with code c (PNTypes.chres). The
@@ -71,7 +71,7 @@ Inductive dn :=
   | DLo (z : Z) (o : nat)
   | DHi (z : Z) (o : nat)
   | DTop (o : nat)
-  | DJ (d : dn) (i o : nat).   (* any other carried point *)
+  | DJ (d : dn) (i o : nat).   (* any other payload point *)
 
 Definition dsh (d : dn) : dn :=
   match d with
@@ -408,8 +408,8 @@ Proof. apply trz_sess_lshift. Qed.
 
 (** ** Substitution of points
 
-    Every point of [trz B k t] is a carried point B[i], a carried point
-    of the variable of an inner box, or a carried point of the root. *)
+    Every point of [trz B k t] is a payload point B[i], a payload point
+    of the variable of an inner box, or a payload point of the root. *)
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
 Proof. apply pt_inst_slot. Qed.

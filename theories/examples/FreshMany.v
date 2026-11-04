@@ -1,6 +1,6 @@
 (** * Example: a fresh channel that acts several times between two points
 
-    many : □(∀ι κ. {ι ≺ κ}. ∗ ⊸^⊥_⊤ Close@ι ⊗ Close@κ ⊸^κ_⊤ ∗)
+    many : □(∀ι κ. {ι ≺ κ}. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)
     many = !(f = λp. let (c, e) = p in
                      let q = new ∗ in let (d, d′) = q in
                      let () = spawn (λu. let () = u in

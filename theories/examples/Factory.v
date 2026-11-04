@@ -8,7 +8,7 @@
 
       fac  = !(f = λu. let () = u in let (c, c′) = new ∗ in
                        let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
-           : □(∗ ⊸^⊥_⊤ (?∗.Close)@a)
+           : □(∗ ⊸ (?∗.Close)@a)
       main = let (f, u) = ⟨fac, ∗⟩ in let () = u in
              let () = recvclose ((force f) ∗) in recvclose ((force f) ∗)
 
@@ -88,11 +88,11 @@ Lemma Cfac_acyclic : c0_acyclic 1 Cfac.
 Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []]. Qed.
 
 Lemma fac_deadlock_free : deadlock_free (∅, {[+ fac_main +]}).
-Proof. apply (soundness_source 1 Cfac _ TUnit Cfac_acyclic); [constructor|apply fac_typed]. Qed.
+Proof. apply (soundness_source 1 Cfac _ TUnit (c0_acyclic_creation _ _ Cfac_acyclic)); [constructor|apply fac_typed]. Qed.
 
 (** ** factory under □∀ι: typable (SHARP-EDGES 61)
 
-      faca : □(∀ι. ∗ ⊸^⊥_⊤ (?∗.Close)@ι)      (the body of fac, new at ι)
+      faca : □(∀ι. ∗ ⊸ (?∗.Close)@ι)      (the body of fac, new at ι)
       fa_main = let (f, u) = ⟨faca, ∗⟩ in let () = u in
                 let (x, y) = ⟨(force f) ∗, (force f) ∗⟩ in
                 let () = recvclose x in recvclose y
@@ -185,4 +185,4 @@ Proof.
 Qed.
 
 Lemma fa_deadlock_free : deadlock_free (∅, {[+ fa_main +]}).
-Proof. apply (soundness_source 2 Cfa _ TUnit Cfa_acyclic); [constructor|apply fa_typed]. Qed.
+Proof. apply (soundness_source 2 Cfa _ TUnit (c0_acyclic_creation _ _ Cfa_acyclic)); [constructor|apply fa_typed]. Qed.

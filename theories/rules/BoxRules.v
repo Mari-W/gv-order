@@ -10,7 +10,7 @@ Set Default Proof Using "All".
 
 (** ** Applying force
 
-    force : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[xs/ιs]}_⊤ T[xs/ιs], at an instance xs
+    force : □(∀ιs. C. ∗ ⊸^u T) ⊸^{u[xs/ιs]} T[xs/ιs], at an instance xs
     with C[xs/ιs] in W (sharp edges 58). Its upper point is the box's,
     instantiated, so the frame of the application is one V-Box
     accepts, and the instance meets the box's constraint. *)
@@ -22,7 +22,9 @@ Proof.
   intros HW HV1 HV2 Hub.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hu & HB & HV).
-  inversion Hk as [| | | | | | | |m kk C1 ub1 T1 xs ss Hxs HC1 HK1 Hss Hsc|]; subst.
+  inversion Hk as [kq Tq Gq xs Hsig HC1 HK1|]; subst.
+  inversion Hsig as [| | | | | | | |m kk C1 ub1 T1 ? ss Hxs Hss Hsc]; subst.
+  apply facts_hold_bcs_at in HC1.
   apply Vrel_box_thunk_iff in HV as (-> & eb & -> & Hfc & HK).
   destruct n as [|n']; [apply Erel_0|].
   apply (Erel_det_beta_S _ _ _ _ _ _ (subst1 (EBox eb) eb)).
@@ -84,7 +86,7 @@ Proof.
   - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
   - apply lenv_split_nones_l.
   - exact Hub.
-  - apply sem_typed_konst; [apply lenv_empty_nones|]. by constructor.
+  - apply sem_typed_konst; [apply lenv_empty_nones|]. by apply KTForce.
   - simpl. by rewrite union_empty_r_L.
 Qed.
 

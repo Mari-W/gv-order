@@ -80,7 +80,7 @@ Proof.
     |exact HL|exact Hs|by apply slot_respect|exact Hc|exact Hr|exact HLr].
 Qed.
 
-(** Strictness when ≡ relates carried points (Forwarder.v). The map [cn]
+(** Strictness when ≡ relates payload points (Forwarder.v). The map [cn]
     has to respect x ↦ x[i] and need not commute with it. *)
 Lemma wgen_strict_cong N E L (cn : point → point) (r : point → nat) :
   (∀ p, p ∈ N → ∃ a, p = NConst a) →
@@ -230,7 +230,7 @@ Definition vrank (w : nat) (x : point) : nat := w * pn_vidx (pt_name x) + pt_off
 Lemma vrank_shift w x : vrank w x < vrank w (pt_shift 1 x).
 Proof. unfold vrank, pt_shift. simpl. lia. Qed.
 
-(** The rank of a point is a weight per root constant, a carried point
+(** The rank of a point is a weight per root constant, a payload point
     weighted by its base, plus a step per name times the offset. *)
 Fixpoint pn_rank (g : nat → nat) (h : nat → nat → nat → nat) (p : pname) : nat :=
   match p with

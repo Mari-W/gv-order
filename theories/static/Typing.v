@@ -118,7 +118,7 @@ Proof.
   - apply tenv_comp_empty_l, se_sym.
   - apply lenv_split_nones_l.
   - exact Hub.
-  - apply t_konst; [apply lenv_empty_nones| |done]. by constructor.
+  - apply t_konst; [apply lenv_empty_nones| |done]. by apply KTForce.
   - destruct F as [P o]. unfold sf_union. simpl. by rewrite union_empty_r_L.
 Qed.
 

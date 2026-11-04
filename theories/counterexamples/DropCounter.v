@@ -225,7 +225,7 @@ Qed.
 Lemma force_notin_Wb n : ¬ Vrel n Wb ∅ Tcex (Konst KForce).
 Proof.
   intros H. apply Vrel_lolli_iff in H as [(eb & ? & _)|(k & T0 & Hk & _ & Hkt & Heq)]; [done|].
-  simplify_eq. inversion Hkt; subst.
+  simplify_eq. inversion Hkt as [kq Tq Gq xs Hsig _ _|]; subst. inversion Hsig; subst.
   simpl in Heq. destruct Heq as (_ & _ & Hbox & Hres).
   destruct ss; [|by destruct Hbox as (_ & ? & _)]. rewrite sinst_slist_nil in Hres.
   destruct T as [| | | | |s y|]; simpl in Hbox; try naive_solver.

@@ -211,7 +211,7 @@ Qed.
 (** ** [ordered] without its constraint: the body does not type
 
       ordered = !(f = λp. let (c, d) = p in let () = close c in close d)
-              : □(∀ι ι′. {}.^⊥ Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗)
+              : □(∀ι ι′. {}. ∗ ⊸ Close@ι ⊗ Close@ι′ ⊸^{ι′} ∗)
 
     close c blocks at ι while the body still holds d at ι′, so E-App
     asks ι ≺ ι′ (examples/Ordered.v). With the empty constraint the

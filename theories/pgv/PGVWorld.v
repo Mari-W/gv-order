@@ -64,7 +64,7 @@ Inductive dn :=
   | DV (a b : nat)                (* the variable a at offset b *)
   | DP (s : psty) (k : nat)       (* a protocol point, k steps on *)
   | DS (b i k : nat)              (* (a,b)[i] at offset k, b ≠ 0 *)
-  | DJ (d : dn) (i k : nat).      (* any other carried point *)
+  | DJ (d : dn) (i k : nat).      (* any other payload point *)
 
 Definition dsh (d : dn) : dn :=
   match d with

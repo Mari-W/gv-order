@@ -11,7 +11,7 @@
     Leaf), a fixed sequence of selections, sends and receives, because
     the calculus has no tree values.
 
-      treeSum : □(∀κ ζ β. C. ∗ ⊸^⊥_⊤ ((XformD;β)@κ ⊸^ζ_⊤ ∃κ′≽κ. C′. β@κ′))
+      treeSum : □(∀κ ζ β. C. ∗ ⊸ ((XformD;β)@κ ⊸^ζ ∃κ′≽κ. C′. β@κ′))
       C  = {κ·w ≺ ζ, κ·w ≺ (κ·w)[i] ∣ w, i}
       C′ = {κ ≺ κ′} ∪ C[κ′/κ]
 
@@ -425,4 +425,4 @@ Proof.
 Qed.
 
 Theorem ts_deadlock_free : deadlock_free (∅, {[+ ts_go +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit top_acyclic); [constructor|apply ts_typed]. Qed.
+Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply ts_typed]. Qed.

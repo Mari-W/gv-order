@@ -11,7 +11,7 @@
     has no integers, so receiveEval returns the channel alone, and the
     Add and Mult branches run the same code.
 
-      receiveEval : □(∀κ ζ β. C. ∗ ⊸^⊥_⊤ ((TermD;β)@κ ⊸^ζ_⊤ ∃κ′≽κ. C′. β@κ′))
+      receiveEval : □(∀κ ζ β. C. ∗ ⊸ ((TermD;β)@κ ⊸^ζ ∃κ′≽κ. C′. β@κ′))
       C  = {κ·w ≺ ζ, κ·w ≺ (κ·w)[i] ∣ w, i}
       C′ = {κ ≺ κ′} ∪ C[κ′/κ]
 
@@ -448,4 +448,4 @@ Proof.
 Qed.
 
 Theorem as_deadlock_free : deadlock_free (∅, {[+ as_go +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit top_acyclic); [constructor|apply as_typed]. Qed.
+Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply as_typed]. Qed.

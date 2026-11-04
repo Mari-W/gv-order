@@ -1,6 +1,6 @@
 (** * Example: a channel created between two box arguments (E-NewFresh)
 
-    between : □(∀ι κ. {ι ≺ κ}. ∗ ⊸^⊥_⊤ Close@ι ⊗ Close@κ ⊸^κ_⊤ ∗)
+    between : □(∀ι κ. {ι ≺ κ}. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)
     between = !(f = λp. let (c, e) = p in
                         let q = new ∗ in let (d, d′) = q in
                         let () = spawn (λu. let () = u in close d′) in

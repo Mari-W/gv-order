@@ -4,15 +4,15 @@
       Cf = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1,  ι′+k ≺ (ι′+k)[0],
             (ι+k)[0] ≡ (ι′+k)[0]  ∣  k ∈ ℕ}                  (positions from 0)
       Cp = {ι+k ≺ (ι+k)[0],  (ι+k)[0] ≺ ι+k+1  ∣  k ∈ ℕ}
-      fwd   : □(∀ι ι′. Cf. ∗ ⊸^⊥_⊤ (Si@ι ⊗ So@ι′ ⊸^{ι′}_⊤ ∗))
+      fwd   : □(∀ι ι′. Cf. ∗ ⊸ (Si@ι ⊗ So@ι′ ⊸^{ι′} ∗))
       fwd   = !(f = λp. let (a, b) = p in let (d, a) = recv a in
                        let (b, u) = ⟨send ⟨d, b⟩, ∗⟩ in let () = u in
                        spawn (λw. let () = w in (force f) ⟨a, b⟩))
-      fprod : □(∀ι. Cp. ∗ ⊸^⊥_⊤ (S̄i@ι ⊸^{ι[0]}_⊤ ∗))
+      fprod : □(∀ι. Cp. ∗ ⊸ (S̄i@ι ⊸^{ι[0]} ∗))
       fprod = !(g = λc. let (e, e′) = new ∗ in let (c, u) = ⟨send ⟨e, c⟩, ∗⟩ in
                        let () = u in let () = close e′ in
                        spawn (λw. let () = w in (force g) c))
-      fcons : □(∀ι. Cp. ∗ ⊸^⊥_⊤ (S̄o@ι ⊸^{ι[0]}_⊤ ∗))
+      fcons : □(∀ι. Cp. ∗ ⊸ (S̄o@ι ⊸^{ι[0]} ∗))
       fcons = !(h = λc. let (d, c) = recv c in let () = close d in
                        spawn (λw. let () = w in (force h) c))
       fw_main = let ((p, f), h) = ⟨⟨fprod, fwd⟩, fcons⟩ in

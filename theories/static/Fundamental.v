@@ -546,7 +546,7 @@ Qed.
 
 Lemma kscoped_pinst peq plt pk k T σ :
   konst_ty peq plt pk k T → kscoped k T → kscoped k (pinst_ty σ T).
-Proof. destruct 1; simpl; auto. Qed.
+Proof. destruct 1 as [? ? ? ? Hs ? ?|]; [destruct Hs|]; simpl; auto. Qed.
 
 Lemma fhyps_pinst_insert σ Φ φ u :
   fhyps_pinst σ (<[φ := u]> Φ) = <[φ := pt_inst σ <$> u]> (fhyps_pinst σ Φ).
@@ -1077,6 +1077,99 @@ Section c0_world.
   Qed.
 End c0_world.
 
+(** ** C₀ is the program's creation constraint (sharp edges 148)
+
+    The empty context has no fact beyond equality and program order.
+    Against it, a creation constraint over n variables
+    ([creation_ok], the premise of new at n = 1) is exactly
+    [c0_acyclic]. Its outer points must be known, and the empty context
+    knows none, so C₀ has none. Conservativity holds for free, because
+    every fact of C₀ is between variables, and acyclicity is the
+    acyclicity of C₀ with program order. *)
+Notation nofact := (λ _ _ : point, False).
+
+Lemma glt_nofact x y : glt nofact nofact x y → pofs x y.
+Proof.
+  assert (∀ x y, geq nofact x y → x = y) as Hq by (induction 1; subst; done).
+  induction 1 as [x y []|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  - apply pofs_shift.
+  - apply Hq in Hx, Hy. by subst.
+  - by eapply pofs_trans.
+Qed.
+
+Lemma pofs_glt (E L : point → point → Prop) x y : pofs x y → glt E L x y.
+Proof.
+  destruct x as [p o], y as [q o']. intros [Hn Ho]. simpl in *. subst q.
+  replace o' with (o + S (o' - o - 1)) by lia. generalize (o' - o - 1) as k. intros k.
+  induction k as [|k IH].
+  - replace (o + 1) with (pt_off (pt_shift 1 (Pt p o))) by (simpl; lia). apply glt_po.
+  - eapply glt_trans; [exact IH|].
+    replace (o + S (S k)) with (pt_off (pt_shift 1 (Pt p (o + S k)))) by (simpl; lia). apply glt_po.
+Qed.
+
+Section c0_creation.
+  Context (n : nat) (C : bcs) (Henv : bc_env C = []).
+
+  Lemma c0_cc_eq x y : cc_eq_at n nofact C x y → pn_vb n (pt_name x) ∧ pn_vb n (pt_name y).
+  Proof.
+    intros [(? & ? & [] & _)|H]. by destruct (c0_open_vb n C _ Henv H) as [[??] _].
+  Qed.
+
+  Lemma c0_cc_lt x y : cc_lt_at n nofact C x y → pn_vb n (pt_name x) ∧ pn_vb n (pt_name y).
+  Proof.
+    intros [(? & ? & [] & _)|H]. by destruct (c0_open_vb n C _ Henv H) as [[??] _].
+  Qed.
+
+  Lemma c0_geq x y :
+    geq (cc_eq_at n nofact C) x y → x = y ∨ (pn_vb n (pt_name x) ∧ pn_vb n (pt_name y)).
+  Proof.
+    induction 1 as [x y H|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH].
+    - right. by apply c0_cc_eq.
+    - by left.
+    - destruct IH as [->|[??]]; [by left|by right].
+    - destruct IH1 as [->|[??]]; [done|]. destruct IH2 as [->|[??]]; by right.
+    - destruct IH as [->|[??]]; [by left|by right].
+    - destruct IH as [->|[??]]; [by left|by right].
+  Qed.
+
+  Lemma c0_glt x y :
+    glt (cc_eq_at n nofact C) (cc_lt_at n nofact C) x y → ¬ pn_vb n (pt_name x) → pofs x y.
+  Proof.
+    induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2]; intros Hn.
+    - by destruct (c0_cc_lt x y H).
+    - apply pofs_shift.
+    - destruct (c0_geq x x' Hx) as [<-|[??]]; [|done].
+      destruct (IH Hn) as [E Ho].
+      destruct (c0_geq y' y Hy) as [<-|[Hv _]]; [done|]. by rewrite <-E in Hv.
+    - pose proof (IH1 Hn) as [E Ho]. eapply pofs_trans; [done|]. apply IH2. by rewrite <-E.
+  Qed.
+End c0_creation.
+
+Lemma c0_creation_ok n C :
+  creation_ok n nofact nofact (λ _, False) C ↔ c0_acyclic n C.
+Proof.
+  split.
+  - intros [[Hacy _] Hk]. assert (bc_env C = []) as Henv.
+    { destruct (bc_env C) as [|x xs]; [done|]. by apply Forall_cons in Hk as [[] _]. }
+    split; [done|]. intros p Hp.
+    assert (glt (cc_eq_at n nofact C) (cc_lt_at n nofact C) p p) as Hp'.
+    { refine (proj2 (gen_mono _ _ _ _ _ _) p p Hp); intros ? ? ?; by right. }
+    destruct (Hacy p Hp') as [x Hx].
+    assert (glt nofact nofact x x) as Hx'.
+    { refine (proj2 (gen_mono _ _ nofact nofact _ _) x x Hx); intros ? ? (? & ? & [] & _). }
+    exact (pofs_irrefl x (glt_nofact x x Hx')).
+  - intros [Henv Hacy]. split; [split|by rewrite Henv].
+    + intros p Hp. exfalso. apply (Hacy p).
+      refine (proj2 (gen_mono _ _ _ _ _ _) p p Hp); intros ? ? [(? & ? & [] & _)|H]; exact H.
+    + split.
+      * intros x y Hx _ H. destruct (c0_geq n C Henv x y H) as [->|[??]]; [apply geq_refl|done].
+      * intros x y Hx _ H. by apply pofs_glt, (c0_glt n C Henv).
+Qed.
+
+Lemma c0_acyclic_creation n C :
+  c0_acyclic n C → creation_ok n nofact nofact (λ _, False) C.
+Proof. apply c0_creation_ok. Qed.
+
 Lemma prim_pinst σ T : prim T → prim (pinst_ty σ T).
 Proof.
   intros H. revert σ. induction H; intros σ; simpl;
@@ -1089,11 +1182,12 @@ Qed.
     (static/Source.v), and the two worlds of the proof, [wnil] for the
     facts and [wc0 n C₀] for the run, are internal to it. *)
 Theorem soundness_source n C0 t T :
-  c0_acyclic n C0 → prim T →
+  creation_ok n nofact nofact (λ _, False) C0 → prim T →
   styped ∅ [(C0, ids n)] [] (∅, None) t T →
   deadlock_free (∅, {[+ t +]}).
 Proof.
-  intros HC HT Hs. pose proof (styped_typed wnil _ _ _ _ _ _ Hs) as Ht.
+  intros HC HT Hs. apply c0_creation_ok in HC.
+  pose proof (styped_typed wnil _ _ _ _ _ _ Hs) as Ht.
   pose proof (wc0_strict n C0 HC) as HS.
   set (σ := plist (c0_consts n)).
   assert (sem_rules (wc0 n C0) (tenv_pinst σ ∅) (lenv_pinst σ [])

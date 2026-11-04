@@ -15,7 +15,7 @@
 
       Sr   = !∗.Close
       C    = {ι[0]ⁿ⁺¹ ≺ ι[0]ⁿ,  ι[0]ⁿ⁺¹ + 1 ≺ ι[0]ⁿ  ∣  n ∈ ℕ}   (positions from 0)
-      fwsrv : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sr@ι ⊸^{ι+1}_⊤ ∗))
+      fwsrv : □(∀ι. C. ∗ ⊸ (Sr@ι ⊸^{ι+1} ∗))
       fwsrv = !(f = λr. case inj₂ ∗ of
                   x. let () = x in close (send ⟨∗, r⟩)
                 | y. let () = y in

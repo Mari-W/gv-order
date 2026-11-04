@@ -2,7 +2,7 @@
 
     [tc_main] of TailCall.v. TailCall.v now creates c in the empty world
     with the creation constraint {ι+k ≺ ι[0] ∣ k ∈ ℕ}, whose ceiling is
-    the carried point ι[0] (sharp edges 105). Before, the ceiling was
+    the payload point ι[0] (sharp edges 105). Before, the ceiling was
     the constant (1, 0) of the world. This file keeps the copy
     [tc_main_ex] of the program and its theorem. *)
 

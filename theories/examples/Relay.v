@@ -3,7 +3,7 @@
       S = μX. ?(∃ι. D@ι).X      D = ?∗.Close
       C₀(x, y) = {x ≺ y, x ≺ x[0], x[0] ≺ x+1, x[0] ≺ y, y ≺ x+1, y ≺ x[0]+1}
       C = C₀(ι, ι′) ∪ {C₀(ι+k+1, (ι+k)[0]+1) ∣ k ∈ ℕ}       (positions from 0)
-      relay : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (S@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗))
+      relay : □(∀ι ι′. C. ∗ ⊸ (S@ι ⊗ Close@ι′ ⊸^{ι′} ∗))
       relay = !(f = λp. let (c, d) = p in let (e, c) = recv c in
                        let (v, e) = recv e in let () = v in let () = close d in
                        spawn (λw. let () = w in (force f) ⟨c, e⟩))

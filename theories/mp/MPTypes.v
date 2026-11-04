@@ -127,7 +127,7 @@ Scheme msty_mut := Induction for msty Sort Prop
   with mpay_mut := Induction for mpay Sort Prop.
 Combined Scheme msty_mpay_mut from msty_mut, mpay_mut.
 
-(** Countability, for priorities and session types inside the items of carried points. *)
+(** Countability, for priorities and session types inside the items of payload points. *)
 Definition prio_enc (ρ : prio) : gen_tree Z :=
   match ρ with
   | PBot => GenNode 0 [] | PTop => GenNode 1 []

@@ -134,7 +134,7 @@ Qed.
 Theorem dl_untypable_source n C0 : c0_acyclic n C0 → ¬ styped ∅ [(C0, ids n)] [] (∅, None) dl_main TUnit.
 Proof.
   intros HC Ht. apply dl_not_deadlock_free.
-  apply (soundness_source n C0 _ TUnit HC); [constructor|exact Ht].
+  apply (soundness_source n C0 _ TUnit (c0_acyclic_creation _ _ HC)); [constructor|exact Ht].
 Qed.
 
 (** ** The repair: g sends first
@@ -267,4 +267,4 @@ Proof.
 Qed.
 
 Theorem dlfix_deadlock_free : deadlock_free (∅, {[+ dlfix_main +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit top_acyclic); [constructor|apply dlfix_typed]. Qed.
+Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply dlfix_typed]. Qed.

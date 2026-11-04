@@ -17,7 +17,7 @@
 
     The program types in the empty world. c is created with the creation
     constraint {ι ≺ ι[0], ι[0]+1 ≺ ι+1}, two facts between ι and its own
-    carried point, and d by the alias at ι[0] (sharp edges 105). The
+    payload point, and d by the alias at ι[0] (sharp edges 105). The
     points (a,k) and s above are ι+k and ι[0]. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.

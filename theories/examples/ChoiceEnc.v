@@ -342,7 +342,7 @@ Proof.
 Qed.
 
 Theorem choice_deadlock_free : deadlock_free (∅, {[+ choice_main +]}).
-Proof. apply (soundness_source 2 Cch _ TUnit ch_rank_ok); [constructor|apply choice_typed]. Qed.
+Proof. apply (soundness_source 2 Cch _ TUnit (c0_acyclic_creation _ _ ch_rank_ok)); [constructor|apply choice_typed]. Qed.
 
 (** ** Negative control: both arms at one point
 
@@ -387,7 +387,7 @@ Qed.
 (** ** Stage 2: a recursive choice
 
       R = μX. &{Next: !∗.X, Stop: Close} = μX. Sbr (!∗.X) Close
-      srv : □(∀ι. C. ∗ ⊸^⊥_⊤ (R@ι ⊸^{ι[1]}_⊤ ∗))
+      srv : □(∀ι. C. ∗ ⊸ (R@ι ⊸^{ι[1]} ∗))
       srv = !(f = λc. branch c { k ⇒ spawn (λw. let () = w in (force f) (send ⟨∗, k⟩))
                                | k ⇒ close k })
       loop_main = let (f, u) = ⟨srv, ∗⟩ in let () = u in
@@ -599,4 +599,4 @@ Proof.
 Qed.
 
 Theorem loop_deadlock_free : deadlock_free (∅, {[+ loop_main +]}).
-Proof. apply (soundness_source 1 lp_C _ TUnit lp_acyclic); [constructor|apply loop_typed]. Qed.
+Proof. apply (soundness_source 1 lp_C _ TUnit (c0_acyclic_creation _ _ lp_acyclic)); [constructor|apply loop_typed]. Qed.

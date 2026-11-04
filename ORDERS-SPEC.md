@@ -1,4 +1,4 @@
-# Order-based GV♯: specification (state of 2026-10-31, after sharp edges 68; branch cfst: context-free session types, sharp edges 72, 73)
+# Order-based GV♯: specification (state of 2026-11-04, after sharp edges 149: choice at x[i] (K11), constants as constrained schemes, C₀ as creation constraint, absent bounds)
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
@@ -85,27 +85,33 @@ terminated, safe, deadlock free        unchanged
 ## 4  Types and environments
 
 ```
-T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C. ∗ ⊸^u_⊤ T)      term types (sharp edges 52, 63, 65)
+T, U ::= ∗ | T ⊗ U | T + U | T ⊸^u_ℓ U | S@ι | □(∀ιs. C. ∗ ⊸^u T)      term types (sharp edges 52, 63, 65)
                           A box is a polymorphic thunk. Its upper point u lives on the arrow,
                           under the binder, and may mention ιs. The box former carries no point.
 C    ⊆ { x ≺ y,  x ≡ y }  constraint of a box: any set of positive facts, finite or infinite,   (sharp edges 65)
                           between points whose roots are ιs, point variables of enclosing boxes
-                          or point constants. □(∀ιs. ∗ ⊸^u_⊤ T) abbreviates C = ∅.
+                          or point constants. □(∀ιs. ∗ ⊸^u T) abbreviates C = ∅.
                           C holds at xs in W when every fact of C[xs/ιs] holds in W.
                           Written with set-builder notation, e.g.
                             { ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1  ∣  k ∈ ℕ }          request and reply
                           Only positive facts: they persist along W ⊑ W′, so V-Box is monotone.
                           A fact x ⊀ y would not persist. An unsatisfiable C is harmless, its box
                           is never forced.
-           | □(∀ιs αs. C. ∗ ⊸^u_⊤ T) | ∃ιs≽ℓ. C. T          (K6, K7, sharp edges 73)
+           | □(∀ιs αs. C. ∗ ⊸^u T) | ∃ιs≽ℓ. C. T          (K6, K7, sharp edges 73)
                           A box binds session variables αs next to its ιs. αs occur in session
-                          positions only. The existential binds points, carries a lower point ℓ
-                          (heads(∃ιs≽ℓ. C. T) = {ℓ}) and a positive constraint C as for boxes.
+                          positions only. The existential binds points, carries a lower bound ℓ
+                          (heads(∃ιs≽ℓ. C. T) = {ℓ} for a point ℓ, ∅ otherwise, with the ⊥ flag
+                          for ℓ = ⊥) and a positive constraint C as for boxes. ∃ιs. C. T leaves
+                          an absent bound out.
                           Rocq: TBox n k C T, TEx ℓ n C T.
-u    ::= ι | ⊥            upper point: the call blocks at most at u     (⊥: never blocks)
-ℓ    ::= ι | ⊤            lower point: the closure holds only above ℓ   (⊤: holds nothing)
-                          (no ⊤ for u: every function has a known upper point, a function that may
-                           block anywhere gets a point variable)
+u    ::= ι, optional      upper point: the call blocks at most at u. An arrow without u never
+                          blocks. A function that may block anywhere gets a point variable.
+ℓ    ::= ι, optional      lower point: the closure holds only at or above ℓ. An arrow without ℓ
+                          holds nothing. T ⊸^u U, T ⊸_ℓ U and T ⊸ U leave the absent bounds out.
+                          Rocq: option point for both (sharp edges 149).
+lower bound of ∃          absent (holds nothing, Rocq LNone), a point ι (Rocq LPt), or ⊥
+                          (Rocq LBot). ⊥ is the unknown point: the value holds channels at points
+                          not known from outside, and no point lies below ⊥. ⊥ has no other meaning.
 S    ::= Skip | S;S | ?P | !P | ⊕(S, S) | &(S, S) | Close | μX.S | X | X̄
                                                                        session types, unannotated (K1, sharp edges 72)
                           Send and receive have no continuation, choice is binary.
@@ -119,12 +125,13 @@ S    ::= Skip | S;S | ?P | !P | ⊕(S, S) | &(S, S) | Close | μX.S | X | X̄
                           Duality is pointwise: !P ↔ ?P, ⊕ ↔ &, dual(S₁;S₂) = dual S₁; dual S₂, X ↔ X̄.
 P    ::= ∃ιs. T           payload, all points of T bound                sugar: !(S₁ ⊗ S₂).S binds them implicitly
 x, ι ::= (p, b)           a point, the instant b of the root p: p after b actions
-p    ::= a | ι-variable | x[i]        root: point constant, bound point variable, carried point
-x[i]                       i ≥ 1: the point of the i-th channel carried by the message of the action
-                          that leaves x. As a point, x[i] also stands for (x[i], 0).
+p    ::= a | ι-variable | x[i]        root: point constant, bound point variable, payload point
+x[i]                       i ≥ 0: the payload point, the point of the i-th channel (from 0) carried by
+                          the message of the action that leaves x. A choice at x continues at x[i]
+                          for branch i (K11, sharp edges 142). As a point, x[i] also stands for (x[i], 0).
 x + n ≔ (p, b + n)  for x = (p, b)
-         (c,k)[1] reads "the first channel carried by c's message at its action k", and
-         (c,k)[1] + 2 is that channel after two of its own actions.
+         (c,k)[0] reads "the first channel carried by c's message at its action k", and
+         (c,k)[0] + 2 is that channel after two of its own actions.
          Why x[i] exists (sharp edges 5): a receiver plans the order of a channel it has
          not received yet, without knowing which channel the sender picks. It names the arriving
          channel by its position in the message. The sender must put the channel it sends at
@@ -139,7 +146,7 @@ x + n ≔ (p, b + n)  for x = (p, b)
 Δ    ::= · | x : T | Δ, Δ
 prim ∗,  prim T ⊗ U,  prim T + U,  prim □T if prim T     (as in the paper)
 
-heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ι}      heads(T ⊸^u_ℓ U) = {ℓ} ∖ {⊤}
+heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ι}      heads(T ⊸^u_ℓ U) = {ℓ}, ∅ without ℓ
 heads(T ⊗ U) = heads(T + U) = heads(T) ∪ heads(U)
 heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 ```
@@ -150,13 +157,13 @@ heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 ## 5  Worlds
 
 ```
-carrier     instants (p, b),  p a point constant or a point x[i] carried by one. No channel names.
+carrier     instants (p, b),  p a point constant or a payload point x[i] of one. No channel names.
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
 successor congruence   x ≡ y  ⇒  x+1 ≡ y+1     (aliased instants stay aliased)
 carried congruence     x ≡ y  ⇒  x[i] ≡ y[i]      (equal instants carry the same message)
 x ≼ y       x ≺ y or x ≡ y
-F ≺ F′      every element of F is ≺ every element of F′       (frames, ⊥ and ⊤ as expected)
+F ≺ F′      every element of F is ≺ every element of F′       (no point lies below ⊥)
 
 W ⊑ W′      ≡ ⊆ ≡′,  ≺ ⊆ ≺′,  W′ strict                        (Kripke order)
 W ⊑ₒ W′     W ⊑ W′ and W′ adds nothing between old instants    (only at new)
@@ -222,8 +229,8 @@ V-Abs     fchans(t) = dom Σ        {ℓ} ≼_W heads(Σ)
               t[v/x] ∈ E^{W′}_j⟦Σ, Σ′ ⊢ U ≺ F⟧
           ⇒   λx.t ∈ V^W_n⟦Σ ⊢ T ⊸^u_ℓ U⟧
 V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C[xs/ιs] holding in W′.
-              λ_. fix x.t ∈ V^{W′}_n⟦· ⊢ (∗ ⊸^u_⊤ T)[xs/ιs]⟧
-          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C. ∗ ⊸^u_⊤ T)⟧                  (sharp edges 58, 63, 65)
+              λ_. fix x.t ∈ V^{W′}_n⟦· ⊢ (∗ ⊸^u T)[xs/ιs]⟧
+          ⇒   !(x = t) ∈ V^W_n⟦· ⊢ □(∀ιs. C. ∗ ⊸^u T)⟧                  (sharp edges 58, 63, 65)
           (V of the thunk at every admissible instance. Unfolded by V-Abs, this is fix x.t in
            E^{W′}_j at every j < n and every F with {u[xs/ιs]} ≺_{W′} F, the box of sharp edges 52.
            Rocq: Vrel_box_iff, unfolded in Vrel_box_thunk_iff)
@@ -232,7 +239,7 @@ V-Box     fchans(t) = ∅     ∀W′ ⊒ W, xs known to W′ with C[xs/ιs] hol
           (≈_W relates two constraints when each fact of one has a fact of the other with
            points up to ≡_W)
 V-Box with αs  as V-Box, and in addition at every list ss of hereditarily contractive session
-          types for the αs, with the thunk in V at (∗ ⊸^u_⊤ T)[xs/ιs][ss/αs]. The instances need
+          types for the αs, with the thunk in V at (∗ ⊸^u T)[xs/ιs][ss/αs]. The instances need
           not be closed. Box bodies with αs compare by ≈_W with session types on the nose
           (teqW_r), because ≈ of open session types is not closed under instances (sharp edges 73)
 V-Ex      {ℓ} ≼_W heads(Σ)    xs known to W,  C[xs/ιs] holds in W,  v ∈ V^W_n⟦Σ ⊢ T[xs/ιs]⟧
@@ -240,11 +247,11 @@ V-Ex      {ℓ} ≼_W heads(Σ)    xs known to W,  C[xs/ιs] holds in W,  v ∈ 
           (Rocq: Vrel_ex_iff. Vdef carries a point substitution so that the clause stays
            structural)
 
-payload at x           P[x] ≔ T[x[1], …, x[m] / ι₁, …, ιₘ]  for P = ∃ι₁ … ιₘ. T and c : S@x.
+payload at x           P[x] ≔ T[x[0], …, x[m−1] / ι₀, …, ιₘ₋₁]  for P = ∃ι₀ … ιₘ₋₁. T and c : S@x.
                        A plain substitution, no quantifier on either side. The sender's channels
-                       satisfy it up to ≡ (V-Chan), so the sender must have put them at the carried points.
+                       satisfy it up to ≡ (V-Chan), so the sender must have put them at the payload points.
 names                  one sort, points. Worlds and environments use ground points (constants and their
-                       carried points x[i]). Static types also use bound point variables.
+                       payload points x[i]). Static types also use bound point variables.
 
 E-Zero    t ∈ E^W_0⟦Θ ⊢ T ≺ F⟧
 E-Stop    v ∈ V^W_{n+1}⟦Θ ⊢ T⟧   ⇒   v ∈ E^W_{n+1}⟦Θ ⊢ T ≺ F⟧
@@ -281,11 +288,12 @@ O-Recv    Θ = Θ₁, c : (?P;S)@x
            overlap is a pair of dual ends at ≡_{W′} points. Every overlap condition of the
            relation reads ≡_W, never equality of points: sharp edges 40)
 O-Close   Θ = Θ₁, c : Close@x      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
-O-Select  Θ = Θ₁, c : ⊕(S₁, S₂)@x   t —c◁i→ t′   t′ ∈ E^W_{n+1}⟦Θ₁, c : Sᵢ@(x+1) ⊢ T ≺ F⟧   (giving, like send)
-O-Branch  Θ = Θ₁, c : &(S₁, S₂)@x   t —c▷i→ t′   t′ ∈ E^W_n⟦Θ₁, c : Sᵢ@(x+1) ⊢ T ≺ F⟧
+O-Select  Θ = Θ₁, c : ⊕(S₁, S₂)@x   t —c◁i→ t′   t′ ∈ E^W_{n+1}⟦Θ₁, c : Sᵢ@x[i] ⊢ T ≺ F⟧   (giving, like send)
+O-Branch  Θ = Θ₁, c : &(S₁, S₂)@x   t —c▷i→ t′   t′ ∈ E^W_n⟦Θ₁, c : Sᵢ@x[i] ⊢ T ≺ F⟧
           (costs one, like receive. No payload arrives, so it is stated at W, not at every W′ ⊒ W.
-           Every action moves the instant by one. Skip and ; move nothing, because unr removes
-           them before a clause reads the head. K4, K5, sharp edges 72)
+           A choice continues at the payload point x[i] of branch i (K11, sharp edges 142), every
+           other action at x+1. Skip and ; move nothing, because unr removes them before a clause
+           reads the head. K4, K5, sharp edges 72)
 O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
           (c = d allowed: a self-link, Θ holds both ends of c, both entries leave Θ.
            Matches P-Act-Link with c = d, which releases c. `link (new ∗)` is typable.)
@@ -328,8 +336,8 @@ Q-Send    Σ = Σ₀, Σ_v, c : (!P;S)@x      dom Σ_e = fchans(v) ∩ C
 Obligations whose continuation environment cannot be formed (e.g. Θ already holds both
 ends of c) fail; such a thread is never ready anyway.
 Q-Close   Σ = Σ₁, c : Close@x      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
-Q-Select  Σ = Σ₁, c : ⊕(S₁, S₂)@x   p —c◁i→ p′   p′ ∈ P^W_{n+1}⟦Σ₁, c : Sᵢ@(x+1) ⊢ T⟧   (giving)
-Q-Branch  Σ = Σ₁, c : &(S₁, S₂)@x   p —c▷i→ p′   p′ ∈ P^W_n⟦Σ₁, c : Sᵢ@(x+1) ⊢ T⟧
+Q-Select  Σ = Σ₁, c : ⊕(S₁, S₂)@x   p —c◁i→ p′   p′ ∈ P^W_{n+1}⟦Σ₁, c : Sᵢ@x[i] ⊢ T⟧   (giving)
+Q-Branch  Σ = Σ₁, c : &(S₁, S₂)@x   p —c▷i→ p′   p′ ∈ P^W_n⟦Σ₁, c : Sᵢ@x[i] ⊢ T⟧
 Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
           (c = d cannot reach the interface: process-level Σ holds one end per channel)
           (a process waiting at an interface link is ready by link(p), sharp edges 68)
@@ -368,24 +376,40 @@ W          a well-formed world over point constants, the index of the judgment
 known      a point is known when W knows it or its root is a root of an instance point of a
            hypothesis in Ψ (sharp edges 59).
 
-new    : ∗ ⊸^⊥_⊤ S@ι ⊗ S′@ι                                  S ⊥ S′,  ι known
-         (new may create a channel at a box's ιs or at a carried point of one)
-spawn  : (∗ ⊸^u_ℓ ∗) ⊸^⊥_⊤ ∗
-send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι_⊤ S@(ι+1)                     {ι} ≺_Γ heads(P[ι])
-recv   : (?P;S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
-selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@(ι+1)                          (K4, sharp edges 72)
-branch : &(S₁, S₂)@ι ⊸^ι_⊤ S₁@(ι+1) + S₂@(ι+1)               (case does the dispatch)
-close  : Close@ι ⊸^ι_⊤ ∗
-link   : S@ι ⊗ S′@ι′ ⊸^⊥_⊤ ∗                                  S ⊥ S′,  ι ≡_Γ ι′
-         (link never blocks, so E-App asks no frame fact for it. The paper's link has no
+Constants are constrained type-indexed schemes (sharp edges 147). An instance of a
+signature is a type T, a constraint G and a list of points that must be known. G is a set of
+facts over ≺ and ≡ that the meta level computes from T. heads stays a meta-level function.
+No signature reads the order.
+
+            type                                                 constraint G
+spawn  : (∗ ⊸^u_ℓ ∗) ⊸ ∗                                       ∅
+send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι S@(ι+1)                        {ι ≺ h ∣ h ∈ heads(P[ι])}, no instance
+                                                                 when P[ι] carries the ⊥ flag
+recv   : (?P;S)@ι ⊸^ι P[ι] ⊗ S@(ι+1)                          ∅
+selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@ι[i]                              {ι ≺ ι[i]}              (K11)
+branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]                     {ι ≺ ι[0], ι ≺ ι[1]}    (case dispatches)
+close  : Close@ι ⊸^ι ∗                                          ∅
+link   : S@ι ⊗ dual S@ι′ ⊸ ∗                                    {ι ≡ ι′}
+         (link never blocks, so E-App asks no future fact for it. The paper's link has no
           order at all, sharp edges 68)
-force  : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs]      Γ ⊢ C[ιs′/ιs],  ιs′ known   (sharp edges 58, 63, 65)
-         (force applies the thunk. Its upper point is the thunk's, instantiated.
-          Γ ⊢ C[ιs′/ιs] asks every fact of the instance, ≺ and ≡)
-         (premises on the order and the support, as known is for new. V-Const reads them in W)
+force  : □(∀ιs αs. C. ∗ ⊸^u T) ⊸^{u[ιs′/ιs]} T[ιs′/ιs][ss/αs]   C[ιs′/ιs], with ιs′ known and
+                                                                 every s ∈ ss hereditarily contractive
+         (force applies the thunk. Its upper point is the thunk's, instantiated. sharp edges 58, 63, 65, 73)
+
+new is the one constant outside the schemes. It creates a fresh point and has no witness to
+instantiate, so its premise is that C is a creation constraint over the context with known
+outer points (sharp edges 97, 103, 105).
+
+new    : ∗ ⊸ ∃ι≽⊥. C. S@ι ⊗ dual S@ι        creation_ok 1 Γ C: C is acyclic and conservative over Γ,
+                                             every outer point of C known
+
+Rocq: konst_sig k T G xs is the table of schemes, konst_ty has the constructors KTSig (a scheme
+whose G holds and whose xs are known) and KTNewEx. KTSpawn, …, KTForce are the instances as
+lemmas, and konst_ty_case is case analysis by constant.
 
 E-Unit     ·; · ⊢^F ∗ : ∗
-E-Const    k : T   ⇒   ·; · ⊢^F k : T
+E-Const    (T, G, xs) an instance of k    Γ ⊢ G    xs known   ⇒   ·; · ⊢^F k : T
+           (Γ ⊢ G asks every fact of G, as force asks C[ιs′/ιs]. For new the premise is creation_ok)
 E-LVar     ·; x : T ⊢^F x : T
 E-Ch       c : S@ι; · ⊢^F c : S@ι′       with ι′ ≡_Γ ι
 E-Abs      Θ; Δ, x : T ⊢^{{μ}} t : U      μ a fresh frame variable, only hypothesis u ≺ μ (sharp edges 56)
@@ -402,8 +426,8 @@ E-LetPair  Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t₁ : T₁ ⊗ T₂    
 E-Inj      Θ; Δ ⊢^F t : Tᵢ   ⇒   Θ; Δ ⊢^F injᵢ t : T₁ + T₂
 E-Case     Θ₁; Δ₁ ⊢^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊢^F tᵢ : U  (i = 1, 2)
            ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊢^F case t of … : U
-E-Exp      ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
-           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C. ∗ ⊸^u_⊤ T)                   (sharp edges 57, 58, 63, 65)
+E-Exp      ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u T) ⊢^{μ}_{Ψ, (C,ιs)} t : T   (μ a fresh frame variable, only u ≺ μ)
+           ⇒   ·; □Δ ⊢^F_Ψ !(x = t) : □(∀ιs. C. ∗ ⊸^u T)                   (sharp edges 57, 58, 63, 65)
            Ψ: the constraints of the enclosing boxes with their instances, hypotheses (C, xs).
            Every side condition of the static system is read in Γ (58, 64, 65).
            Recursion needs no rule of its own. A recursive call is a force of x at some ιs′,
@@ -486,10 +510,10 @@ E-Inj       Θ; Δ ⊨^F t : Tᵢ   ⇒   Θ; Δ ⊨^F injᵢ t : T₁ + T₂
 E-Case      Θ₁; Δ₁ ⊨^{F ∪ heads(Θ₂, Δ₂)} t : T₁ + T₂     Θ₂; Δ₂, xᵢ : Tᵢ ⊨^F tᵢ : U
             ⇒   Θ₁, Θ₂; Δ₁, Δ₂ ⊨^F case t of … : U
 E-Exp       ∀xs known with C[xs/ιs], F′ with {u[xs/ιs]} ≺ F′.
-                ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u_⊤ T) ⊨^{F′} t : T[xs/ιs]
+                ·; □Δ, x : □(∀ιs. C. ∗ ⊸^u T) ⊨^{F′} t : T[xs/ιs]
             fchans(t) = ∅     fv(t) ⊆ dom(□Δ, x)
-            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C. ∗ ⊸^u_⊤ T)                  (sharp edges 58, 63, 65)
-E-Force     Θ; Δ ⊨^F t : □(∀ιs. C. ∗ ⊸^u_⊤ T)    xs known, C[xs/ιs]    {u[xs/ιs]} ≺ F
+            ⇒   ·; □Δ ⊨^F !(x = t) : □(∀ιs. C. ∗ ⊸^u T)                  (sharp edges 58, 63, 65)
+E-Force     Θ; Δ ⊨^F t : □(∀ιs. C. ∗ ⊸^u T)    xs known, C[xs/ιs]    {u[xs/ιs]} ≺ F
             ⇒   Θ; Δ ⊨^F force t : T[xs/ιs]
             (with αs, E-Exp and E-Force take every hereditarily contractive ss as well,
              sem_typed_box and sem_typed_force)
@@ -509,7 +533,7 @@ E-Conv      Θ; Δ ⊨^F t : T,   T ≈_W T′   ⇒   Θ; Δ ⊨^F t : T′    
             H keeps a redex of the hole off the context's channels (subjs_free) for every redex
             but a link. A link may act on the other end of a channel the context holds, and the
             link case moves that end with comp_ext_gen (sharp edges 68). Erel_app_link proves the
-            constant at upper point ⊥ and asks nothing of F.
+            constant without an upper point and asks nothing of F.
             Proved in rules/TermRules.v: sem_typed_unit, sem_typed_konst, sem_typed_var, sem_typed_chan,
             sem_typed_lam (E-Abs; premise for every later world W₁ and F′ with {u} ≺_{W₁} F′),
             sem_typed_inj1/2, sem_typed_letu, sem_typed_letp, sem_typed_case, sem_typed_pair,
@@ -574,10 +598,17 @@ Fundamental     Θ; Δ ⊢^F_W t : T   ⇒   Θ; Δ ⊨^F_W t : T
                 Σ ⊢_W p : T        ⇒   Σ ⊨_W p : T
 Adequacy        · ⊨_W p : T   ⇒   p deadlock free         (the paper's proof)
 Soundness       · ⊢_W p : T,  W strict   ⇒   p deadlock free
+Source          creation_ok n ∅ C₀,  prim T,  ·; · ⊢^∅_{(C₀, ιs)} t : T   ⇒   (∅, {t}) deadlock free
 ```
 
+soundness_source starts a program with n top-level point variables ιs under one constraint
+C₀ over them. C₀ is a creation constraint against the empty context, the premise of new at
+n variables (sharp edges 148). The empty context knows no point, so C₀ has no outer point, and
+it has no fact beyond equality and program order, so conservativity holds for free and
+creation_ok n ∅ C₀ is the acyclicity of C₀ with program order (c0_creation_ok).
+
 Rocq state, branch cfst (sharp edges 72). The session types are those of K1, read through
-unfoldS = unr with fuel. select₁, select₂ and branch are konst_ty KTSel1, KTSel2 and KTBra, the
+unfoldS = unr with fuel. select₁, select₂ and branch are the schemes KSSel1, KSSel2 and KSBra, the
 labels SSel and SBra, the obligations O-Select, O-Branch, Q-Select and Q-Branch (Pchoice_case).
 Every composition lemma, adequacy and the fundamental theorems keep their statements. theories/pgv
 and theories/pn are out of the build (K9).
@@ -585,8 +616,8 @@ and theories/pn are out of the build (K9).
 Rocq state. Rocq implements sharp edges 65 (sharp edges 66, 297c45f, d3dfbe4). A constraint
 is a closure BCs env P, a predicate P on facts over variables closed by its outer points env,
 and substitution acts on env. Its roots are the finitely many roots of env. The static ≡ is
-seqs W Ψ, and fl_map transfers it together with the static ≺. Rocq writes the point x[i] as
-pt_slot x (i−1), with positions from 0, so the spec's x[i] is Rocq's x[i−1]. The paragraphs below
+seqs W Ψ, and fl_map transfers it together with the static ≺. Rocq writes the payload point x[i]
+as pt_slot x i, with positions from 0 as in this file. The paragraphs below
 describe the earlier refactors. Where they mention steps and words, sharp edges 66 replaces
 them by bcs_open and bcs_hold_sub.
 
@@ -621,7 +652,7 @@ the global context.
 E-Conv up to ≈_Γ (67): t_conv asks steq W Ψ T T′, and teq_steq gives the old premise.
 steq_teqW maps it to ≈_{W₁} under an instance, sr_conv takes ≈_W, and sem_typed_tconv is
 rel_tconv in every later world. The forwarder types (fw_deadlock_free). Its world relates
-carried points by ≡, so its strictness uses wgen_strict_cong, whose name map respects x ↦ x[i]
+payload points by ≡, so its strictness uses wgen_strict_cong, whose name map respects x ↦ x[i]
 without commuting with it. The eleven deadlock_free examples and the four theorems stay closed.
 Non-blocking link (68): Readiness.v adds link_t and link_p and the link disjuncts of §6.
 konst_ty types link as TLolli None None, and Erel_app_link is ready by its link redex.
@@ -648,7 +679,7 @@ leader election semantic                       breaks linearity, unchanged
 scheduler       typable                        (r₁,0) ≡ (r₀,0) from the link,  reversed ag₀ rejected
 request/reply   typable, recursive             C = {ι+k ≺ ι′+k, ι′+k ≺ ι+k+1 ∣ k ∈ ℕ}, call at (ι+1, ι′+1)
 relay           typable, recursive             C over ι+k and (ι+k)[1], call at (ι+1, ι[1]+1),
-                                               producer creates its payload at the carried point
+                                               producer creates its payload at the payload point
 delegation      typable                        receiver: (c,k)[1] ≺ (c,k+1),  sender aliases d to (c,k)[1]
 bad link        rejected                       (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0)
 ```
@@ -657,7 +688,7 @@ Rocq types request/reply and the relay with these infinite constraints (sharp ed
 The three programs below are the ones 65 expected. Rocq types all three.
 
 ```
-tail call       typable, no spawn              □(∀ι ζ. {ι+k ≺ ζ ∣ k ∈ ℕ}. ∗ ⊸^⊥_⊤ (S@ι ⊸^ζ_⊤ ∗)),
+tail call       typable, no spawn              □(∀ι ζ. {ι+k ≺ ζ ∣ k ∈ ℕ}. ∗ ⊸ (S@ι ⊸^ζ ∗)),
                                                the tail call at (ι+1, ζ) asks ζ ≺ μ, a frame hypothesis,
                                                the world has (a,k) ≺ (z,0) for every k (tc_deadlock_free)
 forwarder       typable, recursion by spawn    receives d on one channel and sends it on another inside a box,
@@ -689,7 +720,7 @@ An earlier order design was mechanized and abandoned. What it taught, and how th
 - Step preservation of the cut was left open in three cases: rendezvous with payload migration (handled here by Q-Recv stating its continuation with the returning channels restricted), link with an external survivor (the paper's substitution, plus Entry conversion; worlds name no channels), mixed extrusion (no plain/ordered mix here). Report early if any of them resists.
 - Term-level ∀-introduction got stuck (instantiation needed an order-indistinguishable world copy). Here ∀ appears only directly under □, on values, and is an intersection over instances.
 - The frame/window condition holds for offered entries only; a condition on all pending heads is false (recv returns a continuation above its own instant).
-- A closure without a lower bound must hold nothing (ℓ = ⊤ forces Σ = ∅).
+- A closure without a lower bound must hold nothing (an absent ℓ forces Σ = ∅).
 - Unrolling under ≈ needs contractiveness (the paper already assumes it). Counters live in Σ, not in types, so unrolling never has to advance an annotation.
 - Constants are typed through their signatures, one compositionality lemma per constant.
 
@@ -702,7 +733,7 @@ Decidability comes later, for an algorithmic system over a fragment of the const
 Decidability. A candidate fragment is the counter language of docs/extensions/algorithmic.md (section on decidability): facts
 ∀κ̄. x ≺ y whose coordinates are constants or κ + n, with each counter at most once per side.
 That document decides strictness of the generated world under further side conditions and
-shows undecidability without them. It writes forced invariants as C = ⋃ₖ C₀[σᵏ(ιs)] and carried points as x[i].
+shows undecidability without them. It writes forced invariants as C = ⋃ₖ C₀[σᵏ(ιs)] and payload points as x[i].
 
 An algorithmic type system. The static system of §9 is declarative. Missing for an algorithm:
 - choosing facts: rules emit facts instead of checking them
@@ -710,7 +741,7 @@ An algorithmic type system. The static system of §9 is declarative. Missing for
 - choosing C: constraints of recursive boxes as invariants, given or inferred
 - fresh points (E-Abs μ, ℓ; new ι): generate fresh point variables
 - ∀ instantiation (E-Force): unification over points
-- payload points (send's ∃xs): determined by the aliases to the carried points
+- payload points (send's ∃xs): determined by the aliases to the payload points x[i]
 - environment splitting (E-App, E-Let*): input/output contexts
 - conversion (E-Conv): ≈ on regular session types is decidable; apply at application/ascription
 - annotations: ∀ schemes under □ and recursive types are given, not inferred

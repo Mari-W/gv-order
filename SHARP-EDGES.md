@@ -41,7 +41,7 @@ P-Connect checks that they agree (§4, §7). An earlier version used swap
 invariance instead of aliases and was unreadable.
 
 **6. Closures hide the channels they capture.**
-A sent closure shows no channels in its type, so they get no carried point.
+A sent closure shows no channels in its type, so they get no payload point.
 Decision: arrow types carry an upper and a lower point. A placeholder in a
 payload names a point, not a channel (§4).
 
@@ -120,7 +120,7 @@ points and Entry conversion (§10).
 
 **38. Consequences of points-only worlds (Claude, delegated).**
 Payloads become a plain substitution P[x] = T[x[1..m]/ιs]. The ∃xs at the sender
-and ∀xs at the receiver existed only because carried points of channel instants could not
+and ∀xs at the receiver existed only because payload points of channel instants could not
 occur in types. Successor congruence x ≡ y ⇒ x+1 ≡ y+1 becomes a world law,
 because entries now move along their points and Entry conversion must survive an
 action. It replaces the separate alias notation. Arrows are written T ⊸^u_ℓ U
@@ -348,7 +348,7 @@ of monotonicity either. At O-New the world can alias the new point to μ, so the
 of that world to the old names and a leaves the no-alias class, and V-Const then needs a
 new witness for xs. Options: (A) keep the "every" premises of 53 (status quo, sound,
 closed). (B) prove the no-alias lemma by rebuilding witnesses, mapping μ into unused
-carried points x[i] of the point x new creates. This is a different proof, and its truth is open. (C) change
+payload points x[i] of the point x new creates. This is a different proof, and its truth is open. (C) change
 V-Const, for instance by asking pt_known W of force's xs as 49 does for new. This changes
 the relation and needs the author. Static.v is unchanged.
 
@@ -611,7 +611,7 @@ composition lemma, of soundness or of the semantic relation changed. The
 examples in Static.v and OrdExamples.v prove {u} ≺ F through
 ub_below_s_intro, which reads the frame variable as x ≼ u for its hypothesis.
 
-**65. Free constraints replace steps, and slots become carried roots (decided by the author 2026-10-30, spec only, Rocq pending).**
+**65. Free constraints replace steps, and slots become payload points (decided by the author 2026-10-30, spec only, Rocq pending).**
 Steps were hard to read, and the restrictions of 58 and 61 (finite C, ≺ facts
 only, invariance by words) came from decidability, which the author postponed.
 A constraint is now any set of positive facts x ≺ y and x ≡ y, finite or
@@ -622,7 +622,7 @@ its instance, which holds whenever the instance of C is contained in C. C is
 the invariant of the recursion and states the facts of every round at once.
 ≡ in C lets a box body delegate a channel it did not create, so the static
 system reads ≡ from Γ as a congruence over W and the hypotheses. Slots are
-renamed carried roots, written x[i] with positions from 1, and §4 of the spec
+renamed payload points, written x[i] with positions from 1, and §4 of the spec
 states why they exist. The infinite sets give three programs the old design
 rejected: a tail call with a ceiling ζ and {ι+k ≺ ζ ∣ k ∈ ℕ}, a forwarder
 inside a box, and recursion on a received channel. None is checked in Rocq
@@ -830,7 +830,7 @@ global context), and so are parallel Fibonacci and the signal pipe
 (`fibo_deadlock_free`, `pipe_deadlock_free`). The judgment `pn_typed` is Table 2
 with T-App-Poly on our terms and yields the translated term, because the
 translation needs types. A function of level ⊤ becomes a box over one point
-variable, the level anchor, and every level is a carried point of the anchor. Shifted
+variable, the level anchor, and every level is a payload point of the anchor. Shifted
 copies of one arrow get one box type, normalized by the arrow's first finite
 level. The box constraint is the infinite set of facts that a denotation and a
 rank give between points of the variable, and a force at the anchor B[RAnc a]
@@ -1203,7 +1203,7 @@ continuations of a choice at ι+1, so a thread that orders c against d
 differently per branch needed both orders in one world. Program T2 of
 docs/extensions/adequacy/mordido-perez.md §9.5 is the witness. Its branch A
 needs (d,0) ≺ ι+1 and its branch B needs ι+1 ≺ (d,0). A branch point x◁i now
-names the point of c after branch i was picked at x, as the carried point x[i]
+names the point of c after branch i was picked at x, as the payload point x[i]
 names a message position.
 
 Definitions. The point syntax gains a fourth name former, and the world laws
@@ -1284,10 +1284,10 @@ priorities. Effects are lists read as their maximum and lower bounds lists
 read as their minimum, so ⊔ and |Γ| need no symbolic join.
 
 World. A box over one point variable, the anchor, stands for every valuation
-of Θ. The carried points of an anchor are the anchor of an instance, the channel of
+of Θ. The payload points of an anchor are the anchor of an instance, the channel of
 a type and sequence, the lower point of a list and the upper point of a list.
 A point denotes a valuation, a channel in head form, a level or junk. A
-successor, a branch point and the carried point x[0] of a channel denote the
+successor, a branch point and the payload point x[0] of a channel denote the
 continuation, the chosen branch and the payload, so the denotation follows
 the type and branch priorities map to ranks of branch points (D2). A
 continuation whose priority does not rise denotes junk ranked on top, so the
@@ -1330,7 +1330,7 @@ is unchanged.
 Points by observation. A channel point denotes its raw session type and the
 head of its sequence. Two points are equivalent when every walk from them
 reaches equal ranks (`oeq`), a congruence for successors, branch points and
-carried points that the rank respects. T-Eq then keeps the point without a canonical
+payload points that the rank respects. T-Eq then keeps the point without a canonical
 form of context-free session types. `wgen_strict_oeq` generalizes the
 strictness lemma of version 1 to such an equivalence.
 
@@ -1367,7 +1367,7 @@ segment is the part of a session that one call of a recursive function
 consumes, and its length depends on the data, as the whole tree does in
 receiveTree. The rank of an instant was to come from its remaining session type
 and the valuation. The box was to hold the static set of every κ·w ≺ ι·w′ whose
-head priorities compare that way, a carried point was to rank at its payload's
+head priorities compare that way, a payload point was to rank at its payload's
 priority, and the ceiling was to stay only for the latent effect ⊤ toward the
 caller. None of the three losses of section 13 is lifted. Version 2 is
 unchanged except for one lemma.
@@ -1388,9 +1388,9 @@ Three obstacles stand behind the other losses.
 - A fact about an existential point holds at every head and at every instance
   of the type variables, because the predicate of a box is fixed where the
   function is defined and the core instantiates only points and session
-  variables. The anchor can carry the instance in the carried point B[RAnc [] τs], so an
+  variables. The anchor can carry the instance in the payload point B[RAnc [] τs], so an
   item whose denotation reads the type may still depend on it. Equality never
-  crosses roots. The carried point of a walk of an existential point equals no point of
+  crosses roots. The payload point of a walk of an existential point equals no point of
   the anchor at every head, so a channel of the anchor cannot be sent at an
   abstract position (loss b).
 - The core asks κ·w ≺ (κ·w)[0] before a send at κ·w. This holds only at walks that
@@ -1485,7 +1485,7 @@ three labels with every continuation at 1 + 1.
 After receiveTree the returned channel c′ has walks whose ranks depend on the
 data (`rt_rank_data`), so only the floor and the ceiling of the anchor bound
 them. Version 3 gives channels created after the call two places outside that
-band. The low chain starts at the carried point B[RLow] and ranks below every lower
+band. The low chain starts at the payload point B[RLow] and ranks below every lower
 point of ⊥. The high chain starts at the successor of the ceiling, the point
 ε + 1 for the upper point ε of the effect ⊤. Their channels act with the new
 effects ⊥⁻ and ⊤⁺ and count as ⊥⁻ and ⊤⁺ when held. rtA closes d on the low
@@ -1556,7 +1556,7 @@ are. Entry 93 lifts this restriction.
 The list form L ≺ ι ≺ H cannot type a fresh channel that acts several times
 while a later point waits (examples/FreshMany.v needs δ+k ≺ κ for k = 0, 1, 2).
 `t_newfresh` now takes a box constraint C of one variable whose every fact
-relates one point of ι (ι+k, (ι+b)[i]+k, and deeper carried points) to one outer
+relates one point of ι (ι+k, (ι+b)[i]+k, and deeper payload points) to one outer
 point, in either direction (`fresh_ok`, `fresh_lo`, `fresh_hi`). C may be
 infinite. The list form is the lemma `t_newfresh_lh`, and FreshBetween.v uses
 it unchanged. Two choices. C has no fact between two points of ι, because then
@@ -1568,10 +1568,10 @@ constant in.
 **94. The exact betweenness for points of the fresh channel (Claude, 2026-11-01).**
 For every fact u ≺ p and q ≺ v of C with q on the name of p at an offset at
 least that of p (`ple p q`), Γ ⊢ u ≺ v. A path through a enters at p, moves only
-along program order of one name, and leaves at q. Carried points do not connect
-ι to ι[i] in order, because a world relates a carried point to its base only
+along program order of one name, and leaves at q. Payload points do not connect
+ι to ι[i] in order, because a world relates a payload point to its base only
 through facts and C has none between points of ι. So "q reachable from p by
-program order or carried points" in the task reduces to `ple p q`.
+program order or payload points" in the task reduces to `ple p q`.
 `wext_fresh_between_gen` builds the world with a closed form `gblt` of four
 shapes and a sixteen-case transitivity proof. Betweenness closes the four cases
 in which a path leaves a after it entered.
@@ -1579,19 +1579,19 @@ in which a path leaves a after it entered.
 **95. Retyping the closed examples with fresh points (Claude, 2026-11-01).**
 Sync, cycle, scheduler and request/reply type in the empty world, tail call
 keeps the constant of its ceiling, and relay keeps the constant of c with its
-facts on its own carried points (SyncFresh.v, CycleFresh.v, SchedulerFresh.v,
+facts on its own payload points (SyncFresh.v, CycleFresh.v, SchedulerFresh.v,
 RequestReplyFresh.v, TailCallFresh.v, RelayFresh.v). Scheduler creates r₁ by
 E-Const at the fresh point of r₀, which gives the alias that link needs.
 Request/reply puts the infinite family {γ+k ≺ ε+k, ε+k ≺ γ+k+1} into C, and
 program order gives its betweenness. Delegation and received chain do not
-retype, because their facts relate a channel to its own carried points (93).
-Forwarder does not, because it aliases carried points of two channels for every
+retype, because their facts relate a channel to its own payload points (93).
+Forwarder does not, because it aliases payload points of two channels for every
 k. Factory under □∀ι creates no channel in main. No box constraint gets
 simpler. fresh-points.md has the table.
 
 **96. One ≡ fact in E-NewFresh not done (Claude, 2026-11-01).**
 The optional part was to allow one fact ι ≡ x and to derive E-Const at x from
-it. An alias identifies every successor and carried point of ι with those of
+it. An alias identifies every successor and payload point of ι with those of
 x, so the semantic world combines the alias world `W0'` of E-Const with `Wg`,
 and strictness and conservativity need a closed form for the combination. That
 is a second argument of the size of 94, so it stays open. E-Const is unchanged.
@@ -1611,7 +1611,7 @@ docs/extensions/existentials.md, part 1.
 
 **98. The lower point of new is not ⊥, so E-NewFresh stays primitive (Claude, 2026-11-01).**
 The task asked for ℓ = ⊥ if the point syntax can say "below everything". It
-cannot. A point is a constant, a variable or a carried point with an offset.
+cannot. A point is a constant, a variable or a payload point with an offset.
 Every world has x ≺ x+1, and a world may order any two known points either way,
 so no point lies below every point in every world. ⊥ as a lower point would
 also have to enter the frame of a pair as a point below which nothing may
@@ -1764,9 +1764,9 @@ theory.
 **107. The examples in the empty world (Claude, 2026-11-01).**
 Every example that creates its channels in main types in `Wpo []`, and its
 deadlock theorem kept its statement. Delegation, received chain and relay
-state facts between ι and its carried points in C, such as ι ≺ ι[0].
+state facts between ι and its payload points in C, such as ι ≺ ι[0].
 Forwarder states the infinite family (γ+k)[0] ≡ (ε+k)[0] in the constraint
-of b. Tail call takes its ceiling at the carried point ι[0], which no
+of b. Tail call takes its ceiling at the payload point ι[0], which no
 channel occupies, because Sb carries none. Factory resists. In `fac_main`
 main creates no channel, so no point is known, and the box returns its
 session at a point that its type names, straight into recv with no variable
@@ -1828,7 +1828,7 @@ hold global points, the protocol point of a delegated channel
 (`tr_ty (PSess s) = S@ppt s`) and the bounds `upt n`, `lpt n` of a function.
 Rooted at a top-level variable these are free variables inside a session
 type, and E-Const rejects them. Moving PGV to C₀ needs payloads relative to
-their carrier, with C₀ aliasing each carried point to its global point. That changes
+their carrier, with C₀ aliasing each payload point to its global point. That changes
 `tr_sty` and the payload lemmas, a redesign the task did not allow. The work
 stopped there, and `pgv_translate` keeps `typed Wpgv Φ []`.
 
@@ -1945,14 +1945,14 @@ Dardha and Gay's priority assignment (dardha2018new p. 9), two of whose
 priorities coincide for the two ends of one channel. A creation constraint is
 needed only where a program wants facts that program order does not give.
 
-**132. A recursive server places each round at a carried point (Claude, 2026-11-02).**
+**132. A recursive server places each round at a payload point (Claude, 2026-11-02).**
 A server that creates one channel per call needs that channel ordered against
 the channel the call acts on. A creation constraint {κ + k ≺ ι} with the box
 variable ι as an outer point does it, and a hypothesis with outer points has no
 lemma like `sl_hyp0`. The three recursive servers instead place the fresh
 channel at ι[0], the point of the first channel carried at ι, by `t_new_at`, and state the order in
 the box constraint, which names ι alone. For the forwarder and the factorial
-server ι[0] carries no payload, the use of a carried point that TailCall.v's
+server ι[0] carries no payload, the use of a payload point that TailCall.v's
 ceiling makes. For `stream` the fresh channel is the payload, so ι[0] is where
 sender and receiver name it alike. The list form of `t_newfresh_lh_open` would
 not do, because it states κ ≺ ι and not κ+1 ≺ ι, and the server closes the
@@ -1979,7 +1979,7 @@ the alias came from. Conservativity is the one thing that could force a
 congruence, since a creation constraint may not relate two points outside the
 new channel, but that fact then comes from a context which is again a
 constraint or a world. The rules let one alias between base points stand for
-one alias per offset and per carried point, and at every depth that is the
+one alias per offset and per payload point, and at every depth that is the
 difference between a finite constraint and an infinite one.
 
 **135. Three rejections became theorems, the step from the program did not (Claude, 2026-11-02).**
@@ -2134,6 +2134,92 @@ payload point that is no anchor. A payload point is junk unless the
 payload lies above its carrier, which R1 and R3 already ensure. No
 statement changed.
 
+**146. The future stays a sort of its own (Claude, 2026-11-04, author's decision, branch unify).**
+The plan was to make the future variable φ of E-Abs and E-Exp an ordinary
+point variable, with u ≺ φ an ordinary fact. The fundamental property would
+then instantiate φ by each point q of the caller's future F separately and
+needs E_F from the relations at the single points. The right form of that
+lemma is E_F = E_∅ ∩ ⋂_{q ∈ F} E_{{q}}, because the empty intersection is
+everything. Readiness splits that way. relation/FutureConj.v proves
+`below_rest_conj` and `ready_t_conj`, and the link disjunct of `ready_t`
+falls to induction on the finite set F, without a classical axiom. The
+inclusion from left to right is `Erel_frame`. The other inclusion fails to
+go through, because the term relation makes its existential choices once
+for each future. O-New picks a fresh name a and a world W′ for E_{{q₁}} and
+others for E_{{q₂}}. `Erel_new_rename` moves both runs to one name, but the
+two worlds may relate a to old points in opposite ways, a ≺ x in one and
+x ≺ a in the other. Their join need not be strict, and monotonicity only
+moves up, so no single world carries both runs on. The amalgamation of
+Monotonicity.v works only when the second world does not know a. The
+splits of O-Spawn and O-Send are chosen for each future too, up to ≡ and
+in which end of a Both entry moves. No counterexample is known. Within one
+run every requirement that depends on F reads "offered head ≺ q" and holds
+for every q alike, so a cycle in the union of two runs closes inside one of
+them. Turning that into a proof needs a least world for O-New, which the
+relation does not supply. Instantiating φ by a fresh point between u and F
+fails because that point cannot be dropped again (DropCounter.v). An
+instantiation of φ by a set fails as soon as φ occurs in a type, an inner
+arrow with upper bound φ for instance. There were four ways on. (1) keep φ
+as a sort of its own. (2) Make φ a point variable but instantiate it by a
+set, with a side condition that φ occurs only in futures. (3) Index E by a
+family of futures, so that O-New and the splits cannot depend on F and the
+split holds by definition. (4) Prove a least-world property of O-New. The
+author chose (1).
+
+**147. Constants as constrained type-indexed schemes (author's decision, Claude, 2026-11-04, branch unify).**
+An instance of a constant's signature is now a type, a constraint and a
+list of points that must be known (`konst_sig` in types/Types.v). The
+constraint is a set of facts over ≺ and ≡ that the meta level computes from
+the type. Send has {ι ≺ h ∣ h ∈ heads(P[ι])} (`below_all`) and no instance
+when the payload carries the ⊥ flag, select and branch have ι ≺ ι[i], link
+has ι ≡ ι′, and force has C[ιs′/ιs] (`bcs_at`) with ιs′ known. heads stays
+a meta-level function. `konst_ty` has two constructors. `KTSig` proves the
+constraint of an instance from the fact context (`facts_hold`) and asks
+its points known, exactly as force did alone before. `KTNewEx` keeps new
+outside the schemes, because new creates a fresh point and has no witness,
+so its premise is `cc_ok` with known outer points. The old constructors
+survive as lemmas of the same names and statements (`KTSpawn` to
+`KTForce`), and `konst_ty_case` is case analysis by constant, so the
+examples and translations kept their scripts. `konst_ty_mono` is now
+generic over the schemes. Inversions on a constant read the scheme by a
+second inversion. No theorem statement changed.
+
+**148. C₀ is the program's creation constraint (author's decision, Claude, 2026-11-04, branch unify).**
+`soundness_source` asks `creation_ok n nofact nofact (λ _, False) C₀`, the
+premise of new at n fresh variables read against the empty context, in place
+of `c0_acyclic n C₀`. Types.v states the creation constraint for n
+variables (`cc_up_at`, `cc_eq_at`, `cc_lt_at`, `cc_acyclic_at`,
+`cc_conservative_at`, `cc_ok_at`, `creation_ok`). `cc_up`, `cc_eq`, `cc_lt`
+and `cc_acyclic` are their case n = 1 by notation, so new and every proof
+about it read the same definitions. `cc_ok_at_1` and `creation_ok_1` give
+the case n = 1 of conservativity, which names the variable 0 as before.
+`c0_creation_ok` (static/Fundamental.v) proves the new premise equivalent
+to `c0_acyclic`. The empty context knows no point, so C₀ has no outer point.
+Every fact of C₀ is then between variables, so conservativity holds for
+free (`c0_geq`, `c0_glt`), and acyclicity is that of C₀ with program order.
+The examples pass their acyclicity proofs through `c0_acyclic_creation`.
+The worlds stay apart. `wext_cc` extends any world by one fresh name and
+`wc0` realizes n names over `wnil`.
+
+**149. Absent bounds are absence (author's decision, Claude, 2026-11-04, branch unify).**
+⊥ now has one meaning, the unknown point, below which no point lies. The
+code already wrote the upper and lower bound of an arrow as an optional
+point, so only the lower bound of an existential changed. Its constructor
+`LTop` is `LNone`, "no bound, the value holds no channel". `LBot` stays the
+unknown point and `LPt x` a point. The spec writes T ⊸^u U, T ⊸_ℓ U and
+T ⊸ U for arrows with absent bounds and ∃ιs. C. T for an existential
+without a bound, so ⊤ is gone from it. The change is a renaming and no
+statement changed meaning. The Padovani and Novara levels keep their own
+`LTop`, which is the top of their lattice.
+
+**150. p[j] is the payload point (Claude, 2026-11-04, branch unify).**
+SHARP-EDGES, README, ORDERS-SPEC and the comments of theories/ say payload
+point for x[i] where they said carried point or carried root. Branch point
+stays where it names the K10 construct x◁i. ORDERS-SPEC now continues a
+choice at x[i] in the signatures of select and branch, in O-Select,
+O-Branch, Q-Select and Q-Branch, and writes payload points from position 0
+as Rocq does.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
@@ -2193,7 +2279,7 @@ renaming. V and E stayed monotone over well-formed worlds.
 **27. (F) Renaming private names must not touch types.**
 P-Connect renamed private names, and renaming touched names that types mention,
 so the renamed process left its interface. Decision F2 kept channel names out of
-types, with points in types as bound variables, point constants and their carried points.
+types, with points in types as bound variables, point constants and their payload points.
 The current design keeps this.
 
 **28. P is not monotone in the world, even up to renaming.**

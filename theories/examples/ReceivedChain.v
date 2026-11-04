@@ -2,10 +2,10 @@
 
       Sch = μX. ?(∃κ. X@κ).Close
       C = {ι[0]ⁿ + 1 ≺ ι[0]ⁿ⁺¹ ∣ n ∈ ℕ}      ι[0]ⁿ = ι[0]…[0] (n times, positions from 0)
-      rch : □(∀ι. C. ∗ ⊸^⊥_⊤ (Sch@ι ⊸^{ι+1}_⊤ ∗))
+      rch : □(∀ι. C. ∗ ⊸ (Sch@ι ⊸^{ι+1} ∗))
       rch = !(f = λc. let (d, c) = recv c in let () = close c in
                      spawn (λw. let () = w in (force f) d))
-      sch : □(∀ι. C. ∗ ⊸^⊥_⊤ (S̄ch@ι ⊸^{ι+1}_⊤ ∗))
+      sch : □(∀ι. C. ∗ ⊸ (S̄ch@ι ⊸^{ι+1} ∗))
       sch = !(g = λc. let (e, e′) = new ∗ in let (c, u) = ⟨send ⟨e, c⟩, ∗⟩ in let () = u in
                      let () = close c in spawn (λw. let () = w in (force g) e′))
       ch_main = let (r, s) = ⟨rch, sch⟩ in let (c, c′) = new ∗ in

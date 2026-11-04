@@ -3,7 +3,7 @@
     docs/extensions/adequacy/mordido-perez.md, section 12. Priorities
     become points relative to an anchor, as in version 1. An anchor
     stands for a valuation of the priority variables and the session
-    type variables of the enclosing abstraction, and its carried points are
+    type variables of the enclosing abstraction, and its payload points are
 
     - B[RAnc σs τs], the anchor of the instance σs, τs read in B's
       valuation, at which a priority abstraction is forced;

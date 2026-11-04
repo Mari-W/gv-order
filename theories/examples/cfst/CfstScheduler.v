@@ -9,11 +9,11 @@
       Wk = µX. !∗;?∗;X     (scheduler to worker, Start and then the ack)
       Sc = µX. !∗;!∗;X     (scheduler to its successor, Start and then Next)
 
-      follower : □(∀π ω σ ζ. C. ∗ ⊸^⊥_⊤ (S̄c@π ⊗ Wk@ω ⊗ Sc@σ ⊸^ζ_⊤ ∗))
+      follower : □(∀π ω σ ζ. C. ∗ ⊸ (S̄c@π ⊗ Wk@ω ⊗ Sc@σ ⊸^ζ ∗))
       follower = !(f = λ⟨prev, ⟨wk, succ⟩⟩.
                    recv prev; send wk; send succ; recv wk; recv prev;
                    (force f) ⟨prev, ⟨wk, send succ⟩⟩)
-      worker   : □(∀κ ζ. {κ+k ≺ ζ ∣ k}. ∗ ⊸^⊥_⊤ (W̄k@κ ⊸^ζ_⊤ ∗))
+      worker   : □(∀κ ζ. {κ+k ≺ ζ ∣ k}. ∗ ⊸ (W̄k@κ ⊸^ζ ∗))
       worker   = !(w = λx. recv x; (force w) (send x))
       leader   = send a1; send c1; recv a1; (force follower) ⟨d3, ⟨a1, send c1⟩⟩
 
@@ -660,4 +660,4 @@ Proof.
 Qed.
 
 Theorem sch_deadlock_free : deadlock_free (∅, {[+ sch_main +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit top_acyclic); [constructor|apply sch_typed]. Qed.
+Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply sch_typed]. Qed.

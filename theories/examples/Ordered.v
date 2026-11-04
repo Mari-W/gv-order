@@ -1,6 +1,6 @@
 (** * Example: a box that needs ι ≺ ι′ between its arguments (58)
 
-    ordered : □(∀ι ι′. {ι ≺ ι′}.^⊥ Close@ι ⊗ Close@ι′ ⊸^{ι′}_⊤ ∗)
+    ordered : □(∀ι ι′. {ι ≺ ι′}. ∗ ⊸ Close@ι ⊗ Close@ι′ ⊸^{ι′} ∗)
     ordered = !(f = λp. let (c, d) = p in let () = close c in close d)
 
     close c blocks at ι while the body still holds d at ι′, so E-App
@@ -50,7 +50,7 @@ Proof.
         eapply (sl_hyp0 W _ _ _ (pvar 0) (pvar 1)); [by left|done|cbn; lia|done|done].
       + exists (pvar 1). split; [done|]. right.
         eapply (sl_hyp0 W _ _ _ (pvar 0) (pvar 1)); [by left|done|cbn; lia|done|done].
-    - apply t_konst; [apply lenv_empty_nones|constructor|done].
+    - apply t_konst; [apply lenv_empty_nones|apply KTClos|done].
     - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simplify_eq/=; try done.
       destruct y as [|[|y]]; simplify_eq/=. }
   eapply t_wk; [apply (lwk_cons _ [None; None; None]), lwk_cons, lwk_cons, lwk_drop;
@@ -61,7 +61,7 @@ Proof.
   - apply ub_below_s_intro.
     + intros y Hy. simpl in Hy. set_solver.
     + exists (pvar 1). split; [done|]. left. apply se_refl.
-  - apply t_konst; [apply lenv_empty_nones|constructor|done].
+  - apply t_konst; [apply lenv_empty_nones|apply KTClos|done].
   - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simplify_eq/=; try done.
     destruct y as [|[|y]]; simplify_eq/=.
 Qed.

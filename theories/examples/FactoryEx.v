@@ -8,8 +8,8 @@
       mk   = !(f = λu. let () = u in let p = new ∗ in let (c, c′) = p in
                        let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
 
-      mk   : □(∗ ⊸^⊥_⊤ ∃^⊥ ι. {}. (?∗.Close)@ι)                         (Tmk0)
-      mk   : □(∀ζ. ∗ ⊸^⊥_⊤ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ι)       (Tmk1)
+      mk   : □(∗ ⊸ ∃^⊥ ι. {}. (?∗.Close)@ι)                         (Tmk0)
+      mk   : □(∀ζ. ∗ ⊸ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ι)       (Tmk1)
 
       main = let (g, f) = ⟨mk, mk⟩ in
              let p = (force g) ∗ in
@@ -195,7 +195,8 @@ Qed.
 Lemma fx_no_first_call ub T :
   ¬ konst_ty (seqs (Wpo []) []) (slt (Wpo []) []) (skn (Wpo []) []) KForce (TLolli ub None Tfa T).
 Proof.
-  intros Hk. inversion Hk as [| | | | | | | |n k C ub' T' xs ss Hn _ HK _ _| ]; subst.
+  intros Hk. inversion Hk as [kq Tq Gq xs Hsig _ HK|]; subst.
+  inversion Hsig as [| | | | | | | |n k C ub' T' ? ss Hn _ _]; subst.
   destruct xs as [|x xs]; [done|]. apply Forall_cons in HK as [Hx _].
   by apply (Wpo_nil_unknown x).
 Qed.

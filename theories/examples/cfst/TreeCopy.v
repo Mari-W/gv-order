@@ -11,12 +11,12 @@
     with polymorphic recursion in both continuations. The payload Int
     becomes ∗.
 
-      drain : □(∀κ ζ β. C. ∗ ⊸^⊥_⊤ ((TreeD;β)@κ ⊸^ζ_⊤ ∃κ′≽κ. C′. β@κ′))
+      drain : □(∀κ ζ β. C. ∗ ⊸ ((TreeD;β)@κ ⊸^ζ ∃κ′≽κ. C′. β@κ′))
       C  = {κ·w ≺ ζ, κ·w ≺ (κ·w)[i] ∣ w, i}
       C′ = {κ ≺ κ′} ∪ C[κ′/κ]
 
-      copy : □(∀κ ι ζ β α. D. ∗ ⊸^⊥_⊤
-               ((TreeD;β)@κ ⊗ (TreeC;α)@ι ⊸^ζ_⊤ ∃κ′ ι′≽κ. D′. β@κ′ ⊗ α@ι′))
+      copy : □(∀κ ι ζ β α. D. ∗ ⊸
+               ((TreeD;β)@κ ⊗ (TreeC;α)@ι ⊸^ζ ∃κ′ ι′≽κ. D′. β@κ′ ⊗ α@ι′))
       D  = {κ·w ≺ ι·w, ι·w ≺ (κ·w)·s, κ·w ≺ ζ, ι·w ≺ ζ ∣ w, s}
       D′ = {κ ≺ κ′} ∪ D[κ′, ι′, ζ]
 
@@ -806,4 +806,4 @@ Proof.
 Qed.
 
 Theorem tree_deadlock_free : deadlock_free (∅, {[+ tree_main +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit top_acyclic); [constructor|apply tree_typed]. Qed.
+Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply tree_typed]. Qed.

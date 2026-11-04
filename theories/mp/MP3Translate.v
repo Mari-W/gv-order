@@ -680,7 +680,7 @@ Section chains.
 End chains.
 
 (** Every walk from a channel rises at every step to x[i], because no
-    such x[i] is a carried point of the anchor ([dsl_rise]). This gives
+    such x[i] is a payload point of the anchor ([dsl_rise]). This gives
     x ≺ x[i] at a choice (K11). *)
 Section rise.
   Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).

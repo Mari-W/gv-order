@@ -80,7 +80,8 @@ Proof.
         -- by apply Vrel_unit_iff.
       * exfalso. by apply (val_no_tstep _ _ _ Hs).
       * exfalso. by apply (val_no_tstep _ _ _ Hs).
-  - exfalso. inversion Hk; subst; simpl in Heq; naive_solver.
+  - exfalso. inversion Hk as [kq Tq Gq xq Hsig|]; subst; try (inversion Hsig; subst);
+      simpl in Heq; naive_solver.
 Qed.
 
 (** ** Environments of a thread with restricted channels

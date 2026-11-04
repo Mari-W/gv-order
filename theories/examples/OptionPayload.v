@@ -187,10 +187,10 @@ Proof.
 Qed.
 
 Theorem some_deadlock_free : deadlock_free (∅, {[+ some_main +]}).
-Proof. apply (soundness_source 0 op_C0 _ TUnit op_C0_acyclic); [constructor|apply some_typed]. Qed.
+Proof. apply (soundness_source 0 op_C0 _ TUnit (c0_acyclic_creation _ _ op_C0_acyclic)); [constructor|apply some_typed]. Qed.
 
 Theorem some_swapped_deadlock_free : deadlock_free (∅, {[+ some_swapped_main +]}).
-Proof. apply (soundness_source 0 op_C0 _ TUnit op_C0_acyclic); [constructor|apply some_swapped_typed]. Qed.
+Proof. apply (soundness_source 0 op_C0 _ TUnit (c0_acyclic_creation _ _ op_C0_acyclic)); [constructor|apply some_swapped_typed]. Qed.
 
 Theorem none_deadlock_free : deadlock_free (∅, {[+ none_main +]}).
-Proof. apply (soundness_source 0 op_C0 _ TUnit op_C0_acyclic); [constructor|apply none_typed]. Qed.
+Proof. apply (soundness_source 0 op_C0 _ TUnit (c0_acyclic_creation _ _ op_C0_acyclic)); [constructor|apply none_typed]. Qed.

@@ -2,10 +2,10 @@
 
       Stream = µX. !∗;X  (Sb)          dual Stream = µX. ?∗;X  (Sa)
       C = {ι+k ≺ κ+k, κ+k ≺ ι+k+1, ι+k ≺ ζ, κ+k ≺ ζ ∣ k}
-      client    : □(∀ι κ ζ. C. ∗ ⊸^⊥_⊤ (Sb@ι ⊗ Sa@κ ⊸^ζ_⊤ ∗))
+      client    : □(∀ι κ ζ. C. ∗ ⊸ (Sb@ι ⊗ Sa@κ ⊸^ζ ∗))
       client    = !(f = λp. let (c1, c2) = p in let c1 = send ⟨∗, c1⟩ in
                            let (x, c2) = recv c2 in (force f) ⟨c1, c2⟩)
-      newclient : □(∀ι κ ζ. C. ∗ ⊸^⊥_⊤ (Sb@κ ⊗ Sa@ι ⊸^ζ_⊤ ∗))
+      newclient : □(∀ι κ ζ. C. ∗ ⊸ (Sb@κ ⊗ Sa@ι ⊸^ζ ∗))
       newclient = !(g = λp. let (c1, c2) = p in let (x, c2) = recv c2 in
                            (force g) ⟨send ⟨∗, c1⟩, c2⟩)
       main = let (cl, ncl) = ⟨client, newclient⟩ in
@@ -201,4 +201,4 @@ Proof.
 Qed.
 
 Theorem st_deadlock_free : deadlock_free (∅, {[+ st_main +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit top_acyclic); [constructor|apply st_typed]. Qed.
+Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply st_typed]. Qed.

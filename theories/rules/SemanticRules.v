@@ -105,7 +105,7 @@ Proof.
   - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
   - apply lenv_split_nones_l.
   - exact Hub.
-  - apply sr_konst; [apply lenv_empty_nones|]. by constructor.
+  - apply sr_konst; [apply lenv_empty_nones|]. by apply KTForce.
   - simpl. by rewrite union_empty_r_L.
 Qed.
 

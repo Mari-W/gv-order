@@ -1027,6 +1027,6 @@ Qed.
 Theorem pn_deadlock_free e τ e' :
   pn_typed [] e PUnit τ e' → deadlock_free (∅, {[+ e' +]}).
 Proof.
-  intros H. apply (soundness_source 1 Crel _ U Crel_acyclic);
+  intros H. apply (soundness_source 1 Crel _ U (c0_acyclic_creation _ _ Crel_acyclic));
     [repeat constructor|by apply (pn_translate_source e τ e')].
 Qed.

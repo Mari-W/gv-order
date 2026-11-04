@@ -56,7 +56,7 @@ Ltac po_gate HW u := apply ubs_intro; [po_frame HW|po_fvar HW u].
 (** The same at the top level, where the frame has no variable. *)
 Ltac po_gate0 HW := apply ubs_intro; [po_frame HW|done].
 
-(** ** Chains of carried points ι[0]ⁿ
+(** ** Chains of payload points ι[0]ⁿ
 
     A recursive server that creates one channel per call places it at a
     point ι[i] of the channel ι it answers on, so the points of every
@@ -82,7 +82,7 @@ Lemma sdepth_slotv n : sdepth (slotv n) = n.
 Proof. induction n as [|n IH]; [done|]. cbn. by rewrite IH. Qed.
 
 (** Two strict orders on points, read lexicographically on depth and
-    offset. [dlt] puts a deeper carried point below a shallower one, the
+    offset. [dlt] puts a deeper payload point below a shallower one, the
     order of a server whose fresh channel answers before the channel it
     was called on. [ult] is the opposite, the order of a producer that
     sends its fresh channel on. Neither has a rank in ℕ, because the

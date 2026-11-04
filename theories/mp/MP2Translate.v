@@ -586,7 +586,7 @@ Lemma pt_root_mwalk x u : pt_root (mwalk x u) = pt_root x.
 Proof. revert x. induction u as [|[] u IH]; intros x; simpl; [done|..]; by rewrite IH. Qed.
 
 (** Every walk from a channel rises at every step to x[i], because no
-    such x[i] is a carried point of the anchor ([dsl_rise]). This gives
+    such x[i] is a payload point of the anchor ([dsl_rise]). This gives
     x ≺ x[i] at a choice (K11). *)
 Section rise.
   Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).

@@ -662,20 +662,20 @@ Section transfer.
     konst_ty peq' plt' pk' k (pinst_ty σ T).
   Proof.
     intros Heq Hlt Hpk Hk.
-    destruct 1 as [ub lb|m P S x Hh|m P S x|x|S1 S2 x H1|S1 S2 x H1|S1 S2 x H1 H2|S x x' Hxx'
-                  |n kk C ub P xs ss Hxs HC HK Hss Hsc|S C H H0];
+    induction 1 as [ub lb|m P S x Hh|m P S x|x|S1 S2 x H1|S1 S2 x H1|S1 S2 x H1 H2|S x x' Hxx'
+                  |n kk C ub P xs ss Hxs HC HK Hss Hsc|S C H H0] using konst_ty_case;
 
       simpl in *.
-    - constructor.
-    - rewrite payload_pinst, pt_inst_shift by done. constructor. destruct (hbot P); [done|].
+    - apply KTSpawn.
+    - rewrite payload_pinst, pt_inst_shift by done. apply KTSend. destruct (hbot P); [done|].
       intros h Hh'. rewrite <-payload_pinst, heads_pinst in Hh' by done.
       apply elem_of_map in Hh' as (h0 & -> & Hh0). by apply Hlt, Hh.
-    - rewrite payload_pinst, pt_inst_shift by done. constructor.
-    - constructor.
-    - rewrite pt_inst_slot. constructor. rewrite <-pt_inst_slot. by apply Hlt.
-    - rewrite pt_inst_slot. constructor. rewrite <-pt_inst_slot. by apply Hlt.
-    - rewrite !pt_inst_slot. constructor; rewrite <-pt_inst_slot; by apply Hlt.
-    - constructor. by apply Heq.
+    - rewrite payload_pinst, pt_inst_shift by done. apply KTRecv.
+    - apply KTClos.
+    - rewrite pt_inst_slot. apply KTSel1. rewrite <-pt_inst_slot. by apply Hlt.
+    - rewrite pt_inst_slot. apply KTSel2. rewrite <-pt_inst_slot. by apply Hlt.
+    - rewrite !pt_inst_slot. apply KTBra; rewrite <-pt_inst_slot; by apply Hlt.
+    - apply KTLink. by apply Heq.
     - assert (∀ a, pt_inst (plist (pt_inst σ <$> xs)) (pup n σ a) = pt_inst σ (plist xs a))
         as Hc by (intros a; by apply plist_pup_comm).
       assert (pt_inst (plist (pt_inst σ <$> xs)) <$> (pt_inst (pup n σ) <$> ub) =
@@ -684,12 +684,12 @@ Section transfer.
         apply pt_inst_ext. intros a. apply Hc. }
       assert (ty_inst (pt_inst σ <$> xs) (pinst_ty (pup n σ) P) = pinst_ty σ (ty_inst xs P)) as E2.
       { unfold ty_inst. rewrite !pinst_ty_comp. apply pinst_ty_ext. intros a. apply Hc. }
-      rewrite pinst_sinst, <-E1, <-E2. constructor; [by rewrite length_fmap| | |done|done].
+      rewrite pinst_sinst, <-E1, <-E2. apply KTForce; [by rewrite length_fmap| | |done|done].
       + by apply (bcs_hold_inst peq _ plt).
       + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx. by apply Hpk.
     - assert (pt_inst (pup 1 σ) (pvar 0) = pvar 0) as ->
         by (rewrite pt_inst_pvar_at; unfold pup; by rewrite decide_True by lia).
-      constructor.
+      apply KTNewEx.
       + by apply (cc_ok_pinst σ peq plt peq' plt').
       + simpl. apply Forall_fmap. eapply Forall_impl; [exact H0|]. intros x Hx. by apply Hpk.
   Qed.

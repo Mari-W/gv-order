@@ -4,7 +4,7 @@
     become points relative to an anchor, as levels do for Padovani and
     Novara (pn/PNWorld.v on branch orders-lr). An anchor stands for a
     valuation of the priority variables of the enclosing abstraction,
-    and its carried points are
+    and its payload points are
 
     - B[RAnc σs], the anchor of the valuation σs read in B's valuation,
       the instance at which a priority abstraction is forced;

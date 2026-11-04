@@ -1077,28 +1077,28 @@ Section ready.
     konst_ty (w_eq W) (w_lt W) (pt_known W) k T →
     konst_ty (w_eq (wsw a b W)) (w_lt (wsw a b W)) (pt_known (wsw a b W)) k (tysw a b T).
   Proof.
-    destruct 1; simpl; rewrite ?dual_sw.
-    - constructor.
-    - rewrite payload_at_sw. constructor. rewrite hbot_sw. destruct (hbot T); [done|]. intros h Hh.
+    induction 1 using konst_ty_case; simpl; rewrite ?dual_sw.
+    - apply KTSpawn.
+    - rewrite payload_at_sw. apply KTSend. rewrite hbot_sw. destruct (hbot T); [done|]. intros h Hh.
       rewrite <-payload_at_sw, heads_sw in Hh.
       apply elem_of_map in Hh as (h0 & -> & Hh0). simpl.
       rewrite !ptsw_involutive. auto.
-    - rewrite payload_at_sw. constructor.
-    - constructor.
-    - constructor; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
-    - constructor; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
-    - constructor; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
-    - constructor. simpl. by rewrite !ptsw_involutive.
+    - rewrite payload_at_sw. apply KTRecv.
+    - apply KTClos.
+    - apply KTSel1; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
+    - apply KTSel2; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
+    - apply KTBra; simpl; by rewrite ?ptsw_slot, ?ptsw_involutive.
+    - apply KTLink. simpl. by rewrite !ptsw_involutive.
     - rewrite sinst_slist_sw, ty_inst_sw.
       replace (ptsw a b <$> (pt_inst (plist xs) <$> ub))
         with (pt_inst (plist (ptsw a b <$> xs)) <$> (ptsw a b <$> ub)).
-      { constructor; [by rewrite length_fmap|by apply bcs_hold_sw|by apply known_sw
+      { apply KTForce; [by rewrite length_fmap|by apply bcs_hold_sw|by apply known_sw
                      |by rewrite length_fmap|].
         apply Forall_fmap. eapply Forall_impl; [done|]. intros s Hs. by apply hcontractive_sw. }
       destruct ub as [p|]; simpl; [|done]. rewrite pt_inst_sw. f_equal.
       apply pt_inst_ext. intros i. symmetry. apply plist_sw.
     - assert (ptsw a b (pvar 0) = pvar 0) as -> by done.
-      constructor; [|by apply known_sw].
+      apply KTNewEx; [|by apply known_sw].
       apply (cc_ok_transfer (w_eq W) (w_lt W) (w_eq (wsw a b W)) (w_lt (wsw a b W)) C (bcs_sw a b C)
                (ptsw a b)); try done.
       + intros p Hp. rewrite pt_root_sw, Hp. done.
@@ -1177,12 +1177,9 @@ Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) (pk pk' : poi
   (∀ x y, peq x y → peq' x y) → (∀ x y, plt x y → plt' x y) → (∀ x, pk x → pk' x) →
   konst_ty peq plt pk k T → konst_ty peq' plt' pk' k T.
 Proof.
-  intros He Hl Hk. destruct 1; econstructor; eauto.
-  - destruct (hbot T); [done|]. eauto.
-  - by eapply bcs_hold_mono.
-  - by eapply Forall_impl.
-  - by eapply cc_ok_mono.
-  - by eapply Forall_impl.
+  intros He Hl Hk [k0 T0 G xs Hs HG HK|S C HC HK].
+  - eapply KTSig; [done|by eapply facts_hold_mono|by eapply Forall_impl].
+  - constructor; [by eapply cc_ok_mono|by eapply Forall_impl].
 Qed.
 
 Lemma teqW_r_mono W1 W2 T : ∀ ρ U,

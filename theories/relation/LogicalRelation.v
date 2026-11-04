@@ -37,7 +37,7 @@ Definition opt_rel (R : point → point → Prop) (o o' : option point) : Prop :
 Definition lb_rel (R : point → point → Prop) (lb lb' : lbound) : Prop :=
   match lb, lb' with
   | LPt x, LPt y => R x y
-  | LTop, LTop | LBot, LBot => True
+  | LNone, LNone | LBot, LBot => True
   | _, _ => False
   end.
 
@@ -1250,7 +1250,7 @@ Proof.
       eexists _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
 Qed.
 
-(** V-Box at a thunk type ∗ ⊸^u_⊤ T, read as the box of sharp edge 52:
+(** V-Box at a thunk type ∗ ⊸^u T, read as the box of sharp edge 52:
     the unrolled body is in E at every lower index, admissible instance
     and frame above the instantiated upper point. *)
 Lemma Vrel_box_thunk_iff n W Θ m k C ub T v :

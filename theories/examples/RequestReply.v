@@ -3,7 +3,7 @@
     C states every round at once:
 
       C = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1  ∣  k ∈ ℕ}
-      srv : □(∀ι ι′. C. ∗ ⊸^⊥_⊤ (Sa@ι ⊗ Sb@ι′ ⊸^{ι′}_⊤ ∗))
+      srv : □(∀ι ι′. C. ∗ ⊸ (Sa@ι ⊗ Sb@ι′ ⊸^{ι′} ∗))
       srv = !(f = λp. let (a, b) = p in let (x, a) = recv a in let () = x in
                      spawn (λv. let () = v in (force f) ⟨a, send ⟨∗, b⟩⟩))
       cli : the same box over the dual sessions

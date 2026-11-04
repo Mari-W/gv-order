@@ -116,9 +116,9 @@ Definition w_le (W : world) (x y : point) : Prop := w_eq W x y ∨ w_lt W x y.
 (** W knows x: the root of x is in the support (sharp edges 49). *)
 Definition pt_known (W : world) (x : point) : Prop := pt_root x ∈ w_names W.
 
-(** {β} ≺ F for an upper point (⊥ = [None] is below everything) and
-    {λ} ≼ H for a lower point (⊤ = [None] is below nothing, so it forces
-    H = ∅: a closure without a lower bound holds nothing). *)
+(** {β} ≺ F for an upper point (an absent one asks nothing, the call
+    never blocks) and {λ} ≼ H for a lower point (an absent one forces
+    H = ∅, a closure without a lower bound holds nothing). *)
 Definition ub_below (W : world) (ub : option point) (F : gset point) : Prop :=
   match ub with None => True | Some x => ∀ y, y ∈ F → w_lt W x y end.
 
@@ -127,11 +127,12 @@ Definition lb_below (W : world) (lb : option point) (H : gset point) : Prop :=
 
 (** ℓ ≼ H for the lower bound of an existential, where the flag b says
     that H also holds something below no known point (sharp edges 103).
-    ⊥ lies below everything. ⊤ and a point lie below nothing flagged. *)
+    The unknown point ⊥ asks nothing of H. An absent bound and a point
+    lie below nothing flagged. *)
 Definition lbx_below (W : world) (lb : lbound) (H : gset point) (b : bool) : Prop :=
   match lb with
   | LBot => True
-  | LTop => H = ∅ ∧ b = false
+  | LNone => H = ∅ ∧ b = false
   | LPt x => (∀ y, y ∈ H → w_le W x y) ∧ b = false
   end.
 

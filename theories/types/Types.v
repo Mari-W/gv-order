@@ -4,7 +4,8 @@
     S    ::= Skip | S;S | ?P | !P | ⊕(S, S) | &(S, S) | Close | µα.S | α | α̅
                                                     P ::= ∃ιs. T
     (context-free session types, K1 of docs/extensions/context-free.md)
-    β    ::= ι | ⊥        λ ::= ι | ⊤
+    β, λ ::= ι, optional (absent bounds are left out, sharp edges 149)
+    ℓ    ::= absent | ι | ⊥   (⊥ the unknown point)
     ι    ::= (p, b)       p ::= a | point variable | (p, b)[i]   (no channels) *)
 
 From stdpp Require Import base strings gmap countable.
@@ -19,7 +20,7 @@ From LRGV Require Export lang.Syntax.
     channel continues at (p, b)[i] after branch i was picked at (p, b),
     the same point the i-th channel of a message sent at (p, b) gets
     (K11 of docs/extensions/context-free.md). Worlds and environments
-    use ground points (constants and their carried points), static
+    use ground points (constants and their payload points), static
     types also use variables. No point mentions a channel, so renaming channels
     changes no type and no world.
 
@@ -138,16 +139,19 @@ Definition fact_scoped (k : nat) (g : fact) : Prop :=
     A fact whose variables lie beyond n + |bc_env| is not part of C. *)
 Record bcs := BCs { bc_env : list point; bc_facts : fact → Prop }.
 
-(** The lower bound of an existential (sharp edges 97, 103). [LTop]
-    is ⊤, the value holds nothing. [LBot] is ⊥, the value holds
-    channels at points not known from outside. [LPt x] says that every
+(** The lower bound of an existential (sharp edges 97, 103, 149).
+    [LNone] is no bound, the value holds no channel. [LBot] is ⊥, the
+    unknown point: the value holds channels at points not known from
+    outside, and no point lies below ⊥. [LPt x] says that every
     channel of the value lies at or above x. ⊥ is no point. It occurs
     only here, and a frame that holds such a value carries a flag
-    instead (static/FactTheory.v). *)
-Inductive lbound := LTop | LBot | LPt (x : point).
+    instead (static/FactTheory.v). The lower bound of an arrow is an
+    optional point, [None] when the closure holds no channel, and its
+    upper bound is an optional point, [None] when a call never blocks. *)
+Inductive lbound := LNone | LBot | LPt (x : point).
 
 Definition lb_map (f : point → point) (lb : lbound) : lbound :=
-  match lb with LPt x => LPt (f x) | LTop => LTop | LBot => LBot end.
+  match lb with LPt x => LPt (f x) | LNone => LNone | LBot => LBot end.
 
 Lemma lb_map_ext f g lb : (∀ x, f x = g x) → lb_map f lb = lb_map g lb.
 Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
@@ -160,9 +164,9 @@ Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
 
 (** ** Types
 
-    The arrow carries an upper point β ([None] = ⊥: the call never
-    blocks) and a lower point λ ([None] = ⊤: the closure holds
-    nothing). □ binds n point variables, so ∀ occurs only directly
+    The arrow carries an optional upper point β ([None]: the call
+    never blocks) and an optional lower point λ ([None]: the closure
+    holds nothing). □ binds n point variables, so ∀ occurs only directly
     under □ (sharp edges 109). ∃ binds n, and a
     payload binds m. Session types are unannotated: the only points
     inside them are those of payloads, all bound by the payload's ∃, so
@@ -177,7 +181,7 @@ Inductive ty :=
   | TBox (n k : nat) (C : bcs) (T : ty)
                                    (* □(∀ι₀ … ιₙ₋₁ α₀ … αₖ₋₁. C. T) — unlimited
                                       (replicable) values. T is a thunk
-                                      type ∗ ⊸^u_⊤ U, so the upper point
+                                      type ∗ ⊸^u U, so the upper point
                                       u lives on the arrow under the
                                       binder (sharp edges 52, 63); the
                                       constraint C is a set of facts
@@ -193,7 +197,7 @@ Inductive ty :=
                                       value lies in T at some known
                                       instance meeting C, and its
                                       channels lie at or above the lower
-                                      bound ℓ, which is ⊤, ⊥ or a point *)
+                                      bound ℓ, which is absent, ⊥ or a point *)
 with sty :=
   | SRcv (m : nat) (T : ty)        (* ?(∃ι₀ … ιₘ₋₁. T), no continuation *)
   | SSnd (m : nat) (T : ty)        (* !(∃ι₀ … ιₘ₋₁. T), no continuation *)
@@ -504,7 +508,7 @@ Qed.
 (** ** Heads
 
     The points at which a value of the type is next used:
-    heads(S@ι) = {ι}, heads(T ⊸^β_λ U) = {λ} ∖ {⊤}, ∅ for ∗ and □. *)
+    heads(S@ι) = {ι}, heads(T ⊸^β_λ U) = {λ} (∅ without λ), ∅ for ∗ and □. *)
 
 Definition opt_heads (o : option point) : gset point :=
   match o with Some x => {[x]} | None => ∅ end.
@@ -1549,17 +1553,36 @@ Inductive glt (E L : point → point → Prop) : point → point → Prop :=
     the fresh name, and conservativity is what makes that a fresh
     extension ⊑ₒ (relation/Creation.v). *)
 
-Definition cc_up (R : point → point → Prop) : point → point → Prop :=
-  λ x y, ∃ x0 y0, R x0 y0 ∧ x = pt_inst (λ a, pvar (a + 1)) x0 ∧ y = pt_inst (λ a, pvar (a + 1)) y0.
+(** The definitions take the number n of fresh variables. [new] creates
+    one (n = 1), and a program starts under a creation constraint C₀
+    over its n top-level variables, read against the empty context
+    (static/Fundamental.v, sharp edges 148). *)
+Definition cc_up_at (n : nat) (R : point → point → Prop) : point → point → Prop :=
+  λ x y, ∃ x0 y0, R x0 y0 ∧ x = pt_inst (λ a, pvar (a + n)) x0 ∧ y = pt_inst (λ a, pvar (a + n)) y0.
 
-Definition cc_eq (peq : point → point → Prop) (C : bcs) : point → point → Prop :=
-  λ x y, cc_up peq x y ∨ bcs_open 1 C (FEq x y).
+Definition cc_eq_at (n : nat) (peq : point → point → Prop) (C : bcs) : point → point → Prop :=
+  λ x y, cc_up_at n peq x y ∨ bcs_open n C (FEq x y).
 
-Definition cc_lt (plt : point → point → Prop) (C : bcs) : point → point → Prop :=
-  λ x y, cc_up plt x y ∨ bcs_open 1 C (FLt x y).
+Definition cc_lt_at (n : nat) (plt : point → point → Prop) (C : bcs) : point → point → Prop :=
+  λ x y, cc_up_at n plt x y ∨ bcs_open n C (FLt x y).
 
-Definition cc_acyclic (peq plt : point → point → Prop) (C : bcs) : Prop :=
-  ∀ p, glt (cc_eq peq C) (cc_lt plt C) p p → ∃ x, glt (cc_up peq) (cc_up plt) x x.
+Definition cc_acyclic_at (n : nat) (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  ∀ p, glt (cc_eq_at n peq C) (cc_lt_at n plt C) p p →
+    ∃ x, glt (cc_up_at n peq) (cc_up_at n plt) x x.
+
+Definition cc_conservative_at (n : nat) (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  (∀ x y, ¬ pn_vb n (pt_name x) → ¬ pn_vb n (pt_name y) →
+     geq (cc_eq_at n peq C) x y → geq (cc_up_at n peq) x y) ∧
+  (∀ x y, ¬ pn_vb n (pt_name x) → ¬ pn_vb n (pt_name y) →
+     glt (cc_eq_at n peq C) (cc_lt_at n plt C) x y → glt (cc_up_at n peq) (cc_up_at n plt) x y).
+
+Definition cc_ok_at (n : nat) (peq plt : point → point → Prop) (C : bcs) : Prop :=
+  cc_acyclic_at n peq plt C ∧ cc_conservative_at n peq plt C.
+
+Notation cc_up := (cc_up_at 1).
+Notation cc_eq := (cc_eq_at 1).
+Notation cc_lt := (cc_lt_at 1).
+Notation cc_acyclic := (cc_acyclic_at 1).
 
 Definition cc_conservative (peq plt : point → point → Prop) (C : bcs) : Prop :=
   (∀ x y, pt_root x ≠ NVar 0 → pt_root y ≠ NVar 0 →
@@ -1570,31 +1593,35 @@ Definition cc_conservative (peq plt : point → point → Prop) (C : bcs) : Prop
 Definition cc_ok (peq plt : point → point → Prop) (C : bcs) : Prop :=
   cc_acyclic peq plt C ∧ cc_conservative peq plt C.
 
-(** ** Type-indexed families of type signatures for constants
-    (§9)
+(** The root of a point is variable 0 exactly when its name lies below 1. *)
+Lemma pn_vb_1 p : pn_vb 1 p ↔ pn_root p = NVar 0.
+Proof.
+  induction p as [a|a|q IH o i]; simpl; [split; [done|discriminate]| |done].
+  split; [intros ?; f_equal; lia|intros [= ->]; lia].
+Qed.
 
-    new    : ∗ ⊸^⊥_⊤ ∃^⊥ι. C. S@ι ⊗ dual S@ι   C acyclic and conservative
-                                                  (97, 103, 105)
-    spawn  : (∗ ⊸^β_λ ∗) ⊸^⊥_⊤ ∗
-    send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι_⊤ S@(ι+1)     {ι} ≺ heads(P[ι]), no ⊥ flag
-    recv   : (?P;S)@ι ⊸^ι_⊤ P[ι] ⊗ S@(ι+1)
-    selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι_⊤ Sᵢ@ι[i]          ι ≺ ι[i]           (K11)
-    branch : &(S₁, S₂)@ι ⊸^ι_⊤ S₁@ι[0] + S₂@ι[1]   ι ≺ ι[0], ι ≺ ι[1]
-    close  : Close@ι ⊸^ι_⊤ ∗
-    link   : S@ι ⊗ dual S@ι′ ⊸^⊥_⊤ ∗       ι ≡ ι′   (never blocks, sharp edges 68)
-    force  : □(∀ιs αs. C. ∗ ⊸^u_⊤ T) ⊸^{u[ιs′/ιs]}_⊤ T[ιs′/ιs][ss/αs]
-             C[ιs′/ιs], every s ∈ ss hereditarily contractive   (52, 58, 63, 73)
+(** A creation constraint over n fresh variables in a context whose
+    order is [peq], [plt] and whose known points are [pk]: [cc_ok_at]
+    and every outer point known. new asks it at n = 1
+    ([creation_ok_1]), a program asks it for C₀ against the empty
+    context (static/Fundamental.v). *)
+Definition creation_ok (n : nat) (peq plt : point → point → Prop) (pk : point → Prop)
+    (C : bcs) : Prop :=
+  cc_ok_at n peq plt C ∧ Forall pk (bc_env C).
 
-    The side conditions on points are read in an order given as two
-    relations: the world G generates for typing, a world W for the
-    logical relation. Freshness of ι in [new] is a typing condition
-    (static/). [pk] says which points the order knows: the outer
-    points of the constraint of [new] must be known, so that the world
-    of a run can state the facts of C about them (sharp edges 49, 105).
-    The order relations enter [cc_ok] through their closure. new
-    at a known point x is the alias ι ≡ x ([t_new_at] in
-    static/Fundamental.v). force asks its instance known and every
-    fact of the box's constraint at the instance (sharp edges 65). *)
+(** [cc_ok] is the case of one fresh variable. *)
+Lemma cc_ok_at_1 peq plt C : cc_ok_at 1 peq plt C ↔ cc_ok peq plt C.
+Proof.
+  assert (∀ x, ¬ pn_vb 1 (pt_name x) ↔ pt_root x ≠ NVar 0) as E.
+  { intros x. unfold pt_root. rewrite pn_vb_1. done. }
+  unfold cc_ok_at, cc_ok, cc_conservative_at, cc_conservative.
+  split; intros (Ha & He & Hl); (split; [done|split]); intros x y Hx Hy;
+    [apply He|apply Hl|apply He|apply Hl]; by apply E.
+Qed.
+
+Lemma creation_ok_1 peq plt pk C :
+  creation_ok 1 peq plt pk C ↔ cc_ok peq plt C ∧ Forall pk (bc_env C).
+Proof. unfold creation_ok. by rewrite cc_ok_at_1. Qed.
 
 (** T[ss/αs]: the session variable i goes to the i-th session type of a
     list, the variables beyond it shift down (K6). *)
@@ -1610,49 +1637,216 @@ Definition sbranch (b : bool) (S1 S2 : sty) : sty := if b then S2 else S1.
 Lemma sbranch_map (f : sty → sty) b S1 S2 : f (sbranch b S1 S2) = sbranch b (f S1) (f S2).
 Proof. by destruct b. Qed.
 
-Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
-    : konst → ty → Prop :=
-  | KTSpawn ub lb :
-      konst_ty peq plt pk KSpawn
-        (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)
-  | KTSend m T S x :
-      (if hbot T then False else ∀ h, h ∈ heads (payload_at m T x) → plt x h) →
-      konst_ty peq plt pk KSend
+(** ** Constants as constrained type-indexed schemes (sharp edges 147)
+
+    An instance of a constant's signature is a type, a constraint and a
+    list of points that must be known ([konst_sig]). The constraint is a
+    set of point facts that the meta level computes from the type, in
+    the language of box constraints (≺ and ≡ only). E-Const proves it
+    from the fact context, exactly as force proves its box's constraint
+    at the instance. No constant reads the order in its signature. *)
+
+(** Every fact of G holds, ≺ in [lt] and ≡ in [eq]. *)
+Definition facts_hold (eq lt : point → point → Prop) (G : fact → Prop) : Prop :=
+  ∀ g, G g → fact_holds eq lt g.
+
+Lemma facts_hold_mono (eq eq' lt lt' : point → point → Prop) G :
+  (∀ x y, eq x y → eq' x y) → (∀ x y, lt x y → lt' x y) →
+  facts_hold eq lt G → facts_hold eq' lt' G.
+Proof. intros He Hl H g Hg. specialize (H g Hg). destruct g; simpl in *; auto. Qed.
+
+(** C[xs/ιs], the facts of C at the instance xs. *)
+Definition bcs_at (C : bcs) (xs : list point) : fact → Prop :=
+  λ g, ∃ g0, bcs_open (length xs) C g0 ∧ g = fact_map (pt_inst (plist xs)) g0.
+
+Lemma facts_hold_bcs_at eq lt C xs : facts_hold eq lt (bcs_at C xs) ↔ bcs_hold eq lt C xs.
+Proof.
+  split.
+  - intros H g Hg. apply H. by exists g.
+  - intros H g (g0 & Hg0 & ->). by apply H.
+Qed.
+
+(** {x} ≺ H as a set of facts. *)
+Definition below_all (x : point) (H : gset point) : fact → Prop :=
+  λ g, ∃ h, h ∈ H ∧ g = FLt x h.
+
+(** The signatures (spec §9; arrows without a bound leave it out).
+
+    spawn  : (∗ ⊸^β_λ ∗) ⊸ ∗
+    send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι S@(ι+1)       {ι ≺ h ∣ h ∈ heads(P[ι])}, no instance at the ⊥ flag
+    recv   : (?P;S)@ι ⊸^ι P[ι] ⊗ S@(ι+1)
+    close  : Close@ι ⊸^ι ∗
+    selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@ι[i]            {ι ≺ ι[i]}           (K11)
+    branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]   {ι ≺ ι[0], ι ≺ ι[1]}
+    link   : S@ι ⊗ dual S@ι′ ⊸ ∗                  {ι ≡ ι′}   (never blocks, sharp edges 68)
+    force  : □(∀ιs αs. C. ∗ ⊸^u T) ⊸^{u[ιs′/ιs]} T[ιs′/ιs][ss/αs]
+             C[ιs′/ιs], ιs′ known, every s ∈ ss hereditarily contractive   (52, 58, 63, 73) *)
+Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :=
+  | KSSpawn ub lb :
+      konst_sig KSpawn (TLolli None None (TLolli ub lb TUnit TUnit) TUnit) (λ _, False) []
+  | KSSend m T S x :
+      hbot T = false →
+      konst_sig KSend
         (TLolli (Some x) None
            (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) S) x))
            (TSess S (pt_shift 1 x)))
-  | KTRecv m T S x :
-      konst_ty peq plt pk KRecv
+        (below_all x (heads (payload_at m T x))) []
+  | KSRecv m T S x :
+      konst_sig KRecv
         (TLolli (Some x) None
            (TSess (SSeq (SRcv m T) S) x)
            (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))
-  | KTClos x :
-      konst_ty peq plt pk KClos (TLolli (Some x) None (TSess SEnd x) TUnit)
-  | KTSel1 S1 S2 x :
-      plt x (pt_slot x 0) →
-      konst_ty peq plt pk KSel1
+        (λ _, False) []
+  | KSClos x :
+      konst_sig KClos (TLolli (Some x) None (TSess SEnd x) TUnit) (λ _, False) []
+  | KSSel1 S1 S2 x :
+      konst_sig KSel1
         (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_slot x 0)))
-  | KTSel2 S1 S2 x :
-      plt x (pt_slot x 1) →
-      konst_ty peq plt pk KSel2
+        (λ g, g = FLt x (pt_slot x 0)) []
+  | KSSel2 S1 S2 x :
+      konst_sig KSel2
         (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_slot x 1)))
-  | KTBra S1 S2 x :
-      plt x (pt_slot x 0) → plt x (pt_slot x 1) →
-      konst_ty peq plt pk KBra
+        (λ g, g = FLt x (pt_slot x 1)) []
+  | KSBra S1 S2 x :
+      konst_sig KBra
         (TLolli (Some x) None (TSess (SWith S1 S2) x)
            (TSum (TSess S1 (pt_slot x 0)) (TSess S2 (pt_slot x 1))))
-  | KTLink S x x' :
-      peq x x' →
-      konst_ty peq plt pk KLink
+        (λ g, g = FLt x (pt_slot x 0) ∨ g = FLt x (pt_slot x 1)) []
+  | KSLink S x x' :
+      konst_sig KLink
         (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
-  | KTForce n k C ub T xs ss :
-      length xs = n → bcs_hold peq plt C xs → Forall pk xs →
-      length ss = k → Forall hcontractive ss →
-      konst_ty peq plt pk KForce
+        (λ g, g = FEq x x') []
+  | KSForce n k C ub T xs ss :
+      length xs = n → length ss = k → Forall hcontractive ss →
+      konst_sig KForce
         (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
            (sinst_ty (slist ss) (ty_inst xs T)))
+        (bcs_at C xs) xs.
+
+(** E-Const reads a constant at an instance whose constraint holds and
+    whose points are known. new is the one constant outside the
+    schemes. It introduces a fresh point and no witness, so its premise
+    is that C is a creation constraint ([cc_ok]) over known outer
+    points (97, 103, 105):
+
+    new    : ∗ ⊸ ∃^⊥ι. C. S@ι ⊗ dual S@ι
+
+    The order is given as two relations, the world G generates for
+    typing and a world W for the logical relation. [pk] says which
+    points the order knows. force asks its instance known (sharp edges
+    65), and new its outer points, so that the world of a run can state
+    the facts of C about them (sharp edges 49, 105). *)
+Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
+    : konst → ty → Prop :=
+  | KTSig k T G xs :
+      konst_sig k T G xs → facts_hold peq plt G → Forall pk xs →
+      konst_ty peq plt pk k T
   | KTNewEx S C :
       cc_ok peq plt C → Forall pk (bc_env C) →
       konst_ty peq plt pk KNew
         (TLolli None None TUnit
            (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))))).
+
+(** The instances one constant at a time. *)
+Section konst_intro.
+  Context (peq plt : point → point → Prop) (pk : point → Prop).
+
+  Lemma KTSpawn ub lb :
+    konst_ty peq plt pk KSpawn (TLolli None None (TLolli ub lb TUnit TUnit) TUnit).
+  Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
+
+  Lemma KTSend m T S x :
+    (if hbot T then False else ∀ h, h ∈ heads (payload_at m T x) → plt x h) →
+    konst_ty peq plt pk KSend
+      (TLolli (Some x) None
+         (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) S) x))
+         (TSess S (pt_shift 1 x))).
+  Proof.
+    intros H. destruct (hbot T) eqn:Hb; [done|].
+    eapply KTSig; [by constructor| |constructor]. intros g (h & Hh & ->). by apply H.
+  Qed.
+
+  Lemma KTRecv m T S x :
+    konst_ty peq plt pk KRecv
+      (TLolli (Some x) None
+         (TSess (SSeq (SRcv m T) S) x)
+         (TProd (payload_at m T x) (TSess S (pt_shift 1 x)))).
+  Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
+
+  Lemma KTClos x : konst_ty peq plt pk KClos (TLolli (Some x) None (TSess SEnd x) TUnit).
+  Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
+
+  Lemma KTSel1 S1 S2 x :
+    plt x (pt_slot x 0) →
+    konst_ty peq plt pk KSel1
+      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_slot x 0))).
+  Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
+
+  Lemma KTSel2 S1 S2 x :
+    plt x (pt_slot x 1) →
+    konst_ty peq plt pk KSel2
+      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_slot x 1))).
+  Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
+
+  Lemma KTBra S1 S2 x :
+    plt x (pt_slot x 0) → plt x (pt_slot x 1) →
+    konst_ty peq plt pk KBra
+      (TLolli (Some x) None (TSess (SWith S1 S2) x)
+         (TSum (TSess S1 (pt_slot x 0)) (TSess S2 (pt_slot x 1)))).
+  Proof. intros H0 H1. eapply KTSig; [constructor| |constructor]. by intros g [->| ->]. Qed.
+
+  Lemma KTLink S x x' :
+    peq x x' →
+    konst_ty peq plt pk KLink
+      (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit).
+  Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
+
+  Lemma KTForce n k C ub T xs ss :
+    length xs = n → bcs_hold peq plt C xs → Forall pk xs →
+    length ss = k → Forall hcontractive ss →
+    konst_ty peq plt pk KForce
+      (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
+         (sinst_ty (slist ss) (ty_inst xs T))).
+  Proof.
+    intros Hn HC HK Hk Hs. eapply KTSig; [by constructor|by apply facts_hold_bcs_at|done].
+  Qed.
+End konst_intro.
+
+(** Case analysis on a typed constant, one case per constant. *)
+Lemma konst_ty_case (peq plt : point → point → Prop) (pk : point → Prop)
+    (P : konst → ty → Prop) :
+  (∀ ub lb, P KSpawn (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)) →
+  (∀ m T S x, (if hbot T then False else ∀ h, h ∈ heads (payload_at m T x) → plt x h) →
+     P KSend (TLolli (Some x) None
+                (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) S) x))
+                (TSess S (pt_shift 1 x)))) →
+  (∀ m T S x, P KRecv (TLolli (Some x) None
+                         (TSess (SSeq (SRcv m T) S) x)
+                         (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))) →
+  (∀ x, P KClos (TLolli (Some x) None (TSess SEnd x) TUnit)) →
+  (∀ S1 S2 x, plt x (pt_slot x 0) →
+     P KSel1 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_slot x 0)))) →
+  (∀ S1 S2 x, plt x (pt_slot x 1) →
+     P KSel2 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_slot x 1)))) →
+  (∀ S1 S2 x, plt x (pt_slot x 0) → plt x (pt_slot x 1) →
+     P KBra (TLolli (Some x) None (TSess (SWith S1 S2) x)
+               (TSum (TSess S1 (pt_slot x 0)) (TSess S2 (pt_slot x 1))))) →
+  (∀ S x x', peq x x' → P KLink (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)) →
+  (∀ n k C ub T xs ss, length xs = n → bcs_hold peq plt C xs → Forall pk xs →
+     length ss = k → Forall hcontractive ss →
+     P KForce (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
+                 (sinst_ty (slist ss) (ty_inst xs T)))) →
+  (∀ S C, cc_ok peq plt C → Forall pk (bc_env C) →
+     P KNew (TLolli None None TUnit
+               (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))))) →
+  ∀ k T, konst_ty peq plt pk k T → P k T.
+Proof.
+  intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hnw k T [k' T' G xs Hsig HG HK|S C HC HK]; [|by apply Hnw].
+  destruct Hsig as [| m T0 S x Hb| | | | | | |n kk C ub T0 xs ss Hn Hk Hs]; auto.
+  - apply Hsd. rewrite Hb. intros h Hh. apply (HG (FLt x h)). by exists h.
+  - apply Hs1. by apply (HG (FLt _ _)).
+  - apply Hs2. by apply (HG (FLt _ _)).
+  - apply Hbr; [apply (HG (FLt _ _)); by left|apply (HG (FLt _ _)); by right].
+  - apply Hln. by apply (HG (FEq _ _)).
+  - eapply Hfo; [done|by apply facts_hold_bcs_at|done|done|done].
+Qed.

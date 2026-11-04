@@ -105,7 +105,7 @@ Definition hlb_below_hb (Ψ : hyps) (lb : option point)
 Definition hlbx_below_h (Ψ : hyps) (lb : lbound) (H : gset point) (b : bool) : Prop :=
   match lb with
   | LBot => True
-  | LTop => H = ∅ ∧ b = false
+  | LNone => H = ∅ ∧ b = false
   | LPt x => (∀ y, y ∈ H → hle Ψ x y) ∧ b = false
   end.
 

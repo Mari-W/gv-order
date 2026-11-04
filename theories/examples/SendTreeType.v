@@ -3,7 +3,7 @@
       TreeC = µX. ⊕(Skip, !∗;X;X)
       C     = {p ≺ ζ, p ≺ p[i] ∣ p ∈ reach(ι), i}
       C′    = {ι ≺ ι′} ∪ {p ≺ ζ, p ≺ p[i] ∣ p ∈ reach(ι′), i}
-      sendTree : □(∀ι ζ α. C. ∗ ⊸^⊥_⊤ ((TreeC;α)@ι ⊸^ζ_⊤ ∃ι′ ≽ ι. C′. α@ι′))
+      sendTree : □(∀ι ζ α. C. ∗ ⊸ ((TreeC;α)@ι ⊸^ζ ∃ι′ ≽ ι. C′. α@ι′))
 
     reach(ι) holds the points of the walks from ι, ι·w for every walk w.
     A step of a walk is a successor p+1 or the point p[i] where a choice

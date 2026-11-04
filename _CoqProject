@@ -12,6 +12,7 @@ theories/types/LinearEnv.v
 theories/relation/Worlds.v
 theories/relation/Creation.v
 theories/relation/Readiness.v
+theories/relation/FutureConj.v
 theories/relation/LogicalRelation.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v

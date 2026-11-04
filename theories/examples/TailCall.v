@@ -1,9 +1,9 @@
 (** * tail call with a ceiling: typable, sequential (SHARP-EDGES 65)
 
       C = {ι+k ≺ ζ ∣ k ∈ ℕ}
-      snd : □(∀ι ζ. C. ∗ ⊸^⊥_⊤ (Sb@ι ⊸^ζ_⊤ ∗))
+      snd : □(∀ι ζ. C. ∗ ⊸ (Sb@ι ⊸^ζ ∗))
       snd = !(f = λc. (force f) (send ⟨∗, c⟩))
-      rcv : □(∀ι ζ. C. ∗ ⊸^⊥_⊤ (S̄b@ι ⊸^ζ_⊤ ∗))
+      rcv : □(∀ι ζ. C. ∗ ⊸ (S̄b@ι ⊸^ζ ∗))
       rcv = !(g = λc. let (x, c) = recv c in let () = x in (force g) c)
       tc_main = let (s, r) = ⟨snd, rcv⟩ in let (c, c′) = new ∗ in
                 let () = spawn (λu. let () = u in (force r) c′) in (force s) c
@@ -15,7 +15,7 @@
     Its force asks C[ι+1, ζ] ⊆ C ([tc_sub]).
 
     In the empty world main creates c with {ι+k ≺ ι[0] ∣ k ∈ ℕ} and
-    forces at (ι, ι[0]). The ceiling is the carried point ι[0], which no
+    forces at (ι, ι[0]). The ceiling is the payload point ι[0], which no
     channel occupies (sharp edges 105). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -90,7 +90,7 @@ Proof.
 Qed.
 
 (** main creates c with the creation constraint {ι+k ≺ ζ ∣ k ∈ ℕ}, where
-    the ceiling ζ is the carried point ι[0]. Sb carries no channel, so
+    the ceiling ζ is the payload point ι[0]. Sb carries no channel, so
     ζ is no channel point. It is a point of ι, known through the
     hypothesis of new. Every fact stays inside ι, and the pair rank
     (0, k) for ι+k and (1, o) for ζ+o orders them (sharp edges 105). *)
