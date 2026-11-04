@@ -1,5 +1,7 @@
 # Fresh points
 
+Notation: this file predates 2026-11-04 and writes p.j for the point now written p[j]; 'slot' and 'carried root' mean that point.
+
 E-NewFresh creates a channel at a point that no existing name denotes and
 relates that point to known points. It is sound for the logical relation as it
 stands. The proof changes no statement of `soundness`, `fundamental`,

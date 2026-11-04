@@ -1,5 +1,7 @@
 # Existential points
 
+Notation: this file predates 2026-11-04 and writes p.j for the point now written p[j]; 'slot' and 'carried root' mean that point.
+
 Branch `exists`, built on `fresh-points`, sharp edges 97 to 112. Part 1 adds
 existential points to the base order-based relation. Part 2 made ∀ a type
 former of its own and □ a plain modality over it, and that split was undone

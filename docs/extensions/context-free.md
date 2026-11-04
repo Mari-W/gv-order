@@ -1,5 +1,7 @@
 # B. Context-free session types
 
+Notation: this file predates 2026-11-04 and writes p.j for the point now written p[j]; 'slot' and 'carried root' mean that point.
+
 Goal. Deadlock freedom for context-free session types by orders, with the
 compositional logical relation unchanged in shape.
 

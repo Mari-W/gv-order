@@ -1,5 +1,7 @@
 # Programs from the literature, typed natively
 
+Notation: this file predates 2026-11-04 and writes p.j for the point now written p[j]; 'slot' and 'carried root' mean that point.
+
 Four programs of the deadlock-freedom literature now have a derivation in this
 system, written as the paper writes them. Before this, a literature program
 reached the development only through the PGV or the Padovani–Novara

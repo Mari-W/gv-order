@@ -1,5 +1,7 @@
 # A. Algorithmic typing
 
+Notation: this file predates 2026-11-04 and writes p.j for the point now written p[j]; 'slot' and 'carried root' mean that point.
+
 Goal. Type the examples without hand-written derivations, worlds and rank
 proofs. Completeness is not the goal. The declarative system of spec §9 stays the
 reference, and the algorithm is sound for it.

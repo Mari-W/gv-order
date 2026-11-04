@@ -1,5 +1,7 @@
 # D.1 Adequacy for Priority GV
 
+Notation: this file predates 2026-11-04 and writes p.j for the point now written p[j]; 'slot' and 'carried root' mean that point.
+
 Goal. Every closed program of a PGV fragment is deadlock free, proved by
 translating PGV derivations into the static system (route 1 of
 [adequacy.md](adequacy.md)). Source is Kokke and Dardha, "Prioritise the

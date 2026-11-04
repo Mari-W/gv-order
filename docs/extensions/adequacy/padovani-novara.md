@@ -1,5 +1,7 @@
 # D.2 Adequacy for Padovani and Novara (FORTE 2015)
 
+Notation: this file predates 2026-11-04 and writes p.j for the point now written p[j]; 'slot' and 'carried root' mean that point.
+
 Status. Stage 1 done on 2026-10-30. Stage 2 done on 2026-10-30 in
 theories/pn/ (section 7), with the general theorem `pn_deadlock_free` and both
 examples closed under the global context. Stage 3 done on 2026-10-30, a
