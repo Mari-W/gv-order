@@ -136,21 +136,34 @@ with sty_eqb (s r : sty) : bool :=
 Lemma ty_sty_eqb_sound :
   (∀ T U, ty_eqb T U = true → T = U) ∧ (∀ s r, sty_eqb s r = true → s = r).
 Proof.
-  apply ty_sty_mut_ind; intros; try (destruct U; simpl in *; try done);
-    try (destruct r; simpl in *; try done).
-  - apply andb_true_iff in H1 as [[[H1 H2]%andb_true_iff H3]%andb_true_iff H4].
+  apply ty_sty_mut_ind.
+  - intros [] H; done.
+  - intros ub lb T1 IH1 T2 IH2 [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [[[H1 H2]%andb_true_iff H3]%andb_true_iff H4].
     unfold opt_point_eqb in *. apply bool_decide_eq_true in H1, H2. subst. f_equal; auto.
-  - apply andb_true_iff in H1 as [H1 H2]. f_equal; auto.
-  - apply andb_true_iff in H1 as [H1 H2]. f_equal; auto.
-  - apply andb_true_iff in H as [H1 H2]. apply bool_decide_eq_true in H2. subst. f_equal; auto.
-  - apply andb_true_iff in H0 as [H1 H2]. apply Nat.eqb_eq in H1. subst. f_equal; auto.
-  - apply andb_true_iff in H0 as [H1 H2]. apply Nat.eqb_eq in H1. subst. f_equal; auto.
-  - f_equal; auto.
-  - apply Nat.eqb_eq in H. by subst.
-  - apply Nat.eqb_eq in H. by subst.
-  - apply andb_true_iff in H1 as [H1 H2]. f_equal; auto.
-  - apply andb_true_iff in H1 as [H1 H2]. f_equal; auto.
-  - apply andb_true_iff in H1 as [H1 H2]. f_equal; auto.
+  - intros T1 IH1 T2 IH2 [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [H1 H2]. f_equal; auto.
+  - intros T1 IH1 T2 IH2 [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [H1 H2]. f_equal; auto.
+  - intros n k C T1 IH [] H; simpl in H; discriminate.
+  - intros s IH x [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [H1 H2]. apply bool_decide_eq_true in H2. subst. f_equal; auto.
+  - intros lb n C T1 IH [] H; simpl in H; discriminate.
+  - intros m T IH [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [H1 H2]. apply Nat.eqb_eq in H1. subst. f_equal; auto.
+  - intros m T IH [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [H1 H2]. apply Nat.eqb_eq in H1. subst. f_equal; auto.
+  - intros [] H; simpl in H; try discriminate. done.
+  - intros s IH [] H; simpl in H; try discriminate. f_equal; auto.
+  - intros a [] H; simpl in H; try discriminate. apply Nat.eqb_eq in H. by subst.
+  - intros a [] H; simpl in H; try discriminate. apply Nat.eqb_eq in H. by subst.
+  - intros [] H; simpl in H; try discriminate. done.
+  - intros s1 IH1 s2 IH2 [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [H1 H2]. f_equal; auto.
+  - intros s1 IH1 s2 IH2 [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [H1 H2]. f_equal; auto.
+  - intros s1 IH1 s2 IH2 [] H; simpl in H; try discriminate.
+    apply andb_true_iff in H as [H1 H2]. f_equal; auto.
 Qed.
 
 Definition ty_eqb_sound := proj1 ty_sty_eqb_sound.
@@ -217,7 +230,7 @@ Inductive aexpr :=
   | AInj1 (U : ty) (e : aexpr)                          (* inj₁ e at T + U *)
   | AInj2 (T : ty) (e : aexpr)                          (* inj₂ e at T + U *)
   | ACase (e e1 e2 : aexpr)
-  | ANew (S : sty) (C : bcs) (e : aexpr).              (* let (a, b) = new ∗ in e, the fresh point under C *)
+  | ALetNew (S : sty) (C : bcs) (e : aexpr).              (* let (a, b) = new ∗ in e, the fresh point under C *)
 
 Fixpoint erase (a : aexpr) : expr :=
   match a with
@@ -232,7 +245,7 @@ Fixpoint erase (a : aexpr) : expr :=
   | AInj1 _ e => Inj1 (erase e)
   | AInj2 _ e => Inj2 (erase e)
   | ACase e e1 e2 => Case (erase e) (erase e1) (erase e2)
-  | ANew _ _ e => let_new (erase e)
+  | ALetNew _ _ e => let_new (erase e)
   end.
 
 (** ** Decidable scoping of a payload (kscoped) *)
@@ -424,9 +437,9 @@ Fixpoint synth (n : nat) (Φ : fhyps) (Δ : lenv) (F : sframe) (a : aexpr) : opt
         | _ => None
         end
       else None
-  | ANew S C e =>
+  | ALetNew s0 C e =>
       match synth n (fhyps_pinst (pshift 1) Φ)
-              (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: None :: None ::
+              (Some (TSess (dual s0) (pvar 0)) :: Some (TSess s0 (pvar 0)) :: None :: None ::
                  lenv_pinst (pshift 1) Δ)
               (sf_pinst (pshift 1) F) e with
       | Some (U', c) =>

@@ -64,7 +64,7 @@ Proof.
     destruct (omatch lb lb0) as [c1|] eqn:H1; [|discriminate].
     destruct (tmatch T1 T) as [c2|] eqn:H2; [|discriminate].
     destruct (tmatch T2 U) as [c3|] eqn:H3; [|discriminate].
-    injection H as <-. apply csat_cands in Hc. rewrite !Forall_cons in Hc.
+    injection H as <-. simpl in Hc.
     destruct Hc as (Hc0 & Hc1 & Hc2 & Hc3 & _). simpl.
     split_and!; [by eapply omatch_sound|by eapply omatch_sound|by eapply IH1|by eapply IH2].
   - destruct (tmatch T1 T) as [c1|] eqn:H1; [|discriminate].
@@ -116,7 +116,7 @@ Qed.
 Lemma seq_unfoldS s : seq s (unfoldS s).
 Proof.
   apply seq_unf. destruct (unfoldS_cases s) as [[_ H]|[_ H]].
-  - by rewrite unfoldS_hd.
+  - by rewrite (unfoldS_hd (unfoldS s) H).
   - rewrite H. symmetry. exact H.
 Qed.
 
@@ -156,7 +156,7 @@ Proof.
     destruct (hd s) as [| |m T s'| | | | | |] eqn:Hhd; try discriminate.
     destruct (hbot T) eqn:Hb; [discriminate|]. destruct (pscopedb m T) eqn:Hps; [|discriminate].
     simpl in Hk. destruct (tmatch P (payload_at m T x)) as [c0|] eqn:Hm; [|discriminate].
-    injection Hk as <- <-. apply csat_cands in Hc. rewrite !Forall_cons in Hc.
+    injection Hk as <- <-. simpl in Hc.
     destruct Hc as (Hc0 & Hc1 & Hc2 & _).
     eapply (st_app_konst _ _ _ _ _ _ (Some x)
               (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) s') x)));
@@ -192,7 +192,7 @@ Proof.
   - (* branch *)
     destruct A as [| | | | | s x|]; try discriminate.
     destruct (hd s) as [| | | | | |s1 s2| |] eqn:Hhd; try discriminate. injection Hk as <- <-.
-    apply csat_cands in Hc. rewrite !Forall_cons in Hc. destruct Hc as (Hc0 & Hc1 & Hc2 & _).
+    simpl in Hc. destruct Hc as (Hc0 & Hc1 & Hc2 & _).
     eapply (st_app_konst _ _ _ _ _ _ (Some x) (TSess (SWith s1 s2) x));
       [by apply KTBra|done|by apply ub_constr_sound| |exact He].
     simpl. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
@@ -258,11 +258,11 @@ Ltac app_gen_case IH1 IH2 Hn H Hc :=
   let Hsok := fresh "Hsok" in
   let H1 := fresh "H1" in let H2 := fresh "H2" in let H3 := fresh "H3" in
   destruct (sok _ 0 _ 0 _) eqn:Hsok in H; [|discriminate];
-  destruct (synth _ _ (lp _ 0 _) _ _) as [[[| ub lb T0 U| | | | |] c1]|] eqn:H1 in H; try discriminate;
+  destruct (synth _ _ (lp _ 0 _) _ _) as [[[| ubf lbf Tf Uf| | | | |] c1]|] eqn:H1 in H; try discriminate;
   destruct (synth _ _ (lp _ 0 _) _ _) as [[T' c2]|] eqn:H2 in H; [|discriminate];
-  destruct (tmatch T' T0) as [c3|] eqn:H3 in H; [|discriminate];
+  destruct (tmatch T' Tf) as [c3|] eqn:H3 in H; [|discriminate];
   injection H as <- <-;
-  apply csat_cands in Hc; rewrite !Forall_cons in Hc;
+  simpl in Hc;
   let Hc1 := fresh in let Hc2 := fresh in let Hc3 := fresh in let Hc4 := fresh in
   destruct Hc as (Hc1 & Hc2 & Hc3 & Hc4 & _);
   eapply st_app; [apply lp_split, Hsok|by apply ub_constr_sound|by eapply IH1|];
@@ -272,7 +272,7 @@ Theorem synth_sound a : ∀ n Φ Δ F T c Ψ,
   fv_below n Φ → synth n Φ Δ F a = Some (T, c) → csat Ψ c → styped Φ Ψ Δ F (erase a) T.
 Proof.
   induction a as [x| |k|ub lb T0 a IH|a1 IH1 a2 IH2|a1 IH1 a2 IH2|a1 IH1 a2 IH2|a1 IH1 a2 IH2
-                 |U0 a IH|T0 a IH|a IH a1 IH1 a2 IH2|S C a IH];
+                 |U0 a IH|T0 a IH|a IH a1 IH1 a2 IH2|s0 C a IH];
     intros n Φ Δ F T c Ψ Hn H Hc; simpl in H.
   - (* var *)
     destruct (lenv_onlyb x Δ) as [T'|] eqn:Hx; [|discriminate]. injection H as <- <-.
@@ -290,7 +290,7 @@ Proof.
     + exact Hlb.
     + eapply IH; [by apply fv_below_insert|exact H1|exact Hc'].
   - (* application *)
-    destruct a1 as [x| |k|ub lb T0 e| | | | | | | |].
+    destruct a1 as [x| |k|ub0 lb0 Ta e| | | | | | | |].
     3: { destruct (synth n Φ Δ F a2) as [[A c2]|] eqn:H2; [|discriminate].
          destruct (konst_app Φ F k A) as [[U c']|] eqn:Hk; [|discriminate].
          injection H as <- <-. destruct Hc as [Hc2 Hc'].
@@ -326,7 +326,7 @@ Proof.
     destruct (synth _ _ (Some T1 :: lp _ 0 _) _ a1) as [[T' c1]|] eqn:H1 in H; [|discriminate].
     destruct (synth _ _ (Some T2 :: lp _ 0 _) _ a2) as [[T'' c2]|] eqn:H2 in H; [|discriminate].
     destruct (tmatch T'' T') as [c3|] eqn:H3 in H; [|discriminate].
-    injection H as <- <-. apply csat_cands in Hc. rewrite !Forall_cons in Hc.
+    injection H as <- <-. simpl in Hc.
     destruct Hc as (Hc0 & Hc1 & Hc2 & Hc3 & _).
     eapply st_case; [apply lp_split, Hsok|by eapply IH|by eapply IH1|].
     eapply st_conv; [by eapply tmatch_sound|by eapply IH2].
@@ -334,10 +334,10 @@ Proof.
     destruct (synth n (fhyps_pinst (pshift 1) Φ) _ (sf_pinst (pshift 1) F) a) as [[U' c']|] eqn:H1;
       [|discriminate].
     destruct (ty_eqb (pinst_ty (pshift 1) (unshift_ty U')) U') eqn:Hty; [|discriminate].
-    injection H as <- <-. apply csat_cands in Hc. rewrite !Forall_cons in Hc.
+    injection H as <- <-. simpl in Hc.
     destruct Hc as (HCc & HK & Hopen & _). simpl in HCc, Hopen.
     apply csat_cands in HK. rewrite Forall_fmap in HK.
-    apply (st_new_open _ _ _ _ _ _ S C); [exact HCc| |].
+    apply (st_new_open _ _ _ _ _ _ s0 C); [exact HCc| |].
     { eapply Forall_impl; [exact HK|]. intros x Hx. exact Hx. }
     apply ty_eqb_sound in Hty. rewrite Hty.
     eapply IH; [by apply fv_below_pinst|exact H1|exact Hopen].
