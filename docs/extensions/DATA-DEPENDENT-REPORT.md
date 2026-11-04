@@ -27,6 +27,7 @@ lemmas the relation needs from them hold in Rocq (`resolve_valid`,
 | File | Content |
 |---|---|
 | theories/examples/DataBranch.v | the program, its derivation, the two non-derivability theorems, the keep simulation |
+| theories/examples/DataAlternate.v | a case node that runs every round, both branches live, typed through a state that carries the alternating pattern |
 | theories/relation/BranchWorlds.v | prototype of pending-choice worlds |
 | docs/extensions/data-dependent-worlds.md | design note, candidates (a) to (d) and more |
 | docs/extensions/data-dependent.md | one targeted edit in item 1 (Branches) pointing to the note |
@@ -51,6 +52,17 @@ DataBranch.v
 | `db_rnode_untyped_top` | the same at `[(C0, ids n)]` |
 | `db_main_shape` | db_main b is three lets of new, three spawns and db_rnode |
 | `df_keep` | `okb b e → deadlock_free (∅, {[+ keep b e +]}) → deadlock_free (∅, {[+ e +]})` |
+
+DataAlternate.v
+
+| Theorem | Statement |
+|---|---|
+| `alt_typed` | `styped ∅ [] [] (∅, None) alt_main TUnit` |
+| `alt_deadlock_free` | `deadlock_free (∅, {[+ alt_main +]})` |
+
+alt_main runs a box K that sends on c and d every round in the order a state
+bit says and flips the bit. The bit carries the alternating pattern from the
+current round on, as facts relative to K's instance.
 
 `realizable Φ Ψ` says that some strict world W and instance σ make every
 hypothesis of Ψ hold and put every variable of Φ, the hypotheses on the
@@ -117,8 +129,8 @@ the revision of entry 4 is the author's decision.
   infinitely many pending choices, and choice vectors become functions.
 - The closed-program conjecture (section 3 of the note). A closed program
   fails only when a case node runs once per round with an order pattern that
-  is not eventually periodic. Periodic patterns fit in finitely many fact
-  sets relative to a box instance, aperiodic ones do not. Neither half is
-  checked.
+  is not eventually periodic. The alternating pattern types (alt_typed).
+  Periodic patterns fit in finitely many fact sets relative to a box
+  instance, aperiodic ones do not. The general claim is not checked.
 - Mechanizing the inversion from db_main to db_rnode.
 - Inferring the dead-side facts and anchors of section 2 of the note.

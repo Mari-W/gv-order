@@ -58,6 +58,7 @@ context.
 | `db_rnode_unrealizable` | `styped Φ Ψ (db_rctx x y z k) F db_rnode T → ¬ realizable Φ Ψ` |
 | `db_rnode_untyped_top` | the same at the hypotheses `[(C0, ids n)]` |
 | `db_main_shape b` | db_main b is three lets of new, three spawns and db_rnode |
+| `alt_typed`, `alt_deadlock_free` | DataAlternate.v, a case node that runs every round with the live branch alternating types and is deadlock free |
 | `df_keep` | `okb b e → deadlock_free (∅, {[+ keep b e +]}) → deadlock_free (∅, {[+ e +]})` |
 
 db_case is the case node of db_main literally, and db_ctx x y k is the
@@ -150,15 +151,18 @@ channels created in the box body are uniform in the same way. The bit's type
 carries facts relative to the instance, and a fixed type has finitely many
 sides, so it carries finitely many fact sets relative to the instance.
 
-A generator that alternates the bit types (argued here, not checked in
-Rocq). Its state is a sum whose sides
-carry the alternating pattern from the current round on, one side starting
-with x ≺ y and one with y ≺ x, as an infinite constraint relative to the
-instance (sharp edges 65). The next round needs the other side, which the
-opened facts give after the shift of the instance. The origin packs the
-first state from the creation constraints. The same construction applies to
-every pattern whose futures, read relative to the round, take finitely many
-values, which are the eventually periodic patterns.
+An alternating order types, checked in Rocq (theories/examples/DataAlternate.v,
+`alt_typed`, `alt_deadlock_free`). The box K sends on c and d every round, c
+first in even rounds and d first in odd rounds, and its state is a bit of type
+∃{altA(ι, κ)}.∗ ⊕ ∃{altB(ι, κ)}.∗. altA is the alternating pattern from the
+current round on that starts with c, altB the one that starts with d, both
+infinite constraints relative to the instance (sharp edges 65). Each branch
+opens its side, sends, and packs the other side at (ι+1, κ+1), which the
+opened facts give. The box constraint of K is empty, and main packs the first
+state from the creation constraint of d. The case node runs once per round
+and both branches are live. The same construction applies to every pattern
+whose futures, read relative to the round, take finitely many values, which
+are the eventually periodic patterns. That generalization is not checked.
 
 Conjecture. A closed program whose consumer orders c and d in round k by
 P(k), for P computed by a recursive generator and not eventually periodic,
