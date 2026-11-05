@@ -228,8 +228,11 @@ Proof.
       assert (∀ y T', (None :: None :: None :: tr_env Γ) !! y = Some (Some T') → False) as Hn.
       { intros [|[|[|y]]] T' Hy; simpl in Hy; try done.
         apply list_elem_of_lookup_2 in Hy. by apply HΔ in Hy. }
+      (* The second end sits at x̄, which the world identifies with x. *)
+      apply (t_conv _ _ _ _ _ _ _ (TProd (TSess S' x) (TSess (dual S') (pt_dual x))));
+        [split; [apply teq_steq, teq_refl|split; [apply se_w, pgv_eq; done|apply seq_refl]]|].
       eapply (t_pair Wpgv _ [] ∅ ∅ ∅ _ (None :: Some (TSess S' x) :: None :: None :: None :: tr_env Γ)
-                (Some (TSess (dual S') x) :: None :: None :: None :: None :: tr_env Γ)).
+                (Some (TSess (dual S') (pt_dual x)) :: None :: None :: None :: None :: tr_env Γ)).
       * apply comp0, Wpgv_wf.
       * apply lsplit_r, lsplit_l, lsplit_none, lsplit_none, lsplit_none, lenv_split_empty, HΔ.
       * apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
@@ -264,7 +267,7 @@ Proof.
     + rewrite tr_sty_dual, ppt_dual. by apply new_tr_typed.
     + apply t_const; [done|apply KTSpawn|done].
     + apply t_const; [done| |done]. rewrite tr_sty_dual, ppt_dual.
-      apply KTLink. apply se_refl.
+      apply KTLink. apply se_w, pgv_eq; done.
 Qed.
 
 Lemma pgv_konst_inv ok Γ p k T :

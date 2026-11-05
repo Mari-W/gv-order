@@ -105,6 +105,11 @@ Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r.
 Lemma den_payload x i : den (pt_payload x i) = dsl (den x) i.
 Proof. done. Qed.
 
+(** The denotation ignores the polarity: both ends of a channel denote
+    the same protocol (end points). *)
+Lemma den_dual x : den (pt_dual x) = den x.
+Proof. done. Qed.
+
 Lemma dshN_DC k a b : dshN k (DC a b) = DC a (k + b).
 Proof. induction k; simpl; [done|]. by rewrite IHk. Qed.
 
@@ -176,20 +181,22 @@ Proof.
   set (E := λ x y, rooted0 x ∧ rooted0 y ∧ den x = den y).
   set (L := λ x y, rooted0 x ∧ rooted0 y ∧ lexlt (drank (den x)) (drank (den y))).
   assert (∀ x y, geq E x y → den x = den y) as Heq.
-  { induction 1 as [x y (_ & _ & H)| | | | x y _ IH | x y i _ IH]; try congruence.
+  { induction 1 as [x y (_ & _ & H)| | | | x y _ IH | x y i _ IH | x y _ IH]; try congruence.
     - by rewrite !den_shift, IH.
-    - by rewrite !den_payload, IH. }
+    - by rewrite !den_payload, IH.
+    - exact IH. }
   split.
   - apply wgen_wf.
     + intros p ->%elem_of_singleton. by exists 0.
     + intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
     + intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - assert (∀ x y, glt E L x y → lexlt (drank (den x)) (drank (den y))) as Hlt.
-    { induction 1 as [x y (_ & _ & H)|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    { induction 1 as [x y (_ & _ & H)|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
       - done.
       - rewrite den_shift. apply drank_dsh.
       - apply Heq in Hx, Hy. by rewrite Hx, <-Hy.
-      - by eapply lexlt_trans. }
+      - by eapply lexlt_trans.
+      - rewrite den_shift. apply drank_dsh. }
     intros x H. apply Hlt in H. unfold lexlt in H. lia.
 Qed.
 
@@ -263,11 +270,11 @@ Qed.
 
 (** ** Heads of translated types
 
-    A head of a translated type is a protocol point or a lower point,
-    at a priority no smaller than pr(T). *)
+    A head of a translated type is the partner point of a protocol
+    point or a lower point, at a priority no smaller than pr(T). *)
 
 Definition hd_ok (P : prio) (h : point) : Prop :=
-  (∃ s, h = ppt s ∧ prio_le P (PNat (spr s))) ∨ (∃ p, lbp p = Some h ∧ prio_le P p).
+  (∃ s, h = pt_dual (ppt s) ∧ prio_le P (PNat (spr s))) ∨ (∃ p, lbp p = Some h ∧ prio_le P p).
 
 Lemma prio_le_min_l a b c : prio_le a c → prio_le (prio_min a b) c.
 Proof. destruct a, b, c; simpl; lia. Qed.
@@ -314,7 +321,7 @@ Lemma hd_above (x : point) n P h :
   prio_lt (PNat n) P → hd_ok P h → w_lt Wpgv x h.
 Proof.
   intros Hx (k & Ek & Hk) Hn [(s & -> & Hs)|(p & Hp & Hle)].
-  - apply pgv_lt; [done|done|]. rewrite Ek, den_ppt. simpl. rewrite spr_canon.
+  - apply pgv_lt; [done|done|]. rewrite Ek, den_dual, den_ppt. simpl. rewrite spr_canon.
     unfold lexlt. simpl. destruct P; simpl in *; lia.
   - apply pgv_lt; [done|by eapply lbp_rooted|]. rewrite Ek.
     destruct p; simpl in Hp; simplify_eq; destruct P; simpl in *; try done;
@@ -334,7 +341,7 @@ Qed.
 Lemma lbp_below_hd P l h : lbp P = Some l → hd_ok P h → l = h ∨ w_lt Wpgv l h.
 Proof.
   intros Hl [(s & -> & Hs)|(p & Hp & Hle)].
-  - right. apply pgv_lt; [by eapply lbp_rooted|done|]. rewrite den_ppt.
+  - right. apply pgv_lt; [by eapply lbp_rooted|done|]. rewrite den_dual, den_ppt.
     destruct P; simpl in Hl; simplify_eq; simpl in *; rewrite ?spr_canon;
       unfold lexlt; simpl; lia.
   - destruct P as [|n|], p as [|m|]; simpl in Hl, Hp, Hle; try done;
