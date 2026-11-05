@@ -2290,11 +2290,15 @@ moves the selecting end to (x[i])‾ and the branching end to x[i]. The bit prog
 then asks x ≺ ȳ and y ≺ x̄, which are acyclic. Readiness compares an offered
 point with the partner points of the held ends. The deadlock argument picks the
 blocked end with the least point u. Its partner holds ū, and if it is blocked
-at w it owes w ≺ u. The instance with x ≡ x̄ for every point is the old system,
-and the priority systems (PGV, Padovani and Novara) live there. Entry 2 now
-reads x ≺ x̄̄ = x for a thread that holds both ends. Spec: top of
-ORDERS-SPEC.md. If the Rocq port adds its own entry or
-docs/extensions/end-points.md, that one is authoritative for the Rocq details.
+at w it owes w ≺ u. Hatting every fact of an old derivation (x̂ ≺ ŷ for the
+four end facts) gives an end-points derivation, and the priority systems (PGV,
+Padovani and Novara) read as hatted constraints. Adding ι ≡ ῑ alone does not
+recover the old system, because x[j] ≡ (x[j])‾ does not follow for payload
+points. This argument is on paper only. Entry 2 now reads x ≺ x̄̄ = x for a
+thread that holds both ends. Spec: top of ORDERS-SPEC.md. Rocq details,
+the theorems that became open (ChoiceNegative, DataBranch, SemFlag
+underivability) and `bit_typed` / `bit_deadlock_free`: merged into main
+2026-11-05, docs/extensions/end-points.md.
 
 ## From the earlier abandoned mechanization (spec §15)
 

@@ -1,5 +1,10 @@
 # Three small theorems, report
 
+> End points (2026-11-05): the underivability theorems this file cites for
+> ChoiceNegative, DataBranch and SemFlag are open since the end-points merge
+> and commented out in Rocq (marked `END POINTS: open`). See
+> [end-points.md](end-points.md).
+
 Branch `claude/small-theorems-3rew5v`, started from `main` at b621661. The
 head is the commit that adds this report. Four new Rocq files, all registered in
 _CoqProject. No existing Rocq file changed, and no statement of an existing
