@@ -283,8 +283,8 @@ Section steps2.
     exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
     assert (F1 ⊎ F2 ⊎ {[+ e' +]} ⊎ {[+ f' +]} = (F1 ⊎ {[+ e' +]}) ⊎ (F2 ⊎ {[+ f' +]})) as ->
       by multiset_solver.
-    apply (conn_at_world n' W Σ1 Σ2 (<[c := (sbranch i s1 s2, pt_payload k1 (bidx i))]> ΣC)
-             (<[c := (sbranch i r1 r2, pt_payload k2 (bidx i))]> ΣC') C0 C1 C2
+    apply (conn_at_world n' W Σ1 Σ2 (<[c := (sbranch i s1 s2, sel_pt k1 i)]> ΣC)
+             (<[c := (sbranch i r1 r2, bra_pt k2 i)]> ΣC') C0 C1 C2
              _ _ (le_n _) (wext_refl W HW')).
     - split; try done.
       + by apply map_disjoint_insert_r.
@@ -293,16 +293,18 @@ Section steps2.
       + rewrite dom_insert_L, HC0'. clear -HcC0. set_solver.
       + intros r x y Hx Hy. destruct (decide (r = c)) as [->|Hrc].
         * rewrite lookup_insert_eq in Hx, Hy. injection Hx as <-. injection Hy as <-. simpl.
-          split; [by apply (wf_eq_payload _ (proj1 HW'))|by apply sdual_sbranch].
+          split; [|by apply sdual_sbranch].
+          unfold sel_pt, bra_pt. apply (wf_eq_dual _ (proj1 HW')).
+          rewrite <-(pt_payload_dual k2). by apply (wf_eq_payload _ (proj1 HW')).
         * rewrite lookup_insert_ne in Hx, Hy by done. by apply (Hcut r).
-    - assert (Σ1 ∪ <[c := (sbranch i s1 s2, pt_payload k1 (bidx i))]> ΣC =
-              <[c := (sbranch i s1 s2, pt_payload k1 (bidx i))]> Σ1a) as ->.
+    - assert (Σ1 ∪ <[c := (sbranch i s1 s2, sel_pt k1 i)]> ΣC =
+              <[c := (sbranch i s1 s2, sel_pt k1 i)]> Σ1a) as ->.
       { rewrite HE1a. apply map_eq. intros r. destruct (decide (r = c)) as [->|Hrc].
         - rewrite lookup_union, !lookup_insert_eq, H1c. by rewrite (left_id_L None (∪)).
         - rewrite lookup_union, !lookup_insert_ne, lookup_union, lookup_delete_ne by done. done. }
       eapply Prel_down; [|exact HP1']. lia.
-    - assert (Σ2 ∪ <[c := (sbranch i r1 r2, pt_payload k2 (bidx i))]> ΣC' =
-              <[c := (sbranch i r1 r2, pt_payload k2 (bidx i))]> Σ2a) as ->; [|exact HP2'].
+    - assert (Σ2 ∪ <[c := (sbranch i r1 r2, bra_pt k2 i)]> ΣC' =
+              <[c := (sbranch i r1 r2, bra_pt k2 i)]> Σ2a) as ->; [|exact HP2'].
       rewrite HE2a. apply map_eq. intros r. destruct (decide (r = c)) as [->|Hrc].
       + rewrite lookup_union, !lookup_insert_eq, H2c. by rewrite (left_id_L None (∪)).
       + rewrite lookup_union, !lookup_insert_ne, lookup_union, lookup_delete_ne by done. done.
@@ -417,7 +419,7 @@ Section steps2.
           assert (Σ2 !! r = None) as H2r by (apply not_elem_of_dom; clear -HΣ2C0 HrC0; set_solver).
           by rewrite lookup_union, H2r, (left_id_L None (∪)) in H. }
         destruct (Hcut r x e1 HCr HC'r) as [Hq Hd]. split; [|by apply sdual_sym].
-        by apply (wf_eq_sym _ (proj1 HW')).
+        by apply (wf_eq_dual_sym _ _ _ (proj1 HW')).
       - intros r e1 e2 H. subst Θ2. unfold tenv_of in H. rewrite lookup_union, lookup_fmap in H.
         destruct (Σv !! r) eqn:?, (Θe !! r) as [o|] eqn:HΘr; simpl in H; simplify_eq; try done.
         pose proof (Hsp r _ HΘr) as Hb.
@@ -425,7 +427,8 @@ Section steps2.
         destruct Hb as (_ & ? & ?). done.
       - rewrite HDr2, HDo, HDΘ2. clear -HΣeΘ HΘC1 HC1Σ2 HC10. set_solver. }
     assert (Vrel n' W Θ2 (payload_at mm' U' k') v) as HV'.
-    { eapply Vrel_payload; [apply HW'|exact Hkk|]. eapply Vrel_teq; [by apply teq_ty_inst|].
+    { rewrite <-(payload_at_dual mm' U' k').
+      eapply Vrel_payload; [apply HW'|exact Hkk|]. eapply Vrel_teq; [by apply teq_ty_inst|].
       eapply Vrel_down; [|exact HV]. lia. }
     pose proof (Hcont W n' Θ2 (wext_refl W HW') (le_n _)
                   ltac:(rewrite HDΘ2; clear -HdΣa HΘC1 HC12 HC2Σ1 HC20; set_solver) Hrok HV') as HP2'.
@@ -534,7 +537,7 @@ Section steps2.
           rewrite lookup_union, !lookup_difference, Hon in Hy by (clear -Hcv He1 HC10 HcC0; set_solver).
           subst Σr2. rewrite lookup_insert_eq in Hy. simpl in Hy.
           rewrite (right_id_L None (∪)) in Hy. injection Hy as <-. simpl.
-          split; [by apply (wf_eq_shift _ (proj1 HW'))|done].
+          split; [rewrite pt_dual_shift; by apply (wf_eq_shift _ (proj1 HW'))|done].
         * subst ΣC1n. rewrite lookup_insert_ne in Hx by done.
           apply lookup_union_Some_raw in Hx as [Hx|[Hx0 Hx]].
           -- apply lookup_intersection_Some in Hx as [Hx [x' HCr]].
@@ -639,7 +642,7 @@ Section steps3.
     E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∉ C1 → d ∉ C1 →
     c ≠ d ∧ ∃ Σ1a sc sd kc kd,
       Σ1 ∪ ΣC = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1a) ∧ c ∉ dom Σ1a ∧ d ∉ dom Σ1a ∧
-      sdual sc sd ∧ w_eq W kc kd ∧ Prel (S n') W Σ1a TA (C1, F1 ⊎ {[+ e' +]}).
+      sdual sc sd ∧ w_eq W kc (pt_dual kd) ∧ Prel (S n') W Σ1a TA (C1, F1 ⊎ {[+ e' +]}).
   Proof.
     intros HE Hst Hc Hd.
     assert (proc_step (C1, E1) (PSess (SLink {[c; d]})) (C1 ∖ sentc (SLink {[c; d]}), F1 ⊎ {[+ e' +]}))
@@ -656,7 +659,7 @@ Section steps3.
     - exists Σ1a, sc, sd, kc, kd. split_and!; try done. by apply sdual_sym.
     - exists Σ1a, sd, sc, kd, kc. split_and!; try done.
       + rewrite HΣa. by apply insert_insert_ne.
-      + by apply (wf_eq_sym _ (proj1 (co_strict _ _ _ _ _ _ _ _ Hok))).
+      + by apply (wf_eq_dual_sym _ _ _ (proj1 (co_strict _ _ _ _ _ _ _ _ Hok))).
   Qed.
   (** The giving clause for a link of component 1 between its end of a
       cut channel c and an interface channel d: component 2's end of c
@@ -699,7 +702,11 @@ Section steps3.
           done.
         + rewrite cswap_r, !lookup_union, lookup_insert_eq, (not_elem_of_dom_1 _ _ HcΣ2), HC'c, (left_id_L None (∪)), union_Some_l.
           simpl. split; [eapply sdual_unique; [exact Hdd|exact Hdu]|].
-          apply (wf_eq_trans _ (proj1 HW') _ kc); [by apply (wf_eq_sym _ (proj1 HW'))|done].
+          apply (wf_eq_trans _ (proj1 HW') _ (pt_dual kc));
+            first [by apply (wf_eq_dual_sym _ _ _ (proj1 HW'))
+                  |by apply (wf_eq_sym _ (proj1 HW')), (wf_eq_dual_sym _ _ _ (proj1 HW'))
+                  |by apply (wf_eq_dual_l _ _ _ (proj1 HW'))
+                  |by apply (wf_eq_sym _ (proj1 HW')), (wf_eq_dual_l _ _ _ (proj1 HW'))].
         + rewrite cswap_ne by done. rewrite !lookup_union, lookup_insert_ne, lookup_delete_ne by done.
           destruct (Σ2 !! r), (ΣC' !! r); simpl; try done; split; try apply seq_refl;
             apply (wf_eq_refl _ (proj1 HW')).
@@ -791,8 +798,8 @@ Section steps3.
       - subst Σb0. rewrite dom_union_L, !dom_delete_L. clear -HdΣ2. set_solver.
       - eapply sdual_seq_l; [|exact Hdd]. eapply sdual_unique; [exact Hdu|exact Hdc].
       - pose proof (proj1 HW') as Hwf.
-        apply (wf_eq_trans _ Hwf _ kc); [by apply (wf_eq_sym _ Hwf)|].
-        by apply (wf_eq_trans _ Hwf _ kd). }
+        apply (wf_eq_trans _ Hwf _ (pt_dual kc)); [by apply (wf_eq_dual_sym _ _ _ Hwf)|].
+        apply (wf_eq_trans _ Hwf _ kd); [by apply (wf_eq_dual_l _ _ _ Hwf)|done]. }
     rewrite HΣb in HP2.
     pose proof (Prel_internalize c d Hcd (S n') W Σb0 TB C2 E2 sc2 sd2 kc2 kd2 HTB Hio HP2) as HP2'.
     assert (Prel (S n') W (Σ1 ∪ delete c (delete d ΣC)) TA (C1, echsubst c d (F1 ⊎ {[+ e' +]})))
