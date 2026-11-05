@@ -1,4 +1,19 @@
-# Order-based GV♯: specification (state of 2026-11-04, after sharp edges 149: choice at x[i] (K11), constants as constrained schemes, C₀ as creation constraint, absent bounds)
+# Order-based GV♯: specification (state of 2026-11-05, end points: every channel end has its own point; before that sharp edges 149: choice at x[i] (K11), constants as constrained schemes, C₀ as creation constraint, absent bounds)
+
+End points (2026-11-05, branch end-points). Each end of a channel has its own
+point. new creates the two ends at the dual points ι and ῑ. A point carries a
+polarity, x̄ flips it, and x̄̄ = x, x̄+n = (x+n)‾, x̄[i] = x[i] (Rocq `pt_dual`,
+`pt_polar`, `pt_payload_dual`). The head of an end at x is its partner point
+{x̄}, so a thread blocked at u that holds an end at v owes u ≺ v̄. The fact
+theory gains x ≡ y ⇒ x̄ ≡ ȳ (`se_dual`) and x ≺ x̄+1 (`fl_dpo`). The two ends of
+a channel are dual at dual points, x ≡ ȳ, where they were dual at aliased
+points. Readiness compares an offered point with the partner points of the
+held ends. A choice moves the selecting end to (x[i])‾ and the branching end
+to x[i], and link asks x ≡ ȳ. The instance with x ≡ x̄ for every point is the
+old system with one point per channel. The sections below are updated to end
+points where they state a rule. Rocq: theories/types/Types.v,
+static/FactTheory.v, static/Typing.v, relation/Worlds.v, Readiness.v,
+LogicalRelation.v, Creation.v on branch end-points.
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
@@ -14,8 +29,8 @@ part of E (not a separate relation) so that E and readiness use the same world
 extension at every `new`.
 
 Worlds speak about points only, never about channel names (sharp edges 37).
-Every environment entry carries the point of its channel's current instant,
-c : S@x. Renaming channels therefore never touches a world, link substitutes as
+Every environment entry carries the point of its end's current instant,
+c : S@x, and the other end of c sits at the partner point x̄. Renaming channels therefore never touches a world, link substitutes as
 in the paper, and the paper's renaming and junk lemmas hold with the world fixed.
 
 ## 1  Syntax
@@ -124,11 +139,14 @@ S    ::= Skip | S;S | ?P | !P | ⊕(S, S) | &(S, S) | Close | μX.S | X | X̄
                           ⊕(S₁, S₂);S ≈ ⊕(S₁;S, S₂;S), μX.S ≈ S[μX.S/X] for contractive types (K3).
                           Duality is pointwise: !P ↔ ?P, ⊕ ↔ &, dual(S₁;S₂) = dual S₁; dual S₂, X ↔ X̄.
 P    ::= ∃ιs. T           payload, all points of T bound                sugar: !(S₁ ⊗ S₂).S binds them implicitly
-x, ι ::= (p, b)           a point, the instant b of the root p: p after b actions
+x, ι ::= (p, s, b)        a point, the instant b of the end of polarity s at root p (end points)
+x̄    ≔ (p, ¬s, b)        the partner point; x̄̄ = x, (x+n)‾ = x̄+n, x̄[i] = x[i]
 p    ::= a | ι-variable | x[i]        root: point constant, bound point variable, payload point
 x[i]                       i ≥ 0: the payload point, the point of the i-th channel (from 0) carried by
                           the message of the action that leaves x. A choice at x continues at x[i]
-                          for branch i (K11, sharp edges 142). As a point, x[i] also stands for (x[i], 0).
+                          for branch i (K11, sharp edges 142): the branching end at x[i], the
+                          selecting end at its partner (x[i])‾. As a point, x[i] also stands for
+                          (x[i], +, 0). Both ends compute the same payload point, x̄[i] = x[i].
 x + n ≔ (p, b + n)  for x = (p, b)
          (c,k)[0] reads "the first channel carried by c's message at its action k", and
          (c,k)[0] + 2 is that channel after two of its own actions.
@@ -142,13 +160,14 @@ x + n ≔ (p, b + n)  for x = (p, b)
 
 Σ    ::= · | c : S@x | Σ, Σ                       process level, a finite map,  x a ground point,
                                                   c's current instant; each action on c moves x to x+1
-Θ    ::= Σ | Θ, c : S@x, c : S′@x                  term level, may hold both ends,  S ⊥ S′
+Θ    ::= Σ | Θ, c : S@x, c : S′@x̄                  term level, may hold both ends,  S ⊥ S′, at dual points
 Δ    ::= · | x : T | Δ, Δ
 prim ∗,  prim T ⊗ U,  prim T + U,  prim □T if prim T     (as in the paper)
 
-heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ι}      heads(T ⊸^u_ℓ U) = {ℓ}, ∅ without ℓ
+heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ῑ}      heads(T ⊸^u_ℓ U) = {ℓ}, ∅ without ℓ
 heads(T ⊗ U) = heads(T + U) = heads(T) ∪ heads(U)
-heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
+heads(c : S@x) = {x̄}         heads(Σ, Δ) = ⋃ heads of the entries
+                             (end points: the head of an end is its partner point)
 ```
 
 - ∀ appears only directly under □ (never on linear functions, never inside session types).
@@ -160,8 +179,10 @@ heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
 carrier     instants (p, b),  p a point constant or a payload point x[i] of one. No channel names.
 W = (≡, ≺)  ≡ equivalence (aliases),  ≺ strict partial order on ≡-classes
             ⊇ program order (p, b) ≺ (p, b+1) for every name p
+            ⊇ x ≺ x̄+1 for every point x (end points: an end acts before its partner's next action)
 successor congruence   x ≡ y  ⇒  x+1 ≡ y+1     (aliased instants stay aliased)
 payload congruence     x ≡ y  ⇒  x[i] ≡ y[i]      (equal instants carry the same message)
+dual congruence        x ≡ y  ⇒  x̄ ≡ ȳ           (end points, wf_eq_dual)
 x ≼ y       x ≺ y or x ≡ y
 F ≺ F′      every element of F is ≺ every element of F′       (no point lies below ⊥)
 
@@ -184,11 +205,12 @@ link(t)      = some t —c↔d→ t′                            link(p) = some
 ready_W(Θ ∣ F, t) ≔ stable(t) ⇒                                          terms (sharp edges 63, 68)
                       (offered(t) = ∅  ⇒  t is a value)
                     ∧ (link(t)  ∨  ∀o ∈ offered(t).  ∀y ∈ heads(entries(Θ) ∖ offered(t)) ∪ F.  head(o) ≺_W y)
+                      (heads of entries are partner points: head(o) ≺_W x̄ for a held c : S@x)
 
 ready_W(Σ, p) ≔ stable(p) ⇒                                              processes (sharp edges 68)
                   link(p)
                 ∨ ((offered(p) = ∅  ⇒  p is terminated)
-                   ∧ ∀e ∈ entries(Σ) ∖ offered(p).  ∃o ∈ offered(p).  head(o) ≺_W head(e))
+                   ∧ ∀e ∈ entries(Σ) ∖ offered(p).  ∃o ∈ offered(p).  head(o) ≺_W (head(e))‾)
 ```
 
 Link does not block (sharp edges 68). P-Act-Link fires it as a τ once one of
@@ -208,14 +230,18 @@ has to use. A process offers the redexes of all its threads at once, and two
 threads may offer at unrelated points. Its readiness therefore asks only some
 offered head below each held one, and it has no future (sharp edges 63).
 
-The future F of a thread is the set of points it still acts on later. A
-blocking action at u checks u ≺ F. A deadlock is a cycle of threads, each
-blocked on some p while still needing some q that the next thread blocks on,
-and the check u ≺ F turns such a cycle into a cycle of ≺.
+The future F of a thread is the set of partner points of the ends it still
+holds, and the future variables of its callers. A blocking action at u checks
+u ≺ F. A deadlock is a cycle of threads, each blocked at the point of one end
+while it holds another end whose partner the next thread blocks on, and the
+check u ≺ F turns such a cycle into a cycle of ≺. With end points the
+blocked end with the least point u has its partner at ū. If that partner is
+blocked at w it owes w ≺ u, against the choice of u, and otherwise it offers
+the dual action (ReadyChain.v).
 
-ready counts entries, not names: a thread holding both ends of c and blocking
-on one of them must hold the other entry not offered, so it needs
-head(c) ≺ head(c), which fails. Two threads holding one end each are both
+ready counts entries, not names: a thread holding both ends of c, at x and
+x̄, and blocking on the first must hold the second entry not offered, so it
+needs x ≺ x̄̄ = x, which fails. Two threads holding one end each are both
 offered and can synchronize, so that state is not stable.
 
 ## 7  Logical relation   V^W_n⟦Σ ⊢ T⟧,  E^W_n⟦Θ ⊢ T ≺ F⟧,  P^W_n⟦Σ ⊢ T⟧
@@ -278,7 +304,7 @@ Giving steps keep the index (sharp edges 45)
           over the level-n relations, with induction principles Erel_S_ind and Prel_S_ind.
 
 O-Beta    t′ ∈ E^W_n⟦Θ ⊢ T ≺ F⟧
-O-New     ∃a ∉ names(W) ∪ points(Θ, T, F), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@(a,0), c : S′@(a,0) ⊢ T ≺ F⟧
+O-New     ∃a ∉ names(W) ∪ points(Θ, T, F), S ⊥ S′, W′ ⊒ₒ W placing a.   t′ ∈ E^{W′}_n⟦Θ, c : S@a, c : S′@ā ⊢ T ≺ F⟧
           (the created channel name needs no condition, only its point is fresh)
 O-Spawn   Θ = Θ₁, Θ₂     v ∈ V^W_{n+1}⟦Θ₁ ⊢ ∗ ⊸^u_ℓ ∗⟧     t′ ∈ E^W_n⟦Θ₂ ⊢ T ≺ F⟧
           (Every "Θ = Θ₁, c : S@x" below reads the head unr(S); c : (!P;S′)@x means unr(S) = !P;S′.)
@@ -288,18 +314,18 @@ O-Recv    Θ = Θ₁, c : (?P;S)@x
           ∀W′ ⊒ W, j ≤ n, Σ₂, v ∈ V^{W′}_j⟦Σ₂ ⊢ P[x]⟧,  (Θ₁, c : S@(x+1)), Σ₂ defined.
               t′ ∈ E^{W′}_j⟦(Θ₁, c : S@(x+1)), Σ₂ ⊢ T ≺ F⟧
           (the payload is composed with the continuation, so a returning end of c must be
-           dual to it at an aliased point; sharp edges 43)
+           dual to it at a dual point; sharp edges 43)
           (Θ may then hold both ends of a received channel; Θ₁, Σ₂ is defined when every
            overlap is a pair of dual ends at ≡_{W′} points. Every overlap condition of the
            relation reads ≡_W, never equality of points: sharp edges 40)
 O-Close   Θ = Θ₁, c : Close@x      t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
-O-Select  Θ = Θ₁, c : ⊕(S₁, S₂)@x   t —c◁i→ t′   t′ ∈ E^W_{n+1}⟦Θ₁, c : Sᵢ@x[i] ⊢ T ≺ F⟧   (giving, like send)
-O-Branch  Θ = Θ₁, c : &(S₁, S₂)@x   t —c▷i→ t′   t′ ∈ E^W_n⟦Θ₁, c : Sᵢ@x[i] ⊢ T ≺ F⟧
+O-Select  Θ = Θ₁, c : ⊕(S₁, S₂)@x   t —c◁i→ t′   t′ ∈ E^W_{n+1}⟦Θ₁, c : Sᵢ@(x[i])‾ ⊢ T ≺ F⟧   (giving, like send; sel_pt)
+O-Branch  Θ = Θ₁, c : &(S₁, S₂)@x   t —c▷i→ t′   t′ ∈ E^W_n⟦Θ₁, c : Sᵢ@x[i] ⊢ T ≺ F⟧     (bra_pt)
           (costs one, like receive. No payload arrives, so it is stated at W, not at every W′ ⊒ W.
            A choice continues at the payload point x[i] of branch i (K11, sharp edges 142), every
            other action at x+1. Skip and ; move nothing, because unr removes them before a clause
            reads the head. K4, K5, sharp edges 72)
-O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
+O-Link    Θ = Θ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W ȳ    t′ ∈ E^W_n⟦Θ₁ ⊢ T ≺ F⟧
           (c = d allowed: a self-link, Θ holds both ends of c, both entries leave Θ.
            Matches P-Act-Link with c = d, which releases c. `link (new ∗)` is typable.)
           (Θ₁ may keep the other end of c or d. A link compares nothing in readiness, so the
@@ -335,15 +361,16 @@ Q-Recv    Σ = Σ₁, c : (?P;S)@x     p —c?v→ (C′, E′)
 Q-Send    Σ = Σ₀, Σ_v, c : (!P;S)@x      dom Σ_e = fchans(v) ∩ C
           ∃Σ_e, Σ_e′ (points chosen by the obligation).
           v ∈ V^W_{n+1}⟦Σ_v, Σ_e′ ⊢ P[x]⟧      p′ ∈ P^W_n⟦Σ₀, Σ_e, c : S@(x+1) ⊢ T⟧
-          Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay
+          Σ_e′ = ends of dom Σ_e that leave with v,   Σ_e = ends that stay,
+          the two dual at dual points (send_split)
           (both ends of a restricted channel may leave with v; then it has no entry in Σ_e)
 
 Obligations whose continuation environment cannot be formed (e.g. Θ already holds both
 ends of c) fail; such a thread is never ready anyway.
 Q-Close   Σ = Σ₁, c : Close@x      p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
-Q-Select  Σ = Σ₁, c : ⊕(S₁, S₂)@x   p —c◁i→ p′   p′ ∈ P^W_{n+1}⟦Σ₁, c : Sᵢ@x[i] ⊢ T⟧   (giving)
+Q-Select  Σ = Σ₁, c : ⊕(S₁, S₂)@x   p —c◁i→ p′   p′ ∈ P^W_{n+1}⟦Σ₁, c : Sᵢ@(x[i])‾ ⊢ T⟧   (giving)
 Q-Branch  Σ = Σ₁, c : &(S₁, S₂)@x   p —c▷i→ p′   p′ ∈ P^W_n⟦Σ₁, c : Sᵢ@x[i] ⊢ T⟧
-Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y    p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
+Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W ȳ    p′ ∈ P^W_n⟦Σ₁ ⊢ T⟧
           (c = d cannot reach the interface: process-level Σ holds one end per channel)
           (a process waiting at an interface link is ready by link(p), sharp edges 68)
 ```
@@ -352,7 +379,7 @@ Q-Link    c ≠ d    Σ = Σ₁, c : S@x, d : S′@y    S ⊥ S′    x ≡_W y 
 
 ```
 Θ; Δ ⊨^F_W t : T   ≔   ∀n, W′ ⊒ W, Θ′, γ ∈ G^{W′}_n⟦Θ′; Δ⟧, (Θ, Θ′) defined in W′.   tγ ∈ E^{W′}_n⟦Θ, Θ′ ⊢ T ≺ F⟧
-                       (Θ, Θ′ composes, dual ends at ≡_{W′} points allowed: a bound value may hold
+                       (Θ, Θ′ composes, dual ends at dual points up to ≡_{W′} allowed: a bound value may hold
                         the other end of a channel of Θ; sharp edges 50)
 Σ ⊨_W p : T        ≔   ∀n.  p ∈ P^W_n⟦Σ ⊢ T⟧
 Θ; Δ ⊨_W t : T     ≔   Θ; Δ ⊨^∅_W t : T                  (the paper's judgement, plus ready)
@@ -378,8 +405,9 @@ W          a well-formed world over point constants, the index of the judgment
 Γ ⊢ a ≺ b, Γ ⊢ x ≡ y
            the one fact theory, Γ = (W, Ψ, Φ), a and b points or future variables (sharp edges 64, 65).
            Generators: the facts of W,  every fact of C[xs/ιs] for a hypothesis (C, xs) in Ψ,
-           u ≺ φ for every future hypothesis. ≡ is the least congruence (successor and payload)
-           containing the ≡ generators. ≺ contains program order and the ≺ generators and is
+           u ≺ φ for every future hypothesis. ≡ is the least congruence (successor, payload and
+           partner point, se_dual) containing the ≡ generators. ≺ contains program order,
+           x ≺ x+1 and x ≺ x̄+1 (fl_po, fl_dpo), and the ≺ generators, and is
            closed under ≡ and under transitivity through points. With Ψ = Φ = ∅ it is W
            (the ground case). Side conditions are entailments, with no decision procedure
            asked for (§16).
@@ -402,10 +430,12 @@ spawn  : (∗ ⊸^u_ℓ ∗) ⊸ ∗                                       ∅
 send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι S@(ι+1)                        {ι ≺ h ∣ h ∈ heads(P[ι])}, no instance
                                                                  when P[ι] carries the ⊥ flag
 recv   : (?P;S)@ι ⊸^ι P[ι] ⊗ S@(ι+1)                          ∅
-selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@ι[i]                              {ι ≺ ι[i]}              (K11)
-branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]                     {ι ≺ ι[0], ι ≺ ι[1]}    (case dispatches)
+selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@(ι[i])‾                          {ι ≺ ι[i]}              (K11, end points)
+branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]                     {ι ≺ (ι[0])‾, ι ≺ (ι[1])‾}    (case dispatches)
+         (each constraint puts ι below the heads of the result; the selecting end continues
+          at the partner of the branching end, as in the encoding of choice)
 close  : Close@ι ⊸^ι ∗                                          ∅
-link   : S@ι ⊗ dual S@ι′ ⊸ ∗                                    {ι ≡ ι′}
+link   : S@ι ⊗ dual S@ι′ ⊸ ∗                                    {ι ≡ ι̅′}  (the two ends at dual points)
          (link never blocks, so E-App asks no future fact for it. The paper's link has no
           order at all, sharp edges 68)
 force  : □(∀ιs αs. C. ∗ ⊸^u T) ⊸^{u[ιs′/ιs]} T[ιs′/ιs][ss/αs]   C[ιs′/ιs], with ιs′ known and
@@ -416,7 +446,7 @@ new is the one constant outside the schemes. It creates a fresh point and has no
 instantiate, so its premise is that C is a creation constraint over the context with known
 outer points (sharp edges 97, 103, 105).
 
-new    : ∗ ⊸ ∃ι≽⊥. C. S@ι ⊗ dual S@ι        creation_ok 1 Γ C: C is acyclic and conservative over Γ,
+new    : ∗ ⊸ ∃ι≽⊥. C. S@ι ⊗ dual S@ῑ        creation_ok 1 Γ C: C is acyclic and conservative over Γ,
                                              every outer point of C known
 
 Rocq: konst_sig k T G xs is the table of schemes, konst_ty has the constructors KTSig (a scheme
@@ -470,9 +500,10 @@ E-Conv     Θ; Δ ⊢^F t : T     T ≈_Γ T′   ⇒   Θ; Δ ⊢^F t : T′   
            rule. Soundness: under an instance whose hypotheses hold in W₁, ≡_Γ maps into ≡ of W₁,
            and type point conversion (§10) transports V, E and P along ≈_W₁.
 
-P-Term     prim T    Σ, Θ_B; · ⊢^∅ t : T    Θ_B = both ends of every channel in C₀, some points
+P-Term     prim T    Σ, Θ_B; · ⊢^∅ t : T    Θ_B = both ends of every channel in C₀, dual at dual points
            ⇒   Σ ⊢_W (C₀, {t}) : T
-P-Connect  Σ₁, Σ_C ⊢_W (C₁, E₁) : T    Σ₂, Σ_C′ ⊢_W (C₂, E₂) : ∗    Σ_C ⊥ Σ_C′ over C₀ (possibly ∅)
+P-Connect  Σ₁, Σ_C ⊢_W (C₁, E₁) : T    Σ₂, Σ_C′ ⊢_W (C₂, E₂) : ∗    Σ_C ⊥ Σ_C′ over C₀ (possibly ∅),
+           dual at dual points: x ≡_W ȳ for c : S@x ∈ Σ_C and c : S′@y ∈ Σ_C′
            ⇒   Σ₁, Σ₂ ⊢_W (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T
 ```
 
@@ -568,7 +599,7 @@ P-Term      prim T,   Σ, Θ_B; · ⊨^∅_W t : T,   Θ_B both ends of C₀
             channel gives link(p), a link of a channel of C₀ fires, sharp edges 68)
             Rocq (sharp edges 47): induction on n, inside on the size of the thread. Proved as
             Prel_term (composition/PTerm.v). Implicit side conditions made explicit there: W strict,
-            dom Θ_B = C₀, Θ_B only both-ends entries, dual at ≡_W points, dom Σ # C₀.
+            dom Θ_B = C₀, Θ_B only both-ends entries, dual at dual points up to ≡_W, dom Σ # C₀.
 P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ ⊨_{W₂} (C₂, E₂) : ∗,
             Σ_C ⊥ Σ_C′ over C₀,   C₁ # dom Σ₂,   C₂ # dom Σ₁,   W₁ ⊔ W₂ strict
             ⇒   Σ₁, Σ₂ ⊨_{W₁ ⊔ W₂} (C₁ ⊍ C₂ ⊍ C₀, E₁ ⊎ E₂) : T
@@ -581,7 +612,7 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
             Rocq (sharp edges 46): induction on n, inside on the size of the composite's soup;
             both components in one world W ⊒ W₁, W₂ (monotonicity), one at T, the other at ∗.
             Proved as Prel_connect (composition/PConnect.v). Implicit side conditions made explicit there:
-            dom Σ_C = dom Σ_C′ = C₀, cut ends dual at ≡ of W₁ ⊔ W₂, W₁ and W₂ well formed,
+            dom Σ_C = dom Σ_C′ = C₀, cut ends dual at dual points up to ≡ of W₁ ⊔ W₂, W₁ and W₂ well formed,
             Σ₁, Σ₂, Σ_C pairwise disjoint as maps, C₁ # dom Σ₁, C₂ # dom Σ₂, C₁, C₂, C₀ disjoint.
             index (sharp edges 45): components in P at n give the
             composite in P at n. A synchronization of the composite is a giving step of one component
@@ -589,7 +620,7 @@ P-Connect   prim T,   Σ₁, Σ_C ⊨_{W₁} (C₁, E₁) : T,   Σ₂, Σ_C′ 
             the cut moves both cut ends to the chosen branch (cross_choice, sharp edges 72). A link of two cut channels fuses the other ends
             inside one component by Internalizing a link.
 Internalizing a link (component level)
-            prim T,  p ∈ P^W_n⟦Σ, c : S̄@x, d : S@y⟧,  x ≡_W y   ⇒   (C ∪ {d}, E[d/c]) ∈ P^W_n⟦Σ ⊢ T⟧
+            prim T,  p ∈ P^W_n⟦Σ, c : S̄@x, d : S@y⟧,  x ≡_W ȳ   ⇒   (C ∪ {d}, E[d/c]) ∈ P^W_n⟦Σ ⊢ T⟧
             proof: a synchronization on d of the fused process is c!v (free) then d?v of p, a choice
             on d is c◁i (free) then d▷i of p, and a close on d is two closes of p (both free); induction on n, inside on the giving-step
             fixpoint of p; readiness by the chain argument (the two ends are never both offered in a
@@ -683,7 +714,13 @@ the fundamental theorems, of adequacy or of a composition lemma changed.
 
 ## 13  Examples
 
-(c, k) below is the point of c's entry after k actions.
+(c, k) below is the point of c's entry after k actions. The table predates end points.
+With end points the second end of c sits at (c, k)‾, and the facts read: cycle has the
+thunk's γ̄ ≺ ε and the main thread's γ ≺ ε̄ (examples/Cycle.v), blocked asks γ ≺ ε̄ and
+ε̄ ≺ γ, delegation asks the five facts of its creation constraint
+{ι ≺ ι[0], ι ≺ (ι[0])‾, ι[0]+1 ≺ ι+1, (ι[0])‾+1 ≺ ῑ+1, ι[0]+1 ≺ ῑ+1}
+(examples/Delegation.v), and the reduced scheduler creates r₀ under {γ ≺ γ̄}
+(examples/Scheduler.v). The other rows wait for the port of their files.
 
 ```
 sync            typable                       new and spawn instead of fork
