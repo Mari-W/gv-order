@@ -425,9 +425,9 @@ send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι S@(ι+1)                        {ι ≺ h 
                                                                  when P[ι] carries the ⊥ flag
 recv   : (?P;S)@ι ⊸^ι P[ι] ⊗ S@(ι+1)                          ∅
 selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@(ι[i])‾                           {ι ≺ ι[i]}              (K11)
+branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]                     {ι ≺ (ι[0])‾, ι ≺ (ι[1])‾}    (case dispatches)
          (each constraint puts ι below the heads of the result; the selecting end continues
           at the partner of the branching end, as in the encoding of choice)
-branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]                     {ι ≺ (ι[0])‾, ι ≺ (ι[1])‾}    (case dispatches)
 close  : Close@ι ⊸^ι ∗                                          ∅
 link   : S@ι ⊗ dual S@ι′ ⊸ ∗                                    {ι ≡ (ι′)‾}
          (link never blocks, so E-App asks no future fact for it. The paper's link has no
