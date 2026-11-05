@@ -292,7 +292,7 @@ Section ready.
   Context (c d : chan) (Hcd : c ≠ d) (W : world) (HW : strict W) (Σ : senv)
     (sc sd : sty) (kc kd : point) (C : gset chan) (E : gmultiset expr).
   Context (HcΣ : c ∉ dom Σ) (HdΣ : d ∉ dom Σ) (HcC : c ∉ C) (HdC : d ∉ C)
-    (Hdu : sdual sc sd) (Hal : w_eq W kc kd).
+    (Hdu : sdual sc sd) (Hal : w_eq W kc (pt_dual kd)).
   Local Notation Σp := (fusedP c d Σ sc sd kc kd).
   Local Notation q := (C ∪ {[d]}, echsubst c d E).
 
@@ -430,11 +430,10 @@ Section ready.
         destruct (decide (k'.1 = c)) as [Hk'|Hk'].
         { exfalso. destruct k' as [k1' b']. simpl in Hk'. subst k1'.
           apply fusedP_entry_c in He' as [-> ->]. simpl in Hlt.
-          by apply (lt_eq_false kc kd). }
+          by apply (lt_eq_false kc (pt_dual kd)). }
         destruct (decide (k'.1 = d)) as [Hk''|Hk''].
         { exfalso. destruct k' as [k1' b']. simpl in Hk''. subst k1'.
-          apply fusedP_entry_d in He' as [-> ->]; [|done]. simpl in Hlt.
-          destruct HW as [_ Hirr]. exact (Hirr _ Hlt). }
+          apply fusedP_entry_d in He' as [-> ->]; [|done]. apply Hnb. by split. }
         exists k', e'. split_and!.
         + by apply off_fwd.
         + by rewrite <-(fusedP_entry_ne c d Σ sc sd kc kd).
@@ -446,15 +445,15 @@ Section ready.
         destruct (decide (k'.1 = d)) as [Hk'|Hk'].
         { exfalso. destruct k' as [k1' b']. simpl in Hk'. subst k1'.
           apply fusedP_entry_d in He' as [-> ->]; [|done]. simpl in Hlt.
-          apply (lt_eq_false kd kc); [done|by apply (wf_eq_sym _ HWf)]. }
+          apply (lt_eq_false kd (pt_dual kc)); [done|by apply wf_eq_dual_sym]. }
         destruct (decide (k'.1 = c)) as [Hk''|Hk''].
         { exfalso. destruct k' as [k1' b']. simpl in Hk''. subst k1'.
-          apply fusedP_entry_c in He' as [-> ->]. simpl in Hlt.
-          destruct HW as [_ Hirr]. exact (Hirr _ Hlt). }
+          apply fusedP_entry_c in He' as [-> ->]. apply Hnb. by split. }
         exists k', e'. split_and!.
         + by apply off_fwd.
         + by rewrite <-(fusedP_entry_ne c d Σ sc sd kc kd).
-        + simpl. eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|exact Hal]. }
+        + simpl. eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|by apply wf_eq_dual_l]. }
+
     split.
     - intros Hno. apply Hnt, Hv. intros k Ho.
       destruct (decide (k.1 = c ∨ k.1 = d)) as [Hk|Hk].
@@ -676,7 +675,7 @@ Section internalize.
 
   Definition int_ok (W : world) (Σ : senv) (sc sd : sty) (kc kd : point)
       (C : gset chan) : Prop :=
-    strict W ∧ c ∉ dom Σ ∧ d ∉ dom Σ ∧ c ∉ C ∧ d ∉ C ∧ sdual sc sd ∧ w_eq W kc kd.
+    strict W ∧ c ∉ dom Σ ∧ d ∉ dom Σ ∧ c ∉ C ∧ d ∉ C ∧ sdual sc sd ∧ w_eq W kc (pt_dual kd).
 
   Definition fuse_goal (m : nat) (W : world) (Σp : senv) (T : ty) (p : proc) : Prop :=
     ∀ Σ C E sc sd kc kd, Σp = fusedP c d Σ sc sd kc kd → p = (C, E) →
@@ -688,7 +687,7 @@ Section internalize.
     Context (W : world) (Σ : senv) (sc sd : sty) (kc kd : point)
       (C : gset chan) (E : gmultiset expr).
     Context (HW : strict W) (HcΣ : c ∉ dom Σ) (HdΣ : d ∉ dom Σ) (HcC : c ∉ C)
-      (HdC : d ∉ C) (Hdu : sdual sc sd) (Hal : w_eq W kc kd).
+      (HdC : d ∉ C) (Hdu : sdual sc sd) (Hal : w_eq W kc (pt_dual kd)).
     Local Notation Σp := (fusedP c d Σ sc sd kc kd).
     Local Notation q := (C ∪ {[d]}, echsubst c d E).
     Local Notation X := (λ W Σp T p, Prel (S n') W Σp T p ∧ fuse_goal (S n') W Σp T p).
@@ -830,7 +829,7 @@ Section internalize.
       { by exists s0. }
       { rewrite dom_delete_L. clear. set_solver. }
       cbn [sentc] in HΦ. rewrite difference_empty_L in HΦ.
-      pose proof (HΦ (<[a := (sbranch i s1 s2, pt_payload k (bidx i))]> (delete a Σ)) C (F ⊎ {[+ f +]})
+      pose proof (HΦ (<[a := (sbranch i s1 s2, sel_pt k i)]> (delete a Σ)) C (F ⊎ {[+ f +]})
                     sc sd kc kd) as HP.
       rewrite echsubst_disj_union1 in HP. apply HP.
       { unfold fusedP. rewrite (insert_insert_ne _ a c), (insert_insert_ne _ a d) by done. done. }
@@ -864,7 +863,7 @@ Section internalize.
       { by exists s0. }
       { rewrite dom_delete_L. clear. set_solver. }
       cbn [sentc] in HP1. rewrite difference_empty_L in HP1.
-      pose proof (IH n' (le_n _) W _ _ HP1 (<[a := (sbranch i s1 s2, pt_payload k (bidx i))]> (delete a Σ))
+      pose proof (IH n' (le_n _) W _ _ HP1 (<[a := (sbranch i s1 s2, bra_pt k i)]> (delete a Σ))
                     C (F ⊎ {[+ f +]}) sc sd kc kd) as HP.
       rewrite echsubst_disj_union1 in HP. apply HP.
       { unfold fusedP. rewrite (insert_insert_ne _ a c), (insert_insert_ne _ a d) by done. done. }
@@ -993,7 +992,7 @@ Section internalize.
         + split; [rewrite !dom_insert_L; clear -HΣeΘ; set_solver|].
           intros r o Hr. destruct (decide (r = d)) as [->|Hrd].
           * rewrite lookup_insert_eq in Hr. injection Hr as <-. exists (sd, kd).
-            rewrite lookup_insert_eq. split_and!; [done|by apply (wf_eq_sym _ HWf)|by apply sdual_sym].
+            rewrite lookup_insert_eq. split_and!; [done|by apply wf_eq_dual_sym|by apply sdual_sym].
           * rewrite lookup_insert_ne in Hr by done. destruct Hsplit as [_ Hs].
             specialize (Hs r o Hr). rewrite lookup_insert_ne by done. done.
         + rewrite dom_insert_L. clear -HΘeΣ HdΣ. set_solver.
@@ -1158,7 +1157,7 @@ Section internalize.
       (* the payload types agree, the continuations are dual *)
       assert (m' = m ∧ teq U U' ∧
               ((c0 = c ∧ c1 = d ∧ sdual s s') ∨ (c0 = d ∧ c1 = c ∧ sdual s' s)) ∧
-              w_eq W k k') as (-> & HUU & Hcont & Hkk).
+              w_eq W k (pt_dual k')) as (-> & HUU & Hcont & Hkk).
       { destruct Hcc as [[-> ->]|[-> ->]].
         - rewrite fusedP_c in E0. rewrite (fusedP_d c d Hcd) in E1.
           injection E0 as -> ->. injection E1 as -> ->.
@@ -1170,7 +1169,7 @@ Section internalize.
           destruct (sdual_rcv_inv _ _ _ _ _ Hdu Hu1) as (U2 & r' & Hr & HU2 & Hsr).
           rewrite Hu in Hr. injection Hr as -> -> ->. split_and!; [done|by apply teq_sym| |].
           + right. done.
-          + by apply (wf_eq_sym _ HWf). }
+          + by apply wf_eq_dual_sym. }
       set (Σr := <[c1 := (s', pt_shift 1 k')]> Σ1).
       assert (HrC : ∀ y, y ∈ C → Σr !! y = Σe !! y).
       { intros y Hy. assert (y ≠ c1 ∧ y ≠ c0) as [Hy1 Hy0] by (split; intros ->; done).
@@ -1206,7 +1205,8 @@ Section internalize.
         clear -HΣvC. set_solver. }
       assert (Vrel n' W (tenv_of Σv ∪ Θe) (payload_at m U' k') w0) as HV2.
       { eapply Vrel_tconv; [done| |eapply Vrel_down; [|exact HV]; lia].
-        eapply (teqW_trans W HWf); [apply (teqW_payload W HWf); exact Hkk|].
+        eapply (teqW_trans W HWf);
+          [exact (teqW_payload W HWf m U k (pt_dual k') Hkk)|rewrite payload_at_dual].
         apply teq_teqW, teq_ty_inst, HUU. }
       pose proof (send_recv_ok W Σr Σv Σe Θe C) as Sok.
       pose proof (send_recv_back W Σr Σv Σe Θe C) as Sback.
@@ -1270,13 +1270,13 @@ Section internalize.
         injection E0 as <- <-. injection E1 as <- <-.
         apply (IH n' (le_n _) W _ _ HP2 Σ C _ s s' (pt_shift 1 kc) (pt_shift 1 kd));
           [done|done|].
-        split_and!; try done. by apply (wf_eq_shift _ HWf).
+        split_and!; try done. rewrite pt_dual_shift. by apply (wf_eq_shift _ HWf).
       - rewrite (fusedP_d c d Hcd) in E0. rewrite fusedP_c in E1.
         injection E0 as <- <-. injection E1 as <- <-.
         apply (IH n' (le_n _) W _ _ HP2 Σ C _ s' s (pt_shift 1 kc) (pt_shift 1 kd));
           [|done|].
         + unfold fusedP. by rewrite insert_insert_ne.
-        + split_and!; try done. by apply (wf_eq_shift _ HWf).
+        + split_and!; try done. rewrite pt_dual_shift. by apply (wf_eq_shift _ HWf).
     Qed.
 
     Lemma choice_case F2 h h0 g g0 c0 c1 i :
@@ -1309,10 +1309,10 @@ Section internalize.
         by (rewrite HΣ; by rewrite lookup_insert_eq).
       assert (Σ1 = delete c0 (fusedP c d Σ sc sd kc kd)) as ->.
       { rewrite HΣ, delete_insert_id; [done|]. by apply not_elem_of_dom. }
-      assert ((<[c0 := (sbranch i s1 s2, pt_payload k (bidx i))]> (delete c0 (fusedP c d Σ sc sd kc kd)))
+      assert ((<[c0 := (sbranch i s1 s2, sel_pt k i)]> (delete c0 (fusedP c d Σ sc sd kc kd)))
                 !! c1 = Some (s1', k')) as E1 by (rewrite HΣ2; by rewrite lookup_insert_eq).
       rewrite lookup_insert_ne, lookup_delete_ne in E1 by done.
-      assert (Σ2 = delete c1 (<[c0 := (sbranch i s1 s2, pt_payload k (bidx i))]>
+      assert (Σ2 = delete c1 (<[c0 := (sbranch i s1 s2, sel_pt k i)]>
                                 (delete c0 (fusedP c d Σ sc sd kc kd)))) as ->.
       { rewrite HΣ2, delete_insert_id; [done|]. by apply not_elem_of_dom. }
       destruct Hcc as [[-> ->]|[-> ->]].
@@ -1320,20 +1320,24 @@ Section internalize.
         injection E0 as <- <-. injection E1 as <- <-.
         destruct (sdual_plus_with _ _ _ _ _ _ Hdu Hu Hu') as [Hd1 Hd2].
         apply (IH n' (le_n _) W _ _ HP2 Σ C _ (sbranch i s1 s2) (sbranch i r1 r2)
-                 (pt_payload kc (bidx i)) (pt_payload kd (bidx i))); [|done|].
+                 (sel_pt kc i) (bra_pt kd i)); [|done|].
         + unfold fusedP. apply map_eq. intros y.
           destruct (decide (y = d)) as [->|Hyd]; [by simplify_map_eq|].
           destruct (decide (y = c)) as [->|Hyc]; by simplify_map_eq.
-        + split_and!; try done; [by apply sdual_sbranch|by apply (wf_eq_payload _ HWf)].
+        + split_and!; try done; [by apply sdual_sbranch|].
+          unfold sel_pt, bra_pt. apply (wf_eq_dual _ HWf).
+          rewrite <-(pt_payload_dual kd). by apply (wf_eq_payload _ HWf).
       - rewrite (fusedP_d c d Hcd) in E0. rewrite fusedP_c in E1.
         injection E0 as <- <-. injection E1 as <- <-.
         destruct (sdual_with_plus _ _ _ _ _ _ Hdu Hu' Hu) as [Hd1 Hd2].
         apply (IH n' (le_n _) W _ _ HP2 Σ C _ (sbranch i r1 r2) (sbranch i s1 s2)
-                 (pt_payload kc (bidx i)) (pt_payload kd (bidx i))); [|done|].
+                 (bra_pt kc i) (sel_pt kd i)); [|done|].
         + unfold fusedP. apply map_eq. intros y.
           destruct (decide (y = c)) as [->|Hyc]; [by simplify_map_eq|].
           destruct (decide (y = d)) as [->|Hyd]; by simplify_map_eq.
-        + split_and!; try done; [by apply sdual_sbranch|by apply (wf_eq_payload _ HWf)].
+        + split_and!; try done; [by apply sdual_sbranch|].
+          unfold sel_pt, bra_pt. rewrite pt_dual_dual.
+          rewrite <-(pt_payload_dual kd). by apply (wf_eq_payload _ HWf).
     Qed.
 
     Lemma close_steps F2 h h0 g g0 c0 c1 :
@@ -1413,7 +1417,7 @@ Section internalize.
       E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[x0; y0]})) f0 → x0 ∉ C → y0 ∉ C →
       ∃ c1 d1 Σ1 sc1 sd1 kc1 kd1, ({[x0; y0]} : gset chan) = {[c1; d1]} ∧ c1 ≠ d1 ∧
         Σp = <[c1 := (sc1, kc1)]> (<[d1 := (sd1, kd1)]> Σ1) ∧ c1 ∉ dom Σ1 ∧ d1 ∉ dom Σ1 ∧
-        sdual sd1 sc1 ∧ w_eq W kc1 kd1 ∧ Prel (S n') W Σ1 T (C, F ⊎ {[+ f0 +]}).
+        sdual sd1 sc1 ∧ w_eq W kc1 (pt_dual kd1) ∧ Prel (S n') W Σ1 T (C, F ⊎ {[+ f0 +]}).
     Proof.
       intros HEq Hf Hx0 Hy0.
       assert (proc_step (C, E) (PSess (SLink {[x0; y0]}))
@@ -1468,11 +1472,12 @@ Section internalize.
           + rewrite decide_True by done. rewrite fusedP_c in H0. injection H0 as <- <-.
             split; simpl.
             * apply (sdual_unique sc); [done|by apply sdual_sym].
-            * eapply (wf_eq_trans _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hal1].
+            * apply (wf_eq_dual_l _ _ _ HWf) in Hal, Hal1.
+              eapply (wf_eq_trans _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hal1].
           + rewrite decide_False by done. rewrite (fusedP_d c d Hcd) in H0.
             injection H0 as <- <-. split; simpl.
             * apply (sdual_unique sd); by apply sdual_sym.
-            * eapply (wf_eq_trans _ HWf); [exact Hal|exact Hal1].
+            * eapply (wf_eq_trans _ HWf); [exact Hal|by apply wf_eq_dual_l].
         - pose proof (Hl x0) as H0. pose proof (Hl y0) as H1.
           rewrite lookup_insert_eq in H1. rewrite lookup_insert_ne, lookup_insert_eq in H0
             by done.
@@ -1481,7 +1486,7 @@ Section internalize.
           + rewrite decide_True by done. rewrite fusedP_c in H0. injection H0 as <- <-.
             split; simpl.
             * by apply (sdual_unique sc).
-            * eapply (wf_eq_trans _ HWf); [by apply (wf_eq_sym _ HWf)|].
+            * eapply (wf_eq_trans _ HWf); [apply (wf_eq_sym _ HWf); by apply wf_eq_dual_l|].
               by apply (wf_eq_sym _ HWf).
           + rewrite decide_False by done. rewrite (fusedP_d c d Hcd) in H0.
             injection H0 as <- <-. split; simpl.
