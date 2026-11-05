@@ -100,7 +100,9 @@ Record world_wf (W : world) : Prop := {
   wf_lt_po x : w_lt W x (pt_shift 1 x);
   wf_eq_supp x y : w_eq W x y → eq_or_supp (w_names W) x y;
   wf_lt_supp x y : w_lt W x y → po_or_supp (w_names W) x y;
-  wf_names_const p : p ∈ w_names W → ∃ a, p = NConst a
+  wf_names_const p : p ∈ w_names W → ∃ a, p = NConst a;
+  wf_eq_dual x y : w_eq W x y → w_eq W (pt_dual x) (pt_dual y);
+  wf_lt_dpo x : w_lt W x (pt_shift 1 (pt_dual x))
 }.
 
 (** The support consists of point constants, which are root names. *)
@@ -168,8 +170,9 @@ Lemma geq_supp N E x y :
   (∀ x y, E x y → eq_or_supp N x y) → geq E x y → eq_or_supp N x y.
 Proof.
   intros HE. unfold eq_or_supp.
-  induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH];
-    [by apply HE|by left|naive_solver|naive_solver| |].
+  induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH];
+    [by apply HE|by left|naive_solver|naive_solver| | |].
+  - destruct IH as [->|[??]]; [by left|right; done].
   - destruct IH as [->|[??]]; [by left|right; done].
   - destruct IH as [->|[??]]; [by left|right; done].
 Qed.
@@ -180,7 +183,7 @@ Lemma glt_supp N E L x y :
   glt E L x y → po_or_supp N x y.
 Proof.
   intros HE HL. unfold po_or_supp.
-  induction 1 as [x y Hb|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  induction 1 as [x y Hb|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
   - by apply HL.
   - left. apply ppo_po.
   - apply (geq_supp N) in Hx; [|done]. apply (geq_supp N) in Hy; [|done].
@@ -192,6 +195,7 @@ Proof.
     destruct IH1 as [Hp1|[??]], IH2 as [Hp2|[??]];
       try pose proof (ppo_root _ _ Hp1); try pose proof (ppo_root _ _ Hp2);
       first [left; by eapply ppo_trans|right; split; congruence].
+  - left. apply ppo_dpo.
 Qed.
 
 Lemma wgen_wf N E L :
@@ -200,7 +204,7 @@ Lemma wgen_wf N E L :
   (∀ x y, L x y → po_or_supp N x y) →
   world_wf (wgen N E L).
 Proof.
-  intros HN HE HL. split; simpl; [..|done].
+  intros HN HE HL. split; simpl; [..|done| |].
   - apply geq_refl.
   - apply geq_sym.
   - apply geq_trans.
@@ -211,6 +215,8 @@ Proof.
   - apply glt_po.
   - intros x y. by apply geq_supp.
   - intros x y. by apply glt_supp.
+  - apply geq_dual.
+  - apply glt_dpo.
 Qed.
 
 (** ** Kripke order, fresh extension, join, restriction *)
@@ -318,6 +324,9 @@ Proof.
     destruct Hxy as [?|[??]]; [by left|].
     right. split; by apply elem_of_intersection.
   - intros p [Hp _]%elem_of_intersection. by apply HW.
+  - intros x y [Hxy Hs]. split; [by apply (wf_eq_dual _ HW)|].
+    destruct Hs as [->|[??]]; [by left|by right].
+  - intros x. split; [apply (wf_lt_dpo _ HW)|]. left. apply ppo_dpo.
 Qed.
 
 (** An alias is just ≡, because ≡ is closed under shifting. *)
@@ -355,20 +364,15 @@ Proof.
     eapply (wf_lt_trans _ HW); [exact IH|apply (wf_lt_po _ HW)].
 Qed.
 
-Lemma wf_lt_same W x y :
-  world_wf W → pt_name x = pt_name y → pt_off x < pt_off y → w_lt W x y.
-Proof.
-  intros HW Hn Ho. destruct x as [p a], y as [q b]; simpl in *; subst q.
-  replace (Pt p b) with (pt_shift (S (b - a - 1)) (Pt p a)).
-  - by apply wf_lt_po_n.
-  - unfold pt_shift. simpl. f_equal. lia.
-Qed.
-
 Lemma wf_lt_ppo W x y : world_wf W → ppo x y → w_lt W x y.
 Proof.
-  intros HW. induction 1; [apply (wf_lt_po _ HW)|].
+  intros HW. induction 1; [apply (wf_lt_po _ HW)|apply (wf_lt_dpo _ HW)|].
   by eapply (wf_lt_trans _ HW).
 Qed.
+
+Lemma wf_lt_same W x y :
+  world_wf W → pt_name x = pt_name y → pt_off x < pt_off y → w_lt W x y.
+Proof. intros HW Hn Ho. apply wf_lt_ppo; [done|]. by apply ppo_same. Qed.
 
 (** ** Facts with a strictness flag
 
@@ -492,25 +496,37 @@ Section join_paths.
     destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_payload.
   Qed.
 
+  Lemma jpath_dual x y :
+    jpath false x y → jpath false (pt_dual x) (pt_dual y).
+  Proof.
+    remember false as b eqn:Hb. induction 1 as [|b1 b2 x y z Hs Hp IH];
+      [constructor|].
+    destruct b1, b2; try discriminate.
+    change false with (false || false). econstructor; [|by apply IH].
+    destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_dual.
+  Qed.
+
   Lemma join_jpath :
     (∀ x y, w_eq (wjoin W1 W2) x y → jpath false x y) ∧
     (∀ x y, w_lt (wjoin W1 W2) x y → jpath true x y).
   Proof.
     assert (∀ x y, w_eq (wjoin W1 W2) x y → jpath false x y) as Heq.
-    { simpl. induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH].
+    { simpl. induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
       - apply jpath_one. done.
       - constructor.
       - by apply jpath_rev.
       - change false with (false || false). by eapply jpath_app.
       - by apply jpath_shift.
-      - by apply jpath_payload. }
+      - by apply jpath_payload.
+      - by apply jpath_dual. }
     split; [done|]. simpl.
-    induction 1 as [x y Hb|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    induction 1 as [x y Hb|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - by apply jpath_one.
     - apply jpath_one. left. apply (wf_lt_po _ HW1).
     - change true with ((false || true) || false).
       eapply jpath_app; [eapply jpath_app; [by apply Heq|done]|by apply Heq].
     - change true with (true || true). by eapply jpath_app.
+    - apply jpath_one. left. apply (wf_lt_dpo _ HW1).
   Qed.
 
   Let A := w_names W1 ∩ w_names W2.
@@ -699,8 +715,8 @@ Proof.
   intros HW HE HL.
   assert (∀ x y, geq E x y → w_eq W x y) as Heq.
   { induction 1; eauto using wf_eq_refl, wf_eq_sym, wf_eq_trans,
-      wf_eq_shift, wf_eq_payload. }
-  split; [done|]. induction 1; eauto using wf_lt_trans, wf_lt_po.
+      wf_eq_shift, wf_eq_payload, wf_eq_dual. }
+  split; [done|]. induction 1; eauto using wf_lt_trans, wf_lt_po, wf_lt_dpo.
   eapply (wf_lt_eq _ HW); eauto.
 Qed.
 

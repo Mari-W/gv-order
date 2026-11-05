@@ -2,11 +2,12 @@
 
     The gate of the logical relation's step clauses. A stable term or
     process (no internal step left) must either be done, or offer some
-    of the entries it holds, and every entry it holds but does not
-    offer must lie strictly above some offered one in the world's
-    order. Entries, not names, are compared: a thread holding both ends
-    of c and blocking on one of them holds the other entry unoffered and
-    would need head(c) ≺ head(c).
+    of the entries it holds, and the partner point of every entry it
+    holds but does not offer must lie strictly above some offered one
+    in the world's order (end points: blocked at u holding v needs
+    u ≺ v̄). Entries, not names, are compared: a thread holding both
+    ends of c, at x and x̄, and blocking on one of them holds the other
+    entry unoffered and would need x ≺ x, which fails.
 
     For a term, readiness and the future are one condition (sharp edges
     63). Every offered head lies below every head the term holds and
@@ -66,19 +67,21 @@ Definition stable_p (p : proc) : Prop := ∀ p', ¬ proc_step p PTau p'.
 
 (** ** ready_W *)
 
-(** Every held entry not offered lies strictly above an offered one. *)
+(** Every held entry not offered has an offered entry strictly below
+    its partner point: some offered o has head(o) ≺ x̄ for the held
+    c : S@x (end points). *)
 Definition above_offered (W : world) (Θ : tenv) (off : ekey → Prop) : Prop :=
   ∀ k e, tenv_entry Θ k = Some e → ¬ off k →
     ∃ k' e', off k' ∧ tenv_entry Θ k' = Some e' ∧
-      w_lt W (entry_head k' e') (entry_head k e).
+      w_lt W (entry_head k' e') (pt_dual (entry_head k e)).
 
-(** Every offered entry lies strictly below every held entry not
-    offered and below every point of F. *)
+(** Every offered entry lies strictly below the partner point of every
+    held entry not offered, and below every point of F. *)
 Definition below_rest (W : world) (Θ : tenv) (off : ekey → Prop) (F : gset point)
     : Prop :=
   ∀ k e, off k → tenv_entry Θ k = Some e →
     (∀ k' e', tenv_entry Θ k' = Some e' → ¬ off k' →
-       w_lt W (entry_head k e) (entry_head k' e')) ∧
+       w_lt W (entry_head k e) (pt_dual (entry_head k' e'))) ∧
     (∀ y, y ∈ F → w_lt W (entry_head k e) y).
 
 (** A link redex (sharp edges 68). A link never waits for a partner,
