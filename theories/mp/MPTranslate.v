@@ -414,9 +414,9 @@ Section heads.
     assert (∀ l, l ≠ [] → hiz B l = Some (rpt B (RHi l))) as Hz by (by intros [|??]).
     assert (∀ e2, PTop ∈ e2 → e2 ≠ [] → sle Wmp Ψ (rpt B (RHi ef)) (rpt B (RHi e2))) as Htop.
     { intros e2 Ht Hne. destruct (decide (PTop ∈ ef)) as [Ht'|Ht'].
-      - left. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv. rewrite !(den_hi _ _ _ HB) by done.
+      - left. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar. rewrite !(den_hi _ _ _ HB) by done.
         by rewrite !xmaxl_top, !hlen_top by done.
-      - right. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv. rewrite !(den_hi _ _ _ HB) by done.
+      - right. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar. rewrite !(den_hi _ _ _ HB) by done.
         rewrite (xmaxl_top v e2) by done. pose proof (xmaxl_notop v ef Ht').
         destruct (xmaxl v ef); simpl; done. }
     destruct Hle as [Hn|[Ht|[(l1 & l2 & ->)|[Hne Hs]]]]; [done| | |].
@@ -426,13 +426,13 @@ Section heads.
       destruct (decide (l1 = [] ∧ l2 = [])) as [[-> ->]|Hl].
       { rewrite app_nil_r. left. apply se_refl. }
       destruct (decide (PTop ∈ l1 ++ ef ++ l2)) as [Ht|Ht]; [apply Htop; [done|by destruct l1]|].
-      right. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv. rewrite !(den_hi _ _ _ HB) by done.
+      right. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar. rewrite !(den_hi _ _ _ HB) by done.
       rewrite !hlen_notop by set_solver. apply hi_hi.
       + rewrite !xmaxl_app. eapply xle_trans; [apply xle_max_l|apply xle_max_r].
       + by apply xmaxl_notop.
       + rewrite !length_app. destruct l1, l2; simpl in *; try lia. naive_solver.
     - exists (rpt B (RHi ef')). split; [by apply Hz|]. right.
-      apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv. rewrite !(den_hi _ _ _ HB) by done.
+      apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar. rewrite !(den_hi _ _ _ HB) by done.
       apply hi_hi_lt. by apply Hs.
   Qed.
 
@@ -463,11 +463,11 @@ Section heads.
     intros H Hlt Hx Hh. destruct (erel_heads _ _ _ _ _ H Hh) as (t & Ht & Hh').
     destruct ef as [|ρ0 ef0]; [done|]. injection Hx as <-.
     destruct t as [|p Q hh d|T lo ef' V|]; simpl in Hh'; try set_solver.
-    - apply elem_of_singleton in Hh' as ->. apply (gd_lt _ _ _ HB); [done|done|].
-      intros v Hv. rewrite (den_hi _ _ _ HB), (rank_ch _ _ _ HB) by done. apply hi_chan.
+    - apply elem_of_singleton in Hh' as ->. apply (gd_lt _ _ _ HB); [by destruct p|by destruct p|].
+      intros v Hv; rewrite ?den_dual, ?den_polar. rewrite (den_hi _ _ _ HB), (rank_ch _ _ _ HB) by done. apply hi_chan.
       apply (Hlt v Hv). apply (envp_in Γ (MChan p Q hh d)); [done|by left].
     - apply elem_of_singleton in Hh' as ->. apply (gd_lt _ _ _ HB); [done|done|].
-      intros v Hv. rewrite (den_hi _ _ _ HB), (den_lo _ _ _ HB) by done. apply hi_lo.
+      intros v Hv; rewrite ?den_dual, ?den_polar. rewrite (den_hi _ _ _ HB), (den_lo _ _ _ HB) by done. apply hi_lo.
       intros ρ Hρ. apply (Hlt v Hv). by apply (envp_in Γ (MArr T lo ef' V)).
   Qed.
 
@@ -475,7 +475,7 @@ Section heads.
     plt Θ ef lo → hiz B ef = Some x → slt Wmp Ψ x (rpt B (RLo lo)).
   Proof.
     intros Hlt Hx. destruct ef as [|ρ0 ef0]; [done|]. injection Hx as <-.
-    apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv.
+    apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     rewrite (den_hi _ _ _ HB), (den_lo _ _ _ HB) by done. apply hi_lo. by apply Hlt.
   Qed.
 
@@ -483,7 +483,7 @@ Section heads.
     plt Θ ef [chead Q h d] → hiz B ef = Some x → slt Wmp Ψ x (rpt B (RCh Q h d)).
   Proof.
     intros Hlt Hx. destruct ef as [|ρ0 ef0]; [done|]. injection Hx as <-.
-    apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv.
+    apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     rewrite (den_hi _ _ _ HB), (rank_ch _ _ _ HB) by done. apply hi_chan. apply Hlt; [done|by left].
   Qed.
 
@@ -493,14 +493,14 @@ Section heads.
   Proof.
     intros H Hh. destruct (erel_heads _ _ _ _ _ H Hh) as (t & Ht & Hh').
     destruct t as [|p Q hh d|T lo ef' V|]; simpl in Hh'; try set_solver.
-    - apply elem_of_singleton in Hh' as ->. right. apply (gd_lt _ _ _ HB); [done|done|].
-      intros v Hv. rewrite (den_lo _ _ _ HB), (rank_ch _ _ _ HB) by done. apply lo_chan.
+    - apply elem_of_singleton in Hh' as ->. right. apply (gd_lt _ _ _ HB); [by destruct p|by destruct p|].
+      intros v Hv; rewrite ?den_dual, ?den_polar. rewrite (den_lo _ _ _ HB), (rank_ch _ _ _ HB) by done. apply lo_chan.
       apply xminl_le. apply (envp_in Γ (MChan p Q hh d)); [done|by left].
     - apply elem_of_singleton in Hh' as ->.
       destruct (envp_seg Γ _ Ht) as (l1 & l2 & E). simpl in E.
       destruct (decide (l1 = [] ∧ l2 = [])) as [[-> ->]|Hl].
       { rewrite E, app_nil_r. left. apply se_refl. }
-      right. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv.
+      right. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
       rewrite !(den_lo _ _ _ HB) by done. rewrite E. apply lo_lo.
       + rewrite !xminl_app. eapply xle_trans; [apply xmin_le_r|apply xmin_le_l].
       + rewrite !length_app. destruct l1, l2; simpl in *; try lia. naive_solver.
@@ -537,12 +537,20 @@ Qed.
 Lemma ch_hi a x n : pfin a → xle (evalp [] a) x → rlt (xrk (evalp [] a) 1 (KT 1)) (rank (DHi x n)).
 Proof. destruct a; simpl; try done; destruct x; simpl; lia. Qed.
 
+(** The two ends of a channel denote it alike. *)
+Lemma gd_polar Ψ Θ B (HB : good Ψ Θ B) b y : pt_root y = pt_root B → seqs Wmp Ψ y (pt_polar b y).
+Proof. intros Hy. apply (gd_eq _ _ _ HB); [done|by destruct b|]. intros v Hv. by rewrite den_polar. Qed.
+
 Section chan.
   Context (Ψ : hyps) (Θ : pctx) (B : point) (HB : good Ψ Θ B).
   Context (pol : bool) (Q : msty) (h : prio) (d : Z) (Hw : mwf Q).
   Abbreviation Q1 := (mhd Q h d).1.
   Abbreviation h1 := (mhd Q h d).2.
   Abbreviation x := (rpt B (RCh Q h d)).
+
+  (** Both ends of the channel denote it, so their points are aliases. *)
+  Lemma x_polar b : seqs Wmp Ψ (pt_polar b x) x.
+  Proof. apply (gd_eq _ _ _ HB); [by destruct b|done|]. intros v Hv. by rewrite den_polar. Qed.
 
   Lemma ch_conv :
     steq Wmp Ψ (tr B (MChan pol Q h d)) (TSess (polS pol (ers Q1)) x) ∧
@@ -551,7 +559,7 @@ Section chan.
     pose proof (ers_mhd Q h d Hw) as E. simpl.
     assert (seq (polS pol (ers Q)) (polS pol (ers Q1))) as E'
       by (destruct pol; simpl; [by apply seq_dual|done]).
-    split; (split; [apply se_refl|]); [done|by apply seq_sym].
+    split; split; [apply x_polar|done|apply se_sym, x_polar|by apply seq_sym].
   Qed.
 
   Lemma den_x v : models Θ v → den v x = DCh (mmap (pclose v) Q1) (pclose v h1) d.
@@ -565,7 +573,7 @@ Section chan.
     (Q1 = MSnd a P K ∨ Q1 = MRcv a P K) → plt Θ [a] [chead K h1 d] →
     seqs Wmp Ψ (pt_shift 1 x) (rpt B (RCh K h1 d)).
   Proof.
-    intros HQ Hr. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    intros HQ Hr. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     rewrite den_shift, den_x, (den_ch _ _ _ HB) by done. unfold dsh, guard.
     assert (dnext (DCh (mmap (pclose v) Q1) (pclose v h1) d) = dch (mmap (pclose v) K) (pclose v h1) d) as En
       by (destruct HQ as [-> | ->]; done).
@@ -579,7 +587,7 @@ Section chan.
     (Q1 = MSel a K1 K2 ∨ Q1 = MBra a K1 K2) → plt Θ [a] [chead K1 h1 d; chead K2 h1 d] →
     seqs Wmp Ψ (pt_payload x (bidx b)) (rpt B (RCh (if b then K2 else K1) h1 d)).
   Proof.
-    intros HQ Hr. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    intros HQ Hr. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     rewrite den_br, den_x, (den_ch _ _ _ HB) by (try done; rewrite den_x by done; by destruct HQ as [-> | ->]).
     unfold dbr, guard.
     assert (∀ K, K = K1 ∨ K = K2 → xlt (evalp v a) (evalp v (chead K h1 d))) as HK.
@@ -592,7 +600,7 @@ Section chan.
   Lemma ch_branch_lt a K1 K2 b :
     (Q1 = MSel a K1 K2 ∨ Q1 = MBra a K1 K2) → slt Wmp Ψ x (pt_payload x (bidx b)).
   Proof.
-    intros HQ. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv.
+    intros HQ. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     rewrite den_br by (rewrite den_x by done; by destruct HQ as [-> | ->]). apply rank_dbr.
   Qed.
 
@@ -601,7 +609,7 @@ Section chan.
     (Q1 = MSnd a (MPChan pp Qp hp dp) K ∨ Q1 = MRcv a (MPChan pp Qp hp dp) K) →
     seqs Wmp Ψ (pt_payload x 0) (rpt B (RCh Qp hp dp)).
   Proof.
-    intros HQ. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    intros HQ. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     rewrite den_payload, den_x, (den_ch _ _ _ HB) by done. by destruct HQ as [-> | ->].
   Qed.
 
@@ -609,7 +617,7 @@ Section chan.
   Lemma ch_below_hi a ef :
     hprio Q1 = a → pfin a → a ∈ ef → slt Wmp Ψ x (rpt B (RHi ef)).
   Proof.
-    intros Ha Hf Hin. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv.
+    intros Ha Hf Hin. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     rewrite rank_x, (den_hi _ _ _ HB), Ha by done. rewrite <-(evalp_pclose v a).
     apply ch_hi; [by destruct a|]. rewrite evalp_pclose. by apply xmaxl_in.
   Qed.
@@ -630,7 +638,7 @@ Section chan.
     (∀ v, models Θ v → ∃ ρ, ρ ∈ l ∧ xle (evalp v ρ) XT ∧ rank (den v y) = xrk (evalp v ρ) 1 (KT 1)) →
     slt Wmp Ψ x y.
   Proof.
-    intros Ha Hf Hl Hy Hd. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv.
+    intros Ha Hf Hl Hy Hd. apply (gd_lt _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     destruct (Hd v Hv) as (ρ & Hρ & _ & ->). rewrite rank_x, Ha by done. apply xrk_lt.
     specialize (Hl v Hv ρ Hρ). by rewrite xmaxl_single in Hl.
   Qed.
@@ -642,8 +650,9 @@ Lemma ch_inst Ψ Θ B pol S0 h d :
   steq Wmp Ψ (tr B (MChan pol (munf S0 h) (padd h d) d)) (tr B (MChan pol (MRec S0) h d)).
 Proof.
   intros HB Hb Ha.
-  assert (seqs Wmp Ψ (rpt B (RCh (MRec S0) h d)) (rpt B (RCh (munf S0 h) (padd h d) d))) as Hx.
-  { apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv. rewrite !(den_ch _ _ _ HB) by done.
+  assert (seqs Wmp Ψ (pt_polar (negb pol) (rpt B (RCh (MRec S0) h d)))
+                     (pt_polar (negb pol) (rpt B (RCh (munf S0 h) (padd h d) d)))) as Hx.
+  { apply (gd_eq _ _ _ HB); [by destruct pol|by destruct pol|]. intros v Hv; rewrite ?den_dual, ?den_polar. rewrite !(den_ch _ _ _ HB) by done.
     unfold dch. rewrite !mhd_pclose. rewrite (mact_mhd (munf S0 h)) by by apply mact_munf. done. }
   pose proof (ers_mhd (MRec S0) h d (conj Hb Ha)) as E. simpl in E.
   assert (seq (polS pol (SMu (ers S0))) (polS pol (ers (munf S0 h)))) as E'
@@ -725,7 +734,7 @@ Section anc.
 
   Lemma hiz_anc ef : opt_rel (seqs Wmp Ψ) (hiz X ef) (hiz B (psub σ <$> ef)).
   Proof.
-    destruct ef as [|ρ ef]; simpl; [done|]. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    destruct ef as [|ρ ef]; simpl; [done|]. apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
     rewrite den_X_payload, (den_hi _ _ _ HB) by done. unfold dsl. rewrite decode_encode_nat.
     rewrite xmaxl_psub by done. f_equal. symmetry. by apply (hlen_psub σ (ρ :: ef)).
   Qed.
@@ -734,14 +743,15 @@ Section anc.
   Proof.
     induction T as [|p Q h d|T IH1 lo ef V IH2|nv cs T IH1 ef V IH2]; simpl.
     - done.
-    - assert (seqs Wmp Ψ (rpt X (RCh Q h d)) (rpt B (RCh (mmap (psub σ) Q) (psub σ h) d))) as E.
-      { apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+    - assert (seqs Wmp Ψ (pt_polar (negb p) (rpt X (RCh Q h d)))
+                         (pt_polar (negb p) (rpt B (RCh (mmap (psub σ) Q) (psub σ h) d)))) as E.
+      { apply (gd_eq _ _ _ HB); [by destruct p|by destruct p|]. intros v Hv; rewrite ?den_dual, ?den_polar.
         rewrite den_X_payload, (den_ch _ _ _ HB) by done. simpl. rewrite decode_encode_nat.
         rewrite (proj1 (mmap_comp _ _)), (pclose_psub v σ h Hσ).
         by rewrite (proj1 (mmap_ext _ (pclose v ∘ psub σ) (λ ρ, pclose_psub v σ ρ Hσ)) Q). }
       rewrite (proj1 (ers_mmap _)). split; (split; [|apply seq_refl]); [done|by apply se_sym].
     - assert (seqs Wmp Ψ (rpt X (RLo lo)) (rpt B (RLo (psub σ <$> lo)))) as E.
-      { apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv.
+      { apply (gd_eq _ _ _ HB); [done|done|]. intros v Hv; rewrite ?den_dual, ?den_polar.
         rewrite den_X_payload, (den_lo _ _ _ HB) by done. simpl. rewrite decode_encode_nat.
         by rewrite xminl_psub, length_fmap. }
       pose proof (hiz_anc ef) as Eh.
@@ -821,11 +831,12 @@ Section futures.
   (** The payload of a message at x. *)
   Lemma pay_conv (x : point) a P K Q1 :
     (Q1 = MSnd a P K ∨ Q1 = MRcv a P K) →
-    (∀ pp Qp hp dp, P = MPChan pp Qp hp dp → seqs Wmp Ψ (pt_payload x 0) (rpt B (RCh Qp hp dp))) →
+    (∀ pp Qp hp dp, P = MPChan pp Qp hp dp →
+       seqs Wmp Ψ (pt_payload x 0) (pt_polar (negb pp) (rpt B (RCh Qp hp dp)))) →
     steq Wmp Ψ (tr B (payty P)) (payload_at (pm P) (ersp P) x) ∧
     steq Wmp Ψ (payload_at (pm P) (ersp P) x) (tr B (payty P)) ∧
     (∀ y, y ∈ heads (payload_at (pm P) (ersp P) x) →
-       ∃ pp Qp hp dp, P = MPChan pp Qp hp dp ∧ y = pt_payload x 0).
+       ∃ pp Qp hp dp, P = MPChan pp Qp hp dp ∧ y = pt_dual (pt_payload x 0)).
   Proof.
     intros _ Hp. destruct P as [|pp Qp hp dp].
     - unfold payload_at, ty_inst. simpl. split_and!; [apply teq_refl..|set_solver].
@@ -1000,16 +1011,22 @@ Proof.
     cbn [rename]. destruct (erel_split B ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
     destruct (view_snd pol _ a P K Hv) as (Es & Eh & HQ).
     set (x := rpt B (RCh Q h d)). set (S := polS pol (ers K)).
-    assert (∀ pp Qp hp dp, P = MPChan pp Qp hp dp → seqs Wmp Ψ (pt_payload x 0) (rpt B (RCh Qp hp dp))) as Hsl.
-    { intros pp Qp hp dp ->. by apply (ch_pay Ψ Θ B HB pol Q h d Hw a pp Qp hp dp K). }
+    assert (∀ pp Qp hp dp, P = MPChan pp Qp hp dp →
+              seqs Wmp Ψ (pt_payload x 0) (pt_polar (negb pp) (rpt B (RCh Qp hp dp)))) as Hsl.
+    { intros pp Qp hp dp ->. eapply se_trans; [by apply (ch_pay Ψ Θ B HB pol Q h d Hw a pp Qp hp dp K)|].
+      by apply (gd_polar Ψ Θ B HB). }
+    assert (∀ pp Qp hp dp, P = MPChan pp Qp hp dp →
+              seqs Wmp Ψ (pt_dual (pt_payload x 0)) (rpt B (RCh Qp hp dp))) as Hsl'.
+    { intros pp Qp hp dp ->. eapply se_trans; [apply se_sym, (gd_polar Ψ Θ B HB false); done|].
+      by apply (ch_pay Ψ Θ B HB pol Q h d Hw a pp Qp hp dp K). }
     destruct (pay_conv Ψ Θ B HB x a P K _ HQ Hsl) as (Hp1 & _ & Hp3).
     apply (tv_app_closed Wmp HW _ _ _ _ _ _ (Some x)
              (TProd (payload_at (pm P) (ersp P) x) (TSess (SSeq (SSnd (pm P) (ersp P)) S) x))); [bot_false|..].
     + eapply t_conv; [|apply t_const; [apply lenv_empty_nones|apply (KTSend _ _ _ (pm P) (ersp P) S x)|apply ersp_scoped]].
       * apply steq_lolli; [apply teq_steq, teq_refl|]. apply steq_sess; [|apply seq_refl].
-        by apply (ch_next Ψ Θ B HB pol Q h d Hw a P K).
+        first [by apply (ch_next Ψ Θ B HB pol Q h d Hw a P K)|eapply se_trans; [by apply (ch_next Ψ Θ B HB pol Q h d Hw a P K)|by apply (gd_polar Ψ Θ B HB)]].
       * rewrite hbot_ersp. intros y Hy. destruct (Hp3 y Hy) as (pp & Qp & hp & dp & -> & ->).
-        eapply slt_seqs_r; [|apply se_sym, (Hsl pp Qp hp dp eq_refl)].
+        eapply slt_seqs_r; [|apply se_sym, (Hsl' pp Qp hp dp eq_refl)].
         apply (ch_below_lt Ψ Θ B HB pol Q h d Hw a [chead Qp hp dp]); [done|done|done|done|].
         intros v Hv'. exists (chead Qp hp dp). split; [by left|]. split; [by destruct (evalp v _)|].
         by apply (rank_ch Ψ Θ B HB).
@@ -1021,7 +1038,7 @@ Proof.
         { destruct (ch_conv Ψ Θ B HB pol Q h d Hw) as [E _]. by rewrite Es in E. }
         bclean. apply (ubs_union _ HW); [by apply (ubs_seg Ψ Θ B HB Φ F ef2 ef1 [a])|].
         intros z Hz y Hy. destruct (Hp3 y Hy) as (pp & Qp & hp & dp & -> & ->).
-        eapply slt_seqs_r; [|apply se_sym, (Hsl pp Qp hp dp eq_refl)].
+        eapply slt_seqs_r; [|apply se_sym, (Hsl' pp Qp hp dp eq_refl)].
         by apply (hi_below_ch Ψ Θ B HB ef2 Qp hp dp z).
     + apply (ch_ub Ψ Θ B HB pol Q h d Hw Φ a (ef1 ++ ef2 ++ [a])); [done|done|set_solver|done].
   - (* receive *)
@@ -1029,8 +1046,14 @@ Proof.
     destruct (erel_split B ins Γ Δ Γ1 Γ2 HΔ Hs) as (Δ1 & Δ2 & Hd & HΔ1 & HΔ2).
     destruct (view_rcv pol _ a P K Hv) as (Es & Eh & HQ).
     set (x := rpt B (RCh Q h d)). set (S := polS pol (ers K)).
-    assert (∀ pp Qp hp dp, P = MPChan pp Qp hp dp → seqs Wmp Ψ (pt_payload x 0) (rpt B (RCh Qp hp dp))) as Hsl.
-    { intros pp Qp hp dp ->. by apply (ch_pay Ψ Θ B HB pol Q h d Hw a pp Qp hp dp K). }
+    assert (∀ pp Qp hp dp, P = MPChan pp Qp hp dp →
+              seqs Wmp Ψ (pt_payload x 0) (pt_polar (negb pp) (rpt B (RCh Qp hp dp)))) as Hsl.
+    { intros pp Qp hp dp ->. eapply se_trans; [by apply (ch_pay Ψ Θ B HB pol Q h d Hw a pp Qp hp dp K)|].
+      by apply (gd_polar Ψ Θ B HB). }
+    assert (∀ pp Qp hp dp, P = MPChan pp Qp hp dp →
+              seqs Wmp Ψ (pt_dual (pt_payload x 0)) (rpt B (RCh Qp hp dp))) as Hsl'.
+    { intros pp Qp hp dp ->. eapply se_trans; [apply se_sym, (gd_polar Ψ Θ B HB false); done|].
+      by apply (ch_pay Ψ Θ B HB pol Q h d Hw a pp Qp hp dp K). }
     destruct (pay_conv Ψ Θ B HB x a P K _ HQ Hsl) as (_ & Hp2 & _).
     assert (ub_below_s Wmp Ψ Φ (hiz B (ef1 ++ [a])) (sf_union F (lenv_heads Δ2))) as Hpart.
     { apply (ubs_part Ψ Θ B HB Φ F [] ef2 (ef1 ++ [a]) ins Γ2 Δ2); [|done|done].
@@ -1043,7 +1066,7 @@ Proof.
         apply steq_lolli.
         { destruct (ch_conv Ψ Θ B HB pol Q h d Hw) as [_ E]. by rewrite Es in E. }
         apply steq_prod; [done|]. apply steq_sess; [|apply seq_refl].
-        by apply (ch_next Ψ Θ B HB pol Q h d Hw a P K).
+        first [by apply (ch_next Ψ Θ B HB pol Q h d Hw a P K)|eapply se_trans; [by apply (ch_next Ψ Θ B HB pol Q h d Hw a P K)|by apply (gd_polar Ψ Θ B HB)]].
       * apply (IH1 Ψ B ins Δ1); [done|done|]. by apply (ubs_seg Ψ Θ B HB _ _ ef1 [] [a]).
       * by apply (ch_ub Ψ Θ B HB pol Q h d Hw Φ a (ef1 ++ [a])); [done|done|set_solver|].
     + apply (IH2 Ψ B _ _ _ _ HB).
@@ -1068,7 +1091,7 @@ Proof.
              (TSess (SPlus (polS pol (ers K1)) (polS pol (ers K2))) x)); [bot_false|..].
     + eapply t_conv; [|apply t_const; [apply lenv_empty_nones|apply KTSel1; exact (ch_branch_lt Ψ Θ B HB pol Q h d Hw a K1 K2 false HQ)|done]].
       apply steq_lolli; [apply teq_steq, teq_refl|]. apply steq_sess; [|apply seq_refl].
-      by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false).
+      first [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false)|eapply se_trans; [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false)|by apply (gd_polar Ψ Θ B HB)]|eapply se_trans; [apply se_sym, (gd_polar Ψ Θ B HB false); done|]; first [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false)|eapply se_trans; [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false)|by apply (gd_polar Ψ Θ B HB)]]].
     + eapply t_conv; [|apply (IH Ψ B ins Δ); [done|done|]].
       { destruct (ch_conv Ψ Θ B HB pol Q h d Hw) as [E _]. by rewrite Es in E. }
       by apply (ubs_seg Ψ Θ B HB _ _ ef [] [a]).
@@ -1080,7 +1103,7 @@ Proof.
              (TSess (SPlus (polS pol (ers K1)) (polS pol (ers K2))) x)); [bot_false|..].
     + eapply t_conv; [|apply t_const; [apply lenv_empty_nones|apply KTSel2; exact (ch_branch_lt Ψ Θ B HB pol Q h d Hw a K1 K2 true HQ)|done]].
       apply steq_lolli; [apply teq_steq, teq_refl|]. apply steq_sess; [|apply seq_refl].
-      by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true).
+      first [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true)|eapply se_trans; [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true)|by apply (gd_polar Ψ Θ B HB)]|eapply se_trans; [apply se_sym, (gd_polar Ψ Θ B HB false); done|]; first [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true)|eapply se_trans; [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true)|by apply (gd_polar Ψ Θ B HB)]]].
     + eapply t_conv; [|apply (IH Ψ B ins Δ); [done|done|]].
       { destruct (ch_conv Ψ Θ B HB pol Q h d Hw) as [E _]. by rewrite Es in E. }
       by apply (ubs_seg Ψ Θ B HB _ _ ef [] [a]).
@@ -1097,12 +1120,12 @@ Proof.
               (tr B (MChan pol K2 (mhd Q h d).2 d))); [by apply comp0|done| | |].
     + bclean; rewrite (tenv_heads0 _ HW), union_empty_l_L.
       apply (tv_app_closed Wmp HW _ _ _ _ _ _ (Some x) (tr B (MChan pol Q h d))); [bot_false|..].
-      * eapply t_conv; [|apply t_const; [apply lenv_empty_nones|apply KTBra; [exact (ch_branch_lt Ψ Θ B HB pol Q h d Hw a K1 K2 false HQ)|exact (ch_branch_lt Ψ Θ B HB pol Q h d Hw a K1 K2 true HQ)]|done]].
+      * eapply t_conv; [|apply t_const; [apply lenv_empty_nones|apply KTBra; [eapply slt_seqs_r; [exact (ch_branch_lt Ψ Θ B HB pol Q h d Hw a K1 K2 false HQ)|apply (gd_polar Ψ Θ B HB false); done]|eapply slt_seqs_r; [exact (ch_branch_lt Ψ Θ B HB pol Q h d Hw a K1 K2 true HQ)|apply (gd_polar Ψ Θ B HB false); done]]|done]].
         apply steq_lolli.
         { destruct (ch_conv Ψ Θ B HB pol Q h d Hw) as [_ E]. by rewrite Es in E. }
         apply steq_sum; (apply steq_sess; [|apply seq_refl]).
-        { by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false). }
-        { by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true). }
+        { first [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false)|eapply se_trans; [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false)|by apply (gd_polar Ψ Θ B HB)]|eapply se_trans; [apply se_sym, (gd_polar Ψ Θ B HB false); done|]; first [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false)|eapply se_trans; [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 false)|by apply (gd_polar Ψ Θ B HB)]]]. }
+        { first [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true)|eapply se_trans; [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true)|by apply (gd_polar Ψ Θ B HB)]|eapply se_trans; [apply se_sym, (gd_polar Ψ Θ B HB false); done|]; first [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true)|eapply se_trans; [by apply (ch_branch Ψ Θ B HB pol Q h d Hw a K1 K2 true)|by apply (gd_polar Ψ Θ B HB)]]]. }
       * apply (IH Ψ B ins Δ1); [done|done|]. by apply (ubs_seg Ψ Θ B HB _ _ ef1 [] [a]).
       * by apply (ch_ub Ψ Θ B HB pol Q h d Hw Φ a (ef1 ++ [a])); [done|done|set_solver|].
     + apply IHA; [done|by apply (er_keep _ (Some _))|].

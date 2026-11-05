@@ -214,10 +214,18 @@ Fixpoint denN (f : pname → dn) (p : pname) : dn :=
 Definition den (f : pname → dn) (x : point) : dn := dshN (pt_off x) (denN f (pt_name x)).
 
 Lemma den_shift f x : den f (pt_shift 1 x) = dsh (den f x).
-Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r. Qed.
+Proof. destruct x as [p pb k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r. Qed.
 
 Lemma den_shiftN f n x : den f (pt_shift n x) = dshN n (den f x).
-Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
+Proof. destruct x as [p pb k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
+
+(** The denotation ignores the polarity: both ends of a channel denote
+    the same channel (end points). *)
+Lemma den_dual f x : den f (pt_dual x) = den f x.
+Proof. done. Qed.
+
+Lemma den_polar f b x : den f (pt_polar b x) = den f x.
+Proof. by destruct b. Qed.
 
 Lemma den_payload f x i : den f (pt_payload x i) = dsl (den f x) i.
 Proof. done. Qed.
@@ -294,21 +302,24 @@ Lemma wgen_strict_oeq N E L (dnt : point → dn) :
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, dnt (pt_shift 1 x) = dsh (dnt x)) →
   (∀ x i, dnt (pt_payload x i) = dsl (dnt x) i) →
+  (∀ x, dnt (pt_dual x) = dnt x) →
   (∀ x y, E x y → oeq (dnt x) (dnt y)) →
   (∀ x y, L x y → rlt (rank (dnt x)) (rank (dnt y))) →
   strict (wgen N E L).
 Proof.
-  intros HN HE HL Hs Hl Hc HLr. split; [by apply wgen_wf|].
+  intros HN HE HL Hs Hl Hd Hc HLr. split; [by apply wgen_wf|].
   assert (∀ x y, geq E x y → oeq (dnt x) (dnt y)) as Heq.
-  { induction 1; try (by apply Hc); [apply oeq_refl|by apply oeq_sym|by eapply oeq_trans| |].
+  { induction 1; try (by apply Hc); [apply oeq_refl|by apply oeq_sym|by eapply oeq_trans| | |].
     - rewrite !Hs. by apply oeq_dsh.
-    - rewrite !Hl. by apply oeq_dsl. }
+    - rewrite !Hl. by apply oeq_dsl.
+    - by rewrite !Hd. }
   assert (∀ x y, glt E L x y → rlt (rank (dnt x)) (rank (dnt y))) as Hlt.
-  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - by apply HLr.
     - rewrite Hs. apply guard_rise.
     - apply Heq, oeq_rank in Hx, Hy. by rewrite Hx, <-Hy.
-    - by eapply rlt_trans. }
+    - by eapply rlt_trans.
+    - rewrite Hs, Hd. apply guard_rise. }
   intros x H. apply Hlt in H. exact (rlt_irrefl _ H).
 Qed.
 
@@ -331,6 +342,7 @@ Proof.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - apply den_shift.
   - apply den_payload.
+  - apply den_dual.
   - by intros x y (_ & _ & H).
   - by intros x y (_ & _ & H).
 Qed.
@@ -355,8 +367,8 @@ Qed.
 Lemma den_inst f g σ a x :
   pt_root x = NVar a → g (NVar a) = den f (σ a) → den f (pt_inst σ x) = den g x.
 Proof.
-  intros Hx Hg. destruct x as [p o]. unfold pt_inst, pt_root in *. simpl in *.
-  rewrite den_shiftN, (den_pn_inst f g σ a) by done. done.
+  intros Hx Hg. destruct x as [p pb o]. unfold pt_inst, pt_root in *. simpl in *.
+  rewrite den_polar, den_shiftN, (den_pn_inst f g σ a) by done. done.
 Qed.
 
 (** ** Anchors *)
@@ -373,7 +385,7 @@ Proof. induction p as [a|a|q IH b i]; simpl; eauto. Qed.
 
 Lemma den_ianc B v ts : isroot B → den (ianc B v ts) B = DAnc v ts.
 Proof.
-  intros [Ho Hr]. destruct B as [p o]. simpl in *. subst o. unfold den. simpl.
+  intros [Ho Hr]. destruct B as [p pb o]. simpl in *. subst o. unfold den. simpl.
   destruct (pn_root_cases p) as [a [Ha|Ha]]; rewrite Ha in Hr; subst p; simpl;
     unfold ianc; simpl; by rewrite decide_True.
 Qed.
