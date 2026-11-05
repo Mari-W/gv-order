@@ -18,7 +18,13 @@
     The program types in the empty world. c is created with the creation
     constraint {ι ≺ ι[0], ι[0]+1 ≺ ι+1}, two facts between ι and its own
     payload point, and d by the alias at ι[0] (sharp edges 105). The
-    points (a,k) and s above are ι+k and ι[0]. *)
+    points (a,k) and s above are ι+k and ι[0].
+
+    With end points the receiver holds c′ at ῑ, the sender keeps d′ at
+    the partner point ι[0]‾, and send asks ι ≺ ι[0]‾. The constraint
+    grows to five facts: ι ≺ ι[0], ι ≺ ι[0]‾, ι[0]+1 ≺ ι+1 for the
+    receiver's gates, ι[0]‾+1 ≺ ῑ+1 for the sender's gates, and
+    ι[0]+1 ≺ ῑ+1 for the upper point ῑ+1 of the thunk. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -40,12 +46,15 @@ Definition deleg_main : expr :=
           (LetP (App ERecv (Var 2))
             (LetU (Var 1) (LetU (App EClos (Var 0)) (App EClos (Var 3))))))))).
 
-(** The creation constraint of c: ι ≺ ι[0] and ι[0]+1 ≺ ι+1. Both facts
-    stay inside ι, and the rank 10·k for ι+k and 5 + o for ι[0]+o
-    orders them (sharp edges 105). *)
+(** The creation constraint of c, five facts inside ι. The rank 10·k
+    for ι+k and 5 + o for ι[0]+o, either polarity, orders them (sharp
+    edges 105). *)
 Abbreviation sd k := (Pt (NPayload (NVar 0) 0 0) k).
 
-Definition dl_P (g : fact) : Prop := g = FLt (pv 0 0) (sd 0) ∨ g = FLt (sd 1) (pv 0 1).
+Definition dl_P (g : fact) : Prop :=
+  g = FLt (pv 0 0) (pt_dual (sd 0)) ∨ g = FLt (sd 1) (pv 0 1) ∨
+  g = FLt (pt_dual (sd 1)) (pt_dual (pv 0 1)) ∨ g = FLt (sd 1) (pt_dual (pv 0 1)) ∨
+  g = FLt (pv 0 0) (sd 0).
 Definition dl_C : bcs := BCs [] dl_P.
 
 Definition dl_rank (x : point) : nat :=
@@ -60,8 +69,9 @@ Proof.
   apply (cc_ok_inner peq plt dl_P (λ x y, dl_rank x < dl_rank y)).
   - intros x y z; lia.
   - intros x; lia.
-  - intros [n o] _. unfold dl_rank, pt_shift. simpl. repeat case_match; lia.
-  - intros g [-> | ->] _; eexists _, _; (split; [done|]); cbn; lia.
+  - intros [n pb o] _. unfold dl_rank, pt_shift. simpl. repeat case_match; lia.
+  - intros g [-> | [-> | [-> | [-> | ->]]]] _; eexists _, _; (split; [done|]); cbn; lia.
+  - intros [n pb o] _. unfold dl_rank, pt_shift, pt_dual. simpl. repeat case_match; lia.
 Qed.
 
 Lemma deleg_typed : styped ∅ [] [] (∅, None) deleg_main TUnit.
@@ -71,34 +81,47 @@ Proof.
   apply (t_new_open W _ _ ∅ _ _ _ _ Sdel dl_C); [apply dl_ok|constructor|].
   fresh_clean.
   set (Ψ := [(dl_C, [pvar 0])]).
-  assert (slt W Ψ (pv 0 0) (sd 0)) as H1.
-  { eapply (sl_hyp0 _ _ _ _ (pv 0 0) (sd 0)); [by left|by left|cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W Ψ (pv 0 0) (pt_dual (sd 0))) as H1.
+  { eapply (sl_hyp0 _ _ _ _ (pv 0 0) (pt_dual (sd 0))); [by left|by left|cbn; lia|reflexivity|reflexivity]. }
   assert (slt W Ψ (sd 1) (pv 0 1)) as H2.
-  { eapply (sl_hyp0 _ _ _ _ (sd 1) (pv 0 1)); [by left|by right|cbn; lia|reflexivity|reflexivity]. }
+  { eapply (sl_hyp0 _ _ _ _ (sd 1) (pv 0 1)); [by left|by right; left|cbn; lia|reflexivity|reflexivity]. }
   assert (slt W Ψ (sd 0) (pv 0 1)) as H3.
   { eapply sl_trans; [apply (slt_po W _ (sd 0) HW)|exact H2]. }
+  assert (slt W Ψ (pt_dual (sd 1)) (pt_dual (pv 0 1))) as H4.
+  { eapply (sl_hyp0 _ _ _ _ (pt_dual (sd 1)) (pt_dual (pv 0 1)));
+      [by left|by right; right; left|cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W Ψ (pt_dual (sd 0)) (pt_dual (pv 0 1))) as H5.
+  { eapply sl_trans; [apply (slt_po W _ (pt_dual (sd 0)) HW)|exact H4]. }
+  assert (slt W Ψ (sd 1) (pt_dual (pv 0 1))) as H6.
+  { eapply (sl_hyp0 _ _ _ _ (sd 1) (pt_dual (pv 0 1)));
+      [by left|by right; right; right; left|cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W Ψ (pv 0 0) (sd 0)) as H8.
+  { eapply (sl_hyp0 _ _ _ _ (pv 0 0) (sd 0));
+      [by left|by right; right; right; right|cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W Ψ (sd 0) (pt_dual (pv 0 1))) as H7.
+  { eapply sl_trans; [apply (slt_po W _ (sd 0) HW)|exact H6]. }
   apply (t_new_at W _ _ _ _ _ _ _ Sd (sd 0) HWs); [eapply skn_inst; [by left|by left|done]|].
   cbn. tstep.
   { tstep.
-    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0); [set_solver| |].
+    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 1))) (Some (pv 0 0)) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn. tstep.
-      + tstep; [tstep|apply (KTRecv _ _ _ 1 (TSess Sd (pvar 0)) SEnd (pv 0 0))|kscope|].
+      + tstep; [tstep|apply (KTRecv _ _ _ 1 (TSess Sd (pvar 0)) SEnd (pt_dual (pv 0 0)))|kscope|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW).
+        exists (pt_dual (pv 0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pv 0 0)) HW).
       + cbn. tstep.
         * tstep.
           -- tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (sd 0)); cbn; set_solver|done|].
              ++ tstep; tstep.
              ++ apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
-                exists (pv 0 1). split; [done|]. right. done.
+                exists (pt_dual (pv 0 1)). split; [done|]. right. done.
           -- apply KTClos.
           -- done.
           -- apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
-             exists (pv 0 1). split; [done|]. right. done.
+             exists (pt_dual (pv 0 1)). split; [done|]. right. done.
         * tstep; [tstep|apply KTClos|done|].
           apply ubs_intro; [intros y Hy; mem_cases Hy|].
-          exists (pv 0 1). split; [done|]. apply sle_refl, HW.
+          exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW.
     - apply KTSpawn.
     - done.
     - apply ubs_none. }

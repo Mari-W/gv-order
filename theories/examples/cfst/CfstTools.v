@@ -233,6 +233,7 @@ Qed.
 Lemma cc_ok_out peq plt C (R : point → point → Prop) :
   (∀ x y z, R x y → R y z → R x z) → (∀ x, ¬ R x x) →
   (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 x)) →
+  (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 (pt_dual x))) →
   (∀ a b, ¬ bcs_open 1 C (FEq a b)) →
   (∀ a b, bcs_open 1 C (FLt a b) →
      (pt_root a = NVar 0 ∧ pt_root b = NVar 0 ∧ R a b) ∨
@@ -242,7 +243,7 @@ Lemma cc_ok_out peq plt C (R : point → point → Prop) :
      (p = q ∨ R p q) → glt (cc_up peq) (cc_up plt) u v) →
   cc_ok peq plt C.
 Proof.
-  intros Ht Hi Hp He Hc HB.
+  intros Ht Hi Hp Hd He Hc HB.
   apply (cc_model peq plt C id R
            (λ u p, bcs_open 1 C (FLt u p) ∧ pt_root u ≠ NVar 0 ∧ pt_root p = NVar 0)
            (λ q v, bcs_open 1 C (FLt q v) ∧ pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0)).
@@ -250,8 +251,10 @@ Proof.
   - done.
   - done.
   - intros x y i E. unfold id in *. by subst.
+  - done.
   - exact Ht.
   - exact Hp.
+  - exact Hd.
   - exact Hi.
   - intros u p q v (H1 & Hu & Hp') (H2 & Hq & Hv) Hpq. by apply (HB u p q v).
   - intros a b H. by destruct (He a b H).
@@ -276,6 +279,24 @@ Proof.
     unfold pt_shift in H. simpl in H. by rewrite Nat.add_1_r in H.
 Qed.
 
+(** Program order along offsets at either polarity. *)
+Lemma glt_ofs_pol E L p b j k : j < k → glt E L (MkPt p b j) (MkPt p b k).
+Proof.
+  intros Hjk. induction Hjk as [|k _ IH].
+  - pose proof (glt_po E L (MkPt p b j)) as H. unfold pt_shift in H. simpl in H.
+    by rewrite Nat.add_1_r in H.
+  - eapply glt_trans; [exact IH|]. pose proof (glt_po E L (MkPt p b k)) as H.
+    unfold pt_shift in H. simpl in H. by rewrite Nat.add_1_r in H.
+Qed.
+
+(** x+j ≺ x̄+k for j < k, through x+j ≺ x̄+j+1. *)
+Lemma glt_ofs_dual E L p b j k : j < k → glt E L (MkPt p b j) (MkPt p (negb b) k).
+Proof.
+  intros Hjk. pose proof (glt_dpo E L (MkPt p b j)) as H. unfold pt_shift, pt_dual in H. simpl in H.
+  rewrite Nat.add_1_r in H. destruct (decide (S j = k)) as [<-|Hne]; [exact H|].
+  eapply glt_trans; [exact H|]. apply glt_ofs_pol. lia.
+Qed.
+
 (** A walk that is not empty climbs in the size of the point. *)
 Lemma pwalk_size x w : pt_size (pwalk x w) = pt_size x + length w.
 Proof.
@@ -283,24 +304,48 @@ Proof.
     rewrite IH; unfold pt_size, pt_payload, pt_shift; simpl; lia.
 Qed.
 
+(** A walk from the dual point ends at the walk from the point or at
+    its dual: a choice step forgets the polarity. *)
+Lemma pwalk_dual x v : ∃ b, pwalk (pt_dual x) v = pt_polar b (pwalk x v).
+Proof.
+  revert x. induction v as [|[i|] v IH]; intros x; simpl.
+  - by exists false.
+  - exists true. by rewrite pt_payload_dual.
+  - rewrite <-pt_dual_shift. apply IH.
+Qed.
+
+Lemma pt_polar_polar b c y : ∃ d, pt_polar c (pt_polar b y) = pt_polar d y.
+Proof. destruct b, c; simpl; [by exists true|by exists false|by exists false|]. exists true. apply pt_dual_dual. Qed.
+
+Lemma pwalk_polar b x v : ∃ c, pwalk (pt_polar b x) v = pt_polar c (pwalk x v).
+Proof. destruct b; [by exists true|apply pwalk_dual]. Qed.
+
+Lemma pt_size_polar b y : pt_size (pt_polar b y) = pt_size y.
+Proof. by destruct b. Qed.
+
 (** The order of a channel along its walks. y is above x when a walk
-    that is not empty leads from x to y. *)
-Definition wlt (x y : point) : Prop := pt_root x = NVar 0 ∧ ∃ v, v ≠ [] ∧ y = pwalk x v.
+    that is not empty leads from x to y or to ȳ. *)
+Definition wlt (x y : point) : Prop := pt_root x = NVar 0 ∧ ∃ v b, v ≠ [] ∧ y = pt_polar b (pwalk x v).
 
 Lemma wlt_trans x y z : wlt x y → wlt y z → wlt x z.
 Proof.
-  intros [Hx (u & Hu & ->)] [_ (v & Hv & ->)]. split; [done|].
-  exists (u ++ v). split; [by destruct u|by rewrite pwalk_app].
+  intros [Hx (u & b & Hu & ->)] [_ (v & c & Hv & ->)]. split; [done|].
+  destruct (pwalk_polar b (pwalk x u) v) as [d ->].
+  destruct (pt_polar_polar d c (pwalk (pwalk x u) v)) as [e ->].
+  exists (u ++ v), e. split; [by destruct u|by rewrite pwalk_app].
 Qed.
 
 Lemma wlt_irrefl x : ¬ wlt x x.
 Proof.
-  intros [_ (v & Hv & E)]. apply (f_equal pt_size) in E. rewrite pwalk_size in E.
+  intros [_ (v & b & Hv & E)]. apply (f_equal pt_size) in E. rewrite pt_size_polar, pwalk_size in E.
   destruct v; [done|simpl in E; lia].
 Qed.
 
 Lemma wlt_po x : pt_root x = NVar 0 → wlt x (pt_shift 1 x).
-Proof. intros Hx. split; [done|]. by exists [None]. Qed.
+Proof. intros Hx. split; [done|]. by exists [None], true. Qed.
+
+Lemma wlt_dpo x : pt_root x = NVar 0 → wlt x (pt_shift 1 (pt_dual x)).
+Proof. intros Hx. split; [done|]. exists [None], false. simpl. by rewrite pt_dual_shift. Qed.
 
 Lemma pt_payload_root x i : pt_root (pt_payload x i) = pt_root x.
 Proof. done. Qed.
@@ -309,7 +354,7 @@ Lemma pwalk_snoc x w s : pwalk x (w ++ [s]) = wstep (pwalk x w) s.
 Proof. by rewrite pwalk_app. Qed.
 
 Lemma wlt_walk x w v : pt_root x = NVar 0 → v ≠ [] → wlt (pwalk x w) (pwalk x (w ++ v)).
-Proof. intros Hx Hv. split; [by rewrite pwalk_root|]. exists v. split; [done|by rewrite pwalk_app]. Qed.
+Proof. intros Hx Hv. split; [by rewrite pwalk_root|]. exists v, true. split; [done|by rewrite pwalk_app]. Qed.
 
 (** A chain of steps that each hold climbs along a walk. *)
 Lemma walk_chain (L : point → point → Prop) x :
@@ -336,6 +381,9 @@ Proof. intros [_ ?]. lia. Qed.
 Lemma olt_po x : olt x (pt_shift 1 x).
 Proof. split; [done|simpl; lia]. Qed.
 
+Lemma olt_dpo x : olt x (pt_shift 1 (pt_dual x)).
+Proof. split; [done|simpl; lia]. Qed.
+
 (** ** A ceiling and the lockstep pair
 
     The whole programs start under one top-level point variable z = 0
@@ -344,36 +392,48 @@ Proof. split; [done|simpl; lia]. Qed.
 Definition top_C0 : bcs := BCs [] (λ _, False).
 
 Lemma top_acyclic : c0_acyclic 1 top_C0.
-Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []]. Qed.
+Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []|apply vrank_dual]. Qed.
 
 (** The first channel a of a lockstep pair, created under z = 1 with
-    a+k ≺ z for every k. *)
-Definition lsa_P (g : fact) : Prop := ∃ k, g = FLt (pv 0 k) (pv 1 0).
+    a+k ≺ z and ā+k ≺ z for every k. *)
+Definition lsa_P (g : fact) : Prop := ∃ k c, g = FLt (pt_polar c (pv 0 k)) (pv 1 0).
 Definition lsa_C : bcs := BCs [pvar 0] lsa_P.
 
 Lemma lsa_ok peq plt : cc_ok peq plt lsa_C.
 Proof.
-  apply (cc_ok_out _ _ lsa_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
-  - intros a b (f & (k & ->) & _ & E). discriminate E.
-  - intros a b (f & (k & ->) & _ & E). injection E as -> ->. cbn. auto.
-  - intros u p q v (f & (k & ->) & _ & E). injection E as -> ->. cbn. done.
+  apply (cc_ok_out _ _ lsa_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
+  - intros a b (f & (k & c & ->) & _ & E). discriminate E.
+  - intros a b (f & (k & [|] & ->) & _ & E); injection E as -> ->; cbn; auto.
+  - intros u p q v (f & (k & [|] & ->) & _ & E); injection E as -> ->; cbn; done.
 Qed.
 
 (** The second channel b, created under a = 1 and z = 2 with
-    a+k ≺ b+k ≺ a+k+1 and b+k ≺ z for every k. *)
+    a+k ≺ b+k ≺ a+k+1 and b+k ≺ z for every k, between both ends:
+    the facts hold for every choice of polarities. *)
 Definition lsb_P (g : fact) : Prop :=
-  ∃ k, g = FLt (pv 1 k) (pv 0 k) ∨ g = FLt (pv 0 k) (pv 1 (S k)) ∨ g = FLt (pv 0 k) (pv 2 0).
+  ∃ k c c', g = FLt (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k)) ∨
+            g = FLt (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k))) ∨ g = FLt (pt_polar c (pv 0 k)) (pv 2 0).
 Definition lsb_C : bcs := BCs [pvar 0; pvar 1] lsb_P.
 
 Lemma lsb_ok W Ψ : (BCs [pvar 1] lsa_P, [pvar 0]) ∈ Ψ → cc_ok (seqs W Ψ) (slt W Ψ) lsb_C.
 Proof.
   intros Hg.
-  apply (cc_ok_out _ _ lsb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
-  - intros a b (f & (k & [-> | [-> | ->]]) & _ & E); discriminate E.
-  - intros a b (f & (k & [-> | [-> | ->]]) & _ & E); injection E as -> ->; cbn; auto.
-  - intros u p q v (f & (k & [-> | [-> | ->]]) & _ & E) (f' & (j & [-> | [-> | ->]]) & _ & E') Hu Hp Hq Hv Hpq;
-      injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done.
-    + apply glt_ofs. destruct Hpq as [[= ->]|[_ Hpq]]; cbn in *; lia.
-    + apply (glt_up _ _ (pv 0 k) (pv 1 0)).
-      eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pv 0 k) (pv 1 0))); [done|by exists k|fsc|reflexivity].
+  apply (cc_ok_out _ _ lsb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
+  - intros a b (f & (k & c & c' & [-> | [-> | ->]]) & _ & E); discriminate E.
+  - intros a b (f & (k & [|] & [|] & [-> | [-> | ->]]) & _ & E); injection E as -> ->; cbn; auto.
+  - intros u p q v (f & (k & c & c' & [-> | [-> | ->]]) & _ & E) (f' & (j & d & d' & [-> | [-> | ->]]) & _ & E')
+      Hu Hp Hq Hv Hpq; injection E as -> ->; injection E' as -> ->;
+      destruct c, c', d, d'; cbn in Hu, Hp, Hq, Hv |- *; try done;
+      destruct Hpq as [Hpq|[_ Hpq]]; vm_compute in Hpq;
+      try (match type of Hpq with _ = _ => inversion Hpq; subst end); cbn in *;
+      first [apply glt_ofs_pol|apply (glt_ofs_dual _ _ _ true)|apply (glt_ofs_dual _ _ _ false)
+            |apply (glt_up _ _ (pv 0 j) (pv 1 0));
+             eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pv 0 j) (pv 1 0))); [done|by exists j, true|fsc|reflexivity]
+            |apply (glt_up _ _ (pt_dual (pv 0 j)) (pv 1 0));
+             eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pt_dual (pv 0 j)) (pv 1 0))); [done|by exists j, false|fsc|reflexivity]
+            |apply (glt_up _ _ (pv 0 k) (pv 1 0));
+             eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pv 0 k) (pv 1 0))); [done|by exists k, true|fsc|reflexivity]
+            |apply (glt_up _ _ (pt_dual (pv 0 k)) (pv 1 0));
+             eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pt_dual (pv 0 k)) (pv 1 0))); [done|by exists k, false|fsc|reflexivity]];
+      unfold pt_shift in *; cbn in *; lia.
 Qed.
