@@ -18,7 +18,13 @@
     point after a choice meets it too ([send_C_br]). The lower point ι
     of the existential is below ι′ by the first fact of C′. That fact
     holds because every path through TreeC makes a choice at least
-    once. *)
+    once.
+
+    With end points every fact of C and C′ holds between all polarities
+    of its two points. A select at p continues at (p[i])‾, a branch at
+    p[i], and the lower point of an existential must sit below the
+    partner point of ι′. The facts at both polarities cover all three
+    without tracking which end holds the channel. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -30,16 +36,21 @@ Definition TreeC : sty :=
 
 (** The facts of a channel at ι with the ceiling ζ. Every point of a
     walk from ι is below ζ and below the two points where a choice at
-    it continues. *)
+    it continues. With end points the facts hold at both polarities of
+    each point: the selecting end continues at (p[i])‾, the branching
+    end at p[i], and a walk from ῑ reaches the same points as a walk
+    from ι up to polarity. *)
 Definition walk_P (ι ζ : point) (g : fact) : Prop :=
-  ∃ w, g = FLt (pwalk ι w) ζ ∨ ∃ i, g = FLt (pwalk ι w) (wstep (pwalk ι w) (Some i)).
+  ∃ w c c', g = FLt (pt_polar c (pwalk ι w)) ζ ∨
+            ∃ i, g = FLt (pt_polar c (pwalk ι w)) (pt_polar c' (wstep (pwalk ι w) (Some i))).
 
 (** C with ι = 0 and ζ = 1 under the box binder. *)
 Definition send_P (g : fact) : Prop := walk_P (pv 0 0) (pv 1 0) g.
 Definition send_C : bcs := BCs [] send_P.
 
 (** C′ under the binder of ι′ = 0, with the outer ι and ζ as 1 and 2. *)
-Definition after_P (g : fact) : Prop := g = FLt (pv 1 0) (pv 0 0) ∨ walk_P (pv 0 0) (pv 2 0) g.
+Definition after_P (g : fact) : Prop :=
+  (∃ c c', g = FLt (pt_polar c (pv 1 0)) (pt_polar c' (pv 0 0))) ∨ walk_P (pv 0 0) (pv 2 0) g.
 Definition after_C : bcs := BCs [pv 0 0; pv 1 0] after_P.
 
 Definition send_after : ty := TEx (LPt (pv 0 0)) 1 after_C (TSess (SVar 0) (pv 0 0)).
@@ -71,34 +82,59 @@ Proof.
   unfold pt_inst, pt_shift. cbn. rewrite !Nat.add_0_r. done.
 Qed.
 
+Lemma st_inst_polar σ c x : pt_inst σ (pt_polar c x) = pt_polar c (pt_inst σ x).
+Proof. destruct c; [done|apply pt_inst_dual]. Qed.
+
+Lemma st_pwalk_polar c x v : ∃ d, pwalk (pt_polar c x) v = pt_polar d (pwalk x v).
+Proof.
+  revert c x. induction v as [|[i|] v IH]; intros c x; simpl.
+  - by exists c.
+  - rewrite pt_polar_payload. by exists true.
+  - rewrite <-pt_polar_shift. apply IH.
+Qed.
+
+Lemma st_polar_polar c d y : ∃ e, pt_polar c (pt_polar d y) = pt_polar e y.
+Proof. destruct c, d; simpl; [by exists true|by exists false|by exists false|]. exists true. apply pt_dual_dual. Qed.
+
 (** C′ at ι′ gives C at ι′, so the next call meets its constraint. The
     outer points are the closed ones of a run. *)
 Lemma send_C_after (eq lt : point → point → Prop) a o b r x' :
   bcs_hold eq lt (BCs [Pt (NConst a) o; Pt (NConst b) r] after_P) [x'] →
   bcs_hold eq lt send_C [x'; Pt (NConst b) r].
 Proof.
-  intros H g (f & (w & [-> | (i & ->)]) & _ & ->).
+  intros H g (f & (w & c & c' & [-> | (i & ->)]) & _ & ->).
   - assert (bcs_open 1 (BCs [Pt (NConst a) o; Pt (NConst b) r] after_P)
-              (FLt (pwalk (pv 0 0) w) (Pt (NConst b) r))) as Ho.
-    { exists (FLt (pwalk (pv 0 0) w) (pv 2 0)).
-      split_and!; [right; exists w; by left|split; [apply pwalk_vb; cbn; lia|cbn; lia]|].
-      cbn [fact_map]. rewrite pwalk_inst. cbn. unfold pup. cbn.
+              (FLt (pt_polar c (pwalk (pv 0 0) w)) (Pt (NConst b) r))) as Ho.
+    { exists (FLt (pt_polar c (pwalk (pv 0 0) w)) (pv 2 0)).
+      split_and!; [right; exists w, c, c'; by left|split; [destruct c; apply pwalk_vb; cbn; lia|cbn; lia]|].
+      cbn [fact_map]. rewrite st_inst_polar, pwalk_inst. cbn. unfold pup. cbn.
       unfold pt_inst, pt_shift. cbn. by rewrite !Nat.add_0_r. }
-    specialize (H _ Ho). revert H. cbn [fact_map]. rewrite !pwalk_inst. cbn. unfold pup. cbn.
+    specialize (H _ Ho). revert H. cbn [fact_map]. rewrite !st_inst_polar, !pwalk_inst. cbn. unfold pup. cbn.
     unfold pt_inst, pt_shift. cbn. by rewrite !Nat.add_0_r.
   - assert (bcs_open 1 (BCs [Pt (NConst a) o; Pt (NConst b) r] after_P)
-              (FLt (pwalk (pv 0 0) w) (wstep (pwalk (pv 0 0) w) (Some i)))) as Ho.
-    { exists (FLt (pwalk (pv 0 0) w) (wstep (pwalk (pv 0 0) w) (Some i))).
-      split_and!; [right; exists w; right; by exists i|fscw|].
-      cbn [fact_map]. rewrite ?wstep_inst, ?pwalk_inst. done. }
-    specialize (H _ Ho). revert H. cbn [fact_map]. by rewrite ?wstep_inst, ?pwalk_inst.
+              (FLt (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 0 0) w) (Some i))))) as Ho.
+    { exists (FLt (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 0 0) w) (Some i)))).
+      split_and!; [right; exists w, c, c'; right; by exists i|destruct c, c'; fscw|].
+      cbn [fact_map]. rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst. done. }
+    specialize (H _ Ho). revert H. cbn [fact_map]. by rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst.
 Qed.
 
-(** C[ι[i]/ι] ⊆ C. The point after a choice still meets C. *)
-Lemma send_C_br i g :
+(** C[p/ι] ⊆ C for p = ι[i] or (ι[i])‾. The point after a choice
+    still meets C, at either end. *)
+Lemma send_C_br d i g :
   send_P g → fact_scoped 2 g →
-  send_P (fact_map (pt_inst (plist [wstep (pv 0 0) (Some i); pv 1 0])) g).
+  send_P (fact_map (pt_inst (plist [pt_polar d (wstep (pv 0 0) (Some i)); pv 1 0])) g).
 Proof.
-  intros (w & [-> | (j & ->)]) _; exists (Some i :: w); [left|right; exists j];
-    cbn [fact_map]; by rewrite ?wstep_inst, ?pwalk_inst.
+  assert (pt_inst (plist [pt_polar d (wstep (pv 0 0) (Some i)); pv 1 0]) (pv 0 0) =
+          pt_polar d (wstep (pv 0 0) (Some i))) as E0 by (destruct d; reflexivity).
+  assert (pt_inst (plist [pt_polar d (wstep (pv 0 0) (Some i)); pv 1 0]) (pv 1 0) = pv 1 0) as E1
+    by reflexivity.
+  intros (w & c & c' & [-> | (j & ->)]) _; cbn [fact_map];
+    rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst, E0, ?E1;
+    destruct (st_pwalk_polar d (wstep (pv 0 0) (Some i)) w) as [e ->];
+    destruct (st_polar_polar c e (pwalk (wstep (pv 0 0) (Some i)) w)) as [e1 ->].
+  - exists (Some i :: w), e1, c'. by left.
+  - destruct (st_polar_polar c' e (pwalk (wstep (pv 0 0) (Some i)) w)) as [e2 E2].
+    exists (Some i :: w), e1, c'. right. exists j. simpl. f_equal.
+    by rewrite pt_polar_payload.
 Qed.

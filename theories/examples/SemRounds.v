@@ -122,14 +122,18 @@ Qed.
 
     c lives at the points (0, k), d at (1, k). A round that sends on c
     first has (0, k) ≺ (1, k) ≺ (0, k+1), a round that sends on d first
-    has (1, k) ≺ (0, k) ≺ (1, k+1). *)
+    has (1, k) ≺ (0, k) ≺ (1, k+1). With end points each gate compares
+    with the partner point of the other end, so the facts are
+    (0, k) ≺ (1, k)‾ and (1, k) ≺ (0, k+1)‾, or (1, k) ≺ (0, k)‾ and
+    (0, k) ≺ (1, k+1)‾. The receivers hold the other ends at the dual
+    points. *)
 
 Definition px (k : nat) : point := Pt (NConst 0) k.
 Definition py (k : nat) : point := Pt (NConst 1) k.
 
 Definition rfacts (u v : point) : Prop := ∃ k,
-  if rdfirst k then (u = py k ∧ v = px k) ∨ (u = px k ∧ v = py (S k))
-  else (u = px k ∧ v = py k) ∨ (u = py k ∧ v = px (S k)).
+  if rdfirst k then (u = py k ∧ v = pt_dual (px k)) ∨ (u = px k ∧ v = pt_dual (py (S k)))
+  else (u = px k ∧ v = pt_dual (py k)) ∨ (u = py k ∧ v = pt_dual (px (S k))).
 
 Definition rW : world := wgen {[NConst 0; NConst 1]} (λ _ _, False) rfacts.
 
@@ -150,11 +154,14 @@ Proof.
   - done.
   - done.
   - done.
-  - intros [[a| |q b i] o]; unfold rrank, pt_shift; cbn; [|lia|lia].
+  - intros [[a| |q b i] pb o]; unfold rrank, pt_shift; cbn; [|lia|lia].
     destruct a as [|[|a]]; [| |lia]; destruct (rdfirst o), (rdfirst (o + 1)); lia.
   - intros u v (k & Hk). unfold id. destruct (rdfirst k) eqn:E;
       destruct Hk as [[-> ->]|[-> ->]]; unfold rrank; cbn; rewrite ?E;
       destruct (rdfirst (S k)); lia.
+  - intros x y E. unfold id in *. by subst.
+  - intros [[a| |q b i] pb o]; unfold id, rrank, pt_shift, pt_dual; cbn; [|lia|lia].
+    destruct a as [|[|a]]; [| |lia]; destruct (rdfirst o), (rdfirst (o + 1)); lia.
 Qed.
 
 Lemma rW_lt u v : rfacts u v → w_lt rW u v.
@@ -255,7 +262,7 @@ Qed.
 Lemma Sb_unf : seq Sb (SSeq (SSnd 0 TUnit) Sb).
 Proof. apply seq_unf. done. Qed.
 
-Lemma heads_above_one W c s p : world_wf W → heads_above W {[p]} {[c := One (s, p)]}.
+Lemma heads_above_one W c s p : world_wf W → heads_above W {[pt_dual p]} {[c := One (s, p)]}.
 Proof.
   intros HW. pose proof (heads_above_self W {[c := One (s, p)]} HW) as H.
   by rewrite tenv_heads_one in H.
@@ -271,7 +278,7 @@ Proof.
   - apply Vrel_lolli_iff. right. eexists KSend, _. split_and!; [done|done| |apply teqW_refl].
     apply (KTSend _ _ _ 0 TUnit Sb p). simpl. intros h Hh. set_solver.
   - apply Vrel_prod_iff. exists EUnit, (Chan c), ∅, {[c := One (s, p)]}. split_and!; [done| | |].
-    + apply tenv_comp_empty_l, (wf_eq_sym _ HWf).
+    + apply tenv_comp_empty_l, (wf_rdsym _ HWf).
     + by apply Vrel_unit_iff.
     + apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done| |apply (wf_eq_refl _ HWf)].
       eapply seq_trans; [exact Hs|apply Sb_unf].
@@ -279,10 +286,10 @@ Proof.
 Qed.
 
 (** One round: send on f, then on g, and continue with Q. The first send
-    needs f ≺ g, the second g ≺ f+1. *)
+    needs f ≺ ḡ, the second g ≺ f̄+1 (end points). *)
 Lemma Erel_round n W Θ f g s1 s2 pf pg Q :
   strict W → tenv_comp (w_eq W) Θ {[f := One (s1, pf)]} {[g := One (s2, pg)]} →
-  seq s1 Sb → seq s2 Sb → w_lt W pf pg → w_lt W pg (pt_shift 1 pf) →
+  seq s1 Sb → seq s2 Sb → w_lt W pf (pt_dual pg) → w_lt W pg (pt_shift 1 (pt_dual pf)) →
   (∀ W' j f' g' s1' s2' pf' pg' Θ', wext W W' → j ≤ n →
      tenv_comp (w_eq W') Θ' {[f' := One (s1', pf')]} {[g' := One (s2', pg')]} →
      seq s1' Sb → seq s2' Sb → w_eq W' pf' (pt_shift 1 pf) → w_eq W' pg' (pt_shift 1 pg) →
@@ -296,27 +303,27 @@ Proof.
     [done|done|apply tenv_comp_empty_r|left; apply heads_above_empty| |].
   - change (Pair ?a ?b) with (fill_frame (FPairL b) a).
     apply (Erel_bind n (FPairL (rsend (Chan g))) W Θ {[f := One (s1, pf)]} {[g := One (s2, pg)]}
-             (TSess Sb (pt_shift 1 pf)) Th (∅ ∪ ∅) {[pg]});
+             (TSess Sb (pt_shift 1 pf)) Th (∅ ∪ ∅) {[pt_dual pg]});
       [done|done|done|left; by apply heads_above_one| |].
-    + apply Erel_rsend; [done|done|]. intros z Hz. assert (z = pg) as -> by set_solver. done.
+    + apply Erel_rsend; [done|done|]. intros z Hz. assert (z = pt_dual pg) as -> by set_solver. done.
     + intros W' j Θ1' Θ' v HW' Hj Hc' HV.
       apply Vrel_sess_iff in HV as (f' & s1' & pf' & -> & -> & Hs1' & Hpf').
       pose proof (wext_wf _ _ HW') as HWf'. pose proof (proj2 (proj2 (proj2 HW'))) as HWs'.
       change (fill_frame (FPairL (rsend (Chan g))) (Chan f'))
         with (fill_frame (FPairR (Chan f')) (rsend (Chan g))).
       apply (Erel_bind j (FPairR (Chan f')) W' Θ' {[g := One (s2, pg)]} {[f' := One (s1', pf')]}
-               (TSess Sb (pt_shift 1 pg)) Th (∅ ∪ ∅) {[pf']});
-        [done|done|apply comp_comm; [apply (wf_eq_sym _ HWf')|exact Hc']
+               (TSess Sb (pt_shift 1 pg)) Th (∅ ∪ ∅) {[pt_dual pf']});
+        [done|done|apply comp_comm; [apply (wf_rdsym _ HWf')|exact Hc']
         |left; by apply heads_above_one| |].
-      * apply Erel_rsend; [done|done|]. intros z Hz. assert (z = pf') as -> by set_solver.
-        eapply (wf_lt_eq _ HWf'); [apply (wf_eq_refl _ HWf')| |apply (wf_eq_sym _ HWf'), Hpf'].
+      * apply Erel_rsend; [done|done|]. intros z Hz. assert (z = pt_dual pf') as -> by set_solver.
+        eapply (wf_lt_eq _ HWf'); [apply (wf_eq_refl _ HWf')| |apply (wf_eq_sym _ HWf'), (wf_eq_dual _ HWf'), Hpf'].
         apply (proj1 (proj2 (proj2 HW'))). exact Hgf.
       * intros W'' j' Θ1'' Θ'' v HW'' Hj' Hc'' HV.
         apply Vrel_sess_iff in HV as (g' & s2' & pg' & -> & -> & Hs2' & Hpg').
         apply Vrel_Erel. apply Vrel_prod_iff.
         exists (Chan f'), (Chan g'), {[f' := One (s1', pf')]}, {[g' := One (s2', pg')]}.
         split_and!; [done| | |].
-        -- apply comp_comm; [apply (wf_eq_sym _ (wext_wf _ _ HW''))|exact Hc''].
+        -- apply comp_comm; [apply (wf_rdsym _ (wext_wf _ _ HW''))|exact Hc''].
         -- apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|done|]. exact (wext_eq _ _ _ _ HW'' Hpf').
         -- apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|done|exact Hpg'].
   - intros W' j Θ1' Θ' v HW' Hj Hc' HV.
@@ -335,6 +342,12 @@ Proof. unfold pt_shift, px. simpl. f_equal. lia. Qed.
 
 Lemma py_shift k : pt_shift 1 (py k) = py (S k).
 Proof. unfold pt_shift, py. simpl. f_equal. lia. Qed.
+
+Lemma pxd_shift k : pt_shift 1 (pt_dual (px k)) = pt_dual (px (S k)).
+Proof. unfold pt_shift, pt_dual, px. simpl. f_equal. lia. Qed.
+
+Lemma pyd_shift k : pt_shift 1 (pt_dual (py k)) = pt_dual (py (S k)).
+Proof. unfold pt_shift, pt_dual, py. simpl. f_equal. lia. Qed.
 
 (** A fact of rW between points aliased in a later world. *)
 Lemma rW_lt_at W u v x y : wext rW W → rfacts u v → w_eq W x u → w_eq W y v → w_lt W x y.
@@ -369,10 +382,12 @@ Proof.
     { unfold zKj, round_z. cbn. rewrite !subst_num. reflexivity. }
     eapply Erel_dstep; [apply det_beta_letu|].
     unfold round_z. apply (Erel_round n' W Θ d c s2 s1 yk xk); [done| |done|done| | |].
-    + apply comp_comm; [apply (wf_eq_sym _ HWf)|exact Hc].
-    + apply (rW_lt_at W (py k) (px k)); [done| |done|done]. exists k. rewrite Hd. by left.
-    + apply (rW_lt_at W (px k) (py (S k))); [done| |done|by apply (eq_shift_at W _ (py k)); [| |apply py_shift]].
-      exists k. rewrite Hd. by right.
+    + apply comp_comm; [apply (wf_rdsym _ HWf)|exact Hc].
+    + apply (rW_lt_at W (py k) (pt_dual (px k))); [done| |done|by apply (wf_eq_dual _ HWf)].
+      exists k. rewrite Hd. by left.
+    + apply (rW_lt_at W (px k) (pt_dual (py (S k)))); [done| |done|].
+      * exists k. rewrite Hd. by right.
+      * apply (eq_shift_at W _ (pt_dual (py k))); [done| |apply pyd_shift]. by apply (wf_eq_dual _ HWf).
     + intros W' j d' c' s2' s1' pd' pc' Θ' HW' Hj Hc' Hs2' Hs1' Hpd' Hpc'.
       match goal with |- Erel _ _ _ _ _ ?e => assert (e = rthread (S b) 0 c' d') as -> end.
       { unfold subst2, rthread. cbn. rewrite !subst_num. reflexivity. }
@@ -382,15 +397,17 @@ Proof.
         exact (wext_eq _ _ _ _ HW' Hx).
       * eapply (wf_eq_trans _ HWf'); [exact Hpd'|]. apply (eq_shift_at W' _ (py k)); [done| |apply py_shift].
         exact (wext_eq _ _ _ _ HW' Hy).
-      * apply comp_comm; [apply (wf_eq_sym _ HWf')|exact Hc'].
+      * apply comp_comm; [apply (wf_rdsym _ HWf')|exact Hc'].
   - (* c first *)
     assert (rdfirst k = false) as Hd by (unfold rdfirst; by rewrite Hk).
     eapply Erel_dstep; [apply det_beta_case2; [apply num_val|]|].
     { unfold sKj, round_s. cbn. rewrite !rename_num. reflexivity. }
     unfold round_s. apply (Erel_round n' W Θ c d s1 s2 xk yk); [done|done|done|done| | |].
-    + apply (rW_lt_at W (px k) (py k)); [done| |done|done]. exists k. rewrite Hd. by left.
-    + apply (rW_lt_at W (py k) (px (S k))); [done| |done|by apply (eq_shift_at W _ (px k)); [| |apply px_shift]].
-      exists k. rewrite Hd. by right.
+    + apply (rW_lt_at W (px k) (pt_dual (py k))); [done| |done|by apply (wf_eq_dual _ HWf)].
+      exists k. rewrite Hd. by left.
+    + apply (rW_lt_at W (py k) (pt_dual (px (S k)))); [done| |done|].
+      * exists k. rewrite Hd. by right.
+      * apply (eq_shift_at W _ (pt_dual (px k))); [done| |apply pxd_shift]. by apply (wf_eq_dual _ HWf).
     + intros W' j c' d' s1' s2' pc' pd' Θ' HW' Hj Hc' Hs1' Hs2' Hpc' Hpd'.
       match goal with |- Erel _ _ _ _ _ ?e => assert (e = rthread a (S b) c' d') as -> end.
       { unfold subst2, rthread. cbn. rewrite !subst_num. reflexivity. }
@@ -432,21 +449,22 @@ Proof.
   change (subst γ rthr) with rthr.
   apply (rthread_Erel n W' 0 0 0 chc chd Sb Sb (px 0) (py 0)); try done;
     [apply seq_refl|apply seq_refl|apply (wf_eq_refl _ HWf)|apply (wf_eq_refl _ HWf)|].
-  apply comp_comm; [apply (wf_eq_sym _ HWf)|apply rΘ_comp].
+  apply comp_comm; [apply (wf_rdsym _ HWf)|apply rΘ_comp].
 Qed.
 
-(** A receiver on c at the point (a, 0), typed by the static system. *)
+(** A receiver on c at the point (a, 0)‾, typed by the static system.
+    The receivers hold the ends dual to the thread's (end points). *)
 Lemma rrecv_typed W c a :
   world_wf W → pt_known W (Pt (NConst a) 0) →
-  typed W ∅ [] {[c := One (Sa, Pt (NConst a) 0)]} [] (∅, None) (rrecv c) TUnit.
+  typed W ∅ [] {[c := One (Sa, pt_dual (Pt (NConst a) 0))]} [] (∅, None) (rrecv c) TUnit.
 Proof.
-  intros HW Hk. unfold rrecv.
-  eapply (t_app W ∅ [] _ ∅ {[c := One (Sa, Pt (NConst a) 0)]} [] [] [] _ _ _
-            (Some (Pt (NConst a) 0)) None (TSess Sa (Pt (NConst a) 0))).
-  - apply tenv_comp_empty_l. intros ? ?. apply se_sym.
+  intros HW Hk. unfold rrecv. set (p := pt_dual (Pt (NConst a) 0)).
+  eapply (t_app W ∅ [] _ ∅ {[c := One (Sa, p)]} [] [] [] _ _ _
+            (Some p) None (TSess Sa p)).
+  - apply tenv_comp_empty_l, se_dsym.
   - constructor.
   - apply ubs_intro; [|done]. intros z Hz. cbn in Hz. set_solver.
-  - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [Pt (NConst a) 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [p]);
       [done|done| | |apply ubs_none|apply alt_R_typed, HW].
     + apply bcs_hold_intro. intros g [].
     + constructor; [by left|constructor].
@@ -469,7 +487,7 @@ Proof.
   assert (chc ≠ chd) as Hcd by done.
   assert (mptyped rW ({[chd := (Sb, py 0)]} ∪ ∅) (∅ ∪ ∅ ∪ {[chc]}, {[+ rthr +]} ⊎ {[+ rrecv chc +]}) TUnit)
     as P1.
-  { apply (mp_connect rW {[chd := (Sb, py 0)]} ∅ {[chc := (Sb, px 0)]} {[chc := (Sa, px 0)]} {[chc]}
+  { apply (mp_connect rW {[chd := (Sb, py 0)]} ∅ {[chc := (Sb, px 0)]} {[chc := (Sa, pt_dual (px 0))]} {[chc]}
              ∅ ∅ {[+ rthr +]} {[+ rrecv chc +]} TUnit).
     - apply (mp_sem_thread rW _ ∅ ∅); [constructor|done|done|set_solver| | |].
       + intros c o Ho. by rewrite lookup_empty in Ho.
@@ -479,11 +497,11 @@ Proof.
           by rewrite <-insert_union_singleton_l, fmap_insert, map_fmap_singleton. }
         apply rthr_sem.
     - rewrite (left_id_L ∅ (∪)). apply mp_syn.
-      apply (pt_term rW {[chc := (Sa, px 0)]} ∅ ∅); [constructor|done|set_solver| | |].
+      apply (pt_term rW {[chc := (Sa, pt_dual (px 0))]} ∅ ∅); [constructor|done|set_solver| | |].
       + intros c o Ho. by rewrite lookup_empty in Ho.
       + intros c e1 e2 He. by rewrite lookup_empty in He.
       + unfold tenv_of. rewrite map_fmap_singleton, (right_id_L ∅ (∪)).
-        apply rrecv_typed; [done|apply rknown; by left].
+        apply (rrecv_typed rW chc 0); [done|apply (rknown 0); by left].
     - apply dom_singleton_L.
     - apply dom_singleton_L.
     - intros c e e' He He'. apply lookup_singleton_Some in He as [<- <-].
@@ -504,15 +522,15 @@ Proof.
   { unfold rconfig. f_equal; try set_solver; try multiset_solver. }
   assert ((∅ : senv) = ∅ ∪ ∅) as E by by rewrite (left_id_L ∅ (∪)).
   rewrite E at 1.
-  apply (mp_connect rW ∅ ∅ {[chd := (Sb, py 0)]} {[chd := (Sa, py 0)]} {[chd]}
+  apply (mp_connect rW ∅ ∅ {[chd := (Sb, py 0)]} {[chd := (Sa, pt_dual (py 0))]} {[chd]}
            (∅ ∪ ∅ ∪ {[chc]}) ∅ ({[+ rthr +]} ⊎ {[+ rrecv chc +]}) {[+ rrecv chd +]} TUnit).
   - by rewrite (left_id_L ∅ (∪)).
   - rewrite (left_id_L ∅ (∪)). apply mp_syn.
-    apply (pt_term rW {[chd := (Sa, py 0)]} ∅ ∅); [constructor|done|set_solver| | |].
+    apply (pt_term rW {[chd := (Sa, pt_dual (py 0))]} ∅ ∅); [constructor|done|set_solver| | |].
     + intros c o Ho. by rewrite lookup_empty in Ho.
     + intros c e1 e2 He. by rewrite lookup_empty in He.
     + unfold tenv_of. rewrite map_fmap_singleton, (right_id_L ∅ (∪)).
-      apply rrecv_typed; [done|apply rknown; by right].
+      apply (rrecv_typed rW chd 1); [done|apply (rknown 1); by right].
   - apply dom_singleton_L.
   - apply dom_singleton_L.
   - intros c e e' He He'. apply lookup_singleton_Some in He as [<- <-].

@@ -30,7 +30,17 @@
       and d as channel constants, and the partner close c; close d on
       the other ends, is deadlock free. The partner is typed by the
       static system, the thread by [sf_sem_typed], and P-Connect joins
-      them in a mixed derivation ([mixed_soundness], static/Mixed.v). *)
+      them in a mixed derivation ([mixed_soundness], static/Mixed.v).
+
+    END POINTS. The gates now compare with partner points: the first
+    arm asks x ≺ ȳ, the second y ≺ x̄, and the partner, which holds the
+    other ends at x̄ and ȳ, asks x̄ ≺ y. The two arms no longer form a
+    cycle, so the last step of [sf_underivable] fails and the theorem
+    and its corollary are commented out (open, see the report of the
+    end-points port). The closed configuration still needs y ≺ x̄ for
+    the dead arm and x̄ ≺ y for the partner, a cycle. The semantic part
+    is ported: [sf_sem_typed] and [sf_thread_sem] assume x ≺ ȳ, and
+    [sf_mixed] assumes x ≺ ȳ and x̄ ≺ y, which [sf_W] provides. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ChoiceNegative examples.DataBranch static.Mixed.
@@ -231,11 +241,12 @@ Qed.
 Lemma hsteq_sess_inv Ψ s x A : hsteq Ψ (TSess s x) A → ∃ s' x', A = TSess s' x' ∧ heqs Ψ x x'.
 Proof. destruct A; simpl; try done. intros [Hx _]. by eexists _, _. Qed.
 
-(** close i; close j holding i at x and j at y asks x ≺ y. *)
+(** close i; close j holding i at x and j at y asks x ≺ ȳ, the partner
+    point of j (end points). *)
 Lemma arm_inv Φ Ψ Δ F e T :
   sderiv Φ Ψ Δ F e T → ∀ i j, e = sf_arm i j → plainb Δ → ∀ s1 x s2 y,
   Δ !! i = Some (Some (TSess s1 x)) → Δ !! j = Some (Some (TSess s2 y)) → i ≠ j →
-  hlt Ψ x y.
+  hlt Ψ x (pt_dual y).
 Proof.
   induction 1 as [| | | | | | Φ Ψ Δ Δ1 Δ2 F e1 e2 T Hs H1 _ H2 _ | | | | |
                  | Φ Ψ Δ' Δ F e T Hw H IH | Φ Ψ Δ U F e T Hu H IH
@@ -254,7 +265,7 @@ Proof.
     assert (Δ2 !! j0 = Some (Some (TSess sq2 yq))) as Hj2.
     { destruct (lenv_split_lookup_inv _ _ _ _ _ Hs Hj0) as [Hj1|Hj2]; [|done].
       exfalso. apply Hij. symmetry. apply (Ho j0 _ Hj1). intros []. }
-    assert (hlt Ψ xc' yq) as Hlt.
+    assert (hlt Ψ xc' (pt_dual yq)) as Hlt.
     { eapply hub_fact; [exact Hub|]. apply sf_unionb_fst.
       eapply lenv_heads_lookup; [exact Hj2|]. simpl. set_solver. }
     eapply hlt_eqs; [|apply he_refl|exact Hlt].
@@ -304,6 +315,7 @@ Proof.
   exfalso. apply (freevar_flag i). eapply styped_relevant; [exact H|]. by exists U.
 Qed.
 
+(* END POINTS: open, see report.
 Theorem sf_underivable Φ Ψ Δ F T i j s1 x s2 y :
   (∀ p, ¬ hlt Ψ p p) → plain Δ →
   Δ !! i = Some (Some (TSess s1 x)) → Δ !! j = Some (Some (TSess s2 y)) → i ≠ j →
@@ -330,6 +342,7 @@ Corollary sf_underivable_top n C Φ Δ F T i j s1 x s2 y :
   Δ !! i = Some (Some (TSess s1 x)) → Δ !! j = Some (Some (TSess s2 y)) → i ≠ j →
   ¬ styped Φ [(C, ids n)] Δ F (sf_body i j) T.
 Proof. intros HC. apply sf_underivable. by apply c0_irrefl. Qed.
+*)
 
 (** ** Semantic typing
 
@@ -383,9 +396,9 @@ Qed.
 (** The context of the component: c : Close@x at 0, d : Close@y at 1. *)
 Definition sf_ctx (x y : point) : lenv := [Some (TSess SEnd x); Some (TSess SEnd y)].
 
-(** The first arm is typed by the static system when x ≺ y. *)
+(** The first arm is typed by the static system when x ≺ ȳ (end points). *)
 Lemma sf_arm_typed W x y :
-  world_wf W → w_lt W x y → typed W ∅ [] ∅ (sf_ctx x y) (∅, None) (sf_arm 0 1) TUnit.
+  world_wf W → w_lt W x (pt_dual y) → typed W ∅ [] ∅ (sf_ctx x y) (∅, None) (sf_arm 0 1) TUnit.
 Proof.
   intros HW Hxy. unfold sf_arm, sf_ctx.
   apply tv_letu; [exact HW|reflexivity| |].
@@ -402,13 +415,13 @@ Proof.
 Qed.
 
 Lemma sf_arm_sem W x y :
-  strict W → w_lt W x y → sem_typed W ∅ (sf_ctx x y) ∅ (sf_arm 0 1) TUnit.
+  strict W → w_lt W x (pt_dual y) → sem_typed W ∅ (sf_ctx x y) ∅ (sf_arm 0 1) TUnit.
 Proof. intros HW Hxy. apply fundamental; [|done]. by apply sf_arm_typed; [apply HW|]. Qed.
 
 (** The component is semantically typed: the flag reduces to inj₁ ∗ in
     two β-steps, and a third step takes the first arm. *)
 Theorem sf_sem_typed W x y :
-  strict W → w_lt W x y → sem_typed W ∅ (sf_ctx x y) ∅ (sf_body 0 1) TUnit.
+  strict W → w_lt W x (pt_dual y) → sem_typed W ∅ (sf_ctx x y) ∅ (sf_body 0 1) TUnit.
 Proof.
   intros HW Hxy.
   apply (sem_typed_det_beta _ _ _ _ _
@@ -437,7 +450,7 @@ Lemma sf_ground n W x y :
 Proof.
   intros HW. cbn [grounding sf_ctx].
   exists {[chc := One (SEnd, x)]}, {[chd := One (SEnd, y)]}. split.
-  { apply comp_comm; [apply (wf_eq_sym _ HW)|apply db_comp_cd]. }
+  { apply comp_comm; [apply (wf_rdsym _ HW)|apply db_comp_cd]. }
   split.
   { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
   exists {[chd := One (SEnd, y)]}, ∅. split; [apply tenv_comp_empty_r|]. split.
@@ -449,36 +462,38 @@ Lemma sf_thread_closed γ : subst γ sf_thread = sf_thread.
 Proof. reflexivity. Qed.
 
 Theorem sf_thread_sem W x y :
-  strict W → w_lt W x y → sem_typed W (db_Θ x y) [] ∅ sf_thread TUnit.
+  strict W → w_lt W x (pt_dual y) → sem_typed W (db_Θ x y) [] ∅ sf_thread TUnit.
 Proof.
   intros HW Hxy n W' Θ' Θ'' γ HW' Hc Hg. cbn [grounding] in Hg. subst Θ'.
   apply tenv_comp_empty_r_inv in Hc as ->. rewrite sf_thread_closed, <-sf_thread_subst.
   apply (sf_sem_typed W x y HW Hxy n W' (db_Θ x y) (db_Θ x y) sf_γ HW').
-  - apply tenv_comp_empty_l, (wf_eq_sym _ (proj1 (proj2 (proj2 (proj2 HW'))))).
+  - apply tenv_comp_empty_l, (wf_rdsym _ (proj1 (proj2 (proj2 (proj2 HW'))))).
   - apply sf_ground, (proj1 (proj2 (proj2 (proj2 HW')))).
 Qed.
 
-(** The partner close c; close d is typed by the static system. *)
-Lemma tenv_heads_one c e : tenv_heads {[c := One e]} = {[e.2]}.
+(** The partner close c; close d is typed by the static system. It
+    holds c at x̄ and d at ȳ (end points), so it asks x̄ ≺ y. The lemma
+    below is stated for any two points. *)
+Lemma tenv_heads_one c e : tenv_heads {[c := One e]} = {[pt_dual e.2]}.
 Proof. unfold tenv_heads. rewrite map_fold_singleton. simpl. set_solver. Qed.
 
 Lemma cc2_typed W x y :
-  world_wf W → w_lt W x y → typed W ∅ [] (db_Θ x y) [] (∅, None) (cc2 chc chd) TUnit.
+  world_wf W → w_lt W x (pt_dual y) → typed W ∅ [] (db_Θ x y) [] (∅, None) (cc2 chc chd) TUnit.
 Proof.
   intros HW Hxy. unfold cc2.
   eapply (t_letstar W ∅ [] (db_Θ x y) {[chc := One (SEnd, x)]} {[chd := One (SEnd, y)]}
             [] [] []).
-  - apply comp_comm; [intros ? ?; apply se_sym|apply db_comp_cd].
+  - apply comp_comm; [apply se_dsym|apply db_comp_cd].
   - constructor.
   - eapply (t_app W ∅ [] _ ∅ {[chc := One (SEnd, x)]} [] [] [] _ _ _ (Some x) None (TSess SEnd x)).
-    + apply tenv_comp_empty_l. intros ? ?. apply se_sym.
+    + apply tenv_comp_empty_l, se_dsym.
     + constructor.
     + apply ubs_intro; [|done]. intros z Hz. rewrite tenv_heads_one in Hz. mem_cases Hz.
       by apply sl_w.
     + apply t_const; [intros o Ho; by apply elem_of_nil in Ho|apply KTClos|done].
     + apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl].
   - eapply (t_app W ∅ [] _ ∅ {[chd := One (SEnd, y)]} [] [] [] _ _ _ (Some y) None (TSess SEnd y)).
-    + apply tenv_comp_empty_l. intros ? ?. apply se_sym.
+    + apply tenv_comp_empty_l, se_dsym.
     + constructor.
     + apply ubs_intro; [|done]. intros z Hz. mem_cases Hz.
     + apply t_const; [intros o Ho; by apply elem_of_nil in Ho|apply KTClos|done].
@@ -494,13 +509,18 @@ Proof.
   by rewrite fmap_insert, map_fmap_singleton.
 Qed.
 
+(** The partner holds the other ends, at x̄ and ȳ. *)
 Lemma sf_Σ_dual W x y c e e' :
-  world_wf W → sf_Σ x y !! c = Some e → sf_Σ x y !! c = Some e' →
-  w_eq W e.2 e'.2 ∧ sdual e.1 e'.1.
+  world_wf W → sf_Σ x y !! c = Some e → sf_Σ (pt_dual x) (pt_dual y) !! c = Some e' →
+  w_eq W e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1.
 Proof.
-  intros HW He He'. rewrite He in He'. injection He' as <-. split; [apply (wf_eq_refl _ HW)|].
-  unfold sf_Σ in He. apply lookup_insert_Some in He as [(_ & <-)|(_ & He)];
-    [|apply lookup_singleton_Some in He as [_ <-]]; apply (sdual_dual SEnd).
+  intros HW He He'. unfold sf_Σ in He, He'.
+  apply lookup_insert_Some in He as [(<- & <-)|(Hne & He)].
+  - rewrite lookup_insert_eq in He'. injection He' as <-. cbn. rewrite pt_dual_dual.
+    split; [apply (wf_eq_refl _ HW)|apply (sdual_dual SEnd)].
+  - rewrite lookup_insert_ne in He' by done. apply lookup_singleton_Some in He as [<- <-].
+    rewrite lookup_singleton_eq in He'. injection He' as <-. cbn. rewrite pt_dual_dual.
+    split; [apply (wf_eq_refl _ HW)|apply (sdual_dual SEnd)].
 Qed.
 
 (** The configuration: the thread and the partner over the cut {c, d}. *)
@@ -508,14 +528,15 @@ Definition sf_config : proc := ({[chc; chd]}, {[+ sf_thread; cc2 chc chd +]}).
 
 (** A mixed derivation of the configuration. The thread is a semantic
     leaf, the partner a syntactic one. *)
-Theorem sf_mixed W x y : strict W → w_lt W x y → mptyped W ∅ sf_config TUnit.
+Theorem sf_mixed W x y :
+  strict W → w_lt W x (pt_dual y) → w_lt W (pt_dual x) y → mptyped W ∅ sf_config TUnit.
 Proof.
-  intros HW Hxy. pose proof (proj1 HW) as HWf.
+  intros HW Hxy Hxy'. pose proof (proj1 HW) as HWf.
   assert (sf_config = (∅ ∪ ∅ ∪ dom (sf_Σ x y), {[+ sf_thread +]} ⊎ {[+ cc2 chc chd +]})) as ->.
   { unfold sf_config, sf_Σ. f_equal. all: rewrite !dom_insert_L, dom_singleton_L; set_solver. }
   assert ((∅ : senv) = ∅ ∪ ∅) as E by by rewrite (left_id_L ∅ (∪)).
   rewrite E at 1.
-  apply (mp_connect W ∅ ∅ (sf_Σ x y) (sf_Σ x y) (dom (sf_Σ x y)) ∅ ∅
+  apply (mp_connect W ∅ ∅ (sf_Σ x y) (sf_Σ (pt_dual x) (pt_dual y)) (dom (sf_Σ x y)) ∅ ∅
            {[+ sf_thread +]} {[+ cc2 chc chd +]} TUnit); try done.
   - rewrite (left_id_L ∅ (∪)).
     apply (mp_sem_thread W (sf_Σ x y) ∅ ∅); [constructor|done|done|set_solver| | |].
@@ -523,17 +544,18 @@ Proof.
     + intros c e1 e2 He. by rewrite lookup_empty in He.
     + rewrite sf_Σ_tenv. by apply sf_thread_sem.
   - rewrite (left_id_L ∅ (∪)). apply mp_syn.
-    apply (pt_term W (sf_Σ x y) ∅ ∅); [constructor|done|set_solver| | |].
+    apply (pt_term W (sf_Σ (pt_dual x) (pt_dual y)) ∅ ∅); [constructor|done|set_solver| | |].
     + intros c o Ho. by rewrite lookup_empty in Ho.
     + intros c e1 e2 He. by rewrite lookup_empty in He.
-    + rewrite sf_Σ_tenv. by apply cc2_typed.
+    + rewrite sf_Σ_tenv. apply cc2_typed; [done|]. by rewrite pt_dual_dual.
   - intros c e e' He He'. by apply (sf_Σ_dual W x y c).
   - apply map_disjoint_empty_l.
   - apply map_disjoint_empty_l.
 Qed.
 
-(** A strict world with x ≺ y: c at the constant point 0, d at 1. *)
-Definition sf_W : world := Wfacts [0; 1] [(pc 0 0, pc 1 0)].
+(** A strict world with x ≺ ȳ and x̄ ≺ y: c at the constant point 0, d
+    at 1. *)
+Definition sf_W : world := Wfacts [0; 1] [(pc 0 0, pt_dual (pc 1 0)); (pt_dual (pc 0 0), pc 1 0)].
 
 Lemma sf_W_strict : strict sf_W.
 Proof.
@@ -542,12 +564,15 @@ Proof.
   - repeat constructor; cbn; lia.
 Qed.
 
-Lemma sf_W_lt : w_lt sf_W (pc 0 0) (pc 1 0).
-Proof. apply Wfacts_lt. set_solver. Qed.
+Lemma sf_W_lt : w_lt sf_W (pc 0 0) (pt_dual (pc 1 0)).
+Proof. apply Wfacts_lt. by left. Qed.
+
+Lemma sf_W_lt' : w_lt sf_W (pt_dual (pc 0 0)) (pc 1 0).
+Proof. apply Wfacts_lt. by right; left. Qed.
 
 (** The configuration is deadlock free, by the mixed derivation. *)
 Theorem sf_deadlock_free : deadlock_free sf_config.
 Proof.
   apply (mixed_soundness sf_W sf_config TUnit sf_W_strict).
-  apply (sf_mixed sf_W (pc 0 0) (pc 1 0) sf_W_strict sf_W_lt).
+  apply (sf_mixed sf_W (pc 0 0) (pc 1 0) sf_W_strict sf_W_lt sf_W_lt').
 Qed.

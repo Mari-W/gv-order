@@ -38,7 +38,9 @@
     [new] creates the ring channel of A_0 at a fresh ι with the empty
     creation constraint, and every later channel is created by
     [t_new_at] at ι+2k, a point the hypothesis of the first [new] makes
-    known. Reading the two ends of a channel as one point:
+    known. With end points the two ends of a channel sit at x and x̄;
+    the sending end of each channel is the one at x. Reading the two
+    ends of a channel as one root:
 
       c_0, d_1 : ι      a_1, b_1 : ι+2    c_1, d_2 : ι+4
       a_2, b_2 : ι+6    c_2, d_0 : ι+8    a_0, b_0 : ι+10
@@ -92,22 +94,49 @@ Definition ms_main : expr :=
           (LetU (App ESpawn ms_col1)
             (LetU (App ESpawn ms_col2) ms_ag0)))))))))).
 
+(** Program order between the two ends of one root: ι+j ≺ ι+k and
+    ι+j ≺ ῑ+k for j < k, at either polarity of ι+j. With end points
+    the gates compare with partner points, which sit at the other
+    polarity. *)
+Lemma ms_slt_po W Ψ a b b' j k : world_wf W → j < k → slt W Ψ (MkPt a b j) (MkPt a b' k).
+Proof.
+  intros HW H.
+  assert (∀ m d d', slt W Ψ (MkPt a d m) (MkPt a d' (S m))) as Hs.
+  { intros m [] [];
+      [pose proof (slt_po W Ψ (MkPt a true m) HW) as G|pose proof (sl_dpo W Ψ (MkPt a true m)) as G
+      |pose proof (sl_dpo W Ψ (MkPt a false m)) as G|pose proof (slt_po W Ψ (MkPt a false m) HW) as G];
+      unfold pt_shift, pt_dual in G; simpl in G; rewrite Nat.add_1_r in G; exact G. }
+  revert b'. induction H as [|k _ IH]; intros b'; [apply Hs|].
+  eapply sl_trans; [apply (IH true)|apply Hs].
+Qed.
+
+Lemma ms_sle_po W Ψ a b b' j k : world_wf W → j < k ∨ (j = k ∧ b = b') → sle W Ψ (MkPt a b j) (MkPt a b' k).
+Proof.
+  intros HW [H|[-> ->]]; [right; by apply ms_slt_po|apply sle_refl, HW].
+Qed.
+
+Ltac ms_future HW := intros ? Hy; mem_cases Hy; (apply ms_slt_po; [exact HW|cbn; lia]).
+Ltac ms_fvar HW u := exists u; split; [done|apply ms_sle_po; [exact HW|cbn; first [left; lia|right; split; [lia|done]]]].
+Ltac ms_lb HW := intros ? Hy; mem_cases Hy; (apply ms_sle_po; [exact HW|cbn; first [left; lia|right; split; [lia|done]]]).
+Ltac ms_gate HW u := apply ubs_intro; [ms_future HW|ms_fvar HW u].
+Ltac ms_gate0 HW := apply ubs_intro; [ms_future HW|done].
+
 (** A send and a close on one channel at (0, j), inside a λ whose upper
     point is (0, u). *)
 Ltac ms_send HW j u :=
   unfold sendclose; tstep;
   [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 j)); cbn; set_solver|done|];
-    po_gate HW (pv 0 u)
+    ms_gate HW (pv 0 u)
   | apply KTClos
   | done
-  | po_gate HW (pv 0 u) ].
+  | ms_gate HW (pv 0 u) ].
 
 (** A receive and a close on one channel, inside such a λ. *)
-Ltac ms_recv HW u :=
+Ltac ms_recv HW U :=
   unfold recvclose; tstep;
-  [ tstep; [tstep|apply KTRecv|kscope|]; po_gate HW (pv 0 u)
+  [ tstep; [tstep|apply KTRecv|kscope|]; ms_gate HW U
   | cbn; tstep; [tstep|]; cbn; tstep; [tstep|apply KTClos|done|];
-    po_gate HW (pv 0 u) ].
+    ms_gate HW U ].
 
 Lemma ms_typed : styped ∅ [] [] (∅, None) ms_main TUnit.
 Proof.
@@ -130,50 +159,50 @@ Proof.
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 5)) (Some (pv 0 0)) 0);
-      [set_solver|lb_po HW|].
-    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW 5|].
+      [set_solver|ms_lb HW|].
+    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW (pv 0 5)|].
     cbn. tstep; [ms_send HW 2 5|ms_send HW 4 5]. }
   (* A_2: recv d_2 at ι+4, send a_2 at ι+6, send c_2 at ι+8 *)
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
     eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 9)) (Some (pv 0 4)) 0);
-      [set_solver|lb_po HW|].
-    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW 9|].
+      [set_solver|ms_lb HW|].
+    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW (pv 0 9)|].
     cbn. tstep; [ms_send HW 6 9|ms_send HW 8 9]. }
   (* the collectors: recv b_i *)
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 11)) (Some (pv 0 10)) 0);
-      [set_solver|lb_po HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW 11. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 11))) (Some (pv 0 10)) 0);
+      [set_solver|ms_lb HW|].
+    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pv 0 11)). }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 3)) (Some (pv 0 2)) 0);
-      [set_solver|lb_po HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW 3. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 3))) (Some (pv 0 2)) 0);
+      [set_solver|ms_lb HW|].
+    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pv 0 3)). }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 7)) (Some (pv 0 6)) 0);
-      [set_solver|lb_po HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW 7. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 7))) (Some (pv 0 6)) 0);
+      [set_solver|ms_lb HW|].
+    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pv 0 7)). }
   (* A_0: send c_0 at ι, recv d_0 at ι+8, send a_0 at ι+10 *)
   cbn. unfold ms_ag0. tstep.
   { unfold sendclose. tstep.
     - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
-      po_gate0 HW.
+      ms_gate0 HW.
     - apply KTClos.
     - done.
-    - po_gate0 HW. }
+    - ms_gate0 HW. }
   cbn. tstep.
   { unfold recvclose. tstep.
-    - tstep; [tstep|apply KTRecv|kscope|]. po_gate0 HW.
-    - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|]. po_gate0 HW. }
+    - tstep; [tstep|apply KTRecv|kscope|]. ms_gate0 HW.
+    - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|]. ms_gate0 HW. }
   cbn. unfold sendclose. tstep.
   - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 10)); cbn; set_solver|done|].
-    po_gate0 HW.
+    ms_gate0 HW.
   - apply KTClos.
   - done.
-  - po_gate0 HW.
+  - ms_gate0 HW.
 Qed.
 
 Theorem ms_deadlock_free : deadlock_free (∅, {[+ ms_main +]}).

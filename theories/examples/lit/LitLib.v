@@ -25,7 +25,7 @@ Set Default Proof Using "All".
 Definition nil_C0 : bcs := BCs [] (λ _, False).
 
 Lemma nil_C0_acyclic : c0_acyclic 0 nil_C0.
-Proof. apply (c0_acyclic_rank 0 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []]. Qed.
+Proof. apply (c0_acyclic_rank 0 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []|apply vrank_dual]. Qed.
 
 Lemma typed_hyps_wk_lit W Ψ F e T : strict W → typed W ∅ [] ∅ [] F e T → typed W ∅ Ψ ∅ [] F e T.
 Proof.
@@ -47,6 +47,33 @@ Proof.
   intros HT Ht. apply (soundness_source 0 nil_C0 t T (c0_acyclic_creation _ _ nil_C0_acyclic) HT).
   by apply styped_nil_hyps.
 Qed.
+
+(** ** Program order between the two ends of one root
+
+    With end points the two ends of a channel sit at x and x̄, and the
+    gates compare a blocking point with the partner points of the other
+    held ends. ι+j ≺ ι+k and ι+j ≺ ῑ+k hold for j < k at either polarity
+    of ι+j. *)
+Lemma pp_slt_po W Ψ a b b' j k : world_wf W → j < k → slt W Ψ (MkPt a b j) (MkPt a b' k).
+Proof.
+  intros HW H.
+  assert (∀ m d d', slt W Ψ (MkPt a d m) (MkPt a d' (S m))) as Hs.
+  { intros m [] [];
+      [pose proof (slt_po W Ψ (MkPt a true m) HW) as G|pose proof (sl_dpo W Ψ (MkPt a true m)) as G
+      |pose proof (sl_dpo W Ψ (MkPt a false m)) as G|pose proof (slt_po W Ψ (MkPt a false m) HW) as G];
+      unfold pt_shift, pt_dual in G; simpl in G; rewrite Nat.add_1_r in G; exact G. }
+  revert b'. induction H as [|k _ IH]; intros b'; [apply Hs|].
+  eapply sl_trans; [apply (IH true)|apply Hs].
+Qed.
+
+Lemma pp_sle_po W Ψ a b b' j k : world_wf W → j < k ∨ (j = k ∧ b = b') → sle W Ψ (MkPt a b j) (MkPt a b' k).
+Proof. intros HW [H|[-> ->]]; [right; by apply pp_slt_po|apply sle_refl, HW]. Qed.
+
+Ltac pp_future HW := intros ? Hy; mem_cases Hy; (apply pp_slt_po; [exact HW|cbn; lia]).
+Ltac pp_fvar HW u := exists u; split; [done|apply pp_sle_po; [exact HW|cbn; first [left; lia|right; split; [lia|done]]]].
+Ltac pp_lb HW := intros ? Hy; mem_cases Hy; (apply pp_sle_po; [exact HW|cbn; first [left; lia|right; split; [lia|done]]]).
+Ltac pp_gate HW u := apply ubs_intro; [pp_future HW|pp_fvar HW u].
+Ltac pp_gate0 HW := apply ubs_intro; [pp_future HW|done].
 
 (** ** Configurations where every thread waits on a send or a receive
 

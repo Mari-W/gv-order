@@ -17,15 +17,17 @@ Set Default Proof Using "All".
       srv = !(f = λp. let (a, b) = p in let (x, a) = recv a in let () = x in
                      spawn (λv. let () = v in (force f) ⟨a, send ⟨∗, b⟩⟩))
 
-    recv a blocks at ι while the body holds b at ι′ and asks ι ≺ ι′.
-    send b blocks at ι′ while it holds a at ι+1 and asks ι′ ≺ ι+1. With
-    the one-round constraint {ι ≺ ι′, ι′ ≺ ι+1} the recursive force at
-    (ι+1, ι′+1) asks ι+1 ≺ ι′+1, and the fact theory does not derive it.
+    recv a blocks at ι while the body holds b at ι′ and asks ι ≺ ι̅′,
+    against the partner point of b. send b blocks at ι′ while it holds
+    a at ι+1 and asks ι′ ≺ (ι+1)‾ (end points). With the one-round
+    constraint {ι ≺ ι̅′, ι′ ≺ (ι+1)‾} the recursive force at (ι+1, ι′+1)
+    asks ι+1 ≺ (ι′+1)‾, and the fact theory does not derive it.
     Its ≡ relates points with a variable root by equality only, its ≺
     closes the hypotheses under ≡ and transitivity, and a world_wf W
-    relates points with a variable root by program order only. The rank
-    10(k+1) for (ι,k) and 15+k for (ι′,k) meets the hypotheses and
-    program order but puts ι′+1 below ι+1 ([rr_call_underivable]). C is
+    relates points with a variable root by program order only, now
+    x ≺ x+1 and x ≺ x̄+1. The rank 10(k+1) for (ι,k) and 15+k for
+    (ι′,k), at either polarity, meets the hypotheses and program order
+    but puts (ι′+1)‾ below ι+1 ([rr_call_underivable]). C is
     the invariant of the recursion, so it has to state every round at
     once, which the typed version below does. *)
 
@@ -42,7 +44,7 @@ Definition rr_R (x y : point) : Prop :=
   if isvar x && isvar y then rr_rank x < rr_rank y else isvar x = false ∧ isvar y = false.
 
 Definition rr_C1 (g : fact) : Prop :=
-  g = FLt (pvar 0) (pvar 1) ∨ g = FLt (pvar 1) (pt_shift 1 (pvar 0)).
+  g = FLt (pvar 0) (pt_dual (pvar 1)) ∨ g = FLt (pvar 1) (pt_dual (pt_shift 1 (pvar 0))).
 
 Lemma isvar_const W x : world_wf W → pt_root x ∈ w_names W → isvar x = false.
 Proof. intros HW Hx. unfold isvar. by destruct (wf_names_const _ HW _ Hx) as [a ->]. Qed.
@@ -50,13 +52,20 @@ Proof. intros HW Hx. unfold isvar. by destruct (wf_names_const _ HW _ Hx) as [a 
 (** Program order lies in [rr_R]: the rank grows with the offset. *)
 Lemma rr_R_po x : rr_R x (pt_shift 1 x).
 Proof.
-  unfold rr_R, isvar, pt_shift, pt_root, rr_rank. destruct x as [p o]. simpl.
+  unfold rr_R, isvar, pt_shift, pt_root, rr_rank. destruct x as [p pb o]. simpl.
+  destruct (pn_root p); simpl; try (split; reflexivity).
+  destruct p as [a0|[|[|k]]|q b i]; simpl; lia.
+Qed.
+
+Lemma rr_R_dpo x : rr_R x (pt_shift 1 (pt_dual x)).
+Proof.
+  unfold rr_R, isvar, pt_shift, pt_dual, pt_root, rr_rank. destruct x as [p pb o]. simpl.
   destruct (pn_root p); simpl; try (split; reflexivity).
   destruct p as [a0|[|[|k]]|q b i]; simpl; lia.
 Qed.
 
 Lemma rr_call_underivable W : world_wf W →
-  ¬ slt W [(BCs [] rr_C1, ids 2)] (pt_shift 1 (pvar 0)) (pt_shift 1 (pvar 1)).
+  ¬ slt W [(BCs [] rr_C1, ids 2)] (pt_shift 1 (pvar 0)) (pt_dual (pt_shift 1 (pvar 1))).
 Proof.
   intros HW H.
   assert (∀ x y, slt W [(BCs [] rr_C1, ids 2)] x y → rr_R x y) as HR.
@@ -64,7 +73,7 @@ Proof.
     refine (proj2 (fl_map (FCtx W [(BCs [] rr_C1, ids 2)] ∅)
       (λ x y, x = y ∨ (isvar x = false ∧ isvar y = false))
       (λ a b, match a, b with NP x, NP y => rr_R x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
     - intros x0 y0 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
       split; by apply (isvar_const W).
     - intros x0 y0 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
@@ -75,7 +84,7 @@ Proof.
     - intros x0 y0 [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
     - intros x0 y0 i [->|[Hx Hy]]; [by left|right; split; [exact Hx|exact Hy]].
     - intros x0 y0 Hxy. unfold rr_R. destruct (wf_lt_supp _ HW _ _ Hxy) as [[Hn Ho]%ppo_pofs|[Hx Hy]].
-      + destruct x0 as [p o], y0 as [q o']. simpl in *. subst q. unfold isvar, rr_rank, pt_root. simpl.
+      + destruct x0 as [p pb o], y0 as [q pb' o']. simpl in *. subst q. unfold isvar, rr_rank, pt_root. simpl.
         destruct (pn_root p) eqn:Hr; simpl; [done| |done].
         destruct p as [|[|[|]]|]; simpl in *; try lia; simplify_eq.
       + rewrite (isvar_const W x0), (isvar_const W y0); done.
@@ -89,7 +98,9 @@ Proof.
       revert H0. unfold rr_R. rewrite Hy, Hy', !andb_false_r. cbn. tauto.
     - intros [x0|] y0 [z0|]; try done. unfold rr_R.
       destruct (isvar x0), (isvar y0), (isvar z0); simpl; intuition (try lia; try discriminate).
-    - intros x0. apply rr_R_po. }
+    - intros x0. apply rr_R_po.
+    - intros x0 y0 [->|[Hx Hy]]; [by left|right]. unfold isvar, pt_root in *. by simpl.
+    - intros x0. apply rr_R_dpo. }
   apply HR in H. vm_compute in H. lia.
 Qed.
 
@@ -119,12 +130,13 @@ Qed.
 
     Say new puts c at x and d at y. With the one signature of new, x
     and y are the points E-Open binds, aliased or not to known points
-    by the constraint of new (sharp edges 104). The main thread closes c while it
-    holds d, so E-Let* puts y into the future of close c and E-App asks
-    x ≺ y (ub_below_s). The thunk closes d′ while it holds c′, so its
-    body asks y ≺ x. E-Conv keeps points (eqT compares them by
+    by the constraint of new (sharp edges 104). With end points c′ and
+    d′ sit at x̄ and ȳ. The main thread closes c while it holds d, so
+    E-Let* puts the partner point ȳ into the future of close c and
+    E-App asks x ≺ ȳ (ub_below_s). The thunk closes d′ at ȳ while it
+    holds c′, whose partner point is x, so its body asks ȳ ≺ x. E-Conv keeps points (eqT compares them by
     equality) and E-Weak drops only unlimited bindings, so every
-    derivation asks both facts, and x ≺ y ≺ x contradicts strictness.
+    derivation asks both facts, and x ≺ ȳ ≺ x contradicts strictness.
     This holds for every choice of x and y, x = y included.
 
     ** bad link: rejected
@@ -134,10 +146,11 @@ Qed.
                 let () = spawn (λu. let () = u in let () = close e₃ in close d₃) in
                 let () = close c₂ in close e₂
 
-    With c at x, d at y and e at z: link asks x ≡ y (KTLink), the main
-    thread closes c₂ while it holds e₂ and asks x ≺ z, the second
-    thunk closes e₃ while it holds d₃ and asks z ≺ y. Then
-    x ≺ z ≺ y ≡ x, and wf_lt_eq gives x ≺ x. This is the spec's
+    With c₁, c₂ at x, x̄, d₁, d₃ at y, ȳ and e₂, e₃ at z, z̄ (end
+    points): link asks x ≡ ȳ (KTLink), so x̄ ≡ y (wf_eq_dual). The main
+    thread closes c₂ at x̄ while it holds e₂ and asks x̄ ≺ z̄, the second
+    thunk closes e₃ at z̄ while it holds d₃ and asks z̄ ≺ y. Then
+    x̄ ≺ z̄ ≺ y ≡ x̄, and wf_lt_eq gives x̄ ≺ x̄. This is the spec's
     (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0). The program deadlocks: after the
     link the main thread waits on c₂ for d₃, and the second thread
     waits on e₃ for e₂. The argument reads only the alias of KTLink.
@@ -197,10 +210,11 @@ Proof.
   eapply sl_trans; [exact H01|]. by eapply sl_trans.
 Qed.
 
-(** The bad link of [badlink_main]. link ⟨c₁, d₁⟩ asks x ≡ y, the main
-    thread closes c₂ at x while it holds e₂ at z and asks x ≺ z, and the
-    second thunk closes e₃ at z while it holds d₃ at y and asks z ≺ y.
-    The three give x ≺ x. *)
+(** The bad link of [badlink_main]. With end points read x, y, z below
+    as x̄, y, z̄ of the comment above: link ⟨c₁, d₁⟩ gives x̄ ≡ y, the
+    main thread closes c₂ at x̄ while it holds e₂ and asks x̄ ≺ z̄, and
+    the second thunk closes e₃ at z̄ while it holds d₃ and asks z̄ ≺ y.
+    The three give x̄ ≺ x̄. *)
 Lemma badlink_underivable W Ψ x y z :
   (∀ p, ¬ slt W Ψ p p) → ¬ (seqs W Ψ x y ∧ slt W Ψ x z ∧ slt W Ψ z y).
 Proof.
@@ -237,7 +251,13 @@ Proof. intros E. unfold isvar, pt_root. by rewrite E. Qed.
 (** Program order lies in [ord_R]: the offset grows and the root stays. *)
 Lemma ord_R_po x : ord_R x (pt_shift 1 x).
 Proof.
-  unfold ord_R, isvar, pt_shift, pt_root. destruct x as [p o]. simpl.
+  unfold ord_R, isvar, pt_shift, pt_root. destruct x as [p pb o]. simpl.
+  destruct (pn_root p); simpl; split; (reflexivity || lia).
+Qed.
+
+Lemma ord_R_dpo x : ord_R x (pt_shift 1 (pt_dual x)).
+Proof.
+  unfold ord_R, isvar, pt_shift, pt_dual, pt_root. destruct x as [p pb o]. simpl.
   destruct (pn_root p); simpl; split; (reflexivity || lia).
 Qed.
 
@@ -249,7 +269,7 @@ Proof.
     refine (proj2 (fl_map (FCtx W [(ord0_C, ids 2)] ∅)
       (λ x y, x = y ∨ (isvar x = false ∧ isvar y = false))
       (λ a b, match a, b with NP x, NP y => ord_R x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H; unfold id; simpl.
     - intros x1 y1 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
       split; by apply (isvar_const W).
     - intros x1 y1 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
@@ -272,6 +292,8 @@ Proof.
     - intros [x1|] y1 [z1|]; try done. unfold ord_R.
       destruct (isvar x1), (isvar y1), (isvar z1); simpl;
         intuition (try discriminate; try lia); try congruence.
-    - intros x1. apply ord_R_po. }
+    - intros x1. apply ord_R_po.
+    - intros x1 y1 [->|[Hx Hy]]; [by left|right]. unfold isvar, pt_root in *. by simpl.
+    - intros x1. apply ord_R_dpo. }
   apply HR in H. unfold ord_R in H. cbn in H. destruct H as [Hn _]. discriminate.
 Qed.
