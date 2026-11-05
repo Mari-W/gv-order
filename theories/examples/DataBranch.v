@@ -56,10 +56,21 @@
     So one world per component limits a component whose interface types
     the bit without facts. A closed program whose bit comes from a
     constant puts the facts on the bit. The design note discusses what
-    this means for the candidates. *)
+    this means for the candidates.
+
+    END POINTS. Every gate now compares a blocking point with the
+    partner points of the held ends: the inl branch asks x ≺ ȳ, the inr
+    branch y ≺ x̄. [db_typed] still types both bits with the dead-branch
+    fact, with c and d created at fresh points under facts of one
+    polarity. The two orders are no longer a cycle in one world, so the
+    semantic proofs of [db_component_unrealizable],
+    [db_component_sides], [db_rnode_unrealizable] and their corollaries
+    break at their last step and are commented out (open, see the
+    report of the end-points port). [cc2_ready] and [db_case_lt] now
+    give x ≺ ȳ and y ≺ x̄. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export examples.LitTools lang.ThreadSim.
+From LRGV Require Export examples.LitTools examples.FreshTools lang.ThreadSim.
 
 Set Default Proof Using "All".
 
@@ -616,7 +627,7 @@ Lemma db_ground n W b x y k :
       Some (TSess SEnd x)] ++ replicate k None) (db_γ b).
 Proof.
   intros HW. cbn [grounding app].
-  exists ∅, (db_Θ x y). split; [apply tenv_comp_empty_l, (wf_eq_sym _ HW)|]. split.
+  exists ∅, (db_Θ x y). split; [apply tenv_comp_empty_l, (wf_rdsym _ HW)|]. split.
   { apply Vrel_sum_iff. destruct b; [right|left]; eexists; (split; [done|]); by apply Vrel_unit_iff. }
   exists {[chd := One (SEnd, y)]}, {[chc := One (SEnd, x)]}. split; [apply db_comp_cd|]. split.
   { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
@@ -640,10 +651,11 @@ Qed.
 Lemma cc2_can i j : tstep (cc2 i j) (LSess (SClos i)) (LetU EUnit (App EClos (Chan j))).
 Proof. apply TStepLetU, TStepHead, HeadClos. Qed.
 
-(** Readiness of [cc2 i j], holding i at x and j at y, gives x ≺ y. *)
+(** Readiness of [cc2 i j], holding i at x and j at y, gives x ≺ ȳ, the
+    partner point of j (end points). *)
 Lemma cc2_ready W F i j x y :
   i ≠ j →
-  ready_t W (<[j := One (SEnd, y)]> {[i := One (SEnd, x)]}) F (cc2 i j) → w_lt W x y.
+  ready_t W (<[j := One (SEnd, y)]> {[i := One (SEnd, x)]}) F (cc2 i j) → w_lt W x (pt_dual y).
 Proof.
   intros Hij Hr. set (Θ := <[j := One (SEnd, y)]> {[i := One (SEnd, x)]}) in *.
   assert (Θ !! i = Some (One (SEnd, x))) as Hi.
@@ -684,7 +696,7 @@ Ltac ebeta HE st :=
 
 Lemma db_case_lt W T F b x y :
   Erel 3 W (db_Θ x y) T F (subst (db_γ b) db_case) →
-  if b then w_lt W y x else w_lt W x y.
+  if b then w_lt W y (pt_dual x) else w_lt W x (pt_dual y).
 Proof.
   intros HE. rewrite db_case_subst in HE. destruct b.
   - ebeta HE ltac:(by apply HeadCase2). change (subst1 EUnit (LetU (Var 0) (cc2 chd chc)))
@@ -701,6 +713,7 @@ Proof.
     intros Hirr. apply (Hirr _ _ (cc2_can _ _)).
 Qed.
 
+(* END POINTS: open, see report.
 Theorem db_component_unrealizable Φ Ψ F T x y k :
   styped Φ Ψ (db_ctx x y k) F db_case T → ¬ realizable Φ Ψ.
 Proof.
@@ -714,13 +727,15 @@ Proof.
                  (sf_inst ρ (sf_pinst σ F)) (subst (db_γ b) db_case)) as HE.
   { intros b. apply (Hr 3 W (db_Θ (pt_inst σ x) (pt_inst σ y)) (db_Θ (pt_inst σ x) (pt_inst σ y)) (db_γ b)).
     - apply wext_refl, HWs.
-    - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
+    - apply tenv_comp_empty_l, (wf_rdsym _ HW).
     - unfold db_ctx, lenv_pinst. rewrite fmap_app, fmap_replicate. cbn.
       apply db_ground, HW. }
   pose proof (db_case_lt _ _ _ true _ _ (HE true)) as H1.
   pose proof (db_case_lt _ _ _ false _ _ (HE false)) as H2.
   apply (proj2 HWs (pt_inst σ x)). exact (wf_lt_trans _ HW _ _ _ H2 H1).
 Qed.
+
+*)
 
 (** The same node with a bit whose sides carry facts C₁ and C₂. It has
     no derivation when one strict world realizes the hypotheses, C₁ and
@@ -748,7 +763,7 @@ Lemma db_ground2 n W b C1 C2 x y k :
       Some (TSess SEnd y); None; None; None; Some (TSess SEnd x)] ++ replicate k None) (db_γ b).
 Proof.
   intros HW H1 H2. cbn [grounding app].
-  exists ∅, (db_Θ x y). split; [apply tenv_comp_empty_l, (wf_eq_sym _ HW)|]. split.
+  exists ∅, (db_Θ x y). split; [apply tenv_comp_empty_l, (wf_rdsym _ HW)|]. split.
   { apply Vrel_sum_iff. destruct b; [right|left]; eexists; (split; [done|]);
       apply Vrel_ex_iff; (split; [rewrite tenv_heads_nil; by split|]);
       exists []; split_and!; first [done|by apply Forall_nil|by apply Vrel_unit_iff]. }
@@ -759,6 +774,7 @@ Proof.
   apply grounding_nones.
 Qed.
 
+(* END POINTS: open, see report.
 Theorem db_component_sides Φ Ψ F T x y k C1 C2 :
   styped Φ Ψ (db_ctx2 C1 C2 x y k) F db_case T → ¬ realizable2 Φ Ψ C1 C2.
 Proof.
@@ -772,7 +788,7 @@ Proof.
                  (sf_inst ρ (sf_pinst σ F)) (subst (db_γ b) db_case)) as HE.
   { intros b. apply (Hr 3 W (db_Θ (pt_inst σ x) (pt_inst σ y)) (db_Θ (pt_inst σ x) (pt_inst σ y)) (db_γ b)).
     - apply wext_refl, HWs.
-    - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
+    - apply tenv_comp_empty_l, (wf_rdsym _ HW).
     - unfold db_ctx2, lenv_pinst. rewrite fmap_app, fmap_replicate. cbn.
       by apply db_ground2. }
   pose proof (db_case_lt _ _ _ true _ _ (HE true)) as Hl1.
@@ -780,11 +796,14 @@ Proof.
   apply (proj2 HWs (pt_inst σ x)). exact (wf_lt_trans _ HW _ _ _ Hl2 Hl1).
 Qed.
 
+*)
+
 (** The hypotheses of a source program are realizable. A program
     starts under a creation constraint C₀ over n top-level points, and
     the world wc0 n C₀ realizes it ([soundness_source]). So the case
     node of db_main does not type at any context the program starts
     in, for every choice of the points of c and d. *)
+(* END POINTS: open, see report.
 Corollary db_component_untyped_top n C0 F T x y k :
   creation_ok n nofact nofact (λ _, False) C0 →
   ¬ styped ∅ [(C0, ids n)] (db_ctx x y k) F db_case T.
@@ -796,6 +815,8 @@ Proof.
   - intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty.
   - by apply wc0_holds.
 Qed.
+
+*)
 
 (** ** db_main types, and the dead branch learns a fact from the bit
 
@@ -827,9 +848,10 @@ Definition rkv (x : point) : nat :=
 
 Lemma Ce_ok peq plt : cc_ok peq plt Ce.
 Proof.
-  apply (cc_ok_inner peq plt _ (λ x y, rkv x < rkv y)); [intros; lia|intros; lia| |].
+  apply (cc_ok_inner peq plt _ (λ x y, rkv x < rkv y)); [intros; lia|intros; lia| | |].
   - intros x _. unfold rkv, pt_shift. simpl. destruct (pt_name x); lia.
   - intros g -> _. eexists _, _. split; [done|]. cbn. lia.
+  - intros x _. unfold rkv, pt_shift, pt_dual. simpl. destruct (pt_name x); lia.
 Qed.
 
 Lemma sl_fresh_l W Ψ L H x l : (fresh_bcs L H, [x]) ∈ Ψ → l ∈ L → slt W Ψ l x.
@@ -850,78 +872,67 @@ Proof.
   set (W := Wpo []) in *. unfold db_main, let_new_pair.
   apply (t_new_open W _ _ ∅ _ _ _ _ Se Ce); [apply Ce_ok|constructor|].
   fresh_clean.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pv 0 1; sl0 0 1] [sl0 0 5]).
+  set (Lc := [(pv 0 1, false); (sl0 0 1, false)]).
+  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Lc []).
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done);
       (eapply skn_inst; [by left|by left|done]). }
-  { intros l h Hl Hh. apply list_elem_of_singleton in Hh as ->.
-    rewrite elem_of_cons, list_elem_of_singleton in Hl. destruct Hl as [->| ->].
-    - hyp0 (pv 0 1) (sl0 0 5).
-    - apply slt_po_lt; [exact HW|lia]. }
+  { intros l h b' _ Hh. by apply elem_of_nil in Hh. }
   fresh_clean.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pv 1 1; pvar 0] [sl0 1 5]).
+  set (Ld := [(pv 1 1, false); (pvar 0, false)]). set (Hd := [(sl0 1 5, true)]).
+  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Ld Hd).
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done).
     - eapply skn_inst; [by left|by left|done].
     - eapply skn_inst; [by right; left|by left|done].
     - eapply skn_inst; [by left|by left|done]. }
-  { intros l h Hl Hh. apply list_elem_of_singleton in Hh as ->.
-    rewrite elem_of_cons, list_elem_of_singleton in Hl. destruct Hl as [->| ->].
-    - hyp0 (pv 0 1) (sl0 0 5).
-    - apply (slt_fresh_r W _ (pshift 1) [pv 0 1; sl0 0 1] [sl0 0 5] (pvar 0) (sl0 0 5));
-        [by right; left|by left]. }
+  { (* betweenness is vacuous: L is negative, H positive *)
+    intros l h b' Hl Hh. unfold Ld, Hd in *.
+    repeat match goal with E : _ ∈ _ :: _ |- _ => apply elem_of_cons in E as [E|E]
+                         | E : _ ∈ [] |- _ => by apply elem_of_nil in E end; simplify_eq. }
   fresh_clean.
-  rewrite !bcs_inst_fresh.
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pvar 0))) with (pvar 2).
-  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
   change (bcs_inst (pshift 1) (bcs_inst (pshift 1) (bcs_inst (pshift 1) Ce))) with Ce.
-  cbn [fmap list_fmap].
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pv 0 1))) with (pv 2 1).
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (sl0 0 1))) with (sl0 2 1).
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (sl0 0 5))) with (sl0 2 5).
-  change (pt_inst (pshift 1) (pv 1 1)) with (pv 2 1).
-  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
-  change (pt_inst (pshift 1) (sl0 1 5)) with (sl0 2 5).
-  set (Ψ := [(Ce, [pvar 2]); (fresh_bcs [pv 2 1; sl0 2 1] [sl0 2 5], [pvar 1]);
-             (fresh_bcs [pv 2 1; pvar 1] [sl0 2 5], [pvar 0])]).
-  assert (slt W Ψ (pv 2 1) (pvar 1)) as Hz1x.
-  { apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [sl0 2 5]); [by right; left|by left]. }
-  assert (slt W Ψ (pv 2 1) (pvar 0)) as Hz1y.
-  { apply (sl_fresh_l _ _ [pv 2 1; pvar 1] [sl0 2 5]); [by right; right; left|by left]. }
-  assert (slt W Ψ (pvar 1) (pvar 0)) as Hxy.
-  { apply (sl_fresh_l _ _ [pv 2 1; pvar 1] [sl0 2 5]); [by right; right; left|by right; left]. }
-  assert (slt W Ψ (pvar 2) (pvar 1)) as Hzx.
+  match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
+  assert ((bcs_inst (pshift 2) (freshp_bcs Lc []), [pvar 1]) ∈ Ψ) as HgC by (right; left; reflexivity).
+  assert ((bcs_inst (pshift 1) (freshp_bcs Ld Hd), [pvar 0]) ∈ Ψ) as HgD by (right; right; left; reflexivity).
+  assert (slt W Ψ (pv 2 1) (pt_dual (pvar 1))) as Hz1x.
+  { apply (slt_freshp_l W Ψ (pshift 2) Lc [] (pvar 1) (pv 0 1) false); [exact HgC|by left]. }
+  assert (slt W Ψ (pv 2 1) (pt_dual (pvar 0))) as Hz1y.
+  { apply (slt_freshp_l W Ψ (pshift 1) Ld Hd (pvar 0) (pv 1 1) false); [exact HgD|by left]. }
+  assert (slt W Ψ (pvar 1) (pt_dual (pvar 0))) as Hxy.
+  { apply (slt_freshp_l W Ψ (pshift 1) Ld Hd (pvar 0) (pvar 0) false); [exact HgD|by right; left]. }
+  assert (slt W Ψ (pvar 2) (pt_dual (pvar 1))) as Hzx.
   { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1x]. }
-  assert (slt W Ψ (pvar 2) (pvar 0)) as Hzy.
+  assert (slt W Ψ (pvar 2) (pt_dual (pvar 0))) as Hzy.
   { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1y]. }
   tstep.
   { (* spawn (λu. let () = u in close c′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 1))) (Some (pvar 1)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pvar 1). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual (pvar 1)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* spawn (λu. let () = u in close d′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pvar 0). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual (pvar 0)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* spawn the sender of inl ∗ *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 1)) (Some (pvar 2)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 2 1))) (Some (pvar 2)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep.
-    - tstep; [|apply (KTSend _ _ _ 1 Tz SEnd (pvar 2)); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
+    - tstep; [|apply (KTSend _ _ _ 1 Tz SEnd (pt_dual (pvar 2))); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
       + tstep; first [tstep|cbn; apply t_inj1, (tv_unit W HW); reflexivity].
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 2 1). split; [done|]. right. apply (slt_po W _ (pvar 2) HW).
+        exists (pt_dual (pv 2 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pvar 2)) HW).
     - apply KTClos.
     - done.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 2 1). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pv 2 1)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply (tv_letp W HW _ _ _ _ _ _ (payload_at 1 Tz (pvar 2)) (TSess SEnd (pv 2 1)));
     [reflexivity| |].
   { tstep; [tstep|apply KTRecv|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
@@ -954,13 +965,13 @@ Proof.
       exists (FLt (sl0 2 5) (sl0 2 1)). split; [|reflexivity].
       exists (FLt (pv 0 5) (pv 0 1)). split_and!; [done| |reflexivity].
       cbn. lia. }
-    assert (slt W Ψ' (pvar 0) (pvar 1)) as Hyx.
+    assert (slt W Ψ' (pvar 0) (pt_dual (pvar 1))) as Hyx.
     { eapply sl_trans.
-      { apply (sl_fresh_r _ _ [pv 2 1; pvar 1] [sl0 2 5]); [|by left].
-        apply elem_of_app. left. by right; right; left. }
+      { apply (slt_freshp_r W Ψ' (pshift 1) Ld Hd (pvar 0) (sl0 1 5) true); [|by left].
+        apply elem_of_app. left. exact HgD. }
       eapply sl_trans; [exact Hdead|].
-      apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [sl0 2 5]); [|by right; left].
-      apply elem_of_app. left. by right; left. }
+      apply (slt_freshp_l W Ψ' (pshift 2) Lc [] (pvar 1) (sl0 0 1) false); [|by right; left].
+      apply elem_of_app. left. exact HgC. }
     tstep; [tstep|]. cbn. tstep.
     + tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
@@ -974,84 +985,69 @@ Proof.
   set (W := Wpo []) in *. unfold db_main, let_new_pair.
   apply (t_new_open W _ _ ∅ _ _ _ _ Se_t Ce); [apply Ce_ok|constructor|].
   fresh_clean.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pv 0 1; sl0 0 1] [sl0 0 5]).
+  set (Lc := [(pv 0 1, false)]). set (Hc := [(sl0 0 5, true)]).
+  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Lc Hc).
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done);
       (eapply skn_inst; [by left|by left|done]). }
-  { intros l h Hl Hh. apply list_elem_of_singleton in Hh as ->.
-    rewrite elem_of_cons, list_elem_of_singleton in Hl. destruct Hl as [->| ->].
-    - hyp0 (pv 0 1) (sl0 0 5).
-    - apply slt_po_lt; [exact HW|lia]. }
+  { intros l h b' Hl Hh. unfold Lc, Hc in *.
+    repeat match goal with E : _ ∈ _ :: _ |- _ => apply elem_of_cons in E as [E|E]
+                         | E : _ ∈ [] |- _ => by apply elem_of_nil in E end; simplify_eq. }
   fresh_clean.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pv 1 1; sl0 1 1] [pvar 0; sl0 1 5]).
+  set (Ld := [(pv 1 1, false); (sl0 1 1, false)]). set (Hd := [(pt_dual (pvar 0), true)]).
+  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Ld Hd).
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done).
     - eapply skn_inst; [by left|by left|done].
     - eapply skn_inst; [by left|by left|done].
-    - eapply skn_inst; [by right; left|by left|done].
-    - eapply skn_inst; [by left|by left|done]. }
-  { intros l h Hl Hh.
-    rewrite elem_of_cons, list_elem_of_singleton in Hl, Hh.
-    destruct Hl as [->| ->], Hh as [->| ->].
-    - apply (slt_fresh_l W _ (pshift 1) [pv 0 1; sl0 0 1] [sl0 0 5] (pvar 0) (pv 0 1));
-        [by right; left|by left].
-    - hyp0 (pv 0 1) (sl0 0 5).
-    - apply (slt_fresh_l W _ (pshift 1) [pv 0 1; sl0 0 1] [sl0 0 5] (pvar 0) (sl0 0 1));
-        [by right; left|by right; left].
-    - apply slt_po_lt; [exact HW|lia]. }
+    - eapply skn_inst; [by right; left|by left|done]. }
+  { (* betweenness is vacuous: L is negative, H positive *)
+    intros l h b' Hl Hh. unfold Ld, Hd in *.
+    repeat match goal with E : _ ∈ _ :: _ |- _ => apply elem_of_cons in E as [E|E]
+                         | E : _ ∈ [] |- _ => by apply elem_of_nil in E end; simplify_eq. }
   fresh_clean.
-  rewrite !bcs_inst_fresh.
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pvar 0))) with (pvar 2).
-  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
   change (bcs_inst (pshift 1) (bcs_inst (pshift 1) (bcs_inst (pshift 1) Ce))) with Ce.
-  cbn [fmap list_fmap].
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pv 0 1))) with (pv 2 1).
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (sl0 0 1))) with (sl0 2 1).
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (sl0 0 5))) with (sl0 2 5).
-  change (pt_inst (pshift 1) (pv 1 1)) with (pv 2 1).
-  change (pt_inst (pshift 1) (sl0 1 1)) with (sl0 2 1).
-  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
-  change (pt_inst (pshift 1) (sl0 1 5)) with (sl0 2 5).
-  set (Ψ := [(Ce, [pvar 2]); (fresh_bcs [pv 2 1; sl0 2 1] [sl0 2 5], [pvar 1]);
-             (fresh_bcs [pv 2 1; sl0 2 1] [pvar 1; sl0 2 5], [pvar 0])]).
-  assert (slt W Ψ (pv 2 1) (pvar 1)) as Hz1x.
-  { apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [sl0 2 5]); [by right; left|by left]. }
-  assert (slt W Ψ (pv 2 1) (pvar 0)) as Hz1y.
-  { apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [pvar 1; sl0 2 5]); [by right; right; left|by left]. }
-  assert (slt W Ψ (pvar 0) (pvar 1)) as Hyx.
-  { apply (sl_fresh_r _ _ [pv 2 1; sl0 2 1] [pvar 1; sl0 2 5]); [by right; right; left|by left]. }
-  assert (slt W Ψ (pvar 2) (pvar 1)) as Hzx.
+  match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
+  assert ((bcs_inst (pshift 2) (freshp_bcs Lc Hc), [pvar 1]) ∈ Ψ) as HgC by (right; left; reflexivity).
+  assert ((bcs_inst (pshift 1) (freshp_bcs Ld Hd), [pvar 0]) ∈ Ψ) as HgD by (right; right; left; reflexivity).
+  assert (slt W Ψ (pv 2 1) (pt_dual (pvar 1))) as Hz1x.
+  { apply (slt_freshp_l W Ψ (pshift 2) Lc Hc (pvar 1) (pv 0 1) false); [exact HgC|by left]. }
+  assert (slt W Ψ (pv 2 1) (pt_dual (pvar 0))) as Hz1y.
+  { apply (slt_freshp_l W Ψ (pshift 1) Ld Hd (pvar 0) (pv 1 1) false); [exact HgD|by left]. }
+  assert (slt W Ψ (pvar 0) (pt_dual (pvar 1))) as Hyx.
+  { apply (slt_freshp_r W Ψ (pshift 1) Ld Hd (pvar 0) (pt_dual (pvar 0)) true); [exact HgD|by left]. }
+  assert (slt W Ψ (pvar 2) (pt_dual (pvar 1))) as Hzx.
   { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1x]. }
-  assert (slt W Ψ (pvar 2) (pvar 0)) as Hzy.
+  assert (slt W Ψ (pvar 2) (pt_dual (pvar 0))) as Hzy.
   { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1y]. }
   tstep.
   { (* spawn (λu. let () = u in close c′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 1))) (Some (pvar 1)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pvar 1). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual (pvar 1)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* spawn (λu. let () = u in close d′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pvar 0). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual (pvar 0)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* spawn the sender of inr ∗ *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 1)) (Some (pvar 2)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 2 1))) (Some (pvar 2)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep.
-    - tstep; [|apply (KTSend _ _ _ 1 Tz_t SEnd (pvar 2)); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
+    - tstep; [|apply (KTSend _ _ _ 1 Tz_t SEnd (pt_dual (pvar 2))); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
       + tstep; first [tstep|cbn; apply t_inj2, (tv_unit W HW); reflexivity].
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 2 1). split; [done|]. right. apply (slt_po W _ (pvar 2) HW).
+        exists (pt_dual (pv 2 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pvar 2)) HW).
     - apply KTClos.
     - done.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 2 1). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pv 2 1)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply (tv_letp W HW _ _ _ _ _ _ (payload_at 1 Tz_t (pvar 2)) (TSess SEnd (pv 2 1)));
     [reflexivity| |].
   { tstep; [tstep|apply KTRecv|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
@@ -1078,13 +1074,13 @@ Proof.
       exists (FLt (sl0 2 5) (sl0 2 1)). split; [|reflexivity].
       exists (FLt (pv 0 5) (pv 0 1)). split_and!; [done| |reflexivity].
       cbn. lia. }
-    assert (slt W Ψ' (pvar 1) (pvar 0)) as Hxy.
+    assert (slt W Ψ' (pvar 1) (pt_dual (pvar 0))) as Hxy.
     { eapply sl_trans.
-      { apply (sl_fresh_r _ _ [pv 2 1; sl0 2 1] [sl0 2 5]); [|by left].
-        apply elem_of_app. left. by right; left. }
+      { apply (slt_freshp_r W Ψ' (pshift 2) Lc Hc (pvar 1) (sl0 0 5) true); [|by left].
+        apply elem_of_app. left. exact HgC. }
       eapply sl_trans; [exact Hdead|].
-      apply (sl_fresh_l _ _ [pv 2 1; sl0 2 1] [pvar 1; sl0 2 5]); [|by right; left].
-      apply elem_of_app. left. by right; right; left. }
+      apply (slt_freshp_l W Ψ' (pshift 1) Ld Hd (pvar 0) (sl0 1 1) false); [|by right; left].
+      apply elem_of_app. left. exact HgD. }
     tstep; [tstep|]. cbn. tstep.
     + tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; done|done].
@@ -1201,7 +1197,7 @@ Proof. by destruct b. Qed.
 Lemma db_rnode_lt W T F (b : bool) x y z :
   strict W →
   Erel 6 W (db_Θ3 x y z) T F (subst db_ρ db_rnode) →
-  if b then w_lt W y x else w_lt W x y.
+  if b then w_lt W y (pt_dual x) else w_lt W x (pt_dual y).
 Proof.
   intros HWs HE. rewrite db_rnode_subst in HE.
   (* the receive, at the payload bit b *)
@@ -1233,6 +1229,7 @@ Proof.
   by apply (db_case_lt W T F b x y).
 Qed.
 
+(* END POINTS: open, see report.
 Theorem db_rnode_unrealizable Φ Ψ F T x y z k :
   styped Φ Ψ (db_rctx x y z k) F db_rnode T → ¬ realizable Φ Ψ.
 Proof.
@@ -1246,7 +1243,7 @@ Proof.
   assert (Erel 6 W Θ (pinst_ty σ T) (sf_inst ρ (sf_pinst σ F)) (subst db_ρ db_rnode)) as HE.
   { apply (Hr 6 W Θ Θ db_ρ).
     - apply wext_refl, HWs.
-    - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
+    - apply tenv_comp_empty_l, (wf_rdsym _ HW).
     - unfold db_rctx, lenv_pinst. rewrite fmap_app, fmap_replicate. cbn.
       apply db_rground, HW. }
   pose proof (db_rnode_lt _ _ _ true _ _ _ HWs HE) as H1.
@@ -1254,6 +1251,9 @@ Proof.
   apply (proj2 HWs (pt_inst σ x)). exact (wf_lt_trans _ HW _ _ _ H2 H1).
 Qed.
 
+*)
+
+(* END POINTS: open, see report.
 Corollary db_rnode_untyped_top n C0 F T x y z k :
   creation_ok n nofact nofact (λ _, False) C0 →
   ¬ styped ∅ [(C0, ids n)] (db_rctx x y z k) F db_rnode T.
@@ -1265,6 +1265,7 @@ Proof.
   - intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty.
   - by apply wc0_holds.
 Qed.
+*)
 
 (** db_rnode is the tail of db_main after the three lets of new and the
     three spawns. *)

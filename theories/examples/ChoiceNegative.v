@@ -20,7 +20,15 @@
     E-Open, E-Conv and E-Pack are the rules whose conclusion does not
     fix the term. In a context whose bindings are neither unlimited nor
     existential ([plain]) the first three cannot fire, and E-Conv and
-    E-Pack only change the type of the conclusion ([sd_of]). *)
+    E-Pack only change the type of the conclusion ([sd_of]).
+
+    END POINTS: the inversion still runs, but with end points the two
+    arms ask δ ≺ x[0]‾ (the partner point of k) and x[0] ≺ δ̄ (the
+    partner point of d). These name four points and close no cycle, so
+    the final step fails, and the underivability theorems are commented
+    out ([t2i_underivable] to [negative_new_at]). The inversion lemmas
+    above them still compile. Whether the shared-point program now
+    types is open, see the report of the end-points port. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ChoiceEnc.
@@ -266,7 +274,7 @@ Qed.
 Lemma hfl_np Ψ Φ a b : hfl Ψ Φ a b → ∀ x y, a = NP x → b = NP y → hlt Ψ x y.
 Proof.
   unfold hlt.
-  induction 1 as [x0 y0 H|φ u H|x0 x' b H Hb IH|a y0 y' Ha IH H|a y0 b H1 IH1 H2 IH2|x0];
+  induction 1 as [x0 y0 H|φ u H|x0 x' b H Hb IH|a y0 y' Ha IH H|a y0 b H1 IH1 H2 IH2|x0|x0];
     intros x y Ea Eb.
   - injection Ea as <-. injection Eb as <-. by apply hl_h.
   - discriminate.
@@ -274,6 +282,7 @@ Proof.
   - injection Eb as <-. subst a. eapply hl_eqr; [|exact H]. by apply IH.
   - subst a b. eapply hl_trans; [by apply IH1|by apply IH2].
   - injection Ea as <-. injection Eb as <-. apply hl_po.
+  - injection Ea as <-. injection Eb as <-. apply hl_dpo.
 Qed.
 
 Lemma hub_fact Ψ Φ x F y : hub_below_s Ψ Φ (Some x) F → y ∈ F.1 → hlt Ψ x y.
@@ -388,6 +397,7 @@ Proof.
   exists x, r1, y1, r2, y2, r, y. by split_and!.
 Qed.
 
+(* END POINTS: open, see report.
 Theorem t2i_underivable Φ Ψ Δ F T a i :
   (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! i = Some (Some U) → U = TSess Sbr0 a) →
   ¬ styped Φ Ψ Δ F (t2i i) T.
@@ -466,6 +476,8 @@ Proof.
   apply (Hacy δ). by eapply hlt_trans.
 Qed.
 
+*)
+
 (** ** The body of the program after the two news
 
       body₀ = let () = spawn T1 in let () = spawn T3 in T2
@@ -473,10 +485,13 @@ Qed.
     The two spawns take a part of the context, and T2 runs in the rest.
     c′ is in the rest or nowhere, so T2 is underivable in either case. *)
 
+(* END POINTS: open, see report.
 Theorem t2_underivable Φ Ψ Δ F T a :
   (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! 2 = Some (Some U) → U = TSess Sbr0 a) →
   ¬ styped Φ Ψ Δ F t2 T.
 Proof. apply t2i_underivable. Qed.
+
+*)
 
 (** The body with any two spawned thunks: they are never inverted. *)
 Definition bodyg (i : nat) (e1 e3 : expr) : expr :=
@@ -484,6 +499,7 @@ Definition bodyg (i : nat) (e1 e3 : expr) : expr :=
 
 Definition body0 : expr := bodyg 2 t1_thunk t3_thunk.
 
+(* END POINTS: open, see report.
 Theorem bodyg_underivable Φ Ψ Δ F T a i e1 e3 :
   (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! i = Some (Some U) → U = TSess Sbr0 a) →
   ¬ styped Φ Ψ Δ F (bodyg i e1 e3) T.
@@ -503,6 +519,8 @@ Theorem body0_underivable Φ Ψ Δ F T a :
   (∀ p, ¬ hlt Ψ p p) → plain Δ → (∀ U, Δ !! 2 = Some (Some U) → U = TSess Sbr0 a) →
   ¬ styped Φ Ψ Δ F body0 T.
 Proof. apply bodyg_underivable. Qed.
+
+*)
 
 (** ** Top-level constraints
 
@@ -531,6 +549,7 @@ Proof.
   - by eapply geq_trans.
   - by apply geq_shift.
   - by apply geq_payload.
+  - by apply geq_dual.
 Qed.
 
 Lemma hfl_c0 n C Φ a b :
@@ -538,7 +557,7 @@ Lemma hfl_c0 n C Φ a b :
   ∀ x y, a = NP x → b = NP y → glt (c0_eq n C) (c0_lt n C) x y.
 Proof.
   intros Henv.
-  induction 1 as [x0 y0 H|φ u H|x0 x' b H Hb IH|a y0 y' Ha IH H|a y0 b H1 IH1 H2 IH2|x0];
+  induction 1 as [x0 y0 H|φ u H|x0 x' b H Hb IH|a y0 y' Ha IH H|a y0 b H1 IH1 H2 IH2|x0|x0];
     intros x y Ea Eb.
   - injection Ea as <-. injection Eb as <-. apply glt_base. by apply hyp_fact_c0.
   - discriminate.
@@ -546,6 +565,7 @@ Proof.
   - injection Eb as <-. subst a. eapply glt_eq; [apply geq_refl|by apply IH|by apply heqs_c0].
   - subst a b. eapply glt_trans; [by apply IH1|by apply IH2].
   - injection Ea as <-. injection Eb as <-. apply glt_po.
+  - injection Ea as <-. injection Eb as <-. apply glt_dpo.
 Qed.
 
 Lemma c0_irrefl n C : c0_acyclic n C → ∀ p, ¬ hlt [(C, ids n)] p p.
@@ -553,10 +573,13 @@ Proof.
   intros [Henv Hacy] p Hp. apply (Hacy p). by eapply (hfl_c0 n C ∅); [exact Henv|exact Hp|..].
 Qed.
 
+(* END POINTS: open, see report.
 Corollary body0_underivable_top n C Φ Δ F T a :
   c0_acyclic n C → plain Δ → (∀ U, Δ !! 2 = Some (Some U) → U = TSess Sbr0 a) →
   ¬ styped Φ [(C, ids n)] Δ F body0 T.
 Proof. intros HC. apply body0_underivable. by apply c0_irrefl. Qed.
+
+*)
 
 (** ** The route of [choice_typed]
 
@@ -574,6 +597,7 @@ Definition Δnew : lenv :=
   [Some (TSess (dual SEnd) (pd 0)); Some (TSess SEnd (pd 0)); None; None;
    Some (TSess (dual Sch0) (pa 0)); Some (TSess Sch0 (pa 0)); None; None].
 
+(* END POINTS: open, see report.
 Theorem negative_new_at C Φ F T e1 e3 :
   c0_acyclic 2 C → ¬ styped Φ [(C, ids 2)] Δnew F (bodyg 4 e1 e3) T.
 Proof.
@@ -584,3 +608,4 @@ Proof.
       injection HU as <-; split; intros [].
   - intros U HU. unfold Δnew in HU. simpl in HU. injection HU as <-. reflexivity.
 Qed.
+*)

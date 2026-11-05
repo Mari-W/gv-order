@@ -16,7 +16,9 @@
 
     In the empty world main creates c with {ι+k ≺ ι[0] ∣ k ∈ ℕ} and
     forces at (ι, ι[0]). The ceiling is the payload point ι[0], which no
-    channel occupies (sharp edges 105). *)
+    channel occupies (sharp edges 105). With end points the receiver
+    holds c′ at ῑ and main forces rcv at (ῑ, ι[0]), so the constraint
+    of c also has ῑ+k ≺ ι[0]. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -96,7 +98,7 @@ Qed.
     (0, k) for ι+k and (1, o) for ζ+o orders them (sharp edges 105). *)
 Abbreviation tcz := (Pt (NPayload (NVar 0) 0 0) 0).
 
-Definition tcc_P (g : fact) : Prop := ∃ k, g = FLt (pv 0 k) tcz.
+Definition tcc_P (g : fact) : Prop := ∃ k b, g = FLt (pt_polar b (pv 0 k)) tcz.
 Definition tcc_C : bcs := BCs [] tcc_P.
 
 Definition tcc_rank (x : point) : nat * nat :=
@@ -107,8 +109,9 @@ Proof.
   apply (cc_ok_inner peq plt tcc_P (λ x y, lexlt (tcc_rank x) (tcc_rank y))).
   - unfold lexlt. intros x y z; lia.
   - unfold lexlt. intros x; lia.
-  - intros [n o] _. unfold lexlt, tcc_rank, pt_shift. simpl. right. split; [done|lia].
-  - intros g [k ->] _. eexists _, _. split; [done|]. unfold lexlt, tcc_rank. simpl. left. lia.
+  - intros [n pb o] _. unfold lexlt, tcc_rank, pt_shift. simpl. right. split; [done|lia].
+  - intros g (k & [] & ->) _; eexists _, _; (split; [done|]); unfold lexlt, tcc_rank; simpl; left; lia.
+  - intros [n pb o] _. unfold lexlt, tcc_rank, pt_shift, pt_dual. simpl. right. split; [done|lia].
 Qed.
 
 Lemma tc_typed : styped ∅ [] [] (∅, None) tc_main TUnit.
@@ -120,14 +123,15 @@ Proof.
   cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sb tcc_C); [apply tcc_ok|constructor|].
   fresh_clean.
   set (Ψ := [(tcc_C, [pvar 0])]).
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) tc_C [pvar 0; tcz]) as HC.
-  { apply bcs_hold_intro. intros g (k & ->) _. cbn.
-    eapply (sl_hyp0 _ _ _ _ (pv 0 k) tcz); [by left|by exists k|cbn; lia|reflexivity|reflexivity]. }
-  assert (Forall (skn W Ψ) [pvar 0; tcz]) as HK.
-  { constructor; [eapply skn_inst; [by left|by left|done]|].
+  assert (∀ b, bcs_hold (seqs W Ψ) (slt W Ψ) tc_C [pt_polar b (pvar 0); tcz]) as HC.
+  { intros b. apply bcs_hold_intro. intros g (k & ->) _. cbn.
+    eapply (sl_hyp0 _ _ _ _ (pt_polar b (pv 0 k)) tcz);
+      [by left|by exists k, b|destruct b; cbn; lia|destruct b; reflexivity|reflexivity]. }
+  assert (∀ b, Forall (skn W Ψ) [pt_polar b (pvar 0); tcz]) as HK.
+  { intros b. constructor; [eapply skn_inst; [by left|by left|by destruct b]|].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   match goal with |- typed _ _ _ _ [Some ?A; _; None; None; Some ?B; Some ?D] _ _ _ =>
-    change A with (TSess (dual Sb) (pvar 0));
+    change A with (TSess (dual Sb) (pt_dual (pvar 0)));
     change B with (TBox 2 0 tc_C (TLolli None None TUnit tcr_body));
     change D with (TBox 2 0 tc_C (TLolli None None TUnit tcs_body)) end.
   tstep.
@@ -136,14 +140,14 @@ Proof.
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcr_body [pvar 0; tcz]);
-        [done|done|exact HC|exact HK|apply ubs_none|tstep].
+    - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcr_body [pt_dual (pvar 0); tcz]);
+        [done|done|exact (HC false)|exact (HK false)|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists tcz. split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
   - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcs_body [pvar 0; tcz]);
-      [done|done|exact HC|exact HK|apply ubs_none|tstep].
+      [done|done|exact (HC true)|exact (HK true)|apply ubs_none|tstep].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.

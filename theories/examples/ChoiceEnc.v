@@ -104,12 +104,18 @@ Proof. induction Δ; simpl; done. Qed.
 Lemma skn_payload W Ψ x i : skn W Ψ x → skn W Ψ (pt_payload x i).
 Proof. intros [H|(C & xs & y & Hg & Hy & E)]; [by left|right; by exists C, xs, y]. Qed.
 
+(** So is that of x̄. *)
+Lemma skn_dual W Ψ x : skn W Ψ x → skn W Ψ (pt_dual x).
+Proof. intros [H|(C & xs & y & Hg & Hy & E)]; [by left|right; by exists C, xs, y]. Qed.
+
 (** ** Selection is a derived form
 
-    sel_i takes the carrier at x and returns the continuation at x[i].
-    It blocks at x (send) and at x+1 (close), so its upper point is
-    x+1. send asks {x} ≺ {x[0], x[1]}, and close c asks x+1 ≺ x[i],
-    because sel_i holds k at x[i]. *)
+    sel_i takes the carrier at x and returns the continuation at x[i]‾.
+    It creates k at x[i]‾ and k′ at x[i], sends k′ and keeps k. It
+    blocks at x (send) and at x+1 (close), so its upper point is x+1.
+    send asks x ≺ x[0]‾ and x ≺ x[1]‾ for the heads of the sum, and
+    x ≺ x[i] for k, and close c asks x+1 ≺ x[i], because sel_i holds k
+    at x[i]‾, whose partner point is x[i] (end points). *)
 
 Section sel.
   Context (W : world) (HWs : strict W).
@@ -127,16 +133,17 @@ Section sel.
   Lemma sel_typed (i : nat) (inj : expr → expr) Φ Ψ Δ F S1 S2 S x :
     (i = 0 ∧ inj = Inj1 ∧ S = S1) ∨ (i = 1 ∧ inj = Inj2 ∧ S = S2) →
     skn W Ψ x → allunl Δ = true →
-    slt W Ψ x (sl0 x) → slt W Ψ x (sl1 x) → slt W Ψ (pt_shift 1 x) (pt_payload x i) →
+    slt W Ψ x (pt_dual (sl0 x)) → slt W Ψ x (pt_dual (sl1 x)) → slt W Ψ (pt_shift 1 x) (pt_payload x i) →
     typed W Φ Ψ ∅ Δ F
       (Lam (let_new (LetU (App EClos (App ESend (Pair (inj (Var 0)) (Var 4)))) (Var 1))))
-      (TLolli (Some (pt_shift 1 x)) None (TSess (Sch S1 S2) x) (TSess S (pt_payload x i))).
+      (TLolli (Some (pt_shift 1 x)) None (TSess (Sch S1 S2) x) (TSess S (pt_dual (pt_payload x i)))).
   Proof.
     intros Hi Hx Hu H0 H1 Hc. pose proof (proj1 HWs) as HW.
     set (φ := fresh (dom Φ)).
     apply (tv_lam W HW _ _ _ _ _ _ _ _ _ φ); [apply is_fresh|unl Hu; done|].
-    apply (t_new_at W _ _ _ _ _ _ _ S (pt_payload x i) HWs); [by apply skn_payload|].
-    assert (slt W Ψ x (pt_payload x i)) as Hxi by (destruct Hi as [(-> & _)|(-> & _)]; done).
+    apply (t_new_at W _ _ _ _ _ _ _ S (pt_dual (pt_payload x i)) HWs); [by apply skn_dual, skn_payload|].
+    assert (slt W Ψ x (pt_payload x i)) as Hxi
+      by (eapply sl_trans; [apply (slt_po W _ x HW)|exact Hc]).
     destruct Hi as [(-> & -> & ->)|(-> & -> & ->)].
     all: apply tv_letu; [exact HW|unl Hu; reflexivity| |];
       [|apply tv_var; [exact HW|unl Hu; reflexivity|unl Hu; reflexivity]].
@@ -152,16 +159,16 @@ Section sel.
 
   Lemma sel1_typed Φ Ψ Δ F S1 S2 x :
     skn W Ψ x → allunl Δ = true →
-    slt W Ψ x (sl0 x) → slt W Ψ x (sl1 x) → slt W Ψ (pt_shift 1 x) (sl0 x) →
+    slt W Ψ x (pt_dual (sl0 x)) → slt W Ψ x (pt_dual (sl1 x)) → slt W Ψ (pt_shift 1 x) (sl0 x) →
     typed W Φ Ψ ∅ Δ F sel1
-      (TLolli (Some (pt_shift 1 x)) None (TSess (Sch S1 S2) x) (TSess S1 (sl0 x))).
+      (TLolli (Some (pt_shift 1 x)) None (TSess (Sch S1 S2) x) (TSess S1 (pt_dual (sl0 x)))).
   Proof. intros. unfold sel1. apply (sel_typed 0 Inj1); auto. Qed.
 
   Lemma sel2_typed Φ Ψ Δ F S1 S2 x :
     skn W Ψ x → allunl Δ = true →
-    slt W Ψ x (sl0 x) → slt W Ψ x (sl1 x) → slt W Ψ (pt_shift 1 x) (sl1 x) →
+    slt W Ψ x (pt_dual (sl0 x)) → slt W Ψ x (pt_dual (sl1 x)) → slt W Ψ (pt_shift 1 x) (sl1 x) →
     typed W Φ Ψ ∅ Δ F sel2
-      (TLolli (Some (pt_shift 1 x)) None (TSess (Sch S1 S2) x) (TSess S2 (sl1 x))).
+      (TLolli (Some (pt_shift 1 x)) None (TSess (Sch S1 S2) x) (TSess S2 (pt_dual (sl1 x)))).
   Proof. intros. unfold sel2. apply (sel_typed 1 Inj2); auto. Qed.
 End sel.
 
@@ -169,15 +176,16 @@ End sel.
 
     branch receives the sum at x while the context holds Δ₂, closes the
     carrier at x+1 while it holds the sum and Δ₂, and continues in the
-    arm i with the continuation at x[i]. The sum has the heads x[0] and
-    x[1], so the close asks x+1 ≺ x[0] and x+1 ≺ x[1] whatever the arm. *)
+    arm i with the continuation at x[i]. The sum has the heads x[0]‾ and
+    x[1]‾, so the close asks x+1 ≺ x[0]‾ and x+1 ≺ x[1]‾ whatever the
+    arm. *)
 
 Lemma branch_typed W Φ Ψ Δ Δ1 Δ2 F e e1 e2 T1 T2 T x :
   world_wf W → lenv_split Δ Δ1 Δ2 →
   typed W Φ Ψ ∅ Δ1 (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) e (TSess (Sbr T1 T2) x) →
   ub_below_s W Ψ Φ (Some x) (sf_unionb F (lenv_heads Δ2) (lenv_bot Δ2)) →
   ub_below_s W Ψ Φ (Some (pt_shift 1 x))
-    (sf_unionb F ({[sl0 x]} ∪ {[sl1 x]} ∪ lenv_heads Δ2) (lenv_bot Δ2)) →
+    (sf_unionb F ({[pt_dual (sl0 x)]} ∪ {[pt_dual (sl1 x)]} ∪ lenv_heads Δ2) (lenv_bot Δ2)) →
   typed W Φ Ψ ∅ (Some (TSess T1 (sl0 x)) :: None :: None :: Δ2) F e1 T →
   typed W Φ Ψ ∅ (Some (TSess T2 (sl1 x)) :: None :: None :: Δ2) F e2 T →
   typed W Φ Ψ ∅ Δ F (branch e e1 e2) T.
@@ -224,7 +232,21 @@ Qed.
            branch B, close d      δ ≺ a[1]+1 (holds k)
 
     The top-level constraint states four of them, and program order and
-    transitivity give the rest. *)
+    transitivity give the rest.
+
+    With end points T2 holds c′ at ā, the arms receive k at a[0] and
+    a[1], T1 keeps k at a[0]‾, and every gate compares with a partner
+    point. The facts become
+
+      T1   sel₁ at a              a ≺ a[0]‾, a ≺ a[1]‾, a+1 ≺ a[0]
+      T2   recv c′ at ā           ā ≺ δ̄
+           close c′ at ā+1        ā+1 ≺ a[0]‾, ā+1 ≺ a[1]‾, ā+1 ≺ δ̄
+           branch A, close d      δ ≺ a[0]‾
+           branch B, recv k       a[1] ≺ δ̄
+           branch B, close d      δ ≺ a[1]‾+1
+
+    and the top-level constraint states seven of them. a ≺ ā+1 gives
+    the first two from ā+1 ≺ a[0]‾ and ā+1 ≺ a[1]‾. *)
 
 Abbreviation pa k := (pv 0 k).
 Abbreviation pd k := (pv 1 k).
@@ -232,7 +254,9 @@ Abbreviation pa0 k := (Pt (NPayload (NVar 0) 0 0) k).
 Abbreviation pa1 k := (Pt (NPayload (NVar 0) 0 1) k).
 
 Definition ch_fact (g : fact) : Prop :=
-  g = FLt (pa 1) (pa1 0) ∨ g = FLt (pa1 0) (pd 0) ∨ g = FLt (pd 0) (pa0 0) ∨ g = FLt (pd 0) (pa1 1).
+  g = FLt (pa 1) (pa0 0) ∨ g = FLt (pt_dual (pa 1)) (pt_dual (pa0 0)) ∨
+  g = FLt (pt_dual (pa 1)) (pt_dual (pa1 0)) ∨ g = FLt (pt_dual (pa 1)) (pt_dual (pd 0)) ∨
+  g = FLt (pd 0) (pt_dual (pa0 0)) ∨ g = FLt (pa1 0) (pt_dual (pd 0)) ∨ g = FLt (pd 0) (pt_dual (pa1 1)).
 Definition Cch : bcs := BCs [] ch_fact.
 
 Definition t1_thunk : expr := Lam (LetU (Var 0) (sendclose (App sel1 (Var 4)))).
@@ -257,9 +281,11 @@ Proof.
     | _ => 10 * pt_off x
     end).
   apply (c0_acyclic_rank 2 _ r).
-  - intros [p o]. unfold r, pt_shift. simpl. repeat case_match; lia.
-  - by intros ? ? [?|[?|[?|?]]].
-  - intros x y [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; unfold r; cbn; lia.
+  - intros [p b o]. unfold r, pt_shift. simpl. repeat case_match; lia.
+  - by intros ? ? [?|[?|[?|[?|[?|[?|?]]]]]].
+  - intros x y [[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]]]];
+      unfold r; cbn; lia.
+  - intros [p b o]. done.
 Qed.
 
 Lemma choice_typed : styped ∅ [(Cch, ids 2)] [] (∅, None) choice_main TUnit.
@@ -268,21 +294,24 @@ Proof.
   pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold choice_main.
   assert (∀ x y, ch_fact (FLt x y) → slt W Ψ x y) as Hf.
   { intros x y Hxy. apply (sl_hyp0 W Ψ ch_fact (ids 2) x y); [by left|done| | |].
-    - destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; cbn; lia.
-    - apply pt_inst_ids. destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; cbn; lia.
-    - apply pt_inst_ids. destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; cbn; lia. }
-  assert (slt W Ψ (pa 1) (pa1 0)) as F1 by (apply Hf; by left).
-  assert (slt W Ψ (pa1 0) (pd 0)) as F2 by (apply Hf; by right; left).
-  assert (slt W Ψ (pd 0) (pa0 0)) as F3 by (apply Hf; by right; right; left).
-  assert (slt W Ψ (pd 0) (pa1 1)) as F4 by (apply Hf; by right; right; right).
-  assert (slt W Ψ (pa 0) (pa 1)) as P0 by apply (slt_po W _ (pa 0) HW).
-  assert (slt W Ψ (pa0 0) (pa0 1)) as P1 by apply (slt_po W _ (pa0 0) HW).
-  assert (slt W Ψ (pa 1) (pd 0)) as D1 by (eapply sl_trans; [exact F1|exact F2]).
-  assert (slt W Ψ (pa 0) (pd 0)) as D2 by (eapply sl_trans; [exact P0|exact D1]).
-  assert (slt W Ψ (pa 1) (pa0 0)) as D3 by (eapply sl_trans; [exact D1|exact F3]).
-  assert (slt W Ψ (pa 0) (pa0 0)) as D4 by (eapply sl_trans; [exact P0|exact D3]).
-  assert (slt W Ψ (pa 0) (pa1 0)) as D5 by (eapply sl_trans; [exact P0|exact F1]).
-  assert (slt W Ψ (pa 1) (pa0 1)) as D6 by (eapply sl_trans; [exact D3|exact P1]).
+    - destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]]]]; cbn; lia.
+    - apply pt_inst_ids.
+      destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]]]]; cbn; lia.
+    - apply pt_inst_ids.
+      destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]]]]; cbn; lia. }
+  assert (slt W Ψ (pa 1) (pa0 0)) as F1 by (apply Hf; by left).
+  assert (slt W Ψ (pt_dual (pa 1)) (pt_dual (pa0 0))) as F2 by (apply Hf; do 1 right; by left).
+  assert (slt W Ψ (pt_dual (pa 1)) (pt_dual (pa1 0))) as F3 by (apply Hf; do 2 right; by left).
+  assert (slt W Ψ (pt_dual (pa 1)) (pt_dual (pd 0))) as F4 by (apply Hf; do 3 right; by left).
+  assert (slt W Ψ (pd 0) (pt_dual (pa0 0))) as F5 by (apply Hf; do 4 right; by left).
+  assert (slt W Ψ (pa1 0) (pt_dual (pd 0))) as F6 by (apply Hf; do 5 right; by left).
+  assert (slt W Ψ (pd 0) (pt_dual (pa1 1))) as F7 by (apply Hf; by do 6 right).
+  assert (slt W Ψ (pa 0) (pt_dual (pa 1))) as Q0 by apply sl_dpo.
+  assert (slt W Ψ (pa 0) (pt_dual (pa0 0))) as D4 by (eapply sl_trans; [exact Q0|exact F2]).
+  assert (slt W Ψ (pa 0) (pt_dual (pa1 0))) as D5 by (eapply sl_trans; [exact Q0|exact F3]).
+  assert (slt W Ψ (pa 1) (pt_dual (pa0 1))) as D6 by (eapply sl_trans; [exact F1|apply sl_dpo]).
+  assert (slt W Ψ (pt_dual (pa 0)) (pt_dual (pd 0))) as G1
+    by (eapply sl_trans; [apply (slt_po W _ (pt_dual (pa 0)) HW)|exact F4]).
   assert (skn W Ψ (pa 0)) as Ka by (right; exists Cch, (ids 2), (pvar 0); split_and!; [by left|by left|done]).
   assert (skn W Ψ (pd 0)) as Kd by (right; exists Cch, (ids 2), (pvar 1); split_and!; [by left|by right; left|done]).
   apply (t_new_at W _ _ _ _ _ _ _ (Sch Sd Sd) (pa 0) HWs Ka). cbn.
@@ -290,35 +319,35 @@ Proof.
   (* T1 *)
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pa0 1)) (Some (pa 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pa0 1))) (Some (pt_dual (pa 0))) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. unfold sendclose. tstep.
-    - tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (pa0 0)); cbn; set_solver|done|].
+    - tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (pt_dual (pa0 0))); cbn; set_solver|done|].
       + eapply tv_pair; [exact HW|reflexivity| |tstep].
         eapply tv_app; [exact HW|reflexivity| |tstep|].
-        * apply (sel1_typed W HWs _ _ _ _ Sd Sd (pa 0)); [exact Ka|reflexivity|exact D4|exact D5|exact D3].
+        * apply (sel1_typed W HWs _ _ _ _ Sd Sd (pa 0)); [exact Ka|reflexivity|exact D4|exact D5|exact F1].
         * apply ubs_intro; [intros y Hy; mem_cases Hy|].
-          exists (pa0 1). split; [done|]. right. exact D6.
+          exists (pt_dual (pa0 1)). split; [done|]. right. exact D6.
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pa0 1). split; [done|]. right. exact P1.
-    - apply (KTClos _ _ _ (pa0 1)).
+        exists (pt_dual (pa0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pa0 0)) HW).
+    - apply (KTClos _ _ _ (pt_dual (pa0 1))).
     - done.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pa0 1). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pa0 1)). split; [done|]. apply sle_refl, HW. }
   (* T3 *)
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pd 0)) (Some (pd 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pd 0))) (Some (pd 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
-    tstep; [tstep|apply (KTClos _ _ _ (pd 0))|done|].
+    tstep; [tstep|apply (KTClos _ _ _ (pt_dual (pd 0)))|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pd 0). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (pd 0)). split; [done|]. apply sle_refl, HW. }
   (* T2 *)
   cbn.
   eapply (branch_typed W _ _ _ [None; None; None; None; Some _; None; None; None]
                                [None; Some _; None; None; None; None; None; None]
-                               _ _ _ _ (dual Sd) (dual Sd) _ (pa 0) HW).
+                               _ _ _ _ (dual Sd) (dual Sd) _ (pt_dual (pa 0)) HW).
   { repeat constructor. }
   { tstep. }
   { apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
@@ -360,7 +389,14 @@ Proof. apply (soundness_source 2 Cch _ TUnit (c0_acyclic_creation _ _ ch_rank_ok
     derivation of a closed program meets has an acyclic ≺, by the
     argument of examples/Rejected.v, and δ ≺ a[0] ≺ δ is a cycle. The
     choice of the point plays no role: the lemma holds for every point
-    the two arms share. *)
+    the two arms share.
+
+    END POINTS: this argument predates end points. With them branch A
+    asks δ ≺ a[0]‾ (the partner point of k) and branch B asks
+    a[0] ≺ δ̄ (the partner point of d), which name four distinct points
+    and close no cycle. The two lemmas below stay true as stated, but
+    they no longer show that the shared-point program is rejected (see
+    the report of the end-points port and examples/ChoiceNegative.v). *)
 
 Definition Sch0 : sty :=
   SSeq (SSnd 1 (TSum (TSess (dual Sd) (pvar 0)) (TSess (dual Sd) (pvar 0)))) SEnd.
@@ -413,7 +449,15 @@ Qed.
       C = {p_n + 1 ≺ p_n[0], p_n + 1 ≺ p_n[1] ∣ n ∈ ℕ}
 
     C[p_1/ι] is C without its first round ([lp_sub]). The program
-    starts under C as its top-level constraint. *)
+    starts under C as its top-level constraint.
+
+    With end points the server holds c at p_n and the client c′ at
+    p̄_n: sel₁ at p̄_n keeps k at p_n[0]‾, and its continuation after the
+    receive lies at p_n[0]‾+1 = p̄_{n+1}. The close of the server asks
+    p_n+1 ≺ p_n[0]‾ and p_n+1 ≺ p_n[1]‾ for the heads of the sum, its
+    upper point p_n[1] asks p_n+1 ≺ p_n[1], and the client's close asks
+    p̄_n+1 ≺ p_n[i]. The client's send asks p̄_n ≺ p_n[i]‾, which
+    p̄_n ≺ p_n+1 gives. C has these five facts at every round. *)
 
 Definition Rs : sty := SMu (Sbr (SSeq (SSnd 0 TUnit) (SVar 0)) SEnd).
 
@@ -421,11 +465,15 @@ Fixpoint cvp (n : nat) : point :=
   match n with 0 => pvar 0 | S m => pt_shift 1 (pt_payload (cvp m) 0) end.
 
 Definition lp_P (g : fact) : Prop :=
-  ∃ n, g = FLt (pt_shift 1 (cvp n)) (sl0 (cvp n)) ∨ g = FLt (pt_shift 1 (cvp n)) (sl1 (cvp n)).
+  ∃ n, g = FLt (pt_shift 1 (cvp n)) (pt_dual (sl0 (cvp n))) ∨
+       g = FLt (pt_shift 1 (cvp n)) (pt_dual (sl1 (cvp n))) ∨
+       g = FLt (pt_shift 1 (cvp n)) (sl1 (cvp n)) ∨
+       g = FLt (pt_shift 1 (pt_dual (cvp n))) (sl0 (cvp n)) ∨
+       g = FLt (pt_shift 1 (pt_dual (cvp n))) (sl1 (cvp n)).
 Definition lp_C : bcs := BCs [] lp_P.
 
 Lemma pt_inst_payload σ x i : pt_inst σ (pt_payload x i) = pt_payload (pt_inst σ x) i.
-Proof. destruct x as [p o]. done. Qed.
+Proof. destruct x as [p [] o]; reflexivity. Qed.
 
 Lemma cvp_inst n : pt_inst (plist [cvp 1]) (cvp n) = cvp (S n).
 Proof.
@@ -439,18 +487,23 @@ Proof. induction n as [|n IH]; cbn; [lia|exact IH]. Qed.
 
 Lemma lp_sub g : lp_P g → fact_scoped 1 g → lp_P (fact_map (pt_inst (plist [cvp 1])) g).
 Proof.
-  intros (n & [-> | ->]) _; exists (S n); cbn [fact_map];
-    rewrite pt_inst_shift, pt_inst_payload, cvp_inst; [left|right]; done.
+  intros (n & Hf) _; exists (S n); repeat destruct Hf as [->|Hf]; subst; cbn [fact_map];
+    repeat rewrite ?pt_inst_shift, ?pt_inst_dual, ?pt_inst_payload, ?cvp_inst;
+    repeat (first [left; reflexivity|right]); reflexivity.
 Qed.
 
-Lemma lp_fact W Ψ n i : (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (pt_shift 1 (cvp n)) (pt_payload (cvp n) i).
+Lemma lp_hyp W Ψ x y : (lp_C, ids 1) ∈ Ψ → lp_P (FLt x y) → slt W Ψ x y.
 Proof.
-  intros Hg Hi. pose proof (cvp_vb n) as Hv.
-  apply (sl_hyp0 W Ψ lp_P (ids 1) (pt_shift 1 (cvp n)) (pt_payload (cvp n) i)); [done| | | |].
-  - exists n. destruct i as [|[|]]; [by left|by right|lia].
-  - split; cbn; done.
-  - by apply pt_inst_ids.
-  - by apply pt_inst_ids.
+  intros Hg Hf.
+  assert (pn_vb 1 (pt_name x) ∧ pn_vb 1 (pt_name y)) as [Hx Hy].
+  { destruct Hf as (n & Hf). pose proof (cvp_vb n) as Hv.
+    repeat destruct Hf as [Hf|Hf]; injection Hf as -> ->; simpl; auto. }
+  apply (sl_hyp0 W Ψ lp_P (ids 1) x y); [done|done|split; done|by apply pt_inst_ids|by apply pt_inst_ids].
+Qed.
+
+Lemma lp_fact W Ψ n i : (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (pt_shift 1 (cvp n)) (pt_dual (pt_payload (cvp n) i)).
+Proof.
+  intros Hg Hi. apply lp_hyp; [done|]. exists n. destruct i as [|[|]]; [by left|right; by left|lia].
 Qed.
 
 Lemma lp_call W Ψ : (lp_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) lp_C [cvp 1].
@@ -469,10 +522,22 @@ Proof. intros Hg Hx. right. exists C, (ids 1), (pvar 0). split_and!; [done|by le
 Lemma cvp_root n : pt_root (cvp n) = NVar 0.
 Proof. induction n as [|n IH]; [done|]. exact IH. Qed.
 
-(** Selection at round n asks p_n ≺ p_n[0], p_n ≺ p_n[1] and
-    p_n + 1 ≺ p_n[i], all from C and program order. *)
-Lemma lp_sel W Ψ n i : world_wf W → (lp_C, ids 1) ∈ Ψ → i < 2 → slt W Ψ (cvp n) (pt_payload (cvp n) i).
-Proof. intros HW Hg Hi. eapply sl_trans; [apply (slt_po W _ _ HW)|by apply lp_fact]. Qed.
+(** Selection at round n, at p̄_n, asks p̄_n ≺ p_n[0]‾, p̄_n ≺ p_n[1]‾
+    and p̄_n + 1 ≺ p_n[i], all from C and program order. *)
+Lemma lp_sel W Ψ n i : (lp_C, ids 1) ∈ Ψ → i < 2 →
+  slt W Ψ (pt_dual (cvp n)) (pt_dual (pt_payload (cvp n) i)).
+Proof.
+  intros Hg Hi. eapply sl_trans; [apply sl_dpo|]. rewrite pt_dual_dual. by apply lp_fact.
+Qed.
+
+Lemma lp_selc W Ψ n i : (lp_C, ids 1) ∈ Ψ → i < 2 →
+  slt W Ψ (pt_shift 1 (pt_dual (cvp n))) (pt_payload (cvp n) i).
+Proof.
+  intros Hg Hi. apply lp_hyp; [done|]. exists n. destruct i as [|[|]]; [do 3 right; by left|by do 4 right|lia].
+Qed.
+
+Lemma lp_up W Ψ n : (lp_C, ids 1) ∈ Ψ → slt W Ψ (pt_shift 1 (cvp n)) (sl1 (cvp n)).
+Proof. intros Hg. apply lp_hyp; [done|]. exists n. do 2 right. by left. Qed.
 
 Definition srv_body : ty := TLolli (Some (sl1 (pv 0 0))) None (TSess Rs (pv 0 0)) TUnit.
 Definition Tsrv : ty := TBox 1 0 lp_C (TLolli None None TUnit srv_body).
@@ -499,12 +564,12 @@ Proof.
   { eapply t_conv; [|tstep]. conv_sess. }
   { apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (sl1 (pv 0 0)). split; [done|]. right.
-    eapply sl_trans; [apply (slt_po W _ (pv 0 0) HW)|apply (lp_fact W Ψ' 0 1 Hg); lia]. }
+    eapply sl_trans; [apply (slt_po W _ (pv 0 0) HW)|apply (lp_up W Ψ' 0 Hg)]. }
   { apply ubs_intro; [intros y Hy; mem_cases Hy; apply (lp_fact W Ψ' 0 _ Hg); lia|].
-    exists (sl1 (pv 0 0)). split; [done|]. right. apply (lp_fact W Ψ' 0 1 Hg); lia. }
+    exists (sl1 (pv 0 0)). split; [done|]. right. apply (lp_up W Ψ' 0 Hg). }
   - (* Next *)
     unfold next_arm. tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (sl1 (cvp 1))) (Some (sl0 (pv 0 0))) 2); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (sl1 (cvp 1))) (Some (pt_dual (sl0 (pv 0 0)))) 2); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
@@ -516,7 +581,7 @@ Proof.
       * apply ubs_intro; [intros y Hy; mem_cases Hy|].
         exists (sl1 (cvp 1)). split; [done|]. right.
         eapply sl_trans; [apply (slt_po W _ _ HW)|].
-        eapply sl_trans; [apply (slt_po W _ (cvp 1) HW)|apply (lp_fact W Ψ' 1 1 Hg); lia].
+        eapply sl_trans; [apply (slt_po W _ (cvp 1) HW)|apply (lp_up W Ψ' 1 Hg)].
     + apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (sl1 (cvp 1)). split; [done|]. apply sle_refl, HW.
   - (* Stop *)
@@ -542,9 +607,10 @@ Definition lp_rank_n : pname → nat :=
 Lemma lp_acyclic : c0_acyclic 1 lp_C.
 Proof.
   apply (c0_acyclic_rank 1 _ (λ x, lp_rank_n (pt_name x) + pt_off x)).
-  - intros [p o]. cbn. lia.
-  - by intros ? ? [n [?|?]].
-  - intros x y [n [[= -> ->]|[= -> ->]]]; cbn; lia.
+  - intros [p b o]. cbn. lia.
+  - by intros ? ? [n [?|[?|[?|[?|?]]]]].
+  - intros x y [n [[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]]]; cbn; lia.
+  - intros [p b o]. done.
 Qed.
 
 Lemma loop_typed : styped ∅ [(lp_C, ids 1)] [] (∅, None) loop_main TUnit.
@@ -558,7 +624,7 @@ Proof.
   apply (t_new_at W _ _ _ _ _ _ _ Rs (pv 0 0) HWs); [by apply (skn_v0 W _ lp_C)|]. cbn.
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (sl1 (pv 0 0))) (Some (pv 0 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (sl1 (pv 0 0))) (Some (pt_dual (pv 0 0))) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
@@ -573,8 +639,9 @@ Proof.
   tstep.
   { tstep; [|apply KTRecv| |].
     - eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
-      + apply (sel1_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (cvp 0)); [apply Hk|reflexivity|
-          apply (lp_sel W Ψ 0 0); [done|done|lia]|apply (lp_sel W Ψ 0 1); [done|done|lia]|apply (lp_fact W Ψ 0 0); [done|lia]].
+      + apply (sel1_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (pt_dual (cvp 0)));
+          [apply skn_dual, Hk|reflexivity|
+          apply (lp_sel W Ψ 0 0); [done|lia]|apply (lp_sel W Ψ 0 1); [done|lia]|apply (lp_selc W Ψ 0 0); [done|lia]].
       + eapply t_conv; [|tstep]. conv_sess.
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
@@ -583,8 +650,9 @@ Proof.
   tstep.
   { tstep; [|apply KTRecv| |].
     - eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
-      + apply (sel1_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (cvp 1)); [apply Hk|reflexivity|
-          apply (lp_sel W Ψ 1 0); [done|done|lia]|apply (lp_sel W Ψ 1 1); [done|done|lia]|apply (lp_fact W Ψ 1 0); [done|lia]].
+      + apply (sel1_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (pt_dual (cvp 1)));
+          [apply skn_dual, Hk|reflexivity|
+          apply (lp_sel W Ψ 1 0); [done|lia]|apply (lp_sel W Ψ 1 1); [done|lia]|apply (lp_selc W Ψ 1 0); [done|lia]].
       + eapply t_conv; [|tstep]. conv_sess.
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
@@ -593,8 +661,9 @@ Proof.
   tstep; [|apply KTClos|done|]; cycle 1.
   { apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
   eapply tv_app; [exact HW|reflexivity| | |apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
-  - apply (sel2_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (cvp 2)); [apply Hk|reflexivity|
-      apply (lp_sel W Ψ 2 0); [done|done|lia]|apply (lp_sel W Ψ 2 1); [done|done|lia]|apply (lp_fact W Ψ 2 1); [done|lia]].
+  - apply (sel2_typed W HWs _ _ _ _ (SSeq (SRcv 0 TUnit) (dual Rs)) SEnd (pt_dual (cvp 2)));
+      [apply skn_dual, Hk|reflexivity|
+      apply (lp_sel W Ψ 2 0); [done|lia]|apply (lp_sel W Ψ 2 1); [done|lia]|apply (lp_selc W Ψ 2 1); [done|lia]].
   - eapply t_conv; [|tstep]. conv_sess.
 Qed.
 

@@ -37,6 +37,13 @@
     The caller instantiates both variables by one point γ, where the
     alias is reflexivity.
 
+    With end points the send owes ι ≺ (ι[0])‾, the gates compare with
+    partner points, and the lower point of cg is ῑ. C then states
+    ι′ ≺ (ι′[0])‾ and ι′‾ ≺ (ι′[0])‾ in place of ι′ ≺ ι′[0], the main
+    program creates c with {γ ≺ (γ[0])‾, γ̄ ≺ (γ[0])‾, γ[0] ≺ γ+1,
+    γ[0] ≺ γ̄+1}, and the derivation also uses the dual congruence
+    [se_dual] (ι ≡ ι′ gives ῑ ≡ ι′‾).
+
       cg_main = let (g, w) = ⟨cg, ∗⟩ in let () = w in
                 let (c, c′) = new ∗ in            C_c = {γ ≺ γ[0], γ[0] ≺ γ+1}
                 let (e, e′) = new ∗ in            at γ[0]
@@ -71,13 +78,17 @@ Definition Scg : sty := SSeq (SSnd 1 (TSess SEnd (pvar 0))) SEnd.
 
 Abbreviation cgs a := (Pt (NPayload (NVar a) 0 0) 0).
 
+(** With end points the send owes ι ≺ (ι[0])‾, the partner point of the
+    payload, and the lower point ῑ of the box asks ῑ ≺ (ι′[0])‾. C states
+    ι′ ≺ (ι′[0])‾ and ι′‾ ≺ (ι′[0])‾ in place of ι′ ≺ ι′[0]. *)
 Definition cg_P (g : fact) : Prop :=
-  g = FEq (pvar 0) (pvar 1) ∨ g = FLt (pvar 1) (Pt (NPayload (NVar 1) 0 0) 0).
+  g = FEq (pvar 0) (pvar 1) ∨ g = FLt (pvar 1) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)) ∨
+  g = FLt (pt_dual (pvar 1)) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)).
 
 Definition cg_C : bcs := BCs [] cg_P.
 
 Definition cg_body : ty :=
-  TLolli (Some (pv 1 2)) (Some (pv 0 0))
+  TLolli (Some (pv 1 2)) (Some (pt_dual (pv 0 0)))
     (TProd (TProd (TSess Scg (pv 0 0)) (TSess SEnd (cgs 1))) (TSess SEnd (pv 1 2)))
     TUnit.
 
@@ -86,9 +97,11 @@ Definition cgbox : expr :=
     (LetP (Pair (App ESend (Pair (Var 0) (Var 1))) EUnit) (LetU (Var 0)
       (LetU (App EClos (Var 1)) (App EClos (Var 4)))))))).
 
-(** The creation constraint of c in main, {γ ≺ γ[0], γ[0] ≺ γ+1}. *)
+(** The creation constraint of c in main, {γ ≺ (γ[0])‾, γ̄ ≺ (γ[0])‾,
+    γ[0] ≺ γ+1, γ[0] ≺ γ̄+1}. *)
 Definition cgc_P (g : fact) : Prop :=
-  g = FLt (pvar 0) (cgs 0) ∨ g = FLt (cgs 0) (pv 0 1).
+  g = FLt (pvar 0) (pt_dual (cgs 0)) ∨ g = FLt (pt_dual (pvar 0)) (pt_dual (cgs 0)) ∨
+  g = FLt (cgs 0) (pv 0 1) ∨ g = FLt (cgs 0) (pt_dual (pv 0 1)).
 
 Definition cgc_C : bcs := BCs [] cgc_P.
 
@@ -114,9 +127,11 @@ Proof.
   apply (cc_ok_inner peq plt cgc_P (λ x y, cg_rank x < cg_rank y)).
   - intros x y z; lia.
   - intros x; lia.
-  - intros [p o] _. unfold cg_rank, pt_shift. cbn.
+  - intros [p pb o] _. unfold cg_rank, pt_shift. cbn.
     destruct p as [a|a|q b i]; cbn; [lia| |]; repeat case_match; lia.
-  - intros g [-> | ->] _; eexists _, _; split; [done|cbn; lia|done|cbn; lia].
+  - intros g [-> | [-> | [-> | ->]]] _; eexists _, _; (split; [done|]); cbn; lia.
+  - intros [p pb o] _. unfold cg_rank, pt_shift, pt_dual. cbn.
+    destruct p as [a|a|q b i]; cbn; [lia| |]; repeat case_match; lia.
 Qed.
 
 Lemma cgbox_typed W F :
@@ -129,25 +144,43 @@ Proof.
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → seqs W Ψ (pv 0 0) (pv 1 0)) as Heq.
   { intros Ψ Hg. eapply (se_hyp0 _ _ _ _ (pvar 0) (pvar 1));
       [exact Hg|by left|cbn; lia|reflexivity|reflexivity]. }
-  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 1 0) (cgs 1)) as Hs.
-  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (pvar 1) (Pt (NPayload (NVar 1) 0 0) 0));
-      [exact Hg|by right|cbn; lia|reflexivity|reflexivity]. }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 1 0) (pt_dual (cgs 1))) as Hs.
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (pvar 1) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)));
+      [exact Hg|by right; left|cbn; lia|reflexivity|reflexivity]. }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pt_dual (pv 1 0)) (pt_dual (cgs 1))) as Hs'.
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (pt_dual (pvar 1)) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)));
+      [exact Hg|by right; right|cbn; lia|reflexivity|reflexivity]. }
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → seqs W Ψ (cgs 1) (cgs 0)) as Hpayload.
   { intros Ψ Hg. apply (se_payload W Ψ (pv 1 0) (pv 0 0) 0), se_sym, Heq, Hg. }
-  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 0) (cgs 0)) as HsendP.
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 0) (pt_dual (cgs 0))) as HsendP.
   { intros Ψ Hg. eapply sl_eql; [by apply Heq|].
-    eapply sl_eqr; [by apply Hs|by apply Hpayload]. }
-  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 0) (cgs 1)) as Hlo.
-  { intros Ψ Hg. eapply sl_eql; [by apply Heq|by apply Hs]. }
+    eapply sl_eqr; [by apply Hs|]. apply se_dual. by apply Hpayload. }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → seqs W Ψ (pt_dual (pv 0 0)) (pt_dual (pv 1 0))) as Heqd.
+  { intros Ψ Hg. apply se_dual. by apply Heq. }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pt_dual (pv 0 0)) (pt_dual (cgs 1))) as Hlo.
+  { intros Ψ Hg. eapply sl_eql; [by apply Heqd|by apply Hs']. }
   assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 0) (pv 1 2)) as Hd.
   { intros Ψ Hg. eapply sl_eql; [by apply Heq|]. apply slt_po_lt; [exact HW|cbn; lia]. }
-  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 1) (pv 1 2)) as Hcd.
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 1 1) (pt_dual (pv 1 2))) as Hdd1.
+  { intros Ψ Hg. apply (sl_dpo W Ψ (pv 1 1)). }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 0) (pt_dual (pv 1 2))) as Hd'.
+  { intros Ψ Hg. eapply sl_eql; [by apply Heq|].
+    eapply sl_trans; [apply (slt_po_lt W Ψ _ 0 1 HW); lia|apply (Hdd1 _ Hg)]. }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pt_dual (pv 0 0)) (pt_dual (pv 1 2))) as Hld.
+  { intros Ψ Hg. eapply sl_eql; [by apply Heqd|].
+    pose proof (slt_po W Ψ (pt_dual (pv 1 0)) HW) as G1. pose proof (slt_po W Ψ (pt_dual (pv 1 1)) HW) as G2.
+    unfold pt_shift, pt_dual in G1, G2. simpl in G1, G2. eapply sl_trans; [exact G1|exact G2]. }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 1) (pt_dual (pv 1 2))) as Hcd.
+  { intros Ψ Hg. eapply sl_eql.
+    - apply (se_shift W Ψ (pv 0 0) (pv 1 0)), Heq, Hg.
+    - apply (Hdd1 _ Hg). }
+  assert (∀ Ψ, (cg_C, [pvar 0; pvar 1]) ∈ Ψ → slt W Ψ (pv 0 1) (pv 1 2)) as Hcd'.
   { intros Ψ Hg. eapply sl_eql.
     - apply (se_shift W Ψ (pv 0 0) (pv 1 0)), Heq, Hg.
     - apply slt_po_lt; [exact HW|cbn; lia]. }
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ _ 1); [set_solver| |].
   { intros y Hy. mem_cases Hy;
-      first [apply sle_refl, HW|right; first [apply Hlo; by left|apply Hd; by left]]. }
+      first [apply sle_refl, HW|right; first [apply Hlo; by left|apply Hld; by left]]. }
   cbn. eapply (tv_letp W HW _ _ _ _ _ _
                  (TProd (TSess Scg (pv 0 0)) (TSess SEnd (cgs 1))) (TSess SEnd (pv 1 2)));
     [reflexivity|tstep|].
@@ -163,13 +196,13 @@ Proof.
     - apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) SEnd (pv 0 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. apply HsendP. by left.
     - kscope.
-    - apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hd; by left|].
+    - apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hd'; by left|].
       exists (pv 1 2). split; [done|]. right. apply Hd. by left. }
   cbn. tstep; [tstep|]. cbn. tstep.
   { (* close c at ι+1 against d at ι′+2 *)
     tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; apply Hcd; by left|].
-    exists (pv 1 2). split; [done|]. right. apply Hcd. by left. }
+    exists (pv 1 2). split; [done|]. right. apply Hcd'. by left. }
   tstep; [tstep|apply KTClos|done|].
   apply ubs_intro; [intros y Hy; mem_cases Hy|].
   exists (pv 1 2). split; [done|]. apply sle_refl, HW.
@@ -186,12 +219,16 @@ Proof.
   apply (t_new_open W _ _ ∅ _ _ _ _ Scg cgc_C); [apply cgc_ok|constructor|].
   fresh_clean.
   set (Ψ := [(cgc_C, [pvar 0])]).
-  assert (slt W Ψ (pvar 0) (cgs 0)) as Hgs.
-  { eapply (sl_hyp0 _ _ _ _ (pvar 0) (cgs 0)); [by left|by left|cbn; lia|done|done]. }
+  assert (slt W Ψ (pvar 0) (pt_dual (cgs 0))) as Hgs.
+  { eapply (sl_hyp0 _ _ _ _ (pvar 0) (pt_dual (cgs 0))); [by left|by left|cbn; lia|done|done]. }
+  assert (slt W Ψ (pt_dual (pvar 0)) (pt_dual (cgs 0))) as Hgs'.
+  { eapply (sl_hyp0 _ _ _ _ (pt_dual (pvar 0)) (pt_dual (cgs 0))); [by left|by right; left|cbn; lia|done|done]. }
   assert (slt W Ψ (cgs 0) (pv 0 1)) as Hsg.
-  { eapply (sl_hyp0 _ _ _ _ (cgs 0) (pv 0 1)); [by left|by right|cbn; lia|done|done]. }
+  { eapply (sl_hyp0 _ _ _ _ (cgs 0) (pv 0 1)); [by left|by right; right; left|cbn; lia|done|done]. }
+  assert (slt W Ψ (cgs 0) (pt_dual (pv 0 1))) as Hsg'.
+  { eapply (sl_hyp0 _ _ _ _ (cgs 0) (pt_dual (pv 0 1))); [by left|by right; right; right|cbn; lia|done|done]. }
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) cg_C [pvar 0; pvar 0]) as HC.
-  { apply bcs_hold_intro. intros g [-> | ->] _; cbn; [apply se_refl|exact Hgs]. }
+  { apply bcs_hold_intro. intros g [-> | [-> | ->]] _; cbn; [apply se_refl|exact Hgs|exact Hgs']. }
   assert (Forall (skn W Ψ) [pvar 0; pvar 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
@@ -202,43 +239,43 @@ Proof.
   cbn. tstep.
   { (* the receiver of c: recv at γ, close the payload at γ[0], close at γ+1 *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 1))) (Some (pv 0 0)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
-    eapply (tv_letp W HW _ _ _ _ _ _ (TSess SEnd (cgs 0)) (TSess SEnd (pv 0 1)));
+    eapply (tv_letp W HW _ _ _ _ _ _ (TSess SEnd (cgs 0)) (TSess SEnd (pt_dual (pv 0 1))));
       [reflexivity| |].
-    { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess (dual Scg) (pv 0 0))).
+    { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pt_dual (pv 0 0))) (TSess (dual Scg) (pt_dual (pv 0 0)))).
       - tstep.
       - apply KTRecv.
       - kscope.
       - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pv 0 0) HW). }
+        exists (pt_dual (pv 0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pv 0 0)) HW). }
     cbn. tstep.
     { tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hsg|].
-      exists (pv 0 1). split; [done|]. right. exact Hsg. }
+      exists (pt_dual (pv 0 1)). split; [done|]. right. exact Hsg'. }
     tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { (* close e′ at γ[0] *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (cgs 0)) (Some (cgs 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (cgs 0))) (Some (cgs 0)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (cgs 0). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (cgs 0)). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { (* close d′ at γ+2 *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 2)) (Some (pv 0 2)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 2))) (Some (pv 0 2)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pv 0 2). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (pv 0 2)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
   - apply (typed_force0 W _ _ _ _ _ _ 2 cg_C None cg_body [pvar 0; pvar 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].

@@ -56,9 +56,12 @@ From LRGV Require Export examples.LitTools.
 
 Set Default Proof Using "All".
 
+(** With end points the facts hold between all polarities of their two
+    points: the server blocks on the fresh reply channel at (ι[0])‾ while it holds r at ι,
+    whose partner point is ῑ. *)
 Definition fc_P (g : fact) : Prop :=
-  ∃ n, g = FLt (Pt (payloadv (S n)) 0) (Pt (payloadv n) 0) ∨
-       g = FLt (Pt (payloadv (S n)) 1) (Pt (payloadv n) 0).
+  ∃ n c c', g = FLt (pt_polar c (Pt (payloadv (S n)) 0)) (pt_polar c' (Pt (payloadv n) 0)) ∨
+            g = FLt (pt_polar c (Pt (payloadv (S n)) 1)) (pt_polar c' (Pt (payloadv n) 0)).
 
 Definition fc_C : bcs := BCs [] fc_P.
 
@@ -82,10 +85,14 @@ Definition fc_main : expr :=
                (App (App EForce (Var 4)) (Pair (Inj2 EUnit) (Var 2))))))
         (recvclose (Var 0))))).
 
+Lemma fc_inst_polar σ c x : pt_inst σ (pt_polar c x) = pt_polar c (pt_inst σ x).
+Proof. destruct c; [done|apply pt_inst_dual]. Qed.
+
 Lemma fc_sub g : fc_P g → fact_scoped 1 g → fc_P (fact_map (pt_inst (plist [pcr])) g).
 Proof.
-  intros (n & [-> | ->]) _; exists (S n); [left|right];
-    cbn [fact_map]; unfold pt_inst; cbn [pt_name pt_off]; by rewrite !payloadv_inst.
+  intros (n & c & c' & [-> | ->]) _; exists (S n), c, c'; [left|right];
+    cbn [fact_map]; rewrite !fc_inst_polar; unfold pt_inst; cbn [pt_name pt_off pt_pol pt_polar];
+    by rewrite !payloadv_inst.
 Qed.
 
 Lemma fc_call W Ψ : (fc_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) fc_C [pcr].
@@ -93,7 +100,7 @@ Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact fc_sub]. Qed.
 
 Lemma fc_ok peq plt : cc_ok peq plt fc_C.
 Proof.
-  apply cc_ok_dlt. intros g [n [-> | ->]] _; eexists _, _; split; [done| |done|];
+  apply cc_ok_dlt. intros g (n & c & c' & [-> | ->]) _; destruct c, c'; eexists _, _; (split; [done|]);
     left; cbn; rewrite !sdepth_payloadv; lia.
 Qed.
 
@@ -104,12 +111,12 @@ Proof.
   apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 fc_C fc_body. cbn. unfold fc_body.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
-  assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ pcr (pv 0 0)) as Hq.
-  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (payloadv 1) 0) (Pt (payloadv 0) 0));
-      [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
-  assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ (pt_shift 1 pcr) (pv 0 0)) as Hq1.
-  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (Pt (payloadv 1) 1) (Pt (payloadv 0) 0));
-      [exact Hg|cmem|cbn; lia|reflexivity|reflexivity]. }
+  assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ (pt_dual pcr) (pt_dual (pv 0 0))) as Hq.
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (pt_dual (Pt (payloadv 1) 0)) (pt_dual (Pt (payloadv 0) 0)));
+      [exact Hg|exists 0, false, false; by left|cbn; lia|reflexivity|reflexivity]. }
+  assert (∀ Ψ, (fc_C, [pvar 0]) ∈ Ψ → slt W Ψ (pt_shift 1 (pt_dual pcr)) (pt_dual (pv 0 0))) as Hq1.
+  { intros Ψ Hg. eapply (sl_hyp0 _ _ _ _ (pt_dual (Pt (payloadv 1) 1)) (pt_dual (Pt (payloadv 0) 0)));
+      [exact Hg|exists 0, false, false; by right|cbn; lia|reflexivity|reflexivity]. }
   cbn. eapply (tv_letp W HW _ _ _ _ _ _ (TSum TUnit TUnit) (TSess Sd (pv 0 0)));
     [reflexivity|tstep|].
   cbn. eapply (tv_case W _ _ _ _ _ _ _ TUnit TUnit TUnit); [exact HW|reflexivity|tstep| |].
@@ -128,7 +135,7 @@ Proof.
     { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
     cbn. tstep.
     { tstep; [|apply KTSpawn|done|apply ubs_none].
-      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 pcr)) (Some pcr) 2);
+      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 pcr)) (Some (pt_dual pcr)) 2);
         [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
@@ -146,15 +153,15 @@ Proof.
       - tstep; [tstep|apply KTRecv|kscope|].
         apply ubs_intro;
           [intros y Hy; mem_cases Hy;
-           first [apply Hq; by left|apply Hq1; by left|apply (slt_po W _ pcr HW)]|].
+           first [apply Hq; by left|apply Hq1; by left|apply (slt_po W _ (pt_dual pcr) HW)]|].
         exists (pv 0 1). split; [done|]. right.
-        eapply sl_trans; [apply Hq; by left|apply (slt_po W _ (pv 0 0) HW)].
+        eapply sl_trans; [apply Hq; by left|apply (sl_dpo W _ (pt_dual (pv 0 0)))].
       - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
         apply ubs_intro;
           [intros y Hy; mem_cases Hy;
            first [apply Hq1; by left|apply Hq; by left]|].
         exists (pv 0 1). split; [done|]. right.
-        eapply sl_trans; [apply Hq1; by left|apply (slt_po W _ (pv 0 0) HW)]. }
+        eapply sl_trans; [apply Hq1; by left|apply (sl_dpo W _ (pt_dual (pv 0 0)))]. }
     cbn. unfold sendclose. tstep.
     + tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
@@ -184,7 +191,7 @@ Proof.
   { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pt_dual (pv 0 0))) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.

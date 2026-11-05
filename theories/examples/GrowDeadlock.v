@@ -8,7 +8,9 @@
     on d, and nothing steps ([grow_not_df]). Under growth at internal
     choices without an owner (§4.2) each component types on its own, K₁
     with x ≺ y in its inl branch and K₂ with y ≺ x in its inl branch. So
-    that candidate is unsound. *)
+    that candidate is unsound. With end points K₂ holds the other ends
+    at x̄ and ȳ, and the two inl branches ask x ≺ ȳ and ȳ ≺ x, which is
+    still a cycle. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.DataBranch.
