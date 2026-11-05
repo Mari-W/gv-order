@@ -407,16 +407,22 @@ Definition Θany (k : nat) : pctx := PCtx 0 k (λ _ _, True).
 
 (** The coarse ceiling and the floor of the walks from κ, with the
     upper and the lower point of the anchor b, and the rise of every
-    walk at every step to x[i], which gives x ≺ x[i] at a choice (K11). *)
+    walk at every step to x[i], which gives x ≺ x[i] at a choice (K11).
+    End points: the two ends of every walk point are aliases, x ≡ x̄
+    (the denotation ignores the polarity). *)
 Definition pex_fact (κ b : nat) (g : fact) : Prop :=
   (∃ u, g = FLt (mwalk (pvar κ) u) (rpt (pvar b) (RHi [PTop]))) ∨
   (∃ u, g = FLt (rpt (pvar b) (RLo [LP PBot])) (mwalk (pvar κ) u)) ∨
-  (∃ u i, g = FLt (mwalk (pvar κ) u) (pt_payload (mwalk (pvar κ) u) i)).
+  (∃ u i, g = FLt (mwalk (pvar κ) u) (pt_payload (mwalk (pvar κ) u) i)) ∨
+  (∃ u, g = FEq (mwalk (pvar κ) u) (pt_dual (mwalk (pvar κ) u))).
 
 Definition Cseg (k : nat) : bcs := BCs [] (λ g, pex_fact 0 1 g ∨ crel_fact (Θany k) (NVar 1) g).
 Definition Cex (B : point) : bcs := BCs [B] (pex_fact 0 1).
 
-(** ** Translation of types *)
+(** ** Translation of types
+
+    End points: the end of polarity true (the dual session) sits at the
+    dual point, as the second end of [new]. *)
 
 Definition hiz (B : point) (ef : list prio) : option point :=
   match ef with [] => None | _ => Some (rpt B (RHi ef)) end.
@@ -426,9 +432,9 @@ Definition ptsb (B : point) : nat → point := λ _, B.
 Fixpoint tr (B : point) (pts : nat → point) (T : mty) : ty :=
   match T with
   | MUnit => U
-  | MCh p Q (PR h d) => TSess (polS p (ers Q)) (rpt B (RCh Q h d))
-  | MCh p Q (PX n w) => TSess (polS p (ers Q)) (mwalk (pts n) w)
-  | MEx p Q => TEx (LPt (rpt B (RLo [LP PBot]))) 1 (Cex B) (TSess (polS p (ers Q)) (pvar 0))
+  | MCh p Q (PR h d) => TSess (polS p (ers Q)) (pt_polar (negb p) (rpt B (RCh Q h d)))
+  | MCh p Q (PX n w) => TSess (polS p (ers Q)) (pt_polar (negb p) (mwalk (pts n) w))
+  | MEx p Q => TEx (LPt (rpt B (RLo [LP PBot]))) 1 (Cex B) (TSess (polS p (ers Q)) (pt_polar (negb p) (pvar 0)))
   | MArr T lo ef V => TLolli (hiz B ef) (Some (rpt B (RLo lo))) (tr B pts T) (tr B pts V)
   | MPoly Θ T ef V =>
       TBox 1 (pc_nt Θ) (Crel Θ)
@@ -437,8 +443,8 @@ Fixpoint tr (B : point) (pts : nat → point) (T : mty) : ty :=
   | MSeg p k Qa Qr =>
       TBox 2 k (Cseg k)
         (TLolli None None TUnit
-           (TLolli (Some (rpt (pvar 1) (RHi [PTop]))) None (TSess (polS p (ers Qa)) (pvar 0))
-              (TEx (LPt (rpt (pvar 1) (RLo [LP PBot]))) 1 (Cex (pvar 1)) (TSess (polS p (ers Qr)) (pvar 0)))))
+           (TLolli (Some (rpt (pvar 1) (RHi [PTop]))) None (TSess (polS p (ers Qa)) (pt_polar (negb p) (pvar 0)))
+              (TEx (LPt (rpt (pvar 1) (RLo [LP PBot]))) 1 (Cex (pvar 1)) (TSess (polS p (ers Qr)) (pt_polar (negb p) (pvar 0))))))
   end.
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
@@ -465,19 +471,22 @@ Qed.
 Lemma pup_lt m σ a : a < m → pt_inst (pup m σ) (pvar a) = pvar a.
 Proof. intros Ha. rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True. Qed.
 
+Lemma pt_inst_polar σ b x : pt_inst σ (pt_polar b x) = pt_polar b (pt_inst σ x).
+Proof. destruct b; [done|apply pt_inst_dual]. Qed.
+
 Lemma tr_pinst σ B pts T : pinst_ty σ (tr B pts T) = tr (pt_inst σ B) (pt_inst σ ∘ pts) T.
 Proof.
   revert σ B pts. induction T as [|p Q [h d|n w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k Qa Qr];
     intros σ B pts; simpl.
   - done.
-  - by rewrite pt_inst_rpt.
-  - by rewrite pt_inst_mwalk.
-  - by rewrite pt_inst_rpt, pup1_0.
+  - by rewrite pt_inst_polar, pt_inst_rpt.
+  - by rewrite pt_inst_polar, pt_inst_mwalk.
+  - by rewrite pt_inst_rpt, pt_inst_polar, pup1_0.
   - by rewrite IH1, IH2, hiz_pinst, pt_inst_rpt.
   - rewrite IH1, IH2, hiz_pinst, pup1_0. unfold bcs_inst, Crel. simpl.
     rewrite !(tr_ext (pvar 0) (pt_inst (pup 1 σ) ∘ ptsb (pvar 0)) (ptsb (pvar 0))); try done;
       intros n; apply pup1_0.
-  - unfold bcs_inst, Cseg, Cex. simpl. rewrite !pt_inst_rpt, !(pup_lt 2) by lia.
+  - unfold bcs_inst, Cseg, Cex. simpl. rewrite !pt_inst_polar, !pt_inst_rpt, !(pup_lt 2) by lia.
     by rewrite !pup1_0.
 Qed.
 
