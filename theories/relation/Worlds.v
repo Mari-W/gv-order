@@ -105,6 +105,15 @@ Record world_wf (W : world) : Prop := {
   wf_lt_dpo x : w_lt W x (pt_shift 1 (pt_dual x))
 }.
 
+(** Two ends at dual points, read from either end. *)
+Lemma wf_eq_dual_sym W x y : world_wf W → w_eq W x (pt_dual y) → w_eq W y (pt_dual x).
+Proof.
+  intros HW H. apply (wf_eq_sym _ HW). rewrite <-(pt_dual_dual y). by apply (wf_eq_dual _ HW).
+Qed.
+
+Lemma wf_eq_dual_l W x y : world_wf W → w_eq W x (pt_dual y) → w_eq W (pt_dual x) y.
+Proof. intros HW H. rewrite <-(pt_dual_dual y). by apply (wf_eq_dual _ HW). Qed.
+
 (** The support consists of point constants, which are root names. *)
 Lemma wf_names_root W p : world_wf W → p ∈ w_names W → pn_root p = p.
 Proof. intros HW Hp. by destruct (wf_names_const _ HW p Hp) as [a ->]. Qed.

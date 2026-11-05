@@ -873,7 +873,7 @@ Section level.
     { unfold tenv_of. rewrite dom_union_L, dom_fmap_L, (tok_dom _ _ _ _ Hok). clear -HcΣ HcC. set_solver. }
     exists {[NConst a]}, W'. split_and!; [|done|].
     - pose proof (senv_roots_sub Σ ΘB). clear -Hfr H. set_solver.
-    - apply (IHo n' T (le_n _) HT W' Σ (<[c := Both (s, pconst a) (s', pconst a)]> ΘB)).
+    - apply (IHo n' T (le_n _) HT W' Σ (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> ΘB)).
       + apply tok_add_both; [|done|done| |done].
         * eapply tok_mono; [exact (proj1 Hwf)|exact Hok].
         * apply (wf_eq_refl _ (proj1 (proj2 (proj2 (proj2 (proj1 Hwf)))))).
