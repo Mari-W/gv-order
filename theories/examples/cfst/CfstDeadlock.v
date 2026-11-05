@@ -10,9 +10,10 @@
     send on, so both block. FreeST accepts the program. Mordido and
     Pérez reject it because f ⟨a, b′⟩ needs p < q and f ⟨b, a′⟩ needs
     q < p. The same two facts are what our system cannot meet. Let α
-    and β be the points of a and b. The receive in the first thread
-    blocks at α while the future holds b′ at β, so E-App asks α ≺ β. The
-    second thread asks β ≺ α. No acyclic context has both.
+    and β be the points of a and b, so a′ and b′ sit at ᾱ and β̄. The
+    receive in the first thread blocks at α while the future holds b′
+    at β̄, so E-App asks α ≺ β. The second thread receives at β while it
+    holds a′ at ᾱ and asks β ≺ α. No acyclic context has both.
 
     We prove the rejection without an inversion of derivations. The
     program reaches a state where both threads wait on a receive, so
@@ -23,8 +24,9 @@
 
     The repair of Mordido and Pérez swaps the operations in one thread.
     g sends on a′ first and receives on b afterwards. It types with the
-    lockstep creation constraints of Stream.v, α+k ≺ β+k ≺ α+k+1, which
-    give α ≺ β ≺ α+1 ≺ β+1 ([dlfix_deadlock_free]). *)
+    lockstep creation constraints of Stream.v, α+k ≺ β+k ≺ α+k+1 at
+    every polarity, which give α ≺ β ≺ α+1 ≺ β+1 and the same chain
+    between ᾱ and β̄ ([dlfix_deadlock_free]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.cfst.CfstTools.
@@ -160,70 +162,77 @@ Definition dlT : sty := SSeq (SRcv 0 TUnit) SEnd.
 
 Section dlfix.
   Context (W : world) (HW : world_wf W) (Ψ : hyps).
-  Context (Hab : ∀ k, slt W Ψ (pv 1 k) (pv 0 k)) (Hba : ∀ k, slt W Ψ (pv 0 k) (pv 1 (S k))).
+  Context (Hab : ∀ k c c', slt W Ψ (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k)))
+          (Hba : ∀ k c c', slt W Ψ (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k)))).
 
-  Lemma dl_ord : slt W Ψ (pv 1 0) (pv 0 0) ∧ slt W Ψ (pv 0 0) (pv 1 1) ∧ slt W Ψ (pv 1 1) (pv 0 1) ∧
-                 slt W Ψ (pv 1 0) (pv 0 1) ∧ slt W Ψ (pv 0 0) (pv 0 1).
-  Proof.
-    assert (slt W Ψ (pv 1 0) (pv 0 0)) as H1 by apply Hab.
-    assert (slt W Ψ (pv 0 0) (pv 1 1)) as H2 by apply Hba.
-    assert (slt W Ψ (pv 1 1) (pv 0 1)) as H3 by apply Hab.
-    assert (slt W Ψ (pv 0 0) (pv 0 1)) as H5 by (eapply sl_trans; [exact H2|exact H3]).
-    split_and!; try done. eapply sl_trans; [exact H1|exact H5].
-  Qed.
+  (** a+k ≺ b+k ≺ a+k+1 ≺ b+k+1 at all polarities. *)
+  Lemma dl_ab1 k c c' : slt W Ψ (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 (S k))).
+  Proof. eapply sl_trans; [apply (Hab k c c)|]. eapply sl_trans; [apply (Hba k c c)|apply Hab]. Qed.
+
+  Ltac dlo := solve [first
+    [apply (Hab _ true true)|apply (Hab _ true false)|apply (Hab _ false true)|apply (Hab _ false false)
+    |apply (Hba _ true true)|apply (Hba _ true false)|apply (Hba _ false true)|apply (Hba _ false false)
+    |apply (dl_ab1 _ true true)|apply (dl_ab1 _ true false)|apply (dl_ab1 _ false true)|apply (dl_ab1 _ false false)
+    |match goal with |- slt _ _ ?x _ => apply (slt_po W _ x HW) end]].
 
   Lemma dl_f_typed F :
-    typed W (<[0:=Some (pv 0 1)]> ∅) Ψ ∅ [None; None; None; None; None; None; None; None; None] F dl_f
-      (TLolli (Some (pv 0 1)) None (TProd (TSess dlT (pv 1 0)) (TSess (dual dlT) (pv 0 0))) TUnit).
+    typed W (<[0:=Some (pt_dual (pv 0 1))]> ∅) Ψ ∅ [None; None; None; None; None; None; None; None; None] F dl_f
+      (TLolli (Some (pt_dual (pv 0 1))) None
+         (TProd (TSess dlT (pv 1 0)) (TSess (dual dlT) (pt_dual (pv 0 0)))) TUnit).
   Proof.
-    destruct dl_ord as (H1 & H2 & H3 & H4 & H5). unfold dl_f.
+    unfold dl_f.
     eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
     cbn. tstep; [tstep|]. cbn. tstep.
     { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 1 0)) (TSess dlT (pv 1 0))); [tstep|apply KTRecv|kscope|].
-      apply ubs_intro; [intros y Hy; mem_cases Hy; exact H1|].
-      exists (pv 0 1). split; [done|]. by right. }
-    cbn. eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 0 1)) (Some (pv 1 1)) (TSess SEnd (pv 0 1)) TUnit);
+      apply ubs_intro; [intros y Hy; mem_cases Hy; dlo|].
+      exists (pt_dual (pv 0 1)). split; [done|]. right. dlo. }
+    cbn. eapply (tv_app W HW _ _ _ _ _ _ (Some (pt_dual (pv 0 1))) (Some (pt_dual (pv 1 1)))
+                  (TSess SEnd (pt_dual (pv 0 1))) TUnit);
       [reflexivity| | |].
     - eapply (tv_lam W HW _ _ _ _ _ _ _ _ _ 2); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep.
       + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 1 1)) (TSess SEnd (pv 1 1))); [tstep|apply KTClos|done|].
-        apply ubs_intro; [intros y Hy; mem_cases Hy; exact H3|].
-        exists (pv 0 1). split; [done|]. by right.
-      + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 0 1)) (TSess SEnd (pv 0 1))); [tstep|apply KTClos|done|].
+        apply ubs_intro; [intros y Hy; mem_cases Hy; dlo|].
+        exists (pt_dual (pv 0 1)). split; [done|]. right. dlo.
+      + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pt_dual (pv 0 1))) (TSess SEnd (pt_dual (pv 0 1))));
+          [tstep|apply KTClos|done|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 0 1). split; [done|]. apply sle_refl, HW.
-    - eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0)) (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) SEnd) (pv 0 0)))).
+        exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW.
+    - eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pt_dual (pv 0 0)))
+                (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) SEnd) (pt_dual (pv 0 0))))).
       + tstep; tstep.
-      + apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)). cbn. set_solver.
+      + apply (KTSend _ _ _ 0 TUnit SEnd (pt_dual (pv 0 0))). cbn. set_solver.
       + kscope.
-      + apply ubs_intro; [intros y Hy; mem_cases Hy; exact H2|].
-        exists (pv 0 1). split; [done|]. by right.
+      + apply ubs_intro; [intros y Hy; mem_cases Hy; dlo|].
+        exists (pt_dual (pv 0 1)). split; [done|]. right. dlo.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 0 1). split; [done|]. apply sle_refl, HW.
+      exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW.
   Qed.
   Lemma dl_g_typed F :
     typed W ∅ Ψ ∅ [None; None; None; None; None; None; None; None] F dl_g
-      (TLolli (Some (pv 0 1)) None (TProd (TSess dlT (pv 0 0)) (TSess (dual dlT) (pv 1 0))) TUnit).
+      (TLolli (Some (pv 0 1)) None (TProd (TSess dlT (pv 0 0)) (TSess (dual dlT) (pt_dual (pv 1 0)))) TUnit).
   Proof.
-    destruct dl_ord as (H1 & H2 & H3 & H4 & H5). unfold dl_g.
+    unfold dl_g.
     eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 0); [set_solver|cbn; set_solver|].
     cbn. tstep; [tstep|]. cbn. tstep.
     { tstep; [tstep|].
-      eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0)) (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) SEnd) (pv 1 0)))).
+      eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pt_dual (pv 1 0)))
+                (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) SEnd) (pt_dual (pv 1 0))))).
       - tstep; tstep.
-      - apply (KTSend _ _ _ 0 TUnit SEnd (pv 1 0)). cbn. set_solver.
+      - apply (KTSend _ _ _ 0 TUnit SEnd (pt_dual (pv 1 0))). cbn. set_solver.
       - kscope.
-      - apply ubs_intro; [intros y Hy; mem_cases Hy; exact H1|].
-        exists (pv 0 1). split; [done|]. by right. }
+      - apply ubs_intro; [intros y Hy; mem_cases Hy; dlo|].
+        exists (pv 0 1). split; [done|]. right. dlo. }
     cbn. tstep; [tstep|]. cbn. tstep.
     { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0)) (TSess dlT (pv 0 0))); [tstep|apply KTRecv|kscope|].
-      apply ubs_intro; [intros y Hy; mem_cases Hy; exact H2|].
-      exists (pv 0 1). split; [done|]. by right. }
+      apply ubs_intro; [intros y Hy; mem_cases Hy; dlo|].
+      exists (pv 0 1). split; [done|]. right. dlo. }
     cbn. tstep; [tstep|]. cbn. tstep.
-    + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 1 1)) (TSess SEnd (pv 1 1))); [tstep|apply KTClos|done|].
-      apply ubs_intro; [intros y Hy; mem_cases Hy; exact H3|].
-      exists (pv 0 1). split; [done|]. by right.
+    + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pt_dual (pv 1 1))) (TSess SEnd (pt_dual (pv 1 1))));
+        [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; mem_cases Hy; dlo|].
+      exists (pv 0 1). split; [done|]. right. dlo.
     + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 0 1)) (TSess SEnd (pv 0 1))); [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
@@ -245,22 +254,22 @@ Proof.
     constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 2]); (BCs [pvar 2] lsa_P, [pvar 1]); (BCs [pvar 1; pvar 2] lsb_P, [pvar 0])]).
-  assert (∀ k, slt W Ψ (pv 1 k) (pv 0 k)) as Hab.
-  { intros k. eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pv 1 k) (pv 0 k)));
-      [by right; right; left|exists k; by left|fsc|reflexivity]. }
-  assert (∀ k, slt W Ψ (pv 0 k) (pv 1 (S k))) as Hba.
-  { intros k. eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pv 0 k) (pv 1 (S k))));
-      [by right; right; left|exists k; by right; left|fsc|reflexivity]. }
-  destruct (dl_ord W HW Ψ Hab Hba) as (H1 & H2 & H3 & H4 & H5).
+  assert (∀ k c c', slt W Ψ (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k))) as Hab.
+  { intros k c c'. eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k))));
+      [by right; right; left|exists k, c, c'; by left|destruct c, c'; fsc|by destruct c, c']. }
+  assert (∀ k c c', slt W Ψ (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k)))) as Hba.
+  { intros k c c'. eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k)))));
+      [by right; right; left|exists k, c, c'; by right; left|destruct c, c'; fsc|by destruct c, c']. }
+  (* f gets a at α and b′ at β̄, g gets b at β and a′ at ᾱ *)
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 1 0)) 0); [set_solver| |].
-    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact H1]. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 1))) (Some (pt_dual (pv 1 0))) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply (Hab 0 false true)]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity|apply (dl_f_typed W HW Ψ Hab Hba)| |].
     - eapply (tv_pair W HW _ _ _ _ _ _ (TSess dlT (pv 1 0))); [reflexivity|tstep|tstep].
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity|apply (dl_g_typed W HW Ψ Hab Hba)| |].
   - eapply (tv_pair W HW _ _ _ _ _ _ (TSess dlT (pv 0 0))); [reflexivity|tstep|tstep].
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
