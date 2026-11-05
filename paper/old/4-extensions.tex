@@ -1,0 +1,341 @@
+\section{Examples}
+\label{sec:extensions}
+\label{sec:examples}
+
+Every typed program in this section is mechanized with a closed deadlock
+freedom proof. The protocols are written with the recursive session
+types of \cref{fig:types}, and every constraint is a set of facts over
+the point variables its box binds.
+
+\subsection{Recursion over a Received Channel}
+\label{sec:ex-chain}
+
+\begin{example}[The received chain \rocq{ch_main}]
+\label{ex:chain}
+  A channel forever receives another channel of its own type. Write
+  $\pslot{\pviA}{0^n}$ for the name
+  $\pslot{\pslot{\pviA}{0}\dots}{0}$, $n$ slots deep. The protocol and
+  the invariant are
+  \begin{align*}
+    \styB &= \tyMu\tvar. \sRecv{(\sAt{\tvar}{\pslot{\pself}{0}})}{\sTerm}
+    &
+    \cstr &= \set{\, \fLt{\poff{\pslot{\pviA}{0^n}}{1}}{\pslot{\pviA}{0^{n+1}}}
+      \;\mid\; n \in \Nat \,}
+  \end{align*}
+  and the two boxes and the main thread are
+  \begin{align*}
+    \asTmId{rch} := {}
+      & \tBoxA{\asTm{f}}{\pviA}{\cstr}{}
+        \tAbsA{\poff{\pviA}{1}}{}{\ch : \sAt{\styB}{\pviA}}{}
+        \tLet[\chB][\ch_1]{\tApp{\tRecv}{\ch}}{}
+      \\ & \quad
+        \tSeq{\tApp{\tClos}{\ch_1}}{}
+        \tApp{\tSpawn}{(\tAbsA{\poff{\pslot{\pviA}{0}}{1}}{\pslot{\pviA}{0}}{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\pslot{\pviA}{0}})}{\chB}})}
+      \\
+    \asTmId{sch} := {}
+      & \tBoxA{\asTm{g}}{\pviA}{\cstr}{}
+        \tAbsA{\poff{\pviA}{1}}{}{\ch : \sAt{\dual{\styB}}{\pviA}}{}
+        \tLetS{\tPair{\asTm{e}}{\asTm{e}'}}{\tApp{\tNewC{\pviB}{\fEq{\pviB}{\pslot{\pviA}{0}}}}{\tUnit}}{}
+      \\ & \quad
+        \tLetS{\ch_1}{\tApp{\tSend}{\tPair{\asTm{e}}{\ch}}}{}
+        \tSeq{\tApp{\tClos}{\ch_1}}{}
+        \tApp{\tSpawn}{(\tAbsA{\poff{\pslot{\pviA}{0}}{1}}{\pslot{\pviA}{0}}{\tUnit}{\tApp{(\tForceA{\asTm{g}}{\pslot{\pviA}{0}})}{\asTm{e}'}})}
+      \\
+    \asTmId{chain} := {}
+      & \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNewC{\pviA}{\cstr}}{\tUnit}}{}
+        \tSeq{\tApp{\tSpawn}{(\tAbsA{\poff{\pviA}{1}}{\pviA}{\tUnit}{\tApp{(\tForceA{\asTmId{sch}}{\pviA})}{\ch'}})}}{}
+        \tApp{(\tForceA{\asTmId{rch}}{\pviA})}{\ch}
+  \end{align*}
+  The order is one infinite chain, program order and $\cstr$ in
+  alternation:
+  \[
+    \fLt{\pviA}{{}} \poff{\pviA}{1}
+      \prec \pslot{\pviA}{0}
+      \prec \poff{\pslot{\pviA}{0}}{1}
+      \prec \pslot{\pviA}{0^2}
+      \prec \dots
+  \]
+  Each round owns two points, its receive and its close, and $\cstr$ is
+  the only thing that bridges two rounds, because program order relates
+  two points of one name only. The rank $2 \cdot \mathit{depth} +
+  \mathit{offset}$ witnesses acyclicity. The recursive call forces at
+  $\pslot{\pviA}{0}$, so its obligation is
+  $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which is $\cstr$ without its
+  fact at $n = 0$, hence contained in $\cstr$ (\rocq{ch_sub}). One
+  inclusion covers unboundedly many rounds. Nothing is unrolled and
+  nothing is induced over.
+  $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{chain} : \tyUnit$
+  (\rocq{ch_typed}) and $\asTmId{chain}$ is deadlock free
+  (\rocq{ch_deadlock_free}).
+
+  $\dualv{\tvar}$ earns its place here:
+  $\dual{\styB} = \tyMu\tvar. \sSend{(\sAt{\dualv{\tvar}}{\pslot{\pself}{0}})}{\sTerm}$,
+  so the sender's payload is the dual of its own recursion variable,
+  unfolding gives back $\sSend{(\sAt{\styB}{\pslot{\pself}{0}})}{\sTerm}$,
+  and the sender sends a channel at $\styB$ while keeping
+  $\dual{\styB}$. With $\dual{\tvar} = \tvar$, duality and unfolding
+  stop commuting at this type.
+\end{example}
+
+\Cref{sec:further-examples} gives the other examples and the rejection results.
+
+\section{Extensions}
+\label{sec:ext}
+
+\subsection{Choice}
+\label{sec:ext-choice}
+
+The mechanized core has binary choice as primitive session types
+$\oplus\{\sty_0, \sty_1\}$ and $\&\{\sty_0, \sty_1\}$ with the constants
+$\asTmId{select}_0$, $\asTmId{select}_1$ and $\asTmId{branch}$
+(\rocq{konst_sig}). A choice at $\pntA$ continues at the payload point
+$\pslot{\pntA}{i}$ of the branch $i$ it picks, with $i \in \set{0,1}$,
+\begin{align*}
+  \asTmId{select}_i &{}: \forall \pntA.\, \set{\fLt{\pntA}{\pslot{\pntA}{i}}}
+    \Rightarrow \sAt{\oplus\{\sty_0, \sty_1\}}{\pntA}
+    \lolli{\pntA}{} \sAt{\sty_i}{\pslot{\pntA}{i}}
+  \\
+  \asTmId{branch} &{}: \forall \pntA.\,
+    \set{\fLt{\pntA}{\pslot{\pntA}{0}}, \fLt{\pntA}{\pslot{\pntA}{1}}}
+    \Rightarrow \sAt{\&\{\sty_0, \sty_1\}}{\pntA}
+    \lolli{\pntA}{} \lSum{\sAt{\sty_0}{\pslot{\pntA}{0}}}{\sAt{\sty_1}{\pslot{\pntA}{1}}}
+\end{align*}
+The two branches get two points, so one branch may order a channel below
+the continuation and the other above it. A branch that orders two
+channels against the other branch types (\rocq{bo_deadlock_free}).
+The term semantics labels a pick on $\ch$ with $\ch \triangleleft i$ and
+$\ch \triangleright i$, which \textsc{P-Act-Choice} synchronizes, and the
+logical relation has the clauses \textsc{O-Select}, \textsc{O-Branch},
+\textsc{Q-Select} and \textsc{Q-Branch} (\rocq{Eobl}, \rocq{Pobl}).
+% TODO(author): prose
+
+\Cref{fig:choice-relation} adds four obligation clauses and extends the
+selection of offered entries. The value relation and both readiness
+conditions of \cref{def:ready} stay unchanged. Selection keeps the index,
+while branching consumes one step (\rocq{scost}, \rocq{selects}).
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Choice obligations (\rocq{Eobl}, \rocq{Pchoice_case})}
+  Put $D_\oplus=\oplus\{\sty_0,\sty_1\}$,
+  $D_{\&}=\&\{\sty_0,\sty_1\}$ and
+  \[
+    (D,\sigma,d)\in\set{
+      (D_\oplus,\lSelect{\ch}{i},0),
+      (D_{\&},\lBranch{\ch}{i},1)},\qquad i\in\set{0,1}.
+  \]
+  \begin{proofrules}
+    \infer*[lab=O-Select / O-Branch]{
+      \tm'\in\lrEW{\wrld}{n-d}{\tenv_1,
+        \ch:\sAt{\sty_i}{\pslot{\pntA}{i}}\types\ty}{\frm}
+    }{
+      \obl{\wrld;\tenv_1,\ch:\sAt{D}{\pntA}\mid\frm}{n}
+        {\tm\trans{\sigma}\tm':\ty}
+    }
+    \and
+    \infer*[lab=Q-Select / Q-Branch]{
+      (\chset',\pool')\in\lrPW{\wrld}{n-d}{
+        \senv_1,\ch:\sAt{\sty_i}{\pslot{\pntA}{i}}\types\ty}
+    }{
+      \obl{\wrld;\senv_1,\ch:\sAt{D}{\pntA}}{n}
+        {(\chset,\pool)\trans{\sigma}(\chset',\pool'):\ty}
+    }
+  \end{proofrules}
+  Here $n-d$ is truncated subtraction. In the term rule the displayed
+  end is selected from $\tenv$ and the continuation replaces that end,
+  keeping any other end of $\ch$.
+  \rulesection{Offered entries (\rocq{selects}, \rocq{offered_t}, \rocq{offered_p})}
+  For an entry $\entry=(\ch':\sAt{\sty}{\pntB})$,
+  \begin{align*}
+    \selects(\entry,\lSelect{\ch}{i})
+      &\iff \ch'=\ch\land\nf(\sty)=D_\oplus,\\
+    \selects(\entry,\lBranch{\ch}{i})
+      &\iff \ch'=\ch\land\nf(\sty)=D_{\&}.
+  \end{align*}
+  An entry is offered when a transition carries a label that selects it.
+  Readiness still applies $\belowrestop$ to terms and
+  $\aboveofferedop$ to processes with this enlarged offered set.
+  \rulesectionend
+  \caption{Choice in the logical relation and readiness}
+  \Description{The select and branch obligations for terms and processes,
+    and the corresponding selection of offered entries.}
+  \label{fig:choice-relation}
+\end{figure}
+
+Choice is also encodable from sums and delegation. A selection sends
+$\tInj{i+1}{}$ of a fresh channel whose arm $i$ lies at $\pslot{\pntA}{i}$, and a
+branch receives and cases (\rocq{sel1_typed}, \rocq{sel2_typed},
+\rocq{branch_typed}, \rocq{choice_deadlock_free}).
+
+\subsection{Context-Free Session Types}
+\label{sec:ext-cfst}
+
+\Cref{fig:cfst-syntax,fig:cfst-typing} give the changed definitions.
+The core abbreviation $\sSend{\payty}{\sty}$ now means
+$\sSeq{\sOut{\payty}}{\sty}$, and $\sRecv{\payty}{\sty}$ means
+$\sSeq{\sIn{\payty}}{\sty}$.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Extended syntax and duality (\rocq{ty}, \rocq{dual})}
+  \begin{align*}
+    \sty &::= \sSkip\sepr\sSeq{\sty}{\styB}\sepr\sOut{\payty}
+      \sepr\sIn{\payty}\sepr\sTerm\sepr\tyMu\tvar.\sty
+      \sepr\tvar\sepr\dualv{\tvar}\\
+      &\qquad\sepr\oplus\{\sty_0,\sty_1\}\sepr\&\{\sty_0,\sty_1\},\\
+    \ty &::= \cdots\sepr\tyBoxS{\pvivec}{\bar\tvar}{\cstr}{\ty},\\
+    \dual{\sSkip}&=\sSkip,&
+    \dual{\sSeq{\sty}{\styB}}&=\sSeq{\dual{\sty}}{\dual{\styB}},\\
+    \dual{\sOut{\payty}}&=\sIn{\payty},&
+    \dual{\sIn{\payty}}&=\sOut{\payty},\\
+    \dual{\oplus\{\sty_0,\sty_1\}}&=\&\{\dual{\sty_0},\dual{\sty_1}\},&
+    \dual{\&\{\sty_0,\sty_1\}}&=\oplus\{\dual{\sty_0},\dual{\sty_1}\}.
+  \end{align*}
+  The other duality clauses stay as in \cref{fig:types}.
+  \rulesection{Head normalization (\rocq{unfoldS}, \rocq{hseq})}
+  Write $o::=\sOut{\payty}\sepr\sIn{\payty}\sepr\tvar\sepr\dualv{\tvar}$.
+  Normalization exposes a head
+  $H::=\sSkip\sepr\sTerm\sepr\sSeq{o}{\sty}
+    \sepr\oplus\{\sty_0,\sty_1\}\sepr\&\{\sty_0,\sty_1\}$.
+  It unfolds $\tyMu\tvar.\sty$ to
+  $\tysub{\sty}{\tyMu\tvar.\sty}{\tvar}$ and uses
+  \begin{align*}
+    \sSeq{\sSkip}{\sty}&\longmapsto\sty,&
+    \sSeq{(\sSeq{o}{\sty})}{\styB}&\longmapsto\sSeq{o}{(\sSeq{\sty}{\styB})},\\
+    \sSeq{\oplus\{\sty_0,\sty_1\}}{\sty}
+      &\longmapsto\oplus\{\sSeq{\sty_0}{\sty},\sSeq{\sty_1}{\sty}\},&
+    \sSeq{\&\{\sty_0,\sty_1\}}{\sty}
+      &\longmapsto\&\{\sSeq{\sty_0}{\sty},\sSeq{\sty_1}{\sty}\},\\
+    o&\longmapsto\sSeq{o}{\sSkip},&
+    \sSeq{\sTerm}{\sty}&\longmapsto\sTerm.
+  \end{align*}
+  Normalize the left operand before applying a sequence equation.
+  Also $\sSeq{o}{\sSkip}$ followed by $\sty$ normalizes to
+  $\sSeq{o}{\sty}$. The computation uses fuel
+  $f(\sSeq{\sty}{\styB})=1+f(\sty)+f(\styB)$,
+  $f(\tyMu\tvar.\sty)=1+f(\sty)$ and $f(\sty)=1$ otherwise
+  (\rocq{sfuel}, \rocq{unrN}). A failed normalization leaves its input unchanged.
+  \rulesection{Equivalence and contractiveness (\rocq{seq}, \rocq{hcontractive})}
+  \[
+    {\approx}=\nu R.\,\mathcal B(R),\qquad
+    \hc(\sty)\iff\forall n\in\Nat\st\mathcal H^n(\top)(\sty).
+  \]
+  $\mathcal B(R)$ compares normalized heads as follows. Equal terminal heads relate. Action heads relate
+  when their actions agree, their payload arities agree, their payload
+  types relate by type congruence, and their continuations relate.
+  Variable heads require the same variable and polarity. Choice heads
+  require the same constructor and related corresponding arms.
+  Stuck heads relate exactly when equal (\rocq{eq_step}).
+  $\mathcal H(Q)$ accepts terminal heads, requires $Q$ of each action
+  or variable continuation and both choice arms, and rejects stuck heads
+  (\rocq{hc_step}).
+  Relational duality exchanges send with receive, selection with branch,
+  and variable polarities while comparing payloads by $\approx$
+  (\rocq{dual_step}).
+  \rulesectionend
+  \caption{Context-free session syntax and head observations}
+  \Description{Extended session types, boxes, duality, normalization,
+    bisimilarity and hereditary contractiveness.}
+  \label{fig:cfst-syntax}
+\end{figure}
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Session-polymorphic boxes (\rocq{t_exp}, \rocq{KSForce})}
+  Put $B=\tyBoxS{\pvivec}{\bar\tvar}{\cstr}{\tyUnit\lolli{\ubd}{}\ty}$.
+  \begin{proofrules}
+    \infer*[lab=E-Exp-CF]{
+      \lenv\text{ only }\Box\text{ types}\quad\pvivec,\pfv\text{ fresh}\\
+      \forall\bar\sty\text{ with }\hc(\sty_i)\st
+      \fctx,\cstr,\fLt{\ubd}{\pfv};\lenv,\vr:B
+        \typesF{\set{\pfv}}\tm:\tysub{\ty}{\bar\sty}{\bar\tvar}
+    }{
+      \fctx;\lenv\typesF{\frm}\tBoxP{\vr}{\tm}:B
+    }
+  \end{proofrules}
+  \[
+    \tForce:\forall\pntvec,\bar\sty.\,
+    \tysub{\cstr}{\pntvec}{\pvivec}\Rightarrow
+    B\lolli{\tysub{\ubd}{\pntvec}{\pvivec}}{}
+      \tysub{(\tysub{\ty}{\pntvec}{\pvivec})}{\bar\sty}{\bar\tvar},
+    \qquad\hc(\sty_i).
+  \]
+  The point instance is known and both instance lists match their binders.
+  \rulesection{Conversion and the relation (\rocq{eqT}, \rocq{Vdef})}
+  \ref{rule:E-Conv} uses the congruence of $\approx$ through types and
+  world aliasing at carrier points. A box binding session variables
+  compares its body by syntactic equality (\rocq{eqT}).
+  In \ref{rule:V-Box}, quantify also over $\bar\sty$ with $\hc(\sty_i)$
+  and apply $[\bar\tvar\mapsto\bar\sty]$ to the instantiated body type.
+  All channel-head tests in obligations and offered entries read $\nf$.
+  The other value clauses, term and process clauses, and readiness
+  conditions stay unchanged (\rocq{Eobl}, \rocq{Pobl}, \rocq{selects}).
+  \rulesection{Points and payloads}
+  $\heads(\sAt{\sty}{\pntA})=\set{\pntA}$ still holds.
+  Point substitution still stops at session types. Session substitution
+  enters payload types and dualizes an instance under $\dualv{\tvar}$
+  (\rocq{sinst_ty}). Payload instantiation remains
+  $\payloadAt{\payty}{\pntA}$ and choice still moves to
+  $\pslot{\pntA}{i}$. Send and receive move to $\poff{\pntA}{1}$,
+  so their schemes in \cref{fig:signatures} use the new sequential
+  abbreviation without changing their constraints. The other schemes,
+  heads equations, worlds and fact rules stay unchanged.
+  \rulesectionend
+  \caption{The changed box rule, force scheme and observations}
+  \Description{Session instantiation at boxes and force, conversion,
+    logical relation observations, and unchanged point operations.}
+  \label{fig:cfst-typing}
+\end{figure}
+
+Context-free session types add $\asTy{Skip}$ and sequential composition
+$\sty;\sty$ to session types, and a $\Box$ binds session variables
+besides points (\rocq{ty}, \rocq{TBox}). \ref{rule:E-Exp} types the body
+at every hereditarily contractive instance of its session variables, and
+\ref{rule:E-Conv} converts up to bisimilarity. No fact rule is new.
+A recursive function over a context-free protocol acts at the walks of
+its starting point $\pntA$,
+\[
+  \walks(\pntA)=\mu X.\,\set{\pntA}\cup
+    \set{\poff{q}{1},\pslot{q}{0},\pslot{q}{1}\mid q\in X}
+\]
+where $\mu X$ takes the least closed set. A ceiling $\zeta$ satisfies
+$\forall q\in\walks(\pviA)\st\fctx\types\fLt{q}{\zeta}$.
+The box constraint also states the facts each choice owes,
+\[
+  \cstr = \set{\fLt{q}{\zeta},\ \fLt{q}{\pslot{q}{0}},\ \fLt{q}{\pslot{q}{1}}
+    \mid q \in \mathit{walks}(\pviA)} .
+\]
+The type of $\asTmId{sendTree}$ of \citet{ThiemannV16} has upper bound
+$\zeta$ and returns the continuation at an existential point above the
+segment (\rocq{sendTree_ty}). The mechanized programs copy and drain a
+tree received on a channel (\rocq{tree_deadlock_free}), run Milner's
+cyclic scheduler (\rocq{sch_deadlock_free}), treeSum and the arithmetic
+server of \citet{ThiemannV16} (\rocq{ts_deadlock_free},
+\rocq{as_deadlock_free}), and a repaired classic deadlock
+(\rocq{dlfix_deadlock_free}). The classic deadlock itself has no
+derivation (\rocq{dl_untypable}).
+
+A channel created after a segment call is placed by its creation
+constraint relative to the point the call returns. The program of
+\rocq{si_deadlock_free} orders such a channel against the returned
+channel in both directions, and the program of \rocq{sd_deadlock_free}
+creates it at the payload point of the returned channel and sends it
+there. Both type and are deadlock free.
+% TODO(author): prose
+
+Dropping a channel at $\asTy{Skip}$, which \citet{MordidoP} allow, ends
+in a restricted name that no thread mentions. Such a process is not
+terminated in our semantics, so the program that drops it is not deadlock
+free (\rocq{sd_not_deadlock_free}).
+
+The ceiling is coarse. The program
+$\tSeq{\tApp{\asTmId{sendTree}}{\tPair{t}{\ch}}}{\tSeq{\tApp{\tClos}{\chB}}{\tApp{\tSend}{\tPair{v}{\ch}}}}$
+needs $\chB$ between the end of the segment and the continuation of
+$\ch$, and the ceiling of the segment does not separate the two. The
+system of \citet{MordidoP} does not type it either.
+% TODO(author): prose
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

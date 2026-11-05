@@ -1,0 +1,190 @@
+\section{Related Work and Future Directions}
+\label{sec:relatedWork}
+
+\paragraph{Logical relations for session types}
+\citet{DBLP:journals/iandc/PerezCPT14} were the first to investigate
+session types with logical relations, on top of the logical account of
+\citet{DBLP:conf/concur/CairesP10}, to prove strong normalization,
+confluence and behavioral equality.
+\citet{conf/esop/RochaC23} prove strong normalization and safe handling
+of state for message-passing processes with linear session types, based
+on an extension of second-order linear
+logic~\cite{DBLP:journals/tcs/Girard87}.
+In both \cite{DBLP:journals/iandc/PerezCPT14,conf/esop/RochaC23} the
+relation is defined only for syntactically typed processes, and deadlock
+freedom is established separately by subject reduction and progress on
+the derivations.
+\citet{conf/esop/Atkey17} uses a logical relation to prove adequacy of
+an operational and a denotational semantics for ``processes as CLL
+proofs''~\cite{conf/icfp/Wadler12}.
+\citet{DBLP:conf/lics/DerakhshanBJ21} study noninterference, and
+\citet{DBLP:conf/ecoop/0001DB24} extend that work to cyclic processes.
+\citet{DBLP:journals/pacmpl/YaoICBZ25} consider timed message passing
+for IoT systems with session types defined by a logical relation.
+Actris~\cite{DBLP:journals/lmcs/HinrichsenBK22,DBLP:conf/cpp/HinrichsenLKB21,DBLP:journals/pacmpl/HinrichsenBK20}
+and Multris~\cite{HinrichsenJK24} prove safe use of channels and
+resources, not deadlock freedom.
+LinearActris~\cite{JacobsHK24} proves deadlock freedom semantically and
+imposes connectivity graphs
+\cite{DBLP:journals/pacmpl/JacobsBK22,DBLP:journals/pacmpl/JacobsB23} as
+a global invariant of every program.
+
+\paragraph{Order-based and priority-based systems}
+\Cref{tab:related} compares the systems that order the blocking actions.
+\citet{Kobayashi97} attaches an abstract time tag to each instance of a
+channel type constructor and asks that the transitive closure of the tag
+relation be a strict partial order. Tags inside a channel type are
+schematic and renamed at each output, and many channels may share one
+tag. Here tags are points, the relation is a constraint, inner tags are
+the payload points $\pslot{\pntA}{j}$, and the renaming is instantiation
+at $\tForce$.
+\citet{Kobayashi06} adds the creation order of names to the judgment at
+his rule for $\nu$, and that rule is the closest precedent of a creation
+constraint.
+\citet{Padovani14} gives each linear channel type one integer priority
+and shifts priorities on replicated channels.
+\citet{PadovaniN15} is the system this work continues. They give the
+arrow two levels in $\mathbb{Z} \cup \set{\bot, \top}$ and shift only at
+functions of level $\top$, because shifting an arbitrary function would
+type a deadlocked self-forwarding. Our $\lbd$ and $\ubd$ carry the same
+two bounds as points, and a box holds no channel, which plays the part
+of level $\top$. Their constructor $\lceil t \rceil^n$ delays a shift by
+$n$ inside a type, and the pipe of their equation (3.6) receives a
+channel whose level lies 2 above the level of the carrier. A payload
+here is relative in the same way. It mentions only the points
+$\pslot{\pself}{j}$, and $\payloadAt{\payty}{\pntA}$ places them at the
+carrier $\pntA$. A relative point is a point of the partial order, so a
+constraint orders it against the carrier and against the points of
+other channels, where a level offers one integer offset in one total
+order.
+PolyVGR~\cite{SaffrichT23} names the channels a message carries by an
+existential package $!(\exists \alpha{:}\mathrm{Dom}(N).\, \Sigma; T).S$,
+and the receiver gives each received channel a fresh name. A closure
+that mentions a channel loses its connection to that channel once the
+channel is sent. Both ends here compute the same payload point
+$\pslot{\pntA}{j}$, so facts stated before the send still hold after it.
+PolyVGR names a created channel by an existential result type, as
+$\tNew$ does here.
+PCP~\cite{DardhaG18} and PGV~\cite{KokkeD23} attach one priority in
+$\Nat \cup \set{\omega}$ to each action and ask that a blocking action
+carry a smaller number than the channels its continuation holds, which
+is $\fctx \types \fLt{\ubd}{\frm}$ at \ref{rule:E-App} here. PGV has
+neither priority polymorphism nor recursion.
+APCP~\cite{APCP} checks a payload law at send and selection and lifts
+every priority of an unfolded type by a common amount; its selections do
+not block.
+\citet{BalzerTP19} attach a world to each process, keep an acyclic order
+on worlds and create and order worlds by explicit statements, with a
+world substitution at spawn. Their worlds order acquires of shared
+processes, which this system does not have.
+\citet{VieiraV13} order abstract events and define the union of two
+orders only when it stays acyclic.
+\citet{FlanaganA99} order lock types, bound a lock variable by an
+interval $m :: (m_1, m_2)$ under $\forall$ and $\exists$ and at
+lock creation, and require a value under a lock abstraction. An interval
+kind is a constraint $\set{\fLt{\ubd}{\pviA}, \fLt{\pviA}{\asTy{v}}}$,
+and $\forall$ appears only on boxes here for the same reason their
+abstraction bodies are values.
+\citet{KobayashiL17} extract a lam from a process and decide
+circularity of the lam afterwards, giving fresh level names to the
+channels each unfolding creates.
+
+\begin{table}[tp]
+  \caption{Systems that order the blocking actions. The last column
+    gives the construct here that plays the same part.}
+  \label{tab:related}
+  \small
+  \begin{tabular}{p{0.15\textwidth}p{0.21\textwidth}p{0.17\textwidth}p{0.17\textwidth}p{0.17\textwidth}}
+    \toprule
+    System & What is ordered & Reuse at many points & Payloads & Here \\
+    \midrule
+    \citet{Kobayashi97}
+      & abstract time tags, strict partial order
+      & tags renamed at each output
+      & inner tags of the channel type
+      & points, $\cstr$, payload points \\
+    \citet{Kobayashi06}
+      & levels in $\Nat \cup \set{\infty}$, creation order on names
+      & none
+      & usages of carried channels
+      & one point per action, creation constraint \\
+    \citet{Padovani14}
+      & one integer priority per linear channel type
+      & shifting on replicated channels
+      & relative to the carrier
+      & instantiation at $\tForce$ \\
+    \citet{PadovaniN15}
+      & levels in $\mathbb{Z} \cup \set{\bot,\top}$
+      & shifting at level-$\top$ functions
+      & bounded at new, send, recv
+      & $\lolli{\ubd}{\lbd}$, boxes \\
+    \citet{DardhaG18}
+      & priorities in $\Nat \cup \set{\omega}$
+      & lifting a whole context
+      & bounded at send
+      & \ref{rule:E-App} \\
+    \citet{KokkeD23}
+      & one priority per action
+      & none
+      & unconstrained
+      & \ref{rule:E-App}, send's premise \\
+    \citet{APCP}
+      & priorities in $\Nat \cup \set{\omega}$
+      & lifting by a common amount at recursion
+      & subject below payload
+      & send's premise \\
+    \citet{BalzerTP19}
+      & worlds under an acyclic order
+      & world substitution at spawn
+      & channels not yet acquired
+      & points, $\fctx$, acyclicity \\
+    \citet{VieiraV13}
+      & abstract events, strict partial order
+      & none
+      & events of message types left out
+      & facts over points \\
+    \citet{FlanaganA99}
+      & lock types, strict partial order
+      & $\forall m :: (m_1,m_2)$ with a value body
+      & locks, no payloads
+      & $\cstr$ under $\forall$ and $\exists$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Topological approaches}
+\citet{DBLP:conf/concur/CairesP10} compose two processes along exactly
+one channel, and \citet{DBLP:journals/jfp/Wadler14} shares that
+restriction; two shared channels would allow loops that race or
+deadlock. \citet{DardhaG18} note that this rejects Milner's cyclic
+scheduler, which \cref{ex:scheduler} types.
+\citet{DBLP:journals/pacmpl/JacobsBK22} type programs with plain linear
+session types and obtain deadlock freedom from an invariant that the
+graph of threads and channels has no undirected cycle; their fork
+creates the channel and the thread at once, while $\tNew$ and $\tSpawn$
+are separate here.
+
+\paragraph{Future directions}
+A compositional and liberal logical relation for properties beyond
+deadlock freedom is open, observational equivalence
+\cite{conf/esop/Atkey17} and liveness properties such as lock freedom
+\cite{Kobayashi02,Padovani13} among them. Compositional semantic
+characterizations of progress for shared-memory concurrency
+\cite{DOsualdoSFG21,LiangF18,LeeLYCKH25} are a starting point for the
+latter. Embedding the relation into a separation logic would allow a
+mixture of paradigms, as LinearActris~\cite{JacobsHK24} supports mutable
+heaps alongside message passing. A semantic bridge between
+priority-based and Curry-Howard-based systems in the spirit of
+\cite{DardhaP22,Jaramillo025} would extend
+\cref{thm:pgv,thm:pn} beyond the two source systems mechanized here.
+Multiparty session types~\cite{HondaYC16} need priority-based
+annotations for programs that interleave several sessions, and their
+semantic account is still underdeveloped.
+Our semantics is synchronous, and asynchrony is open: the cyclic pair of
+\citet{DBLP:conf/ecoop/0001DB24} deadlocks under synchronous
+communication, so \cref{thm:soundness-source} forces its rejection.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

@@ -1,0 +1,70 @@
+
+\section{Mechanization}
+\label{sec:mechanization}
+
+Everything this paper states is mechanized in Rocq: the calculus and the
+static system of \cref{sec:calculus}, the logical relation of
+\cref{sec:logicalRelation}, every example of \cref{sec:examples}, the
+extensions of \cref{sec:ext} and the two embeddings of
+\cref{sec:ex-priority}. The translation of the system of
+\citet{MordidoP} is mechanized as well (\rocq{mp3_deadlock_free_source})
+and the paper treats it informally. The development is built on top of the
+\texttt{std++} library and does not admit any axiom.
+
+\paragraph{AI Use}
+The conception of the semantics, type system, logical relation, examples and sketches of the soundness arguments were all done without the use of AI.
+The mechanization was produced with the aid of generative AI
+(Claude Code, Fable 5 orchestrating Opus 5),
+in several refinements starting from the manually written definitions and proof sketches.
+We thoroughly audited the definitions for accuracy against their hand-written versions.
+\ed{\pt! \mw! please check you agree with this characterization}
+
+The artifact comprises $46{,}633$ lines (non-blank, non-comment) of Rocq
+across 114 files, containing $1{,}541$ definitions and $3{,}541$ lemmas
+and theorems.
+% Counted over theories/**/*.v after stripping (* *) comments:
+% LOC = non-blank lines, definitions = Definition|Fixpoint|Inductive|Record,
+% lemmas and theorems = Lemma|Theorem|Corollary, Local ones included
+% (3,441 + 99 + 1).
+\Cref{tab:mechanization} gives the distribution over components.
+The examples, the rejections and the three translations take
+$23{,}698$ lines, $51\%$ of the development. The term judgment is one
+inductive (\rocq{typed}), and the judgment of source programs is its
+instance at the empty world (\rocq{styped}).
+The source of complexity is the semantic typing proofs, which reason about
+the LTS directly. To tame the combinatorial explosion, the proofs use an
+invariant-based method. A program logic layer would carry them more
+scalably, and we leave that exploration for future work.
+
+\begin{table}[t]
+  \caption{Lines of Rocq by component.}
+  \label{tab:mechanization}
+  \begin{tabular}{lr}
+    \toprule
+    Component                                                                      & LOC          \\
+    \midrule
+    Syntax, labelled semantics, harmony, safety (\cref{fig:syntax,fig:term-semantics,fig:proc-semantics}) & 2,087        \\
+    Types, payloads, duality, environments (\cref{fig:types})                      & 1,835        \\
+    Points, the fact theory, the static system, soundness (\cref{fig:facts,fig:typeSys,fig:typeSysPoints,fig:signatures}) & 2,719        \\
+    Worlds, readiness, creation constraints, the logical relation (\cref{fig:logrel-rules-value,fig:logrel-rules-term,fig:logrel-rules-proc}) & 2,384        \\
+    Compositionality for terms (\cref{tab:compositionality})                       & 1,841        \\
+    Compositionality for processes (\cref{lem:comp:connect})                       & 5,572        \\
+    Invariance under renaming, point substitution and conversion                   & 6,497        \\
+    Examples and rejections (\cref{sec:examples,sec:ext})                          & 7,406        \\
+    Translations of PGV, Padovani--Novara and Mordido--P\'erez (\cref{sec:ex-priority}) & 16,292       \\
+    \midrule
+    Total                                                                          & 46,633       \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The main proof work is \ref{rule:P-Connect} (\cref{lem:comp:connect}).
+Connecting two processes on a set of channels is the linear-logic cut,
+and it is the only place where membership of the combined process in the
+relation is hard to maintain: it has to keep the composed world strict,
+which is what \cref{thm:amalgamation,thm:fresh-extension} are for.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

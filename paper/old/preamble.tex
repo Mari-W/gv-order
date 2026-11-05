@@ -1,0 +1,380 @@
+% LNCS-provided:
+% \RequirePackage{amsthm}
+% \newtheorem{definition}{Definition}
+% \newtheorem{theorem}{Theorem}
+% \newtheorem{lemma}{Lemma}
+
+\AtEndPreamble{%
+\theoremstyle{acmdefinition}
+\newtheorem{remark}[theorem]{Remark}}
+
+
+\makeatletter
+\newcommand*\FreezeMathAlpha[1]{%
+  \@tempcnta=#1\relax
+  \ifnum\@tempcnta>"7000\relax
+    \advance\@tempcnta-"7000\relax
+    \mathchardef#1=\@tempcnta
+  \fi}
+\AtBeginDocument{%
+  \FreezeMathAlpha\Gamma  \FreezeMathAlpha\Delta   \FreezeMathAlpha\Theta
+  \FreezeMathAlpha\Lambda \FreezeMathAlpha\Xi      \FreezeMathAlpha\Pi
+  \FreezeMathAlpha\Sigma  \FreezeMathAlpha\Upsilon \FreezeMathAlpha\Phi
+  \FreezeMathAlpha\Psi    \FreezeMathAlpha\Omega}
+\makeatother
+
+% https://tex.stackexchange.com/a/40185
+\makeatletter
+\let\@realLabel\label
+\makeatother
+\RequirePackage{amsmath}
+\RequirePackage{mathtools}
+
+\RequirePackage{xparse}
+
+\RequirePackage{xspace}
+
+% https://tex.stackexchange.com/a/521495
+\makeatletter
+\@ifdefinable\MakeTokenFromCsname{%
+  \long\def\MakeTokenFromCsname#1#{%
+    \romannumeral0\@MakeTokenFromCsname{#1}%
+  }%
+}%
+\newcommand\@MakeTokenFromCsname[2]{%
+  \expandafter\@@@MakeTokenFromCsname\expandafter{\csname#2\endcsname}{ #1}%
+}%
+\newcommand\@@@MakeTokenFromCsname[2]{#2#1}%
+\makeatother
+
+\makeatletter
+\def\DMO#1{%
+  \MakeTokenFromCsname\DeclareMathOperator{@#1}{#1}%
+  \MakeTokenFromCsname\NewDocumentCommand{#1}{o}{\MakeTokenFromCsname{@#1}\IfValueT{##1}{_{##1}}}%
+}
+\makeatother
+
+% A little slack for the occasional line that would otherwise stick into
+% the margin: applied only to lines TeX cannot break any other way.
+\setlength{\emergencystretch}{1em}
+
+\DeclareMathOperator{\fc}{subj}
+\DMO{dom}
+\DMO{flv}
+\DMO{fv}
+\DMO{fchans}
+
+\makeatletter
+
+\newcommand{\acronym}[2]{\emph{#1}~(#2)}
+
+\def\hyph-{\mbox{-}\nobreak\hspace{0pt}}
+\def\pre#1-{$#1$\mbox{-}\nobreak\hspace{0pt}}
+% \nobreak avoids linebreaks
+% the 0-width space allows the suffix to be correctly hyphenated
+
+\newcommand{\picalc}{%
+    \texorpdfstring{\pre{\pi}-calculus}{pi-calculus}}
+\newcommand{\lcalc}{%
+    \texorpdfstring{\pre{\lambda}-calculus}{lambda-calculus}}
+
+\makeatother
+
+\newcommand{\Nat}{\mathbb{N}}
+
+\RequirePackage{myproofs}
+\RequirePackage{mathpartir}
+% Inference rules: mathpartir \infer* inside proofrule(s); see proofrules.sty
+\RequirePackage{proofrules}
+
+% `\sepr` for regularly spaced, `\sepr*` for more spacing.
+\makeatletter
+\def\sepr{\@ifstar\@seprstar\@seprnostar}
+\def\@seprnostar{\mathbin{\mbox{\large{$\mid$}}}}
+\def\@seprstar{~~\@seprnostar~}
+\makeatother
+
+\def\<{\langle}
+\def\>{\rangle}
+\def\disjoint{\mathrel{\#}}
+\NewDocumentCommand\set{m}{{\{#1\}}}
+\RequirePackage{stmaryrd}
+\NewDocumentCommand\mset{m}{{\lbag#1\rbag}}
+\NewDocumentCommand\msetA{m}{{\lbag\begin{array}[t]{l} #1\rbag \end{array}}}
+\NewDocumentCommand\update{mmm}{{#1\oplus[#2 \mapsto #3]}}
+
+\let\ltxvdash\vdash
+\newcommand{\types}{\mathrel{\color{black}\ltxvdash}}
+\newcommand{\proves}{\mathrel{\color{black}\vDash}}
+
+\newcommand{\ichoice}{\mathbin{{\color{cTy}\oplus}}}
+\newcommand{\echoice}{\mathrel{{\color{cTy}\&}}}
+
+\PassOptionsToPackage{dvipsnames,rgb}{xcolor}
+\RequirePackage{xcolor}
+
+% Semantic markup: sorts, metavariables and marked operators.  Everything
+% below marks leaves only; \fFunc/\fType/\fProc survive as aliases.
+\RequirePackage{lrlight}
+\colorlet{cProc}{cPr}
+\colorlet{cType}{cTy}
+\colorlet{cFunc}{cTm}
+\def\fCtx#1{{\color{cTm}\mathcal{#1}}}
+
+\newcommand{\var}{\mathit}
+
+\def\hole{{\color{cTm}[\cdot]}}
+
+\RequirePackage{upgreek}
+% Term keywords carry the term colour; \tyOp is their type-level twin.
+\def\tOp#1{\mathinner{{\color{cTm}\mathsf{#1}}}}
+\def\tyOp#1{\mathinner{{\color{cTy}\mathsf{#1}}}}
+\def\tForce{\tOp{force}}
+\def\tFork{\tOp{fork}}
+\def\tRecv{\tOp{recv}}
+\def\tSend{\tOp{send}}
+\def\tWait{\tOp{wait}}
+\def\tTerm{\tOp{term}}
+\def\tClos{\tOp{close}}
+\def\tLink{\tOp{link}}
+\def\tFixOp{\tOp{fix}}
+\def\tForce{\tOp{force}}
+\def\tInjOp{\tOp{inj}}
+\def\tCaseOp{\tOp{case}}
+\def\tIfOp{\tOp{if}}
+\def\tUnit{{\color{cTm}\ast}}
+\def\tyUnit{{\color{cTy}\ast}}
+\let\tLVA\vr
+\let\tLVB\vrB
+\let\tIVX\ivx
+\let\tIVY\ivy
+\NewDocumentCommand\tAbs{mm}{{{\color{cTm}\uplambda}#1{\color{cTm}.}#2}}
+\NewDocumentCommand\tPair{mm}{{\mathopen{{\color{cTm}\<}}#1\mathpunct{{\color{cTm},}}#2\mathclose{{\color{cTm}\>}}}}
+\NewDocumentCommand\tBox{m}{{{\color{cTy}\Box}{#1}}}
+\NewDocumentCommand\tApp{mm}{{#1\,#2}}
+\NewDocumentCommand\tLet{soomm}{{\tOp{let}\,\IfBooleanTF{#1}{\tUnit}{\tPair{#2}{#3}}=#4\;\tOp{in}\;#5}}
+\NewDocumentCommand\tFix{mmm}{{\tFixOp\,\tAbs{#1}{\tAbs{#2}{#3}}}}
+\NewDocumentCommand\tSub{mmm}{{#1\mathopen{{\color{cTm}[}}#3\mathrel{\color{cTm}\mapsto}#2\mathclose{{\color{cTm}]}}}}
+\NewDocumentCommand\tLetI{mmm}{{\tOp{let}\,{\IExp{#1}}=#2\;\tOp{in}\;#3}}
+\NewDocumentCommand\tLetS{mmm}{{\tOp{let}\,{{#1}}=#2\;\tOp{in}\;#3}}
+\NewDocumentCommand\tFixI{mm}{{\tFixOp\,{#1}.{#2}}}
+\NewDocumentCommand\tInj{mm}{{\tInjOp_{\idx{#1}}\,#2}}
+\NewDocumentCommand\tCase{mmmmm}{{\tCaseOp\,{#1}( #2.#3) (#4.#5)}}
+\NewDocumentCommand\tIf{mmm}{{\tIfOp\,{#1}( #2)(#3)}}
+\NewDocumentCommand\tSeq{mm}{{#1;#2}}
+
+
+
+% Labelled arrows.  \stackon centred the label over a \longrightarrow of
+% fixed length, so a long label stuck out at both ends.  \xrightarrow
+% grows with its label instead, but bottoms out well short of
+% \longrightarrow, so we pad the label to the width that makes the two
+% agree: \xrightarrow's width is its label's width plus a fixed overhead,
+% which we measure once.
+\makeatletter
+\newlength\lr@arw@min
+\newlength\lr@arw@tmp
+\AtBeginDocument{%
+  \settowidth\lr@arw@min{$\longrightarrow$}%
+  \settowidth\lr@arw@tmp{$\xrightarrow{\mathmakebox[\lr@arw@min]{}}$}%
+  \addtolength\lr@arw@tmp{-\lr@arw@min}%  the overhead
+  \addtolength\lr@arw@min{-\lr@arw@tmp}%  the label width that matches
+  \ifdim\lr@arw@min<\z@ \lr@arw@min\z@ \fi}
+\newcommand\lr@arw@lbl[1]{%
+  \settowidth\lr@arw@tmp{$\scriptstyle#1$}%
+  \ifdim\lr@arw@tmp<\lr@arw@min \lr@arw@tmp\lr@arw@min \fi%
+  \mathmakebox[\lr@arw@tmp]{#1}}
+\NewDocumentCommand\trans{mo}{%
+\ifblank{#1}{\xrightarrow{}}{
+  \xrightarrow{\lr@arw@lbl{#1}}
+}%
+  \IfValueT{#2}{^{#2}}}
+% \redu carries no label, but still goes through \xrightarrow so that it
+% is the same arrow, and the same length, as \trans with a short one.
+\NewDocumentCommand\redu{o}{%
+  \longrightarrow\IfValueT{#1}{^{#1}}}
+\makeatother
+% Step of the label-free reduction semantics (appendix on harmony).
+\newcommand{\sred}{\mathrel{\rightsquigarrow}}
+\def\irred{\operatorname{irred}}
+
+% Label constructors own their own symbol only; the channels and values
+% they mention arrive already marked.
+\NewDocumentCommand\lRecv{mm}{{{#1}{?}{#2}}}
+\NewDocumentCommand\lSend{mm}{{{#1}{!}{#2}}}
+\NewDocumentCommand\lWait{m}{{{#1}{?}}}
+\NewDocumentCommand\lTerm{m}{{{#1}{!}}}
+\let\lClos\lTerm
+\NewDocumentCommand\lFork{mm}{{(\nu{#1}){#2}}}
+\NewDocumentCommand\lLink{mm}{{ {\leftrightarrow}\set{{#1}, {#2}}}}
+\NewDocumentCommand\lLinkSingle{m}{{ {\leftrightarrow}\set{{#1}}}}
+
+\RequirePackage{amssymb}
+\NewDocumentCommand\lFunc{mm}{{{#1}\mathrel{{\color{cTy}\multimap}}{#2}}}
+\NewDocumentCommand\lPair{mm}{{{#1}\mathrel{{\color{cTy}\otimes}}{#2}}}
+\NewDocumentCommand\lSum{mm}{{{#1}\mathrel{{\color{cTy}+}}{#2}}}
+\NewDocumentCommand\sRecv{mm}{{{\color{cTy}?}{#1}{\color{cTy}.}{#2}}}
+\NewDocumentCommand\sSend{mm}{{{\color{cTy}!}{#1}{\color{cTy}.}{#2}}}
+% \def\sWait{\tOp{Wait}}
+% \def\sTerm{\tOp{Term}}
+\def\sWait{\tyOp{Close}}
+\def\sTerm{\tyOp{Close}}
+\def\tEmpty{{\color{cTy}{}\cdot{}}}
+% Duality is an operation on session types; \dualv is the *syntax* of a
+% dualized type variable (Types.v, SVarD).  One macro for both made
+% dual(alpha) = alpha-bar print as a tautology.
+\NewDocumentCommand\dual{m}{{{\color{cTy}\mathit{dual}}(#1)}}
+\NewDocumentCommand\dualv{m}{{\color{cTy}\overline{#1}}}
+\def\tyFact{\tyOp{Fact}}
+\def\sSkip{\tyOp{Skip}}
+\NewDocumentCommand\sSeq{mm}{{#1}\mathbin{\color{cTy};}{#2}}
+\NewDocumentCommand\sOut{m}{{\color{cTy}!}{#1}}
+\NewDocumentCommand\sIn{m}{{\color{cTy}?}{#1}}
+\NewDocumentCommand\tyBoxS{mmmm}{\tyBox{#1\,#2}{#3}{#4}}
+\DeclareMathOperator{\nf}{nf}
+\DeclareMathOperator{\hc}{hc}
+\DeclareMathOperator{\walks}{walks}
+\NewDocumentCommand\lSelect{mm}{{#1}\triangleleft{#2}}
+\NewDocumentCommand\lBranch{mm}{{#1}\triangleright{#2}}
+\DeclareMathOperator{\selects}{selects}
+\def\ptype{\operatorname{ptype}}
+\def\primitive{\operatorname{prim}}
+
+\RequirePackage{stmaryrd}
+\def\tRepl{\tOp{repl}}
+\def\tReq{\tOp{req}}
+\makeatletter
+% \let\@replSymb\shortuparrow
+\let\@replSymb!
+\let\@reqSymb\shortdownarrow
+\NewDocumentCommand\lRepl{mm}{{{\@replSymb}\lFork{#1}{#2}}}
+\NewDocumentCommand\lReq{mm}{{{\@reqSymb}\lFork{#1}{#2}}}
+\NewDocumentCommand\lUnres{m}{{{\@replSymb}#1}}
+\NewDocumentCommand\IExp{m}{{{\@replSymb}#1}}
+\makeatother
+
+\RequirePackage{stmaryrd}
+\makeatletter
+\NewDocumentCommand\@lr{mmm}{{#1}_{#2}\llbracket{#3}\rrbracket}
+\NewDocumentCommand\lrVal{mm}{\@lr{V}{#1}{#2}}
+\NewDocumentCommand\lrTerm{mm}{\@lr{E}{#1}{#2}}
+\NewDocumentCommand\lrProc{mm}{\@lr{P}{#1}{#2}}
+\NewDocumentCommand\lrGSub{mm}{\@lr{G}{#1}{#2}}
+% Script T, so the judgment letter does not collide with the
+% metavariable T for types.
+\NewDocumentCommand\lrTopo{mm}{\@lr{\mathcal{T}}{#1}{#2}}
+\makeatother
+
+% Σ ⊩_n (transition) : T  --  "this transition discharges its
+% obligation at Σ ⊢ T, with continuations at index n".
+\NewDocumentCommand\obl{mmm}{{#1} \mathrel{\Vdash_{#2}} {#3}}
+
+\newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
+% The n-ary form of \cupdot is stmaryrd's \bigcupdot.
+
+\newcommand{\ie}{i.e.,~} % comma
+\newcommand{\eg}{e.g.~}  % no comma, according to the Handbook for Scholars
+
+\newcommand{\st}{.\,}
+
+\DeclareMathOperator{\unf}{unfold}
+\newcommand{\sflipop}{\mathit{flip}}
+\newcommand{\isdual}{\mathrel{\perp}}
+
+\DeclareMathOperator{\sent}{sentc}
+% \newcommand{\sent}{sentc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Points, facts, constraints, futures.  Points and the order on them
+%% are type-level objects, so they carry cTy.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DeclareMetaVar\pntA{Ty}{x}    \DeclareMetaVar\pntB{Ty}{y}
+\DeclareMetaVar\pntC{Ty}{z}
+\DeclareMetaVar\pnm{Ty}{n}     \DeclareMetaVar\pcst{Ty}{a}
+\DeclareMetaVar\cstr{Ty}{C}    \DeclareMetaVar\frm{Ty}{F}
+\DeclareMetaVar\fctx{Ty}{\Gamma}
+\DeclareMetaVar\ubd{Ty}{u}
+\DeclareSortSymbol\pviA{Ty}{\mathord}{\iota}
+\DeclareSortSymbol\pviB{Ty}{\mathord}{\kappa}
+\DeclareSortSymbol\pfv{Ty}{\mathord}{\varphi}
+\DeclareSortSymbol\pnode{Ty}{\mathord}{\nu}
+\DeclareMetaVar\lbd{Ty}{l}
+\DeclareSortSymbol\fact{Ty}{\mathord}{g}
+\def\pBot{{\color{cTy}\bot}}
+\def\pTop{{\color{cTy}\top}}
+% an absent bound, written in grammars only
+\def\pAbs{{\color{cTy}\cdot}}
+\def\pvivec{{\color{cTy}\bar{\iota}}}
+\def\pntvec{{\color{cTy}\bar{x}}}
+\colorlet{cSelf}{ForestGreen}
+\def\pself{{\color{cSelf}\mathsf{self}}}
+% the partner point of an end (end points, appendix)
+\NewDocumentCommand\pdual{m}{{\color{cTy}\overline{#1}}}
+% x + k, x[j] (payload point), x ≺ y, x ≡ y, {ℓ} ≼ N
+\NewDocumentCommand\poff{mm}{{#1}\mathbin{{\color{cTy}+}}{#2}}
+\NewDocumentCommand\pslot{mm}{{#1}\mathopen{\color{cTy}[}{#2}\mathclose{\color{cTy}]}}
+\let\ppay\pslot
+\NewDocumentCommand\fLt{mm}{{#1}\mathrel{{\color{cTy}\prec}}{#2}}
+\NewDocumentCommand\fEq{mm}{{#1}\mathrel{{\color{cTy}\equiv}}{#2}}
+\NewDocumentCommand\fLe{mm}{{#1}\mathrel{{\color{cTy}\preccurlyeq}}{#2}}
+\DeclareMathOperator{\heads}{heads}
+\DeclareMathOperator{\rootof}{root}
+% S@x, the annotated arrow, the box type, the existential
+\NewDocumentCommand\sAt{mm}{{#1}{\color{cTy}@}{#2}}
+\NewDocumentCommand\lolli{mm}{\mathrel{{\color{cTy}\multimap}^{#1}_{#2}}}
+\NewDocumentCommand\tyBox{mmm}{{{\color{cTy}\Box}(\mathord{\color{cTy}\forall}#1{\color{cTy}.}\,#2{\color{cTy}.}\,#3)}}
+\NewDocumentCommand\tyEx{mmmm}{{\mathord{\color{cTy}\exists}^{#1}#2{\color{cTy}.}\,#3{\color{cTy}.}\,#4}}
+\NewDocumentCommand\tysub{mmm}{{#1}\mathopen{{\color{cTy}[}}#3\mathrel{\color{cTy}\mapsto}#2\mathclose{{\color{cTy}]}}}
+\NewDocumentCommand\payloadAt{mm}{{#1}[#2/\pself]}
+\DeclareMetaVar\payty{Ty}{A}
+% new, spawn, boxes, force, and the future-indexed judgment
+\def\tNew{\tOp{new}}
+\def\tSpawn{\tOp{spawn}}
+\NewDocumentCommand\tNewC{mm}{{\tNew\,#1\,\mathopen{{\color{cTm}\{}}#2\mathclose{{\color{cTm}\}}}}}
+\NewDocumentCommand\tBoxP{mm}{{{\color{cTm}!}#1{\color{cTm}.}\,#2}}
+\NewDocumentCommand\tBoxA{mmmm}{{{\color{cTm}!}#1\,\mathord{\color{cTy}\forall}#2\,\mathopen{{\color{cTm}\{}}#3\mathclose{{\color{cTm}\}}}{\color{cTm}.}\,#4}}
+\NewDocumentCommand\tForceA{mm}{{\tForce\,#1\,[#2]}}
+\NewDocumentCommand\tAbsA{mmmm}{{{\color{cTm}\uplambda}^{#1}_{#2}#3{\color{cTm}.}#4}}
+\NewDocumentCommand\typesF{m}{\mathrel{\color{black}\ltxvdash_{#1}}}
+\NewDocumentCommand\provesF{m}{\mathrel{\color{black}\vDash^{#1}}}
+% The term judgment (typed) carries a future; the process judgment
+% (ptyped) carries a world.
+\NewDocumentCommand\typesW{m}{\mathrel{\color{black}\ltxvdash_{#1}}}
+\NewDocumentCommand\typesFW{mm}{\mathrel{\color{black}\ltxvdash^{#1}_{#2}}}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\strict}{strict}
+\NewDocumentCommand\wrest{mm}{{#1}\mathord{\restriction_{#2}}}
+\newcommand{\wjoinsym}{\mathbin{\sqcup}}
+% Labels of the two new primitives
+\NewDocumentCommand\lNew{m}{{(\nu{#1})}}
+\NewDocumentCommand\lSpawnL{m}{{{\Uparrow}{#1}}}
+% The logical relation reads a world and a future
+\makeatletter
+\NewDocumentCommand\lrTermF{mmm}{{\@lr{E}{#1}{#2}^{#3}}}
+\makeatother
+\DeclareMetaVar\wrld{Ty}{W}
+\DeclareMetaVar\tenv{Ty}{\Theta}
+\DeclareMathOperator{\readyop}{ready}
+\DeclareMathOperator{\belowrestop}{below\_rest}
+\DeclareMathOperator{\aboveofferedop}{above\_offered}
+\DeclareMathOperator{\ents}{ents}
+\DeclareMathOperator{\balanced}{balanced}
+\DeclareMathOperator{\hd}{hd}
+\DeclareMathOperator{\offered}{offered}
+\DeclareSortSymbol\entry{Ty}{\mathord}{\eta}
+\NewDocumentCommand\tenvof{m}{{\tenv(#1)}}
+\RequirePackage{stmaryrd}
+\NewDocumentCommand\lrVW{mmm}{{V^{#1}_{#2}\llbracket{#3}\rrbracket}}
+\NewDocumentCommand\lrEW{mmmm}{{E^{#1}_{#2}\llbracket{#3}\rrbracket^{#4}}}
+\NewDocumentCommand\lrPW{mmm}{{P^{#1}_{#2}\llbracket{#3}\rrbracket}}
+\NewDocumentCommand\lrGW{mmm}{{G^{#1}_{#2}\llbracket{#3}\rrbracket}}
+\NewDocumentCommand\cost{m}{\mathbin{\ominus}#1}
+\newcommand{\wextsym}{\mathrel{\sqsubseteq}}
+\newcommand{\wextfresh}{\mathrel{\sqsubseteq_{\mathrm{o}}}}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:
+

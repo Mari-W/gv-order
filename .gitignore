@@ -49,6 +49,9 @@ rocq_mcp_cache*
 *.ps
 paper/*.pdf
 !paper/rocq-logo.pdf
+!paper/main-old.pdf
+paper/old/*.pdf
+!paper/old/rocq-logo.pdf
 
 # Working documents and local editor helpers. Kept in the tree, out of the repo.
 /docs/system/
