@@ -77,283 +77,7 @@ the point variables its box binds.
   stop commuting at this type.
 \end{example}
 
-\subsection{A Forwarder between Two Abstract Points}
-\label{sec:ex-forwarder}
-
-\begin{example}[The forwarder \rocq{fw_main}]
-\label{ex:forwarder}
-  A box with two point variables forwards every message of one session
-  to another.
-  \begin{align*}
-    \sty_{\asTy{i}} &= \tyMu\tvar. \sRecv{(\sAt{\sTerm}{\pslot{\pself}{0}})}{\tvar}
-    &
-    \sty_{\asTy{o}} &= \tyMu\tvar. \sSend{(\sAt{\sTerm}{\pslot{\pself}{0}})}{\tvar}
-    \\
-    \cstr_{\asTy{f}} &= \set{\,
-      \fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
-      \fLt{\poff{\pviA'}{k}}{\poff{\pviA}{k+1}},\
-      \fLt{\poff{\pviA'}{k}}{\pslot{(\poff{\pviA'}{k})}{0}}
-      \;\mid\; k \in \Nat \,}
-    \\
-    & \quad \cup\ \set{\, \fEq{\pslot{(\poff{\pviA}{k})}{0}}{\pslot{(\poff{\pviA'}{k})}{0}}
-      \;\mid\; k \in \Nat \,}
-    \\
-    \asTmId{fwd} &{}: \tyBox{\pviA \pviA'}{\cstr_{\asTy{f}}}{%
-      \tyUnit \lolli{}{}
-        (\lPair{\sAt{\sty_{\asTy{i}}}{\pviA}}{\sAt{\sty_{\asTy{o}}}{\pviA'}}
-          \lolli{\pviA'}{} \tyUnit)}
-    \\
-    \asTmId{fwd} &{}=
-      \tBoxA{\asTm{f}}{\pviA \pviA'}{\cstr_{\asTy{f}}}{}
-      \tAbsA{\pviA'}{}{\asTm{p}}{}
-      \tLet[\vr][\vrB]{\asTm{p}}{}
-      \tLet[\chB][\vr_1]{\tApp{\tRecv}{\vr}}{}
-    \\ & \qquad
-      \tLetS{\vrB_1}{\tApp{\tSend}{\tPair{\chB}{\vrB}}}{}
-    \\ & \qquad
-      \tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\poff{\pviA}{1}\ \poff{\pviA'}{1}})}{%
-        \tPair{\vr_1}{\vrB_1}}})}
-  \end{align*}
-  The receive at $\pviA$ gives $\chB$ the type
-  $\sAt{\sTerm}{\pslot{\pviA}{0}}$, and the send at $\pviA'$ asks for
-  $\sAt{\sTerm}{\pslot{\pviA'}{0}}$. \Cref{rule:E-Conv} up to
-  $\fctx \types {\equiv}$ moves $\chB$ along the alias
-  $\fEq{\pslot{\pviA}{0}}{\pslot{\pviA'}{0}}$ of $\cstr_{\asTy{f}}$.
-  This is the one place in the development where an alias between two
-  payload points is needed, and $\cstr_{\asTy{f}}$ is indexed by the
-  offset rather than by the payload depth. The recursive call asks
-  $\cstr_{\asTy{f}}$ one round later, which $\cstr_{\asTy{f}}$ contains
-  (\rocq{fw_sub}). A producer and a consumer complete the program
-  (\rocq{fprod_typed}, \rocq{fcons_typed}), and
-  $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{fw} : \tyUnit$
-  (\rocq{fw_typed}) makes it deadlock free
-  (\rocq{fw_deadlock_free}).
-\end{example}
-
-\subsection{A Descending Order}
-\label{sec:ex-descending}
-
-\begin{example}[Kobayashi's forwarder server \rocq{fwsrv}]
-\label{ex:kobfwd}
-  Example~2 of \citet{Kobayashi06} is a replicated server that answers
-  on a reply channel, either at once or by creating a fresh reply
-  channel, calling itself on it and forwarding the answer. His
-  derivation needs the fresh channel strictly below the one it answers
-  on, and he notes that without that fact the process has no type.
-  Here the fresh reply channel of a call sits at $\pslot{\pviA}{0}$, the
-  first payload point of the channel the call answers on, and
-  \begin{align*}
-    \sty_{\asTy{r}} &= \sSend{\tyUnit}{\sTerm}
-    &
-    \cstr &= \set{\,
-      \fLt{\pslot{\pviA}{0^{n+1}}}{\pslot{\pviA}{0^n}},\
-      \fLt{\poff{\pslot{\pviA}{0^{n+1}}}{1}}{\pslot{\pviA}{0^n}}
-      \;\mid\; n \in \Nat \,}
-    \\
-    \asTmId{fwsrv} &{}: \tyBox{\pviA}{\cstr}{%
-      \tyUnit \lolli{}{}
-        (\sAt{\sty_{\asTy{r}}}{\pviA} \lolli{\poff{\pviA}{1}}{} \tyUnit)}
-  \end{align*}
-  The order descends along the payload depth, and the depth grows without
-  bound, so there is no rank in $\Nat$. The lexicographic order on the
-  reversed depth and the offset contains every fact of $\cstr$ and
-  program order (\rocq{KobForwarder.fw_ok}). Strictness asks only irreflexivity and transitivity,
-  so a descending chain is admitted. The recursive call asks
-  $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which $\cstr$ contains
-  (\rocq{KobForwarder.fw_sub}), and the whole program types
-  (\rocq{KobForwarder.fw_typed}) and is deadlock free
-  (\rocq{fw_deadlock_free_kob}).
-\end{example}
-
-\begin{example}[The factorial server \rocq{fcsrv}]
-\label{ex:factserver}
-  Kobayashi's running example~\cite{Kobayashi06} and example~(3) of
-  \citet{Padovani14} are the same program: a server receives a number
-  and a reply channel, answers at zero, and otherwise creates a fresh
-  reply channel, calls itself on it, blocks on the answer and sends its
-  own. \citet{Padovani14} notes that the fresh channel stands in the
-  reply channel's position, so a monomorphic system wants the two
-  priorities equal while the blocking input wants one below the other,
-  and that polymorphism over the replicated channel is what types the
-  program. Here the box's $\forall$ is that polymorphism, the constraint
-  is the one of \cref{ex:kobfwd}, and
-  \[
-    \asTmId{fact} : \tyBox{\pviA}{\cstr}{%
-      \tyUnit \lolli{}{}
-        (\lPair{(\lSum{\tyUnit}{\tyUnit})}{\sAt{\sty_{\asTy{r}}}{\pviA}}
-          \lolli{\poff{\pviA}{1}}{} \tyUnit)}
-  \]
-  \Cref{rule:E-Case} types both branches, and the program is deadlock
-  free (\rocq{fc_deadlock_free}).
-\end{example}
-
-\subsection{Milner's Cyclic Scheduler}
-\label{sec:extens-scheduler}
-
-\begin{example}[Milner's cyclic scheduler \rocq{ms_main}]
-\label{ex:scheduler}
-  \citet{DardhaG18} motivate priority-based typing with Milner's cyclic
-  scheduler, their Example~1, which is deadlock free and ``not typable
-  in the original type systems by Caires-Pfenning and Wadler'', where
-  Wadler's system is a process calculus equivalent to GV
-  \cite{conf/esop/LindleyM15}, which \OurLang\ refines. The ring of
-  three agents, each with a spoke to its own collector, is
-  \begin{align*}
-    \asTmId{A}_0 &=
-      \tSeq{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\ch_0}})}}{}
-      \tSeq{\asTmId{recvclose}\ \chB_0}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\vr_0}})}}
-    \\
-    \asTmId{A}_i &=
-      \tSeq{\asTmId{recvclose}\ \chB_i}{}
-      \tSeq{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\vr_i}})}}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\ch_i}})}}
-      \qquad 0 < i < 3
-    \\
-    \asTmId{P}_i &= \asTmId{recvclose}\ \vrB_i
-    \qquad\text{where}\quad
-    \asTmId{recvclose}\ \asTm{r} =
-      \tLet[\ivx][\asTm{r}]{\tApp{\tRecv}{\asTm{r}}}{\tSeq{\ivx}{\tApp{\tClos}{\asTm{r}}}}
-  \end{align*}
-  Six channels sit at the points of one root. The first $\tNew$ creates
-  the ring channel of $\asTmId{A}_0$ at a fresh $\pviA$ with the empty
-  creation constraint, and every later channel is created at
-  $\poff{\pviA}{2k}$ by the alias
-  $\fEq{\pviB}{\poff{\pviA}{2k}}$. Three threads sharing three ring
-  channels form a cycle, so no derivation by \ref{rule:P-Connect}
-  exists, and the order on points admits the program all the same:
-  $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{ms} : \tyUnit$
-  (\rocq{ms_typed}), so it is deadlock free (\rocq{ms_deadlock_free}).
-  A reduced variant with three agents and no collectors, one of which is
-  a $\tLink$, is \rocq{sched_deadlock_free}.
-\end{example}
-
-\subsection{Programs the System Rejects}
-\label{sec:ex-rejected}
-
-A system that only showed what types would be worth less. Each
-rejection below names the facts a derivation would have to supply, and
-each is a theorem that those facts do not hold together. Two of them
-close a cycle, so they are stated for every $\fctx$ whose $\fLt{}{}$ has
-no cycle. A strict world without hypotheses is such a $\fctx$
-(\rocq{slt_acyclic_nil}).
-
-\begin{theorem}[One round is not enough \rocq{rr_call_underivable}]
-\label{thm:rej-rr}
-  Let $\asTmId{srv}$ be the server that answers every request on
-  $\vr$ with a reply on $\vrB$, forever, and let
-  $\cstr_1 = \set{\fLt{\pviA}{\pviA'}, \fLt{\pviA'}{\poff{\pviA}{1}}}$
-  be the constraint of one round. The recursive call forces at
-  $(\poff{\pviA}{1}, \poff{\pviA'}{1})$ and so asks
-  $\fLt{\poff{\pviA}{1}}{\poff{\pviA'}{1}}$, and
-  $\fctx = \cstr_1$ does not derive that fact for any well-formed
-  world.
-\end{theorem}
-
-\begin{proof}
-  A model refutes the fact. Send $\fLt{}{}$ to the relation
-  $\asTy{R}$ that compares the rank below when both points have a
-  variable root and holds between any two points with constant roots,
-  and send $\fEq{}{}$ to equality on points with a variable root and to
-  the same unconditional relation elsewhere (\rocq{rr_R},
-  \rocq{rr_rank}). Every rule of the fact logic is sound for that pair,
-  which is one obligation per rule (\rocq{fl_map}). A well-formed world
-  relates two points with a variable root by program order alone and
-  identifies them only when equal, and a point whose root the world
-  supports is a point constant (\rocq{isvar_const},
-  \rocq{world_wf}). Program order raises the offset and so raises the
-  rank (\rocq{rr_R_po}). The two facts of $\cstr_1$ hold in the model by
-  computation. Mapping the asked fact gives
-  $\asTy{R}(\poff{\pviA}{1}, \poff{\pviA'}{1})$, which reads $20 < 16$.
-\end{proof}
-
-The rank $10(k+1)$ for $\poff{\pviA}{k}$ and $15+k$ for
-$\poff{\pviA'}{k}$ satisfies $\cstr_1$ and program order and puts
-$\poff{\pviA'}{1}$ below $\poff{\pviA}{1}$. A constraint is the
-invariant of a recursion, so it has to state every round at once, as
-\cref{ex:chain,ex:forwarder} do.
-
-\begin{theorem}[A box needs its constraint \rocq{ord_no_constraint}]
-\label{thm:rej-ord}
-  Let
-  \begin{align*}
-    \asTmId{ordered} &= \tBoxP{\asTm{f}}{\tAbs{\asTm{p}}{%
-      \tLet[\ch][\chB]{\asTm{p}}{\tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}}}}
-    \\
-    &: \tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{}{}
-      (\lPair{\sAt{\sTerm}{\pviA}}{\sAt{\sTerm}{\pviA'}}
-        \lolli{\pviA'}{} \tyUnit)}
-  \end{align*}
-  Closing $\ch$ blocks at $\pviA$ while the body still holds $\chB$ at
-  $\pviA'$, so \ref{rule:E-App} asks $\fLt{\pviA}{\pviA'}$. With
-  $\cstr = \emptyset$ the fact theory does not derive
-  $\fLt{\pviA}{\pviA'}$ at any well-formed world. With
-  $\cstr = \set{\fLt{\pviA}{\pviA'}}$ it does, in the world-carrying
-  judgment at every well-formed world (\rocq{ordered_typed}).
-\end{theorem}
-
-\begin{proof}
-  Again a model (\rocq{ord_R}, \rocq{fl_map}). Send $\fLt{}{}$ to the
-  relation that holds between two points with a variable root when
-  their roots agree and the offset grows, and between any two points
-  with constant roots. Send $\fEq{}{}$ to equality on the first kind and
-  to the unconditional relation on the second. Program order keeps the
-  root and raises the offset, so it lies in the model
-  (\rocq{ord_R_po}), a point whose root the world supports is a
-  constant (\rocq{isvar_const}), and the empty constraint contributes no
-  fact (\rocq{bcs_open_nil}). The names of $\pviA$ and $\pviA'$ are the
-  variables $0$ and $1$, so they differ, and the model refutes
-  $\fLt{\pviA}{\pviA'}$.
-\end{proof}
-
-\begin{theorem}[A reversed agent \rocq{sched_rev_underivable}, \rocq{ms_rev_underivable}]
-\label{thm:rej-sched}
-  In the reduced scheduler, reversing $\asTmId{ag}_0$ so that it
-  receives before it sends asks $\fLt{\pntB}{\pntA}$, while
-  $\asTmId{ag}_2$ asks $\fLt{\pntC}{\pntB}$ and the $\tLink$ asks
-  $\fEq{\pntC}{\pntA}$. The three close the cycle
-  $\fLt{\pntA}{\pntB} \prec \pntA$. In Milner's scheduler the same
-  reversal asks $\fLt{\asTy{r}_2}{\asTy{r}_0}$ against
-  $\fLt{\asTy{r}_0}{\asTy{r}_1}$ and
-  $\fLt{\asTy{r}_1}{\asTy{r}_2}$.
-\end{theorem}
-
-\begin{proof}
-  Both are closures of the three facts in $\fctx$. In the reduced
-  scheduler, transitivity of $\fLt{}{}$ takes
-  $\fLt{\pntC}{\pntB}$ and $\fLt{\pntB}{\pntA}$ to
-  $\fLt{\pntC}{\pntA}$, and closure of $\fLt{}{}$ under $\fEq{}{}$ on
-  the right takes that and $\fEq{\pntC}{\pntA}$ to $\fLt{\pntC}{\pntC}$
-  (\rocq{sl_trans}, \rocq{sl_eqr}, \rocq{se_sym}). In Milner's
-  scheduler two uses of transitivity give
-  $\fLt{\asTy{r}_0}{\asTy{r}_0}$. Either conclusion contradicts the
-  hypothesis that $\fLt{}{}$ of $\fctx$ has no cycle, which a strict
-  world without hypotheses discharges (\rocq{slt_acyclic_nil}).
-\end{proof}
-
-\begin{theorem}[A cyclic forwarding \rocq{badlink_underivable}]
-\label{thm:rej-link}
-  For $\asTmId{badlink}$ (\rocq{badlink_main}), with $\ch$ at $\pntA$,
-  $\chB$ at $\pntB$ and $\asTm{e}$ at $\pntC$, the $\tLink$ asks
-  $\fEq{\pntA}{\pntB}$, the main thread asks $\fLt{\pntA}{\pntC}$ and
-  the second thunk asks $\fLt{\pntC}{\pntB}$. The three give
-  $\fLt{\pntA}{\pntA}$.
-\end{theorem}
-
-\begin{proof}
-  Transitivity takes $\fLt{\pntA}{\pntC}$ and $\fLt{\pntC}{\pntB}$ to
-  $\fLt{\pntA}{\pntB}$, and closure under $\fEq{\pntA}{\pntB}$ on the
-  right gives $\fLt{\pntA}{\pntA}$ (\rocq{sl_trans}, \rocq{sl_eqr},
-  \rocq{se_sym}), against the hypothesis on $\fctx$.
-\end{proof}
-
-The program deadlocks after the forwarding. The mechanization argues
-the deadlock in a comment and proves only the rejection.
-
-The deadlocked $\asTmId{blocked}$ of \cref{ex:deadlock}
-(\rocq{blocked_main}) is rejected for the same reason. Whatever points
-$\tNew$ picks for $\ch$ and $\chB$, the main thread asks
-$\fLt{\pntA}{\pntB}$ and the thunk asks $\fLt{\pntB}{\pntA}$, and
-\ref{rule:E-Conv} keeps points while \ref{rule:E-Weak} drops only
-unlimited bindings, so every derivation asks both.
+\Cref{sec:further-examples} gives the other examples and the rejection results.
 
 \section{Extensions}
 \label{sec:ext}
@@ -385,6 +109,59 @@ logical relation has the clauses \textsc{O-Select}, \textsc{O-Branch},
 \textsc{Q-Select} and \textsc{Q-Branch} (\rocq{Eobl}, \rocq{Pobl}).
 % TODO(author): prose
 
+\Cref{fig:choice-relation} adds four obligation clauses and extends the
+selection of offered entries. The value relation and both readiness
+conditions of \cref{def:ready} stay unchanged. Selection keeps the index,
+while branching consumes one step (\rocq{scost}, \rocq{selects}).
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Choice obligations (\rocq{Eobl}, \rocq{Pchoice_case})}
+  Put $D_\oplus=\oplus\{\sty_0,\sty_1\}$,
+  $D_{\&}=\&\{\sty_0,\sty_1\}$ and
+  \[
+    (D,\sigma,d)\in\set{
+      (D_\oplus,\lSelect{\ch}{i},0),
+      (D_{\&},\lBranch{\ch}{i},1)},\qquad i\in\set{0,1}.
+  \]
+  \begin{proofrules}
+    \infer*[lab=O-Select / O-Branch]{
+      \tm'\in\lrEW{\wrld}{n-d}{\tenv_1,
+        \ch:\sAt{\sty_i}{\pslot{\pntA}{i}}\types\ty}{\frm}
+    }{
+      \obl{\wrld;\tenv_1,\ch:\sAt{D}{\pntA}\mid\frm}{n}
+        {\tm\trans{\sigma}\tm':\ty}
+    }
+    \and
+    \infer*[lab=Q-Select / Q-Branch]{
+      (\chset',\pool')\in\lrPW{\wrld}{n-d}{
+        \senv_1,\ch:\sAt{\sty_i}{\pslot{\pntA}{i}}\types\ty}
+    }{
+      \obl{\wrld;\senv_1,\ch:\sAt{D}{\pntA}}{n}
+        {(\chset,\pool)\trans{\sigma}(\chset',\pool'):\ty}
+    }
+  \end{proofrules}
+  Here $n-d$ is truncated subtraction. In the term rule the displayed
+  end is selected from $\tenv$ and the continuation replaces that end,
+  keeping any other end of $\ch$.
+  \rulesection{Offered entries (\rocq{selects}, \rocq{offered_t}, \rocq{offered_p})}
+  For an entry $\entry=(\ch':\sAt{\sty}{\pntB})$,
+  \begin{align*}
+    \selects(\entry,\lSelect{\ch}{i})
+      &\iff \ch'=\ch\land\nf(\sty)=D_\oplus,\\
+    \selects(\entry,\lBranch{\ch}{i})
+      &\iff \ch'=\ch\land\nf(\sty)=D_{\&}.
+  \end{align*}
+  An entry is offered when a transition carries a label that selects it.
+  Readiness still applies $\belowrestop$ to terms and
+  $\aboveofferedop$ to processes with this enlarged offered set.
+  \rulesectionend
+  \caption{Choice in the logical relation and readiness}
+  \Description{The select and branch obligations for terms and processes,
+    and the corresponding selection of offered entries.}
+  \label{fig:choice-relation}
+\end{figure}
+
 Choice is also encodable from sums and delegation. A selection sends
 $\tInj{i+1}{}$ of a fresh channel whose arm $i$ lies at $\pslot{\pntA}{i}$, and a
 branch receives and cases (\rocq{sel1_typed}, \rocq{sel2_typed},
@@ -392,6 +169,123 @@ branch receives and cases (\rocq{sel1_typed}, \rocq{sel2_typed},
 
 \subsection{Context-Free Session Types}
 \label{sec:ext-cfst}
+
+\Cref{fig:cfst-syntax,fig:cfst-typing} give the changed definitions.
+The core abbreviation $\sSend{\payty}{\sty}$ now means
+$\sSeq{\sOut{\payty}}{\sty}$, and $\sRecv{\payty}{\sty}$ means
+$\sSeq{\sIn{\payty}}{\sty}$.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Extended syntax and duality (\rocq{ty}, \rocq{dual})}
+  \begin{align*}
+    \sty &::= \sSkip\sepr\sSeq{\sty}{\styB}\sepr\sOut{\payty}
+      \sepr\sIn{\payty}\sepr\sTerm\sepr\tyMu\tvar.\sty
+      \sepr\tvar\sepr\dualv{\tvar}\\
+      &\qquad\sepr\oplus\{\sty_0,\sty_1\}\sepr\&\{\sty_0,\sty_1\},\\
+    \ty &::= \cdots\sepr\tyBoxS{\pvivec}{\bar\tvar}{\cstr}{\ty},\\
+    \dual{\sSkip}&=\sSkip,&
+    \dual{\sSeq{\sty}{\styB}}&=\sSeq{\dual{\sty}}{\dual{\styB}},\\
+    \dual{\sOut{\payty}}&=\sIn{\payty},&
+    \dual{\sIn{\payty}}&=\sOut{\payty},\\
+    \dual{\oplus\{\sty_0,\sty_1\}}&=\&\{\dual{\sty_0},\dual{\sty_1}\},&
+    \dual{\&\{\sty_0,\sty_1\}}&=\oplus\{\dual{\sty_0},\dual{\sty_1}\}.
+  \end{align*}
+  The other duality clauses stay as in \cref{fig:types}.
+  \rulesection{Head normalization (\rocq{unfoldS}, \rocq{hseq})}
+  Write $o::=\sOut{\payty}\sepr\sIn{\payty}\sepr\tvar\sepr\dualv{\tvar}$.
+  Normalization exposes a head
+  $H::=\sSkip\sepr\sTerm\sepr\sSeq{o}{\sty}
+    \sepr\oplus\{\sty_0,\sty_1\}\sepr\&\{\sty_0,\sty_1\}$.
+  It unfolds $\tyMu\tvar.\sty$ to
+  $\tysub{\sty}{\tyMu\tvar.\sty}{\tvar}$ and uses
+  \begin{align*}
+    \sSeq{\sSkip}{\sty}&\longmapsto\sty,&
+    \sSeq{(\sSeq{o}{\sty})}{\styB}&\longmapsto\sSeq{o}{(\sSeq{\sty}{\styB})},\\
+    \sSeq{\oplus\{\sty_0,\sty_1\}}{\sty}
+      &\longmapsto\oplus\{\sSeq{\sty_0}{\sty},\sSeq{\sty_1}{\sty}\},&
+    \sSeq{\&\{\sty_0,\sty_1\}}{\sty}
+      &\longmapsto\&\{\sSeq{\sty_0}{\sty},\sSeq{\sty_1}{\sty}\},\\
+    o&\longmapsto\sSeq{o}{\sSkip},&
+    \sSeq{\sTerm}{\sty}&\longmapsto\sTerm.
+  \end{align*}
+  Normalize the left operand before applying a sequence equation.
+  Also $\sSeq{o}{\sSkip}$ followed by $\sty$ normalizes to
+  $\sSeq{o}{\sty}$. The computation uses fuel
+  $f(\sSeq{\sty}{\styB})=1+f(\sty)+f(\styB)$,
+  $f(\tyMu\tvar.\sty)=1+f(\sty)$ and $f(\sty)=1$ otherwise
+  (\rocq{sfuel}, \rocq{unrN}). A failed normalization leaves its input unchanged.
+  \rulesection{Equivalence and contractiveness (\rocq{seq}, \rocq{hcontractive})}
+  \[
+    {\approx}=\nu R.\,\mathcal B(R),\qquad
+    \hc(\sty)\iff\forall n\in\Nat\st\mathcal H^n(\top)(\sty).
+  \]
+  $\mathcal B(R)$ compares normalized heads as follows. Equal terminal heads relate. Action heads relate
+  when their actions agree, their payload arities agree, their payload
+  types relate by type congruence, and their continuations relate.
+  Variable heads require the same variable and polarity. Choice heads
+  require the same constructor and related corresponding arms.
+  Stuck heads relate exactly when equal (\rocq{eq_step}).
+  $\mathcal H(Q)$ accepts terminal heads, requires $Q$ of each action
+  or variable continuation and both choice arms, and rejects stuck heads
+  (\rocq{hc_step}).
+  Relational duality exchanges send with receive, selection with branch,
+  and variable polarities while comparing payloads by $\approx$
+  (\rocq{dual_step}).
+  \rulesectionend
+  \caption{Context-free session syntax and head observations}
+  \Description{Extended session types, boxes, duality, normalization,
+    bisimilarity and hereditary contractiveness.}
+  \label{fig:cfst-syntax}
+\end{figure}
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Session-polymorphic boxes (\rocq{t_exp}, \rocq{KSForce})}
+  Put $B=\tyBoxS{\pvivec}{\bar\tvar}{\cstr}{\tyUnit\lolli{\ubd}{}\ty}$.
+  \begin{proofrules}
+    \infer*[lab=E-Exp-CF]{
+      \lenv\text{ only }\Box\text{ types}\quad\pvivec,\pfv\text{ fresh}\\
+      \forall\bar\sty\text{ with }\hc(\sty_i)\st
+      \fctx,\cstr,\fLt{\ubd}{\pfv};\lenv,\vr:B
+        \typesF{\set{\pfv}}\tm:\tysub{\ty}{\bar\sty}{\bar\tvar}
+    }{
+      \fctx;\lenv\typesF{\frm}\tBoxP{\vr}{\tm}:B
+    }
+  \end{proofrules}
+  \[
+    \tForce:\forall\pntvec,\bar\sty.\,
+    \tysub{\cstr}{\pntvec}{\pvivec}\Rightarrow
+    B\lolli{\tysub{\ubd}{\pntvec}{\pvivec}}{}
+      \tysub{(\tysub{\ty}{\pntvec}{\pvivec})}{\bar\sty}{\bar\tvar},
+    \qquad\hc(\sty_i).
+  \]
+  The point instance is known and both instance lists match their binders.
+  \rulesection{Conversion and the relation (\rocq{eqT}, \rocq{Vdef})}
+  \ref{rule:E-Conv} uses the congruence of $\approx$ through types and
+  world aliasing at carrier points. A box binding session variables
+  compares its body by syntactic equality (\rocq{eqT}).
+  In \ref{rule:V-Box}, quantify also over $\bar\sty$ with $\hc(\sty_i)$
+  and apply $[\bar\tvar\mapsto\bar\sty]$ to the instantiated body type.
+  All channel-head tests in obligations and offered entries read $\nf$.
+  The other value clauses, term and process clauses, and readiness
+  conditions stay unchanged (\rocq{Eobl}, \rocq{Pobl}, \rocq{selects}).
+  \rulesection{Points and payloads}
+  $\heads(\sAt{\sty}{\pntA})=\set{\pntA}$ still holds.
+  Point substitution still stops at session types. Session substitution
+  enters payload types and dualizes an instance under $\dualv{\tvar}$
+  (\rocq{sinst_ty}). Payload instantiation remains
+  $\payloadAt{\payty}{\pntA}$ and choice still moves to
+  $\pslot{\pntA}{i}$. Send and receive move to $\poff{\pntA}{1}$,
+  so their schemes in \cref{fig:signatures} use the new sequential
+  abbreviation without changing their constraints. The other schemes,
+  heads equations, worlds and fact rules stay unchanged.
+  \rulesectionend
+  \caption{The changed box rule, force scheme and observations}
+  \Description{Session instantiation at boxes and force, conversion,
+    logical relation observations, and unchanged point operations.}
+  \label{fig:cfst-typing}
+\end{figure}
 
 Context-free session types add $\asTy{Skip}$ and sequential composition
 $\sty;\sty$ to session types, and a $\Box$ binds session variables
@@ -401,12 +295,12 @@ at every hereditarily contractive instance of its session variables, and
 A recursive function over a context-free protocol acts at the walks of
 its starting point $\pntA$,
 \[
-  \mathit{walks}(\pntA) = \set{\pntA\, w \mid w \in (+1 \mid [0] \mid [1])^*}
+  \walks(\pntA)=\mu X.\,\set{\pntA}\cup
+    \set{\poff{q}{1},\pslot{q}{0},\pslot{q}{1}\mid q\in X}
 \]
-where $+1$ follows an action and $[i]$ follows branch $i$ of a choice. A
-ceiling $\zeta$ is an ordinary point variable above every walk, and the
-box constraint states the ceiling and the facts each choice owes for all
-walks at once,
+where $\mu X$ takes the least closed set. A ceiling $\zeta$ satisfies
+$\forall q\in\walks(\pviA)\st\fctx\types\fLt{q}{\zeta}$.
+The box constraint also states the facts each choice owes,
 \[
   \cstr = \set{\fLt{q}{\zeta},\ \fLt{q}{\pslot{q}{0}},\ \fLt{q}{\pslot{q}{1}}
     \mid q \in \mathit{walks}(\pviA)} .
@@ -439,145 +333,6 @@ $\tSeq{\tApp{\asTmId{sendTree}}{\tPair{t}{\ch}}}{\tSeq{\tApp{\tClos}{\chB}}{\tAp
 needs $\chB$ between the end of the segment and the continuation of
 $\ch$, and the ceiling of the segment does not separate the two. The
 system of \citet{MordidoP} does not type it either.
-% TODO(author): prose
-
-\section{Subsumption}
-\label{sec:ex-priority}
-
-A mechanized fragment of each of two priority-based systems translates
-into \OurLang, and the translation makes every closed program of unit
-type in the fragment deadlock free as written, not only its image.
-
-\begin{theorem}[A fragment of PGV \rocq{pgv_deadlock_free_source}]
-\label{thm:pgv}
-  Every closed program of type $\tyUnit$ of the fragment of
-  \citet{KokkeD23} cut out by \rocq{pgv_mono} in \rocq{pgv_typed} is deadlock free. The
-  fragment is PGV without $\asTy{0}$ and $\asTmId{absurd}$, with the
-  premise $o < \mathit{pr}(\ty)$ at send and receive, the premise
-  $q < \mathit{pr}(\ty)$ at their pair rule, and monotone session types
-  at every send and receive.
-\end{theorem}
-
-\begin{proof}
-  Two halves. First, the translation types. One fixed world $\wrld_{\mathrm{PGV}}$
-  ranks the points of the image lexicographically by the priority a
-  session type carries, and it is strict (\rocq{Wpgv},
-  \rocq{Wpgv_strict}). Induction on the PGV derivation types the
-  translated term in that world (\rocq{pgv_translate}), where PGV's
-  bound $p$ becomes a point below the future. \Cref{th:soundness} then makes the
-  translation of a closed program deadlock free
-  (\rocq{ptyped_closed}, \rocq{pgv_deadlock_free}).
-
-  Second, the translation changes the term only at an unapplied
-  communication constant, which it wraps in a $\lambda$
-  (\rocq{pgv_eta}), so deadlock freedom carries back. A congruence
-  relates a term to its translation and contains that wrapping
-  (\rocq{rel}, \rocq{rel_eta}). Every reduction of $\asTm{M}$ is matched
-  by a sequence of reductions of the translation
-  (\rocq{PGVSimulation.sim_step}, \rocq{PGVSimulation.sim_star}). When no thread of $\asTm{M}$ takes a $\beta$,
-  $\tNew$ or $\tSpawn$ step, $\beta$ steps bring every thread of the
-  translation to the action of its thread in $\asTm{M}$ (\rocq{norm}),
-  so a step of the translation is a step of $\asTm{M}$
-  (\rocq{PGVSimulation.final}). A stuck $\asTm{M}$ would leave the translation stuck.
-\end{proof}
-
-The fragment leaves out the empty type $\asTy{0}$ of
-\citet{KokkeD23} and its eliminator $\asTmId{absurd}$
-(\rocq{pgv_typed}). \OurLang\ has no empty type, so neither form has an
-image.
-
-PGV's send schema puts no condition on its payload, and our fragment
-adds $o < \mathit{pr}(\ty)$ for $\sSend{\ty}{\sty}$ and
-$\sRecv{\ty}{\sty}$ at priority $o$. The
-embedding is what found the gap. Without that condition a closed PGV
-program types and deadlocks, and the \OurLang\ premise $\tSend$ owes,
-$\fLt{\pntA}{\pnode}$ for every head $\pnode$ of the payload, is the
-same requirement. Their pair rule compares the bound of the left
-component with the environment of the right one and asks nothing of the
-left component's type, which costs a second program, and the fragment
-adds $q < \mathit{pr}(\ty)$ there. \ref{rule:E-Pair} types the right
-component under $\frm$ grown by $\heads(\ty)$, which is that premise.
-PGV with both premises rejects both programs for every choice of the
-fragment's predicate (\rocq{cx1_rejected}, \rocq{cx2_rejected}).
-
-The theorem covers monotone sessions. A falling session, whose
-priorities decrease along a channel, types in repaired PGV
-(\rocq{fall2_typed}, \rocq{fallxy_typed}). The program of
-\rocq{fallxy_typed} defeats every translation that reads points off
-session types alone, and its typing in \OurLang\ is not mechanized.
-% TODO(author): falling sessions open
-
-Example~2.1 of \citet{KokkeD23} is among the mechanized programs
-(\rocq{pgv_ex21_deadlock_free}), and so are a delegation program
-(\rocq{pgv_deleg_deadlock_free}) and a forwarding program
-(\rocq{pgv_link_deadlock_free}) of our own.
-
-\begin{theorem}[Padovani and Novara \rocq{pn_deadlock_free_source}]
-\label{thm:pn}
-  Every closed program of type unit of \citet{PadovaniN15}, typed in
-  their Table~2 with T-App-Poly and the repaired $\asTmId{fix}$
-  (\rocq{pn_typed}), is deadlock free in their semantics. In the
-  fragment of \rocq{pn_typed} constants occur applied and sums range
-  over unlimited types.
-\end{theorem}
-
-\begin{proof}
-  The same two halves. The translation of a closed program is typable in
-  the source judgment under one top-level constraint over one point
-  variable (\rocq{pn_translate_source}), that constraint is acyclic
-  (\rocq{PNWorld.Crel}, \rocq{Crel_acyclic}), and
-  \cref{thm:soundness-source} makes the translation deadlock free
-  (\rocq{pn_deadlock_free}).
-
-  Carrying that back is a simulation. A relation ties a source term to
-  its target at the shape of the P\&N type the translation reads, it
-  holds of every translation the typing produces, and it is closed under
-  substitution (\rocq{trel}, \rocq{trel_of_typed},
-  \rocq{trel_subst}). Every source step is matched by the corresponding
-  target step together with administrative ones (\rocq{PNSimulation.fwd_rt}), and a
-  related source term is a value or steps (\rocq{src_progress}), which
-  turns deadlock freedom of the target into deadlock freedom of the
-  source in the semantics of \citet{PadovaniN15}
-  (\rocq{pn_deadlock_free_src}). A $\asTmId{fix}$ runs its body at every
-  source unfolding, and the target forces its box at the same moment
-  (\rocq{PNSimulation.tr_fix}), so the relation is closed under unfolding for every
-  body.
-\end{proof}
-
-Their $\asTmId{fibo}$ and their signal pipe are mechanized
-(\rocq{fibo_deadlock_free_src}, \rocq{pipe_deadlock_free_src}), and so
-are three fixes whose body is no $\lambda$
-(\rocq{div_deadlock_free_src}, \rocq{divsend_deadlock_free_src},
-\rocq{fixfork_deadlock_free_src}).
-
-\Citet{PadovaniN15} measure the same two bounds with numbers. A channel
-type $p[t]^n$ carries a level $n$, the arrow $t \to^{\rho,\sigma} s$
-carries the least level of a channel in the closure and the greatest
-level the call acts on, and their $\asTmId{new}$, $\asTmId{send}$ and
-$\asTmId{recv}$ each ask $n < \lvert t \rvert$, with
-$\lvert t \rvert$ the level of $t$. Our $\lbd$ and $\ubd$ carry the
-arrow's two bounds as points, and the premise $\tSend$ owes,
-$\fLt{\pntA}{\pnode}$ for every head $\pnode$ of the payload, is
-$n < \lvert t \rvert$ with the arithmetic removed. An abstract order
-subsumes that condition rather than meeting it. Level polymorphism in
-their system is the shift $\mathord{\Uparrow}^n$, admitted at a function
-of level $\top$ only, and every shift is a fresh number. Here one
-constraint $\cstr$ over the point variables of a $\Box$ states the facts
-its instances owe, and a $\tForce$ at any instance that satisfies
-$\cstr$ is legal, so the one constraint the translation writes covers
-every shift the source takes, the unboundedly many of a recursive
-definition included (\rocq{PNWorld.Crel}, \rocq{PNWorld.crel_hold}). A $\Box$ binds the
-$\forall$ and holds no channel, which is the part their level $\top$
-plays.
-
-The context-free system of \citet{MordidoP} assigns priorities to the
-actions of a context-free session type. We relate it to \OurLang\
-informally. A priority becomes a point, the sequence of priorities their
-$\asTmId{new}$ assigns to a channel becomes the offsets of its point, and
-their top effect becomes a ceiling (\cref{sec:ext-cfst}). Their examples
-type here, the tree channel (\rocq{tree_deadlock_free}), the two streams
-(\rocq{client_typed}, \rocq{newclient_typed}) and the repaired classic
-deadlock (\rocq{dlfix_deadlock_free}).
 % TODO(author): prose
 
 %%% Local Variables:

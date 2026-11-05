@@ -43,12 +43,28 @@ his rule for $\nu$, and that rule is the closest precedent of a creation
 constraint.
 \citet{Padovani14} gives each linear channel type one integer priority
 and shifts priorities on replicated channels.
-\citet{PadovaniN15} give the arrow two levels in
-$\mathbb{Z} \cup \set{\bot, \top}$ and shift only at functions of level
-$\top$, because shifting an arbitrary function would type a deadlocked
-self-forwarding. Our $\lbd$ and $\ubd$ carry the same two bounds as
-points, and a box holds no channel, which plays the part of level
-$\top$.
+\citet{PadovaniN15} is the system this work continues. They give the
+arrow two levels in $\mathbb{Z} \cup \set{\bot, \top}$ and shift only at
+functions of level $\top$, because shifting an arbitrary function would
+type a deadlocked self-forwarding. Our $\lbd$ and $\ubd$ carry the same
+two bounds as points, and a box holds no channel, which plays the part
+of level $\top$. Their constructor $\lceil t \rceil^n$ delays a shift by
+$n$ inside a type, and the pipe of their equation (3.6) receives a
+channel whose level lies 2 above the level of the carrier. A payload
+here is relative in the same way. It mentions only the points
+$\pslot{\pself}{j}$, and $\payloadAt{\payty}{\pntA}$ places them at the
+carrier $\pntA$. A relative point is a point of the partial order, so a
+constraint orders it against the carrier and against the points of
+other channels, where a level offers one integer offset in one total
+order.
+PolyVGR~\cite{SaffrichT23} names the channels a message carries by an
+existential package $!(\exists \alpha{:}\mathrm{Dom}(N).\, \Sigma; T).S$,
+and the receiver gives each received channel a fresh name. A closure
+that mentions a channel loses its connection to that channel once the
+channel is sent. Both ends here compute the same payload point
+$\pslot{\pntA}{j}$, so facts stated before the send still hold after it.
+PolyVGR names a created channel by an existential result type, as
+$\tNew$ does here.
 PCP~\cite{DardhaG18} and PGV~\cite{KokkeD23} attach one priority in
 $\Nat \cup \set{\omega}$ to each action and ask that a blocking action
 carry a smaller number than the channels its continuation holds, which

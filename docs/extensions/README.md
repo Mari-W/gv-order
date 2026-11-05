@@ -10,6 +10,7 @@ extend it. Each has its own outline in this folder.
 | B | Context-free session types | [context-free.md](context-free.md) | core, parts of C |
 | C | Data-dependent constraints | [data-dependent.md](data-dependent.md) | core |
 | D | Adequacy for related systems | [adequacy/adequacy.md](adequacy/adequacy.md) | core, B for the CFST systems |
+| E | Regions, orders inside and trees between | [regions.md](regions.md) | core, C for orders inside cycles |
 
 ## Why these four
 

@@ -61,7 +61,8 @@
    {\@ifnextchar_{\lr@c@sub{#1}{#2}{#3}{#4}}%
      {{\color{#1}#2{#3}#4}}}}
 \def\lr@c@prime#1#2#3#4'{\lr@collect{#1}{#2}{#3}{#4'}}
-\def\lr@c@sub#1#2#3#4_#5{\lr@collect{#1}{#2}{#3}{#4_{#5}}}
+\newcommand{\idx}[1]{{\color{black}\let\color\@gobble #1}}
+\def\lr@c@sub#1#2#3#4_#5{\lr@collect{#1}{#2}{#3}{#4_{\idx{#5}}}}
 
 %% \DeclareSort{<S>}{<colour>}{<alphabet>} defines three entry points,
 %% all of which absorb a following subscript or prime:
@@ -92,7 +93,7 @@
 %% Leaf-level marking gives up TeX's implicit atom classes, so every
 %% marked symbol restates its own.
 \NewDocumentCommand\DeclareSortSymbol{ m m m m }{%
-  \NewDocumentCommand#1{}{#3{{\color{\csname lr@col@#2\endcsname}#4}}}}
+  \NewDocumentCommand#1{}{\lr@leaf{\csname lr@col@#2\endcsname}{#3}{#4}}}
 
 %% \DeclareSortKeyword\cs{<S>}{<letters>}  -- an operator spelled as a word
 \NewDocumentCommand\DeclareSortKeyword{ m m m }{%

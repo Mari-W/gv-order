@@ -32,8 +32,9 @@ points of a running program stand in.
 
 \begin{definition}[World \rocq{world}, \rocq{world_wf}, \rocq{strict}]
 \label{def:world}
-  A world $\wrld$ is a finite set of names, its \emph{support}, together
-  with two relations $\fEq{}{}$ and $\fLt{}{}$ on points. It is
+  A world $\wrld = (N,{\equiv}_{\wrld},{\prec}_{\wrld})$ consists of a
+  finite set of names $N$ and two relations $\fEq{}{}$ and $\fLt{}{}$ on points.
+  Its \emph{support} is $\supp(\wrld) := N$. It is
   \emph{well formed} when $\fEq{}{}$ is an equivalence closed under
   successor and payload congruence, $\fLt{}{}$ is transitive, closed under
   $\fEq{}{}$ on both sides and contains program order
@@ -80,22 +81,8 @@ have their roots in $A$ (\rocq{wrestrict}).
   \]
 \end{theorem}
 
-\begin{proof}
-  Both directions compare cycles, and both joins are well formed
-  because their parts are (\rocq{wjoin_wf}, \rocq{wrestrict_wf}).
-  Every fact of the restricted join is a fact of
-  $\wrld_1 \sqcup \wrld_2$ (\rocq{wjoin_restrict_incl}), which gives the
-  forward direction. For the converse, read a fact of
-  $\wrld_1 \sqcup \wrld_2$ as a path whose steps are facts of $\wrld_1$
-  and facts of $\wrld_2$, with a flag recording whether some step is
-  strict (\rocq{jpath}, \rocq{join_jpath}). Such a path is a single fact
-  of one component, or it leaves $x$ by one component, crosses the
-  restricted join between two points whose roots both worlds support,
-  and returns by one component (\rocq{jpath_decomp}). A cycle at $x$
-  therefore yields a cycle of $\wrld_1$, a cycle of $\wrld_2$, or a
-  cycle of the restricted join (\rocq{join_cycle}), and the first two
-  contradict strictness of the components.
-\end{proof}
+(\rocq{wjoin_wf}, \rocq{wrestrict_wf}, \rocq{wjoin_restrict_incl}, \rocq{jpath},
+\rocq{join_jpath}, \rocq{jpath_decomp}, \rocq{join_cycle}).
 
 \begin{theorem}[Fresh extension \rocq{fresh_extension}]
 \label{thm:fresh-extension}
@@ -105,18 +92,7 @@ have their roots in $A$ (\rocq{wrestrict}).
   $\wrld_1' \sqcup \wrld_2$ is strict.
 \end{theorem}
 
-\begin{proof}
-  Apply \cref{thm:amalgamation} to $\wrld_1'$ and $\wrld_2$ and
-  transport the resulting cycle back to $\wrld_1 \sqcup \wrld_2$. Write
-  $A$ for the names both $\wrld_1'$ and $\wrld_2$ support. No point with
-  a root in $A$ has its root in $N$, because $N$ avoids the support of
-  $\wrld_2$. A fact of $\wrld_1'$ between two such points is therefore a
-  fact of $\wrld_1$, which is the last clause of $\wextfresh$
-  (\cref{def:wext}, \rocq{wext_fresh}). Every fact of the join of the
-  two restrictions to $A$ is then a fact of $\wrld_1 \sqcup \wrld_2$
-  (\rocq{wgen_incl}), so a cycle in the restricted join is a cycle in
-  $\wrld_1 \sqcup \wrld_2$, which is strict.
-\end{proof}
+(\rocq{wext_fresh}, \rocq{wgen_incl}).
 
 The step clauses of the relation are gated by \emph{readiness}. A term
 or process with no internal step left must either be done or offer some
@@ -179,6 +155,29 @@ unoffered entry above some offered one, and a process has no future. A
 forwarding never blocks, so a term or process at a forwarding redex
 compares nothing, and only the process clause lets a forwarding redex
 discharge the condition on values as well.
+
+\begin{example}[Ready and blocked threads]
+  Let $\wrld$ be strict with $\supp(\wrld)=\set{\pcst,\asTy{b}}$ and
+  $\wrld\types\fLt{\pcst}{\asTy{b}}$, with no reverse precedence.
+  Both threads of
+  \[
+    (\set{\ch,\chB},\mset{
+      \tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}},
+      \tSeq{\tApp{\tClos}{\chB}}{\tApp{\tClos}{\ch}}})
+  \]
+  hold $\ch:\sAt{\sTerm}{\pcst}$ and $\chB:\sAt{\sTerm}{\asTy{b}}$.
+  At empty future the first thread is ready because its offer on $\ch$
+  precedes its unoffered end of $\chB$. The second thread is not ready
+  because its offer on $\chB$ would require the reverse precedence.
+  Neither close can synchronize, so the process is blocked.
+\end{example}
+
+\begin{example}[A future delays readiness]
+  In the same world, $\tApp{\tClos}{\ch}$ with
+  $\tenv=\ch:\sAt{\sTerm}{\pcst}$ is ready at future
+  $\set{\asTy{b}}$. It is not ready at future $\set{\pcst}$ because
+  $\belowrestop$ would require $\wrld\types\fLt{\pcst}{\pcst}$.
+\end{example}
 
 \subsection{A Logical Relation for \OurLang}
 \label{sec:logicalRelation:relation}
@@ -325,18 +324,18 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
     \and
     \infer*[lab=O-Recv]{
       \forall \wrld' \mathrel{\sqsupseteq} \wrld,\ j \le n \cost{\lambda},\ \tenv_2,\
-        \val \in \lrVW{\wrld'}{j}{\tenv_2 \types \tysub{\tyB}{\pntA}{\pself}} \st
+        \val \in \lrVW{\wrld'}{j}{\tenv_2 \types \payloadAt{\payty}{\pntA}} \st
       \\
       \tm' \in \lrEW{\wrld'}{j}{(\tenv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})}) \cdot \tenv_2 \types \ty}{\frm}
     }{
-      \obl{\wrld ; \tenv_1 , \ch : \sAt{(\sRecv{\tyB}{\sty})}{\pntA} \mid \frm}{n}{\tm \trans{\lRecv{\ch}{\val}} \tm' : \ty}
+      \obl{\wrld ; \tenv_1 , \ch : \sAt{(\sRecv{\payty}{\sty})}{\pntA} \mid \frm}{n}{\tm \trans{\lRecv{\ch}{\val}} \tm' : \ty}
     } \label{rule:O-Recv}
     \and
     \infer*[lab=O-Send]{
-      \val \in \lrVW{\wrld}{n}{\tenv_2 \types \tysub{\tyB}{\pntA}{\pself}} \\
+      \val \in \lrVW{\wrld}{n}{\tenv_2 \types \payloadAt{\payty}{\pntA}} \\
       \tm' \in \lrEW{\wrld}{n \cost{\lambda}}{\tenv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})} \types \ty}{\frm}
     }{
-      \obl{\wrld ; (\tenv_1 , \ch : \sAt{(\sSend{\tyB}{\sty})}{\pntA}) \cdot \tenv_2 \mid \frm}{n}{\tm \trans{\lSend{\ch}{\val}} \tm' : \ty}
+      \obl{\wrld ; (\tenv_1 , \ch : \sAt{(\sSend{\payty}{\sty})}{\pntA}) \cdot \tenv_2 \mid \frm}{n}{\tm \trans{\lSend{\ch}{\val}} \tm' : \ty}
     } \label{rule:O-Send}
     \and
     \infer*[lab=O-Close]{
@@ -363,9 +362,15 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
 
 A send, a close and a forwarding give a resource away, so they keep the
 index. $n \cost{\lambda} = n$ for those three labels and
-$n \cost{\lambda} = n - 1$ for every other (\rocq{tcost}). The
-corresponding successor term is strictly smaller, which is what makes
-\cref{fig:logrel-rules-term} a definition (\rocq{Efuel}).
+$n \cost{\lambda} = n - 1$ for every other (\rocq{tcost}), with
+truncated subtraction. For process labels,
+$n \cost{\pi} = \max(0, n - \mathit{pcost}(\pi))$ (\rocq{pcost}), except that the
+$\tau$ of \ref{rule:P-Act-Link} also costs zero, so
+$n \cost{\tau_{\mathrm{link}}} = n$.
+The corresponding successor term is strictly smaller, which is what
+makes \cref{fig:logrel-rules-term} a definition (\rocq{Efuel}).
+Zero-cost process steps shrink the message size (\rocq{pcost_giving}),
+so recursion at the same index is well founded.
 \Cref{rule:V-Abs} reads the argument and the result at strictly smaller
 indices only, so \ref{rule:V-Box} may use it at an instance of its own
 type.
@@ -384,75 +389,72 @@ type.
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Process logical relation $\proc \in \lrPW{\wrld}{n}{\senv \types \ty}$ (\rocq{Pdef})}
+  \rulesection*{Process logical relation $(\chset,\pool) \in \lrPW{\wrld}{n}{\senv \types \ty}$ (\rocq{Pdef})}
   \begin{proofrules}
     \infer*[lab=P-Zero]{}{
-      \proc \in \lrPW{\wrld}{0}{\senv \types \ty}
+      (\chset,\pool) \in \lrPW{\wrld}{0}{\senv \types \ty}
     } \label{rule:P-Zero}
     \and
     \infer*[lab=P-Intro]{
-      \irred \proc \implies \proc = (\asPrOp{\emptyset}, \mset{\val,\tUnit,\dots,\tUnit})
+      \irred (\chset,\pool) \implies (\chset,\pool) = (\asPrOp{\emptyset}, \mset{\val,\tUnit,\dots,\tUnit})
         \text{ with } \val \in \lrVW{\wrld}{n+1}{\senv \types \ty}
       \\
-      \neg\irred \proc \implies \readyop_{\wrld}(\senv, \proc)
+      \neg\irred (\chset,\pool) \implies \readyop_{\wrld}(\senv, (\chset,\pool))
       \\
-      \forall \pi, \proc'\st \proc \trans{\pi} \proc' \implies
-        \obl{\wrld ; \senv}{n+1}{\proc \trans{\pi} \proc' : \ty}
+      \forall \pi,\chset',\pool'\st (\chset,\pool) \trans{\pi} (\chset',\pool') \implies
+        \obl{\wrld ; \senv}{n+1}{(\chset,\pool) \trans{\pi} (\chset',\pool') : \ty}
     }{
-      \proc \in \lrPW{\wrld}{n+1}{\senv \types \ty}
+      (\chset,\pool) \in \lrPW{\wrld}{n+1}{\senv \types \ty}
     } \label{rule:P-Intro}
   \end{proofrules}
-  \rulesection{Obligations of a process transition $\obl{\wrld ; \senv}{n}{\proc \trans{\pi} \proc' : \ty}$ (\rocq{Pobl})}
+  \rulesection{Obligations of a process transition $\obl{\wrld ; \senv}{n}{(\chset,\pool) \trans{\pi} (\chset',\pool') : \ty}$ (\rocq{Pobl})}
   \begin{proofrules}
     \infer*[lab=Q-Tau]{
-      \proc'.1 \disjoint \dom(\senv) \implies
+      \chset' \disjoint \dom(\senv) \implies
       \exists\, N \text{ fresh for } \senv, \ty,\
         \wrld \wextfresh \wrld' \text{ placing } N \st
-      \proc' \in \lrPW{\wrld'}{n \cost{\pi}}{\senv \types \ty}
-      \\
-      \text{and, if the step is the $\tau$ of \ref{rule:P-Act-Link}},\
-        \proc' \in \lrPW{\wrld}{n}{\senv \types \ty}
+      (\chset',\pool') \in \lrPW{\wrld'}{n \cost{\pi}}{\senv \types \ty}
     }{
-      \obl{\wrld ; \senv}{n}{\proc \trans{\tau} \proc' : \ty}
+      \obl{\wrld ; \senv}{n}{(\chset,\pool) \trans{\tau} (\chset',\pool') : \ty}
     } \label{rule:Q-Tau}
     \and
     \infer*[lab=Q-Recv]{
       \forall \wrld' \mathrel{\sqsupseteq} \wrld,\ j \le n \cost{\pi},\ \tenv_2
-        \text{ with } \dom(\tenv_2) \disjoint \proc.1
+        \text{ with } \dom(\tenv_2) \disjoint \chset
         \text{ and } \mathit{ok}_{\wrld'}(\senv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})}, \tenv_2),\
-        \val \in \lrVW{\wrld'}{j}{\tenv_2 \types \tysub{\tyB}{\pntA}{\pself}} \st
+        \val \in \lrVW{\wrld'}{j}{\tenv_2 \types \payloadAt{\payty}{\pntA}} \st
       \\
-      (\proc'.1 \cup B, \proc'.2) \in
+      (\chset' \cup B, \pool') \in
         \lrPW{\wrld'}{j}{(\senv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})}) \mathbin{\triangleright} \tenv_2 \types \ty}
     }{
-      \obl{\wrld ; \senv_1 , \ch : \sAt{(\sRecv{\tyB}{\sty})}{\pntA}}{n}{\proc \trans{\lRecv{\ch}{\val}} \proc' : \ty}
+      \obl{\wrld ; \senv_1 , \ch : \sAt{(\sRecv{\payty}{\sty})}{\pntA}}{n}{(\chset,\pool) \trans{\lRecv{\ch}{\val}} (\chset',\pool') : \ty}
     } \label{rule:Q-Recv}
     \and
     \infer*[lab=Q-Send]{
-      \dom(\tenv_{\asTy{e}}) = \fchans(\val) \cap \proc.1 \\
+      \dom(\tenv_{\asTy{e}}) = \fchans(\val) \cap \chset \\
       \dom(\tenv_{\asTy{e}}) \disjoint \dom(\senv_0 , \senv_{\asTy{v}}) \cup \set{\ch} \\
       \tenv_{\asTy{e}} \text{ and } \senv_{\asTy{e}} \text{ are dual at aliased points}
       \\\\
-      \val \in \lrVW{\wrld}{n}{\senv_{\asTy{v}} , \tenv_{\asTy{e}} \types \tysub{\tyB}{\pntA}{\pself}}
+      \val \in \lrVW{\wrld}{n}{\senv_{\asTy{v}} , \tenv_{\asTy{e}} \types \payloadAt{\payty}{\pntA}}
       \quad
-      \proc' \in \lrPW{\wrld}{n \cost{\pi}}{\senv_0 , \senv_{\asTy{e}} , \ch : \sAt{\sty}{(\poff{\pntA}{1})} \types \ty}
+      (\chset',\pool') \in \lrPW{\wrld}{n \cost{\pi}}{\senv_0 , \senv_{\asTy{e}} , \ch : \sAt{\sty}{(\poff{\pntA}{1})} \types \ty}
     }{
-      \obl{\wrld ; \senv_0 , \senv_{\asTy{v}} , \ch : \sAt{(\sSend{\tyB}{\sty})}{\pntA}}{n}{\proc \trans{\lSend{\ch}{\val}} \proc' : \ty}
+      \obl{\wrld ; \senv_0 , \senv_{\asTy{v}} , \ch : \sAt{(\sSend{\payty}{\sty})}{\pntA}}{n}{(\chset,\pool) \trans{\lSend{\ch}{\val}} (\chset',\pool') : \ty}
     } \label{rule:Q-Send}
     \and
     \infer*[lab=Q-Close]{
-      \proc' \in \lrPW{\wrld}{n \cost{\pi}}{\senv_1 \types \ty}
+      (\chset',\pool') \in \lrPW{\wrld}{n \cost{\pi}}{\senv_1 \types \ty}
     }{
-      \obl{\wrld ; \senv_1 , \ch : \sAt{\sTerm}{\pntA}}{n}{\proc \trans{\lTerm{\ch}} \proc' : \ty}
+      \obl{\wrld ; \senv_1 , \ch : \sAt{\sTerm}{\pntA}}{n}{(\chset,\pool) \trans{\lTerm{\ch}} (\chset',\pool') : \ty}
     } \label{rule:Q-Close}
     \and
     \infer*[lab=Q-Link]{
       \ch \ne \chB \\
       \sty_{\chB} \isdual \sty_{\ch} \\
       \wrld \types \fEq{\pntA}{\pntB} \\
-      \proc' \in \lrPW{\wrld}{n \cost{\pi}}{\senv_1 \types \ty}
+      (\chset',\pool') \in \lrPW{\wrld}{n \cost{\pi}}{\senv_1 \types \ty}
     }{
-      \obl{\wrld ; \senv_1 , \ch : \sAt{\sty_{\ch}}{\pntA} , \chB : \sAt{\sty_{\chB}}{\pntB}}{n}{\proc \trans{\lLink{\ch}{\chB}} \proc' : \ty}
+      \obl{\wrld ; \senv_1 , \ch : \sAt{\sty_{\ch}}{\pntA} , \chB : \sAt{\sty_{\chB}}{\pntB}}{n}{(\chset,\pool) \trans{\lLink{\ch}{\chB}} (\chset',\pool') : \ty}
     } \label{rule:Q-Link}
   \end{proofrules}
   \rulesectionend
@@ -463,9 +465,11 @@ type.
 \end{figure}
 
 \Cref{rule:Q-Tau} is the only clause that grows the world, by the fresh
-extension that \ref{rule:P-Act-New} needs; a $\tau$ of
-\ref{rule:P-Act-Link} creates no point and keeps the world, and it also
-gives away a resource, so it carries its obligation at $n$ as well.
+extension that \ref{rule:P-Act-New} needs.
+For the $\tau$ of \ref{rule:P-Act-Link}, we require $N = \emptyset$
+and $\wrld' = \wrld$ at index $n$.
+At strict worlds, this single premise is equivalent to \rocq{Pobl}
+by \rocq{wext_fresh_refl} and \rocq{Prel_down}.
 In \ref{rule:Q-Recv} the message may bring the other end of a channel
 the receiver already holds, or both ends of a fresh one. Those channels
 $B$ become restricted in the continuation and their entries leave both
@@ -501,7 +505,7 @@ a grounding substitution.
   \[
     \lrGW{\wrld}{n}{\tenv ; \vr_1 : \ty_1, \dots, \vr_k : \ty_k} :=
       \left\{
-        [\vr_1/\val_1,\dots,\vr_k/\val_k] \;\middle|\;
+        [\vr_1 \mapsto \val_1,\dots,\vr_k \mapsto \val_k] \;\middle|\;
           \begin{matrix}
           \tenv = \tenv_1 \cdot {} \dots \cdot \tenv_k
             \\
@@ -547,17 +551,7 @@ suspended computation.
   $\proc' \in \lrPW{\wrld'}{m}{\tEmpty \types \ty}$ for some $\wrld'$.
 \end{lemma}
 
-\begin{proof}
-  Induction on the length of the run. At length $0$ take
-  $\wrld' = \wrld$. A run of length $n+1$ splits into a reduction
-  $\proc \redu \proc''$ and a run of length $n$. Read
-  \ref{rule:P-Intro} at index $n+1+m$ and apply its $\tau$ obligation
-  \ref{rule:Q-Tau} to that reduction (\rocq{Prel_S_tau}). The side
-  condition on restricted channels holds because $\dom(\tEmpty)$ is
-  empty, so the obligation returns a world $\wrld''$ with
-  $\proc'' \in \lrPW{\wrld''}{n+m}{\tEmpty \types \ty}$. The induction
-  hypothesis at $\wrld''$ finishes it.
-\end{proof}
+(\rocq{Prel_S_tau}).
 
 \begin{lemma}[\rocq{Prel_safe}]
 \label{lm:lrproc-safe}
@@ -565,16 +559,7 @@ suspended computation.
   safe.
 \end{lemma}
 
-\begin{proof}
-  A process either has no transition or has one (\rocq{proc_progress}).
-  In the first case the first premise of \ref{rule:P-Intro} says that
-  $\proc$ is a value and a soup of units (\rocq{Prel_S_irred}), so
-  $\proc$ is safe. In the second case the transition cannot carry a
-  session label, because an offer on a channel needs an entry in the
-  environment and the environment is $\tEmpty$
-  (\rocq{Prel_S_empty_no_sess}). The transition is a $\tau$, and
-  $\proc$ reduces.
-\end{proof}
+(\rocq{proc_progress}, \rocq{Prel_S_irred}, \rocq{Prel_S_empty_no_sess}).
 
 \begin{theorem}[Adequacy \rocq{adequacy}]
   \label{thm:adequacy}
@@ -648,26 +633,7 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
     : \ty \lolli{\ubd}{\lbd} \tyB$.
 \end{lemma}
 
-\begin{proof}
-  A $\lambda$ is a value, and a value of the value relation belongs to
-  the term relation at every future (\rocq{Vrel_Erel}), so the goal is
-  \ref{rule:V-Abs} for $\tAbs{\vr}{\tm\gamma}$ under a grounding
-  substitution $\gamma$. It has three premises.
-  \begin{enumerate*}[(i)]
-    \item the free channels of $\tm\gamma$ are the domain of the
-      environment, because $\mathit{wf}$ gives it for $\tm$ and a
-      grounding substitution contributes exactly the channels of the
-      values it substitutes (\rocq{fchans_subst}),
-    \item $\lbd$ lies at or below every head of the composed
-      environment, because each such head is a head of $\tenv$, where
-      the hypothesis puts $\lbd$ below it, or the head of a value
-      $\gamma$ substitutes for a hypothesis of $\lenv$, which lies at or
-      above that hypothesis's head (\rocq{grounding_heads}), and
-    \item the body at every later world, every smaller index, every
-      argument of the value relation and every future above $\ubd$, which
-      is the hypothesis read at that world and future.
-  \end{enumerate*}
-\end{proof}
+(\rocq{Vrel_Erel}, \rocq{fchans_subst}, \rocq{grounding_heads}).
 
 \begin{lemma}[Compositionality: \ref{rule:E-Exp} \rocq{sem_typed_box}]
   \label{lem:comp:exp}
@@ -684,27 +650,7 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
     : \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}$.
 \end{lemma}
 
-\begin{proof}
-  $\lenv$ carries $\Box$ types only, so every value a grounding
-  substitution $\gamma$ supplies for it holds no channel, and the
-  environment the substitution splits is empty
-  (\rocq{grounding_unl}). The free channels of $\tm\gamma$ are then
-  empty as well (\rocq{fchans_subst}), which is the first premise of
-  \ref{rule:V-Box}.
-
-  The second premise asks for
-  $\tAbs{\tUnit}{\tSub{\tm\gamma}{\tBoxP{\vr}{\tm\gamma}}{\vr}}$ at
-  every later world and every instance of $\cstr$. Prove the stronger
-  statement that $\tBoxP{\vr}{\tm\gamma}$ belongs to the value relation
-  at every index $j \le n$ and every later world, by well-founded
-  induction on $j$ (\rocq{Vrel_box_thunk_iff}). At an instance the
-  hypothesis types $\tm$ with $\vr$ bound to the box type, and the
-  grounding substitution for that hypothesis is the box itself at the
-  index the instance reads, which is strictly smaller than $j$. The
-  induction hypothesis supplies it. \Cref{rule:V-Abs} reads its argument
-  at strictly smaller indices only, which is what makes the smaller
-  index available.
-\end{proof}
+(\rocq{grounding_unl}, \rocq{fchans_subst}, \rocq{Vrel_box_thunk_iff}).
 
 \begin{lemma}[Compositionality: \ref{rule:P-Connect} \rocq{conn_all}, \rocq{Prel_connect}]
   \label{lem:comp:connect}
@@ -723,120 +669,30 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
 \end{lemma}
 
 \begin{proof}
-  The statement above is \rocq{conn_all}, which reads both components
-  in one strict world at one index. \rocq{Prel_connect} reads them
-  semantically typed in $\wrld_1$ and $\wrld_2$, requires
-  $\wrld_1 \sqcup \wrld_2$ strict and delivers the composite in
-  $\wrld_1 \sqcup \wrld_2$. Monotonicity of the process relation in
-  the world lifts each component to the join before anything else
-  happens (\rocq{Prel_mono}, \rocq{wext_join_l}), and its clause for a
-  fresh extension is \cref{thm:fresh-extension}
-  (\rocq{wext_fresh_join}). From here on one strict world $\wrld$ carries
-  both components. The premises of \ref{rule:P-Connect} together with
-  the disjointness the rule leaves implicit form one record
-  (\rocq{cut_ok}), and the two components are named symmetrically, one
-  at $\ty$ and the other at $\tyUnit$ (\rocq{ctys}), so every case below
-  is proved for component 1 and reused for component 2 by swapping the
-  two (\rocq{ctys_sym}, \rocq{cut_ok_sym}).
-
-  Induction is on the index and, inside it, on the size of the composed
-  soup. The outer induction is on $n$ (\rocq{conn_at}, \rocq{conn_all}). At $n = 0$ the
-  goal is \ref{rule:P-Zero}. At $n+1$ an inner well-founded induction
-  runs on the summed size of the terms of
-  $\pool_1 \uplus \pool_2$ (\rocq{conn_lt}, \rocq{msize}). The inner
-  induction pays for the clauses that keep the index. A send, a close
-  and a forwarding consume a redex, so they shrink the summed size
-  (\rocq{pcost_giving}), while every other clause descends to $n$ and
-  uses the outer hypothesis. \Cref{rule:P-Intro} leaves three
-  obligations (\rocq{conn_level}, \rocq{Prel_S_intro}).
-
-  \emph{The composite stops only at a value.} An irreducible composite
-  lets neither component step, so each component is irreducible, and
-  \ref{rule:P-Intro} of each gives a value, an empty environment and an
-  empty restricted set (\rocq{Prel_S_stop_prim}). Primitivity of $\ty$
-  is what puts the value in the empty environment
-  (\rocq{Vrel_prim_empty}). The value of component 2 is $\tUnit$, and
-  $\dom(\senv_{\asTy{C}})$ is empty because the restricted set of the
-  composite is, so the composite is the value of component 1 beside
-  units (\rocq{conn_stop}).
-
-  \emph{The composite is ready.} Let the composite have no $\tau$ step.
-  A forwarding redex of a component touching a restricted channel of the
-  composite would be such a $\tau$, so its channels are external and
-  \ref{rule:P-Act-Session} lifts it to a forwarding redex of the
-  composite (\rocq{link_l}, \rocq{link_r}). With no forwarding on either
-  side both components are stable (\rocq{stable_l}, \rocq{stable_r}) and
-  satisfy the two remaining conditions of \cref{def:ready}
-  (\rocq{ready_core}, \rocq{Prel_S_ready}).
-
-  The cut ends of a channel of $\chset_0$ are never both offered in a
-  stable composite (\rocq{cut_not_both}). The two entries are dual at
-  the head, so one offer is a send and the other a receive, or both are
-  closes (\rocq{sdual_snd}, \rocq{sdual_rcv}, \rocq{sdual_end}). Either
-  pair synchronizes, which is a $\tau$ of the composite
-  (\rocq{msg_tau}, \rocq{close_tau}), against stability.
-
-  Now take an entry the composite holds and does not offer, say in
-  component 1. Readiness of the component gives an entry it offers
-  strictly below it. If that entry sits on a channel of $\senv_1$ it is
-  an offer of the composite (\rocq{ext_l}) and we are done. Otherwise it
-  sits on a channel $\ch$ of $\chset_0$, and the partner end of $\ch$ in
-  component 2 is unoffered by the paragraph above, at a point the cut
-  aliases to the first (\rocq{step_l}, \rocq{step_r}). Repeat from that
-  partner entry. Every step descends strictly in $\wrld$, and the head
-  of each cut channel visited so far lies at or above the head of the
-  current entry, so a cut channel is never visited twice and the walk
-  stops after at most $|\chset_0|$ switches (\rocq{descent}). It stops
-  at an offer of the composite, strictly below the entry it started
-  from, which is the second condition of \cref{def:ready}. The order on
-  points is doing here what a topological restriction does in a
-  linear-logic system, and strictness of $\wrld$ is the only thing the
-  walk needs.
-
-  For the first condition, suppose the composite offers nothing. Then
-  neither component offers anything, by the same walk started at a cut
-  end (\rocq{no_offers_l}, \rocq{no_offers_r}). An environment whose
-  every entry lies above an offer and which offers nothing is empty
-  (\rocq{empty_of_no_offers}), so both components are terminated and so
-  is the composite (\rocq{ready_connect}).
-
-  \emph{Every transition of the composite carries its obligation.}
-  Invert the transition (\rocq{ptau_inv}, \rocq{proc_step_sess_inv}) and
-  read the corresponding obligation of the component that moved.
-  \begin{itemize}
-    \item A $\tau$ inside one component is \ref{rule:Q-Tau} of that
-      component (\rocq{own_tau}). It returns a fresh extension, whose
-      new names are renamed away from the roots of the other component
-      and of $\ty$ before the other component is lifted along it
-      (\rocq{Prel_tau_rename}). The four shapes are
-      \rocq{tau_beta}, \rocq{tau_new}, \rocq{tau_spawn} and
-      \rocq{tau_msg}, with \rocq{tau_close} for a close of two threads
-      of the same component.
-    \item A synchronization across the cut pairs the send obligation
-      \ref{rule:Q-Send} of one component with the receive obligation
-      \ref{rule:Q-Recv} of the other, which reads the sent value
-      (\rocq{cross_msg}). Two closes across the cut retire the channel,
-      and $\senv_{\asTy{C}}$ and $\dual{\senv_{\asTy{C}}}$ lose its
-      entry on both sides (\rocq{cross_close}). The subject of such a
-      pair always lies in $\chset_0$, because a channel both components
-      act on is neither restricted by one alone nor held by both
-      (\rocq{cross_subj}).
-    \item An external label of one component passes through, with the
-      composite's interface being that component's
-      (\rocq{ext_recv}, \rocq{ext_send}, \rocq{ext_close},
-      \rocq{ext_link}).
-    \item A forwarding of a component on a restricted channel of the
-      composite is the $\tau$ of \ref{rule:P-Act-Link}. The two ends it
-      names are dual at aliased points, so renaming one to the other
-      fuses them into the two ends of one restricted channel and keeps
-      the relation at the same index (\rocq{link_give},
-      \rocq{link_own}, \rocq{ext_link_norm}). The soup shrinks, so the
-      inner hypothesis applies.
-  \end{itemize}
-  The $n$-ary cut folds this one along a list of components, lifting
-  each to the join of all their worlds first (\rocq{Prel_connect_list},
-  \rocq{Prel_connect_n}).
+  \rocq{conn_all} proves the indexed statement in one strict world.
+  Monotonicity lifts both components to $\wrld_1\sqcup\wrld_2$
+  (\rocq{Prel_mono}, \rocq{wext_join_l}).
+  \Cref{thm:fresh-extension} preserves strictness when either component
+  creates a channel (\rocq{wext_fresh_join}). This gives
+  \rocq{Prel_connect}. Folding this cut gives the finite compositions
+  (\rocq{Prel_connect_list}, \rocq{Prel_connect_n}).
 \end{proof}
+
+(\rocq{conn_all}, \rocq{Prel_connect}, \rocq{Prel_mono}, \rocq{wext_join_l},
+\rocq{wext_fresh_join}, \rocq{cut_ok}, \rocq{ctys}, \rocq{ctys_sym},
+\rocq{cut_ok_sym}, \rocq{conn_at}, \rocq{conn_lt}, \rocq{msize},
+\rocq{pcost_giving}, \rocq{conn_level}, \rocq{Prel_S_intro}, \rocq{Prel_S_stop_prim},
+\rocq{Vrel_prim_empty}, \rocq{conn_stop}, \rocq{link_l}, \rocq{link_r},
+\rocq{stable_l}, \rocq{stable_r}, \rocq{ready_core}, \rocq{Prel_S_ready},
+\rocq{cut_not_both}, \rocq{sdual_snd}, \rocq{sdual_rcv}, \rocq{sdual_end},
+\rocq{msg_tau}, \rocq{close_tau}, \rocq{ext_l}, \rocq{step_l},
+\rocq{step_r}, \rocq{descent}, \rocq{no_offers_l}, \rocq{no_offers_r},
+\rocq{empty_of_no_offers}, \rocq{ready_connect}, \rocq{ptau_inv}, \rocq{proc_step_sess_inv},
+\rocq{own_tau}, \rocq{Prel_tau_rename}, \rocq{tau_beta}, \rocq{tau_new},
+\rocq{tau_spawn}, \rocq{tau_msg}, \rocq{tau_close}, \rocq{cross_msg},
+\rocq{cross_close}, \rocq{cross_subj}, \rocq{ext_recv}, \rocq{ext_send},
+\rocq{ext_close}, \rocq{ext_link}, \rocq{link_give}, \rocq{link_own},
+\rocq{ext_link_norm}, \rocq{Prel_connect_list}, \rocq{Prel_connect_n}).
 
 \Cref{lem:comp:connect} is the linear-logic cut, and it is the one place
 where strictness of the composed world is needed:

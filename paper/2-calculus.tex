@@ -195,10 +195,7 @@ relation (\cref{rm:vabs}).
   (\cref{sec:app-harmony}, \cref{fig:red-semantics}).
 \end{theorem}
 
-\begin{proof}
-  \Cref{sec:app-harmony}, after the reduction semantics it compares the
-  LTS with.
-\end{proof}
+
 
 Transitions $\proc \trans{\tau} \proc'$ are written $\proc \redu \proc'$
 and called process reductions, with $\trans{}[*]$ for the reflexive
@@ -302,54 +299,13 @@ $\pi, \proc'$ with $\proc \trans{\pi} \proc'$.
   ${\forall \proc'.\,\proc \redu[*] \proc'}$ implies $\proc'$ is safe.
 \end{definition}
 
-\begin{example}[An exchange between two threads \rocq{sync_main}]
-\label{ex:sync}
-  \begin{align*}
-    \asTmId{sync} := {}
-      & \tLetS{\tPair{\ch}{\chB}}{\tApp{\tNew}{\tUnit}}{}
-        \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\ch}})}})}}{}
-      \\
-      & \tLet[\ivx][\chB]{\tApp{\tRecv}{\chB}}{\tSeq{\ivx}{\tApp{\tClos}{\chB}}}
-  \end{align*}
-  The spawned thread sends $\tUnit$ on $\ch$ and closes it, the main
-  thread receives on $\chB$ and closes it. The process
-  $(\emptyset, \mset{\asTmId{sync}})$ is deadlock free
-  (\rocq{sync_deadlock_free}).
-\end{example}
 
-\begin{example}[A cyclic topology \rocq{cycle_main}]
-\label{ex:cyclic}
-  \begin{align*}
-    \asTmId{cycle} := {}
-      & \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNew}{\tUnit}}{}
-        \tLetS{\tPair{\chB}{\chB'}}{\tApp{\tNew}{\tUnit}}{}
-      \\
-      & \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tSeq{\tApp{\tClos}{\ch'}}{\tApp{\tClos}{\chB'}}})}}{}
-        \tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}
-  \end{align*}
-  Two threads share the two channels $\ch$ and $\chB$, so the topology
-  is cyclic. Both threads close $\ch$ before $\chB$, and the process is
-  deadlock free (\rocq{cycle_deadlock_free}).
-\end{example}
 
-\begin{example}[A deadlocked process \rocq{blocked_main}]
-\label{ex:deadlock}
-  Reversing the two closes of one thread of \cref{ex:cyclic} gives
-  \begin{align*}
-    \asTmId{blocked} := {}
-      & \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNew}{\tUnit}}{}
-        \tLetS{\tPair{\chB}{\chB'}}{\tApp{\tNew}{\tUnit}}{}
-      \\
-      & \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tSeq{\tApp{\tClos}{\chB'}}{\tApp{\tClos}{\ch'}}})}}{}
-        \tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}}
-  \end{align*}
-  After the two creations, the spawn and the pure steps that follow,
-  the process is irreducible and
-  not terminated: one thread waits to close $\ch$, the other waits to
-  close $\chB$. It is not safe, so no process that reaches it is
-  deadlock free. The mechanization states the term and does not prove
-  the deadlock.
-\end{example}
+
+
+
+
+\Cref{sec:further-examples} gives the exchange, cyclic topology and deadlock examples.
 
 \subsection{The Static System}
 \label{sec:syntacticTyping}
@@ -410,17 +366,19 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
       \sepr \ty \lolli{\ubd}{\lbd} \tyB \sepr \sAt{\sty}{\pntA}
       \sepr \tyBox{\pvivec}{\cstr}{\ty} \sepr \tyEx{\lbd}{\pvivec}{\cstr}{\ty}
     \\
-    \sty &::= \sSend{\ty}{\sty} \sepr \sRecv{\ty}{\sty} \sepr \sTerm
+    \sty &::= \sSend{\payty}{\sty} \sepr \sRecv{\payty}{\sty} \sepr \sTerm
       \sepr \tyMu\tvar.\sty \sepr \tvar \sepr \dualv{\tvar}
+    \\
+    \payty &::= \ty \quad\text{subject to } \operatorname{points}(\ty) \subseteq \set{\pslot{\pself}{j} \mid j \in \Nat}
     \\
     \ubd &::= \pAbs \sepr \pntA
     & \lbd &::= \pAbs \sepr \pBot \sepr \pntA
   \end{align*}
   \rulesection{Session duality $\dual{\sty}$ (\rocq{dual})}
   \begin{align*}
-    \dual{\sSend{\ty}{\sty}} &= \sRecv{\ty}{\dual{\sty}}
+    \dual{\sSend{\payty}{\sty}} &= \sRecv{\payty}{\dual{\sty}}
     &
-    \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
+    \dual{\sRecv{\payty}{\sty}} &= \sSend{\payty}{\dual{\sty}}
     &
     \dual{\sTerm} &= \sTerm
     \\
@@ -448,7 +406,7 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
   the binder of a $\Box$ and of an $\exists$ (\rocq{pup}).
   \rulesection{Payloads (\rocq{payload_at})}
   \begin{align*}
-    \tysub{\ty}{\pntA}{\pself} &= \tysub{\ty}{\pslot{\pntA}{j}}{\pslot{\pself}{j}}
+    \payloadAt{\payty}{\pntA} &:= \payty[\pslot{\pself}{j} \mapsto \pslot{\pntA}{j}]_{j \in \Nat}
   \end{align*}
   \rulesectionend
   \caption{Types, session types and duality}
@@ -472,35 +430,31 @@ such choice.
 
 \begin{definition}[Payload \rocq{payload_at}]
 \label{def:payload}
-  The type $\ty$ in $\sSend{\ty}{\sty}$ and $\sRecv{\ty}{\sty}$ mentions
-  no point other than the relative points $\pslot{\pself}{0}, \pslot{\pself}{1},
-  \dots$, and a send or receive at $\pntA$ fills $\pslot{\pself}{j}$
-  with $\pslot{\pntA}{j}$, written $\tysub{\ty}{\pntA}{\pself}$.
+  A payload $\payty$ is a type whose free points satisfy the restriction
+  in \cref{fig:types}. Here $\operatorname{points}$ collects points outside
+  nested payloads and respects point binders. Each nested payload obeys
+  the same restriction. We call $\pself$ the relative point of the payload.
+  The shorthand $\payloadAt{\payty}{\pntA}$ denotes simultaneous
+  replacement of every $\pslot{\pself}{j}$ by $\pslot{\pntA}{j}$.
 \end{definition}
 
 \begin{remark}
 \label{rm:payload}
-  \ref{rule:E-Const} checks \cref{def:payload} for the payload of
-  $\tSend$ and $\tRecv$ (\rocq{kscoped}), and no other rule breaks
-  it. Point substitution replaces the
-  variables $\pvivec$, and $\pslot{\pself}{j}$ is no variable, so no
-  enclosing $\Box$ or $\exists$ touches it. Point substitution also
-  stops at a channel type, by the clause
-  $\tysub{(\sAt{\sty}{\pntB})}{\pntvec}{\pvivec} =
-    \sAt{\sty}{(\tysub{\pntB}{\pntvec}{\pvivec})}$ of \cref{fig:types},
-  so it never reaches inside a payload at all (\rocq{pinst_ty}).
-
-  Session substitution does reach inside a payload, because unfolding
-  $\tyMu\tvar.\sRecv{(\sAt{\tvar}{\pslot{\pself}{0}})}{\sTerm}$ has to
-  rewrite the $\tvar$ under the carrier. It rewrites session variables
-  and nothing else, and the point a channel type hangs on stays put
-  (\rocq{sinst_ty}, and the same shape in \rocq{sren_ty} and
-  \rocq{sflip_ty}), so unfolding leaves every relative point alone. The
-  property the proofs use is
-  $\tysub{(\tysub{\ty}{\pntA}{\pself})}{\pntvec}{\pvivec}
-    = \tysub{\ty}{(\tysub{\pntA}{\pntvec}{\pvivec})}{\pself}$
-  (\rocq{payload_pinst}), which holds for every payload $\ty$ that
-  meets \cref{def:payload}.
+  \ref{rule:E-Const} checks payload scoping for $\tSend$ and $\tRecv$
+  (\rocq{kscoped}). Point substitution changes the carrier point in
+  $\sAt{\sty}{\pntB}$ and leaves $\sty$ unchanged, so an enclosing
+  $\Box$ or $\exists$ cannot change a payload's relative points
+  (\rocq{pinst_ty}). Session substitution changes session variables,
+  including those inside payloads, and leaves their points unchanged
+  (\rocq{sinst_ty}, \rocq{sren_ty}, \rocq{sflip_ty}). Thus unfolding
+  $\tyMu\tvar.\sRecv{(\sAt{\tvar}{\pslot{\pself}{0}})}{\sTerm}$
+  replaces $\tvar$ without changing $\pslot{\pself}{0}$.
+  Payload instantiation commutes with point substitution,
+  \[
+    \tysub{(\payloadAt{\payty}{\pntA})}{\pntvec}{\pvivec}
+      = \payloadAt{\payty}{(\tysub{\pntA}{\pntvec}{\pvivec})}
+  \]
+  (\rocq{payload_pinst}).
 \end{remark}
 
 Sender and receiver name the carried channels alike, so a message
@@ -654,6 +608,71 @@ in $\frm$ makes both derived judgments fail for a point: no closure,
 message, packed value or blocking call coexists with an unopened
 existential at $\pBot$.
 
+\paragraph{Constants}
+A constant has a constrained type-indexed scheme
+$\cst : \forall \pntvec.\, \cstr \Rightarrow \ty$
+(\cref{fig:signatures}, \rocq{konst_sig}). \ref{rule:E-Const} instantiates
+$\pntvec$ with points $\vec{\pntA}$ and proves the instance
+constraint $\fctx \types \tysub{\cstr}{\vec{\pntA}}{\pntvec}$
+(\rocq{konst_ty}). Only $\tForce$ asks its instance to be known. A point is known when $\fctx$ binds its root, through
+the creation constraint $\cstr_0$ of the program, a $\Box$ or an
+$\exists$, or when the world supports it (\rocq{skn}). An action that may block happens at a point $\pntA$,
+so $\tSend$, $\tRecv$ and $\tClos$ have upper bound $\pntA$, and
+\ref{rule:E-App} then requires $\fctx \types \fLt{\pntA}{\frm}$. $\tLink$
+and $\tSpawn$ never block, so their upper bound is absent. $\tSend$ owes
+$\fLt{\pntA}{\pnode}$ for every head $\pnode$ of its payload, the
+channels it hands over. $\tLink$ asks $\fEq{\pntA}{\pntB}$. Forwarding
+merges two sessions into one conduit, and the actions of the merged
+channel need a single position. \ref{rule:O-Link} of the logical relation
+requires the world to alias the two points as well. % TODO(author): prose
+
+$\tNew$ is the one constant outside the schemes. It puts both ends of a
+channel at a fresh point $\pviA$ and returns an existential whose
+introduction premise is that its constraint $\cstr$ is a creation
+constraint (\cref{def:creation}) over known outer points. A channel thus
+starts at a point placed by its creation constraint and not by a global
+number.
+
+\begin{figure}[tp]
+  \adjustfigure[]
+  \rulesection*{Schemes of the constants $\cst : \forall \pntvec.\, \cstr \Rightarrow \ty$ (\rocq{konst_sig}, \rocq{konst_ty})}
+  \begin{align*}
+    \tSpawn &{}: (\tyUnit \lolli{\ubd}{\lbd} \tyUnit) \lolli{}{} \tyUnit
+    \\
+    \tSend &{}: \forall \pntA.\,
+      \set{\fLt{\pntA}{\pnode} \mid \pnode \in \heads(\payloadAt{\payty}{\pntA})}
+      \Rightarrow
+      \lPair{\payloadAt{\payty}{\pntA}}{\sAt{(\sSend{\payty}{\sty})}{\pntA}}
+      \lolli{\pntA}{} \sAt{\sty}{(\poff{\pntA}{1})}
+    \\
+    \tRecv &{}: \forall \pntA.\, \sAt{(\sRecv{\payty}{\sty})}{\pntA}
+      \lolli{\pntA}{} \lPair{\payloadAt{\payty}{\pntA}}{\sAt{\sty}{(\poff{\pntA}{1})}}
+    \\
+    \tClos &{}: \forall \pntA.\, \sAt{\sTerm}{\pntA} \lolli{\pntA}{} \tyUnit
+    \\
+    \tLink &{}: \forall \pntA \pntB.\, \set{\fEq{\pntA}{\pntB}} \Rightarrow
+      \lPair{\sAt{\sty}{\pntA}}{\sAt{\dual{\sty}}{\pntB}} \lolli{}{} \tyUnit
+    \\
+    \tForce &{}: \forall \pntvec.\, \tysub{\cstr}{\pntvec}{\pvivec} \Rightarrow
+      \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}
+      \lolli{\tysub{\ubd}{\pntvec}{\pvivec}}{} \tysub{\ty}{\pntvec}{\pvivec}
+  \end{align*}
+  An empty constraint is omitted. The payload of $\tSend$ has no head
+  $\pBot$.
+  \rulesection{Creation of a channel}
+  \begin{align*}
+    \tNew &{}: \tyUnit \lolli{}{}
+      \tyEx{\pBot}{\pviA}{\cstr}{\lPair{\sAt{\sty}{\pviA}}{\sAt{\dual{\sty}}{\pviA}}}
+    & & \cstr \text{ a creation constraint under } \fctx
+  \end{align*}
+  \rulesectionend
+  \caption{Schemes of the constants}
+  \Description{The schemes of spawn, send, recv, close, link and force,
+    each with the constraint its instance proves, and the signature of new
+    with its creation constraint.}
+  \label{fig:signatures}
+\end{figure}
+
 \paragraph{Term rules}
 \Cref{fig:typeSys,fig:typeSysPoints} give the term rules. $\lenv_1 \cdot \lenv_2$ splits
 $\lenv$ and copies variables of $\Box$ type to both sides.
@@ -795,71 +814,6 @@ that holds channels has fixed points.
   \label{fig:typeSysPoints}
 \end{figure}
 
-\paragraph{Constants}
-A constant has a constrained type-indexed scheme
-$\cst : \forall \pntvec.\, \cstr \Rightarrow \ty$
-(\cref{fig:signatures}, \rocq{konst_sig}). \ref{rule:E-Const} instantiates
-$\pntvec$ with points $\vec{\pntA}$ and proves the instance
-constraint $\fctx \types \tysub{\cstr}{\vec{\pntA}}{\pntvec}$
-(\rocq{konst_ty}). Only $\tForce$ asks its instance to be known. A point is known when $\fctx$ binds its root, through
-the creation constraint $\cstr_0$ of the program, a $\Box$ or an
-$\exists$, or when the world supports it (\rocq{skn}). An action that may block happens at a point $\pntA$,
-so $\tSend$, $\tRecv$ and $\tClos$ have upper bound $\pntA$, and
-\ref{rule:E-App} then requires $\fctx \types \fLt{\pntA}{\frm}$. $\tLink$
-and $\tSpawn$ never block, so their upper bound is absent. $\tSend$ owes
-$\fLt{\pntA}{\pnode}$ for every head $\pnode$ of its payload, the
-channels it hands over. $\tLink$ asks $\fEq{\pntA}{\pntB}$. Forwarding
-merges two sessions into one conduit, and the actions of the merged
-channel need a single position. \ref{rule:O-Link} of the logical relation
-requires the world to alias the two points as well. % TODO(author): prose
-
-$\tNew$ is the one constant outside the schemes. It puts both ends of a
-channel at a fresh point $\pviA$ and returns an existential whose
-introduction premise is that its constraint $\cstr$ is a creation
-constraint (\cref{def:creation}) over known outer points. A channel thus
-starts at a point placed by its creation constraint and not by a global
-number.
-
-\begin{figure}[tp]
-  \adjustfigure[]
-  \rulesection*{Schemes of the constants $\cst : \forall \pntvec.\, \cstr \Rightarrow \ty$ (\rocq{konst_sig}, \rocq{konst_ty})}
-  \begin{align*}
-    \tSpawn &{}: (\tyUnit \lolli{\ubd}{\lbd} \tyUnit) \lolli{}{} \tyUnit
-    \\
-    \tSend &{}: \forall \pntA.\,
-      \set{\fLt{\pntA}{\pnode} \mid \pnode \in \heads(\tysub{\ty}{\pntA}{\pself})}
-      \Rightarrow
-      \lPair{\tysub{\ty}{\pntA}{\pself}}{\sAt{(\sSend{\ty}{\sty})}{\pntA}}
-      \lolli{\pntA}{} \sAt{\sty}{(\poff{\pntA}{1})}
-    \\
-    \tRecv &{}: \forall \pntA.\, \sAt{(\sRecv{\ty}{\sty})}{\pntA}
-      \lolli{\pntA}{} \lPair{\tysub{\ty}{\pntA}{\pself}}{\sAt{\sty}{(\poff{\pntA}{1})}}
-    \\
-    \tClos &{}: \forall \pntA.\, \sAt{\sTerm}{\pntA} \lolli{\pntA}{} \tyUnit
-    \\
-    \tLink &{}: \forall \pntA \pntB.\, \set{\fEq{\pntA}{\pntB}} \Rightarrow
-      \lPair{\sAt{\sty}{\pntA}}{\sAt{\dual{\sty}}{\pntB}} \lolli{}{} \tyUnit
-    \\
-    \tForce &{}: \forall \pntvec.\, \tysub{\cstr}{\pntvec}{\pvivec} \Rightarrow
-      \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}
-      \lolli{\tysub{\ubd}{\pntvec}{\pvivec}}{} \tysub{\ty}{\pntvec}{\pvivec}
-  \end{align*}
-  An empty constraint is omitted. The payload of $\tSend$ has no head
-  $\pBot$.
-  \rulesection{Creation of a channel}
-  \begin{align*}
-    \tNew &{}: \tyUnit \lolli{}{}
-      \tyEx{\pBot}{\pviA}{\cstr}{\lPair{\sAt{\sty}{\pviA}}{\sAt{\dual{\sty}}{\pviA}}}
-    & & \cstr \text{ a creation constraint under } \fctx
-  \end{align*}
-  \rulesectionend
-  \caption{Schemes of the constants}
-  \Description{The schemes of spawn, send, recv, close, link and force,
-    each with the constraint its instance proves, and the signature of new
-    with its creation constraint.}
-  \label{fig:signatures}
-\end{figure}
-
 \begin{definition}[Creation constraint \rocq{cc_ok}]
 \label{def:creation}
   A point of $\pviA$ is a point with root $\pviA$. A constraint $\cstr$
@@ -903,7 +857,7 @@ wants a global order, such as the translation of a priority system,
 states it in $\cstr_0$ and aliases its channels to the variables
 $\cstr_0$ speaks of. A source program names no point constant. Its points
 are the variables that $\cstr_0$, a $\Box$ and an $\exists$ bind. For
-such a program $\tysub{\ty}{\pntA}{\pself}$ is the only way a payload
+such a program $\payloadAt{\payty}{\pntA}$ is the only way a payload
 acquires a point. \Cref{thm:soundness-source} asks $\cstr_0$ to be a
 creation constraint against the empty context, which holds exactly when
 $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
@@ -970,54 +924,9 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
   % TODO(author): prose
 \end{example}
 
-\begin{example}[A channel or nothing \rocq{some_main}, \rocq{none_main}]
-\label{ex:option}
-  A message carries a channel or nothing. With
-  $\sty^0 = \sSend{\tyUnit}{\sTerm}$ the protocol is
-  $\sSend{(\lSum{\sAt{\sty^0}{\pslot{\pself}{0}}}{\tyUnit})}{\sTerm}$,
-  and the receiver $\asTmId{R}$ cases on what arrives,
-  \begin{align*}
-    \asTmId{R} := {}
-      & \tAbsA{\poff{\pviA}{1}}{\pviA}{\tUnit}{}
-        \tLet[\asTm{m}][\ch'_1]{\tApp{\tRecv}{\ch'}}{}
-        \tCase{\asTm{m}}{\asTm{e}}{\tSeq{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}})}}{\tApp{\tClos}{\ch'_1}}}{\asTm{u}}{\tSeq{\asTm{u}}{\tApp{\tClos}{\ch'_1}}}
-  \end{align*}
-  The program $\asTmId{some}$ sends $\tInj{1}{\chB}$ for a channel $\chB$
-  created at $\pslot{\pviA}{0}$, and $\asTmId{none}$ sends
-  $\tInj{2}{\tUnit}$. Both create the carrier under
-  $\set{\fLt{\pviA}{\pslot{\pviA}{0}},
-    \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}}}$. The heads of a sum
-  are the heads of both arms, so $\asTmId{none}$ owes
-  $\fLt{\pviA}{\pslot{\pviA}{0}}$ although it sends no channel, and
-  \ref{rule:E-Case} types both arms of $\asTmId{R}$. Both programs are
-  deadlock free (\rocq{some_deadlock_free}, \rocq{none_deadlock_free}),
-  and so is $\asTmId{some}$ with the spawn moved before the creation of
-  $\chB$ (\rocq{some_swapped_deadlock_free}).
-\end{example}
 
-\begin{example}[Request and reply \rocq{rr_main}]
-\label{ex:rr}
-  A server answers every request on $\asTm{a}$ with a reply on
-  $\asTm{b}$, forever, and a client asks and waits in the same rhythm.
-  Both are boxes over the constraint
-  \[
-    \cstr = \set{\fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
-      \fLt{\poff{\pviA'}{k}}{\poff{\pviA}{k+1}} \mid k \in \Nat}
-  \]
-  and the server has type
-  $\tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{}{}
-    (\lPair{\sAt{\sty_a}{\pviA}}{\sAt{\sty_b}{\pviA'}} \lolli{\pviA'}{} \tyUnit)}$
-  with $\sty_a = \tyMu\tvar.\sRecv{\tyUnit}{\tvar}$ and
-  $\sty_b = \tyMu\tvar.\sSend{\tyUnit}{\tvar}$. After one round the body
-  calls itself at $(\poff{\pviA}{1}, \poff{\pviA'}{1})$, and
-  $\tysub{\cstr}{\poff{\pviA}{1}, \poff{\pviA'}{1}}{\pviA, \pviA'}
-  \subseteq \cstr$, so the hypothesis of the body proves the instance
-  constraint of $\tForce$. The program creates $\asTm{a}$ with no fact and
-  $\asTm{b}$ under the infinite creation constraint that states $\cstr$ at
-  their two points (\rocq{rr_typed}), and it is deadlock free
-  (\rocq{rr_deadlock_free}). A constraint that states one round only does
-  not type the recursive call (\cref{thm:rej-rr}).
-\end{example}
+
+
 
 %%% Local Variables:
 %%% mode: latex

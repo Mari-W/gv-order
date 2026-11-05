@@ -152,13 +152,13 @@
 \NewDocumentCommand\tPair{mm}{{\mathopen{{\color{cTm}\<}}#1\mathpunct{{\color{cTm},}}#2\mathclose{{\color{cTm}\>}}}}
 \NewDocumentCommand\tBox{m}{{{\color{cTy}\Box}{#1}}}
 \NewDocumentCommand\tApp{mm}{{#1\,#2}}
-\NewDocumentCommand\tLet{soomm}{{\tOp{let}\IfBooleanTF{#1}{\tUnit}{\tPair{#2}{#3}}=#4\tOp{in}#5}}
+\NewDocumentCommand\tLet{soomm}{{\tOp{let}\,\IfBooleanTF{#1}{\tUnit}{\tPair{#2}{#3}}=#4\;\tOp{in}\;#5}}
 \NewDocumentCommand\tFix{mmm}{{\tFixOp\,\tAbs{#1}{\tAbs{#2}{#3}}}}
-\NewDocumentCommand\tSub{mmm}{{#1\mathopen{{\color{cTm}[}}#2{\color{cTm}/}#3\mathclose{{\color{cTm}]}}}}
-\NewDocumentCommand\tLetI{mmm}{{\tOp{let}{\IExp{#1}}=#2\tOp{in}#3}}
-\NewDocumentCommand\tLetS{mmm}{{\tOp{let}{{#1}}=#2\tOp{in}#3}}
+\NewDocumentCommand\tSub{mmm}{{#1\mathopen{{\color{cTm}[}}#3\mathrel{\color{cTm}\mapsto}#2\mathclose{{\color{cTm}]}}}}
+\NewDocumentCommand\tLetI{mmm}{{\tOp{let}\,{\IExp{#1}}=#2\;\tOp{in}\;#3}}
+\NewDocumentCommand\tLetS{mmm}{{\tOp{let}\,{{#1}}=#2\;\tOp{in}\;#3}}
 \NewDocumentCommand\tFixI{mm}{{\tFixOp\,{#1}.{#2}}}
-\NewDocumentCommand\tInj{mm}{{\tInjOp_{#1} #2}}
+\NewDocumentCommand\tInj{mm}{{\tInjOp_{\idx{#1}}\,#2}}
 \NewDocumentCommand\tCase{mmmmm}{{\tCaseOp\,{#1}( #2.#3) (#4.#5)}}
 \NewDocumentCommand\tIf{mmm}{{\tIfOp\,{#1}( #2)(#3)}}
 \NewDocumentCommand\tSeq{mm}{{#1;#2}}
@@ -226,6 +226,17 @@
 \NewDocumentCommand\dual{m}{{{\color{cTy}\mathit{dual}}(#1)}}
 \NewDocumentCommand\dualv{m}{{\color{cTy}\overline{#1}}}
 \def\tyFact{\tyOp{Fact}}
+\def\sSkip{\tyOp{Skip}}
+\NewDocumentCommand\sSeq{mm}{{#1}\mathbin{\color{cTy};}{#2}}
+\NewDocumentCommand\sOut{m}{{\color{cTy}!}{#1}}
+\NewDocumentCommand\sIn{m}{{\color{cTy}?}{#1}}
+\NewDocumentCommand\tyBoxS{mmmm}{\tyBox{#1\,#2}{#3}{#4}}
+\DeclareMathOperator{\nf}{nf}
+\DeclareMathOperator{\hc}{hc}
+\DeclareMathOperator{\walks}{walks}
+\NewDocumentCommand\lSelect{mm}{{#1}\triangleleft{#2}}
+\NewDocumentCommand\lBranch{mm}{{#1}\triangleright{#2}}
+\DeclareMathOperator{\selects}{selects}
 \def\ptype{\operatorname{ptype}}
 \def\primitive{\operatorname{prim}}
 
@@ -287,7 +298,7 @@
 \DeclareSortSymbol\pviB{Ty}{\mathord}{\kappa}
 \DeclareSortSymbol\pfv{Ty}{\mathord}{\varphi}
 \DeclareSortSymbol\pnode{Ty}{\mathord}{\nu}
-\DeclareSortSymbol\lbd{Ty}{\mathord}{\ell}
+\DeclareMetaVar\lbd{Ty}{l}
 \DeclareSortSymbol\fact{Ty}{\mathord}{g}
 \def\pBot{{\color{cTy}\bot}}
 \def\pTop{{\color{cTy}\top}}
@@ -295,7 +306,10 @@
 \def\pAbs{{\color{cTy}\cdot}}
 \def\pvivec{{\color{cTy}\bar{\iota}}}
 \def\pntvec{{\color{cTy}\bar{x}}}
-\def\pself{{\color{cTy}\mathsf{self}}}
+\colorlet{cSelf}{ForestGreen}
+\def\pself{{\color{cSelf}\mathsf{self}}}
+% the partner point of an end (end points, appendix)
+\NewDocumentCommand\pdual{m}{{\color{cTy}\overline{#1}}}
 % x + k, x[j] (payload point), x ≺ y, x ≡ y, {ℓ} ≼ N
 \NewDocumentCommand\poff{mm}{{#1}\mathbin{{\color{cTy}+}}{#2}}
 \NewDocumentCommand\pslot{mm}{{#1}\mathopen{\color{cTy}[}{#2}\mathclose{\color{cTy}]}}
@@ -310,7 +324,9 @@
 \NewDocumentCommand\lolli{mm}{\mathrel{{\color{cTy}\multimap}^{#1}_{#2}}}
 \NewDocumentCommand\tyBox{mmm}{{{\color{cTy}\Box}(\mathord{\color{cTy}\forall}#1{\color{cTy}.}\,#2{\color{cTy}.}\,#3)}}
 \NewDocumentCommand\tyEx{mmmm}{{\mathord{\color{cTy}\exists}^{#1}#2{\color{cTy}.}\,#3{\color{cTy}.}\,#4}}
-\NewDocumentCommand\tysub{mmm}{{#1}\mathopen{{\color{cTy}[}}#2{\color{cTy}/}#3\mathclose{{\color{cTy}]}}}
+\NewDocumentCommand\tysub{mmm}{{#1}\mathopen{{\color{cTy}[}}#3\mathrel{\color{cTy}\mapsto}#2\mathclose{{\color{cTy}]}}}
+\NewDocumentCommand\payloadAt{mm}{{#1}[#2/\pself]}
+\DeclareMetaVar\payty{Ty}{A}
 % new, spawn, boxes, force, and the future-indexed judgment
 \def\tNew{\tOp{new}}
 \def\tSpawn{\tOp{spawn}}
@@ -342,6 +358,7 @@
 \DeclareMathOperator{\belowrestop}{below\_rest}
 \DeclareMathOperator{\aboveofferedop}{above\_offered}
 \DeclareMathOperator{\ents}{ents}
+\DeclareMathOperator{\balanced}{balanced}
 \DeclareMathOperator{\hd}{hd}
 \DeclareMathOperator{\offered}{offered}
 \DeclareSortSymbol\entry{Ty}{\mathord}{\eta}

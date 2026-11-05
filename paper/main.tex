@@ -2,14 +2,14 @@
 % \PassOptionsToPackage{capitalize,noabbrev}{cleveref}
 \PassOptionsToPackage{dvipsnames,rgb}{xcolor}
 
-\documentclass[acmsmall,screen,review,anonymous]{acmart}
+\documentclass[acmsmall,screen,review,anonymous,nonacm]{acmart}
 
 \let\Bbbk\relax
 
 \acmJournal{PACMPL}
 \acmYear{2027}
 \acmVolume{1}
-\acmNumber{OOPSLA}
+\acmNumber{PLDI}
 \acmArticle{1}
 \acmMonth{4}
 \setcopyright{none}
@@ -33,7 +33,7 @@
 \RequirePackage{rocqrefs}
 \input{rocqrefs}
 
-\usepackage[comments]{comments}
+% \usepackage[final]{comments}
 % \input{unicodeletters}
 
 \def\OurLang{\texorpdfstring{GV\ensuremath{^{\sharp}}}{GV-sharp}\xspace}
@@ -41,34 +41,11 @@
 
 \begin{document}
 
-\title{A Logical-Relations Approach to Compositional Deadlock Freedom for Session Types}
+\title{A Semantic Account of Deadlock Freedom for Cyclic and Recursive Session-Typed Processes}
 
 %% (PT: suggest alphabetical order, unsure how to deal with 'van den' and 'd')
 %% (BH: Dutch last name sorting ignores 'van den')
 %% (ED: Italian last name sorting does *not* ignore the "D'", I am always listed under D. Changed accordingly)
-
-\author{Emanuele D'Osualdo}
-\orcid{0000-0002-9179-5827}
-\affiliation{%
-  \institution{University of Konstanz}
-  \country{Germany}
-}
-\email{emanuele.dosualdo@uni-konstanz.de}
-
-\author{Bas van den Heuvel}
-\orcid{0000-0002-8264-7371}
-\affiliation{%
-  \institution{Karlsruhe University of Applied Sciences}
-  \country{Germany}
-}
-
-\author{Peter Thiemann}
-\orcid{0000-0002-9000-1239}
-\affiliation{%
-  \institution{University of Freiburg}
-  \country{Germany}
-}
-\email{thiemann@cs.uni-freiburg.de}
 
 \author{Marius Weidner}
 \orcid{0009-0008-1152-165X}
@@ -78,14 +55,50 @@
 }
 \email{weidner@cs.uni-freiburg.de}
 
+\author{Emanuele D'Osualdo}
+\orcid{0000-0002-9179-5827}
+\affiliation{%
+  \institution{University of Konstanz}
+  \country{Germany}
+}
+\email{emanuele.dosualdo@uni-konstanz.de}
+
+\author{Peter Thiemann}
+\orcid{0000-0002-9000-1239}
+\affiliation{%
+  \institution{University of Freiburg}
+  \country{Germany}
+}
+\email{thiemann@cs.uni-freiburg.de}
+
+\begin{CCSXML}
+  <ccs2012>
+  <concept>
+  <concept_id>10003752.10003790.10011740</concept_id>
+  <concept_desc>Theory of computation~Type theory</concept_desc>
+  <concept_significance>500</concept_significance>
+  </concept>
+  <concept>
+  <concept_id>10003752.10010124.10010131</concept_id>
+  <concept_desc>Theory of computation~Program semantics</concept_desc>
+  <concept_significance>500</concept_significance>
+  </concept>
+  <concept>
+  <concept_id>10003752.10003753.10003761.10003764</concept_id>
+  <concept_desc>Theory of computation~Process calculi</concept_desc>
+  <concept_significance>300</concept_significance>
+  </concept>
+  <concept>
+  <concept_id>10011007.10011006.10011008.10011009.10011014</concept_id>
+  <concept_desc>Software and its engineering~Concurrent programming languages</concept_desc>
+  <concept_significance>300</concept_significance>
+  </concept>
+  </ccs2012>
+\end{CCSXML}
 \ccsdesc[500]{Theory of computation~Type theory}
 \ccsdesc[500]{Theory of computation~Program semantics}
 \ccsdesc[300]{Theory of computation~Process calculi}
 \ccsdesc[300]{Software and its engineering~Concurrent programming languages}
-% TODO: \ccsdesc typesets the concepts, but ACM also wants the
-% machine-readable CCSXML block that its concept tool emits. Generate
-% it at dl.acm.org/ccs and paste it above these lines before
-% submitting.
 \keywords{session types, deadlock freedom, logical relations, concurrency}
 
 \maketitle
@@ -98,17 +111,18 @@
 
 \input{4-extensions}
 
+\input{4b-subsumption}
+
 \input{5-formalization}
 
 \input{6-related-work}
 
 \section*{Data-Availability Statement}
 
-The Rocq mechanization accompanying this paper is available as
-supplementary material; every definition, lemma and example cited in
-the text links to its counterpart in it.
-\mw{for the anonymous submission, regenerate the links against
-  an Anonymous GitHub mirror --- `python3 paper/rocqrefs.py gen -{}-base
+The Rocq mechanization accompanying this paper is available as supplementary
+material; every definition, lemma and example cited in the text links to its
+counterpart in it. \mw{for the anonymous submission, regenerate the links
+  against an Anonymous GitHub mirror --- `python3 paper/rocqrefs.py gen -{}-base
   https://anonymous.4open.science/r/XXXX/' --- and put that URL here.}
 
 \bibliographystyle{ACM-Reference-Format}
