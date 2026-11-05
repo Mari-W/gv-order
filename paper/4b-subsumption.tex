@@ -4,6 +4,15 @@
 A mechanized fragment of each of two priority-based systems translates
 into \OurLang, and the translation makes every closed program of unit
 type in the fragment deadlock free as written, not only its image.
+Both systems give the two ends of a channel one priority or level, so their
+images live in the collapsed instance of \cref{sec:app-endpoints}. The
+world $\wrld_{\mathrm{PGV}}$ and the top-level constraint of the second
+translation identify every point of the image with its partner point,
+$\fEq{\pntA}{\pdual{\pntA}}$, and the gate then compares a blocking
+point with the points of the held ends, as a priority check does.
+% TODO(author): depends on end-points port. The pgv, pn and mp
+% translations are not ported yet; this paragraph states the intended
+% shape of the port, which adds x == bar x to Wpgv and to PNWorld.Crel.
 
 \begin{theorem}[A fragment of PGV \rocq{pgv_deadlock_free_source}]
 \label{thm:pgv}
@@ -130,7 +139,8 @@ plays.
 The context-free system of \citet{MordidoP} assigns priorities to the
 actions of a context-free session type. We relate it to \OurLang\
 informally. A priority becomes a point, the sequence of priorities their
-$\asTmId{new}$ assigns to a channel becomes the offsets of its point, and
+$\asTmId{new}$ assigns to a channel becomes the offsets of its two end
+points, which the translation identifies, and
 their top effect becomes a ceiling (\cref{sec:ext-cfst}). Their examples
 type here, the tree channel (\rocq{tree_deadlock_free}), the two streams
 (\rocq{client_typed}, \rocq{newclient_typed}) and the repaired classic
