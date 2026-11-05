@@ -1,5 +1,9 @@
 # Regions: orders inside, trees between
 
+Superseded for tree shapes by end points (2026-11-05, docs/ORDERS-SPEC.md
+top, branch end-points): with one point per channel end, the program R of §1
+needs α ≺ β̄ and β ≺ ᾱ, which are acyclic. §6 (orders inside cycles) stays open.
+
 State of 2026-11-05. A design note, nothing here is mechanized. It records the
 discussion of 2026-11-04/05 on data-dependent orders, the region design that came
 out of it, and how it compares to paper 1 (GV♯), the current paper and the
