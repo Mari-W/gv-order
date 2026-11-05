@@ -32,7 +32,12 @@ Inductive pname :=
   | NVar (a : nat)
   | NPayload (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
 
-Record point := Pt { pt_name : pname; pt_off : nat }.
+(** A point carries a polarity (end points, docs/extensions/end-points.md).
+    The two ends of a channel sit at dual points x and x̄, which share
+    name and offset and differ in [pt_pol]. [Pt p o] is the point of
+    positive polarity. *)
+Record point := MkPt { pt_name : pname; pt_pol : bool; pt_off : nat }.
+Abbreviation Pt p o := (MkPt p true o).
 
 Global Instance pname_eq_dec : EqDecision pname.
 Proof. solve_decision. Defined.
@@ -61,15 +66,40 @@ Proof. solve_decision. Defined.
 
 Global Instance point_countable : Countable point.
 Proof.
-  apply (inj_countable' (λ x, (pt_name x, pt_off x)) (λ '(p, b), Pt p b)).
+  apply (inj_countable' (λ x, (pt_name x, pt_pol x, pt_off x)) (λ '(p, q, b), MkPt p q b)).
   by intros [].
 Qed.
 
 (** x + n, x[i], the variable a, and the constant a at offset 0. *)
 Definition pt_shift (n : nat) (x : point) : point :=
-  Pt (pt_name x) (pt_off x + n).
+  MkPt (pt_name x) (pt_pol x) (pt_off x + n).
+(** The payload point x[i] names the i-th carried end. It is the same
+    point from both ends of the carrier, so it ignores the polarity of
+    x and is positive itself: x̄[i] = x[i]. *)
 Definition pt_payload (x : point) (i : nat) : point :=
   Pt (NPayload (pt_name x) (pt_off x) i) 0.
+(** The dual point x̄, the point of the other end. *)
+Definition pt_dual (x : point) : point :=
+  MkPt (pt_name x) (negb (pt_pol x)) (pt_off x).
+(** The point y read at polarity b: y itself for [true], ȳ for [false]. *)
+Definition pt_polar (b : bool) (y : point) : point := if b then y else pt_dual y.
+
+Lemma pt_dual_dual x : pt_dual (pt_dual x) = x.
+Proof. destruct x as [p b o]. unfold pt_dual. simpl. by rewrite negb_involutive. Qed.
+Lemma pt_dual_shift n x : pt_dual (pt_shift n x) = pt_shift n (pt_dual x).
+Proof. done. Qed.
+Lemma pt_payload_dual x i : pt_payload (pt_dual x) i = pt_payload x i.
+Proof. done. Qed.
+Lemma pt_dual_inj x y : pt_dual x = pt_dual y → x = y.
+Proof. intros H. by rewrite <-(pt_dual_dual x), H, pt_dual_dual. Qed.
+Lemma pt_dual_neq x : pt_dual x ≠ x.
+Proof. destruct x as [p [] o]; unfold pt_dual; simpl; congruence. Qed.
+Lemma pt_polar_shift b n y : pt_polar b (pt_shift n y) = pt_shift n (pt_polar b y).
+Proof. by destruct b. Qed.
+Lemma pt_polar_dual b y : pt_polar b (pt_dual y) = pt_dual (pt_polar b y).
+Proof. by destruct b. Qed.
+Lemma pt_polar_payload b y i : pt_payload (pt_polar b y) i = pt_payload y i.
+Proof. by destruct b. Qed.
 (** The payload point p[j] and the offset p + k, written x ·[ j ] and
     x +ₚ k, the paper's p[j] and p+k. *)
 Notation "x ·[ j ]" := (pt_payload x j) (at level 2, j at level 200, left associativity, format "x ·[ j ]").
@@ -77,6 +107,11 @@ Notation "x +ₚ k" := (pt_shift k x) (at level 50, left associativity).
 (** The index j of x[j] for branch i: x[0] for the first branch ([false]),
     x[1] for the second ([true]) (K11). *)
 Definition bidx (i : bool) : nat := if i then 1 else 0.
+(** Where a choice continues (end points): the selecting end at
+    (x[i])‾, the branching end at x[i]. The two are dual. *)
+Definition sel_pt (x : point) (i : bool) : point := pt_dual (pt_payload x (bidx i)).
+Definition bra_pt (x : point) (i : bool) : point := pt_payload x (bidx i).
+
 Definition pvar (a : nat) : point := Pt (NVar a) 0.
 Definition pconst (a : nat) : point := Pt (NConst a) 0.
 
@@ -90,7 +125,7 @@ Fixpoint pn_inst (σ : nat → point) (p : pname) : point :=
   end.
 
 Definition pt_inst (σ : nat → point) (x : point) : point :=
-  pt_shift (pt_off x) (pn_inst σ (pt_name x)).
+  pt_polar (pt_pol x) (pt_shift (pt_off x) (pn_inst σ (pt_name x))).
 
 (** Lifting an instantiation under a binder of m point variables. *)
 Definition pup (m : nat) (σ : nat → point) : nat → point :=
@@ -257,38 +292,47 @@ Proof. by destruct g. Qed.
     under the lifted substitution. *)
 Section bcs_open.
   Local Lemma bpt_shift_0 x : pt_shift 0 x = x.
-  Proof. destruct x as [p o]. unfold pt_shift. simpl. f_equal. lia. Qed.
+  Proof. destruct x as [p b o]. unfold pt_shift. simpl. f_equal. lia. Qed.
 
   Local Lemma bpt_inst_pvar σ a : pt_inst σ (pvar a) = σ a.
   Proof. unfold pt_inst, pvar. simpl. apply bpt_shift_0. Qed.
 
   Local Lemma bpt_inst_shift σ n x : pt_inst σ (pt_shift n x) = pt_shift n (pt_inst σ x).
   Proof.
-    destruct x as [p o]. unfold pt_inst, pt_shift. simpl.
-    destruct (pn_inst σ p). simpl. f_equal. lia.
+    destruct x as [p b o]. unfold pt_inst, pt_shift. simpl.
+    destruct (pn_inst σ p). destruct b; unfold pt_polar, pt_dual; simpl; f_equal; lia.
+  Qed.
+
+  Local Lemma bpt_inst_dual σ x : pt_inst σ (pt_dual x) = pt_dual (pt_inst σ x).
+  Proof.
+    destruct x as [p b o]. unfold pt_inst. simpl.
+    destruct b; simpl; [done|by rewrite pt_dual_dual].
   Qed.
 
   Local Lemma bpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
   Proof.
     induction p as [a|a|p IH b i]; simpl; [done|done|].
     assert (∀ x, pt_inst τ (pt_payload x i) = pt_payload (pt_inst τ x) i) as Hs
-      by (intros [q o]; done).
+      by (intros [q [] o]; reflexivity).
     by rewrite Hs, bpt_inst_shift, IH.
   Qed.
 
   Local Lemma bpt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
-  Proof. unfold pt_inst at 2 3. by rewrite bpt_inst_shift, bpn_inst_comp. Qed.
+  Proof.
+    destruct x as [n b o]. unfold pt_inst at 2 3. simpl.
+    destruct b; simpl; [|rewrite bpt_inst_dual]; by rewrite bpt_inst_shift, bpn_inst_comp.
+  Qed.
 
   Local Lemma bpt_inst_ext_vb k σ τ x :
     pn_vb k (pt_name x) → (∀ a, a < k → σ a = τ a) → pt_inst σ x = pt_inst τ x.
   Proof.
-    intros Hx H. destruct x as [p o]. unfold pt_inst. simpl in *. f_equal.
+    intros Hx H. destruct x as [p bb o]. unfold pt_inst. simpl in *. do 2 f_equal.
     induction p as [a|a|p IH b i]; simpl in *; [done|by apply H|by rewrite IH..].
   Qed.
 
   Local Lemma bpt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
   Proof.
-    intros H. destruct x as [p o]. unfold pt_inst. simpl. f_equal.
+    intros H. destruct x as [p bb o]. unfold pt_inst. simpl. do 2 f_equal.
     induction p as [a|a|p IH b i]; simpl; [done|apply H|by rewrite IH..].
   Qed.
 
@@ -355,38 +399,48 @@ Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
     (relation/LogicalRelation.v, sharp edges 73). *)
 Section tinst.
   Local Lemma tpt_shift_0 x : pt_shift 0 x = x.
-  Proof. destruct x as [p o]. unfold pt_shift. simpl. f_equal. lia. Qed.
+  Proof. destruct x as [p b o]. unfold pt_shift. simpl. f_equal. lia. Qed.
 
   Lemma tpt_inst_pvar_at σ a : pt_inst σ (pvar a) = σ a.
   Proof. unfold pt_inst, pvar. simpl. apply tpt_shift_0. Qed.
 
   Local Lemma tpt_inst_shift σ n x : pt_inst σ (pt_shift n x) = pt_shift n (pt_inst σ x).
   Proof.
-    destruct x as [p o]. unfold pt_inst, pt_shift. simpl.
-    destruct (pn_inst σ p). simpl. f_equal. lia.
+    destruct x as [p b o]. unfold pt_inst, pt_shift. simpl.
+    destruct (pn_inst σ p). destruct b; unfold pt_polar, pt_dual; simpl; f_equal; lia.
+  Qed.
+
+  Lemma tpt_inst_dual σ x : pt_inst σ (pt_dual x) = pt_dual (pt_inst σ x).
+  Proof.
+    destruct x as [p b o]. unfold pt_inst. simpl.
+    destruct b; simpl; [done|by rewrite pt_dual_dual].
   Qed.
 
   Local Lemma tpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
   Proof.
     induction p as [a|a|p IH b i]; simpl; [done|done|].
     assert (∀ x, pt_inst τ (pt_payload x i) = pt_payload (pt_inst τ x) i) as Hs
-      by (intros [q o]; done).
+      by (intros [q [] o]; reflexivity).
     by rewrite Hs, tpt_inst_shift, IH.
   Qed.
 
   Lemma tpt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
-  Proof. unfold pt_inst at 2 3. by rewrite tpt_inst_shift, tpn_inst_comp. Qed.
+  Proof.
+    destruct x as [n b o]. unfold pt_inst at 2 3. simpl.
+    destruct b; simpl; [|rewrite tpt_inst_dual]; by rewrite tpt_inst_shift, tpn_inst_comp.
+  Qed.
 
   Lemma tpt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
   Proof.
-    intros H. destruct x as [p o]. unfold pt_inst. simpl. f_equal.
+    intros H. destruct x as [p bb o]. unfold pt_inst. simpl. do 2 f_equal.
     induction p as [a|a|p IH b i]; simpl; [done|apply H|by rewrite IH..].
   Qed.
 
   Lemma tpt_inst_pvar x : pt_inst pvar x = x.
   Proof.
-    destruct x as [p o]. unfold pt_inst. simpl. f_equal.
-    assert (pn_inst pvar p = Pt p 0) as ->; [|unfold pt_shift; simpl; f_equal; lia].
+    destruct x as [p bb o]. unfold pt_inst. simpl.
+    assert (pn_inst pvar p = Pt p 0) as ->;
+      [|destruct bb; unfold pt_polar, pt_shift, pt_dual; simpl; f_equal; lia].
     induction p as [a|a|p IH b i]; simpl; [done|done|by rewrite IH..].
   Qed.
 
@@ -512,7 +566,11 @@ Qed.
 (** ** Heads
 
     The points at which a value of the type is next used:
-    heads(S@ι) = {ι}, heads(T ⊸^β_λ U) = {λ} (∅ without λ), ∅ for ∗ and □. *)
+    heads(S@ι) = {ῑ}, heads(T ⊸^β_λ U) = {λ} (∅ without λ), ∅ for ∗ and □.
+    The head of an end is the point of its partner end (end points,
+    docs/extensions/end-points.md): a thread blocked at u that holds an
+    end at v owes u ≺ v̄. Lower bounds λ and ℓ already live among these
+    partner points. *)
 
 Definition opt_heads (o : option point) : gset point :=
   match o with Some x => {[x]} | None => ∅ end.
@@ -525,7 +583,7 @@ Fixpoint heads (T : ty) : gset point :=
   | TUnit | TBox _ _ _ _ => ∅
   | TLolli _ lb _ _ => opt_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
-  | TSess _ x => {[x]}
+  | TSess _ x => {[pt_dual x]}
   | TEx lb _ _ _ => lb_heads lb
   end.
 
@@ -1283,13 +1341,14 @@ Definition tenv_entry (Θ : tenv) (k : ekey) : option (sty * point) :=
   | _, _ => None
   end.
 
-(** head(c : S@x) = x. *)
+(** The point of the entry c : S@x, x. *)
 Definition entry_head (k : ekey) (e : sty * point) : point := e.2.
 
+(** The heads of an entry are partner points: heads(c : S@x) = {x̄}. *)
 Definition ends_heads (c : chan) (o : ends) : gset point :=
   match o with
-  | One e => {[e.2]}
-  | Both e1 e2 => {[e1.2; e2.2]}
+  | One e => {[pt_dual e.2]}
+  | Both e1 e2 => {[pt_dual e1.2; pt_dual e2.2]}
   end.
 
 Definition tenv_heads (Θ : tenv) : gset point :=
@@ -1377,6 +1436,7 @@ Definition fresh_outer (C : bcs) (u : point) : point := pt_inst (plist (pvar 0 :
     size that rises along successors makes it irreflexive. *)
 Inductive ppo : point → point → Prop :=
   | ppo_po x : ppo x (pt_shift 1 x)
+  | ppo_dpo x : ppo x (pt_shift 1 (pt_dual x))     (* x ≺ x̄+1, end points *)
   | ppo_trans x y z : ppo x y → ppo y z → ppo x z.
 
 Fixpoint pn_size (p : pname) : nat :=
@@ -1389,42 +1449,48 @@ Definition pt_size (x : point) : nat := pn_size (pt_name x) + pt_off x.
 
 Lemma ppo_size x y : ppo x y → pt_size x < pt_size y.
 Proof.
-  unfold pt_size. induction 1; simpl; [lia|lia].
+  unfold pt_size. induction 1; simpl; [lia|lia|lia].
 Qed.
 
 Lemma ppo_irrefl x : ¬ ppo x x.
 Proof. intros H%ppo_size. lia. Qed.
 
 Lemma ppo_root x y : ppo x y → pt_root x = pt_root y.
-Proof. induction 1; [done|congruence]. Qed.
+Proof. induction 1; [done|done|congruence]. Qed.
 
 Lemma ppo_same x y : pt_name x = pt_name y → pt_off x < pt_off y → ppo x y.
 Proof.
-  destruct x as [p a], y as [q b]; simpl. intros <- Ho.
-  replace b with (a + S (b - a - 1)) by lia. generalize (b - a - 1) as k.
-  intros k. induction k as [|k IH].
-  - replace (a + 1) with (pt_off (pt_shift 1 (Pt p a))) by (simpl; lia).
-    apply ppo_po.
-  - eapply ppo_trans; [exact IH|].
-    replace (a + S (S k)) with (pt_off (pt_shift 1 (Pt p (a + S k)))) by (simpl; lia).
-    apply ppo_po.
+  intros Hn Ho. destruct x as [p c a], y as [q c' b]; simpl in *. subst q.
+  assert (∀ d a0 k, ppo (MkPt p d a0) (MkPt p d (a0 + S k))) as Hsame.
+  { intros d a0 k. induction k as [|k IH].
+    - exact (ppo_po (MkPt p d a0)).
+    - eapply ppo_trans; [exact IH|].
+      replace (a0 + S (S k)) with (a0 + S k + 1) by lia. exact (ppo_po (MkPt p d (a0 + S k))). }
+  destruct (decide (c = c')) as [<-|Hc].
+  - replace b with (a + S (b - a - 1)) by lia. apply Hsame.
+  - assert (c' = negb c) as -> by (destruct c, c'; done).
+    assert (ppo (MkPt p c a) (MkPt p (negb c) (a + 1))) as H1 by exact (ppo_dpo (MkPt p c a)).
+    destruct (decide (b = a + 1)) as [->|Hb]; [done|].
+    eapply ppo_trans; [exact H1|]. replace b with (a + 1 + S (b - a - 2)) by lia. apply Hsame.
 Qed.
 
 (** A map on points that commutes with successor preserves program
     order. *)
 Lemma ppo_map (f : point → point) x y :
   (∀ z, f (pt_shift 1 z) = pt_shift 1 (f z)) →
+  (∀ z, f (pt_dual z) = pt_dual (f z)) →
   ppo x y → ppo (f x) (f y).
 Proof.
-  intros Hs. induction 1 as [z|]; [rewrite Hs; apply ppo_po|by eapply ppo_trans].
+  intros Hs Hd. induction 1 as [z|z|];
+    [rewrite Hs; apply ppo_po|rewrite Hs, Hd; apply ppo_dpo|by eapply ppo_trans].
 Qed.
 
 (** p at or before v in program order. *)
 Definition ple (p v : point) : Prop := p = v ∨ ppo p v.
 
-Lemma ple_same p v : pt_name p = pt_name v → pt_off p ≤ pt_off v → ple p v.
+Lemma ple_same p v : pt_name p = pt_name v → pt_pol p = pt_pol v → pt_off p ≤ pt_off v → ple p v.
 Proof.
-  intros Hn Ho. destruct (decide (pt_off p = pt_off v)) as [E|E].
+  intros Hn Hp Ho. destruct (decide (pt_off p = pt_off v)) as [E|E].
   - left. destruct p, v. simpl in *. by subst.
   - right. apply ppo_same; [done|lia].
 Qed.
@@ -1533,13 +1599,15 @@ Inductive geq (E : point → point → Prop) : point → point → Prop :=
   | geq_sym x y : geq E x y → geq E y x
   | geq_trans x y z : geq E x y → geq E y z → geq E x z
   | geq_shift x y : geq E x y → geq E (pt_shift 1 x) (pt_shift 1 y)
-  | geq_payload x y i : geq E x y → geq E (pt_payload x i) (pt_payload y i).
+  | geq_payload x y i : geq E x y → geq E (pt_payload x i) (pt_payload y i)
+  | geq_dual x y : geq E x y → geq E (pt_dual x) (pt_dual y).
 
 Inductive glt (E L : point → point → Prop) : point → point → Prop :=
   | glt_base x y : L x y → glt E L x y
   | glt_po x : glt E L x (pt_shift 1 x)
   | glt_eq x x' y y' : geq E x x' → glt E L x' y' → geq E y' y → glt E L x y
-  | glt_trans x y z : glt E L x y → glt E L y z → glt E L x z.
+  | glt_trans x y z : glt E L x y → glt E L y z → glt E L x z
+  | glt_dpo x : glt E L x (pt_shift 1 (pt_dual x)).
 
 (** ** Creation constraints (static-system.md §5, sharp edges 105)
 
@@ -1680,9 +1748,15 @@ Definition below_all (x : point) (H : gset point) : fact → Prop :=
     send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι S@(ι+1)       {ι ≺ h ∣ h ∈ heads(P[ι])}, no instance at the ⊥ flag
     recv   : (?P;S)@ι ⊸^ι P[ι] ⊗ S@(ι+1)
     close  : Close@ι ⊸^ι ∗
-    selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@ι[i]            {ι ≺ ι[i]}           (K11)
-    branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]   {ι ≺ ι[0], ι ≺ ι[1]}
-    link   : S@ι ⊗ dual S@ι′ ⊸ ∗                  {ι ≡ ι′}   (never blocks, sharp edges 68)
+    selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@(ι[i])‾         {ι ≺ ι[i]}           (K11, end points)
+    branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]   {ι ≺ (ι[0])‾, ι ≺ (ι[1])‾}
+    link   : S@ι ⊗ dual S@ι′ ⊸ ∗                  {ι ≡ (ι′)‾}   (never blocks, sharp edges 68)
+
+    With end points the selecting end continues at the dual payload
+    point (ι[i])‾ and the branching end at ι[i], so the two ends stay at
+    dual points. This is the placement of the encoding of choice, where
+    the brancher receives the end at ι[i] and the selector keeps its
+    partner (examples/ChoiceEnc.v).
     force  : □(∀ιs αs. C. ∗ ⊸^u T) ⊸^{u[ιs′/ιs]} T[ιs′/ιs][ss/αs]
              C[ιs′/ιs], ιs′ known, every s ∈ ss hereditarily contractive   (52, 58, 63, 73) *)
 Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :=
@@ -1705,21 +1779,21 @@ Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :
       konst_sig KClos (TLolli (Some x) None (TSess SEnd x) TUnit) (λ _, False) []
   | KSSel1 S1 S2 x :
       konst_sig KSel1
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_payload x 0)))
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_dual (pt_payload x 0))))
         (λ g, g = FLt x (pt_payload x 0)) []
   | KSSel2 S1 S2 x :
       konst_sig KSel2
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_payload x 1)))
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_dual (pt_payload x 1))))
         (λ g, g = FLt x (pt_payload x 1)) []
   | KSBra S1 S2 x :
       konst_sig KBra
         (TLolli (Some x) None (TSess (SWith S1 S2) x)
            (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))
-        (λ g, g = FLt x (pt_payload x 0) ∨ g = FLt x (pt_payload x 1)) []
+        (λ g, g = FLt x (pt_dual (pt_payload x 0)) ∨ g = FLt x (pt_dual (pt_payload x 1))) []
   | KSLink S x x' :
       konst_sig KLink
         (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
-        (λ g, g = FEq x x') []
+        (λ g, g = FEq x (pt_dual x')) []
   | KSForce n k C ub T xs ss :
       length xs = n → length ss = k → Forall hcontractive ss →
       konst_sig KForce
@@ -1733,7 +1807,7 @@ Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :
     is that C is a creation constraint ([cc_ok]) over known outer
     points (97, 103, 105):
 
-    new    : ∗ ⊸ ∃^⊥ι. C. S@ι ⊗ dual S@ι
+    new    : ∗ ⊸ ∃^⊥ι. C. S@ι ⊗ dual S@ῑ
 
     The order is given as two relations, the world G generates for
     typing and a world W for the logical relation. [pk] says which
@@ -1749,7 +1823,7 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       cc_ok peq plt C → Forall pk (bc_env C) →
       konst_ty peq plt pk KNew
         (TLolli None None TUnit
-           (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))))).
+           (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))))).
 
 (** The instances one constant at a time. *)
 Section konst_intro.
@@ -1783,24 +1857,24 @@ Section konst_intro.
   Lemma KTSel1 S1 S2 x :
     plt x (pt_payload x 0) →
     konst_ty peq plt pk KSel1
-      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_payload x 0))).
+      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_dual (pt_payload x 0)))).
   Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
 
   Lemma KTSel2 S1 S2 x :
     plt x (pt_payload x 1) →
     konst_ty peq plt pk KSel2
-      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_payload x 1))).
+      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_dual (pt_payload x 1)))).
   Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
 
   Lemma KTBra S1 S2 x :
-    plt x (pt_payload x 0) → plt x (pt_payload x 1) →
+    plt x (pt_dual (pt_payload x 0)) → plt x (pt_dual (pt_payload x 1)) →
     konst_ty peq plt pk KBra
       (TLolli (Some x) None (TSess (SWith S1 S2) x)
          (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1)))).
   Proof. intros H0 H1. eapply KTSig; [constructor| |constructor]. by intros g [->| ->]. Qed.
 
   Lemma KTLink S x x' :
-    peq x x' →
+    peq x (pt_dual x') →
     konst_ty peq plt pk KLink
       (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit).
   Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
@@ -1829,20 +1903,20 @@ Lemma konst_ty_case (peq plt : point → point → Prop) (pk : point → Prop)
                          (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))) →
   (∀ x, P KClos (TLolli (Some x) None (TSess SEnd x) TUnit)) →
   (∀ S1 S2 x, plt x (pt_payload x 0) →
-     P KSel1 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_payload x 0)))) →
+     P KSel1 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_dual (pt_payload x 0))))) →
   (∀ S1 S2 x, plt x (pt_payload x 1) →
-     P KSel2 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_payload x 1)))) →
-  (∀ S1 S2 x, plt x (pt_payload x 0) → plt x (pt_payload x 1) →
+     P KSel2 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_dual (pt_payload x 1))))) →
+  (∀ S1 S2 x, plt x (pt_dual (pt_payload x 0)) → plt x (pt_dual (pt_payload x 1)) →
      P KBra (TLolli (Some x) None (TSess (SWith S1 S2) x)
                (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))) →
-  (∀ S x x', peq x x' → P KLink (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)) →
+  (∀ S x x', peq x (pt_dual x') → P KLink (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)) →
   (∀ n k C ub T xs ss, length xs = n → bcs_hold peq plt C xs → Forall pk xs →
      length ss = k → Forall hcontractive ss →
      P KForce (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
                  (sinst_ty (slist ss) (ty_inst xs T)))) →
   (∀ S C, cc_ok peq plt C → Forall pk (bc_env C) →
      P KNew (TLolli None None TUnit
-               (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))))) →
+               (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))))) →
   ∀ k T, konst_ty peq plt pk k T → P k T.
 Proof.
   intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hnw k T [k' T' G xs Hsig HG HK|S C HC HK]; [|by apply Hnw].
