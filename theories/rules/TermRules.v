@@ -49,7 +49,7 @@ Proof. intros [c b] e He. unfold tenv_entry in He. by rewrite lookup_empty in He
 
 Lemma heads_above_self W Θ : world_wf W → heads_above W (tenv_heads Θ) Θ.
 Proof.
-  intros HW k e He. exists e.2. split; [|left; apply (wf_eq_refl _ HW)].
+  intros HW k e He. exists (pt_dual e.2). split; [|left; apply (wf_eq_refl _ HW)].
   apply elem_of_tenv_heads_entry. eauto.
 Qed.
 
@@ -64,7 +64,7 @@ Proof.
       [|apply heads_above_empty].
     intros k e He. destruct lb as [l|]; simpl in Hlb.
     + exists l. split; [set_solver|]. apply Hlb. apply elem_of_tenv_heads_entry. eauto.
-    + exfalso. assert (e.2 ∈ tenv_heads Θ) as Hin by (apply elem_of_tenv_heads_entry; eauto).
+    + exfalso. assert (pt_dual e.2 ∈ tenv_heads Θ) as Hin by (apply elem_of_tenv_heads_entry; eauto).
       rewrite Hlb in Hin. set_solver.
   - apply Vrel_prod_iff in HV as (v1 & v2 & Θ1 & Θ2 & _ & Hc & H1 & H2).
     eapply heads_above_comp; [exact Hc|eauto|eauto].
@@ -76,11 +76,11 @@ Proof.
     intros [c' b] e He. unfold tenv_entry in He. simpl in He.
     destruct (decide (c' = c)) as [->|Hne].
     + rewrite lookup_singleton_eq in He. destruct b; simplify_eq.
-      exists x. split; [set_solver|]. left. by apply (wf_eq_sym _ HW).
+      exists (pt_dual x). split; [set_solver|]. left. apply (wf_eq_dual _ HW). by apply (wf_eq_sym _ HW).
     + rewrite lookup_singleton_ne in He by done. done.
   - apply Vrel_ex_iff in HV as [Hlb _].
     intros k e He. destruct lb as [| |l]; simpl in Hlb, Hb; [|done|].
-    + exfalso. assert (e.2 ∈ tenv_heads Θ) as Hin by (apply elem_of_tenv_heads_entry; eauto).
+    + exfalso. assert (pt_dual e.2 ∈ tenv_heads Θ) as Hin by (apply elem_of_tenv_heads_entry; eauto).
       rewrite (proj1 Hlb) in Hin. set_solver.
     + exists l. split; [set_solver|]. apply Hlb. apply elem_of_tenv_heads_entry. eauto.
 Qed.
@@ -279,7 +279,7 @@ Qed.
 Lemma sem_typed_var W Δ F x T : lenv_only Δ x T → sem_typed W ∅ Δ F (Var x) T.
 Proof.
   intros Ho n W' Θ' Θ'' γ HW Hc Hg. simpl.
-  pose proof (wf_eq_sym _ (proj1 (proj2 (proj2 (proj2 HW))))) as Hs.
+  pose proof (wf_rdsym _ (proj1 (proj2 (proj2 (proj2 HW))))) as Hs.
   apply (tenv_comp_empty_l_inv _ _ _ Hs) in Hc as ->.
   apply Vrel_Erel. eapply grounding_only; [apply HW|done|done].
 Qed.
@@ -681,7 +681,7 @@ Proof.
         -- done.
         -- unfold ty_inst. cbn [pinst_ty]. rewrite tpt_inst_pvar_at. simpl.
            apply Vrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, pconst a)]},
-             {[c := One (dual S, pconst a)]}. split_and!.
+             {[c := One (dual S, pt_dual (pconst a))]}. split_and!.
            ++ done.
            ++ split.
               ** intros c'. rewrite insert_empty. destruct (decide (c' = c)) as [->|Hne].
@@ -693,7 +693,7 @@ Proof.
                  split; [apply (wf_eq_refl _ HW')|apply sdual_dual].
            ++ apply Vrel_sess_iff. exists c, S, (pconst a).
               split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW')].
-           ++ apply Vrel_sess_iff. exists c, (dual S), (pconst a).
+           ++ apply Vrel_sess_iff. exists c, (dual S), (pt_dual (pconst a)).
               split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW')].
 Qed.
 
@@ -828,7 +828,7 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SPlus S1 S2) x ∧
-            B = TSess (sbranch b S1 S2) (pt_payload x (bidx b))) as (S1 & S2 & x & -> & -> & ->).
+            B = TSess (sbranch b S1 S2) (sel_pt x b)) as (S1 & S2 & x & -> & -> & ->).
   { destruct b; simpl in Hk; inversion Hk as [kq Tq Gq xq Hsig|]; subst; inversion Hsig; subst; eauto 10. }
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
@@ -847,12 +847,12 @@ Proof.
   - intros α e' Hst. apply app_val_step in Hst; [|by destruct b|done].
     assert (α = LSess (SSel c b) ∧ e' = Chan c) as [-> ->]
       by (destruct b; inversion Hst; subst; done).
-    simpl. exists ∅, s1, s2, k, {[c := One (sbranch b s1 s2, pt_payload k (bidx b))]}. split_and!.
+    simpl. exists ∅, s1, s2, k, {[c := One (sbranch b s1 s2, sel_pt k b)]}. split_and!.
     + exists s0. split; [|done]. left. split; [done|by rewrite insert_empty].
     + left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|].
-      apply Vrel_sess_iff. exists c, (sbranch b s1 s2), (pt_payload k (bidx b)).
-      split_and!; [done|done|by destruct b|by apply (wf_eq_payload _ HWf)].
+      apply Vrel_sess_iff. exists c, (sbranch b s1 s2), (sel_pt k b).
+      split_and!; [done|done|by destruct b|by apply (wf_eq_dual _ HWf), (wf_eq_payload _ HWf)].
 Qed.
 
 (** branch (K4): it waits like receive, at cost 1, and returns the
@@ -931,7 +931,7 @@ Proof.
     as (U0 & s' & Hu0 & HU0 & Hs').
   pose proof (comp_single_ext _ _ _ _ _ Hc) as Hext.
   (* the payload's entries lie above x *)
-  assert (∀ k' e', tenv_entry Θw k' = Some e' → w_lt W k e'.2) as Habove.
+  assert (∀ k' e', tenv_entry Θw k' = Some e' → w_lt W k (pt_dual e'.2)) as Habove.
   { intros k' e' He'.
     assert (hbot (payload_at m T0 x) = false) as Hpb' by (unfold payload_at, ty_inst; by rewrite hbot_pinst).
     destruct (Vrel_heads_above _ _ _ _ _ HWf Hpb' HVw _ _ He') as (h & Hh & Hle).
@@ -1016,7 +1016,7 @@ Proof.
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [kq Tq Gq xq Hsig HG _|]; subst.
   inversion Hsig as [| | | | | | |S x x'|]; subst.
-  assert (w_eq W x x') as Hxx' by by apply (HG (FEq x x')).
+  assert (w_eq W x (pt_dual x')) as Hxx' by by apply (HG (FEq x (pt_dual x'))).
 
   apply Vrel_prod_iff in HV as (vc & vd & Θc & Θd & -> & Hc & HVc & HVd).
   apply Vrel_sess_iff in HVc as (c & sc & kc & -> & -> & Hsc & Hkc).
@@ -1047,7 +1047,7 @@ Proof.
     + apply (comp_single_ext (w_eq W)). apply comp_comm; [exact (wf_rdsym _ HWf)|exact Hc].
     + apply sdual_seq_dual. eapply seq_trans; [exact Hsd|]. apply seq_dual, seq_sym, Hsc.
     + eapply (wf_eq_trans _ HWf); [exact Hkc|].
-      eapply (wf_eq_trans _ HWf); [exact Hxx'|exact (wf_eq_sym _ HWf _ _ Hkd)].
+      eapply (wf_eq_trans _ HWf); [exact Hxx'|exact (wf_eq_dual _ HWf _ _ (wf_eq_sym _ HWf _ _ Hkd))].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|]. by apply Vrel_unit_iff.
 Qed.
 
@@ -1058,7 +1058,7 @@ Lemma Erel_app_noforce n W Θ Θ1 Θ2 ub lb T U F v1 v2 :
   Erel n W Θ U F (App v1 v2).
 Proof.
   intros HW Hc Hnf HV1 HV2 Hub.
-  pose proof (wf_eq_sym _ (proj1 HW)) as Hs.
+  pose proof (wf_rdsym _ (proj1 HW)) as Hs.
   destruct (proj1 (Vrel_lolli_iff _ _ _ _ _ _ _ _) HV1) as [(eb & -> & _)|(k & T0 & -> & -> & _)].
   - by eapply Erel_app_lam.
   - apply (tenv_comp_empty_l_inv _ _ _ Hs) in Hc as ->.
