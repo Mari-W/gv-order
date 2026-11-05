@@ -394,6 +394,12 @@ Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
 Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
   ty_inst (payload_pts x m) T.
 
+(** x̄[i] = x[i], so the payload at x̄ is the payload at x. *)
+Lemma payload_pts_dual x m : payload_pts (pt_dual x) m = payload_pts x m.
+Proof. done. Qed.
+Lemma payload_at_dual m T x : payload_at m T (pt_dual x) = payload_at m T x.
+Proof. done. Qed.
+
 (** Composition and identity of point instantiation on types. The
     relation instantiates the ∃ of [TEx] by composing substitutions
     (relation/LogicalRelation.v, sharp edges 73). *)
