@@ -2275,6 +2275,27 @@ In the same step every identifier with slot became payload, the future of
 a term lost the name frame, and the typing constructors took the rule
 names of the paper (docs/RENAMES.md, scripts/rename-phase3.py).
 
+**154. One point per channel end (author's decision, 2026-11-05, branches end-points and end-points-paper).**
+One point per channel merges the ends of two threads. A component that
+receives a bit and closes c and d in the order the bit picks asks x ≺ y in one
+branch and y ≺ x in the other, under one Γ, and has no derivation
+(`db_component_unrealizable` on main, entry 4). Witness: the bit program of
+the paper's §2, examples/DataBranch.v.
+Decision: every end gets its own point. new creates the ends at ι and ῑ, the
+head of an end at x is its partner point x̄, so a thread blocked at u that holds
+an end at v owes u ≺ v̄. The fact theory gains x ≡ y ⇒ x̄ ≡ ȳ (`se_dual`) and
+x ≺ x̄+1 (`fl_dpo`), worlds the same two closure conditions (`wf_eq_dual`,
+`wf_lt_dpo`). The two ends of a channel are dual at dual points, x ≡ ȳ. A choice
+moves the selecting end to (x[i])‾ and the branching end to x[i]. The bit program
+then asks x ≺ ȳ and y ≺ x̄, which are acyclic. Readiness compares an offered
+point with the partner points of the held ends. The deadlock argument picks the
+blocked end with the least point u. Its partner holds ū, and if it is blocked
+at w it owes w ≺ u. The instance with x ≡ x̄ for every point is the old system,
+and the priority systems (PGV, Padovani and Novara) live there. Entry 2 now
+reads x ≺ x̄̄ = x for a thread that holds both ends. Spec: top of
+ORDERS-SPEC.md. If the Rocq port adds its own entry or
+docs/extensions/end-points.md, that one is authoritative for the Rocq details.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
