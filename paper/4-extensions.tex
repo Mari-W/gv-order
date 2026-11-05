@@ -69,9 +69,10 @@ the point variables its box binds.
   and $\cstr$ is the only thing that bridges two rounds, because program
   order relates two points of one name only. The rank $2 \cdot
   \mathit{depth} + \mathit{offset}$, at either polarity, witnesses
-  acyclicity.
-  % TODO(author): depends on end-points port. ReceivedChain.v is not
-  % ported; C and the annotations are derived by hand.
+  acyclicity. The mechanization splits $\cstr$ between the two boxes.
+  $\asTmId{rch}$ takes the first fact (\rocq{ch_C}), $\asTmId{sch}$
+  takes the other two and is forced at $\pdual{\pviA}$ (\rocq{chs_C}),
+  and $\asTmId{chain}$ creates $\ch$ under all three (\rocq{chc_C}).
   The recursive call forces at
   $\pslot{\pviA}{0}$, so its obligation is
   $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which is $\cstr$ without its
@@ -124,8 +125,6 @@ end keeps its partner. The two branches get two points, so one branch
 may order a channel below the continuation and the other above it. A
 branch that orders two channels against the other branch types
 (\rocq{bo_deadlock_free}).
-% TODO(author): depends on end-points port. BranchOrder.v and
-% ChoiceEnc.v are not ported.
 The term semantics labels a pick on $\ch$ with $\ch \triangleleft i$ and
 $\ch \triangleright i$, which \textsc{P-Act-Choice} synchronizes, and the
 logical relation has the clauses \textsc{O-Select}, \textsc{O-Branch},
@@ -331,10 +330,6 @@ The box constraint also states the facts each choice owes,
   \cstr = \set{\fLt{q}{\zeta},\ \fLt{q}{\pslot{q}{i}},\ \fLt{q}{\pdual{\pslot{q}{i}}}
     \mid q \in \mathit{walks}(\pviA),\ i \in \set{0,1}} .
 \]
-% TODO(author): depends on end-points port. Only CfstTools, Stream and
-% CfstDeadlock are ported; walks and C follow the polarity-blind walks
-% of CfstTools.wlt, the box constraints of TreeCopy and the mp
-% translation are not ported yet.
 The type of $\asTmId{sendTree}$ of \citet{ThiemannV16} has upper bound
 $\zeta$ and returns the continuation at an existential point above the
 segment (\rocq{sendTree_ty}). The mechanized programs copy and drain a
@@ -344,10 +339,6 @@ server of \citet{ThiemannV16} (\rocq{ts_deadlock_free},
 \rocq{as_deadlock_free}), and a repaired classic deadlock
 (\rocq{dlfix_deadlock_free}). The classic deadlock itself has no
 derivation (\rocq{dl_untypable}).
-% TODO(author): depends on end-points port. Of the programs named in this
-% subsection only CfstDeadlock (dlfix, dl_untypable) and Stream are
-% ported; TreeCopy, CfstScheduler, TreeSum, ArithServer,
-% SegmentInterleave, SegmentDeleg and SkipDrop are not.
 
 A channel created after a segment call is placed by its creation
 constraint relative to the point the call returns. The program of

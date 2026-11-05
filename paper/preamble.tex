@@ -310,6 +310,8 @@
 \def\pself{{\color{cSelf}\mathsf{self}}}
 % the partner point of an end (end points, appendix)
 \NewDocumentCommand\pdual{m}{{\color{cTy}\overline{#1}}}
+% both ends of a channel: x̂ ≺ ŷ stands for the four end facts
+\NewDocumentCommand\phat{m}{{\color{cTy}\widehat{#1}}}
 % x + k, x[j] (payload point), x ≺ y, x ≡ y, {ℓ} ≼ N
 \NewDocumentCommand\poff{mm}{{#1}\mathbin{{\color{cTy}+}}{#2}}
 \NewDocumentCommand\pslot{mm}{{#1}\mathopen{\color{cTy}[}{#2}\mathclose{\color{cTy}]}}

@@ -366,7 +366,13 @@ end acts at the partner point $\pdual{\pntA}$ in the same
 synchronization. The $j$-th channel of the message sent at $\pntA$ sits
 at the payload point $\pslot{\pntA}{j}$. Both ends compute the same
 payload point, $\pslot{\pdual{\pntA}}{j} = \pslot{\pntA}{j}$, so the
-sender and the receiver agree on it (\rocq{pt_payload_dual}). A source
+sender and the receiver agree on it (\rocq{pt_payload_dual}). A fact
+about a channel rather than one of its ends writes $\phat{\pntA}$ for
+both ends. The fact $\fLt{\phat{\pntA}}{\phat{\pntB}}$ stands for the
+four facts $\fLt{\pntA}{\pntB}$, $\fLt{\pntA}{\pdual{\pntB}}$,
+$\fLt{\pdual{\pntA}}{\pntB}$ and $\fLt{\pdual{\pntA}}{\pdual{\pntB}}$, a
+fact with one hatted side for two, and
+$\phat{\poff{\pntA}{k}} = \poff{\phat{\pntA}}{k}$. A source
 program names point variables only.
 Constants $\pcst$ arise at run time, where a world (\cref{sec:worlds})
 states the facts between them.
@@ -971,11 +977,13 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
 \paragraph{Why each end has its own point}
 A point plays two roles. It says when an end may wait, and as a head it
 says when the partner may rely on that end. In synchronous communication
-the moment an end may wait is the moment its partner must arrive, so one
-point per end carries both roles. One point per channel merges the ends
-of two threads, and an order chosen at run time then closes a cycle.
+the moment an end may wait is the moment its partner must arrive. Each
+end therefore has its own point, and the head of an end is the point of
+its partner. A priority system gives both ends of an action one
+priority. An order chosen at run time then asks for two priorities each
+below the other.
 
-\begin{example}[An order chosen by a received bit \rocq{db_main}]
+\begin{example}[An order chosen by a received bit \rocq{bit_main}]
 \label{ex:endpoints-bit}
   \begin{align*}
     \asTmId{bit} := {}
@@ -983,9 +991,9 @@ of two threads, and an order chosen at run time then closes a cycle.
         \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNew}{\tUnit}}{}
         \tLetS{\tPair{\chB}{\chB'}}{\tApp{\tNew}{\tUnit}}{}
       \\
-      & \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{\ch'}})}}{}
+      & \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tInj{1}{\tUnit}}{\asTm{e}'}})}})}}{}
+        \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{\ch'}})}}{}
         \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{\chB'}})}}{}
-        \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tInj{1}{\tUnit}}{\asTm{e}'}})}})}}{}
         \asTmId{R}
       \\
     \asTmId{R} := {}
@@ -1012,25 +1020,19 @@ types both branches under one $\fctx$, which collects the facts below.
     right & $\pviA_2$ ($\chB$)     & $\ch$         & $\fLt{\pviA_2}{\pdual{\pviA_1}}$
   \end{tabular}
 \end{center}
-With one point per channel $\pdual{\pviA_1} = \pviA_1$ and
-$\pdual{\pviA_2} = \pviA_2$, and the two branch facts close the cycle
-$\fLt{\pviA_1}{\pviA_2} \prec \pviA_1$. A component of this shape then
-has no derivation under any hypotheses a strict world realizes
-(\rocq{db_component_unrealizable}), and PGV rejects it for the same
-reason.
-% TODO(author): depends on end-points port. db_component_unrealizable is
-% proved on main for one point per channel; on end-points it no longer
-% holds as stated and DataBranch.v is not ported yet.
-With end points a cycle through $\fLt{\pviA_1}{\pdual{\pviA_2}}$ has to
-continue with a fact that starts at $\pdual{\pviA_2}$. Only the gate of
-the thread that holds $\chB'$ yields one, when it blocks at
-$\pdual{\pviA_2}$ while it holds another end. That thread holds no other
-end, and the same holds at $\pdual{\pviA_1}$. The facts of both branches
-are acyclic, and the creation constraints of $\ch$ and $\chB$ state them.
-% TODO(author): depends on end-points port. The derivation of bit with
-% end points is not mechanized yet.
+A cycle through $\fLt{\pviA_1}{\pdual{\pviA_2}}$ has to continue with a
+fact that starts at $\pdual{\pviA_2}$. Only the gate of the thread that
+holds $\chB'$ yields one, when it blocks at $\pdual{\pviA_2}$ while it
+holds another end. That thread holds no other end, and the same holds at
+$\pdual{\pviA_1}$. The facts of both branches are therefore acyclic.
+One constraint over the three channels states them, and
+$\asTmId{bit}$ types and is deadlock free (\rocq{bit_typed},
+\rocq{bit_deadlock_free}). A priority system gives $\ch$ and $\ch'$ one
+priority and $\chB$ and $\chB'$ another. The left branch then asks for
+the first below the second and the right branch for the converse, and
+PGV rejects the program.
 \Cref{sec:app-endpoints} checks that the deadlocked program of
-\cref{ex:deadlock} stays rejected.
+\cref{ex:deadlock} has no derivation.
 
 
 
