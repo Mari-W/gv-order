@@ -311,12 +311,15 @@ Thus each channel has exactly two ends with dual sessions at dual points.
     \\
     \cstr_{\asTy{f}} &= \set{\,
       \fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
-      \fLt{\poff{\pviA}{k}}{\poff{\pdual{\pviA'}}{k}},\
-      \fLt{\poff{\pviA'}{k}}{\poff{\pdual{\pviA}}{k+1}},\
-      \fLt{\poff{\pviA'}{k}}{\pdual{\pslot{(\poff{\pviA'}{k})}{0}}}
+      \fLt{\poff{\pviA}{k}}{\poff{\pdual{\pviA'}}{k}}
       \;\mid\; k \in \Nat \,}
       % TODO(author): depends on end-points port. Forwarder.v is not
       % ported; C_f is derived by hand from the gates of fwd.
+    \\
+    & \quad \cup\ \set{\,
+      \fLt{\poff{\pviA'}{k}}{\poff{\pdual{\pviA}}{k+1}},\
+      \fLt{\poff{\pviA'}{k}}{\pdual{\pslot{(\poff{\pviA'}{k})}{0}}}
+      \;\mid\; k \in \Nat \,}
     \\
     & \quad \cup\ \set{\, \fEq{\pslot{(\poff{\pviA}{k})}{0}}{\pslot{(\poff{\pviA'}{k})}{0}}
       \;\mid\; k \in \Nat \,}
@@ -369,7 +372,7 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   $\pdual{\pslot{\pviA}{0}}$ while it holds the end at $\pviA$, so
   \begin{align*}
     \sty_{\asTy{r}} &= \sSend{\tyUnit}{\sTerm}
-    &
+    \\
     \cstr &= \set{\,
       \fLt{\poff{\pdual{\pslot{\pviA}{0^{n+1}}}}{1}}{\pdual{\pslot{\pviA}{0^n}}},\
       \fLt{\poff{\pdual{\pslot{\pviA}{0^{n+1}}}}{1}}{\poff{\pslot{\pviA}{0^n}}{1}}
