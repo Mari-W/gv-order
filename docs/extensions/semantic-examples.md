@@ -1,5 +1,10 @@
 # Semantic components in syntactic programs
 
+> End points (2026-11-05): the underivability theorems this file cites for
+> ChoiceNegative, DataBranch and SemFlag are open since the end-points merge
+> and commented out in Rocq (marked `END POINTS: open`). See
+> [end-points.md](end-points.md).
+
 Branch `semantic-examples`, cut from `main` at d9fd5c0. Three new files,
 `theories/static/Mixed.v`, `theories/examples/SemFlag.v` and
 `theories/examples/SemRounds.v`, all registered in `_CoqProject`. No existing

@@ -1,5 +1,10 @@
 # C. Data-dependent constraints
 
+> End points (2026-11-05): the underivability theorems this file cites for
+> ChoiceNegative, DataBranch and SemFlag are open since the end-points merge
+> and commented out in Rocq (marked `END POINTS: open`). See
+> [end-points.md](end-points.md).
+
 Notation: this file predates 2026-11-04 and writes p.j for the point now written p[j]; 'slot' and 'carried root' mean that point.
 
 Goal. Facts about the order of points that depend on values a program computes

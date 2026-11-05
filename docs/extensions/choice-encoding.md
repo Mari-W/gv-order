@@ -1,5 +1,10 @@
 # Session choice from sums and delegation
 
+> End points (2026-11-05): the underivability theorems this file cites for
+> ChoiceNegative, DataBranch and SemFlag are open since the end-points merge
+> and commented out in Rocq (marked `END POINTS: open`). See
+> [end-points.md](end-points.md).
+
 Session choice is a derived form of the core. A selection sends the injection of
 a fresh continuation channel, and the payload type puts the left arm at the
 point self[0] and the right arm at self[1]. Each branch of a choice then has a

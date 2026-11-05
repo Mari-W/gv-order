@@ -1,5 +1,10 @@
 # Worlds that depend on data
 
+> End points (2026-11-05): the underivability theorems this file cites for
+> ChoiceNegative, DataBranch and SemFlag are open since the end-points merge
+> and commented out in Rocq (marked `END POINTS: open`). See
+> [end-points.md](end-points.md).
+
 State of 2026-11-04, branch claude/data-dependent-worlds-9rgdfr. The Rocq
 files are theories/examples/DataBranch.v, theories/examples/DataAlternate.v,
 theories/examples/GrowDeadlock.v and theories/relation/BranchWorlds.v.
