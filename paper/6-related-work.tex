@@ -40,7 +40,17 @@ the payload points $\pslot{\pntA}{j}$, and the renaming is instantiation
 at $\tForce$.
 \citet{Kobayashi06} adds the creation order of names to the judgment at
 his rule for $\nu$, and that rule is the closest precedent of a creation
-constraint.
+constraint. He also gives every action an obligation level and a
+capability level. An obligation of level $n$ must be fulfilled with
+capabilities below $n$, and a capability of level $n$ needs a co-action
+of obligation at most $n$. End points fuse the two levels per end. The
+gate fact $\fLt{\ubd}{\pdual{\pntB}}$ is his first rule, with the
+capability $\ubd$ of the blocking action and the obligation
+$\pdual{\pntB}$ of a held end, the point at which its partner may wait.
+His second rule holds with equality, because the ends at $\pntA$ and
+$\pdual{\pntA}$ meet in one synchronization. PGV~\cite{KokkeD23} keeps
+one priority per action and gives it to both ends, which is the
+collapsed instance of \cref{sec:app-endpoints}.
 \citet{Padovani14} gives each linear channel type one integer priority
 and shifts priorities on replicated channels.
 \citet{PadovaniN15} is the system this work continues. They give the
@@ -107,7 +117,7 @@ channels each unfolding creates.
       & levels in $\Nat \cup \set{\infty}$, creation order on names
       & none
       & usages of carried channels
-      & one point per action, creation constraint \\
+      & one point per end and action, creation constraint \\
     \citet{Padovani14}
       & one integer priority per linear channel type
       & shifting on replicated channels

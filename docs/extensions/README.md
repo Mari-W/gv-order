@@ -10,7 +10,16 @@ extend it. Each has its own outline in this folder.
 | B | Context-free session types | [context-free.md](context-free.md) | core, parts of C |
 | C | Data-dependent constraints | [data-dependent.md](data-dependent.md) | core |
 | D | Adequacy for related systems | [adequacy/adequacy.md](adequacy/adequacy.md) | core, B for the CFST systems |
-| E | Regions, orders inside and trees between | [regions.md](regions.md) | core, C for orders inside cycles |
+| E | Regions, orders inside and trees between | [regions.md](regions.md), superseded for tree shapes by F | core, C for orders inside cycles |
+| F | End points: one point per channel end | ORDERS-SPEC.md (top), paper §2 and §3, docs/extensions/end-points.md on branch end-points | core |
+
+End points (2026-11-05) are the core from now on. Each end of a channel has its
+own point, the head of an end is its partner point, and a thread blocked at u
+that holds an end at v owes u ≺ v̄. The program of a component that branches on
+a received bit and closes two channels in the order the bit picks then types
+without a region (paper, example "An order chosen by a received bit"). This is
+the tree-shaped case regions.md was designed for, so E stays relevant only for
+orders inside cycles. The Rocq port runs on branch end-points.
 
 ## Why these four
 

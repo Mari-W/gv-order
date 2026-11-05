@@ -132,9 +132,9 @@ Write $\balanced_{\wrld}(\tenv)$ when
   \exists\sty,\styB,\pntA,\pntB\st
   \tenv(\ch)=\sAt{\sty}{\pntA}\cdot\sAt{\styB}{\pntB}
   \land \sty\isdual\styB
-  \land \wrld\types\fEq{\pntA}{\pntB}.
+  \land \wrld\types\fEq{\pntA}{\pdual{\pntB}}.
 \]
-Thus each channel has exactly two ends with dual sessions at aliased points.
+Thus each channel has exactly two ends with dual sessions at dual points.
 
 \begin{figure}[tp]
   \adjustfigure[]
@@ -176,7 +176,7 @@ Thus each channel has exactly two ends with dual sessions at aliased points.
       \senv_1 , \senv_{\asTy{C}} \typesW{\wrld} (\chset_1 , \pool_1) : \ty \\
       \senv_2 , \senv'_{\asTy{C}} \typesW{\wrld} (\chset_2 , \pool_2) : \tyUnit \\
       \dom(\senv_{\asTy{C}}) = \dom(\senv'_{\asTy{C}}) = \chset_0 \\
-      \senv'_{\asTy{C}} \text{ dual to } \senv_{\asTy{C}} \text{ at aliased points}
+      \senv'_{\asTy{C}} \text{ dual to } \senv_{\asTy{C}} \text{ at dual points}
     }{
       \senv_1 , \senv_2 \typesW{\wrld} (\chset_1 \cupdot \chset_2 \cupdot \chset_0 , \pool_1 \uplus \pool_2) : \ty
     } \label{rule:P-Connect}
@@ -255,11 +255,12 @@ Thus each channel has exactly two ends with dual sessions at aliased points.
   \end{align*}
   The program $\asTmId{some}$ sends $\tInj{1}{\chB}$ for a channel $\chB$
   created at $\pslot{\pviA}{0}$, and $\asTmId{none}$ sends
-  $\tInj{2}{\tUnit}$. Both create the carrier under
-  $\set{\fLt{\pviA}{\pslot{\pviA}{0}},
-    \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}}}$. The heads of a sum
+  $\tInj{2}{\tUnit}$. Both create the carrier under the constraint
+  $\cstr_{\asTy{d}}$ of \cref{ex:delegation}. The heads of a sum
   are the heads of both arms, so $\asTmId{none}$ owes
-  $\fLt{\pviA}{\pslot{\pviA}{0}}$ although it sends no channel, and
+  $\fLt{\pviA}{\pdual{\pslot{\pviA}{0}}}$ although it sends no channel, and
+  % TODO(author): depends on end-points port. OptionPayload.v is not
+  % ported; the constraint C_d is carried over by hand from deleg.
   \ref{rule:E-Case} types both arms of $\asTmId{R}$. Both programs are
   deadlock free (\rocq{some_deadlock_free}, \rocq{none_deadlock_free}),
   and so is $\asTmId{some}$ with the spawn moved before the creation of
@@ -272,9 +273,12 @@ Thus each channel has exactly two ends with dual sessions at aliased points.
   $\asTm{b}$, forever, and a client asks and waits in the same rhythm.
   Both are boxes over the constraint
   \[
-    \cstr = \set{\fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
-      \fLt{\poff{\pviA'}{k}}{\poff{\pviA}{k+1}} \mid k \in \Nat}
+    \cstr = \set{\fLt{\poff{\pviA}{k}}{\poff{\pdual{\pviA'}}{k}},\
+      \fLt{\poff{\pviA'}{k}}{\poff{\pdual{\pviA}}{k+1}} \mid k \in \Nat}
   \]
+  % TODO(author): depends on end-points port. RequestReply.v is not
+  % ported; C is derived by hand (receive at iota+k holding b, send at
+  % iota'+k holding a).
   and the server has type
   $\tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{}{}
     (\lPair{\sAt{\sty_a}{\pviA}}{\sAt{\sty_b}{\pviA'}} \lolli{\pviA'}{} \tyUnit)}$
@@ -283,9 +287,12 @@ Thus each channel has exactly two ends with dual sessions at aliased points.
   calls itself at $(\poff{\pviA}{1}, \poff{\pviA'}{1})$, and
   $\tysub{\cstr}{\poff{\pviA}{1}, \poff{\pviA'}{1}}{\pviA, \pviA'}
   \subseteq \cstr$, so the hypothesis of the body proves the instance
-  constraint of $\tForce$. The program creates $\asTm{a}$ with no fact and
-  $\asTm{b}$ under the infinite creation constraint that states $\cstr$ at
-  their two points (\rocq{rr_typed}), and it is deadlock free
+  constraint of $\tForce$. The client sends on $\asTm{a}$ and receives on
+  $\asTm{b}$ in the same rhythm, so it is a box over the same $\cstr$,
+  forced at the partner points $\pdual{\pviA}$ and $\pdual{\pviA'}$. The
+  program creates $\asTm{a}$ with no fact and $\asTm{b}$ under the
+  infinite creation constraint that states $\cstr$ at both instances
+  (\rocq{rr_typed}), and it is deadlock free
   (\rocq{rr_deadlock_free}). A constraint that states one round only does
   not type the recursive call (\cref{thm:rej-rr}).
 \end{example}
@@ -304,8 +311,14 @@ Thus each channel has exactly two ends with dual sessions at aliased points.
     \\
     \cstr_{\asTy{f}} &= \set{\,
       \fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
-      \fLt{\poff{\pviA'}{k}}{\poff{\pviA}{k+1}},\
-      \fLt{\poff{\pviA'}{k}}{\pslot{(\poff{\pviA'}{k})}{0}}
+      \fLt{\poff{\pviA}{k}}{\poff{\pdual{\pviA'}}{k}}
+      \;\mid\; k \in \Nat \,}
+      % TODO(author): depends on end-points port. Forwarder.v is not
+      % ported; C_f is derived by hand from the gates of fwd.
+    \\
+    & \quad \cup\ \set{\,
+      \fLt{\poff{\pviA'}{k}}{\poff{\pdual{\pviA}}{k+1}},\
+      \fLt{\poff{\pviA'}{k}}{\pdual{\pslot{(\poff{\pviA'}{k})}{0}}}
       \;\mid\; k \in \Nat \,}
     \\
     & \quad \cup\ \set{\, \fEq{\pslot{(\poff{\pviA}{k})}{0}}{\pslot{(\poff{\pviA'}{k})}{0}}
@@ -354,14 +367,18 @@ Thus each channel has exactly two ends with dual sessions at aliased points.
   derivation needs the fresh channel strictly below the one it answers
   on, and he notes that without that fact the process has no type.
   Here the fresh reply channel of a call sits at $\pslot{\pviA}{0}$, the
-  first payload point of the channel the call answers on, and
+  first payload point of the channel the call answers on. The spawned
+  call answers on that end, and the server waits on the partner end at
+  $\pdual{\pslot{\pviA}{0}}$ while it holds the end at $\pviA$, so
   \begin{align*}
     \sty_{\asTy{r}} &= \sSend{\tyUnit}{\sTerm}
-    &
+    \\
     \cstr &= \set{\,
-      \fLt{\pslot{\pviA}{0^{n+1}}}{\pslot{\pviA}{0^n}},\
-      \fLt{\poff{\pslot{\pviA}{0^{n+1}}}{1}}{\pslot{\pviA}{0^n}}
+      \fLt{\poff{\pdual{\pslot{\pviA}{0^{n+1}}}}{1}}{\pdual{\pslot{\pviA}{0^n}}},\
+      \fLt{\poff{\pdual{\pslot{\pviA}{0^{n+1}}}}{1}}{\poff{\pslot{\pviA}{0^n}}{1}}
       \;\mid\; n \in \Nat \,}
+    % TODO(author): depends on end-points port. KobForwarder.v and
+    % FactServer.v are not ported; C is derived by hand.
     \\
     \asTmId{fwsrv} &{}: \tyBox{\pviA}{\cstr}{%
       \tyUnit \lolli{}{}
@@ -430,7 +447,10 @@ Thus each channel has exactly two ends with dual sessions at aliased points.
   the ring channel of $\asTmId{A}_0$ at a fresh $\pviA$ with the empty
   creation constraint, and every later channel is created at
   $\poff{\pviA}{2k}$ by the alias
-  $\fEq{\pviB}{\poff{\pviA}{2k}}$. Three threads sharing three ring
+  $\fEq{\pviB}{\poff{\pviA}{2k}}$, with its partner end at
+  $\poff{\pdual{\pviA}}{2k}$. Three threads sharing three ring
+  % TODO(author): depends on end-points port. MilnerSched.v is not
+  % ported; whether the aliases alone still type it is open.
   channels form a cycle, so no derivation by \ref{rule:P-Connect}
   exists, and the order on points admits the program all the same:
   $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{ms} : \tyUnit$
@@ -453,10 +473,10 @@ no cycle. A strict world without hypotheses is such a $\fctx$
 \label{thm:rej-rr}
   Let $\asTmId{srv}$ be the server that answers every request on
   $\vr$ with a reply on $\vrB$, forever, and let
-  $\cstr_1 = \set{\fLt{\pviA}{\pviA'}, \fLt{\pviA'}{\poff{\pviA}{1}}}$
+  $\cstr_1 = \set{\fLt{\pviA}{\pdual{\pviA'}}, \fLt{\pviA'}{\poff{\pdual{\pviA}}{1}}}$
   be the constraint of one round. The recursive call forces at
   $(\poff{\pviA}{1}, \poff{\pviA'}{1})$ and so asks
-  $\fLt{\poff{\pviA}{1}}{\poff{\pviA'}{1}}$, and
+  $\fLt{\poff{\pviA}{1}}{\poff{\pdual{\pviA'}}{1}}$, and
   $\fctx = \cstr_1$ does not derive that fact for any well-formed
   world.
 \end{theorem}
@@ -464,8 +484,13 @@ no cycle. A strict world without hypotheses is such a $\fctx$
 (\rocq{rr_R}, \rocq{rr_rank}, \rocq{fl_map}, \rocq{isvar_const}, \rocq{world_wf}, \rocq{rr_R_po}).
 
 The rank $10(k+1)$ for $\poff{\pviA}{k}$ and $15+k$ for
-$\poff{\pviA'}{k}$ satisfies $\cstr_1$ and program order and puts
-$\poff{\pviA'}{1}$ below $\poff{\pviA}{1}$. A constraint is the
+$\poff{\pviA'}{k}$, at either polarity, satisfies $\cstr_1$ and both
+rules of program order and puts $\poff{\pdual{\pviA'}}{1}$ below
+$\poff{\pviA}{1}$.
+% TODO(author): depends on end-points port. Rejected.v is not ported;
+% rr_call_underivable, ord_no_constraint and the facts of the reversed
+% agents are still the one-point-per-channel versions.
+A constraint is the
 invariant of a recursion, so it has to state every round at once, as
 \cref{ex:chain,ex:forwarder} do.
 
@@ -481,15 +506,18 @@ invariant of a recursion, so it has to state every round at once, as
         \lolli{\pviA'}{} \tyUnit)}
   \end{align*}
   Closing $\ch$ blocks at $\pviA$ while the body still holds $\chB$ at
-  $\pviA'$, so \ref{rule:E-App} asks $\fLt{\pviA}{\pviA'}$. With
+  $\pviA'$, so \ref{rule:E-App} asks $\fLt{\pviA}{\pdual{\pviA'}}$. With
   $\cstr = \emptyset$ the fact theory does not derive
-  $\fLt{\pviA}{\pviA'}$ at any well-formed world. With
-  $\cstr = \set{\fLt{\pviA}{\pviA'}}$ it does, in the world-carrying
+  $\fLt{\pviA}{\pdual{\pviA'}}$ at any well-formed world. With
+  $\cstr = \set{\fLt{\pviA}{\pdual{\pviA'}}}$ it does, in the world-carrying
   judgment at every well-formed world (\rocq{ordered_typed}).
 \end{theorem}
 
 (\rocq{ord_R}, \rocq{fl_map}, \rocq{ord_R_po}, \rocq{isvar_const}, \rocq{bcs_open_nil}).
 
+% TODO(author): depends on end-points port. The facts below are those
+% of one point per channel. The lemmas are order facts that hold
+% verbatim, but the points the reversed agents relate change.
 \begin{theorem}[A reversed agent \rocq{sched_rev_underivable}, \rocq{ms_rev_underivable}]
 \label{thm:rej-sched}
   In the reduced scheduler, reversing $\asTmId{ag}_0$ so that it
@@ -506,11 +534,16 @@ invariant of a recursion, so it has to state every round at once, as
 
 \begin{theorem}[A cyclic forwarding \rocq{badlink_underivable}]
 \label{thm:rej-link}
-  For $\asTmId{badlink}$ (\rocq{badlink_main}), with $\ch$ at $\pntA$,
-  $\chB$ at $\pntB$ and $\asTm{e}$ at $\pntC$, the $\tLink$ asks
-  $\fEq{\pntA}{\pntB}$, the main thread asks $\fLt{\pntA}{\pntC}$ and
-  the second thunk asks $\fLt{\pntC}{\pntB}$. The three give
-  $\fLt{\pntA}{\pntA}$.
+  For $\asTmId{badlink}$ (\rocq{badlink_main}), with the first ends of
+  $\ch$, $\chB$ and $\asTm{e}$ at $\pntA$, $\pntB$ and $\pntC$, the
+  $\tLink$ of the first ends of $\ch$ and $\chB$ asks
+  $\fEq{\pntA}{\pdual{\pntB}}$, hence $\fEq{\pdual{\pntA}}{\pntB}$ by
+  \ref{rule:A-Dual}. The main thread closes $\ch$ at $\pdual{\pntA}$
+  while it holds $\asTm{e}$ at $\pntC$ and asks
+  $\fLt{\pdual{\pntA}}{\pdual{\pntC}}$. The second thunk closes
+  $\asTm{e}$ at $\pdual{\pntC}$ while it holds $\chB$ at $\pdual{\pntB}$
+  and asks $\fLt{\pdual{\pntC}}{\pntB}$. The three give
+  $\fLt{\pdual{\pntA}}{\pdual{\pntA}}$.
 \end{theorem}
 
 (\rocq{sl_trans}, \rocq{sl_eqr}, \rocq{se_sym}).
@@ -521,110 +554,38 @@ the deadlock in a comment and proves only the rejection.
 The deadlocked $\asTmId{blocked}$ of \cref{ex:deadlock}
 (\rocq{blocked_main}) is rejected for the same reason. Whatever points
 $\tNew$ picks for $\ch$ and $\chB$, the main thread asks
-$\fLt{\pntA}{\pntB}$ and the thunk asks $\fLt{\pntB}{\pntA}$, and
+$\fLt{\pntA}{\pdual{\pntB}}$ and the thunk asks
+$\fLt{\pdual{\pntB}}{\pntA}$, and
 \ref{rule:E-Conv} keeps points while \ref{rule:E-Weak} drops only
 unlimited bindings, so every derivation asks both.
 
 
 
-\section{End Points: Ordering an End against its Partner}
+\section{End Points against One Point per Channel}
 \label{sec:app-endpoints}
 
-This section motivates a change of the core that is being mechanized
-and is not part of the results above. Each end of a channel gets its own
-point, and the gate orders the blocking point before the points of the
-partners of the held ends.
+This section compares end points with a system that puts both ends of a
+channel at one point, as PGV does with its priorities and Padovani and
+Novara with their levels. That system is the instance of \OurLang\ in which every
+fact context contains $\fEq{\pntA}{\pdual{\pntA}}$ for every point
+$\pntA$. There the partner point of an end is its own point,
+\ref{rule:O-DPo} is program order, and the two ends of a channel are dual
+at aliased points.
+% TODO(author): the collapsed instance is not mechanized. A box has to
+% state x == bar x for the payload points it reaches as well, because
+% A-Payload does not derive x[j] == bar(x[j]) from iota == bar iota.
 
-\begin{example}[An order chosen by a received bit]
-\label{ex:endpoints-bit}
-  \begin{align*}
-    \asTmId{main} := {}
-      & \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNew}{\tUnit}}{}
-        \tLetS{\tPair{\chB}{\chB'}}{\tApp{\tNew}{\tUnit}}{}
-        \tLetS{\tPair{\asTm{e}}{\asTm{e}'}}{\tApp{\tNew}{\tUnit}}{}
-      \\
-      & \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{\ch'}})}}{}
-        \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{\chB'}})}}{}
-        \tSeq{\tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tInj{1}{\tUnit}}{\asTm{e}'}})}})}}{}
-        \asTmId{R}
-      \\
-    \asTmId{R} := {}
-      & \tLet[\asTm{b}][\asTm{e}]{\tApp{\tRecv}{\asTm{e}}}{}
-        \tCase{\asTm{b}}{\asTm{u}}{\tSeq{\asTm{u}}{\tSeq{\tApp{\tClos}{\ch}}{\tSeq{\tApp{\tClos}{\chB}}{\tApp{\tClos}{\asTm{e}}}}}}{\asTm{u}}{\tSeq{\asTm{u}}{\tSeq{\tApp{\tClos}{\chB}}{\tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\asTm{e}}}}}}
-  \end{align*}
-  The thread $\asTmId{R}$ receives a bit on $\asTm{e}$ and closes $\ch$
-  and $\chB$ in the order the bit picks. Each partner holds one end and
-  closes it, so the process is deadlock free for either bit.
-\end{example}
-
-The program has no derivation in \OurLang. Both ends of $\ch$ sit at one
-point $\pviA_1$ and both ends of $\chB$ at $\pviA_2$. The left branch
-closes $\ch$ while it holds $\chB$ and owes
-$\fLt{\pviA_1}{\pviA_2}$. The right branch owes
-$\fLt{\pviA_2}{\pviA_1}$. Both facts sit in one fact context, which then
-has a cycle. A component of this shape has no derivation under any
-hypotheses a strict world realizes (\rocq{db_component_unrealizable}).
-PGV rejects it for the same reason.
-
-The cause is that one point plays two roles. It says when an end may
-wait, and it says when the partner may rely on that end.
-\citet{Kobayashi06} keeps the two apart as a capability level and an
-obligation level per action. PGV~\cite{KokkeD23} collapses them into one
-priority, and \OurLang\ collapses further by sharing the point between
-the two ends.
-
-\paragraph{End points}
-Each end gets its own point. $\tNew$ creates the ends at the dual points
-$\pviA$ and $\pdual{\pviA}$, and the partner of an end at $\pntA$ sits at
-$\pdual{\pntA}$. In synchronous communication the moment an end may wait
-is the moment its partner must arrive, so one point per end carries both
-roles and one strict order stays enough. Three things change.
-\begin{itemize}
-  \item The heads of an end at $\pntA$ are $\set{\pdual{\pntA}}$, its
-        partner point. The gate keeps its form. A thread blocked at
-        $\pntA$ that holds an end at $\pntB$ owes
-        $\fLt{\pntA}{\pdual{\pntB}}$.
-  \item Program order gains $\fLt{\pntA}{\poff{\pdual{\pntA}}{1}}$. An
-        end acts at $\pntA$ before its partner's next action.
-  \item Two ends of a channel are dual at dual points, where \OurLang\
-        asks them to be dual at aliased points.
-\end{itemize}
-Adding $\pviA \equiv \pdual{\pviA}$ to every creation constraint gives
-back \OurLang, so every derivation of \OurLang\ remains one.
-
-\paragraph{The example again}
-Both branches use the same five points. $\asTmId{R}$ holds $\ch$ at
-$\pviA_1$, $\chB$ at $\pviA_2$ and $\asTm{e}$ at $\pviA_3$. The partners
-hold $\ch'$ at $\pdual{\pviA_1}$ and $\chB'$ at $\pdual{\pviA_2}$. The
-branches differ in the pair of points their gate relates.
-\begin{center}
-  \begin{tabular}{llll}
-    branch & $\asTmId{R}$ blocks at & while holding & owes \\
-    \hline
-    both  & $\pviA_3$ ($\asTm{e}$) & $\ch$, $\chB$ & $\fLt{\pviA_3}{\pdual{\pviA_1}}$, $\fLt{\pviA_3}{\pdual{\pviA_2}}$ \\
-    left  & $\pviA_1$ ($\ch$)      & $\chB$        & $\fLt{\pviA_1}{\pdual{\pviA_2}}$ \\
-    right & $\pviA_2$ ($\chB$)     & $\ch$         & $\fLt{\pviA_2}{\pdual{\pviA_1}}$
-  \end{tabular}
-\end{center}
-In \OurLang\ the two ends of a channel share one point, so
-$\pdual{\pviA_1} = \pviA_1$ and $\pdual{\pviA_2} = \pviA_2$, and the two
-branch facts read $\fLt{\pviA_1}{\pviA_2}$ and $\fLt{\pviA_2}{\pviA_1}$.
-They form a cycle. With end points the left fact goes from
-$\asTmId{R}$'s end of $\ch$ to the partner's end of $\chB$, and the right
-fact from $\asTmId{R}$'s end of $\chB$ to the partner's end of $\ch$. A
-cycle through $\fLt{\pviA_1}{\pdual{\pviA_2}}$ has to continue with a
-fact that starts at $\pdual{\pviA_2}$. Such a fact comes only from the
-gate of the thread that holds $\chB'$, when it blocks at
-$\pdual{\pviA_2}$ while holding another end. That thread holds no other
-end, so no fact starts at $\pdual{\pviA_2}$, and by the same argument
-none at $\pdual{\pviA_1}$. The facts of both branches together are
-acyclic, and the program types.
-
-The left fact reads as follows. $\asTmId{R}$ may wait on $\ch$ while the
-partner of $\chB$ waits on $\asTmId{R}$. That is harmless, because the
-partner of $\ch$ does not wait on the partner of $\chB$. A deadlock would
-need a chain of such waits that returns to $\asTmId{R}$, and the chain
-stops at the partner of $\chB$.
+\paragraph{The bit example}
+In \cref{ex:endpoints-bit} the left fact
+$\fLt{\pviA_1}{\pdual{\pviA_2}}$ says that $\asTmId{R}$ may wait on
+$\ch$ while the partner of $\chB$ waits on $\asTmId{R}$. That is
+harmless, because the partner of $\ch$ does not wait on the partner of
+$\chB$. A deadlock needs a chain of such waits that returns to
+$\asTmId{R}$, and the chain stops at the partner of $\chB$.
+\citet{Kobayashi06} keeps the two roles of a point apart as a capability
+level and an obligation level per action. PGV~\cite{KokkeD23} merges
+them into one priority, and one point per channel merges further by
+sharing the point between the two ends.
 
 \paragraph{Deadlocks stay rejected}
 In \cref{ex:deadlock} the main thread closes $\ch$ at $\pviA_1$ while it
@@ -633,13 +594,8 @@ thread closes $\chB'$ at $\pdual{\pviA_2}$ while it holds $\ch'$ and owes
 $\fLt{\pdual{\pviA_2}}{\pdual{\pdual{\pviA_1}}}$, which is
 $\fLt{\pdual{\pviA_2}}{\pviA_1}$. The two facts form a cycle. In
 \cref{ex:cyclic} the spawned thread closes $\ch'$ first and owes
-$\fLt{\pdual{\pviA_1}}{\pviA_2}$ instead, and the facts stay acyclic.
-
-The argument for deadlock freedom keeps its shape. Take the blocked end
-with the least point $\pntA$. Its partner holds the end at
-$\pdual{\pntA}$. If it is blocked at some $\pntB$, it owes
-$\fLt{\pntB}{\pntA}$, which contradicts the choice of $\pntA$. Otherwise
-it offers the dual action and the two threads step.
+$\fLt{\pdual{\pviA_1}}{\pviA_2}$ instead, and the facts stay acyclic
+(\rocq{cycle_typed}).
 
 \paragraph{What stays out}
 Two threads joined by two channels that both branch on the same bit and
@@ -657,20 +613,14 @@ values.
 \Cref{tab:deleg} lists every blocking action of $\asTmId{deleg}$
 (\cref{ex:delegation}), the point $\ubd$ it blocks at, the future the rest
 of the thread still holds, and the premise
-$\fctx \types \fLt{\ubd}{\frm}$ that \ref{rule:E-App} owes for it. Five
-facts discharge all of them.
-\begin{align*}
-  \fLt{\pviA}{\pslot{\pviA}{0}} &\quad\text{from the first } \tNew
-  &
-  \fLt{\pslot{\pviA}{0}}{\poff{\pslot{\pviA}{0}}{1}} &\quad\text{program order}
-  \\
-  \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}} &\quad\text{from the first } \tNew
-  &
-  \fLt{\poff{\pviA}{1}}{\pfv} &\quad\text{from \ref{rule:E-Abs}}
-  \\
-  \fEq{\pviB}{\pslot{\pviA}{0}} &\quad\text{from the second } \tNew
-  \span\span
-\end{align*}
+$\fctx \types \fLt{\ubd}{\frm}$ that \ref{rule:E-App} owes for it. The
+five facts of $\cstr_{\asTy{d}}$, the alias
+$\fEq{\pviB}{\pslot{\pviA}{0}}$ of the second $\tNew$, program order and
+the hypothesis $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$ of \ref{rule:E-Abs}
+discharge all of them. The future holds partner points. The main thread
+keeps $\chB'$ at $\pdual{\pslot{\pviA}{0}}$, whose head is
+$\pslot{\pviA}{0}$, and $\asTmId{K}$ keeps $\ch'_1$ at
+$\poff{\pdual{\pviA}}{1}$, whose head is $\poff{\pviA}{1}$.
 
 \begin{table}[htp]
   \caption{Every blocking action of $\asTmId{deleg}$ and the premise it
@@ -684,39 +634,41 @@ facts discharge all of them.
     $\tApp{\tSend}{\tPair{\chB}{\ch}}$
       & $\pviA$ & $\set{\pslot{\pviA}{0}}$ & $\fLt{\pviA}{\pslot{\pviA}{0}}$ \\
     \quad and the payload of the send
-      & $\pviA$ & $\heads \set{\pslot{\pviA}{0}}$ & $\fLt{\pviA}{\pslot{\pviA}{0}}$ \\
+      & $\pviA$ & $\heads(\chB) = \set{\pdual{\pslot{\pviA}{0}}}$ & $\fLt{\pviA}{\pdual{\pslot{\pviA}{0}}}$ \\
     $\tApp{\tRecv}{\chB'}$
-      & $\pslot{\pviA}{0}$ & $\set{\poff{\pviA}{1}}$ & $\fLt{\pslot{\pviA}{0}}{\poff{\pviA}{1}}$ \\
+      & $\pdual{\pslot{\pviA}{0}}$ & $\set{\poff{\pdual{\pviA}}{1}}$ & $\fLt{\pdual{\pslot{\pviA}{0}}}{\poff{\pdual{\pviA}}{1}}$ \\
     $\tApp{\tClos}{\chB_1}$
-      & $\poff{\pslot{\pviA}{0}}{1}$ & $\set{\poff{\pviA}{1}}$ & $\fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}}$ \\
+      & $\poff{\pdual{\pslot{\pviA}{0}}}{1}$ & $\set{\poff{\pdual{\pviA}}{1}}$ & $\fLt{\poff{\pdual{\pslot{\pviA}{0}}}{1}}{\poff{\pdual{\pviA}}{1}}$ \\
     $\tApp{\tClos}{\ch_1}$
       & $\poff{\pviA}{1}$ & $\emptyset$ & vacuous \\
     $\tApp{\tSpawn}{\asTmId{K}}$
-      & absent & $\set{\pviA, \pslot{\pviA}{0}}$ & an absent bound never blocks \\
+      & absent & & an absent bound never blocks \\
     $\tApp{\tNewC{\pviB}{\dots}}{\tUnit}$
-      & absent & $\set{\pviA}$ & $\cstr$ acyclic and conservative \\
+      & absent & & $\cstr$ acyclic and conservative \\
     \midrule
-    \multicolumn{4}{l}{\emph{spawned thread, under both constraints and $\fLt{\poff{\pviA}{1}}{\pfv}$}} \\
+    \multicolumn{4}{l}{\emph{spawned thread, under both constraints and $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$}} \\
     $\tApp{\tRecv}{\ch'}$
-      & $\pviA$ & $\set{\pfv}$ & $\fLt{\pviA}{\pfv}$ \\
+      & $\pdual{\pviA}$ & $\set{\pfv}$ & $\fLt{\pdual{\pviA}}{\pfv}$ \\
     $\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}}$
       & $\pslot{\pviA}{0}$ & $\set{\pfv, \poff{\pviA}{1}}$ & $\fLt{\pslot{\pviA}{0}}{{}}$ both \\
     $\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}})}$
       & $\poff{\pslot{\pviA}{0}}{1}$ & $\set{\pfv, \poff{\pviA}{1}}$ & $\fLt{\poff{\pslot{\pviA}{0}}{1}}{{}}$ both \\
     $\tApp{\tClos}{\ch'_1}$
-      & $\poff{\pviA}{1}$ & $\set{\pfv}$ & $\fLt{\poff{\pviA}{1}}{\pfv}$ \\
+      & $\poff{\pdual{\pviA}}{1}$ & $\set{\pfv}$ & $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$ \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Program order carries half the chain and no more. $\fLt{\pntA}{\poff{\pntA}{1}}$
-holds for every point, and only between points of one name. $\pviA$ and
-$\pslot{\pviA}{0}$ carry different names, which is why
-$\fLt{\pviA}{\pslot{\pviA}{0}}$ is written in the creation constraint.
-The constraint is written at the $\tNew$ of the carrier, not at the
-send: $\tNew$ commits to where the payload will live at the moment it
-creates the channel the payload will travel on, and the second $\tNew$
-then creates that payload there.
+$\asTmId{K}$ receives $\asTm{e}$ at $\pslot{\pdual{\pviA}}{0}$, which is
+$\pslot{\pviA}{0}$, the point at which the main thread sent $\chB$.
+Program order carries part of the chain and no more.
+$\fLt{\pntA}{\poff{\pntA}{1}}$ and $\fLt{\pntA}{\poff{\pdual{\pntA}}{1}}$
+hold for every point, and only between points of one name. $\pviA$ and
+$\pslot{\pviA}{0}$ carry different names, which is why the facts between
+them are written in the creation constraint. The constraint is written
+at the $\tNew$ of the carrier, not at the send. $\tNew$ commits to where
+the payload will live at the moment it creates the channel the payload
+will travel on, and the second $\tNew$ then creates that payload there.
 
 \section{Duality and Equivalence of Recursive Session Types}
 \label{sec:app-duality}
