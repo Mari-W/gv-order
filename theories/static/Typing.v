@@ -15,6 +15,12 @@ From LRGV Require Export static.PointSubst.
 
 Set Default Proof Using "All".
 
+(** Two ends at dual points, read from either end, in Γ ⊢ ≡ (end points). *)
+Lemma se_dsym W Ψ : rdsym (seqs W Ψ).
+Proof.
+  intros x y H. apply se_sym. rewrite <-(pt_dual_dual y). by apply se_dual.
+Qed.
+
 Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sfuture → expr → ty → Prop :=
   | t_unit Φ Ψ Δ F :                                    (* E-Unit *)
       lenv_empty Δ →
@@ -115,7 +121,7 @@ Lemma typed_force W Φ Ψ Θ Δ F e m k C ub T xs ss :
 Proof.
   intros HW Hxs HC HK Hss Hsc Hub He.
   eapply (t_app W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ _ None).
-  - apply tenv_comp_empty_l, se_sym.
+  - apply tenv_comp_empty_l, se_dsym.
   - apply lenv_split_nones_l.
   - exact Hub.
   - apply t_const; [apply lenv_empty_nones| |done]. by apply KTForce.
@@ -206,16 +212,16 @@ Lemma t_new_open W Φ Ψ Θ Δ F e T S C :
   typed W (fhyps_pinst (pshift 1) Φ)
     (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
     (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: None :: None ::
+    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
        lenv_pinst (pshift 1) Δ)
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
   typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
   intros HC HK Hb. unfold let_new.
-  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
+  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
   (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
   apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
-  { apply tenv_comp_empty_l, se_sym. }
+  { apply tenv_comp_empty_l, se_dsym. }
   { apply lenv_split_nones_l. }
   { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
     - apply tenv_comp_empty_r.
@@ -230,23 +236,23 @@ Proof.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)
   apply (t_letstar W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
-  { apply tenv_comp_empty_l, se_sym. }
+  { apply tenv_comp_empty_l, se_dsym. }
   { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
   { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence. }
   (* open p *)
   apply (t_open W Φ Ψ Θ _ F _ 1 LBot 1 C
-           (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))) T); [done|intros Hun; exact Hun|].
+           (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
   cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
   change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
   (* let ⟨a, b⟩ = p *)
   apply (t_letpair W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
-           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))
+           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
               :: lenv_nones (lenv_pinst (pshift 1) Δ))
            (None :: None :: lenv_pinst (pshift 1) Δ)
-           _ _ _ (TSess S (pvar 0)) (TSess (dual S) (pvar 0))); [| | |exact Hb].
-  - apply tenv_comp_empty_l, se_sym.
+           _ _ _ (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))); [| | |exact Hb].
+  - apply tenv_comp_empty_l, se_dsym.
   - apply lsplit_none, lsplit_l, lenv_split_nones_l.
   - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
@@ -263,7 +269,7 @@ Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C :
   typed W (fhyps_pinst (pshift 1) Φ)
     (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
     (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: None :: None ::
+    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
        lenv_pinst (pshift 1) Δ)
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
   typed W Φ Ψ Θ Δ F (let_new e) T.
@@ -280,7 +286,7 @@ Lemma t_newfresh_lh_open W Φ Ψ Θ Δ F e T S L H :
   typed W (fhyps_pinst (pshift 1) Φ)
     (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
     (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: None :: None ::
+    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
        lenv_pinst (pshift 1) Δ)
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
   typed W Φ Ψ Θ Δ F (let_new e) T.

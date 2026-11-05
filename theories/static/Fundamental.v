@@ -781,10 +781,10 @@ Proof.
   destruct (alias_bcs_ok W Ψ x Hx) as (_ & HK & _).
   pose proof (cc_ok_alias (seqs W Ψ) (slt W Ψ) x) as HC.
   set (C := alias_bcs x).
-  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
+  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
   (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
   apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
-  { apply tenv_comp_empty_l, se_sym. }
+  { apply tenv_comp_empty_l, se_dsym. }
   { apply lenv_split_nones_l. }
   { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
     - apply tenv_comp_empty_r.
@@ -798,14 +798,14 @@ Proof.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)
   apply (t_letstar W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
-  { apply tenv_comp_empty_l, se_sym. }
+  { apply tenv_comp_empty_l, se_dsym. }
   { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
   { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence. }
   (* open p, with the hypothesis ι ≡ x *)
   apply (t_open W Φ Ψ Θ _ F _ 1 LBot 1 C
-           (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))) T); [done|intros Hun; exact Hun|].
+           (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
   cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
   change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
   set (Ψ1 := hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
@@ -819,13 +819,13 @@ Proof.
     simpl. rewrite !pt_inst_pvar_at. done. }
   (* let ⟨a, b⟩ = p, the pair moved from ι to x *)
   apply (t_letpair W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
-           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))
+           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
               :: lenv_nones (lenv_pinst (pshift 1) Δ))
            (None :: None :: lenv_pinst (pshift 1) Δ)
            _ _ _ (TSess S (pt_inst (pshift 1) x)) (TSess (dual S) (pt_inst (pshift 1) x))).
-  - apply tenv_comp_empty_l, se_sym.
+  - apply tenv_comp_empty_l, se_dsym.
   - apply lsplit_none, lsplit_l, lenv_split_nones_l.
-  - apply (t_conv W _ _ _ _ _ _ (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
+  - apply (t_conv W _ _ _ _ _ _ (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
     { split; split; [exact Hal|apply seq_refl|exact Hal|apply seq_refl]. }
     apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
