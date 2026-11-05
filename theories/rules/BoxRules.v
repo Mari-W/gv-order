@@ -43,7 +43,7 @@ Lemma Erel_app n W Θ Θ1 Θ2 ub lb T U F v1 v2 :
 Proof.
   intros HW Hc HV1 HV2 Hub.
   destruct (decide (v1 = EForce)) as [->|Hnf]; [|by eapply Erel_app_noforce].
-  pose proof (wf_eq_sym _ (proj1 HW)) as Hs.
+  pose proof (wf_rdsym _ (proj1 HW)) as Hs.
   destruct (proj1 (Vrel_lolli_iff _ _ _ _ _ _ _ _) HV1) as [(eb & ? & _)|(k & T0 & _ & -> & _)];
     [done|].
   apply (tenv_comp_empty_l_inv _ _ _ Hs) in Hc as ->. by eapply Erel_app_force.
@@ -83,7 +83,7 @@ Lemma sem_typed_force W Θ Δ F e m k C ub T xs ss :
 Proof.
   intros HW Hxs HC HK Hss Hsc Hub He.
   eapply (sem_typed_app W Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ _ None).
-  - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
+  - apply tenv_comp_empty_l, (wf_rdsym _ HW).
   - apply lenv_split_nones_l.
   - exact Hub.
   - apply sem_typed_konst; [apply lenv_empty_nones|]. by apply KTForce.
@@ -101,7 +101,7 @@ Proof.
   destruct Hg as (Θ1 & Θ2 & Hc & HV & _).
   pose proof (Vrel_unl_empty _ _ _ _ _ Hu HV) as ->.
   exists ∅, Θ. split_and!.
-  - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
+  - apply tenv_comp_empty_l, (wf_rdsym _ HW).
   - exact HV.
   - eapply grounding_ext; [|exact Hg0]. by intros [|i].
 Qed.
@@ -132,7 +132,7 @@ Proof.
   - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
     destruct (Hu (Some T)) as [?|(U & [= <-] & HU)]; [by left|done|].
     rewrite (Vrel_unl_empty _ _ _ _ _ HU HV) in Hc.
-    apply (tenv_comp_empty_l_inv _ _ _ (wf_eq_sym _ HW)) in Hc as ->.
+    apply (tenv_comp_empty_l_inv _ _ _ (wf_rdsym _ HW)) in Hc as ->.
     apply (IH _ (γ ∘ S)); [|done]. intros o Ho. apply Hu. by right.
   - apply (IH _ (γ ∘ S)); [|done]. intros o Ho. apply Hu. by right.
 Qed.

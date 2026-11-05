@@ -102,7 +102,7 @@ Lemma sem_rules_force W Θ Δ F e m k C ub T xs ss :
 Proof.
   intros HW Hxs HC HK Hss Hsc Hub He.
   eapply (sr_app W Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ _ None).
-  - apply tenv_comp_empty_l, (wf_eq_sym _ HW).
+  - apply tenv_comp_empty_l, (wf_rdsym _ HW).
   - apply lenv_split_nones_l.
   - exact Hub.
   - apply sr_konst; [apply lenv_empty_nones|]. by apply KTForce.
