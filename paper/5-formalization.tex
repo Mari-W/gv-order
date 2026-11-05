@@ -10,12 +10,6 @@ extensions of \cref{sec:ext} and the two embeddings of
 \citet{MordidoP} is mechanized as well (\rocq{mp3_deadlock_free_source})
 and the paper treats it informally. The development is built on top of the
 \texttt{std++} library and does not admit any axiom.
-% TODO(author): depends on end-points port. On branch end-points the
-% core, the fundamental theorem and soundness are ported, and so are
-% Sync, Cycle, Delegation, Scheduler, Factory, FactoryEx, Stream and
-% CfstDeadlock. The other examples, the rejections and the translations
-% are not, so "everything this paper states is mechanized" holds only
-% after the port.
 
 \paragraph{AI Use}
 The conception of the semantics, type system, logical relation, examples and sketches of the soundness arguments were all done without the use of AI.
@@ -25,18 +19,18 @@ in several refinements starting from the manually written definitions and proof 
 We thoroughly audited the definitions for accuracy against their hand-written versions.
 \ed{\pt! \mw! please check you agree with this characterization}
 
-The artifact comprises $46{,}633$ lines (non-blank, non-comment) of Rocq
-across 114 files, containing $1{,}541$ definitions and $3{,}541$ lemmas
+The artifact comprises $54{,}662$ lines (non-blank, non-comment) of Rocq
+across 137 files, containing $1{,}830$ definitions and $4{,}139$ lemmas
 and theorems.
 % Counted over theories/**/*.v after stripping (* *) comments:
 % LOC = non-blank lines, definitions = Definition|Fixpoint|Inductive|Record,
-% lemmas and theorems = Lemma|Theorem|Corollary, Local ones included
-% (3,441 + 99 + 1).
-% TODO(author): recount after the end-points port. The numbers above and
-% in the table are those of main at dbb55b1, before end points.
+% lemmas and theorems = Lemma|Theorem|Corollary, Local ones included.
+% Recounted on main after the end-points merge (2026-11-05). Table rows
+% by directory: lang; types; static; relation; rules; composition;
+% invariance; examples + counterexamples; pgv + pn + mp; algorithmic.
 \Cref{tab:mechanization} gives the distribution over components.
 The examples, the rejections and the three translations take
-$23{,}698$ lines, $51\%$ of the development. The term judgment is one
+$29{,}747$ lines, $54\%$ of the development. The term judgment is one
 inductive (\rocq{typed}), and the judgment of source programs is its
 instance at the empty world (\rocq{styped}).
 The source of complexity is the semantic typing proofs, which reason about
@@ -52,16 +46,17 @@ scalably, and we leave that exploration for future work.
     Component                                                                      & LOC          \\
     \midrule
     Syntax, labelled semantics, harmony, safety (\cref{fig:syntax,fig:term-semantics,fig:proc-semantics}) & 2,087        \\
-    Types, payloads, duality, environments (\cref{fig:types})                      & 1,835        \\
-    Points, the fact theory, the static system, soundness (\cref{fig:facts,fig:typeSys,fig:typeSysPoints,fig:signatures}) & 2,719        \\
-    Worlds, readiness, creation constraints, the logical relation (\cref{fig:logrel-rules-value,fig:logrel-rules-term,fig:logrel-rules-proc}) & 2,384        \\
-    Compositionality for terms (\cref{tab:compositionality})                       & 1,841        \\
-    Compositionality for processes (\cref{lem:comp:connect})                       & 5,572        \\
-    Invariance under renaming, point substitution and conversion                   & 6,497        \\
-    Examples and rejections (\cref{sec:examples,sec:ext})                          & 7,406        \\
-    Translations of PGV, Padovani--Novara and Mordido--P\'erez (\cref{sec:ex-priority}) & 16,292       \\
+    Types, payloads, duality, environments (\cref{fig:types})                      & 1,914        \\
+    Points, the fact theory, the static system, soundness (\cref{fig:facts,fig:typeSys,fig:typeSysPoints,fig:signatures}) & 3,068        \\
+    Worlds, readiness, creation constraints, the logical relation (\cref{fig:logrel-rules-value,fig:logrel-rules-term,fig:logrel-rules-proc}) & 2,996        \\
+    Compositionality for terms (\cref{tab:compositionality})                       & 1,844        \\
+    Compositionality for processes (\cref{lem:comp:connect})                       & 5,627        \\
+    Invariance under renaming, point substitution and conversion                   & 6,529        \\
+    Examples and rejections (\cref{sec:examples,sec:ext})                          & 13,093       \\
+    Translations of PGV, Padovani--Novara and Mordido--P\'erez (\cref{sec:ex-priority}) & 16,654 \\
+    Algorithmic checker                                                            & 850         \\
     \midrule
-    Total                                                                          & 46,633       \\
+    Total                                                                          & 54,662       \\
     \bottomrule
   \end{tabular}
 \end{table}

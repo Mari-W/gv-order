@@ -4,15 +4,17 @@
 A mechanized fragment of each of two priority-based systems translates
 into \OurLang, and the translation makes every closed program of unit
 type in the fragment deadlock free as written, not only its image.
-Both systems give the two ends of a channel one priority or level, so their
-images live in the collapsed instance of \cref{sec:app-endpoints}. The
-world $\wrld_{\mathrm{PGV}}$ and the top-level constraint of the second
+Both systems give the two ends of a channel one priority or level, so a
+priority below another reads as a hatted fact
+$\fLt{\phat{\pntA}}{\phat{\pntB}}$. Mapping $\pntA$ and $\pdual{\pntA}$
+to one point sends every hatted fact to a fact between priorities and
+$\fLt{\pntA}{\poff{\pdual{\pntA}}{1}}$ to program order. A set of
+hatted facts is therefore acyclic exactly when its priorities are, and
+every fact a gate asks is among the expanded ones. The world
+$\wrld_{\mathrm{PGV}}$ and the top-level constraint of the second
 translation identify every point of the image with its partner point,
-$\fEq{\pntA}{\pdual{\pntA}}$, and the gate then compares a blocking
-point with the points of the held ends, as a priority check does.
-% TODO(author): depends on end-points port. The pgv, pn and mp
-% translations are not ported yet; this paragraph states the intended
-% shape of the port, which adds x == bar x to Wpgv and to PNWorld.Crel.
+$\fEq{\pntA}{\pdual{\pntA}}$. The gate then compares a blocking point
+with the points of the held ends, as a priority check does.
 
 \begin{theorem}[A fragment of PGV \rocq{pgv_deadlock_free_source}]
 \label{thm:pgv}

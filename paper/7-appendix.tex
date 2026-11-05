@@ -259,8 +259,6 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   $\cstr_{\asTy{d}}$ of \cref{ex:delegation}. The heads of a sum
   are the heads of both arms, so $\asTmId{none}$ owes
   $\fLt{\pviA}{\pdual{\pslot{\pviA}{0}}}$ although it sends no channel, and
-  % TODO(author): depends on end-points port. OptionPayload.v is not
-  % ported; the constraint C_d is carried over by hand from deleg.
   \ref{rule:E-Case} types both arms of $\asTmId{R}$. Both programs are
   deadlock free (\rocq{some_deadlock_free}, \rocq{none_deadlock_free}),
   and so is $\asTmId{some}$ with the spawn moved before the creation of
@@ -276,9 +274,6 @@ Thus each channel has exactly two ends with dual sessions at dual points.
     \cstr = \set{\fLt{\poff{\pviA}{k}}{\poff{\pdual{\pviA'}}{k}},\
       \fLt{\poff{\pviA'}{k}}{\poff{\pdual{\pviA}}{k+1}} \mid k \in \Nat}
   \]
-  % TODO(author): depends on end-points port. RequestReply.v is not
-  % ported; C is derived by hand (receive at iota+k holding b, send at
-  % iota'+k holding a).
   and the server has type
   $\tyBox{\pviA \pviA'}{\cstr}{\tyUnit \lolli{}{}
     (\lPair{\sAt{\sty_a}{\pviA}}{\sAt{\sty_b}{\pviA'}} \lolli{\pviA'}{} \tyUnit)}$
@@ -313,8 +308,6 @@ Thus each channel has exactly two ends with dual sessions at dual points.
       \fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
       \fLt{\poff{\pviA}{k}}{\poff{\pdual{\pviA'}}{k}}
       \;\mid\; k \in \Nat \,}
-      % TODO(author): depends on end-points port. Forwarder.v is not
-      % ported; C_f is derived by hand from the gates of fwd.
     \\
     & \quad \cup\ \set{\,
       \fLt{\poff{\pviA'}{k}}{\poff{\pdual{\pviA}}{k+1}},\
@@ -369,16 +362,15 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   Here the fresh reply channel of a call sits at $\pslot{\pviA}{0}$, the
   first payload point of the channel the call answers on. The spawned
   call answers on that end, and the server waits on the partner end at
-  $\pdual{\pslot{\pviA}{0}}$ while it holds the end at $\pviA$, so
+  $\pdual{\pslot{\pviA}{0}}$ while it holds the end at $\pviA$. The
+  constraint states its facts between both ends of each channel,
   \begin{align*}
     \sty_{\asTy{r}} &= \sSend{\tyUnit}{\sTerm}
     \\
     \cstr &= \set{\,
-      \fLt{\poff{\pdual{\pslot{\pviA}{0^{n+1}}}}{1}}{\pdual{\pslot{\pviA}{0^n}}},\
-      \fLt{\poff{\pdual{\pslot{\pviA}{0^{n+1}}}}{1}}{\poff{\pslot{\pviA}{0^n}}{1}}
+      \fLt{\phat{\pslot{\pviA}{0^{n+1}}}}{\phat{\pslot{\pviA}{0^n}}},\
+      \fLt{\poff{\phat{\pslot{\pviA}{0^{n+1}}}}{1}}{\phat{\pslot{\pviA}{0^n}}}
       \;\mid\; n \in \Nat \,}
-    % TODO(author): depends on end-points port. KobForwarder.v and
-    % FactServer.v are not ported; C is derived by hand.
     \\
     \asTmId{fwsrv} &{}: \tyBox{\pviA}{\cstr}{%
       \tyUnit \lolli{}{}
@@ -449,8 +441,6 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   $\poff{\pviA}{2k}$ by the alias
   $\fEq{\pviB}{\poff{\pviA}{2k}}$, with its partner end at
   $\poff{\pdual{\pviA}}{2k}$. Three threads sharing three ring
-  % TODO(author): depends on end-points port. MilnerSched.v is not
-  % ported; whether the aliases alone still type it is open.
   channels form a cycle, so no derivation by \ref{rule:P-Connect}
   exists, and the order on points admits the program all the same:
   $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{ms} : \tyUnit$
@@ -487,9 +477,6 @@ The rank $10(k+1)$ for $\poff{\pviA}{k}$ and $15+k$ for
 $\poff{\pviA'}{k}$, at either polarity, satisfies $\cstr_1$ and both
 rules of program order and puts $\poff{\pdual{\pviA'}}{1}$ below
 $\poff{\pviA}{1}$.
-% TODO(author): depends on end-points port. Rejected.v is not ported;
-% rr_call_underivable, ord_no_constraint and the facts of the reversed
-% agents are still the one-point-per-channel versions.
 A constraint is the
 invariant of a recursion, so it has to state every round at once, as
 \cref{ex:chain,ex:forwarder} do.
@@ -515,9 +502,6 @@ invariant of a recursion, so it has to state every round at once, as
 
 (\rocq{ord_R}, \rocq{fl_map}, \rocq{ord_R_po}, \rocq{isvar_const}, \rocq{bcs_open_nil}).
 
-% TODO(author): depends on end-points port. The facts below are those
-% of one point per channel. The lemmas are order facts that hold
-% verbatim, but the points the reversed agents relate change.
 \begin{theorem}[A reversed agent \rocq{sched_rev_underivable}, \rocq{ms_rev_underivable}]
 \label{thm:rej-sched}
   In the reduced scheduler, reversing $\asTmId{ag}_0$ so that it
@@ -561,19 +545,13 @@ unlimited bindings, so every derivation asks both.
 
 
 
-\section{End Points against One Point per Channel}
+\section{End Points against Priorities}
 \label{sec:app-endpoints}
 
-This section compares end points with a system that puts both ends of a
-channel at one point, as PGV does with its priorities and Padovani and
-Novara with their levels. That system is the instance of \OurLang\ in which every
-fact context contains $\fEq{\pntA}{\pdual{\pntA}}$ for every point
-$\pntA$. There the partner point of an end is its own point,
-\ref{rule:O-DPo} is program order, and the two ends of a channel are dual
-at aliased points.
-% TODO(author): the collapsed instance is not mechanized. A box has to
-% state x == bar x for the payload points it reaches as well, because
-% A-Payload does not derive x[j] == bar(x[j]) from iota == bar iota.
+This section compares end points with priority systems, which give both
+ends of an action one priority, as PGV does with its priorities and
+Padovani and Novara with their levels. \Cref{sec:ex-priority} reads such
+an assignment as hatted facts.
 
 \paragraph{The bit example}
 In \cref{ex:endpoints-bit} the left fact
@@ -584,10 +562,11 @@ $\chB$. A deadlock needs a chain of such waits that returns to
 $\asTmId{R}$, and the chain stops at the partner of $\chB$.
 \citet{Kobayashi06} keeps the two roles of a point apart as a capability
 level and an obligation level per action. PGV~\cite{KokkeD23} merges
-them into one priority, and one point per channel merges further by
-sharing the point between the two ends.
+them into one priority, which both ends share. End points give each end
+its own point, and the gate compares the point of a waiting end with the
+partner point of a held end.
 
-\paragraph{Deadlocks stay rejected}
+\paragraph{Deadlocks have no derivation}
 In \cref{ex:deadlock} the main thread closes $\ch$ at $\pviA_1$ while it
 holds $\chB$ and owes $\fLt{\pviA_1}{\pdual{\pviA_2}}$. The spawned
 thread closes $\chB'$ at $\pdual{\pviA_2}$ while it holds $\ch'$ and owes
