@@ -36,9 +36,10 @@ points of a running program stand in.
   finite set of names $N$ and two relations $\fEq{}{}$ and $\fLt{}{}$ on points.
   Its \emph{support} is $\supp(\wrld) := N$. It is
   \emph{well formed} when $\fEq{}{}$ is an equivalence closed under
-  successor and payload congruence, $\fLt{}{}$ is transitive, closed under
-  $\fEq{}{}$ on both sides and contains program order
-  $\fLt{\pntA}{\poff{\pntA}{1}}$, every support name is a point
+  successor, payload congruence and partner points, $\fLt{}{}$ is
+  transitive, closed under $\fEq{}{}$ on both sides and contains program
+  order $\fLt{\pntA}{\poff{\pntA}{1}}$ and
+  $\fLt{\pntA}{\poff{\pdual{\pntA}}{1}}$, every support name is a point
   constant, and outside the support only reflexivity and program order
   hold. It is \emph{strict} when it is well formed and $\fLt{}{}$ is
   irreflexive.
@@ -97,10 +98,10 @@ have their roots in $A$ (\rocq{wrestrict}).
 The step clauses of the relation are gated by \emph{readiness}. A term
 or process with no internal step left must either be done or offer some
 of the entries it holds, and the offered entries must lie strictly below
-everything it holds but does not offer. Entries are compared, not names:
-a thread holding both ends of $\ch$ and blocking on one of them holds
-the other entry unoffered and would need
-$\fLt{\heads(\ch)}{\heads(\ch)}$.
+the partner points of the entries it holds but does not offer. Entries
+are compared, not names. A thread that holds both ends of $\ch$, at
+$\pntA$ and $\pdual{\pntA}$, and blocks on the first holds the second
+unoffered and would need $\fLt{\pntA}{\pntA}$.
 
 \begin{definition}[Readiness \rocq{ready_t}, \rocq{ready_p}]
 \label{def:ready}
@@ -112,7 +113,7 @@ $\fLt{\heads(\ch)}{\heads(\ch)}$.
       &\iff
       \forall \entry \in O \cap \ents(\tenv) \st
         \forall \entry' \in \ents(\tenv) \setminus O \st
-          \wrld \types \fLt{\hd(\entry)}{\hd(\entry')}
+          \wrld \types \fLt{\hd(\entry)}{\pdual{\hd(\entry')}}
     \\
       &\qquad \text{and }
       \forall \entry \in O \cap \ents(\tenv) \st
@@ -123,7 +124,7 @@ $\fLt{\heads(\ch)}{\heads(\ch)}$.
       &\iff
       \forall \entry \in \ents(\tenv) \setminus O \st
         \exists \entry' \in O \cap \ents(\tenv) \st
-          \wrld \types \fLt{\hd(\entry')}{\hd(\entry)}
+          \wrld \types \fLt{\hd(\entry')}{\pdual{\hd(\entry)}}
   \end{align*}
   (\rocq{below_rest}, \rocq{above_offered}). Let $\offered(\tm)$ and
   $\offered(\proc)$ be the entries on which $\tm$ and $\proc$ offer a
@@ -149,33 +150,37 @@ $\fLt{\heads(\ch)}{\heads(\ch)}$.
 \end{definition}
 
 The two clauses are asymmetric. A term owes $\belowrestop$, which puts
-every offered entry below every unoffered one and below every point of
-the future. A process owes only $\aboveofferedop$, which puts every
-unoffered entry above some offered one, and a process has no future. A
+every offered entry below the partner point of every unoffered one and
+below every point of the future. A process owes only $\aboveofferedop$,
+which puts the partner point of every unoffered entry above some offered
+one, and a process has no future. A
 forwarding never blocks, so a term or process at a forwarding redex
 compares nothing, and only the process clause lets a forwarding redex
 discharge the condition on values as well.
 
 \begin{example}[Ready and blocked threads]
   Let $\wrld$ be strict with $\supp(\wrld)=\set{\pcst,\asTy{b}}$ and
-  $\wrld\types\fLt{\pcst}{\asTy{b}}$, with no reverse precedence.
-  Both threads of
+  $\wrld\types\fLt{\pcst}{\pdual{\asTy{b}}}$, and
+  $\wrld\not\types\fLt{\pdual{\asTy{b}}}{\pcst}$. In
   \[
     (\set{\ch,\chB},\mset{
       \tSeq{\tApp{\tClos}{\ch}}{\tApp{\tClos}{\chB}},
       \tSeq{\tApp{\tClos}{\chB}}{\tApp{\tClos}{\ch}}})
   \]
-  hold $\ch:\sAt{\sTerm}{\pcst}$ and $\chB:\sAt{\sTerm}{\asTy{b}}$.
-  At empty future the first thread is ready because its offer on $\ch$
-  precedes its unoffered end of $\chB$. The second thread is not ready
-  because its offer on $\chB$ would require the reverse precedence.
+  the first thread holds $\ch:\sAt{\sTerm}{\pcst}$ and
+  $\chB:\sAt{\sTerm}{\asTy{b}}$, the second $\ch:\sAt{\sTerm}{\pdual{\pcst}}$
+  and $\chB:\sAt{\sTerm}{\pdual{\asTy{b}}}$.
+  At empty future the first thread is ready because its offer at
+  $\pcst$ precedes the partner point $\pdual{\asTy{b}}$ of its unoffered
+  end. The second thread is not ready because its offer at
+  $\pdual{\asTy{b}}$ would need $\fLt{\pdual{\asTy{b}}}{\pcst}$.
   Neither close can synchronize, so the process is blocked.
 \end{example}
 
 \begin{example}[A future delays readiness]
   In the same world, $\tApp{\tClos}{\ch}$ with
   $\tenv=\ch:\sAt{\sTerm}{\pcst}$ is ready at future
-  $\set{\asTy{b}}$. It is not ready at future $\set{\pcst}$ because
+  $\set{\pdual{\asTy{b}}}$. It is not ready at future $\set{\pcst}$ because
   $\belowrestop$ would require $\wrld\types\fLt{\pcst}{\pcst}$.
 \end{example}
 
@@ -197,10 +202,11 @@ single end (\rocq{senv}, \rocq{tenv}, \rocq{ends}, \rocq{tenv_of}). A
 component's interface exposes one end of each channel it talks on, so a
 process reads $\senv$. The relation must also describe a channel whose
 two ends are owned inside the component, after a cut or straight after
-$\tNew$, where \ref{rule:O-New} installs both ends at one point, so a
-term reads $\tenv$. $\heads(\tenv)$ is the set of points of the
-entries of $\tenv$, and $\tenv_1 \cdot \tenv_2$ splits $\tenv$ up to
-$\fEq{}{}$ of the world (\rocq{tenv_comp}).
+$\tNew$, where \ref{rule:O-New} installs the two ends at dual points, so
+a term reads $\tenv$. $\heads(\tenv)$ is the set of partner points of
+the entries of $\tenv$ (\rocq{tenv_heads}). $\tenv_1 \cdot \tenv_2$
+splits $\tenv$ up to $\fEq{}{}$ of the world, and two single ends of one
+channel join when they are dual at dual points (\rocq{tenv_comp}).
 
 \begin{figure}[tp]
   \adjustfigure[]
@@ -310,7 +316,7 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
       \exists\, \pcst \text{ fresh for } \wrld, \tenv, \ty, \frm,\
         \exists \sty,\ \wrld \wextfresh \wrld' \text{ placing } \pcst \st
       \\
-      \tm' \in \lrEW{\wrld'}{n \cost{\lambda}}{\tenv , \ch : \sAt{\sty}{\pcst} \cdot \sAt{\dual{\sty}}{\pcst} \types \ty}{\frm}
+      \tm' \in \lrEW{\wrld'}{n \cost{\lambda}}{\tenv , \ch : \sAt{\sty}{\pcst} \cdot \sAt{\dual{\sty}}{\pdual{\pcst}} \types \ty}{\frm}
     }{
       \obl{\wrld ; \tenv \mid \frm}{n}{\tm \trans{\lNew{\ch}} \tm' : \ty}
     } \label{rule:O-New}
@@ -346,7 +352,7 @@ $\fEq{}{}$ of the world (\rocq{tenv_comp}).
     \and
     \infer*[lab=O-Link]{
       \sty_{\chB} \isdual \sty_{\ch} \\
-      \wrld \types \fEq{\pntA}{\pntB} \\
+      \wrld \types \fEq{\pntA}{\pdual{\pntB}} \\
       \tm' \in \lrEW{\wrld}{n \cost{\lambda}}{\tenv_1 \types \ty}{\frm}
     }{
       \obl{\wrld ; \tenv_1 , \ch : \sAt{\sty_{\ch}}{\pntA} , \chB : \sAt{\sty_{\chB}}{\pntB} \mid \frm}{n}{}
@@ -433,7 +439,7 @@ type.
     \infer*[lab=Q-Send]{
       \dom(\tenv_{\asTy{e}}) = \fchans(\val) \cap \chset \\
       \dom(\tenv_{\asTy{e}}) \disjoint \dom(\senv_0 , \senv_{\asTy{v}}) \cup \set{\ch} \\
-      \tenv_{\asTy{e}} \text{ and } \senv_{\asTy{e}} \text{ are dual at aliased points}
+      \tenv_{\asTy{e}} \text{ and } \senv_{\asTy{e}} \text{ are dual at dual points}
       \\\\
       \val \in \lrVW{\wrld}{n}{\senv_{\asTy{v}} , \tenv_{\asTy{e}} \types \payloadAt{\payty}{\pntA}}
       \quad
@@ -451,7 +457,7 @@ type.
     \infer*[lab=Q-Link]{
       \ch \ne \chB \\
       \sty_{\chB} \isdual \sty_{\ch} \\
-      \wrld \types \fEq{\pntA}{\pntB} \\
+      \wrld \types \fEq{\pntA}{\pdual{\pntB}} \\
       (\chset',\pool') \in \lrPW{\wrld}{n \cost{\pi}}{\senv_1 \types \ty}
     }{
       \obl{\wrld ; \senv_1 , \ch : \sAt{\sty_{\ch}}{\pntA} , \chB : \sAt{\sty_{\chB}}{\pntB}}{n}{(\chset,\pool) \trans{\lLink{\ch}{\chB}} (\chset',\pool') : \ty}
@@ -476,16 +482,17 @@ $B$ become restricted in the continuation and their entries leave both
 environments, which the operation $\senv \mathbin{\triangleright} \tenv_2$
 performs (\rocq{recv_back}, \rocq{recv_env}). The premise
 $\mathit{ok}_{\wrld'}(\senv, \tenv_2)$ asks that every single end in
-$\tenv_2$ be dual to the end of its channel in $\senv$ at an aliased
-point, that the two ends of a channel arriving whole be dual at aliased
+$\tenv_2$ be dual to the end of its channel in $\senv$ at a dual
+point, that the two ends of a channel arriving whole be dual at dual
 points, and that such a channel be absent from $\senv$
 (\rocq{recv_ok}).
 \Cref{rule:Q-Send} is where a private channel becomes part of the
 external interface. The restricted channels the message carries are
 $\dom(\tenv_{\asTy{e}}) = \fchans(\val) \cap \chset$; the ends that
 leave with the message are typed in $\tenv_{\asTy{e}}$, the ends that
-stay in $\senv_{\asTy{e}}$, and the two are dual at aliased points
-(\rocq{send_split}). The continuation then serves
+stay in $\senv_{\asTy{e}}$, and the two are dual at dual points
+(\rocq{send_split}). A point $\pntA$ and a point $\pntB$ are dual in a
+world $\wrld$ when $\wrld \types \fEq{\pntA}{\pdual{\pntB}}$. The continuation then serves
 $\senv_{\asTy{e}}$ as part of its interface. No condition on the
 topology of the continuation is imposed: the order on points does that
 work, so this rule needs no split of the continuation into one process
@@ -655,7 +662,7 @@ is \ref{rule:P-Connect} with no shared channel (\rocq{Prel_indep}).
 \begin{lemma}[Compositionality: \ref{rule:P-Connect} \rocq{conn_all}, \rocq{Prel_connect}]
   \label{lem:comp:connect}
   If $\primitive \ty$, the two interfaces
-  $\senv_{\asTy{C}}$ and $\dual{\senv_{\asTy{C}}}$ are dual at aliased
+  $\senv_{\asTy{C}}$ and $\dual{\senv_{\asTy{C}}}$ are dual at dual
   points of $\wrld$,
   $(\chset_1, \pool_1) \in \lrPW{\wrld}{n}{\senv_1 , \senv_{\asTy{C}} \types \ty}$,
   $(\chset_2, \pool_2) \in \lrPW{\wrld}{n}{\senv_2 , \dual{\senv_{\asTy{C}}} \types \tyUnit}$,
@@ -700,6 +707,20 @@ where strictness of the composed world is needed:
 because the only clause that grows a world grows it freshly
 (\ref{rule:Q-Tau}) and the names it adds are unknown to the other
 component.
+
+Partner points are what make the chain argument for readiness of the
+composite go through (\rocq{ready_connect}, \rocq{descent}). In a stable
+composite the two ends of a cut channel are never both offered. Take an
+offered end at $\pntA$ on a cut channel whose partner end, at
+$\pdual{\pntA}$, is unoffered. The component that holds the partner end
+offers some entry at a point $\pntB$ with
+$\wrld \types \fLt{\pntB}{\pdual{\pdual{\pntA}}}$, that is
+$\fLt{\pntB}{\pntA}$. The offered points descend strictly, so the chain
+visits each cut channel at most once and ends at an external offer. Read
+as a deadlock argument, the blocked end with the least point $\pntA$ has
+a partner at $\pdual{\pntA}$. If that partner is blocked at $\pntB$, it
+owes $\fLt{\pntB}{\pntA}$, against the choice of $\pntA$. Otherwise it
+offers the dual action and the two threads step.
 
 \begin{theorem}[Fundamental property \rocq{fundamental}, \rocq{fundamental_proc}]
 \label{th:fundamental}
