@@ -20,19 +20,25 @@ Set Default Proof Using "All".
 Definition pshift (m : nat) : nat → point := λ a, pvar (a + m).
 
 Lemma pt_shift_0 x : pt_shift 0 x = x.
-Proof. destruct x as [p o]. unfold pt_shift. simpl. f_equal. lia. Qed.
+Proof. destruct x as [p b o]. unfold pt_shift. simpl. f_equal. lia. Qed.
 
 Lemma pt_inst_pvar_at σ a : pt_inst σ (pvar a) = σ a.
 Proof. unfold pt_inst, pvar. simpl. apply pt_shift_0. Qed.
 
 Lemma pt_inst_shift σ n x : pt_inst σ (pt_shift n x) = pt_shift n (pt_inst σ x).
 Proof.
-  destruct x as [p o]. unfold pt_inst, pt_shift. simpl.
-  destruct (pn_inst σ p). simpl. f_equal. lia.
+  destruct x as [p b o]. unfold pt_inst, pt_shift. simpl.
+  destruct (pn_inst σ p). destruct b; unfold pt_polar, pt_dual; simpl; f_equal; lia.
 Qed.
 
+Lemma pt_inst_dual σ x : pt_inst σ (pt_dual x) = pt_dual (pt_inst σ x).
+Proof. destruct x as [p [] o]; unfold pt_inst; simpl; [done|by rewrite pt_dual_dual]. Qed.
+
 Lemma pt_inst_payload σ x i : pt_inst σ (pt_payload x i) = pt_payload (pt_inst σ x) i.
-Proof. destruct x as [p o]. unfold pt_inst, pt_payload, pt_shift. simpl. done. Qed.
+Proof. destruct x as [p [] o]; reflexivity. Qed.
+
+Lemma pt_name_inst σ x : pt_name (pt_inst σ x) = pt_name (pn_inst σ (pt_name x)).
+Proof. destruct x as [p [] o]; done. Qed.
 
 Lemma pn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
 Proof.
@@ -41,7 +47,10 @@ Proof.
 Qed.
 
 Lemma pt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
-Proof. unfold pt_inst at 2 3. by rewrite pt_inst_shift, pn_inst_comp. Qed.
+Proof.
+  destruct x as [n b o]. unfold pt_inst at 2 3. simpl.
+  destruct b; simpl; [|rewrite pt_inst_dual]; by rewrite pt_inst_shift, pn_inst_comp.
+Qed.
 
 Lemma pn_inst_ext_root σ τ p :
   (∀ a, pn_root p = NVar a → σ a = τ a) → pn_inst σ p = pn_inst τ p.
@@ -49,7 +58,7 @@ Proof. induction p as [a|a|p IH b i]; simpl; intros H; [done|by apply H|by rewri
 
 Lemma pt_inst_ext_root σ τ x :
   (∀ a, pt_root x = NVar a → σ a = τ a) → pt_inst σ x = pt_inst τ x.
-Proof. intros H. unfold pt_inst. f_equal. by apply pn_inst_ext_root. Qed.
+Proof. intros H. unfold pt_inst. do 2 f_equal. by apply pn_inst_ext_root. Qed.
 
 Lemma pt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
 Proof. intros H. apply pt_inst_ext_root. auto. Qed.
@@ -58,7 +67,10 @@ Lemma pn_inst_pvar p : pn_inst pvar p = Pt p 0.
 Proof. induction p as [a|a|p IH b i]; simpl; [done|done|by rewrite IH..]. Qed.
 
 Lemma pt_inst_pvar x : pt_inst pvar x = x.
-Proof. destruct x as [p o]. unfold pt_inst. simpl. by rewrite pn_inst_pvar. Qed.
+Proof.
+  destruct x as [p b o]. unfold pt_inst. simpl. rewrite pn_inst_pvar.
+  destruct b; unfold pt_polar, pt_dual, pt_shift; simpl; f_equal; lia.
+Qed.
 
 Lemma pn_inst_const σ p a : pn_root p = NConst a → pn_inst σ p = Pt p 0.
 Proof.
@@ -66,7 +78,11 @@ Proof.
 Qed.
 
 Lemma pt_inst_const σ x a : pt_root x = NConst a → pt_inst σ x = x.
-Proof. destruct x as [p o]. intros H. unfold pt_inst. simpl. by rewrite (pn_inst_const σ p a H). Qed.
+Proof.
+  destruct x as [p b o]. intros H. unfold pt_inst. simpl. rewrite (pn_inst_const σ p a H).
+  destruct b; unfold pt_polar, pt_dual, pt_shift; simpl; f_equal; lia.
+Qed.
+
 
 (** Lifting composes, and the identity lifts to itself. *)
 Lemma pup_ext n σ τ a : (∀ b, σ b = τ b) → pup n σ a = pup n τ a.
@@ -229,7 +245,8 @@ Lemma fact_scoped_inst k ys g :
   fact_scoped k (fact_map (pt_inst (plist ys)) g).
 Proof.
   intros Hys. destruct g as [x y|x y]; simpl; intros [Hx Hy];
-    unfold pt_inst; simpl; split; by apply pn_vb_inst.
+    rewrite !pt_name_inst; split; by apply pn_vb_inst.
+
 Qed.
 
 (** The recursive call for a constraint without outer points, whose
@@ -286,7 +303,7 @@ Proof. induction p as [a|a|p IH b i]; simpl; [done|done|exact IH..]. Qed.
 
 Lemma pt_root_inst σ x :
   pt_root (pt_inst σ x) = match pt_root x with NVar a => pt_root (σ a) | q => q end.
-Proof. destruct x as [p o]. exact (pn_root_inst σ p). Qed.
+Proof. destruct x as [p [] o]; exact (pn_root_inst σ p). Qed.
 
 (** A hypothesis fact, substituted, is a fact of the substituted hypothesis. *)
 Lemma hyp_fact_inst (eq lt : point → point → Prop) (pk : point → Prop) σ Ψ g :
@@ -411,7 +428,7 @@ Proof.
   - by rewrite IH1, IH2, set_map_union_L.
   - by rewrite IH1, IH2, set_map_union_L.
   - by rewrite set_map_empty.
-  - by rewrite set_map_singleton_L.
+  - by rewrite set_map_singleton_L, pt_inst_dual.
   - destruct lb; simpl; [by rewrite set_map_empty|by rewrite set_map_empty|by rewrite set_map_singleton_L].
 Qed.
 
@@ -442,8 +459,9 @@ Proof.
   - intros c e1 e2 H1 H2. unfold tenv_pinst in H1, H2. rewrite lookup_fmap in H1, H2.
     destruct (Θ1 !! c) as [[e1'|]|] eqn:E1; simplify_eq/=.
     destruct (Θ2 !! c) as [[e2'|]|] eqn:E2; simplify_eq/=.
-    destruct (Hd c e1' e2' E1 E2) as [He Hs]. split; [|done]. by apply HR.
+    destruct (Hd c e1' e2' E1 E2) as [He Hs]. split; [|done]. rewrite <-pt_inst_dual. by apply HR.
 Qed.
+
 
 (** ** General constraints of E-NewFresh (sharp edges 93)
 
@@ -546,6 +564,7 @@ Proof.
   intros He Hl. apply (cc_ok_transfer peq plt peq' plt' C (bcs_inst σ C) (pt_inst (pup 1 σ))).
   - intros x. apply pt_inst_shift.
   - intros x i. apply pt_inst_payload.
+  - intros x. apply pt_inst_dual.
   - intros p Hp. rewrite pt_inst_new; [done|apply pup1_0|done].
   - intros x Hx. rewrite pt_root_inst. destruct (pt_root x) as [c|[|k]|q b i]; try done.
 
@@ -578,8 +597,10 @@ Proof.
     + done.
     + done.
     + intros x y i E. unfold id in *. by subst.
+    + done.
     + apply pofs_trans.
     + intros p _. apply pofs_shift.
+    + intros p _. unfold pofs, pt_shift. simpl. split; [done|lia].
     + apply pofs_irrefl.
     + intros u' p' q' v' (u & p & Hu & -> & ->) (q & v & Hv & -> & ->) Hpq.
       pose proof Hu as (_ & _ & Hp0 & Hu0). pose proof Hv as (_ & _ & Hq0 & Hv0).
@@ -610,8 +631,10 @@ Proof.
     + intros x. apply pt_inst_shift.
     + intros x i _. apply pt_inst_payload.
     + intros x y i E. rewrite !pt_inst_payload. by rewrite E.
+    + intros x. apply pt_inst_dual.
     + apply pofs_trans.
     + intros p _. apply pofs_shift.
+    + intros p _. unfold pofs, pt_shift. simpl. split; [done|lia].
     + apply pofs_irrefl.
 
     + intros ? ? ? ? [].
@@ -648,7 +671,8 @@ Section transfer.
     intros Hxy. pose proof (wext_wf _ _ HW1) as Hwf.
     destruct (wf_lt_supp _ HW x y Hxy) as [Hp|[Hx Hy]].
     - apply (wf_lt_ppo _ _ _ Hwf). revert Hp. apply ppo_map.
-      intros z. apply pt_inst_shift.
+      + intros z. apply pt_inst_shift.
+      + intros z. apply pt_inst_dual.
     - destruct (wf_names_const _ HW _ Hx) as [a Ha]. destruct (wf_names_const _ HW _ Hy) as [b Hb].
       rewrite (pt_inst_const σ x a Ha), (pt_inst_const σ y b Hb).
     destruct HW1 as (_ & He & Hl & _). auto.
@@ -672,10 +696,10 @@ Section transfer.
       apply elem_of_map in Hh' as (h0 & -> & Hh0). by apply Hlt, Hh.
     - rewrite payload_pinst, pt_inst_shift by done. apply KTRecv.
     - apply KTClos.
-    - rewrite pt_inst_payload. apply KTSel1. rewrite <-pt_inst_payload. by apply Hlt.
-    - rewrite pt_inst_payload. apply KTSel2. rewrite <-pt_inst_payload. by apply Hlt.
-    - rewrite !pt_inst_payload. apply KTBra; rewrite <-pt_inst_payload; by apply Hlt.
-    - apply KTLink. by apply Heq.
+    - rewrite pt_inst_dual, pt_inst_payload. apply KTSel1. rewrite <-pt_inst_payload. by apply Hlt.
+    - rewrite pt_inst_dual, pt_inst_payload. apply KTSel2. rewrite <-pt_inst_payload. by apply Hlt.
+    - rewrite !pt_inst_payload. apply KTBra; rewrite <-pt_inst_payload, <-pt_inst_dual; by apply Hlt.
+    - apply KTLink. rewrite <-pt_inst_dual. by apply Heq.
     - assert (∀ a, pt_inst (plist (pt_inst σ <$> xs)) (pup n σ a) = pt_inst σ (plist xs a))
         as Hc by (intros a; by apply plist_pup_comm).
       assert (pt_inst (plist (pt_inst σ <$> xs)) <$> (pt_inst (pup n σ) <$> ub) =
@@ -687,7 +711,8 @@ Section transfer.
       rewrite pinst_sinst, <-E1, <-E2. apply KTForce; [by rewrite length_fmap| | |done|done].
       + by apply (bcs_hold_inst peq _ plt).
       + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx. by apply Hpk.
-    - assert (pt_inst (pup 1 σ) (pvar 0) = pvar 0) as ->
+    - rewrite pt_inst_dual.
+      assert (pt_inst (pup 1 σ) (pvar 0) = pvar 0) as ->
         by (rewrite pt_inst_pvar_at; unfold pup; by rewrite decide_True by lia).
       apply KTNewEx.
       + by apply (cc_ok_pinst σ peq plt peq' plt').
@@ -737,7 +762,10 @@ Section transfer.
     - intros a y y' H Hy. exact (fl_eqr (FCtx W1 Ψ' Φ') _ _ _ H Hy).
     - intros a y b. exact (fl_trans (FCtx W1 Ψ' Φ') _ _ _).
     - intros x. rewrite pt_inst_shift. apply (fl_po (FCtx W1 Ψ' Φ')).
+    - intros x y H. rewrite !pt_inst_dual. by apply se_dual.
+    - intros x. rewrite pt_inst_shift, pt_inst_dual. apply (fl_dpo (FCtx W1 Ψ' Φ')).
   Qed.
+
 
 
   Lemma seqs_pinst_s Ψ Ψ' x y :
@@ -941,7 +969,7 @@ Qed.
 
 Lemma ends_heads_pinst σ c o :
   ends_heads c (ends_pinst σ o) = set_map (pt_inst σ) (ends_heads c o).
-Proof. destruct o; simpl; set_solver. Qed.
+Proof. destruct o; simpl; rewrite <-?pt_inst_dual; set_solver. Qed.
 
 Lemma tenv_heads_pinst σ Θ : tenv_heads (tenv_pinst σ Θ) = set_map (pt_inst σ) (tenv_heads Θ).
 Proof.

@@ -98,6 +98,7 @@ has no axioms and no admitted proofs.
 - `Stream.v`: Padovani's `stream`, a producer that sends a fresh continuation each round, with a consumer (`st_deadlock_free`).
 - `Congruence.v`: a box whose derivation needs both congruences of ≡, one alias between base points read at a payload point x[i] and at the successor (`cg_deadlock_free`).
 - `Rejected.v`: programs the static system rejects (`rr_call_underivable`, `sched_rev_underivable`, `ms_rev_underivable`, `badlink_underivable`, `ord_no_constraint`).
+- `EndPoints.v`: the bit program of the end-points extension. A thread receives a bit and closes c before d or d before c. It types in `styped` under {ε+1 ≺ γ̄, ε+1 ≺ δ̄, γ ≺ δ̄, δ ≺ γ̄} and is deadlock free (`bit_typed`, `bit_deadlock_free`, docs/extensions/end-points.md).
 - `SendTreeType.v`: the type of sendTree with the coarse ceiling over walks through x+1 and x[i], a smoke test (SHARP-EDGES 73, 142).
 
 `examples/cfst/`, the examples of context-free session types (SHARP-EDGES 74, 75, 142 and 144). Since K11 a choice moves its channel from x to x[i] and owes x ≺ x[i], and ceilings range over the walks from a point. Every example states a whole-program `styped` derivation, creates its channels with the existential new under a creation constraint, and proves deadlock freedom with `soundness_source`.
@@ -188,6 +189,8 @@ theories/mp stays at its world `Wmp` on the merged core. Translated new is `let_
 - Primitive choice translates into that encoding. `choice_translate` (examples/ChoiceTranslate.v) proves that replacing select and branch by the encoded terms preserves `styped` on a fragment, and `translated_deadlock_free` (examples/ChoiceTranslateEx.v) applies it to T1 ∥ T2 ∥ T3. The negative control with both arms at one payload point is underivable by inversion (`t2_underivable`, `negative_new_at`, examples/ChoiceNegative.v). A message whose payload is an existential is a derived form (`send_ex`, `recv_ex`, `ex_deadlock_free`, examples/ExPayload.v, docs/extensions/existential-payloads.md). The three are summarized in docs/extensions/SMALL-THEOREMS-REPORT.md.
 - A payload of a channel or nothing. `some_deadlock_free`, `some_swapped_deadlock_free` and `none_deadlock_free` (examples/OptionPayload.v) send inj₁ of a channel at ι[0] or inj₂ ∗ on !((S⁰@self[0]) ⊕ ∗).Close. The heads of a sum include both arms, so `none` owes ι ≺ ι[0] and the creation constraint of `some` (sharp edges 140).
 - The box type □(∀ιs. C. T) is one type former (`TBox`, types/Types.v), so ∀ occurs only directly under □. Part 2 of docs/extensions/existentials.md had split it into □ and ∀ with E-Gen and E-Inst. No program used the two rules, and the split was undone (sharp edges 109). The rules beyond `orders-lr` are E-Pack and E-Open.
+
+- End points (docs/extensions/end-points.md): every end of a channel has its own point, the two ends of a channel sit at dual points x and x̄, heads are partner points, and a thread blocked at u that holds an end at v owes u ≺ v̄. Program order adds x ≺ x̄+1. `bit_deadlock_free` (examples/EndPoints.v) types a program whose two branches close two channels in opposite orders. The underivability theorems of ChoiceNegative.v, DataBranch.v and SemFlag.v that relied on one point per channel are commented out and marked `END POINTS: open`.
 
 ## Other documents
 

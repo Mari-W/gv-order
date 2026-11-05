@@ -156,6 +156,14 @@ Section teqW.
     intros H. apply w_eq_pteqW. apply (wf_eq_payload _ HW). by apply pteqW_eq.
   Qed.
 
+  Lemma pteqW_dual x y : pteqW W x y → pteqW W (pt_dual x) (pt_dual y).
+  Proof.
+    intros H. apply w_eq_pteqW. apply (wf_eq_dual _ HW). by apply pteqW_eq.
+  Qed.
+
+  Lemma pteqW_polar b x y : pteqW W x y → pteqW W (pt_polar b x) (pt_polar b y).
+  Proof. destruct b; [done|apply pteqW_dual]. Qed.
+
   (** A ground point is fixed by instantiation. *)
   Lemma pn_inst_ground σ p a : pn_root p = NConst a → pn_inst σ p = Pt p 0.
   Proof.
@@ -165,8 +173,9 @@ Section teqW.
 
   Lemma pt_inst_ground σ x : pt_ground x → pt_inst σ x = x.
   Proof.
-    intros [a Ha]. destruct x as [p o]. unfold pt_inst. simpl.
-    rewrite (pn_inst_ground σ p a Ha). unfold pt_shift. simpl. by rewrite ?Nat.add_0_l.
+    intros [a Ha]. destruct x as [p bb o]. unfold pt_inst. simpl.
+    rewrite (pn_inst_ground σ p a Ha).
+    destruct bb; unfold pt_polar, pt_dual, pt_shift; simpl; by rewrite ?Nat.add_0_l.
   Qed.
 
   Lemma pteqW_inst_r ρ x y : pteqW W x y → pteqW W (pt_inst ρ x) (pt_inst ρ y).
@@ -178,7 +187,7 @@ Section teqW.
   Lemma pteqW_inst_l σ τ x :
     (∀ i, pteqW W (σ i) (τ i)) → pteqW W (pt_inst σ x) (pt_inst τ x).
   Proof.
-    intros H. destruct x as [p o]. unfold pt_inst. simpl. apply pteqW_shift.
+    intros H. destruct x as [p bb o]. unfold pt_inst. simpl. apply pteqW_polar, pteqW_shift.
     induction p; simpl; [by left|apply H|].
     apply pteqW_payload, pteqW_shift, IHp.
   Qed.
@@ -628,14 +637,14 @@ Section tconv.
     intros H Hy. apply elem_of_tenv_heads in Hy as (c & o' & Hc & Hy).
     specialize (H c). rewrite Hc in H. destruct (Θ !! c) as [o|] eqn:Ho; [|done].
     destruct o as [e|e1 e2], o' as [e'|e1' e2']; simpl in *; try done.
-    - apply elem_of_singleton in Hy as ->. exists e.2.
+    - apply elem_of_singleton in Hy as ->. exists (pt_dual e.2).
       split; [apply elem_of_tenv_heads; exists c, (One e); split; [done|];
-              simpl; set_solver|apply H].
+              simpl; set_solver|apply (wf_eq_dual _ HW), H].
     - destruct H as [[_ H1] [_ H2]].
       apply elem_of_union in Hy as [->%elem_of_singleton| ->%elem_of_singleton].
-      + exists e1.2. split; [|done]. apply elem_of_tenv_heads.
+      + exists (pt_dual e1.2). split; [|by apply (wf_eq_dual _ HW)]. apply elem_of_tenv_heads.
         exists c, (Both e1 e2). split; [done|]. simpl. set_solver.
-      + exists e2.2. split; [|done]. apply elem_of_tenv_heads.
+      + exists (pt_dual e2.2). split; [|by apply (wf_eq_dual _ HW)]. apply elem_of_tenv_heads.
         exists c, (Both e1 e2). split; [done|]. simpl. set_solver.
   Qed.
 
@@ -696,7 +705,8 @@ Section tconv.
         { intros Ho'. apply Hn. by apply (offered_t_conv Θ). }
         pose proof (H1 k' f Hf Hn0) as Hlt.
         unfold entry_head in *. eapply (wf_lt_eq _ HW); [|exact Hlt|];
-          first [done|by apply (wf_eq_sym _ HW)].
+          [first [done|by apply (wf_eq_sym _ HW)]
+          |apply (wf_eq_dual _ HW); first [done|by apply (wf_eq_sym _ HW)]].
       + intros y Hy. pose proof (H2 y Hy) as Hlt.
         unfold entry_head in *. eapply (wf_lt_eq _ HW); [|exact Hlt|apply (wf_eq_refl _ HW)].
         first [done|by apply (wf_eq_sym _ HW)].
@@ -771,11 +781,11 @@ Section tconv_comp.
 
   Lemma entry_conv_dual e1 e2 e1' e2' :
     entry_conv W e1 e1' → entry_conv W e2 e2' →
-    w_eq W e1.2 e2.2 ∧ sdual e1.1 e2.1 → w_eq W e1'.2 e2'.2 ∧ sdual e1'.1 e2'.1.
+    w_eq W e1.2 (pt_dual e2.2) ∧ sdual e1.1 e2.1 → w_eq W e1'.2 (pt_dual e2'.2) ∧ sdual e1'.1 e2'.1.
   Proof.
     intros [Hs1 Hx1] [Hs2 Hx2] [Hx Hs]. split.
     - eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
-      by eapply (wf_eq_trans _ HW).
+      eapply (wf_eq_trans _ HW); [exact Hx|]. by apply (wf_eq_dual _ HW).
     - eapply sdual_seq_l; [exact Hs1|]. by eapply sdual_seq_r.
   Qed.
 
@@ -1023,7 +1033,7 @@ Proof.
     exists c, d, Θ1', Θm', sc', sd', kc', kd'. split_and!; [done|done|done| | |].
     + eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
     + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
-      eapply (wf_eq_trans _ HW); [exact Hal|exact Hkd].
+      eapply (wf_eq_trans _ HW); [exact Hal|by apply (wf_eq_dual _ HW)].
     + exact (proj2 HE' _ HW Hc1).
   - (* O-Select *)
     destruct Hstep as (Θr & s1 & s2 & k & ΘS & (s0 & Hext & Hu) & Hext1 & HE').
@@ -1031,9 +1041,9 @@ Proof.
       as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
     destruct (seq_plus_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
       [by apply seq_sym|done|].
-    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_payload k (bidx i))
-                (sbranch i s1' s2', pt_payload k' (bidx i)) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
-    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW). }
+    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, sel_pt k i)
+                (sbranch i s1' s2', sel_pt k' i) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
+    { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_dual _ HW), (wf_eq_payload _ HW). }
     exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
     exact (proj2 HE' _ HW Hc3).
   - (* O-Branch *)
@@ -1042,11 +1052,12 @@ Proof.
       as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
     destruct (seq_with_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
       [by apply seq_sym|done|].
-    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, pt_payload k (bidx i))
-                (sbranch i s1' s2', pt_payload k' (bidx i)) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
+    destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, bra_pt k i)
+                (sbranch i s1' s2', bra_pt k' i) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
     { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW). }
     exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
     eapply HEj; [lia|done|exact Hc3|exact HE'].
+
   - (* O-New: rename the new point away from the points of Θ' *)
     intros Hc0. rewrite <-(tconv_dom W Θ Θ' Hc) in Hc0.
     destruct (Hstep Hc0) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
@@ -1184,7 +1195,7 @@ Section sconv.
     destruct (tconv_entry _ _ _ _ _ H Hf) as (f' & Hf' & [_ Hff]).
     exists k', f'. split_and!; [done|done|].
     unfold entry_head in *. eapply (wf_lt_eq _ HW);
-      [by apply (wf_eq_sym _ HW)|exact Hlt|by apply (wf_eq_sym _ HW)].
+      [by apply (wf_eq_sym _ HW)|exact Hlt|by apply (wf_eq_dual _ HW), (wf_eq_sym _ HW)].
   Qed.
 
   Lemma offered_p_conv Σ Σ' p k : sconv W Σ Σ' → offered_p Σ p k ↔ offered_p Σ' p k.
@@ -1384,7 +1395,7 @@ Proof.
     + rewrite !dom_delete_L. set_solver.
     + eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
     + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
-      eapply (wf_eq_trans _ HW); [exact Hal|exact Hkd].
+      eapply (wf_eq_trans _ HW); [exact Hal|by apply (wf_eq_dual _ HW)].
     + apply (proj2 HP'); [done|].
       intros x. destruct (decide (x = c)) as [->|Hxc].
       { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hc1 as ->. }
@@ -1400,7 +1411,7 @@ Proof.
       [by apply seq_sym|done|].
     exists Σ1', s1', s2', k'. split_and!; [by exists s0'|done|].
     apply (proj2 HP'); [done|]. apply sconv_insert; [done|].
-    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW).
+    split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_dual _ HW), (wf_eq_payload _ HW).
   - (* Q-Branch *)
     destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc1 & HP').
     destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)

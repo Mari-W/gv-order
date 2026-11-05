@@ -262,18 +262,18 @@ Section connect.
   Context (Hd1 : Σ1 ##ₘ ΣC) (Hd2 : Σ2 ##ₘ ΣC') (Hd12 : Σ1 ##ₘ Σ2).
   Context (HC0 : dom ΣC = C0) (HC0' : dom ΣC' = C0).
   Context (Hcut : ∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' →
-                    w_eq W e.2 e'.2 ∧ sdual e.1 e'.1).
+                    w_eq W e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1).
   Context (HC2 : C2 ## dom Σ1) (HC1 : C1 ## dom Σ2).
   Context (Hl1 : ∀ k e k' e',
              tenv_entry (tenv_of (Σ1 ∪ ΣC)) k = Some e →
              tenv_entry (tenv_of (Σ1 ∪ ΣC)) k' = Some e' →
-             w_lt W1 (entry_head k' e') (entry_head k e) →
-             w_lt W (entry_head k' e') (entry_head k e)).
+             w_lt W1 (entry_head k' e') (pt_dual (entry_head k e)) →
+             w_lt W (entry_head k' e') (pt_dual (entry_head k e))).
   Context (Hl2 : ∀ k e k' e',
              tenv_entry (tenv_of (Σ2 ∪ ΣC')) k = Some e →
              tenv_entry (tenv_of (Σ2 ∪ ΣC')) k' = Some e' →
-             w_lt W2 (entry_head k' e') (entry_head k e) →
-             w_lt W (entry_head k' e') (entry_head k e)).
+             w_lt W2 (entry_head k' e') (pt_dual (entry_head k e)) →
+             w_lt W (entry_head k' e') (pt_dual (entry_head k e))).
 
   Local Notation C := (C1 ∪ C2 ∪ C0).
   Local Notation p := (C1 ∪ C2 ∪ C0, E1 ⊎ E2).
@@ -514,9 +514,15 @@ Section connect.
   Lemma eq_sym_W x y : w_eq W x y → w_eq W y x.
   Proof. destruct HW as [HWf _]. apply (wf_eq_sym _ HWf). Qed.
 
-  (** One step of the descent from each side: an unoffered entry lies
-      above a composite offer, or above an unoffered entry of the
-      other side on a cut channel, at an aliased head. *)
+  Lemma eq_dual_W x y : w_eq W x (pt_dual y) → w_eq W (pt_dual x) y.
+  Proof.
+    destruct HW as [HWf _]. intros H. rewrite <-(pt_dual_dual y). by apply (wf_eq_dual _ HWf).
+  Qed.
+
+  (** One step of the descent from each side (end points). The partner
+      point of an unoffered entry lies above a composite offer, or above
+      the offered end of a cut channel, whose other end is unoffered on
+      the other side at the dual point. *)
   Definition coffer_below (h : point) : Prop :=
     ∃ k' e', offered_p Σ p k' ∧ tenv_entry (tenv_of Σ) k' = Some e' ∧
       w_lt W (entry_head k' e') h.
@@ -524,10 +530,10 @@ Section connect.
   Lemma step_l k e :
     stable_p p →
     tenv_entry (tenv_of Σa) k = Some e → ¬ offered_p Σa (C1, E1) k →
-    coffer_below (entry_head k e) ∨
-    ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧ w_eq W e1.2 e2.2 ∧
-      ¬ offered_p Σb (C2, E2) (c, false) ∧
-      w_lt W e1.2 (entry_head k e).
+    coffer_below (pt_dual (entry_head k e)) ∨
+    ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧ w_eq W e1.2 (pt_dual e2.2) ∧
+      offered_p Σa (C1, E1) (c, false) ∧ ¬ offered_p Σb (C2, E2) (c, false) ∧
+      w_lt W e1.2 (pt_dual (entry_head k e)).
   Proof.
     intros Hs He Hno. destruct Hc1 as [_ Hab].
     destruct (Hab k e He Hno) as (k' & e' & Ho & He' & Hlt).
@@ -544,7 +550,8 @@ Section connect.
       assert (is_Some (ΣC' !! k'.1)) as [e2 He2]
         by (apply elem_of_dom; by rewrite HC0').
       destruct (Hcut _ _ _ He1 He2) as [Hcnt _].
-      exists k'.1, e', e2. split_and!; [done..| |].
+      exists k'.1, e', e2. split_and!; [done..| | |].
+      + by rewrite <-Hk'.
       + intros Ho2. apply (cut_not_both k'.1 false false Hs Hc); [|done].
         by rewrite <-Hk'.
       + exact Hlt.
@@ -553,10 +560,10 @@ Section connect.
   Lemma step_r k e :
     stable_p p →
     tenv_entry (tenv_of Σb) k = Some e → ¬ offered_p Σb (C2, E2) k →
-    coffer_below (entry_head k e) ∨
-    ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧ w_eq W e1.2 e2.2 ∧
-      ¬ offered_p Σa (C1, E1) (c, false) ∧
-      w_lt W e1.2 (entry_head k e).
+    coffer_below (pt_dual (entry_head k e)) ∨
+    ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧ w_eq W e1.2 (pt_dual e2.2) ∧
+      offered_p Σb (C2, E2) (c, false) ∧ ¬ offered_p Σa (C1, E1) (c, false) ∧
+      w_lt W e2.2 (pt_dual (entry_head k e)).
   Proof.
     intros Hs He Hno. destruct Hc2 as [_ Hab].
     destruct (Hab k e He Hno) as (k' & e' & Ho & He' & Hlt).
@@ -573,66 +580,88 @@ Section connect.
       assert (is_Some (ΣC !! k'.1)) as [e1 He1]
         by (apply elem_of_dom; by rewrite HC0).
       destruct (Hcut _ _ _ He1 He2) as [Hcnt _].
-      exists k'.1, e1, e'. split_and!; [done..| |].
+      exists k'.1, e1, e'. split_and!; [done..| | |].
+      + by rewrite <-Hk'.
       + intros Ho1. apply (cut_not_both k'.1 false false Hs Hc); [done|].
         by rewrite <-Hk'.
-      + eapply lt_eq_l; [exact Hcnt|]. exact Hlt.
+      + exact Hlt.
   Qed.
 
-  (** The descent. V collects the cut channels visited so far; their
-      heads lie at or above the current entry, so none is visited
-      twice, and the chain ends at an offer of the composite. *)
+  (** The descent. V collects the cut channels visited so far. The
+      offered end of each lies at or above the current target, the
+      partner point of the current entry, so none is visited twice, and
+      the chain ends at an offer of the composite. *)
+  Definition visited_ok (V : gset chan) (t : point) : Prop :=
+    ∀ v ev, v ∈ V →
+      ((ΣC !! v = Some ev ∧ offered_p Σa (C1, E1) (v, false)) ∨
+       (ΣC' !! v = Some ev ∧ offered_p Σb (C2, E2) (v, false))) →
+      w_eq W t ev.2 ∨ w_lt W t ev.2.
+
+  Lemma visited_ok_step V t t' c ec :
+    visited_ok V t → w_eq W t' ec.2 → w_lt W ec.2 t →
+    (∀ ev, ((ΣC !! c = Some ev ∧ offered_p Σa (C1, E1) (c, false)) ∨
+            (ΣC' !! c = Some ev ∧ offered_p Σb (C2, E2) (c, false))) → ev = ec) →
+    visited_ok (V ∪ {[c]}) t'.
+  Proof.
+    intros Hinv Ht Hlt Hc v ev Hv Hev. apply elem_of_union in Hv as [Hv| ->%elem_of_singleton].
+    - right. destruct (Hinv v ev Hv Hev) as [Heq|Hlt'].
+      + eapply lt_eq_l; [exact Ht|]. by eapply lt_eq_r.
+      + eapply lt_eq_l; [exact Ht|]. by eapply lt_trans_W.
+    - left. by rewrite (Hc ev Hev).
+  Qed.
+
   Lemma descent n : ∀ (V : gset chan) (i : bool) k e,
     stable_p p →
     size (C0 ∖ V) ≤ n →
     (if i then tenv_entry (tenv_of Σa) k = Some e ∧ ¬ offered_p Σa (C1, E1) k
      else tenv_entry (tenv_of Σb) k = Some e ∧ ¬ offered_p Σb (C2, E2) k) →
-    (∀ v ev, v ∈ V → ΣC !! v = Some ev →
-       w_eq W (entry_head k e) ev.2 ∨ w_lt W (entry_head k e) ev.2) →
-    coffer_below (entry_head k e).
+    visited_ok V (pt_dual (entry_head k e)) →
+    coffer_below (pt_dual (entry_head k e)).
   Proof.
     induction n as [|n IH]; intros V i k e Hs Hn Hq Hinv.
-    all: assert (coffer_below (entry_head k e) ∨
-           ∃ c e1 e2, c ∈ C0 ∧ ΣC !! c = Some e1 ∧ ΣC' !! c = Some e2 ∧
-             w_eq W e1.2 e2.2 ∧
-             (if i then ¬ offered_p Σb (C2, E2) (c, false)
-              else ¬ offered_p Σa (C1, E1) (c, false)) ∧
-             w_lt W e1.2 (entry_head k e))
-           as [Hdone|(c & e1 & e2 & Hc & He1 & He2 & Hcnt & Hpart & Hlt)];
-      [destruct i, Hq; [by apply step_l|by apply step_r]|done|].
-    all: assert (c ∉ V) as HcV.
-    1,3: intros HcV; destruct (Hinv c e1 HcV He1) as [Heq|Hlt'];
-         [apply (lt_irrefl_W (entry_head k e)); by eapply lt_eq_l
-         |by eapply lt_irrefl_W, lt_trans_W].
-    - exfalso. assert (c ∈ C0 ∖ V) as Hin by set_solver.
-      assert (size (C0 ∖ V) ≠ 0) as Hnz.
-      { intros Hz. apply size_empty_inv in Hz. rewrite Hz in Hin. set_solver. }
-      lia.
-    - assert (C0 ∖ (V ∪ {[c]}) ⊂ C0 ∖ V) as Hsub by set_solver.
-      apply subset_size in Hsub.
-      assert (∀ h, w_eq W h e1.2 → ∀ v ev, v ∈ V ∪ {[c]} → ΣC !! v = Some ev →
-                w_eq W h ev.2 ∨ w_lt W h ev.2) as Hinv'.
-      { intros h Hh v ev Hv Hev. apply elem_of_union in Hv as [Hv| ->%elem_of_singleton].
-        - right. destruct (Hinv v ev Hv Hev) as [Heq|Hlt'].
-          + eapply lt_eq_l; [exact Hh|]. by eapply lt_eq_r.
-          + eapply lt_eq_l; [exact Hh|]. by eapply lt_trans_W.
-        - left. rewrite He1 in Hev. by injection Hev as <-. }
-      destruct i.
-      + destruct (IH (V ∪ {[c]}) false (c, false) e2) as (k'' & e'' & ? & ? & Hlt'').
-        * done.
-        * lia.
-        * split; [|done]. rewrite tenv_entry_of. by rewrite lookup_b_cut.
-        * apply Hinv'. unfold entry_head. simpl. by apply eq_sym_W.
-        * exists k'', e''. split_and!; [done|done|].
-          eapply lt_trans_W; [|exact Hlt]. eapply lt_eq_r; [exact Hlt''|].
-          unfold entry_head. simpl. by apply eq_sym_W.
-      + destruct (IH (V ∪ {[c]}) true (c, false) e1) as (k'' & e'' & ? & ? & Hlt'').
-        * done.
-        * lia.
-        * split; [|done]. rewrite tenv_entry_of. by rewrite lookup_a_cut.
-        * apply Hinv'. destruct HW as [HWf _]. apply HWf.
-        * exists k'', e''. split_and!; [done|done|].
-          by eapply lt_trans_W.
+    all: destruct i; destruct Hq as [Hq1 Hq2].
+    all: first [destruct (step_l k e Hs Hq1 Hq2)
+                  as [Hdone|(c & e1 & e2 & Hc & He1 & He2 & Hcnt & Hoff & Hpart & Hlt)]
+               |destruct (step_r k e Hs Hq1 Hq2)
+                  as [Hdone|(c & e1 & e2 & Hc & He1 & He2 & Hcnt & Hoff & Hpart & Hlt)]];
+      [done|].
+    (* the offered cut end is not visited yet *)
+    all: try assert (c ∉ V) as HcV
+           by (intros HcV; destruct (Hinv c e1 HcV (or_introl (conj He1 Hoff))) as [Heq|Hlt'];
+               [apply (lt_irrefl_W e1.2); eapply lt_eq_r; [exact Hlt|exact Heq]
+               |by eapply lt_irrefl_W, lt_trans_W]).
+    all: try assert (c ∉ V) as HcV
+           by (intros HcV; destruct (Hinv c e2 HcV (or_intror (conj He2 Hoff))) as [Heq|Hlt'];
+               [apply (lt_irrefl_W e2.2); eapply lt_eq_r; [exact Hlt|exact Heq]
+               |by eapply lt_irrefl_W, lt_trans_W]).
+    all: try (exfalso; assert (c ∈ C0 ∖ V) as Hin by set_solver;
+         assert (size (C0 ∖ V) ≠ 0) as Hnz
+           by (intros Hz; apply size_empty_inv in Hz; rewrite Hz in Hin; set_solver);
+         lia).
+    all: assert (C0 ∖ (V ∪ {[c]}) ⊂ C0 ∖ V) as Hsub by set_solver;
+         apply subset_size in Hsub.
+    - (* side a offered at c: continue on side b at e2 *)
+      destruct (IH (V ∪ {[c]}) false (c, false) e2) as (k'' & e'' & ? & ? & Hlt'').
+      + done.
+      + lia.
+      + split; [|done]. rewrite tenv_entry_of. by rewrite lookup_b_cut.
+      + eapply (visited_ok_step V _ _ c e1); [done| |exact Hlt|].
+        * unfold entry_head. simpl. apply eq_sym_W. exact Hcnt.
+        * intros ev [[Hev _]|[_ Hev]]; [rewrite He1 in Hev; by injection Hev|done].
+      + exists k'', e''. split_and!; [done|done|].
+        eapply lt_trans_W; [|exact Hlt]. eapply lt_eq_r; [exact Hlt''|].
+        unfold entry_head. simpl. apply eq_sym_W. exact Hcnt.
+    - (* side b offered at c: continue on side a at e1 *)
+      destruct (IH (V ∪ {[c]}) true (c, false) e1) as (k'' & e'' & ? & ? & Hlt'').
+      + done.
+      + lia.
+      + split; [|done]. rewrite tenv_entry_of. by rewrite lookup_a_cut.
+      + eapply (visited_ok_step V _ _ c e2); [done| |exact Hlt|].
+        * unfold entry_head. simpl. by apply eq_dual_W.
+        * intros ev [[_ Hev]|[Hev _]]; [done|rewrite He2 in Hev; by injection Hev].
+      + exists k'', e''. split_and!; [done|done|].
+        eapply lt_trans_W; [|exact Hlt]. eapply lt_eq_r; [exact Hlt''|].
+        unfold entry_head. simpl. by apply eq_dual_W.
   Qed.
   Lemma no_offers_l :
     stable_p p → (∀ k, ¬ offered_p Σ p k) → ∀ k, ¬ offered_p Σa (C1, E1) k.
@@ -646,7 +675,7 @@ Section connect.
         apply not_elem_of_dom in Hout. rewrite Hout in He. by destruct (ΣC !! k.1). }
       assert (is_Some (ΣC' !! k.1)) as [e2 He2] by (apply elem_of_dom; by rewrite HC0').
       destruct (descent (size C0) ∅ false (k.1, false) e2) as (k' & ? & Ho2 & _);
-        [done|by rewrite difference_empty_L| |set_solver|by apply (Hno k')].
+        [done|by rewrite difference_empty_L| |intros ?? Hv; set_solver|by apply (Hno k')].
       split; [rewrite tenv_entry_of; by rewrite lookup_b_cut|].
       intros Ho2. apply (cut_not_both k.1 false false Hs Hc); [|done]. by rewrite <-Hk.
   Qed.
@@ -663,7 +692,7 @@ Section connect.
         apply not_elem_of_dom in Hout. rewrite Hout in He. by destruct (ΣC' !! k.1). }
       assert (is_Some (ΣC !! k.1)) as [e1 He1] by (apply elem_of_dom; by rewrite HC0).
       destruct (descent (size C0) ∅ true (k.1, false) e1) as (k' & ? & Ho1 & _);
-        [done|by rewrite difference_empty_L| |set_solver|by apply (Hno k')].
+        [done|by rewrite difference_empty_L| |intros ?? Hv; set_solver|by apply (Hno k')].
       split; [rewrite tenv_entry_of; by rewrite lookup_a_cut|].
       intros Ho1. apply (cut_not_both k.1 false false Hs Hc); [done|]. by rewrite <-Hk.
   Qed.
@@ -715,7 +744,7 @@ Section connect.
         * split.
           -- rewrite Hkk, tenv_entry_of. simpl. by rewrite lookup_a_l.
           -- intros Ho. by apply Hk, ext_l.
-        * set_solver.
+        * intros ?? Hv. set_solver.
         * by exists k', e'.
       + destruct (descent (size C0) ∅ false k e) as (k' & e' & ? & ? & ?).
         * done.
@@ -723,7 +752,7 @@ Section connect.
         * split.
           -- rewrite Hkk, tenv_entry_of. simpl. by rewrite lookup_b_r.
           -- intros Ho. by apply Hk, ext_r.
-        * set_solver.
+        * intros ?? Hv. set_solver.
         * by exists k', e'.
   Qed.
   End core.
@@ -850,10 +879,12 @@ Section term.
       by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
     assert (tenv_entry Θ (c', b) = Some (if b then e2 else e1)) as Hself
       by (rewrite entry_cut by done; unfold tenv_entry; simpl; rewrite Ho; by destruct b).
-    assert (w_eq W (entry_head (c', negb b) (if b then e1 else e2))
-              (entry_head (c', b) (if b then e2 else e1))) as Hhead
-      by (unfold entry_head; simpl; destruct HW as [HWf _];
-          destruct b; simpl; [done|by apply (wf_eq_sym _ HWf)]).
+    assert (w_eq W (pt_dual (entry_head (c', negb b) (if b then e1 else e2)))
+              (entry_head (c', b) (if b then e2 else e1))) as Hhead.
+    { unfold entry_head; simpl; destruct HW as [HWf _].
+      destruct b; simpl.
+      - rewrite <-(pt_dual_dual e2.2). by apply (wf_eq_dual _ HWf).
+      - by apply (wf_eq_sym _ HWf). }
     (* the other end is not offered: an offer of it comes from the same action *)
     assert (¬ offered_t Θ t (c', negb b)) as Hnoff.
     { intros (σ' & t'' & Hst' & Hsel').

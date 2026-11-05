@@ -126,6 +126,16 @@ Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Na
 Lemma den_payload x i : den (pt_payload x i) = dsl (den x) i.
 Proof. done. Qed.
 
+(** The denotation ignores the polarity: both ends of a channel denote
+    the same channel (end points). *)
+Lemma den_dual x : den (pt_dual x) = den x.
+Proof. done. Qed.
+
+Lemma den_polar b x : den (pt_polar b x) = den x.
+Proof. by destruct b. Qed.
+
+Ltac dclean := repeat (rewrite den_dual || rewrite den_polar).
+
 Lemma den_proot : den proot = DAnc 0 0.
 Proof. done. Qed.
 
@@ -189,8 +199,8 @@ Lemma den_inst X a x :
   den X = DAnc a 0 → pt_root x = NVar 0 →
   den (pt_inst (plist [X]) x) = dshift a (den x).
 Proof.
-  intros HX Hx. destruct x as [p o]. unfold pt_inst, pt_root in *. simpl in *.
-  rewrite den_shiftN, (den_inst_pn X a) by done. unfold den. simpl. by rewrite dshift_dshN.
+  intros HX Hx. destruct x as [p pb o]. unfold pt_inst, pt_root in *. simpl in *.
+  rewrite den_polar, den_shiftN, (den_inst_pn X a) by done. unfold den. simpl. by rewrite dshift_dshN.
 Qed.
 
 (** ** Rank *)
@@ -254,6 +264,7 @@ Proof.
 
   - apply rank_dsh.
   - by intros x y (_ & _ & H).
+  - done.
 Qed.
 
 (** ** Translation of types
@@ -263,6 +274,9 @@ Qed.
     - unit is the box □(∗ ⊸ ∗), and a sum of unlimited types the box of
       the sum of their translations, read at the root anchor.
     - p[t]ⁿ is (p(∃ιs. P).Close)@B[RCh c] with c the code of the channel.
+      With end points the end of polarity [true] sits at B[RCh c] and
+      the end of polarity [false] at its dual point. The denotation
+      ignores the polarity ([den_polar]), so [Crel] identifies the two.
       A channel payload sits at x[0] for the channel's point x
       (one binder), an unlimited payload needs no binder.
     - μα.p[⌈α⌉ᵐ]ⁿ is (µα. p(∃ι. α@ι).Close)@B[RCh c].
@@ -300,10 +314,10 @@ Fixpoint trz (B : point) (k : Z) (t : pty) {struct t} : ty :=
       TSess (pol p (pbind t1)
                (if chanlike t1 then TSess (sess t1) (pvar 0)
                 else if un_b t1 then trz proot 0 t1 else TUnit) SEnd)
-        (rpt B (RCh (PChan true (lshift k t1) (n + k))))
+        (pt_polar p (rpt B (RCh (PChan true (lshift k t1) (n + k)))))
   | PRec p m n =>
       TSess (SMu (pol p 1 (TSess (SVar 0) (pvar 0)) SEnd))
-        (rpt B (RCh (PChan true (PDisp m (PRec p m (n + k))) (n + k))))
+        (pt_polar p (rpt B (RCh (PChan true (PDisp m (PRec p m (n + k))) (n + k)))))
   | PDisp m t1 => trz B (k + m) t1
   | PArr t1 (Some r) σ t2 => TLolli (hiz B k σ) (Some (loz B k r)) (trz B k t1) (trz B k t2)
   | PArr t1 None σ t2 =>
@@ -329,9 +343,14 @@ Definition ppay (t : pty) : ty :=
 Lemma sess_chan p t n : sess (PChan p t n) = pol p (pbind t) (ppay t) SEnd.
 Proof. done. Qed.
 
-(** A channel type is a session at the point of its code. *)
+(** The polarity of a channel type. *)
+Fixpoint cpol (t : pty) : bool :=
+  match t with PChan p _ _ | PRec p _ _ => p | PDisp _ t => cpol t | _ => true end.
+
+(** A channel type is a session at the point of its code, read at its
+    polarity. *)
 Lemma trz_chanlike B k t c :
-  chres k t = Some c → trz B k t = TSess (sess t) (rpt B (RCh c)).
+  chres k t = Some c → trz B k t = TSess (sess t) (pt_polar (cpol t) (rpt B (RCh c))).
 Proof.
   revert k. induction t as [| | p t IH n|p m n|m t IH|t IH1 r σ s IH2]; intros k Hc;
     simpl in *; try done; try (by injection Hc as <-).
@@ -414,6 +433,9 @@ Proof. apply trz_sess_lshift. Qed.
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
 Proof. apply pt_inst_payload. Qed.
 
+Lemma pt_inst_polar_pn σ b x : pt_inst σ (pt_polar b x) = pt_polar b (pt_inst σ x).
+Proof. destruct b; [done|apply pt_inst_dual]. Qed.
+
 Lemma hiz_pinst σ B k s : pt_inst σ <$> hiz B k s = hiz (pt_inst σ B) k s.
 Proof. destruct s; simpl; try done; by rewrite pt_inst_rpt. Qed.
 
@@ -426,8 +448,8 @@ Proof.
     intros σ B k.
   - done.
   - simpl. rewrite IH1, IH2. by rewrite (pt_inst_const _ proot 0).
-  - simpl. by rewrite pt_inst_rpt.
-  - simpl. by rewrite pt_inst_rpt.
+  - simpl. by rewrite pt_inst_polar_pn, pt_inst_rpt.
+  - simpl. by rewrite pt_inst_polar_pn, pt_inst_rpt.
   - simpl. apply IH.
   - destruct r as [r|]; simpl.
     + rewrite IH1, IH2, hiz_pinst. unfold loz. by rewrite pt_inst_rpt.
@@ -493,10 +515,10 @@ Section facts.
   Proof.
     revert k z. induction t as [| | p t IH n|p m n|m t IH|t IH1 r σ s IH2]; intros k z Hz Hh;
       simpl in *; try done.
-    - injection Hz as <-. apply elem_of_singleton in Hh as ->. split; [done|right].
-      rewrite den_ch0. simpl. lia.
-    - injection Hz as <-. apply elem_of_singleton in Hh as ->. split; [done|right].
-      rewrite den_ch0. simpl. lia.
+    - injection Hz as <-. apply elem_of_singleton in Hh as ->. split; [by destruct p|right].
+      rewrite den_dual, den_polar, den_ch0. simpl. lia.
+    - injection Hz as <-. apply elem_of_singleton in Hh as ->. split; [by destruct p|right].
+      rewrite den_dual, den_polar, den_ch0. simpl. lia.
     - destruct (tlev t) as [z'|] eqn:E; simpl in Hz; [|done]. injection Hz as <-.
       destruct (IH (k + m)%Z z' eq_refl Hh) as [H1 H2]. split; [done|].
       replace (z' + m + k)%Z with (z' + (k + m))%Z by lia. done.
@@ -604,8 +626,10 @@ Section facts.
     (k1 + a = k2)%Z → steq wnil Ψ (trz (rpt B (RAnc a)) k1 t) (trz B k2 t).
   Proof.
     pose proof (den_anc0 a) as HX.
-    assert (∀ c, seqs wnil Ψ (rpt (rpt B (RAnc a)) (RCh c)) (rpt B (RCh (lshift a c)))) as Hch.
-    { intros c. apply (gd_eq _ _ HB); [done|done|]. by rewrite (den_ch _ a HX), den_ch0. }
+    assert (∀ b c, seqs wnil Ψ (pt_polar b (rpt (rpt B (RAnc a)) (RCh c)))
+                               (pt_polar b (rpt B (RCh (lshift a c))))) as Hch.
+    { intros b c. apply (gd_eq _ _ HB); [by destruct b|by destruct b|].
+      by rewrite !den_polar, (den_ch _ a HX), den_ch0. }
     revert k1 k2. induction t as [| | p t IH n|p m n|m t IH|t IH1 r σ s IH2]; intros k1 k2 Hk;
       try (apply teq_steq, teq_refl; fail); simpl.
     - split; [|apply seq_refl]. eapply se_trans; [apply Hch|]. simpl.

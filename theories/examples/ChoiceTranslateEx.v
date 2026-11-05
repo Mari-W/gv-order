@@ -12,7 +12,14 @@
     under the top-level constraint {a ≺ a[1], a[1] ≺ δ, δ ≺ a[0], δ ≺ a[1]+1},
     [native_deadlock_free] is deadlock freedom of the program itself, and
     [translated_deadlock_free] is deadlock freedom of its translation into
-    sums plus delegation, by [choice_translate_df]. *)
+    sums plus delegation, by [choice_translate_df].
+
+    With end points T2 holds c′ at ā and d at δ, T1 keeps k at a[0]‾,
+    and the top-level constraint is
+    {a ≺ a[0], a ≺ a[0]‾, a ≺ a[1]‾, ā ≺ a[0]‾, ā ≺ a[1]‾, ā ≺ δ̄,
+     δ ≺ a[0]‾, a[1] ≺ δ̄, δ ≺ a[1]‾+1}: select₁ and the fragment ask
+    the first three, branch at ā the next three, the arms the last
+    three. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ChoiceTranslate.
@@ -97,14 +104,14 @@ Section frules.
     hyp_known Ψ x →
     fstyped (fhyps_pinst (pshift 1) Φ)
       (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (alias_bcs x), ids 1)])
-      (Some (TSess (dual S) (pt_inst (pshift 1) x)) :: Some (TSess S (pt_inst (pshift 1) x))
+      (Some (TSess (dual S) (pt_dual (pt_inst (pshift 1) x))) :: Some (TSess S (pt_inst (pshift 1) x))
          :: None :: None :: lenv_pinst (pshift 1) Δ)
       (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
     fstyped Φ Ψ Δ F (let_new e) T.
   Proof.
     intros Hx Hb. unfold let_new.
     set (C := alias_bcs x).
-    set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
+    set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
     apply (f_letp Φ Ψ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
     { apply lenv_split_nones_l. }
     { apply (f_pair Φ Ψ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
@@ -122,7 +129,7 @@ Section frules.
       exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
       apply fmap_Some in Hy as (? & _ & ?). congruence. }
     apply (f_open Φ Ψ _ F _ 1 LBot 1 C
-             (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))) T); [done|intros Hun; exact Hun|].
+             (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
     cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
     change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
     set (Ψ1 := hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
@@ -134,13 +141,13 @@ Section frules.
         simpl. rewrite !pt_inst_pvar_at. done.
       - simpl. rewrite pt_inst_unshift. done. }
     apply (f_letp _ _ _
-             (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))
+             (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
                 :: lenv_nones (lenv_pinst (pshift 1) Δ))
              (None :: None :: lenv_pinst (pshift 1) Δ)
-             _ _ _ (TSess S (pt_inst (pshift 1) x)) (TSess (dual S) (pt_inst (pshift 1) x))).
+             _ _ _ (TSess S (pt_inst (pshift 1) x)) (TSess (dual S) (pt_dual (pt_inst (pshift 1) x)))).
     - apply lsplit_none, lsplit_l, lenv_split_nones_l.
-    - apply (f_conv _ _ _ _ _ (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
-      { split; split; [exact Hal|done|exact Hal|done]. }
+    - apply (f_conv _ _ _ _ _ (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
+      { split; split; [exact Hal|done|apply he_dual; exact Hal|done]. }
       apply f_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
       exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
       apply fmap_Some in Hy as (? & _ & ?). congruence.
@@ -193,7 +200,10 @@ Definition choice_native : expr :=
         (Case (App EBra (Var 2)) arm1n arm2n)))).
 
 Definition cn_fact (g : fact) : Prop :=
-  g = FLt (pa 0) (pa1 0) ∨ g = FLt (pa1 0) (pd 0) ∨ g = FLt (pd 0) (pa0 0) ∨ g = FLt (pd 0) (pa1 1).
+  g = FLt (pa 0) (pa0 0) ∨ g = FLt (pa 0) (pt_dual (pa0 0)) ∨ g = FLt (pa 0) (pt_dual (pa1 0)) ∨
+  g = FLt (pt_dual (pa 0)) (pt_dual (pa0 0)) ∨ g = FLt (pt_dual (pa 0)) (pt_dual (pa1 0)) ∨
+  g = FLt (pt_dual (pa 0)) (pt_dual (pd 0)) ∨ g = FLt (pd 0) (pt_dual (pa0 0)) ∨
+  g = FLt (pa1 0) (pt_dual (pd 0)) ∨ g = FLt (pd 0) (pt_dual (pa1 1)).
 Definition Cn : bcs := BCs [] cn_fact.
 
 Lemma cn_rank_ok : c0_acyclic 2 Cn.
@@ -206,9 +216,10 @@ Proof.
     | _ => 10 * pt_off x
     end).
   apply (c0_acyclic_rank 2 _ r).
-  - intros [p o]. unfold r, pt_shift. simpl. repeat case_match; lia.
-  - by intros ? ? [?|[?|[?|?]]].
-  - intros x y [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; unfold r; cbn; lia.
+  - intros [p b o]. unfold r, pt_shift. simpl. repeat case_match; lia.
+  - intros ? ? H. repeat destruct H as [H|H]; discriminate.
+  - intros x y H. repeat destruct H as [H|H]; injection H as -> ->; unfold r; cbn; lia.
+  - intros [p b o]. done.
 Qed.
 
 Ltac memc H :=
@@ -233,53 +244,59 @@ Proof.
   assert (∀ x y, cn_fact (FLt x y) →
             hlt Ψ2 (pt_inst (plist [pv 2 0; pv 3 0]) x) (pt_inst (plist [pv 2 0; pv 3 0]) y)) as Hf.
   { intros x y Hxy. eapply (hlt_hyp0 _ _ _ x y); [exact Hin|exact Hxy| |done|done].
-    destruct Hxy as [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; cbn; lia. }
+    repeat destruct Hxy as [Hxy|Hxy]; injection Hxy as -> ->; cbn; lia. }
   set (a := pv 2 0). set (δ := pv 3 0).
   set (a0 := Pt (NPayload (NVar 2) 0 0) 0). set (a1 := Pt (NPayload (NVar 2) 0 1) 0).
-  assert (hlt Ψ2 a a1) as F1 by (apply (Hf (pa 0) (pa1 0)); by left).
-  assert (hlt Ψ2 a1 δ) as F2 by (apply (Hf (pa1 0) (pd 0)); by right; left).
-  assert (hlt Ψ2 δ a0) as F3 by (apply (Hf (pd 0) (pa0 0)); by right; right; left).
-  assert (hlt Ψ2 δ (pt_shift 1 a1)) as F4 by (apply (Hf (pd 0) (pa1 1)); by right; right; right).
-  assert (hlt Ψ2 a δ) as D1 by (eapply hlt_trans; [exact F1|exact F2]).
-  assert (hlt Ψ2 a a0) as D2 by (eapply hlt_trans; [exact D1|exact F3]).
-  assert (hlt Ψ2 a0 (pt_shift 1 a0)) as P0 by apply hlt_po.
-  assert (hlt Ψ2 a (pt_shift 1 a0)) as D3 by (eapply hlt_trans; [exact D2|exact P0]).
+  assert (hlt Ψ2 a a0) as N1 by (apply (Hf (pa 0) (pa0 0)); by left).
+  assert (hlt Ψ2 a (pt_dual a0)) as N2 by (apply (Hf (pa 0) (pt_dual (pa0 0))); do 1 right; by left).
+  assert (hlt Ψ2 a (pt_dual a1)) as N3 by (apply (Hf (pa 0) (pt_dual (pa1 0))); do 2 right; by left).
+  assert (hlt Ψ2 (pt_dual a) (pt_dual a0)) as N4
+    by (apply (Hf (pt_dual (pa 0)) (pt_dual (pa0 0))); do 3 right; by left).
+  assert (hlt Ψ2 (pt_dual a) (pt_dual a1)) as N5
+    by (apply (Hf (pt_dual (pa 0)) (pt_dual (pa1 0))); do 4 right; by left).
+  assert (hlt Ψ2 (pt_dual a) (pt_dual δ)) as N6
+    by (apply (Hf (pt_dual (pa 0)) (pt_dual (pd 0))); do 5 right; by left).
+  assert (hlt Ψ2 δ (pt_dual a0)) as N7 by (apply (Hf (pd 0) (pt_dual (pa0 0))); do 6 right; by left).
+  assert (hlt Ψ2 a1 (pt_dual δ)) as N8 by (apply (Hf (pa1 0) (pt_dual (pd 0))); do 7 right; by left).
+  assert (hlt Ψ2 δ (pt_dual (pt_shift 1 a1))) as N9 by (apply (Hf (pd 0) (pt_dual (pa1 1))); by do 8 right).
+  assert (hlt Ψ2 a (pt_shift 1 (pt_dual a0))) as D3 by (eapply hlt_trans; [exact N1|apply hl_dpo]).
+  assert (hlt Ψ2 (pt_dual a0) (pt_shift 1 (pt_dual a0))) as P0 by apply hlt_po.
   assert (hyp_known Ψ2 a) as Ka by (exists (BCs [] cn_fact), [pv 2 0; pv 3 0], (pv 2 0); split_and!; [done|by left|done]).
   (* T1 *)
   apply fv_letu; [reflexivity| |].
   { eapply fv_appk; [|fk ltac:(apply KTSpawn)|done].
-    apply (fv_lam _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 a0)) (Some a) 0); [set_solver| |].
+    apply (fv_lam _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 (pt_dual a0))) (Some (pt_dual a)) 0); [set_solver| |].
     { intros y Hy. memc Hy. apply hle_refl. }
     apply fv_letu; [reflexivity|apply fv_var; reflexivity|]. cbn. unfold sendclose.
-    eapply fv_appk; [|fk ltac:(apply (KTClos _ _ _ (pt_shift 1 a0)))|].
-    - eapply fv_appk; [|fk ltac:(apply (KTSend _ _ _ 0 TUnit SEnd a0); cbn; set_solver)|].
+    eapply fv_appk; [|fk ltac:(apply (KTClos _ _ _ (pt_shift 1 (pt_dual a0))))|].
+    - eapply fv_appk; [|fk ltac:(apply (KTSend _ _ _ 0 TUnit SEnd (pt_dual a0)); cbn; set_solver)|].
       + apply fv_pair; [reflexivity| |apply fv_unit; reflexivity].
         eapply fv_appk; [apply fv_var; reflexivity| |].
-        * intros ? ? H. apply f_sel1; [exact H|exact Ka|exact D2|exact F1].
+        * intros ? ? H. apply f_sel1; [exact H|exact Ka|exact N1|exact N2|exact N3].
         * apply hubs_intro; [intros y Hy; memc Hy|].
-          exists (pt_shift 1 a0). split; [done|]. right. exact D3.
+          exists (pt_shift 1 (pt_dual a0)). split; [done|]. right. exact D3.
       + apply hubs_intro; [intros y Hy; memc Hy|].
-        exists (pt_shift 1 a0). split; [done|]. right. exact P0.
+        exists (pt_shift 1 (pt_dual a0)). split; [done|]. right. exact P0.
     - apply hubs_intro; [intros y Hy; memc Hy|].
-      exists (pt_shift 1 a0). split; [done|]. apply hle_refl. }
+      exists (pt_shift 1 (pt_dual a0)). split; [done|]. apply hle_refl. }
   (* T3 *)
   cbn. apply fv_letu; [reflexivity| |].
   { eapply fv_appk; [|fk ltac:(apply KTSpawn)|done].
-    apply (fv_lam _ _ _ _ _ TUnit TUnit (Some δ) (Some δ) 0); [set_solver| |].
+    apply (fv_lam _ _ _ _ _ TUnit TUnit (Some (pt_dual δ)) (Some δ) 0); [set_solver| |].
     { intros y Hy. memc Hy. apply hle_refl. }
     apply fv_letu; [reflexivity|apply fv_var; reflexivity|]. cbn.
-    eapply fv_appk; [apply fv_var; reflexivity|fk ltac:(apply (KTClos _ _ _ δ))|].
+    eapply fv_appk; [apply fv_var; reflexivity|fk ltac:(apply (KTClos _ _ _ (pt_dual δ)))|].
     apply hubs_intro; [intros y Hy; memc Hy|].
-    exists δ. split; [done|]. apply hle_refl. }
+    exists (pt_dual δ). split; [done|]. apply hle_refl. }
   (* T2 *)
   cbn. eapply fv_case; [reflexivity| | |].
   - eapply fv_appk; [apply fv_var; reflexivity| |].
-    + intros ? ? H. apply f_bra; [exact H|exact D2|exact F1].
-    + apply hubs_intro; [intros y Hy; memc Hy; exact D1|done].
+    + intros ? ? H. apply (f_bra _ _ _ _ _ _ (pt_dual a)); [exact H|exact N4|exact N5].
+    + apply hubs_intro; [intros y Hy; memc Hy; exact N6|done].
   - (* branch A: close d, then receive on k at a[0] *)
     unfold arm1n, recvclose. apply fv_letu; [reflexivity| |].
     + eapply fv_appk; [apply fv_var; reflexivity|fk ltac:(apply (KTClos _ _ _ δ))|].
-      apply hubs_intro; [intros y Hy; memc Hy; exact F3|done].
+      apply hubs_intro; [intros y Hy; memc Hy; exact N7|done].
     + eapply fv_letp; [reflexivity| |].
       * eapply fv_appk; [apply fv_var; reflexivity|fk ltac:(apply KTRecv)|].
         apply hubs_intro; [intros y Hy; memc Hy|done].
@@ -289,11 +306,11 @@ Proof.
   - (* branch B: receive on k at a[1], then close d *)
     unfold arm2n. eapply fv_letp; [reflexivity| |].
     + eapply fv_appk; [apply fv_var; reflexivity|fk ltac:(apply KTRecv)|].
-      apply hubs_intro; [intros y Hy; memc Hy; exact F2|done].
+      apply hubs_intro; [intros y Hy; memc Hy; exact N8|done].
     + cbn. apply fv_letu; [reflexivity|apply fv_var; reflexivity|].
       apply fv_letu; [reflexivity| |].
       * eapply fv_appk; [apply fv_var; reflexivity|fk ltac:(apply (KTClos _ _ _ δ))|].
-        apply hubs_intro; [intros y Hy; memc Hy; exact F4|done].
+        apply hubs_intro; [intros y Hy; memc Hy; exact N9|done].
       * eapply fv_appk; [apply fv_var; reflexivity|fk ltac:(apply KTClos)|].
         apply hubs_intro; [intros y Hy; memc Hy|done].
 Qed.

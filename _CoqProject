@@ -95,6 +95,7 @@ theories/examples/ChoiceTranslate.v
 theories/examples/ChoiceTranslateEx.v
 theories/examples/ExPayload.v
 theories/examples/OptionPayload.v
+theories/examples/EndPoints.v
 theories/examples/lit/LitLib.v
 theories/examples/lit/LitRejected.v
 theories/examples/lit/Falling.v

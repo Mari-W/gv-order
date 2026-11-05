@@ -35,18 +35,33 @@
     [soundness]. The construction carries a pattern whose futures,
     relative to the round, take two values. Section 3 of the design note
     conjectures that a pattern with infinitely many such futures has no
-    derivation. *)
+    derivation.
+
+    With end points a round that sends on x first and on y second asks
+    x ≺ ȳ and y ≺ x̄+1 against the partner points, and the thunk of the
+    round, which holds both ends, takes x̄ as its lower point, which asks
+    x̄ ≺ ȳ. altA and altB carry these three facts per round. Its upper
+    point is x̄+1, above x by x ≺ x̄+1 and above y by y ≺ x̄+1, so the
+    box needs no fact between ι and κ themselves. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Import examples.LitTools.
 Set Default Proof Using "All".
 
 Definition altA (g : fact) : Prop := ∃ n,
-  g = FLt (pv 0 (2*n)) (pv 1 (2*n)) ∨ g = FLt (pv 1 (2*n)) (pv 0 (2*n+1)) ∨
-  g = FLt (pv 1 (2*n+1)) (pv 0 (2*n+1)) ∨ g = FLt (pv 0 (2*n+1)) (pv 1 (2*n+2)).
+  g = FLt (pv 0 (2*n)) (pt_dual (pv 1 (2*n))) ∨
+  g = FLt (pt_dual (pv 0 (2*n))) (pt_dual (pv 1 (2*n))) ∨
+  g = FLt (pv 1 (2*n)) (pt_dual (pv 0 (2*n+1))) ∨
+  g = FLt (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+1))) ∨
+  g = FLt (pt_dual (pv 1 (2*n+1))) (pt_dual (pv 0 (2*n+1))) ∨
+  g = FLt (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+2))).
 Definition altB (g : fact) : Prop := ∃ n,
-  g = FLt (pv 1 (2*n)) (pv 0 (2*n)) ∨ g = FLt (pv 0 (2*n)) (pv 1 (2*n+1)) ∨
-  g = FLt (pv 0 (2*n+1)) (pv 1 (2*n+1)) ∨ g = FLt (pv 1 (2*n+1)) (pv 0 (2*n+2)).
+  g = FLt (pv 1 (2*n)) (pt_dual (pv 0 (2*n))) ∨
+  g = FLt (pt_dual (pv 1 (2*n))) (pt_dual (pv 0 (2*n))) ∨
+  g = FLt (pv 0 (2*n)) (pt_dual (pv 1 (2*n+1))) ∨
+  g = FLt (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+1))) ∨
+  g = FLt (pt_dual (pv 0 (2*n+1))) (pt_dual (pv 1 (2*n+1))) ∨
+  g = FLt (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+2))).
 
 Definition alt_T : ty :=
   TSum (TEx LNone 0 (BCs [pvar 0; pvar 1] altA) TUnit) (TEx LNone 0 (BCs [pvar 0; pvar 1] altB) TUnit).
@@ -94,37 +109,50 @@ Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 Lemma alt_fhyps_ins2 σ : fhyps_pinst σ (<[1:=None]> (<[0:=None]> ∅)) = <[1:=None]> (<[0:=None]> ∅).
 Proof. unfold fhyps_pinst. by rewrite !fmap_insert, fmap_empty. Qed.
 
-Ltac alt_envpt := unfold pt_inst, pup, plist, pt_shift; cbn; repeat (rewrite decide_False by lia); cbn; f_equal; (f_equal; lia).
+Ltac alt_envpt := unfold pt_inst, pup, plist, pt_shift, pt_dual, pt_polar; cbn; repeat (rewrite decide_False by lia); cbn;
+  f_equal; first [reflexivity|f_equal; lia|f_equal; f_equal; lia].
 
 (** The pattern from the next round, read from the opened pattern of this round. *)
 Lemma altB_next W Ψ :
   (BCs [pvar 0; pvar 1] altA, []) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) (BCs [pv 0 1; pv 1 1] altB) [].
 Proof.
   intros Hg g (f & Hf & Hs & ->).
-  destruct Hf as (n & [->|[->|[->| ->]]]); cbn [fact_map fact_holds]; rewrite !alt_plist_nil.
-  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 1 (2*n+1)) (pv 0 (2*n+1)))); [done| |cbn; lia|alt_envpt].
-    exists n. right; right; left. done.
-  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 0 (2*n+1)) (pv 1 (2*n+2)))); [done| |cbn; lia|alt_envpt].
-    exists n. right; right; right. done.
-  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 0 (2*S n)) (pv 1 (2*S n)))); [done| |cbn; lia|alt_envpt].
-    exists (S n). left. done.
-  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 1 (2*S n)) (pv 0 (2*S n+1)))); [done| |cbn; lia|alt_envpt].
-    exists (S n). right; left. done.
+  destruct Hf as (n & [->|[->|[->|[->|[->| ->]]]]]); cbn [fact_map fact_holds]; rewrite !alt_plist_nil.
+  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+1))))); [done| |cbn; lia|alt_envpt].
+    exists n. do 3 right. by left.
+  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pt_dual (pv 1 (2*n+1))) (pt_dual (pv 0 (2*n+1)))));
+      [done| |cbn; lia|alt_envpt].
+    exists n. do 4 right. by left.
+  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+2))))); [done| |cbn; lia|alt_envpt].
+    exists n. by do 5 right.
+  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 0 (2*S n)) (pt_dual (pv 1 (2*S n))))); [done| |cbn; lia|alt_envpt].
+    exists (S n). by left.
+  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pt_dual (pv 0 (2*S n))) (pt_dual (pv 1 (2*S n)))));
+      [done| |cbn; lia|alt_envpt].
+    exists (S n). right. by left.
+  - eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 1 (2*S n)) (pt_dual (pv 0 (2*S n+1))))); [done| |cbn; lia|alt_envpt].
+    exists (S n). do 2 right. by left.
 Qed.
 
 Lemma altA_next W Ψ :
   (BCs [pvar 0; pvar 1] altB, []) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) (BCs [pv 0 1; pv 1 1] altA) [].
 Proof.
   intros Hg g (f & Hf & Hs & ->).
-  destruct Hf as (n & [->|[->|[->| ->]]]); cbn [fact_map fact_holds]; rewrite !alt_plist_nil.
-  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 0 (2*n+1)) (pv 1 (2*n+1)))); [done| |cbn; lia|alt_envpt].
-    exists n. right; right; left. done.
-  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 1 (2*n+1)) (pv 0 (2*n+2)))); [done| |cbn; lia|alt_envpt].
-    exists n. right; right; right. done.
-  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 1 (2*S n)) (pv 0 (2*S n)))); [done| |cbn; lia|alt_envpt].
-    exists (S n). left. done.
-  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 0 (2*S n)) (pv 1 (2*S n+1)))); [done| |cbn; lia|alt_envpt].
-    exists (S n). right; left. done.
+  destruct Hf as (n & [->|[->|[->|[->|[->| ->]]]]]); cbn [fact_map fact_holds]; rewrite !alt_plist_nil.
+  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+1))))); [done| |cbn; lia|alt_envpt].
+    exists n. do 3 right. by left.
+  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pt_dual (pv 0 (2*n+1))) (pt_dual (pv 1 (2*n+1)))));
+      [done| |cbn; lia|alt_envpt].
+    exists n. do 4 right. by left.
+  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+2))))); [done| |cbn; lia|alt_envpt].
+    exists n. by do 5 right.
+  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 1 (2*S n)) (pt_dual (pv 0 (2*S n))))); [done| |cbn; lia|alt_envpt].
+    exists (S n). by left.
+  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pt_dual (pv 1 (2*S n))) (pt_dual (pv 0 (2*S n)))));
+      [done| |cbn; lia|alt_envpt].
+    exists (S n). right. by left.
+  - eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 0 (2*S n)) (pt_dual (pv 1 (2*S n+1))))); [done| |cbn; lia|alt_envpt].
+    exists (S n). do 2 right. by left.
 Qed.
 
 Lemma alt_K_ty_scoped : pscoped 0 alt_K_ty.
@@ -165,16 +193,19 @@ Proof.
     cbn [insert list_insert].
     set (Ψ := [(alt_KC, [pvar 0; pvar 1])] ++ [(BCs [pvar 0; pvar 1] altA, ids 0)]).
     assert ((BCs [pvar 0; pvar 1] altA, []) ∈ Ψ) as Hg by (apply elem_of_app; right; by left).
-    assert (slt W Ψ (pv 0 0) (pv 1 0)) as Hik.
-    { eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 0 0) (pv 1 0))); [done| |cbn; lia|alt_envpt].
+    assert (slt W Ψ (pv 0 0) (pt_dual (pv 1 0))) as Hik.
+    { eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 0 0) (pt_dual (pv 1 0)))); [done| |cbn; lia|alt_envpt].
       exists 0. by left. }
-    assert (slt W Ψ (pv 1 0) (pv 0 1)) as Hki1.
-    { eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 1 0) (pv 0 1))); [done| |cbn; lia|alt_envpt].
-      exists 0. by right; left. }
+    assert (slt W Ψ (pt_dual (pv 0 0)) (pt_dual (pv 1 0))) as Hlb.
+    { eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pt_dual (pv 0 0)) (pt_dual (pv 1 0)))); [done| |cbn; lia|alt_envpt].
+      exists 0. right. by left. }
+    assert (slt W Ψ (pv 1 0) (pt_dual (pv 0 1))) as Hki1.
+    { eapply (alt_hyp_env_lt W Ψ _ altA (FLt (pv 1 0) (pt_dual (pv 0 1)))); [done| |cbn; lia|alt_envpt].
+      exists 0. do 2 right. by left. }
     tstep; [tstep|]. cbn.
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 0)) (Some (pv 0 0)) 2); [set_solver| |].
-    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact Hik]. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 1))) (Some (pt_dual (pv 0 0))) 2); [set_solver| |].
+    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact Hlb]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
     + apply (typed_force0 W _ _ _ _ _ _ 2 alt_KC None alt_K_body [pv 0 1; pv 1 1]);
@@ -194,14 +225,14 @@ Proof.
            ++ apply (KTSend _ _ _ 0 TUnit Sb (pv 1 0)). cbn. set_solver.
            ++ kscope.
            ++ apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hki1|].
-              exists (pv 1 0). split; [done|]. apply sle_refl, HW.
+              exists (pt_dual (pv 0 1)). split; [done|]. right. exact Hki1.
         -- eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
                      (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) Sb) (pv 0 0)))).
            ++ tstep; [|tstep]. eapply t_conv; [|tstep]. conv_sess.
            ++ apply (KTSend _ _ _ 0 TUnit Sb (pv 0 0)). cbn. set_solver.
            ++ kscope.
            ++ apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hik|].
-              exists (pv 1 0). split; [done|]. right. exact Hik.
+              exists (pt_dual (pv 0 1)). split; [done|]. right. apply sl_dpo.
       * apply t_inj2. apply (t_pack W _ _ _ _ _ _ LNone 0 (BCs [pv 0 1; pv 1 1] altB) TUnit []).
         -- done.
         -- constructor.
@@ -226,16 +257,19 @@ Proof.
     cbn [insert list_insert].
     set (Ψ := [(alt_KC, [pvar 0; pvar 1])] ++ [(BCs [pvar 0; pvar 1] altB, ids 0)]).
     assert ((BCs [pvar 0; pvar 1] altB, []) ∈ Ψ) as Hg by (apply elem_of_app; right; by left).
-    assert (slt W Ψ (pv 1 0) (pv 0 0)) as Hki.
-    { eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 1 0) (pv 0 0))); [done| |cbn; lia|alt_envpt].
+    assert (slt W Ψ (pv 1 0) (pt_dual (pv 0 0))) as Hki.
+    { eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 1 0) (pt_dual (pv 0 0)))); [done| |cbn; lia|alt_envpt].
       exists 0. by left. }
-    assert (slt W Ψ (pv 0 0) (pv 1 1)) as Hik1.
-    { eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 0 0) (pv 1 1))); [done| |cbn; lia|alt_envpt].
-      exists 0. by right; left. }
+    assert (slt W Ψ (pt_dual (pv 1 0)) (pt_dual (pv 0 0))) as Hlb.
+    { eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pt_dual (pv 1 0)) (pt_dual (pv 0 0)))); [done| |cbn; lia|alt_envpt].
+      exists 0. right. by left. }
+    assert (slt W Ψ (pv 0 0) (pt_dual (pv 1 1))) as Hik1.
+    { eapply (alt_hyp_env_lt W Ψ _ altB (FLt (pv 0 0) (pt_dual (pv 1 1)))); [done| |cbn; lia|alt_envpt].
+      exists 0. do 2 right. by left. }
     tstep; [tstep|]. cbn.
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 0)) (Some (pv 1 0)) 2); [set_solver| |].
-    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact Hki]. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 1 1))) (Some (pt_dual (pv 1 0))) 2); [set_solver| |].
+    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact Hlb]. }
     cbn. tstep; [tstep|]. cbn.
     eapply (tv_letp W HW _ _ _ _ _ _ (TSess Sb (pv 1 1)) TUnit); [reflexivity| |].
     { tstep; [tstep|].
@@ -245,7 +279,7 @@ Proof.
       - apply (KTSend _ _ _ 0 TUnit Sb (pv 1 0)). cbn. set_solver.
       - kscope.
       - apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hki|].
-        exists (pv 0 0). split; [done|]. right. exact Hki. }
+        exists (pt_dual (pv 1 1)). split; [done|]. right. apply sl_dpo. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
     + apply (typed_force0 W _ _ _ _ _ _ 2 alt_KC None alt_K_body [pv 0 1; pv 1 1]);
@@ -265,7 +299,7 @@ Proof.
         -- apply (KTSend _ _ _ 0 TUnit Sb (pv 0 0)). cbn. set_solver.
         -- kscope.
         -- apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hik1|].
-           exists (pv 0 0). split; [done|]. apply sle_refl, HW.
+           exists (pt_dual (pv 1 1)). split; [done|]. right. exact Hik1.
       * apply t_inj1. apply (t_pack W _ _ _ _ _ _ LNone 0 (BCs [pv 0 1; pv 1 1] altA) TUnit []).
         -- done.
         -- constructor.
@@ -304,7 +338,7 @@ Proof.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 0). split; [done|]. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn. tstep; [|apply KTSpawn|done|apply ubs_none].
-  eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pv 0 1)) 2); [set_solver| |].
+  eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pt_dual (pv 0 1))) 2); [set_solver| |].
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
@@ -318,8 +352,12 @@ Proof.
 Qed.
 
 Definition alt_Cd_facts (g : fact) : Prop := ∃ n,
-  g = FLt (pv 1 (2*n)) (pv 0 (2*n)) ∨ g = FLt (pv 0 (2*n)) (pv 1 (2*n+1)) ∨
-  g = FLt (pv 0 (2*n+1)) (pv 1 (2*n+1)) ∨ g = FLt (pv 1 (2*n+1)) (pv 0 (2*n+2)).
+  g = FLt (pv 1 (2*n)) (pt_dual (pv 0 (2*n))) ∨
+  g = FLt (pt_dual (pv 1 (2*n))) (pt_dual (pv 0 (2*n))) ∨
+  g = FLt (pv 0 (2*n)) (pt_dual (pv 1 (2*n+1))) ∨
+  g = FLt (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+1))) ∨
+  g = FLt (pt_dual (pv 0 (2*n+1))) (pt_dual (pv 1 (2*n+1))) ∨
+  g = FLt (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+2))).
 Definition alt_Cd : bcs := BCs [pvar 0] alt_Cd_facts.
 
 Lemma alt_hyp_fresh_lt W Ψ C x u v a b :
@@ -327,7 +365,8 @@ Lemma alt_hyp_fresh_lt W Ψ C x u v a b :
   pt_inst (plist (x :: bc_env C)) u = a → pt_inst (plist (x :: bc_env C)) v = b → slt W Ψ a b.
 Proof. intros ? ? ? <- <-. by apply slt_hyp_fresh. Qed.
 
-Ltac alt_ptnorm := unfold pt_inst, pup, plist, pt_shift; cbn; repeat (rewrite decide_False by lia); cbn; f_equal; lia.
+Ltac alt_ptnorm := unfold pt_inst, pup, plist, pt_shift, pt_dual, pt_polar; cbn; repeat (rewrite decide_False by lia); cbn;
+  first [reflexivity|f_equal; lia|f_equal; f_equal; lia].
 
 Definition alt_main : expr :=
   LetP (Pair alt_K alt_R) (let_new_pair (let_new_pair
@@ -345,16 +384,18 @@ Proof.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sb [] []); [constructor|set_solver|].
   fresh_clean.
   refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sb alt_Cd _ _ _ _).
-  { intros f (n & [-> |[-> |[-> | ->]]]) Hs.
+  { intros f (n & [-> |[-> |[-> |[-> |[-> | ->]]]]]) Hs.
     - left. eexists _, _. split; [done|]. split_and!; [exists n; by left|done|done|done].
-    - right. eexists _, _. split; [done|]. split_and!; [exists n; by right; left|done|done|done].
-    - right. eexists _, _. split; [done|]. split_and!; [exists n; by right; right; left|done|done|done].
-    - left. eexists _, _. split; [done|]. split_and!; [exists n; by right; right; right|done|done|done]. }
+    - left. eexists _, _. split; [done|]. split_and!; [exists n; right; by left|done|done|done].
+    - right. eexists _, _. split; [done|]. split_and!; [exists n; do 2 right; by left|done|done|done].
+    - right. eexists _, _. split; [done|]. split_and!; [exists n; do 3 right; by left|done|done|done].
+    - right. eexists _, _. split; [done|]. split_and!; [exists n; do 4 right; by left|done|done|done].
+    - left. eexists _, _. split; [done|]. split_and!; [exists n; by do 5 right|done|done|done]. }
   { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
   { intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) [_ Hpq]%ple_inv.
-    destruct Hf as (n & [E|[E|[E|E]]]); injection E as -> ->;
+    destruct Hf as (n & [E|[E|[E|[E|[E|E]]]]]); injection E as -> ->;
       try (exfalso; by apply Hu); try (cbn in Hp; discriminate).
-    all: destruct Hf' as (m & [E|[E|[E|E]]]); injection E as -> ->;
+    all: destruct Hf' as (m & [E|[E|[E|[E|[E|E]]]]]); injection E as -> ->;
       try (exfalso; by apply Hv); try (cbn in Hq; discriminate).
     all: cbn in Hpq; unfold fresh_outer; cbn; apply sl_w, wf_lt_same; [done|done|cbn; lia]. }
   fresh_clean.
@@ -362,46 +403,52 @@ Proof.
   set (Ψ := [(bcs_inst (pshift 1) (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 1]);
              (bcs_inst (pshift 1) alt_Cd, [pvar 0])]).
   match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E] _ _ _ =>
-    change A with (TSess Sa (pvar 0)); change B with (TSess Sb (pvar 0));
-    change A' with (TSess Sa (pvar 1)); change B' with (TSess Sb (pvar 1));
+    change A with (TSess Sa (pt_dual (pvar 0))); change B with (TSess Sb (pvar 0));
+    change A' with (TSess Sa (pt_dual (pvar 1))); change B' with (TSess Sb (pvar 1));
     change D with alt_R_ty; change E with alt_K_ty end.
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) (BCs [pvar 1; pvar 0] altA) []) as HFA.
   { intros g (f & Hf & Hs & ->).
-    destruct Hf as (n & [->|[->|[->| ->]]]); cbn [fact_map fact_holds]; rewrite !alt_plist_nil.
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 1 (2*n)) (pv 0 (2*n)));
+    destruct Hf as (n & [->|[->|[->|[->|[->| ->]]]]]); cbn [fact_map fact_holds]; rewrite !alt_plist_nil.
+    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 1 (2*n)) (pt_dual (pv 0 (2*n))));
         [by right; left|exists n; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 0 (2*n)) (pv 1 (2*n+1)));
-        [by right; left|exists n; by right; left|cbn; lia|alt_ptnorm|alt_ptnorm].
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 0 (2*n+1)) (pv 1 (2*n+1)));
-        [by right; left|exists n; by right; right; left|cbn; lia|alt_ptnorm|alt_ptnorm].
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 1 (2*n+1)) (pv 0 (2*n+2)));
-        [by right; left|exists n; by right; right; right|cbn; lia|alt_ptnorm|alt_ptnorm]. }
+    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0)
+                (pt_dual (pv 1 (2*n))) (pt_dual (pv 0 (2*n))));
+        [by right; left|exists n; right; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
+    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 0 (2*n)) (pt_dual (pv 1 (2*n+1))));
+        [by right; left|exists n; do 2 right; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
+    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+1))));
+        [by right; left|exists n; do 3 right; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
+    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0)
+                (pt_dual (pv 0 (2*n+1))) (pt_dual (pv 1 (2*n+1))));
+        [by right; left|exists n; do 4 right; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
+    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+2))));
+        [by right; left|exists n; by do 5 right|cbn; lia|alt_ptnorm|alt_ptnorm]. }
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 1))) (Some (pvar 1)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [pvar 1]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [pt_dual (pvar 1)]);
         [done|done| | |apply ubs_none|tstep].
       + apply bcs_hold_intro. intros g [].
       + constructor; [eapply skn_inst; [by left|by left|done]|constructor].
     - cbn. tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pvar 1). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pvar 1)). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [pt_dual (pvar 0)]);
         [done|done| | |apply ubs_none|tstep].
       + apply bcs_hold_intro. intros g [].
       + constructor; [eapply skn_inst; [by right; left|by left|done]|constructor].
     - cbn. tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pvar 0). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pvar 0)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
   - apply (typed_force0 W _ _ _ _ _ _ 2 alt_KC None alt_K_body [pvar 1; pvar 0]);
       [done|done| | |apply ubs_none|tstep].

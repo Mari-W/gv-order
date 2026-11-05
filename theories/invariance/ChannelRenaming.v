@@ -622,13 +622,13 @@ Proof.
       destruct Hstep as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
       exists (tenvswap a b Θr), s1, s2, k, (tenvswap a b Θ'). split_and!.
       * by apply (tenv_hd_swap a b _ _ (SPlus s1 s2)).
-      * by apply (tenv_ext_swap a b _ _ (sbranch i s1 s2, pt_payload k (bidx i))).
+      * by apply (tenv_ext_swap a b _ _ (sbranch i s1 s2, sel_pt k i)).
       * exact (proj2 HE').
     + (* branch *)
       destruct Hstep as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
       exists (tenvswap a b Θr), s1, s2, k, (tenvswap a b Θ'). split_and!.
       * by apply (tenv_hd_swap a b _ _ (SWith s1 s2)).
-      * by apply (tenv_ext_swap a b _ _ (sbranch i s1 s2, pt_payload k (bidx i))).
+      * by apply (tenv_ext_swap a b _ _ (sbranch i s1 s2, bra_pt k i)).
       * by apply (IHE n' ltac:(lia)).
     + (* new *)
       intros Hc.

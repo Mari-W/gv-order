@@ -15,7 +15,13 @@
     ι ≺ κ for the facts ι ≺ δ and δ+k ≺ κ, because δ+k lies after δ in
     program order, and the box hypothesis gives it (sharp edges 93).
     The list form L ≺ ι ≺ H could not state δ+1 ≺ κ. E-Open on q opens
-    the existential result of new (sharp edges 99). *)
+    the existential result of new (sharp edges 99).
+
+    With end points the thread keeps d at δ and the partner acts on d′
+    at δ̄. close c asks ι ≺ δ̄ and the sends ask δ+k ≺ κ̄ besides
+    δ+k ≺ κ. The fact ι ≺ δ̄ meets δ+k ≺ κ and δ+k ≺ κ̄ in betweenness
+    through δ̄ ≺ δ+1, and the box constraint {ι ≺ κ, ι ≺ κ̄} of
+    FreshBetween.v gives both. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.FreshBetween.
@@ -36,7 +42,8 @@ Definition fm_box : expr :=
 (** The constraint, in the context of the rule: the variable 0 is δ,
     the variables 1 and 2 are the outer points ι and κ. *)
 Definition fm_facts (g : fact) : Prop :=
-  g = FLt (pvar 1) (pvar 0) ∨ ∃ k, g = FLt (Pt (NVar 0) k) (pvar 2).
+  g = FLt (pvar 1) (pt_dual (pvar 0)) ∨
+  ∃ k, g = FLt (Pt (NVar 0) k) (pvar 2) ∨ g = FLt (Pt (NVar 0) k) (pt_dual (pvar 2)).
 
 Definition fm_C : bcs := BCs [pvar 0; pvar 1] fm_facts.
 
@@ -48,14 +55,16 @@ Proof.
   eapply t_weak; [apply lwk_cons, lwk_drop; [done|constructor]|].
   cbn. tstep; [tstep|]. cbn.
   refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sdd fm_C _ _ _ _).
-  { intros f [->|[k ->]] Hs.
+  { intros f [->|[k [-> | ->]]] Hs.
     - left. eexists _, _. split; [done|]. split_and!; [by left|done|done|done].
-    - right. eexists _, _. split; [done|]. split_and!; [right; by exists k|done|done|done]. }
+    - right. eexists _, _. split; [done|]. split_and!; [right; exists k; by left|done|done|done].
+    - right. eexists _, _. split; [done|]. split_and!; [right; exists k; by right|done|done|done]. }
   { apply (skn_ids2 W _ fb_C); [by left|done|done]. }
   { intros u p q v (Hf & _ & Hp & _) (Hf' & _ & _ & Hv) _.
-    destruct Hf as [E|[k E]]; injection E as -> ->; [|done].
-    destruct Hf' as [E|[k E]]; injection E as -> ->; [done|].
-    cbn. hyp0 (pvar 0) (pvar 1). }
+    destruct Hf as [E|[k [E|E]]]; injection E as -> ->; [|done|done].
+    destruct Hf' as [E|[k [E|E]]]; injection E as -> ->; [done| |]; cbn.
+    - eapply (sl_hyp0 _ _ _ _ (pvar 0) (pvar 1)); [by left|by left|cbn; lia|reflexivity|reflexivity].
+    - eapply (sl_hyp0 _ _ _ _ (pvar 0) (pt_dual (pvar 1))); [by left|by right|cbn; lia|reflexivity|reflexivity]. }
   rewrite tenv_pinst_empty, sf_pinst_fresh. cbn.
   change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
   change (pt_inst (pshift 1) (pvar 1)) with (pvar 2).
@@ -65,30 +74,36 @@ Proof.
     by (unfold Φ, fhyps_pinst; by rewrite lookup_fmap, lookup_insert_eq).
   set (C' := bcs_inst (pshift 1) fm_C).
   set (Ψ := [(fb_C, [pvar 1; pvar 2]); (C', [pvar 0])]).
-  assert (slt W Ψ (pvar 1) (pvar 0)) as Hιδ.
-  { apply (slt_hyp_fresh W Ψ C' (pvar 0) (pvar 1) (pvar 0)); [by right; left|by left|cbn; lia]. }
+  assert (slt W Ψ (pvar 1) (pt_dual (pvar 0))) as Hιδ.
+  { apply (slt_hyp_fresh W Ψ C' (pvar 0) (pvar 1) (pt_dual (pvar 0))); [by right; left|by left|cbn; lia]. }
   assert (∀ k, slt W Ψ (Pt (NVar 0) k) (pvar 2)) as Hδκ.
   { intros k. apply (slt_hyp_fresh W Ψ C' (pvar 0) (Pt (NVar 0) k) (pvar 2));
-      [by right; left|right; by exists k|cbn; lia]. }
-  assert (slt W Ψ (pvar 1) (pvar 2)) as Hικ by hyp0 (pvar 0) (pvar 1).
+      [by right; left|right; exists k; by left|cbn; lia]. }
+  assert (∀ k, slt W Ψ (Pt (NVar 0) k) (pt_dual (pvar 2))) as Hδκ'.
+  { intros k. apply (slt_hyp_fresh W Ψ C' (pvar 0) (Pt (NVar 0) k) (pt_dual (pvar 2)));
+      [by right; left|right; exists k; by right|cbn; lia]. }
+  assert (slt W Ψ (pvar 1) (pvar 2)) as Hικ.
+  { eapply (sl_hyp0 _ _ _ _ (pvar 0) (pvar 1)); [by left|by left|cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W Ψ (pvar 1) (pt_dual (pvar 2))) as Hικ'.
+  { eapply (sl_hyp0 _ _ _ _ (pvar 0) (pt_dual (pvar 1))); [by left|by right|cbn; lia|reflexivity|reflexivity]. }
   set (δ1 := Pt (NVar 0) 1). set (δ2 := Pt (NVar 0) 2).
   tstep.
   { (* the partner receives twice and closes *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some δ2) (Some (pvar 0)) 2); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual δ2)) (Some (pvar 0)) 2); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep.
     { tstep; [tstep|apply KTRecv|kscope|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists δ2. split; [by rewrite lookup_insert_eq|right].
-      apply sl_w. apply (wf_lt_po_n W (pvar 0) 1 HW). }
+      exists (pt_dual δ2). split; [by rewrite lookup_insert_eq|right].
+      apply sl_w. apply (wf_lt_po_n W (pt_dual (pvar 0)) 1 HW). }
     cbn. tstep; [tstep|]. cbn. unfold recvclose. tstep.
     { tstep; [tstep|apply KTRecv|kscope|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists δ2. split; [by rewrite lookup_insert_eq|right]. apply (slt_po W _ δ1 HW). }
+      exists (pt_dual δ2). split; [by rewrite lookup_insert_eq|right]. apply (slt_po W _ (pt_dual δ1) HW). }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists δ2. split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual δ2). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* close c at ι, holding d at δ and e at κ *)
     tstep; [tstep|apply KTClos|done|].
@@ -106,11 +121,11 @@ Proof.
                   (TProd TUnit (TSess Sdd (pvar 0))) (TSess (SSeq (SSnd 0 TUnit) SEnd) δ1));
           [|apply (KTSend _ _ _ 0 TUnit (SSeq (SSnd 0 TUnit) SEnd) (pvar 0)); cbn; set_solver|kscope|].
         * tstep; [tstep|tstep].
-        * apply ubs_intro; [intros y Hy; mem_cases Hy; apply (Hδκ 0)|].
+        * apply ubs_intro; [intros y Hy; mem_cases Hy; apply (Hδκ' 0)|].
           exists (pvar 2). split; [done|right; apply (Hδκ 0)].
-      + apply ubs_intro; [intros y Hy; mem_cases Hy; apply (Hδκ 1)|].
+      + apply ubs_intro; [intros y Hy; mem_cases Hy; apply (Hδκ' 1)|].
         exists (pvar 2). split; [done|right; apply (Hδκ 1)].
-    - apply ubs_intro; [intros y Hy; mem_cases Hy; apply (Hδκ 2)|].
+    - apply ubs_intro; [intros y Hy; mem_cases Hy; apply (Hδκ' 2)|].
       exists (pvar 2). split; [done|right; apply (Hδκ 2)]. }
   (* close e at κ *)
   tstep; [tstep|apply KTClos|done|].
@@ -148,40 +163,44 @@ Proof.
     by (intros σ; unfold sf_pinst; simpl; by rewrite set_map_empty).
   rewrite tenv_pinst_empty, Hsf. cbn.
   match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ => change T with fb_ty end.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] []).
-  { constructor; [|constructor]. right. exists (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 0], (pvar 0).
-    split_and!; [by left|by left|done]. }
-  { intros l h _ Hh. by apply elem_of_nil in Hh. }
+  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd [(pvar 0, true); (pvar 0, false)] []).
+  { cbn. repeat (apply Forall_cons; split;
+      [right; exists (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 0], (pvar 0); split_and!; [by left|by left|done]|]).
+    by apply Forall_nil. }
+  { intros l h b _ Hh. by apply elem_of_nil in Hh. }
   rewrite tenv_pinst_empty, Hsf. cbn.
   change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
   match goal with |- typed _ _ _ _ (_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: Some ?T :: []) _ _ _ =>
     change T with fb_ty end.
   replace (fhyps_pinst (pshift 1) (fhyps_pinst (pshift 1) ∅)) with (∅ : fhyps)
     by (unfold fhyps_pinst; by rewrite !fmap_empty).
+  set (L := [(pvar 0, true); (pvar 0, false)]).
   set (Ψ := [(bcs_inst (pshift 1) (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 1]);
-             (bcs_inst (pshift 1) (fresh_bcs [pvar 0] []), [pvar 0])]).
+             (bcs_inst (pshift 1) (freshp_bcs L []), [pvar 0])]).
   assert (slt W Ψ (pvar 1) (pvar 0)) as Hγε.
-  { apply (slt_fresh_l W Ψ (pshift 1) [pvar 0] [] (pvar 0) (pvar 0)); [by right; left|by left]. }
+  { apply (slt_freshp_l W Ψ (pshift 1) L [] (pvar 0) (pvar 0) true); [by right; left|by left]. }
+  assert (slt W Ψ (pvar 1) (pt_dual (pvar 0))) as Hγε'.
+  { apply (slt_freshp_l W Ψ (pshift 1) L [] (pvar 0) (pvar 0) false); [by right; left|by right; left]. }
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 1))) (Some (pvar 1)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pvar 1). split; [done|apply sle_refl, HW]. }
+    exists (pt_dual (pvar 1)). split; [done|apply sle_refl, HW]. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pvar 0). split; [done|apply sle_refl, HW]. }
+    exists (pt_dual (pvar 0)). split; [done|apply sle_refl, HW]. }
   cbn. eapply (tv_app W HW _ _ _ _ _ _ (Some (pvar 0)) None
                  (TProd (TSess SEnd (pvar 1)) (TSess SEnd (pvar 0))) TUnit); [reflexivity| | |].
   - change (TLolli (Some (pvar 0)) None (TProd (TSess SEnd (pvar 1)) (TSess SEnd (pvar 0))) TUnit)
       with (ty_inst [pvar 1; pvar 0] fb_body).
     apply (typed_force0 W _ _ _ _ _ _ 2 fb_C None fb_body [pvar 1; pvar 0]); [done|done| | |apply ubs_none|tstep].
-    + apply bcs_hold_intro. intros g -> _. exact Hγε.
+    + apply bcs_hold_intro. intros g [-> | ->] _; [exact Hγε|exact Hγε'].
     + constructor; [|constructor; [|constructor]].
       * right. eexists _, [pvar 1], (pvar 1). split_and!; [by left|by left|done].
       * right. eexists _, [pvar 0], (pvar 0). split_and!; [by right; left|by left|done].

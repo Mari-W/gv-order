@@ -214,10 +214,18 @@ Fixpoint denN (f : pname → dn) (p : pname) : dn :=
 Definition den (f : pname → dn) (x : point) : dn := dshN (pt_off x) (denN f (pt_name x)).
 
 Lemma den_shift f x : den f (pt_shift 1 x) = dsh (den f x).
-Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r. Qed.
+Proof. destruct x as [p pb k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r. Qed.
 
 Lemma den_shiftN f n x : den f (pt_shift n x) = dshN n (den f x).
-Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
+Proof. destruct x as [p pb k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
+
+(** The denotation ignores the polarity: both ends of a channel denote
+    the same channel (end points). *)
+Lemma den_dual f x : den f (pt_dual x) = den f x.
+Proof. done. Qed.
+
+Lemma den_polar f b x : den f (pt_polar b x) = den f x.
+Proof. by destruct b. Qed.
 
 Lemma den_payload f x i : den f (pt_payload x i) = dsl (den f x) i.
 Proof. done. Qed.
@@ -294,21 +302,24 @@ Lemma wgen_strict_oeq N E L (dnt : point → dn) :
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, dnt (pt_shift 1 x) = dsh (dnt x)) →
   (∀ x i, dnt (pt_payload x i) = dsl (dnt x) i) →
+  (∀ x, dnt (pt_dual x) = dnt x) →
   (∀ x y, E x y → oeq (dnt x) (dnt y)) →
   (∀ x y, L x y → rlt (rank (dnt x)) (rank (dnt y))) →
   strict (wgen N E L).
 Proof.
-  intros HN HE HL Hs Hl Hc HLr. split; [by apply wgen_wf|].
+  intros HN HE HL Hs Hl Hd Hc HLr. split; [by apply wgen_wf|].
   assert (∀ x y, geq E x y → oeq (dnt x) (dnt y)) as Heq.
-  { induction 1; try (by apply Hc); [apply oeq_refl|by apply oeq_sym|by eapply oeq_trans| |].
+  { induction 1; try (by apply Hc); [apply oeq_refl|by apply oeq_sym|by eapply oeq_trans| | |].
     - rewrite !Hs. by apply oeq_dsh.
-    - rewrite !Hl. by apply oeq_dsl. }
+    - rewrite !Hl. by apply oeq_dsl.
+    - by rewrite !Hd. }
   assert (∀ x y, glt E L x y → rlt (rank (dnt x)) (rank (dnt y))) as Hlt.
-  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - by apply HLr.
     - rewrite Hs. apply guard_rise.
     - apply Heq, oeq_rank in Hx, Hy. by rewrite Hx, <-Hy.
-    - by eapply rlt_trans. }
+    - by eapply rlt_trans.
+    - rewrite Hs, Hd. apply guard_rise. }
   intros x H. apply Hlt in H. exact (rlt_irrefl _ H).
 Qed.
 
@@ -331,6 +342,7 @@ Proof.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - apply den_shift.
   - apply den_payload.
+  - apply den_dual.
   - by intros x y (_ & _ & H).
   - by intros x y (_ & _ & H).
 Qed.
@@ -355,8 +367,8 @@ Qed.
 Lemma den_inst f g σ a x :
   pt_root x = NVar a → g (NVar a) = den f (σ a) → den f (pt_inst σ x) = den g x.
 Proof.
-  intros Hx Hg. destruct x as [p o]. unfold pt_inst, pt_root in *. simpl in *.
-  rewrite den_shiftN, (den_pn_inst f g σ a) by done. done.
+  intros Hx Hg. destruct x as [p pb o]. unfold pt_inst, pt_root in *. simpl in *.
+  rewrite den_polar, den_shiftN, (den_pn_inst f g σ a) by done. done.
 Qed.
 
 (** ** Anchors *)
@@ -373,7 +385,7 @@ Proof. induction p as [a|a|q IH b i]; simpl; eauto. Qed.
 
 Lemma den_ianc B v ts : isroot B → den (ianc B v ts) B = DAnc v ts.
 Proof.
-  intros [Ho Hr]. destruct B as [p o]. simpl in *. subst o. unfold den. simpl.
+  intros [Ho Hr]. destruct B as [p pb o]. simpl in *. subst o. unfold den. simpl.
   destruct (pn_root_cases p) as [a [Ha|Ha]]; rewrite Ha in Hr; subst p; simpl;
     unfold ianc; simpl; by rewrite decide_True.
 Qed.
@@ -395,16 +407,22 @@ Definition Θany (k : nat) : pctx := PCtx 0 k (λ _ _, True).
 
 (** The coarse ceiling and the floor of the walks from κ, with the
     upper and the lower point of the anchor b, and the rise of every
-    walk at every step to x[i], which gives x ≺ x[i] at a choice (K11). *)
+    walk at every step to x[i], which gives x ≺ x[i] at a choice (K11).
+    End points: the two ends of every walk point are aliases, x ≡ x̄
+    (the denotation ignores the polarity). *)
 Definition pex_fact (κ b : nat) (g : fact) : Prop :=
   (∃ u, g = FLt (mwalk (pvar κ) u) (rpt (pvar b) (RHi [PTop]))) ∨
   (∃ u, g = FLt (rpt (pvar b) (RLo [LP PBot])) (mwalk (pvar κ) u)) ∨
-  (∃ u i, g = FLt (mwalk (pvar κ) u) (pt_payload (mwalk (pvar κ) u) i)).
+  (∃ u i, g = FLt (mwalk (pvar κ) u) (pt_payload (mwalk (pvar κ) u) i)) ∨
+  (∃ u, g = FEq (mwalk (pvar κ) u) (pt_dual (mwalk (pvar κ) u))).
 
 Definition Cseg (k : nat) : bcs := BCs [] (λ g, pex_fact 0 1 g ∨ crel_fact (Θany k) (NVar 1) g).
 Definition Cex (B : point) : bcs := BCs [B] (pex_fact 0 1).
 
-(** ** Translation of types *)
+(** ** Translation of types
+
+    End points: the end of polarity true (the dual session) sits at the
+    dual point, as the second end of [new]. *)
 
 Definition hiz (B : point) (ef : list prio) : option point :=
   match ef with [] => None | _ => Some (rpt B (RHi ef)) end.
@@ -414,9 +432,9 @@ Definition ptsb (B : point) : nat → point := λ _, B.
 Fixpoint tr (B : point) (pts : nat → point) (T : mty) : ty :=
   match T with
   | MUnit => U
-  | MCh p Q (PR h d) => TSess (polS p (ers Q)) (rpt B (RCh Q h d))
-  | MCh p Q (PX n w) => TSess (polS p (ers Q)) (mwalk (pts n) w)
-  | MEx p Q => TEx (LPt (rpt B (RLo [LP PBot]))) 1 (Cex B) (TSess (polS p (ers Q)) (pvar 0))
+  | MCh p Q (PR h d) => TSess (polS p (ers Q)) (pt_polar (negb p) (rpt B (RCh Q h d)))
+  | MCh p Q (PX n w) => TSess (polS p (ers Q)) (pt_polar (negb p) (mwalk (pts n) w))
+  | MEx p Q => TEx (LPt (rpt B (RLo [LP PBot]))) 1 (Cex B) (TSess (polS p (ers Q)) (pt_polar (negb p) (pvar 0)))
   | MArr T lo ef V => TLolli (hiz B ef) (Some (rpt B (RLo lo))) (tr B pts T) (tr B pts V)
   | MPoly Θ T ef V =>
       TBox 1 (pc_nt Θ) (Crel Θ)
@@ -425,8 +443,8 @@ Fixpoint tr (B : point) (pts : nat → point) (T : mty) : ty :=
   | MSeg p k Qa Qr =>
       TBox 2 k (Cseg k)
         (TLolli None None TUnit
-           (TLolli (Some (rpt (pvar 1) (RHi [PTop]))) None (TSess (polS p (ers Qa)) (pvar 0))
-              (TEx (LPt (rpt (pvar 1) (RLo [LP PBot]))) 1 (Cex (pvar 1)) (TSess (polS p (ers Qr)) (pvar 0)))))
+           (TLolli (Some (rpt (pvar 1) (RHi [PTop]))) None (TSess (polS p (ers Qa)) (pt_polar (negb p) (pvar 0)))
+              (TEx (LPt (rpt (pvar 1) (RLo [LP PBot]))) 1 (Cex (pvar 1)) (TSess (polS p (ers Qr)) (pt_polar (negb p) (pvar 0))))))
   end.
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
@@ -453,19 +471,22 @@ Qed.
 Lemma pup_lt m σ a : a < m → pt_inst (pup m σ) (pvar a) = pvar a.
 Proof. intros Ha. rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True. Qed.
 
+Lemma pt_inst_polar σ b x : pt_inst σ (pt_polar b x) = pt_polar b (pt_inst σ x).
+Proof. destruct b; [done|apply pt_inst_dual]. Qed.
+
 Lemma tr_pinst σ B pts T : pinst_ty σ (tr B pts T) = tr (pt_inst σ B) (pt_inst σ ∘ pts) T.
 Proof.
   revert σ B pts. induction T as [|p Q [h d|n w]| p Q |T IH1 lo ef V IH2|Θ T IH1 ef V IH2|p k Qa Qr];
     intros σ B pts; simpl.
   - done.
-  - by rewrite pt_inst_rpt.
-  - by rewrite pt_inst_mwalk.
-  - by rewrite pt_inst_rpt, pup1_0.
+  - by rewrite pt_inst_polar, pt_inst_rpt.
+  - by rewrite pt_inst_polar, pt_inst_mwalk.
+  - by rewrite pt_inst_rpt, pt_inst_polar, pup1_0.
   - by rewrite IH1, IH2, hiz_pinst, pt_inst_rpt.
   - rewrite IH1, IH2, hiz_pinst, pup1_0. unfold bcs_inst, Crel. simpl.
     rewrite !(tr_ext (pvar 0) (pt_inst (pup 1 σ) ∘ ptsb (pvar 0)) (ptsb (pvar 0))); try done;
       intros n; apply pup1_0.
-  - unfold bcs_inst, Cseg, Cex. simpl. rewrite !pt_inst_rpt, !(pup_lt 2) by lia.
+  - unfold bcs_inst, Cseg, Cex. simpl. rewrite !pt_inst_polar, !pt_inst_rpt, !(pup_lt 2) by lia.
     by rewrite !pup1_0.
 Qed.
 

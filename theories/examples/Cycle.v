@@ -11,10 +11,15 @@
 
     The program types in the empty world. c is created with no fact and
     d with the creation constraint γ ≺ ε, where γ and ε are the points of
-    c and d (sharp edges 105). *)
+    c and d (sharp edges 105).
+
+    With end points the thunk holds c′ and d′ at γ̄ and ε̄. Its gate asks
+    γ̄ ≺ ε, the main thread's gate asks γ ≺ ε̄, and the upper point ε̄ of
+    the thunk asks γ̄ ≺ ε̄. The constraint of d is {γ, γ̄} ≺ {ε, ε̄}
+    ([freshp_bcs]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export examples.ExampleTools.
+From LRGV Require Export examples.FreshTools.
 
 Set Default Proof Using "All".
 
@@ -31,26 +36,33 @@ Proof.
   set (W := Wpo []) in *. unfold cycle_main.
   apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
   fresh_clean.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [pvar 0] []).
-  { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
-  { intros l h _ Hh. by apply elem_of_nil in Hh. }
+  set (Lc := [(pvar 0, true); (pvar 0, false); (pt_dual (pvar 0), true); (pt_dual (pvar 0), false)]).
+  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Lc []).
+  { cbn. repeat (apply Forall_cons; split; [eapply skn_inst; [by left|by left|done]|]). by apply Forall_nil. }
+  { intros l h b _ Hh. by apply elem_of_nil in Hh. }
   fresh_clean.
-  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
   set (Ψ := [(bcs_inst (pshift 1) (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 1]);
-             (bcs_inst (pshift 1) (fresh_bcs [pvar 0] []), [pvar 0])]).
-  assert (slt W Ψ (pvar 1) (pvar 0)) as Hγε.
-  { apply (slt_fresh_l W Ψ (pshift 1) [pvar 0] [] (pvar 0) (pvar 0)); [by right; left|by left]. }
+             (bcs_inst (pshift 1) (freshp_bcs Lc []), [pvar 0])]).
+  assert (∀ l b, (l, b) ∈ Lc → slt W Ψ (pt_inst (pshift 1) l) (pt_polar b (pvar 0))) as HL.
+  { intros l b Hl. by apply (slt_freshp_l W Ψ (pshift 1) Lc [] (pvar 0)); [right; left|]. }
+  assert (slt W Ψ (pvar 1) (pvar 0)) as Hγε by (apply (HL (pvar 0) true); set_solver).
+  assert (slt W Ψ (pvar 1) (pt_dual (pvar 0))) as Hγε'.
+  { apply (HL (pvar 0) false); set_solver. }
+  assert (slt W Ψ (pt_dual (pvar 1)) (pvar 0)) as Hγ'ε.
+  { apply (HL (pt_dual (pvar 0)) true); set_solver. }
+  assert (slt W Ψ (pt_dual (pvar 1)) (pt_dual (pvar 0))) as Hγ'ε'.
+  { apply (HL (pt_dual (pvar 0)) false); set_solver. }
   tstep.
   { tstep.
-    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 0)) (Some (pvar 1)) 0); [set_solver| |].
+    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 1)) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; done]. }
       cbn. tstep; [tstep|]. cbn. tstep.
       + tstep; [tstep|apply KTClos|done|].
         apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
-        exists (pvar 0). split; [done|]. right. done.
+        exists (pt_dual (pvar 0)). split; [done|]. right. done.
       + tstep; [tstep|apply KTClos|done|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pvar 0). split; [done|]. apply sle_refl, HW.
+        exists (pt_dual (pvar 0)). split; [done|]. apply sle_refl, HW.
     - apply KTSpawn.
     - done.
     - apply ubs_none. }

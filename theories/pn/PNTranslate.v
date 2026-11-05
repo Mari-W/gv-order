@@ -490,8 +490,8 @@ Proof.
     simpl.
   - split; [unfold bcs_scoped; simpl; constructor|]. repeat split.
   - split; [unfold bcs_scoped; simpl; constructor|]. split_and!; try done; [apply IH1|apply IH2]; apply Hp.
-  - by apply Hr.
-  - by apply Hr.
+  - destruct p; exact (Hr _ _ _ HB).
+  - destruct p; exact (Hr _ _ _ HB).
   - by apply IH.
   - destruct r as [r|]; simpl.
     + split_and!; [destruct σ; simpl; try done; by apply Hr|by apply Hr|by apply IH1|by apply IH2].
@@ -547,13 +547,18 @@ Section terms.
         as -> by (unfold payload_at, ty_inst; simpl; by rewrite pt_inst_pvar_at).
       assert (cpay (PChan true (lshift k t) (n + k)) = Some c') as Hp.
       { simpl. rewrite chres_lshift. by replace (0 + k)%Z with k by lia. }
-      pose proof (pay_eq Ψ B HB _ _ Hp) as He.
+      assert (seqs W Ψ (pt_payload (chx t n) 0) (pt_polar (cpol t) (rpt B (RCh c')))) as He.
+      { apply (gd_eq _ _ HB); [done|by destruct (cpol t)|].
+        rewrite den_polar. unfold chx. by rewrite (den_pay Ψ B HB _ _ Hp), (den_ch0 Ψ B HB). }
       destruct (chres_lev k t c' Hc') as (z & Hz & Hlc). rewrite Hz in Hn. simpl in Hn.
       split_and!.
       + split; [by apply se_sym|apply seq_refl].
       + split; [done|apply seq_refl].
       + intros h Hh. simpl in Hh. apply elem_of_singleton in Hh as ->.
-        apply (ch_below_pay Ψ B HB _ c' (n + k) (z + k)); [done|done|done|lia].
+        (* the head is the partner point x̄[0], which denotes x[0] *)
+        split; apply (gd_lt _ _ HB); try done;
+          unfold chx; rewrite ?den_dual, ?den_shift, (den_pay Ψ B HB _ _ Hp), (den_ch0 Ψ B HB); simpl;
+          rewrite Hlc; simpl; lia.
       + simpl. intros a Ha. injection Ha as <-. lia.
     - destruct Hok as [Hok|Hun]; [congruence|]. pose proof Hun as Hb. apply un_b_un in Hb. rewrite Hb.
       assert (payload_at 0 (trz proot 0 t) (chx t n) = trz B k t) as ->.
@@ -572,14 +577,16 @@ Section terms.
   Proof.
     intros HΔ Hok Hn. pose proof (proj1 wnil_strict) as HW.
     destruct (pay_conv t n Hok Hn) as (Hc1 & _ & Hh & Hs).
-    set (x := chx t n). set (φ1 := fresh (dom Φ)).
+    (* The sending end has polarity false and sits at the dual point. *)
+    set (x := pt_dual (chx t n)). set (φ1 := fresh (dom Φ)).
+    assert (seqs W Ψ x (chx t n)) as Hxd by (apply (gd_eq _ _ HB); [done|done|reflexivity]).
     apply (t_abs W Φ Ψ ∅ Δ0 F _ _ _ None None φ1); [apply is_fresh|lbhb|].
     { simpl. by bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L. }
     set (Φ1 := <[φ1 := None]> Φ). set (φ2 := fresh (dom Φ1)).
     apply (t_abs W Φ1 Ψ ∅ _ _ _ _ _ (hiz B k (LZ n)) (Some (loz B k n)) φ2); [apply is_fresh|lbhb|].
     { simpl. bclean; rewrite (tenv_heads0 W HW), empty_heads, union_empty_l_L, union_empty_r_L by done.
       intros y Hy. apply elem_of_singleton in Hy as ->. apply (lo_below Ψ B HB).
-      split; [done|right]. unfold x, chx. rewrite (den_ch0 Ψ B HB). simpl. lia. }
+      split; [done|right]. unfold x, chx. dclean. rewrite (den_ch0 Ψ B HB). simpl. lia. }
     set (Φ2 := <[φ2 := hiz B k (LZ n)]> Φ1).
     assert (Φ2 !! φ2 = Some (Some (rpt B (RHi (n + k))))) as Hφ2 by (unfold Φ2; by rewrite lookup_insert_eq).
     set (E := Some (trz B k t) :: Some (trz B k (PChan false t n)) :: Δ0).
@@ -592,15 +599,16 @@ Section terms.
       split; [done|by right]. }
     eapply (t_app W Φ2 Ψ ∅ ∅ ∅ E (lenv_nones E) E Fr _ _ (Some (pt_shift 1 x)) None).
     { by apply comp0. } { apply lenv_split_nones_l. }
-    { apply Hub. apply (ch1_below_hi Ψ B HB). apply clev_chx. }
+    { apply Hub. eapply sl_eql; [apply se_shift, Hxd|]. apply (ch1_below_hi Ψ B HB). apply clev_chx. }
     { apply t_const; [apply lenv_empty_nones|apply KTClos|done]. }
     rewrite sf_union_empty.
     eapply (t_app W Φ2 Ψ ∅ ∅ ∅ E (lenv_nones E) E Fr _ _ (Some x) None
               (TProd (payload_at (pbind t) (ppay t) x) (TSess (SSeq (SSnd (pbind t) (ppay t)) SEnd) x))).
     { by apply comp0. } { apply lenv_split_nones_l. }
-    { apply Hub. apply (ch_below_hi Ψ B HB). apply clev_chx. }
+    { apply Hub. eapply sl_eql; [exact Hxd|]. apply (ch_below_hi Ψ B HB). apply clev_chx. }
     { apply t_const; [apply lenv_empty_nones| |done]. apply (KTSend _ _ _ (pbind t) (ppay t) SEnd x).
-      rewrite hbot_ppay. intros h' Hh'. by apply Hh. }
+      rewrite hbot_ppay. intros h' Hh'. destruct (Hh h' Hh') as [H1 H2].
+      eapply sl_eql; [exact Hxd|exact H1]. }
     rewrite sf_union_empty.
     eapply (t_pair W Φ2 Ψ ∅ ∅ ∅ E (Some (trz B k t) :: None :: Δ0)
               (None :: Some (trz B k (PChan false t n)) :: Δ0)); [by apply comp0| | |].
@@ -787,6 +795,7 @@ Proof.
   - by eapply se_trans.
   - by apply se_shift.
   - by apply se_payload.
+  - by apply se_dual.
 Qed.
 
 Lemma fl_sub Γ Ψ' a b :
@@ -800,6 +809,7 @@ Proof.
   - eapply fl_eqr; [done|]. simpl. by eapply seqs_sub.
   - by eapply fl_trans.
   - apply fl_po.
+  - apply fl_dpo.
 Qed.
 
 Lemma good_sub Ψ Ψ' B : (∀ h, h ∈ Ψ → h ∈ Ψ') → good Ψ B → good Ψ' B.

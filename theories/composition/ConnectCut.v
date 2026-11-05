@@ -33,7 +33,7 @@ Record cut_ok (W : world) (Σ1 Σ2 ΣC ΣC' : senv) (C0 C1 C2 : gset chan) : Pro
   co_dom : dom ΣC = C0;
   co_dom' : dom ΣC' = C0;
   co_cut : ∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' →
-             w_eq W e.2 e'.2 ∧ sdual e.1 e'.1;
+             w_eq W e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1;
   co_C1Σ2 : C1 ## dom Σ2;
   co_C2Σ1 : C2 ## dom Σ1;
   co_C1Σ1 : C1 ## dom Σ1;
@@ -48,7 +48,7 @@ Lemma cut_ok_sym W Σ1 Σ2 ΣC ΣC' C0 C1 C2 :
 Proof.
   intros [HW ? ? ? ? ? Hcut ? ? ? ? ? ? ?]. split; try done; try by symmetry.
   intros c e e' H1 H2. destruct (Hcut c e' e H2 H1) as [Hq Hd].
-  split; [by apply (wf_eq_sym _ (proj1 HW))|by apply sdual_sym].
+  split; [by apply (wf_eq_dual_sym _ _ _ (proj1 HW))|by apply sdual_sym].
 Qed.
 
 Section cut_facts.
@@ -363,7 +363,7 @@ Section steps.
             clear -Hin HrC0 HC10. set_solver. }
           exists y. rewrite lookup_union, HΣer, lookup_intersection, Hy, Hvr. simpl.
           destruct (Hcut r x y HCr Hy) as [Hq Hd]. split_and!; [done| |by apply sdual_sym].
-          by apply (wf_eq_sym _ (proj1 HW')).
+          by apply (wf_eq_dual_sym _ _ _ (proj1 HW')).
     - subst Σvc. unfold tenv_of. rewrite dom_union_L, dom_fmap_L, dom_intersection_L, dom_union_L, HC0.
       apply map_disjoint_dom in Hd12. clear -HΘC1 HC1Σ1 HC1Σ2 Hd12 HC10 HdΣa HΣ1C0 HΣ2C0. set_solver.
     - assert (tenv_of Σv' ∪ (Θe ∪ tenv_of Σvc) = tenv_of Σv ∪ Θe) as ->; [|done].
@@ -552,7 +552,7 @@ Section steps.
               subst Σr1. by rewrite lookup_insert_ne. }
             by rewrite lookup_union, lookup_difference, H1ar, HCr, Hy. }
           destruct (Hdo r y x Hry Hx) as [Hq Hdu]. split; [|by apply sdual_sym].
-          by apply (wf_eq_sym _ (proj1 HW3)).
+          by apply (wf_eq_dual_sym _ _ _ (proj1 HW3)).
         * clear -HD2n HC1Σ2 HB12. set_solver.
         * clear -HD1n HDre Hr1a HC2Σ1 HC20 HΘC. set_solver.
         * intros r Hr1 Hr2. apply HD1n in Hr2. apply elem_of_union in Hr1 as [Hr1|Hr1].
@@ -654,7 +654,7 @@ Section steps.
     E1 = F1 ⊎ {[+ e +]} →
     tstep e (LSess (if bra then SBra c i else SSel c i)) e' → c ∉ C →
     Pchoice_case (if bra then Prel n' else Prel (S n')) W Σ T c i
-      (if bra then SWith else SPlus) (C, F1 ⊎ E2 ⊎ {[+ e' +]}).
+      (if bra then SWith else SPlus) (if bra then bra_pt else sel_pt) (C, F1 ⊎ E2 ⊎ {[+ e' +]}).
   Proof.
     intros HE Hst Hc. pose proof Hok as Hok0.
     destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
@@ -665,7 +665,7 @@ Section steps.
       apply PStepSession; [done|]. destruct bra; simpl; clear -Hc; set_solver. }
     pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hst1) as Hc1.
     assert (Pchoice_case (if bra then Prel n' else Prel (S n')) W (Σ1 ∪ ΣC) TA c i
-              (if bra then SWith else SPlus) (C1, F1 ⊎ {[+ e' +]})) as Hc1'
+              (if bra then SWith else SPlus) (if bra then bra_pt else sel_pt) (C1, F1 ⊎ {[+ e' +]})) as Hc1'
       by (destruct bra; exact Hc1).
     clear Hc1. destruct Hc1' as (Σ1a & s1 & s2 & k & (s0 & HΣa & Hu) & Hc1a & HP1').
     assert (c ∉ C0) as HcC0 by (clear -Hc; set_solver).
@@ -692,16 +692,16 @@ Section steps.
     - rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
       clear -Hc1a HcΣ1 Hd12. set_solver.
     - rewrite insert_union_l.
-      assert (<[c := (sbranch i s1 s2, pt_payload k (bidx i))]> (Σ1a ∖ ΣC) ##ₘ ΣC) as Hdj.
+      assert (<[c := (sbranch i s1 s2, (if bra then bra_pt else sel_pt) k i)]> (Σ1a ∖ ΣC) ##ₘ ΣC) as Hdj.
       { apply map_disjoint_insert_l. split; [done|]. by apply map_disjoint_difference_l1. }
-      assert (dom (<[c := (sbranch i s1 s2, pt_payload k (bidx i))]> (Σ1a ∖ ΣC)) ⊆ dom Σ1) as Hdm.
+      assert (dom (<[c := (sbranch i s1 s2, (if bra then bra_pt else sel_pt) k i)]> (Σ1a ∖ ΣC)) ⊆ dom Σ1) as Hdm.
       { rewrite dom_insert_L, dom_difference_L. intros r Hr.
         apply elem_of_union in Hr as [->%elem_of_singleton|Hr]; [done|].
         assert (r ∈ dom (Σ1 ∪ ΣC)) as H.
         { rewrite HΣa, dom_insert_L. clear -Hr. set_solver. }
         rewrite dom_union_L in H. clear -H Hr. set_solver. }
-      assert (<[c := (sbranch i s1 s2, pt_payload k (bidx i))]> (Σ1a ∖ ΣC) ∪ ΣC =
-              <[c := (sbranch i s1 s2, pt_payload k (bidx i))]> Σ1a) as Hre
+      assert (<[c := (sbranch i s1 s2, (if bra then bra_pt else sel_pt) k i)]> (Σ1a ∖ ΣC) ∪ ΣC =
+              <[c := (sbranch i s1 s2, (if bra then bra_pt else sel_pt) k i)]> Σ1a) as Hre
         by (by rewrite <-insert_union_l, HΣre).
       destruct bra.
       + apply iface_lower; [done|done|]. by rewrite Hre.

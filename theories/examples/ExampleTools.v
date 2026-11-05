@@ -33,9 +33,10 @@ Set Default Proof Using "All".
 Lemma geq_cn (E : prel) (cn : point → point) x y :
   (∀ x, cn (pt_shift 1 x) = pt_shift 1 (cn x)) →
   (∀ x y i, cn x = cn y → cn (pt_payload x i) = cn (pt_payload y i)) →
+  (∀ x y, cn x = cn y → cn (pt_dual x) = cn (pt_dual y)) →
   (∀ x y, E x y → cn x = cn y) →
   geq E x y → cn x = cn y.
-Proof. intros Hs Hl HE. induction 1; try congruence; auto. Qed.
+Proof. intros Hs Hl Hd HE. induction 1; try congruence; auto. Qed.
 
 Lemma wgen_strict_by {A} (R : A → A → Prop) N E L (cn : point → point) (r : point → A) :
   (∀ a, ¬ R a a) → (∀ a b c, R a b → R b c → R a c) →
@@ -47,15 +48,18 @@ Lemma wgen_strict_by {A} (R : A → A → Prop) N E L (cn : point → point) (r 
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, R (r x) (r (pt_shift 1 x))) →
   (∀ x y, L x y → R (r (cn x)) (r (cn y))) →
+  (∀ x y, cn x = cn y → cn (pt_dual x) = cn (pt_dual y)) →
+  (∀ x, R (r (cn x)) (r (cn (pt_shift 1 (pt_dual x))))) →
   strict (wgen N E L).
 Proof.
-  intros Hirr Htr HN HE HL Hs Hl Hc Hr HLr. split; [by apply wgen_wf|].
+  intros Hirr Htr HN HE HL Hs Hl Hc Hr HLr Hd Hrd. split; [by apply wgen_wf|].
   assert (∀ x y, glt E L x y → R (r (cn x)) (r (cn y))) as Hlt.
-  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - by apply HLr.
     - rewrite Hs. apply Hr.
     - apply (geq_cn E cn) in Hx, Hy; [|done..]. by rewrite Hx, <-Hy.
-    - by eapply Htr. }
+    - by eapply Htr.
+    - apply Hrd. }
   intros x H. apply Hlt in H. exact (Hirr _ H).
 Qed.
 
@@ -73,11 +77,13 @@ Lemma wgen_strict N E L (cn : point → point) (r : point → nat) :
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, r x < r (pt_shift 1 x)) →
   (∀ x y, L x y → r (cn x) < r (cn y)) →
+  (∀ x y, cn x = cn y → cn (pt_dual x) = cn (pt_dual y)) →
+  (∀ x, r (cn x) < r (cn (pt_shift 1 (pt_dual x)))) →
   strict (wgen N E L).
 Proof.
-  intros HN HE HL Hs Hl Hc Hr HLr.
+  intros HN HE HL Hs Hl Hc Hr HLr Hd Hrd.
   apply (wgen_strict_by lt N E L cn r); [intros a; lia|intros a b c; lia|exact HN|exact HE
-    |exact HL|exact Hs|by apply payload_respect|exact Hc|exact Hr|exact HLr].
+    |exact HL|exact Hs|by apply payload_respect|exact Hc|exact Hr|exact HLr|exact Hd|exact Hrd].
 Qed.
 
 (** Strictness when ≡ relates payload points (Forwarder.v). The map [cn]
@@ -91,9 +97,11 @@ Lemma wgen_strict_cong N E L (cn : point → point) (r : point → nat) :
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, r x < r (pt_shift 1 x)) →
   (∀ x y, L x y → r (cn x) < r (cn y)) →
+  (∀ x y, cn x = cn y → cn (pt_dual x) = cn (pt_dual y)) →
+  (∀ x, r (cn x) < r (cn (pt_shift 1 (pt_dual x)))) →
   strict (wgen N E L).
 Proof.
-  intros HN HE HL Hs Hl Hc Hr HLr.
+  intros HN HE HL Hs Hl Hc Hr HLr Hd Hrd.
   apply (wgen_strict_by lt N E L cn r); [intros a; lia|intros a b c; lia|done..].
 Qed.
 
@@ -110,12 +118,14 @@ Lemma wgen_strict_lex N E L (cn : point → point) (r : point → nat * nat) :
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, lexlt (r x) (r (pt_shift 1 x))) →
   (∀ x y, L x y → lexlt (r (cn x)) (r (cn y))) →
+  (∀ x y, cn x = cn y → cn (pt_dual x) = cn (pt_dual y)) →
+  (∀ x, lexlt (r (cn x)) (r (cn (pt_shift 1 (pt_dual x))))) →
   strict (wgen N E L).
 Proof.
-  intros HN HE HL Hs Hl Hc Hr HLr.
+  intros HN HE HL Hs Hl Hc Hr HLr Hd Hrd.
   apply (wgen_strict_by lexlt N E L cn r); [intros a; unfold lexlt; lia
     |intros a b c; unfold lexlt; lia|exact HN|exact HE
-    |exact HL|exact Hs|by apply payload_respect|exact Hc|exact Hr|exact HLr].
+    |exact HL|exact Hs|by apply payload_respect|exact Hc|exact Hr|exact HLr|exact Hd|exact Hrd].
 Qed.
 
 (** ** Ranks into ℤ with a top element
@@ -150,6 +160,8 @@ Lemma wgen_strict_z N E L (cn : point → point) (r : point → zrank) :
   (∀ x y, E x y → cn x = cn y) →
   (∀ x, zlt (r x) (r (pt_shift 1 x))) →
   (∀ x y, L x y → zlt (r (cn x)) (r (cn y))) →
+  (∀ x y, cn x = cn y → cn (pt_dual x) = cn (pt_dual y)) →
+  (∀ x, zlt (r (cn x)) (r (cn (pt_shift 1 (pt_dual x))))) →
   strict (wgen N E L).
 Proof. apply wgen_strict_by; [apply zlt_irrefl|apply zlt_trans]. Qed.
 
@@ -169,17 +181,19 @@ Lemma wgen_strict_den {D A} (R : A → A → Prop) N E L (den : point → D)
   (∀ x y, E x y → den x = den y) →
   (∀ d, R (r d) (r (dsh d))) →
   (∀ x y, L x y → R (r (den x)) (r (den y))) →
+  (∀ x, den (pt_dual x) = den x) →
   strict (wgen N E L).
 Proof.
-  intros Hirr Htr HN HE HL Hs Hl Hc Hr HLr. split; [by apply wgen_wf|].
+  intros Hirr Htr HN HE HL Hs Hl Hc Hr HLr Hd. split; [by apply wgen_wf|].
   assert (∀ x y, geq E x y → den x = den y) as Heq.
-  { induction 1; try congruence; auto; rewrite ?Hs, ?Hl; congruence. }
+  { induction 1; try congruence; auto; rewrite ?Hs, ?Hl, ?Hd; congruence. }
   assert (∀ x y, glt E L x y → R (r (den x)) (r (den y))) as Hlt.
-  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - by apply HLr.
     - rewrite Hs. apply Hr.
     - apply Heq in Hx, Hy. by rewrite Hx, <-Hy.
-    - by eapply Htr. }
+    - by eapply Htr.
+    - rewrite Hs, Hd. apply Hr. }
   intros x H. apply Hlt in H. exact (Hirr _ H).
 Qed.
 
@@ -194,31 +208,38 @@ Lemma c0_acyclic_den {D A} (R : A → A → Prop) n P (den : point → D)
   (∀ x y, P (FEq x y) → den x = den y) →
   (∀ d, R (r d) (r (dsh d))) →
   (∀ x y, P (FLt x y) → R (r (den x)) (r (den y))) →
+  (∀ x, den (pt_dual x) = den x) →
   c0_acyclic n (BCs [] P).
 Proof.
-  intros Hirr Htr Hs Hl HE Hr HL. split; [done|].
+  intros Hirr Htr Hs Hl HE Hr HL Hd. split; [done|].
   assert (∀ x y, geq (c0_eq n (BCs [] P)) x y → den x = den y) as Heq.
-  { induction 1 as [x y H| | | | |]; try congruence; rewrite ?Hs, ?Hl; try congruence.
+  { induction 1 as [x y H| | | | | |]; try congruence; rewrite ?Hs, ?Hl, ?Hd; try congruence.
     apply bcs_open_nil in H as [H _]. by apply HE. }
   assert (∀ x y, glt (c0_eq n (BCs [] P)) (c0_lt n (BCs [] P)) x y → R (r (den x)) (r (den y))) as Hlt.
-  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - apply bcs_open_nil in H as [H _]. by apply HL.
     - rewrite Hs. apply Hr.
     - apply Heq in Hx, Hy. by rewrite Hx, <-Hy.
-    - by eapply Htr. }
+    - by eapply Htr.
+    - rewrite Hs, Hd. apply Hr. }
   intros p H. exact (Hirr _ (Hlt _ _ H)).
 Qed.
 
-(** The same with a rank into ℕ and no ≡ facts. *)
+(** The same with a rank into ℕ and no ≡ facts. The rank must ignore
+    polarity (end points). *)
 Lemma c0_acyclic_rank n P (r : point → nat) :
   (∀ x, r x < r (pt_shift 1 x)) →
   (∀ x y, ¬ P (FEq x y)) → (∀ x y, P (FLt x y) → r x < r y) →
+  (∀ x, r (pt_dual x) = r x) →
   c0_acyclic n (BCs [] P).
 Proof.
-  intros Hr HE HL. apply (c0_acyclic_den lt n P id (pt_shift 1) pt_payload r); try done.
-  - intros a. lia.
-  - intros a b c. lia.
-  - intros x y H. by destruct (HE x y).
+  intros Hr HE HL Hd.
+  assert (∀ x, r (MkPt (pt_name x) true (pt_off x)) = r x) as Hrd.
+  { intros [p [] o]; [done|exact (Hd (MkPt p false o))]. }
+  apply (c0_acyclic_den lt n P (λ x, MkPt (pt_name x) true (pt_off x)) (pt_shift 1)
+           (λ x i, pt_payload x i) r);
+    [intros a; lia|intros a b c; lia|done|done|intros x y H; by destruct (HE x y)|exact Hr| |done].
+  intros x y H. rewrite !Hrd. by apply HL.
 Qed.
 
 (** A rank for top-level variables: w per variable index, one per step. *)
@@ -229,6 +250,10 @@ Definition vrank (w : nat) (x : point) : nat := w * pn_vidx (pt_name x) + pt_off
 
 Lemma vrank_shift w x : vrank w x < vrank w (pt_shift 1 x).
 Proof. unfold vrank, pt_shift. simpl. lia. Qed.
+
+Lemma vrank_dual w x : vrank w (pt_dual x) = vrank w x.
+Proof. done. Qed.
+
 
 (** The rank of a point is a weight per root constant, a payload point
     weighted by its base, plus a step per name times the offset. *)
@@ -355,7 +380,7 @@ Section rules.
   Context (W : world) (HW : world_wf W).
 
   Lemma comp0 Ψ : tenv_comp (seqs W Ψ) ∅ ∅ ∅.
-  Proof. apply tenv_comp_empty_l. intros ? ?. apply se_sym. Qed.
+  Proof. apply tenv_comp_empty_l, se_dsym. Qed.
 
   Lemma tenv_heads0 : tenv_heads ∅ = ∅.
   Proof. unfold tenv_heads. by rewrite map_fold_empty. Qed.
@@ -466,7 +491,9 @@ End futures.
 Lemma ple_inv p q : ple p q → pt_name p = pt_name q ∧ pt_off p ≤ pt_off q.
 Proof.
   intros [->|H]; [split; [done|lia]|].
-  induction H as [z|x y z _ [??] _ [??]]; [unfold pt_shift; simpl; split; [done|lia]|split; [congruence|lia]].
+  induction H as [z|z|x y z _ [??] _ [??]];
+    [unfold pt_shift; simpl; split; [done|lia]|unfold pt_shift; simpl; split; [done|lia]
+    |split; [congruence|lia]].
 Qed.
 
 (** ** Walks (K11)
@@ -548,9 +575,17 @@ Definition Wpo (cs : list nat) : world :=
 
 Lemma Wpo_strict cs : strict (Wpo cs).
 Proof.
-  apply (wgen_strict _ _ _ id (prank (λ _, 1) (λ _, 0) (λ _ _ _, 0))); try done.
+  apply (wgen_strict _ _ _ id (prank (λ _, 1) (λ _, 0) (λ _ _ _, 0))).
   - intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
-  - intros x. apply prank_shift. lia.
+  - done.
+  - done.
+  - done.
+  - done.
+  - done.
+  - intros x. unfold prank, pt_shift. simpl. lia.
+  - done.
+  - intros x y Hxy. unfold id in *. by subst.
+  - intros x. unfold id, prank, pt_shift. simpl. lia.
 Qed.
 
 (** The empty world of the examples supports no name. *)
@@ -587,7 +622,11 @@ Proof.
     rewrite !elem_of_list_to_set. by split.
   - intros x. by apply prank_shift.
   - intros x y Hxy. rewrite Forall_forall in Hr. apply (Hr _ Hxy).
+  - intros x y Hxy. unfold id in *. by subst.
+  - intros x. unfold id. pose proof (prank_shift k g h x Hk) as H.
+    unfold prank, pt_shift in *. simpl in *. lia.
 Qed.
+
 
 Lemma Wfacts_lt cs L x y : (x, y) ∈ L → w_lt (Wfacts cs L) x y.
 Proof. intros H. by apply glt_base. Qed.
@@ -709,16 +748,19 @@ Lemma cc_ok_inner peq plt P (R : point → point → Prop) :
   (∀ x y z, R x y → R y z → R x z) → (∀ x, ¬ R x x) →
   (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 x)) →
   (∀ g, P g → fact_scoped 1 g → ∃ x y, g = FLt x y ∧ R x y) →
+  (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 (pt_dual x))) →
   cc_ok peq plt (BCs [] P).
 Proof.
-  intros Ht Hi Hp HP.
+  intros Ht Hi Hp HP Hpd.
   apply (cc_model peq plt (BCs [] P) id R (λ _ _, False) (λ _ _, False)).
   - done.
   - done.
   - done.
   - intros x y i E. unfold id in *. by subst.
+  - done.
   - exact Ht.
   - exact Hp.
+  - exact Hpd.
   - exact Hi.
   - intros ? ? ? ? [].
   - intros a b Hg. apply bcs_open_nil in Hg as [Hg Hs]. destruct (HP _ Hg Hs) as (? & ? & E & _). discriminate E.

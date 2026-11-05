@@ -28,6 +28,10 @@ From LRGV Require Export relation.Worlds.
 
 Set Default Proof Using "All".
 
+(** The root of an instance is the root of the instantiated name. *)
+Lemma pt_root_inst σ x : pt_root (pt_inst σ x) = pt_root (pn_inst σ (pt_name x)).
+Proof. destruct x as [n [] o]; done. Qed.
+
 (** ** Theories *)
 
 Record theory (E L : prel) : Prop := {
@@ -38,7 +42,9 @@ Record theory (E L : prel) : Prop := {
   th_payload x y i : E x y → E (pt_payload x i) (pt_payload y i);
   th_lt_trans x y z : L x y → L y z → L x z;
   th_lt_eq x x' y y' : E x x' → L x' y' → E y' y → L x y;
-  th_po x : L x (pt_shift 1 x)
+  th_po x : L x (pt_shift 1 x);
+  th_dual x y : E x y → E (pt_dual x) (pt_dual y);
+  th_dpo x : L x (pt_shift 1 (pt_dual x))
 }.
 
 Lemma theory_gen E L : theory (geq E) (glt E L).
@@ -55,9 +61,12 @@ Proof.
   - apply (wf_lt_trans _ HW).
   - apply (wf_lt_eq _ HW).
   - apply (wf_lt_po _ HW).
+  - apply (wf_eq_dual _ HW).
+  - apply (wf_lt_dpo _ HW).
 Qed.
 
-(** Same name, strictly later offset: program order. *)
+(** Same name, strictly later offset: program order. The polarities
+    may differ, because x ≺ x̄+1 is program order too (end points). *)
 Definition pofs (x y : point) : Prop := pt_name x = pt_name y ∧ pt_off x < pt_off y.
 
 Lemma pofs_trans x y z : pofs x y → pofs y z → pofs x z.
@@ -74,7 +83,10 @@ Proof. unfold pofs, pt_root. intros [-> _]. done. Qed.
 
 (** Program order of a world is [ppo], which is [pofs]. *)
 Lemma ppo_pofs x y : ppo x y → pofs x y.
-Proof. induction 1; [apply pofs_shift|by eapply pofs_trans]. Qed.
+Proof.
+  induction 1; [apply pofs_shift| |by eapply pofs_trans].
+  unfold pofs, pt_shift. simpl. split; [done|lia].
+Qed.
 
 Lemma pofs_ppo x y : pofs x y → ppo x y.
 Proof. intros [Hn Ho]. by apply ppo_same. Qed.
@@ -82,10 +94,10 @@ Proof. intros [Hn Ho]. by apply ppo_same. Qed.
 Lemma pt_shift_S k x : pt_shift 1 (pt_shift k x) = pt_shift (S k) x.
 Proof. unfold pt_shift. simpl. f_equal. lia. Qed.
 
-Lemma pofs_is_shift x y : pofs x y → ∃ k, y = pt_shift (S k) x.
+Lemma pofs_is_shift x y : pofs x y → ∃ k, y = pt_shift (S k) x ∨ y = pt_shift (S k) (pt_dual x).
 Proof.
-  destruct x as [p o], y as [q o']. unfold pofs, pt_shift. simpl. intros [-> Ho].
-  exists (o' - o - 1). f_equal. lia.
+  destruct x as [p b o], y as [q b' o']. unfold pofs, pt_shift, pt_dual. simpl. intros [-> Ho].
+  exists (o' - o - 1). destruct b, b'; simpl; [left|right|right|left]; f_equal; lia.
 Qed.
 
 Lemma th_po_n E L k x : theory E L → L x (pt_shift (S k) x).
@@ -95,43 +107,51 @@ Proof.
   - rewrite <-pt_shift_S. eapply (th_lt_trans _ _ HT); [exact IH|apply (th_po _ _ HT)].
 Qed.
 
+Lemma th_ppo E L x y : theory E L → ppo x y → L x y.
+Proof.
+  intros HT. induction 1; [apply (th_po _ _ HT)|apply (th_dpo _ _ HT)|by eapply (th_lt_trans _ _ HT)].
+Qed.
+
 Lemma th_pofs E L x y : theory E L → pofs x y → L x y.
-Proof. intros HT H. destruct (pofs_is_shift x y H) as [k ->]. by apply (th_po_n E L). Qed.
+Proof. intros HT H. apply (th_ppo E L x y HT). by apply pofs_ppo. Qed.
 
 Lemma map_shift_n (f : point → point) :
   (∀ x, f (pt_shift 1 x) = pt_shift 1 (f x)) → ∀ k x, f (pt_shift k x) = pt_shift k (f x).
 Proof.
   intros Hs k. assert (∀ y, pt_shift 0 y = y) as H0.
-  { intros [p o]. unfold pt_shift. simpl. f_equal. lia. }
+  { intros [p b o]. unfold pt_shift. simpl. f_equal. lia. }
   induction k as [|k IH]; intros x.
   - by rewrite !H0.
   - rewrite <-(pt_shift_S k x), <-(pt_shift_S k (f x)). by rewrite Hs, IH.
 Qed.
 
-(** A map that commutes with successor and x ↦ x[i] carries the closure of
-    generators into every theory that holds their images. *)
+(** A map that commutes with successor, x ↦ x[i] and x ↦ x̄ carries the
+    closure of generators into every theory that holds their images. *)
 Lemma gen_map E L E' L' (f : point → point) :
   theory E' L' →
   (∀ x, f (pt_shift 1 x) = pt_shift 1 (f x)) →
   (∀ x i, f (pt_payload x i) = pt_payload (f x) i) →
+  (∀ x, f (pt_dual x) = pt_dual (f x)) →
   (∀ x y, E x y → E' (f x) (f y)) → (∀ x y, L x y → L' (f x) (f y)) →
   (∀ x y, geq E x y → E' (f x) (f y)) ∧ (∀ x y, glt E L x y → L' (f x) (f y)).
 Proof.
-  intros HT Hs Hl HE HL.
+  intros HT Hs Hl Hd HE HL.
   assert (∀ x y, geq E x y → E' (f x) (f y)) as Hq.
-  { induction 1 as [x y H|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH].
+  { induction 1 as [x y H|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
     - auto.
     - apply (th_refl _ _ HT).
     - by apply (th_sym _ _ HT).
     - by eapply (th_trans _ _ HT).
     - rewrite !Hs. by apply (th_shift _ _ HT).
-    - rewrite !Hl. by apply (th_payload _ _ HT). }
+    - rewrite !Hl. by apply (th_payload _ _ HT).
+    - rewrite !Hd. by apply (th_dual _ _ HT). }
   split; [done|].
-  induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
   - auto.
   - rewrite Hs. apply (th_po _ _ HT).
   - eapply (th_lt_eq _ _ HT); [by apply Hq|exact IH|by apply Hq].
   - by eapply (th_lt_trans _ _ HT).
+  - rewrite Hs, Hd. apply (th_dpo _ _ HT).
 Qed.
 
 Lemma gen_mono E L E' L' :
@@ -140,7 +160,7 @@ Lemma gen_mono E L E' L' :
 Proof.
   intros HE HL.
   destruct (gen_map E L (geq E') (glt E' L') id (theory_gen E' L')) as [H1 H2];
-    [done|done|intros; apply geq_base; auto|intros; apply glt_base; auto|].
+    [done|done|done|intros; apply geq_base; auto|intros; apply glt_base; auto|].
   split; intros x y H; [exact (H1 _ _ H)|exact (H2 _ _ H)].
 Qed.
 
@@ -154,15 +174,16 @@ Lemma gen_triv (rn : pname) E L :
 Proof.
   intros HE HL.
   assert (∀ x y, geq E x y → x = y ∨ (pt_root x ≠ rn ∧ pt_root y ≠ rn)) as Hq.
-  { induction 1 as [x y H|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH].
+  { induction 1 as [x y H|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
     - right. auto.
     - by left.
     - naive_solver.
     - destruct IH1 as [->|[??]], IH2 as [->|[??]]; [by left|right..]; done.
     - destruct IH as [->|[??]]; [by left|right; done].
+    - destruct IH as [->|[??]]; [by left|right; done].
     - destruct IH as [->|[??]]; [by left|right; done]. }
   split; [done|].
-  induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
   - right. auto.
   - left. apply pofs_shift.
   - apply Hq in Hx, Hy. unfold pofs, pt_root in *.
@@ -171,6 +192,7 @@ Proof.
   - unfold pofs, pt_root in *.
     destruct IH1 as [[??]|[??]], IH2 as [[??]|[??]];
       first [left; split; [congruence|lia]|right; split; congruence].
+  - left. unfold pofs. simpl. split; [done|lia].
 Qed.
 
 (** The relation of a flag: ≡ at [false], ≺ at [true]. *)
@@ -198,6 +220,7 @@ Section interp.
   Context (g : point → point).
   Context (Hgs : ∀ x, g (pt_shift 1 x) = pt_shift 1 (g x)).
   Context (Hgl : ∀ x i, g (pt_payload x i) = pt_payload (g x) i).
+  Context (Hgd : ∀ x, g (pt_dual x) = pt_dual (g x)).
   Context (Hg1 : ∀ p, pt_root p = NVar 0 → pt_root (g p) = rt).
   Context (Hg2 : ∀ x, pt_root x ≠ NVar 0 → pt_root (g x) ≠ rt).
   Context (Hg3 : ∀ p q, pt_root p = NVar 0 → pt_root q = NVar 0 → g p = g q → p = q).
@@ -349,12 +372,35 @@ Section interp.
           first [by apply (th_payload _ _ HK)|by apply (th_payload _ _ HT)].
   Qed.
 
+  Lemma V_dual x y : V false x y → V false (pt_dual x) (pt_dual y).
+  Proof.
+    intros [(Hx & Hy & H)|[(p & w & b1 & b2 & Hp & -> & Hw & Hy & H1 & H2 & Hb)
+           |[(q & w & b1 & b2 & Hq & -> & Hw & Hx & H1 & H2 & Hb)|(p & q & Hp & Hq & -> & -> & H)]]].
+    - left. split_and!; [done|done|by apply (th_dual _ _ HT)].
+    - destruct b1, b2; try done. right; left. exists (pt_dual p), (pt_dual w), false, false.
+      rewrite Hgd. split_and!; try done; simpl in *;
+        [by apply (th_dual _ _ HK)|rewrite Hgd; by apply (th_dual _ _ HT)].
+    - destruct b1, b2; try done. right; right; left. exists (pt_dual q), (pt_dual w), false, false.
+      rewrite Hgd. split_and!; try done; simpl in *;
+        [rewrite Hgd; by apply (th_dual _ _ HT)|by apply (th_dual _ _ HK)].
+    - right; right; right. exists (pt_dual p), (pt_dual q). rewrite !Hgd. split_and!; try done.
+      destruct H as [H|(w & w' & b1 & b2 & b3 & Hw & Hw' & H1 & H2 & H3 & Hb)].
+      + left. simpl in *. by apply (th_dual _ _ HK).
+      + destruct b1, b2, b3; try done. right. exists (pt_dual w), (pt_dual w'), false, false, false.
+        rewrite !Hgd. split_and!; try done; simpl in *;
+          first [by apply (th_dual _ _ HK)|by apply (th_dual _ _ HT)].
+  Qed.
+
   Lemma V_pofs x y : pofs x y → Nt x → V true x y.
   Proof.
-    intros Hxy Hx. destruct (pofs_is_shift x y Hxy) as [k ->].
-    destruct (Hg4 x Hx) as (p & Hp & <-). right; right; right.
-    exists p, (pt_shift (S k) p). split_and!; try done; [by rewrite (map_shift_n g Hgs)|].
-    left. simpl. by apply (th_po_n KE KL).
+    intros Hxy Hx. destruct (pofs_is_shift x y Hxy) as [k [->| ->]].
+    - destruct (Hg4 x Hx) as (p & Hp & <-). right; right; right.
+      exists p, (pt_shift (S k) p). split_and!; try done; [by rewrite (map_shift_n g Hgs)|].
+      left. simpl. by apply (th_po_n KE KL).
+    - destruct (Hg4 x Hx) as (p & Hp & <-). right; right; right.
+      exists p, (pt_shift (S k) (pt_dual p)). split_and!; try done;
+        [by rewrite (map_shift_n g Hgs), Hgd|].
+      left. simpl. apply (th_pofs KE KL); [done|]. unfold pofs, pt_shift. simpl. split; [done|lia].
   Qed.
 
   Lemma V_po x : V true x (pt_shift 1 x).
@@ -362,6 +408,13 @@ Section interp.
     destruct (decide (Nt x)) as [Hx|Hx].
     - apply V_pofs; [apply pofs_shift|done].
     - left. split_and!; [done|done|apply (th_po _ _ HT)].
+  Qed.
+
+  Lemma V_dpo x : V true x (pt_shift 1 (pt_dual x)).
+  Proof.
+    destruct (decide (Nt x)) as [Hx|Hx].
+    - apply V_pofs; [|done]. unfold pofs, pt_shift. simpl. split; [done|lia].
+    - left. split_and!; [done|done|apply (th_dpo _ _ HT)].
   Qed.
 
   Lemma V_base b x y : rb KE KL b x y → V b (g x) (g y).
@@ -378,7 +431,7 @@ Section interp.
     (∀ x y, glt (λ x y, E x y ∨ De x y) (λ x y, L x y ∨ Dl x y) x y → V true x y).
   Proof.
     assert (∀ x y, geq (λ x y, E x y ∨ De x y) x y → V false x y) as Hq.
-    { induction 1 as [x y [H|H]|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH].
+    { induction 1 as [x y [H|H]|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
       - destruct (decide (Nt x)) as [Hx|Hx]; [rewrite (HEn x y H) by auto; apply V_refl|].
         destruct (decide (Nt y)) as [Hy|Hy]; [rewrite (HEn x y H) by auto; apply V_refl|].
         left. by split_and!.
@@ -387,9 +440,10 @@ Section interp.
       - by apply V_sym.
       - exact (V_trans false false _ _ _ IH1 IH2).
       - by apply V_shift.
-      - by apply V_payload. }
+      - by apply V_payload.
+      - by apply V_dual. }
     split; [done|].
-    induction 1 as [x y [H|H]|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    induction 1 as [x y [H|H]|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - destruct (decide (Nt x)) as [Hx|Hx]; [apply V_pofs; auto|].
       destruct (decide (Nt y)) as [Hy|Hy].
       + pose proof (HLn x y H (or_intror Hy)) as Hp. exfalso. apply Hx. by rewrite (pofs_root x y Hp).
@@ -398,6 +452,7 @@ Section interp.
     - apply V_po.
     - apply Hq in Hx, Hy. exact (V_trans true false _ _ _ (V_trans false true _ _ _ Hx IH) Hy).
     - exact (V_trans true true _ _ _ IH1 IH2).
+    - apply V_dpo.
   Qed.
 
   Theorem interp :
@@ -433,7 +488,7 @@ End interp.
 Lemma cc_up_root R x y : cc_up R x y → pt_root x ≠ NVar 0 ∧ pt_root y ≠ NVar 0.
 Proof.
   assert (∀ z, pt_root (pt_inst (λ a, pvar (a + 1)) z) ≠ NVar 0) as Hr.
-  { intros [p o]. unfold pt_inst, pt_root, pt_shift. simpl.
+  { intros z. rewrite pt_root_inst. destruct z as [p bb o]. unfold pt_root. simpl.
     induction p as [c|c|q IH b i]; simpl; [done|intros [=]; lia|done]. }
   intros (x0 & y0 & _ & -> & ->). split; apply Hr.
 Qed.
@@ -467,8 +522,10 @@ Section model.
   Context (Hφs : ∀ x, φ (pt_shift 1 x) = pt_shift 1 (φ x)).
   Context (Hφl : ∀ x i, pt_root (φ x) ≠ NVar 0 → φ (pt_payload x i) = pt_payload (φ x) i).
   Context (Hφr : ∀ x y i, φ x = φ y → φ (pt_payload x i) = φ (pt_payload y i)).
+  Context (Hφd : ∀ x, φ (pt_dual x) = pt_dual (φ x)).
   Context (HRt : ∀ x y z, R x y → R y z → R x z).
   Context (HRp : ∀ p, pt_root p = NVar 0 → R p (pt_shift 1 p)).
+  Context (HRd : ∀ p, pt_root p = NVar 0 → R p (pt_shift 1 (pt_dual p))).
   Context (HRi : ∀ p, ¬ R p p).
   Context (HB : ∀ u p q v, Lo u p → Hi q v → (p = q ∨ R p q) → TL u v).
   Context (HCe : ∀ a b, bcs_open 1 C (FEq a b) → TE (φ a) (φ b)).
@@ -573,7 +630,7 @@ Section model.
     (∀ x y, geq E1 x y → TE (φ x) (φ y)) ∧ (∀ x y, glt E1 L1 x y → N (φ x) (φ y)).
   Proof.
     assert (∀ x y, geq E1 x y → TE (φ x) (φ y)) as Hq.
-    { induction 1 as [x y [H|H]|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH].
+    { induction 1 as [x y [H|H]|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
       - destruct (cc_up_root _ _ _ H). rewrite !Hφo by done. by apply geq_base.
       - by apply HCe.
       - apply geq_refl.
@@ -584,9 +641,10 @@ Section model.
         { rewrite (Hφr x y i (cc_eq_new peq _ _ IH (or_introl Hx))). apply geq_refl. }
         destruct (decide (pt_root (φ y) = NVar 0)) as [Hy|Hy].
         { rewrite (Hφr x y i (cc_eq_new peq _ _ IH (or_intror Hy))). apply geq_refl. }
-        rewrite !Hφl by done. by apply geq_payload. }
+        rewrite !Hφl by done. by apply geq_payload.
+      - rewrite !Hφd. by apply geq_dual. }
     split; [done|].
-    induction 1 as [x y [H|H]|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+    induction 1 as [x y [H|H]|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - destruct (cc_up_root _ _ _ H) as [Hx Hy]. rewrite !Hφo by done.
       left. split_and!; [done|done|by apply glt_base].
     - by apply HCl.
@@ -595,6 +653,9 @@ Section model.
       + left. split_and!; [done|done|apply glt_po].
     - apply Hq in Hx, Hy. eapply N_eql; [exact Hx|]. by eapply N_eqr.
     - by eapply N_trans.
+    - rewrite Hφs, Hφd. destruct (decide (pt_root (φ x) = NVar 0)) as [Hx|Hx].
+      + right; right; right. split_and!; [done|done|]. left. by apply HRd.
+      + left. split_and!; [done|done|apply glt_dpo].
   Qed.
 
   Theorem cc_model : cc_ok peq plt C.
@@ -627,6 +688,7 @@ Proof. intros H. apply geq_base. by exists x, y. Qed.
 Lemma cc_ok_transfer peq plt peq' plt' C C' (f : point → point) :
   (∀ x, f (pt_shift 1 x) = pt_shift 1 (f x)) →
   (∀ x i, f (pt_payload x i) = pt_payload (f x) i) →
+  (∀ x, f (pt_dual x) = pt_dual (f x)) →
   (∀ p, pt_root p = NVar 0 → pt_root (f p) = NVar 0) →
   (∀ x, pt_root x ≠ NVar 0 → pt_root (f x) ≠ NVar 0) →
   (∀ p q, pt_root p = NVar 0 → pt_root q = NVar 0 → f p = f q → p = q) →
@@ -636,16 +698,16 @@ Lemma cc_ok_transfer peq plt peq' plt' C C' (f : point → point) :
   (∀ g, bcs_open 1 C' g → ∃ g0, bcs_open 1 C g0 ∧ g = fact_map f g0) →
   cc_ok peq plt C → cc_ok peq' plt' C'.
 Proof.
-  intros Hs Hl H1 H2 H3 H4 He Hlt HC [Hacy [Hce Hcl]].
+  intros Hs Hl Hd H1 H2 H3 H4 He Hlt HC [Hacy [Hce Hcl]].
   destruct (gen_map (cc_up peq) (cc_up plt) (geq (cc_up peq')) (glt (cc_up peq') (cc_up plt')) f
-              (theory_gen _ _) Hs Hl He Hlt) as [Mq Ml].
+              (theory_gen _ _) Hs Hl Hd He Hlt) as [Mq Ml].
   destruct (interp (geq (cc_up peq')) (glt (cc_up peq') (cc_up plt')) (theory_gen _ _) (NVar 0)
               (λ x y H Hr, cc_eq_new peq' x y H Hr)
               (λ x y H Hr, match proj2 (cc_triv peq' plt') x y H with
                            | or_introl Hp => Hp
                            | or_intror (conj Ha Hb) => match Hr with or_introl E => False_rect _ (Ha E)
                                                                    | or_intror E => False_rect _ (Hb E) end end)
-              (geq (cc_eq peq C)) (glt (cc_eq peq C) (cc_lt plt C)) (theory_gen _ _) f Hs Hl H1 H2 H3 H4
+              (geq (cc_eq peq C)) (glt (cc_eq peq C) (cc_lt plt C)) (theory_gen _ _) f Hs Hl Hd H1 H2 H3 H4
               ltac:(intros x y Hx Hy H; apply Mq; by apply Hce)
               ltac:(intros x y Hx Hy H; apply Ml; by apply Hcl)
               ltac:(intros p H; destruct (Hacy p H) as [x Hx]; exists (f x); by apply Ml)
@@ -700,9 +762,12 @@ Section world.
   Fixpoint ga_name (p : pname) : pname :=
     match p with NPayload q b i => NPayload (ga_name q) b i | _ => ga_root p end.
 
-  Definition ga (x : point) : point := Pt (ga_name (pt_name x)) (pt_off x).
+  Definition ga (x : point) : point := MkPt (ga_name (pt_name x)) (pt_pol x) (pt_off x).
 
   Lemma ga_shift x : ga (pt_shift 1 x) = pt_shift 1 (ga x).
+  Proof. done. Qed.
+
+  Lemma ga_dual x : ga (pt_dual x) = pt_dual (ga x).
   Proof. done. Qed.
 
   Lemma ga_payload x i : ga (pt_payload x i) = pt_payload (ga x) i.
@@ -731,19 +796,19 @@ Section world.
 
   Lemma ga_inj_new p q : pt_root p = NVar 0 → pt_root q = NVar 0 → ga p = ga q → p = q.
   Proof.
-    destruct p as [p o], q as [q o']. unfold ga, pt_root. simpl. intros Hp Hq [=E ->].
+    destruct p as [p b o], q as [q b' o']. unfold ga, pt_root. simpl. intros Hp Hq [=E -> ->].
     f_equal. by apply ga_name_inj_new.
   Qed.
 
   Lemma ga_surj_new y : pt_root y = NConst a → ∃ p, pt_root p = NVar 0 ∧ ga p = y.
   Proof.
-    destruct y as [n o]. unfold pt_root, ga. simpl. intros Hn.
+    destruct y as [n bb o]. unfold pt_root, ga. simpl. intros Hn.
     assert (∃ p, pn_root p = NVar 0 ∧ ga_name p = n) as (p & Hp & <-).
     { induction n as [c|c|q IH b i]; simpl in *.
       - injection Hn as ->. by exists (NVar 0).
       - done.
       - destruct (IH Hn) as (p & Hp & <-). by exists (NPayload p b i). }
-    by exists (Pt p o).
+    by exists (MkPt p bb o).
   Qed.
 
   (** On points rooted at 0 or at a constant other than a, [ga] is the
@@ -752,7 +817,7 @@ Section world.
     (pt_root x = NVar 0 ∨ ∃ c, pt_root x = NConst c ∧ c ≠ a) →
     ga x = pt_inst (plist [pconst a]) x.
   Proof.
-    destruct x as [n o]. unfold ga, pt_inst, pt_root. simpl. intros Hr.
+    destruct x as [n bb o]. unfold ga, pt_inst, pt_root. simpl. intros Hr.
     assert (∀ n, (pn_root n = NVar 0 ∨ ∃ c, pn_root n = NConst c ∧ c ≠ a) →
               pn_inst (plist [pconst a]) n = Pt (ga_name n) 0) as Hn.
     { induction n0 as [c|[|c]|q IH b i]; simpl; intros H.
@@ -760,7 +825,7 @@ Section world.
       - done.
       - destruct H as [?|(? & ? & _)]; done.
       - rewrite IH by done. done. }
-    rewrite (Hn n Hr). unfold pt_shift. simpl. try (f_equal; lia).
+    rewrite (Hn n Hr). destruct bb; unfold pt_polar, pt_shift, pt_dual; simpl; try (f_equal; lia).
   Qed.
 End world.
 
@@ -773,7 +838,10 @@ Qed.
 
 Lemma pt_inst_root_vb σ k x :
   pn_vb k (pt_name x) → ∃ j, j < k ∧ pt_root (pt_inst σ x) = pt_root (σ j).
-Proof. intros H. destruct (pn_vb_inst_root σ k _ H) as (j & ? & E). exists j. split; [done|exact E]. Qed.
+Proof.
+  intros H. destruct (pn_vb_inst_root σ k _ H) as (j & ? & E). exists j. split; [done|].
+  rewrite pt_root_inst. exact E.
+Qed.
 
 (** The points of the facts of C under the binder, at outer points known
     in W: their root is 0 or a name of W. *)
@@ -791,11 +859,12 @@ Proof.
     unfold plist. destruct (lookup_lt_is_Some_2 (bc_env C) (j - 1)) as [e He]; [lia|]. rewrite He.
     pose proof (proj1 (Forall_lookup _ _) HK _ _ He) as Hk. unfold pt_known in Hk.
     destruct (wf_names_const _ HW _ Hk) as [c Hc].
-    destruct e as [n o]. unfold pt_root in *. simpl in *.
+    rewrite pt_root_inst. destruct e as [n bb o]. unfold pt_root in *. simpl in *.
     assert (∀ n, pn_root n = NConst c →
               pn_root (pt_name (pn_inst (λ a', pvar (a' + 1)) n)) = NConst c) as Hc'.
     { induction n0 as [c'|c'|q IH b i]; simpl; [done|done|]. intros Hq. by apply IH. }
-    unfold pt_inst. simpl. rewrite Hc'; [|done]. by rewrite <-Hc. }
+    rewrite Hc'; [|done]. by rewrite <-Hc. }
+
   destruct f as [u v|u v]; destruct Hs as [Hu Hv]; simpl in *; destruct Hx as [<-|<-]; by apply Hz.
 Qed.
 
@@ -811,7 +880,9 @@ Proof.
   (* W sends Γ under the binder back to W *)
   assert (∀ x, pt_root (pt_inst (λ b, pvar (b + 1)) x) ≠ NVar 0 ∧
                (pt_root x ∈ w_names W → ga a (pt_inst (λ b, pvar (b + 1)) x) = x)) as Hup.
-  { intros [n o]. unfold pt_root, pt_inst, ga. simpl.
+  { intros [n bb o]. rewrite pt_root_inst.
+    assert (∀ n, pt_pol (pn_inst (λ b, pvar (b + 1)) n) = true) as Hpol.
+    { intros n0. destruct n0; done. }
     assert (∀ n, pn_root (pt_name (pn_inst (λ b, pvar (b + 1)) n)) ≠ NVar 0 ∧
                  (pn_root n ∈ w_names W →
                   ga_name a (pt_name (pn_inst (λ b, pvar (b + 1)) n)) = n ∧
@@ -823,7 +894,11 @@ Proof.
       - destruct IH as [IH1 IH2]. split; [done|]. intros Hq. destruct (IH2 Hq) as [E1 E2].
         split; [|done]. simpl. rewrite E1. f_equal. lia. }
     destruct (Hn n) as [H1 H2]. split; [done|]. intros Hr. destruct (H2 Hr) as [E1 E2].
-    rewrite E1. simpl. f_equal. lia. }
+    unfold pt_root in Hr. simpl in Hr.
+    unfold pt_inst. simpl. pose proof (Hpol n) as Hp.
+    destruct (pn_inst (λ b, pvar (b + 1)) n) as [nn pp oo]. simpl in *. subst pp oo.
+    destruct bb; unfold pt_polar, pt_dual, ga, pt_shift; simpl; rewrite E1; f_equal; lia. }
+
   assert (∀ x y, cc_up (w_eq W) x y → w_eq W (ga a x) (ga a y)) as Mq.
   { intros x y (x0 & y0 & H & -> & ->).
     destruct (wf_eq_supp _ HW _ _ H) as [->|[Hx Hy]]; [apply (wf_eq_refl _ HW)|].
@@ -832,18 +907,19 @@ Proof.
   { intros x y (x0 & y0 & H & -> & ->).
     destruct (wf_lt_supp _ HW _ _ H) as [Hp%ppo_pofs|[Hx Hy]].
     - apply (th_pofs _ _ (ga a (pt_inst (λ b, pvar (b + 1)) x0)) _ (theory_world W HW)).
-      destruct x0 as [p o], y0 as [q o']. destruct Hp as [Hn Ho]. simpl in *. subst q.
-      unfold pofs, ga, pt_inst, pt_shift. simpl. split; [done|lia].
+      destruct x0 as [p b o], y0 as [q b' o']. destruct Hp as [Hn Ho]. simpl in *. subst q.
+      unfold pofs, ga, pt_inst. destruct b, b'; simpl; split; try done; lia.
     - rewrite (proj2 (Hup x0) Hx), (proj2 (Hup y0) Hy). done. }
   destruct (gen_map (cc_up (w_eq W)) (cc_up (w_lt W)) (w_eq W) (w_lt W) (ga a) (theory_world W HW)
-              (ga_shift a) (ga_payload a) Mq Ml) as [Gq Gl].
+              (ga_shift a) (ga_payload a) (ga_dual a) Mq Ml) as [Gq Gl].
   destruct (interp (w_eq W) (w_lt W) (theory_world W HW) (NConst a)
               ltac:(intros x y H Hr; destruct (wf_eq_supp _ HW _ _ H) as [?|[Hx Hy]]; [done|];
                     exfalso; destruct Hr as [Hr|Hr]; rewrite <-Hr in *; by apply Ha)
               ltac:(intros x y H Hr; destruct (wf_lt_supp _ HW _ _ H) as [?%ppo_pofs|[Hx Hy]]; [done|];
                     exfalso; destruct Hr as [Hr|Hr]; rewrite <-Hr in *; by apply Ha)
               (geq (cc_eq (w_eq W) C)) (glt (cc_eq (w_eq W) C) (cc_lt (w_lt W) C)) (theory_gen _ _)
-              (ga a) (ga_shift a) (ga_payload a) (ga_root_new a) (ga_root_old a) (ga_inj_new a)
+              (ga a) (ga_shift a) (ga_payload a) (ga_dual a) (ga_root_new a) (ga_root_old a) (ga_inj_new a)
+
               (ga_surj_new a)
               ltac:(intros x y Hx Hy H; apply Gq; by apply Hce)
               ltac:(intros x y Hx Hy H; apply Gl; by apply Hcl)

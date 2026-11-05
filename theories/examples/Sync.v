@@ -33,7 +33,7 @@ Proof.
   fresh_clean.
   tstep.
   { cbn. tstep.
-    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NVar 0) 1)) (Some (pvar 0)) 0); [set_solver| |].
+    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NVar 0) 1)) (Some (pt_dual (pvar 0))) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
       tstep.

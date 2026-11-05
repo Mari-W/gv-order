@@ -21,12 +21,13 @@ Proof.
   - apply pofs_irrefl.
   - intros x _. apply pofs_shift.
   - intros g [].
+  - intros x _. unfold pofs, pt_shift. simpl. split; [done|lia].
 Qed.
 
 Lemma c0_nofacts : creation_ok 0 nofact nofact (λ _, False) nofacts.
 Proof.
   apply c0_acyclic_creation, (c0_acyclic_rank 0 _ pt_off);
-    [intros x; cbn; lia|by intros ? ? []|by intros ? ? []].
+    [intros x; cbn; lia|by intros ? ? []|by intros ? ? []|done].
 Qed.
 
 (** ** sync
@@ -37,7 +38,7 @@ Qed.
 Definition sync_a : aexpr :=
   ALetNew Ssync nofacts
     (ALetU (AApp (AKonst KSpawn)
-              (ALam (Some (pv 0 1)) (Some (pv 0 0)) TUnit
+              (ALam (Some (pv 0 1)) (Some (pt_dual (pv 0 0))) TUnit
                  (ALetU (AVar 0) (AApp (AKonst KClos) (AApp (AKonst KSend) (APair AUnit (AVar 2)))))))
        (ALetP (AApp (AKonst KRecv) (AVar 0)) (ALetU (AVar 1) (AApp (AKonst KClos) (AVar 0))))).
 
@@ -63,13 +64,18 @@ Qed.
 
 (** ** cycle
 
-    Two channels. The second is created under the constraint γ ≺ ε, the
-    slice of the facts the two closes need. *)
+    Two channels. The second is created under the constraint γ̂ ≺ ε̂,
+    the four facts between the ends of γ and of ε (end points: the
+    thread closes γ̄ while it holds ε̄ and needs γ̄ ≺ ε, the main thread
+    closes γ while it holds ε and needs γ ≺ ε̄). *)
+Definition hat_lo (x : point) : bcs :=
+  BCs [x] (λ g, ∃ b c, g = FLt (pt_polar b (pvar 1)) (pt_polar c (pvar 0))).
+
 Definition cycle_a : aexpr :=
   ALetNew SEnd nofacts
-    (ALetNew SEnd (fresh_bcs [pvar 0] [])
+    (ALetNew SEnd (hat_lo (pvar 0))
        (ALetU (AApp (AKonst KSpawn)
-                 (ALam (Some (pvar 0)) (Some (pvar 1)) TUnit
+                 (ALam (Some (pt_dual (pvar 0))) (Some (pvar 1)) TUnit
                     (ALetU (AVar 0) (ALetU (AApp (AKonst KClos) (AVar 5)) (AApp (AKonst KClos) (AVar 1))))))
           (ALetU (AApp (AKonst KClos) (AVar 5)) (AApp (AKonst KClos) (AVar 1))))).
 
@@ -79,18 +85,17 @@ Proof. reflexivity. Qed.
 Lemma cycle_a_type : (fst <$> synth 0 ∅ [] (∅, None) cycle_a) = Some TUnit.
 Proof. vm_compute. reflexivity. Qed.
 
-(** The creation constraint {γ ≺ ε} of the second channel is a creation
-    constraint over any context that knows γ. *)
-Lemma cc_ok_lo peq plt x : cc_ok peq plt (fresh_bcs [x] []).
+(** The creation constraint γ̂ ≺ ε̂ of the second channel is a creation
+    constraint over any context that knows γ: every fact enters ε̂ from
+    outside, and no fact leaves it. *)
+Lemma cc_ok_hat_lo peq plt x : cc_ok peq plt (hat_lo x).
 Proof.
-  apply cc_ok_fresh.
-  - left. intros f Hf Hs. destruct Hf as [(i & Hi & ->)|(j & Hj & ->)]; [|simpl in Hj; lia].
-    left. eexists _, _. split; [done|]. split_and!; [left; by exists i|done|done|done].
-  - apply fresh_between_lt.
-    + intros f Hf Hs. destruct Hf as [(i & Hi & ->)|(j & Hj & ->)]; [|simpl in Hj; lia].
-      left. eexists _, _. split; [done|]. split_and!; [left; by exists i|done|done|done].
-    + intros u p q v _ (Hf & _ & Hq & _) _. destruct Hf as [(i & Hi & E)|(j & Hj & E)]; [|simpl in Hj; lia].
-      injection E as -> ->. exfalso. cbn in Hq. by inversion Hq.
+  assert (fresh_lt (hat_lo x)) as Hlt.
+  { intros f (b & c & ->) Hs. left. eexists _, _. split; [done|].
+    split_and!; [by exists b, c|done|by destruct c|by destruct b]. }
+  apply cc_ok_fresh; [by left|]. apply fresh_between_lt; [done|].
+  intros u p q v _ (Hf & _ & Hq & Hv) _. destruct Hf as (b & c & E). injection E as -> ->.
+  by destruct b.
 Qed.
 
 Lemma set_map_empty_pt (f : point → point) : set_map (C:=gset point) (D:=gset point) f ∅ = ∅.
@@ -103,17 +108,24 @@ Proof.
   cbn. rewrite fhyps_pinst_empty, !lookup_insert_eq, !set_map_empty_pt. cbn.
   set (Ψ := [(bcs_inst (pshift 1) (bcs_inst (pshift 1) nofacts), []);
              (bcs_inst (pshift 1) (bcs_inst (pshift 1) nofacts), [pt_inst (pshift 1) (pvar 0)]);
-             (bcs_inst (pshift 1) (fresh_bcs [pvar 0] []), [pvar 0])]).
-  assert (hlt Ψ (pt_inst (pshift 1) (pvar 0)) (pvar 0)) as Hγε.
-  { apply (hl_h Ψ ∅ _ (pvar 0)). exists (bcs_inst (pshift 1) (fresh_bcs [pvar 0] [])), [pvar 0].
-    split; [by right; right; left|]. rewrite bcs_inst_fresh. apply fresh_open. left.
-    exists (pt_inst (pshift 1) (pvar 0)). split; [by left|done]. }
+             (bcs_inst (pshift 1) (hat_lo (pvar 0)), [pvar 0])]).
+  assert (∀ b c, hlt Ψ (pt_polar b (pt_inst (pshift 1) (pvar 0))) (pt_polar c (pvar 0))) as Hγε.
+  { intros b c. apply (hl_h Ψ ∅). exists (bcs_inst (pshift 1) (hat_lo (pvar 0))), [pvar 0].
+    split; [by right; right; left|].
+    eexists. split.
+    - exists (FLt (pt_polar b (pvar 1)) (pt_polar c (pvar 0))).
+      split_and!; [by exists b, c|destruct b, c; cbn; split; lia|reflexivity].
+    - destruct b, c; reflexivity. }
+  pose proof (Hγε false false) as H1. pose proof (Hγε false true) as H2.
+  pose proof (Hγε true false) as H3. pose proof (Hγε true true) as H4. cbn [pt_polar] in *.
   split_and!; try done.
   all: try apply cc_ok_nofacts.
-  all: try apply cc_ok_lo.
+  all: try apply cc_ok_hat_lo.
   all: try (eexists _, _, _; split_and!; [by right; left|by left|done]).
-  all: try (intros y Hy; mem_cases Hy; first [left; apply he_refl|right; exact Hγε|exact Hγε]).
+  all: try (intros y Hy; mem_cases Hy; rewrite ?pt_dual_dual; first [left; apply he_refl|done]).
   all: try (left; apply he_refl).
-  all: try (right; exact Hγε).
-  all: try exact Hγε.
+  all: try (right; done).
+  all: try (intros y Hy; mem_cases Hy; rewrite ?pt_dual_dual;
+            first [right; exact H4|left; exact (he_refl _ (pvar 1))]).
+  all: try done.
 Qed.

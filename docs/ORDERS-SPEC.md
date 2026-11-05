@@ -1,4 +1,13 @@
-# Order-based GV♯: specification (state of 2026-11-04, after sharp edges 149: choice at x[i] (K11), constants as constrained schemes, C₀ as creation constraint, absent bounds)
+# Order-based GV♯: specification (state of 2026-11-05, end points: one point per end, see the next section; earlier state of 2026-11-04, after sharp edges 149: choice at x[i] (K11), constants as constrained schemes, C₀ as creation constraint, absent bounds)
+
+End points (docs/extensions/end-points.md, branch end-points). Every end of a
+channel has its own point. A point carries a polarity, x̄ is the point of the
+other end, and x̄[i] = x[i]. The two ends of a channel sit at dual points
+(new gives S@ι ⊗ dual S@ῑ), heads are partner points (heads(S@x) = {x̄}), and
+every duality condition below that reads x ≡ y for two ends reads x ≡ ȳ.
+Worlds and Γ ⊢ ≡ are closed under x ↦ x̄, and program order adds x ≺ x̄+1. A
+selecting end continues at (x[i])‾, a branching end at x[i]. Where the text
+below still writes one point for both ends, read the end-points form.
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
@@ -146,9 +155,9 @@ x + n ≔ (p, b + n)  for x = (p, b)
 Δ    ::= · | x : T | Δ, Δ
 prim ∗,  prim T ⊗ U,  prim T + U,  prim □T if prim T     (as in the paper)
 
-heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ι}      heads(T ⊸^u_ℓ U) = {ℓ}, ∅ without ℓ
+heads(∗) = heads(□σ) = ∅      heads(S@ι) = {ῑ}      heads(T ⊸^u_ℓ U) = {ℓ}, ∅ without ℓ
 heads(T ⊗ U) = heads(T + U) = heads(T) ∪ heads(U)
-heads(c : S@x) = {x}         heads(Σ, Δ) = ⋃ heads of the entries
+heads(c : S@x) = {x̄}         heads(Σ, Δ) = ⋃ heads of the entries
 ```
 
 - ∀ appears only directly under □ (never on linear functions, never inside session types).
@@ -184,11 +193,12 @@ link(t)      = some t —c↔d→ t′                            link(p) = some
 ready_W(Θ ∣ F, t) ≔ stable(t) ⇒                                          terms (sharp edges 63, 68)
                       (offered(t) = ∅  ⇒  t is a value)
                     ∧ (link(t)  ∨  ∀o ∈ offered(t).  ∀y ∈ heads(entries(Θ) ∖ offered(t)) ∪ F.  head(o) ≺_W y)
+                    (head(c : S@x) = x, heads(c : S@x) = {x̄}: the offered point lies below the partner points)
 
 ready_W(Σ, p) ≔ stable(p) ⇒                                              processes (sharp edges 68)
                   link(p)
                 ∨ ((offered(p) = ∅  ⇒  p is terminated)
-                   ∧ ∀e ∈ entries(Σ) ∖ offered(p).  ∃o ∈ offered(p).  head(o) ≺_W head(e))
+                   ∧ ∀e ∈ entries(Σ) ∖ offered(p).  ∃o ∈ offered(p).  head(o) ≺_W (head(e))‾)
 ```
 
 Link does not block (sharp edges 68). P-Act-Link fires it as a τ once one of
@@ -402,10 +412,10 @@ spawn  : (∗ ⊸^u_ℓ ∗) ⊸ ∗                                       ∅
 send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι S@(ι+1)                        {ι ≺ h ∣ h ∈ heads(P[ι])}, no instance
                                                                  when P[ι] carries the ⊥ flag
 recv   : (?P;S)@ι ⊸^ι P[ι] ⊗ S@(ι+1)                          ∅
-selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@ι[i]                              {ι ≺ ι[i]}              (K11)
-branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]                     {ι ≺ ι[0], ι ≺ ι[1]}    (case dispatches)
+selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@(ι[i])‾                           {ι ≺ ι[i]}              (K11)
+branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]                     {ι ≺ (ι[0])‾, ι ≺ (ι[1])‾}    (case dispatches)
 close  : Close@ι ⊸^ι ∗                                          ∅
-link   : S@ι ⊗ dual S@ι′ ⊸ ∗                                    {ι ≡ ι′}
+link   : S@ι ⊗ dual S@ι′ ⊸ ∗                                    {ι ≡ (ι′)‾}
          (link never blocks, so E-App asks no future fact for it. The paper's link has no
           order at all, sharp edges 68)
 force  : □(∀ιs αs. C. ∗ ⊸^u T) ⊸^{u[ιs′/ιs]} T[ιs′/ιs][ss/αs]   C[ιs′/ιs], with ιs′ known and
@@ -416,7 +426,7 @@ new is the one constant outside the schemes. It creates a fresh point and has no
 instantiate, so its premise is that C is a creation constraint over the context with known
 outer points (sharp edges 97, 103, 105).
 
-new    : ∗ ⊸ ∃ι≽⊥. C. S@ι ⊗ dual S@ι        creation_ok 1 Γ C: C is acyclic and conservative over Γ,
+new    : ∗ ⊸ ∃ι≽⊥. C. S@ι ⊗ dual S@ῑ        creation_ok 1 Γ C: C is acyclic and conservative over Γ,
                                              every outer point of C known
 
 Rocq: konst_sig k T G xs is the table of schemes, konst_ty has the constructors KTSig (a scheme

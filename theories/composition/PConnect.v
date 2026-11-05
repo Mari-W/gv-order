@@ -193,7 +193,7 @@ Qed.
 
 (** P-Connect (§11). Component 1 runs at T, component 2 at ∗, and they
     share the cut C₀: Σ_C and Σ_C′ hold the two ends of each channel of
-    C₀, dual and at aliased points of W₁ ⊔ W₂. The remaining premises
+    C₀, dual and at dual points of W₁ ⊔ W₂ (end points). The remaining premises
     are the spec's implicit well-formedness: worlds well formed, and the
     restricted sets and the interfaces pairwise disjoint. *)
 Theorem Prel_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :
@@ -201,7 +201,7 @@ Theorem Prel_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :
   sem_ptyped W1 (Σ1 ∪ ΣC) (C1, E1) T → sem_ptyped W2 (Σ2 ∪ ΣC') (C2, E2) TUnit →
   dom ΣC = C0 → dom ΣC' = C0 →
   (∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' →
-     w_eq (wjoin W1 W2) e.2 e'.2 ∧ sdual e.1 e'.1) →
+     w_eq (wjoin W1 W2) e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1) →
   C1 ## dom Σ2 → C2 ## dom Σ1 →
   strict (wjoin W1 W2) → world_wf W1 → world_wf W2 →
   Σ1 ##ₘ ΣC → Σ2 ##ₘ ΣC' → Σ1 ##ₘ Σ2 →

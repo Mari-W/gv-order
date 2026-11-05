@@ -143,7 +143,7 @@ Proof.
             ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') as Hm.
   { refine (proj2 (fl_map _ (w_eq W1)
       (λ a b, ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
     - intros x0 y0 H. by apply He.
     - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
     - apply (wf_eq_refl _ Hwf).
@@ -160,7 +160,9 @@ Proof.
       exact (wf_lt_eq _ Hwf a' a' y y' (wf_eq_refl _ Hwf a') (H a' y' Ha' eq_refl) Hy).
     - intros a y b H1 H2 a' b' Ha' Hb'.
       exact (wf_lt_trans _ Hwf a' y b' (H1 a' y Ha' eq_refl) (H2 y b' eq_refl Hb')).
-    - intros x0 ? ? -> ->. apply (wf_lt_po _ Hwf). }
+    - intros x0 ? ? -> ->. apply (wf_lt_po _ Hwf).
+    - apply (wf_eq_dual _ Hwf).
+    - intros x0 ? ? -> ->. apply (wf_lt_dpo _ Hwf). }
   intros y Hy. unfold sf_inst in Hy. rewrite Hb in Hy. simpl in Hy.
   rewrite union_empty_r_L in Hy. apply elem_of_union in Hy as [Hy|Hy].
   - exact (Hm _ _ (HP y Hy) x y eq_refl eq_refl).
@@ -774,17 +776,17 @@ Qed.
 
 Lemma t_new_at W Φ Ψ Θ Δ F e T S x :
   strict W → skn W Ψ x →
-  typed W Φ Ψ Θ (Some (TSess (dual S) x) :: Some (TSess S x) :: None :: None :: Δ) F e T →
+  typed W Φ Ψ Θ (Some (TSess (dual S) (pt_dual x)) :: Some (TSess S x) :: None :: None :: Δ) F e T →
   typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
   intros HW Hx Hb. unfold let_new.
   destruct (alias_bcs_ok W Ψ x Hx) as (_ & HK & _).
   pose proof (cc_ok_alias (seqs W Ψ) (slt W Ψ) x) as HC.
   set (C := alias_bcs x).
-  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
+  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
   (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
   apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
-  { apply tenv_comp_empty_l, se_sym. }
+  { apply tenv_comp_empty_l, se_dsym. }
   { apply lenv_split_nones_l. }
   { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
     - apply tenv_comp_empty_r.
@@ -798,14 +800,14 @@ Proof.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)
   apply (t_letstar W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
-  { apply tenv_comp_empty_l, se_sym. }
+  { apply tenv_comp_empty_l, se_dsym. }
   { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
   { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence. }
   (* open p, with the hypothesis ι ≡ x *)
   apply (t_open W Φ Ψ Θ _ F _ 1 LBot 1 C
-           (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))) T); [done|intros Hun; exact Hun|].
+           (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
   cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
   change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
   set (Ψ1 := hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
@@ -819,14 +821,15 @@ Proof.
     simpl. rewrite !pt_inst_pvar_at. done. }
   (* let ⟨a, b⟩ = p, the pair moved from ι to x *)
   apply (t_letpair W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
-           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))
+           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
               :: lenv_nones (lenv_pinst (pshift 1) Δ))
            (None :: None :: lenv_pinst (pshift 1) Δ)
-           _ _ _ (TSess S (pt_inst (pshift 1) x)) (TSess (dual S) (pt_inst (pshift 1) x))).
-  - apply tenv_comp_empty_l, se_sym.
+           _ _ _ (TSess S (pt_inst (pshift 1) x)) (TSess (dual S) (pt_inst (pshift 1) (pt_dual x)))).
+  - apply tenv_comp_empty_l, se_dsym.
   - apply lsplit_none, lsplit_l, lenv_split_nones_l.
-  - apply (t_conv W _ _ _ _ _ _ (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
-    { split; split; [exact Hal|apply seq_refl|exact Hal|apply seq_refl]. }
+  - apply (t_conv W _ _ _ _ _ _ (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
+    { split; split; [exact Hal|apply seq_refl| |apply seq_refl].
+      rewrite pt_inst_dual. by apply se_dual. }
     apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence.
@@ -928,8 +931,8 @@ Section c0_world.
     | NPayload q b i => NPayload (c0_back q) b i
     end.
 
-  Definition c0_pt (x : point) : point := Pt (c0_name (pt_name x)) (pt_off x).
-  Definition c0_bpt (x : point) : point := Pt (c0_back (pt_name x)) (pt_off x).
+  Definition c0_pt (x : point) : point := MkPt (c0_name (pt_name x)) (pt_pol x) (pt_off x).
+  Definition c0_bpt (x : point) : point := MkPt (c0_back (pt_name x)) (pt_pol x) (pt_off x).
 
   Definition c0_consts : list point := pconst <$> List.seq 0 n.
 
@@ -959,8 +962,8 @@ Section c0_world.
 
   Lemma pt_inst_consts x : pn_vb n (pt_name x) → pt_inst (plist c0_consts) x = c0_pt x.
   Proof.
-    destruct x as [p o]. simpl. intros H. unfold pt_inst. simpl. rewrite pn_inst_consts by done.
-    done.
+    destruct x as [p [] o]; simpl; intros H; unfold pt_inst; simpl; rewrite pn_inst_consts by done;
+      done.
   Qed.
 
   (** Under the binder of n variables with no outer points, the facts of
@@ -974,8 +977,8 @@ Section c0_world.
 
   Lemma pt_inst_pup_vb σ x : pn_vb n (pt_name x) → pt_inst (pup n σ) x = x.
   Proof.
-    destruct x as [p o]. simpl. intros H. unfold pt_inst. simpl. rewrite pn_inst_pup_vb by done.
-    unfold pt_shift. simpl. done.
+    destruct x as [p [] o]; simpl; intros H; unfold pt_inst; simpl; rewrite pn_inst_pup_vb by done;
+      unfold pt_shift; simpl; done.
   Qed.
 
   Lemma c0_open_vb g :
@@ -1011,7 +1014,7 @@ Section c0_world.
     - destruct (gen_map (λ x y, ∃ x0 y0, c0_eq n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
                   (λ x y, ∃ x0 y0, c0_lt n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
                   (geq (c0_eq n C)) (glt (c0_eq n C) (c0_lt n C)) c0_bpt
-                  (theory_gen _ _)) as [_ Gl]; [done|done| | |].
+                  (theory_gen _ _)) as [_ Gl]; [done|done|done| | |].
       + intros x y (x0 & y0 & H & -> & ->). destruct (c0_open_vb _ Henv H) as [[Hx Hy] _].
         unfold c0_bpt, c0_pt. simpl. rewrite !c0_back_name by done.
         destruct x0, y0. by apply geq_base.
@@ -1025,7 +1028,7 @@ Section c0_world.
   Proof.
     intros HC. pose proof (wc0_strict HC) as HS.
     destruct (gen_map (λ _ _, False) (λ _ _, False) (w_eq wc0) (w_lt wc0) id
-                (theory_world _ (proj1 HS))) as [Gq Gl]; [done|done|done|done|].
+                (theory_world _ (proj1 HS))) as [Gq Gl]; [done|done|done|done|done|].
 
     split_and!; [simpl; set_solver|exact Gq|exact Gl|done].
   Qed.
@@ -1068,21 +1071,18 @@ Notation nofact := (λ _ _ : point, False).
 Lemma glt_nofact x y : glt nofact nofact x y → pofs x y.
 Proof.
   assert (∀ x y, geq nofact x y → x = y) as Hq by (induction 1; subst; done).
-  induction 1 as [x y []|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  induction 1 as [x y []|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
   - apply pofs_shift.
   - apply Hq in Hx, Hy. by subst.
   - by eapply pofs_trans.
+  - unfold pofs, pt_shift. simpl. split; [done|lia].
 Qed.
 
 Lemma pofs_glt (E L : point → point → Prop) x y : pofs x y → glt E L x y.
 Proof.
-  destruct x as [p o], y as [q o']. intros [Hn Ho]. simpl in *. subst q.
-  replace o' with (o + S (o' - o - 1)) by lia. generalize (o' - o - 1) as k. intros k.
-  induction k as [|k IH].
-  - replace (o + 1) with (pt_off (pt_shift 1 (Pt p o))) by (simpl; lia). apply glt_po.
-  - eapply glt_trans; [exact IH|].
-    replace (o + S (S k)) with (pt_off (pt_shift 1 (Pt p (o + S k)))) by (simpl; lia). apply glt_po.
+  intros H. apply pofs_ppo in H. induction H; [apply glt_po|apply glt_dpo|by eapply glt_trans].
 Qed.
+
 
 Section c0_creation.
   Context (n : nat) (C : bcs) (Henv : bc_env C = []).
@@ -1100,11 +1100,12 @@ Section c0_creation.
   Lemma c0_geq x y :
     geq (cc_eq_at n nofact C) x y → x = y ∨ (pn_vb n (pt_name x) ∧ pn_vb n (pt_name y)).
   Proof.
-    induction 1 as [x y H|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH].
+    induction 1 as [x y H|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
     - right. by apply c0_cc_eq.
     - by left.
     - destruct IH as [->|[??]]; [by left|by right].
     - destruct IH1 as [->|[??]]; [done|]. destruct IH2 as [->|[??]]; by right.
+    - destruct IH as [->|[??]]; [by left|by right].
     - destruct IH as [->|[??]]; [by left|by right].
     - destruct IH as [->|[??]]; [by left|by right].
   Qed.
@@ -1112,14 +1113,16 @@ Section c0_creation.
   Lemma c0_glt x y :
     glt (cc_eq_at n nofact C) (cc_lt_at n nofact C) x y → ¬ pn_vb n (pt_name x) → pofs x y.
   Proof.
-    induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2]; intros Hn.
+    induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x]; intros Hn.
     - by destruct (c0_cc_lt x y H).
     - apply pofs_shift.
     - destruct (c0_geq x x' Hx) as [<-|[??]]; [|done].
       destruct (IH Hn) as [E Ho].
       destruct (c0_geq y' y Hy) as [<-|[Hv _]]; [done|]. by rewrite <-E in Hv.
     - pose proof (IH1 Hn) as [E Ho]. eapply pofs_trans; [done|]. apply IH2. by rewrite <-E.
+    - unfold pofs, pt_shift. simpl. split; [done|lia].
   Qed.
+
 End c0_creation.
 
 Lemma c0_creation_ok n C :

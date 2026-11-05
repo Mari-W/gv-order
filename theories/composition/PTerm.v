@@ -141,7 +141,7 @@ Ltac tlk := repeat (progress (rewrite ?lookup_union, ?lookup_tenv_of, ?ounion_So
 Lemma tok_at W Σ ΘB C0 x :
   tok W Σ ΘB C0 →
   (x ∈ C0 ↔ is_Some (ΘB !! x)) ∧ (Σ !! x = None ∨ ΘB !! x = None) ∧
-  (∀ o, ΘB !! x = Some o → ∃ e1 e2, o = Both e1 e2 ∧ w_eq W e1.2 e2.2 ∧ sdual e1.1 e2.1).
+  (∀ o, ΘB !! x = Some o → ∃ e1 e2, o = Both e1 e2 ∧ w_eq W e1.2 (pt_dual e2.2) ∧ sdual e1.1 e2.1).
 Proof.
   intros [HW Hd Hdj Hb Hdu]. split_and!.
   - by rewrite <-Hd, elem_of_dom.
@@ -235,7 +235,7 @@ Proof.
   intros Hok HW HdC (Hon & Hdu2 & Hbo).
   pose proof (tok_mono _ _ _ _ _ HW Hok) as Hok'.
   assert (∀ x, (x ∈ C0 ↔ is_Some (ΘB !! x)) ∧ (Σr !! x = None ∨ ΘB !! x = None) ∧
-    (∀ o, ΘB !! x = Some o → ∃ e1 e2, o = Both e1 e2 ∧ w_eq W' e1.2 e2.2 ∧ sdual e1.1 e2.1))
+    (∀ o, ΘB !! x = Some o → ∃ e1 e2, o = Both e1 e2 ∧ w_eq W' e1.2 (pt_dual e2.2) ∧ sdual e1.1 e2.1))
     as Hat by (intros x; by apply tok_at).
   assert (∀ x, is_Some (Θ2 !! x) → ΘB !! x = None) as H2B.
   { intros x Hx. destruct (Hat x) as (HC & _). destruct (ΘB !! x) eqn:E; [|done].
@@ -245,7 +245,7 @@ Proof.
     apply elem_of_difference. split; [by eapply elem_of_dom_2|].
     rewrite elem_of_dom. unfold tenv_ones. rewrite lookup_omap, Hx. simpl. by intros []. }
   assert (∀ x e1 e2, Σr !! x = Some e1 → Θ2 !! x = Some (One e2) →
-            w_eq W' e1.2 e2.2 ∧ sdual e1.1 e2.1) as HΣ2.
+            w_eq W' e1.2 (pt_dual e2.2) ∧ sdual e1.1 e2.1) as HΣ2.
   { intros x e1 e2 H1 H2. apply (Hon x); [done|]. unfold tenv_ones.
     rewrite lookup_omap, H2. done. }
   assert (∀ x, (ΘB !! x = None ∨ (∃ o, ΘB !! x = Some o ∧ Σr !! x = None ∧ Θ2 !! x = None)) ∧ True) as Hx0.
@@ -306,7 +306,7 @@ Lemma comp_at W Σ ΘB C0 Θ1 Θ2 x :
   (∃ e, ΘB !! x = None ∧ Σ !! x = Some e ∧ Θ1 !! x = Some (One e) ∧ Θ2 !! x = None) ∨
   (∃ e, ΘB !! x = None ∧ Σ !! x = Some e ∧ Θ1 !! x = None ∧ Θ2 !! x = Some (One e)) ∨
   (∃ e1 e2, ΘB !! x = Some (Both e1 e2) ∧ Σ !! x = None ∧
-     w_eq W e1.2 e2.2 ∧ sdual e1.1 e2.1 ∧
+     w_eq W e1.2 (pt_dual e2.2) ∧ sdual e1.1 e2.1 ∧
      ((Θ1 !! x = Some (Both e1 e2) ∧ Θ2 !! x = None) ∨
       (Θ1 !! x = None ∧ Θ2 !! x = Some (Both e1 e2)) ∨
       (Θ1 !! x = Some (One e1) ∧ Θ2 !! x = Some (One e2)) ∨
@@ -385,7 +385,7 @@ Proof.
         intros [= <-]; simpl; try done.
       * eexists. split; [done|]. done.
       * eexists. split; [done|].
-        split; [by apply (wf_eq_sym _ (proj1 (tok_strict _ _ _ _ Hok)))|by apply sdual_sym].
+        split; [by apply (wf_eq_dual_sym _ _ _ (proj1 (tok_strict _ _ _ _ Hok)))|by apply sdual_sym].
   - intros x. dset. tlk. rewrite elem_of_singleton. intros Hx [Hy| ->].
     + destruct (Hca x) as [(H1&H2&H3&H4)|[(e0&H1&H2&H3&H4)|[(e0&H1&H2&H3&H4)|(e1&e2&H1&H2&_&_&H)]]];
         cat_rw H1 H2 H3 H4; simpl in *; fin_is.
@@ -435,6 +435,8 @@ Proof.
     [..|destruct H as [(H3&H4)|[(H3&H4)|[(H3&H4)|(H3&H4)]]]; cat_rw H3 H4 H4 H4; simpl in *;
         rewrite ?ounion_Some, ?ounion_None in *].
   assert (∀ x y, w_eq W x y → w_eq W y x) as Hsym by apply (wf_eq_sym _ (proj1 HW)).
+  assert (∀ x y, w_eq W x (pt_dual y) → w_eq W y (pt_dual x)) as Hdsym
+    by (intros; by apply (wf_eq_dual_sym _ _ _ (proj1 HW))).
   split_and!.
   - apply map_eq. intros x. tlk. rewrite !lookup_tenv_ones, lookup_tenv_boths. tlk.
     sp_cases Hca x; done.
@@ -507,7 +509,7 @@ Qed.
 Lemma link_env W Σ ΘB C0 Θm Θ1 c' d' ec ed c d :
   tok W Σ ΘB C0 → c ∈ C0 → {[c'; d']} = ({[c; d]} : gset chan) →
   tenv_ext Θ1 d' ed Θm → tenv_ext Θm c' ec (tenv_of Σ ∪ ΘB) →
-  sdual ed.1 ec.1 → w_eq W ec.2 ed.2 →
+  sdual ed.1 ec.1 → w_eq W ec.2 (pt_dual ed.2) →
   (c = d ∧ Θ1 = tenv_of Σ ∪ delete c ΘB) ∨
   (c ≠ d ∧ ∃ Θ' ΘB', tenv_move W c d Θ1 Θ' ∧ tconv W Θ' (tenv_of Σ ∪ ΘB') ∧
      tok W Σ ΘB' (C0 ∖ {[c]})).
@@ -515,7 +517,11 @@ Proof.
   intros Hok HcC Hcd H1 H2 Hdu Heq.
   pose proof (tok_strict _ _ _ _ Hok) as HW.
   assert (∀ x y, w_eq W x y → w_eq W y x) as Hsym by apply (wf_eq_sym _ (proj1 HW)).
+  assert (∀ x y, w_eq W x (pt_dual y) → w_eq W y (pt_dual x)) as Hdsym
+    by (intros; by apply (wf_eq_dual_sym _ _ _ (proj1 HW))).
   assert (∀ x y z, w_eq W x y → w_eq W y z → w_eq W x z) as Htr by apply (wf_eq_trans _ (proj1 HW)).
+  assert (∀ x y, w_eq W x (pt_dual y) → w_eq W (pt_dual x) y) as Hdl
+    by (intros; by apply (wf_eq_dual_l _ _ _ (proj1 HW))).
   destruct (tok_at W Σ ΘB C0 c Hok) as (HC & HΣB & HB).
   destruct (proj1 HC HcC) as [oc Hoc].
   destruct (HB oc Hoc) as (c1 & c2 & -> & Hq12 & Hd12).
@@ -552,16 +558,16 @@ Proof.
       rewrite Ho1, Ho2 by done. done. }
     (* the removed entries at c and d, linked *)
     assert (∃ xc xd, removed (tenv_of Σ ∪ ΘB) Θ1 c xc ∧ removed (tenv_of Σ ∪ ΘB) Θ1 d xd ∧
-              sdual xc.1 xd.1 ∧ w_eq W xc.2 xd.2) as (xc & xd & Rc & Rd & Hxd & Hxq).
+              sdual xc.1 xd.1 ∧ w_eq W xc.2 (pt_dual xd.2)) as (xc & xd & Rc & Rd & Hxd & Hxq).
     { assert ((c' = c ∧ d' = d) ∨ (c' = d ∧ d' = c)) as [[-> ->]|[-> ->]].
       { assert (c ∈ ({[c'; d']} : gset chan)) as Hc' by (rewrite Hcd; clear; set_solver).
         assert (c' ∈ ({[c; d]} : gset chan)) as Hc'' by (rewrite <-Hcd; clear; set_solver).
         assert (d' ∈ ({[c; d]} : gset chan)) as Hd' by (rewrite <-Hcd; clear; set_solver).
         clear -Hc' Hc'' Hd' Hne'. set_solver. }
       - exists ec, ed. split_and!; [done|done|by apply sdual_sym|done].
-      - exists ed, ec. split_and!; [done|done|done|by apply Hsym]. }
+      - exists ed, ec. split_and!; [done|done|done|by apply Hdsym]. }
     (* the remaining end of c *)
-    assert (∃ rc, Θ1 !! c = Some (One rc) ∧ sdual xc.1 rc.1 ∧ w_eq W xc.2 rc.2)
+    assert (∃ rc, Θ1 !! c = Some (One rc) ∧ sdual xc.1 rc.1 ∧ w_eq W xc.2 (pt_dual rc.2))
       as (rc & Hrc & Hrcd & Hrcq).
     { destruct (removed_both _ _ _ _ _ _ _ Rc HΣc Hoc) as (r & Hr & [[-> ->]|[-> ->]]);
         exists r; split_and!; eauto using sdual_sym. }
@@ -571,12 +577,13 @@ Proof.
     + (* d restricted: fusion *)
       destruct (HBd od eq_refl) as (d1 & d2 & -> & Hq12' & Hd12').
       assert (Σ !! d = None) as HΣd by (destruct HΣBd; congruence).
-      assert (∃ rd, Θ1 !! d = Some (One rd) ∧ sdual xd.1 rd.1 ∧ w_eq W xd.2 rd.2)
+      assert (∃ rd, Θ1 !! d = Some (One rd) ∧ sdual xd.1 rd.1 ∧ w_eq W xd.2 (pt_dual rd.2))
         as (rd & Hrd & Hrdd & Hrdq).
       { destruct (removed_both _ _ _ _ _ _ _ Rd HΣd Hod) as (r & Hr & [[-> ->]|[-> ->]]);
           exists r; split_and!; eauto using sdual_sym. }
       assert (sdual rc.1 rd.1) as Hrr by (eapply sdual_seq_l; [apply seq_sym, Hseq|exact Hrdd]).
-      assert (w_eq W rc.2 rd.2) as Hrq by eauto.
+      assert (w_eq W rc.2 (pt_dual rd.2)) as Hrq.
+      { eapply Htr; [apply Hdsym; exact Hrcq|]. eapply Htr; [apply Hdl; exact Hxq|exact Hrdq]. }
       exists (<[d := Both rc rd]> (delete c Θ1)), (<[d := Both rc rd]> (delete c ΘB)). split_and!.
       * split_and!.
         -- tlk. done.
@@ -614,7 +621,9 @@ Proof.
         -- tlk. rewrite Hrc, Hd1. constructor.
         -- intros f1 f2. rewrite Hd1. discriminate.
       * intros x. destruct (decide (x = d)) as [->|Hxd'].
-        { tlk. rewrite HΣd. simpl. rewrite ounion_Some. split; [done|]. eauto. }
+        { tlk. rewrite HΣd. simpl. rewrite ounion_Some. split; [done|].
+          first [eapply Htr; [apply Hdsym; exact Hrcq|apply Hdl; exact Hxq]
+                |apply Hsym; eapply Htr; [apply Hdsym; exact Hrcq|apply Hdl; exact Hxq]]. }
         destruct (decide (x = c)) as [->|Hxc].
         { tlk. rewrite HΣc. done. }
         tlk. rewrite Ho by done. tlk. destruct ((One <$> Σ !! x) ∪ ΘB !! x); simpl; [apply (ends_conv_refl W (proj1 HW))|done].
@@ -735,21 +744,21 @@ Section level.
   Lemma case_choice c i t' (bra : bool) :
     tstep t (LSess (if bra then SBra c i else SSel c i)) t' → c ∉ C0 →
     Pchoice_case (if bra then Prel n' else Prel (S n')) W Σ T c i
-      (if bra then SWith else SPlus) (C0, {[+ t' +]}).
+      (if bra then SWith else SPlus) (if bra then bra_pt else sel_pt) (C0, {[+ t' +]}).
   Proof.
     intros Hst HcC. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc0.
     assert (∃ Θr s1 s2 k Θ', tenv_hd (tenv_of Σ ∪ ΘB) c ((if bra then SWith else SPlus) s1 s2) k Θr ∧
-              tenv_ext Θr c (sbranch i s1 s2, pt_payload k (bidx i)) Θ' ∧
+              tenv_ext Θr c (sbranch i s1 s2, (if bra then bra_pt else sel_pt) k i) Θ' ∧
               (if bra then Erel n' else Erel (S n')) W Θ' T ∅ t') as Hc
       by (destruct bra; exact Hc0).
     clear Hc0. destruct Hc as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
     destruct (hd_iface _ _ _ _ _ _ _ _ Hok HcC Hhd) as (s0 & HΣc & Hu & ->).
     pose proof (ΘB_none_of _ _ _ _ _ Hok HcC) as HBc.
-    assert (Θ' = tenv_of (<[c := (sbranch i s1 s2, pt_payload k (bidx i))]> (delete c Σ)) ∪ ΘB) as ->.
+    assert (Θ' = tenv_of (<[c := (sbranch i s1 s2, (if bra then bra_pt else sel_pt) k i)]> (delete c Σ)) ∪ ΘB) as ->.
     { rewrite <-ins_one by done.
       destruct Hext as [(_ & ->)|(e' & HH & _)]; [done|]. exfalso. revert HH. tlk.
       rewrite HBc. simpl. by rewrite ounion_None. }
-    assert (tok W (<[c := (sbranch i s1 s2, pt_payload k (bidx i))]> (delete c Σ)) ΘB C0) as Hok1.
+    assert (tok W (<[c := (sbranch i s1 s2, (if bra then bra_pt else sel_pt) k i)]> (delete c Σ)) ΘB C0) as Hok1.
     { apply tok_insert; [done|]. eapply tok_sub; [|exact Hok]. apply delete_subseteq. }
     exists (delete c Σ), s1, s2, k. split_and!.
     - exists s0. split; [|done]. by rewrite insert_delete_id.
@@ -848,7 +857,7 @@ Section level.
   Qed.
 
   Lemma tok_add_both W' c k1 k2 :
-    tok W' Σ ΘB C0 → c ∉ dom Σ → c ∉ C0 → w_eq W' k1.2 k2.2 → sdual k1.1 k2.1 →
+    tok W' Σ ΘB C0 → c ∉ dom Σ → c ∉ C0 → w_eq W' k1.2 (pt_dual k2.2) → sdual k1.1 k2.1 →
     tok W' Σ (<[c := Both k1 k2]> ΘB) (C0 ∪ {[c]}).
   Proof.
     intros [HW Hd Hdj Hb Hdu] HcΣ HcC Hq Hdd. split; try done.
@@ -873,7 +882,7 @@ Section level.
     { unfold tenv_of. rewrite dom_union_L, dom_fmap_L, (tok_dom _ _ _ _ Hok). clear -HcΣ HcC. set_solver. }
     exists {[NConst a]}, W'. split_and!; [|done|].
     - pose proof (senv_roots_sub Σ ΘB). clear -Hfr H. set_solver.
-    - apply (IHo n' T (le_n _) HT W' Σ (<[c := Both (s, pconst a) (s', pconst a)]> ΘB)).
+    - apply (IHo n' T (le_n _) HT W' Σ (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> ΘB)).
       + apply tok_add_both; [|done|done| |done].
         * eapply tok_mono; [exact (proj1 Hwf)|exact Hok].
         * apply (wf_eq_refl _ (proj1 (proj2 (proj2 (proj2 (proj1 Hwf)))))).

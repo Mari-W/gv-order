@@ -190,10 +190,18 @@ Lemma dshN_add n m d : dshN n (dshN m d) = dshN (n + m) d.
 Proof. induction n; simpl; congruence. Qed.
 
 Lemma den_shift v x : den v (pt_shift 1 x) = dsh (den v x).
-Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r. Qed.
+Proof. destruct x as [p pb k]. unfold den, pt_shift. simpl. by rewrite Nat.add_1_r. Qed.
 
 Lemma den_shiftN v n x : den v (pt_shift n x) = dshN n (den v x).
-Proof. destruct x as [p k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
+Proof. destruct x as [p pb k]. unfold den, pt_shift. simpl. by rewrite dshN_add, Nat.add_comm. Qed.
+
+(** The denotation ignores the polarity: both ends of a channel denote
+    the same channel (end points). *)
+Lemma den_dual v x : den v (pt_dual x) = den v x.
+Proof. done. Qed.
+
+Lemma den_polar v b x : den v (pt_polar b x) = den v x.
+Proof. by destruct b. Qed.
 
 Lemma den_payload v x i : den v (pt_payload x i) = dsl (den v x) i.
 Proof. done. Qed.
@@ -229,20 +237,22 @@ Lemma wgen_strict_dn {D A} (R : A → A → Prop) N E L (dnt : point → D)
   (∀ x y, L x y → po_or_supp N x y) →
   (∀ x, dnt (pt_shift 1 x) = dS (dnt x)) →
   (∀ x i, dnt (pt_payload x i) = dL (dnt x) i) →
+  (∀ x, dnt (pt_dual x) = dnt x) →
   (∀ x y, E x y → dnt x = dnt y) →
   (∀ d, R (r d) (r (dS d))) →
   (∀ x y, L x y → R (r (dnt x)) (r (dnt y))) →
   strict (wgen N E L).
 Proof.
-  intros Hirr Htr HN HE HL Hs Hl Hc Hr HLr. split; [by apply wgen_wf|].
+  intros Hirr Htr HN HE HL Hs Hl Hd Hc Hr HLr. split; [by apply wgen_wf|].
   assert (∀ x y, geq E x y → dnt x = dnt y) as Heq.
-  { induction 1; try congruence; auto; rewrite ?Hs, ?Hl; congruence. }
+  { induction 1; try congruence; auto; rewrite ?Hs, ?Hl, ?Hd; congruence. }
   assert (∀ x y, glt E L x y → R (r (dnt x)) (r (dnt y))) as Hlt.
-  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2].
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - by apply HLr.
     - rewrite Hs. apply Hr.
     - apply Heq in Hx, Hy. by rewrite Hx, <-Hy.
-    - by eapply Htr. }
+    - by eapply Htr.
+    - rewrite Hs, Hd. apply Hr. }
   intros x H. apply Hlt in H. exact (Hirr _ H).
 Qed.
 
@@ -265,6 +275,7 @@ Proof.
   - intros x y (Hx & Hy & _). right. unfold rooted0 in *. rewrite Hx, Hy. set_solver.
   - apply den_shift.
   - apply den_payload.
+  - done.
   - by intros x y (_ & _ & H).
   - apply rank_dsh.
   - by intros x y (_ & _ & H).
@@ -290,8 +301,8 @@ Qed.
 Lemma den_inst v w X x :
   den v X = DAnc w → pt_root x = NVar 0 → den v (pt_inst (plist [X]) x) = den w x.
 Proof.
-  intros HX Hx. destruct x as [p o]. unfold pt_inst, pt_root in *. simpl in *.
-  rewrite den_shiftN, (den_inst_pn v w X) by done. done.
+  intros HX Hx. destruct x as [p pb o]. unfold pt_inst, pt_root in *. simpl in *.
+  rewrite den_polar, den_shiftN, (den_inst_pn v w X) by done. done.
 Qed.
 
 (** ** Priorities under valuations and substitutions *)
@@ -355,7 +366,13 @@ Definition crel_fact (Θ : pctx) (g : fact) : Prop :=
 Definition Crel (Θ : pctx) : bcs := BCs [] (crel_fact Θ).
 Definition C0 : bcs := BCs [] (λ _, False).
 
-(** ** Translation of types *)
+(** ** Translation of types
+
+    With end points the two ends of a channel sit at dual points. The
+    end of polarity [true] (the dual type) sits at the dual point of
+    its channel, the end of polarity [false] at the point itself. The
+    denotation ignores the polarity, so both points denote the channel
+    ([den_dual]). *)
 
 Definition hiz (B : point) (ef : list prio) : option point :=
   match ef with [] => None | _ => Some (rpt B (RHi ef)) end.
@@ -363,7 +380,7 @@ Definition hiz (B : point) (ef : list prio) : option point :=
 Fixpoint tr (B : point) (T : mty) : ty :=
   match T with
   | MUnit => U
-  | MChan p Q h d => TSess (polS p (ers Q)) (rpt B (RCh Q h d))
+  | MChan p Q h d => TSess (polS p (ers Q)) (pt_polar (negb p) (rpt B (RCh Q h d)))
   | MArr T lo ef V => TLolli (hiz B ef) (Some (rpt B (RLo lo))) (tr B T) (tr B V)
   | MPoly nv cs T ef V =>
       TBox 1 0 (Crel (PCtx nv cs))
@@ -372,6 +389,9 @@ Fixpoint tr (B : point) (T : mty) : ty :=
 
 Lemma pt_inst_rpt σ B r : pt_inst σ (rpt B r) = rpt (pt_inst σ B) r.
 Proof. apply pt_inst_payload. Qed.
+
+Lemma pt_inst_polar_mp σ b x : pt_inst σ (pt_polar b x) = pt_polar b (pt_inst σ x).
+Proof. destruct b; [done|apply pt_inst_dual]. Qed.
 
 Lemma hiz_pinst σ B ef : pt_inst σ <$> hiz B ef = hiz (pt_inst σ B) ef.
 Proof. destruct ef; simpl; [done|]. by rewrite pt_inst_rpt. Qed.
@@ -383,7 +403,7 @@ Lemma tr_pinst σ B T : pinst_ty σ (tr B T) = tr (pt_inst σ B) T.
 Proof.
   revert σ B. induction T as [|p Q h d|T IH1 lo ef V IH2|nv cs T IH1 ef V IH2]; intros σ B; simpl.
   - done.
-  - by rewrite pt_inst_rpt.
+  - by rewrite pt_inst_polar_mp, pt_inst_rpt.
   - by rewrite IH1, IH2, hiz_pinst, pt_inst_rpt.
   - by rewrite IH1, IH2, hiz_pinst, pup1_0.
 Qed.

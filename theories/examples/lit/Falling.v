@@ -42,6 +42,12 @@
       x : ∅      b : {β ≺ ξ, ξ+2 ≺ β+1}      c : ∅
       d : {γ+1 ≺ δ, δ ≺ γ+2, γ+2 ≺ δ+1}
 
+    With end points the partners hold x̄, b̄, c̄, d̄ at the dual points,
+    and each gate compares with the partner point of a held end, so
+    the facts above read with the right-hand point dual (β ≺ ξ̄ and so
+    on). b also states ξ+2 ≺ β+1 for the upper point of X and β̄ ≺ ξ̄
+    for its lower point β̄, and d states γ+2 ≺ δ+1.
+
     §8.2 names the first fact of each constraint. The others are the
     facts at the later instants of the same threads. Each fact relates
     the new channel to one older one, so each constraint is conservative
@@ -113,29 +119,29 @@ Definition fallxy_main : expr :=
             (LetP (Pair (App ESend (Pair EUnit (Var 1))) EUnit) (LetU (Var 0)
               (let_new_pair (LetU (App ESpawn (partner2 1)) fx_tail)))))))))).
 
-(** A partner of FS1 on the point (a, 0), spawned. *)
+(** A partner of FS1 on the other end, at the point (a, 0)‾, spawned. *)
 Ltac fx_partner1 HW a :=
   tstep;
   [ tstep; [|apply KTSpawn|done|apply ubs_none];
-    eapply (tv_lam _ HW _ _ _ _ _ TUnit TUnit (Some (pv a 2)) (Some (pv a 0)) 0);
+    eapply (tv_lam _ HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv a 2))) (Some (pv a 0)) 0);
       [set_solver|intros y Hy; mem_cases Hy; apply sle_refl, HW|];
     cbn; tstep; [tstep|]; cbn; tstep;
-    [ tstep; [tstep|apply KTRecv|kscope|]; po_gate HW (pv a 2)
+    [ tstep; [tstep|apply KTRecv|kscope|]; pp_gate HW (pt_dual (pv a 2))
     | cbn; tstep; [tstep|]; cbn; unfold sendclose; tstep;
-      [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv a 1)); cbn; set_solver|done|];
-        po_gate HW (pv a 2)
-      | apply KTClos | done | po_gate HW (pv a 2) ] ]
+      [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pt_dual (pv a 1))); cbn; set_solver|done|];
+        pp_gate HW (pt_dual (pv a 2))
+      | apply KTClos | done | pp_gate HW (pt_dual (pv a 2)) ] ]
   | ].
 
-(** A partner of S2 = Sd on the point (a, 0), spawned. *)
+(** A partner of S2 = Sd on the other end, at the point (a, 0)‾, spawned. *)
 Ltac fx_partner2 HW a :=
   tstep;
   [ tstep; [|apply KTSpawn|done|apply ubs_none];
-    eapply (tv_lam _ HW _ _ _ _ _ TUnit TUnit (Some (pv a 1)) (Some (pv a 0)) 0);
+    eapply (tv_lam _ HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv a 1))) (Some (pv a 0)) 0);
       [set_solver|intros y Hy; mem_cases Hy; apply sle_refl, HW|];
     cbn; tstep; [tstep|]; cbn; unfold recvclose; tstep;
-    [ tstep; [tstep|apply KTRecv|kscope|]; po_gate HW (pv a 1)
-    | cbn; tstep; [tstep|]; cbn; tstep; [tstep|apply KTClos|done|]; po_gate HW (pv a 1) ]
+    [ tstep; [tstep|apply KTRecv|kscope|]; pp_gate HW (pt_dual (pv a 1))
+    | cbn; tstep; [tstep|]; cbn; tstep; [tstep|apply KTClos|done|]; pp_gate HW (pt_dual (pv a 1)) ]
   | ].
 
 (** ** The creation constraints *)
@@ -144,40 +150,46 @@ Definition fx0_C : bcs := BCs [] (λ _, False).
 
 Lemma fx0_ok peq plt : cc_ok peq plt fx0_C.
 Proof.
-  apply (cc_ok_out _ _ fx0_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
+  apply (cc_ok_out _ _ fx0_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
   - intros a b (f & [] & _).
   - intros a b (f & [] & _).
   - intros u p q v (f & [] & _).
 Qed.
 
-(** b at 0 under x at 1. *)
-Definition fxb_P (g : fact) : Prop := g = FLt (pv 0 0) (pv 1 0) ∨ g = FLt (pv 1 2) (pv 0 1).
+(** b at 0 under x at 1. With end points the gates compare with
+    partner points: β ≺ ξ̄ at the send on b, ξ+2 ≺ (β+1)‾ and
+    ξ+2 ≺ β+1 at the actions on x, and β̄ ≺ ξ̄ for the lower point β̄ of
+    the thread X. *)
+Definition fxb_P (g : fact) : Prop :=
+  g = FLt (pv 0 0) (pt_dual (pv 1 0)) ∨ g = FLt (pt_dual (pv 0 0)) (pt_dual (pv 1 0)) ∨
+  g = FLt (pv 1 2) (pv 0 1) ∨ g = FLt (pv 1 2) (pt_dual (pv 0 1)).
 Definition fxb_C : bcs := BCs [pvar 0] fxb_P.
 
 Lemma fxb_ok peq plt : cc_ok peq plt fxb_C.
 Proof.
-  apply (cc_ok_out _ _ fxb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
-  - intros a b (f & [-> | ->] & _ & E); discriminate E.
-  - intros a b (f & [-> | ->] & _ & E); injection E as -> ->; cbn; auto.
-  - intros u p q v (f & [-> | ->] & _ & E) (f' & [-> | ->] & _ & E') Hu Hp Hq Hv Hpq;
-      injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done.
-    destruct Hpq as [Hpq|[_ Hpq]]; [discriminate Hpq|cbn in Hpq; lia].
+  apply (cc_ok_out _ _ fxb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
+  - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); discriminate E.
+  - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); injection E as -> ->; cbn; auto.
+  - intros u p q v (f & [-> | [-> | [-> | ->]]] & _ & E) (f' & [-> | [-> | [-> | ->]]] & _ & E') Hu Hp Hq Hv Hpq;
+      injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done;
+      exfalso; (destruct Hpq as [Hpq|[_ Hpq]]; vm_compute in Hpq; [discriminate Hpq|lia]).
 Qed.
 
-(** d at 0 under c at 1. *)
+(** d at 0 under c at 1: γ+1 ≺ δ̄, δ ≺ (γ+2)‾, γ+2 ≺ (δ+1)‾ and
+    γ+2 ≺ δ+1. *)
 Definition fxd_P (g : fact) : Prop :=
-  g = FLt (pv 1 1) (pv 0 0) ∨ g = FLt (pv 0 0) (pv 1 2) ∨ g = FLt (pv 1 2) (pv 0 1).
+  g = FLt (pv 1 1) (pt_dual (pv 0 0)) ∨ g = FLt (pv 0 0) (pt_dual (pv 1 2)) ∨
+  g = FLt (pv 1 2) (pt_dual (pv 0 1)) ∨ g = FLt (pv 1 2) (pv 0 1).
 Definition fxd_C : bcs := BCs [pvar 0] fxd_P.
 
 Lemma fxd_ok peq plt : cc_ok peq plt fxd_C.
 Proof.
-  apply (cc_ok_out _ _ fxd_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po| | |].
-  - intros a b (f & [-> | [-> | ->]] & _ & E); discriminate E.
-  - intros a b (f & [-> | [-> | ->]] & _ & E); injection E as -> ->; cbn; auto.
-  - intros u p q v (f & [-> | [-> | ->]] & _ & E) (f' & [-> | [-> | ->]] & _ & E') Hu Hp Hq Hv Hpq;
-      injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done.
-    + cbn. apply glt_ofs. simpl. lia.
-    + destruct Hpq as [Hpq|[_ Hpq]]; [discriminate Hpq|cbn in Hpq; lia].
+  apply (cc_ok_out _ _ fxd_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
+  - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); discriminate E.
+  - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); injection E as -> ->; cbn; auto.
+  - intros u p q v (f & [-> | [-> | [-> | ->]]] & _ & E) (f' & [-> | [-> | [-> | ->]]] & _ & E') Hu Hp Hq Hv Hpq;
+      injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done;
+      exfalso; (destruct Hpq as [Hpq|[_ Hpq]]; vm_compute in Hpq; [discriminate Hpq|lia]).
 Qed.
 
 Lemma fallxy_styped : styped ∅ [] [] (∅, None) fallxy_main TUnit.
@@ -194,39 +206,49 @@ Proof.
   change (pt_inst (pshift 1) (pt_inst (pshift 1) (pvar 0))) with (pv 2 0).
   change (pt_inst (pshift 1) (pvar 0)) with (pv 1 0).
   match goal with |- typed _ _ ?G _ _ _ _ _ => set (Ψ := G) end.
-  assert (slt W Ψ (pv 1 0) (pv 2 0)) as Hbx.
-  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 0 0) (pv 1 0)));
+  assert (slt W Ψ (pv 1 0) (pt_dual (pv 2 0))) as Hbx.
+  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 0 0) (pt_dual (pv 1 0))));
       [by right; left|by left|fsc|reflexivity]. }
+  assert (slt W Ψ (pt_dual (pv 1 0)) (pt_dual (pv 2 0))) as Hbx'.
+  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pt_dual (pv 0 0)) (pt_dual (pv 1 0))));
+      [by right; left|by right; left|fsc|reflexivity]. }
   assert (slt W Ψ (pv 2 2) (pv 1 1)) as Hxb.
   { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 1 2) (pv 0 1)));
-      [by right; left|by right|fsc|reflexivity]. }
+      [by right; left|by right; right; left|fsc|reflexivity]. }
+  assert (slt W Ψ (pv 2 2) (pt_dual (pv 1 1))) as Hxb'.
+  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 1 2) (pt_dual (pv 0 1))));
+      [by right; left|by right; right; right|fsc|reflexivity]. }
   assert (slt W Ψ (pv 2 0) (pv 1 1)) as Hx0.
   { eapply sl_trans; [|exact Hxb]. apply slt_po_lt; [exact HW|lia]. }
   assert (slt W Ψ (pv 2 1) (pv 1 1)) as Hx1.
   { eapply sl_trans; [|exact Hxb]. apply slt_po_lt; [exact HW|lia]. }
+  assert (slt W Ψ (pv 2 0) (pt_dual (pv 1 1))) as Hx0'.
+  { eapply sl_trans; [|exact Hxb']. apply slt_po_lt; [exact HW|lia]. }
+  assert (slt W Ψ (pv 2 1) (pt_dual (pv 1 1))) as Hx1'.
+  { eapply sl_trans; [|exact Hxb']. apply slt_po_lt; [exact HW|lia]. }
   (* the thread X *)
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 1)) (Some (pv 1 0)) 0); [set_solver| |].
-    { intros y Hy. mem_cases Hy; [apply sle_refl, HW|right; exact Hbx]. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 1)) (Some (pt_dual (pv 1 0))) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact Hbx']. }
     cbn. tstep; [tstep|]. cbn.
-    eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 1)) (Some (pv 2 0)) (TSess SEnd (pv 1 1)) TUnit);
+    eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 1)) (Some (pt_dual (pv 2 0))) (TSess SEnd (pv 1 1)) TUnit);
       [reflexivity| | |].
-    - eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 1 1)) (Some (pv 2 0)) 1); [set_solver| |].
+    - eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 1 1)) (Some (pt_dual (pv 2 0))) 1); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn.
-      eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 1)) (Some (pv 1 1))
+      eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 1)) (Some (pt_dual (pv 1 1)))
                 (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 2 1)) TUnit); [reflexivity| | |].
-      + eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 1 1)) (Some (pv 1 1)) 2); [set_solver| |].
+      + eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 1 1)) (Some (pt_dual (pv 1 1))) 2); [set_solver| |].
         { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
         cbn. tstep.
         * eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 2 1)) (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 2 1)));
             [tstep|apply KTRecv|kscope|].
-          apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hx1|].
+          apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hx1'|].
           exists (pv 1 1). split; [done|]. right; exact Hx1.
         * cbn. tstep; [tstep|]. cbn. tstep.
           -- eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 2 2)) (TSess SEnd (pv 2 2))); [tstep|apply KTClos|done|].
-             apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hxb|].
+             apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hxb'|].
              exists (pv 1 1). split; [done|]. right; exact Hxb.
           -- eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 1 1)) (TSess SEnd (pv 1 1))); [tstep|apply KTClos|done|].
              apply ubs_intro; [intros y Hy; mem_cases Hy|].
@@ -235,7 +257,7 @@ Proof.
         * tstep; tstep.
         * apply (KTSend _ _ _ 0 TUnit (SSeq (SRcv 0 TUnit) SEnd) (pv 2 0)). cbn. set_solver.
         * kscope.
-        * apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hx0|].
+        * apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hx0'|].
           exists (pv 1 1). split; [done|]. right; exact Hx0.
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
         exists (pv 1 1). split; [done|]. apply sle_refl, HW.
@@ -262,31 +284,34 @@ Proof.
   { constructor; [eapply skn_inst; [by right; right; left|by left|done]|constructor]. }
   fresh_clean.
   change (pt_inst (pshift 1) (pv 0 1)) with (pv 1 1).
-  clear Hbx Hxb Hx0 Hx1.
+  clear Hbx Hbx' Hxb Hxb' Hx0 Hx1 Hx0' Hx1'.
   match goal with |- typed _ _ ?G _ _ _ _ _ => set (Ψ' := G) end.
-  assert (slt W Ψ' (pv 1 1) (pv 0 0)) as Hcd.
-  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 1 1) (pv 0 0)));
+  assert (slt W Ψ' (pv 1 1) (pt_dual (pv 0 0))) as Hcd.
+  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 1 1) (pt_dual (pv 0 0))));
       [by right; right; right; left|by left|fsc|reflexivity]. }
-  assert (slt W Ψ' (pv 0 0) (pv 1 2)) as Hdc.
-  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 0 0) (pv 1 2)));
+  assert (slt W Ψ' (pv 0 0) (pt_dual (pv 1 2))) as Hdc.
+  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 0 0) (pt_dual (pv 1 2))));
       [by right; right; right; left|by right; left|fsc|reflexivity]. }
-  assert (slt W Ψ' (pv 1 2) (pv 0 1)) as Hcd2.
+  assert (slt W Ψ' (pv 1 2) (pt_dual (pv 0 1))) as Hcd2.
+  { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 1 2) (pt_dual (pv 0 1))));
+      [by right; right; right; left|by right; right; left|fsc|reflexivity]. }
+  assert (slt W Ψ' (pv 1 2) (pv 0 1)) as Hcd2'.
   { eapply (sl_hyp W Ψ' [pt_inst (pshift 1) (pvar 0)] fxd_P [pvar 0] (FLt (pv 1 2) (pv 0 1)));
-      [by right; right; right; left|by right; right|fsc|reflexivity]. }
+      [by right; right; right; left|by right; right; right|fsc|reflexivity]. }
   fx_partner2 HW 0. cbn.
   (* receive on c at γ+1 while d waits at δ *)
   tstep.
   { tstep; [tstep|apply KTRecv|kscope|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hcd|done]. }
   cbn. tstep; [tstep|]. cbn.
-  eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 0 1)) (Some (pv 1 2)) (TSess SEnd (pv 0 1)) TUnit);
+  eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 0 1)) (Some (pt_dual (pv 1 2))) (TSess SEnd (pv 0 1)) TUnit);
     [reflexivity| | |].
-  - eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 0 1)) (Some (pv 1 2)) 0); [set_solver| |].
+  - eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 0 1)) (Some (pt_dual (pv 1 2))) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep.
     + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 1 2)) (TSess SEnd (pv 1 2))); [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hcd2|].
-      exists (pv 0 1). split; [done|]. right; exact Hcd2.
+      exists (pv 0 1). split; [done|]. right; exact Hcd2'.
     + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 0 1)) (TSess SEnd (pv 0 1))); [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.

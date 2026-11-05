@@ -306,24 +306,24 @@ Definition konst_app (Φ : fhyps) (F : sfuture) (k : konst) (A : ty) : option (t
   | KSel1, TSess s x =>
       match hd s with
       | HPlus s1 s2 =>
-          Some (TSess s1 (pt_payload x 0), CAnd (CAtom (ALt x (pt_payload x 0))) (ub_constr Φ (Some x) F))
+          Some (TSess s1 (pt_dual (pt_payload x 0)), CAnd (CAtom (ALt x (pt_payload x 0))) (ub_constr Φ (Some x) F))
       | _ => None
       end
   | KSel2, TSess s x =>
       match hd s with
       | HPlus s1 s2 =>
-          Some (TSess s2 (pt_payload x 1), CAnd (CAtom (ALt x (pt_payload x 1))) (ub_constr Φ (Some x) F))
+          Some (TSess s2 (pt_dual (pt_payload x 1)), CAnd (CAtom (ALt x (pt_payload x 1))) (ub_constr Φ (Some x) F))
       | _ => None
       end
   | KBra, TSess s x =>
       match hd s with
       | HWith s1 s2 =>
           Some (TSum (TSess s1 (pt_payload x 0)) (TSess s2 (pt_payload x 1)),
-                cands [CAtom (ALt x (pt_payload x 0)); CAtom (ALt x (pt_payload x 1)); ub_constr Φ (Some x) F])
+                cands [CAtom (ALt x (pt_dual (pt_payload x 0))); CAtom (ALt x (pt_dual (pt_payload x 1))); ub_constr Φ (Some x) F])
       | _ => None
       end
   | KLink, TProd (TSess s x) (TSess r y) =>
-      if sty_eqb r (dual s) then Some (TUnit, CAtom (AEq x y)) else None
+      if sty_eqb r (dual s) then Some (TUnit, CAtom (AEq x (pt_dual y))) else None
   | _, _ => None
   end.
 
@@ -440,7 +440,7 @@ Fixpoint synth (n : nat) (Φ : fhyps) (Δ : lenv) (F : sfuture) (a : aexpr) : op
       else None
   | ALetNew s0 C e =>
       match synth n (fhyps_pinst (pshift 1) Φ)
-              (Some (TSess (dual s0) (pvar 0)) :: Some (TSess s0 (pvar 0)) :: None :: None ::
+              (Some (TSess (dual s0) (pt_dual (pvar 0))) :: Some (TSess s0 (pvar 0)) :: None :: None ::
                  lenv_pinst (pshift 1) Δ)
               (sf_pinst (pshift 1) F) e with
       | Some (U', c) =>

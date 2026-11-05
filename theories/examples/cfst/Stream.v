@@ -16,7 +16,8 @@
     ceiling of both recursions, which no channel occupies. Channel 1 is
     a and channel 2 is b. a is created with a+k ≺ z for every k, and b
     with a+k ≺ b+k ≺ a+k+1 and b+k ≺ z ([lsa_C], [lsb_C] of
-    CfstTools.v). Mordido and Pérez fix the priority sequences
+    CfstTools.v), at every polarity of the points. client meets C at
+    ι = a and κ = b̄, newclient at ι = ā and κ = b. Mordido and Pérez fix the priority sequences
     [1, 3, 5, …] and [2, 4, 6, …] at new. Here the creation constraints
     state the same interleaving as facts, and the instants of each
     channel count its actions. The protocol is regular. The example
@@ -29,7 +30,7 @@ From LRGV Require Export examples.cfst.CfstTools.
 Set Default Proof Using "All".
 
 Definition st_P (g : fact) : Prop :=
-  ∃ k, g = FLt (pv 0 k) (pv 1 k) ∨ g = FLt (pv 1 k) (pv 0 (S k)) ∨
+  ∃ k, g = FLt (pv 0 k) (pt_dual (pv 1 k)) ∨ g = FLt (pv 1 k) (pt_dual (pv 0 (S k))) ∨
        g = FLt (pv 0 k) (pv 2 0) ∨ g = FLt (pv 1 k) (pv 2 0).
 Definition st_C : bcs := BCs [] st_P.
 
@@ -60,12 +61,12 @@ Lemma st_call W Ψ : (st_C, ids 3) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) st
 Proof. intros Hg. apply bcs_hold_self; [done|vb_list|exact st_step]. Qed.
 
 Lemma st_facts W Ψ k : (st_C, [pv 0 0; pv 1 0; pv 2 0]) ∈ Ψ →
-  slt W Ψ (pv 0 k) (pv 1 k) ∧ slt W Ψ (pv 1 k) (pv 0 (S k)) ∧
+  slt W Ψ (pv 0 k) (pt_dual (pv 1 k)) ∧ slt W Ψ (pv 1 k) (pt_dual (pv 0 (S k))) ∧
   slt W Ψ (pv 0 k) (pv 2 0) ∧ slt W Ψ (pv 1 k) (pv 2 0).
 Proof.
   intros Hg. split_and!.
-  - eapply (sl_hyp0 W Ψ st_P [pv 0 0; pv 1 0; pv 2 0] (pv 0 k) (pv 1 k)); [done|exists k; by left|cbn; lia|done|done].
-  - eapply (sl_hyp0 W Ψ st_P [pv 0 0; pv 1 0; pv 2 0] (pv 1 k) (pv 0 (S k))); [done|exists k; by right; left|cbn; lia|done|done].
+  - eapply (sl_hyp0 W Ψ st_P [pv 0 0; pv 1 0; pv 2 0] (pv 0 k) (pt_dual (pv 1 k))); [done|exists k; by left|cbn; lia|done|done].
+  - eapply (sl_hyp0 W Ψ st_P [pv 0 0; pv 1 0; pv 2 0] (pv 1 k) (pt_dual (pv 0 (S k)))); [done|exists k; by right; left|cbn; lia|done|done].
   - eapply (sl_hyp0 W Ψ st_P [pv 0 0; pv 1 0; pv 2 0] (pv 0 k) (pv 2 0)); [done|exists k; by right; right; left|cbn; lia|done|done].
   - eapply (sl_hyp0 W Ψ st_P [pv 0 0; pv 1 0; pv 2 0] (pv 1 k) (pv 2 0)); [done|exists k; by right; right; right|cbn; lia|done|done].
 Qed.
@@ -165,37 +166,47 @@ Proof.
     constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 2]); (BCs [pvar 2] lsa_P, [pvar 1]); (BCs [pvar 1; pvar 2] lsb_P, [pvar 0])]).
-  assert (∀ k, slt W Ψ (pv 1 k) (pv 0 k) ∧ slt W Ψ (pv 0 k) (pv 1 (S k)) ∧
-               slt W Ψ (pv 1 k) (pv 2 0) ∧ slt W Ψ (pv 0 k) (pv 2 0)) as Hf.
-  { intros k. split_and!.
-    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pv 1 k) (pv 0 k)));
-        [by right; right; left|exists k; by left|fsc|reflexivity].
-    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pv 0 k) (pv 1 (S k))));
-        [by right; right; left|exists k; by right; left|fsc|reflexivity].
-    - eapply (sl_hyp W Ψ [pvar 2] lsa_P [pvar 1] (FLt (pv 0 k) (pv 1 0)));
-        [by right; left|by exists k|fsc|reflexivity].
-    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pv 0 k) (pv 2 0)));
-        [by right; right; left|exists k; by right; right|fsc|reflexivity]. }
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pv 1 0; pv 0 0; pv 2 0]) as HC.
-  { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn; apply Hf. }
-  assert (Forall (skn W Ψ) [pv 1 0; pv 0 0; pv 2 0]) as HK.
+  assert (∀ k c c', slt W Ψ (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k)) ∧
+                 slt W Ψ (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k))) ∧
+                 slt W Ψ (pt_polar c (pv 1 k)) (pv 2 0) ∧ slt W Ψ (pt_polar c (pv 0 k)) (pv 2 0)) as Hf.
+  { intros k c c'. split_and!.
+    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k))));
+        [by right; right; left|exists k, c, c'; by left|destruct c, c'; fsc|by destruct c, c'].
+    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k)))));
+        [by right; right; left|exists k, c, c'; by right; left|destruct c, c'; fsc|by destruct c, c'].
+    - eapply (sl_hyp W Ψ [pvar 2] lsa_P [pvar 1] (FLt (pt_polar c (pv 0 k)) (pv 1 0)));
+        [by right; left|by exists k, c|destruct c; fsc|by destruct c].
+    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pt_polar c (pv 0 k)) (pv 2 0)));
+        [by right; right; left|exists k, c, c; by right; right|destruct c; fsc|by destruct c]. }
+  (* client gets a at α and b′ at β̄, newclient gets b at β and a′ at ᾱ *)
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pv 1 0; pt_dual (pv 0 0); pv 2 0]) as HC.
+  { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn;
+      first [apply (Hf k true true)|apply (Hf k true false)|apply (Hf k false true)|apply (Hf k false false)]. }
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pt_dual (pv 1 0); pv 0 0; pv 2 0]) as HC'.
+  { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn;
+      first [apply (Hf k true true)|apply (Hf k true false)|apply (Hf k false true)|apply (Hf k false false)]. }
+  assert (Forall (skn W Ψ) [pv 1 0; pt_dual (pv 0 0); pv 2 0]) as HK.
+  { constructor; [eapply skn_inst; [by right; left|by left|done]|].
+    constructor; [eapply skn_inst; [by right; right; left|by left|done]|].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  assert (Forall (skn W Ψ) [pt_dual (pv 1 0); pv 0 0; pv 2 0]) as HK'.
   { constructor; [eapply skn_inst; [by right; left|by left|done]|].
     constructor; [eapply skn_inst; [by right; right; left|by left|done]|].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 0)) (Some (pv 1 0)) 0); [set_solver| |].
-    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply (Hf 0)]. }
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 0)) (Some (pt_dual (pv 1 0))) 0); [set_solver| |].
+    { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply (Hf 0 false true)]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None cl_body [pv 1 0; pv 0 0; pv 2 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None cl_body [pv 1 0; pt_dual (pv 0 0); pv 2 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pv 2 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None ncl_body [pv 1 0; pv 0 0; pv 2 0]);
-      [done|done|exact HC|exact HK|apply ubs_none|tstep].
+  - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None ncl_body [pt_dual (pv 1 0); pv 0 0; pv 2 0]);
+      [done|done|exact HC'|exact HK'|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.

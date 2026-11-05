@@ -10,12 +10,22 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('relation/LogicalRelation.v', 'adequacy'), ('rules/SemanticRules.v', 'sem_rules_fundamental')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
+def strip_comments(t):
+    # drop (* ... *) comments, nested, so that commented-out theorems are skipped
+    out, depth, i = [], 0, 0
+    while i < len(t):
+        if t.startswith('(*', i): depth += 1; i += 2; continue
+        if depth and t.startswith('*)', i): depth -= 1; i += 2; continue
+        if not depth: out.append(t[i])
+        elif t[i] == '\n': out.append('\n')
+        i += 1
+    return ''.join(out)
 for f, n in main:
     items.append((mod(pathlib.Path(f)), n))
 for d in ['examples', 'pgv', 'pn', 'mp', 'counterexamples']:
     for f in sorted((root / d).rglob('*.v')):
         rel = f.relative_to(root)
-        for m in re.finditer(r"^(Theorem|Corollary|Lemma)\s+([A-Za-z0-9_']+)", f.read_text(), re.M):
+        for m in re.finditer(r"^(Theorem|Corollary|Lemma)\s+([A-Za-z0-9_']+)", strip_comments(f.read_text()), re.M):
             kind, n = m.group(1), m.group(2)
             if kind != 'Lemma' or re.search(r'deadlock_free|untypable|underivable|_typed|_not_', n):
                 items.append((mod(rel), n))

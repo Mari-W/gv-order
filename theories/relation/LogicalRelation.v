@@ -256,7 +256,7 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
       ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∧
         sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
         at_cost Elow En n (tcost α) W'
-          (<[c := Both (s, pconst a) (s', pconst a)]> Θ) T F e'
+          (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> Θ) T F e'
   | LSpawn w =>                                        (* O-Spawn *)
       ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
         Vn W Θ1 (TLolli ub lb TUnit TUnit) w ∧
@@ -281,15 +281,15 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
       ∃ c d Θ1 Θm sc sd kc kd,
         cd = {[c; d]} ∧
         tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
-        sdual sd sc ∧ w_eq W kc kd ∧
+        sdual sd sc ∧ w_eq W kc (pt_dual kd) ∧
         at_cost Elow En n (tcost α) W Θ1 T F e'
   | LSess (SSel c b) =>                                (* O-Select *)
       ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SPlus s1 s2) k Θr ∧
-        tenv_ext Θr c (sbranch b s1 s2, pt_payload k (bidx b)) Θ' ∧
+        tenv_ext Θr c (sbranch b s1 s2, sel_pt k b) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
   | LSess (SBra c b) =>                                (* O-Branch *)
       ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SWith s1 s2) k Θr ∧
-        tenv_ext Θr c (sbranch b s1 s2, pt_payload k (bidx b)) Θ' ∧
+        tenv_ext Θr c (sbranch b s1 s2, bra_pt k b) Θ' ∧
         at_cost Elow En n (tcost α) W Θ' T F e'
   end.
 
@@ -341,13 +341,13 @@ Definition recv_env (Σr : senv) (Θ2 : tenv) : senv :=
 
 (** Q-Send: the restricted channels a message carries. Θe holds the
     ends that leave with the message (one end, or both), Σe the ends
-    that stay, dual at aliased points. *)
+    that stay, dual at dual points (end points). *)
 Definition send_split (W : world) (Σe : senv) (Θe : tenv) : Prop :=
   dom Σe ⊆ dom Θe ∧
   ∀ r o, Θe !! r = Some o →
     match o with
-    | One e' => ∃ e, Σe !! r = Some e ∧ w_eq W e.2 e'.2 ∧ sdual e.1 e'.1
-    | Both e1 e2 => Σe !! r = None ∧ w_eq W e1.2 e2.2 ∧ sdual e1.1 e2.1
+    | One e' => ∃ e, Σe !! r = Some e ∧ w_eq W e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1
+    | Both e1 e2 => Σe !! r = None ∧ w_eq W e1.2 (pt_dual e2.2) ∧ sdual e1.1 e2.1
     end.
 
 Lemma send_split_mono W W' Σe Θe :
@@ -388,13 +388,14 @@ Definition Pclos_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (c : chan) (p' : proc) : Prop :=
   ∃ Σ1 k, senv_hd Σ c SEnd k Σ1 ∧ c ∉ dom Σ1 ∧ X W Σ1 T p'.
 
-(** Q-Select (u = ⊕) and Q-Branch (u = &): the entry of c moves to the
-    branch b at k[b] (K11). *)
+(** Q-Select (u = ⊕, tgt = [sel_pt]) and Q-Branch (u = &, tgt =
+    [bra_pt]): the entry of c moves to the branch b, at (k[b])‾ for the
+    selecting end and at k[b] for the branching end (K11, end points). *)
 Definition Pchoice_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (c : chan) (b : bool)
-    (u : sty → sty → sty) (p' : proc) : Prop :=
+    (u : sty → sty → sty) (tgt : point → bool → point) (p' : proc) : Prop :=
   ∃ Σ1 s1 s2 k, senv_hd Σ c (u s1 s2) k Σ1 ∧ c ∉ dom Σ1 ∧
-    X W (<[c := (sbranch b s1 s2, pt_payload k (bidx b))]> Σ1) T p'.
+    X W (<[c := (sbranch b s1 s2, tgt k b)]> Σ1) T p'.
 
 (** c = d cannot reach the interface: Σ holds one end per channel. *)
 Definition Plink_case (X : world → senv → ty → proc → Prop)
@@ -403,7 +404,7 @@ Definition Plink_case (X : world → senv → ty → proc → Prop)
     cd = {[c; d]} ∧ c ≠ d ∧
     Σ = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1) ∧
     c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧
-    sdual sd sc ∧ w_eq W kc kd ∧
+    sdual sd sc ∧ w_eq W kc (pt_dual kd) ∧
     X W Σ1 T p'.
 
 (** The giving steps of a process shrink its soup: a giving step of a
@@ -449,9 +450,10 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
   | PSess (SLink cd) =>                                (* Q-Link *)
       Plink_case (at_cost Plow Pn n (pcost π)) W Σ T cd p'
   | PSess (SSel c b) =>                                (* Q-Select *)
-      Pchoice_case (at_cost Plow Pn n (pcost π)) W Σ T c b SPlus p'
+      Pchoice_case (at_cost Plow Pn n (pcost π)) W Σ T c b SPlus sel_pt p'
   | PSess (SBra c b) =>                                (* Q-Branch *)
-      Pchoice_case (at_cost Plow Pn n (pcost π)) W Σ T c b SWith p'
+      Pchoice_case (at_cost Plow Pn n (pcost π)) W Σ T c b SWith bra_pt p'
+
   end.
 
 (** Process relation at level n' + 1 with fuel k. Every clause is

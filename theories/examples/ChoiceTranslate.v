@@ -38,7 +38,13 @@
       facts branch asks.
     [fstyped_styped] embeds the fragment in [styped]. The translation
     keeps the hypotheses Ψ, so the creation constraint of a program in
-    the fragment is the creation constraint of its translation. *)
+    the fragment is the creation constraint of its translation.
+
+    End points. selectᵢ now gives Sᵢ@x[i]‾ and asks x ≺ x[i], branch
+    asks x ≺ x[0]‾ and x ≺ x[1]‾ (the heads of the sum). selᵢ creates
+    k at x[i]‾ and k′ at x[i], so its send asks x ≺ x[0]‾, x ≺ x[1]‾
+    for the payload and x ≺ x[i] for k. The fragment's selectᵢ asks the
+    fact of the constant and the two facts of branch. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ChoiceEnc.
@@ -276,15 +282,17 @@ Inductive fstyped : fhyps → hyps → lenv → sfuture → expr → ty → Prop
       kplain k → lenv_empty Δ → konst_ty (heqs Ψ) (hlt Ψ) (hyp_known Ψ) k T → kscoped k T →
       fstyped Φ Ψ Δ F (Konst k) T
   | f_sel1 Φ Ψ Δ F S1 S2 x :
-      lenv_empty Δ → hyp_known Ψ x → hlt Ψ x (pt_payload x 0) → hlt Ψ x (pt_payload x 1) →
+      lenv_empty Δ → hyp_known Ψ x → hlt Ψ x (pt_payload x 0) →
+      hlt Ψ x (pt_dual (pt_payload x 0)) → hlt Ψ x (pt_dual (pt_payload x 1)) →
       fstyped Φ Ψ Δ F (Konst KSel1)
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_payload x 0)))
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_dual (pt_payload x 0))))
   | f_sel2 Φ Ψ Δ F S1 S2 x :
-      lenv_empty Δ → hyp_known Ψ x → hlt Ψ x (pt_payload x 0) → hlt Ψ x (pt_payload x 1) →
+      lenv_empty Δ → hyp_known Ψ x → hlt Ψ x (pt_payload x 1) →
+      hlt Ψ x (pt_dual (pt_payload x 0)) → hlt Ψ x (pt_dual (pt_payload x 1)) →
       fstyped Φ Ψ Δ F (Konst KSel2)
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_payload x 1)))
+        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_dual (pt_payload x 1))))
   | f_bra Φ Ψ Δ F S1 S2 x :
-      lenv_empty Δ → hlt Ψ x (pt_payload x 0) → hlt Ψ x (pt_payload x 1) →
+      lenv_empty Δ → hlt Ψ x (pt_dual (pt_payload x 0)) → hlt Ψ x (pt_dual (pt_payload x 1)) →
       fstyped Φ Ψ Δ F (Konst KBra)
         (TLolli (Some x) None (TSess (SWith S1 S2) x)
            (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))
@@ -407,15 +415,14 @@ Section enc.
   Lemma selE_typed (i : nat) (inj : expr → expr) Φ Ψ Δ F S1 S2 S x :
     (i = 0 ∧ inj = Inj1 ∧ S = S1) ∨ (i = 1 ∧ inj = Inj2 ∧ S = S2) →
     skn W Ψ x → allunl Δ = true →
-    slt W Ψ x (sl0 x) → slt W Ψ x (sl1 x) →
+    slt W Ψ x (pt_payload x i) → slt W Ψ x (pt_dual (sl0 x)) → slt W Ψ x (pt_dual (sl1 x)) →
     typed W Φ Ψ ∅ Δ F (selE inj)
-      (TLolli (Some x) None (TSess (Sch S1 S2) x) (TSess S (pt_payload x i))).
+      (TLolli (Some x) None (TSess (Sch S1 S2) x) (TSess S (pt_dual (pt_payload x i)))).
   Proof.
-    intros Hi Hx Hu H0 H1. pose proof (proj1 HWs) as HW.
+    intros Hi Hx Hu Hxi H0 H1. pose proof (proj1 HWs) as HW.
     set (φ := fresh (dom Φ)).
     apply (tv_lam W HW _ _ _ _ _ _ _ _ _ φ); [apply is_fresh|unl Hu; done|].
-    apply (t_new_at W _ _ _ _ _ _ _ S (pt_payload x i) HWs); [by apply skn_payload|].
-    assert (slt W Ψ x (pt_payload x i)) as Hxi by (destruct Hi as [(-> & _)|(-> & _)]; done).
+    apply (t_new_at W _ _ _ _ _ _ _ S (pt_dual (pt_payload x i)) HWs); [by apply skn_dual, skn_payload|].
     assert (∀ y, y ∈ heads (payload_at 2 (TSum (TSess (dual S1) (pvar 0)) (TSess (dual S2) (pvar 1))) x) →
               slt W Ψ x y) as Hpay.
     { intros y Hy. mem_cases Hy; done. }
@@ -434,7 +441,7 @@ Section enc.
     all: apply tv_letu; [exact HW|unl Hu; reflexivity|apply tv_var; [exact HW|unl Hu; reflexivity|unl Hu; reflexivity]|];
       unl Hu; apply tv_letu; [exact HW|unl Hu; reflexivity| |apply tv_var; [exact HW|unl Hu; reflexivity|unl Hu; reflexivity]];
       unl Hu; eapply tv_appk; [exact HW| |apply KTSpawn|done|apply ubs_none];
-      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 x)) (Some (pt_shift 1 x))
+      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 x)) (Some (pt_dual (pt_shift 1 x)))
                 (fresh (dom (<[φ:=Some x]> Φ)))); [apply is_fresh|unl Hu; intros y Hy; mem_cases Hy; apply sle_refl, HW|];
       unl Hu; apply tv_letu; [exact HW|unl Hu; reflexivity|apply tv_var; [exact HW|unl Hu; reflexivity|unl Hu; reflexivity]|];
       unl Hu; eapply tv_appk; [exact HW|apply tv_var; [exact HW|unl Hu; reflexivity|unl Hu; reflexivity]|apply KTClos|done|];
@@ -459,7 +466,7 @@ Section enc.
         cbn. eexists. rewrite lookup_insert_eq. split; [done|]. apply sle_refl, HW.
     - unl Hu. apply tv_letu; [exact HW|unl Hu; reflexivity| |].
       + unl Hu. eapply tv_appk; [exact HW| |apply KTSpawn|done|apply ubs_none].
-        eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 x)) (Some (pt_shift 1 x))
+        eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 x)) (Some (pt_dual (pt_shift 1 x)))
                   (fresh (dom (<[φ:=Some x]> Φ)))); [apply is_fresh| |].
         { unl Hu. intros y Hy. mem_cases Hy. apply sle_refl, HW. }
         unl Hu. apply tv_letu; [exact HW|unl Hu; reflexivity| |].
@@ -523,10 +530,10 @@ Proof.
     apply st_konst; [by apply tr_lenv_empty|by apply tr_konst_plain|by apply tr_kscoped].
   - apply styped_wnil.
     apply (selE_typed wnil wnil_strict 0 Inj1); [by left|by right|by apply lenv_empty_allunl, tr_lenv_empty
-      |by apply hlt_slt|by apply hlt_slt].
+      |by apply hlt_slt|by apply hlt_slt|by apply hlt_slt].
   - apply styped_wnil.
     apply (selE_typed wnil wnil_strict 1 Inj2); [by right|by right|by apply lenv_empty_allunl, tr_lenv_empty
-      |by apply hlt_slt|by apply hlt_slt].
+      |by apply hlt_slt|by apply hlt_slt|by apply hlt_slt].
   - apply styped_wnil. apply (braE_typed wnil wnil_strict). by apply lenv_empty_allunl, tr_lenv_empty.
   - rewrite tr_ty_inst. apply st_konst; [by apply tr_lenv_empty| |done].
     rewrite <-(sinst_slist_nil (ty_inst xs (tr_ty T))).

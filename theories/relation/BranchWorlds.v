@@ -380,9 +380,10 @@ Proof. intros HE. induction 1; subst; eauto. Qed.
 
 Lemma glt_rank E L (r : point → nat) x y :
   (∀ x y, E x y → x = y) → (∀ x y, L x y → r x < r y) → (∀ x, r x < r (pt_shift 1 x)) →
+  (∀ x, r x < r (pt_shift 1 (pt_dual x))) →
   glt E L x y → r x < r y.
 Proof.
-  intros HE HL Hp. induction 1 as [| |x x' y y' Hx _ IH Hy|]; [auto|auto| |lia].
+  intros HE HL Hp Hd. induction 1 as [| |x x' y y' Hx _ IH Hy| |]; [auto|auto| |lia|auto].
   apply (geq_eqonly E) in Hx, Hy; [|done..]. by subst.
 Qed.
 
@@ -390,6 +391,9 @@ Definition rk (a : nat) (x : point) : nat :=
   2 * pt_off x + if decide (pt_name x = NConst a) then 1 else 0.
 
 Lemma rk_po a x : rk a x < rk a (pt_shift 1 x).
+Proof. unfold rk, pt_shift. simpl. case_decide; lia. Qed.
+
+Lemma rk_dpo a x : rk a x < rk a (pt_shift 1 (pt_dual x)).
 Proof. unfold rk, pt_shift. simpl. case_decide; lia. Qed.
 
 Lemma N2_wf L : (∀ x y, L x y → pt_root x ∈ N2 ∧ pt_root y ∈ N2) → world_wf (wgen N2 nof L).
@@ -411,14 +415,14 @@ Proof. unfold N2, xd, pt_root. simpl. set_solver. Qed.
 Lemma Wcd_strict : strict Wcd.
 Proof.
   split; [apply N2_wf, only_supp; [apply xc_N2|apply xd_N2]|].
-  intros x Hx. apply (glt_rank nof (only xc xd) (rk 1)) in Hx; [lia|by intros ?? []| |apply rk_po].
+  intros x Hx. apply (glt_rank nof (only xc xd) (rk 1)) in Hx; [lia|by intros ?? []| |apply rk_po|apply rk_dpo].
   intros ?? [-> ->]. unfold rk. simpl. repeat case_decide; simplify_eq; lia.
 Qed.
 
 Lemma Wdc_strict : strict Wdc.
 Proof.
   split; [apply N2_wf, only_supp; [apply xd_N2|apply xc_N2]|].
-  intros x Hx. apply (glt_rank nof (only xd xc) (rk 0)) in Hx; [lia|by intros ?? []| |apply rk_po].
+  intros x Hx. apply (glt_rank nof (only xd xc) (rk 0)) in Hx; [lia|by intros ?? []| |apply rk_po|apply rk_dpo].
   intros ?? [-> ->]. unfold rk. simpl. repeat case_decide; simplify_eq; lia.
 Qed.
 
@@ -463,10 +467,10 @@ Proof.
     { intros i c b' x y Hi Hs. destruct i as [|[]]; [|done|done]. injection Hi as <-.
       destruct b'; simpl in Hs; destruct Hs as [-> ->]; split; first [apply xc_N2|apply xd_N2]. }
     intros x Hx.
-    apply (glt_rank (w_eq W0) _ (rk (if b then 0 else 1))) in Hx; [lia| | |apply rk_po].
+    apply (glt_rank (w_eq W0) _ (rk (if b then 0 else 1))) in Hx; [lia| | |apply rk_po|apply rk_dpo].
     + intros ?? H. by apply (geq_eqonly nof) in H; [|intros ?? []].
     + intros x0 y0 [H|H].
-      * apply (glt_rank nof nof (rk (if b then 0 else 1)) x0 y0) in H; [done|by intros ?? []|by intros ?? []|apply rk_po].
+      * apply (glt_rank nof nof (rk (if b then 0 else 1)) x0 y0) in H; [done|by intros ?? []|by intros ?? []|apply rk_po|apply rk_dpo].
       * apply Hp in H. destruct H as [-> ->]. unfold rk. destruct b; simpl;
           repeat case_decide; simplify_eq; lia.
 Qed.
@@ -495,7 +499,8 @@ Proof. induction p as [a|a|p IH b i]; simpl; [done|done|exact IH..]. Qed.
 
 Lemma pt_root_inst' σ x :
   pt_root (pt_inst σ x) = match pt_root x with NVar a => pt_root (σ a) | q => q end.
-Proof. destruct x as [p o]. exact (pn_root_inst' σ p). Qed.
+Proof. destruct x as [p [] o]; exact (pn_root_inst' σ p). Qed.
+
 
 Lemma Dlt_supp W a C x y :
   world_wf W → Forall (pt_known W) (bc_env C) → Dlt a C x y →

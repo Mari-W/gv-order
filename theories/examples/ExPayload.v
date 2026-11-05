@@ -28,7 +28,15 @@
     The client closes k₁′ at a[0] while it holds k₂′ at v′ and asks
     a[0] ≺ v′. That fact is the hypothesis E-Open gives it. The point v′
     is not a payload point of c, so no constraint written before the
-    receive mentions it. The top-level constraint is {a+1 ≺ a[0]}. *)
+    receive mentions it. The top-level constraint is {a+1 ≺ a[0]}.
+
+    With end points the two ends of a channel sit at dual points. k₁ is
+    created at (a[0])‾ so that the sent end k₁′ sits at the payload
+    point a[0]. k₂ is created at v with {a[0] ≺ v, a[0] ≺ v̄}, k₂′ sits
+    at v̄, and the payload constraint becomes {ι₀ ≺ ι, ι₀ ≺ ῑ}, because
+    the client blocks at a[0] while it holds k₂′ at v′, whose partner
+    point is v̄′. The top-level constraint states a+1 ≺ a[0] at all four
+    polarities. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -43,11 +51,11 @@ Abbreviation pa0 k := (Pt (NPayload (NVar 0) 0 0) k).
 (** ** The payload *)
 
 (** {ι₀ ≺ ι}: the variable 0 is ι, the variable 1 is the outer point ι₀. *)
-Definition Cx : bcs := BCs [pvar 0] (λ g, g = FLt (pvar 1) (pvar 0)).
+Definition Cx : bcs := BCs [pvar 0] (λ g, g = FLt (pvar 1) (pvar 0) ∨ g = FLt (pvar 1) (pt_dual (pvar 0))).
 Definition Pay : ty := TProd (TSess SEnd (pvar 0)) (TEx (LPt (pvar 0)) 1 Cx (TSess Sd (pvar 0))).
 Definition Sx : sty := SSeq (SSnd 1 Pay) SEnd.
 
-Definition Cx_at (x : point) : bcs := BCs [x] (λ g, g = FLt (pvar 1) (pvar 0)).
+Definition Cx_at (x : point) : bcs := BCs [x] (λ g, g = FLt (pvar 1) (pvar 0) ∨ g = FLt (pvar 1) (pt_dual (pvar 0))).
 
 Lemma pay_at x :
   payload_at 1 Pay x =
@@ -71,8 +79,22 @@ Definition client : expr :=
 Definition ex_main : expr :=
   let_new_pair (LetU (App ESpawn (Lam (LetU (Var 0) server))) client).
 
-Definition ex_fact (g : fact) : Prop := g = FLt (pa 1) (pa0 0).
+Definition ex_fact (g : fact) : Prop :=
+  g = FLt (pa 1) (pa0 0) ∨ g = FLt (pa 1) (pt_dual (pa0 0)) ∨
+  g = FLt (pt_dual (pa 1)) (pa0 0) ∨ g = FLt (pt_dual (pa 1)) (pt_dual (pa0 0)).
 Definition C0x : bcs := BCs [] ex_fact.
+
+(** The creation constraint of k₂ at v = 0 with a[0] = 1 outside. *)
+Definition Ck2 : bcs := BCs [pa0 0] (λ g, g = FLt (pvar 1) (pvar 0) ∨ g = FLt (pvar 1) (pt_dual (pvar 0))).
+
+Lemma ck2_ok peq plt : cc_ok peq plt Ck2.
+Proof.
+  apply (cc_ok_out _ _ Ck2 olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
+  - intros a b (f & [-> | ->] & _ & E); discriminate E.
+  - intros a b (f & [-> | ->] & _ & E); injection E as -> ->; cbn; auto.
+  - intros u p q v (f & [-> | ->] & _ & E) (f' & [-> | ->] & _ & E') Hu Hp Hq Hv _;
+      injection E as -> ->; injection E' as -> ->; exfalso; apply Hu, Hq.
+Qed.
 
 Lemma ex_rank_ok : c0_acyclic 1 C0x.
 Proof.
@@ -81,9 +103,10 @@ Proof.
     | _ => 10 * pt_off x
     end).
   apply (c0_acyclic_rank 1 _ r).
-  - intros [p o]. unfold r, pt_shift. simpl. repeat case_match; lia.
-  - by intros ? ? ?.
-  - intros x y [= -> ->]. unfold r. cbn. lia.
+  - intros [p pb o]. unfold r, pt_shift. simpl. repeat case_match; lia.
+  - by intros ? ? [?|[?|[?|?]]].
+  - intros x y [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; unfold r; cbn; lia.
+  - intros [p pb o]. done.
 Qed.
 
 (** ** The derived rules
@@ -156,34 +179,42 @@ Lemma ex_typed : styped ∅ [(C0x, ids 1)] [] (∅, None) ex_main TUnit.
 Proof.
   apply styped_wnil. set (W := wnil). set (Ψ := [(C0x, ids 1)]).
   pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold ex_main.
-  assert (slt W Ψ (pa 1) (pa0 0)) as F1.
-  { apply (sl_hyp0 W Ψ ex_fact (ids 1) (pa 1) (pa0 0)); [by left|done|split; cbn; lia|done|done]. }
+  assert (slt W Ψ (pt_dual (pa 1)) (pa0 0)) as F1.
+  { apply (sl_hyp0 W Ψ ex_fact (ids 1) (pt_dual (pa 1)) (pa0 0)); [by left|by right; right; left|split; cbn; lia|done|done]. }
+  assert (slt W Ψ (pt_dual (pa 1)) (pt_dual (pa0 0))) as F1b.
+  { apply (sl_hyp0 W Ψ ex_fact (ids 1) (pt_dual (pa 1)) (pt_dual (pa0 0))); [by left|by right; right; right|split; cbn; lia|done|done]. }
+  assert (skn W Ψ (pt_dual (pa0 0))) as Ka0d by (right; exists C0x, (ids 1), (pvar 0); split_and!; [by left|by left|done]).
   assert (skn W Ψ (pa 0)) as Ka by (right; exists C0x, (ids 1), (pvar 0); split_and!; [by left|by left|done]).
   assert (skn W Ψ (pa0 0)) as Ka0 by (right; exists C0x, (ids 1), (pvar 0); split_and!; [by left|by left|done]).
   apply (t_new_at W _ _ _ _ _ _ _ Sx (pa 0) HWs Ka). cbn.
   tstep.
   { (* the server thread *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pa0 0)) (Some (pa 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pa0 0))) (Some (pt_dual (pa 0))) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. unfold server.
-    apply (t_new_at W _ _ _ _ _ _ _ SEnd (pa0 0) HWs Ka0). cbn.
-    apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ (dual Sd) [pa0 0] []);
-      [constructor; [exact Ka0|constructor]|intros l h _ Hh; by apply elem_of_nil in Hh|].
+    apply (t_new_at W _ _ _ _ _ _ _ SEnd (pt_dual (pa0 0)) HWs Ka0d). cbn.
+    apply (t_new_open W _ _ ∅ _ _ _ _ (dual Sd) Ck2); [apply ck2_ok|constructor; [exact Ka0|constructor]|].
     rewrite tenv_pinst_empty, sf_pinst_empty. cbn.
     match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ' := Q) end.
     assert (slt W Ψ' (pv 1 1) (Pt (NPayload (NVar 1) 0 0) 0)) as F1'.
-    { apply (sl_hyp0 W Ψ' ex_fact [pvar 1] (pa 1) (pa0 0)); [by left|done|split; cbn; lia|done|done]. }
+    { apply (sl_hyp0 W Ψ' ex_fact [pvar 1] (pa 1) (pa0 0)); [by left|by left|split; cbn; lia|done|done]. }
+    assert (slt W Ψ' (pv 1 1) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0))) as F1d.
+    { apply (sl_hyp0 W Ψ' ex_fact [pvar 1] (pa 1) (pt_dual (pa0 0))); [by left|by right; left|split; cbn; lia|done|done]. }
     assert (slt W Ψ' (Pt (NPayload (NVar 1) 0 0) 0) (pvar 0)) as G.
-    { apply (slt_fresh_l W Ψ' (pshift 1) [pa0 0] [] (pvar 0) (pa0 0)); [by right; left|by left]. }
+    { eapply (sl_hyp W Ψ' _ _ [pvar 0] (FLt (pvar 1) (pvar 0))); [by right; left|by left|fsc|reflexivity]. }
+    assert (slt W Ψ' (Pt (NPayload (NVar 1) 0 0) 0) (pt_dual (pvar 0))) as G'.
+    { eapply (sl_hyp W Ψ' _ _ [pvar 0] (FLt (pvar 1) (pt_dual (pvar 0)))); [by right; left|by right|fsc|reflexivity]. }
     assert (slt W Ψ' (pv 1 0) (Pt (NPayload (NVar 1) 0 0) 0)) as F0'.
     { eapply sl_trans; [apply (slt_po W _ (pv 1 0) HW)|exact F1']. }
-    assert (skn W Ψ' (pvar 0)) as Kv.
+    assert (slt W Ψ' (pv 1 0) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0))) as F0d.
+    { eapply sl_trans; [apply (slt_po W _ (pv 1 0) HW)|exact F1d]. }
+    assert (skn W Ψ' (pt_dual (pvar 0))) as Kv.
     { right. eexists _, (ids 1), (pvar 0). split_and!; [by right; left|by left|done]. }
     tstep.
     { (* the receiver of k₂ *)
       tstep; [|apply KTSpawn|done|apply ubs_none].
-      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pvar 0)) 1); [set_solver| |].
+      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pt_dual (pvar 0))) 1); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn. unfold recvclose. tstep.
       - tstep; [tstep|apply KTRecv|kscope|].
@@ -198,26 +229,26 @@ Proof.
       - tstep; [|apply (KTSend _ _ _ 1 Pay SEnd (pv 1 0))|exact pay_scoped|].
         + rewrite pay_at. tstep; [tstep|]. tstep; [|tstep].
           eapply (t_pack W _ _ _ _ _ _ (LPt (Pt (NPayload (NVar 1) 0 0) 0)) 1
-                    (Cx_at (Pt (NPayload (NVar 1) 0 0) 0)) (TSess Sd (pvar 0)) [pvar 0]).
+                    (Cx_at (Pt (NPayload (NVar 1) 0 0) 0)) (TSess Sd (pvar 0)) [pt_dual (pvar 0)]).
           * done.
           * constructor; [exact Kv|constructor].
-          * apply bcs_hold_env. intros f -> _. cbn. exact G.
+          * apply bcs_hold_env. intros f [-> | ->] _; cbn; [exact G'|exact G].
           * split; [|done]. intros y Hy. mem_cases Hy. right. exact G.
           * cbn. tstep.
-        + rewrite pay_at. cbn. intros h Hh. mem_cases Hh; exact F0'.
-        + apply ubs_intro; [intros y Hy; mem_cases Hy; exact F0'|].
-          exists (Pt (NPayload (NVar 1) 0 0) 0). split; [done|]. right. exact F0'.
-      - apply ubs_intro; [intros y Hy; mem_cases Hy; exact F1'|].
-        exists (Pt (NPayload (NVar 1) 0 0) 0). split; [done|]. right. exact F1'. }
+        + rewrite pay_at. cbn. intros h Hh. mem_cases Hh; first [exact F0'|exact F0d].
+        + apply ubs_intro; [intros y Hy; mem_cases Hy; first [exact F0'|exact F0d]|].
+          exists (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)). split; [done|]. right. exact F0d.
+      - apply ubs_intro; [intros y Hy; mem_cases Hy; first [exact F1'|exact F1d]|].
+        exists (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)). split; [done|]. right. exact F1d. }
     (* close k₁ *)
     tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (Pt (NPayload (NVar 1) 0 0) 0). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)). split; [done|]. apply sle_refl, HW. }
   (* the client *)
   cbn. unfold client. tstep.
   { tstep; [tstep|apply KTRecv|exact pay_scoped|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
   rewrite pay_at. cbn. tstep.
-  { tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy; exact F1|done]. }
+  { tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy; first [exact F1|exact F1b]|done]. }
   cbn. tstep; [tstep|]. cbn.
   eapply (tv_open W _ _ _ _ _ 0); [reflexivity|intros []|reflexivity|reflexivity|reflexivity|reflexivity|reflexivity|].
   cbn. rewrite ?sf_pinst_empty.
@@ -227,10 +258,17 @@ Proof.
     assert (bcs_open 1 (bcs_inst (pshift 1) (Cx_at (pt_payload (pa 0) 0)))
               (fact_map (pt_inst (pup 1 (plist [pt_inst (pshift 1) (pt_payload (pa 0) 0)])))
                  (FLt (pvar 1) (pvar 0)))) as Ho.
-    { exists (FLt (pvar 1) (pvar 0)). split_and!; [done|split; cbn; lia|done]. }
+    { exists (FLt (pvar 1) (pvar 0)). split_and!; [by left|split; cbn; lia|done]. }
+    apply (hyp_in_fact W Ψ'' _ _ Hin) in Ho. exact Ho. }
+  assert (slt W Ψ'' (Pt (NPayload (NVar 1) 0 0) 0) (pt_dual (pvar 0))) as H0d.
+  { assert ((bcs_inst (pshift 1) (Cx_at (pt_payload (pa 0) 0)), [pvar 0]) ∈ Ψ'') as Hin by (by right; left).
+    assert (bcs_open 1 (bcs_inst (pshift 1) (Cx_at (pt_payload (pa 0) 0)))
+              (fact_map (pt_inst (pup 1 (plist [pt_inst (pshift 1) (pt_payload (pa 0) 0)])))
+                 (FLt (pvar 1) (pt_dual (pvar 0))))) as Ho.
+    { exists (FLt (pvar 1) (pt_dual (pvar 0))). split_and!; [by right|split; cbn; lia|done]. }
     apply (hyp_in_fact W Ψ'' _ _ Hin) in Ho. exact Ho. }
   tstep.
-  { tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy; exact H0|done]. }
+  { tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy; first [exact H0d|exact H0]|done]. }
   cbn. unfold sendclose. tstep; [|apply KTClos|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
   tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (pvar 0)); cbn; set_solver|done|].
   - tstep; tstep.
