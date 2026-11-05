@@ -156,7 +156,7 @@ Inductive ptyped (W : world) : senv → proc → ty → Prop :=
   | pt_connect Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :         (* P-Connect *)
       ptyped W (Σ1 ∪ ΣC) (C1, E1) T → ptyped W (Σ2 ∪ ΣC') (C2, E2) TUnit →
       dom ΣC = C0 → dom ΣC' = C0 →
-      (∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' → w_eq W e.2 e'.2 ∧ sdual e.1 e'.1) →
+      (∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' → w_eq W e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1) →
       C1 ## dom Σ2 → C2 ## dom Σ1 →
       Σ1 ##ₘ ΣC → Σ2 ##ₘ ΣC' → Σ1 ##ₘ Σ2 →
       C1 ## dom Σ1 → C2 ## dom Σ2 → C1 ## C0 → C2 ## C0 → C1 ## C2 →

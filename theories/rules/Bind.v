@@ -10,9 +10,10 @@ From LRGV Require Export composition.PTerm.
 
 Set Default Proof Using "All".
 
-(** Every entry of Θ2 lies at or above some point of H. *)
+(** The partner point of every entry of Θ2 lies at or above some point
+    of H (end points: H collects partner points). *)
 Definition heads_above (W : world) (H : gset point) (Θ2 : tenv) : Prop :=
-  ∀ k e, tenv_entry Θ2 k = Some e → ∃ h, h ∈ H ∧ w_le W h e.2.
+  ∀ k e, tenv_entry Θ2 k = Some e → ∃ h, h ∈ H ∧ w_le W h (pt_dual e.2).
 
 Lemma heads_above_mono W W' H Θ2 : wext W W' → heads_above W H Θ2 → heads_above W' H Θ2.
 Proof.
@@ -33,6 +34,13 @@ Proof. intros HW [Hh|Hb]; [left; by eapply heads_above_mono|by right]. Qed.
 
 (** ** Composition, pointwise *)
 
+(** Two ends at dual points, read from either end (end points). The
+    composition lemmas need this symmetry of their alias relation. *)
+Definition rdsym (R : point → point → Prop) : Prop := ∀ x y, R x (pt_dual y) → R y (pt_dual x).
+
+Lemma wf_rdsym W : world_wf W → rdsym (w_eq W).
+Proof. intros HW x y. by apply wf_eq_dual_sym. Qed.
+
 Lemma comp_lookup R Θ Θ1 Θ2 c :
   tenv_comp R Θ Θ1 Θ2 → Θ2 !! c = None → Θ !! c = Θ1 !! c.
 Proof. intros [Hj _] H2. specialize (Hj c). rewrite H2 in Hj. by inversion Hj. Qed.
@@ -50,7 +58,7 @@ Proof.
 Qed.
 
 Lemma comp_comm R Θ Θ1 Θ2 :
-  (∀ x y, R x y → R y x) → tenv_comp R Θ Θ1 Θ2 → tenv_comp R Θ Θ2 Θ1.
+  rdsym R → tenv_comp R Θ Θ1 Θ2 → tenv_comp R Θ Θ2 Θ1.
 Proof.
   intros Hs [Hj Hd]. split.
   - intros x. specialize (Hj x). inversion Hj; constructor.
@@ -81,7 +89,7 @@ Ltac jcases x Θs :=
     end in go Θs.
 
 Lemma comp_assoc R Θ Θa Θb Θc Θd :
-  (∀ x y, R x y → R y x) →
+  rdsym R →
   tenv_comp R Θ Θa Θb → tenv_comp R Θa Θc Θd →
   tenv_comp R (tjoin_as Θ Θc Θb) Θc Θb ∧ tenv_comp R Θ (tjoin_as Θ Θc Θb) Θd.
 Proof.
@@ -364,21 +372,21 @@ Section bind_ready.
       split.
       + intros [c b] ent Hent Hnot.
         destruct (decide (c ∈ dom Θ2)) as [Hin|Hnin].
-        * assert (∃ h, h ∈ H ∧ w_le W h ent.2) as (h & HhH & Hle).
-        { apply elem_of_dom in Hin as [o2 Ho2]. destruct Hc as [Hj Hd].
+        * change (entry_head (c, b) ent) with ent.2.
+          apply elem_of_dom in Hin as [o2 Ho2]. pose proof Hc as [Hj Hd].
           pose proof (Hj c) as Jc. unfold tenv_entry in Hent. simpl in Hent. rewrite Ho2 in Jc.
+          assert (Hn1 : ∀ e1, Θ1 !! c = Some (One e1) → w_lt W (entry_head k0 ent0) (pt_dual e1.2)).
+          { intros e1 He1. apply (H1 (c, false) e1); [unfold tenv_entry; simpl; by rewrite He1|].
+            intros Ho'. apply (proj2 (br_up Hab _ Ho')). simpl. by apply elem_of_dom_2 in Ho2. }
+          assert (Hn2 : ∀ k' e2, tenv_entry Θ2 k' = Some e2 → w_lt W (entry_head k0 ent0) (pt_dual e2.2)).
+          { intros k' e2 He2. destruct (Hh' k' e2 He2) as (h & HhH & Hle).
+            eapply lt_le_W; [apply HW| |exact Hle]. apply H2. by apply elem_of_union_r. }
           destruct (Θ1 !! c) as [o1|] eqn:Ho1, (Θ !! c) as [o|] eqn:Ho;
             inversion Jc; subst; try done.
-          all: first [ (apply (Hh' (c, b)); unfold tenv_entry; simpl; rewrite Ho2; done) | lazymatch type of Ho1 with _ = Some (One ?e1) => lazymatch type of Ho2 with _ = Some (One ?e2) =>
-                     destruct (Hh' (c, false) e2) as (h & Hh1 & Hh2);
-                       [unfold tenv_entry; simpl; by rewrite Ho2|];
-                     destruct (Hd c e1 e2 Ho1 Ho2) as [Hq _];
-                     exists h; split; [done|];
-                     destruct b; simplify_eq; first
-                       [done|eapply eq_le_W; [apply HW|exact Hh2|by apply (wf_eq_sym _ (proj1 HW))]]
-                 end end ]. }
-          eapply lt_le_W; [apply HW| |exact Hle].
-          apply H2. by apply elem_of_union_r.
+          all: first [ apply (Hn2 (c, b)); unfold tenv_entry; simpl; rewrite Ho2; done
+                     | destruct b; simplify_eq;
+                       first [ by apply Hn1
+                             | apply (Hn2 (c, false)); unfold tenv_entry; simpl; by rewrite Ho2 ] ].
         * rewrite (entry_agree _ _ _ _ _ _ Hc) in Hent by done.
           apply (H1 (c, b) ent Hent). intros Ho'. apply Hnot. exact (proj1 (br_up Hab _ Ho')).
       + intros y Hy. apply H2. by apply elem_of_union_l.
@@ -415,7 +423,7 @@ Proof.
   assert (HE : Erel (S n') W Θ1 Th (F ∪ H) e).
   { apply Erel_S_iff. split_and!; [done|done|]. intros α e' Hst.
     eapply Ecase_gen_mono; [|exact (Hstep α e' Hst)]. by intros ? ? ? ? ? [? _]. }
-  assert (∀ x y, w_eq W x y → w_eq W y x) as Hsym by apply (wf_eq_sym _ (proj1 HW)).
+  assert (rdsym (w_eq W)) as Hsym by (by apply wf_rdsym, HW).
   destruct (is_val e) eqn:Hv.
   { apply (HK W (S n') Θ1 Θ e); [by apply wext_refl|lia|done|].
     apply Hval, val_irred. by rewrite Hv. }
@@ -445,7 +453,7 @@ Proof.
       exists (partial_alter (λ _, Θ1r !! c) c Θ), m, U, s, k. split; [by exists s0|].
       intros W' j Θp Θrc Θ' HW' Hj Hextc Hcomp' HV.
       pose proof (proj2 (proj2 (proj2 HW'))) as HWs'.
-      assert (∀ x y, w_eq W' x y → w_eq W' y x) as Hsym' by apply (wf_eq_sym _ (proj1 HWs')).
+      assert (rdsym (w_eq W')) as Hsym' by (by apply wf_rdsym, HWs').
       pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW')) Hcr) as Hcr'.
       destruct (comp_ext_back _ _ _ _ _ c _ Hcr' H2c Hextc) as [Hc1 Hext1].
       destruct (comp_assoc _ _ _ _ _ _ Hsym' Hcomp' Hc1) as [HX1 HX2].

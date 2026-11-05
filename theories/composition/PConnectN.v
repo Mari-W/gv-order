@@ -47,7 +47,7 @@ Definition cut_out (D : gset chan) (Σ : senv) : senv := filter (λ kv, kv.1 ∉
 Definition cut_in (D : gset chan) (Σ : senv) : senv := filter (λ kv, kv.1 ∈ D) Σ.
 
 Record conn_ok (W : world) (C0 : gset chan) (ps : list comp) : Prop := {
-  ok_cut c : c ∈ C0 → ∃ e e', ends c ps = [e; e'] ∧ w_eq W e.2 e'.2 ∧ sdual e.1 e'.1;
+  ok_cut c : c ∈ C0 → ∃ e e', ends c ps = [e; e'] ∧ w_eq W e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1;
   ok_one c : c ∉ C0 → length (ends c ps) ≤ 1;
   ok_C c : length (filter (λ p, c ∈ cC p) ps) ≤ 1;
   ok_C0 p : p ∈ ps → cC p ## C0;
@@ -159,7 +159,7 @@ Section merge.
 
   Lemma Cc_ends c : c ∈ Cc → ∃ e e',
     cΓ h !! c = Some e ∧ cΓ r !! c = Some e' ∧ ends c rs = [] ∧
-    w_eq W e.2 e'.2 ∧ sdual e.1 e'.1.
+    w_eq W e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1.
   Proof.
     intros Hc. pose proof (Cc_sub c Hc) as HC0.
     destruct (ok_cut _ _ _ Hok c HC0) as (e0 & e0' & Hends & Heq & Hd).
@@ -378,7 +378,7 @@ Theorem Prel_connect_n T C0 h rs :
   sem_ptyped (nW h) (nΣ h ∪ nΣC h) (nC h, nE h) T →
   Forall (λ p, sem_ptyped (nW p) (nΣ p ∪ nΣC p) (nC p, nE p) TUnit) rs →
   (∀ c, c ∈ C0 → ∃ e e', omap (λ p, nΣC p !! c) ps = [e; e'] ∧
-     w_eq Wall e.2 e'.2 ∧ sdual e.1 e'.1) →
+     w_eq Wall e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1) →
   (∀ p, p ∈ ps → dom (nΣC p) ⊆ C0 ∧ dom (nΣ p) ## C0) →
   (∀ c, length (omap (λ p, nΣ p !! c) ps) ≤ 1) →
   (∀ c, length (filter (λ p, c ∈ nC p) ps) ≤ 1) →

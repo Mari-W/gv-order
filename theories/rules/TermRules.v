@@ -140,10 +140,10 @@ Qed.
 
 (** ** Composition: units and rearrangements *)
 
-Lemma tenv_comp_empty_l R Θ : (∀ x y, R x y → R y x) → tenv_comp R Θ ∅ Θ.
+Lemma tenv_comp_empty_l R Θ : rdsym R → tenv_comp R Θ ∅ Θ.
 Proof. intros Hs. apply comp_comm; [done|]. apply tenv_comp_empty_r. Qed.
 
-Lemma tenv_comp_empty_l_inv R Θ Θ2 : (∀ x y, R x y → R y x) → tenv_comp R Θ ∅ Θ2 → Θ = Θ2.
+Lemma tenv_comp_empty_l_inv R Θ Θ2 : rdsym R → tenv_comp R Θ ∅ Θ2 → Θ = Θ2.
 Proof. intros Hs Hc. by eapply tenv_comp_empty_r_inv, comp_comm. Qed.
 
 Lemma tenv_comp_empty_inv R Θ : tenv_comp R Θ ∅ ∅ → Θ = ∅.
@@ -151,7 +151,7 @@ Proof. apply tenv_comp_empty_r_inv. Qed.
 
 (** (Θ1, Θ2), (Θ1', Θ2') = (Θ1, Θ1'), (Θ2, Θ2'). *)
 Lemma comp_swap4 R Θ'' Θ Θ' Θ1 Θ2 Θ1' Θ2' :
-  (∀ x y, R x y → R y x) →
+  rdsym R →
   tenv_comp R Θ'' Θ Θ' → tenv_comp R Θ Θ1 Θ2 → tenv_comp R Θ' Θ1' Θ2' →
   ∃ A B, tenv_comp R Θ'' A B ∧ tenv_comp R A Θ1 Θ1' ∧ tenv_comp R B Θ2 Θ2'.
 Proof.
@@ -174,7 +174,7 @@ Lemma grounding_split n W Θ Δ Δ1 Δ2 γ :
   world_wf W → lenv_split Δ Δ1 Δ2 → grounding n W Θ Δ γ →
   ∃ Θ1 Θ2, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧ grounding n W Θ1 Δ1 γ ∧ grounding n W Θ2 Δ2 γ.
 Proof.
-  intros HW Hsp. assert (∀ x y, w_eq W x y → w_eq W y x) as Hs by apply (wf_eq_sym _ HW).
+  intros HW Hsp. assert (rdsym (w_eq W)) as Hs by (by apply wf_rdsym).
   revert Θ γ. induction Hsp as [|Δ Δ1 Δ2 Hsp IH|T Δ Δ1 Δ2 Hsp IH|T Δ Δ1 Δ2 Hsp IH|U Δ Δ1 Δ2 HU Hsp IH];
     intros Θ γ Hg; simpl in *.
   - subst. exists ∅, ∅. split_and!; [apply tenv_comp_empty_r|done|done].
@@ -210,7 +210,7 @@ Qed.
 Lemma grounding_only n W Θ Δ γ x T :
   world_wf W → lenv_only Δ x T → grounding n W Θ Δ γ → Vrel n W Θ T (γ x).
 Proof.
-  intros HW. assert (∀ x y, w_eq W x y → w_eq W y x) as Hs by apply (wf_eq_sym _ HW).
+  intros HW. assert (rdsym (w_eq W)) as Hs by (by apply wf_rdsym).
   revert Θ γ x. induction Δ as [|o Δ IH]; intros Θ γ x [Hx Honly] Hg; simpl in *.
   - done.
   - destruct x as [|x]; simpl in Hx.
@@ -302,8 +302,8 @@ Proof.
   - eapply IH; [|exact Hg]. intros i. apply Hγ.
 Qed.
 
-Lemma wext_sym W W' : wext W W' → ∀ x y, w_eq W' x y → w_eq W' y x.
-Proof. intros HW. apply (wf_eq_sym _ (wext_wf _ _ HW)). Qed.
+Lemma wext_sym W W' : wext W W' → rdsym (w_eq W').
+Proof. intros HW. apply wf_rdsym, (wext_wf _ _ HW). Qed.
 
 (** ** The elimination skeleton
 
@@ -402,7 +402,7 @@ Qed.
     Θ1' = Θa, Θb and B = Θ2, Θ'2 gives Θ3 = Θ2, X with X = Θb, A and
     A = Θa, Θ'2. *)
 Lemma comp_bind2 R Θ3 Θ1' B Θa Θb Θ2 Θ'2 :
-  (∀ x y, R x y → R y x) →
+  rdsym R →
   tenv_comp R Θ3 Θ1' B → tenv_comp R Θ1' Θa Θb → tenv_comp R B Θ2 Θ'2 →
   ∃ X A, tenv_comp R Θ3 Θ2 X ∧ tenv_comp R X Θb A ∧ tenv_comp R A Θa Θ'2.
 Proof.
@@ -783,7 +783,7 @@ Proof.
     apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [apply HW'|exact HB]|].
     apply Vrel_prod_iff. exists w, (Chan c), Θ2, {[c := One (s', pt_shift 1 k)]}. split_and!.
     + done.
-    + apply comp_comm; [exact (wf_eq_sym _ HWf')|exact Hcomp].
+    + apply comp_comm; [exact (wf_rdsym _ HWf')|exact Hcomp].
     + eapply Vrel_teq; [apply teq_ty_inst, HU0|].
       eapply Vrel_payload; [done| |exact HVw]. by apply (proj1 (proj2 HW')).
     + apply Vrel_sess_iff. exists c, s', (pt_shift 1 k). split_and!; [done|done|done|].
@@ -998,7 +998,7 @@ Proof.
     assert (α = LSess (SSend c w) ∧ e' = Chan c) as [-> ->] by (inversion Hst; done). simpl.
     exists Θw, ∅, Θw, m, U0, s', k, {[c := One (s', pt_shift 1 k)]}. split_and!.
     + by exists s0.
-    + apply tenv_comp_empty_l. exact (wf_eq_sym _ HWf).
+    + apply tenv_comp_empty_l. exact (wf_rdsym _ HWf).
     + eapply Vrel_payload; [done|exact (wf_eq_sym _ HWf _ _ Hk0)|].
       eapply Vrel_teq; [apply teq_ty_inst, teq_sym, HU0|exact HVw].
     + left. split; [done|by rewrite insert_empty].
@@ -1044,7 +1044,7 @@ Proof.
     exists c, d, ∅, {[d := One (sd, kd)]}, sc, sd, kc, kd. split_and!.
     + done.
     + left. split; [done|by rewrite insert_empty].
-    + apply (comp_single_ext (w_eq W)). apply comp_comm; [exact (wf_eq_sym _ HWf)|exact Hc].
+    + apply (comp_single_ext (w_eq W)). apply comp_comm; [exact (wf_rdsym _ HWf)|exact Hc].
     + apply sdual_seq_dual. eapply seq_trans; [exact Hsd|]. apply seq_dual, seq_sym, Hsc.
     + eapply (wf_eq_trans _ HWf); [exact Hkc|].
       eapply (wf_eq_trans _ HWf); [exact Hxx'|exact (wf_eq_sym _ HWf _ _ Hkd)].
@@ -1121,7 +1121,7 @@ Proof.
   - by apply IH.
   - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
     rewrite (Vrel_unl_empty _ _ _ _ _ HU HV) in Hc.
-    apply (tenv_comp_empty_l_inv _ _ _ (wf_eq_sym _ HW)) in Hc as ->. by apply IH.
+    apply (tenv_comp_empty_l_inv _ _ _ (wf_rdsym _ HW)) in Hc as ->. by apply IH.
 Qed.
 
 Lemma sem_typed_wk W Θ Δ' Δ F e T :
