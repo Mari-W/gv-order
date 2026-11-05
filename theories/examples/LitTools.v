@@ -101,12 +101,16 @@ Lemma dlt_irrefl x : ¬ dlt x x.
 Proof. unfold dlt. lia. Qed.
 Lemma dlt_po x : dlt x (pt_shift 1 x).
 Proof. unfold dlt, pt_shift. cbn. lia. Qed.
+Lemma dlt_dpo x : dlt x (pt_shift 1 (pt_dual x)).
+Proof. unfold dlt, pt_shift. cbn. lia. Qed.
 
 Lemma ult_trans x y z : ult x y → ult y z → ult x z.
 Proof. unfold ult. lia. Qed.
 Lemma ult_irrefl x : ¬ ult x x.
 Proof. unfold ult. lia. Qed.
 Lemma ult_po x : ult x (pt_shift 1 x).
+Proof. unfold ult, pt_shift. cbn. lia. Qed.
+Lemma ult_dpo x : ult x (pt_shift 1 (pt_dual x)).
 Proof. unfold ult, pt_shift. cbn. lia. Qed.
 
 (** A creation constraint whose facts are ≺ facts inside ι that fall or
@@ -116,7 +120,7 @@ Lemma cc_ok_dlt peq plt P :
   cc_ok peq plt (BCs [] P).
 Proof.
   intros HP. apply (cc_ok_inner peq plt P dlt);
-    [exact dlt_trans|exact dlt_irrefl|intros x _; apply dlt_po|exact HP].
+    [exact dlt_trans|exact dlt_irrefl|intros x _; apply dlt_po|exact HP|intros x _; apply dlt_dpo].
 Qed.
 
 Lemma cc_ok_ult peq plt P :
@@ -124,7 +128,7 @@ Lemma cc_ok_ult peq plt P :
   cc_ok peq plt (BCs [] P).
 Proof.
   intros HP. apply (cc_ok_inner peq plt P ult);
-    [exact ult_trans|exact ult_irrefl|intros x _; apply ult_po|exact HP].
+    [exact ult_trans|exact ult_irrefl|intros x _; apply ult_po|exact HP|intros x _; apply ult_dpo].
 Qed.
 
 (** ** E-Case for Θ = ∅
