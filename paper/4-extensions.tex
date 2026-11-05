@@ -19,7 +19,9 @@ the point variables its box binds.
   \begin{align*}
     \styB &= \tyMu\tvar. \sRecv{(\sAt{\tvar}{\pslot{\pself}{0}})}{\sTerm}
     &
-    \cstr &= \set{\, \fLt{\poff{\pslot{\pviA}{0^n}}{1}}{\pslot{\pviA}{0^{n+1}}}
+    \cstr &= \set{\, \fLt{\poff{\pslot{\pviA}{0^n}}{1}}{\pdual{\pslot{\pviA}{0^{n+1}}}},\
+      \fLt{\poff{\pdual{\pslot{\pviA}{0^n}}}{1}}{\pslot{\pviA}{0^{n+1}}},\
+      \fLt{\pdual{\pslot{\pviA}{0^n}}}{\pdual{\pslot{\pviA}{0^{n+1}}}}
       \;\mid\; n \in \Nat \,}
   \end{align*}
   and the two boxes and the main thread are
@@ -30,38 +32,50 @@ the point variables its box binds.
         \tLet[\chB][\ch_1]{\tApp{\tRecv}{\ch}}{}
       \\ & \quad
         \tSeq{\tApp{\tClos}{\ch_1}}{}
-        \tApp{\tSpawn}{(\tAbsA{\poff{\pslot{\pviA}{0}}{1}}{\pslot{\pviA}{0}}{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\pslot{\pviA}{0}})}{\chB}})}
+        \tApp{\tSpawn}{(\tAbsA{\poff{\pslot{\pviA}{0}}{1}}{\pdual{\pslot{\pviA}{0}}}{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\pslot{\pviA}{0}})}{\chB}})}
       \\
     \asTmId{sch} := {}
       & \tBoxA{\asTm{g}}{\pviA}{\cstr}{}
-        \tAbsA{\poff{\pviA}{1}}{}{\ch : \sAt{\dual{\styB}}{\pviA}}{}
+        \tAbsA{\poff{\pdual{\pviA}}{1}}{}{\ch : \sAt{\dual{\styB}}{\pdual{\pviA}}}{}
         \tLetS{\tPair{\asTm{e}}{\asTm{e}'}}{\tApp{\tNewC{\pviB}{\fEq{\pviB}{\pslot{\pviA}{0}}}}{\tUnit}}{}
       \\ & \quad
         \tLetS{\ch_1}{\tApp{\tSend}{\tPair{\asTm{e}}{\ch}}}{}
         \tSeq{\tApp{\tClos}{\ch_1}}{}
-        \tApp{\tSpawn}{(\tAbsA{\poff{\pslot{\pviA}{0}}{1}}{\pslot{\pviA}{0}}{\tUnit}{\tApp{(\tForceA{\asTm{g}}{\pslot{\pviA}{0}})}{\asTm{e}'}})}
+        \tApp{\tSpawn}{(\tAbsA{\poff{\pdual{\pslot{\pviA}{0}}}{1}}{\pslot{\pviA}{0}}{\tUnit}{\tApp{(\tForceA{\asTm{g}}{\pslot{\pviA}{0}})}{\asTm{e}'}})}
       \\
     \asTmId{chain} := {}
       & \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNewC{\pviA}{\cstr}}{\tUnit}}{}
-        \tSeq{\tApp{\tSpawn}{(\tAbsA{\poff{\pviA}{1}}{\pviA}{\tUnit}{\tApp{(\tForceA{\asTmId{sch}}{\pviA})}{\ch'}})}}{}
+        \tSeq{\tApp{\tSpawn}{(\tAbsA{\poff{\pdual{\pviA}}{1}}{\pviA}{\tUnit}{\tApp{(\tForceA{\asTmId{sch}}{\pviA})}{\ch'}})}}{}
         \tApp{(\tForceA{\asTmId{rch}}{\pviA})}{\ch}
   \end{align*}
-  The order is one infinite chain, program order and $\cstr$ in
-  alternation:
+  The receiver closes $\ch_1$ while it holds $\chB$ at
+  $\pslot{\pviA}{0}$, which gives the first fact. The sender sends $\asTm{e}$
+  and closes $\ch_1$ while it keeps $\asTm{e}'$ at
+  $\pdual{\pslot{\pviA}{0}}$, which gives the second, and the payload of
+  its send gives the third. The order is two infinite chains that cross
+  between the two ends at every round:
   \[
-    \fLt{\pviA}{{}} \poff{\pviA}{1}
-      \prec \pslot{\pviA}{0}
-      \prec \poff{\pslot{\pviA}{0}}{1}
+    \fLt{\poff{\pviA}{1}}{\pdual{\pslot{\pviA}{0}}}
+      \prec \poff{\pdual{\pslot{\pviA}{0}}}{1}
       \prec \pslot{\pviA}{0^2}
       \prec \dots
+    \qquad
+    \fLt{\poff{\pdual{\pviA}}{1}}{\pslot{\pviA}{0}}
+      \prec \poff{\pslot{\pviA}{0}}{1}
+      \prec \pdual{\pslot{\pviA}{0^2}}
+      \prec \dots
   \]
-  Each round owns two points, its receive and its close, and $\cstr$ is
-  the only thing that bridges two rounds, because program order relates
-  two points of one name only. The rank $2 \cdot \mathit{depth} +
-  \mathit{offset}$ witnesses acyclicity. The recursive call forces at
+  Each round owns four points, the receive and the close of each end,
+  and $\cstr$ is the only thing that bridges two rounds, because program
+  order relates two points of one name only. The rank $2 \cdot
+  \mathit{depth} + \mathit{offset}$, at either polarity, witnesses
+  acyclicity.
+  % TODO(author): depends on end-points port. ReceivedChain.v is not
+  % ported; C and the annotations are derived by hand.
+  The recursive call forces at
   $\pslot{\pviA}{0}$, so its obligation is
   $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which is $\cstr$ without its
-  fact at $n = 0$, hence contained in $\cstr$ (\rocq{ch_sub}). One
+  facts at $n = 0$, hence contained in $\cstr$ (\rocq{ch_sub}). One
   inclusion covers unboundedly many rounds. Nothing is unrolled and
   nothing is induced over.
   $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{chain} : \tyUnit$
@@ -89,20 +103,29 @@ The mechanized core has binary choice as primitive session types
 $\oplus\{\sty_0, \sty_1\}$ and $\&\{\sty_0, \sty_1\}$ with the constants
 $\asTmId{select}_0$, $\asTmId{select}_1$ and $\asTmId{branch}$
 (\rocq{konst_sig}). A choice at $\pntA$ continues at the payload point
-$\pslot{\pntA}{i}$ of the branch $i$ it picks, with $i \in \set{0,1}$,
+$\pslot{\pntA}{i}$ of the branch $i$ it picks, with $i \in \set{0,1}$.
+The branching end continues at $\pslot{\pntA}{i}$ and the selecting end
+at its partner point $\pdual{\pslot{\pntA}{i}}$ (\rocq{sel_pt},
+\rocq{bra_pt}), so the two ends stay at dual points,
 \begin{align*}
   \asTmId{select}_i &{}: \forall \pntA.\, \set{\fLt{\pntA}{\pslot{\pntA}{i}}}
     \Rightarrow \sAt{\oplus\{\sty_0, \sty_1\}}{\pntA}
-    \lolli{\pntA}{} \sAt{\sty_i}{\pslot{\pntA}{i}}
+    \lolli{\pntA}{} \sAt{\sty_i}{\pdual{\pslot{\pntA}{i}}}
   \\
   \asTmId{branch} &{}: \forall \pntA.\,
-    \set{\fLt{\pntA}{\pslot{\pntA}{0}}, \fLt{\pntA}{\pslot{\pntA}{1}}}
+    \set{\fLt{\pntA}{\pdual{\pslot{\pntA}{0}}}, \fLt{\pntA}{\pdual{\pslot{\pntA}{1}}}}
     \Rightarrow \sAt{\&\{\sty_0, \sty_1\}}{\pntA}
     \lolli{\pntA}{} \lSum{\sAt{\sty_0}{\pslot{\pntA}{0}}}{\sAt{\sty_1}{\pslot{\pntA}{1}}}
 \end{align*}
-The two branches get two points, so one branch may order a channel below
-the continuation and the other above it. A branch that orders two
-channels against the other branch types (\rocq{bo_deadlock_free}).
+Each constraint orders $\pntA$ below the heads of the result. The
+placement is the one of the encoding of choice below, where the
+branching end receives an end at $\pslot{\pntA}{i}$ and the selecting
+end keeps its partner. The two branches get two points, so one branch
+may order a channel below the continuation and the other above it. A
+branch that orders two channels against the other branch types
+(\rocq{bo_deadlock_free}).
+% TODO(author): depends on end-points port. BranchOrder.v and
+% ChoiceEnc.v are not ported.
 The term semantics labels a pick on $\ch$ with $\ch \triangleleft i$ and
 $\ch \triangleright i$, which \textsc{P-Act-Choice} synchronizes, and the
 logical relation has the clauses \textsc{O-Select}, \textsc{O-Branch},
@@ -120,14 +143,14 @@ while branching consumes one step (\rocq{scost}, \rocq{selects}).
   Put $D_\oplus=\oplus\{\sty_0,\sty_1\}$,
   $D_{\&}=\&\{\sty_0,\sty_1\}$ and
   \[
-    (D,\sigma,d)\in\set{
-      (D_\oplus,\lSelect{\ch}{i},0),
-      (D_{\&},\lBranch{\ch}{i},1)},\qquad i\in\set{0,1}.
+    (D,\sigma,d,\pntB)\in\set{
+      (D_\oplus,\lSelect{\ch}{i},0,\pdual{\pslot{\pntA}{i}}),
+      (D_{\&},\lBranch{\ch}{i},1,\pslot{\pntA}{i})},\qquad i\in\set{0,1}.
   \]
   \begin{proofrules}
     \infer*[lab=O-Select / O-Branch]{
       \tm'\in\lrEW{\wrld}{n-d}{\tenv_1,
-        \ch:\sAt{\sty_i}{\pslot{\pntA}{i}}\types\ty}{\frm}
+        \ch:\sAt{\sty_i}{\pntB}\types\ty}{\frm}
     }{
       \obl{\wrld;\tenv_1,\ch:\sAt{D}{\pntA}\mid\frm}{n}
         {\tm\trans{\sigma}\tm':\ty}
@@ -135,7 +158,7 @@ while branching consumes one step (\rocq{scost}, \rocq{selects}).
     \and
     \infer*[lab=Q-Select / Q-Branch]{
       (\chset',\pool')\in\lrPW{\wrld}{n-d}{
-        \senv_1,\ch:\sAt{\sty_i}{\pslot{\pntA}{i}}\types\ty}
+        \senv_1,\ch:\sAt{\sty_i}{\pntB}\types\ty}
     }{
       \obl{\wrld;\senv_1,\ch:\sAt{D}{\pntA}}{n}
         {(\chset,\pool)\trans{\sigma}(\chset',\pool'):\ty}
@@ -271,12 +294,13 @@ $\sSeq{\sIn{\payty}}{\sty}$.
   The other value clauses, term and process clauses, and readiness
   conditions stay unchanged (\rocq{Eobl}, \rocq{Pobl}, \rocq{selects}).
   \rulesection{Points and payloads}
-  $\heads(\sAt{\sty}{\pntA})=\set{\pntA}$ still holds.
+  $\heads(\sAt{\sty}{\pntA})=\set{\pdual{\pntA}}$ still holds.
   Point substitution still stops at session types. Session substitution
   enters payload types and dualizes an instance under $\dualv{\tvar}$
   (\rocq{sinst_ty}). Payload instantiation remains
-  $\payloadAt{\payty}{\pntA}$ and choice still moves to
-  $\pslot{\pntA}{i}$. Send and receive move to $\poff{\pntA}{1}$,
+  $\payloadAt{\payty}{\pntA}$, and choice still moves the branching end
+  to $\pslot{\pntA}{i}$ and the selecting end to
+  $\pdual{\pslot{\pntA}{i}}$. Send and receive move to $\poff{\pntA}{1}$,
   so their schemes in \cref{fig:signatures} use the new sequential
   abbreviation without changing their constraints. The other schemes,
   heads equations, worlds and fact rules stay unchanged.
@@ -296,15 +320,21 @@ A recursive function over a context-free protocol acts at the walks of
 its starting point $\pntA$,
 \[
   \walks(\pntA)=\mu X.\,\set{\pntA}\cup
-    \set{\poff{q}{1},\pslot{q}{0},\pslot{q}{1}\mid q\in X}
+    \set{\poff{q}{1},\pslot{q}{i},\pdual{\pslot{q}{i}}\mid q\in X,\ i \in \set{0,1}}
 \]
-where $\mu X$ takes the least closed set. A ceiling $\zeta$ satisfies
+where $\mu X$ takes the least closed set. A choice step forgets the
+polarity, because a walk passes a branching end and a selecting end
+alike. A ceiling $\zeta$ satisfies
 $\forall q\in\walks(\pviA)\st\fctx\types\fLt{q}{\zeta}$.
 The box constraint also states the facts each choice owes,
 \[
-  \cstr = \set{\fLt{q}{\zeta},\ \fLt{q}{\pslot{q}{0}},\ \fLt{q}{\pslot{q}{1}}
-    \mid q \in \mathit{walks}(\pviA)} .
+  \cstr = \set{\fLt{q}{\zeta},\ \fLt{q}{\pslot{q}{i}},\ \fLt{q}{\pdual{\pslot{q}{i}}}
+    \mid q \in \mathit{walks}(\pviA),\ i \in \set{0,1}} .
 \]
+% TODO(author): depends on end-points port. Only CfstTools, Stream and
+% CfstDeadlock are ported; walks and C follow the polarity-blind walks
+% of CfstTools.wlt, the box constraints of TreeCopy and the mp
+% translation are not ported yet.
 The type of $\asTmId{sendTree}$ of \citet{ThiemannV16} has upper bound
 $\zeta$ and returns the continuation at an existential point above the
 segment (\rocq{sendTree_ty}). The mechanized programs copy and drain a
@@ -314,6 +344,10 @@ server of \citet{ThiemannV16} (\rocq{ts_deadlock_free},
 \rocq{as_deadlock_free}), and a repaired classic deadlock
 (\rocq{dlfix_deadlock_free}). The classic deadlock itself has no
 derivation (\rocq{dl_untypable}).
+% TODO(author): depends on end-points port. Of the programs named in this
+% subsection only CfstDeadlock (dlfix, dl_untypable) and Stream are
+% ported; TreeCopy, CfstScheduler, TreeSum, ArithServer,
+% SegmentInterleave, SegmentDeleg and SkipDrop are not.
 
 A channel created after a segment call is placed by its creation
 constraint relative to the point the call returns. The program of
