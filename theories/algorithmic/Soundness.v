@@ -203,13 +203,13 @@ Qed.
 Lemma st_new_open Φ Ψ Δ F e T S C :
   cc_ok (heqs Ψ) (hlt Ψ) C → Forall (hyp_known Ψ) (bc_env C) →
   styped (fhyps_pinst (pshift 1) Φ) (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
-    (Some (TSess (dual S) (pvar 0)) :: Some (TSess S (pvar 0)) :: None :: None ::
+    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
        lenv_pinst (pshift 1) Δ)
     (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
   styped Φ Ψ Δ F (let_new e) T.
 Proof.
   intros HC HK Hb. unfold let_new.
-  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))).
+  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
   apply (st_letp Φ Ψ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply lenv_split_nones_l. }
   { apply (st_pair Φ Ψ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
@@ -226,14 +226,14 @@ Proof.
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence. }
   apply (st_open Φ Ψ _ F _ 1 LBot 1 C
-           (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0))) T); [done|intros Hun; exact Hun|].
+           (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
   cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
   change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
   apply (st_letp _ _ _
-           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pvar 0)))
+           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
               :: lenv_nones (lenv_pinst (pshift 1) Δ))
            (None :: None :: lenv_pinst (pshift 1) Δ)
-           _ _ _ (TSess S (pvar 0)) (TSess (dual S) (pvar 0))); [| |exact Hb].
+           _ _ _ (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))); [| |exact Hb].
   - apply lsplit_none, lsplit_l, lenv_split_nones_l.
   - apply st_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
