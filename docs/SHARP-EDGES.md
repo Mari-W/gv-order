@@ -2328,6 +2328,61 @@ conditions now read equality. The PGV, PN and MP translations and
 DropCounter.v are out of the build (NO-EQ: translation pending). Every
 remaining CheckAll entry is closed (192 of 301). no-equality.md §7.
 
+**155. A live relation: channel steps cost one, a synchronization two, τ is free (Claude, 2026-11-06, branch liveness).**
+The relation of entry 45 lets every τ pay with the index, so a program that loops
+on β forever is in it at every index. To rule out τ-divergence the τ steps (β,
+new, spawn) must cost nothing and recur inductively, and then every channel step
+must cost one, or a send-only producer loop has no index to pay with. Sends at
+cost one bring back the halving budget of entry 44. Witness: Internalize fuses
+the ends c and d of p, and one synchronization of the fused process is a send of p
+on c and a receive of p on d.
+Decision: send, select, close, link, receive and branch cost one, a process τ of a
+message, a close or a choice costs two, the τ of P-Act-Link one, β, new and spawn
+zero. A composite pays at least what one component pays sequentially for the same
+step, and components in parallel pay in parallel, so Internalize, P-Connect,
+P-Term and P-Join keep their statements. The payload of a send moves to n − 1, so
+E at level n reads V at level n only at its own type and at ∗ ⊸ ∗, which lets the
+arrow read argument and body at every j ≤ n (β free, Tait). V recurs on `tsize`
+with fuel. Size fuel for E and P (entries 46, 47) is gone. Adequacy gives deadlock
+freedom and no τ-divergence (`live_adequacy`, `live_runs`). Spec §17,
+docs/extensions/liveness.md, theories/liveness.
+
+**156. The live E and P state their premises in every future world (Claude, 2026-11-06, branch liveness).**
+P-Connect inside one level inducts on both τ fixpoints. When the second component
+creates a channel at a fresh extension W'', the first must be moved to W'', and a
+derivation moved by monotonicity is not a subderivation, so the inner induction
+hypothesis misses it. Entry 45's encoding paragraph met the same wall at the link τ.
+Decision: `Ebody` and `Pbody` quantify over every W1 with W ⊑ W1 or W1 = W. A
+component keeps its derivation at its base world and is read at any later world.
+Monotonicity in the world is the definition (`Eind_mono_world`). E-Stop then needs
+V monotone in the world (`LVdef_mono`).
+
+**157. Recursion through a later self (Claude, 2026-11-06, branch liveness).**
+Forcing a box costs nothing now, so E-Exp cannot pay for the self reference with the
+unrolling. Decision: the body may use the box only at levels strictly below the
+current one (`LVrel_box_lob`), and a channel step, which lowers the index,
+discharges that. A guarded judgment (E with E-Stop replaced by False) carries the
+discharge into let, case and the primitives, as semantic lemmas, not syntactic
+premises. Rejected: calling the recursion at strictly shifted points of a channel.
+A fresh extension at new may alias a new point to ι+1, so a shifted instance does
+not prove that the body acted. Kobayashi's server (examples/KobForwarder.v) spawns
+the next call before any channel step and τ-diverges on every run. It is deadlock
+free and stays out of the live relation. The forwarder, its producer and consumer,
+the rounds example and sendTree call themselves after a channel step, two of them
+after a send only.
+
+**158. A rank on points does not give lock freedom (Claude, 2026-11-06, branch liveness).**
+Claim checked: under a fair scheduler, lock freedom needs every point to have
+finitely many points below it. The ω+1 witness is right, but a rank is not enough.
+Witness: A holds b and loops creating a fresh channel, spawning its partner and
+sending once on it, and C waits on b̄. Each fresh point is placed below b̄ by
+`wext_fresh`, every world has finitely many points below b̄, a rank fixed at
+creation gives every fresh point rank 0, and C starves under every fair scheduler.
+Decision, on paper: lock freedom under weak fairness per thread needs no
+τ-divergence, a rank fixed at creation, and an obligation fuel per held entry that
+bounds the channel steps of its holder before it offers the entry (Padovani's
+tickets, Trillium's Fuel). Not mechanized. docs/extensions/liveness.md §9.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
