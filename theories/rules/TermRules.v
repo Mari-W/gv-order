@@ -666,10 +666,10 @@ Proof.
     inversion Hst as [| | |c| | | | | | | | | | |]; subst. simpl. intros _.
     destruct (fresh_const (w_names W ∪ ty_roots U ∪ future_roots F)) as [a Ha].
     destruct (wext_cc W a C HW HC HK ltac:(clear -Ha; set_solver)) as (W' & Hfr & HCa).
-    exists a, S, (dual S), W'. split_and!.
-    + unfold tenv_roots. rewrite map_fold_empty. clear -Ha. set_solver.
+    exists (pconst a), S, (dual S), W'. split_and!.
+    + left. exists a. split_and!; [done| |done].
+      unfold tenv_roots. rewrite map_fold_empty. clear -Ha. set_solver.
     + apply sdual_dual.
-    + done.
     + pose proof (proj1 Hfr) as HWW'. pose proof (wext_wf _ _ HWW') as HW'.
       pose proof Hfr as (_ & _ & Hnames & _).
       apply Vrel_Erel. eapply Vrel_tconv; [done|eapply teqW_mono; [apply HWW'|exact HB]|].

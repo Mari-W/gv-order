@@ -237,11 +237,20 @@ Qed.
 
 (** The obligation of a step e --α--> e' at index n, given the value
     and term relations below n ([Vlow], [Elow]) and at n ([Vn], [En]).
-    At new, the created channel gets a point (a, 0) with a fresh for W
-    and for the points of Θ, T and F, and W grows by a fresh extension
-    placing a. The name c is only required to be new to Θ, so that the
+    At new, the created channel gets a point x ([new_place]): either
+    (a, 0) with a fresh for W and for the points of Θ, T and F, and W
+    grows by a fresh extension placing a, or a point x that W already
+    knows, and W stays (new@x, branch no-eq: no alias ties a fresh
+    point to x). The name c is only required to be new to Θ, so that the
     continuation environment can be formed. A link with c = d is a
     self-link: Θ holds both ends of c, and both entries leave. *)
+Definition new_place (W : world) (N : gset pname) (x : point) (W' : world) : Prop :=
+  (∃ a, x = pconst a ∧ NConst a ∉ N ∧ wext_fresh W {[NConst a]} W') ∨
+  (pt_known W x ∧ W' = W).
+
+Lemma new_place_sub W N N' x W' : N' ⊆ N → new_place W N x W' → new_place W N' x W'.
+Proof. intros HN [(a & -> & Ha & Hf)|H]; [left; exists a; split_and!; [done|set_solver|done]|by right]. Qed.
+
 Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
     (Vn : world → tenv → ty → expr → Prop)
     (Elow : nat → world → tenv → ty → gset point → expr → Prop)
@@ -253,10 +262,10 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
       at_cost Elow En n (tcost α) W Θ T F e'
   | LNew c =>                                          (* O-New *)
       c ∉ dom Θ →
-      ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∧
-        sdual s s' ∧ wext_fresh W {[NConst a]} W' ∧
+      ∃ x s s' W', new_place W (tenv_roots Θ ∪ ty_roots T ∪ future_roots F) x W' ∧
+        sdual s s' ∧
         at_cost Elow En n (tcost α) W'
-          (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> Θ) T F e'
+          (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e'
   | LSpawn w =>                                        (* O-Spawn *)
       ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
         Vn W Θ1 (TLolli ub lb TUnit TUnit) w ∧
@@ -788,8 +797,8 @@ Proof.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; auto.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'.
     split_and!; [done|done|]. apply HEl; [lia|exact HX].
-  - intros H Hc. destruct (H Hc) as (a&s&s'&W'&?&?&?&HX).
-    exists a, s, s', W'. split_and!; try done. apply HEl; [lia|exact HX].
+  - intros H Hc. destruct (H Hc) as (x&s&s'&W'&?&?&HX).
+    exists x, s, s', W'. split_and!; try done. apply HEl; [lia|exact HX].
   - intros (Θ1&Θ2&ub&lb&?&?&HX). exists Θ1, Θ2, ub, lb.
     split_and!; [done|auto|apply HEl; [lia|exact HX]].
 Qed.
@@ -1209,8 +1218,8 @@ Proof.
       eexists _, _, _, _, _. split_and!; [done..|]. exact (proj2 HE').
     + destruct H2 as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
       eexists _, _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
-    + intros Hc. destruct (H2 Hc) as (a & s & s' & W' & ? & ? & ? & HE').
-      eexists _, _, _, _. split_and!; [done|done|done|]. eapply IH; [|done]. lia.
+    + intros Hc. destruct (H2 Hc) as (x & s & s' & W' & ? & ? & HE').
+      eexists _, _, _, _. split_and!; [done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Θ1 & Θ2 & ub & lb & ? & HV & HE').
       eexists _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.

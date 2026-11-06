@@ -1462,17 +1462,25 @@ Proof.
       * by apply (IHE n' ltac:(lia) W).
     + (* new *)
       intros Hc. rewrite dom_tenvsw in Hc.
-      destruct (Hstep Hc) as (a0 & s & s' & W1 & Ha & Hdu & Hfr & HE').
-      exists (nswap a b a0), (stysw a b s), (stysw a b s'), (wsw a b W1). split_and!.
-      * rewrite tenv_roots_sw, (proj1 (roots_sw_mut a b)), future_roots_sw,
-          <-!set_map_union_L.
-        apply (not_elem_of_names_sw a b (NConst a0)). done.
-      * by apply sdual_sw.
-      * apply (wext_fresh_wsw a b) in Hfr.
-        rewrite set_map_singleton_L in Hfr.
-        eapply wext_fresh_wsame; [exact HS|apply wsame_refl|exact Hfr].
-      * apply (IHE n' ltac:(lia) W1 (wsw a b W1)) in HE'; [|apply wsame_refl].
-        by rewrite tenvsw_insert in HE'.
+      destruct (Hstep Hc) as (x & s & s' & W1 & [(a0 & -> & Ha & Hfr)|(Hx & ->)] & Hdu & HE').
+      * exists (pconst (nswap a b a0)), (stysw a b s), (stysw a b s'), (wsw a b W1). split_and!.
+        -- left. exists (nswap a b a0). split_and!; [done| |].
+           ++ rewrite tenv_roots_sw, (proj1 (roots_sw_mut a b)), future_roots_sw,
+                <-!set_map_union_L.
+              apply (not_elem_of_names_sw a b (NConst a0)). done.
+           ++ apply (wext_fresh_wsw a b) in Hfr.
+              rewrite set_map_singleton_L in Hfr.
+              eapply wext_fresh_wsame; [exact HS|apply wsame_refl|exact Hfr].
+        -- by apply sdual_sw.
+        -- apply (IHE n' ltac:(lia) W1 (wsw a b W1)) in HE'; [|apply wsame_refl].
+           by rewrite tenvsw_insert in HE'.
+      * (* new at a known point *)
+        exists (ptsw a b x), (stysw a b s), (stysw a b s'), W'. split_and!.
+        -- right. split; [|done]. unfold pt_known in *. rewrite <-(proj1 HS). simpl.
+           by rewrite pt_root_sw, elem_of_names_sw.
+        -- by apply sdual_sw.
+        -- apply (IHE n' ltac:(lia) W W') in HE'; [|done]. rewrite tenvsw_insert in HE'.
+           unfold esw in HE'. simpl in HE'. rewrite ?ptsw_dual in HE'. exact HE'.
     + (* spawn *)
       destruct Hstep as (Θ1 & Θ2 & ub & lb & Hc & HVw & HE').
       exists (tenvsw a b Θ1), (tenvsw a b Θ2), (ptsw a b <$> ub), (ptsw a b <$> lb).

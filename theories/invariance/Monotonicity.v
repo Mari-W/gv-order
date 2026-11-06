@@ -96,10 +96,10 @@ Proof.
     exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by apply (proj2 HE').
   - destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
     exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by apply IHj.
-  - intros Hc. destruct (Hstep Hc) as (a & s & s' & W' & Ha & ? & ? & HE').
-    exists a, s, s', W'. split_and!; [|done|done|by apply IHj].
+  - intros Hc. destruct (Hstep Hc) as (x & s & s' & W' & Ha & ? & HE').
+    exists x, s, s', W'. split_and!; [|done|by apply IHj].
     assert (future_roots F' ⊆ future_roots F) by (unfold future_roots; set_solver).
-    set_solver.
+    eapply new_place_sub; [|exact Ha]. set_solver.
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|]. by apply IHj.
 Qed.
@@ -185,7 +185,12 @@ Proof.
       exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. eapply HEj; [lia|done|done|exact HE'].
     + (* O-New: rename the new point away from W', then join *)
       intros Hc.
-      destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
+      destruct (Hstep Hc) as (x & s & s' & W1 & [(a & -> & Ha & Hfr)|(Hx & ->)] & Hdu & HE').
+      2: { (* new at a known point: the world stays *)
+        exists x, s, s', W'. split_and!.
+        - right. split; [|done]. unfold pt_known in *. by destruct HWW' as (? & _); set_solver.
+        - done.
+        - eapply HEj; [lia|done|done|exact HE']. }
       destruct (fresh_const (w_names W' ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F))
         as [a1 Ha1].
       assert (w_names W ⊆ w_names W') by (by destruct HWW').
@@ -193,10 +198,9 @@ Proof.
                   ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
       pose proof (wext_fresh_join W {[NConst a1]} W1' W' HW Hfr' HWW'
                     ltac:(set_solver)) as Hfr''.
-      exists a1, (stysw a a1 s), (stysw a a1 s'), (wjoin W1' W'). split_and!.
-      * set_solver.
+      exists (pconst a1), (stysw a a1 s), (stysw a a1 s'), (wjoin W1' W'). split_and!.
+      * left. exists a1. split_and!; [done|set_solver|done].
       * by apply sdual_sw.
-      * done.
       * eapply HEj; [lia| |apply wext_join_l|exact HE1].
         -- by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
         -- by destruct Hfr'' as ((_ & _ & _ & ?) & _).

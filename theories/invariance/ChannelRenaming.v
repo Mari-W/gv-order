@@ -634,10 +634,9 @@ Proof.
       intros Hc.
       assert (c ∉ dom Θ) as Hc0.
       { rewrite dom_tenvswap, elem_of_gswap', cswap_involutive in Hc. done. }
-      destruct (Hstep Hc0) as (a0 & s & s' & W1 & Ha & Hdu & Hfr & HE').
-      exists a0, s, s', W1. split_and!.
+      destruct (Hstep Hc0) as (x & s & s' & W1 & Ha & Hdu & HE').
+      exists x, s, s', W1. split_and!.
       * by rewrite tenv_roots_swap.
-      * done.
       * done.
       * apply (IHE n' ltac:(lia)) in HE'. by rewrite tenvswap_insert in HE'.
     + (* spawn *)

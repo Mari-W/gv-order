@@ -127,15 +127,15 @@ Proof.
     exists Θr, s1, s2, k, Θ'. split_and!; [done|done|].
     eapply HEj; [lia|done|exact Hteq|exact HE'].
   - (* O-New: rename the new point away from the points of T' *)
-    intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
+    intros Hc. destruct (Hstep Hc) as (x & s & s' & W1 & [(a & -> & Ha & Hfr)|(Hx & ->)] & Hdu & HE').
+    2: { exists x, s, s', W. split_and!; [by right|done|]. eapply HEj; [lia|done|exact Hteq|exact HE']. }
     destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
                            ∪ future_roots F)) as [a1 Ha1].
     destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
                 ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
-    exists a1, (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
-    + set_solver.
+    exists (pconst a1), (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
+    + left. exists a1. split_and!; [done|set_solver|done].
     + by apply sdual_sw.
-    + done.
     + eapply HEj; [lia| |exact Hteq|exact HE1].
       by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
