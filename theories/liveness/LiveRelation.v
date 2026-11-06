@@ -268,52 +268,48 @@ Definition Ptop (below : nat → llevel) (n : nat)
 
 (** ** The value relation at level n, by fuel on [tsize]
 
-    As [Vdef] except the arrow, which reads the argument and the body at
-    the lower levels j < n and, through [Etop], at n itself. *)
+    As [Vrel] except the arrow, which reads the argument and the body at
+    the lower levels j < n and, through [Etop], at n itself. The fuel
+    makes the point substitution of [Vdef] unnecessary: the existential
+    and the box read their body at the instance itself. *)
 Fixpoint LVdef (below : nat → llevel) (n k : nat)
-    (W : world) (Θ : tenv) (σ : nat → point) (T : ty) (v : expr) {struct k} : Prop :=
+    (W : world) (Θ : tenv) (T : ty) (v : expr) {struct k} : Prop :=
   match k with
   | 0 => False
   | S k' =>
     match T with
     | TUnit => Θ = ∅ ∧ v = EUnit
     | TSess s x =>
-        ∃ c s0 kk, v = Chan c ∧ Θ = {[c := One (s0, kk)]} ∧ seq s0 s ∧
-          w_eq W kk (pt_inst σ x)
+        ∃ c s0 kk, v = Chan c ∧ Θ = {[c := One (s0, kk)]} ∧ seq s0 s ∧ w_eq W kk x
     | TLolli ub lb T1 U =>
-        (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧
-           lb_below W (pt_inst σ <$> lb) (tenv_heads Θ) ∧
+        (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
            ∀ W' j Θ' Θ'' w F, wext W W' → j ≤ n →
-             tenv_comp (w_eq W') Θ'' Θ Θ' → ub_below W' (pt_inst σ <$> ub) F →
-             (j < n → lvV (below j) W' Θ' (pinst_ty σ T1) w →
-                lvE (below j) W' Θ'' (pinst_ty σ U) F (subst1 w eb)) ∧
-             (j = n → LVdef below n k' W' Θ' σ T1 w →
-                Etop below n (λ W Θ v, LVdef below n k' W Θ σ U v) (pinst_ty σ U)
-                  W' Θ'' F (subst1 w eb)))
+             tenv_comp (w_eq W') Θ'' Θ Θ' → ub_below W' ub F →
+             (j < n → lvV (below j) W' Θ' T1 w → lvE (below j) W' Θ'' U F (subst1 w eb)) ∧
+             (j = n → LVdef below n k' W' Θ' T1 w →
+                Etop below n (λ W Θ v, LVdef below n k' W Θ U v) U W' Θ'' F (subst1 w eb)))
         ∨ (∃ kc T0, v = Konst kc ∧ Θ = ∅ ∧ konst_ty (w_eq W) (w_lt W) (pt_known W) kc T0 ∧
-             teqW W T0 (pinst_ty σ (TLolli ub lb T1 U)))
+             teqW W T0 (TLolli ub lb T1 U))
     | TProd T1 U =>
         ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
-          LVdef below n k' W Θ1 σ T1 v1 ∧ LVdef below n k' W Θ2 σ U v2
+          LVdef below n k' W Θ1 T1 v1 ∧ LVdef below n k' W Θ2 U v2
     | TSum T1 U =>
-        (∃ v', v = Inj1 v' ∧ LVdef below n k' W Θ σ T1 v')
-        ∨ (∃ v', v = Inj2 v' ∧ LVdef below n k' W Θ σ U v')
+        (∃ v', v = Inj1 v' ∧ LVdef below n k' W Θ T1 v')
+        ∨ (∃ v', v = Inj2 v' ∧ LVdef below n k' W Θ U v')
     | TBox m kk C T1 =>
         Θ = ∅ ∧ ∃ eb, v = EBox eb ∧ fchans eb = ∅ ∧
           ∀ W' xs ss, wext W W' → length xs = m → length ss = kk → Forall hcontractive ss →
-            bcs_hold (w_eq W') (w_lt W') (bcs_inst σ C) xs → Forall (pt_known W') xs →
-            LVdef below n k' W' ∅ pvar
-              (sinst_ty (slist ss) (ty_inst xs (pinst_ty (pup m σ) T1))) (thunk eb)
+            bcs_hold (w_eq W') (w_lt W') C xs → Forall (pt_known W') xs →
+            LVdef below n k' W' ∅ (sinst_ty (slist ss) (ty_inst xs T1)) (thunk eb)
     | TEx lb m C T1 =>
-        lbx_below W (lb_map (pt_inst σ) lb) (tenv_heads Θ) false ∧
-        ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧
-          bcs_hold (w_eq W) (w_lt W) (bcs_inst σ C) xs ∧
-          LVdef below n k' W Θ (pt_inst (plist xs) ∘ pup m σ) T1 v
+        lbx_below W lb (tenv_heads Θ) false ∧
+        ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧ bcs_hold (w_eq W) (w_lt W) C xs ∧
+          LVdef below n k' W Θ (ty_inst xs T1) v
     end
   end.
 
 Definition lVtop (below : nat → llevel) (n : nat) (T : ty) : world → tenv → expr → Prop :=
-  λ W Θ v, LVdef below n (S (tsize T)) W Θ pvar T v.
+  λ W Θ v, LVdef below n (S (tsize T)) W Θ T v.
 
 Definition mk_llevel (below : nat → llevel) (n : nat) : llevel :=
   {| lvV := λ W Θ T v, lVtop below n T W Θ v;
@@ -335,3 +331,269 @@ Definition LVrel (n : nat) : world → tenv → ty → expr → Prop := lvV (lle
 Definition LErel (n : nat) : world → tenv → ty → gset point → expr → Prop :=
   lvE (llevel_at n).
 Definition LPrel (n : nat) : world → senv → ty → proc → Prop := lvP (llevel_at n).
+
+(** ** Monotonicity of one unfolding, and induction
+
+    [Ebody_mono] and [Pbody_mono] are transparent, so that the guard
+    checker sees through them in [Eind_ind'] and [Pind_ind']. *)
+
+Definition Ebody_mono below n
+    (X Y : (world → tenv → expr → Prop) → ty → world → tenv → gset point → expr → Prop)
+    (f : ∀ VT T W Θ F e, X VT T W Θ F e → Y VT T W Θ F e) VT T W Θ F e :
+  Ebody below n X VT T W Θ F e → Ebody below n Y VT T W Θ F e.
+Proof.
+  intros H W1 HW. destruct (H W1 HW) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
+  split; [exact Hs|]. split; [exact Hr|]. split.
+  { intros e' Hst. exact (f _ _ _ _ _ _ (Hb e' Hst)). }
+  split.
+  { intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & W' & H1 & H2 & H3 & H4).
+    exists a, s, s', W'. split; [exact H1|]. split; [exact H2|]. split; [exact H3|].
+    exact (f _ _ _ _ _ _ H4). }
+  split; [|exact Hσ].
+  intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & H1 & H2 & H3).
+  exists Θ1, Θ2, ub, lb. split; [exact H1|]. split; [|exact (f _ _ _ _ _ _ H3)].
+  destruct H2 as [(eb & Hw & Hfc & Hlb & H')|Hk]; [left|right; exact Hk].
+  exists eb. split; [exact Hw|]. split; [exact Hfc|]. split; [exact Hlb|].
+  intros W' j Θ' Θ'' w' F' HW' Hj Hc Hub.
+  destruct (H' W' j Θ' Θ'' w' F' HW' Hj Hc Hub) as [K1 K2]. split; [exact K1|].
+  intros Hjn HΘ Hw'. exact (f _ _ _ _ _ _ (K2 Hjn HΘ Hw')).
+Defined.
+
+Lemma Eind_ind' below n
+    (Φ : (world → tenv → expr → Prop) → ty → world → tenv → gset point → expr → Prop) :
+  (∀ VT T W Θ F e,
+     Ebody below n (λ VT T W Θ F e, Eind below n VT T W Θ F e ∧ Φ VT T W Θ F e)
+       VT T W Θ F e → Φ VT T W Θ F e) →
+  ∀ VT T W Θ F e, Eind below n VT T W Θ F e → Φ VT T W Θ F e.
+Proof.
+  intros Hind. fix IH 7. intros VT T W Θ F e [VT' T' W' Θ' F' e' H].
+  apply Hind. refine (Ebody_mono below n _ _ _ VT' T' W' Θ' F' e' H).
+  intros ? ? ? ? ? ? HX. exact (conj HX (IH _ _ _ _ _ _ HX)).
+Qed.
+
+Definition Pbody_mono below n VT T (X Y : world → senv → proc → Prop)
+    (f : ∀ W Σ p, X W Σ p → Y W Σ p) W Σ p :
+  Pbody below n VT T X W Σ p → Pbody below n VT T Y W Σ p.
+Proof.
+  intros H W1 HW. destruct (H W1 HW) as (Hs & Hr & Ha & Hc & Hl & Hσ).
+  split; [exact Hs|]. split; [exact Hr|]. split; [|exact (conj Hc (conj Hl Hσ))].
+  intros p' Hst Hd. destruct (Ha p' Hst Hd) as (N & W' & H1 & H2 & H3).
+  exists N, W'. split; [exact H1|]. split; [exact H2|]. exact (f _ _ _ H3).
+Defined.
+
+Lemma Pind_ind' below n VT T (Φ : world → senv → proc → Prop) :
+  (∀ W Σ p, Pbody below n VT T (λ W Σ p, Pind below n VT T W Σ p ∧ Φ W Σ p) W Σ p →
+     Φ W Σ p) →
+  ∀ W Σ p, Pind below n VT T W Σ p → Φ W Σ p.
+Proof.
+  intros Hind. fix IH 4. intros W Σ p [W' Σ' p' H].
+  apply Hind. refine (Pbody_mono below n VT T _ _ _ W' Σ' p' H).
+  intros ? ? ? HX. exact (conj HX (IH _ _ _ HX)).
+Qed.
+
+Lemma Eind_inv below n VT T W Θ F e :
+  Eind below n VT T W Θ F e → Ebody below n (Eind below n) VT T W Θ F e.
+Proof. by destruct 1. Qed.
+
+Lemma Pind_inv below n VT T W Σ p :
+  Pind below n VT T W Σ p → Pbody below n VT T (Pind below n VT T) W Σ p.
+Proof. by destruct 1. Qed.
+
+(** Monotonicity in the world holds by definition. *)
+Lemma Eind_mono_world below n VT T W W' Θ F e :
+  wext_r W W' → Eind below n VT T W Θ F e → Eind below n VT T W' Θ F e.
+Proof.
+  intros HW H%Eind_inv. constructor. intros W1 HW1. apply H. by eapply wext_r_trans.
+Qed.
+
+Lemma Pind_mono_world below n VT T W W' Σ p :
+  wext_r W W' → Pind below n VT T W Σ p → Pind below n VT T W' Σ p.
+Proof.
+  intros HW H%Pind_inv. constructor. intros W1 HW1. apply H. by eapply wext_r_trans.
+Qed.
+
+Lemma Vspawn_mono Vl El (E1 E2 : world → tenv → gset point → expr → Prop) n W Θ ub lb w :
+  (∀ W Θ F e, E1 W Θ F e → E2 W Θ F e) →
+  Vspawn Vl El E1 n W Θ ub lb w → Vspawn Vl El E2 n W Θ ub lb w.
+Proof.
+  intros HE [(eb & -> & Hfc & Hlb & H)|Hk]; [left|by right].
+  exists eb. split_and!; [done..|]. intros W' j Θ' Θ'' w' F HW Hj Hc Hub.
+  destruct (H W' j Θ' Θ'' w' F HW Hj Hc Hub) as [H1 H2]. split; [done|].
+  intros ? ? ?. apply HE. auto.
+Qed.
+
+(** E-Stop reads VT only. *)
+Lemma Eind_VT_mono below n VT1 VT2 T W Θ F e :
+  (∀ W Θ v, VT1 W Θ v → VT2 W Θ v) →
+  Eind below n VT1 T W Θ F e → Eind below n VT2 T W Θ F e.
+Proof.
+  intros HV H. revert VT2 HV.
+  induction H as [VT T W Θ F e H] using Eind_ind'. intros VT2 HV.
+  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
+  split_and!; [auto|done| | | |done].
+  - intros e' Hst. by apply (Hb e' Hst).
+  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & W' & ? & ? & ? & _ & HX).
+    exists a, s, s', W'. split_and!; [done..|]. by apply HX.
+  - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
+    exists Θ1, Θ2, ub, lb. split_and!; [done| |by apply HX].
+    eapply Vspawn_mono; [|exact Hv]. by intros ? ? ? ? [? _].
+Qed.
+
+Lemma Eind_VT_iff below n VT1 VT2 T W Θ F e :
+  (∀ W Θ v, VT1 W Θ v ↔ VT2 W Θ v) →
+  Eind below n VT1 T W Θ F e ↔ Eind below n VT2 T W Θ F e.
+Proof. intros HV. split; apply Eind_VT_mono; naive_solver. Qed.
+
+Lemma Etop_VT_iff below n VT1 VT2 T W Θ F e :
+  (∀ W Θ v, VT1 W Θ v ↔ VT2 W Θ v) →
+  Etop below n VT1 T W Θ F e ↔ Etop below n VT2 T W Θ F e.
+Proof. intros HV. destruct n; [done|]. by apply Eind_VT_iff. Qed.
+
+Lemma Pind_VT_mono below n VT1 VT2 T W Σ p :
+  (∀ W Θ v, VT1 W Θ v → VT2 W Θ v) →
+  Pind below n VT1 T W Σ p → Pind below n VT2 T W Σ p.
+Proof.
+  intros HV H. induction H as [W Σ p H] using Pind_ind'.
+  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
+  split_and!; [|done| |done|done|done].
+  - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. auto.
+  - intros p' Hst Hd. destruct (Ha p' Hst Hd) as (N & W' & ? & ? & _ & HX). eauto.
+Qed.
+
+(** ** Obligations, monotone in the lower levels *)
+
+Lemma LEobl_mono Vl1 Vl2 El1 El2 n W Θ T F σ e' :
+  (∀ j, j ≤ pred n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+  (∀ j, j ≤ pred n → ∀ W Θ T F, El1 j W Θ T F e' → El2 j W Θ T F e') →
+  LEobl Vl1 El1 n W Θ T F σ e' → LEobl Vl2 El2 n W Θ T F σ e'.
+Proof.
+  intros HV HE. destruct σ as [c w|c w|c|cd|c b|c b]; cbn [LEobl].
+  - intros (Θ1 & m & U & s & k & Hhd & H). exists Θ1, m, U, s, k. split; [done|].
+    intros W' j Θ2 Θ1c Θ' HW Hj Hext Hc HV'. apply HE; [done|].
+    apply (H W' j Θ2 Θ1c Θ'); try done. by apply HV.
+  - intros (Θr&Θ1&Θ2&m&U&s&k&Θ'&?&?&Hp&?&HX). exists Θr, Θ1, Θ2, m, U, s, k, Θ'.
+    split_and!; try done; [by apply HV|by apply HE].
+  - intros (Θ1&k&?&HX). exists Θ1, k. split; [done|by apply HE].
+  - intros (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
+    exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; try done. by apply HE.
+  - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; try done. by apply HE.
+  - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; try done. by apply HE.
+Qed.
+
+Lemma Ptau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
+  (∀ W Σ T, X W Σ T p' → Y W Σ T p') → Ptau_case X W Σ T p' → Ptau_case Y W Σ T p'.
+Proof. intros HXY H Hd. destruct (H Hd) as (N & W' & ? & ? & ?). exists N, W'. split_and!; [done|done|by apply HXY]. Qed.
+
+Lemma LPobl_mono Vl1 Vl2 Pl1 Pl2 n W Σ T p σ p' :
+  (∀ j, j ≤ pred n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+  (∀ j, j ≤ pred n → ∀ W Σ T q, Pl1 j W Σ T q → Pl2 j W Σ T q) →
+  LPobl Vl1 Pl1 n W Σ T p σ p' → LPobl Vl2 Pl2 n W Σ T p σ p'.
+Proof.
+  intros HV HP. destruct σ as [c w|c w|c|cd|c b|c b]; cbn [LPobl].
+  - intros (Σ1 & m & U & s & k & Hhd & Hc & H). exists Σ1, m, U, s, k.
+    split_and!; [done|done|]. intros W' j Θ2 HW Hj Hfr Hdu HV'.
+    apply HP; [done|]. apply (H W' j Θ2); try done. by apply HV.
+  - intros (Σ0&Σv&m&U&s&k&Σe&Θe&?&?&?&?&?&?&?&Hp&HX).
+    exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done; [by apply HV|by apply HP].
+  - intros (Σ1&k&?&?&HX). exists Σ1, k. split_and!; try done. by apply HP.
+  - intros (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
+    exists c, d, Σ1, sc, sd, kc, kd. split_and!; try done. by apply HP.
+  - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k. split_and!; try done. by apply HP.
+  - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k. split_and!; try done. by apply HP.
+Qed.
+
+(** The relation at level n reads the levels below n only. *)
+Lemma Eind_below below1 below2 n VT T W Θ F e :
+  0 < n → (∀ j, j < n → below1 j = below2 j) →
+  Eind below1 n VT T W Θ F e → Eind below2 n VT T W Θ F e.
+Proof.
+  intros Hn Hb H. induction H as [VT T W Θ F e H] using Eind_ind'.
+  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hbeta & Hnew & Hsp & Hσ).
+  split_and!; [done|done| | | |].
+  - intros e' Hst. by apply (Hbeta e' Hst).
+  - intros c e' Hst Hc. destruct (Hnew c e' Hst Hc) as (a & s & s' & W' & ? & ? & ? & _ & HX).
+    exists a, s, s', W'. by split_and!.
+  - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
+    exists Θ1, Θ2, ub, lb. split_and!; [done| |done].
+    destruct Hv as [(eb & -> & ? & ? & Hv)|Hk]; [left|by right]. exists eb.
+    split_and!; [done..|]. intros W' j Θ' Θ'' w' F' HW Hj Hc Hub.
+    destruct (Hv W' j Θ' Θ'' w' F' HW Hj Hc Hub) as [K1 K2]. split.
+    + intros Hjn. rewrite <-(Hb j Hjn). by apply K1.
+    + intros ? ? ?. by apply K2.
+  - intros σ e' Hst. eapply LEobl_mono; [..|exact (Hσ σ e' Hst)].
+    + intros j Hj W' Θ' T' v. cbv beta. rewrite (Hb j) by lia. done.
+    + intros j Hj W' Θ' T' F'. cbv beta. rewrite (Hb j) by lia. done.
+Qed.
+
+Lemma Pind_below below1 below2 n VT T W Σ p :
+  0 < n → (∀ j, j < n → below1 j = below2 j) →
+  Pind below1 n VT T W Σ p → Pind below2 n VT T W Σ p.
+Proof.
+  intros Hn Hb H. induction H as [W Σ p H] using Pind_ind'.
+  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
+  split_and!; [done|done| | | |].
+  - intros p' Hst Hd. destruct (Ha p' Hst Hd) as (N & W' & ? & ? & _ & HX). eauto.
+  - intros p' Hst. rewrite <-(Hb (pred (pred n))) by lia. auto.
+  - intros p' Hst. rewrite <-(Hb (pred n)) by lia. auto.
+  - intros σ p' Hst. eapply LPobl_mono; [..|exact (Hσ σ p' Hst)].
+    + intros j Hj W' Θ' T' v. cbv beta. rewrite (Hb j) by lia. done.
+    + intros j Hj W' Σ' T' q. cbv beta. rewrite (Hb j) by lia. done.
+Qed.
+
+(** ** Levels *)
+
+Lemma llevel_at_eq n : llevel_at n = mk_llevel (llevels n) n.
+Proof. unfold llevel_at. simpl. by destruct (decide (n < n)); [lia|]. Qed.
+
+Lemma llevels_at n j : j < n → llevels n j = llevel_at j.
+Proof.
+  revert j. induction n as [|n' IH]; intros j Hj; [lia|].
+  simpl. destruct (decide (j < n')) as [H|H].
+  - by apply IH.
+  - assert (j = n') as -> by lia. by rewrite llevel_at_eq.
+Qed.
+
+Lemma LErel_0 W Θ T F e : LErel 0 W Θ T F e.
+Proof. unfold LErel. rewrite llevel_at_eq. simpl. exact I. Qed.
+
+Lemma LPrel_0 W Σ T p : LPrel 0 W Σ T p.
+Proof. unfold LPrel. rewrite llevel_at_eq. simpl. exact I. Qed.
+
+(** ** The fuel of V does not matter above the size *)
+
+Lemma LVdef_fuel below n k1 : ∀ k2 W Θ T v, tsize T < k1 → tsize T < k2 →
+  LVdef below n k1 W Θ T v ↔ LVdef below n k2 W Θ T v.
+Proof.
+  induction k1 as [|k1 IH]; intros k2 W Θ T v H1 H2; [lia|].
+  destruct k2 as [|k2]; [lia|].
+  assert (∀ W Θ T v, tsize T < k1 → tsize T < k2 →
+            LVdef below n k1 W Θ T v ↔ LVdef below n k2 W Θ T v) as IH'.
+  { intros W0 Θ0 T0 v0 ? ?. by apply IH. }
+  clear IH.
+  destruct T as [|ub lb T1 U|T1 U|T1 U|m kk C T1|s x|lb m C T1]; cbn [LVdef tsize] in *.
+  - done.
+  - apply or_iff_compat_r.
+    split; intros (eb & -> & Hfc & Hlb & H); exists eb; (split_and!; [done..|]);
+      intros W' j Θ' Θ'' w F HW Hj Hc Hub; destruct (H W' j Θ' Θ'' w F HW Hj Hc Hub) as [K1 K2];
+      (split; [done|]); intros Hjn HV.
+    + eapply Etop_VT_iff; [|apply K2; [done|]].
+      * intros. symmetry. apply IH'; lia.
+      * apply (IH' W' Θ' T1 w); [lia|lia|exact HV].
+    + eapply Etop_VT_iff; [|apply K2; [done|]].
+      * intros. apply IH'; lia.
+      * apply (IH' W' Θ' T1 w); [lia|lia|exact HV].
+  - split; intros (v1 & v2 & Θ1 & Θ2 & -> & Hc & Hv1 & Hv2); exists v1, v2, Θ1, Θ2;
+      (split_and!; [done|done| |]); (eapply IH'; [..|eassumption]; lia).
+  - split; (intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]); exists v'; (split; [done|]);
+      (eapply IH'; [..|eassumption]; lia).
+  - assert (∀ xs ss, tsize (sinst_ty (slist ss) (ty_inst xs T1)) = tsize T1) as Hts.
+    { intros xs ss. unfold ty_inst. by rewrite tsize_sinst, tsize_pinst. }
+    split; intros (-> & eb & -> & Hfc & H); (split; [done|]); exists eb; (split_and!; [done..|]);
+      intros W' xs ss HW Hxs Hss Hsc HC HK; specialize (H W' xs ss HW Hxs Hss Hsc HC HK);
+      (eapply IH'; [..|exact H]); rewrite Hts; lia.
+  - done.
+  - assert (∀ xs, tsize (ty_inst xs T1) = tsize T1) as Hts.
+    { intros xs. unfold ty_inst. by rewrite tsize_pinst. }
+    apply and_iff_compat_l. split; intros (xs & ? & ? & ? & Hv); exists xs; (split_and!; [done..|]);
+      (eapply IH'; [..|exact Hv]); rewrite Hts; lia.
+Qed.
