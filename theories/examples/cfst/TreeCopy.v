@@ -661,8 +661,7 @@ Definition tca_C : bcs := BCs [pvar 0] send_P.
 
 Lemma tca_ok peq plt : cc_ok peq plt tca_C.
 Proof.
-  apply (cc_ok_out _ _ tca_C wlt); [exact wlt_trans|exact wlt_irrefl|exact wlt_po|exact wlt_dpo| | |].
-  - intros a b (f & (w & c & c' & [-> | (i & ->)]) & _ & E); discriminate E.
+  apply (cc_ok_out _ _ tca_C wlt); [exact wlt_trans|exact wlt_irrefl|exact wlt_po|exact wlt_dpo| |].
   - intros a b (f & (w & c & c' & [-> | (i & ->)]) & _ & E); cbn [fact_map] in E;
       rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst in E; injection E as -> ->.
     + right; right. rewrite st_root_polar, pwalk_root. split; cbn; done.
@@ -742,8 +741,7 @@ Proof.
       destruct (pwalk (pv 0 0) w) as [n b o], (pwalk (pv 0 0) w') as [n' b' o'].
       unfold pt_shift. simpl in *. subst. f_equal. lia. }
     apply (f_equal (pt_inst (λ _, pv 1 0))) in E. rewrite pt_inst_shift, !pwalk_inst in E. exact E. }
-  apply (cc_ok_out _ _ tcb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & (w & c & c' & [-> | [(s & ->) | ->]]) & _ & E); discriminate E.
+  apply (cc_ok_out _ _ tcb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & (w & c & c' & [-> | [(s & ->) | ->]]) & _ & E); cbn [fact_map] in E;
       rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst in E; injection E as -> ->; right;
       rewrite ?st_root_polar, ?pt_payload_root, ?wstep_root, ?pwalk_root; cbn; auto.

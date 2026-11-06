@@ -244,7 +244,7 @@ Lemma fact_scoped_inst k ys g :
   Forall (λ y, pn_vb k (pt_name y)) ys → fact_scoped (length ys) g →
   fact_scoped k (fact_map (pt_inst (plist ys)) g).
 Proof.
-  intros Hys. destruct g as [x y|x y]; simpl; intros [Hx Hy];
+  intros Hys. destruct g as [x y]; simpl; intros [Hx Hy];
     rewrite !pt_name_inst; split; by apply pn_vb_inst.
 
 Qed.
@@ -261,7 +261,7 @@ Proof.
   exists (fact_map (pt_inst (plist ys)) g).
   pose proof (fact_scoped_inst _ _ _ Hys Hs) as Hs'. split.
   - unfold ids. rewrite length_fmap, length_seq. apply bcs_open_nil. split; [by apply H|done].
-  - destruct (fact_map (pt_inst (plist ys)) g) as [x y|x y]; simpl in *;
+  - destruct (fact_map (pt_inst (plist ys)) g) as [x y]; simpl in *;
       destruct Hs' as [Hx Hy]; by rewrite !pt_inst_ids.
 Qed.
 
@@ -487,8 +487,6 @@ Proof. apply fresh_ok_shape; [done|]. simpl. by rewrite length_fmap. Qed.
 Lemma fresh_lt_inst σ C : fresh_lt (bcs_inst σ C) → fresh_lt C.
 Proof. apply fresh_lt_shape; [done|]. simpl. by rewrite length_fmap. Qed.
 
-Lemma fresh_eq_inst σ C w : fresh_eq (bcs_inst σ C) w ↔ fresh_eq C w.
-Proof. apply fresh_eq_shape; [done|]. simpl. by rewrite length_fmap. Qed.
 
 Lemma pn_vb_var k p : pn_vb k p → ∃ b, pn_root p = NVar b ∧ b < k.
 Proof. induction p as [c|b|q IH b' i]; simpl; [done|by exists b|exact IH]. Qed.
@@ -507,14 +505,6 @@ Lemma fresh_outer_inst σ C u :
   pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →
   fresh_outer (bcs_inst σ C) u = pt_inst σ (fresh_outer C u).
 Proof. intros Hs Hr. unfold fresh_outer. simpl. by apply pt_inst_outer. Qed.
-
-Lemma fresh_at_inst σ C w p :
-  pn_vb (S (length (bc_env C))) (pt_name w) → pt_root w ≠ NVar 0 →
-  fresh_at (bcs_inst σ C) w p = pt_inst σ (fresh_at C w p).
-Proof.
-  intros Hs Hr. unfold fresh_at. rewrite pt_inst_comp. apply pt_inst_ext. intros b.
-  unfold compose. by apply fresh_outer_inst.
-Qed.
 
 (** ** Creation constraints at the static level (sharp edges 105)
 
@@ -578,10 +568,10 @@ Proof.
   - intros g Hg. by apply bcs_open_inst.
 Qed.
 
-(** The constraints of sharp edges 93 and 104 are acyclic and
-    conservative. Without the alias the model keeps the points of ι
-    apart and betweenness closes every path through ι. With the alias
-    ι ≡ w the model reads every point of ι at w. *)
+(** The constraints of sharp edges 93 are acyclic and conservative.
+    The model keeps the points of ι apart and betweenness closes every
+    path through ι. (The alias form of sharp edges 104 is gone on
+    branch no-eq.) *)
 Lemma cc_ok_fresh peq plt C : fresh_ok C → fresh_between plt C → cc_ok peq plt C.
 Proof.
   set (op := pt_inst (pup 1 (plist (bc_env C)))).
@@ -589,7 +579,7 @@ Proof.
   { intros p Hp. apply pt_inst_new; [apply pup1_0|done]. }
   assert (∀ u, pt_root u ≠ NVar 0 → pt_root (op u) ≠ NVar 0) as Hold.
   { intros u Hu. unfold op. rewrite cc_open_outer by done. apply pt_root_up. }
-  intros [HC|(w & Hw & HC)] (Hb1 & Hb2 & Hb3).
+  intros HC Hb1.
   - apply (cc_model peq plt C id pofs
       (λ u' p', ∃ u p, fresh_lo C u p ∧ u' = op u ∧ p' = op p)
       (λ q' v', ∃ q v, fresh_hi C q v ∧ q' = op q ∧ v' = op v)).
@@ -608,49 +598,12 @@ Proof.
       unfold op. rewrite !cc_open_outer by done. apply cc_up_lt. apply (Hb1 HC u p q v Hu Hv).
       destruct Hpq as [->|Hp]; [by left|right; by apply pofs_ppo].
     + intros a b (f & Hf & Hs & E).
-      destruct (HC f Hf Hs) as [(? & ? & -> & _)|(? & ? & -> & _)]; discriminate.
-    + intros a b (f & Hf & Hs & E).
       destruct (HC f Hf Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)]; injection E as -> ->; unfold id.
       * pose proof Hu as (_ & _ & Hp0 & Hu0). right; left. split_and!; [by apply Hold|by rewrite Hnew|].
         exists (op u), (op p). split_and!; [by exists u, p|left; apply geq_refl|by left].
       * pose proof Hv as (_ & _ & Hq0 & Hv0). right; right; left.
         split_and!; [by rewrite Hnew|by apply Hold|].
         exists (op q), (op v). split_and!; [by exists q, v|by left|left; apply geq_refl].
-  - pose proof Hw as (Hwf & Hws & Hwr).
-    set (τ := λ a, match a with 0 => op w | S k => pvar (S k) end).
-    assert (∀ x, pt_root x ≠ NVar 0 → pt_inst τ x = x) as Hτo by (intros x Hx; by apply pt_inst_old).
-    assert (op w = pt_inst (λ a, pvar (a + 1)) (fresh_outer C w)) as Ew by (by apply cc_open_outer).
-    assert (∀ p, pt_root p = NVar 0 →
-              pt_inst τ p = pt_inst (λ a, pvar (a + 1)) (fresh_at C w p)) as Hτn.
-    { intros p Hp. unfold fresh_at. rewrite pt_inst_comp. apply pt_inst_ext_root.
-      intros a Ha. rewrite Hp in Ha. injection Ha as <-. simpl. unfold compose. exact Ew. }
-    assert (∀ p, pt_root p = NVar 0 → pt_root (pt_inst τ p) ≠ NVar 0) as Hτr.
-    { intros p Hp. rewrite Hτn by done. apply pt_root_up. }
-    apply (cc_model peq plt C (pt_inst τ) pofs (λ _ _, False) (λ _ _, False)).
-    + exact Hτo.
-    + intros x. apply pt_inst_shift.
-    + intros x i _. apply pt_inst_payload.
-    + intros x y i E. rewrite !pt_inst_payload. by rewrite E.
-    + intros x. apply pt_inst_dual.
-    + apply pofs_trans.
-    + intros p _. apply pofs_shift.
-    + intros p _. unfold pofs, pt_shift. simpl. split; [done|lia].
-    + apply pofs_irrefl.
-
-    + intros ? ? ? ? [].
-    + intros a b (f & Hf & Hs & E).
-      destruct (HC f Hf Hs) as [(? & ? & -> & _)|[(? & ? & -> & _)| ->]]; [discriminate|discriminate|].
-      injection E as -> ->. fold op. rewrite (Hnew (pvar 0)) by done. rewrite pt_inst_pvar_at. simpl.
-      rewrite Hτo by (by apply Hold). apply geq_refl.
-    + intros a b (f & Hf & Hs & E).
-      destruct (HC f Hf Hs) as [(u & p & -> & Hu)|[(q & v & -> & Hv)| ->]]; [| |discriminate];
-        injection E as -> ->; fold op.
-      * pose proof Hu as (_ & _ & Hp0 & Hu0). left. rewrite (Hnew p Hp0), (Hτo (op u)) by (by apply Hold).
-        split_and!; [by apply Hold|by apply Hτr|]. rewrite Hτn by done. unfold op.
-        rewrite cc_open_outer by done. apply cc_up_lt. by apply (Hb2 w u p).
-      * pose proof Hv as (_ & _ & Hq0 & Hv0). left. rewrite (Hnew q Hq0), (Hτo (op v)) by (by apply Hold).
-        split_and!; [by apply Hτr|by apply Hold|]. rewrite Hτn by done. unfold op.
-        rewrite cc_open_outer by done. apply cc_up_lt. by apply (Hb3 w q v).
 Qed.
 
 Section transfer.
@@ -750,7 +703,6 @@ Section transfer.
   Proof.
     intros HΨ HΦ. apply (fl_map (FCtx W Ψ Φ) (seqs W1 Ψ') _ (pt_inst σ) (node_inst σ)); simpl.
     - intros x y H. apply se_w. by apply pinst_eq.
-    - intros x y H. exact (hyp_fact_inst _ _ _ σ Ψ (FEq x y) HΨ H).
     - intros x. apply se_refl.
     - intros x y. apply se_sym.
     - intros x y z. apply se_trans.

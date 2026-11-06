@@ -25,7 +25,7 @@ Set Default Proof Using "All".
 Definition nil_C0 : bcs := BCs [] (λ _, False).
 
 Lemma nil_C0_acyclic : c0_acyclic 0 nil_C0.
-Proof. apply (c0_acyclic_rank 0 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []|apply vrank_dual]. Qed.
+Proof. apply (c0_acyclic_rank 0 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|apply vrank_dual]. Qed.
 
 Lemma typed_hyps_wk_lit W Ψ F e T : strict W → typed W ∅ [] ∅ [] F e T → typed W ∅ Ψ ∅ [] F e T.
 Proof.

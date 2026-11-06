@@ -137,14 +137,6 @@ Proof.
   exists (FLt x y). split; [by apply bcs_open_nil|done].
 Qed.
 
-(** A ≡ fact of a hypothesis without outer points. *)
-Lemma se_hyp0 W Ψ P xs x y x' y' :
-  (BCs [] P, xs) ∈ Ψ → P (FEq x y) → fact_scoped (length xs) (FEq x y) →
-  pt_inst (plist xs) x = x' → pt_inst (plist xs) y = y' → seqs W Ψ x' y'.
-Proof.
-  intros Hg Hxy Hs <- <-. apply se_h. exists (BCs [] P), xs. split; [done|].
-  exists (FEq x y). split; [by apply bcs_open_nil|done].
-Qed.
 
 (** ** Processes
 
@@ -289,7 +281,7 @@ Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C :
   typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
   intros HC HK Hbt Hb. apply (t_new_open W Φ Ψ Θ Δ F e T S C); [|done|done].
-  apply cc_ok_fresh; [by left|by apply fresh_between_lt].
+  apply cc_ok_fresh; [done|by apply fresh_between_lt].
 Qed.
 
 (** E-NewFresh with lists, L ≺ ι ≺ H, every point of L below every

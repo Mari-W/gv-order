@@ -62,13 +62,12 @@ Definition bit_rank (x : point) : nat :=
 
 Lemma c0_acyclic_prank n P (r : point → nat) :
   (∀ x, r x < r (pt_shift 1 x)) → (∀ x, r x < r (pt_shift 1 (pt_dual x))) →
-  (∀ x y, ¬ P (FEq x y)) → (∀ x y, P (FLt x y) → r x < r y) →
+  (∀ x y, P (FLt x y) → r x < r y) →
   c0_acyclic n (BCs [] P).
 Proof.
-  intros Hs Hd HE HL. split; [done|].
+  intros Hs Hd HL. split; [done|].
   assert (∀ x y, geq (c0_eq n (BCs [] P)) x y → x = y) as Heq.
-  { induction 1 as [x y H| | | | | |]; try congruence.
-    apply bcs_open_nil in H as [H _]. by destruct (HE x y). }
+  { induction 1 as [x y []| | | | | |]; try congruence. }
   assert (∀ x y, glt (c0_eq n (BCs [] P)) (c0_lt n (BCs [] P)) x y → r x < r y) as Hlt.
   { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - apply bcs_open_nil in H as [H _]. by apply HL.
@@ -84,7 +83,6 @@ Proof.
   apply (c0_acyclic_prank 3 bit_P bit_rank).
   - intros [p [] o]; unfold bit_rank, pt_shift; simpl; lia.
   - intros [p [] o]; unfold bit_rank, pt_shift, pt_dual; simpl; lia.
-  - intros x y [?|[?|[?|?]]]; discriminate.
   - intros x y [E|[E|[E|E]]]; injection E as -> ->; vm_compute; lia.
 Qed.
 

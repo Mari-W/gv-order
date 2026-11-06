@@ -149,11 +149,9 @@ Proof.
     refine (proj2 (fl_map (FCtx W [(fb_C, ids 2)] ∅)
       (λ x y, x = y ∨ (fb_isvar x = false ∧ fb_isvar y = false))
       (λ a b, match a, b with NP x, NP y => fb_R x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H1 H2; unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ Hxy); clear Hxy H1 H2; unfold id; simpl.
     - intros x1 y1 H0. destruct (wf_eq_supp _ HW _ _ H0) as [->|[Hx Hy]]; [by left|right].
       split; by apply (fb_isvar_const W).
-    - intros x1 y1 (C & xs & Hg & g0 & Hg0 & E). apply list_elem_of_singleton in Hg.
-      injection Hg as -> ->. apply bcs_open_nil in Hg0 as [[-> | ->] _]; discriminate.
     - by left.
     - intros x1 y1 [->|[? ?]]; [by left|by right].
     - intros x1 y1 z1 [->|[? ?]] [->|[? ?]]; [by left|by right|by right|by right].

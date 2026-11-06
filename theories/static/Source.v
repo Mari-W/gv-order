@@ -34,7 +34,6 @@ Set Default Proof Using "All".
     point before [new] or force may name it. *)
 
 Inductive heqs (Ψ : hyps) : point → point → Prop :=
-  | he_h x y : hyp_fact Ψ (FEq x y) → heqs Ψ x y
   | he_refl x : heqs Ψ x x
   | he_sym x y : heqs Ψ x y → heqs Ψ y x
   | he_trans x y z : heqs Ψ x y → heqs Ψ y z → heqs Ψ x z
@@ -288,7 +287,6 @@ Section collapse.
   Proof.
     induction 1.
     - apply w_eq_nil in H as ->. apply he_refl.
-    - by apply he_h.
     - apply he_refl.
     - by apply he_sym.
     - by eapply he_trans.

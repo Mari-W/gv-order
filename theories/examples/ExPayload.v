@@ -89,8 +89,7 @@ Definition Ck2 : bcs := BCs [pa0 0] (λ g, g = FLt (pvar 1) (pvar 0) ∨ g = FLt
 
 Lemma ck2_ok peq plt : cc_ok peq plt Ck2.
 Proof.
-  apply (cc_ok_out _ _ Ck2 olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & [-> | ->] & _ & E); discriminate E.
+  apply (cc_ok_out _ _ Ck2 olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & [-> | ->] & _ & E); injection E as -> ->; cbn; auto.
   - intros u p q v (f & [-> | ->] & _ & E) (f' & [-> | ->] & _ & E') Hu Hp Hq Hv _;
       injection E as -> ->; injection E' as -> ->; exfalso; apply Hu, Hq.
@@ -104,7 +103,6 @@ Proof.
     end).
   apply (c0_acyclic_rank 1 _ r).
   - intros [p pb o]. unfold r, pt_shift. simpl. repeat case_match; lia.
-  - by intros ? ? [?|[?|[?|?]]].
   - intros x y [[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]; unfold r; cbn; lia.
   - intros [p pb o]. done.
 Qed.

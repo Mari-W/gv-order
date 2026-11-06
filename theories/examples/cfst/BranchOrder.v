@@ -96,8 +96,7 @@ Definition bod_C : bcs := BCs [pvar 0] bod_P.
 
 Lemma bod_ok W : cc_ok (seqs W [(boc_C, [pvar 0])]) (slt W [(boc_C, [pvar 0])]) bod_C.
 Proof.
-  apply (cc_ok_out _ _ bod_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & Hf & _ & E). destruct Hf as [-> | [-> | [-> | ->]]]; discriminate E.
+  apply (cc_ok_out _ _ bod_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & Hf & _ & E). destruct Hf as [-> | [-> | [-> | ->]]]; injection E as -> ->; cbn; auto.
   - intros u p q v (f & Hf & _ & E) (f' & Hf' & _ & E') Hu Hp Hq Hv Hpq.
     destruct Hf as [-> | [-> | [-> | ->]]]; injection E as -> ->; cbn in Hu, Hp; try done;

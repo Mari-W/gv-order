@@ -90,7 +90,7 @@ Proof.
 Qed.
 
 Lemma Cfac_acyclic : c0_acyclic 1 Cfac.
-Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []|apply vrank_dual]. Qed.
+Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|apply vrank_dual]. Qed.
 
 Lemma fac_deadlock_free : deadlock_free (∅, {[+ fac_main +]}).
 Proof. apply (soundness_source 1 Cfac _ TUnit (c0_acyclic_creation _ _ Cfac_acyclic)); [constructor|apply fac_typed]. Qed.
@@ -186,7 +186,7 @@ Qed.
 
 Lemma Cfa_acyclic : c0_acyclic 2 Cfa.
 Proof.
-  apply (c0_acyclic_rank 2 _ (vrank 10)); [apply vrank_shift|by intros ? ? [?|?]| |apply vrank_dual].
+  apply (c0_acyclic_rank 2 _ (vrank 10)); [apply vrank_shift| |apply vrank_dual].
   intros x y [[= -> ->]|[= -> ->]]; cbn; lia.
 Qed.
 

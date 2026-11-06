@@ -81,8 +81,8 @@ Definition ids (m : nat) : list point := pvar <$> List.seq 0 m.
 
     Every fact the static system reads comes from two judgments over
     the context Γ = (W, Ψ, Φ). Γ ⊢ x ≡ y ([seqs]) is the least
-    congruence for successor and x ↦ x[i] that contains ≡ of W and
-    the ≡ facts of the hypotheses. Γ ⊢ a ≺ b ([fl]) is over nodes,
+    congruence for successor and x ↦ x[i] that contains ≡ of W
+    (branch no-eq: hypotheses carry no ≡ facts). Γ ⊢ a ≺ b ([fl]) is over nodes,
     which are points and future variables. It has program order
     x ≺ x + 1 ([fl_po]), the order of W, the ≺ facts of the hypotheses
     and u ≺ φ for every future hypothesis of Φ, and it is closed under
@@ -105,7 +105,6 @@ Record fctx := FCtx { fc_W : world; fc_hyps : hyps; fc_fv : fhyps }.
 
 Inductive seqs (W : world) (Ψ : hyps) : point → point → Prop :=
   | se_w x y : w_eq W x y → seqs W Ψ x y
-  | se_h x y : hyp_fact Ψ (FEq x y) → seqs W Ψ x y
   | se_refl x : seqs W Ψ x x
   | se_sym x y : seqs W Ψ x y → seqs W Ψ y x
   | se_trans x y z : seqs W Ψ x y → seqs W Ψ y z → seqs W Ψ x z
@@ -129,7 +128,6 @@ Inductive fl (Γ : fctx) : node → node → Prop :=
 Lemma fl_map Γ (Q : point → point → Prop) (R : node → node → Prop)
     (fp : point → point) (f : node → node) :
   (∀ x y, w_eq (fc_W Γ) x y → Q (fp x) (fp y)) →
-  (∀ x y, hyp_fact (fc_hyps Γ) (FEq x y) → Q (fp x) (fp y)) →
   (∀ x, Q (fp x) (fp x)) →
   (∀ x y, Q (fp x) (fp y) → Q (fp y) (fp x)) →
   (∀ x y z, Q (fp x) (fp y) → Q (fp y) (fp z) → Q (fp x) (fp z)) →
@@ -147,7 +145,7 @@ Lemma fl_map Γ (Q : point → point → Prop) (R : node → node → Prop)
   (∀ x y, seqs (fc_W Γ) (fc_hyps Γ) x y → Q (fp x) (fp y)) ∧
   (∀ a b, fl Γ a b → R (f a) (f b)).
 Proof.
-  intros Hew Heh Her Hes Het Hesh Hesl Hw Hh Hv Hl Hr Ht Hpo Hed Hdpo.
+  intros Hew Her Hes Het Hesh Hesl Hw Hh Hv Hl Hr Ht Hpo Hed Hdpo.
   assert (∀ x y, seqs (fc_W Γ) (fc_hyps Γ) x y → Q (fp x) (fp y)) as Hq
     by (induction 1; eauto).
   split; [done|]. induction 1; eauto.
@@ -196,7 +194,7 @@ Proof.
   - intros H. change (match NP x, NP y with NP x, NP y => slt W Ψ x y | _, _ => True end).
     refine (proj2 (fl_map (FCtx W Ψ Φ) (seqs W Ψ)
       (λ a b, match a, b with NP x, NP y => slt W Ψ x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); unfold id; simpl; eauto using seqs.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); unfold id; simpl; eauto using seqs.
     + apply sl_w.
     + apply sl_h.
     + intros x0 x' [] ? ?; [by eapply sl_eql|done].
@@ -205,7 +203,7 @@ Proof.
     + intros x0. apply sl_po.
     + intros x0. apply sl_dpo.
   - refine (proj2 (fl_map (FCtx W Ψ ∅) (seqs W Ψ) (fl (FCtx W Ψ Φ)) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _); unfold id; simpl; eauto using seqs.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _); unfold id; simpl; eauto using seqs.
     + exact (fl_w (FCtx W Ψ Φ)).
     + exact (fl_h (FCtx W Ψ Φ)).
     + intros φ u H. by rewrite lookup_empty in H.
@@ -240,9 +238,8 @@ Definition lbx_below_h (W : world) (Ψ : hyps) (lb : lbound)
 (** Without hypotheses the static ≡ and ≺ are those of W. *)
 Lemma seqs_nil W x y : world_wf W → seqs W [] x y → w_eq W x y.
 Proof.
-  intros HW. induction 1 as [x y H|x y (? & ? & H & _)| | | | | |].
+  intros HW. induction 1 as [x y H| | | | | |].
   - done.
-  - by apply elem_of_nil in H.
   - apply (wf_eq_refl _ HW).
   - by apply (wf_eq_sym _ HW).
   - by eapply (wf_eq_trans _ HW).
@@ -289,8 +286,7 @@ Proof.
   intros HW H. change (match NP x, NP y with NP x, NP y => w_lt W x y | _, _ => True end).
   refine (proj2 (fl_map (FCtx W [] ∅) (w_eq W)
     (λ a b, match a, b with NP x, NP y => w_lt W x y | _, _ => True end) id id
-    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); clear H; unfold id; simpl; try done.
-  - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); clear H; unfold id; simpl; try done.
   - apply (wf_eq_refl _ HW).
   - apply (wf_eq_sym _ HW).
   - apply (wf_eq_trans _ HW).
@@ -312,7 +308,7 @@ Qed.
     points are statically known. *)
 Lemma hyp_in_fact W Ψ C xs : (C, xs) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) C xs.
 Proof.
-  intros H g Hg. destruct g as [x y|x y]; simpl; [apply sl_h|apply se_h];
+  intros H g Hg. destruct g as [x y]; simpl; apply sl_h;
     exists C, xs; (split; [done|]); eexists; (split; [exact Hg|done]).
 Qed.
 

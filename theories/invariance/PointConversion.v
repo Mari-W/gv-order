@@ -316,10 +316,8 @@ Proof.
   { intros z z' Hzz. apply HWW'. apply (pteqW_eq _ HW).
     by apply pteqW_inst_r. }
   destruct (HC g Hg) as (g' & Hg' & Hr). specialize (H g' Hg').
-  destruct g as [x y|x y], g' as [x' y'|x' y']; simpl in *; try done; destruct Hr as [H1 H2].
-  - eapply (wf_lt_eq _ HW'); [apply Hz, H1|exact H|apply (wf_eq_sym _ HW'), Hz, H2].
-  - eapply (wf_eq_trans _ HW'); [apply Hz, H1|].
-    eapply (wf_eq_trans _ HW'); [exact H|apply (wf_eq_sym _ HW'), Hz, H2].
+  destruct g as [x y], g' as [x' y']; simpl in *; destruct Hr as [H1 H2].
+  eapply (wf_lt_eq _ HW'); [apply Hz, H1|exact H|apply (wf_eq_sym _ HW'), Hz, H2].
 Qed.
 
 Lemma bcs_hold_conv W W' C C' xs :

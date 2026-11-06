@@ -97,21 +97,14 @@ Section frules.
     fstyped Φ Ψ Δ F (Lam e) (TLolli ub lb T U).
   Proof. intros Hφ Hl H. by eapply f_lam. Qed.
 
-  (** new at a known point x, with the body in the context after the
-      open: the point variables shifted by one, ι ≡ x as a hypothesis,
-      and the two ends at the shifted x. *)
+  (** new at a known point x (new@x, [KTNewAt]). *)
   Lemma fv_new_open Φ Ψ Δ F e T S x :
     hyp_known Ψ x →
-    fstyped (fhyps_pinst (pshift 1) Φ)
-      (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (alias_bcs x), ids 1)])
-      (Some (TSess (dual S) (pt_dual (pt_inst (pshift 1) x))) :: Some (TSess S (pt_inst (pshift 1) x))
-         :: None :: None :: lenv_pinst (pshift 1) Δ)
-      (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
+    fstyped Φ Ψ (Some (TSess (dual S) (pt_dual x)) :: Some (TSess S x) :: None :: None :: Δ) F e T →
     fstyped Φ Ψ Δ F (let_new e) T.
   Proof.
     intros Hx Hb. unfold let_new.
-    set (C := alias_bcs x).
-    set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
+    set (X := TProd (TSess S x) (TSess (dual S) (pt_dual x))).
     apply (f_letp Φ Ψ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
     { apply lenv_split_nones_l. }
     { apply (f_pair Φ Ψ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
@@ -119,8 +112,7 @@ Section frules.
       - eapply (f_app Φ Ψ _ _ _ _ _ _ None None TUnit).
         + apply lenv_split_nones_l.
         + done.
-        + apply f_konst; [done|apply lenv_empty_nones| |done].
-          apply KTNewEx; [apply cc_ok_alias|by constructor].
+        + apply f_konst; [done|apply lenv_empty_nones| |done]. by apply KTNewAt.
         + apply f_unit. apply lenv_empty_nones.
       - apply f_unit. apply lenv_empty_nones. }
     apply (f_letu Φ Ψ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
@@ -128,27 +120,10 @@ Section frules.
     { apply f_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
       exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
       apply fmap_Some in Hy as (? & _ & ?). congruence. }
-    apply (f_open Φ Ψ _ F _ 1 LBot 1 C
-             (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
-    cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
-    change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
-    set (Ψ1 := hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
-    assert (heqs Ψ1 (pvar 0) (pt_inst (pshift 1) x)) as Hal.
-    { apply he_h. exists (bcs_inst (pshift 1) C), [pvar 0].
-      split; [apply elem_of_app; right; by apply list_elem_of_singleton|].
-      exists (FEq (pvar 0) (pt_inst (λ a', pvar (a' + 1)) (pt_inst (pshift 1) x))). split.
-      - exists (FEq (pvar 0) (pvar 1)). split_and!; [done|cbn; lia|].
-        simpl. rewrite !pt_inst_pvar_at. done.
-      - simpl. rewrite pt_inst_unshift. done. }
-    apply (f_letp _ _ _
-             (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
-                :: lenv_nones (lenv_pinst (pshift 1) Δ))
-             (None :: None :: lenv_pinst (pshift 1) Δ)
-             _ _ _ (TSess S (pt_inst (pshift 1) x)) (TSess (dual S) (pt_dual (pt_inst (pshift 1) x)))).
+    apply (f_letp _ _ _ (None :: Some X :: lenv_nones Δ) (None :: None :: Δ)
+             _ _ _ (TSess S x) (TSess (dual S) (pt_dual x))).
     - apply lsplit_none, lsplit_l, lenv_split_nones_l.
-    - apply (f_conv _ _ _ _ _ (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
-      { split; split; [exact Hal|done|apply he_dual; exact Hal|done]. }
-      apply f_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
+    - apply f_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
       exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
       apply fmap_Some in Hy as (? & _ & ?). congruence.
     - exact Hb.
@@ -217,7 +192,6 @@ Proof.
     end).
   apply (c0_acyclic_rank 2 _ r).
   - intros [p b o]. unfold r, pt_shift. simpl. repeat case_match; lia.
-  - intros ? ? H. repeat destruct H as [H|H]; discriminate.
   - intros x y H. repeat destruct H as [H|H]; injection H as -> ->; unfold r; cbn; lia.
   - intros [p b o]. done.
 Qed.
@@ -236,17 +210,17 @@ Proof.
   apply (fv_new_open _ _ _ _ _ _ Sp (pa 0)).
   { exists Cn, (ids 2), (pvar 0). split_and!; [by left|by left|done]. }
   cbn. rewrite ?set_map_empty.
-  apply (fv_new_open _ _ _ _ _ _ SEnd (pv 2 0)).
-  { eexists _, [pv 1 0; pv 2 0], (pv 2 0). split_and!; [by left|by right; left|done]. }
+  apply (fv_new_open _ _ _ _ _ _ SEnd (pv 1 0)).
+  { exists Cn, (ids 2), (pvar 1). split_and!; [by left|by right; left|done]. }
   cbn. rewrite ?set_map_empty.
   match goal with |- fstyped _ ?Q _ _ _ _ => set (Ψ2 := Q) end.
-  assert ((BCs [] cn_fact, [pv 2 0; pv 3 0]) ∈ Ψ2) as Hin by (by left).
+  assert ((BCs [] cn_fact, [pv 0 0; pv 1 0]) ∈ Ψ2) as Hin by (by left).
   assert (∀ x y, cn_fact (FLt x y) →
-            hlt Ψ2 (pt_inst (plist [pv 2 0; pv 3 0]) x) (pt_inst (plist [pv 2 0; pv 3 0]) y)) as Hf.
+            hlt Ψ2 (pt_inst (plist [pv 0 0; pv 1 0]) x) (pt_inst (plist [pv 0 0; pv 1 0]) y)) as Hf.
   { intros x y Hxy. eapply (hlt_hyp0 _ _ _ x y); [exact Hin|exact Hxy| |done|done].
     repeat destruct Hxy as [Hxy|Hxy]; injection Hxy as -> ->; cbn; lia. }
-  set (a := pv 2 0). set (δ := pv 3 0).
-  set (a0 := Pt (NPayload (NVar 2) 0 0) 0). set (a1 := Pt (NPayload (NVar 2) 0 1) 0).
+  set (a := pv 0 0). set (δ := pv 1 0).
+  set (a0 := Pt (NPayload (NVar 0) 0 0) 0). set (a1 := Pt (NPayload (NVar 0) 0 1) 0).
   assert (hlt Ψ2 a a0) as N1 by (apply (Hf (pa 0) (pa0 0)); by left).
   assert (hlt Ψ2 a (pt_dual a0)) as N2 by (apply (Hf (pa 0) (pt_dual (pa0 0))); do 1 right; by left).
   assert (hlt Ψ2 a (pt_dual a1)) as N3 by (apply (Hf (pa 0) (pt_dual (pa1 0))); do 2 right; by left).
@@ -261,7 +235,7 @@ Proof.
   assert (hlt Ψ2 δ (pt_dual (pt_shift 1 a1))) as N9 by (apply (Hf (pd 0) (pt_dual (pa1 1))); by do 8 right).
   assert (hlt Ψ2 a (pt_shift 1 (pt_dual a0))) as D3 by (eapply hlt_trans; [exact N1|apply hl_dpo]).
   assert (hlt Ψ2 (pt_dual a0) (pt_shift 1 (pt_dual a0))) as P0 by apply hlt_po.
-  assert (hyp_known Ψ2 a) as Ka by (exists (BCs [] cn_fact), [pv 2 0; pv 3 0], (pv 2 0); split_and!; [done|by left|done]).
+  assert (hyp_known Ψ2 a) as Ka by (exists (BCs [] cn_fact), [pv 0 0; pv 1 0], (pv 0 0); split_and!; [done|by left|done]).
   (* T1 *)
   apply fv_letu; [reflexivity| |].
   { eapply fv_appk; [|fk ltac:(apply KTSpawn)|done].

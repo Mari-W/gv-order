@@ -89,7 +89,7 @@ Qed.
 Definition op_C0 : bcs := BCs [] (λ _, False).
 
 Lemma op_C0_acyclic : c0_acyclic 0 op_C0.
-Proof. apply (c0_acyclic_rank 0 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []|apply vrank_dual]. Qed.
+Proof. apply (c0_acyclic_rank 0 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|apply vrank_dual]. Qed.
 
 (** After E-NewFresh for c: the creation constraint gives ι ≺ ι[0] and
     ι[0]+1 ≺ ι+1, and program order gives ι[0] ≺ ι+1. *)

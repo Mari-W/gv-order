@@ -198,23 +198,20 @@ Proof.
 Qed.
 
 (** A top-level constraint is acyclic when a rank rises along program
-    order and along its ≺ facts and its ≡ facts keep the denotation
-    (sharp edges 110). *)
+    order and along its ≺ facts (sharp edges 110). *)
 Lemma c0_acyclic_den {D A} (R : A → A → Prop) n P (den : point → D)
     (dsh : D → D) (dsl : D → nat → D) (r : D → A) :
   (∀ a, ¬ R a a) → (∀ a b c, R a b → R b c → R a c) →
   (∀ x, den (pt_shift 1 x) = dsh (den x)) →
   (∀ x i, den (pt_payload x i) = dsl (den x) i) →
-  (∀ x y, P (FEq x y) → den x = den y) →
   (∀ d, R (r d) (r (dsh d))) →
   (∀ x y, P (FLt x y) → R (r (den x)) (r (den y))) →
   (∀ x, den (pt_dual x) = den x) →
   c0_acyclic n (BCs [] P).
 Proof.
-  intros Hirr Htr Hs Hl HE Hr HL Hd. split; [done|].
+  intros Hirr Htr Hs Hl Hr HL Hd. split; [done|].
   assert (∀ x y, geq (c0_eq n (BCs [] P)) x y → den x = den y) as Heq.
-  { induction 1 as [x y H| | | | | |]; try congruence; rewrite ?Hs, ?Hl, ?Hd; try congruence.
-    apply bcs_open_nil in H as [H _]. by apply HE. }
+  { induction 1 as [x y []| | | | | |]; try congruence; rewrite ?Hs, ?Hl, ?Hd; try congruence. }
   assert (∀ x y, glt (c0_eq n (BCs [] P)) (c0_lt n (BCs [] P)) x y → R (r (den x)) (r (den y))) as Hlt.
   { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - apply bcs_open_nil in H as [H _]. by apply HL.
@@ -225,20 +222,20 @@ Proof.
   intros p H. exact (Hirr _ (Hlt _ _ H)).
 Qed.
 
-(** The same with a rank into ℕ and no ≡ facts. The rank must ignore
-    polarity (end points). *)
+(** The same with a rank into ℕ. The rank must ignore polarity (end
+    points). *)
 Lemma c0_acyclic_rank n P (r : point → nat) :
   (∀ x, r x < r (pt_shift 1 x)) →
-  (∀ x y, ¬ P (FEq x y)) → (∀ x y, P (FLt x y) → r x < r y) →
+  (∀ x y, P (FLt x y) → r x < r y) →
   (∀ x, r (pt_dual x) = r x) →
   c0_acyclic n (BCs [] P).
 Proof.
-  intros Hr HE HL Hd.
+  intros Hr HL Hd.
   assert (∀ x, r (MkPt (pt_name x) true (pt_off x)) = r x) as Hrd.
   { intros [p [] o]; [done|exact (Hd (MkPt p false o))]. }
   apply (c0_acyclic_den lt n P (λ x, MkPt (pt_name x) true (pt_off x)) (pt_shift 1)
            (λ x i, pt_payload x i) r);
-    [intros a; lia|intros a b c; lia|done|done|intros x y H; by destruct (HE x y)|exact Hr| |done].
+    [intros a; lia|intros a b c; lia|done|done|exact Hr| |done].
   intros x y H. rewrite !Hrd. by apply HL.
 Qed.
 
@@ -763,7 +760,6 @@ Proof.
   - exact Hpd.
   - exact Hi.
   - intros ? ? ? ? [].
-  - intros a b Hg. apply bcs_open_nil in Hg as [Hg Hs]. destruct (HP _ Hg Hs) as (? & ? & E & _). discriminate E.
   - intros a b Hg. apply bcs_open_nil in Hg as [Hg Hs].
     destruct (HP _ Hg Hs) as (x & y & E & Hxy). injection E as <- <-.
     destruct Hs as [Ha Hb]. right; right; right. unfold id.
