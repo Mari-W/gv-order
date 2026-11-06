@@ -395,25 +395,53 @@ Closed, in `theories/liveness/`.
   The payload of a send is read one level down (`LVrel_down`).
 - The comm and link τ of a process now place fresh names cofinitely as well
   (`LPtau_case`), so conversion and composition need no renaming of points.
+- Branch no-eq. Since 2026-11-06 liveness sits on no-eq (rebased onto b4fcf35).
+  ≡_W is equality, and O-New places the channel by `new_place`: a fresh
+  constant outside L ∪ roots, or a point the world knows (new@x, world
+  unchanged). `LErel_app_new` covers KTNewAt. The PN and MP2 guard checks of
+  GuardEx.v are commented out (NO-EQ: translation pending). Trivial alias
+  steps in LiveBind and LiveConsts are gone. The PointConversion lemmas in
+  LiveConv stay.
+- `LiveTermRules.v`. The live semantic judgment `lsem_typed` with
+  `lgrounding`, and E-Unit, E-Const, E-Var, E-Ch, E-Abs, E-App (all function
+  values, force included, `LErel_app`), E-Let*, E-LetPair, E-Pair, E-Inj,
+  E-Case, E-Weak, E-Conv (≈_W), E-Contract, E-Force, E-Pack, E-Open
+  (`LErel_Vsub`), and `lsem_rules` (sem_rules without E-Exp) with
+  `lsem_rules_fundamental`.
+- `LiveBind.v`. `LErel_bind_R`: the continuation is needed at the current
+  index only for returns that satisfy a condition R closed under the τ steps
+  of the hole (`tadmin`).
+- `LiveGuard.v`. `gd_noret`: a term with `gd` reaches no value by β, new and
+  spawn (purely syntactic). `LErel_bind_guarded`: a guarded hole binds with a
+  continuation below the index. The judgment with one later variable
+  `lsem_later` (`lgroundingL`, `later_val`). `lsem_typed_box_live`: E-Exp
+  from a later judgment of the body, by Löb up to the index
+  (`LVrel_box_lob_le`); when the body is a λ, the later hypothesis also says
+  that the self is a box around a λ. `lsem_later_letu_guard`: E-Guard-Let.
+- `GuardCex.v`. Blocker, sharp edge 161. The guarded system admits a typed
+  program that τ-diverges: a box whose body is not a λ forces its own self
+  through the special case of `ok` for (force x) e before any channel step
+  (`cx_gptyped`, `cx_tau_diverges`, `live_guarded_false`). The guarded live
+  fundamental theorem is false as stated. A repair (`okf`, `okvf`, `gallf`:
+  the special case only under the λs of a box body) keeps the forwarder, the
+  tail call, first-action and the rounds box (`gallf_examples`). It changes
+  `guarded`, the definition of the guarded system, and waits for the author.
 
 Next, in order.
 
-1. The semantic judgment `lsem_typed` and the rules of TermRules.v (E-Unit,
-   E-Var, E-Abs, E-App, E-Let, E-LetPair, E-Case, E-Pair, E-Inj, weakening),
-   BoxRules.v, ExRules.v and SemanticRules.v, on top of `LErel_bind`.
-2. The guard in the semantics. Plan: a guarded term relation Eg (E whose
-   every return lies one level down, so a value handed to the continuation is
-   in V below the current level), the lemma `gd e → Eg` for typed e by
-   induction on the derivation, and a judgment with one later variable whose
-   rules follow `ok`. E-Exp then uses `LVrel_box_lob`.
-3. Invariance (point and channel renaming, junk renaming) as far as the
-   composition proofs need it, then Internalize, P-Connect, P-Term, P-Join.
-4. `gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p`, and the examples of GuardEx.v as
-   live theorems.
-
-Not ported. The bind lemma, the constants (send, receive, close, select,
-branch, link, new), the invariance lemmas (renaming of points and channels,
-equivalence), the composition lemmas (Internalize, P-Connect, P-Term, P-Join),
-the semantic judgment with later hypotheses, the static fundamental theorem
-and the examples. Their feasibility rests on the case analyses of §2, §4 and
-§6. None of them has met a counterexample.
+1. The author decides on the repair of the guard (sharp edge 161).
+2. The remaining rules of the later judgment, one per clause of the repaired
+   guard: dropping a variable that does not occur, the let, let-pair, pair,
+   application and case forms with the later variable on both sides (bind
+   with R true and `lgroundingL` read at j ≤ n), the applied λ, the λ of the
+   box body (later variable under the binder), and force of the self applied
+   to a guarded argument (one β to the λ from `later_val`, then
+   `LErel_bind_guarded`). Then `typed ∧ ok_repaired → lsem_later` by
+   induction on the typing derivation, following `typed_sem_rules`
+   (static/Fundamental.v), and the live counterpart of `sem_rules` with
+   E-Exp-Live.
+3. Invariance (channel and junk renaming) as far as the composition proofs
+   need it, then Internalize with synchronization cost 2, P-Connect, P-Term,
+   P-Join. None of these is ported yet.
+4. `gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p` for the repaired guard, and the
+   examples of GuardEx.v as live theorems.
