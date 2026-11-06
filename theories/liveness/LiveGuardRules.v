@@ -548,3 +548,273 @@ Proof.
   apply tenv_comp_empty_r_inv in Hc3 as ->. apply LVrel_LErel. simpl.
   apply LVrel_sum_iff. right. eauto.
 Qed.
+
+(** ** E-Abs with marks
+
+    The arrow reads its body at every j ≤ n, the current index included,
+    so the body is judged with the marks of the λ. A marked variable is
+    in V one level down, which is all the channel and head conditions of
+    the arrow read. *)
+
+Lemma lsem_later_lam W Θ Δ Lm F e T U ub lb :
+  term_wf Θ (Some T :: Δ) e →
+  lenv_bot Δ = false →
+  lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
+  (∀ W1 F', wext W W1 → ub_below W1 ub F' → lsem_later W1 Θ (Some T :: Δ) (None .: Lm) F' e U) →
+  lsem_later W Θ Δ Lm F (Lam e) (TLolli ub lb T U).
+Proof.
+  intros (Hfc & Hfv & Hrel) Hbot Hlb He n W' Θ' Θ'' γ HW Hc Hg. simpl.
+  destruct n as [|n']; [apply LErel_0|].
+  pose proof (lgroundingL_lower (S n') n' _ _ _ _ _ ltac:(lia) Hg) as Hgl.
+  pose proof (wext_wf _ _ HW) as HW'. pose proof eq_rdsym as Hs.
+  apply LVrel_LErel, LVrel_lolli_iff. left. exists (subst (up γ) e). split_and!; [done| | |].
+  - rewrite (tenv_join_dom _ _ _ (proj1 Hc)). apply set_eq. intros ch. split.
+    + intros Hch.
+      assert (fchans (subst (up γ) e) ⊆ fchans e ∪ dom Θ') as Hsub.
+      { apply fchans_subst. eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
+        - intros _. set_solver.
+        - intros (T' & Hx). unfold compose. rewrite fchans_rename. by eapply lgrounding_fchans. }
+      rewrite <-Hfc. set_solver.
+    + intros [Hch|Hch]%elem_of_union.
+      * apply fchans_subst_super. by rewrite Hfc.
+      * destruct (lgrounding_dom _ _ _ _ _ _ Hgl Hch) as (x & T' & Hx & Hu & Hin).
+        assert (freevar (S x) e) as Hfree by (apply Hrel; by exists T').
+        pose proof (fchans_subst_free e (S x) (up γ) Hfree) as Hsub. simpl in Hsub.
+        unfold compose in Hsub. rewrite fchans_rename in Hsub. set_solver.
+  - assert (∀ h, h ∈ tenv_heads Θ'' → (h ∈ tenv_heads Θ ∨ ∃ h', h' ∈ lenv_heads Δ ∧ w_le W' h' h))
+      as Hh.
+    { intros h (k & e0 & He0 & ->)%elem_of_tenv_heads_entry.
+      destruct (comp_entry _ _ _ _ _ _ Hc He0) as [[k' Hk]|[k' Hk]].
+      - left. apply elem_of_tenv_heads_entry. eauto.
+      - right. exact (lgrounding_heads _ _ _ _ _ HW' Hbot Hgl _ _ Hk). }
+    pose proof (lb_below_mono _ _ _ _ HW Hlb) as Hlb'.
+    destruct lb as [l|]; simpl in *.
+    + intros h Hin. destruct (Hh h Hin) as [Hin'|(h' & Hh' & Hle)].
+      * apply Hlb'. set_solver.
+      * eapply le_le_W; [exact HW'| |exact Hle]. apply Hlb'. set_solver.
+    + apply set_eq. intros h. split; [|set_solver]. intros Hin.
+      destruct (Hh h Hin) as [Hin'|(h' & Hh' & _)]; set_solver.
+  - intros W2 j Θa Θb w F' HW2 Hj Hcb Hub HVw. rewrite subst1_subst.
+    pose proof (wext_trans _ _ _ HW HW2) as HWW2.
+    destruct (comp_assoc _ _ _ _ _ _ Hs Hcb (comp_comm _ _ _ _ Hs Hc)) as [HX HY].
+    apply (He W2 F' HWW2 Hub j W2 (tjoin_as Θb Θ' Θa) Θb).
+    + by apply wext_refl, HWW2.
+    + by apply comp_comm.
+    + simpl. exists Θa, Θ'. split_and!; [by apply comp_comm|done|].
+      eapply lgroundingL_ext; [|eapply lgroundingL_down; [|eapply lgroundingL_mono; [exact HW2|exact Hg]]].
+      * done.
+      * lia.
+Qed.
+
+(** ** The closure at level 0
+
+    A closure is in V at level 0 by its channels and heads alone, so the
+    rules of E-Abs without the body give it. An applied λ whose argument
+    is guarded needs no more of its function now (a closure built before
+    the guard). *)
+
+Definition lsem_v0 (W : world) (Θ : tenv) (Δ : lenv) (Lm : lmark) (e : expr) (T : ty) : Prop :=
+  ∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ Θ' → lgroundingL (S n) W' Θ' Δ Lm γ →
+    LVrel 0 W' Θ'' T (subst γ e).
+
+Lemma lsem_v0_lam W Θ Δ Lm e T U ub lb :
+  term_wf Θ (Some T :: Δ) e → lenv_bot Δ = false → lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
+  lsem_v0 W Θ Δ Lm (Lam e) (TLolli ub lb T U).
+Proof.
+  intros (Hfc & Hfv & Hrel) Hbot Hlb n' W' Θ' Θ'' γ HW Hc Hg. simpl.
+  pose proof (lgroundingL_lower (S n') n' _ _ _ _ _ ltac:(lia) Hg) as Hgl.
+  pose proof (wext_wf _ _ HW) as HW'. pose proof eq_rdsym as Hs.
+  apply LVrel_lolli_iff. left. exists (subst (up γ) e). split_and!; [done| | |].
+  - rewrite (tenv_join_dom _ _ _ (proj1 Hc)). apply set_eq. intros ch. split.
+    + intros Hch.
+      assert (fchans (subst (up γ) e) ⊆ fchans e ∪ dom Θ') as Hsub.
+      { apply fchans_subst. eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
+        - intros _. set_solver.
+        - intros (T' & Hx). unfold compose. rewrite fchans_rename. by eapply lgrounding_fchans. }
+      rewrite <-Hfc. set_solver.
+    + intros [Hch|Hch]%elem_of_union.
+      * apply fchans_subst_super. by rewrite Hfc.
+      * destruct (lgrounding_dom _ _ _ _ _ _ Hgl Hch) as (x & T' & Hx & Hu & Hin).
+        assert (freevar (S x) e) as Hfree by (apply Hrel; by exists T').
+        pose proof (fchans_subst_free e (S x) (up γ) Hfree) as Hsub. simpl in Hsub.
+        unfold compose in Hsub. rewrite fchans_rename in Hsub. set_solver.
+  - assert (∀ h, h ∈ tenv_heads Θ'' → (h ∈ tenv_heads Θ ∨ ∃ h', h' ∈ lenv_heads Δ ∧ w_le W' h' h))
+      as Hh.
+    { intros h (k & e0 & He0 & ->)%elem_of_tenv_heads_entry.
+      destruct (comp_entry _ _ _ _ _ _ Hc He0) as [[k' Hk]|[k' Hk]].
+      - left. apply elem_of_tenv_heads_entry. eauto.
+      - right. exact (lgrounding_heads _ _ _ _ _ HW' Hbot Hgl _ _ Hk). }
+    pose proof (lb_below_mono _ _ _ _ HW Hlb) as Hlb'.
+    destruct lb as [l|]; simpl in *.
+    + intros h Hin. destruct (Hh h Hin) as [Hin'|(h' & Hh' & Hle)].
+      * apply Hlb'. set_solver.
+      * eapply le_le_W; [exact HW'| |exact Hle]. apply Hlb'. set_solver.
+    + apply set_eq. intros h. split; [|set_solver]. intros Hin.
+      destruct (Hh h Hin) as [Hin'|(h' & Hh' & _)]; set_solver.
+  - intros W2 j Θa Θb w F' HW2 Hj Hcb Hub HVw. assert (j = 0) as -> by lia. apply LErel_0.
+Qed.
+
+Lemma LErel_val_inv n W Θ T F v : is_val v → LErel (S n) W Θ T F v → LVrel (S n) W Θ T v.
+Proof.
+  intros Hv H. apply LErel_S_iff in H. destruct (H W (wext_r_refl _)) as (Hs & _).
+  apply Hs. intros α e' Hst. by eapply val_no_tstep.
+Qed.
+
+Lemma LErel_beta_inv n W Θ T F e e' : tstep e LBeta e' → LErel (S n) W Θ T F e → LErel (S n) W Θ T F e'.
+Proof.
+  intros Hst H. apply LErel_S_iff in H. destruct (H W (wext_r_refl _)) as (_ & _ & Hb & _). by apply Hb.
+Qed.
+
+Lemma lsem_v0_wk W Θ Δ' Δ Lm e T :
+  lenv_wk Δ' Δ → lsem_v0 W Θ Δ' Lm e T → lsem_v0 W Θ Δ Lm e T.
+Proof.
+  intros Hwk He n W' Θ' Θ'' γ HW Hc Hg. apply (He n W' Θ' Θ'' γ HW Hc). by eapply lgroundingL_wk.
+Qed.
+
+Lemma lsem_v0_conv W Θ Δ Lm e T T' :
+  teqW W T T' → lsem_v0 W Θ Δ Lm e T → lsem_v0 W Θ Δ Lm e T'.
+Proof.
+  intros Ht He n W' Θ' Θ'' γ HW Hc Hg. eapply LVrel_tconv; [exact (wext_wf _ _ HW)| |by apply (He n W' Θ')].
+  eapply teqW_mono; [|exact Ht]. intros x y H. exact H.
+Qed.
+
+Lemma lsem_v0_contract W Θ Δ U Lm e T :
+  unlimited U →
+  lsem_v0 W Θ (Some U :: Some U :: Δ) (λ x, Lm (pred x)) e T →
+  lsem_v0 W Θ (Some U :: Δ) Lm (rename pred e) T.
+Proof.
+  intros Hu He n W' Θ' Θ'' γ HW Hc Hg. rewrite subst_rename.
+  apply (He n W' Θ' Θ'' (λ x, γ (pred x))); [done|done|]. by apply lgroundingL_contract.
+Qed.
+
+Lemma lsem_v0_open W Θ Δ Lm e i lb m C T U :
+  Δ !! i = Some (Some (TEx lb m C T)) →
+  (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+     bcs_hold (w_eq W1) (w_lt W1) C xs →
+     lsem_v0 W1 Θ (<[i := Some (ty_inst xs T)]> Δ) Lm e U) →
+  lsem_v0 W Θ Δ Lm e U.
+Proof.
+  intros Hi He n W' Θ' Θ'' γ HW Hc Hg.
+  destruct (lgroundingL_open _ _ _ _ _ _ _ _ _ _ _ Hi Hg) as (xs & Hxs & HK & HC & Hg').
+  apply (He W' xs HW Hxs HK HC n W' Θ' Θ'' γ); [|done|done].
+  apply wext_refl. by destruct HW as (_&_&_&?).
+Qed.
+
+Lemma lsem_v0_pack W Θ Δ Lm e lb m C T xs :
+  length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+  lbx_below W lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
+  lsem_v0 W Θ Δ Lm e (ty_inst xs T) → lsem_v0 W Θ Δ Lm e (TEx lb m C T).
+Proof.
+  intros Hxs HK HC Hlb He n W' Θ' Θ'' γ HW Hc Hg.
+  eapply LVrel_pack; [done..|exact HW|by apply (He n W' Θ')].
+Qed.
+
+Lemma lsem_later_pack W Θ Δ Lm F e lb m C T xs :
+  length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+  lbx_below W lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
+  lsem_later W Θ Δ Lm F e (ty_inst xs T) → lsem_later W Θ Δ Lm F e (TEx lb m C T).
+Proof.
+  intros Hxs HK HC Hlb He n W' Θ' Θ'' γ HW Hc Hg.
+  eapply LErel_Vsub; [|by apply (He n W' Θ' Θ'' γ)].
+  intros j W2 Θ2 v Hj HW2 HV. eapply LVrel_pack; [done..| |exact HV].
+  destruct HW2 as [->|HW2]; [done|by eapply wext_trans].
+Qed.
+
+(** ** The applied λ whose argument is guarded
+
+    The closure is a value at once. The argument acts before it returns,
+    so the closure is applied below the index, where its free variables
+    are read now. Its heads are read at level 0. *)
+
+Lemma lsem_later_app_lam W Θ Θ1 Θ2 Δ Δ1 Δ2 Lm F b e2 ub lb T U :
+  gd e2 = true → tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
+  lsem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) (Lam b) (TLolli ub lb T U) →
+  lsem_v0 W Θ1 Δ1 Lm (Lam b) (TLolli ub lb T U) →
+  lsem_later W Θ2 Δ2 Lm (F ∪ opt_heads lb) e2 T →
+  lsem_later W Θ Δ Lm F (App (Lam b) e2) U.
+Proof.
+  intros Hgd Hc Hsp Hub He1 Hv1 He2 n W' Θ' Θ'' γ HW Hc'' Hg.
+  destruct n as [|n']; [apply LErel_0|].
+  pose proof (wext_wf _ _ HW) as HW'. pose proof eq_rdsym as Hs.
+  destruct (lgroundingL_split _ _ _ _ _ _ _ _ Hsp Hg) as (Θ'1 & Θ'2 & Hc' & Hg1 & Hg2).
+  destruct (comp_swap4 _ _ _ _ _ _ _ _ Hs Hc'' Hc Hc') as (A & B & HAB & HA & HB).
+  change (subst γ (App (Lam b) e2)) with (fill_frame (FAppR (subst γ (Lam b))) (subst γ e2)).
+  eapply (LErel_bind_guarded (S n') _ W' Θ'' B A T U F (opt_heads lb)).
+  - apply gd_noret, gd_subst, Hgd.
+  - done.
+  - apply HW.
+  - by apply comp_comm.
+  - left. eapply (LVrel_heads_above _ _ _ (TLolli ub lb T U)); [exact HW'|done|].
+    exact (Hv1 n' W' Θ'1 A γ HW HA Hg1).
+  - by apply (He2 (S n') W' Θ'2 B γ).
+  - intros W'' j Θ2' Θ4 v2 HW'' Hj Hc4 HV2.
+    destruct j as [|j']; [apply LErel_0|].
+    pose proof (wext_trans _ _ _ HW HW'') as HWW''.
+    assert (LVrel (S j') W'' A (TLolli ub lb T U) (subst γ (Lam b))) as HV1.
+    { apply (LErel_val_inv _ _ _ _ (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2)))); [done|].
+      apply (He1 (S j') W'' Θ'1 A γ HWW''); [exact HA|].
+      eapply lgrounding_mono; [exact HW''|]. exact (lgroundingL_lower (S n') (S j') _ _ _ _ _ Hj Hg1). }
+    apply (LErel_app (S j') W'' Θ4 A Θ2' ub lb T U); [apply HWW''| |done|done|].
+    + apply comp_comm; [exact Hs|exact Hc4].
+    + eapply ub_below_mono; [exact HWW''|exact Hub].
+Qed.
+
+(** ** Force of the self applied to a guarded argument (sharp edges 161)
+
+    The self is later and a box around a λ, so forcing it is one β to a
+    closure without channels. The argument acts before it returns, and
+    the closure is applied below the index. *)
+
+Lemma lsem_later_app_force W Θ Θ1 Θ2 Δ Δ1 Δ2 Lm F y T0 e2 ub lb T U :
+  gd e2 = true → tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
+  Δ1 !! y = Some (Some T0) → Lm y = Some true →
+  term_wf Θ1 Δ1 (App EForce (Var y)) →
+  lsem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) (App EForce (Var y))
+    (TLolli ub lb T U) →
+  lsem_later W Θ2 Δ2 Lm (F ∪ opt_heads lb) e2 T →
+  lsem_later W Θ Δ Lm F (App (App EForce (Var y)) e2) U.
+Proof.
+  intros Hgd Hc Hsp Hub Hy HLy (Hfc & _ & Hrel) He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg.
+  destruct n as [|n']; [apply LErel_0|].
+  pose proof (wext_wf _ _ HW) as HW'. pose proof eq_rdsym as Hs.
+  destruct (lgroundingL_split _ _ _ _ _ _ _ _ Hsp Hg) as (Θ'1 & Θ'2 & Hc' & Hg1 & Hg2).
+  destruct (comp_swap4 _ _ _ _ _ _ _ _ Hs Hc'' Hc Hc') as (A & B & HAB & HA & HB).
+  destruct (proj2 (lgroundingL_later _ _ _ _ _ _ _ _ _ Hy HLy Hg1) eq_refl) as [b0 Hb0].
+  assert (Θ1 = ∅) as ->.
+  { apply dom_empty_inv_L. rewrite <-Hfc. done. }
+  assert (Θ'1 = ∅) as ->.
+  { refine (lgroundingL_empty _ _ _ _ _ _ _ Hg1). intros x T' Hx Hu.
+    assert (freevar x (App EForce (Var y))) as Hfx by (apply Hrel; by exists T').
+    simpl in Hfx. destruct Hfx as [[]| ->]. by rewrite HLy. }
+  apply (tenv_comp_empty_inv) in HA as ->.
+  apply (tenv_comp_empty_l_inv _ _ _ Hs) in HAB as <-.
+  set (cl := subst1 (EBox (Lam b0)) (Lam b0)).
+  assert (is_val cl) as Hcl by done.
+  simpl. rewrite Hb0.
+  apply (LErel_det_beta _ _ _ _ _ _ (App cl (subst γ e2))).
+  { apply TStepAppL, TStepHead, HeadForce. }
+  { intros α e'' Hst.
+    apply tstep_app_inv in Hst as [(e1' & Hst & ->)|[(Hv & _)|(Hv & _)]]; [|done|done].
+    apply app_val_step in Hst; [|done|done]. by inversion Hst. }
+  change (App cl (subst γ e2)) with (fill_frame (FAppR cl) (subst γ e2)).
+  eapply (LErel_bind_guarded (S n') _ W' Θ'' Θ'' ∅ T U F (opt_heads lb)).
+  - apply gd_noret, gd_subst, Hgd.
+  - done.
+  - apply HW.
+  - apply tenv_comp_empty_r.
+  - left. apply heads_above_empty.
+  - by apply (He2 (S n') W' Θ'2 Θ'' γ).
+  - intros W'' j Θ2' Θ4 v2 HW'' Hj Hc4 HV2.
+    destruct j as [|j']; [apply LErel_0|].
+    pose proof (wext_trans _ _ _ HW HW'') as HWW''.
+    assert (LVrel (S j') W'' ∅ (TLolli ub lb T U) cl) as HV1.
+    { apply (LErel_val_inv _ _ _ _ (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2)))); [done|].
+      apply (LErel_beta_inv _ _ _ _ _ (App EForce (EBox (Lam b0)))); [by apply TStepHead, HeadForce|].
+      rewrite <-Hb0. change (App EForce (γ y)) with (subst γ (App EForce (Var y))).
+      apply (He1 (S j') W'' ∅ ∅ γ HWW''); [apply tenv_comp_empty_r|].
+      eapply lgrounding_mono; [exact HW''|]. exact (lgroundingL_lower (S n') (S j') _ _ _ _ _ Hj Hg1). }
+    apply tenv_comp_empty_r_inv in Hc4 as ->.
+    apply (LErel_app (S j') W'' Θ2' ∅ Θ2' ub lb T U); [apply HWW''| |done|done|].
+    + apply tenv_comp_empty_l, eq_rdsym.
+    + eapply ub_below_mono; [exact HWW''|exact Hub].
+Qed.
