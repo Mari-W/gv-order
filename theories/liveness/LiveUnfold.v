@@ -209,9 +209,9 @@ Definition LEstep (X : world → tenv → ty → gset point → expr → Prop) (
     (¬ irred e → ready_t W1 Θ F e) ∧
     (∀ e', tstep e LBeta e' → X W1 Θ T F e') ∧
     (∀ c e', tstep e (LNew c) e' → c ∉ dom Θ →
-       ∀ L : gset pname, ∃ a s s' W', NConst a ∉ L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∧
-         sdual s s' ∧ wext_fresh W1 {[NConst a]} W' ∧
-         X W' (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> Θ) T F e') ∧
+       ∀ L : gset pname, ∃ x s s' W', new_place W1 (L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F) x W' ∧
+         sdual s s' ∧
+         X W' (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e') ∧
     (∀ w e', tstep e (LSpawn w) e' →
        ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W1) Θ Θ1 Θ2 ∧
          Vspawn LVrel LErel (λ W Θ F e, X W Θ TUnit F e) (S n) W1 Θ1 ub lb w ∧
@@ -225,7 +225,7 @@ Proof.
   intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
   split_and!; [done|done| | | |done].
   - intros e' Hst. auto.
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & ?).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
     exists a, s, s', W'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
@@ -245,7 +245,7 @@ Proof.
   split_and!; [|done| | | |].
   - intros Hirr. auto.
   - intros e' Hst. auto.
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & ?).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
     exists a, s, s', W'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
@@ -268,7 +268,7 @@ Proof.
   split_and!; [|done| | | |].
   - intros Hirr. apply LVrel_eq. auto.
   - intros e' Hst. auto.
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & ?).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
     exists a, s, s', W'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
@@ -488,7 +488,7 @@ Proof.
   split_and!; [| done | | | | ].
   - intros Hirr. eapply LVrel_down; [|by apply Hs]. lia.
   - intros e' Hst. by apply (Hb e' Hst).
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & _ & HX).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
     exists a, s, s', W'. by split_and!.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |done].

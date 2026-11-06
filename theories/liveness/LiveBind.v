@@ -130,9 +130,9 @@ Proof.
   all: destruct (Hh _ _ Hen2) as (h & HhH & Hle).
   all: pose proof (Hlt h ltac:(set_solver)) as Hlh; unfold entry_head in Hlh; simpl in Hlh.
   all: apply (Hirr e1.2); destruct Hle as [Heq|Hlt'].
-  all: try (eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlh|];
+  all: try (eapply (wf_lt_eq _ HWf); [reflexivity|exact Hlh|];
             eapply (wf_eq_trans _ HWf); [exact Heq|by apply (wf_eq_sym _ HWf)]).
-  all: eapply (wf_lt_eq _ HWf); [apply HWf|eapply (wf_lt_trans _ HWf); [exact Hlh|exact Hlt']|];
+  all: eapply (wf_lt_eq _ HWf); [reflexivity|eapply (wf_lt_trans _ HWf); [exact Hlh|exact Hlt']|];
          by apply (wf_eq_sym _ HWf).
 Qed.
 
@@ -247,9 +247,6 @@ End Lbind_ready.
 Lemma wext_r_strict W W1 : strict W → wext_r W W1 → strict W1.
 Proof. intros HW [->|H]; [done|apply H]. Qed.
 
-Lemma wext_r_eq W W1 x y : wext_r W W1 → w_eq W x y → w_eq W1 x y.
-Proof. intros [->|(_ & He & _)] Hxy; [done|by apply He]. Qed.
-
 Lemma heads_above_x_mono_r W W1 H Θ2 :
   wext_r W W1 → heads_above_x W H Θ2 → heads_above_x W1 H Θ2.
 Proof. intros [->|HW] Hh; [done|by eapply heads_above_x_mono]. Qed.
@@ -288,10 +285,10 @@ Proof.
   apply LErel_S_iff. intros W1 HW1.
   pose proof (wext_r_strict _ _ HW HW1) as HW1s.
   assert (tenv_comp (w_eq W1) Θ Θ1 Θ2) as Hc1.
-  { eapply tenv_comp_mono; [|exact Hc]. intros x y. by apply wext_r_eq. }
+  { exact Hc. }
   pose proof (heads_above_x_mono_r _ _ _ _ HW1 Hh) as Hh1.
   pose proof (LErel_mono _ _ _ _ _ _ _ HW1 HE) as HE1.
-  assert (rdsym (w_eq W1)) as Hsym by (by apply wf_rdsym, HW1s).
+  assert (rdsym (w_eq W1)) as Hsym by apply eq_rdsym.
   assert (∀ W' j Θ1' Θ' v, wext W1 W' → j ≤ S n' → tenv_comp (w_eq W') Θ' Θ1' Θ2 →
             LVrel j W' Θ1' Th v → LErel j W' Θ' T F (fill_frame f v)) as HK1.
   { intros W' j Θ1' Θ' v HW' Hj Hc' HV'. apply (HK W' j Θ1' Θ' v); [|done..].
@@ -314,11 +311,14 @@ Proof.
       split; apply not_elem_of_dom; clear -HcΘ; set_solver. }
     destruct (Hnew c e' Hst' ltac:(by apply not_elem_of_dom)
                 (L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F))
-      as (a & s & s' & W' & Hfr & Hdd & Hwf & _ & HΦ).
-    exists a, s, s', W'. split_and!; [clear -Hfr; set_solver|done|done|].
+      as (x & s & s' & W' & Hpl & Hdd & _ & HΦ).
+    exists x, s, s', W'. split_and!; [eapply new_place_sub; [|exact Hpl]; clear; set_solver|done|].
+    destruct Hpl as [(a & -> & Hfr & Hwf)|(Hx & ->)].
+    2: { (* new at a known point: the world stays *)
+      apply HΦ; [by apply comp_insert|exact HK1|done|done|done]. }
     pose proof (proj1 Hwf) as HW1'.
     apply HΦ.
-    + apply comp_insert; [|done]. exact (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW1')) Hc1).
+    + apply comp_insert; [|done]. exact Hc1.
     + intros W'' j Θ1' Θ' v HW'' Hj Hc' HV. apply (HK1 W'' j Θ1' Θ' v); [|done..].
       by eapply wext_trans.
     + by eapply heads_above_x_mono.
@@ -344,8 +344,8 @@ Proof.
       exists (partial_alter (λ _, Θ1r !! c) c Θ), m, U, s, k. split; [by exists s0|].
       intros W' j Θp Θrc Θ' HW' Hj Hextc Hcomp' HV.
       pose proof (proj2 (proj2 (proj2 HW'))) as HWs'.
-      assert (rdsym (w_eq W')) as Hsym' by (by apply wf_rdsym, HWs').
-      pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW')) Hcr) as Hcr'.
+      assert (rdsym (w_eq W')) as Hsym' by apply eq_rdsym.
+      pose proof Hcr as Hcr'.
       destruct (comp_ext_back _ _ _ _ _ c _ Hcr' H2c Hextc) as [Hc1' Hext1].
       destruct (comp_assoc _ _ _ _ _ _ Hsym' Hcomp' Hc1') as [HX1 HX2].
       pose proof (Hcont W' j Θp _ _ HW' Hj Hext1 HX1 HV) as HEj.
