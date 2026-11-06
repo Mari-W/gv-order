@@ -370,7 +370,6 @@ Proof.
   - intros x; lia.
   - intros [n pb o] _. unfold fwb_rank, pt_shift. simpl. repeat case_match; lia.
   - intros [n pb o] _. unfold fwb_rank, pt_shift, pt_dual. simpl. repeat case_match; lia.
-  - intros a b (f & (k & Hf) & _ & E). repeat destruct Hf as [Hf|Hf]; subst; discriminate.
   - intros a b (f & (k & Hf) & _ & E). repeat destruct Hf as [Hf|Hf]; subst; cbn in E;
       rewrite ?E0, ?E1 in E; injection E as -> ->; cbn;
       first [left; split_and!; [done|done|unfold fwb_rank; cbn; lia]

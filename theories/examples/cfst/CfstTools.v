@@ -234,7 +234,6 @@ Lemma cc_ok_out peq plt C (R : point → point → Prop) :
   (∀ x y z, R x y → R y z → R x z) → (∀ x, ¬ R x x) →
   (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 x)) →
   (∀ x, pt_root x = NVar 0 → R x (pt_shift 1 (pt_dual x))) →
-  (∀ a b, ¬ bcs_open 1 C (FEq a b)) →
   (∀ a b, bcs_open 1 C (FLt a b) →
      (pt_root a = NVar 0 ∧ pt_root b = NVar 0 ∧ R a b) ∨
      (pt_root a ≠ NVar 0 ∧ pt_root b = NVar 0) ∨ (pt_root a = NVar 0 ∧ pt_root b ≠ NVar 0)) →
@@ -243,7 +242,7 @@ Lemma cc_ok_out peq plt C (R : point → point → Prop) :
      (p = q ∨ R p q) → glt (cc_up peq) (cc_up plt) u v) →
   cc_ok peq plt C.
 Proof.
-  intros Ht Hi Hp Hd He Hc HB.
+  intros Ht Hi Hp Hd Hc HB.
   apply (cc_model peq plt C id R
            (λ u p, bcs_open 1 C (FLt u p) ∧ pt_root u ≠ NVar 0 ∧ pt_root p = NVar 0)
            (λ q v, bcs_open 1 C (FLt q v) ∧ pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0)).
@@ -257,7 +256,6 @@ Proof.
   - exact Hd.
   - exact Hi.
   - intros u p q v (H1 & Hu & Hp') (H2 & Hq & Hv) Hpq. by apply (HB u p q v).
-  - intros a b H. by destruct (He a b H).
   - intros a b H. unfold id. destruct (Hc a b H) as [(Ha & Hb & Hr)|[(Ha & Hb)|(Ha & Hb)]].
     + right; right; right. split_and!; [done|done|by left].
     + right; left. split_and!; [done|done|]. exists a, b. split; [done|split; [left; apply geq_refl|by left]].
@@ -392,7 +390,7 @@ Proof. split; [done|simpl; lia]. Qed.
 Definition top_C0 : bcs := BCs [] (λ _, False).
 
 Lemma top_acyclic : c0_acyclic 1 top_C0.
-Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|by intros ? ? []|apply vrank_dual]. Qed.
+Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|apply vrank_dual]. Qed.
 
 (** The first channel a of a lockstep pair, created under z = 1 with
     a+k ≺ z and ā+k ≺ z for every k. *)
@@ -401,8 +399,7 @@ Definition lsa_C : bcs := BCs [pvar 0] lsa_P.
 
 Lemma lsa_ok peq plt : cc_ok peq plt lsa_C.
 Proof.
-  apply (cc_ok_out _ _ lsa_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & (k & c & ->) & _ & E). discriminate E.
+  apply (cc_ok_out _ _ lsa_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & (k & [|] & ->) & _ & E); injection E as -> ->; cbn; auto.
   - intros u p q v (f & (k & [|] & ->) & _ & E); injection E as -> ->; cbn; done.
 Qed.
@@ -418,8 +415,7 @@ Definition lsb_C : bcs := BCs [pvar 0; pvar 1] lsb_P.
 Lemma lsb_ok W Ψ : (BCs [pvar 1] lsa_P, [pvar 0]) ∈ Ψ → cc_ok (seqs W Ψ) (slt W Ψ) lsb_C.
 Proof.
   intros Hg.
-  apply (cc_ok_out _ _ lsb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & (k & c & c' & [-> | [-> | ->]]) & _ & E); discriminate E.
+  apply (cc_ok_out _ _ lsb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & (k & [|] & [|] & [-> | [-> | ->]]) & _ & E); injection E as -> ->; cbn; auto.
   - intros u p q v (f & (k & c & c' & [-> | [-> | ->]]) & _ & E) (f' & (j & d & d' & [-> | [-> | ->]]) & _ & E')
       Hu Hp Hq Hv Hpq; injection E as -> ->; injection E' as -> ->;

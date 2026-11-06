@@ -143,9 +143,8 @@ Proof.
             ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') as Hm.
   { refine (proj2 (fl_map _ (w_eq W1)
       (λ a b, ∀ a' b', node_den ρ a a' → node_den ρ b b' → w_lt W1 a' b') id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)); unfold id; simpl.
     - intros x0 y0 H. by apply He.
-    - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
     - apply (wf_eq_refl _ Hwf).
     - apply (wf_eq_sym _ Hwf).
     - apply (wf_eq_trans _ Hwf).
@@ -740,37 +739,6 @@ Qed.
     the context is that x is known. On main this was derived from the
     existential signature at C = {ι ≡ x}; branch no-eq has no alias. *)
 
-Definition alias_bcs (x : point) : bcs := BCs [x] (λ f, f = FEq (pvar 0) (pvar 1)).
-
-Lemma alias_bcs_ok W Ψ x :
-  skn W Ψ x →
-  fresh_ok (alias_bcs x) ∧ Forall (skn W Ψ) (bc_env (alias_bcs x)) ∧
-  fresh_between (slt W Ψ) (alias_bcs x).
-Proof.
-  intros Hx.
-  assert (fresh_eq (alias_bcs x) (pvar 1)) as Hw by (split_and!; [done|cbn; lia|done]).
-  split_and!.
-  - right. exists (pvar 1). split; [done|]. intros f Hf _. by right; right.
-  - by constructor.
-  - split_and!.
-    + intros Hlt. exfalso. by apply (fresh_lt_no_eq (alias_bcs x) (pvar 1)).
-    + intros w u p _ (Hf & _). discriminate Hf.
-    + intros w q v _ (Hf & _). discriminate Hf.
-Qed.
-
-(** The alias {ι ≡ x} is a creation constraint in every context. *)
-Lemma cc_ok_alias peq plt x : cc_ok peq plt (alias_bcs x).
-Proof.
-  apply cc_ok_fresh.
-  - assert (fresh_eq (alias_bcs x) (pvar 1)) as Hw by (split_and!; [done|cbn; lia|done]).
-    right. exists (pvar 1). split; [done|]. intros f Hf _. by right; right.
-  - split_and!.
-    + intros Hlt. exfalso. apply (fresh_lt_no_eq (alias_bcs x) (pvar 1)); [done|].
-      split_and!; [done|cbn; lia|done].
-    + intros w u p _ (Hf & _). discriminate Hf.
-    + intros w q v _ (Hf & _). discriminate Hf.
-Qed.
-
 Lemma t_new_at W Φ Ψ Θ Δ F e T S x :
   strict W → skn W Ψ x →
   typed W Φ Ψ Θ (Some (TSess (dual S) (pt_dual x)) :: Some (TSess S x) :: None :: None :: Δ) F e T →
@@ -910,7 +878,7 @@ Proof. intros HW Hp. apply (adequacy W T p). by apply fundamental_proc. Qed.
 Lemma styped_wnil Φ Ψ Δ F e T : typed wnil Φ Ψ ∅ Δ F e T → styped Φ Ψ Δ F e T.
 Proof. intros H. exact H. Qed.
 
-Definition c0_eq (n : nat) (C : bcs) : point → point → Prop := λ x y, bcs_open n C (FEq x y).
+Definition c0_eq (n : nat) (C : bcs) : point → point → Prop := λ _ _, False.
 Definition c0_lt (n : nat) (C : bcs) : point → point → Prop := λ x y, bcs_open n C (FLt x y).
 
 (** C₀ speaks of the top-level variables only, and its closure with
@@ -990,7 +958,7 @@ Section c0_world.
     fact_scoped n g ∧ bc_facts C g.
   Proof.
     intros Henv (f & Hf & Hs & ->). rewrite Henv in Hs. simpl in Hs. rewrite Nat.add_0_r in Hs.
-    destruct f as [x y|x y]; cbn [fact_map fact_scoped] in *; destruct Hs as [Hx Hy];
+    destruct f as [x y]; cbn [fact_map fact_scoped] in *; destruct Hs as [Hx Hy];
       rewrite !(pt_inst_pup_vb (plist (bc_env C))) by done; done.
   Qed.
 
@@ -1011,17 +979,14 @@ Section c0_world.
     intros [Henv Hacy]. split.
     - apply wgen_wf.
       + intros p Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _). by exists a.
-      + intros x y (x0 & y0 & H & -> & ->). right.
-        destruct (c0_open_vb _ Henv H) as [[Hx Hy] _]. split; by apply c0_pt_known.
+      + intros x y (x0 & y0 & [] & -> & ->).
       + intros x y (x0 & y0 & H & -> & ->). right.
         destruct (c0_open_vb _ Henv H) as [[Hx Hy] _]. split; by apply c0_pt_known.
     - destruct (gen_map (λ x y, ∃ x0 y0, c0_eq n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
                   (λ x y, ∃ x0 y0, c0_lt n C x0 y0 ∧ x = c0_pt x0 ∧ y = c0_pt y0)
                   (geq (c0_eq n C)) (glt (c0_eq n C) (c0_lt n C)) c0_bpt
                   (theory_gen _ _)) as [_ Gl]; [done|done|done| | |].
-      + intros x y (x0 & y0 & H & -> & ->). destruct (c0_open_vb _ Henv H) as [[Hx Hy] _].
-        unfold c0_bpt, c0_pt. simpl. rewrite !c0_back_name by done.
-        destruct x0, y0. by apply geq_base.
+      + intros x y (x0 & y0 & [] & -> & ->).
       + intros x y (x0 & y0 & H & -> & ->). destruct (c0_open_vb _ Henv H) as [[Hx Hy] _].
         unfold c0_bpt, c0_pt. simpl. rewrite !c0_back_name by done.
         destruct x0, y0. by apply glt_base.
@@ -1051,9 +1016,8 @@ Section c0_world.
     rewrite Exs, EC. split.
     - intros g Hg. assert (length c0_consts = n) as Hl by (unfold c0_consts; by rewrite length_fmap, List.length_seq).
       rewrite Hl in Hg. destruct (c0_open_vb _ Henv Hg) as [Hs _].
-      destruct g as [x y|x y]; destruct Hs as [Hx Hy]; simpl; rewrite !pt_inst_consts by done.
-      + apply glt_base. by exists x, y.
-      + apply geq_base. by exists x, y.
+      destruct g as [x y]; destruct Hs as [Hx Hy]; simpl; rewrite !pt_inst_consts by done.
+      apply glt_base. by exists x, y.
     - apply Forall_forall. intros x Hx. unfold c0_consts in Hx.
       apply list_elem_of_fmap in Hx as (a & -> & Ha). apply elem_of_seq in Ha.
       unfold pt_known, pconst, pt_root. simpl. apply elem_of_list_to_set, list_elem_of_fmap.
@@ -1092,9 +1056,7 @@ Section c0_creation.
   Context (n : nat) (C : bcs) (Henv : bc_env C = []).
 
   Lemma c0_cc_eq x y : cc_eq_at n nofact C x y → pn_vb n (pt_name x) ∧ pn_vb n (pt_name y).
-  Proof.
-    intros [(? & ? & [] & _)|H]. by destruct (c0_open_vb n C _ Henv H) as [[??] _].
-  Qed.
+  Proof. intros (? & ? & [] & _). Qed.
 
   Lemma c0_cc_lt x y : cc_lt_at n nofact C x y → pn_vb n (pt_name x) ∧ pn_vb n (pt_name y).
   Proof.
@@ -1137,14 +1099,14 @@ Proof.
     { destruct (bc_env C) as [|x xs]; [done|]. by apply Forall_cons in Hk as [[] _]. }
     split; [done|]. intros p Hp.
     assert (glt (cc_eq_at n nofact C) (cc_lt_at n nofact C) p p) as Hp'.
-    { refine (proj2 (gen_mono _ _ _ _ _ _) p p Hp); intros ? ? ?; by right. }
+    { refine (proj2 (gen_mono _ _ _ _ _ _) p p Hp); [intros ? ? []|intros ? ? ?; by right]. }
     destruct (Hacy p Hp') as [x Hx].
     assert (glt nofact nofact x x) as Hx'.
     { refine (proj2 (gen_mono _ _ nofact nofact _ _) x x Hx); intros ? ? (? & ? & [] & _). }
     exact (pofs_irrefl x (glt_nofact x x Hx')).
   - intros [Henv Hacy]. split; [split|by rewrite Henv].
     + intros p Hp. exfalso. apply (Hacy p).
-      refine (proj2 (gen_mono _ _ _ _ _ _) p p Hp); intros ? ? [(? & ? & [] & _)|H]; exact H.
+      refine (proj2 (gen_mono _ _ _ _ _ _) p p Hp); [intros ? ? (? & ? & [] & _)|intros ? ? [(? & ? & [] & _)|H]; exact H].
     + split.
       * intros x y Hx _ H. destruct (c0_geq n C Henv x y H) as [->|[??]]; [apply geq_refl|done].
       * intros x y Hx _ H. by apply pofs_glt, (c0_glt n C Henv).

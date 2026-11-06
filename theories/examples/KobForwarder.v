@@ -192,7 +192,7 @@ Proof.
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) fw_C [pvar 0]) as HC.
   { apply bcs_hold_self; [by left|vb_list|]. intros g Hg Hs.
     change (plist [pvar 0]) with (plist (ids 1)).
-    destruct g as [x y|x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids. }
+    destruct g as [x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids. }
   assert (Forall (skn W Ψ) [pvar 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   cbn. tstep.

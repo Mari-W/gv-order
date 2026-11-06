@@ -1042,9 +1042,8 @@ Section ready.
     bcs_hold (w_eq (wsw a b W)) (w_lt (wsw a b W)) (bcs_sw a b C) (ptsw a b <$> xs).
   Proof.
     intros H g Hg. rewrite length_fmap in Hg. apply bcs_open_sw in Hg as (g0 & Hg0 & ->).
-    specialize (H g0 Hg0). destruct g0 as [x y|x y]; simpl in *; rewrite <-!pt_inst_plist_sw.
-    - by apply wsw_lt.
-    - simpl. by rewrite ?ptsw_dual, !ptsw_involutive.
+    specialize (H g0 Hg0). destruct g0 as [x y]; simpl in *; rewrite <-!pt_inst_plist_sw.
+    by apply wsw_lt.
   Qed.
 
   Lemma known_sw W xs : Forall (pt_known W) xs → Forall (pt_known (wsw a b W)) (ptsw a b <$> xs).
@@ -1067,8 +1066,6 @@ Section ready.
   Lemma fresh_lt_sw C : fresh_lt (bcs_sw a b C) → fresh_lt C.
   Proof. apply fresh_lt_shape; [done|]. simpl. by rewrite length_fmap. Qed.
 
-  Lemma fresh_eq_sw C w : fresh_eq (bcs_sw a b C) w ↔ fresh_eq C w.
-  Proof. apply fresh_eq_shape; [done|]. simpl. by rewrite length_fmap. Qed.
 
   Lemma fresh_outer_sw C u :
     pn_vb (S (length (bc_env C))) (pt_name u) →
@@ -1077,16 +1074,6 @@ Section ready.
     intros Hu. unfold fresh_outer. rewrite pt_inst_sw.
     replace (ptsw a b u) with u by (destruct u; unfold ptsw; simpl in *; by rewrite (pn_vb_sw a b _ _ Hu)).
     apply pt_inst_ext. intros i. unfold compose. rewrite plist_sw. done.
-  Qed.
-
-  (** A point of the fresh channel read with the alias in place of ι. *)
-  Lemma fresh_at_sw C w p :
-    pn_vb (S (length (bc_env C))) (pt_name w) → pn_vb (S (length (bc_env C))) (pt_name p) →
-    ptsw a b (fresh_at C w p) = fresh_at (bcs_sw a b C) w p.
-  Proof.
-    intros Hw Hp. unfold fresh_at. rewrite pt_inst_sw.
-    replace (ptsw a b p) with p by (destruct p; unfold ptsw; simpl in *; by rewrite (pn_vb_sw a b _ _ Hp)).
-    apply pt_inst_ext. intros i. unfold compose. by apply fresh_outer_sw.
   Qed.
 
   Lemma konst_ty_sw W k T :

@@ -282,7 +282,6 @@ Proof.
     end).
   apply (c0_acyclic_rank 2 _ r).
   - intros [p b o]. unfold r, pt_shift. simpl. repeat case_match; lia.
-  - by intros ? ? [?|[?|[?|[?|[?|[?|?]]]]]].
   - intros x y [[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]]]];
       unfold r; cbn; lia.
   - intros [p b o]. done.
@@ -513,7 +512,7 @@ Lemma lp_self W Ψ : (lp_C, ids 1) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) lp
 Proof.
   intros Hg. apply bcs_hold_self; [done|vb_list|]. intros g Hg' Hs.
   change (plist [pvar 0]) with (plist (ids 1)).
-  destruct g as [x y|x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids.
+  destruct g as [x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids.
 Qed.
 
 Lemma skn_v0 W Ψ C x : (C, ids 1) ∈ Ψ → pt_root x = NVar 0 → skn W Ψ x.
@@ -608,7 +607,6 @@ Lemma lp_acyclic : c0_acyclic 1 lp_C.
 Proof.
   apply (c0_acyclic_rank 1 _ (λ x, lp_rank_n (pt_name x) + pt_off x)).
   - intros [p b o]. cbn. lia.
-  - by intros ? ? [n [?|[?|[?|[?|?]]]]].
   - intros x y [n [[= -> ->]|[[= -> ->]|[[= -> ->]|[[= -> ->]|[= -> ->]]]]]]; cbn; lia.
   - intros [p b o]. done.
 Qed.

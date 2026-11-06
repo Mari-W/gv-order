@@ -386,9 +386,7 @@ Proof. unfold pt_inst. cbn. by rewrite Nat.add_1_r. Qed.
 Lemma sch_ok W a : sch_inv W a → cc_ok (seqs W (sch_Ψ a)) (slt W (sch_Ψ a)) (sch_C a).
 Proof.
   intros [HR Hz].
-  apply (cc_ok_out _ _ (sch_C a) olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros x y (f & Hf & _ & E).
-    destruct Hf as [(b & k & j & c & c' & _ & _ & ->)|[(b & k & j & c & c' & _ & _ & ->)|(j & c & ->)]]; discriminate E.
+  apply (cc_ok_out _ _ (sch_C a) olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros x y (f & Hf & _ & E). cbn [bc_facts bc_env] in *.
     destruct Hf as [(b & k & j & [|] & [|] & Hb & _ & ->)|[(b & k & j & [|] & [|] & Hb & _ & ->)|(j & [|] & ->)]];
       unfold sch_C in E; cbn [fact_map bc_env] in E; rewrite !open_ids in E by (cbn; lia); injection E as -> ->; cbn.

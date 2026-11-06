@@ -67,8 +67,7 @@ Definition sid_C : bcs := BCs [pvar 0; pvar 2] sid_P.
 Lemma sid_ok W Ψ : slt W Ψ (pv 0 0) (pv 2 0) → cc_ok (seqs W Ψ) (slt W Ψ) sid_C.
 Proof.
   intros Hz.
-  apply (cc_ok_out _ _ sid_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); discriminate E.
+  apply (cc_ok_out _ _ sid_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); injection E as -> ->; cbn; auto.
   - intros u p q v (f & [-> | [-> | [-> | ->]]] & _ & E) (f' & [-> | [-> | [-> | ->]]] & _ & E') Hu Hp Hq Hv Hpq;
       injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done.

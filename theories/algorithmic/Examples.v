@@ -27,7 +27,7 @@ Qed.
 Lemma c0_nofacts : creation_ok 0 nofact nofact (λ _, False) nofacts.
 Proof.
   apply c0_acyclic_creation, (c0_acyclic_rank 0 _ pt_off);
-    [intros x; cbn; lia|by intros ? ? []|by intros ? ? []|done].
+    [intros x; cbn; lia|by intros ? ? []|done].
 Qed.
 
 (** ** sync
@@ -93,7 +93,7 @@ Proof.
   assert (fresh_lt (hat_lo x)) as Hlt.
   { intros f (b & c & ->) Hs. left. eexists _, _. split; [done|].
     split_and!; [by exists b, c|done|by destruct c|by destruct b]. }
-  apply cc_ok_fresh; [by left|]. apply fresh_between_lt; [done|].
+  apply cc_ok_fresh; [done|]. apply fresh_between_lt; [done|].
   intros u p q v _ (Hf & _ & Hq & Hv) _. destruct Hf as (b & c & E). injection E as -> ->.
   by destruct b.
 Qed.

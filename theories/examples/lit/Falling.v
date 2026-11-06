@@ -150,8 +150,7 @@ Definition fx0_C : bcs := BCs [] (λ _, False).
 
 Lemma fx0_ok peq plt : cc_ok peq plt fx0_C.
 Proof.
-  apply (cc_ok_out _ _ fx0_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & [] & _).
+  apply (cc_ok_out _ _ fx0_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & [] & _).
   - intros u p q v (f & [] & _).
 Qed.
@@ -167,8 +166,7 @@ Definition fxb_C : bcs := BCs [pvar 0] fxb_P.
 
 Lemma fxb_ok peq plt : cc_ok peq plt fxb_C.
 Proof.
-  apply (cc_ok_out _ _ fxb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); discriminate E.
+  apply (cc_ok_out _ _ fxb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); injection E as -> ->; cbn; auto.
   - intros u p q v (f & [-> | [-> | [-> | ->]]] & _ & E) (f' & [-> | [-> | [-> | ->]]] & _ & E') Hu Hp Hq Hv Hpq;
       injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done;
@@ -184,8 +182,7 @@ Definition fxd_C : bcs := BCs [pvar 0] fxd_P.
 
 Lemma fxd_ok peq plt : cc_ok peq plt fxd_C.
 Proof.
-  apply (cc_ok_out _ _ fxd_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| | |].
-  - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); discriminate E.
+  apply (cc_ok_out _ _ fxd_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & [-> | [-> | [-> | ->]]] & _ & E); injection E as -> ->; cbn; auto.
   - intros u p q v (f & [-> | [-> | [-> | ->]]] & _ & E) (f' & [-> | [-> | [-> | ->]]] & _ & E') Hu Hp Hq Hv Hpq;
       injection E as -> ->; injection E' as -> ->; cbn in Hu, Hp, Hq, Hv; try done;

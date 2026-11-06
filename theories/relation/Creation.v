@@ -528,7 +528,6 @@ Section model.
   Context (HRd : ∀ p, pt_root p = NVar 0 → R p (pt_shift 1 (pt_dual p))).
   Context (HRi : ∀ p, ¬ R p p).
   Context (HB : ∀ u p q v, Lo u p → Hi q v → (p = q ∨ R p q) → TL u v).
-  Context (HCe : ∀ a b, bcs_open 1 C (FEq a b) → TE (φ a) (φ b)).
   Context (HCl : ∀ a b, bcs_open 1 C (FLt a b) → cc_rel TE TL R Lo Hi (φ a) (φ b)).
 
   Local Notation N := (cc_rel TE TL R Lo Hi).
@@ -630,9 +629,8 @@ Section model.
     (∀ x y, geq E1 x y → TE (φ x) (φ y)) ∧ (∀ x y, glt E1 L1 x y → N (φ x) (φ y)).
   Proof.
     assert (∀ x y, geq E1 x y → TE (φ x) (φ y)) as Hq.
-    { induction 1 as [x y [H|H]|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
+    { induction 1 as [x y H|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
       - destruct (cc_up_root _ _ _ H). rewrite !Hφo by done. by apply geq_base.
-      - by apply HCe.
       - apply geq_refl.
       - by apply geq_sym.
       - by eapply geq_trans.
@@ -711,16 +709,15 @@ Proof.
               ltac:(intros x y Hx Hy H; apply Mq; by apply Hce)
               ltac:(intros x y Hx Hy H; apply Ml; by apply Hcl)
               ltac:(intros p H; destruct (Hacy p H) as [x Hx]; exists (f x); by apply Ml)
-              (λ x y, bcs_open 1 C' (FEq x y)) (λ x y, bcs_open 1 C' (FLt x y)))
+              (λ _ _, False) (λ x y, bcs_open 1 C' (FLt x y)))
     as (Ie & Il & Ic).
-  - intros x y H. destruct (HC _ H) as ([x0 y0|x0 y0] & H0 & E); simpl in E; simplify_eq.
-    exists x0, y0. split_and!; [apply geq_base; by right|done|done].
-  - intros x y H. destruct (HC _ H) as ([x0 y0|x0 y0] & H0 & E); simpl in E; simplify_eq.
+  - intros x y [].
+  - intros x y H. destruct (HC _ H) as ([x0 y0] & H0 & E); simpl in E; simplify_eq.
     exists x0, y0. split_and!; [apply glt_base; by right|done|done].
   - destruct (gen_mono (cc_eq peq' C') (cc_lt plt' C')
-                (λ x y, geq (cc_up peq') x y ∨ bcs_open 1 C' (FEq x y))
+                (λ x y, geq (cc_up peq') x y ∨ False)
                 (λ x y, glt (cc_up peq') (cc_up plt') x y ∨ bcs_open 1 C' (FLt x y))) as [Gq Gl].
-    { intros x y [H|H]; [left; by apply geq_base|by right]. }
+    { intros x y H. left. by apply geq_base. }
     { intros x y [H|H]; [left; by apply glt_base|by right]. }
     split.
     + intros p H. apply Gl in H. destruct (Ic p H) as [y Hy]. by exists y.
@@ -847,7 +844,7 @@ Qed.
     in W: their root is 0 or a name of W. *)
 Lemma bcs_open1_root W C g x :
   world_wf W → Forall (pt_known W) (bc_env C) → bcs_open 1 C g →
-  (match g with FLt x y | FEq x y => x end = x ∨ match g with FLt x y | FEq x y => y end = x) →
+  (match g with FLt x y => x end = x ∨ match g with FLt x y => y end = x) →
   pt_root x = NVar 0 ∨ pt_root x ∈ w_names W.
 Proof.
   intros HW HK (f & _ & Hs & ->) Hx.
@@ -865,7 +862,7 @@ Proof.
     { induction n0 as [c'|c'|q IH b i]; simpl; [done|done|]. intros Hq. by apply IH. }
     rewrite Hc'; [|done]. by rewrite <-Hc. }
 
-  destruct f as [u v|u v]; destruct Hs as [Hu Hv]; simpl in *; destruct Hx as [<-|<-]; by apply Hz.
+  destruct f as [u v]; destruct Hs as [Hu Hv]; simpl in *; destruct Hx as [<-|<-]; by apply Hz.
 Qed.
 
 Lemma wext_cc W a C :
@@ -874,7 +871,7 @@ Lemma wext_cc W a C :
   ∃ W', wext_fresh W {[NConst a]} W' ∧ bcs_hold (w_eq W') (w_lt W') C [pconst a].
 Proof.
   intros [HW Hirr] [Hacy [Hce Hcl]] HK Ha.
-  set (De := λ x y, ∃ x0 y0, bcs_open 1 C (FEq x0 y0) ∧ x = ga a x0 ∧ y = ga a y0).
+  set (De := λ _ _ : point, False).
   set (Dl := λ x y, ∃ x0 y0, bcs_open 1 C (FLt x0 y0) ∧ x = ga a x0 ∧ y = ga a y0).
   set (W' := wgen (w_names W ∪ {[NConst a]}) (λ x y, w_eq W x y ∨ De x y) (λ x y, w_lt W x y ∨ Dl x y)).
   (* W sends Γ under the binder back to W *)
@@ -925,11 +922,11 @@ Proof.
               ltac:(intros x y Hx Hy H; apply Gl; by apply Hcl)
               ltac:(intros p H; destruct (Hacy p H) as [x Hx]; exists (ga a x); by apply Gl)
               De Dl) as (Ie & Il & Ic).
-  - intros x y (x0 & y0 & H & -> & ->). exists x0, y0. split_and!; [apply geq_base; by right|done|done].
+  - intros x y [].
   - intros x y (x0 & y0 & H & -> & ->). exists x0, y0. split_and!; [apply glt_base; by right|done|done].
   - (* roots of the facts of C at a *)
     assert (∀ g x0, bcs_open 1 C g →
-              (match g with FLt x y | FEq x y => x end = x0 ∨ match g with FLt x y | FEq x y => y end = x0) →
+              (match g with FLt x y => x end = x0 ∨ match g with FLt x y => y end = x0) →
               pt_root (ga a x0) ∈ w_names W ∪ {[NConst a]} ∧ ga a x0 = pt_inst (plist [pconst a]) x0) as Hr.
     { intros g x0 Hg Hx0. destruct (bcs_open1_root W C g x0 HW HK Hg Hx0) as [H0|H0].
       - split; [rewrite (ga_root_new a x0 H0); set_solver|]. apply ga_inst. by left.
@@ -942,9 +939,8 @@ Proof.
     { apply wgen_wf.
       - intros p Hp. apply elem_of_union in Hp as [Hp|Hp]; [by apply (wf_names_const _ HW)|].
         apply elem_of_singleton in Hp as ->. by exists a.
-      - intros x y [H|(x0 & y0 & H & -> & ->)].
-        + eapply eq_or_supp_mono; [|by apply (wf_eq_supp _ HW)]. set_solver.
-        + right. split; [apply (Hr _ x0 H); by left|apply (Hr _ y0 H); by right].
+      - intros x y [H|[]].
+        eapply eq_or_supp_mono; [|by apply (wf_eq_supp _ HW)]. set_solver.
       - intros x y [H|(x0 & y0 & H & -> & ->)].
         + eapply po_or_supp_mono; [|by apply (wf_lt_supp _ HW)]. set_solver.
         + right. split; [apply (Hr _ x0 H); by left|apply (Hr _ y0 H); by right]. }
@@ -958,9 +954,7 @@ Proof.
       * done.
       * intros x y Hx Hy. assert (pt_root x ≠ NConst a) by set_solver.
         assert (pt_root y ≠ NConst a) by set_solver. split; intros Hxy; [by apply Ie|by apply Il].
-    + intros g Hg. simpl. destruct g as [x0 y0|x0 y0]; simpl.
-      * rewrite <-(proj2 (Hr _ x0 Hg (or_introl eq_refl))), <-(proj2 (Hr _ y0 Hg (or_intror eq_refl))).
-        apply glt_base. right. by exists x0, y0.
-      * rewrite <-(proj2 (Hr _ x0 Hg (or_introl eq_refl))), <-(proj2 (Hr _ y0 Hg (or_intror eq_refl))).
-        apply geq_base. right. by exists x0, y0.
+    + intros g Hg. simpl. destruct g as [x0 y0]; simpl.
+      rewrite <-(proj2 (Hr _ x0 Hg (or_introl eq_refl))), <-(proj2 (Hr _ y0 Hg (or_intror eq_refl))).
+      apply glt_base. right. by exists x0, y0.
 Qed.

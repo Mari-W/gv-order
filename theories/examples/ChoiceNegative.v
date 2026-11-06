@@ -536,14 +536,13 @@ Proof.
   intros Henv (C' & xs & Hin & g0 & Hg0 & ->).
   apply list_elem_of_singleton in Hin. injection Hin as -> ->.
   rewrite length_ids in Hg0. destruct (c0_open_vb n C g0 Henv Hg0) as [Hsc _].
-  destruct g0 as [x y|x y]; destruct Hsc as [Hx Hy]; cbn [fact_map];
+  destruct g0 as [x y]; destruct Hsc as [Hx Hy]; cbn [fact_map];
     rewrite !pt_inst_ids by done; exact Hg0.
 Qed.
 
 Lemma heqs_c0 n C x y : bc_env C = [] → heqs [(C, ids n)] x y → geq (c0_eq n C) x y.
 Proof.
   intros Henv. induction 1.
-  - apply geq_base. by apply hyp_fact_c0.
   - apply geq_refl.
   - by apply geq_sym.
   - by eapply geq_trans.

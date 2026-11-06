@@ -141,21 +141,21 @@ Definition plist (xs : list point) : nat → point :=
 Definition payload_pts (x : point) (m : nat) : list point :=
   (λ i, pt_payload x i) <$> seq 0 m.
 
-(** Facts of a constraint: x ≺ y and x ≡ y (sharp edges 65). *)
-Inductive fact := FLt (x y : point) | FEq (x y : point).
+(** Facts of a constraint: x ≺ y (sharp edges 65). Branch no-eq has
+    no ≡ facts (sharp edges 159). *)
+Inductive fact := FLt (x y : point).
 
 Definition fact_map (f : point → point) (g : fact) : fact :=
-  match g with FLt x y => FLt (f x) (f y) | FEq x y => FEq (f x) (f y) end.
+  match g with FLt x y => FLt (f x) (f y) end.
 
-(** g holds when its ≺ holds in [lt] and its ≡ in [eq]. *)
+(** g holds when its ≺ holds in [lt]. The argument [eq] is unused. *)
 Definition fact_holds (eq lt : point → point → Prop) (g : fact) : Prop :=
-  match g with FLt x y => lt x y | FEq x y => eq x y end.
+  match g with FLt x y => lt x y end.
 
-(** Two facts of the same kind with related points. *)
+(** Two facts with related points. *)
 Definition fact_rel (R : point → point → Prop) (g g' : fact) : Prop :=
   match g, g' with
-  | FLt x y, FLt x' y' | FEq x y, FEq x' y' => R x x' ∧ R y y'
-  | _, _ => False
+  | FLt x y, FLt x' y' => R x x' ∧ R y y'
   end.
 
 (** The root of a name is a variable below k. *)
@@ -165,7 +165,7 @@ Fixpoint pn_vb (k : nat) (p : pname) : Prop :=
   end.
 
 Definition fact_scoped (k : nat) (g : fact) : Prop :=
-  match g with FLt x y | FEq x y => pn_vb k (pt_name x) ∧ pn_vb k (pt_name y) end.
+  match g with FLt x y => pn_vb k (pt_name x) ∧ pn_vb k (pt_name y) end.
 
 (** The constraint of a box (sharp edges 65): any set of positive facts,
     finite or infinite. It is a closure: the facts [bc_facts] speak of
@@ -1520,23 +1520,13 @@ Qed.
     the alias, and it implies the betweenness of sharp edges 94. For
     C = {ι ≡ w} it is empty, and w known is all that new asks. *)
 
-Definition fresh_eq (C : bcs) (w : point) : Prop :=
-  bc_facts C (FEq (pvar 0) w) ∧ pn_vb (S (length (bc_env C))) (pt_name w) ∧ pt_root w ≠ NVar 0.
-
-Definition fresh_ok (C : bcs) : Prop :=
-  fresh_lt C ∨
-  ∃ w, fresh_eq C w ∧
-    ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
-      (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v) ∨
-      f = FEq (pvar 0) w.
-
-Definition fresh_at (C : bcs) (w p : point) : point := pt_inst (λ _, fresh_outer C w) p.
+(** Branch no-eq: the alias case is gone, so the allowed form is the
+    ≺ form of sharp edges 93 and the condition is betweenness. *)
+Definition fresh_ok (C : bcs) : Prop := fresh_lt C.
 
 Definition fresh_between (plt : point → point → Prop) (C : bcs) : Prop :=
-  (fresh_lt C → ∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
-     plt (fresh_outer C u) (fresh_outer C v)) ∧
-  (∀ w u p, fresh_eq C w → fresh_lo C u p → plt (fresh_outer C u) (fresh_at C w p)) ∧
-  (∀ w q v, fresh_eq C w → fresh_hi C q v → plt (fresh_at C w q) (fresh_outer C v)).
+  fresh_lt C → ∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
+    plt (fresh_outer C u) (fresh_outer C v).
 
 (** The form of C reads only its facts and the length of its
     environment, so renaming and instantiating the outer points keeps it. *)
@@ -1549,8 +1539,6 @@ Section fresh_shape.
   Lemma fresh_hi_shape q v : fresh_hi C q v ↔ fresh_hi C' q v.
   Proof. unfold fresh_hi. by rewrite Hf, Hl. Qed.
 
-  Lemma fresh_eq_shape w : fresh_eq C w ↔ fresh_eq C' w.
-  Proof. unfold fresh_eq. by rewrite Hf, Hl. Qed.
 
   Lemma fresh_lt_shape : fresh_lt C → fresh_lt C'.
   Proof.
@@ -1561,21 +1549,8 @@ Section fresh_shape.
   Qed.
 
   Lemma fresh_ok_shape : fresh_ok C → fresh_ok C'.
-  Proof.
-    intros [H|(w & Hw & H)]; [left; by apply fresh_lt_shape|right].
-    exists w. split; [by apply fresh_eq_shape|]. intros f Hf' Hs. rewrite <-Hf in Hf'. rewrite <-Hl in Hs.
-    destruct (H f Hf' Hs) as [(u & p & -> & Hu)|[(q & v & -> & Hv)| ->]].
-    - left. exists u, p. split; [done|]. by apply fresh_lo_shape.
-    - right; left. exists q, v. split; [done|]. by apply fresh_hi_shape.
-    - by right; right.
-  Qed.
+  Proof. apply fresh_lt_shape. Qed.
 End fresh_shape.
-
-Lemma fresh_lt_no_eq C w : fresh_lt C → ¬ fresh_eq C w.
-Proof.
-  intros H (Hf & Hs & _).
-  destruct (H _ Hf) as [(? & ? & E & _)|(? & ? & E & _)]; [split; [cbn; lia|done]|discriminate|discriminate].
-Qed.
 
 (** Without an alias, [fresh_between] is the betweenness of sharp
     edges 94. *)
@@ -1584,12 +1559,12 @@ Lemma fresh_between_lt (plt : point → point → Prop) C :
   (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q → plt (fresh_outer C u) (fresh_outer C v)) →
   fresh_between plt C.
 Proof.
-  intros HC Hbt. split_and!; [done|..]; intros w ? ? Hw; exfalso; by apply (fresh_lt_no_eq C w).
+  intros HC Hbt _. exact Hbt.
 Qed.
 
 Lemma fresh_between_mono (plt plt' : point → point → Prop) C :
   (∀ x y, plt x y → plt' x y) → fresh_between plt C → fresh_between plt' C.
-Proof. intros H (H1 & H2 & H3). split_and!; eauto. Qed.
+Proof. intros H H1 HC u p q v Hu Hv Hpq. eauto. Qed.
 
 (** ** The closure of a set of facts
 
@@ -1639,7 +1614,7 @@ Definition cc_up_at (n : nat) (R : point → point → Prop) : point → point �
   λ x y, ∃ x0 y0, R x0 y0 ∧ x = pt_inst (λ a, pvar (a + n)) x0 ∧ y = pt_inst (λ a, pvar (a + n)) y0.
 
 Definition cc_eq_at (n : nat) (peq : point → point → Prop) (C : bcs) : point → point → Prop :=
-  λ x y, cc_up_at n peq x y ∨ bcs_open n C (FEq x y).
+  λ x y, cc_up_at n peq x y.
 
 Definition cc_lt_at (n : nat) (plt : point → point → Prop) (C : bcs) : point → point → Prop :=
   λ x y, cc_up_at n plt x y ∨ bcs_open n C (FLt x y).

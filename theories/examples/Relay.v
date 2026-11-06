@@ -307,9 +307,8 @@ Proof.
   { intros h b Hh. by apply (slt_freshp_r W Ψ (pshift 1) reld_L reld_H (pvar 0)); [right; left|]. }
   assert (∀ g, relc_P g → fact_scoped 1 g →
             fact_holds (seqs W Ψ) (slt W Ψ) (fact_map (pt_inst (plist [pv 1 0])) g)) as Hc.
-  { intros [x y|x y] Hg Hs; cbn.
-    - eapply (sl_hyp0 _ _ _ _ x y); [by left|exact Hg|exact Hs|reflexivity|reflexivity].
-    - eapply (se_hyp0 _ _ _ _ x y); [by left|exact Hg|exact Hs|reflexivity|reflexivity]. }
+  { intros [x y] Hg Hs; cbn.
+    eapply (sl_hyp0 _ _ _ _ x y); [by left|exact Hg|exact Hs|reflexivity|reflexivity]. }
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) rel_C [pv 1 0; pvar 0]) as HC.
   { apply bcs_hold_intro. intros g [Hg|(k & Hg)] Hs.
     - unfold c0 in Hg. repeat destruct Hg as [->|Hg]; subst; cbn.
