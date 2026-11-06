@@ -22,7 +22,7 @@ Proof.
   intros HW HV1 HV2 Hub.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hu & HB & HV).
-  inversion Hk as [kq Tq Gq xs Hsig HC1 HK1|]; subst.
+  inversion Hk as [kq Tq Gq xs Hsig HC1 HK1| |]; subst.
   inversion Hsig as [| | | | | | | |m kk C1 ub1 T1 ? ss Hxs Hss Hsc]; subst.
   apply facts_hold_bcs_at in HC1.
   apply Vrel_box_thunk_iff in HV as (-> & eb & -> & Hfc & HK).

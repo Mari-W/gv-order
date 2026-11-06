@@ -1814,6 +1814,10 @@ Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :
     points (97, 103, 105):
 
     new    : ∗ ⊸ ∃^⊥ι. C. S@ι ⊗ dual S@ῑ
+    new@x  : ∗ ⊸ S@x ⊗ dual S@x̄                 x known (branch no-eq)
+
+    new@x places the channel at a point the order already knows. On
+    main it was derived from the alias {ι ≡ x}.
 
     The order is given as two relations, the world G generates for
     typing and a world W for the logical relation. [pk] says which
@@ -1829,7 +1833,11 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
       cc_ok peq plt C → Forall pk (bc_env C) →
       konst_ty peq plt pk KNew
         (TLolli None None TUnit
-           (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))))).
+           (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))))
+  | KTNewAt S x :
+      pk x →
+      konst_ty peq plt pk KNew
+        (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) (pt_dual x)))).
 
 (** The instances one constant at a time. *)
 Section konst_intro.
@@ -1922,9 +1930,11 @@ Lemma konst_ty_case (peq plt : point → point → Prop) (pk : point → Prop)
   (∀ S C, cc_ok peq plt C → Forall pk (bc_env C) →
      P KNew (TLolli None None TUnit
                (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))))) →
+  (∀ S x, pk x → P KNew (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) (pt_dual x))))) →
   ∀ k T, konst_ty peq plt pk k T → P k T.
 Proof.
-  intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hnw k T [k' T' G xs Hsig HG HK|S C HC HK]; [|by apply Hnw].
+  intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hnw Hna k T [k' T' G xs Hsig HG HK|S C HC HK|S x Hx];
+    [|by apply Hnw|by apply Hna].
   destruct Hsig as [| m T0 S x Hb| | | | | | |n kk C ub T0 xs ss Hn Hk Hs]; auto.
   - apply Hsd. rewrite Hb. intros h Hh. apply (HG (FLt x h)). by exists h.
   - apply Hs1. by apply (HG (FLt _ _)).

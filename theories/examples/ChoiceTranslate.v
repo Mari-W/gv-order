@@ -498,6 +498,7 @@ Proof.
   - apply KTClos.
   - rewrite tr_dual. by apply KTLink.
   - rewrite tr_dual. by apply KTNewEx.
+  - rewrite tr_dual. by apply KTNewAt.
 Qed.
 
 Lemma tr_kscoped k T : kscoped k T → kscoped k (tr_ty T).

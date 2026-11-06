@@ -200,7 +200,7 @@ Qed.
 Lemma fx_no_first_call ub T :
   ¬ konst_ty (seqs (Wpo []) []) (slt (Wpo []) []) (skn (Wpo []) []) KForce (TLolli ub None Tfa T).
 Proof.
-  intros Hk. inversion Hk as [kq Tq Gq xs Hsig _ HK|]; subst.
+  intros Hk. inversion Hk as [kq Tq Gq xs Hsig _ HK| |]; subst.
   inversion Hsig as [| | | | | | | |n k C ub' T' ? ss Hn _ _]; subst.
   destruct xs as [|x xs]; [done|]. apply Forall_cons in HK as [Hx _].
   by apply (Wpo_nil_unknown x).
