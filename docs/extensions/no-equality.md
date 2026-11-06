@@ -1,10 +1,13 @@
 # No equality constraints (branch no-eq)
 
 State of 2026-11-06. Branch `no-eq` from main cba4a2b. Step 1 (surface) is
-done for the core calculus and every core and cfst example. Step 2
-(metatheory) is not started beyond an inventory and one partial lemma, and the
-four subsumption translations (Padovani–Novara, MP, MP2, MP3) and the PGV
-translation still rely on ≡. Reasons and estimates are in §5.
+done for the core calculus and every core and cfst example (§2, §3). Step 2
+(metatheory) is done for the core (§7): facts have no ≡, worlds have no ≡,
+Γ ⊢ ≡ is equality, `new@x` is a primitive typing of `new`, and O-New places a
+channel at a fresh constant or at a known point. The PGV, Padovani–Novara and
+MP translations still rely on ≡ and are out of the build (§7.4). The whole
+remaining development builds from clean, and every remaining CheckAll entry
+(192 of 301) is closed under the global context.
 
 ## 1. What ≡ did, verified
 
@@ -227,16 +230,15 @@ below. The uses fall into nine kinds.
 
 ### Decision: w_eq becomes syntactic equality
 
-The plan is to keep worlds as (names, ≺) and read every former w_eq as
-equality, not to keep a field that is propositionally equality. Reasons. (1)
-Every world the semantics builds from an alias-free start is alias-free when no
-constraint holds ≡: `wgen` with no ≡ generators has `geq = eq`, the join of
-alias-free worlds is alias-free, and the creation world of an ≡-free creation
-constraint is alias-free (relation/NoAlias.v proves the first two). (2) A field
-equal to `=` would keep every `wf_eq_*` obligation and every rewrite along it,
-which is the cost we want to remove. (3) The relation's quantification over
-W′ ⊒ W then ranges over alias-free worlds, and monotonicity is unaffected
-because the order part is unchanged.
+Worlds are (names, ≺) and every former w_eq reads as equality, not as a field
+that is propositionally equality. Reasons. (1) Every world the semantics builds
+from an alias-free start is alias-free when no constraint holds ≡: `wgen` with
+equality generators has `geq = eq` (`geq_eq`, relation/Worlds.v), and the join
+of alias-free worlds is alias-free. (2) A field equal to `=` would keep every
+`wf_eq_*` obligation. (3) The relation's quantification over W′ ⊒ W ranges over
+alias-free worlds, and monotonicity is unaffected because the order part is
+unchanged. Done in §7. (relation/NoAlias.v of the first session is gone, the
+lemma `geq_eq` moved into Worlds.v.)
 
 ### The central changes and whether they hold
 
@@ -273,8 +275,7 @@ because the order part is unchanged.
 - K8: PGV one day. PN about a week. MP, MP2, MP3 one to two weeks, with an
   open design question for `pex_fact` (x ≡ x̄).
 
-Not feasible in this session. Done here: the inventory, relation/NoAlias.v,
-and the decision above.
+The core part took one session (§7). The translations are not ported.
 
 ### Per-file counts
 
@@ -382,3 +383,119 @@ D7. In Step 2 w_eq becomes syntactic equality, not a field equal to `=` (§5).
 
 D8. The translations stay on ≡ in this branch. They are the main obstacle to
 Step 2 and are reported, not ported.
+
+D9 (Step 2). `new@x` is a primitive typing `KTNewAt` of `new` (Types.v), and
+O-New has a second case: the channel sits at a point the world knows and the
+world stays (`new_place`, relation/LogicalRelation.v).
+
+D10 (Step 2). `w_eq W`, `seqs W Ψ` and `heqs Ψ` stay as names for equality
+(an abbreviation for `w_eq`, definitions for `seqs` and `heqs`). The ≡ laws
+that were record fields or constructors are lemmas over equality under their
+old names. Statements keep their text while their content is syntactic
+equality. Inlining the names is mechanical and not done.
+
+D11 (Step 2). counterexamples/DropCounter.v leaves the build. Its witness world
+aliases (μ,1) with (b,0). The counterexample transfers without ≡ (a fresh point
+strictly between (b,0) and (b,1), which no point of W witnesses), but the file
+is not rewritten. It has no CheckAll entry.
+
+## 7. Step 2, done
+
+### 7.1 What was removed
+
+- `FEq` (types/Types.v). `fact` has one constructor `FLt`. `fact_holds`,
+  `fact_map`, `fact_rel`, `fact_scoped` lost their ≡ branch.
+- The alias form of creation constraints: `fresh_eq`, `fresh_at`, the alias
+  branch of `fresh_ok` (now `fresh_lt`) and of `fresh_between`, the ≡ part of
+  `cc_eq_at`, and the model premise `HCe` of `cc_model` (relation/Creation.v).
+  `wext_cc` creates no aliases.
+- `alias_bcs`, `cc_ok_alias` and the alias derivation of `t_new_at`
+  (static/Fundamental.v), and the alias in `fv_new_open`
+  (examples/ChoiceTranslateEx.v).
+- `se_h`, `he_h` (≡ facts read from hypotheses) and `se_hyp0`
+  (static/Typing.v).
+- The `w_eq` field of `world` and the world_wf laws `wf_eq_refl`,
+  `wf_eq_sym`, `wf_eq_trans`, `wf_eq_shift`, `wf_eq_payload`, `wf_lt_eq`,
+  `wf_eq_supp`, `wf_eq_dual` (relation/Worlds.v). They are lemmas about
+  equality now. `wgen N E L` keeps only the order, and `wrestrict` and `wsw`
+  (invariance/PointRenaming.v) lost their ≡ component.
+- The aliasing rules A-* as constructors. `seqs` (static/FactTheory.v) and
+  `heqs` (static/Source.v) are equality.
+- Proof steps that converted along ≡, in JunkRenaming, PointConversion,
+  Internalize, ConnectSteps, ReadyChain, Bind, TermRules, BranchWorlds,
+  Monotonicity, PTerm, PConnect, Fundamental, Mixed.
+
+Line counts over theories/, diff from main cba4a2b: 64 files, 940
+insertions, 1152 deletions (Step 1 and Step 2). Step 2 alone, from 7a11f08:
+59 files, 662 insertions, 847 deletions. The excluded translations are not
+counted as removed.
+
+Remaining occurrences in the built files: `FEq` 0, `w_eq` 393 (abbreviation
+for equality), `seqs` 139, `heqs` 65, `pteqW` 148, `teqW` 295,
+`steq`/`hsteq` 111, `wf_eq_*` 207 (lemmas over equality), `geq` 69 (closure
+of equality generators inside `glt`).
+
+### 7.2 Statements that changed
+
+- `konst_ty` gains `KTNewAt S x : pk x → konst_ty KNew (∗ ⊸ S@x ⊗ dual S@x̄)`,
+  and `konst_ty_case` its case. `t_new_at` keeps its statement.
+- O-New (`Eobl`, relation/LogicalRelation.v) reads
+  `∃ x s s' W', new_place W N x W' ∧ sdual s s' ∧ …` with the entries at x and
+  x̄, in place of `∃ a s s' W', NConst a ∉ N ∧ sdual s s' ∧ wext_fresh W
+  {[NConst a]} W' ∧ …` with the entries at `pconst a`. `new_place W N x W'` is
+  `(∃ a, x = pconst a ∧ NConst a ∉ N ∧ wext_fresh W {[NConst a]} W') ∨
+  (pt_known W x ∧ W' = W)`. The step owes less, and the condition is semantic.
+- `fresh_ok C := fresh_lt C`. `fresh_between plt C` is the betweenness
+  implication alone.
+- `cc_model` loses the ≡ premise `HCe`. `cc_ok_out`
+  (examples/cfst/CfstTools.v), `c0_acyclic_den`, `c0_acyclic_rank`
+  (examples/ExampleTools.v) and `c0_acyclic_prank` (examples/EndPoints.v) lose
+  their "no ≡ fact" premise. `fl_map` loses its ≡-hypothesis premise.
+- `link : ∀a. S@a ⊗ dual S@ā ⊸ ∗` (Step 1).
+- Composition (P-Connect, P-Join, `Prel_connect`, `fundamental_join`): the
+  statements are unchanged in text. Their cut conditions read
+  `w_eq W e.2 (pt_dual e'.2)`, which is now `e.2 = pt_dual e'.2`. No premise
+  was added. `join_jpath` lost its unused well-formedness argument for W₂.
+
+### 7.3 Theorems
+
+Clean build of everything in _CoqProject. CheckAll.v regenerated: 192 entries
+built and checked, all closed under the global context, among them
+`soundness`, `soundness_source`, `fundamental`, `fundamental_proc`,
+`adequacy`, `sem_rules_fundamental`, every core and cfst example, the
+forwarder, Milner, Kobayashi, delegation, the choice translation, SemFlag,
+SemRounds, DataBranch.
+
+### 7.4 Excluded from the build (NO-EQ: translation pending)
+
+These files left _CoqProject. Their CheckAll entries are commented out with
+the marker `NO-EQ: translation pending` (109 entries; scripts/gen-checkall.py
+reads _CoqProject).
+
+- pgv: PGVWorld, PGVTranslate, PGVSimulation, PGVExamples, PGVFalling. PGV
+  puts both ends of a channel at one point and reads x ≡ x̄ from its world
+  (`pgv_eq`).
+- pn: PNWorld, PNTranslate, PNExamples, PNSimulation. `crel_fact` holds x ≡ y
+  for points with one denotation, and delegation needs the received channel at
+  its canonical point (`pay_eq`).
+- mp: MPWorld, MPTranslate, MPExamples, MP2World, MP2Typing, MP2Translate,
+  MP2Examples, MP2Simulation, MPRounds, MP3World, MP3Typing, MP3Translate,
+  MP3Examples, MP3Simulation. The same denotational ≡, and `pex_fact` holds
+  x ≡ x̄ for segment points.
+- counterexamples/DropCounter.v (D11, no CheckAll entry).
+
+PGVTypes, PGVTyping, PNTypes, PNTyping, PNSemantics, MPTypes, MPTyping,
+MP2Types, MP2Semantics and MP3Types stay in the build. They do not depend on
+worlds.
+
+### 7.5 What did not work without ≡
+
+- No core lemma became false. The deadlock argument, amalgamation, fresh
+  extension, monotonicity, renaming invariance and composition go through with
+  ≡ read as equality.
+- The translations (§7.4) need the redesign estimated in §5.
+- DropCounter's witness needs a new world (D11).
+- Not done: inlining the names `w_eq`, `seqs`, `heqs` and `pteqW` (pteqW W x y
+  is x = y ∨ (ground ∧ ground ∧ x = y)), removing `geq` and the E parameter of
+  `wgen` and `glt`, and deleting the rewriting rules `fl_eql` and `fl_eqr`,
+  which close ≺ under equality and are admissible. Each is mechanical.

@@ -2319,6 +2319,14 @@ For Step 2, w_eq becomes syntactic equality (D7), justified by
 relation/NoAlias.v. The PN, MP and PGV translations keep ≡ (D8): they identify
 points by denotation, and MP's segment existential states x ≡ x̄.
 Details, inventory and effort: docs/extensions/no-equality.md.
+Step 2 (approved, same day): facts, worlds and Γ ⊢ ≡ have no ≡. FEq, the
+alias form of creation constraints, the w_eq field and the aliasing rules as
+constructors are gone. new@x is a primitive typing of new (KTNewAt), and O-New
+places a channel at a fresh constant or at a known point (new_place), a
+semantic condition. Composition statements are unchanged in text, their cut
+conditions now read equality. The PGV, PN and MP translations and
+DropCounter.v are out of the build (NO-EQ: translation pending). Every
+remaining CheckAll entry is closed (192 of 301). no-equality.md §7.
 
 ## From the earlier abandoned mechanization (spec §15)
 
