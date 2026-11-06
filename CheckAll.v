@@ -51,10 +51,16 @@ Require LRGV.examples.cfst.TreeSum.
 Require LRGV.examples.lit.Falling.
 Require LRGV.examples.lit.LitLib.
 Require LRGV.examples.lit.LitRejected.
-(* NO-EQ: translation pending  Require LRGV.mp.MP2Examples. *)
+Require LRGV.liveness.GuardCex.
+Require LRGV.liveness.GuardEx.
 Require LRGV.liveness.LiveAdequacy.
+Require LRGV.liveness.LiveBind.
+Require LRGV.liveness.LiveConsts.
+Require LRGV.liveness.LiveGuard.
 Require LRGV.liveness.LiveKob.
 Require LRGV.liveness.LiveRules.
+Require LRGV.liveness.LiveTermRules.
+(* NO-EQ: translation pending  Require LRGV.mp.MP2Examples. *)
 Require LRGV.mp.MP2Semantics.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Simulation. *)
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Translate. *)
@@ -90,6 +96,22 @@ Print Assumptions LRGV.liveness.LiveRules.LVrel_box_lob.
 Print Assumptions LRGV.liveness.LiveRules.LErel_spawn.
 Print Assumptions LRGV.liveness.LiveKob.kob_tau_diverges.
 Print Assumptions LRGV.liveness.LiveKob.live_fundamental_false.
+Print Assumptions LRGV.liveness.LiveBind.LErel_bind.
+Print Assumptions LRGV.liveness.LiveBind.LErel_bind_R.
+Print Assumptions LRGV.liveness.LiveConsts.LErel_app_noforce.
+Print Assumptions LRGV.liveness.LiveTermRules.LErel_app.
+Print Assumptions LRGV.liveness.LiveTermRules.lsem_rules_fundamental.
+Print Assumptions LRGV.liveness.LiveGuard.gd_noret.
+Print Assumptions LRGV.liveness.LiveGuard.LErel_bind_guarded.
+Print Assumptions LRGV.liveness.LiveGuard.lsem_typed_box_live.
+Print Assumptions LRGV.liveness.LiveGuard.lsem_later_letu_guard.
+Print Assumptions LRGV.liveness.GuardEx.fw_gstyped.
+Print Assumptions LRGV.liveness.GuardEx.tc_gstyped.
+Print Assumptions LRGV.liveness.GuardEx.kob_not_guarded.
+Print Assumptions LRGV.liveness.GuardCex.cx_gptyped.
+Print Assumptions LRGV.liveness.GuardCex.cx_tau_diverges.
+Print Assumptions LRGV.liveness.GuardCex.live_guarded_false.
+Print Assumptions LRGV.liveness.GuardCex.gallf_examples.
 Print Assumptions LRGV.examples.ChoiceEnc.branch_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_deadlock_free.

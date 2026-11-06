@@ -12,7 +12,16 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('liveness/LiveAdequacy.v', 'live_finite_runs'), ('liveness/LiveRules.v', 'LErel_app_lam'),
         ('liveness/LiveRules.v', 'LErel_force'), ('liveness/LiveRules.v', 'LVrel_box_lob'),
         ('liveness/LiveRules.v', 'LErel_spawn'), ('liveness/LiveKob.v', 'kob_tau_diverges'),
-        ('liveness/LiveKob.v', 'live_fundamental_false')]
+        ('liveness/LiveKob.v', 'live_fundamental_false'),
+        ('liveness/LiveBind.v', 'LErel_bind'), ('liveness/LiveBind.v', 'LErel_bind_R'),
+        ('liveness/LiveConsts.v', 'LErel_app_noforce'), ('liveness/LiveTermRules.v', 'LErel_app'),
+        ('liveness/LiveTermRules.v', 'lsem_rules_fundamental'),
+        ('liveness/LiveGuard.v', 'gd_noret'), ('liveness/LiveGuard.v', 'LErel_bind_guarded'),
+        ('liveness/LiveGuard.v', 'lsem_typed_box_live'), ('liveness/LiveGuard.v', 'lsem_later_letu_guard'),
+        ('liveness/GuardEx.v', 'fw_gstyped'), ('liveness/GuardEx.v', 'tc_gstyped'),
+        ('liveness/GuardEx.v', 'kob_not_guarded'),
+        ('liveness/GuardCex.v', 'cx_gptyped'), ('liveness/GuardCex.v', 'cx_tau_diverges'),
+        ('liveness/GuardCex.v', 'live_guarded_false'), ('liveness/GuardCex.v', 'gallf_examples')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
