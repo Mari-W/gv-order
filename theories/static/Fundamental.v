@@ -548,7 +548,7 @@ Qed.
 
 Lemma kscoped_pinst peq plt pk k T σ :
   konst_ty peq plt pk k T → kscoped k T → kscoped k (pinst_ty σ T).
-Proof. destruct 1 as [? ? ? ? Hs ? ?|]; [destruct Hs|]; simpl; auto. Qed.
+Proof. destruct 1 as [? ? ? ? Hs ? ?| |]; [destruct Hs| |]; simpl; auto. Qed.
 
 Lemma fhyps_pinst_insert σ Φ φ u :
   fhyps_pinst σ (<[φ := u]> Φ) = <[φ := pt_inst σ <$> u]> (fhyps_pinst σ Φ).
@@ -736,12 +736,9 @@ Qed.
 
 (** ** new at a known point (sharp edges 104)
 
-    new has the one existential signature. At C = {ι ≡ x} it gives the
-    old signature at a known point x on the encoded let of new. E-Open
-    puts ι ≡ x into the hypotheses, E-Conv moves the opened pair from ι
-    to x, and the body is the old one with the point variables shifted
-    past ι ([typed_pinst]). The only premise on the context is that x
-    is known, as for the old signature. *)
+    new@x ([KTNewAt]) on the encoded let of new. The only premise on
+    the context is that x is known. On main this was derived from the
+    existential signature at C = {ι ≡ x}; branch no-eq has no alias. *)
 
 Definition alias_bcs (x : point) : bcs := BCs [x] (λ f, f = FEq (pvar 0) (pvar 1)).
 
@@ -780,11 +777,8 @@ Lemma t_new_at W Φ Ψ Θ Δ F e T S x :
   typed W Φ Ψ Θ Δ F (let_new e) T.
 Proof.
   intros HW Hx Hb. unfold let_new.
-  destruct (alias_bcs_ok W Ψ x Hx) as (_ & HK & _).
-  pose proof (cc_ok_alias (seqs W Ψ) (slt W Ψ) x) as HC.
-  set (C := alias_bcs x).
-  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
-  (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
+  set (X := TProd (TSess S x) (TSess (dual S) (pt_dual x))).
+  (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩, new@x *)
   apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply tenv_comp_empty_l, se_dsym. }
   { apply lenv_split_nones_l. }
@@ -795,7 +789,7 @@ Proof.
       + apply tenv_comp_empty_r.
       + apply lenv_split_nones_l.
       + done.
-      + apply t_const; [apply lenv_empty_nones| |done]. by apply KTNewEx.
+      + apply t_const; [apply lenv_empty_nones| |done]. by apply KTNewAt.
       + apply t_unit. apply lenv_empty_nones.
     - apply t_unit. apply lenv_empty_nones. }
   (* let ∗ = w *)
@@ -805,37 +799,16 @@ Proof.
   { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence. }
-  (* open p, with the hypothesis ι ≡ x *)
-  apply (t_open W Φ Ψ Θ _ F _ 1 LBot 1 C
-           (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
-  cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
-  change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
-  set (Ψ1 := hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
-  assert (seqs W Ψ1 (pvar 0) (pt_inst (pshift 1) x)) as Hal.
-  { assert ((bcs_inst (pshift 1) C, [pvar 0]) ∈ Ψ1) as Hg
-      by (apply elem_of_app; right; by apply list_elem_of_singleton).
-    pose proof (hyp_in_fact W Ψ1 (bcs_inst (pshift 1) C) [pvar 0] Hg) as HCg.
-    specialize (HCg (FEq (pvar 0) (pt_inst (λ a', pvar (a' + 1)) (pt_inst (pshift 1) x)))).
-    simpl in HCg. rewrite pt_inst_unshift in HCg. apply HCg.
-    exists (FEq (pvar 0) (pvar 1)). split_and!; [done|cbn; lia|].
-    simpl. rewrite !pt_inst_pvar_at. done. }
-  (* let ⟨a, b⟩ = p, the pair moved from ι to x *)
-  apply (t_letpair W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
-           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
-              :: lenv_nones (lenv_pinst (pshift 1) Δ))
-           (None :: None :: lenv_pinst (pshift 1) Δ)
-           _ _ _ (TSess S (pt_inst (pshift 1) x)) (TSess (dual S) (pt_inst (pshift 1) (pt_dual x)))).
+  (* let ⟨a, b⟩ = p *)
+  apply (t_letpair W _ _ _ ∅ Θ _
+           (None :: Some X :: lenv_nones Δ) (None :: None :: Δ)
+           _ _ _ (TSess S x) (TSess (dual S) (pt_dual x))).
   - apply tenv_comp_empty_l, se_dsym.
   - apply lsplit_none, lsplit_l, lenv_split_nones_l.
-  - apply (t_conv W _ _ _ _ _ _ (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
-    { split; split; [exact Hal|apply seq_refl| |apply seq_refl].
-      rewrite pt_inst_dual. by apply se_dual. }
-    apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
+  - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence.
-  - assert (hyps_hold (seqs W Ψ1) (slt W Ψ1) (skn W Ψ1) (hyps_inst (pshift 1) Ψ)) as HΨ.
-    { apply hyps_hold_sub. intros g Hg. apply elem_of_app. by left. }
-    exact (typed_pinst W _ _ _ _ _ _ _ HW Hb (pshift 1) Ψ1 HΨ).
+  - exact Hb.
 Qed.
 
 (** A closed derivation: no future variables, no hypotheses, and the

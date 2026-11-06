@@ -1127,6 +1127,8 @@ Section ready.
       + intros x y (x0 & y0 & Hxy & -> & ->). apply glt_base.
         exists (ptsw a b x0), (ptsw a b y0). rewrite !pt_inst_sw. split_and!; [by apply wsw_lt|done|done].
       + intros g Hg. by apply bcs_open_sw.
+    - rewrite ?ptsw_dual. apply KTNewAt. unfold pt_known in *. simpl.
+      by rewrite pt_root_sw, elem_of_names_sw.
   Qed.
 
   Lemma pteqW_sw W x y : pteqW W x y → pteqW (wsw a b W) (ptsw a b x) (ptsw a b y).
@@ -1193,9 +1195,10 @@ Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) (pk pk' : poi
   (∀ x y, peq x y → peq' x y) → (∀ x y, plt x y → plt' x y) → (∀ x, pk x → pk' x) →
   konst_ty peq plt pk k T → konst_ty peq' plt' pk' k T.
 Proof.
-  intros He Hl Hk [k0 T0 G xs Hs HG HK|S C HC HK].
+  intros He Hl Hk [k0 T0 G xs Hs HG HK|S C HC HK|S x Hx].
   - eapply KTSig; [done|by eapply facts_hold_mono|by eapply Forall_impl].
   - constructor; [by eapply cc_ok_mono|by eapply Forall_impl].
+  - apply KTNewAt. auto.
 Qed.
 
 Lemma teqW_r_mono W1 W2 T : ∀ ρ U,
