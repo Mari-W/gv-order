@@ -323,7 +323,7 @@ Definition konst_app (Φ : fhyps) (F : sfuture) (k : konst) (A : ty) : option (t
       | _ => None
       end
   | KLink, TProd (TSess s x) (TSess r y) =>
-      if sty_eqb r (dual s) then Some (TUnit, CAtom (AEq x (pt_dual y))) else None
+      if sty_eqb r (dual s) && bool_decide (y = pt_dual x) then Some (TUnit, CTrue) else None
   | _, _ => None
   end.
 

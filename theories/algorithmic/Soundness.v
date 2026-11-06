@@ -170,9 +170,10 @@ Proof.
     simpl. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
   - (* link *)
     destruct A as [| | [| | | | | s x|] [| | | | | r y|]| | | |]; try discriminate.
-    destruct (sty_eqb r (dual s)) eqn:Hd; [|discriminate]. injection Hk as <- <-.
-    apply sty_eqb_sound in Hd as ->.
-    eapply (st_app_konst _ _ _ _ _ _ None (TProd (TSess s x) (TSess (dual s) y)));
+    destruct (sty_eqb r (dual s)) eqn:Hd; [|discriminate].
+    destruct (bool_decide (y = pt_dual x)) eqn:Hy; [|discriminate]. injection Hk as <- <-.
+    apply sty_eqb_sound in Hd as ->. apply bool_decide_eq_true in Hy as ->.
+    eapply (st_app_konst _ _ _ _ _ _ None (TProd (TSess s x) (TSess (dual s) (pt_dual x))));
       [by apply KTLink|done|done| |exact He].
     apply teq_hsteq. cbn. split_and!; [done|apply seq_refl|done|apply seq_refl].
   - (* select₁ *)
