@@ -19,6 +19,7 @@
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard liveness.LiveKob examples.ExampleTools.
+From LRGV Require examples.Forwarder examples.TailCall examples.cfst.FirstAction examples.SemRounds.
 
 Local Set Warnings "-register-all".
 
@@ -139,3 +140,43 @@ Proof.
   intros H. apply cx_tau_diverges, (live_no_tau_divergence (Wpo [0]) TUnit).
   apply H; [apply Wpo_strict|apply cx_gptyped].
 Qed.
+
+(** ** The proposed repair, checked against the examples (not adopted)
+
+    [okf f] is [ok] with the special case for (force x) e allowed only
+    when f holds, and [okvf] sets f when it passes a λ of the box body. *)
+
+Fixpoint okf (f : bool) (x : nat) (e : expr) : bool :=
+  match e with
+  | Var y => negb (Nat.eqb x y)
+  | EUnit | Konst _ | Chan _ => true
+  | Lam b | EBox b => negb (occurs (S x) b)
+  | App (App (Konst KForce) (Var y)) e2 =>
+      if Nat.eqb x y then f && gd e2 && okf f x e2 else okf f x e2
+  | App (Lam b) e2 => okf f x e2 && (gd e2 || okf f (S x) b)
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => okf f x e1 && (gd e1 || okf f x e2)
+  | LetP e1 e2 => okf f x e1 && (gd e1 || okf f (S (S x)) e2)
+  | Inj1 e | Inj2 e => okf f x e
+  | Case e e1 e2 => okf f x e && (gd e || (okf f (S x) e1 && okf f (S x) e2))
+  end.
+
+Fixpoint okvf (f : bool) (x : nat) (e : expr) : bool :=
+  match e with
+  | Lam b => okvf true (S x) b
+  | _ => okf f x e
+  end.
+
+Fixpoint gallf (e : expr) : bool :=
+  match e with
+  | Var _ | EUnit | Konst _ | Chan _ => true
+  | EBox b => okvf false 0 b && gallf b
+  | Lam e | Inj1 e | Inj2 e => gallf e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => gallf e1 && gallf e2
+  | Case e e1 e2 => gallf e && gallf e1 && gallf e2
+  end.
+
+Theorem gallf_examples :
+  gallf Forwarder.fw_main = true ∧ gallf TailCall.tc_main = true ∧
+  gallf FirstAction.fa_go = true ∧ gallf FirstAction.fac_go = true ∧
+  gallf SemRounds.rK = true ∧ gallf cx_main = false.
+Proof. vm_compute. repeat split. Qed.
