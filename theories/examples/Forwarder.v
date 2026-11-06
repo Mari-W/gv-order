@@ -1,43 +1,55 @@
-(** * forwarder in a box: typable, recursive (SHARP-EDGES 67)
+(** * forwarder in a box: typable, recursive, without aliases (SHARP-EDGES 67, 150)
 
-      Si = μX. ?(∃κ. Close@κ).X       So = μX. !(∃κ. Close@κ).X
-      Cf = {ι+k ≺ ι′+k,  ι′+k ≺ ι+k+1,  ι′+k ≺ (ι′+k)[0],
-            (ι+k)[0] ≡ (ι′+k)[0]  ∣  k ∈ ℕ}                  (positions from 0)
-      Cp = {ι+k ≺ (ι+k)[0],  (ι+k)[0] ≺ ι+k+1  ∣  k ∈ ℕ}
+      Si = μX. ?(Close@σ).X                σ = x[0] for the action at x
+      So = μX. !(∃^{σ̄} κ. {κ ≺ σ}. Close@κ).X
+      Cf = {ι+k ≺ ι′+k,  ι+k ≺ ι̅′+k,  ι′+k ≺ ι̅+k+1,  ι′+k ≺ (ι′+k)[0]‾,
+            (ι+k)[0] ≺ (ι′+k)[0],  (ι′+k)[0]‾ ≺ (ι+k)[0]‾  ∣  k ∈ ℕ}
+      Cp = {ι+k ≺ ι[0], ι[0]‾,  ι[0], ι[0]‾ ≺ ι̅+k+1  ∣  k ∈ ℕ}      ι[0] = (ι+k)[0]
       fwd   : □(∀ι ι′. Cf. ∗ ⊸ (Si@ι ⊗ So@ι′ ⊸^{ι′} ∗))
       fwd   = !(f = λp. let (a, b) = p in let (d, a) = recv a in
                        let (b, u) = ⟨send ⟨d, b⟩, ∗⟩ in let () = u in
                        spawn (λw. let () = w in (force f) ⟨a, b⟩))
-      fprod : □(∀ι. Cp. ∗ ⊸ (S̄i@ι ⊸^{ι[0]} ∗))
-      fprod = !(g = λc. let (e, e′) = new ∗ in let (c, u) = ⟨send ⟨e, c⟩, ∗⟩ in
+      fprod : □(∀ι. Cp. ∗ ⊸ (S̄i@ι ⊸^{ι[0]‾} ∗))
+      fprod = !(g = λc. let (e, e′) = new@(ι[0]) ∗ in let (c, u) = ⟨send ⟨e, c⟩, ∗⟩ in
                        let () = u in let () = close e′ in
                        spawn (λw. let () = w in (force g) c))
       fcons : □(∀ι. Cp. ∗ ⊸ (S̄o@ι ⊸^{ι[0]} ∗))
-      fcons = !(h = λc. let (d, c) = recv c in let () = close d in
+      fcons = !(h = λc. let (d, c) = recv c in [open d at κ]
+                       let () = close d in
                        spawn (λw. let () = w in (force h) c))
       fw_main = let ((p, f), h) = ⟨⟨fprod, fwd⟩, fcons⟩ in
                 let (a, a′) = new ∗ in let (b, b′) = new ∗ in
                 let () = spawn (λw. let () = w in (force p) a′) in
                 let () = spawn (λw. let () = w in (force h) b′) in (force f) ⟨a, b⟩
 
-    recv a gives d the type Close@ι[0], and send at ι′ asks Close@ι′[0].
-    E-Conv up to Γ ⊢ ≡ ([t_conv] with [steq]) moves d along the fact
-    ι[0] ≡ ι′[0] of Cf ([se_hyp0]). The producer creates e at ι[0], the
-    point its payload must live at. The recursive calls ask Cf and Cp one
-    round later, which C contains ([fw_sub], [fp_sub]).
+    recv a gives d the type Close@ρ with ρ = (ι+k)[0]. The send at ι′+k
+    has the payload point σ = (ι′+k)[0], and it packs d at κ = ρ. E-Pack
+    asks the constraint ρ ≺ σ and the bound σ̄ ≼ ρ̄ (the head of d is its
+    partner point ρ̄), and the send asks ι′+k ≺ σ̄. All three are facts
+    of Cf. The consumer opens the payload at a fresh κ with κ ≺ σ and
+    closes d at κ while it holds c at θ+k+1 (θ its point). Cp gives
+    σ ≺ θ̄+k+1, so κ lies below the partner of c. The upper point of the
+    consumer is σ, and κ ≺ σ is its witness. The recursive calls ask Cf
+    and Cp one round later, which C contains ([fw_sub], [fp_sub]).
 
-    In the empty world main creates a with the producer constraint fp_C
-    and b with the facts that relate it to a, the alias family
-    (γ+k)[0] ≡ (ε+k)[0] included ([fwb_ok], sharp edges 105).
+    Before (main, with E-Conv up to ≡), the box carried the alias
+    (ι+k)[0] ≡ (ι′+k)[0], and So sent Close@σ. The alias splits into two
+    order facts that point in opposite directions, ρ ≺ σ for the
+    receiver and σ̄ ≺ ρ̄ for the sender. No fact relates σ to σ̄ or ρ to
+    ρ̄, and ≺ is not closed under x ↦ x̄, so the two are consistent.
+
+    In the empty world main creates a with the producer constraint fpa_C
+    and b with the facts that relate it to a ([fwb_ok], sharp edges
+    105). Both are order-only creation constraints.
 
     With end points every gate compares with partner points ([fw_C],
     [fp_C]). The producer's upper point is ι[0]‾, where it closes e′.
     main forces fwd at (γ, ε), the producer at γ̄ and the consumer at
-    ε̄. a is created with [fpa_C], b with [fwb_C], whose model keeps the
-    polarity of the points it moves. *)
+    ε̄. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
+From LRGV Require Import examples.cfst.CfstTools.
 
 Set Default Proof Using "All".
 
@@ -45,15 +57,29 @@ Abbreviation svv a k := (Pt (NPayload (NVar a) k 0) 0).
 Abbreviation sl a k := (Pt (NPayload (NConst a) k 0) 0).
 
 Definition Sfi : sty := SMu (SSeq (SRcv 1 (TSess SEnd (pvar 0))) (SVar 0)).
-Definition Sfo : sty := SMu (SSeq (SSnd 1 (TSess SEnd (pvar 0))) (SVar 0)).
+(** The outgoing payload is an existential. Under the payload binder
+    the variable 0 is σ, the payload point x[0] of the send at x. Under
+    the existential binder the variable 0 is κ and the variable 1 is σ.
+    The bound is σ̄ and the constraint is {κ ≺ σ}. *)
+Definition Cfo_P (g : fact) : Prop := g = FLt (pvar 0) (pvar 1).
+Definition Pfo : ty := TEx (LPt (pt_dual (pvar 0))) 1 (BCs [pvar 0] Cfo_P) (TSess SEnd (pvar 0)).
+Definition Sfo : sty := SMu (SSeq (SSnd 1 Pfo) (SVar 0)).
+
+Lemma Pfo_scoped : pscoped 1 Pfo.
+Proof.
+  cbn. split; [|split].
+  - intros ? Hv. injection Hv. lia.
+  - unfold bcs_scoped. cbn. constructor; [|constructor]. intros ? Hv. injection Hv. lia.
+  - intros ? Hv. injection Hv. lia.
+Qed.
 
 (** With end points every gate compares a blocking point with the
     partner points of the other held ends: ι ≺ ι̅′ for the recv on a,
     ι′ ≺ (ι+1)‾ for the send on b, ι′ ≺ (ι′[0])‾ for its payload. *)
 Definition fw_P (g : fact) : Prop :=
   ∃ k, g = FLt (pv 0 k) (pt_dual (pv 1 k)) ∨ g = FLt (pv 0 k) (pv 1 k) ∨
-       g = FLt (pv 1 k) (pt_dual (svv 1 k)) ∨ g = FEq (svv 0 k) (svv 1 k) ∨
-       g = FLt (pv 1 k) (pt_dual (pv 0 (S k))).
+       g = FLt (pv 1 k) (pt_dual (svv 1 k)) ∨ g = FLt (pt_dual (svv 1 k)) (pt_dual (svv 0 k)) ∨
+       g = FLt (svv 0 k) (svv 1 k) ∨ g = FLt (pv 1 k) (pt_dual (pv 0 (S k))).
 Definition fw_C : bcs := BCs [] fw_P.
 
 (** The producer sends e at ι[0] and closes e′ at ι[0]‾, the consumer
@@ -93,7 +119,7 @@ Definition fw_main : expr :=
 (** C[ι+1, ι′+1] ⊆ C and C[ι+1] ⊆ C: round k goes to round k+1. *)
 Lemma fw_sub g : fw_P g → fact_scoped 2 g → fw_P (fact_map (pt_inst (plist [pv 0 1; pv 1 1])) g).
 Proof.
-  intros (k & [-> | [-> | [-> | [-> | ->]]]]) _; exists (S k);
+  intros (k & [-> | [-> | [-> | [-> | [-> | ->]]]]]) _; exists (S k);
     repeat (first [left; reflexivity|right]); reflexivity.
 Qed.
 
@@ -130,14 +156,20 @@ Proof.
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0))
-              (TProd (TSess SEnd (svv 1 0)) (TSess (SSeq (SSnd 1 (TSess SEnd (pvar 0))) Sfo) (pv 1 0)))).
+              (TProd (payload_at 1 Pfo (pv 1 0)) (TSess (SSeq (SSnd 1 Pfo) Sfo) (pv 1 0)))).
     - tstep; [eapply t_conv; [|tstep]; conv_sess|].
-      (* the alias: d : Close@ι[0] becomes Close@ι′[0] along ι[0] ≡ ι′[0] *)
-      eapply t_conv; [|tstep]. split; [|apply seq_refl].
-      eapply (se_hyp0 _ _ _ _ (svv 0 0) (svv 1 0)); [by left|fmem|cbn; lia|reflexivity|reflexivity].
-    - apply (KTSend _ _ _ 1 (TSess SEnd (pvar 0)) Sfo (pv 1 0)).
+      (* pack d : Close@ι[0] at κ = ι[0]: the constraint ι[0] ≺ ι′[0] and
+         the bound (ι′[0])‾ ≺ (ι[0])‾ are facts of Cf *)
+      eapply (t_pack W _ _ _ _ _ _ (LPt (pt_dual (svv 1 0))) 1 (BCs [svv 1 0] Cfo_P)
+                (TSess SEnd (pvar 0)) [svv 0 0]).
+      + done.
+      + constructor; [skn_payload|constructor].
+      + apply bcs_hold_env. intros f -> _. cbn. fhyp (svv 0 0) (svv 1 0).
+      + split; [|done]. intros y Hy. mem_cases Hy. right. fhyp (pt_dual (svv 1 0)) (pt_dual (svv 0 0)).
+      + cbn. tstep.
+    - apply (KTSend _ _ _ 1 Pfo Sfo (pv 1 0)).
       intros h Hh. cbn in Hh. apply elem_of_singleton in Hh as ->. fhyp (pv 1 0) (pt_dual (svv 1 0)).
-    - kscope.
+    - exact Pfo_scoped.
     - apply ubs_intro; [intros y Hy; mem_cases Hy; fhyp (pv 1 0) (pt_dual (pv 0 1))|].
       exists (pv 1 0). split; [done|]. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
@@ -203,28 +235,48 @@ Proof.
   eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
   cbn. tstep.
   { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 0 0))
-              (TSess (SSeq (SRcv 1 (TSess SEnd (pvar 0))) (dual Sfo)) (pv 0 0))).
+              (TSess (SSeq (SRcv 1 Pfo) (dual Sfo)) (pv 0 0))).
     - eapply t_conv; [|tstep]. conv_sess.
     - apply KTRecv.
-    - kscope.
+    - exact Pfo_scoped.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (svv 0 0). split; [done|]. right. fhyp (pv 0 0) (svv 0 0). }
-  cbn. tstep.
+  (* open the payload: d at a fresh κ (variable 0) with κ ≺ σ, σ = θ[0];
+     θ is now the variable 1 *)
+  cbn. eapply (tv_open W _ _ _ _ _ 1); [reflexivity|intros []|reflexivity|reflexivity|reflexivity|reflexivity|reflexivity|].
+  cbn. rewrite ?sf_pinst_empty.
+  match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ' := Q) end.
+  assert (slt W Ψ' (pvar 0) (svv 1 0)) as Hk.
+  { assert ((BCs [svv 1 0] Cfo_P, [pvar 0]) ∈ Ψ') as Hin by (by right; left).
+    assert (bcs_open 1 (BCs [svv 1 0] Cfo_P)
+              (fact_map (pt_inst (pup 1 (plist [svv 1 0]))) (FLt (pvar 0) (pvar 1)))) as Ho.
+    { exists (FLt (pvar 0) (pvar 1)). split_and!; [done|split; cbn; lia|done]. }
+    apply (hyp_in_fact W Ψ' _ _ Hin) in Ho. exact Ho. }
+  assert (∀ u v, fp_P (FLt u v) → fact_scoped 1 (FLt u v) →
+            slt W Ψ' (pt_inst (plist [pvar 1]) u) (pt_inst (plist [pvar 1]) v)) as Hp.
+  { intros u v Hg Hs. eapply (sl_hyp0 _ _ _ _ u v); [by left|exact Hg|exact Hs|reflexivity|reflexivity]. }
+  assert (slt W Ψ' (svv 1 0) (pt_dual (pv 1 1))) as Hs1.
+  { apply (Hp (svv 0 0) (pt_dual (pv 0 1))); [exists 0; by right; right; right|cbn; lia]. }
+  tstep.
   { tstep; [tstep|apply KTClos|done|].
-    apply ubs_intro; [intros y Hy; mem_cases Hy; fhyp (svv 0 0) (pt_dual (pv 0 1))|].
-    exists (svv 0 0). split; [done|]. apply sle_refl, HW. }
+    apply ubs_intro; [intros y Hy; mem_cases Hy; eapply sl_trans; [exact Hk|exact Hs1]|].
+    exists (svv 1 0). split; [done|]. right. exact Hk. }
   tstep; [|apply KTSpawn|done|apply ubs_none].
-  eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (svv 0 1)) (Some (pt_dual (pv 0 1))) 2); [set_solver| |].
+  eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (svv 1 1)) (Some (pt_dual (pv 1 1))) 2); [set_solver| |].
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 1 fp_C None fcons_body [pv 0 1]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 fp_C None fcons_body [pv 1 1]);
       [done|done| | |apply ubs_none|tstep].
-    + apply fp_call. by left.
-    + apply (skn_fp W _ (pv 0 1)); [by left|done].
+    + apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn.
+      * apply (Hp (pv 0 (S k)) (pt_dual (svv 0 (S k)))); [exists (S k); by left|cbn; lia].
+      * apply (Hp (pv 0 (S k)) (svv 0 (S k))); [exists (S k); by right; left|cbn; lia].
+      * apply (Hp (pt_dual (svv 0 (S k))) (pt_dual (pv 0 (S (S k))))); [exists (S k); by right; right; left|cbn; lia].
+      * apply (Hp (svv 0 (S k)) (pt_dual (pv 0 (S (S k))))); [exists (S k); by right; right; right|cbn; lia].
+    + constructor; [|constructor]. right. exists fp_C, [pvar 1], (pvar 1). split_and!; [by left|by left|done].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (svv 0 1). split; [done|]. apply sle_refl, HW.
+    exists (svv 1 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
 (** ** main in the empty world (sharp edges 105)
@@ -237,12 +289,16 @@ Qed.
     which hold the producer constraint at γ̄. b is created at ε with the
     facts that relate it to a and the consumer constraint at ε̄,
 
-      Cb = {γ+k ≺ ε+k, ε̄+k,  ε+k ≺ (ε+k)[0]‾, γ̄+k+1,  (γ+k)[0] ≡ (ε+k)[0],
+      Cb = {γ+k ≺ ε+k, ε̄+k,  ε+k ≺ (ε+k)[0]‾, γ̄+k+1,
+            (γ+k)[0] ≺ (ε+k)[0],  (ε+k)[0]‾ ≺ (γ+k)[0]‾,
             ε̄+k ≺ (ε+k)[0], (ε+k)[0]‾,  (ε+k)[0], (ε+k)[0]‾ ≺ ε+k+1  ∣  k ∈ ℕ}.
 
-    Its model reads (ε+k)[0] as (γ+k)[0] at the same polarity, orders
-    the points of ε by their offsets, and the facts that enter and leave
-    ε close through program order and Ca. *)
+    Cb has only ≺ facts ([cc_ok_out]). Inside ε they follow the rank
+    3k for ε+k and 3k+1 for (ε+k)[0] at either polarity. The facts that
+    enter ε from γ and leave it to γ close through program order and
+    Ca. The pair (γ+k)[0] ≺ (ε+k)[0] ≺ (γ+k)[0]‾ would ask
+    (γ+k)[0] ≺ (γ+k)[0]‾ of Ca, but the two points of ε have the same
+    rank, so that pair is never chained. *)
 
 Definition fpa_P (g : fact) : Prop :=
   ∃ k b b', g = FLt (pt_polar b (pv 0 k)) (pt_polar b' (svv 0 k)) ∨
@@ -251,7 +307,8 @@ Definition fpa_C : bcs := BCs [] fpa_P.
 
 Definition fwb_P (g : fact) : Prop :=
   ∃ k, g = FLt (pv 1 k) (pt_dual (pv 0 k)) ∨ g = FLt (pv 1 k) (pv 0 k) ∨
-       g = FLt (pv 0 k) (pt_dual (svv 0 k)) ∨ g = FEq (svv 1 k) (svv 0 k) ∨
+       g = FLt (pv 0 k) (pt_dual (svv 0 k)) ∨
+       g = FLt (pt_dual (svv 0 k)) (pt_dual (svv 1 k)) ∨ g = FLt (svv 1 k) (svv 0 k) ∨
        g = FLt (pv 0 k) (pt_dual (pv 1 (S k))) ∨
        g = FLt (pt_dual (pv 0 k)) (pt_dual (svv 0 k)) ∨ g = FLt (pt_dual (pv 0 k)) (svv 0 k) ∨
        g = FLt (pt_dual (svv 0 k)) (pv 0 (S k)) ∨ g = FLt (svv 0 k) (pv 0 (S k)).
@@ -275,34 +332,13 @@ Proof.
   - intros [n pb o] _. unfold fwa_rank, pt_shift, pt_dual. simpl. repeat case_match; lia.
 Qed.
 
-(** The map of the model: (ε+k)[0] and everything carried there go to
-    (γ+k)[0], at the same polarity. *)
-Fixpoint fwb_name (p : pname) : pname :=
-  match p with
-  | NPayload (NVar 0) k 0 => NPayload (NVar 1) k 0
-  | NPayload q k i => NPayload (fwb_name q) k i
-  | _ => p
+(** The rank inside ε: ε+k at 3k, (ε+k)[0]+j at 3k+1+j. *)
+Definition fwb_rank (x : point) : nat :=
+  match pt_name x with
+  | NVar 0 => 3 * pt_off x
+  | NPayload (NVar 0) k 0 => 3 * k + 1 + pt_off x
+  | _ => pt_off x
   end.
-
-Definition fwb_phi (x : point) : point := MkPt (fwb_name (pt_name x)) (pt_pol x) (pt_off x).
-
-Lemma fwb_name_old p : pn_root p ≠ NVar 0 → fwb_name p = p.
-Proof.
-  induction p as [c|c|q IH k i]; simpl; [done|done|]. intros H.
-  destruct q as [c|[|c]|q' k' i']; destruct i; simpl in *; try done; rewrite ?IH; done.
-Qed.
-
-Lemma fwb_name_root p : pn_root (fwb_name p) = NVar 0 → pn_root p = NVar 0.
-Proof.
-  induction p as [c|c|q IH k i]; simpl; [done|done|].
-  destruct q as [c|[|c]|q' k' i']; destruct i; simpl in *; auto.
-Qed.
-
-Lemma fwb_name_var0 p : fwb_name p = NVar 0 → p = NVar 0.
-Proof.
-  destruct p as [c|c|q k i]; simpl; [done|done|].
-  destruct q as [c|[|c]|q' k' i']; destruct i; simpl; done.
-Qed.
 
 Lemma fwb_ok W Ψ : world_wf W → (fpa_C, [pvar 0]) ∈ Ψ → cc_ok (seqs W Ψ) (slt W Ψ) fwb_C.
 Proof.
@@ -322,74 +358,35 @@ Proof.
         [exact Hg|exists k, true, false; by right|cbn; lia|done|done]. }
   assert (∀ k j, k < j → T (pv 1 k) (pv 1 j)) as Hpo.
   { intros k j Hkj. apply (th_pofs _ _ _ _ (theory_gen _ _)). unfold pofs. simpl. split; [done|lia]. }
-  (** γ+j lies below every point that leaves ε at offset k ≥ j. *)
   assert (∀ j k b, j ≤ k → T (pv 1 j) (pt_polar b (svv 1 k))) as Hs.
   { intros j k b Hjk. destruct (decide (j = k)) as [<-|Hne]; [apply Ha1|].
     eapply glt_trans; [apply (Hpo j k); lia|apply Ha1]. }
   assert (∀ j k, j ≤ k → T (pv 1 j) (pt_dual (pv 1 (S k)))) as Hd.
   { intros j k Hjk. apply (th_pofs _ _ _ _ (theory_gen _ _)). unfold pofs. simpl. split; [done|lia]. }
-  apply (cc_model (seqs W Ψ) (slt W Ψ) fwb_C fwb_phi (λ x y, pofs x y)
-           (λ u p, ∃ k, (u = pv 1 k ∧ p = pt_dual (pv 0 k)) ∨ (u = pv 1 k ∧ p = pv 0 k) ∨
-                        (u = pt_dual (svv 1 k) ∧ p = pv 0 (S k)) ∨ (u = svv 1 k ∧ p = pv 0 (S k)))
-           (λ q v, ∃ k, (q = pv 0 k ∧ v = pt_dual (svv 1 k)) ∨ (q = pv 0 k ∧ v = pt_dual (pv 1 (S k))) ∨
-                        (q = pt_dual (pv 0 k) ∧ v = pt_dual (svv 1 k)) ∨ (q = pt_dual (pv 0 k) ∧ v = svv 1 k))).
-  - intros [n pb o] Hn. unfold fwb_phi, pt_root in *. simpl in *. by rewrite fwb_name_old.
-  - done.
-  - intros [n pb o] i Hr. unfold fwb_phi, pt_payload, pt_root in *. simpl in *.
-    destruct n as [c|[|c]|q k i']; destruct i; simpl in *; try done.
-  - intros [n pb o] [n' pb' o'] i E. unfold fwb_phi, pt_payload in *. cbn [pt_name pt_off pt_pol] in *.
-    injection E as E1 _ <-.
-    destruct (decide (n = NVar 0)) as [->|Hn].
-    + cbn [fwb_name] in E1. symmetry in E1. apply fwb_name_var0 in E1 as ->. done.
-    + destruct (decide (n' = NVar 0)) as [->|Hn'].
-      * cbn [fwb_name] in E1. apply fwb_name_var0 in E1 as ->. done.
-      * assert (∀ m, m ≠ NVar 0 → fwb_name (NPayload m o i) = NPayload (fwb_name m) o i) as Hs'.
-        { intros m Hm. destruct m as [c|[|c]|q k j]; destruct i; simpl; done. }
-        rewrite (Hs' n), (Hs' n') by done. by rewrite E1.
-  - intros [n pb o]. done.
-  - apply pofs_trans.
-  - intros p _. apply pofs_shift.
-  - intros p _. unfold pofs, pt_shift, pt_dual. simpl. split; [done|lia].
-  - apply pofs_irrefl.
-  - assert (∀ p q, (p = q ∨ pofs p q) → pt_off p ≤ pt_off q) as Hle.
-    { intros p q [<-|[_ Ho]]; lia. }
-    intros u p q v (j & Hl) (k & Hh) Hpq. apply Hle in Hpq.
-    destruct Hl as [[-> ->]|[[-> ->]|[[-> ->]|[-> ->]]]];
-      destruct Hh as [[-> ->]|[[-> ->]|[[-> ->]|[-> ->]]]]; cbn in Hpq;
-      first [apply (Hs _ _ false); lia|apply (Hs _ _ true); lia|apply Hd; lia
-            |eapply glt_trans; [apply (Ha2 _ false)|]; first [apply (Hs _ _ false); lia|apply (Hs _ _ true); lia|apply Hd; lia]
-            |eapply glt_trans; [apply (Ha2 _ true)|]; first [apply (Hs _ _ false); lia|apply (Hs _ _ true); lia|apply Hd; lia]].
-  - intros a b (f & (k & Hf) & Hs' & E). simpl in E.
-    destruct Hf as [->|[->|[->|[->|[->|[->|[->|[->| ->]]]]]]]]; try discriminate.
-    injection E as -> ->. cbn. apply geq_refl.
-  - intros a b (f & (k & Hf) & Hs' & E). simpl in E.
-    destruct Hf as [->|[->|[->|[->|[->|[->|[->|[->| ->]]]]]]]]; try discriminate; injection E as -> ->; cbn.
-    + right; left. split_and!; [done|done|]. exists (pv 1 k), (pt_dual (pv 0 k)).
-      split_and!; [exists k; by left|left; apply geq_refl|by left].
-    + right; left. split_and!; [done|done|]. exists (pv 1 k), (pv 0 k).
-      split_and!; [exists k; by right; left|left; apply geq_refl|by left].
-    + right; right; left. split_and!; [done|done|]. exists (pv 0 k), (pt_dual (svv 1 k)).
-      split_and!; [exists k; by left|by left|left; apply geq_refl].
-    + right; right; left. split_and!; [done|done|]. exists (pv 0 k), (pt_dual (pv 1 (S k))).
-      split_and!; [exists k; by right; left|by left|left; apply geq_refl].
-    + right; right; left. split_and!; [done|done|]. exists (pt_dual (pv 0 k)), (pt_dual (svv 1 k)).
-      split_and!; [exists k; by right; right; left|by left|left; apply geq_refl].
-    + right; right; left. split_and!; [done|done|]. exists (pt_dual (pv 0 k)), (svv 1 k).
-      split_and!; [exists k; by right; right; right|by left|left; apply geq_refl].
-    + right; left. split_and!; [done|done|]. exists (pt_dual (svv 1 k)), (pv 0 (S k)).
-      split_and!; [exists k; by right; right; left|left; apply geq_refl|by left].
-    + right; left. split_and!; [done|done|]. exists (svv 1 k), (pv 0 (S k)).
-      split_and!; [exists k; by right; right; right|left; apply geq_refl|by left].
-Qed.
-
-Lemma se_hyp_fresh W Ψ C x u v :
-  (C, [x]) ∈ Ψ → bc_facts C (FEq u v) → fact_scoped (S (length (bc_env C))) (FEq u v) →
-  seqs W Ψ (pt_inst (plist (x :: bc_env C)) u) (pt_inst (plist (x :: bc_env C)) v).
-Proof.
-  intros Hin Hf Hs. apply se_h. exists C, [x]. split; [done|].
-  exists (fact_map (pt_inst (pup 1 (plist (bc_env C)))) (FEq u v)). split.
-  - exists (FEq u v). split_and!; [done|done|done].
-  - by rewrite open1_comp.
+  assert (pup 1 (plist [pvar 0]) 0 = pvar 0) as E0 by (unfold pup; by rewrite decide_True by lia).
+  assert (pup 1 (plist [pvar 0]) 1 = pvar 1) as E1 by (unfold pup; by rewrite decide_False by lia).
+  apply (cc_ok_out _ _ fwb_C (λ x y, fwb_rank x < fwb_rank y)).
+  - intros x y z; lia.
+  - intros x; lia.
+  - intros [n pb o] _. unfold fwb_rank, pt_shift. simpl. repeat case_match; lia.
+  - intros [n pb o] _. unfold fwb_rank, pt_shift, pt_dual. simpl. repeat case_match; lia.
+  - intros a b (f & (k & Hf) & _ & E). repeat destruct Hf as [Hf|Hf]; subst; discriminate.
+  - intros a b (f & (k & Hf) & _ & E). repeat destruct Hf as [Hf|Hf]; subst; cbn in E;
+      rewrite ?E0, ?E1 in E; injection E as -> ->; cbn;
+      first [left; split_and!; [done|done|unfold fwb_rank; cbn; lia]
+            |right; left; split; [discriminate|done]
+            |right; right; split; [done|discriminate]].
+  - intros u p q v (f & (k & Hf) & _ & E) (f' & (j & Hf') & _ & E') Hu Hp Hq Hv Hpq.
+    repeat destruct Hf as [Hf|Hf]; subst; cbn in E; rewrite ?E0, ?E1 in E; injection E as -> ->;
+      repeat destruct Hf' as [Hf'|Hf']; subst; cbn in E'; rewrite ?E0, ?E1 in E'; injection E' as -> ->;
+      cbn in Hu, Hp, Hq, Hv;
+      try discriminate Hp; try discriminate Hq;
+      try (exfalso; apply Hu; reflexivity); try (exfalso; apply Hv; reflexivity);
+      (destruct Hpq as [Epq|Hlt]; [try discriminate Epq; injection Epq as Epq|
+        unfold fwb_rank in Hlt; cbn in Hlt]);
+      first [apply (Hs k j false); lia|apply (Hd k j); lia
+            |eapply glt_trans; [apply (Ha2 k true)|];
+             first [apply (Hs (S k) j false); lia|apply (Hd (S k) j); lia]].
 Qed.
 
 Lemma fw_typed : styped ∅ [] [] (∅, None) fw_main TUnit.
@@ -409,20 +406,18 @@ Proof.
             slt W Ψ (pt_inst (plist [pvar 0; pv 1 0]) u) (pt_inst (plist [pvar 0; pv 1 0]) v)) as Hb.
   { intros u v Hf Hs. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) fwb_C) (pvar 0) u v);
       [by right; left|done|done]. }
-  assert (∀ k, seqs W Ψ (svv 1 k) (svv 0 k)) as Hbe.
-  { intros k. apply (se_hyp_fresh W Ψ (bcs_inst (pshift 1) fwb_C) (pvar 0) (svv 1 k) (svv 0 k));
-      [by right; left|exists k; by right; right; right; left|cbn; lia]. }
   assert (∀ u v, fpa_P (FLt u v) → fact_scoped 1 (FLt u v) →
             slt W Ψ (pt_inst (plist [pv 1 0]) u) (pt_inst (plist [pv 1 0]) v)) as Ha.
   { intros u v Hg Hs. eapply (sl_hyp0 _ _ _ _ u v); [by left|exact Hg|exact Hs|reflexivity|reflexivity]. }
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) fw_C [pv 1 0; pvar 0]) as HCf.
   { apply bcs_hold_intro. intros g (k & Hg) _.
-    destruct Hg as [-> | [-> | [-> | [-> | ->]]]]; cbn.
-    - apply (Hb (pv 1 k) (pt_dual (pv 0 k))); [exists k; by left|cbn; lia].
-    - apply (Hb (pv 1 k) (pv 0 k)); [exists k; by right; left|cbn; lia].
-    - apply (Hb (pv 0 k) (pt_dual (svv 0 k))); [exists k; by right; right; left|cbn; lia].
-    - apply Hbe.
-    - apply (Hb (pv 0 k) (pt_dual (pv 1 (S k)))); [exists k; by right; right; right; right; left|cbn; lia]. }
+    destruct Hg as [-> | [-> | [-> | [-> | [-> | ->]]]]]; cbn.
+    - apply (Hb (pv 1 k) (pt_dual (pv 0 k))); [fmem|cbn; lia].
+    - apply (Hb (pv 1 k) (pv 0 k)); [fmem|cbn; lia].
+    - apply (Hb (pv 0 k) (pt_dual (svv 0 k))); [fmem|cbn; lia].
+    - apply (Hb (pt_dual (svv 0 k)) (pt_dual (svv 1 k))); [fmem|cbn; lia].
+    - apply (Hb (svv 1 k) (svv 0 k)); [fmem|cbn; lia].
+    - apply (Hb (pv 0 k) (pt_dual (pv 1 (S k)))); [fmem|cbn; lia]. }
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) fp_C [pt_dual (pv 1 0)]) as HCa.
   { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn.
     - apply (Ha (pt_polar false (pv 0 k)) (pt_polar false (svv 0 k))); [exists k, false, false; by left|cbn; lia].
@@ -431,10 +426,10 @@ Proof.
     - apply (Ha (pt_polar true (svv 0 k)) (pv 0 (S k))); [exists k, true, true; by right|cbn; lia]. }
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) fp_C [pt_dual (pvar 0)]) as HCb.
   { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn.
-    - apply (Hb (pt_dual (pv 0 k)) (pt_dual (svv 0 k))); [exists k; do 5 right; by left|cbn; lia].
-    - apply (Hb (pt_dual (pv 0 k)) (svv 0 k)); [exists k; do 6 right; by left|cbn; lia].
-    - apply (Hb (pt_dual (svv 0 k)) (pv 0 (S k))); [exists k; do 7 right; by left|cbn; lia].
-    - apply (Hb (svv 0 k) (pv 0 (S k))); [exists k; by do 8 right|cbn; lia]. }
+    - apply (Hb (pt_dual (pv 0 k)) (pt_dual (svv 0 k))); [fmem|cbn; lia].
+    - apply (Hb (pt_dual (pv 0 k)) (svv 0 k)); [fmem|cbn; lia].
+    - apply (Hb (pt_dual (svv 0 k)) (pv 0 (S k))); [fmem|cbn; lia].
+    - apply (Hb (svv 0 k) (pv 0 (S k))); [fmem|cbn; lia]. }
   assert (Forall (skn W Ψ) [pv 1 0; pvar 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|].
     constructor; [eapply skn_inst; [by right; left|by left|done]|constructor]. }
