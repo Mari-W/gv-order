@@ -330,8 +330,8 @@ Definition LPstep (X : world → senv → ty → proc → Prop) (n : nat)
     (¬ pirred p → ready_p W1 Σ p) ∧
     (∀ p', padmin p p' → p'.1 ## dom Σ →
        ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧ X W' Σ T p') ∧
-    (∀ p', pcomm p p' → Ptau_case (LPrel (pred n)) W1 Σ T p') ∧
-    (∀ p', ptau_link p p' → Ptau_case (LPrel n) W1 Σ T p') ∧
+    (∀ p', pcomm p p' → LPtau_case (LPrel (pred n)) W1 Σ T p') ∧
+    (∀ p', ptau_link p p' → LPtau_case (LPrel n) W1 Σ T p') ∧
     (∀ σ p', proc_step p (PSess σ) p' → LPobl LVrel LPrel (S n) W1 Σ T p σ p').
 
 Lemma Pbody_LPstep n VT T (X : world → senv → proc → Prop)
@@ -344,9 +344,9 @@ Proof.
   split_and!; [| done | | | | ].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. split_and!; auto.
   - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
-  - intros p' Hst. eapply Ptau_case_mono; [|by apply Hc].
+  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (lvP_llevels (S n)) in Hx; [done|simpl; lia].
-  - intros p' Hst. eapply Ptau_case_mono; [|by apply Hl].
+  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hl].
     intros ? ? ? Hx. apply (lvP_llevels (S n)) in Hx; [done|simpl; lia].
   - intros σ p' Hst. eapply LPobl_mono; [..|exact (Hσ σ p' Hst)].
     + intros j Hj ? ? ? ?. apply lvV_llevels. simpl in Hj. lia.
@@ -363,9 +363,9 @@ Proof.
   split_and!; [| done | | | | ].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. split_and!; auto.
   - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
-  - intros p' Hst. eapply Ptau_case_mono; [|by apply Hc].
+  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (lvP_llevels (S n)); [simpl; lia|done].
-  - intros p' Hst. eapply Ptau_case_mono; [|by apply Hl].
+  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hl].
     intros ? ? ? Hx. apply (lvP_llevels (S n)); [simpl; lia|done].
   - intros σ p' Hst. eapply LPobl_mono; [..|exact (Hσ σ p' Hst)].
     + intros j Hj ? ? ? ?. symmetry. apply lvV_llevels. simpl in Hj. lia.
@@ -515,9 +515,9 @@ Proof.
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & HV & ?). exists v, E.
     split_and!; [done|done| |done]. eapply LVrel_down; [|exact HV]. lia.
   - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & _ & HX). eauto.
-  - intros p' Hst. eapply Ptau_case_mono; [|by apply Hc].
+  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (IHn (pred n')); [lia|lia|exact Hx].
-  - intros p' Hst. eapply Ptau_case_mono; [|by apply Hl].
+  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hl].
     intros ? ? ? Hx. apply (IHn n'); [lia|lia|]. exact Hx.
   - intros σ p' Hst. eapply LPobl_lower; [..|exact (Hσ σ p' Hst)]; [lia| |].
     + intros. eapply LVrel_down; [|done]. simpl. lia.

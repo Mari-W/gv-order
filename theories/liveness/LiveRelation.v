@@ -226,6 +226,14 @@ Inductive Eind (below : nat → llevel) (n : nat) :
   | EIntro VT T W Θ F e :
       Ebody below n (Eind below n) VT T W Θ F e → Eind below n VT T W Θ F e.
 
+(** A process τ that may create channels: for every finite set L of
+    names, the world grows by a fresh extension placing names outside L
+    (cofinite, liveness.md §3). *)
+Definition LPtau_case (X : world → senv → ty → proc → Prop)
+    (W : world) (Σ : senv) (T : ty) (p' : proc) : Prop :=
+  p'.1 ## dom Σ → ∀ L : gset pname,
+    ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧ X W' Σ T p'.
+
 (** ** The process relation at level n *)
 Definition Pbody (below : nat → llevel) (n : nat)
     (VT : world → tenv → expr → Prop) (T : ty)
@@ -238,9 +246,9 @@ Definition Pbody (below : nat → llevel) (n : nat)
     (∀ p', padmin p p' → p'.1 ## dom Σ →                           (* Q-Admin *)
        ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧ X W' Σ p') ∧
     (∀ p', pcomm p p' →                                            (* Q-Comm *)
-       Ptau_case (lvP (below (pred (pred n)))) W1 Σ T p') ∧
+       LPtau_case (lvP (below (pred (pred n)))) W1 Σ T p') ∧
     (∀ p', ptau_link p p' →                                        (* Q-Link-τ *)
-       Ptau_case (lvP (below (pred n))) W1 Σ T p') ∧
+       LPtau_case (lvP (below (pred n))) W1 Σ T p') ∧
     (∀ σ p', proc_step p (PSess σ) p' →                             (* Q-σ *)
        LPobl (λ j, lvV (below j)) (λ j, lvP (below j)) n W1 Σ T p σ p').
 
@@ -473,9 +481,9 @@ Proof.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; try done. by apply HE.
 Qed.
 
-Lemma Ptau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
-  (∀ W Σ T, X W Σ T p' → Y W Σ T p') → Ptau_case X W Σ T p' → Ptau_case Y W Σ T p'.
-Proof. intros HXY H Hd. destruct (H Hd) as (N & W' & ? & ? & ?). exists N, W'. split_and!; [done|done|by apply HXY]. Qed.
+Lemma LPtau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
+  (∀ W Σ T, X W Σ T p' → Y W Σ T p') → LPtau_case X W Σ T p' → LPtau_case Y W Σ T p'.
+Proof. intros HXY H Hd L. destruct (H Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; [done|done|by apply HXY]. Qed.
 
 Lemma LPobl_mono Vl1 Vl2 Pl1 Pl2 n W Σ T p σ p' :
   (∀ j, j ≤ pred n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →

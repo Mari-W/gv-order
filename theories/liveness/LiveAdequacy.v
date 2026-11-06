@@ -24,9 +24,9 @@ Proof.
   apply ptau_classify in Hst as [Ha|[Hc|Hl]].
   - destruct (HA p' Ha (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
     exists W'. eapply LPrel_down; [|exact HP']. lia.
-  - destruct (HC p' Hc (disjoint_dom_empty _)) as (N & W' & _ & _ & HP').
+  - destruct (HC p' Hc (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
     exists W'. exact HP'.
-  - destruct (HL p' Hl (disjoint_dom_empty _)) as (N & W' & _ & _ & HP').
+  - destruct (HL p' Hl (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
     exists W'. eapply LPrel_down; [|exact HP']. lia.
 Qed.
 
