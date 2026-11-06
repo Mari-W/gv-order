@@ -7,7 +7,7 @@
     below the current index only ([LErel_bind_guarded]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export liveness.LiveTermRules liveness.Guard.
+From LRGV Require Export liveness.LiveTermRules liveness.GuardMarks.
 
 Set Default Proof Using "All".
 Local Set Warnings "-register-all".
@@ -151,11 +151,6 @@ Qed.
 Definition later_val (n : nat) (W : world) (lam : bool) (T : ty) (v : expr) : Prop :=
   (∀ j W2, j < n → wext_r W W2 → LVrel j W2 ∅ T v) ∧ (lam = true → ∃ b, v = EBox (Lam b)).
 
-Definition lmark : Type := nat → option bool.
-
-(** No variable is later. *)
-Definition noL : lmark := λ _, None.
-
 Fixpoint lgroundingL (n : nat) (W : world) (Θ : tenv) (Δ : lenv) (Lm : lmark)
     (γ : nat → expr) : Prop :=
   match Δ with
@@ -259,8 +254,6 @@ Qed.
 
     The self is the variable 0 of the body. When the body is a λ, the
     later hypothesis also says that the self is a box around a λ. *)
-
-Definition is_lam (e : expr) : bool := match e with Lam _ => true | _ => false end.
 
 Lemma is_lam_subst σ e : is_lam e = true → ∃ b, subst σ e = Lam b.
 Proof. destruct e; try done. intros _. simpl. eauto. Qed.
