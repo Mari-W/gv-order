@@ -870,9 +870,11 @@ Qed.
 
 Theorem fundamental_proc W Σ p T : ptyped W Σ p T → strict W → sem_ptyped W Σ p T.
 Proof.
-  induction 1 as [Σ ΘB C0 t T HT Hd Hdj Hb Hdu Ht
-                 |Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T H1 IH1 H2 IH2 HdC HdC' Hcut
-                    ? ? ? ? ? ? ? ? ? ?]; intros HW.
+  induction 1 as [W Σ ΘB C0 t T HT Hd Hdj Hb Hdu Ht
+                 |W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T H1 IH1 H2 IH2 HdC HdC' Hcut
+                    ? ? ? ? ? ? ? ? ? ?
+                 |W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T H1 IH1 H2 IH2 HdC HdC' Hcut
+                    ? ? ? ? ? ? ? ? ? ? HW1 HW2 HJ]; intros HW.
   - apply (Prel_term W Σ ΘB C0); try done. by apply fundamental.
   - assert (strict (wjoin W W)) as HWW by (by apply wjoin_sub_strict, wext_refl).
     intros n. eapply Prel_mono; [apply HWW|by apply wext_join_self|].
@@ -884,6 +886,35 @@ Proof.
       split; [by apply wjoin_l|done].
     + apply HW.
     + apply HW.
+  - (* P-Join: each component is strict inside the strict join *)
+    assert (strict W1) as HS1.
+    { split; [done|]. intros x Hx. apply (proj2 HJ x), (proj2 (wjoin_l W1 W2)), Hx. }
+    assert (strict W2) as HS2.
+    { split; [done|]. intros x Hx. apply (proj2 HJ x), (proj2 (wjoin_r W1 W2)), Hx. }
+    apply (Prel_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T); try done.
+    + exact (ptyped_prim _ _ _ _ H1).
+    + by apply IH1.
+    + by apply IH2.
+Qed.
+
+(** P-Join with the side condition read on the shared names only. *)
+Corollary fundamental_join W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :
+  ptyped W1 (Σ1 ∪ ΣC) (C1, E1) T → ptyped W2 (Σ2 ∪ ΣC') (C2, E2) TUnit →
+  dom ΣC = C0 → dom ΣC' = C0 →
+  (∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' →
+     w_eq (wjoin W1 W2) e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1) →
+  C1 ## dom Σ2 → C2 ## dom Σ1 →
+  Σ1 ##ₘ ΣC → Σ2 ##ₘ ΣC' → Σ1 ##ₘ Σ2 →
+  C1 ## dom Σ1 → C2 ## dom Σ2 → C1 ## C0 → C2 ## C0 → C1 ## C2 →
+  strict W1 → strict W2 →
+  strict (wjoin (wrestrict W1 (w_names W1 ∩ w_names W2))
+                (wrestrict W2 (w_names W1 ∩ w_names W2))) →
+  sem_ptyped (wjoin W1 W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ C0, E1 ⊎ E2) T.
+Proof.
+  intros ??????????????? HS1 HS2 HA.
+  assert (strict (wjoin W1 W2)) as HJ by (by apply amalgamation).
+  apply fundamental_proc; [|done].
+  eapply pt_join; try done; [apply HS1|apply HS2].
 Qed.
 
 (** ** Soundness: typed closed configurations are deadlock free *)

@@ -151,22 +151,36 @@ Qed.
     P-Term and P-Connect of §9. The side conditions are the implicit
     well-formedness of the spec: Θ_B holds both ends, dual at aliased
     points, of exactly the channels of C₀; the unions C₁ ⊍ C₂ ⊍ C₀ and
-    Σ₁, Σ₂, Σ_C are disjoint; the cut ends are dual at aliased points. *)
+    Σ₁, Σ₂, Σ_C are disjoint; the cut ends are dual at aliased points.
 
-Inductive ptyped (W : world) : senv → proc → ty → Prop :=
-  | pt_term Σ ΘB C0 t T :                               (* P-Term *)
+    P-Join is P-Connect for two components typed at their own worlds.
+    It asks the join of the two worlds to be strict, which [amalgamation]
+    reduces to the names both worlds share. *)
+
+Inductive ptyped : world → senv → proc → ty → Prop :=
+  | pt_term W Σ ΘB C0 t T :                             (* P-Term *)
       prim T → dom ΘB = C0 → dom Σ ## C0 →
       (∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2) → tenv_dual (w_eq W) ΘB →
       typed W ∅ [] (tenv_of Σ ∪ ΘB) [] (∅, None) t T →
       ptyped W Σ (C0, {[+ t +]}) T
-  | pt_connect Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :         (* P-Connect *)
+  | pt_connect W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :       (* P-Connect *)
       ptyped W (Σ1 ∪ ΣC) (C1, E1) T → ptyped W (Σ2 ∪ ΣC') (C2, E2) TUnit →
       dom ΣC = C0 → dom ΣC' = C0 →
       (∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' → w_eq W e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1) →
       C1 ## dom Σ2 → C2 ## dom Σ1 →
       Σ1 ##ₘ ΣC → Σ2 ##ₘ ΣC' → Σ1 ##ₘ Σ2 →
       C1 ## dom Σ1 → C2 ## dom Σ2 → C1 ## C0 → C2 ## C0 → C1 ## C2 →
-      ptyped W (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ C0, E1 ⊎ E2) T.
+      ptyped W (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ C0, E1 ⊎ E2) T
+  | pt_join W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :      (* P-Join *)
+      ptyped W1 (Σ1 ∪ ΣC) (C1, E1) T → ptyped W2 (Σ2 ∪ ΣC') (C2, E2) TUnit →
+      dom ΣC = C0 → dom ΣC' = C0 →
+      (∀ c e e', ΣC !! c = Some e → ΣC' !! c = Some e' →
+         w_eq (wjoin W1 W2) e.2 (pt_dual e'.2) ∧ sdual e.1 e'.1) →
+      C1 ## dom Σ2 → C2 ## dom Σ1 →
+      Σ1 ##ₘ ΣC → Σ2 ##ₘ ΣC' → Σ1 ##ₘ Σ2 →
+      C1 ## dom Σ1 → C2 ## dom Σ2 → C1 ## C0 → C2 ## C0 → C1 ## C2 →
+      world_wf W1 → world_wf W2 → strict (wjoin W1 W2) →
+      ptyped (wjoin W1 W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ C0, E1 ⊎ E2) T.
 
 Lemma ptyped_prim W Σ p T : ptyped W Σ p T → prim T.
 Proof. induction 1; auto. Qed.
