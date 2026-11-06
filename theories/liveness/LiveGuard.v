@@ -400,3 +400,32 @@ Proof.
     + apply (He2 j W'' Θ'2 B γ); [by eapply wext_trans|done|].
       eapply lgrounding_mono; [exact HW''|]. apply (lgroundingL_lower (S n') j _ _ _ _ _ _ Hj Hg2).
 Qed.
+
+(** ** Dropping the later variable *)
+
+Lemma lgroundingL_drop n W Θ Δ x lam γ :
+  lgroundingL n W Θ Δ (Some x) lam γ → lgrounding n W Θ (<[x := None]> Δ) γ.
+Proof.
+  revert Θ x γ. induction Δ as [|o Δ IH]; intros Θ x γ Hg; [done|].
+  destruct x as [|x]; simpl in *.
+  - destruct o as [T|]; simpl in *.
+    + destruct Hg as (_ & _ & Hg). exact (proj1 (lgroundingL_none _ _ _ _ _ _) Hg).
+    + exact (proj1 (lgroundingL_none _ _ _ _ _ _) Hg).
+  - destruct o as [T|]; simpl in *.
+    + destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg). exists Θ1, Θ2. split_and!; [done|done|by apply IH].
+    + by apply IH.
+Qed.
+
+(** A term that does not use the later variable: the judgment without it. *)
+Lemma lsem_later_drop W Θ Δ x lam F e T :
+  lsem_typed W Θ (<[x := None]> Δ) F e T → lsem_later W Θ Δ (Some x) lam F e T.
+Proof.
+  intros He n W' Θ' Θ'' γ HW Hc Hg. apply (He n W' Θ' Θ'' γ HW Hc). by eapply lgroundingL_drop.
+Qed.
+
+(** A judgment without later variable gives one with it, read now. *)
+Lemma lsem_later_now W Θ Δ lam F e T :
+  lsem_typed W Θ Δ F e T ↔ lsem_later W Θ Δ None lam F e T.
+Proof.
+  split; intros He n W' Θ' Θ'' γ HW Hc Hg; apply (He n W' Θ' Θ'' γ HW Hc); by apply lgroundingL_none in Hg || apply lgroundingL_none.
+Qed.
