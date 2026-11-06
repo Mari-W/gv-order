@@ -9,6 +9,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export rules.BoxRules.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** E at T gives E at T′ when every later value at T is a value at T′. *)

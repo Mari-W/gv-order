@@ -8,6 +8,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export rules.SemanticRules.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** ** Static futures and hypotheses (sharp edges 54, 56)
@@ -287,20 +291,13 @@ Proof.
   refine (proj2 (fl_map (FCtx W [] ∅) (w_eq W)
     (λ a b, match a, b with NP x, NP y => w_lt W x y | _, _ => True end) id id
     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); clear H; unfold id; simpl; try done.
-  - apply (wf_eq_refl _ HW).
-  - apply (wf_eq_sym _ HW).
-  - apply (wf_eq_trans _ HW).
-  - apply (wf_eq_shift _ HW).
-  - apply (wf_eq_payload _ HW).
-  - intros ? ? (? & ? & H & _). by apply elem_of_nil in H.
-  - intros x0 x' [] Hx H; [|done].
-    eapply (wf_lt_eq _ HW); [exact Hx|exact H|apply (wf_eq_refl _ HW)].
-  - intros [] y0 y' H Hy; [|done].
-    eapply (wf_lt_eq _ HW); [apply (wf_eq_refl _ HW)|exact H|exact Hy].
-  - intros [] y0 []; try done. apply (wf_lt_trans _ HW).
-  - intros x0. apply (wf_lt_po _ HW).
-  - apply (wf_eq_dual _ HW).
-  - intros x0. apply (wf_lt_dpo _ HW).
+  all: try (intros; subst; done).
+  all: try (intros ? ? (? & ? & H & _); by apply elem_of_nil in H).
+  all: try (intros x0 x' [] Hx H; [|done]; by subst).
+  all: try (intros [] y0 y' H Hy; [|done]; by subst).
+  all: try (intros [] y0 []; try done; apply (wf_lt_trans _ HW)).
+  all: try (intros x0; apply (wf_lt_po _ HW)).
+  all: try (intros x0; apply (wf_lt_dpo _ HW)).
 Qed.
 
 

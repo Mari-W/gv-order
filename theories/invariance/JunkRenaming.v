@@ -9,6 +9,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.ReadyChain invariance.ChannelRenaming.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** ** Substitution on channels, labels, and label sets *)
 
 Definition csub (x b c : chan) : chan := if decide (c = x) then b else c.
@@ -996,7 +1000,7 @@ Section move2.
           by apply Hdd.
         * rewrite A1, A2 in Jc. rewrite B1, B2 in Jd. inversion Jc. inversion Jd.
           destruct (Hdd e2 e1) as [Hx Hs]; [done|done|]. split.
-          -- by apply wf_eq_dual_sym.
+          -- by apply eq_dual_sym.
           -- by apply sdual_sym.
         * by apply (Hdu d).
   Qed.
@@ -2108,13 +2112,13 @@ Proof.
          ltac:(unfold tenv_entry; simpl; by rewrite Hd)
          ltac:(intros Ho; apply Hsame in Ho; simpl in Ho; congruence)) as Hlt;
        unfold entry_head in Hlt; simpl in Hlt;
-       apply (Hirr e1.2); eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|by apply (wf_eq_sym _ HWf)])
+       apply (Hirr e1.2); eapply (wf_lt_eq _ HWf); [reflexivity|exact Hlt|by apply (wf_eq_sym _ HWf)])
     | (pose proof (proj1 (Ha _ _ Hk0 ltac:(unfold tenv_entry; simpl; by rewrite Hd)) (c, false) e1
          ltac:(unfold tenv_entry; simpl; by rewrite Hc)
          ltac:(intros Ho; apply Hsame in Ho; simpl in Ho; congruence)) as Hlt;
        unfold entry_head in Hlt; simpl in Hlt;
        apply (Hirr e2.2); eapply (wf_lt_eq _ HWf);
-         [apply HWf|exact Hlt|apply (wf_eq_sym _ HWf); by apply wf_eq_dual_sym]) ].
+         [reflexivity|exact Hlt|apply (wf_eq_sym _ HWf); by apply eq_dual_sym]) ].
 Qed.
 
 (** ** Junk collapse for terms *)
@@ -2523,7 +2527,7 @@ Section fused_offers.
       simpl in Hsel. destruct Hsel as [Hk _]. rewrite Hκ1 in Hk.
       unfold gsub in Hk. apply elem_of_map in Hk as (z & Hz & Hzin).
       destruct (decide (k.1 ∈ cd)) as [Hin|Hnin].
-      { exists k, e'. split_and!; [|done|apply HWf].
+      { exists k, e'. split_and!; [|done|reflexivity].
         exists (SLink cd), f. split; [done|]. split; [done|by eexists]. }
       (* z and k.1 are c and d, so the move fuses them *)
       assert (z ∈ dom Θ) as HzΘ by (by apply (Hsub _ _ Hf)).
@@ -2553,7 +2557,7 @@ Section fused_offers.
         pose proof (proj1 (Hbr (c, false) e1 Hoc ltac:(unfold tenv_entry; simpl; by rewrite Hc))
                       (d, false) e2 ltac:(unfold tenv_entry; simpl; by rewrite Hd) (Hnoff d Hdn)) as Hlt.
         unfold entry_head in Hlt; simpl in Hlt.
-        apply (Hirr e1.2). eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|by apply (wf_eq_sym _ HWf)].
+        apply (Hirr e1.2). eapply (wf_lt_eq _ HWf); [reflexivity|exact Hlt|by apply (wf_eq_sym _ HWf)].
       + assert (d ∈ cd) as Hdin by naive_solver.
         assert (offered_t Θ e (d, false)) as Hod.
         { exists (SLink cd), f. split; [done|]. split; [done|]. unfold tenv_entry; simpl. rewrite Hd. by eexists. }
@@ -2561,7 +2565,7 @@ Section fused_offers.
                       (c, false) e1 ltac:(unfold tenv_entry; simpl; by rewrite Hc) (Hnoff c Hcin)) as Hlt.
         unfold entry_head in Hlt; simpl in Hlt.
         apply (Hirr e2.2). eapply (wf_lt_eq _ HWf);
-          [apply HWf|exact Hlt|apply (wf_eq_sym _ HWf); by apply wf_eq_dual_sym]. }
+          [reflexivity|exact Hlt|apply (wf_eq_sym _ HWf); by apply eq_dual_sym]. }
     all: pose proof (selects_subj _ _ _ Hsel) as Hk.
       all: rewrite (ssub_rel_subjs _ _ _ _ Hr), Hκ1 in Hk; simpl in Hk; unfold gsub in Hk;
         rewrite set_map_singleton_L in Hk; apply elem_of_singleton in Hk.
@@ -2573,7 +2577,7 @@ Section fused_offers.
                 rewrite Hk1 in HkΘ; rewrite Hy in Hc0Θ, Hok;
                 assert (fused c d Θ) as Hfu by (by apply (move_fused W c d Θ Θ' Hm));
                 destruct (move_ok_fused c d Θ _ Hok Hfu); congruence).
-      all: exists k, e'; split_and!; [|done|apply HWf].
+      all: exists k, e'; split_and!; [|done|reflexivity].
       all: eexists _, f; split; [exact Hf|].
       all: rewrite Hκ5 in Hsel by (rewrite Hk0; exact (move_ok_fused c d Θ c0 Hok)).
       all: apply (selects_move c d Θ Θ' _ _ k Hr); [intros ? [=]|simpl; rewrite Hk0; set_solver| |exact Hsel].
@@ -2700,9 +2704,9 @@ Proof.
       * intros k2 e2 He2 Hn2. destruct (Hκ4 k2 e2 He2) as (k3 & <- & He3).
         assert (¬ offered_t Θ e k3) as Hn3 by (intros Ho3; apply Hn2; by apply Hfwd).
         pose proof (H1 k3 e2 He3 Hn3) as Hlt. unfold entry_head in *.
-        eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf].
+        eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|reflexivity].
       * intros y Hy. pose proof (H2 y Hy) as Hlt. unfold entry_head in *.
-        eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf].
+        eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|reflexivity].
   - intros α f' Hst. destruct α as [|[c' w'|c' w'|c'|cd'|c' i'|c' i']|c'|w'].
     + (* β *)
       apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].

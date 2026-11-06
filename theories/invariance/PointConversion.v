@@ -9,33 +9,33 @@
 From stdpp Require Import base tactics gmap.
 From LRGV Require Export invariance.Monotonicity.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** ** Types up to aliases *)
 
 Section teqW.
   Context (W : world) (HW : world_wf W).
 
   Lemma pteqW_eq x y : pteqW W x y → w_eq W x y.
-  Proof. intros [->|(_ & _ & H)]; [apply HW|done]. Qed.
+  Proof. intros [->|(_ & _ & H)]; [apply (wf_eq_refl _ HW)|done]. Qed.
 
   Lemma pteqW_refl x : pteqW W x x.
   Proof. by left. Qed.
 
   Lemma pteqW_sym x y : pteqW W x y → pteqW W y x.
-  Proof. intros [->|(? & ? & ?)]; [by left|right; split_and!; auto using wf_eq_sym]. Qed.
+  Proof. pose proof HW as _. intros [->|(? & ? & ->)]; by left. Qed.
 
   Lemma pteqW_trans x y z : pteqW W x y → pteqW W y z → pteqW W x z.
   Proof.
-    intros [->|(? & ? & ?)] [->|(? & ? & ?)]; [by left|by right..|].
-    right. split_and!; [done|done|]. by eapply wf_eq_trans.
+    pose proof HW as _. intros [->|(? & ? & ->)] [->|(? & ? & ->)]; by left.
   Qed.
 
   (** In a well-formed world only ground points have proper aliases. *)
   Lemma w_eq_pteqW x y : w_eq W x y → pteqW W x y.
   Proof.
-    intros H. destruct (wf_eq_supp _ HW x y H) as [->|[Hx Hy]]; [by left|right].
-    destruct (wf_names_const _ HW _ Hx) as [a Ha].
-    destruct (wf_names_const _ HW _ Hy) as [b Hb].
-    split_and!; [by exists a|by exists b|done].
+    pose proof HW as _. intros ->. by left.
   Qed.
 
   Lemma opt_rel_refl o : opt_rel (pteqW W) o o.
@@ -148,17 +148,17 @@ Section teqW.
 
   Lemma pteqW_shift n x y : pteqW W x y → pteqW W (pt_shift n x) (pt_shift n y).
   Proof.
-    intros H. apply w_eq_pteqW. apply wf_eq_shift_n; [done|]. by apply pteqW_eq.
+    intros H. apply pteqW_eq in H. rewrite H. apply pteqW_refl.
   Qed.
 
   Lemma pteqW_payload x y i : pteqW W x y → pteqW W (pt_payload x i) (pt_payload y i).
   Proof.
-    intros H. apply w_eq_pteqW. apply (wf_eq_payload _ HW). by apply pteqW_eq.
+    intros H. apply pteqW_eq in H. rewrite H. apply pteqW_refl.
   Qed.
 
   Lemma pteqW_dual x y : pteqW W x y → pteqW W (pt_dual x) (pt_dual y).
   Proof.
-    intros H. apply w_eq_pteqW. apply (wf_eq_dual _ HW). by apply pteqW_eq.
+    intros H. apply pteqW_eq in H. rewrite H. apply pteqW_refl.
   Qed.
 
   Lemma pteqW_polar b x y : pteqW W x y → pteqW W (pt_polar b x) (pt_polar b y).
@@ -278,7 +278,7 @@ Proof.
   intros Hb y Hy. apply pteqW_eq in Hr; [|done].
   destruct (Hb y Hy) as [He|Hl]; [left|right].
   - eapply (wf_eq_trans _ HW); [|exact He]. by apply (wf_eq_sym _ HW).
-  - eapply (wf_lt_eq _ HW); [| exact Hl|apply HW]. by apply (wf_eq_sym _ HW).
+  - eapply (wf_lt_eq _ HW); [| exact Hl|reflexivity]. by apply (wf_eq_sym _ HW).
 Qed.
 
 Lemma lbx_below_conv W lb lb' H f :
@@ -288,7 +288,7 @@ Proof.
   intros [Hb ->]. split; [|done]. intros y Hy. apply pteqW_eq in Hr; [|done].
   destruct (Hb y Hy) as [He|Hl]; [left|right].
   - eapply (wf_eq_trans _ HW); [|exact He]. by apply (wf_eq_sym _ HW).
-  - eapply (wf_lt_eq _ HW); [| exact Hl|apply HW]. by apply (wf_eq_sym _ HW).
+  - eapply (wf_lt_eq _ HW); [| exact Hl|reflexivity]. by apply (wf_eq_sym _ HW).
 Qed.
 
 Lemma ub_below_conv W ub ub' F :
@@ -296,7 +296,7 @@ Lemma ub_below_conv W ub ub' F :
 Proof.
   intros HW Hr. destruct ub as [x|], ub' as [x'|]; simpl in *; try done.
   intros Hb y Hy. apply pteqW_eq in Hr; [|done].
-  eapply (wf_lt_eq _ HW); [|apply Hb, Hy|apply HW]. by apply (wf_eq_sym _ HW).
+  eapply (wf_lt_eq _ HW); [|apply Hb, Hy|reflexivity]. by apply (wf_eq_sym _ HW).
 Qed.
 
 Lemma wext_wf W W' : wext W W' → world_wf W'.
@@ -354,8 +354,7 @@ Proof.
           intros. by eapply wext_eq.
         * eapply ub_below_conv; [done| |exact Hub].
           apply opt_rel_sym; [done|]. destruct ub, ub'; simpl in *; try done.
-          destruct Hu as [->|(? & ? & ?)]; [by left|right; split_and!; auto].
-          by eapply wext_eq.
+          all: destruct Hu as [->|(? & ? & ->)]; by left.
       + apply Vrel_lolli_iff. right. exists k, T0. split_and!; [done|done|done|].
         eapply teqW_trans; [done|exact Ht|]. simpl. by split_and!. }
   assert (∀ W Θ T T' eb, world_wf W → teqW W T T' →
@@ -395,7 +394,7 @@ Proof.
       apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hk).
       apply Vrel_sess_iff. exists c, s0, k. split_and!; [done|done| |].
       + by eapply seq_trans.
-      + eapply (wf_eq_trans _ HW); [exact Hk|]. by apply pteqW_eq.
+      + eapply (wf_eq_trans _ HW); [exact Hk|]. by apply (pteqW_eq W HW).
     - destruct Ht as (Hl & <- & HC & Ht).
       apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HCx & H)].
       apply Vrel_ex_iff. split; [by eapply lbx_below_conv|]. exists xs. split_and!; [done..| |].
@@ -513,7 +512,7 @@ Lemma sem_typed_tconv W Θ Δ F e T T' :
   teqW W T T' → sem_typed W Θ Δ F e T → sem_typed W Θ Δ F e T'.
 Proof.
   intros Ht He n W' Θ' Θ'' γ HW Hd Hg. eapply Erel_tconv; [apply HW| |by apply (He n W' Θ')].
-  eapply teqW_mono; [|exact Ht]. intros x y. by apply wext_eq.
+  eapply teqW_mono; [|exact Ht]. intros x y Hxy. done.
 Qed.
 
 (** A payload typed at P[x] is typed at P[y] for every alias y of x. *)
@@ -572,7 +571,7 @@ Section tconv.
   Context (W : world) (HW : world_wf W).
 
   Lemma entry_conv_refl e : entry_conv W e e.
-  Proof. split; [apply seq_refl|apply HW]. Qed.
+  Proof. pose proof HW as _. split; [apply seq_refl|reflexivity]. Qed.
 
   Lemma entry_conv_sym e e' : entry_conv W e e' → entry_conv W e' e.
   Proof. intros [? ?]. split; [by apply seq_sym|by apply (wf_eq_sym _ HW)]. Qed.
@@ -908,7 +907,7 @@ Proof.
       - intros y' Hy'. destruct (tconv_heads W HW Θ Θ' y' Hc Hy') as (y & Hy & Hyy).
         destruct (Hlb y Hy) as [He|Hl]; [left|right].
         + by eapply (wf_eq_trans _ HW).
-        + eapply (wf_lt_eq _ HW); [apply HW|exact Hl|exact Hyy].
+        + eapply (wf_lt_eq _ HW); [reflexivity|exact Hl|exact Hyy].
       - apply set_eq. intros y'. split; [|set_solver]. intros Hy'.
         destruct (tconv_heads W HW Θ Θ' y' Hc Hy') as (y & Hy & _). set_solver. }
     assert (∀ Θ Θ' lb, world_wf W → tconv W Θ Θ' → lbx_below W lb (tenv_heads Θ) false →
@@ -929,7 +928,7 @@ Proof.
           -- intros y' Hy'. destruct (tconv_heads W HW Θ Θ' y' Hc Hy') as (y & Hy & Hyy).
              destruct (Hlb y Hy) as [He|Hl]; [left|right].
              ++ by eapply (wf_eq_trans _ HW).
-             ++ eapply (wf_lt_eq _ HW); [apply HW|exact Hl|exact Hyy].
+             ++ eapply (wf_lt_eq _ HW); [reflexivity|exact Hl|exact Hyy].
           -- apply set_eq. intros y'. split; [|set_solver]. intros Hy'.
              destruct (tconv_heads W HW Θ Θ' y' Hc Hy') as (y & Hy & _). set_solver.
         * intros W' j Θa Θ'' w F HW' Hj Hcomp HVw Hub.
@@ -1221,7 +1220,7 @@ Lemma sconv_mono W W' Σ Σ' :
   (∀ x y, w_eq W x y → w_eq W' x y) → sconv W Σ Σ' → sconv W' Σ Σ'.
 Proof.
   intros Hm H c. specialize (H c). destruct (Σ !! c), (Σ' !! c); try done.
-  destruct H. split; auto.
+  all: destruct H; split; auto.
 Qed.
 
 Lemma tconv_union W Θ1 Θ1' Θ2 Θ2' :

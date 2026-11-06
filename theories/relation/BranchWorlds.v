@@ -28,6 +28,10 @@
 From stdpp Require Import base gmap.
 From LRGV Require Export relation.Worlds relation.Creation.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** ** Pending choices *)
@@ -58,7 +62,7 @@ Lemma at_choice_wf W P ch :
 Proof.
   intros HW HP. apply wgen_wf.
   - apply HW.
-  - apply HW.
+  - intros x y ->. by left.
   - intros x y [H|(i & c & b & Hi & _ & Hs)].
     + by apply HW.
     + right. by eapply HP.
@@ -67,8 +71,8 @@ Qed.
 Lemma at_choice_names W P ch : w_names (at_choice W P ch) = w_names W.
 Proof. done. Qed.
 
-Lemma at_choice_eq W P ch x y : w_eq W x y → w_eq (at_choice W P ch) x y.
-Proof. intros H. by apply geq_base. Qed.
+Lemma at_choice_eq W (P : list pchoice) (ch : list bool) x y : w_eq W x y → w_eq (at_choice W P ch) x y.
+Proof. done. Qed.
 
 Lemma at_choice_lt W P ch x y : w_lt W x y → w_lt (at_choice W P ch) x y.
 Proof. intros H. apply glt_base. by left. Qed.
@@ -88,10 +92,10 @@ Lemma wgen_into N E L W :
   ∀ x y, w_lt (wgen N E L) x y → w_lt W x y.
 Proof. intros HW HE HL. apply (wgen_in_world W E L HW HE HL). Qed.
 
-Lemma wgen_into_eq N E L W :
+Lemma wgen_into_eq (N : gset pname) (E L : prel) W :
   world_wf W → (∀ x y, E x y → w_eq W x y) → (∀ x y, L x y → w_lt W x y) →
   ∀ x y, w_eq (wgen N E L) x y → w_eq W x y.
-Proof. intros HW HE HL. apply (wgen_in_world W E L HW HE HL). Qed.
+Proof. intros HW HE HL x y H. exact H. Qed.
 
 (** ** Resolving a choice
 
@@ -135,7 +139,7 @@ Qed.
 Lemma resolve_wf W P i b :
   world_wf W → supported (w_names W) P → world_wf (resolve W P i b).
 Proof.
-  intros HW HP. apply wgen_wf; [apply HW|apply HW|].
+  intros HW HP. apply wgen_wf; [apply HW|intros x y ->; by left|].
   intros x y [H|(c & Hi & Hs)]; [by apply HW|right; by eapply HP].
 Qed.
 
@@ -149,12 +153,9 @@ Proof.
   set (Wt := at_choice W P (<[i := b]> ch)).
   assert (world_wf Wt) as HWt by (by apply at_choice_wf).
   assert (∀ x y, w_eq (resolve W P i b) x y → w_eq Wt x y) as Heq.
-  { apply (wgen_into_eq _ _ _ Wt HWt); [apply at_choice_eq|].
-    intros x y [H|(c & Hi & Hs)]; [by apply at_choice_lt|].
-    apply at_choice_pick. exists i, c, b. split_and!; [done| |done].
-    by apply list_lookup_insert_eq. }
+  { by intros x y ->. }
   assert (∀ x y, w_lt (resolve W P i b) x y → w_lt Wt x y) as Hlt.
-  { apply (wgen_into _ _ _ Wt HWt); [apply at_choice_eq|].
+  { apply (wgen_into _ _ _ Wt HWt); [by intros ? ? ->|].
     intros x y [H|(c & Hi & Hs)]; [by apply at_choice_lt|].
     apply at_choice_pick. exists i, c, b. split_and!; [done| |done].
     by apply list_lookup_insert_eq. }
@@ -186,10 +187,9 @@ Proof.
       set (Wt := at_choice W P ch).
       assert (world_wf Wt) as HWt by (by apply at_choice_wf).
       assert (∀ x y, w_eq (resolve W P i b) x y → w_eq Wt x y) as Heq.
-      { apply (wgen_into_eq _ _ _ Wt HWt); [apply at_choice_eq|].
-        intros x y [H|(c & Hc & _)]; [by apply at_choice_lt|congruence]. }
+      { by intros x y ->. }
       assert (∀ x y, w_lt (resolve W P i b) x y → w_lt Wt x y) as Hlt.
-      { apply (wgen_into _ _ _ Wt HWt); [apply at_choice_eq|].
+      { apply (wgen_into _ _ _ Wt HWt); [by intros ? ? ->|].
         intros x y [H|(c & Hc & _)]; [by apply at_choice_lt|congruence]. }
       apply (strict_sub _ Wt).
       * apply at_choice_wf; [by apply resolve_wf|by apply resolve_supported].
@@ -223,10 +223,10 @@ Proof.
   assert (world_wf Wt) as HWt.
   { apply at_choice_wf; [by apply resolve_wf|by apply resolve_supported]. }
   assert (∀ x y, w_eq W x y → w_eq Wt x y) as Heq.
-  { intros x y H. apply at_choice_eq. by apply geq_base. }
+  { by intros x y ->. }
   assert (∀ x y, w_lt W x y → w_lt Wt x y) as Hlt.
   { intros x y H. apply at_choice_lt. apply glt_base. by left. }
-  split; [apply (wgen_into_eq _ _ _ Wt HWt)|apply (wgen_into _ _ _ Wt HWt)]; try done.
+  split; [by intros x y ->|apply (wgen_into _ _ _ Wt HWt)]; try done.
   all: intros x y [H|(j & c & b' & Hj & Hc & Hs)]; [by apply Hlt|].
   all: destruct (decide (j = i)) as [->|Hji].
   all: try (rewrite list_lookup_insert_eq in Hc by (by apply lookup_lt_Some in Hc;
@@ -332,12 +332,10 @@ Proof.
     destruct (wjoin_r (at_choice W1 (P ++ Pn) (ch ++ chn)) (at_choice W' P' ch')) as [Hr1e Hr1l].
     pose proof (proj1 HJ) as HJw.
     assert (∀ x y, w_eq (wjoin W1 W') x y → w_eq J x y) as Heq.
-    { apply (wgen_into_eq _ _ _ J HJw).
-      - intros x y [H|H]; [apply Hl1e, at_choice_eq, H|apply Hr1e, at_choice_eq, H].
-      - intros x y [H|H]; [apply Hl1l, at_choice_lt, H|apply Hr1l, at_choice_lt, H]. }
+    { by intros x y ->. }
     assert (∀ x y, w_lt (wjoin W1 W') x y → w_lt J x y) as Hlt.
     { apply (wgen_into _ _ _ J HJw).
-      - intros x y [H|H]; [apply Hl1e, at_choice_eq, H|apply Hr1e, at_choice_eq, H].
+      - intros x y [H|H]; [apply Hl1e, H|apply Hr1e, H].
       - intros x y [H|H]; [apply Hl1l, at_choice_lt, H|apply Hr1l, at_choice_lt, H]. }
     apply (wgen_into _ _ _ J HJw); [done|].
     intros x y [H|(i & c & b & Hi & Hc & Hs)]; [by apply Hlt|].
@@ -468,7 +466,7 @@ Proof.
       destruct b'; simpl in Hs; destruct Hs as [-> ->]; split; first [apply xc_N2|apply xd_N2]. }
     intros x Hx.
     apply (glt_rank (w_eq W0) _ (rk (if b then 0 else 1))) in Hx; [lia| | |apply rk_po|apply rk_dpo].
-    + intros ?? H. by apply (geq_eqonly nof) in H; [|intros ?? []].
+    + intros ?? H. exact H.
     + intros x0 y0 [H|H].
       * apply (glt_rank nof nof (rk (if b then 0 else 1)) x0 y0) in H; [done|by intros ?? []|by intros ?? []|apply rk_po|apply rk_dpo].
       * apply Hp in H. destruct H as [-> ->]. unfold rk. destruct b; simpl;
@@ -520,7 +518,7 @@ Proof.
   intros HW Ha. apply wgen_wf.
   - intros p Hp. apply elem_of_union in Hp as [Hp|Hp]; [by apply HW|].
     apply elem_of_singleton in Hp as ->. by exists a.
-  - intros x y H. eapply eq_or_supp_mono; [|by apply HW]. set_solver.
+  - intros x y H. eapply eq_or_supp_mono; [|by apply (wf_eq_supp _ HW)]. set_solver.
   - intros x y H. eapply po_or_supp_mono; [|by apply HW]. set_solver.
 Qed.
 
@@ -551,11 +549,11 @@ Proof.
   assert (world_wf Wt) as HWt by (apply at_choice_wf; [by apply Wnew_wf|exact Hsup]).
   (* Wt lies in W2 *)
   assert (∀ x y, w_eq W x y → w_eq W2 x y) as HeW.
-  { intros x y H. apply He2, at_choice_eq, H. }
+  { intros x y H. apply He2, H. }
   assert (∀ x y, w_lt W x y → w_lt W2 x y) as HlW.
   { intros x y H. apply Hl2, at_choice_lt, H. }
   assert (∀ x y, w_eq (Wnew W a) x y → w_eq W2 x y) as HeN.
-  { apply (wgen_into_eq _ _ _ W2 HW2); [exact HeW|exact HlW]. }
+  { by intros x y ->. }
   assert (∀ x y, w_lt (Wnew W a) x y → w_lt W2 x y) as HlN.
   { apply (wgen_into _ _ _ W2 HW2); [exact HeW|exact HlW]. }
   assert (∀ x y, pick (P ++ [(Dlt a C0, Dlt a C1)]) (ch ++ [b]) x y → w_lt W2 x y) as Hpk.
@@ -568,13 +566,13 @@ Proof.
       destruct b; simpl in Hside; destruct Hside as (x0 & y0 & Hg & -> & ->);
         exact (Hhold (FLt x0 y0) Hg). }
   assert (∀ x y, w_eq Wt x y → w_eq W2 x y) as HeT.
-  { apply (wgen_into_eq _ _ _ W2 HW2); [exact HeN|]. intros x y [H|H]; [by apply HlN|by apply Hpk]. }
+  { by intros x y ->. }
   assert (∀ x y, w_lt Wt x y → w_lt W2 x y) as HlT.
   { apply (wgen_into _ _ _ W2 HW2); [exact HeN|]. intros x y [H|H]; [by apply HlN|by apply Hpk]. }
   assert (strict Wt) as HSt by (apply (strict_sub _ W2); done).
   (* Wc lies in Wt *)
   assert (∀ x y, w_eq W x y → w_eq Wt x y) as HeWt.
-  { intros x y H. apply at_choice_eq. by apply geq_base. }
+  { by intros x y ->. }
   assert (∀ x y, w_lt W x y → w_lt Wt x y) as HlWt.
   { intros x y H. apply at_choice_lt. apply glt_base. done. }
   assert (∀ x y, pick P ch x y → w_lt Wt x y) as HpWt.
@@ -582,7 +580,7 @@ Proof.
   split_and!.
   - split_and!.
     + simpl. set_solver.
-    + apply (wgen_into_eq _ _ _ Wt HWt); [exact HeWt|]. intros x y [H|H]; [by apply HlWt|by apply HpWt].
+    + by intros x y ->.
     + apply (wgen_into _ _ _ Wt HWt); [exact HeWt|]. intros x y [H|H]; [by apply HlWt|by apply HpWt].
     + exact HSt.
   - exact HN.
@@ -655,18 +653,18 @@ Proof.
   { intros c x y Hc Hs'. apply at_choice_pick. exists j, c, b'. split_and!; [done| |done].
     unfold ch2. rewrite list_lookup_insert_ne by done. apply list_lookup_insert_eq.
     by apply lookup_lt_Some in Hc; lia. }
-  assert (∀ x y, w_eq W x y → w_eq Wt x y) as HeW by (intros; by apply at_choice_eq).
+  assert (∀ x y, w_eq W x y → w_eq Wt x y) as HeW by (by intros ? ? ->).
   assert (∀ x y, w_lt W x y → w_lt Wt x y) as HlW by (intros; by apply at_choice_lt).
   assert (∀ x y, w_lt (resolve W P i b) x y → w_lt Wt x y) as Hri.
   { apply (wgen_into _ _ _ Wt HWt); [done|]. intros x y [H|(c & Hc & H)]; [by apply HlW|by eapply Hsi]. }
   assert (∀ x y, w_eq (resolve W P i b) x y → w_eq Wt x y) as Hrie.
-  { apply (wgen_into_eq _ _ _ Wt HWt); [done|]. intros x y [H|(c & Hc & H)]; [by apply HlW|by eapply Hsi]. }
+  { by intros x y ->. }
   assert (∀ x y, w_lt (resolve W P j b') x y → w_lt Wt x y) as Hrj.
   { apply (wgen_into _ _ _ Wt HWt); [done|]. intros x y [H|(c & Hc & H)]; [by apply HlW|by eapply Hsj]. }
   assert (∀ x y, w_eq (resolve W P j b') x y → w_eq Wt x y) as Hrje.
-  { apply (wgen_into_eq _ _ _ Wt HWt); [done|]. intros x y [H|(c & Hc & H)]; [by apply HlW|by eapply Hsj]. }
+  { by intros x y ->. }
   assert (∀ x y, w_eq (wjoin (resolve W P i b) (resolve W P j b')) x y → w_eq Wt x y) as HeJ.
-  { apply (wgen_into_eq _ _ _ Wt HWt); intros x y [H|H]; auto. }
+  { by intros x y ->. }
   assert (∀ x y, w_lt (wjoin (resolve W P i b) (resolve W P j b')) x y → w_lt Wt x y) as HlJ.
   { apply (wgen_into _ _ _ Wt HWt); intros x y [H|H]; auto. }
   apply (strict_sub _ Wt).

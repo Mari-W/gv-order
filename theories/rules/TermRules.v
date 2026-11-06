@@ -7,6 +7,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export rules.Bind relation.Creation.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** ** Heads of values
@@ -174,7 +178,7 @@ Lemma grounding_split n W Θ Δ Δ1 Δ2 γ :
   world_wf W → lenv_split Δ Δ1 Δ2 → grounding n W Θ Δ γ →
   ∃ Θ1 Θ2, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧ grounding n W Θ1 Δ1 γ ∧ grounding n W Θ2 Δ2 γ.
 Proof.
-  intros HW Hsp. assert (rdsym (w_eq W)) as Hs by (by apply wf_rdsym).
+  intros HW Hsp. assert (rdsym (w_eq W)) as Hs by apply eq_rdsym.
   revert Θ γ. induction Hsp as [|Δ Δ1 Δ2 Hsp IH|T Δ Δ1 Δ2 Hsp IH|T Δ Δ1 Δ2 Hsp IH|U Δ Δ1 Δ2 HU Hsp IH];
     intros Θ γ Hg; simpl in *.
   - subst. exists ∅, ∅. split_and!; [apply tenv_comp_empty_r|done|done].
@@ -210,7 +214,7 @@ Qed.
 Lemma grounding_only n W Θ Δ γ x T :
   world_wf W → lenv_only Δ x T → grounding n W Θ Δ γ → Vrel n W Θ T (γ x).
 Proof.
-  intros HW. assert (rdsym (w_eq W)) as Hs by (by apply wf_rdsym).
+  intros HW. assert (rdsym (w_eq W)) as Hs by apply eq_rdsym.
   revert Θ γ x. induction Δ as [|o Δ IH]; intros Θ γ x [Hx Honly] Hg; simpl in *.
   - done.
   - destruct x as [|x]; simpl in Hx.
@@ -303,7 +307,7 @@ Proof.
 Qed.
 
 Lemma wext_sym W W' : wext W W' → rdsym (w_eq W').
-Proof. intros HW. apply wf_rdsym, (wext_wf _ _ HW). Qed.
+Proof. intros HW. apply eq_rdsym. Qed.
 
 (** ** The elimination skeleton
 
@@ -552,7 +556,7 @@ Lemma le_le_W W x y z : world_wf W → w_le W x y → w_le W y z → w_le W x z.
 Proof.
   intros HW Hxy [Hyz|Hyz]; [by eapply eq_le_W|]. right.
   destruct Hxy as [Hxy|Hxy].
-  - eapply (wf_lt_eq _ HW); [exact Hxy|exact Hyz|apply HW].
+  - eapply (wf_lt_eq _ HW); [exact Hxy|exact Hyz|reflexivity].
   - eapply (wf_lt_trans _ HW); eauto.
 Qed.
 
@@ -787,7 +791,7 @@ Proof.
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [kq Tq Gq xq Hsig _ _| |]; subst. inversion Hsig as [|m T0 S x| | | | | | |]; subst.
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
-  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
+  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   destruct (seq_rcv_inv _ _ _ _ _ Hs0 (unfoldS_rcv _ _ _))
     as (U0 & s' & Hu0 & HU0 & Hs').
   destruct n as [|n']; [apply Erel_0|].
@@ -800,7 +804,7 @@ Proof.
       split; [done|]. exists (s0, k), m, U0, s'. split; [|done].
       unfold tenv_entry. simpl. by rewrite lookup_singleton_eq.
     + intros y Hy. simpl.
-      eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
+      eapply (wf_lt_eq _ HWf); [reflexivity|by apply Hxl|reflexivity].
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | | | |c' w Hw| | | | | | | | |]; subst. simpl.
     exists ∅, m, U0, s', k. split.
@@ -827,7 +831,7 @@ Proof.
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [kq Tq Gq xq Hsig _ _| |]; subst. inversion Hsig as [| | |x| | | | |]; subst.
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
-  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
+  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   pose proof (seq_end_inv _ _ Hs0 eq_refl) as Hu0.
   destruct n as [|n']; [apply Erel_0|].
   assert (tstep (App EClos (Chan c)) (LSess (SClos c)) EUnit) as Hst0
@@ -839,7 +843,7 @@ Proof.
       split; [done|]. exists (s0, k). split_and!; [|done|done].
       unfold tenv_entry. simpl. by rewrite lookup_singleton_eq.
     + intros y Hy. simpl.
-      eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
+      eapply (wf_lt_eq _ HWf); [reflexivity|by apply Hxl|reflexivity].
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst; subst. simpl.
     exists ∅, k. split.
@@ -859,7 +863,7 @@ Proof.
             B = TSess (sbranch b S1 S2) (sel_pt x b)) as (S1 & S2 & x & -> & -> & ->).
   { destruct b; simpl in Hk; inversion Hk as [kq Tq Gq xq Hsig| |]; subst; inversion Hsig; subst; eauto 10. }
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
-  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
+  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   destruct (seq_plus_inv _ _ _ _ Hs0 (unfoldS_plus _ _)) as (s1 & s2 & Hu0 & Hs1 & Hs2).
   destruct n as [|n']; [apply Erel_0|].
   assert (tstep (App (Konst (ksel b)) (Chan c)) (LSess (SSel c b)) (Chan c)) as Hst0
@@ -871,7 +875,7 @@ Proof.
       exists (s0, k), s1, s2. split; [|done].
       unfold tenv_entry. simpl. by rewrite lookup_singleton_eq.
     + intros y Hy. simpl.
-      eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
+      eapply (wf_lt_eq _ HWf); [reflexivity|by apply Hxl|reflexivity].
   - intros α e' Hst. apply app_val_step in Hst; [|by destruct b|done].
     assert (α = LSess (SSel c b) ∧ e' = Chan c) as [-> ->]
       by (destruct b; inversion Hst; subst; done).
@@ -897,7 +901,7 @@ Proof.
     as (S1 & S2 & x & -> & -> & ->)
     by (inversion Hk as [kq Tq Gq xq Hsig| |]; subst; inversion Hsig; subst; eauto 10).
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
-  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & Hk0).
+  apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   destruct (seq_with_inv _ _ _ _ Hs0 (unfoldS_with _ _)) as (s1 & s2 & Hu0 & Hs1 & Hs2).
   destruct n as [|n']; [apply Erel_0|].
   assert (∀ b, tstep (App EBra (Chan c)) (LSess (SBra c b)) (inj_of b (Chan c))) as Hst0
@@ -909,7 +913,7 @@ Proof.
       exists (s0, k), s1, s2. split; [|done].
       unfold tenv_entry. simpl. by rewrite lookup_singleton_eq.
     + intros y Hy. simpl.
-      eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
+      eapply (wf_lt_eq _ HWf); [reflexivity|by apply Hxl|reflexivity].
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | | | | | | | | |c' b'| | | |]; subst. simpl.
     exists ∅, s1, s2, k, {[c := One (sbranch b' s1 s2, pt_payload k (bidx b'))]}. split_and!.
@@ -953,7 +957,7 @@ Proof.
     by (intros h Hh; apply (HG (FLt x h)); by exists h).
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_prod_iff in HV as (w & vc & Θw & Θc & -> & Hc & HVw & HVc).
-  apply Vrel_sess_iff in HVc as (c & s0 & k & -> & -> & Hs0 & Hk0).
+  apply Vrel_sess_iff in HVc as (c & s0 & k & -> & -> & Hs0 & <-).
   pose proof (Vrel_val _ _ _ _ _ HVw) as Hw.
   destruct (seq_snd_inv _ _ _ _ _ Hs0 (unfoldS_snd _ _ _))
     as (U0 & s' & Hu0 & HU0 & Hs').
@@ -961,9 +965,9 @@ Proof.
   (* the payload's entries lie above x *)
   assert (∀ k' e', tenv_entry Θw k' = Some e' → w_lt W k (pt_dual e'.2)) as Habove.
   { intros k' e' He'.
-    assert (hbot (payload_at m T0 x) = false) as Hpb' by (unfold payload_at, ty_inst; by rewrite hbot_pinst).
+    assert (hbot (payload_at m T0 k) = false) as Hpb' by (unfold payload_at, ty_inst; by rewrite hbot_pinst).
     destruct (Vrel_heads_above _ _ _ _ _ HWf Hpb' HVw _ _ He') as (h & Hh & Hle).
-    eapply (wf_lt_eq _ HWf); [exact Hk0|eapply lt_le_W; [done|by apply Hpay|exact Hle]|apply HWf]. }
+    eapply (wf_lt_eq _ HWf); [reflexivity|eapply lt_le_W; [done|by apply Hpay|exact Hle]|reflexivity]. }
   (* the key of the sending end *)
   assert (∃ kc, tenv_entry Θ kc = Some (s0, k) ∧ kc.1 = c ∧
             ∀ k' e', k' ≠ kc → tenv_entry Θ k' = Some e' → ∃ k'', tenv_entry Θw k'' = Some e')
@@ -1021,13 +1025,13 @@ Proof.
       destruct (Hrest k' e' Hne He') as (k'' & Hk'').
       unfold entry_head. simpl. by apply (Habove k'').
     + intros y Hy. unfold entry_head. simpl.
-      eapply (wf_lt_eq _ HWf); [exact Hk0|by apply Hxl|apply HWf].
+      eapply (wf_lt_eq _ HWf); [reflexivity|by apply Hxl|reflexivity].
   - intros α e' Hst. apply app_val_step in Hst; [|done|simpl; by apply andb_True].
     assert (α = LSess (SSend c w) ∧ e' = Chan c) as [-> ->] by (inversion Hst; done). simpl.
     exists Θw, ∅, Θw, m, U0, s', k, {[c := One (s', pt_shift 1 k)]}. split_and!.
     + by exists s0.
     + apply tenv_comp_empty_l. exact (wf_rdsym _ HWf).
-    + eapply Vrel_payload; [done|exact (wf_eq_sym _ HWf _ _ Hk0)|].
+    + eapply Vrel_payload; [done|reflexivity|].
       eapply Vrel_teq; [apply teq_ty_inst, teq_sym, HU0|exact HVw].
     + left. split; [done|by rewrite insert_empty].
     + apply Vrel_Erel. eapply Vrel_tconv; [done|exact HB|].

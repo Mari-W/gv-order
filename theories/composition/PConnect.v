@@ -9,6 +9,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.ConnectSteps.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** Section lemmas take every section variable, so that both
     orientations of a configuration can be passed uniformly. *)
 Set Default Proof Using "All".
@@ -183,12 +187,12 @@ Qed.
 
 Lemma wext_join_l' W1 W2 : strict (wjoin W1 W2) → wext W1 (wjoin W1 W2).
 Proof.
-  intros H. split_and!; [simpl; set_solver|apply wjoin_l|apply wjoin_l|done].
+  intros H. split_and!; try done; [simpl; set_solver|apply wjoin_l].
 Qed.
 
 Lemma wext_join_r' W1 W2 : strict (wjoin W1 W2) → wext W2 (wjoin W1 W2).
 Proof.
-  intros H. split_and!; [simpl; set_solver|apply wjoin_r|apply wjoin_r|done].
+  intros H. split_and!; try done; [simpl; set_solver|apply wjoin_r].
 Qed.
 
 (** P-Connect (§11). Component 1 runs at T, component 2 at ∗, and they

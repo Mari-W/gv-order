@@ -8,6 +8,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.PTerm.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** The partner point of every entry of Θ2 lies at or above some point
@@ -39,7 +43,10 @@ Proof. intros HW [Hh|Hb]; [left; by eapply heads_above_mono|by right]. Qed.
 Definition rdsym (R : point → point → Prop) : Prop := ∀ x y, R x (pt_dual y) → R y (pt_dual x).
 
 Lemma wf_rdsym W : world_wf W → rdsym (w_eq W).
-Proof. intros HW x y. by apply wf_eq_dual_sym. Qed.
+Proof. intros HW x y. by apply eq_dual_sym. Qed.
+
+Lemma eq_rdsym : rdsym (@eq point).
+Proof. intros x y. by apply eq_dual_sym. Qed.
 
 Lemma comp_lookup R Θ Θ1 Θ2 c :
   tenv_comp R Θ Θ1 Θ2 → Θ2 !! c = None → Θ !! c = Θ1 !! c.
@@ -166,9 +173,9 @@ Proof.
   all: destruct (Hh _ _ Hen2) as (h & HhH & Hle).
   all: pose proof (Hlt h ltac:(set_solver)) as Hlh; unfold entry_head in Hlh; simpl in Hlh.
   all: apply (Hirr e1.2); destruct Hle as [Heq|Hlt'].
-  all: try (eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlh|];
+  all: try (eapply (wf_lt_eq _ HWf); [reflexivity|exact Hlh|];
             eapply (wf_eq_trans _ HWf); [exact Heq|by apply (wf_eq_sym _ HWf)]).
-  all: eapply (wf_lt_eq _ HWf); [apply HWf|eapply (wf_lt_trans _ HWf); [exact Hlh|exact Hlt']|];
+  all: eapply (wf_lt_eq _ HWf); [reflexivity|eapply (wf_lt_trans _ HWf); [exact Hlh|exact Hlt']|];
          by apply (wf_eq_sym _ HWf).
 Qed.
 
@@ -286,7 +293,7 @@ Qed.
 Lemma lt_le_W W x y z : world_wf W → w_lt W x y → w_le W y z → w_lt W x z.
 Proof.
   intros HW Hxy [Hyz|Hyz].
-  - eapply (wf_lt_eq _ HW); [apply HW|exact Hxy|exact Hyz].
+  - eapply (wf_lt_eq _ HW); [reflexivity|exact Hxy|exact Hyz].
   - eapply (wf_lt_trans _ HW); eauto.
 Qed.
 
@@ -294,7 +301,7 @@ Lemma eq_le_W W x y z : world_wf W → w_le W x y → w_eq W y z → w_le W x z.
 Proof.
   intros HW [Hxy|Hxy] Hyz.
   - left. eapply (wf_eq_trans _ HW); eauto.
-  - right. eapply (wf_lt_eq _ HW); [apply HW|exact Hxy|exact Hyz].
+  - right. eapply (wf_lt_eq _ HW); [reflexivity|exact Hxy|exact Hyz].
 Qed.
 
 Lemma entry_agree R Θ Θ1 Θ2 c b :
@@ -423,7 +430,7 @@ Proof.
   assert (HE : Erel (S n') W Θ1 Th (F ∪ H) e).
   { apply Erel_S_iff. split_and!; [done|done|]. intros α e' Hst.
     eapply Ecase_gen_mono; [|exact (Hstep α e' Hst)]. by intros ? ? ? ? ? [? _]. }
-  assert (rdsym (w_eq W)) as Hsym by (by apply wf_rdsym, HW).
+  assert (rdsym (w_eq W)) as Hsym by apply eq_rdsym.
   destruct (is_val e) eqn:Hv.
   { apply (HK W (S n') Θ1 Θ e); [by apply wext_refl|lia|done|].
     apply Hval, val_irred. by rewrite Hv. }
@@ -453,7 +460,7 @@ Proof.
       exists (partial_alter (λ _, Θ1r !! c) c Θ), m, U, s, k. split; [by exists s0|].
       intros W' j Θp Θrc Θ' HW' Hj Hextc Hcomp' HV.
       pose proof (proj2 (proj2 (proj2 HW'))) as HWs'.
-      assert (rdsym (w_eq W')) as Hsym' by (by apply wf_rdsym, HWs').
+      assert (rdsym (w_eq W')) as Hsym' by apply eq_rdsym.
       pose proof (tenv_comp_mono _ _ _ _ _ (proj1 (proj2 HW')) Hcr) as Hcr'.
       destruct (comp_ext_back _ _ _ _ _ c _ Hcr' H2c Hextc) as [Hc1 Hext1].
       destruct (comp_assoc _ _ _ _ _ _ Hsym' Hcomp' Hc1) as [HX1 HX2].

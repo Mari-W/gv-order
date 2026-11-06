@@ -14,6 +14,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export lang.Semantics lang.Safety types.Types types.SessionEquiv relation.Worlds relation.Readiness types.LinearEnv.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** ** Types up to aliases
 
     T ≈_W U: T ≈ U up to aliases of ground points in W. The constants'

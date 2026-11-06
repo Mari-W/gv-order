@@ -26,6 +26,10 @@
 From stdpp Require Import base gmap relations.
 From LRGV Require Export relation.Worlds.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** The root of an instance is the root of the instantiated name. *)
@@ -948,12 +952,12 @@ Proof.
     { split; [done|]. intros x Hx. destruct (Ic x Hx) as [y Hy]. by apply (Hirr y). }
     exists W'. split.
     + split_and!.
-      * split_and!; simpl; [set_solver|intros x y H; apply geq_base; by left
+      * split_and!; simpl; [set_solver|done
           |intros x y H; apply glt_base; by left|done].
       * set_solver.
       * done.
       * intros x y Hx Hy. assert (pt_root x ≠ NConst a) by set_solver.
-        assert (pt_root y ≠ NConst a) by set_solver. split; intros Hxy; [by apply Ie|by apply Il].
+        assert (pt_root y ≠ NConst a) by set_solver. split; intros Hxy; [done|by apply Il].
     + intros g Hg. simpl. destruct g as [x0 y0]; simpl.
       rewrite <-(proj2 (Hr _ x0 Hg (or_introl eq_refl))), <-(proj2 (Hr _ y0 Hg (or_intror eq_refl))).
       apply glt_base. right. by exists x0, y0.

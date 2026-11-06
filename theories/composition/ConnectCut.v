@@ -9,6 +9,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.Internalize.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** ** Configurations over a cut
 
     Component 1 runs at TA, component 2 at TB, one of them at T and

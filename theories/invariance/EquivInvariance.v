@@ -12,6 +12,10 @@
 From stdpp Require Import base tactics gmap.
 From LRGV Require Export invariance.PointRenaming.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** ≈ commutes with instantiating point variables: the points of
     both sides agree on the nose. *)
 Lemma eqT_pinst ρ T : ∀ U σ, eqT ρ T U → eqT ρ (pinst_ty σ T) (pinst_ty σ U).

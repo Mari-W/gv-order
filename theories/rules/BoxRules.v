@@ -6,6 +6,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export rules.TermRules.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** ** Applying force

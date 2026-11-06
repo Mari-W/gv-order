@@ -34,6 +34,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.SemFlag examples.DataAlternate.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** ** Numerals and the program *)
@@ -447,8 +451,7 @@ Proof.
   intros n W' Θ' Θ'' γ HW Hc Hg. cbn [grounding] in Hg. subst Θ'.
   apply tenv_comp_empty_r_inv in Hc as ->. pose proof (wext_wf _ _ HW) as HWf.
   change (subst γ rthr) with rthr.
-  apply (rthread_Erel n W' 0 0 0 chc chd Sb Sb (px 0) (py 0)); try done;
-    [apply seq_refl|apply seq_refl|apply (wf_eq_refl _ HWf)|apply (wf_eq_refl _ HWf)|].
+  apply (rthread_Erel n W' 0 0 0 chc chd Sb Sb (px 0) (py 0)); try done; try apply seq_refl.
   apply comp_comm; [apply (wf_rdsym _ HWf)|apply rΘ_comp].
 Qed.
 
