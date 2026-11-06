@@ -11,7 +11,8 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('liveness/LiveAdequacy.v', 'live_adequacy'), ('liveness/LiveAdequacy.v', 'live_runs'),
         ('liveness/LiveAdequacy.v', 'live_finite_runs'), ('liveness/LiveRules.v', 'LErel_app_lam'),
         ('liveness/LiveRules.v', 'LErel_force'), ('liveness/LiveRules.v', 'LVrel_box_lob'),
-        ('liveness/LiveRules.v', 'LErel_spawn')]
+        ('liveness/LiveRules.v', 'LErel_spawn'), ('liveness/LiveKob.v', 'kob_tau_diverges'),
+        ('liveness/LiveKob.v', 'live_fundamental_false')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
