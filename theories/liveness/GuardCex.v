@@ -8,10 +8,14 @@
       bad  = !(x. let ∗ = (force x) g in λy. y)      g guarded
       main = (force bad) ∗
 
-    [main] is [guarded] ([cx_guarded]) and its thread has an infinite
-    β sequence ([cx_tau_diverges]). The static typing of [main] (with a
-    box at one point variable ζ as its upper point, g closing a fresh
-    channel below ζ) is not mechanized yet. *)
+    [main] is statically typed in the world with one constant
+    ([cx_main_typed]; the box quantifies its upper point ζ, and g closes
+    a fresh channel created below ζ) and [guarded] ([cx_guarded]). Its
+    thread has an infinite β sequence ([cx_tau_diverges]). So the live
+    fundamental theorem fails for the guarded system of Guard.v
+    ([live_guarded_false]). The special case of [ok] for (force x) e is
+    sound only when the body of the box is a λ, so that forcing the
+    self returns a value at once. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard liveness.LiveKob examples.ExampleTools.
@@ -71,4 +75,67 @@ Theorem cx_tau_diverges : ¬ no_tau_divergence (∅, {[+ cx_main +]}).
 Proof.
   intros Hnd. apply (cx_not_acc (∅, {[+ cx_main +]}) (Hnd _ (rtc_refl _ _)) ∅ ∅ cx_main);
     [do 2 constructor|]. by rewrite (left_id_L ∅ (⊎)).
+Qed.
+
+(** ** Typing *)
+
+Lemma cx_bad_typed W F : world_wf W → typed W ∅ [] ∅ [] F cx_bad cx_bty.
+Proof.
+  intros HW. unfold cx_bad, cx_bty.
+  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
+  change (bcs_inst (pshift 1) cx_C) with cx_C.
+  replace (pup 1 (pshift 1) 0 +ₚ 0) with (pvar 0) by reflexivity.
+  change (bcs_inst (pshift 1) cx_C) with cx_C.
+  cbn. unfold cx_body. tstep.
+  - eapply tv_app; [exact HW|reflexivity| | |apply ubs_none].
+    + apply (typed_force0 W _ _ _ _ _ _ 1 cx_C (Some (pvar 0)) cx_fty [pvar 0]); [done|done| | | |tstep].
+      * apply bcs_hold_intro. by intros g Hg.
+      * apply Forall_singleton. eapply skn_inst; [by left|by left|done].
+      * apply ubs_intro; [intros y Hy; mem_cases Hy|]. exists (pvar 0). split; [done|apply sle_refl, HW].
+    + cbn. unfold cx_g, let_new_pair.
+      apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [] [pvar 0]).
+      { cbn. apply Forall_singleton. eapply skn_inst; [by left|by left|done]. }
+      { intros l h Hl. by apply elem_of_nil in Hl. }
+      fresh_clean. tstep.
+      { tstep; [|apply KTSpawn|done|apply ubs_none].
+        eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 1).
+        { rewrite fhyps_pinst_insert. set_solver. }
+        { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
+        cbn. tstep; [tstep|]. cbn.
+        tstep; [tstep|apply KTClos|done|].
+        apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (pt_dual (pvar 0)). split; [done|]. apply sle_refl, HW. }
+      cbn. tstep; [tstep|apply KTClos|done|].
+      apply ubs_intro; [intros y Hy; set_solver|].
+      cbn. exists (pt_inst (pshift 1) (pvar 0)). split.
+      { rewrite fhyps_pinst_insert. by rewrite lookup_insert_eq. }
+      right. apply (slt_fresh_r W _ (pshift 1) [] [pvar 0] (pvar 0) (pvar 0)); [by right; left|by left].
+  - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit None None 1); [set_solver|done|tstep].
+Qed.
+
+Lemma cx_main_typed : typed (Wpo [0]) ∅ [] ∅ [] (∅, None) cx_main TUnit.
+Proof.
+  pose proof (proj1 (Wpo_strict [0])) as HW. unfold cx_main.
+  eapply tv_app; [exact HW|reflexivity| | |apply ubs_none].
+  - apply (typed_force0 _ _ _ _ _ _ _ 1 cx_C (Some (pvar 0)) cx_fty [pc 0 0]); [done|done| | | |].
+    + apply bcs_hold_intro. by intros g Hg.
+    + apply Forall_singleton. left. unfold pt_known. simpl. set_solver.
+    + apply ubs_intro; [intros y Hy; set_solver|done].
+    + apply cx_bad_typed, HW.
+  - tstep.
+Qed.
+
+(** ** The live fundamental theorem fails for the guarded system *)
+
+Theorem cx_gptyped : gptyped (Wpo [0]) ∅ (∅, {[+ cx_main +]}) TUnit.
+Proof.
+  split; [apply ptyped_closed; [constructor|apply cx_main_typed]|].
+  intros e He. apply gmultiset_elem_of_singleton in He as ->. apply cx_guarded.
+Qed.
+
+Theorem live_guarded_false :
+  ¬ (∀ W p T, strict W → gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p).
+Proof.
+  intros H. apply cx_tau_diverges, (live_no_tau_divergence (Wpo [0]) TUnit).
+  apply H; [apply Wpo_strict|apply cx_gptyped].
 Qed.
