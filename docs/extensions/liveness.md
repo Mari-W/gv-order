@@ -380,6 +380,33 @@ Closed, in `theories/liveness/`.
   examples against it.
 - `LiveBind.v`. `LErel_bind`, the bind lemma, with the statement of
   `Erel_bind`.
+- `LiveConv.v`. `LVrel_tconv`, `LErel_tconv`, `LPrel_tconv`, `LVrel_payload`:
+  conversion along T ≈_W T'. Inside one level V and E convert together by
+  induction on `tsize`. The alias handling is confined to the lemmas reused
+  from PointConversion.v (`teqW_mono`, `lb_below_conv`, `ub_below_conv`,
+  `bcs_hold_conv`, `pteqW_eq`, the teqW algebra). With equality for ≡_W they
+  become rewriting, and the live proofs keep their shape.
+- `LiveConsts.v`. `LErel_app_noforce` and one lemma per constant (new, spawn,
+  receive, send, close, select, branch, link). Each proof first moves to a
+  later world (`lmove`, `LErel_intro`, `LEnow`) and then reads the step there.
+  The payload of a send is read one level down (`LVrel_down`).
+- The comm and link τ of a process now place fresh names cofinitely as well
+  (`LPtau_case`), so conversion and composition need no renaming of points.
+
+Next, in order.
+
+1. The semantic judgment `lsem_typed` and the rules of TermRules.v (E-Unit,
+   E-Var, E-Abs, E-App, E-Let, E-LetPair, E-Case, E-Pair, E-Inj, weakening),
+   BoxRules.v, ExRules.v and SemanticRules.v, on top of `LErel_bind`.
+2. The guard in the semantics. Plan: a guarded term relation Eg (E whose
+   every return lies one level down, so a value handed to the continuation is
+   in V below the current level), the lemma `gd e → Eg` for typed e by
+   induction on the derivation, and a judgment with one later variable whose
+   rules follow `ok`. E-Exp then uses `LVrel_box_lob`.
+3. Invariance (point and channel renaming, junk renaming) as far as the
+   composition proofs need it, then Internalize, P-Connect, P-Term, P-Join.
+4. `gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p`, and the examples of GuardEx.v as
+   live theorems.
 
 Not ported. The bind lemma, the constants (send, receive, close, select,
 branch, link, new), the invariance lemmas (renaming of points and channels,
