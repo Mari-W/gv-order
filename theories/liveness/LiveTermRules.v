@@ -580,3 +580,122 @@ Proof.
   - apply lsem_typed_konst; [apply lenv_empty_nones|]. by apply KTForce.
   - simpl. by rewrite union_empty_r_L.
 Qed.
+
+(** ** E-Pack and E-Open *)
+
+Lemma new_place_wext_r W N x W' : new_place W N x W' → wext_r W W'.
+Proof. intros [(a & _ & _ & Hfr)|(_ & ->)]; [right; apply Hfr|left; done]. Qed.
+
+(** E at T' from E at T, when V at T is contained in V at T' at every
+    level up to n and in every later world. *)
+Lemma LErel_Vsub n : ∀ W Θ T T' F e,
+  (∀ j W' Θ' v, j ≤ n → wext_r W W' → LVrel j W' Θ' T v → LVrel j W' Θ' T' v) →
+  LErel n W Θ T F e → LErel n W Θ T' F e.
+Proof.
+  induction n as [n IHn] using lt_wf_ind.
+  destruct n as [|n']; [intros; apply LErel_0|].
+  intros W Θ T T' F e HV HE. revert T' HV.
+  revert W Θ T F e HE.
+  refine (LErel_S_ind n' (λ W Θ T F e, ∀ T',
+            (∀ j W' Θ' v, j ≤ S n' → wext_r W W' → LVrel j W' Θ' T v → LVrel j W' Θ' T' v) →
+            LErel (S n') W Θ T' F e) _).
+  intros W Θ T F e H T' HV. apply LErel_S_iff. intros W1 HW1.
+  assert (∀ W2, wext_r W1 W2 →
+            ∀ j W' Θ' v, j ≤ S n' → wext_r W2 W' → LVrel j W' Θ' T v → LVrel j W' Θ' T' v) as HV2.
+  { intros W2 HW2 j W' Θ' v Hj HW' HVv. apply HV; [done| |done].
+    eapply wext_r_trans; [exact HW1|]. by eapply wext_r_trans. }
+  assert (∀ j W0 Θ0 F0 e0, j ≤ n' → wext_r W1 W0 →
+            LErel j W0 Θ0 T F0 e0 → LErel j W0 Θ0 T' F0 e0) as HEj.
+  { intros j W0 Θ0 F0 e0 Hj HW0. apply (IHn j ltac:(lia)).
+    intros i W' Θ' v Hi HW'. apply (HV2 W0 HW0); [lia|done]. }
+  destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ).
+  split_and!.
+  - intros Hirr. apply (HV2 W1 (wext_r_refl _)); [lia|apply wext_r_refl|by apply Hs].
+  - done.
+  - intros e' Hst. destruct (Hb e' Hst) as [_ HΦ]. apply HΦ.
+    intros j W' Θ' v Hj HW' HVv. apply (HV2 W1 (wext_r_refl _)); [done|done|done].
+  - intros c e' Hst Hc L.
+    destruct (Hnew c e' Hst Hc (L ∪ ty_roots T')) as (x & s & s' & W' & Hpl & Hdu & _ & HΦ).
+    exists x, s, s', W'. split_and!; [eapply new_place_sub; [|exact Hpl]; set_solver|done|].
+    apply HΦ. intros j W'' Θ' v Hj HW'' HVv.
+    apply (HV2 W' (new_place_wext_r _ _ _ _ Hpl)); [done|done|done].
+  - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HΦ).
+    exists Θ1, Θ2, ub, lb. split_and!; [done| |].
+    + eapply Vspawn_mono; [|exact Hv]. by intros ? ? ? ? [? _].
+    + apply HΦ. intros j W' Θ' v Hj HW' HVv. apply (HV2 W1 (wext_r_refl _)); [done|done|done].
+  - intros σ e' Hst. pose proof (Hσ σ e' Hst) as Hc.
+    destruct σ as [c w|c w|c|cd|c i|c i]; cbn [LEobl pred] in Hc |- *.
+    + destruct Hc as (Θ1 & m & U & s & k & Hhd & H').
+      exists Θ1, m, U, s, k. split; [done|].
+      intros W' j Θ2 Θ1c Θ' HW' Hj Hext Hc HVw.
+      eapply HEj; [lia|by right|by apply (H' W' j Θ2 Θ1c Θ')].
+    + destruct Hc as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & ? & ? & ? & ? & HE').
+      exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
+      eapply HEj; [lia|apply wext_r_refl|exact HE'].
+    + destruct Hc as (Θ1 & k & ? & HE'). exists Θ1, k. split; [done|].
+      eapply HEj; [lia|apply wext_r_refl|exact HE'].
+    + destruct Hc as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & ? & ? & ? & ? & HE').
+      exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; try done.
+      eapply HEj; [lia|apply wext_r_refl|exact HE'].
+    + destruct Hc as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      exists Θr, s1, s2, k, Θ'. split_and!; try done.
+      eapply HEj; [lia|apply wext_r_refl|exact HE'].
+    + destruct Hc as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
+      exists Θr, s1, s2, k, Θ'. split_and!; try done.
+      eapply HEj; [lia|apply wext_r_refl|exact HE'].
+Qed.
+
+Lemma lsem_typed_pack W Θ Δ F e lb m C T xs :
+  length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+  lbx_below W lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
+  lsem_typed W Θ Δ F e (ty_inst xs T) → lsem_typed W Θ Δ F e (TEx lb m C T).
+Proof.
+  intros Hxs HK HC Hlb He n W' Θ' Θ'' γ HW Hc Hg.
+  eapply LErel_Vsub; [|by apply (He n W' Θ' Θ'' γ)].
+  intros j W2 Θ2 v Hj HW2 HV.
+  assert (wext W W2) as HWW2 by (destruct HW2 as [->|HW2]; [done|by eapply wext_trans]).
+  pose proof (wext_wf _ _ HWW2) as HW2f.
+  apply LVrel_ex_iff. split; [|exists xs; split_and!; [done| | |done]].
+  - pose proof (lbx_below_mono _ _ _ _ _ HWW2 Hlb) as Hlb2.
+    destruct lb as [| |x]; simpl in *; [|done|].
+    + destruct Hlb2 as [Hlb2 Hb]. pose proof (LVrel_heads_above _ _ _ _ _ HW2f Hb HV) as Hab.
+      split; [|done]. apply set_eq. intros y. split; [|set_solver].
+      intros (k & e0 & Hk & ->)%elem_of_tenv_heads_entry.
+      destruct (Hab k e0 Hk) as (h & Hh & _). set_solver.
+    + destruct Hlb2 as [Hlb2 Hb]. pose proof (LVrel_heads_above _ _ _ _ _ HW2f Hb HV) as Hab.
+      split; [|done]. intros y (k & e0 & Hk & ->)%elem_of_tenv_heads_entry.
+      destruct (Hab k e0 Hk) as (h & Hh & Hle). eapply le_le_W; [done| |exact Hle]. by apply Hlb2.
+  - eapply Forall_impl; [exact HK|]. intros x. unfold pt_known. destruct HWW2 as (? & _). set_solver.
+  - destruct HWW2 as (_ & He2 & Hl2 & _). eapply bcs_hold_mono; [exact He2|exact Hl2|exact HC].
+Qed.
+
+Lemma lgrounding_open n W Θ Δ γ i lb m C T :
+  Δ !! i = Some (Some (TEx lb m C T)) → lgrounding n W Θ Δ γ →
+  ∃ xs, length xs = m ∧ Forall (pt_known W) xs ∧ bcs_hold (w_eq W) (w_lt W) C xs ∧
+    lgrounding n W Θ (<[i := Some (ty_inst xs T)]> Δ) γ.
+Proof.
+  revert i Θ γ. induction Δ as [|o Δ IH]; intros i Θ γ Hi Hg; [done|].
+  destruct i as [|i]; simpl in Hi.
+  - injection Hi as ->. simpl in Hg. destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
+    apply LVrel_ex_iff in HV as [_ (xs & Hxs & HK & HC & HV)].
+    exists xs. split_and!; [done..|]. simpl. by exists Θ1, Θ2.
+  - destruct o as [U|]; simpl in Hg.
+    + destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
+      destruct (IH i Θ2 (γ ∘ S) Hi Hg) as (xs & Hxs & HK & HC & Hg').
+      exists xs. split_and!; [done..|]. simpl. by exists Θ1, Θ2.
+    + destruct (IH i Θ (γ ∘ S) Hi Hg) as (xs & Hxs & HK & HC & Hg').
+      exists xs. by split_and!.
+Qed.
+
+Lemma lsem_typed_open W Θ Δ F e i lb m C T U :
+  Δ !! i = Some (Some (TEx lb m C T)) →
+  (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+     bcs_hold (w_eq W1) (w_lt W1) C xs →
+     lsem_typed W1 Θ (<[i := Some (ty_inst xs T)]> Δ) F e U) →
+  lsem_typed W Θ Δ F e U.
+Proof.
+  intros Hi He n W' Θ' Θ'' γ HW Hc Hg.
+  destruct (lgrounding_open _ _ _ _ _ _ _ _ _ _ Hi Hg) as (xs & Hxs & HK & HC & Hg').
+  apply (He W' xs HW Hxs HK HC n W' Θ' Θ'' γ); [|done|done].
+  apply wext_refl. by destruct HW as (_&_&_&?).
+Qed.
