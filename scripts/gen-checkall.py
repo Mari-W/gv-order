@@ -7,7 +7,11 @@ import re, pathlib
 root = pathlib.Path('theories')
 main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundness_source'),
         ('static/Fundamental.v', 'fundamental'), ('static/Fundamental.v', 'fundamental_proc'),
-        ('relation/LogicalRelation.v', 'adequacy'), ('rules/SemanticRules.v', 'sem_rules_fundamental')]
+        ('relation/LogicalRelation.v', 'adequacy'), ('rules/SemanticRules.v', 'sem_rules_fundamental'),
+        ('liveness/LiveAdequacy.v', 'live_adequacy'), ('liveness/LiveAdequacy.v', 'live_runs'),
+        ('liveness/LiveAdequacy.v', 'live_finite_runs'), ('liveness/LiveRules.v', 'LErel_app_lam'),
+        ('liveness/LiveRules.v', 'LErel_force'), ('liveness/LiveRules.v', 'LVrel_box_lob'),
+        ('liveness/LiveRules.v', 'LErel_spawn')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
