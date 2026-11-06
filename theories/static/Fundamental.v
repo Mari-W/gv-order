@@ -8,6 +8,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export static.Source.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** ** Small equations for fresh points *)
@@ -806,7 +810,7 @@ Proof.
   destruct (wgen_in_world W (λ x y, w_eq W x y ∨ w_eq W x y)
               (λ x y, w_lt W x y ∨ w_lt W x y)) as [Heq Hlt];
     [apply HW|naive_solver|naive_solver|].
-  split_and!; [simpl; set_solver|exact Heq|exact Hlt|exact HW].
+  split_and!; [simpl; set_solver|done|exact Hlt|exact HW].
 Qed.
 
 Theorem fundamental_proc W Σ p T : ptyped W Σ p T → strict W → sem_ptyped W Σ p T.
@@ -823,8 +827,6 @@ Proof.
     + exact (ptyped_prim _ _ _ _ H1).
     + by apply IH1.
     + by apply IH2.
-    + intros c e e' He He'. destruct (Hcut c e e' He He') as [Heq Hs].
-      split; [by apply wjoin_l|done].
     + apply HW.
     + apply HW.
   - (* P-Join: each component is strict inside the strict join *)
@@ -999,7 +1001,7 @@ Section c0_world.
     destruct (gen_map (λ _ _, False) (λ _ _, False) (w_eq wc0) (w_lt wc0) id
                 (theory_world _ (proj1 HS))) as [Gq Gl]; [done|done|done|done|done|].
 
-    split_and!; [simpl; set_solver|exact Gq|exact Gl|done].
+    split_and!; [simpl; set_solver|done|exact Gl|done].
   Qed.
 
   Lemma wc0_holds : c0_acyclic n C →

@@ -22,6 +22,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export static.Fundamental.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** ** Processes *)
@@ -66,8 +70,6 @@ Proof.
     + exact (mptyped_prim _ _ _ _ H1).
     + by apply IH1.
     + by apply IH2.
-    + intros c e e' He He'. destruct (Hcut c e e' He He') as [Heq Hs].
-      split; [by apply wjoin_l|done].
     + apply HW.
     + apply HW.
 Qed.

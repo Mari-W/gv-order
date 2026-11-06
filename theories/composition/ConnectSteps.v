@@ -7,6 +7,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.ConnectCut.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** Section lemmas take every section variable, so that both
     orientations of a configuration can be passed uniformly. *)
 Set Default Proof Using "All".
@@ -153,8 +157,7 @@ Section steps2.
     - pose proof (wext_fresh_wext _ _ _ Hfr') as Hx.
       destruct q1 as [C1' E1']. simpl in *.
       apply (conn_at_world n' W1' Σ1 Σ2 ΣC ΣC' C0 C1' C2 E1' E2 (le_n _) Hx).
-      + split; try done; [apply Hx| |clear -Hg Hq; set_solver..].
-        intros r x y Hx1 Hy1. destruct (Hcut r x y Hx1 Hy1). split; [|done]. by eapply wext_eq.
+      + split; try done; [apply Hx|clear -Hg Hq; set_solver..].
       + done.
       + eapply Prel_mono; [apply HW'|done|]. eapply Prel_down; [|exact HP2]. lia.
   Qed.

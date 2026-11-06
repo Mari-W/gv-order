@@ -23,9 +23,14 @@ Notation prel := (point → point → Prop).
 
 Record world := World {
   w_names : gset pname;
-  w_eq : prel;
   w_lt : prel
 }.
+
+(** Branch no-eq (sharp edges 159): a world has no aliases. Two points
+    are the same instant exactly when they are equal. [w_eq W] is an
+    abbreviation for syntactic equality, kept so that statements written
+    for worlds with aliases read unchanged. *)
+Abbreviation w_eq W := (@eq point) (only parsing).
 
 (** The root name of a point: ι[i] belongs to the name of ι.
     The support is a set of root names (point constants), so that
@@ -90,20 +95,33 @@ Definition po_or_supp (N : gset pname) (x y : point) : Prop :=
   ppo x y ∨ (pt_root x ∈ N ∧ pt_root y ∈ N).
 
 Record world_wf (W : world) : Prop := {
-  wf_eq_refl x : w_eq W x x;
-  wf_eq_sym x y : w_eq W x y → w_eq W y x;
-  wf_eq_trans x y z : w_eq W x y → w_eq W y z → w_eq W x z;
-  wf_eq_shift x y : w_eq W x y → w_eq W (pt_shift 1 x) (pt_shift 1 y);
-  wf_eq_payload x y i : w_eq W x y → w_eq W (pt_payload x i) (pt_payload y i);
   wf_lt_trans x y z : w_lt W x y → w_lt W y z → w_lt W x z;
-  wf_lt_eq x x' y y' : w_eq W x x' → w_lt W x' y' → w_eq W y' y → w_lt W x y;
   wf_lt_po x : w_lt W x (pt_shift 1 x);
-  wf_eq_supp x y : w_eq W x y → eq_or_supp (w_names W) x y;
   wf_lt_supp x y : w_lt W x y → po_or_supp (w_names W) x y;
   wf_names_const p : p ∈ w_names W → ∃ a, p = NConst a;
-  wf_eq_dual x y : w_eq W x y → w_eq W (pt_dual x) (pt_dual y);
   wf_lt_dpo x : w_lt W x (pt_shift 1 (pt_dual x))
 }.
+
+(** The laws of ≡ that worlds with aliases had as fields hold of
+    equality. They stay as lemmas under their old names. *)
+Lemma wf_eq_refl (W : world) (HW : world_wf W) x : w_eq W x x.
+Proof. done. Qed.
+Lemma wf_eq_sym (W : world) (HW : world_wf W) x y : w_eq W x y → w_eq W y x.
+Proof. by intros ->. Qed.
+Lemma wf_eq_trans (W : world) (HW : world_wf W) x y z : w_eq W x y → w_eq W y z → w_eq W x z.
+Proof. by intros -> ->. Qed.
+Lemma wf_eq_shift (W : world) (HW : world_wf W) x y : w_eq W x y → w_eq W (pt_shift 1 x) (pt_shift 1 y).
+Proof. by intros ->. Qed.
+Lemma wf_eq_payload (W : world) (HW : world_wf W) x y i :
+  w_eq W x y → w_eq W (pt_payload x i) (pt_payload y i).
+Proof. by intros ->. Qed.
+Lemma wf_lt_eq (W : world) (HW : world_wf W) x x' y y' :
+  w_eq W x x' → w_lt W x' y' → w_eq W y' y → w_lt W x y.
+Proof. by intros -> ? <-. Qed.
+Lemma wf_eq_supp (W : world) (HW : world_wf W) x y : w_eq W x y → eq_or_supp (w_names W) x y.
+Proof. intros ->. by left. Qed.
+Lemma wf_eq_dual (W : world) (HW : world_wf W) x y : w_eq W x y → w_eq W (pt_dual x) (pt_dual y).
+Proof. by intros ->. Qed.
 
 (** Two ends at dual points, read from either end. *)
 Lemma wf_eq_dual_sym W x y : world_wf W → w_eq W x (pt_dual y) → w_eq W y (pt_dual x).
@@ -113,6 +131,13 @@ Qed.
 
 Lemma wf_eq_dual_l W x y : world_wf W → w_eq W x (pt_dual y) → w_eq W (pt_dual x) y.
 Proof. intros HW H. rewrite <-(pt_dual_dual y). by apply (wf_eq_dual _ HW). Qed.
+
+(** The same without a world (branch no-eq). *)
+Lemma eq_dual_sym x y : x = pt_dual y → y = pt_dual x.
+Proof. intros ->. by rewrite pt_dual_dual. Qed.
+
+Lemma eq_dual_l x y : x = pt_dual y → pt_dual x = y.
+Proof. intros ->. by rewrite pt_dual_dual. Qed.
 
 (** The support consists of point constants, which are root names. *)
 Lemma wf_names_root W p : world_wf W → p ∈ w_names W → pn_root p = p.
@@ -172,8 +197,13 @@ Qed.
 (** [geq] and [glt] live in types/Types.v, because the premise of
     [new] reads them (sharp edges 105). *)
 
+(** The congruence closure of generators that are equalities is
+    equality (branch no-eq). *)
+Lemma geq_eq (E : prel) x y : (∀ x y, E x y → x = y) → geq E x y → x = y.
+Proof. intros HE. induction 1; subst; auto; congruence. Qed.
+
 Definition wgen (N : gset pname) (E L : prel) : world :=
-  World N (geq E) (glt E L).
+  World N (glt E L).
 
 Lemma geq_supp N E x y :
   (∀ x y, E x y → eq_or_supp N x y) → geq E x y → eq_or_supp N x y.
@@ -213,18 +243,10 @@ Lemma wgen_wf N E L :
   (∀ x y, L x y → po_or_supp N x y) →
   world_wf (wgen N E L).
 Proof.
-  intros HN HE HL. split; simpl; [..|done| |].
-  - apply geq_refl.
-  - apply geq_sym.
-  - apply geq_trans.
-  - apply geq_shift.
-  - apply geq_payload.
+  intros HN HE HL. split; simpl; [..|done|].
   - apply glt_trans.
-  - apply glt_eq.
   - apply glt_po.
-  - intros x y. by apply geq_supp.
   - intros x y. by apply glt_supp.
-  - apply geq_dual.
   - apply glt_dpo.
 Qed.
 
@@ -254,7 +276,6 @@ Definition wjoin (W1 W2 : world) : world :=
 (** W|_A. *)
 Definition wrestrict (W : world) (A : gset pname) : world :=
   World (w_names W ∩ A)
-    (λ x y, w_eq W x y ∧ eq_or_supp A x y)
     (λ x y, w_lt W x y ∧ po_or_supp A x y).
 
 (** ** Basic facts *)
@@ -287,54 +308,31 @@ Lemma wjoin_l W1 W2 :
   (∀ x y, w_eq W1 x y → w_eq (wjoin W1 W2) x y) ∧
   (∀ x y, w_lt W1 x y → w_lt (wjoin W1 W2) x y).
 Proof.
-  split; intros x y H; [apply geq_base|apply glt_base]; by left.
+  split; intros x y H; [done|apply glt_base]; by left.
 Qed.
 
 Lemma wjoin_r W1 W2 :
   (∀ x y, w_eq W2 x y → w_eq (wjoin W1 W2) x y) ∧
   (∀ x y, w_lt W2 x y → w_lt (wjoin W1 W2) x y).
 Proof.
-  split; intros x y H; [apply geq_base|apply glt_base]; by right.
+  split; intros x y H; [done|apply glt_base]; by right.
 Qed.
 
 Lemma wrestrict_wf W A : world_wf W → world_wf (wrestrict W A).
 Proof.
   intros HW. split; simpl; unfold eq_or_supp, po_or_supp.
-  - intros x. split; [apply (wf_eq_refl _ HW)|by left].
-  - intros x y [? Hs]. split; [by apply (wf_eq_sym _ HW)|].
-    destruct Hs as [->|[??]]; [by left|by right].
-  - intros x y z [? Hs1] [? Hs2]. split; [by eapply (wf_eq_trans _ HW)|].
-    destruct Hs1 as [->|[??]], Hs2 as [->|[??]]; [by left|by right..].
-  - intros x y [? Hs]. split; [by apply (wf_eq_shift _ HW)|].
-    destruct Hs as [->|[??]]; [by left|by right].
-  - intros x y i [? Hs]. split; [by apply (wf_eq_payload _ HW)|].
-    destruct Hs as [->|[??]]; [by left|by right].
   - intros x y z [? Hs1] [? Hs2]. split; [by eapply (wf_lt_trans _ HW)|].
     destruct Hs1 as [H1|[H1 H1']], Hs2 as [H2|[H2 H2']].
     + left. by eapply ppo_trans.
     + right. split; [by rewrite (ppo_root _ _ H1)|done].
     + right. split; [done|by rewrite <-(ppo_root _ _ H2)].
     + by right.
-  - intros x x' y y' [? Hx] [? Hl] [? Hy]. split; [by eapply (wf_lt_eq _ HW)|].
-    destruct Hx as [<-|[Hx1 Hx2]], Hy as [->|[Hy1 Hy2]].
-    + exact Hl.
-    + right. split; [|done].
-      destruct Hl as [He|[? _]]; [by rewrite (ppo_root _ _ He)|done].
-    + right. split; [done|].
-      destruct Hl as [He|[_ ?]]; [by rewrite <-(ppo_root _ _ He)|done].
-    + by right.
   - intros x. split; [apply (wf_lt_po _ HW)|]. left. apply ppo_po.
-  - intros x y [Hxy Hs]. apply (wf_eq_supp _ HW) in Hxy.
-    destruct Hs as [->|[??]]; [by left|].
-    destruct Hxy as [->|[??]]; [by left|].
-    right. split; by apply elem_of_intersection.
   - intros x y [Hxy Hs]. apply (wf_lt_supp _ HW) in Hxy.
     destruct Hs as [?|[??]]; [by left|].
     destruct Hxy as [?|[??]]; [by left|].
     right. split; by apply elem_of_intersection.
   - intros p [Hp _]%elem_of_intersection. by apply HW.
-  - intros x y [Hxy Hs]. split; [by apply (wf_eq_dual _ HW)|].
-    destruct Hs as [->|[??]]; [by left|by right].
   - intros x. split; [apply (wf_lt_dpo _ HW)|]. left. apply ppo_dpo.
 Qed.
 
@@ -425,14 +423,14 @@ Lemma wfact_restrict W A b x y :
   wfact W b x y → pt_root x ∈ A → pt_root y ∈ A →
   wfact (wrestrict W A) b x y.
 Proof.
-  destruct b; simpl; intros H Hx Hy; (split; [done|]); by right.
+  destruct b; simpl; intros H Hx Hy; [split; [done|]; by right|done].
 Qed.
 
 Lemma wfact_join_l W1 W2 b x y : wfact W1 b x y → wfact (wjoin W1 W2) b x y.
-Proof. destruct b; apply wjoin_l. Qed.
+Proof. destruct b; [apply wjoin_l|simpl; auto]. Qed.
 
 Lemma wfact_join_r W1 W2 b x y : wfact W2 b x y → wfact (wjoin W1 W2) b x y.
-Proof. destruct b; apply wjoin_r. Qed.
+Proof. destruct b; [apply wjoin_r|simpl; auto]. Qed.
 
 (** ** Inclusion of generated worlds *)
 
@@ -481,8 +479,7 @@ Section join_paths.
       [constructor|].
     destruct b1, b2; try discriminate.
     change false with (false || false). eapply jpath_app; [by apply IH|].
-    apply jpath_one. destruct Hs as [Hs|Hs]; [left|right];
-      by apply wf_eq_sym.
+    apply jpath_one. destruct Hs as [Hs|Hs]; [left|right]; simpl in *; by subst.
   Qed.
 
   Lemma jpath_shift x y :
@@ -492,7 +489,7 @@ Section join_paths.
       [constructor|].
     destruct b1, b2; try discriminate.
     change false with (false || false). econstructor; [|by apply IH].
-    destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_shift.
+    destruct Hs as [Hs|Hs]; [left|right]; simpl in *; by subst.
   Qed.
 
   Lemma jpath_payload x y i :
@@ -502,7 +499,7 @@ Section join_paths.
       [constructor|].
     destruct b1, b2; try discriminate.
     change false with (false || false). econstructor; [|by apply IH].
-    destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_payload.
+    destruct Hs as [Hs|Hs]; [left|right]; simpl in *; by subst.
   Qed.
 
   Lemma jpath_dual x y :
@@ -512,7 +509,7 @@ Section join_paths.
       [constructor|].
     destruct b1, b2; try discriminate.
     change false with (false || false). econstructor; [|by apply IH].
-    destruct Hs as [Hs|Hs]; [left|right]; by apply wf_eq_dual.
+    destruct Hs as [Hs|Hs]; [left|right]; simpl in *; by subst.
   Qed.
 
   Lemma join_jpath :
@@ -520,20 +517,15 @@ Section join_paths.
     (∀ x y, w_lt (wjoin W1 W2) x y → jpath true x y).
   Proof.
     assert (∀ x y, w_eq (wjoin W1 W2) x y → jpath false x y) as Heq.
-    { simpl. induction 1 as [x y Hb|x|x y _ IH|x y z _ IH1 _ IH2|x y _ IH|x y i _ IH|x y _ IH].
-      - apply jpath_one. done.
-      - constructor.
-      - by apply jpath_rev.
-      - change false with (false || false). by eapply jpath_app.
-      - by apply jpath_shift.
-      - by apply jpath_payload.
-      - by apply jpath_dual. }
+    { intros x y ->. constructor. }
+    assert (∀ x y, geq (λ x y, w_eq W1 x y ∨ w_eq W2 x y) x y → jpath false x y) as Heq'.
+    { intros x y H. apply Heq. revert H. apply geq_eq. by intros ? ? [?|?]. }
     split; [done|]. simpl.
     induction 1 as [x y Hb|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
     - by apply jpath_one.
     - apply jpath_one. left. apply (wf_lt_po _ HW1).
     - change true with ((false || true) || false).
-      eapply jpath_app; [eapply jpath_app; [by apply Heq|done]|by apply Heq].
+      eapply jpath_app; [eapply jpath_app; [by apply Heq'|done]|by apply Heq'].
     - change true with (true || true). by eapply jpath_app.
     - apply jpath_one. left. apply (wf_lt_dpo _ HW1).
   Qed.
@@ -592,7 +584,6 @@ Section join_paths.
         * left. exists (b0 || b'). split; [done|].
           destruct b0, b, b'; naive_solver.
         * right. exists y, y, b0, false, b'. split_and!; try done.
-          -- destruct b0; simpl; apply (wf_eq_refl _ RJ_wf).
           -- destruct b0, b, b'; naive_solver.
       + destruct (sfact_combine _ _ _ _ _ Hs Hya) as [Hxa|(Hy & _ & _)].
         * right. exists a, c, (b0 || b1), b2, b3. split_and!; try done.
@@ -618,7 +609,6 @@ Section join_paths.
       + destruct (sfact_combine _ _ _ _ _ Hs Hyz) as [Hxz|(Hy & _ & _)].
         * by left.
         * right. exists y, y, b0, false, b. split_and!; try done.
-          -- destruct b0; simpl; apply (wf_eq_refl _ RJ_wf).
           -- by rewrite orb_false_r.
       + destruct (sfact_combine _ _ _ _ _ Hs Hya) as [Hxa|(Hy & _ & _)].
         * right. exists a, c, (b0 || b1), b2, b3. split_and!; try done.
@@ -664,8 +654,8 @@ Lemma wjoin_restrict_incl W1 W2 A :
   (∀ x y, w_lt (wjoin (wrestrict W1 A) (wrestrict W2 A)) x y →
           w_lt (wjoin W1 W2) x y).
 Proof.
-  apply wgen_incl.
-  - intros x y [[H _]|[H _]]; apply geq_base; [by left|by right].
+  split; [done|]. refine (proj2 (wgen_incl _ _ _ _ _ _)).
+  - intros x y [->| ->]; apply geq_refl.
   - intros x y [[H _]|[H _]]; apply glt_base; [by left|by right].
 Qed.
 
@@ -700,11 +690,8 @@ Proof.
   { intros x Hx. subst A. set_solver. }
   split; [apply wjoin_wf; apply wrestrict_wf; [apply HW1'|apply HW2]|].
   intros x Hx. apply (Hi x).
-  revert Hx. apply wgen_incl.
-  - intros a b [[Hab Hs]|[Hab Hs]].
-    + destruct Hs as [->|[Ha Hb]]; [apply geq_refl|].
-      apply geq_base. left. by apply (Hold a b (HA a Ha) (HA b Hb)).
-    + apply geq_base. by right.
+  revert Hx. refine (proj2 (wgen_incl _ _ _ _ _ _) x x).
+  - intros a b [->| ->]; apply geq_refl.
   - intros a b [[Hab Hs]|[Hab Hs]].
     + destruct Hs as [Hp|[Ha Hb]]; [by apply (wf_lt_ppo _ a b HJ)|].
       apply glt_base. left. by apply (Hold a b (HA a Ha) (HA b Hb)).
@@ -722,11 +709,13 @@ Lemma wgen_in_world W E L :
   (∀ x y, geq E x y → w_eq W x y) ∧ (∀ x y, glt E L x y → w_lt W x y).
 Proof.
   intros HW HE HL.
-  assert (∀ x y, geq E x y → w_eq W x y) as Heq.
-  { induction 1; eauto using wf_eq_refl, wf_eq_sym, wf_eq_trans,
-      wf_eq_shift, wf_eq_payload, wf_eq_dual. }
-  split; [done|]. induction 1; eauto using wf_lt_trans, wf_lt_po, wf_lt_dpo.
-  eapply (wf_lt_eq _ HW); eauto.
+  assert (∀ x y, geq E x y → w_eq W x y) as Heq by (intros x y; by apply geq_eq).
+  split; [done|]. induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
+  - by apply HL.
+  - apply (wf_lt_po _ HW).
+  - apply Heq in Hx, Hy. by subst.
+  - by eapply (wf_lt_trans _ HW).
+  - apply (wf_lt_dpo _ HW).
 Qed.
 
 Lemma wjoin_sub_strict W W' :
@@ -773,13 +762,11 @@ Proof.
                                          w_eq (wrestrict W' A) x y)
                 (λ x y, w_lt (wrestrict W1 A) x y ∨
                         w_lt (wrestrict W' A) x y)) as [Heq Hlt]; [done| | |].
-    - intros x y [[H Hs]|[H Hs]]; [|done].
-      destruct Hs as [->|[Hx Hy]]; [apply (wf_eq_refl _ HW')|].
-      by apply (H1 false x y); [|apply HA..].
+    - intros x y [->| ->]; done.
     - intros x y [[H Hs]|[H Hs]]; [|done].
       destruct Hs as [Hp|[Hx Hy]]; [by apply wf_lt_ppo|].
       by apply (H1 true x y); [|apply HA..].
-    - intros [] x y H; simpl in *; [by apply Hlt|by apply Heq]. }
+    - intros [] x y H; simpl in *; [by apply Hlt|done]. }
   (* a side fact between points outside N is a fact of W' *)
   assert (∀ b x y, sfact W1 W' b x y → pt_root x ∉ N → pt_root y ∉ N →
             wfact W' b x y) as Hs.
@@ -799,7 +786,7 @@ Proof.
   - simpl. rewrite Hnames. set_solver.
   - intros x y Hx Hy. split.
     + intros H. apply (Hpath false); [|done..].
-      by apply (join_jpath W1 W' HW1 HW').
+      by apply (join_jpath W1 W' HW1).
     + intros H. apply (Hpath true); [|done..].
-      by apply (join_jpath W1 W' HW1 HW').
+      by apply (join_jpath W1 W' HW1).
 Qed.

@@ -16,6 +16,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export relation.LogicalRelation relation.Creation.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** ** The transposition on constants, names and points *)
 
 Definition nswap (a b x : nat) : nat :=
@@ -445,29 +449,21 @@ Lemma wsame_refl W : wsame W W.
 Proof. done. Qed.
 
 Lemma wsame_sym W1 W2 : wsame W1 W2 → wsame W2 W1.
-Proof. intros (? & He & Hl). split_and!; [done|..]; intros; [by rewrite He|by rewrite Hl]. Qed.
+Proof. intros (? & He & Hl). split_and!; [done|done|intros; by rewrite Hl]. Qed.
 
 Lemma wsame_trans W1 W2 W3 : wsame W1 W2 → wsame W2 W3 → wsame W1 W3.
 Proof.
-  intros (H1 & He1 & Hl1) (H2 & He2 & Hl2). split_and!; [congruence|..];
-    intros; [by rewrite He1|by rewrite Hl1].
+  intros (H1 & He1 & Hl1) (H2 & He2 & Hl2). split_and!; [congruence|done|];
+    intros; by rewrite Hl1.
 Qed.
 
 Lemma wsame_wf W1 W2 : wsame W1 W2 → world_wf W1 → world_wf W2.
 Proof.
   intros (Hn & He & Hl) HW. split.
-  - intros x. apply He, HW.
-  - intros x y. rewrite <-!He. apply HW.
-  - intros x y z. rewrite <-!He. apply HW.
-  - intros x y. rewrite <-!He. apply HW.
-  - intros x y i. rewrite <-!He. apply HW.
   - intros x y z. rewrite <-!Hl. apply HW.
-  - intros x x' y y'. rewrite <-!He, <-!Hl. apply HW.
   - intros x. apply Hl, HW.
-  - intros x y. rewrite <-He, <-Hn. apply HW.
   - intros x y. rewrite <-Hl, <-Hn. apply HW.
   - intros p. rewrite <-Hn. apply HW.
-  - intros x y. rewrite <-!He. apply HW.
   - intros x. apply Hl, HW.
 Qed.
 
@@ -501,7 +497,6 @@ Qed.
 
 Definition wsw (a b : nat) (W : world) : world :=
   World (set_map (pnsw a b) (w_names W))
-    (λ x y, w_eq W (ptsw a b x) (ptsw a b y))
     (λ x y, w_lt W (ptsw a b x) (ptsw a b y)).
 
 Section wsw.
@@ -520,9 +515,9 @@ Section wsw.
     rewrite <-(elem_of_names_sw (pnsw a b p)), pnsw_involutive. done.
   Qed.
 
-  Lemma wsw_eq W x y :
+  Lemma wsw_eq (W : world) x y :
     w_eq (wsw a b W) (ptsw a b x) (ptsw a b y) ↔ w_eq W x y.
-  Proof. simpl. by rewrite ?ptsw_dual, !ptsw_involutive. Qed.
+  Proof. split; [by apply (ptsw_inj a b)|by intros ->]. Qed.
 
   Lemma wsw_lt W x y :
     w_lt (wsw a b W) (ptsw a b x) (ptsw a b y) ↔ w_lt W x y.
@@ -532,23 +527,13 @@ Section wsw.
   Proof.
     intros HW. split; simpl; intros *.
     - apply HW.
-    - apply HW.
-    - apply HW.
-    - rewrite !ptsw_shift. apply HW.
-    - rewrite !ptsw_payload. apply HW.
-    - apply HW.
-    - apply HW.
     - rewrite ptsw_shift. apply HW.
-    - intros H. apply (wf_eq_supp _ HW) in H as [H|[Hx Hy]].
-      + left. by apply (ptsw_inj a b).
-      + right. rewrite !elem_of_names_sw', <-!pt_root_sw. done.
     - intros H. apply (wf_lt_supp _ HW) in H as [Hp|[Hx Hy]].
       + left. by apply (ppo_sw a b).
       + right. rewrite !elem_of_names_sw', <-!pt_root_sw. done.
     - intros Hp. apply elem_of_names_sw' in Hp.
       destruct (wf_names_const _ HW _ Hp) as [c Hc].
       exists (nswap a b c). rewrite <-(pnsw_involutive a b p), Hc. done.
-    - rewrite !ptsw_dual. apply HW.
     - rewrite ptsw_shift, ptsw_dual. apply HW.
   Qed.
 
@@ -561,7 +546,7 @@ Section wsw.
     split_and!; simpl.
     - apply set_eq. intros p. rewrite !elem_of_names_sw', pnsw_involutive.
       done.
-    - intros. by rewrite ?ptsw_dual, !ptsw_involutive.
+    - done.
     - intros. by rewrite ?ptsw_dual, !ptsw_involutive.
   Qed.
 
@@ -589,7 +574,7 @@ Section wsw.
       rewrite elem_of_union, !elem_of_names_sw', Hn. set_solver.
     - intros x y Hx' Hy'. simpl.
       rewrite elem_of_names_sw', <-pt_root_sw in Hx', Hy'.
-      by apply Hold.
+      split; [done|]. by apply Hold.
   Qed.
 
   Lemma lbx_below_sw W lb H f :
@@ -599,7 +584,8 @@ Section wsw.
     destruct lb as [| |x]; simpl; [|done|].
     - intros [-> ->]. split; [set_solver|done].
     - intros [Hb ->]. split; [|done]. intros y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0).
-      unfold w_le. simpl. rewrite ?ptsw_dual, !ptsw_involutive. by apply Hb.
+      unfold w_le. simpl. rewrite ?ptsw_dual, !ptsw_involutive.
+      destruct (Hb _ Hy0) as [->|?]; [by left|by right].
   Qed.
 
   Lemma lb_below_sw W lb H :
@@ -608,7 +594,8 @@ Section wsw.
   Proof.
     destruct lb as [x|]; simpl.
     - intros Hb y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0).
-      unfold w_le. simpl. rewrite ?ptsw_dual, !ptsw_involutive. by apply Hb.
+      unfold w_le. simpl. rewrite ?ptsw_dual, !ptsw_involutive.
+      destruct (Hb _ Hy0) as [->|?]; [by left|by right].
     - intros ->. set_solver.
   Qed.
 
@@ -838,7 +825,7 @@ Section envs.
     destruct (Θ1 !! c) as [[]|] eqn:E1; try done.
     destruct (Θ2 !! c) as [[]|] eqn:E2; try done.
     injection H1 as <-. injection H2 as <-.
-    destruct (Hd _ _ _ E1 E2) as [Hx Hs]. simpl. rewrite ?ptsw_dual, !ptsw_involutive.
+    destruct (Hd _ _ _ E1 E2) as [Hx Hs]. simpl. rewrite Hx, ?ptsw_dual.
     split; [done|]. by apply sdual_sw.
   Qed.
 
@@ -867,7 +854,7 @@ Section envs.
   Proof.
     intros H c e1 e2 He. rewrite lookup_tenvsw in He.
     destruct (Θ !! c) as [[]|] eqn:E; try done. injection He as <- <-.
-    destruct (H _ _ _ E) as [Hx Hs]. simpl. rewrite ?ptsw_dual, !ptsw_involutive.
+    destruct (H _ _ _ E) as [Hx Hs]. simpl. rewrite Hx, ?ptsw_dual.
     split; [done|]. by apply sdual_sw.
   Qed.
 
@@ -886,7 +873,7 @@ Section envs.
     intros H c e1 e2 H1 H2. rewrite lookup_senvsw in H1, H2.
     destruct (Σ1 !! c) eqn:E1, (Σ2 !! c) eqn:E2; try done.
     injection H1 as <-. injection H2 as <-.
-    destruct (H _ _ _ E1 E2) as [Hx Hs]. simpl. rewrite ?ptsw_dual, !ptsw_involutive.
+    destruct (H _ _ _ E1 E2) as [Hx Hs]. simpl. rewrite Hx, ?ptsw_dual.
     split; [done|]. by apply sdual_sw.
   Qed.
 
@@ -920,10 +907,10 @@ Section envs.
       destruct (Θe !! r) as [o0|] eqn:E; [|done]. injection Hr as <-.
       specialize (H _ _ E). destruct o0 as [e'|e1 e2]; simpl.
       + destruct H as (e & He & Hx & Hs). exists (esw a b e).
-        rewrite lookup_senvsw, He. simpl. rewrite ?ptsw_dual, !ptsw_involutive.
+        rewrite lookup_senvsw, He. simpl. rewrite Hx, ?ptsw_dual.
         split_and!; [done|done|]. by apply sdual_sw.
       + destruct H as (He & Hx & Hs). rewrite lookup_senvsw, He. simpl.
-        rewrite ?ptsw_dual, !ptsw_involutive. split_and!; [done|done|]. by apply sdual_sw.
+        rewrite Hx, ?ptsw_dual. split_and!; [done|done|]. by apply sdual_sw.
   Qed.
 End envs.
 
@@ -1121,8 +1108,7 @@ Section ready.
   Lemma pteqW_sw W x y : pteqW W x y → pteqW (wsw a b W) (ptsw a b x) (ptsw a b y).
   Proof.
     intros [->|(Hx & Hy & H)]; [by left|right].
-    rewrite !pt_ground_sw. split_and!; [done|done|]. simpl.
-    by rewrite ?ptsw_dual, !ptsw_involutive.
+    rewrite !pt_ground_sw. split_and!; [done|done|]. simpl. by rewrite H.
   Qed.
 
   Lemma teqW_r_sw W T : ∀ ρ U, (∀ s r, ρ s r → ρ (stysw a b s) (stysw a b r)) →
@@ -1191,27 +1177,11 @@ Qed.
 Lemma teqW_r_mono W1 W2 T : ∀ ρ U,
   (∀ x y, w_eq W1 x y → w_eq W2 x y) → teqW_r ρ W1 T U → teqW_r ρ W2 T U.
 Proof.
-  assert (∀ x y, (∀ x y, w_eq W1 x y → w_eq W2 x y) →
-            pteqW W1 x y → pteqW W2 x y) as Hp.
-  { intros x y He [->|(? & ? & ?)]; [by left|right; auto]. }
-  assert (∀ n C C', (∀ x y, w_eq W1 x y → w_eq W2 x y) →
-            bcs_rel (pteqW W1) n C C' → bcs_rel (pteqW W2) n C C') as Hb.
-  { intros n C C' He [HC1 HC2].
-    assert (∀ g g', fact_rel (pteqW W1) g g' → fact_rel (pteqW W2) g g') as Hf.
-    { intros [] []; simpl; try done; intros [? ?]; split; eauto. }
-    split.
-    + intros g Hg. destruct (HC1 g Hg) as (g' & ? & ?). eauto.
-    + intros g Hg. destruct (HC2 g Hg) as (g' & ? & ?). eauto. }
+  (* without aliases pteqW W1 and pteqW W2 are the same relation (branch no-eq) *)
+  assert (∀ n C C', bcs_rel (pteqW W1) n C C' → bcs_rel (pteqW W2) n C C') as Hb by done.
   induction T; intros ρ [] He; simpl; try done.
-  - intros (Hu & Hl & ? & ?). split_and!; auto.
-    + destruct ub, ub0; simpl in *; try done. eauto.
-    + destruct lb, lb0; simpl in *; try done. eauto.
-  - naive_solver.
-  - naive_solver.
-  - intros (? & ? & HC & ?). split_and!; eauto. destruct k; eauto.
-  - naive_solver.
-  - intros (Hl & ? & HC & ?). split_and!; eauto.
-    destruct lb, lb0; simpl in *; try done. eauto.
+  all: try naive_solver.
+  all: destruct k; naive_solver.
 Qed.
 
 Lemma teqW_mono W1 W2 T U :
@@ -1307,7 +1277,7 @@ Proof.
           by apply lb_below_sw.
         * intros W'' j Θ' Θ'' w F Hx Hj Hc HVw Hub.
           assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
-          apply (tenv_comp_sw a b) in Hc. rewrite tenvsw_involutive in Hc.
+          apply (tenv_comp_sw a b W) in Hc. rewrite tenvsw_involutive in Hc.
           apply (IHV j Hj W'' (wsw a b W'')) in HVw; [|apply wsame_refl].
           rewrite tysw_involutive in HVw.
           apply (ub_below_sw a b) in Hub. rewrite ptsw_fmap_involutive in Hub.
@@ -1397,7 +1367,7 @@ Proof.
       split; [by apply (tenv_hd_sw a b _ _ (SSeq (SRcv m U) s))|].
       intros W'' j Θ2 Θ1c Θ' Hx Hj Hext Hc HVw.
       assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
-      apply (tenv_comp_sw a b) in Hc.
+      apply (tenv_comp_sw a b W) in Hc.
       apply (tenv_ext_sw a b) in Hext. rewrite tenvsw_involutive in Hext.
       unfold esw in Hext. simpl in Hext.
       rewrite stysw_involutive, ptsw_shift, ptsw_involutive in Hext.
@@ -1698,22 +1668,7 @@ Section fixed.
       + assert (pnsw a b (pnsw a b p) = pnsw a b p) as E by (by apply Hfixn).
         rewrite pnsw_involutive in E. by rewrite E.
       + by rewrite Hfixn.
-    - intros x y. simpl.
-      destruct (Hcase x) as [[Hxa Hxb]|Hx];
-        [destruct (Hcase y) as [[Hya Hyb]|Hy]|].
-      + by rewrite !ptsw_fix.
-      + split; intros H.
-        * apply (wf_eq_supp _ HW) in H as [H|[_ H]];
-            [|by destruct (Hout _ (Hsw _ Hy))].
-          apply (ptsw_inj a b) in H as ->. apply HW.
-        * apply (wf_eq_supp _ HW) in H as [->|[_ H]]; [apply HW|].
-          by destruct (Hout _ Hy).
-      + split; intros H.
-        * apply (wf_eq_supp _ HW) in H as [H|[H _]];
-            [|by destruct (Hout _ (Hsw _ Hx))].
-          apply (ptsw_inj a b) in H as ->. apply HW.
-        * apply (wf_eq_supp _ HW) in H as [->|[H _]]; [apply HW|].
-          by destruct (Hout _ Hx).
+    - done.
     - intros x y. simpl.
       destruct (Hcase x) as [[Hxa Hxb]|Hx];
         [destruct (Hcase y) as [[Hya Hyb]|Hy]|].

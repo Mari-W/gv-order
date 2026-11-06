@@ -17,6 +17,10 @@
 From stdpp Require Import base strings gmap gmultiset.
 From LRGV Require Export composition.PConnect.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** One world for both components: W ⊔ W lies below W (as in Static.v,
@@ -27,7 +31,7 @@ Proof.
   destruct (wgen_in_world W (λ x y, w_eq W x y ∨ w_eq W x y)
               (λ x y, w_lt W x y ∨ w_lt W x y)) as [Heq Hlt];
     [apply HW|naive_solver|naive_solver|].
-  split_and!; [simpl; set_solver|exact Heq|exact Hlt|exact HW].
+  split_and!; [simpl; set_solver|done|exact Hlt|exact HW].
 Qed.
 
 (** ** Components with one interface map *)
@@ -353,7 +357,7 @@ Proof.
   intros HW Hs. split_and!; [|..|done].
   - intros p Hp. simpl. apply elem_of_union_list. exists (w_names W).
     split; [|done]. by apply list_elem_of_fmap_2.
-  - intros x y H. apply geq_base. eauto.
+  - by intros x y ->.
   - intros x y H. apply glt_base. eauto.
 Qed.
 

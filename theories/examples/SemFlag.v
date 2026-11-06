@@ -46,6 +46,8 @@ From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ChoiceNegative examples.DataBranch static.Mixed.
 From LRGV Require Import static.SourceRules.
 
+
+
 Set Default Proof Using "All".
 
 (** ** The program *)
@@ -110,7 +112,7 @@ Proof. destruct U; simpl; tauto. Qed.
 
 (** The linear bindings of Δ sit at i only. *)
 Definition lin_only (Δ : lenv) (i : nat) : Prop :=
-  ∀ y W, Δ !! y = Some (Some W) → ¬ unlimited W → y = i.
+  ∀ y U, Δ !! y = Some (Some U) → ¬ unlimited U → y = i.
 
 Lemma wk_transfer Δ' Δ i V :
   lenv_wk Δ' Δ → Δ' !! i = Some (Some V) → lin_only Δ' i →

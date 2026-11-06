@@ -60,7 +60,7 @@ Qed.
 Lemma wext_join_l W1 W' :
   strict (wjoin W1 W') → wext W1 (wjoin W1 W').
 Proof.
-  intros Hs. split_and!; [simpl; set_solver|apply wjoin_l|apply wjoin_l|done].
+  intros Hs. split_and!; try done; [simpl; set_solver|apply wjoin_l].
 Qed.
 
 (** ** Future weakening *)
@@ -127,13 +127,12 @@ Proof.
         intros W'' j Θ' Θ'' w F HW' Hj Hc HVw Hub.
         apply (HL W'' j Θ' Θ'' w F); [|done..]. by eapply wext_trans.
       + apply Vrel_lolli_iff. right. exists k, T0.
-        destruct HWW' as (Hn & He & Hl & _). split_and!; [done|done| |].
-        * eapply konst_ty_mono; [| | |exact Hk]; auto.
-          unfold pt_known. intros x Hx. by apply Hn.
-        * by eapply teqW_mono.
+        destruct HWW' as (Hn & He & Hl & _). split_and!; try done.
+        all: try (by eapply teqW_mono).
+        all: eapply konst_ty_mono; [| | |exact Hk]; auto;
+          unfold pt_known; intros x Hx; by apply Hn.
     - apply Vrel_prod_iff in HVv as (v1 & v2 & Θ1 & Θ2 & -> & Hsp & H1 & H2).
       apply Vrel_prod_iff. exists v1, v2, Θ1, Θ2. split_and!; eauto.
-      eapply tenv_comp_mono; [|exact Hsp]. by destruct HWW' as (_ & ? & _).
     - apply Vrel_sum_iff in HVv as [(v' & -> & H)|(v' & -> & H)];
         apply Vrel_sum_iff; [left|right]; exists v'; eauto.
     - apply Vrel_box_iff in HVv as (-> & eb & -> & Hfc & HK).
@@ -169,16 +168,13 @@ Proof.
     + destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' &
                          Hhd & Hc & HVw & Hext & HE').
       exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done.
-      * eapply tenv_comp_mono; [|exact Hc]. by destruct HWW' as (_ & ? & _).
       * eapply HV; done.
       * exact (proj2 HE' W' HW HWW').
     + destruct Hstep as (Θ1 & k & Hhd & HE').
       exists Θ1, k. split; [done|]. exact (proj2 HE' W' HW HWW').
     + destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd &
                          -> & ? & ? & ? & Hal & HE').
-      exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..| |].
-      * destruct HWW' as (_ & He & _). auto.
-      * exact (proj2 HE' W' HW HWW').
+      exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|]. exact (proj2 HE' W' HW HWW').
     + destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
       exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. exact (proj2 HE' W' HW HWW').
     + destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
@@ -206,7 +202,7 @@ Proof.
         -- by destruct Hfr'' as ((_ & _ & _ & ?) & _).
     + destruct Hstep as (Θ1 & Θ2 & ub & lb & Hc & HVw & HE').
       exists Θ1, Θ2, ub, lb. split_and!.
-      * eapply tenv_comp_mono; [|exact Hc]. by destruct HWW' as (_ & ? & _).
+      * exact Hc.
       * eapply HV; done.
       * eapply HEj; [lia|done|done|exact HE'].
   - destruct n as [|n']; [intros; apply Prel_0|].
@@ -240,16 +236,13 @@ Proof.
     + destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
                          ? & ? & ? & ? & Hsp & ? & HVw & HP').
       exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done.
-      * eapply send_split_mono; [|exact Hsp]. by destruct HWW' as (_ & ? & _).
       * eapply HV; done.
       * exact (proj2 HP' W' HW HWW').
     + destruct Hstep as (Σ1 & k & Hhd & ? & HP').
       exists Σ1, k. split_and!; [done|done|]. exact (proj2 HP' W' HW HWW').
     + destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
                          -> & ? & -> & ? & ? & ? & Hal & HP').
-      exists c, d, Σ1, sc, sd, kc, kd. split_and!; [done..| |].
-      * destruct HWW' as (_ & He & _). auto.
-      * exact (proj2 HP' W' HW HWW').
+      exists c, d, Σ1, sc, sd, kc, kd. split_and!; [done..|]. exact (proj2 HP' W' HW HWW').
     + destruct Hstep as (Σ1 & s1 & s2 & k & ? & ? & HP').
       exists Σ1, s1, s2, k. split_and!; [done..|]. exact (proj2 HP' W' HW HWW').
     + destruct Hstep as (Σ1 & s1 & s2 & k & ? & ? & HP').

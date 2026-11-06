@@ -11,6 +11,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export relation.LogicalRelation.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** ** Lifting transitions into a larger soup *)
 
 Lemma new_retarget e c e' c' : tstep e (LNew c) e' → ∃ e'', tstep e (LNew c') e''.
@@ -506,10 +510,10 @@ Section connect.
   Proof. destruct HW as [HWf _]. apply (wf_lt_trans _ HWf). Qed.
 
   Lemma lt_eq_l x y z : w_eq W x y → w_lt W y z → w_lt W x z.
-  Proof. destruct HW as [HWf _]. intros. eapply (wf_lt_eq _ HWf); [done|done|apply HWf]. Qed.
+  Proof. destruct HW as [HWf _]. intros. eapply (wf_lt_eq _ HWf); [done|done|reflexivity]. Qed.
 
   Lemma lt_eq_r x y z : w_lt W x y → w_eq W y z → w_lt W x z.
-  Proof. destruct HW as [HWf _]. intros. eapply (wf_lt_eq _ HWf); [apply HWf|done|done]. Qed.
+  Proof. destruct HW as [HWf _]. intros. eapply (wf_lt_eq _ HWf); [reflexivity|done|done]. Qed.
 
   Lemma eq_sym_W x y : w_eq W x y → w_eq W y x.
   Proof. destruct HW as [HWf _]. apply (wf_eq_sym _ HWf). Qed.
@@ -907,7 +911,7 @@ Section term.
     pose proof (proj1 (Hab (c', b) _ (ex_intro _ _ (ex_intro _ _ (conj Hst Hsel))) Hself)
                   _ _ Hother Hnoff) as Hlt.
     destruct HW as [HWf Hirr]; apply (Hirr (entry_head (c', b) (if b then e2 else e1)));
-      eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|exact Hhead].
+      eapply (wf_lt_eq _ HWf); [reflexivity|exact Hlt|exact Hhead].
   Qed.
   Lemma lift_offer k : stable_p p → k.1 ∈ dom Σ → offered_t Θ t k → offered_p Σ p k.
   Proof.

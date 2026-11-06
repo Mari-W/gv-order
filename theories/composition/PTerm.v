@@ -16,6 +16,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export composition.PConnect.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 Set Default Proof Using "All".
 
 (** ** Steps of a single thread *)
@@ -101,7 +105,6 @@ Record tok (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) : Prop := {
 Lemma tok_mono W W' Σ ΘB C0 : wext W W' → tok W Σ ΘB C0 → tok W' Σ ΘB C0.
 Proof.
   intros (_ & Heq & _ & HW') [HW Hd Hdj Hb Hdu]. split; try done.
-  eapply tenv_dual_mono; [|exact Hdu]. exact Heq.
 Qed.
 
 (** Restricting a map to the keys of another, or to the keys missing
@@ -236,7 +239,7 @@ Proof.
   pose proof (tok_mono _ _ _ _ _ HW Hok) as Hok'.
   assert (∀ x, (x ∈ C0 ↔ is_Some (ΘB !! x)) ∧ (Σr !! x = None ∨ ΘB !! x = None) ∧
     (∀ o, ΘB !! x = Some o → ∃ e1 e2, o = Both e1 e2 ∧ w_eq W' e1.2 (pt_dual e2.2) ∧ sdual e1.1 e2.1))
-    as Hat by (intros x; by apply tok_at).
+    as Hat by (intros x; by apply (tok_at W')).
   assert (∀ x, is_Some (Θ2 !! x) → ΘB !! x = None) as H2B.
   { intros x Hx. destruct (Hat x) as (HC & _). destruct (ΘB !! x) eqn:E; [|done].
     exfalso. apply (HdC x); [by apply elem_of_dom|apply HC; by eexists]. }

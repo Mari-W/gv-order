@@ -11,6 +11,10 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export invariance.JunkRenaming.
 
+(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
+Implicit Types W : world.
+
+
 (** [set_solver] after dropping the large hypotheses. *)
 Local Ltac sset :=
   repeat match goal with
@@ -393,7 +397,7 @@ Section ready.
   Lemma lt_eq_false x y : w_lt W x y → w_eq W x y → False.
   Proof.
     intros Hlt Heq. destruct HW as [HWf Hirr]. apply (Hirr y).
-    eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|apply HWf].
+    eapply (wf_lt_eq _ HWf); [by apply (wf_eq_sym _ HWf)|exact Hlt|reflexivity].
   Qed.
 
   Lemma fused_ready :
@@ -437,7 +441,7 @@ Section ready.
         exists k', e'. split_and!.
         + by apply off_fwd.
         + by rewrite <-(fusedP_entry_ne c d Σ sc sd kc kd).
-        + simpl. eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|by apply (wf_eq_sym _ HWf)].
+        + simpl. eapply (wf_lt_eq _ HWf); [reflexivity|exact Hlt|by apply (wf_eq_sym _ HWf)].
       - rewrite entry_d in He. injection He as <-.
         destruct (Ha (c, false) (sc, kc) entry_c) as (k' & e' & Ho' & He' & Hlt).
         { intros Hc'. by apply Hnb. }
@@ -445,14 +449,14 @@ Section ready.
         destruct (decide (k'.1 = d)) as [Hk'|Hk'].
         { exfalso. destruct k' as [k1' b']. simpl in Hk'. subst k1'.
           apply fusedP_entry_d in He' as [-> ->]; [|done]. simpl in Hlt.
-          apply (lt_eq_false kd (pt_dual kc)); [done|by apply wf_eq_dual_sym]. }
+          apply (lt_eq_false kd (pt_dual kc)); [done|by apply eq_dual_sym]. }
         destruct (decide (k'.1 = c)) as [Hk''|Hk''].
         { exfalso. destruct k' as [k1' b']. simpl in Hk''. subst k1'.
           apply fusedP_entry_c in He' as [-> ->]. apply Hnb. by split. }
         exists k', e'. split_and!.
         + by apply off_fwd.
         + by rewrite <-(fusedP_entry_ne c d Σ sc sd kc kd).
-        + simpl. eapply (wf_lt_eq _ HWf); [apply HWf|exact Hlt|by apply wf_eq_dual_l]. }
+        + simpl. eapply (wf_lt_eq _ HWf); [reflexivity|exact Hlt|by apply eq_dual_l]. }
 
     split.
     - intros Hno. apply Hnt, Hv. intros k Ho.
@@ -697,8 +701,7 @@ Section internalize.
       wext W W' → c ∉ dom Σ' → d ∉ dom Σ' → c ∉ C' → d ∉ C' → int_ok W' Σ' sc sd kc kd C'.
     Proof.
       intros Hx ????. split_and!; try done.
-      - by destruct Hx as (_ & _ & _ & ?).
-      - by apply (proj1 (proj2 Hx)).
+      all: by destruct Hx as (_ & _ & _ & ?).
     Qed.
 
     Lemma ext_recv a w' q' :
@@ -992,7 +995,7 @@ Section internalize.
         + split; [rewrite !dom_insert_L; clear -HΣeΘ; set_solver|].
           intros r o Hr. destruct (decide (r = d)) as [->|Hrd].
           * rewrite lookup_insert_eq in Hr. injection Hr as <-. exists (sd, kd).
-            rewrite lookup_insert_eq. split_and!; [done|by apply wf_eq_dual_sym|by apply sdual_sym].
+            rewrite lookup_insert_eq. split_and!; [done|by apply eq_dual_sym|by apply sdual_sym].
           * rewrite lookup_insert_ne in Hr by done. destruct Hsplit as [_ Hs].
             specialize (Hs r o Hr). rewrite lookup_insert_ne by done. done.
         + rewrite dom_insert_L. clear -HΘeΣ HdΣ. set_solver.
@@ -1169,7 +1172,7 @@ Section internalize.
           destruct (sdual_rcv_inv _ _ _ _ _ Hdu Hu1) as (U2 & r' & Hr & HU2 & Hsr).
           rewrite Hu in Hr. injection Hr as -> -> ->. split_and!; [done|by apply teq_sym| |].
           + right. done.
-          + by apply wf_eq_dual_sym. }
+          + by apply eq_dual_sym. }
       set (Σr := <[c1 := (s', pt_shift 1 k')]> Σ1).
       assert (HrC : ∀ y, y ∈ C → Σr !! y = Σe !! y).
       { intros y Hy. assert (y ≠ c1 ∧ y ≠ c0) as [Hy1 Hy0] by (split; intros ->; done).
@@ -1477,7 +1480,7 @@ Section internalize.
           + rewrite decide_False by done. rewrite (fusedP_d c d Hcd) in H0.
             injection H0 as <- <-. split; simpl.
             * apply (sdual_unique sd); by apply sdual_sym.
-            * eapply (wf_eq_trans _ HWf); [exact Hal|by apply wf_eq_dual_l].
+            * eapply (wf_eq_trans _ HWf); [exact Hal|by apply eq_dual_l].
         - pose proof (Hl x0) as H0. pose proof (Hl y0) as H1.
           rewrite lookup_insert_eq in H1. rewrite lookup_insert_ne, lookup_insert_eq in H0
             by done.
@@ -1486,7 +1489,7 @@ Section internalize.
           + rewrite decide_True by done. rewrite fusedP_c in H0. injection H0 as <- <-.
             split; simpl.
             * by apply (sdual_unique sc).
-            * eapply (wf_eq_trans _ HWf); [apply (wf_eq_sym _ HWf); by apply wf_eq_dual_l|].
+            * eapply (wf_eq_trans _ HWf); [apply (wf_eq_sym _ HWf); by apply eq_dual_l|].
               by apply (wf_eq_sym _ HWf).
           + rewrite decide_False by done. rewrite (fusedP_d c d Hcd) in H0.
             injection H0 as <- <-. split; simpl.
