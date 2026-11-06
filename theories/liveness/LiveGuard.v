@@ -324,3 +324,79 @@ Proof.
       * done.
       * eapply lgrounding_mono; [exact HW1|exact Hg].
 Qed.
+
+(** ** The guard discharges the later variable *)
+
+Lemma lgroundingL_split n W Θ Δ Δ1 Δ2 L lam γ :
+  lenv_split Δ Δ1 Δ2 → lgroundingL n W Θ Δ L lam γ →
+  ∃ Θ1 Θ2, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧ lgroundingL n W Θ1 Δ1 L lam γ ∧
+    lgroundingL n W Θ2 Δ2 L lam γ.
+Proof.
+  intros Hsp. pose proof eq_rdsym as Hs.
+  revert Θ L γ. induction Hsp as [|Δ Δ1 Δ2 Hsp IH|T Δ Δ1 Δ2 Hsp IH|T Δ Δ1 Δ2 Hsp IH|U Δ Δ1 Δ2 HU Hsp IH];
+    intros Θ L γ Hg; simpl in *.
+  - subst. exists ∅, ∅. split_and!; [apply tenv_comp_empty_r|done|done].
+  - by apply IH.
+  - destruct (decide (L = Some 0)) as [->|HL].
+    + destruct Hg as (Hu & Hv & Hg). destruct (IH _ _ _ Hg) as (Θ1 & Θ2 & Hc & Hg1 & Hg2).
+      exists Θ1, Θ2. split; [done|]. split; [exact (conj Hu (conj Hv Hg1))|done].
+    + destruct Hg as (Θa & Θr & Hc & HV & Hg).
+      destruct (IH _ _ _ Hg) as (Θ1 & Θ2 & Hc' & Hg1 & Hg2).
+      destruct (comp_assoc _ _ _ _ _ _ Hs (comp_comm _ _ _ _ Hs Hc) Hc') as [HX HY].
+      eexists _, Θ2. split_and!; [exact HY| |done].
+      exists Θa, Θ1. split_and!; [by apply comp_comm|done|done].
+  - destruct (decide (L = Some 0)) as [->|HL].
+    + destruct Hg as (Hu & Hv & Hg). destruct (IH _ _ _ Hg) as (Θ1 & Θ2 & Hc & Hg1 & Hg2).
+      exists Θ1, Θ2. split; [done|]. split; [done|exact (conj Hu (conj Hv Hg2))].
+    + destruct Hg as (Θa & Θr & Hc & HV & Hg).
+      destruct (IH _ _ _ Hg) as (Θ1 & Θ2 & Hc' & Hg1 & Hg2).
+      destruct (comp_assoc _ _ _ _ _ _ Hs (comp_comm _ _ _ _ Hs Hc) (comp_comm _ _ _ _ Hs Hc'))
+        as [HX HY].
+      eexists Θ1, _. split_and!; [by apply comp_comm|done|].
+      exists Θa, Θ2. split_and!; [by apply comp_comm|done|done].
+  - destruct (decide (L = Some 0)) as [->|HL].
+    + destruct Hg as (Hu & Hv & Hg). destruct (IH _ _ _ Hg) as (Θ1 & Θ2 & Hc & Hg1 & Hg2).
+      exists Θ1, Θ2. split; [done|]. split; [exact (conj Hu (conj Hv Hg1))|exact (conj Hu (conj Hv Hg2))].
+    + destruct Hg as (Θa & Θr & Hc & HV & Hg).
+      pose proof (LVrel_unl_empty _ _ _ _ _ HU HV) as ->.
+      apply (tenv_comp_empty_l_inv _ _ _ Hs) in Hc as ->.
+      destruct (IH _ _ _ Hg) as (Θ1 & Θ2 & Hc' & Hg1 & Hg2).
+      exists Θ1, Θ2. split_and!; [done| |].
+      * exists ∅, Θ1. split_and!; [by apply tenv_comp_empty_l|done|done].
+      * exists ∅, Θ2. split_and!; [by apply tenv_comp_empty_l|done|done].
+Qed.
+
+(** E-Guard-Let: a guarded e1 with a later variable, and a continuation
+    that reads the variable now. *)
+Lemma lsem_later_letu_guard W Θ Θ1 Θ2 Δ Δ1 Δ2 L lam F e1 e2 T :
+  gd e1 = true → tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+  lsem_later W Θ1 Δ1 L lam (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 TUnit →
+  lsem_typed W Θ2 Δ2 F e2 T →
+  lsem_later W Θ Δ L lam F (LetU e1 e2) T.
+Proof.
+  intros Hgd Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  destruct n as [|n']; [apply LErel_0|].
+  pose proof (wext_wf _ _ HW) as HW'. pose proof eq_rdsym as Hs.
+  destruct (lgroundingL_split _ _ _ _ _ _ _ _ _ Hsp Hg) as (Θ'1 & Θ'2 & Hc' & Hg1 & Hg2).
+  destruct (comp_swap4 _ _ _ _ _ _ _ _ Hs Hc'' Hc Hc') as (A & B & HAB & HA & HB).
+  change (LetU (subst γ e1) (subst γ e2)) with (fill_frame (FLetU (subst γ e2)) (subst γ e1)).
+  eapply (LErel_bind_guarded (S n') _ W' Θ'' A B TUnit T F
+            (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))).
+  - apply gd_noret, gd_subst, Hgd.
+  - done.
+  - apply HW.
+  - done.
+  - apply heads_above_x_bot. intros Hb.
+    eapply heads_above_comp; [exact HB|by apply heads_above_self|].
+    eapply lgrounding_heads; [exact HW'|exact Hb|]. apply (lgroundingL_lower (S n') n' _ _ _ _ _ _ ltac:(lia) Hg2).
+  - by apply (He1 (S n') W' Θ'1 A γ).
+  - intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. simpl.
+    apply LVrel_unit_iff in HV as [-> ->].
+    apply (tenv_comp_empty_l_inv _ _ _ Hs) in Hc3 as ->.
+    apply (LErel_det_beta _ _ _ _ _ _ (subst γ e2)).
+    + apply TStepHead, HeadLetU.
+    + intros α e'' Hst. apply tstep_letu_inv in Hst as [(e1' & Hst & _)|(_ & -> & ->)]; [|done].
+      exfalso. by eapply val_no_tstep.
+    + apply (He2 j W'' Θ'2 B γ); [by eapply wext_trans|done|].
+      eapply lgrounding_mono; [exact HW''|]. apply (lgroundingL_lower (S n') j _ _ _ _ _ _ Hj Hg2).
+Qed.
