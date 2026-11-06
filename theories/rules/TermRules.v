@@ -1015,8 +1015,8 @@ Proof.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [kq Tq Gq xq Hsig HG _|]; subst.
-  inversion Hsig as [| | | | | | |S x x'|]; subst.
-  assert (w_eq W x (pt_dual x')) as Hxx' by by apply (HG (FEq x (pt_dual x'))).
+  inversion Hsig as [| | | | | | |S x|]; subst.
+  assert (w_eq W x (pt_dual (pt_dual x))) as Hxx' by (rewrite pt_dual_dual; apply (wf_eq_refl _ HWf)).
 
   apply Vrel_prod_iff in HV as (vc & vd & Θc & Θd & -> & Hc & HVc & HVd).
   apply Vrel_sess_iff in HVc as (c & sc & kc & -> & -> & Hsc & Hkc).

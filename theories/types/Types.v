@@ -1756,7 +1756,7 @@ Definition below_all (x : point) (H : gset point) : fact → Prop :=
     close  : Close@ι ⊸^ι ∗
     selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@(ι[i])‾         {ι ≺ ι[i]}           (K11, end points)
     branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]   {ι ≺ (ι[0])‾, ι ≺ (ι[1])‾}
-    link   : S@ι ⊗ dual S@ι′ ⊸ ∗                  {ι ≡ (ι′)‾}   (never blocks, sharp edges 68)
+    link   : S@ι ⊗ dual S@ῑ ⊸ ∗                    (never blocks, sharp edges 68; no-eq: the ends at ι and ῑ)
 
     With end points the selecting end continues at the dual payload
     point (ι[i])‾ and the branching end at ι[i], so the two ends stay at
@@ -1796,10 +1796,10 @@ Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :
         (TLolli (Some x) None (TSess (SWith S1 S2) x)
            (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))
         (λ g, g = FLt x (pt_dual (pt_payload x 0)) ∨ g = FLt x (pt_dual (pt_payload x 1))) []
-  | KSLink S x x' :
+  | KSLink S x :
       konst_sig KLink
-        (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)
-        (λ g, g = FEq x (pt_dual x')) []
+        (TLolli None None (TProd (TSess S x) (TSess (dual S) (pt_dual x))) TUnit)
+        (λ _, False) []
   | KSForce n k C ub T xs ss :
       length xs = n → length ss = k → Forall hcontractive ss →
       konst_sig KForce
@@ -1879,11 +1879,10 @@ Section konst_intro.
          (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1)))).
   Proof. intros H0 H1. eapply KTSig; [constructor| |constructor]. by intros g [->| ->]. Qed.
 
-  Lemma KTLink S x x' :
-    peq x (pt_dual x') →
+  Lemma KTLink S x :
     konst_ty peq plt pk KLink
-      (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit).
-  Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
+      (TLolli None None (TProd (TSess S x) (TSess (dual S) (pt_dual x))) TUnit).
+  Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
 
   Lemma KTForce n k C ub T xs ss :
     length xs = n → bcs_hold peq plt C xs → Forall pk xs →
@@ -1915,7 +1914,7 @@ Lemma konst_ty_case (peq plt : point → point → Prop) (pk : point → Prop)
   (∀ S1 S2 x, plt x (pt_dual (pt_payload x 0)) → plt x (pt_dual (pt_payload x 1)) →
      P KBra (TLolli (Some x) None (TSess (SWith S1 S2) x)
                (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))) →
-  (∀ S x x', peq x (pt_dual x') → P KLink (TLolli None None (TProd (TSess S x) (TSess (dual S) x')) TUnit)) →
+  (∀ S x, P KLink (TLolli None None (TProd (TSess S x) (TSess (dual S) (pt_dual x))) TUnit)) →
   (∀ n k C ub T xs ss, length xs = n → bcs_hold peq plt C xs → Forall pk xs →
      length ss = k → Forall hcontractive ss →
      P KForce (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
@@ -1931,6 +1930,5 @@ Proof.
   - apply Hs1. by apply (HG (FLt _ _)).
   - apply Hs2. by apply (HG (FLt _ _)).
   - apply Hbr; [apply (HG (FLt _ _)); by left|apply (HG (FLt _ _)); by right].
-  - apply Hln. by apply (HG (FEq _ _)).
   - eapply Hfo; [done|by apply facts_hold_bcs_at|done|done|done].
 Qed.

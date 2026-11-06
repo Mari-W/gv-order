@@ -266,8 +266,14 @@ Proof.
   - destruct Hk as [S|p q| | | | |S]; simpl in Ek |- *; try done.
     + rewrite tr_sty_dual, ppt_dual. by apply new_tr_typed.
     + apply t_const; [done|apply KTSpawn|done].
-    + apply t_const; [done| |done]. rewrite tr_sty_dual, ppt_dual.
-      apply KTLink. apply se_w, pgv_eq; done.
+    + rewrite tr_sty_dual, ppt_dual.
+      (* both ends sit at one point ppt S, which Wpgv identifies with its
+         dual; link asks the second end at the dual point (branch no-eq) *)
+      apply (t_conv _ _ _ _ _ _ _
+               (TLolli None None (TProd (TSess (tr_sty S) (ppt S)) (TSess (dual (tr_sty S)) (pt_dual (ppt S)))) TUnit)).
+      * cbn. split_and!; try done; try apply seq_refl; try apply se_refl.
+        apply se_w, pgv_eq; try done; by rewrite den_dual.
+      * apply t_const; [done|apply KTLink|done].
 Qed.
 
 Lemma pgv_konst_inv ok Γ p k T :

@@ -147,13 +147,14 @@ Qed.
                 let () = close c₂ in close e₂
 
     With c₁, c₂ at x, x̄, d₁, d₃ at y, ȳ and e₂, e₃ at z, z̄ (end
-    points): link asks x ≡ ȳ (KTLink), so x̄ ≡ y (wf_eq_dual). The main
-    thread closes c₂ at x̄ while it holds e₂ and asks x̄ ≺ z̄, the second
-    thunk closes e₃ at z̄ while it holds d₃ and asks z̄ ≺ y. Then
-    x̄ ≺ z̄ ≺ y ≡ x̄, and wf_lt_eq gives x̄ ≺ x̄. This is the spec's
-    (c,0) ≺ (e,0) ≺ (d,0) ≡ (c,0). The program deadlocks: after the
-    link the main thread waits on c₂ for d₃, and the second thread
-    waits on e₃ for e₂. The argument reads only the alias of KTLink.
+    points): link types only with d₁ at x̄ (KTLink, branch no-eq), so
+    y = x̄ and d₃ sits at x. On main the link asked the alias x ≡ ȳ. The
+    main thread closes c₂ at x̄ while it holds e₂ and asks x̄ ≺ z̄, the
+    second thunk closes e₃ at z̄ while it holds d₃ and asks z̄ ≺ x̄. This
+    is the spec's (c,0) ≺ (e,0) ≺ (c,0). The program deadlocks: after
+    the link the main thread waits on c₂ for d₃, and the second thread
+    waits on e₃ for e₂. The argument reads only the points KTLink
+    fixes.
     link has upper point ⊥ (sharp edges 68), so the link thunk asks
     no fact, and the program stays rejected. *)
 
@@ -190,13 +191,13 @@ Proof. intros [HW Hs] p H. apply (Hs p). by apply slt_nil. Qed.
 
 (** The reversed agent of examples/Scheduler.v. ag₀ receives on r₂ at y
     while it holds r₀ at x, so it asks y ≺ x. ag₂ receives on r₁ at z
-    while it holds r₂ at y, so it asks z ≺ y. link ⟨r₁, r₀⟩ asks
-    z ≡ x. The three give z ≺ z. *)
-Lemma sched_rev_underivable W Ψ x y z :
-  (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ y x ∧ slt W Ψ z y ∧ seqs W Ψ z x).
+    while it holds r₂ at y, so it asks z ≺ y. link ⟨r₁, r₀⟩ types only
+    when the two ends sit at dual points, so z is x (branch no-eq: no
+    alias, the points are equal). The two give x ≺ x. *)
+Lemma sched_rev_underivable W Ψ x y :
+  (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ y x ∧ slt W Ψ x y).
 Proof.
-  intros Hacy (Hyx & Hzy & Hzx). apply (Hacy z).
-  eapply sl_trans; [exact Hzy|]. eapply sl_eqr; [exact Hyx|by apply se_sym].
+  intros Hacy (Hyx & Hxy). apply (Hacy x). by eapply sl_trans.
 Qed.
 
 (** The reversed agent of examples/MilnerSched.v. With r_i the point of
@@ -210,16 +211,16 @@ Proof.
   eapply sl_trans; [exact H01|]. by eapply sl_trans.
 Qed.
 
-(** The bad link of [badlink_main]. With end points read x, y, z below
-    as x̄, y, z̄ of the comment above: link ⟨c₁, d₁⟩ gives x̄ ≡ y, the
-    main thread closes c₂ at x̄ while it holds e₂ and asks x̄ ≺ z̄, and
-    the second thunk closes e₃ at z̄ while it holds d₃ and asks z̄ ≺ y.
-    The three give x̄ ≺ x̄. *)
-Lemma badlink_underivable W Ψ x y z :
-  (∀ p, ¬ slt W Ψ p p) → ¬ (seqs W Ψ x y ∧ slt W Ψ x z ∧ slt W Ψ z y).
+(** The bad link of [badlink_main]. With end points read x, z below
+    as x̄, z̄ of the comment above. link ⟨c₁, d₁⟩ types only when d₁
+    sits at the partner point of c₁, so d₃ sits at x̄ (branch no-eq: d
+    is created by new@x̄, no alias). The main thread closes c₂ at x̄
+    while it holds e₂ and asks x̄ ≺ z̄, and the second thunk closes e₃ at
+    z̄ while it holds d₃ and asks z̄ ≺ x̄. The two give x̄ ≺ x̄. *)
+Lemma badlink_underivable W Ψ x z :
+  (∀ p, ¬ slt W Ψ p p) → ¬ (slt W Ψ x z ∧ slt W Ψ z x).
 Proof.
-  intros Hacy (Hxy & Hxz & Hzy). apply (Hacy x).
-  eapply sl_eqr; [|by apply se_sym]. by eapply sl_trans.
+  intros Hacy (Hxz & Hzx). apply (Hacy x). by eapply sl_trans.
 Qed.
 
 (** ** [ordered] without its constraint: the body does not type

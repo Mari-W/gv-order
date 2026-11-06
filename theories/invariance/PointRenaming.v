@@ -1104,7 +1104,7 @@ Section ready.
     - apply KTSel1; simpl; by rewrite ?ptsw_dual, ?ptsw_payload, ?ptsw_dual, ?ptsw_involutive.
     - apply KTSel2; simpl; by rewrite ?ptsw_dual, ?ptsw_payload, ?ptsw_dual, ?ptsw_involutive.
     - apply KTBra; simpl; by rewrite ?ptsw_dual, ?ptsw_payload, ?ptsw_dual, ?ptsw_involutive.
-    - apply KTLink. simpl. by rewrite ?ptsw_dual, !ptsw_involutive.
+    - rewrite ?ptsw_dual. apply KTLink.
     - rewrite sinst_slist_sw, ty_inst_sw.
       replace (ptsw a b <$> (pt_inst (plist xs) <$> ub))
         with (pt_inst (plist (ptsw a b <$> xs)) <$> (ptsw a b <$> ub)).

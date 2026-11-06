@@ -88,7 +88,7 @@ Proof.
     - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pvar 1)) (Some (pvar 1)) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; done]. }
       cbn. tstep; [tstep|]. cbn.
-      tstep; [tstep; tstep|apply (KTLink _ _ _ Sd (pvar 1) (pt_dual (pvar 1)) (se_refl _ _ _))|done|].
+      tstep; [tstep; tstep|apply (KTLink _ _ _ Sd (pvar 1))|done|].
       apply ubs_none.
     - apply KTSpawn.
     - done.

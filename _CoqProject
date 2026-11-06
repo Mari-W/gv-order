@@ -12,6 +12,7 @@ theories/types/LinearEnv.v
 theories/types/SinstFusion.v
 theories/relation/Worlds.v
 theories/relation/Creation.v
+theories/relation/NoAlias.v
 theories/relation/Readiness.v
 theories/relation/BranchWorlds.v
 theories/relation/FutureConj.v

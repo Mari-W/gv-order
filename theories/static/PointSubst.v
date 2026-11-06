@@ -686,7 +686,7 @@ Section transfer.
     konst_ty peq' plt' pk' k (pinst_ty σ T).
   Proof.
     intros Heq Hlt Hpk Hk.
-    induction 1 as [ub lb|m P S x Hh|m P S x|x|S1 S2 x H1|S1 S2 x H1|S1 S2 x H1 H2|S x x' Hxx'
+    induction 1 as [ub lb|m P S x Hh|m P S x|x|S1 S2 x H1|S1 S2 x H1|S1 S2 x H1 H2|S x
                   |n kk C ub P xs ss Hxs HC HK Hss Hsc|S C H H0] using konst_ty_case;
 
       simpl in *.
@@ -699,7 +699,7 @@ Section transfer.
     - rewrite pt_inst_dual, pt_inst_payload. apply KTSel1. rewrite <-pt_inst_payload. by apply Hlt.
     - rewrite pt_inst_dual, pt_inst_payload. apply KTSel2. rewrite <-pt_inst_payload. by apply Hlt.
     - rewrite !pt_inst_payload. apply KTBra; rewrite <-pt_inst_payload, <-pt_inst_dual; by apply Hlt.
-    - apply KTLink. rewrite <-pt_inst_dual. by apply Heq.
+    - rewrite pt_inst_dual. apply KTLink.
     - assert (∀ a, pt_inst (plist (pt_inst σ <$> xs)) (pup n σ a) = pt_inst σ (plist xs a))
         as Hc by (intros a; by apply plist_pup_comm).
       assert (pt_inst (plist (pt_inst σ <$> xs)) <$> (pt_inst (pup n σ) <$> ub) =
