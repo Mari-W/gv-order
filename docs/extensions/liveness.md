@@ -370,6 +370,12 @@ Closed, in `theories/liveness/`.
 - `LiveAdequacy.v`. `live_adequacy`, `live_runs`, `live_finite_runs`.
 - `LiveRules.v`. `LErel_app_lam` (Tait), `LErel_force` (unrolling at the
   index), `LVrel_box_lob` (E-Exp-Live), `LErel_spawn`.
+- `LiveKob.v`. `kob_tau_diverges`: Kobayashi's server has a reachable state
+  from which new, spawn and β continue forever. `live_fundamental_false`:
+  some statically typed closed program is not in the live relation. The live
+  fundamental theorem therefore needs a restriction of the static E-Exp rule
+  (a guarded self, §6). That is a change of the type system and waits for the
+  author.
 
 Not ported. The bind lemma, the constants (send, receive, close, select,
 branch, link, new), the invariance lemmas (renaming of points and channels,
