@@ -53,10 +53,13 @@ Require LRGV.examples.lit.LitLib.
 Require LRGV.examples.lit.LitRejected.
 Require LRGV.liveness.GuardCex.
 Require LRGV.liveness.GuardEx.
+Require LRGV.liveness.GuardMarks.
 Require LRGV.liveness.LiveAdequacy.
 Require LRGV.liveness.LiveBind.
 Require LRGV.liveness.LiveConsts.
 Require LRGV.liveness.LiveGuard.
+Require LRGV.liveness.LiveGuardFund.
+Require LRGV.liveness.LiveGuardRules.
 Require LRGV.liveness.LiveKob.
 Require LRGV.liveness.LiveRules.
 Require LRGV.liveness.LiveTermRules.
@@ -113,6 +116,17 @@ Print Assumptions LRGV.liveness.GuardCex.cx_tau_diverges.
 Print Assumptions LRGV.liveness.GuardCex.live_guarded_unrepaired_false.
 Print Assumptions LRGV.liveness.GuardCex.cx_not_guarded.
 Print Assumptions LRGV.liveness.GuardCex.guarded_examples.
+Print Assumptions LRGV.liveness.LiveGuard.lsem_later_box_live.
+Print Assumptions LRGV.liveness.GuardMarks.okv_okR.
+Print Assumptions LRGV.liveness.GuardMarks.okR_rename.
+Print Assumptions LRGV.liveness.LiveGuardRules.lsem_later_lam.
+Print Assumptions LRGV.liveness.LiveGuardRules.lsem_later_app_lam.
+Print Assumptions LRGV.liveness.LiveGuardRules.lsem_later_app_force.
+Print Assumptions LRGV.liveness.LiveGuardFund.typed_live.
+Print Assumptions LRGV.liveness.LiveGuardFund.live_fundamental_guarded.
+Print Assumptions LRGV.liveness.LiveGuardFund.live_fundamental_guarded_closed.
+Print Assumptions LRGV.liveness.LiveGuardFund.fw_live.
+Print Assumptions LRGV.liveness.LiveGuardFund.tc_live.
 Print Assumptions LRGV.examples.ChoiceEnc.branch_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_deadlock_free.

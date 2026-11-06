@@ -431,18 +431,36 @@ Closed, in `theories/liveness/`.
   (`cx_not_guarded`) and keeps the forwarder, the tail call, first-action and
   the rounds box (`guarded_examples`).
 
+- `GuardMarks.v`, sharp edge 162. The guard with a mark per variable
+  (`okM`, `okR`, `gallM`). `L y = Some f` marks y as later, and f permits
+  force of y applied to a guarded argument. `ok` and `okv` are its one-mark
+  instances (`ok_okM`, `okv_okR`), `gall` implies `gallM` (`gall_gallM`), and
+  the marked guard is invariant under renaming (`okR_rename`, `gallM_rename`).
+- `LiveGuard.v`. The later judgment `lsem_later W Θ Δ Lm F e T` now takes a
+  mark per variable with its own λ flag. `lsem_later_box_live`: E-Exp-Live with
+  later variables around the box, whose body sees the self as one more later
+  variable.
+- `LiveGuardRules.v`. One rule per clause of the repaired guard. Weakening,
+  contraction (the marks follow the renaming), open, conversion, pack, the
+  injections, and let, let-pair, case, pair and application, each with the
+  marks on both parts or with a guarded first part and the rest judged without
+  marks (`lsem_later_elim`, `lsem_later_elim_guarded`, `lcont_*`). E-Abs with
+  marks (`lsem_later_lam`). The applied λ with a guarded argument
+  (`lsem_later_app_lam`) reads its closure in V at level 0 (`lsem_v0`), which
+  the rules of E-Abs give without the body. Force of the self applied to a
+  guarded argument (`lsem_later_app_force`) is one β to the closure of the
+  self and a guarded bind.
+- `LiveGuardFund.v`. `typed_live`: a typed term with `gallM` is in the later
+  judgment for every marking with `okR`, and a λ is in `lsem_v0`, by one
+  induction on the typing derivation that follows `typed_sem_rules`.
+  `live_fundamental_guarded`: `gtyped W ∅ [] Θ Δ (F, None) e T → strict W →
+  lsem_typed W Θ Δ F e T`. `live_fundamental_guarded_closed`: a closed guarded
+  typed term is in the live E relation at every index. `fw_live`, `tc_live`:
+  the forwarder and the tail call as live terms.
+
 Next, in order.
 
-1. The remaining rules of the later judgment, one per clause of the repaired
-   guard (dropping the variable and the guarded let are done): the let, let-pair, pair,
-   application and case forms with the later variable on both sides (bind
-   with R true and `lgroundingL` read at j ≤ n), the applied λ, the λ of the
-   box body (later variable under the binder), and force of the self applied
-   to a guarded argument (one β to the λ from `later_val`, then
-   `LErel_bind_guarded`). Then `typed ∧ ok_repaired → lsem_later` by
-   induction on the typing derivation, following `typed_sem_rules`
-   (static/Fundamental.v), and the live counterpart of `sem_rules` with
-   E-Exp-Live.
+1. Done: the term-level guarded live fundamental theorem.
 2. Invariance (channel and junk renaming) as far as the composition proofs
    need it, then Internalize with synchronization cost 2, P-Connect, P-Term,
    P-Join. None of these is ported yet.
