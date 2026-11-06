@@ -418,6 +418,10 @@ Closed, in `theories/liveness/`.
   from a later judgment of the body, by Löb up to the index
   (`LVrel_box_lob_le`); when the body is a λ, the later hypothesis also says
   that the self is a box around a λ. `lsem_later_letu_guard`: E-Guard-Let.
+  `lsem_later_drop`: a term judged without the later variable.
+  `lsem_later_now`: with no later variable the judgment is `lsem_typed`.
+  `lgroundingL_split`, `lgroundingL_lower` (a later variable is now one level
+  down), monotonicity and downward closure of `lgroundingL`.
 - `GuardCex.v`, sharp edge 161. The guard of entry 160 admitted a typed
   program that τ-diverges: a box whose body is not a λ forced its own self
   through the special case of `ok` for (force x) e before any channel step
@@ -430,7 +434,7 @@ Closed, in `theories/liveness/`.
 Next, in order.
 
 1. The remaining rules of the later judgment, one per clause of the repaired
-   guard: dropping a variable that does not occur, the let, let-pair, pair,
+   guard (dropping the variable and the guarded let are done): the let, let-pair, pair,
    application and case forms with the later variable on both sides (bind
    with R true and `lgroundingL` read at j ≤ n), the applied λ, the λ of the
    box body (later variable under the binder), and force of the self applied
