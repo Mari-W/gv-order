@@ -70,11 +70,11 @@ Qed.
 (** ** E-Conv as a relation *)
 
 Lemma opt_rel_sym Ψ o o' : opt_rel (heqs Ψ) o o' → opt_rel (heqs Ψ) o' o.
-Proof. destruct o, o'; simpl; try done. apply he_sym. Qed.
+Proof. destruct o, o'; simpl; try done; by intros ->. Qed.
 
 Lemma opt_rel_trans Ψ o o' o'' :
   opt_rel (heqs Ψ) o o' → opt_rel (heqs Ψ) o' o'' → opt_rel (heqs Ψ) o o''.
-Proof. destruct o, o', o''; simpl; try done. apply he_trans. Qed.
+Proof. destruct o, o', o''; simpl; try done; by intros -> ->. Qed.
 
 Lemma teq_trans' T U V : teq T U → teq U V → teq T V.
 Proof. apply eqT_trans, seq_trans. Qed.
@@ -542,13 +542,7 @@ Qed.
 
 Lemma heqs_c0 n C x y : bc_env C = [] → heqs [(C, ids n)] x y → geq (c0_eq n C) x y.
 Proof.
-  intros Henv. induction 1.
-  - apply geq_refl.
-  - by apply geq_sym.
-  - by eapply geq_trans.
-  - by apply geq_shift.
-  - by apply geq_payload.
-  - by apply geq_dual.
+  intros Henv ->. apply geq_refl.
 Qed.
 
 Lemma hfl_c0 n C Φ a b :

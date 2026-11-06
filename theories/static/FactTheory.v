@@ -107,14 +107,25 @@ Inductive node := NP (x : point) | NV (φ : nat).
 
 Record fctx := FCtx { fc_W : world; fc_hyps : hyps; fc_fv : fhyps }.
 
-Inductive seqs (W : world) (Ψ : hyps) : point → point → Prop :=
-  | se_w x y : w_eq W x y → seqs W Ψ x y
-  | se_refl x : seqs W Ψ x x
-  | se_sym x y : seqs W Ψ x y → seqs W Ψ y x
-  | se_trans x y z : seqs W Ψ x y → seqs W Ψ y z → seqs W Ψ x z
-  | se_shift x y : seqs W Ψ x y → seqs W Ψ (pt_shift 1 x) (pt_shift 1 y)
-  | se_payload x y i : seqs W Ψ x y → seqs W Ψ (pt_payload x i) (pt_payload y i)
-  | se_dual x y : seqs W Ψ x y → seqs W Ψ (pt_dual x) (pt_dual y).    (* end points *)
+(** Branch no-eq (sharp edges 159): Γ ⊢ x ≡ y is equality. The
+    aliasing rules are gone. [seqs] stays as a name for equality, and
+    the old rules hold as lemmas under their old names. *)
+Definition seqs (W : world) (Ψ : hyps) (x y : point) : Prop := x = y.
+
+Lemma se_w W Ψ x y : w_eq W x y → seqs W Ψ x y.
+Proof. done. Qed.
+Lemma se_refl W Ψ x : seqs W Ψ x x.
+Proof. done. Qed.
+Lemma se_sym W Ψ x y : seqs W Ψ x y → seqs W Ψ y x.
+Proof. by intros ->. Qed.
+Lemma se_trans W Ψ x y z : seqs W Ψ x y → seqs W Ψ y z → seqs W Ψ x z.
+Proof. by intros -> ->. Qed.
+Lemma se_shift W Ψ x y : seqs W Ψ x y → seqs W Ψ (pt_shift 1 x) (pt_shift 1 y).
+Proof. by intros ->. Qed.
+Lemma se_payload W Ψ x y i : seqs W Ψ x y → seqs W Ψ (pt_payload x i) (pt_payload y i).
+Proof. by intros ->. Qed.
+Lemma se_dual W Ψ x y : seqs W Ψ x y → seqs W Ψ (pt_dual x) (pt_dual y).
+Proof. by intros ->. Qed.
 
 Inductive fl (Γ : fctx) : node → node → Prop :=
   | fl_w x y : w_lt (fc_W Γ) x y → fl Γ (NP x) (NP y)
@@ -151,7 +162,7 @@ Lemma fl_map Γ (Q : point → point → Prop) (R : node → node → Prop)
 Proof.
   intros Hew Her Hes Het Hesh Hesl Hw Hh Hv Hl Hr Ht Hpo Hed Hdpo.
   assert (∀ x y, seqs (fc_W Γ) (fc_hyps Γ) x y → Q (fp x) (fp y)) as Hq
-    by (induction 1; eauto).
+    by (intros x y ->; apply Her).
   split; [done|]. induction 1; eauto.
 Qed.
 
@@ -198,7 +209,7 @@ Proof.
   - intros H. change (match NP x, NP y with NP x, NP y => slt W Ψ x y | _, _ => True end).
     refine (proj2 (fl_map (FCtx W Ψ Φ) (seqs W Ψ)
       (λ a b, match a, b with NP x, NP y => slt W Ψ x y | _, _ => True end) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); unfold id; simpl; eauto using seqs.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ H); unfold id; simpl; eauto using se_w, se_refl, se_sym, se_trans, se_shift, se_payload, se_dual.
     + apply sl_w.
     + apply sl_h.
     + intros x0 x' [] ? ?; [by eapply sl_eql|done].
@@ -207,7 +218,7 @@ Proof.
     + intros x0. apply sl_po.
     + intros x0. apply sl_dpo.
   - refine (proj2 (fl_map (FCtx W Ψ ∅) (seqs W Ψ) (fl (FCtx W Ψ Φ)) id id
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _); unfold id; simpl; eauto using seqs.
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _); unfold id; simpl; eauto using se_w, se_refl, se_sym, se_trans, se_shift, se_payload, se_dual.
     + exact (fl_w (FCtx W Ψ Φ)).
     + exact (fl_h (FCtx W Ψ Φ)).
     + intros φ u H. by rewrite lookup_empty in H.
@@ -242,14 +253,7 @@ Definition lbx_below_h (W : world) (Ψ : hyps) (lb : lbound)
 (** Without hypotheses the static ≡ and ≺ are those of W. *)
 Lemma seqs_nil W x y : world_wf W → seqs W [] x y → w_eq W x y.
 Proof.
-  intros HW. induction 1 as [x y H| | | | | |].
-  - done.
-  - apply (wf_eq_refl _ HW).
-  - by apply (wf_eq_sym _ HW).
-  - by eapply (wf_eq_trans _ HW).
-  - by apply (wf_eq_shift _ HW).
-  - by apply (wf_eq_payload _ HW).
-  - by apply (wf_eq_dual _ HW).
+  intros HW H. exact H.
 Qed.
 
 (** ** Types up to Γ ⊢ ≡ (sharp edges 67)
@@ -282,7 +286,7 @@ Proof.
     + destruct lb0; simpl; [apply se_refl|done].
   - destruct H. split; auto.
   - destruct H. split; auto.
-  - destruct H as [<- ?]. split; [apply se_refl|done].
+  all: destruct H as [<- ?]; split; [apply se_refl|done].
 Qed.
 
 Lemma slt_nil W x y : world_wf W → slt W [] x y → w_lt W x y.
