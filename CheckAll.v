@@ -52,6 +52,8 @@ Require LRGV.examples.lit.Falling.
 Require LRGV.examples.lit.LitLib.
 Require LRGV.examples.lit.LitRejected.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Examples. *)
+Require LRGV.liveness.LiveAdequacy.
+Require LRGV.liveness.LiveRules.
 Require LRGV.mp.MP2Semantics.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Simulation. *)
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Translate. *)
@@ -78,6 +80,13 @@ Print Assumptions LRGV.static.Fundamental.fundamental.
 Print Assumptions LRGV.static.Fundamental.fundamental_proc.
 Print Assumptions LRGV.relation.LogicalRelation.adequacy.
 Print Assumptions LRGV.rules.SemanticRules.sem_rules_fundamental.
+Print Assumptions LRGV.liveness.LiveAdequacy.live_adequacy.
+Print Assumptions LRGV.liveness.LiveAdequacy.live_runs.
+Print Assumptions LRGV.liveness.LiveAdequacy.live_finite_runs.
+Print Assumptions LRGV.liveness.LiveRules.LErel_app_lam.
+Print Assumptions LRGV.liveness.LiveRules.LErel_force.
+Print Assumptions LRGV.liveness.LiveRules.LVrel_box_lob.
+Print Assumptions LRGV.liveness.LiveRules.LErel_spawn.
 Print Assumptions LRGV.examples.ChoiceEnc.branch_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_deadlock_free.

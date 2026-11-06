@@ -19,6 +19,7 @@ theories/relation/LogicalRelation.v
 theories/liveness/LiveRelation.v
 theories/liveness/LiveUnfold.v
 theories/liveness/LiveAdequacy.v
+theories/liveness/LiveRules.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v

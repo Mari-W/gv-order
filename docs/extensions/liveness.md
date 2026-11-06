@@ -288,7 +288,13 @@ The run is lock free when every pending thread later takes part in a step.
 
 A blocked thread stays enabled exactly as long as its partner offers the dual
 action, and an offer persists until it fires, so weak fairness per thread is
-enough. Strong fairness is not needed.
+enough. Strong fairness is not needed. Padovani and Zavattaro assume full
+fairness instead, a run is fair when it passes through finitely many weakly
+terminating states (padovani2025fair, p7), and they prove fair termination, a
+stronger property than lock freedom. Their weak termination proof uses a
+lexicographic measure because the premises of their call and cut rules need
+not have a smaller measure (p21), the same reason this relation pairs the
+index with an inductive layer.
 
 ### The rank claim is not sufficient
 

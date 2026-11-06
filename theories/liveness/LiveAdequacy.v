@@ -22,7 +22,7 @@ Proof.
   intros HP Hst. apply LPrel_S_iff in HP.
   destruct (HP W (wext_r_refl W)) as (_ & _ & HA & HC & HL & _).
   apply ptau_classify in Hst as [Ha|[Hc|Hl]].
-  - destruct (HA p' Ha (disjoint_dom_empty _)) as (N & W' & _ & _ & HP').
+  - destruct (HA p' Ha (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
     exists W'. eapply LPrel_down; [|exact HP']. lia.
   - destruct (HC p' Hc (disjoint_dom_empty _)) as (N & W' & _ & _ & HP').
     exists W'. exact HP'.
@@ -76,7 +76,7 @@ Proof.
   intros W Σ T p H ->.
   constructor. intros p' Ha.
   destruct (H W (wext_r_refl W)) as (_ & _ & HA & _).
-  destruct (HA p' Ha (disjoint_dom_empty _)) as (N & W' & _ & _ & _ & HΦ).
+  destruct (HA p' Ha (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & _ & HΦ).
   by apply HΦ.
 Qed.
 
