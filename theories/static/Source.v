@@ -37,13 +37,21 @@ Set Default Proof Using "All".
     point of a hypothesis, which is what static-system.md asks of a
     point before [new] or force may name it. *)
 
-Inductive heqs (Ψ : hyps) : point → point → Prop :=
-  | he_refl x : heqs Ψ x x
-  | he_sym x y : heqs Ψ x y → heqs Ψ y x
-  | he_trans x y z : heqs Ψ x y → heqs Ψ y z → heqs Ψ x z
-  | he_shift x y : heqs Ψ x y → heqs Ψ (pt_shift 1 x) (pt_shift 1 y)
-  | he_payload x y i : heqs Ψ x y → heqs Ψ (pt_payload x i) (pt_payload y i)
-  | he_dual x y : heqs Ψ x y → heqs Ψ (pt_dual x) (pt_dual y).
+(** Branch no-eq: [heqs] is equality, as [seqs]. *)
+Definition heqs (Ψ : hyps) (x y : point) : Prop := x = y.
+
+Lemma he_refl Ψ x : heqs Ψ x x.
+Proof. done. Qed.
+Lemma he_sym Ψ x y : heqs Ψ x y → heqs Ψ y x.
+Proof. by intros ->. Qed.
+Lemma he_trans Ψ x y z : heqs Ψ x y → heqs Ψ y z → heqs Ψ x z.
+Proof. by intros -> ->. Qed.
+Lemma he_shift Ψ x y : heqs Ψ x y → heqs Ψ (pt_shift 1 x) (pt_shift 1 y).
+Proof. by intros ->. Qed.
+Lemma he_payload Ψ x y i : heqs Ψ x y → heqs Ψ (pt_payload x i) (pt_payload y i).
+Proof. by intros ->. Qed.
+Lemma he_dual Ψ x y : heqs Ψ x y → heqs Ψ (pt_dual x) (pt_dual y).
+Proof. by intros ->. Qed.
 
 Inductive hfl (Ψ : hyps) (Φ : fhyps) : node → node → Prop :=
   | hl_h x y : hyp_fact Ψ (FLt x y) → hfl Ψ Φ (NP x) (NP y)
@@ -143,7 +151,7 @@ Proof.
     + destruct lb0; simpl; [apply he_refl|done].
   - destruct H. split; auto.
   - destruct H. split; auto.
-  - destruct H as [<- ?]. split; [apply he_refl|done].
+  all: destruct H as [<- ?]; split; [apply he_refl|done].
 Qed.
 
 (** ** The empty world and the source instance
@@ -191,7 +199,7 @@ Definition styped (Φ : fhyps) (Ψ : hyps) (Δ : lenv) (F : sfuture) (e : expr) 
     theory, and program order is a rule, so no world law is needed. *)
 
 Lemma heqs_seqs W Ψ x y : heqs Ψ x y → seqs W Ψ x y.
-Proof. induction 1; eauto using seqs. Qed.
+Proof. done. Qed.
 
 Lemma hfl_fl W Ψ Φ a b : hfl Ψ Φ a b → fl (FCtx W Ψ Φ) a b.
 Proof.
@@ -216,13 +224,8 @@ Proof. intros [H|H]; [left; by apply heqs_seqs|right; by apply hlt_slt]. Qed.
 
 Lemma hsteq_steq W Ψ T : ∀ U, hsteq Ψ T U → steq W Ψ T U.
 Proof.
-  induction T; intros [] H; simpl in *; try done.
-  - destruct H as (Hu & Hl & ? & ?). split_and!; auto.
-    + destruct ub0, ub; simpl in *; [by apply heqs_seqs|done|done|done].
-    + destruct lb0, lb; simpl in *; [by apply heqs_seqs|done|done|done].
-  - destruct H. split; auto.
-  - destruct H. split; auto.
-  - destruct H as [Hx ?]. split; [by apply heqs_seqs|done].
+  (* without aliases hsteq and steq compare points alike (branch no-eq) *)
+  induction T; intros [] H; simpl in *; try done; naive_solver.
 Qed.
 
 Lemma hub_below_s_ub W Ψ Φ ub F : hub_below_s Ψ Φ ub F → ub_below_s W Ψ Φ ub F.
@@ -288,16 +291,7 @@ Section collapse.
   Proof. unfold pt_known. rewrite HN. apply not_elem_of_empty. Qed.
 
   Lemma seqs_heqs Ψ x y : seqs W Ψ x y → heqs Ψ x y.
-  Proof.
-    induction 1.
-    - apply w_eq_nil in H as ->. apply he_refl.
-    - apply he_refl.
-    - by apply he_sym.
-    - by eapply he_trans.
-    - by apply he_shift.
-    - by apply he_payload.
-    - by apply he_dual.
-  Qed.
+  Proof. pose proof HW as _. done. Qed.
 
   Lemma fl_hfl Ψ Φ a b : fl (FCtx W Ψ Φ) a b → hfl Ψ Φ a b.
   Proof.
@@ -324,13 +318,7 @@ Section collapse.
 
   Lemma steq_hsteq Ψ T : ∀ U, steq W Ψ T U → hsteq Ψ T U.
   Proof.
-    induction T; intros [] H; simpl in *; try done.
-    - destruct H as (Hu & Hl & ? & ?). split_and!; auto.
-      + destruct ub0, ub; simpl in *; [by apply seqs_heqs|done|done|done].
-      + destruct lb0, lb; simpl in *; [by apply seqs_heqs|done|done|done].
-    - destruct H. split; auto.
-    - destruct H. split; auto.
-    - destruct H as [Hx ?]. split; [by apply seqs_heqs|done].
+    induction T; intros [] H; simpl in *; try done; naive_solver.
   Qed.
 
   Lemma ub_below_s_hub Ψ Φ ub F : ub_below_s W Ψ Φ ub F → hub_below_s Ψ Φ ub F.
