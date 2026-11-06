@@ -9,7 +9,7 @@ Worlds and Γ ⊢ ≡ are closed under x ↦ x̄, and program order adds x ≺ x
 selecting end continues at (x[i])‾, a branching end at x[i]. Where the text
 below still writes one point for both ends, read the end-points form.
 
-Branch no-eq (2026-11-06, docs/extensions/no-equality.md, sharp edges 155).
+Branch no-eq (2026-11-06, docs/extensions/no-equality.md, sharp edges 159).
 No program, type or constraint of the core examples contains ≡. link is
 S@ι ⊗ dual S@ῑ ⊸ ∗, new at an existing point is `t_new_at` (new@p), and a
 channel delegated to a point the receiver does not know travels as an
@@ -750,7 +750,7 @@ forwarder       typable, recursion by spawn    receives d on one channel and sen
                                                C ∋ (ι+k)[1] ≡ (ι′+k)[1], E-Conv moves d from D@ι[1] to D@ι′[1]
                                                (sharp edges 67, fw_deadlock_free). Branch no-eq: the sent
                                                payload is ∃^{σ̄}κ. {κ ≺ σ}. Close@κ and C holds ρ ≺ σ, σ̄ ≺ ρ̄
-                                               for ρ = (ι+k)[0], σ = (ι′+k)[0] (sharp edges 155)
+                                               for ρ = (ι+k)[0], σ = (ι′+k)[0] (sharp edges 159)
 received chain  typable, recursion by spawn    call at ι[1], C = {ι[1]ⁿ + 1 ≺ ι[1]ⁿ⁺¹ ∣ n ∈ ℕ},
                                                ι[1]ⁿ = ι[1]…[1] (n times), upper point ι+1 (ch_deadlock_free)
 ```

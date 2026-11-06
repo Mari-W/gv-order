@@ -2300,7 +2300,7 @@ the theorems that became open (ChoiceNegative, DataBranch, SemFlag
 underivability) and `bit_typed` / `bit_deadlock_free`: merged into main
 2026-11-05, docs/extensions/end-points.md.
 
-**155. No equality constraints at the surface (Claude, 2026-11-06, branch no-eq).**
+**159. No equality constraints at the surface (Claude, 2026-11-06, branch no-eq).**
 Problem: ≡ costs seven aliasing rules, E-Conv up to Γ ⊢ ≡, type point
 conversion and ≡ in every world, and the surface needed it in four places
 only: new pinned to a point, link, the forwarder's alias between two payload
