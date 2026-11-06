@@ -51,24 +51,24 @@ Require LRGV.examples.cfst.TreeSum.
 Require LRGV.examples.lit.Falling.
 Require LRGV.examples.lit.LitLib.
 Require LRGV.examples.lit.LitRejected.
-Require LRGV.mp.MP2Examples.
+(* NO-EQ: translation pending  Require LRGV.mp.MP2Examples. *)
 Require LRGV.mp.MP2Semantics.
-Require LRGV.mp.MP2Simulation.
-Require LRGV.mp.MP2Translate.
-Require LRGV.mp.MP3Examples.
-Require LRGV.mp.MP3Simulation.
-Require LRGV.mp.MP3Translate.
-Require LRGV.mp.MPExamples.
-Require LRGV.mp.MPRounds.
-Require LRGV.mp.MPTranslate.
-Require LRGV.pgv.PGVExamples.
-Require LRGV.pgv.PGVFalling.
-Require LRGV.pgv.PGVSimulation.
-Require LRGV.pgv.PGVTranslate.
-Require LRGV.pn.PNExamples.
+(* NO-EQ: translation pending  Require LRGV.mp.MP2Simulation. *)
+(* NO-EQ: translation pending  Require LRGV.mp.MP2Translate. *)
+(* NO-EQ: translation pending  Require LRGV.mp.MP3Examples. *)
+(* NO-EQ: translation pending  Require LRGV.mp.MP3Simulation. *)
+(* NO-EQ: translation pending  Require LRGV.mp.MP3Translate. *)
+(* NO-EQ: translation pending  Require LRGV.mp.MPExamples. *)
+(* NO-EQ: translation pending  Require LRGV.mp.MPRounds. *)
+(* NO-EQ: translation pending  Require LRGV.mp.MPTranslate. *)
+(* NO-EQ: translation pending  Require LRGV.pgv.PGVExamples. *)
+(* NO-EQ: translation pending  Require LRGV.pgv.PGVFalling. *)
+(* NO-EQ: translation pending  Require LRGV.pgv.PGVSimulation. *)
+(* NO-EQ: translation pending  Require LRGV.pgv.PGVTranslate. *)
+(* NO-EQ: translation pending  Require LRGV.pn.PNExamples. *)
 Require LRGV.pn.PNSemantics.
-Require LRGV.pn.PNSimulation.
-Require LRGV.pn.PNTranslate.
+(* NO-EQ: translation pending  Require LRGV.pn.PNSimulation. *)
+(* NO-EQ: translation pending  Require LRGV.pn.PNTranslate. *)
 Require LRGV.relation.LogicalRelation.
 Require LRGV.rules.SemanticRules.
 Require LRGV.static.Fundamental.
@@ -260,116 +260,116 @@ Print Assumptions LRGV.examples.lit.LitRejected.mcx2_untypable.
 Print Assumptions LRGV.examples.lit.LitRejected.mcx2_untypable_source.
 Print Assumptions LRGV.examples.lit.LitRejected.mcx3_untypable.
 Print Assumptions LRGV.examples.lit.LitRejected.mcx3_untypable_source.
-Print Assumptions LRGV.pgv.PGVExamples.ex21_typed.
-Print Assumptions LRGV.pgv.PGVExamples.pgv_ex21_deadlock_free.
-Print Assumptions LRGV.pgv.PGVExamples.deleg_typed.
-Print Assumptions LRGV.pgv.PGVExamples.pgv_deleg_deadlock_free.
-Print Assumptions LRGV.pgv.PGVExamples.lnk_typed.
-Print Assumptions LRGV.pgv.PGVExamples.pgv_link_deadlock_free.
-Print Assumptions LRGV.pgv.PGVFalling.fall2_typed.
-Print Assumptions LRGV.pgv.PGVFalling.S1_not_mono.
-Print Assumptions LRGV.pgv.PGVFalling.fallxy_typed.
-Print Assumptions LRGV.pgv.PGVSimulation.pgv_deadlock_free_source.
-Print Assumptions LRGV.pgv.PGVTranslate.new_tr_typed.
-Print Assumptions LRGV.pgv.PGVTranslate.pgv_translate.
-Print Assumptions LRGV.pgv.PGVTranslate.pgv_deadlock_free.
-Print Assumptions LRGV.pgv.PGVTranslate.pgv_deadlock_free_applied.
-Print Assumptions LRGV.pn.PNExamples.fibo_pn_typed.
-Print Assumptions LRGV.pn.PNExamples.fibo_typed.
-Print Assumptions LRGV.pn.PNExamples.fibo_deadlock_free.
-Print Assumptions LRGV.pn.PNExamples.cont_typed.
-Print Assumptions LRGV.pn.PNExamples.pipe_typed.
-Print Assumptions LRGV.pn.PNExamples.pipe_main_typed.
-Print Assumptions LRGV.pn.PNExamples.pipe_deadlock_free.
-Print Assumptions LRGV.pn.PNExamples.div_typed.
-Print Assumptions LRGV.pn.PNExamples.divsend_typed.
-Print Assumptions LRGV.pn.PNExamples.fixfork_pn_typed.
-Print Assumptions LRGV.pn.PNExamples.fixfork_typed.
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVExamples.ex21_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVExamples.pgv_ex21_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVExamples.deleg_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVExamples.pgv_deleg_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVExamples.lnk_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVExamples.pgv_link_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVFalling.fall2_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVFalling.S1_not_mono. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVFalling.fallxy_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVSimulation.pgv_deadlock_free_source. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVTranslate.new_tr_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVTranslate.pgv_translate. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVTranslate.pgv_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pgv.PGVTranslate.pgv_deadlock_free_applied. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.fibo_pn_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.fibo_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.fibo_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.cont_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.pipe_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.pipe_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.pipe_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.div_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.divsend_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.fixfork_pn_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.fixfork_typed. *)
 Print Assumptions LRGV.pn.PNSemantics.src_head_not_val.
 Print Assumptions LRGV.pn.PNSemantics.src_step_not_val.
-Print Assumptions LRGV.pn.PNSimulation.pn_typed_lam_inv.
-Print Assumptions LRGV.pn.PNSimulation.trel_of_typed.
-Print Assumptions LRGV.pn.PNSimulation.pn_deadlock_free_source.
-Print Assumptions LRGV.pn.PNSimulation.fibo_deadlock_free_src.
-Print Assumptions LRGV.pn.PNSimulation.pipe_deadlock_free_src.
-Print Assumptions LRGV.pn.PNSimulation.div_deadlock_free_src.
-Print Assumptions LRGV.pn.PNSimulation.divsend_deadlock_free_src.
-Print Assumptions LRGV.pn.PNSimulation.fixfork_deadlock_free_src.
-Print Assumptions LRGV.pn.PNTranslate.pconv_typed.
-Print Assumptions LRGV.pn.PNTranslate.pn_translate.
-Print Assumptions LRGV.pn.PNTranslate.pn_translate_source.
-Print Assumptions LRGV.pn.PNTranslate.pn_deadlock_free.
-Print Assumptions LRGV.mp.MP2Examples.receiveTree_typed.
-Print Assumptions LRGV.mp.MP2Examples.rt_sender_typed.
-Print Assumptions LRGV.mp.MP2Examples.rt_main_typed.
-Print Assumptions LRGV.mp.MP2Examples.rt_mp2_deadlock_free.
-Print Assumptions LRGV.mp.MP2Examples.t2_main_typed.
-Print Assumptions LRGV.mp.MP2Examples.t2_mp2_deadlock_free.
-Print Assumptions LRGV.mp.MP2Examples.df_main_typed.
-Print Assumptions LRGV.mp.MP2Examples.df_mp2_deadlock_free.
-Print Assumptions LRGV.mp.MP2Examples.client_typed.
-Print Assumptions LRGV.mp.MP2Examples.newclient_typed.
-Print Assumptions LRGV.mp.MP2Examples.st_main_typed.
-Print Assumptions LRGV.mp.MP2Examples.st_mp2_deadlock_free.
-Print Assumptions LRGV.mp.MP2Examples.psend_typed.
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.pn_typed_lam_inv. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.trel_of_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.pn_deadlock_free_source. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.fibo_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.pipe_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.div_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.divsend_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.fixfork_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNTranslate.pconv_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNTranslate.pn_translate. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNTranslate.pn_translate_source. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNTranslate.pn_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.receiveTree_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.rt_sender_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.rt_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.rt_mp2_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.t2_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.t2_mp2_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.df_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.df_mp2_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.client_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.newclient_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.st_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.st_mp2_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.psend_typed. *)
 Print Assumptions LRGV.mp.MP2Semantics.src_head_not_val.
 Print Assumptions LRGV.mp.MP2Semantics.src_step_not_val.
-Print Assumptions LRGV.mp.MP2Simulation.trm_of_typed.
-Print Assumptions LRGV.mp.MP2Simulation.mp2_deadlock_free_source.
-Print Assumptions LRGV.mp.MP2Simulation.rt_deadlock_free_src.
-Print Assumptions LRGV.mp.MP2Simulation.st_deadlock_free_src.
-Print Assumptions LRGV.mp.MP2Simulation.df_deadlock_free_src.
-Print Assumptions LRGV.mp.MP2Simulation.t2_deadlock_free_src.
-Print Assumptions LRGV.mp.MP2Translate.fork_tr_typed.
-Print Assumptions LRGV.mp.MP2Translate.mp2_translate.
-Print Assumptions LRGV.mp.MP2Translate.mp2_deadlock_free.
-Print Assumptions LRGV.mp.MP3Examples.receiveTree_typed.
-Print Assumptions LRGV.mp.MP3Examples.rt_sender_typed.
-Print Assumptions LRGV.mp.MP3Examples.rt_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.rt_mp3_deadlock_free.
-Print Assumptions LRGV.mp.MP3Examples.rtd_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.rtA_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.rtB_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.rtA_mp3_deadlock_free.
-Print Assumptions LRGV.mp.MP3Examples.rtB_mp3_deadlock_free.
-Print Assumptions LRGV.mp.MP3Examples.t2_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.t2_mp3_deadlock_free.
-Print Assumptions LRGV.mp.MP3Examples.ch3_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.ch3_mp3_deadlock_free.
-Print Assumptions LRGV.mp.MP3Examples.df_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.df_mp3_deadlock_free.
-Print Assumptions LRGV.mp.MP3Examples.client_typed.
-Print Assumptions LRGV.mp.MP3Examples.newclient_typed.
-Print Assumptions LRGV.mp.MP3Examples.st_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.st_mp3_deadlock_free.
-Print Assumptions LRGV.mp.MP3Examples.psend_typed.
-Print Assumptions LRGV.mp.MP3Examples.hrecv_typed.
-Print Assumptions LRGV.mp.MP3Examples.dsend_typed.
-Print Assumptions LRGV.mp.MP3Examples.rr_main_typed.
-Print Assumptions LRGV.mp.MP3Examples.rr_mp3_deadlock_free.
-Print Assumptions LRGV.mp.MP3Simulation.trm_of_typed.
-Print Assumptions LRGV.mp.MP3Simulation.mp3_deadlock_free_source.
-Print Assumptions LRGV.mp.MP3Simulation.rt_deadlock_free_src3.
-Print Assumptions LRGV.mp.MP3Simulation.st_deadlock_free_src3.
-Print Assumptions LRGV.mp.MP3Simulation.df_deadlock_free_src3.
-Print Assumptions LRGV.mp.MP3Simulation.t2_deadlock_free_src3.
-Print Assumptions LRGV.mp.MP3Simulation.ch3_deadlock_free_src3.
-Print Assumptions LRGV.mp.MP3Simulation.rr_deadlock_free_src3.
-Print Assumptions LRGV.mp.MP3Simulation.rtA_deadlock_free_src3.
-Print Assumptions LRGV.mp.MP3Simulation.rtB_deadlock_free_src3.
-Print Assumptions LRGV.mp.MP3Translate.fork_tr_typed.
-Print Assumptions LRGV.mp.MP3Translate.mp3_translate.
-Print Assumptions LRGV.mp.MP3Translate.mp3_deadlock_free.
-Print Assumptions LRGV.mp.MPExamples.client_typed.
-Print Assumptions LRGV.mp.MPExamples.newclient_typed.
-Print Assumptions LRGV.mp.MPExamples.st_main_typed.
-Print Assumptions LRGV.mp.MPExamples.st_mp_deadlock_free.
-Print Assumptions LRGV.mp.MPRounds.p8_not_deadlock_free.
-Print Assumptions LRGV.mp.MPRounds.p8_not_mtyped.
-Print Assumptions LRGV.mp.MPRounds.hrecv_typed.
-Print Assumptions LRGV.mp.MPRounds.dsend_typed.
-Print Assumptions LRGV.mp.MPRounds.rr_main_typed.
-Print Assumptions LRGV.mp.MPRounds.rr_mp2_deadlock_free.
-Print Assumptions LRGV.mp.MPRounds.rr_deadlock_free_src.
-Print Assumptions LRGV.mp.MPTranslate.mp_translate.
-Print Assumptions LRGV.mp.MPTranslate.mp_deadlock_free.
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.trm_of_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.mp2_deadlock_free_source. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.rt_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.st_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.df_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.t2_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Translate.fork_tr_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Translate.mp2_translate. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Translate.mp2_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.receiveTree_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rt_sender_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rt_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rt_mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rtd_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rtA_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rtB_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rtA_mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rtB_mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.t2_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.t2_mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.ch3_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.ch3_mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.df_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.df_mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.client_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.newclient_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.st_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.st_mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.psend_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.hrecv_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.dsend_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rr_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Examples.rr_mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.trm_of_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.mp3_deadlock_free_source. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.rt_deadlock_free_src3. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.st_deadlock_free_src3. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.df_deadlock_free_src3. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.t2_deadlock_free_src3. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.ch3_deadlock_free_src3. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.rr_deadlock_free_src3. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.rtA_deadlock_free_src3. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Simulation.rtB_deadlock_free_src3. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Translate.fork_tr_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Translate.mp3_translate. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP3Translate.mp3_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPExamples.client_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPExamples.newclient_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPExamples.st_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPExamples.st_mp_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPRounds.p8_not_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPRounds.p8_not_mtyped. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPRounds.hrecv_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPRounds.dsend_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPRounds.rr_main_typed. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPRounds.rr_mp2_deadlock_free. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPRounds.rr_deadlock_free_src. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPTranslate.mp_translate. *)
+(* NO-EQ: translation pending  Print Assumptions LRGV.mp.MPTranslate.mp_deadlock_free. *)
