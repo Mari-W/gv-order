@@ -138,8 +138,8 @@ read at ∗. The premises hold in every future world W1 ⊒ W (Kripke style, §4
   (irred e → VT W1 Θ e)                                         E-Stop
   ∧ (¬ irred e → ready_t W1 Θ F e)                               E-Step
   ∧ (∀ e', e --β--> e' → Eind VT T W1 Θ F e')                     O-Beta
-  ∧ (∀ c e', e --νc--> e' → c ∉ dom Θ →
-       ∃ a s s' W', fresh a ∧ s ⊥ s' ∧ W1 ⊑ₒ W' ∧
+  ∧ (∀ c e', e --νc--> e' → c ∉ dom Θ → ∀ L,
+       ∃ a s s' W', a ∉ L ∪ roots(Θ, T, F) ∧ s ⊥ s' ∧ W1 ⊑ₒ W' ∧
          Eind VT T W' (Θ, c : (s@a, s'@ā)) F e')                  O-New
   ∧ (∀ w e', e --⇑w--> e' →
        ∃ Θ1 Θ2 ub lb, Θ = Θ1, Θ2 ∧ Vspawn_n W1 Θ1 ub lb w ∧
@@ -151,14 +151,22 @@ read at ∗. The premises hold in every future world W1 ⊒ W (Kripke style, §4
 v = ∗) ∗`. `Eobl_σ` is today's obligation of the six session labels with every
 successor at n − 1 and the payload of O-Send at n − 1.
 
+O-New and Q-Admin quantify cofinitely over the fresh names. For every finite
+set L the term finds a fresh point outside L. Today's O-New finds one point
+fresh for Θ, T and F, and the bind lemma then renames it away from the
+context's environment and the hole's type (`Erel_new_rename`). The cofinite
+form lets the bind lemma and P-Connect pick L to cover the context, so the
+τ layer needs no renaming lemma. E-New produces the cofinite form directly,
+because its successor is a value.
+
 ### P at level n
 
 `Pind below n VT T W Σ p`, one constructor, premises in every W1 ⊒ W.
 
 ```
 P-Stop, P-Step                                       as today, at W1
-∀ p', padmin p p' → p'.1 # dom Σ →
-  ∃ N W', fresh N ∧ W1 ⊑ₒ W' ∧ Pind VT T W' Σ p'          Q-Admin
+∀ p', padmin p p' → p'.1 # dom Σ → ∀ L,
+  ∃ N W', N # L ∪ roots(Σ, T) ∧ W1 ⊑ₒ W' ∧ Pind VT T W' Σ p'   Q-Admin
 ∀ p', pcomm p p' → Ptau_case (P_{n−2}) W1 Σ T p'          Q-Comm
 ∀ p', ptau_link p p' → Ptau_case (P_{n−1}) W1 Σ T p'      Q-Link
 ∀ σ p', p --σ--> p' → Pobl_σ (levels < n) W1 Σ T p σ p'    Q-σ, cost 1
@@ -344,4 +352,22 @@ a separate design.
 
 ## 10  State of the mechanization
 
-Filled in at the end of the branch's work.
+Closed, in `theories/liveness/`.
+
+- `LiveRelation.v`. The definitions of §2 and §3, custom induction principles
+  over the τ layer (`Eind_ind'`, `Pind_ind'`), monotonicity in the world,
+  independence of the fuel of V, the relation reads only the levels below.
+- `LiveUnfold.v`. Characteristic equations `LVrel_*_iff`, `LErel_S_iff`,
+  `LPrel_S_iff`, induction over τ steps `LErel_S_ind`, `LPrel_S_ind`, downward
+  closure of V, E and P, monotonicity of V in the world, `LVrel_LErel`,
+  `Vspawn_LVrel`.
+- `LiveAdequacy.v`. `live_adequacy`, `live_runs`, `live_finite_runs`.
+- `LiveRules.v`. `LErel_app_lam` (Tait), `LErel_force` (unrolling at the
+  index), `LVrel_box_lob` (E-Exp-Live), `LErel_spawn`.
+
+Not ported. The bind lemma, the constants (send, receive, close, select,
+branch, link, new), the invariance lemmas (renaming of points and channels,
+equivalence), the composition lemmas (Internalize, P-Connect, P-Term, P-Join),
+the semantic judgment with later hypotheses, the static fundamental theorem
+and the examples. Their feasibility rests on the case analyses of §2, §4 and
+§6. None of them has met a counterexample.
