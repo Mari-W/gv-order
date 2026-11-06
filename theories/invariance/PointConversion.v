@@ -438,15 +438,15 @@ Proof.
     + destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
       exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by eapply HEj.
     + (* O-New: rename the new point away from the points of T' *)
-      intros Hc. destruct (Hstep Hc) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
+      intros Hc. destruct (Hstep Hc) as (x & s & s' & W1 & [(a & -> & Ha & Hfr)|(Hx & ->)] & Hdu & HE').
+      2: { exists x, s, s', W. split_and!; [by right|done|]. eapply HEj; [lia|done|done|exact HE']. }
       destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
                              ∪ future_roots F)) as [a1 Ha1].
       destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
                   ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
-      exists a1, (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
-      * set_solver.
+      exists (pconst a1), (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
+      * left. exists a1. split_and!; [done|set_solver|done].
       * by apply sdual_sw.
-      * done.
       * eapply HEj; [lia| | |exact HE1].
         -- by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
         -- intros. destruct Hfr' as ((_ & He & _) & _). auto.
@@ -1060,15 +1060,17 @@ Proof.
 
   - (* O-New: rename the new point away from the points of Θ' *)
     intros Hc0. rewrite <-(tconv_dom W Θ Θ' Hc) in Hc0.
-    destruct (Hstep Hc0) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
+    destruct (Hstep Hc0) as (x & s & s' & W1 & [(a & -> & Ha & Hfr)|(Hx & ->)] & Hdu & HE').
+    2: { exists x, s, s', W. split_and!; [by right|done|].
+         eapply HEj; [lia|done| |exact HE'].
+         apply (tconv_insert W); [done|apply (ends_conv_refl W HW)]. }
     destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ tenv_roots Θ' ∪ ty_roots T
                            ∪ future_roots F)) as [a1 Ha1].
     destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
                 ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
-    exists a1, (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
-    + set_solver.
+    exists (pconst a1), (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
+    + left. exists a1. split_and!; [done|set_solver|done].
     + by apply sdual_sw.
-    + done.
     + assert (world_wf W1') as HW1 by (by destruct Hfr' as ((_ & _ & _ & [? _]) & _)).
       eapply HEj; [lia|done| |exact HE1].
       apply (tconv_insert W1'); [|apply (ends_conv_refl W1' HW1)].

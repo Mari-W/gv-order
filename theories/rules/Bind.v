@@ -524,15 +524,20 @@ Proof.
       assert (Θ1 !! c = None ∧ Θ2 !! c = None) as [H1c H2c].
       { rewrite (tenv_join_dom _ _ _ (proj1 Hc)) in HcΘ.
         split; apply not_elem_of_dom; clear -HcΘ; set_solver. }
-      destruct (Hcase ltac:(by apply not_elem_of_dom)) as (a0 & s & s' & W1 & Hfr0 & Hdd & Hwf & HE1).
+      destruct (Hcase ltac:(by apply not_elem_of_dom))
+        as (x & s & s' & W1 & [(a0 & -> & Hfr0 & Hwf)|(Hx & ->)] & Hdd & HE1).
+      2: { (* new at a known point: the world stays *)
+        exists x, s, s', W. split_and!; [by right|done|].
+        eapply (IHn n'); [lia|done|exact HW| |by eapply heads_above_x_mono|exact HE1|].
+        { apply comp_insert; [|done]. exact Hc. }
+        apply (HKd W n'); [by apply wext_refl|done]. }
       destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∪
                   tenv_roots Θ1 ∪ ty_roots Th ∪ future_roots (F ∪ H))) as [a1 Ha1].
       destruct (Erel_new_rename n' W W1 Θ1 Th (F ∪ H) e' c s s' a0 a1 (proj1 HW) Hwf Hfr0
                   ltac:(clear -Ha1; set_solver) HE1) as (W1' & Hwf' & HE1').
-      exists a1, (stysw a0 a1 s), (stysw a0 a1 s'), W1'. split_and!.
-      * clear -Ha1. set_solver.
+      exists (pconst a1), (stysw a0 a1 s), (stysw a0 a1 s'), W1'. split_and!.
+      * left. exists a1. split_and!; [done|clear -Ha1; set_solver|done].
       * by apply sdual_sw.
-      * done.
       * pose proof (proj1 Hwf') as HW1'.
         eapply (IHn n'); [lia|done|exact (proj2 (proj2 (proj2 HW1')))|
           |by eapply heads_above_x_mono|exact HE1'|].

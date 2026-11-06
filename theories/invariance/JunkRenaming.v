@@ -2813,17 +2813,18 @@ Proof.
       destruct (exist_fresh (fchans e ∪ dom Θ ∪ dom Θ' ∪ {[c; d; c']})) as [c0 Hc0].
       destruct (tstep_chsubst_new_inv c d e c' f' Hst c0) as (f & Hf & ->); [set_solver..|].
       pose proof (Hstep _ _ Hf) as Hc1. simpl in Hc1.
-      destruct (Hc1 ltac:(set_solver)) as (a & s & s' & W1 & Ha & Hdu & Hfr & HE').
-      exists a, s, s', W1. split_and!; [|done|done|].
+      destruct (Hc1 ltac:(set_solver)) as (a & s & s' & W1 & Ha & Hdu & HE').
+      exists a, s, s', W1. split_and!; [|done|].
       { by rewrite (move_roots W c d Hcd Θ Θ' Hm). }
-      assert (strict W1) as HW1 by (by destruct Hfr as ((_ & _ & _ & ?) & _)).
+      assert (strict W1 ∧ ∀ x y, w_eq W x y → w_eq W1 x y) as [HW1 HeW1].
+      { destruct Ha as [(a0 & _ & _ & Hfr)|(_ & ->)]; [|done].
+        split; [by destruct Hfr as ((_ & _ & _ & ?) & _)|apply (proj1 (proj2 (proj1 Hfr)))]. }
       assert (tenv_move W1 c d Θ Θ') as HmW1.
-      { eapply (move_mono W c d W1); [|exact Hm]. intros ? ? ?.
-        by apply (proj1 (proj2 (proj1 Hfr))). }
-      apply (IHE n' ltac:(lia) W1 _ (<[c0 := Both (s, pconst a) (s', pt_dual (pconst a))]> Θ') T F f HW1)
+      { eapply (move_mono W c d W1); [|exact Hm]. intros ? ? ?. by apply HeW1. }
+      apply (IHE n' ltac:(lia) W1 _ (<[c0 := Both (s, a) (s', pt_dual a)]> Θ') T F f HW1)
         in HE'; [|apply move_insert; [set_solver|set_solver|done]].
-      assert (tenv_move W1 c0 c' (<[c0 := Both (s, pconst a) (s', pt_dual (pconst a))]> Θ')
-                (tenvswap c0 c' (<[c0 := Both (s, pconst a) (s', pt_dual (pconst a))]> Θ'))) as Hmv.
+      assert (tenv_move W1 c0 c' (<[c0 := Both (s, a) (s', pt_dual a)]> Θ')
+                (tenvswap c0 c' (<[c0 := Both (s, a) (s', pt_dual a)]> Θ'))) as Hmv.
       { assert (c0 ≠ c') as Hne by (clear -Hc0; set_solver).
         apply move_swap; [done|]. rewrite lookup_insert_ne by done.
         by apply not_elem_of_dom. }
