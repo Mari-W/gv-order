@@ -13,9 +13,11 @@ Branch no-eq (2026-11-06, docs/extensions/no-equality.md, sharp edges 159).
 No program, type or constraint of the core examples contains ≡. link is
 S@ι ⊗ dual S@ῑ ⊸ ∗, new at an existing point is `t_new_at` (new@p), and a
 channel delegated to a point the receiver does not know travels as an
-existential payload with order facts. The metatheory still has ≡ (worlds,
-Γ ⊢ ≡, E-Conv), and the translations of §4b still introduce it. On main
-everything below holds as written.
+existential payload with order facts. Step 2: facts are x ≺ y only, worlds
+are (names, ≺) with ≡ read as equality, Γ ⊢ ≡ is equality, new@x is the
+primitive KTNewAt, and O-New places the channel at a fresh constant or at a
+known point. Read every ≡ below as =. The translations of §4b are out of the
+build on this branch. On main everything below holds as written.
 
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
