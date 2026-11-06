@@ -2416,6 +2416,22 @@ self also states that the self is a box around a λ when the body is one (`later
 The repaired `guarded` rejects the witness (`cx_not_guarded`) and keeps the forwarder,
 the tail call, first-action and the rounds box (`guarded_examples`).
 
+**162. One later variable is not enough for the fundamental theorem (Claude, 2026-11-07, branch liveness).**
+The guard of entry 161 checks one later variable. Induction on the typing derivation
+meets two places where one does not suffice. E-Contract renames the variables 0 and 1 to
+0, so a contracted self is two later variables in the premise. Inside a nested box the
+self of the enclosing box stays later, and the inner self joins it. A third place needs
+no extra variable but another fact. An applied λ whose argument is guarded binds the
+argument with the closure in the frame, and the bind asks for the heads of the closure
+now, while its body may use the self before any guard.
+Decision: the semantic judgment marks each variable separately (`lsem_later`, a mark
+`Some f` per later variable with its own λ flag), and the proof reads the guard with the
+same marks (`okM`, theories/liveness/GuardMarks.v). `ok` and `okv` are its one-mark
+instances, and the marked guard is invariant under renaming, so E-Contract and nested
+boxes go through. The closure of an applied λ is read in V at level 0, which E-Abs gives
+from its channels and heads without the body (`lsem_v0`). No static rule and no approved
+statement changes. `live_fundamental_guarded` (theories/liveness/LiveGuardFund.v).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

@@ -9,7 +9,7 @@
     later variable ([lsem_later_box_live]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export liveness.LiveGuardRules liveness.GuardMarks static.Fundamental.
+From LRGV Require Export liveness.LiveGuardRules liveness.GuardMarks static.Fundamental liveness.GuardEx.
 
 Set Default Proof Using "All".
 Local Set Warnings "-register-all".
@@ -350,3 +350,37 @@ Proof.
       intros C0 xs0 Hg. apply list_elem_of_singleton in Hg. injection Hg as -> ->. done. }
     clear Hb'; intros Hb'. by apply (proj2 Hb').
 Qed.
+
+(** ** The closed form
+
+    No future variables, no hypotheses, the identity substitution, and
+    no later variable. *)
+
+Theorem live_fundamental_guarded W Θ Δ F e T :
+  gtyped W ∅ [] Θ Δ (F, None) e T → strict W → lsem_typed W Θ Δ F e T.
+Proof.
+  intros [Ht Hg] HW.
+  pose proof (typed_live _ _ _ _ _ _ _ _ Ht (gall_gallM _ Hg) W (λ _, ∅) pvar (proj1 HW) (wext_refl _ HW)) as H.
+  rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
+  assert (sf_inst (λ _, ∅) (F, None) = F) as Ef.
+  { unfold sf_inst. simpl. by rewrite !union_empty_r_L. }
+  rewrite Ef in H. apply lsem_later_now. refine (proj1 (H _ _) _ (okR_noL _)).
+  - intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty.
+  - intros C xs Hgi. cbn in Hgi. by apply elem_of_nil in Hgi.
+Qed.
+
+(** A closed guarded typed term is in the live E relation at every index. *)
+Corollary live_fundamental_guarded_closed W F e T :
+  gtyped W ∅ [] ∅ [] (F, None) e T → strict W → ∀ n, LErel n W ∅ T F e.
+Proof.
+  intros Ht HW n. pose proof (live_fundamental_guarded _ _ _ _ _ _ Ht HW n W ∅ ∅ Var) as H.
+  rewrite subst_ids in H. apply H; [by apply wext_refl|apply tenv_comp_empty_r|done].
+Qed.
+
+(** ** The examples of GuardEx.v as live terms *)
+
+Theorem fw_live : ∀ n, LErel n wnil ∅ TUnit ∅ Forwarder.fw_main.
+Proof. apply live_fundamental_guarded_closed; [apply fw_gstyped|apply wnil_strict]. Qed.
+
+Theorem tc_live : ∀ n, LErel n wnil ∅ TUnit ∅ TailCall.tc_main.
+Proof. apply live_fundamental_guarded_closed; [apply tc_gstyped|apply wnil_strict]. Qed.
