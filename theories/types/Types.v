@@ -1501,24 +1501,14 @@ Proof.
   - right. apply ppo_same; [done|lia].
 Qed.
 
-(** ** The alias of a fresh point (sharp edges 104)
+(** ** The form of a fresh constraint (sharp edges 93, 94)
 
-    [fresh_eq C w] is the fact ι ≡ w of C, with w an outer point. C is
-    of the allowed form ([fresh_ok]) when its facts are ≺ facts of the
-    form above ([fresh_lt]), or when they are such facts and one alias
-    ι ≡ w. Which of the two cases holds is part of the evidence, so the
-    semantic proof can build its world by cases without excluded
-    middle. [fresh_at C w p] reads a point p of the fresh channel with
-    the alias in place of ι, so ι+k becomes w+k and ι[i] becomes w[i].
-
-    [fresh_between plt C] is the condition on the context. Without an
-    alias it is the betweenness of sharp edges 94. With the alias
-    ι ≡ w, the point ι has every fact of w, and a fresh extension adds
-    no fact between known points. So every ≺ fact of C must already hold
-    of w, that is u ≺ p[w/ι] for every u ≺ p and q[w/ι] ≺ v for every
-    q ≺ v of C. That condition is necessary in every world that holds
-    the alias, and it implies the betweenness of sharp edges 94. For
-    C = {ι ≡ w} it is empty, and w known is all that new asks. *)
+    C is of the allowed form ([fresh_ok]) when its facts are ≺ facts
+    that enter ι from an outer point or leave it to one ([fresh_lt]).
+    [fresh_between plt C] is the condition on the context, the
+    betweenness of sharp edges 94. On main C could also hold one alias
+    ι ≡ w (sharp edges 104). Branch no-eq has no alias, and new@w is the
+    primitive [KTNewAt] (sharp edges 159). *)
 
 (** Branch no-eq: the alias case is gone, so the allowed form is the
     ≺ form of sharp edges 93 and the condition is betweenness. *)
