@@ -699,3 +699,118 @@ Proof.
   apply (He W' xs HW Hxs HK HC n W' Θ' Θ'' γ); [|done|done].
   apply wext_refl. by destruct HW as (_&_&_&?).
 Qed.
+
+(** ** The rules as one inductive judgment
+
+    [lsem_rules] is [sem_rules] (rules/SemanticRules.v) without E-Exp,
+    whose live form needs a guarded body. *)
+
+Inductive lsem_rules (W : world) : tenv → lenv → gset point → expr → ty → Prop :=
+  | lsr_unit Δ F :                                        (* E-Unit *)
+      lenv_empty Δ →
+      lsem_rules W ∅ Δ F EUnit TUnit
+  | lsr_konst Δ F k T :                                   (* E-Const *)
+      lenv_empty Δ → konst_ty (w_eq W) (w_lt W) (pt_known W) k T →
+      lsem_rules W ∅ Δ F (Konst k) T
+  | lsr_var Δ F x T :                                     (* E-LVar *)
+      lenv_only Δ x T →
+      lsem_rules W ∅ Δ F (Var x) T
+  | lsr_chan Δ F c s k s' y :                             (* E-Ch, ι′ ≡_G ι *)
+      lenv_empty Δ → seq s s' → w_eq W k y →
+      lsem_rules W {[c := One (s, k)]} Δ F (Chan c) (TSess s' y)
+  | lsr_lam Θ Δ F e T U ub lb :                           (* E-Abs *)
+      term_wf Θ (Some T :: Δ) e → lenv_bot Δ = false → lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
+      (∀ W1 F', wext W W1 → ub_below W1 ub F' → lsem_rules W1 Θ (Some T :: Δ) F' e U) →
+      lsem_rules W Θ Δ F (Lam e) (TLolli ub lb T U)
+  | lsr_app Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :           (* E-App *)
+      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
+      lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TLolli ub lb T U) →
+      lsem_rules W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
+      lsem_rules W Θ Δ F (App e1 e2) U
+  | lsr_pair Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :                (* E-Pair *)
+      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+      lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 T →
+      lsem_rules W Θ2 Δ2 (F ∪ (heads T ∪ bot_pts (hbot T))) e2 U →
+      lsem_rules W Θ Δ F (Pair e1 e2) (TProd T U)
+  | lsr_letu Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :                  (* E-Let* *)
+      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+      lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 TUnit →
+      lsem_rules W Θ2 Δ2 F e2 T →
+      lsem_rules W Θ Δ F (LetU e1 e2) T
+  | lsr_letp Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :            (* E-LetPair *)
+      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+      lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TProd T1 T2) →
+      lsem_rules W Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
+      lsem_rules W Θ Δ F (LetP e1 e2) T
+  | lsr_inj1 Θ Δ F e T U :                                (* E-Inj *)
+      lsem_rules W Θ Δ F e T → lsem_rules W Θ Δ F (Inj1 e) (TSum T U)
+  | lsr_inj2 Θ Δ F e T U :
+      lsem_rules W Θ Δ F e U → lsem_rules W Θ Δ F (Inj2 e) (TSum T U)
+  | lsr_case Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T :          (* E-Case *)
+      tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+      lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e (TSum T1 T2) →
+      lsem_rules W Θ2 (Some T1 :: Δ2) F e1 T →
+      lsem_rules W Θ2 (Some T2 :: Δ2) F e2 T →
+      lsem_rules W Θ Δ F (Case e e1 e2) T
+  | lsr_wk
+ Θ Δ' Δ F e T :                                 (* E-Weak *)
+      lenv_wk Δ' Δ → lsem_rules W Θ Δ' F e T → lsem_rules W Θ Δ F e T
+  | lsr_contract Θ Δ U F e T :                            (* E-Contract *)
+      unlimited U →
+      lsem_rules W Θ (Some U :: Some U :: Δ) F e T →
+      lsem_rules W Θ (Some U :: Δ) F (rename pred e) T
+  | lsr_conv Θ Δ F e T T' :                               (* E-Conv, ≈_W (sharp edges 67) *)
+      teqW W T T' → lsem_rules W Θ Δ F e T → lsem_rules W Θ Δ F e T'
+  | lsr_pack Θ Δ F e lb m C T xs :                        (* E-Pack (sharp edges 97) *)
+      length xs = m → Forall (pt_known W) xs → bcs_hold (w_eq W) (w_lt W) C xs →
+      lbx_below W lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
+      lsem_rules W Θ Δ F e (ty_inst xs T) → lsem_rules W Θ Δ F e (TEx lb m C T)
+  | lsr_open Θ Δ F e i lb m C T U :                       (* E-Open *)
+      Δ !! i = Some (Some (TEx lb m C T)) →
+      (∀ W1 xs, wext W W1 → length xs = m → Forall (pt_known W1) xs →
+         bcs_hold (w_eq W1) (w_lt W1) C xs →
+         lsem_rules W1 Θ (<[i := Some (ty_inst xs T)]> Δ) F e U) →
+      lsem_rules W Θ Δ F e U.
+
+(** E-Force is E-App at the constant force. *)
+Theorem lsem_rules_fundamental W Θ Δ F e T :
+  lsem_rules W Θ Δ F e T → strict W → lsem_typed W Θ Δ F e T.
+Proof.
+  induction 1 as
+    [W Δ F HΔ
+    |W Δ F k T HΔ Hk
+    |W Δ F x T Ho
+    |W Δ F c s k s' y HΔ Hs Hk
+    |W Θ Δ F e T U ub lb Hwf Hbot Hlb Hb IH
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U HΘ HΔ Hub H1 IH1 H2 IH2
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U HΘ HΔ H1 IH1 H2 IH2
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T HΘ HΔ H1 IH1 H2 IH2
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T HΘ HΔ H1 IH1 H2 IH2
+    |W Θ Δ F e T U H IH
+    |W Θ Δ F e T U H IH
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ H0 IH0 H1 IH1 H2 IH2
+    |W Θ Δ' Δ F e T Hwk H IH
+    |W Θ Δ U F e T Hu H IH
+    |W Θ Δ F e T T' Hteq H IH
+    |W Θ Δ F e lb m C T xs Hxs HK HC Hlb H IH
+    |W Θ Δ F e i lb m C T U Hi Hb IH]; intros HW.
+  - by apply lsem_typed_unit.
+  - by apply lsem_typed_konst.
+  - by apply lsem_typed_var.
+  - by apply lsem_typed_chan.
+  - apply lsem_typed_lam; [done|done|done|].
+    intros W1 F' HW1 Hub'. apply IH; [done|done|apply HW1].
+  - eapply lsem_typed_app; [done|done|done|by apply IH1|by apply IH2].
+  - eapply lsem_typed_pair; [done|done|by apply IH1|by apply IH2].
+  - eapply lsem_typed_letu; [done|done|by apply IH1|by apply IH2].
+  - eapply lsem_typed_letp; [done|done|by apply IH1|by apply IH2].
+  - apply lsem_typed_inj1. by apply IH.
+  - apply lsem_typed_inj2. by apply IH.
+  - eapply lsem_typed_case; [done|done|by apply IH0|by apply IH1|by apply IH2].
+  - eapply lsem_typed_wk; [done|by apply IH].
+  - apply lsem_typed_contract; [done|by apply IH].
+  - eapply lsem_typed_conv; [done|by apply IH].
+  - eapply lsem_typed_pack; [done..|by apply IH].
+  - eapply lsem_typed_open; [done|].
+    intros W1 xs HW1 Hxs HK HC. apply IH; [done..|apply HW1].
+Qed.
