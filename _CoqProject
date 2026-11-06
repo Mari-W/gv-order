@@ -31,6 +31,7 @@ theories/liveness/LiveTermRules.v
 theories/liveness/LiveGuard.v
 theories/liveness/LiveRenaming.v
 theories/liveness/LiveJunk.v
+theories/liveness/LiveFuse.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v
