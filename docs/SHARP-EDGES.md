@@ -2383,6 +2383,22 @@ Decision, on paper: lock freedom under weak fairness per thread needs no
 bounds the channel steps of its holder before it offers the entry (Padovani's
 tickets, Trillium's Fuel). Not mechanized. docs/extensions/liveness.md §9.
 
+**160. The guarded fragment (author's decision, 2026-11-06, branch liveness).**
+A guard on E-Exp breaks the subsumption of Padovani and Novara's calculus (paper §4b).
+Its fix is unrestricted, and ⟨fix λx.x⟩ (`div_main`) τ-diverges, so no guard that makes
+the live fundamental theorem true can keep `pn_translate_source`. Decision: E-Exp stays
+unguarded, and the guarded fragment sits beside it. `gtyped`, `gstyped` and `gptyped` are
+the static judgments restricted to terms whose boxes are guarded (`guarded`, a computable
+check), so they are sub-systems by definition. The self of a box is a later hypothesis.
+A send, receive, close, select, branch or link discharges it for its continuation. The
+guard passes through let, let-pair, pairs, application arguments and an applied λ, and
+through case when both branches are guarded. A closure built before the guard may not
+hold the self. Forcing the self is no use, only applying it is, so (force x) e passes
+when e is guarded. The forwarder, the tail call, first-action and the rounds box are
+guarded (theories/liveness/GuardEx.v). Kobayashi's server and ⟨fix λx.x⟩ are not.
+Data-bounded recursion that forks before it acts (`fibo_pn`) stays outside, although it
+does not τ-diverge.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

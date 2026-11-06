@@ -376,6 +376,10 @@ Closed, in `theories/liveness/`.
   fundamental theorem therefore needs a restriction of the static E-Exp rule
   (a guarded self, §6). That is a change of the type system and waits for the
   author.
+- `Guard.v`, `GuardEx.v`. The guarded fragment (sharp edges 160) and the
+  examples against it.
+- `LiveBind.v`. `LErel_bind`, the bind lemma, with the statement of
+  `Erel_bind`.
 
 Not ported. The bind lemma, the constants (send, receive, close, select,
 branch, link, new), the invariance lemmas (renaming of points and channels,
