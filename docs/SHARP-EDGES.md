@@ -2300,6 +2300,26 @@ the theorems that became open (ChoiceNegative, DataBranch, SemFlag
 underivability) and `bit_typed` / `bit_deadlock_free`: merged into main
 2026-11-05, docs/extensions/end-points.md.
 
+**155. No equality constraints at the surface (Claude, 2026-11-06, branch no-eq).**
+Problem: ≡ costs seven aliasing rules, E-Conv up to Γ ⊢ ≡, type point
+conversion and ≡ in every world, and the surface needed it in four places
+only: new pinned to a point, link, the forwarder's alias between two payload
+points, and the forwarder's creation constraint, which aliased the payload
+points of the fresh channel to those of an existing one (not a pin of the
+fresh name, so new@p does not cover it). Congruence.v and cfst/FirstAction.v
+had box aliases whose two sides every caller instantiated alike.
+Decisions: new@p is `t_new_at`, whose statement has no ≡ (D1). link is
+S@ι ⊗ dual S@ῑ ⊸ ∗ (D2). The forwarder sends ∃^{σ̄}κ. {κ ≺ σ}. Close@κ with σ
+the payload point of the send, and its box replaces ρ ≡ σ by ρ ≺ σ and σ̄ ≺ ρ̄
+(D3): the receiver needs κ below its carrier, the sender needs its point below
+the head of what it packs, and ≺ is not closed under duality, so the two
+directions coexist. Congruence.v takes one variable (D4), FirstAction.v keeps an
+unused binder (D5), the link rejections of Rejected.v use equal points (D6).
+For Step 2, w_eq becomes syntactic equality (D7), justified by
+relation/NoAlias.v. The PN, MP and PGV translations keep ≡ (D8): they identify
+points by denotation, and MP's segment existential states x ≡ x̄.
+Details, inventory and effort: docs/extensions/no-equality.md.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 
