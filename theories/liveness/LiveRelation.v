@@ -23,20 +23,13 @@ From LRGV Require Export relation.LogicalRelation.
 
 Local Set Warnings "-register-all".
 
-(** ** Sizes of types *)
+(** ** Sizes of types
 
-Fixpoint tsize (T : ty) : nat :=
-  match T with
-  | TUnit | TSess _ _ => 1
-  | TLolli _ _ T1 U | TProd T1 U | TSum T1 U => S (tsize T1 + tsize U)
-  | TBox _ _ _ T1 | TEx _ _ _ T1 => S (tsize T1)
-  end.
+    [tsize] (types/Types.v) counts the type constructors outside session
+    types. Instantiation keeps it. *)
 
 Lemma tsize_pos T : 0 < tsize T.
 Proof. destruct T; simpl; lia. Qed.
-
-Lemma tsize_pinst σ T : tsize (pinst_ty σ T) = tsize T.
-Proof. induction T in σ |- *; simpl; auto. Qed.
 
 Lemma tsize_sinst σ T : tsize (sinst_ty σ T) = tsize T.
 Proof. induction T in σ |- *; simpl; auto. Qed.
