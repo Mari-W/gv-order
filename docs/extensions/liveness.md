@@ -418,19 +418,18 @@ Closed, in `theories/liveness/`.
   from a later judgment of the body, by Löb up to the index
   (`LVrel_box_lob_le`); when the body is a λ, the later hypothesis also says
   that the self is a box around a λ. `lsem_later_letu_guard`: E-Guard-Let.
-- `GuardCex.v`. Blocker, sharp edge 161. The guarded system admits a typed
-  program that τ-diverges: a box whose body is not a λ forces its own self
+- `GuardCex.v`, sharp edge 161. The guard of entry 160 admitted a typed
+  program that τ-diverges: a box whose body is not a λ forced its own self
   through the special case of `ok` for (force x) e before any channel step
-  (`cx_gptyped`, `cx_tau_diverges`, `live_guarded_false`). The guarded live
-  fundamental theorem is false as stated. A repair (`okf`, `okvf`, `gallf`:
-  the special case only under the λs of a box body) keeps the forwarder, the
-  tail call, first-action and the rounds box (`gallf_examples`). It changes
-  `guarded`, the definition of the guarded system, and waits for the author.
+  (`cx_gptyped0`, `cx_tau_diverges`, `live_guarded_unrepaired_false`).
+  Decided 2026-11-07: `guarded` (Guard.v) now allows the special case only
+  under the λs of a box body (`ok f`, `okv f`). It rejects the witness
+  (`cx_not_guarded`) and keeps the forwarder, the tail call, first-action and
+  the rounds box (`guarded_examples`).
 
 Next, in order.
 
-1. The author decides on the repair of the guard (sharp edge 161).
-2. The remaining rules of the later judgment, one per clause of the repaired
+1. The remaining rules of the later judgment, one per clause of the repaired
    guard: dropping a variable that does not occur, the let, let-pair, pair,
    application and case forms with the later variable on both sides (bind
    with R true and `lgroundingL` read at j ≤ n), the applied λ, the λ of the
@@ -440,8 +439,8 @@ Next, in order.
    induction on the typing derivation, following `typed_sem_rules`
    (static/Fundamental.v), and the live counterpart of `sem_rules` with
    E-Exp-Live.
-3. Invariance (channel and junk renaming) as far as the composition proofs
+2. Invariance (channel and junk renaming) as far as the composition proofs
    need it, then Internalize with synchronization cost 2, P-Connect, P-Term,
    P-Join. None of these is ported yet.
-4. `gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p` for the repaired guard, and the
+3. `gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p`, and the
    examples of GuardEx.v as live theorems.

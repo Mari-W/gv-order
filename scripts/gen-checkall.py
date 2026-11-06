@@ -20,8 +20,9 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('liveness/LiveGuard.v', 'lsem_typed_box_live'), ('liveness/LiveGuard.v', 'lsem_later_letu_guard'),
         ('liveness/GuardEx.v', 'fw_gstyped'), ('liveness/GuardEx.v', 'tc_gstyped'),
         ('liveness/GuardEx.v', 'kob_not_guarded'),
-        ('liveness/GuardCex.v', 'cx_gptyped'), ('liveness/GuardCex.v', 'cx_tau_diverges'),
-        ('liveness/GuardCex.v', 'live_guarded_false'), ('liveness/GuardCex.v', 'gallf_examples')]
+        ('liveness/GuardCex.v', 'cx_gptyped0'), ('liveness/GuardCex.v', 'cx_tau_diverges'),
+        ('liveness/GuardCex.v', 'live_guarded_unrepaired_false'), ('liveness/GuardCex.v', 'cx_not_guarded'),
+        ('liveness/GuardCex.v', 'guarded_examples')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):

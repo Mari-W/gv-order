@@ -1,27 +1,55 @@
-(** * A guarded box that τ-diverges (sharp edges 161)
+(** * The unrepaired guard admits a τ-divergent program (sharp edges 161)
 
-    Force is call by name: forcing a box runs its body. When the body
-    is not a λ, the special case of [ok] for (force x) e lets the body
-    force its own self before any channel step, and the unrolled body
-    does the same again.
+    Force is call by name: forcing a box runs its body. The guard of
+    entry 160 allowed (force x) e also when the box body is not a λ,
+    and then the body forces its own self before any channel step.
 
       bad  = !(x. let ∗ = (force x) g in λy. y)      g guarded
       main = (force bad) ∗
 
-    [main] is statically typed in the world with one constant
-    ([cx_main_typed]; the box quantifies its upper point ζ, and g closes
-    a fresh channel created below ζ) and [guarded] ([cx_guarded]). Its
-    thread has an infinite β sequence ([cx_tau_diverges]). So the live
-    fundamental theorem fails for the guarded system of Guard.v
-    ([live_guarded_false]). The special case of [ok] for (force x) e is
-    sound only when the body of the box is a λ, so that forcing the
-    self returns a value at once. *)
+    [main] is statically typed ([cx_main_typed]), passes the unrepaired
+    check [gall0] ([cx_guarded0]), and τ-diverges ([cx_tau_diverges]),
+    so the live fundamental theorem fails for the unrepaired guard
+    ([live_guarded_unrepaired_false]). The repaired [guarded] of Guard.v
+    allows the case only under the λs of a box body. It rejects [main]
+    ([cx_not_guarded]) and keeps the examples ([guarded_examples]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard liveness.LiveKob examples.ExampleTools.
 From LRGV Require examples.Forwarder examples.TailCall examples.cfst.FirstAction examples.SemRounds.
 
 Local Set Warnings "-register-all".
+
+(** ** The unrepaired guard of entry 160 *)
+
+Fixpoint ok0 (x : nat) (e : expr) : bool :=
+  match e with
+  | Var y => negb (Nat.eqb x y)
+  | EUnit | Konst _ | Chan _ => true
+  | Lam b | EBox b => negb (occurs (S x) b)
+  | App (App (Konst KForce) (Var y)) e2 =>
+      if Nat.eqb x y then gd e2 && ok0 x e2 else ok0 x e2
+  | App (Lam b) e2 => ok0 x e2 && (gd e2 || ok0 (S x) b)
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => ok0 x e1 && (gd e1 || ok0 x e2)
+  | LetP e1 e2 => ok0 x e1 && (gd e1 || ok0 (S (S x)) e2)
+  | Inj1 e | Inj2 e => ok0 x e
+  | Case e e1 e2 => ok0 x e && (gd e || (ok0 (S x) e1 && ok0 (S x) e2))
+  end.
+
+Fixpoint okv0 (x : nat) (e : expr) : bool :=
+  match e with Lam b => okv0 (S x) b | _ => ok0 x e end.
+
+Fixpoint gall0 (e : expr) : bool :=
+  match e with
+  | Var _ | EUnit | Konst _ | Chan _ => true
+  | EBox b => okv0 0 b && gall0 b
+  | Lam e | Inj1 e | Inj2 e => gall0 e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => gall0 e1 && gall0 e2
+  | Case e e1 e2 => gall0 e && gall0 e1 && gall0 e2
+  end.
+
+Definition gptyped0 (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ptyped W Σ p T ∧ ∀ e, e ∈ p.2 → gall0 e = true.
 
 Definition cx_C : bcs := BCs [] (λ _, False).
 Definition cx_fty : ty := TLolli None None TUnit TUnit.
@@ -36,8 +64,12 @@ Definition cx_body : expr := LetU (App (App EForce (Var 0)) cx_g) (Lam (Var 0)).
 Definition cx_bad : expr := EBox cx_body.
 Definition cx_main : expr := App (App EForce cx_bad) EUnit.
 
-Theorem cx_guarded : guarded cx_main.
+Theorem cx_guarded0 : gall0 cx_main = true.
 Proof. vm_compute. reflexivity. Qed.
+
+(** The repaired guard rejects it. *)
+Theorem cx_not_guarded : ¬ guarded cx_main.
+Proof. unfold guarded. vm_compute. discriminate. Qed.
 
 (** ** The unrolling never ends *)
 
@@ -128,55 +160,22 @@ Qed.
 
 (** ** The live fundamental theorem fails for the guarded system *)
 
-Theorem cx_gptyped : gptyped (Wpo [0]) ∅ (∅, {[+ cx_main +]}) TUnit.
+Theorem cx_gptyped0 : gptyped0 (Wpo [0]) ∅ (∅, {[+ cx_main +]}) TUnit.
 Proof.
   split; [apply ptyped_closed; [constructor|apply cx_main_typed]|].
-  intros e He. apply gmultiset_elem_of_singleton in He as ->. apply cx_guarded.
+  intros e He. apply gmultiset_elem_of_singleton in He as ->. apply cx_guarded0.
 Qed.
 
-Theorem live_guarded_false :
-  ¬ (∀ W p T, strict W → gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p).
+Theorem live_guarded_unrepaired_false :
+  ¬ (∀ W p T, strict W → gptyped0 W ∅ p T → ∀ n, LPrel n W ∅ T p).
 Proof.
   intros H. apply cx_tau_diverges, (live_no_tau_divergence (Wpo [0]) TUnit).
-  apply H; [apply Wpo_strict|apply cx_gptyped].
+  apply H; [apply Wpo_strict|apply cx_gptyped0].
 Qed.
 
-(** ** The proposed repair, checked against the examples (not adopted)
+(** ** The repaired guard keeps the examples *)
 
-    [okf f] is [ok] with the special case for (force x) e allowed only
-    when f holds, and [okvf] sets f when it passes a λ of the box body. *)
-
-Fixpoint okf (f : bool) (x : nat) (e : expr) : bool :=
-  match e with
-  | Var y => negb (Nat.eqb x y)
-  | EUnit | Konst _ | Chan _ => true
-  | Lam b | EBox b => negb (occurs (S x) b)
-  | App (App (Konst KForce) (Var y)) e2 =>
-      if Nat.eqb x y then f && gd e2 && okf f x e2 else okf f x e2
-  | App (Lam b) e2 => okf f x e2 && (gd e2 || okf f (S x) b)
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => okf f x e1 && (gd e1 || okf f x e2)
-  | LetP e1 e2 => okf f x e1 && (gd e1 || okf f (S (S x)) e2)
-  | Inj1 e | Inj2 e => okf f x e
-  | Case e e1 e2 => okf f x e && (gd e || (okf f (S x) e1 && okf f (S x) e2))
-  end.
-
-Fixpoint okvf (f : bool) (x : nat) (e : expr) : bool :=
-  match e with
-  | Lam b => okvf true (S x) b
-  | _ => okf f x e
-  end.
-
-Fixpoint gallf (e : expr) : bool :=
-  match e with
-  | Var _ | EUnit | Konst _ | Chan _ => true
-  | EBox b => okvf false 0 b && gallf b
-  | Lam e | Inj1 e | Inj2 e => gallf e
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => gallf e1 && gallf e2
-  | Case e e1 e2 => gallf e && gallf e1 && gallf e2
-  end.
-
-Theorem gallf_examples :
-  gallf Forwarder.fw_main = true ∧ gallf TailCall.tc_main = true ∧
-  gallf FirstAction.fa_go = true ∧ gallf FirstAction.fac_go = true ∧
-  gallf SemRounds.rK = true ∧ gallf cx_main = false.
-Proof. vm_compute. repeat split. Qed.
+Theorem guarded_examples :
+  guarded Forwarder.fw_main ∧ guarded TailCall.tc_main ∧
+  guarded FirstAction.fa_go ∧ guarded FirstAction.fac_go ∧ guarded SemRounds.rK.
+Proof. unfold guarded. vm_compute. repeat split. Qed.
