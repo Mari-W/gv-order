@@ -9,6 +9,14 @@ Worlds and Γ ⊢ ≡ are closed under x ↦ x̄, and program order adds x ≺ x
 selecting end continues at (x[i])‾, a branching end at x[i]. Where the text
 below still writes one point for both ends, read the end-points form.
 
+Branch no-eq (2026-11-06, docs/extensions/no-equality.md, sharp edges 155).
+No program, type or constraint of the core examples contains ≡. link is
+S@ι ⊗ dual S@ῑ ⊸ ∗, new at an existing point is `t_new_at` (new@p), and a
+channel delegated to a point the receiver does not know travels as an
+existential payload with order facts. The metatheory still has ≡ (worlds,
+Γ ⊢ ≡, E-Conv), and the translations of §4b still introduce it. On main
+everything below holds as written.
+
 This file is the current design. It supersedes every earlier order design
 (the old `orders` branch, `orders.lagda`, `orders-examples.txt`,
 `paper/orders-plan.pdf`). Notation follows the paper (`paper/2-calculus.tex`,
@@ -429,7 +437,7 @@ branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]                     {ι
          (each constraint puts ι below the heads of the result; the selecting end continues
           at the partner of the branching end, as in the encoding of choice)
 close  : Close@ι ⊸^ι ∗                                          ∅
-link   : S@ι ⊗ dual S@ι′ ⊸ ∗                                    {ι ≡ (ι′)‾}
+link   : S@ι ⊗ dual S@ῑ ⊸ ∗                                    ∅      (branch no-eq; main: S@ι ⊗ dual S@ι′ with {ι ≡ (ι′)‾})
          (link never blocks, so E-App asks no future fact for it. The paper's link has no
           order at all, sharp edges 68)
 force  : □(∀ιs αs. C. ∗ ⊸^u T) ⊸^{u[ιs′/ιs]} T[ιs′/ιs][ss/αs]   C[ιs′/ιs], with ιs′ known and
@@ -740,7 +748,9 @@ tail call       typable, no spawn              □(∀ι ζ. {ι+k ≺ ζ ∣ k 
                                                the world has (a,k) ≺ (z,0) for every k (tc_deadlock_free)
 forwarder       typable, recursion by spawn    receives d on one channel and sends it on another inside a box,
                                                C ∋ (ι+k)[1] ≡ (ι′+k)[1], E-Conv moves d from D@ι[1] to D@ι′[1]
-                                               (sharp edges 67, fw_deadlock_free)
+                                               (sharp edges 67, fw_deadlock_free). Branch no-eq: the sent
+                                               payload is ∃^{σ̄}κ. {κ ≺ σ}. Close@κ and C holds ρ ≺ σ, σ̄ ≺ ρ̄
+                                               for ρ = (ι+k)[0], σ = (ι′+k)[0] (sharp edges 155)
 received chain  typable, recursion by spawn    call at ι[1], C = {ι[1]ⁿ + 1 ≺ ι[1]ⁿ⁺¹ ∣ n ∈ ℕ},
                                                ι[1]ⁿ = ι[1]…[1] (n times), upper point ι+1 (ch_deadlock_free)
 ```
