@@ -28,6 +28,7 @@ theories/liveness/LiveBind.v
 theories/liveness/LiveConv.v
 theories/liveness/LiveConsts.v
 theories/liveness/LiveTermRules.v
+theories/liveness/GuardMarks.v
 theories/liveness/LiveGuard.v
 theories/liveness/LiveGuardRules.v
 theories/invariance/PointRenaming.v
