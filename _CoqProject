@@ -23,6 +23,7 @@ theories/liveness/LiveRules.v
 theories/liveness/LiveKob.v
 theories/liveness/Guard.v
 theories/liveness/GuardEx.v
+theories/liveness/GuardCex.v
 theories/liveness/LiveBind.v
 theories/liveness/LiveConv.v
 theories/liveness/LiveConsts.v
