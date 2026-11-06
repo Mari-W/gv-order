@@ -2399,20 +2399,22 @@ guarded (theories/liveness/GuardEx.v). Kobayashi's server and ⟨fix λx.x⟩ ar
 Data-bounded recursion that forks before it acts (`fibo_pn`) stays outside, although it
 does not τ-diverge.
 
-**161. Forcing the self of a box whose body is not a λ (Claude, 2026-11-06, branch liveness, open).**
+**161. Forcing the self of a box whose body is not a λ (Claude, 2026-11-06, branch liveness; decided 2026-11-07).**
 Force is call by name, so forcing a box runs its body. The special case of entry 160 for
 (force x) e assumes that forcing the self returns a value at once. That holds when the
-body is a λ, which `okv` reads under. For a body that is not a λ, `okv` falls back to
-`ok`, which also admits the special case, and the body forces its own self before any
+body is a λ, which `okv` reads under. For a body that is not a λ, `okv` fell back to
+`ok`, which also admitted the special case, and the body forced its own self before any
 channel step. Witness (theories/liveness/GuardCex.v): bad = !(x. let ∗ = (force x) g in
-λy. y) with g guarded, main = (force bad) ∗. main is statically typed and `guarded`
-(`cx_gptyped`) and its thread has an infinite β sequence (`cx_tau_diverges`), so the
-live fundamental theorem is false for the guarded system (`live_guarded_false`).
-Proposed repair, waiting for the author: `ok` takes a flag that permits the special case
-only under the λs of a box body (`okv` sets it when it passes a λ, the fallback clears
-it). Semantically the later hypothesis of the self then also states that the self is a
-box whose body is a λ, and forcing it is one β to a value. The forwarder, the tail call
-and the rounds box keep their guard, because their bodies are λs.
+λy. y) with g guarded, main = (force bad) ∗. main is statically typed and passed the
+check (`cx_gptyped0`), and its thread has an infinite β sequence (`cx_tau_diverges`), so
+the live fundamental theorem fails for that guard (`live_guarded_unrepaired_false`).
+Decision (coordinator, under the author's delegation): `ok` takes a flag that permits the
+special case only under the λs of a box body. `okv` sets it when it passes a λ, the
+fallback keeps it cleared. The intent of entry 160 is unchanged, because forcing a self
+whose body is a λ returns that λ in one β step. Semantically the later hypothesis of the
+self also states that the self is a box around a λ when the body is one (`later_val`).
+The repaired `guarded` rejects the witness (`cx_not_guarded`) and keeps the forwarder,
+the tail call, first-action and the rounds box (`guarded_examples`).
 
 ## From the earlier abandoned mechanization (spec §15)
 

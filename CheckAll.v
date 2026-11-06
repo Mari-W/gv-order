@@ -108,10 +108,11 @@ Print Assumptions LRGV.liveness.LiveGuard.lsem_later_letu_guard.
 Print Assumptions LRGV.liveness.GuardEx.fw_gstyped.
 Print Assumptions LRGV.liveness.GuardEx.tc_gstyped.
 Print Assumptions LRGV.liveness.GuardEx.kob_not_guarded.
-Print Assumptions LRGV.liveness.GuardCex.cx_gptyped.
+Print Assumptions LRGV.liveness.GuardCex.cx_gptyped0.
 Print Assumptions LRGV.liveness.GuardCex.cx_tau_diverges.
-Print Assumptions LRGV.liveness.GuardCex.live_guarded_false.
-Print Assumptions LRGV.liveness.GuardCex.gallf_examples.
+Print Assumptions LRGV.liveness.GuardCex.live_guarded_unrepaired_false.
+Print Assumptions LRGV.liveness.GuardCex.cx_not_guarded.
+Print Assumptions LRGV.liveness.GuardCex.guarded_examples.
 Print Assumptions LRGV.examples.ChoiceEnc.branch_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_deadlock_free.
