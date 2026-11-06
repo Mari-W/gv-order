@@ -137,3 +137,190 @@ Proof.
       pose proof (LVrel_val _ _ _ _ _ HV) as Hv'. by rewrite Hv in Hv'.
     + apply (HK W' j Θ1' Θ' v); [done|lia|done|done].
 Qed.
+
+(** ** A judgment with one later variable
+
+    [L = Some x] marks the variable x of Δ as later: its value is in V at
+    every level below n and in every later world, and its environment
+    is empty. With [lam], the value is moreover a box whose body is a λ,
+    so forcing it is one β to a value (sharp edges 161). [L = None] is
+    [lgrounding]. *)
+
+Definition later_val (n : nat) (W : world) (lam : bool) (T : ty) (v : expr) : Prop :=
+  (∀ j W2, j < n → wext_r W W2 → LVrel j W2 ∅ T v) ∧ (lam = true → ∃ b, v = EBox (Lam b)).
+
+Definition shiftL (L : option nat) : option nat :=
+  match L with Some (S x) => Some x | _ => None end.
+
+Fixpoint lgroundingL (n : nat) (W : world) (Θ : tenv) (Δ : lenv) (L : option nat) (lam : bool)
+    (γ : nat → expr) : Prop :=
+  match Δ with
+  | [] => Θ = ∅
+  | None :: Δ' => lgroundingL n W Θ Δ' (shiftL L) lam (γ ∘ S)
+  | Some T :: Δ' =>
+      if decide (L = Some 0) then
+        unlimited T ∧ later_val n W lam T (γ 0) ∧ lgroundingL n W Θ Δ' None lam (γ ∘ S)
+      else
+        ∃ Θ1 Θ2, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧ LVrel n W Θ1 T (γ 0) ∧
+                 lgroundingL n W Θ2 Δ' (shiftL L) lam (γ ∘ S)
+  end.
+
+Definition lsem_later (W : world) (Θ : tenv) (Δ : lenv) (L : option nat) (lam : bool)
+    (F : gset point) (e : expr) (T : ty) : Prop :=
+  ∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ Θ' →
+    lgroundingL n W' Θ' Δ L lam γ → LErel n W' Θ'' T F (subst γ e).
+
+Lemma shiftL_none : shiftL None = None.
+Proof. done. Qed.
+
+Lemma lgroundingL_none n W Θ Δ lam γ : lgroundingL n W Θ Δ None lam γ ↔ lgrounding n W Θ Δ γ.
+Proof.
+  revert Θ γ. induction Δ as [|[T|] Δ IH]; intros Θ γ; simpl; [done| |by apply IH].
+  destruct (decide (None = Some 0)) as [|_]; [done|].
+  split; intros (Θ1 & Θ2 & ? & ? & Hg); exists Θ1, Θ2; split_and!; try done; by apply IH.
+Qed.
+
+(** A later variable is now one level down. *)
+Lemma lgroundingL_lower n j W Θ Δ L lam γ :
+  j < n → lgroundingL n W Θ Δ L lam γ → lgrounding j W Θ Δ γ.
+Proof.
+  intros Hj. revert Θ L γ. induction Δ as [|[T|] Δ IH]; intros Θ L γ Hg; simpl in *; [done| |by eapply IH].
+  destruct (decide (L = Some 0)) as [->|HL].
+  - destruct Hg as (Hu & [Hv _] & Hg). exists ∅, Θ. split_and!.
+    + apply tenv_comp_empty_l, eq_rdsym.
+    + apply (Hv j W Hj), wext_r_refl.
+    + by eapply IH.
+  - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg). exists Θ1, Θ2.
+    split_and!; [done|eapply LVrel_down; [|exact HV]; lia|by eapply IH].
+Qed.
+
+Lemma lgroundingL_mono n W W' Θ Δ L lam γ :
+  wext W W' → lgroundingL n W Θ Δ L lam γ → lgroundingL n W' Θ Δ L lam γ.
+Proof.
+  intros HW. revert Θ L γ. induction Δ as [|[T|] Δ IH]; intros Θ L γ Hg; simpl in *; [done| |by apply IH].
+  destruct (decide (L = Some 0)) as [->|HL].
+  - destruct Hg as (Hu & [Hv Hl] & Hg). split_and!; [done| |by apply IH].
+    split; [|done]. intros j W2 Hj HW2. apply Hv; [done|]. right.
+    destruct HW2 as [->|HW2]; [done|by eapply wext_trans].
+  - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg). exists Θ1, Θ2.
+    split_and!; [done|by eapply LVrel_mono|by apply IH].
+Qed.
+
+Lemma lgroundingL_down n m W Θ Δ L lam γ :
+  m ≤ n → lgroundingL n W Θ Δ L lam γ → lgroundingL m W Θ Δ L lam γ.
+Proof.
+  intros Hm. revert Θ L γ. induction Δ as [|[T|] Δ IH]; intros Θ L γ Hg; simpl in *; [done| |by apply IH].
+  destruct (decide (L = Some 0)) as [->|HL].
+  - destruct Hg as (Hu & [Hv Hl] & Hg). split_and!; [done| |by apply IH].
+    split; [|done]. intros j W2 Hj HW2. apply Hv; [lia|done].
+  - destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg). exists Θ1, Θ2.
+    split_and!; [done|by eapply LVrel_down|by apply IH].
+Qed.
+
+Lemma lgroundingL_ext n W Θ Δ L lam γ γ' :
+  (∀ i, γ i = γ' i) → lgroundingL n W Θ Δ L lam γ → lgroundingL n W Θ Δ L lam γ'.
+Proof.
+  revert Θ L γ γ'. induction Δ as [|[T|] Δ IH]; intros Θ L γ γ' Hγ Hg; simpl in *; [done| |].
+  - destruct (decide (L = Some 0)).
+    + destruct Hg as (Hu & Hv & Hg). rewrite <-Hγ. split_and!; [done|done|].
+      eapply IH; [|exact Hg]. intros i. apply Hγ.
+    + destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg). exists Θ1, Θ2. split_and!; [done|by rewrite <-Hγ|].
+      eapply IH; [|exact Hg]. intros i. apply Hγ.
+  - eapply IH; [|exact Hg]. intros i. apply Hγ.
+Qed.
+
+Lemma lgroundingL_unl n W Θ Δ L lam γ : lenv_unl Δ → lgroundingL n W Θ Δ L lam γ → Θ = ∅.
+Proof.
+  revert Θ L γ. induction Δ as [|[T|] Δ IH]; intros Θ L γ Hu Hg; simpl in *.
+  - done.
+  - assert (lenv_unl Δ) as Hu' by (intros o Ho; apply Hu; by right).
+    destruct (decide (L = Some 0)).
+    + destruct Hg as (_ & _ & Hg). by eapply IH.
+    + destruct Hg as (Θ1 & Θ2 & Hc & HV & Hg).
+      destruct (Hu (Some T)) as [?|(U & [= <-] & HU)]; [by left|done|].
+      rewrite (LVrel_unl_empty _ _ _ _ _ HU HV) in Hc.
+      apply (tenv_comp_empty_l_inv _ _ _ eq_rdsym) in Hc as ->. by eapply IH.
+  - apply (IH _ (shiftL L) (γ ∘ S)); [|done]. intros o Ho. apply Hu. by right.
+Qed.
+
+(** ** E-Exp-Live: the body with a later self
+
+    The self is the variable 0 of the body. When the body is a λ, the
+    later hypothesis also says that the self is a box around a λ. *)
+
+Definition is_lam (e : expr) : bool := match e with Lam _ => true | _ => false end.
+
+Lemma is_lam_subst σ e : is_lam e = true → ∃ b, subst σ e = Lam b.
+Proof. destruct e; try done. intros _. simpl. eauto. Qed.
+
+
+(** [LVrel_box_lob] up to a bound N on the index. *)
+Lemma LVrel_box_lob_le N W m k C ub T eb :
+  fchans eb = ∅ →
+  (∀ n W1 xs ss F, n ≤ N → wext W W1 → length xs = m → length ss = k → Forall hcontractive ss →
+     bcs_hold (w_eq W1) (w_lt W1) C xs → Forall (pt_known W1) xs →
+     ub_below W1 (pt_inst (plist xs) <$> ub) F →
+     (∀ j W2, j < n → wext W1 W2 →
+        LVrel j W2 ∅ (TBox m k C (TLolli ub None TUnit T)) (EBox eb)) →
+     LErel n W1 ∅ (sinst_ty (slist ss) (ty_inst xs T)) F (subst1 (EBox eb) eb)) →
+  ∀ n W', n ≤ N → wext W W' → LVrel n W' ∅ (TBox m k C (TLolli ub None TUnit T)) (EBox eb).
+Proof.
+  intros Hfc Hbody n. induction n as [n IH] using lt_wf_ind. intros W' HnN HW'.
+  apply LVrel_box_iff. split; [done|]. exists eb. split_and!; [done|done|].
+  intros W'' xs ss HW'' Hxs Hss Hsc HC HK.
+  unfold ty_inst. cbn [pinst_ty sinst_ty fmap option_fmap option_map].
+  apply LVrel_lolli_iff. left. exists (rename S (subst1 (EBox eb) eb)). split_and!.
+  - done.
+  - rewrite fchans_rename, dom_empty_L. apply set_eq. intros c. split; [|set_solver].
+    intros Hc%fchans_subst1_sub. simpl in Hc. rewrite Hfc in Hc. set_solver.
+  - simpl. by rewrite tenv_heads_empty'.
+  - intros W3 j Θ' Θ'' w F HW3 Hj Hc Hub HVw.
+    apply LVrel_unit_iff in HVw as [-> ->]. apply tenv_comp_empty_inv in Hc as ->.
+    rewrite thunk_app.
+    assert (wext W W3) as HWW3 by (eapply wext_trans; [exact HW'|]; by eapply wext_trans).
+    apply (Hbody j W3 xs ss F); [lia|done|done|done|done| | |exact Hub|].
+    + destruct HW3 as (_ & He3 & Hl3 & _). eapply bcs_hold_mono; [exact He3|exact Hl3|exact HC].
+    + eapply Forall_impl; [exact HK|]. destruct HW3 as (Hn & _). unfold pt_known.
+      intros x Hx. by apply Hn.
+    + intros i W4 Hi HW4. apply IH; [lia|lia|]. by eapply wext_trans.
+Qed.
+
+Lemma lgrounding_unl n W Θ Δ γ : lenv_unl Δ → lgrounding n W Θ Δ γ → Θ = ∅.
+Proof.
+  intros Hu Hg. apply (lgroundingL_unl n W Θ Δ None false γ Hu). by apply lgroundingL_none.
+Qed.
+
+Lemma lsem_typed_box_live W Δ F e m k C ub T :
+  lenv_unl Δ → term_wf ∅ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ) e →
+  (∀ W1 xs ss F', wext W W1 → length xs = m → length ss = k → Forall hcontractive ss →
+     bcs_hold (w_eq W1) (w_lt W1) C xs →
+     Forall (pt_known W1) xs → ub_below W1 (pt_inst (plist xs) <$> ub) F' →
+     lsem_later W1 ∅ (Some (TBox m k C (TLolli ub None TUnit T)) :: Δ) (Some 0) (is_lam e) F' e
+       (sinst_ty (slist ss) (ty_inst xs T))) →
+  lsem_typed W ∅ Δ F (EBox e) (TBox m k C (TLolli ub None TUnit T)).
+Proof.
+  intros Hu (Hfc & Hfv & _) He n W' Θ' Θ'' γ HW Hc Hg. simpl.
+  pose proof (lgrounding_unl _ _ _ _ _ Hu Hg) as ->.
+  apply tenv_comp_empty_inv in Hc as ->.
+  apply LVrel_LErel.
+  assert (fchans (subst (up γ) e) = ∅) as Hfc'.
+  { assert (fchans (subst (up γ) e) ⊆ fchans e ∪ dom (∅ : tenv)) as Hsub.
+    { apply fchans_subst. eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
+      - intros _. set_solver.
+      - intros (T' & Hx). unfold compose. rewrite fchans_rename. by eapply lgrounding_fchans. }
+    rewrite Hfc, dom_empty_L in Hsub. set_solver. }
+  apply (LVrel_box_lob_le n W' m k C ub T (subst (up γ) e) Hfc'); [|done|apply wext_refl, HW].
+  intros n1 W1 xs ss F1 Hn1 HW1 Hxs Hss Hsc HC HK Hub Hlob. rewrite subst1_subst.
+  pose proof (wext_trans _ _ _ HW HW1) as HWW1.
+  apply (He W1 xs ss F1 HWW1 Hxs Hss Hsc HC HK Hub n1 W1 ∅ ∅).
+  - apply wext_refl, HWW1.
+  - apply tenv_comp_empty_r.
+  - simpl. destruct (decide (Some 0 = Some 0)) as [_|]; [|done]. split_and!.
+    + done.
+    + split.
+      * intros j W2 Hj [<-|HW2]; [apply Hlob; [done|apply wext_refl, HWW1]|by apply Hlob].
+      * intros Hl. destruct (is_lam_subst (up γ) e Hl) as [b ->]. by exists b.
+    + apply lgroundingL_none. eapply lgrounding_ext; [|eapply lgrounding_down; [exact Hn1|]].
+      * done.
+      * eapply lgrounding_mono; [exact HW1|exact Hg].
+Qed.
