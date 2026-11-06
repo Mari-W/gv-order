@@ -139,8 +139,8 @@ read at ∗. The premises hold in every future world W1 ⊒ W (Kripke style, §4
   ∧ (¬ irred e → ready_t W1 Θ F e)                               E-Step
   ∧ (∀ e', e --β--> e' → Eind VT T W1 Θ F e')                     O-Beta
   ∧ (∀ c e', e --νc--> e' → c ∉ dom Θ → ∀ L,
-       ∃ a s s' W', a ∉ L ∪ roots(Θ, T, F) ∧ s ⊥ s' ∧ W1 ⊑ₒ W' ∧
-         Eind VT T W' (Θ, c : (s@a, s'@ā)) F e')                  O-New
+       ∃ x s s' W', new_place W1 (L ∪ roots(Θ, T, F)) x W' ∧ s ⊥ s' ∧
+         Eind VT T W' (Θ, c : (s@x, s'@x̄)) F e')                  O-New
   ∧ (∀ w e', e --⇑w--> e' →
        ∃ Θ1 Θ2 ub lb, Θ = Θ1, Θ2 ∧ Vspawn_n W1 Θ1 ub lb w ∧
          Eind VT T W1 Θ2 F e')                                    O-Spawn
@@ -151,7 +151,10 @@ read at ∗. The premises hold in every future world W1 ⊒ W (Kripke style, §4
 v = ∗) ∗`. `Eobl_σ` is today's obligation of the six session labels with every
 successor at n − 1 and the payload of O-Send at n − 1.
 
-O-New and Q-Admin quantify cofinitely over the fresh names. For every finite
+`new_place W N x W'` is the condition of branch no-eq (no-equality.md §7.2):
+x is a constant a ∉ N and W' a fresh extension of W placing a, or x is a
+point W knows and W' = W (new@x). O-New and Q-Admin quantify cofinitely over
+the fresh names. For every finite
 set L the term finds a fresh point outside L. Today's O-New finds one point
 fresh for Θ, T and F, and the bind lemma then renames it away from the
 context's environment and the hole's type (`Erel_new_rename`). The cofinite

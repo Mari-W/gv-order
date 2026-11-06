@@ -59,8 +59,9 @@ Section conv.
     - done.
     - intros e' Hst. destruct (Hb e' Hst) as [_ HΦ]. by apply HΦ.
     - intros c e' Hst Hc L.
-      destruct (Hnew c e' Hst Hc (L ∪ ty_roots T')) as (a & s & s' & W' & Ha & Hdu & Hfr & _ & HΦ).
-      exists a, s, s', W'. split_and!; [set_solver|done|done|].
+      destruct (Hnew c e' Hst Hc (L ∪ ty_roots T')) as (x & s & s' & W' & Hpl & Hdu & _ & HΦ).
+      exists x, s, s', W'. split_and!; [eapply new_place_sub; [|exact Hpl]; set_solver|done|].
+      destruct Hpl as [(a & -> & Ha & Hfr)|(_ & ->)]; [|by apply HΦ].
       pose proof (proj1 Hfr) as HW'. apply HΦ; [by eapply wext_wf| |done].
       eapply teqW_mono; [|exact Ht1]. intros ? ? ?. by apply (proj1 (proj2 HW')).
     - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HΦ).
@@ -111,8 +112,7 @@ Section conv.
         assert (teqW W' T2 T2') as Ht2' by (by eapply teqW_mono).
         assert (ub_below W' ub F) as Hub'.
         { eapply ub_below_conv; [done| |exact Hub].
-          apply opt_rel_sym; [done|]. destruct ub, ub'; simpl in *; try done.
-          destruct Hu as [->|(? & ? & ?)]; [by left|right; split_and!; auto]. }
+          apply opt_rel_sym; [done|]. destruct ub, ub'; simpl in *; try done. }
         destruct (decide (j < n)) as [Hlt|Hge].
         * eapply (proj1 (proj2 (IHn j Hlt))); [done|exact Ht2'|].
           apply (HL W' j Θ' Θ'' w F); [done|done|done|done|].
@@ -151,7 +151,7 @@ Section conv.
       apply LVrel_sess_iff in HVv as (c & s0 & kk & -> & -> & Hs0 & Hkk).
       apply LVrel_sess_iff. exists c, s0, kk. split_and!; [done|done| |].
       + by eapply seq_trans.
-      + eapply (wf_eq_trans _ HW); [exact Hkk|]. by apply pteqW_eq.
+      + eapply (wf_eq_trans _ HW); [exact Hkk|]. by apply (pteqW_eq W HW).
     - destruct Ht as (Hl & <- & HC & Ht).
       apply LVrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HCx & H)].
       apply LVrel_ex_iff. split; [by eapply lbx_below_conv|]. exists xs. split_and!; [done..| |].

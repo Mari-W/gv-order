@@ -210,9 +210,9 @@ Definition Ebody (below : nat → llevel) (n : nat)
     (¬ irred e → ready_t W1 Θ F e) ∧                              (* E-Step *)
     (∀ e', tstep e LBeta e' → X VT T W1 Θ F e') ∧                  (* O-Beta *)
     (∀ c e', tstep e (LNew c) e' → c ∉ dom Θ →                    (* O-New *)
-       ∀ L : gset pname, ∃ a s s' W', NConst a ∉ L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∧
-         sdual s s' ∧ wext_fresh W1 {[NConst a]} W' ∧
-         X VT T W' (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> Θ) F e') ∧
+       ∀ L : gset pname, ∃ x s s' W', new_place W1 (L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F) x W' ∧
+         sdual s s' ∧
+         X VT T W' (<[c := Both (s, x) (s', pt_dual x)]> Θ) F e') ∧
     (∀ w e', tstep e (LSpawn w) e' →                               (* O-Spawn *)
        ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W1) Θ Θ1 Θ2 ∧
          Vspawn (λ j, lvV (below j)) (λ j, lvE (below j))
@@ -347,8 +347,8 @@ Proof.
   split; [exact Hs|]. split; [exact Hr|]. split.
   { intros e' Hst. exact (f _ _ _ _ _ _ (Hb e' Hst)). }
   split.
-  { intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & H1 & H2 & H3 & H4).
-    exists a, s, s', W'. split; [exact H1|]. split; [exact H2|]. split; [exact H3|].
+  { intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & H1 & H2 & H4).
+    exists a, s, s', W'. split; [exact H1|]. split; [exact H2|].
     exact (f _ _ _ _ _ _ H4). }
   split; [|exact Hσ].
   intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & H1 & H2 & H3).
@@ -433,7 +433,7 @@ Proof.
   constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
   split_and!; [auto|done| | | |done].
   - intros e' Hst. by apply (Hb e' Hst).
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & _ & HX).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
     exists a, s, s', W'. split_and!; [done..|]. by apply HX.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |by apply HX].
@@ -512,7 +512,7 @@ Proof.
   constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hbeta & Hnew & Hsp & Hσ).
   split_and!; [done|done| | | |].
   - intros e' Hst. by apply (Hbeta e' Hst).
-  - intros c e' Hst Hc L. destruct (Hnew c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & _ & HX).
+  - intros c e' Hst Hc L. destruct (Hnew c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
     exists a, s, s', W'. by split_and!.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |done].
