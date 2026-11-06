@@ -24,6 +24,7 @@ theories/liveness/LiveKob.v
 theories/liveness/Guard.v
 theories/liveness/GuardEx.v
 theories/liveness/LiveBind.v
+theories/liveness/LiveConv.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v
