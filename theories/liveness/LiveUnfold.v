@@ -209,7 +209,7 @@ Definition LEstep (X : world → tenv → ty → gset point → expr → Prop) (
     (¬ irred e → ready_t W1 Θ F e) ∧
     (∀ e', tstep e LBeta e' → X W1 Θ T F e') ∧
     (∀ c e', tstep e (LNew c) e' → c ∉ dom Θ →
-       ∃ a s s' W', NConst a ∉ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∧
+       ∀ L : gset pname, ∃ a s s' W', NConst a ∉ L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F ∧
          sdual s s' ∧ wext_fresh W1 {[NConst a]} W' ∧
          X W' (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> Θ) T F e') ∧
     (∀ w e', tstep e (LSpawn w) e' →
@@ -225,7 +225,7 @@ Proof.
   intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
   split_and!; [done|done| | | |done].
   - intros e' Hst. auto.
-  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & W' & ? & ? & ? & ?).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & ?).
     exists a, s, s', W'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
@@ -245,7 +245,7 @@ Proof.
   split_and!; [|done| | | |].
   - intros Hirr. auto.
   - intros e' Hst. auto.
-  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & W' & ? & ? & ? & ?).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & ?).
     exists a, s, s', W'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
@@ -268,7 +268,7 @@ Proof.
   split_and!; [|done| | | |].
   - intros Hirr. apply LVrel_eq. auto.
   - intros e' Hst. auto.
-  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & W' & ? & ? & ? & ?).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & ?).
     exists a, s, s', W'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
@@ -329,7 +329,7 @@ Definition LPstep (X : world → senv → ty → proc → Prop) (n : nat)
              (∀ e, e ∈ E → e = EUnit)) ∧
     (¬ pirred p → ready_p W1 Σ p) ∧
     (∀ p', padmin p p' → p'.1 ## dom Σ →
-       ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧ X W' Σ T p') ∧
+       ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧ X W' Σ T p') ∧
     (∀ p', pcomm p p' → Ptau_case (LPrel (pred n)) W1 Σ T p') ∧
     (∀ p', ptau_link p p' → Ptau_case (LPrel n) W1 Σ T p') ∧
     (∀ σ p', proc_step p (PSess σ) p' → LPobl LVrel LPrel (S n) W1 Σ T p σ p').
@@ -343,7 +343,7 @@ Proof.
   intros HV HX H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
   split_and!; [| done | | | | ].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. split_and!; auto.
-  - intros p' Hst Hd. destruct (Ha p' Hst Hd) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
+  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
   - intros p' Hst. eapply Ptau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (lvP_llevels (S n)) in Hx; [done|simpl; lia].
   - intros p' Hst. eapply Ptau_case_mono; [|by apply Hl].
@@ -362,7 +362,7 @@ Proof.
   intros HV HX H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
   split_and!; [| done | | | | ].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. split_and!; auto.
-  - intros p' Hst Hd. destruct (Ha p' Hst Hd) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
+  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
   - intros p' Hst. eapply Ptau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (lvP_llevels (S n)); [simpl; lia|done].
   - intros p' Hst. eapply Ptau_case_mono; [|by apply Hl].
@@ -488,7 +488,7 @@ Proof.
   split_and!; [| done | | | | ].
   - intros Hirr. eapply LVrel_down; [|by apply Hs]. lia.
   - intros e' Hst. by apply (Hb e' Hst).
-  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & W' & ? & ? & ? & _ & HX).
+  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ? & _ & HX).
     exists a, s, s', W'. by split_and!.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |done].
@@ -514,7 +514,7 @@ Proof.
   split_and!; [| done | | | | ].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & HV & ?). exists v, E.
     split_and!; [done|done| |done]. eapply LVrel_down; [|exact HV]. lia.
-  - intros p' Hst Hd. destruct (Ha p' Hst Hd) as (N & W' & ? & ? & _ & HX). eauto.
+  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & _ & HX). eauto.
   - intros p' Hst. eapply Ptau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (IHn (pred n')); [lia|lia|exact Hx].
   - intros p' Hst. eapply Ptau_case_mono; [|by apply Hl].
