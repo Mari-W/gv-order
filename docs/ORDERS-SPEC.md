@@ -804,3 +804,20 @@ An algorithmic type system. The static system of §9 is declarative. Missing for
 - environment splitting (E-App, E-Let*): input/output contexts
 - conversion (E-Conv): ≈ on regular session types is decidable; apply at application/ascription
 - annotations: ∀ schemes under □ and recursive types are given, not inferred
+
+## 17  Liveness (branch liveness, 2026-11-06, sharp edges 155 to 158)
+
+A second relation Vˡ, Eˡ, Pˡ next to §7, in theories/liveness. Design and state in docs/extensions/liveness.md.
+
+Costs. send, select, close, link, receive, branch: 1. Process τ of P-Act-Msg, P-Act-Close, P-Act-Choice: 2. τ of P-Act-Link: 1. β (application, let, let-pair, case, force), new, spawn, at both levels: 0, read inductively. Payloads of sends at n − 1.
+
+Level n. Vˡ_n by fuel on `tsize`, the arrow at every j ≤ n (j = n through Eˡ_n). Eˡ_n and Pˡ_n least fixpoints (`Eind`, `Pind`) whose one constructor states, in every W1 ⊒ W, E-Stop, E-Step, O-Beta, O-New, O-Spawn (the spawned closure inlined at level n) and the six session obligations one level down, resp. P-Stop, P-Step, Q-Admin (β, new, spawn), Q-Comm at n − 2, Q-Link-τ at n − 1 and Q-σ at n − 1. Level 0 holds every term and process.
+
+Results (closed).
+- `live_adequacy`: (∀ n, Pˡ_n W ∅ T p) ⇒ deadlock_free p ∧ every state reachable from p is accessible for the τ of β, new and spawn.
+- `live_runs`: every infinite run from such a p takes a channel step (P-Act-Msg, Close, Choice or Link) after every position. `live_finite_runs`: a finite maximal run ends terminated.
+- E-App for a closure and E-Force at the same index, E-Spawn with the spawned closure in Vˡ at ∗ ⊸ ∗ at the same level, E-Exp-Live by Löb with the box needed only below the current level.
+
+Recursion. A box body may use the box only at levels below the current one. A channel step discharges this. Shifted points are not a guard (sharp edges 157).
+
+Lock freedom. Needs, on top, a rank on points fixed at creation and an obligation fuel per held entry (sharp edges 158). Open.
