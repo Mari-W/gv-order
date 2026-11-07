@@ -81,7 +81,8 @@ ground part to be acyclic, which is strictness of $\wrld$
 With channels, every composite rule of
 \cref{fig:typeSys} splits $\tenv$ as it splits $\lenv$, and adds the
 heads of the second part of $\tenv$ to the future of its first subterm.
-\ref{rule:E-Ch} reads a channel from $\tenv$, up to aliasing. Weakening
+\ref{rule:E-Ch} reads a channel from $\tenv$, up to equivalence of its
+session. Weakening
 and contraction act on variables of $\Box$ type.
 
 \begin{figure}[tp]
@@ -89,10 +90,9 @@ and contraction act on variables of $\Box$ type.
   \rulesection*{Channels and structural rules (\rocq{typed})}
   \begin{proofrules}
     \infer*[lab=E-Ch]{
-      \sty \approx \sty' \\
-      \fctx \types \fEq{\pntA}{\pntB}
+      \sty \approx \sty'
     }{
-      \ch : \sAt{\sty}{\pntA} ; \fctx ; \tEmpty \typesF{\frm} \ch : \sAt{\sty'}{\pntB}
+      \ch : \sAt{\sty}{\pntA} ; \fctx ; \tEmpty \typesF{\frm} \ch : \sAt{\sty'}{\pntA}
     } \label{rule:E-Ch}
     \and
     \infer*[lab=E-Weak]{
@@ -126,13 +126,12 @@ processes that interact in a dual way on the channels of
 $\senv_{\asTy{C}}$ and subsumes the mix rule at
 $\senv_{\asTy{C}} = \tEmpty$.
 
-Write $\balanced_{\wrld}(\tenv)$ when
+Write $\balanced(\tenv)$ when
 \[
   \forall \ch\in\dom(\tenv)\st
-  \exists\sty,\styB,\pntA,\pntB\st
-  \tenv(\ch)=\sAt{\sty}{\pntA}\cdot\sAt{\styB}{\pntB}
-  \land \sty\isdual\styB
-  \land \wrld\types\fEq{\pntA}{\pdual{\pntB}}.
+  \exists\sty,\styB,\pntA\st
+  \tenv(\ch)=\sAt{\sty}{\pntA}\cdot\sAt{\styB}{\pdual{\pntA}}
+  \land \sty\isdual\styB .
 \]
 Thus each channel has exactly two ends with dual sessions at dual points.
 
@@ -166,7 +165,7 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   \begin{proofrules}
     \infer*[lab=P-Term]{
       \primitive \ty \\
-      \balanced_{\wrld}(\tenv_{\asTy{B}}) \\
+      \balanced(\tenv_{\asTy{B}}) \\
       \senv , \tenv_{\asTy{B}} ; \wrld ; \tEmpty \typesF{\emptyset} \tm : \ty
     }{
       \senv \typesW{\wrld} (\dom(\tenv_{\asTy{B}}) , \mset{\tm}) : \ty
@@ -300,9 +299,10 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   A box with two point variables forwards every message of one session
   to another.
   \begin{align*}
-    \sty_{\asTy{i}} &= \tyMu\tvar. \sRecv{(\sAt{\sTerm}{\pslot{\pself}{0}})}{\tvar}
-    &
-    \sty_{\asTy{o}} &= \tyMu\tvar. \sSend{(\sAt{\sTerm}{\pslot{\pself}{0}})}{\tvar}
+    \sty_{\asTy{i}} &= \tyMu\tvar. \sRecv{(\tyPay{\pself}{\sAt{\sTerm}{\pslot{\pself}{0}}})}{\tvar}
+    \\
+    \sty_{\asTy{o}} &= \tyMu\tvar. \sSend{(\tyPay{\pself}{
+      \tyEx{\pdual{\pslot{\pself}{0}}}{\pviB}{\set{\fLt{\pviB}{\pslot{\pself}{0}}}}{\sAt{\sTerm}{\pviB}}})}{\tvar}
     \\
     \cstr_{\asTy{f}} &= \set{\,
       \fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
@@ -311,11 +311,13 @@ Thus each channel has exactly two ends with dual sessions at dual points.
     \\
     & \quad \cup\ \set{\,
       \fLt{\poff{\pviA'}{k}}{\poff{\pdual{\pviA}}{k+1}},\
-      \fLt{\poff{\pviA'}{k}}{\pdual{\pslot{(\poff{\pviA'}{k})}{0}}}
+      \fLt{\poff{\pviA'}{k}}{\pdual{\pntC_k}}
       \;\mid\; k \in \Nat \,}
     \\
-    & \quad \cup\ \set{\, \fEq{\pslot{(\poff{\pviA}{k})}{0}}{\pslot{(\poff{\pviA'}{k})}{0}}
+    & \quad \cup\ \set{\, \fLt{\pntB_k}{\pntC_k},\
+      \fLt{\pdual{\pntC_k}}{\pdual{\pntB_k}}
       \;\mid\; k \in \Nat \,}
+    \qquad \pntB_k = \pslot{(\poff{\pviA}{k})}{0},\ \pntC_k = \pslot{(\poff{\pviA'}{k})}{0}
     \\
     \asTmId{fwd} &{}: \tyBox{\pviA \pviA'}{\cstr_{\asTy{f}}}{%
       \tyUnit \lolli{}{}
@@ -333,17 +335,25 @@ Thus each channel has exactly two ends with dual sessions at dual points.
       \tApp{\tSpawn}{(\tAbs{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\poff{\pviA}{1}\ \poff{\pviA'}{1}})}{%
         \tPair{\vr_1}{\vrB_1}}})}
   \end{align*}
-  The receive at $\pviA$ gives $\chB$ the type
-  $\sAt{\sTerm}{\pslot{\pviA}{0}}$, and the send at $\pviA'$ asks for
-  $\sAt{\sTerm}{\pslot{\pviA'}{0}}$. \Cref{rule:E-Conv} up to
-  $\fctx \types {\equiv}$ moves $\chB$ along the alias
-  $\fEq{\pslot{\pviA}{0}}{\pslot{\pviA'}{0}}$ of $\cstr_{\asTy{f}}$.
-  This is the one place in the development where an alias between two
-  payload points is needed, and $\cstr_{\asTy{f}}$ is indexed by the
-  offset rather than by the payload depth. The recursive call asks
-  $\cstr_{\asTy{f}}$ one round later, which $\cstr_{\asTy{f}}$ contains
-  (\rocq{fw_sub}). A producer and a consumer complete the program
-  (\rocq{fprod_typed}, \rocq{fcons_typed}), and
+  The receive at $\pviA$ gives $\chB$ the type $\sAt{\sTerm}{\pntB_0}$.
+  The send at $\pviA'$ has the payload point $\pntC_0$ and packs $\chB$
+  at $\pviB = \pntB_0$. \ref{rule:E-Pack} asks the constraint
+  $\fLt{\pntB_0}{\pntC_0}$ and the bound
+  $\fLe{\pdual{\pntC_0}}{\set{\pdual{\pntB_0}}}$, because the head of
+  $\chB$ is its partner point. The send asks
+  $\fLt{\pviA'}{\pdual{\pntC_0}}$ for the head of the packed value. All
+  three are facts of $\cstr_{\asTy{f}}$ (\rocq{Pfo}). The receiver of the
+  payload needs $\pviB$ below its carrier and the sender needs its point
+  below the head of what it packs, so $\cstr_{\asTy{f}}$ orders $\pntB_k$
+  and $\pntC_k$ in one direction and their partner points in the other.
+  No fact relates a point to its partner point, so the two directions
+  form no cycle. $\cstr_{\asTy{f}}$ is indexed by the offset and not by
+  the payload depth. The recursive call asks $\cstr_{\asTy{f}}$ one round
+  later, which $\cstr_{\asTy{f}}$ contains (\rocq{fw_sub}). A producer
+  creates each message with $\tNewAt{\pslot{\pviA}{0}}$, and a consumer
+  opens it at a fresh $\pviB$ with $\fLt{\pviB}{\pslot{\pviA}{0}}$ and
+  closes it there (\rocq{fprod_typed}, \rocq{fcons_typed}). Together
+  they complete the program, and
   $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{fw} : \tyUnit$
   (\rocq{fw_typed}) makes it deadlock free
   (\rocq{fw_deadlock_free}).
@@ -437,9 +447,8 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   \end{align*}
   Six channels sit at the points of one root. The first $\tNew$ creates
   the ring channel of $\asTmId{A}_0$ at a fresh $\pviA$ with the empty
-  creation constraint, and every later channel is created at
-  $\poff{\pviA}{2k}$ by the alias
-  $\fEq{\pviB}{\poff{\pviA}{2k}}$, with its partner end at
+  creation constraint, and every later channel is created by
+  $\tNewAt{\poff{\pviA}{2k}}$, with its partner end at
   $\poff{\pdual{\pviA}}{2k}$. Three threads sharing three ring
   channels form a cycle, so no derivation by \ref{rule:P-Connect}
   exists, and the order on points admits the program all the same:
@@ -505,32 +514,33 @@ invariant of a recursion, so it has to state every round at once, as
 \begin{theorem}[A reversed agent \rocq{sched_rev_underivable}, \rocq{ms_rev_underivable}]
 \label{thm:rej-sched}
   In the reduced scheduler, reversing $\asTmId{ag}_0$ so that it
-  receives before it sends asks $\fLt{\pntB}{\pntA}$, while
-  $\asTmId{ag}_2$ asks $\fLt{\pntC}{\pntB}$ and the $\tLink$ asks
-  $\fEq{\pntC}{\pntA}$. The three close the cycle
+  receives before it sends asks $\fLt{\pntB}{\pntA}$. $\asTmId{ag}_2$
+  receives at the point the $\tLink$ forwards, and the $\tLink$ types
+  only at dual points, which places that point at $\pntA$. So
+  $\asTmId{ag}_2$ asks $\fLt{\pntA}{\pntB}$, and the two close the cycle
   $\fLt{\pntA}{\pntB} \prec \pntA$. In Milner's scheduler the same
   reversal asks $\fLt{\asTy{r}_2}{\asTy{r}_0}$ against
   $\fLt{\asTy{r}_0}{\asTy{r}_1}$ and
   $\fLt{\asTy{r}_1}{\asTy{r}_2}$.
 \end{theorem}
 
-(\rocq{sl_trans}, \rocq{sl_eqr}, \rocq{se_sym}, \rocq{slt_acyclic_nil}).
+(\rocq{sl_trans}, \rocq{slt_acyclic_nil}).
 
 \begin{theorem}[A cyclic forwarding \rocq{badlink_underivable}]
 \label{thm:rej-link}
   For $\asTmId{badlink}$ (\rocq{badlink_main}), with the first ends of
-  $\ch$, $\chB$ and $\asTm{e}$ at $\pntA$, $\pntB$ and $\pntC$, the
-  $\tLink$ of the first ends of $\ch$ and $\chB$ asks
-  $\fEq{\pntA}{\pdual{\pntB}}$, hence $\fEq{\pdual{\pntA}}{\pntB}$ by
-  \ref{rule:A-Dual}. The main thread closes $\ch$ at $\pdual{\pntA}$
-  while it holds $\asTm{e}$ at $\pntC$ and asks
+  $\ch$ and $\asTm{e}$ at $\pntA$ and $\pntC$, the $\tLink$ of the first
+  ends of $\ch$ and $\chB$ types only when the first end of $\chB$ sits
+  at $\pdual{\pntA}$, so $\chB$ comes from
+  $\tNewAt{\pdual{\pntA}}$. The main thread closes $\ch$ at
+  $\pdual{\pntA}$ while it holds $\asTm{e}$ at $\pntC$ and asks
   $\fLt{\pdual{\pntA}}{\pdual{\pntC}}$. The second thunk closes
-  $\asTm{e}$ at $\pdual{\pntC}$ while it holds $\chB$ at $\pdual{\pntB}$
-  and asks $\fLt{\pdual{\pntC}}{\pntB}$. The three give
-  $\fLt{\pdual{\pntA}}{\pdual{\pntA}}$.
+  $\asTm{e}$ at $\pdual{\pntC}$ while it holds $\chB$ at $\pntA$, whose
+  head is $\pdual{\pntA}$, and asks $\fLt{\pdual{\pntC}}{\pdual{\pntA}}$.
+  The two give $\fLt{\pdual{\pntA}}{\pdual{\pntA}}$.
 \end{theorem}
 
-(\rocq{sl_trans}, \rocq{sl_eqr}, \rocq{se_sym}).
+(\rocq{sl_trans}).
 
 The program deadlocks after the forwarding. The mechanization argues
 the deadlock in a comment and proves only the rejection.
@@ -593,8 +603,7 @@ values.
 (\cref{ex:delegation}), the point $\ubd$ it blocks at, the future the rest
 of the thread still holds, and the premise
 $\fctx \types \fLt{\ubd}{\frm}$ that \ref{rule:E-App} owes for it. The
-five facts of $\cstr_{\asTy{d}}$, the alias
-$\fEq{\pviB}{\pslot{\pviA}{0}}$ of the second $\tNew$, program order and
+five facts of $\cstr_{\asTy{d}}$, program order and
 the hypothesis $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$ of \ref{rule:E-Abs}
 discharge all of them. The future holds partner points. The main thread
 keeps $\chB'$ at $\pdual{\pslot{\pviA}{0}}$, whose head is
@@ -622,10 +631,10 @@ $\poff{\pdual{\pviA}}{1}$, whose head is $\poff{\pviA}{1}$.
       & $\poff{\pviA}{1}$ & $\emptyset$ & vacuous \\
     $\tApp{\tSpawn}{\asTmId{K}}$
       & absent & & an absent bound never blocks \\
-    $\tApp{\tNewC{\pviB}{\dots}}{\tUnit}$
-      & absent & & $\cstr$ acyclic and conservative \\
+    $\tApp{\tNewAt{\pslot{\pviA}{0}}}{\tUnit}$
+      & absent & & $\pslot{\pviA}{0}$ known \\
     \midrule
-    \multicolumn{4}{l}{\emph{spawned thread, under both constraints and $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$}} \\
+    \multicolumn{4}{l}{\emph{spawned thread, under $\cstr_{\asTy{d}}$ and $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$}} \\
     $\tApp{\tRecv}{\ch'}$
       & $\pdual{\pviA}$ & $\set{\pfv}$ & $\fLt{\pdual{\pviA}}{\pfv}$ \\
     $\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}}$
@@ -687,11 +696,9 @@ will travel on, and the second $\tNew$ then creates that payload there.
     \and
     \infer*{
       \ty \approx \ty' \\
-      \tyB \approx \tyB' \\
-      \fctx \types \fEq{\ubd}{\ubd'} \\
-      \fctx \types \fEq{\lbd}{\lbd'}
+      \tyB \approx \tyB'
     }{
-      \ty \lolli{\ubd}{\lbd} \tyB \approx \ty' \lolli{\ubd'}{\lbd'} \tyB'
+      \ty \lolli{\ubd}{\lbd} \tyB \approx \ty' \lolli{\ubd}{\lbd} \tyB'
     }
     \and
     \infer*{
@@ -709,10 +716,9 @@ will travel on, and the second $\tNew$ then creates that payload there.
     }
     \and
     \infer*{
-      \sty \approx \styB \\
-      \fctx \types \fEq{\pntA}{\pntB}
+      \sty \approx \styB
     }{
-      \sAt{\sty}{\pntA} \approx \sAt{\styB}{\pntB}
+      \sAt{\sty}{\pntA} \approx \sAt{\styB}{\pntA}
     }
     \and
     \infer*{
@@ -829,8 +835,8 @@ Duality also has a relational reading $\sty \isdual \styB$. The two agree:
 $\sty \isdual \styB$ holds iff
 $\sty \approx \dual{\styB}$ (\rocq{sdual_seq_dual})
 \cite{DBLP:journals/corr/abs-2004-01322}.
-Under $\Box$ and $\exists$ the equivalence identifies two points only
-when they are equal (\rocq{steq}).
+The equivalence relates two types only when their points are equal
+(\rocq{steq}).
 
 \section{Reduction Semantics and Harmony}
 \label{sec:app-harmony}
