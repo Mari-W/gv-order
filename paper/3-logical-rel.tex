@@ -330,14 +330,14 @@ channel join when they are dual at dual points (\rocq{tenv_comp}).
       \forall \wrld' \mathrel{\sqsupseteq} \wrld,\ j \le n \cost{\lambda},\ \tenv_2,\
         \val \in \lrVW{\wrld'}{j}{\tenv_2 \types \payloadAt{\payty}{\pntA}} \st
       \\
-      \tm' \in \lrEW{\wrld'}{j}{(\tenv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})}) \cdot \tenv_2 \types \ty}{\frm}
+      \tm' \in \lrEW{\wrld'}{j}{(\tenv_1 , \ch : \sAt{\sty}{\poff{\pntA}{1}}) \cdot \tenv_2 \types \ty}{\frm}
     }{
       \obl{\wrld ; \tenv_1 , \ch : \sAt{(\sRecv{\payty}{\sty})}{\pntA} \mid \frm}{n}{\tm \trans{\lRecv{\ch}{\val}} \tm' : \ty}
     } \label{rule:O-Recv}
     \and
     \infer*[lab=O-Send]{
       \val \in \lrVW{\wrld}{n}{\tenv_2 \types \payloadAt{\payty}{\pntA}} \\
-      \tm' \in \lrEW{\wrld}{n \cost{\lambda}}{\tenv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})} \types \ty}{\frm}
+      \tm' \in \lrEW{\wrld}{n \cost{\lambda}}{\tenv_1 , \ch : \sAt{\sty}{\poff{\pntA}{1}} \types \ty}{\frm}
     }{
       \obl{\wrld ; (\tenv_1 , \ch : \sAt{(\sSend{\payty}{\sty})}{\pntA}) \cdot \tenv_2 \mid \frm}{n}{\tm \trans{\lSend{\ch}{\val}} \tm' : \ty}
     } \label{rule:O-Send}
@@ -431,11 +431,11 @@ type.
     \infer*[lab=Q-Recv]{
       \forall \wrld' \mathrel{\sqsupseteq} \wrld,\ j \le n \cost{\pi},\ \tenv_2
         \text{ with } \dom(\tenv_2) \disjoint \chset
-        \text{ and } \mathit{ok}_{\wrld'}(\senv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})}, \tenv_2),\
+        \text{ and } \mathit{ok}_{\wrld'}(\senv_1 , \ch : \sAt{\sty}{\poff{\pntA}{1}}, \tenv_2),\
         \val \in \lrVW{\wrld'}{j}{\tenv_2 \types \payloadAt{\payty}{\pntA}} \st
       \\
       (\chset' \cup B, \pool') \in
-        \lrPW{\wrld'}{j}{(\senv_1 , \ch : \sAt{\sty}{(\poff{\pntA}{1})}) \mathbin{\triangleright} \tenv_2 \types \ty}
+        \lrPW{\wrld'}{j}{(\senv_1 , \ch : \sAt{\sty}{\poff{\pntA}{1}}) \mathbin{\triangleright} \tenv_2 \types \ty}
     }{
       \obl{\wrld ; \senv_1 , \ch : \sAt{(\sRecv{\payty}{\sty})}{\pntA}}{n}{(\chset,\pool) \trans{\lRecv{\ch}{\val}} (\chset',\pool') : \ty}
     } \label{rule:Q-Recv}
@@ -447,7 +447,7 @@ type.
       \\\\
       \val \in \lrVW{\wrld}{n}{\senv_{\asTy{v}} , \tenv_{\asTy{e}} \types \payloadAt{\payty}{\pntA}}
       \quad
-      (\chset',\pool') \in \lrPW{\wrld}{n \cost{\pi}}{\senv_0 , \senv_{\asTy{e}} , \ch : \sAt{\sty}{(\poff{\pntA}{1})} \types \ty}
+      (\chset',\pool') \in \lrPW{\wrld}{n \cost{\pi}}{\senv_0 , \senv_{\asTy{e}} , \ch : \sAt{\sty}{\poff{\pntA}{1}} \types \ty}
     }{
       \obl{\wrld ; \senv_0 , \senv_{\asTy{v}} , \ch : \sAt{(\sSend{\payty}{\sty})}{\pntA}}{n}{(\chset,\pool) \trans{\lSend{\ch}{\val}} (\chset',\pool') : \ty}
     } \label{rule:Q-Send}

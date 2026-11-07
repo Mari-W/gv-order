@@ -337,7 +337,7 @@
 \def\tSpawn{\tOp{spawn}}
 \NewDocumentCommand\tNewC{mm}{{\tNew\,#1\,\mathopen{{\color{cTm}\{}}#2\mathclose{{\color{cTm}\}}}}}
 % new@x: new at a point the context knows
-\NewDocumentCommand\tNewAt{m}{{\tNew{\color{cTy}@}#1}}
+\NewDocumentCommand\tNewAt{m}{\mathord{{\color{cTm}\mathsf{new}}{\color{cTy}@}{#1}}}
 \NewDocumentCommand\tBoxP{mm}{{{\color{cTm}!}#1{\color{cTm}.}\,#2}}
 \NewDocumentCommand\tBoxA{mmmm}{{{\color{cTm}!}#1\,\mathord{\color{cTy}\forall}#2\,\mathopen{{\color{cTm}\{}}#3\mathclose{{\color{cTm}\}}}{\color{cTm}.}\,#4}}
 \NewDocumentCommand\tForceA{mm}{{\tForce\,#1\,[#2]}}

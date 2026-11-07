@@ -460,8 +460,8 @@ The producer of an existential picks its points when it packs, and the
 consumer opens it at fresh variables. A payload binds its relative point
 $\pself$ with $\lambdabar$, and the carrier fixes it. A message sent at
 $\pntA$ instantiates $\pself$ by $\pntA$, so its $j$-th channel sits at
-$\pslot{\pntA}{j}$. $\tNew$ returns an existential that the runtime
-produces (\cref{fig:signatures}).
+$\pslot{\pntA}{j}$. The first typing of $\tNew$ returns an existential
+that the runtime produces (\cref{fig:signatures}).
 
 \begin{definition}[Payload \rocq{payload_at}]
 \label{def:payload}
@@ -647,10 +647,10 @@ shift $\poff{\pviA}{k}$.
       \set{\fLt{\pntA}{\pnode} \mid \pnode \in \heads(\payloadAt{\payty}{\pntA})}
       \Rightarrow
       \lPair{\payloadAt{\payty}{\pntA}}{\sAt{(\sSend{\payty}{\sty})}{\pntA}}
-      \lolli{\pntA}{} \sAt{\sty}{(\poff{\pntA}{1})}
+      \lolli{\pntA}{} \sAt{\sty}{\poff{\pntA}{1}}
     \\
     \tRecv &{}: \forall \pntA.\, \sAt{(\sRecv{\payty}{\sty})}{\pntA}
-      \lolli{\pntA}{} \lPair{\payloadAt{\payty}{\pntA}}{\sAt{\sty}{(\poff{\pntA}{1})}}
+      \lolli{\pntA}{} \lPair{\payloadAt{\payty}{\pntA}}{\sAt{\sty}{\poff{\pntA}{1}}}
     \\
     \tClos &{}: \forall \pntA.\, \sAt{\sTerm}{\pntA} \lolli{\pntA}{} \tyUnit
     \\
@@ -888,7 +888,7 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
           \tApp{\tNewAt{\pslot{\pviA}{0}}}{\tUnit}}{}
       \\
       & \tSeq{\tApp{\tSpawn}{\asTmId{K}}}{}
-        \tLetS{\ch_1 : \sAt{\sTerm}{(\poff{\pviA}{1})}}{\tApp{\tSend}{\tPair{\chB}{\ch}}}{}
+        \tLetS{\ch_1 : \sAt{\sTerm}{\poff{\pviA}{1}}}{\tApp{\tSend}{\tPair{\chB}{\ch}}}{}
       \\
       & \tLet[\ivx][\chB_1]{\tApp{\tRecv}{\chB'}}{}
         \tSeq{\ivx}{\tSeq{\tApp{\tClos}{\chB_1}}{\tApp{\tClos}{\ch_1}}}
