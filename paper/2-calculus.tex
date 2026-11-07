@@ -325,8 +325,8 @@ from.
   \adjustfigure[]
   \rulesection*{Names $\pnm$, points $\pntA$, facts $\fact$, constraints $\cstr$ (\rocq{point}, \rocq{fact}, \rocq{bcs})}
   \begin{align*}
-    \pnm &::= \pviA \sepr \pcst \sepr \pslot{\pntA}{j}
-    & \text{(a variable, a constant at run time, a payload point)}
+    \pnm &::= \pviA \sepr \pcst \sepr \fld{\pntA}{\flL}
+    & \text{(a variable, a constant at run time, a field)}
     \\
     \pntA &::= \poff{\pnm}{k} \sepr \poff{\pdual{\pnm}}{k}
     & \text{(the $k$-th action of an end at $\pnm$ or at $\pdual{\pnm}$, $k \in \Nat$, and $\poff{\pnm}{0}$ is $\pnm$)}
@@ -343,13 +343,13 @@ from.
     &
     \pdual{\poff{\pntA}{k}} &= \poff{\pdual{\pntA}}{k}
     &
-    \pslot{\pdual{\pntA}}{j} &= \pslot{\pntA}{j}
+    \fld{\pdual{\pntA}}{\flL} &= \fld{\pntA}{\flL}
     &
     \rootof(\pdual{\pntA}) &= \rootof(\pntA)
     \\
     \rootof(\poff{\pviA}{k}) &= \pviA
     &
-    \rootof(\poff{\pslot{\pntA}{j}}{k}) &= \rootof(\pntA)
+    \rootof(\poff{\fld{\pntA}{\flL}}{k}) &= \rootof(\pntA)
     &
     \rootof(\poff{\pcst}{k}) &= \pcst
     \span\span
@@ -364,10 +364,14 @@ from.
 
 An end at $\pntA$ acts there and moves to $\poff{\pntA}{1}$. Its partner
 end acts at the partner point $\pdual{\pntA}$ in the same
-synchronization. The $j$-th channel of the message sent at $\pntA$ sits
-at the payload point $\pslot{\pntA}{j}$. Both ends compute the same
-payload point, $\pslot{\pdual{\pntA}}{j} = \pslot{\pntA}{j}$, so the
-sender and the receiver agree on it (\rocq{pt_payload_dual}). A fact
+synchronization. A channel carried by the message sent at $\pntA$ sits
+at a field $\fld{\pntA}{\flL}$ of $\pntA$. Fields are labels, written
+$\flK$, $\flM$ and $\flL$, and they bind nothing. Shift and field are
+both postfix and read left to right, so $\fld{\poff{\pntA}{1}}{\flK}$ is
+the field $\flK$ of the next point and $\poff{\fld{\pntA}{\flK}}{1}$ the
+next point of the field. Both ends compute the same field,
+$\fld{\pdual{\pntA}}{\flL} = \fld{\pntA}{\flL}$, so the sender and the
+receiver agree on it (\rocq{pt_payload_dual}). A fact
 about a channel rather than one of its ends writes $\phat{\pntA}$ for
 both ends. The fact $\fLt{\phat{\pntA}}{\phat{\pntB}}$ stands for the
 four facts $\fLt{\pntA}{\pntB}$, $\fLt{\pntA}{\pdual{\pntB}}$,
@@ -389,19 +393,19 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
       \sepr \ty \lolli{\ubd}{\lbd} \tyB \sepr \sAt{\sty}{\pntA}
       \sepr \tyBox{\pvivec}{\cstr}{\ty} \sepr \tyEx{\lbd}{\pvivec}{\cstr}{\ty}
     \\
-    \sty &::= \sSend{\payty}{\sty} \sepr \sRecv{\payty}{\sty} \sepr \sTerm
+    \sty &::= \sendp{\pbv}{\payty}{\sty} \sepr \recvp{\pbv}{\payty}{\sty} \sepr \sTerm
       \sepr \tyMu\tvar.\sty \sepr \tvar \sepr \dualv{\tvar}
     \\
-    \payty &::= \tyPay{\pself}{\ty} \quad\text{subject to } \operatorname{points}(\ty) \subseteq \set{\pslot{\pself}{j} \mid j \in \Nat}
+    \payty &::= \ty \quad\text{subject to } \operatorname{points}(\ty) \subseteq \set{\fld{\pbv}{\flL} \mid \flL \text{ a field}}
     \\
     \ubd &::= \pAbs \sepr \pntA
     & \lbd &::= \pAbs \sepr \pBot \sepr \pntA
   \end{align*}
   \rulesection{Session duality $\dual{\sty}$ (\rocq{dual})}
   \begin{align*}
-    \dual{\sSend{\payty}{\sty}} &= \sRecv{\payty}{\dual{\sty}}
+    \dual{\sendp{\pbv}{\payty}{\sty}} &= \recvp{\pbv}{\payty}{\dual{\sty}}
     &
-    \dual{\sRecv{\payty}{\sty}} &= \sSend{\payty}{\dual{\sty}}
+    \dual{\recvp{\pbv}{\payty}{\sty}} &= \sendp{\pbv}{\payty}{\dual{\sty}}
     &
     \dual{\sTerm} &= \sTerm
     \\
@@ -417,8 +421,8 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
     &
     \tysub{(\poff{\pcst}{k})}{\pntvec}{\pvivec} &= \poff{\pcst}{k}
     &
-    \tysub{(\poff{\pslot{\pntB}{j}}{k})}{\pntvec}{\pvivec}
-      &= \poff{\pslot{(\tysub{\pntB}{\pntvec}{\pvivec})}{j}}{k}
+    \tysub{(\poff{\fld{\pntB}{\flL}}{k})}{\pntvec}{\pvivec}
+      &= \poff{\fld{(\tysub{\pntB}{\pntvec}{\pvivec})}{\flL}}{k}
     \\
     \tysub{\pdual{\pntB}}{\pntvec}{\pvivec}
       &= \pdual{\tysub{\pntB}{\pntvec}{\pvivec}}
@@ -432,7 +436,7 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
   the binder of a $\Box$ and of an $\exists$ (\rocq{pup}).
   \rulesection{Payloads (\rocq{payload_at})}
   \begin{align*}
-    \payloadAt{(\tyPay{\pself}{\ty})}{\pntA} &:= \ty[\pslot{\pself}{j} \mapsto \pslot{\pntA}{j}]_{j \in \Nat}
+    \payloadAt{\payty}{\pntA} &:= \payty[\fld{\pbv}{\flL} \mapsto \fld{\pntA}{\flL}]_{\flL \text{ a field}}
   \end{align*}
   \rulesectionend
   \caption{Types, session types and duality}
@@ -457,22 +461,29 @@ such choice.
 Three binders bind points, and they differ in who picks the point. The
 user of a $\Box$ picks the points of its $\forall$ at every $\tForce$.
 The producer of an existential picks its points when it packs, and the
-consumer opens it at fresh variables. A payload binds its relative point
-$\pself$ with $\lambdabar$, and the carrier fixes it. A message sent at
-$\pntA$ instantiates $\pself$ by $\pntA$, so its $j$-th channel sits at
-$\pslot{\pntA}{j}$. The first typing of $\tNew$ returns an existential
-that the runtime produces (\cref{fig:signatures}).
+consumer opens it at fresh variables. An action
+$\sendp{\pbv}{\payty}{\sty}$ binds the point $\pbv$ it happens at with
+$\lambdabar$, and the carrier supplies that point by performing the
+action. A send on a channel at $\pntA$ substitutes $\pntA$ for $\pbv$,
+so a channel carried at the field $\fld{\pbv}{\flL}$ sits at
+$\fld{\pntA}{\flL}$. The superscript carries the point of the action, as
+a priority annotation does in a priority system, except that ours is
+bound and fixed by the channel the action happens on. The first typing
+of $\tNew$ returns an existential that the runtime produces
+(\cref{fig:signatures}).
 
 \begin{definition}[Payload \rocq{payload_at}]
 \label{def:payload}
-  A payload $\payty = \tyPay{\pself}{\ty}$ binds $\pself$ in a type $\ty$
-  whose free points satisfy the restriction in \cref{fig:types}. Here
-  $\operatorname{points}$ collects points outside nested payloads and
-  respects point binders. Each nested payload obeys the same restriction.
-  We call $\pself$ the relative point of the payload. The shorthand
-  $\payloadAt{\payty}{\pntA}$ denotes simultaneous replacement of every
-  $\pslot{\pself}{j}$ by $\pslot{\pntA}{j}$ in $\ty$. We write $\ty$ for
-  $\tyPay{\pself}{\ty}$ when $\pself$ does not occur in $\ty$.
+  A payload $\payty$ of $\sendp{\pbv}{\payty}{\sty}$ or
+  $\recvp{\pbv}{\payty}{\sty}$ is a type whose free points satisfy the
+  restriction in \cref{fig:types}. The binder $\pbv$ scopes over
+  $\payty$ only, and the continuation $\sty$ lives at
+  $\poff{\pbv}{1}$. Here $\operatorname{points}$ collects points outside
+  nested payloads and respects point binders. Each nested payload obeys
+  the same restriction. The shorthand $\payloadAt{\payty}{\pntA}$ denotes
+  simultaneous replacement of every $\fld{\pbv}{\flL}$ by
+  $\fld{\pntA}{\flL}$ in $\payty$. We write $\sSend{(\payty)}{\sty}$ when
+  $\pbv$ does not occur in $\payty$.
 \end{definition}
 
 \begin{remark}
@@ -480,12 +491,12 @@ that the runtime produces (\cref{fig:signatures}).
   \ref{rule:E-Const} checks payload scoping for $\tSend$ and $\tRecv$
   (\rocq{kscoped}). Point substitution changes the carrier point in
   $\sAt{\sty}{\pntB}$ and leaves $\sty$ unchanged, so an enclosing
-  $\Box$ or $\exists$ cannot change a payload's relative points
+  $\Box$ or $\exists$ cannot change the points a payload binds
   (\rocq{pinst_ty}). Session substitution changes session variables,
   including those inside payloads, and leaves their points unchanged
   (\rocq{sinst_ty}, \rocq{sren_ty}, \rocq{sflip_ty}). Thus unfolding
-  $\tyMu\tvar.\sRecv{(\tyPay{\pself}{\sAt{\tvar}{\pslot{\pself}{0}}})}{\sTerm}$
-  replaces $\tvar$ without changing $\pslot{\pself}{0}$.
+  $\tyMu\tvar.\recvp{\pbv}{\sAt{\tvar}{\fld{\pbv}{\flK}}}{\sTerm}$
+  replaces $\tvar$ without changing $\fld{\pbv}{\flK}$.
   Payload instantiation commutes with point substitution,
   \[
     \tysub{(\payloadAt{\payty}{\pntA})}{\pntvec}{\pvivec}
@@ -634,7 +645,7 @@ learns only $\cstr$. A channel thus starts at a point placed by its
 creation constraint and not by a global number. The second typing,
 $\tNewAt{\pntA}$, puts the two ends at a known point $\pntA$ and at
 $\pdual{\pntA}$ (\rocq{KTNewAt}). A program uses it to create a channel
-at a payload point $\pslot{\pviA}{0}$ of a channel it holds or at a
+at a field $\fld{\pviA}{\flK}$ of a channel it holds or at a
 shift $\poff{\pviA}{k}$.
 
 \begin{figure}[tp]
@@ -646,10 +657,10 @@ shift $\poff{\pviA}{k}$.
     \tSend &{}: \forall \pntA.\,
       \set{\fLt{\pntA}{\pnode} \mid \pnode \in \heads(\payloadAt{\payty}{\pntA})}
       \Rightarrow
-      \lPair{\payloadAt{\payty}{\pntA}}{\sAt{(\sSend{\payty}{\sty})}{\pntA}}
+      \lPair{\payloadAt{\payty}{\pntA}}{\sAt{(\sendp{\pbv}{\payty}{\sty})}{\pntA}}
       \lolli{\pntA}{} \sAt{\sty}{\poff{\pntA}{1}}
     \\
-    \tRecv &{}: \forall \pntA.\, \sAt{(\sRecv{\payty}{\sty})}{\pntA}
+    \tRecv &{}: \forall \pntA.\, \sAt{(\recvp{\pbv}{\payty}{\sty})}{\pntA}
       \lolli{\pntA}{} \lPair{\payloadAt{\payty}{\pntA}}{\sAt{\sty}{\poff{\pntA}{1}}}
     \\
     \tClos &{}: \forall \pntA.\, \sAt{\sTerm}{\pntA} \lolli{\pntA}{} \tyUnit
@@ -875,7 +886,7 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
   are
   \begin{align*}
     \sty^0 &= \sSend{\tyUnit}{\sTerm}
-    & \sty &= \sSend{(\tyPay{\pself}{\sAt{\sty^0}{\pslot{\pself}{0}}})}{\sTerm}
+    & \sty &= \sendp{\pbv}{\sAt{\sty^0}{\fld{\pbv}{\flK}}}{\sTerm}
   \end{align*}
   and the program, with every annotation inlined, is
   \begin{align*}
@@ -883,9 +894,9 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
       & \tLetS{\tPair{\ch : \sAt{\sty}{\pviA}}{\ch' : \sAt{\dual{\sty}}{\pdual{\pviA}}}}{%
           \tApp{\tNewC{\pviA}{\cstr_{\asTy{d}}}}{\tUnit}}{}
       \\
-      & \tLetS{\tPair{\chB : \sAt{\sty^0}{\pslot{\pviA}{0}}}{%
-          \chB' : \sAt{(\sRecv{\tyUnit}{\sTerm})}{\pdual{\pslot{\pviA}{0}}}}}{%
-          \tApp{\tNewAt{\pslot{\pviA}{0}}}{\tUnit}}{}
+      & \tLetS{\tPair{\chB : \sAt{\sty^0}{\fld{\pviA}{\flK}}}{%
+          \chB' : \sAt{(\sRecv{\tyUnit}{\sTerm})}{\pdual{\fld{\pviA}{\flK}}}}}{%
+          \tApp{\tNewAt{\fld{\pviA}{\flK}}}{\tUnit}}{}
       \\
       & \tSeq{\tApp{\tSpawn}{\asTmId{K}}}{}
         \tLetS{\ch_1 : \sAt{\sTerm}{\poff{\pviA}{1}}}{\tApp{\tSend}{\tPair{\chB}{\ch}}}{}
@@ -902,21 +913,21 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
   inside the gap between the carrier's two actions,
   \[
     \cstr_{\asTy{d}} = \set{
-      \fLt{\pviA}{\pslot{\pviA}{0}},\
-      \fLt{\pviA}{\pdual{\pslot{\pviA}{0}}},\
-      \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pviA}{1}},\
-      \fLt{\poff{\pdual{\pslot{\pviA}{0}}}{1}}{\poff{\pdual{\pviA}}{1}},\
-      \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pdual{\pviA}}{1}}} .
+      \fLt{\pviA}{\fld{\pviA}{\flK}},\
+      \fLt{\pviA}{\pdual{\fld{\pviA}{\flK}}},\
+      \fLt{\poff{\fld{\pviA}{\flK}}{1}}{\poff{\pviA}{1}},\
+      \fLt{\poff{\pdual{\fld{\pviA}{\flK}}}{1}}{\poff{\pdual{\pviA}}{1}},\
+      \fLt{\poff{\fld{\pviA}{\flK}}{1}}{\poff{\pdual{\pviA}}{1}}} .
   \]
-  The second $\tNew$ creates $\chB$ at the payload point of a message the
+  The second $\tNew$ creates $\chB$ at the field $\fld{\pviA}{\flK}$ of a message the
   carrier has not sent yet and $\chB'$ at its partner point
-  $\pdual{\pslot{\pviA}{0}}$. The send owes the first two facts, one for
+  $\pdual{\fld{\pviA}{\flK}}$. The send owes the first two facts, one for
   its payload and one for the end $\chB'$ the main thread keeps. The
   third fact serves the gates of $\asTmId{K}$, the fourth those of the
   main thread, and the fifth lifts the gates of $\asTmId{K}$ above its
   upper point $\poff{\pdual{\pviA}}{1}$. The rank
   $\poff{\pviA}{k} \mapsto 10k$ and
-  $\poff{\pslot{\pviA}{0}}{o} \mapsto 5+o$, at either polarity, witnesses
+  $\poff{\fld{\pviA}{\flK}}{o} \mapsto 5+o$, at either polarity, witnesses
   acyclicity.
   \Cref{sec:app-delegation} lists every blocking action with the premise
   it owes. The judgment is

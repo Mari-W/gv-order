@@ -244,7 +244,7 @@ Thus each channel has exactly two ends with dual sessions at dual points.
 \label{ex:option}
   A message carries a channel or nothing. With
   $\sty^0 = \sSend{\tyUnit}{\sTerm}$ the protocol is
-  $\sSend{(\lSum{\sAt{\sty^0}{\pslot{\pself}{0}}}{\tyUnit})}{\sTerm}$,
+  $\sendp{\pbv}{\lSum{\sAt{\sty^0}{\fld{\pbv}{\flK}}}{\tyUnit}}{\sTerm}$,
   and the receiver $\asTmId{R}$ cases on what arrives,
   \begin{align*}
     \asTmId{R} := {}
@@ -253,11 +253,11 @@ Thus each channel has exactly two ends with dual sessions at dual points.
         \tCase{\asTm{m}}{\asTm{e}}{\tSeq{\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}})}}{\tApp{\tClos}{\ch'_1}}}{\asTm{u}}{\tSeq{\asTm{u}}{\tApp{\tClos}{\ch'_1}}}
   \end{align*}
   The program $\asTmId{some}$ sends $\tInj{1}{\chB}$ for a channel $\chB$
-  created at $\pslot{\pviA}{0}$, and $\asTmId{none}$ sends
+  created at $\fld{\pviA}{\flK}$, and $\asTmId{none}$ sends
   $\tInj{2}{\tUnit}$. Both create the carrier under the constraint
   $\cstr_{\asTy{d}}$ of \cref{ex:delegation}. The heads of a sum
   are the heads of both arms, so $\asTmId{none}$ owes
-  $\fLt{\pviA}{\pdual{\pslot{\pviA}{0}}}$ although it sends no channel, and
+  $\fLt{\pviA}{\pdual{\fld{\pviA}{\flK}}}$ although it sends no channel, and
   \ref{rule:E-Case} types both arms of $\asTmId{R}$. Both programs are
   deadlock free (\rocq{some_deadlock_free}, \rocq{none_deadlock_free}),
   and so is $\asTmId{some}$ with the spawn moved before the creation of
@@ -299,10 +299,10 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   A box with two point variables forwards every message of one session
   to another.
   \begin{align*}
-    \sty_{\asTy{i}} &= \tyMu\tvar. \sRecv{(\tyPay{\pself}{\sAt{\sTerm}{\pslot{\pself}{0}}})}{\tvar}
+    \sty_{\asTy{i}} &= \tyMu\tvar. \recvp{\pbv}{\sAt{\sTerm}{\fld{\pbv}{\flK}}}{\tvar}
     \\
-    \sty_{\asTy{o}} &= \tyMu\tvar. \sSend{(\tyPay{\pself}{
-      \tyEx{\pdual{\pslot{\pself}{0}}}{\pviB}{\set{\fLt{\pviB}{\pslot{\pself}{0}}}}{\sAt{\sTerm}{\pviB}}})}{\tvar}
+    \sty_{\asTy{o}} &= \tyMu\tvar. \sendp{\pbv}{
+      \tyEx{\pdual{\fld{\pbv}{\flK}}}{\pviB}{\set{\fLt{\pviB}{\fld{\pbv}{\flK}}}}{\sAt{\sTerm}{\pviB}}}{\tvar}
     \\
     \cstr_{\asTy{f}} &= \set{\,
       \fLt{\poff{\pviA}{k}}{\poff{\pviA'}{k}},\
@@ -317,7 +317,7 @@ Thus each channel has exactly two ends with dual sessions at dual points.
     & \quad \cup\ \set{\, \fLt{\pntB_k}{\pntC_k},\
       \fLt{\pdual{\pntC_k}}{\pdual{\pntB_k}}
       \;\mid\; k \in \Nat \,}
-    \qquad \pntB_k = \pslot{(\poff{\pviA}{k})}{0},\ \pntC_k = \pslot{(\poff{\pviA'}{k})}{0}
+    \qquad \pntB_k = \fld{\poff{\pviA}{k}}{\flK},\ \pntC_k = \fld{\poff{\pviA'}{k}}{\flK}
     \\
     \asTmId{fwd} &{}: \tyBox{\pviA \pviA'}{\cstr_{\asTy{f}}}{%
       \tyUnit \lolli{}{}
@@ -336,7 +336,7 @@ Thus each channel has exactly two ends with dual sessions at dual points.
         \tPair{\vr_1}{\vrB_1}}})}
   \end{align*}
   The receive at $\pviA$ gives $\chB$ the type $\sAt{\sTerm}{\pntB_0}$.
-  The send at $\pviA'$ has the payload point $\pntC_0$ and packs $\chB$
+  The send at $\pviA'$ binds $\pbv$ to $\pviA'$, so its payload field is $\pntC_0$, and it packs $\chB$
   at $\pviB = \pntB_0$. \ref{rule:E-Pack} asks the constraint
   $\fLt{\pntB_0}{\pntC_0}$ and the bound
   $\fLe{\pdual{\pntC_0}}{\set{\pdual{\pntB_0}}}$, because the head of
@@ -348,10 +348,10 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   and $\pntC_k$ in one direction and their partner points in the other.
   No fact relates a point to its partner point, so the two directions
   form no cycle. $\cstr_{\asTy{f}}$ is indexed by the offset and not by
-  the payload depth. The recursive call asks $\cstr_{\asTy{f}}$ one round
+  the field depth. The recursive call asks $\cstr_{\asTy{f}}$ one round
   later, which $\cstr_{\asTy{f}}$ contains (\rocq{fw_sub}). A producer
-  creates each message with $\tNewAt{\pslot{\pviA}{0}}$, and a consumer
-  opens it at a fresh $\pviB$ with $\fLt{\pviB}{\pslot{\pviA}{0}}$ and
+  creates each message with $\tNewAt{\fld{\pviA}{\flK}}$, and a consumer
+  opens it at a fresh $\pviB$ with $\fLt{\pviB}{\fld{\pviA}{\flK}}$ and
   closes it there (\rocq{fprod_typed}, \rocq{fcons_typed}). Together
   they complete the program, and
   $\emptyset ; \tEmpty \typesF{\emptyset} \asTmId{fw} : \tyUnit$
@@ -369,29 +369,29 @@ Thus each channel has exactly two ends with dual sessions at dual points.
   channel, calling itself on it and forwarding the answer. His
   derivation needs the fresh channel strictly below the one it answers
   on, and he notes that without that fact the process has no type.
-  Here the fresh reply channel of a call sits at $\pslot{\pviA}{0}$, the
-  first payload point of the channel the call answers on. The spawned
+  Here the fresh reply channel of a call sits at $\fld{\pviA}{\flK}$, the
+  field $\flK$ of the channel the call answers on. The spawned
   call answers on that end, and the server waits on the partner end at
-  $\pdual{\pslot{\pviA}{0}}$ while it holds the end at $\pviA$. The
+  $\pdual{\fld{\pviA}{\flK}}$ while it holds the end at $\pviA$. The
   constraint states its facts between both ends of each channel,
   \begin{align*}
     \sty_{\asTy{r}} &= \sSend{\tyUnit}{\sTerm}
     \\
     \cstr &= \set{\,
-      \fLt{\phat{\pslot{\pviA}{0^{n+1}}}}{\phat{\pslot{\pviA}{0^n}}},\
-      \fLt{\poff{\phat{\pslot{\pviA}{0^{n+1}}}}{1}}{\phat{\pslot{\pviA}{0^n}}}
+      \fLt{\phat{\fld{\pviA}{\flK^{n+1}}}}{\phat{\fld{\pviA}{\flK^n}}},\
+      \fLt{\poff{\phat{\fld{\pviA}{\flK^{n+1}}}}{1}}{\phat{\fld{\pviA}{\flK^n}}}
       \;\mid\; n \in \Nat \,}
     \\
     \asTmId{fwsrv} &{}: \tyBox{\pviA}{\cstr}{%
       \tyUnit \lolli{}{}
         (\sAt{\sty_{\asTy{r}}}{\pviA} \lolli{\poff{\pviA}{1}}{} \tyUnit)}
   \end{align*}
-  The order descends along the payload depth, and the depth grows without
+  The order descends along the field depth, and the depth grows without
   bound, so there is no rank in $\Nat$. The lexicographic order on the
   reversed depth and the offset contains every fact of $\cstr$ and
   program order (\rocq{KobForwarder.fw_ok}). Strictness asks only irreflexivity and transitivity,
   so a descending chain is admitted. The recursive call asks
-  $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which $\cstr$ contains
+  $\tysub{\cstr}{\fld{\pviA}{\flK}}{\pviA}$, which $\cstr$ contains
   (\rocq{KobForwarder.fw_sub}), and the whole program types
   (\rocq{KobForwarder.fw_typed}) and is deadlock free
   (\rocq{fw_deadlock_free_kob}).
@@ -606,8 +606,8 @@ $\fctx \types \fLt{\ubd}{\frm}$ that \ref{rule:E-App} owes for it. The
 five facts of $\cstr_{\asTy{d}}$, program order and
 the hypothesis $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$ of \ref{rule:E-Abs}
 discharge all of them. The future holds partner points. The main thread
-keeps $\chB'$ at $\pdual{\pslot{\pviA}{0}}$, whose head is
-$\pslot{\pviA}{0}$, and $\asTmId{K}$ keeps $\ch'_1$ at
+keeps $\chB'$ at $\pdual{\fld{\pviA}{\flK}}$, whose head is
+$\fld{\pviA}{\flK}$, and $\asTmId{K}$ keeps $\ch'_1$ at
 $\poff{\pdual{\pviA}}{1}$, whose head is $\poff{\pviA}{1}$.
 
 \begin{table}[htp]
@@ -620,39 +620,39 @@ $\poff{\pdual{\pviA}}{1}$, whose head is $\poff{\pviA}{1}$.
     \midrule
     \multicolumn{4}{l}{\emph{main thread}} \\
     $\tApp{\tSend}{\tPair{\chB}{\ch}}$
-      & $\pviA$ & $\set{\pslot{\pviA}{0}}$ & $\fLt{\pviA}{\pslot{\pviA}{0}}$ \\
+      & $\pviA$ & $\set{\fld{\pviA}{\flK}}$ & $\fLt{\pviA}{\fld{\pviA}{\flK}}$ \\
     \quad and the payload of the send
-      & $\pviA$ & $\heads(\chB) = \set{\pdual{\pslot{\pviA}{0}}}$ & $\fLt{\pviA}{\pdual{\pslot{\pviA}{0}}}$ \\
+      & $\pviA$ & $\heads(\chB) = \set{\pdual{\fld{\pviA}{\flK}}}$ & $\fLt{\pviA}{\pdual{\fld{\pviA}{\flK}}}$ \\
     $\tApp{\tRecv}{\chB'}$
-      & $\pdual{\pslot{\pviA}{0}}$ & $\set{\poff{\pdual{\pviA}}{1}}$ & $\fLt{\pdual{\pslot{\pviA}{0}}}{\poff{\pdual{\pviA}}{1}}$ \\
+      & $\pdual{\fld{\pviA}{\flK}}$ & $\set{\poff{\pdual{\pviA}}{1}}$ & $\fLt{\pdual{\fld{\pviA}{\flK}}}{\poff{\pdual{\pviA}}{1}}$ \\
     $\tApp{\tClos}{\chB_1}$
-      & $\poff{\pdual{\pslot{\pviA}{0}}}{1}$ & $\set{\poff{\pdual{\pviA}}{1}}$ & $\fLt{\poff{\pdual{\pslot{\pviA}{0}}}{1}}{\poff{\pdual{\pviA}}{1}}$ \\
+      & $\poff{\pdual{\fld{\pviA}{\flK}}}{1}$ & $\set{\poff{\pdual{\pviA}}{1}}$ & $\fLt{\poff{\pdual{\fld{\pviA}{\flK}}}{1}}{\poff{\pdual{\pviA}}{1}}$ \\
     $\tApp{\tClos}{\ch_1}$
       & $\poff{\pviA}{1}$ & $\emptyset$ & vacuous \\
     $\tApp{\tSpawn}{\asTmId{K}}$
       & absent & & an absent bound never blocks \\
-    $\tApp{\tNewAt{\pslot{\pviA}{0}}}{\tUnit}$
-      & absent & & $\pslot{\pviA}{0}$ known \\
+    $\tApp{\tNewAt{\fld{\pviA}{\flK}}}{\tUnit}$
+      & absent & & $\fld{\pviA}{\flK}$ known \\
     \midrule
     \multicolumn{4}{l}{\emph{spawned thread, under $\cstr_{\asTy{d}}$ and $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$}} \\
     $\tApp{\tRecv}{\ch'}$
       & $\pdual{\pviA}$ & $\set{\pfv}$ & $\fLt{\pdual{\pviA}}{\pfv}$ \\
     $\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}}$
-      & $\pslot{\pviA}{0}$ & $\set{\pfv, \poff{\pviA}{1}}$ & $\fLt{\pslot{\pviA}{0}}{{}}$ both \\
+      & $\fld{\pviA}{\flK}$ & $\set{\pfv, \poff{\pviA}{1}}$ & $\fLt{\fld{\pviA}{\flK}}{{}}$ both \\
     $\tApp{\tClos}{(\tApp{\tSend}{\tPair{\tUnit}{\asTm{e}}})}$
-      & $\poff{\pslot{\pviA}{0}}{1}$ & $\set{\pfv, \poff{\pviA}{1}}$ & $\fLt{\poff{\pslot{\pviA}{0}}{1}}{{}}$ both \\
+      & $\poff{\fld{\pviA}{\flK}}{1}$ & $\set{\pfv, \poff{\pviA}{1}}$ & $\fLt{\poff{\fld{\pviA}{\flK}}{1}}{{}}$ both \\
     $\tApp{\tClos}{\ch'_1}$
       & $\poff{\pdual{\pviA}}{1}$ & $\set{\pfv}$ & $\fLt{\poff{\pdual{\pviA}}{1}}{\pfv}$ \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-$\asTmId{K}$ receives $\asTm{e}$ at $\pslot{\pdual{\pviA}}{0}$, which is
-$\pslot{\pviA}{0}$, the point at which the main thread sent $\chB$.
+$\asTmId{K}$ receives $\asTm{e}$ at $\fld{\pdual{\pviA}}{\flK}$, which is
+$\fld{\pviA}{\flK}$, the point at which the main thread sent $\chB$.
 Program order carries part of the chain and no more.
 $\fLt{\pntA}{\poff{\pntA}{1}}$ and $\fLt{\pntA}{\poff{\pdual{\pntA}}{1}}$
 hold for every point, and only between points of one name. $\pviA$ and
-$\pslot{\pviA}{0}$ carry different names, which is why the facts between
+$\fld{\pviA}{\flK}$ carry different names, which is why the facts between
 them are written in the creation constraint. The constraint is written
 at the $\tNew$ of the carrier, not at the send. $\tNew$ commits to where
 the payload will live at the moment it creates the channel the payload
@@ -665,16 +665,16 @@ will travel on, and the second $\tNew$ then creates that payload there.
   \adjustfigure[]
   \rulesection*{Session types $\sty$ (\cref{fig:types})}
   \begin{align*}
-    \sty &::= \sRecv{\ty}{\sty} \sepr \sSend{\ty}{\sty} \sepr
+    \sty &::= \recvp{\pbv}{\ty}{\sty} \sepr \sendp{\pbv}{\ty}{\sty} \sepr
                    \sTerm \sepr \tyMu\tvar.\sty \sepr
                    \tvar \sepr \dualv{\tvar}
     % & \text{($\dualv{\tvar}$ never occurs in a source type)}
   \end{align*}
   \rulesection{Duality $\dual{\sty}$}
   \begin{align*}
-    \dual{\sRecv{\ty}{\sty}} &= \sSend{\ty}{\dual{\sty}}
+    \dual{\recvp{\pbv}{\ty}{\sty}} &= \sendp{\pbv}{\ty}{\dual{\sty}}
     &
-    \dual{\sSend{\ty}{\sty}} &= \sRecv{\ty}{\dual{\sty}}
+    \dual{\sendp{\pbv}{\ty}{\sty}} &= \recvp{\pbv}{\ty}{\dual{\sty}}
     &
     \dual{\sTerm} &= \sTerm
     \\
@@ -737,14 +737,14 @@ will travel on, and the second $\tNew$ then creates that payload there.
       \ty \approx \tyB \\
       \sty \approx \styB
     }{
-      \sRecv{\ty}{\sty} \approx \sRecv{\tyB}{\styB}
+      \recvp{\pbv}{\ty}{\sty} \approx \recvp{\pbv}{\tyB}{\styB}
     } \label{rule:Eq-Recv}
     \and
     \infer*[lab=Eq-Send]{
       \ty \approx \tyB \\
       \sty \approx \styB
     }{
-      \sSend{\ty}{\sty} \approx \sSend{\tyB}{\styB}
+      \sendp{\pbv}{\ty}{\sty} \approx \sendp{\pbv}{\tyB}{\styB}
     } \label{rule:Eq-Send}
     \and
     \infer*[lab=Eq-Close]{}{
@@ -770,14 +770,14 @@ will travel on, and the second $\tNew$ then creates that payload there.
       \ty \approx \tyB \\
       \sty \isdual \styB
     }{
-      \sRecv{\ty}{\sty} \isdual \sSend{\tyB}{\styB}
+      \recvp{\pbv}{\ty}{\sty} \isdual \sendp{\pbv}{\tyB}{\styB}
     } \label{rule:D-Recv}
     \and
     \infer*[lab=D-Send]{
       \ty \approx \tyB \\
       \sty \isdual \styB
     }{
-      \sSend{\ty}{\sty} \isdual \sRecv{\tyB}{\styB}
+      \sendp{\pbv}{\ty}{\sty} \isdual \recvp{\pbv}{\tyB}{\styB}
     } \label{rule:D-Send}
     \and
     \infer*[lab=D-Close]{}{

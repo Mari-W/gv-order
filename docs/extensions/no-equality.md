@@ -206,7 +206,8 @@ FirstAction theorems, `sched_rev_underivable`, `badlink_underivable`,
 The paper is adapted on branch no-eq-paper: no ≡ anywhere, new@x as a second
 typing of new (KTNewAt), link at dual points, worlds (N, ≺), O-New with
 new_place, the forwarder with the existential payload, Milner by new@ι⁺²ᵏ,
-the shift written x⁺ᵏ and the payload binder written ƛself. The PGV and PN
+the shift written x⁺ᵏ, actions written !^{ƛσ}(T).S with fields σ.κ
+in place of self[j]. The PGV and PN
 claims of §4b and the mechanization claim of §5 carry the comment
 `% NO-EQ: translation proof pending port`.
 
