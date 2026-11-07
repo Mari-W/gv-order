@@ -230,7 +230,7 @@
 \NewDocumentCommand\sSeq{mm}{{#1}\mathbin{\color{cTy};}{#2}}
 \NewDocumentCommand\sOut{m}{{\color{cTy}!}{#1}}
 \NewDocumentCommand\sIn{m}{{\color{cTy}?}{#1}}
-% actions that bind their point: !^{ƛσ}(A).S and ?^{ƛσ}(A).S, σ scoped over A
+% actions that bind their point: !^{ƛξ}(A).S and ?^{ƛξ}(A).S, ξ scoped over A
 \NewDocumentCommand\outp{mm}{{{\color{cTy}!}^{{\color{cTy}\lambdabar}#1}(#2)}}
 \NewDocumentCommand\inp{mm}{{{\color{cTy}?}^{{\color{cTy}\lambdabar}#1}(#2)}}
 \NewDocumentCommand\sendp{mmm}{{\outp{#1}{#2}{\color{cTy}.}{#3}}}
@@ -302,9 +302,9 @@
 \DeclareSortSymbol\pviA{Ty}{\mathord}{\iota}
 \DeclareSortSymbol\pviB{Ty}{\mathord}{\rho}
 % the point an action binds, and field labels
-\DeclareSortSymbol\pbv{Ty}{\mathord}{\sigma}
+\DeclareSortSymbol\pbv{Ty}{\mathord}{\xi}
 \def\flK{{\color{cTy}\kappa}}
-\def\flM{{\color{cTy}\mu}}
+\def\flM{{\color{cTy}\delta}}
 \def\flL{{\color{cTy}\ell}}
 \DeclareSortSymbol\pfv{Ty}{\mathord}{\varphi}
 \DeclareSortSymbol\pnode{Ty}{\mathord}{\nu}
