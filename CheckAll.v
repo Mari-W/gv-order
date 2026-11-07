@@ -61,6 +61,7 @@ Require LRGV.liveness.LiveEconv.
 Require LRGV.liveness.LiveFuse.
 Require LRGV.liveness.LiveGuard.
 Require LRGV.liveness.LiveGuardFund.
+Require LRGV.liveness.LiveGuardProc.
 Require LRGV.liveness.LiveGuardRules.
 Require LRGV.liveness.LiveInternalize.
 Require LRGV.liveness.LiveJunk.
@@ -146,6 +147,14 @@ Print Assumptions LRGV.liveness.LivePConnect.LPrel_connect.
 Print Assumptions LRGV.liveness.LivePConnect.LPrel_join.
 Print Assumptions LRGV.liveness.LivePTerm.LPrel_term.
 Print Assumptions LRGV.liveness.LivePTerm.LPrel_indep.
+Print Assumptions LRGV.liveness.LiveGuardProc.live_fundamental_proc.
+Print Assumptions LRGV.liveness.LiveGuardProc.live_soundness.
+Print Assumptions LRGV.liveness.LiveGuardProc.live_soundness_term.
+Print Assumptions LRGV.liveness.LiveGuardProc.live_soundness_source.
+Print Assumptions LRGV.liveness.LiveGuardProc.fw_live_sound.
+Print Assumptions LRGV.liveness.LiveGuardProc.tc_live_sound.
+Print Assumptions LRGV.liveness.LiveGuardProc.fa_live_sound.
+Print Assumptions LRGV.liveness.LiveGuardProc.fac_live_sound.
 Print Assumptions LRGV.examples.ChoiceEnc.branch_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_deadlock_free.
