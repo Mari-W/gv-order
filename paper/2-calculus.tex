@@ -313,7 +313,8 @@ $\pi, \proc'$ with $\proc \trans{\pi} \proc'$.
 
 Types carry \emph{points}. A point is a name with a polarity and a
 natural offset, a channel end has type $\sAt{\sty}{\pntA}$, and the
-$k$-th action of an end at $\pntA$ happens at $\poff{\pntA}{k}$. Each
+$k$-th action of an end at $\pntA$ happens at its $k$-th shift
+$\poff{\pntA}{k}$, written $\poff{\pntA}{1}$ for $k = 1$. Each
 end of a channel has its own point, and the two ends of a channel sit at
 the dual points $\pntA$ and $\pdual{\pntA}$. \Cref{fig:points} gives points,
 facts and constraints, \cref{fig:types} the types, and
@@ -328,10 +329,10 @@ from.
     & \text{(a variable, a constant at run time, a payload point)}
     \\
     \pntA &::= \poff{\pnm}{k} \sepr \poff{\pdual{\pnm}}{k}
-    & \text{(the $k$-th action of an end at $\pnm$ or at $\pdual{\pnm}$, $k \in \Nat$; $\poff{\pnm}{0}$ is $\pnm$)}
+    & \text{(the $k$-th action of an end at $\pnm$ or at $\pdual{\pnm}$, $k \in \Nat$, and $\poff{\pnm}{0}$ is $\pnm$)}
     \\
-    \fact \in \tyFact &::= \fLt{\pntA}{\pntB} \sepr \fEq{\pntA}{\pntB}
-    & \text{($\pntA$ acts before $\pntB$; $\pntA$ and $\pntB$ are one point)}
+    \fact \in \tyFact &::= \fLt{\pntA}{\pntB}
+    & \text{($\pntA$ acts before $\pntB$)}
     \\
     \cstr &\subseteq \tyFact
     & \text{(a set of facts, finite or infinite, under a binder $\pvivec$)}
@@ -391,7 +392,7 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
     \sty &::= \sSend{\payty}{\sty} \sepr \sRecv{\payty}{\sty} \sepr \sTerm
       \sepr \tyMu\tvar.\sty \sepr \tvar \sepr \dualv{\tvar}
     \\
-    \payty &::= \ty \quad\text{subject to } \operatorname{points}(\ty) \subseteq \set{\pslot{\pself}{j} \mid j \in \Nat}
+    \payty &::= \tyPay{\pself}{\ty} \quad\text{subject to } \operatorname{points}(\ty) \subseteq \set{\pslot{\pself}{j} \mid j \in \Nat}
     \\
     \ubd &::= \pAbs \sepr \pntA
     & \lbd &::= \pAbs \sepr \pBot \sepr \pntA
@@ -431,7 +432,7 @@ $\tysub{\ty}{\pntvec}{\pvivec}$ replaces each $\pviA_i$ by $\pntA_i$.
   the binder of a $\Box$ and of an $\exists$ (\rocq{pup}).
   \rulesection{Payloads (\rocq{payload_at})}
   \begin{align*}
-    \payloadAt{\payty}{\pntA} &:= \payty[\pslot{\pself}{j} \mapsto \pslot{\pntA}{j}]_{j \in \Nat}
+    \payloadAt{(\tyPay{\pself}{\ty})}{\pntA} &:= \ty[\pslot{\pself}{j} \mapsto \pslot{\pntA}{j}]_{j \in \Nat}
   \end{align*}
   \rulesectionend
   \caption{Types, session types and duality}
@@ -453,14 +454,25 @@ channel, and is usable at every choice of points for $\pvivec$ that
 satisfies $\cstr$. $\tyEx{\lbd}{\pvivec}{\cstr}{\ty}$ is $\ty$ at some
 such choice.
 
+Three binders bind points, and they differ in who picks the point. The
+user of a $\Box$ picks the points of its $\forall$ at every $\tForce$.
+The producer of an existential picks its points when it packs, and the
+consumer opens it at fresh variables. A payload binds its relative point
+$\pself$ with $\lambdabar$, and the carrier fixes it. A message sent at
+$\pntA$ instantiates $\pself$ by $\pntA$, so its $j$-th channel sits at
+$\pslot{\pntA}{j}$. $\tNew$ returns an existential that the runtime
+produces (\cref{fig:signatures}).
+
 \begin{definition}[Payload \rocq{payload_at}]
 \label{def:payload}
-  A payload $\payty$ is a type whose free points satisfy the restriction
-  in \cref{fig:types}. Here $\operatorname{points}$ collects points outside
-  nested payloads and respects point binders. Each nested payload obeys
-  the same restriction. We call $\pself$ the relative point of the payload.
-  The shorthand $\payloadAt{\payty}{\pntA}$ denotes simultaneous
-  replacement of every $\pslot{\pself}{j}$ by $\pslot{\pntA}{j}$.
+  A payload $\payty = \tyPay{\pself}{\ty}$ binds $\pself$ in a type $\ty$
+  whose free points satisfy the restriction in \cref{fig:types}. Here
+  $\operatorname{points}$ collects points outside nested payloads and
+  respects point binders. Each nested payload obeys the same restriction.
+  We call $\pself$ the relative point of the payload. The shorthand
+  $\payloadAt{\payty}{\pntA}$ denotes simultaneous replacement of every
+  $\pslot{\pself}{j}$ by $\pslot{\pntA}{j}$ in $\ty$. We write $\ty$ for
+  $\tyPay{\pself}{\ty}$ when $\pself$ does not occur in $\ty$.
 \end{definition}
 
 \begin{remark}
@@ -472,7 +484,7 @@ such choice.
   (\rocq{pinst_ty}). Session substitution changes session variables,
   including those inside payloads, and leaves their points unchanged
   (\rocq{sinst_ty}, \rocq{sren_ty}, \rocq{sflip_ty}). Thus unfolding
-  $\tyMu\tvar.\sRecv{(\sAt{\tvar}{\pslot{\pself}{0}})}{\sTerm}$
+  $\tyMu\tvar.\sRecv{(\tyPay{\pself}{\sAt{\tvar}{\pslot{\pself}{0}}})}{\sTerm}$
   replaces $\tvar$ without changing $\pslot{\pself}{0}$.
   Payload instantiation commutes with point substitution,
   \[
@@ -523,50 +535,7 @@ channels in $\tenv$ (\cref{sec:app-proc}).
 
 \begin{figure}[tp]
   \adjustfigure[]
-  \rulesection*{Aliasing $\fctx \types \fEq{\pntA}{\pntB}$ (\rocq{seqs})}
-  \begin{proofrules}
-    \infer*[lab=A-Hyp]{
-      (\fEq{\pntA}{\pntB}) \in \fctx
-    }{
-      \fctx \types \fEq{\pntA}{\pntB}
-    } \label{rule:A-Hyp}
-    \and
-    \infer*[lab=A-Refl]{}{
-      \fctx \types \fEq{\pntA}{\pntA}
-    } \label{rule:A-Refl}
-    \and
-    \infer*[lab=A-Sym]{
-      \fctx \types \fEq{\pntA}{\pntB}
-    }{
-      \fctx \types \fEq{\pntB}{\pntA}
-    } \label{rule:A-Sym}
-    \and
-    \infer*[lab=A-Trans]{
-      \fctx \types \fEq{\pntA}{\pntB} \\
-      \fctx \types \fEq{\pntB}{\pntC}
-    }{
-      \fctx \types \fEq{\pntA}{\pntC}
-    } \label{rule:A-Trans}
-    \and
-    \infer*[lab=A-Shift]{
-      \fctx \types \fEq{\pntA}{\pntB}
-    }{
-      \fctx \types \fEq{\poff{\pntA}{1}}{\poff{\pntB}{1}}
-    } \label{rule:A-Shift}
-    \and
-    \infer*[lab=A-Payload]{
-      \fctx \types \fEq{\pntA}{\pntB}
-    }{
-      \fctx \types \fEq{\pslot{\pntA}{j}}{\pslot{\pntB}{j}}
-    } \label{rule:A-Payload}
-    \and
-    \infer*[lab=A-Dual]{
-      \fctx \types \fEq{\pntA}{\pntB}
-    }{
-      \fctx \types \fEq{\pdual{\pntA}}{\pdual{\pntB}}
-    } \label{rule:A-Dual}
-  \end{proofrules}
-  \rulesection{Precedence $\fctx \types \fLt{\pnode}{\pnode'}$ (\rocq{fl})}
+  \rulesection*{Precedence $\fctx \types \fLt{\pnode}{\pnode'}$ (\rocq{fl})}
   \begin{proofrules}
     \infer*[lab=O-Po]{}{
       \fctx \types \fLt{\pntA}{\poff{\pntA}{1}}
@@ -581,20 +550,6 @@ channels in $\tenv$ (\cref{sec:app-proc}).
     }{
       \fctx \types \fLt{\pnode}{\pnode'}
     } \label{rule:O-Hyp}
-    \and
-    \infer*[lab=O-EqL]{
-      \fctx \types \fEq{\pntA}{\pntA'} \\
-      \fctx \types \fLt{\pntA'}{\pnode}
-    }{
-      \fctx \types \fLt{\pntA}{\pnode}
-    } \label{rule:O-EqL}
-    \and
-    \infer*[lab=O-EqR]{
-      \fctx \types \fLt{\pnode}{\pntB'} \\
-      \fctx \types \fEq{\pntB'}{\pntB}
-    }{
-      \fctx \types \fLt{\pnode}{\pntB}
-    } \label{rule:O-EqR}
     \and
     \infer*[lab=O-Trans]{
       \fctx \types \fLt{\pnode}{\pntB} \\
@@ -622,7 +577,7 @@ channels in $\tenv$ (\cref{sec:app-proc}).
     \text{ or } \lbd = \pBot,
     \\ & \qquad\qquad
     \text{ or } \lbd = \pntA \text{ and }
-      \fctx \types \fEq{\pntA}{\pnode} \text{ or } \fctx \types \fLt{\pntA}{\pnode}
+      \pntA = \pnode \text{ or } \fctx \types \fLt{\pntA}{\pnode}
       \text{ for every } \pnode \in N
     \\
     \fctx \types \fLt{\ubd}{\frm}
@@ -633,7 +588,7 @@ channels in $\tenv$ (\cref{sec:app-proc}).
   \end{align*}
   \rulesectionend
   \caption{The fact theory}
-  \Description{Seven rules for aliasing, six rules for precedence, the
+  \Description{Four rules for precedence, the
     heads of a type and of an environment, and the two derived
     judgments relating a bound to a set of nodes.}
   \label{fig:facts}
@@ -641,8 +596,7 @@ channels in $\tenv$ (\cref{sec:app-proc}).
 
 \Cref{rule:O-Po,rule:O-DPo} are program order, and they relate two points
 of one name only. \Cref{rule:O-DPo} says that an end acts at $\pntA$
-before its partner takes the action after the one they share.
-\Cref{rule:A-Dual} moves an alias to the partner ends. The head of an
+before its partner takes the action after the one they share. The head of an
 end is its partner point, so a thread blocked at $\ubd$ that holds an
 end at $\pntB$ owes $\fLt{\ubd}{\pdual{\pntB}}$. The fact orders the
 blocked end before the end that the other thread will wait on. No rule derives $\fLt{\pnode}{\pBot}$, so a $\pBot$ node in $N$ or
@@ -656,26 +610,32 @@ $\cst : \forall \pntvec.\, \cstr \Rightarrow \ty$
 (\cref{fig:signatures}, \rocq{konst_sig}). \ref{rule:E-Const} instantiates
 $\pntvec$ with points $\vec{\pntA}$ and proves the instance
 constraint $\fctx \types \tysub{\cstr}{\vec{\pntA}}{\pntvec}$
-(\rocq{konst_ty}). Only $\tForce$ asks its instance to be known. A point is known when $\fctx$ binds its root, through
+(\rocq{konst_ty}). Only $\tForce$ asks its instance to be known, and
+$\tNewAt{\pntA}$ below asks the same of $\pntA$. A point is known when $\fctx$ binds its root, through
 the creation constraint $\cstr_0$ of the program, a $\Box$ or an
 $\exists$, or when the world supports it (\rocq{skn}). An action that may block happens at a point $\pntA$,
 so $\tSend$, $\tRecv$ and $\tClos$ have upper bound $\pntA$, and
 \ref{rule:E-App} then requires $\fctx \types \fLt{\pntA}{\frm}$. $\tLink$
 and $\tSpawn$ never block, so their upper bound is absent. $\tSend$ owes
 $\fLt{\pntA}{\pnode}$ for every head $\pnode$ of its payload, the
-channels it hands over. $\tLink$ asks $\fEq{\pntA}{\pdual{\pntB}}$.
-Forwarding merges two sessions into one conduit, so the two forwarded
-ends stand to each other as the two ends of one channel do, at dual
-points. \ref{rule:O-Link} of the logical relation asks the same of the
-world. % TODO(author): prose
+channels it hands over. $\tLink$ takes two ends at dual points
+$\pntA$ and $\pdual{\pntA}$. Forwarding merges two sessions into one
+conduit, so the two forwarded ends stand to each other as the two ends
+of one channel do. \ref{rule:O-Link} of the logical relation asks the
+same. % TODO(author): prose
 
-$\tNew$ is the one constant outside the schemes. It puts the two ends of
-a channel at the dual points $\pviA$ and $\pdual{\pviA}$ of a fresh
-variable $\pviA$ and returns an existential whose
-introduction premise is that its constraint $\cstr$ is a creation
-constraint (\cref{def:creation}) over known outer points. A channel thus
-starts at a point placed by its creation constraint and not by a global
-number.
+$\tNew$ is the one constant outside the schemes, and it has two
+typings. The first puts the two ends of a channel at the dual points
+$\pviA$ and $\pdual{\pviA}$ of a fresh variable $\pviA$ and returns an
+existential whose introduction premise is that its constraint $\cstr$ is
+a creation constraint (\cref{def:creation}) over known outer points. The
+runtime produces this existential. It picks the point, and the program
+learns only $\cstr$. A channel thus starts at a point placed by its
+creation constraint and not by a global number. The second typing,
+$\tNewAt{\pntA}$, puts the two ends at a known point $\pntA$ and at
+$\pdual{\pntA}$ (\rocq{KTNewAt}). A program uses it to create a channel
+at a payload point $\pslot{\pviA}{0}$ of a channel it holds or at a
+shift $\poff{\pviA}{k}$.
 
 \begin{figure}[tp]
   \adjustfigure[]
@@ -694,8 +654,8 @@ number.
     \\
     \tClos &{}: \forall \pntA.\, \sAt{\sTerm}{\pntA} \lolli{\pntA}{} \tyUnit
     \\
-    \tLink &{}: \forall \pntA \pntB.\, \set{\fEq{\pntA}{\pdual{\pntB}}} \Rightarrow
-      \lPair{\sAt{\sty}{\pntA}}{\sAt{\dual{\sty}}{\pntB}} \lolli{}{} \tyUnit
+    \tLink &{}: \forall \pntA.\,
+      \lPair{\sAt{\sty}{\pntA}}{\sAt{\dual{\sty}}{\pdual{\pntA}}} \lolli{}{} \tyUnit
     \\
     \tForce &{}: \forall \pntvec.\, \tysub{\cstr}{\pntvec}{\pvivec} \Rightarrow
       \tyBox{\pvivec}{\cstr}{\tyUnit \lolli{\ubd}{} \ty}
@@ -703,17 +663,21 @@ number.
   \end{align*}
   An empty constraint is omitted. The payload of $\tSend$ has no head
   $\pBot$.
-  \rulesection{Creation of a channel}
+  \rulesection{Creation of a channel (\rocq{KTNewEx}, \rocq{KTNewAt})}
   \begin{align*}
     \tNew &{}: \tyUnit \lolli{}{}
       \tyEx{\pBot}{\pviA}{\cstr}{\lPair{\sAt{\sty}{\pviA}}{\sAt{\dual{\sty}}{\pdual{\pviA}}}}
     & & \cstr \text{ a creation constraint under } \fctx
+    \\
+    \tNewAt{\pntA} &{}: \tyUnit \lolli{}{}
+      \lPair{\sAt{\sty}{\pntA}}{\sAt{\dual{\sty}}{\pdual{\pntA}}}
+    & & \pntA \text{ known}
   \end{align*}
   \rulesectionend
   \caption{Schemes of the constants}
   \Description{The schemes of spawn, send, recv, close, link and force,
-    each with the constraint its instance proves, and the signature of new
-    with its creation constraint.}
+    each with the constraint its instance proves, and the two typings of
+    new, one with its creation constraint and one at a known point.}
   \label{fig:signatures}
 \end{figure}
 
@@ -817,7 +781,7 @@ that holds channels has fixed points.
   \begin{proofrules}
     \infer*[lab=E-Conv]{
       \fctx ; \lenv \typesF{\frm} \tm : \ty \\
-      \ty \approx \ty' \text{ up to } \fctx \types {\equiv}
+      \ty \approx \ty'
     }{
       \fctx ; \lenv \typesF{\frm} \tm : \ty'
     } \label{rule:E-Conv}
@@ -870,20 +834,17 @@ that holds channels has fixed points.
       and
     \item \emph{conservative}:
       $\fctx, \cstr \types \fLt{\pntA}{\pntB}$ implies
-      $\fctx \types \fLt{\pntA}{\pntB}$, and
-      $\fctx, \cstr \types \fEq{\pntA}{\pntB}$ implies
-      $\fctx \types \fEq{\pntA}{\pntB}$, for all points
+      $\fctx \types \fLt{\pntA}{\pntB}$ for all points
       $\pntA, \pntB$ without root $\pviA$.
   \end{itemize}
 \end{definition}
 
 A new channel may sit anywhere the context leaves room, and it may not
-order or identify two points the context already has.
-$\cstr = \set{\fEq{\pviA}{\pntA}}$ places the first end at $\pntA$ and,
-by \ref{rule:A-Dual}, the second end at $\pdual{\pntA}$.
+order two points the context already has.
 $\cstr = \set{\fLt{\ubd}{\pviA}, \fLt{\pviA}{\asTy{v}}}$ places the first end
 between $\ubd$ and $\asTy{v}$, which conservativity allows only when
-$\fctx \types \fLt{\ubd}{\asTy{v}}$. We write
+$\fctx \types \fLt{\ubd}{\asTy{v}}$. A channel at a point the context
+already has comes from $\tNewAt{\pntA}$. We write
 $\tNewC{\pviA}{\cstr}$ for $\tNew$ at a fresh point $\pviA$ under
 $\cstr$, $\tBoxA{\vr}{\pvivec}{\cstr}{\tm}$ for the box of
 \ref{rule:E-Exp}, $\tAbsA{\ubd}{\lbd}{\vr}{\tm}$ for the abstraction of
@@ -899,8 +860,8 @@ A program starts under one constraint $\cstr_0$ over the top-level point
 variables it begins with, its creation constraint. A program that creates
 all its channels with $\tNew$ takes $\cstr_0 = \emptyset$. A program that
 wants a global order, such as the translation of a priority system,
-states it in $\cstr_0$ and aliases its channels to the variables
-$\cstr_0$ speaks of. A source program names no point constant. Its points
+states it in $\cstr_0$ and creates its channels with $\tNewAt{\pntA}$
+at the variables $\cstr_0$ speaks of. A source program names no point constant. Its points
 are the variables that $\cstr_0$, a $\Box$ and an $\exists$ bind. For
 such a program $\payloadAt{\payty}{\pntA}$ is the only way a payload
 acquires a point. \Cref{thm:soundness-source} asks $\cstr_0$ to be a
@@ -914,7 +875,7 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
   are
   \begin{align*}
     \sty^0 &= \sSend{\tyUnit}{\sTerm}
-    & \sty &= \sSend{(\sAt{\sty^0}{\pslot{\pself}{0}})}{\sTerm}
+    & \sty &= \sSend{(\tyPay{\pself}{\sAt{\sty^0}{\pslot{\pself}{0}}})}{\sTerm}
   \end{align*}
   and the program, with every annotation inlined, is
   \begin{align*}
@@ -924,7 +885,7 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
       \\
       & \tLetS{\tPair{\chB : \sAt{\sty^0}{\pslot{\pviA}{0}}}{%
           \chB' : \sAt{(\sRecv{\tyUnit}{\sTerm})}{\pdual{\pslot{\pviA}{0}}}}}{%
-          \tApp{\tNewC{\pviB}{\fEq{\pviB}{\pslot{\pviA}{0}}}}{\tUnit}}{}
+          \tApp{\tNewAt{\pslot{\pviA}{0}}}{\tUnit}}{}
       \\
       & \tSeq{\tApp{\tSpawn}{\asTmId{K}}}{}
         \tLetS{\ch_1 : \sAt{\sTerm}{(\poff{\pviA}{1})}}{\tApp{\tSend}{\tPair{\chB}{\ch}}}{}
@@ -948,7 +909,7 @@ $\cstr_0$ has no outer point and is acyclic (\rocq{c0_creation_ok}).
       \fLt{\poff{\pslot{\pviA}{0}}{1}}{\poff{\pdual{\pviA}}{1}}} .
   \]
   The second $\tNew$ creates $\chB$ at the payload point of a message the
-  carrier has not sent yet, and \ref{rule:A-Dual} puts $\chB'$ at
+  carrier has not sent yet and $\chB'$ at its partner point
   $\pdual{\pslot{\pviA}{0}}$. The send owes the first two facts, one for
   its payload and one for the end $\chB'$ the main thread keeps. The
   third fact serves the gates of $\asTmId{K}$, the fourth those of the
