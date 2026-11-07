@@ -458,15 +458,23 @@ Closed, in `theories/liveness/`.
   typed term is in the live E relation at every index. `fw_live`, `tc_live`:
   the forwarder and the tail call as live terms.
 
-Next, in order.
+- `LiveGuardProc.v`. `live_fundamental_proc`: `gptyped W Σ p T → strict W →
+  ∀ n, LPrel n W Σ T p`, by induction on the process typing with
+  `LPrel_term`, `LPrel_connect` and `LPrel_join` of §11, as in
+  `fundamental_proc`. `live_soundness`: a guarded typed closed program is
+  deadlock free and does not τ-diverge (`live_adequacy`).
+  `live_soundness_term` for one closed thread, `live_soundness_source` for a
+  source program under a creation constraint by the c0 world of
+  `soundness_source`. `fw_live_sound`, `tc_live_sound`, `fa_live_sound` and
+  `fac_live_sound`: the forwarder, the tail call and both first-action
+  programs are deadlock free and free of τ-divergence.
+- SemRounds is not among them. Its deadlock freedom comes from a mixed
+  derivation (`mixed_soundness`), whose box is semantic, so it has no
+  `gptyped` derivation to feed the theorem. `rounds_guarded` checks only the
+  guard of its box.
 
-1. Done: the term-level guarded live fundamental theorem.
-2. Done on branch liveness-comp (§11). Invariance, Internalize, P-Connect,
-   P-Term and P-Join.
-3. `gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p`, and the
-   examples of GuardEx.v as live theorems. P-Term, P-Connect and P-Join of
-   §11 are the process cases, so only the term judgment of step 1 is
-   missing.
+Next. Lock freedom stays out of scope (§9). A live counterpart of the mixed
+derivation would cover SemRounds.
 
 ## 11  Composition (branch liveness-comp)
 

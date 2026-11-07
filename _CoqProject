@@ -32,6 +32,7 @@ theories/liveness/GuardMarks.v
 theories/liveness/LiveGuard.v
 theories/liveness/LiveGuardRules.v
 theories/liveness/LiveGuardFund.v
+theories/liveness/LiveGuardProc.v
 theories/liveness/LiveRenaming.v
 theories/liveness/LiveJunk.v
 theories/liveness/LiveFuse.v
