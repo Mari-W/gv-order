@@ -57,10 +57,17 @@ Require LRGV.liveness.GuardMarks.
 Require LRGV.liveness.LiveAdequacy.
 Require LRGV.liveness.LiveBind.
 Require LRGV.liveness.LiveConsts.
+Require LRGV.liveness.LiveEconv.
+Require LRGV.liveness.LiveFuse.
 Require LRGV.liveness.LiveGuard.
 Require LRGV.liveness.LiveGuardFund.
 Require LRGV.liveness.LiveGuardRules.
+Require LRGV.liveness.LiveInternalize.
+Require LRGV.liveness.LiveJunk.
 Require LRGV.liveness.LiveKob.
+Require LRGV.liveness.LivePConnect.
+Require LRGV.liveness.LivePTerm.
+Require LRGV.liveness.LiveRenaming.
 Require LRGV.liveness.LiveRules.
 Require LRGV.liveness.LiveTermRules.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Examples. *)
@@ -127,6 +134,18 @@ Print Assumptions LRGV.liveness.LiveGuardFund.live_fundamental_guarded.
 Print Assumptions LRGV.liveness.LiveGuardFund.live_fundamental_guarded_closed.
 Print Assumptions LRGV.liveness.LiveGuardFund.fw_live.
 Print Assumptions LRGV.liveness.LiveGuardFund.tc_live.
+Print Assumptions LRGV.liveness.LiveRenaming.LPrel_swap.
+Print Assumptions LRGV.liveness.LiveRenaming.LPrel_swap_restricted.
+Print Assumptions LRGV.liveness.LiveJunk.LPrel_junk.
+Print Assumptions LRGV.liveness.LiveFuse.LVrel_fuse.
+Print Assumptions LRGV.liveness.LiveFuse.LErel_fuse.
+Print Assumptions LRGV.liveness.LiveEconv.LErel_econv.
+Print Assumptions LRGV.liveness.LiveEconv.LPrel_sconv.
+Print Assumptions LRGV.liveness.LiveInternalize.LPrel_internalize.
+Print Assumptions LRGV.liveness.LivePConnect.LPrel_connect.
+Print Assumptions LRGV.liveness.LivePConnect.LPrel_join.
+Print Assumptions LRGV.liveness.LivePTerm.LPrel_term.
+Print Assumptions LRGV.liveness.LivePTerm.LPrel_indep.
 Print Assumptions LRGV.examples.ChoiceEnc.branch_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_deadlock_free.
