@@ -2416,6 +2416,18 @@ self also states that the self is a box around a λ when the body is one (`later
 The repaired `guarded` rejects the witness (`cx_not_guarded`) and keeps the forwarder,
 the tail call, first-action and the rounds box (`guarded_examples`).
 
+**170. The move lemma meets new at the same index (Claude, 2026-11-07, branch liveness-comp).**
+`rel_fuse` moves the ends of c to d inside a related term. When the image creates a
+channel, the old proof let the original create a fresh c0 and moved c0 to the image's
+name by a second move one level down, which the cost of new paid for. In the live
+relation new costs nothing, and a second move of the induction hypothesis is not a
+subderivation. Decision: the original creates the image's name itself whenever that
+name is not c (`tstep_chsubst_new_same`), including d when neither end is held. When
+the image creates c, the original creates a fresh c0, and a swap of c0 and c finishes,
+because the moved term no longer mentions c (`eswap_chsubst_absent`). Channel renaming
+holds at every level on its own, so the swap needs no induction. `LErel_fuse` keeps the
+statement of `rel_fuse`. docs/extensions/liveness.md §11.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

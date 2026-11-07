@@ -93,8 +93,8 @@ encoding paragraph).
 Feasibility verdict for point 2 of the plan. Sends at cost 1 are compatible
 with every composition lemma once a synchronization costs 2. No lemma
 statement changes. The assessment is a case analysis of the steps of q in
-Internalize and of the composite in P-Connect, recorded above. The
-composition proofs themselves are not ported on this branch (§10).
+Internalize and of the composite in P-Connect, recorded above. Branch
+liveness-comp ports the composition proofs with these statements (§11).
 
 ## 3  The relation
 
@@ -443,8 +443,73 @@ Next, in order.
    induction on the typing derivation, following `typed_sem_rules`
    (static/Fundamental.v), and the live counterpart of `sem_rules` with
    E-Exp-Live.
-2. Invariance (channel and junk renaming) as far as the composition proofs
-   need it, then Internalize with synchronization cost 2, P-Connect, P-Term,
-   P-Join. None of these is ported yet.
+2. Done on branch liveness-comp (§11). Invariance, Internalize, P-Connect,
+   P-Term and P-Join.
 3. `gptyped W ∅ p T → ∀ n, LPrel n W ∅ T p`, and the
-   examples of GuardEx.v as live theorems.
+   examples of GuardEx.v as live theorems. P-Term, P-Connect and P-Join of
+   §11 are the process cases, so only the term judgment of step 1 is
+   missing.
+
+## 11  Composition (branch liveness-comp)
+
+Closed under the global context, in `theories/liveness/`. Every statement
+is the old one with LPrel, LErel and LVrel in place of Prel, Erel and
+Vrel, and with `∀ n, LPrel n …` in place of `sem_ptyped`. No premise is
+added. The P-Term premise reads the live term judgment `lsem_typed` in
+place of `sem_typed`.
+
+| File | Theorems | Old proof |
+|---|---|---|
+| `LiveRenaming.v` | `LVrel_swap`, `LErel_swap`, `LPrel_swap`, `LPrel_swap_restricted` | ChannelRenaming.v |
+| `LiveJunk.v` | `LPrel_junk` | JunkRenaming.v, `Prel_junk` |
+| `LiveFuse.v` | `LVrel_fuse`, `LErel_fuse`, `LErel_junk`, `LErel_rename` | JunkRenaming.v, `rel_fuse` |
+| `LiveEconv.v` | `LVrel_econv`, `LErel_econv`, `LPrel_sconv` | PointConversion.v |
+| `LiveInternalize.v` | `LPrel_internalize` | Internalize.v |
+| `LiveConnect.v`, `LivePConnect.v` | `LPrel_connect`, `LPrel_join` | ConnectCut.v, ConnectSteps.v, PConnect.v |
+| `LivePTerm.v` | `LPrel_term`, `LPrel_indep` | PTerm.v |
+
+Of EquivInvariance.v only type conversion remains nontrivial without ≡,
+and LiveConv.v has it (`LVrel_teq`, `LErel_tconv`). Environment conversion
+up to session equivalence is in `LiveEconv.v`, because the link cases of
+Internalize and P-Connect read it.
+
+How the proofs differ from the old ones.
+
+- Inside one level V and E move together by induction on `tsize`, as in
+  LiveConv.v. The arrow at j = n needs E at the result type, and E needs V
+  at its own type for E-Stop. The spawned closure is read through the τ
+  induction of E, so it needs no V at ∗ ⊸ ∗.
+- Junk renaming, the move lemma, conversion and Internalize induct on the
+  τ layer of the derivation (`LErel_S_ind`, `LPrel_S_ind`). β, new and
+  spawn use the induction hypothesis at the same index. Every channel step
+  goes one or two levels down, where the outer induction on n applies.
+  The old proofs used the size of the soup for sends, closes and links.
+  These now cost one and go down a level.
+- Fresh names are cofinite, so no lemma renames points. Conversion of the
+  interface passes the roots of the converted interface into the set L to
+  avoid. P-Connect passes the roots of the other component.
+- The move lemma (`LErel_fuse`) meets a new at the same index. The old
+  proof moved the fresh name of the original to the image's name by a
+  second move one level down. Here the original creates the image's name
+  itself whenever that name is not c. When the image creates c, which
+  the moved term no longer mentions, the original creates a fresh c0 and
+  a swap of c0 and c finishes (sharp edge 170).
+- Internalize. A synchronization of the fused process on d is a send of
+  p at cost one and a receive at cost one, so the fused successor is read
+  at n − 2, which is the cost of the synchronization. At n − 2 = 0 the
+  obligation is trivial. Otherwise the second step is read from the first
+  successor at n − 1 (`li_sync_case`, `li_choice_case`, `li_close_case`).
+- P-Connect inducts on the τ layer of the first component and inside on
+  that of the second (`lconn_level`). The goal is stated for the two base
+  worlds and every composite world above both (`lconn_goal`). A component
+  that creates a channel at a fresh extension is read there, and the other
+  keeps its derivation at its base world. P-Join is `LPrel_connect` at two
+  worlds, so the composite world is the join and no move by monotonicity
+  is needed. A synchronization across the cut costs one in each component
+  and two in the composite.
+- P-Term inducts on the τ layer of the thread. A spawn composes the
+  continuation and the spawned thread by P-Connect at the same index. The
+  spawned closure is applied to ∗ and steps by β to its body, which the
+  thread's derivation reads at the current index (`LPrel_spawned`).
+
+All twelve theorems are in CheckAll.v.
