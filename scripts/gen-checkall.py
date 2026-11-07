@@ -22,7 +22,13 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('liveness/GuardEx.v', 'kob_not_guarded'),
         ('liveness/GuardCex.v', 'cx_gptyped0'), ('liveness/GuardCex.v', 'cx_tau_diverges'),
         ('liveness/GuardCex.v', 'live_guarded_unrepaired_false'), ('liveness/GuardCex.v', 'cx_not_guarded'),
-        ('liveness/GuardCex.v', 'guarded_examples')]
+        ('liveness/GuardCex.v', 'guarded_examples'),
+        ('liveness/LiveRenaming.v', 'LPrel_swap'), ('liveness/LiveRenaming.v', 'LPrel_swap_restricted'),
+        ('liveness/LiveJunk.v', 'LPrel_junk'), ('liveness/LiveFuse.v', 'LVrel_fuse'),
+        ('liveness/LiveFuse.v', 'LErel_fuse'), ('liveness/LiveEconv.v', 'LErel_econv'),
+        ('liveness/LiveEconv.v', 'LPrel_sconv'), ('liveness/LiveInternalize.v', 'LPrel_internalize'),
+        ('liveness/LivePConnect.v', 'LPrel_connect'), ('liveness/LivePConnect.v', 'LPrel_join'),
+        ('liveness/LivePTerm.v', 'LPrel_term'), ('liveness/LivePTerm.v', 'LPrel_indep')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
