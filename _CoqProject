@@ -37,6 +37,7 @@ theories/liveness/LiveJunk.v
 theories/liveness/LiveFuse.v
 theories/liveness/LiveEconv.v
 theories/liveness/LiveInternalize.v
+theories/liveness/LiveConnect.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v
