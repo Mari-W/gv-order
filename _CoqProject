@@ -46,6 +46,7 @@ theories/lockfree/Fair.v
 theories/lockfree/TauThread.v
 theories/lockfree/Criterion.v
 theories/lockfree/LocalProgress.v
+theories/lockfree/ThreadProgress.v
 theories/lockfree/Fragment.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
