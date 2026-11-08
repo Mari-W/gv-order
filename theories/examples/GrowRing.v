@@ -286,6 +286,15 @@ Proof.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
+(** C₀ speaks of the one top-level point γ only, so it is the creation
+    constraint of γ ([created], sharp edges 172). *)
+Lemma rg_created : created (Wpo []) [(rg0_C, ids 1)].
+Proof.
+  apply (created_snoc (Wpo []) [] rg0_C); [constructor| |constructor].
+  apply (cc_ok_mono nofact nofact); [intros ? ? []|intros ? ? []|].
+  apply cc_ok_at_1. exact (proj1 (c0_acyclic_creation 1 rg0_C rg0_acyclic)).
+Qed.
+
 Lemma rg_deadlock_free : deadlock_free (∅, {[+ rg_main +]}).
 Proof.
   apply (soundness_source 1 rg0_C _ TUnit (c0_acyclic_creation _ _ rg0_acyclic));
