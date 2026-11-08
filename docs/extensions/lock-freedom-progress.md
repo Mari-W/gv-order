@@ -6,7 +6,7 @@ Updated after every stage and every agent result.
 | Stage | Status | Rocq files / theorems | make | Admitted | Open problems |
 |---|---|---|---|---|---|
 | 0  Paper proof (criterion, fuel and rank from the fragment) | 0a done, 0b next | none | n/a | n/a | decisions 1 to 4 of the plan await the author |
-| 1  Fair semantics, lock_free, local_progress, lf_criterion | in progress | to come | not run | 0 | none yet |
+| 1  Fair semantics, lock_free, local_progress, lf_criterion | done (f99a2bd) | theories/lockfree/Instr.v (istep_erase, preduction_lift, pred_star_lift), Fair.v (wfair, lock_free, lock_free_reach), TauThread.v (thread_acc), LocalProgress.v (local_progress_ready), Criterion.v (lf_criterion) | passes | 0, no axioms | see log: LPrel alone does not give local progress; linearity facts must come from typing; links still channel steps |
 | 2  Budgeted live relation with oracle | not started, waits for the author | | | | changes composition statements by ω |
 | 3  Static fragment, fundamental theorem, lf_soundness | not started | | | | |
 | 4  Paper section | not started | | | | |
@@ -29,6 +29,22 @@ Updated after every stage and every agent result.
 - 2026-11-08. Revision approved by the author (relayed): fuel ticks only
   while the partner end is offered (plan §7). The static fragment keeps R2.
   The controller program must type by a direct semantic proof.
+
+- 2026-11-08. Stage 1 done. lf_criterion is closed under the global context,
+  constructive (fairness with deadlines, no axiom). Findings:
+  (1) `∀ n, LPrel n W ∅ T p` alone does not give local progress. The closed
+  process ({a, c}, {recv a, ping c, pong c}) satisfies the relation at every n
+  because it never becomes stable, yet recv a waits forever. The false
+  statement sits in theories/lockfree/open/LocalProgressLR.v, outside the
+  build. Stage 2 must therefore keep a per-thread invariant (each thread's
+  gate at its own Θ, one holder per entry, partner entries at dual points),
+  as the fundamental theorem's derivation has it, and not rely on the closed
+  P relation alone.
+  (2) fuel_bound carries two linearity clauses (unique holder, enabled
+  pending threads stay enabled) that typing has to supply.
+  (3) Links are still channel steps in padmin, admin_at and tR. With link
+  cost 0 these widen in TauThread.v and the admin predicate.
+  (4) lock_free_reach (Padovani's Def. II.1) is defined, not yet related.
 
 ## Decisions
 
