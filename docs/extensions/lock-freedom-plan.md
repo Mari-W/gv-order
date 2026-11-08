@@ -81,6 +81,8 @@ Lock freedom needs exactly two bounds, one for patterns 1 and 2 and one for
 pattern 3. Both mirror Padovani's two annotations, with tickets and priorities
 (padovani2014deadlock, p2 and p7).
 
+(Revised in §7: fuel ticks only while the partner end is offered.)
+
 **Fuel** bounds patterns 1 and 2. Every held entry k carries fuel φ(k) ∈ ℕ. A
 channel step of the holder on another entry, a link included, decrements φ(k).
 Sending k passes its remaining fuel minus one. An action on k itself gives the
@@ -135,6 +137,9 @@ thread. It follows from `ready_p` and `above_offered` at one state, because
 the world restricted to the finitely many held heads is a finite strict
 order.
 
+(§7: the induction keeps its shape. The fuel argument applies because C is
+pending, so its end is offered.)
+
 Proof. By induction on (rk y, φ of the holder's entry for ȳ), lexicographic,
 for C pending at y. Let A be the holder of ȳ. A leaves every τ sequence by no
 τ-divergence. If A blocks at u, the gate gives rk u < rk y, and the induction
@@ -155,6 +160,8 @@ like the guard of sharp edge 160.
 | R2 advance before recursion: every end passed into a recursive call was acted on in the current round, or created in it | postponement by holding across rounds |
 | R3 no waiting on later rounds: a round does not act on an end whose partner it passes into a recursive call | growing chains |
 | R4 no blind forwarding in a round: an end received in a round is acted on before the round sends it on | endless delegation |
+
+(§7: R2 stays as it is in the static fragment, which stays conservative.)
 
 Static fuel then equals the length of a round in channel steps. That length
 is finite by the guard and R1, and the oracle can compute it from the typing
@@ -293,3 +300,52 @@ fresh `new` (FactoryEx, ChoiceEnc, ChoiceTranslate, ChoiceTranslateEx,
 DataBranch, FreshTools, ChoiceNegative, LitRejected). With links as admin
 steps (6.1.1), fuel per point suffices, so the caps per entry are unneeded.
 Stage 0b checks the examples against this option.
+
+## 7  Fuel ticks only while the partner waits (2026-11-08, approved by the author)
+
+**Problem.** Fuel per holder step rejects lock-free programs that hold an
+end forever while nobody waits on it.
+
+```
+let (ctl, ctl') = new in let (r, r') = new in
+spawn (rec server. recv r'; server);     holds ctl' forever, never uses it
+rec client. send r (); client            holds ctl forever, never uses it
+```
+
+Nobody is ever pending on ctl, so the program is lock free by §0. Under §3.1,
+however, φ(ctl') runs out after a few server rounds. Padovani's tickets have
+the same limit.
+
+**Change.** φ(c) decrements on a holder step on another entry only while
+the partner end c̄ is offered. The oracle, or the world under §6.4, fixes the
+value when the partner starts offering. Acting on c refills it. Sending c
+while its partner is offered passes φ − 1. Rank is unchanged. It constrains
+only gate facts that a blocked thread relies on. In the controller, every
+point of r gets rank 0 and ctl rank 1.
+
+**Checks.**
+- The postponement program of liveness.md §9 stays rejected. Its main thread
+  offers b from the start, so the holder's fuel runs out.
+- The controller is accepted.
+- Endless delegation of an end someone waits on stays rejected.
+
+**Compositionality, and where it bites.** A single thread cannot see
+whether its partner offers. A component whose end is external (in Σ) has to
+assume the partner may offer at any time, and its fuel ticks as before.
+Fuel ticks "only while offered" only where both ends lie inside the process,
+on a restricted channel, so P can see the offer. Consequences:
+- The compositional fundamental theorem keeps the conservative behaviour.
+  The static fragment keeps R2 as it is.
+- The controller types semantically only by a direct proof at the process
+  level, where ctl is restricted. It does not type component by component.
+  This makes it a "semantic typing types more" example, beside SemRounds.
+- Marking ends whose partner never waits (in the type) would let
+  composition see it too. Not pursued, because it adds annotations.
+
+**Terminology for the paper.** The condition is stated as well-foundedness
+of waiting, with fuel and rank as proof devices. Plain well-foundedness of ≺
+is too weak: the postponement program has an ascending chain below b of
+order type ω, which is well-founded with b at height ω.
+
+**Required example.** The controller, typed by a direct semantic proof, and
+rejected by the static fragment (R2).

@@ -26,6 +26,10 @@ Updated after every stage and every agent result.
   Open: the proof argues classically (plan §6.3). Third uniformity option
   recorded, the constant world (plan §6.4).
 
+- 2026-11-08. Revision approved by the author (relayed): fuel ticks only
+  while the partner end is offered (plan §7). The static fragment keeps R2.
+  The controller program must type by a direct semantic proof.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
