@@ -193,6 +193,12 @@ Print Assumptions LRGV.lockfree.Fragment.rg_lfsource.
 Print Assumptions LRGV.lockfree.Fragment.abp_r2.
 Print Assumptions LRGV.lockfree.Fragment.abp_wf.
 Print Assumptions LRGV.lockfree.Fragment.abp_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.cworld_hold.
+Print Assumptions LRGV.lockfree.Fragment.lfsource_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.fw_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.tc_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.rc_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.kob_cworld_not_wf.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.

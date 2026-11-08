@@ -692,9 +692,9 @@ Proof.
   - destruct g as [u v]. cbn [fact_map] in *. injection E as <- <-. by rewrite !plist_pup_inst.
 Qed.
 
-(** The facts after one step of [created] whose constraint has the
-    outer points ids m: the earlier facts shifted, and the facts of
-    the constraint as they stand. *)
+(** After one step of [created] whose constraint has the outer points
+    ids m, the facts are the earlier facts shifted and the facts of the
+    constraint as they stand. *)
 Lemma hyps_lt_snoc Ψ C m x y :
   bc_env C = ids m →
   hyps_lt (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]) x y →
@@ -777,8 +777,8 @@ Qed.
 
 (** *** A ladder of rank constraints
 
-    The hypotheses of CfstScheduler.v and ABP.v: a ceiling z without
-    facts, then channels 0, …, a-1. The constraint of channel a relates
+    CfstScheduler.v and ABP.v create a ceiling z without facts, then
+    channels 0, …, a-1. The constraint of channel a relates
     its instants to those of each earlier channel by a rank rkf and puts
     them below z. The world is well founded under the rank that reads
     channel b at rkf b and puts z above all of them. *)
@@ -890,8 +890,8 @@ Definition fw_E : list (node * node) :=
 Lemma fw_E_one : length fw_E = 1.
 Proof. vm_compute. reflexivity. Qed.
 
-(** The facts of the forwarder (Forwarder.v): a is the constant 1 and b
-    the constant 0. Round k of both sits at 6k, a at 6k, b at 6k+1, and
+(** In the world of the forwarder (Forwarder.v) a is the constant 1 and
+    b the constant 0. Round k of both sits at 6k, a at 6k, b at 6k+1, and
     the payload points a[k], b[k] in between, at 6k+2 or 6k+3 by
     polarity. *)
 Definition fw_k (p : pname) : nat :=
@@ -962,7 +962,7 @@ Qed.
 Theorem tc_lfptyped : ∃ W, strict W ∧ lfptyped W ∅ (∅, {[+ TailCall.tc_main +]}) TUnit.
 Proof. exists (cworld TailCall.tc_Ψ). exact (lfsource_lfptyped _ _ _ tc_lfsource). Qed.
 
-(** The recursive CFST scheduler, over its seven top-level points: the
+(** The recursive CFST scheduler, over its seven top-level points, the
     ceiling and the six channels of the ring. Rounds of six steps, every
     end passed on is acted on in the round, no hop. Its world is the
     ladder of rank constraints. *)
