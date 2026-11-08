@@ -8,8 +8,8 @@ Updated after every stage and every agent result.
 | 0  Paper proof (criterion, fuel and rank from the fragment) | done (0a, 0b) | none | n/a | n/a | decisions 1 to 4 of the plan await the author |
 | 1  Fair semantics, lock_free, local_progress, lf_criterion | done (f99a2bd) | theories/lockfree/Instr.v (istep_erase, preduction_lift, pred_star_lift), Fair.v (wfair, lock_free, lock_free_reach), TauThread.v (thread_acc), LocalProgress.v (local_progress_ready), Criterion.v (lf_criterion) | passes | 0, no axioms | see log: LPrel alone does not give local progress; linearity facts must come from typing; links still channel steps |
 | 2a Link τ costs 0 (relation, guard, liveness proofs, TauThread) | done on the liveness side (31c95da), lockfree widening folded into 2b-core | LiveRelation.v (PALink, LElink, Q-Link), Guard.v (KLink out), LiveGuard.v, LiveBind.v, Internalize, LiveConnect.v (lsteps_link), P-Term | passes | 0, no axioms | thread_acc needs the premise "every link redex has a restricted end" |
-| 2b-core Constant world in the core (base and live relation, typing without KTNewEx, examples retyped) | in progress | | | | author approved for the core |
-| 2b Rank and fuel in the relation (well-founded W, fuel constant N, per-thread invariant) | after 2b-core | | | | per-thread invariant needed (stage 1 finding 1) |
+| 2b-core Constant world in the core (base and live relation, typing without KTNewEx, examples retyped) | done (de6e13c..6540027) | Typing.v (created), Fundamental.v (created_world, soundness_created), base and live relation (O-New at a known point, Q-Admin and process τ keep W), TauThread.v (links_restricted) | passes, 255 closed | 0, no axioms | SegmentInterleave not retyped (needs a stronger TreeSum box type, author); paper cites t_new_open and si_deadlock_free |
+| 2b Rank and fuel in the relation (well-founded W, fuel constant N, per-thread invariant) | running on branch lf-fuel | | | | per-thread invariant needed (stage 1 finding 1) |
 | 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | done (4d74f15, merge into lock-freedom after 2a) | theories/lockfree/Fragment.v: lfptyped, lfsource, fw_lfptyped, tc_lfptyped, sch_lfsource, kob/c1/c3 rejections, tsum_r1_fails | passes, 267 closed | 0, no axioms | Rank on W catches chains only under the constant world; R4′ needs a typing annotation |
 | 3  Fundamental theorem, lf_soundness, thread_progress, examples | not started | | | | |
 | 3c Coverage of the literature (plan §12) | done (cc300ce on lf-rules) | Fragment.v (lf_r2r, starve_not_lfptyped, rc_lfptyped, abp_lfsource, rg_lfsource, wgen_rank_wf), examples/ABP.v, examples/GrowRing.v | passes | 0, no axioms | none. The ring gap is closed | | | | author's acceptance criterion |
@@ -89,6 +89,18 @@ Updated after every stage and every agent result.
   R2-recv as well as R1, so R1′ alone would not admit it. CheckAll lists 396
   Print Assumptions, of which 109 are the commented-out translation entries.
   All 287 active ones are closed.
+
+- 2026-11-09. Stage 2b-core done. The constant world is in the base and
+  live relation. KTNewEx is gone, and top-level channels come from creation
+  hypotheses (`created`, `soundness_created`). All composition statements
+  and the soundness family keep their form. Lemmas that concluded
+  `∃ W'` with `wext_fresh` now conclude at the same W. Boxes of FreshBetween,
+  FreshMany, FactoryEx and GuardCex got stronger types. SegmentInterleave is
+  out of the build: its channel needs facts against the point opened from
+  TreeSum's result, which only a stronger TreeSum box type gives (author).
+  lf-rules merged (1d0e977). The merge is clean in git but Fragment.v breaks,
+  because its closed typings predate the creation hypotheses. A port runs on
+  lock-freedom, stage 2b on branch lf-fuel.
 
 ## Decisions
 
