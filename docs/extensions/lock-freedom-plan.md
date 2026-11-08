@@ -457,7 +457,11 @@ and §3.4 where they differ.
   longest path in the R4′ graph. The factor 2 covers an end acted on at the
   start of round k and next at the end of round k+1. The relation takes N as
   a parameter, so fuel is uniform by construction. Per-point fuel is
-  unnecessary.
+  unnecessary. The semantic judgment hides N: `⊨ p := ∃ N, ∀ n, LPrel N n p`.
+  The relation is monotone in N (more fuel asks less), so composition takes
+  the maximum. The fundamental theorem computes N from the program text. A
+  direct semantic proof picks its own N. The definition never computes N
+  from syntax, so it stays a semantic notion.
 
 ### 10.4  The constant world and the examples
 
