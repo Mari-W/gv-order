@@ -163,7 +163,7 @@ Lemma sess_stable e a : act e = Some a → is_sess a → stable_t e.
 Proof.
   intros Ha Hs α e' Hst. destruct (act_step _ _ _ Hst) as (a' & Ha' & Ho).
   rewrite Ha in Ha'. injection Ha' as <-. destruct α; try done; exfalso.
-  all: apply (admin_not_sess a); [by apply (offers_admin a _ Ho)|done].
+  all: destruct a; simpl in Ho; try done; destruct Hs as [? Hs]; discriminate.
 Qed.
 
 Lemma offered_pend Θ e k : offered_t Θ e k → ∃ a S, act e = Some a ∧ asubjs a = Some S ∧ k.1 ∈ S.
@@ -281,7 +281,9 @@ Section local_progress.
     { exists t. split; [done|]. by eapply (Hmeet t e s es k ek k' ek'). }
     destruct (act es) as [a|] eqn:Ha.
     - destruct (admin_or_sess a) as [Had|Hse].
-      + apply (Hvia s); [done|]. apply admin_enabled. by exists es, a.
+      + apply (Hvia s); [done|]. destruct Had as [Had Hns].
+        apply (admin_enabled q s es a Hes Ha Had). intros c d ->. exfalso. apply Hns.
+        unfold is_sess. simpl. by eexists.
       + destruct (Hready s es Hes (sess_stable es a Ha Hse)) as [_ [Hl|Hbr]].
         { apply (Hvia s); [done|]. by apply (Hlink s es). }
         destruct (offered_exists W (Θ s) (F s) es (Hready s es Hes) (sess_stable es a Ha Hse)

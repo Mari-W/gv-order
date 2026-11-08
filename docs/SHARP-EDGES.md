@@ -2468,6 +2468,15 @@ process step fires it, `no_tau_divergence` holds, and the erased thread still ha
 infinite chain of link steps. The widened lemma needs a hypothesis that every link redex
 of a reachable configuration has a restricted end, which typing supplies, and then
 `lf_criterion` gains it as a premise.
+Done in stage 2b-core (decision under the author's delegation, 2026-11-08). `is_admin`
+and `admin_lbl` include links, so `admin_at` and `tR` do too (theories/lockfree/Instr.v).
+`links_restricted p` says that every link redex of a configuration reachable from p has a
+restricted end (theories/lockfree/TauThread.v). `thread_acc` and `lf_criterion` take it as
+a premise. An administrative step of a holder now continues up to renaming
+(`admin_step`, `run_admin_step`), because a link renames its own continuation, and the
+measure erases names anyway. `admin_enabled` asks a restricted end for a link redex.
+`admin_or_sess` splits into a pure administrative redex and a session redex, so local
+progress needs no new premise.
 
 ## From the earlier abandoned mechanization (spec §15)
 

@@ -70,7 +70,7 @@ Section criterion.
   Context (p : proc) (r : nat → config) (l : nat → gset nat).
   Context (Hr0 : erase (r 0) = p) (Hmax : maximal r l) (Hfair : wfair r l).
   Context (HLP : ∀ q, pred_star p (erase q) → local_progress q).
-  Context (Hnd : no_tau_divergence p).
+  Context (Hnd : no_tau_divergence p) (Hlr : links_restricted p).
   Context (fu : nat → nat → nat).
   Context (Huniq : ∀ k t s s', pend (r k) t → waits (r k) t s → waits (r k) t s' → s = s').
   Context (Hpers : ∀ k t, pend (r k) t → enabled (r k) t → t ∉ l k → enabled (r (S k)) t).
@@ -127,10 +127,13 @@ Section criterion.
     destruct Hw as (_ & e0 & a0 & S0 & c0 & es & _ & _ & _ & _ & Hes & _).
     destruct (act es) as [a|] eqn:Ha.
     - destruct (admin_or_sess a) as [Had|Hse].
-      + right. apply (fair_persist s k (λ m, admin_at (r m) s)).
+      + right. destruct Had as [Had _]. apply (fair_persist s k (λ m, admin_at (r m) s)).
         * by exists es, a.
         * intros m _ Hm Hsm. by apply (run_admin r l Hmax).
-        * intros m Hm. by apply admin_enabled.
+        * intros m (es' & a' & Hes' & Ha' & Had').
+          apply (admin_enabled (r m) s es' a' Hes' Ha' Had'). intros c d ->.
+          apply (Hlr (erase (r m)) (soup (delete s (r m).2)) es' c d (reach m)); [|done].
+          simpl. by apply soup_delete.
       + assert (pend (r k) s) as Hps by (by exists es, a).
         destruct (Hrank k t s Hp Hw0 Hps) as [Hent|HR'].
         * left. by apply enabled_fires.
@@ -159,7 +162,7 @@ Section criterion.
     destruct Hch as [|t s u Hw _]; [by apply enabled_fires|].
     destruct Hw as [Hst Hw']. pose proof (conj Hst Hw') as Hw.
     destruct Hw' as (_ & _ & _ & _ & es & _ & _ & _ & _ & Hes & _).
-    pose proof (thread_acc p (r k0) s es Hnd (reach k0) Hes) as Hacc.
+    pose proof (thread_acc p (r k0) s es Hlr Hnd (reach k0) Hes) as Hacc.
     remember (cerase es) as x eqn:Hx.
     assert (∀ k, k0 ≤ k → fu k t = n → we k t = e → pend (r k) t → waits (r k) t s →
               ∀ es, (r k).2 !! s = Some es → cerase es = x → ∃ j, k0 ≤ j ∧ t ∈ l j)
@@ -197,13 +200,14 @@ Section criterion.
     destruct HQm as [?|[Hlt|Hsm]]; [done|lia|].
     destruct (Hadm s Hwsm Hsm) as (es'' & a & Hes'' & Ha & Had).
     rewrite Hes' in Hes''. injection Hes'' as <-.
-    destruct (run_admin_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & Hα & Hst2 & He2).
-    assert (tR (cerase e2) x) as HtR by (rewrite <-Hx'; by eapply tR_step).
+    destruct (run_admin_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & g & Hα & Hst2 & He2).
+    assert (tR (cerase (emap g e2)) x) as HtR
+      by (rewrite cerase_emap, <-Hx'; by eapply tR_step).
     assert (fu (S m) t = n) as Hfn by lia.
     assert (we (S m) t = e) as Hwn by (by rewrite Hstab).
     assert (pend (r (S m)) t) as Hpn by (by apply (run_pend r l Hmax)).
     assert (waits (r (S m)) t s) as Hwsn by (by apply Hwiff).
-    exact (IHx (cerase e2) HtR (S m) ltac:(lia) Hfn Hwn Hpn Hwsn e2 He2 eq_refl).
+    exact (IHx (cerase (emap g e2)) HtR (S m) ltac:(lia) Hfn Hwn Hpn Hwsn (emap g e2) He2 eq_refl).
   Qed.
 
   Theorem lf_run_criterion : lf_run r l.
@@ -219,14 +223,14 @@ End criterion.
 
 Theorem lf_criterion p :
   (∀ q, pred_star p (erase q) → local_progress q) →
-  no_tau_divergence p →
+  no_tau_divergence p → links_restricted p →
   (∀ r l, erase (r 0) = p → maximal r l → fuel_bound r l) →
   (∀ r l, erase (r 0) = p → maximal r l → rank_bound r l) →
   lock_free p.
 Proof.
-  intros HLP Hnd Hfb Hrb r l Hr0 Hmax Hfair.
+  intros HLP Hnd Hlr Hfb Hrb r l Hr0 Hmax Hfair.
   destruct (Hfb r l Hr0 Hmax) as (fu & Huniq & Hpers & Hfuel).
   destruct (Hrb r l Hr0 Hmax) as (E & R & we & HR & Hstab & Hrank).
-  exact (lf_run_criterion p r l Hr0 Hmax Hfair HLP Hnd fu Huniq Hpers Hfuel E R we HR
+  exact (lf_run_criterion p r l Hr0 Hmax Hfair HLP Hnd Hlr fu Huniq Hpers Hfuel E R we HR
     Hstab Hrank).
 Qed.

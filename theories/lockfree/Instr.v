@@ -241,6 +241,9 @@ Proof. induction e; simpl; f_equal; auto. Qed.
 Lemma emap_emap g h e : emap g (emap h e) = emap (g ∘ h) e.
 Proof. induction e; simpl; f_equal; auto. Qed.
 
+Lemma emap_id e : emap id e = e.
+Proof. induction e; simpl; f_equal; auto. Qed.
+
 Lemma is_val_emap g e : is_val (emap g e) = is_val e.
 Proof. induction e; simpl; try done; by rewrite ?IHe1, ?IHe2, ?IHe. Qed.
 
@@ -277,16 +280,22 @@ Proof. rewrite chsubst_emap. apply act_emap. Qed.
 
 (** ** Kinds of actions *)
 
+(** A link costs nothing (sharp edges 171), so its redex is
+    administrative. It is a session action too, because it names two
+    channels. *)
 Definition is_admin (a : action) : Prop :=
-  match a with ABeta | ANew | ASpawn _ => True | _ => False end.
+  match a with ABeta | ANew | ASpawn _ | ALink _ _ => True | _ => False end.
 
 Definition is_sess (a : action) : Prop := is_Some (asubjs a).
 
-Lemma admin_or_sess a : is_admin a ∨ is_sess a.
-Proof. destruct a; simpl; unfold is_sess; simpl; eauto. Qed.
+Lemma admin_or_sess a : (is_admin a ∧ ¬ is_sess a) ∨ is_sess a.
+Proof.
+  destruct a; simpl; unfold is_sess; simpl; try (right; by eexists).
+  all: left; split; [done|by intros [? ?]].
+Qed.
 
-Lemma admin_not_sess a : is_admin a → is_sess a → False.
-Proof. destruct a; simpl; unfold is_sess; simpl; try done; by intros _ [? ?]. Qed.
+Lemma admin_sess_link a : is_admin a → is_sess a → ∃ c d, a = ALink c d.
+Proof. destruct a; simpl; unfold is_sess; simpl; try done; try (by intros _ [? ?]); eauto. Qed.
 
 Lemma amap_admin g a : is_admin (amap g a) ↔ is_admin a.
 Proof. by destruct a. Qed.
@@ -295,10 +304,10 @@ Lemma amap_sess g a : is_sess (amap g a) ↔ is_sess a.
 Proof. unfold is_sess. destruct a; simpl; split; eauto. Qed.
 
 Definition admin_lbl (α : tlabel) : Prop :=
-  match α with LBeta | LNew _ | LSpawn _ => True | LSess _ => False end.
+  match α with LBeta | LNew _ | LSpawn _ | LSess (SLink _) => True | LSess _ => False end.
 
 Lemma offers_admin a α : offers a α → is_admin a ↔ admin_lbl α.
-Proof. destruct a, α; simpl; try done; by destruct σ. Qed.
+Proof. destruct a, α; simpl; try done; destruct σ; done. Qed.
 
 (** ** Threads of a configuration *)
 
@@ -348,19 +357,20 @@ Proof.
 Qed.
 
 (** A thread that takes part acts with its redex. A thread whose
-    redex is administrative takes part alone, with that redex. *)
+    redex is administrative takes part alone, with that redex, and a
+    link renames its continuation. *)
 Lemma istep_actor q L q' t e :
   istep q L q' → t ∈ L → q.2 !! t = Some e →
   ∃ α e', tstep e α e' ∧
-    (admin_lbl α → q'.2 !! t = Some e').
+    (admin_lbl α → ∃ g, q'.2 !! t = Some (emap g e')).
 Proof.
   destruct 1; simpl; intros Ht Hte.
   - apply elem_of_singleton in Ht as ->. simplify_eq. eexists _, _. split; [done|].
-    intros _. by rewrite lookup_insert_eq.
+    intros _. exists id. rewrite emap_id. by rewrite lookup_insert_eq.
   - apply elem_of_singleton in Ht as ->. simplify_eq. eexists _, _. split; [done|].
-    intros _. by rewrite lookup_insert_eq.
+    intros _. exists id. rewrite emap_id. by rewrite lookup_insert_eq.
   - apply elem_of_singleton in Ht as ->. simplify_eq. eexists _, _. split; [done|].
-    intros _. rewrite lookup_insert_ne by (intros ->; congruence).
+    intros _. exists id. rewrite emap_id. rewrite lookup_insert_ne by (intros ->; congruence).
     by rewrite lookup_insert_eq.
   - apply elem_of_union in Ht as [Ht|Ht]; apply elem_of_singleton in Ht as ->;
       simplify_eq; (eexists _, _; split; [done|done]).
@@ -368,7 +378,9 @@ Proof.
       simplify_eq; (eexists _, _; split; [done|done]).
   - apply elem_of_union in Ht as [Ht|Ht]; apply elem_of_singleton in Ht as ->;
       simplify_eq; (eexists _, _; split; [done|done]).
-  - apply elem_of_singleton in Ht as ->. simplify_eq. eexists _, _. split; [done|done].
+  - apply elem_of_singleton in Ht as ->. simplify_eq. eexists _, _. split; [done|].
+    intros _. exists (csub c d). rewrite lookup_fmap, lookup_insert_eq. simpl.
+    by rewrite chsubst_emap.
 Qed.
 
 Lemma enabled_act q t e : enabled q t → q.2 !! t = Some e → ∃ a, act e = Some a.
@@ -380,18 +392,22 @@ Qed.
 
 Lemma admin_step q L q' t e a :
   istep q L q' → t ∈ L → q.2 !! t = Some e → act e = Some a → is_admin a →
-  ∃ α e', admin_lbl α ∧ tstep e α e' ∧ q'.2 !! t = Some e'.
+  ∃ α e' g, admin_lbl α ∧ tstep e α e' ∧ q'.2 !! t = Some (emap g e').
 Proof.
   intros Hst Ht He Ha Had.
   destruct (istep_actor q L q' t e Hst Ht He) as (α & e' & Hs & Hq).
   destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho). rewrite Ha in Ha'. simplify_eq.
   assert (admin_lbl α) as Hα by (by apply (offers_admin a')).
-  exists α, e'. auto.
+  destruct (Hq Hα) as [g Hg]. exists α, e', g. auto.
 Qed.
 
-Lemma admin_enabled q t : admin_at q t → enabled q t.
+(** An administrative redex is enabled. A link needs a restricted
+    end, because P-Act-Link removes one (sharp edges 171). *)
+Lemma admin_enabled q t e a :
+  q.2 !! t = Some e → act e = Some a → is_admin a →
+  (∀ c d, a = ALink c d → c ∈ q.1 ∨ d ∈ q.1) → enabled q t.
 Proof.
-  destruct q as [C M]. intros (e & a & He & Ha & Had). simpl in *.
+  destruct q as [C M]. intros He Ha Had Hln. simpl in *.
   destruct a; try done.
   - destruct (act_offer e ABeta LBeta Ha I) as [e' Hs].
     eexists _, _. split; [by eapply IBeta|set_solver].
@@ -403,4 +419,10 @@ Proof.
     set (j := fresh (dom M)).
     assert (M !! j = None) as Hj by (apply not_elem_of_dom, is_fresh).
     eexists _, _. split; [by eapply ISpawn|set_solver].
+  - destruct (act_offer e (ALink c d) (LSess (SLink {[c; d]})) Ha eq_refl) as [e' Hs].
+    destruct (Hln c d eq_refl) as [Hc|Hd].
+    + eexists _, _. split; [by eapply ILink|set_solver].
+    + assert (tstep e (LSess (SLink {[d; c]})) e') as Hs'.
+      { by replace ({[d; c]} : gset chan) with ({[c; d]} : gset chan) by set_solver. }
+      eexists _, _. split; [by eapply ILink|set_solver].
 Qed.

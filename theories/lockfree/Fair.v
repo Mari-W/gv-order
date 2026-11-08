@@ -100,7 +100,7 @@ Section runs.
 
   Lemma run_admin_step i t e a :
     t ∈ l i → (r i).2 !! t = Some e → act e = Some a → is_admin a →
-    ∃ α e', admin_lbl α ∧ tstep e α e' ∧ (r (S i)).2 !! t = Some e'.
+    ∃ α e' g, admin_lbl α ∧ tstep e α e' ∧ (r (S i)).2 !! t = Some (emap g e').
   Proof.
     intros Ht He Ha Had. destruct (Hmax i) as [Hs|(_ & _ & Hl)].
     - by eapply admin_step.
