@@ -5,7 +5,7 @@ Updated after every stage and every agent result.
 
 | Stage | Status | Rocq files / theorems | make | Admitted | Open problems |
 |---|---|---|---|---|---|
-| 0  Paper proof (criterion, fuel and rank from the fragment) | in progress | none | n/a | n/a | decisions 1 to 4 of the plan await the author |
+| 0  Paper proof (criterion, fuel and rank from the fragment) | in progress, part 0a running | none | n/a | n/a | decisions 1 to 4 of the plan await the author |
 | 1  Fair semantics, lock_free, local_progress, lf_criterion | in progress | to come | not run | 0 | none yet |
 | 2  Budgeted live relation with oracle | not started, waits for the author | | | | changes composition statements by ω |
 | 3  Static fragment, fundamental theorem, lf_soundness | not started | | | | |
@@ -15,6 +15,10 @@ Updated after every stage and every agent result.
 
 - 2026-11-08. Branch created. Plan moved here from the liveness worktree.
   Stages 0 and 1 started in parallel. Stage 1 changes no existing definition.
+- 2026-11-08. The first stage 0 agent was cut off by a content filter partway
+  through and delivered nothing. Stage 0 is restarted in three smaller parts:
+  0a (fuel, rank and the criterion proof), 0b (rules R1 to R4 and the oracle),
+  0c (example verdicts). 0a is running.
 
 ## Related work hooks
 
