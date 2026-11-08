@@ -199,18 +199,15 @@ Proof.
     simpl. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
 Qed.
 
-(** ** new, encoded as let_new, in the source judgment (static/Typing.v, t_new_open) *)
+(** ** new@x, encoded as let_new, in the source judgment (static/Fundamental.v, t_new_at) *)
 
-Lemma st_new_open Φ Ψ Δ F e T S C :
-  cc_ok (heqs Ψ) (hlt Ψ) C → Forall (hyp_known Ψ) (bc_env C) →
-  styped (fhyps_pinst (pshift 1) Φ) (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
-    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
-       lenv_pinst (pshift 1) Δ)
-    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
+Lemma st_new_at Φ Ψ Δ F e T S x :
+  hyp_known Ψ x →
+  styped Φ Ψ (Some (TSess (dual S) (pt_dual x)) :: Some (TSess S x) :: None :: None :: Δ) F e T →
   styped Φ Ψ Δ F (let_new e) T.
 Proof.
-  intros HC HK Hb. unfold let_new.
-  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
+  intros HK Hb. unfold let_new.
+  set (X := TProd (TSess S x) (TSess (dual S) (pt_dual x))).
   apply (st_letp Φ Ψ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply lenv_split_nones_l. }
   { apply (st_pair Φ Ψ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
@@ -218,7 +215,7 @@ Proof.
     - eapply (st_app Φ Ψ _ _ _ _ _ _ None None TUnit).
       + apply lenv_split_nones_l.
       + done.
-      + apply st_konst; [apply lenv_empty_nones| |done]. by apply KTNewEx.
+      + apply st_konst; [apply lenv_empty_nones| |done]. by apply KTNewAt.
       + apply st_unit. apply lenv_empty_nones.
     - apply st_unit. apply lenv_empty_nones. }
   apply (st_letu Φ Ψ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
@@ -226,15 +223,8 @@ Proof.
   { apply st_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
     apply fmap_Some in Hy as (? & _ & ?). congruence. }
-  apply (st_open Φ Ψ _ F _ 1 LBot 1 C
-           (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
-  cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
-  change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
-  apply (st_letp _ _ _
-           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
-              :: lenv_nones (lenv_pinst (pshift 1) Δ))
-           (None :: None :: lenv_pinst (pshift 1) Δ)
-           _ _ _ (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))); [| |exact Hb].
+  apply (st_letp _ _ _ (None :: Some X :: lenv_nones Δ) (None :: None :: Δ)
+           _ _ _ (TSess S x) (TSess (dual S) (pt_dual x))); [| |exact Hb].
   - apply lsplit_none, lsplit_l, lenv_split_nones_l.
   - apply st_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
     exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
@@ -331,17 +321,11 @@ Proof.
     destruct Hc as (Hc0 & Hc1 & Hc2 & Hc3 & _).
     eapply st_case; [apply lp_split, Hsok|by eapply IH|by eapply IH1|].
     eapply st_conv; [by eapply tmatch_sound|by eapply IH2].
-  - (* new *)
-    destruct (synth n (fhyps_pinst (pshift 1) Φ) _ (sf_pinst (pshift 1) F) a) as [[U' c']|] eqn:H1;
-      [|discriminate].
-    destruct (ty_eqb (pinst_ty (pshift 1) (unshift_ty U')) U') eqn:Hty; [|discriminate].
-    injection H as <- <-. simpl in Hc.
-    destruct Hc as (HCc & HK & Hopen & _). simpl in HCc, Hopen.
-    apply csat_cands in HK. rewrite Forall_fmap in HK.
-    apply (st_new_open _ _ _ _ _ _ s0 C); [exact HCc| |].
-    { eapply Forall_impl; [exact HK|]. intros x Hx. exact Hx. }
-    apply ty_eqb_sound in Hty. rewrite Hty.
-    eapply IH; [by apply fv_below_pinst|exact H1|exact Hopen].
+  - (* new@x *)
+    destruct (synth n Φ _ F a) as [[T' c']|] eqn:H1; [|discriminate].
+    injection H as <- <-. simpl in Hc. destruct Hc as (HK & Hb & _).
+    apply (st_new_at _ _ _ _ _ _ s0 C); [exact HK|].
+    eapply IH; [exact Hn|exact H1|exact Hb].
 Qed.
 
 (** A closed program the checker accepts, whose constraint holds under

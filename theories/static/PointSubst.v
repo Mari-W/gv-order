@@ -644,7 +644,7 @@ Section transfer.
   Proof.
     intros Heq Hlt Hpk Hk.
     induction 1 as [ub lb|m P S x Hh|m P S x|x|S1 S2 x H1|S1 S2 x H1|S1 S2 x H1 H2|S x
-                  |n kk C ub P xs ss Hxs HC HK Hss Hsc|S C H H0|S x Hx] using konst_ty_case;
+                  |n kk C ub P xs ss Hxs HC HK Hss Hsc|S x Hx] using konst_ty_case;
 
       simpl in *.
     - apply KTSpawn.
@@ -668,12 +668,6 @@ Section transfer.
       rewrite pinst_sinst, <-E1, <-E2. apply KTForce; [by rewrite length_fmap| | |done|done].
       + by apply (bcs_hold_inst peq _ plt).
       + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx. by apply Hpk.
-    - rewrite pt_inst_dual.
-      assert (pt_inst (pup 1 σ) (pvar 0) = pvar 0) as ->
-        by (rewrite pt_inst_pvar_at; unfold pup; by rewrite decide_True by lia).
-      apply KTNewEx.
-      + by apply (cc_ok_pinst σ peq plt peq' plt').
-      + simpl. apply Forall_fmap. eapply Forall_impl; [exact H0|]. intros x Hx. by apply Hpk.
     - rewrite pt_inst_dual. apply KTNewAt. by apply Hpk.
   Qed.
 

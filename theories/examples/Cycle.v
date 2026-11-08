@@ -9,9 +9,10 @@
     The paper's P-Connect over {c, d} is here the closed program that
     creates both channels.
 
-    The program types in the empty world. c is created with no fact and
-    d with the creation constraint γ ≺ ε, where γ and ε are the points of
-    c and d (sharp edges 105).
+    The program types under the hypotheses of its two top-level points
+    ([cycle_Ψ]). c is created with no fact and d with the creation
+    constraint γ ≺ ε, where γ and ε are the points of c and d (sharp
+    edges 105, 172).
 
     With end points the thunk holds c′ and d′ at γ̄ and ε̄. Its gate asks
     γ̄ ≺ ε, the main thread's gate asks γ ≺ ε̄, and the upper point ε̄ of
@@ -30,16 +31,26 @@ Definition cycle_main : expr :=
   let_new_pair (let_new_pair
     (LetU (App ESpawn cycle_thunk) (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
 
-Lemma cycle_typed : styped ∅ [] [] (∅, None) cycle_main TUnit.
+Definition cycle_Lc : list (point * bool) :=
+  [(pvar 0, true); (pvar 0, false); (pt_dual (pvar 0), true); (pt_dual (pvar 0), false)].
+
+Definition cycle_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) (fresh_bcs [] []), ids 1)]) ++
+    [(bcs_inst (pshift 1) (freshp_bcs cycle_Lc []), ids 1)].
+
+Lemma cycle_created : created (Wpo []) cycle_Ψ.
 Proof.
-  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
-  set (W := Wpo []) in *. unfold cycle_main.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [] []); [constructor|set_solver|].
-  fresh_clean.
-  set (Lc := [(pvar 0, true); (pvar 0, false); (pt_dual (pvar 0), true); (pt_dual (pvar 0), false)]).
-  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Lc []).
+  apply created_p; [apply created_lh; [constructor|constructor|set_solver]| |].
   { cbn. repeat (apply Forall_cons; split; [eapply skn_inst; [by left|by left|done]|]). by apply Forall_nil. }
   { intros l h b _ Hh. by apply elem_of_nil in Hh. }
+Qed.
+
+Lemma cycle_typed : styped ∅ cycle_Ψ [] (∅, None) cycle_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
+  set (W := Wpo []) in *. unfold cycle_main, cycle_Ψ.
+  new_top HWs SEnd (pvar 1). new_top HWs SEnd (pvar 0).
+  set (Lc := cycle_Lc).
   fresh_clean.
   set (Ψ := [(bcs_inst (pshift 1) (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 1]);
              (bcs_inst (pshift 1) (freshp_bcs Lc []), [pvar 0])]).
@@ -74,6 +85,5 @@ Qed.
 
 Lemma cycle_deadlock_free : deadlock_free (∅, {[+ cycle_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply cycle_typed].
+  apply (soundness_created_s cycle_Ψ _ TUnit cycle_created); [constructor|apply cycle_typed].
 Qed.

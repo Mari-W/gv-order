@@ -4,11 +4,12 @@
            let () = spawn (λu. let () = u in close (send ⟨∗, c⟩)) in
            let (x, d) = recv d in let () = x in close d
 
-    c : !∗.Close@ι and d : ?∗.Close@ι, with ι created by new with no
-    facts. Each thread holds one end only, so no fact beyond program
-    order is needed. The thunk blocks at ι and ι+1, its upper point is
-    ι+1, its lower point ι. The program types in the empty world
-    (sharp edges 105). *)
+    c : !∗.Close@ι and d : ?∗.Close@ι, with ι a top-level point
+    created with no facts. Each thread holds one end only, so no fact
+    beyond program order is needed. The thunk blocks at ι and ι+1, its
+    upper point is ι+1, its lower point ι. The program types under the
+    hypothesis of ι ([sync_Ψ]), and the run starts in a world that
+    places ι (sharp edges 105, 172). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -25,11 +26,16 @@ Definition sync_main : expr :=
     (LetU (App ESpawn sync_thunk)
       (LetP (App ERecv (Var 0)) (LetU (Var 1) (App EClos (Var 0))))).
 
-Lemma sync_typed : styped ∅ [] [] (∅, None) sync_main TUnit.
+Definition sync_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) (fresh_bcs [] []), ids 1)].
+
+Lemma sync_created : created (Wpo []) sync_Ψ.
+Proof. apply created_lh; [constructor|constructor|set_solver]. Qed.
+
+Lemma sync_typed : styped ∅ sync_Ψ [] (∅, None) sync_main TUnit.
 Proof.
-  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
-  set (W := Wpo []) in *. unfold sync_main, let_new_pair.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Ssync [] []); [constructor|set_solver|].
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
+  set (W := Wpo []) in *. unfold sync_main, let_new_pair, sync_Ψ.
+  new_top HWs Ssync (pvar 0).
   fresh_clean.
   tstep.
   { cbn. tstep.
@@ -56,6 +62,5 @@ Qed.
 
 Lemma sync_deadlock_free : deadlock_free (∅, {[+ sync_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply sync_typed].
+  apply (soundness_created_s sync_Ψ _ TUnit sync_created); [constructor|apply sync_typed].
 Qed.

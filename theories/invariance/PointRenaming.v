@@ -1087,20 +1087,6 @@ Section ready.
         apply Forall_fmap. eapply Forall_impl; [done|]. intros s Hs. by apply hcontractive_sw. }
       destruct ub as [p|]; simpl; [|done]. rewrite pt_inst_sw. f_equal.
       apply pt_inst_ext. intros i. symmetry. apply plist_sw.
-    - assert (ptsw a b (pvar 0) = pvar 0) as -> by done.
-      apply KTNewEx; [|by apply known_sw].
-      apply (cc_ok_transfer (w_eq W) (w_lt W) (w_eq (wsw a b W)) (w_lt (wsw a b W)) C (bcs_sw a b C)
-               (ptsw a b)); try done.
-      + intros p Hp. rewrite pt_root_sw, Hp. done.
-      + intros x Hx. rewrite pt_root_sw. destruct (pt_root x) as [c|c|q o i]; simpl; done.
-
-      + intros p q _ _ E. by rewrite <-(ptsw_involutive a b p), E, ptsw_involutive.
-      + intros y Hy. exists (ptsw a b y). rewrite ptsw_involutive, pt_root_sw, Hy. by split.
-      + intros x y (x0 & y0 & Hxy & -> & ->). apply geq_base.
-        exists (ptsw a b x0), (ptsw a b y0). rewrite !pt_inst_sw. split_and!; [by apply wsw_eq|done|done].
-      + intros x y (x0 & y0 & Hxy & -> & ->). apply glt_base.
-        exists (ptsw a b x0), (ptsw a b y0). rewrite !pt_inst_sw. split_and!; [by apply wsw_lt|done|done].
-      + intros g Hg. by apply bcs_open_sw.
     - rewrite ?ptsw_dual. apply KTNewAt. unfold pt_known in *. simpl.
       by rewrite pt_root_sw, elem_of_names_sw.
   Qed.
@@ -1168,9 +1154,8 @@ Lemma konst_ty_mono (peq plt peq' plt' : point → point → Prop) (pk pk' : poi
   (∀ x y, peq x y → peq' x y) → (∀ x y, plt x y → plt' x y) → (∀ x, pk x → pk' x) →
   konst_ty peq plt pk k T → konst_ty peq' plt' pk' k T.
 Proof.
-  intros He Hl Hk [k0 T0 G xs Hs HG HK|S C HC HK|S x Hx].
+  intros He Hl Hk [k0 T0 G xs Hs HG HK|S x Hx].
   - eapply KTSig; [done|by eapply facts_hold_mono|by eapply Forall_impl].
-  - constructor; [by eapply cc_ok_mono|by eapply Forall_impl].
   - apply KTNewAt. auto.
 Qed.
 

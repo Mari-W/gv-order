@@ -1,9 +1,9 @@
-(** * Tools for the closed examples retyped with fresh points
+(** * Tools for the closed examples with top-level creation constraints
 
     Each file *Fresh.v next to an example types the same program with
-    E-NewFresh at its top-level news and applies [soundness] in the
-    world its facts still need, usually the empty world [Wpo []]
-    (docs/extensions/fresh-points.md). *)
+    its top-level channels as point variables of the hypotheses
+    ([created]) and applies [soundness_created_s]
+    (docs/extensions/fresh-points.md, sharp edges 172). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.
@@ -45,23 +45,16 @@ Proof.
   - apply ppo_size in Hp. destruct b, b'; unfold pt_size in Hp; simpl in Hp; lia.
 Qed.
 
-Lemma t_newfreshp_open W Φ Ψ Θ Δ F e T S L H :
-  Forall (skn W Ψ) (L.*1 ++ H.*1) →
+Lemma created_p W Ψ L H :
+  created W Ψ → Forall (skn W Ψ) (L.*1 ++ H.*1) →
   (∀ l h b, (l, b) ∈ L → (h, b) ∈ H → slt W Ψ l h) →
-  typed W (fhyps_pinst (pshift 1) Φ)
-    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (freshp_bcs L H), ids 1)])
-    (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
-       lenv_pinst (pshift 1) Δ)
-    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-  typed W Φ Ψ Θ Δ F (let_new e) T.
+  created W (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (freshp_bcs L H), ids 1)]).
 Proof.
-  intros HK Hbt Hb.
-  apply (t_newfresh_open W Φ Ψ Θ Δ F e T S (freshp_bcs L H)); [| | |done].
+  intros HΨ HK Hbt.
+  apply (created_fresh W Ψ (freshp_bcs L H)); [done| |done|].
   - intros f Hf Hs. destruct Hf as [(i & l & b & Hi & ->)|(j & h & b & Hj & ->)].
     + left. eexists _, _. split; [done|]. split_and!; [left; by exists i, l, b|done|apply pt_root_polar0|done].
     + right. eexists _, _. split; [done|]. split_and!; [right; by exists j, h, b|done|apply pt_root_polar0|done].
-  - done.
   - intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) Hpq.
     destruct Hf as [(i & l & b & Hi & E)|(j & h & b & Hj & E)]; injection E as -> ->;
       [|by rewrite pt_root_polar0 in Hu].

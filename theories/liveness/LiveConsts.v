@@ -130,37 +130,9 @@ Proof.
   intros HW HV1 HV2. lmove.
   destruct (Lkonst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [kq Tq Gq xq Hsig|S C HC HK|S x Hx]; subst; [inversion Hsig| |].
-  2: { (* new@x: the channel at a point W knows, the world stays *)
-    apply LVrel_unit_iff in HV as [-> ->]. destruct n as [|n']; [exact I|].
-    assert (tstep (App ENew EUnit) (LNew "c") (Pair (Chan "c") (Chan "c"))) as Hst0
-      by apply TStepHead, HeadNew.
-    unfold LEnow. split_and!.
-    - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
-    - intros _ Hs. exfalso. exact (Hs _ _ Hst0).
-    - intros α e' Hst. apply app_val_step in Hst; [|done|done].
-      inversion Hst as [| | |c| | | | | | | | | | |]; subst. simpl. intros _ L.
-      exists x, S, (dual S), W. split_and!.
-      + right. by split.
-      + apply sdual_dual.
-      + apply LVrel_LErel. eapply LVrel_tconv; [exact (proj1 HW)|exact HB|].
-        apply LVrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, x)]},
-          {[c := One (dual S, pt_dual x)]}. split_and!.
-        * done.
-        * split.
-          -- intros c'. rewrite insert_empty. destruct (decide (c' = c)) as [->|Hne].
-             ++ rewrite !lookup_singleton_eq. constructor.
-             ++ rewrite !lookup_singleton_ne by done. constructor.
-          -- intros c' e1 e2 H1 H2. destruct (decide (c' = c)) as [->|Hne];
-               [|by rewrite lookup_singleton_ne in H1].
-             rewrite lookup_singleton_eq in H1, H2. simplify_eq. simpl.
-             rewrite pt_dual_dual. split; [done|apply sdual_dual].
-        * apply LVrel_sess_iff. exists c, S, x. split_and!; [done|done|apply seq_refl|done].
-        * apply LVrel_sess_iff. exists c, (dual S), (pt_dual x).
-          split_and!; [done|done|apply seq_refl|done]. }
+  inversion Hk as [kq Tq Gq xq Hsig|S x Hx]; subst; [inversion Hsig|].
+  (* new@x: the channel at a point W knows, the world stays *)
   apply LVrel_unit_iff in HV as [-> ->]. destruct n as [|n']; [exact I|].
-  (* new at a fresh point a, packed (sharp edges 97). The world is W with
-     the facts of C at a, a fresh extension by [cc_ok] (105). *)
   assert (tstep (App ENew EUnit) (LNew "c") (Pair (Chan "c") (Chan "c"))) as Hst0
     by apply TStepHead, HeadNew.
   unfold LEnow. split_and!.
@@ -168,37 +140,24 @@ Proof.
   - intros _ Hs. exfalso. exact (Hs _ _ Hst0).
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | |c| | | | | | | | | | |]; subst. simpl. intros _ L.
-    destruct (fresh_const (L ∪ w_names W ∪ ty_roots U ∪ future_roots F)) as [a Ha].
-    destruct (wext_cc W a C HW HC HK ltac:(clear -Ha; set_solver)) as (W' & Hfr & HCa).
-    exists (pconst a), S, (dual S), W'. split_and!.
-    + left. exists a. split_and!; [done| |done].
-      unfold tenv_roots. rewrite map_fold_empty. clear -Ha. set_solver.
+    exists x, S, (dual S), W. split_and!.
+    + right. by split.
     + apply sdual_dual.
-    + pose proof (proj1 Hfr) as HWW'. pose proof (wext_wf _ _ HWW') as HW'.
-      pose proof Hfr as (_ & _ & Hnames & _).
-      apply LVrel_LErel. eapply LVrel_tconv; [done|eapply teqW_mono; [apply HWW'|exact HB]|].
-      apply LVrel_ex_iff. split.
+    + apply LVrel_LErel. eapply LVrel_tconv; [exact (proj1 HW)|exact HB|].
+      apply LVrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, x)]},
+        {[c := One (dual S, pt_dual x)]}. split_and!.
       * done.
-      * exists [pconst a]. split_and!.
-        -- done.
-        -- apply Forall_singleton. unfold pt_known. simpl. rewrite Hnames. set_solver.
-        -- done.
-        -- unfold ty_inst. cbn [pinst_ty]. rewrite tpt_inst_pvar_at. simpl.
-           apply LVrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, pconst a)]},
-             {[c := One (dual S, pt_dual (pconst a))]}. split_and!.
-           ++ done.
-           ++ split.
-              ** intros c'. rewrite insert_empty. destruct (decide (c' = c)) as [->|Hne].
-                 --- rewrite !lookup_singleton_eq. constructor.
-                 --- rewrite !lookup_singleton_ne by done. constructor.
-              ** intros c' e1 e2 H1 H2. destruct (decide (c' = c)) as [->|Hne];
-                   [|by rewrite lookup_singleton_ne in H1].
-                 rewrite lookup_singleton_eq in H1, H2. simplify_eq. simpl.
-                 split; [apply (wf_eq_refl _ HW')|apply sdual_dual].
-           ++ apply LVrel_sess_iff. exists c, S, (pconst a).
-              split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW')].
-           ++ apply LVrel_sess_iff. exists c, (dual S), (pt_dual (pconst a)).
-              split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW')].
+      * split.
+        -- intros c'. rewrite insert_empty. destruct (decide (c' = c)) as [->|Hne].
+           ++ rewrite !lookup_singleton_eq. constructor.
+           ++ rewrite !lookup_singleton_ne by done. constructor.
+        -- intros c' e1 e2 H1 H2. destruct (decide (c' = c)) as [->|Hne];
+             [|by rewrite lookup_singleton_ne in H1].
+           rewrite lookup_singleton_eq in H1, H2. simplify_eq. simpl.
+           rewrite pt_dual_dual. split; [done|apply sdual_dual].
+      * apply LVrel_sess_iff. exists c, S, x. split_and!; [done|done|apply seq_refl|done].
+      * apply LVrel_sess_iff. exists c, (dual S), (pt_dual x).
+        split_and!; [done|done|apply seq_refl|done].
 Qed.
 
 Lemma LErel_app_spawn n W Θ ub lb T U F v2 :
@@ -208,7 +167,7 @@ Proof.
   intros HW HV1 HV2. lmove.
   destruct (Lkonst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [kq Tq Gq xq Hsig _ _| |]; subst. inversion Hsig as [ub1 lb1| | | | | | | |]; subst.
+  inversion Hk as [kq Tq Gq xq Hsig _ _|]; subst. inversion Hsig as [ub1 lb1| | | | | | | |]; subst.
   pose proof (LVrel_val _ _ _ _ _ HV) as Hv.
   destruct n as [|n']; [exact I|].
   assert (tstep (App ESpawn v2) (LSpawn v2) EUnit) as Hst0 by by apply TStepHead, HeadSpawn.
@@ -237,7 +196,7 @@ Proof.
   intros HW HV1 HV2 Hub0. lmove. pose proof (proj1 HW) as HWf.
   destruct (Lkonst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [kq Tq Gq xq Hsig _ _| |]; subst. inversion Hsig as [|m T0 S x| | | | | | |]; subst.
+  inversion Hk as [kq Tq Gq xq Hsig _ _|]; subst. inversion Hsig as [|m T0 S x| | | | | | |]; subst.
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply LVrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   destruct (seq_rcv_inv _ _ _ _ _ Hs0 (unfoldS_rcv _ _ _))
@@ -277,7 +236,7 @@ Proof.
   intros HW HV1 HV2 Hub0. lmove. pose proof (proj1 HW) as HWf.
   destruct (Lkonst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [kq Tq Gq xq Hsig _ _| |]; subst. inversion Hsig as [| | |x| | | | |]; subst.
+  inversion Hk as [kq Tq Gq xq Hsig _ _|]; subst. inversion Hsig as [| | |x| | | | |]; subst.
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply LVrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   pose proof (seq_end_inv _ _ Hs0 eq_refl) as Hu0.
@@ -309,7 +268,7 @@ Proof.
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SPlus S1 S2) x ∧
             B = TSess (sbranch b S1 S2) (sel_pt x b)) as (S1 & S2 & x & -> & -> & ->).
-  { destruct b; simpl in Hk; inversion Hk as [kq Tq Gq xq Hsig| |]; subst; inversion Hsig; subst; eauto 10. }
+  { destruct b; simpl in Hk; inversion Hk as [kq Tq Gq xq Hsig|]; subst; inversion Hsig; subst; eauto 10. }
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply LVrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   destruct (seq_plus_inv _ _ _ _ Hs0 (unfoldS_plus _ _)) as (s1 & s2 & Hu0 & Hs1 & Hs2).
@@ -347,7 +306,7 @@ Proof.
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SWith S1 S2) x ∧
             B = TSum (TSess S1 (pt_payload x (bidx false))) (TSess S2 (pt_payload x (bidx true))))
     as (S1 & S2 & x & -> & -> & ->)
-    by (inversion Hk as [kq Tq Gq xq Hsig| |]; subst; inversion Hsig; subst; eauto 10).
+    by (inversion Hk as [kq Tq Gq xq Hsig|]; subst; inversion Hsig; subst; eauto 10).
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply LVrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   destruct (seq_with_inv _ _ _ _ Hs0 (unfoldS_with _ _)) as (s1 & s2 & Hu0 & Hs1 & Hs2).
@@ -383,7 +342,7 @@ Proof.
   intros HW HV1 HV2 Hub0. lmove. pose proof (proj1 HW) as HWf.
   destruct (Lkonst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [kq Tq Gq xq Hsig HG _| |]; subst.
+  inversion Hk as [kq Tq Gq xq Hsig HG _|]; subst.
   inversion Hsig as [|m T0 S x Hpb| | | | | | |]; subst.
   assert (∀ h, h ∈ heads (payload_at m T0 x) → w_lt W x h) as Hpay
     by (intros h Hh; apply (HG (FLt x h)); by exists h).
@@ -478,7 +437,7 @@ Proof.
   intros HW HV1 HV2 Hub0. lmove. pose proof (proj1 HW) as HWf.
   destruct (Lkonst_app_inv _ _ _ _ _ _ _ _ _ _ HWf HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
-  inversion Hk as [kq Tq Gq xq Hsig HG _| |]; subst.
+  inversion Hk as [kq Tq Gq xq Hsig HG _|]; subst.
   inversion Hsig as [| | | | | | |S x|]; subst.
   assert (w_eq W x (pt_dual (pt_dual x))) as Hxx' by (rewrite pt_dual_dual; apply (wf_eq_refl _ HWf)).
 

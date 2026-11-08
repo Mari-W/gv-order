@@ -1774,31 +1774,26 @@ Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :
 
 (** E-Const reads a constant at an instance whose constraint holds and
     whose points are known. new is the one constant outside the
-    schemes. It introduces a fresh point and no witness, so its premise
-    is that C is a creation constraint ([cc_ok]) over known outer
-    points (97, 103, 105):
+    schemes. Under the constant world (sharp edges 172) it places the
+    channel at a point the order already knows:
 
-    new    : ∗ ⊸ ∃^⊥ι. C. S@ι ⊗ dual S@ῑ
-    new@x  : ∗ ⊸ S@x ⊗ dual S@x̄                 x known (branch no-eq)
+    new@x  : ∗ ⊸ S@x ⊗ dual S@x̄                 x known
 
-    new@x places the channel at a point the order already knows. On
-    main it was derived from the alias {ι ≡ x}.
+    The existential signature new : ∗ ⊸ ∃^⊥ι. C. S@ι ⊗ dual S@ῑ, which
+    grew the world by a fresh point, is gone. A channel created at the
+    top level of a program is a point variable of the program's
+    hypotheses, and the run starts in a world that places it
+    ([soundness_created], static/Fundamental.v).
 
     The order is given as two relations, the world G generates for
     typing and a world W for the logical relation. [pk] says which
     points the order knows. force asks its instance known (sharp edges
-    65), and new its outer points, so that the world of a run can state
-    the facts of C about them (sharp edges 49, 105). *)
+    65), and new its point (sharp edges 49, 105). *)
 Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
     : konst → ty → Prop :=
   | KTSig k T G xs :
       konst_sig k T G xs → facts_hold peq plt G → Forall pk xs →
       konst_ty peq plt pk k T
-  | KTNewEx S C :
-      cc_ok peq plt C → Forall pk (bc_env C) →
-      konst_ty peq plt pk KNew
-        (TLolli None None TUnit
-           (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))))
   | KTNewAt S x :
       pk x →
       konst_ty peq plt pk KNew
@@ -1892,14 +1887,11 @@ Lemma konst_ty_case (peq plt : point → point → Prop) (pk : point → Prop)
      length ss = k → Forall hcontractive ss →
      P KForce (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
                  (sinst_ty (slist ss) (ty_inst xs T)))) →
-  (∀ S C, cc_ok peq plt C → Forall pk (bc_env C) →
-     P KNew (TLolli None None TUnit
-               (TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))))) →
   (∀ S x, pk x → P KNew (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) (pt_dual x))))) →
   ∀ k T, konst_ty peq plt pk k T → P k T.
 Proof.
-  intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hnw Hna k T [k' T' G xs Hsig HG HK|S C HC HK|S x Hx];
-    [|by apply Hnw|by apply Hna].
+  intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hna k T [k' T' G xs Hsig HG HK|S x Hx];
+    [|by apply Hna].
   destruct Hsig as [| m T0 S x Hb| | | | | | |n kk C ub T0 xs ss Hn Hk Hs]; auto.
   - apply Hsd. rewrite Hb. intros h Hh. apply (HG (FLt x h)). by exists h.
   - apply Hs1. by apply (HG (FLt _ _)).

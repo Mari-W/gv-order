@@ -713,11 +713,46 @@ Ltac box_open1 C T :=
     with [Some (pinst_ty (pshift 1) (TBox 1 0 C (TLolli None None TUnit T)))];
   rewrite (pinst_closed _ (TBox 1 0 C (TLolli None None TUnit T))) by (split; [constructor|]; unfold T; body_scope).
 
-(** ** Creation constraints in the examples (sharp edges 105)
+(** ** Creation constraints in the examples (sharp edges 105, 172)
 
-    Every example creates its channels in the empty world. A channel's
-    order facts are the creation constraint of its new, and later code
-    reads them as hypotheses. *)
+    Every example creates its channels at its top level. Under the
+    constant world each such channel is a point variable of the
+    program's hypotheses Ψ, created by new@x, and its order facts are
+    the creation constraint of Ψ ([created], static/Typing.v). Later
+    code reads them as hypotheses. The run starts in a world that
+    realizes them at constants ([soundness_created]). *)
+
+(** Soundness for a closed source program over the hypotheses of its
+    top-level channels. *)
+Lemma soundness_created_s Ψ t T :
+  created (Wpo []) Ψ → prim T → styped ∅ Ψ [] (∅, None) t T →
+  deadlock_free (∅, {[+ t +]}).
+Proof.
+  intros HΨ HT Ht. apply (soundness_created (Wpo []) Ψ t T (Wpo_strict []) HΨ HT).
+  by apply styped_typed.
+Qed.
+
+(** A closed derivation without hypotheses holds under any
+    hypotheses, for the boxes that a program defines before it creates
+    its channels. *)
+Lemma typed_hyps_nil W Ψ Φ Θ Δ F e T :
+  strict W → typed W Φ [] Θ Δ F e T → typed W Φ Ψ Θ Δ F e T.
+Proof.
+  intros HW Ht. pose proof (typed_pinst W Φ [] Θ Δ F e T HW Ht pvar Ψ) as H.
+  rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
+  assert (fhyps_pinst pvar Φ = Φ) as E.
+  { unfold fhyps_pinst. rewrite <-(map_fmap_id Φ) at 2. apply map_fmap_ext.
+    intros φ [u|] _; simpl; [by rewrite pt_inst_pvar|done]. }
+  rewrite E in H. apply H. intros C xs Hin. by apply elem_of_nil in Hin.
+Qed.
+
+(** A top-level channel at the point variable k is known. *)
+Ltac skn_top :=
+  eapply skn_hyp; cbn; repeat (first [left; reflexivity|right]).
+
+(** new@x at a top-level point variable, in a strict world HWs. *)
+Ltac new_top HWs S x :=
+  apply (t_new_at _ _ _ _ _ _ _ _ S x HWs); [skn_top|].
 
 Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option futrest)).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.

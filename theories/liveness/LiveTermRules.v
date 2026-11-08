@@ -396,7 +396,7 @@ Proof.
   intros HW HV1 HV2 Hub.
   destruct (Lkonst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hu & HB & HV).
-  inversion Hk as [kq Tq Gq xs Hsig HC1 HK1| |]; subst.
+  inversion Hk as [kq Tq Gq xs Hsig HC1 HK1|]; subst.
   inversion Hsig as [| | | | | | | |m kk C1 ub1 T1 ? ss Hxs Hss Hsc]; subst.
   apply facts_hold_bcs_at in HC1.
   pose proof HV as HV'. apply LVrel_box_iff in HV as (-> & eb & -> & _).
@@ -493,7 +493,7 @@ Proof.
   assert (konst_ty (w_eq W') (w_lt W') (pt_known W') k T) as Hk'.
   { eapply konst_ty_mono; [| | |exact Hk]; [done|done|]. unfold pt_known. intros x Hx. by apply Hn. }
   assert (∃ ub lb A B, T = TLolli ub lb A B) as (ub & lb & A & B & ->)
-    by (destruct Hk' as [? ? ? ? Hs ? ?| |]; [destruct Hs| |]; eauto).
+    by (destruct Hk' as [? ? ? ? Hs ? ?|]; [destruct Hs|]; eauto).
   apply LVrel_lolli_iff; right; eexists _, _; split_and!; [done|done|exact Hk'|apply teqW_refl].
 Qed.
 

@@ -502,7 +502,7 @@ Proof.
           by rewrite <-H1. }
         pose proof (lconn_all (S n') T HT _ _ _ _ _ _ _ _ _ _ T TUnit ltac:(by left) Hcut HP1 HP2') as HP.
         by rewrite HΣ, HC in HP.
-      * exfalso. inversion Hk as [kq Tq Gq xq Hsig| |]; subst; try (inversion Hsig; subst);
+      * exfalso. inversion Hk as [kq Tq Gq xq Hsig|]; subst; try (inversion Hsig; subst);
           simpl in Heq; naive_solver.
   - intros p' Hst. exfalso. by eapply pcomm_single.
   - (* Q-Link: an external link, at the index *)

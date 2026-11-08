@@ -551,7 +551,7 @@ Qed.
 
 Lemma kscoped_pinst peq plt pk k T σ :
   konst_ty peq plt pk k T → kscoped k T → kscoped k (pinst_ty σ T).
-Proof. destruct 1 as [? ? ? ? Hs ? ?| |]; [destruct Hs| |]; simpl; auto. Qed.
+Proof. destruct 1 as [? ? ? ? Hs ? ?|]; [destruct Hs|]; simpl; auto. Qed.
 
 Lemma fhyps_pinst_insert σ Φ φ u :
   fhyps_pinst σ (<[φ := u]> Φ) = <[φ := pt_inst σ <$> u]> (fhyps_pinst σ Φ).
@@ -1147,6 +1147,71 @@ Proof.
   { unfold sf_inst, sf_pinst. simpl. rewrite set_map_empty. set_solver. }
   rewrite E in H.
   apply (adequacy (wc0 n C0) (pinst_ty σ T)).
+  apply (Prel_term _ ∅ ∅ ∅); [by apply prim_pinst|done|done|set_solver| | |].
+  - intros c o Ho. by rewrite lookup_empty in Ho.
+  - intros c e1 e2 He. by rewrite lookup_empty in He.
+  - unfold tenv_of. rewrite fmap_empty, (left_id_L ∅ (∪)).
+    by apply sem_rules_fundamental.
+Qed.
+
+(** ** Soundness under the constant world (sharp edges 172)
+
+    A program typed under the hypotheses of its top-level channels
+    ([created], static/Typing.v) is deadlock free. The run starts in a
+    world that places the channels at constants, one after the other,
+    each by a fresh extension that realizes its creation constraint
+    ([wext_cc]). Along the run the world never grows. *)
+
+Lemma created_world W Ψ :
+  strict W → created W Ψ →
+  ∃ W1 σ, wext W W1 ∧ hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ).
+Proof.
+  intros HW. induction 1 as [|Ψ C HΨ IH HC HK].
+  - exists W, pvar. split; [by apply wext_refl|]. intros C xs Hin. by apply elem_of_nil in Hin.
+  - destruct IH as (W1 & σ & HW1 & Hh).
+    pose proof (proj1 HW) as Hwf.
+    assert (cc_ok (w_eq W1) (w_lt W1) (bcs_inst σ C)) as HC1.
+    { apply (cc_ok_pinst σ (seqs W Ψ) (slt W Ψ)); [| |done].
+      - intros x y H. by apply (seqs_pinst W W1 σ Hwf HW1 Ψ).
+      - intros x y H. by apply (slt_pinst W W1 σ Hwf HW1 Ψ). }
+    assert (Forall (pt_known W1) (bc_env (bcs_inst σ C))) as HK1.
+    { simpl. apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx.
+      by apply (skn_pinst_known W W1 σ Hwf HW1 Ψ). }
+    destruct (fresh_const (w_names W1)) as [a Ha].
+    destruct (wext_cc W1 a (bcs_inst σ C) (proj2 (proj2 (proj2 HW1))) HC1 HK1 Ha)
+      as (W2 & Hfr & HCa).
+    pose proof (proj1 Hfr) as H12.
+    set (σ' := λ k, match k with 0 => pconst a | S k => σ k end).
+    exists W2, σ'. split; [by eapply wext_trans|].
+    assert (∀ k, pt_inst σ' (pshift 1 k) = σ k) as Hs.
+    { intros k. unfold pshift. rewrite pt_inst_pvar_at. by replace (k + 1) with (S k) by lia. }
+    rewrite hyps_inst_app, hyps_comp, (hyps_inst_ext _ σ) by (intros k; apply Hs).
+    apply hyps_hold_app; [by apply (hyps_hold_wext W1)|].
+    rewrite hyps_inst_single, bcs_comp, (bcs_inst_ext _ σ) by (intros k; apply Hs).
+    intros C' xs Hin. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+    change (pt_inst σ' (pvar 0)) with (pconst a).
+    split; [exact HCa|].
+    apply Forall_singleton. unfold pt_known. pose proof Hfr as (_ & _ & -> & _).
+    unfold pt_root, pconst. simpl. set_solver.
+Qed.
+
+Theorem soundness_created W Ψ t T :
+  strict W → created W Ψ → prim T →
+  typed W ∅ Ψ ∅ [] (∅, None) t T →
+  deadlock_free (∅, {[+ t +]}).
+Proof.
+  intros HW HΨ HT Ht.
+  destruct (created_world W Ψ HW HΨ) as (W1 & σ & HW1 & Hh).
+  pose proof (proj2 (proj2 (proj2 HW1))) as HS.
+  assert (sem_rules W1 (tenv_pinst σ ∅) (lenv_pinst σ [])
+            (sf_inst (λ _, ∅) (sf_pinst σ (∅, None))) t (pinst_ty σ T)) as H.
+  { apply (typed_sem_rules _ _ _ _ _ _ _ _ Ht); [apply (proj1 HW)|done| |done].
+    intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty. }
+  rewrite tenv_pinst_empty in H.
+  assert (sf_inst (λ _, ∅) (sf_pinst σ (∅, None)) = ∅) as E.
+  { unfold sf_inst, sf_pinst. simpl. rewrite set_map_empty. set_solver. }
+  rewrite E in H.
+  apply (adequacy W1 (pinst_ty σ T)).
   apply (Prel_term _ ∅ ∅ ∅); [by apply prim_pinst|done|done|set_solver| | |].
   - intros c o Ho. by rewrite lookup_empty in Ho.
   - intros c e1 e2 He. by rewrite lookup_empty in He.

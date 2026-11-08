@@ -15,11 +15,10 @@ Definition cycle_main_ex : expr :=
   let_new_pair (let_new_pair
     (LetU (App ESpawn cycle_thunk) (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
 
-Lemma cycle_typed_fresh : styped ∅ [] [] (∅, None) cycle_main_ex TUnit.
+Lemma cycle_typed_fresh : styped ∅ cycle_Ψ [] (∅, None) cycle_main_ex TUnit.
 Proof. exact cycle_typed. Qed.
 
 Lemma cycle_deadlock_free_fresh : deadlock_free (∅, {[+ cycle_main_ex +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
-  apply ptyped_closed_s; [constructor|apply cycle_typed_fresh].
+  apply (soundness_created_s cycle_Ψ _ TUnit cycle_created); [constructor|apply cycle_typed_fresh].
 Qed.

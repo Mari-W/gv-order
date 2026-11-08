@@ -3,12 +3,12 @@
     [synth n Φ Δ F a] is the synthesis half of the bidirectional system
     of algorithmic-bidir.md, run on annotated terms [aexpr]. It is a
     function. It returns the synthesized type and a constraint
-    ([constr]), a finite tree of atoms over the fact theory with one
-    binder for the fresh point of every [new]. The constraint collects
+    ([constr]), a finite tree of atoms over the fact theory. The
+    constraint collects
     everything the declarative rules of static/Source.v read from the
     fact context: the ≺ facts of the gates ({u} ≺ F), the ≡ facts of
-    conversion, the lower bounds of closures, knownness, and the
-    creation constraints of [new]. [csat Ψ c] says that c holds in the
+    conversion, the lower bounds of closures, and knownness, among it
+    the knownness of the point of every [new]. [csat Ψ c] says that c holds in the
     fact theory of the hypotheses Ψ. Soundness.v proves that every
     hypothesis context Ψ with [csat Ψ c] gives a derivation of
     [styped Φ Ψ Δ F (erase a) T].
@@ -17,8 +17,10 @@
     close, select, branch and link applied to an argument, λ with its
     bounds and argument type annotated, application, pairs, let, sums
     with the other arm annotated, case, and [new] with its session type
-    and creation constraint annotated, encoded as [let_new]. No box,
-    no force, no pack beyond the one of new, no bare constant. Linear
+    and its point annotated (new@x, the constant world of sharp edges
+    172), encoded as [let_new]. No box, no force, no pack, no bare
+    constant. Channels created at the top level are point variables of
+    the program's creation constraint C₀ ([synth_deadlock_free]). Linear
     environments split by occurrence ([lp], [sok] of
     examples/ExampleTools.v). Session types are compared on the nose
     ([sty_eqb]); the head of a session type is read through [hd], which
@@ -231,7 +233,7 @@ Inductive aexpr :=
   | AInj1 (U : ty) (e : aexpr)                          (* inj₁ e at T + U *)
   | AInj2 (T : ty) (e : aexpr)                          (* inj₂ e at T + U *)
   | ACase (e e1 e2 : aexpr)
-  | ALetNew (S : sty) (C : bcs) (e : aexpr).              (* let (a, b) = new ∗ in e, the fresh point under C *)
+  | ALetNew (S : sty) (x : point) (e : aexpr).            (* let (a, b) = new@x ∗ in e *)
 
 Fixpoint erase (a : aexpr) : expr :=
   match a with
@@ -326,9 +328,6 @@ Definition konst_app (Φ : fhyps) (F : sfuture) (k : konst) (A : ty) : option (t
       if sty_eqb r (dual s) && bool_decide (y = pt_dual x) then Some (TUnit, CTrue) else None
   | _, _ => None
   end.
-
-(** The result type of a [new] body must not mention the fresh point. *)
-Definition unshift_ty (U : ty) : ty := pinst_ty (λ a, pvar (a - 1)) U.
 
 (** ** Synthesis
 
@@ -438,18 +437,10 @@ Fixpoint synth (n : nat) (Φ : fhyps) (Δ : lenv) (F : sfuture) (a : aexpr) : op
         | _ => None
         end
       else None
-  | ALetNew s0 C e =>
-      match synth n (fhyps_pinst (pshift 1) Φ)
-              (Some (TSess (dual s0) (pt_dual (pvar 0))) :: Some (TSess s0 (pvar 0)) :: None :: None ::
-                 lenv_pinst (pshift 1) Δ)
-              (sf_pinst (pshift 1) F) e with
-      | Some (U', c) =>
-          let T := unshift_ty U' in
-          if ty_eqb (pinst_ty (pshift 1) T) U' then
-            Some (T, cands [CAtom (ACc C);
-                            cands (CAtom ∘ AKnown <$> bc_env C);
-                            COpen C c])
-          else None
+  | ALetNew s0 x e =>
+      match synth n Φ
+              (Some (TSess (dual s0) (pt_dual x)) :: Some (TSess s0 x) :: None :: None :: Δ) F e with
+      | Some (T, c) => Some (T, cands [CAtom (AKnown x); c])
       | None => None
       end
   end.

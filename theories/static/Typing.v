@@ -108,10 +108,10 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sfuture → e
 
     E-Pack and E-Open (sharp edges 97, 99). E-Open opens an
     existential hypothesis into fresh point variables 0, …, m-1 under
-    its constraint, scoped like a box body. With the existential
-    signature of new and a let that binds the result of new it gives
-    E-NewFresh ([t_newfresh_open] below), which is no rule of its own
-    (sharp edges 103). *)
+    its constraint, scoped like a box body. Under the constant world
+    new has no existential signature, so E-NewFresh is gone (sharp
+    edges 172). A channel created at the top level is a point variable
+    of the program's hypotheses ([created] below). *)
 
 (** E-Force is E-App at the constant force. The instance must meet the
     box's constraint, every fact read from W and the hypotheses Ψ
@@ -206,107 +206,47 @@ Proof. induction Δ; simpl; constructor; done. Qed.
     lang/Syntax.v, because the translations of PGV and of Padovani and
     Novara produce them too. *)
 
-(** E-NewFresh (sharp edges 90, 93, 103) from the existential
-    signature of new, E-LetPair, E-Let*, E-Open on p and E-LetPair. The
-    fresh point ι is the point variable 0 of the body, bound like the
-    ιs of E-Exp, so Φ, Ψ, Θ, Δ, F and T shift past it and ι is free in
-    none of them. The body assumes the hypothesis C, whose facts relate
-    points of the fresh channel (ι+k, ι[i], ι[i]+k, …) to outer points
-    ([fresh_lt]), and holds the two ends of the channel at ι. The outer
-    points are known. Betweenness asks u ≺ v for every fact u ≺ p and
-    q ≺ v of C with q at or after p in program order of one name. The
-    lower bound of the existential is ⊥, so C needs no fact below ι. *)
-Lemma t_new_open W Φ Ψ Θ Δ F e T S C :
-  cc_ok (seqs W Ψ) (slt W Ψ) C →
-  Forall (skn W Ψ) (bc_env C) →
-  typed W (fhyps_pinst (pshift 1) Φ)
-    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
-    (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
-       lenv_pinst (pshift 1) Δ)
-    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-  typed W Φ Ψ Θ Δ F (let_new e) T.
-Proof.
-  intros HC HK Hb. unfold let_new.
-  set (X := TEx LBot 1 C (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))).
-  (* let ⟨p, w⟩ = ⟨new ∗, ∗⟩ *)
-  apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
-  { apply tenv_comp_empty_l, se_dsym. }
-  { apply lenv_split_nones_l. }
-  { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
-    - apply tenv_comp_empty_r.
-    - apply lenv_split_nones_nones.
-    - eapply (t_app W Φ Ψ ∅ ∅ ∅ _ _ _ _ _ _ None None TUnit).
-      + apply tenv_comp_empty_r.
-      + apply lenv_split_nones_l.
-      + done.
-      + apply t_const; [apply lenv_empty_nones| |done].
-        by apply KTNewEx.
-      + apply t_unit. apply lenv_empty_nones.
-    - apply t_unit. apply lenv_empty_nones. }
-  (* let ∗ = w *)
-  apply (t_letstar W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
-  { apply tenv_comp_empty_l, se_dsym. }
-  { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
-  { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
-    exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
-    apply fmap_Some in Hy as (? & _ & ?). congruence. }
-  (* open p *)
-  apply (t_open W Φ Ψ Θ _ F _ 1 LBot 1 C
-           (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))) T); [done|intros Hun; exact Hun|].
-  cbn [lenv_pinst fmap list_fmap option_fmap option_map pinst_ty].
-  change (<[1 := ?o]> (?a :: ?b :: ?l)) with (a :: o :: l).
-  (* let ⟨a, b⟩ = p *)
-  apply (t_letpair W _ _ _ ∅ (tenv_pinst (pshift 1) Θ) _
-           (None :: Some (TProd (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0))))
-              :: lenv_nones (lenv_pinst (pshift 1) Δ))
-           (None :: None :: lenv_pinst (pshift 1) Δ)
-           _ _ _ (TSess S (pvar 0)) (TSess (dual S) (pt_dual (pvar 0)))); [| | |exact Hb].
-  - apply tenv_comp_empty_l, se_dsym.
-  - apply lsplit_none, lsplit_l, lenv_split_nones_l.
-  - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
-    exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
-    apply fmap_Some in Hy as (? & _ & ?). congruence.
-Qed.
+(** ** Channels created at the top level (sharp edges 172)
 
-(** The constraint of sharp edges 93 with betweenness is a creation
-    constraint ([cc_ok_fresh]). *)
-Lemma t_newfresh_open W Φ Ψ Θ Δ F e T S C :
-  fresh_lt C →
-  Forall (skn W Ψ) (bc_env C) →
+    Under the constant world every channel is created with new@x at a
+    point x the context knows. A channel that a program creates at its
+    top level is a point variable of the program's hypotheses. [created
+    W Ψ] says that Ψ arises the way E-NewFresh used to build it, one
+    channel at a time. Each step adds the point variable 0 under a
+    creation constraint C over the points known so far, and shifts the
+    earlier hypotheses past it. The run then starts in a world that
+    places every such channel at a constant ([soundness_created],
+    static/Fundamental.v), so the creation facts are facts of the
+    initial world. *)
+Inductive created (W : world) : hyps → Prop :=
+  | created_nil : created W []
+  | created_snoc Ψ C :
+      created W Ψ → cc_ok (seqs W Ψ) (slt W Ψ) C → Forall (skn W Ψ) (bc_env C) →
+      created W (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
+
+(** The constraint of sharp edges 93 with betweenness. *)
+Lemma created_fresh W Ψ C :
+  created W Ψ → fresh_lt C → Forall (skn W Ψ) (bc_env C) →
   (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
      slt W Ψ (fresh_outer C u) (fresh_outer C v)) →
-  typed W (fhyps_pinst (pshift 1) Φ)
-    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)])
-    (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
-       lenv_pinst (pshift 1) Δ)
-    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-  typed W Φ Ψ Θ Δ F (let_new e) T.
+  created W (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
 Proof.
-  intros HC HK Hbt Hb. apply (t_new_open W Φ Ψ Θ Δ F e T S C); [|done|done].
+  intros HΨ HC HK Hbt. apply created_snoc; [done| |done].
   apply cc_ok_fresh; [done|by apply fresh_between_lt].
 Qed.
 
-(** E-NewFresh with lists, L ≺ ι ≺ H, every point of L below every
-    point of H (sharp edges 90, 103). *)
-Lemma t_newfresh_lh_open W Φ Ψ Θ Δ F e T S L H :
-  Forall (skn W Ψ) (L ++ H) →
+(** With lists, L ≺ ι ≺ H, every point of L below every point of H
+    (sharp edges 90, 103). *)
+Lemma created_lh W Ψ L H :
+  created W Ψ → Forall (skn W Ψ) (L ++ H) →
   (∀ l h, l ∈ L → h ∈ H → slt W Ψ l h) →
-  typed W (fhyps_pinst (pshift 1) Φ)
-    (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)])
-    (tenv_pinst (pshift 1) Θ)
-    (Some (TSess (dual S) (pt_dual (pvar 0))) :: Some (TSess S (pvar 0)) :: None :: None ::
-       lenv_pinst (pshift 1) Δ)
-    (sf_pinst (pshift 1) F) e (pinst_ty (pshift 1) T) →
-  typed W Φ Ψ Θ Δ F (let_new e) T.
+  created W (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)]).
 Proof.
-  intros HK Hbt Hb.
-  apply (t_newfresh_open W Φ Ψ Θ Δ F e T S (fresh_bcs L H)); [| | |done].
+  intros HΨ HK Hbt.
+  apply (created_fresh W Ψ (fresh_bcs L H)); [done| |done|].
   - intros f Hf Hs. destruct Hf as [(i & Hi & ->)|(j & Hj & ->)].
     + left. eexists _, _. split; [done|]. split_and!; [left; by exists i|done|done|done].
     + right. eexists _, _. split; [done|]. split_and!; [right; by exists j|done|done|done].
-  - done.
   - intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) _.
     destruct Hf as [(i & Hi & E)|(j & Hj & E)]; injection E as -> ->; [|done].
     destruct Hf' as [(i' & Hi' & E)|(j & Hj & E)]; injection E as -> ->; [done|].
@@ -317,3 +257,8 @@ Proof.
     rewrite lookup_app_r by lia. replace (length L + j - length L) with j by lia. rewrite Hh.
     apply Hbt; by eapply list_elem_of_lookup_2.
 Qed.
+
+(** The point variable k of a hypothesis list whose entry has instance
+    [pvar k] is known. *)
+Lemma skn_hyp W Ψ C k : (C, [pvar k]) ∈ Ψ → skn W Ψ (pvar k).
+Proof. intros H. right. exists C, [pvar k], (pvar k). split_and!; [done|by left|done]. Qed.
