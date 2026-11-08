@@ -349,3 +349,53 @@ order type ω, which is well-founded with b at height ω.
 
 **Required example.** The controller, typed by a direct semantic proof, and
 rejected by the static fragment (R2).
+
+## 8  Motivating examples
+
+Every change to the relation answers one program. "Rocq" marks a closed
+theorem. All other entries are argued on paper.
+
+### Liveness (no τ-divergence)
+
+| Program | What goes wrong | Change it motivates |
+|---|---|---|
+| Kobayashi's server (KobForwarder.v): each call creates a reply channel, spawns the next call, blocks | infinite new, spawn, β, no channel step, deadlock free (Rocq `kob_tau_diverges`) | least fixpoint over internal steps, costs 0 and 1 |
+| PN's ⟨fix λx.x⟩ (`div_main`) | diverges internally, PN types it (Rocq `pn_div_not_guarded`) | guard as a separate fragment, E-Exp stays unguarded for subsumption |
+| typed program diverging under the old static system | Rocq `live_fundamental_false` | guard on recursion |
+| `!(x. let ∗ = (force x) g in λy.y)`, forced | forcing the self reruns a non-λ body forever (Rocq `live_guarded_unrepaired_false`) | force of the self only under the λs of the body (sharp edge 161) |
+| `rec f. let (a, b) = new in link a b; f ()` | a link per round counts as progress, nothing is observed | link τ costs 0, link leaves the guard's paying primitives |
+| one synchronization of an internalized process = send plus receive of the original | index halves per step (sharp edge 44) | synchronization costs 2 |
+
+### Lock freedom (every waiting thread is served)
+
+| Program | What goes wrong | Change it motivates |
+|---|---|---|
+| A holds b and loops forever: new channel below b̄, one step on it. C waits on b̄ | A is live, C starves under every fair scheduler | fuel, because rank alone does not help (every world has finitely many points below b̄) |
+| A holds b and loops on a, served by B. C waits on b̄ | same, with ω many points below b̄ | fuel |
+| a server receives an end and sends it back on its next point, forever (Padovani's Example (2), padovani2014deadlock p2) | the end travels forever, its waiter starves | fuel passes with −1 when an end is sent (tickets) |
+| each thread spawns the next and blocks on a fresh point below its predecessor's, after one step with a chatterbox | the waiting chain grows forever, the first waiter starves | rank |
+| `let (a, b) = new@y in link ⟨e, a⟩; e := b`, looped by the holder of C's partner | each link hands C a fresh partner with fresh fuel | link as an internal step (cost 0), or caps per entry |
+| `let _ = server () in close b` with an infinite server | b sits in the frame forever | R1, recursion only with empty future |
+| a server that serves client b only when client a requests | b's waiter starves if a never requests | R2, correctly rejected |
+| main returns a channel end | a finished thread may hold the partner | premise `prim T` |
+| the controller (§7): both sides hold ctl forever, nobody waits on it | lock free, but holder-side fuel rejects it | fuel ticks only while the partner waits |
+
+### Out of scope
+
+| Program | Why |
+|---|---|
+| `fibo_pn`, Padovani's fact | recursion bounded by data, needs termination checking, Padovani's lock-free system rejects them too (padovani2014deadlock p8, Example III.6) |
+| CFST tree servers recursing in non-tail position | an infinite tree from the client keeps the frame forever |
+
+## 9  The strongest property in reach
+
+Lock freedom together with no τ-divergence and weak fairness gives individual
+progress: in every weakly fair maximal run, every thread terminates or takes
+part in infinitely many channel steps. Proof: a thread with an internal
+redex takes finitely many internal steps (no τ-divergence) and is fired by
+fairness. A pending thread is served (lock freedom). So no thread stops
+forever short of a value. This is stated as a corollary `thread_progress` in
+stage 3.
+
+Stronger still is fair termination (every fair run terminates, as in
+padovani2025fair). It needs termination of recursion, which is out of scope.

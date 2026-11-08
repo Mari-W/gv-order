@@ -71,6 +71,10 @@ Require LRGV.liveness.LivePTerm.
 Require LRGV.liveness.LiveRenaming.
 Require LRGV.liveness.LiveRules.
 Require LRGV.liveness.LiveTermRules.
+Require LRGV.lockfree.Criterion.
+Require LRGV.lockfree.Instr.
+Require LRGV.lockfree.LocalProgress.
+Require LRGV.lockfree.TauThread.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Examples. *)
 Require LRGV.mp.MP2Semantics.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Simulation. *)
@@ -155,6 +159,12 @@ Print Assumptions LRGV.liveness.LiveGuardProc.fw_live_sound.
 Print Assumptions LRGV.liveness.LiveGuardProc.tc_live_sound.
 Print Assumptions LRGV.liveness.LiveGuardProc.fa_live_sound.
 Print Assumptions LRGV.liveness.LiveGuardProc.fac_live_sound.
+Print Assumptions LRGV.lockfree.Instr.istep_erase.
+Print Assumptions LRGV.lockfree.Instr.preduction_lift.
+Print Assumptions LRGV.lockfree.Instr.pred_star_lift.
+Print Assumptions LRGV.lockfree.TauThread.thread_acc.
+Print Assumptions LRGV.lockfree.Criterion.lf_criterion.
+Print Assumptions LRGV.lockfree.LocalProgress.local_progress_ready.
 Print Assumptions LRGV.examples.ChoiceEnc.branch_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_deadlock_free.
