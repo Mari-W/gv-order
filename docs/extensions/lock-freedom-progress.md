@@ -12,7 +12,7 @@ Updated after every stage and every agent result.
 | 2b Rank and fuel in the relation (well-founded W, fuel constant N, per-thread invariant) | after 2b-core | | | | per-thread invariant needed (stage 1 finding 1) |
 | 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | done (4d74f15, merge into lock-freedom after 2a) | theories/lockfree/Fragment.v: lfptyped, lfsource, fw_lfptyped, tc_lfptyped, sch_lfsource, kob/c1/c3 rejections, tsum_r1_fails | passes, 267 closed | 0, no axioms | Rank on W catches chains only under the constant world; R4′ needs a typing annotation |
 | 3  Fundamental theorem, lf_soundness, thread_progress, examples | not started | | | | |
-| 3c Coverage of the literature (plan §12) | in progress (analysis on paper) | | | | author's acceptance criterion |
+| 3c Coverage of the literature (plan §12) | analysis done (plan §13), Rocq part pending | | | | author's acceptance criterion |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -65,6 +65,13 @@ Updated after every stage and every agent result.
   `wf_world W` alone accepts C1. Rank catches them only under the constant
   world, where those facts become facts of W. This makes the constant world
   essential for stage 2b, not optional.
+
+- 2026-11-08. Stage 3c analysis done (plan §13). All lock-free examples of
+  Padovani 2013/2014, PVV14 and Kobayashi 2002 are covered or outside the
+  calculus, except the growing ring III.7. Decision: relax R2′ to R2-recv
+  with fed slots (fragment check only). Ring, ReceivedChain and the ABP to
+  be checked in Rocq. Example (10) of padovani2014deadlock was mislabelled
+  in an older store fact, now separated.
 
 ## Decisions
 

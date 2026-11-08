@@ -544,3 +544,54 @@ checks this before any claim:
 - What counts as a gap follows the rule for subsumption: only a program
   confirmed typable by them and not by us, after removing translation
   artefacts.
+
+## 13  Stage 3c results: coverage (2026-11-08)
+
+Analysis on paper of the lock-freedom systems in the store. The full table is
+in the progress log. kobayashi2002type now has its PDF (author's copy).
+
+**Covered.** Stream (session form), Padovani's nodes (L2(A,B), L2(B,A), and
+Node A via a send loop and a receive loop per node), the alternating bit
+protocol (III.8), Kobayashi's sum server and loop (Ex. 2.1, 2.5),
+Padovani 2013's forwarder system (= Forwarder.v, Rocq `fw_lfptyped`),
+PVV14's (2) and (4). Correctly rejected: L1(B), L2(B,B), PVV14 (3), the
+infinite delegation (2), Kobayashi's recursive forwarder.
+
+**Non-tail recursion.** R1 rejects no lock-free program of these papers.
+Fact and Fibonacci are rejected by ⊢LF (padovani2014deadlock p10, "deadlock
+free but not lock free") and by Kobayashi 2002 (p32). In our calculus a
+non-tail call becomes a spawned call and a wait, which R1 accepts. Guard and
+Rank reject it, matching Padovani's ban on negative priorities.
+
+**Outside the calculus.** Kobayashi's objects with racing method servers
+(Ex. 3.6, 3.7) and the dining philosophers with semaphores (Ex. 3.8, which
+need strong fairness, kobayashi2002type p8). The two-server process on a
+shared channel (p9 of padovani2014deadlock) needs nondeterministic choice of
+server.
+
+**One gap: the growing ring (padovani2014deadlock, Example III.7).** ⊢LF
+types it and it is lock free in our semantics. Every translation fails the
+guard or R2′. Concurrency within a round is needed, so some spawned thread
+either recurses before the round's first primitive (guard) or hands a
+received end back to recursion (R2′).
+
+**Over-restrictions in the repo.** R2′ rejects ReceivedChain.v (a received
+payload passed to recursion inside a spawn), and state passed through
+unchanged.
+
+**Decision (under delegation): adopt R2-recv with fed slots.** A received
+payload counts as advanced when it is passed to a recursive call, but not
+when it is linked. Every parameter slot that a received payload can reach
+must be acted on before the round sends it on. The second clause is
+necessary. Without it a server passes a received end into recursion and the
+next round sends it back unacted, and the waiter starves. The relaxation
+admits the ring, ReceivedChain, the literal Node A and fork-join in general.
+It keeps rejecting C1 (Rank) and C3 (link clause). It changes only the
+fragment check, not the relation or the guard. The alternative G′ (closures
+built before the guard may hold the self if their own body is guarded)
+would rework the LiveGuard proofs and is kept in reserve.
+
+**To verify in Rocq (stage 3c, Rocq part):** the core types the spawn-ahead
+ring, Rank holds for it, the fuel bound N = (d+1)·2L stays valid under
+R2-recv (a received end is delayed by at most one round), and the ring,
+ReceivedChain and the ABP pass the revised checks.
