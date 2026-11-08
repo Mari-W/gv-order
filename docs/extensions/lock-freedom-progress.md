@@ -12,7 +12,7 @@ Updated after every stage and every agent result.
 | 2b Rank and fuel in the relation (well-founded W, fuel constant N, per-thread invariant) | after 2b-core | | | | per-thread invariant needed (stage 1 finding 1) |
 | 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | done (4d74f15, merge into lock-freedom after 2a) | theories/lockfree/Fragment.v: lfptyped, lfsource, fw_lfptyped, tc_lfptyped, sch_lfsource, kob/c1/c3 rejections, tsum_r1_fails | passes, 267 closed | 0, no axioms | Rank on W catches chains only under the constant world; R4′ needs a typing annotation |
 | 3  Fundamental theorem, lf_soundness, thread_progress, examples | not started | | | | |
-| 3c Coverage of the literature (plan §12) | analysis done (plan §13), Rocq part pending | | | | author's acceptance criterion |
+| 3c Coverage of the literature (plan §12) | done (cc300ce on lf-rules) | Fragment.v (lf_r2r, starve_not_lfptyped, rc_lfptyped, abp_lfsource, rg_lfsource, wgen_rank_wf), examples/ABP.v, examples/GrowRing.v | passes | 0, no axioms | none. The ring gap is closed | | | | author's acceptance criterion |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -80,6 +80,15 @@ Updated after every stage and every agent result.
   every link redex of a reachable configuration has a restricted end.
   Typing supplies it, as it supplies the linearity clauses of fuel_bound.
   lf_criterion is a theorem of this branch, not an approved statement.
+
+- 2026-11-08. Stage 3c done in Rocq. The core types Padovani's growing ring
+  (GrowRing.v) and the alternating bit protocol (ABP.v). Both pass the
+  revised checks with R2-recv, and Rank holds by a pair rank. ReceivedChain is
+  now in the fragment. The starving server fails exactly by the fed-slot
+  clause. The fuel bound N = (d+1)·2L stays valid on paper. TreeSum fails
+  R2-recv as well as R1, so R1′ alone would not admit it. CheckAll lists 396
+  Print Assumptions, of which 109 are the commented-out translation entries.
+  All 287 active ones are closed.
 
 ## Decisions
 
