@@ -485,3 +485,30 @@ three stronger box types, goes to the author.
 | TailCall | in, needs Acc because of the ceiling ι[0] |
 | KobForwarder, FactServer | out (guard, and Rank fails) |
 | cfst/TreeSum | lock free, out by R1, in under R1′ |
+
+## 11  Proposals from the literature session, and decisions (2026-11-08)
+
+- **Drop fairness, prove Padovani's reachability form instead.** Rejected
+  as a replacement. The author asked for the fair form, and stage 1 already
+  proves `lf_criterion` for weakly fair runs, constructively. The
+  reachability form (`lock_free_reach`, defined in Fair.v) can follow as a
+  corollary, because the induction builds the schedule. Added to stage 3 as
+  an optional corollary.
+- **One waiter measure instead of fuel and rank.** Adopted for the paper
+  only: "every wait has an ordinal variant that decreases with every action
+  below the waiting point". The Rocq proof keeps fuel (local to the holder)
+  and well-foundedness of W (§10), because a shared measure would need
+  agreement between components at composition.
+- **ℕ fuel against bounds that arrive late.** A holder that receives n and
+  then runs n rounds before serving a waiter needs ordinal fuel. This is
+  postponement justified by data, and it is a stated limitation, the same as
+  termination on data. One constant N is enough for the fragment.
+- **No select, no mixed choice.** Weak fairness suffices because an offer
+  persists until it fires. That holds because the calculus has no select and
+  no mixed choice. The paper states this, so that no claim about Go or Rust
+  inherits it.
+- **Further limitations, stated in the paper.** Internal computation that
+  terminates because of data before serving a waiter (excluded by the guard).
+  Servers that loop while the client says "more" (lock free only through the
+  client's data). Divide and conquer such as parallel mergesort, which is
+  semantically fine and statically excluded by R1.
