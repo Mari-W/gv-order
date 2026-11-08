@@ -241,19 +241,11 @@ Qed.
 
 (** The obligation of a step e --α--> e' at index n, given the value
     and term relations below n ([Vlow], [Elow]) and at n ([Vn], [En]).
-    At new, the created channel gets a point x ([new_place]): either
-    (a, 0) with a fresh for W and for the points of Θ, T and F, and W
-    grows by a fresh extension placing a, or a point x that W already
-    knows, and W stays (new@x, branch no-eq: no alias ties a fresh
-    point to x). The name c is only required to be new to Θ, so that the
-    continuation environment can be formed. A link with c = d is a
-    self-link: Θ holds both ends of c, and both entries leave. *)
-Definition new_place (W : world) (N : gset pname) (x : point) (W' : world) : Prop :=
-  (∃ a, x = pconst a ∧ NConst a ∉ N ∧ wext_fresh W {[NConst a]} W') ∨
-  (pt_known W x ∧ W' = W).
-
-Lemma new_place_sub W N N' x W' : N' ⊆ N → new_place W N x W' → new_place W N' x W'.
-Proof. intros HN [(a & -> & Ha & Hf)|H]; [left; exists a; split_and!; [done|set_solver|done]|by right]. Qed.
+    At new, the created channel gets a point x that W already knows,
+    and W stays (new@x, constant world, sharp edge 172). The name c is
+    only required to be new to Θ, so that the continuation environment
+    can be formed. A link with c = d is a self-link. Θ holds both ends
+    of c, and both entries leave. *)
 
 Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
     (Vn : world → tenv → ty → expr → Prop)
@@ -266,9 +258,9 @@ Definition Eobl (Vlow : nat → world → tenv → ty → expr → Prop)
       at_cost Elow En n (tcost α) W Θ T F e'
   | LNew c =>                                          (* O-New *)
       c ∉ dom Θ →
-      ∃ x s s' W', new_place W (tenv_roots Θ ∪ ty_roots T ∪ future_roots F) x W' ∧
+      ∃ x s s', pt_known W x ∧
         sdual s s' ∧
-        at_cost Elow En n (tcost α) W'
+        at_cost Elow En n (tcost α) W
           (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e'
   | LSpawn w =>                                        (* O-Spawn *)
       ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
@@ -377,8 +369,7 @@ Definition ptau_link (p p' : proc) : Prop :=
 
 Definition Ptau_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (p' : proc) : Prop :=
-  p'.1 ## dom Σ →
-  ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧ X W' Σ T p'.
+  p'.1 ## dom Σ → X W Σ T p'.
 
 (** A link creates no points: its τ keeps the world. *)
 Definition Plinktau_case (X : world → senv → ty → proc → Prop)
@@ -473,12 +464,10 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
     stated for the successor itself. Differences from the term
     relation:
 
-    - Q-Tau: the world may grow by a fresh extension, placing the
-      points of channels the step creates, fresh for the points of Σ
-      and T. Only successors whose restricted channels stay clear of
-      Σ are constrained (configurations whose restricted names clash
-      with their interface are not well formed; sharp edges 41).
-      The paper's Q-Tau is W′ = W.
+    - Q-Tau: the world stays (constant world, sharp edge 172). Only
+      successors whose restricted channels stay clear of Σ are
+      constrained. Configurations whose restricted names clash with
+      their interface are not well formed (sharp edges 41).
     - Q-Recv: received channels are not restricted names of the
       process (the same hygiene).
     - Q-Recv: channels B the receiver ends up holding both ends of
@@ -801,8 +790,8 @@ Proof.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; auto.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'.
     split_and!; [done|done|]. apply HEl; [lia|exact HX].
-  - intros H Hc. destruct (H Hc) as (x&s&s'&W'&?&?&HX).
-    exists x, s, s', W'. split_and!; try done. apply HEl; [lia|exact HX].
+  - intros H Hc. destruct (H Hc) as (x&s&s'&?&?&HX).
+    exists x, s, s'. split_and!; try done. apply HEl; [lia|exact HX].
   - intros (Θ1&Θ2&ub&lb&?&?&HX). exists Θ1, Θ2, ub, lb.
     split_and!; [done|auto|apply HEl; [lia|exact HX]].
 Qed.
@@ -822,8 +811,7 @@ Proof.
   intros HVl HV HPl HP.
   destruct π as [|[c w|c w|c|cd|c b|c b]]; cbn [Pobl at_cost pcost scost nlower pred] in *.
   - intros [H1 H2]. split.
-    + intros Hd. destruct (H1 Hd) as (N&W'&?&?&HX). exists N, W'.
-      split_and!; [done|done|]. apply HPl; [lia|exact HX].
+    + intros Hd. apply HPl; [lia|exact (H1 Hd)].
     + intros Hl Hd. apply HP; [by right|]. exact (H2 Hl Hd).
   - intros (Σ1 & m & U & s & k & Hhd & Hc & H). exists Σ1, m, U, s, k.
     split_and!; [done|done|]. intros W' j Θ2 HW Hj Hfr Hdu HV'.
@@ -1006,11 +994,9 @@ Lemma Prel_S_irred n W Σ T p :
          (∀ e, e ∈ E → e = EUnit).
 Proof. intros (H1 & _)%Prel_S_iff Hirr. exact (H1 Hirr). Qed.
 
-(** Every τ step lowers the index by at most one and may grow the
-    world by a fresh extension. *)
+(** Every τ step lowers the index by at most one and keeps the world. *)
 Lemma Prel_S_tau n W Σ T p p' :
-  Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ →
-  ∃ N W', N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧ Prel n W' Σ T p'.
+  Prel (S n) W Σ T p → preduction p p' → p'.1 ## dom Σ → Prel n W Σ T p'.
 Proof.
   intros HP Hred Hd. pose proof (Prel_S_step _ _ _ _ _ _ _ HP Hred) as [H _].
   exact (H Hd).
@@ -1122,17 +1108,15 @@ Definition sem_ptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
 (** ** The adequacy chain (Lemmas 3.4, 3.5 and Theorem 3.6) *)
 
 (** Lemma 3.4, for the closed environment: the last state of a run is
-    related in some world. *)
+    related in the same world. *)
 Lemma Prel_steps m : ∀ W n T p p',
-  nsteps preduction m p p' → Prel (m + n) W ∅ T p →
-  ∃ W', Prel n W' ∅ T p'.
+  nsteps preduction m p p' → Prel (m + n) W ∅ T p → Prel n W ∅ T p'.
 Proof.
   induction m as [|m IH]; intros W n T p p' Hrun HP.
-  { inversion Hrun; subst. by exists W. }
+  { by inversion Hrun; subst. }
   inversion Hrun as [|? ? q ? Hpq Hqr]; subst. simpl in HP.
-  destruct (Prel_S_tau _ _ _ _ _ _ HP Hpq) as (N & W' & _ & _ & HP');
-    [rewrite dom_empty_L; apply disjoint_empty_r|].
-  exact (IH W' n T q p' Hqr HP').
+  apply (IH W n T q p' Hqr). apply (Prel_S_tau _ _ _ _ _ _ HP Hpq).
+  rewrite dom_empty_L. apply disjoint_empty_r.
 Qed.
 
 (** Lemma 3.5 *)
@@ -1150,9 +1134,8 @@ Qed.
 Theorem adequacy W T p : sem_ptyped W ∅ p T → deadlock_free p.
 Proof.
   intros HP p' Hsteps. apply rtc_nsteps_1 in Hsteps as [m Hm].
-  destruct (Prel_steps m W 1 T p p' Hm) as (W' & HPr);
-    [by rewrite Nat.add_1_r|].
-  by eapply (Prel_safe 0).
+  apply (Prel_safe 0 W T), (Prel_steps m W 1 T p p' Hm).
+  by rewrite Nat.add_1_r.
 Qed.
 
 (** ** Downward closure (Lemma 3.7) *)
@@ -1222,8 +1205,8 @@ Proof.
       eexists _, _, _, _, _. split_and!; [done..|]. exact (proj2 HE').
     + destruct H2 as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
       eexists _, _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
-    + intros Hc. destruct (H2 Hc) as (x & s & s' & W' & ? & ? & HE').
-      eexists _, _, _, _. split_and!; [done|done|]. eapply IH; [|done]. lia.
+    + intros Hc. destruct (H2 Hc) as (x & s & s' & ? & ? & HE').
+      eexists _, _, _. split_and!; [done|done|]. eapply IH; [|done]. lia.
     + destruct H2 as (Θ1 & Θ2 & ub & lb & ? & HV & HE').
       eexists _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
@@ -1243,8 +1226,7 @@ Proof.
   - intros π p' Hst. specialize (H2 π p' Hst).
     destruct π as [|[c w|c w|c|cd|c b|c b]]; simpl in H2 |- *.
     + destruct H2 as [H2 Hl]. split.
-      * intros Hd. destruct (H2 Hd) as (N & W' & ? & ? & ?).
-        exists N, W'. split_and!; [done|done|]. eapply IH; [|done]. lia.
+      * intros Hd. eapply IH; [|exact (H2 Hd)]. lia.
       * intros Hlk. eapply Plinktau_case_mono; [|exact (Hl Hlk)]. by intros ? ? ? ? [_ ?].
     + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
       eexists _, _, _, _, _. split_and!; [done|done|].

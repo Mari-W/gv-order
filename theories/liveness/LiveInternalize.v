@@ -71,9 +71,7 @@ Section linternalize.
     Context (Hcm : ∀ p', pcomm (C, E) p' → LPtau_case (LPrel (pred n')) W Σp T p').
     Context (Hlx : ∀ cd p', proc_step (C, E) (PSess (SLink cd)) p' →
       Plink_case (λ W Σ T p, LPrel (S n') W Σ T p ∧ lfuse_goal (S n') W Σ T p) W Σp T cd p').
-    Context (Hadm : ∀ p', padmin (C, E) p' → p'.1 ## dom Σp → ∀ L : gset pname,
-      ∃ N W', N ## L ∪ senv_roots Σp ∪ ty_roots T ∧ wext_fresh W N W' ∧
-        lfuse_goal (S n') W' Σp T p').
+    Context (Hadm : ∀ p', padmin (C, E) p' → p'.1 ## dom Σp → lfuse_goal (S n') W Σp T p').
 
     Lemma li_int_ok_ext W' Σ' C' :
       wext W W' → c ∉ dom Σ' → d ∉ dom Σ' → c ∉ C' → d ∉ C' → int_ok W' Σ' sc sd kc kd C'.
@@ -815,19 +813,15 @@ Section linternalize.
 
     Lemma li_link_tau_p y0 x0 F f f0 :
       E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[y0; x0]})) f0 → y0 ∈ C →
-      (C ∖ {[y0]}) ## dom Σ → ∀ L : gset pname,
-      ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
-        lfuse_goal (S n') W' Σp T (C ∖ {[y0]}, echsubst y0 x0 (F ⊎ {[+ f0 +]})).
+      (C ∖ {[y0]}) ## dom Σ →
+      lfuse_goal (S n') W Σp T (C ∖ {[y0]}, echsubst y0 x0 (F ⊎ {[+ f0 +]})).
     Proof.
-      intros HEq Hf Hy0 Hg L.
+      intros HEq Hf Hy0 Hg.
       assert (ptau_link (C, E) (C ∖ {[y0]}, echsubst y0 x0 (F ⊎ {[+ f0 +]}))) as Hpl.
       { exists C, F, f, y0, x0, f0. split_and!; [by rewrite HEq|done|done|done]. }
       assert ((C ∖ {[y0]}) ## dom Σp) as Hd'.
       { rewrite (fusedP_dom c d Hcd). clear -Hg HcC HdC. set_solver. }
-      destruct (Hadm _ (padmin_link _ _ Hpl) Hd' L) as (N & W' & HN & Hfr & HP1).
-      exists N, W'. split_and!; [|done|exact HP1].
-      pose proof (senv_roots_mono Σ Σp (fusedP_sub c d Σ sc sd kc kd HcΣ HdΣ)) as Hs.
-      clear -HN Hs. set_solver.
+      exact (Hadm _ (padmin_link _ _ Hpl) Hd').
     Qed.
 
     Lemma li_link_out x0 xb y0 F f f0 :
@@ -935,39 +929,31 @@ Section linternalize.
     Qed.
 
     Lemma li_via_admin p1 :
-      padmin (C, E) p1 → p1.1 ## dom Σp → c ∉ p1.1 → d ∉ p1.1 → ∀ L : gset pname,
-      ∃ N W1, N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W1 ∧
-        LPrel (S n') W1 Σ T (p1.1 ∪ {[d]}, echsubst c d p1.2).
+      padmin (C, E) p1 → p1.1 ## dom Σp → c ∉ p1.1 → d ∉ p1.1 →
+      LPrel (S n') W Σ T (p1.1 ∪ {[d]}, echsubst c d p1.2).
     Proof.
-      intros Hp Hg Hc Hd L.
-      destruct (Hadm p1 Hp Hg L) as (N & W1 & HN & Hfr & HΦ).
-      exists N, W1. split_and!; [|done|].
-      - pose proof (senv_roots_mono Σ Σp (fusedP_sub c d Σ sc sd kc kd HcΣ HdΣ)) as Hs.
-        clear -HN Hs. set_solver.
-      - destruct p1 as [C1 E1].
-        apply (HΦ Σ C1 E1 sc sd kc kd eq_refl eq_refl).
-        apply li_int_ok_ext; [by destruct Hfr|done..].
+      intros Hp Hg Hc Hd.
+      pose proof (Hadm p1 Hp Hg) as HΦ.
+      destruct p1 as [C1 E1].
+      apply (HΦ Σ C1 E1 sc sd kc kd eq_refl eq_refl).
+      apply li_int_ok_ext; [by apply wext_refl|done..].
     Qed.
 
     Lemma li_via_comm p1 :
-      pcomm (C, E) p1 → p1.1 ## dom Σp → c ∉ p1.1 → d ∉ p1.1 → ∀ L : gset pname,
-      ∃ N W1, N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W1 ∧
-        LPrel (pred n') W1 Σ T (p1.1 ∪ {[d]}, echsubst c d p1.2).
+      pcomm (C, E) p1 → p1.1 ## dom Σp → c ∉ p1.1 → d ∉ p1.1 →
+      LPrel (pred n') W Σ T (p1.1 ∪ {[d]}, echsubst c d p1.2).
     Proof.
-      intros Hp Hg Hc Hd L.
-      destruct (Hcm p1 Hp Hg L) as (N & W1 & HN & Hfr & HP1).
-      exists N, W1. split_and!; [|done|].
-      - pose proof (senv_roots_mono Σ Σp (fusedP_sub c d Σ sc sd kc kd HcΣ HdΣ)) as Hs.
-        clear -HN Hs. set_solver.
-      - destruct p1 as [C1 E1].
-        apply (IH (pred n') ltac:(lia) W1 _ _ HP1 Σ C1 E1 sc sd kc kd eq_refl eq_refl).
-        apply li_int_ok_ext; [by destruct Hfr|done..].
+      intros Hp Hg Hc Hd.
+      pose proof (Hcm p1 Hp Hg) as HP1.
+      destruct p1 as [C1 E1].
+      apply (IH (pred n') ltac:(lia) W _ _ HP1 Σ C1 E1 sc sd kc kd eq_refl eq_refl).
+      apply li_int_ok_ext; [by apply wext_refl|done..].
     Qed.
 
     Lemma li_link_give q' :
       ptau_link q q' → LPtau_case (LPrel (S n')) W Σ T q'.
     Proof.
-      intros (C0 & F' & e' & a & b' & e'' & HeqP & Hts & HaC & ->) Hd L.
+      intros (C0 & F' & e' & a & b' & e'' & HeqP & Hts & HaC & ->) Hd.
       injection HeqP as <- HeqE. cbn [fst] in Hd.
       apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
       apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
@@ -991,7 +977,6 @@ Section linternalize.
         rewrite Hcx0 in Hab.
         destruct (decide (y0 = c ∨ y0 = d)) as [Hy0|Hy0].
         + (* both ends of the fused pair: a self-link on d *)
-          exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
           assert (csub c d y0 = d) as Hcy0
             by (destruct Hy0 as [->| ->]; [apply csub_hit|by apply csub_ne]).
           rewrite Hcy0 in Hab.
@@ -1050,12 +1035,10 @@ Section linternalize.
               apply elem_of_difference. split; [clear -Hy1; set_solver|].
               intros Hya%elem_of_singleton. subst y.
               destruct Hab' as [[-> _]|[-> _]]; [done|]. by apply Hy1', elem_of_singleton. }
-            destruct (li_link_tau_p y0 x0 F f f0 HEq ltac:(by rewrite upair_comm) Hy0C Hg L)
-              as (N & W' & HN & Hfr & HΦ).
-            exists N, W'. split_and!; [done|done|].
+            pose proof (li_link_tau_p y0 x0 F f f0 HEq ltac:(by rewrite upair_comm) Hy0C Hg) as HΦ.
             pose proof (HΦ Σ _ _ sc sd kc kd eq_refl eq_refl) as HP.
-            assert (int_ok W' Σ sc sd kc kd (C ∖ {[y0]})) as Hok
-              by (apply li_int_ok_ext; [by destruct Hfr|done|done
+            assert (int_ok W Σ sc sd kc kd (C ∖ {[y0]})) as Hok
+              by (apply li_int_ok_ext; [by apply wext_refl|done|done
                                     |clear -HcC; set_solver|clear -HdC; set_solver]).
             specialize (HP Hok).
             assert (echsubst c d (echsubst y0 x0 (F ⊎ {[+ f0 +]})) =
@@ -1077,7 +1060,6 @@ Section linternalize.
                  by (clear -Hy0d; set_solver).
                exact HP.
           * (* an external link of p *)
-            exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
             assert (a = d ∧ b' = y0) as [-> ->].
             { assert (a ∈ ({[d; y0]} : gset chan)) as Ha by (rewrite <-Hab; clear; set_solver).
               assert (a ≠ y0) as Hay by (intros ->; clear -HaC Hy0C Hy0d; set_solver).
@@ -1099,11 +1081,10 @@ Section linternalize.
           clear -Ha Hb H1 H2 H3 H4. set_solver. }
         assert (a ∈ C) as HaC' by (clear -HaC Had; set_solver).
         assert (C ∖ {[a]} ## dom Σ) as Hg by (clear -Hd; set_solver).
-        destruct (li_link_tau_p a b' F f f0 HEq Hf0 HaC' Hg L) as (N & W' & HN & Hfr & HΦ).
-        exists N, W'. split_and!; [done|done|].
+        pose proof (li_link_tau_p a b' F f f0 HEq Hf0 HaC' Hg) as HΦ.
         pose proof (HΦ Σ _ _ sc sd kc kd eq_refl eq_refl) as HP.
-        assert (int_ok W' Σ sc sd kc kd (C ∖ {[a]})) as Hok
-          by (apply li_int_ok_ext; [by destruct Hfr|done|done
+        assert (int_ok W Σ sc sd kc kd (C ∖ {[a]})) as Hok
+          by (apply li_int_ok_ext; [by apply wext_refl|done|done
                                 |clear -HcC; set_solver|clear -HdC; set_solver]).
         specialize (HP Hok).
         rewrite <-(echsubst_comm a b' c d) in HP by congruence.
@@ -1112,24 +1093,22 @@ Section linternalize.
     Qed.
 
     Lemma li_admin q' :
-      padmin q q' → q'.1 ## dom Σ → ∀ L : gset pname,
-      ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧ LPrel (S n') W' Σ T q'.
+      padmin q q' → q'.1 ## dom Σ → LPrel (S n') W Σ T q'.
     Proof.
-      intros Hq Hd L.
+      intros Hq Hd.
       apply padmin_inv in Hq as
         [ (F' & e' & e'' & HeqE & Hts & ->)
         | [ (F' & e' & c'' & e'' & HeqE & Hts & Hc''C & Hc''F & Hc''e & ->)
         | [ (F' & e' & v' & e'' & HeqE & Hts & ->)
         | Hlink ]]]; cbn [fst] in Hd.
-      4: { (* link: a τ at the index *) exact (li_link_give q' Hlink Hd L). }
+      4: { (* link: a τ at the index *) exact (li_link_give q' Hlink Hd). }
       - (* β *)
         apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
         apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
         apply eq_sym, lsub_beta in Hα as ->.
-        destruct (li_via_admin (C, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PABeta)
+        pose proof (li_via_admin (C, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PABeta)
                     ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
-                    HcC HdC L) as (N & W1 & HN & Hfr & HP).
-        exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                    HcC HdC) as HP. cbn [fst snd] in HP.
         by rewrite echsubst_disj_union1 in HP.
       - (* new: through a fresh z, then rename z to the image's name *)
         apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
@@ -1138,11 +1117,10 @@ Section linternalize.
           [clear -Hz; set_solver..|].
         assert (z ∉ C ∧ z ∉ echans F ∧ z ∉ fchans f) as (HzC & HzF & Hzf)
           by (clear -Hz; set_solver).
-        destruct (li_via_admin (C ∪ {[z]}, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PANew)
+        pose proof (li_via_admin (C ∪ {[z]}, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PANew)
                     ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd Hz HcC HdC; set_solver)
                     ltac:(cbn [fst]; clear -Hz HcC; set_solver)
-                    ltac:(cbn [fst]; clear -Hz HdC; set_solver) L) as (N & W1 & HN & Hfr & HP).
-        exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                    ltac:(cbn [fst]; clear -Hz HdC; set_solver)) as HP. cbn [fst snd] in HP.
         assert (c'' ∉ dom Σ) as Hc''Σ by (clear -Hd; set_solver).
         apply (LPrel_swap_restricted z c'') in HP; [|clear -Hz; set_solver|done].
         unfold pswap in HP. cbn [fst snd] in HP.
@@ -1155,7 +1133,7 @@ Section linternalize.
              pose proof (fchans_chsubst_sup c d f) as Hsup.
              clear -Hin Hf Hsup Hz Hc''C Hc''e. set_solver. }
         assert (gswap z c'' (C ∪ {[z]} ∪ {[d]}) = C ∪ {[d]} ∪ {[c'']}) as Hg.
-        { clear Hσ Hcm Hlx Hadm IH HP Hts Hf0 HN Hfr.
+        { clear Hσ Hcm Hlx Hadm IH HP Hts Hf0.
           apply set_eq. intros y. rewrite elem_of_gswap'. unfold cswap.
           repeat case_decide; subst; set_solver. }
         rewrite Hg in HP. exact HP.
@@ -1163,20 +1141,18 @@ Section linternalize.
         apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
         apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
         destruct α as [| | |v]; simpl in Hα; try discriminate. injection Hα as ->.
-        destruct (li_via_admin (C, F ⊎ {[+ f0 +]} ⊎ {[+ App v EUnit +]}) ltac:(rewrite HEq; by apply PASpawn)
+        pose proof (li_via_admin (C, F ⊎ {[+ f0 +]} ⊎ {[+ App v EUnit +]}) ltac:(rewrite HEq; by apply PASpawn)
                     ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
-                    HcC HdC L) as (N & W1 & HN & Hfr & HP).
-        exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                    HcC HdC) as HP. cbn [fst snd] in HP.
         by rewrite !echsubst_disj_union, !echsubst_singleton in HP.
     Qed.
 
     Lemma li_comm q' :
       pcomm q q' → LPtau_case (LPrel (pred n')) W Σ T q'.
     Proof.
-      intros Hq Hd L.
+      intros Hq Hd.
       destruct (decide (n' = 0)) as [Hn0|Hn0].
-      { exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
-        rewrite Hn0. apply LPrel_0. }
+      { rewrite Hn0. apply LPrel_0. }
       assert (∃ n'', n' = S n'') as [n'' Hn] by (exists (pred n'); lia).
       apply pcomm_inv in Hq as
         [ (F' & c' & v' & e' & e'' & g' & g'' & HeqE & Hts & Htr & ->)
@@ -1190,13 +1166,11 @@ Section linternalize.
         injection Hα as Hc0 ->.
         apply tstep_chsubst_recv_inv_subst in Htr as (c1 & g0 & Hc1 & Hg0 & ->).
         destruct (decide (c0 = c1)) as [<-|Hc01].
-        + destruct (li_via_comm (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PCMsg)
+        + pose proof (li_via_comm (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PCMsg)
                       ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
-                      HcC HdC L) as (N & W1 & HN & Hfr & HP).
-          exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                      HcC HdC) as HP. cbn [fst snd] in HP.
           by rewrite echsubst_disj_union2 in HP.
-        + exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
-          rewrite Hn. cbn [pred]. rewrite <-echsubst_disj_union2.
+        + rewrite Hn. cbn [pred]. rewrite <-echsubst_disj_union2.
           apply (li_sync_case n'' Hn F2 h h0 g g0 c0 c1 w0); [exact HEq|done|done| |clear -Hd; set_solver].
           apply csub_pair; [congruence|done].
       - (* close *)
@@ -1212,13 +1186,12 @@ Section linternalize.
         + destruct (decide (c0 ∈ C)) as [Hc0C|Hc0C].
           * assert (c0 ≠ c ∧ c0 ≠ d) as [Hc0c Hc0d] by (split; intros ->; done).
             rewrite csub_ne in Hc0 by done. subst c'.
-            destruct (li_via_comm (C ∖ {[c0]}, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})
+            pose proof (li_via_comm (C ∖ {[c0]}, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})
                         ltac:(rewrite HEq; by eapply PCClose)
                         ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd);
                               clear -Hd HcC HdC Hc0d; set_solver)
                         ltac:(cbn [fst]; clear -HcC; set_solver)
-                        ltac:(cbn [fst]; clear -HdC; set_solver) L) as (N & W1 & HN & Hfr & HP).
-            exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                        ltac:(cbn [fst]; clear -HdC; set_solver)) as HP. cbn [fst snd] in HP.
             rewrite echsubst_disj_union2 in HP.
             replace ((C ∪ {[d]}) ∖ {[c0]}) with (C ∖ {[c0]} ∪ {[d]})
               by (clear -Hc0d; set_solver).
@@ -1228,7 +1201,6 @@ Section linternalize.
             by (apply csub_pair; [congruence|done]).
           assert (c' = d) as ->.
           { rewrite Hc0. destruct Hcc as [[-> _]|[-> _]]; [apply csub_hit|by apply csub_ne]. }
-          exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
           rewrite Hn. cbn [pred].
           rewrite <-echsubst_disj_union2.
           replace ((C ∪ {[d]}) ∖ {[d]}) with C by (clear -HdC; set_solver).
@@ -1243,13 +1215,11 @@ Section linternalize.
         destruct α as [|[c1 w1|c1 w1|c1|cd1|c1 i1|c1 i1]| |]; simpl in Hα; try discriminate.
         injection Hα as Hc1 Hi1. subst i1.
         destruct (decide (c0 = c1)) as [<-|Hc01].
-        + destruct (li_via_comm (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PCChoice)
+        + pose proof (li_via_comm (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PCChoice)
                       ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
-                      HcC HdC L) as (N & W1 & HN & Hfr & HP).
-          exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                      HcC HdC) as HP. cbn [fst snd] in HP.
           by rewrite echsubst_disj_union2 in HP.
-        + exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
-          rewrite Hn. cbn [pred]. rewrite <-echsubst_disj_union2.
+        + rewrite Hn. cbn [pred]. rewrite <-echsubst_disj_union2.
           apply (li_choice_case n'' Hn F2 h h0 g g0 c0 c1 i); [exact HEq|done|done|].
           apply csub_pair; [congruence|done].
     Qed.
@@ -1292,10 +1262,9 @@ Section linternalize.
       intros Σ1 [HP1 HΦ]. split; [done|]. intros ? ? ? ? ? ? ? ? ? ?. by eapply HΦ. }
     clear Hlk.
     assert (Hadm' : ∀ p', padmin (C, E) p' → p'.1 ## dom (fusedP c d Σ sc sd kc kd) →
-      ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots (fusedP c d Σ sc sd kc kd) ∪ ty_roots T ∧
-        wext_fresh W N W' ∧ lfuse_goal (S n') W' (fusedP c d Σ sc sd kc kd) T p').
-    { intros p' Hp Hd L. destruct (Hadm p' Hp Hd L) as (N & W' & ? & ? & _ & HΦ).
-      exists N, W'. split_and!; [done|done|]. intros ? ? ? ? ? ? ? ? ? ?. by eapply HΦ. }
+      lfuse_goal (S n') W (fusedP c d Σ sc sd kc kd) T p').
+    { intros p' Hp Hd. destruct (Hadm p' Hp Hd) as (_ & HΦ).
+      intros ? ? ? ? ? ? ? ? ? ?. by eapply HΦ. }
     clear Hadm. rename Hadm' into Hadm.
     assert (Hnp : ¬ pirred (C, E)).
     { intros Hp. destruct (Hirr Hp) as (v & E1 & _ & _ & HV & _).

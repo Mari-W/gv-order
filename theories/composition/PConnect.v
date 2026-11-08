@@ -114,7 +114,7 @@ Section assembly.
           -- eapply Ptau_case_conv; [exact HΣs| |exact (cross_close n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1
                       E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 F1 e e' f f' c HE2 HE1 Hs1 Hs2)].
              f_equal; [by rewrite HCs|clear -HΣs; multiset_solver].
-        * intros Hg. exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl, Hok|].
+        * intros Hg.
           eapply Prel_down; [|apply Hgive]; [lia|].
           exists (C1 ∪ C2 ∪ C0), F, e, c, d, e'. by rewrite HE.
         * destruct (gmultiset_split_in2 _ _ _ _ _ HE)

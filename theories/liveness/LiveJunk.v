@@ -56,7 +56,7 @@ Lemma LPstep_mono (X Y : world → senv → ty → proc → Prop) n W Σ T p :
 Proof.
   intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
   split_and!; [done|done| |done| |done].
-  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. auto.
+  - intros p' Hst Hd. auto.
   - intros cd p' Hst. eapply Plink_case_mono; [|exact (Hl cd p' Hst)]. auto.
 Qed.
 
@@ -228,13 +228,12 @@ Proof.
       + by apply (ssub_rel_select x b Σ σ σ' k Hr). }
   apply LPrel_S_iff. intros W1 HW1.
   destruct (H W1 HW1) as (Hirr & Hrdy & Had & Hc & Hl & Hσ).
-  assert (Had' : ∀ p', padmin (C, E) p' → p'.1 ## dom Σ → ∀ L : gset pname,
-            ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧
-              LPrel (S n') W' Σ T p' ∧ ∀ C E b, p' = (C, E) →
+  assert (Had' : ∀ p', padmin (C, E) p' → p'.1 ## dom Σ →
+              LPrel (S n') W1 Σ T p' ∧ ∀ C E b, p' = (C, E) →
                 x ∉ dom Σ → x ∉ C → (b ∈ C → b ∉ dom Σ) → b ≠ x →
-                LPrel (S n') W' Σ T (C, echsubst x b E)).
-  { intros p' Hp Hd L. destruct (Had p' Hp Hd L) as (N & W' & ? & ? & HP' & HΦ).
-    exists N, W'. split_and!; [done|done|done|]. intros. by eapply HΦ. }
+                LPrel (S n') W1 Σ T (C, echsubst x b E)).
+  { intros p' Hp Hd. destruct (Had p' Hp Hd) as (HP' & HΦ).
+    split; [done|]. intros. by eapply HΦ. }
   clear Had H. rename Had' into Had.
   split_and!.
   - (* P-Stop *)
@@ -278,7 +277,7 @@ Proof.
       { intros Ho. apply Hk. by apply Hoffers. }
       exists k', e'. split_and!; [by apply Hoffers|done|done].
   - (* Q-Admin *)
-    intros q Hst Hd L.
+    intros q Hst Hd.
     apply padmin_inv in Hst as
       [ (F' & e' & e'' & HeqE & Hts & ->)
       | [ (F' & e' & c & e'' & HeqE & Hts & HcC & HcF & Hce & ->)
@@ -288,8 +287,7 @@ Proof.
       apply echsubst_decomp in HeqE as (F & f & -> & -> & ->).
       apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
       apply eq_sym, lsub_beta in Hα as ->.
-      destruct (Had _ (PABeta _ _ _ _ Hf0) Hd L) as (N & W2 & HN & Hfr & _ & HΦ).
-      exists N, W2. split_and!; [done|done|].
+      destruct (Had _ (PABeta _ _ _ _ Hf0) Hd) as (_ & HΦ).
       rewrite <-echsubst_disj_union1. by apply HΦ.
     + (* new *)
       apply echsubst_decomp in HeqE as (F & f & -> & -> & ->).
@@ -299,8 +297,7 @@ Proof.
         assert (x ∉ echans F) as HxF by (intros Hx; by apply HcF, echans_echsubst_hit).
         rewrite (chsubst_id x b f) in Hts, Hce by done.
         rewrite (echsubst_id x b F) in HcF |- * by done.
-        destruct (Had _ (PANew C F f b e'' Hts HcC HcF Hce) Hd L) as (N & W2 & HN & Hfr & HP' & _).
-by exists N, W2. }
+        by destruct (Had _ (PANew C F f b e'' Hts HcC HcF Hce) Hd) as (HP' & _). }
       destruct (decide (c = x)) as [->|Hcx].
       { (* new at x: freshen through z, then transpose back *)
         destruct (exist_fresh (C ∪ dom Σ ∪ echans F ∪ fchans f ∪ {[x; b]})) as [z Hz].
@@ -308,8 +305,7 @@ by exists N, W2. }
           [set_solver..|].
         assert (padmin (C, F ⊎ {[+ f +]}) (C ∪ {[z]}, F ⊎ {[+ f0 +]})) as Horig.
         { apply PANew; [done|set_solver..]. }
-        destruct (Had _ Horig ltac:(simpl; set_solver) L) as (N & W2 & HN & Hfr & _ & HΦ).
-        exists N, W2. split_and!; [done|done|].
+        destruct (Had _ Horig ltac:(simpl; set_solver)) as (_ & HΦ).
         refine (imp4 _ _ _ _ _ _ (HΦ _ _ b eq_refl) (λ HP', _) _ _ _ _); [|done|set_solver| |done].
         2: { intros Hb. apply HbC. set_solver. }
         apply (LPrel_swap_restricted x z) in HP'; [|done|set_solver].
@@ -332,17 +328,14 @@ by exists N, W2. }
       rewrite chsubst_refl.
       assert (c ∉ echans F) as HcF0.
       { pose proof (echans_echsubst_sup x b F). set_solver. }
-      destruct (Had _ (PANew C F f c f0 Hf0 HcC HcF0 Hcf) Hd L)
-        as (N & W2 & HN & Hfr & _ & HΦ).
-      exists N, W2. split_and!; [done|done|].
+      destruct (Had _ (PANew C F f c f0 Hf0 HcC HcF0 Hcf) Hd) as (_ & HΦ).
       rewrite <-echsubst_disj_union1. apply (HΦ _ _ b eq_refl); [done|set_solver| |done].
       intros Hb. apply HbC. set_solver.
     + (* spawn *)
       apply echsubst_decomp in HeqE as (F & f & -> & -> & ->).
       apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
       destruct α as [| | |v]; simpl in Hα; try discriminate. injection Hα as ->.
-      destruct (Had _ (PASpawn _ _ _ _ _ Hf0) Hd L) as (N & W2 & HN & Hfr & _ & HΦ).
-      exists N, W2. split_and!; [done|done|].
+      destruct (Had _ (PASpawn _ _ _ _ _ Hf0) Hd) as (_ & HΦ).
       refine (imp4 _ _ _ _ _ _ (HΦ _ _ b eq_refl) (λ HP', _) _ _ _ _); [|done..].
       by rewrite !echsubst_disj_union, !echsubst_singleton in HP'.
     + (* link, a τ at the index *)
@@ -389,9 +382,7 @@ by exists N, W2. }
           + apply elem_of_union; right. by apply elem_of_singleton.
           + apply elem_of_union; left. apply elem_of_difference.
             split; [done|]. by intros ->%elem_of_singleton. }
-      destruct (Had _ (padmin_link _ _ ltac:(exists C, F, f, d1, x, f0; split_and!; done)) Hd' L)
-        as (N & W2 & HN & Hfr & _ & HΦ).
-      exists N, W2. split_and!; [done|done|].
+      destruct (Had _ (padmin_link _ _ ltac:(exists C, F, f, d1, x, f0; split_and!; done)) Hd') as (_ & HΦ).
       refine (imp4 _ _ _ _ _ _ (HΦ _ _ b eq_refl) (λ HP', _) _ _ _ _); [|done|set_solver| |done].
       2: { intros Hb. apply HbC. set_solver. }
       destruct (decide (b = d1)) as [->|Hbd].
@@ -417,9 +408,7 @@ by exists N, W2. }
     assert (d ≠ x) as Hdx.
     { intros ->. apply Hx'. rewrite <-Hcd. apply elem_of_union; right.
       by apply elem_of_singleton. }
-    destruct (Had _ (padmin_link _ _ ltac:(exists C, F, f, c, d, f0; split_and!; done)) Hd L)
-      as (N & W2 & HN & Hfr & _ & HΦ).
-    exists N, W2. split_and!; [done|done|].
+    destruct (Had _ (padmin_link _ _ ltac:(exists C, F, f, c, d, f0; split_and!; done)) Hd) as (_ & HΦ).
     assert (x ∉ C ∖ {[c]}) as HxC'.
     { intros Hin. apply elem_of_difference in Hin as [? _]. done. }
     destruct (decide (b = c)) as [->|Hbc].
@@ -430,7 +419,7 @@ by exists N, W2. }
     2: { intros Hb. apply HbC. by apply elem_of_difference in Hb as [? _]. }
     by rewrite echsubst_comm in HP'.
   - (* Q-Comm *)
-    intros q Hst Hd L.
+    intros q Hst Hd.
     apply pcomm_inv in Hst as
       [ (F' & c & v' & e' & e'' & g' & g'' & HeqE & Hts & Htr & ->)
       | [ (F' & c & e' & e'' & g' & g'' & HeqE & Hts & Htr & HcC & ->)
@@ -449,9 +438,7 @@ by exists N, W2. }
       { intros ->. apply (Hoff (F2 ⊎ {[+ h +]}) g (SRecv x w0) g0); [multiset_solver|done| |];
           simpl; set_solver. }
       rewrite csub_ne in Hc0, Hc1 by done. subst c0 c1.
-      destruct (Hc _ (PCMsg C F2 c w0 h h0 g g0 Hh0 Hg0) Hd L)
-        as (N & W2 & HN & Hfr & HP').
-      exists N, W2. split_and!; [done|done|].
+      pose proof (Hc _ (PCMsg C F2 c w0 h h0 g g0 Hh0 Hg0) Hd) as HP'.
       apply (IH2 _ _ _ _ b) in HP'; [|done..]. by rewrite echsubst_disj_union2 in HP'.
     + (* internal close *)
       apply echsubst_decomp in HeqE as (F1 & g & -> & HeqE1 & ->).
@@ -469,9 +456,7 @@ by exists N, W2. }
       { intros ->. apply (Hoff (F2 ⊎ {[+ h +]}) g (SClos x) g0); [multiset_solver|done| |];
           simpl; set_solver. }
       rewrite csub_ne in Hc0, Hc1 by done. subst c0 c1.
-      destruct (Hc _ (PCClose C F2 c h h0 g g0 Hh0 Hg0 HcC) Hd L)
-        as (N & W2 & HN & Hfr & HP').
-      exists N, W2. split_and!; [done|done|].
+      pose proof (Hc _ (PCClose C F2 c h h0 g g0 Hh0 Hg0 HcC) Hd) as HP'.
       apply (IH2 _ _ _ _ b) in HP'; [|set_solver|set_solver| |done].
       2: { intros Hb. apply HbC. set_solver. }
       by rewrite echsubst_disj_union2 in HP'.
@@ -491,9 +476,7 @@ by exists N, W2. }
       { intros ->. apply (Hoff (F2 ⊎ {[+ h +]}) g (SBra x i) g0); [multiset_solver|done| |];
           simpl; set_solver. }
       rewrite csub_ne in Hc0, Hc1 by done. subst c0 c1.
-      destruct (Hc _ (PCChoice C F2 c i h h0 g g0 Hh0 Hg0) Hd L)
-        as (N & W2 & HN & Hfr & HP').
-      exists N, W2. split_and!; [done|done|].
+      pose proof (Hc _ (PCChoice C F2 c i h h0 g g0 Hh0 Hg0) Hd) as HP'.
       apply (IH2 _ _ _ _ b) in HP'; [|done..]. by rewrite echsubst_disj_union2 in HP'.
   - (* Q-Link: an external link, at the index *)
     intros cd q Hst.

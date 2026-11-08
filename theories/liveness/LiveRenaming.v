@@ -130,12 +130,12 @@ Section swap.
       intros Hirr0. apply Hirr. by apply irred_swap.
     - intros e'' Hst. apply (tstep_eswap_inv' a b) in Hst. simpl in Hst.
       destruct (Hb _ Hst) as [_ HΦ]. specialize (HΦ HVT). by rewrite eswap_involutive in HΦ.
-    - intros c e'' Hst Hc L. apply (tstep_eswap_inv' a b) in Hst. simpl in Hst.
+    - intros c e'' Hst Hc. apply (tstep_eswap_inv' a b) in Hst. simpl in Hst.
       assert (cswap a b c ∉ dom Θ) as Hc0.
       { rewrite dom_tenvswap, elem_of_gswap' in Hc. done. }
-      destruct (Hnew _ _ Hst Hc0 L) as (x & s & s' & W' & Hpl & Hdu & _ & HΦ).
-      exists x, s, s', W'. split_and!.
-      + by rewrite tenv_roots_swap.
+      destruct (Hnew _ _ Hst Hc0) as (x & s & s' & Hpl & Hdu & _ & HΦ).
+      exists x, s, s'. split_and!.
+      + done.
       + done.
       + specialize (HΦ HVT). by rewrite tenvswap_insert, cswap_involutive, eswap_involutive in HΦ.
     - intros w e'' Hst. apply (tstep_eswap_inv' a b) in Hst. simpl in Hst.
@@ -264,15 +264,13 @@ Section swap.
         by rewrite (HE e0 He0).
     - intros Hpirr. apply ready_p_swap.
       apply Hr. intros Hp0. apply Hpirr. by apply pirred_swap.
-    - intros q Hst Hd L. apply padmin_pswap_inv in Hst.
+    - intros q Hst Hd. apply padmin_pswap_inv in Hst.
       rewrite <-(pswap_involutive a b q) in Hd. apply disj_pswap in Hd.
-      destruct (Ha _ Hst Hd L) as (N & W' & HN & Hfr & _ & HΦ).
-      exists N, W'. split_and!; [by rewrite senv_roots_swap|done|].
+      destruct (Ha _ Hst Hd) as [_ HΦ].
       by rewrite pswap_involutive in HΦ.
-    - intros q Hst Hd L. apply pcomm_pswap_inv in Hst.
+    - intros q Hst Hd. apply pcomm_pswap_inv in Hst.
       rewrite <-(pswap_involutive a b q) in Hd. apply disj_pswap in Hd.
-      destruct (Hc _ Hst Hd L) as (N & W' & HN & Hfr & HP').
-      exists N, W'. split_and!; [by rewrite senv_roots_swap|done|].
+      pose proof (Hc _ Hst Hd) as HP'.
       apply IHP in HP'; [|lia]. by rewrite pswap_involutive in HP'.
     - intros cd q Hst. apply (proc_step_pswap_inv' a b) in Hst. simpl in Hst.
       destruct (Hl _ _ Hst) as (c & d & Σ1 & sc & sd & kc & kd &

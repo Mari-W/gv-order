@@ -1697,17 +1697,13 @@ Section internalize.
 
     Lemma via_tau p1 :
       proc_step (C, E) PTau p1 → p1.1 ## dom Σp → c ∉ p1.1 → d ∉ p1.1 →
-      ∃ N W1, N ## senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W1 ∧
-        Prel n' W1 Σ T (p1.1 ∪ {[d]}, echsubst c d p1.2).
+      Prel n' W Σ T (p1.1 ∪ {[d]}, echsubst c d p1.2).
     Proof.
       intros Hp Hg Hc Hd.
-      destruct (proj1 (Hstep PTau p1 Hp) Hg) as (N & W1 & HN & Hfr & HP1).
-      exists N, W1. split_and!; [|done|].
-      - pose proof (senv_roots_mono Σ Σp (fusedP_sub c d Σ sc sd kc kd HcΣ HdΣ)) as Hs.
-        clear -HN Hs. set_solver.
-      - destruct p1 as [C1 E1].
-        apply (IH n' (le_n _) W1 _ _ HP1 Σ C1 E1 sc sd kc kd eq_refl eq_refl).
-        apply int_ok_ext; [by destruct Hfr|done..].
+      pose proof (proj1 (Hstep PTau p1 Hp) Hg) as HP1.
+      destruct p1 as [C1 E1].
+      apply (IH n' (le_n _) W _ _ HP1 Σ C1 E1 sc sd kc kd eq_refl eq_refl).
+      apply int_ok_ext; [by apply wext_refl|done..].
     Qed.
 
     Lemma tau_costly q' :
@@ -1728,10 +1724,9 @@ Section internalize.
         apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
         apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
         apply eq_sym, lsub_beta in Hα as ->.
-        destruct (via_tau (C, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PStepBeta)
+        pose proof (via_tau (C, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PStepBeta)
                     ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
-                    HcC HdC) as (N & W1 & HN & Hfr & HP).
-        exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                    HcC HdC) as HP. cbn [fst snd] in HP.
         by rewrite echsubst_disj_union1 in HP.
       - (* new: through a fresh z, then rename z to the image's name *)
         apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
@@ -1740,11 +1735,10 @@ Section internalize.
           [clear -Hz; set_solver..|].
         assert (z ∉ C ∧ z ∉ echans F ∧ z ∉ fchans f) as (HzC & HzF & Hzf)
           by (clear -Hz; set_solver).
-        destruct (via_tau (C ∪ {[z]}, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PStepNew)
+        pose proof (via_tau (C ∪ {[z]}, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PStepNew)
                     ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd Hz HcC HdC; set_solver)
                     ltac:(cbn [fst]; clear -Hz HcC; set_solver)
-                    ltac:(cbn [fst]; clear -Hz HdC; set_solver)) as (N & W1 & HN & Hfr & HP).
-        exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                    ltac:(cbn [fst]; clear -Hz HdC; set_solver)) as HP. cbn [fst snd] in HP.
         assert (c'' ∉ dom Σ) as Hc''Σ by (clear -Hd; set_solver).
         apply (Prel_swap_restricted z c'') in HP; [|clear -Hz; set_solver|done].
         unfold pswap in HP. cbn [fst snd] in HP.
@@ -1757,7 +1751,7 @@ Section internalize.
              pose proof (fchans_chsubst_sup c d f) as Hsup.
              clear -Hin Hf Hsup Hz Hc''C Hc''e. set_solver. }
         assert (gswap z c'' (C ∪ {[z]} ∪ {[d]}) = C ∪ {[d]} ∪ {[c'']}) as Hg.
-        { clear Hstep IH HP Hq0 Hgive Hts Hf0 HN Hfr.
+        { clear Hstep IH HP Hq0 Hgive Hts Hf0.
           apply set_eq. intros y. rewrite elem_of_gswap'. unfold cswap.
           repeat case_decide; subst; set_solver. }
         rewrite Hg in HP. exact HP.
@@ -1765,10 +1759,9 @@ Section internalize.
         apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
         apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
         destruct α as [| | |v]; simpl in Hα; try discriminate. injection Hα as ->.
-        destruct (via_tau (C, F ⊎ {[+ f0 +]} ⊎ {[+ App v EUnit +]}) ltac:(rewrite HEq; by apply PStepSpawn)
+        pose proof (via_tau (C, F ⊎ {[+ f0 +]} ⊎ {[+ App v EUnit +]}) ltac:(rewrite HEq; by apply PStepSpawn)
                     ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
-                    HcC HdC) as (N & W1 & HN & Hfr & HP).
-        exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                    HcC HdC) as HP. cbn [fst snd] in HP.
         by rewrite !echsubst_disj_union, !echsubst_singleton in HP.
       - (* message *)
         apply echsubst_decomp in HeqE as (F1 & g & HEq & HeqE1 & ->).
@@ -1778,13 +1771,11 @@ Section internalize.
         injection Hα as Hc0 ->.
         apply tstep_chsubst_recv_inv_subst in Htr as (c1 & g0 & Hc1 & Hg0 & ->).
         destruct (decide (c0 = c1)) as [<-|Hc01].
-        + destruct (via_tau (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PStepMsg)
+        + pose proof (via_tau (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PStepMsg)
                       ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
-                      HcC HdC) as (N & W1 & HN & Hfr & HP).
-          exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                      HcC HdC) as HP. cbn [fst snd] in HP.
           by rewrite echsubst_disj_union2 in HP.
-        + exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
-          rewrite <-echsubst_disj_union2.
+        + rewrite <-echsubst_disj_union2.
           apply (sync_case F2 h h0 g g0 c0 c1 w0); [exact HEq|done|done| |clear -Hd; set_solver].
           apply csub_pair; [congruence|done].
       - (* close *)
@@ -1800,13 +1791,12 @@ Section internalize.
         + destruct (decide (c0 ∈ C)) as [Hc0C|Hc0C].
           * assert (c0 ≠ c ∧ c0 ≠ d) as [Hc0c Hc0d] by (split; intros ->; done).
             rewrite csub_ne in Hc0 by done. subst c'.
-            destruct (via_tau (C ∖ {[c0]}, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})
+            pose proof (via_tau (C ∖ {[c0]}, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})
                         ltac:(rewrite HEq; by eapply PStepClose)
                         ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd);
                               clear -Hd HcC HdC Hc0d; set_solver)
                         ltac:(cbn [fst]; clear -HcC; set_solver)
-                        ltac:(cbn [fst]; clear -HdC; set_solver)) as (N & W1 & HN & Hfr & HP).
-            exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                        ltac:(cbn [fst]; clear -HdC; set_solver)) as HP. cbn [fst snd] in HP.
             rewrite echsubst_disj_union2 in HP.
             replace ((C ∪ {[d]}) ∖ {[c0]}) with (C ∖ {[c0]} ∪ {[d]})
               by (clear -Hc0d; set_solver).
@@ -1816,13 +1806,11 @@ Section internalize.
             by (apply csub_pair; [congruence|done]).
           assert (c' = d) as ->.
           { rewrite Hc0. destruct Hcc as [[-> _]|[-> _]]; [apply csub_hit|by apply csub_ne]. }
-          exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
           apply (Prel_down (S n')); [lia|].
           rewrite <-echsubst_disj_union2.
           replace ((C ∪ {[d]}) ∖ {[d]}) with C by (clear -HdC; set_solver).
           exact (close_case F2 h h0 g g0 c0 c1 HEq Hh0 Hg0 Hcc).
       - (* link: its giving clause gives the costly one *)
-        exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
         apply (Prel_down (S n')); [lia|]. apply Hgive; [|exact Hd].
         exists (C ∪ {[d]}), F', e', a, b', e''. split_and!; [by rewrite HeqE|done|done|done].
       - (* choice *)
@@ -1835,13 +1823,11 @@ Section internalize.
         destruct α as [|[c1 w1|c1 w1|c1|cd1|c1 i1|c1 i1]| |]; simpl in Hα; try discriminate.
         injection Hα as Hc1 Hi1. subst i1.
         destruct (decide (c0 = c1)) as [<-|Hc01].
-        + destruct (via_tau (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PStepChoice)
+        + pose proof (via_tau (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PStepChoice)
                       ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
-                      HcC HdC) as (N & W1 & HN & Hfr & HP).
-          exists N, W1. split_and!; [done|done|]. cbn [fst snd] in HP.
+                      HcC HdC) as HP. cbn [fst snd] in HP.
           by rewrite echsubst_disj_union2 in HP.
-        + exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
-          rewrite <-echsubst_disj_union2.
+        + rewrite <-echsubst_disj_union2.
           apply (choice_case F2 h h0 g g0 c0 c1 i); [exact HEq|done|done|].
           apply csub_pair; [congruence|done].
     Qed.

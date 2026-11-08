@@ -177,7 +177,7 @@ Proof.
   split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hp).
   - intros _ Hs. exfalso. exact (Hs _ Hp).
-  - intros p' Hst Hd L.
+  - intros p' Hst Hd.
     apply padmin_inv in Hst as [(F & e & e' & HE & Hs & ->)|[(F & e & c & e' & HE & Hs & _)
       |[(F & e & v & e' & HE & Hs & _)|Hlink]]].
     4: { exfalso. destruct Hlink as (C' & E & e & c & d & e' & Heq & Hst & _).
@@ -185,7 +185,6 @@ Proof.
          by apply tstep_app_lam_unit in Hst as [? _]. }
     all: symmetry in HE; apply soup_single_inv in HE as [-> ->];
       apply tstep_app_lam_unit in Hs as [Hα ->]; try discriminate.
-    exists ∅, W1. split_and!; [set_solver|by apply wext_fresh_refl|].
     rewrite (left_id_L ∅ (⊎)). by apply HB.
   - intros p' Hst. exfalso. by eapply pcomm_single.
   - intros cd p' Hst. exfalso.
@@ -402,7 +401,7 @@ Section llevel.
         + clear. set_solver.
         + intros Hd'. exfalso. clear -Hd' HdC0. set_solver.
         + done. }
-    intros _ L. exists ∅, W. split_and!; [apply disjoint_empty_l|apply wext_fresh_refl, lt_HWs|exact HP].
+    intros _. exact HP.
   Qed.
 End llevel.
 
@@ -454,36 +453,25 @@ Proof.
       intros e He. apply gmultiset_elem_of_singleton in He as ->. by eapply LVrel_val.
     + apply Hready. intros Hi. exact (Hi _ _ Hs).
   - (* Q-Admin, by induction on the τ layer of the thread *)
-    intros p' Hst Hd L.
+    intros p' Hst Hd.
     apply padmin_inv in Hst as [(F & e & t' & HE' & Hs & ->)|[(F & e & c & t' & HE' & Hs & HcC & HcF & Hce & ->)
       |[(F & e & v & t' & HE' & Hs & ->)|Hlink]]].
     4: { (* link of a restricted channel, a τ at the index *)
       destruct Hlink as (C' & E & e & c & d & t' & Heq & Hst & HcC & ->).
       injection Heq as <- HE'. symmetry in HE'. apply soup_single_inv in HE' as [-> ->].
       rewrite (left_id_L ∅ (⊎)), echsubst_singleton.
-      exact (lt_case_tlink n' IHo T HT W Σ ΘB C0 t Hok HE c d t' Hst HcC (Hlk' _ _ Hst) Hd L). }
+      exact (lt_case_tlink n' IHo T HT W Σ ΘB C0 t Hok HE c d t' Hst HcC (Hlk' _ _ Hst) Hd). }
     all: symmetry in HE'; apply soup_single_inv in HE' as [-> ->]; rewrite (left_id_L ∅ (⊎)); simpl in Hd.
-    + exists ∅, W. split_and!; [set_solver|by apply wext_fresh_refl|].
-      destruct (Hb t' Hs) as [_ HΦ]. exact (HΦ eq_refl HT Σ ΘB C0 eq_refl Hok).
+    + destruct (Hb t' Hs) as [_ HΦ]. exact (HΦ eq_refl HT Σ ΘB C0 eq_refl Hok).
     + assert (c ∉ dom Σ) as HcΣ by (clear -Hd; set_solver).
       assert (c ∉ dom (tenv_of Σ ∪ ΘB)) as Hc0.
       { unfold tenv_of. rewrite dom_union_L, dom_fmap_L, (tok_dom _ _ _ _ Hok). clear -HcΣ HcC. set_solver. }
-      destruct (Hnew c t' Hs Hc0 (L ∪ senv_roots Σ)) as (x & s & s' & W' & Hpl & Hdd & _ & HΦ).
-      destruct Hpl as [(a & -> & Hfr & Hwf)|(Hx & ->)].
-      * exists {[NConst a]}, W'. split_and!; [|done|].
-        { pose proof (senv_roots_sub Σ ΘB). clear -Hfr H. set_solver. }
-        apply (HΦ eq_refl HT Σ (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> ΘB)).
-        -- rewrite <-ins_both; [done|]. by apply not_elem_of_dom.
-        -- apply ltok_add_both; [|done|done| |done].
-           ++ eapply tok_mono; [exact (proj1 Hwf)|exact Hok].
-           ++ apply (wf_eq_refl _ (proj1 (proj2 (proj2 (proj2 (proj1 Hwf)))))).
-      * exists ∅, W. split_and!; [apply disjoint_empty_l|by apply wext_fresh_refl|].
-        apply (HΦ eq_refl HT Σ (<[c := Both (s, x) (s', pt_dual x)]> ΘB)).
-        -- rewrite <-ins_both; [done|]. by apply not_elem_of_dom.
-        -- apply ltok_add_both; [done|done|done| |done].
-           simpl. rewrite ?pt_dual_dual. apply (wf_eq_refl _ (proj1 HWs)).
-    + exists ∅, W. split_and!; [apply disjoint_empty_l|by apply wext_fresh_refl|].
-      destruct (Hsp v t' Hs) as (Θ1 & Θ2 & ub & lb & Hcomp & Hv & _ & HΦ2).
+      destruct (Hnew c t' Hs Hc0) as (x & s & s' & Hx & Hdd & _ & HΦ).
+      apply (HΦ eq_refl HT Σ (<[c := Both (s, x) (s', pt_dual x)]> ΘB)).
+      * rewrite <-ins_both; [done|]. by apply not_elem_of_dom.
+      * apply ltok_add_both; [done|done|done| |done].
+        simpl. rewrite ?pt_dual_dual. apply (wf_eq_refl _ (proj1 HWs)).
+    + destruct (Hsp v t' Hs) as (Θ1 & Θ2 & ub & lb & Hcomp & Hv & _ & HΦ2).
       destruct (spawn_env W Σ ΘB C0 Θ1 Θ2 Hok Hcomp) as (H2 & H1 & Hok2 & Hok1 & Hcut & HΣ & HC).
       pose proof (λ Heq, HΦ2 eq_refl HT _ _ _ Heq Hok2) as HP1.
       specialize (HP1 ltac:(by rewrite <-H2)).

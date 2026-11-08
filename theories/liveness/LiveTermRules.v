@@ -583,9 +583,6 @@ Qed.
 
 (** ** E-Pack and E-Open *)
 
-Lemma new_place_wext_r W N x W' : new_place W N x W' → wext_r W W'.
-Proof. intros [(a & _ & _ & Hfr)|(_ & ->)]; [right; apply Hfr|left; done]. Qed.
-
 (** E at T' from E at T, when V at T is contained in V at T' at every
     level up to n and in every later world. *)
 Lemma LErel_Vsub n : ∀ W Θ T T' F e,
@@ -614,11 +611,11 @@ Proof.
   - done.
   - intros e' Hst. destruct (Hb e' Hst) as [_ HΦ]. apply HΦ.
     intros j W' Θ' v Hj HW' HVv. apply (HV2 W1 (wext_r_refl _)); [done|done|done].
-  - intros c e' Hst Hc L.
-    destruct (Hnew c e' Hst Hc (L ∪ ty_roots T')) as (x & s & s' & W' & Hpl & Hdu & _ & HΦ).
-    exists x, s, s', W'. split_and!; [eapply new_place_sub; [|exact Hpl]; set_solver|done|].
+  - intros c e' Hst Hc.
+    destruct (Hnew c e' Hst Hc) as (x & s & s' & Hpl & Hdu & _ & HΦ).
+    exists x, s, s'. split_and!; [done|done|].
     apply HΦ. intros j W'' Θ' v Hj HW'' HVv.
-    apply (HV2 W' (new_place_wext_r _ _ _ _ Hpl)); [done|done|done].
+    apply (HV2 W1 (wext_r_refl _)); [done|done|done].
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HΦ).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |].
     + eapply Vspawn_mono; [|exact Hv]. by intros ? ? ? ? [? _].

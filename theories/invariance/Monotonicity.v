@@ -6,12 +6,9 @@
 
     Facts only ever help: ready, the future and every alias the relation
     asks for are positive in ≡ and ≺, and the clauses that quantify
-    over future worlds see fewer of them from a larger world. The
-    clauses that need an argument are O-New and Q-Tau: the points the
-    step placed are first renamed away from the larger world W′
-    ([Points.Erel_new_rename], [Points.Prel_tau_rename]), and the fresh
-    extension is then joined with W′, which stays a fresh extension of
-    W′ ([wext_fresh_join]). *)
+    over future worlds see fewer of them from a larger world. O-New
+    and Q-Tau keep the world (sharp edge 172), so they follow from the
+    induction hypothesis at W′. *)
 
 From stdpp Require Import base tactics gmap.
 From LRGV Require Export invariance.EquivInvariance.
@@ -96,10 +93,8 @@ Proof.
     exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by apply (proj2 HE').
   - destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
     exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. by apply IHj.
-  - intros Hc. destruct (Hstep Hc) as (x & s & s' & W' & Ha & ? & HE').
-    exists x, s, s', W'. split_and!; [|done|by apply IHj].
-    assert (future_roots F' ⊆ future_roots F) by (unfold future_roots; set_solver).
-    eapply new_place_sub; [|exact Ha]. set_solver.
+  - intros Hc. destruct (Hstep Hc) as (x & s & s' & Ha & ? & HE').
+    exists x, s, s'. split_and!; [done|done|by apply IHj].
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|]. by apply IHj.
 Qed.
@@ -179,27 +174,12 @@ Proof.
       exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. exact (proj2 HE' W' HW HWW').
     + destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
       exists Θr, s1, s2, k, Θ'. split_and!; [done..|]. eapply HEj; [lia|done|done|exact HE'].
-    + (* O-New: rename the new point away from W', then join *)
-      intros Hc.
-      destruct (Hstep Hc) as (x & s & s' & W1 & [(a & -> & Ha & Hfr)|(Hx & ->)] & Hdu & HE').
-      2: { (* new at a known point: the world stays *)
-        exists x, s, s', W'. split_and!.
-        - right. split; [|done]. unfold pt_known in *. by destruct HWW' as (? & _); set_solver.
-        - done.
-        - eapply HEj; [lia|done|done|exact HE']. }
-      destruct (fresh_const (w_names W' ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F))
-        as [a1 Ha1].
-      assert (w_names W ⊆ w_names W') by (by destruct HWW').
-      destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
-                  ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
-      pose proof (wext_fresh_join W {[NConst a1]} W1' W' HW Hfr' HWW'
-                    ltac:(set_solver)) as Hfr''.
-      exists (pconst a1), (stysw a a1 s), (stysw a a1 s'), (wjoin W1' W'). split_and!.
-      * left. exists a1. split_and!; [done|set_solver|done].
-      * by apply sdual_sw.
-      * eapply HEj; [lia| |apply wext_join_l|exact HE1].
-        -- by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
-        -- by destruct Hfr'' as ((_ & _ & _ & ?) & _).
+    + (* O-New: the world stays *)
+      intros Hc. destruct (Hstep Hc) as (x & s & s' & Hx & Hdu & HE').
+      exists x, s, s'. split_and!.
+      * unfold pt_known in *. by destruct HWW' as (? & _); set_solver.
+      * done.
+      * eapply HEj; [lia|done|done|exact HE'].
     + destruct Hstep as (Θ1 & Θ2 & ub & lb & Hc & HVw & HE').
       exists Θ1, Θ2, ub, lb. split_and!.
       * exact Hc.
@@ -218,16 +198,9 @@ Proof.
     { intros Hp. by eapply ready_p_mono, Hrdy. }
     intros π q Hst. specialize (Hstep π q Hst).
     destruct π as [|[c w|c w|c|cd|c i|c i]]; simpl in Hstep |- *.
-    + (* Q-Tau: rename the placed points away from W', then join *)
+    + (* Q-Tau: the world stays *)
       destruct Hstep as [Htau Hlink]. split.
-      { intros Hd. destruct (Htau Hd) as (N & W1 & HN & Hfr & HP').
-        destruct (Prel_tau_rename n' (w_names W') _ W N W1 Σ T q eq_refl HW Hfr HN HP')
-          as (N' & W1' & HN'W & HN' & Hfr' & HP1).
-        pose proof (wext_fresh_join W N' W1' W' HW Hfr' HWW' HN'W) as Hfr''.
-        exists N', (wjoin W1' W'). split_and!; [done|done|].
-        eapply HPj; [lia| |apply wext_join_l|exact HP1].
-        * by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
-        * by destruct Hfr'' as ((_ & _ & _ & ?) & _). }
+      { intros Hd. eapply HPj; [lia|done|done|exact (Htau Hd)]. }
       intros Hl Hd. exact (proj2 (Hlink Hl Hd) W' HW HWW').
     + destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
       exists Σ1, m, U, s, k. split_and!; [done|done|].

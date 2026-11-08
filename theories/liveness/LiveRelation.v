@@ -221,9 +221,9 @@ Definition Ebody (below : nat → llevel) (n : nat)
     (¬ irred e → ready_t W1 Θ F e) ∧                              (* E-Step *)
     (∀ e', tstep e LBeta e' → X VT T W1 Θ F e') ∧                  (* O-Beta *)
     (∀ c e', tstep e (LNew c) e' → c ∉ dom Θ →                    (* O-New *)
-       ∀ L : gset pname, ∃ x s s' W', new_place W1 (L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F) x W' ∧
+       ∃ x s s', pt_known W1 x ∧
          sdual s s' ∧
-         X VT T W' (<[c := Both (s, x) (s', pt_dual x)]> Θ) F e') ∧
+         X VT T W1 (<[c := Both (s, x) (s', pt_dual x)]> Θ) F e') ∧
     (∀ w e', tstep e (LSpawn w) e' →                               (* O-Spawn *)
        ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W1) Θ Θ1 Θ2 ∧
          Vspawn (λ j, lvV (below j)) (λ j, lvE (below j))
@@ -239,13 +239,10 @@ Inductive Eind (below : nat → llevel) (n : nat) :
   | EIntro VT T W Θ F e :
       Ebody below n (Eind below n) VT T W Θ F e → Eind below n VT T W Θ F e.
 
-(** A process τ that may create channels: for every finite set L of
-    names, the world grows by a fresh extension placing names outside L
-    (cofinite, liveness.md §3). *)
+(** A process τ keeps the world (constant world, sharp edge 172). *)
 Definition LPtau_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (p' : proc) : Prop :=
-  p'.1 ## dom Σ → ∀ L : gset pname,
-    ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧ X W' Σ T p'.
+  p'.1 ## dom Σ → X W Σ T p'.
 
 (** ** The process relation at level n *)
 Definition Pbody (below : nat → llevel) (n : nat)
@@ -256,8 +253,7 @@ Definition Pbody (below : nat → llevel) (n : nat)
       ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ VT W1 (tenv_of Σ) v ∧
              (∀ e, e ∈ E → e = EUnit)) ∧
     (¬ pirred p → ready_p W1 Σ p) ∧                                 (* P-Step *)
-    (∀ p', padmin p p' → p'.1 ## dom Σ →                           (* Q-Admin *)
-       ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧ X W' Σ p') ∧
+    (∀ p', padmin p p' → p'.1 ## dom Σ → X W1 Σ p') ∧              (* Q-Admin *)
     (∀ p', pcomm p p' →                                            (* Q-Comm *)
        LPtau_case (lvP (below (pred (pred n)))) W1 Σ T p') ∧
     (∀ cd p', proc_step p (PSess (SLink cd)) p' →                   (* Q-Link *)
@@ -360,8 +356,8 @@ Proof.
   split; [exact Hs|]. split; [exact Hr|]. split.
   { intros e' Hst. exact (f _ _ _ _ _ _ (Hb e' Hst)). }
   split.
-  { intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & H1 & H2 & H4).
-    exists a, s, s', W'. split; [exact H1|]. split; [exact H2|].
+  { intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & H1 & H2 & H4).
+    exists a, s, s'. split; [exact H1|]. split; [exact H2|].
     exact (f _ _ _ _ _ _ H4). }
   split; [|split; [exact Hσ|]].
   2: { intros cd e' Hst. destruct (Hlk cd e' Hst) as (c & d & Θ1 & Θm & sc & sd & kc & kd & H1 & H2 & H3 & H4 & H5 & H6).
@@ -394,8 +390,7 @@ Definition Pbody_mono below n VT T (X Y : world → senv → proc → Prop)
 Proof.
   intros H W1 HW. destruct (H W1 HW) as (Hs & Hr & Ha & Hc & Hl & Hσ).
   split; [exact Hs|]. split; [exact Hr|]. split; [|split; [exact Hc|split; [|exact Hσ]]].
-  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & H1 & H2 & H3).
-    exists N, W'. split; [exact H1|]. split; [exact H2|]. exact (f _ _ _ H3).
+  - intros p' Hst Hd. exact (f _ _ _ (Ha p' Hst Hd)).
   - intros cd p' Hst. destruct (Hl cd p' Hst) as (c & d & Σ1 & sc & sd & kc & kd & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8).
     exists c, d, Σ1, sc, sd, kc, kd. split; [exact H1|]. split; [exact H2|]. split; [exact H3|].
     split; [exact H4|]. split; [exact H5|]. split; [exact H6|]. split; [exact H7|]. exact (f _ _ _ H8).
@@ -452,8 +447,8 @@ Proof.
   constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [auto|done| | | |done|].
   - intros e' Hst. by apply (Hb e' Hst).
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
-    exists a, s, s', W'. split_and!; [done..|]. by apply HX.
+  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & _ & HX).
+    exists a, s, s'. split_and!; [done..|]. by apply HX.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |by apply HX].
     eapply Vspawn_mono; [|exact Hv]. by intros ? ? ? ? [? _].
@@ -479,7 +474,7 @@ Proof.
   constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
   split_and!; [|done| |done| |done].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. auto.
-  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & _ & HX). eauto.
+  - intros p' Hst Hd. by destruct (Ha p' Hst Hd) as [_ HX].
   - intros cd p' Hst. destruct (Hl cd p' Hst) as (c & d & Σ1 & sc & sd & kc & kd & ? & ? & ? & ? & ? & ? & ? & _ & HX).
     exists c, d, Σ1, sc, sd, kc, kd. by split_and!.
 Qed.
@@ -519,7 +514,7 @@ Qed.
 
 Lemma LPtau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
   (∀ W Σ T, X W Σ T p' → Y W Σ T p') → LPtau_case X W Σ T p' → LPtau_case Y W Σ T p'.
-Proof. intros HXY H Hd L. destruct (H Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; [done|done|by apply HXY]. Qed.
+Proof. intros HXY H Hd. by apply HXY, H. Qed.
 
 Lemma LPobl_mono Vl1 Vl2 Pl1 Pl2 n W Σ T p σ p' :
   (∀ j, j ≤ pred n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
@@ -547,8 +542,8 @@ Proof.
   constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hbeta & Hnew & Hsp & Hσ & Hlk).
   split_and!; [done|done| | | | |].
   - intros e' Hst. by apply (Hbeta e' Hst).
-  - intros c e' Hst Hc L. destruct (Hnew c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
-    exists a, s, s', W'. by split_and!.
+  - intros c e' Hst Hc. destruct (Hnew c e' Hst Hc) as (a & s & s' & ? & ? & _ & HX).
+    exists a, s, s'. by split_and!.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |done].
     destruct Hv as [(eb & -> & ? & ? & Hv)|Hk]; [left|by right]. exists eb.
@@ -569,7 +564,7 @@ Proof.
   intros Hn Hb H. induction H as [W Σ p H] using Pind_ind'.
   constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
   split_and!; [done|done| | | |].
-  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & _ & HX). eauto.
+  - intros p' Hst Hd. by destruct (Ha p' Hst Hd) as [_ HX].
   - intros p' Hst. rewrite <-(Hb (pred (pred n))) by lia. auto.
   - intros cd p' Hst. eapply Plink_case_mono; [|exact (Hl cd p' Hst)]. by intros ? [_ ?].
   - intros σ p' Hst. eapply LPobl_mono; [..|exact (Hσ σ p' Hst)].

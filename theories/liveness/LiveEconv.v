@@ -3,9 +3,8 @@
     [LVrel_econv], [LErel_econv]: V and E transport along Θ ≈_W Θ′, the
     same ends with session types up to ≈. [LPrel_sconv]: P transports
     along Σ ≈_W Σ′. The environment lemmas are reused from
-    PointConversion.v. New and the process τ need no renaming of
-    points: their fresh names are cofinite, and the caller adds the
-    roots of the converted environment to the set to avoid. *)
+    PointConversion.v. New and the process τ keep the world, so they
+    need no renaming of points. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.LiveFuse.
@@ -78,15 +77,11 @@ Section econv.
     - intros Hirr. eapply HVT; [done|exact Hc|]. by apply Hval.
     - intros Hirr. eapply ready_t_conv; [done|exact Hc|]. by apply Hrdy.
     - intros e' Hst. destruct (Hb e' Hst) as [_ HΦ]. by apply HΦ.
-    - intros c e' Hst Hc' L.
+    - intros c e' Hst Hc'.
       rewrite <-(tconv_dom W Θ Θ' Hc) in Hc'.
-      destruct (Hnew c e' Hst Hc' (L ∪ tenv_roots Θ')) as (x & s & s' & W' & Hpl & Hdu & _ & HΦ).
-      exists x, s, s', W'. split_and!; [eapply new_place_sub; [|exact Hpl]; set_solver|done|].
-      assert (world_wf W' ∧ ∀ x y, w_eq W x y → w_eq W' x y) as [HW' HeW'].
-      { destruct Hpl as [(a & -> & Ha & Hfr)|(_ & ->)]; [|done].
-        pose proof (proj1 Hfr) as Hx. split; [by eapply wext_wf|intros; by eapply wext_eq]. }
-      apply (HΦ HVT); [done|]. apply (tconv_insert W'); [|apply (ends_conv_refl W' HW')].
-      by eapply tconv_mono.
+      destruct (Hnew c e' Hst Hc') as (x & s & s' & Hpl & Hdu & _ & HΦ).
+      exists x, s, s'. split_and!; [done|done|].
+      apply (HΦ HVT); [done|]. by apply (tconv_insert W); [|apply (ends_conv_refl W HW)].
     - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & Hsp' & Hv & _ & HΦ).
       destruct (tconv_comp_split W HW Θ Θ1 Θ2 Θ' Hsp' Hc) as (Θ1' & Θ2' & Hsp'' & Hc1 & Hc2).
       exists Θ1', Θ2', ub, lb. split_and!; [done| |by apply HΦ].
@@ -286,23 +281,15 @@ Proof.
   clear H HW0 Hc0 HW1.
   assert (Htau : ∀ X q, (∀ W' Σ0 Σ0' T q, world_wf W' → sconv W' Σ0 Σ0' → X W' Σ0 T q → X W' Σ0' T q) →
             LPtau_case X W Σ T q → LPtau_case X W Σ' T q).
-  { intros X q HX Hq Hd L. rewrite <-(sconv_dom W Σ Σ' Hc) in Hd.
-    destruct (Hq Hd (L ∪ senv_roots Σ')) as (N & W1 & HN & Hfr & HP').
-    exists N, W1. split_and!; [set_solver|done|].
-    assert (world_wf W1) as HW1 by (by destruct Hfr as ((_ & _ & _ & [? _]) & _)).
-    eapply HX; [done| |exact HP'].
-    eapply sconv_mono; [|exact Hc]. intros. destruct Hfr as ((_ & He & _) & _). auto. }
+  { intros X q HX Hq Hd. rewrite <-(sconv_dom W Σ Σ' Hc) in Hd.
+    eapply HX; [done|exact Hc|exact (Hq Hd)]. }
   split_and!.
   - intros Hp. destruct (Hirr Hp) as (v & E & -> & ? & HVv & ?).
     exists v, E. split_and!; [done|done| |done].
     eapply LVrel_econv; [done|by apply sconv_tconv|exact HVv].
   - intros Hp. eapply (ready_p_conv W HW); [exact Hc|]. by apply Hrdy.
-  - intros q Hst Hd L. rewrite <-(sconv_dom W Σ Σ' Hc) in Hd.
-    destruct (Had q Hst Hd (L ∪ senv_roots Σ')) as (N & W1 & HN & Hfr & _ & HΦ).
-    exists N, W1. split_and!; [set_solver|done|].
-    assert (world_wf W1) as HW1 by (by destruct Hfr as ((_ & _ & _ & [? _]) & _)).
-    apply HΦ; [done|].
-    eapply sconv_mono; [|exact Hc]. intros. destruct Hfr as ((_ & He & _) & _). auto.
+  - intros q Hst Hd. rewrite <-(sconv_dom W Σ Σ' Hc) in Hd.
+    destruct (Had q Hst Hd) as [_ HΦ]. by apply HΦ.
   - intros q Hst. apply Htau; [|by apply Hcm]. intros. eapply HPj; [lia|done..].
   - (* Q-Link, at the index *)
     intros cd q Hst.

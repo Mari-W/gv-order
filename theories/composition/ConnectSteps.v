@@ -123,8 +123,6 @@ Section steps2.
         apply map_eq. intros r. pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
         mpoint. all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence).
   Qed.
-  Lemma wext_fresh_wext W0 N W1 : wext_fresh W0 N W1 → wext W0 W1.
-  Proof. by intros [? _]. Qed.
 
   (** The composite in a larger world, components at level j ≤ n'. *)
   Lemma conn_at_world j W' Σ1' Σ2' ΣC1 ΣC2 C0' C1' C2' E1' E2' :
@@ -145,21 +143,12 @@ Section steps2.
     pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
     destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
     pose proof (Prel_S_step _ _ _ _ _ _ _ HP1 Hst) as [Hc1 _].
-    destruct (Hc1 ltac:(rewrite dom_union_L, HC0; clear -Hg Hq; set_solver))
-      as (N & W1 & HN & Hfr & HP1').
-    destruct (Prel_tau_rename n' (senv_roots (Σ2 ∪ ΣC') ∪ ty_roots TB ∪ ty_roots T) _ W N W1
-                _ _ _ eq_refl (proj1 HW') Hfr HN HP1') as (N' & W1' & HN'X & HN' & Hfr' & HP1'').
-    exists N', W1'. split_and!; [|done|].
-    - pose proof (senv_roots_mono Σ1 (Σ1 ∪ ΣC) ltac:(by apply map_union_subseteq_l)).
-      pose proof (senv_roots_mono Σ2 (Σ2 ∪ ΣC') ltac:(by apply map_union_subseteq_l)).
-      pose proof (senv_roots_union Σ1 Σ2) as Hsr.
-      destruct Hty as [[-> ->]|[-> ->]]; clear -HN'X HN' Hsr H H0; set_solver.
-    - pose proof (wext_fresh_wext _ _ _ Hfr') as Hx.
-      destruct q1 as [C1' E1']. simpl in *.
-      apply (conn_at_world n' W1' Σ1 Σ2 ΣC ΣC' C0 C1' C2 E1' E2 (le_n _) Hx).
-      + split; try done; [apply Hx|clear -Hg Hq; set_solver..].
-      + done.
-      + eapply Prel_mono; [apply HW'|done|]. eapply Prel_down; [|exact HP2]. lia.
+    pose proof (Hc1 ltac:(rewrite dom_union_L, HC0; clear -Hg Hq; set_solver)) as HP1'.
+    destruct q1 as [C1' E1']. simpl in *.
+    apply (conn_at_world n' W Σ1 Σ2 ΣC ΣC' C0 C1' C2 E1' E2 (le_n _) (wext_refl W HW')).
+    - split; try done; clear -Hg Hq; set_solver.
+    - done.
+    - eapply Prel_down; [|exact HP2]. lia.
   Qed.
   (** A cut channel is the only channel both components act on. *)
   Lemma cross_subj F1 F2 e σ1 e' f σ2 f' c :
@@ -220,7 +209,6 @@ Section steps2.
       - rewrite lookup_union, lookup_delete_eq, H2c, Hc2a. done.
       - rewrite lookup_insert_ne in Hr by done. rewrite <-Hr, !lookup_union, lookup_delete_ne by done.
         done. }
-    exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
     assert (C ∖ {[c]} = C1 ∪ C2 ∪ (C0 ∖ {[c]})) as -> by (clear -Hc1 Hc2; set_solver).
     assert (F1 ⊎ F2 ⊎ {[+ e' +]} ⊎ {[+ f' +]} = (F1 ⊎ {[+ e' +]}) ⊎ (F2 ⊎ {[+ f' +]})) as ->
       by multiset_solver.
@@ -283,7 +271,6 @@ Section steps2.
       by rewrite (left_id_L None (∪)) in Hr. }
     destruct (Hcut c _ _ HCc HC'c) as [Hk Hdu]. simpl in Hk, Hdu.
     destruct (sdual_plus_with _ _ _ _ _ _ Hdu Hu1 Hu2) as [Hdu1 Hdu2].
-    exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
     assert (F1 ⊎ F2 ⊎ {[+ e' +]} ⊎ {[+ f' +]} = (F1 ⊎ {[+ e' +]}) ⊎ (F2 ⊎ {[+ f' +]})) as ->
       by multiset_solver.
     apply (conn_at_world n' W Σ1 Σ2 (<[c := (sbranch i s1 s2, sel_pt k1 i)]> ΣC)
@@ -476,7 +463,6 @@ Section steps2.
       clear -He1 HC1Σ2 HC10 H. set_solver. }
     assert (Σv ##ₘ Σ2) as Hv2.
     { apply map_disjoint_dom. clear -Hva Hd12 HΣ2C0. set_solver. }
-    exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
     assert (Σ1 ∪ Σ2 = Σ1n ∪ Σ2n) as ->.
     { apply map_eq. intros r. pose proof (f_equal (lookup r) HΣa) as Hr.
       subst Σ1n Σ2n. destruct (decide (r = c)) as [->|Hrc]; mtrim; mpoint. }

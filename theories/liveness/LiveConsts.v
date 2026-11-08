@@ -16,10 +16,10 @@ Definition LEcase (n : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
     (α : tlabel) (e' : expr) : Prop :=
   match α with
   | LBeta => LErel (S n) W Θ T F e'
-  | LNew c => c ∉ dom Θ → ∀ L : gset pname,
-      ∃ x s s' W', new_place W (L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F) x W' ∧
+  | LNew c => c ∉ dom Θ →
+      ∃ x s s', pt_known W x ∧
         sdual s s' ∧
-        LErel (S n) W' (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e'
+        LErel (S n) W (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e'
   | LSpawn w => ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
       LVrel (S n) W Θ1 (TLolli ub lb TUnit TUnit) w ∧ LErel (S n) W Θ2 T F e'
   | LSess (SLink cd) => LElink (λ W Θ F e, LErel (S n) W Θ T F e) W Θ F cd e'
@@ -139,9 +139,9 @@ Proof.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst0).
   - intros _ Hs. exfalso. exact (Hs _ _ Hst0).
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
-    inversion Hst as [| | |c| | | | | | | | | | |]; subst. simpl. intros _ L.
-    exists x, S, (dual S), W. split_and!.
-    + right. by split.
+    inversion Hst as [| | |c| | | | | | | | | | |]; subst. simpl. intros _.
+    exists x, S, (dual S). split_and!.
+    + done.
     + apply sdual_dual.
     + apply LVrel_LErel. eapply LVrel_tconv; [exact (proj1 HW)|exact HB|].
       apply LVrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, x)]},

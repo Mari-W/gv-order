@@ -853,10 +853,7 @@ Section level.
   Proof.
     intros Hst. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
     split; [|intros Hl; exfalso; by eapply no_ptau_link].
-    intros _. exists ∅, W. split_and!.
-    - apply disjoint_empty_l.
-    - apply wext_fresh_refl, HWs.
-    - exact (IHo n' T (le_n _) HT W Σ ΘB C0 t' Hok Hc).
+    intros _. exact (IHo n' T (le_n _) HT W Σ ΘB C0 t' Hok Hc).
   Qed.
 
   Lemma tok_add_both W' c k1 k2 :
@@ -884,20 +881,11 @@ Section level.
     assert (c ∉ dom Θ) as Hc0.
     { unfold tenv_of. rewrite dom_union_L, dom_fmap_L, (tok_dom _ _ _ _ Hok). clear -HcΣ HcC. set_solver. }
     specialize (Hc Hc0).
-    destruct Hc as (x & s & s' & W' & [(a & -> & Hfr & Hwf)|(Hx & ->)] & Hdd & HE').
-    + exists {[NConst a]}, W'. split_and!; [|done|].
-      * pose proof (senv_roots_sub Σ ΘB). clear -Hfr H. set_solver.
-      * apply (IHo n' T (le_n _) HT W' Σ (<[c := Both (s, pconst a) (s', pt_dual (pconst a))]> ΘB)).
-        -- apply tok_add_both; [|done|done| |done].
-           ++ eapply tok_mono; [exact (proj1 Hwf)|exact Hok].
-           ++ apply (wf_eq_refl _ (proj1 (proj2 (proj2 (proj2 (proj1 Hwf)))))).
-        -- rewrite <-ins_both; [done|]. by apply not_elem_of_dom.
-    + (* new at a known point: the world stays *)
-      exists ∅, W. split_and!; [apply disjoint_empty_l|apply wext_fresh_refl, HWs|].
-      apply (IHo n' T (le_n _) HT W Σ (<[c := Both (s, x) (s', pt_dual x)]> ΘB)).
-      * apply tok_add_both; [done|done|done| |done].
-        simpl. rewrite ?pt_dual_dual. apply (wf_eq_refl _ (proj1 HWs)).
-      * rewrite <-ins_both; [done|]. by apply not_elem_of_dom.
+    destruct Hc as (x & s & s' & Hx & Hdd & HE').
+    apply (IHo n' T (le_n _) HT W Σ (<[c := Both (s, x) (s', pt_dual x)]> ΘB)).
+    - apply tok_add_both; [done|done|done| |done].
+      simpl. rewrite ?pt_dual_dual. apply (wf_eq_refl _ (proj1 HWs)).
+    - rewrite <-ins_both; [done|]. by apply not_elem_of_dom.
   Qed.
 
   Lemma case_spawn v t' :
@@ -906,7 +894,7 @@ Section level.
   Proof.
     intros Hst. pose proof (Erel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc. simpl in Hc |- *.
     split; [|intros Hl; exfalso; by eapply no_ptau_link].
-    intros _. exists ∅, W. split_and!; [apply disjoint_empty_l|apply wext_fresh_refl, HWs|].
+    intros _.
     destruct Hc as (Θ1 & Θ2 & ub & lb & Hcomp & HV & HE2).
     destruct (spawn_env W Σ ΘB C0 Θ1 Θ2 Hok Hcomp) as (H2 & H1 & Hok2 & Hok1 & Hcut & HΣ & HC).
     pose proof (IHo n' T (le_n _) HT _ _ _ _ t' Hok2 ltac:(by rewrite <-H2)) as HP1.
@@ -932,7 +920,7 @@ Section level.
         eapply Erel_econv; [apply HWs|exact Hcv|].
         exact (proj2 (rel_fuse (S n')) W Θ1 Θ' T ∅ t' c d HWs Hne Hmv HE'). }
     simpl. split.
-    - intros _. exists ∅, W. split_and!; [apply disjoint_empty_l|apply wext_fresh_refl, HWs|].
+    - intros _.
       eapply Prel_down; [|exact HP]. lia.
     - intros _ _. exact HP.
   Qed.

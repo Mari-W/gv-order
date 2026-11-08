@@ -2,8 +2,7 @@
 
     teq T T' moves V, E and semantic typing from T to T' ([Vrel_teq],
     [Erel_teq], [sem_typed_teq]) in every well-formed world and under
-    every future. At [new] the fresh point is renamed away from the
-    points of the converted type ([Erel_new_rename]).
+    every future.
 
     V and E are proved together by strong induction on the step index,
     with an inner induction on the type for V. The session case is a
@@ -130,18 +129,9 @@ Proof.
   - destruct Hstep as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
     exists Θr, s1, s2, k, Θ'. split_and!; [done|done|].
     eapply HEj; [lia|done|exact Hteq|exact HE'].
-  - (* O-New: rename the new point away from the points of T' *)
-    intros Hc. destruct (Hstep Hc) as (x & s & s' & W1 & [(a & -> & Ha & Hfr)|(Hx & ->)] & Hdu & HE').
-    2: { exists x, s, s', W. split_and!; [by right|done|]. eapply HEj; [lia|done|exact Hteq|exact HE']. }
-    destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
-                           ∪ future_roots F)) as [a1 Ha1].
-    destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 HW Hfr Ha
-                ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
-    exists (pconst a1), (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
-    + left. exists a1. split_and!; [done|set_solver|done].
-    + by apply sdual_sw.
-    + eapply HEj; [lia| |exact Hteq|exact HE1].
-      by destruct Hfr' as ((_ & _ & _ & [? _]) & _).
+  - (* O-New *)
+    intros Hc. destruct (Hstep Hc) as (x & s & s' & Hx & Hdu & HE').
+    exists x, s, s'. split_and!; [done|done|]. eapply HEj; [lia|done|exact Hteq|exact HE'].
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|].
     eapply HEj; [lia|done|exact Hteq|exact HE'].

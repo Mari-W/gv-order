@@ -3,7 +3,7 @@
     V, E and P transport along T ≈_W T'. The arrow of V at level n reads
     E at level n, so inside one level V and E are converted together by
     induction on [tsize], which ≈_W keeps ([teqW_tsize]). New and the
-    process τ need no renaming, because their fresh names are cofinite.
+    process τ need no renaming, because they keep the world.
 
     The alias handling sits in the lemmas reused from
     invariance/PointConversion.v ([teqW_mono], [lb_below_conv],
@@ -58,12 +58,9 @@ Section conv.
     - intros Hirr. by apply HVT, Hs.
     - done.
     - intros e' Hst. destruct (Hb e' Hst) as [_ HΦ]. by apply HΦ.
-    - intros c e' Hst Hc L.
-      destruct (Hnew c e' Hst Hc (L ∪ ty_roots T')) as (x & s & s' & W' & Hpl & Hdu & _ & HΦ).
-      exists x, s, s', W'. split_and!; [eapply new_place_sub; [|exact Hpl]; set_solver|done|].
-      destruct Hpl as [(a & -> & Ha & Hfr)|(_ & ->)]; [|by apply HΦ].
-      pose proof (proj1 Hfr) as HW'. apply HΦ; [by eapply wext_wf| |done].
-      eapply teqW_mono; [|exact Ht1]. intros ? ? ?. by apply (proj1 (proj2 HW')).
+    - intros c e' Hst Hc.
+      destruct (Hnew c e' Hst Hc) as (x & s & s' & Hpl & Hdu & _ & HΦ).
+      exists x, s, s'. split_and!; [done|done|]. by apply HΦ.
     - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HΦ).
       exists Θ1, Θ2, ub, lb. split_and!; [done| |by apply HΦ].
       eapply Vspawn_mono; [|exact Hv]. by intros ? ? ? ? [? _].
@@ -184,12 +181,8 @@ Section conv.
     - intros Hp. destruct (Hs Hp) as (v & E & -> & ? & HVv & ?).
       exists v, E. split_and!; [done|done| |done]. by eapply HV.
     - done.
-    - intros p' Hst Hd L. destruct (Ha p' Hst Hd (L ∪ ty_roots T')) as (N & W' & HN & Hfr & _ & HΦ).
-      exists N, W'. split_and!; [set_solver|done|]. pose proof (proj1 Hfr) as HW'.
-      apply HΦ; [by eapply wext_wf|]. eapply teqW_mono; [|exact Ht1]. intros ? ? ?. by apply (proj1 (proj2 HW')).
-    - intros p' Hst Hd L. destruct (Hc p' Hst Hd (L ∪ ty_roots T')) as (N & W' & HN & Hfr & HP').
-      exists N, W'. split_and!; [set_solver|done|]. pose proof (proj1 Hfr) as HW'.
-      eapply HPj; [lia|by eapply wext_wf| |exact HP']. intros ? ? ?. by apply (proj1 (proj2 HW')).
+    - intros p' Hst Hd. destruct (Ha p' Hst Hd) as [_ HΦ]. by apply HΦ.
+    - intros p' Hst Hd. eapply HPj; [lia|done|by intros|exact (Hc p' Hst Hd)].
     - intros cd p' Hst. eapply Plink_case_mono; [|exact (Hl cd p' Hst)].
       intros ? [_ HΦ]. by apply HΦ.
     - intros σ q Hst. pose proof (Hσ σ q Hst) as Hc'.

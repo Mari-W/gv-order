@@ -51,17 +51,9 @@ Proof.
   - destruct Hstep as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
     exists Θr, s1, s2, k, Θ'. split_and!; [done..|].
     eapply HEj; [lia|by apply wext_refl|exact HE'].
-  - (* O-New: rename the new point away from the points of T' *)
-    intros Hc. destruct (Hstep Hc) as (x & s & s' & W1 & [(a & -> & Ha & Hfr)|(Hx & ->)] & Hdu & HE').
-    2: { exists x, s, s', W. split_and!; [by right|done|]. eapply HEj; [lia|by apply wext_refl|exact HE']. }
-    destruct (fresh_const (w_names W ∪ tenv_roots Θ ∪ ty_roots T ∪ ty_roots T'
-                           ∪ future_roots F)) as [a1 Ha1].
-    destruct (Erel_new_rename _ _ _ _ _ _ _ c s s' a a1 (proj1 HW) Hfr Ha
-                ltac:(set_solver) HE') as (W1' & Hfr' & HE1).
-    exists (pconst a1), (stysw a a1 s), (stysw a a1 s'), W1'. split_and!.
-    + left. exists a1. split_and!; [done|set_solver|done].
-    + by apply sdual_sw.
-    + eapply HEj; [lia|by destruct Hfr' as (? & _)|exact HE1].
+  - (* O-New *)
+    intros Hc. destruct (Hstep Hc) as (x & s & s' & Hx & Hdu & HE').
+    exists x, s, s'. split_and!; [done|done|]. eapply HEj; [lia|by apply wext_refl|exact HE'].
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|].
     eapply HEj; [lia|by apply wext_refl|exact HE'].

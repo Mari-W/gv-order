@@ -15,29 +15,26 @@ Local Set Warnings "-register-all".
 Lemma disjoint_dom_empty (C : gset chan) : C ## dom (∅ : senv).
 Proof. rewrite dom_empty_L. apply disjoint_empty_r. Qed.
 
-(** Every τ lowers the index by at most two and may grow the world. *)
+(** Every τ lowers the index by at most two and keeps the world. *)
 Lemma LPrel_tau n W T p p' :
-  LPrel (S (S n)) W ∅ T p → preduction p p' → ∃ W', LPrel n W' ∅ T p'.
+  LPrel (S (S n)) W ∅ T p → preduction p p' → LPrel n W ∅ T p'.
 Proof.
   intros HP Hst. apply LPrel_S_iff in HP.
   destruct (HP W (wext_r_refl W)) as (_ & _ & HA & HC & _ & _).
   apply ptau_classify in Hst as [Ha|Hc].
-  - destruct (HA p' Ha (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
-    exists W'. eapply LPrel_down; [|exact HP']. lia.
-  - destruct (HC p' Hc (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
-    exists W'. exact HP'.
+  - eapply LPrel_down; [|exact (HA p' Ha (disjoint_dom_empty _))]. lia.
+  - exact (HC p' Hc (disjoint_dom_empty _)).
 Qed.
 
 (** A run of m steps lowers the index by at most 2m. *)
 Lemma LPrel_steps m : ∀ W n T p p',
-  nsteps preduction m p p' → LPrel (2 * m + n) W ∅ T p → ∃ W', LPrel n W' ∅ T p'.
+  nsteps preduction m p p' → LPrel (2 * m + n) W ∅ T p → LPrel n W ∅ T p'.
 Proof.
   induction m as [|m IH]; intros W n T p p' Hrun HP.
-  { inversion Hrun; subst. by exists W. }
+  { by inversion Hrun; subst. }
   inversion Hrun as [|? ? q ? Hpq Hqr]; subst.
   replace (2 * S m + n) with (S (S (2 * m + n))) in HP by lia.
-  destruct (LPrel_tau _ _ _ _ _ HP Hpq) as (W' & HP').
-  exact (IH W' n T q p' Hqr HP').
+  exact (IH W n T q p' Hqr (LPrel_tau _ _ _ _ _ HP Hpq)).
 Qed.
 
 Lemma slabel_link_dec σ : (∃ cd, σ = SLink cd) ∨ (∀ cd, σ ≠ SLink cd).
@@ -85,7 +82,7 @@ Proof.
   intros W Σ T p H ->.
   constructor. intros p' Ha.
   destruct (H W (wext_r_refl W)) as (_ & _ & HA & _).
-  destruct (HA p' Ha (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & _ & HΦ).
+  destruct (HA p' Ha (disjoint_dom_empty _)) as (_ & HΦ).
   by apply HΦ.
 Qed.
 
@@ -95,7 +92,7 @@ Definition no_tau_divergence (p : proc) : Prop :=
   ∀ q, pred_star p q → Acc (λ y x, padmin x y) q.
 
 Lemma live_reach W T p q :
-  (∀ n, LPrel n W ∅ T p) → pred_star p q → ∀ n, ∃ W', LPrel n W' ∅ T q.
+  (∀ n, LPrel n W ∅ T p) → pred_star p q → ∀ n, LPrel n W ∅ T q.
 Proof.
   intros HP Hq n. apply rtc_nsteps_1 in Hq as [m Hm].
   exact (LPrel_steps m W n T p q Hm (HP (2 * m + n))).
@@ -103,14 +100,12 @@ Qed.
 
 Theorem live_deadlock_free W T p : (∀ n, LPrel n W ∅ T p) → deadlock_free p.
 Proof.
-  intros HP q Hq. destruct (live_reach W T p q HP Hq 1) as (W' & HP').
-  by eapply (LPrel_safe 0).
+  intros HP q Hq. by eapply (LPrel_safe 0), (live_reach W T p q HP Hq 1).
 Qed.
 
 Theorem live_no_tau_divergence W T p : (∀ n, LPrel n W ∅ T p) → no_tau_divergence p.
 Proof.
-  intros HP q Hq. destruct (live_reach W T p q HP Hq 1) as (W' & HP').
-  by eapply (LPrel_acc 0).
+  intros HP q Hq. by eapply (LPrel_acc 0), (live_reach W T p q HP Hq 1).
 Qed.
 
 (** Theorem (live adequacy). *)

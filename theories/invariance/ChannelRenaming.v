@@ -634,9 +634,9 @@ Proof.
       intros Hc.
       assert (c ∉ dom Θ) as Hc0.
       { rewrite dom_tenvswap, elem_of_gswap', cswap_involutive in Hc. done. }
-      destruct (Hstep Hc0) as (x & s & s' & W1 & Ha & Hdu & HE').
-      exists x, s, s', W1. split_and!.
-      * by rewrite tenv_roots_swap.
+      destruct (Hstep Hc0) as (x & s & s' & Ha & Hdu & HE').
+      exists x, s, s'. split_and!.
+      * done.
       * done.
       * apply (IHE n' ltac:(lia)) in HE'. by rewrite tenvswap_insert in HE'.
     + (* spawn *)
@@ -677,9 +677,7 @@ Proof.
       { intros Hd. destruct q as [Cq Eq]; simpl in *.
         rewrite dom_senvswap in Hd. by apply gswap_disjoint_iff in Hd. }
       split.
-      { intros Hd. destruct (Htau (Hdd Hd)) as (N & W1 & HN & Hfr & HP').
-        exists N, W1. split_and!; [by rewrite senv_roots_swap|done|].
-        by apply (IHP n' ltac:(lia)). }
+      { intros Hd. by apply (IHP n' ltac:(lia)), Htau, Hdd. }
       intros Hl Hd. apply (ptau_link_pswap a b) in Hl.
       rewrite !pswap_involutive in Hl.
       exact (proj2 (Hlink Hl (Hdd Hd))).

@@ -667,8 +667,8 @@ Proof.
   - intros _ Hs. exfalso. exact (Hs _ _ Hst0).
   - intros α e' Hst. apply app_val_step in Hst; [|done|done].
     inversion Hst as [| | |c| | | | | | | | | | |]; subst. simpl. intros _.
-    exists x, S, (dual S), W. split_and!.
-    + right. by split.
+    exists x, S, (dual S). split_and!.
+    + done.
     + apply sdual_dual.
     + apply Vrel_Erel. eapply Vrel_tconv; [first [exact HW|exact (proj1 HW)]|exact HB|].
       apply Vrel_prod_iff. exists (Chan c), (Chan c), {[c := One (S, x)]},

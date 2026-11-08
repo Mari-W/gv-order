@@ -2,9 +2,8 @@
 
     As [Erel_bind], with the live costs. A τ step of the hole (β, new,
     spawn, link) stays at the index and uses the induction over τ steps. A channel step lowers
-    the index and uses the induction on n. At new the hole's fresh point
-    is chosen outside the context's names by the cofinite quantifier, so
-    no renaming of points is needed. *)
+    the index and uses the induction on n. New keeps the world, so no
+    renaming of points is needed. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.LiveRules rules.Bind.
@@ -313,25 +312,14 @@ Proof.
   - intros _. exact (Lbind_ready n' W1 Θ Θ1 Θ2 Th F H f e Hf Hnv HW1s Hc1 Hh1 HE1).
   - intros E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
     destruct (Hbeta e' Hst') as [_ HΦ]. by apply HΦ.
-  - intros c E' Hst HcΘ L. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
+  - intros c E' Hst HcΘ. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
     assert (Θ1 !! c = None ∧ Θ2 !! c = None) as [H1c H2c].
     { rewrite (tenv_join_dom _ _ _ (proj1 Hc1)) in HcΘ.
       split; apply not_elem_of_dom; clear -HcΘ; set_solver. }
-    destruct (Hnew c e' Hst' ltac:(by apply not_elem_of_dom)
-                (L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F))
-      as (x & s & s' & W' & Hpl & Hdd & _ & HΦ).
-    exists x, s, s', W'. split_and!; [eapply new_place_sub; [|exact Hpl]; clear; set_solver|done|].
-    destruct Hpl as [(a & -> & Hfr & Hwf)|(Hx & ->)].
-    2: { (* new at a known point: the world stays *)
-      apply HΦ; [by apply comp_insert|exact HK1|done|done|done]. }
-    pose proof (proj1 Hwf) as HW1'.
-    apply HΦ.
-    + apply comp_insert; [|done]. exact Hc1.
-    + intros W'' j Θ1' Θ' v HW'' Hj Hc' HV. apply (HK1 W'' j Θ1' Θ' v); [|done..].
-      by eapply wext_trans.
-    + by eapply heads_above_x_mono.
-    + exact (proj2 (proj2 (proj2 HW1'))).
-    + done.
+    destruct (Hnew c e' Hst' ltac:(by apply not_elem_of_dom))
+      as (x & s & s' & Hx & Hdd & _ & HΦ).
+    exists x, s, s'. split_and!; [done|done|].
+    apply HΦ; [by apply comp_insert|exact HK1|done|done|done].
   - intros w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
     destruct (Hsp w e' Hst') as (Θa & Θb & ub & lb & HcAB & HV & _ & HΦ).
     destruct (comp_assoc _ _ _ _ _ _ Hsym Hc1 (comp_comm _ _ _ _ Hsym HcAB)) as [HX1 HX2].
@@ -492,26 +480,14 @@ Proof.
   - intros _. exact (Lbind_ready n' W1 Θ Θ1 Θ2 Th F H f e Hf Hnv HW1s Hc1 Hh1 HE1).
   - intros E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
     destruct (Hbeta e' Hst') as [_ HΦ]. apply HΦ; try done. eapply HRc; [exact HRe|by econstructor].
-  - intros c E' Hst HcΘ L. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
+  - intros c E' Hst HcΘ. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
     assert (Θ1 !! c = None ∧ Θ2 !! c = None) as [H1c H2c].
     { rewrite (tenv_join_dom _ _ _ (proj1 Hc1)) in HcΘ.
       split; apply not_elem_of_dom; clear -HcΘ; set_solver. }
-    destruct (Hnew c e' Hst' ltac:(by apply not_elem_of_dom)
-                (L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F))
-      as (x & s & s' & W' & Hpl & Hdd & _ & HΦ).
-    exists x, s, s', W'. split_and!; [eapply new_place_sub; [|exact Hpl]; clear; set_solver|done|].
-    destruct Hpl as [(a & -> & Hfr & Hwf)|(Hx & ->)].
-    2: { (* new at a known point: the world stays *)
-      apply HΦ; [by apply comp_insert|exact HK1|done|done|done|eapply HRc; [exact HRe|by econstructor]]. }
-    pose proof (proj1 Hwf) as HW1'.
-    apply HΦ.
-    + apply comp_insert; [|done]. exact Hc1.
-    + intros W'' j Θ1' Θ' v HW'' Hj HRv Hc' HV. apply (HK1 W'' j Θ1' Θ' v); [|done..].
-      by eapply wext_trans.
-    + by eapply heads_above_x_mono.
-    + exact (proj2 (proj2 (proj2 HW1'))).
-    + done.
-    + eapply HRc; [exact HRe|by econstructor].
+    destruct (Hnew c e' Hst' ltac:(by apply not_elem_of_dom))
+      as (x & s & s' & Hx & Hdd & _ & HΦ).
+    exists x, s, s'. split_and!; [done|done|].
+    apply HΦ; [by apply comp_insert|exact HK1|done|done|done|eapply HRc; [exact HRe|by econstructor]].
   - intros w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
     destruct (Hsp w e' Hst') as (Θa & Θb & ub & lb & HcAB & HV & _ & HΦ).
     destruct (comp_assoc _ _ _ _ _ _ Hsym Hc1 (comp_comm _ _ _ _ Hsym HcAB)) as [HX1 HX2].

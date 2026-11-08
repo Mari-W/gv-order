@@ -44,9 +44,6 @@ Lemma cut_ok_new1 W Σ1 Σ2 ΣC ΣC' C0 C1 C2 c :
   cut_ok W Σ1 Σ2 ΣC ΣC' C0 (C1 ∪ {[c]}) C2.
 Proof. intros []. split; try done; set_solver. Qed.
 
-Lemma wext_r_of_fresh W N W' : wext_fresh W N W' → wext_r W W'.
-Proof. intros [? _]. by right. Qed.
-
 Lemma senv_roots_union_sub Σ1 ΣC : Σ1 ##ₘ ΣC → senv_roots Σ1 ⊆ senv_roots (Σ1 ∪ ΣC).
 Proof. intros _. apply senv_roots_mono, map_union_subseteq_l. Qed.
 
@@ -96,14 +93,11 @@ Section lassembly.
     { intros cd p1' Hst. eapply Plink_case_mono; [|exact (Hl1 cd p1' Hst)].
       intros Σa' [_ HΦ] Σ1' Σ2' ΣC1 ΣC2 C0' C1' E1' HΣa Hq HΣb Hok'.
       eapply (HΦ W2 _ TB (C2, E2) HP2b); [exact HΣa|exact Hq|exact HΣb|done|done|by left|exact HW2'|exact Hok']. }
-    assert (HA1 : ∀ p1', padmin (C1, E1) p1' → p1'.1 ## dom (Σ1 ∪ ΣC) → ∀ L : gset pname,
-              ∃ N W'', N ## L ∪ senv_roots (Σ1 ∪ ΣC) ∪ ty_roots TA ∧ wext_fresh W' N W'' ∧
-                lc_succ n' T Σ2 ΣC' C2 E2 W'' (Σ1 ∪ ΣC) p1').
-    { intros p1' Hp Hd L. destruct (Ha1 p1' Hp Hd L) as (N & W'' & HN & Hfr & _ & HΦ).
-      exists N, W''. split_and!; [done|done|].
+    assert (HA1 : ∀ p1', padmin (C1, E1) p1' → p1'.1 ## dom (Σ1 ∪ ΣC) →
+              lc_succ n' T Σ2 ΣC' C2 E2 W' (Σ1 ∪ ΣC) p1').
+    { intros p1' Hp Hd. destruct (Ha1 p1' Hp Hd) as (_ & HΦ).
       intros Σ1' Σ2' ΣC1 ΣC2 C0' C1' E1' HΣa Hq HΣb Hok'.
-      eapply (HΦ W2 _ TB (C2, E2) HP2b); [exact HΣa|exact Hq|exact HΣb|done|done|by left| |exact Hok'].
-      eapply wext_r_trans; [exact HW2'|]. by eapply wext_r_of_fresh. }
+      eapply (HΦ W2 _ TB (C2, E2) HP2b); [exact HΣa|exact Hq|exact HΣb|done|done|by left|exact HW2'|exact Hok']. }
     assert (HQ2 : ∀ cd p2', proc_step (C2, E2) (PSess (SLink cd)) p2' →
               Plink_case (λ W0 Σb _ q, lc_succ n' T Σ1 ΣC C1 E1 W0 Σb q) W' (Σ2 ∪ ΣC') TB cd p2').
     { intros cd p2' Hst. eapply Plink_case_mono; [|exact (Hl2 cd p2' Hst)].
@@ -112,16 +106,12 @@ Section lassembly.
       pose proof (HΦ W' Σ1' Σ2' ΣC1 ΣC2 C0' C1 C2' E1 E2' HΣa eq_refl HΣb Hq Hty HW1' (wext_r_refl _) Hok'')
         as HP.
       rewrite (co_union_comm _ _ _ _ _ _ _ _ Hok''), union3_comm, (comm_L (⊎) E1 E2') in HP. exact HP. }
-    assert (HA2 : ∀ p2', padmin (C2, E2) p2' → p2'.1 ## dom (Σ2 ∪ ΣC') → ∀ L : gset pname,
-              ∃ N W'', N ## L ∪ senv_roots (Σ2 ∪ ΣC') ∪ ty_roots TB ∧ wext_fresh W' N W'' ∧
-                lc_succ n' T Σ1 ΣC C1 E1 W'' (Σ2 ∪ ΣC') p2').
-    { intros p2' Hp Hd L. destruct (Ha2 p2' Hp Hd L) as (N & W'' & HN & Hfr & _ & HΦ).
-      exists N, W''. split_and!; [done|done|].
+    assert (HA2 : ∀ p2', padmin (C2, E2) p2' → p2'.1 ## dom (Σ2 ∪ ΣC') →
+              lc_succ n' T Σ1 ΣC C1 E1 W' (Σ2 ∪ ΣC') p2').
+    { intros p2' Hp Hd. destruct (Ha2 p2' Hp Hd) as (_ & HΦ).
       intros Σ2' Σ1' ΣC2 ΣC1 C0' C2' E2' HΣb Hq HΣa Hok'.
       pose proof (cut_ok_sym _ _ _ _ _ _ _ _ Hok') as Hok''.
-      assert (wext_r W1 W'') as HW1''.
-      { eapply wext_r_trans; [exact HW1'|]. by eapply wext_r_of_fresh. }
-      pose proof (HΦ W'' Σ1' Σ2' ΣC1 ΣC2 C0' C1 C2' E1 E2' HΣa eq_refl HΣb Hq Hty HW1'' (wext_r_refl _) Hok'')
+      pose proof (HΦ W' Σ1' Σ2' ΣC1 ΣC2 C0' C1 C2' E1 E2' HΣa eq_refl HΣb Hq Hty HW1' (wext_r_refl _) Hok'')
         as HP.
       rewrite (co_union_comm _ _ _ _ _ _ _ _ Hok''), union3_comm, (comm_L (⊎) E1 E2') in HP. exact HP. }
     pose proof (ctys_sym _ _ _ Hty) as Hty'. pose proof (cut_ok_sym _ _ _ _ _ _ _ _ Hok) as Hok'.
@@ -153,7 +143,7 @@ Section lassembly.
       + pose proof (lc_conn_ready n' T HT W' Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 Hok' HP2 HP1) as H.
         by rewrite HΣs, HCs, HEs in H.
     - (* Q-Admin: by the inductions on the τ layers *)
-      intros q' Hq Hd L. simpl in Hd.
+      intros q' Hq Hd. simpl in Hd.
       apply padmin_inv in Hq as
         [ (F & e & e' & HE & Hs & ->)
         | [ (F & e & c & e' & HE & Hs & HcC & HcF & Hce & ->)
@@ -163,90 +153,75 @@ Section lassembly.
         injection Heq as <- HE.
         destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
         + exact (lc2_link_give n' T HT W' Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA Hok HP1 HQ1 HA1
-                   F1 e c d e' HE1 Hst HcC L).
-        + destruct (lc2_link_give n' T HT W' Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB Hok' HP2 HQ2 HA2
-                      F2 e c d e' HE2 Hst ltac:(by rewrite HCs) L) as (N & W'' & HN & Hfr & H).
-          exists N, W''. rewrite HΣs in HN, H. rewrite HCs in H. split_and!; [done|done|].
+                   F1 e c d e' HE1 Hst HcC).
+        + pose proof (lc2_link_give n' T HT W' Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB Hok' HP2 HQ2 HA2
+                        F2 e c d e' HE2 Hst ltac:(by rewrite HCs)) as H.
+          rewrite HΣs, HCs in H.
           assert (F2 ⊎ E1 ⊎ {[+ e' +]} = E1 ⊎ F2 ⊎ {[+ e' +]}) as <- by multiset_solver. exact H. }
       + destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
         * destruct (Ha1 (C1, F1 ⊎ {[+ e' +]}) ltac:(rewrite HE1; by apply PABeta)
-                      ltac:(simpl; rewrite dom_union_L, HC0; set_solver)
-                      (L ∪ senv_roots (Σ1 ∪ Σ2) ∪ ty_roots T ∪ senv_roots (Σ2 ∪ ΣC')))
-            as (N & W'' & HN & Hfr & _ & HΦ).
-          exists N, W''. split_and!; [set_solver|done|].
+                      ltac:(simpl; rewrite dom_union_L, HC0; set_solver))
+            as (_ & HΦ).
           assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver.
           eapply (HΦ W2 _ TB (C2, E2) HP2b); try done.
-          -- by left.
-          -- eapply wext_r_trans; [exact HW2'|]. by eapply wext_r_of_fresh.
-          -- eapply cut_ok_mono; [by eapply wext_r_of_fresh|exact Hok].
+          all: try (by left).
+          all: try (exact HW2').
+          all: try (exact Hok).
         * destruct (Ha2 (C2, F2 ⊎ {[+ e' +]}) ltac:(rewrite HE2; by apply PABeta)
-                      ltac:(simpl; rewrite dom_union_L, HC0'; set_solver)
-                      (L ∪ senv_roots (Σ1 ∪ Σ2) ∪ ty_roots T ∪ senv_roots (Σ1 ∪ ΣC)))
-            as (N & W'' & HN & Hfr & _ & HΦ).
-          exists N, W''. split_and!; [set_solver|done|].
+                      ltac:(simpl; rewrite dom_union_L, HC0'; set_solver))
+            as (_ & HΦ).
           assert (E1 ⊎ F2 ⊎ {[+ e' +]} = E1 ⊎ (F2 ⊎ {[+ e' +]})) as -> by multiset_solver.
           eapply HΦ; try done.
-          -- eapply wext_r_trans; [exact HW1'|]. by eapply wext_r_of_fresh.
-          -- by left.
-          -- eapply cut_ok_mono; [by eapply wext_r_of_fresh|exact Hok].
+          all: try (exact HW1').
+          all: try (by left).
+          all: try (exact Hok).
       +
         destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
         * rewrite echans_disj_union in HcF.
           destruct (Ha1 (C1 ∪ {[c]}, F1 ⊎ {[+ e' +]})
                       ltac:(rewrite HE1; apply PANew; [done|set_solver|set_solver|done])
-                      ltac:(simpl; rewrite dom_union_L, HC0; set_solver)
-                      (L ∪ senv_roots (Σ1 ∪ Σ2) ∪ ty_roots T ∪ senv_roots (Σ2 ∪ ΣC')))
-            as (N & W'' & HN & Hfr & _ & HΦ).
-          exists N, W''. split_and!; [set_solver|done|].
+                      ltac:(simpl; rewrite dom_union_L, HC0; set_solver))
+            as (_ & HΦ).
           assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver.
           assert (C1 ∪ C2 ∪ C0 ∪ {[c]} = C1 ∪ {[c]} ∪ C2 ∪ C0) as -> by set_solver.
           eapply (HΦ W2 _ TB (C2, E2) HP2b); try done.
-          -- by left.
-          -- eapply wext_r_trans; [exact HW2'|]. by eapply wext_r_of_fresh.
-          -- eapply cut_ok_mono; [by eapply wext_r_of_fresh|].
-             apply cut_ok_new1; [exact Hok|set_solver..].
+          all: try (by left).
+          all: try (exact HW2').
+          all: try (apply cut_ok_new1; [exact Hok|set_solver..]).
         * rewrite echans_disj_union in HcF.
           destruct (Ha2 (C2 ∪ {[c]}, F2 ⊎ {[+ e' +]})
                       ltac:(rewrite HE2; apply PANew; [done|set_solver|set_solver|done])
-                      ltac:(simpl; rewrite dom_union_L, HC0'; set_solver)
-                      (L ∪ senv_roots (Σ1 ∪ Σ2) ∪ ty_roots T ∪ senv_roots (Σ1 ∪ ΣC)))
-            as (N & W'' & HN & Hfr & _ & HΦ).
-          exists N, W''. split_and!; [set_solver|done|].
+                      ltac:(simpl; rewrite dom_union_L, HC0'; set_solver))
+            as (_ & HΦ).
           assert (E1 ⊎ F2 ⊎ {[+ e' +]} = E1 ⊎ (F2 ⊎ {[+ e' +]})) as -> by multiset_solver.
           assert (C1 ∪ C2 ∪ C0 ∪ {[c]} = C1 ∪ (C2 ∪ {[c]}) ∪ C0) as -> by set_solver.
           eapply HΦ; try done.
-          -- eapply wext_r_trans; [exact HW1'|]. by eapply wext_r_of_fresh.
-          -- by left.
-          -- eapply cut_ok_mono; [by eapply wext_r_of_fresh|].
-             apply cut_ok_sym, cut_ok_new1; [exact Hok'|set_solver..].
+          all: try (exact HW1').
+          all: try (by left).
+          all: try (apply cut_ok_sym, cut_ok_new1; [exact Hok'|set_solver..]).
       + destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
         * destruct (Ha1 (C1, F1 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]}) ltac:(rewrite HE1; by apply PASpawn)
-                      ltac:(simpl; rewrite dom_union_L, HC0; set_solver)
-                      (L ∪ senv_roots (Σ1 ∪ Σ2) ∪ ty_roots T ∪ senv_roots (Σ2 ∪ ΣC')))
-            as (N & W'' & HN & Hfr & _ & HΦ).
-          exists N, W''. split_and!; [set_solver|done|].
+                      ltac:(simpl; rewrite dom_union_L, HC0; set_solver))
+            as (_ & HΦ).
           assert (F1 ⊎ E2 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]} =
                   (F1 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]}) ⊎ E2) as -> by multiset_solver.
           eapply (HΦ W2 _ TB (C2, E2) HP2b); try done.
-          -- by left.
-          -- eapply wext_r_trans; [exact HW2'|]. by eapply wext_r_of_fresh.
-          -- eapply cut_ok_mono; [by eapply wext_r_of_fresh|exact Hok].
+          all: try (by left).
+          all: try (exact HW2').
+          all: try (exact Hok).
         * destruct (Ha2 (C2, F2 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]}) ltac:(rewrite HE2; by apply PASpawn)
-                      ltac:(simpl; rewrite dom_union_L, HC0'; set_solver)
-                      (L ∪ senv_roots (Σ1 ∪ Σ2) ∪ ty_roots T ∪ senv_roots (Σ1 ∪ ΣC)))
-            as (N & W'' & HN & Hfr & _ & HΦ).
-          exists N, W''. split_and!; [set_solver|done|].
+                      ltac:(simpl; rewrite dom_union_L, HC0'; set_solver))
+            as (_ & HΦ).
           assert (E1 ⊎ F2 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]} =
                   E1 ⊎ (F2 ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]})) as -> by multiset_solver.
           eapply HΦ; try done.
-          -- eapply wext_r_trans; [exact HW1'|]. by eapply wext_r_of_fresh.
-          -- by left.
-          -- eapply cut_ok_mono; [by eapply wext_r_of_fresh|exact Hok].
+          all: try (exact HW1').
+          all: try (by left).
+          all: try (exact Hok).
     - (* Q-Comm *)
       intros q' Hq.
       destruct (decide (n' = 0)) as [Hn0|Hn0].
-      { intros Hd L. exists ∅, W'. split_and!; [set_solver|apply wext_fresh_refl, (co_strict _ _ _ _ _ _ _ _ Hok)|].
-        rewrite Hn0. apply LPrel_0. }
+      { intros Hd. rewrite Hn0. apply LPrel_0. }
       assert (∃ n'', n' = S n'') as [n'' Hn] by (exists (pred n'); lia).
       apply pcomm_inv in Hq as
         [ (F & c & v & e & e' & f & f' & HE & Hs1 & Hs2 & ->)

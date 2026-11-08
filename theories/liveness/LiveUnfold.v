@@ -209,9 +209,9 @@ Definition LEstep (X : world → tenv → ty → gset point → expr → Prop) (
     (¬ irred e → ready_t W1 Θ F e) ∧
     (∀ e', tstep e LBeta e' → X W1 Θ T F e') ∧
     (∀ c e', tstep e (LNew c) e' → c ∉ dom Θ →
-       ∀ L : gset pname, ∃ x s s' W', new_place W1 (L ∪ tenv_roots Θ ∪ ty_roots T ∪ future_roots F) x W' ∧
+       ∃ x s s', pt_known W1 x ∧
          sdual s s' ∧
-         X W' (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e') ∧
+         X W1 (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e') ∧
     (∀ w e', tstep e (LSpawn w) e' →
        ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W1) Θ Θ1 Θ2 ∧
          Vspawn LVrel LErel (λ W Θ F e, X W Θ TUnit F e) (S n) W1 Θ1 ub lb w ∧
@@ -226,8 +226,8 @@ Proof.
   intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [done|done| | | |done|].
   - intros e' Hst. auto.
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
-    exists a, s, s', W'. auto.
+  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & ?).
+    exists a, s, s'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
     eapply Vspawn_mono; [|exact Hv]. auto.
@@ -247,8 +247,8 @@ Proof.
   split_and!; [|done| | | | |].
   - intros Hirr. auto.
   - intros e' Hst. auto.
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
-    exists a, s, s', W'. auto.
+  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & ?).
+    exists a, s, s'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
     eapply Vspawn_ext; [..|exact Hv]; [| |auto].
@@ -271,8 +271,8 @@ Proof.
   split_and!; [|done| | | | |].
   - intros Hirr. apply LVrel_eq. auto.
   - intros e' Hst. auto.
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
-    exists a, s, s', W'. auto.
+  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & ?).
+    exists a, s, s'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
     eapply Vspawn_ext; [..|exact Hv]; [| |auto].
@@ -332,8 +332,7 @@ Definition LPstep (X : world → senv → ty → proc → Prop) (n : nat)
       ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ is_val v ∧ LVrel (S n) W1 (tenv_of Σ) T v ∧
              (∀ e, e ∈ E → e = EUnit)) ∧
     (¬ pirred p → ready_p W1 Σ p) ∧
-    (∀ p', padmin p p' → p'.1 ## dom Σ →
-       ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧ X W' Σ T p') ∧
+    (∀ p', padmin p p' → p'.1 ## dom Σ → X W1 Σ T p') ∧
     (∀ p', pcomm p p' → LPtau_case (LPrel (pred n)) W1 Σ T p') ∧
     (∀ cd p', proc_step p (PSess (SLink cd)) p' → Plink_case X W1 Σ T cd p') ∧
     (∀ σ p', proc_step p (PSess σ) p' → LPobl LVrel LPrel (S n) W1 Σ T p σ p').
@@ -347,7 +346,7 @@ Proof.
   intros HV HX H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
   split_and!; [| done | | | | ].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. split_and!; auto.
-  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
+  - intros p' Hst Hd. auto.
   - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (lvP_llevels (S n)) in Hx; [done|simpl; lia].
   - intros cd p' Hst. eapply Plink_case_mono; [|by apply Hl]. auto.
@@ -365,7 +364,7 @@ Proof.
   intros HV HX H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
   split_and!; [| done | | | | ].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. split_and!; auto.
-  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
+  - intros p' Hst Hd. auto.
   - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (lvP_llevels (S n)); [simpl; lia|done].
   - intros cd p' Hst. eapply Plink_case_mono; [|by apply Hl]. auto.
@@ -488,8 +487,8 @@ Proof.
   split_and!; [| done | | | | | ].
   - intros Hirr. eapply LVrel_down; [|by apply Hs]. lia.
   - intros e' Hst. by apply (Hb e' Hst).
-  - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
-    exists a, s, s', W'. by split_and!.
+  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & _ & HX).
+    exists a, s, s'. by split_and!.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |done].
     destruct Hv as [(eb & -> & ? & ? & Hv)|Hk]; [left|by right]. exists eb.
@@ -515,7 +514,7 @@ Proof.
   split_and!; [| done | | | | ].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & HV & ?). exists v, E.
     split_and!; [done|done| |done]. eapply LVrel_down; [|exact HV]. lia.
-  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & _ & HX). eauto.
+  - intros p' Hst Hd. by destruct (Ha p' Hst Hd) as [_ HX].
   - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (IHn (pred n')); [lia|lia|exact Hx].
   - intros cd p' Hst. eapply Plink_case_mono; [|by apply Hl]. by intros ? [_ ?].

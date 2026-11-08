@@ -239,20 +239,15 @@ Section fuse.
       apply eq_sym, lsub_beta in Hα as ->.
       destruct (Hb _ Hf) as [_ HΦ]. by apply HΦ.
     - (* new *)
-      intros c' f' Hst Hc' L.
+      intros c' f' Hst Hc'.
       assert (c ∉ dom Θ') as HcΘ' by (pose proof Hm as (Hc0 & _); by apply not_elem_of_dom).
       destruct (decide (c' = c)) as [->|Hc'c].
       + destruct (exist_fresh (fchans e ∪ dom Θ ∪ dom Θ' ∪ {[c; d]})) as [c0 Hc0].
         destruct (tstep_chsubst_new_inv c d e c f' Hst c0) as (f & Hf & ->); [set_solver..|].
-        destruct (Hnew _ _ Hf ltac:(set_solver) L) as (x & s & s' & W' & Hpl & Hdu & _ & HΦ).
-        exists x, s, s', W'. split_and!; [by rewrite (move_roots W c d Hcd Θ Θ' Hm)|done|].
-        assert (strict W' ∧ ∀ x y, w_eq W x y → w_eq W' x y) as [HW' HeW'].
-        { destruct Hpl as [(a0 & _ & _ & Hfr)|(_ & ->)]; [|done].
-          split; [by destruct Hfr as ((_ & _ & _ & ?) & _)|apply (proj1 (proj2 (proj1 Hfr)))]. }
-        assert (tenv_move W' c d Θ Θ') as HmW'.
-        { eapply (move_mono W c d W'); [|exact Hm]. intros ? ? ?. by apply HeW'. }
-        pose proof (HΦ HVT (<[c0 := Both (s, x) (s', pt_dual x)]> Θ') HW') as HE1.
-        assert (LErel (S n') W' (<[c0 := Both (s, x) (s', pt_dual x)]> Θ') T F (chsubst c d f))
+        destruct (Hnew _ _ Hf ltac:(set_solver)) as (x & s & s' & Hpl & Hdu & _ & HΦ).
+        exists x, s, s'. split_and!; [done|done|].
+        pose proof (HΦ HVT (<[c0 := Both (s, x) (s', pt_dual x)]> Θ') HW) as HE1.
+        assert (LErel (S n') W (<[c0 := Both (s, x) (s', pt_dual x)]> Θ') T F (chsubst c d f))
           as HE2.
         { apply HE1. apply move_insert; [set_solver|set_solver|done]. }
         apply (LErel_swap c0 c) in HE2.
@@ -266,17 +261,12 @@ Section fuse.
             exact (proj2 (move_none_d W c d Θ Θ' Hm Hc')).
           - pose proof Hm as (_ & Ho & _). apply not_elem_of_dom. apply not_elem_of_dom in Hc'.
             by rewrite <-(Ho c' Hc'c Hc'd). }
-        destruct (Hnew _ _ Hf Hc'0 L) as (x & s & s' & W' & Hpl & Hdu & _ & HΦ).
-        exists x, s, s', W'. split_and!; [by rewrite (move_roots W c d Hcd Θ Θ' Hm)|done|].
-        assert (strict W' ∧ ∀ x y, w_eq W x y → w_eq W' x y) as [HW' HeW'].
-        { destruct Hpl as [(a0 & _ & _ & Hfr)|(_ & ->)]; [|done].
-          split; [by destruct Hfr as ((_ & _ & _ & ?) & _)|apply (proj1 (proj2 (proj1 Hfr)))]. }
-        assert (tenv_move W' c d Θ Θ') as HmW'.
-        { eapply (move_mono W c d W'); [|exact Hm]. intros ? ? ?. by apply HeW'. }
+        destruct (Hnew _ _ Hf Hc'0) as (x & s & s' & Hpl & Hdu & _ & HΦ).
+        exists x, s, s'. split_and!; [done|done|].
         apply (HΦ HVT); [done|].
         destruct (decide (c' = d)) as [->|Hc'd].
         * apply not_elem_of_dom in Hc'.
-          destruct (move_none_d W' c d Θ Θ' HmW' Hc') as [Hc1 Hd1].
+          destruct (move_none_d W c d Θ Θ' Hm Hc') as [Hc1 Hd1].
           by apply move_insert_d.
         * by apply move_insert.
     - (* spawn *)
