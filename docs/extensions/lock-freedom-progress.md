@@ -9,7 +9,7 @@ Updated after every stage and every agent result.
 | 1  Fair semantics, lock_free, local_progress, lf_criterion | done (f99a2bd) | theories/lockfree/Instr.v (istep_erase, preduction_lift, pred_star_lift), Fair.v (wfair, lock_free, lock_free_reach), TauThread.v (thread_acc), LocalProgress.v (local_progress_ready), Criterion.v (lf_criterion) | passes | 0, no axioms | see log: LPrel alone does not give local progress; linearity facts must come from typing; links still channel steps |
 | 2a Link τ costs 0 (relation, guard, liveness proofs, TauThread) | in progress | | | | |
 | 2b Rank and fuel in the relation (constant world, well-founded W, fuel constant N) | next, after 2a | | | | per-thread invariant needed (stage 1 finding 1) |
-| 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | in progress | | | | |
+| 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | done (4d74f15, merge into lock-freedom after 2a) | theories/lockfree/Fragment.v: lfptyped, lfsource, fw_lfptyped, tc_lfptyped, sch_lfsource, kob/c1/c3 rejections, tsum_r1_fails | passes, 267 closed | 0, no axioms | Rank on W catches chains only under the constant world; R4′ needs a typing annotation |
 | 3  Fundamental theorem, lf_soundness, thread_progress, examples | not started | | | | |
 | 3c Coverage of the literature (plan §12) | not started | | | | author's acceptance criterion |
 | 4  Paper section | not started | | | | |
@@ -55,6 +55,15 @@ Updated after every stage and every agent result.
   Rank as well-foundedness of W. Rank needs no number, and fuel is one
   constant N per program. Constant world adopted for the lock-free relation
   only. Core adoption goes to the author (three box types get stronger).
+
+- 2026-11-08. Stage 3a done on lf-rules. R1 is strict tail position
+  (syntactic). R2′ checks that ends passed to recursion or link are fresh in
+  the round. R4′ is backed by a typing annotation, because terms carry no
+  types. Finding: in the current calculus the descending chains of C1 and
+  KobForwarder sit in box constraints and creation hypotheses, not in W, so
+  `wf_world W` alone accepts C1. Rank catches them only under the constant
+  world, where those facts become facts of W. This makes the constant world
+  essential for stage 2b, not optional.
 
 ## Decisions
 
