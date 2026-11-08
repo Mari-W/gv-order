@@ -569,13 +569,6 @@ Proof.
   by apply H.
 Qed.
 
-Lemma LPrel_S_link n W Σ T p p' :
-  LPrel (S n) W Σ T p → ptau_link p p' → LPtau_case (LPrel n) W Σ T p'.
-Proof.
-  intros HP Hst. apply LPrel_S_iff in HP. destruct (HP W (wext_r_refl W)) as (_ & _ & _ & _ & H & _).
-  by apply H.
-Qed.
-
 Set Default Proof Using "All".
 Section lsteps2.
   Context (n' : nat) (T : ty) (HT : prim T).
@@ -595,60 +588,6 @@ Section lsteps2.
   Lemma lc2_HW2 : strict W.
   Proof. apply Hok. Qed.
 
-  (** Q-Link for an external link of component 1. *)
-  Lemma lc2_ext_link F1 e cd e' :
-    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink cd)) e' → subjs (SLink cd) ## C →
-    Plink_case (LPrel n') W Σ T cd (C ∖ sentc (SLink cd), F1 ⊎ E2 ⊎ {[+ e' +]}).
-  Proof.
-    intros HE Hst Hc. pose proof Hok as Hok0.
-    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
-    assert (proc_step (C1, E1) (PSess (SLink cd)) (C1 ∖ sentc (SLink cd), F1 ⊎ {[+ e' +]}))
-      as Hst1.
-    { rewrite HE. apply (PStepSession C1 F1 e (SLink cd) e' Hst). simpl in *. clear -Hc. set_solver. }
-    pose proof (LPrel_S_sess _ _ _ _ _ _ _ HP1 Hst1) as Hc1. simpl in Hc1.
-    cbn [sentc]. rewrite difference_empty_L in Hc1 |- *.
-    destruct Hc1 as (c & d & Σ1a & sc & sd & kc & kd & -> & Hcd & HΣa & Hc1a & Hd1a & Hdu & Hal & HP1').
-    simpl in Hc.
-    assert (c ∉ C0 ∧ d ∉ C0) as [HcC0 HdC0] by (clear -Hc; set_solver).
-    assert (ΣC !! c = None) as HCc by (apply not_elem_of_dom; by rewrite HC0).
-    assert (ΣC !! d = None) as HCd by (apply not_elem_of_dom; by rewrite HC0).
-    assert (ΣC ⊆ Σ1a) as HCsub.
-    { apply map_subseteq_spec. intros r x Hx. pose proof (f_equal (lookup r) HΣa) as Hr.
-      destruct (decide (r = c)) as [->|Hrc]; [congruence|].
-      destruct (decide (r = d)) as [->|Hrd]; [congruence|].
-      rewrite !lookup_insert_ne in Hr by done.
-      rewrite lookup_union, Hx in Hr. destruct (Σ1 !! r) eqn:H1r.
-      - exfalso. exact (proj1 (map_disjoint_spec _ _) Hd1 r _ _ H1r Hx).
-      - by rewrite (left_id_L None (∪)) in Hr. }
-    exists c, d, (Σ1a ∖ ΣC ∪ Σ2), sc, sd, kc, kd. split_and!; try done.
-    - apply map_eq. intros r.
-      pose proof (f_equal (lookup r) HΣa) as Hr.
-      pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
-      destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]]; mpoint.
-      all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence).
-    - assert (c ∈ dom Σ1 ∧ d ∈ dom Σ1) as [Hc1 Hd1''].
-      { assert (c ∈ dom (Σ1 ∪ ΣC) ∧ d ∈ dom (Σ1 ∪ ΣC)) as [H H'] by
-          (rewrite HΣa, !dom_insert_L; clear; set_solver).
-        rewrite dom_union_L, HC0 in H, H'. clear -H H' HcC0 HdC0. set_solver. }
-      rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
-      clear -Hc1a Hc1 Hd12. set_solver.
-    - assert (c ∈ dom Σ1 ∧ d ∈ dom Σ1) as [Hc1 Hd1''].
-      { assert (c ∈ dom (Σ1 ∪ ΣC) ∧ d ∈ dom (Σ1 ∪ ΣC)) as [H H'] by
-          (rewrite HΣa, !dom_insert_L; clear; set_solver).
-        rewrite dom_union_L, HC0 in H, H'. clear -H H' HcC0 HdC0. set_solver. }
-      rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
-      clear -Hd1a Hd1'' Hd12. set_solver.
-    - eapply (lc_iface_shrink n' T HT IHo W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hty Hok0 HP1 HP2 HP1n HP2n);
-        [done| | |].
-      + by apply map_disjoint_difference_l1.
-      + rewrite dom_difference_L. intros r Hr.
-        assert (r ∈ dom (Σ1 ∪ ΣC)) as H.
-        { rewrite HΣa, !dom_insert_L. clear -Hr. set_solver. }
-        rewrite dom_union_L in H. clear -H Hr. set_solver.
-      + assert (Σ1a ∖ ΣC ∪ ΣC = Σ1a) as -> ; [|done].
-        apply map_eq. intros r. pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
-        mpoint. all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence).
-  Qed.
   Lemma lc2_wext_fresh_wext W0 N W1 : wext_fresh W0 N W1 → wext W0 W1.
   Proof. by intros [? _]. Qed.
 
@@ -1110,40 +1049,6 @@ Section lsteps2.
     - assert (Σ2n ∪ ΣC2n = recv_env Σr2 Θ2) as -> by (subst ΣC2n; by apply map_difference_union).
       exact HP2'.
   Qed.
-  (** The giving clause for a link of component 1 that removes a
-      channel restricted in component 1. *)
-  Lemma lc2_link_own F1 e c d e' :
-    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C1 → ∀ L : gset pname,
-      ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
-        LPrel n' W' Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
-    Proof.
-      intros HE Hst Hc L.
-    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
-    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
-    pose proof Hok as Hok0.
-    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
-    assert (ptau_link (C1, E1) (C1 ∖ {[c]}, echsubst c d (F1 ⊎ {[+ e' +]}))) as Hl.
-    { exists C1, F1, e, c, d, e'. by rewrite HE. }
-    destruct (LPrel_S_link _ _ _ _ _ _ HP1 Hl
-                ltac:(simpl; rewrite dom_union_L, HC0; clear -HC1Σ1 HC10; set_solver)
-                (L ∪ senv_roots Σ ∪ ty_roots T)) as (N & W' & HN & Hfr & HP1').
-    exists N, W'. split_and!; [clear -HN; set_solver|done|].
-    pose proof (lc2_wext_fresh_wext _ _ _ Hfr) as Hx.
-    assert (LPrel n' W' (Σ2 ∪ ΣC') TB (C2, E2)) as HP2m.
-    { eapply LPrel_mono; [by right|]. eapply LPrel_down; [|exact HP2]. lia. }
-    assert (LPrel n' W' (Σ2 ∪ ΣC') TB (C2, echsubst c d E2)) as HP2'.
-    { destruct (decide (d = c)) as [->|Hdc]; [by rewrite echsubst_refl|].
-      apply LPrel_junk; [| |intros Hd'| |exact HP2m].
-      - rewrite dom_union_L, HC0'. clear -Hc HC1Σ2 HC10. set_solver.
-      - clear -Hc HC12. set_solver.
-      - rewrite dom_union_L, HC0'. clear -Hd' HC2Σ2 HC20. set_solver.
-      - done. }
-    assert (C ∖ {[c]} = (C1 ∖ {[c]}) ∪ C2 ∪ C0) as -> by (clear -Hc HC12 HC10; set_solver).
-    assert (echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]}) = echsubst c d (F1 ⊎ {[+ e' +]}) ⊎ echsubst c d E2)
-      as -> by (rewrite !echsubst_disj_union; multiset_solver).
-    apply (IHo n' (le_n _) W' Σ1 Σ2 ΣC ΣC' C0 _ C2 _ _ TA TB); [done| |exact HP1'|exact HP2'].
-    split; try done; [apply Hx|clear -HC1Σ2 HC1Σ1 HC10 HC12; set_solver..].
-  Qed.
 End lsteps2.
 
 Section lsteps3.
@@ -1161,243 +1066,6 @@ Section lsteps3.
   Local Notation C := (C1 ∪ C2 ∪ C0).
   Local Notation Σ := (Σ1 ∪ Σ2).
 
-  (** An external link of component 1, with the two ends named as in
-      the label. *)
-  Lemma lc2_ext_link_norm F1 e c d e' :
-    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∉ C1 → d ∉ C1 →
-    c ≠ d ∧ ∃ Σ1a sc sd kc kd,
-      Σ1 ∪ ΣC = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1a) ∧ c ∉ dom Σ1a ∧ d ∉ dom Σ1a ∧
-      sdual sc sd ∧ w_eq W kc (pt_dual kd) ∧ LPrel n' W Σ1a TA (C1, F1 ⊎ {[+ e' +]}).
-  Proof.
-    intros HE Hst Hc Hd.
-    assert (proc_step (C1, E1) (PSess (SLink {[c; d]})) (C1 ∖ sentc (SLink {[c; d]}), F1 ⊎ {[+ e' +]}))
-      as Hs1 by (rewrite HE; apply PStepSession; [done|simpl; clear -Hc Hd; set_solver]).
-    pose proof (LPrel_S_sess _ _ _ _ _ _ _ HP1 Hs1) as Hc1. simpl in Hc1.
-    rewrite difference_empty_L in Hc1.
-    destruct Hc1 as (c' & d' & Σ1a & sc & sd & kc & kd & Hcd' & Hne & HΣa & Hc1a & Hd1a & Hdu & Hal & HP1').
-    assert (c ≠ d) as Hcd.
-    { intros <-. assert (c' ∈ ({[c; c]} : gset chan)) as H1 by (rewrite Hcd'; set_solver).
-      assert (d' ∈ ({[c; c]} : gset chan)) as H2 by (rewrite Hcd'; set_solver).
-      apply Hne. set_solver. }
-    split; [done|].
-    destruct (upair_eq_inv c d c' d' Hcd' Hcd) as [[-> ->]|[-> ->]].
-    - exists Σ1a, sc, sd, kc, kd. split_and!; try done. by apply sdual_sym.
-    - exists Σ1a, sd, sc, kd, kc. split_and!; try done.
-      + rewrite HΣa. by apply insert_insert_ne.
-      + by apply (wf_eq_dual_sym _ _ _ (proj1 (co_strict _ _ _ _ _ _ _ _ Hok))).
-  Qed.
-  (** The giving clause for a link of component 1 between its end of a
-      cut channel c and an interface channel d: component 2's end of c
-      is renamed to d. *)
-  Lemma lc2_link_iface F1 e c d e' :
-    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C0 → d ∈ dom Σ1 →
-    LPrel n' W Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
-  Proof.
-    intros HE Hst HcC0 HdΣ1.
-    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
-    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
-    pose proof Hok as Hok0.
-    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
-    apply map_disjoint_dom in Hd12 as Hd12'.
-    assert (c ∉ C1 ∧ d ∉ C1 ∧ c ∉ C2 ∧ d ∉ C2 ∧ d ∉ C0 ∧ d ∉ dom Σ2 ∧ c ∉ dom Σ1 ∧ c ∉ dom Σ2)
-      as (Hc1 & Hd1' & Hc2 & Hd2' & HdC0 & HdΣ2 & HcΣ1 & HcΣ2)
-      by (clear -HcC0 HdΣ1 HC10 HC1Σ1 HC20 HC2Σ1 HΣ1C0 HΣ2C0 Hd12'; set_solver).
-    destruct (lc2_ext_link_norm F1 e c d e' HE Hst Hc1 Hd1')
-      as (Hcd & Σ1a & sc & sd & kc & kd & HΣa & Hc1a & Hd1a & Hdu & Hal & HP1').
-    assert (ΣC !! c = Some (sc, kc)) as HCc.
-    { pose proof (f_equal (lookup c) HΣa) as H. rewrite lookup_insert_eq, lookup_union in H.
-      rewrite (not_elem_of_dom_1 _ _ HcΣ1), (left_id_L None (∪)) in H. done. }
-    assert (Σ1 !! d = Some (sd, kd)) as H1d.
-    { pose proof (f_equal (lookup d) HΣa) as H. rewrite lookup_insert_ne, lookup_insert_eq, lookup_union in H by done.
-      assert (ΣC !! d = None) as HCd by (apply not_elem_of_dom; by rewrite HC0).
-      rewrite HCd in H. destruct (Σ1 !! d); [by rewrite (right_id_L None (∪)) in H|done]. }
-    assert (is_Some (ΣC' !! c)) as [[sc2 kc2] HC'c] by (apply elem_of_dom; by rewrite HC0').
-    destruct (Hcut c _ _ HCc HC'c) as [Hkk Hdd]. simpl in Hkk, Hdd.
-    (* component 2, its end of c renamed to d *)
-    assert (LPrel n' W (<[d := (sd, kd)]> Σ2 ∪ delete c ΣC') TB (C2, echsubst c d E2)) as HP2'.
-    { pose proof (LPrel_swap c d _ _ _ _ _ HP2n) as H. unfold pswap in H. simpl in H.
-      rewrite gswap_fresh in H by done.
-      apply (LPrel_junk _ _ _ _ _ _ c d) in H.
-      - rewrite echsubst_msswap_same in H. eapply LPrel_sconv; [apply HW'| |exact H].
-        intros r. rewrite lookup_senvswap'.
-        destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
-        + rewrite cswap_l, !lookup_union. rewrite lookup_insert_ne by done. rewrite lookup_delete_eq.
-          rewrite (not_elem_of_dom_1 _ _ HdΣ2), (not_elem_of_dom_1 _ _ HcΣ2).
-          assert (ΣC' !! d = None) as -> by (apply not_elem_of_dom; by rewrite HC0').
-          done.
-        + rewrite cswap_r, !lookup_union, lookup_insert_eq, (not_elem_of_dom_1 _ _ HcΣ2), HC'c, (left_id_L None (∪)), union_Some_l.
-          simpl. split; [eapply sdual_unique; [exact Hdd|exact Hdu]|].
-          apply (wf_eq_trans _ (proj1 HW') _ (pt_dual kc));
-            first [by apply (wf_eq_dual_sym _ _ _ (proj1 HW'))
-                  |by apply (wf_eq_sym _ (proj1 HW')), (wf_eq_dual_sym _ _ _ (proj1 HW'))
-                  |by apply (wf_eq_dual_l _ _ _ (proj1 HW'))
-                  |by apply (wf_eq_sym _ (proj1 HW')), (wf_eq_dual_l _ _ _ (proj1 HW'))].
-        + rewrite cswap_ne by done. rewrite !lookup_union, lookup_insert_ne, lookup_delete_ne by done.
-          destruct (Σ2 !! r), (ΣC' !! r); simpl; try done; split; try apply seq_refl;
-            apply (wf_eq_refl _ (proj1 HW')).
-      - rewrite dom_senvswap, elem_of_gswap', cswap_l, dom_union_L, HC0'.
-        clear -HdΣ2 HdC0. set_solver.
-      - done.
-      - done.
-      - done. }
-    assert (LPrel n' W (delete d Σ1 ∪ delete c ΣC) TA (C1, echsubst c d (F1 ⊎ {[+ e' +]}))) as HP1''.
-    { assert (Σ1a = delete d Σ1 ∪ delete c ΣC) as <-.
-      { apply map_eq. intros r. pose proof (f_equal (lookup r) HΣa) as Hr.
-        destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
-        - rewrite lookup_union, lookup_delete_eq, lookup_delete_ne, (not_elem_of_dom_1 _ _ HcΣ1) by done.
-          by rewrite (not_elem_of_dom_1 _ _ Hc1a).
-        - rewrite lookup_union, lookup_delete_eq, lookup_delete_ne by done.
-          assert (ΣC !! d = None) as -> by (apply not_elem_of_dom; by rewrite HC0).
-          by rewrite (not_elem_of_dom_1 _ _ Hd1a).
-        - rewrite !lookup_insert_ne in Hr by done.
-          by rewrite <-Hr, !lookup_union, lookup_delete_ne, lookup_delete_ne by done. }
-      apply LPrel_junk; [done|done|intros ?; contradiction|by apply not_eq_sym|exact HP1']. }
-    assert (Σ1 ∪ Σ2 = delete d Σ1 ∪ <[d := (sd, kd)]> Σ2) as ->.
-    { apply map_eq. intros r. destruct (decide (r = d)) as [->|Hrd].
-      - by rewrite !lookup_union, lookup_delete_eq, lookup_insert_eq, H1d, union_Some_l, (left_id_L None (∪)).
-      - by rewrite !lookup_union, lookup_delete_ne, lookup_insert_ne by done. }
-    assert (C ∖ {[c]} = C1 ∪ C2 ∪ (C0 ∖ {[c]})) as -> by (clear -Hc1 Hc2; set_solver).
-    assert (echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]}) = echsubst c d (F1 ⊎ {[+ e' +]}) ⊎ echsubst c d E2)
-      as -> by (rewrite !echsubst_disj_union; multiset_solver).
-    apply (IHo n' (le_n _) W (delete d Σ1) (<[d := (sd, kd)]> Σ2) (delete c ΣC) (delete c ΣC') _ C1 C2 _ _ TA TB);
-      [done| |exact HP1''|exact HP2'].
-    split; try done.
-      + by apply map_disjoint_delete_l, map_disjoint_delete_r.
-      + apply map_disjoint_insert_l. split; [|by apply map_disjoint_delete_r].
-        rewrite lookup_delete_ne; [|done]. apply not_elem_of_dom. by rewrite HC0'.
-      + apply map_disjoint_dom. rewrite dom_delete_L, dom_insert_L. clear -Hd12'. set_solver.
-      + rewrite dom_delete_L. by rewrite HC0.
-      + rewrite dom_delete_L. by rewrite HC0'.
-      + intros r x y Hx Hy. apply lookup_delete_Some in Hx as [_ Hx].
-        apply lookup_delete_Some in Hy as [_ Hy]. by apply (Hcut r).
-      + rewrite dom_insert_L. clear -HC1Σ2 Hd1'. set_solver.
-      + rewrite dom_delete_L. clear -HC2Σ1. set_solver.
-      + rewrite dom_delete_L. clear -HC1Σ1. set_solver.
-      + rewrite dom_insert_L. clear -HC2Σ2 Hd2'. set_solver.
-      + clear -HC10. set_solver.
-      + clear -HC20. set_solver.
-  Qed.
-  (** The giving clause for a link of component 1 between its ends of
-      two cut channels c and d: component 2 gets both ends of d and
-      fuses them by Internalizing a link. *)
-  Lemma lc2_link_cut F1 e c d e' :
-    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C0 → d ∈ C0 →
-    LPrel n' W Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
-  Proof.
-    intros HE Hst HcC0 HdC0.
-    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
-    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
-    pose proof Hok as Hok0.
-    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
-    assert (c ∉ C1 ∧ d ∉ C1 ∧ c ∉ C2 ∧ d ∉ C2 ∧ c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧ c ∉ dom Σ2 ∧ d ∉ dom Σ2)
-      as (Hc1 & Hd1' & Hc2 & Hd2' & HcΣ1 & HdΣ1 & HcΣ2 & HdΣ2)
-      by (clear -HcC0 HdC0 HC10 HC20 HΣ1C0 HΣ2C0; set_solver).
-    destruct (lc2_ext_link_norm F1 e c d e' HE Hst Hc1 Hd1')
-      as (Hcd & Σ1a & sc & sd & kc & kd & HΣa & Hc1a & Hd1a & Hdu & Hal & HP1').
-    assert (ΣC !! c = Some (sc, kc)) as HCc.
-    { pose proof (f_equal (lookup c) HΣa) as H. rewrite lookup_insert_eq, lookup_union in H.
-      by rewrite (not_elem_of_dom_1 _ _ HcΣ1), (left_id_L None (∪)) in H. }
-    assert (ΣC !! d = Some (sd, kd)) as HCd.
-    { pose proof (f_equal (lookup d) HΣa) as H.
-      rewrite lookup_insert_ne, lookup_insert_eq, lookup_union in H by done.
-      by rewrite (not_elem_of_dom_1 _ _ HdΣ1), (left_id_L None (∪)) in H. }
-    assert (is_Some (ΣC' !! c)) as [[sc2 kc2] HC'c] by (apply elem_of_dom; by rewrite HC0').
-    assert (is_Some (ΣC' !! d)) as [[sd2 kd2] HC'd] by (apply elem_of_dom; by rewrite HC0').
-    destruct (Hcut c _ _ HCc HC'c) as [Hkc Hdc]. destruct (Hcut d _ _ HCd HC'd) as [Hkd Hdd].
-    simpl in Hkc, Hdc, Hkd, Hdd.
-    set (Σb0 := Σ2 ∪ delete c (delete d ΣC')).
-    assert (Σ2 ∪ ΣC' = fusedP c d Σb0 sc2 sd2 kc2 kd2) as HΣb.
-    { apply map_eq. intros r. unfold fusedP. subst Σb0.
-      destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
-      - by rewrite lookup_insert_eq, lookup_union, (not_elem_of_dom_1 _ _ HcΣ2), HC'c.
-      - rewrite lookup_insert_ne, lookup_insert_eq by done.
-        by rewrite lookup_union, (not_elem_of_dom_1 _ _ HdΣ2), HC'd.
-      - rewrite !lookup_insert_ne by done.
-        by rewrite !lookup_union, lookup_delete_ne, lookup_delete_ne by done. }
-    assert (prim TB) as HTB by (by destruct (ctys_prim _ _ _ HT Hty)).
-    assert (int_ok c d W Σb0 sc2 sd2 kc2 kd2 C2) as Hio.
-    { split_and!; try done.
-      - subst Σb0. rewrite dom_union_L, !dom_delete_L. clear -HcΣ2. set_solver.
-      - subst Σb0. rewrite dom_union_L, !dom_delete_L. clear -HdΣ2. set_solver.
-      - eapply sdual_seq_l; [|exact Hdd]. eapply sdual_unique; [exact Hdu|exact Hdc].
-      - pose proof (proj1 HW') as Hwf.
-        apply (wf_eq_trans _ Hwf _ (pt_dual kc)); [by apply (wf_eq_dual_sym _ _ _ Hwf)|].
-        apply (wf_eq_trans _ Hwf _ kd); [by apply (wf_eq_dual_l _ _ _ Hwf)|done]. }
-    rewrite HΣb in HP2n.
-    pose proof (LPrel_internalize c d Hcd n' W Σb0 TB C2 E2 sc2 sd2 kc2 kd2 HTB Hio HP2n) as HP2'.
-    assert (LPrel n' W (Σ1 ∪ delete c (delete d ΣC)) TA (C1, echsubst c d (F1 ⊎ {[+ e' +]})))
-      as HP1''.
-    { assert (Σ1a = Σ1 ∪ delete c (delete d ΣC)) as <-.
-      { apply map_eq. intros r. pose proof (f_equal (lookup r) HΣa) as Hr.
-        destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
-        - rewrite lookup_union, lookup_delete_eq, (not_elem_of_dom_1 _ _ HcΣ1).
-          by rewrite (not_elem_of_dom_1 _ _ Hc1a).
-        - rewrite lookup_union, lookup_delete_ne, lookup_delete_eq, (not_elem_of_dom_1 _ _ HdΣ1) by done.
-          by rewrite (not_elem_of_dom_1 _ _ Hd1a).
-        - rewrite !lookup_insert_ne in Hr by done.
-          by rewrite <-Hr, !lookup_union, lookup_delete_ne, lookup_delete_ne by done. }
-      apply LPrel_junk; [done|done|intros ?; contradiction|by apply not_eq_sym|exact HP1']. }
-    assert (C ∖ {[c]} = C1 ∪ (C2 ∪ {[d]}) ∪ (C0 ∖ {[c; d]})) as ->.
-    { apply set_eq. intros x. destruct (decide (x = d)) as [->|Hxd]; [clear -Hcd HdC0; set_solver|].
-      clear -Hc1 Hc2 Hxd. set_solver. }
-    assert (echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]}) = echsubst c d (F1 ⊎ {[+ e' +]}) ⊎ echsubst c d E2)
-      as -> by (rewrite !echsubst_disj_union; multiset_solver).
-    apply (IHo n' (le_n _) W Σ1 Σ2 (delete c (delete d ΣC)) (delete c (delete d ΣC')) _ C1 _ _ _ TA TB);
-      [done| |exact HP1''|exact HP2'].
-    split; try done.
-      + by apply map_disjoint_delete_r, map_disjoint_delete_r.
-      + by apply map_disjoint_delete_r, map_disjoint_delete_r.
-      + rewrite !dom_delete_L, HC0. clear. set_solver.
-      + rewrite !dom_delete_L, HC0'. clear. set_solver.
-      + intros r x y Hx Hy. apply lookup_delete_Some in Hx as [_ Hx].
-        apply lookup_delete_Some in Hx as [_ Hx]. apply lookup_delete_Some in Hy as [_ Hy].
-        apply lookup_delete_Some in Hy as [_ Hy]. by apply (Hcut r).
-      + clear -HC2Σ1 HdΣ1. set_solver.
-      + clear -HC2Σ2 HdΣ2. set_solver.
-      + clear -HC10. set_solver.
-      + clear -HC20. set_solver.
-      + clear -HC12 Hd1'. set_solver.
-  Qed.
-  (** The giving clause for a link τ of the composite whose thread is in
-      component 1. *)
-  Lemma lc2_link_give F1 e c d e' :
-    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C → ∀ L : gset pname,
-      ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
-        LPrel n' W' Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
-    Proof.
-      intros HE Hst HcC L.
-    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
-    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
-    pose proof Hok as Hok0.
-    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
-    destruct (decide (c ∈ C1)) as [Hc1|Hc1].
-    { exact (lc2_link_own n' T HT IHo W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hty Hok0 HP1 HP2 HP1n HP2n
-    F1 e c d e' HE Hst Hc1 L). }
-    destruct (decide (d ∈ C1)) as [Hd1'|Hd1'].
-    { assert (d ≠ c) as Hdc by (intros ->; done).
-      rewrite upair_comm in Hst.
-      destruct (lc2_link_own n' T HT IHo W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hty Hok0 HP1 HP2 HP1n HP2n
-                    F1 e d c e' HE Hst Hd1' L) as (N & W' & HN & Hfr & H).
-      exists N, W'. split_and!; [done|done|].
-      apply (LPrel_swap_restricted c d) in H.
-      - unfold pswap in H. simpl in H.
-        rewrite gswap_minus_other, msswap_echsubst_flip in H; [done|done|clear -Hd1'; set_solver].
-      - apply map_disjoint_dom in Hd12. rewrite dom_union_L.
-        clear -HcC HC1Σ1 HC1Σ2 HC2Σ1 HC2Σ2 HΣ1C0 HΣ2C0. set_solver.
-      - rewrite dom_union_L. clear -Hd1' HC1Σ1 HC1Σ2. set_solver. }
-    rewrite HE in HP1.
-    pose proof (LPrel_offer_dom _ _ _ _ _ _ _ _ _ HP1 Hst ltac:(simpl; clear -Hc1 Hd1'; set_solver))
-      as Hsub. simpl in Hsub. rewrite dom_union_L, HC0 in Hsub. rewrite <-HE in HP1.
-    assert (c ∈ C0) as HcC0.
-    { assert (c ∈ dom Σ1 ∪ C0) as H by (apply Hsub; clear; set_solver).
-      clear -H HcC HC2Σ1 Hc1. set_solver. }
-    assert (d ∈ dom Σ1 ∪ C0) as Hd by (apply Hsub; clear; set_solver).
-    apply elem_of_union in Hd as [Hd|Hd].
-    - exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
-      exact (lc2_link_iface F1 e c d e' HE Hst HcC0 Hd).
-    - exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
-      exact (lc2_link_cut F1 e c d e' HE Hst HcC0 Hd).
-  Qed.
 
   Lemma lc2_C12_0 : C1 ## C2 ∪ C0.
   Proof. pose proof (co_C12 _ _ _ _ _ _ _ _ Hok). pose proof (co_C10 _ _ _ _ _ _ _ _ Hok). set_solver. Qed.
@@ -1441,3 +1109,402 @@ Section lsteps3.
     apply H; [rewrite HE; by eapply PCChoice|apply lc2_C12_0].
   Qed.
 End lsteps3.
+
+(** ** Links of a component, at the index
+
+    A link costs nothing (lock-freedom plan §6.1), so the composite
+    after a link of component 1 is read at the index. Component 2 stays
+    as it is: the composite with component 1's successor is given by the
+    induction on the τ layer of component 1 ([lc_succ]), and the link's
+    effect on component 2's ends (junk, renaming, fusion) is applied to
+    the composite as a whole. The same lemmas serve a link of
+    component 2, with the roles swapped. *)
+
+Lemma lc_cut_ok_wext W W' Σ1 Σ2 ΣC ΣC' C0 C1 C1' C2 :
+  wext W W' → C1' ⊆ C1 → cut_ok W Σ1 Σ2 ΣC ΣC' C0 C1 C2 → cut_ok W' Σ1 Σ2 ΣC ΣC' C0 C1' C2.
+Proof.
+  intros Hx Hsub [HW Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+  split; try done.
+  all: first
+    [ apply Hx
+    | (intros r x y Hx1 Hy1; destruct (Hcut r x y Hx1 Hy1) as [H1 H2];
+       split; [by apply (proj1 (proj2 Hx))|done])
+    | (clear -Hsub HC1Σ2; set_solver)
+    | (clear -Hsub HC1Σ1; set_solver)
+    | (clear -Hsub HC10; set_solver)
+    | (clear -Hsub HC12; set_solver) ].
+Qed.
+
+(** The composite with component 1 replaced by q, over any cut, with
+    component 2 unchanged. *)
+Definition lc_succ (n' : nat) (T : ty) (Σ2 ΣC' : senv) (C2 : gset chan) (E2 : gmultiset expr)
+    (W0 : world) (Σa : senv) (q : proc) : Prop :=
+  ∀ Σ1' Σ2' ΣC1 ΣC2 C0' C1' E1', Σa = Σ1' ∪ ΣC1 → q = (C1', E1') → Σ2 ∪ ΣC' = Σ2' ∪ ΣC2 →
+    cut_ok W0 Σ1' Σ2' ΣC1 ΣC2 C0' C1' C2 →
+    LPrel (S n') W0 (Σ1' ∪ Σ2') T (C1' ∪ C2 ∪ C0', E1' ⊎ E2).
+
+Section lsteps_link.
+  Context (n' : nat) (T : ty) (HT : prim T).
+  Context (W : world) (Σ1 Σ2 ΣC ΣC' : senv) (C0 C1 C2 : gset chan)
+    (E1 E2 : gmultiset expr) (TA : ty).
+  Context (Hok : cut_ok W Σ1 Σ2 ΣC ΣC' C0 C1 C2).
+  Context (HP1 : LPrel (S n') W (Σ1 ∪ ΣC) TA (C1, E1)).
+  Context (HQ : ∀ cd p1', proc_step (C1, E1) (PSess (SLink cd)) p1' →
+    Plink_case (λ W0 Σa _ q, lc_succ n' T Σ2 ΣC' C2 E2 W0 Σa q) W (Σ1 ∪ ΣC) TA cd p1').
+  Context (HA : ∀ p1', padmin (C1, E1) p1' → p1'.1 ## dom (Σ1 ∪ ΣC) → ∀ L : gset pname,
+    ∃ N W', N ## L ∪ senv_roots (Σ1 ∪ ΣC) ∪ ty_roots TA ∧ wext_fresh W N W' ∧
+      lc_succ n' T Σ2 ΣC' C2 E2 W' (Σ1 ∪ ΣC) p1').
+
+  Local Notation C := (C1 ∪ C2 ∪ C0).
+  Local Notation Σ := (Σ1 ∪ Σ2).
+
+  (** Q-Link for an external link of component 1. *)
+  Lemma lc2_ext_link F1 e cd e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink cd)) e' → subjs (SLink cd) ## C →
+    Plink_case (LPrel (S n')) W Σ T cd (C ∖ sentc (SLink cd), F1 ⊎ E2 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst Hc. pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    assert (proc_step (C1, E1) (PSess (SLink cd)) (C1 ∖ sentc (SLink cd), F1 ⊎ {[+ e' +]}))
+      as Hst1.
+    { rewrite HE. apply (PStepSession C1 F1 e (SLink cd) e' Hst). simpl in *. clear -Hc. set_solver. }
+    pose proof (HQ _ _ Hst1) as Hc1.
+    cbn [sentc] in Hc1 |- *. rewrite difference_empty_L in Hc1 |- *.
+    destruct Hc1 as (c & d & Σ1a & sc & sd & kc & kd & -> & Hcd & HΣa & Hc1a & Hd1a & Hdu & Hal & HX).
+    simpl in Hc.
+    assert (c ∉ C0 ∧ d ∉ C0) as [HcC0 HdC0] by (clear -Hc; set_solver).
+    assert (ΣC !! c = None) as HCc by (apply not_elem_of_dom; by rewrite HC0).
+    assert (ΣC !! d = None) as HCd by (apply not_elem_of_dom; by rewrite HC0).
+    assert (ΣC ⊆ Σ1a) as HCsub.
+    { apply map_subseteq_spec. intros r x Hx. pose proof (f_equal (lookup r) HΣa) as Hr.
+      destruct (decide (r = c)) as [->|Hrc]; [congruence|].
+      destruct (decide (r = d)) as [->|Hrd]; [congruence|].
+      rewrite !lookup_insert_ne in Hr by done.
+      rewrite lookup_union, Hx in Hr. destruct (Σ1 !! r) eqn:H1r.
+      - exfalso. exact (proj1 (map_disjoint_spec _ _) Hd1 r _ _ H1r Hx).
+      - by rewrite (left_id_L None (∪)) in Hr. }
+    assert (c ∈ dom Σ1 ∧ d ∈ dom Σ1) as [Hc1 Hd1''].
+    { assert (c ∈ dom (Σ1 ∪ ΣC) ∧ d ∈ dom (Σ1 ∪ ΣC)) as [H H'] by
+        (rewrite HΣa, !dom_insert_L; clear; set_solver).
+      rewrite dom_union_L, HC0 in H, H'. clear -H H' HcC0 HdC0. set_solver. }
+    assert (Σ1a ∖ ΣC ∪ ΣC = Σ1a) as HΣ1a.
+    { apply map_eq. intros r. pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
+      mpoint. all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence). }
+    assert (dom (Σ1a ∖ ΣC) ⊆ dom Σ1) as Hsub.
+    { rewrite dom_difference_L. intros r Hr.
+      assert (r ∈ dom (Σ1 ∪ ΣC)) as H.
+      { rewrite HΣa, !dom_insert_L. clear -Hr. set_solver. }
+      rewrite dom_union_L in H. clear -H Hr. set_solver. }
+    exists c, d, (Σ1a ∖ ΣC ∪ Σ2), sc, sd, kc, kd. split_and!; try done.
+    - apply map_eq. intros r.
+      pose proof (f_equal (lookup r) HΣa) as Hr.
+      pose proof (proj1 (map_subseteq_spec _ _) HCsub r) as Hs.
+      destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]]; mpoint.
+      all: try (first [specialize (Hs _ eq_refl) | match goal with L : ΣC !! _ = Some _ |- _ => specialize (Hs _ L) end]; simplify_eq; rewrite ?(left_id_L None (∪)); congruence).
+    - rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
+      clear -Hc1a Hc1 Hd12. set_solver.
+    - rewrite dom_union_L, dom_difference_L. apply map_disjoint_dom in Hd12.
+      clear -Hd1a Hd1'' Hd12. set_solver.
+    - assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver.
+      apply (HX (Σ1a ∖ ΣC) Σ2 ΣC ΣC' C0 C1 (F1 ⊎ {[+ e' +]})); [done|done|done|].
+      apply map_disjoint_dom in Hd12.
+      split; try done; try (apply map_disjoint_dom);
+        [rewrite dom_difference_L; clear; set_solver|clear -Hsub Hd12|clear -Hsub HC2Σ1|clear -Hsub HC1Σ1];
+        set_solver.
+  Qed.
+
+  (** A link of component 1 that removes a channel restricted in
+      component 1: component 2 holds neither end, so the composite
+      renames junk only. *)
+  Lemma lc2_link_own F1 e c d e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C1 → ∀ L : gset pname,
+      ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
+        LPrel (S n') W' Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
+  Proof.
+    intros HE Hst Hc L.
+    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
+    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
+    pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    assert (ptau_link (C1, E1) (C1 ∖ {[c]}, echsubst c d (F1 ⊎ {[+ e' +]}))) as Hl.
+    { exists C1, F1, e, c, d, e'. by rewrite HE. }
+    destruct (HA _ (padmin_link _ _ Hl)
+                ltac:(simpl; rewrite dom_union_L, HC0; clear -HC1Σ1 HC10; set_solver)
+                (L ∪ senv_roots Σ ∪ ty_roots T)) as (N & W' & HN & Hfr & HX).
+    exists N, W'. split_and!; [clear -HN; set_solver|done|].
+    pose proof (proj1 Hfr) as Hx.
+    pose proof (HX Σ1 Σ2 ΣC ΣC' C0 (C1 ∖ {[c]}) (echsubst c d (F1 ⊎ {[+ e' +]}))
+                  eq_refl eq_refl eq_refl
+                  (lc_cut_ok_wext W W' Σ1 Σ2 ΣC ΣC' C0 C1 (C1 ∖ {[c]}) C2 Hx ltac:(clear; set_solver) Hok0)) as HXc.
+    assert (C ∖ {[c]} = (C1 ∖ {[c]}) ∪ C2 ∪ C0) as -> by (clear -Hc HC12 HC10; set_solver).
+    destruct (decide (d = c)) as [->|Hdc].
+    { rewrite !echsubst_refl in HXc |- *.
+      assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver. exact HXc. }
+    assert (echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]}) =
+            echsubst c d (echsubst c d (F1 ⊎ {[+ e' +]}) ⊎ E2)) as ->.
+    { rewrite (echsubst_disj_union c d (echsubst c d (F1 ⊎ {[+ e' +]})) E2).
+      rewrite (echsubst_id c d (echsubst c d (F1 ⊎ {[+ e' +]})));
+        [|by apply echans_echsubst_notin; intros ->].
+      rewrite !echsubst_disj_union. multiset_solver. }
+    apply LPrel_junk; [| | |done|exact HXc].
+    - rewrite dom_union_L. clear -Hc HC1Σ1 HC1Σ2. set_solver.
+    - clear -Hc HC12 HC10. set_solver.
+    - intros Hd'. rewrite dom_union_L. clear -Hd' HC1Σ1 HC1Σ2 HC2Σ1 HC2Σ2 HΣ1C0 HΣ2C0. set_solver.
+  Qed.
+
+  (** An external link of component 1, with the two ends named as in
+      the label. *)
+  Lemma lc_ext_link_norm F1 e c d e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∉ C1 → d ∉ C1 →
+    c ≠ d ∧ ∃ Σ1a sc sd kc kd,
+      Σ1 ∪ ΣC = <[c := (sc, kc)]> (<[d := (sd, kd)]> Σ1a) ∧ c ∉ dom Σ1a ∧ d ∉ dom Σ1a ∧
+      sdual sc sd ∧ w_eq W kc (pt_dual kd) ∧
+      lc_succ n' T Σ2 ΣC' C2 E2 W Σ1a (C1, F1 ⊎ {[+ e' +]}).
+  Proof.
+    intros HE Hst Hc Hd.
+    assert (proc_step (C1, E1) (PSess (SLink {[c; d]})) (C1 ∖ sentc (SLink {[c; d]}), F1 ⊎ {[+ e' +]}))
+      as Hs1 by (rewrite HE; apply PStepSession; [done|simpl; clear -Hc Hd; set_solver]).
+    pose proof (HQ _ _ Hs1) as Hc1. cbn [sentc] in Hc1.
+    rewrite difference_empty_L in Hc1.
+    destruct Hc1 as (c' & d' & Σ1a & sc & sd & kc & kd & Hcd' & Hne & HΣa & Hc1a & Hd1a & Hdu & Hal & HX).
+    assert (c ≠ d) as Hcd.
+    { intros <-. assert (c' ∈ ({[c; c]} : gset chan)) as H1 by (rewrite Hcd'; set_solver).
+      assert (d' ∈ ({[c; c]} : gset chan)) as H2 by (rewrite Hcd'; set_solver).
+      apply Hne. set_solver. }
+    split; [done|].
+    destruct (upair_eq_inv c d c' d' Hcd' Hcd) as [[-> ->]|[-> ->]].
+    - exists Σ1a, sc, sd, kc, kd. split_and!; try done. by apply sdual_sym.
+    - exists Σ1a, sd, sc, kd, kc. split_and!; try done.
+      + rewrite HΣa. by apply insert_insert_ne.
+      + by apply (wf_eq_dual_sym _ _ _ (proj1 (co_strict _ _ _ _ _ _ _ _ Hok))).
+  Qed.
+
+  (** A link of component 1 between its end of a cut channel c and an
+      interface channel d: in the composite, component 2's end of c is
+      renamed to d. *)
+  Lemma lc2_link_iface F1 e c d e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C0 → d ∈ dom Σ1 →
+    LPrel (S n') W Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
+  Proof.
+    intros HE Hst HcC0 HdΣ1.
+    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
+    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
+    pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    apply map_disjoint_dom in Hd12 as Hd12'.
+    assert (c ∉ C1 ∧ d ∉ C1 ∧ c ∉ C2 ∧ d ∉ C2 ∧ d ∉ C0 ∧ d ∉ dom Σ2 ∧ c ∉ dom Σ1 ∧ c ∉ dom Σ2)
+      as (Hc1 & Hd1' & Hc2 & Hd2' & HdC0 & HdΣ2 & HcΣ1 & HcΣ2)
+      by (clear -HcC0 HdΣ1 HC10 HC1Σ1 HC20 HC2Σ1 HΣ1C0 HΣ2C0 Hd12'; set_solver).
+    destruct (lc_ext_link_norm F1 e c d e' HE Hst Hc1 Hd1')
+      as (Hcd & Σ1a & sc & sd & kc & kd & HΣa & Hc1a & Hd1a & Hdu & Hal & HX).
+    assert (ΣC !! c = Some (sc, kc)) as HCc.
+    { pose proof (f_equal (lookup c) HΣa) as H. rewrite lookup_insert_eq, lookup_union in H.
+      rewrite (not_elem_of_dom_1 _ _ HcΣ1), (left_id_L None (∪)) in H. done. }
+    assert (ΣC !! d = None) as HCd by (apply not_elem_of_dom; by rewrite HC0).
+    assert (Σ1 !! d = Some (sd, kd)) as H1d.
+    { pose proof (f_equal (lookup d) HΣa) as H. rewrite lookup_insert_ne, lookup_insert_eq, lookup_union in H by done.
+      rewrite HCd in H. destruct (Σ1 !! d); [by rewrite (right_id_L None (∪)) in H|done]. }
+    assert (is_Some (ΣC' !! c)) as [[sc2 kc2] HC'c] by (apply elem_of_dom; by rewrite HC0').
+    assert (ΣC' !! d = None) as HC'd by (apply not_elem_of_dom; by rewrite HC0').
+    destruct (Hcut c _ _ HCc HC'c) as [Hkk Hdd]. simpl in Hkk, Hdd.
+    assert (Σ1a = delete d Σ1 ∪ delete c ΣC) as HΣ1a.
+    { apply map_eq. intros r. pose proof (f_equal (lookup r) HΣa) as Hr.
+      destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
+      - rewrite lookup_union, lookup_delete_eq, lookup_delete_ne, (not_elem_of_dom_1 _ _ HcΣ1) by done.
+        by rewrite (not_elem_of_dom_1 _ _ Hc1a).
+      - rewrite lookup_union, lookup_delete_eq, lookup_delete_ne, HCd by done.
+        by rewrite (not_elem_of_dom_1 _ _ Hd1a).
+      - rewrite !lookup_insert_ne in Hr by done.
+        by rewrite <-Hr, !lookup_union, lookup_delete_ne, lookup_delete_ne by done. }
+    (* the composite with component 2's end of c on the interface *)
+    assert (Σ2 ∪ ΣC' = <[c := (sc2, kc2)]> Σ2 ∪ delete c ΣC') as HΣb.
+    { apply map_eq. intros r. destruct (decide (r = c)) as [->|Hrc].
+      - rewrite !lookup_union, lookup_insert_eq, lookup_delete_eq, (not_elem_of_dom_1 _ _ HcΣ2), HC'c.
+        done.
+      - by rewrite !lookup_union, lookup_insert_ne, lookup_delete_ne by done. }
+    assert (cut_ok W (delete d Σ1) (<[c := (sc2, kc2)]> Σ2) (delete c ΣC) (delete c ΣC')
+              (C0 ∖ {[c]}) C1 C2) as Hok2.
+    { split; try done.
+      + by apply map_disjoint_delete_l, map_disjoint_delete_r.
+      + apply map_disjoint_insert_l. split; [|by apply map_disjoint_delete_r].
+        by rewrite lookup_delete_eq.
+      + apply map_disjoint_dom. rewrite dom_delete_L, dom_insert_L. clear -Hd12' HcΣ1. set_solver.
+      + rewrite dom_delete_L. by rewrite HC0.
+      + rewrite dom_delete_L. by rewrite HC0'.
+      + intros r x y Hx Hy. apply lookup_delete_Some in Hx as [_ Hx].
+        apply lookup_delete_Some in Hy as [_ Hy]. by apply (Hcut r).
+      + rewrite dom_insert_L. clear -HC1Σ2 Hc1. set_solver.
+      + rewrite dom_delete_L. clear -HC2Σ1. set_solver.
+      + rewrite dom_delete_L. clear -HC1Σ1. set_solver.
+      + rewrite dom_insert_L. clear -HC2Σ2 Hc2. set_solver.
+      + clear -HC10. set_solver.
+      + clear -HC20. set_solver. }
+    pose proof (HX (delete d Σ1) (<[c := (sc2, kc2)]> Σ2) (delete c ΣC) (delete c ΣC') (C0 ∖ {[c]})
+                  C1 (F1 ⊎ {[+ e' +]}) HΣ1a eq_refl HΣb Hok2) as HXc.
+    (* rename c to d in the composite *)
+    apply (LPrel_swap c d) in HXc. unfold pswap in HXc. cbn [fst snd] in HXc.
+    rewrite gswap_fresh in HXc by (clear -Hc1 Hd1' Hc2 Hd2' HdC0; set_solver).
+    apply (LPrel_junk _ _ _ _ _ _ c d) in HXc.
+    - rewrite echsubst_msswap_same in HXc.
+      assert (C ∖ {[c]} = C1 ∪ C2 ∪ C0 ∖ {[c]}) as -> by (clear -Hc1 Hc2; set_solver).
+      assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver.
+      eapply LPrel_sconv; [apply HW'| |exact HXc].
+      intros r. rewrite lookup_senvswap'.
+      destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
+      + rewrite cswap_l, !lookup_union, lookup_delete_eq, lookup_insert_ne by done.
+        rewrite (not_elem_of_dom_1 _ _ HdΣ2), (not_elem_of_dom_1 _ _ HcΣ1), (not_elem_of_dom_1 _ _ HcΣ2).
+        done.
+      + rewrite cswap_r, !lookup_union, lookup_insert_eq, lookup_delete_ne by done.
+        rewrite (not_elem_of_dom_1 _ _ HcΣ1), H1d, (not_elem_of_dom_1 _ _ HdΣ2), (left_id_L None (∪)).
+        rewrite (right_id_L None (∪)).
+        split; simpl; [eapply sdual_unique; [exact Hdd|exact Hdu]|].
+        apply (wf_eq_trans _ (proj1 HW') _ (pt_dual kc));
+          first [by apply (wf_eq_dual_sym _ _ _ (proj1 HW'))
+                |by apply (wf_eq_sym _ (proj1 HW')), (wf_eq_dual_sym _ _ _ (proj1 HW'))
+                |by apply (wf_eq_dual_l _ _ _ (proj1 HW'))
+                |by apply (wf_eq_sym _ (proj1 HW')), (wf_eq_dual_l _ _ _ (proj1 HW'))].
+      + rewrite cswap_ne by done. rewrite !lookup_union, lookup_delete_ne, lookup_insert_ne by done.
+        destruct (Σ1 !! r), (Σ2 !! r); simpl; try done; split; try apply seq_refl;
+          apply (wf_eq_refl _ (proj1 HW')).
+    - rewrite dom_senvswap, elem_of_gswap', cswap_l, dom_union_L, dom_delete_L, dom_insert_L.
+      clear -HdΣ2 Hcd. set_solver.
+    - clear -Hc1 Hc2. set_solver.
+    - intros Hd'. exfalso. clear -Hd' Hd1' Hd2' HdC0. set_solver.
+    - done.
+  Qed.
+
+  (** A link of component 1 between its ends of two cut channels c and
+      d: the composite internalizes the link of component 2's ends. *)
+  Lemma lc2_link_cut F1 e c d e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C0 → d ∈ C0 →
+    LPrel (S n') W Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
+  Proof.
+    intros HE Hst HcC0 HdC0.
+    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
+    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
+    pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    apply map_disjoint_dom in Hd12 as Hd12'.
+    assert (c ∉ C1 ∧ d ∉ C1 ∧ c ∉ C2 ∧ d ∉ C2 ∧ c ∉ dom Σ1 ∧ d ∉ dom Σ1 ∧ c ∉ dom Σ2 ∧ d ∉ dom Σ2)
+      as (Hc1 & Hd1' & Hc2 & Hd2' & HcΣ1 & HdΣ1 & HcΣ2 & HdΣ2)
+      by (clear -HcC0 HdC0 HC10 HC20 HΣ1C0 HΣ2C0; set_solver).
+    destruct (lc_ext_link_norm F1 e c d e' HE Hst Hc1 Hd1')
+      as (Hcd & Σ1a & sc & sd & kc & kd & HΣa & Hc1a & Hd1a & Hdu & Hal & HX).
+    assert (ΣC !! c = Some (sc, kc)) as HCc.
+    { pose proof (f_equal (lookup c) HΣa) as H. rewrite lookup_insert_eq, lookup_union in H.
+      by rewrite (not_elem_of_dom_1 _ _ HcΣ1), (left_id_L None (∪)) in H. }
+    assert (ΣC !! d = Some (sd, kd)) as HCd.
+    { pose proof (f_equal (lookup d) HΣa) as H.
+      rewrite lookup_insert_ne, lookup_insert_eq, lookup_union in H by done.
+      by rewrite (not_elem_of_dom_1 _ _ HdΣ1), (left_id_L None (∪)) in H. }
+    assert (is_Some (ΣC' !! c)) as [[sc2 kc2] HC'c] by (apply elem_of_dom; by rewrite HC0').
+    assert (is_Some (ΣC' !! d)) as [[sd2 kd2] HC'd] by (apply elem_of_dom; by rewrite HC0').
+    destruct (Hcut c _ _ HCc HC'c) as [Hkc Hdc]. destruct (Hcut d _ _ HCd HC'd) as [Hkd Hdd].
+    simpl in Hkc, Hdc, Hkd, Hdd.
+    assert (Σ1a = Σ1 ∪ delete c (delete d ΣC)) as HΣ1a.
+    { apply map_eq. intros r. pose proof (f_equal (lookup r) HΣa) as Hr.
+      destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
+      - rewrite lookup_union, lookup_delete_eq, (not_elem_of_dom_1 _ _ HcΣ1).
+        by rewrite (not_elem_of_dom_1 _ _ Hc1a).
+      - rewrite lookup_union, lookup_delete_ne, lookup_delete_eq, (not_elem_of_dom_1 _ _ HdΣ1) by done.
+        by rewrite (not_elem_of_dom_1 _ _ Hd1a).
+      - rewrite !lookup_insert_ne in Hr by done.
+        by rewrite <-Hr, !lookup_union, lookup_delete_ne, lookup_delete_ne by done. }
+    set (Σ2f := <[c := (sc2, kc2)]> (<[d := (sd2, kd2)]> Σ2)).
+    assert (Σ2 ∪ ΣC' = Σ2f ∪ delete c (delete d ΣC')) as HΣb.
+    { apply map_eq. intros r. subst Σ2f.
+      destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
+      - rewrite !lookup_union, lookup_insert_eq, lookup_delete_eq, (not_elem_of_dom_1 _ _ HcΣ2), HC'c.
+        done.
+      - rewrite !lookup_union, lookup_insert_ne, lookup_insert_eq by congruence.
+        rewrite lookup_delete_ne, lookup_delete_eq by congruence.
+        rewrite (not_elem_of_dom_1 _ _ HdΣ2), HC'd. done.
+      - rewrite !lookup_union, !lookup_insert_ne by done.
+        by rewrite lookup_delete_ne, lookup_delete_ne by done. }
+    assert (cut_ok W Σ1 Σ2f (delete c (delete d ΣC)) (delete c (delete d ΣC'))
+              (C0 ∖ {[c; d]}) C1 C2) as Hokc.
+    { subst Σ2f. split; try done.
+      + by apply map_disjoint_delete_r, map_disjoint_delete_r.
+      + apply map_disjoint_dom. rewrite !dom_insert_L, !dom_delete_L.
+        apply map_disjoint_dom in Hd2. clear -Hd2. set_solver.
+      + apply map_disjoint_dom. rewrite !dom_insert_L. clear -Hd12' HcΣ1 HdΣ1. set_solver.
+      + rewrite !dom_delete_L, HC0. clear. set_solver.
+      + rewrite !dom_delete_L, HC0'. clear. set_solver.
+      + intros r x y Hx Hy. apply lookup_delete_Some in Hx as [_ Hx].
+        apply lookup_delete_Some in Hx as [_ Hx]. apply lookup_delete_Some in Hy as [_ Hy].
+        apply lookup_delete_Some in Hy as [_ Hy]. by apply (Hcut r).
+      + rewrite !dom_insert_L. clear -HC1Σ2 Hc1 Hd1'. set_solver.
+      + rewrite !dom_insert_L. clear -HC2Σ2 Hc2 Hd2'. set_solver.
+      + clear -HC10. set_solver.
+      + clear -HC20. set_solver. }
+    pose proof (HX Σ1 Σ2f (delete c (delete d ΣC)) (delete c (delete d ΣC')) (C0 ∖ {[c; d]})
+                  C1 (F1 ⊎ {[+ e' +]}) HΣ1a eq_refl HΣb Hokc) as HXc.
+    assert (Σ1 ∪ Σ2f = fusedP c d (Σ1 ∪ Σ2) sc2 sd2 kc2 kd2) as HΣf.
+    { apply map_eq. intros r. unfold fusedP. subst Σ2f.
+      destruct (decide (r = c)) as [->|Hrc]; [|destruct (decide (r = d)) as [->|Hrd]].
+      - rewrite lookup_union, !lookup_insert_eq, (not_elem_of_dom_1 _ _ HcΣ1). done.
+      - rewrite lookup_union, (lookup_insert_ne _ c d) by congruence.
+        rewrite (lookup_insert_ne _ c d) by congruence. rewrite !lookup_insert_eq.
+        rewrite (not_elem_of_dom_1 _ _ HdΣ1). done.
+      - rewrite lookup_union, (lookup_insert_ne _ c r), (lookup_insert_ne _ d r) by congruence.
+        rewrite (lookup_insert_ne _ c r), (lookup_insert_ne _ d r) by congruence.
+        by rewrite lookup_union. }
+    rewrite HΣf in HXc.
+    assert (int_ok c d W (Σ1 ∪ Σ2) sc2 sd2 kc2 kd2 (C1 ∪ C2 ∪ C0 ∖ {[c; d]})) as Hio.
+    { split_and!; try done.
+      - rewrite dom_union_L. clear -HcΣ1 HcΣ2. set_solver.
+      - rewrite dom_union_L. clear -HdΣ1 HdΣ2. set_solver.
+      - clear -Hc1 Hc2. set_solver.
+      - clear -Hd1' Hd2'. set_solver.
+      - eapply sdual_seq_l; [|exact Hdd]. eapply sdual_unique; [exact Hdu|exact Hdc].
+      - pose proof (proj1 HW') as Hwf.
+        apply (wf_eq_trans _ Hwf _ (pt_dual kc)); [by apply (wf_eq_dual_sym _ _ _ Hwf)|].
+        apply (wf_eq_trans _ Hwf _ kd); [by apply (wf_eq_dual_l _ _ _ Hwf)|done]. }
+    pose proof (LPrel_internalize c d Hcd (S n') W (Σ1 ∪ Σ2) T _ _ sc2 sd2 kc2 kd2 HT Hio HXc)
+      as HY.
+    assert (C ∖ {[c]} = C1 ∪ C2 ∪ C0 ∖ {[c; d]} ∪ {[d]}) as ->.
+    { apply set_eq. intros x. destruct (decide (x = d)) as [->|Hxd]; [clear -Hcd HdC0; set_solver|].
+      clear -Hc1 Hc2 Hxd. set_solver. }
+    assert (F1 ⊎ E2 ⊎ {[+ e' +]} = (F1 ⊎ {[+ e' +]}) ⊎ E2) as -> by multiset_solver.
+    exact HY.
+  Qed.
+
+  (** The giving clause for a link τ of the composite whose thread is in
+      component 1. *)
+  Lemma lc2_link_give F1 e c d e' :
+    E1 = F1 ⊎ {[+ e +]} → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C → ∀ L : gset pname,
+      ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
+        LPrel (S n') W' Σ T (C ∖ {[c]}, echsubst c d (F1 ⊎ E2 ⊎ {[+ e' +]})).
+  Proof.
+    intros HE Hst HcC L.
+    pose proof (co_Σ1C0 _ _ _ _ _ _ _ _ Hok) as HΣ1C0.
+    pose proof (co_Σ2C0 _ _ _ _ _ _ _ _ Hok) as HΣ2C0.
+    pose proof Hok as Hok0.
+    destruct Hok as [HW' Hd1 Hd2 Hd12 HC0 HC0' Hcut HC1Σ2 HC2Σ1 HC1Σ1 HC2Σ2 HC10 HC20 HC12].
+    destruct (decide (c ∈ C1)) as [Hc1|Hc1].
+    { exact (lc2_link_own F1 e c d e' HE Hst Hc1 L). }
+    destruct (decide (d ∈ C1)) as [Hd1'|Hd1'].
+    { assert (d ≠ c) as Hdc by (intros ->; done).
+      rewrite upair_comm in Hst.
+      destruct (lc2_link_own F1 e d c e' HE Hst Hd1' L) as (N & W' & HN & Hfr & H).
+      exists N, W'. split_and!; [done|done|].
+      apply (LPrel_swap_restricted c d) in H.
+      - unfold pswap in H. simpl in H.
+        rewrite gswap_minus_other, msswap_echsubst_flip in H; [done|done|clear -Hd1'; set_solver].
+      - apply map_disjoint_dom in Hd12. rewrite dom_union_L.
+        clear -HcC HC1Σ1 HC1Σ2 HC2Σ1 HC2Σ2 HΣ1C0 HΣ2C0. set_solver.
+      - rewrite dom_union_L. clear -Hd1' HC1Σ1 HC1Σ2. set_solver. }
+    rewrite HE in HP1.
+    pose proof (LPrel_offer_dom _ _ _ _ _ _ _ _ _ HP1 Hst ltac:(simpl; clear -Hc1 Hd1'; set_solver))
+      as Hsub. simpl in Hsub. rewrite dom_union_L, HC0 in Hsub. rewrite <-HE in HP1.
+    assert (c ∈ C0) as HcC0.
+    { assert (c ∈ dom Σ1 ∪ C0) as H by (apply Hsub; clear; set_solver).
+      clear -H HcC HC2Σ1 Hc1. set_solver. }
+    assert (d ∈ dom Σ1 ∪ C0) as Hd by (apply Hsub; clear; set_solver).
+    apply elem_of_union in Hd as [Hd|Hd].
+    - exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
+      exact (lc2_link_iface F1 e c d e' HE Hst HcC0 Hd).
+    - exists ∅, W. split_and!; [clear; set_solver|by apply wext_fresh_refl|].
+      exact (lc2_link_cut F1 e c d e' HE Hst HcC0 Hd).
+  Qed.
+End lsteps_link.

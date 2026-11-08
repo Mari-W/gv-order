@@ -48,11 +48,12 @@ same index, read inductively.
 | new | 1 | 0, inductive |
 | spawn | 1 | 0, inductive |
 | receive, branch | 1 | 1 |
-| send, select, close, link | 0, inductive on size | 1 |
-| process τ of β, new, spawn | 1 | 0, inductive |
+| send, select, close | 0, inductive on size | 1 |
+| link | 0, inductive on size | 0, inductive |
+| process τ of β, new, spawn, link (P-Act-Link) | 1 | 0, inductive |
 | process τ of a message, a close, a choice | 1 | 2 |
-| process τ of a link (P-Act-Link) | 1 and 0 | 1 |
-| external process label (`PSess σ`) | as the thread label | 1 |
+| external process label (`PSess σ`) other than a link | as the thread label | 1 |
+| external link of a process (Q-Link) | as the thread label | 0, inductive |
 
 The payload of a send moves from index n to n − 1, the index of the
 continuation. A receive still quantifies over j ≤ n − 1.
@@ -73,22 +74,28 @@ edge 45 removed by making the send free. A synchronization at cost 2 restores
 at n − 1 with the payload at n − 1, and p's receive at j = n − 2 takes the
 payload by downward closure and gives `P_{n−2}`. A close of q on d is a close
 of p on c and one on d, cost 1 + 1. A choice is a select and a branch, 1 + 1.
-A link τ of q is one external link of p, cost 1.
+A link τ of q is an internal or an external link of p, cost 0 on both sides.
 
 P-Connect composes two components over a cut. A synchronization on a cut
 channel is a send of one component and a receive of the other, each at cost 1,
 in parallel. The composite pays 2, more than either component, so the
-induction on n closes after one downward closure. A link τ of one component
-fuses the other at its current index, which is downward closed to n − 1.
+induction on n closes after one downward closure. A link τ of one component is
+read by the induction on that component's τ layer. The other component stays as
+it is, and the link's effect on its ends (junk, renaming, fusion) is applied to
+the composite at the same index (`lsteps_link`, LiveConnect.v).
 
 P-Term turns a thread into a one-thread process with the same costs. P-Join
 and `Prel_indep` compose independently, so the composite pays the maximum.
 
 The new costs also remove two devices. Giving steps no longer need to shrink
 the term (`tstep_giving_size`, `esize`, `msize`, sharp edges 46 and 47),
-because links and sends leave the inductive layer. The τ of P-Act-Link no
-longer carries a second obligation at the same index (sharp edge 45,
-encoding paragraph).
+because sends leave the inductive layer and links are read in the τ layer.
+
+Links cost 0 (lock-freedom plan §6.1, sharp edge 171). A link observes nothing,
+so the loop `rec f. let (a, b) = new in link a b; f ()` is τ-divergent and
+rejected by `no_tau_divergence`. The link τ (P-Act-Link) is in `padmin`, and
+`pchan` is `pcomm`. O-Link and Q-Link are clauses of the inductive layer, and
+link is not a paying primitive of the guard.
 
 Feasibility verdict for point 2 of the plan. Sends at cost 1 are compatible
 with every composition lemma once a synchronization costs 2. No lemma

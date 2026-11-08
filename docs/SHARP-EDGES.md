@@ -2444,6 +2444,31 @@ because the moved term no longer mentions c (`eswap_chsubst_absent`). Channel re
 holds at every level on its own, so the swap needs no induction. `LErel_fuse` keeps the
 statement of `rel_fuse`. docs/extensions/liveness.md §11.
 
+**171. A link costs nothing (author's decision, 2026-11-08, branch lock-freedom).**
+At cost 1 a link counted as progress while it observed nothing. The loop
+`rec f. let (a, b) = new in link a b; f ()` passed the live relation, and a holder could
+refresh a waiting thread's partner end by links (lock-freedom plan §6.1, §8).
+Decision: the link τ (P-Act-Link) is in `padmin`, `pchan` is `pcomm`, and O-Link and
+Q-Link move from the obligations one level down into the inductive layer (`LElink`,
+the Q-Link clause of `Pbody`). `KLink` leaves `prim_konst`, so a link pays for no
+recursive call, and the guard's `tau_label` and the bind lemma's `tadmin` include links.
+Two proofs changed shape. P-Connect inducts on the τ layers of both components, the
+inner induction with the first component fixed, so a link of the second component may
+not rewrite the first. The link lemmas now leave the other component as it is and apply
+the link's effect to the composite: junk renaming for an owned channel, a swap for a cut
+channel linked to the interface, Internalize for two cut channels (`lsteps_link`,
+theories/liveness/LiveConnect.v). P-Term reads an internal link through the term's
+induction hypothesis for the unrenamed continuation and renames or internalizes at the
+process level (`link_env_split`, `lt_case_tlink`, theories/liveness/LivePTerm.v). No
+approved statement of the liveness side changes.
+Open on the lock-freedom side: `admin_at` and `tR` (theories/lockfree) still exclude
+links. With links in `tR`, `thread_acc` is false in the untyped semantics. A thread can
+close a channel a and then loop on `link a a`. The link has no restricted end, so no
+process step fires it, `no_tau_divergence` holds, and the erased thread still has an
+infinite chain of link steps. The widened lemma needs a hypothesis that every link redex
+of a reachable configuration has a restricted end, which typing supplies, and then
+`lf_criterion` gains it as a premise.
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

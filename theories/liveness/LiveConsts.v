@@ -22,6 +22,7 @@ Definition LEcase (n : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point)
         LErel (S n) W' (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e'
   | LSpawn w => ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W) Θ Θ1 Θ2 ∧
       LVrel (S n) W Θ1 (TLolli ub lb TUnit TUnit) w ∧ LErel (S n) W Θ2 T F e'
+  | LSess (SLink cd) => LElink (λ W Θ F e, LErel (S n) W Θ T F e) W Θ F cd e'
   | LSess σ => LEobl LVrel LErel (S n) W Θ T F σ e'
   end.
 
@@ -34,12 +35,13 @@ Lemma LErel_intro n W Θ T F e :
   LErel n W Θ T F e.
 Proof.
   destruct n as [|n']; intros H; [apply LErel_0|]. apply LErel_S_iff. intros W1 HW1.
-  destruct (H W1 HW1) as (Hs & Hr & Hst). split_and!; [done|done| | | |].
+  destruct (H W1 HW1) as (Hs & Hr & Hst). split_and!; [done|done| | | | |].
   - intros e' He. exact (Hst _ _ He).
   - intros c e' He. exact (Hst _ _ He).
   - intros w e' He. destruct (Hst _ _ He) as (Θ1 & Θ2 & ub & lb & ? & ? & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |done]. by apply Vspawn_LVrel.
-  - intros σ e' He. exact (Hst _ _ He).
+  - intros σ e' He. destruct σ as [| | |cd| |]; try exact (Hst _ _ He). done.
+  - intros cd e' He. exact (Hst _ _ He).
 Qed.
 
 Lemma ub_below_mono_r W W1 ub F : wext_r W W1 → ub_below W ub F → ub_below W1 ub F.

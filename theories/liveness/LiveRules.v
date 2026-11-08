@@ -26,6 +26,7 @@ Proof.
   - intros c e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
   - intros w e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
   - intros σ e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
+  - intros cd e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
 Qed.
 
 (** ** E-App for a closure, at the same index (Tait) *)
@@ -128,4 +129,5 @@ Proof.
     + apply Vspawn_LVrel. by eapply LVrel_mono_r.
     + apply LVrel_LErel. by apply LVrel_unit_iff.
   - intros σ e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
+  - intros cd e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
 Qed.

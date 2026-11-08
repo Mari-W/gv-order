@@ -16,8 +16,9 @@ Section swap_steps.
 
   Lemma padmin_pswap p p' : padmin p p' → padmin (pswap a b p) (pswap a b p').
   Proof.
-    destruct 1 as [C E e e' Hst|C E e c e' Hst HcC HcE Hce|C E e v e' Hst];
-      unfold pswap; simpl; rewrite ?msswap_disj_union, ?msswap_singleton.
+    destruct 1 as [C E e e' Hst|C E e c e' Hst HcC HcE Hce|C E e v e' Hst|C E e c d e' Hst HcC].
+    4: { apply padmin_link, ptau_link_pswap. by exists C, E, e, c, d, e'. }
+    all: unfold pswap; simpl; rewrite ?msswap_disj_union, ?msswap_singleton.
     - apply PABeta. by apply (tstep_eswap a b) in Hst.
     - rewrite gswap_union, gswap_singleton. apply PANew.
       + by apply (tstep_eswap a b) in Hst.
@@ -85,15 +86,7 @@ Section swap_obl.
     - destruct 1 as (Θ1 & k & Hhd & HE'). exists (tenvswap a b Θ1), k. split.
       + by apply (tenv_hd_swap a b _ _ SEnd).
       + by apply IHE.
-    - destruct 1 as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & H1 & H2 & Hdu & Hal & HE').
-      exists (cswap a b c), (cswap a b d), (tenvswap a b Θ1), (tenvswap a b Θm), sc, sd, kc, kd.
-      split_and!.
-      + apply gswap_upair.
-      + by apply (tenv_ext_swap a b _ _ (sd, kd)).
-      + by apply (tenv_ext_swap a b _ _ (sc, kc)).
-      + done.
-      + done.
-      + by apply IHE.
+    - done.
     - destruct 1 as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE').
       exists (tenvswap a b Θr), s1, s2, k, (tenvswap a b Θ'). split_and!.
       + by apply (tenv_hd_swap a b _ _ (SPlus s1 s2)).
@@ -126,7 +119,7 @@ Section swap.
               (∀ W Θ v, LVrel (S n') W Θ T v → LVrel (S n') W (tenvswap a b Θ) T (eswap a b v)) →
               LErel (S n') W (tenvswap a b Θ) T F (eswap a b e)) _).
     intros W Θ T F e H HVT. apply LErel_S_iff. intros W1 HW1.
-    destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ).
+    destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
     assert (HVu : ∀ W Θ v, LVrel (S n') W Θ TUnit v →
               LVrel (S n') W (tenvswap a b Θ) TUnit (eswap a b v)).
     { intros W0 Θ0 v0 [-> ->]%LVrel_unit_iff. apply LVrel_unit_iff. by rewrite tenvswap_empty. }
@@ -175,6 +168,16 @@ Section swap.
       apply LEobl_swap; [| |exact Hc].
       + intros j Hj. apply (IHn j). simpl in Hj. lia.
       + intros j Hj. apply (IHn j). simpl in Hj. lia.
+    - intros cd e'' Hst. apply (tstep_eswap_inv' a b) in Hst. simpl in Hst.
+      destruct (Hlk _ _ Hst) as (c & d & Θ1 & Θm & sc & sd & kc & kd & Hcd & H1 & H2 & Hdu & Hal & [_ HΦ]).
+      exists (cswap a b c), (cswap a b d), (tenvswap a b Θ1), (tenvswap a b Θm), sc, sd, kc, kd.
+      split_and!.
+      + by rewrite <-(gswap_involutive a b cd), Hcd, gswap_upair.
+      + by apply (tenv_ext_swap a b _ _ (sd, kd)).
+      + by apply (tenv_ext_swap a b _ _ (sc, kc)).
+      + done.
+      + done.
+      + specialize (HΦ HVT). by rewrite eswap_involutive in HΦ.
   Qed.
 
   Lemma LVrel_swap_size k :
@@ -271,11 +274,19 @@ Section swap.
       destruct (Hc _ Hst Hd L) as (N & W' & HN & Hfr & HP').
       exists N, W'. split_and!; [by rewrite senv_roots_swap|done|].
       apply IHP in HP'; [|lia]. by rewrite pswap_involutive in HP'.
-    - intros q Hst Hd L. apply ptau_link_pswap_inv in Hst.
-      rewrite <-(pswap_involutive a b q) in Hd. apply disj_pswap in Hd.
-      destruct (Hl _ Hst Hd L) as (N & W' & HN & Hfr & HP').
-      exists N, W'. split_and!; [by rewrite senv_roots_swap|done|].
-      apply IHP in HP'; [|lia]. by rewrite pswap_involutive in HP'.
+    - intros cd q Hst. apply (proc_step_pswap_inv' a b) in Hst. simpl in Hst.
+      destruct (Hl _ _ Hst) as (c & d & Σ1 & sc & sd & kc & kd &
+                           Hcd & Hne & -> & Hc1 & Hd1 & Hdu & Hal & [_ HP']).
+      exists (cswap a b c), (cswap a b d), (senvswap a b Σ1), sc, sd, kc, kd.
+      split_and!.
+      * by rewrite <-(gswap_involutive a b cd), Hcd, gswap_upair.
+      * intros Heq. by apply cswap_inj in Heq.
+      * by rewrite !senvswap_insert.
+      * rewrite dom_senvswap. by rewrite elem_of_gswap.
+      * rewrite dom_senvswap. by rewrite elem_of_gswap.
+      * done.
+      * done.
+      * by rewrite pswap_involutive in HP'.
     - intros σ q Hst. apply (proc_step_pswap_inv' a b) in Hst. simpl in Hst.
       pose proof (Hσ _ _ Hst) as Hstep.
       rewrite <-(pswap_involutive a b q).
@@ -323,18 +334,7 @@ Section swap.
         * by apply (senv_hd_swap a b _ _ SEnd).
         * rewrite dom_senvswap. by rewrite elem_of_gswap.
         * by apply (IHP n' ltac:(lia)) in HP'.
-      + destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd &
-                           -> & Hne & -> & Hc1 & Hd1 & Hdu & Hal & HP').
-        exists (cswap a b c), (cswap a b d), (senvswap a b Σ1), sc, sd, kc, kd.
-        split_and!.
-        * apply gswap_upair.
-        * intros Heq. by apply cswap_inj in Heq.
-        * by rewrite !senvswap_insert.
-        * rewrite dom_senvswap. by rewrite elem_of_gswap.
-        * rewrite dom_senvswap. by rewrite elem_of_gswap.
-        * done.
-        * done.
-        * by apply (IHP n' ltac:(lia)) in HP'.
+      + done.
       + destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc0 & HP').
         exists (senvswap a b Σ1), s1, s2, k. split_and!.
         * by apply (senv_hd_swap a b _ _ (SPlus s1 s2)).

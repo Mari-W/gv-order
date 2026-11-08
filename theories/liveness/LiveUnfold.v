@@ -216,20 +216,22 @@ Definition LEstep (X : world → tenv → ty → gset point → expr → Prop) (
        ∃ Θ1 Θ2 ub lb, tenv_comp (w_eq W1) Θ Θ1 Θ2 ∧
          Vspawn LVrel LErel (λ W Θ F e, X W Θ TUnit F e) (S n) W1 Θ1 ub lb w ∧
          X W1 Θ2 T F e') ∧
-    (∀ σ e', tstep e (LSess σ) e' → LEobl LVrel LErel (S n) W1 Θ T F σ e').
+    (∀ σ e', tstep e (LSess σ) e' → LEobl LVrel LErel (S n) W1 Θ T F σ e') ∧
+    (∀ cd e', tstep e (LSess (SLink cd)) e' → LElink (λ W Θ F e, X W Θ T F e) W1 Θ F cd e').
 
 Lemma LEstep_mono (X Y : world → tenv → ty → gset point → expr → Prop) n W Θ T F e :
   (∀ W Θ T F e, X W Θ T F e → Y W Θ T F e) →
   LEstep X n W Θ T F e → LEstep Y n W Θ T F e.
 Proof.
-  intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
-  split_and!; [done|done| | | |done].
+  intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  split_and!; [done|done| | | |done|].
   - intros e' Hst. auto.
   - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
     exists a, s, s', W'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
     eapply Vspawn_mono; [|exact Hv]. auto.
+  - intros cd e' Hst. eapply LElink_mono; [|exact (Hlk cd e' Hst)]. auto.
 Qed.
 
 (** One unfolding of the inductive layer, read at the levels. *)
@@ -241,8 +243,8 @@ Lemma Ebody_LEstep n (X : (world → tenv → expr → Prop) → ty → world �
   Ebody (llevels (S n)) (S n) X VT T W Θ F e →
   LEstep Y n W Θ T F e.
 Proof.
-  intros HV HX HXu H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
-  split_and!; [|done| | | |].
+  intros HV HX HXu H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  split_and!; [|done| | | | |].
   - intros Hirr. auto.
   - intros e' Hst. auto.
   - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
@@ -255,6 +257,7 @@ Proof.
   - intros σ e' Hst. eapply LEobl_mono; [..|exact (Hσ σ e' Hst)].
     + intros j Hj ? ? ? ?. apply lvV_llevels. simpl in Hj. lia.
     + intros j Hj ? ? ? ?. apply lvE_llevels. simpl in Hj. lia.
+  - intros cd e' Hst. eapply LElink_mono; [|exact (Hlk cd e' Hst)]. auto.
 Qed.
 
 Lemma LEstep_Ebody n (X : (world → tenv → expr → Prop) → ty → world → tenv → gset point → expr → Prop)
@@ -264,8 +267,8 @@ Lemma LEstep_Ebody n (X : (world → tenv → expr → Prop) → ty → world �
   LEstep Y n W Θ T F e →
   Ebody (llevels (S n)) (S n) X (lVtop (llevels (S n)) (S n) T) T W Θ F e.
 Proof.
-  intros HX HXu H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
-  split_and!; [|done| | | |].
+  intros HX HXu H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  split_and!; [|done| | | | |].
   - intros Hirr. apply LVrel_eq. auto.
   - intros e' Hst. auto.
   - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & ?).
@@ -278,6 +281,7 @@ Proof.
   - intros σ e' Hst. eapply LEobl_mono; [..|exact (Hσ σ e' Hst)].
     + intros j Hj ? ? ? ?. symmetry. apply lvV_llevels. simpl in Hj. lia.
     + intros j Hj ? ? ? ?. apply lvE_llevels. simpl in Hj. lia.
+  - intros cd e' Hst. eapply LElink_mono; [|exact (Hlk cd e' Hst)]. auto.
 Qed.
 
 Lemma LErel_S_unit n W Θ F e :
@@ -331,7 +335,7 @@ Definition LPstep (X : world → senv → ty → proc → Prop) (n : nat)
     (∀ p', padmin p p' → p'.1 ## dom Σ →
        ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧ X W' Σ T p') ∧
     (∀ p', pcomm p p' → LPtau_case (LPrel (pred n)) W1 Σ T p') ∧
-    (∀ p', ptau_link p p' → LPtau_case (LPrel n) W1 Σ T p') ∧
+    (∀ cd p', proc_step p (PSess (SLink cd)) p' → Plink_case X W1 Σ T cd p') ∧
     (∀ σ p', proc_step p (PSess σ) p' → LPobl LVrel LPrel (S n) W1 Σ T p σ p').
 
 Lemma Pbody_LPstep n VT T (X : world → senv → proc → Prop)
@@ -346,8 +350,7 @@ Proof.
   - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
   - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (lvP_llevels (S n)) in Hx; [done|simpl; lia].
-  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hl].
-    intros ? ? ? Hx. apply (lvP_llevels (S n)) in Hx; [done|simpl; lia].
+  - intros cd p' Hst. eapply Plink_case_mono; [|by apply Hl]. auto.
   - intros σ p' Hst. eapply LPobl_mono; [..|exact (Hσ σ p' Hst)].
     + intros j Hj ? ? ? ?. apply lvV_llevels. simpl in Hj. lia.
     + intros j Hj ? ? ? ?. apply lvP_llevels. simpl in Hj. lia.
@@ -365,8 +368,7 @@ Proof.
   - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. split_and!; auto.
   - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (lvP_llevels (S n)); [simpl; lia|done].
-  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hl].
-    intros ? ? ? Hx. apply (lvP_llevels (S n)); [simpl; lia|done].
+  - intros cd p' Hst. eapply Plink_case_mono; [|by apply Hl]. auto.
   - intros σ p' Hst. eapply LPobl_mono; [..|exact (Hσ σ p' Hst)].
     + intros j Hj ? ? ? ?. symmetry. apply lvV_llevels. simpl in Hj. lia.
     + intros j Hj ? ? ? ?. apply lvP_llevels. simpl in Hj. lia.
@@ -445,8 +447,7 @@ Proof.
   - intros (Θr&Θ1&Θ2&mm&U&s&k&Θ'&?&?&Hp&?&HX). exists Θr, Θ1, Θ2, mm, U, s, k, Θ'.
     split_and!; auto.
   - intros (Θ1&k&?&HX). exists Θ1, k. auto.
-  - intros (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
-    exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; auto.
+  - done.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; auto.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; auto.
 Qed.
@@ -471,8 +472,7 @@ Proof.
     split_and!; [done|done|]. intros W' j Θ2 HW Hj. apply H; [done|lia].
   - by apply Psend_case_mono.
   - intros (Σ1&k&?&?&HX). exists Σ1, k. split_and!; auto.
-  - intros (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
-    exists c, d, Σ1, sc, sd, kc, kd. split_and!; auto.
+  - done.
   - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k. split_and!; auto.
   - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k. split_and!; auto.
 Qed.
@@ -484,8 +484,8 @@ Proof.
   destruct n as [|n']; [lia|].
   destruct (decide (m' = n')) as [->|Hne]; [done|].
   revert W Θ T F e HE. apply (LErel_S_ind n'). intros W Θ T F e H.
-  apply LErel_S_iff. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
-  split_and!; [| done | | | | ].
+  apply LErel_S_iff. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  split_and!; [| done | | | | | ].
   - intros Hirr. eapply LVrel_down; [|by apply Hs]. lia.
   - intros e' Hst. by apply (Hb e' Hst).
   - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
@@ -501,6 +501,7 @@ Proof.
   - intros σ e' Hst. eapply LEobl_lower; [..|exact (Hσ σ e' Hst)]; [lia| |].
     + intros. eapply LVrel_down; [|done]. simpl. lia.
     + intros ? ? ? ? Hx. apply (IHn n'); [lia|simpl; lia|exact Hx].
+  - intros cd e' Hst. eapply LElink_mono; [|exact (Hlk cd e' Hst)]. by intros ? [_ ?].
 Qed.
 
 Lemma LPrel_down n : ∀ m W Σ T p, m ≤ n → LPrel n W Σ T p → LPrel m W Σ T p.
@@ -517,8 +518,7 @@ Proof.
   - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & _ & HX). eauto.
   - intros p' Hst. eapply LPtau_case_mono; [|by apply Hc].
     intros ? ? ? Hx. apply (IHn (pred n')); [lia|lia|exact Hx].
-  - intros p' Hst. eapply LPtau_case_mono; [|by apply Hl].
-    intros ? ? ? Hx. apply (IHn n'); [lia|lia|]. exact Hx.
+  - intros cd p' Hst. eapply Plink_case_mono; [|by apply Hl]. by intros ? [_ ?].
   - intros σ p' Hst. eapply LPobl_lower; [..|exact (Hσ σ p' Hst)]; [lia| |].
     + intros. eapply LVrel_down; [|done]. simpl. lia.
     + intros ? ? ? Hx. apply (IHn n'); [lia|simpl; lia|exact Hx].
@@ -602,4 +602,5 @@ Proof.
   - intros c e' Hst. exfalso. eauto using val_no_tstep.
   - intros w e' Hst. exfalso. eauto using val_no_tstep.
   - intros σ e' Hst. exfalso. eauto using val_no_tstep.
+  - intros cd e' Hst. exfalso. eauto using val_no_tstep.
 Qed.

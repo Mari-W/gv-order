@@ -53,7 +53,7 @@ Section conv.
     assert (world_wf W1) as HW1f by (destruct HW1 as [->|HW1]; [done|by eapply wext_wf]).
     assert (teqW W1 T T') as Ht1.
     { eapply teqW_mono; [|exact Ht]. intros. by eapply wext_r_eq'. }
-    destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ).
+    destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
     split_and!.
     - intros Hirr. by apply HVT, Hs.
     - done.
@@ -81,12 +81,13 @@ Section conv.
       + destruct Hc as (Θr & Θ1 & Θ2 & m & U & s & k & Θ' & ? & ? & ? & ? & HE').
         exists Θr, Θ1, Θ2, m, U, s, k, Θ'. split_and!; try done. by eapply HEj.
       + destruct Hc as (Θ1 & k & ? & HE'). exists Θ1, k. split; [done|]. by eapply HEj.
-      + destruct Hc as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & ? & ? & ? & ? & HE').
-        exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; try done. by eapply HEj.
+      + done.
       + destruct Hc as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
         exists Θr, s1, s2, k, Θ'. split_and!; try done. by eapply HEj.
       + destruct Hc as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
         exists Θr, s1, s2, k, Θ'. split_and!; try done. by eapply HEj.
+    - intros cd e' Hst. eapply LElink_mono; [|exact (Hlk cd e' Hst)].
+      intros ? [_ HΦ]. by apply HΦ.
   Qed.
 
   Lemma LVrel_tconv_size k :
@@ -189,9 +190,8 @@ Section conv.
     - intros p' Hst Hd L. destruct (Hc p' Hst Hd (L ∪ ty_roots T')) as (N & W' & HN & Hfr & HP').
       exists N, W'. split_and!; [set_solver|done|]. pose proof (proj1 Hfr) as HW'.
       eapply HPj; [lia|by eapply wext_wf| |exact HP']. intros ? ? ?. by apply (proj1 (proj2 HW')).
-    - intros p' Hst Hd L. destruct (Hl p' Hst Hd (L ∪ ty_roots T')) as (N & W' & HN & Hfr & HP').
-      exists N, W'. split_and!; [set_solver|done|]. pose proof (proj1 Hfr) as HW'.
-      eapply HPj; [lia|by eapply wext_wf| |exact HP']. intros ? ? ?. by apply (proj1 (proj2 HW')).
+    - intros cd p' Hst. eapply Plink_case_mono; [|exact (Hl cd p' Hst)].
+      intros ? [_ HΦ]. by apply HΦ.
     - intros σ q Hst. pose proof (Hσ σ q Hst) as Hc'.
       destruct σ as [c w|c w|c|cd|c i|c i]; cbn [LPobl pred] in Hc' |- *.
       + destruct Hc' as (Σ1 & m & U & s & k & Hhd & ? & H').
@@ -201,8 +201,7 @@ Section conv.
       + destruct Hc' as (Σ0 & Σv & m & U & s & k & Σe & Θe & ? & ? & ? & ? & ? & ? & ? & ? & HP').
         exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done. by eapply HPj.
       + destruct Hc' as (Σ1 & k & ? & ? & HP'). exists Σ1, k. split_and!; try done. by eapply HPj.
-      + destruct Hc' as (c & d & Σ1 & sc & sd & kc & kd & -> & ? & ? & ? & ? & ? & ? & HP').
-        exists c, d, Σ1, sc, sd, kc, kd. split_and!; try done. by eapply HPj.
+      + done.
       + destruct Hc' as (Σ1 & s1 & s2 & k & ? & ? & HP').
         exists Σ1, s1, s2, k. split_and!; try done. by eapply HPj.
       + destruct Hc' as (Σ1 & s1 & s2 & k & ? & ? & HP').

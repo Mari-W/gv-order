@@ -2,7 +2,7 @@
 
     A closed process in the live relation at every index is deadlock
     free, and from every reachable state every sequence of τ steps of
-    β, new and spawn is finite. Hence every maximal run terminates or
+    β, new, spawn and link is finite. Hence every maximal run terminates or
     performs infinitely many channel steps ([live_runs]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -20,14 +20,12 @@ Lemma LPrel_tau n W T p p' :
   LPrel (S (S n)) W ∅ T p → preduction p p' → ∃ W', LPrel n W' ∅ T p'.
 Proof.
   intros HP Hst. apply LPrel_S_iff in HP.
-  destruct (HP W (wext_r_refl W)) as (_ & _ & HA & HC & HL & _).
-  apply ptau_classify in Hst as [Ha|[Hc|Hl]].
+  destruct (HP W (wext_r_refl W)) as (_ & _ & HA & HC & _ & _).
+  apply ptau_classify in Hst as [Ha|Hc].
   - destruct (HA p' Ha (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
     exists W'. eapply LPrel_down; [|exact HP']. lia.
   - destruct (HC p' Hc (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
     exists W'. exact HP'.
-  - destruct (HL p' Hl (disjoint_dom_empty _) ∅) as (N & W' & _ & _ & HP').
-    exists W'. eapply LPrel_down; [|exact HP']. lia.
 Qed.
 
 (** A run of m steps lowers the index by at most 2m. *)
@@ -42,15 +40,24 @@ Proof.
   exact (IH W' n T q p' Hqr HP').
 Qed.
 
+Lemma slabel_link_dec σ : (∃ cd, σ = SLink cd) ∨ (∀ cd, σ ≠ SLink cd).
+Proof. destruct σ as [| | |cd| |]; try (right; discriminate). left. by exists cd. Qed.
+
 (** With an empty interface no session label is allowed. *)
-Lemma LPobl_empty Vl Pl n W T p σ p' : LPobl Vl Pl n W ∅ T p σ p' → False.
+Lemma Plink_case_empty X W T cd p' : Plink_case X W ∅ T cd p' → False.
 Proof.
-  destruct σ as [c w|c w|c|cd|c b|c b]; simpl.
+  intros (c & d & Σ1 & sc & sd & kc & kd & _ & _ & Heq & _).
+  exact (insert_non_empty _ _ _ (eq_sym Heq)).
+Qed.
+
+Lemma LPobl_empty Vl Pl n W T p σ p' :
+  (∀ cd, σ ≠ SLink cd) → LPobl Vl Pl n W ∅ T p σ p' → False.
+Proof.
+  intros Hnl. destruct σ as [c w|c w|c|cd|c b|c b]; simpl.
   - intros (Σ1 & m & U & s & k & Heq & _). exact (senv_hd_not_empty _ _ _ _ Heq).
   - intros (?&?&?&?&?&?&?&?&Heq&_). exact (senv_hd_not_empty _ _ _ _ Heq).
   - intros (Σ1 & k & Heq & _). exact (senv_hd_not_empty _ _ _ _ Heq).
-  - intros (c & d & Σ1 & sc & sd & kc & kd & _ & _ & Heq & _).
-    exact (insert_non_empty _ _ _ (eq_sym Heq)).
+  - by destruct (Hnl cd).
   - intros (Σ1 & s1 & s2 & k & Heq & _). exact (senv_hd_not_empty _ _ _ _ Heq).
   - intros (Σ1 & s1 & s2 & k & Heq & _). exact (senv_hd_not_empty _ _ _ _ Heq).
 Qed.
@@ -58,12 +65,14 @@ Qed.
 Lemma LPrel_safe n W T p : LPrel (S n) W ∅ T p → safe p.
 Proof.
   intros HP. apply LPrel_S_iff in HP.
-  destruct (HP W (wext_r_refl W)) as (Hs & _ & _ & _ & _ & Hσ).
+  destruct (HP W (wext_r_refl W)) as (Hs & _ & _ & _ & Hl & Hσ).
   destruct (proc_progress p) as [Hirr|(π & p' & Hst)].
   - left. destruct (Hs Hirr) as (v & E & -> & Hv & _ & HE). exists v, E. auto.
   - right. destruct π as [|σ].
     + by exists p'.
-    + exfalso. exact (LPobl_empty _ _ _ _ _ _ _ _ (Hσ σ p' Hst)).
+    + exfalso. destruct (slabel_link_dec σ) as [[cd ->]|Hnl].
+      * exact (Plink_case_empty _ _ _ _ _ (Hl cd p' Hst)).
+      * exact (LPobl_empty _ _ _ _ _ _ _ _ Hnl (Hσ σ p' Hst)).
 Qed.
 
 (** ** The τ layer is well founded *)

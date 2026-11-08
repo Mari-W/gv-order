@@ -608,7 +608,7 @@ Proof.
             LErel j W0 Θ0 T F0 e0 → LErel j W0 Θ0 T' F0 e0) as HEj.
   { intros j W0 Θ0 F0 e0 Hj HW0. apply (IHn j ltac:(lia)).
     intros i W' Θ' v Hi HW'. apply (HV2 W0 HW0); [lia|done]. }
-  destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ).
+  destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
   split_and!.
   - intros Hirr. apply (HV2 W1 (wext_r_refl _)); [lia|apply wext_r_refl|by apply Hs].
   - done.
@@ -634,15 +634,16 @@ Proof.
       eapply HEj; [lia|apply wext_r_refl|exact HE'].
     + destruct Hc as (Θ1 & k & ? & HE'). exists Θ1, k. split; [done|].
       eapply HEj; [lia|apply wext_r_refl|exact HE'].
-    + destruct Hc as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & ? & ? & ? & ? & HE').
-      exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; try done.
-      eapply HEj; [lia|apply wext_r_refl|exact HE'].
+    + done.
     + destruct Hc as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
       exists Θr, s1, s2, k, Θ'. split_and!; try done.
       eapply HEj; [lia|apply wext_r_refl|exact HE'].
     + destruct Hc as (Θr & s1 & s2 & k & Θ' & ? & ? & HE').
       exists Θr, s1, s2, k, Θ'. split_and!; try done.
       eapply HEj; [lia|apply wext_r_refl|exact HE'].
+  - intros cd e' Hst. eapply LElink_mono; [|exact (Hlk cd e' Hst)].
+    intros ? [_ HΦ]. apply HΦ.
+    intros j W' Θ' v Hj HW' HVv. apply (HV2 W1 (wext_r_refl _)); [done|done|done].
 Qed.
 
 Lemma lsem_typed_pack W Θ Δ F e lb m C T xs :

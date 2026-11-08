@@ -2,8 +2,8 @@
 
     [LPrel_junk]: a process that holds neither end of x and does not
     restrict x stays related when x is renamed to b. The proof follows
-    [Prel_junk]. The τ steps of β, new and spawn stay at the index and
-    are read inductively, the other steps are read one or two levels
+    [Prel_junk]. The τ steps of β, new, spawn and link and the external
+    links stay at the index and are read inductively, the other steps are read one or two levels
     down, where the outer induction applies. The stepping lemmas are
     reused from JunkRenaming.v. *)
 
@@ -21,12 +21,14 @@ Lemma padmin_inv C E p' :
   ∨ (∃ F e c e', E = F ⊎ {[+ e +]} ∧ tstep e (LNew c) e' ∧
        c ∉ C ∧ c ∉ echans F ∧ c ∉ fchans e ∧ p' = (C ∪ {[c]}, F ⊎ {[+ e' +]}))
   ∨ (∃ F e v e', E = F ⊎ {[+ e +]} ∧ tstep e (LSpawn v) e' ∧
-       p' = (C, F ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]})).
+       p' = (C, F ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]}))
+  ∨ ptau_link (C, E) p'.
 Proof.
   intros H. inversion H; simplify_eq.
   - left. eauto 10.
   - right; left. eauto 12.
-  - right; right. eauto 12.
+  - right; right; left. eauto 12.
+  - right; right; right. eexists _, _, _, _, _, _. split_and!; [done|eassumption|done|done].
 Qed.
 
 Lemma pcomm_inv C E p' :
@@ -53,8 +55,17 @@ Lemma LPstep_mono (X Y : world → senv → ty → proc → Prop) n W Σ T p :
   (∀ W Σ T p, X W Σ T p → Y W Σ T p) → LPstep X n W Σ T p → LPstep Y n W Σ T p.
 Proof.
   intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
-  split_and!; [done|done| |done|done|done].
-  intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. auto.
+  split_and!; [done|done| |done| |done].
+  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & ?). exists N, W'. auto.
+  - intros cd p' Hst. eapply Plink_case_mono; [|exact (Hl cd p' Hst)]. auto.
+Qed.
+
+Lemma LPrel_S_plink n W Σ T p cd p' :
+  LPrel (S n) W Σ T p → proc_step p (PSess (SLink cd)) p' →
+  Plink_case (LPrel (S n)) W Σ T cd p'.
+Proof.
+  intros HP Hst. apply LPrel_S_iff in HP. destruct (HP W (wext_r_refl W)) as (_ & _ & _ & _ & H & _).
+  by apply H.
 Qed.
 
 Lemma LPrel_S_sess n W Σ T p σ p' :
@@ -87,7 +98,8 @@ Lemma LPrel_offer_dom n W Σ T C E0 e σ e' :
 Proof.
   intros HP Hst Hd.
   pose proof (LPrel_S_sess _ _ _ _ _ _ _ HP (PStepSession C E0 e σ e' Hst Hd)) as Hc.
-  destruct σ as [c w|c w|c|cd|c i|c i]; simpl in Hc |- *.
+  destruct σ as [c w|c w|c|cd|c i|c i]; simpl in Hc |- *;
+    [| | |pose proof (LPrel_S_plink _ _ _ _ _ _ _ HP (PStepSession C E0 e (SLink cd) e' Hst Hd)) as Hc'; clear Hc; rename Hc' into Hc| |].
   5,6: destruct Hc as (Σ1 & s1 & s2 & k & Hhd & _); apply senv_hd_dom in Hhd; set_solver.
   - destruct Hc as (Σ1 & m & U & s & k & Hhd & _). apply senv_hd_dom in Hhd. set_solver.
   - destruct Hc as (?&?&?&?&?&?&?&?&Hhd&_). apply senv_hd_dom in Hhd. set_solver.
@@ -270,7 +282,8 @@ Proof.
     apply padmin_inv in Hst as
       [ (F' & e' & e'' & HeqE & Hts & ->)
       | [ (F' & e' & c & e'' & HeqE & Hts & HcC & HcF & Hce & ->)
-      | (F' & e' & v' & e'' & HeqE & Hts & ->) ]].
+      | [ (F' & e' & v' & e'' & HeqE & Hts & ->)
+      | (C0 & F' & e' & c & d & e'' & HeqP & Hts & HcC & Hq) ]]].
     + (* β *)
       apply echsubst_decomp in HeqE as (F & f & -> & -> & ->).
       apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
@@ -332,6 +345,90 @@ by exists N, W2. }
       exists N, W2. split_and!; [done|done|].
       refine (imp4 _ _ _ _ _ _ (HΦ _ _ b eq_refl) (λ HP', _) _ _ _ _); [|done..].
       by rewrite !echsubst_disj_union, !echsubst_singleton in HP'.
+    + (* link, a τ at the index *)
+    injection HeqP as <- HeqE. subst q.
+    apply echsubst_decomp in HeqE as (F & f & -> & -> & ->).
+    apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
+    destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
+    injection Hα as Hcd.
+    destruct (tstep_link_shape _ _ _ Hf0) as (c0 & d0 & ->).
+    assert (c ≠ x) as Hcx by set_solver.
+    rewrite <-echsubst_disj_union1.
+    assert (∀ C', C' ⊆ C ∖ {[c]} ∪ {[b]} → b ∈ C → C' ## dom Σ) as Hguard.
+    { intros C' HC' HbC'. apply elem_of_disjoint. intros y Hy1 Hy2.
+      apply HC' in Hy1. apply elem_of_union in Hy1 as [Hy1| ->%elem_of_singleton].
+      - by apply (elem_of_disjoint _ _) in Hd; apply (Hd y).
+      - by apply (HbC HbC'). }
+    destruct (decide (x = c0 ∨ x = d0)) as [Hx|Hx].
+    { (* the original links the junk x with a restricted d1 *)
+      assert (∃ d1, {[c0; d0]} = ({[x; d1]} : gset chan)) as [d1 Hxd1].
+      { destruct Hx as [<-|<-]; [by exists d0|exists c0; by rewrite upair_comm]. }
+      rewrite Hxd1 in Hf0, Hcd. rewrite gsub_upair, csub_hit in Hcd.
+      assert (d1 ≠ x) as Hd1x.
+      { intros ->. apply (Hoff F f (SLink {[x; x]}) f0); [done|done| |simpl; set_solver].
+        simpl. set_solver. }
+      rewrite csub_ne in Hcd by done.
+      assert (d1 ∈ C) as Hd1C.
+      { destruct (decide (d1 ∈ C)) as [|Hn]; [done|]. exfalso.
+        apply (Hoff F f (SLink {[x; d1]}) f0); [done|done| |simpl; set_solver].
+        simpl. set_solver. }
+      rewrite upair_comm in Hf0.
+      symmetry in Hcd.
+      assert (c ∈ ({[b; d1]} : gset chan)) as Hc'.
+      { rewrite Hcd. apply elem_of_union; left. by apply elem_of_singleton. }
+      assert (b ≠ d1 → (c = b ∧ d = d1) ∨ (c = d1 ∧ d = b)) as Hcases.
+      { intros Hbd. apply upair_eq_inv in Hcd; [|done]. naive_solver. }
+      assert ((C ∖ {[d1]}) ## dom Σ) as Hd'.
+      { destruct (decide (b = d1)) as [->|Hbd].
+        - assert (c = d1) as ->.
+          { apply elem_of_union in Hc' as [?%elem_of_singleton|?%elem_of_singleton]; done. }
+          done.
+        - destruct (Hcases Hbd) as [[-> ->]|[-> ->]]; [|done].
+          apply Hguard; [|done]. intros y Hy. apply elem_of_difference in Hy as [Hy _].
+          destruct (decide (y = b)) as [->|Hyb].
+          + apply elem_of_union; right. by apply elem_of_singleton.
+          + apply elem_of_union; left. apply elem_of_difference.
+            split; [done|]. by intros ->%elem_of_singleton. }
+      destruct (Had _ (padmin_link _ _ ltac:(exists C, F, f, d1, x, f0; split_and!; done)) Hd' L)
+        as (N & W2 & HN & Hfr & _ & HΦ).
+      exists N, W2. split_and!; [done|done|].
+      refine (imp4 _ _ _ _ _ _ (HΦ _ _ b eq_refl) (λ HP', _) _ _ _ _); [|done|set_solver| |done].
+      2: { intros Hb. apply HbC. set_solver. }
+      destruct (decide (b = d1)) as [->|Hbd].
+      - assert (c = d1 ∧ d = d1) as [-> ->].
+        { assert (d ∈ ({[d1; d1]} : gset chan)) as Hd1.
+          { rewrite Hcd. apply elem_of_union; right. by apply elem_of_singleton. }
+          apply elem_of_union in Hc' as [?%elem_of_singleton|?%elem_of_singleton];
+          apply elem_of_union in Hd1 as [?%elem_of_singleton|?%elem_of_singleton]; done. }
+        rewrite echsubst_refl. by rewrite echsubst_collapse in HP'.
+      - rewrite echsubst_chain in HP' by done.
+        destruct (Hcases Hbd) as [[-> ->]|[-> ->]]; [|done].
+        apply (LPrel_swap_restricted b d1) in HP'; [|by apply HbC|].
+        2: { intros Hin. apply (elem_of_disjoint _ _) in Hd. apply (Hd d1); [set_solver|done]. }
+        unfold pswap in HP'. simpl in HP'.
+        assert (gswap b d1 (C ∖ {[d1]}) = C ∖ {[b]}) as Hg.
+        { apply set_eq. intros y. rewrite elem_of_gswap'. unfold cswap.
+          repeat case_decide; subst; set_solver. }
+        rewrite Hg, msswap_echsubst_flip in HP'. done. }
+    assert (x ∉ ({[c0; d0]} : gset chan)) as Hx'.
+    { intros Hin. apply elem_of_union in Hin as [?%elem_of_singleton|?%elem_of_singleton];
+        apply Hx; auto. }
+    rewrite gsub_id in Hcd by done. rewrite <-Hcd in Hf0.
+    assert (d ≠ x) as Hdx.
+    { intros ->. apply Hx'. rewrite <-Hcd. apply elem_of_union; right.
+      by apply elem_of_singleton. }
+    destruct (Had _ (padmin_link _ _ ltac:(exists C, F, f, c, d, f0; split_and!; done)) Hd L)
+      as (N & W2 & HN & Hfr & _ & HΦ).
+    exists N, W2. split_and!; [done|done|].
+    assert (x ∉ C ∖ {[c]}) as HxC'.
+    { intros Hin. apply elem_of_difference in Hin as [? _]. done. }
+    destruct (decide (b = c)) as [->|Hbc].
+    { refine (imp4 _ _ _ _ _ _ (HΦ _ _ d eq_refl) (λ HP', _) _ _ _ _); [|done|done| |done].
+      2: { intros Hdin HdΣ. apply (elem_of_disjoint _ _) in Hd. by apply (Hd d). }
+      by rewrite echsubst_retarget. }
+    refine (imp4 _ _ _ _ _ _ (HΦ _ _ b eq_refl) (λ HP', _) _ _ _ _); [|done|done| |done].
+    2: { intros Hb. apply HbC. by apply elem_of_difference in Hb as [? _]. }
+    by rewrite echsubst_comm in HP'.
   - (* Q-Comm *)
     intros q Hst Hd L.
     apply pcomm_inv in Hst as
@@ -398,91 +495,26 @@ by exists N, W2. }
         as (N & W2 & HN & Hfr & HP').
       exists N, W2. split_and!; [done|done|].
       apply (IH2 _ _ _ _ b) in HP'; [|done..]. by rewrite echsubst_disj_union2 in HP'.
-  - (* Q-Link-τ *)
-    intros q (C0 & F' & e' & c & d & e'' & HeqP & Hts & HcC & Hq) Hd L.
-    injection HeqP as <- HeqE. subst q.
-    apply echsubst_decomp in HeqE as (F & f & -> & -> & ->).
-    apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
+  - (* Q-Link: an external link, at the index *)
+    intros cd q Hst.
+    apply proc_step_sess_inv in Hst as (F' & e1 & e1' & HE & Hts & Hd & ->).
+    apply echsubst_decomp in HE as (F & e & -> & -> & ->).
+    apply tstep_chsubst_det_inv in Hts as (α & f & Hf & Hα & ->); [|done].
     destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
     injection Hα as Hcd.
-    destruct (tstep_link_shape _ _ _ Hf0) as (c0 & d0 & ->).
-    assert (c ≠ x) as Hcx by set_solver.
-    rewrite <-echsubst_disj_union1.
-    assert (∀ C', C' ⊆ C ∖ {[c]} ∪ {[b]} → b ∈ C → C' ## dom Σ) as Hguard.
-    { intros C' HC' HbC'. apply elem_of_disjoint. intros y Hy1 Hy2.
-      apply HC' in Hy1. apply elem_of_union in Hy1 as [Hy1| ->%elem_of_singleton].
-      - by apply (elem_of_disjoint _ _) in Hd; apply (Hd y).
-      - by apply (HbC HbC'). }
-    destruct (decide (x = c0 ∨ x = d0)) as [Hx|Hx].
-    { (* the original links the junk x with a restricted d1 *)
-      assert (∃ d1, {[c0; d0]} = ({[x; d1]} : gset chan)) as [d1 Hxd1].
-      { destruct Hx as [<-|<-]; [by exists d0|exists c0; by rewrite upair_comm]. }
-      rewrite Hxd1 in Hf0, Hcd. rewrite gsub_upair, csub_hit in Hcd.
-      assert (d1 ≠ x) as Hd1x.
-      { intros ->. apply (Hoff F f (SLink {[x; x]}) f0); [done|done| |simpl; set_solver].
-        simpl. set_solver. }
-      rewrite csub_ne in Hcd by done.
-      assert (d1 ∈ C) as Hd1C.
-      { destruct (decide (d1 ∈ C)) as [|Hn]; [done|]. exfalso.
-        apply (Hoff F f (SLink {[x; d1]}) f0); [done|done| |simpl; set_solver].
-        simpl. set_solver. }
-      rewrite upair_comm in Hf0.
-      symmetry in Hcd.
-      assert (c ∈ ({[b; d1]} : gset chan)) as Hc'.
-      { rewrite Hcd. apply elem_of_union; left. by apply elem_of_singleton. }
-      assert (b ≠ d1 → (c = b ∧ d = d1) ∨ (c = d1 ∧ d = b)) as Hcases.
-      { intros Hbd. apply upair_eq_inv in Hcd; [|done]. naive_solver. }
-      assert ((C ∖ {[d1]}) ## dom Σ) as Hd'.
-      { destruct (decide (b = d1)) as [->|Hbd].
-        - assert (c = d1) as ->.
-          { apply elem_of_union in Hc' as [?%elem_of_singleton|?%elem_of_singleton]; done. }
-          done.
-        - destruct (Hcases Hbd) as [[-> ->]|[-> ->]]; [|done].
-          apply Hguard; [|done]. intros y Hy. apply elem_of_difference in Hy as [Hy _].
-          destruct (decide (y = b)) as [->|Hyb].
-          + apply elem_of_union; right. by apply elem_of_singleton.
-          + apply elem_of_union; left. apply elem_of_difference.
-            split; [done|]. by intros ->%elem_of_singleton. }
-      destruct (Hl _ ltac:(exists C, F, f, d1, x, f0; split_and!; done) Hd' L)
-        as (N & W2 & HN & Hfr & HP').
-      exists N, W2. split_and!; [done|done|].
-      apply (IH1 _ _ _ _ b) in HP'; [|done|set_solver| |done].
-      2: { intros Hb. apply HbC. set_solver. }
-      destruct (decide (b = d1)) as [->|Hbd].
-      - assert (c = d1 ∧ d = d1) as [-> ->].
-        { assert (d ∈ ({[d1; d1]} : gset chan)) as Hd1.
-          { rewrite Hcd. apply elem_of_union; right. by apply elem_of_singleton. }
-          apply elem_of_union in Hc' as [?%elem_of_singleton|?%elem_of_singleton];
-          apply elem_of_union in Hd1 as [?%elem_of_singleton|?%elem_of_singleton]; done. }
-        rewrite echsubst_refl. by rewrite echsubst_collapse in HP'.
-      - rewrite echsubst_chain in HP' by done.
-        destruct (Hcases Hbd) as [[-> ->]|[-> ->]]; [|done].
-        apply (LPrel_swap_restricted b d1) in HP'; [|by apply HbC|].
-        2: { intros Hin. apply (elem_of_disjoint _ _) in Hd. apply (Hd d1); [set_solver|done]. }
-        unfold pswap in HP'. simpl in HP'.
-        assert (gswap b d1 (C ∖ {[d1]}) = C ∖ {[b]}) as Hg.
-        { apply set_eq. intros y. rewrite elem_of_gswap'. unfold cswap.
-          repeat case_decide; subst; set_solver. }
-        rewrite Hg, msswap_echsubst_flip in HP'. done. }
-    assert (x ∉ ({[c0; d0]} : gset chan)) as Hx'.
-    { intros Hin. apply elem_of_union in Hin as [?%elem_of_singleton|?%elem_of_singleton];
-        apply Hx; auto. }
-    rewrite gsub_id in Hcd by done. rewrite <-Hcd in Hf0.
-    assert (d ≠ x) as Hdx.
-    { intros ->. apply Hx'. rewrite <-Hcd. apply elem_of_union; right.
-      by apply elem_of_singleton. }
-    destruct (Hl _ ltac:(exists C, F, f, c, d, f0; split_and!; done) Hd L)
-      as (N & W2 & HN & Hfr & HP').
-    exists N, W2. split_and!; [done|done|].
-    assert (x ∉ C ∖ {[c]}) as HxC'.
-    { intros Hin. apply elem_of_difference in Hin as [? _]. done. }
-    destruct (decide (b = c)) as [->|Hbc].
-    { apply (IH1 _ _ _ _ d) in HP'; [|done|done| |done].
-      2: { intros Hdin HdΣ. apply (elem_of_disjoint _ _) in Hd. by apply (Hd d). }
-      by rewrite echsubst_retarget. }
-    apply (IH1 _ _ _ _ b) in HP'; [|done|done| |done].
-    2: { intros Hb. apply HbC. by apply elem_of_difference in Hb as [? _]. }
-    by rewrite echsubst_comm in HP'.
+    assert (x ∉ cd0) as Hx.
+    { apply (Hpre F e (SLink cd0) f eq_refl Hf). simpl. by rewrite <-Hcd. }
+    rewrite gsub_id in Hcd by done. subst cd.
+    destruct (Hl _ _ (PStepSession C F e (SLink cd0) f Hf Hd))
+      as (c1 & d1 & Σ1 & sc & sd & kc & kd & -> & Hne & HΣ & Hc1 & Hd1 & Hdu & Hal & _ & HΦ).
+    exists c1, d1, Σ1, sc, sd, kc, kd. split_and!; try done.
+    refine (imp4 _ _ _ _ _ _ (HΦ eq_refl _ _ b eq_refl) (λ HP', _) _ _ _ _).
+    { by rewrite echsubst_disj_union1 in HP'. }
+    { rewrite HΣ in HxΣ. rewrite !dom_insert_L in HxΣ. sset. }
+    { sset. }
+    { intros Hb. rewrite HΣ in HbC. rewrite !dom_insert_L in HbC.
+      pose proof (HbC ltac:(sset)). sset. }
+    { done. }
   - (* external steps *)
   intros σ' q Hst.
   apply proc_step_sess_inv in Hst as (F' & e1 & e1' & HE & Hts & Hd & ->).
@@ -596,23 +628,8 @@ by exists N, W2. }
       { sset. }
       { intros Hb. apply senv_hd_dom in Hhd. pose proof (HbC ltac:(sset)). sset. }
       { done. }
-    * (* link *)
-      apply tstep_chsubst_det_inv in Hts as (α & f & Hf & Hα & ->); [|done].
-      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-      injection Hα as Hcd.
-      assert (x ∉ cd0) as Hx.
-      { apply (Hpre F e (SLink cd0) f eq_refl Hf). simpl. by rewrite <-Hcd. }
-      rewrite gsub_id in Hcd by done. subst cd.
-      destruct (Hσ _ _ (PStepSession C F e (SLink cd0) f Hf Hd))
-        as (c1 & d1 & Σ1 & sc & sd & kc & kd & -> & Hne & HΣ & Hc1 & Hd1 & Hdu & Hal & HP').
-      exists c1, d1, Σ1, sc, sd, kc, kd. split_and!; try done.
-      refine (imp4 _ _ _ _ _ _ (λ a1 a2 a3 a4, IH1 _ _ _ _ b a1 a2 a3 a4 HP') (λ HP', _) _ _ _ _).
-      { by rewrite echsubst_disj_union1 in HP'. }
-      { rewrite HΣ in HxΣ. rewrite !dom_insert_L in HxΣ. sset. }
-      { sset. }
-      { intros Hb. rewrite HΣ in HbC. rewrite !dom_insert_L in HbC.
-        pose proof (HbC ltac:(sset)). sset. }
-      { done. }
+    * (* link: Q-Link above *)
+      done.
     * (* select *)
       apply tstep_chsubst_det_inv in Hts as (α & f & Hf & Hα & ->); [|done].
       destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.

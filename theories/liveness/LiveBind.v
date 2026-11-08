@@ -1,7 +1,7 @@
 (** * The bind lemma for the live relation (Bind.v)
 
-    As [Erel_bind], with the live costs. A τ step of the hole stays at
-    the index and uses the induction over τ steps. A channel step lowers
+    As [Erel_bind], with the live costs. A τ step of the hole (β, new,
+    spawn, link) stays at the index and uses the induction over τ steps. A channel step lowers
     the index and uses the induction on n. At new the hole's fresh point
     is chosen outside the context's names by the cofinite quantifier, so
     no renaming of points is needed. *)
@@ -16,7 +16,14 @@ Lemma LErel_S_step n W Θ T F e σ e' :
   LErel (S n) W Θ T F e → tstep e (LSess σ) e' → LEobl LVrel LErel (S n) W Θ T F σ e'.
 Proof.
   intros HE Hst. apply LErel_S_iff in HE.
-  destruct (HE W (wext_r_refl W)) as (_ & _ & _ & _ & _ & Hσ). by apply Hσ.
+  destruct (HE W (wext_r_refl W)) as (_ & _ & _ & _ & _ & Hσ & _). by apply Hσ.
+Qed.
+
+Lemma LErel_S_link n W Θ T F e cd e' :
+  LErel (S n) W Θ T F e → tstep e (LSess (SLink cd)) e' → LElink (λ W Θ F e, LErel (S n) W Θ T F e) W Θ F cd e'.
+Proof.
+  intros HE Hst. apply LErel_S_iff in HE.
+  destruct (HE W (wext_r_refl W)) as (_ & _ & _ & _ & _ & _ & Hl). by apply Hl.
 Qed.
 
 Lemma LErel_S_ready n W Θ T F e : LErel (S n) W Θ T F e → ¬ irred e → ready_t W Θ F e.
@@ -33,7 +40,8 @@ Lemma LErel_subjs n W Θ T F e σ e' :
   LErel (S n) W Θ T F e → tstep e (LSess σ) e' → subjs σ ⊆ dom Θ.
 Proof.
   intros HE Hst. pose proof (LErel_S_step _ _ _ _ _ _ _ _ HE Hst) as Hc.
-  destruct σ as [c w|c w|c|cd|c i|c i]; simpl in Hc |- *.
+  destruct σ as [c w|c w|c|cd|c i|c i]; simpl in Hc |- *;
+    [| | |pose proof (LErel_S_link _ _ _ _ _ _ _ _ HE Hst) as Hc'; clear Hc; rename Hc' into Hc| |].
   5,6: destruct Hc as (Θr & s1 & s2 & k & Θ' & (s0 & Hext & _) & _);
     destruct Hext as [[_ ->]|(f & _ & [-> | ->])]; rewrite dom_insert_L; set_solver.
   - destruct Hc as (Θ1 & m & U & s & k & (s0 & Hext & _) & _).
@@ -87,7 +95,7 @@ Proof.
     + assert (c ∈ dom Θ) as HcΘ by (apply Hsub; done). apply elem_of_dom in HcΘ as [o Ho].
       exists (c, false), (SLink cd), e'. split; [done|]. split; [done|].
       unfold tenv_entry. simpl. rewrite Ho. destruct o; by eexists.
-    + exfalso. destruct Hstep as (c & d & ? & ? & ? & ? & ? & ? & -> & _). set_solver.
+    + exfalso. destruct (LErel_S_link _ _ _ _ _ _ _ _ HE Hst) as (c & d & ? & ? & ? & ? & ? & ? & -> & _). set_solver.
 Qed.
 
 (** With the comparisons of readiness in hand, the redex acts on no
@@ -293,7 +301,7 @@ Proof.
             LVrel j W' Θ1' Th v → LErel j W' Θ' T F (fill_frame f v)) as HK1.
   { intros W' j Θ1' Θ' v HW' Hj Hc' HV'. apply (HK W' j Θ1' Θ' v); [|done..].
     by eapply wext_r_wext. }
-  destruct (Hstep W1 HW1) as (Hval & Hrdy & Hbeta & Hnew & Hsp & Hσ).
+  destruct (Hstep W1 HW1) as (Hval & Hrdy & Hbeta & Hnew & Hsp & Hσ & Hlk).
   assert (∀ W' j, wext W1 W' → j ≤ n' →
             ∀ W'' j' Θ1' Θ' v, wext W' W'' → j' ≤ j → tenv_comp (w_eq W'') Θ' Θ1' Θ2 →
               LVrel j' W'' Θ1' Th v → LErel j' W'' Θ' T F (fill_frame f v)) as HKd.
@@ -376,13 +384,8 @@ Proof.
       exists (partial_alter (λ _, Θ1' !! c) c Θ), k. split; [by exists s0|].
       eapply (IHn n'); [lia|done|done|exact Hcr|done|exact HE'|].
       apply (HKd W1 n'); [by apply wext_refl|done].
-    + (* link *)
-      destruct Hcase as (c & d & Θ1' & Θm & sc & sd & kc & kd & -> & Hx1 & Hx2 & Hdu & Heq & HE').
-      destruct (comp_ext_gen _ _ _ _ _ c _ Hc1 Hx2) as (Θm' & Hcm & Hextm).
-      destruct (comp_ext_gen _ _ _ _ _ d _ Hcm Hx1) as (Θ1'' & Hc1'' & Hext1).
-      eexists c, d, _, _, sc, sd, kc, kd. split_and!; [done|exact Hext1|exact Hextm|done|done|].
-      eapply (IHn n'); [lia|done|done|exact Hc1''|done|exact HE'|].
-      apply (HKd W1 n'); [by apply wext_refl|done].
+    + (* link: O-Link below *)
+      done.
     + (* select *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
@@ -413,6 +416,13 @@ Proof.
         intros y Hy. by rewrite !lookup_partial_alter_ne by congruence.
       * eapply (IHn n'); [lia|done|done|exact Hcs|done|exact HE'|].
         apply (HKd W1 n'); [by apply wext_refl|done].
+  - (* O-Link: a τ of the hole, at the index *)
+    intros cd E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
+    destruct (Hlk cd e' Hst') as (c & d & Θ1' & Θm & sc & sd & kc & kd & -> & Hx1 & Hx2 & Hdu & Heq & [_ HΦ]).
+    destruct (comp_ext_gen _ _ _ _ _ c _ Hc1 Hx2) as (Θm' & Hcm & Hextm).
+    destruct (comp_ext_gen _ _ _ _ _ d _ Hcm Hx1) as (Θ1'' & Hc1'' & Hext1).
+    eexists c, d, _, _, sc, sd, kc, kd. split_and!; [done|exact Hext1|exact Hextm|done|done|].
+    apply HΦ; [exact Hc1''|exact HK1|done|done|done].
 Qed.
 
 (** ** Bind with a condition on the returns of the hole
@@ -426,7 +436,8 @@ Qed.
 Inductive tadmin : expr → expr → Prop :=
   | TABeta e e' : tstep e LBeta e' → tadmin e e'
   | TANew e c e' : tstep e (LNew c) e' → tadmin e e'
-  | TASpawn e w e' : tstep e (LSpawn w) e' → tadmin e e'.
+  | TASpawn e w e' : tstep e (LSpawn w) e' → tadmin e e'
+  | TALink e cd e' : tstep e (LSess (SLink cd)) e' → tadmin e e'.
 
 Lemma LErel_bind_R n : ∀ (R : expr → Prop) f W Θ Θ1 Θ2 Th T F H e,
   (∀ e e', R e → tadmin e e' → R e') → R e →
@@ -468,7 +479,7 @@ Proof.
             LVrel j W' Θ1' Th v → LErel j W' Θ' T F (fill_frame f v)) as HK1.
   { intros W' j Θ1' Θ' v HW' Hj HRv Hc' HV'. apply (HK W' j Θ1' Θ' v); [|done..].
     by eapply wext_r_wext. }
-  destruct (Hstep W1 HW1) as (Hval & Hrdy & Hbeta & Hnew & Hsp & Hσ).
+  destruct (Hstep W1 HW1) as (Hval & Hrdy & Hbeta & Hnew & Hsp & Hσ & Hlk).
   assert (∀ W' j, wext W1 W' → j ≤ n' →
             ∀ W'' j' Θ1' Θ' v, wext W' W'' → j' ≤ j → (j' = j → True) →
               tenv_comp (w_eq W'') Θ' Θ1' Θ2 →
@@ -553,13 +564,8 @@ Proof.
       exists (partial_alter (λ _, Θ1' !! c) c Θ), k. split; [by exists s0|].
       eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcr|done|exact HE'|].
       apply (HKd W1 n'); [by apply wext_refl|done].
-    + (* link *)
-      destruct Hcase as (c & d & Θ1' & Θm & sc & sd & kc & kd & -> & Hx1 & Hx2 & Hdu & Heq & HE').
-      destruct (comp_ext_gen _ _ _ _ _ c _ Hc1 Hx2) as (Θm' & Hcm & Hextm).
-      destruct (comp_ext_gen _ _ _ _ _ d _ Hcm Hx1) as (Θ1'' & Hc1'' & Hext1).
-      eexists c, d, _, _, sc, sd, kc, kd. split_and!; [done|exact Hext1|exact Hextm|done|done|].
-      eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hc1''|done|exact HE'|].
-      apply (HKd W1 n'); [by apply wext_refl|done].
+    + (* link: O-Link below *)
+      done.
     + (* select *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
@@ -590,6 +596,13 @@ Proof.
         intros y Hy. by rewrite !lookup_partial_alter_ne by congruence.
       * eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcs|done|exact HE'|].
         apply (HKd W1 n'); [by apply wext_refl|done].
+  - (* O-Link: a τ of the hole, at the index *)
+    intros cd E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
+    destruct (Hlk cd e' Hst') as (c & d & Θ1' & Θm & sc & sd & kc & kd & -> & Hx1 & Hx2 & Hdu & Heq & [_ HΦ]).
+    destruct (comp_ext_gen _ _ _ _ _ c _ Hc1 Hx2) as (Θm' & Hcm & Hextm).
+    destruct (comp_ext_gen _ _ _ _ _ d _ Hcm Hx1) as (Θ1'' & Hc1'' & Hext1).
+    eexists c, d, _, _, sc, sd, kc, kd. split_and!; [done|exact Hext1|exact Hextm|done|done|].
+    apply HΦ; [exact Hc1''|exact HK1|done|done|done|eapply HRc; [exact HRe|by econstructor]].
 Qed.
 
 

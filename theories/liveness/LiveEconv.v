@@ -68,7 +68,7 @@ Section econv.
     assert (world_wf W) as HW by (by eapply wext_r_wf).
     assert (tconv W Θ Θ') as Hc.
     { eapply tconv_mono; [|exact Hc0]. intros. by eapply wext_r_eq. }
-    destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ).
+    destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
     clear H HW0 Hc0 HW1.
     assert (HVu : ∀ W Θ Θ' v, world_wf W → tconv W Θ Θ' →
               LVrel (S n') W Θ TUnit v → LVrel (S n') W Θ' TUnit v).
@@ -152,18 +152,8 @@ Section econv.
         exists Θ1', k'. split.
         * exists s0'. split; [done|]. apply (seq_end_inv _ s0); [by apply seq_sym|done].
         * by eapply HEj.
-      + (* O-Link *)
-        destruct Hstep as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & Hext1 & Hext2 &
-                           Hdu & Hal & HE').
-        destruct (tconv_unext W Θm c (sc, kc) Θ Θ' Hc Hext2)
-          as ([sc' kc'] & Θm' & Hext2' & [Hsc Hkc] & Hcm). simpl in Hsc, Hkc.
-        destruct (tconv_unext W Θ1 d (sd, kd) Θm Θm' Hcm Hext1)
-          as ([sd' kd'] & Θ1' & Hext1' & [Hsd Hkd] & Hc1). simpl in Hsd, Hkd.
-        exists c, d, Θ1', Θm', sc', sd', kc', kd'. split_and!; [done|done|done| | |].
-        * eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
-        * eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
-          eapply (wf_eq_trans _ HW); [exact Hal|by apply (wf_eq_dual _ HW)].
-        * by eapply HEj.
+      + (* O-Link below *)
+        exact I.
       + (* O-Select *)
         destruct Hstep as (Θr & s1 & s2 & k & ΘS & (s0 & Hext & Hu) & Hext1 & HE').
         destruct (tconv_unext W Θr c (s0, k) Θ Θ' Hc Hext)
@@ -187,6 +177,19 @@ Section econv.
         { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW). }
         exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
         eapply HEj; [lia|done|exact Hc3|exact HE'].
+    - (* O-Link, at the index *)
+      intros cd e' Hst.
+      destruct (Hlk cd e' Hst) as (c & d & Θ1 & Θm & sc & sd & kc & kd & -> & Hext1 & Hext2 &
+                                   Hdu & Hal & [_ HΦ]).
+      destruct (tconv_unext W Θm c (sc, kc) Θ Θ' Hc Hext2)
+        as ([sc' kc'] & Θm' & Hext2' & [Hsc Hkc] & Hcm). simpl in Hsc, Hkc.
+      destruct (tconv_unext W Θ1 d (sd, kd) Θm Θm' Hcm Hext1)
+        as ([sd' kd'] & Θ1' & Hext1' & [Hsd Hkd] & Hc1). simpl in Hsd, Hkd.
+      exists c, d, Θ1', Θm', sc', sd', kc', kd'. split_and!; [done|done|done| | |].
+      * eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
+      * eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
+        eapply (wf_eq_trans _ HW); [exact Hal|by apply (wf_eq_dual _ HW)].
+      * exact (HΦ HVT Θ1' HW Hc1).
   Qed.
 
   Lemma LVrel_econv_size k :
@@ -301,7 +304,35 @@ Proof.
     apply HΦ; [done|].
     eapply sconv_mono; [|exact Hc]. intros. destruct Hfr as ((_ & He & _) & _). auto.
   - intros q Hst. apply Htau; [|by apply Hcm]. intros. eapply HPj; [lia|done..].
-  - intros q Hst. apply Htau; [|by apply Hlk]. intros. eapply HPj; [lia|done..].
+  - (* Q-Link, at the index *)
+    intros cd q Hst.
+    destruct (Hlk cd q Hst) as (c & d & Σ1 & sc & sd & kc & kd & -> & Hne & HΣ & Hc1 & Hd1 &
+                                Hdu & Hal & [_ HΦ]).
+      pose proof (Hc c) as Hcc. pose proof (Hc d) as Hdd. rewrite HΣ in Hcc, Hdd.
+      rewrite lookup_insert_eq in Hcc. rewrite lookup_insert_ne, lookup_insert_eq in Hdd by done.
+      destruct (Σ' !! c) as [[sc' kc']|] eqn:Ec; [|done].
+      destruct (Σ' !! d) as [[sd' kd']|] eqn:Ed; [|done].
+      destruct Hcc as [Hsc Hkc], Hdd as [Hsd Hkd]. simpl in *.
+      exists c, d, (delete c (delete d Σ')), sc', sd', kc', kd'. split_and!.
+      * done.
+      * done.
+      * apply map_eq. intros x. destruct (decide (x = c)) as [->|Hxc].
+        { by rewrite lookup_insert_eq. }
+        rewrite lookup_insert_ne by done. destruct (decide (x = d)) as [->|Hxd].
+        { by rewrite lookup_insert_eq. }
+        by rewrite lookup_insert_ne, lookup_delete_ne, lookup_delete_ne.
+      * rewrite dom_delete_L. set_solver.
+      * rewrite !dom_delete_L. set_solver.
+      * eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
+      * eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
+        eapply (wf_eq_trans _ HW); [exact Hal|by apply (wf_eq_dual _ HW)].
+      * apply HΦ; [done|].
+        intros x. destruct (decide (x = c)) as [->|Hxc].
+        { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hc1 as ->. }
+        rewrite lookup_delete_ne by done. destruct (decide (x = d)) as [->|Hxd].
+        { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hd1 as ->. }
+        rewrite lookup_delete_ne by done. specialize (Hc x). rewrite HΣ in Hc.
+        by rewrite !lookup_insert_ne in Hc.
   - intros σ q Hst. specialize (Hstep σ q Hst).
     destruct σ as [c w|c w|c|cd|c i|c i]; cbn [LPobl pred] in Hstep |- *.
     + (* Q-Recv *)
@@ -357,34 +388,8 @@ Proof.
       exists Σ1', k'. split_and!; [|done|].
       * exists s0'. split; [done|]. apply (seq_end_inv _ s0); [by apply seq_sym|done].
       * eapply HPj; [lia|done|exact Hc1'|exact HP'].
-    + (* Q-Link *)
-      destruct Hstep as (c & d & Σ1 & sc & sd & kc & kd & -> & Hne & HΣ & Hc1 & Hd1 &
-                         Hdu & Hal & HP').
-      pose proof (Hc c) as Hcc. pose proof (Hc d) as Hdd. rewrite HΣ in Hcc, Hdd.
-      rewrite lookup_insert_eq in Hcc. rewrite lookup_insert_ne, lookup_insert_eq in Hdd by done.
-      destruct (Σ' !! c) as [[sc' kc']|] eqn:Ec; [|done].
-      destruct (Σ' !! d) as [[sd' kd']|] eqn:Ed; [|done].
-      destruct Hcc as [Hsc Hkc], Hdd as [Hsd Hkd]. simpl in *.
-      exists c, d, (delete c (delete d Σ')), sc', sd', kc', kd'. split_and!.
-      * done.
-      * done.
-      * apply map_eq. intros x. destruct (decide (x = c)) as [->|Hxc].
-        { by rewrite lookup_insert_eq. }
-        rewrite lookup_insert_ne by done. destruct (decide (x = d)) as [->|Hxd].
-        { by rewrite lookup_insert_eq. }
-        by rewrite lookup_insert_ne, lookup_delete_ne, lookup_delete_ne.
-      * rewrite dom_delete_L. set_solver.
-      * rewrite !dom_delete_L. set_solver.
-      * eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
-      * eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
-        eapply (wf_eq_trans _ HW); [exact Hal|by apply (wf_eq_dual _ HW)].
-      * eapply HPj; [lia|done| |exact HP'].
-        intros x. destruct (decide (x = c)) as [->|Hxc].
-        { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hc1 as ->. }
-        rewrite lookup_delete_ne by done. destruct (decide (x = d)) as [->|Hxd].
-        { rewrite lookup_delete_eq. by apply not_elem_of_dom in Hd1 as ->. }
-        rewrite lookup_delete_ne by done. specialize (Hc x). rewrite HΣ in Hc.
-        by rewrite !lookup_insert_ne in Hc.
+    + (* Q-Link above *)
+      exact I.
     + (* Q-Select *)
       destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc1 & HP').
       destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)

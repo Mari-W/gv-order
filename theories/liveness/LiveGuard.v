@@ -1,7 +1,8 @@
 (** * The guard in the semantics (liveness.md §6, §10 step 2)
 
     A term with [gd] performs a session primitive before it returns:
-    no sequence of β, new and spawn steps reaches a value ([gd_noret]).
+    no sequence of β, new, spawn and link steps reaches a value
+    ([gd_noret]).
     This is purely operational, so a guarded hole meets the condition of
     [LErel_bind_R] with [R := noret], and its continuation is needed
     below the current index only ([LErel_bind_guarded]). *)
@@ -67,14 +68,16 @@ Proof. apply gd_subst. Qed.
 
 (** ** τ steps keep the guard *)
 
-Definition tau_label (α : tlabel) : Prop := ∀ σ, α ≠ LSess σ.
+(** The labels of steps at cost zero: β, new, spawn and link. *)
+Definition tau_label (α : tlabel) : Prop := ∀ σ, α = LSess σ → ∃ cd, σ = SLink cd.
 
 Lemma gd_tstep e α e' : tstep e α e' → tau_label α → gd e = true → gd e' = true.
 Proof.
   induction 1 as [e α e' Hh|e1 α e1' e2 Hst IH|v e2 α e2' Hv Hst IH|e1 α e1' e2 Hst IH
                  |v e2 α e2' Hv Hst IH|e1 α e1' e2 Hst IH|e1 α e1' e2 Hst IH|e α e' Hst IH
                  |e α e' Hst IH|e α e' e1 e2 Hst IH]; intros Hα Hg.
-  - destruct Hh; simpl in *; try discriminate Hg; try (exfalso; exact (Hα _ eq_refl)).
+  - destruct Hh; simpl in *; try discriminate Hg;
+      try (exfalso; destruct (Hα _ eq_refl) as [? ?]; discriminate).
     + apply orb_true_iff in Hg as [Hg|Hg]; [by rewrite gd_val in Hg|by apply gd_subst1].
     + done.
     + rewrite (gd_val u), (gd_val v) in Hg by done. simpl in Hg. by apply gd_subst2.
@@ -104,7 +107,10 @@ Qed.
 Definition noret (e : expr) : Prop := ∀ e', rtc tadmin e e' → is_val e' = false.
 
 Lemma tadmin_tau e e' : tadmin e e' → ∃ α, tstep e α e' ∧ tau_label α.
-Proof. intros [? ? Hs|? ? ? Hs|? ? ? Hs]; eexists; (split; [exact Hs|done]). Qed.
+Proof.
+  intros [? ? Hs|? ? ? Hs|? ? ? Hs|? cd ? Hs]; eexists; (split; [exact Hs|]);
+    intros σ Hσ; try discriminate Hσ. injection Hσ as <-. by exists cd.
+Qed.
 
 Lemma gd_noret e : gd e = true → noret e.
 Proof.

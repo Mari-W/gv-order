@@ -190,7 +190,7 @@ Section fuse.
     assert (HE0 : LErel (S n') W Θ T F e).
     { eapply LErel_mono; [exact HW1|]. apply LErel_S_iff.
       eapply LEstep_mono; [|exact H]. by intros ? ? ? ? ? [? _]. }
-    destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ).
+    destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
     clear H HW0 Hm0 HW1.
     pose proof (proj1 HW) as HWf.
     assert (Hexcl : fused c d Θ → ∀ σ f, tstep e (LSess σ) f → (c ∈ subjs σ ∨ d ∈ subjs σ) →
@@ -407,17 +407,8 @@ Section fuse.
         destruct Hc1 as (Θ1 & k & Hhd & HE').
         destruct (move_hd W c d Hcd Θ Θ' c0 _ k Θ1 Hm Hhd Hok0) as (Θ1' & Hhd' & Hm1).
         exists Θ1', k. split; [done|]. exact (IHE n' ltac:(lia) W _ _ T F f HW Hm1 HE').
-      + (* link *)
-        apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-        destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hcd'. subst cd'.
-        pose proof (Hσ _ _ Hf) as Hc1. cbn [LEobl pred] in Hc1 |- *.
-        destruct Hc1 as (c1 & d1 & Θ1 & Θm & sc & sd & kc & kd & -> & H1 & H2 & Hdu & Hal & HE').
-        destruct (move_unext_any W c d Θ Θ' c1 _ Θm Hcd Hm H2) as (Θm' & H2' & Hmm).
-        destruct (move_unext_any W c d Θm Θm' d1 _ Θ1 Hcd Hmm H1) as (Θ1' & H1' & Hm1).
-        exists (csub c d c1), (csub c d d1), Θ1', Θm', sc, sd, kc, kd. split_and!; [|done..|].
-        * unfold gsub. by rewrite set_map_union_L, !set_map_singleton_L.
-        * exact (IHE n' ltac:(lia) W _ _ T F f HW Hm1 HE').
+      + (* link: O-Link below *)
+        exact I.
       + (* select *)
         apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
         destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
@@ -446,6 +437,17 @@ Section fuse.
         destruct (move_ext W c d Hcd Θr Θr' c0 _ Θ'' Hmr Hext Hokr) as (Θ3 & Hext' & Hm3).
         exists Θr', s1, s2, k, Θ3. split_and!; [done|done|].
         exact (IHE n' ltac:(lia) W _ _ T F f HW Hm3 HE').
+    - (* O-Link, at the index *)
+      intros cd' f' Hst.
+      apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
+      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
+      injection Hα as Hcd'. subst cd'.
+      destruct (Hlk _ _ Hf) as (c1 & d1 & Θ1 & Θm & sc & sd & kc & kd & -> & H1 & H2 & Hdu & Hal & [_ HΦ]).
+      destruct (move_unext_any W c d Θ Θ' c1 _ Θm Hcd Hm H2) as (Θm' & H2' & Hmm).
+      destruct (move_unext_any W c d Θm Θm' d1 _ Θ1 Hcd Hmm H1) as (Θ1' & H1' & Hm1).
+      exists (csub c d c1), (csub c d d1), Θ1', Θm', sc, sd, kc, kd. split_and!; [|done..|].
+      * unfold gsub. by rewrite set_map_union_L, !set_map_singleton_L.
+      * exact (HΦ HVT Θ1' HW Hm1).
   Qed.
 
   Lemma LVrel_fuse_size k :

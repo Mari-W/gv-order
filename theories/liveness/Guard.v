@@ -1,8 +1,8 @@
 (** * The guarded fragment (liveness.md §6, sharp edges 157, 160)
 
     The self of a box is a later hypothesis. A session primitive (send,
-    receive, close, select, branch, link) discharges it for its
-    continuation. The guard passes through let, let-pair, pairs and the
+    receive, close, select, branch) discharges it for its continuation.
+    A link does not: it costs nothing (lock-freedom plan §6.1). The guard passes through let, let-pair, pairs and the
     arguments of an application, through an applied λ (App (Lam b) e is
     a let), and through case when both branches are guarded. A closure
     built before the guard may not hold the self. Forcing the self is no
@@ -21,7 +21,7 @@ From LRGV Require Export static.Source.
 (** ** A term performs a session primitive before it returns *)
 
 Definition prim_konst (k : konst) : bool :=
-  match k with KRecv | KSend | KClos | KLink | KSel1 | KSel2 | KBra => true | _ => false end.
+  match k with KRecv | KSend | KClos | KSel1 | KSel2 | KBra => true | _ => false end.
 
 Fixpoint gd (e : expr) : bool :=
   match e with

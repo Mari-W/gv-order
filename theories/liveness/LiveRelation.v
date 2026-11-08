@@ -51,10 +51,11 @@ Proof. by right. Qed.
 
 (** ** Process τ steps, classified
 
-    [padmin]: the τ of P-Act-Beta, P-Act-New and P-Act-Spawn, which cost
-    nothing. [pcomm]: the τ of P-Act-Msg, P-Act-Close and P-Act-Choice,
-    which cost two. [ptau_link]: the τ of P-Act-Link, which costs one.
-    [pchan] is a channel step of a process: [pcomm] or [ptau_link]. *)
+    [padmin]: the τ of P-Act-Beta, P-Act-New, P-Act-Spawn and P-Act-Link,
+    which cost nothing. A link observes nothing, so it is internal
+    (lock-freedom plan §6.1). [pcomm]: the τ of P-Act-Msg, P-Act-Close
+    and P-Act-Choice, which cost two. [pchan] is a channel step of a
+    process, that is [pcomm]. *)
 
 Inductive padmin : proc → proc → Prop :=
   | PABeta C E e e' :
@@ -64,7 +65,10 @@ Inductive padmin : proc → proc → Prop :=
       padmin (C, E ⊎ {[+ e +]}) (C ∪ {[c]}, E ⊎ {[+ e' +]})
   | PASpawn C E e v e' :
       tstep e (LSpawn v) e' →
-      padmin (C, E ⊎ {[+ e +]}) (C, E ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]}).
+      padmin (C, E ⊎ {[+ e +]}) (C, E ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]})
+  | PALink C E e c d e' :
+      tstep e (LSess (SLink {[c; d]})) e' → c ∈ C →
+      padmin (C, E ⊎ {[+ e +]}) (C ∖ {[c]}, echsubst c d (E ⊎ {[+ e' +]})).
 
 Inductive pcomm : proc → proc → Prop :=
   | PCMsg C E c v e e' f f' :
@@ -77,7 +81,10 @@ Inductive pcomm : proc → proc → Prop :=
       tstep e (LSess (SSel c b)) e' → tstep f (LSess (SBra c b)) f' →
       pcomm (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) (C, E ⊎ {[+ e' +]} ⊎ {[+ f' +]}).
 
-Definition pchan (p p' : proc) : Prop := pcomm p p' ∨ ptau_link p p'.
+Definition pchan (p p' : proc) : Prop := pcomm p p'.
+
+Lemma padmin_link p p' : ptau_link p p' → padmin p p'.
+Proof. intros (C & E & e & c & d & e' & -> & Hst & HC & ->). by apply PALink. Qed.
 
 Lemma ptau_classify p p' : proc_step p PTau p' ↔ padmin p p' ∨ pchan p p'.
 Proof.
@@ -86,14 +93,13 @@ Proof.
     + left. by econstructor.
     + left. by econstructor.
     + left. by econstructor.
-    + right. left. by econstructor.
-    + right. left. by econstructor.
-    + right. left. by econstructor.
-    + right. right. eexists _, _, _, _, _, _. done.
-  - intros [Ha|[Hc|(C & E & e & c & d & e' & -> & Hst & HC & ->)]].
+    + right. by econstructor.
+    + right. by econstructor.
+    + right. by econstructor.
+    + left. by econstructor.
+  - intros [Ha|Hc].
     + destruct Ha; by econstructor.
     + destruct Hc; by econstructor.
-    + by econstructor.
 Qed.
 
 Lemma padmin_step p p' : padmin p p' → preduction p p'.
@@ -135,12 +141,7 @@ Definition LEobl (Vlow : nat → world → tenv → ty → expr → Prop)
         Elow (pred n) W Θ' T F e'
   | SClos c =>                                         (* O-Close *)
       ∃ Θ1 k, tenv_hd Θ c SEnd k Θ1 ∧ Elow (pred n) W Θ1 T F e'
-  | SLink cd =>                                        (* O-Link *)
-      ∃ c d Θ1 Θm sc sd kc kd,
-        cd = {[c; d]} ∧
-        tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
-        sdual sd sc ∧ w_eq W kc (pt_dual kd) ∧
-        Elow (pred n) W Θ1 T F e'
+  | SLink cd => True                                   (* O-Link, in Ebody *)
   | SSel c b =>                                        (* O-Select *)
       ∃ Θr s1 s2 k Θ', tenv_hd Θ c (SPlus s1 s2) k Θr ∧
         tenv_ext Θr c (sbranch b s1 s2, sel_pt k b) Θ' ∧
@@ -151,7 +152,18 @@ Definition LEobl (Vlow : nat → world → tenv → ty → expr → Prop)
         Elow (pred n) W Θ' T F e'
   end.
 
-(** The session labels of a process, each at cost one. *)
+(** O-Link: a link costs nothing, so its continuation is read at the
+    same level, X (lock-freedom plan §6.1). *)
+Definition LElink (X : world → tenv → gset point → expr → Prop)
+    (W : world) (Θ : tenv) (F : gset point) (cd : gset chan) (e' : expr) : Prop :=
+  ∃ c d Θ1 Θm sc sd kc kd,
+    cd = {[c; d]} ∧
+    tenv_ext Θ1 d (sd, kd) Θm ∧ tenv_ext Θm c (sc, kc) Θ ∧
+    sdual sd sc ∧ w_eq W kc (pt_dual kd) ∧
+    X W Θ1 F e'.
+
+(** The session labels of a process other than a link, each at cost
+    one. *)
 Definition LPobl (Vlow : nat → world → tenv → ty → expr → Prop)
     (Plow : nat → world → senv → ty → proc → Prop)
     (n : nat) (W : world) (Σ : senv) (T : ty) (p : proc)
@@ -169,8 +181,7 @@ Definition LPobl (Vlow : nat → world → tenv → ty → expr → Prop)
       Psend_case (Vlow (pred n)) (Plow (pred n)) W Σ T p c w p'
   | SClos c =>                                         (* Q-Close *)
       Pclos_case (Plow (pred n)) W Σ T c p'
-  | SLink cd =>                                        (* Q-Link *)
-      Plink_case (Plow (pred n)) W Σ T cd p'
+  | SLink cd => True                                   (* Q-Link, in Pbody *)
   | SSel c b =>                                        (* Q-Select *)
       Pchoice_case (Plow (pred n)) W Σ T c b SPlus sel_pt p'
   | SBra c b =>                                        (* Q-Branch *)
@@ -219,7 +230,9 @@ Definition Ebody (below : nat → llevel) (n : nat)
            (X Vunit_top TUnit) n W1 Θ1 ub lb w ∧
          X VT T W1 Θ2 F e') ∧
     (∀ σ e', tstep e (LSess σ) e' →                                 (* O-σ *)
-       LEobl (λ j, lvV (below j)) (λ j, lvE (below j)) n W1 Θ T F σ e').
+       LEobl (λ j, lvV (below j)) (λ j, lvE (below j)) n W1 Θ T F σ e') ∧
+    (∀ cd e', tstep e (LSess (SLink cd)) e' →                       (* O-Link *)
+       LElink (X VT T) W1 Θ F cd e').
 
 Inductive Eind (below : nat → llevel) (n : nat) :
     (world → tenv → expr → Prop) → ty → world → tenv → gset point → expr → Prop :=
@@ -247,8 +260,8 @@ Definition Pbody (below : nat → llevel) (n : nat)
        ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W1 N W' ∧ X W' Σ p') ∧
     (∀ p', pcomm p p' →                                            (* Q-Comm *)
        LPtau_case (lvP (below (pred (pred n)))) W1 Σ T p') ∧
-    (∀ p', ptau_link p p' →                                        (* Q-Link-τ *)
-       LPtau_case (lvP (below (pred n))) W1 Σ T p') ∧
+    (∀ cd p', proc_step p (PSess (SLink cd)) p' →                   (* Q-Link *)
+       Plink_case (λ W Σ _ q, X W Σ q) W1 Σ T cd p') ∧
     (∀ σ p', proc_step p (PSess σ) p' →                             (* Q-σ *)
        LPobl (λ j, lvV (below j)) (λ j, lvP (below j)) n W1 Σ T p σ p').
 
@@ -343,14 +356,17 @@ Definition Ebody_mono below n
     (f : ∀ VT T W Θ F e, X VT T W Θ F e → Y VT T W Θ F e) VT T W Θ F e :
   Ebody below n X VT T W Θ F e → Ebody below n Y VT T W Θ F e.
 Proof.
-  intros H W1 HW. destruct (H W1 HW) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
+  intros H W1 HW. destruct (H W1 HW) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split; [exact Hs|]. split; [exact Hr|]. split.
   { intros e' Hst. exact (f _ _ _ _ _ _ (Hb e' Hst)). }
   split.
   { intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & H1 & H2 & H4).
     exists a, s, s', W'. split; [exact H1|]. split; [exact H2|].
     exact (f _ _ _ _ _ _ H4). }
-  split; [|exact Hσ].
+  split; [|split; [exact Hσ|]].
+  2: { intros cd e' Hst. destruct (Hlk cd e' Hst) as (c & d & Θ1 & Θm & sc & sd & kc & kd & H1 & H2 & H3 & H4 & H5 & H6).
+       exists c, d, Θ1, Θm, sc, sd, kc, kd. split; [exact H1|]. split; [exact H2|].
+       split; [exact H3|]. split; [exact H4|]. split; [exact H5|]. exact (f _ _ _ _ _ _ H6). }
   intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & H1 & H2 & H3).
   exists Θ1, Θ2, ub, lb. split; [exact H1|]. split; [|exact (f _ _ _ _ _ _ H3)].
   destruct H2 as [(eb & Hw & Hfc & Hlb & H')|Hk]; [left|right; exact Hk].
@@ -377,9 +393,12 @@ Definition Pbody_mono below n VT T (X Y : world → senv → proc → Prop)
   Pbody below n VT T X W Σ p → Pbody below n VT T Y W Σ p.
 Proof.
   intros H W1 HW. destruct (H W1 HW) as (Hs & Hr & Ha & Hc & Hl & Hσ).
-  split; [exact Hs|]. split; [exact Hr|]. split; [|exact (conj Hc (conj Hl Hσ))].
-  intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & H1 & H2 & H3).
-  exists N, W'. split; [exact H1|]. split; [exact H2|]. exact (f _ _ _ H3).
+  split; [exact Hs|]. split; [exact Hr|]. split; [|split; [exact Hc|split; [|exact Hσ]]].
+  - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & H1 & H2 & H3).
+    exists N, W'. split; [exact H1|]. split; [exact H2|]. exact (f _ _ _ H3).
+  - intros cd p' Hst. destruct (Hl cd p' Hst) as (c & d & Σ1 & sc & sd & kc & kd & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8).
+    exists c, d, Σ1, sc, sd, kc, kd. split; [exact H1|]. split; [exact H2|]. split; [exact H3|].
+    split; [exact H4|]. split; [exact H5|]. split; [exact H6|]. split; [exact H7|]. exact (f _ _ _ H8).
 Defined.
 
 Lemma Pind_ind' below n VT T (Φ : world → senv → proc → Prop) :
@@ -430,14 +449,16 @@ Lemma Eind_VT_mono below n VT1 VT2 T W Θ F e :
 Proof.
   intros HV H. revert VT2 HV.
   induction H as [VT T W Θ F e H] using Eind_ind'. intros VT2 HV.
-  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ).
-  split_and!; [auto|done| | | |done].
+  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  split_and!; [auto|done| | | |done|].
   - intros e' Hst. by apply (Hb e' Hst).
   - intros c e' Hst Hc L. destruct (Hn c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
     exists a, s, s', W'. split_and!; [done..|]. by apply HX.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |by apply HX].
     eapply Vspawn_mono; [|exact Hv]. by intros ? ? ? ? [? _].
+  - intros cd e' Hst. destruct (Hlk cd e' Hst) as (c & d & Θ1 & Θm & sc & sd & kc & kd & ? & ? & ? & ? & ? & _ & HX).
+    exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; [done..|]. by apply HX.
 Qed.
 
 Lemma Eind_VT_iff below n VT1 VT2 T W Θ F e :
@@ -456,9 +477,11 @@ Lemma Pind_VT_mono below n VT1 VT2 T W Σ p :
 Proof.
   intros HV H. induction H as [W Σ p H] using Pind_ind'.
   constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
-  split_and!; [|done| |done|done|done].
+  split_and!; [|done| |done| |done].
   - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. auto.
   - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & _ & HX). eauto.
+  - intros cd p' Hst. destruct (Hl cd p' Hst) as (c & d & Σ1 & sc & sd & kc & kd & ? & ? & ? & ? & ? & ? & ? & _ & HX).
+    exists c, d, Σ1, sc, sd, kc, kd. by split_and!.
 Qed.
 
 (** ** Obligations, monotone in the lower levels *)
@@ -475,10 +498,23 @@ Proof.
   - intros (Θr&Θ1&Θ2&m&U&s&k&Θ'&?&?&Hp&?&HX). exists Θr, Θ1, Θ2, m, U, s, k, Θ'.
     split_and!; try done; [by apply HV|by apply HE].
   - intros (Θ1&k&?&HX). exists Θ1, k. split; [done|by apply HE].
-  - intros (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
-    exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; try done. by apply HE.
+  - done.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; try done. by apply HE.
   - intros (Θr&s1&s2&k&Θ'&?&?&HX). exists Θr, s1, s2, k, Θ'. split_and!; try done. by apply HE.
+Qed.
+
+Lemma LElink_mono (X Y : world → tenv → gset point → expr → Prop) W Θ F cd e' :
+  (∀ Θ1, X W Θ1 F e' → Y W Θ1 F e') → LElink X W Θ F cd e' → LElink Y W Θ F cd e'.
+Proof.
+  intros HXY (c&d&Θ1&Θm&sc&sd&kc&kd&?&?&?&?&?&HX).
+  exists c, d, Θ1, Θm, sc, sd, kc, kd. split_and!; try done. by apply HXY.
+Qed.
+
+Lemma Plink_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T T' cd p' :
+  (∀ Σ1, X W Σ1 T p' → Y W Σ1 T' p') → Plink_case X W Σ T cd p' → Plink_case Y W Σ T' cd p'.
+Proof.
+  intros HXY (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
+  exists c, d, Σ1, sc, sd, kc, kd. split_and!; try done. by apply HXY.
 Qed.
 
 Lemma LPtau_case_mono (X Y : world → senv → ty → proc → Prop) W Σ T p' :
@@ -497,8 +533,7 @@ Proof.
   - intros (Σ0&Σv&m&U&s&k&Σe&Θe&?&?&?&?&?&?&?&Hp&HX).
     exists Σ0, Σv, m, U, s, k, Σe, Θe. split_and!; try done; [by apply HV|by apply HP].
   - intros (Σ1&k&?&?&HX). exists Σ1, k. split_and!; try done. by apply HP.
-  - intros (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
-    exists c, d, Σ1, sc, sd, kc, kd. split_and!; try done. by apply HP.
+  - done.
   - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k. split_and!; try done. by apply HP.
   - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k. split_and!; try done. by apply HP.
 Qed.
@@ -509,8 +544,8 @@ Lemma Eind_below below1 below2 n VT T W Θ F e :
   Eind below1 n VT T W Θ F e → Eind below2 n VT T W Θ F e.
 Proof.
   intros Hn Hb H. induction H as [VT T W Θ F e H] using Eind_ind'.
-  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hbeta & Hnew & Hsp & Hσ).
-  split_and!; [done|done| | | |].
+  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hbeta & Hnew & Hsp & Hσ & Hlk).
+  split_and!; [done|done| | | | |].
   - intros e' Hst. by apply (Hbeta e' Hst).
   - intros c e' Hst Hc L. destruct (Hnew c e' Hst Hc L) as (a & s & s' & W' & ? & ? & _ & HX).
     exists a, s, s', W'. by split_and!.
@@ -524,6 +559,7 @@ Proof.
   - intros σ e' Hst. eapply LEobl_mono; [..|exact (Hσ σ e' Hst)].
     + intros j Hj W' Θ' T' v. cbv beta. rewrite (Hb j) by lia. done.
     + intros j Hj W' Θ' T' F'. cbv beta. rewrite (Hb j) by lia. done.
+  - intros cd e' Hst. eapply LElink_mono; [|exact (Hlk cd e' Hst)]. by intros ? [_ ?].
 Qed.
 
 Lemma Pind_below below1 below2 n VT T W Σ p :
@@ -535,7 +571,7 @@ Proof.
   split_and!; [done|done| | | |].
   - intros p' Hst Hd L. destruct (Ha p' Hst Hd L) as (N & W' & ? & ? & _ & HX). eauto.
   - intros p' Hst. rewrite <-(Hb (pred (pred n))) by lia. auto.
-  - intros p' Hst. rewrite <-(Hb (pred n)) by lia. auto.
+  - intros cd p' Hst. eapply Plink_case_mono; [|exact (Hl cd p' Hst)]. by intros ? [_ ?].
   - intros σ p' Hst. eapply LPobl_mono; [..|exact (Hσ σ p' Hst)].
     + intros j Hj W' Θ' T' v. cbv beta. rewrite (Hb j) by lia. done.
     + intros j Hj W' Σ' T' q. cbv beta. rewrite (Hb j) by lia. done.

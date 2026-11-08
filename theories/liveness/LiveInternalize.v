@@ -6,7 +6,9 @@
     costs two, and it is a send of p on one end, at cost one, followed
     by a receive on the other, at cost one (liveness.md §2). β, new and
     spawn of the fused process are those of p at cost zero, read by
-    induction on the τ layer of p. The environment and stepping lemmas
+    induction on the τ layer of p. So is a link: a link τ of the fused
+    process is an internal or an external link of p, both at cost zero
+    (lock-freedom plan §6.1). The environment and stepping lemmas
     are reused from Internalize.v. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -67,7 +69,8 @@ Section linternalize.
     Context (Hσ : ∀ σ p', proc_step (C, E) (PSess σ) p' →
       LPobl LVrel LPrel (S n') W Σp T (C, E) σ p').
     Context (Hcm : ∀ p', pcomm (C, E) p' → LPtau_case (LPrel (pred n')) W Σp T p').
-    Context (Hlk : ∀ p', ptau_link (C, E) p' → LPtau_case (LPrel n') W Σp T p').
+    Context (Hlx : ∀ cd p', proc_step (C, E) (PSess (SLink cd)) p' →
+      Plink_case (λ W Σ T p, LPrel (S n') W Σ T p ∧ lfuse_goal (S n') W Σ T p) W Σp T cd p').
     Context (Hadm : ∀ p', padmin (C, E) p' → p'.1 ## dom Σp → ∀ L : gset pname,
       ∃ N W', N ## L ∪ senv_roots Σp ∪ ty_roots T ∧ wext_fresh W N W' ∧
         lfuse_goal (S n') W' Σp T p').
@@ -254,7 +257,7 @@ Section linternalize.
 
     Lemma li_ext_link cd q' :
       proc_step q (PSess (SLink cd)) q' →
-      LPobl LVrel LPrel (S n') W Σ T q (SLink cd) q'.
+      Plink_case (LPrel (S n')) W Σ T cd q'.
     Proof.
       intros Hq. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
       apply echsubst_decomp in HE as (F & e & -> & -> & ->).
@@ -268,12 +271,10 @@ Section linternalize.
           unfold gsub; apply elem_of_map; [exists c|exists d]; (split; [|done]);
           [by rewrite csub_hit|by rewrite csub_ne]. }
       rewrite gsub_id in Hcd' by done. subst cd.
-      pose proof (Hσ _ _ (PStepSession C F e (SLink cd0) f Hf
+      pose proof (Hlx _ _ (PStepSession C F e (SLink cd0) f Hf
                     ltac:(cbn [subjs]; clear -HsC; set_solver))) as Hp.
-      cbn [LPobl Pclos_case Plink_case Psend_case pred] in Hp.
       destruct Hp as (c1 & d1 & Σ1 & sc1 & sd1 & kc1 & kd1 & -> & Hne & HΣ & Hc1 & Hd1 &
-                      Hdu1 & Hal1 & HP1).
-      pose proof (IH n' (le_n _) W _ _ HP1) as HΦ.
+                      Hdu1 & Hal1 & _ & HΦ).
       assert (c1 ≠ c ∧ c1 ≠ d ∧ d1 ≠ c ∧ d1 ≠ d) as (H1 & H2 & H3 & H4)
         by (clear -Hc0 Hd0; set_solver).
       destruct (fusedP_peel c d Hcd Σ sc sd kc kd _ c1 (sc1, kc1) HcΣ HdΣ H1 H2 HΣ)
@@ -799,15 +800,15 @@ Section linternalize.
       E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[x0; y0]})) f0 → x0 ∉ C → y0 ∉ C →
       ∃ c1 d1 Σ1 sc1 sd1 kc1 kd1, ({[x0; y0]} : gset chan) = {[c1; d1]} ∧ c1 ≠ d1 ∧
         Σp = <[c1 := (sc1, kc1)]> (<[d1 := (sd1, kd1)]> Σ1) ∧ c1 ∉ dom Σ1 ∧ d1 ∉ dom Σ1 ∧
-        sdual sd1 sc1 ∧ w_eq W kc1 (pt_dual kd1) ∧ LPrel n' W Σ1 T (C, F ⊎ {[+ f0 +]}).
+        sdual sd1 sc1 ∧ w_eq W kc1 (pt_dual kd1) ∧ LPrel (S n') W Σ1 T (C, F ⊎ {[+ f0 +]}).
     Proof.
       intros HEq Hf Hx0 Hy0.
       assert (proc_step (C, E) (PSess (SLink {[x0; y0]}))
                 (C ∖ sentc (SLink {[x0; y0]}), F ⊎ {[+ f0 +]})) as Hst.
       { rewrite HEq. apply PStepSession; [done|]. cbn [subjs]. clear -Hx0 Hy0. set_solver. }
-      pose proof (Hσ _ _ Hst) as Hp. cbn [LPobl Pclos_case Plink_case Psend_case pred] in Hp.
+      pose proof (Hlx _ _ Hst) as Hp.
       destruct Hp as (c1 & d1 & Σ1 & sc1 & sd1 & kc1 & kd1 & Hcd1 & Hne & HΣ & Hc1 & Hd1 &
-                      Hdu1 & Hal1 & HP1).
+                      Hdu1 & Hal1 & HP1 & _).
       cbn [sentc] in HP1. rewrite difference_empty_L in HP1.
       by exists c1, d1, Σ1, sc1, sd1, kc1, kd1.
     Qed.
@@ -816,15 +817,15 @@ Section linternalize.
       E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[y0; x0]})) f0 → y0 ∈ C →
       (C ∖ {[y0]}) ## dom Σ → ∀ L : gset pname,
       ∃ N W', N ## L ∪ senv_roots Σ ∪ ty_roots T ∧ wext_fresh W N W' ∧
-        lfuse_goal n' W' Σp T (C ∖ {[y0]}, echsubst y0 x0 (F ⊎ {[+ f0 +]})).
+        lfuse_goal (S n') W' Σp T (C ∖ {[y0]}, echsubst y0 x0 (F ⊎ {[+ f0 +]})).
     Proof.
       intros HEq Hf Hy0 Hg L.
       assert (ptau_link (C, E) (C ∖ {[y0]}, echsubst y0 x0 (F ⊎ {[+ f0 +]}))) as Hpl.
       { exists C, F, f, y0, x0, f0. split_and!; [by rewrite HEq|done|done|done]. }
       assert ((C ∖ {[y0]}) ## dom Σp) as Hd'.
       { rewrite (fusedP_dom c d Hcd). clear -Hg HcC HdC. set_solver. }
-      destruct (Hlk _ Hpl Hd' L) as (N & W' & HN & Hfr & HP1).
-      exists N, W'. split_and!; [|done|by apply (IH n' (le_n _))].
+      destruct (Hadm _ (padmin_link _ _ Hpl) Hd' L) as (N & W' & HN & Hfr & HP1).
+      exists N, W'. split_and!; [|done|exact HP1].
       pose proof (senv_roots_mono Σ Σp (fusedP_sub c d Σ sc sd kc kd HcΣ HdΣ)) as Hs.
       clear -HN Hs. set_solver.
     Qed.
@@ -832,7 +833,7 @@ Section linternalize.
     Lemma li_link_out x0 xb y0 F f f0 :
       (x0 = c ∧ xb = d) ∨ (x0 = d ∧ xb = c) → y0 ≠ c → y0 ≠ d → y0 ∉ C →
       E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[x0; y0]})) f0 →
-      LPrel n' W Σ T (C, echsubst d y0 (echsubst c d (F ⊎ {[+ f0 +]}))).
+      LPrel (S n') W Σ T (C, echsubst d y0 (echsubst c d (F ⊎ {[+ f0 +]}))).
     Proof.
       intros Hx Hy0c Hy0d Hy0C HEq Hf. destruct HW as [HWf _].
       assert (x0 ∉ C ∧ x0 ≠ y0) as [Hx0C Hx0y]
@@ -964,7 +965,7 @@ Section linternalize.
     Qed.
 
     Lemma li_link_give q' :
-      ptau_link q q' → LPtau_case (LPrel n') W Σ T q'.
+      ptau_link q q' → LPtau_case (LPrel (S n')) W Σ T q'.
     Proof.
       intros (C0 & F' & e' & a & b' & e'' & HeqP & Hts & HaC & ->) Hd L.
       injection HeqP as <- HeqE. cbn [fst] in Hd.
@@ -1118,7 +1119,9 @@ Section linternalize.
       apply padmin_inv in Hq as
         [ (F' & e' & e'' & HeqE & Hts & ->)
         | [ (F' & e' & c'' & e'' & HeqE & Hts & Hc''C & Hc''F & Hc''e & ->)
-        | (F' & e' & v' & e'' & HeqE & Hts & ->) ]]; cbn [fst] in Hd.
+        | [ (F' & e' & v' & e'' & HeqE & Hts & ->)
+        | Hlink ]]]; cbn [fst] in Hd.
+      4: { (* link: a τ at the index *) exact (li_link_give q' Hlink Hd L). }
       - (* β *)
         apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
         apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
@@ -1152,7 +1155,7 @@ Section linternalize.
              pose proof (fchans_chsubst_sup c d f) as Hsup.
              clear -Hin Hf Hsup Hz Hc''C Hc''e. set_solver. }
         assert (gswap z c'' (C ∪ {[z]} ∪ {[d]}) = C ∪ {[d]} ∪ {[c'']}) as Hg.
-        { clear Hσ Hcm Hlk Hadm IH HP Hts Hf0 HN Hfr.
+        { clear Hσ Hcm Hlx Hadm IH HP Hts Hf0 HN Hfr.
           apply set_eq. intros y. rewrite elem_of_gswap'. unfold cswap.
           repeat case_decide; subst; set_solver. }
         rewrite Hg in HP. exact HP.
@@ -1255,7 +1258,7 @@ Section linternalize.
       proc_step q (PSess σ') q' → LPobl LVrel LPrel (S n') W Σ T q σ' q'.
     Proof.
       intros Hq. destruct σ' as [a w'|a w'|a|cd|a i|a i];
-        [by apply li_ext_recv|by apply li_ext_send|by apply li_ext_close|by apply li_ext_link
+        [by apply li_ext_recv|by apply li_ext_send|by apply li_ext_close|exact I
         |by apply li_ext_sel|by apply li_ext_bra].
     Qed.
   End lstep.
@@ -1282,6 +1285,12 @@ Section linternalize.
     pose proof Hok as (HW & HcΣ & HdΣ & HcC & HdC & Hdu & Hal).
     destruct (H W HW1) as (Hirr & Hrdy & Hadm & Hcm & Hlk & Hσ).
     clear H HW1 Hok0.
+    assert (Hlx : ∀ cd p', proc_step (C, E) (PSess (SLink cd)) p' →
+      Plink_case (λ W Σ T p, LPrel (S n') W Σ T p ∧ lfuse_goal (S n') W Σ T p) W
+        (fusedP c d Σ sc sd kc kd) T cd p').
+    { intros cd p' Hst. eapply Plink_case_mono; [|exact (Hlk cd p' Hst)].
+      intros Σ1 [HP1 HΦ]. split; [done|]. intros ? ? ? ? ? ? ? ? ? ?. by eapply HΦ. }
+    clear Hlk.
     assert (Hadm' : ∀ p', padmin (C, E) p' → p'.1 ## dom (fusedP c d Σ sc sd kc kd) →
       ∀ L : gset pname, ∃ N W', N ## L ∪ senv_roots (fusedP c d Σ sc sd kc kd) ∪ ty_roots T ∧
         wext_fresh W N W' ∧ lfuse_goal (S n') W' (fusedP c d Σ sc sd kc kd) T p').
@@ -1306,7 +1315,7 @@ Section linternalize.
       split; [intros H; exfalso; by apply Hno|done].
     - eapply li_admin; eassumption.
     - eapply li_comm; eassumption.
-    - eapply li_link_give; eassumption.
+    - eapply li_ext_link; eassumption.
     - eapply li_ext_case; eassumption.
   Qed.
 End linternalize.
