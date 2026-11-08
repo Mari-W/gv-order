@@ -7,7 +7,8 @@ Updated after every stage and every agent result.
 |---|---|---|---|---|---|
 | 0  Paper proof (criterion, fuel and rank from the fragment) | 0a done, 0b next | none | n/a | n/a | decisions 1 to 4 of the plan await the author |
 | 1  Fair semantics, lock_free, local_progress, lf_criterion | done (f99a2bd) | theories/lockfree/Instr.v (istep_erase, preduction_lift, pred_star_lift), Fair.v (wfair, lock_free, lock_free_reach), TauThread.v (thread_acc), LocalProgress.v (local_progress_ready), Criterion.v (lf_criterion) | passes | 0, no axioms | see log: LPrel alone does not give local progress; linearity facts must come from typing; links still channel steps |
-| 2  Budgeted live relation with oracle | not started, waits for the author | | | | changes composition statements by ω |
+| 2a Link τ costs 0 (relation, guard, liveness proofs, TauThread) | in progress | | | | |
+| 2  Rank and fuel in the relation | waits for stage 0b (constant world or oracle) | | | | per-thread invariant needed (stage 1 finding 1) |
 | 3  Static fragment, fundamental theorem, lf_soundness | not started | | | | |
 | 4  Paper section | not started | | | | |
 
