@@ -83,6 +83,8 @@ theories/examples/RequestReply.v
 theories/examples/Relay.v
 theories/examples/TailCall.v
 theories/examples/ReceivedChain.v
+theories/examples/GrowRing.v
+theories/examples/ABP.v
 theories/examples/Forwarder.v
 theories/examples/Ordered.v
 theories/examples/FreshBetween.v

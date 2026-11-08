@@ -29,8 +29,12 @@
       graph of all hops is acyclic. Expressions carry no types, so this
       rule reads its types off typings of the boxes, not off the term.
     - Rank ([wf_world]): ≺ of the world is well founded.
+    - R2-recv ([r2r], stage 3c, plan §13) replaces R2′ in the fragment.
+      A received payload passed to a call of the self counts as
+      advanced, and every slot it feeds must be acted on before the
+      round passes it on. [r2] stays as the stricter rule.
 
-    [lfptyped] is [gptyped] with R1, R2′, R4′ and Rank. [lfsource] is
+    [lfptyped] is [gptyped] with R1, R2-recv, R4′ and Rank. [lfsource] is
     the same for a source program under a top-level constraint, the
     form in which the CFST scheduler is typed. *)
 
@@ -38,7 +42,8 @@ From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard.
 From LRGV Require Import static.Fundamental examples.ExampleTools examples.LitTools.
 From LRGV Require examples.Forwarder examples.TailCall examples.KobForwarder
-  examples.cfst.CfstTools examples.cfst.CfstScheduler examples.cfst.TreeSum.
+  examples.cfst.CfstTools examples.cfst.CfstScheduler examples.cfst.TreeSum
+  examples.ReceivedChain examples.GrowRing examples.ABP.
 
 (** ** Potentially recursive calls *)
 
@@ -331,6 +336,134 @@ Definition r4_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
     (∀ b T, (b, T) ∈ ann → tyd b T) ∧ acyclic E = true ∧
     ∀ e, ts e → ∃ E', thread_edges ann e = Some E' ∧ ∀ ab, ab ∈ E' → ab ∈ E.
 
+(** ** R2-recv, advance with fed slots (plan §13)
+
+    R2-recv relaxes R2′ for received payloads. Inside a round, the
+    argument of a potentially recursive call is advanced when every
+    component of its pair structure is fresh, or is a received payload
+    not acted on and the call forces the self of the round's box. A
+    link still asks a fresh argument, so a received payload counts as
+    advanced when it goes to recursion and not when it is linked.
+
+    A received payload that goes to the self lands in a parameter slot
+    of the next round, a path into the parameter's product type. These
+    are the fed slots of the box ([feds]). Within a round, a fed slot
+    not yet acted on may occur only as the carrier of an action, as the
+    pair a let pair takes apart, or as the value a let binds. Each of
+    those keeps track of the slot. Any other occurrence, and in
+    particular a send of the slot as payload, is rejected. A slot whose
+    path is a prefix of a fed path, or extends one, counts as fed.
+
+    The environment records for each variable whether it is fresh, its
+    carrier ([car], shared with R4′), and whether it is the self. In
+    EBox (Lam b) the parameter is variable 0 of b, at slot path [], and
+    the self is variable 1. The flag [ff] switches the fed-slot clause
+    on. Without it the starving server below passes. *)
+
+Record rent := RE { re_fr : bool; re_car : car; re_self : bool }.
+
+Definition rno : rent := RE false CNo false.
+Definition rget (G : list rent) (x : nat) : rent := default rno (G !! x).
+Definition rfr (G : list rent) : list bool := re_fr <$> G.
+Definition rcr (G : list rent) : list car := re_car <$> G.
+
+(** A received payload not acted on. *)
+Definition rrcv (G : list rent) (e : expr) : bool := is_rcv (ecar (rcr G) e).
+
+Definition rself (G : list rent) (f : expr) : bool :=
+  match f with Var x => re_self (rget G x) | _ => false end.
+
+(** Every component is fresh or a received payload. *)
+Fixpoint adv (G : list rent) (e : expr) : bool :=
+  match e with
+  | Pair a b => adv G a && adv G b
+  | _ => fresh (rfr G) e || rrcv G e
+  end.
+
+(** The slots that the received components of a call argument feed. *)
+Fixpoint fedp (G : list rent) (π : list bool) (e : expr) : list (list bool) :=
+  match e with
+  | Pair a b => fedp G (π ++ [false]) a ++ fedp G (π ++ [true]) b
+  | _ => if rrcv G e then [π] else []
+  end.
+
+(** The entries a let, a let pair and a case branch bind. *)
+Definition rbind1 (G : list rent) (a : expr) : rent := RE (fresh (rfr G) a) (ecar (rcr G) a) false.
+Definition rbindp (G : list rent) (e : expr) : list rent :=
+  zip_with (λ f c, RE f c false) (pfresh (rfr G) e) (pcar (rcr G) e).
+Definition rbindc (G : list rent) (e : expr) : rent := RE (fresh (rfr G) e) (ccar (rcr G) e) false.
+
+(** The fed slots of a box body. Nested boxes are boxes of their own. *)
+Fixpoint feds (G : list rent) (e : expr) : list (list bool) :=
+  match e with
+  | App (App (Konst KForce) f) a => (if rself G f then fedp G [] a else []) ++ feds G f ++ feds G a
+  | App (Lam b) a => feds G a ++ feds (rbind1 G a :: G) b
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => feds G e1 ++ feds G e2
+  | Lam b => feds (rno :: G) b
+  | EBox _ => []
+  | LetP e1 e2 => feds G e1 ++ feds (rbindp G e1 ++ G) e2
+  | Case e e1 e2 => feds G e ++ feds (rbindc G e :: G) e1 ++ feds (rbindc G e :: G) e2
+  | Inj1 e | Inj2 e => feds G e
+  | Var _ | EUnit | Konst _ | Chan _ => []
+  end.
+
+Fixpoint pref (π ρ : list bool) : bool :=
+  match π, ρ with
+  | [], _ => true
+  | b :: π', c :: ρ' => Bool.eqb b c && pref π' ρ'
+  | _ :: _, [] => false
+  end.
+
+(** A parameter slot not acted on whose path meets a fed slot. *)
+Definition rfed (fd : list (list bool)) (r : rent) : bool :=
+  negb (re_fr r) &&
+  match re_car r with CPar π => existsb (λ ρ, pref π ρ || pref ρ π) fd | _ => false end.
+
+(** The constants that act on a carrier given as a variable. *)
+Definition act_konst (k : konst) : bool :=
+  match k with KRecv | KClos | KSel1 | KSel2 | KBra => true | _ => false end.
+
+Definition bbox_env (b : expr) : list rent :=
+  match b with
+  | Lam _ => [RE false (CPar []) false; RE false CNo true]
+  | _ => [RE false CNo true]
+  end.
+
+Definition bbox_body (b : expr) : expr := match b with Lam b' => b' | _ => b end.
+
+Fixpoint r2r (ff rnd : bool) (fd : list (list bool)) (G : list rent) (e : expr) : bool :=
+  match e with
+  | Var x => negb (ff && rnd && rfed fd (rget G x))
+  | App (App (Konst KForce) f) a =>
+      (negb rnd || negb (pcall_target f) || fresh (rfr G) a || (rself G f && adv G a)) &&
+      r2r ff rnd fd G f && r2r ff rnd fd G a
+  | App (Konst k) a =>
+      (negb rnd || negb (bool_decide (k = KLink)) || fresh (rfr G) a) &&
+      match a with
+      | Var _ => act_konst k || r2r ff rnd fd G a
+      | Pair p (Var _) => if bool_decide (k = KSend) then r2r ff rnd fd G p else r2r ff rnd fd G a
+      | _ => r2r ff rnd fd G a
+      end
+  | App (Lam b) a =>
+      match a with Var _ => true | _ => r2r ff rnd fd G a end &&
+      r2r ff rnd fd (rbind1 G a :: G) b
+  | App e1 e2 => r2r ff rnd fd G e1 && r2r ff rnd fd G e2
+  | Lam b => r2r ff rnd fd (rno :: G) b
+  | EBox b =>
+      let G' := bbox_env b in let b' := bbox_body b in r2r ff true (feds G' b') G' b'
+  | LetU e1 e2 => r2r ff rnd fd G e1 && r2r ff rnd fd G e2
+  | LetP e1 e2 =>
+      match e1 with Var _ => true | _ => r2r ff rnd fd G e1 end &&
+      r2r ff rnd fd (rbindp G e1 ++ G) e2
+  | Case e e1 e2 =>
+      r2r ff rnd fd G e && r2r ff rnd fd (rbindc G e :: G) e1 && r2r ff rnd fd (rbindc G e :: G) e2
+  | Pair e1 e2 => r2r ff rnd fd G e1 && r2r ff rnd fd G e2
+  | Inj1 e | Inj2 e => r2r ff rnd fd G e
+  | EUnit | Konst _ | Chan _ => true
+  end.
+
+Definition lf_r2r (e : expr) : bool := r2r true false [] [] e.
+
 (** ** Rank *)
 
 Definition wf_world (W : world) : Prop := well_founded (w_lt W).
@@ -341,7 +474,7 @@ Definition lf_r4 (W : world) (p : proc) : Prop :=
   r4_ok (λ b T, ∃ Φ Ψ Δ F, typed W Φ Ψ ∅ Δ F b T) (λ e, e ∈ p.2).
 
 Definition lfptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  gptyped W Σ p T ∧ (∀ e, e ∈ p.2 → lf_r1 e = true) ∧ (∀ e, e ∈ p.2 → lf_r2 e = true) ∧
+  gptyped W Σ p T ∧ (∀ e, e ∈ p.2 → lf_r1 e = true) ∧ (∀ e, e ∈ p.2 → lf_r2r e = true) ∧
   lf_r4 W p ∧ wf_world W.
 
 Lemma lfptyped_gptyped W Σ p T : lfptyped W Σ p T → gptyped W Σ p T.
@@ -352,7 +485,7 @@ Proof. by intros [? _]. Qed.
     [wc0 n C₀]. *)
 Definition lfsource (n : nat) (C0 : bcs) (t : expr) (T : ty) : Prop :=
   creation_ok n nofact nofact (λ _, False) C0 ∧ prim T ∧
-  gstyped ∅ [(C0, ids n)] [] (∅, None) t T ∧ lf_r1 t = true ∧ lf_r2 t = true ∧
+  gstyped ∅ [(C0, ids n)] [] (∅, None) t T ∧ lf_r1 t = true ∧ lf_r2r t = true ∧
   r4_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧ wf_world (wc0 n C0).
 
 Lemma lfsource_gstyped n C0 t T : lfsource n C0 t T → gstyped ∅ [(C0, ids n)] [] (∅, None) t T.
@@ -390,6 +523,53 @@ Proof.
   apply wgen_empty_wf.
   - intros x y (? & ? & [] & _).
   - intros x y (? & ? & (f & [] & _) & _).
+Qed.
+
+(** Rank from a rank into a well-founded order. A world generated
+    without ≡ facts is well founded when the rank rises along program
+    order, along x ≺ x̄+1 and along its ≺ facts. The facts may form
+    infinite ascending chains. *)
+Lemma wgen_rank_wf {A} (R : A → A → Prop) N (E L : prel) (r : point → A) :
+  well_founded R → (∀ a b c, R a b → R b c → R a c) →
+  (∀ x y, ¬ E x y) → (∀ x y, L x y → R (r x) (r y)) →
+  (∀ x, R (r x) (r (pt_shift 1 x))) → (∀ x, R (r x) (r (pt_shift 1 (pt_dual x)))) →
+  wf_world (wgen N E L).
+Proof.
+  intros Hwf Htr HE HL Hs Hd.
+  assert (∀ x y, geq E x y → x = y) as Hq.
+  { induction 1 as [x y H| | | | | |]; [by destruct (HE x y H)|..]; subst; done. }
+  assert (∀ x y, glt E L x y → R (r x) (r y)) as Hlt.
+  { induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
+    - by apply HL.
+    - apply Hs.
+    - apply Hq in Hx, Hy. by subst.
+    - by eapply Htr.
+    - apply Hd. }
+  assert (∀ a, Acc R a → ∀ x, r x = a → Acc (glt E L) x) as H.
+  { induction 1 as [a _ IH]. intros x <-. constructor. intros y Hy. exact (IH (r y) (Hlt y x Hy) y eq_refl). }
+  intros x. exact (H (r x) (Hwf (r x)) x eq_refl).
+Qed.
+
+(** The run of a source program starts in [wc0 n C₀]. Its ≺ facts are
+    the facts of C₀ read at the constants. *)
+Lemma wc0_rank_wf {A} (R : A → A → Prop) n C (r : point → A) :
+  well_founded R → (∀ a b c, R a b → R b c → R a c) →
+  (∀ x y, bcs_open n C (FLt x y) → R (r (c0_pt n x)) (r (c0_pt n y))) →
+  (∀ x, R (r x) (r (pt_shift 1 x))) → (∀ x, R (r x) (r (pt_shift 1 (pt_dual x)))) →
+  wf_world (wc0 n C).
+Proof.
+  intros Hwf Htr HL Hs Hd. apply (wgen_rank_wf R _ _ _ r Hwf Htr); [| |done|done].
+  - intros x y (x0 & y0 & [] & _).
+  - intros x y (x0 & y0 & H & -> & ->). exact (HL x0 y0 H).
+Qed.
+
+Lemma lexlt_wf : well_founded lexlt.
+Proof.
+  assert (∀ a b, Acc lexlt (a, b)) as H.
+  { intros a. induction a as [a IHa] using (well_founded_induction Wf_nat.lt_wf).
+    intros b. induction b as [b IHb] using (well_founded_induction Wf_nat.lt_wf).
+    constructor. intros [a' b'] [Hlt|[Heq Hlt]]; cbn in *; [by apply IHa|subst; by apply IHb]. }
+  intros [a b]. apply H.
 Qed.
 
 (** A descending chain refutes Rank. *)
@@ -548,3 +728,128 @@ Qed.
     is still used by the frame of the right call. *)
 Theorem tsum_r1_fails : lf_r1 TreeSum.tsum = false.
 Proof. vm_compute. reflexivity. Qed.
+
+(** ** Stage 3c: R2-recv (plan §13) *)
+
+(** The starving server. Each round receives an end x on c, sends back
+    the end h that the previous round received, and recurs with ⟨c, x⟩.
+
+      starve = !(f = λp. let (c, h) = p in let (x, c) = recv c in
+                   let (c, u) = ⟨send ⟨h, c⟩, ∗⟩ in let () = u in (force f) ⟨c, x⟩)
+
+    x feeds the slot of h, and the next round sends h on before it acts
+    on it. An end can bounce between the server and a client forever,
+    and its partner waits. The guard, R1 and R4′ accept it, and so does
+    R2-recv without the fed-slot clause. With the clause it fails. *)
+Definition starve_body : expr :=
+  LetP (Var 0) (LetP (App ERecv (Var 1))
+    (LetP (Pair (App ESend (Pair (Var 2) (Var 0))) EUnit) (LetU (Var 0)
+      (App (App EForce (Var 7)) (Pair (Var 1) (Var 3)))))).
+
+Definition starve_box : expr := EBox (Lam starve_body).
+
+Theorem starve_checks :
+  guarded starve_box ∧ lf_r1 starve_box = true ∧ thread_edges [] starve_box = Some [] ∧
+  r2r false false [] [] starve_box = true ∧ lf_r2r starve_box = false ∧ lf_r2 starve_box = false.
+Proof. unfold guarded. split_and!; vm_compute; reflexivity. Qed.
+
+(** The slot it feeds is the second component of the parameter. *)
+Theorem starve_feds : feds (bbox_env (Lam starve_body)) starve_body = [[true]].
+Proof. vm_compute. reflexivity. Qed.
+
+Theorem starve_not_lfptyped W Σ T : ¬ lfptyped W Σ (∅, {[+ starve_box +]}) T.
+Proof.
+  intros (_ & _ & H2 & _). specialize (H2 _ (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)).
+  revert H2. vm_compute. discriminate.
+Qed.
+
+(** R2-recv on the earlier examples. Kobayashi's forwarder and C1 pass
+    it and stay out by the guard and by Rank. C3 still fails it, by the
+    link clause alone. TreeSum fails it as it fails R2′, besides R1. *)
+Theorem r2r_earlier :
+  lf_r2r KobForwarder.fw_main = true ∧ lf_r2r c1_box = true ∧
+  lf_r2r c3_box = false ∧ r2r false false [] [] c3_box = false ∧
+  lf_r2r TreeSum.tsum = false.
+Proof. split_and!; vm_compute; reflexivity. Qed.
+
+(** ReceivedChain.v: R2′ rejects it, R2-recv accepts it. The received
+    payload d goes to the self inside a spawn and feeds the parameter
+    slot, which the next round acts on first. *)
+Theorem rc_r2_fails : lf_r2 ReceivedChain.ch_main = false.
+Proof. vm_compute. reflexivity. Qed.
+
+Theorem rc_lfptyped : lfptyped (Wpo []) ∅ (∅, {[+ ReceivedChain.ch_main +]}) TUnit.
+Proof.
+  split_and!.
+  - split; [apply ptyped_closed_s; [constructor|apply ReceivedChain.ch_typed]|].
+    intros e ->%elem_of_single. vm_compute. reflexivity.
+  - intros e ->%elem_of_single. vm_compute. reflexivity.
+  - intros e ->%elem_of_single. vm_compute. reflexivity.
+  - exists [], []. split_and!.
+    + intros b T Hin. by apply elem_of_nil in Hin.
+    + reflexivity.
+    + intros e ->%elem_of_single. exists []. split; [vm_compute; reflexivity|done].
+  - apply Wpo_wf.
+Qed.
+
+(** The growing ring (GrowRing.v, Padovani III.7). R2′ rejects it,
+    because the received z goes to the self. Under the constant world
+    the facts of e are facts of W. They climb without end, and the rank
+    2·depth + offset still makes W well founded. *)
+Theorem rg_r2_fails : lf_r2 GrowRing.rg_main = false.
+Proof. vm_compute. reflexivity. Qed.
+
+Lemma rg_wf : wf_world (wc0 1 GrowRing.rg0_C).
+Proof.
+  apply (wc0_rank_wf lt 1 _ GrowRing.rg_rank Wf_nat.lt_wf); [intros a b c; lia| | |].
+  - intros x y H. rewrite !GrowRing.rg_rank_c0. apply bcs_open_nil in H as [H _].
+    by apply GrowRing.rg0_rank.
+  - intros x. unfold GrowRing.rg_rank, pt_shift. cbn. lia.
+  - intros x. unfold GrowRing.rg_rank, pt_shift, pt_dual. cbn. lia.
+Qed.
+
+Theorem rg_lfsource : lfsource 1 GrowRing.rg0_C GrowRing.rg_main TUnit.
+Proof.
+  split_and!.
+  - apply c0_acyclic_creation, GrowRing.rg0_acyclic.
+  - constructor.
+  - split; [apply GrowRing.rg_typed|vm_compute; reflexivity].
+  - vm_compute. reflexivity.
+  - vm_compute. reflexivity.
+  - exists [], []. split_and!.
+    + intros b T Hin. by apply elem_of_nil in Hin.
+    + reflexivity.
+    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
+  - apply rg_wf.
+Qed.
+
+(** The alternating bit protocol (ABP.v, Padovani III.8). No end
+    travels, so R2′ already accepts it. The world has the ceiling θ
+    above three interleaved ascending chains, and the pair rank makes it
+    well founded. *)
+Theorem abp_r2 : lf_r2 ABP.abp_main = true.
+Proof. vm_compute. reflexivity. Qed.
+
+Lemma abp_wf : wf_world (wc0 4 ABP.abp0_C).
+Proof.
+  apply (wc0_rank_wf lexlt 4 _ ABP.abp_rank lexlt_wf); [unfold lexlt; intros a b c; lia| | |].
+  - intros x y H. rewrite !ABP.abp_rank_c0. apply bcs_open_nil in H as [H _].
+    by apply ABP.abp_rank_facts.
+  - apply ABP.abp_rank_shift.
+  - intros x. exact (ABP.abp_rank_shift x).
+Qed.
+
+Theorem abp_lfsource : lfsource 4 ABP.abp0_C ABP.abp_main TUnit.
+Proof.
+  split_and!.
+  - apply c0_acyclic_creation, ABP.abp0_acyclic.
+  - constructor.
+  - split; [apply ABP.abp_typed|vm_compute; reflexivity].
+  - vm_compute. reflexivity.
+  - vm_compute. reflexivity.
+  - exists [], []. split_and!.
+    + intros b T Hin. by apply elem_of_nil in Hin.
+    + reflexivity.
+    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
+  - apply abp_wf.
+Qed.

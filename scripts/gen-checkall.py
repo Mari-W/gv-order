@@ -47,7 +47,13 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/Fragment.v', 'kob_checks'), ('lockfree/Fragment.v', 'kob_not_lfptyped'),
         ('lockfree/Fragment.v', 'kob_rank_fails'), ('lockfree/Fragment.v', 'c1_checks'),
         ('lockfree/Fragment.v', 'c1_rank_fails'), ('lockfree/Fragment.v', 'c3_checks'),
-        ('lockfree/Fragment.v', 'c3_not_lfptyped'), ('lockfree/Fragment.v', 'tsum_r1_fails')]
+        ('lockfree/Fragment.v', 'c3_not_lfptyped'), ('lockfree/Fragment.v', 'tsum_r1_fails'),
+        ('lockfree/Fragment.v', 'starve_checks'), ('lockfree/Fragment.v', 'starve_feds'),
+        ('lockfree/Fragment.v', 'starve_not_lfptyped'), ('lockfree/Fragment.v', 'r2r_earlier'),
+        ('lockfree/Fragment.v', 'rc_r2_fails'), ('lockfree/Fragment.v', 'rc_lfptyped'),
+        ('lockfree/Fragment.v', 'rg_r2_fails'), ('lockfree/Fragment.v', 'rg_wf'),
+        ('lockfree/Fragment.v', 'rg_lfsource'), ('lockfree/Fragment.v', 'abp_r2'),
+        ('lockfree/Fragment.v', 'abp_wf'), ('lockfree/Fragment.v', 'abp_lfsource')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
