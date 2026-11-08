@@ -231,3 +231,65 @@ over the points that are already there.
    link loops τ-divergence. This changes the cost table of liveness.md §2.
 4. G4 before or after lock freedom. Without it SemRounds stays out of both
    theorems.
+
+## 6  Stage 0a results and revisions (2026-11-08)
+
+A paper proof of `lf_criterion` exists (stage 0a agent report, folded in
+here). The measure is lexicographic on (rk of the waiting point, fuel of the
+partner entry, the Acc structure of the admin steps of its holders). This is
+Padovani's priority, tickets and depth (padovani2014deadlock, p15, Def. B.8).
+
+### 6.1  Corrections to §3
+
+1. **Links can refresh fuel.** In the loop `let (a, b) = new@y in link ⟨e, a⟩;
+   e := b`, the holder of C's partner replaces it by a fresh end at the same
+   point after every round. A spawn variant hands each fresh end to a new
+   thread. Fuel per point misses both, because a link moves no point.
+   With the author's decision that a link τ costs 0 (§5, decision 3),
+   a link becomes an admin step. Both loops are then τ-divergent and
+   rejected by `no_tau_divergence`. With links at cost 1, fuel needs caps per
+   entry that strictly decrease across links.
+2. **The rank condition** is x ≺ z ⇒ rk x < rk z, applied to the gate fact
+   u ≺ y of a holder of ȳ blocked at u. §3.1 mixed y and ȳ.
+3. **local_progress cannot come from `ready_p`.** For a closed process Σ = ∅,
+   and `above_offered` says nothing about restricted channels. The per-thread
+   gates (`below_rest` at each thread's Θ) must be part of the instrumented
+   invariant. With rank_bounded and safety, local_progress is then redundant.
+4. **Finished threads.** A thread that finishes holds nothing only if the
+   main result type has no channels. lf_soundness assumes `prim T`, as
+   live_soundness already does.
+
+### 6.2  Lemmas the proof needs
+
+Frozen threads keep their term. Every live entry has one holder and a dual
+peer. Sync steps name both holders. Mutual offers stay enabled. In a closed
+state every link redex is enabled. Admin redexes are always enabled. Every
+thread is a value or has one redex (admin, link, or an action on one entry).
+Links move no point. Steps commute with renaming. The admin steps of the
+successive holders of one entry replay as a padmin chain. Finished threads
+hold nothing.
+
+### 6.3  Open: classical reasoning
+
+The step "the partner's fuel is eventually constant" argues by contradiction
+on an infinite run. That needs classical logic, which means an axiom such as
+excluded middle, and adding one needs the author's approval. A constructive
+alternative states fairness with explicit deadlines (a fair scheduler gives,
+for every enabled thread, a position by which it steps). Lock freedom then
+comes with a computable bound. To be decided before stage 1 closes
+lf_criterion.
+
+### 6.4  Third option for uniformity: a constant world
+
+Proposed by the author. Forbid a larger world at O-New and Q-Admin, so W′ = W
+and every channel is created with `new@x` at a point that already exists.
+The world is then the same along the whole run and for every index. Rank and
+fuel live in the world per point (`rk, fu : point → ℕ`). They are uniform
+without an oracle, and composition statements keep their form. Fresh names
+and cofinite freshness disappear from the relation. The cost is that the
+lock-free fragment uses only `new@x`, with the facts for all points given up
+front as patterns over shifts and fields. On the branch, 8 example files use
+fresh `new` (FactoryEx, ChoiceEnc, ChoiceTranslate, ChoiceTranslateEx,
+DataBranch, FreshTools, ChoiceNegative, LitRejected). With links as admin
+steps (6.1.1), fuel per point suffices, so the caps per entry are unneeded.
+Stage 0b checks the examples against this option.
