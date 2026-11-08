@@ -102,6 +102,20 @@ Updated after every stage and every agent result.
   because its closed typings predate the creation hypotheses. A port runs on
   lock-freedom, stage 2b on branch lf-fuel.
 
+- 2026-11-09. Fragment port to the constant world done. Rank is asked of
+  `cworld Ψ`, the world where the run of a program over creation hypotheses
+  Ψ starts. It places variable k at the constant k and has exactly the facts
+  of Ψ, so creation facts are facts of W. `lfsource Ψ t T` takes
+  `created (Wpo []) Ψ` and `wf_world (cworld Ψ)`, and `lfsource_lfptyped`
+  turns it into `lfptyped (cworld Ψ)` with `cworld Ψ` strict. Forwarder,
+  TailCall and ReceivedChain are stated as `∃ W, strict W ∧ lfptyped W …`.
+  ABP is retyped over a ladder of rank constraints (θ, then ζ, υ, χ), the
+  construction of the CFST scheduler made generic. GrowRing's C₀ is already
+  a creation constraint. Every rejection keeps its statement, and
+  `kob_cworld_not_wf` shows that Rank rejects the world of Kobayashi's
+  forwarder itself. CheckAll lists 404 Print Assumptions, 293 active, all
+  closed.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
