@@ -516,3 +516,31 @@ three stronger box types, goes to the author.
   Servers that loop while the client says "more" (lock free only through the
   client's data). Divide and conquer such as parallel mergesort, which is
   semantically fine and statically excluded by R1.
+
+## 12  Coverage of the literature (author's acceptance criterion, 2026-11-08)
+
+The author accepts the design if it covers everything the standard
+literature on lock freedom covers, statically and semantically. Stage 3c
+checks this before any claim:
+
+- **Static.** Every program that a lock-freedom type system in the store
+  accepts must be typed by the static fragment, after translation to the
+  calculus. Sources: padovani2014deadlock (the ⊢LF examples: stream, the
+  node configurations of Example II.2/III.5, the growing ring III.7, the
+  alternating bit protocol III.8), kobayashi2002type (no PDF yet, to be
+  fetched), kobayashi2006new (Example (10) of padovani2014deadlock p9, typed
+  by Kobayashi and not by Padovani), padovani2013lock, padovani2014typing.
+  A program outside the fragment that one of them types is a gap. A gap
+  either relaxes the fragment or, if the program is not lock free in our
+  semantics, is shown not to be.
+- **Semantic.** Every such program, and every lock-free program among the
+  motivating examples (§8), must be in the lock-free relation. Programs
+  outside the static fragment get a direct semantic proof (the controller,
+  SemRounds after G4, TreeSum).
+- **Expected tension.** R1 excludes non-tail recursion. Padovani's ⊢LF
+  excludes the corresponding π-calculus patterns (fact, Fibonacci need
+  negative priorities, p8). Kobayashi's obligation levels may accept more.
+  Example (10) is the first case to check.
+- What counts as a gap follows the rule for subsumption: only a program
+  confirmed typable by them and not by us, after removing translation
+  artefacts.

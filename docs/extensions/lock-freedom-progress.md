@@ -11,6 +11,7 @@ Updated after every stage and every agent result.
 | 2b Rank and fuel in the relation (constant world, well-founded W, fuel constant N) | next, after 2a | | | | per-thread invariant needed (stage 1 finding 1) |
 | 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | in progress | | | | |
 | 3  Fundamental theorem, lf_soundness, thread_progress, examples | not started | | | | |
+| 3c Coverage of the literature (plan §12) | not started | | | | author's acceptance criterion |
 | 4  Paper section | not started | | | | |
 
 ## Log
