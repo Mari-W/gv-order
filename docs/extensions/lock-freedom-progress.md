@@ -20,6 +20,14 @@ Updated after every stage and every agent result.
   0a (fuel, rank and the criterion proof), 0b (rules R1 to R4 and the oracle),
   0c (example verdicts). 0a is running.
 
+## Decisions
+
+- 2026-11-08, author. Links: the link τ costs 0, so link loops count as
+  τ-divergence (plan decision 3). Part of stage 2.
+- 2026-11-08, author. SemRounds (G4) after lock freedom.
+- 2026-11-08, author. Uniformity (oracle or annotations in types): open,
+  the author asked whether the oracle keeps compositionality.
+
 ## Related work hooks
 
 - padovani2014deadlock p2 and p7. Tickets bound delegation and natural
