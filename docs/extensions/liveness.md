@@ -145,9 +145,9 @@ read at ∗. The premises hold in every future world W1 ⊒ W (Kripke style, §4
   (irred e → VT W1 Θ e)                                         E-Stop
   ∧ (¬ irred e → ready_t W1 Θ F e)                               E-Step
   ∧ (∀ e', e --β--> e' → Eind VT T W1 Θ F e')                     O-Beta
-  ∧ (∀ c e', e --νc--> e' → c ∉ dom Θ → ∀ L,
-       ∃ x s s' W', new_place W1 (L ∪ roots(Θ, T, F)) x W' ∧ s ⊥ s' ∧
-         Eind VT T W' (Θ, c : (s@x, s'@x̄)) F e')                  O-New
+  ∧ (∀ c e', e --νc--> e' → c ∉ dom Θ →
+       ∃ x s s', x known to W1 ∧ s ⊥ s' ∧
+         Eind VT T W1 (Θ, c : (s@x, s'@x̄)) F e')                  O-New
   ∧ (∀ w e', e --⇑w--> e' →
        ∃ Θ1 Θ2 ub lb, Θ = Θ1, Θ2 ∧ Vspawn_n W1 Θ1 ub lb w ∧
          Eind VT T W1 Θ2 F e')                                    O-Spawn
@@ -158,16 +158,14 @@ read at ∗. The premises hold in every future world W1 ⊒ W (Kripke style, §4
 v = ∗) ∗`. `Eobl_σ` is today's obligation of the six session labels with every
 successor at n − 1 and the payload of O-Send at n − 1.
 
-`new_place W N x W'` is the condition of branch no-eq (no-equality.md §7.2):
-x is a constant a ∉ N and W' a fresh extension of W placing a, or x is a
-point W knows and W' = W (new@x). O-New and Q-Admin quantify cofinitely over
-the fresh names. For every finite
-set L the term finds a fresh point outside L. Today's O-New finds one point
-fresh for Θ, T and F, and the bind lemma then renames it away from the
-context's environment and the hole's type (`Erel_new_rename`). The cofinite
-form lets the bind lemma and P-Connect pick L to cover the context, so the
-τ layer needs no renaming lemma. E-New produces the cofinite form directly,
-because its successor is a value.
+Under the constant world (sharp edge 172, stage 2b-core of the lock-freedom
+plan) O-New places the channel at a point x that W1 already knows, and the
+world stays. Until then O-New read `new_place W N x W'`, which also allowed
+a fresh constant a ∉ N with a fresh extension W′ placing a, and O-New and
+Q-Admin quantified cofinitely over the fresh names, so that the bind lemma
+and P-Connect could pick the set L to avoid. With no fresh names the
+cofinite quantifiers are gone, and so is the renaming of a fresh point
+(`Erel_new_rename`, `Prel_tau_rename`).
 
 ### P at level n
 
@@ -175,8 +173,7 @@ because its successor is a value.
 
 ```
 P-Stop, P-Step                                       as today, at W1
-∀ p', padmin p p' → p'.1 # dom Σ → ∀ L,
-  ∃ N W', N # L ∪ roots(Σ, T) ∧ W1 ⊑ₒ W' ∧ Pind VT T W' Σ p'   Q-Admin
+∀ p', padmin p p' → p'.1 # dom Σ → Pind VT T W1 Σ p'        Q-Admin
 ∀ p', pcomm p p' → Ptau_case (P_{n−2}) W1 Σ T p'          Q-Comm
 ∀ p', ptau_link p p' → Ptau_case (P_{n−1}) W1 Σ T p'      Q-Link
 ∀ σ p', p --σ--> p' → Pobl_σ (levels < n) W1 Σ T p σ p'    Q-σ, cost 1
@@ -400,8 +397,10 @@ Closed, in `theories/liveness/`.
   receive, send, close, select, branch, link). Each proof first moves to a
   later world (`lmove`, `LErel_intro`, `LEnow`) and then reads the step there.
   The payload of a send is read one level down (`LVrel_down`).
-- The comm and link τ of a process now place fresh names cofinitely as well
-  (`LPtau_case`), so conversion and composition need no renaming of points.
+- The comm and link τ of a process placed fresh names cofinitely as well
+  (`LPtau_case`), so conversion and composition needed no renaming of points.
+  Under the constant world (sharp edge 172) `LPtau_case` keeps the world and
+  places no names.
 - Branch no-eq. Since 2026-11-06 liveness sits on no-eq (rebased onto b4fcf35).
   ≡_W is equality, and O-New places the channel by `new_place`: a fresh
   constant outside L ∪ roots, or a point the world knows (new@x, world
@@ -518,7 +517,8 @@ How the proofs differ from the old ones.
   goes one or two levels down, where the outer induction on n applies.
   The old proofs used the size of the soup for sends, closes and links.
   These now cost one and go down a level.
-- Fresh names are cofinite, so no lemma renames points. Conversion of the
+- Fresh names were cofinite, so no lemma renamed points. Under the constant
+  world there are no fresh names at all (sharp edge 172). Conversion of the
   interface passes the roots of the converted interface into the set L to
   avoid. P-Connect passes the roots of the other component.
 - The move lemma (`LErel_fuse`) meets a new at the same index. The old

@@ -445,6 +445,9 @@ of equality generators inside `glt`).
   {[NConst a]} W' ∧ …` with the entries at `pconst a`. `new_place W N x W'` is
   `(∃ a, x = pconst a ∧ NConst a ∉ N ∧ wext_fresh W {[NConst a]} W') ∨
   (pt_known W x ∧ W' = W)`. The step owes less, and the condition is semantic.
+  Later (sharp edge 172, constant world, branch lock-freedom) the fresh
+  disjunct left as well. O-New reads `∃ x s s', pt_known W x ∧ sdual s s' ∧ …`
+  at W, `new_place` is deleted, and Q-Admin and `Ptau_case` keep the world.
 - `fresh_ok C := fresh_lt C`. `fresh_between plt C` is the betweenness
   implication alone.
 - `cc_model` loses the ≡ premise `HCe`. `cc_ok_out`

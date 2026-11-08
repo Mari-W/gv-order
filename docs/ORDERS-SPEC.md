@@ -454,8 +454,16 @@ new    : ∗ ⊸ ∃ι≽⊥. C. S@ι ⊗ dual S@ῑ        creation_ok 1 Γ C: 
                                              every outer point of C known
 
 Rocq: konst_sig k T G xs is the table of schemes, konst_ty has the constructors KTSig (a scheme
-whose G holds and whose xs are known) and KTNewEx. KTSpawn, …, KTForce are the instances as
+whose G holds and whose xs are known) and KTNewAt. KTSpawn, …, KTForce are the instances as
 lemmas, and konst_ty_case is case analysis by constant.
+
+Constant world (sharp edges 172, branch lock-freedom). The existential signature of new above
+is gone from the Rocq development, and with it KTNewEx and E-NewFresh. new only types as
+new@x : ∗ ⊸ S@x ⊗ dual S@x̄ with x known. A channel created at the top level is a point
+variable of the program's hypotheses, built one channel at a time under a creation
+constraint ([created]), and the run starts in a world that places it at a constant
+([soundness_created]). A channel created inside a box sits at a field point of a box
+variable, and the box constraint states its facts. Along a run the world never grows.
 
 E-Unit     ·; · ⊢^F ∗ : ∗
 E-Const    (T, G, xs) an instance of k    Γ ⊢ G    xs known   ⇒   ·; · ⊢^F k : T
