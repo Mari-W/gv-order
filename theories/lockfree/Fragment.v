@@ -35,8 +35,10 @@
       round passes it on. [r2] stays as the stricter rule.
 
     [lfptyped] is [gptyped] with R1, R2-recv, R4′ and Rank. [lfsource] is
-    the same for a source program under a top-level constraint, the
-    form in which the CFST scheduler is typed. *)
+    the same for a closed source program over the hypotheses of its
+    top-level channels, the form in which the examples are typed under
+    the constant world (sharp edges 172). Its Rank is asked of the world
+    where the run starts, which has the creation facts ([cworld]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard.
@@ -480,17 +482,6 @@ Definition lfptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
 Lemma lfptyped_gptyped W Σ p T : lfptyped W Σ p T → gptyped W Σ p T.
 Proof. by intros [? _]. Qed.
 
-(** A source program under the top-level constraint C₀ over n point
-    variables (the premises of [live_soundness_source]). Its world is
-    [wc0 n C₀]. *)
-Definition lfsource (n : nat) (C0 : bcs) (t : expr) (T : ty) : Prop :=
-  creation_ok n nofact nofact (λ _, False) C0 ∧ prim T ∧
-  gstyped ∅ [(C0, ids n)] [] (∅, None) t T ∧ lf_r1 t = true ∧ lf_r2r t = true ∧
-  r4_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧ wf_world (wc0 n C0).
-
-Lemma lfsource_gstyped n C0 t T : lfsource n C0 t T → gstyped ∅ [(C0, ids n)] [] (∅, None) t T.
-Proof. by intros (_ & _ & ? & _). Qed.
-
 (** ** Rank, general facts *)
 
 (** A world generated without facts orders only by program order. *)
@@ -518,13 +509,6 @@ Qed.
 Lemma Wpo_wf cs : wf_world (Wpo cs).
 Proof. unfold Wpo. apply wgen_empty_wf; by intros ? ? []. Qed.
 
-Lemma wc0_top_wf n : wf_world (wc0 n CfstTools.top_C0).
-Proof.
-  apply wgen_empty_wf.
-  - intros x y (? & ? & [] & _).
-  - intros x y (? & ? & (f & [] & _) & _).
-Qed.
-
 (** Rank from a rank into a well-founded order. A world generated
     without ≡ facts is well founded when the rank rises along program
     order, along x ≺ x̄+1 and along its ≺ facts. The facts may form
@@ -550,19 +534,6 @@ Proof.
   intros x. exact (H (r x) (Hwf (r x)) x eq_refl).
 Qed.
 
-(** The run of a source program starts in [wc0 n C₀]. Its ≺ facts are
-    the facts of C₀ read at the constants. *)
-Lemma wc0_rank_wf {A} (R : A → A → Prop) n C (r : point → A) :
-  well_founded R → (∀ a b c, R a b → R b c → R a c) →
-  (∀ x y, bcs_open n C (FLt x y) → R (r (c0_pt n x)) (r (c0_pt n y))) →
-  (∀ x, R (r x) (r (pt_shift 1 x))) → (∀ x, R (r x) (r (pt_shift 1 (pt_dual x)))) →
-  wf_world (wc0 n C).
-Proof.
-  intros Hwf Htr HL Hs Hd. apply (wgen_rank_wf R _ _ _ r Hwf Htr); [| |done|done].
-  - intros x y (x0 & y0 & [] & _).
-  - intros x y (x0 & y0 & H & -> & ->). exact (HL x0 y0 H).
-Qed.
-
 Lemma lexlt_wf : well_founded lexlt.
 Proof.
   assert (∀ a b, Acc lexlt (a, b)) as H.
@@ -581,6 +552,328 @@ Proof.
   exact (H (f 0) (Hwf (f 0)) 0 eq_refl).
 Qed.
 
+(** ** Rank under the constant world (sharp edges 172)
+
+    A closed program creates its channels at its top level, so they are
+    the point variables of its hypotheses Ψ ([created]). Its run starts
+    in [cworld Ψ], which places variable k at the constant k and has
+    exactly the facts of Ψ there, closed under program order. The
+    creation facts are facts of this world, and Rank asks that its ≺ be
+    well founded. A descending chain in a creation constraint, as in
+    Kobayashi's forwarder, refutes it ([kob_cworld_not_wf]). *)
+
+Definition cst (b : nat) : nat → point := λ k, pconst (k + b).
+
+(** The ≺ facts that the hypotheses Ψ state at their instances. *)
+Definition hyps_lt (Ψ : hyps) : prel :=
+  λ x y, ∃ C xs g, (C, xs) ∈ Ψ ∧ bcs_open (length xs) C g ∧ fact_map (pt_inst (plist xs)) g = FLt x y.
+
+Definition cnames (b n : nat) : gset pname := list_to_set (NConst <$> List.seq b n).
+
+Definition cworld (Ψ : hyps) : world :=
+  wgen (cnames 0 (length Ψ)) (λ _ _, False) (hyps_lt (hyps_inst (cst 0) Ψ)).
+
+Lemma cnames_fresh b n : NConst b ∉ cnames (S b) n.
+Proof.
+  unfold cnames. intros Hin. apply elem_of_list_to_set, list_elem_of_fmap in Hin as (c & Ec & Hc).
+  apply elem_of_seq in Hc. injection Ec as ->. lia.
+Qed.
+
+(** The world of [created_world] at the constants b, b+1, …, read off
+    the hypotheses one channel at a time. *)
+Lemma created_cst Ψ : created (Wpo []) Ψ → ∀ b, ∃ W1,
+  wext (Wpo []) W1 ∧ w_names W1 = cnames b (length Ψ) ∧
+  hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst (cst b) Ψ).
+Proof.
+  pose proof Wpo_nil_strict' as HW. induction 1 as [|Ψ C HΨ IH HC HK]; intros b.
+  - exists (Wpo []). split_and!; [by apply wext_refl|done|]. intros C xs Hin. by apply elem_of_nil in Hin.
+  - destruct (IH (S b)) as (W1 & HW1 & HN1 & Hh).
+    pose proof (proj1 HW) as Hwf.
+    assert (cc_ok (w_eq W1) (w_lt W1) (bcs_inst (cst (S b)) C)) as HC1.
+    { apply (cc_ok_pinst (cst (S b)) (seqs (Wpo []) Ψ) (slt (Wpo []) Ψ)); [| |done].
+      - intros x y H. by apply (seqs_pinst (Wpo []) W1 (cst (S b)) Hwf HW1 Ψ).
+      - intros x y H. by apply (slt_pinst (Wpo []) W1 (cst (S b)) Hwf HW1 Ψ). }
+    assert (Forall (pt_known W1) (bc_env (bcs_inst (cst (S b)) C))) as HK1.
+    { simpl. apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx.
+      by apply (skn_pinst_known (Wpo []) W1 (cst (S b)) Hwf HW1 Ψ). }
+    assert (NConst b ∉ w_names W1) as Ha by (rewrite HN1; apply cnames_fresh).
+    destruct (wext_cc W1 b (bcs_inst (cst (S b)) C) (proj2 (proj2 (proj2 HW1))) HC1 HK1 Ha)
+      as (W2 & Hfr & HCa).
+    exists W2. split_and!.
+    + by eapply wext_trans; [exact HW1|exact (proj1 Hfr)].
+    + pose proof Hfr as (_ & _ & -> & _). rewrite HN1, length_app. unfold hyps_inst.
+      rewrite length_fmap. cbn [length]. rewrite Nat.add_1_r. unfold cnames. cbn. set_solver.
+    + assert (∀ k, pt_inst (cst b) (pshift 1 k) = cst (S b) k) as Hs.
+      { intros k. unfold pshift, cst. rewrite pt_inst_pvar_at. f_equal. lia. }
+      rewrite hyps_inst_app, hyps_comp, (hyps_inst_ext _ (cst (S b))) by (intros k; apply Hs).
+      apply hyps_hold_app; [apply (hyps_hold_wext W1); [exact (proj1 Hfr)|exact Hh]|].
+      rewrite hyps_inst_single, bcs_comp, (bcs_inst_ext _ (cst (S b))) by (intros k; apply Hs).
+      intros C' xs Hin. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+      split; [exact HCa|].
+      apply Forall_singleton. unfold pt_known. pose proof Hfr as (_ & _ & -> & _).
+      unfold pt_root, cst, pconst. simpl. set_solver.
+Qed.
+
+(** A world contains the world its facts generate. *)
+Lemma glt_into (W : world) (L : prel) :
+  world_wf W → (∀ x y, L x y → w_lt W x y) → ∀ x y, glt (λ _ _, False) L x y → w_lt W x y.
+Proof.
+  intros HW HL.
+  assert (∀ x y, geq (λ _ _ : point, False) x y → x = y) as Hq.
+  { induction 1 as [x y []| | | | | |]; subst; done. }
+  induction 1 as [x y H|x|x x' y y' Hx _ IH Hy|x y z _ IH1 _ IH2|x].
+  - by apply HL.
+  - apply (wf_lt_po _ HW).
+  - apply Hq in Hx, Hy. by subst.
+  - by eapply (wf_lt_trans _ HW).
+  - apply (wf_lt_dpo _ HW).
+Qed.
+
+(** [cworld Ψ] is strict and realizes Ψ at the constants. *)
+Lemma cworld_hold Ψ : created (Wpo []) Ψ →
+  strict (cworld Ψ) ∧ hyps_hold (w_eq (cworld Ψ)) (w_lt (cworld Ψ)) (pt_known (cworld Ψ)) (hyps_inst (cst 0) Ψ).
+Proof.
+  intros HΨ. destruct (created_cst Ψ HΨ 0) as (W1 & HW1 & HN & Hh).
+  destruct (proj2 (proj2 (proj2 HW1))) as [HW1wf HW1irr].
+  assert (∀ x y, hyps_lt (hyps_inst (cst 0) Ψ) x y → w_lt W1 x y) as HL.
+  { intros x y (C & xs & g & Hin & Hg & E). destruct (Hh C xs Hin) as [Hb _].
+    specialize (Hb g Hg). rewrite E in Hb. exact Hb. }
+  pose proof (glt_into W1 _ HW1wf HL) as Hin.
+  split; [split|].
+  - apply wgen_wf.
+    + intros p Hp. unfold cnames in Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _).
+      by exists a.
+    + by intros ? ? [].
+    + intros x y H. rewrite <-HN. apply (wf_lt_supp _ HW1wf). by apply HL.
+  - intros x Hx. apply (HW1irr x). by apply Hin.
+  - intros C xs Hc. split.
+    + intros g Hg. destruct (fact_map (pt_inst (plist xs)) g) as [x y] eqn:E. cbn [fact_holds].
+      apply glt_base. by exists C, xs, g.
+    + destruct (Hh C xs Hc) as [_ Hk]. eapply Forall_impl; [exact Hk|]. intros x Hx.
+      unfold pt_known in *. simpl. by rewrite <-HN.
+Qed.
+
+(** The process of a closed program over Ψ is typed in [cworld Ψ]. *)
+Lemma cworld_ptyped Ψ t T :
+  created (Wpo []) Ψ → prim T → styped ∅ Ψ [] (∅, None) t T →
+  ptyped (cworld Ψ) ∅ (∅, {[+ t +]}) (pinst_ty (cst 0) T).
+Proof.
+  intros HΨ HT Ht. destruct (cworld_hold Ψ HΨ) as [HS Hh].
+  apply ptyped_closed; [by apply prim_pinst|].
+  pose proof (typed_pinst (cworld Ψ) ∅ Ψ ∅ [] (∅, None) t T HS (styped_typed (cworld Ψ) _ _ _ _ _ _ Ht) (cst 0) []) as H.
+  rewrite tenv_pinst_empty in H. unfold fhyps_pinst, sf_pinst in H. cbn in H.
+  rewrite fmap_empty, set_map_empty in H. apply H.
+  apply (hyps_hold_mono (w_eq (cworld Ψ)) _ (w_lt (cworld Ψ)) _ (pt_known (cworld Ψ))); [| | |exact Hh].
+  - intros ? ? ?. by apply se_w.
+  - intros ? ? ?. by apply sl_w.
+  - intros ? ?. by left.
+Qed.
+
+(** *** The facts of Ψ *)
+
+Lemma hyps_lt_inst σ Ψ x y :
+  hyps_lt (hyps_inst σ Ψ) x y → ∃ x0 y0, hyps_lt Ψ x0 y0 ∧ x = pt_inst σ x0 ∧ y = pt_inst σ y0.
+Proof.
+  intros (C & xs & g & Hin & Hg & E).
+  unfold hyps_inst in Hin. apply list_elem_of_fmap in Hin as ([C0 xs0] & Eg & Hin). injection Eg as -> ->.
+  rewrite length_fmap in Hg. apply bcs_open_inst in Hg as (g0 & Hg0 & ->).
+  destruct (fact_map (pt_inst (plist xs0)) g0) as [x1 y1] eqn:E0.
+  exists x1, y1. split; [by exists C0, xs0, g0|].
+  destruct g0 as [u v]. cbn [fact_map] in E, E0. injection E0 as <- <-. injection E as <- <-.
+  by rewrite !plist_pup_inst.
+Qed.
+
+Lemma hyps_lt_intro σ Ψ x y : hyps_lt Ψ x y → hyps_lt (hyps_inst σ Ψ) (pt_inst σ x) (pt_inst σ y).
+Proof.
+  intros (C & xs & g & Hin & Hg & E).
+  exists (bcs_inst σ C), (pt_inst σ <$> xs), (fact_map (pt_inst (pup (length xs) σ)) g). split_and!.
+  - unfold hyps_inst. apply list_elem_of_fmap. by exists (C, xs).
+  - rewrite length_fmap. apply bcs_open_inst. by exists g.
+  - destruct g as [u v]. cbn [fact_map] in *. injection E as <- <-. by rewrite !plist_pup_inst.
+Qed.
+
+(** The facts after one step of [created] whose constraint has the
+    outer points ids m: the earlier facts shifted, and the facts of
+    the constraint as they stand. *)
+Lemma hyps_lt_snoc Ψ C m x y :
+  bc_env C = ids m →
+  hyps_lt (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]) x y →
+  (∃ x0 y0, hyps_lt Ψ x0 y0 ∧ x = pt_inst (pshift 1) x0 ∧ y = pt_inst (pshift 1) y0) ∨
+  (bc_facts C (FLt x y) ∧ fact_scoped (S m) (FLt x y)).
+Proof.
+  intros Henv (C' & xs & g & Hin & Hg & E). apply elem_of_app in Hin as [Hin|Hin].
+  - left. apply (hyps_lt_inst (pshift 1) Ψ). by exists C', xs, g.
+  - right. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+    destruct C as [env P]. cbn [bc_env] in Henv. subst env.
+    destruct Hg as (f & Hf & Hs & ->). unfold bcs_inst in Hf, Hs, E. cbn [bc_facts bc_env length] in Hf, Hs, E.
+    change (ids 1) with [pvar 0] in E. rewrite open1_comp, CfstScheduler.ids_shift in E.
+    destruct f as [u v]. destruct Hs as [Hu Hv]. cbn [fact_map] in E.
+    assert (length (ids m) = m) as Hl by (unfold ids; by rewrite length_fmap, length_seq).
+    rewrite length_fmap in Hu, Hv. rewrite Hl in Hu, Hv.
+    rewrite !pt_inst_ids in E by done. injection E as -> ->. by split; [|split].
+Qed.
+
+Lemma hyps_lt_snoc_intro Ψ C m x y :
+  bc_env C = ids m → bc_facts C (FLt x y) → fact_scoped (S m) (FLt x y) →
+  hyps_lt (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]) x y.
+Proof.
+  intros Henv Hf Hs. exists (bcs_inst (pshift 1) C), (ids 1), (fact_map (pt_inst (pup 1 (plist (bc_env (bcs_inst (pshift 1) C))))) (FLt x y)).
+  split_and!.
+  - apply elem_of_app. right. by left.
+  - exists (FLt x y). split_and!; [by destruct C|..|done].
+    destruct C as [env P]. cbn [bc_env] in Henv. subst env. unfold bcs_inst. cbn [bc_env length].
+    rewrite length_fmap. replace (length (ids 1) + length (ids m)) with (S m); [done|].
+    unfold ids. rewrite !length_fmap, !length_seq. lia.
+  - change (ids 1) with [pvar 0]. rewrite open1_comp.
+    destruct C as [env P]. cbn [bc_env] in Henv. subst env. unfold bcs_inst. cbn [bc_env].
+    rewrite CfstScheduler.ids_shift.
+    destruct Hs as [Hx Hy]. cbn [fact_map]. by rewrite !pt_inst_ids.
+Qed.
+
+(** *** Ranks
+
+    Variable k becomes the constant k, at the same polarity and offset. *)
+Fixpoint pn_cst (p : pname) : pname :=
+  match p with
+  | NVar a | NConst a => NConst a
+  | NPayload q b i => NPayload (pn_cst q) b i
+  end.
+
+Lemma pt_inst_cst x : pt_inst (cst 0) x = MkPt (pn_cst (pt_name x)) (pt_pol x) (pt_off x).
+Proof.
+  assert (∀ p, pn_inst (cst 0) p = Pt (pn_cst p) 0) as E.
+  { induction p as [a|a|q IH b i]; cbn [pn_inst pn_cst]; [done| |].
+    - unfold cst, pconst. by rewrite Nat.add_0_r.
+    - rewrite IH. done. }
+  destruct x as [p c o]. unfold pt_inst. cbn [pt_name pt_pol pt_off]. rewrite E. by destruct c.
+Qed.
+
+Lemma sdepth_cst p : sdepth (pn_cst p) = sdepth p.
+Proof. induction p as [a|a|q IH b i]; cbn; [done|done|by rewrite IH]. Qed.
+
+(** Rank holds when a rank into a well-founded order rises along program
+    order, along x ≺ x̄+1 and along the facts of Ψ at the constants. *)
+Lemma cworld_rank_wf {A} (R : A → A → Prop) Ψ (r : point → A) :
+  well_founded R → (∀ a b c, R a b → R b c → R a c) →
+  (∀ x y, hyps_lt Ψ x y → R (r (pt_inst (cst 0) x)) (r (pt_inst (cst 0) y))) →
+  (∀ x, R (r x) (r (pt_shift 1 x))) → (∀ x, R (r x) (r (pt_shift 1 (pt_dual x)))) →
+  wf_world (cworld Ψ).
+Proof.
+  intros Hwf Htr HL Hs Hd. apply (wgen_rank_wf R _ _ _ r Hwf Htr); [by intros ? ? []| |done|done].
+  intros x y H. destruct (hyps_lt_inst _ _ _ _ H) as (x0 & y0 & H0 & -> & ->). by apply HL.
+Qed.
+
+(** The rank of depth and offset, read lexicographically. *)
+Definition drank (x : point) : nat * nat := (sdepth (pt_name x), pt_off x).
+
+Lemma cworld_depth_wf Ψ : (∀ x y, hyps_lt Ψ x y → lexlt (drank x) (drank y)) → wf_world (cworld Ψ).
+Proof.
+  intros HL. apply (cworld_rank_wf lexlt Ψ drank lexlt_wf); [unfold lexlt; intros ? ? ?; lia| | |].
+  - intros x y H. rewrite !pt_inst_cst. unfold drank in *. cbn [pt_name pt_off]. rewrite !sdepth_cst.
+    by apply HL.
+  - intros x. unfold drank, lexlt, pt_shift. cbn. lia.
+  - intros x. unfold drank, lexlt, pt_shift. cbn. lia.
+Qed.
+
+(** *** A ladder of rank constraints
+
+    The hypotheses of CfstScheduler.v and ABP.v: a ceiling z without
+    facts, then channels 0, …, a-1. The constraint of channel a relates
+    its instants to those of each earlier channel by a rank rkf and puts
+    them below z. The world is well founded under the rank that reads
+    channel b at rkf b and puts z above all of them. *)
+Section ladder_rank.
+  Context (rkf : nat → nat → nat) (Hrk : ∀ b k, rkf b k < rkf b (S k)) (C : nat → bcs).
+  Context (Henv : ∀ a, bc_env (C a) = ids (S a)).
+  Context (HC : ∀ a x y, bc_facts (C a) (FLt x y) →
+    (∃ b k j c c', b < a ∧ rkf b k < rkf a j ∧ x = pt_polar c (pv (a - b) k) ∧ y = pt_polar c' (pv 0 j)) ∨
+    (∃ b k j c c', b < a ∧ rkf a j < rkf b k ∧ x = pt_polar c (pv 0 j) ∧ y = pt_polar c' (pv (a - b) k)) ∨
+    (∃ j c, x = pt_polar c (pv 0 j) ∧ y = pv (S a) 0)).
+
+  Fixpoint ladder (a : nat) : hyps :=
+    match a with
+    | 0 => [(CfstTools.top_C0, ids 1)]
+    | S a' => hyps_inst (pshift 1) (ladder a') ++ [(bcs_inst (pshift 1) (C a'), ids 1)]
+    end.
+
+  Definition lad_rel (a : nat) (x y : point) : Prop :=
+    ∃ v k c, v < a ∧ x = pt_polar c (pv v k) ∧
+      ((∃ w l c', w < a ∧ y = pt_polar c' (pv w l) ∧ rkf (a - 1 - v) k < rkf (a - 1 - w) l) ∨ y = pv a 0).
+
+  Lemma ladder_lt a x y : hyps_lt (ladder a) x y → lad_rel a x y.
+  Proof.
+    revert x y. induction a as [|a IH]; intros x y H.
+    - destruct H as (C' & xs & g & Hin & Hg & _). apply list_elem_of_singleton in Hin.
+      injection Hin as -> ->. destruct Hg as (f & Hf & _). destruct Hf.
+    - destruct (hyps_lt_snoc (ladder a) (C a) (S a) x y (Henv a) H) as [(x0 & y0 & H0 & -> & ->)|[Hf _]].
+      + destruct (IH x0 y0 H0) as (v & k & c & Hv & -> & Hy).
+        exists (S v), k, c. split; [lia|]. split; [by rewrite CfstScheduler.pv_shift_polar|].
+        destruct Hy as [(w & l & c' & Hw & -> & Hr)| ->].
+        * left. exists (S w), l, c'. split; [lia|]. split; [by rewrite CfstScheduler.pv_shift_polar|].
+          by replace (S a - 1 - S v) with (a - 1 - v) by lia; replace (S a - 1 - S w) with (a - 1 - w) by lia.
+        * right. by rewrite CfstScheduler.pv_shift.
+      + destruct (HC a x y Hf) as [(b & k & j & c & c' & Hb & Hr & -> & ->)
+                                  |[(b & k & j & c & c' & Hb & Hr & -> & ->)|(j & c & -> & ->)]].
+        * exists (a - b), k, c. split; [lia|]. split; [done|]. left. exists 0, j, c'. split; [lia|]. split; [done|].
+          by replace (S a - 1 - (a - b)) with b by lia; replace (S a - 1 - 0) with a by lia.
+        * exists 0, j, c. split; [lia|]. split; [done|]. left. exists (a - b), k, c'. split; [lia|]. split; [done|].
+          by replace (S a - 1 - (a - b)) with b by lia; replace (S a - 1 - 0) with a by lia.
+        * exists 0, j, c. split; [lia|]. split; [done|]. by right.
+  Qed.
+
+  Definition lad_rank (n : nat) (x : point) : nat * nat :=
+    match pt_name x with
+    | NConst v => if decide (v < n) then (0, rkf (n - 1 - v) (pt_off x))
+                  else if decide (v = n) then (1, pt_off x) else (0, pt_off x)
+    | _ => (0, pt_off x)
+    end.
+
+  Lemma lad_rank_shift n x : lexlt (lad_rank n x) (lad_rank n (pt_shift 1 x)).
+  Proof.
+    unfold lad_rank, lexlt, pt_shift. cbn [pt_name pt_off].
+    destruct (pt_name x) as [v|v|q b i]; [|cbn; lia|cbn; lia].
+    repeat case_decide; cbn; try lia. right. split; [done|]. rewrite Nat.add_1_r. apply Hrk.
+  Qed.
+
+  Lemma ladder_wf n : wf_world (cworld (ladder n)).
+  Proof.
+    apply (cworld_rank_wf lexlt _ (lad_rank n) lexlt_wf); [unfold lexlt; intros ? ? ?; lia| |apply lad_rank_shift|].
+    - intros x y H. destruct (ladder_lt n x y H) as (v & k & c & Hv & -> & [(w & l & c' & Hw & -> & Hr)| ->]);
+        rewrite !pt_inst_cst; destruct c; try destruct c'; unfold lad_rank, lexlt; cbn [pt_name pt_off pt_polar pt_dual pn_cst];
+        repeat case_decide; cbn; lia.
+    - intros x. exact (lad_rank_shift n (pt_dual x)).
+  Qed.
+End ladder_rank.
+
+(** A closed source program over the hypotheses Ψ of its top-level
+    channels (the premises of [soundness_created_s]), with the checks of
+    the fragment. Its run starts in [cworld Ψ], and Rank is asked of
+    that world. *)
+Definition lfsource (Ψ : hyps) (t : expr) (T : ty) : Prop :=
+  created (Wpo []) Ψ ∧ prim T ∧
+  gstyped ∅ Ψ [] (∅, None) t T ∧ lf_r1 t = true ∧ lf_r2r t = true ∧
+  r4_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧ wf_world (cworld Ψ).
+
+Lemma lfsource_gstyped Ψ t T : lfsource Ψ t T → gstyped ∅ Ψ [] (∅, None) t T.
+Proof. by intros (_ & _ & ? & _). Qed.
+
+(** The process of such a program is in the fragment, in the world
+    where its run starts. *)
+Theorem lfsource_lfptyped Ψ t T :
+  lfsource Ψ t T → strict (cworld Ψ) ∧ lfptyped (cworld Ψ) ∅ (∅, {[+ t +]}) (pinst_ty (cst 0) T).
+Proof.
+  intros (HΨ & HT & [Ht Hg] & H1 & H2 & (ann & E & Hann & Hac & Hts) & Hwf).
+  split; [exact (proj1 (cworld_hold Ψ HΨ))|]. split_and!.
+  - split; [by apply cworld_ptyped|]. by intros e ->%gmultiset_elem_of_singleton.
+  - by intros e ->%gmultiset_elem_of_singleton.
+  - by intros e ->%gmultiset_elem_of_singleton.
+  - exists ann, E. split_and!; [|done|].
+    + intros b U Hin. destruct (Hann b U Hin) as (Φ & Ψ' & Δ & F & Hb). exists Φ, Ψ', Δ, F.
+      by apply styped_typed.
+    + intros e ->%gmultiset_elem_of_singleton. by apply Hts.
+  - done.
+Qed.
+
 (** ** Examples *)
 
 Lemma elem_of_single (e t : expr) : e ∈ ({[+ t +]} : gmultiset expr) → e = t.
@@ -597,44 +890,89 @@ Definition fw_E : list (node * node) :=
 Lemma fw_E_one : length fw_E = 1.
 Proof. vm_compute. reflexivity. Qed.
 
-Theorem fw_lfptyped : lfptyped (Wpo []) ∅ (∅, {[+ Forwarder.fw_main +]}) TUnit.
+(** The facts of the forwarder (Forwarder.v): a is the constant 1 and b
+    the constant 0. Round k of both sits at 6k, a at 6k, b at 6k+1, and
+    the payload points a[k], b[k] in between, at 6k+2 or 6k+3 by
+    polarity. *)
+Definition fw_k (p : pname) : nat :=
+  match p with NPayload (NConst 1) k 0 | NPayload (NConst 0) k 0 => k | _ => 0 end.
+Definition fw_b (p : pname) (c : bool) : nat :=
+  match p with
+  | NConst 0 => 1
+  | NPayload (NConst 1) _ 0 => if c then 2 else 3
+  | NPayload (NConst 0) _ 0 => if c then 3 else 2
+  | _ => 0
+  end.
+Definition fw_rank (x : point) : nat := 6 * (pt_off x + fw_k (pt_name x)) + fw_b (pt_name x) (pt_pol x).
+
+Lemma fw_b_le p c : fw_b p c ≤ 3.
+Proof. unfold fw_b. repeat case_match; lia. Qed.
+
+Lemma fw_wf : wf_world (cworld Forwarder.fw_Ψ).
 Proof.
-  pose proof (proj1 Wpo_nil_strict') as HW.
-  split_and!.
-  - split; [apply ptyped_closed_s; [constructor|apply Forwarder.fw_typed]|].
-    intros e ->%elem_of_single. vm_compute. reflexivity.
-  - intros e ->%elem_of_single. vm_compute. reflexivity.
-  - intros e ->%elem_of_single. vm_compute. reflexivity.
-  - exists fw_ann, fw_E. split_and!.
-    + intros b T Hin. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
-      exists ∅, [], [], (∅, None). by apply Forwarder.fwd_typed.
-    + vm_compute. reflexivity.
-    + intros e ->%elem_of_single. exists fw_E. split; [vm_compute; reflexivity|done].
-  - apply Wpo_wf.
+  apply (cworld_rank_wf lt _ fw_rank Wf_nat.lt_wf); [intros ? ? ?; lia| | |].
+  - intros x y H.
+    destruct (hyps_lt_snoc _ Forwarder.fwb_C 1 x y eq_refl H) as [(x0 & y0 & H0 & -> & ->)|[Hf _]].
+    + destruct (hyps_lt_snoc [] Forwarder.fpa_C 0 x0 y0 eq_refl H0) as [(? & ? & (? & ? & ? & Hn & _) & _)|[Hf _]];
+        [by apply elem_of_nil in Hn|].
+      destruct Hf as (k & b & b' & [E|E]); injection E as -> ->; destruct b, b'; cbn; lia.
+    + destruct Hf as (k & E); repeat destruct E as [E|E]; injection E as -> ->; cbn; lia.
+  - intros x. unfold fw_rank, pt_shift. cbn. lia.
+  - intros x. unfold fw_rank, pt_shift, pt_dual. cbn. pose proof (fw_b_le (pt_name x) (pt_pol x)). lia.
 Qed.
 
-(** The tail call. No hop. *)
-Theorem tc_lfptyped : lfptyped (Wpo []) ∅ (∅, {[+ TailCall.tc_main +]}) TUnit.
+Theorem fw_lfsource : lfsource Forwarder.fw_Ψ Forwarder.fw_main TUnit.
 Proof.
   split_and!.
-  - split; [apply ptyped_closed_s; [constructor|apply TailCall.tc_typed]|].
-    intros e ->%elem_of_single. vm_compute. reflexivity.
-  - intros e ->%elem_of_single. vm_compute. reflexivity.
-  - intros e ->%elem_of_single. vm_compute. reflexivity.
+  - apply Forwarder.fw_created.
+  - constructor.
+  - split; [apply Forwarder.fw_typed|vm_compute; reflexivity].
+  - vm_compute. reflexivity.
+  - vm_compute. reflexivity.
+  - exists fw_ann, fw_E. split_and!.
+    + intros b T Hin. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+      exists ∅, [], [], (∅, None). apply Forwarder.fwd_typed, (proj1 wnil_strict).
+    + vm_compute. reflexivity.
+    + intros e ->. exists fw_E. split; [vm_compute; reflexivity|done].
+  - apply fw_wf.
+Qed.
+
+Theorem fw_lfptyped : ∃ W, strict W ∧ lfptyped W ∅ (∅, {[+ Forwarder.fw_main +]}) TUnit.
+Proof. exists (cworld Forwarder.fw_Ψ). exact (lfsource_lfptyped _ _ _ fw_lfsource). Qed.
+
+(** The tail call. No hop. The facts ι+k ≺ ι[0] climb in depth. *)
+Theorem tc_lfsource : lfsource TailCall.tc_Ψ TailCall.tc_main TUnit.
+Proof.
+  split_and!.
+  - apply TailCall.tc_created.
+  - constructor.
+  - split; [apply TailCall.tc_typed|vm_compute; reflexivity].
+  - vm_compute. reflexivity.
+  - vm_compute. reflexivity.
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
-    + intros e ->%elem_of_single. exists []. split; [vm_compute; reflexivity|done].
-  - apply Wpo_wf.
+    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
+  - apply cworld_depth_wf. intros x y H.
+    destruct (hyps_lt_snoc [] TailCall.tcc_C 0 x y eq_refl H) as [(? & ? & (? & ? & ? & Hn & _) & _)|[Hf _]];
+      [by apply elem_of_nil in Hn|].
+    destruct Hf as (k & b & E). injection E as -> ->. destruct b; unfold drank, lexlt; cbn; lia.
 Qed.
 
-(** The recursive CFST scheduler, a source program under the ceiling
-    constraint. Rounds of six steps, every end passed on is acted on in
-    the round, no hop. *)
-Theorem sch_lfsource : lfsource 1 CfstTools.top_C0 CfstScheduler.sch_main TUnit.
+Theorem tc_lfptyped : ∃ W, strict W ∧ lfptyped W ∅ (∅, {[+ TailCall.tc_main +]}) TUnit.
+Proof. exists (cworld TailCall.tc_Ψ). exact (lfsource_lfptyped _ _ _ tc_lfsource). Qed.
+
+(** The recursive CFST scheduler, over its seven top-level points: the
+    ceiling and the six channels of the ring. Rounds of six steps, every
+    end passed on is acted on in the round, no hop. Its world is the
+    ladder of rank constraints. *)
+Lemma sch_ladder a : CfstScheduler.sch_Ψ a = ladder CfstScheduler.sch_C a.
+Proof. induction a as [|a IH]; [done|]. cbn [CfstScheduler.sch_Ψ ladder]. by rewrite IH. Qed.
+
+Theorem sch_lfsource : lfsource (CfstScheduler.sch_Ψ 6) CfstScheduler.sch_main TUnit.
 Proof.
   split_and!.
-  - apply c0_acyclic_creation, CfstTools.top_acyclic.
+  - apply CfstScheduler.sch_created.
   - constructor.
   - split; [apply CfstScheduler.sch_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
@@ -643,7 +981,10 @@ Proof.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
-  - apply wc0_top_wf.
+  - rewrite sch_ladder. apply (ladder_wf CfstScheduler.rk CfstScheduler.rk_S); [intros a; reflexivity|].
+    intros a x y [(b & k & j & c & c' & Hb & Hr & E)|[(b & k & j & c & c' & Hb & Hr & E)|(j & c & E)]];
+      injection E as -> ->;
+      [left; by exists b, k, j, c, c'|right; left; by exists b, k, j, c, c'|right; right; by exists j, c].
 Qed.
 
 (** Kobayashi's forwarder server. The guard rejects it. R1, R2′ and R4′
@@ -668,6 +1009,19 @@ Theorem kob_rank_fails W a :
 Proof.
   intros H. apply (chain_not_wf W (λ n, pt_inst (plist [pconst a]) (Pt (payloadv n) 0))).
   intros n. apply H. exists n, true, true. left. reflexivity.
+Qed.
+
+(** The world where the run of Kobayashi's forwarder starts has these
+    facts at the constant 0, so Rank rejects it already there. *)
+Lemma payloadv_vb n : pn_vb 1 (payloadv n).
+Proof. induction n as [|n IH]; cbn; [lia|done]. Qed.
+
+Theorem kob_cworld_not_wf : ¬ wf_world (cworld KobForwarder.kfw_Ψ).
+Proof.
+  apply (chain_not_wf _ (λ n, pt_inst (cst 0) (Pt (payloadv n) 0))). intros n.
+  apply glt_base. apply hyps_lt_intro. apply (hyps_lt_snoc_intro [] KobForwarder.fw_C 0); [reflexivity| |].
+  - exists n, true, true. by left.
+  - split; apply payloadv_vb.
 Qed.
 
 (** C1 of plan §10.1, the spawner chain.
@@ -778,19 +1132,30 @@ Proof. split_and!; vm_compute; reflexivity. Qed.
 Theorem rc_r2_fails : lf_r2 ReceivedChain.ch_main = false.
 Proof. vm_compute. reflexivity. Qed.
 
-Theorem rc_lfptyped : lfptyped (Wpo []) ∅ (∅, {[+ ReceivedChain.ch_main +]}) TUnit.
+Lemma sdepth_chv n : sdepth (ReceivedChain.chv n) = n.
+Proof. induction n as [|n IH]; [done|]. cbn. by rewrite IH. Qed.
+
+Theorem rc_lfsource : lfsource ReceivedChain.ch_Ψ ReceivedChain.ch_main TUnit.
 Proof.
   split_and!.
-  - split; [apply ptyped_closed_s; [constructor|apply ReceivedChain.ch_typed]|].
-    intros e ->%elem_of_single. vm_compute. reflexivity.
-  - intros e ->%elem_of_single. vm_compute. reflexivity.
-  - intros e ->%elem_of_single. vm_compute. reflexivity.
+  - apply ReceivedChain.ch_created.
+  - constructor.
+  - split; [apply ReceivedChain.ch_typed|vm_compute; reflexivity].
+  - vm_compute. reflexivity.
+  - vm_compute. reflexivity.
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
-    + intros e ->%elem_of_single. exists []. split; [vm_compute; reflexivity|done].
-  - apply Wpo_wf.
+    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
+  - apply cworld_depth_wf. intros x y H.
+    destruct (hyps_lt_snoc [] ReceivedChain.chc_C 0 x y eq_refl H) as [(? & ? & (? & ? & ? & Hn & _) & _)|[Hf _]];
+      [by apply elem_of_nil in Hn|].
+    destruct Hf as [(n & E)|(n & [E|E])]; injection E as -> ->; unfold drank, lexlt;
+      cbn [pt_name pt_off fst snd ReceivedChain.chv sdepth]; rewrite ?sdepth_chv; lia.
 Qed.
+
+Theorem rc_lfptyped : ∃ W, strict W ∧ lfptyped W ∅ (∅, {[+ ReceivedChain.ch_main +]}) TUnit.
+Proof. exists (cworld ReceivedChain.ch_Ψ). exact (lfsource_lfptyped _ _ _ rc_lfsource). Qed.
 
 (** The growing ring (GrowRing.v, Padovani III.7). R2′ rejects it,
     because the received z goes to the self. Under the constant world
@@ -799,19 +1164,25 @@ Qed.
 Theorem rg_r2_fails : lf_r2 GrowRing.rg_main = false.
 Proof. vm_compute. reflexivity. Qed.
 
-Lemma rg_wf : wf_world (wc0 1 GrowRing.rg0_C).
+Lemma pdepth_cst p : GrowRing.pdepth (pn_cst p) = GrowRing.pdepth p.
+Proof. induction p as [a|a|q IH b i]; cbn; [done|done|by rewrite IH]. Qed.
+
+Lemma rg_wf : wf_world (cworld [(GrowRing.rg0_C, ids 1)]).
 Proof.
-  apply (wc0_rank_wf lt 1 _ GrowRing.rg_rank Wf_nat.lt_wf); [intros a b c; lia| | |].
-  - intros x y H. rewrite !GrowRing.rg_rank_c0. apply bcs_open_nil in H as [H _].
-    by apply GrowRing.rg0_rank.
+  apply (cworld_rank_wf lt _ GrowRing.rg_rank Wf_nat.lt_wf); [intros a b c; lia| | |].
+  - intros x y H.
+    destruct (hyps_lt_snoc [] GrowRing.rg0_C 0 x y eq_refl H) as [(? & ? & (? & ? & ? & Hn & _) & _)|[Hf _]];
+      [by apply elem_of_nil in Hn|].
+    pose proof (GrowRing.rg0_rank x y Hf) as Hr. rewrite !pt_inst_cst. unfold GrowRing.rg_rank in *.
+    cbn [pt_name pt_off]. by rewrite !pdepth_cst.
   - intros x. unfold GrowRing.rg_rank, pt_shift. cbn. lia.
   - intros x. unfold GrowRing.rg_rank, pt_shift, pt_dual. cbn. lia.
 Qed.
 
-Theorem rg_lfsource : lfsource 1 GrowRing.rg0_C GrowRing.rg_main TUnit.
+Theorem rg_lfsource : lfsource [(GrowRing.rg0_C, ids 1)] GrowRing.rg_main TUnit.
 Proof.
   split_and!.
-  - apply c0_acyclic_creation, GrowRing.rg0_acyclic.
+  - apply GrowRing.rg_created.
   - constructor.
   - split; [apply GrowRing.rg_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
@@ -830,19 +1201,21 @@ Qed.
 Theorem abp_r2 : lf_r2 ABP.abp_main = true.
 Proof. vm_compute. reflexivity. Qed.
 
-Lemma abp_wf : wf_world (wc0 4 ABP.abp0_C).
+Lemma abp_ladder a : ABP.lad_Ψ ABP.rkc a = ladder (ABP.lad_C ABP.rkc) a.
+Proof. induction a as [|a IH]; [done|]. cbn [ABP.lad_Ψ ladder]. by rewrite IH. Qed.
+
+Lemma abp_wf : wf_world (cworld ABP.abp_Ψ).
 Proof.
-  apply (wc0_rank_wf lexlt 4 _ ABP.abp_rank lexlt_wf); [unfold lexlt; intros a b c; lia| | |].
-  - intros x y H. rewrite !ABP.abp_rank_c0. apply bcs_open_nil in H as [H _].
-    by apply ABP.abp_rank_facts.
-  - apply ABP.abp_rank_shift.
-  - intros x. exact (ABP.abp_rank_shift x).
+  unfold ABP.abp_Ψ. rewrite abp_ladder. apply (ladder_wf ABP.rkc ABP.rkc_S); [intros a; reflexivity|].
+  intros a x y [(b & k & j & c & c' & Hb & Hr & E)|[(b & k & j & c & c' & Hb & Hr & E)|(j & c & E)]];
+    injection E as -> ->;
+    [left; by exists b, k, j, c, c'|right; left; by exists b, k, j, c, c'|right; right; by exists j, c].
 Qed.
 
-Theorem abp_lfsource : lfsource 4 ABP.abp0_C ABP.abp_main TUnit.
+Theorem abp_lfsource : lfsource ABP.abp_Ψ ABP.abp_main TUnit.
 Proof.
   split_and!.
-  - apply c0_acyclic_creation, ABP.abp0_acyclic.
+  - apply ABP.abp_created.
   - constructor.
   - split; [apply ABP.abp_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
