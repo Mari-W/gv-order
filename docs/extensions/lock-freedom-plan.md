@@ -399,3 +399,89 @@ stage 3.
 
 Stronger still is fair termination (every fair run terminates, as in
 padovani2025fair). It needs termination of recursion, which is out of scope.
+
+## 10  Stage 0b results: the revised design (2026-11-08)
+
+Stage 0b read the rules and the examples against the constant world.
+Verdicts come from reading, not from Rocq. The design below supersedes §3.1
+and §3.4 where they differ.
+
+### 10.1  Counterexamples to §3.4
+
+- **C1, a spawner chain.** A recursive box creates a channel at κ[0] each
+  round, spawns a thread that blocks on it while holding the previous end,
+  and recurses at κ[0]. Every round takes a channel step with a chatterbox.
+  It satisfies the guard and R1 to R4, yet main starves. The gate needs
+  κ[0]^{k+1} ≺ κ[0]^k, an infinite descending chain. R3 misses it.
+- **C1′.** The same chain with points shifted upward at every call. The
+  alternative "recursive calls not below the caller's points" misses it too,
+  because ≺ is not closed under shift and field.
+- **C2, a pipeline.** Each stage receives, creates a channel, spawns the next
+  stage on one end, and sends on the other. Lock free, rejected by R3.
+- **C3, link refresh with a chatter step.** The holder of C's partner links it
+  to a fresh end each round and also takes a step on another channel. Not
+  τ-divergent even with links at cost 0, accepted by R1 to R4, and C starves.
+- **C4.** R4 rejects the Forwarder, which forwards a received end once.
+
+### 10.2  The revised conditions
+
+- **Guard**, with link removed from the paying primitives (stage 2a).
+- **R1.** A potentially recursive call happens with empty future. A
+  potentially recursive call is a force of a box whose body forces, or of a
+  box variable, parameter or received box. R1′ (only the call's results
+  remain in the frame) would admit TreeSum. Left for later.
+- **R2′, advance.** On every path through a round, every end passed into a
+  potentially recursive call, and every argument of a link, was acted on
+  earlier in the round or created in it. The link clause closes C3.
+- **R4′, bounded forwarding.** The graph with an edge A → B, when an end
+  received on a carrier of session type A is sent unacted on a carrier of
+  type B (types up to points), is acyclic. It admits the Forwarder and
+  rejects forwarding rings.
+- **Rank.** The world is well founded: `well_founded (w_lt W)`. This is a
+  condition on W, checked once, not a check on box bodies. C1 and C1′ have
+  harmless bodies, and the descending chain lives in the facts. The union of
+  two well-founded constraint families can descend, so a check per box would
+  not compose. Under the constant world every gate fact at runtime is a fact
+  of W. So no rank function is needed. Acc on W suffices.
+- **R3 is dropped.**
+
+### 10.3  Fuel and rank, simplified
+
+- **Rank** needs no number. Well-foundedness of W replaces rk. A rank into ℕ
+  would fail on TailCall ({ι+k ≺ ι[0] | k}), the CFST scheduler and TreeSum,
+  which have ceilings. Well-founded induction (Acc) handles ceilings. The
+  claim in liveness.md §9 that lock freedom needs a rank into ℕ is wrong once
+  fuel is present.
+- **Fuel** is one constant N per program: N = (d+1)·2L, with L the maximum
+  number of channel steps in a round (finite by the guard and R1) and d the
+  longest path in the R4′ graph. The factor 2 covers an end acted on at the
+  start of round k and next at the end of round k+1. The relation takes N as
+  a parameter, so fuel is uniform by construction. Per-point fuel is
+  unnecessary.
+
+### 10.4  The constant world and the examples
+
+About 34 example files type a fresh `new`, not 8. Almost all are top-level
+`new` in a closed main typed in the empty world (sharp edge 105). Each
+becomes a constant of W, and the creation facts become facts of W. Three
+files have a fresh `new` inside a box: FactoryEx, FreshBetween and FreshMany.
+They stay typable, with a stronger box constraint that the caller states in
+W. No program is lost, but those box types ask more of their callers, and
+the "typed in the empty world" statements become "typed in W".
+
+Decision taken under the author's delegation: the constant world applies to
+the lock-free relation only, as a restriction of its fragment. The core
+relation keeps fresh extension. Whether to adopt it in the core, given the
+three stronger box types, goes to the author.
+
+### 10.5  Example verdicts
+
+| Example | Verdict |
+|---|---|
+| Forwarder | in (R4′ admits the single hop), fuel 2 |
+| SemRounds | lock free, out of the static fragment until G4 |
+| CfstScheduler (the recursive scheduler) | in, round of 6 steps |
+| MilnerSched.v | no recursion, lock free trivially |
+| TailCall | in, needs Acc because of the ceiling ι[0] |
+| KobForwarder, FactServer | out (guard, and Rank fails) |
+| cfst/TreeSum | lock free, out by R1, in under R1′ |
