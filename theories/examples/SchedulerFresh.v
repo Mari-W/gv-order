@@ -18,11 +18,10 @@ Definition sched_main_ex : expr :=
   let_new_pair (let_new_pair (let_new_pair
     (LetU (App ESpawn ag1_thunk) (LetU (App ESpawn ag2_thunk) ag0)))).
 
-Lemma sched_typed_fresh : styped ∅ [] [] (∅, None) sched_main_ex TUnit.
+Lemma sched_typed_fresh : styped ∅ sched_Ψ [] (∅, None) sched_main_ex TUnit.
 Proof. exact sched_typed. Qed.
 
 Lemma sched_deadlock_free_fresh : deadlock_free (∅, {[+ sched_main_ex +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
-  apply ptyped_closed_s; [constructor|apply sched_typed_fresh].
+  apply (soundness_created_s sched_Ψ _ TUnit sched_created); [constructor|apply sched_typed_fresh].
 Qed.

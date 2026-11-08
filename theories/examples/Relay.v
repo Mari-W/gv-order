@@ -23,10 +23,10 @@
     ([rel_sub]). main forces both boxes at (γ, ε), the points of c and
     d. Round 0 is C₀(γ, ε) and round k+1 is C₀(γ+k+1, (γ+k)[0]+1).
 
-    main types in the empty world. c is created with the facts of its
-    own rounds, ordered by the ranks 3k+3 for γ+k and 3k+4+4o for
-    (γ+k)[0]+o, and d with the four facts of round 0 that mention it
-    (sharp edges 105).
+    main types under the hypotheses of its two top-level points γ and
+    ε ([rel_Ψ]). c is created with the facts of its own rounds, ordered
+    by the ranks 3k+3 for γ+k and 3k+4+4o for (γ+k)[0]+o, and d with
+    the four facts of round 0 that mention it (sharp edges 105, 172).
 
     With end points the gates compare with partner points, and the two
     boxes need different constraints: the relay's round [c0] at (ι, ι′)
@@ -269,15 +269,13 @@ Qed.
 Ltac rel_in := repeat (first [apply list_elem_of_here|apply list_elem_of_further]).
 Ltac rel_po := match goal with |- slt ?W _ ?x _ => apply (slt_po W _ x); assumption end.
 
-Lemma rel_typed : styped ∅ [] [] (∅, None) rel_main TUnit.
+Definition rel_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) relc_C, ids 1)]) ++
+    [(bcs_inst (pshift 1) (freshp_bcs reld_L reld_H), ids 1)].
+
+Lemma rel_created : created (Wpo []) rel_Ψ.
 Proof.
-  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold rel_main.
-  tstep.
-  { tstep; [apply prod_typed, HWs|apply relay_typed, HW]. }
-  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Srl relc_C); [apply relc_ok|constructor|].
-  fresh_clean.
-  change (bcs_inst (pshift 1) relc_C) with relc_C.
+  pose proof (proj1 Wpo_nil_strict') as HW. set (W := Wpo []) in *.
   assert (∀ b b', slt W [(relc_C, [pvar 0])] (pt_polar b (pv 0 0)) (pt_polar b' (sv 0))) as Hc1.
   { intros b b'. eapply (sl_hyp0 _ _ _ _ (pt_polar b (pv 0 0)) (pt_polar b' (sv 0)));
       [by left|left; exists b, b'; by left|destruct b, b'; cbn; lia
@@ -286,7 +284,9 @@ Proof.
   { intros b b'. eapply (sl_hyp0 _ _ _ _ (pt_polar b (sv 0)) (pt_polar b' (pv 0 1)));
       [by left|left; exists b, b'; by right|destruct b, b'; cbn; lia
       |destruct b; reflexivity|destruct b'; reflexivity]. }
-  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd reld_L reld_H).
+  refine (created_p W [(relc_C, [pvar 0])] reld_L reld_H _ _ _).
+  { change [(relc_C, [pvar 0])] with (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) relc_C, ids 1)]).
+    apply created_snoc; [constructor|apply relc_ok|constructor]. }
   { cbn. repeat (apply Forall_cons; split; [eapply skn_inst; [by left|by left|done]|]). by apply Forall_nil. }
   { intros l h b Hl Hh. unfold reld_L, reld_H in *.
     repeat match goal with E : _ ∈ _ :: _ |- _ => apply elem_of_cons in E as [E|E]
@@ -299,6 +299,15 @@ Proof.
             |eapply sl_trans; [exact (Hc1 true false)|rel_po]
             |eapply sl_trans; [exact (Hc1 false true)|rel_po]
             |eapply sl_trans; [exact (Hc1 false false)|rel_po]]. }
+Qed.
+
+Lemma rel_typed : styped ∅ rel_Ψ [] (∅, None) rel_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold rel_main, rel_Ψ.
+  tstep.
+  { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply prod_typed, HWs|apply relay_typed, HW]. }
+  cbn. new_top HWs Srl (pvar 1). new_top HWs SEnd (pvar 0).
   fresh_clean.
   match goal with |- typed _ _ ?Ψ0 _ _ _ _ _ => set (Ψ := Ψ0) end.
   assert (∀ l b, (l, b) ∈ reld_L → slt W Ψ (pt_inst (pshift 1) l) (pt_polar b (pvar 0))) as HdL.
@@ -374,6 +383,5 @@ Qed.
 
 Lemma rel_deadlock_free : deadlock_free (∅, {[+ rel_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply rel_typed].
+  apply (soundness_created_s rel_Ψ _ TUnit rel_created); [constructor|apply rel_typed].
 Qed.

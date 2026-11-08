@@ -145,15 +145,20 @@ Proof.
   exists (pv 0 2). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma cg_typed : styped ∅ [] [] (∅, None) cg_main TUnit.
+Definition cg_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) cgc_C, ids 1)].
+
+Lemma cg_created : created (Wpo []) cg_Ψ.
+Proof. apply created_snoc; [constructor|apply cgc_ok|constructor]. Qed.
+
+Lemma cg_typed : styped ∅ cg_Ψ [] (∅, None) cg_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold cg_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold cg_main, cg_Ψ.
   eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 0 cg_C (TLolli None None TUnit cg_body)) TUnit);
     [reflexivity| |].
-  { tstep; [tstep|apply cgbox_typed, HW]. }
+  { tstep; [tstep|apply typed_hyps_nil; [exact HWs|apply cgbox_typed, HW]]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Scg cgc_C); [apply cgc_ok|constructor|].
+  new_top HWs Scg (pvar 0).
   fresh_clean.
   set (Ψ := [(cgc_C, [pvar 0])]).
   assert (slt W Ψ (pvar 0) (pt_dual (cgs 0))) as Hgs.
@@ -221,6 +226,5 @@ Qed.
 
 Theorem cg_deadlock_free : deadlock_free (∅, {[+ cg_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply cg_typed].
+  apply (soundness_created_s cg_Ψ _ TUnit cg_created); [constructor|apply cg_typed].
 Qed.

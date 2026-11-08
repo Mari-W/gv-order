@@ -1,9 +1,10 @@
 (** * Shared tools for the examples taken from the literature
 
     The literature examples place every channel at a point of one root.
-    The first [new] of a program creates a fresh point variable ι with
-    the empty creation constraint, and every later channel is created by
-    [t_new_at] at ι+k, which the hypothesis of the first [new] makes
+    The first [new] of a program creates its channel at a top-level
+    point ι, a point variable of the program's hypotheses with the empty
+    creation constraint (sharp edges 172). Every later channel is
+    created by [t_new_at] at ι+k, which the hypothesis of ι makes
     known. The facts these programs need are then ι+j ≺ ι+k for j < k,
     which program order gives ([slt_po_lt]).
 

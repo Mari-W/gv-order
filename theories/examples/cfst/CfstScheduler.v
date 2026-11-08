@@ -459,6 +459,12 @@ Qed.
 Lemma sch_kn_0 : sch_kn 0.
 Proof. intros v Hv. assert (v = 0) as -> by lia. exists top_C0. by left. Qed.
 
+Lemma sch_kn_all a : sch_kn a.
+Proof. induction a; [apply sch_kn_0|by apply sch_kn_step]. Qed.
+
+Lemma sch_inv_all W a : strict W → sch_inv W a.
+Proof. intros HW. induction a; [apply sch_inv_0|by apply sch_inv_step]. Qed.
+
 Lemma sch_skn W a x : sch_kn a → pt_root x = NVar 0 ∨ (∃ v, v ≤ a ∧ pt_root x = NVar v) →
   skn W (sch_Ψ a) x.
 Proof.
@@ -584,26 +590,31 @@ Ltac hrp HRP := first [apply (HRP _ _ _ _ true true)|apply (HRP _ _ _ _ true fal
   [lia|lia|vm_compute; lia].
 Ltac clp CL := first [apply (CL _ _ true)|apply (CL _ _ false)]; lia.
 
-(** One [new] of the ring: channel a with the session type St. *)
-Ltac sch_new W HWs a St Ia Ka I K :=
-  apply (t_new_open W _ _ ∅ _ _ _ _ St (sch_C a)); [apply sch_ok, Ia|apply sch_env, Ka|];
-  rewrite ?tenv_pinst_empty, ?sf_pinst_none, ?fhyps_pinst_empty;
-  change (hyps_inst (pshift 1) (sch_Ψ a) ++ [(bcs_inst (pshift 1) (sch_C a), ids 1)]) with (sch_Ψ (S a));
-  pose proof (sch_inv_step W a HWs Ia) as I; pose proof (sch_kn_step a Ka) as K;
-  cbn -[sch_Ψ sch_C wk_ty fl_ty];
-  rewrite ?(pinst_closed _ wk_ty wk_ty_pscoped), ?(pinst_closed _ fl_ty fl_ty_pscoped).
+(** The six channels and z are the top-level points of the program
+    ([created], sharp edges 172). *)
+Lemma sch_created a : created (Wpo []) (sch_Ψ a).
+Proof.
+  pose proof Wpo_nil_strict' as HWs. induction a as [|a IH]; [apply top_created|].
+  apply created_snoc; [done|apply sch_ok, sch_inv_all, HWs|apply sch_env, sch_kn_all].
+Qed.
 
-Lemma sch_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) sch_main TUnit.
+(** One [new] of the ring: channel a at its point variable k = 5 - a
+    with the session type St. *)
+Ltac sch_new W HWs K St k :=
+  apply (t_new_at W _ _ _ _ _ _ _ St (pvar k) HWs);
+    [apply (sch_skn W 6); [exact K|right; exists k; split; [lia|done]]|];
+  cbn -[sch_Ψ sch_C wk_ty fl_ty].
+
+Lemma sch_typed : styped ∅ (sch_Ψ 6) [] (∅, None) sch_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
   pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold sch_main.
-  change [(top_C0, ids 1)] with (sch_Ψ 0).
   tstep.
   { tstep; apply typed_hyps_wk; [exact HWs|apply worker_typed, HW|exact HWs|apply follower_typed, HW]. }
-  pose proof (sch_inv_0 W) as I0. pose proof sch_kn_0 as K0.
+  pose proof (sch_kn_all 6) as K6. pose proof (sch_inv_all W 6 HWs) as I6.
   cbn -[sch_Ψ sch_C wk_ty fl_ty].
-  sch_new W HWs 0 Wk I0 K0 I1 K1. sch_new W HWs 1 Wk I1 K1 I2 K2. sch_new W HWs 2 Wk I2 K2 I3 K3.
-  sch_new W HWs 3 Sc I3 K3 I4 K4. sch_new W HWs 4 Sc I4 K4 I5 K5. sch_new W HWs 5 Sc I5 K5 I6 K6.
+  sch_new W HWs K6 Wk 5. sch_new W HWs K6 Wk 4. sch_new W HWs K6 Wk 3.
+  sch_new W HWs K6 Sc 2. sch_new W HWs K6 Sc 1. sch_new W HWs K6 Sc 0.
   destruct I6 as [HR Hz].
   pose proof (fl_hold W HW _ HR Hz) as FH. pose proof (hr_pt W HW _ HR Hz) as HRP.
   pose proof (ceil_lt W HW _ HR Hz) as CL.
@@ -713,4 +724,4 @@ Proof.
 Qed.
 
 Theorem sch_deadlock_free : deadlock_free (∅, {[+ sch_main +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply sch_typed]. Qed.
+Proof. apply (soundness_created_s (sch_Ψ 6) _ TUnit (sch_created 6)); [constructor|apply sch_typed]. Qed.

@@ -229,13 +229,18 @@ Proof.
     exists (pt_shift 1 (pt_dual pcr)). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma st_typed : styped ∅ [] [] (∅, None) st_main TUnit.
+Definition st_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) st_C, ids 1)].
+
+Lemma st_created : created (Wpo []) st_Ψ.
+Proof. apply created_snoc; [constructor|apply st_ok|constructor]. Qed.
+
+Lemma st_typed : styped ∅ st_Ψ [] (∅, None) st_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main, st_Ψ.
   tstep.
-  { tstep; [apply stprod_typed, HWs|apply stcons_typed, HW]. }
-  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sst st_C); [apply st_ok|constructor|].
+  { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply stprod_typed, HWs|apply stcons_typed, HW]. }
+  cbn. new_top HWs Sst (pvar 0).
   fresh_clean.
   set (Ψ := [(st_C, [pvar 0])]).
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pvar 0]) as HC.
@@ -267,6 +272,5 @@ Qed.
 
 Theorem st_deadlock_free : deadlock_free (∅, {[+ st_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply st_typed].
+  apply (soundness_created_s st_Ψ _ TUnit st_created); [constructor|apply st_typed].
 Qed.

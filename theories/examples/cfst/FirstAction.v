@@ -156,10 +156,10 @@ Definition fa_go : expr :=
 Definition fa_cw : list (option bool) := None :: ts_cw.
 Definition fap (k : nat) : point := pt_dual (pwalk (pv 0 0) (take k fa_cw)).
 
-Lemma fa_go_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) fa_go TUnit.
+Lemma fa_go_typed : styped ∅ tca_Ψ [] (∅, None) fa_go TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fa_go.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fa_go, tca_Ψ.
   assert (hcontractive ts_Q1) as HQ1 by (apply hcontractive_seq; [apply hcontractive_rcv|apply hcontractive_end]).
   assert (hcontractive ts_Q2) as HQ2 by (apply hcontractive_seq; [apply hcontractive_rcv|exact HQ1]).
   tstep.
@@ -168,8 +168,7 @@ Proof.
   tstep.
   { tstep; [tstep|apply fa_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_open W _ _ ∅ _ _ _ _ (FaS SEnd) tca_C); [apply tca_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  new_top HWs (FaS SEnd) (pvar 0).
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 1]); (BCs [pvar 1] send_P, [pvar 0])]).
   assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)) as Haz.
@@ -295,7 +294,7 @@ Qed.
 
 Theorem fa_deadlock_free : deadlock_free (∅, {[+ fa_go +]}).
 Proof.
-  apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic));
+  apply (soundness_created_s tca_Ψ _ TUnit tca_created);
     [constructor|apply fa_go_typed].
 Qed.
 
@@ -408,10 +407,10 @@ Definition fac_main : expr :=
 Definition fac_go : expr :=
   LetP (Pair tsum EUnit) (LetU (Var 0) (LetP (Pair fac EUnit) (LetU (Var 0) fac_main))).
 
-Lemma fac_go_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) fac_go TUnit.
+Lemma fac_go_typed : styped ∅ tca_Ψ [] (∅, None) fac_go TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fac_go.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fac_go, tca_Ψ.
   assert (hcontractive ts_Q1) as HQ1 by (apply hcontractive_seq; [apply hcontractive_rcv|apply hcontractive_end]).
   assert (hcontractive ts_Q2) as HQ2 by (apply hcontractive_seq; [apply hcontractive_rcv|exact HQ1]).
   tstep.
@@ -420,8 +419,7 @@ Proof.
   tstep.
   { tstep; [tstep|apply fac_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_open W _ _ ∅ _ _ _ _ (FaS SEnd) tca_C); [apply tca_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  new_top HWs (FaS SEnd) (pvar 0).
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 1]); (BCs [pvar 1] send_P, [pvar 0])]).
   assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)) as Haz.
@@ -551,6 +549,6 @@ Qed.
 
 Theorem fac_deadlock_free : deadlock_free (∅, {[+ fac_go +]}).
 Proof.
-  apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic));
+  apply (soundness_created_s tca_Ψ _ TUnit tca_created);
     [constructor|apply fac_go_typed].
 Qed.

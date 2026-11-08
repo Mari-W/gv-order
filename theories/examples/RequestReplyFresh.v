@@ -22,11 +22,10 @@ Definition rr_main_ex : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-Lemma rr_typed_fresh : styped ∅ [] [] (∅, None) rr_main_ex TUnit.
+Lemma rr_typed_fresh : styped ∅ rr_Ψ [] (∅, None) rr_main_ex TUnit.
 Proof. exact rr_typed. Qed.
 
 Lemma rr_deadlock_free_fresh : deadlock_free (∅, {[+ rr_main_ex +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
-  apply ptyped_closed_s; [constructor|apply rr_typed_fresh].
+  apply (soundness_created_s rr_Ψ _ TUnit rr_created); [constructor|apply rr_typed_fresh].
 Qed.

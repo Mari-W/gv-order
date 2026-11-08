@@ -10,8 +10,9 @@
     closes d while it holds c, and branch B receives on c while it
     holds d. Under K11 a choice at ι continues at ι[A] or ι[B], so the
     two orders live on different points. A = select₁ is the index 0
-    and B = select₂ the index 1. The program types in the empty world
-    with two creation constraints. T1 holds c at ι and T2 the other end
+    and B = select₂ the index 1. The program types under the
+    hypotheses of its two top-level points ι and δ ([bo_Ψ]), with two
+    creation constraints (sharp edges 172). T1 holds c at ι and T2 the other end
     at ῑ. T2 holds d at δ and T3 the other end at δ̄. c is created first
     with
 
@@ -109,14 +110,23 @@ Qed.
 Abbreviation bA k := (Pt (NPayload (NVar 1) 0 0) k).
 Abbreviation bB k := (Pt (NPayload (NVar 1) 0 1) k).
 
-Lemma bo_typed : styped ∅ [] [] (∅, None) bo_main TUnit.
+Definition bo_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) boc_C, ids 1)]) ++
+    [(bcs_inst (pshift 1) bod_C, ids 1)].
+
+Lemma bo_created : created (Wpo []) bo_Ψ.
+Proof.
+  refine (created_snoc (Wpo []) [(boc_C, [pvar 0])] bod_C _ _ _); [|apply bod_ok|].
+  - change [(boc_C, [pvar 0])] with (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) boc_C, ids 1)]).
+    apply created_snoc; [constructor|apply boc_ok|constructor].
+  - constructor; [eapply skn_inst; [by left|by left|done]|constructor].
+Qed.
+
+Lemma bo_typed : styped ∅ bo_Ψ [] (∅, None) bo_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold bo_main.
-  apply (t_new_open W _ _ ∅ _ _ _ _ bo_S boc_C); [apply boc_ok|constructor|].
-  fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ SEnd bod_C); [apply bod_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold bo_main, bo_Ψ.
+  new_top HWs bo_S (pvar 1). new_top HWs SEnd (pvar 0).
   fresh_clean.
   set (Ψ := [(bcs_inst (pshift 1) boc_C, [pvar 1]); (bcs_inst (pshift 1) bod_C, [pvar 0])]).
   assert (slt W Ψ (pv 1 0) (bA 0)) as HcA.
@@ -192,6 +202,5 @@ Qed.
 
 Theorem bo_deadlock_free : deadlock_free (∅, {[+ bo_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply bo_typed].
+  apply (soundness_created_s bo_Ψ _ TUnit bo_created); [constructor|apply bo_typed].
 Qed.

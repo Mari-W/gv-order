@@ -121,4 +121,5 @@ Proof.
   all: try (intros y Hy; mem_cases Hy; rewrite ?pt_dual_dual;
             first [right; exact H4|left; exact (he_refl _ (pvar 1))]).
   all: try done.
+  eexists _, _, (pvar 1); split_and!; [by left|by right; left|done].
 Qed.

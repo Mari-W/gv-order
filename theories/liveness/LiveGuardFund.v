@@ -379,8 +379,38 @@ Qed.
 
 (** ** The examples of GuardEx.v as live terms *)
 
-Theorem fw_live : ∀ n, LErel n wnil ∅ TUnit ∅ Forwarder.fw_main.
-Proof. apply live_fundamental_guarded_closed; [apply fw_gstyped|apply wnil_strict]. Qed.
+(** A closed guarded program over the hypotheses of its top-level
+    channels is live in the world where its run starts (sharp edges
+    172). *)
+Corollary live_fundamental_guarded_created Ψ e T :
+  gstyped ∅ Ψ [] (∅, None) e T → created (Wpo []) Ψ →
+  ∃ W1 σ, strict W1 ∧ ∀ n, LErel n W1 ∅ (pinst_ty σ T) ∅ e.
+Proof.
+  intros [Ht Hg] HΨ.
+  destruct (created_world (Wpo []) Ψ (Wpo_strict []) HΨ) as (W1 & σ & HW1 & Hh).
+  pose proof (proj2 (proj2 (proj2 HW1))) as HS.
+  exists W1, σ. split; [done|]. intros n.
+  pose proof (typed_live _ _ _ _ _ _ _ _ (styped_typed (Wpo []) _ _ _ _ _ _ Ht) (gall_gallM _ Hg)
+                W1 (λ _, ∅) σ (proj1 (Wpo_strict [])) HW1) as H.
+  rewrite tenv_pinst_empty in H.
+  assert (sf_inst (λ _, ∅) (sf_pinst σ (∅, None)) = ∅) as Ef.
+  { unfold sf_inst, sf_pinst. simpl. rewrite set_map_empty. set_solver. }
+  rewrite Ef in H.
+  assert (lsem_typed W1 ∅ [] ∅ e (pinst_ty σ T)) as HL.
+  { apply lsem_later_now. refine (proj1 (H _ _) _ (okR_noL _)); [|exact Hh].
+    intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty. }
+  pose proof (HL n W1 ∅ ∅ Var) as H'. rewrite subst_ids in H'.
+  apply H'; [by apply wext_refl|apply tenv_comp_empty_r|done].
+Qed.
 
-Theorem tc_live : ∀ n, LErel n wnil ∅ TUnit ∅ TailCall.tc_main.
-Proof. apply live_fundamental_guarded_closed; [apply tc_gstyped|apply wnil_strict]. Qed.
+Theorem fw_live : ∃ W, strict W ∧ ∀ n, LErel n W ∅ TUnit ∅ Forwarder.fw_main.
+Proof.
+  destruct (live_fundamental_guarded_created _ _ _ fw_gstyped Forwarder.fw_created) as (W & σ & HW & H).
+  by exists W.
+Qed.
+
+Theorem tc_live : ∃ W, strict W ∧ ∀ n, LErel n W ∅ TUnit ∅ TailCall.tc_main.
+Proof.
+  destruct (live_fundamental_guarded_created _ _ _ tc_gstyped TailCall.tc_created) as (W & σ & HW & H).
+  by exists W.
+Qed.

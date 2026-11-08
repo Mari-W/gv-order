@@ -172,15 +172,20 @@ Proof.
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma fc_typed : styped ∅ [] [] (∅, None) fc_main TUnit.
+Definition fc_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) fc_C, ids 1)].
+
+Lemma fc_created : created (Wpo []) fc_Ψ.
+Proof. apply created_snoc; [constructor|apply fc_ok|constructor]. Qed.
+
+Lemma fc_typed : styped ∅ fc_Ψ [] (∅, None) fc_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fc_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fc_main, fc_Ψ.
   eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 0 fc_C (TLolli None None TUnit fc_body)) TUnit);
     [reflexivity| |].
-  { tstep; [tstep|apply fcsrv_typed, HWs]. }
+  { tstep; [tstep|apply typed_hyps_nil; [exact HWs|apply fcsrv_typed, HWs]]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fc_C); [apply fc_ok|constructor|].
+  new_top HWs Sd (pvar 0).
   fresh_clean.
   set (Ψ := [(fc_C, [pvar 0])]).
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) fc_C [pvar 0]) as HC.
@@ -209,6 +214,5 @@ Qed.
 
 Theorem fc_deadlock_free : deadlock_free (∅, {[+ fc_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply fc_typed].
+  apply (soundness_created_s fc_Ψ _ TUnit fc_created); [constructor|apply fc_typed].
 Qed.

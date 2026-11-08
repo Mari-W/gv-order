@@ -392,6 +392,15 @@ Definition top_C0 : bcs := BCs [] (λ _, False).
 Lemma top_acyclic : c0_acyclic 1 top_C0.
 Proof. apply (c0_acyclic_rank 1 _ (vrank 1)); [apply vrank_shift|by intros ? ? []|apply vrank_dual]. Qed.
 
+Lemma top_ok peq plt : cc_ok peq plt top_C0.
+Proof. apply (cc_ok_inner peq plt _ olt); [apply olt_trans|apply olt_irrefl|intros x _; apply olt_po|done|intros x _; apply olt_dpo]. Qed.
+
+(** z is the first top-level point of a program ([created], sharp
+    edges 172). The channels a program creates at its top level are
+    the next ones. *)
+Lemma top_created : created (Wpo []) [(top_C0, ids 1)].
+Proof. apply (created_snoc (Wpo []) [] top_C0); [constructor|apply top_ok|constructor]. Qed.
+
 (** The first channel a of a lockstep pair, created under z = 1 with
     a+k ≺ z and ā+k ≺ z for every k. *)
 Definition lsa_P (g : fact) : Prop := ∃ k c, g = FLt (pt_polar c (pv 0 k)) (pv 1 0).
@@ -432,4 +441,20 @@ Proof.
             |apply (glt_up _ _ (pt_dual (pv 0 k)) (pv 1 0));
              eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pt_dual (pv 0 k)) (pv 1 0))); [done|by exists k, false|fsc|reflexivity]];
       unfold pt_shift in *; cbn in *; lia.
+Qed.
+
+(** The hypotheses of a program that creates the lockstep pair at its
+    top level under z, and their creation (sharp edges 172). *)
+Definition ls_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [(top_C0, ids 1)] ++ [(bcs_inst (pshift 1) lsa_C, ids 1)]) ++
+    [(bcs_inst (pshift 1) lsb_C, ids 1)].
+
+Lemma ls_created : created (Wpo []) ls_Ψ.
+Proof.
+  apply created_snoc.
+  - apply created_snoc; [apply top_created|apply lsa_ok|].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor].
+  - apply lsb_ok. cbn. by right; left.
+  - cbn. constructor; [eapply skn_inst; [by right; left|by left|done]|].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor].
 Qed.

@@ -1,7 +1,7 @@
 (** * relay with fresh points
 
     [rel_main] of Relay.v. Relay.v now creates both channels from
-    creation constraints in the empty world (sharp edges 105). c gets
+    creation constraints at top-level points (sharp edges 105, 172). c gets
     the facts of its own rounds, which relate (ι,k) to its carried
     points, and d gets the four facts of round 0 that mention it. This
     file keeps the copy [rel_main_ex] of the program and its theorem. *)
@@ -18,11 +18,10 @@ Definition rel_main_ex : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
-Lemma rel_typed_fresh : styped ∅ [] [] (∅, None) rel_main_ex TUnit.
+Lemma rel_typed_fresh : styped ∅ rel_Ψ [] (∅, None) rel_main_ex TUnit.
 Proof. exact rel_typed. Qed.
 
 Lemma rel_deadlock_free_fresh : deadlock_free (∅, {[+ rel_main_ex +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit Wpo_nil_strict).
-  apply ptyped_closed_s; [constructor|apply rel_typed_fresh].
+  apply (soundness_created_s rel_Ψ _ TUnit rel_created); [constructor|apply rel_typed_fresh].
 Qed.

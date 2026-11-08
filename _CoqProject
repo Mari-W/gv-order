@@ -104,7 +104,6 @@ theories/examples/cfst/TreeSum.v
 theories/examples/cfst/ArithServer.v
 theories/examples/cfst/BranchOrder.v
 theories/examples/cfst/SkipDrop.v
-theories/examples/cfst/SegmentInterleave.v
 theories/examples/cfst/SegmentDeleg.v
 theories/examples/cfst/FirstAction.v
 theories/examples/cfst/MuVar.v

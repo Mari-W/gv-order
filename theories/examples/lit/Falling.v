@@ -7,7 +7,9 @@
     type covers [fallxy] (§8.2), and the section states that a
     derivation with a fresh point per [new] exists without giving it.
     This file gives both derivations in the core ([fall2_styped],
-    [fallxy_styped]) and deadlock freedom through [soundness_source].
+    [fallxy_styped]), each under the hypotheses of the program's
+    top-level points ([fall2_Ψ], [fallxy_Ψ], sharp edges 172), and
+    deadlock freedom through [soundness_created].
 
     [fall2] is the pair of threads of §2.
 
@@ -189,98 +191,106 @@ Proof.
       exfalso; (destruct Hpq as [Hpq|[_ Hpq]]; vm_compute in Hpq; [discriminate Hpq|lia]).
 Qed.
 
-Lemma fallxy_styped : styped ∅ [] [] (∅, None) fallxy_main TUnit.
+(** x, b, c and d are the four top-level points of fallxy, d at 0 and
+    x at 3. *)
+Definition fallxy_Ψ3 : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) fx0_C, ids 1)]) ++
+    [(bcs_inst (pshift 1) fxb_C, ids 1)]) ++ [(bcs_inst (pshift 1) fx0_C, ids 1)].
+Definition fallxy_Ψ : hyps := hyps_inst (pshift 1) fallxy_Ψ3 ++ [(bcs_inst (pshift 1) fxd_C, ids 1)].
+
+Lemma fallxy_created : created (Wpo []) fallxy_Ψ.
+Proof.
+  unfold fallxy_Ψ, fallxy_Ψ3.
+  apply created_snoc; [apply created_snoc; [apply created_snoc|apply fx0_ok|constructor]|apply fxd_ok|].
+  - apply created_snoc; [constructor|apply fx0_ok|constructor].
+  - apply fxb_ok.
+  - cbn. constructor; [eapply skn_inst; [by left|by left|done]|constructor].
+  - cbn. constructor; [eapply skn_inst; [by right; right; left|by left|done]|constructor].
+Qed.
+
+Lemma fallxy_styped : styped ∅ fallxy_Ψ [] (∅, None) fallxy_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fallxy_main.
-  apply (t_new_open W _ _ ∅ _ _ _ _ FS1 fx0_C); [apply fx0_ok|constructor|].
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fallxy_main, fallxy_Ψ, fallxy_Ψ3.
+  new_top HWs FS1 (pv 3 0). new_top HWs Sd (pv 2 0). new_top HWs FS1 (pvar 1).
   fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fxb_C); [apply fxb_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
-  fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ FS1 fx0_C); [apply fx0_ok|constructor|].
-  fresh_clean.
-  change (pt_inst (pshift 1) (pt_inst (pshift 1) (pvar 0))) with (pv 2 0).
-  change (pt_inst (pshift 1) (pvar 0)) with (pv 1 0).
   match goal with |- typed _ _ ?G _ _ _ _ _ => set (Ψ := G) end.
-  assert (slt W Ψ (pv 1 0) (pt_dual (pv 2 0))) as Hbx.
-  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 0 0) (pt_dual (pv 1 0))));
+  assert (slt W Ψ (pv 2 0) (pt_dual (pv 3 0))) as Hbx.
+  { eapply (sl_hyp W Ψ [pvar 3] fxb_P [pvar 2] (FLt (pv 0 0) (pt_dual (pv 1 0))));
       [by right; left|by left|fsc|reflexivity]. }
-  assert (slt W Ψ (pt_dual (pv 1 0)) (pt_dual (pv 2 0))) as Hbx'.
-  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pt_dual (pv 0 0)) (pt_dual (pv 1 0))));
+  assert (slt W Ψ (pt_dual (pv 2 0)) (pt_dual (pv 3 0))) as Hbx'.
+  { eapply (sl_hyp W Ψ [pvar 3] fxb_P [pvar 2] (FLt (pt_dual (pv 0 0)) (pt_dual (pv 1 0))));
       [by right; left|by right; left|fsc|reflexivity]. }
-  assert (slt W Ψ (pv 2 2) (pv 1 1)) as Hxb.
-  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 1 2) (pv 0 1)));
+  assert (slt W Ψ (pv 3 2) (pv 2 1)) as Hxb.
+  { eapply (sl_hyp W Ψ [pvar 3] fxb_P [pvar 2] (FLt (pv 1 2) (pv 0 1)));
       [by right; left|by right; right; left|fsc|reflexivity]. }
-  assert (slt W Ψ (pv 2 2) (pt_dual (pv 1 1))) as Hxb'.
-  { eapply (sl_hyp W Ψ [pvar 2] fxb_P [pvar 1] (FLt (pv 1 2) (pt_dual (pv 0 1))));
+  assert (slt W Ψ (pv 3 2) (pt_dual (pv 2 1))) as Hxb'.
+  { eapply (sl_hyp W Ψ [pvar 3] fxb_P [pvar 2] (FLt (pv 1 2) (pt_dual (pv 0 1))));
       [by right; left|by right; right; right|fsc|reflexivity]. }
-  assert (slt W Ψ (pv 2 0) (pv 1 1)) as Hx0.
+  assert (slt W Ψ (pv 3 0) (pv 2 1)) as Hx0.
   { eapply sl_trans; [|exact Hxb]. apply slt_po_lt; [exact HW|lia]. }
-  assert (slt W Ψ (pv 2 1) (pv 1 1)) as Hx1.
+  assert (slt W Ψ (pv 3 1) (pv 2 1)) as Hx1.
   { eapply sl_trans; [|exact Hxb]. apply slt_po_lt; [exact HW|lia]. }
-  assert (slt W Ψ (pv 2 0) (pt_dual (pv 1 1))) as Hx0'.
+  assert (slt W Ψ (pv 3 0) (pt_dual (pv 2 1))) as Hx0'.
   { eapply sl_trans; [|exact Hxb']. apply slt_po_lt; [exact HW|lia]. }
-  assert (slt W Ψ (pv 2 1) (pt_dual (pv 1 1))) as Hx1'.
+  assert (slt W Ψ (pv 3 1) (pt_dual (pv 2 1))) as Hx1'.
   { eapply sl_trans; [|exact Hxb']. apply slt_po_lt; [exact HW|lia]. }
   (* the thread X *)
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 1)) (Some (pt_dual (pv 1 0))) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 1)) (Some (pt_dual (pv 2 0))) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; exact Hbx']. }
     cbn. tstep; [tstep|]. cbn.
-    eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 1)) (Some (pt_dual (pv 2 0))) (TSess SEnd (pv 1 1)) TUnit);
+    eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 1)) (Some (pt_dual (pv 3 0))) (TSess SEnd (pv 2 1)) TUnit);
       [reflexivity| | |].
-    - eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 1 1)) (Some (pt_dual (pv 2 0))) 1); [set_solver| |].
+    - eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 2 1)) (Some (pt_dual (pv 3 0))) 1); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn.
-      eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 1)) (Some (pt_dual (pv 1 1)))
-                (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 2 1)) TUnit); [reflexivity| | |].
-      + eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 1 1)) (Some (pt_dual (pv 1 1))) 2); [set_solver| |].
+      eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 1)) (Some (pt_dual (pv 2 1)))
+                (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 3 1)) TUnit); [reflexivity| | |].
+      + eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pv 2 1)) (Some (pt_dual (pv 2 1))) 2); [set_solver| |].
         { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
         cbn. tstep.
-        * eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 2 1)) (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 2 1)));
+        * eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pv 3 1)) (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 3 1)));
             [tstep|apply KTRecv|kscope|].
           apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hx1'|].
-          exists (pv 1 1). split; [done|]. right; exact Hx1.
+          exists (pv 2 1). split; [done|]. right; exact Hx1.
         * cbn. tstep; [tstep|]. cbn. tstep.
-          -- eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 2 2)) (TSess SEnd (pv 2 2))); [tstep|apply KTClos|done|].
+          -- eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 3 2)) (TSess SEnd (pv 3 2))); [tstep|apply KTClos|done|].
              apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hxb'|].
-             exists (pv 1 1). split; [done|]. right; exact Hxb.
-          -- eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 1 1)) (TSess SEnd (pv 1 1))); [tstep|apply KTClos|done|].
+             exists (pv 2 1). split; [done|]. right; exact Hxb.
+          -- eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 2 1)) (TSess SEnd (pv 2 1))); [tstep|apply KTClos|done|].
              apply ubs_intro; [intros y Hy; mem_cases Hy|].
-             exists (pv 1 1). split; [done|]. apply sle_refl, HW.
-      + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 2 0)) (TProd TUnit (TSess FS1 (pv 2 0)))).
+             exists (pv 2 1). split; [done|]. apply sle_refl, HW.
+      + eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 3 0)) (TProd TUnit (TSess FS1 (pv 3 0)))).
         * tstep; tstep.
-        * apply (KTSend _ _ _ 0 TUnit (SSeq (SRcv 0 TUnit) SEnd) (pv 2 0)). cbn. set_solver.
+        * apply (KTSend _ _ _ 0 TUnit (SSeq (SRcv 0 TUnit) SEnd) (pv 3 0)). cbn. set_solver.
         * kscope.
         * apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hx0'|].
-          exists (pv 1 1). split; [done|]. right; exact Hx0.
+          exists (pv 2 1). split; [done|]. right; exact Hx0.
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 1 1). split; [done|]. apply sle_refl, HW.
-    - eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0)) (TProd TUnit (TSess Sd (pv 1 0)))).
+        exists (pv 2 1). split; [done|]. apply sle_refl, HW.
+    - eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 2 0)) (TProd TUnit (TSess Sd (pv 2 0)))).
       + tstep; tstep.
-      + apply (KTSend _ _ _ 0 TUnit SEnd (pv 1 0)). cbn. set_solver.
+      + apply (KTSend _ _ _ 0 TUnit SEnd (pv 2 0)). cbn. set_solver.
       + kscope.
       + apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hbx|].
-        exists (pv 1 1). split; [done|]. right. apply slt_po_lt; [exact HW|lia].
+        exists (pv 2 1). split; [done|]. right. apply slt_po_lt; [exact HW|lia].
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 1 1). split; [done|]. apply sle_refl, HW. }
-  cbn. fx_partner1 HW 2. cbn. fx_partner2 HW 1. cbn. fx_partner1 HW 0. cbn.
+      exists (pv 2 1). split; [done|]. apply sle_refl, HW. }
+  cbn. fx_partner1 HW 3. cbn. fx_partner2 HW 2. cbn. fx_partner1 HW 1. cbn.
   (* the main thread: send on c at γ, then d under its constraint *)
   tstep.
   { tstep; [tstep|].
-    eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0)) (TProd TUnit (TSess FS1 (pv 0 0)))).
+    eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 1 0)) (TProd TUnit (TSess FS1 (pv 1 0)))).
     - tstep; tstep.
-    - apply (KTSend _ _ _ 0 TUnit (SSeq (SRcv 0 TUnit) SEnd) (pv 0 0)). cbn. set_solver.
+    - apply (KTSend _ _ _ 0 TUnit (SSeq (SRcv 0 TUnit) SEnd) (pv 1 0)). cbn. set_solver.
     - kscope.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
   cbn. tstep; [tstep|]. cbn.
-  change (pt_shift 1 (pv 0 0)) with (pv 0 1).
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fxd_C); [apply fxd_ok|..].
-  { constructor; [eapply skn_inst; [by right; right; left|by left|done]|constructor]. }
+  change (pt_shift 1 (pv 1 0)) with (pv 1 1).
+  new_top HWs Sd (pvar 0).
   fresh_clean.
-  change (pt_inst (pshift 1) (pv 0 1)) with (pv 1 1).
   clear Hbx Hbx' Hxb Hxb' Hx0 Hx1 Hx0' Hx1'.
   match goal with |- typed _ _ ?G _ _ _ _ _ => set (Ψ' := G) end.
   assert (slt W Ψ' (pv 1 1) (pt_dual (pv 0 0))) as Hcd.
@@ -320,11 +330,16 @@ Proof.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Lemma fall2_styped : styped ∅ [] [] (∅, None) fall2_main TUnit.
+Definition fall2_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) fx0_C, ids 1)].
+
+Lemma fall2_created : created (Wpo []) fall2_Ψ.
+Proof. apply created_snoc; [constructor|apply fx0_ok|constructor]. Qed.
+
+Lemma fall2_styped : styped ∅ fall2_Ψ [] (∅, None) fall2_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fall2_main.
-  apply (t_new_open W _ _ ∅ _ _ _ _ FS1 fx0_C); [apply fx0_ok|constructor|].
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fall2_main, fall2_Ψ.
+  new_top HWs FS1 (pvar 0).
   fresh_clean.
   fx_partner1 HW 0. cbn.
   eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 0 2)) None (TSess (SSeq (SRcv 0 TUnit) SEnd) (pv 0 1)) TUnit);
@@ -341,10 +356,10 @@ Proof.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-(** ** Deadlock freedom, through [soundness_source] *)
+(** ** Deadlock freedom, through [soundness_created] *)
 
 Theorem fall2_deadlock_free : deadlock_free (∅, {[+ fall2_main +]}).
-Proof. apply (soundness_source_nil _ TUnit); [constructor|apply fall2_styped]. Qed.
+Proof. apply (soundness_created_s fall2_Ψ _ TUnit fall2_created); [constructor|apply fall2_styped]. Qed.
 
 Theorem fallxy_deadlock_free : deadlock_free (∅, {[+ fallxy_main +]}).
-Proof. apply (soundness_source_nil _ TUnit); [constructor|apply fallxy_styped]. Qed.
+Proof. apply (soundness_created_s fallxy_Ψ _ TUnit fallxy_created); [constructor|apply fallxy_styped]. Qed.

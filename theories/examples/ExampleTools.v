@@ -746,6 +746,25 @@ Proof.
   rewrite E in H. apply H. intros C xs Hin. by apply elem_of_nil in Hin.
 Qed.
 
+(** The process of such a program is typed by P-Term in the world
+    where its run starts. *)
+Lemma created_ptyped Ψ t T :
+  created (Wpo []) Ψ → prim T → styped ∅ Ψ [] (∅, None) t T →
+  ∃ W1 σ, strict W1 ∧ ptyped W1 ∅ (∅, {[+ t +]}) (pinst_ty σ T).
+Proof.
+  intros HΨ HT Ht.
+  destruct (created_world (Wpo []) Ψ (Wpo_strict []) HΨ) as (W1 & σ & HW1 & Hh).
+  pose proof (proj2 (proj2 (proj2 HW1))) as HS.
+  exists W1, σ. split; [done|]. apply ptyped_closed; [by apply prim_pinst|].
+  pose proof (typed_pinst W1 ∅ Ψ ∅ [] (∅, None) t T HS (styped_typed W1 _ _ _ _ _ _ Ht) σ []) as H.
+  rewrite tenv_pinst_empty in H. unfold fhyps_pinst, sf_pinst in H. cbn in H.
+  rewrite fmap_empty, set_map_empty in H. apply H.
+  apply (hyps_hold_mono (w_eq W1) _ (w_lt W1) _ (pt_known W1)); [| | |exact Hh].
+  - intros ? ? ?. by apply se_w.
+  - intros ? ? ?. by apply sl_w.
+  - intros ? ?. by left.
+Qed.
+
 (** A top-level channel at the point variable k is known. *)
 Ltac skn_top :=
   eapply skn_hyp; cbn; repeat (first [left; reflexivity|right]).

@@ -22,14 +22,16 @@
 
     What is proved here.
 
-    - [db_typed] : db_main b has a source derivation for both bits, with
-      no top-level points. The receiver gives the bit a type whose side
+    - [db_typed] : db_main b has a source derivation for both bits,
+      under the hypotheses of its three top-level points z, c and d
+      ([db_Ψ b], sharp edges 172). The receiver gives the bit a type whose side
       for the other bit carries an unsatisfiable fact about the payload
       points of the receive, ∗ ⊕ ∃{z[0]+5 ≺ z[0]+1}.∗ for b = false.
       E-Open in the dead branch adds the fact, and the creation
       constraints anchor c and d to z[0]+1 and z[0]+5, so the dead
       branch derives the reverse order. The static facts give the order
-      of the live branch. [db_deadlock_free] follows from [soundness].
+      of the live branch. [db_deadlock_free] follows from
+      [soundness_created].
 
     - [db_component_unrealizable] : the case node of db_main, with the
       bit typed at ∗ ⊕ ∗ (no fact on either side), c : Close@x and
@@ -870,20 +872,24 @@ Proof.
   apply fresh_open. right. by exists h.
 Qed.
 
-Lemma db_typed_false : styped ∅ [] [] (∅, None) (db_main false) TUnit.
+Definition dbf_Lc : list (point * bool) := [(pv 0 1, false); (sl0 0 1, false)].
+Definition dbf_Ld : list (point * bool) := [(pv 1 1, false); (pvar 0, false)].
+Definition dbf_Hd : list (point * bool) := [(sl0 1 5, true)].
+
+Definition dbf_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) Ce, ids 1)]) ++
+    [(bcs_inst (pshift 1) (freshp_bcs dbf_Lc []), ids 1)]) ++
+    [(bcs_inst (pshift 1) (freshp_bcs dbf_Ld dbf_Hd), ids 1)].
+
+Lemma dbf_created : created (Wpo []) dbf_Ψ.
 Proof.
-  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold db_main, let_new_pair.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Se Ce); [apply Ce_ok|constructor|].
-  fresh_clean.
+  unfold dbf_Ψ, dbf_Lc, dbf_Ld, dbf_Hd.
   set (Lc := [(pv 0 1, false); (sl0 0 1, false)]).
-  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Lc []).
+  set (Ld := [(pv 1 1, false); (pvar 0, false)]). set (Hd := [(sl0 1 5, true)]).
+  apply created_p; [apply created_p; [apply created_snoc; [constructor|apply Ce_ok|constructor]| |]| |].
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done);
       (eapply skn_inst; [by left|by left|done]). }
   { intros l h b' _ Hh. by apply elem_of_nil in Hh. }
-  fresh_clean.
-  set (Ld := [(pv 1 1, false); (pvar 0, false)]). set (Hd := [(sl0 1 5, true)]).
-  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Ld Hd).
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done).
     - eapply skn_inst; [by left|by left|done].
     - eapply skn_inst; [by right; left|by left|done].
@@ -892,6 +898,14 @@ Proof.
     intros l h b' Hl Hh. unfold Ld, Hd in *.
     repeat match goal with E : _ ∈ _ :: _ |- _ => apply elem_of_cons in E as [E|E]
                          | E : _ ∈ [] |- _ => by apply elem_of_nil in E end; simplify_eq. }
+Qed.
+
+Lemma db_typed_false : styped ∅ dbf_Ψ [] (∅, None) (db_main false) TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
+  set (W := Wpo []) in *. unfold db_main, let_new_pair, dbf_Ψ.
+  new_top HWs Se (pvar 2). new_top HWs SEnd (pvar 1). new_top HWs SEnd (pvar 0).
+  set (Lc := dbf_Lc). set (Ld := dbf_Ld). set (Hd := dbf_Hd).
   fresh_clean.
   change (bcs_inst (pshift 1) (bcs_inst (pshift 1) (bcs_inst (pshift 1) Ce))) with Ce.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
@@ -983,22 +997,27 @@ Proof.
       apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Lemma db_typed_true : styped ∅ [] [] (∅, None) (db_main true) TUnit.
+Definition dbt_Lc : list (point * bool) := [(pv 0 1, false)].
+Definition dbt_Hc : list (point * bool) := [(sl0 0 5, true)].
+Definition dbt_Ld : list (point * bool) := [(pv 1 1, false); (sl0 1 1, false)].
+Definition dbt_Hd : list (point * bool) := [(pt_dual (pvar 0), true)].
+
+Definition dbt_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) Ce, ids 1)]) ++
+    [(bcs_inst (pshift 1) (freshp_bcs dbt_Lc dbt_Hc), ids 1)]) ++
+    [(bcs_inst (pshift 1) (freshp_bcs dbt_Ld dbt_Hd), ids 1)].
+
+Lemma dbt_created : created (Wpo []) dbt_Ψ.
 Proof.
-  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold db_main, let_new_pair.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Se_t Ce); [apply Ce_ok|constructor|].
-  fresh_clean.
+  unfold dbt_Ψ, dbt_Lc, dbt_Hc, dbt_Ld, dbt_Hd.
   set (Lc := [(pv 0 1, false)]). set (Hc := [(sl0 0 5, true)]).
-  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Lc Hc).
+  set (Ld := [(pv 1 1, false); (sl0 1 1, false)]). set (Hd := [(pt_dual (pvar 0), true)]).
+  apply created_p; [apply created_p; [apply created_snoc; [constructor|apply Ce_ok|constructor]| |]| |].
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done);
       (eapply skn_inst; [by left|by left|done]). }
   { intros l h b' Hl Hh. unfold Lc, Hc in *.
     repeat match goal with E : _ ∈ _ :: _ |- _ => apply elem_of_cons in E as [E|E]
                          | E : _ ∈ [] |- _ => by apply elem_of_nil in E end; simplify_eq. }
-  fresh_clean.
-  set (Ld := [(pv 1 1, false); (sl0 1 1, false)]). set (Hd := [(pt_dual (pvar 0), true)]).
-  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ SEnd Ld Hd).
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done).
     - eapply skn_inst; [by left|by left|done].
     - eapply skn_inst; [by left|by left|done].
@@ -1007,6 +1026,14 @@ Proof.
     intros l h b' Hl Hh. unfold Ld, Hd in *.
     repeat match goal with E : _ ∈ _ :: _ |- _ => apply elem_of_cons in E as [E|E]
                          | E : _ ∈ [] |- _ => by apply elem_of_nil in E end; simplify_eq. }
+Qed.
+
+Lemma db_typed_true : styped ∅ dbt_Ψ [] (∅, None) (db_main true) TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
+  set (W := Wpo []) in *. unfold db_main, let_new_pair, dbt_Ψ.
+  new_top HWs Se_t (pvar 2). new_top HWs SEnd (pvar 1). new_top HWs SEnd (pvar 0).
+  set (Lc := dbt_Lc). set (Hc := dbt_Hc). set (Ld := dbt_Ld). set (Hd := dbt_Hd).
   fresh_clean.
   change (bcs_inst (pshift 1) (bcs_inst (pshift 1) (bcs_inst (pshift 1) Ce))) with Ce.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
@@ -1098,14 +1125,19 @@ Proof.
       apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Theorem db_typed b : styped ∅ [] [] (∅, None) (db_main b) TUnit.
+(** The hypotheses of the top-level points of db_main b. *)
+Definition db_Ψ (b : bool) : hyps := if b then dbt_Ψ else dbf_Ψ.
+
+Lemma db_created b : created (Wpo []) (db_Ψ b).
+Proof. destruct b; [apply dbt_created|apply dbf_created]. Qed.
+
+Theorem db_typed b : styped ∅ (db_Ψ b) [] (∅, None) (db_main b) TUnit.
 Proof. destruct b; [apply db_typed_true|apply db_typed_false]. Qed.
 
-(** Deadlock freedom for both bits, from [soundness]. *)
+(** Deadlock freedom for both bits, from [soundness_created]. *)
 Theorem db_deadlock_free b : deadlock_free (∅, {[+ db_main b +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply db_typed].
+  apply (soundness_created_s (db_Ψ b) _ TUnit (db_created b)); [constructor|apply db_typed].
 Qed.
 
 (** ** The receiving component with a fact-free session type

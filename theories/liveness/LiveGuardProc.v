@@ -88,26 +88,39 @@ Proof.
   - unfold tenv_of. rewrite fmap_empty, (left_id_L ∅ (∪)). exact Hl.
 Qed.
 
-(** ** The examples of GuardEx.v as live programs *)
+(** A guarded source program over the hypotheses of its top-level
+    channels, in the world where its run starts (sharp edges 172). *)
+Theorem live_soundness_created Ψ t T :
+  created (Wpo []) Ψ → prim T → gstyped ∅ Ψ [] (∅, None) t T →
+  deadlock_free (∅, {[+ t +]}) ∧ no_tau_divergence (∅, {[+ t +]}).
+Proof.
+  intros HΨ HT [Hs Hg].
+  destruct (created_world (Wpo []) Ψ (Wpo_strict []) HΨ) as (W1 & σ & HW1 & Hh).
+  pose proof (typed_live _ _ _ _ _ _ _ _ (styped_typed (Wpo []) _ _ _ _ _ _ Hs) (gall_gallM _ Hg)
+                W1 (λ _, ∅) σ (proj1 (Wpo_strict [])) HW1) as H.
+  assert (sf_inst (λ _, ∅) (sf_pinst σ (∅, None)) = ∅) as E.
+  { unfold sf_inst, sf_pinst. simpl. rewrite set_map_empty. set_solver. }
+  rewrite tenv_pinst_empty, E in H.
+  assert (lsem_typed W1 ∅ (lenv_pinst σ []) ∅ t (pinst_ty σ T)) as Hl.
+  { apply lsem_later_now. refine (proj1 (H _ _) _ (okR_noL _)); [|done].
+    intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty. }
+  apply (live_adequacy W1 (pinst_ty σ T)).
+  apply (LPrel_term _ ∅ ∅ ∅); [by apply prim_pinst|exact (proj2 (proj2 (proj2 HW1)))|done|set_solver| | |].
+  - intros c o Ho. by rewrite lookup_empty in Ho.
+  - intros c e1 e2 He. by rewrite lookup_empty in He.
+  - unfold tenv_of. rewrite fmap_empty, (left_id_L ∅ (∪)). exact Hl.
+Qed.
 
+(** ** The examples of GuardEx.v as live programs *)
 Theorem fw_live_sound :
   deadlock_free (∅, {[+ Forwarder.fw_main +]}) ∧ no_tau_divergence (∅, {[+ Forwarder.fw_main +]}).
-Proof. apply (live_soundness_term wnil _ TUnit); [apply wnil_strict|constructor|apply fw_gstyped]. Qed.
-
+Proof. apply (live_soundness_created _ _ TUnit Forwarder.fw_created); [constructor|apply fw_gstyped]. Qed.
 Theorem tc_live_sound :
   deadlock_free (∅, {[+ TailCall.tc_main +]}) ∧ no_tau_divergence (∅, {[+ TailCall.tc_main +]}).
-Proof. apply (live_soundness_term wnil _ TUnit); [apply wnil_strict|constructor|apply tc_gstyped]. Qed.
-
+Proof. apply (live_soundness_created _ _ TUnit TailCall.tc_created); [constructor|apply tc_gstyped]. Qed.
 Theorem fa_live_sound :
   deadlock_free (∅, {[+ FirstAction.fa_go +]}) ∧ no_tau_divergence (∅, {[+ FirstAction.fa_go +]}).
-Proof.
-  apply (live_soundness_source 1 CfstTools.top_C0 _ TUnit
-           (c0_acyclic_creation _ _ CfstTools.top_acyclic)); [constructor|apply fa_gstyped].
-Qed.
-
+Proof. apply (live_soundness_created _ _ TUnit TreeCopy.tca_created); [constructor|apply fa_gstyped]. Qed.
 Theorem fac_live_sound :
   deadlock_free (∅, {[+ FirstAction.fac_go +]}) ∧ no_tau_divergence (∅, {[+ FirstAction.fac_go +]}).
-Proof.
-  apply (live_soundness_source 1 CfstTools.top_C0 _ TUnit
-           (c0_acyclic_creation _ _ CfstTools.top_acyclic)); [constructor|apply fac_gstyped].
-Qed.
+Proof. apply (live_soundness_created _ _ TUnit TreeCopy.tca_created); [constructor|apply fac_gstyped]. Qed.

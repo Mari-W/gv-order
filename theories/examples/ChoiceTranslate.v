@@ -497,7 +497,6 @@ Proof.
   - rewrite tr_payload. apply KTRecv.
   - apply KTClos.
   - rewrite tr_dual. by apply KTLink.
-  - rewrite tr_dual. by apply KTNewEx.
   - rewrite tr_dual. by apply KTNewAt.
 Qed.
 

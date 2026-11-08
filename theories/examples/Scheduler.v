@@ -26,10 +26,11 @@
     for r₀ and r₁. [sched_rev_underivable] (examples/Rejected.v) proves
     that the three facts do not hold together.
 
-    The program types in the empty world. r₀ is created at γ with no
-    fact, r₁ by the alias at γ, which gives the alias that link needs,
-    and r₂ at ε with γ+1 ≺ ε (sharp edges 105). The points (a,0), (b,0)
-    and (c,0) above are γ, ε and γ.
+    The program types under the hypotheses of its two top-level points
+    γ and ε ([sched_Ψ]). r₀ is created at γ with no fact, r₁ by the
+    alias at γ, which gives the alias that link needs, and r₂ at ε with
+    γ+1 ≺ ε (sharp edges 105, 172). The points (a,0), (b,0) and (c,0)
+    above are γ, ε and γ.
 
     With end points ag₁ holds r₁ at γ and r₀′ at γ̄, so its lower point
     lies below both partners. r₀ is created with {γ ≺ γ̄} ([ccd_C]),
@@ -49,18 +50,26 @@ Definition sched_main : expr :=
   let_new_pair (let_new_pair (let_new_pair
     (LetU (App ESpawn ag1_thunk) (LetU (App ESpawn ag2_thunk) ag0)))).
 
-Lemma sched_typed : styped ∅ [] [] (∅, None) sched_main TUnit.
+Definition sched_Lr : list (point * bool) :=
+  [(Pt (NVar 0) 1, true); (pt_dual (Pt (NVar 0) 1), false)].
+
+Definition sched_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) ccd_C, ids 1)]) ++
+    [(bcs_inst (pshift 1) (freshp_bcs sched_Lr []), ids 1)].
+
+Lemma sched_created : created (Wpo []) sched_Ψ.
 Proof.
-  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold sched_main.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sd ccd_C); [apply ccd_ok|constructor|].
-  fresh_clean.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pvar 0) HWs); [eapply skn_inst; [by left|by left|done]|].
-  cbn.
-  set (Lr := [(Pt (NVar 0) 1, true); (pt_dual (Pt (NVar 0) 1), false)]).
-  apply (t_newfreshp_open W _ _ ∅ _ _ _ _ Sd Lr []).
+  apply created_p; [apply created_snoc; [constructor|apply ccd_ok|constructor]| |].
   { cbn. repeat (apply Forall_cons; split; [eapply skn_inst; [by left|by left|done]|]). by apply Forall_nil. }
   { intros l h b _ Hh. by apply elem_of_nil in Hh. }
+Qed.
+
+Lemma sched_typed : styped ∅ sched_Ψ [] (∅, None) sched_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold sched_main, sched_Ψ.
+  new_top HWs Sd (pvar 1). new_top HWs Sd (pvar 1). new_top HWs Sd (pvar 0).
+  set (Lr := sched_Lr).
   fresh_clean.
   set (Ψ := [(ccd_C, [pvar 1]); (bcs_inst (pshift 1) (freshp_bcs Lr []), [pvar 0])]).
   change (pt_inst (pshift 1) (pvar 0)) with (pvar 1) in *.
@@ -133,6 +142,5 @@ Qed.
 
 Lemma sched_deadlock_free : deadlock_free (∅, {[+ sched_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply sched_typed].
+  apply (soundness_created_s sched_Ψ _ TUnit sched_created); [constructor|apply sched_typed].
 Qed.

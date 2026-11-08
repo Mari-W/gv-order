@@ -1,44 +1,42 @@
-(** * The factory with an existential result, in the empty world
+(** * The factory with an existential result
 
     A factory spawns a worker and returns a handle, as a future or a
     task API does. The box mk is the term [fac] of Factory.v. Its result
-    is now an existential, so the point of the handle is hidden, and
-    E-Pack introduces it at the lower bound ⊥.
+    is an existential, so the point of the handle is hidden, and E-Pack
+    introduces it at the lower bound ⊥.
 
       mk   = !(f = λu. let () = u in let p = new ∗ in let (c, c′) = p in
                        let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
 
-      mk   : □(∗ ⊸ ∃^⊥ ι. {}. (?∗.Close)@ῑ)                         (Tmk0)
-      mk   : □(∀ζ. ∗ ⊸ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ῑ)       (Tmk1)
+    Under the constant world (sharp edges 172) new creates the channel
+    at the field point ζ[0] of the box variable ζ, and the box
+    constraint states the facts of ζ[0] that the result promises:
+
+      mk   : □(∀ζ. {ζ[0]‾ ≺ ζ[0][0], ζ[0]‾+1 ≺ ζ[0][0]}.
+                 ∗ ⊸ ∃^⊥ ι. {ῑ ≺ ι[0], ῑ+1 ≺ ι[0]}. (?∗.Close)@ῑ)       (Tmk0)
+      mk   : □(∀ζ. {ζ ≺ ζ[0], ζ+1 ≺ ζ[0]}.
+                 ∗ ⊸ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ῑ)            (Tmk1)
 
       main = let (g, f) = ⟨mk, mk⟩ in
              let p = (force g) ∗ in
              let q = (force f) ∗ in
              let () = recvclose p in recvclose q
 
-    The two types share the term. At Tmk0 new creates the channel with
-    the empty creation constraint. At Tmk1 it creates it with the
-    constraint {ζ ≺ ι, ζ+1 ≺ ι}, where ζ is the box variable. Both are
-    the list form L ≺ ι of [t_newfresh_lh_open] with no upper points,
-    so betweenness holds with nothing to check. The body
-    returns c′ packed with E-Pack at the instance [ι], and the
-    constraint of the existential is the creation constraint itself, so
-    the hypothesis of new proves it.
+    The two types share the term ([mk_typed]). The body packs c′ at the
+    instance ζ[0], and the box constraint proves the constraint of the
+    existential there. The first call instantiates ζ with the top-level
+    point ζ₀ of main, whose hypothesis is the box constraint of Tmk0 at
+    ζ₀ ([fx_Ψ]). The second call instantiates ζ with the point ῑ_p of
+    p, and the hypothesis of opening p is the box constraint of Tmk1 at
+    ῑ_p. Opening q gives ῑ_p ≺ ι_q and ῑ_p+1 ≺ ι_q, the two facts that
+    recv and close on p need while main holds q. Before the constant
+    world Tmk0 had no ∀ and main needed no point.
 
     The let of one variable is the let pair on ⟨e, ∗⟩ followed by a
     let ∗, as in [let_new]. main opens p with E-Open right after the
     let pair, before the let ∗, so that no unopened ∃^⊥ sits in the
-    context of a later premise. The first call needs no point, because
-    Tmk0 has no ∀. The second call instantiates ζ with the point of p,
-    which the hypothesis of the first E-Open makes known. Opening q
-    gives p ≺ q and p+1 ≺ q, and these are the two facts that recv and
-    close on p need while main holds q. main creates no channel and
-    types in the empty world [Wpo []] ([fx_deadlock_free]).
-
-    With end points c′ sits at ῑ, the partner of c, so the result names
-    ῑ. The handle q at ῑ_q has the partner ι_q, and the second call
-    instantiates ζ with the point ῑ_p of p. The facts ῑ_p ≺ ι_q and
-    ῑ_p+1 ≺ ι_q are again the two that main needs.
+    context of a later premise. main creates no channel and types
+    under the hypothesis of ζ₀ ([fx_deadlock_free]).
 
     Factory.v needs a world with constants for the same pattern (sharp
     edges 107). Without the existential, the result type of the box
@@ -58,63 +56,81 @@ Definition Sr : sty := SSeq (SRcv 0 TUnit) SEnd.
 
 Definition mk : expr := fac.
 
-(** ∃^⊥ ι. {l ≺ ι ∣ l ∈ L}. (?∗.Close)@ι, the result of a call. *)
-Definition Tmk_res (L : list point) : ty := TEx LBot 1 (fresh_bcs L []) (TSess Sr (pt_dual (pvar 0))).
+(** ∃^⊥ ι. C. (?∗.Close)@ῑ, the result of a call. *)
+Definition Tres (C : bcs) : ty := TEx LBot 1 C (TSess Sr (pt_dual (pvar 0))).
 
-Definition Tmk (m : nat) (L : list point) : ty :=
-  TBox m 0 (BCs [] (λ _, False)) (TLolli None None TUnit (TLolli None None TUnit (Tmk_res L))).
+(** ∃^⊥ ι. {l ≺ ι ∣ l ∈ L}. (?∗.Close)@ῑ. *)
+Definition Tmk_res (L : list point) : ty := Tres (fresh_bcs L []).
 
-Definition Tmk0 : ty := Tmk 0 [].
-Definition Tmk1 : ty := Tmk 1 [pvar 0; Pt (NVar 0) 1].
+(** Under the constant world (sharp edges 172) the box creates the
+    channel with new@ζ[0] at the field point of its variable ζ, and the
+    box constraint states the facts of ζ[0] that the result promises.
+    The caller proves them for its instance. *)
+Abbreviation x0 := (Pt (NPayload (NVar 0) 0 0) 0).
+Abbreviation x00 := (Pt (NPayload (NPayload (NVar 0) 0 0) 0 0) 0).
 
-(** E-Pack at the instance [ι], ι the point variable 0 of the body of
-    new. The constraint is the hypothesis of new. *)
-Ltac mk_pack :=
-  apply (t_pack _ _ _ _ _ _ _ _ _ _ _ [pvar 0]);
-  [ done
-  | constructor; [right; eexists _, _, (pvar 0); split_and!; [by right; left|by left|done]|constructor]
-  | apply hyp_in_fact; by right; left
-  | done
-  | tstep ].
+Definition Tmk (Cb Cr : bcs) : ty :=
+  TBox 1 0 Cb (TLolli None None TUnit (TLolli None None TUnit (Tres Cr))).
 
-(** The worker and the return after new. The channel is at the point
-    variable 0 of the body of new, c at 1 and c′ at 0. *)
-Ltac mk_tail HW :=
-  cbn; tstep;
-  [ tstep; [|apply KTSpawn|done|apply ubs_none];
-    eapply (tv_lam _ HW _ _ _ _ _ TUnit TUnit (Some (Pt (NVar 0) 1)) (Some (pt_dual (Pt (NVar 0) 0))) 2);
-      [set_solver| |];
-    [ intros y Hy; mem_cases Hy; apply sle_refl, HW
-    | cbn; tstep; [tstep|]; cbn; unfold sendclose; tstep;
-      [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (Pt (NVar 0) 0)); cbn; set_solver|done|];
-        apply ubs_intro; [intros y Hy; mem_cases Hy|];
-        exists (Pt (NVar 0) 1); split; [done|]; right; apply (slt_po _ _ (Pt (NVar 0) 0) HW)
-      | apply KTClos
-      | done
-      | apply ubs_intro; [intros y Hy; mem_cases Hy|];
-        exists (Pt (NVar 0) 1); split; [done|]; apply sle_refl, HW ] ]
-  | mk_pack ].
+(** Tmk0: ∀ζ. {ζ[0]‾ ≺ ζ[0][0], ζ[0]‾+1 ≺ ζ[0][0]}. ∗ ⊸ ∃^⊥ ι. {ῑ ≺ ι[0], ῑ+1 ≺ ι[0]}. (?∗.Close)@ῑ.
+    The result holds the facts that the second call needs at ζ = ῑ. *)
+Definition Cr0 : bcs := BCs [] (λ g, g = FLt (pt_dual (pvar 0)) x0 ∨ g = FLt (pt_shift 1 (pt_dual (pvar 0))) x0).
+Definition Cb0 : bcs := BCs [] (λ g, g = FLt (pt_dual x0) x00 ∨ g = FLt (pt_shift 1 (pt_dual x0)) x00).
+Definition Tmk0 : ty := Tmk Cb0 Cr0.
 
-Lemma mk0_typed W F : strict W → typed W ∅ [] ∅ [] F mk Tmk0.
+(** Tmk1: ∀ζ. {ζ ≺ ζ[0], ζ+1 ≺ ζ[0]}. ∗ ⊸ ∃^⊥ ι. {ζ ≺ ι, ζ+1 ≺ ι}. (?∗.Close)@ῑ. *)
+Definition Cb1 : bcs := BCs [] (λ g, g = FLt (pvar 0) x0 ∨ g = FLt (Pt (NVar 0) 1) x0).
+Definition Tmk1 : ty := Tmk Cb1 (fresh_bcs [pvar 0; Pt (NVar 0) 1] []).
+
+(** The box at any constraint whose facts give the result's facts at
+    the instance ζ[0]. *)
+Lemma mk_typed W F Cb Cr :
+  strict W →
+  (∀ Ψ, (bcs_inst (pshift 1) Cb, [pvar 0]) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) Cr [x0]) →
+  typed W ∅ [] ∅ [] F mk (Tmk Cb Cr).
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold mk, fac, Tmk0, Tmk.
+  intros HWs HCr. pose proof (proj1 HWs) as HW. unfold mk, fac, Tmk.
   apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
   cbn. tstep; [tstep|]. cbn.
-  apply (t_newfresh_lh_open W _ _ _ _ _ _ _ Sd [] []); [constructor|set_solver|].
-  mk_tail HW.
+  apply (t_new_at W _ _ _ _ _ _ _ Sd x0 HWs);
+    [right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]|].
+  cbn. tstep.
+  - tstep; [|apply KTSpawn|done|apply ubs_none].
+    eapply (tv_lam _ HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 x0)) (Some (pt_dual x0)) 2);
+      [set_solver| |].
+    + intros y Hy; mem_cases Hy; apply sle_refl, HW.
+    + cbn; tstep; [tstep|]; cbn; unfold sendclose; tstep.
+      * tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd x0); cbn; set_solver|done|].
+        apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (pt_shift 1 x0); split; [done|]; right; apply (slt_po _ _ x0 HW).
+      * apply KTClos.
+      * done.
+      * apply ubs_intro; [intros y Hy; mem_cases Hy|].
+        exists (pt_shift 1 x0); split; [done|]; apply sle_refl, HW.
+  - apply (t_pack _ _ _ _ _ _ _ _ _ _ _ [x0]).
+    + done.
+    + constructor; [right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]|constructor].
+    + apply HCr. by left.
+    + done.
+    + tstep.
+Qed.
+
+Lemma mk0_typed W F : strict W → typed W ∅ [] ∅ [] F mk Tmk0.
+Proof.
+  intros HWs. apply mk_typed; [done|]. intros Ψ Hin.
+  apply bcs_hold_intro. intros g [-> | ->] _; cbn.
+  - eapply (sl_hyp0 _ _ _ _ (pt_dual x0) x00); [exact Hin|by left|cbn; lia|reflexivity|reflexivity].
+  - eapply (sl_hyp0 _ _ _ _ (pt_shift 1 (pt_dual x0)) x00); [exact Hin|by right|cbn; lia|reflexivity|reflexivity].
 Qed.
 
 Lemma mk1_typed W F : strict W → typed W ∅ [] ∅ [] F mk Tmk1.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold mk, fac, Tmk1, Tmk.
-  apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
-  cbn. eapply (tv_lam W HW _ _ _ _ _ TUnit _ None None 1); [set_solver|cbn; set_solver|].
-  cbn. tstep; [tstep|]. cbn.
-  apply (t_newfresh_lh_open W _ _ _ _ _ _ _ Sd [pvar 0; Pt (NVar 0) 1] []).
-  { constructor; [skn_payload|constructor; [skn_payload|constructor]]. }
-  { intros l h _ Hh. by apply elem_of_nil in Hh. }
-  mk_tail HW.
+  intros HWs. apply mk_typed; [done|]. intros Ψ Hin.
+  apply bcs_hold_fresh_intro. intros f [(i & Hi & ->)|(j & Hj & ->)] Hs; [|cbn in Hj; lia].
+  destruct i as [|[|i]]; [| |cbn in Hi; lia]; cbn.
+  - eapply (sl_hyp0 _ _ _ _ (pvar 0) x0); [exact Hin|by left|cbn; lia|reflexivity|reflexivity].
+  - eapply (sl_hyp0 _ _ _ _ (Pt (NVar 0) 1) x0); [exact Hin|by right|cbn; lia|reflexivity|reflexivity].
 Qed.
 
 (** ** The client *)
@@ -125,21 +141,39 @@ Definition fx_main : expr :=
     (LetP (Pair (App (App EForce (Var 2)) EUnit) EUnit) (LetU (Var 0)
       (LetU (recvclose (Var 3)) (recvclose (Var 1))))))).
 
-Lemma fx_typed : styped ∅ [] [] (∅, None) fx_main TUnit.
+(** main has one top-level point ζ₀, with the facts of Cb0 at ζ₀, so
+    that the first call has an instance (sharp edges 172). *)
+Definition fx_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) Cb0, ids 1)].
+
+Lemma fx_created : created (Wpo []) fx_Ψ.
+Proof.
+  apply created_snoc; [constructor| |constructor].
+  set (r := λ x : point, 3 * pt_off x +
+              match pt_name x with NPayload (NPayload _ _ _) _ _ => 20 | NPayload _ _ _ => 10 | _ => 0 end).
+  apply (cc_ok_inner _ _ _ (λ x y, r x < r y)).
+  - intros x y z; lia.
+  - intros x; lia.
+  - intros [q pb o] _. unfold r, pt_shift. simpl. lia.
+  - intros g [-> | ->] _; eexists _, _; (split; [done|]); unfold r; cbn; lia.
+  - intros [q pb o] _. unfold r, pt_shift, pt_dual. simpl. lia.
+Qed.
+
+Lemma fx_typed : styped ∅ fx_Ψ [] (∅, None) fx_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fx_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fx_main, fx_Ψ. cbn.
   (* let (g, f) = ⟨mk, mk⟩ *)
   eapply (tv_letp W HW _ _ _ _ _ _ Tmk0 Tmk1); [reflexivity| |].
-  { tstep; [apply mk1_typed, HWs|apply mk0_typed, HWs]. }
-  (* let p = (force g) ∗, opened at once *)
-  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (Tmk_res []) TUnit); [reflexivity| |].
+  { tstep; apply typed_hyps_nil; [exact HWs|apply mk1_typed, HWs|exact HWs|apply mk0_typed, HWs]. }
+  (* let p = (force g) ∗ at ζ = ζ₀, opened at once *)
+  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (Tres Cr0) TUnit); [reflexivity| |].
   { tstep; [tstep|].
     eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-    apply (typed_force0 W _ _ _ _ _ _ 0 (BCs [] (λ _, False)) None (TLolli None None TUnit (Tmk_res [])) []);
-      [done|done| |constructor|apply ubs_none|tstep].
-    apply bcs_hold_intro. by intros ? []. }
-  apply (t_open W _ _ _ _ _ _ 1 LBot 1 (fresh_bcs [] []) (TSess Sr (pt_dual (pvar 0))) TUnit);
+    apply (typed_force0 W _ _ _ _ _ _ 1 Cb0 None (TLolli None None TUnit (Tres Cr0)) [pvar 0]);
+      [done|done| | |apply ubs_none|tstep].
+    - apply hyp_in_fact. by left.
+    - constructor; [right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]|constructor]. }
+  apply (t_open W _ _ _ _ _ _ 1 LBot 1 Cr0 (TSess Sr (pt_dual (pvar 0))) TUnit);
     [done|intros Hun; exact Hun|].
   fresh_clean.
   tstep; [tstep|]. cbn.
@@ -147,21 +181,23 @@ Proof.
   eapply (tv_letp W HW _ _ _ _ _ _ (Tmk_res [pt_dual (pvar 0); pt_dual (Pt (NVar 0) 1)]) TUnit); [reflexivity| |].
   { tstep; [tstep|].
     eapply tv_app; [exact HW|reflexivity| |tstep|apply ubs_none].
-    apply (typed_force0 W _ _ _ _ _ _ 1 (BCs [] (λ _, False)) None
+    apply (typed_force0 W _ _ _ _ _ _ 1 Cb1 None
              (TLolli None None TUnit (Tmk_res [pvar 0; Pt (NVar 0) 1])) [pt_dual (pvar 0)]);
-      [done|done| |constructor; [skn_payload|constructor]|apply ubs_none|tstep].
-    apply bcs_hold_intro. by intros ? []. }
+      [done|done| |constructor; [right; eexists _, _, (pvar 0); split_and!; [by right; left|by left|done]|constructor]|apply ubs_none|tstep].
+    apply bcs_hold_intro. intros g [-> | ->] _; cbn.
+    - eapply (sl_hyp0 _ _ _ [pvar 0] (pt_dual (pvar 0)) x0); [by right; left|by left|cbn; lia|reflexivity|reflexivity].
+    - eapply (sl_hyp0 _ _ _ [pvar 0] (pt_shift 1 (pt_dual (pvar 0))) x0);
+        [by right; left|by right|cbn; lia|reflexivity|reflexivity]. }
   apply (t_open W _ _ _ _ _ _ 1 LBot 1 (fresh_bcs [pt_dual (pvar 0); pt_dual (Pt (NVar 0) 1)] [])
            (TSess Sr (pt_dual (pvar 0))) TUnit); [done|intros Hun; exact Hun|].
   fresh_clean.
-  set (Ψ := hyps_inst (pshift 1) [(bcs_inst (pshift 1) (fresh_bcs [] []), [pvar 0])] ++
-            [(bcs_inst (pshift 1) (fresh_bcs [pt_dual (pvar 0); pt_dual (Pt (NVar 0) 1)] []), ids 1)]).
+  match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
   assert (slt W Ψ (pt_dual (pvar 1)) (pvar 0)) as H0.
   { apply (slt_fresh_l W Ψ (pshift 1) [pt_dual (pvar 0); pt_dual (Pt (NVar 0) 1)] [] (pvar 0) (pt_dual (pvar 0)));
-      [by right; left|by left]. }
+      [by right; right; left|by left]. }
   assert (slt W Ψ (pt_dual (Pt (NVar 1) 1)) (pvar 0)) as H1.
   { apply (slt_fresh_l W Ψ (pshift 1) [pt_dual (pvar 0); pt_dual (Pt (NVar 0) 1)] [] (pvar 0) (pt_dual (Pt (NVar 0) 1)));
-      [by right; left|by right; left]. }
+      [by right; right; left|by right; left]. }
   tstep; [tstep|]. cbn.
   tstep.
   - (* recvclose p at ι_p, holding q at ι_q *)
@@ -178,10 +214,7 @@ Proof.
 Qed.
 
 Theorem fx_deadlock_free : deadlock_free (∅, {[+ fx_main +]}).
-Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply fx_typed].
-Qed.
+Proof. apply (soundness_created_s fx_Ψ _ TUnit fx_created); [constructor|apply fx_typed]. Qed.
 
 (** ** Why the existential
 

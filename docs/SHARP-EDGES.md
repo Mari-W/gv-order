@@ -2478,6 +2478,29 @@ measure erases names anyway. `admin_enabled` asks a restricted end for a link re
 `admin_or_sess` splits into a pure administrative redex and a session redex, so local
 progress needs no new premise.
 
+**172. The constant world (author's decision, 2026-11-08, branch lock-freedom).**
+The world of a run never grows. Every channel is created with new@x at a point x the
+context already knows. The existential signature of new (`KTNewEx`) is gone, and with it
+E-NewFresh (`t_new_open`, `t_newfresh_open`, `t_newfresh_lh_open`, `t_newfreshp_open`).
+The reason is lock freedom. Rank and fuel must be uniform over the run, and under a
+growing world the descending chains of C1 and KobForwarder sit in creation hypotheses
+instead of in W (lock-freedom plan §6.4, §10.2). A channel that a program creates at its
+top level is now a point variable of the program's hypotheses Ψ. `created W Ψ`
+(static/Typing.v) says that Ψ arises one channel at a time under creation constraints,
+with the premises E-NewFresh had (`created_snoc`, `created_fresh`, `created_lh`,
+`created_p`). `soundness_created` (static/Fundamental.v) starts the run in a world that
+places each such channel at a constant by `wext_cc`, so the creation facts are facts of
+the initial world. `soundness` and `soundness_source` keep their statements. A channel
+created inside a box sits at a field point of a box variable, and the box constraint
+states its facts, which the caller proves (FreshBetween, FreshMany, FactoryEx, GuardCex).
+A typing lemma of an example changes from `styped ∅ [] …` to `styped ∅ X_Ψ …`, and its
+deadlock freedom theorem keeps its statement. SegmentInterleave left the build. Its
+channel d is created with facts against the point κ′ that the server gets by opening the
+existential result of treeSum, and no known point has them. The algorithmic checker
+annotates new with its point. Fresh extension stays as a world construction
+(`wext_fresh`, `wext_cc`, relation/BranchWorlds.v) and leaves the relations (stage
+2b-core, see the lock-freedom plan).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

@@ -38,9 +38,10 @@
     receiver and σ̄ ≺ ρ̄ for the sender. No fact relates σ to σ̄ or ρ to
     ρ̄, and ≺ is not closed under x ↦ x̄, so the two are consistent.
 
-    In the empty world main creates a with the producer constraint fpa_C
-    and b with the facts that relate it to a ([fwb_ok], sharp edges
-    105). Both are order-only creation constraints.
+    main types under the hypotheses of its two top-level points γ and
+    ε ([fw_Ψ]). It creates a at γ with the producer constraint fpa_C and
+    b at ε with the facts that relate it to a ([fwb_ok], sharp edges
+    105, 172). Both are order-only creation constraints.
 
     With end points every gate compares with partner points ([fw_C],
     [fp_C]). The producer's upper point is ι[0]‾, where it closes e′.
@@ -279,7 +280,7 @@ Proof.
     exists (svv 1 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-(** ** main in the empty world (sharp edges 105)
+(** ** main over its top-level points (sharp edges 105, 172)
 
     main forces fwd at (γ, ε), the producer at γ̄ (a′) and the consumer
     at ε̄ (b′). a is created at γ with the facts inside γ,
@@ -388,17 +389,27 @@ Proof.
              first [apply (Hs (S k) j false); lia|apply (Hd (S k) j); lia]].
 Qed.
 
-Lemma fw_typed : styped ∅ [] [] (∅, None) fw_main TUnit.
+Definition fw_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) fpa_C, ids 1)]) ++
+    [(bcs_inst (pshift 1) fwb_C, ids 1)].
+
+Lemma fw_created : created (Wpo []) fw_Ψ.
+Proof.
+  pose proof (proj1 Wpo_nil_strict') as HW.
+  apply created_snoc; [apply created_snoc; [constructor|apply fpa_ok|constructor]|
+    apply fwb_ok; [done|cbn; by left]|
+    cbn; constructor; [eapply skn_inst; [by left|by left|done]|constructor]].
+Qed.
+
+Lemma fw_typed : styped ∅ fw_Ψ [] (∅, None) fw_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fw_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fw_main, fw_Ψ.
   tstep.
-  { tstep; [apply fcons_typed, HW|]. tstep; [apply fwd_typed, HW|apply fprod_typed, HWs]. }
+  { tstep; [apply typed_hyps_nil; [exact HWs|apply fcons_typed, HW]|].
+    tstep; (apply typed_hyps_nil; [exact HWs|]); [apply fwd_typed, HW|apply fprod_typed, HWs]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sfi fpa_C); [apply fpa_ok|constructor|].
-  fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sfo fwb_C); [apply fwb_ok; [done|by left]|
-    constructor; [eapply skn_inst; [by left|by left|done]|constructor]|].
+  new_top HWs Sfi (pvar 1). new_top HWs Sfo (pvar 0).
   fresh_clean.
   match goal with |- typed _ _ ?Ψ0 _ _ _ _ _ => set (Ψ := Ψ0) end.
   assert (∀ u v, fwb_P (FLt u v) → fact_scoped 2 (FLt u v) →
@@ -474,6 +485,5 @@ Qed.
 
 Lemma fw_deadlock_free : deadlock_free (∅, {[+ fw_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply fw_typed].
+  apply (soundness_created_s fw_Ψ _ TUnit fw_created); [constructor|apply fw_typed].
 Qed.

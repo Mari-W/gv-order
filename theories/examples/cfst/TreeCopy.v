@@ -767,18 +767,37 @@ Qed.
 
 (** After both [new]s b is 0, a is 1 and z is 2. The producer acts on
     a at α, α[B], α[B]+1, (α[B]+1)[A] and its [A]. *)
-Lemma tree_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) tree_main TUnit.
+Definition tree_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [(top_C0, ids 1)] ++ [(bcs_inst (pshift 1) tca_C, ids 1)]) ++
+    [(bcs_inst (pshift 1) tcb_C, ids 1)].
+
+(** The hypotheses of a program that creates a alone at its top level
+    under z (sharp edges 172). TreeSum.v and the examples after it use
+    them. *)
+Definition tca_Ψ : hyps := hyps_inst (pshift 1) [(top_C0, ids 1)] ++ [(bcs_inst (pshift 1) tca_C, ids 1)].
+
+Lemma tca_created : created (Wpo []) tca_Ψ.
+Proof.
+  apply created_snoc; [apply top_created|apply tca_ok|].
+  constructor; [eapply skn_inst; [by left|by left|done]|constructor].
+Qed.
+
+Lemma tree_created : created (Wpo []) tree_Ψ.
+Proof.
+  apply created_snoc.
+  - apply tca_created.
+  - apply tcb_ok. cbn. by right; left.
+  - cbn. constructor; [eapply skn_inst; [by right; left|by left|done]|].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor].
+Qed.
+
+Lemma tree_typed : styped ∅ tree_Ψ [] (∅, None) tree_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tree_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tree_main, tree_Ψ.
   tstep.
   { tstep; apply typed_hyps_wk; [exact HWs|apply drain_typed, HW|exact HWs|apply copy_typed, HW]. }
-  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ (SSeq TreeC SEnd) tca_C); [apply tca_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
-  fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ (SSeq TreeC SEnd) tcb_C); [apply tcb_ok; by right; left|..].
-  { constructor; [eapply skn_inst; [by right; left|by left|done]|].
-    constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  cbn. new_top HWs (SSeq TreeC SEnd) (pvar 1). new_top HWs (SSeq TreeC SEnd) (pvar 0).
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 2]); (BCs [pvar 2] send_P, [pvar 1]); (BCs [pvar 1; pvar 2] tcb_P, [pvar 0])]).
   assert (∀ w c c', slt W Ψ (pt_polar c (pwalk (pv 1 0) w)) (pt_polar c' (pwalk (pv 0 0) w))) as Hab.
@@ -928,4 +947,4 @@ Proof.
 Qed.
 
 Theorem tree_deadlock_free : deadlock_free (∅, {[+ tree_main +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply tree_typed]. Qed.
+Proof. apply (soundness_created_s tree_Ψ _ TUnit tree_created); [constructor|apply tree_typed]. Qed.

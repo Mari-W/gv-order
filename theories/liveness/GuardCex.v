@@ -53,10 +53,12 @@ Definition gptyped0 (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
 
 Definition cx_C : bcs := BCs [] (λ _, False).
 Definition cx_fty : ty := TLolli None None TUnit TUnit.
-Definition cx_bty : ty := TBox 1 0 cx_C (TLolli (Some (pvar 0)) None TUnit cx_fty).
+Definition cx_bty : ty := TBox 1 0 cx_C (TLolli (Some (pv 0 1)) None TUnit cx_fty).
 
-(** A guarded unit term: a fresh channel, one end closed by a spawned
-    thread, the other by the caller. *)
+(** A guarded unit term: a channel at the box variable ζ (new@ζ, the
+    constant world of sharp edges 172), one end closed by a spawned
+    thread, the other by the caller. The upper point of the box is
+    ζ+1, so that the close at ζ passes the gate. *)
 Definition cx_g : expr :=
   let_new_pair (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1))))) (App EClos (Var 1))).
 
@@ -112,27 +114,25 @@ Qed.
 
 (** ** Typing *)
 
-Lemma cx_bad_typed W F : world_wf W → typed W ∅ [] ∅ [] F cx_bad cx_bty.
+Lemma cx_bad_typed W F : strict W → typed W ∅ [] ∅ [] F cx_bad cx_bty.
 Proof.
-  intros HW. unfold cx_bad, cx_bty.
+  intros HWs. pose proof (proj1 HWs) as HW. unfold cx_bad, cx_bty.
   apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   change (bcs_inst (pshift 1) cx_C) with cx_C.
-  replace (pup 1 (pshift 1) 0 +ₚ 0) with (pvar 0) by reflexivity.
+  replace (pup 1 (pshift 1) 0 +ₚ 1) with (pv 0 1) by reflexivity.
   change (bcs_inst (pshift 1) cx_C) with cx_C.
   cbn. unfold cx_body. tstep.
   - eapply tv_app; [exact HW|reflexivity| | |apply ubs_none].
-    + apply (typed_force0 W _ _ _ _ _ _ 1 cx_C (Some (pvar 0)) cx_fty [pvar 0]); [done|done| | | |tstep].
+    + apply (typed_force0 W _ _ _ _ _ _ 1 cx_C (Some (pv 0 1)) cx_fty [pvar 0]); [done|done| | | |tstep].
       * apply bcs_hold_intro. by intros g Hg.
       * apply Forall_singleton. eapply skn_inst; [by left|by left|done].
-      * apply ubs_intro; [intros y Hy; mem_cases Hy|]. exists (pvar 0). split; [done|apply sle_refl, HW].
+      * apply ubs_intro; [intros y Hy; mem_cases Hy|]. exists (pv 0 1). split; [done|apply sle_refl, HW].
     + cbn. unfold cx_g, let_new_pair.
-      apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ SEnd [] [pvar 0]).
-      { cbn. apply Forall_singleton. eapply skn_inst; [by left|by left|done]. }
-      { intros l h Hl. by apply elem_of_nil in Hl. }
-      fresh_clean. tstep.
+      apply (t_new_at W _ _ _ _ _ _ _ SEnd (pvar 0) HWs); [eapply skn_inst; [by left|by left|done]|].
+      cbn. tstep.
       { tstep; [|apply KTSpawn|done|apply ubs_none].
         eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 1).
-        { rewrite fhyps_pinst_insert. set_solver. }
+        { set_solver. }
         { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
         cbn. tstep; [tstep|]. cbn.
         tstep; [tstep|apply KTClos|done|].
@@ -140,9 +140,8 @@ Proof.
         exists (pt_dual (pvar 0)). split; [done|]. apply sle_refl, HW. }
       cbn. tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; set_solver|].
-      cbn. exists (pt_inst (pshift 1) (pvar 0)). split.
-      { rewrite fhyps_pinst_insert. by rewrite lookup_insert_eq. }
-      right. apply (slt_fresh_r W _ (pshift 1) [] [pvar 0] (pvar 0) (pvar 0)); [by right; left|by left].
+      cbn. exists (pv 0 1). split; [by rewrite lookup_insert_eq|].
+      right. apply (slt_po W _ (pvar 0) HW).
   - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit None None 1); [set_solver|done|tstep].
 Qed.
 
@@ -150,11 +149,11 @@ Lemma cx_main_typed : typed (Wpo [0]) ∅ [] ∅ [] (∅, None) cx_main TUnit.
 Proof.
   pose proof (proj1 (Wpo_strict [0])) as HW. unfold cx_main.
   eapply tv_app; [exact HW|reflexivity| | |apply ubs_none].
-  - apply (typed_force0 _ _ _ _ _ _ _ 1 cx_C (Some (pvar 0)) cx_fty [pc 0 0]); [done|done| | | |].
+  - apply (typed_force0 _ _ _ _ _ _ _ 1 cx_C (Some (pv 0 1)) cx_fty [pc 0 0]); [done|done| | | |].
     + apply bcs_hold_intro. by intros g Hg.
     + apply Forall_singleton. left. unfold pt_known. simpl. set_solver.
     + apply ubs_intro; [intros y Hy; set_solver|done].
-    + apply cx_bad_typed, HW.
+    + apply cx_bad_typed, Wpo_strict.
   - tstep.
 Qed.
 

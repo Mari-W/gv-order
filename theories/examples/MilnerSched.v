@@ -35,10 +35,10 @@
     communication. The program runs one round, as theirs does.
 
     Points. The six channels sit at the points of one root. The first
-    [new] creates the ring channel of A_0 at a fresh ι with the empty
-    creation constraint, and every later channel is created by
-    [t_new_at] at ι+2k, a point the hypothesis of the first [new] makes
-    known. With end points the two ends of a channel sit at x and x̄;
+    [new] creates the ring channel of A_0 at the top-level point ι, a
+    point variable of the program's hypotheses with the empty creation
+    constraint ([ms_Ψ], sharp edges 172). Every later channel is created
+    by [t_new_at] at ι+2k, a point the hypothesis of ι makes known. With end points the two ends of a channel sit at x and x̄;
     the sending end of each channel is the one at x. Reading the two
     ends of a channel as one root:
 
@@ -138,12 +138,17 @@ Ltac ms_recv HW U :=
   | cbn; tstep; [tstep|]; cbn; tstep; [tstep|apply KTClos|done|];
     ms_gate HW U ].
 
-Lemma ms_typed : styped ∅ [] [] (∅, None) ms_main TUnit.
+Definition ms_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) (fresh_bcs [] []), ids 1)].
+
+Lemma ms_created : created (Wpo []) ms_Ψ.
+Proof. apply created_lh; [constructor|constructor|set_solver]. Qed.
+
+Lemma ms_typed : styped ∅ ms_Ψ [] (∅, None) ms_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ms_main.
-  (* the ring channel of A_0 at a fresh ι, then five channels at ι+2k *)
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sd [] []); [constructor|set_solver|].
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ms_main, ms_Ψ.
+  (* the ring channel of A_0 at the top-level ι, then five channels at ι+2k *)
+  new_top HWs Sd (pvar 0).
   fresh_clean.
   apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 2) HWs);
     [eapply skn_inst; [by left|by left|done]|]. cbn.
@@ -207,6 +212,5 @@ Qed.
 
 Theorem ms_deadlock_free : deadlock_free (∅, {[+ ms_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply ms_typed].
+  apply (soundness_created_s ms_Ψ _ TUnit ms_created); [constructor|apply ms_typed].
 Qed.

@@ -196,14 +196,13 @@ Definition lp_cw : list (option bool) := [Some true; None; Some false].
 Definition lpp (k : nat) : point :=
   pt_polar (negb (wpol (take k lp_cw))) (pwalk (pv 0 0) (take k lp_cw)).
 
-Lemma lp_go_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) lp_go TUnit.
+Lemma lp_go_typed : styped ∅ tca_Ψ [] (∅, None) lp_go TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold lp_go.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold lp_go, tca_Ψ.
   tstep.
   { tstep; apply typed_hyps_wk; [exact HWs|apply lp_typed, HW|exact HWs|apply lp_typed, HW]. }
-  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ LpC tca_C); [apply tca_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  cbn. new_top HWs LpC (pvar 0).
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 1]); (BCs [pvar 1] send_P, [pvar 0])]).
   assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)) as Haz.
@@ -268,6 +267,6 @@ Qed.
 
 Theorem lp_deadlock_free : deadlock_free (∅, {[+ lp_go +]}).
 Proof.
-  apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic));
+  apply (soundness_created_s tca_Ψ _ TUnit tca_created);
     [constructor|apply lp_go_typed].
 Qed.

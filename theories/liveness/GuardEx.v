@@ -3,21 +3,21 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard liveness.LiveKob.
 From LRGV Require examples.Forwarder examples.TailCall examples.cfst.FirstAction
-  examples.SemRounds examples.cfst.CfstTools.
+  examples.SemRounds examples.cfst.CfstTools examples.cfst.TreeCopy.
 (* NO-EQ: translation pending  From LRGV Require pn.PNExamples mp.MP2Examples. *)
 
 (** The forwarder, with its producer and consumer. *)
-Theorem fw_gstyped : gstyped ∅ [] [] (∅, None) Forwarder.fw_main TUnit.
+Theorem fw_gstyped : gstyped ∅ Forwarder.fw_Ψ [] (∅, None) Forwarder.fw_main TUnit.
 Proof. split; [apply Forwarder.fw_typed|vm_compute; reflexivity]. Qed.
 
 (** The tail call forces the self before the send and applies it after. *)
-Theorem tc_gstyped : gstyped ∅ [] [] (∅, None) TailCall.tc_main TUnit.
+Theorem tc_gstyped : gstyped ∅ TailCall.tc_Ψ [] (∅, None) TailCall.tc_main TUnit.
 Proof. split; [apply TailCall.tc_typed|vm_compute; reflexivity]. Qed.
 
-Theorem fa_gstyped : gstyped ∅ [(CfstTools.top_C0, ids 1)] [] (∅, None) FirstAction.fa_go TUnit.
+Theorem fa_gstyped : gstyped ∅ TreeCopy.tca_Ψ [] (∅, None) FirstAction.fa_go TUnit.
 Proof. split; [apply FirstAction.fa_go_typed|vm_compute; reflexivity]. Qed.
 
-Theorem fac_gstyped : gstyped ∅ [(CfstTools.top_C0, ids 1)] [] (∅, None) FirstAction.fac_go TUnit.
+Theorem fac_gstyped : gstyped ∅ TreeCopy.tca_Ψ [] (∅, None) FirstAction.fac_go TUnit.
 Proof. split; [apply FirstAction.fac_go_typed|vm_compute; reflexivity]. Qed.
 
 (** The rounds box of the semantic example is guarded by its two sends. *)

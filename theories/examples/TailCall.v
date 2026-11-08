@@ -14,9 +14,10 @@
     (ι+1, ζ) has upper point ζ and asks ζ ≺ μ, the future hypothesis.
     Its force asks C[ι+1, ζ] ⊆ C ([tc_sub]).
 
-    In the empty world main creates c with {ι+k ≺ ι[0] ∣ k ∈ ℕ} and
-    forces at (ι, ι[0]). The ceiling is the payload point ι[0], which no
-    channel occupies (sharp edges 105). With end points the receiver
+    main types under the hypothesis of its top-level point ι
+    ([tc_Ψ]). It creates c at ι with {ι+k ≺ ι[0] ∣ k ∈ ℕ} and forces at
+    (ι, ι[0]). The ceiling is the payload point ι[0], which no channel
+    occupies (sharp edges 105, 172). With end points the receiver
     holds c′ at ῑ and main forces rcv at (ῑ, ι[0]), so the constraint
     of c also has ῑ+k ≺ ι[0]. *)
 
@@ -114,13 +115,18 @@ Proof.
   - intros [n pb o] _. unfold lexlt, tcc_rank, pt_shift, pt_dual. simpl. right. split; [done|lia].
 Qed.
 
-Lemma tc_typed : styped ∅ [] [] (∅, None) tc_main TUnit.
+Definition tc_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) tcc_C, ids 1)].
+
+Lemma tc_created : created (Wpo []) tc_Ψ.
+Proof. apply created_snoc; [constructor|apply tcc_ok|constructor]. Qed.
+
+Lemma tc_typed : styped ∅ tc_Ψ [] (∅, None) tc_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tc_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tc_main, tc_Ψ.
   tstep.
-  { tstep; [apply tcr_typed, HW|apply tcs_typed, HW]. }
-  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sb tcc_C); [apply tcc_ok|constructor|].
+  { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply tcr_typed, HW|apply tcs_typed, HW]. }
+  cbn. new_top HWs Sb (pvar 0).
   fresh_clean.
   set (Ψ := [(tcc_C, [pvar 0])]).
   assert (∀ b, bcs_hold (seqs W Ψ) (slt W Ψ) tc_C [pt_polar b (pvar 0); tcz]) as HC.
@@ -154,6 +160,5 @@ Qed.
 
 Lemma tc_deadlock_free : deadlock_free (∅, {[+ tc_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply tc_typed].
+  apply (soundness_created_s tc_Ψ _ TUnit tc_created); [constructor|apply tc_typed].
 Qed.

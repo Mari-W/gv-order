@@ -127,6 +127,8 @@ Proof. intros HP. by apply kob_tau_diverges, (live_no_tau_divergence W TUnit). Q
 Theorem live_fundamental_false :
   ¬ (∀ W p T, strict W → ptyped W ∅ p T → ∀ n, LPrel n W ∅ T p).
 Proof.
-  intros H. apply (kob_not_live (Wpo [])).
-  apply H; [apply Wpo_strict|]. apply ptyped_closed_s; [constructor|apply fw_typed].
+  intros H.
+  destruct (created_ptyped kfw_Ψ fw_main TUnit kfw_created ltac:(constructor) fw_typed)
+    as (W1 & σ & HW1 & Hp).
+  apply (kob_not_live W1). by apply H.
 Qed.

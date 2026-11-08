@@ -152,18 +152,13 @@ Proof.
 Qed.
 
 (** After both [new]s b is 0, a is 1 and the ceiling z is 2. *)
-Lemma st_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) st_main TUnit.
+Lemma st_typed : styped ∅ ls_Ψ [] (∅, None) st_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main, ls_Ψ.
   tstep.
   { tstep; apply typed_hyps_wk; [exact HWs|apply newclient_typed, HW|exact HWs|apply client_typed, HW]. }
-  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sb lsa_C); [apply lsa_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
-  fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sb lsb_C); [apply lsb_ok; by right; left|..].
-  { constructor; [eapply skn_inst; [by right; left|by left|done]|].
-    constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  cbn. new_top HWs Sb (pvar 1). new_top HWs Sb (pvar 0).
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 2]); (BCs [pvar 2] lsa_P, [pvar 1]); (BCs [pvar 1; pvar 2] lsb_P, [pvar 0])]).
   assert (∀ k c c', slt W Ψ (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k)) ∧
@@ -212,4 +207,4 @@ Proof.
 Qed.
 
 Theorem st_deadlock_free : deadlock_free (∅, {[+ st_main +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply st_typed]. Qed.
+Proof. apply (soundness_created_s ls_Ψ _ TUnit ls_created); [constructor|apply st_typed]. Qed.

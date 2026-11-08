@@ -18,9 +18,10 @@
     the server's thunk blocks at ι′ while the pair holds a at ι+1, the
     fact ι′ ≺ ι+1 of C.
 
-    In the empty world main creates a at γ with no fact and b at ε with
-    the creation constraint {γ+k ≺ ε+k, ε+k ≺ γ+k+1 ∣ k ∈ ℕ}, and forces
-    both boxes at (γ, ε) (sharp edges 105).
+    main types under the hypotheses of its two top-level points γ and
+    ε ([rr_Ψ]). It creates a at γ with no fact and b at ε with the
+    creation constraint {γ+k ≺ ε+k, ε+k ≺ γ+k+1 ∣ k ∈ ℕ}, and forces
+    both boxes at (γ, ε) (sharp edges 105, 172).
 
     With end points the gates compare with partner points:
     C = {ι+k ≺ (ι′+k)‾, ι′+k ≺ (ι+k+1)‾ ∣ k ∈ ℕ}, and the upper point of
@@ -143,29 +144,37 @@ Definition rrf_facts (g : fact) : Prop :=
        g = FLt (pt_dual (pv 1 k)) (pv 0 k) ∨ g = FLt (pt_dual (pv 0 k)) (pv 1 (S k)).
 Definition rrf_C : bcs := BCs [pvar 0] rrf_facts.
 
-Lemma rr_typed : styped ∅ [] [] (∅, None) rr_main TUnit.
+Definition rr_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) ccd_C, ids 1)]) ++
+    [(bcs_inst (pshift 1) rrf_C, ids 1)].
+
+Lemma rr_created : created (Wpo []) rr_Ψ.
 Proof.
-  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
-  set (W := Wpo []) in *. unfold rr_main.
-  tstep.
-  { tstep; [apply cli_typed, HW|apply srv_typed, HW]. }
-  cbn.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sa ccd_C); [apply ccd_ok|constructor|].
-  fresh_clean.
-  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sb rrf_C _ _ _ _).
+  pose proof (proj1 Wpo_nil_strict') as HW.
+  refine (created_fresh (Wpo []) _ rrf_C _ _ _ _).
+  { apply created_snoc; [constructor|apply ccd_ok|constructor]. }
   { intros f [k [-> | [-> | [-> | ->]]]] Hs.
     - left. eexists _, _. split; [done|]. split_and!; [exists k; by left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [exists k; by right; left|done|done|done].
     - left. eexists _, _. split; [done|]. split_and!; [exists k; by right; right; left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [exists k; by right; right; right|done|done|done]. }
-  { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
+  { cbn. constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
   { intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) [_ Hpq]%ple_inv.
     destruct Hf as [k [E|[E|[E|E]]]]; injection E as -> ->; try done;
     destruct Hf' as [k' [E|[E|[E|E]]]]; injection E as -> ->; try done;
     cbn in Hpq; unfold fresh_outer; cbn; apply sl_w, wf_lt_same; [done|done|cbn; lia|done|done|cbn; lia
       |done|done|cbn; lia|done|done|cbn; lia]. }
+Qed.
+
+Lemma rr_typed : styped ∅ rr_Ψ [] (∅, None) rr_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
+  set (W := Wpo []) in *. unfold rr_main, rr_Ψ.
+  tstep.
+  { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply cli_typed, HW|apply srv_typed, HW]. }
+  cbn.
+  new_top HWs Sa (pvar 1). new_top HWs Sb (pvar 0).
   fresh_clean.
-  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
   set (Ψ := [(ccd_C, [pvar 1]); (bcs_inst (pshift 1) rrf_C, [pvar 0])]).
   assert (slt W Ψ (pvar 1) (pt_dual (pvar 1))) as Hcc by (apply slt_ccd; by left).
   assert (∀ k, slt W Ψ (pv 1 k) (pt_dual (pv 0 k))) as Hlo.
@@ -215,6 +224,5 @@ Qed.
 
 Lemma rr_deadlock_free : deadlock_free (∅, {[+ rr_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply rr_typed].
+  apply (soundness_created_s rr_Ψ _ TUnit rr_created); [constructor|apply rr_typed].
 Qed.

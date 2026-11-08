@@ -31,8 +31,9 @@
     [altA_next]). The box constraint of K is empty. main creates d under
     the pattern relative to c and packs the first state.
 
-    [alt_typed] is the derivation, [alt_deadlock_free] follows from
-    [soundness]. The construction carries a pattern whose futures,
+    [alt_typed] is the derivation, under the hypotheses of the two
+    top-level points of c and d ([alt_Ψ], sharp edges 172).
+    [alt_deadlock_free] follows from [soundness_created]. The construction carries a pattern whose futures,
     relative to the round, take two values. Section 3 of the design note
     conjectures that a pattern with infinitely many such futures has no
     derivation.
@@ -374,16 +375,15 @@ Definition alt_main : expr :=
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 5)) (Var 1)))))
       (App (App EForce (Var 5)) (Pair (Inj1 EUnit) (Pair (Var 3) (Var 1)))))))).
 
-Lemma alt_typed : styped ∅ [] [] (∅, None) alt_main TUnit.
+Definition alt_Ψ : hyps :=
+  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) (fresh_bcs [] []), ids 1)]) ++
+    [(bcs_inst (pshift 1) alt_Cd, ids 1)].
+
+Lemma alt_created : created (Wpo []) alt_Ψ.
 Proof.
-  apply styped_Wpo. pose proof (proj1 Wpo_nil_strict') as HW.
-  set (W := Wpo []) in *. unfold alt_main.
-  tstep.
-  { tstep; [apply alt_R_typed, HW|apply alt_K_typed, HW]. }
-  cbn.
-  apply (t_newfresh_lh_open W _ _ ∅ _ _ _ _ Sb [] []); [constructor|set_solver|].
-  fresh_clean.
-  refine (t_newfresh_open W _ _ ∅ _ _ _ _ Sb alt_Cd _ _ _ _).
+  pose proof (proj1 Wpo_nil_strict') as HW.
+  refine (created_fresh (Wpo []) _ alt_Cd _ _ _ _).
+  { apply created_lh; [constructor|constructor|set_solver]. }
   { intros f (n & [-> |[-> |[-> |[-> |[-> | ->]]]]]) Hs.
     - left. eexists _, _. split; [done|]. split_and!; [exists n; by left|done|done|done].
     - left. eexists _, _. split; [done|]. split_and!; [exists n; right; by left|done|done|done].
@@ -391,15 +391,24 @@ Proof.
     - right. eexists _, _. split; [done|]. split_and!; [exists n; do 3 right; by left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [exists n; do 4 right; by left|done|done|done].
     - left. eexists _, _. split; [done|]. split_and!; [exists n; by do 5 right|done|done|done]. }
-  { constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
+  { cbn. constructor; [|constructor]. eapply skn_inst; [by left|by left|done]. }
   { intros u p q v (Hf & _ & Hp & Hu) (Hf' & _ & Hq & Hv) [_ Hpq]%ple_inv.
     destruct Hf as (n & [E|[E|[E|[E|[E|E]]]]]); injection E as -> ->;
       try (exfalso; by apply Hu); try (cbn in Hp; discriminate).
     all: destruct Hf' as (m & [E|[E|[E|[E|[E|E]]]]]); injection E as -> ->;
       try (exfalso; by apply Hv); try (cbn in Hq; discriminate).
     all: cbn in Hpq; unfold fresh_outer; cbn; apply sl_w, wf_lt_same; [done|done|cbn; lia]. }
+Qed.
+
+Lemma alt_typed : styped ∅ alt_Ψ [] (∅, None) alt_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
+  set (W := Wpo []) in *. unfold alt_main, alt_Ψ.
+  tstep.
+  { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply alt_R_typed, HW|apply alt_K_typed, HW]. }
+  cbn.
+  new_top HWs Sb (pvar 1). new_top HWs Sb (pvar 0).
   fresh_clean.
-  change (pt_inst (pshift 1) (pvar 0)) with (pvar 1).
   set (Ψ := [(bcs_inst (pshift 1) (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 1]);
              (bcs_inst (pshift 1) alt_Cd, [pvar 0])]).
   match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E] _ _ _ =>
@@ -473,7 +482,6 @@ Qed.
 
 Lemma alt_deadlock_free : deadlock_free (∅, {[+ alt_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply alt_typed].
+  apply (soundness_created_s alt_Ψ _ TUnit alt_created); [constructor|apply alt_typed].
 Qed.
 

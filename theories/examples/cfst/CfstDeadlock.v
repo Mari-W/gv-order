@@ -242,16 +242,11 @@ End dlfix.
 
 (** After both [new]s b is 0, a is 1 and the ceiling z is 2, as in
     Stream.v. *)
-Lemma dlfix_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) dlfix_main TUnit.
+Lemma dlfix_typed : styped ∅ ls_Ψ [] (∅, None) dlfix_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold dlfix_main.
-  apply (t_new_open W _ _ ∅ _ _ _ _ dlT lsa_C); [apply lsa_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
-  fresh_clean.
-  apply (t_new_open W _ _ ∅ _ _ _ _ dlT lsb_C); [apply lsb_ok; by right; left|..].
-  { constructor; [eapply skn_inst; [by right; left|by left|done]|].
-    constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold dlfix_main, ls_Ψ.
+  new_top HWs dlT (pvar 1). new_top HWs dlT (pvar 0).
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 2]); (BCs [pvar 2] lsa_P, [pvar 1]); (BCs [pvar 1; pvar 2] lsb_P, [pvar 0])]).
   assert (∀ k c c', slt W Ψ (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k))) as Hab.
@@ -276,4 +271,4 @@ Proof.
 Qed.
 
 Theorem dlfix_deadlock_free : deadlock_free (∅, {[+ dlfix_main +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply dlfix_typed]. Qed.
+Proof. apply (soundness_created_s ls_Ψ _ TUnit ls_created); [constructor|apply dlfix_typed]. Qed.

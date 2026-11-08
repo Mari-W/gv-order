@@ -47,7 +47,8 @@
     all polarities of their points.
     A creation constraint {κ + k ≺ ι} with the outer point ι would do
     the same job; the chain keeps every fact inside one root, as the
-    other examples in the empty world do.
+    other examples do. main types under the hypothesis of its top-level
+    point ι ([kfw_Ψ], sharp edges 172).
 
     Acyclicity. C has no rank in ℕ, because the depth grows without
     bound and the order falls along it. [dlt] reads a point
@@ -178,15 +179,20 @@ Proof.
       exists (pv 0 1). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Lemma fw_typed : styped ∅ [] [] (∅, None) fw_main TUnit.
+Definition kfw_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) fw_C, ids 1)].
+
+Lemma kfw_created : created (Wpo []) kfw_Ψ.
+Proof. apply created_snoc; [constructor|apply fw_ok|constructor]. Qed.
+
+Lemma fw_typed : styped ∅ kfw_Ψ [] (∅, None) fw_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fw_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold fw_main, kfw_Ψ.
   eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 0 fw_C (TLolli None None TUnit fw_body)) TUnit);
     [reflexivity| |].
-  { tstep; [tstep|apply fwsrv_typed, HWs]. }
+  { tstep; [tstep|apply typed_hyps_nil; [exact HWs|apply fwsrv_typed, HWs]]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sd fw_C); [apply fw_ok|constructor|].
+  new_top HWs Sd (pvar 0).
   fresh_clean.
   set (Ψ := [(fw_C, [pvar 0])]).
   assert (bcs_hold (seqs W Ψ) (slt W Ψ) fw_C [pvar 0]) as HC.
@@ -216,6 +222,5 @@ Qed.
 
 Theorem fw_deadlock_free_kob : deadlock_free (∅, {[+ fw_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply fw_typed].
+  apply (soundness_created_s kfw_Ψ _ TUnit kfw_created); [constructor|apply fw_typed].
 Qed.

@@ -15,9 +15,10 @@
     the payload), which the sender also needs because it holds d′ at s.
     ⟨send ⟨d, c⟩, ∗⟩ stands for a let of one variable.
 
-    The program types in the empty world. c is created with the creation
-    constraint {ι ≺ ι[0], ι[0]+1 ≺ ι+1}, two facts between ι and its own
-    payload point, and d by the alias at ι[0] (sharp edges 105). The
+    The program types under the hypothesis of its top-level point ι
+    ([deleg_Ψ]). c is created at ι with the creation constraint
+    {ι ≺ ι[0], ι[0]+1 ≺ ι+1}, two facts between ι and its own payload
+    point, and d by the alias at ι[0] (sharp edges 105, 172). The
     points (a,k) and s above are ι+k and ι[0].
 
     With end points the receiver holds c′ at ῑ, the sender keeps d′ at
@@ -74,11 +75,16 @@ Proof.
   - intros [n pb o] _. unfold dl_rank, pt_shift, pt_dual. simpl. repeat case_match; lia.
 Qed.
 
-Lemma deleg_typed : styped ∅ [] [] (∅, None) deleg_main TUnit.
+Definition deleg_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) dl_C, ids 1)].
+
+Lemma deleg_created : created (Wpo []) deleg_Ψ.
+Proof. apply created_snoc; [constructor|apply dl_ok|constructor]. Qed.
+
+Lemma deleg_typed : styped ∅ deleg_Ψ [] (∅, None) deleg_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold deleg_main.
-  apply (t_new_open W _ _ ∅ _ _ _ _ Sdel dl_C); [apply dl_ok|constructor|].
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold deleg_main, deleg_Ψ.
+  new_top HWs Sdel (pvar 0).
   fresh_clean.
   set (Ψ := [(dl_C, [pvar 0])]).
   assert (slt W Ψ (pv 0 0) (pt_dual (sd 0))) as H1.
@@ -143,6 +149,5 @@ Qed.
 
 Lemma deleg_deadlock_free : deadlock_free (∅, {[+ deleg_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply deleg_typed].
+  apply (soundness_created_s deleg_Ψ _ TUnit deleg_created); [constructor|apply deleg_typed].
 Qed.

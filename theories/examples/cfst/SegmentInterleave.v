@@ -23,7 +23,13 @@
     and d : ?¹⁰;Close¹² (T-Let, p. 25). Version 3 of the translation in
     theories/mp does not, because the rank world fixes the ranks of the
     walks of c′ by the data (mordido-perez.md, §15.3). The core types it
-    natively ([si_typed], [si_deadlock_free]). *)
+    natively ([si_typed], [si_deadlock_free]).
+
+    Out of the build under the constant world (sharp edges 172). d is
+    created with facts against κ′, a point the server only knows by
+    opening the existential result of treeSum. new@x needs x known with
+    those facts, and no point of the context has them. A field point
+    κ′[0] would need treeSum's result type to promise its facts. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.cfst.TreeSum.

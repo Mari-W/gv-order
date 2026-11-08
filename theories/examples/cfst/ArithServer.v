@@ -321,16 +321,15 @@ Definition as_go : expr :=
 Definition as_Q : sty := SSeq (SRcv 0 TUnit) SEnd.
 
 (** After the [new] a is 0 and z is 1. *)
-Lemma as_typed : styped ∅ [(top_C0, ids 1)] [] (∅, None) as_go TUnit.
+Lemma as_typed : styped ∅ tca_Ψ [] (∅, None) as_go TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold as_go.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold as_go, tca_Ψ.
   assert (hcontractive as_Q) as HQ by (apply hcontractive_seq; [apply hcontractive_rcv|apply hcontractive_end]).
   assert (hcontractive (SSeq TermC as_Q)) as HQ' by (apply hcontractive_seq; [apply TermC_hc|exact HQ]).
   tstep.
   { tstep; apply typed_hyps_wk; [exact HWs|apply reval_typed, HW|exact HWs|apply reval_typed, HW]. }
-  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ (SSeq TermC as_Q) tca_C); [apply tca_ok|..].
-  { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
+  cbn. new_top HWs (SSeq TermC as_Q) (pvar 0).
   fresh_clean.
   set (Ψ := [(top_C0, [pvar 1]); (BCs [pvar 1] send_P, [pvar 0])]).
   assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)) as Haz.
@@ -452,4 +451,4 @@ Proof.
 Qed.
 
 Theorem as_deadlock_free : deadlock_free (∅, {[+ as_go +]}).
-Proof. apply (soundness_source 1 top_C0 _ TUnit (c0_acyclic_creation _ _ top_acyclic)); [constructor|apply as_typed]. Qed.
+Proof. apply (soundness_created_s tca_Ψ _ TUnit tca_created); [constructor|apply as_typed]. Qed.

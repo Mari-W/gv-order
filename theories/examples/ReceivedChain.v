@@ -19,10 +19,11 @@
     λ covers both blocking points. A tail call would need a ceiling, as
     in the tail-call example.
 
-    In the empty world main creates c with the box constraint itself as
-    its creation constraint and forces both boxes at its point. Every
-    fact stays inside ι, ordered by the rank 2·depth + offset (sharp
-    edges 105).
+    main types under the hypothesis of its top-level point ι
+    ([ch_Ψ]). It creates c at ι with the box constraint itself as its
+    creation constraint and forces both boxes at its point. Every fact
+    stays inside ι, ordered by the rank 2·depth + offset (sharp edges
+    105, 172).
 
     With end points the receiver asks ι[0]ⁿ+1 ≺ (ι[0]ⁿ⁺¹)‾ ([ch_C]). The
     sender keeps e′ at ι[0]‾ and recurs there, so its box has its own
@@ -217,13 +218,18 @@ Proof.
   - intros [n pb o] _. unfold ch_rank, pt_shift, pt_dual. simpl. case_match; lia.
 Qed.
 
-Lemma ch_typed : styped ∅ [] [] (∅, None) ch_main TUnit.
+Definition ch_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) chc_C, ids 1)].
+
+Lemma ch_created : created (Wpo []) ch_Ψ.
+Proof. apply created_snoc; [constructor|apply chc_ok|constructor]. Qed.
+
+Lemma ch_typed : styped ∅ ch_Ψ [] (∅, None) ch_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ch_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ch_main, ch_Ψ.
   tstep.
-  { tstep; [apply sch_typed, HWs|apply rch_typed, HW]. }
-  cbn. apply (t_new_open W _ _ ∅ _ _ _ _ Sch chc_C); [apply chc_ok|constructor|].
+  { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply sch_typed, HWs|apply rch_typed, HW]. }
+  cbn. new_top HWs Sch (pvar 0).
   fresh_clean.
   set (Ψ := [(chc_C, [pvar 0])]).
   assert (∀ x y, chc_P (FLt x y) → fact_scoped 1 (FLt x y) → slt W Ψ x y) as Hc.
@@ -270,6 +276,5 @@ Qed.
 
 Lemma ch_deadlock_free : deadlock_free (∅, {[+ ch_main +]}).
 Proof.
-  apply (soundness (Wpo []) _ TUnit (Wpo_strict _)).
-  apply ptyped_closed_s; [constructor|apply ch_typed].
+  apply (soundness_created_s ch_Ψ _ TUnit ch_created); [constructor|apply ch_typed].
 Qed.
