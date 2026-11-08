@@ -41,7 +41,13 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('liveness/LiveGuardProc.v', 'fa_live_sound'), ('liveness/LiveGuardProc.v', 'fac_live_sound'),
         ('lockfree/Instr.v', 'istep_erase'), ('lockfree/Instr.v', 'preduction_lift'),
         ('lockfree/Instr.v', 'pred_star_lift'), ('lockfree/TauThread.v', 'thread_acc'),
-        ('lockfree/Criterion.v', 'lf_criterion'), ('lockfree/LocalProgress.v', 'local_progress_ready')]
+        ('lockfree/Criterion.v', 'lf_criterion'), ('lockfree/LocalProgress.v', 'local_progress_ready'),
+        ('lockfree/Fragment.v', 'lfptyped_gptyped'), ('lockfree/Fragment.v', 'fw_lfptyped'),
+        ('lockfree/Fragment.v', 'tc_lfptyped'), ('lockfree/Fragment.v', 'sch_lfsource'),
+        ('lockfree/Fragment.v', 'kob_checks'), ('lockfree/Fragment.v', 'kob_not_lfptyped'),
+        ('lockfree/Fragment.v', 'kob_rank_fails'), ('lockfree/Fragment.v', 'c1_checks'),
+        ('lockfree/Fragment.v', 'c1_rank_fails'), ('lockfree/Fragment.v', 'c3_checks'),
+        ('lockfree/Fragment.v', 'c3_not_lfptyped'), ('lockfree/Fragment.v', 'tsum_r1_fails')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):

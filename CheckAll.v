@@ -72,6 +72,7 @@ Require LRGV.liveness.LiveRenaming.
 Require LRGV.liveness.LiveRules.
 Require LRGV.liveness.LiveTermRules.
 Require LRGV.lockfree.Criterion.
+Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
 Require LRGV.lockfree.LocalProgress.
 Require LRGV.lockfree.TauThread.
@@ -165,6 +166,18 @@ Print Assumptions LRGV.lockfree.Instr.pred_star_lift.
 Print Assumptions LRGV.lockfree.TauThread.thread_acc.
 Print Assumptions LRGV.lockfree.Criterion.lf_criterion.
 Print Assumptions LRGV.lockfree.LocalProgress.local_progress_ready.
+Print Assumptions LRGV.lockfree.Fragment.lfptyped_gptyped.
+Print Assumptions LRGV.lockfree.Fragment.fw_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.tc_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.sch_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.kob_checks.
+Print Assumptions LRGV.lockfree.Fragment.kob_not_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.kob_rank_fails.
+Print Assumptions LRGV.lockfree.Fragment.c1_checks.
+Print Assumptions LRGV.lockfree.Fragment.c1_rank_fails.
+Print Assumptions LRGV.lockfree.Fragment.c3_checks.
+Print Assumptions LRGV.lockfree.Fragment.c3_not_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.tsum_r1_fails.
 Print Assumptions LRGV.examples.ChoiceEnc.branch_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_typed.
 Print Assumptions LRGV.examples.ChoiceEnc.choice_deadlock_free.
