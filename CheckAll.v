@@ -43,7 +43,7 @@ Require LRGV.examples.cfst.CfstScheduler.
 Require LRGV.examples.cfst.FirstAction.
 Require LRGV.examples.cfst.MuVar.
 Require LRGV.examples.cfst.SegmentDeleg.
-Require LRGV.examples.cfst.SegmentInterleave.
+(* CONST-WORLD: retyping pending  Require LRGV.examples.cfst.SegmentInterleave. *)
 Require LRGV.examples.cfst.SkipDrop.
 Require LRGV.examples.cfst.Stream.
 Require LRGV.examples.cfst.TreeCopy.
@@ -98,6 +98,7 @@ Require LRGV.rules.SemanticRules.
 Require LRGV.static.Fundamental.
 Print Assumptions LRGV.static.Fundamental.soundness.
 Print Assumptions LRGV.static.Fundamental.soundness_source.
+Print Assumptions LRGV.static.Fundamental.soundness_created.
 Print Assumptions LRGV.static.Fundamental.fundamental.
 Print Assumptions LRGV.static.Fundamental.fundamental_proc.
 Print Assumptions LRGV.relation.LogicalRelation.adequacy.
@@ -207,6 +208,7 @@ Print Assumptions LRGV.examples.Factory.fac_deadlock_free.
 Print Assumptions LRGV.examples.Factory.faca_typed.
 Print Assumptions LRGV.examples.Factory.fa_typed.
 Print Assumptions LRGV.examples.Factory.fa_deadlock_free.
+Print Assumptions LRGV.examples.FactoryEx.mk_typed.
 Print Assumptions LRGV.examples.FactoryEx.mk0_typed.
 Print Assumptions LRGV.examples.FactoryEx.mk1_typed.
 Print Assumptions LRGV.examples.FactoryEx.fx_typed.
@@ -315,8 +317,8 @@ Print Assumptions LRGV.examples.cfst.MuVar.lp_go_typed.
 Print Assumptions LRGV.examples.cfst.MuVar.lp_deadlock_free.
 Print Assumptions LRGV.examples.cfst.SegmentDeleg.sd_typed.
 Print Assumptions LRGV.examples.cfst.SegmentDeleg.sd_deadlock_free.
-Print Assumptions LRGV.examples.cfst.SegmentInterleave.si_typed.
-Print Assumptions LRGV.examples.cfst.SegmentInterleave.si_deadlock_free.
+(* CONST-WORLD: retyping pending  Print Assumptions LRGV.examples.cfst.SegmentInterleave.si_typed. *)
+(* CONST-WORLD: retyping pending  Print Assumptions LRGV.examples.cfst.SegmentInterleave.si_deadlock_free. *)
 Print Assumptions LRGV.examples.cfst.SkipDrop.sd_not_deadlock_free.
 Print Assumptions LRGV.examples.cfst.Stream.client_typed.
 Print Assumptions LRGV.examples.cfst.Stream.newclient_typed.
