@@ -7,7 +7,7 @@ Updated after every stage and every agent result.
 |---|---|---|---|---|---|
 | 0  Paper proof (criterion, fuel and rank from the fragment) | done (0a, 0b) | none | n/a | n/a | decisions 1 to 4 of the plan await the author |
 | 1  Fair semantics, lock_free, local_progress, lf_criterion | done (f99a2bd) | theories/lockfree/Instr.v (istep_erase, preduction_lift, pred_star_lift), Fair.v (wfair, lock_free, lock_free_reach), TauThread.v (thread_acc), LocalProgress.v (local_progress_ready), Criterion.v (lf_criterion) | passes | 0, no axioms | see log: LPrel alone does not give local progress; linearity facts must come from typing; links still channel steps |
-| 2a Link τ costs 0 (relation, guard, liveness proofs, TauThread) | in progress | | | | |
+| 2a Link τ costs 0 (relation, guard, liveness proofs, TauThread) | done on the liveness side (31c95da), lockfree widening folded into 2b-core | LiveRelation.v (PALink, LElink, Q-Link), Guard.v (KLink out), LiveGuard.v, LiveBind.v, Internalize, LiveConnect.v (lsteps_link), P-Term | passes | 0, no axioms | thread_acc needs the premise "every link redex has a restricted end" |
 | 2b-core Constant world in the core (base and live relation, typing without KTNewEx, examples retyped) | next, after 2a | | | | author approved for the core |
 | 2b Rank and fuel in the relation (well-founded W, fuel constant N, per-thread invariant) | after 2b-core | | | | per-thread invariant needed (stage 1 finding 1) |
 | 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | done (4d74f15, merge into lock-freedom after 2a) | theories/lockfree/Fragment.v: lfptyped, lfsource, fw_lfptyped, tc_lfptyped, sch_lfsource, kob/c1/c3 rejections, tsum_r1_fails | passes, 267 closed | 0, no axioms | Rank on W catches chains only under the constant world; R4′ needs a typing annotation |
@@ -72,6 +72,14 @@ Updated after every stage and every agent result.
   with fed slots (fragment check only). Ring, ReceivedChain and the ABP to
   be checked in Rocq. Example (10) of padovani2014deadlock was mislabelled
   in an older store fact, now separated.
+
+- 2026-11-08. Stage 2a done on the liveness side. No approved statement
+  changed. Widening the lockfree admin step to links makes thread_acc false
+  in the untyped semantics (a thread links a channel it already closed,
+  forever). Decision under delegation: lf_criterion gains the premise that
+  every link redex of a reachable configuration has a restricted end.
+  Typing supplies it, as it supplies the linearity clauses of fuel_bound.
+  lf_criterion is a theorem of this branch, not an approved statement.
 
 ## Decisions
 
