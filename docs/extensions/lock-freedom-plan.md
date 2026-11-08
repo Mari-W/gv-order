@@ -595,3 +595,77 @@ would rework the LiveGuard proofs and is kept in reserve.
 ring, Rank holds for it, the fuel bound N = (d+1)·2L stays valid under
 R2-recv (a received end is delayed by at most one round), and the ring,
 ReceivedChain and the ABP pass the revised checks.
+
+## 14  Stage 2b: the lock-free relation (2026-11-09)
+
+Stage 2b stopped before any Rocq definition. The judgment of §10.3,
+`⊨ p := ∃ N, ∀ n, LPrel N n p`, does not imply lock freedom for any layer
+that reads the rank off the points of the live relation. The constant world
+fixes W for every index. It does not fix where an entry sits in W. O-New
+picks its point x and its session types inside each level (`∃ x s s'` in
+`Ebody`), and O-Send, O-Spawn and O-Recv pick environment splits there too.
+So a reachable state has one placement per index, and placements at
+different indices need not agree.
+
+### 14.1  Counterexample: C1 with a ceiling
+
+Argued on paper, not mechanized. Take the spawner chain C1 of §10.1 in a well-founded world with a ceiling,
+the shape of TailCall. W knows ι and ζ, with the facts ι+k ≺ ι[0] and
+ζ+j ≺ ι+k for all j and k. W is well founded and ι[0] has height ω. Main
+waits on c₀ at ι[0]. Round k creates c_k, spawns T_k, which blocks on c_k
+while it holds the partner end of c_{k−1}, and takes one step with a
+chatterbox at ζ+k.
+
+At index n the relation places c_k at ι+(n−k) for k ≤ n. Every gate of
+round k needs ι+(n−k) ≺ ι+(n−k+1), which program order gives, and the
+first needs ι+(n−1) ≺ ι[0]. After n/2 rounds the index is spent and level 0
+holds everything. So the process is in the relation at every index, with
+the per-thread invariant of stage 1 at every state. Fuel 2 suffices. A
+blocked thread takes no step, so the fuel of the end it holds never ticks,
+and the recursive thread hands c_k on after one chatter step. W is well
+founded. Yet main waits forever in every fair run.
+
+A uniform placement turns the chain into an infinite descent in W, which
+`well_founded (w_lt W)` excludes. So rank needs a placement that is the
+same at every index and coherent along the run, and the plan has none. In
+`lf_criterion` this is the stability clause of `rank_bound`
+(`we (S k) t = we k t`), which nothing indexed can supply.
+
+### 14.2  What is unaffected
+
+Fuel is uniform. N is a constant, and the counters are functions of the
+run, because ends are named by channels. Local progress, links_restricted
+and the per-thread invariant are facts of one state, so one index n ≥ 1
+supplies them at every reachable state (`live_reach`). no_tau_divergence
+comes from `live_adequacy` as before.
+
+### 14.3  Ways out, for the author
+
+1. A placement oracle (U1 of §3.2, restricted to placement). The
+   relation takes ω, which fixes the point and the types at O-New and the
+   splits at O-Send and O-Spawn, and adequacy assumes
+   `∃ N ω, ∀ n, LPrel N ω n p`. Composition combines the oracles of its
+   components. The fundamental theorem reads ω off the typing derivation.
+2. Uniform choices without an oracle. A coinductive invariant over
+   configurations annotated with thread environments chooses each
+   successor annotation once, outside the index, and asks the live
+   relation at every index of each annotated state. Adequacy then needs
+   no choice principle if `lf_criterion` takes rank and fuel as relations
+   on positions rather than functions. The fundamental theorem must pick
+   its witnesses independently of n, which amounts to option 1 with ω
+   taken from typing.
+3. Points in the syntax. `new@x` with a point expression in the term.
+   Box instantiation would then substitute points into terms, which the
+   calculus does not do today.
+4. A depth bound instead of Rank. A second constant D bounds the length
+   of every chain of waits at every reachable state. The bound is a fact
+   of the configuration and needs no placement. The criterion then
+   inducts on the vector of fuels along the chain, lexicographically,
+   which is well founded because the length is at most D. The cost is
+   that D does not compose by maximum, because a chain may cross between two
+   components many times, and programs whose blocked chains grow without
+   bound (possibly the growing ring) fall out.
+
+We recommend option 1. It is the only one that keeps Rank as
+`well_founded (w_lt W)` and keeps compositionality checkable, at the cost
+of one parameter in the composition statements.
