@@ -46,6 +46,7 @@ theories/lockfree/Fair.v
 theories/lockfree/TauThread.v
 theories/lockfree/Criterion.v
 theories/lockfree/LocalProgress.v
+theories/lockfree/Fragment.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v
@@ -82,6 +83,8 @@ theories/examples/RequestReply.v
 theories/examples/Relay.v
 theories/examples/TailCall.v
 theories/examples/ReceivedChain.v
+theories/examples/GrowRing.v
+theories/examples/ABP.v
 theories/examples/Forwarder.v
 theories/examples/Ordered.v
 theories/examples/FreshBetween.v
