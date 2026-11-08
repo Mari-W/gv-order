@@ -99,6 +99,17 @@ Updated after every stage and every agent result.
   plan §14.3. We recommend a placement oracle. Fuel, local progress and
   links_restricted are unaffected.
 
+- 2026-11-09. Type-free results on lf-fuel, independent of the §14 choice.
+  `thread_progress` (ThreadProgress.v, plan §9): from lock_free,
+  no_tau_divergence and links_restricted, every thread of a weakly fair
+  maximal run stops or takes part in a channel step after every position.
+  `thread_progress_val` adds threads_safe and gives a value that stays.
+  `lock_free_reach_of` (Reach.v): lock_free p implies lock_free_reach p for
+  every p, with no premise. The proof lifts process steps backwards and
+  builds a fair run with a computable round-robin scheduler. The converse
+  fails untyped (a race of two senders on a free channel). For typed
+  processes it is open. Both constructive, no axiom.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as

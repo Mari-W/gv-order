@@ -77,7 +77,9 @@ Require LRGV.lockfree.Criterion.
 Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
 Require LRGV.lockfree.LocalProgress.
+Require LRGV.lockfree.Reach.
 Require LRGV.lockfree.TauThread.
+Require LRGV.lockfree.ThreadProgress.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Examples. *)
 Require LRGV.mp.MP2Semantics.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Simulation. *)
@@ -169,6 +171,10 @@ Print Assumptions LRGV.lockfree.Instr.pred_star_lift.
 Print Assumptions LRGV.lockfree.TauThread.thread_acc.
 Print Assumptions LRGV.lockfree.Criterion.lf_criterion.
 Print Assumptions LRGV.lockfree.LocalProgress.local_progress_ready.
+Print Assumptions LRGV.lockfree.ThreadProgress.thread_progress.
+Print Assumptions LRGV.lockfree.ThreadProgress.thread_progress_val.
+Print Assumptions LRGV.lockfree.ThreadProgress.stopped_forever.
+Print Assumptions LRGV.lockfree.Reach.lock_free_reach_of.
 Print Assumptions LRGV.lockfree.Fragment.lfptyped_gptyped.
 Print Assumptions LRGV.lockfree.Fragment.fw_lfptyped.
 Print Assumptions LRGV.lockfree.Fragment.tc_lfptyped.
