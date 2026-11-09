@@ -174,3 +174,37 @@ Section soup1.
       by rewrite (lf_pt _ _ _ _ _ _ _ _ Hc t e o ek He Hek).
   Qed.
 End soup1.
+
+(** ** Threads outside a step *)
+
+Lemma nonpart_terms q L q' :
+  istep q L q' → ∃ g, (∀ u eu, u ∉ L → q.2 !! u = Some eu → q'.2 !! u = Some (emap g eu)) ∧
+    (∀ c, (∀ u eu, u ∈ L → q.2 !! u = Some eu → c ∉ fchans eu) → g c = c).
+Proof.
+  intros Hst. destruct Hst as [C M i e e' Hi Hs|C M i e c0 x e' Hi Hs HC Hc|C M i j e v e' Hi Hs Hj
+    |C M i j c0 b v e e' f f' Hij Hi Hj He Hf|C M i j c0 b e e' f f' Hij Hi Hj He Hf HC
+    |C M i j c0 β b0 e e' f f' Hij Hi Hj He Hf|C M i e c0 bc d bd e' Hi Hs HC]; simpl.
+  1-6: exists id; (split; [|done]); intros u eu Hu Heu; rewrite emap_id.
+  - rewrite lookup_insert_ne; [done|set_solver].
+  - rewrite lookup_insert_ne; [done|set_solver].
+  - rewrite !lookup_insert_ne; [done|set_solver|]. intros ->. by rewrite Hj in Heu.
+  - rewrite !lookup_insert_ne; [done|set_solver|set_solver].
+  - rewrite !lookup_insert_ne; [done|set_solver|set_solver].
+  - rewrite !lookup_insert_ne; [done|set_solver|set_solver].
+  - exists (Instr.csub c0 d). split.
+    + intros u eu Hu Heu. rewrite lookup_fmap, lookup_insert_ne by set_solver. rewrite Heu. simpl.
+      by rewrite chsubst_emap.
+    + intros c Hc. specialize (Hc i e ltac:(set_solver) Hi).
+      destruct (act_step _ _ _ Hs) as (b & Hb & Ho). destruct b; simpl in Ho; try done.
+      pose proof (act_aends_fends e (ALink c1 d0) _ Hb eq_refl) as Hsub. rewrite <-Ho in Hsub.
+      unfold Instr.csub. case_decide; [|done]. subst. exfalso. apply Hc.
+      apply fchans_of_fends with (o := (c0, bc)). set_solver.
+Qed.
+
+Lemma rend_emap q q' t e g :
+  q.2 !! t = Some e → q'.2 !! t = Some (emap g e) →
+  rend q' t = (λ o : cend, (g o.1, o.2)) <$> rend q t.
+Proof.
+  intros He He'. unfold rend. rewrite He, He', act_emap.
+  destruct (act e) as [a|]; [|done]. simpl. by destruct a.
+Qed.
