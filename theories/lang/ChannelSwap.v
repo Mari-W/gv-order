@@ -147,6 +147,13 @@ Proof.
     apply elem_of_map. exists (oswap a b o). split; [done|]. apply elem_of_map. by exists o.
 Qed.
 
+Lemma fends_eswap a b e : fends (eswap a b e) = goswap a b (fends e).
+Proof.
+  unfold goswap. induction e; simpl;
+    rewrite ?set_map_union_L, ?set_map_singleton_L, ?set_map_empty;
+    rewrite ?IHe, ?IHe1, ?IHe2, ?IHe3; done.
+Qed.
+
 Definition slswap (a b : chan) (σ : slabel) : slabel :=
   match σ with
   | SRecv c v => SRecv (oswap a b c) (eswap a b v)
