@@ -203,7 +203,10 @@ Updated after every stage and every agent result.
   F-Wait at every point the clause offers, so it fails in any world
   where some point has a partner budget ∞ and a budget above the floor.
   The clause stays as written until the author picks a restriction of
-  the incoming points.
+  the incoming points. Under delegation only ends with a finite partner
+  budget travel. `fin_ok` asks it of the incoming ends, the send clause
+  asks it of the payload (`ftravel`, `fuel_send_travel`), and spawn and
+  link stay unchanged because no proof needs it there.
 
 ## Decisions
 

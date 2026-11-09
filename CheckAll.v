@@ -227,6 +227,7 @@ Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nolink.
 Print Assumptions LRGV.lockfree.LFFuel.fupd_cap.
 Print Assumptions LRGV.lockfree.LFFuel.fhand_fin_ok.
 Print Assumptions LRGV.lockfree.LFFuel.fcap_finite.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_send_travel.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.

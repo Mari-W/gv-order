@@ -165,6 +165,11 @@ Definition ftick_ok (o : cend) (φ : gmap cend fuel) : Prop :=
 Definition fhand (fl : nat) (X : gset cend) (φ : gmap cend fuel) : Prop :=
   ∀ o m, o ∈ X → φ !! o = Some (Some m) → fl + 1 ≤ m.
 
+(** Only ends whose partner has a finite budget travel in a message.
+    Acting on an end whose partner has budget ∞ breaks F-Wait anyway. *)
+Definition ftravel (W : world) (π : gmap cend point) (X : gset cend) : Prop :=
+  ∀ o k, o ∈ X → π !! o = Some k → w_bud W (pt_dual k) ≠ None.
+
 (** A link of o1 with o2 hands the obligation of o1 to the partner of
     o2, whose budget must lie below the counter of o1. *)
 Definition flink1 (W : world) (π : gmap cend point) (φ : gmap cend fuel) (o1 o2 : cend)
@@ -184,7 +189,8 @@ Definition flink (W : world) (π : gmap cend point) (φ : gmap cend fuel) (cd : 
 Definition fin_ok (W : world) (fl : nat) (w : expr)
     (πi : gmap cend point) (φi : gmap cend fuel) : Prop :=
   dom πi = fends w ∧ dom φi = fends w ∧ fcap W πi φi ∧
-  ∀ o f, φi !! o = Some f → fle (Some fl) f.
+  (∀ o f, φi !! o = Some f → fle (Some fl) f) ∧
+  ∀ o k, πi !! o = Some k → w_bud W (pt_dual k) ≠ None.
 
 (** ** The predicates, level by level *)
 
@@ -205,6 +211,7 @@ Definition Fobl (E V : nat → fpred) (n' : nat) (W : world)
       match σ with
       | SSend o w =>
           (∀ k, π !! o = Some k → fhand (w_pay W k) (fends w) φ) ∧
+          ftravel W π (fends w) ∧
           E n' W (fupd W π φ α).1 (fupd W π φ α).2 e'
       | SRecv o w =>
           (* the floor is keyed by the carrier's point at the sender,
@@ -360,7 +367,7 @@ Proof.
   - by apply IH.
   - destruct Hs as [H1 H2]. split; [done|].
     intros k j πi φi Hk Hj. apply (H2 k j πi φi Hk). lia.
-  - destruct Hs as (H1 & H2 & H3). auto.
+  - destruct Hs as (H1 & H2 & H3 & H4). auto.
   - destruct Hs as [H1 H2]. auto.
   - destruct Hs as (H1 & H2 & H3). auto.
   - destruct Hs as [H1 H2]. auto.
@@ -415,6 +422,10 @@ Section clauses.
     tstep e (LSess (SSend o w)) e' → π !! o = Some k → fhand (w_pay W k) (fends w) φ.
   Proof. intros Hst Hk. pose proof (fuel_obl _ _ Hst) as (_ & H & _). by apply H. Qed.
 
+  (** The payload of a send has finite partner budgets. *)
+  Lemma fuel_send_travel o w e' : tstep e (LSess (SSend o w)) e' → ftravel W π (fends w).
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & _ & H & _). Qed.
+
   (** The link clause. *)
   Lemma fuel_link cd e' : tstep e (LSess (SLink cd)) e' → flink W π φ cd.
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H & _). Qed.
@@ -434,7 +445,7 @@ Section clauses.
     destruct α as [|[o w|o w|o|cd|o b|o b]|c x|w]; simpl in H |- *.
     - done.
     - by destruct (Hr o w).
-    - by destruct H as (_ & _ & H).
+    - by destruct H as (_ & _ & _ & H).
     - by destruct H as [_ H].
     - by destruct H as (_ & _ & H).
     - by destruct H as [_ H].
@@ -571,9 +582,10 @@ Qed.
     [pt_dual_dual]. *)
 Lemma fhand_fin_ok (W : world) fl π φ w :
   fcap W π φ → dom φ = dom π → fends w ⊆ dom π → fhand fl (fends w) φ →
+  ftravel W π (fends w) →
   fin_ok W fl w (fchild π φ w).1 (fchild π φ w).2.
 Proof.
-  intros Hc Hdom Hsub Hh. unfold fchild; simpl. split_and!.
+  intros Hc Hdom Hsub Hh Ht. unfold fchild; simpl. split_and!.
   - rewrite dom_mres. set_solver.
   - rewrite dom_fmap_L, dom_mres, Hdom. set_solver.
   - by apply fcap_tick, fcap_mres.
@@ -581,6 +593,7 @@ Proof.
     apply lookup_mres_Some in Hf as [Hf Hx].
     destruct f0 as [m|]; simpl; [|done].
     pose proof (Hh o m Hx Hf). lia.
+  - intros o k Hk. apply lookup_mres_Some in Hk as [Hk Hx]. by apply (Ht o k).
 Qed.
 
 (** ** Finite counters *)
