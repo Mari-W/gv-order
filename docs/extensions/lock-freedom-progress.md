@@ -188,6 +188,22 @@ Updated after every stage and every agent result.
   `term_wf` of the continuation and `tenv_bipol` of its environment, which
   `typed_live` supplies from the typing (`typed_wf_inst`). `typed_live`
   takes `tenv_pol σ Θ`, as `typed_sem_rules` does after L2.
+- 2026-11-09. Stage L4b (plan §17.3, §17.8). theories/lockfree/LFFuel.v
+  builds on lang and Worlds alone, with no Admitted and no axiom.
+  `FuelE n W π φ e` and `Vfuel` are defined by the course-of-values
+  scheme of the base relation (`flevels`). `fupd` computes the successor
+  counters from the label. `FuelE_down`, `Vfuel_down`, `lffuel_step`,
+  `lffuel_recv`, `lffuel_spawn`, `fuel_cap`, `fuel_wait`, `fupd_cap`,
+  `fhand_fin_ok`, `fcap_finite` and four lemmas at counter 0 (no action
+  on another end, no send, spawn or link of the end) are proved, and the
+  14 CheckAll entries close in a scratch file. The receive floor reads
+  `w_pay` at the sender's point, the dual of the receiver's. Receive is
+  universal over the points of the incoming ends, as §17.3 has it, and
+  this is too strong. A receiver that acts on a received end must meet
+  F-Wait at every point the clause offers, so it fails in any world
+  where some point has a partner budget ∞ and a budget above the floor.
+  The clause stays as written until the author picks a restriction of
+  the incoming points.
 
 ## Decisions
 
