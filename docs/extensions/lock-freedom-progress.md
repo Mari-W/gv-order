@@ -14,6 +14,7 @@ Updated after every stage and every agent result.
 | 3  Fundamental theorem, lf_soundness, thread_progress, examples | thread_progress and lock_free_reach_of done (lf-fuel, type-free), the rest waits on plan §14 | ThreadProgress.v (thread_progress, thread_progress_val, stopped_forever), Reach.v (lock_free_reach_of) | passes | 0, no axioms | converse of lock_free_reach_of fails untyped; typed case open |
 | 3c Coverage of the literature (plan §12) | done (cc300ce on lf-rules) | Fragment.v (lf_r2r, starve_not_lfptyped, rc_lfptyped, abp_lfsource, rg_lfsource, wgen_rank_wf), examples/ABP.v, examples/GrowRing.v | passes | 0, no axioms | none. The ring gap is closed | | | | author's acceptance criterion |
 | L1, L2 Syntactic points (plan §16.6 P1, P2, world fields of §17.8) | done (e767283..b5849ec) | lang (`Chan c b`, `EPt`, `KPay`, `KSucc`, labels on ends, `HeadNew c x`, `fends`, `let_new_at`), types (`TPt`, `konst_ty`, `tenv_ends`, `tenv_fit`), relation (`w_bud`, `w_pay`, V at `TSess` and `TPt`, `fends` in the arrow, O-New at the label's point, `tenv_hd_end`, `selects`), rules (`sem_typed_pt`, `Erel_app_pay`, `Erel_app_succ`), static (`t_pt`, `t_ch`, `created` over constants, `tenv_pol`) | lang to static pass, liveness, lockfree, examples, algorithmic broken until L3 and L4 | 0, no axioms | `wext` does not keep budgets yet (`wext_bud` apart), translations out of the build |
+| L3a Syntactic points in the live relation (plan §16.6 P3a) | done (ecd1872..0db07a9) | liveness: labels on ends, E-Fit (`tenv_fit Θ e` in `Ebody` and `LEstep`), O-New at the label's point, `tenv_fit Θ eb` in the arrow and in `Vspawn`, `tenv_hd_end`, V at `TSess` with the bit and at `TPt`, `LErel_app_pay`, `LErel_app_succ`, `lsem_typed_pt`. The twelve listed statements keep their text | liveness passes except GuardEx, GuardCex, LiveKob, LiveGuardFund, LiveGuardProc, which wait on examples (ExampleTools, Forwarder, KobForwarder); LiveGuardFund and LiveGuardProc checked against a stub of `Wpo` | 0, no axioms (stub aside) | lockfree waits on L4 |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -172,6 +173,21 @@ Updated after every stage and every agent result.
   over the point variables of `soundness_source` names no point and so
   creates no channel. Programs that create channels go through `created`
   and `soundness_created`. Sharp edge 173.
+- 2026-11-09. Stage L3a (plan §16.6 P3a). theories/liveness builds with
+  E-Fit, except five files that import broken examples (GuardEx, GuardCex,
+  LiveKob directly, LiveGuardFund and LiveGuardProc through GuardEx and
+  `Wpo` of ExampleTools). A copy of LiveGuardFund and LiveGuardProc with an
+  axiomatic `Wpo` compiles, and `Print Assumptions` closes on the ten
+  listed theorems that do not mention `Wpo`. The twelve listed statements
+  keep their text. Three things differ from §16.3. The arrow and `Vspawn`
+  ask `tenv_fit Θ eb`, not only `fends eb = tenv_ends Θ`, because
+  `LVrel_LErel` must give E-Fit and the polarity half of `tenv_fit` is no
+  consequence of the ends of the body. The bind lemmas take the fit of their
+  frame (`tenv_fit Θ2 (fill_frame f EUnit)`), the fallback of §16.5, and the
+  elimination rules of `lsem_rules` and the later judgment take
+  `term_wf` of the continuation and `tenv_bipol` of its environment, which
+  `typed_live` supplies from the typing (`typed_wf_inst`). `typed_live`
+  takes `tenv_pol σ Θ`, as `typed_sem_rules` does after L2.
 
 ## Decisions
 
