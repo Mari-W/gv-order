@@ -21,9 +21,15 @@ From LRGV Require Export types.Types.
 
 Notation prel := (point → point → Prop).
 
+(** A world also carries budgets (lock-freedom plan §17.8): [w_bud x]
+    is the refill and cap of an end at x ([None] is ∞, nobody waits on
+    its partner), and [w_pay x] the floor of an end that arrives on a
+    carrier at x. The base and live relations do not read them. *)
 Record world := World {
   w_names : gset pname;
-  w_lt : prel
+  w_lt : prel;
+  w_bud : point → option nat;
+  w_pay : point → nat
 }.
 
 (** Branch no-eq (sharp edges 159): a world has no aliases. Two points
@@ -56,6 +62,7 @@ Fixpoint ty_roots (T : ty) : gset pname :=
   | TBox _ _ C T1 => bcs_roots C ∪ ty_roots T1
   | TSess s x => sty_roots s ∪ {[pt_root x]}
   | TEx lb _ C T1 => set_map pt_root (lb_heads lb) ∪ bcs_roots C ∪ ty_roots T1
+  | TPt x => {[pt_root x]}
   end
 with sty_roots (s : sty) : gset pname :=
   match s with
@@ -202,8 +209,13 @@ Qed.
 Lemma geq_eq (E : prel) x y : (∀ x y, E x y → x = y) → geq E x y → x = y.
 Proof. intros HE. induction 1; subst; auto; congruence. Qed.
 
-Definition wgen (N : gset pname) (E L : prel) : world :=
-  World N (glt E L).
+Definition wgen_b (N : gset pname) (E L : prel)
+    (B : point → option nat) (P : point → nat) : world :=
+  World N (glt E L) B P.
+
+(** The generated world with the default budgets: every end ∞, every
+    floor 0. *)
+Abbreviation wgen N E L := (wgen_b N E L (λ _, None) (λ _, 0)).
 
 Lemma geq_supp N E x y :
   (∀ x y, E x y → eq_or_supp N x y) → geq E x y → eq_or_supp N x y.
@@ -237,11 +249,11 @@ Proof.
   - left. apply ppo_dpo.
 Qed.
 
-Lemma wgen_wf N E L :
+Lemma wgen_wf N E L B P :
   (∀ p, p ∈ N → ∃ a, p = NConst a) →
   (∀ x y, E x y → eq_or_supp N x y) →
   (∀ x y, L x y → po_or_supp N x y) →
-  world_wf (wgen N E L).
+  world_wf (wgen_b N E L B P).
 Proof.
   intros HN HE HL. split; simpl; [..|done|].
   - apply glt_trans.
@@ -267,16 +279,38 @@ Definition wext_fresh (W : world) (N : gset pname) (W' : world) : Prop :=
   (∀ x y, pt_root x ∉ N → pt_root y ∉ N →
      (w_eq W' x y → w_eq W x y) ∧ (w_lt W' x y → w_lt W x y)).
 
-(** W₁ ⊔ W₂. *)
+(** W₁ ⊔ W₂. Each component brings its budgets on its own names, the
+    left one where both know a name. *)
+Definition wjoin_bud {A} (W1 W2 : world) (f : world → point → A) (x : point) : A :=
+  if decide (pt_root x ∈ w_names W1) then f W1 x else f W2 x.
+
 Definition wjoin (W1 W2 : world) : world :=
-  wgen (w_names W1 ∪ w_names W2)
+  wgen_b (w_names W1 ∪ w_names W2)
     (λ x y, w_eq W1 x y ∨ w_eq W2 x y)
-    (λ x y, w_lt W1 x y ∨ w_lt W2 x y).
+    (λ x y, w_lt W1 x y ∨ w_lt W2 x y)
+    (wjoin_bud W1 W2 w_bud) (wjoin_bud W1 W2 w_pay).
 
 (** W|_A. *)
 Definition wrestrict (W : world) (A : gset pname) : world :=
   World (w_names W ∩ A)
-    (λ x y, w_lt W x y ∧ po_or_supp A x y).
+    (λ x y, w_lt W x y ∧ po_or_supp A x y) (w_bud W) (w_pay W).
+
+(** W′ keeps the budgets of W on the support of W (§17.8). Not yet a
+    conjunct of [wext]: see sharp edges 173. *)
+Definition wext_bud (W W' : world) : Prop :=
+  ∀ x, pt_known W x → w_bud W' x = w_bud W x ∧ w_pay W' x = w_pay W x.
+
+Lemma wext_bud_refl W : wext_bud W W.
+Proof. done. Qed.
+
+Lemma wext_bud_trans W1 W2 W3 :
+  w_names W1 ⊆ w_names W2 → wext_bud W1 W2 → wext_bud W2 W3 → wext_bud W1 W3.
+Proof.
+  intros Hn H12 H23 x Hx. destruct (H12 x Hx) as [<- <-]. apply H23. unfold pt_known in *. set_solver.
+Qed.
+
+Lemma wext_bud_join_l W1 W2 : wext_bud W1 (wjoin W1 W2).
+Proof. intros x Hx. unfold wjoin, wjoin_bud. simpl. by rewrite !decide_True. Qed.
 
 (** ** Basic facts *)
 

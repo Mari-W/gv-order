@@ -27,27 +27,33 @@ From LRGV Require Export lang.Safety relation.Worlds.
 
 (** ** Offered entries
 
-    The entry of Θ a session label selects: c!v the entry of c whose
-    type unfolds to !…, c?v the one with ?…, c◁i the one with ⊕, c▷i the
-    one with &, c! one Close entry (the
-    first, when both ends of c are Close: closing consumes only one),
-    c↔d the entries of c and d (both entries of c for a self-link). *)
+    The entry of Θ a session label selects: o!v the entry of the end o
+    whose type unfolds to !…, o?v the one with ?…, o◁i the one with ⊕,
+    o▷i the one with &, o! the Close entry of o (the first, when both
+    entries of c are Close at the same polarity: closing consumes only
+    one), o↔o' the entries of o and o'. The entry of an end o = (c, b)
+    is an entry of c whose point has polarity b (syntactic points,
+    sharp edges 173). *)
 
 Definition selects (Θ : tenv) (σ : slabel) (k : ekey) : Prop :=
   match σ with
   | SSend c _ =>
-      k.1 = c ∧ ∃ e m T s, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SSeq (SSnd m T) s
+      k.1 = c.1 ∧ ∃ e m T s, tenv_entry Θ k = Some e ∧ pt_pol e.2 = c.2 ∧
+        unfoldS e.1 = SSeq (SSnd m T) s
   | SRecv c _ =>
-      k.1 = c ∧ ∃ e m T s, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SSeq (SRcv m T) s
+      k.1 = c.1 ∧ ∃ e m T s, tenv_entry Θ k = Some e ∧ pt_pol e.2 = c.2 ∧
+        unfoldS e.1 = SSeq (SRcv m T) s
   | SClos c =>
-      k.1 = c ∧ ∃ e, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SEnd ∧
+      k.1 = c.1 ∧ ∃ e, tenv_entry Θ k = Some e ∧ pt_pol e.2 = c.2 ∧ unfoldS e.1 = SEnd ∧
         (k.2 = true →
-           ∀ e', tenv_entry Θ (c, false) = Some e' → unfoldS e'.1 ≠ SEnd)
-  | SLink cd => k.1 ∈ cd ∧ is_Some (tenv_entry Θ k)
+           ∀ e', tenv_entry Θ (c.1, false) = Some e' → pt_pol e'.2 = c.2 → unfoldS e'.1 ≠ SEnd)
+  | SLink cd => ∃ e, tenv_entry Θ k = Some e ∧ (k.1, pt_pol e.2) ∈ cd
   | SSel c _ =>
-      k.1 = c ∧ ∃ e s1 s2, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SPlus s1 s2
+      k.1 = c.1 ∧ ∃ e s1 s2, tenv_entry Θ k = Some e ∧ pt_pol e.2 = c.2 ∧
+        unfoldS e.1 = SPlus s1 s2
   | SBra c _ =>
-      k.1 = c ∧ ∃ e s1 s2, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SWith s1 s2
+      k.1 = c.1 ∧ ∃ e s1 s2, tenv_entry Θ k = Some e ∧ pt_pol e.2 = c.2 ∧
+        unfoldS e.1 = SWith s1 s2
   end.
 
 Definition offered_t (Θ : tenv) (t : expr) (k : ekey) : Prop :=

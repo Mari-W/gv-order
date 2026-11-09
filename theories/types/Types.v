@@ -1367,6 +1367,41 @@ Proof.
     destruct_or?; by destruct select (is_Some None).
 Qed.
 
+Lemma tenv_ends_dom Θ : set_map fst (tenv_ends Θ) = dom Θ.
+Proof.
+  apply set_eq. intros c. rewrite elem_of_map, elem_of_dom. split.
+  - intros (o & -> & Ho). apply elem_of_tenv_ends in Ho as (c' & eo & Hc & Ho).
+    destruct eo; simpl in Ho; [apply elem_of_singleton in Ho as ->
+      |apply elem_of_union in Ho as [->%elem_of_singleton| ->%elem_of_singleton]];
+      simpl; by eexists.
+  - intros [eo Hc]. destruct eo as [e|e1 e2].
+    + exists (c, pt_pol e.2). split; [done|]. apply elem_of_tenv_ends.
+      exists c, (One e). split; [done|]. simpl. set_solver.
+    + exists (c, pt_pol e1.2). split; [done|]. apply elem_of_tenv_ends.
+      exists c, (Both e1 e2). split; [done|]. simpl. set_solver.
+Qed.
+
+Lemma tenv_join_ends Θ Θ1 Θ2 :
+  tenv_join Θ Θ1 Θ2 → tenv_ends Θ = tenv_ends Θ1 ∪ tenv_ends Θ2.
+Proof.
+  intros H. apply set_eq. intros o. rewrite elem_of_union, !elem_of_tenv_ends. split.
+  - intros (c & eo & Hc & Ho). pose proof (H c) as Hj. rewrite Hc in Hj.
+    inversion Hj as [|eo' H1 H2|eo' H1 H2|e1 e2 H1 H2|e1 e2 H1 H2]; subst.
+    + left. eauto.
+    + right. eauto.
+    + simpl in Ho. apply elem_of_union in Ho as [Ho|Ho].
+      * left. exists c, (One e1). split; [done|]. done.
+      * right. exists c, (One e2). split; [done|]. done.
+    + simpl in Ho. apply elem_of_union in Ho as [Ho|Ho].
+      * right. exists c, (One e2). split; [done|]. done.
+      * left. exists c, (One e1). split; [done|]. done.
+  - intros [(c & eo & Hc & Ho)|(c & eo & Hc & Ho)]; pose proof (H c) as Hj; rewrite Hc in Hj.
+    + inversion Hj as [|eo' H1 H2|eo' H1 H2|e1 e2 H1 H2|e1 e2 H1 H2]; subst;
+        eexists c, _; (split; [done|]); simpl; set_solver.
+    + inversion Hj as [|eo' H1 H2|eo' H1 H2|e1 e2 H1 H2|e1 e2 H1 H2]; subst;
+        eexists c, _; (split; [done|]); simpl; set_solver.
+Qed.
+
 Lemma tenv_join_empty Θ : tenv_join Θ ∅ ∅ → Θ = ∅.
 Proof.
   intros H. apply map_empty. intros c. specialize (H c).

@@ -650,6 +650,88 @@ Proof.
     + intros Hc. unfold compose. by rewrite fchans_rename.
 Qed.
 
+(** ** Ends under renaming and substitution *)
+
+Lemma fends_rename e : ∀ r, fends (rename r e) = fends e.
+Proof.
+  induction e; intros r; simpl; auto.
+  all: try by rewrite IHe1, IHe2.
+  by rewrite IHe1, IHe2, IHe3.
+Qed.
+
+(** Substitution can only add ends... *)
+Lemma fends_subst_super e : ∀ γ, fends e ⊆ fends (subst γ e).
+Proof. induction e; intros γ; simpl; set_solver. Qed.
+
+(** ... and the ends of values substituted for occurring variables
+    all appear in the result. *)
+Lemma fends_subst_free e : ∀ y γ,
+  freevar y e → fends (γ y) ⊆ fends (subst γ e).
+Proof.
+  induction e; simpl; intros y γ Hf; try done.
+  - by subst.
+  - specialize (IHe (S y) (up γ) Hf). simpl in IHe.
+    unfold compose in IHe. rewrite fends_rename in IHe. exact IHe.
+  - destruct Hf as [Hf|Hf];
+      [specialize (IHe1 _ γ Hf)|specialize (IHe2 _ γ Hf)]; set_solver.
+  - destruct Hf as [Hf|Hf];
+      [specialize (IHe1 _ γ Hf)|specialize (IHe2 _ γ Hf)]; set_solver.
+  - destruct Hf as [Hf|Hf];
+      [specialize (IHe1 _ γ Hf)|specialize (IHe2 _ γ Hf)]; set_solver.
+  - destruct Hf as [Hf|Hf]; [specialize (IHe1 _ γ Hf); set_solver|].
+    specialize (IHe2 _ (up (up γ)) Hf). simpl in IHe2.
+    unfold compose in IHe2. rewrite !fends_rename in IHe2. set_solver.
+  - by specialize (IHe _ γ Hf).
+  - by specialize (IHe _ γ Hf).
+  - destruct Hf as [Hf|[Hf|Hf]].
+    + specialize (IHe1 _ γ Hf). set_solver.
+    + specialize (IHe2 (S y) (up γ) Hf). simpl in IHe2.
+      unfold compose in IHe2. rewrite fends_rename in IHe2. set_solver.
+    + specialize (IHe3 (S y) (up γ) Hf). simpl in IHe3.
+      unfold compose in IHe3. rewrite fends_rename in IHe3. set_solver.
+  - specialize (IHe (S y) (up γ) Hf). simpl in IHe.
+    unfold compose in IHe. rewrite fends_rename in IHe. exact IHe.
+Qed.
+
+Lemma fends_subst e : ∀ γ (D : gset cend),
+  allfv (λ x, fends (γ x) ⊆ D) e →
+  fends (subst γ e) ⊆ fends e ∪ D.
+Proof.
+  induction e; simpl; intros γ D HP;
+    [set_solver|set_solver|set_solver|set_solver|set_solver| | | | | | | | |];
+    [|destruct HP as [H1 H2];
+      specialize (IHe1 _ _ H1); specialize (IHe2 _ _ H2); set_solver ..| |set_solver|set_solver| | ].
+  - (* Lam *)
+    apply (IHe (up γ) D). eapply allfv_mono; [|done]. intros [|x]; simpl.
+    + intros _. set_solver.
+    + intros Hc. unfold compose. by rewrite fends_rename.
+  - (* LetP *)
+    destruct HP as [H1 H2].
+    specialize (IHe1 _ _ H1).
+    assert (allfv (λ x, fends (up (up γ) x) ⊆ D) e2) as H2'.
+    { eapply allfv_mono; [|done]. intros [|[|x]]; simpl.
+      - intros _. set_solver.
+      - intros _. set_solver.
+      - intros Hc. unfold compose. by rewrite !fends_rename. }
+    specialize (IHe2 _ _ H2'). set_solver.
+  - (* Case *)
+    destruct HP as (H0 & H1 & H2).
+    specialize (IHe1 _ _ H0).
+    assert (allfv (λ x, fends (up γ x) ⊆ D) e2) as H1'.
+    { eapply allfv_mono; [|exact H1]. intros [|x]; simpl.
+      - intros _. set_solver.
+      - intros Hc. unfold compose. by rewrite fends_rename. }
+    assert (allfv (λ x, fends (up γ x) ⊆ D) e3) as H2'.
+    { eapply allfv_mono; [|exact H2]. intros [|x]; simpl.
+      - intros _. set_solver.
+      - intros Hc. unfold compose. by rewrite fends_rename. }
+    specialize (IHe2 _ _ H1'). specialize (IHe3 _ _ H2'). set_solver.
+  - (* EBox *)
+    apply (IHe (up γ) D). eapply allfv_mono; [|done]. intros [|x]; simpl.
+    + intros _. set_solver.
+    + intros Hc. unfold compose. by rewrite fends_rename.
+Qed.
+
 (** ** Transposition of two channel names *)
 
 Definition cswap (a b c : chan) : chan :=
@@ -745,6 +827,18 @@ Lemma fchans_subst2_sub u v e :
   fchans (subst2 u v e) ⊆ fchans e ∪ (fchans u ∪ fchans v).
 Proof.
   apply fchans_subst. apply allfv_forall.
+  intros [|[|x]]; simpl; set_solver.
+Qed.
+
+Lemma fends_subst1_sub v e : fends (subst1 v e) ⊆ fends e ∪ fends v.
+Proof.
+  apply fends_subst. apply allfv_forall. intros [|x]; simpl; set_solver.
+Qed.
+
+Lemma fends_subst2_sub u v e :
+  fends (subst2 u v e) ⊆ fends e ∪ (fends u ∪ fends v).
+Proof.
+  apply fends_subst. apply allfv_forall.
   intros [|[|x]]; simpl; set_solver.
 Qed.
 

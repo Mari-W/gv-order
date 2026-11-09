@@ -877,7 +877,8 @@ Proof.
   intros [HW Hirr] [Hacy [Hce Hcl]] HK Ha.
   set (De := λ _ _ : point, False).
   set (Dl := λ x y, ∃ x0 y0, bcs_open 1 C (FLt x0 y0) ∧ x = ga a x0 ∧ y = ga a y0).
-  set (W' := wgen (w_names W ∪ {[NConst a]}) (λ x y, w_eq W x y ∨ De x y) (λ x y, w_lt W x y ∨ Dl x y)).
+  set (W' := wgen_b (w_names W ∪ {[NConst a]}) (λ x y, w_eq W x y ∨ De x y) (λ x y, w_lt W x y ∨ Dl x y)
+                (w_bud W) (w_pay W)).
   (* W sends Γ under the binder back to W *)
   assert (∀ x, pt_root (pt_inst (λ b, pvar (b + 1)) x) ≠ NVar 0 ∧
                (pt_root x ∈ w_names W → ga a (pt_inst (λ b, pvar (b + 1)) x) = x)) as Hup.
