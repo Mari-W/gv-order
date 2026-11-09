@@ -200,6 +200,12 @@ Updated after every stage and every agent result.
   stage 2b findings: the ω layer is not compositional, and ω cannot be read
   off a Prop derivation constructively). Design first as plan §16, then
   implementation.
+- 2026-11-09, under delegation. `wext` does not carry budgets (L2
+  deviation 1). Budgets matter only for the lock-free layer, so the
+  agreement of W1 and W2 on budgets at the cut is a hypothesis of
+  `LFP_connect` and `LFP_join` only. Prel_connect, fundamental_join and
+  pt_join keep their statements. `LFP_connect` gains this one hypothesis
+  over the form of `LPrel_connect`.
 
 ## Related work hooks
 
