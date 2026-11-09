@@ -222,6 +222,10 @@ Updated after every stage and every agent result.
   `LFP_connect` and `LFP_join` only. Prel_connect, fundamental_join and
   pt_join keep their statements. `LFP_connect` gains this one hypothesis
   over the form of `LPrel_connect`.
+- 2026-11-09, under delegation. The arrow and `Vspawn` of the live relation
+  ask `tenv_fit Θ eb` (ends and the polarity condition `tenv_bipol`), not
+  only `fends eb = tenv_ends Θ` as §16.3 had it. `LVrel_LErel` needs it for
+  E-Fit, and typing supplies `tenv_bipol`.
 
 ## Related work hooks
 
