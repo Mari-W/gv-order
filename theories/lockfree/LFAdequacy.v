@@ -325,4 +325,169 @@ Section conf.
     - intros t e He (cd & e' & Hst). destruct (act_step _ _ _ Hst) as (b & Hb & Ho).
       destruct b; simpl in Ho; try done. by eapply c_link_enabled.
   Qed.
+
+  (** A thread blocked on c holds one end of c. Holding both, its gate
+      would put the offered point below itself. *)
+  Lemma rchan_sess b c : rchan b = Some c → is_sess b.
+  Proof. intros H. unfold is_sess. by rewrite (rchan_asubjs b c H). Qed.
+
+  Lemma rchan_fchans e b c : act e = Some b → rchan b = Some c → c ∈ fchans e.
+  Proof.
+    intros Hb Hr. apply (act_asubjs_fchans e b {[c]} Hb (rchan_asubjs b c Hr)). set_solver.
+  Qed.
+
+  Lemma c_offered t e b c :
+    (ac_q a).2 !! t = Some e → act e = Some b → rchan b = Some c →
+    ∃ k ek, offered_t (ac_env a t) e k ∧ tenv_entry (ac_env a t) k = Some ek ∧ k.1 = c ∧
+      below_rest W (ac_env a t) (offered_t (ac_env a t) e) ∅.
+  Proof.
+    intros He Hb Hr.
+    assert (c ∈ dom (ac_env a t)) as Hcd by (rewrite (c_dom t e He); by eapply rchan_fchans).
+    destruct (entry_of_dom _ _ Hcd) as [x Hx].
+    pose proof (c_irr t e _ x He Hx) as Hnirr.
+    pose proof (sess_stable e b Hb (rchan_sess b c Hr)) as Hstab.
+    destruct (c_ready t e He Hnirr Hstab) as [_ [(cd & e' & Hl)|Hbr]].
+    { destruct (act_step _ _ _ Hl) as (b' & Hb' & Ho). rewrite Hb in Hb'. injection Hb' as <-.
+      destruct b; simpl in Ho, Hr; done. }
+    destruct (offered_exists W (ac_env a t) ∅ e (c_ready t e He Hnirr) Hstab
+      (λ Hv, Hnirr (val_irred e Hv))) as [k Hk].
+    destruct Hk as (σ & e1 & Hst & Hsel) eqn:Hk'.
+    destruct (selects_entry _ _ _ Hsel) as [ek Hek].
+    exists k, ek. split_and!; [done|done| |done]. by eapply offered_rchan.
+  Qed.
+
+  Lemma both_false t e b c x y :
+    (ac_q a).2 !! t = Some e → act e = Some b → rchan b = Some c →
+    ac_env a t !! c = Some (Both x y) → False.
+  Proof.
+    intros He Hb Hr Hxy.
+    destruct (c_offered t e b c He Hb Hr) as (k0 & ek0 & Ho0 & Hk0 & H0 & Hbr).
+    set (k1 := (c, negb k0.2)).
+    assert (∃ ek1, tenv_entry (ac_env a t) k1 = Some ek1) as [ek1 Hk1].
+    { unfold k1, tenv_entry. simpl. rewrite Hxy. destruct k0.2; simpl; eauto. }
+    assert (k1 ≠ k0) as Hne.
+    { unfold k1. destruct k0 as [c0 b0]. simpl. intros [=]. by destruct b0. }
+    assert (k1.1 = k0.1) as H10 by (unfold k1; simpl; by rewrite H0).
+    destruct (c_partner_of t e k0 ek0 t e k1 ek1 He Hk0 He Hk1 H10) as [Hd Hsd]; [congruence|].
+    destruct (decide (offered_t (ac_env a t) e k1)) as [Ho1|Hno1].
+    - assert (act e ≠ None) as Hsome by (by rewrite Hb).
+      assert (∀ c' d', act e ≠ Some (ALink c' d')) as Hnl.
+      { intros c' d' Hl. rewrite Hb in Hl. injection Hl as ->. by simpl in Hr. }
+      exact (offered_twice_false (ac_env a t) e k0 k1 ek0 ek1 Hsome Hnl Ho0 Ho1 Hk0 Hk1
+        (λ H, Hne (eq_sym H)) (eq_sym H10) Hsd).
+    - destruct (Hbr k0 ek0 Ho0 Hk0) as [Hb1 _]. specialize (Hb1 k1 ek1 Hk1 Hno1).
+      unfold entry_head in Hb1. rewrite Hd, pt_dual_dual in Hb1.
+      induction (Hwf ek0.2) as [z _ IH]. by apply (IH z).
+  Qed.
+
+  (** Waiting is holding the partner end. *)
+  Lemma c_waits t e b c s :
+    (ac_q a).2 !! t = Some e → act e = Some b → rchan b = Some c →
+    waits (ac_q a) t s ↔ s ≠ t ∧ ∃ es, (ac_q a).2 !! s = Some es ∧ c ∈ dom (ac_env a s).
+  Proof.
+    intros He Hb Hr. split.
+    - intros (Hst & e' & b' & S & c' & es & He' & Hb' & HS & Hc' & Hes & Hm).
+      rewrite He in He'. injection He' as <-. rewrite Hb in Hb'. injection Hb' as <-.
+      rewrite (rchan_asubjs b c Hr) in HS. injection HS as <-. apply elem_of_singleton in Hc'.
+      subst. split; [done|]. exists es. split; [done|]. by rewrite (c_dom s es Hes).
+    - intros (Hst & es & Hes & Hcs). split; [done|]. exists e, b, {[c]}, c, es.
+      split_and!; [done|done|by apply rchan_asubjs|set_solver|done|]. by rewrite <-(c_dom s es Hes).
+  Qed.
+
+  (** The rank of a blocked thread: the point of its entry. *)
+  Definition ent_pt (o : option ends) : point :=
+    match o with Some (One x) | Some (Both x _) => x.2 | None => pbot end.
+
+  Lemma c_one t e b c :
+    (ac_q a).2 !! t = Some e → act e = Some b → rchan b = Some c →
+    ∃ x, ac_env a t !! c = Some (One x).
+  Proof.
+    intros He Hb Hr.
+    assert (c ∈ dom (ac_env a t)) as Hcd by (rewrite (c_dom t e He); by eapply rchan_fchans).
+    apply elem_of_dom in Hcd as [[x|x y] Hx]; [by exists x|].
+    exfalso. by apply (both_false t e b c x y).
+  Qed.
+
+  Lemma c_rank t e b c s es b' d :
+    (ac_q a).2 !! t = Some e → act e = Some b → rchan b = Some c →
+    (ac_q a).2 !! s = Some es → act es = Some b' → rchan b' = Some d →
+    s ≠ t → c ∈ dom (ac_env a s) →
+    enabled (ac_q a) t ∨ w_lt W (ent_pt (ac_env a s !! d)) (ent_pt (ac_env a t !! c)).
+  Proof.
+    intros He Hb Hr Hes Hb' Hr' Hst Hcs.
+    destruct (c_one t e b c He Hb Hr) as [x Hx].
+    assert (∃ y, ac_env a s !! c = Some (One y)) as [y Hy].
+    { apply elem_of_dom in Hcs as [[y|y1 y2] Hy]; [by exists y|exfalso].
+      assert (tenv_entry (ac_env a s) (c, false) = Some y1) as H1 by (unfold tenv_entry; simpl; by rewrite Hy).
+      assert (tenv_entry (ac_env a s) (c, true) = Some y2) as H2 by (unfold tenv_entry; simpl; by rewrite Hy).
+      assert (tenv_entry (ac_env a t) (c, false) = Some x) as H3 by (unfold tenv_entry; simpl; by rewrite Hx).
+      destruct (c_three s s t es es e (c, false) (c, true) (c, false) y1 y2 x Hes Hes He H1 H2 H3
+        eq_refl eq_refl) as [H|[H|H]]; simplify_eq. }
+    assert (tenv_entry (ac_env a t) (c, false) = Some x) as Htx by (unfold tenv_entry; simpl; by rewrite Hx).
+    assert (tenv_entry (ac_env a s) (c, false) = Some y) as Hsy by (unfold tenv_entry; simpl; by rewrite Hy).
+    destruct (c_partner_of t e (c, false) x s es (c, false) y He Htx Hes Hsy) as [Hd Hsd];
+      [done|congruence|].
+    destruct (c_offered s es b' d Hes Hb' Hr') as (k0 & ek0 & Ho0 & Hk0 & H0 & Hbr).
+    destruct (c_one s es b' d Hes Hb' Hr') as [z Hz].
+    destruct (entry_one _ d z k0 ek0 Hz Hk0 H0) as [-> ->].
+    destruct (decide (d = c)) as [->|Hdc].
+    - left. destruct (c_offered t e b c He Hb Hr) as (kt & ekt & Hot & Hkt & Ht0 & _).
+      destruct (entry_one _ c x kt ekt Hx Hkt Ht0) as [-> ->].
+      rewrite Hy in Hz. injection Hz as <-.
+      destruct (meet_step t e s es (c, false) (c, false) x y (λ H, Hst (eq_sym H)) He Hes)
+        as (L & q' & Hst' & HtL & _); try done.
+      + intros c' d' Hl. rewrite Hb in Hl. injection Hl as ->. by simpl in Hr.
+      + intros c' d' Hl. rewrite Hb' in Hl. injection Hl as ->. by simpl in Hr'.
+      + by exists L, q'.
+    - right. rewrite Hz, Hx. simpl.
+      assert (¬ offered_t (ac_env a s) es (c, false)) as Hno.
+      { intros Ho. apply Hdc. symmetry. exact (offered_rchan _ _ _ b' d Ho Hb' Hr'). }
+      destruct (Hbr (d, false) z Ho0 Hk0) as [Hb1 _]. specialize (Hb1 (c, false) y Hsy Hno).
+      unfold entry_head in Hb1. by rewrite Hd, pt_dual_dual in Hb1.
+  Qed.
 End conf.
+
+(** ** The counter of the partner entry *)
+
+Definition holder_fuel (a : aconf) (t : nat) (c : chan) : nat :=
+  match list_find (λ se : nat * expr, se.1 ≠ t ∧ c ∈ dom (ac_env a se.1)) (map_to_list (ac_q a).2) with
+  | Some (_, (s, _)) => ac_fuel a s c
+  | None => 0
+  end.
+
+Lemma holder_fuel_spec W a t e c s es :
+  LFconf 1 W ∅ a → (ac_q a).2 !! t = Some e → c ∈ dom (ac_env a t) →
+  (ac_q a).2 !! s = Some es → s ≠ t → c ∈ dom (ac_env a s) → holder_fuel a t c = ac_fuel a s c.
+Proof.
+  intros Hc He Ht Hes Hst Hs. unfold holder_fuel.
+  destruct (list_find _ _) as [[i [s0 e0]]|] eqn:Hf.
+  - apply list_find_Some in Hf as (Hl & [Hs0t Hs0c] & _). simpl in *.
+    apply list_elem_of_lookup_2, elem_of_map_to_list in Hl.
+    by rewrite (c_uniq W a Hc t e s0 e0 s es c He Hl Hes Ht Hs0c Hs Hs0t Hst).
+  - apply list_find_None in Hf. rewrite Forall_forall in Hf.
+    exfalso. apply (Hf (s, es)); [by apply elem_of_map_to_list|]. done.
+Qed.
+
+Lemma holder_fuel_none a t c :
+  (∀ s es, (ac_q a).2 !! s = Some es → s ≠ t → c ∉ dom (ac_env a s)) → holder_fuel a t c = 0.
+Proof.
+  intros H. unfold holder_fuel. destruct (list_find _ _) as [[i [s0 e0]]|] eqn:Hf; [|done].
+  apply list_find_Some in Hf as (Hl & [Hs0t Hs0c] & _). simpl in *.
+  apply list_elem_of_lookup_2, elem_of_map_to_list in Hl. by destruct (H s0 e0 Hl Hs0t).
+Qed.
+
+Definition rchan_of (a : aconf) (t : nat) : option chan :=
+  match (ac_q a).2 !! t with
+  | Some e => match act e with Some b => rchan b | None => None end
+  | None => None
+  end.
+
+Definition partner_fuel (a : aconf) (t : nat) : nat :=
+  match rchan_of a t with Some c => holder_fuel a t c | None => 0 end.
+
+Definition rank_pt (a : aconf) (t : nat) : point :=
+  match rchan_of a t with Some c => ent_pt (ac_env a t !! c) | None => pbot end.
+
+Lemma rchan_of_eq a t e b c :
+  (ac_q a).2 !! t = Some e → act e = Some b → rchan b = Some c → rchan_of a t = Some c.
+Proof. intros He Hb Hr. unfold rchan_of. by rewrite He, Hb. Qed.
