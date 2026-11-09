@@ -277,7 +277,7 @@ Proof. intros Hk. specialize (Hk (pt_name x)). unfold prank, pt_shift. simpl. ni
 Fixpoint occ (x : nat) (e : expr) : bool :=
   match e with
   | Var y => Nat.eqb x y
-  | EUnit | Konst _ | Chan _ => false
+  | EUnit | Konst _ | Chan _ _ | EPt _ => false
   | Lam e | EBox e => occ (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => occ x e1 || occ x e2
   | LetP e1 e2 => occ x e1 || occ (S (S x)) e2
@@ -388,6 +388,13 @@ Section rules.
 
   Lemma tv_unit Φ Ψ Δ F : allunl Δ = true → typed W Φ Ψ ∅ Δ F EUnit TUnit.
   Proof. intros H. eapply t_weak; [by apply nones_wk|]. apply t_unit, lenv_empty_nones. Qed.
+
+  (** A point literal (E-Pt). *)
+  Lemma tv_pt Φ Ψ Δ F x :
+    allunl Δ = true → pt_ground x → skn W Ψ x → typed W Φ Ψ ∅ Δ F (EPt x) (TPt x).
+  Proof.
+    intros H Hg Hk. eapply t_weak; [by apply nones_wk|]. apply t_pt; [apply lenv_empty_nones|done|done].
+  Qed.
 
   Lemma tv_app Φ Ψ Δ F e1 e2 ub lb T U :
     sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
@@ -558,6 +565,7 @@ Ltac tstep :=
   match goal with
   | |- typed _ _ _ _ _ _ (Var _) _ => apply tv_var; [assumption|done|reflexivity]
   | |- typed _ _ _ _ _ _ EUnit _ => apply tv_unit; [assumption|reflexivity]
+  | |- typed _ _ _ _ _ _ (EPt _) _ => apply tv_pt; [assumption|reflexivity|eexists; reflexivity|]
   | |- typed _ _ _ _ _ _ (LetU _ _) _ => apply tv_letu; [assumption|reflexivity| |]
   | |- typed _ _ _ _ _ _ (LetP _ _) _ => eapply tv_letp; [assumption|reflexivity| |]
   | |- typed _ _ _ _ _ _ (Pair _ _) _ => eapply tv_pair; [assumption|reflexivity| |]
@@ -743,7 +751,7 @@ Proof.
   assert (fhyps_pinst pvar Φ = Φ) as E.
   { unfold fhyps_pinst. rewrite <-(map_fmap_id Φ) at 2. apply map_fmap_ext.
     intros φ [u|] _; simpl; [by rewrite pt_inst_pvar|done]. }
-  rewrite E in H. apply H. intros C xs Hin. by apply elem_of_nil in Hin.
+  rewrite E in H. apply H; [|apply tenv_pol_pvar]. intros C xs Hin. by apply elem_of_nil in Hin.
 Qed.
 
 (** The process of such a program is typed by P-Term in the world
@@ -758,20 +766,37 @@ Proof.
   exists W1, σ. split; [done|]. apply ptyped_closed; [by apply prim_pinst|].
   pose proof (typed_pinst W1 ∅ Ψ ∅ [] (∅, None) t T HS (styped_typed W1 _ _ _ _ _ _ Ht) σ []) as H.
   rewrite tenv_pinst_empty in H. unfold fhyps_pinst, sf_pinst in H. cbn in H.
-  rewrite fmap_empty, set_map_empty in H. apply H.
+  rewrite fmap_empty, set_map_empty in H. apply H; [|apply tenv_pol_empty].
   apply (hyps_hold_mono (w_eq W1) _ (w_lt W1) _ (pt_known W1)); [| | |exact Hh].
   - intros ? ? ?. by apply se_w.
   - intros ? ? ?. by apply sl_w.
   - intros ? ?. by left.
 Qed.
 
-(** A top-level channel at the point variable k is known. *)
-Ltac skn_top :=
-  eapply skn_hyp; cbn; repeat (first [left; reflexivity|right]).
+(** A constant that neither the empty world nor the hypotheses know,
+    for [created_snoc]. *)
+Lemma not_skn_Wpo Ψ a :
+  NConst a ∉ (Ψ ≫= (λ g, pt_root <$> g.2)) → ¬ skn (Wpo []) Ψ (pconst a).
+Proof.
+  intros H [Hk|(C & xs & y & Hin & Hy & E)].
+  - unfold pt_known in Hk. cbn in Hk. set_solver.
+  - apply H. apply list_elem_of_bind. exists (C, xs). split; [|done].
+    apply list_elem_of_fmap. exists y. split; [by rewrite <-E|done].
+Qed.
 
-(** new@x at a top-level point variable, in a strict world HWs. *)
+Ltac fresh_const := apply not_skn_Wpo; cbn; set_solver.
+
+(** A top-level channel at the constant a (or the point variable k)
+    is known. *)
+Ltac skn_top :=
+  first [eapply skn_hyp_const|eapply skn_hyp]; cbn; repeat (first [left; reflexivity|right]).
+
+(** A literal over a constant is ground. *)
+Ltac ground := eexists; reflexivity.
+
+(** new@x at a top-level constant, in a strict world HWs. *)
 Ltac new_top HWs S x :=
-  apply (t_new_at _ _ _ _ _ _ _ _ S x HWs); [skn_top|].
+  apply (t_new_at _ _ _ _ _ _ _ _ S x HWs); [ground|skn_top|].
 
 Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option futrest)).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
