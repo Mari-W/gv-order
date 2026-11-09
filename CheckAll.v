@@ -77,6 +77,7 @@ Require LRGV.lockfree.Criterion.
 Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
 Require LRGV.lockfree.LFAdequacy.
+Require LRGV.lockfree.LFFuel.
 Require LRGV.lockfree.LFRelation.
 Require LRGV.lockfree.LocalProgress.
 Require LRGV.lockfree.Reach.
@@ -212,6 +213,20 @@ Print Assumptions LRGV.lockfree.LFRelation.LFPrel_fuel.
 Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy.
 Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy_ex.
 Print Assumptions LRGV.lockfree.LFAdequacy.lf_thread_progress.
+Print Assumptions LRGV.lockfree.LFFuel.FuelE_down.
+Print Assumptions LRGV.lockfree.LFFuel.Vfuel_down.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_cap.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_wait.
+Print Assumptions LRGV.lockfree.LFFuel.lffuel_step.
+Print Assumptions LRGV.lockfree.LFFuel.lffuel_recv.
+Print Assumptions LRGV.lockfree.LFFuel.lffuel_spawn.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_act.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nosend.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nospawn.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nolink.
+Print Assumptions LRGV.lockfree.LFFuel.fupd_cap.
+Print Assumptions LRGV.lockfree.LFFuel.fhand_fin_ok.
+Print Assumptions LRGV.lockfree.LFFuel.fcap_finite.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.

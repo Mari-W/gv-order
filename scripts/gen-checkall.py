@@ -62,7 +62,14 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/Fragment.v', 'rc_lfsource'), ('lockfree/Fragment.v', 'kob_cworld_not_wf'),
         ('lockfree/LFRelation.v', 'LFPrel_down'), ('lockfree/LFRelation.v', 'LFPrel_fuel'),
         ('lockfree/LFAdequacy.v', 'lf_adequacy'), ('lockfree/LFAdequacy.v', 'lf_adequacy_ex'),
-        ('lockfree/LFAdequacy.v', 'lf_thread_progress')]
+        ('lockfree/LFAdequacy.v', 'lf_thread_progress'),
+        ('lockfree/LFFuel.v', 'FuelE_down'), ('lockfree/LFFuel.v', 'Vfuel_down'),
+        ('lockfree/LFFuel.v', 'fuel_cap'), ('lockfree/LFFuel.v', 'fuel_wait'),
+        ('lockfree/LFFuel.v', 'lffuel_step'), ('lockfree/LFFuel.v', 'lffuel_recv'),
+        ('lockfree/LFFuel.v', 'lffuel_spawn'), ('lockfree/LFFuel.v', 'fuel_zero_act'),
+        ('lockfree/LFFuel.v', 'fuel_zero_nosend'), ('lockfree/LFFuel.v', 'fuel_zero_nospawn'),
+        ('lockfree/LFFuel.v', 'fuel_zero_nolink'), ('lockfree/LFFuel.v', 'fupd_cap'),
+        ('lockfree/LFFuel.v', 'fhand_fin_ok'), ('lockfree/LFFuel.v', 'fcap_finite')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
