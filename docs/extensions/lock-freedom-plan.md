@@ -1703,3 +1703,37 @@ LocalProgress.v as adapted in §16. LFRelation.v is deleted. `snd_next`,
 checks the peer's budget. LFAdequacy.v keeps the instantiation of the
 criterion (`holder_one`, `holder_exists`, `sync_partner`, `nonpart_terms`,
 `fuel_pos`, `c_waits_holder`, `rank_pt_eq`), moved to π_k and φ_k.
+
+### 17.8  Budgets in the world (author, 2026-11-09)
+
+The author approved §17 with one change. The budgets move from a shared
+parameter B into the world, so that each component brings its own, as it
+brings its own order facts. One shared B would be a global object.
+
+```
+Record world := World {
+  w_names : gset pname;
+  w_lt    : prel;
+  w_bud   : point → option nat;   (* refill and cap; None is ∞, nobody waits *)
+  w_pay   : point → nat }.        (* floor of an end arriving on a carrier at this point *)
+```
+
+`b_val` is dropped if the fragment keeps it at 0 and no example needs it.
+Otherwise it becomes a third field. `wext` keeps budgets on the support of
+the smaller world. `wjoin W1 W2` takes each component's budgets on its own
+root names, and the components agree at the points of the cut, a condition
+of the kind `strict (wjoin W1 W2)` already is. `FuelE n W π φ e` reads the
+budgets from W. The judgment and the composition lemmas lose B.
+
+```
+Definition LFP W Σ T p : Prop :=
+  (∀ n, LPrel n W Σ T p) ∧ ∃ π φ, ∀ n, LFsoup n W Σ T π φ p.
+Theorem LFP_connect … : (the hypotheses of LPrel_connect, with LPrel replaced by LFP W1, LFP W2) →
+  LFP (wjoin W1 W2) (Σ1 ∪ Σ2) T (C1 ∪ C2 ∪ C0, E1 ⊎ E2).
+Theorem lf_adequacy W T p : world_wf W → well_founded (w_lt W) → LFP W ∅ T p → lock_free p.
+```
+
+The world record changes form, an approved statement (item 3 of 17.4 is
+superseded). Every lemma about worlds that builds a world (`wext_cc`,
+`wjoin`, `cworld`, `Wpo`, `wgen`, BranchWorlds) gains the two fields. The
+base and live relations ignore them. Stage L2 adds the fields.
