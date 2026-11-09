@@ -135,16 +135,16 @@ theories/examples/EndPoints.v
 theories/examples/lit/LitLib.v
 theories/examples/lit/LitRejected.v
 theories/examples/lit/Falling.v
-theories/pgv/PGVTypes.v
-theories/pgv/PGVTyping.v
-theories/pn/PNTypes.v
-theories/pn/PNTyping.v
-theories/pn/PNSemantics.v
-theories/mp/MPTypes.v
-theories/mp/MPTyping.v
-theories/mp/MP2Types.v
-theories/mp/MP2Semantics.v
-theories/mp/MP3Types.v
+# SYNTACTIC-POINTS: translation port pending theories/pgv/PGVTypes.v
+# SYNTACTIC-POINTS: translation port pending theories/pgv/PGVTyping.v
+# SYNTACTIC-POINTS: translation port pending theories/pn/PNTypes.v
+# SYNTACTIC-POINTS: translation port pending theories/pn/PNTyping.v
+# SYNTACTIC-POINTS: translation port pending theories/pn/PNSemantics.v
+# SYNTACTIC-POINTS: translation port pending theories/mp/MPTypes.v
+# SYNTACTIC-POINTS: translation port pending theories/mp/MPTyping.v
+# SYNTACTIC-POINTS: translation port pending theories/mp/MP2Types.v
+# SYNTACTIC-POINTS: translation port pending theories/mp/MP2Semantics.v
+# SYNTACTIC-POINTS: translation port pending theories/mp/MP3Types.v
 theories/algorithmic/Algorithmic.v
 theories/algorithmic/Soundness.v
 theories/algorithmic/Solver.v

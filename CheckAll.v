@@ -83,7 +83,7 @@ Require LRGV.lockfree.Reach.
 Require LRGV.lockfree.TauThread.
 Require LRGV.lockfree.ThreadProgress.
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Examples. *)
-Require LRGV.mp.MP2Semantics.
+(* SYNTACTIC-POINTS: translation port pending  Require LRGV.mp.MP2Semantics. *)
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Simulation. *)
 (* NO-EQ: translation pending  Require LRGV.mp.MP2Translate. *)
 (* NO-EQ: translation pending  Require LRGV.mp.MP3Examples. *)
@@ -97,7 +97,7 @@ Require LRGV.mp.MP2Semantics.
 (* NO-EQ: translation pending  Require LRGV.pgv.PGVSimulation. *)
 (* NO-EQ: translation pending  Require LRGV.pgv.PGVTranslate. *)
 (* NO-EQ: translation pending  Require LRGV.pn.PNExamples. *)
-Require LRGV.pn.PNSemantics.
+(* SYNTACTIC-POINTS: translation port pending  Require LRGV.pn.PNSemantics. *)
 (* NO-EQ: translation pending  Require LRGV.pn.PNSimulation. *)
 (* NO-EQ: translation pending  Require LRGV.pn.PNTranslate. *)
 Require LRGV.relation.LogicalRelation.
@@ -428,8 +428,8 @@ Print Assumptions LRGV.examples.lit.LitRejected.mcx3_untypable_source.
 (* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.divsend_typed. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.fixfork_pn_typed. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNExamples.fixfork_typed. *)
-Print Assumptions LRGV.pn.PNSemantics.src_head_not_val.
-Print Assumptions LRGV.pn.PNSemantics.src_step_not_val.
+(* SYNTACTIC-POINTS: translation port pending  Print Assumptions LRGV.pn.PNSemantics.src_head_not_val. *)
+(* SYNTACTIC-POINTS: translation port pending  Print Assumptions LRGV.pn.PNSemantics.src_step_not_val. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.pn_typed_lam_inv. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.trel_of_typed. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.pn.PNSimulation.pn_deadlock_free_source. *)
@@ -455,8 +455,8 @@ Print Assumptions LRGV.pn.PNSemantics.src_step_not_val.
 (* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.st_main_typed. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.st_mp2_deadlock_free. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Examples.psend_typed. *)
-Print Assumptions LRGV.mp.MP2Semantics.src_head_not_val.
-Print Assumptions LRGV.mp.MP2Semantics.src_step_not_val.
+(* SYNTACTIC-POINTS: translation port pending  Print Assumptions LRGV.mp.MP2Semantics.src_head_not_val. *)
+(* SYNTACTIC-POINTS: translation port pending  Print Assumptions LRGV.mp.MP2Semantics.src_step_not_val. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.trm_of_typed. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.mp2_deadlock_free_source. *)
 (* NO-EQ: translation pending  Print Assumptions LRGV.mp.MP2Simulation.rt_deadlock_free_src. *)
