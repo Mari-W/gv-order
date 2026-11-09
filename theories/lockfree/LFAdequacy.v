@@ -94,6 +94,7 @@ Proof.
 Qed.
 
 Section conf.
+  #[local] Set Default Proof Using "All".
   Context (W : world) (HW : world_wf W) (Hwf : well_founded (w_lt W)).
   Context (a : aconf) (Hc : LFconf 1 W ∅ a).
 
@@ -455,7 +456,7 @@ Definition holder_fuel (a : aconf) (t : nat) (c : chan) : nat :=
   | None => 0
   end.
 
-Lemma holder_fuel_spec W a t e c s es :
+Lemma holder_fuel_spec W (HW : world_wf W) (Hwf : well_founded (w_lt W)) a t e c s es :
   LFconf 1 W ∅ a → (ac_q a).2 !! t = Some e → c ∈ dom (ac_env a t) →
   (ac_q a).2 !! s = Some es → s ≠ t → c ∈ dom (ac_env a s) → holder_fuel a t c = ac_fuel a s c.
 Proof.
@@ -463,7 +464,7 @@ Proof.
   destruct (list_find _ _) as [[i [s0 e0]]|] eqn:Hf.
   - apply list_find_Some in Hf as (Hl & [Hs0t Hs0c] & _). simpl in *.
     apply list_elem_of_lookup_2, elem_of_map_to_list in Hl.
-    by rewrite (c_uniq W a Hc t e s0 e0 s es c He Hl Hes Ht Hs0c Hs Hs0t Hst).
+    by rewrite (c_uniq W HW Hwf a Hc t e s0 e0 s es c He Hl Hes Ht Hs0c Hs Hs0t Hst).
   - apply list_find_None in Hf. rewrite Forall_forall in Hf.
     exfalso. apply (Hf (s, es)); [by apply elem_of_map_to_list|]. done.
 Qed.
@@ -668,3 +669,99 @@ Section cases.
       + intros u Hu. by rewrite decide_False.
   Qed.
 End cases.
+
+(** ** Domains under the operations of an update *)
+
+Lemma dom_step_entry f c (Θ : tenv) x : x ∈ dom (step_entry f c Θ) ↔ x ∈ dom Θ.
+Proof.
+  unfold step_entry. destruct (Θ !! c) as [[]|] eqn:Hc; try done.
+  rewrite dom_insert_L. apply elem_of_dom_2 in Hc. set_solver.
+Qed.
+
+Lemma lookup_tenv_minus (Θ Θ1 : tenv) x :
+  tenv_minus Θ Θ1 !! x = Θ !! x ≫= λ o, match Θ1 !! x with None => Some o | Some o1 => ends_minus o o1 end.
+Proof. unfold tenv_minus. by rewrite map_lookup_imap. Qed.
+
+Lemma dom_tenv_minus_keep (Θ Θ1 : tenv) x : x ∉ dom Θ1 → (x ∈ dom (tenv_minus Θ Θ1) ↔ x ∈ dom Θ).
+Proof.
+  intros Hx. apply not_elem_of_dom in Hx. rewrite !elem_of_dom, lookup_tenv_minus, Hx.
+  destruct (Θ !! x); simpl; split; intros [? ?]; eauto; discriminate.
+Qed.
+
+Lemma dom_tenv_minus_sub (Θ Θ1 : tenv) x : x ∈ dom (tenv_minus Θ Θ1) → x ∈ dom Θ.
+Proof.
+  rewrite !elem_of_dom, lookup_tenv_minus. destruct (Θ !! x); simpl; [eauto|]. by intros [? ?].
+Qed.
+
+Lemma dom_tenv_minus_one (Θ Θ1 : tenv) x y :
+  Θ !! x = Some (One y) → x ∈ dom Θ1 → x ∉ dom (tenv_minus Θ Θ1).
+Proof.
+  intros Hx Hx1. apply elem_of_dom in Hx1 as [o1 Ho1].
+  rewrite not_elem_of_dom, lookup_tenv_minus, Hx, Ho1. simpl. done.
+Qed.
+
+Lemma dom_tenv_union (Θ Θ1 : tenv) x : x ∈ dom (tenv_union Θ Θ1) ↔ x ∈ dom Θ ∨ x ∈ dom Θ1.
+Proof.
+  unfold tenv_union. rewrite !elem_of_dom, lookup_union_with.
+  destruct (Θ !! x), (Θ1 !! x); simpl; split; try (intros [[? ?]|[? ?]]); try intros [? ?];
+    try discriminate; eauto.
+Qed.
+
+Lemma lookup_tenv_rename_ne r o (Θ : tenv) x : x ≠ r → x ≠ o → tenv_rename r o Θ !! x = Θ !! x.
+Proof.
+  intros Hr Ho. unfold tenv_rename. destruct (Θ !! r) as [y|] eqn:Hy; [|done].
+  unfold tenv_union. rewrite lookup_union_with, lookup_delete_ne, lookup_singleton_ne by done.
+  by destruct (Θ !! x).
+Qed.
+
+Lemma dom_tenv_rename_o r o (Θ : tenv) : o ∈ dom (tenv_rename r o Θ) → r ∈ dom Θ ∨ o ∈ dom Θ.
+Proof.
+  unfold tenv_rename. destruct (Θ !! r) as [y|] eqn:Hy; [|by right].
+  left. by apply elem_of_dom_2 in Hy.
+Qed.
+
+Lemma dom_tenv_rename_ne r o (Θ : tenv) x : x ≠ r → x ≠ o → (x ∈ dom (tenv_rename r o Θ) ↔ x ∈ dom Θ).
+Proof. intros Hr Ho. by rewrite !elem_of_dom, lookup_tenv_rename_ne. Qed.
+
+Lemma dom_tenv_rename_sub r o (Θ : tenv) x : x ∈ dom (tenv_rename r o Θ) → x = o ∨ x ∈ dom Θ.
+Proof.
+  destruct (decide (x = o)) as [->|Ho]; [by left|]. intros H. right.
+  destruct (decide (x = r)) as [->|Hr].
+  - unfold tenv_rename in H. destruct (Θ !! r) as [y|] eqn:Hy; [|exact H].
+    by apply elem_of_dom_2 in Hy.
+  - by rewrite dom_tenv_rename_ne in H.
+Qed.
+
+(** A counter at 0 forces an action on its channel. *)
+Lemma fuel_pos W (HW : world_wf W) (Hwf : well_founded (w_lt W)) a s es b c :
+  LFconf 1 W ∅ a → (ac_q a).2 !! s = Some es → c ∈ dom (ac_env a s) → act es = Some b →
+  (is_admin b ∨ ∃ d, rchan b = Some d ∧ d ≠ c) → 0 < ac_fuel a s c.
+Proof.
+  intros Hc Hes Hcs Hb Hor. destruct (decide (ac_fuel a s c = 0)) as [H0|H0]; [|lia].
+  destruct (c_thread W HW Hwf a Hc s es Hes) as (_ & _ & _ & Hf).
+  destruct (Hf c Hcs H0) as (b' & S & Hb' & Hna & HS & HcS). rewrite Hb in Hb'. injection Hb' as <-.
+  destruct Hor as [Had|(d & Hr & Hd)]; [done|].
+  rewrite (rchan_asubjs b d Hr) in HS. injection HS as <-. set_solver.
+Qed.
+
+Lemma holder_fuel_lt a t c X :
+  0 < X → (∀ u eu, (ac_q a).2 !! u = Some eu → u ≠ t → c ∈ dom (ac_env a u) → ac_fuel a u c < X) →
+  holder_fuel a t c < X.
+Proof.
+  intros HX H. unfold holder_fuel. destruct (list_find _ _) as [[i [s0 e0]]|] eqn:Hf; [|done].
+  apply list_find_Some in Hf as (Hl & [Hs0t Hs0c] & _). simpl in *.
+  apply list_elem_of_lookup_2, elem_of_map_to_list in Hl. by apply (H s0 e0).
+Qed.
+
+Lemma c_waits_holder W (HW : world_wf W) (Hwf : well_founded (w_lt W)) a t e b c s es :
+  LFconf 1 W ∅ a → (ac_q a).2 !! t = Some e → act e = Some b → rchan b = Some c →
+  (ac_q a).2 !! s = Some es → s ≠ t → c ∈ dom (ac_env a s) →
+  ∀ u, waits (ac_q a) t u ↔ u = s.
+Proof.
+  intros Hc He Hb Hr Hes Hst Hcs u. rewrite (c_waits W HW Hwf a Hc t e b c u He Hb Hr).
+  assert (c ∈ dom (ac_env a t)) as Hct.
+  { rewrite (c_dom W HW Hwf a Hc t e He). by eapply (rchan_fchans W HW Hwf a Hc). }
+  split.
+  - intros (Hut & eu & Heu & Hcu). by apply (c_uniq W HW Hwf a Hc t e u eu s es c).
+  - intros ->. eauto.
+Qed.
