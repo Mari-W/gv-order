@@ -1068,4 +1068,253 @@ Section run.
     rewrite (holder_fuel_spec W HW Hwf _ t e c s es Hc He Hct Hes Hst Hcs).
     by apply holder_fuel_lt.
   Qed.
+
+  Ltac holds_of Hc Heu Hbu Hru :=
+    rewrite (c_dom _ HW Hwf _ Hc _ _ Heu); exact (rchan_fchans _ HW Hwf _ Hc _ _ _ Hbu Hru).
+
+  (** The fuel clause of the criterion. *)
+  Lemma run_fuel k t : npend (r k) t → t ∉ l k →
+    fu (S k) t < fu k t ∨
+    (fu (S k) t = fu k t ∧ (∀ s, waits (r (S k)) t s ↔ waits (r k) t s) ∧
+     ∀ s, waits (r k) t s → s ∈ l k → admin_at (r k) s).
+  Proof.
+    intros Hp HtL. destruct (npend_arun k t Hp) as (e & b & c & He & Hb & Hr & Hna).
+    pose proof (arun_conf k) as Hc.
+    destruct (c_one W HW Hwf _ Hc t e b c He Hb Hr) as [x Hx].
+    destruct (holder_exists W HW Hwf _ t e x c Hc He Hx) as (s & es & Hes & Hst & Hcs).
+    destruct (holder_one W HW Hwf _ t e x c s es Hc He Hx Hes Hst Hcs) as [y Hy].
+    assert (c ∈ dom (ac_env (arun k) t)) as Hct by (holds_of Hc He Hb Hr).
+    assert (c ∈ (ac_q (arun k)).1) as HcC.
+    { apply (c_closed W HW Hwf _ Hc t e He). by eapply (rchan_fchans W HW Hwf _ Hc). }
+    assert (∀ u eu, (ac_q (arun k)).2 !! u = Some eu → u ≠ t → c ∈ dom (ac_env (arun k) u) → u = s)
+      as Huniq.
+    { intros u eu Heu Hut Hcu. exact (c_uniq W HW Hwf _ Hc t e u eu s es c He Heu Hes Hct Hcu Hcs Hut Hst). }
+    destruct (Hmax k) as [Hst0|(_ & Heq & Hl)].
+    2:{ right. unfold fu. rewrite arun_stuck by done. split_and!; [done|by rewrite Heq|].
+        intros u _ Hu. rewrite Hl in Hu. set_solver. }
+    pose proof (arun_conf (S k)) as Hc'.
+    rewrite <-(arun_q k) in Hst0.
+    pose proof (aupd_cases ω N (arun k) (l k) (r (S k)) Hst0) as Hcases.
+    change (aupd ω N (arun k) (l k) (r (S k))) with (arun (S k)) in Hcases.
+    pose proof (arun_q (S k)) as Hq'.
+    assert (∀ u, admin_at (ac_q (arun k)) u → admin_at (r k) u) as Hadm by (intros u; by rewrite arun_q).
+    destruct Hcases as
+      [(i & ei & ei' & HL' & Hi & Hbi & _ & Hq & Hkeep)
+      |[(i & ei & cn & ei' & HL' & Hi & Hbi & _ & Hcn & Hq & Hkeep & Henv & Hfl)
+      |[(i & j & ei & v & ei' & HL' & Hi & Hbi & _ & Hj & Hq & Hkeep & Henvi & Henvj & Hfi & Hfj)
+      |[(i & ei & ro & oo & ei' & HL' & Hi & Hbi & _ & HroC & Hq & Henvi & Hren & Hfl)
+      |[(s1 & t1 & c1 & v & es1 & es1' & et1 & et1' & Hne & HL' & Hs1 & Ht1 & Hbs1 & Hbt1 & _ & _ & Hq
+          & Hkeep & Henvs & Henvt & Hfs & Hft)
+      |[(s1 & t1 & c1 & es1 & es1' & et1 & et1' & Hne & HL' & Hs1 & Ht1 & Hbs1 & Hbt1 & _ & _ & _ & Hq
+          & Hkeep & Henvs & Henvt & Hfs & Hft)
+       |(s1 & t1 & c1 & b1 & es1 & es1' & et1 & et1' & Hne & HL' & Hs1 & Ht1 & Hbs1 & Hbt1 & _ & _ & Hq
+          & Hkeep & Henvs & Henvt & Hfs & Hft)
+      ]]]]]]; rewrite HL' in HtL.
+    - (* β *)
+      assert ((ac_q (arun (S k))).2 !! t = Some e) as He'.
+      { rewrite Hq', Hq. simpl. rewrite lookup_insert_ne; set_solver. }
+      pose proof (rchan_of_eq _ t e b c He' Hb Hr) as Hrt.
+      right. apply (fuel_eq_case k t e b c s es He Hb Hr Hes Hst Hcs Hrt).
+      + rewrite Hq', Hq. simpl. destruct (decide (s = i)) as [->|Hsi].
+        * rewrite lookup_insert_eq. eauto.
+        * rewrite lookup_insert_ne by done. eauto.
+      + by destruct (Hkeep s) as [-> _].
+      + by destruct (Hkeep s) as [_ ->].
+      + intros Hs. rewrite HL' in Hs. apply elem_of_singleton in Hs. subst. apply Hadm.
+        by exists ei, ABeta.
+    - (* new *)
+      assert ((ac_q (arun (S k))).2 !! t = Some e) as He'.
+      { rewrite Hq', Hq. simpl. rewrite lookup_insert_ne; set_solver. }
+      assert (c ≠ cn) as Hccn by (intros ->; done).
+      pose proof (rchan_of_eq _ t e b c He' Hb Hr) as Hrt.
+      right. apply (fuel_eq_case k t e b c s es He Hb Hr Hes Hst Hcs Hrt).
+      + rewrite Hq', Hq. simpl. destruct (decide (s = i)) as [->|Hsi].
+        * rewrite lookup_insert_eq. eauto.
+        * rewrite lookup_insert_ne by done. eauto.
+      + destruct (decide (s = i)) as [->|Hsi]; [rewrite Henv, dom_insert_L; set_solver|].
+        by destruct (Hkeep s Hsi) as [-> _].
+      + destruct (decide (s = i)) as [->|Hsi]; [rewrite Hfl; by rewrite decide_False|].
+        by destruct (Hkeep s Hsi) as [_ ->].
+      + intros Hs. rewrite HL' in Hs. apply elem_of_singleton in Hs. subst. apply Hadm.
+        by exists ei, ANew.
+    - (* spawn *)
+      assert (t ≠ j) by (intros ->; congruence).
+      assert ((ac_q (arun (S k))).2 !! t = Some e) as He'.
+      { rewrite Hq', Hq. simpl. rewrite !lookup_insert_ne; set_solver. }
+      pose proof (rchan_of_eq _ t e b c He' Hb Hr) as Hrt.
+      destruct (decide (s = i)) as [->|Hsi].
+      + destruct (decide (c ∈ dom (pl_give (or_pick ω (ac_env (arun k) i) ei)))) as [Hg|Hg].
+        * left. pose proof (fuel_pos W HW Hwf _ i es (ASpawn v) c Hc Hes Hcs ltac:(congruence) (or_introl I)) as Hpos.
+          apply (fuel_lt_case k t e b c i es c He Hb Hr Hes Hst Hcs Hrt Hpos).
+          intros u eu Heu Hut Hcu.
+          destruct (decide (u = j)) as [->|Huj]; [rewrite Hfj; lia|].
+          destruct (decide (u = i)) as [->|Hui].
+          { exfalso. rewrite Henvi in Hcu. by apply (dom_tenv_minus_one _ _ c y Hy Hg). }
+          exfalso. destruct (Hkeep u Hui Huj) as [Henvu _]. rewrite Henvu in Hcu.
+          rewrite Hq', Hq in Heu. simpl in Heu. rewrite !lookup_insert_ne in Heu by done.
+          by apply Hui, (Huniq u eu).
+        * right. apply (fuel_eq_case k t e b c i es He Hb Hr Hes Hst Hcs Hrt).
+          { rewrite Hq', Hq. simpl. rewrite lookup_insert_ne by congruence. rewrite lookup_insert_eq. eauto. }
+          { rewrite Henvi. by rewrite dom_tenv_minus_keep. }
+          { by rewrite Hfi. }
+          { intros _. apply Hadm. by exists ei, (ASpawn v). }
+      + assert (s ≠ j) by (intros ->; congruence).
+        right. apply (fuel_eq_case k t e b c s es He Hb Hr Hes Hst Hcs Hrt).
+        * rewrite Hq', Hq. simpl. rewrite !lookup_insert_ne by done. eauto.
+        * by destruct (Hkeep s Hsi H0) as [-> _].
+        * by destruct (Hkeep s Hsi H0) as [_ ->].
+        * intros Hs. rewrite HL' in Hs. set_solver.
+    - (* link *)
+      assert (t ≠ i) as Hti by set_solver.
+      assert ((ac_q (arun (S k))).2 !! t = Some (chsubst ro oo e)) as He'.
+      { rewrite Hq', Hq. simpl. rewrite lookup_fmap, lookup_insert_ne by done. by rewrite He. }
+      assert (act (chsubst ro oo e) = Some (amap (csub ro oo) b)) as Hb' by (by rewrite act_chsubst, Hb).
+      pose proof (rchan_of_eq _ t _ _ _ He' Hb' (rchan_amap (csub ro oo) b c Hr)) as Hrt.
+      assert (ro ∈ dom (ac_env (arun k) i) ∧ oo ∈ dom (ac_env (arun k) i)) as [Hroi Hooi].
+      { rewrite (c_dom W HW Hwf _ Hc i ei Hi).
+        destruct Hbi as [Hbi|Hbi]; pose proof (act_asubjs_fchans ei _ _ Hbi eq_refl); set_solver. }
+      assert (is_admin (if bool_decide True then ALink ro oo else ALink ro oo)) as Hadl by done.
+      assert (∃ bi, act ei = Some bi ∧ is_admin bi) as (bi & Hbi' & Hadbi).
+      { destruct Hbi as [Hbi|Hbi]; eexists; split; [exact Hbi|done|exact Hbi|done]. }
+      destruct (decide (s = i)) as [->|Hsi].
+      + destruct (decide (c = ro ∨ c = oo)) as [Hco|Hco].
+        * left. pose proof (fuel_pos W HW Hwf _ i es bi c Hc Hes Hcs ltac:(congruence) (or_introl Hadbi)) as Hpos.
+          apply (fuel_lt_case k t e b c i es (csub ro oo c) He Hb Hr Hes Hst Hcs Hrt Hpos).
+          intros u eu Heu Hut Hcu.
+          assert (csub ro oo c = oo) as Hco'.
+          { unfold csub. destruct Hco as [->| ->]; case_decide; congruence. }
+          rewrite Hco' in Hcu |- *.
+          destruct (decide (u = i)) as [->|Hui].
+          { exfalso. rewrite Henvi in Hcu. set_solver. }
+          rewrite Hfl. unfold link_fuel. rewrite (Hren u Hui) in Hcu.
+          rewrite decide_True by (split_and!; [done|done|by apply dom_tenv_rename_o]).
+          match goal with |- min ?X ?m < _ => pose proof (Nat.le_min_r X m) end.
+          destruct Hco as [-> | ->]; lia.
+        * right. assert (csub ro oo c = c) as Hcc by (unfold csub; case_decide; naive_solver).
+          rewrite Hcc in Hrt.
+          apply (fuel_eq_case k t e b c i es He Hb Hr Hes Hst Hcs Hrt).
+          { rewrite Hq', Hq. simpl. rewrite lookup_fmap, lookup_insert_eq. simpl. eauto. }
+          { rewrite Henvi. rewrite !dom_delete_L. set_solver. }
+          { rewrite Hfl. unfold link_fuel. by rewrite decide_False by naive_solver. }
+          { intros _. apply Hadm. by exists ei, bi. }
+      + assert (c ≠ ro) as Hcr.
+        { intros ->. apply Hsi. symmetry. apply (Huniq i ei Hi); [done|done]. }
+        assert (c ≠ oo) as Hco.
+        { intros ->. apply Hsi. symmetry. apply (Huniq i ei Hi); [done|done]. }
+        assert (csub ro oo c = c) as Hcc by (unfold csub; case_decide; naive_solver).
+        rewrite Hcc in Hrt. right. apply (fuel_eq_case k t e b c s es He Hb Hr Hes Hst Hcs Hrt).
+        * rewrite Hq', Hq. simpl. rewrite lookup_fmap, lookup_insert_ne by done. rewrite Hes. simpl. eauto.
+        * rewrite (Hren s Hsi). by rewrite dom_tenv_rename_ne.
+        * rewrite Hfl. unfold link_fuel. by rewrite decide_False by naive_solver.
+        * intros Hs. rewrite HL' in Hs. set_solver.
+    - (* message *)
+      assert ((ac_q (arun (S k))).2 !! t = Some e) as He'.
+      { rewrite Hq', Hq. simpl. rewrite !lookup_insert_ne; set_solver. }
+      pose proof (rchan_of_eq _ t e b c He' Hb Hr) as Hrt.
+      assert (c1 ∈ dom (ac_env (arun k) s1)) as Hc1s by (holds_of Hc Hs1 Hbs1 (eq_refl (Some c1))).
+      assert (c1 ∈ dom (ac_env (arun k) t1)) as Hc1t by (holds_of Hc Ht1 Hbt1 (eq_refl (Some c1))).
+      assert (c1 ≠ c) as Hc1c.
+      { intros ->. apply Hne. rewrite (Huniq s1 es1 Hs1); [|set_solver|done].
+        by rewrite (Huniq t1 et1 Ht1); [|set_solver|done]. }
+      destruct (decide (s = s1)) as [->|Hss1]; [|destruct (decide (s = t1)) as [->|Hst1]].
+      + left. pose proof (fuel_pos W HW Hwf _ s1 es (ASend c1 v) c Hc Hes Hcs ltac:(congruence)
+          (or_intror (ex_intro _ c1 (conj eq_refl Hc1c)))) as Hpos.
+        apply (fuel_lt_case k t e b c s1 es c He Hb Hr Hes Hst Hcs Hrt Hpos).
+        intros u eu Heu Hut Hcu.
+        destruct (decide (u = s1)) as [->|Hus1]; [rewrite Hfs; unfold tick; rewrite decide_False by done; lia|].
+        destruct (decide (u = t1)) as [->|Hut1].
+        * rewrite Hft. unfold msg_fuel. rewrite decide_False by done.
+          case_decide; [case_decide; lia|].
+          exfalso. rewrite Henvt, dom_tenv_union, dom_step_entry in Hcu.
+          destruct Hcu as [Hcu|Hcu]; [|done]. apply Hne. symmetry. by apply (Huniq t1 et1).
+        * exfalso. destruct (Hkeep u Hus1 Hut1) as [Henvu _]. rewrite Henvu in Hcu.
+          rewrite Hq', Hq in Heu. simpl in Heu. rewrite !lookup_insert_ne in Heu by done.
+          by apply Hus1, (Huniq u eu).
+      + left. pose proof (fuel_pos W HW Hwf _ t1 es (ARecv c1) c Hc Hes Hcs ltac:(congruence)
+          (or_intror (ex_intro _ c1 (conj eq_refl Hc1c)))) as Hpos.
+        apply (fuel_lt_case k t e b c t1 es c He Hb Hr Hes Hst Hcs Hrt Hpos).
+        intros u eu Heu Hut Hcu.
+        destruct (decide (u = t1)) as [->|Hut1].
+        * rewrite Hft. unfold msg_fuel. rewrite decide_False by done.
+          case_decide; [rewrite decide_True by done; lia|lia].
+        * destruct (decide (u = s1)) as [->|Hus1].
+          { exfalso. rewrite Henvs, dom_step_entry in Hcu. apply dom_tenv_minus_sub in Hcu.
+            by apply Hne, (Huniq s1 es1). }
+          exfalso. destruct (Hkeep u Hus1 Hut1) as [Henvu _]. rewrite Henvu in Hcu.
+          rewrite Hq', Hq in Heu. simpl in Heu. rewrite !lookup_insert_ne in Heu by done.
+          by apply Hut1, (Huniq u eu).
+      + right. apply (fuel_eq_case k t e b c s es He Hb Hr Hes Hst Hcs Hrt).
+        * rewrite Hq', Hq. simpl. rewrite !lookup_insert_ne by done. eauto.
+        * by destruct (Hkeep s Hss1 Hst1) as [-> _].
+        * by destruct (Hkeep s Hss1 Hst1) as [_ ->].
+        * intros Hs. rewrite HL' in Hs. set_solver.
+    - (* close *)
+      assert ((ac_q (arun (S k))).2 !! t = Some e) as He'.
+      { rewrite Hq', Hq. simpl. rewrite !lookup_insert_ne; set_solver. }
+      pose proof (rchan_of_eq _ t e b c He' Hb Hr) as Hrt.
+      assert (c1 ∈ dom (ac_env (arun k) s1)) as Hc1s by (holds_of Hc Hs1 Hbs1 (eq_refl (Some c1))).
+      assert (c1 ∈ dom (ac_env (arun k) t1)) as Hc1t by (holds_of Hc Ht1 Hbt1 (eq_refl (Some c1))).
+      assert (c1 ≠ c) as Hc1c.
+      { intros ->. apply Hne. rewrite (Huniq s1 es1 Hs1); [|set_solver|done].
+        by rewrite (Huniq t1 et1 Ht1); [|set_solver|done]. }
+      assert (∀ u eu, (ac_q (arun (S k))).2 !! u = Some eu → u ≠ t → u ≠ s →
+                c ∈ dom (ac_env (arun (S k)) u) → False) as Hnot.
+      { intros u eu Heu Hut Hus Hcu.
+        destruct (decide (u = s1)) as [->|Hus1].
+        { rewrite Henvs, dom_delete_L in Hcu. by apply Hus, (Huniq s1 es1 Hs1); [|set_solver]. }
+        destruct (decide (u = t1)) as [->|Hut1].
+        { rewrite Henvt, dom_delete_L in Hcu. by apply Hus, (Huniq t1 et1 Ht1); [|set_solver]. }
+        destruct (Hkeep u Hus1 Hut1) as [Henvu _]. rewrite Henvu in Hcu.
+        rewrite Hq', Hq in Heu. simpl in Heu. rewrite !lookup_insert_ne in Heu by done.
+        by apply Hus, (Huniq u eu). }
+      destruct (decide (s = s1 ∨ s = t1)) as [Hsp|Hsp].
+      + left. assert (0 < ac_fuel (arun k) s c) as Hpos.
+        { destruct Hsp as [->| ->].
+          - exact (fuel_pos W HW Hwf _ s1 es1 (AClos c1) c Hc Hs1 Hcs Hbs1
+              (or_intror (ex_intro _ c1 (conj eq_refl Hc1c)))).
+          - exact (fuel_pos W HW Hwf _ t1 et1 (AClos c1) c Hc Ht1 Hcs Hbt1
+              (or_intror (ex_intro _ c1 (conj eq_refl Hc1c)))). }
+        apply (fuel_lt_case k t e b c s es c He Hb Hr Hes Hst Hcs Hrt Hpos).
+        intros u eu Heu Hut Hcu. destruct (decide (u = s)) as [->|Hus]; [|by destruct (Hnot u eu Heu Hut Hus Hcu)].
+        destruct Hsp as [->| ->]; [rewrite Hfs|rewrite Hft]; unfold tick; rewrite decide_False by done; lia.
+      + right. apply (fuel_eq_case k t e b c s es He Hb Hr Hes Hst Hcs Hrt).
+        * rewrite Hq', Hq. simpl. rewrite !lookup_insert_ne by naive_solver. eauto.
+        * by destruct (Hkeep s ltac:(naive_solver) ltac:(naive_solver)) as [-> _].
+        * by destruct (Hkeep s ltac:(naive_solver) ltac:(naive_solver)) as [_ ->].
+        * intros Hs. rewrite HL' in Hs. set_solver.
+    - (* choice *)
+      assert ((ac_q (arun (S k))).2 !! t = Some e) as He'.
+      { rewrite Hq', Hq. simpl. rewrite !lookup_insert_ne; set_solver. }
+      pose proof (rchan_of_eq _ t e b c He' Hb Hr) as Hrt.
+      assert (c1 ∈ dom (ac_env (arun k) s1)) as Hc1s by (holds_of Hc Hs1 Hbs1 (eq_refl (Some c1))).
+      assert (c1 ∈ dom (ac_env (arun k) t1)) as Hc1t by (holds_of Hc Ht1 Hbt1 (eq_refl (Some c1))).
+      assert (c1 ≠ c) as Hc1c.
+      { intros ->. apply Hne. rewrite (Huniq s1 es1 Hs1); [|set_solver|done].
+        by rewrite (Huniq t1 et1 Ht1); [|set_solver|done]. }
+      assert (∀ u eu, (ac_q (arun (S k))).2 !! u = Some eu → u ≠ t → u ≠ s →
+                c ∈ dom (ac_env (arun (S k)) u) → False) as Hnot.
+      { intros u eu Heu Hut Hus Hcu.
+        destruct (decide (u = s1)) as [->|Hus1].
+        { rewrite Henvs, dom_step_entry in Hcu. by apply Hus, (Huniq s1 es1 Hs1). }
+        destruct (decide (u = t1)) as [->|Hut1].
+        { rewrite Henvt, dom_step_entry in Hcu. by apply Hus, (Huniq t1 et1 Ht1). }
+        destruct (Hkeep u Hus1 Hut1) as [Henvu _]. rewrite Henvu in Hcu.
+        rewrite Hq', Hq in Heu. simpl in Heu. rewrite !lookup_insert_ne in Heu by done.
+        by apply Hus, (Huniq u eu). }
+      destruct (decide (s = s1 ∨ s = t1)) as [Hsp|Hsp].
+      + left. assert (0 < ac_fuel (arun k) s c) as Hpos.
+        { destruct Hsp as [->| ->].
+          - exact (fuel_pos W HW Hwf _ s1 es1 (ASel c1 b1) c Hc Hs1 Hcs Hbs1
+              (or_intror (ex_intro _ c1 (conj eq_refl Hc1c)))).
+          - exact (fuel_pos W HW Hwf _ t1 et1 (ABra c1) c Hc Ht1 Hcs Hbt1
+              (or_intror (ex_intro _ c1 (conj eq_refl Hc1c)))). }
+        apply (fuel_lt_case k t e b c s es c He Hb Hr Hes Hst Hcs Hrt Hpos).
+        intros u eu Heu Hut Hcu. destruct (decide (u = s)) as [->|Hus]; [|by destruct (Hnot u eu Heu Hut Hus Hcu)].
+        destruct Hsp as [->| ->]; [rewrite Hfs|rewrite Hft]; unfold tick; rewrite decide_False by done; lia.
+      + right. apply (fuel_eq_case k t e b c s es He Hb Hr Hes Hst Hcs Hrt).
+        * rewrite Hq', Hq. simpl. rewrite !lookup_insert_ne by naive_solver. eauto.
+        * by destruct (Hkeep s ltac:(naive_solver) ltac:(naive_solver)) as [-> _].
+        * by destruct (Hkeep s ltac:(naive_solver) ltac:(naive_solver)) as [_ ->].
+        * intros Hs. rewrite HL' in Hs. set_solver.
+  Qed.
 End run.
