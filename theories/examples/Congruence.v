@@ -70,9 +70,12 @@ Definition cgc_P (g : fact) : Prop :=
 
 Definition cgc_C : bcs := BCs [] cgc_P.
 
+(** γ[0] at the constant 0 of main (syntactic points, sharp edges 173). *)
+Abbreviation cgsc k := (Pt (NPayload (NConst 0) 0 0) k).
+
 Definition cg_main : expr :=
   LetP (Pair cgbox EUnit) (LetU (Var 0)
-    (let_new_pair (let_new_pair (let_new_pair
+    (let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (cgsc 0)) (let_new_pair_at (EPt (pc 0 2))
       (LetU (App ESpawn (Lam (LetU (Var 0)
                (LetP (App ERecv (Var 5)) (LetU (App EClos (Var 1)) (App EClos (Var 0)))))))
         (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 3)))))
@@ -145,80 +148,80 @@ Proof.
   exists (pv 0 2). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Definition cg_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) cgc_C, ids 1)].
+Definition cg_Ψ : hyps := [] ++ [(cgc_C, [pconst 0])].
 
 Lemma cg_created : created (Wpo []) cg_Ψ.
-Proof. apply created_snoc; [constructor|apply cgc_ok|constructor]. Qed.
+Proof. apply created_snoc; [constructor|apply cgc_ok|constructor|fresh_const]. Qed.
 
 Lemma cg_typed : styped ∅ cg_Ψ [] (∅, None) cg_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold cg_main, cg_Ψ.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold cg_main, let_new_pair_at, cg_Ψ.
   eapply (tv_letp W HW _ _ _ _ _ _ (TBox 1 0 cg_C (TLolli None None TUnit cg_body)) TUnit);
     [reflexivity| |].
   { tstep; [tstep|apply typed_hyps_nil; [exact HWs|apply cgbox_typed, HW]]. }
   cbn. tstep; [tstep|]. cbn.
-  new_top HWs Scg (pvar 0).
+  new_top HWs Scg (pconst 0).
   fresh_clean.
-  set (Ψ := [(cgc_C, [pvar 0])]).
-  assert (slt W Ψ (pvar 0) (pt_dual (cgs 0))) as Hgs.
+  set (Ψ := [(cgc_C, [pconst 0])]).
+  assert (slt W Ψ (pconst 0) (pt_dual (cgsc 0))) as Hgs.
   { eapply (sl_hyp0 _ _ _ _ (pvar 0) (pt_dual (cgs 0))); [by left|by left|cbn; lia|done|done]. }
-  assert (slt W Ψ (pt_dual (pvar 0)) (pt_dual (cgs 0))) as Hgs'.
+  assert (slt W Ψ (pt_dual (pconst 0)) (pt_dual (cgsc 0))) as Hgs'.
   { eapply (sl_hyp0 _ _ _ _ (pt_dual (pvar 0)) (pt_dual (cgs 0))); [by left|by right; left|cbn; lia|done|done]. }
-  assert (slt W Ψ (cgs 0) (pv 0 1)) as Hsg.
+  assert (slt W Ψ (cgsc 0) (pc 0 1)) as Hsg.
   { eapply (sl_hyp0 _ _ _ _ (cgs 0) (pv 0 1)); [by left|by right; right; left|cbn; lia|done|done]. }
-  assert (slt W Ψ (cgs 0) (pt_dual (pv 0 1))) as Hsg'.
+  assert (slt W Ψ (cgsc 0) (pt_dual (pc 0 1))) as Hsg'.
   { eapply (sl_hyp0 _ _ _ _ (cgs 0) (pt_dual (pv 0 1))); [by left|by right; right; right|cbn; lia|done|done]. }
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) cg_C [pvar 0]) as HC.
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) cg_C [pconst 0]) as HC.
   { apply bcs_hold_intro. intros g [-> | ->] _; cbn; [exact Hgs|exact Hgs']. }
-  assert (Forall (skn W Ψ) [pvar 0]) as HK.
+  assert (Forall (skn W Ψ) [pconst 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
-  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (cgs 0) HWs).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (cgsc 0) HWs); [ground| |].
   { eapply skn_inst; [by left|by left|done]. }
-  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pv 0 2) HWs).
+  cbn. apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 0 2) HWs); [ground| |].
   { eapply skn_inst; [by left|by left|done]. }
   cbn. tstep.
   { (* the receiver of c: recv at γ, close the payload at γ[0], close at γ+1 *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 1))) (Some (pv 0 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 1))) (Some (pc 0 0)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
-    eapply (tv_letp W HW _ _ _ _ _ _ (TSess SEnd (cgs 0)) (TSess SEnd (pt_dual (pv 0 1))));
+    eapply (tv_letp W HW _ _ _ _ _ _ (TSess SEnd (cgsc 0)) (TSess SEnd (pt_dual (pc 0 1))));
       [reflexivity| |].
-    { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pt_dual (pv 0 0))) (TSess (dual Scg) (pt_dual (pv 0 0)))).
+    { eapply (tv_appk W HW _ _ _ _ KRecv _ (Some (pt_dual (pc 0 0))) (TSess (dual Scg) (pt_dual (pc 0 0)))).
       - tstep.
       - apply KTRecv.
       - kscope.
       - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pt_dual (pv 0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pv 0 0)) HW). }
+        exists (pt_dual (pc 0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pc 0 0)) HW). }
     cbn. tstep.
     { tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy; exact Hsg|].
-      exists (pt_dual (pv 0 1)). split; [done|]. right. exact Hsg'. }
+      exists (pt_dual (pc 0 1)). split; [done|]. right. exact Hsg'. }
     tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (pc 0 1)). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { (* close e′ at γ[0] *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (cgs 0))) (Some (cgs 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (cgsc 0))) (Some (cgsc 0)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (cgs 0)). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (cgsc 0)). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { (* close d′ at γ+2 *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 2))) (Some (pv 0 2)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 2))) (Some (pc 0 2)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (pv 0 2)). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (pc 0 2)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 1 cg_C None cg_body [pvar 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 cg_C None cg_body [pconst 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep; [tstep|tstep; [tstep|tstep]].
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
