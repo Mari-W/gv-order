@@ -381,3 +381,114 @@ Proof.
       eexists _, _, _. unfold cdual. simpl. rewrite negb_involutive. split; [exact He0|exact Hf].
     + unfold cdual. simpl. rewrite negb_involutive. apply (tstep_end_fends _ _ _ _ He0 eq_refl).
 Qed.
+
+Lemma sync_partner_ends q L q' p ep ap op :
+  istep q L q' → p ∈ L → q.2 !! p = Some ep → act ep = Some ap → aend1 ap = Some op →
+  ∃ u eu, u ∈ L ∧ u ≠ p ∧ q.2 !! u = Some eu ∧ cdual op ∈ fends eu.
+Proof.
+  intros Hst HpL Hp Ha Ho. destruct q as [C M]. simpl in Hp.
+  assert (Hlbl : ∀ α e', tstep ep α e' → offers ap α) by
+    (intros α e' Hs; destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoa); congruence).
+  inversion Hst as [C0 M0 i ei ei' Hi Hs|C0 M0 i ei c x ei' Hi Hs HC Hcs|C0 M0 i j ei v ei' Hi Hs Hj
+    |C0 M0 i j c b v ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i j c b ei ei' f f' Hij Hi Hj He0 Hf HC
+    |C0 M0 i j c β b ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i ei c bc d bd ei' Hi Hs HC]; subst;
+    try (apply elem_of_singleton in HpL as ->; rewrite Hp in Hi; injection Hi as <-;
+         exfalso; eapply admin_lbl_offers; [by apply (Hlbl _ _ Hs)|done|exact Ho]).
+  all: apply elem_of_union in HpL as [HpL|HpL]; apply elem_of_singleton in HpL as ->.
+  all: try (rewrite Hp in Hi; injection Hi as <-).
+  all: try (rewrite Hp in Hj; injection Hj as <-).
+  all: first [pose proof (Hlbl _ _ He0) as Hoa|pose proof (Hlbl _ _ Hf) as Hoa].
+  - apply offers_send in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists j, f. split_and!; [set_solver|done|done|apply (tstep_end_fends _ _ _ _ Hf eq_refl)].
+  - apply offers_recv in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists i, ei. split_and!; [set_solver|done|done|].
+    unfold cdual. simpl. rewrite negb_involutive. apply (tstep_end_fends _ _ _ _ He0 eq_refl).
+  - apply offers_clos in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists j, f. split_and!; [set_solver|done|done|apply (tstep_end_fends _ _ _ _ Hf eq_refl)].
+  - apply offers_clos in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists i, ei. split_and!; [set_solver|done|done|].
+    unfold cdual. simpl. rewrite negb_involutive. apply (tstep_end_fends _ _ _ _ He0 eq_refl).
+  - apply offers_sel in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists j, f. split_and!; [set_solver|done|done|apply (tstep_end_fends _ _ _ _ Hf eq_refl)].
+  - apply offers_bra in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists i, ei. split_and!; [set_solver|done|done|].
+    unfold cdual. simpl. rewrite negb_involutive. apply (tstep_end_fends _ _ _ _ He0 eq_refl).
+Qed.
+
+Lemma chan_kept q L q' c :
+  istep q L q' → c ∈ q.1 → (∀ u eu, u ∈ L → q.2 !! u = Some eu → c ∉ fchans eu) → c ∈ q'.1.
+Proof.
+  intros Hst HcC Hn. destruct q as [C M]. simpl in *.
+  inversion Hst as [C0 M0 i ei ei' Hi Hs|C0 M0 i ei c0 x ei' Hi Hs HC Hcs|C0 M0 i j ei v ei' Hi Hs Hj
+    |C0 M0 i j c0 b v ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i j c0 b ei ei' f f' Hij Hi Hj He0 Hf HC
+    |C0 M0 i j c0 β b ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i ei c0 bc d bd ei' Hi Hs HC]; subst; simpl;
+    try done; try set_solver.
+  - assert (c ≠ c0) as Hne.
+    { intros ->. apply (Hn i ei ltac:(set_solver) Hi). apply fchans_of_fends with (o := (c0, b)).
+      apply (tstep_end_fends _ _ _ _ He0 eq_refl). }
+    set_solver.
+  - assert (c ≠ c0) as Hne.
+    { intros ->. apply (Hn i ei ltac:(set_solver) Hi). apply fchans_of_fends with (o := (c0, bc)).
+      destruct (act_step _ _ _ Hs) as (a & Ha & Hoa). apply offers_link in Hoa as (o1 & o2 & -> & Hcd).
+      apply (act_aends_fends ei (ALink o1 o2) _ Ha eq_refl). simpl. rewrite <-Hcd. set_solver. }
+    set_solver.
+Qed.
+
+Lemma synced_step q L q' t p o :
+  synced q t p o → istep q L q' → t ∉ L → p ∉ L →
+  (∀ u eu, u ∈ L → q.2 !! u = Some eu → o.1 ∉ fchans eu) → synced q' t p o.
+Proof.
+  intros (e & f & He & Hf & Htp & H) Hst Ht Hp Hn.
+  destruct (nonpart_terms _ _ _ Hst) as (g & Hg & Hgc). pose proof (Hgc o.1 Hn) as Hgo.
+  pose proof (Hg t e Ht He) as He'. pose proof (Hg p f Hp Hf) as Hf'.
+  assert (TauThread.omap g o = o) as Ho by (destruct o; unfold TauThread.omap; simpl in *; by rewrite Hgo).
+  assert (TauThread.omap g (cdual o) = cdual o) as Hdo
+    by (destruct o; unfold TauThread.omap, cdual; simpl in *; by rewrite Hgo).
+  exists (emap g e), (emap g f). split_and!; [done|done|done|].
+  destruct H as [(v & e1 & f1 & H1 & H2)|[(v & e1 & f1 & H1 & H2)|[(e1 & f1 & H1 & H2 & HC)
+    |[(b & e1 & f1 & H1 & H2)|(b & e1 & f1 & H1 & H2)]]]];
+    apply (tstep_emap g) in H1, H2; cbn [lmap smap] in H1, H2;
+    try rewrite Ho in H1; try rewrite Ho in H2; try rewrite Hdo in H1; try rewrite Hdo in H2.
+  - left. exists (emap g v), (emap g e1), (emap g f1). by split.
+  - right; left. exists (emap g v), (emap g e1), (emap g f1). by split.
+  - right; right; left. exists (emap g e1), (emap g f1). split_and!; [done|done|].
+    apply (chan_kept _ _ _ _ Hst HC Hn).
+  - right; right; right; left. exists b, (emap g e1), (emap g f1). by split.
+  - right; right; right; right. exists b, (emap g e1), (emap g f1). by split.
+Qed.
+
+Lemma synced_partner_act q t p o f :
+  synced q t p o → q.2 !! p = Some f → ∃ ap, act f = Some ap ∧ aend1 ap = Some (cdual o).
+Proof.
+  intros (e0 & f0 & _ & Hf0 & _ & H) Hf. rewrite Hf in Hf0. injection Hf0 as <-.
+  destruct H as [(v & e1 & f1 & H1 & H2)|[(v & e1 & f1 & H1 & H2)|[(e1 & f1 & H1 & H2 & _)
+    |[(b & e1 & f1 & H1 & H2)|(b & e1 & f1 & H1 & H2)]]]].
+  - destruct (act_step _ _ _ H2) as (ap & Hap & Hoa). apply offers_recv in Hoa as ->. by eexists.
+  - destruct (act_step _ _ _ H1) as (ap & Hap & Hoa). apply offers_send in Hoa as ->. by eexists.
+  - destruct (act_step _ _ _ H2) as (ap & Hap & Hoa). apply offers_clos in Hoa as ->. by eexists.
+  - destruct (act_step _ _ _ H2) as (ap & Hap & Hoa). apply offers_bra in Hoa as ->. by eexists.
+  - destruct (act_step _ _ _ H1) as (ap & Hap & Hoa). apply offers_sel in Hoa as ->. by eexists.
+Qed.
+
+Lemma pers_step n W T π q A U L q' t :
+  strict W → LFconf (S n) W ∅ T π q A U → istep q L q' → t ∉ L → npend q t → enabled q t → enabled q' t.
+Proof.
+  intros HW Hc Hst Ht Hp Hen. destruct (npend_end q t Hp) as (e & a & o & He & Ha & Ho & _).
+  destruct (enabled_synced q t e a o He Ha Ho Hen) as (p & f & Hsy & Hf & Hpo).
+  pose proof (s_held n W HW T π q A U Hc t e a o He Ha Ho) as Hto.
+  assert (Hholds : ∀ u eu, q.2 !! u = Some eu → o.1 ∈ fchans eu → u = t ∨ u = p).
+  { intros u eu Heu Hm. apply fends_of_fchans in Hm as [b' Hb'].
+    destruct (decide ((o.1, b') = o)) as [Heq|Hneq].
+    - left. rewrite Heq in Hb'. by apply (s_uniq n W HW T π q A U Hc u t eu e o).
+    - right. assert ((o.1, b') = cdual o) as Heq.
+      { destruct o as [c β]. unfold cdual. simpl in *. f_equal.
+        destruct b', β; simpl; try done; exfalso; by apply Hneq. }
+      rewrite Heq in Hb'. by apply (s_uniq n W HW T π q A U Hc u p eu f (cdual o)). }
+  assert (p ∉ L) as HpL.
+  { intros HpL. destruct (synced_partner_act q t p o f Hsy Hf) as (ap & Hap & Hao).
+    destruct (sync_partner_ends q L q' p f ap _ Hst HpL Hf Hap Hao) as (u & eu & HuL & Hup & Heu & Hu).
+    rewrite cdual_cdual in Hu. assert (u = t) as -> by (apply (s_uniq n W HW T π q A U Hc u t eu e o); done).
+    done. }
+  apply (synced_enabled q' t p o). apply (synced_step q L q' t p o Hsy Hst Ht HpL).
+  intros u eu HuL Heu Hm. destruct (Hholds u eu Heu Hm) as [->| ->]; done.
+Qed.
