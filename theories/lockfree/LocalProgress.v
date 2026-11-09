@@ -27,75 +27,95 @@ Definition is_end (s : sty) : bool := match s with SEnd => true | _ => false end
 Definition is_plus (s : sty) : bool := match s with SPlus _ _ => true | _ => false end.
 Definition is_with (s : sty) : bool := match s with SWith _ _ => true | _ => false end.
 
-Definition ent_ok (Θ : tenv) (k : ekey) (f : sty → bool) : bool :=
-  match tenv_entry Θ k with Some e => f (unfoldS e.1) | None => false end.
+(** An entry at k whose point has polarity b and whose type passes f. *)
+Definition ent_ok (Θ : tenv) (k : ekey) (b : bool) (f : sty → bool) : bool :=
+  match tenv_entry Θ k with
+  | Some e => bool_decide (pt_pol e.2 = b) && f (unfoldS e.1)
+  | None => false
+  end.
 
 Definition selb (Θ : tenv) (σ : slabel) (k : ekey) : bool :=
   match σ with
-  | SSend c _ => bool_decide (k.1 = c) && ent_ok Θ k is_snd
-  | SRecv c _ => bool_decide (k.1 = c) && ent_ok Θ k is_rcv
-  | SClos c => bool_decide (k.1 = c) && ent_ok Θ k is_end &&
-      (negb k.2 || match tenv_entry Θ (c, false) with
-                   | Some e' => negb (is_end (unfoldS e'.1)) | None => true end)
-  | SLink cd => bool_decide (k.1 ∈ cd) && bool_decide (is_Some (tenv_entry Θ k))
-  | SSel c _ => bool_decide (k.1 = c) && ent_ok Θ k is_plus
-  | SBra c _ => bool_decide (k.1 = c) && ent_ok Θ k is_with
+  | SSend c _ => bool_decide (k.1 = c.1) && ent_ok Θ k c.2 is_snd
+  | SRecv c _ => bool_decide (k.1 = c.1) && ent_ok Θ k c.2 is_rcv
+  | SClos c => bool_decide (k.1 = c.1) && ent_ok Θ k c.2 is_end &&
+      (negb k.2 || negb (ent_ok Θ (c.1, false) c.2 is_end))
+  | SLink cd =>
+      match tenv_entry Θ k with Some e => bool_decide ((k.1, pt_pol e.2) ∈ cd) | None => false end
+  | SSel c _ => bool_decide (k.1 = c.1) && ent_ok Θ k c.2 is_plus
+  | SBra c _ => bool_decide (k.1 = c.1) && ent_ok Θ k c.2 is_with
   end.
 
-Lemma ent_ok_snd Θ k : (∃ e m T s, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SSeq (SSnd m T) s)
-  ↔ ent_ok Θ k is_snd = true.
+Lemma ent_ok_snd Θ k b :
+  (∃ e m T s, tenv_entry Θ k = Some e ∧ pt_pol e.2 = b ∧ unfoldS e.1 = SSeq (SSnd m T) s)
+  ↔ ent_ok Θ k b is_snd = true.
 Proof.
   unfold ent_ok. destruct (tenv_entry Θ k) as [e|]; [|naive_solver].
-  split; [intros (? & m & T & s & [=<-] & ->); done|].
-  destruct (unfoldS e.1) as [| | | | | | |s1 s2| |] eqn:Hu; try done.
-  destruct s1; try done. intros _. by eexists _, _, _, _.
+  rewrite andb_true_iff, bool_decide_eq_true.
+  split; [intros (? & m & T & s & [=<-] & Hb & ->); done|].
+  intros [Hb Hu]. destruct (unfoldS e.1) as [| | | | | | |s1 s2| |] eqn:Hu'; try done.
+  destruct s1; try done. by eexists _, _, _, _.
 Qed.
 
-Lemma ent_ok_rcv Θ k : (∃ e m T s, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SSeq (SRcv m T) s)
-  ↔ ent_ok Θ k is_rcv = true.
+Lemma ent_ok_rcv Θ k b :
+  (∃ e m T s, tenv_entry Θ k = Some e ∧ pt_pol e.2 = b ∧ unfoldS e.1 = SSeq (SRcv m T) s)
+  ↔ ent_ok Θ k b is_rcv = true.
 Proof.
   unfold ent_ok. destruct (tenv_entry Θ k) as [e|]; [|naive_solver].
-  split; [intros (? & m & T & s & [=<-] & ->); done|].
-  destruct (unfoldS e.1) as [| | | | | | |s1 s2| |] eqn:Hu; try done.
-  destruct s1; try done. intros _. by eexists _, _, _, _.
+  rewrite andb_true_iff, bool_decide_eq_true.
+  split; [intros (? & m & T & s & [=<-] & Hb & ->); done|].
+  intros [Hb Hu]. destruct (unfoldS e.1) as [| | | | | | |s1 s2| |] eqn:Hu'; try done.
+  destruct s1; try done. by eexists _, _, _, _.
 Qed.
 
-Lemma ent_ok_plus Θ k : (∃ e s1 s2, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SPlus s1 s2)
-  ↔ ent_ok Θ k is_plus = true.
+Lemma ent_ok_plus Θ k b :
+  (∃ e s1 s2, tenv_entry Θ k = Some e ∧ pt_pol e.2 = b ∧ unfoldS e.1 = SPlus s1 s2)
+  ↔ ent_ok Θ k b is_plus = true.
 Proof.
   unfold ent_ok. destruct (tenv_entry Θ k) as [e|]; [|naive_solver].
-  split; [intros (? & s1 & s2 & [=<-] & ->); done|].
-  destruct (unfoldS e.1) eqn:Hu; try done. intros _. by eexists _, _, _.
+  rewrite andb_true_iff, bool_decide_eq_true.
+  split; [intros (? & s1 & s2 & [=<-] & Hb & ->); done|].
+  intros [Hb Hu]. destruct (unfoldS e.1) eqn:Hu'; try done. by eexists _, _, _.
 Qed.
 
-Lemma ent_ok_with Θ k : (∃ e s1 s2, tenv_entry Θ k = Some e ∧ unfoldS e.1 = SWith s1 s2)
-  ↔ ent_ok Θ k is_with = true.
+Lemma ent_ok_with Θ k b :
+  (∃ e s1 s2, tenv_entry Θ k = Some e ∧ pt_pol e.2 = b ∧ unfoldS e.1 = SWith s1 s2)
+  ↔ ent_ok Θ k b is_with = true.
 Proof.
   unfold ent_ok. destruct (tenv_entry Θ k) as [e|]; [|naive_solver].
-  split; [intros (? & s1 & s2 & [=<-] & ->); done|].
-  destruct (unfoldS e.1) eqn:Hu; try done. intros _. by eexists _, _, _.
+  rewrite andb_true_iff, bool_decide_eq_true.
+  split; [intros (? & s1 & s2 & [=<-] & Hb & ->); done|].
+  intros [Hb Hu]. destruct (unfoldS e.1) eqn:Hu'; try done. by eexists _, _, _.
 Qed.
 
 Lemma is_end_spec s : is_end s = true ↔ s = SEnd.
 Proof. destruct s; naive_solver. Qed.
+
+Lemma ent_ok_end Θ k b :
+  (∃ e, tenv_entry Θ k = Some e ∧ pt_pol e.2 = b ∧ unfoldS e.1 = SEnd)
+  ↔ ent_ok Θ k b is_end = true.
+Proof.
+  unfold ent_ok. destruct (tenv_entry Θ k) as [e|]; [|naive_solver].
+  rewrite andb_true_iff, bool_decide_eq_true, is_end_spec. naive_solver.
+Qed.
 
 Lemma selb_spec Θ σ k : selects Θ σ k ↔ selb Θ σ k = true.
 Proof.
   destruct σ as [c v|c v|c|cd|c b|c b]; simpl; rewrite ?andb_true_iff, ?bool_decide_eq_true.
   - rewrite <-ent_ok_rcv. done.
   - rewrite <-ent_ok_snd. done.
-  - rewrite orb_true_iff, negb_true_iff. unfold ent_ok.
+  - rewrite orb_true_iff, !negb_true_iff, <-ent_ok_end.
     split.
-    + intros (Hc & e & He & Hu & Hk). rewrite He, Hu. split_and!; [done|done|].
+    + intros (Hc & e & He & Hp & Hu & Hk). split_and!; [done|by exists e|].
       destruct k as [c' []]; simpl in *; [right|by left].
-      destruct (tenv_entry Θ (c, false)) as [e'|]; [|done].
-      apply negb_true_iff. destruct (is_end (unfoldS e'.1)) eqn:He'; [|done].
-      apply is_end_spec in He'. exfalso. by apply (Hk eq_refl e').
-    + intros [[Hc Hok] Hk]. destruct (tenv_entry Θ k) as [e|] eqn:He; [|done].
-      apply is_end_spec in Hok. split; [done|]. exists e. split_and!; [done|done|].
-      intros Hk2 e' He'. destruct Hk as [Hk|Hk]; [by rewrite Hk2 in Hk|].
-      rewrite He' in Hk. apply negb_true_iff in Hk. intros Hu. rewrite Hu in Hk. done.
-  - done.
+      destruct (ent_ok Θ (c.1, false) c.2 is_end) eqn:He'; [|done].
+      apply ent_ok_end in He' as (e' & He' & Hp' & Hu'). exfalso. by apply (Hk eq_refl e').
+    + intros [[Hc (e & He & Hp & Hu)] Hk]. split; [done|]. exists e. split_and!; [done|done|done|].
+      intros Hk2 e' He' Hp' Hu'. destruct Hk as [Hk|Hk]; [by rewrite Hk2 in Hk|].
+      assert (ent_ok Θ (c.1, false) c.2 is_end = true) as Hok by (apply ent_ok_end; eauto).
+      congruence.
+  - destruct (tenv_entry Θ k) as [e|]; [|naive_solver].
+    rewrite bool_decide_eq_true. naive_solver.
   - rewrite <-ent_ok_plus. done.
   - rewrite <-ent_ok_with. done.
 Qed.
@@ -145,7 +165,10 @@ Proof.
 Qed.
 
 Lemma selects_subj Θ σ k : selects Θ σ k → k.1 ∈ subjs σ.
-Proof. destruct σ; simpl; set_solver. Qed.
+Proof.
+  destruct σ; simpl; try set_solver.
+  intros (e & _ & H). apply elem_of_map. by exists (k.1, pt_pol e.2).
+Qed.
 
 Lemma tenv_entry_dom Θ k e : tenv_entry Θ k = Some e → k.1 ∈ dom Θ.
 Proof.
@@ -182,6 +205,32 @@ Lemma offered_pend Θ e k : offered_t Θ e k → ∃ a S, act e = Some a ∧ asu
 Proof.
   intros (σ & e' & Hst & Hsel). destruct (act_step _ _ _ Hst) as (a & Ha & Ho).
   exists a, (subjs σ). split_and!; [done|by apply offers_asubjs|by apply (selects_subj Θ)].
+Qed.
+
+(** The end of an offered entry is an end of the redex. *)
+Lemma offered_aends Θ e k ek :
+  offered_t Θ e k → tenv_entry Θ k = Some ek →
+  ∃ a S, act e = Some a ∧ aends a = Some S ∧ (k.1, pt_pol ek.2) ∈ S.
+Proof.
+  intros (σ & e' & Hst & Hsel) Hk. destruct (act_step _ _ _ Hst) as (a & Ha & Ho).
+  exists a. destruct σ as [o w|o w|o|cd|o b|o b]; simpl in Hsel.
+  - apply offers_recv in Ho as ->. exists {[o]}. split_and!; [done|done|].
+    destruct Hsel as (H1 & x & m & T & s & Hx & Hp & _). rewrite Hk in Hx. injection Hx as <-.
+    destruct o as [c b]; simpl in *; subst. set_solver.
+  - apply offers_send in Ho as ->. exists {[o]}. split_and!; [done|done|].
+    destruct Hsel as (H1 & x & m & T & s & Hx & Hp & _). rewrite Hk in Hx. injection Hx as <-.
+    destruct o as [c b]; simpl in *; subst. set_solver.
+  - apply offers_clos in Ho as ->. exists {[o]}. split_and!; [done|done|].
+    destruct Hsel as (H1 & x & Hx & Hp & _). rewrite Hk in Hx. injection Hx as <-.
+    destruct o as [c b]; simpl in *; subst. set_solver.
+  - apply offers_link in Ho as (c & d & -> & Hcd). exists {[c; d]}. split_and!; [done|done|].
+    destruct Hsel as (x & Hx & Hin). rewrite Hk in Hx. injection Hx as <-. by rewrite <-Hcd.
+  - apply offers_sel in Ho as ->. exists {[o]}. split_and!; [done|done|].
+    destruct Hsel as (H1 & x & s1 & s2 & Hx & Hp & _). rewrite Hk in Hx. injection Hx as <-.
+    destruct o as [c b']; simpl in *; subst. set_solver.
+  - apply offers_bra in Ho as ->. exists {[o]}. split_and!; [done|done|].
+    destruct Hsel as (H1 & x & s1 & s2 & Hx & Hp & _). rewrite Hk in Hx. injection Hx as <-.
+    destruct o as [c b']; simpl in *; subst. set_solver.
 Qed.
 
 (** An offered entry exists when the thread is not a value. *)
@@ -243,7 +292,7 @@ Section local_progress.
   Context (Hready : ∀ t e, q.2 !! t = Some e → ¬ irred e → ready_t W (Θ t) (F t) e).
   Context (Hirr : ∀ t e k ek, q.2 !! t = Some e → tenv_entry (Θ t) k = Some ek → ¬ irred e).
   Context (Hmention : ∀ t e k ek, q.2 !! t = Some e → tenv_entry (Θ t) k = Some ek →
-             k.1 ∈ fchans e).
+             (k.1, pt_pol ek.2) ∈ fends e).
   Context (Hpartner : ∀ t e k ek, q.2 !! t = Some e → tenv_entry (Θ t) k = Some ek →
              ∃ s es k' ek', q.2 !! s = Some es ∧ tenv_entry (Θ s) k' = Some ek' ∧
                k'.1 = k.1 ∧ (s, k') ≠ (t, k) ∧ ek'.2 = pt_dual ek.2).
@@ -266,12 +315,15 @@ Section local_progress.
   Qed.
 
   (** A step of the chain from t to s, for s ≠ t. *)
-  Lemma waits_of t e (k : ekey) s es (k' : ekey) :
-    q.2 !! t = Some e → offered_t (Θ t) e k → q.2 !! s = Some es → k'.1 = k.1 →
-    k'.1 ∈ fchans es → s ≠ t → waits q t s.
+  Lemma waits_of t e (k : ekey) (ek : sty * point) s es (k' : ekey) (ek' : sty * point) :
+    q.2 !! t = Some e → offered_t (Θ t) e k → tenv_entry (Θ t) k = Some ek →
+    q.2 !! s = Some es → k'.1 = k.1 → ek'.2 = pt_dual ek.2 →
+    (k'.1, pt_pol ek'.2) ∈ fends es → s ≠ t → waits q t s.
   Proof.
-    intros He Ho Hes Hk Hm Hst. destruct (offered_pend _ _ _ Ho) as (a & S & Ha & HS & HkS).
-    split; [done|]. exists e, a, S, k.1, es. split_and!; try done. by rewrite <-Hk.
+    intros He Ho Hk Hes Hk1 Hd Hm Hst.
+    destruct (offered_aends _ _ _ _ Ho Hk) as (a & S & Ha & HS & HkS).
+    split; [done|]. exists e, a, S, (k.1, pt_pol ek.2), es. split_and!; try done.
+    unfold cdual. simpl. rewrite Hk1, Hd in Hm. exact Hm.
   Qed.
 
   Lemma chain_from x :
@@ -288,7 +340,7 @@ Section local_progress.
       as Hvia.
     { intros u Hsu Hu. destruct (decide (s = t)) as [->|Hst]; [by exists u|].
       exists u. split; [|done]. eapply rtc_l; [|exact Hsu].
-      eapply waits_of; [exact He|exact Ho|exact Hes|exact Hk1| |exact Hst].
+      eapply waits_of; [exact He|exact Ho|exact Hk|exact Hes|exact Hk1|exact Hd| |exact Hst].
       by eapply Hmention. }
     destruct (decide (offered_t (Θ s) es k')) as [Ho'|Hno'].
     { destruct (Hmeet t e s es k ek k' ek') as [Ht|Hs]; try done.

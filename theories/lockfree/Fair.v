@@ -49,13 +49,34 @@ Definition lock_free_reach (p : proc) : Prop :=
 (** ** Dependencies
 
     A pending thread t waits for s when s is another thread that
-    mentions a channel of t's redex. In a well-typed configuration s
-    holds the partner end. [local_progress] says that the chain of
-    waits from every pending thread reaches an enabled thread. *)
+    mentions the partner of an end of t's redex. Ends are named in
+    terms (sharp edges 173), so s holds that partner end.
+    [local_progress] says that the chain of waits from every pending
+    thread reaches an enabled thread. *)
+
+(** The partner end: the other end of the same channel. *)
+Definition cdual (o : cend) : cend := (o.1, negb o.2).
+
+Lemma cdual_cdual o : cdual (cdual o) = o.
+Proof. destruct o as [c b]. unfold cdual. simpl. by rewrite negb_involutive. Qed.
+
+Lemma cdual_ne o : cdual o ≠ o.
+Proof. destruct o as [c []]; unfold cdual; simpl; congruence. Qed.
+
+(** The ends a session action acts on, [None] for the silent ones. *)
+Definition aends (a : action) : option (gset cend) :=
+  match a with
+  | ABeta | ANew _ | ASpawn _ => None
+  | ARecv o | ASend o _ | AClos o | ASel o _ | ABra o => Some {[o]}
+  | ALink o o' => Some {[o; o']}
+  end.
+
+Lemma aends_asubjs a : is_Some (aends a) ↔ is_Some (asubjs a).
+Proof. destruct a; simpl; split; intros [? ?]; try discriminate; eauto. Qed.
 
 Definition waits (q : config) (t s : nat) : Prop :=
-  s ≠ t ∧ ∃ e a S c es, q.2 !! t = Some e ∧ act e = Some a ∧ asubjs a = Some S ∧
-    c ∈ S ∧ q.2 !! s = Some es ∧ c ∈ fchans es.
+  s ≠ t ∧ ∃ e a S o es, q.2 !! t = Some e ∧ act e = Some a ∧ aends a = Some S ∧
+    o ∈ S ∧ q.2 !! s = Some es ∧ cdual o ∈ fends es.
 
 Definition local_progress (q : config) : Prop :=
   ∀ t, pend q t → ∃ s, rtc (waits q) t s ∧ enabled q s.
@@ -63,7 +84,7 @@ Definition local_progress (q : config) : Prop :=
 Lemma waits_pend q t s : waits q t s → pend q t.
 Proof.
   intros (_ & e & a & S & c & es & He & Ha & HS & _). exists e, a.
-  split_and!; [done|done|]. unfold is_sess. by rewrite HS.
+  split_and!; [done|done|]. unfold is_sess. apply aends_asubjs. by rewrite HS.
 Qed.
 
 (** ** Runs from a process reach reachable states *)

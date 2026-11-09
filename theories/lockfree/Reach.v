@@ -35,7 +35,7 @@ From LRGV Require Export lockfree.Fair.
 Lemma act_offer_sig e a α : act e = Some a → offers a α → {e' | tstep e α e'}.
 Proof.
   revert a α.
-  induction e as [x| |k|c|e0 IHe|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [x| |k|c b|x|e0 IHe|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e1 IH1 e2 IH2|e1 IH|e1 IH|e0 IH0 e1 IH1 e2 IH2
                  |e1 IH];
     simpl; intros a α Ha Hoff; try discriminate.
@@ -46,64 +46,72 @@ Proof.
     destruct (is_val e2) eqn:Hb2;
       [|destruct (IH2 _ _ Ha Hoff) as [e2' Hst]; exists (App e1 e2');
         apply TStepAppR; [by rewrite Hb1|done]].
-    destruct e1 as [| |k| |e0 | | | | | | | | ]; try discriminate.
+    destruct e1 as [| |k| | |e0 | | | | | | | | ]; try discriminate.
     + (* a concurrency primitive *)
       destruct k; simplify_eq.
       * (* T-Act-New *)
-        destruct e2 as [| | | | | | | | | | | | ]; try discriminate.
-        simplify_eq. destruct α as [|σ|c|w]; try done.
-        exists (Pair (Chan c) (Chan c)). apply TStepHead, HeadNew.
+        destruct e2 as [| | | |x| | | | | | | | | ]; try discriminate.
+        simplify_eq. destruct α as [|σ|c y|w]; try done. simpl in Hoff; subst y.
+        eexists. apply TStepHead, HeadNew.
       * (* T-Act-Spawn *)
         destruct α as [|σ|c|w]; try done. simpl in Hoff. simplify_eq.
         exists EUnit. apply TStepHead, HeadSpawn. by rewrite Hb2.
       * (* T-Act-Recv *)
-        destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | |c b| | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| | ]; try done.
-        destruct σ as [d w|d w|d|cd|d b|d b]; try done.
-        destruct Hoff as [-> Hw]. exists (Pair w (Chan d)).
+        destruct σ as [d w|d w|d|cd|d b'|d b']; try done.
+        destruct Hoff as [<- Hw]. exists (Pair w (Chan c b)).
         by apply TStepHead, HeadRecv.
       * (* T-Act-Send *)
-        destruct e2 as [| | | | | |v w | | | | | | ]; try discriminate.
-        destruct w as [| | |d | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | | | | | |v w | | | | | | ]; try discriminate.
+        destruct w as [| | |d b| | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| | ]; try done.
-        destruct σ as [d' w'|d' w'|d'|cd'|d' b|d' b]; try done.
-        destruct Hoff as [-> ->].
+        destruct σ as [d' w'|d' w'|d'|cd'|d' b'|d' b']; try done.
+        destruct Hoff as [<- ->].
         pose proof (is_val_of_true _ Hb2) as Hv2. simpl in Hv2.
         apply andb_True in Hv2 as [Hv _].
-        exists (Chan d'). by apply TStepHead, HeadSend.
+        exists (Chan d b). by apply TStepHead, HeadSend.
       * (* T-Act-Close *)
-        destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | |c b| | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| | ]; try done.
-        destruct σ as [d w|d w|d|cd|d b|d b]; try done. simpl in Hoff. simplify_eq.
+        destruct σ as [d w|d w|d|cd|d b'|d b']; try done. simpl in Hoff. simplify_eq.
         exists EUnit. by apply TStepHead, HeadClos.
       * (* T-Act-Link *)
-        destruct e2 as [| | | | | |v w | | | | | | ]; try discriminate.
-        destruct v as [| | |c' | | | | | | | | | ]; try discriminate.
-        destruct w as [| | |d' | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | | | | | |v w | | | | | | ]; try discriminate.
+        destruct v as [| | |c' bc| | | | | | | | | | ]; try discriminate.
+        destruct w as [| | |d' bd| | | | | | | | | | ]; try discriminate.
         simplify_eq.
         destruct α as [|σ| | ]; try done.
         destruct σ as [| | |cd''| | ]; try done.
         simpl in Hoff. subst cd''.
         exists EUnit. by apply TStepHead, HeadLink.
       * (* T-Act-Force: [EBox _] is unconditionally a value *)
-        destruct e2 as [| | | | | | | | | | | |eb ]; try discriminate.
+        destruct e2 as [| | | | | | | | | | | | |eb ]; try discriminate.
         simplify_eq. destruct α; try done.
         exists (subst1 (EBox eb) eb). by apply TStepHead, HeadForce.
       * (* T-Act-Select₁ *)
-        destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | |c b| | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| | ]; try done.
-        destruct σ; try done. destruct Hoff as [-> <-].
-        exists (Chan c0). by apply TStepHead, HeadSel1.
+        destruct σ; try done. destruct Hoff as [<- <-].
+        eexists. by apply TStepHead, HeadSel1.
       * (* T-Act-Select₂ *)
-        destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | |c b| | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| | ]; try done.
-        destruct σ; try done. destruct Hoff as [-> <-].
-        exists (Chan c0). by apply TStepHead, HeadSel2.
+        destruct σ; try done. destruct Hoff as [<- <-].
+        eexists. by apply TStepHead, HeadSel2.
       * (* T-Act-Branch *)
-        destruct e2 as [| | |c | | | | | | | | | ]; try discriminate.
+        destruct e2 as [| | |c b| | | | | | | | | | ]; try discriminate.
         simplify_eq. destruct α as [|σ| | ]; try done.
         destruct σ; try done. simpl in Hoff. subst.
         eexists. by apply TStepHead, HeadBra.
+      * (* T-Act-Pay *)
+        destruct e2 as [| | | |x| | | | | | | | | ]; try discriminate.
+        simplify_eq. destruct α; try done.
+        eexists. by apply TStepHead, HeadPay.
+      * (* T-Act-Succ *)
+        destruct e2 as [| | | |x| | | | | | | | | ]; try discriminate.
+        simplify_eq. destruct α; try done.
+        eexists. by apply TStepHead, HeadSucc.
     + (* T-Act-App *)
       simplify_eq. destruct α; try done.
       exists (subst1 e2 e0). apply TStepHead, HeadApp. by rewrite Hb2.
@@ -123,7 +131,7 @@ Proof.
     destruct (is_val e1) eqn:Hb1;
       [|destruct (IH1 _ _ Ha Hoff) as [e1' Hst]; exists (LetP e1' e2);
         by apply TStepLetP].
-    destruct e1 as [| | | | | |u w | | | | | | ]; try discriminate.
+    destruct e1 as [| | | | | | |u w | | | | | | ]; try discriminate.
     simplify_eq. destruct α; try done.
     pose proof (is_val_of_true _ Hb1) as Hv1. simpl in Hv1.
     apply andb_True in Hv1 as [Hu Hw].
@@ -138,7 +146,7 @@ Proof.
     destruct (is_val e0) eqn:Hb0;
       [|destruct (IH0 _ _ Ha Hoff) as [e0' Hst]; exists (Case e0' e1 e2);
         by apply TStepCase].
-    destruct e0 as [| | | | | | | | |v |w | | ]; try discriminate.
+    destruct e0 as [| | | | | | | | | |v |w | | ]; try discriminate.
     + simplify_eq. destruct α; try done. simpl in Hb0.
       exists (subst1 v e1). apply TStepHead, HeadCase1. by rewrite Hb0.
     + simplify_eq. destruct α; try done. simpl in Hb0.
@@ -148,11 +156,11 @@ Qed.
 
 Definition partner_ok (a : action) (b : option action) : Prop :=
   match a, b with
-  | ARecv c, Some (ASend c' _) => c' = c
-  | ASend c _, Some (ARecv c') => c' = c
-  | AClos c, Some (AClos c') => c' = c
-  | ASel c _, Some (ABra c') => c' = c
-  | ABra c, Some (ASel c' _) => c' = c
+  | ARecv c, Some (ASend c' _) => c' = cdual c
+  | ASend c _, Some (ARecv c') => c' = cdual c
+  | AClos c, Some (AClos c') => c' = cdual c
+  | ASel c _, Some (ABra c') => c' = cdual c
+  | ABra c, Some (ASel c' _) => c' = cdual c
   | _, _ => False
   end.
 
@@ -161,9 +169,9 @@ Proof. destruct a, b as [[]|]; simpl; apply _. Defined.
 
 Definition partner_need (C : gset chan) (M : gmap nat expr) (t : nat) (a : action) : Prop :=
   match a with
-  | ABeta | ANew | ASpawn _ => True
-  | ALink c d => c ∈ C ∨ d ∈ C
-  | AClos c => c ∈ C ∧ ∃ j f, j ≠ t ∧ M !! j = Some f ∧ partner_ok a (act f)
+  | ABeta | ANew _ | ASpawn _ => True
+  | ALink c d => c.1 ∈ C ∨ d.1 ∈ C
+  | AClos c => c.1 ∈ C ∧ ∃ j f, j ≠ t ∧ M !! j = Some f ∧ partner_ok a (act f)
   | _ => ∃ j f, j ≠ t ∧ M !! j = Some f ∧ partner_ok a (act f)
   end.
 
@@ -183,9 +191,9 @@ Proof.
   assert (∀ α e', tstep e α e' → offers a α) as Hoff.
   { intros α e' Hs. destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho). congruence. }
   remember (C, M) as q0 eqn:Hq0.
-  destruct Hst as [C0 M0 i e0 e0' Hi Hs|C0 M0 i e0 c e0' Hi Hs HC Hc|C0 M0 i j e0 v e0' Hi Hs Hj
-    |C0 M0 i j c v e0 e0' f f' Hij Hi Hj He0 Hf|C0 M0 i j c e0 e0' f f' Hij Hi Hj He0 Hf HC
-    |C0 M0 i j c b e0 e0' f f' Hij Hi Hj He0 Hf|C0 M0 i e0 c d e0' Hi Hs HC];
+  destruct Hst as [C0 M0 i e0 e0' Hi Hs|C0 M0 i e0 c x e0' Hi Hs HC Hc|C0 M0 i j e0 v e0' Hi Hs Hj
+    |C0 M0 i j c bb v e0 e0' f f' Hij Hi Hj He0 Hf|C0 M0 i j c bb e0 e0' f f' Hij Hi Hj He0 Hf HC
+    |C0 M0 i j c β bb e0 e0' f f' Hij Hi Hj He0 Hf|C0 M0 i e0 c bc d bd e0' Hi Hs HC];
     injection Hq0 as -> ->; simpl in Ht.
   - apply elem_of_singleton in Ht as ->. rewrite He in Hi. injection Hi as <-.
     apply Hoff in Hs. destruct a; simpl in Hs |- *; tauto.
@@ -196,27 +204,28 @@ Proof.
   - apply elem_of_union in Ht as [Ht|Ht]; apply elem_of_singleton in Ht as ->.
     + rewrite He in Hi. injection Hi as <-. apply Hoff, offers_send in He0 as ->.
       destruct (act_step _ _ _ Hf) as (b & Hb & Hob). apply offers_recv in Hob as ->.
-      simpl. exists j, f. split_and!; [lia|done|by rewrite Hb].
+      simpl. exists j, f. split_and!; [lia|done|rewrite Hb; unfold cdual; simpl; by rewrite ?negb_involutive].
     + rewrite He in Hj. injection Hj as <-. apply Hoff, offers_recv in Hf as ->.
       destruct (act_step _ _ _ He0) as (b & Hb & Hob). apply offers_send in Hob as ->.
-      simpl. exists i, e0. split_and!; [lia|done|by rewrite Hb].
+      simpl. exists i, e0. split_and!; [lia|done|rewrite Hb; unfold cdual; simpl; by rewrite ?negb_involutive].
   - apply elem_of_union in Ht as [Ht|Ht]; apply elem_of_singleton in Ht as ->.
     + rewrite He in Hi. injection Hi as <-. apply Hoff, offers_clos in He0 as ->.
       destruct (act_step _ _ _ Hf) as (b & Hb & Hob). apply offers_clos in Hob as ->.
-      simpl. split; [done|]. exists j, f. split_and!; [lia|done|by rewrite Hb].
+      simpl. split; [done|]. exists j, f. split_and!; [lia|done|rewrite Hb; unfold cdual; simpl; by rewrite ?negb_involutive].
     + rewrite He in Hj. injection Hj as <-. apply Hoff, offers_clos in Hf as ->.
       destruct (act_step _ _ _ He0) as (b & Hb & Hob). apply offers_clos in Hob as ->.
-      simpl. split; [done|]. exists i, e0. split_and!; [lia|done|by rewrite Hb].
+      simpl. split; [done|]. exists i, e0. split_and!; [lia|done|rewrite Hb; unfold cdual; simpl; by rewrite ?negb_involutive].
   - apply elem_of_union in Ht as [Ht|Ht]; apply elem_of_singleton in Ht as ->.
     + rewrite He in Hi. injection Hi as <-. apply Hoff, offers_sel in He0 as ->.
       destruct (act_step _ _ _ Hf) as (b' & Hb & Hob). apply offers_bra in Hob as ->.
-      simpl. exists j, f. split_and!; [lia|done|by rewrite Hb].
+      simpl. exists j, f. split_and!; [lia|done|rewrite Hb; unfold cdual; simpl; by rewrite ?negb_involutive].
     + rewrite He in Hj. injection Hj as <-. apply Hoff, offers_bra in Hf as ->.
       destruct (act_step _ _ _ He0) as (b' & Hb & Hob). apply offers_sel in Hob as ->.
-      simpl. exists i, e0. split_and!; [lia|done|by rewrite Hb].
+      simpl. exists i, e0. split_and!; [lia|done|rewrite Hb; unfold cdual; simpl; by rewrite ?negb_involutive].
   - apply elem_of_singleton in Ht as ->. rewrite He in Hi. injection Hi as <-.
     apply Hoff, offers_link in Hs as (c' & d' & -> & Hcd). simpl.
-    assert (c ∈ ({[c'; d']} : gset chan)) by (rewrite <-Hcd; set_solver). set_solver.
+    assert ((c, bc) ∈ ({[c'; d']} : gset cend)) as Hin by (rewrite <-Hcd; set_solver).
+    apply elem_of_union in Hin as [Hin|Hin]; apply elem_of_singleton in Hin; subst; simpl; auto.
 Qed.
 
 (** ** Deciding whether a thread can take part, with the step *)
@@ -241,79 +250,81 @@ Proof.
   destruct (act e) as [a|] eqn:Ha.
   2:{ right. intros Hen. destruct (enabled_act _ _ _ Hen He) as [a Ha']. congruence. }
   pose proof (enabled_partner C M t e a) as Hneed.
-  destruct a as [| |v|c|c v|c|c d|c b|c].
+  destruct a as [|x|v|[c β]|[c β] v|[c β]|[c bc] [d bd]|[c β] b|[c β]].
   - left. destruct (act_offer_sig e _ LBeta Ha I) as [e' Hs].
     exists ({[t]}, (C, <[t := e']> M)). split; [by eapply IBeta|simpl; set_solver].
   - left. set (c := fresh (C ∪ echans (soup M))).
     assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
-    destruct (act_offer_sig e _ (LNew c) Ha I) as [e' Hs].
+    destruct (act_offer_sig e _ (LNew c x) Ha eq_refl) as [e' Hs].
     exists ({[t]}, (C ∪ {[c]}, <[t := e']> M)).
     split; [eapply INew; [done|done|set_solver|set_solver]|simpl; set_solver].
   - left. destruct (act_offer_sig e _ (LSpawn v) Ha eq_refl) as [e' Hs].
     set (j := fresh (dom M)). assert (M !! j = None) as Hj by (apply not_elem_of_dom, is_fresh).
     exists ({[t]}, (C, <[j := App v EUnit]> (<[t := e']> M))).
     split; [by eapply ISpawn|simpl; set_solver].
-  - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ARecv c) (act f)))
+  - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ARecv (c, β)) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
     + left. simpl in *. destruct (act f) as [[| | | |c' w| | | |]|] eqn:Hf; simpl in Hok; try done.
       subst c'.
-      destruct (act_offer_sig f _ (LSess (SSend c w)) Hf (conj eq_refl eq_refl)) as [f' Hsf].
-      destruct (act_offer_sig e _ (LSess (SRecv c w)) Ha (conj eq_refl (act_send_val f c w Hf)))
-        as [e' Hse].
+      destruct (act_offer_sig f _ (LSess (SSend (c, negb β) w)) Hf (conj eq_refl eq_refl))
+        as [f' Hsf].
+      destruct (act_offer_sig e _ (LSess (SRecv (c, β) w)) Ha
+        (conj eq_refl (act_send_val f _ w Hf))) as [e' Hse].
       exists ({[j; t]}, (C, <[t := e']> (<[j := f']> M))). split; [|simpl; set_solver].
-      by eapply IMsg.
+      eapply IMsg; [done|done|done|exact Hsf|]. by rewrite negb_involutive.
     + right. intros Hen. destruct (Hneed Hen He Ha) as (j & f & Hjt & Hj & Hok).
       by apply (Hno j f Hj).
-  - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ASend c v) (act f)))
+  - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ASend (c, β) v) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
     + left. simpl in *. destruct (act f) as [[| | |c'| | | | |]|] eqn:Hf; simpl in Hok; try done.
       subst c'.
-      destruct (act_offer_sig e _ (LSess (SSend c v)) Ha (conj eq_refl eq_refl)) as [e' Hse].
-      destruct (act_offer_sig f _ (LSess (SRecv c v)) Hf (conj eq_refl (act_send_val e c v Ha)))
-        as [f' Hsf].
+      destruct (act_offer_sig e _ (LSess (SSend (c, β) v)) Ha (conj eq_refl eq_refl)) as [e' Hse].
+      destruct (act_offer_sig f _ (LSess (SRecv (c, negb β) v)) Hf
+        (conj eq_refl (act_send_val e _ v Ha))) as [f' Hsf].
       exists ({[t; j]}, (C, <[j := f']> (<[t := e']> M))). split; [|simpl; set_solver].
       eapply IMsg; [by apply not_eq_sym|done..].
     + right. intros Hen. destruct (Hneed Hen He Ha) as (j & f & Hjt & Hj & Hok).
       by apply (Hno j f Hj).
   - destruct (decide (c ∈ C)) as [HC|HC].
     2:{ right. intros Hen. by destruct (Hneed Hen He Ha) as [? _]. }
-    destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (AClos c) (act f)))
+    destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (AClos (c, β)) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
     + left. simpl in *. destruct (act f) as [[| | | | |c'| | |]|] eqn:Hf; simpl in Hok; try done.
       subst c'.
-      destruct (act_offer_sig e _ (LSess (SClos c)) Ha eq_refl) as [e' Hse].
-      destruct (act_offer_sig f _ (LSess (SClos c)) Hf eq_refl) as [f' Hsf].
+      destruct (act_offer_sig e _ (LSess (SClos (c, β))) Ha eq_refl) as [e' Hse].
+      destruct (act_offer_sig f _ (LSess (SClos (c, negb β))) Hf eq_refl) as [f' Hsf].
       exists ({[t; j]}, (C ∖ {[c]}, <[j := f']> (<[t := e']> M))). split; [|simpl; set_solver].
       eapply IClose; [by apply not_eq_sym|done..].
     + right. intros Hen. destruct (Hneed Hen He Ha) as (_ & j & f & Hjt & Hj & Hok).
       by apply (Hno j f Hj).
-  - destruct (act_offer_sig e _ (LSess (SLink {[c; d]})) Ha eq_refl) as [e' Hse].
+  - destruct (act_offer_sig e _ (LSess (SLink {[(c, bc); (d, bd)]})) Ha eq_refl) as [e' Hse].
     destruct (decide (c ∈ C)) as [HC|HC].
     { left. exists ({[t]}, (C ∖ {[c]}, chsubst c d <$> (<[t := e']> M))).
       split; [by eapply ILink|simpl; set_solver]. }
     destruct (decide (d ∈ C)) as [HD|HD].
     { left. exists ({[t]}, (C ∖ {[d]}, chsubst d c <$> (<[t := e']> M))).
       split; [|simpl; set_solver]. eapply ILink; [done| |done].
-      by replace ({[d; c]} : gset chan) with ({[c; d]} : gset chan) by set_solver. }
+      by rewrite upair_comm. }
     right. intros Hen. by destruct (Hneed Hen He Ha).
-  - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ASel c b) (act f)))
+  - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ASel (c, β) b) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
     + left. simpl in *. destruct (act f) as [[| | | | | | | |c']|] eqn:Hf; simpl in Hok; try done.
       subst c'.
-      destruct (act_offer_sig e _ (LSess (SSel c b)) Ha (conj eq_refl eq_refl)) as [e' Hse].
-      destruct (act_offer_sig f _ (LSess (SBra c b)) Hf eq_refl) as [f' Hsf].
+      destruct (act_offer_sig e _ (LSess (SSel (c, β) b)) Ha (conj eq_refl eq_refl)) as [e' Hse].
+      destruct (act_offer_sig f _ (LSess (SBra (c, negb β) b)) Hf eq_refl) as [f' Hsf].
       exists ({[t; j]}, (C, <[j := f']> (<[t := e']> M))). split; [|simpl; set_solver].
       eapply IChoice; [by apply not_eq_sym|done..].
     + right. intros Hen. destruct (Hneed Hen He Ha) as (j & f & Hjt & Hj & Hok).
       by apply (Hno j f Hj).
-  - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ABra c) (act f)))
+  - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ABra (c, β)) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
     + left. simpl in *. destruct (act f) as [[| | | | | | |c' b|]|] eqn:Hf; simpl in Hok; try done.
       subst c'.
-      destruct (act_offer_sig f _ (LSess (SSel c b)) Hf (conj eq_refl eq_refl)) as [f' Hsf].
-      destruct (act_offer_sig e _ (LSess (SBra c b)) Ha eq_refl) as [e' Hse].
+      destruct (act_offer_sig f _ (LSess (SSel (c, negb β) b)) Hf (conj eq_refl eq_refl))
+        as [f' Hsf].
+      destruct (act_offer_sig e _ (LSess (SBra (c, β) b)) Ha eq_refl) as [e' Hse].
       exists ({[j; t]}, (C, <[t := e']> (<[j := f']> M))). split; [|simpl; set_solver].
-      by eapply IChoice.
+      eapply IChoice; [done|done|done|exact Hsf|]. by rewrite negb_involutive.
     + right. intros Hen. destruct (Hneed Hen He Ha) as (j & f & Hjt & Hj & Hok).
       by apply (Hno j f Hj).
 Qed.
@@ -458,9 +469,9 @@ Lemma preduction_back q p1 : preduction p1 (erase q) → ∃ L q1, erase q1 = p1
 Proof.
   destruct q as [C' M]. unfold erase, preduction; simpl. intros H.
   remember (C', soup M) as p2 eqn:Hp2. remember PTau as π eqn:Hπ.
-  destruct H as [|C E e e' Hst|C E e c e' Hst HC HcE Hce|C E e v e' Hst
-    |C E c v e e' f f' He Hf|C E c e e' f f' He Hf HC
-    |C E c b e e' f f' He Hf|C E e c d e' Hst HC]; try discriminate;
+  destruct H as [|C E e e' Hst|C E e c x e' Hst HC HcE Hce|C E e v e' Hst
+    |C E c b v e e' f f' He Hf|C E c b e e' f f' He Hf HC
+    |C E c β b e e' f f' He Hf|C E e c bc d bd e' Hst HC]; try discriminate;
     injection Hp2 as <- HE; symmetry in HE.
   - destruct (soup_extract M E e' HE) as (i & Hi & HEi).
     exists {[i]}, (C, <[i := e]> M). split.

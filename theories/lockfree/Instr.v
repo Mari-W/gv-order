@@ -93,27 +93,27 @@ Inductive istep : config → gset nat → config → Prop :=
   | IBeta C M i e e' :
       M !! i = Some e → tstep e LBeta e' →
       istep (C, M) {[i]} (C, <[i := e']> M)
-  | INew C M i e c e' :
-      M !! i = Some e → tstep e (LNew c) e' →
+  | INew C M i e c x e' :
+      M !! i = Some e → tstep e (LNew c x) e' →
       c ∉ C → c ∉ echans (soup M) →
       istep (C, M) {[i]} (C ∪ {[c]}, <[i := e']> M)
   | ISpawn C M i j e v e' :
       M !! i = Some e → tstep e (LSpawn v) e' → M !! j = None →
       istep (C, M) {[i]} (C, <[j := App v EUnit]> (<[i := e']> M))
-  | IMsg C M i j c v e e' f f' :
+  | IMsg C M i j c b v e e' f f' :
       i ≠ j → M !! i = Some e → M !! j = Some f →
-      tstep e (LSess (SSend c v)) e' → tstep f (LSess (SRecv c v)) f' →
+      tstep e (LSess (SSend (c, b) v)) e' → tstep f (LSess (SRecv (c, negb b) v)) f' →
       istep (C, M) {[i; j]} (C, <[j := f']> (<[i := e']> M))
-  | IClose C M i j c e e' f f' :
+  | IClose C M i j c b e e' f f' :
       i ≠ j → M !! i = Some e → M !! j = Some f →
-      tstep e (LSess (SClos c)) e' → tstep f (LSess (SClos c)) f' → c ∈ C →
+      tstep e (LSess (SClos (c, b))) e' → tstep f (LSess (SClos (c, negb b))) f' → c ∈ C →
       istep (C, M) {[i; j]} (C ∖ {[c]}, <[j := f']> (<[i := e']> M))
-  | IChoice C M i j c b e e' f f' :
+  | IChoice C M i j c β b e e' f f' :
       i ≠ j → M !! i = Some e → M !! j = Some f →
-      tstep e (LSess (SSel c b)) e' → tstep f (LSess (SBra c b)) f' →
+      tstep e (LSess (SSel (c, β) b)) e' → tstep f (LSess (SBra (c, negb β) b)) f' →
       istep (C, M) {[i; j]} (C, <[j := f']> (<[i := e']> M))
-  | ILink C M i e c d e' :
-      M !! i = Some e → tstep e (LSess (SLink {[c; d]})) e' → c ∈ C →
+  | ILink C M i e c bc d bd e' :
+      M !! i = Some e → tstep e (LSess (SLink {[(c, bc); (d, bd)]})) e' → c ∈ C →
       istep (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> (<[i := e']> M)).
 
 Definition istep' (q q' : config) : Prop := ∃ L, istep q L q'.
@@ -123,13 +123,13 @@ Abbreviation isteps := (rtc istep').
 
 Theorem istep_erase q L q' : istep q L q' → preduction (erase q) (erase q').
 Proof.
-  destruct 1 as [C M i e e' Hi Hst|C M i e c e' Hi Hst HC Hc|C M i j e v e' Hi Hst Hj
-    |C M i j c v e e' f f' Hij Hi Hj He Hf|C M i j c e e' f f' Hij Hi Hj He Hf HC
-    |C M i j c b e e' f f' Hij Hi Hj He Hf|C M i e c d e' Hi Hst HC]; unfold erase; simpl.
+  destruct 1 as [C M i e e' Hi Hst|C M i e c x e' Hi Hst HC Hc|C M i j e v e' Hi Hst Hj
+    |C M i j c b v e e' f f' Hij Hi Hj He Hf|C M i j c b e e' f f' Hij Hi Hj He Hf HC
+    |C M i j c β b e e' f f' Hij Hi Hj He Hf|C M i e c bc d bd e' Hi Hst HC]; unfold erase; simpl.
   - rewrite (soup_delete M i e Hi), (soup_update M i e e' Hi). by apply PStepBeta.
   - rewrite (soup_update M i e e' Hi). rewrite (soup_delete M i e Hi) in Hc |- *.
     rewrite echans_disj_union, echans_singleton in Hc.
-    apply PStepNew; [done|done|set_solver|set_solver].
+    eapply PStepNew; [done|done|set_solver|set_solver].
   - assert (i ≠ j) by (intros ->; congruence).
     rewrite soup_insert by (rewrite lookup_insert_ne; done).
     rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi). by eapply PStepSpawn.
@@ -137,7 +137,7 @@ Proof.
   - destruct (soup_update2 M i j e f e' f' Hij Hi Hj) as [-> ->]. by eapply PStepClose.
   - destruct (soup_update2 M i j e f e' f' Hij Hi Hj) as [-> ->]. by eapply PStepChoice.
   - rewrite soup_fmap, (soup_update M i e e' Hi), (soup_delete M i e Hi).
-    by apply PStepLink.
+    by eapply PStepLink.
 Qed.
 
 Corollary isteps_erase q q' : isteps q q' → pred_star (erase q) (erase q').
@@ -153,9 +153,9 @@ Theorem preduction_lift q p' :
 Proof.
   destruct q as [C M]. unfold erase, preduction; simpl. intros H.
   remember (C, soup M) as p0 eqn:Hp0. remember PTau as π eqn:Hπ.
-  destruct H as [|C0 E e e' Hst|C0 E e c e' Hst HC HcE Hce|C0 E e v e' Hst
-    |C0 E c v e e' f f' He Hf|C0 E c e e' f f' He Hf HC
-    |C0 E c b e e' f f' He Hf|C0 E e c d e' Hst HC]; try discriminate;
+  destruct H as [|C0 E e e' Hst|C0 E e c x e' Hst HC HcE Hce|C0 E e v e' Hst
+    |C0 E c b v e e' f f' He Hf|C0 E c b e e' f f' He Hf HC
+    |C0 E c β b e e' f f' He Hf|C0 E e c bc d bd e' Hst HC]; try discriminate;
     injection Hp0 as <- HE; symmetry in HE.
   - destruct (soup_extract M E e HE) as (i & Hi & HEi).
     eexists _, _. split; [by eapply IBeta|].
@@ -221,7 +221,8 @@ Fixpoint emap (g : chan → chan) (e : expr) : expr :=
   | Var x => Var x
   | EUnit => EUnit
   | Konst k => Konst k
-  | Chan c => Chan (g c)
+  | Chan c b => Chan (g c) b
+  | EPt x => EPt x
   | Lam e => Lam (emap g e)
   | App e1 e2 => App (emap g e1) (emap g e2)
   | Pair e1 e2 => Pair (emap g e1) (emap g e2)
@@ -250,19 +251,19 @@ Proof. induction e; simpl; try done; by rewrite ?IHe1, ?IHe2, ?IHe. Qed.
 Definition amap (g : chan → chan) (a : action) : action :=
   match a with
   | ABeta => ABeta
-  | ANew => ANew
+  | ANew x => ANew x
   | ASpawn v => ASpawn (emap g v)
-  | ARecv c => ARecv (g c)
-  | ASend c v => ASend (g c) (emap g v)
-  | AClos c => AClos (g c)
-  | ALink c d => ALink (g c) (g d)
-  | ASel c b => ASel (g c) b
-  | ABra c => ABra (g c)
+  | ARecv c => ARecv (g c.1, c.2)
+  | ASend c v => ASend (g c.1, c.2) (emap g v)
+  | AClos c => AClos (g c.1, c.2)
+  | ALink c d => ALink (g c.1, c.2) (g d.1, d.2)
+  | ASel c b => ASel (g c.1, c.2) b
+  | ABra c => ABra (g c.1, c.2)
   end.
 
 Lemma act_emap g e : act (emap g e) = amap g <$> act e.
 Proof.
-  induction e as [| | |c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [| | |c b|x|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
     |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; simpl; try done; rewrite ?is_val_emap.
   - destruct (is_val e1) eqn:H1; [|done]. destruct (is_val e2) eqn:H2; [|done].
     destruct e1; simpl; try done.
@@ -284,7 +285,7 @@ Proof. rewrite chsubst_emap. apply act_emap. Qed.
     administrative. It is a session action too, because it names two
     channels. *)
 Definition is_admin (a : action) : Prop :=
-  match a with ABeta | ANew | ASpawn _ | ALink _ _ => True | _ => False end.
+  match a with ABeta | ANew _ | ASpawn _ | ALink _ _ => True | _ => False end.
 
 Definition is_sess (a : action) : Prop := is_Some (asubjs a).
 
@@ -304,7 +305,7 @@ Lemma amap_sess g a : is_sess (amap g a) ↔ is_sess a.
 Proof. unfold is_sess. destruct a; simpl; split; eauto. Qed.
 
 Definition admin_lbl (α : tlabel) : Prop :=
-  match α with LBeta | LNew _ | LSpawn _ | LSess (SLink _) => True | LSess _ => False end.
+  match α with LBeta | LNew _ _ | LSpawn _ | LSess (SLink _) => True | LSess _ => False end.
 
 Lemma offers_admin a α : offers a α → is_admin a ↔ admin_lbl α.
 Proof. destruct a, α; simpl; try done; destruct σ; done. Qed.
@@ -405,7 +406,7 @@ Qed.
     end, because P-Act-Link removes one (sharp edges 171). *)
 Lemma admin_enabled q t e a :
   q.2 !! t = Some e → act e = Some a → is_admin a →
-  (∀ c d, a = ALink c d → c ∈ q.1 ∨ d ∈ q.1) → enabled q t.
+  (∀ c d, a = ALink c d → c.1 ∈ q.1 ∨ d.1 ∈ q.1) → enabled q t.
 Proof.
   destruct q as [C M]. intros He Ha Had Hln. simpl in *.
   destruct a; try done.
@@ -413,16 +414,18 @@ Proof.
     eexists _, _. split; [by eapply IBeta|set_solver].
   - set (c := fresh (C ∪ echans (soup M))).
     assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
-    destruct (act_offer e ANew (LNew c) Ha I) as [e' Hs].
+    destruct (act_offer e (ANew x) (LNew c x) Ha eq_refl) as [e' Hs].
     eexists _, _. split; [eapply INew; [done|done|set_solver|set_solver]|set_solver].
   - destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e' Hs].
     set (j := fresh (dom M)).
     assert (M !! j = None) as Hj by (apply not_elem_of_dom, is_fresh).
     eexists _, _. split; [by eapply ISpawn|set_solver].
-  - destruct (act_offer e (ALink c d) (LSess (SLink {[c; d]})) Ha eq_refl) as [e' Hs].
-    destruct (Hln c d eq_refl) as [Hc|Hd].
+  - destruct c as [c bc], d as [d bd].
+    destruct (act_offer e (ALink (c, bc) (d, bd)) (LSess (SLink {[(c, bc); (d, bd)]})) Ha eq_refl)
+      as [e' Hs].
+    destruct (Hln (c, bc) (d, bd) eq_refl) as [Hc|Hd]; simpl in *.
     + eexists _, _. split; [by eapply ILink|set_solver].
-    + assert (tstep e (LSess (SLink {[d; c]})) e') as Hs'.
-      { by replace ({[d; c]} : gset chan) with ({[c; d]} : gset chan) by set_solver. }
+    + assert (tstep e (LSess (SLink {[(d, bd); (c, bc)]})) e') as Hs'.
+      { by rewrite upair_comm. }
       eexists _, _. split; [by eapply ILink|set_solver].
 Qed.

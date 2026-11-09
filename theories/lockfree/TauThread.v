@@ -37,21 +37,24 @@ Proof. unfold subst1. rewrite emap_subst. apply subst_ext. by intros [|x]. Qed.
 Lemma emap_subst2 g u v e : emap g (subst2 u v e) = subst2 (emap g u) (emap g v) (emap g e).
 Proof. unfold subst2. rewrite emap_subst. apply subst_ext. by intros [|[|x]]. Qed.
 
+(** The renaming of an end keeps its bit. *)
+Definition omap (g : chan → chan) (o : cend) : cend := (g o.1, o.2).
+
 Definition smap (g : chan → chan) (σ : slabel) : slabel :=
   match σ with
-  | SRecv c v => SRecv (g c) (emap g v)
-  | SSend c v => SSend (g c) (emap g v)
-  | SClos c => SClos (g c)
-  | SLink cd => SLink (set_map g cd)
-  | SSel c b => SSel (g c) b
-  | SBra c b => SBra (g c) b
+  | SRecv c v => SRecv (omap g c) (emap g v)
+  | SSend c v => SSend (omap g c) (emap g v)
+  | SClos c => SClos (omap g c)
+  | SLink cd => SLink (set_map (omap g) cd)
+  | SSel c b => SSel (omap g c) b
+  | SBra c b => SBra (omap g c) b
   end.
 
 Definition lmap (g : chan → chan) (α : tlabel) : tlabel :=
   match α with
   | LBeta => LBeta
   | LSess σ => LSess (smap g σ)
-  | LNew c => LNew (g c)
+  | LNew c x => LNew (g c) x
   | LSpawn v => LSpawn (emap g v)
   end.
 
@@ -60,7 +63,9 @@ Proof.
   destruct 1; simpl; rewrite ?emap_subst1, ?emap_subst2.
   all: try (constructor; by rewrite ?is_val_emap).
   - by destruct b; constructor.
-  - replace (set_map g {[c; d]} : gset chan) with ({[g c; g d]} : gset chan) by set_solver.
+  - replace (set_map (omap g) {[(c, bc); (d, bd)]} : gset cend)
+      with ({[(g c, bc); (g d, bd)]} : gset cend)
+      by (by rewrite set_map_union_L, !set_map_singleton_L).
     constructor.
 Qed.
 
@@ -158,7 +163,7 @@ Qed.
     fires (sharp edges 171). *)
 Definition links_restricted (p : proc) : Prop :=
   ∀ q E e c d, pred_star p q → q.2 = E ⊎ {[+ e +]} → act e = Some (ALink c d) →
-    c ∈ q.1 ∨ d ∈ q.1.
+    c.1 ∈ q.1 ∨ d.1 ∈ q.1.
 
 (** An admin-accessible process has admin-accessible threads. *)
 Lemma padmin_acc_thread p q :
@@ -172,7 +177,7 @@ Proof.
   constructor. intros y (α & x' & Hα & Hst & ->).
   destruct (act_step _ _ _ Hst) as (a' & Ha' & Ho). unfold cerase in Ha'.
   rewrite act_emap in Ha'. destruct (act e) as [a|] eqn:Ha; [|done]. simpl in Ha'.
-  simplify_eq. destruct a; simpl in Ho; destruct α as [|[| | |cd| |]|c1|w];
+  simplify_eq. destruct a; simpl in Ho; destruct α as [|[| | |cd| |]|c1 x1|w];
     try (exfalso; exact Ho); try (exfalso; exact Hα).
   - (* β *)
     destruct (act_offer e ABeta LBeta Ha I) as [e' He'].
@@ -182,13 +187,13 @@ Proof.
   - (* new, at a globally fresh name *)
     set (c0 := fresh (C ∪ echans E ∪ fchans e)).
     assert (c0 ∉ C ∪ echans E ∪ fchans e) as Hc0 by apply is_fresh.
-    destruct (act_offer e ANew (LNew c0) Ha I) as [e' He'].
+    subst x1. destruct (act_offer e (ANew x) (LNew c0 x) Ha eq_refl) as [e' He'].
     assert (cerase x' = cerase e') as ->.
     { rewrite <-(cerase_idem e'). eapply tstep_det_cerase; [exact Hst|by apply tstep_emap|done]. }
     assert (c0 ∉ C) by (clear -Hc0; set_solver).
     assert (c0 ∉ echans E) by (clear -Hc0; set_solver).
     assert (c0 ∉ fchans e) by (clear -Hc0; set_solver).
-    pose proof (PANew C E e c0 e' He' H H0 H1) as Hpa.
+    pose proof (PANew C E e c0 x e' He' H H0 H1) as Hpa.
     exact (IH _ Hpa (Hr' _ Hpa) E e' eq_refl).
   - (* spawn *)
     subst w. destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e' He'].
@@ -200,20 +205,21 @@ Proof.
     simpl. multiset_solver.
   - (* link, at a restricted end *)
     match type of Ha with act e = Some (ALink ?x ?y) => rename x into c; rename y into d end.
-    destruct (act_offer e (ALink c d) (LSess (SLink {[c; d]})) Ha eq_refl) as [e' He'].
+    destruct c as [c bc], d as [d bd].
+    destruct (act_offer e (ALink (c, bc) (d, bd)) (LSess (SLink {[(c, bc); (d, bd)]})) Ha eq_refl)
+      as [e' He'].
     assert (cerase x' = cerase e') as ->.
     { rewrite <-(cerase_idem e'). eapply tstep_det_cerase; [exact Hst|by apply tstep_emap|].
-      simpl. rewrite Ho. f_equal. f_equal. set_solver. }
-    assert (∀ c' d', tstep e (LSess (SLink {[c'; d']})) e' → c' ∈ C →
+      simpl. rewrite Ho. f_equal. f_equal. by rewrite !set_map_union_L, !set_map_singleton_L. }
+    assert (∀ c' bc' d' bd', tstep e (LSess (SLink {[(c', bc'); (d', bd')]})) e' → c' ∈ C →
               Acc tR (cerase e')) as Hlk.
-    { intros c' d' Hs' Hc'. pose proof (PALink C E e c' d' e' Hs' Hc') as Hpa.
+    { intros c' bc' d' bd' Hs' Hc'. pose proof (PALink C E e c' bc' d' bd' e' Hs' Hc') as Hpa.
       rewrite <-(cerase_emap (csub c' d') e'), <-chsubst_emap.
       apply (IH _ Hpa (Hr' _ Hpa) (echsubst c' d' E)).
       simpl. by rewrite echsubst_disj_union, echsubst_singleton. }
-    destruct (Hlr (C, E ⊎ {[+ e +]}) E e c d Hpq eq_refl Ha) as [Hc|Hd]; simpl in *.
-    + exact (Hlk c d He' Hc).
-    + apply (Hlk d c); [|done].
-      by replace ({[d; c]} : gset chan) with ({[c; d]} : gset chan) by set_solver.
+    destruct (Hlr (C, E ⊎ {[+ e +]}) E e (c, bc) (d, bd) Hpq eq_refl Ha) as [Hc|Hd]; simpl in *.
+    + exact (Hlk c bc d bd He' Hc).
+    + apply (Hlk d bd c bc); [|done]. by rewrite upair_comm.
 Qed.
 
 (** Every thread of every reachable configuration is admin-accessible. *)
