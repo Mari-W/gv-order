@@ -808,4 +808,29 @@ Section fuel_exists.
         unfold fval. rewrite !eupd_ne by done. rewrite Hm. split_and!; [done|done|].
         intros ->%elem_of_singleton. done.
   Qed.
+  (** The channel of a synchronization between i and j is not t's. *)
+  Lemma fe_chan i j ei ej σi σj ei' ej' c b :
+    i ≠ t → j ≠ t → M !! i = Some ei → M !! j = Some ej →
+    tstep ei (LSess σi) ei' → sl_end σi = Some (c, b) →
+    tstep ej (LSess σj) ej' → sl_end σj = Some (c, negb b) → o.1 ≠ c.
+  Proof.
+    intros Hit Hjt Hi Hj Hsi Hei Hsj Hej Hoc.
+    pose proof (tstep_end_fends _ _ _ _ Hsi Hei) as H1. pose proof (tstep_end_fends _ _ _ _ Hsj Hej) as H2.
+    apply (st_cowner (S n) W HW T π C M A U Hc i j ei ej c b t e Hi Hj H1 H2 (not_eq_sym Hit) (not_eq_sym Hjt) He).
+    rewrite <-Hoc. apply fchans_of_fends. apply (s_held (S (S n)) W HW T π (C, M) A U Hc t e a o He Ha Ho).
+  Qed.
+
+  (** The counter of an end other than the acted one, after the action. *)
+  Lemma fe_val_act x σ ox kx :
+    sl_end σ = Some ox → mrem (sl_out σ) (P x) !! ox = Some kx → cdual o ∉ sl_out σ → cdual o ≠ ox →
+    (∀ y, sl_next σ kx = Some y → y.1 ≠ cdual o) →
+    (fupd W (P x) (F x) (LSess σ)).2 !! cdual o = ftick <$> F x !! cdual o.
+  Proof.
+    intros Hox Hk' Hout Hne Hnx.
+    rewrite (fupd_act W σ (P x) (F x) ox kx Hox Hk').
+    destruct (sl_next σ kx) as [[o1 k1]|] eqn:Hn; simpl.
+    - rewrite lookup_insert_ne by (intros Heq; apply (Hnx (o1, k1)); [done|by rewrite Heq]).
+      rewrite lookup_fmap, lookup_delete_ne by done. rewrite lookup_mrem, decide_False by done. done.
+    - rewrite lookup_fmap, lookup_delete_ne by done. rewrite lookup_mrem, decide_False by done. done.
+  Qed.
 End fuel_exists.
