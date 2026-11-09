@@ -7,9 +7,11 @@
     strict world, and [soundness] gives [*_deadlock_free].
 
     A program text let (c, d) = new ∗ in t in a comment stands for the
-    encoded let of new, [let_new_pair t] (sharp edges 99, 104). A
-    channel at a known point x is typed by [t_new_at], new at the
-    constraint {ι ≡ x}. The typing lemmas take a strict world, because
+    encoded let of new, [let_new_pair_at (EPt x) t] (sharp edges 99,
+    104, 173). A top-level new names a constant x of the hypotheses
+    ([created]). A box that creates a channel takes its point as a
+    parameter of type [TPt ι] and passes [let_new_pair_at v t] a
+    computed point v ([t_new_v]). The typing lemmas take a strict world, because
     [t_new_at] instantiates the body past ι.
 
     This file holds what several examples share. Strict worlds come from
