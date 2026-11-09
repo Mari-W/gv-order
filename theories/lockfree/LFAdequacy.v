@@ -492,3 +492,56 @@ Proof.
   apply (synced_enabled q' t p o). apply (synced_step q L q' t p o Hsy Hst Ht HpL).
   intros u eu HuL Heu Hm. destruct (Hholds u eu Heu Hm) as [->| ->]; done.
 Qed.
+
+(** ** The soup along runs and reachable configurations *)
+
+Lemma strict_of W : world_wf W → well_founded (w_lt W) → strict W.
+Proof. intros HW Hwf. split; [done|]. intros x Hx. induction (Hwf x) as [x _ IH]. by apply (IH x). Qed.
+
+Lemma lfconf_isteps W T π q0 q1 :
+  strict W → isteps q0 q1 → (∀ n, ∃ A U, LFconf n W ∅ T π q0 A U) →
+  ∃ π', ∀ n, ∃ A U, LFconf n W ∅ T π' q1 A U.
+Proof.
+  intros HW Hs. revert π. induction Hs as [q|q q2 q3 [L Hst] _ IH]; intros π H0; [by exists π|].
+  apply (IH (pupd π q L q2)). intros n. destruct (H0 (S (S n))) as (A & U & Hc).
+  by apply (lfconf_step n W T π q A U L q2).
+Qed.
+
+(** The soup of a judgment, at any lifting of the process. *)
+Lemma LFP_soup W T p q :
+  LFP W ∅ T p → erase q = p →
+  ∃ π φ, (∀ n, ∃ A U, LFconf n W ∅ T π q A U) ∧ (∀ n, lf_fuel n W π φ q).
+Proof.
+  intros [_ (π & φ & HS)] Hq. exists π, φ. split; intros n; destruct (HS n) as (q1 & A & U & Hq1 & Hc & Hf);
+    destruct q as [C M], q1 as [C1 M1]; unfold erase in Hq, Hq1; simpl in *; rewrite <-Hq in Hq1;
+    injection Hq1 as -> HM.
+  - by apply (LFconf_relabel n W ∅ T π C M1 M A U).
+  - by apply (lf_fuel_relabel n W π φ C M1 M).
+Qed.
+
+Lemma erase_surj (p : proc) : ∃ q, erase q = p.
+Proof.
+  destruct p as [C E]. induction E as [|x E IH] using gmultiset_ind.
+  - exists (C, ∅). unfold erase. simpl. by rewrite soup_empty.
+  - destruct IH as [[C' M] Hq]. unfold erase in Hq. simpl in Hq. injection Hq as -> HE.
+    set (j := fresh (dom M)). assert (M !! j = None) as Hj by (apply not_elem_of_dom, is_fresh).
+    exists (C, <[j := x]> M). unfold erase. simpl. rewrite soup_insert by done. rewrite HE.
+    by rewrite (comm_L (⊎)).
+Qed.
+
+Lemma lf_links_restricted W T p :
+  strict W → LFP W ∅ T p → links_restricted p.
+Proof.
+  intros HW HP q E e c d Hq HE Ha.
+  destruct (erase_surj p) as [q0 Hq0].
+  destruct (LFP_soup W T p q0 HP Hq0) as (π & φ & Hc0 & _).
+  rewrite <-Hq0 in Hq. destruct (pred_star_lift q0 q Hq) as (q1 & Hq1 & <-).
+  destruct (lfconf_isteps W T π q0 q1 HW Hq1 Hc0) as [π' Hc1].
+  destruct (Hc1 1) as (A & U & Hc). simpl in HE.
+  assert (e ∈ soup q1.2) as He by (rewrite HE; multiset_solver).
+  apply elem_of_soup in He as [t Ht].
+  pose proof (lf_closed _ _ _ _ _ _ _ _ Hc t e Ht) as Hcl.
+  left. simpl. assert (c.1 ∈ fchans e) as Hce.
+  { apply fchans_of_fends. apply (act_aends_fends e (ALink c d) {[c; d]} Ha eq_refl). set_solver. }
+  set_solver.
+Qed.
