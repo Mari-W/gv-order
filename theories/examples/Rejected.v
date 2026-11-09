@@ -156,13 +156,16 @@ Qed.
     link has upper point ⊥ (sharp edges 68), so the link thunk asks
     no fact, and the program stays rejected. *)
 
+(** Under syntactic points (sharp edges 173) the news name their points:
+    c at the constant 0 and d at 1 in [blocked_main], and c at x = 0, d
+    at x̄ and e at z = 1 in [badlink_main]. *)
 Definition blocked_main : expr :=
-  let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1))
     (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (App EClos (Var 1)) (App EClos (Var 3))))))
       (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
 
 Definition badlink_main : expr :=
-  let_new_pair (let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pt_dual (pconst 0))) (let_new_pair_at (EPt (pconst 1))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App ELink (Pair (Var 6) (Var 4))))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (App EClos (Var 1)) (App EClos (Var 3))))))
         (LetU (App EClos (Var 4)) (App EClos (Var 1))))))).
