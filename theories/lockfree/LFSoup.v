@@ -1005,4 +1005,131 @@ Section step.
     - set_solver.
   Qed.
 
+  (** ** Two participants on one channel *)
+
+  (** Nobody else mentions a channel whose two ends i and j hold. *)
+  Lemma st_cowner i j e f c b t g :
+    M !! i = Some e → M !! j = Some f → (c, b) ∈ fends e → (c, negb b) ∈ fends f →
+    t ≠ i → t ≠ j → M !! t = Some g → c ∉ fchans g.
+  Proof.
+    intros He Hf Hi Hj Hti Htj Hg Hcg. apply fends_of_fchans in Hcg as [b' Hb'].
+    destruct b, b'; simpl in *.
+    - by apply (st_disj t i g e Hti Hg He (c, true)).
+    - by apply (st_disj t j g f Htj Hg Hf (c, false)).
+    - by apply (st_disj t j g f Htj Hg Hf (c, true)).
+    - by apply (st_disj t i g e Hti Hg He (c, false)).
+  Qed.
+
+  Lemma hd_end Θ o u k Θ1 :
+    tenv_hd_end Θ o u k Θ1 → tenv_bipol Θ →
+    ∃ s, unfoldS s = u ∧ tenv_ext Θ1 o.1 (s, k) Θ ∧ tenv_end Θ o = Some (s, k) ∧
+      tenv_end Θ1 o = None ∧ (∀ o', o' ≠ o → tenv_end Θ o' = tenv_end Θ1 o').
+  Proof.
+    intros [(s & Hext & Hu) Hp] Hb. exists s. destruct o as [c b]. simpl in *. subst b.
+    split_and!; [done|done|by apply (tenv_end_ext_eq _ _ _ _ Hext Hb)
+      |by apply (tenv_end_ext_none _ _ _ _ Hext Hb)|].
+    intros o' Ho'. by apply (tenv_end_ext_ne _ _ _ _ _ Hext Hb).
+  Qed.
+
+  Lemma two_frame (i j : nat) (e f e' f' : expr) (Θi Θj : tenv) (c : chan) (π' : gmap cend point) (C' : gset chan) :
+    i ≠ j → M !! i = Some e → M !! j = Some f →
+    LErel n W Θi (U i) ∅ e' → LErel n W Θj (U j) ∅ f' → tenv_fit Θi e' → tenv_fit Θj f' →
+    fends e' ∪ fends f' ⊆ fends e ∪ fends f → fends e' ## fends f' →
+    (C' = C ∨ (C' = (C ∖ {[c]}) ∧ (c ∉ fchans e') ∧ (c ∉ fchans f'))) →
+    (∀ t g, t ≠ i → t ≠ j → M !! t = Some g → c ∉ fchans g) →
+    (∀ o x, o.1 ≠ c → ((tenv_end Θi o = Some x ∨ tenv_end Θj o = Some x) ↔
+                       (tenv_end (A i) o = Some x ∨ tenv_end (A j) o = Some x))) →
+    (∀ o, o.1 ≠ c → π' !! o = π !! o) →
+    (∀ o x, o.1 = c → (tenv_end Θi o = Some x ∨ tenv_end Θj o = Some x) →
+       π' !! o = Some x.2 ∧ ∃ y, (tenv_end Θi (cdual o) = Some y ∨ tenv_end Θj (cdual o) = Some y) ∧
+         y.2 = pt_dual x.2 ∧ sdual x.1 y.1) →
+    LFconf n W ∅ T π' (C', <[j := f']> (<[i := e']> M)) (eupd (eupd A i Θi) j Θj) U.
+  Proof.
+    intros Hij He Hf HEi HEj Hfi Hfj Hsub Hdij HC' Hoth Hent Hπ HChk.
+    set (M' := <[j := f']> (<[i := e']> M)).
+    assert (HM' : ∀ t, M' !! t = if decide (t = j) then Some f'
+                                 else if decide (t = i) then Some e' else M !! t).
+    { intros t. unfold M'. destruct (decide (t = j)) as [->|Htj]; [by rewrite lookup_insert_eq|].
+      rewrite lookup_insert_ne by done.
+      destruct (decide (t = i)) as [->|Hti]; [by rewrite lookup_insert_eq|]. by rewrite lookup_insert_ne. }
+    set (A' := eupd (eupd A i Θi) j Θj).
+    assert (HA' : ∀ t, A' t = if decide (t = j) then Θj else if decide (t = i) then Θi else A t).
+    { intros t. unfold A', eupd. repeat case_decide; congruence. }
+    assert (Hsub' : ∀ t g, M' !! t = Some g → (t = j ∨ t = i) → fends g ⊆ fends e ∪ fends f).
+    { intros t g Hg Ht. rewrite HM' in Hg.
+      destruct (decide (t = j)); [injection Hg as <-; set_solver|].
+      destruct (decide (t = i)); [injection Hg as <-; set_solver|]. naive_solver. }
+    apply (LFconf_frame (S (S n)) n W T π π' (C, M) (C', M') A A' U U (cends c) Hc); simpl.
+    - intros t g Hg. rewrite HM' in Hg. rewrite HA'.
+      destruct (decide (t = j)) as [->|Htj]; [by injection Hg as <-|].
+      destruct (decide (t = i)) as [->|Hti]; [by injection Hg as <-|]. by apply st_down.
+    - intros t g Hg. rewrite HM' in Hg. rewrite HA'.
+      destruct (decide (t = j)) as [->|Htj]; [by injection Hg as <-|].
+      destruct (decide (t = i)) as [->|Hti]; [by injection Hg as <-|]. by apply st_fit.
+    - intros t g Hg. rewrite HM' in Hg.
+      destruct (decide (t = j)) as [->|Htj]; [by apply (st_ty j f)|].
+      destruct (decide (t = i)) as [->|Hti]; [by apply (st_ty i e)|]. by apply (st_ty t g).
+    - apply (disj_frame M M' {[i; j]} st_disj).
+      + intros t Ht. rewrite HM'. rewrite !decide_False by set_solver. done.
+      + intros p g t h Hp Ht Hg Hh.
+        assert (t ≠ i ∧ t ≠ j) as [Hti Htj] by set_solver.
+        pose proof (st_disj i t e h ltac:(done) He Hh).
+        pose proof (st_disj j t f h ltac:(done) Hf Hh).
+        pose proof (Hsub' p g Hg ltac:(set_solver)). set_solver.
+      + intros p p' g g' Hp Hp' Hpp Hg Hg'. rewrite HM' in Hg, Hg'.
+        apply elem_of_union in Hp as [Hp|Hp]; apply elem_of_singleton in Hp as ->;
+          apply elem_of_union in Hp' as [Hp'|Hp']; apply elem_of_singleton in Hp' as ->; try done.
+        * rewrite decide_False in Hg by done. rewrite decide_True in Hg by done.
+          rewrite decide_True in Hg' by done. injection Hg as <-. injection Hg' as <-. done.
+        * rewrite decide_True in Hg by done.
+          rewrite decide_False in Hg' by done. rewrite decide_True in Hg' by done.
+          injection Hg as <-. injection Hg' as <-. by symmetry.
+    - intros t g Hg. pose proof (Hg) as Hg0. rewrite HM' in Hg0.
+      pose proof (st_closed i e He). pose proof (st_closed j f Hf).
+      destruct (decide (t = j ∨ t = i)) as [Ht|Ht].
+      + pose proof (Hsub' t g Hg Ht) as Hs.
+        assert (fchans g ⊆ C) as HgC.
+        { intros d Hd'. rewrite fchans_fends in Hd'. apply elem_of_map in Hd' as (o & -> & Ho).
+          apply Hs, elem_of_union in Ho as [Ho|Ho].
+          - apply (st_closed i e He). by apply fchans_of_fends.
+          - apply (st_closed j f Hf). by apply fchans_of_fends. }
+        destruct HC' as [->|(-> & Hce & Hcf)]; [done|].
+        assert (c ∉ fchans g).
+        { revert Hg0. case_decide; [intros [= <-]; done|]. case_decide; [intros [= <-]; done|].
+          naive_solver. }
+        set_solver.
+      + rewrite !decide_False in Hg0 by naive_solver. pose proof (st_closed t g Hg0).
+        destruct HC' as [->|(-> & _ & _)]; [done|].
+        pose proof (Hoth t g ltac:(naive_solver) ltac:(naive_solver) Hg0). set_solver.
+    - intros o. apply cends_cdual.
+    - intros o x Ho. rewrite elem_of_cends in Ho. split.
+      + intros (t & g & Hg & Hx). rewrite HA' in Hx. rewrite HM' in Hg.
+        destruct (decide (t = j)) as [->|Htj].
+        { destruct (proj1 (Hent o x Ho) (or_intror Hx)) as [H|H]; [by exists i, e|by exists j, f]. }
+        destruct (decide (t = i)) as [->|Hti].
+        { destruct (proj1 (Hent o x Ho) (or_introl Hx)) as [H|H]; [by exists i, e|by exists j, f]. }
+        by exists t, g.
+      + intros (t & g & Hg & Hx). simpl in Hg.
+        destruct (decide (t = i ∨ t = j)) as [Ht|Ht].
+        * assert (tenv_end (A i) o = Some x ∨ tenv_end (A j) o = Some x) as Hor.
+          { destruct Ht as [->| ->]; auto. }
+          destruct (proj2 (Hent o x Ho) Hor) as [H|H].
+          -- exists i, e'. rewrite HM', HA', decide_False, decide_True by done.
+             rewrite decide_False, decide_True by done. done.
+          -- exists j, f'. rewrite HM', HA', !decide_True by done. done.
+        * exists t, g. rewrite HM', HA', !decide_False by naive_solver. done.
+    - intros o Ho. apply Hπ. intros Ho'. apply Ho. by apply elem_of_cends.
+    - intros o x Ho%elem_of_cends (t & g & Hg & Hx). rewrite HM' in Hg. rewrite HA' in Hx.
+      assert (tenv_end Θi o = Some x ∨ tenv_end Θj o = Some x) as Hor.
+      { destruct (decide (t = j)) as [->|Htj]; [by right|].
+        destruct (decide (t = i)) as [->|Hti]; [by left|].
+        exfalso. pose proof (Hoth t g Hti Htj Hg) as Hn. destruct o as [c' b']. simpl in Ho. subst c'.
+        rewrite (st_nomention t g c Hg Hn) in Hx. done. }
+      destruct (HChk o x Ho Hor) as (Hp & y & Hy & Hd1 & Hd2). split; [done|].
+      exists y. split; [|done]. destruct Hy as [Hy|Hy].
+      + exists i, e'. rewrite HM', HA', decide_False, decide_True by done.
+        rewrite decide_False, decide_True by done. done.
+      + exists j, f'. rewrite HM', HA', !decide_True by done. done.
+  Qed.
+
 End step.
