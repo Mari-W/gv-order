@@ -149,24 +149,31 @@ Proof.
   all: assert (tenv_entry Θ1 (c, false) = Some e1) as Hen by (unfold tenv_entry; simpl; by rewrite Ho1).
   all: assert (offered_t Θ1 e (c, false)) as Hoff.
   all: try (exists σ, e'; split; [done|];
-            destruct σ as [c0 w|c0 w|c0|cd|c0 i|c0 i]; simpl in Hc1, Hstep |- *;
+            destruct σ as [[c0 β0] w|[c0 β0] w|[c0 β0]|cd|[c0 β0] i|[c0 β0] i]; simpl in Hc1, Hstep |- *;
             [apply elem_of_singleton in Hc1; subst c0;
-             destruct Hstep as (Θ1r & m & U & s & k & Hhd & _);
-             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [_ Hu]; split; [done|]; eauto 10
+             destruct Hstep as (Θ1r & m & U & s & k & [Hhd Hp] & _);
+             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [He1 Hu]; split; [done|];
+             exists e1, m, U, s; split_and!; [done|by rewrite He1|done]
             |apply elem_of_singleton in Hc1; subst c0;
-             destruct Hstep as (Θr & ? & ? & m & U & s & k & ? & Hhd & _);
-             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [_ Hu]; split; [done|]; eauto 10
+             destruct Hstep as (Θr & ? & ? & m & U & s & k & ? & [Hhd Hp] & _);
+             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [He1 Hu]; split; [done|];
+             exists e1, m, U, s; split_and!; [done|by rewrite He1|done]
             |apply elem_of_singleton in Hc1; subst c0;
-             destruct Hstep as (Θr & k & Hhd & _);
-             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [_ Hu]; split; [done|];
-             exists e1; split_and!; [done|done|discriminate]
-            |split; [done|by eexists]
+             destruct Hstep as (Θr & k & [Hhd Hp] & _);
+             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [He1 Hu]; split; [done|];
+             exists e1; split_and!; [done|by rewrite He1|done|discriminate]
+            |apply elem_of_map in Hc1 as ([y yb] & Hy & Hyin); simpl in Hy; subst y;
+             destruct (Erel_link_ends _ _ _ _ _ _ _ _ HE Hst _ _ Hyin) as ([y' b'] & e0 & Hy' & He0 & Hp0);
+             simpl in Hy'; subst y'; unfold tenv_entry in He0; simpl in He0; rewrite Ho1 in He0;
+             destruct b'; [done|]; injection He0 as <-; exists e1; split; [done|by rewrite Hp0]
             |apply elem_of_singleton in Hc1; subst c0;
-             destruct Hstep as (Θr & s1 & s2 & k & ? & Hhd & _);
-             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [_ Hu]; split; [done|]; eauto 10
+             destruct Hstep as (Θr & s1 & s2 & k & ? & [Hhd Hp] & _);
+             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [He1 Hu]; split; [done|];
+             exists e1, s1, s2; split_and!; [done|by rewrite He1|done]
             |apply elem_of_singleton in Hc1; subst c0;
-             destruct Hstep as (Θr & s1 & s2 & k & ? & Hhd & _);
-             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [_ Hu]; split; [done|]; eauto 10]).
+             destruct Hstep as (Θr & s1 & s2 & k & ? & [Hhd Hp] & _);
+             destruct (tenv_hd_one _ _ _ _ _ _ Ho1 Hhd) as [He1 Hu]; split; [done|];
+             exists e1, s1, s2; split_and!; [done|by rewrite He1|done]]).
   all: pose proof (proj2 (Hfr (c, false) e1 Hoff Hen)) as Hlt.
   all: destruct Hh as [Hh|Hb]; [|by apply (no_lt_pbot W e1.2 HWf), Hlt, elem_of_union_r].
   all: assert (tenv_entry Θ2 (c, false) = Some e2) as Hen2 by (unfold tenv_entry; simpl; by rewrite Ho2).
@@ -205,6 +212,16 @@ Proof.
   specialize (Hj c).
   destruct (Θ1 !! c) as [[]|], (Θ2 !! c) as [[]|], (Θ !! c) as [[]|];
     inversion Hj; subst; destruct b; simpl in *; try done; by eexists.
+Qed.
+
+Lemma comp_entry_in R Θ Θ1 Θ2 k e :
+  tenv_comp R Θ Θ1 Θ2 → tenv_entry Θ1 k = Some e → ∃ b, tenv_entry Θ (k.1, b) = Some e.
+Proof.
+  intros [Hj _] He. destruct k as [c b]. unfold tenv_entry in *. simpl in *.
+  specialize (Hj c).
+  destruct (Θ1 !! c) as [[]|], (Θ2 !! c) as [[]|], (Θ !! c) as [[]|];
+    inversion Hj; subst; destruct b; simplify_eq; try done.
+  all: first [by exists false|by exists true].
 Qed.
 
 Lemma palter_eq (A B : tenv) c :
@@ -361,11 +378,13 @@ Section bind_ready.
       intros Hno. exfalso.
       destruct (offered_some _ _ _ _ _ _ _ _ HE Hl) as [k0 (σ & e' & Hst & Hsel)].
       destruct (link_t_only e σ e' (ex_intro _ cd (ex_intro _ e1 Hl)) Hst) as [cd' ->].
-      apply (Hno k0). exists (SLink cd'), (fill_frame f e'). split; [by apply tstep_fill|].
-      destruct Hsel as [Hk Hent]. split; [done|]. exact (comp_entry_some _ _ _ _ _ Hc Hent). }
+      destruct Hsel as (ent & Hent & Hin).
+      destruct (comp_entry_in _ _ _ _ _ _ Hc Hent) as [b Hb].
+      apply (Hno (k0.1, b)). exists (SLink cd'), (fill_frame f e'). split; [by apply tstep_fill|].
+      by exists ent. }
     split.
     - destruct (tstep_progress e) as [Hi|(α & e' & Hst)]; [by destruct Hni|].
-      pose proof (Hse _ _ Hst) as Hα. destruct α as [|σ|c|w]; try done.
+      pose proof (Hse _ _ Hst) as Hα. destruct α as [|σ|c x|w]; try done.
       destruct (offered_some _ _ _ _ _ _ _ _ HE Hst) as [k0 Hk0].
       destruct (br_up Hab k0 Hk0) as [Hk0' _].
       intros Hno. exfalso. exact (Hno k0 Hk0').
@@ -448,16 +467,16 @@ Proof.
                 Vrel j' W'' Θ1' Th v → Erel j' W'' Θ' T F (fill_frame f v)) as HKd.
     { intros W' j HW' Hj W'' j' Θ1' Θ' v HW'' Hj' Hc' HV.
       apply (HK W'' j' Θ1' Θ' v); [by eapply wext_trans|lia|done|done]. }
-    destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hcase |- *.
+    destruct α as [|[[c β] w|[c β] w|[c β]|cd|[c β] i|[c β] i]|c x|w]; simpl in Hcase |- *.
     + (* β *)
       eapply (IHn n'); [lia|done|done|done|done|exact Hcase|].
       apply (HKd W n'); [by apply wext_refl|done].
     + (* receive *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
-      destruct Hcase as (Θ1r & m & U & s & k & (s0 & Hext & Hu) & Hcont).
+      destruct Hcase as (Θ1r & m & U & s & k & ((s0 & Hext & Hu) & Hp) & Hcont).
       destruct (comp_ext _ _ _ _ _ c _ Hc H2c Hext) as [Hcr Hextr].
-      exists (partial_alter (λ _, Θ1r !! c) c Θ), m, U, s, k. split; [by exists s0|].
+      exists (partial_alter (λ _, Θ1r !! c) c Θ), m, U, s, k. split; [split; [by exists s0|done]|].
       intros W' j Θp Θrc Θ' HW' Hj Hextc Hcomp' HV.
       pose proof (proj2 (proj2 (proj2 HW'))) as HWs'.
       assert (rdsym (w_eq W')) as Hsym' by apply eq_rdsym.
@@ -470,13 +489,13 @@ Proof.
     + (* send *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
-      destruct Hcase as (Θ1r & A & B & m & U & s & k & Θ1' & (s0 & Hext & Hu) & HcAB & HV & Hext' & HE' & HΦ).
+      destruct Hcase as (Θ1r & A & B & m & U & s & k & Θ1' & ((s0 & Hext & Hu) & Hp) & HcAB & HV & Hext' & HE' & HΦ).
       destruct (comp_ext _ _ _ _ _ c _ Hc H2c Hext) as [Hcr Hextr].
       destruct (comp_assoc _ _ _ _ _ _ Hsym Hcr HcAB) as [HX1 HX2].
       set (X := tjoin_as (partial_alter (λ _, Θ1r !! c) c Θ) A Θ2) in *.
       exists (partial_alter (λ _, Θ1r !! c) c Θ), X, B, m, U, s, k,
         (partial_alter (λ _, Θ1' !! c) c X).
-      split_and!; [by exists s0|done|done| |].
+      split_and!; [split; [by exists s0|done]|done|done| |].
       * eapply ext_transfer; [exact Hext'|by apply (comp_lookup _ _ _ _ _ HX1)|
           by rewrite lookup_partial_alter_eq|].
         intros y Hy. by rewrite lookup_partial_alter_ne.
@@ -486,9 +505,9 @@ Proof.
     + (* close *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
-      destruct Hcase as (Θ1' & k & (s0 & Hext & Hu) & HE' & HΦ).
+      destruct Hcase as (Θ1' & k & ((s0 & Hext & Hu) & Hp) & HE' & HΦ).
       destruct (comp_ext _ _ _ _ _ c _ Hc H2c Hext) as [Hcr Hextr].
-      exists (partial_alter (λ _, Θ1' !! c) c Θ), k. split; [by exists s0|].
+      exists (partial_alter (λ _, Θ1' !! c) c Θ), k. split; [split; [by exists s0|done]|].
       exact (HΦ _ Hcr HK Hh HW eq_refl).
     + (* link *)
       (* the context may hold the other end of c or d (sharp edges 68) *)
@@ -500,13 +519,13 @@ Proof.
     + (* select *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
-      destruct Hcase as (Θ1r & s1 & s2 & k & Θ1' & (s0 & Hext & Hu) & Hext' & HE' & HΦ).
+      destruct Hcase as (Θ1r & s1 & s2 & k & Θ1' & ((s0 & Hext & Hu) & Hp) & Hext' & HE' & HΦ).
       destruct (comp_ext _ _ _ _ _ c _ Hc H2c Hext) as [Hcr Hextr].
       pose proof (comp_set _ _ _ _ c (Θ1' !! c) Hcr H2c) as Hcs.
       rewrite (palter_eq Θ1r Θ1' c) in Hcs; [|intros y Hy; by apply (ext_off _ _ _ _ _ Hext')].
       exists (partial_alter (λ _, Θ1r !! c) c Θ), s1, s2, k,
         (partial_alter (λ _, Θ1' !! c) c (partial_alter (λ _, Θ1r !! c) c Θ)).
-      split_and!; [by exists s0| |].
+      split_and!; [split; [by exists s0|done]| |].
       * eapply ext_transfer; [exact Hext'|by rewrite lookup_partial_alter_eq|
           by rewrite lookup_partial_alter_eq|].
         intros y Hy. by rewrite !lookup_partial_alter_ne by congruence.
@@ -514,13 +533,13 @@ Proof.
     + (* branch *)
       assert (Θ2 !! c = None) as H2c.
       { apply not_elem_of_dom. intros Hin. apply (Hfree _ eq_refl ltac:(done) c); [simpl; set_solver|done]. }
-      destruct Hcase as (Θ1r & s1 & s2 & k & Θ1' & (s0 & Hext & Hu) & Hext' & HE').
+      destruct Hcase as (Θ1r & s1 & s2 & k & Θ1' & ((s0 & Hext & Hu) & Hp) & Hext' & HE').
       destruct (comp_ext _ _ _ _ _ c _ Hc H2c Hext) as [Hcr Hextr].
       pose proof (comp_set _ _ _ _ c (Θ1' !! c) Hcr H2c) as Hcs.
       rewrite (palter_eq Θ1r Θ1' c) in Hcs; [|intros y Hy; by apply (ext_off _ _ _ _ _ Hext')].
       exists (partial_alter (λ _, Θ1r !! c) c Θ), s1, s2, k,
         (partial_alter (λ _, Θ1' !! c) c (partial_alter (λ _, Θ1r !! c) c Θ)).
-      split_and!; [by exists s0| |].
+      split_and!; [split; [by exists s0|done]| |].
       * eapply ext_transfer; [exact Hext'|by rewrite lookup_partial_alter_eq|
           by rewrite lookup_partial_alter_eq|].
         intros y Hy. by rewrite !lookup_partial_alter_ne by congruence.
@@ -531,8 +550,8 @@ Proof.
       assert (Θ1 !! c = None ∧ Θ2 !! c = None) as [H1c H2c].
       { rewrite (tenv_join_dom _ _ _ (proj1 Hc)) in HcΘ.
         split; apply not_elem_of_dom; clear -HcΘ; set_solver. }
-      destruct (Hcase ltac:(by apply not_elem_of_dom)) as (x & s & s' & Hx & Hdd & HE1).
-      exists x, s, s'. split_and!; [done|done|].
+      destruct (Hcase ltac:(by apply not_elem_of_dom)) as (Hx & s & s' & Hdd & HE1).
+      split; [done|]. exists s, s'. split; [done|].
       eapply (IHn n'); [lia|done|exact HW| |by eapply heads_above_x_mono|exact HE1|].
       { apply comp_insert; [|done]. exact Hc. }
       apply (HKd W n'); [by apply wext_refl|done].
