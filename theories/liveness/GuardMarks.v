@@ -29,7 +29,7 @@ Definition force_var (e : expr) : option nat :=
 Fixpoint occursM (L : lmark) (e : expr) : bool :=
   match e with
   | Var y => marked L y
-  | EUnit | Konst _ | Chan _ => false
+  | EUnit | Konst _ | Chan _ _ | EPt _ => false
   | Lam e | EBox e => occursM (None .: L) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => occursM L e1 || occursM L e2
   | LetP e1 e2 => occursM L e1 || occursM (None .: None .: L) e2
@@ -40,7 +40,7 @@ Fixpoint occursM (L : lmark) (e : expr) : bool :=
 Fixpoint okM (L : lmark) (e : expr) : bool :=
   match e with
   | Var y => negb (marked L y)
-  | EUnit | Konst _ | Chan _ => true
+  | EUnit | Konst _ | Chan _ _ | EPt _ => true
   | Lam b | EBox b => negb (occursM (None .: L) b)
   | App e1 e2 =>
       match force_var e1 with
@@ -64,7 +64,7 @@ Fixpoint okR (L : lmark) (e : expr) : bool :=
 (** Every box is guarded, its self marked with whether its body is a λ. *)
 Fixpoint gallM (e : expr) : bool :=
   match e with
-  | Var _ | EUnit | Konst _ | Chan _ => true
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => true
   | EBox b => okR (Some (is_lam b) .: noL) b && gallM b
   | Lam e | Inj1 e | Inj2 e => gallM e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => gallM e1 && gallM e2
@@ -90,7 +90,7 @@ Proof. intros H [|i]; simpl; [done|apply H]. Qed.
 
 Lemma occursM_rename e : ∀ ρ L L', (∀ i, L' i = L (ρ i)) → occursM L (rename ρ e) = occursM L' e.
 Proof.
-  induction e as [x| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [x| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; intros ρ L L' HL; simpl; try done.
   - unfold marked. by rewrite HL.
   - by apply IH, up_ren.
@@ -108,7 +108,7 @@ Qed.
 Lemma gd_rename_aux e : ∀ ρ, gd (rename ρ e) = gd e ∧
   (match e with Lam b => ∀ ρ, gd (rename ρ b) = gd b | _ => True end).
 Proof.
-  induction e as [x| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [x| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; intros ρ; simpl; try done.
   - split; [done|]. intros ρ'. apply IH.
   - split; [|done]. destruct (IH1 ρ) as [H1 H1']. rewrite (proj1 (IH2 ρ)).
@@ -126,15 +126,15 @@ Proof. apply gd_rename_aux. Qed.
 
 Lemma force_var_some e y : force_var e = Some y → e = App EForce (Var y).
 Proof.
-  destruct e as [| | | | |e1 e2| | | | | | |]; try done.
-  destruct e1 as [| |k| | | | | | | | | |]; try done. destruct k; try done.
+  destruct e as [| | | | | |e1 e2| | | | | | |]; try done.
+  destruct e1 as [| |k| | | | | | | | | | |]; try done. destruct k; try done.
   destruct e2; try done. simpl. by intros [= ->].
 Qed.
 
 Lemma force_var_rename ρ e : force_var (rename ρ e) = option_map ρ (force_var e).
 Proof.
-  destruct e as [| | | | |e1 e2| | | | | | |]; try done.
-  destruct e1 as [| |k| | | | | | | | | |]; try done. destruct k; try done.
+  destruct e as [| | | | | |e1 e2| | | | | | |]; try done.
+  destruct e1 as [| |k| | | | | | | | | | |]; try done. destruct k; try done.
   destruct e2; done.
 Qed.
 
@@ -144,7 +144,7 @@ Proof. by destruct e. Qed.
 Lemma okM_app_gen L e1 e2 : force_var e1 = None → is_lam e1 = false →
   okM L (App e1 e2) = okM L e1 && (gd e1 || okM L e2).
 Proof.
-  intros Hf Hl. destruct e1 as [| | | | |e11 e12| | | | | | |]; try done.
+  intros Hf Hl. destruct e1 as [| | | | | |e11 e12| | | | | | |]; try done.
   cbn -[force_var gd]. by rewrite Hf.
 Qed.
 
@@ -152,7 +152,7 @@ Lemma okM_rename_aux e : ∀ ρ L L', (∀ i, L' i = L (ρ i)) → okM L (rename
   (match e with Lam b => ∀ ρ L L', (∀ i, L' i = L (ρ i)) →
      okM (None .: L) (rename (upren ρ) b) = okM (None .: L') b | _ => True end).
 Proof.
-  induction e as [x| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [x| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; intros ρ L L' HL; simpl; try done.
   - unfold marked. by rewrite HL.
   - split; [by erewrite occursM_rename; [|apply up_ren]|].
@@ -162,7 +162,7 @@ Proof.
     destruct (force_var e1) as [y|] eqn:Hf.
     + apply force_var_some in Hf as ->. simpl. by rewrite HL, gd_rename, (proj1 (IH2 ρ L L' HL)).
     + destruct (is_lam e1) eqn:Hl.
-      * destruct e1 as [| | | |b| | | | | | | |]; try done. simpl.
+      * destruct e1 as [| | | | |b| | | | | | | |]; try done. simpl.
         by rewrite (H1' ρ L L' HL), gd_rename, (proj1 (IH2 ρ L L' HL)).
       * rewrite !okM_app_gen; [|done|done|by rewrite force_var_rename, Hf|by rewrite is_lam_rename].
         by rewrite H1, gd_rename, (proj1 (IH2 ρ L L' HL)).
@@ -204,10 +204,11 @@ Definition nooc_P (e : expr) : Prop := ∀ L, occursM L e = false → okM L e = 
 
 Lemma occursM_false_okM_aux e : nooc_P e ∧ match e with Lam b => nooc_P b | _ => True end.
 Proof.
-  induction e as [x| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [x| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH];
     (split; [intros L H|try done]).
   - simpl in *. by rewrite H.
+  - done.
   - done.
   - done.
   - done.
@@ -218,7 +219,7 @@ Proof.
     + apply force_var_some in Hf as ->. simpl in *. unfold marked in H1.
       destruct (L y); [done|]. by apply (proj1 IH2).
     + destruct (is_lam e1) eqn:Hl.
-      * destruct e1 as [| | | |b| | | | | | | |]; try done. simpl in *.
+      * destruct e1 as [| | | | |b| | | | | | | |]; try done. simpl in *.
         by rewrite (proj1 IH2 L H2), (proj2 IH1 _ H1), orb_true_r.
       * rewrite okM_app_gen; [|done|done]. by rewrite (proj1 IH1 L H1), (proj1 IH2 L H2), orb_true_r.
   - simpl in *. apply orb_false_iff in H as [H1 H2]. by rewrite (proj1 IH1 L H1), (proj1 IH2 L H2), orb_true_r.
@@ -259,7 +260,7 @@ Qed.
 
 Lemma occursM_single e : ∀ L x f, only_mark L x f → occursM L e = occurs x e.
 Proof.
-  induction e as [y| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [y| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; intros L x f HL; simpl; try done.
   - destruct HL as [Hx Hy]. unfold marked. destruct (Nat.eq_dec x y) as [->|Hne].
     + by rewrite Hx, Nat.eqb_refl.
@@ -278,8 +279,8 @@ Qed.
 Lemma ok_app_gen f x e1 e2 : force_var e1 = None → is_lam e1 = false →
   ok f x (App e1 e2) = ok f x e1 && (gd e1 || ok f x e2).
 Proof.
-  intros Hf Hl. destruct e1 as [| | | | |e11 e12| | | | | | |]; try done.
-  destruct e11 as [| |k| | | | | | | | | |]; try done. destruct k; try done.
+  intros Hf Hl. destruct e1 as [| | | | | |e11 e12| | | | | | |]; try done.
+  destruct e11 as [| |k| | | | | | | | | | |]; try done. destruct k; try done.
   destruct e12; done.
 Qed.
 
@@ -287,12 +288,13 @@ Definition ok_okM_P (e : expr) : Prop := ∀ L x f, only_mark L x f → ok f x e
 
 Lemma ok_okM_aux e : ok_okM_P e ∧ match e with Lam b => ok_okM_P b | _ => True end.
 Proof.
-  induction e as [y| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [y| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH];
     (split; [intros L x f HL H|try done]).
   - simpl in *. destruct HL as [Hx Hy]. unfold marked. destruct (Nat.eq_dec x y) as [->|Hne].
     + by rewrite Nat.eqb_refl in H.
     + by rewrite Hy.
+  - done.
   - done.
   - done.
   - done.
@@ -306,7 +308,7 @@ Proof.
       * rewrite (proj2 (Nat.eqb_neq x y) Hne) in H. rewrite Hy; [|done].
         by apply (proj1 IH2 L x f).
     + destruct (is_lam e1) eqn:Hl.
-      * destruct e1 as [| | | |b| | | | | | | |]; try done. simpl in H |- *. bool_simpl.
+      * destruct e1 as [| | | | |b| | | | | | | |]; try done. simpl in H |- *. bool_simpl.
         { by apply (proj1 IH2 L x f). }
         orstep.
         apply (proj2 IH1 (None .: L) (S x) f); [by apply only_mark_up|done].
@@ -334,7 +336,7 @@ Proof. apply ok_okM_aux. Qed.
 
 Lemma okv_okR e : ∀ L x f, only_mark L x (f || is_lam e) → okv f x e = true → okR L e = true.
 Proof.
-  induction e as [y| |k|c|b IH|e1 e2|e1 e2|e1 e2|e1 e2|e0|e0|e0 e1 e2|e0]; intros L x f HL H;
+  induction e as [y| |k|c cb|cx|b IH|e1 e2|e1 e2|e1 e2|e1 e2|e0|e0|e0 e1 e2|e0]; intros L x f HL H;
     try (apply okM_okR; eapply ok_okM; [|exact H]; simpl in HL; by rewrite orb_false_r in HL).
   rewrite okR_eq. apply orb_true_iff. right. apply (IH _ (S x) true); [|done].
   simpl in HL. rewrite orb_true_r in HL. by apply only_mark_up.
@@ -342,7 +344,7 @@ Qed.
 
 Lemma gall_gallM e : gall e = true → gallM e = true.
 Proof.
-  induction e as [y| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [y| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; intros H; cbn [gall gallM] in *; bool_simpl; auto.
   apply (okv_okR _ _ 0 false); [|done]. split; [done|]. intros [|y] Hne; [lia|done].
 Qed.
@@ -359,7 +361,7 @@ Proof. intros H [|i]; simpl; [done|apply H]. Qed.
 Lemma occursM_union e : ∀ L1 L2 L, (∀ i, L i = mark_union L1 L2 i) →
   occursM L e = occursM L1 e || occursM L2 e.
 Proof.
-  induction e as [y| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [y| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; intros L1 L2 L HL; simpl; try done.
   - unfold marked, mark_union in *. rewrite HL. by destruct (L1 y), (L2 y).
   - by erewrite IH; [|apply mark_union_up].
@@ -381,10 +383,11 @@ Definition okM_union_P (e : expr) : Prop := ∀ L1 L2 L, (∀ i, L i = mark_unio
 
 Lemma okM_union_aux e : okM_union_P e ∧ match e with Lam b => okM_union_P b | _ => True end.
 Proof.
-  induction e as [y| |k|c|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+  induction e as [y| |k|c cb|cx|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
                  |e IH|e IH|e IH e1 IH1 e2 IH2|e IH];
     (split; [intros L1 L2 L HL H1 H2; simpl in *; rewrite ?orb_false_iff in H2|try done]).
   - unfold marked, mark_union in *. rewrite HL. by destruct (L1 y), (L2 y).
+  - done.
   - done.
   - done.
   - done.
@@ -399,7 +402,7 @@ Proof.
       * by apply (proj1 IH2 L1 L2).
       * destruct (L2 y); [done|]. by apply (proj1 IH2 L1 L2).
     + destruct (is_lam e1) eqn:Hl.
-      * destruct e1 as [| | | |b| | | | | | | |]; try done. simpl in H1, H21 |- *. bool_simpl.
+      * destruct e1 as [| | | | |b| | | | | | | |]; try done. simpl in H1, H21 |- *. bool_simpl.
         { by apply (proj1 IH2 L1 L2). }
         orstep. apply (proj2 IH1 (None .: L1) (None .: L2)); [by apply mark_union_up|done|done].
       * rewrite okM_app_gen; [|done|done]. rewrite okM_app_gen in H1; [|done|done]. bool_simpl.
@@ -428,7 +431,7 @@ Proof. apply okM_union_aux. Qed.
 Lemma okR_union e : ∀ L1 L2 L, (∀ i, L i = mark_union L1 L2 i) →
   okR L1 e = true → occursM L2 e = false → okR L e = true.
 Proof.
-  induction e as [y| |k|c|b IH|e1 e2|e1 e2|e1 e2|e1 e2|e0|e0|e0 e1 e2|e0]; intros L1 L2 L HL H1 H2;
+  induction e as [y| |k|c cb|cx|b IH|e1 e2|e1 e2|e1 e2|e1 e2|e0|e0|e0 e1 e2|e0]; intros L1 L2 L HL H1 H2;
     rewrite okR_eq in H1 |- *; apply orb_true_iff in H1 as [H1|H1]; apply orb_true_iff;
     try (left; by eapply okM_union); try done.
   right. simpl in *. eapply IH; [by apply mark_union_up|done|done].

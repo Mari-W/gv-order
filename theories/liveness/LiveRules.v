@@ -15,15 +15,15 @@ Local Set Warnings "-register-all".
 (** ** A deterministic β costs nothing *)
 
 Lemma LErel_det_beta n W Θ T F e e' :
-  tstep e LBeta e' → (∀ α e'', tstep e α e'' → α = LBeta ∧ e'' = e') →
+  tenv_fit Θ e → tstep e LBeta e' → (∀ α e'', tstep e α e'' → α = LBeta ∧ e'' = e') →
   LErel n W Θ T F e' → LErel n W Θ T F e.
 Proof.
-  intros Hst Hdet HE. destruct n as [|n']; [apply LErel_0|].
-  apply LErel_S_iff. intros W1 HW1. split_and!.
+  intros Hfit Hst Hdet HE. destruct n as [|n']; [apply LErel_0|].
+  apply LErel_S_iff. split; [exact Hfit|]. intros W1 HW1. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst).
   - intros _ Hs. exfalso. exact (Hs _ _ Hst).
   - intros e'' Hst'. destruct (Hdet _ _ Hst') as [_ ->]. by eapply LErel_mono.
-  - intros c e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
+  - intros c x e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
   - intros w e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
   - intros σ e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
   - intros cd e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
@@ -37,9 +37,11 @@ Lemma LErel_app_lam n W Θ Θ1 Θ2 ub lb T U F eb v2 :
   LErel n W Θ U F (App (Lam eb) v2).
 Proof.
   intros HW Hc HV1 HV2 Hub. pose proof (LVrel_val _ _ _ _ _ HV2) as Hv2.
+  pose proof (LVrel_fit _ _ _ _ _ HV1) as Hf1. pose proof (LVrel_fit _ _ _ _ _ HV2) as Hf2.
   apply LVrel_lolli_iff in HV1 as [(eb' & Heq & _ & _ & HL)|(k & _ & Heq & _)]; [|done].
   injection Heq as <-.
   apply (LErel_det_beta _ _ _ _ _ _ (subst1 v2 eb)).
+  - by eapply tenv_fit_join.
   - by apply TStepHead, HeadApp.
   - intros α e'' Hst. apply app_val_step in Hst; [|done|done]. by inversion Hst.
   - apply (HL W n Θ2 Θ v2 F); [by apply wext_refl|lia|done|done|done].
@@ -61,6 +63,7 @@ Proof.
   apply LVrel_lolli_iff in HB as [(eb' & Heq & _ & _ & HL)|(kc & _ & Heq & _)]; [|done].
   unfold thunk in Heq. injection Heq as <-.
   apply (LErel_det_beta _ _ _ _ _ _ (subst1 (EBox eb) eb)).
+  - apply tenv_fit_empty. simpl. by rewrite fends_empty_of_fchans.
   - by apply TStepHead, HeadForce.
   - intros α e'' Hst. apply app_val_step in Hst; [|done|done]. by inversion Hst.
   - rewrite <-(thunk_app EUnit eb).
@@ -94,7 +97,8 @@ Proof.
   unfold ty_inst. cbn [pinst_ty sinst_ty fmap option_fmap option_map].
   apply LVrel_lolli_iff. left. exists (rename S (subst1 (EBox eb) eb)). split_and!.
   - done.
-  - rewrite fchans_rename, dom_empty_L. apply set_eq. intros c. split; [|set_solver].
+  - apply tenv_fit_empty, fends_empty_of_fchans. rewrite fchans_rename.
+    apply set_eq. intros c. split; [|set_solver].
     intros Hc%fchans_subst1_sub. simpl in Hc. rewrite Hfc in Hc. set_solver.
   - simpl. by rewrite tenv_heads_empty'.
   - intros W3 j Θ' Θ'' w F HW3 Hj Hc Hub HVw.
@@ -118,11 +122,11 @@ Proof.
   { intros α e' Hst. apply app_val_step in Hst; [|done|done]. by inversion Hst. }
   assert (tstep (App ESpawn w) (LSpawn w) EUnit) as Hst by by apply TStepHead, HeadSpawn.
   destruct n as [|n']; [apply LErel_0|].
-  apply LErel_S_iff. intros W1 HW1. split_and!.
+  apply LErel_S_iff. split; [eapply tenv_fit_ends, (LVrel_fit _ _ _ _ _ HV); simpl; set_solver|]. intros W1 HW1. split_and!.
   - intros Hirr. exfalso. exact (Hirr _ _ Hst).
   - intros _ Hs. exfalso. exact (Hs _ _ Hst).
   - intros e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
-  - intros c e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
+  - intros c x e'' Hst'. destruct (Hdet _ _ Hst') as [Hα _]. discriminate Hα.
   - intros w' e'' Hst'. destruct (Hdet _ _ Hst') as [[= <-] ->].
     exists Θ, ∅, ub, lb. split_and!.
     + apply tenv_comp_empty_r.
