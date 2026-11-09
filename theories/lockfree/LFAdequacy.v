@@ -765,3 +765,58 @@ Proof.
   - intros (Hut & eu & Heu & Hcu). by apply (c_uniq W HW Hwf a Hc t e u eu s es c).
   - intros ->. eauto.
 Qed.
+
+(** ** A synchronization has a partner on the same channel *)
+Lemma sync_partner q L q' p e b c :
+  istep q L q' → p ∈ L → q.2 !! p = Some e → act e = Some b → rchan b = Some c →
+  ∃ u eu bu, u ∈ L ∧ u ≠ p ∧ q.2 !! u = Some eu ∧ act eu = Some bu ∧ rchan bu = Some c.
+Proof.
+  intros Hst HpL He Hb Hr.
+  destruct Hst as [C M i e0 e' Hi Hs|C M i e0 c0 e' Hi Hs HC Hc|C M i j e0 v e' Hi Hs Hj
+    |C M i j c0 v e0 e' f f' Hij Hi Hj He0 Hf|C M i j c0 e0 e' f f' Hij Hi Hj He0 Hf HC
+    |C M i j c0 b0 e0 e' f f' Hij Hi Hj He0 Hf|C M i e0 c0 d e' Hi Hs HC]; simpl in *.
+  all: try (apply elem_of_singleton in HpL; subst p; rewrite He in Hi; injection Hi as <-;
+            destruct (act_step _ _ _ Hs) as (b' & Hb' & Ho); rewrite Hb in Hb'; injection Hb' as <-;
+            destruct b; simpl in Ho, Hr; done).
+  all: destruct (act_step _ _ _ He0) as (b1 & Hb1 & Ho1); destruct (act_step _ _ _ Hf) as (b2 & Hb2 & Ho2).
+  all: apply elem_of_union in HpL as [HpL|HpL]; apply elem_of_singleton in HpL; subst p.
+  all: try (rewrite He in Hi; injection Hi as <-; rewrite Hb in Hb1; injection Hb1 as <-).
+  all: try (rewrite He in Hj; injection Hj as <-; rewrite Hb in Hb2; injection Hb2 as <-).
+  - exists j, f, b2. destruct b, b2; simpl in Ho1, Ho2, Hr; destruct_and?; simplify_eq; try done.
+    split_and!; [set_solver|done|done|done|done].
+  - exists i, e0, b1. destruct b1, b; simpl in Ho1, Ho2, Hr; destruct_and?; simplify_eq; try done.
+    split_and!; [set_solver|congruence|done|done|done].
+  - exists j, f, b2. destruct b, b2; simpl in Ho1, Ho2, Hr; destruct_and?; simplify_eq; try done.
+    split_and!; [set_solver|done|done|done|done].
+  - exists i, e0, b1. destruct b1, b; simpl in Ho1, Ho2, Hr; destruct_and?; simplify_eq; try done.
+    split_and!; [set_solver|congruence|done|done|done].
+  - exists j, f, b2. destruct b, b2; simpl in Ho1, Ho2, Hr; destruct_and?; simplify_eq; try done.
+    split_and!; [set_solver|done|done|done|done].
+  - exists i, e0, b1. destruct b1, b; simpl in Ho1, Ho2, Hr; destruct_and?; simplify_eq; try done.
+    split_and!; [set_solver|congruence|done|done|done].
+Qed.
+
+(** Threads outside a step keep their term up to one renaming, which
+    fixes every channel the participants do not mention. *)
+Lemma nonpart_terms q L q' :
+  istep q L q' → ∃ g, (∀ u eu, u ∉ L → q.2 !! u = Some eu → q'.2 !! u = Some (emap g eu)) ∧
+    (∀ c, (∀ u eu, u ∈ L → q.2 !! u = Some eu → c ∉ fchans eu) → g c = c).
+Proof.
+  intros Hst. destruct Hst as [C M i e e' Hi Hs|C M i e c0 e' Hi Hs HC Hc|C M i j e v e' Hi Hs Hj
+    |C M i j c0 v e e' f f' Hij Hi Hj He Hf|C M i j c0 e e' f f' Hij Hi Hj He Hf HC
+    |C M i j c0 b0 e e' f f' Hij Hi Hj He Hf|C M i e c0 d e' Hi Hs HC]; simpl.
+  1-6: exists id; (split; [|done]); intros u eu Hu Heu; rewrite emap_id.
+  - rewrite lookup_insert_ne; [done|set_solver].
+  - rewrite lookup_insert_ne; [done|set_solver].
+  - rewrite !lookup_insert_ne; [done|set_solver|]. intros ->. by rewrite Hj in Heu.
+  - rewrite !lookup_insert_ne; [done|set_solver|set_solver].
+  - rewrite !lookup_insert_ne; [done|set_solver|set_solver].
+  - rewrite !lookup_insert_ne; [done|set_solver|set_solver].
+  - exists (csub c0 d). split.
+    + intros u eu Hu Heu. rewrite lookup_fmap, lookup_insert_ne by set_solver. rewrite Heu. simpl.
+      by rewrite chsubst_emap.
+    + intros c Hc. specialize (Hc i e ltac:(set_solver) Hi).
+      destruct (act_step _ _ _ Hs) as (b & Hb & Ho). destruct b; simpl in Ho; try done.
+      pose proof (act_asubjs_fchans e (ALink c1 d0) _ Hb eq_refl) as Hsub. rewrite <-Ho in Hsub.
+      unfold csub. case_decide; [subst; set_solver|done].
+Qed.
