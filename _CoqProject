@@ -119,15 +119,15 @@ theories/examples/LitTools.v
 theories/examples/MilnerSched.v
 theories/examples/KobForwarder.v
 theories/examples/FactServer.v
-# SYNTACTIC-POINTS: example port pending theories/examples/DataBranch.v
-# SYNTACTIC-POINTS: example port pending theories/examples/DataAlternate.v
-# SYNTACTIC-POINTS: example port pending theories/examples/GrowDeadlock.v
+theories/examples/DataBranch.v
+theories/examples/DataAlternate.v
+theories/examples/GrowDeadlock.v
 theories/examples/Stream.v
 theories/examples/Congruence.v
-# SYNTACTIC-POINTS: example port pending theories/examples/ChoiceEnc.v
-# SYNTACTIC-POINTS: example port pending theories/examples/ChoiceNegative.v
-# SYNTACTIC-POINTS: example port pending theories/examples/SemFlag.v
-# SYNTACTIC-POINTS: example port pending theories/examples/SemRounds.v
+theories/examples/ChoiceEnc.v
+theories/examples/ChoiceNegative.v
+theories/examples/SemFlag.v
+theories/examples/SemRounds.v
 # SYNTACTIC-POINTS: example port pending theories/examples/ChoiceTranslate.v
 # SYNTACTIC-POINTS: example port pending theories/examples/ChoiceTranslateEx.v
 theories/examples/ExPayload.v

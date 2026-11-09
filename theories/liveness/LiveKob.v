@@ -16,9 +16,15 @@ From LRGV Require Export liveness.LiveAdequacy examples.KobForwarder.
 
 Local Set Warnings "-register-all".
 
-(** A pending call of the server on channel c. *)
-Definition kob_call (c : chan) : expr :=
-  App (Lam (LetU (Var 0) (App (App EForce fwsrv) (Chan c)))) EUnit.
+(** A pending call of the server on channel c, with the point value
+    v (syntactic points, sharp edges 173). The server takes the point
+    of r as its first argument, so a call names it. The main thread
+    passes the literal of the constant 0, and every call the server
+    spawns passes [KPay 0] applied to the point of its own call. *)
+Definition kob_thunk (v : expr) (c : chan) : expr :=
+  Lam (LetU (Var 0) (App (App (App EForce fwsrv) v) (Chan c true))).
+Definition kob_call (v : expr) (c : chan) : expr := App (kob_thunk v c) EUnit.
+Abbreviation kob_callp x c := (kob_call (App (Konst (KPay 0)) (EPt x)) c).
 
 Definition tbeta (e e' : expr) : Prop := tstep e LBeta e'.
 
@@ -42,39 +48,59 @@ Ltac tstep_search :=
 
 Ltac tbeta_run := repeat (eapply rtc_l; [unfold tbeta; tstep_search|]; cbn); apply rtc_refl.
 
-(** One round: from a pending call on c to a pending call on d, through
-    β, a new of d and a spawn, without a channel step. *)
-Lemma kob_round_thread c d :
-  ∃ e1 e2 e3 e4,
-    rtc tbeta (kob_call c) e1 ∧ tstep e1 (LNew d) e2 ∧ fchans e1 ⊆ {[c]} ∧
-    rtc tbeta e2 e3 ∧ tstep e3 (LSpawn (Lam (LetU (Var 0) (App (App EForce fwsrv) (Chan d))))) e4.
+(** One round of a thread s: from s to a spawned pending call on d,
+    through β, a new of d and a spawn, without a channel step. *)
+Definition kob_round_of (s : expr) (c d : chan) (v' : expr) : Prop :=
+  ∃ z e1 e2 e3 e4,
+    rtc tbeta s e1 ∧ tstep e1 (LNew d z) e2 ∧ fchans e1 ⊆ {[c]} ∧
+    rtc tbeta e2 e3 ∧ tstep e3 (LSpawn (kob_thunk v' d)) e4.
+
+(** The first call, at the literal x. *)
+Lemma kob_round_thread_pt x c d :
+  kob_round_of (kob_call (EPt x) c) c d (App (Konst (KPay 0)) (EPt x)).
 Proof.
-  eexists _, _, _, _. split_and!.
-  - unfold kob_call, fwsrv. tbeta_run.
+  eexists _, _, _, _, _. split_and!.
+  - unfold kob_call, kob_thunk, fwsrv. tbeta_run.
   - cbn. tstep_search.
   - cbn. set_solver.
   - cbn. tbeta_run.
   - cbn. tstep_search.
 Qed.
 
-Lemma kob_round C E c d :
-  d ∉ C → d ∉ echans E → d ≠ c →
-  ∃ E', tc padmin (C, E ⊎ {[+ kob_call c +]}) (C ∪ {[d]}, E' ⊎ {[+ kob_call d +]}).
+(** A spawned call, at x[0]. *)
+Lemma kob_round_thread x c d :
+  kob_round_of (kob_callp x c) c d (App (Konst (KPay 0)) (EPt (pt_payload x 0))).
 Proof.
-  intros HC HE Hd.
-  destruct (kob_round_thread c d) as (e1 & e2 & e3 & e4 & H1 & H2 & Hf & H3 & H4).
+  eexists _, _, _, _, _. split_and!.
+  - unfold kob_call, kob_thunk, fwsrv. tbeta_run.
+  - cbn. tstep_search.
+  - cbn. set_solver.
+  - cbn. tbeta_run.
+  - cbn. tstep_search.
+Qed.
+
+Lemma kob_round_proc C E s c d v' :
+  d ∉ C → d ∉ echans E → d ≠ c → kob_round_of s c d v' →
+  ∃ E', tc padmin (C, E ⊎ {[+ s +]}) (C ∪ {[d]}, E' ⊎ {[+ kob_call v' d +]}).
+Proof.
+  intros HC HE Hd (z & e1 & e2 & e3 & e4 & H1 & H2 & Hf & H3 & H4).
   exists (E ⊎ {[+ e4 +]}).
   eapply tc_rtc_l; [apply rtc_tbeta_padmin, H1|].
-  eapply tc_l; [apply PANew; [exact H2|done|done|set_solver]|].
+  eapply tc_l; [eapply PANew; [exact H2|done|done|set_solver]|].
   eapply tc_rtc_l; [apply rtc_tbeta_padmin, H3|].
   apply tc_once. apply PASpawn. exact H4.
 Qed.
 
+Lemma kob_round C E x c d :
+  d ∉ C → d ∉ echans E → d ≠ c →
+  ∃ E', tc padmin (C, E ⊎ {[+ kob_callp x c +]}) (C ∪ {[d]}, E' ⊎ {[+ kob_callp (pt_payload x 0) d +]}).
+Proof. intros HC HE Hd. apply (kob_round_proc C E _ c d); [done|done|done|apply kob_round_thread]. Qed.
+
 (** The main thread reaches the first pending call by β, new and spawn. *)
 Lemma kob_start_thread c :
   ∃ e1 e2 e3 e4,
-    rtc tbeta fw_main e1 ∧ tstep e1 (LNew c) e2 ∧ fchans e1 = ∅ ∧
-    rtc tbeta e2 e3 ∧ tstep e3 (LSpawn (Lam (LetU (Var 0) (App (App EForce fwsrv) (Chan c))))) e4.
+    rtc tbeta fw_main e1 ∧ tstep e1 (LNew c (pconst 0)) e2 ∧ fchans e1 = ∅ ∧
+    rtc tbeta e2 e3 ∧ tstep e3 (LSpawn (kob_thunk (EPt (pconst 0)) c)) e4.
 Proof.
   eexists _, _, _, _. split_and!.
   - unfold fw_main, fwsrv. tbeta_run.
@@ -85,12 +111,12 @@ Proof.
 Qed.
 
 Lemma kob_start c :
-  ∃ E, rtc padmin (∅, {[+ fw_main +]}) (∅ ∪ {[c]}, E ⊎ {[+ kob_call c +]}).
+  ∃ E, rtc padmin (∅, {[+ fw_main +]}) (∅ ∪ {[c]}, E ⊎ {[+ kob_call (EPt (pconst 0)) c +]}).
 Proof.
   destruct (kob_start_thread c) as (e1 & e2 & e3 & e4 & H1 & H2 & Hf & H3 & H4).
   exists (∅ ⊎ {[+ e4 +]}). rewrite <-(gmultiset_disj_union_left_id {[+ fw_main +]}).
   etrans; [apply rtc_tbeta_padmin, H1|].
-  eapply rtc_l; [apply PANew; [exact H2|set_solver|rewrite echans_empty; set_solver|rewrite Hf; set_solver]|].
+  eapply rtc_l; [eapply PANew; [exact H2|set_solver|rewrite echans_empty; set_solver|rewrite Hf; set_solver]|].
   etrans; [apply rtc_tbeta_padmin, H3|].
   apply rtc_once. apply PASpawn. exact H4.
 Qed.
@@ -99,25 +125,28 @@ Qed.
 
 Lemma kob_not_acc q :
   Acc (λ y x, padmin x y) q →
-  ∀ C E c, rtc padmin q (C, E ⊎ {[+ kob_call c +]}) → False.
+  ∀ C E x c, rtc padmin q (C, E ⊎ {[+ kob_callp x c +]}) → False.
 Proof.
-  induction 1 as [q _ IH]. intros C E c Hq.
+  induction 1 as [q _ IH]. intros C E x c Hq.
   inversion Hq as [? Heq|? q1 ? Hq1 Hrest]; subst.
   - set (d := fresh (C ∪ echans E ∪ {[c]})).
     pose proof (is_fresh (C ∪ echans E ∪ {[c]})) as Hd. fold d in Hd.
-    destruct (kob_round C E c d) as (E' & Hr); [set_solver|set_solver|set_solver|].
+    destruct (kob_round C E x c d) as (E' & Hr); [set_solver|set_solver|set_solver|].
     inversion Hr as [? ? Hone|? q1 ? Hq1 Hrest]; subst.
-    + by apply (IH _ Hone (C ∪ {[d]}) E' d).
-    + apply (IH _ Hq1 (C ∪ {[d]}) E' d). by apply tc_rtc.
-  - by apply (IH q1 Hq1 C E c).
+    + by apply (IH _ Hone (C ∪ {[d]}) E' (pt_payload x 0) d).
+    + apply (IH _ Hq1 (C ∪ {[d]}) E' (pt_payload x 0) d). by apply tc_rtc.
+  - by apply (IH q1 Hq1 C E x c).
 Qed.
 
 Theorem kob_tau_diverges : ¬ no_tau_divergence (∅, {[+ fw_main +]}).
 Proof.
   intros Hnd. set (c := "kob"%string).
   destruct (kob_start c) as (E & Hs).
-  apply (kob_not_acc (∅, {[+ fw_main +]})) with (∅ ∪ {[c]}) E c; [|exact Hs].
-  apply Hnd. apply rtc_refl.
+  destruct (exist_fresh ((∅ ∪ {[c]}) ∪ echans E ∪ {[c]})) as [d Hd].
+  destruct (kob_round_proc ((∅ : gset chan) ∪ {[c]}) E (kob_call (EPt (pconst 0)) c) c d (App (Konst (KPay 0)) (EPt (pconst 0))))
+    as (E' & Hr); [set_solver|set_solver|set_solver|apply kob_round_thread_pt|].
+  apply (kob_not_acc (∅, {[+ fw_main +]}) (Hnd _ (rtc_refl _ _)) (((∅ : gset chan) ∪ {[c]}) ∪ {[d]}) E' (pconst 0) d).
+  etrans; [exact Hs|]. apply tc_rtc, Hr.
 Qed.
 
 Corollary kob_not_live W : ¬ ∀ n, LPrel n W ∅ TUnit (∅, {[+ fw_main +]}).

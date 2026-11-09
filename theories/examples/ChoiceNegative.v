@@ -104,6 +104,7 @@ Proof.
   - destruct H as [H1 H2], H' as [H1' H2']. split; [by eapply he_trans|by eapply seq_trans].
   - destruct H as (-> & -> & -> & H), H' as (-> & -> & -> & H').
     split_and!; [done|done|done|by eapply teq_trans'].
+  - by rewrite H.
 Qed.
 
 Lemma hsteq_ex Ψ T U : hsteq Ψ T U → is_ex T → is_ex U.
@@ -124,6 +125,9 @@ Inductive styped_sd : fhyps → hyps → lenv → sfuture → expr → ty → Pr
   | sd_var Φ Ψ Δ F x T :
       lenv_only Δ x T →
       styped_sd Φ Ψ Δ F (Var x) T
+  | sd_pt Φ Ψ Δ F x :
+      lenv_empty Δ → pt_ground x → hyp_known Ψ x →
+      styped_sd Φ Ψ Δ F (EPt x) (TPt x)
   | sd_lam Φ Ψ Δ F e T U ub lb φ :
       φ ∉ dom Φ →
       hlb_below_hb Ψ lb (lenv_heads Δ) (lenv_bot Δ) →
@@ -372,7 +376,7 @@ Proof.
   destruct (recv_shape _ _ HK) as (m & P & S & x & ->).
   apply Hc in HV as ->.
   cbn [hsteq] in HKA. destruct HKA as (_ & _ & HA & HUr).
-  destruct A as [| | | | |s z|]; cbn [hsteq] in HA; try contradiction.
+  destruct A as [| | | | |s z| |]; cbn [hsteq] in HA; try contradiction.
   destruct HVA as [HVA|[]]. cbn [hsteq] in HVA.
   destruct HA as [Hxz Hs], HVA as [Haz Hs'].
   pose proof (seq_trans _ _ _ Hs (seq_sym _ _ Hs')) as Hss.
@@ -381,18 +385,18 @@ Proof.
   destruct HU as [HU|[]].
   pose proof (hsteq_trans Ψ (TProd (payload_at 1 P x) (TSess S (pt_shift 1 x))) U _ HUr HU) as HT.
   unfold P0 in HP.
-  destruct P as [| | |P1 P2| | |]; cbn [eqT] in HP; try contradiction. destruct HP as [HP1 HP2].
-  destruct P1 as [| | | | |s1 z1|]; cbn [eqT] in HP1; try contradiction.
-  destruct P2 as [| | | | |s2 z2|]; cbn [eqT] in HP2; try contradiction.
+  destruct P as [| | |P1 P2| | | |]; cbn [eqT] in HP; try contradiction. destruct HP as [HP1 HP2].
+  destruct P1 as [| | | | |s1 z1| |]; cbn [eqT] in HP1; try contradiction.
+  destruct P2 as [| | | | |s2 z2| |]; cbn [eqT] in HP2; try contradiction.
   destruct HP1 as [-> _], HP2 as [-> _].
   assert (payload_at 1 (TSum (TSess s1 (pvar 0)) (TSess s2 (pvar 0))) x
           = TSum (TSess s1 (pt_payload x 0)) (TSess s2 (pt_payload x 0))) as E by reflexivity.
   rewrite E in HT.
-  destruct T1 as [| | |T11 T12| | |]; cbn [hsteq] in HT; try (exfalso; destruct HT as [HT _]; exact HT).
+  destruct T1 as [| | |T11 T12| | | |]; cbn [hsteq] in HT; try (exfalso; destruct HT as [HT _]; exact HT).
   destruct HT as [[H1 H2] HT2].
-  destruct T11 as [| | | | |r1 y1|]; cbn [hsteq] in H1; try contradiction.
-  destruct T12 as [| | | | |r2 y2|]; cbn [hsteq] in H2; try contradiction.
-  destruct T2 as [| | | | |r y|]; cbn [hsteq] in HT2; try contradiction.
+  destruct T11 as [| | | | |r1 y1| |]; cbn [hsteq] in H1; try contradiction.
+  destruct T12 as [| | | | |r2 y2| |]; cbn [hsteq] in H2; try contradiction.
+  destruct T2 as [| | | | |r y| |]; cbn [hsteq] in HT2; try contradiction.
   destruct H1 as [Hy1 _], H2 as [Hy2 _].
   exists x, r1, y1, r2, y2, r, y. by split_and!.
 Qed.
@@ -583,12 +587,15 @@ Proof. intros HC. apply body0_underivable. by apply c0_irrefl. Qed.
     any acyclic top-level constraint. The two thunks are whatever the
     renaming of [let_new_pair] makes of T1 and T3. *)
 
-Lemma choice_main_new : ∃ e1 e3, choice_main = let_new (let_new (bodyg 4 e1 e3)).
-Proof. eexists _, _. unfold choice_main, let_new_pair, bodyg, t2i. cbn. reflexivity. Qed.
+Lemma choice_main_new :
+  ∃ e1 e3, choice_main = let_new_at (EPt (ka 0)) (let_new_at (EPt (kd 0)) (bodyg 4 e1 e3)).
+Proof. eexists _, _. unfold choice_main, let_new_pair_at, bodyg, t2i. cbn. reflexivity. Qed.
 
+(** Syntactic points (sharp edges 173): a and δ are the constants 0
+    and 1 of the program's hypotheses. *)
 Definition Δnew : lenv :=
-  [Some (TSess (dual SEnd) (pd 0)); Some (TSess SEnd (pd 0)); None; None;
-   Some (TSess (dual Sch0) (pa 0)); Some (TSess Sch0 (pa 0)); None; None].
+  [Some (TSess (dual SEnd) (pt_dual (kd 0))); Some (TSess SEnd (kd 0)); None; None;
+   Some (TSess (dual Sch0) (pt_dual (ka 0))); Some (TSess Sch0 (ka 0)); None; None].
 
 (* END POINTS: open, see report.
 Theorem negative_new_at C Φ F T e1 e3 :

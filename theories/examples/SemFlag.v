@@ -143,7 +143,7 @@ Proof. destruct e; simpl; try discriminate. by intros [= ->]. Qed.
 Lemma rename_pred_kv e k i :
   rename pred e = App (Konst k) (Var i) → ∃ i', e = App (Konst k) (Var i') ∧ pred i' = i.
 Proof.
-  destruct e as [| | | | |e1 e2| | | | | | |]; simpl; try discriminate. intros [= H1 H2].
+  destruct e as [| | | | | |e1 e2| | | | | | |]; simpl; try discriminate. intros [= H1 H2].
   apply rename_pred_konst in H1 as ->. apply rename_pred_var in H2 as (i' & -> & <-).
   by eexists.
 Qed.
@@ -152,7 +152,7 @@ Lemma rename_pred_arm e i j :
   rename pred e = sf_arm i j →
   ∃ i' j', e = sf_arm i' j' ∧ pred i' = i ∧ pred j' = j.
 Proof.
-  destruct e as [| | | | | | |e1 e2| | | | |]; simpl; try discriminate. intros [= H1 H2].
+  destruct e as [| | | | | | | |e1 e2| | | | |]; simpl; try discriminate. intros [= H1 H2].
   apply rename_pred_kv in H1 as (i' & -> & <-). apply rename_pred_kv in H2 as (j' & -> & <-).
   by eexists _, _.
 Qed.
@@ -163,7 +163,7 @@ Lemma konst_inv Φ Ψ Δ F e T :
   (∃ K, konst_ty (heqs Ψ) (hlt Ψ) (hyp_known Ψ) k K ∧ (hsteq Ψ K T ∨ is_ex T)) ∧
   (∀ y W, Δ !! y = Some (Some W) → unlimited W).
 Proof.
-  induction 1 as [| Φ Ψ Δ F k0 T HΔ Hk _ | | | | | | | | | |
+  induction 1 as [| Φ Ψ Δ F k0 T HΔ Hk _ | | | | | | | | | | |
                  | Φ Ψ Δ' Δ F e T Hw H IH | Φ Ψ Δ U F e T Hu H IH
                  | Φ Ψ Δ F e T T' Hq H IH | Φ Ψ Δ F e lb m C T xs _ _ _ _ H IH
                  | Φ Ψ Δ F e i lb m C T U Hi _ H IH ];
@@ -187,7 +187,7 @@ Lemma var_inv Φ Ψ Δ F e T :
   sderiv Φ Ψ Δ F e T → ∀ i, e = Var i → plainb Δ →
   ∃ V, Δ !! i = Some (Some V) ∧ (hsteq Ψ V T ∨ is_ex T) ∧ lin_only Δ i.
 Proof.
-  induction 1 as [| | Φ Ψ Δ F x T Ho | | | | | | | | |
+  induction 1 as [| | Φ Ψ Δ F x T Ho | | | | | | | | | |
                  | Φ Ψ Δ' Δ F e T Hw H IH | Φ Ψ Δ U F e T Hu H IH
                  | Φ Ψ Δ F e T T' Hq H IH | Φ Ψ Δ F e lb m C T xs _ _ _ _ H IH
                  | Φ Ψ Δ F e i lb m C T U Hi _ H IH ];
@@ -213,7 +213,7 @@ Lemma kv_inv Φ Ψ Δ F e T :
     konst_ty (heqs Ψ) (hlt Ψ) (hyp_known Ψ) k K ∧ hsteq Ψ K (TLolli ub lb A U) ∧
     Δ !! i = Some (Some V) ∧ (hsteq Ψ V A ∨ is_ex A) ∧ lin_only Δ i.
 Proof.
-  induction 1 as [| | | | Φ Ψ Δ Δ1 Δ2 F e1 e2 ub lb T U Hs Hub H1 _ H2 _ | | | | | | |
+  induction 1 as [| | | | | Φ Ψ Δ Δ1 Δ2 F e1 e2 ub lb T U Hs Hub H1 _ H2 _ | | | | | | |
                  | Φ Ψ Δ' Δ F e T Hw H IH | Φ Ψ Δ U F e T Hu H IH
                  | Φ Ψ Δ F e T T' Hq H IH | Φ Ψ Δ F e lb m C T xs _ _ _ _ H IH
                  | Φ Ψ Δ F e i lb m C T U Hi _ H IH ];
@@ -250,7 +250,7 @@ Lemma arm_inv Φ Ψ Δ F e T :
   Δ !! i = Some (Some (TSess s1 x)) → Δ !! j = Some (Some (TSess s2 y)) → i ≠ j →
   hlt Ψ x (pt_dual y).
 Proof.
-  induction 1 as [| | | | | | Φ Ψ Δ Δ1 Δ2 F e1 e2 T Hs H1 _ H2 _ | | | | |
+  induction 1 as [| | | | | | | Φ Ψ Δ Δ1 Δ2 F e1 e2 T Hs H1 _ H2 _ | | | | |
                  | Φ Ψ Δ' Δ F e T Hw H IH | Φ Ψ Δ U F e T Hu H IH
                  | Φ Ψ Δ F e T T' Hq H IH | Φ Ψ Δ F e lb m C T xs _ _ _ _ H IH
                  | Φ Ψ Δ F e i lb m C T U Hi _ H IH ];
@@ -303,7 +303,7 @@ Lemma arm_ctx Φ Ψ Δ F T1 T i j :
 Proof.
   intros Hp H [|k] U Hk; simpl in Hk; [|right; apply (Hp k U Hk)].
   injection Hk as <-.
-  destruct T1 as [| | | | | |lb m C T1]; try (left; exact I); try (right; intros []; done).
+  destruct T1 as [| | | | | |lb m C T1|]; try (left; exact I); try (right; intros []; done).
   exfalso. assert (freevar 0 (sf_arm (S i) (S j))) as Hf.
   { eapply styped_relevant; [exact H|]. exists (TEx lb m C T1). split; [done|intros []]. }
   simpl in Hf. lia.
@@ -438,37 +438,43 @@ Qed.
 (** ** The closed configuration
 
     The thread holds c and d as channel constants, c at x and d at y.
-    The partner holds the other ends and closes c, then d. *)
+    The partner holds the other ends and closes c, then d. A channel
+    value names its end by the polarity of its point (syntactic
+    points, sharp edges 173), so the thread and the partner are
+    stated for the points x and y ([sf_thread_at], [sf_config_at]),
+    and [sf_thread] and [sf_config] are their instances at the
+    constants 0 and 1. *)
 
-Definition sf_thread : expr := Case sf_flag (cc2 chc chd) (cc2 chd chc).
+Definition sf_thread_at (x y : point) : expr :=
+  Case sf_flag (cc2 (chc, pt_pol x) (chd, pt_pol y)) (cc2 (chd, pt_pol y) (chc, pt_pol x)).
 
-Definition sf_γ : nat → expr := Chan chc .: Chan chd .: Var.
+Definition sf_γ (x y : point) : nat → expr := Chan chc (pt_pol x) .: Chan chd (pt_pol y) .: Var.
 
-Lemma sf_thread_subst : subst sf_γ (sf_body 0 1) = sf_thread.
+Lemma sf_thread_subst x y : subst (sf_γ x y) (sf_body 0 1) = sf_thread_at x y.
 Proof. reflexivity. Qed.
 
 Lemma sf_ground n W x y :
-  world_wf W → grounding n W (db_Θ x y) (sf_ctx x y) sf_γ.
+  world_wf W → grounding n W (db_Θ x y) (sf_ctx x y) (sf_γ x y).
 Proof.
   intros HW. cbn [grounding sf_ctx].
   exists {[chc := One (SEnd, x)]}, {[chd := One (SEnd, y)]}. split.
   { apply comp_comm; [apply (wf_rdsym _ HW)|apply db_comp_cd]. }
   split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   exists {[chd := One (SEnd, y)]}, ∅. split; [apply tenv_comp_empty_r|]. split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   done.
 Qed.
 
-Lemma sf_thread_closed γ : subst γ sf_thread = sf_thread.
+Lemma sf_thread_closed γ x y : subst γ (sf_thread_at x y) = sf_thread_at x y.
 Proof. reflexivity. Qed.
 
 Theorem sf_thread_sem W x y :
-  strict W → w_lt W x (pt_dual y) → sem_typed W (db_Θ x y) [] ∅ sf_thread TUnit.
+  strict W → w_lt W x (pt_dual y) → sem_typed W (db_Θ x y) [] ∅ (sf_thread_at x y) TUnit.
 Proof.
   intros HW Hxy n W' Θ' Θ'' γ HW' Hc Hg. cbn [grounding] in Hg. subst Θ'.
   apply tenv_comp_empty_r_inv in Hc as ->. rewrite sf_thread_closed, <-sf_thread_subst.
-  apply (sf_sem_typed W x y HW Hxy n W' (db_Θ x y) (db_Θ x y) sf_γ HW').
+  apply (sf_sem_typed W x y HW Hxy n W' (db_Θ x y) (db_Θ x y) (sf_γ x y) HW').
   - apply tenv_comp_empty_l, (wf_rdsym _ (proj1 (proj2 (proj2 (proj2 HW'))))).
   - apply sf_ground, (proj1 (proj2 (proj2 (proj2 HW')))).
 Qed.
@@ -480,7 +486,8 @@ Lemma tenv_heads_one c e : tenv_heads {[c := One e]} = {[pt_dual e.2]}.
 Proof. unfold tenv_heads. rewrite map_fold_singleton. simpl. set_solver. Qed.
 
 Lemma cc2_typed W x y :
-  world_wf W → w_lt W x (pt_dual y) → typed W ∅ [] (db_Θ x y) [] (∅, None) (cc2 chc chd) TUnit.
+  world_wf W → w_lt W x (pt_dual y) →
+  typed W ∅ [] (db_Θ x y) [] (∅, None) (cc2 (chc, pt_pol x) (chd, pt_pol y)) TUnit.
 Proof.
   intros HW Hxy. unfold cc2.
   eapply (t_letstar W ∅ [] (db_Θ x y) {[chc := One (SEnd, x)]} {[chd := One (SEnd, y)]}
@@ -493,13 +500,13 @@ Proof.
     + apply ubs_intro; [|done]. intros z Hz. rewrite tenv_heads_one in Hz. mem_cases Hz.
       by apply sl_w.
     + apply t_const; [intros o Ho; by apply elem_of_nil in Ho|apply KTClos|done].
-    + apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl].
+    + apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl|done].
   - eapply (t_app W ∅ [] _ ∅ {[chd := One (SEnd, y)]} [] [] [] _ _ _ (Some y) None (TSess SEnd y)).
     + apply tenv_comp_empty_l, se_dsym.
     + constructor.
     + apply ubs_intro; [|done]. intros z Hz. mem_cases Hz.
     + apply t_const; [intros o Ho; by apply elem_of_nil in Ho|apply KTClos|done].
-    + apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl].
+    + apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl|done].
 Qed.
 
 (** The interface of each side: c at x and d at y, both Close. *)
@@ -526,20 +533,25 @@ Proof.
 Qed.
 
 (** The configuration: the thread and the partner over the cut {c, d}. *)
-Definition sf_config : proc := ({[chc; chd]}, {[+ sf_thread; cc2 chc chd +]}).
+Definition sf_config_at (x y : point) : proc :=
+  ({[chc; chd]}, {[+ sf_thread_at x y; cc2 (chc, pt_pol (pt_dual x)) (chd, pt_pol (pt_dual y)) +]}).
+
+Definition sf_thread : expr := sf_thread_at (pc 0 0) (pc 1 0).
+Definition sf_config : proc := sf_config_at (pc 0 0) (pc 1 0).
 
 (** A mixed derivation of the configuration. The thread is a semantic
     leaf, the partner a syntactic one. *)
 Theorem sf_mixed W x y :
-  strict W → w_lt W x (pt_dual y) → w_lt W (pt_dual x) y → mptyped W ∅ sf_config TUnit.
+  strict W → w_lt W x (pt_dual y) → w_lt W (pt_dual x) y → mptyped W ∅ (sf_config_at x y) TUnit.
 Proof.
   intros HW Hxy Hxy'. pose proof (proj1 HW) as HWf.
-  assert (sf_config = (∅ ∪ ∅ ∪ dom (sf_Σ x y), {[+ sf_thread +]} ⊎ {[+ cc2 chc chd +]})) as ->.
-  { unfold sf_config, sf_Σ. f_equal. all: rewrite !dom_insert_L, dom_singleton_L; set_solver. }
+  set (pt := cc2 (chc, pt_pol (pt_dual x)) (chd, pt_pol (pt_dual y))).
+  assert (sf_config_at x y = (∅ ∪ ∅ ∪ dom (sf_Σ x y), {[+ sf_thread_at x y +]} ⊎ {[+ pt +]})) as ->.
+  { unfold sf_config_at, sf_Σ. f_equal. all: rewrite !dom_insert_L, dom_singleton_L; set_solver. }
   assert ((∅ : senv) = ∅ ∪ ∅) as E by by rewrite (left_id_L ∅ (∪)).
   rewrite E at 1.
   apply (mp_connect W ∅ ∅ (sf_Σ x y) (sf_Σ (pt_dual x) (pt_dual y)) (dom (sf_Σ x y)) ∅ ∅
-           {[+ sf_thread +]} {[+ cc2 chc chd +]} TUnit); try done.
+           {[+ sf_thread_at x y +]} {[+ pt +]} TUnit); try done.
   - rewrite (left_id_L ∅ (∪)).
     apply (mp_sem_thread W (sf_Σ x y) ∅ ∅); [constructor|done|done|set_solver| | |].
     + intros c o Ho. by rewrite lookup_empty in Ho.
@@ -549,7 +561,7 @@ Proof.
     apply (pt_term W (sf_Σ (pt_dual x) (pt_dual y)) ∅ ∅); [constructor|done|set_solver| | |].
     + intros c o Ho. by rewrite lookup_empty in Ho.
     + intros c e1 e2 He. by rewrite lookup_empty in He.
-    + rewrite sf_Σ_tenv. apply cc2_typed; [done|]. by rewrite pt_dual_dual.
+    + rewrite sf_Σ_tenv. apply (cc2_typed W (pt_dual x) (pt_dual y)); [done|]. by rewrite pt_dual_dual.
   - intros c e e' He He'. by apply (sf_Σ_dual W x y c).
   - apply map_disjoint_empty_l.
   - apply map_disjoint_empty_l.

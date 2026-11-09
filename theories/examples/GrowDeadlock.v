@@ -17,8 +17,12 @@ From LRGV Require Export examples.DataBranch.
 
 Set Default Proof Using "All".
 
-Definition gK1 : expr := Case (Inj1 EUnit) (LetU (Var 0) (cc2 chc chd)) (LetU (Var 0) (cc2 chd chc)).
-Definition gK2 : expr := Case (Inj1 EUnit) (LetU (Var 0) (cc2 chd chc)) (LetU (Var 0) (cc2 chc chd)).
+(** Syntactic points (sharp edges 173): K₁ holds the positive ends of
+    c and d, K₂ the negative ones. *)
+Definition gK1 : expr :=
+  Case (Inj1 EUnit) (LetU (Var 0) (cc2 (chc, true) (chd, true))) (LetU (Var 0) (cc2 (chd, true) (chc, true))).
+Definition gK2 : expr :=
+  Case (Inj1 EUnit) (LetU (Var 0) (cc2 (chd, false) (chc, false))) (LetU (Var 0) (cc2 (chc, false) (chd, false))).
 
 Definition grow_proc : proc := ({[chc; chd]}, {[+ gK1 +]} ⊎ {[+ gK2 +]}).
 
@@ -28,7 +32,8 @@ Proof. intros H. rewrite !(comm_L (⊎) {[+ _ +]} {[+ b +]}). by apply PStepBeta
 Lemma beta_r C a b b' : tstep b LBeta b' → preduction (C, {[+ a +]} ⊎ {[+ b +]}) (C, {[+ a +]} ⊎ {[+ b' +]}).
 Proof. intros H. by apply PStepBeta. Qed.
 
-Definition grow_stuck : proc := ({[chc; chd]}, {[+ cc2 chc chd +]} ⊎ {[+ cc2 chd chc +]}).
+Definition grow_stuck : proc :=
+  ({[chc; chd]}, {[+ cc2 (chc, true) (chd, true) +]} ⊎ {[+ cc2 (chd, false) (chc, false) +]}).
 
 Lemma grow_reach : pred_star grow_proc grow_stuck.
 Proof.
@@ -66,7 +71,7 @@ Proof.
       by done. lia.
 Qed.
 
-Lemma cc2_ne : cc2 chc chd ≠ cc2 chd chc.
+Lemma cc2_ne : cc2 (chc, true) (chd, true) ≠ cc2 (chd, false) (chc, false).
 Proof. done. Qed.
 
 Ltac soup1 := match goal with
@@ -82,17 +87,17 @@ Proof.
   intros p' H. unfold grow_stuck, preduction in H.
   inversion H as
     [|C0 E e e' Hs
-     |C0 E e c e' Hs Hc1 Hc2 Hc3
+     |C0 E e c x e' Hs Hc1 Hc2 Hc3
      |C0 E e v e' Hs
-     |C0 E c v e e' f f' He Hf
-     |C0 E c e e' f f' He Hf Hc
-     |C0 E c bb e e' f f' He Hf
-     |C0 E e c d e' Hs Hc]; subst.
+     |C0 E c β v e e' f f' He Hf
+     |C0 E c β e e' f f' He Hf Hc
+     |C0 E c β bb e e' f f' He Hf
+     |C0 E e c bc d bd e' Hs Hc]; subst.
   - soup1; apply cc2_step in Hs; discriminate.
   - soup1; apply cc2_step in Hs; discriminate.
   - soup1; apply cc2_step in Hs; discriminate.
   - soup2; apply cc2_step in He; discriminate.
-  - soup2; apply cc2_step in He; apply cc2_step in Hf; rewrite He in Hf; injection Hf as Hcd; unfold chc, chd in Hcd; discriminate Hcd.
+  - soup2; apply cc2_step in He; apply cc2_step in Hf; unfold chc, chd in *; simplify_eq.
   - soup2; apply cc2_step in He; discriminate.
   - soup1; apply cc2_step in Hs; discriminate.
 Qed.

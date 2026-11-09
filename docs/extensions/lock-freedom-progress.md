@@ -268,6 +268,33 @@ Updated after every stage and every agent result.
   instantiation for the port, and `LFP_term`, `LFP_connect` and
   `LFP_join` move to L5.
 
+- 2026-11-09. The remaining examples on syntactic points (branch
+  sp-examples2). SemFlag, SemRounds, ChoiceEnc, ChoiceNegative,
+  DataBranch, DataAlternate, GrowDeadlock and liveness/LiveKob.v build
+  with no Admitted and no axiom. sel_i takes the carrier point x as a
+  value before the carrier and creates k by new (x[i]). It sends the end
+  at x[i] and keeps the end at x[i]‾, so no constant has to compute x̄
+  (`sel_at`, `sel_lit_typed`). The programs of ChoiceEnc, DataBranch and
+  DataAlternate create their channels at constants under `created`
+  hypotheses (`ch_Ψ`, `lp_Ψ`, `dbf_Ψ`, `dbt_Ψ`, `alt_Ψ`), and the round
+  points of the recursive choice are literals over the constant 0
+  (`cvc`). A channel value names its end by the polarity of its point,
+  so `cc2` takes two ends, and SemFlag states the thread and the partner
+  for the points x and y (`sf_thread_at`, `sf_config_at`), with
+  `sf_thread` and `sf_config` their instances at the constants 0 and 1.
+  SemRounds gives the thread the positive ends and the receivers the
+  negative ones. In LiveKob every call passes the server a point value,
+  the main thread the literal of 0 and each spawned call `KPay 0` applied
+  to the point of its caller, and `kob_tau_diverges` and
+  `live_fundamental_false` keep their statements. The rejection theorems
+  of ChoiceNegative, SemFlag and DataBranch stay commented out as the
+  end-points port left them. ChoiceTranslate, ChoiceTranslateEx and
+  SegmentDeleg keep their marker. In liveness/GuardCex.v the box body
+  forces its self with no λ in front, so it cannot take a point
+  parameter, and `cx_g` creates its channel at the literal of the
+  constant 0 with the box's upper point at 0+1 (`cx_bad_typed` asks
+  that the world knows 0).
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
@@ -310,6 +337,12 @@ Updated after every stage and every agent result.
   conjunct of `fin_ok`). Acting on an end whose partner budget is ∞ can
   starve the actor, which F-Wait forbids anyway, and idle ends are never
   delegated. The receive clause stays universal.
+- 2026-11-09, under delegation. The send clause of `Fobl` (LFFuel) gains
+  `Vfuel` of the payload at the handed-on counters, the counterpart of
+  `Vlow` in O-Send. Without it the receiver's fuel conjunct breaks when a
+  closure travels (L4a obstacle). The section hypothesis of
+  `local_progress_ready` reading ends follows from the approved change to
+  `waits` and is accepted.
 
 ## Related work hooks
 

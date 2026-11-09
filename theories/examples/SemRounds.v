@@ -71,8 +71,12 @@ Definition rbody : expr :=
 
 Definition rK : expr := EBox rbody.
 
+(** Syntactic points (sharp edges 173): a channel value names its end
+    by the polarity of its point. The thread holds the positive ends of
+    c and d, at (0, k) and (1, k), and the receivers the negative
+    ones. *)
 Definition rthread (a b : nat) (c d : chan) : expr :=
-  App (App EForce rK) (Pair (Pair (num a) (num b)) (Pair (Chan c) (Chan d))).
+  App (App EForce rK) (Pair (Pair (num a) (num b)) (Pair (Chan c true) (Chan d true))).
 
 (** ** The pattern *)
 
@@ -210,11 +214,11 @@ Lemma Erel_dstep_S n W Θ T F e e' : det_beta e e' → Erel n W Θ T F e' → Er
 Proof. intros [Hs Hd]. by apply Erel_det_beta_S. Qed.
 
 Definition round_z (b : nat) (c d : chan) : expr :=
-  LetP (Pair (rsend (Chan d)) (rsend (Chan c)))
+  LetP (Pair (rsend (Chan d true)) (rsend (Chan c true)))
     (App (App EForce rK) (Pair (Pair (Inj2 (num b)) (Inj1 EUnit)) (Pair (Var 0) (Var 1)))).
 
 Definition round_s (a b : nat) (c d : chan) : expr :=
-  LetP (Pair (rsend (Chan c)) (rsend (Chan d)))
+  LetP (Pair (rsend (Chan c true)) (rsend (Chan d true)))
     (App (App EForce rK) (Pair (Pair (num a) (Inj2 (num b))) (Pair (Var 1) (Var 0)))).
 
 
@@ -230,16 +234,17 @@ Definition sK : expr := LetP (Pair (rsend (Var 4)) (rsend (Var 3)))
   (App (App EForce rK) (Pair (Pair (Var 2) (Inj2 (Var 3))) (Pair (Var 1) (Var 0)))).
 Definition BK : expr := LetP (Var 0) (LetP (Var 0) (LetP (Var 3) (Case (Var 1) zK sK))).
 
-Definition zKc (c d : chan) : expr := LetU (Var 0) (LetP (Pair (rsend (Chan d)) (rsend (Chan c)))
+Definition zKc (c d : chan) : expr := LetU (Var 0) (LetP (Pair (rsend (Chan d true)) (rsend (Chan c true)))
   (App (App EForce rK) (Pair (Pair (Inj2 (Var 3)) (Inj1 EUnit)) (Pair (Var 0) (Var 1))))).
-Definition sKc (c d : chan) : expr := LetP (Pair (rsend (Chan c)) (rsend (Chan d)))
+Definition sKc (c d : chan) : expr := LetP (Pair (rsend (Chan c true)) (rsend (Chan d true)))
   (App (App EForce rK) (Pair (Pair (Var 2) (Inj2 (Var 3))) (Pair (Var 1) (Var 0)))).
 
 Definition zKj (b : nat) (c d : chan) : expr := LetU (Var 0) (round_z b c d).
-Definition sKj (b : nat) (c d : chan) : expr := LetP (Pair (rsend (Chan c)) (rsend (Chan d)))
+Definition sKj (b : nat) (c d : chan) : expr := LetP (Pair (rsend (Chan c true)) (rsend (Chan d true)))
   (App (App EForce rK) (Pair (Pair (Var 2) (Inj2 (num b))) (Pair (Var 1) (Var 0)))).
 
-Definition rval (a b : nat) (c d : chan) : expr := Pair (Pair (num a) (num b)) (Pair (Chan c) (Chan d)).
+Definition rval (a b : nat) (c d : chan) : expr :=
+  Pair (Pair (num a) (num b)) (Pair (Chan c true) (Chan d true)).
 
 Lemma rval_val a b c d : is_val (rval a b c d).
 Proof. simpl. rewrite !andb_True. split_and!; try apply num_val; done. Qed.
@@ -251,7 +256,7 @@ Proof.
   eapply Erel_dstep_S; [apply det_beta_appl, (det_beta_force' _ (Lam BK)); reflexivity|].
   eapply Erel_dstep; [apply (det_beta_app_lam _ _ (LetP (rval a b c d) (LetP (Var 0) (LetP (Var 3) (Case (Var 1) zK sK)))));
     [apply rval_val|reflexivity]|].
-  eapply Erel_dstep; [apply (det_beta_letp' _ _ _ (LetP (Pair (Chan c) (Chan d)) (LetP (Pair (num a) (num b)) (Case (Var 1) zK sK))));
+  eapply Erel_dstep; [apply (det_beta_letp' _ _ _ (LetP (Pair (Chan c true) (Chan d true)) (LetP (Pair (num a) (num b)) (Case (Var 1) zK sK))));
     [simpl; rewrite andb_True; split; apply num_val|done|]|].
   { unfold subst2. cbn. rewrite !rename_num. reflexivity. }
   eapply Erel_dstep; [apply (det_beta_letp' _ _ _ (LetP (Pair (num a) (num b)) (Case (Var 1) (zKc c d) (sKc c d))));
@@ -275,47 +280,49 @@ Qed.
 (** send ⟨∗, c⟩ on c : Sb at p, with a future above p. *)
 Lemma Erel_rsend n W c s p F :
   strict W → seq s Sb → (∀ z, z ∈ F → w_lt W p z) →
-  Erel n W {[c := One (s, p)]} (TSess Sb (pt_shift 1 p)) F (rsend (Chan c)).
+  Erel n W {[c := One (s, p)]} (TSess Sb (pt_shift 1 p)) F (rsend (Chan c (pt_pol p))).
 Proof.
   intros HW Hs HF. pose proof (proj1 HW) as HWf.
   apply (Erel_app_send n W _ (Some p) None (TProd TUnit (TSess (SSeq (SSnd 0 TUnit) Sb) p))); [done| | |].
   - apply Vrel_lolli_iff. right. eexists KSend, _. split_and!; [done|done| |apply teqW_refl].
     apply (KTSend _ _ _ 0 TUnit Sb p). simpl. intros h Hh. set_solver.
-  - apply Vrel_prod_iff. exists EUnit, (Chan c), ∅, {[c := One (s, p)]}. split_and!; [done| | |].
+  - apply Vrel_prod_iff. exists EUnit, (Chan c (pt_pol p)), ∅, {[c := One (s, p)]}. split_and!; [done| | |].
     + apply tenv_comp_empty_l, (wf_rdsym _ HWf).
     + by apply Vrel_unit_iff.
-    + apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done| |apply (wf_eq_refl _ HWf)].
+    + apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done| |apply (wf_eq_refl _ HWf)|done].
       eapply seq_trans; [exact Hs|apply Sb_unf].
   - exact HF.
 Qed.
 
 (** One round: send on f, then on g, and continue with Q. The first send
     needs f ≺ ḡ, the second g ≺ f̄+1 (end points). *)
-Lemma Erel_round n W Θ f g s1 s2 pf pg Q :
+Lemma Erel_round n W Θ f g s1 s2 pf pg bf bg Q :
   strict W → tenv_comp (w_eq W) Θ {[f := One (s1, pf)]} {[g := One (s2, pg)]} →
-  seq s1 Sb → seq s2 Sb → w_lt W pf (pt_dual pg) → w_lt W pg (pt_shift 1 (pt_dual pf)) →
+  seq s1 Sb → seq s2 Sb → pt_pol pf = bf → pt_pol pg = bg →
+  w_lt W pf (pt_dual pg) → w_lt W pg (pt_shift 1 (pt_dual pf)) →
   (∀ W' j f' g' s1' s2' pf' pg' Θ', wext W W' → j ≤ n →
      tenv_comp (w_eq W') Θ' {[f' := One (s1', pf')]} {[g' := One (s2', pg')]} →
      seq s1' Sb → seq s2' Sb → w_eq W' pf' (pt_shift 1 pf) → w_eq W' pg' (pt_shift 1 pg) →
-     Erel j W' Θ' TUnit ∅ (subst2 (Chan f') (Chan g') Q)) →
-  Erel n W Θ TUnit ∅ (LetP (Pair (rsend (Chan f)) (rsend (Chan g))) Q).
+     Erel j W' Θ' TUnit ∅ (subst2 (Chan f' bf) (Chan g' bg) Q)) →
+  Erel n W Θ TUnit ∅ (LetP (Pair (rsend (Chan f bf)) (rsend (Chan g bg))) Q).
 Proof.
-  intros HW Hc Hs1 Hs2 Hfg Hgf HK. pose proof (proj1 HW) as HWf.
+  intros HW Hc Hs1 Hs2 Hbf Hbg Hfg Hgf HK. subst bf bg. pose proof (proj1 HW) as HWf.
   set (Th := TProd (TSess Sb (pt_shift 1 pf)) (TSess Sb (pt_shift 1 pg))).
   change (LetP ?e Q) with (fill_frame (FLetP Q) e).
   apply (Erel_bind n (FLetP Q) W Θ Θ ∅ Th TUnit ∅ ∅);
     [done|done|apply tenv_comp_empty_r|left; apply heads_above_empty| |].
   - change (Pair ?a ?b) with (fill_frame (FPairL b) a).
-    apply (Erel_bind n (FPairL (rsend (Chan g))) W Θ {[f := One (s1, pf)]} {[g := One (s2, pg)]}
+    apply (Erel_bind n (FPairL (rsend (Chan g (pt_pol pg)))) W Θ {[f := One (s1, pf)]} {[g := One (s2, pg)]}
              (TSess Sb (pt_shift 1 pf)) Th (∅ ∪ ∅) {[pt_dual pg]});
       [done|done|done|left; by apply heads_above_one| |].
     + apply Erel_rsend; [done|done|]. intros z Hz. assert (z = pt_dual pg) as -> by set_solver. done.
     + intros W' j Θ1' Θ' v HW' Hj Hc' HV.
-      apply Vrel_sess_iff in HV as (f' & s1' & pf' & -> & -> & Hs1' & Hpf').
+      apply Vrel_sess_iff in HV as (f' & β1 & s1' & pf' & -> & -> & Hs1' & Hpf' & Hβ1).
+      assert (β1 = pt_pol pf) as -> by (rewrite <-Hβ1, Hpf'; done).
       pose proof (wext_wf _ _ HW') as HWf'. pose proof (proj2 (proj2 (proj2 HW'))) as HWs'.
-      change (fill_frame (FPairL (rsend (Chan g))) (Chan f'))
-        with (fill_frame (FPairR (Chan f')) (rsend (Chan g))).
-      apply (Erel_bind j (FPairR (Chan f')) W' Θ' {[g := One (s2, pg)]} {[f' := One (s1', pf')]}
+      change (fill_frame (FPairL (rsend (Chan g (pt_pol pg)))) (Chan f' (pt_pol pf)))
+        with (fill_frame (FPairR (Chan f' (pt_pol pf))) (rsend (Chan g (pt_pol pg)))).
+      apply (Erel_bind j (FPairR (Chan f' (pt_pol pf))) W' Θ' {[g := One (s2, pg)]} {[f' := One (s1', pf')]}
                (TSess Sb (pt_shift 1 pg)) Th (∅ ∪ ∅) {[pt_dual pf']});
         [done|done|apply comp_comm; [apply (wf_rdsym _ HWf')|exact Hc']
         |left; by apply heads_above_one| |].
@@ -323,19 +330,23 @@ Proof.
         eapply (wf_lt_eq _ HWf'); [apply (wf_eq_refl _ HWf')| |apply (wf_eq_sym _ HWf'), (wf_eq_dual _ HWf'), Hpf'].
         apply (proj1 (proj2 (proj2 HW'))). exact Hgf.
       * intros W'' j' Θ1'' Θ'' v HW'' Hj' Hc'' HV.
-        apply Vrel_sess_iff in HV as (g' & s2' & pg' & -> & -> & Hs2' & Hpg').
+        apply Vrel_sess_iff in HV as (g' & β2 & s2' & pg' & -> & -> & Hs2' & Hpg' & Hβ2).
+        assert (β2 = pt_pol pg) as -> by (rewrite <-Hβ2, Hpg'; done).
         apply Vrel_Erel. apply Vrel_prod_iff.
-        exists (Chan f'), (Chan g'), {[f' := One (s1', pf')]}, {[g' := One (s2', pg')]}.
+        exists (Chan f' (pt_pol pf)), (Chan g' (pt_pol pg)), {[f' := One (s1', pf')]}, {[g' := One (s2', pg')]}.
         split_and!; [done| | |].
         -- apply comp_comm; [apply (wf_rdsym _ (wext_wf _ _ HW''))|exact Hc''].
-        -- apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|done|]. exact (wext_eq _ _ _ _ HW'' Hpf').
-        -- apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|done|exact Hpg'].
+        -- apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|done| |by rewrite Hpf'].
+           exact (wext_eq _ _ _ _ HW'' Hpf').
+        -- apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|done|exact Hpg'|by rewrite Hpg'].
   - intros W' j Θ1' Θ' v HW' Hj Hc' HV.
     apply tenv_comp_empty_r_inv in Hc' as ->.
     apply Vrel_prod_iff in HV as (v1 & v2 & Θa & Θb & -> & Hab & Ha & Hb).
-    apply Vrel_sess_iff in Ha as (f' & s1' & pf' & -> & -> & Hs1' & Hpf').
-    apply Vrel_sess_iff in Hb as (g' & s2' & pg' & -> & -> & Hs2' & Hpg').
+    apply Vrel_sess_iff in Ha as (f' & β1 & s1' & pf' & -> & -> & Hs1' & Hpf' & Hβ1).
+    apply Vrel_sess_iff in Hb as (g' & β2 & s2' & pg' & -> & -> & Hs2' & Hpg' & Hβ2).
     eapply Erel_dstep; [by apply det_beta_letp|].
+    assert (β1 = pt_pol pf) as -> by (rewrite <-Hβ1, Hpf'; done).
+    assert (β2 = pt_pol pg) as -> by (rewrite <-Hβ2, Hpg'; done).
     by apply (HK W' j f' g' s1' s2' pf' pg').
 Qed.
 
@@ -385,7 +396,7 @@ Proof.
     eapply Erel_dstep; [apply det_beta_case1; [done|]|].
     { unfold zKj, round_z. cbn. rewrite !subst_num. reflexivity. }
     eapply Erel_dstep; [apply det_beta_letu|].
-    unfold round_z. apply (Erel_round n' W Θ d c s2 s1 yk xk); [done| |done|done| | |].
+    unfold round_z. apply (Erel_round n' W Θ d c s2 s1 yk xk true true); [done| |done|done|by rewrite Hy|by rewrite Hx| | |].
     + apply comp_comm; [apply (wf_rdsym _ HWf)|exact Hc].
     + apply (rW_lt_at W (py k) (pt_dual (px k))); [done| |done|by apply (wf_eq_dual _ HWf)].
       exists k. rewrite Hd. by left.
@@ -406,7 +417,7 @@ Proof.
     assert (rdfirst k = false) as Hd by (unfold rdfirst; by rewrite Hk).
     eapply Erel_dstep; [apply det_beta_case2; [apply num_val|]|].
     { unfold sKj, round_s. cbn. rewrite !rename_num. reflexivity. }
-    unfold round_s. apply (Erel_round n' W Θ c d s1 s2 xk yk); [done|done|done|done| | |].
+    unfold round_s. apply (Erel_round n' W Θ c d s1 s2 xk yk true true); [done|done|done|done|by rewrite Hx|by rewrite Hy| | |].
     + apply (rW_lt_at W (px k) (pt_dual (py k))); [done| |done|by apply (wf_eq_dual _ HWf)].
       exists k. rewrite Hd. by left.
     + apply (rW_lt_at W (py k) (pt_dual (px (S k)))); [done| |done|].
@@ -429,7 +440,7 @@ Qed.
     receivers (alt_R of DataAlternate.v) hold the other ends. *)
 
 Definition rthr : expr := rthread 0 0 chc chd.
-Definition rrecv (c : chan) : expr := App (App EForce alt_R) (Chan c).
+Definition rrecv (c : chan) : expr := App (App EForce alt_R) (Chan c false).
 
 Definition rΘ : tenv := <[chd := One (Sb, py 0)]> {[chc := One (Sb, px 0)]}.
 
@@ -471,7 +482,7 @@ Proof.
       [done|done| | |apply ubs_none|apply alt_R_typed, HW].
     + apply bcs_hold_intro. intros g [].
     + constructor; [by left|constructor].
-  - apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl].
+  - apply t_ch; [intros o Ho; by apply elem_of_nil in Ho|apply seq_refl|apply se_refl|done].
 Qed.
 
 Lemma Sb_Sa : sdual Sb Sa.
