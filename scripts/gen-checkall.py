@@ -64,7 +64,7 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/Fragment.v', 'c3_r2h'), ('lockfree/Fragment.v', 'fw_budgets'),
         ('lockfree/Fragment.v', 'tc_budgets'), ('lockfree/Fragment.v', 'sch_budgets'),
         ('lockfree/Fragment.v', 'rc_budgets'), ('lockfree/Fragment.v', 'rg_budgets'),
-        ('lockfree/Fragment.v', 'abp_budgets'),
+        ('lockfree/Fragment.v', 'abp_budgets'), ('lockfree/Fragment.v', 'lc_r2_fails'),
         ('lockfree/LFSoup.v', 'LFsoup_down'), ('lockfree/LFSoup.v', 'lfconf_step'),
         ('lockfree/LFSoup.v', 'lfconf_run'), ('lockfree/LFSoup.v', 'lfc_local_progress'),
         ('lockfree/LFAdequacy.v', 'lf_adequacy'), ('lockfree/LFAdequacy.v', 'lf_adequacy_ex'),

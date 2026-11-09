@@ -217,6 +217,7 @@ Print Assumptions LRGV.lockfree.Fragment.sch_budgets.
 Print Assumptions LRGV.lockfree.Fragment.rc_budgets.
 Print Assumptions LRGV.lockfree.Fragment.rg_budgets.
 Print Assumptions LRGV.lockfree.Fragment.abp_budgets.
+Print Assumptions LRGV.lockfree.Fragment.lc_r2_fails.
 Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down.
 Print Assumptions LRGV.lockfree.LFSoup.lfconf_step.
 Print Assumptions LRGV.lockfree.LFSoup.lfconf_run.

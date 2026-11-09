@@ -323,6 +323,10 @@ Updated after every stage and every agent result.
   first argument of a forced self to perform a primitive and a point
   value performs none. The session type at each point (`ty_of`) is an
   input of the budgets and is not checked against the derivation.
+  A leading λ of a box counts as a fresh point parameter only when the
+  box type of a typed annotation says TPt (`box_npt`, `r2h_ok`), no
+  example needs that annotation, and `lc_r2_fails` shows that a box
+  passing a leading channel parameter on unacted is rejected otherwise.
 
 ## Decisions
 

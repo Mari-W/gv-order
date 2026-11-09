@@ -43,8 +43,9 @@
       graph and from the length of a round.
 
     Syntactic points (sharp edges 173): a box that creates a channel
-    takes its points as leading λs, the checks read those λs as point
-    parameters, and the hypotheses of a closed program name constants.
+    takes its points as leading λs, and the hypotheses of a closed
+    program name constants. R2-recv reads a leading λ as a point
+    parameter only when the box type in its annotation says TPt.
 
     [lfptyped] is [gptyped] with R1, R2-recv, the hand-off graph and
     Rank. [lfsource] is
@@ -161,8 +162,10 @@ Definition pfresh (S : list bool) (e : expr) : list bool :=
 
 (** [rnd] holds inside a box body. A box starts a new round in which no
     outer variable, no parameter and not the self is fresh. The leading
-    λs of a box take point values, so their variables are fresh, and
-    only the innermost λ takes the parameter. Every argument of a
+    λs of a box are parameters as well. A point value built by EPt,
+    KPay or KSucc is fresh, a point parameter passed on unchanged is
+    not, because [r2] reads no type that would tell a point parameter
+    from a channel. Every argument of a
     potentially recursive call is checked, the point values and the
     parameter, because a call applied to k arguments contains the call
     applied to the first k - 1. *)
@@ -180,8 +183,8 @@ Fixpoint r2 (rnd : bool) (S : list bool) (e : expr) : bool :=
   | EBox b =>
       (fix lams (S' : list bool) (a : expr) : bool :=
          match a with
-         | Lam a' => lams (true :: S') a'
-         | _ => r2 true (match S' with _ :: S'' => false :: S'' | [] => [] end) a
+         | Lam a' => lams (false :: S') a'
+         | _ => r2 true S' a
          end) [] b
   | LetU e1 e2 => r2 rnd S e1 && r2 rnd S e2
   | LetP e1 e2 => r2 rnd S e1 && r2 rnd (pfresh S e1 ++ S) e2
@@ -532,8 +535,9 @@ Definition r4_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
     The environment records for each variable whether it is fresh, its
     carrier ([car], shared with the hand-off graph), and whether it is
     the self. In a box body the parameter is variable 0, at slot path
-    [], the point parameters follow and are fresh, and the self is
-    last ([bbox_env]). The flag [ff] switches the fed-slot clause on.
+    [], the other leading λs follow, and the self is last
+    ([bbox_envk]). A leading λ is a point parameter, and fresh, only
+    when the box type says that it takes TPt ([box_npt]). The flag [ff] switches the fed-slot clause on.
     Without it the starving server below passes. The flag [lk]
     switches the link clause on. *)
 
@@ -607,56 +611,78 @@ Definition rfed (fd : list (list bool)) (r : rent) : bool :=
 Definition act_konst (k : konst) : bool :=
   match k with KRecv | KClos | KSel1 | KSel2 | KBra => true | _ => false end.
 
-Definition bbox_env (b : expr) : list rent :=
-  benv (RE false (CPar []) false) (RE true CNo false) (RE false CNo true) (nlams b).
+(** The environment of a box body whose k outermost λs take point
+    values. Those are fresh. The other leading λs are ordinary
+    parameters and are not fresh. *)
+Definition bbox_envk (k : nat) (b : expr) : list rent :=
+  match nlams b with
+  | 0 => [RE false CNo true]
+  | S m => RE false (CPar []) false :: repeat rno (m - k) ++ repeat (RE true CNo false) k ++ [RE false CNo true]
+  end.
+
+Definition bbox_env (b : expr) : list rent := bbox_envk 0 b.
+
+(** The number of leading point parameters that a box type states:
+    □(∀…. ∗ ⊸ TPt x₁ ⊸ … ⊸ TPt xₖ ⊸ …). *)
+Fixpoint npt (T : ty) : nat := match T with TLolli _ _ (TPt _) T' => S (npt T') | _ => 0 end.
+
+Definition box_npt (ann : list (expr * ty)) (e : expr) : nat :=
+  match ann_lookup e ann with Some (TBox _ _ _ (TLolli _ _ _ T)) => npt T | _ => 0 end.
 
 Definition bbox_body (b : expr) : expr := bbody b.
 
-Fixpoint r2x (lk ff rnd : bool) (fd : list (list bool)) (G : list rent) (e : expr) : bool :=
+Fixpoint r2x (lk : bool) (pts : expr → nat) (ff rnd : bool) (fd : list (list bool)) (G : list rent) (e : expr) : bool :=
   match e with
   | Var x => negb (ff && rnd && rfed fd (rget G x))
   | App e1 e2 =>
       match fhead e, e1 with
       | Some f, App _ _ =>
           (negb rnd || negb (pcall_target f) || fresh (rfr G) e2 || (rself G f && adv G e2)) &&
-          r2x lk ff rnd fd G e1 && r2x lk ff rnd fd G e2
+          r2x lk pts ff rnd fd G e1 && r2x lk pts ff rnd fd G e2
       | _, Konst k =>
           (negb rnd || negb lk || negb (bool_decide (k = KLink)) || fresh (rfr G) e2) &&
           match e2 with
-          | Var _ => act_konst k || r2x lk ff rnd fd G e2
-          | Pair p (Var _) => if bool_decide (k = KSend) then r2x lk ff rnd fd G p else r2x lk ff rnd fd G e2
-          | _ => r2x lk ff rnd fd G e2
+          | Var _ => act_konst k || r2x lk pts ff rnd fd G e2
+          | Pair p (Var _) => if bool_decide (k = KSend) then r2x lk pts ff rnd fd G p else r2x lk pts ff rnd fd G e2
+          | _ => r2x lk pts ff rnd fd G e2
           end
       | _, Lam b =>
-          match e2 with Var _ => true | _ => r2x lk ff rnd fd G e2 end &&
-          r2x lk ff rnd fd (rbind1 G e2 :: G) b
-      | _, _ => r2x lk ff rnd fd G e1 && r2x lk ff rnd fd G e2
+          match e2 with Var _ => true | _ => r2x lk pts ff rnd fd G e2 end &&
+          r2x lk pts ff rnd fd (rbind1 G e2 :: G) b
+      | _, _ => r2x lk pts ff rnd fd G e1 && r2x lk pts ff rnd fd G e2
       end
-  | Lam b => r2x lk ff rnd fd (rno :: G) b
+  | Lam b => r2x lk pts ff rnd fd (rno :: G) b
   | EBox b =>
-      let G' := bbox_env b in
+      let k := match nlams b with 0 => 0 | S m => Nat.min m (pts (EBox b)) end in
+      let G' := bbox_envk k b in
       (fix lams (a : expr) : bool :=
-         match a with Lam a' => lams a' | _ => r2x lk ff true (feds G' a) G' a end) b
-  | LetU e1 e2 => r2x lk ff rnd fd G e1 && r2x lk ff rnd fd G e2
+         match a with Lam a' => lams a' | _ => r2x lk pts ff true (feds G' a) G' a end) b
+  | LetU e1 e2 => r2x lk pts ff rnd fd G e1 && r2x lk pts ff rnd fd G e2
   | LetP e1 e2 =>
-      match e1 with Var _ => true | _ => r2x lk ff rnd fd G e1 end &&
-      r2x lk ff rnd fd (rbindp G e1 ++ G) e2
+      match e1 with Var _ => true | _ => r2x lk pts ff rnd fd G e1 end &&
+      r2x lk pts ff rnd fd (rbindp G e1 ++ G) e2
   | Case e e1 e2 =>
-      r2x lk ff rnd fd G e && r2x lk ff rnd fd (rbindc G e :: G) e1 && r2x lk ff rnd fd (rbindc G e :: G) e2
-  | Pair e1 e2 => r2x lk ff rnd fd G e1 && r2x lk ff rnd fd G e2
-  | Inj1 e | Inj2 e => r2x lk ff rnd fd G e
+      r2x lk pts ff rnd fd G e && r2x lk pts ff rnd fd (rbindc G e :: G) e1 && r2x lk pts ff rnd fd (rbindc G e :: G) e2
+  | Pair e1 e2 => r2x lk pts ff rnd fd G e1 && r2x lk pts ff rnd fd G e2
+  | Inj1 e | Inj2 e => r2x lk pts ff rnd fd G e
   | EUnit | Konst _ | Chan _ _ | EPt _ => true
   end.
 
 (** R2-recv with the link clause, as stage 3c stated it. *)
 Definition r2r (ff rnd : bool) (fd : list (list bool)) (G : list rent) (e : expr) : bool :=
-  r2x true ff rnd fd G e.
+  r2x true (λ _, 0) ff rnd fd G e.
 
 Definition lf_r2r (e : expr) : bool := r2r true false [] [] e.
 
 (** R2-recv without the link clause, which the hand-off graph replaces
-    (plan §17.6). *)
-Definition lf_r2h (e : expr) : bool := r2x false true false [] [] e.
+    (plan §17.6). A leading λ of a box counts as a point parameter, and
+    so as fresh, only when the box type in the annotation [ann] says
+    that its argument is TPt. *)
+Definition lf_r2h (ann : list (expr * ty)) (e : expr) : bool := r2x false (box_npt ann) true false [] [] e.
+
+(** R2-recv for the threads [ts], with box types derived by [tyd]. *)
+Definition r2h_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
+  ∃ ann : list (expr * ty), (∀ b T, (b, T) ∈ ann → tyd b T) ∧ ∀ e, ts e → lf_r2h ann e = true.
 
 (** ** Rank *)
 
@@ -667,8 +693,11 @@ Definition wf_world (W : world) : Prop := well_founded (w_lt W).
 Definition lf_r4 (W : world) (p : proc) : Prop :=
   r4_ok (λ b T, ∃ Φ Ψ Δ F, typed W Φ Ψ ∅ Δ F b T) (λ e, e ∈ p.2).
 
+Definition lf_r2w (W : world) (p : proc) : Prop :=
+  r2h_ok (λ b T, ∃ Φ Ψ Δ F, typed W Φ Ψ ∅ Δ F b T) (λ e, e ∈ p.2).
+
 Definition lfptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  gptyped W Σ p T ∧ (∀ e, e ∈ p.2 → lf_r1 e = true) ∧ (∀ e, e ∈ p.2 → lf_r2h e = true) ∧
+  gptyped W Σ p T ∧ (∀ e, e ∈ p.2 → lf_r1 e = true) ∧ lf_r2w W p ∧
   lf_r4 W p ∧ wf_world W.
 
 Lemma lfptyped_gptyped W Σ p T : lfptyped W Σ p T → gptyped W Σ p T.
@@ -1028,7 +1057,8 @@ End ladder_rank.
     that world. *)
 Definition lfsource (Ψ : hyps) (t : expr) (T : ty) : Prop :=
   created (Wpo []) Ψ ∧ prim T ∧
-  gstyped ∅ Ψ [] (∅, None) t T ∧ lf_r1 t = true ∧ lf_r2h t = true ∧
+  gstyped ∅ Ψ [] (∅, None) t T ∧ lf_r1 t = true ∧
+  r2h_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧
   r4_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧ wf_world (cworld Ψ).
 
 Lemma lfsource_gstyped Ψ t T : lfsource Ψ t T → gstyped ∅ Ψ [] (∅, None) t T.
@@ -1046,13 +1076,16 @@ Theorem lfsource_lfptyped_at Ψ t T B P :
   strict (World (hroots Ψ) (w_lt (cworld Ψ)) B P) ∧
   lfptyped (World (hroots Ψ) (w_lt (cworld Ψ)) B P) ∅ (∅, {[+ t +]}) T.
 Proof.
-  intros (HΨ & HT & [Ht Hg] & H1 & H2 & (ann & E & Hann & Hac & Hts) & Hwf).
+  intros (HΨ & HT & [Ht Hg] & H1 & (ann2 & Hann2 & H2) & (ann & E & Hann & Hac & Hts) & Hwf).
   destruct (cworld_hold Ψ HΨ) as [HS Hh].
   pose proof (strict_budgets (cworld Ψ) B P HS) as HS'.
   split; [exact HS'|]. split_and!.
   - split; [by apply (world_ptyped _ Ψ)|]. by intros e ->%gmultiset_elem_of_singleton.
   - by intros e ->%gmultiset_elem_of_singleton.
-  - by intros e ->%gmultiset_elem_of_singleton.
+  - exists ann2. split.
+    + intros b U Hin. destruct (Hann2 b U Hin) as (Φ & Ψ' & Δ & F & Hb). exists Φ, Ψ', Δ, F.
+      by apply styped_typed.
+    + intros e ->%gmultiset_elem_of_singleton. by apply H2.
   - exists ann, E. split_and!; [|done|].
     + intros b U Hin. destruct (Hann b U Hin) as (Φ & Ψ' & Δ & F & Hb). exists Φ, Ψ', Δ, F.
       by apply styped_typed.
@@ -1190,7 +1223,7 @@ Proof.
   - constructor.
   - split; [apply Forwarder.fw_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists fw_ann, fw_E. split_and!.
     + intros b T Hin. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
       exists ∅, [], [], (∅, None). apply Forwarder.fwd_typed, (proj1 wnil_strict).
@@ -1210,7 +1243,7 @@ Proof.
   - constructor.
   - split; [apply TailCall.tc_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
@@ -1236,7 +1269,7 @@ Proof.
   - constructor.
   - split; [apply CfstScheduler.sch_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
@@ -1392,7 +1425,7 @@ Proof.
   exact (acyclic_loop E n Hac (Hsub _ Hn)).
 Qed.
 
-Theorem c3_r2h : lf_r2h c3_box = true.
+Theorem c3_r2h : lf_r2h [] c3_box = true.
 Proof. vm_compute. reflexivity. Qed.
 
 (** TreeSum (plan §10.5): R1 rejects it, because the left call's result
@@ -1430,9 +1463,32 @@ Proof. vm_compute. reflexivity. Qed.
 
 Theorem starve_not_lfptyped W Σ T : ¬ lfptyped W Σ (∅, {[+ starve_box +]}) T.
 Proof.
-  intros (_ & _ & H2 & _). specialize (H2 _ (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)).
+  intros (_ & _ & (ann & _ & H2) & _). specialize (H2 _ (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)).
   revert H2. vm_compute. discriminate.
 Qed.
+
+(** A box whose leading λ takes a channel c and passes it on unacted.
+
+      lc = !(f = λc. λd. let d′ = send ⟨∗, d⟩ in (force f) c d′)
+
+    Read as a point parameter c would count as fresh, and R2 would let
+    the round hand c on forever. Only an annotation whose box type says
+    TPt for c makes R2-recv accept it, and the typing premise of
+    [lfptyped] asks a derivation of that type. Without an annotation,
+    or with a channel type for c, R2-recv rejects it, and so does R2′. *)
+Definition lc_box : expr :=
+  EBox (Lam (Lam (App (Lam (App (App (App EForce (Var 3)) (Var 2)) (Var 0)))
+    (App ESend (Pair EUnit (Var 0)))))).
+
+Definition lc_ty (A : ty) : ty :=
+  TBox 0 0 (BCs [] (λ _, False))
+    (TLolli None None TUnit (TLolli None None A (TLolli None None (TSess SEnd (pvar 0)) TUnit))).
+
+Theorem lc_r2_fails :
+  guarded lc_box ∧ lf_r1 lc_box = true ∧ lf_r2 lc_box = false ∧ lf_r2h [] lc_box = false ∧
+  lf_r2h [(lc_box, lc_ty (TSess SEnd (pvar 0)))] lc_box = false ∧
+  lf_r2h [(lc_box, lc_ty (TPt (pvar 0)))] lc_box = true.
+Proof. unfold guarded. split_and!; vm_compute; reflexivity. Qed.
 
 (** R2-recv on the earlier examples. Kobayashi's forwarder and C1 pass
     it and stay out by the guard and by Rank. C3 still fails it, by the
@@ -1467,7 +1523,7 @@ Proof.
   - constructor.
   - split; [apply ReceivedChain.ch_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
@@ -1516,7 +1572,7 @@ Proof.
   - constructor.
   - split; [apply GrowRing.rg_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
@@ -1541,7 +1597,7 @@ Proof.
   - constructor.
   - split; [apply ABP.abp_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
