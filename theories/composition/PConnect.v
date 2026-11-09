@@ -44,12 +44,12 @@ Section assembly.
     assert (C2 ∪ C1 ∪ C0 = C1 ∪ C2 ∪ C0) as HCs by apply union3_comm.
     assert (E2 ⊎ E1 = E1 ⊎ E2) as HEs by apply (comm_L (⊎)).
     assert (Hgive : ∀ p', ptau_link (C1 ∪ C2 ∪ C0, E1 ⊎ E2) p' → Prel (S n') W (Σ1 ∪ Σ2) T p').
-    { intros p' (C' & E & e & c & d & e' & Heq & Hst & HcC & ->). injection Heq as <- HE.
+    { intros p' (C' & E & e & c & bc & d & bd & e' & Heq & Hst & HcC & ->). injection Heq as <- HE.
       destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
       - exact (link_give n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                 F1 e c d e' HE1 Hst HcC).
+                 F1 e c bc d bd e' HE1 Hst HcC).
       - pose proof (link_give n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB TA Hm' Hty' Hok' HP2 HP1
-                      F2 e c d e' HE2 Hst ltac:(by rewrite HCs)) as H.
+                      F2 e c bc d bd e' HE2 Hst ltac:(by rewrite HCs)) as H.
         rewrite HΣs, HCs in H.
         assert (F2 ⊎ E1 ⊎ {[+ e' +]} = E1 ⊎ F2 ⊎ {[+ e' +]}) as <- by multiset_solver. exact H. }
     apply Prel_S_intro.
@@ -65,12 +65,12 @@ Section assembly.
       + simpl. split; [|intros Hl _; by apply Hgive].
         pose proof Hst as Hst0.
         apply ptau_inv in Hst as [(F & e & e' & HE & Hs & ->)
-          |[(F & e & c & e' & HE & Hs & HcC & HcF & Hce & ->)
+          |[(F & e & c & x & e' & HE & Hs & HcC & HcF & Hce & ->)
           |[(F & e & v & e' & HE & Hs & ->)
-          |[(F & c & v & e & e' & f & f' & HE & Hs1 & Hs2 & ->)
-          |[(F & c & e & e' & f & f' & HE & Hs1 & Hs2 & HcC & ->)
-          |[(F & e & c & d & e' & HE & Hs & HcC & ->)
-          |(F & c & i & e & e' & f & f' & HE & Hs1 & Hs2 & ->)]]]]]].
+          |[(F & c & β & v & e & e' & f & f' & HE & Hs1 & Hs2 & ->)
+          |[(F & c & β & e & e' & f & f' & HE & Hs1 & Hs2 & HcC & ->)
+          |[(F & e & c & bc & d & bd & e' & HE & Hs & HcC & ->)
+          |(F & c & β & i & e & e' & f & f' & HE & Hs1 & Hs2 & ->)]]]]]].
         * destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
           -- exact (tau_beta n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
                       F1 e e' HE1 Hs).
@@ -79,9 +79,9 @@ Section assembly.
              f_equal; [done|clear -HΣs; multiset_solver].
         * destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
           -- exact (tau_new n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 e c e' HE1 Hs HcC HcF Hce).
+                      F1 e c x e' HE1 Hs HcC HcF Hce).
           -- eapply Ptau_case_conv; [exact HΣs| |exact (tau_new n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1
-                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 e c e' HE2 Hs ltac:(by rewrite HCs)
+                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 e c x e' HE2 Hs ltac:(by rewrite HCs)
                       ltac:(by rewrite (comm_L (⊎) F2)) Hce)].
              f_equal; [by rewrite HCs|clear -HΣs; multiset_solver].
         * destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
@@ -93,76 +93,76 @@ Section assembly.
         * destruct (gmultiset_split_in2 _ _ _ _ _ HE)
             as [(F1 & HE1 & ->)|[(F2 & HE2 & ->)|[(F1 & F2 & HE1 & HE2 & ->)|(F1 & F2 & HE1 & HE2 & ->)]]].
           -- exact (tau_msg n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 c v e e' f f' HE1 Hs1 Hs2).
+                      F1 c β v e e' f f' HE1 Hs1 Hs2).
           -- eapply Ptau_case_conv; [exact HΣs| |exact (tau_msg n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1
-                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 c v e e' f f' HE2 Hs1 Hs2)].
+                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 c β v e e' f f' HE2 Hs1 Hs2)].
              f_equal; [done|clear -HΣs; multiset_solver].
           -- exact (cross_msg n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 F2 e e' f f' c v HE1 HE2 Hs1 Hs2).
+                      F1 F2 e e' f f' c β v HE1 HE2 Hs1 Hs2).
           -- eapply Ptau_case_conv; [exact HΣs| |exact (cross_msg n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1
-                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 F1 e e' f f' c v HE2 HE1 Hs1 Hs2)].
+                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 F1 e e' f f' c β v HE2 HE1 Hs1 Hs2)].
              f_equal; [done|clear -HΣs; multiset_solver].
         * destruct (gmultiset_split_in2 _ _ _ _ _ HE)
             as [(F1 & HE1 & ->)|[(F2 & HE2 & ->)|[(F1 & F2 & HE1 & HE2 & ->)|(F1 & F2 & HE1 & HE2 & ->)]]].
           -- exact (tau_close n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 c e e' f f' HE1 Hs1 Hs2).
+                      F1 c β e e' f f' HE1 Hs1 Hs2).
           -- eapply Ptau_case_conv; [exact HΣs| |exact (tau_close n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1
-                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 c e e' f f' HE2 Hs1 Hs2)].
+                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 c β e e' f f' HE2 Hs1 Hs2)].
              f_equal; [by rewrite HCs|clear -HΣs; multiset_solver].
           -- exact (cross_close n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 F2 e e' f f' c HE1 HE2 Hs1 Hs2).
+                      F1 F2 e e' f f' c β HE1 HE2 Hs1 Hs2).
           -- eapply Ptau_case_conv; [exact HΣs| |exact (cross_close n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1
-                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 F1 e e' f f' c HE2 HE1 Hs1 Hs2)].
+                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 F1 e e' f f' c β HE2 HE1 Hs1 Hs2)].
              f_equal; [by rewrite HCs|clear -HΣs; multiset_solver].
         * intros Hg.
           eapply Prel_down; [|apply Hgive]; [lia|].
-          exists (C1 ∪ C2 ∪ C0), F, e, c, d, e'. by rewrite HE.
+          exists (C1 ∪ C2 ∪ C0), F, e, c, bc, d, bd, e'. by rewrite HE.
         * destruct (gmultiset_split_in2 _ _ _ _ _ HE)
             as [(F1 & HE1 & ->)|[(F2 & HE2 & ->)|[(F1 & F2 & HE1 & HE2 & ->)|(F1 & F2 & HE1 & HE2 & ->)]]].
           -- exact (tau_choice n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 c i e e' f f' HE1 Hs1 Hs2).
+                      F1 c β i e e' f f' HE1 Hs1 Hs2).
           -- eapply Ptau_case_conv; [exact HΣs| |exact (tau_choice n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1
-                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 c i e e' f f' HE2 Hs1 Hs2)].
+                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 c β i e e' f f' HE2 Hs1 Hs2)].
              f_equal; [done|clear -HΣs; multiset_solver].
           -- exact (cross_choice n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 F2 e e' f f' c i HE1 HE2 Hs1 Hs2).
+                      F1 F2 e e' f f' c β i HE1 HE2 Hs1 Hs2).
           -- eapply Ptau_case_conv; [exact HΣs| |exact (cross_choice n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1
-                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 F1 e e' f f' c i HE2 HE1 Hs1 Hs2)].
+                      E2 E1 TB TA Hm' Hty' Hok' HP2 HP1 F2 F1 e e' f f' c β i HE2 HE1 Hs1 Hs2)].
              f_equal; [done|clear -HΣs; multiset_solver].
       + apply proc_step_sess_inv in Hst as (E0 & e & e' & HE & Hs & Hsub & ->).
         destruct (gmultiset_split_in _ _ _ _ HE) as [(F1 & HE1 & ->)|(F2 & HE2 & ->)].
-        * destruct σ as [c w|c w|c|cd|c i|c i]; simpl in Hsub.
+        * destruct σ as [[c β] w|[c β] w|[c β]|cd|[c β] i|[c β] i]; simpl in Hsub.
           -- exact (ext_recv n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 e c w e' HE1 Hs ltac:(clear -Hsub; set_solver)).
+                      F1 e c β w e' HE1 Hs ltac:(clear -Hsub; set_solver)).
           -- exact (ext_send n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 e c w e' HE1 Hs ltac:(clear -Hsub; set_solver)).
+                      F1 e c β w e' HE1 Hs ltac:(clear -Hsub; set_solver)).
           -- exact (ext_close n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 e c e' HE1 Hs ltac:(clear -Hsub; set_solver)).
+                      F1 e c β e' HE1 Hs ltac:(clear -Hsub; set_solver)).
           -- exact (ext_link n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
                       F1 e cd e' HE1 Hs Hsub).
           -- exact (ext_sel n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 e c i e' HE1 Hs ltac:(clear -Hsub; set_solver)).
+                      F1 e c β i e' HE1 Hs ltac:(clear -Hsub; set_solver)).
           -- exact (ext_bra n' T HT IHo m IHi W Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 TA TB Hm Hty Hok HP1 HP2
-                      F1 e c i e' HE1 Hs ltac:(clear -Hsub; set_solver)).
+                      F1 e c β i e' HE1 Hs ltac:(clear -Hsub; set_solver)).
         * rewrite <-HCs in Hsub.
-          destruct σ as [c w|c w|c|cd|c i|c i]; simpl in Hsub.
+          destruct σ as [[c β] w|[c β] w|[c β]|cd|[c β] i|[c β] i]; simpl in Hsub.
           -- eapply Pcase_conv; [exact HΣs| | |exact (ext_recv n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB TA Hm' Hty' Hok' HP2 HP1
-                      F2 e c w e' HE2 Hs ltac:(clear -Hsub; set_solver))];
+                      F2 e c β w e' HE2 Hs ltac:(clear -Hsub; set_solver))];
                [first [by rewrite HCs, HEs|reflexivity]|f_equal; [by rewrite HCs|clear -HΣs; multiset_solver]].
           -- eapply Pcase_conv; [exact HΣs| | |exact (ext_send n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB TA Hm' Hty' Hok' HP2 HP1
-                      F2 e c w e' HE2 Hs ltac:(clear -Hsub; set_solver))];
+                      F2 e c β w e' HE2 Hs ltac:(clear -Hsub; set_solver))];
                [first [by rewrite HCs, HEs|reflexivity]|f_equal; [by rewrite HCs|clear -HΣs; multiset_solver]].
           -- eapply Pcase_conv; [exact HΣs| | |exact (ext_close n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB TA Hm' Hty' Hok' HP2 HP1
-                      F2 e c e' HE2 Hs ltac:(clear -Hsub; set_solver))];
+                      F2 e c β e' HE2 Hs ltac:(clear -Hsub; set_solver))];
                [first [by rewrite HCs, HEs|reflexivity]|f_equal; [by rewrite HCs|clear -HΣs; multiset_solver]].
           -- eapply Pcase_conv; [exact HΣs| | |exact (ext_link n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB TA Hm' Hty' Hok' HP2 HP1
                       F2 e cd e' HE2 Hs Hsub)];
                [first [by rewrite HCs, HEs|reflexivity]|f_equal; [by rewrite HCs|clear -HΣs; multiset_solver]].
           -- eapply Pcase_conv; [exact HΣs| | |exact (ext_sel n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB TA Hm' Hty' Hok' HP2 HP1
-                      F2 e c i e' HE2 Hs ltac:(clear -Hsub; set_solver))];
+                      F2 e c β i e' HE2 Hs ltac:(clear -Hsub; set_solver))];
                [first [by rewrite HCs, HEs|reflexivity]|f_equal; [by rewrite HCs|clear -HΣs; multiset_solver]].
           -- eapply Pcase_conv; [exact HΣs| | |exact (ext_bra n' T HT IHo m IHi W Σ2 Σ1 ΣC' ΣC C0 C2 C1 E2 E1 TB TA Hm' Hty' Hok' HP2 HP1
-                      F2 e c i e' HE2 Hs ltac:(clear -Hsub; set_solver))];
+                      F2 e c β i e' HE2 Hs ltac:(clear -Hsub; set_solver))];
                [first [by rewrite HCs, HEs|reflexivity]|f_equal; [by rewrite HCs|clear -HΣs; multiset_solver]].
   Qed.
 End assembly.
