@@ -79,7 +79,7 @@ Proof.
   { unfold sf_inst, sf_pinst. simpl. rewrite set_map_empty. set_solver. }
   rewrite tenv_pinst_empty, E in H.
   assert (lsem_typed (wc0 n C0) ∅ (lenv_pinst σ []) ∅ t (pinst_ty σ T)) as Hl.
-  { apply lsem_later_now. refine (proj1 (H _ _) _ (okR_noL _)); [|by apply wc0_holds].
+  { apply lsem_later_now. refine (proj1 (H _ _ (tenv_pol_empty _)) _ (okR_noL _)); [|by apply wc0_holds].
     intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty. }
   apply (live_adequacy (wc0 n C0) (pinst_ty σ T)).
   apply (LPrel_term _ ∅ ∅ ∅); [by apply prim_pinst|done|done|set_solver| | |].
@@ -102,7 +102,7 @@ Proof.
   { unfold sf_inst, sf_pinst. simpl. rewrite set_map_empty. set_solver. }
   rewrite tenv_pinst_empty, E in H.
   assert (lsem_typed W1 ∅ (lenv_pinst σ []) ∅ t (pinst_ty σ T)) as Hl.
-  { apply lsem_later_now. refine (proj1 (H _ _) _ (okR_noL _)); [|done].
+  { apply lsem_later_now. refine (proj1 (H _ _ (tenv_pol_empty _)) _ (okR_noL _)); [|done].
     intros φ u. unfold fhyps_pinst. by rewrite fmap_empty, lookup_empty. }
   apply (live_adequacy W1 (pinst_ty σ T)).
   apply (LPrel_term _ ∅ ∅ ∅); [by apply prim_pinst|exact (proj2 (proj2 (proj2 HW1)))|done|set_solver| | |].
