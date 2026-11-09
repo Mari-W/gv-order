@@ -653,15 +653,16 @@ Definition tm_prod : expr :=
   App EClos (App ESel1 (App ESel1 (App ESend (Pair EUnit (App ESel2 (Var 3)))))).
 
 Definition tree_main : expr :=
-  LetP (Pair copy drain) (let_new_pair (let_new_pair
+  LetP (Pair copy drain) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam tm_cons)) (LetU (App ESpawn (Lam tm_copier)) tm_prod)))).
 
-(** The creation constraint of a, over α = 0 with z = 1 outside. *)
-Definition tca_C : bcs := BCs [pvar 0] send_P.
+(** The creation constraint of a, over α = 0 with z outside. Under
+    syntactic points z is the constant [z] (sharp edges 173). *)
+Definition tca_C (z : nat) : bcs := BCs [pconst z] send_P.
 
-Lemma tca_ok peq plt : cc_ok peq plt tca_C.
+Lemma tca_ok peq plt z : cc_ok peq plt (tca_C z).
 Proof.
-  apply (cc_ok_out _ _ tca_C wlt); [exact wlt_trans|exact wlt_irrefl|exact wlt_po|exact wlt_dpo| |].
+  apply (cc_ok_out _ _ (tca_C z) wlt); [exact wlt_trans|exact wlt_irrefl|exact wlt_po|exact wlt_dpo| |].
   - intros a b (f & (w & c & c' & [-> | (i & ->)]) & _ & E); cbn [fact_map] in E;
       rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst in E; injection E as -> ->.
     + right; right. rewrite st_root_polar, pwalk_root. split; cbn; done.
@@ -679,7 +680,7 @@ Definition tcb_P (g : fact) : Prop :=
   ∃ w c c', g = FLt (pt_polar c (pwalk (pv 1 0) w)) (pt_polar c' (pwalk (pv 0 0) w)) ∨
        (∃ s, g = FLt (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 1 0) w) s))) ∨
        g = FLt (pt_polar c (pwalk (pv 0 0) w)) (pv 2 0).
-Definition tcb_C : bcs := BCs [pvar 0; pvar 1] tcb_P.
+Definition tcb_C : bcs := BCs [pconst 1; pconst 2] tcb_P.
 
 Lemma pwalk_pol x w : pt_pol x = true → pt_pol (pwalk x w) = true.
 Proof. revert x. induction w as [|[i|] w IH]; intros x Hx; simpl; [done| |]; apply IH; done. Qed.
@@ -708,26 +709,26 @@ Qed.
     offsets sits at the same walk, k successors later, so the leaving
     fact lands on α at that walk k successors later, and the facts of a
     and program order give the fact between the outer points. *)
-Lemma tcb_ok W Ψ : (BCs [pvar 1] send_P, [pvar 0]) ∈ Ψ → cc_ok (seqs W Ψ) (slt W Ψ) tcb_C.
+Lemma tcb_ok W Ψ : (tca_C 2, [pconst 1]) ∈ Ψ → cc_ok (seqs W Ψ) (slt W Ψ) tcb_C.
 Proof.
   intros Hg.
   set (TL := glt (cc_up (seqs W Ψ)) (cc_up (slt W Ψ))).
-  assert (∀ u c c' i, TL (pt_polar c (pwalk (pv 1 0) u)) (pt_polar c' (wstep (pwalk (pv 1 0) u) (Some i)))) as HA.
+  assert (∀ u c c' i, TL (pt_polar c (pwalk (pc 1 0) u)) (pt_polar c' (wstep (pwalk (pc 1 0) u) (Some i)))) as HA.
   { intros u c c' i.
-    assert (slt W Ψ (pt_polar c (pwalk (pv 0 0) u)) (pt_polar c' (wstep (pwalk (pv 0 0) u) (Some i)))) as H.
-    { eapply (sl_hyp W Ψ [pvar 1] send_P [pvar 0]
+    assert (slt W Ψ (pt_polar c (pwalk (pc 1 0) u)) (pt_polar c' (wstep (pwalk (pc 1 0) u) (Some i)))) as H.
+    { eapply (sl_hyp W Ψ [pconst 2] send_P [pconst 1]
                 (FLt (pt_polar c (pwalk (pv 0 0) u)) (pt_polar c' (wstep (pwalk (pv 0 0) u) (Some i)))));
         [done|exists u, c, c'; right; by exists i|fscp|fmwp]. }
     pose proof (glt_up (seqs W Ψ) _ _ _ H) as G. by rewrite !st_inst_polar, wstep_inst, pwalk_inst in G. }
-  assert (∀ u c, TL (pt_polar c (pwalk (pv 1 0) u)) (pv 2 0)) as HZ.
+  assert (∀ u c, TL (pt_polar c (pwalk (pc 1 0) u)) (pc 2 0)) as HZ.
   { intros u c.
-    assert (slt W Ψ (pt_polar c (pwalk (pv 0 0) u)) (pv 1 0)) as H.
-    { eapply (sl_hyp W Ψ [pvar 1] send_P [pvar 0] (FLt (pt_polar c (pwalk (pv 0 0) u)) (pv 1 0)));
+    assert (slt W Ψ (pt_polar c (pwalk (pc 1 0) u)) (pc 2 0)) as H.
+    { eapply (sl_hyp W Ψ [pconst 2] send_P [pconst 1] (FLt (pt_polar c (pwalk (pv 0 0) u)) (pv 1 0)));
         [done|exists u, c, true; by left|fscp|fmwp]. }
     pose proof (glt_up (seqs W Ψ) _ _ _ H) as G. by rewrite st_inst_polar, pwalk_inst in G. }
   assert (∀ w w' c d, pt_polar c (pwalk (pv 0 0) w) = pt_polar d (pwalk (pv 0 0) w') ∨
                        olt (pt_polar c (pwalk (pv 0 0) w)) (pt_polar d (pwalk (pv 0 0) w')) →
-            ∃ k, pwalk (pv 1 0) w' = pt_shift k (pwalk (pv 1 0) w)) as Hrel.
+            ∃ k, pwalk (pc 1 0) w' = pt_shift k (pwalk (pc 1 0) w)) as Hrel.
   { intros w w' c d H.
     assert (pt_name (pwalk (pv 0 0) w) = pt_name (pwalk (pv 0 0) w') ∧
             pt_off (pwalk (pv 0 0) w) ≤ pt_off (pwalk (pv 0 0) w')) as [En Eo].
@@ -740,7 +741,7 @@ Proof.
     { pose proof (pwalk_pol (pv 0 0) w eq_refl) as P. pose proof (pwalk_pol (pv 0 0) w' eq_refl) as P'.
       destruct (pwalk (pv 0 0) w) as [n b o], (pwalk (pv 0 0) w') as [n' b' o'].
       unfold pt_shift. simpl in *. subst. f_equal. lia. }
-    apply (f_equal (pt_inst (λ _, pv 1 0))) in E. rewrite pt_inst_shift, !pwalk_inst in E. exact E. }
+    apply (f_equal (pt_inst (λ _, pc 1 0))) in E. rewrite pt_inst_shift, !pwalk_inst in E. exact E. }
   apply (cc_ok_out _ _ tcb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
   - intros a b (f & (w & c & c' & [-> | [(s & ->) | ->]]) & _ & E); cbn [fact_map] in E;
       rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst in E; injection E as -> ->; right;
@@ -748,9 +749,9 @@ Proof.
   - intros u p q v (f & (w & c & c' & [-> | [(s & ->) | ->]]) & _ & E) (f' & (w' & d & d' & [-> | [(s' & ->) | ->]]) & _ & E')
       Hu Hp Hq Hv Hpq; cbn [fact_map] in E, E'; rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst in E;
       rewrite ?st_inst_polar, ?wstep_inst, ?pwalk_inst in E'; injection E as -> ->; injection E' as -> ->;
-      change (pt_inst (pup 1 (plist [pvar 0; pvar 1])) (pv 0 0)) with (pv 0 0) in *;
-      change (pt_inst (pup 1 (plist [pvar 0; pvar 1])) (pv 1 0)) with (pv 1 0) in *;
-      change (pt_inst (pup 1 (plist [pvar 0; pvar 1])) (pv 2 0)) with (pv 2 0) in *;
+      change (pt_inst (pup 1 (plist [pconst 1; pconst 2])) (pv 0 0)) with (pv 0 0) in *;
+      change (pt_inst (pup 1 (plist [pconst 1; pconst 2])) (pv 1 0)) with (pc 1 0) in *;
+      change (pt_inst (pup 1 (plist [pconst 1; pconst 2])) (pv 2 0)) with (pc 2 0) in *;
       try (exfalso; apply Hu; by rewrite st_root_polar, pwalk_root);
       try (exfalso; revert Hq; rewrite st_root_polar, pwalk_root; done).
     + fold TL. destruct (Hrel w w' c' d Hpq) as [k E]. rewrite E.
@@ -759,8 +760,8 @@ Proof.
         -- rewrite pt_shift_0. apply HA.
         -- eapply glt_trans; [apply (glt_ofs_any _ _ _ c true (S k)); lia|].
            rewrite <-pwalk_nones, <-pwalk_app. apply HA.
-      * cbn [wstep]. replace (pt_shift 1 (pt_shift k (pwalk (pv 1 0) w))) with (pt_shift (S k) (pwalk (pv 1 0) w)).
-        2:{ destruct (pwalk (pv 1 0) w). unfold pt_shift. simpl. f_equal. lia. }
+      * cbn [wstep]. replace (pt_shift 1 (pt_shift k (pwalk (pc 1 0) w))) with (pt_shift (S k) (pwalk (pc 1 0) w)).
+        2:{ destruct (pwalk (pc 1 0) w). unfold pt_shift. simpl. f_equal. lia. }
         apply glt_ofs_any. lia.
     + fold TL. apply HZ.
 Qed.
@@ -768,85 +769,86 @@ Qed.
 (** After both [new]s b is 0, a is 1 and z is 2. The producer acts on
     a at α, α[B], α[B]+1, (α[B]+1)[A] and its [A]. *)
 Definition tree_Ψ : hyps :=
-  hyps_inst (pshift 1) (hyps_inst (pshift 1) [(top_C0, ids 1)] ++ [(bcs_inst (pshift 1) tca_C, ids 1)]) ++
-    [(bcs_inst (pshift 1) tcb_C, ids 1)].
+  ([(top_C0, [pconst 2])] ++ [(tca_C 2, [pconst 1])]) ++ [(tcb_C, [pconst 0])].
 
 (** The hypotheses of a program that creates a alone at its top level
     under z (sharp edges 172). TreeSum.v and the examples after it use
     them. *)
-Definition tca_Ψ : hyps := hyps_inst (pshift 1) [(top_C0, ids 1)] ++ [(bcs_inst (pshift 1) tca_C, ids 1)].
+Definition tca_Ψ : hyps := [(top_C0, [pconst 1])] ++ [(tca_C 1, [pconst 0])].
 
 Lemma tca_created : created (Wpo []) tca_Ψ.
 Proof.
-  apply created_snoc; [apply top_created|apply tca_ok|].
+  apply created_snoc; [apply top_created|apply tca_ok| |fresh_const].
   constructor; [eapply skn_inst; [by left|by left|done]|constructor].
 Qed.
 
 Lemma tree_created : created (Wpo []) tree_Ψ.
 Proof.
   apply created_snoc.
-  - apply tca_created.
+  - apply created_snoc; [apply top_created|apply tca_ok| |fresh_const].
+    constructor; [eapply skn_inst; [by left|by left|done]|constructor].
   - apply tcb_ok. cbn. by right; left.
   - cbn. constructor; [eapply skn_inst; [by right; left|by left|done]|].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor].
+  - fresh_const.
 Qed.
 
 Lemma tree_typed : styped ∅ tree_Ψ [] (∅, None) tree_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tree_main, tree_Ψ.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tree_main, let_new_pair_at, tree_Ψ.
   tstep.
   { tstep; apply typed_hyps_wk; [exact HWs|apply drain_typed, HW|exact HWs|apply copy_typed, HW]. }
-  cbn. new_top HWs (SSeq TreeC SEnd) (pvar 1). new_top HWs (SSeq TreeC SEnd) (pvar 0).
+  cbn. new_top HWs (SSeq TreeC SEnd) (pconst 1). new_top HWs (SSeq TreeC SEnd) (pconst 0).
   fresh_clean.
-  set (Ψ := [(top_C0, [pvar 2]); (BCs [pvar 2] send_P, [pvar 1]); (BCs [pvar 1; pvar 2] tcb_P, [pvar 0])]).
-  assert (∀ w c c', slt W Ψ (pt_polar c (pwalk (pv 1 0) w)) (pt_polar c' (pwalk (pv 0 0) w))) as Hab.
-  { intros w c c'. eapply (sl_hyp W Ψ [pvar 1; pvar 2] tcb_P [pvar 0]
+  set (Ψ := [(top_C0, [pconst 2]); (BCs [pconst 2] send_P, [pconst 1]); (BCs [pconst 1; pconst 2] tcb_P, [pconst 0])]).
+  assert (∀ w c c', slt W Ψ (pt_polar c (pwalk (pc 1 0) w)) (pt_polar c' (pwalk (pc 0 0) w))) as Hab.
+  { intros w c c'. eapply (sl_hyp W Ψ [pconst 1; pconst 2] tcb_P [pconst 0]
                              (FLt (pt_polar c (pwalk (pv 1 0) w)) (pt_polar c' (pwalk (pv 0 0) w))));
       [inlist|exists w, c, c'; by left|fscp|fmwp]. }
-  assert (∀ w s c c', slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 1 0) w) s))) as Hba.
-  { intros w s c c'. eapply (sl_hyp W Ψ [pvar 1; pvar 2] tcb_P [pvar 0]
+  assert (∀ w s c c', slt W Ψ (pt_polar c (pwalk (pc 0 0) w)) (pt_polar c' (wstep (pwalk (pc 1 0) w) s))) as Hba.
+  { intros w s c c'. eapply (sl_hyp W Ψ [pconst 1; pconst 2] tcb_P [pconst 0]
                                (FLt (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 1 0) w) s))));
       [inlist|exists w, c, c'; right; left; by exists s|fscp|fmwp]. }
-  assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pv 2 0)) as Hbz.
-  { intros w c. eapply (sl_hyp W Ψ [pvar 1; pvar 2] tcb_P [pvar 0] (FLt (pt_polar c (pwalk (pv 0 0) w)) (pv 2 0)));
+  assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pc 0 0) w)) (pc 2 0)) as Hbz.
+  { intros w c. eapply (sl_hyp W Ψ [pconst 1; pconst 2] tcb_P [pconst 0] (FLt (pt_polar c (pwalk (pv 0 0) w)) (pv 2 0)));
       [inlist|exists w, c, true; by right; right|fscp|fmwp]. }
-  assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pv 1 0) w)) (pv 2 0)) as Haz.
-  { intros w c. eapply (sl_hyp W Ψ [pvar 2] send_P [pvar 1] (FLt (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)));
+  assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pc 1 0) w)) (pc 2 0)) as Haz.
+  { intros w c. eapply (sl_hyp W Ψ [pconst 2] send_P [pconst 1] (FLt (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)));
       [inlist|exists w, c, true; by left|fscp|fmwp]. }
-  assert (∀ w i c c', slt W Ψ (pt_polar c (pwalk (pv 1 0) w)) (pt_polar c' (wstep (pwalk (pv 1 0) w) (Some i)))) as Haa.
-  { intros w i c c'. eapply (sl_hyp W Ψ [pvar 2] send_P [pvar 1]
+  assert (∀ w i c c', slt W Ψ (pt_polar c (pwalk (pc 1 0) w)) (pt_polar c' (wstep (pwalk (pc 1 0) w) (Some i)))) as Haa.
+  { intros w i c c'. eapply (sl_hyp W Ψ [pconst 2] send_P [pconst 1]
                           (FLt (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 0 0) w) (Some i)))));
       [inlist|exists w, c, c'; right; by exists i|fscp|fmwp]. }
-  assert (∀ w i c c', slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 0 0) w) (Some i)))) as Hbb.
+  assert (∀ w i c c', slt W Ψ (pt_polar c (pwalk (pc 0 0) w)) (pt_polar c' (wstep (pwalk (pc 0 0) w) (Some i)))) as Hbb.
   { intros w i c c'. eapply sl_trans; [apply (Hba w (Some i) c true)|]. rewrite <-!pwalk_snoc. apply Hab. }
   cbn. tstep.
   { (* the consumer *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 0)) (Some (pv 0 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 2 0)) (Some (pc 0 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     unfold tm_cons. cbn. tstep; [tstep|]. cbn.
-    set (RD := TEx (LPt (pt_dual (pv 0 0))) 1 (BCs [pt_dual (pv 0 0); pv 2 0] after_P) (TSess SEnd (pv 0 0))).
-    eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 0)) None RD); [reflexivity| | |].
-    - eapply (tv_lam W HW _ _ _ _ _ RD _ (Some (pv 2 0)) None 1); [set_solver|cbn; set_solver|].
-      cbn. apply (tv_open W _ _ _ _ _ 0 (LPt (pt_dual (pv 0 0))) 1 (BCs [pt_dual (pv 0 0); pv 2 0] after_P)
+    set (RD := TEx (LPt (pt_dual (pc 0 0))) 1 (BCs [pt_dual (pc 0 0); pc 2 0] after_P) (TSess SEnd (pv 0 0))).
+    eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 2 0)) None RD); [reflexivity| | |].
+    - eapply (tv_lam W HW _ _ _ _ _ RD _ (Some (pc 2 0)) None 1); [set_solver|cbn; set_solver|].
+      cbn. apply (tv_open W _ _ _ _ _ 0 (LPt (pt_dual (pc 0 0))) 1 (BCs [pt_dual (pc 0 0); pc 2 0] after_P)
                   (TSess SEnd (pv 0 0)) _
-                  (<[1:=Some (pv 3 0)]> (<[0:=Some (pv 3 0)]> ∅))
-                  [(top_C0, [pvar 3]); (BCs [pvar 3] send_P, [pvar 2]); (BCs [pvar 2; pvar 3] tcb_P, [pvar 1]);
-                   (BCs [pt_dual (pv 1 0); pv 3 0] after_P, [pv 0 0])]
+                  (<[1:=Some (pc 2 0)]> (<[0:=Some (pc 2 0)]> ∅))
+                  [(top_C0, [pconst 2]); (BCs [pconst 2] send_P, [pconst 1]); (BCs [pconst 1; pconst 2] tcb_P, [pconst 0]);
+                   (BCs [pt_dual (pc 0 0); pc 2 0] after_P, [pv 0 0])]
                   [Some (TSess SEnd (pv 0 0)); None; None; None; None; None; None; None; None; None;
                    Some drain_ty; Some copy_ty]
                   (∅, Some (FVar 1)) TUnit);
         [reflexivity|intros []|reflexivity|reflexivity|reflexivity|apply sf_pinst_empty|reflexivity|].
       eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 0 0)) (TSess SEnd (pv 0 0))); [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 3 0). split; [done|]. right.
-      eapply (sl_hyp W _ [pt_dual (pv 1 0); pv 3 0] after_P [pv 0 0] (FLt (pv 0 0) (pv 2 0)));
+      exists (pc 2 0). split; [done|]. right.
+      eapply (sl_hyp W _ [pt_dual (pc 0 0); pc 2 0] after_P [pv 0 0] (FLt (pv 0 0) (pv 2 0)));
         [inlist|right; exists [], true, true; by left|fsc|reflexivity].
-    - eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 0)) None (TSess (SSeq TreeD SEnd) (pt_dual (pv 0 0))) RD);
+    - eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 2 0)) None (TSess (SSeq TreeD SEnd) (pt_dual (pc 0 0))) RD);
         [reflexivity| | |].
-      + unfold RD. rewrite <-(drain_inst (pt_dual (pv 0 0)) (pv 2 0) SEnd).
-        apply (typed_force W _ _ _ _ _ _ 2 1 send_C None drain_body [pt_dual (pv 0 0); pv 2 0] [SEnd]);
+      + unfold RD. rewrite <-(drain_inst (pt_dual (pc 0 0)) (pc 2 0) SEnd).
+        apply (typed_force W _ _ _ _ _ _ 2 1 send_C None drain_body [pt_dual (pc 0 0); pc 2 0] [SEnd]);
           [done|done| | |done| |apply ubs_none|tstep].
         * apply bcs_hold_intro. intros g (w & c & c' & [-> | (i & ->)]) _; cbn [fact_map fact_holds];
             pnorm; [eapply Hbz|eapply Hbb].
@@ -855,31 +857,31 @@ Proof.
         * apply Forall_singleton, hcontractive_end.
       + tstep.
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 2 0). split; [done|]. apply sle_refl, HW.
+        exists (pc 2 0). split; [done|]. apply sle_refl, HW.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 2 0). split; [done|]. apply sle_refl, HW. }
+      exists (pc 2 0). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { (* the copier *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 0)) (Some (pv 1 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 2 0)) (Some (pc 1 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply (Hab [] true false)]. }
     unfold tm_copier. cbn. tstep; [tstep|]. cbn.
-    set (RC := TEx (LPt (pt_dual (pv 1 0))) 2 (BCs [pt_dual (pv 1 0); pv 2 0] cafter_P)
+    set (RC := TEx (LPt (pt_dual (pc 1 0))) 2 (BCs [pt_dual (pc 1 0); pc 2 0] cafter_P)
                  (TProd (TSess SEnd (pv 0 0)) (TSess SEnd (pv 1 0)))).
-    eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 0)) None RC); [reflexivity| | |].
-    - eapply (tv_lam W HW _ _ _ _ _ RC _ (Some (pv 2 0)) None 1); [set_solver|cbn; set_solver|].
-      cbn. apply (tv_open W _ _ _ _ _ 0 (LPt (pt_dual (pv 1 0))) 2 (BCs [pt_dual (pv 1 0); pv 2 0] cafter_P)
+    eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 2 0)) None RC); [reflexivity| | |].
+    - eapply (tv_lam W HW _ _ _ _ _ RC _ (Some (pc 2 0)) None 1); [set_solver|cbn; set_solver|].
+      cbn. apply (tv_open W _ _ _ _ _ 0 (LPt (pt_dual (pc 1 0))) 2 (BCs [pt_dual (pc 1 0); pc 2 0] cafter_P)
                   (TProd (TSess SEnd (pv 0 0)) (TSess SEnd (pv 1 0))) _
-                  (<[1:=Some (pv 4 0)]> (<[0:=Some (pv 4 0)]> ∅))
-                  [(top_C0, [pvar 4]); (BCs [pvar 4] send_P, [pvar 3]); (BCs [pvar 3; pvar 4] tcb_P, [pvar 2]);
-                   (BCs [pt_dual (pv 3 0); pv 4 0] cafter_P, [pv 0 0; pv 1 0])]
+                  (<[1:=Some (pc 2 0)]> (<[0:=Some (pc 2 0)]> ∅))
+                  [(top_C0, [pconst 2]); (BCs [pconst 2] send_P, [pconst 1]); (BCs [pconst 1; pconst 2] tcb_P, [pconst 0]);
+                   (BCs [pt_dual (pc 1 0); pc 2 0] cafter_P, [pv 0 0; pv 1 0])]
                   [Some (TProd (TSess SEnd (pv 0 0)) (TSess SEnd (pv 1 0)));
                    None; None; None; None; None; None; None; None; None; Some drain_ty; Some copy_ty]
                   (∅, Some (FVar 1)) TUnit);
         [reflexivity|intros []|reflexivity|reflexivity|reflexivity|apply sf_pinst_empty|reflexivity|].
-      set (Ψc := [(top_C0, [pvar 4]); (BCs [pvar 4] send_P, [pvar 3]); (BCs [pvar 3; pvar 4] tcb_P, [pvar 2]);
-                  (BCs [pt_dual (pv 3 0); pv 4 0] cafter_P, [pv 0 0; pv 1 0])]).
-      assert (slt W Ψc (pv 0 0) (pt_dual (pv 1 0)) ∧ slt W Ψc (pv 0 0) (pv 4 0) ∧ slt W Ψc (pv 1 0) (pv 4 0))
+      set (Ψc := [(top_C0, [pconst 2]); (BCs [pconst 2] send_P, [pconst 1]); (BCs [pconst 1; pconst 2] tcb_P, [pconst 0]);
+                  (BCs [pt_dual (pc 1 0); pc 2 0] cafter_P, [pv 0 0; pv 1 0])]).
+      assert (slt W Ψc (pv 0 0) (pt_dual (pv 1 0)) ∧ slt W Ψc (pv 0 0) (pc 2 0) ∧ slt W Ψc (pv 1 0) (pc 2 0))
         as (H01 & H0z & H1z).
       { split_and!.
         - eapply (sl_hyp W _ _ cafter_P _ (FLt (pv 0 0) (pt_dual (pv 1 0))));
@@ -891,15 +893,15 @@ Proof.
       tstep; [tstep|]. cbn. tstep.
       + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 0 0)) (TSess SEnd (pv 0 0))); [tstep|apply KTClos|done|].
         apply ubs_intro; [intros y Hy; mem_cases Hy; exact H01|].
-        exists (pv 4 0). split; [done|]. by right.
+        exists (pc 2 0). split; [done|]. by right.
       + eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 1 0)) (TSess SEnd (pv 1 0))); [tstep|apply KTClos|done|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 4 0). split; [done|]. by right.
-    - eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 2 0)) None
-                (TProd (TSess (SSeq TreeD SEnd) (pt_dual (pv 1 0))) (TSess (SSeq TreeC SEnd) (pv 0 0))) RC);
+        exists (pc 2 0). split; [done|]. by right.
+    - eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 2 0)) None
+                (TProd (TSess (SSeq TreeD SEnd) (pt_dual (pc 1 0))) (TSess (SSeq TreeC SEnd) (pc 0 0))) RC);
         [reflexivity| | |].
-      + unfold RC. rewrite <-(copy_inst (pt_dual (pv 1 0)) (pv 0 0) (pv 2 0) SEnd SEnd).
-        apply (typed_force W _ _ _ _ _ _ 3 2 copy_C None copy_body [pt_dual (pv 1 0); pv 0 0; pv 2 0] [SEnd; SEnd]);
+      + unfold RC. rewrite <-(copy_inst (pt_dual (pc 1 0)) (pc 0 0) (pc 2 0) SEnd SEnd).
+        apply (typed_force W _ _ _ _ _ _ 3 2 copy_C None copy_body [pt_dual (pc 1 0); pc 0 0; pc 2 0] [SEnd; SEnd]);
           [done|done| | |done| |apply ubs_none|tstep].
         * apply bcs_hold_intro. intros g (w & c & c' & [-> | [(s & ->) | [-> | ->]]]) _; cbn [fact_map fact_holds];
             pnorm; [eapply Hab|eapply Hba|eapply Haz|eapply Hbz].
@@ -907,17 +909,17 @@ Proof.
           constructor; [eapply skn_inst; [by right; right; left|by left|done]|].
           constructor; [eapply skn_inst; [by left|by left|done]|constructor].
         * constructor; [apply hcontractive_end|constructor; [apply hcontractive_end|constructor]].
-      + eapply (tv_pair W HW _ _ _ _ _ _ (TSess (SSeq TreeD SEnd) (pt_dual (pv 1 0)))); [reflexivity|tstep|tstep].
+      + eapply (tv_pair W HW _ _ _ _ _ _ (TSess (SSeq TreeD SEnd) (pt_dual (pc 1 0)))); [reflexivity|tstep|tstep].
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 2 0). split; [done|]. apply sle_refl, HW.
+        exists (pc 2 0). split; [done|]. apply sle_refl, HW.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 2 0). split; [done|]. apply sle_refl, HW. }
+      exists (pc 2 0). split; [done|]. apply sle_refl, HW. }
   (* the producer: α[B], α[B]+1, (α[B]+1)[A] and its [A] *)
   unfold tm_prod. cbn.
-  set (p1 := pt_dual (pwalk (pv 1 0) [Some true])).
-  set (p2 := pt_dual (pwalk (pv 1 0) [Some true; None])).
-  set (p3 := pt_dual (pwalk (pv 1 0) [Some true; None; Some false])).
-  set (p4 := pt_dual (pwalk (pv 1 0) [Some true; None; Some false; Some false])).
+  set (p1 := pt_dual (pwalk (pc 1 0) [Some true])).
+  set (p2 := pt_dual (pwalk (pc 1 0) [Some true; None])).
+  set (p3 := pt_dual (pwalk (pc 1 0) [Some true; None; Some false])).
+  set (p4 := pt_dual (pwalk (pc 1 0) [Some true; None; Some false; Some false])).
   eapply (tv_appk W HW _ _ _ _ KClos _ (Some p4) (TSess SEnd p4));
     [|apply KTClos|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
   apply (t_conv W _ _ _ _ _ _ (TSess (SSeq SSkip SEnd) p4)).
@@ -939,8 +941,8 @@ Proof.
     [|apply (KTSend _ _ _ 0 TUnit (SSeq TreeC (SSeq TreeC SEnd)) p1); cbn; set_solver
      |kscope|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
   tstep; [|tstep].
-  eapply (tv_appk W HW _ _ _ _ KSel2 _ (Some (pv 1 0))
-            (TSess (SPlus (SSeq SSkip SEnd) (SSeq (SSnd 0 TUnit) (SSeq TreeC (SSeq TreeC SEnd)))) (pv 1 0)));
+  eapply (tv_appk W HW _ _ _ _ KSel2 _ (Some (pc 1 0))
+            (TSess (SPlus (SSeq SSkip SEnd) (SSeq (SSnd 0 TUnit) (SSeq TreeC (SSeq TreeC SEnd)))) (pc 1 0)));
     [|apply KTSel2, (Haa [] true true true)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
   eapply t_conv; [|tstep]. apply teq_steq. split; [done|].
   eapply seq_trans; [apply TreeC_seq|]. apply seq_plus_cong; [apply seq_refl|apply node_snd, hcontractive_end].
