@@ -51,6 +51,10 @@ Abbreviation pa k := (pv 0 k).
 Abbreviation pa0 k := (Pt (NPayload (NVar 0) 0 0) k).
 Abbreviation pb k := (pv 1 k).
 Abbreviation pb0 k := (Pt (NPayload (NVar 1) 0 0) k).
+(** a at the constant 1 and its field point (syntactic points, sharp
+    edges 173). *)
+Abbreviation pbc k := (pc 1 k).
+Abbreviation pb0c k := (Pt (NPayload (NConst 1) 0 0) k).
 
 (** ** The payload *)
 
@@ -69,7 +73,7 @@ Proof. reflexivity. Qed.
 (** ** The program *)
 
 Definition server : expr :=
-  let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pt_dual (pb0c 0))) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam (LetU (Var 0) (recvclose (Var 2)))))
       (LetU (App EClos (App ESend (Pair (Pair (Var 2) (Var 0)) (Var 6))))
         (App EClos (Var 3))))).
@@ -81,7 +85,7 @@ Definition client : expr :=
         (LetU (App EClos (Var 1)) (sendclose (Var 0))))).
 
 Definition ex_main : expr :=
-  let_new_pair (LetU (App ESpawn (Lam (LetU (Var 0) server))) client).
+  let_new_pair_at (EPt (pconst 1)) (LetU (App ESpawn (Lam (LetU (Var 0) server))) client).
 
 Definition ex_fact (g : fact) : Prop :=
   g = FLt (pa 1) (pa0 0) ∨ g = FLt (pa 1) (pt_dual (pa0 0)) ∨
@@ -89,7 +93,7 @@ Definition ex_fact (g : fact) : Prop :=
 Definition C0x : bcs := BCs [] ex_fact.
 
 (** The creation constraint of k₂ at v = 0 with a[0] = 1 outside. *)
-Definition Ck2 : bcs := BCs [pa0 0] (λ g, g = FLt (pvar 1) (pvar 0) ∨ g = FLt (pvar 1) (pt_dual (pvar 0))).
+Definition Ck2 : bcs := BCs [pb0c 0] (λ g, g = FLt (pvar 1) (pvar 0) ∨ g = FLt (pvar 1) (pt_dual (pvar 0))).
 
 Lemma ck2_ok peq plt : cc_ok peq plt Ck2.
 Proof.
@@ -116,12 +120,11 @@ Qed.
     with new@v, so v is a top-level point and its facts are facts of
     the initial world. *)
 Definition ex_Ψ : hyps :=
-  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) C0x, ids 1)]) ++
-    [(bcs_inst (pshift 1) Ck2, ids 1)].
+  ([] ++ [(C0x, [pconst 1])]) ++ [(Ck2, [pconst 0])].
 
 Lemma ex_created : created (Wpo []) ex_Ψ.
 Proof.
-  apply created_snoc; [apply created_snoc; [constructor| |constructor]|apply ck2_ok|].
+  apply created_snoc; [apply created_snoc; [constructor| |constructor|fresh_const]|apply ck2_ok| |fresh_const].
   - set (r := λ x : point, match pt_name x with
       | NPayload (NVar 0) 0 0 => 15 + 10 * pt_off x
       | _ => 10 * pt_off x
@@ -132,7 +135,7 @@ Proof.
     + intros [q pb o] _. unfold r, pt_shift. simpl. repeat case_match; lia.
     + intros g Hg _. destruct Hg as [-> |[-> |[-> | ->]]]; eexists _, _; (split; [done|]); unfold r; cbn; lia.
     + intros [q pb o] _. unfold r, pt_shift, pt_dual. simpl. repeat case_match; lia.
-  - cbn. constructor; [|constructor]. right. exists (bcs_inst (pshift 1) C0x), [pvar 0], (pvar 0).
+  - cbn. constructor; [|constructor]. right. exists C0x, [pconst 1], (pconst 1).
     split_and!; [by left|by left|done].
 Qed.
 
@@ -206,59 +209,59 @@ Lemma ex_typed : styped ∅ ex_Ψ [] (∅, None) ex_main TUnit.
 Proof.
   apply styped_wnil. set (W := wnil). unfold ex_Ψ. cbn.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
-  pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold ex_main.
-  assert (slt W Ψ (pt_dual (pb 1)) (pb0 0)) as F1.
-  { apply (sl_hyp0 W Ψ ex_fact [pvar 1] (pt_dual (pa 1)) (pa0 0)); [by left|by right; right; left|split; cbn; lia|reflexivity|reflexivity]. }
-  assert (slt W Ψ (pt_dual (pb 1)) (pt_dual (pb0 0))) as F1b.
-  { apply (sl_hyp0 W Ψ ex_fact [pvar 1] (pt_dual (pa 1)) (pt_dual (pa0 0))); [by left|by right; right; right|split; cbn; lia|reflexivity|reflexivity]. }
-  assert (skn W Ψ (pt_dual (pb0 0))) as Ka0d by (right; exists C0x, [pvar 1], (pvar 1); split_and!; [by left|by left|done]).
-  assert (skn W Ψ (pb 0)) as Ka by (right; exists C0x, [pvar 1], (pvar 1); split_and!; [by left|by left|done]).
-  assert (skn W Ψ (pb0 0)) as Ka0 by (right; exists C0x, [pvar 1], (pvar 1); split_and!; [by left|by left|done]).
-  apply (t_new_at W _ _ _ _ _ _ _ Sx (pb 0) HWs Ka). cbn.
+  pose proof wnil_strict as HWs. pose proof (proj1 HWs) as HW. unfold ex_main, let_new_pair_at.
+  assert (slt W Ψ (pt_dual (pbc 1)) (pb0c 0)) as F1.
+  { apply (sl_hyp0 W Ψ ex_fact [pconst 1] (pt_dual (pa 1)) (pa0 0)); [by left|by right; right; left|split; cbn; lia|reflexivity|reflexivity]. }
+  assert (slt W Ψ (pt_dual (pbc 1)) (pt_dual (pb0c 0))) as F1b.
+  { apply (sl_hyp0 W Ψ ex_fact [pconst 1] (pt_dual (pa 1)) (pt_dual (pa0 0))); [by left|by right; right; right|split; cbn; lia|reflexivity|reflexivity]. }
+  assert (skn W Ψ (pt_dual (pb0c 0))) as Ka0d by (right; exists C0x, [pconst 1], (pconst 1); split_and!; [by left|by left|done]).
+  assert (skn W Ψ (pbc 0)) as Ka by (right; exists C0x, [pconst 1], (pconst 1); split_and!; [by left|by left|done]).
+  assert (skn W Ψ (pb0c 0)) as Ka0 by (right; exists C0x, [pconst 1], (pconst 1); split_and!; [by left|by left|done]).
+  apply (t_new_at W _ _ _ _ _ _ _ Sx (pbc 0) HWs ltac:(ground) Ka). cbn.
   tstep.
   { (* the server thread *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pb0 0))) (Some (pt_dual (pb 0))) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pb0c 0))) (Some (pt_dual (pbc 0))) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
-    cbn. tstep; [tstep|]. cbn. unfold server.
-    apply (t_new_at W _ _ _ _ _ _ _ SEnd (pt_dual (pb0 0)) HWs Ka0d). cbn.
-    assert (skn W Ψ (pvar 0)) as Kv0 by (right; eexists _, [pvar 0], (pvar 0); split_and!; [by right; left|by left|done]).
-    apply (t_new_at W _ _ _ _ _ _ _ (dual Sd) (pvar 0) HWs Kv0).
+    cbn. tstep; [tstep|]. cbn. unfold server, let_new_pair_at.
+    apply (t_new_at W _ _ _ _ _ _ _ SEnd (pt_dual (pb0c 0)) HWs ltac:(ground) Ka0d). cbn.
+    assert (skn W Ψ (pconst 0)) as Kv0 by (right; eexists _, [pconst 0], (pconst 0); split_and!; [by right; left|by left|done]).
+    apply (t_new_at W _ _ _ _ _ _ _ (dual Sd) (pconst 0) HWs ltac:(ground) Kv0).
     cbn.
     match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ' := Q) end.
-    assert (slt W Ψ' (pv 1 1) (Pt (NPayload (NVar 1) 0 0) 0)) as F1'.
-    { apply (sl_hyp0 W Ψ' ex_fact [pvar 1] (pa 1) (pa0 0)); [by left|by left|split; cbn; lia|done|done]. }
-    assert (slt W Ψ' (pv 1 1) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0))) as F1d.
-    { apply (sl_hyp0 W Ψ' ex_fact [pvar 1] (pa 1) (pt_dual (pa0 0))); [by left|by right; left|split; cbn; lia|done|done]. }
-    assert (slt W Ψ' (Pt (NPayload (NVar 1) 0 0) 0) (pvar 0)) as G.
-    { eapply (sl_hyp W Ψ' _ _ [pvar 0] (FLt (pvar 1) (pvar 0))); [by right; left|by left|fsc|reflexivity]. }
-    assert (slt W Ψ' (Pt (NPayload (NVar 1) 0 0) 0) (pt_dual (pvar 0))) as G'.
-    { eapply (sl_hyp W Ψ' _ _ [pvar 0] (FLt (pvar 1) (pt_dual (pvar 0)))); [by right; left|by right|fsc|reflexivity]. }
-    assert (slt W Ψ' (pv 1 0) (Pt (NPayload (NVar 1) 0 0) 0)) as F0'.
-    { eapply sl_trans; [apply (slt_po W _ (pv 1 0) HW)|exact F1']. }
-    assert (slt W Ψ' (pv 1 0) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0))) as F0d.
-    { eapply sl_trans; [apply (slt_po W _ (pv 1 0) HW)|exact F1d]. }
-    assert (skn W Ψ' (pt_dual (pvar 0))) as Kv.
-    { right. eexists _, (ids 1), (pvar 0). split_and!; [by right; left|by left|done]. }
+    assert (slt W Ψ' (pc 1 1) (Pt (NPayload (NConst 1) 0 0) 0)) as F1'.
+    { apply (sl_hyp0 W Ψ' ex_fact [pconst 1] (pa 1) (pa0 0)); [by left|by left|split; cbn; lia|done|done]. }
+    assert (slt W Ψ' (pc 1 1) (pt_dual (Pt (NPayload (NConst 1) 0 0) 0))) as F1d.
+    { apply (sl_hyp0 W Ψ' ex_fact [pconst 1] (pa 1) (pt_dual (pa0 0))); [by left|by right; left|split; cbn; lia|done|done]. }
+    assert (slt W Ψ' (Pt (NPayload (NConst 1) 0 0) 0) (pconst 0)) as G.
+    { eapply (sl_hyp W Ψ' _ _ [pconst 0] (FLt (pvar 1) (pvar 0))); [by right; left|by left|fsc|reflexivity]. }
+    assert (slt W Ψ' (Pt (NPayload (NConst 1) 0 0) 0) (pt_dual (pconst 0))) as G'.
+    { eapply (sl_hyp W Ψ' _ _ [pconst 0] (FLt (pvar 1) (pt_dual (pvar 0)))); [by right; left|by right|fsc|reflexivity]. }
+    assert (slt W Ψ' (pc 1 0) (Pt (NPayload (NConst 1) 0 0) 0)) as F0'.
+    { eapply sl_trans; [apply (slt_po W _ (pc 1 0) HW)|exact F1']. }
+    assert (slt W Ψ' (pc 1 0) (pt_dual (Pt (NPayload (NConst 1) 0 0) 0))) as F0d.
+    { eapply sl_trans; [apply (slt_po W _ (pc 1 0) HW)|exact F1d]. }
+    assert (skn W Ψ' (pt_dual (pconst 0))) as Kv.
+    { right. eexists _, [pconst 0], (pconst 0). split_and!; [by right; left|by left|done]. }
     tstep.
     { (* the receiver of k₂ *)
       tstep; [|apply KTSpawn|done|apply ubs_none].
-      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 1)) (Some (pt_dual (pvar 0))) 1); [set_solver| |].
+      eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 1)) (Some (pt_dual (pconst 0))) 1); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn. unfold recvclose. tstep.
       - tstep; [tstep|apply KTRecv|kscope|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 0 1). split; [done|]. right. apply (slt_po W _ (pvar 0) HW).
+        exists (pc 0 1). split; [done|]. right. apply (slt_po W _ (pconst 0) HW).
       - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
+        exists (pc 0 1). split; [done|]. apply sle_refl, HW. }
     cbn. tstep.
     { (* send ⟨⟨k₁′, pack k₂′⟩, c⟩, then close c *)
-      tstep; [|apply (KTClos _ _ _ (pv 1 1))|done|].
-      - tstep; [|apply (KTSend _ _ _ 1 Pay SEnd (pv 1 0))|exact pay_scoped|].
+      tstep; [|apply (KTClos _ _ _ (pc 1 1))|done|].
+      - tstep; [|apply (KTSend _ _ _ 1 Pay SEnd (pc 1 0))|exact pay_scoped|].
         + rewrite pay_at. tstep; [tstep|]. tstep; [|tstep].
-          eapply (t_pack W _ _ _ _ _ _ (LPt (Pt (NPayload (NVar 1) 0 0) 0)) 1
-                    (Cx_at (Pt (NPayload (NVar 1) 0 0) 0)) (TSess Sd (pvar 0)) [pt_dual (pvar 0)]).
+          eapply (t_pack W _ _ _ _ _ _ (LPt (Pt (NPayload (NConst 1) 0 0) 0)) 1
+                    (Cx_at (Pt (NPayload (NConst 1) 0 0) 0)) (TSess Sd (pvar 0)) [pt_dual (pconst 0)]).
           * done.
           * constructor; [exact Kv|constructor].
           * apply bcs_hold_env. intros f [-> | ->] _; cbn; [exact G'|exact G].
@@ -266,13 +269,13 @@ Proof.
           * cbn. tstep.
         + rewrite pay_at. cbn. intros h Hh. mem_cases Hh; first [exact F0'|exact F0d].
         + apply ubs_intro; [intros y Hy; mem_cases Hy; first [exact F0'|exact F0d]|].
-          exists (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)). split; [done|]. right. exact F0d.
+          exists (pt_dual (Pt (NPayload (NConst 1) 0 0) 0)). split; [done|]. right. exact F0d.
       - apply ubs_intro; [intros y Hy; mem_cases Hy; first [exact F1'|exact F1d]|].
-        exists (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)). split; [done|]. right. exact F1d. }
+        exists (pt_dual (Pt (NPayload (NConst 1) 0 0) 0)). split; [done|]. right. exact F1d. }
     (* close k₁ *)
     tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (Pt (NPayload (NVar 1) 0 0) 0)). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (Pt (NPayload (NConst 1) 0 0) 0)). split; [done|]. apply sle_refl, HW. }
   (* the client *)
   cbn. unfold client. tstep.
   { tstep; [tstep|apply KTRecv|exact pay_scoped|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done]. }
@@ -282,17 +285,17 @@ Proof.
   eapply (tv_open W _ _ _ _ _ 0); [reflexivity|intros []|reflexivity|reflexivity|reflexivity|reflexivity|reflexivity|].
   cbn. rewrite ?sf_pinst_empty.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ'' := Q) end.
-  assert (slt W Ψ'' (Pt (NPayload (NVar 2) 0 0) 0) (pvar 0)) as H0.
-  { assert ((bcs_inst (pshift 1) (Cx_at (pt_payload (pb 0) 0)), [pvar 0]) ∈ Ψ'') as Hin by (by right; right; left).
-    assert (bcs_open 1 (bcs_inst (pshift 1) (Cx_at (pt_payload (pb 0) 0)))
-              (fact_map (pt_inst (pup 1 (plist [pt_inst (pshift 1) (pt_payload (pb 0) 0)])))
+  assert (slt W Ψ'' (Pt (NPayload (NConst 1) 0 0) 0) (pvar 0)) as H0.
+  { assert ((bcs_inst (pshift 1) (Cx_at (pt_payload (pbc 0) 0)), [pvar 0]) ∈ Ψ'') as Hin by (by right; right; left).
+    assert (bcs_open 1 (bcs_inst (pshift 1) (Cx_at (pt_payload (pbc 0) 0)))
+              (fact_map (pt_inst (pup 1 (plist [pt_inst (pshift 1) (pt_payload (pbc 0) 0)])))
                  (FLt (pvar 1) (pvar 0)))) as Ho.
     { exists (FLt (pvar 1) (pvar 0)). split_and!; [by left|split; cbn; lia|done]. }
     apply (hyp_in_fact W Ψ'' _ _ Hin) in Ho. exact Ho. }
-  assert (slt W Ψ'' (Pt (NPayload (NVar 2) 0 0) 0) (pt_dual (pvar 0))) as H0d.
-  { assert ((bcs_inst (pshift 1) (Cx_at (pt_payload (pb 0) 0)), [pvar 0]) ∈ Ψ'') as Hin by (by right; right; left).
-    assert (bcs_open 1 (bcs_inst (pshift 1) (Cx_at (pt_payload (pb 0) 0)))
-              (fact_map (pt_inst (pup 1 (plist [pt_inst (pshift 1) (pt_payload (pb 0) 0)])))
+  assert (slt W Ψ'' (Pt (NPayload (NConst 1) 0 0) 0) (pt_dual (pvar 0))) as H0d.
+  { assert ((bcs_inst (pshift 1) (Cx_at (pt_payload (pbc 0) 0)), [pvar 0]) ∈ Ψ'') as Hin by (by right; right; left).
+    assert (bcs_open 1 (bcs_inst (pshift 1) (Cx_at (pt_payload (pbc 0) 0)))
+              (fact_map (pt_inst (pup 1 (plist [pt_inst (pshift 1) (pt_payload (pbc 0) 0)])))
                  (FLt (pvar 1) (pt_dual (pvar 0))))) as Ho.
     { exists (FLt (pvar 1) (pt_dual (pvar 0))). split_and!; [by right|split; cbn; lia|done]. }
     apply (hyp_in_fact W Ψ'' _ _ Hin) in Ho. exact Ho. }
