@@ -545,3 +545,73 @@ Proof.
   { apply fchans_of_fends. apply (act_aends_fends e (ALink c d) {[c; d]} Ha eq_refl). set_solver. }
   set_solver.
 Qed.
+
+(** ** The counter of the partner end *)
+
+Definition holder (q : config) (o : cend) : option nat :=
+  match list_find (λ se : nat * expr, o ∈ fends se.2) (map_to_list q.2) with
+  | Some (_, (s, _)) => Some s
+  | None => None
+  end.
+
+Lemma holder_spec q o s es :
+  q.2 !! s = Some es → o ∈ fends es →
+  (∀ s' es', q.2 !! s' = Some es' → o ∈ fends es' → s' = s) → holder q o = Some s.
+Proof.
+  intros Hs Ho Hu. unfold holder.
+  destruct (list_find _ _) as [[i [s0 e0]]|] eqn:Hf.
+  - apply list_find_Some in Hf as (Hl & Hin & _). simpl in Hin.
+    apply list_elem_of_lookup_2, elem_of_map_to_list in Hl. f_equal. by apply (Hu s0 e0).
+  - apply list_find_None in Hf. rewrite Forall_forall in Hf. exfalso.
+    apply (Hf (s, es)); [by apply elem_of_map_to_list|done].
+Qed.
+
+Definition fval (F : nat → gmap cend fuel) (s : nat) (o : cend) : nat :=
+  match F s !! o with Some (Some m) => m | _ => 0 end.
+
+Definition fu_at (q : config) (F : nat → gmap cend fuel) (t : nat) : nat :=
+  match rend q t with
+  | Some o => match holder q (cdual o) with Some s => fval F s (cdual o) | None => 0 end
+  | None => 0
+  end.
+
+Lemma sess_end_step e a o : act e = Some a → aend1 a = Some o → ∃ σ e', tstep e (LSess σ) e' ∧ sl_end σ = Some o.
+Proof.
+  intros Ha Ho. assert (is_sess a) as Hs by (unfold is_sess; destruct a; simpl in *; try done; by eexists).
+  destruct (sess_stable_step e a Ha Hs) as (σ & e' & Hst). exists σ, e'. split; [done|].
+  destruct (act_step _ _ _ Hst) as (a' & Ha' & Hoa). rewrite Ha in Ha'. injection Ha' as <-.
+  by apply (offers_aend1 a σ o).
+Qed.
+
+Section counters.
+  #[local] Set Default Proof Using "All".
+  Context (n : nat) (W : world) (HW : strict W) (T : ty) (π : gmap cend point).
+  Context (q : config) (A : nat → tenv) (U : nat → ty) (P : nat → gmap cend point) (F : nat → gmap cend fuel).
+  Context (Hc : LFconf (S (S n)) W ∅ T π q A U) (HF : lf_fuelc (S (S n)) W π P F q).
+
+  (** The partner end of a pending thread has a finite counter. *)
+  Lemma holder_fin t e a o s es :
+    q.2 !! t = Some e → act e = Some a → aend1 a = Some o →
+    q.2 !! s = Some es → s ≠ t → cdual o ∈ fends es →
+    ∃ m, F s !! cdual o = Some (Some m) ∧ fu_at q F t = m.
+  Proof.
+    intros He Ha Ho Hes Hst Hso.
+    destruct (HF t e He) as (H1t & H2t & H3t & H4t). destruct (HF s es Hes) as (H1s & H2s & H3s & H4s).
+    destruct (sess_end_step e a o Ha Ho) as (σ & e1 & Hst1 & Hσ).
+    destruct (fuel_wait (S n) W (P t) (F t) e H1t σ e1 o Hst1 Hσ) as (k & mb & Hk & Hb).
+    pose proof (s_held (S n) W HW T π q A U Hc t e a o He Ha Ho) as Hto.
+    destruct (proj1 (lfc_held _ _ _ _ _ _ _ Hc t e o He) Hto) as [x Hx].
+    destruct (proj1 (lfc_held _ _ _ _ _ _ _ Hc s es (cdual o) Hes) Hso) as [y Hy].
+    destruct (lfc_partner_at _ _ _ _ _ _ _ Hc t e o x s es y He Hx Hes Hy) as [Hy2 _].
+    assert (P s !! cdual o = Some (pt_dual k)) as Hks.
+    { rewrite H4s by done. rewrite (lf_pt _ _ _ _ _ _ _ _ Hc s es _ _ Hes Hy), Hy2.
+      rewrite H4t in Hk by done. rewrite (lf_pt _ _ _ _ _ _ _ _ Hc t e _ _ He Hx) in Hk. by injection Hk as ->. }
+    assert (is_Some (F s !! cdual o)) as [f Hf] by (apply elem_of_dom; by rewrite H3s).
+    destruct (fuel_cap (S n) W (P s) (F s) es H1s (cdual o) f Hf) as (k' & Hk' & Hle).
+    rewrite Hks in Hk'. injection Hk' as <-. rewrite Hb in Hle. destruct f as [m|]; [|done].
+    exists m. split; [done|]. unfold fu_at. unfold rend. rewrite He, Ha, Ho.
+    rewrite (holder_spec q (cdual o) s es Hes Hso).
+    - unfold fval. by rewrite Hf.
+    - intros s' es' Hes' Hso'. by apply (s_uniq (S n) W HW T π q A U Hc s' s es' es (cdual o)).
+  Qed.
+End counters.
