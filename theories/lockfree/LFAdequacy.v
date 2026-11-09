@@ -680,3 +680,50 @@ Proof.
   rewrite H4 in Hk by done. rewrite (Hb k Hk) in Hle. unfold fval. rewrite Hf.
   destruct f as [m''|]; simpl in Hle; [lia|done].
 Qed.
+
+Section fuel_exists.
+  #[local] Set Default Proof Using "All".
+  Context (n : nat) (W : world) (HW : strict W) (T : ty) (π : gmap cend point).
+  Context (C : gset chan) (M : gmap nat expr) (A : nat → tenv) (U : nat → ty).
+  Context (P : nat → gmap cend point) (F : nat → gmap cend fuel).
+  Context (Hc : LFconf (S (S (S n))) W ∅ T π (C, M) A U) (HF : lf_fuelc (S (S (S n))) W π P F (C, M)).
+  Context (t : nat) (e : expr) (a : action) (o : cend) (He : M !! t = Some e) (Ha : act e = Some a)
+    (Ho : aend1 a = Some o).
+  Context (s : nat) (es : expr) (Hes : M !! s = Some es) (Hst : s ≠ t) (Hso : cdual o ∈ fends es).
+  Context (m : nat) (Hm : F s !! cdual o = Some (Some m)).
+
+  Lemma fe_uniq x ex : M !! x = Some ex → cdual o ∈ fends ex → x = s.
+  Proof. intros Hx Hxo. by apply (s_uniq (S (S n)) W HW T π (C, M) A U Hc x s ex es (cdual o)). Qed.
+
+  Lemma fe_tick y σ y' oy :
+    M !! s = Some y → tstep y (LSess σ) y' → sl_end σ = Some oy → oy ≠ cdual o → 1 ≤ m.
+  Proof.
+    intros Hy Hs Hoy Hne. rewrite Hes in Hy. injection Hy as <-. destruct (HF s es Hes) as (H1 & _).
+    apply (fuel_tick (S (S n)) W (P s) (F s) es H1 σ y' oy Hs Hoy (cdual o) m); [done|done].
+  Qed.
+
+  Lemma fe_beta i ei ei' :
+    M !! i = Some ei → tstep ei LBeta ei' → t ≠ i →
+    fgoal (C, M) (C, <[i := ei']> M) (fstep W P F (C, M) {[i]} (C, <[i := ei']> M)).2 {[i]} t o s m.
+  Proof.
+    intros Hi Hs Hti.
+    destruct (lfsoup_conf_step (S n) W T π P F (C, M) A U {[i]} _ HW Hc HF (IBeta C M i ei ei' Hi Hs))
+      as [(A' & U' & Hc') _].
+    assert (fstep W P F (C, M) {[i]} (C, <[i:=ei']> M) = (P, F)) as ->.
+    { rewrite fstep_single. simpl. rewrite Hi. unfold fsingle.
+      destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoa). rewrite Ha'. by apply offers_beta in Hoa as ->. }
+    assert ((C, <[i:=ei']> M).2 !! t = Some e) as He' by (simpl; by rewrite lookup_insert_ne).
+    destruct (s_partner n W HW T _ _ A' U' Hc' t e a o He' Ha Ho) as (s' & es' & Hs't & Hes' & Hso').
+    exists s', es'. split_and!; [done|done|done|]. right. simpl in Hes'.
+    destruct (decide (s' = i)) as [->|Hs'i].
+    - rewrite lookup_insert_eq in Hes'. injection Hes' as <-.
+      pose proof (st_beta (S n) W HW T π C M A U Hc i ei ei' Hi Hs) as HE'.
+      assert (fends ei' = fends ei) as Hends.
+      { by rewrite (st_ends (S n) W HW T π C M A U Hc i ei Hi), (proj1 (LErel_S_fit _ _ _ _ _ _ HE')). }
+      rewrite Hends in Hso'. pose proof (fe_uniq i ei Hi Hso') as Eis. subst i. unfold fval. cbn [snd]. rewrite Hm.
+      split_and!; [done|done|]. intros _. exists ei, ABeta. split_and!; [done| |done].
+      destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoa). rewrite Ha'. by apply offers_beta in Hoa as ->.
+    - rewrite lookup_insert_ne in Hes' by done. pose proof (fe_uniq s' es' Hes' Hso') as Es. subst s'.
+      unfold fval. cbn [snd]. rewrite Hm. split_and!; [done|done|]. intros ->%elem_of_singleton. done.
+  Qed.
+End fuel_exists.
