@@ -19,8 +19,8 @@ Set Default Proof Using "All".
 Lemma teqW_tsize ρ W T : ∀ U, teqW_r ρ W T U → tsize T = tsize U.
 Proof.
   induction T as [| ub lb T1 IH1 U1 IH2 | T1 IH1 U1 IH2 | T1 IH1 U1 IH2 | m k C T1 IH | s x
-                 | lb m C T1 IH] in ρ |- *;
-    intros [| ub' lb' T1' U1' | T1' U1' | T1' U1' | m' k' C' T1' | s' x' | lb' m' C' T1'] H;
+                 | lb m C T1 IH | x] in ρ |- *;
+    intros [| ub' lb' T1' U1' | T1' U1' | T1' U1' | m' k' C' T1' | s' x' | lb' m' C' T1' | x'] H;
     simpl in *; try done.
   - destruct H as (_ & _ & H1 & H2). by rewrite (IH1 _ _ H1), (IH2 _ _ H2).
   - destruct H as [H1 H2]. by rewrite (IH1 _ _ H1), (IH2 _ _ H2).
@@ -49,18 +49,18 @@ Section conv.
     refine (LErel_S_ind n' (λ W Θ T F e, world_wf W → teqW W T T' →
               (∀ W Θ v, world_wf W → teqW W T T' → LVrel (S n') W Θ T v → LVrel (S n') W Θ T' v) →
               LErel (S n') W Θ T' F e) _).
-    intros W Θ T F e H HW Ht HVT. apply LErel_S_iff. intros W1 HW1.
+    intros W Θ T F e H HW Ht HVT. apply LErel_S_iff. split; [exact (proj1 H)|]. intros W1 HW1.
     assert (world_wf W1) as HW1f by (destruct HW1 as [->|HW1]; [done|by eapply wext_wf]).
     assert (teqW W1 T T') as Ht1.
     { eapply teqW_mono; [|exact Ht]. intros. by eapply wext_r_eq'. }
-    destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
+    destruct (proj2 H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
     split_and!.
     - intros Hirr. by apply HVT, Hs.
     - done.
     - intros e' Hst. destruct (Hb e' Hst) as [_ HΦ]. by apply HΦ.
-    - intros c e' Hst Hc.
-      destruct (Hnew c e' Hst Hc) as (x & s & s' & Hpl & Hdu & _ & HΦ).
-      exists x, s, s'. split_and!; [done|done|]. by apply HΦ.
+    - intros c x e' Hst Hc.
+      destruct (Hnew c x e' Hst Hc) as (Hpl & s & s' & Hdu & _ & HΦ).
+      split; [done|]. exists s, s'. split; [done|]. by apply HΦ.
     - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HΦ).
       exists Θ1, Θ2, ub, lb. split_and!; [done| |by apply HΦ].
       eapply Vspawn_mono; [|exact Hv]. by intros ? ? ? ? [? _].
@@ -96,8 +96,8 @@ Section conv.
               LErel n W Θ T F e → LErel n W Θ T' F e) as HE.
     { intros W0 Θ0 T0 T0' F e Hs HW0 Ht0. apply LErel_tconv_at; [|done|done].
       intros W1 Θ1 v1 HW1 Ht1. apply (IHk (tsize T0)); [lia|lia|done|done]. }
-    destruct T as [|ub lb T1 T2|T1 T2|T1 T2|m kk C0 T1|s x|lb m C0 T1];
-      destruct T' as [|ub' lb' T1' T2'|T1' T2'|T1' T2'|m' kk' C0' T1'|s' x'|lb' m' C0' T1'];
+    destruct T as [|ub lb T1 T2|T1 T2|T1 T2|m kk C0 T1|s x|lb m C0 T1|x];
+      destruct T' as [|ub' lb' T1' T2'|T1' T2'|T1' T2'|m' kk' C0' T1'|s' x'|lb' m' C0' T1'|x'];
       simpl in Ht, Hk; try done.
     - destruct Ht as (Hu & Hl & Ht1 & Ht2).
       apply LVrel_lolli_iff in HVv as [(eb & -> & Hsup & Hlb & HL)|(kc & T0 & -> & -> & Hkc & Htc)].
@@ -146,8 +146,8 @@ Section conv.
       + apply HK; [done..| |done].
         eapply (bcs_hold_conv W W' C0 C0'); [done|done| |done]. by rewrite Hxs.
     - destruct Ht as [Hx Hs].
-      apply LVrel_sess_iff in HVv as (c & s0 & kk & -> & -> & Hs0 & Hkk).
-      apply LVrel_sess_iff. exists c, s0, kk. split_and!; [done|done| |].
+      apply LVrel_sess_iff in HVv as (c & b & s0 & kk & -> & -> & Hs0 & Hkk & Hb).
+      apply LVrel_sess_iff. exists c, b, s0, kk. split_and!; [done|done| | |done].
       + by eapply seq_trans.
       + eapply (wf_eq_trans _ HW); [exact Hkk|]. by apply (pteqW_eq W HW).
     - destruct Ht as (Hl & <- & HC & Ht).
@@ -157,6 +157,7 @@ Section conv.
         rewrite Hxs. by apply bcs_rel_sym.
       + eapply (IHk (tsize T1) ltac:(lia) W Θ (ty_inst xs T1)); [unfold ty_inst; rewrite tsize_pinst; lia|done| |exact H].
         by apply teqW_ty_inst.
+    - pose proof (pteqW_eq W HW _ _ Ht) as <-. exact HVv.
   Qed.
 
   Lemma LPrel_tconv_at W Σ T T' p :
