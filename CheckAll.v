@@ -76,6 +76,8 @@ Require LRGV.liveness.LiveTermRules.
 Require LRGV.lockfree.Criterion.
 Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
+Require LRGV.lockfree.LFAdequacy.
+Require LRGV.lockfree.LFRelation.
 Require LRGV.lockfree.LocalProgress.
 Require LRGV.lockfree.Reach.
 Require LRGV.lockfree.TauThread.
@@ -205,6 +207,11 @@ Print Assumptions LRGV.lockfree.Fragment.fw_lfsource.
 Print Assumptions LRGV.lockfree.Fragment.tc_lfsource.
 Print Assumptions LRGV.lockfree.Fragment.rc_lfsource.
 Print Assumptions LRGV.lockfree.Fragment.kob_cworld_not_wf.
+Print Assumptions LRGV.lockfree.LFRelation.LFPrel_down.
+Print Assumptions LRGV.lockfree.LFRelation.LFPrel_fuel.
+Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy.
+Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy_ex.
+Print Assumptions LRGV.lockfree.LFAdequacy.lf_thread_progress.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.
