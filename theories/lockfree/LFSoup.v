@@ -1199,4 +1199,93 @@ Section step.
         rewrite (proj1 Hfitj) in Hin. destruct o as [c' b']. simpl in Ho. subst c'. by apply (Hnej b').
   Qed.
 
+  (** ** choice *)
+  Lemma step_choice i j c β b e e' f f' :
+    i ≠ j → M !! i = Some e → M !! j = Some f →
+    tstep e (LSess (SSel (c, β) b)) e' → tstep f (LSess (SBra (c, negb β) b)) f' →
+    ∃ A', LFconf n W ∅ T (pupd π (C, M) {[i; j]} (C, <[j := f']> (<[i := e']> M)))
+      (C, <[j := f']> (<[i := e']> M)) A' U.
+  Proof.
+    intros Hij He Hf Hse Hsf.
+    pose proof (st_sess i e _ e' He Hse) as (Θr & s1 & s2 & k & Θ' & Hhd & Hext & HE). simpl in HE.
+    pose proof (st_sess j f _ f' Hf Hsf) as (Θr' & r1 & r2 & k' & Θ'' & Hhdj & Hextj & HEj).
+    simpl in HEj.
+    destruct (st_rest i e _ _ _ _ He Hhd) as (s0 & Hu & _ & Hxi & Hoi & Hends & Hri).
+    destruct (st_rest j f _ _ _ _ Hf Hhdj) as (r0 & Hur & _ & Hxj & Hoj & Hendsj & Hrj).
+    destruct (lfc_partner_at _ _ _ _ _ _ _ Hc i e (c, β) _ j f _ He Hxi Hf Hxj) as [Hk' Hsd].
+    simpl in Hk'. subst k'.
+    destruct (sdual_plus_with _ _ _ _ _ _ Hsd Hu Hur) as [Hd1 Hd2].
+    pose proof (sdual_sbranch b _ _ _ _ Hd1 Hd2) as Hdb.
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE) as Hfit. pose proof (LErel_S_fit _ _ _ _ _ _ HEj) as Hfitj.
+    pose proof (st_disj i j e f Hij He Hf) as Hdisj.
+    assert (∀ b', (c, b') ∉ tenv_ends Θr) as Hnr.
+    { intros b' Hb'. rewrite Hends in Hb'. destruct (decide (b' = β)) as [->|Hb]; [set_solver|].
+      assert (b' = negb β) as -> by (by destruct β, b').
+      apply (Hdisj (c, negb β)); [set_solver|done]. }
+    assert (∀ b', (c, b') ∉ tenv_ends Θr') as Hnr'.
+    { intros b' Hb'. rewrite Hendsj in Hb'. destruct (decide (b' = negb β)) as [->|Hb]; [set_solver|].
+      assert (b' = β) as -> by (by destruct β, b').
+      apply (Hdisj (c, β)); [done|set_solver]. }
+    assert (∀ b', tenv_end Θr (c, b') = None) as Hnr0.
+    { intros b'. destruct (tenv_end Θr (c, b')) eqn:H; [|done]. exfalso. apply (Hnr b').
+      apply tenv_ends_end. by eexists. }
+    assert (∀ b', tenv_end Θr' (c, b') = None) as Hnr0'.
+    { intros b'. destruct (tenv_end Θr' (c, b')) eqn:H; [|done]. exfalso. apply (Hnr' b').
+      apply tenv_ends_end. by eexists. }
+    assert (pt_pol (sel_pt k b) = false) as Hps by done.
+    assert (pt_pol (bra_pt (pt_dual k) b) = true) as Hpb by done.
+    destruct (tenv_ends_ext _ _ _ _ Hext (proj2 Hfit)) as [He1 _].
+    destruct (tenv_ends_ext _ _ _ _ Hextj (proj2 Hfitj)) as [He2 _].
+    rewrite (proj1 Hfit) in He1. cbn [snd] in He1. rewrite ?Hps in He1.
+    rewrite (proj1 Hfitj) in He2. cbn [snd] in He2. rewrite ?Hpb in He2.
+    assert (HΘ' : ∀ o, tenv_end Θ' o = if decide (o = (c, false)) then Some (sbranch b s1 s2, sel_pt k b)
+                                       else tenv_end Θr o).
+    { intros o. rewrite (tenv_end_ext _ _ _ _ o Hext (proj2 Hfit)). cbn [snd]. by rewrite ?Hps. }
+    assert (HΘ'' : ∀ o, tenv_end Θ'' o = if decide (o = (c, true))
+                                         then Some (sbranch b r1 r2, bra_pt (pt_dual k) b)
+                                         else tenv_end Θr' o).
+    { intros o. rewrite (tenv_end_ext _ _ _ _ o Hextj (proj2 Hfitj)). cbn [snd]. by rewrite ?Hpb. }
+    assert (π !! (c, β) = Some k) as Hπk by apply (lf_pt _ _ _ _ _ _ _ _ Hc i e _ _ He Hxi).
+    assert (pupd π (C, M) {[i; j]} (C, <[j := f']> (<[i := e']> M)) =
+            <[(c, false) := sel_pt k b]> (<[(c, true) := bra_pt k b]> π)) as Hpu.
+    { unfold pupd.
+      destruct (act_step _ _ _ Hse) as (a & Ha & Hoa). apply offers_sel in Hoa as ->.
+      destruct (act_step _ _ _ Hsf) as (a' & Ha' & Hoa'). apply offers_bra in Hoa' as ->.
+      destruct (pev_of_pair (C, M) (C, <[j:=f']> (<[i:=e']> M)) i j e f Hij He Hf) as [-> | ->];
+        unfold pev2; rewrite ?Ha, ?Ha'; simpl; by rewrite Hπk. }
+    exists (eupd (eupd A i Θ') j Θ'').
+    rewrite Hpu.
+    eapply (two_frame i j e f e' f' Θ' Θ'' c); try done.
+    - eapply LErel_down; [|exact HE]. lia.
+    - eapply LErel_down; [|exact HEj]. lia.
+    - rewrite He1, He2, Hends, Hendsj. cbn [fst]. intros o Ho. destruct β; set_solver.
+    - rewrite He1, He2. cbn [fst]. intros o Ho1 Ho2.
+      apply elem_of_union in Ho1 as [Ho1|Ho1]; apply elem_of_union in Ho2 as [Ho2|Ho2].
+      + rewrite Hends in Ho1. rewrite Hendsj in Ho2. apply (Hdisj o); set_solver.
+      + apply elem_of_singleton in Ho2 as ->. by apply (Hnr true).
+      + apply elem_of_singleton in Ho1 as ->. by apply (Hnr' false).
+      + apply elem_of_singleton in Ho1, Ho2. congruence.
+    - by left.
+    - intros t g Hti Htj Hg. by apply (st_cowner i j e f c β t g).
+    - intros o x Ho. rewrite HΘ', HΘ'', !decide_False by (intros ->; by apply Ho).
+      rewrite (Hri o), (Hrj o); [done| |]; intros ->; by apply Ho.
+    - intros o Ho. rewrite !lookup_insert_ne; [done| |]; intros <-; by apply Ho.
+    - intros o x Ho Hx. rewrite HΘ', HΘ'' in Hx. destruct o as [c' b']. simpl in Ho. subst c'.
+      rewrite Hnr0, Hnr0' in Hx. destruct b'.
+      + destruct Hx as [Hx|Hx]; [rewrite decide_False in Hx by done; done|].
+        rewrite decide_True in Hx by done. injection Hx as <-. simpl. split.
+        { rewrite lookup_insert_ne by done. rewrite lookup_insert_eq. done. }
+        exists (sbranch b s1 s2, sel_pt k b). split_and!.
+        * left. rewrite HΘ'. unfold cdual. simpl. by rewrite decide_True.
+        * done.
+        * by apply sdual_sym.
+      + destruct Hx as [Hx|Hx]; [|rewrite decide_False in Hx by done; done].
+        rewrite decide_True in Hx by done. injection Hx as <-. simpl. split.
+        { by rewrite lookup_insert_eq. }
+        exists (sbranch b r1 r2, bra_pt (pt_dual k) b). split_and!.
+        * right. rewrite HΘ''. unfold cdual. simpl. by rewrite decide_True.
+        * unfold sel_pt, bra_pt. by rewrite pt_dual_dual.
+        * done.
+  Qed.
+
 End step.
