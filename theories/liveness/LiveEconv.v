@@ -39,6 +39,19 @@ Proof. intros HW [->|H]; [done|by eapply wext_wf]. Qed.
 Lemma wext_r_eq W W1 x y : wext_r W W1 → w_eq W x y → w_eq W1 x y.
 Proof. intros [->|H] Hxy; [done|by eapply wext_eq]. Qed.
 
+(** ≈_W keeps the fit of a term (E-Fit). *)
+Lemma tenv_bipol_tconv W Θ Θ' : tconv W Θ Θ' → tenv_bipol Θ → tenv_bipol Θ'.
+Proof.
+  intros Hc HB c e1' e2' He'. pose proof (Hc c) as Hcc. rewrite He' in Hcc.
+  destruct (Θ !! c) as [[f|f1 f2]|] eqn:E; simpl in Hcc; try done.
+  destruct Hcc as [[_ H1] [_ H2]]. simpl in H1, H2. rewrite <-H1, <-H2. by apply (HB c).
+Qed.
+
+Lemma tenv_fit_tconv W Θ Θ' e : tconv W Θ Θ' → tenv_fit Θ e → tenv_fit Θ' e.
+Proof.
+  intros Hc [Hf HB]. split; [by rewrite <-(tconv_ends W Θ Θ' Hc)|by eapply tenv_bipol_tconv].
+Qed.
+
 Section econv.
   Context (n : nat).
   Context (IHn : ∀ j, j < n →
@@ -63,11 +76,11 @@ Section econv.
       (∀ W Θ Θ' v, world_wf W → tconv W Θ Θ' → LVrel (S n') W Θ T v → LVrel (S n') W Θ' T v) →
       ∀ Θ', world_wf W → tconv W Θ Θ' → LErel (S n') W Θ' T F e) _).
     intros W0 Θ T F e H HVT Θ' HW0 Hc0.
-    apply LErel_S_iff. intros W HW1.
+    apply LErel_S_iff. split; [exact (tenv_fit_tconv _ _ _ _ Hc0 (proj1 H))|]. intros W HW1.
     assert (world_wf W) as HW by (by eapply wext_r_wf).
     assert (tconv W Θ Θ') as Hc.
     { eapply tconv_mono; [|exact Hc0]. intros. by eapply wext_r_eq. }
-    destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
+    destruct (proj2 H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
     clear H HW0 Hc0 HW1.
     assert (HVu : ∀ W Θ Θ' v, world_wf W → tconv W Θ Θ' →
               LVrel (S n') W Θ TUnit v → LVrel (S n') W Θ' TUnit v).
@@ -77,16 +90,16 @@ Section econv.
     - intros Hirr. eapply HVT; [done|exact Hc|]. by apply Hval.
     - intros Hirr. eapply ready_t_conv; [done|exact Hc|]. by apply Hrdy.
     - intros e' Hst. destruct (Hb e' Hst) as [_ HΦ]. by apply HΦ.
-    - intros c e' Hst Hc'.
+    - intros c x e' Hst Hc'.
       rewrite <-(tconv_dom W Θ Θ' Hc) in Hc'.
-      destruct (Hnew c e' Hst Hc') as (x & s & s' & Hpl & Hdu & _ & HΦ).
-      exists x, s, s'. split_and!; [done|done|].
+      destruct (Hnew c x e' Hst Hc') as (Hpl & s & s' & Hdu & _ & HΦ).
+      split; [done|]. exists s, s'. split; [done|].
       apply (HΦ HVT); [done|]. by apply (tconv_insert W); [|apply (ends_conv_refl W HW)].
     - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & Hsp' & Hv & _ & HΦ).
       destruct (tconv_comp_split W HW Θ Θ1 Θ2 Θ' Hsp' Hc) as (Θ1' & Θ2' & Hsp'' & Hc1 & Hc2).
       exists Θ1', Θ2', ub, lb. split_and!; [done| |by apply HΦ].
       destruct Hv as [(eb & -> & Hfc & Hlb & HL)|(k & T0 & -> & -> & Hk & Ht)].
-      + left. exists eb. split_and!; [done|by rewrite <-(tconv_dom W Θ1 Θ1')|by eapply lb_below_tconv|].
+      + left. exists eb. split_and!; [done|by eapply tenv_fit_tconv|by eapply lb_below_tconv|].
         intros W' j Θa Θ'' w' F' HW' Hj Hcomp Hub.
         assert (world_wf W') as HW'f by (by eapply wext_wf).
         destruct (tconv_comp_join W' HW'f Θ1 Θ1' Θa Θ'' Hcomp) as (Θ0 & Hc0 & Hconv).
@@ -96,14 +109,14 @@ Section econv.
         * intros Hjn HΘ Hw. destruct (K2 Hjn HΘ Hw) as [_ HΦ']. by apply HΦ'.
       + apply (tconv_empty W) in Hc1 as ->. right. by exists k, T0.
     - intros σ e' Hst. pose proof (Hσ σ e' Hst) as Hstep.
-      destruct σ as [c w|c w|c|cd|c i|c i]; cbn [LEobl pred] in Hstep |- *.
+      destruct σ as [[c β] w|[c β] w|[c β]|cd|[c β] i|[c β] i]; cbn [LEobl pred fst snd] in Hstep |- *.
       + (* O-Recv *)
-        destruct Hstep as (Θ1 & m & U & s & k & (s0 & Hext & Hu) & H).
+        destruct Hstep as (Θ1 & m & U & s & k & ((s0 & Hext & Hu) & Hp) & H).
         destruct (tconv_unext W Θ1 c (s0, k) Θ Θ' Hc Hext)
           as ([s0' k'] & Θ1' & Hext' & [Hs Hkk] & Hc1). simpl in Hs, Hkk.
         destruct (seq_rcv_inv s0' s0 m U s) as (U' & s'' & Hu' & HU & Hs'');
           [by apply seq_sym|done|].
-        exists Θ1', m, U', s'', k'. split; [by exists s0'|].
+        exists Θ1', m, U', s'', k'. split; [split; [by exists s0'|by rewrite <-Hkk]|].
         intros W' j Θ2 Θ1c' Θ'' HW' Hj HextT Hcomp HVw.
         assert (world_wf W') as HW'f by (by eapply wext_wf).
         assert (∀ x y, w_eq W x y → w_eq W' x y) as Hsub by (intros; by eapply wext_eq).
@@ -122,7 +135,7 @@ Section econv.
         pose proof (H W' j Θ2 Θ1c Θ0 HW' Hj Hext1 Hc0 HVw0) as HE'.
         eapply HEj; [lia|done|exact Hconv|exact HE'].
       + (* O-Send *)
-        destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & ΘS & (s0 & Hext & Hu) &
+        destruct Hstep as (Θr & Θ1 & Θ2 & m & U & s & k & ΘS & ((s0 & Hext & Hu) & Hp) &
                            Hsp' & HVw & Hext1 & HE').
         destruct (tconv_unext W Θr c (s0, k) Θ Θ' Hc Hext)
           as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
@@ -133,7 +146,7 @@ Section econv.
           as (Θ''' & Hext3 & Hc3); [|done|].
         { split; simpl; [by apply seq_sym|]. by apply (wf_eq_shift _ HW). }
         exists Θr', Θ1', Θ2', m, U', s'', k', Θ'''. split_and!.
-        * by exists s0'.
+        * split; [by exists s0'|by rewrite <-Hkk].
         * done.
         * eapply LVrel_tconv; [done| |by eapply HVj].
           eapply teqW_trans; [done|apply teqW_payload; [done|exact Hkk]|].
@@ -141,16 +154,17 @@ Section econv.
         * done.
         * by eapply HEj.
       + (* O-Close *)
-        destruct Hstep as (Θ1 & k & (s0 & Hext & Hu) & HE').
+        destruct Hstep as (Θ1 & k & ((s0 & Hext & Hu) & Hp) & HE').
         destruct (tconv_unext W Θ1 c (s0, k) Θ Θ' Hc Hext)
           as ([s0' k'] & Θ1' & Hext' & [Hs Hkk] & Hc1). simpl in Hs, Hkk.
         exists Θ1', k'. split.
-        * exists s0'. split; [done|]. apply (seq_end_inv _ s0); [by apply seq_sym|done].
+        * split; [|by rewrite <-Hkk].
+          exists s0'. split; [done|]. apply (seq_end_inv _ s0); [by apply seq_sym|done].
         * by eapply HEj.
       + (* O-Link below *)
         exact I.
       + (* O-Select *)
-        destruct Hstep as (Θr & s1 & s2 & k & ΘS & (s0 & Hext & Hu) & Hext1 & HE').
+        destruct Hstep as (Θr & s1 & s2 & k & ΘS & ((s0 & Hext & Hu) & Hp) & Hext1 & HE').
         destruct (tconv_unext W Θr c (s0, k) Θ Θ' Hc Hext)
           as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
         destruct (seq_plus_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
@@ -159,10 +173,10 @@ Section econv.
                     (sbranch i s1' s2', sel_pt k' i) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
         { split; simpl; [destruct i; by apply seq_sym|].
           by apply (wf_eq_dual _ HW), (wf_eq_payload _ HW). }
-        exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
+        exists Θr', s1', s2', k', Θ3. split_and!; [split; [by exists s0'|by rewrite <-Hkk]|done|].
         by eapply HEj.
       + (* O-Branch *)
-        destruct Hstep as (Θr & s1 & s2 & k & ΘS & (s0 & Hext & Hu) & Hext1 & HE').
+        destruct Hstep as (Θr & s1 & s2 & k & ΘS & ((s0 & Hext & Hu) & Hp) & Hext1 & HE').
         destruct (tconv_unext W Θr c (s0, k) Θ Θ' Hc Hext)
           as ([s0' k'] & Θr' & Hext' & [Hs Hkk] & Hcr). simpl in Hs, Hkk.
         destruct (seq_with_inv s0' s0 s1 s2) as (s1' & s2' & Hu' & Hs1 & Hs2);
@@ -170,7 +184,7 @@ Section econv.
         destruct (tconv_ext W Θr Θr' c (sbranch i s1 s2, bra_pt k i)
                     (sbranch i s1' s2', bra_pt k' i) ΘS Hcr) as (Θ3 & Hext3 & Hc3); [|done|].
         { split; simpl; [destruct i; by apply seq_sym|]. by apply (wf_eq_payload _ HW). }
-        exists Θr', s1', s2', k', Θ3. split_and!; [by exists s0'|done|].
+        exists Θr', s1', s2', k', Θ3. split_and!; [split; [by exists s0'|by rewrite <-Hkk]|done|].
         eapply HEj; [lia|done|exact Hc3|exact HE'].
     - (* O-Link, at the index *)
       intros cd e' Hst.
@@ -180,7 +194,7 @@ Section econv.
         as ([sc' kc'] & Θm' & Hext2' & [Hsc Hkc] & Hcm). simpl in Hsc, Hkc.
       destruct (tconv_unext W Θ1 d (sd, kd) Θm Θm' Hcm Hext1)
         as ([sd' kd'] & Θ1' & Hext1' & [Hsd Hkd] & Hc1). simpl in Hsd, Hkd.
-      exists c, d, Θ1', Θm', sc', sd', kc', kd'. split_and!; [done|done|done| | |].
+      exists c, d, Θ1', Θm', sc', sd', kc', kd'. split_and!; [by rewrite <-Hkc, <-Hkd|done|done| | |].
       * eapply sdual_seq_l; [exact Hsd|]. by eapply sdual_seq_r.
       * eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|].
         eapply (wf_eq_trans _ HW); [exact Hal|by apply (wf_eq_dual _ HW)].
@@ -196,13 +210,13 @@ Section econv.
               LErel n W Θ T F e → LErel n W Θ' T F e) as HE.
     { intros W0 Θ0 Θ0' T0 F e Hs. apply LErel_econv_at.
       intros W1 Θ1 Θ1' v1. apply (IHk (tsize T0)); [lia|lia]. }
-    destruct T as [|ub lb T1 T2|T1 T2|T1 T2|m kk C0 T1|s x|lb m C0 T1]; simpl in Hk.
+    destruct T as [|ub lb T1 T2|T1 T2|T1 T2|m kk C0 T1|s x|lb m C0 T1|x]; simpl in Hk.
     - apply LVrel_unit_iff in HVv as [-> ->]. apply LVrel_unit_iff.
       split; [by apply (tconv_empty W)|done].
     - apply LVrel_lolli_iff in HVv
         as [(eb & -> & Hsup & Hlb & HL)|(kc & T0 & -> & -> & Hkc & Ht)].
       + apply LVrel_lolli_iff. left. exists eb. split_and!; [done| | |].
-        * by rewrite <-(tconv_dom W Θ Θ').
+        * by eapply tenv_fit_tconv.
         * by eapply lb_below_tconv.
         * intros W' j Θa Θ'' w F HW' Hj Hcomp Hub HVw.
           assert (world_wf W') as HW'f by (by eapply wext_wf).
@@ -227,15 +241,17 @@ Section econv.
       + eapply (IHk (tsize T2)); [lia|lia|done|exact Hc|exact H].
     - apply LVrel_box_iff in HVv as (-> & HB).
       apply (tconv_empty W) in Hc as ->. by apply LVrel_box_iff.
-    - apply LVrel_sess_iff in HVv as (c & s0 & kk & -> & -> & Hs0 & Hkk).
+    - apply LVrel_sess_iff in HVv as (c & bb & s0 & kk & -> & -> & Hs0 & Hkk & Hp).
       destruct (tconv_singleton_inv W c _ Θ' Hc) as ([[s0' k']|] & -> & Ho); [|done].
       destruct Ho as [Hs Hk']. simpl in *.
-      apply LVrel_sess_iff. exists c, s0', k'. split_and!; [done|done| |].
+      apply LVrel_sess_iff. exists c, bb, s0', k'. split_and!; [done|done| | |by rewrite <-Hk'].
       + eapply seq_trans; [by apply seq_sym|exact Hs0].
       + eapply (wf_eq_trans _ HW); [by apply (wf_eq_sym _ HW)|exact Hkk].
     - apply LVrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HCx & H)].
       apply LVrel_ex_iff. split; [by eapply lbx_below_tconv|]. exists xs. split_and!; [done..|].
       eapply (IHk (tsize T1)); [lia|unfold ty_inst; rewrite tsize_pinst; lia|done|exact Hc|exact H].
+    - apply LVrel_pt_iff in HVv as (-> & -> & Hx). apply (tconv_empty W) in Hc as ->.
+      by apply LVrel_pt_iff.
   Qed.
 End econv.
 
@@ -301,7 +317,7 @@ Proof.
       destruct (Σ' !! d) as [[sd' kd']|] eqn:Ed; [|done].
       destruct Hcc as [Hsc Hkc], Hdd as [Hsd Hkd]. simpl in *.
       exists c, d, (delete c (delete d Σ')), sc', sd', kc', kd'. split_and!.
-      * done.
+      * by rewrite <-Hkc, <-Hkd.
       * done.
       * apply map_eq. intros x. destruct (decide (x = c)) as [->|Hxc].
         { by rewrite lookup_insert_eq. }
@@ -321,7 +337,7 @@ Proof.
         rewrite lookup_delete_ne by done. specialize (Hc x). rewrite HΣ in Hc.
         by rewrite !lookup_insert_ne in Hc.
   - intros σ q Hst. specialize (Hstep σ q Hst).
-    destruct σ as [c w|c w|c|cd|c i|c i]; cbn [LPobl pred] in Hstep |- *.
+    destruct σ as [[c β] w|[c β] w|[c β]|cd|[c β] i|[c β] i]; cbn [LPobl pred fst snd] in Hstep |- *.
     + (* Q-Recv *)
       destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc1 & H).
       destruct (sconv_hd W HW Σ Σ' c _ k Σ1 Hc Hhd Hc1)
