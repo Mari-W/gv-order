@@ -920,4 +920,89 @@ Section step.
         apply Hent_i. unfold Θn. rewrite tenv_end_new. unfold cdual. simpl.
         rewrite negb_involutive. by rewrite decide_True.
   Qed.
+  (** ** spawn *)
+  Lemma step_spawn i j e w e' :
+    M !! i = Some e → tstep e (LSpawn w) e' → M !! j = None →
+    ∃ A' U', LFconf n W ∅ T (pupd π (C, M) {[i]} (C, <[j := App w EUnit]> (<[i := e']> M)))
+      (C, <[j := App w EUnit]> (<[i := e']> M)) A' U'.
+  Proof.
+    intros He Hst Hj.
+    assert (i ≠ j) as Hij by (intros ->; congruence).
+    destruct (st_spawn i e w e' He Hst) as (Θ1 & Θ2 & Hcomp & HE1 & HE2).
+    assert (pupd π (C, M) {[i]} (C, <[j := App w EUnit]> (<[i := e']> M)) = π) as ->.
+    { unfold pupd. rewrite pev_of_single. simpl. rewrite He. unfold pev1.
+      destruct (act_step _ _ _ Hst) as (a & Ha & Ho). rewrite Ha. by apply offers_spawn in Ho as ->. }
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE1) as Hfit1.
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE2) as Hfit2.
+    pose proof (st_bipol i e He) as Hb.
+    destruct (tenv_ends_comp _ _ _ Hcomp Hb) as [Hu Hd].
+    rewrite (proj1 Hfit1), (proj1 Hfit2) in Hu, Hd. rewrite <-(st_ends i e He) in Hu.
+    set (M' := <[j := App w EUnit]> (<[i := e']> M)).
+    assert (HM' : ∀ t, M' !! t = if decide (t = j) then Some (App w EUnit)
+                                 else if decide (t = i) then Some e' else M !! t).
+    { intros t. unfold M'. destruct (decide (t = j)) as [->|Htj]; [by rewrite lookup_insert_eq|].
+      rewrite lookup_insert_ne by done.
+      destruct (decide (t = i)) as [->|Hti]; [by rewrite lookup_insert_eq|]. by rewrite lookup_insert_ne. }
+    set (A' := eupd (eupd A i Θ2) j Θ1).
+    assert (HA' : ∀ t, A' t = if decide (t = j) then Θ1 else if decide (t = i) then Θ2 else A t).
+    { intros t. unfold A', eupd. repeat case_decide; congruence. }
+    assert (Hsub : ∀ t f, M' !! t = Some f → (t = j ∨ t = i) → fends f ⊆ fends e).
+    { intros t f Hf Ht. rewrite HM' in Hf. rewrite Hu.
+      destruct (decide (t = j)); [injection Hf as <-; set_solver|].
+      destruct (decide (t = i)); [injection Hf as <-; set_solver|]. naive_solver. }
+    exists A', (eupd U j TUnit).
+    apply (LFconf_frame (S (S n)) n W T π π (C, M) (C, M') A A' U _ ∅ Hc); simpl.
+    - intros t f Hf. rewrite HM' in Hf. rewrite HA'. unfold eupd.
+      destruct (decide (t = j)) as [->|Htj].
+      + injection Hf as <-. eapply LErel_down; [|exact HE1]. lia.
+      + destruct (decide (t = i)) as [->|Hti].
+        * injection Hf as <-. eapply LErel_down; [|exact HE2]. lia.
+        * by apply st_down.
+    - intros t f Hf. rewrite HM' in Hf. rewrite HA'.
+      destruct (decide (t = j)) as [->|Htj]; [by injection Hf as <-|].
+      destruct (decide (t = i)) as [->|Hti]; [by injection Hf as <-|]. by apply st_fit.
+    - intros t f Hf. rewrite HM' in Hf. unfold eupd.
+      destruct (decide (t = j)) as [->|Htj]; [by right|].
+      destruct (decide (t = i)) as [->|Hti]; [by apply (st_ty i e)|]. by apply (st_ty t f).
+    - apply (disj_frame M M' {[i; j]} st_disj).
+      + intros t Ht. rewrite HM'. rewrite !decide_False by set_solver. done.
+      + intros p f t g Hp Ht Hf Hg.
+        assert (t ≠ i) by set_solver.
+        pose proof (st_disj i t e g ltac:(done) He Hg).
+        pose proof (Hsub p f Hf ltac:(set_solver)). set_solver.
+      + intros p p' f f' Hp Hp' Hpp Hf Hf'. rewrite HM' in Hf, Hf'.
+        apply elem_of_union in Hp as [Hp|Hp]; apply elem_of_singleton in Hp as ->;
+          apply elem_of_union in Hp' as [Hp'|Hp']; apply elem_of_singleton in Hp' as ->; try done.
+        * rewrite decide_False in Hf by done. rewrite decide_True in Hf by done.
+          rewrite decide_True in Hf' by done. injection Hf as <-. injection Hf' as <-. by symmetry.
+        * rewrite decide_True in Hf by done.
+          rewrite decide_False in Hf' by done. rewrite decide_True in Hf' by done.
+          injection Hf as <-. injection Hf' as <-. done.
+    - intros t f Hf. pose proof (Hf) as Hf0. rewrite HM' in Hf0.
+      destruct (decide (t = j ∨ t = i)) as [Ht|Ht].
+      + pose proof (Hsub t f Hf Ht) as Hs. pose proof (st_closed i e He).
+        rewrite fchans_fends. rewrite fchans_fends in *.
+        intros c Hc'. apply elem_of_map in Hc' as (o & -> & Ho). apply H.
+        apply elem_of_map. exists o. split; [done|]. by apply Hs.
+      + rewrite !decide_False in Hf0 by naive_solver. by apply (st_closed t).
+    - set_solver.
+    - intros o x _. split.
+      + intros (t & f & Hf & Hx). rewrite HA' in Hx. rewrite HM' in Hf.
+        destruct (decide (t = j)) as [->|Htj].
+        { exists i, e. split; [done|]. by apply (tenv_end_comp_l _ _ _ _ _ Hcomp Hb). }
+        destruct (decide (t = i)) as [->|Hti].
+        { exists i, e. split; [done|]. by apply (tenv_end_comp_r _ _ _ _ _ Hcomp Hb). }
+        by exists t, f.
+      + intros (t & f & Hf & Hx). destruct (decide (t = i)) as [->|Hti].
+        * simpl in Hf. rewrite He in Hf. injection Hf as <-.
+          destruct (tenv_end_comp_inv _ _ _ _ _ Hcomp Hb Hx) as [H1|H2].
+          -- exists j, (App w EUnit). rewrite HM', HA', !decide_True by done. done.
+          -- exists i, e'. rewrite HM', HA', decide_False, decide_True by done.
+             rewrite decide_False, decide_True by done. done.
+        * assert (t ≠ j) by (intros ->; simpl in Hf; congruence).
+          exists t, f. rewrite HM', HA', !decide_False by done. done.
+    - done.
+    - set_solver.
+  Qed.
+
 End step.
