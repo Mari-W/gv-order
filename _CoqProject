@@ -126,7 +126,7 @@ theories/examples/Stream.v
 theories/examples/Congruence.v
 theories/examples/ChoiceEnc.v
 theories/examples/ChoiceNegative.v
-# SYNTACTIC-POINTS: example port pending theories/examples/SemFlag.v
+theories/examples/SemFlag.v
 # SYNTACTIC-POINTS: example port pending theories/examples/SemRounds.v
 # SYNTACTIC-POINTS: example port pending theories/examples/ChoiceTranslate.v
 # SYNTACTIC-POINTS: example port pending theories/examples/ChoiceTranslateEx.v
