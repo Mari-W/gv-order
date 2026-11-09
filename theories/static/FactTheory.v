@@ -275,6 +275,7 @@ Fixpoint steq (W : world) (Ψ : hyps) (T U : ty) : Prop :=
   | TBox _ _ _ _, TBox _ _ _ _ => teq T U
   | TSess s x, TSess r y => seqs W Ψ x y ∧ seq s r
   | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ teq T1 U1
+  | TPt x, TPt y => x = y
   | _, _ => False
   end.
 
@@ -286,6 +287,7 @@ Proof.
     + destruct lb0; simpl; [apply se_refl|done].
   - destruct H. split; auto.
   - destruct H. split; auto.
+  all: try done.
   all: destruct H as [<- ?]; split; [apply se_refl|done].
 Qed.
 

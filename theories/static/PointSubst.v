@@ -368,6 +368,7 @@ Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   | TBox n _ C T1 => bcs_scoped k C ∧ pscoped (n + k) T1
   | TSess _ x => pt_scoped k x
   | TEx lb n C T1 => lb_scoped k lb ∧ bcs_scoped k C ∧ pscoped (n + k) T1
+  | TPt x => pt_scoped k x
   end.
 
 Lemma pinst_ty_ext_scoped T : ∀ k σ τ,
@@ -380,7 +381,7 @@ Proof.
   { intros k n σ τ H a Ha. unfold pup. destruct (decide (a < n)); [done|].
     rewrite H; [done|lia]. }
   induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n kk C T1 IH | s x
-                 | lb n C T1 IH];
+                 | lb n C T1 IH | x];
     intros k σ τ HT H; simpl in *.
   - done.
   - destruct HT as (Hub & Hlb & H1 & H2).
@@ -400,6 +401,7 @@ Proof.
       unfold bcs_scoped in HC. rewrite Forall_forall in HC. eapply Hpt; [|exact H].
       apply HC. by eapply list_elem_of_lookup_2.
     + eapply IH; [done|]. by apply Hup.
+  - f_equal. eauto.
 Qed.
 
 Lemma payload_pinst σ m T x :
@@ -425,7 +427,7 @@ Proof. destruct o; simpl; [by rewrite set_map_singleton_L|by rewrite set_map_emp
 Lemma heads_pinst σ T : heads (pinst_ty σ T) = set_map (pt_inst σ) (heads T).
 Proof.
   induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
-                 | lb n C T1 IH];
+                 | lb n C T1 IH | x];
     simpl.
   - by rewrite set_map_empty.
   - apply opt_heads_pinst.
@@ -434,6 +436,7 @@ Proof.
   - by rewrite set_map_empty.
   - by rewrite set_map_singleton_L, pt_inst_dual.
   - destruct lb; simpl; [by rewrite set_map_empty|by rewrite set_map_empty|by rewrite set_map_singleton_L].
+  - by rewrite set_map_empty.
 Qed.
 
 (** ** Facts survive substitution
@@ -644,7 +647,7 @@ Section transfer.
   Proof.
     intros Heq Hlt Hpk Hk.
     induction 1 as [ub lb|m P S x Hh|m P S x|x|S1 S2 x H1|S1 S2 x H1|S1 S2 x H1 H2|S x
-                  |n kk C ub P xs ss Hxs HC HK Hss Hsc|S x Hx] using konst_ty_case;
+                  |n kk C ub P xs ss Hxs HC HK Hss Hsc|S x Hx|i x Hx|x Hx] using konst_ty_case;
 
       simpl in *.
     - apply KTSpawn.
@@ -669,6 +672,8 @@ Section transfer.
       + by apply (bcs_hold_inst peq _ plt).
       + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx. by apply Hpk.
     - rewrite pt_inst_dual. apply KTNewAt. by apply Hpk.
+    - rewrite pt_inst_payload. apply KTPay. rewrite <-pt_inst_payload. by apply Hpk.
+    - rewrite pt_inst_shift. apply KTSucc. rewrite <-pt_inst_shift. by apply Hpk.
   Qed.
 
   Lemma skn_pinst_known Ψ x :
@@ -825,6 +830,7 @@ Section transfer.
     - exact (eqT_pinst seq _ _ σ H).
     - destruct H as [? ?]. split; [by apply (seqs_pinst_s Ψ)|done].
     - destruct H as (<- & <- & <- & ?). split_and!; [done|done|done|by apply eqT_pinst].
+    - by subst.
   Qed.
 
   Lemma steq_teqW Ψ T : ∀ U,
@@ -847,6 +853,7 @@ Section transfer.
     - destruct H as (<- & <- & <- & ?). split_and!; [|done|apply bcs_rel_refl|].
       + destruct lb; simpl; [done|done|by left].
       + apply teq_teqW. by apply eqT_pinst.
+    - subst. by left.
   Qed.
 End transfer.
 

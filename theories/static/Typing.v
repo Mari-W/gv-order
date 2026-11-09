@@ -35,9 +35,12 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sfuture → e
   | t_var Φ Ψ Δ F x T :                                 (* E-LVar *)
       lenv_only Δ x T →
       typed W Φ Ψ ∅ Δ F (Var x) T
-  | t_ch Φ Ψ Δ F c s k s' y :                         (* E-Ch, ι′ ≡_Γ ι *)
-      lenv_empty Δ → seq s s' → seqs W Ψ k y →
-      typed W Φ Ψ {[c := One (s, k)]} Δ F (Chan c) (TSess s' y)
+  | t_pt Φ Ψ Δ F x :                                   (* E-Pt (§16.4) *)
+      lenv_empty Δ → pt_ground x → skn W Ψ x →
+      typed W Φ Ψ ∅ Δ F (EPt x) (TPt x)
+  | t_ch Φ Ψ Δ F c b s k s' y :                       (* E-Ch, ι′ ≡_Γ ι *)
+      lenv_empty Δ → seq s s' → seqs W Ψ k y → pt_pol k = b →
+      typed W Φ Ψ {[c := One (s, k)]} Δ F (Chan c b) (TSess s' y)
   | t_abs Φ Ψ Θ Δ F e T U ub lb φ :                     (* E-Abs *)
       φ ∉ dom Φ →
       lb_below_hb W Ψ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
@@ -110,7 +113,7 @@ Inductive typed (W : world) : fhyps → hyps → tenv → lenv → sfuture → e
     existential hypothesis into fresh point variables 0, …, m-1 under
     its constraint, scoped like a box body. Under the constant world
     new has no existential signature, so E-NewFresh is gone (sharp
-    edges 172). A channel created at the top level is a point variable
+    edges 172). A channel created at the top level sits at a constant
     of the program's hypotheses ([created] below). *)
 
 (** E-Force is E-App at the constant force. The instance must meet the
@@ -202,7 +205,7 @@ Qed.
 Lemma lenv_split_nones_nones Δ : lenv_split (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ).
 Proof. induction Δ; simpl; constructor; done. Qed.
 
-(** [let_new] and [let_new_pair], the encoded let of new, are in
+(** [let_new_at] and [let_new_pair_at], the encoded let of new, are in
     lang/Syntax.v, because the translations of PGV and of Padovani and
     Novara produce them too. *)
 
@@ -210,40 +213,43 @@ Proof. induction Δ; simpl; constructor; done. Qed.
 
     Under the constant world every channel is created with new@x at a
     point x the context knows. A channel that a program creates at its
-    top level is a point variable of the program's hypotheses. [created
-    W Ψ] says that Ψ arises the way E-NewFresh used to build it, one
-    channel at a time. Each step adds the point variable 0 under a
-    creation constraint C over the points known so far, and shifts the
-    earlier hypotheses past it. The run then starts in a world that
-    places every such channel at a constant ([soundness_created],
-    static/Fundamental.v), so the creation facts are facts of the
-    initial world. *)
+    top level sits at a constant of the program's hypotheses, because a
+    point literal [EPt x] is ground (§16.2). [created W Ψ] says that Ψ
+    arises one channel at a time. Each step adds a constant a that
+    neither W nor the earlier hypotheses know, under a creation
+    constraint C over the points known so far. Nothing shifts. The run
+    then starts in a world that places a at that very name
+    ([soundness_created], static/Fundamental.v), so the creation facts
+    are facts of the initial world. *)
 Inductive created (W : world) : hyps → Prop :=
   | created_nil : created W []
-  | created_snoc Ψ C :
+  | created_snoc Ψ C a :
       created W Ψ → cc_ok (seqs W Ψ) (slt W Ψ) C → Forall (skn W Ψ) (bc_env C) →
-      created W (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
+      ¬ skn W Ψ (pconst a) →
+      created W (Ψ ++ [(C, [pconst a])]).
 
 (** The constraint of sharp edges 93 with betweenness. *)
-Lemma created_fresh W Ψ C :
+Lemma created_fresh W Ψ C a :
   created W Ψ → fresh_lt C → Forall (skn W Ψ) (bc_env C) →
   (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
      slt W Ψ (fresh_outer C u) (fresh_outer C v)) →
-  created W (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]).
+  ¬ skn W Ψ (pconst a) →
+  created W (Ψ ++ [(C, [pconst a])]).
 Proof.
-  intros HΨ HC HK Hbt. apply created_snoc; [done| |done].
+  intros HΨ HC HK Hbt Ha. apply created_snoc; [done| |done|done].
   apply cc_ok_fresh; [done|by apply fresh_between_lt].
 Qed.
 
 (** With lists, L ≺ ι ≺ H, every point of L below every point of H
     (sharp edges 90, 103). *)
-Lemma created_lh W Ψ L H :
+Lemma created_lh W Ψ L H a :
   created W Ψ → Forall (skn W Ψ) (L ++ H) →
   (∀ l h, l ∈ L → h ∈ H → slt W Ψ l h) →
-  created W (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (fresh_bcs L H), ids 1)]).
+  ¬ skn W Ψ (pconst a) →
+  created W (Ψ ++ [(fresh_bcs L H, [pconst a])]).
 Proof.
-  intros HΨ HK Hbt.
-  apply (created_fresh W Ψ (fresh_bcs L H)); [done| |done|].
+  intros HΨ HK Hbt Ha.
+  apply (created_fresh W Ψ (fresh_bcs L H)); [done| |done| |done].
   - intros f Hf Hs. destruct Hf as [(i & Hi & ->)|(j & Hj & ->)].
     + left. eexists _, _. split; [done|]. split_and!; [left; by exists i|done|done|done].
     + right. eexists _, _. split; [done|]. split_and!; [right; by exists j|done|done|done].
@@ -262,3 +268,7 @@ Qed.
     [pvar k] is known. *)
 Lemma skn_hyp W Ψ C k : (C, [pvar k]) ∈ Ψ → skn W Ψ (pvar k).
 Proof. intros H. right. exists C, [pvar k], (pvar k). split_and!; [done|by left|done]. Qed.
+
+(** The constant a of a channel created at the top level is known. *)
+Lemma skn_hyp_const W Ψ C a : (C, [pconst a]) ∈ Ψ → skn W Ψ (pconst a).
+Proof. intros H. right. exists C, [pconst a], (pconst a). split_and!; [done|by left|done]. Qed.

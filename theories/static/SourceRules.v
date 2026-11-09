@@ -23,6 +23,9 @@ Inductive sderiv : fhyps → hyps → lenv → sfuture → expr → ty → Prop 
   | sr_var Φ Ψ Δ F x T :                                (* E-LVar *)
       lenv_only Δ x T →
       sderiv Φ Ψ Δ F (Var x) T
+  | sr_pt Φ Ψ Δ F x :                                   (* E-Pt (§16.4) *)
+      lenv_empty Δ → pt_ground x → hyp_known Ψ x →
+      sderiv Φ Ψ Δ F (EPt x) (TPt x)
   | sr_lam Φ Ψ Δ F e T U ub lb φ :                      (* E-Abs *)
       φ ∉ dom Φ →
       hlb_below_hb Ψ lb (lenv_heads Δ) (lenv_bot Δ) →
@@ -92,6 +95,7 @@ Proof.
   - by apply t_unit.
   - apply t_const; [done| |done]. by apply hkonst_ty.
   - by apply t_var.
+  - apply t_pt; [done|done|]. by apply hyp_known_skn.
   - eapply t_abs; [done| |exact IHsderiv].
     rewrite tenv_heads_empty, (left_id_L ∅ (∪)). by apply hlb_below_hb_lb.
   - eapply t_app; [apply tenv_comp_empty_r|done|by apply hub_below_s_ub| |done].
@@ -125,6 +129,7 @@ Proof.
   - by apply sr_unit.
   - apply sr_konst; [done| |done]. by apply (konst_ty_h wnil HW HN).
   - by apply sr_var.
+  - apply sr_pt; [done|done|]. by apply (skn_hyp_known wnil HW HN).
   - exfalso. apply (f_equal dom) in HΘ.
     rewrite dom_singleton_L, dom_empty_L in HΘ. set_solver.
   - subst Θ. eapply sr_lam; [done| |by apply IHHt].
@@ -178,6 +183,10 @@ Proof. src_rule sr_konst. Qed.
 
 Lemma st_var Φ Ψ Δ F x T : lenv_only Δ x T → styped Φ Ψ Δ F (Var x) T.
 Proof. src_rule sr_var. Qed.
+
+Lemma st_pt Φ Ψ Δ F x :
+  lenv_empty Δ → pt_ground x → hyp_known Ψ x → styped Φ Ψ Δ F (EPt x) (TPt x).
+Proof. src_rule sr_pt. Qed.
 
 Lemma st_lam Φ Ψ Δ F e T U ub lb φ :
   φ ∉ dom Φ →

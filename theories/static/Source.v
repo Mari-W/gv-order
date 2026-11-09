@@ -140,6 +140,7 @@ Fixpoint hsteq (Ψ : hyps) (T U : ty) : Prop :=
   | TBox _ _ _ _, TBox _ _ _ _ => teq T U
   | TSess s x, TSess r y => heqs Ψ x y ∧ seq s r
   | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ teq T1 U1
+  | TPt x, TPt y => x = y
   | _, _ => False
   end.
 
@@ -151,6 +152,7 @@ Proof.
     + destruct lb0; simpl; [apply he_refl|done].
   - destruct H. split; auto.
   - destruct H. split; auto.
+  all: try done.
   all: destruct H as [<- ?]; split; [apply he_refl|done].
 Qed.
 
@@ -369,6 +371,7 @@ Proof.
   - by apply t_unit.
   - apply t_const; [done| |done]. apply hkonst_ty. by apply (konst_ty_h W1 HW HN).
   - by apply t_var.
+  - apply t_pt; [done|done|]. apply hyp_known_skn. by apply (skn_hyp_known W1 HW HN).
   - exfalso. apply (f_equal dom) in HΘ.
     rewrite dom_singleton_L, dom_empty_L in HΘ. set_solver.
   - subst Θ. eapply t_abs; [done| |by apply IHHt].
