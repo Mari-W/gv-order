@@ -669,3 +669,193 @@ comes from `live_adequacy` as before.
 We recommend option 1. It is the only one that keeps Rank as
 `well_founded (w_lt W)` and keeps compositionality checkable, at the cost
 of one parameter in the composition statements.
+
+## 15  Stage 2b with the oracle (2026-11-09)
+
+The relation is the live relation with an invariant layer. The layer
+annotates every configuration that a run of p reaches, and the oracle ω
+fixes that annotation once, for every index. Rocq in
+theories/lockfree/LFRelation.v (definitions, monotonicity) and
+theories/lockfree/LFAdequacy.v (adequacy).
+
+### 15.1  Why a layer and not a constrained O-New
+
+O-New sits inside the inductive `Eind` of the live relation. A layer
+outside `Eind` cannot reach that existential, and a new parameter of
+`Ebody` changes a statement of theories/liveness. The process relation
+at Σ = ∅ also forgets the threads (stage 1, finding 1), so a constraint
+there constrains nothing. The layer therefore makes the choices itself.
+It annotates configurations, computes the annotation of every successor
+from ω, and asks the live term relation of every thread at that
+annotation, at every index.
+
+### 15.2  The oracle
+
+```
+Record placement := Placement {
+  pl_pt : point; pl_s : sty; pl_s' : sty;   (* new: c ↦ Both (pl_s, pl_pt) (pl_s', pt_dual pl_pt) *)
+  pl_give : tenv }.                          (* spawn, send: the entries handed over *)
+Record oracle := Oracle {
+  or_init : config → nat → tenv;             (* environments of the starting threads *)
+  or_pick : tenv → expr → placement }.       (* read at the thread's Θ and term *)
+```
+
+`or_pick` reads the environment and the term before the step, so it
+never sees the fresh name. The splits are a real choice. A thread that
+holds both ends of c and hands c to a spawned thread or a payload while
+its continuation keeps c chooses which end goes. For Close/Close the two
+ends differ only in their point, x or x̄, and the gates read that point.
+Entries that the term does not mention can also go either way. So ω
+gives the handed-over entries (`pl_give`). Every other choice of the
+live relation is forced. The entry after an action is `snd_next`,
+`rcv_next`, `sel_next b` or `bra_next b` of the entry before it, a
+received entry keeps the sender's entry, and a link only renames.
+Worlds have no aliases on this branch (`w_eq` is equality), so points
+are exact.
+
+### 15.3  Annotations and their update
+
+```
+Record aconf := AConf { ac_q : config; ac_env : nat → tenv; ac_fuel : nat → chan → nat }.
+Definition aupd (ω : oracle) (N : nat) (a : aconf) (L : gset nat) (q' : config) : aconf.
+Definition astep ω N a a' := ∃ L q', istep (ac_q a) L q' ∧ a' = aupd ω N a L q'.
+Definition areach ω N := rtc (astep ω N).
+Definition ainit ω N q := AConf q (or_init ω q) (λ _ _, N).
+```
+
+`aupd` reads the step off L, the two configurations and the redexes.
+
+| Step of thread i (and j) | Environments | Counters |
+|---|---|---|
+| β | unchanged | unchanged |
+| new c | c ↦ Both (pl_s, pl_pt) (pl_s', pt_dual pl_pt) at i | c of i set to N |
+| spawn j | i keeps Θ minus pl_give, j gets pl_give | j gets i's counter − 1 |
+| link r o (r removed) | i drops r and o, every other thread renames r to o | the peers of r and o get min(own, min(i's r, i's o) − 1) on o |
+| message c, i to j | i: payload removed, c by snd_next. j: c by rcv_next, payload added | c set to N on both, every other counter − 1, j's received entries get i's counter − 1 |
+| close c | c removed on both | c set to N on both, others − 1 |
+| choice b on c | sel_next b and bra_next b | c set to N on both, others − 1 |
+
+Threads outside L keep their environment and counters, up to the
+renaming of a link and its counter transfer. The environments never
+read the counters.
+
+### 15.4  The invariant and the relation
+
+```
+Definition LFErel n W (Θ : tenv) (φ : chan → nat) (e : expr) : Prop :=
+  (∃ U, LErel n W Θ U ∅ e) ∧ dom Θ = fchans e ∧ (irred e → Θ = ∅) ∧
+  (∀ c, c ∈ dom Θ → φ c = 0 →
+     ∃ a S, act e = Some a ∧ ¬ is_admin a ∧ asubjs a = Some S ∧ c ∈ S).
+
+Definition LFconf n W Σ a : Prop :=
+  (∀ t e, M !! t = Some e → LFErel n W (A t) (Φ t) e) ∧
+  (∀ t e, M !! t = Some e → fchans e ⊆ C ∪ dom Σ) ∧
+  (∀ t e k ek, M !! t = Some e → tenv_entry (A t) k = Some ek → k.1 ∉ dom Σ →
+     ∃ s es k' ek', M !! s = Some es ∧ tenv_entry (A s) k' = Some ek' ∧ k'.1 = k.1 ∧
+       (s, k') ≠ (t, k) ∧ ek'.2 = pt_dual ek.2 ∧ sdual ek.1 ek'.1) ∧
+  (no channel has three entries)
+  where (C, M) = ac_q a, A = ac_env a, Φ = ac_fuel a.
+
+Definition LFPrel (N : nat) (ω : oracle) (n : nat) W Σ T p : Prop :=
+  LPrel n W Σ T p ∧
+  ∀ q a, erase q = p → areach ω N (ainit ω N q) a → LFconf n W Σ a.
+```
+
+The index n enters only through `LPrel n` and the `LErel n` of each
+thread. The annotation of a reachable configuration is the same for
+every n. Fuel is one constant N, and the judgment hides it as
+`∃ N ω, ∀ n, LFPrel N ω n W ∅ T p`. Rank is the premise
+`well_founded (w_lt W)`, with no number. Fuel is per thread and channel,
+not per point.
+
+### 15.5  Statements
+
+```
+Theorem LFPrel_down N ω n m W Σ T p : m ≤ n → LFPrel N ω n W Σ T p → LFPrel N ω m W Σ T p.
+Theorem LFPrel_fuel N N' ω n W Σ T p : N ≤ N' → LFPrel N ω n W Σ T p → LFPrel N' ω n W Σ T p.
+
+Theorem lf_adequacy N ω W T p :
+  world_wf W → well_founded (w_lt W) → (∀ n, LFPrel N ω n W ∅ T p) → lock_free p.
+Corollary lf_adequacy_ex W T p :
+  world_wf W → well_founded (w_lt W) → (∃ N ω, ∀ n, LFPrel N ω n W ∅ T p) → lock_free p.
+Corollary lf_thread_progress W T p :
+  world_wf W → well_founded (w_lt W) → (∃ N ω, ∀ n, LFPrel N ω n W ∅ T p) →
+  ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
+```
+
+`lf_criterion` changes its hypotheses, not its conclusion. Local
+progress is asked at the positions of runs only. Uniqueness, persistence,
+fuel, stability and the rank clause are asked only of threads whose
+redex is a session action other than a link (`npend`). A pending link
+is administrative and enabled under `links_restricted`, so the proof
+fires it by weak fairness, as it already did for the other
+administrative redexes. `local_progress_ready` asks readiness only of
+threads that can step, asks that a thread holding an entry can step,
+and lets two meeting offers enable either thread, because a meeting
+partner may sit at a link.
+
+The adequacy proof instantiates the criterion as follows.
+- `fu k t` is the counter of the partner entry of t's channel at the
+  annotation of position k. A step of the holder on another channel
+  ticks it. Handing the entry on by a send, a spawn or a link passes at
+  most the counter minus one. An administrative step of the holder
+  that keeps the entry keeps the holder and the counter.
+- `we k t` is the point of the entry that t offers, and R is `w_lt W`.
+  A thread that does not step keeps its entry, up to renaming. The gate
+  of the holder s, read from `LErel 1` at s's environment, puts the point
+  of s's offer below the dual of s's entry of t's channel, which pairing
+  makes t's point.
+- local progress and `links_restricted` are facts of one annotated
+  configuration, and `no_tau_divergence` comes from `live_adequacy`.
+
+### 15.6  C1 with a ceiling is rejected
+
+Take any N and ω with `∀ n, LFPrel N ω n W ∅ T p` for the program of
+14.1, and the fair run in which every round fires. The annotation of
+this run is one sequence, computed by `aupd` from ω, the same at every
+index. At the position where T_k blocks, `LFconf 1` gives T_k's gate.
+T_k offers its end of c_k at y_k and holds the partner end of c_{k−1},
+which pairing puts at pt_dual y_{k−1}. The gate gives y_k ≺ y_{k−1}. A
+blocked thread keeps its entries, so the points y_k do not move. The run
+yields y_0 ≻ y_1 ≻ y_2 ≻ … in W, against `well_founded (w_lt W)`. In
+14.1 the index-n relation placed c_k at ι+(n−k), a different placement
+for each n. Here n only sets how deep `LErel` is read at a fixed
+annotated configuration. The same follows from `lf_adequacy`, because
+C1 is not lock free. No Rocq lemma states it, because C1 as a closed
+program with a ceiling world and a fair starving run is not built.
+
+### 15.7  What stage 3 has to supply
+
+The layer is a property of closed runs. It does not compose over a cut,
+because the runs of a composite interleave interactions across the cut
+that neither component's internal runs contain. Stage 3 therefore proves
+the layer from typing by preservation along annotated steps, not by
+semantic composition. The statements it needs are these, with `LFtyped`
+the typed form of `LFconf` (every thread typed in the guarded static
+system at its annotated environment, ω's picks equal to the points and
+splits of those typings, pairing, at most two entries per channel, and
+counters at least the remaining fragment budget).
+
+```
+lf_init      : lfptyped W ∅ p T → ∃ N ω, ∀ q, erase q = p → LFtyped N ω W (ainit ω N q).
+lf_preserve  : LFtyped N ω W a → astep ω N a a' → LFtyped N ω W a'.
+lf_typed_rel : LFtyped N ω W a → ∀ n, LFconf n W ∅ a.
+lf_live      : lfptyped W ∅ p T → ∀ n, LPrel n W ∅ T p.        (live_soundness)
+```
+
+Two risks for stage 3. First, `or_pick` is a function in Type, and the
+point of a `new` lives in a Prop typing derivation and not in the term,
+because box instantiation substitutes points into types only. A function
+of (Θ, e) defined on all reachable states needs countable choice over
+those derivations, unless the picks are computable from the term. Points
+in the syntax (14.3, option 3) make them computable. The relational form
+(14.3, option 2) avoids the function: replace `aupd` by any successor in
+an invariant set, and run the criterion over finite annotated prefixes.
+Second, two threads with Θ = ∅ and the same term receive the same picks.
+Such a thread starts an independent subsystem, so one pick should serve
+both, but this uniformization is unproved.
+
+A semantic composition of the layer would need runs with external
+actions, so that each component's layer covers the interactions across
+the cut. Its P-Connect statement would combine the oracles by the side
+that holds the thread, which needs `or_pick` to see more than (Θ, e).
