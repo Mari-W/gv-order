@@ -84,18 +84,19 @@ Section linternalize.
       proc_step q (PSess (SRecv a w')) q' →
       LPobl LVrel LPrel (S n') W Σ T q (SRecv a w') q'.
     Proof.
-      intros Hq. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
+      intros Hq. destruct a as [a βa]. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
       apply echsubst_decomp in HE as (F & e & -> & -> & ->).
       simpl in HsC. cbn [sentc fst snd]. rewrite difference_empty_L.
       destruct (exist_fresh (fchans w' ∪ fchans e ∪ echans F ∪ C ∪ dom Σ ∪ {[c; d]}))
         as [z Hz].
-      destruct (tstep_chsubst_recv_inv_swap c d z e a w' f')
-        as (c0 & f & Hc0 & Hf & ->); [done|sset|sset|sset|done|sset|].
+      destruct (tstep_chsubst_recv_inv_swap c d z e (a, βa) w' f')
+        as ([c0 β0] & f & Hc0 & Hf & ->); [done|sset|sset|sset|done|sset|].
+      unfold osub in Hc0; simpl in Hc0; injection Hc0 as Hc0 <-.
       assert (c0 ≠ c) as Hc0c.
       { intros ->. rewrite csub_hit in Hc0. subst a. sset. }
       rewrite csub_ne in Hc0 by done. subst c0.
       assert (a ≠ d ∧ a ∉ C) as [Had HaC] by sset.
-      pose proof (Hσ _ _ (PStepSession C F e (SRecv a (eswap c z w')) f Hf
+      pose proof (Hσ _ _ (PStepSession C F e (SRecv (a, β0) (eswap c z w')) f Hf
                     ltac:(simpl; sset))) as Hp.
       simpl in Hp. destruct Hp as (Σ1 & m & U & s & k & (s0 & HΣ & Hu) & Ha1 & H).
       destruct (fusedP_peel c d Hcd Σ sc sd kc kd Σ1 a (s0, k) HcΣ HdΣ Hc0c Had HΣ Ha1)
@@ -158,18 +159,18 @@ Section linternalize.
       proc_step q (PSess (SClos a)) q' →
       LPobl LVrel LPrel (S n') W Σ T q (SClos a) q'.
     Proof.
-      intros Hq. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
+      intros Hq. destruct a as [a βa]. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
       apply echsubst_decomp in HE as (F & e & -> & -> & ->).
-      cbn [subjs] in HsC. cbn [sentc fst snd]. rewrite difference_empty_L.
+      cbn [subjs fst] in HsC. cbn [sentc fst snd]. rewrite difference_empty_L.
       apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-      injection Hα as Hc0.
+      destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+      injection Hα as Hc0 Hb0. subst β0.
       assert (c0 ≠ c) as Hc0c.
       { intros ->. rewrite csub_hit in Hc0. subst a. clear -HsC. set_solver. }
       rewrite csub_ne in Hc0 by done. subst c0.
       assert (a ≠ d ∧ a ∉ C) as [Had HaC] by (clear -HsC; set_solver).
-      pose proof (Hσ _ _ (PStepSession C F e (SClos a) f Hf
-                    ltac:(cbn [subjs]; clear -HaC; set_solver))) as Hp.
+      pose proof (Hσ _ _ (PStepSession C F e (SClos (a, βa)) f Hf
+                    ltac:(cbn [subjs fst]; clear -HaC; set_solver))) as Hp.
       cbn [LPobl Pclos_case Plink_case Psend_case pred] in Hp. destruct Hp as (Σ1 & k & (s0 & HΣ & Hu) & Ha1 & HP1).
       pose proof (IH n' (le_n _) W _ _ HP1) as HΦ.
       destruct (fusedP_peel c d Hcd Σ sc sd kc kd Σ1 a (s0, k) HcΣ HdΣ Hc0c Had HΣ Ha1)
@@ -188,19 +189,19 @@ Section linternalize.
       proc_step q (PSess (SSel a i)) q' →
       LPobl LVrel LPrel (S n') W Σ T q (SSel a i) q'.
     Proof.
-      intros Hq. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
+      intros Hq. destruct a as [a βa]. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
       apply echsubst_decomp in HE as (F & e & -> & -> & ->).
-      cbn [subjs] in HsC. cbn [LPobl Pchoice_case pred sentc fst snd].
+      cbn [subjs fst] in HsC. cbn [LPobl Pchoice_case pred sentc fst snd].
       rewrite difference_empty_L.
       apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-      injection Hα as Hc0 Hi0. subst i0.
+      destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+      injection Hα as Hc0 Hb0 Hi0. subst i0 β0.
       assert (c0 ≠ c) as Hc0c.
       { intros ->. rewrite csub_hit in Hc0. subst a. clear -HsC. set_solver. }
       rewrite csub_ne in Hc0 by done. subst c0.
       assert (a ≠ d ∧ a ∉ C) as [Had HaC] by (clear -HsC; set_solver).
-      pose proof (Hσ _ _ (PStepSession C F e (SSel a i) f Hf
-                    ltac:(cbn [subjs]; clear -HaC; set_solver))) as Hp.
+      pose proof (Hσ _ _ (PStepSession C F e (SSel (a, βa) i) f Hf
+                    ltac:(cbn [subjs fst]; clear -HaC; set_solver))) as Hp.
       cbn [LPobl Pchoice_case pred] in Hp.
       destruct Hp as (Σ1 & s1 & s2 & k & (s0 & HΣ & Hu) & Ha1 & HP1).
       pose proof (IH n' (le_n _) W _ _ HP1) as HΦ.
@@ -223,19 +224,19 @@ Section linternalize.
       proc_step q (PSess (SBra a i)) q' →
       LPobl LVrel LPrel (S n') W Σ T q (SBra a i) q'.
     Proof.
-      intros Hq. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
+      intros Hq. destruct a as [a βa]. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
       apply echsubst_decomp in HE as (F & e & -> & -> & ->).
-      cbn [subjs] in HsC. cbn [LPobl Pchoice_case pred sentc fst snd].
+      cbn [subjs fst] in HsC. cbn [LPobl Pchoice_case pred sentc fst snd].
       rewrite difference_empty_L.
       apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-      injection Hα as Hc0 Hi0. subst i0.
+      destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+      injection Hα as Hc0 Hb0 Hi0. subst i0 β0.
       assert (c0 ≠ c) as Hc0c.
       { intros ->. rewrite csub_hit in Hc0. subst a. clear -HsC. set_solver. }
       rewrite csub_ne in Hc0 by done. subst c0.
       assert (a ≠ d ∧ a ∉ C) as [Had HaC] by (clear -HsC; set_solver).
-      pose proof (Hσ _ _ (PStepSession C F e (SBra a i) f Hf
-                    ltac:(cbn [subjs]; clear -HaC; set_solver))) as Hp.
+      pose proof (Hσ _ _ (PStepSession C F e (SBra (a, βa) i) f Hf
+                    ltac:(cbn [subjs fst]; clear -HaC; set_solver))) as Hp.
       cbn [LPobl Pchoice_case pred] in Hp.
       destruct Hp as (Σ1 & s1 & s2 & k & (s0 & HΣ & Hu) & Ha1 & HP1).
       destruct (fusedP_peel c d Hcd Σ sc sd kc kd Σ1 a (s0, k) HcΣ HdΣ Hc0c Had HΣ Ha1)
@@ -259,20 +260,23 @@ Section linternalize.
     Proof.
       intros Hq. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
       apply echsubst_decomp in HE as (F & e & -> & -> & ->).
-      cbn [subjs] in HsC. cbn [sentc fst snd]. rewrite difference_empty_L.
+      cbn [subjs fst] in HsC. cbn [sentc fst snd]. rewrite difference_empty_L.
       apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
+      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
       injection Hα as Hcd'.
-      assert (c ∉ cd0 ∧ d ∉ cd0) as [Hc0 Hd0].
-      { subst cd. split; intros Hin; apply (elem_of_disjoint _ _) in HsC; apply (HsC d);
+      assert (c ∉ (set_map fst cd0 : gset chan) ∧ d ∉ (set_map fst cd0 : gset chan)) as [Hc0 Hd0].
+      { subst cd. rewrite gosub_fst in HsC.
+        split; intros Hin; apply (elem_of_disjoint _ _) in HsC; apply (HsC d);
           [|clear; set_solver| |clear; set_solver];
           unfold gsub; apply elem_of_map; [exists c|exists d]; (split; [|done]);
           [by rewrite csub_hit|by rewrite csub_ne]. }
-      rewrite gsub_id in Hcd' by done. subst cd.
+      rewrite gosub_id in Hcd' by done. subst cd.
       pose proof (Hlx _ _ (PStepSession C F e (SLink cd0) f Hf
-                    ltac:(cbn [subjs]; clear -HsC; set_solver))) as Hp.
+                    ltac:(cbn [subjs]; apply elem_of_disjoint; intros y Hy1 Hy2;
+                      apply (elem_of_disjoint _ _) in HsC; apply (HsC y); [done|clear -Hy2; set_solver]))) as Hp.
       destruct Hp as (c1 & d1 & Σ1 & sc1 & sd1 & kc1 & kd1 & -> & Hne & HΣ & Hc1 & Hd1 &
                       Hdu1 & Hal1 & _ & HΦ).
+      rewrite set_map_union_L, !set_map_singleton_L in Hc0, Hd0.
       assert (c1 ≠ c ∧ c1 ≠ d ∧ d1 ≠ c ∧ d1 ≠ d) as (H1 & H2 & H3 & H4)
         by (clear -Hc0 Hd0; set_solver).
       destruct (fusedP_peel c d Hcd Σ sc sd kc kd _ c1 (sc1, kc1) HcΣ HdΣ H1 H2 HΣ)
@@ -296,18 +300,18 @@ Section linternalize.
       proc_step q (PSess (SSend a w')) q' →
       LPobl LVrel LPrel (S n') W Σ T q (SSend a w') q'.
     Proof.
-      intros Hq. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
+      intros Hq. destruct a as [a βa]. apply proc_step_sess_inv in Hq as (F' & e1 & f' & HE & Hst & HsC & ->).
       apply echsubst_decomp in HE as (F & e & -> & -> & ->).
-      cbn [subjs] in HsC. cbn [sentc fst snd].
+      cbn [subjs fst] in HsC. cbn [sentc fst snd].
       apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-      injection Hα as Hc0 ->.
+      destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+      injection Hα as Hc0 Hb0 ->. subst β0.
       assert (c0 ≠ c) as Hc0c.
       { intros ->. rewrite csub_hit in Hc0. subst a. clear -HsC. set_solver. }
       rewrite csub_ne in Hc0 by done. subst c0.
       assert (a ≠ d ∧ a ∉ C) as [Had HaC] by (clear -HsC; set_solver).
-      pose proof (Hσ _ _ (PStepSession C F e (SSend a w0) f Hf
-                    ltac:(cbn [subjs]; clear -HaC; set_solver))) as Hp.
+      pose proof (Hσ _ _ (PStepSession C F e (SSend (a, βa) w0) f Hf
+                    ltac:(cbn [subjs fst]; clear -HaC; set_solver))) as Hp.
       cbn [LPobl Pclos_case Plink_case Psend_case pred] in Hp.
       destruct Hp as (Σ0 & Σv & m & U & s & k & Σe & Θe & (s0 & HΣ & Hu) & Hdj & Ha0 & Hav &
                       Hdom & Hsplit & HdΘΣ & HV & HP1).
@@ -485,21 +489,21 @@ Section linternalize.
           * done.
     Qed.
 
-    Lemma li_sync_case n'' (Hn : n' = S n'') F2 h h0 g g0 c0 c1 w0 :
+    Lemma li_sync_case n'' (Hn : n' = S n'') F2 h h0 g g0 c0 b0 c1 b1 w0 :
       E = F2 ⊎ {[+ h +]} ⊎ {[+ g +]} →
-      tstep h (LSess (SSend c0 w0)) h0 → tstep g (LSess (SRecv c1 w0)) g0 →
+      tstep h (LSess (SSend (c0, b0) w0)) h0 → tstep g (LSess (SRecv (c1, b1) w0)) g0 →
       (c0 = c ∧ c1 = d) ∨ (c0 = d ∧ c1 = c) → C ## dom Σ →
       LPrel n'' W Σ T (C ∪ {[d]}, echsubst c d (F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})).
     Proof.
       intros -> Hh Hg Hcc HCΣ. destruct HW as [HWf _].
       assert (c0 ≠ c1 ∧ c0 ∉ C ∧ c1 ∉ C) as (Hc01 & Hc0C & Hc1C)
         by (destruct Hcc as [[-> ->]|[-> ->]]; split_and!; done).
-      assert (proc_step (C, F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) (PSess (SSend c0 w0))
-                (C ∖ sentc (SSend c0 w0), F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]})) as Hst1.
+      assert (proc_step (C, F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) (PSess (SSend (c0, b0) w0))
+                (C ∖ sentc (SSend (c0, b0) w0), F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]})) as Hst1.
       { replace (F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) with (F2 ⊎ {[+ g +]} ⊎ {[+ h +]})
           by multiset_solver.
-        apply PStepSession; [done|]. cbn [subjs]. clear -Hc0C. set_solver. }
-      pose proof (Hσ _ _ Hst1) as Hp. cbn [LPobl Pclos_case Plink_case Psend_case pred] in Hp.
+        apply PStepSession; [done|]. cbn [subjs fst]. clear -Hc0C. set_solver. }
+      pose proof (Hσ _ _ Hst1) as Hp. cbn [LPobl Pclos_case Plink_case Psend_case pred fst snd] in Hp.
       destruct Hp as (Σ0 & Σv & m & U & s & k & Σe & Θe & (s0 & HΣ & Hu) & Hdj & Ha0 & Hav &
                       Hdom & Hsplit & HdΘΣ & HV & HP1).
       cbn [fst snd sentc] in Hdom, HP1.
@@ -514,12 +518,12 @@ Section linternalize.
         rewrite fusedP_ne, lookup_insert_ne, lookup_union in Hl by done.
         assert (Σ !! y = None) as Hy' by (apply not_elem_of_dom; clear -HCΣ Hy; set_solver).
         rewrite Hy' in Hl. destruct (Σ0 !! y), (Σv !! y); done. }
-      assert (proc_step (C ∖ fchans w0, F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) (PSess (SRecv c1 w0))
-                (C ∖ fchans w0 ∖ sentc (SRecv c1 w0), F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})) as Hst2.
+      assert (proc_step (C ∖ fchans w0, F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) (PSess (SRecv (c1, b1) w0))
+                (C ∖ fchans w0 ∖ sentc (SRecv (c1, b1) w0), F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})) as Hst2.
       { replace (F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) with (F2 ⊎ {[+ h0 +]} ⊎ {[+ g +]})
           by multiset_solver.
-        apply PStepSession; [done|]. cbn [subjs]. clear -Hc1C. set_solver. }
-      rewrite Hn in HP1. pose proof (LPrel_S_sess _ _ _ _ _ _ _ HP1 Hst2) as Hp2. cbn [LPobl Pclos_case Plink_case Psend_case pred] in Hp2.
+        apply PStepSession; [done|]. cbn [subjs fst]. clear -Hc1C. set_solver. }
+      rewrite Hn in HP1. pose proof (LPrel_S_sess _ _ _ _ _ _ _ HP1 Hst2) as Hp2. cbn [LPobl Pclos_case Plink_case Psend_case pred fst snd] in Hp2.
       destruct Hp2 as (Σ1 & m' & U' & s' & k' & (s1 & HΣ1 & Hu1) & Hc1Σ1 & Hrecv).
       cbn [fst snd sentc] in Hrecv. rewrite difference_empty_L in Hrecv.
       set (Σp1 := <[c0 := (s, pt_shift 1 k)]> (Σ0 ∪ Σe)) in *.
@@ -660,30 +664,30 @@ Section linternalize.
         + split_and!; try done. rewrite pt_dual_shift. by apply (wf_eq_shift _ HWf).
     Qed.
 
-    Lemma li_choice_case n'' (Hn : n' = S n'') F2 h h0 g g0 c0 c1 i :
+    Lemma li_choice_case n'' (Hn : n' = S n'') F2 h h0 g g0 c0 b0 c1 b1 i :
       E = F2 ⊎ {[+ h +]} ⊎ {[+ g +]} →
-      tstep h (LSess (SSel c0 i)) h0 → tstep g (LSess (SBra c1 i)) g0 →
+      tstep h (LSess (SSel (c0, b0) i)) h0 → tstep g (LSess (SBra (c1, b1) i)) g0 →
       (c0 = c ∧ c1 = d) ∨ (c0 = d ∧ c1 = c) →
       LPrel n'' W Σ T (C ∪ {[d]}, echsubst c d (F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})).
     Proof.
       intros -> Hh Hg Hcc. pose proof (proj1 HW) as HWf.
       assert (c0 ≠ c1 ∧ c0 ∉ C ∧ c1 ∉ C) as (Hc01 & Hc0C & Hc1C)
         by (destruct Hcc as [[-> ->]|[-> ->]]; split_and!; done).
-      assert (proc_step (C, F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) (PSess (SSel c0 i))
-                (C ∖ sentc (SSel c0 i), F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]})) as Hst1.
+      assert (proc_step (C, F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) (PSess (SSel (c0, b0) i))
+                (C ∖ sentc (SSel (c0, b0) i), F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]})) as Hst1.
       { replace (F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) with (F2 ⊎ {[+ g +]} ⊎ {[+ h +]})
           by multiset_solver.
-        apply PStepSession; [done|]. cbn [subjs]. clear -Hc0C. set_solver. }
-      pose proof (Hσ _ _ Hst1) as Hp. cbn [LPobl Pchoice_case pred] in Hp.
+        apply PStepSession; [done|]. cbn [subjs fst]. clear -Hc0C. set_solver. }
+      pose proof (Hσ _ _ Hst1) as Hp. cbn [LPobl Pchoice_case pred fst snd] in Hp.
       destruct Hp as (Σ1 & s1 & s2 & k & (s0 & HΣ & Hu) & Hc0Σ1 & HP1).
       cbn [sentc] in HP1. rewrite difference_empty_L in HP1.
-      assert (proc_step (C, F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) (PSess (SBra c1 i))
-                (C ∖ sentc (SBra c1 i), F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})) as Hst2.
+      assert (proc_step (C, F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) (PSess (SBra (c1, b1) i))
+                (C ∖ sentc (SBra (c1, b1) i), F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})) as Hst2.
       { replace (F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) with (F2 ⊎ {[+ h0 +]} ⊎ {[+ g +]})
           by multiset_solver.
-        apply PStepSession; [done|]. cbn [subjs]. clear -Hc1C. set_solver. }
+        apply PStepSession; [done|]. cbn [subjs fst]. clear -Hc1C. set_solver. }
       rewrite Hn in HP1. pose proof (LPrel_S_sess _ _ _ _ _ _ _ HP1 Hst2) as Hp2.
-      cbn [LPobl Pchoice_case pred] in Hp2.
+      cbn [LPobl Pchoice_case pred fst snd] in Hp2.
       destruct Hp2 as (Σ2 & r1 & r2 & k' & (s1' & HΣ2 & Hu') & Hc1Σ2 & HP2).
       cbn [sentc] in HP2. rewrite difference_empty_L in HP2.
       assert (fusedP c d Σ sc sd kc kd !! c0 = Some (s0, k)) as E0
@@ -721,44 +725,44 @@ Section linternalize.
           rewrite <-(pt_payload_dual kd). by apply (wf_eq_payload _ HWf).
     Qed.
 
-    Lemma li_close_steps n'' (Hn : n' = S n'') F2 h h0 g g0 c0 c1 :
+    Lemma li_close_steps n'' (Hn : n' = S n'') F2 h h0 g g0 c0 b0 c1 b1 :
       E = F2 ⊎ {[+ h +]} ⊎ {[+ g +]} →
-      tstep h (LSess (SClos c0)) h0 → tstep g (LSess (SClos c1)) g0 →
+      tstep h (LSess (SClos (c0, b0))) h0 → tstep g (LSess (SClos (c1, b1))) g0 →
       c0 ∉ C → c1 ∉ C →
       ∃ Σ1 Σ2 k k', senv_hd Σp c0 SEnd k Σ1 ∧ c0 ∉ dom Σ1 ∧
         senv_hd Σ1 c1 SEnd k' Σ2 ∧ c1 ∉ dom Σ2 ∧
         LPrel n'' W Σ2 T (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}).
     Proof.
       intros -> Hh Hg Hc0C Hc1C.
-      assert (proc_step (C, F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) (PSess (SClos c0))
-                (C ∖ sentc (SClos c0), F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]})) as Hst1.
+      assert (proc_step (C, F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) (PSess (SClos (c0, b0)))
+                (C ∖ sentc (SClos (c0, b0)), F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]})) as Hst1.
       { replace (F2 ⊎ {[+ h +]} ⊎ {[+ g +]}) with (F2 ⊎ {[+ g +]} ⊎ {[+ h +]})
           by multiset_solver.
-        apply PStepSession; [done|]. cbn [subjs]. clear -Hc0C. set_solver. }
-      pose proof (Hσ _ _ Hst1) as Hp. cbn [LPobl Pclos_case Plink_case Psend_case pred] in Hp.
+        apply PStepSession; [done|]. cbn [subjs fst]. clear -Hc0C. set_solver. }
+      pose proof (Hσ _ _ Hst1) as Hp. cbn [LPobl Pclos_case Plink_case Psend_case pred fst snd] in Hp.
       destruct Hp as (Σ1 & k & Hhd & Hc0 & HP1).
       cbn [sentc] in HP1. rewrite difference_empty_L in HP1.
-      assert (proc_step (C, F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) (PSess (SClos c1))
-                (C ∖ sentc (SClos c1), F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})) as Hst2.
+      assert (proc_step (C, F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) (PSess (SClos (c1, b1)))
+                (C ∖ sentc (SClos (c1, b1)), F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})) as Hst2.
       { replace (F2 ⊎ {[+ g +]} ⊎ {[+ h0 +]}) with (F2 ⊎ {[+ h0 +]} ⊎ {[+ g +]})
           by multiset_solver.
-        apply PStepSession; [done|]. cbn [subjs]. clear -Hc1C. set_solver. }
-      rewrite Hn in HP1. pose proof (LPrel_S_sess _ _ _ _ _ _ _ HP1 Hst2) as Hp2. cbn [LPobl Pclos_case Plink_case Psend_case pred] in Hp2.
+        apply PStepSession; [done|]. cbn [subjs fst]. clear -Hc1C. set_solver. }
+      rewrite Hn in HP1. pose proof (LPrel_S_sess _ _ _ _ _ _ _ HP1 Hst2) as Hp2. cbn [LPobl Pclos_case Plink_case Psend_case pred fst snd] in Hp2.
       destruct Hp2 as (Σ2 & k' & Hhd2 & Hc1 & HP2).
       cbn [sentc] in HP2. rewrite difference_empty_L in HP2.
       by exists Σ1, Σ2, k, k'.
     Qed.
 
-    Lemma li_close_case n'' (Hn : n' = S n'') F2 h h0 g g0 c0 c1 :
+    Lemma li_close_case n'' (Hn : n' = S n'') F2 h h0 g g0 c0 b0 c1 b1 :
       E = F2 ⊎ {[+ h +]} ⊎ {[+ g +]} →
-      tstep h (LSess (SClos c0)) h0 → tstep g (LSess (SClos c1)) g0 →
+      tstep h (LSess (SClos (c0, b0))) h0 → tstep g (LSess (SClos (c1, b1))) g0 →
       (c0 = c ∧ c1 = d) ∨ (c0 = d ∧ c1 = c) →
       LPrel n'' W Σ T (C, echsubst c d (F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]})).
     Proof.
       intros HE Hh Hg Hcc.
       assert (c0 ∉ C ∧ c1 ∉ C) as [Hc0C Hc1C]
         by (destruct Hcc as [[-> ->]|[-> ->]]; done).
-      destruct (li_close_steps n'' Hn F2 h h0 g g0 c0 c1 HE Hh Hg Hc0C Hc1C)
+      destruct (li_close_steps n'' Hn F2 h h0 g g0 c0 b0 c1 b1 HE Hh Hg Hc0C Hc1C)
         as (Σ1 & Σ2 & k & k' & (s0 & HΣ & _) & Hc0 & (s1 & HΣ1 & _) & Hc1 & HP2).
       assert (Σ2 = Σ) as ->.
       { apply map_eq. intros y.
@@ -783,56 +787,58 @@ Section linternalize.
       intros Hin. exfalso. done.
     Qed.
 
-    Lemma li_close_same n'' (Hn : n' = S n'') F2 h h0 g g0 c0 :
+    Lemma li_close_same n'' (Hn : n' = S n'') F2 h h0 g g0 c0 b0 b1 :
       E = F2 ⊎ {[+ h +]} ⊎ {[+ g +]} →
-      tstep h (LSess (SClos c0)) h0 → tstep g (LSess (SClos c0)) g0 →
+      tstep h (LSess (SClos (c0, b0))) h0 → tstep g (LSess (SClos (c0, b1))) g0 →
       c0 ∉ C → False.
     Proof.
       intros HE Hh Hg Hc0C.
-      destruct (li_close_steps n'' Hn F2 h h0 g g0 c0 c0 HE Hh Hg Hc0C Hc0C)
+      destruct (li_close_steps n'' Hn F2 h h0 g g0 c0 b0 c0 b1 HE Hh Hg Hc0C Hc0C)
         as (Σ1 & Σ2 & k & k' & _ & Hc0 & Hhd2 & _ & _).
       apply senv_hd_dom in Hhd2. apply Hc0. rewrite Hhd2. clear. set_solver.
     Qed.
 
-    Lemma li_link_ext x0 y0 F f f0 :
-      E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[x0; y0]})) f0 → x0 ∉ C → y0 ∉ C →
+    Lemma li_link_ext x0 bx y0 yb F f f0 :
+      E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[(x0, bx); (y0, yb)]})) f0 → x0 ∉ C → y0 ∉ C →
       ∃ c1 d1 Σ1 sc1 sd1 kc1 kd1, ({[x0; y0]} : gset chan) = {[c1; d1]} ∧ c1 ≠ d1 ∧
         Σp = <[c1 := (sc1, kc1)]> (<[d1 := (sd1, kd1)]> Σ1) ∧ c1 ∉ dom Σ1 ∧ d1 ∉ dom Σ1 ∧
         sdual sd1 sc1 ∧ w_eq W kc1 (pt_dual kd1) ∧ LPrel (S n') W Σ1 T (C, F ⊎ {[+ f0 +]}).
     Proof.
       intros HEq Hf Hx0 Hy0.
-      assert (proc_step (C, E) (PSess (SLink {[x0; y0]}))
-                (C ∖ sentc (SLink {[x0; y0]}), F ⊎ {[+ f0 +]})) as Hst.
-      { rewrite HEq. apply PStepSession; [done|]. cbn [subjs]. clear -Hx0 Hy0. set_solver. }
+      assert (proc_step (C, E) (PSess (SLink {[(x0, bx); (y0, yb)]}))
+                (C ∖ sentc (SLink {[(x0, bx); (y0, yb)]}), F ⊎ {[+ f0 +]})) as Hst.
+      { rewrite HEq. apply PStepSession; [done|]. rewrite subjs_upair. clear -Hx0 Hy0. set_solver. }
       pose proof (Hlx _ _ Hst) as Hp.
       destruct Hp as (c1 & d1 & Σ1 & sc1 & sd1 & kc1 & kd1 & Hcd1 & Hne & HΣ & Hc1 & Hd1 &
                       Hdu1 & Hal1 & HP1 & _).
       cbn [sentc] in HP1. rewrite difference_empty_L in HP1.
-      by exists c1, d1, Σ1, sc1, sd1, kc1, kd1.
+      exists c1, d1, Σ1, sc1, sd1, kc1, kd1. split_and!; try done.
+      apply (f_equal (λ X : gset cend, (set_map fst X : gset chan))) in Hcd1. simpl in Hcd1.
+      by rewrite !set_map_union_L, !set_map_singleton_L in Hcd1.
     Qed.
 
-    Lemma li_link_tau_p y0 x0 F f f0 :
-      E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[y0; x0]})) f0 → y0 ∈ C →
+    Lemma li_link_tau_p y0 yb x0 bx F f f0 :
+      E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[(y0, yb); (x0, bx)]})) f0 → y0 ∈ C →
       (C ∖ {[y0]}) ## dom Σ →
       lfuse_goal (S n') W Σp T (C ∖ {[y0]}, echsubst y0 x0 (F ⊎ {[+ f0 +]})).
     Proof.
       intros HEq Hf Hy0 Hg.
       assert (ptau_link (C, E) (C ∖ {[y0]}, echsubst y0 x0 (F ⊎ {[+ f0 +]}))) as Hpl.
-      { exists C, F, f, y0, x0, f0. split_and!; [by rewrite HEq|done|done|done]. }
+      { exists C, F, f, y0, yb, x0, bx, f0. split_and!; [by rewrite HEq|done|done|done]. }
       assert ((C ∖ {[y0]}) ## dom Σp) as Hd'.
       { rewrite (fusedP_dom c d Hcd). clear -Hg HcC HdC. set_solver. }
       exact (Hadm _ (padmin_link _ _ Hpl) Hd').
     Qed.
 
-    Lemma li_link_out x0 xb y0 F f f0 :
+    Lemma li_link_out x0 bx xb y0 yb F f f0 :
       (x0 = c ∧ xb = d) ∨ (x0 = d ∧ xb = c) → y0 ≠ c → y0 ≠ d → y0 ∉ C →
-      E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[x0; y0]})) f0 →
+      E = F ⊎ {[+ f +]} → tstep f (LSess (SLink {[(x0, bx); (y0, yb)]})) f0 →
       LPrel (S n') W Σ T (C, echsubst d y0 (echsubst c d (F ⊎ {[+ f0 +]}))).
     Proof.
       intros Hx Hy0c Hy0d Hy0C HEq Hf. destruct HW as [HWf _].
       assert (x0 ∉ C ∧ x0 ≠ y0) as [Hx0C Hx0y]
         by (destruct Hx as [[-> ->]|[-> ->]]; split; [done|congruence|done|congruence]).
-      destruct (li_link_ext x0 y0 F f f0 HEq Hf Hx0C Hy0C)
+      destruct (li_link_ext x0 bx y0 yb F f f0 HEq Hf Hx0C Hy0C)
         as (c1 & d1 & Σ1 & sc1 & sd1 & kc1 & kd1 & Hcd1 & Hne & HΣ & Hc1 & Hd1 &
             Hdu1 & Hal1 & HP1).
       assert (Hl : ∀ y, fusedP c d Σ sc sd kc kd !! y =
@@ -953,24 +959,25 @@ Section linternalize.
     Lemma li_link_give q' :
       ptau_link q q' → LPtau_case (LPrel (S n')) W Σ T q'.
     Proof.
-      intros (C0 & F' & e' & a & b' & e'' & HeqP & Hts & HaC & ->) Hd.
+      intros (C0 & F' & e' & a & ba & b' & bb & e'' & HeqP & Hts & HaC & ->) Hd.
       injection HeqP as <- HeqE. cbn [fst] in Hd.
       apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
       apply tstep_chsubst_det_inv in Hts as (α & f0 & Hf0 & Hα & ->); [|done].
-      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
+      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
       injection Hα as Hcd'.
-      destruct (tstep_link_shape _ _ _ Hf0) as (a0 & b0 & ->).
-      rewrite gsub_upair in Hcd'.
+      destruct (tstep_link_shape _ _ _ Hf0) as (a0 & ba0 & b0 & bb0 & ->).
       rewrite <-echsubst_disj_union1.
       destruct (decide (a0 = c ∨ a0 = d ∨ b0 = c ∨ b0 = d)) as [Hin|Hnin].
-      - assert (∃ x0 y0, ({[a0; b0]} : gset chan) = {[x0; y0]} ∧ (x0 = c ∨ x0 = d))
-          as (x0 & y0 & Hxy & Hx0).
+      - assert (∃ x0 bx y0 yb, ({[(a0, ba0); (b0, bb0)]} : gset cend) = {[(x0, bx); (y0, yb)]} ∧
+                  (x0 = c ∨ x0 = d))
+          as (x0 & bx & y0 & yb & Hxy & Hx0).
         { destruct Hin as [Ha|[Ha|[Hb|Hb]]];
-            [exists a0, b0|exists a0, b0|exists b0, a0|exists b0, a0];
+            [exists a0, ba0, b0, bb0|exists a0, ba0, b0, bb0|exists b0, bb0, a0, ba0|exists b0, bb0, a0, ba0];
             (split; [try done; by rewrite upair_comm|tauto]). }
-        rewrite Hxy in Hf0.
+        rewrite Hxy in Hf0, Hcd'. rewrite gosub_upair in Hcd'.
         assert (({[a; b']} : gset chan) = {[csub c d x0; csub c d y0]}) as Hab.
-        { rewrite Hcd', <-!gsub_upair, Hxy. done. }
+        { apply (f_equal (λ X : gset cend, (set_map fst X : gset chan))) in Hcd'. simpl in Hcd'.
+          by rewrite !set_map_union_L, !set_map_singleton_L in Hcd'. }
         clear Hcd' Hxy.
         assert (csub c d x0 = d) as Hcx0
           by (destruct Hx0 as [->| ->]; [apply csub_hit|by apply csub_ne]).
@@ -988,7 +995,7 @@ Section linternalize.
           replace ((C ∪ {[d]}) ∖ {[d]}) with C by (clear -HdC; set_solver).
           assert (x0 ∉ C ∧ y0 ∉ C) as [Hx0C Hy0C]
             by (destruct Hx0 as [->| ->], Hy0 as [->| ->]; done).
-          destruct (li_link_ext x0 y0 F f f0 HEq Hf0 Hx0C Hy0C)
+          destruct (li_link_ext x0 bx y0 yb F f f0 HEq Hf0 Hx0C Hy0C)
             as (c1 & d1 & Σ1 & sc1 & sd1 & kc1 & kd1 & Hcd1 & Hne & HΣ & Hc1 & Hd1 & _ & _ & HP1).
           assert (x0 ≠ y0) as Hxy0.
           { intros <-. apply Hne.
@@ -1035,7 +1042,7 @@ Section linternalize.
               apply elem_of_difference. split; [clear -Hy1; set_solver|].
               intros Hya%elem_of_singleton. subst y.
               destruct Hab' as [[-> _]|[-> _]]; [done|]. by apply Hy1', elem_of_singleton. }
-            pose proof (li_link_tau_p y0 x0 F f f0 HEq ltac:(by rewrite upair_comm) Hy0C Hg) as HΦ.
+            pose proof (li_link_tau_p y0 yb x0 bx F f f0 HEq ltac:(by rewrite upair_comm) Hy0C Hg) as HΦ.
             pose proof (HΦ Σ _ _ sc sd kc kd eq_refl eq_refl) as HP.
             assert (int_ok W Σ sc sd kc kd (C ∖ {[y0]})) as Hok
               by (apply li_int_ok_ext; [by apply wext_refl|done|done
@@ -1070,18 +1077,21 @@ Section linternalize.
               clear -Hy Hy0d. set_solver. }
             replace ((C ∪ {[d]}) ∖ {[d]}) with C by (clear -HdC; set_solver).
             destruct Hx0 as [->| ->].
-            -- exact (li_link_out c d y0 F f f0 (or_introl (conj eq_refl eq_refl)) Hy0c Hy0d Hy0C HEq Hf0).
-            -- exact (li_link_out d c y0 F f f0 (or_intror (conj eq_refl eq_refl)) Hy0c Hy0d Hy0C HEq Hf0).
+            -- exact (li_link_out c bx d y0 yb F f f0 (or_introl (conj eq_refl eq_refl)) Hy0c Hy0d Hy0C HEq Hf0).
+            -- exact (li_link_out d bx c y0 yb F f f0 (or_intror (conj eq_refl eq_refl)) Hy0c Hy0d Hy0C HEq Hf0).
       - (* neither end *)
         assert (a0 ≠ c ∧ a0 ≠ d ∧ b0 ≠ c ∧ b0 ≠ d) as (H1 & H2 & H3 & H4) by tauto.
-        rewrite !csub_ne in Hcd' by done. rewrite <-Hcd' in Hf0.
-        assert (a ∈ ({[a0; b0]} : gset chan)) as Ha by (rewrite <-Hcd'; clear; set_solver).
+        rewrite gosub_upair, !csub_ne in Hcd' by done. rewrite <-Hcd' in Hf0.
+        assert (({[a; b']} : gset chan) = {[a0; b0]}) as Hcdc.
+        { apply (f_equal (λ X : gset cend, (set_map fst X : gset chan))) in Hcd'. simpl in Hcd'.
+          by rewrite !set_map_union_L, !set_map_singleton_L in Hcd'. }
+        assert (a ∈ ({[a0; b0]} : gset chan)) as Ha by (rewrite <-Hcdc; clear; set_solver).
         assert (a ≠ c ∧ a ≠ d ∧ b' ≠ c) as (Hac & Had & Hbc).
-        { assert (b' ∈ ({[a0; b0]} : gset chan)) as Hb by (rewrite <-Hcd'; clear; set_solver).
+        { assert (b' ∈ ({[a0; b0]} : gset chan)) as Hb by (rewrite <-Hcdc; clear; set_solver).
           clear -Ha Hb H1 H2 H3 H4. set_solver. }
         assert (a ∈ C) as HaC' by (clear -HaC Had; set_solver).
         assert (C ∖ {[a]} ## dom Σ) as Hg by (clear -Hd; set_solver).
-        pose proof (li_link_tau_p a b' F f f0 HEq Hf0 HaC' Hg) as HΦ.
+        pose proof (li_link_tau_p a ba b' bb F f f0 HEq Hf0 HaC' Hg) as HΦ.
         pose proof (HΦ Σ _ _ sc sd kc kd eq_refl eq_refl) as HP.
         assert (int_ok W Σ sc sd kc kd (C ∖ {[a]})) as Hok
           by (apply li_int_ok_ext; [by apply wext_refl|done|done
@@ -1098,7 +1108,7 @@ Section linternalize.
       intros Hq Hd.
       apply padmin_inv in Hq as
         [ (F' & e' & e'' & HeqE & Hts & ->)
-        | [ (F' & e' & c'' & e'' & HeqE & Hts & Hc''C & Hc''F & Hc''e & ->)
+        | [ (F' & e' & c'' & yp & e'' & HeqE & Hts & Hc''C & Hc''F & Hc''e & ->)
         | [ (F' & e' & v' & e'' & HeqE & Hts & ->)
         | Hlink ]]]; cbn [fst] in Hd.
       4: { (* link: a τ at the index *) exact (li_link_give q' Hlink Hd). }
@@ -1113,11 +1123,11 @@ Section linternalize.
       - (* new: through a fresh z, then rename z to the image's name *)
         apply echsubst_decomp in HeqE as (F & f & HEq & -> & ->).
         destruct (exist_fresh (C ∪ dom Σ ∪ echans F ∪ fchans f ∪ {[c; d; c'']})) as [z Hz].
-        destruct (tstep_chsubst_new_inv c d f c'' e'' Hts z) as (f0 & Hf0 & ->);
+        destruct (tstep_chsubst_new_inv c d f c'' yp e'' Hts z) as (f0 & Hf0 & ->);
           [clear -Hz; set_solver..|].
         assert (z ∉ C ∧ z ∉ echans F ∧ z ∉ fchans f) as (HzC & HzF & Hzf)
           by (clear -Hz; set_solver).
-        pose proof (li_via_admin (C ∪ {[z]}, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by apply PANew)
+        pose proof (li_via_admin (C ∪ {[z]}, F ⊎ {[+ f0 +]}) ltac:(rewrite HEq; by eapply PANew)
                     ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd Hz HcC HdC; set_solver)
                     ltac:(cbn [fst]; clear -Hz HcC; set_solver)
                     ltac:(cbn [fst]; clear -Hz HdC; set_solver)) as HP. cbn [fst snd] in HP.
@@ -1155,33 +1165,34 @@ Section linternalize.
       { rewrite Hn0. apply LPrel_0. }
       assert (∃ n'', n' = S n'') as [n'' Hn] by (exists (pred n'); lia).
       apply pcomm_inv in Hq as
-        [ (F' & c' & v' & e' & e'' & g' & g'' & HeqE & Hts & Htr & ->)
-        | [ (F' & c' & e' & e'' & g' & g'' & HeqE & Hts & Htr & Hc'C & ->)
-        | (F' & c' & i & e' & e'' & g' & g'' & HeqE & Hts & Htr & ->) ]]; cbn [fst] in Hd.
+        [ (F' & c' & β' & v' & e' & e'' & g' & g'' & HeqE & Hts & Htr & ->)
+        | [ (F' & c' & β' & e' & e'' & g' & g'' & HeqE & Hts & Htr & Hc'C & ->)
+        | (F' & c' & β' & i & e' & e'' & g' & g'' & HeqE & Hts & Htr & ->) ]]; cbn [fst] in Hd.
       - (* message *)
         apply echsubst_decomp in HeqE as (F1 & g & HEq & HeqE1 & ->).
         symmetry in HeqE1. apply echsubst_decomp in HeqE1 as (F2 & h & -> & -> & ->).
         apply tstep_chsubst_det_inv in Hts as (α & h0 & Hh0 & Hα & ->); [|done].
-        destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc0 ->.
-        apply tstep_chsubst_recv_inv_subst in Htr as (c1 & g0 & Hc1 & Hg0 & ->).
+        destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc0 Hb0 ->. subst β'.
+        apply tstep_chsubst_recv_inv_subst in Htr as ([c1 β1] & g0 & Hc1 & Hg0 & ->).
+        unfold osub in Hc1; simpl in Hc1; injection Hc1 as Hc1 ->.
         destruct (decide (c0 = c1)) as [<-|Hc01].
         + pose proof (li_via_comm (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PCMsg)
                       ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
                       HcC HdC) as HP. cbn [fst snd] in HP.
           by rewrite echsubst_disj_union2 in HP.
         + rewrite Hn. cbn [pred]. rewrite <-echsubst_disj_union2.
-          apply (li_sync_case n'' Hn F2 h h0 g g0 c0 c1 w0); [exact HEq|done|done| |clear -Hd; set_solver].
+          apply (li_sync_case n'' Hn F2 h h0 g g0 c0 β0 c1 (negb β0) w0); [exact HEq|done|done| |clear -Hd; set_solver].
           apply csub_pair; [congruence|done].
       - (* close *)
         apply echsubst_decomp in HeqE as (F1 & g & HEq & HeqE1 & ->).
         symmetry in HeqE1. apply echsubst_decomp in HeqE1 as (F2 & h & -> & -> & ->).
         apply tstep_chsubst_det_inv in Hts as (α & h0 & Hh0 & Hα & ->); [|done].
-        destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc0.
+        destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc0 Hb0. subst β'.
         apply tstep_chsubst_det_inv in Htr as (α & g0 & Hg0 & Hα & ->); [|done].
-        destruct α as [|[c1 w1|c1 w1|c1|cd1|c1 i1|c1 i1]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc1.
+        destruct α as [|[[c1 β1] w1|[c1 β1] w1|[c1 β1]|cd1|[c1 β1] i1|[c1 β1] i1]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc1 Hb1. subst β1.
         destruct (decide (c0 = c1)) as [<-|Hc01].
         + destruct (decide (c0 ∈ C)) as [Hc0C|Hc0C].
           * assert (c0 ≠ c ∧ c0 ≠ d) as [Hc0c Hc0d] by (split; intros ->; done).
@@ -1196,7 +1207,7 @@ Section linternalize.
             replace ((C ∪ {[d]}) ∖ {[c0]}) with (C ∖ {[c0]} ∪ {[d]})
               by (clear -Hc0d; set_solver).
             exact HP.
-          * exfalso. exact (li_close_same n'' Hn F2 h h0 g g0 c0 HEq Hh0 Hg0 Hc0C).
+          * exfalso. exact (li_close_same n'' Hn F2 h h0 g g0 c0 _ _ HEq Hh0 Hg0 Hc0C).
         + assert ((c0 = c ∧ c1 = d) ∨ (c0 = d ∧ c1 = c)) as Hcc
             by (apply csub_pair; [congruence|done]).
           assert (c' = d) as ->.
@@ -1204,23 +1215,23 @@ Section linternalize.
           rewrite Hn. cbn [pred].
           rewrite <-echsubst_disj_union2.
           replace ((C ∪ {[d]}) ∖ {[d]}) with C by (clear -HdC; set_solver).
-          exact (li_close_case n'' Hn F2 h h0 g g0 c0 c1 HEq Hh0 Hg0 Hcc).
+          exact (li_close_case n'' Hn F2 h h0 g g0 c0 _ c1 _ HEq Hh0 Hg0 Hcc).
       - (* choice *)
         apply echsubst_decomp in HeqE as (F1 & g & HEq & HeqE1 & ->).
         symmetry in HeqE1. apply echsubst_decomp in HeqE1 as (F2 & h & -> & -> & ->).
         apply tstep_chsubst_det_inv in Hts as (α & h0 & Hh0 & Hα & ->); [|done].
-        destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc0 Hi0. subst i0.
+        destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc0 Hb0 Hi0. subst i0 β'.
         apply tstep_chsubst_det_inv in Htr as (α & g0 & Hg0 & Hα & ->); [|done].
-        destruct α as [|[c1 w1|c1 w1|c1|cd1|c1 i1|c1 i1]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc1 Hi1. subst i1.
+        destruct α as [|[[c1 β1] w1|[c1 β1] w1|[c1 β1]|cd1|[c1 β1] i1|[c1 β1] i1]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc1 Hb1 Hi1. subst i1 β1.
         destruct (decide (c0 = c1)) as [<-|Hc01].
         + pose proof (li_via_comm (C, F2 ⊎ {[+ h0 +]} ⊎ {[+ g0 +]}) ltac:(rewrite HEq; by eapply PCChoice)
                       ltac:(cbn [fst]; rewrite (fusedP_dom c d Hcd); clear -Hd HcC HdC; set_solver)
                       HcC HdC) as HP. cbn [fst snd] in HP.
           by rewrite echsubst_disj_union2 in HP.
         + rewrite Hn. cbn [pred]. rewrite <-echsubst_disj_union2.
-          apply (li_choice_case n'' Hn F2 h h0 g g0 c0 c1 i); [exact HEq|done|done|].
+          apply (li_choice_case n'' Hn F2 h h0 g g0 c0 β0 c1 (negb β0) i); [exact HEq|done|done|].
           apply csub_pair; [congruence|done].
     Qed.
 
