@@ -287,7 +287,7 @@ Record LFconf (n : nat) (W : world) (Σ : senv) (T : ty) (π : gmap cend point)
     counters φ, which lie outside the index as π does. *)
 Definition lf_fuel (n : nat) (W : world) (π : gmap cend point) (φ : gmap cend fuel)
     (q : config) : Prop :=
-  ∀ t e, q.2 !! t = Some e → FuelE n W (mres (fends e) π) (mres (fends e) φ) e.
+  ∀ t e, q.2 !! t = Some e → FuelE n W (mres (fends e) π) (mres (fends e) φ) e ∧ fends e ⊆ dom φ.
 
 Definition LFsoup (n : nat) (W : world) (Σ : senv) (T : ty) (π : gmap cend point)
     (φ : gmap cend fuel) (p : proc) : Prop :=
@@ -306,7 +306,10 @@ Proof.
 Qed.
 
 Lemma lf_fuel_down n m W π φ q : m ≤ n → lf_fuel n W π φ q → lf_fuel m W π φ q.
-Proof. intros Hmn H t e He. apply (FuelE_down m n); [done|]. exact (H t e He). Qed.
+Proof.
+  intros Hmn H t e He. destruct (H t e He) as [H1 H2]. split; [|done].
+  by apply (FuelE_down m n).
+Qed.
 
 Theorem LFsoup_down n m W Σ T π φ p : m ≤ n → LFsoup n W Σ T π φ p → LFsoup m W Σ T π φ p.
 Proof.
@@ -2042,3 +2045,112 @@ Section progress.
     - by apply lp_link.
   Qed.
 End progress.
+
+(** ** Counters along a step
+
+    The fuel of a thread is read in its own points and counters,
+    [P t] and [F t], which a run computes step by step, outside the
+    index, as π is. [fstep] is the update: the participants move by
+    [fupd], a spawned thread gets [fchild], a receiver adds the sender's
+    payload at its counters minus one, and a link renames the peer of the
+    removed end in every map ([kren]). *)
+
+Definition kren {Y : Type} (g : chan → chan) (m : gmap cend Y) : gmap cend Y :=
+  list_to_map ((λ ov : cend * Y, ((g ov.1.1, ov.1.2), ov.2)) <$> map_to_list m).
+
+Definition fmsg (W : world) (P : nat → gmap cend point) (F : nat → gmap cend fuel)
+    (s t : nat) (o o' : cend) (w : expr) : (nat → gmap cend point) * (nat → gmap cend fuel) :=
+  let rs := fupd W (P s) (F s) (LSess (SSend o w)) in
+  let rr := fupd W (P t) (F t) (LSess (SRecv o' w)) in
+  (eupd (eupd P s rs.1) t (rr.1 ∪ mres (fends w) (P s)),
+   eupd (eupd F s rs.2) t (rr.2 ∪ (ftick <$> mres (fends w) (F s)))).
+
+Definition f2 (W : world) (P : nat → gmap cend point) (F : nat → gmap cend fuel)
+    (s t : nat) (σs σt : slabel) : (nat → gmap cend point) * (nat → gmap cend fuel) :=
+  let rs := fupd W (P s) (F s) (LSess σs) in
+  let rt := fupd W (P t) (F t) (LSess σt) in
+  (eupd (eupd P s rs.1) t rt.1, eupd (eupd F s rs.2) t rt.2).
+
+Definition fpair (W : world) (P : nat → gmap cend point) (F : nat → gmap cend fuel)
+    (i j : nat) (ei ej : expr) : (nat → gmap cend point) * (nat → gmap cend fuel) :=
+  match act ei, act ej with
+  | Some (ASend o w), Some (ARecv o') => fmsg W P F i j o o' w
+  | Some (ARecv o'), Some (ASend o w) => fmsg W P F j i o o' w
+  | Some (AClos o), Some (AClos o') => f2 W P F i j (SClos o) (SClos o')
+  | Some (ASel o b), Some (ABra o') => f2 W P F i j (SSel o b) (SBra o' b)
+  | Some (ABra o'), Some (ASel o b) => f2 W P F j i (SSel o b) (SBra o' b)
+  | _, _ => (P, F)
+  end.
+
+Definition fsingle (W : world) (P : nat → gmap cend point) (F : nat → gmap cend fuel)
+    (q q' : config) (i : nat) (e : expr) : (nat → gmap cend point) * (nat → gmap cend fuel) :=
+  match act e with
+  | Some (ANew x) =>
+      let r := fupd W (P i) (F i) (LNew (default "" (head (elements (q'.1 ∖ q.1)))) x) in
+      (eupd P i r.1, eupd F i r.2)
+  | Some (ASpawn w) =>
+      let j := default 0 (head (elements (dom q'.2 ∖ dom q.2))) in
+      let r := fupd W (P i) (F i) (LSpawn w) in
+      let ch := fchild (P i) (F i) w in
+      (eupd (eupd P i r.1) j ch.1, eupd (eupd F i r.2) j ch.2)
+  | Some (ALink o1 o2) =>
+      let c := default "" (head (elements (q.1 ∖ q'.1))) in
+      let d := if decide (o1.1 = c) then o2.1 else o1.1 in
+      let r := fupd W (P i) (F i) (LSess (SLink {[o1; o2]})) in
+      (λ t, kren (csub c d) (eupd P i r.1 t), λ t, kren (csub c d) (eupd F i r.2 t))
+  | _ => (P, F)
+  end.
+
+Definition fstep (W : world) (P : nat → gmap cend point) (F : nat → gmap cend fuel)
+    (q : config) (L : gset nat) (q' : config) : (nat → gmap cend point) * (nat → gmap cend fuel) :=
+  match elements L with
+  | [i] => match q.2 !! i with Some e => fsingle W P F q q' i e | None => (P, F) end
+  | [i; j] => match q.2 !! i, q.2 !! j with Some ei, Some ej => fpair W P F i j ei ej | _, _ => (P, F) end
+  | _ => (P, F)
+  end.
+
+(** The fuel of a configuration, thread by thread. *)
+Definition lf_fuelc (n : nat) (W : world) (π : gmap cend point) (P : nat → gmap cend point)
+    (F : nat → gmap cend fuel) (q : config) : Prop :=
+  ∀ t e, q.2 !! t = Some e →
+    FuelE n W (P t) (F t) e ∧ dom (P t) = fends e ∧ dom (F t) = fends e ∧
+    ∀ o, o ∈ fends e → P t !! o = π !! o.
+
+Lemma lf_fuelc_down n m W π P F q : m ≤ n → lf_fuelc n W π P F q → lf_fuelc m W π P F q.
+Proof.
+  intros Hmn H t e He. destruct (H t e He) as (H1 & H2). split; [|done]. by apply (FuelE_down m n).
+Qed.
+
+Definition kinj {Y : Type} (g : chan → chan) (m : gmap cend Y) : Prop :=
+  ∀ o1 o2 v1 v2, m !! o1 = Some v1 → m !! o2 = Some v2 → (g o1.1, o1.2) = (g o2.1, o2.2) → o1 = o2.
+
+Lemma renk_kren {Y : Type} (g : chan → chan) (m : gmap cend Y) : kinj g m → renk g m (kren g m).
+Proof.
+  intros Hi. unfold kren. split.
+  - intros o v Ho. apply elem_of_list_to_map_1'.
+    + intros y ([o2 v2] & Heq & Hov)%list_elem_of_fmap. apply elem_of_map_to_list in Hov.
+      simpl in Heq. assert (o2 = o) as ->.
+      { apply (Hi o2 o v2 v Hov Ho). inversion Heq. by f_equal. }
+      rewrite Ho in Hov. injection Hov as ->. by inversion Heq.
+    + apply list_elem_of_fmap. exists (o, v). split; [done|]. by apply elem_of_map_to_list.
+  - intros o' v Ho'. apply elem_of_list_to_map_2 in Ho'.
+    apply list_elem_of_fmap in Ho' as ([o v'] & Heq & Hov). apply elem_of_map_to_list in Hov.
+    simpl in Heq. injection Heq as -> ->. by exists o.
+Qed.
+
+Lemma kren_lookup {Y : Type} (g : chan → chan) (m : gmap cend Y) o v :
+  kinj g m → m !! o = Some v → kren g m !! (g o.1, o.2) = Some v.
+Proof. intros Hi Ho. by apply (renk_kren g m Hi). Qed.
+
+Lemma kren_lookup_inv {Y : Type} (g : chan → chan) (m : gmap cend Y) o' v :
+  kinj g m → kren g m !! o' = Some v → ∃ o, o' = (g o.1, o.2) ∧ m !! o = Some v.
+Proof. intros Hi Ho. by apply (renk_kren g m Hi). Qed.
+
+Lemma kren_dom {Y : Type} (g : chan → chan) (m : gmap cend Y) :
+  kinj g m → dom (kren g m) = set_map (λ o : cend, (g o.1, o.2)) (dom m).
+Proof.
+  intros Hi. apply set_eq. intros o'. rewrite elem_of_map. split.
+  - intros [v Hv]%elem_of_dom. destruct (kren_lookup_inv g m o' v Hi Hv) as (o & -> & Ho).
+    exists o. split; [done|]. by apply elem_of_dom_2 in Ho.
+  - intros (o & -> & [v Hv]%elem_of_dom). apply elem_of_dom. exists v. by apply kren_lookup.
+Qed.

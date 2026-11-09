@@ -232,22 +232,27 @@ Definition Fobl (E V : nat → fpred) (n' : nat) (W : world)
 (** [renk g m m']: m' is m with every end (c, b) renamed to (g c, b).
     Two ends with one image must carry one value. *)
 Definition renk {Y : Type} (g : chan → chan) (m m' : gmap cend Y) : Prop :=
-  (∀ o, m' !! (g o.1, o.2) = m !! o) ∧
-  (∀ o', is_Some (m' !! o') → ∃ o, o' = (g o.1, o.2) ∧ is_Some (m !! o)).
+  (∀ o v, m !! o = Some v → m' !! (g o.1, o.2) = Some v) ∧
+  (∀ o' v, m' !! o' = Some v → ∃ o, o' = (g o.1, o.2) ∧ m !! o = Some v).
 
 Lemma renk_id {Y : Type} (m : gmap cend Y) : renk id m m.
-Proof. split; [by intros [c b]|]. intros [c b] H. by exists (c, b). Qed.
+Proof. split; [by intros [c b]|]. intros [c b] v H. by exists (c, b). Qed.
 
 Lemma renk_id_inv {Y : Type} (m m' : gmap cend Y) : renk id m m' → m' = m.
-Proof. intros [H _]. apply map_eq. intros [c b]. apply (H (c, b)). Qed.
+Proof.
+  intros [H1 H2]. apply map_eq. intros [c b].
+  destruct (m !! (c, b)) as [v|] eqn:E; [by apply (H1 (c, b))|].
+  destruct (m' !! (c, b)) as [v|] eqn:E'; [|done].
+  destruct (H2 _ _ E') as ([c' b'] & [= <- <-] & H). simpl in H. congruence.
+Qed.
 
 Lemma renk_compose {Y : Type} (g h : chan → chan) (m m1 m2 : gmap cend Y) :
   renk h m m1 → renk g m1 m2 → renk (g ∘ h) m m2.
 Proof.
   intros [H1 H2] [G1 G2]. split.
-  - intros o. rewrite <-H1. apply (G1 (h o.1, o.2)).
-  - intros o' Ho'. destruct (G2 o' Ho') as (o1 & -> & Ho1).
-    destruct (H2 o1 Ho1) as (o & -> & Ho). by exists o.
+  - intros o v Ho. apply (G1 (h o.1, o.2)). by apply H1.
+  - intros o' v Ho'. destruct (G2 o' v Ho') as (o1 & -> & Ho1).
+    destruct (H2 o1 v Ho1) as (o & -> & Ho). by exists o.
 Qed.
 
 (** FuelE is closed under the renaming of channels by definition: a link
