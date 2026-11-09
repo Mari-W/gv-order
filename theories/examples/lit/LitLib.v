@@ -31,7 +31,7 @@ Lemma typed_hyps_wk_lit W Ψ F e T : strict W → typed W ∅ [] ∅ [] F e T �
 Proof.
   intros HW H. pose proof (typed_pinst W _ _ _ _ _ _ _ HW H pvar Ψ) as H'.
   rewrite fhyps_pinst_empty, tenv_pinst_empty, sf_pinst_pvar, pinst_ty_pvar in H'.
-  apply H'. intros C xs Hm. by apply elem_of_nil in Hm.
+  apply H'; [|apply tenv_pol_empty]. intros C xs Hm. by apply elem_of_nil in Hm.
 Qed.
 
 Lemma styped_nil_hyps e T :

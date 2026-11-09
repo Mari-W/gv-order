@@ -29,7 +29,11 @@
     and e at its top-level points γ and ε ([fb_Ψ]) and gets deadlock
     freedom from [soundness_created_s]. [fb_between_underivable] still
     shows that the old constraint {ι ≺ κ, ι ≺ κ̄} has no point between
-    ι and κ. *)
+    ι and κ.
+
+    Under syntactic points (sharp edges 173) the box takes the point ι
+    as a parameter π : pt(ι) and creates d by new (π[0]). main creates c
+    and e at the constants 1 and 0 and passes the literal γ. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.FreshTools.
@@ -49,28 +53,35 @@ Definition fbx_P (g : fact) : Prop :=
   g = FLt fbd (pvar 1) ∨ g = FLt fbd (pt_dual (pvar 1)).
 Definition fbx_C : bcs := BCs [] fbx_P.
 
+(** Under syntactic points the box takes the point ι as a parameter and
+    creates d by new (π[0]) ([KPay 0], sharp edges 173). *)
 Definition fb_body : ty :=
-  TLolli (Some (pvar 1)) None (TProd (TSess SEnd (pvar 0)) (TSess SEnd (pvar 1))) TUnit.
+  TLolli None None (TPt (pvar 0))
+    (TLolli (Some (pvar 1)) None (TProd (TSess SEnd (pvar 0)) (TSess SEnd (pvar 1))) TUnit).
 
 Definition fb_ty : ty := TBox 2 0 fbx_C (TLolli None None TUnit fb_body).
 
 Definition fb_box : expr :=
-  EBox (Lam (LetP (Var 0) (let_new_pair
+  EBox (Lam (Lam (LetP (Var 0) (let_new_pair_at (App (Konst (KPay 0)) (Var 3))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
     (LetU (App EClos (Var 3))
     (LetU (App EClos (Var 1))
-          (App EClos (Var 2)))))))).
+          (App EClos (Var 2))))))))).
 
 Lemma fb_typed W F : strict W → typed W ∅ [] ∅ [] F fb_box fb_ty.
 Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold fb_box, fb_ty.
   apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
-  cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pvar 1)) None 1); [set_solver|cbn; set_solver|].
-  eapply t_weak; [apply lwk_cons, lwk_drop; [done|constructor]|].
+  cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ None None 1); [set_solver|cbn; set_solver|].
+  cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ (Some (pvar 1)) None 2); [set_solver|cbn; set_solver|].
+  eapply t_weak; [apply lwk_cons, lwk_cons, lwk_drop; [done|constructor]|].
   cbn. tstep; [tstep|]. cbn.
   change (bcs_inst (pshift 2) fbx_C) with fbx_C.
-  apply (t_new_at W _ _ _ _ _ _ _ SEnd fbd HWs);
-    [eapply (skn_in W _ _ [pvar 0; pvar 1] (pvar 0)); [by left|by left|done]|].
+  unfold let_new_pair_at. apply (t_new_v W _ _ _ _ _ _ _ SEnd fbd _ HWs).
+  { intros F'. cbn. eapply (tv_appk W HW _ _ _ _ (KPay 0) _ None (TPt (pvar 0)));
+      [tstep|apply KTPay; eapply (skn_in W _ _ [pvar 0; pvar 1] (pvar 0)); [by left|by left|done]
+      |done|apply ubs_none]. }
+  { eapply (skn_in W _ _ [pvar 0; pvar 1] (pvar 0)); [by left|by left|done]. }
   cbn.
   set (Ψ := [(fbx_C, [pvar 0; pvar 1])]).
   (* the facts: ι ≺ δ̄, δ ≺ κ, δ ≺ κ̄, ι ≺ κ, ι ≺ κ̄ *)
@@ -87,7 +98,7 @@ Proof.
   tstep.
   { (* spawn (λu. let () = u in close d′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual fbd)) (Some fbd) 2); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual fbd)) (Some fbd) 3); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
@@ -204,10 +215,10 @@ Qed.
 
 Definition fb_main : expr :=
   LetP (Pair fb_box EUnit) (LetU (Var 0)
-    (let_new_pair (let_new_pair
+    (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 3)))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
-        (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
+        (App (App (App EForce (Var 5)) (EPt (pconst 1))) (Pair (Var 3) (Var 1)))))))).
 
 
 
@@ -222,10 +233,10 @@ Definition fb_main : expr :=
 
 Definition fb_main_ex : expr :=
   LetP (Pair fb_box EUnit) (LetU (Var 0)
-    (let_new_pair (let_new_pair
+    (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 3)))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
-        (App (App EForce (Var 5)) (Pair (Var 3) (Var 1)))))))).
+        (App (App (App EForce (Var 5)) (EPt (pconst 1))) (Pair (Var 3) (Var 1)))))))).
 
 (** The creation constraint of γ: γ ≺ (γ[0])‾. *)
 Definition fbg_P (g : fact) : Prop := g = FLt (pvar 0) (pt_dual fbd).
@@ -243,18 +254,19 @@ Proof.
 Qed.
 
 (** The facts of ε: γ and γ[0] below ε and ε̄. *)
+Abbreviation fbdc := (Pt (NPayload (NConst 1) 0 0) 0).
+
 Definition fb_L : list (point * bool) :=
-  [(pvar 0, true); (pvar 0, false); (fbd, true); (fbd, false)].
+  [(pconst 1, true); (pconst 1, false); (fbdc, true); (fbdc, false)].
 
 Definition fb_Ψ : hyps :=
-  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) fbg_C, ids 1)]) ++
-    [(bcs_inst (pshift 1) (freshp_bcs fb_L []), ids 1)].
+  ([] ++ [(fbg_C, [pconst 1])]) ++ [(freshp_bcs fb_L [], [pconst 0])].
 
 Lemma fb_created : created (Wpo []) fb_Ψ.
 Proof.
-  apply created_p; [apply created_snoc; [constructor|apply fbg_ok|constructor]| |].
+  apply created_p; [apply created_snoc; [constructor|apply fbg_ok|constructor|fresh_const]| | |fresh_const].
   - cbn. repeat (apply Forall_cons; split;
-      [right; exists (bcs_inst (pshift 1) fbg_C), [pvar 0], (pvar 0); split_and!; [by left|by left|done]|]).
+      [right; exists fbg_C, [pconst 1], (pconst 1); split_and!; [by left|by left|done]|]).
     by apply Forall_nil.
   - intros l h b _ Hh. by apply elem_of_nil in Hh.
 Qed.
@@ -262,47 +274,50 @@ Qed.
 Lemma fb_main_typed_fresh : styped ∅ fb_Ψ [] (∅, None) fb_main_ex TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold fb_main_ex, fb_Ψ.
+  set (W := Wpo []) in *. unfold fb_main_ex, let_new_pair_at, fb_Ψ.
   tstep.
   { tstep; [tstep|apply typed_hyps_nil; [exact HWs|apply fb_typed, HWs]]. }
   cbn. tstep; [tstep|]. cbn.
-  new_top HWs SEnd (pvar 1). new_top HWs SEnd (pvar 0).
+  new_top HWs SEnd (pconst 1). new_top HWs SEnd (pconst 0).
   cbn.
   set (L := fb_L).
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
-  assert (∀ l b, (l, b) ∈ L → slt W Ψ (pt_inst (pshift 1) l) (pt_polar b (pvar 0))) as HL.
-  { intros l b Hl. by apply (slt_freshp_l W Ψ (pshift 1) L [] (pvar 0)); [right; left|]. }
-  assert (slt W Ψ (pvar 1) (pvar 0)) as Hγε by (apply (HL (pvar 0) true); set_solver).
-  assert (slt W Ψ (pvar 1) (pt_dual (pvar 0))) as Hγε' by (apply (HL (pvar 0) false); set_solver).
-  assert (slt W Ψ (Pt (NPayload (NVar 1) 0 0) 0) (pvar 0)) as Hdε by (apply (HL fbd true); set_solver).
-  assert (slt W Ψ (Pt (NPayload (NVar 1) 0 0) 0) (pt_dual (pvar 0))) as Hdε'
-    by (apply (HL fbd false); set_solver).
-  assert (slt W Ψ (pvar 1) (pt_dual (Pt (NPayload (NVar 1) 0 0) 0))) as Hγd.
-  { eapply (sl_hyp0 _ _ fbg_P [pvar 1] (pvar 0) (pt_dual fbd)); [by left|done|cbn; lia|reflexivity|reflexivity]. }
+  assert (∀ l b, (l, b) ∈ L → slt W Ψ l (pt_polar b (pconst 0))) as HL.
+  { intros l b Hl. by apply (slt_freshp_l W Ψ L [] (pconst 0)); [right; left|]. }
+  assert (slt W Ψ (pconst 1) (pconst 0)) as Hγε by (apply (HL (pconst 1) true); set_solver).
+  assert (slt W Ψ (pconst 1) (pt_dual (pconst 0))) as Hγε' by (apply (HL (pconst 1) false); set_solver).
+  assert (slt W Ψ (Pt (NPayload (NConst 1) 0 0) 0) (pconst 0)) as Hdε by (apply (HL fbdc true); set_solver).
+  assert (slt W Ψ (Pt (NPayload (NConst 1) 0 0) 0) (pt_dual (pconst 0))) as Hdε'
+    by (apply (HL fbdc false); set_solver).
+  assert (slt W Ψ (pconst 1) (pt_dual (Pt (NPayload (NConst 1) 0 0) 0))) as Hγd.
+  { eapply (sl_hyp0 _ _ fbg_P [pconst 1] (pvar 0) (pt_dual fbd)); [by left|done|cbn; lia|reflexivity|reflexivity]. }
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 1))) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pconst 1))) (Some (pconst 1)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (pvar 1)). split; [done|apply sle_refl, HW]. }
+    exists (pt_dual (pconst 1)). split; [done|apply sle_refl, HW]. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pconst 0))) (Some (pconst 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (pvar 0)). split; [done|apply sle_refl, HW]. }
-  cbn. eapply (tv_app W HW _ _ _ _ _ _ (Some (pvar 0)) None
-                 (TProd (TSess SEnd (pvar 1)) (TSess SEnd (pvar 0))) TUnit); [reflexivity| | |].
-  - change (TLolli (Some (pvar 0)) None (TProd (TSess SEnd (pvar 1)) (TSess SEnd (pvar 0))) TUnit)
-      with (ty_inst [pvar 1; pvar 0] fb_body).
-    apply (typed_force0 W _ _ _ _ _ _ 2 fbx_C None fb_body [pvar 1; pvar 0]); [done|done| | |apply ubs_none|tstep].
-    + apply bcs_hold_intro. intros g [-> |[-> |[-> |[-> | ->]]]] _; cbn;
-        [exact Hγε|exact Hγε'|exact Hγd|exact Hdε|exact Hdε'].
-    + constructor; [|constructor; [|constructor]].
-      * right. eexists _, [pvar 1], (pvar 1). split_and!; [by left|by left|done].
-      * right. eexists _, [pvar 0], (pvar 0). split_and!; [by right; left|by left|done].
+    exists (pt_dual (pconst 0)). split; [done|apply sle_refl, HW]. }
+  cbn. eapply (tv_app W HW _ _ _ _ _ _ (Some (pconst 0)) None
+                 (TProd (TSess SEnd (pconst 1)) (TSess SEnd (pconst 0))) TUnit); [reflexivity| | |].
+  - eapply (tv_app W HW _ _ _ _ _ _ None None (TPt (pconst 1))); [reflexivity| | |apply ubs_none].
+    + change (TLolli None None (TPt (pconst 1))
+                (TLolli (Some (pconst 0)) None (TProd (TSess SEnd (pconst 1)) (TSess SEnd (pconst 0))) TUnit))
+        with (ty_inst [pconst 1; pconst 0] fb_body).
+      apply (typed_force0 W _ _ _ _ _ _ 2 fbx_C None fb_body [pconst 1; pconst 0]); [done|done| | |apply ubs_none|tstep].
+      * apply bcs_hold_intro. intros g [-> |[-> |[-> |[-> | ->]]]] _; cbn;
+          [exact Hγε|exact Hγε'|exact Hγd|exact Hdε|exact Hdε'].
+      * constructor; [|constructor; [|constructor]].
+        -- right. eexists _, [pconst 1], (pconst 1). split_and!; [by left|by left|done].
+        -- right. eexists _, [pconst 0], (pconst 0). split_and!; [by right; left|by left|done].
+    + tstep. right. eexists _, [pconst 1], (pconst 1). split_and!; [by left|by left|done].
   - cbn. tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
