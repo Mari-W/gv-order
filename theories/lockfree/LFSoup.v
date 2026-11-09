@@ -2751,3 +2751,49 @@ Section fuel.
   Qed.
 
 End fuel.
+
+(** ** Preservation of the soup with its fuel *)
+
+Theorem lfsoup_conf_step n W T π P F q A U L q' :
+  strict W → LFconf (S (S n)) W ∅ T π q A U → lf_fuelc (S (S n)) W π P F q → istep q L q' →
+  (∃ A' U', LFconf n W ∅ T (pupd π q L q') q' A' U') ∧
+  lf_fuelc n W (pupd π q L q') (fstep W P F q L q').1 (fstep W P F q L q').2 q'.
+Proof.
+  intros HW Hc HF Hst. split; [by apply (lfconf_step n W T π q A U L q')|]. destruct q as [C M].
+  inversion Hst as [C0 M0 i e e' Hi Hs|C0 M0 i e c x e' Hi Hs HC Hcs|C0 M0 i j e v e' Hi Hs Hj
+    |C0 M0 i j c b v e e' f f' Hij Hi Hj He Hf|C0 M0 i j c b e e' f f' Hij Hi Hj He Hf HC
+    |C0 M0 i j c β b e e' f f' Hij Hi Hj He Hf|C0 M0 i e c bc d bd e' Hi Hs HC]; subst.
+  - by apply (fuel_beta n W HW T π C M A U Hc P F HF i e e').
+  - by apply (fuel_new n W HW T π C M A U Hc P F HF i e c x e').
+  - by apply (fuel_spawn n W HW T π C M A U Hc P F HF i j e v e').
+  - by apply (fuel_msg n W HW T π C M A U Hc P F HF i j c b v e e' f f').
+  - by apply (fuel_close n W HW T π C M A U Hc P F HF i j c b e e' f f').
+  - by apply (fuel_choice n W HW T π C M A U Hc P F HF i j c β b e e' f f').
+  - by apply (fuel_link n W HW T π C M A U Hc P F HF i e c bc d bd e').
+Qed.
+
+(** Points and counters along a run. *)
+Fixpoint frun (W : world) (P : nat → gmap cend point) (F : nat → gmap cend fuel) (r : nat → config)
+    (l : nat → gset nat) (k : nat) : (nat → gmap cend point) * (nat → gmap cend fuel) :=
+  match k with
+  | 0 => (P, F)
+  | S k' => fstep W (frun W P F r l k').1 (frun W P F r l k').2 (r k') (l k') (r (S k'))
+  end.
+
+Lemma fstep_stuck W P F q : fstep W P F q ∅ q = (P, F).
+Proof. unfold fstep. by rewrite elements_empty. Qed.
+
+Theorem lfsoup_run W T π P F r l :
+  strict W → maximal r l →
+  (∀ n, ∃ A U, LFconf n W ∅ T π (r 0) A U) → (∀ n, lf_fuelc n W π P F (r 0)) →
+  ∀ k n, (∃ A U, LFconf n W ∅ T (prun π r l k) (r k) A U) ∧
+    lf_fuelc n W (prun π r l k) (frun W P F r l k).1 (frun W P F r l k).2 (r k).
+Proof.
+  intros HW Hmax H0 F0 k. induction k as [|k IH]; [intros n; split; [done|apply F0]|]. intros n. simpl.
+  destruct (IH (S (S n))) as [(A & U & Hc) HF].
+  destruct (Hmax k) as [Hst|(_ & Heq & Hl)].
+  - by apply (lfsoup_conf_step n W T _ _ _ (r k) A U (l k)).
+  - rewrite Heq, Hl, pupd_stuck, fstep_stuck. split.
+    + exists A, U. eapply LFconf_down; [|exact Hc]. lia.
+    + eapply lf_fuelc_down; [|exact HF]. lia.
+Qed.
