@@ -632,3 +632,292 @@ Proof.
         as (s' & es' & Hes' & Hy'). exists s', es', y. by split_and!.
   - intros t e He. pose proof (Hcl t e He). set_solver.
 Qed.
+
+(** ** Updates of the environments *)
+
+Definition eupd {X : Type} (A : nat → X) (t : nat) (x : X) : nat → X :=
+  λ u, if decide (u = t) then x else A u.
+
+Lemma eupd_eq {X : Type} (A : nat → X) t x : eupd A t x t = x.
+Proof. unfold eupd. by rewrite decide_True. Qed.
+
+Lemma eupd_ne {X : Type} (A : nat → X) t x u : u ≠ t → eupd A t x u = A u.
+Proof. intros H. unfold eupd. by rewrite decide_False. Qed.
+
+Lemma fchans_eq_fends e e' : fends e' = fends e → fchans e' = fchans e.
+Proof. intros H. by rewrite !fchans_fends, H. Qed.
+
+Lemma pev_of_single q q' i : pev_of q {[i]} q' = match q.2 !! i with Some e => pev1 q q' e | None => PNone end.
+Proof. unfold pev_of. by rewrite elements_singleton. Qed.
+
+Lemma pev_of_pair q q' i j ei ej :
+  i ≠ j → q.2 !! i = Some ei → q.2 !! j = Some ej →
+  pev_of q {[i; j]} q' = pev2 ei ej ∨ pev_of q {[i; j]} q' = pev2 ej ei.
+Proof.
+  intros Hij Hi Hj. unfold pev_of.
+  assert (elements ({[i; j]} : gset nat) = [i; j] ∨ elements ({[i; j]} : gset nat) = [j; i]) as [H|H].
+  { apply Permutation_length_2_inv. symmetry.
+    rewrite elements_union_singleton by set_solver. by rewrite elements_singleton. }
+  - rewrite H, Hi, Hj. by left.
+  - rewrite H, Hi, Hj. by right.
+Qed.
+
+(** ** Entries and ends around the participants of a step *)
+
+Definition others (M : gmap nat expr) (A : nat → tenv) (I : gset nat) (o : cend)
+    (x : sty * point) : Prop :=
+  ∃ t f, (t ∉ I) ∧ M !! t = Some f ∧ tenv_end (A t) o = Some x.
+
+Lemma ent_split C M A (I : gset nat) o x :
+  (∀ i, i ∈ I → is_Some (M !! i)) →
+  ent (C, M) A o x ↔ (∃ i, i ∈ I ∧ tenv_end (A i) o = Some x) ∨ others M A I o x.
+Proof.
+  intros HI. split.
+  - intros (t & f & Hf & Hx). destruct (decide (t ∈ I)) as [Ht|Ht]; [left; by exists t|].
+    right. by exists t, f.
+  - intros [(i & Hi & Hx)|(t & f & _ & Hf & Hx)].
+    + destruct (HI i Hi) as [f Hf]. by exists i, f.
+    + by exists t, f.
+Qed.
+
+Lemma others_ext M M' A A' (I : gset nat) o x :
+  (∀ t, t ∉ I → M' !! t = M !! t) → (∀ t, t ∉ I → A' t = A t) →
+  others M' A' I o x ↔ others M A I o x.
+Proof.
+  intros HM HA. split; intros (t & f & Ht & Hf & Hx); exists t, f; split_and!; try done.
+  - by rewrite <-HM. - by rewrite <-HA. - by rewrite HM. - by rewrite HA.
+Qed.
+
+Lemma disj_frame (M M' : gmap nat expr) (I : gset nat) :
+  (∀ t s e es, t ≠ s → M !! t = Some e → M !! s = Some es → fends e ## fends es) →
+  (∀ t, t ∉ I → M' !! t = M !! t) →
+  (∀ p e' t e, p ∈ I → t ∉ I → M' !! p = Some e' → M !! t = Some e → fends e' ## fends e) →
+  (∀ p p' e e', p ∈ I → p' ∈ I → p ≠ p' → M' !! p = Some e → M' !! p' = Some e' →
+     fends e ## fends e') →
+  ∀ t s e es, t ≠ s → M' !! t = Some e → M' !! s = Some es → fends e ## fends es.
+Proof.
+  intros Hd HM Hpt Hpp t s e es Hts He Hes.
+  destruct (decide (t ∈ I)) as [Ht|Ht], (decide (s ∈ I)) as [Hs|Hs].
+  - by apply (Hpp t s).
+  - rewrite HM in Hes by done. by apply (Hpt t e s es).
+  - rewrite HM in He by done. symmetry. by apply (Hpt s es t e).
+  - rewrite HM in He, Hes by done. by apply (Hd t s).
+Qed.
+
+(** ** One step of a soup *)
+
+Section step.
+  #[local] Set Default Proof Using "All".
+  Context (n : nat) (W : world) (HW : strict W) (T : ty) (π : gmap cend point).
+  Context (C : gset chan) (M : gmap nat expr) (A : nat → tenv) (U : nat → ty).
+  Context (Hc : LFconf (S (S n)) W ∅ T π (C, M) A U).
+
+  Lemma st_rel t e : M !! t = Some e → LErel (S (S n)) W (A t) (U t) ∅ e.
+  Proof. apply (lf_rel _ _ _ _ _ _ _ _ Hc). Qed.
+
+  Lemma st_step t e : M !! t = Some e → LEstep (LErel (S (S n))) (S n) W (A t) (U t) ∅ e.
+  Proof. intros He. apply LErel_S_iff. by apply st_rel. Qed.
+
+  Lemma st_down t e : M !! t = Some e → LErel n W (A t) (U t) ∅ e.
+  Proof. intros He. eapply LErel_down; [|by apply st_rel]. lia. Qed.
+
+  Lemma st_fit t e : M !! t = Some e → tenv_fit (A t) e.
+  Proof. apply (lf_fit _ _ _ _ _ _ _ _ Hc). Qed.
+
+  Lemma st_ends t e : M !! t = Some e → fends e = tenv_ends (A t).
+  Proof. apply (lfc_ends _ _ _ _ _ _ _ Hc). Qed.
+
+  Lemma st_bipol t e : M !! t = Some e → tenv_bipol (A t).
+  Proof. apply (lfc_bipol _ _ _ _ _ _ _ Hc). Qed.
+
+  Lemma st_closed t e : M !! t = Some e → fchans e ⊆ C.
+  Proof.
+    intros He. pose proof (lf_closed _ _ _ _ _ _ _ _ Hc t e He) as H. simpl in H. set_solver.
+  Qed.
+
+  Lemma st_disj t s e es : t ≠ s → M !! t = Some e → M !! s = Some es → fends e ## fends es.
+  Proof. apply (lf_disj _ _ _ _ _ _ _ _ Hc). Qed.
+
+  Lemma st_ty t e : M !! t = Some e → U t = T ∨ U t = TUnit.
+  Proof. apply (lf_ty _ _ _ _ _ _ _ _ Hc). Qed.
+
+  (** The clauses at W itself. *)
+  Lemma st_beta t e e' : M !! t = Some e → tstep e LBeta e' → LErel (S (S n)) W (A t) (U t) ∅ e'.
+  Proof.
+    intros He Hst. destruct (proj2 (st_step t e He) W (wext_r_refl W)) as (_ & _ & Hb & _). auto.
+  Qed.
+
+  Lemma st_new t e c x e' :
+    M !! t = Some e → tstep e (LNew c x) e' → c ∉ dom (A t) →
+    ∃ s s', sdual s s' ∧ LErel (S (S n)) W (<[c := Both (s, x) (s', pt_dual x)]> (A t)) (U t) ∅ e'.
+  Proof.
+    intros He Hst Hc'. destruct (proj2 (st_step t e He) W (wext_r_refl W)) as (_ & _ & _ & Hn & _).
+    by destruct (Hn c x e' Hst Hc') as (_ & ?).
+  Qed.
+
+  Lemma st_spawn t e w e' :
+    M !! t = Some e → tstep e (LSpawn w) e' →
+    ∃ Θ1 Θ2, tenv_comp (@eq point) (A t) Θ1 Θ2 ∧
+      LErel (S (S n)) W Θ1 TUnit ∅ (App w EUnit) ∧ LErel (S (S n)) W Θ2 (U t) ∅ e'.
+  Proof.
+    intros He Hst. destruct (proj2 (st_step t e He) W (wext_r_refl W)) as (_ & _ & _ & _ & Hsp & _).
+    destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & Hcomp & Hv & HE).
+    exists Θ1, Θ2. split_and!; [done| |done].
+    apply Vspawn_LVrel in Hv.
+    apply (LErel_app _ W Θ1 Θ1 ∅ ub lb TUnit TUnit ∅ w EUnit HW); [apply tenv_comp_empty_r|done| |].
+    - by apply LVrel_unit_iff.
+    - destruct ub; simpl; set_solver.
+  Qed.
+
+  Lemma st_sess t e σ e' :
+    M !! t = Some e → tstep e (LSess σ) e' → LEobl LVrel LErel (S (S n)) W (A t) (U t) ∅ σ e'.
+  Proof. intros He Hst. apply (LErel_S_step _ _ _ _ _ _ _ _ (st_rel t e He) Hst). Qed.
+
+  Lemma st_link t e cd e' :
+    M !! t = Some e → tstep e (LSess (SLink cd)) e' →
+    LElink (λ W Θ F e, LErel (S (S n)) W Θ (U t) F e) W (A t) ∅ cd e'.
+  Proof. intros He Hst. apply (LErel_S_link _ _ _ _ _ _ _ _ (st_rel t e He) Hst). Qed.
+
+  (** ** β *)
+  Lemma step_beta i e e' :
+    M !! i = Some e → tstep e LBeta e' →
+    LFconf n W ∅ T (pupd π (C, M) {[i]} (C, <[i := e']> M)) (C, <[i := e']> M) A U.
+  Proof.
+    intros He Hst.
+    assert (pupd π (C, M) {[i]} (C, <[i := e']> M) = π) as ->.
+    { unfold pupd. rewrite pev_of_single. simpl. rewrite He. unfold pev1.
+      destruct (act_step _ _ _ Hst) as (a & Ha & Ho). rewrite Ha. by apply offers_beta in Ho as ->. }
+    pose proof (st_beta i e e' He Hst) as HE'.
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE') as Hfit'.
+    assert (fends e' = fends e) as Hends by (by rewrite (st_ends i e He), (proj1 Hfit')).
+    assert (∀ t f, <[i := e']> M !! t = Some f → ∃ f0, M !! t = Some f0 ∧ fends f = fends f0 ∧
+              (t = i → f = e') ∧ (t ≠ i → f = f0)) as Hlk.
+    { intros t f Hf. destruct (decide (t = i)) as [->|Hti].
+      - rewrite lookup_insert_eq in Hf. injection Hf as <-. exists e. done.
+      - rewrite lookup_insert_ne in Hf by done. exists f. done. }
+    apply (LFconf_frame (S (S n)) n W T π π (C, M) (C, <[i := e']> M) A A U U ∅ Hc); simpl.
+    - intros t f Hf. destruct (decide (t = i)) as [->|Hti].
+      + rewrite lookup_insert_eq in Hf. injection Hf as <-. eapply LErel_down; [|exact HE']. lia.
+      + rewrite lookup_insert_ne in Hf by done. by apply st_down.
+    - intros t f Hf. destruct (decide (t = i)) as [->|Hti].
+      + rewrite lookup_insert_eq in Hf. by injection Hf as <-.
+      + rewrite lookup_insert_ne in Hf by done. by apply st_fit.
+    - intros t f Hf. destruct (Hlk t f Hf) as (f0 & Hf0 & _). by apply (st_ty t f0).
+    - intros t s f fs Hts Hf Hfs. destruct (Hlk t f Hf) as (f0 & Hf0 & -> & _).
+      destruct (Hlk s fs Hfs) as (fs0 & Hfs0 & -> & _). by apply (st_disj t s f0 fs0).
+    - intros t f Hf. destruct (Hlk t f Hf) as (f0 & Hf0 & Hfe & _).
+      rewrite (fchans_eq_fends f0 f Hfe). by apply (st_closed t).
+    - set_solver.
+    - intros o x _. split.
+      + intros (t & f & Hf & Hx). destruct (Hlk t f Hf) as (f0 & Hf0 & _). by exists t, f0.
+      + intros (t & f0 & Hf0 & Hx). exists t. destruct (decide (t = i)) as [->|Hti].
+        * exists e'. simpl. by rewrite lookup_insert_eq.
+        * exists f0. simpl. by rewrite lookup_insert_ne.
+    - done.
+    - set_solver.
+  Qed.
+
+  Lemma st_nomention t e c : M !! t = Some e → c ∉ fchans e → ∀ b, tenv_end (A t) (c, b) = None.
+  Proof.
+    intros He Hc' b. apply tenv_end_none. simpl. by rewrite (lfc_dom _ _ _ _ _ _ _ Hc t e He).
+  Qed.
+
+  Lemma st_fresh_mention c t e : c ∉ echans (soup M) → M !! t = Some e → c ∉ fchans e.
+  Proof.
+    intros Hc' He Hce. apply Hc'. apply elem_of_echans. exists e. split; [|done].
+    apply elem_of_soup. by exists t.
+  Qed.
+
+  (** ** new *)
+  Lemma step_new i e c x e' :
+    M !! i = Some e → tstep e (LNew c x) e' → c ∉ C → c ∉ echans (soup M) →
+    ∃ A', LFconf n W ∅ T (pupd π (C, M) {[i]} (C ∪ {[c]}, <[i := e']> M))
+      (C ∪ {[c]}, <[i := e']> M) A' U.
+  Proof.
+    intros He Hst HcC Hcs.
+    assert (∀ t f, M !! t = Some f → c ∉ fchans f) as Hnm by (intros t f Hf; by eapply st_fresh_mention).
+    assert (c ∉ dom (A i)) as Hci by (rewrite (lfc_dom _ _ _ _ _ _ _ Hc i e He); by apply (Hnm i)).
+    destruct (st_new i e c x e' He Hst Hci) as (s & s' & Hss & HE').
+    set (Θn := <[c := Both (s, x) (s', pt_dual x)]> (A i)).
+    assert (pupd π (C, M) {[i]} (C ∪ {[c]}, <[i := e']> M) =
+            <[(c, pt_pol x) := x]> (<[(c, negb (pt_pol x)) := pt_dual x]> π)) as ->.
+    { unfold pupd. rewrite pev_of_single. simpl. rewrite He. unfold pev1.
+      destruct (act_step _ _ _ Hst) as (a & Ha & Ho). rewrite Ha. apply offers_new in Ho as ->.
+      simpl. assert ((C ∪ {[c]}) ∖ C = {[c]}) as -> by set_solver. by rewrite elements_singleton. }
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE') as Hfit'.
+    assert (fends e' = fends e ∪ cends c) as Hends.
+    { rewrite (st_ends i e He), <-(proj1 Hfit'). unfold Θn.
+      rewrite tenv_ends_new. unfold cends. destruct (pt_pol x); set_solver. }
+    exists (eupd A i Θn).
+    apply (LFconf_frame (S (S n)) n W T π _ (C, M) (C ∪ {[c]}, <[i := e']> M) A _ U U (cends c) Hc);
+      simpl.
+    - intros t f Hf. destruct (decide (t = i)) as [->|Hti].
+      + rewrite lookup_insert_eq in Hf. injection Hf as <-. rewrite eupd_eq.
+        eapply LErel_down; [|exact HE']. lia.
+      + rewrite lookup_insert_ne in Hf by done. rewrite eupd_ne by done. by apply (st_down).
+    - intros t f Hf. destruct (decide (t = i)) as [->|Hti].
+      + rewrite lookup_insert_eq in Hf. injection Hf as <-. by rewrite eupd_eq.
+      + rewrite lookup_insert_ne in Hf by done. rewrite eupd_ne by done. by apply (st_fit).
+    - intros t f Hf. destruct (decide (t = i)) as [->|Hti].
+      + by apply (st_ty i e).
+      + rewrite lookup_insert_ne in Hf by done. by apply (st_ty t f).
+    - apply (disj_frame M _ {[i]} (st_disj)).
+      + intros t Ht. rewrite lookup_insert_ne; set_solver.
+      + intros p f t g Hp Ht Hf Hg. apply elem_of_singleton in Hp as ->.
+        rewrite lookup_insert_eq in Hf. injection Hf as <-. rewrite Hends.
+        assert (t ≠ i) by set_solver.
+        pose proof (st_disj i t e g ltac:(done) He Hg).
+        intros o Ho1 Ho2. apply elem_of_union in Ho1 as [Ho1|Ho1]; [set_solver|].
+        apply elem_of_cends in Ho1. apply (Hnm t g Hg). rewrite <-Ho1. by apply fchans_of_fends.
+      + intros p p' f f' Hp Hp' Hpp. set_solver.
+    - intros t f Hf. destruct (decide (t = i)) as [->|Hti].
+      + rewrite lookup_insert_eq in Hf. injection Hf as <-.
+        rewrite fchans_fends, Hends, set_map_union_L, <-fchans_fends.
+        pose proof (st_closed i e He).
+        intros d Hd. apply elem_of_union in Hd as [Hd|Hd]; [set_solver|].
+        apply elem_of_map in Hd as (o & -> & Ho%elem_of_cends). set_solver.
+      + rewrite lookup_insert_ne in Hf by done. pose proof (st_closed t f Hf).
+        set_solver.
+    - intros o. apply cends_cdual.
+    - intros o x0 Ho.
+      assert (HI : ∀ i', i' ∈ ({[i]} : gset nat) → is_Some (M !! i'))
+        by (intros i' ->%elem_of_singleton; by eexists).
+      assert (HI' : ∀ i', i' ∈ ({[i]} : gset nat) → is_Some (<[i:=e']> M !! i'))
+        by (intros i' ->%elem_of_singleton; rewrite lookup_insert_eq; by eexists).
+      rewrite (ent_split _ (<[i:=e']> M) (eupd A i Θn) {[i]} o x0 HI'), (ent_split C M A {[i]} o x0 HI).
+      rewrite (others_ext (<[i:=e']> M) M (eupd A i Θn) A);
+        [|intros t Ht; rewrite lookup_insert_ne; set_solver|intros t Ht; rewrite eupd_ne; set_solver].
+      assert (tenv_end Θn o = tenv_end (A i) o) as Hθ.
+      { unfold Θn. rewrite tenv_end_new. rewrite !decide_False; [done| |];
+          intros ->; apply Ho, elem_of_cends; done. }
+      split; intros [(i' & Hi' & Hx)|Ho']; [|by right| |by right];
+        apply elem_of_singleton in Hi' as ->; left; exists i; (split; [by apply elem_of_singleton|]).
+      + by rewrite eupd_eq, Hθ in Hx.
+      + by rewrite eupd_eq, Hθ.
+    - intros o Ho. assert (o ≠ (c, pt_pol x)) by (intros ->; apply Ho, elem_of_cends; done).
+      assert (o ≠ (c, negb (pt_pol x))) by (intros ->; apply Ho, elem_of_cends; done).
+      by rewrite !lookup_insert_ne by done.
+    - intros o x0 Ho%elem_of_cends (t & f & Hf & Hx).
+      assert (t = i) as ->.
+      { destruct (decide (t = i)) as [->|Hti]; [done|]. simpl in Hf.
+        rewrite lookup_insert_ne in Hf by done. rewrite eupd_ne in Hx by done.
+        destruct o as [c' b]. simpl in Ho. subst c'.
+        by rewrite (st_nomention t f c Hf (Hnm t f Hf)) in Hx. }
+      rewrite eupd_eq in Hx. unfold Θn in Hx. rewrite tenv_end_new in Hx.
+      assert (Hent_i : ∀ o' y, tenv_end Θn o' = Some y → ent (C ∪ {[c]}, <[i:=e']> M) (eupd A i Θn) o' y).
+      { intros o' y Hy. exists i, e'. simpl. rewrite lookup_insert_eq, eupd_eq. done. }
+      destruct (decide (o = (c, pt_pol x))) as [->|H1].
+      + injection Hx as <-. simpl. split; [by rewrite lookup_insert_eq|].
+        exists (s', pt_dual x). split_and!; [|done|done]. apply Hent_i. unfold Θn.
+        rewrite tenv_end_new. unfold cdual. simpl.
+        rewrite decide_False by (intros [=]; by destruct (pt_pol x)). by rewrite decide_True.
+      + destruct (decide (o = (c, negb (pt_pol x)))) as [->|H2].
+        2:{ exfalso. destruct o as [c' b]. simpl in Ho. subst c'.
+            destruct b, (pt_pol x); simpl in *; congruence. }
+        injection Hx as <-. simpl. split.
+        { rewrite lookup_insert_ne by (intros [=]; by destruct (pt_pol x)). by rewrite lookup_insert_eq. }
+        exists (s, x). split_and!; [|by rewrite pt_dual_dual|by apply sdual_sym].
+        apply Hent_i. unfold Θn. rewrite tenv_end_new. unfold cdual. simpl.
+        rewrite negb_involutive. by rewrite decide_True.
+  Qed.
+End step.
