@@ -2874,3 +2874,14 @@ Proof.
   - rewrite dom_mres. clear -H2. set_solver.
   - intros o Ho. by rewrite lookup_mres, decide_True.
 Qed.
+
+Lemma kren_lookup_safe {Y : Type} (g : chan → chan) (m : gmap cend Y) o v :
+  (∀ o2 v2, m !! o2 = Some v2 → (g o2.1, o2.2) = (g o.1, o.2) → o2 = o) →
+  m !! o = Some v → kren g m !! (g o.1, o.2) = Some v.
+Proof.
+  intros Hi Ho. unfold kren. apply elem_of_list_to_map_1'.
+  - intros y ([o2 v2] & Heq & Hov)%list_elem_of_fmap. apply elem_of_map_to_list in Hov.
+    simpl in Heq. assert (o2 = o) as -> by (apply (Hi o2 v2 Hov); by inversion Heq).
+    rewrite Ho in Hov. injection Hov as ->. by inversion Heq.
+  - apply list_elem_of_fmap. exists (o, v). split; [done|]. by apply elem_of_map_to_list.
+Qed.
