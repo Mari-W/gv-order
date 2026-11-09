@@ -359,7 +359,10 @@ Definition alt_Cd_facts (g : fact) : Prop := ∃ n,
   g = FLt (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+1))) ∨
   g = FLt (pt_dual (pv 0 (2*n+1))) (pt_dual (pv 1 (2*n+1))) ∨
   g = FLt (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+2))).
-Definition alt_Cd : bcs := BCs [pvar 0] alt_Cd_facts.
+(** Syntactic points (sharp edges 173): c and d are the constants 0
+    and 1 of the hypotheses, and d is created under the pattern
+    relative to the constant of c. *)
+Definition alt_Cd : bcs := BCs [pconst 0] alt_Cd_facts.
 
 Lemma alt_hyp_fresh_lt W Ψ C x u v a b :
   (C, [x]) ∈ Ψ → bc_facts C (FLt u v) → fact_scoped (S (length (bc_env C))) (FLt u v) →
@@ -370,20 +373,18 @@ Ltac alt_ptnorm := unfold pt_inst, pup, plist, pt_shift, pt_dual, pt_polar; cbn;
   first [reflexivity|f_equal; lia|f_equal; f_equal; lia].
 
 Definition alt_main : expr :=
-  LetP (Pair alt_K alt_R) (let_new_pair (let_new_pair
+  LetP (Pair alt_K alt_R) (let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 5)) (Var 3)))))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 5)) (Var 1)))))
       (App (App EForce (Var 5)) (Pair (Inj1 EUnit) (Pair (Var 3) (Var 1)))))))).
 
-Definition alt_Ψ : hyps :=
-  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) (fresh_bcs [] []), ids 1)]) ++
-    [(bcs_inst (pshift 1) alt_Cd, ids 1)].
+Definition alt_Ψ : hyps := ([] ++ [(fresh_bcs [] [], [pconst 0])]) ++ [(alt_Cd, [pconst 1])].
 
 Lemma alt_created : created (Wpo []) alt_Ψ.
 Proof.
   pose proof (proj1 Wpo_nil_strict') as HW.
-  refine (created_fresh (Wpo []) _ alt_Cd _ _ _ _).
-  { apply created_lh; [constructor|constructor|set_solver]. }
+  refine (created_fresh (Wpo []) _ alt_Cd 1 _ _ _ _ _); [| | | |fresh_const].
+  { apply created_lh; [constructor|constructor|set_solver|fresh_const]. }
   { intros f (n & [-> |[-> |[-> |[-> |[-> | ->]]]]]) Hs.
     - left. eexists _, _. split; [done|]. split_and!; [exists n; by left|done|done|done].
     - left. eexists _, _. split; [done|]. split_and!; [exists n; right; by left|done|done|done].
@@ -403,75 +404,73 @@ Qed.
 Lemma alt_typed : styped ∅ alt_Ψ [] (∅, None) alt_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold alt_main, alt_Ψ.
+  set (W := Wpo []) in *. unfold alt_main, let_new_pair_at, alt_Ψ.
   tstep.
   { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply alt_R_typed, HW|apply alt_K_typed, HW]. }
   cbn.
-  new_top HWs Sb (pvar 1). new_top HWs Sb (pvar 0).
-  fresh_clean.
-  set (Ψ := [(bcs_inst (pshift 1) (bcs_inst (pshift 1) (fresh_bcs [] [])), [pvar 1]);
-             (bcs_inst (pshift 1) alt_Cd, [pvar 0])]).
+  new_top HWs Sb (pc 0 0). new_top HWs Sb (pc 1 0). cbn.
+  match goal with |- typed _ _ ?Ψ0 _ _ _ _ _ => set (Ψ := Ψ0) end.
   match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E] _ _ _ =>
-    change A with (TSess Sa (pt_dual (pvar 0))); change B with (TSess Sb (pvar 0));
-    change A' with (TSess Sa (pt_dual (pvar 1))); change B' with (TSess Sb (pvar 1));
+    change A with (TSess Sa (pt_dual (pc 1 0))); change B with (TSess Sb (pc 1 0));
+    change A' with (TSess Sa (pt_dual (pc 0 0))); change B' with (TSess Sb (pc 0 0));
     change D with alt_R_ty; change E with alt_K_ty end.
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) (BCs [pvar 1; pvar 0] altA) []) as HFA.
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) (BCs [pc 0 0; pc 1 0] altA) []) as HFA.
   { intros g (f & Hf & Hs & ->).
     destruct Hf as (n & [->|[->|[->|[->|[->| ->]]]]]); cbn [fact_map fact_holds]; rewrite !alt_plist_nil.
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 1 (2*n)) (pt_dual (pv 0 (2*n))));
+    - eapply (alt_hyp_fresh_lt W Ψ alt_Cd (pconst 1) (pv 1 (2*n)) (pt_dual (pv 0 (2*n))));
         [by right; left|exists n; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0)
+    - eapply (alt_hyp_fresh_lt W Ψ alt_Cd (pconst 1)
                 (pt_dual (pv 1 (2*n))) (pt_dual (pv 0 (2*n))));
         [by right; left|exists n; right; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 0 (2*n)) (pt_dual (pv 1 (2*n+1))));
+    - eapply (alt_hyp_fresh_lt W Ψ alt_Cd (pconst 1) (pv 0 (2*n)) (pt_dual (pv 1 (2*n+1))));
         [by right; left|exists n; do 2 right; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+1))));
+    - eapply (alt_hyp_fresh_lt W Ψ alt_Cd (pconst 1) (pv 0 (2*n+1)) (pt_dual (pv 1 (2*n+1))));
         [by right; left|exists n; do 3 right; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0)
+    - eapply (alt_hyp_fresh_lt W Ψ alt_Cd (pconst 1)
                 (pt_dual (pv 0 (2*n+1))) (pt_dual (pv 1 (2*n+1))));
         [by right; left|exists n; do 4 right; by left|cbn; lia|alt_ptnorm|alt_ptnorm].
-    - eapply (alt_hyp_fresh_lt W Ψ (bcs_inst (pshift 1) alt_Cd) (pvar 0) (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+2))));
+    - eapply (alt_hyp_fresh_lt W Ψ alt_Cd (pconst 1) (pv 1 (2*n+1)) (pt_dual (pv 0 (2*n+2))));
         [by right; left|exists n; by do 5 right|cbn; lia|alt_ptnorm|alt_ptnorm]. }
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 1))) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 0))) (Some (pc 0 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [pt_dual (pvar 1)]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [pt_dual (pc 0 0)]);
         [done|done| | |apply ubs_none|tstep].
       + apply bcs_hold_intro. intros g [].
       + constructor; [eapply skn_inst; [by left|by left|done]|constructor].
     - cbn. tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pt_dual (pvar 1)). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pc 0 0)). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 1 0))) (Some (pc 1 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [pt_dual (pvar 0)]);
+    - apply (typed_force0 W _ _ _ _ _ _ 1 alt_RC None alt_R_body [pt_dual (pc 1 0)]);
         [done|done| | |apply ubs_none|tstep].
       + apply bcs_hold_intro. intros g [].
       + constructor; [eapply skn_inst; [by right; left|by left|done]|constructor].
     - cbn. tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pt_dual (pvar 0)). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pc 1 0)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 2 alt_KC None alt_K_body [pvar 1; pvar 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 alt_KC None alt_K_body [pc 0 0; pc 1 0]);
       [done|done| | |apply ubs_none|tstep].
     + apply bcs_hold_intro. intros g [].
     + constructor; [eapply skn_inst; [by left|by left|done]|].
       constructor; [eapply skn_inst; [by right; left|by left|done]|constructor].
   - match goal with |- typed _ _ _ _ _ _ _ ?T => change T with
-      (TProd (TSum (TEx LNone 0 (BCs [pvar 1; pvar 0] altA) TUnit)
-                   (TEx LNone 0 (BCs [pvar 1; pvar 0] altB) TUnit))
-             (TProd (TSess Sb (pvar 1)) (TSess Sb (pvar 0)))) end.
+      (TProd (TSum (TEx LNone 0 (BCs [pc 0 0; pc 1 0] altA) TUnit)
+                   (TEx LNone 0 (BCs [pc 0 0; pc 1 0] altB) TUnit))
+             (TProd (TSess Sb (pc 0 0)) (TSess Sb (pc 1 0)))) end.
     cbn [opt_heads fmap option_fmap option_map sf_union].
     tstep.
     + tstep; [tstep|tstep].
-    + apply t_inj1. apply (t_pack W _ _ _ _ _ _ LNone 0 (BCs [pvar 1; pvar 0] altA) TUnit []).
+    + apply t_inj1. apply (t_pack W _ _ _ _ _ _ LNone 0 (BCs [pc 0 0; pc 1 0] altA) TUnit []).
       * done.
       * constructor.
       * exact HFA.
