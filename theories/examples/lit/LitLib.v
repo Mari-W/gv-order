@@ -211,7 +211,7 @@ Ltac pb := eapply rtc_l; [apply PStepBeta; tsh|]; norml.
     thread exists. *)
 Ltac pnew s :=
   eapply rtc_l;
-  [apply (PStepNew _ _ _ s%string); [tsh|set_solver|unfold echans; rewrite gmultiset_elements_empty; set_solver|cbn; set_solver]|];
+  [eapply (PStepNew _ _ _ s%string); [tsh|set_solver|unfold echans; rewrite gmultiset_elements_empty; set_solver|cbn; set_solver]|];
   norml.
 
 (** A spawn of the last thread. *)

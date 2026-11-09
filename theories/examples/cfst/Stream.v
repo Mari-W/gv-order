@@ -49,7 +49,7 @@ Definition newclient : expr :=
     (App (App EForce (Var 5)) (Pair (App ESend (Pair EUnit (Var 3))) (Var 0))))))).
 
 Definition st_main : expr :=
-  LetP (Pair client newclient) (let_new_pair (let_new_pair
+  LetP (Pair client newclient) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 1))))))
       (App (App EForce (Var 4)) (Pair (Var 1) (Var 2)))))).
 
@@ -155,52 +155,52 @@ Qed.
 Lemma st_typed : styped ∅ ls_Ψ [] (∅, None) st_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main, ls_Ψ.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main, let_new_pair_at, ls_Ψ.
   tstep.
   { tstep; apply typed_hyps_wk; [exact HWs|apply newclient_typed, HW|exact HWs|apply client_typed, HW]. }
-  cbn. new_top HWs Sb (pvar 1). new_top HWs Sb (pvar 0).
+  cbn. new_top HWs Sb (pconst 1). new_top HWs Sb (pconst 0).
   fresh_clean.
-  set (Ψ := [(top_C0, [pvar 2]); (BCs [pvar 2] lsa_P, [pvar 1]); (BCs [pvar 1; pvar 2] lsb_P, [pvar 0])]).
-  assert (∀ k c c', slt W Ψ (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k)) ∧
-                 slt W Ψ (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k))) ∧
-                 slt W Ψ (pt_polar c (pv 1 k)) (pv 2 0) ∧ slt W Ψ (pt_polar c (pv 0 k)) (pv 2 0)) as Hf.
+  set (Ψ := [(top_C0, [pconst 2]); (BCs [pconst 2] lsa_P, [pconst 1]); (BCs [pconst 1; pconst 2] lsb_P, [pconst 0])]).
+  assert (∀ k c c', slt W Ψ (pt_polar c (pc 1 k)) (pt_polar c' (pc 0 k)) ∧
+                 slt W Ψ (pt_polar c (pc 0 k)) (pt_polar c' (pc 1 (S k))) ∧
+                 slt W Ψ (pt_polar c (pc 1 k)) (pc 2 0) ∧ slt W Ψ (pt_polar c (pc 0 k)) (pc 2 0)) as Hf.
   { intros k c c'. split_and!.
-    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k))));
+    - eapply (sl_hyp W Ψ [pconst 1; pconst 2] lsb_P [pconst 0] (FLt (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k))));
         [by right; right; left|exists k, c, c'; by left|destruct c, c'; fsc|by destruct c, c'].
-    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k)))));
+    - eapply (sl_hyp W Ψ [pconst 1; pconst 2] lsb_P [pconst 0] (FLt (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k)))));
         [by right; right; left|exists k, c, c'; by right; left|destruct c, c'; fsc|by destruct c, c'].
-    - eapply (sl_hyp W Ψ [pvar 2] lsa_P [pvar 1] (FLt (pt_polar c (pv 0 k)) (pv 1 0)));
+    - eapply (sl_hyp W Ψ [pconst 2] lsa_P [pconst 1] (FLt (pt_polar c (pv 0 k)) (pv 1 0)));
         [by right; left|by exists k, c|destruct c; fsc|by destruct c].
-    - eapply (sl_hyp W Ψ [pvar 1; pvar 2] lsb_P [pvar 0] (FLt (pt_polar c (pv 0 k)) (pv 2 0)));
+    - eapply (sl_hyp W Ψ [pconst 1; pconst 2] lsb_P [pconst 0] (FLt (pt_polar c (pv 0 k)) (pv 2 0)));
         [by right; right; left|exists k, c, c; by right; right|destruct c; fsc|by destruct c]. }
   (* client gets a at α and b′ at β̄, newclient gets b at β and a′ at ᾱ *)
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pv 1 0; pt_dual (pv 0 0); pv 2 0]) as HC.
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pc 1 0; pt_dual (pc 0 0); pc 2 0]) as HC.
   { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn;
       first [apply (Hf k true true)|apply (Hf k true false)|apply (Hf k false true)|apply (Hf k false false)]. }
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pt_dual (pv 1 0); pv 0 0; pv 2 0]) as HC'.
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pt_dual (pc 1 0); pc 0 0; pc 2 0]) as HC'.
   { apply bcs_hold_intro. intros g (k & [-> | [-> | [-> | ->]]]) _; cbn;
       first [apply (Hf k true true)|apply (Hf k true false)|apply (Hf k false true)|apply (Hf k false false)]. }
-  assert (Forall (skn W Ψ) [pv 1 0; pt_dual (pv 0 0); pv 2 0]) as HK.
+  assert (Forall (skn W Ψ) [pc 1 0; pt_dual (pc 0 0); pc 2 0]) as HK.
   { constructor; [eapply skn_inst; [by right; left|by left|done]|].
     constructor; [eapply skn_inst; [by right; right; left|by left|done]|].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
-  assert (Forall (skn W Ψ) [pt_dual (pv 1 0); pv 0 0; pv 2 0]) as HK'.
+  assert (Forall (skn W Ψ) [pt_dual (pc 1 0); pc 0 0; pc 2 0]) as HK'.
   { constructor; [eapply skn_inst; [by right; left|by left|done]|].
     constructor; [eapply skn_inst; [by right; right; left|by left|done]|].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 2 0)) (Some (pt_dual (pv 1 0))) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 2 0)) (Some (pt_dual (pc 1 0))) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; apply (Hf 0 false true)]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None cl_body [pv 1 0; pt_dual (pv 0 0); pv 2 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None cl_body [pc 1 0; pt_dual (pc 0 0); pc 2 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 2 0). split; [done|]. apply sle_refl, HW. }
+      exists (pc 2 0). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None ncl_body [pt_dual (pv 1 0); pv 0 0; pv 2 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 3 st_C None ncl_body [pt_dual (pc 1 0); pc 0 0; pc 2 0]);
       [done|done|exact HC'|exact HK'|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
