@@ -1369,8 +1369,9 @@ Section step.
   Lemma step_msg i j c b v e e' f f' :
     i ≠ j → M !! i = Some e → M !! j = Some f →
     tstep e (LSess (SSend (c, b) v)) e' → tstep f (LSess (SRecv (c, negb b) v)) f' →
-    ∃ A', LFconf n W ∅ T (pupd π (C, M) {[i; j]} (C, <[j := f']> (<[i := e']> M)))
-      (C, <[j := f']> (<[i := e']> M)) A' U.
+    (∃ A', LFconf n W ∅ T (pupd π (C, M) {[i; j]} (C, <[j := f']> (<[i := e']> M)))
+      (C, <[j := f']> (<[i := e']> M)) A' U) ∧
+    fends e' = fends e ∖ fends v ∧ fends f' = fends f ∪ fends v ∧ fends v ⊆ fends e ∧ (c, b) ∉ fends v.
   Proof.
     intros Hij He Hf Hse Hsf.
     pose proof (st_sess i e _ e' He Hse) as (Θr & Θ1 & Θ2 & m & Uu & s & k & Θ' & Hhd & Hcomp & HV & Hext & HE).
@@ -1446,6 +1447,22 @@ Section step.
     { intros [c' []] Ho; simpl in Ho; subst c'.
       - by rewrite lookup_alter_eq, lookup_alter_ne.
       - by rewrite lookup_alter_ne, lookup_alter_eq. }
+    assert (tenv_ends Θ2 = fends v) as HΘ2 by apply (LVrel_fit _ _ _ _ _ HV).
+    assert ((c, b) ∉ fends v) as Hcbv by (rewrite <-HΘ2; intros H; apply (Hnr b); rewrite Hu12; set_solver).
+    split.
+    2:{ rewrite He1, He2, <-HΘ2. rewrite Hu12 in Hends. split_and!.
+        - apply set_eq. intros o. split.
+          + intros Ho. apply elem_of_union in Ho as [Ho|Ho].
+            * apply elem_of_difference. split; [|intros Ho2; by apply (Hd12 o)].
+              assert (o ∈ fends e ∖ {[(c, b)]}) by (rewrite <-Hends; set_solver). set_solver.
+            * apply elem_of_singleton in Ho as ->. apply elem_of_difference. split; [done|].
+              rewrite HΘ2. done.
+          + intros [Ho1 Ho2]%elem_of_difference. destruct (decide (o = (c, b))) as [->|Hob]; [set_solver|].
+            assert (o ∈ tenv_ends Θ1 ∪ tenv_ends Θ2) as Ho by (rewrite Hends; set_solver). set_solver.
+        - rewrite Hendsj. apply set_eq. intros o.
+          destruct (decide (o = (c, negb b))) as [->|Hob]; set_solver.
+        - assert (tenv_ends Θ2 ⊆ fends e ∖ {[(c, b)]}) by (rewrite <-Hends; set_solver). set_solver.
+        - by rewrite HΘ2. }
     exists (eupd (eupd A i Θ') j Θ'').
     rewrite Hpu.
     eapply (two_frame i j e f e' f' Θ' Θ'' c); try done.
@@ -1854,7 +1871,7 @@ Proof.
   - exists A, U. by apply (step_beta n W HW T π C M A U Hc i e e').
   - destruct (step_new n W HW T π C M A U Hc i e c x e' Hi Hs HC Hcs) as [A' ?]. by exists A', U.
   - by apply (step_spawn n W HW T π C M A U Hc i j e v e').
-  - destruct (step_msg n W HW T π C M A U Hc i j c b v e e' f f') as [A' ?]; try done. by exists A', U.
+  - destruct (step_msg n W HW T π C M A U Hc i j c b v e e' f f') as [[A' ?] _]; try done. by exists A', U.
   - destruct (step_close n W HW T π C M A U Hc i j c b e e' f f') as [A' ?]; try done. by exists A', U.
   - destruct (step_choice n W HW T π C M A U Hc i j c β b e e' f f') as [A' ?]; try done.
     by exists A', U.
