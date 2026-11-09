@@ -15,6 +15,7 @@ Updated after every stage and every agent result.
 | 3c Coverage of the literature (plan §12) | done (cc300ce on lf-rules) | Fragment.v (lf_r2r, starve_not_lfptyped, rc_lfptyped, abp_lfsource, rg_lfsource, wgen_rank_wf), examples/ABP.v, examples/GrowRing.v | passes | 0, no axioms | none. The ring gap is closed | | | | author's acceptance criterion |
 | L1, L2 Syntactic points (plan §16.6 P1, P2, world fields of §17.8) | done (e767283..b5849ec) | lang (`Chan c b`, `EPt`, `KPay`, `KSucc`, labels on ends, `HeadNew c x`, `fends`, `let_new_at`), types (`TPt`, `konst_ty`, `tenv_ends`, `tenv_fit`), relation (`w_bud`, `w_pay`, V at `TSess` and `TPt`, `fends` in the arrow, O-New at the label's point, `tenv_hd_end`, `selects`), rules (`sem_typed_pt`, `Erel_app_pay`, `Erel_app_succ`), static (`t_pt`, `t_ch`, `created` over constants, `tenv_pol`) | lang to static pass, liveness, lockfree, examples, algorithmic broken until L3 and L4 | 0, no axioms | `wext` does not keep budgets yet (`wext_bud` apart), translations out of the build |
 | L3a Syntactic points in the live relation (plan §16.6 P3a) | done (ecd1872..0db07a9) | liveness: labels on ends, E-Fit (`tenv_fit Θ e` in `Ebody` and `LEstep`), O-New at the label's point, `tenv_fit Θ eb` in the arrow and in `Vspawn`, `tenv_hd_end`, V at `TSess` with the bit and at `TPt`, `LErel_app_pay`, `LErel_app_succ`, `lsem_typed_pt`. The twelve listed statements keep their text | liveness passes except GuardEx, GuardCex, LiveKob, LiveGuardFund, LiveGuardProc, which wait on examples (ExampleTools, Forwarder, KobForwarder); LiveGuardFund and LiveGuardProc checked against a stub of `Wpo` | 0, no axioms (stub aside) | lockfree waits on L4 |
+| L4a Lock-free soup on syntactic points (plan §16.5, §17.3) | live part done (0c99ff2..6a1bb82), fuel part and adequacy blocked | Instr, Fair (`waits` reads ends), TauThread, LocalProgress, Reach on labels on ends; LFSoup.v (`LFconf`, `LFsoup`, `LFP`, `pupd`, `lfconf_step`, `lfconf_run`, `LFsoup_down`, `lfc_local_progress`); LFRelation.v deleted | lockfree passes except Fragment (L6) and LFAdequacy (out of the build, L5) | 0, no axioms | FuelE's send clause promises no Vfuel of the payload, so the fuel conjunct is not preserved at a message; FuelE needs a renaming lemma for links; `lf_adequacy` waits on both |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -233,6 +234,39 @@ Updated after every stage and every agent result.
   the result of the box tsum needs a `TPt` in its package. ChoiceEnc.v,
   ChoiceNegative.v, DataBranch.v, DataAlternate.v, GrowDeadlock.v,
   SemFlag.v and SemRounds.v were not reached.
+
+- 2026-11-09. Stage L4a (plan §16.5, §17.3). Instr.v, Fair.v,
+  TauThread.v, LocalProgress.v and Reach.v build on labels on ends.
+  `waits` reads ends (`cdual`, `aends`). `lf_criterion`, `thread_progress`,
+  `thread_progress_val`, `lock_free_reach_of` and `lock_free` keep their
+  text. `local_progress_ready` keeps its conclusion, and its section
+  hypothesis `Hmention` now names the end of the entry, `(k.1, pt_pol
+  ek.2) ∈ fends e`, because `waits` does. `links_restricted` asks
+  `c.1 ∈ q.1`. LFRelation.v is gone. LFSoup.v holds the soup over a
+  configuration with environments per thread id (`LFconf n W Σ T π q A
+  U`), read through ends (`tenv_end`). `pupd` reads the step off the
+  redexes (`pev_of`). A link removes both ends of the restricted channel
+  from π, because the renamed peer lands on the linker's end of the other
+  channel, which sits at the peer's point already. `lfconf_step` proves
+  the preservation of the live soup from index n + 2 to n for every step,
+  a link included, where `LErel_fuse` renames the peer and fuses it with
+  the holder of the other peer when one thread holds both. `lfconf_run`
+  gives the soup at every index at every position of a run, at π_k, and
+  `lfc_local_progress` gives local progress of one soup. The soup asks
+  `prim T`, because a main thread that ends as a value holding an end
+  starves its partner while the process keeps running. The fuel conjunct
+  of `LFsoup` is not preserved at a message. The receive clause of
+  `FuelE` continues only for payloads in `Vfuel`, and the send clause
+  promises no `Vfuel` of the payload, so a closure sent in a message
+  breaks the receiver's conjunct. The fix that suggests itself is a send
+  conjunct `Vfuel n' W (mres (fends w) π) (ftick <$> mres (fends w) φ) w`,
+  the counterpart of `Vlow` in O-Send. It waits on the author. The fuel
+  conjunct also needs `FuelE` invariant under the renaming of a link, a
+  lemma of the size of LiveFuse.v. So `lf_adequacy`, `lf_adequacy_ex` and
+  `lf_thread_progress` are not proved, LFAdequacy.v is out of the build
+  (`# SYNTACTIC-POINTS: lockfree port pending`) and keeps the oracle-era
+  instantiation for the port, and `LFP_term`, `LFP_connect` and
+  `LFP_join` move to L5.
 
 ## Decisions
 
