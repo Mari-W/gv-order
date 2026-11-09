@@ -1886,3 +1886,73 @@ Proof.
   - by apply (lfconf_step n W T _ (r k) A U (l k)).
   - rewrite Heq, Hl, pupd_stuck. exists A, U. eapply LFconf_down; [|exact Hc]. lia.
 Qed.
+
+(** ** Local progress of one soup *)
+
+Definition skind (σ : slabel) : hkind :=
+  match σ with
+  | SSend _ _ => KdSnd | SRecv _ _ => KdRcv | SClos _ => KdEnd
+  | SSel _ _ => KdPlus | SBra _ _ => KdWith | SLink _ => KdStuck
+  end.
+
+(** A selected entry is the entry of the label's end, of the label's kind. *)
+Lemma selects_info Θ σ k ek o :
+  selects Θ σ k → tenv_entry Θ k = Some ek → sl_end σ = Some o →
+  k.1 = o.1 ∧ pt_pol ek.2 = o.2 ∧ kind (hd ek.1) = skind σ.
+Proof.
+  intros Hsel Hk Ho. destruct σ; simpl in Hsel, Ho; try discriminate; injection Ho as <-.
+  - destruct Hsel as (H1 & x & m & T & s & Hx & Hp & Hu). rewrite Hk in Hx. injection Hx as <-.
+    by rewrite (hd_of _ _ Hu).
+  - destruct Hsel as (H1 & x & m & T & s & Hx & Hp & Hu). rewrite Hk in Hx. injection Hx as <-.
+    by rewrite (hd_of _ _ Hu).
+  - destruct Hsel as (H1 & x & Hx & Hp & Hu & _). rewrite Hk in Hx. injection Hx as <-.
+    by rewrite (hd_of _ _ Hu).
+  - destruct Hsel as (H1 & x & s1 & s2 & Hx & Hp & Hu). rewrite Hk in Hx. injection Hx as <-.
+    by rewrite (hd_of _ _ Hu).
+  - destruct Hsel as (H1 & x & s1 & s2 & Hx & Hp & Hu). rewrite Hk in Hx. injection Hx as <-.
+    by rewrite (hd_of _ _ Hu).
+Qed.
+
+Lemma sl_end_some σ : (∀ cd, σ ≠ SLink cd) → ∃ o, sl_end σ = Some o.
+Proof. destruct σ; simpl; try (intros; by eexists). intros H. by destruct (H cd). Qed.
+
+(** The ends a redex acts on are ends of the term. *)
+Lemma act_aends_fends e a S : act e = Some a → aends a = Some S → S ⊆ fends e.
+Proof.
+  induction e as [| | |c b|x|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
+    |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; simpl; intros Ha HS; try discriminate.
+  - destruct (is_val e1); [destruct (is_val e2)|].
+    + repeat (case_match; simplify_eq/=); set_solver.
+    + specialize (IH2 Ha HS). set_solver.
+    + specialize (IH1 Ha HS). set_solver.
+  - destruct (is_val e1).
+    + specialize (IH2 Ha HS). set_solver.
+    + specialize (IH1 Ha HS). set_solver.
+  - destruct (is_val e1); [repeat (case_match; simplify_eq/=); done|].
+    specialize (IH1 Ha HS). set_solver.
+  - destruct (is_val e1); [repeat (case_match; simplify_eq/=); done|].
+    specialize (IH1 Ha HS). set_solver.
+  - by apply IH.
+  - by apply IH.
+  - destruct (is_val e); [repeat (case_match; simplify_eq/=); done|].
+    specialize (IH Ha HS). set_solver.
+Qed.
+
+Section progress.
+  #[local] Set Default Proof Using "All".
+  Context (n : nat) (W : world) (HW : strict W) (T : ty) (π : gmap cend point).
+  Context (q : config) (A : nat → tenv) (U : nat → ty).
+  Context (Hc : LFconf (S n) W ∅ T π q A U).
+
+  Lemma lp_closed t e : q.2 !! t = Some e → fchans e ⊆ q.1.
+  Proof. intros He. pose proof (lf_closed _ _ _ _ _ _ _ _ Hc t e He) as H. set_solver. Qed.
+
+  Lemma lp_link t e : q.2 !! t = Some e → link_t e → enabled q t.
+  Proof.
+    intros He (cd & e' & Hst). destruct (act_step _ _ _ Hst) as (a & Ha & Ho).
+    destruct a; simpl in Ho; try done.
+    apply (admin_enabled q t e _ He Ha I). intros c' d' [= <- <-]. left.
+    apply (lp_closed t e He). apply fchans_of_fends.
+    apply (act_aends_fends e (ALink c d) {[c; d]} Ha eq_refl). set_solver.
+  Qed.
+End progress.
