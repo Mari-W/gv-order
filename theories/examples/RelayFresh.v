@@ -14,9 +14,9 @@ Set Default Proof Using "All".
 (** [rel_main] with d bound by the encoded let of new (sharp edges
     99). *)
 Definition rel_main_ex : expr :=
-  LetP (Pair relay prod) (let_new_pair (let_new_pair
+  LetP (Pair relay prod) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
-      (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
+      (App (App (App EForce (Var 4)) (EPt (pt_dual (pconst 1)))) (Pair (Var 2) (Var 0)))))).
 
 Lemma rel_typed_fresh : styped ∅ rel_Ψ [] (∅, None) rel_main_ex TUnit.
 Proof. exact rel_typed. Qed.

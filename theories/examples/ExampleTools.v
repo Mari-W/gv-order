@@ -285,7 +285,7 @@ Fixpoint occ (x : nat) (e : expr) : bool :=
   | Case e e1 e2 => occ x e || occ (S x) e1 || occ (S x) e2
   end.
 
-Definition unlb (T : ty) : bool := match T with TBox _ _ _ _ => true | _ => false end.
+Definition unlb (T : ty) : bool := match T with TBox _ _ _ _ | TPt _ => true | _ => false end.
 
 Lemma unlb_unl T : unlb T = true → unlimited T.
 Proof. by destruct T. Qed.
@@ -797,6 +797,68 @@ Ltac ground := eexists; reflexivity.
 (** new@x at a top-level constant, in a strict world HWs. *)
 Ltac new_top HWs S x :=
   apply (t_new_at _ _ _ _ _ _ _ _ S x HWs); [ground|skn_top|].
+
+(** new at a computed point (syntactic points). The point value v is
+    typed from the unlimited bindings of Δ, for instance a box
+    parameter of type [TPt ι] or [KPay i] applied to it. *)
+Definition lkeepu (Δ : lenv) : lenv :=
+  (λ o, match o with Some T => if unlb T then Some T else None | None => None end) <$> Δ.
+
+Lemma lkeepu_split Δ : lenv_split Δ (lkeepu Δ) Δ.
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; [constructor| |by constructor].
+  destruct (unlb T) eqn:Hu; [apply lsplit_unl; [by apply unlb_unl|done]|by apply lsplit_r].
+Qed.
+
+Lemma lkeepu_split_l Δ : lenv_split (lkeepu Δ) (lkeepu Δ) (lenv_nones Δ).
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; [constructor| |by constructor].
+  destruct (unlb T); by constructor.
+Qed.
+
+Lemma lkeepu_split_r Δ : lenv_split (lkeepu Δ) (lenv_nones Δ) (lkeepu Δ).
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; [constructor| |by constructor].
+  destruct (unlb T); by constructor.
+Qed.
+
+Lemma t_new_v W Φ Ψ Θ Δ F e T S x v :
+  strict W →
+  (∀ F', typed W Φ Ψ ∅ (lkeepu Δ) F' v (TPt x)) → skn W Ψ x →
+  typed W Φ Ψ Θ (Some (TSess (dual S) (pt_dual x)) :: Some (TSess S x) :: None :: None :: Δ) F e T →
+  typed W Φ Ψ Θ Δ F (let_new_at v e) T.
+Proof.
+  intros HW Hv Hx Hb. unfold let_new_at.
+  set (X := TProd (TSess S x) (TSess (dual S) (pt_dual x))).
+  apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lkeepu Δ) Δ F _ _ X TUnit).
+  { apply tenv_comp_empty_l, se_dsym. }
+  { apply lkeepu_split. }
+  { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lkeepu Δ) (lkeepu Δ) (lenv_nones Δ)).
+    - apply tenv_comp_empty_r.
+    - apply lkeepu_split_l.
+    - eapply (t_app W Φ Ψ ∅ ∅ ∅ _ (lenv_nones Δ) (lkeepu Δ) _ _ _ None None (TPt x)).
+      + apply tenv_comp_empty_r.
+      + apply lkeepu_split_r.
+      + done.
+      + apply t_const; [apply lenv_empty_nones| |done]. by apply KTNewAt.
+      + apply Hv.
+    - apply t_unit. apply lenv_empty_nones. }
+  apply (t_letstar W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
+  { apply tenv_comp_empty_l, se_dsym. }
+  { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
+  { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
+    exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
+    apply fmap_Some in Hy as (? & _ & ?). congruence. }
+  apply (t_letpair W _ _ _ ∅ Θ _
+           (None :: Some X :: lenv_nones Δ) (None :: None :: Δ)
+           _ _ _ (TSess S x) (TSess (dual S) (pt_dual x))).
+  - apply tenv_comp_empty_l, se_dsym.
+  - apply lsplit_none, lsplit_l, lenv_split_nones_l.
+  - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
+    exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
+    apply fmap_Some in Hy as (? & _ & ?). congruence.
+  - exact Hb.
+Qed.
 
 Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option futrest)).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
