@@ -85,19 +85,29 @@ Qed.
 Definition rg_P (g : fact) : Prop := ∃ X Y, rreach (pvar 0) (pvar 1) X Y ∧ rg_F X Y g.
 Definition rg_C : bcs := BCs [] rg_P.
 
+(** Under syntactic points the ring takes the point ι₁ and the partner
+    point ι̅₂ as parameters π₁ and π₂, creates a by new (π₂[0]) and b by
+    new (π₁[1]), and passes π₁[0], π₁[1] to the first call and π₁[1],
+    π₂[0] to the second, because x̄[i] = x[i] (sharp edges 173). *)
 Definition rg_body : ty :=
-  TLolli (Some (pv 0 1)) None (TProd (TSess Sch (pv 0 0)) (TSess (dual Sch) (pv 1 0))) TUnit.
+  TLolli None None (TPt (pv 0 0)) (TLolli None None (TPt (pt_dual (pv 1 0)))
+    (TLolli (Some (pv 0 1)) None (TProd (TSess Sch (pv 0 0)) (TSess (dual Sch) (pv 1 0))) TUnit)).
 Definition rg_ty : ty := TBox 2 0 rg_C (TLolli None None TUnit rg_body).
 
 Definition ring : expr :=
-  EBox (Lam (LetP (Var 0) (let_new_pair
+  EBox (Lam (Lam (Lam (LetP (Var 0) (let_new_pair_at (App (Konst (KPay 0)) (Var 3))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (App ESend (Pair (Var 2) (Var 3)))))))
-    (LetP (App ERecv (Var 3)) (LetU (App EClos (Var 0)) (let_new_pair
-      (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 10)) (Pair (Var 4) (Var 1))))))
-        (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 10)) (Pair (Var 2) (Var 5)))))))))))))).
+    (LetP (App ERecv (Var 3)) (LetU (App EClos (Var 0)) (let_new_pair_at (App (Konst (KPay 1)) (Var 8))
+      (LetU (App ESpawn (Lam (LetU (Var 0)
+         (App (App (App (App EForce (Var 12)) (App (Konst (KPay 0)) (Var 11))) (App (Konst (KPay 1)) (Var 11)))
+              (Pair (Var 4) (Var 1))))))
+        (App ESpawn (Lam (LetU (Var 0)
+         (App (App (App (App EForce (Var 12)) (App (Konst (KPay 1)) (Var 11))) (App (Konst (KPay 0)) (Var 10)))
+              (Pair (Var 2) (Var 5)))))))))))))))).
 
 Definition rg_main : expr :=
-  LetP (Pair ring EUnit) (LetU (Var 0) (let_new_pair (App (App EForce (Var 3)) (Pair (Var 1) (Var 0))))).
+  LetP (Pair ring EUnit) (LetU (Var 0) (let_new_pair_at (EPt (pconst 0))
+    (App (App (App (App EForce (Var 3)) (EPt (pconst 0))) (EPt (pconst 0))) (Pair (Var 1) (Var 0))))).
 
 Abbreviation rx0 := (Pt (NPayload (NVar 0) 0 0) 0).
 Abbreviation rx1 := (Pt (NPayload (NVar 0) 0 1) 0).
@@ -146,14 +156,21 @@ Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold ring, rg_ty.
   apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open rg_C rg_body. cbn. unfold rg_body.
-  eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
+  eapply (tv_lam W HW _ _ _ _ _ _ _ None None 1); [set_solver|cbn; set_solver|].
+  cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ None None 2); [set_solver|cbn; set_solver|].
+  cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 3); [set_solver|cbn; set_solver|].
+  assert (∀ Ψ, (rg_C, ids 2) ∈ Ψ → skn W Ψ rx0 ∧ skn W Ψ rx1 ∧ skn W Ψ ry0) as Hk.
+  { intros Ψ Hg. split_and!; apply rg_kn; [done|by left|done|by left|done|by right]. }
   cbn. tstep; [tstep|]. cbn.
   (* a, a′ at ι₂[0] *)
-  apply (t_new_at W _ _ _ _ _ _ _ Sch ry0 HWs); [apply rg_kn; [by left|by right]|].
+  unfold let_new_pair_at. apply (t_new_v W _ _ _ _ _ _ _ Sch ry0 _ HWs); [| |].
+  { intros F'. cbn. eapply (tv_appk W HW _ _ _ _ (KPay 0) _ None (TPt (pt_dual (pv 1 0))));
+      [tstep|apply KTPay; apply Hk; by left|done|apply ubs_none]. }
+  { apply Hk. by left. }
   cbn. tstep.
   { (* the y-thread: send a on y, close y *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 1)) (Some (pt_dual (pv 1 0))) 2); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 1)) (Some (pt_dual (pv 1 0))) 4); [set_solver| |].
     { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; rgf]. }
     cbn. tstep; [tstep|]. cbn.
     eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 1 1)) (TSess SEnd (pv 1 1))).
@@ -185,31 +202,46 @@ Proof.
     apply ubs_intro; [intros y Hy; mem_cases Hy; rgf|].
     exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   (* b, b′ at ι₁[1] *)
-  apply (t_new_at W _ _ _ _ _ _ _ Sch rx1 HWs); [apply rg_kn; [by left|by left]|].
+  apply (t_new_v W _ _ _ _ _ _ _ Sch rx1 _ HWs); [| |].
+  { intros F'. cbn. eapply (tv_appk W HW _ _ _ _ (KPay 1) _ None (TPt (pv 0 0)));
+      [tstep|apply KTPay; apply Hk; by left|done|apply ubs_none]. }
+  { apply Hk. by left. }
   cbn. tstep.
   { (* the call at (ι₁[0], ι₁[1]‾) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 rx0)) (Some (pv 0 1)) 2); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 rx0)) (Some (pv 0 1)) 4); [set_solver| |].
     { intros y Hy. mem_cases Hy; right; rgf. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 2 rg_C None rg_body [rx0; pt_dual rx1]);
-        [done|done| | |apply ubs_none|tstep].
-      + apply rg_call; [by left| |cbn; lia|cbn; lia]. apply (rr_l (pvar 0) (pvar 1) (pvar 0) (pvar 1) (rr_root _ _)).
-      + constructor; [apply rg_kn; [by left|by left]|constructor; [apply rg_kn; [by left|by left]|constructor]].
+    - eapply (tv_app W HW _ _ _ _ _ _ None None (TPt rx1)); [reflexivity| | |apply ubs_none].
+      + eapply (tv_app W HW _ _ _ _ _ _ None None (TPt rx0)); [reflexivity| | |apply ubs_none].
+        * apply (typed_force0 W _ _ _ _ _ _ 2 rg_C None rg_body [rx0; pt_dual rx1]);
+            [done|done| | |apply ubs_none|tstep].
+          -- apply rg_call; [by left| |cbn; lia|cbn; lia]. apply (rr_l (pvar 0) (pvar 1) (pvar 0) (pvar 1) (rr_root _ _)).
+          -- constructor; [apply rg_kn; [by left|by left]|constructor; [apply rg_kn; [by left|by left]|constructor]].
+        * eapply (tv_appk W HW _ _ _ _ (KPay 0) _ None (TPt (pv 0 0)));
+            [tstep|apply KTPay; apply Hk; by left|done|apply ubs_none].
+      + eapply (tv_appk W HW _ _ _ _ (KPay 1) _ None (TPt (pv 0 0)));
+          [tstep|apply KTPay; apply Hk; by left|done|apply ubs_none].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
       exists (pt_shift 1 rx0). split; [done|]. apply sle_refl, HW. }
   (* the call at (ι₁[1], ι₂[0]‾) *)
   cbn. tstep; [|apply KTSpawn|done|apply ubs_none].
-  eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 rx1)) (Some (pv 0 1)) 2); [set_solver| |].
+  eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 rx1)) (Some (pv 0 1)) 4); [set_solver| |].
   { intros y Hy. mem_cases Hy; right; rgf. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 2 rg_C None rg_body [rx1; pt_dual ry0]);
-      [done|done| | |apply ubs_none|tstep].
-    + apply rg_call; [by left| |cbn; lia|cbn; lia]. apply (rr_r (pvar 0) (pvar 1) (pvar 0) (pvar 1) (rr_root _ _)).
-    + constructor; [apply rg_kn; [by left|by left]|constructor; [apply rg_kn; [by left|by right]|constructor]].
+  - eapply (tv_app W HW _ _ _ _ _ _ None None (TPt ry0)); [reflexivity| | |apply ubs_none].
+    + eapply (tv_app W HW _ _ _ _ _ _ None None (TPt rx1)); [reflexivity| | |apply ubs_none].
+      * apply (typed_force0 W _ _ _ _ _ _ 2 rg_C None rg_body [rx1; pt_dual ry0]);
+          [done|done| | |apply ubs_none|tstep].
+        -- apply rg_call; [by left| |cbn; lia|cbn; lia]. apply (rr_r (pvar 0) (pvar 1) (pvar 0) (pvar 1) (rr_root _ _)).
+        -- constructor; [apply rg_kn; [by left|by left]|constructor; [apply rg_kn; [by left|by right]|constructor]].
+      * eapply (tv_appk W HW _ _ _ _ (KPay 1) _ None (TPt (pv 0 0)));
+          [tstep|apply KTPay; apply Hk; by left|done|apply ubs_none].
+    + eapply (tv_appk W HW _ _ _ _ (KPay 0) _ None (TPt (pt_dual (pv 1 0))));
+        [tstep|apply KTPay; apply Hk; by left|done|apply ubs_none].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pt_shift 1 rx1). split; [done|]. apply sle_refl, HW.
@@ -259,44 +291,56 @@ Proof.
   all: by apply pt_inst_ids; destruct Hs.
 Qed.
 
-Lemma rg_typed : styped ∅ [(rg0_C, ids 1)] [] (∅, None) rg_main TUnit.
+(** Under syntactic points γ is the constant 0 of the hypotheses
+    [rg_Ψ], whose creation constraint is C₀ (sharp edges 173). *)
+Definition rg_Ψ : hyps := [] ++ [(rg0_C, [pconst 0])].
+
+Lemma rg_typed : styped ∅ rg_Ψ [] (∅, None) rg_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold rg_main.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold rg_main, rg_Ψ.
   tstep.
   { tstep; [tstep|apply typed_hyps_wk; [exact HWs|apply ring_typed, HWs]]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sch (pvar 0) HWs).
-  { apply (skn_in W _ rg0_C (ids 1) (pvar 0)); [by left|inlist|done]. }
+  assert (skn W ([] ++ [(rg0_C, [pconst 0])]) (pconst 0)) as Hk0.
+  { apply (skn_in W _ rg0_C [pconst 0] (pconst 0)); [by left|by left|done]. }
+  unfold let_new_pair_at. apply (t_new_at W _ _ _ _ _ _ _ Sch (pconst 0) HWs); [ground|exact Hk0|].
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 2 rg_C None rg_body [pvar 0; pt_dual (pvar 0)]);
-      [done|done| | |apply ubs_none|tstep].
-    + apply bcs_hold_intro. intros g (X & Y & HR & HF) Hs.
-      assert (rg0_P (fact_map (pt_inst (plist [pvar 0; pt_dual (pvar 0)])) g)) as H0.
-      { exists (pt_inst (plist [pvar 0; pt_dual (pvar 0)]) X), (pt_inst (plist [pvar 0; pt_dual (pvar 0)]) Y).
-        split; [|by apply rg_F_inst].
-        apply (rreach_inst (plist [pvar 0; pt_dual (pvar 0)])) in HR. rewrite !pt_inst_pvar_at in HR. exact HR. }
-      assert (fact_scoped 1 (fact_map (pt_inst (plist [pvar 0; pt_dual (pvar 0)])) g)) as Hs1.
-      { apply fact_scoped_inst; [vb_list|exact Hs]. }
-      revert H0 Hs1. destruct (fact_map (pt_inst (plist [pvar 0; pt_dual (pvar 0)])) g) as [x y].
-      intros H0 Hs1. cbn [fact_holds]. by apply rg0_hyp.
-    + constructor; [|constructor; [|constructor]];
-        apply (skn_in W _ rg0_C (ids 1) (pvar 0)); first [by left|inlist|done].
+  - eapply (tv_app W HW _ _ _ _ _ _ None None (TPt (pconst 0))); [reflexivity| | |apply ubs_none].
+    + eapply (tv_app W HW _ _ _ _ _ _ None None (TPt (pconst 0))); [reflexivity| | |apply ubs_none].
+      * apply (typed_force0 W _ _ _ _ _ _ 2 rg_C None rg_body [pconst 0; pt_dual (pconst 0)]);
+          [done|done| | |apply ubs_none|tstep].
+        -- apply bcs_hold_intro. intros g (X & Y & HR & HF) Hs.
+           set (g' := fact_map (pt_inst (plist [pvar 0; pt_dual (pvar 0)])) g).
+           assert (rg0_P g') as H0.
+           { exists (pt_inst (plist [pvar 0; pt_dual (pvar 0)]) X), (pt_inst (plist [pvar 0; pt_dual (pvar 0)]) Y).
+             split; [|by apply rg_F_inst].
+             apply (rreach_inst (plist [pvar 0; pt_dual (pvar 0)])) in HR. rewrite !pt_inst_pvar_at in HR. exact HR. }
+           assert (fact_scoped 1 g') as Hs1.
+           { apply fact_scoped_inst; [vb_list|exact Hs]. }
+           assert (fact_map (pt_inst (plist [pconst 0; pt_dual (pconst 0)])) g = fact_map (pt_inst (plist [pconst 0])) g')
+             as ->.
+           { unfold g'. destruct g as [x y]. destruct Hs as [Hx Hy]. cbn [fact_map]. f_equal;
+               rewrite pt_inst_comp; apply pt_inst_ext_root; intros a Ha;
+               [pose proof (pn_vb_root _ _ _ Hx Ha) as Hlt|pose proof (pn_vb_root _ _ _ Hy Ha) as Hlt];
+               (destruct a as [|[|a]]; [done|done|cbn in Hlt; lia]). }
+           apply (hyp_in_fact W _ rg0_C [pconst 0]); [by left|]. by apply bcs_open_nil.
+        -- constructor; [|constructor; [|constructor]];
+             apply (skn_in W _ rg0_C [pconst 0] (pconst 0)); first [by left|done].
+      * tstep. apply (skn_in W _ rg0_C [pconst 0] (pconst 0)); [by left|by left|done].
+    + tstep. apply (skn_in W _ rg0_C [pconst 0] (pconst 0)); [by left|by left|done].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
 (** C₀ speaks of the one top-level point γ only, so it is the creation
     constraint of γ ([created], sharp edges 172). *)
-Lemma rg_created : created (Wpo []) [(rg0_C, ids 1)].
+Lemma rg_created : created (Wpo []) rg_Ψ.
 Proof.
-  apply (created_snoc (Wpo []) [] rg0_C); [constructor| |constructor].
+  apply (created_snoc (Wpo []) [] rg0_C 0); [constructor| |constructor|fresh_const].
   apply (cc_ok_mono nofact nofact); [intros ? ? []|intros ? ? []|].
   apply cc_ok_at_1. exact (proj1 (c0_acyclic_creation 1 rg0_C rg0_acyclic)).
 Qed.
 
 Lemma rg_deadlock_free : deadlock_free (∅, {[+ rg_main +]}).
-Proof.
-  apply (soundness_source 1 rg0_C _ TUnit (c0_acyclic_creation _ _ rg0_acyclic));
-    [constructor|apply rg_typed].
-Qed.
+Proof. apply (soundness_created_s rg_Ψ _ TUnit rg_created); [constructor|apply rg_typed]. Qed.
