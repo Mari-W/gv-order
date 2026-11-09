@@ -1318,3 +1318,64 @@ Section run.
         * intros Hs. rewrite HL' in Hs. set_solver.
   Qed.
 End run.
+
+(** ** Adequacy *)
+
+Lemma areach_isteps ω N a q : isteps (ac_q a) q → ∃ a', areach ω N a a' ∧ ac_q a' = q.
+Proof.
+  intros H. remember (ac_q a) as q0 eqn:Hq0. revert a Hq0.
+  induction H as [q|q1 q2 q3 [L Hst] _ IH]; intros a ->.
+  - by exists a.
+  - destruct (IH (aupd ω N a L q2) eq_refl) as (a' & Ha' & Hq). exists a'. split; [|done].
+    eapply rtc_l; [|exact Ha']. by exists L, q2.
+Qed.
+
+(** Every link redex of a reachable configuration has a restricted end. *)
+Lemma lf_links_restricted N ω W T p q0 :
+  world_wf W → well_founded (w_lt W) → LFPrel N ω 1 W ∅ T p → erase q0 = p → links_restricted p.
+Proof.
+  intros HW Hwf [_ HL] Hq0 q E e c d Hq HE Hl. rewrite <-Hq0 in Hq.
+  destruct (pred_star_lift q0 q Hq) as (q1 & Hq1 & <-).
+  destruct (areach_isteps ω N (ainit ω N q0) q1 Hq1) as (a1 & Ha1 & <-).
+  pose proof (HL q0 a1 Hq0 Ha1) as Hc. simpl in HE.
+  assert (e ∈ soup (ac_q a1).2) as He by (rewrite HE; multiset_solver).
+  apply elem_of_soup in He as [t Ht].
+  left. apply (c_closed W HW Hwf a1 Hc t e Ht). apply (act_asubjs_fchans e _ _ Hl eq_refl). set_solver.
+Qed.
+
+Lemma lf_no_tau_divergence N ω W T p : (∀ n, LFPrel N ω n W ∅ T p) → no_tau_divergence p.
+Proof. intros HP. apply (live_no_tau_divergence W T p). intros n. by destruct (HP n). Qed.
+
+Theorem lf_adequacy N ω W T p :
+  world_wf W → well_founded (w_lt W) → (∀ n, LFPrel N ω n W ∅ T p) → lock_free p.
+Proof.
+  intros HW Hwf HP r l Hr0 Hmax Hfair.
+  pose proof (lf_no_tau_divergence N ω W T p HP) as Hnd.
+  pose proof (lf_links_restricted N ω W T p (r 0) HW Hwf (HP 1) Hr0) as Hlr.
+  assert (∀ a, areach ω N (ainit ω N (r 0)) a → LFconf 1 W ∅ a) as HL.
+  { intros a Ha. exact (proj2 (HP 1) (r 0) a Hr0 Ha). }
+  refine (lf_run_criterion p r l Hr0 Hmax Hfair _ Hnd Hlr (fu ω N r l) _ _ _
+    point (w_lt W) (we ω N r l) Hwf _ _).
+  - intros k. pose proof (c_local_progress W HW Hwf _ (arun_conf ω N W HW Hwf r l Hmax HL k)) as H.
+    by rewrite (arun_q ω N W HW Hwf r l Hmax HL) in H.
+  - exact (run_uniq ω N W HW Hwf r l Hmax HL).
+  - exact (run_pers ω N W HW Hwf r l Hmax HL).
+  - exact (run_fuel ω N W HW Hwf r l Hmax HL).
+  - exact (run_stab ω N W HW Hwf r l Hmax HL).
+  - exact (run_rank ω N W HW Hwf r l Hmax HL).
+Qed.
+
+Corollary lf_adequacy_ex W T p :
+  world_wf W → well_founded (w_lt W) → (∃ N ω, ∀ n, LFPrel N ω n W ∅ T p) → lock_free p.
+Proof. intros HW Hwf (N & ω & HP). by apply (lf_adequacy N ω W T p). Qed.
+
+(** Individual progress (plan §9): every thread of a weakly fair maximal
+    run stops or takes part in a channel step after every position. *)
+Corollary lf_thread_progress W T p :
+  world_wf W → well_founded (w_lt W) → (∃ N ω, ∀ n, LFPrel N ω n W ∅ T p) →
+  ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
+Proof.
+  intros HW Hwf (N & ω & HP) r l Hr0 Hmax Hfair.
+  apply (thread_progress p (lf_adequacy N ω W T p HW Hwf HP) (lf_no_tau_divergence N ω W T p HP)
+    (lf_links_restricted N ω W T p (r 0) HW Hwf (HP 1) Hr0) r l Hr0 Hmax Hfair).
+Qed.
