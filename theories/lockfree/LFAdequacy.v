@@ -821,6 +821,38 @@ Proof.
       unfold csub. case_decide; [subst; set_solver|done].
 Qed.
 
+(** The holder of the partner end holds one end of the channel. *)
+Lemma holder_one W (HW : world_wf W) (Hwf : well_founded (w_lt W)) a t e x c s es :
+  LFconf 1 W ∅ a → (ac_q a).2 !! t = Some e → ac_env a t !! c = Some (One x) →
+  (ac_q a).2 !! s = Some es → s ≠ t → c ∈ dom (ac_env a s) → ∃ y, ac_env a s !! c = Some (One y).
+Proof.
+  intros Hc He Hx Hes Hst Hcs.
+  apply elem_of_dom in Hcs as [[y|y1 y2] Hy]; [by exists y|exfalso].
+  assert (tenv_entry (ac_env a s) (c, false) = Some y1) as H1 by (unfold tenv_entry; simpl; by rewrite Hy).
+  assert (tenv_entry (ac_env a s) (c, true) = Some y2) as H2 by (unfold tenv_entry; simpl; by rewrite Hy).
+  assert (tenv_entry (ac_env a t) (c, false) = Some x) as H3 by (unfold tenv_entry; simpl; by rewrite Hx).
+  destruct (c_three W HW Hwf a Hc s s t es es e (c, false) (c, true) (c, false) y1 y2 x Hes Hes He
+    H1 H2 H3 eq_refl eq_refl) as [H|[H|H]]; simplify_eq.
+Qed.
+
+(** The holder exists. *)
+Lemma holder_exists W (HW : world_wf W) (Hwf : well_founded (w_lt W)) a t e x c :
+  LFconf 1 W ∅ a → (ac_q a).2 !! t = Some e → ac_env a t !! c = Some (One x) →
+  ∃ s es, (ac_q a).2 !! s = Some es ∧ s ≠ t ∧ c ∈ dom (ac_env a s).
+Proof.
+  intros Hc He Hx.
+  assert (tenv_entry (ac_env a t) (c, false) = Some x) as H3 by (unfold tenv_entry; simpl; by rewrite Hx).
+  destruct (c_pair W HW Hwf a Hc t e (c, false) x He H3) as (s & es & k' & ek' & Hes & Hk' & H1 & Hne & _).
+  exists s, es. split_and!; [done| |].
+  - intros ->. destruct k' as [c' []]; simpl in H1; subst c'; [|done].
+    unfold tenv_entry in Hk'. simpl in Hk'. by rewrite Hx in Hk'.
+  - simpl in H1. rewrite <-H1. by eapply entry_dom.
+Qed.
+
+Lemma rank_pt_eq a a' t :
+  (ac_q a').2 !! t = (ac_q a).2 !! t → ac_env a' t = ac_env a t → rank_pt a' t = rank_pt a t.
+Proof. intros Hq HA. unfold rank_pt, rchan_of. by rewrite Hq, HA. Qed.
+
 (** ** The annotated run *)
 
 Section run.
@@ -928,5 +960,65 @@ Section run.
     - intros c' d' Hl. rewrite Hb2 in Hl. injection Hl as Hl. rewrite Hl in Hr2. done.
     - intros c' d' Hl. rewrite Hbp2 in Hl. injection Hl as Hl. rewrite Hl in Hrp2. done.
     - by exists L, q'.
+  Qed.
+
+  (** A thread that does not step keeps the point of its entry. *)
+  Lemma run_stab k t : npend (r k) t → t ∉ l k → we (S k) t = we k t.
+  Proof.
+    intros Hp HtL. destruct (npend_arun k t Hp) as (e & b & c & He & Hb & Hr & Hna).
+    destruct (Hmax k) as [Hst|(_ & Heq & Hl)]; [|unfold we; by rewrite arun_stuck].
+    pose proof (arun_conf k) as Hc. pose proof (arun_conf (S k)) as Hc'.
+    rewrite <-(arun_q k) in Hst. unfold we.
+    change (arun (S k)) with (aupd ω N (arun k) (l k) (r (S k))) in Hc' |- *.
+    destruct (aupd_cases ω N (arun k) (l k) (r (S k)) Hst) as
+      [(i & ei & ei' & HL' & Hi & _ & _ & Hq & Hkeep)
+      |[(i & ei & cn & ei' & HL' & Hi & _ & _ & _ & Hq & Hkeep & _)
+      |[(i & j & ei & v & ei' & HL' & Hi & _ & _ & Hj & Hq & Hkeep & _)
+      |[(i & ei & ro & oo & ei' & HL' & Hi & Hbi & _ & HC & Hq & _ & Hren & _)
+      |[(s1 & t1 & c1 & v & es & es' & et & et' & Hne & HL' & _ & _ & _ & _ & _ & _ & Hq & Hkeep & _)
+      |[(s1 & t1 & c1 & es & es' & et & et' & Hne & HL' & _ & _ & _ & _ & _ & _ & _ & Hq & Hkeep & _)
+       |(s1 & t1 & c1 & b1 & es & es' & et & et' & Hne & HL' & _ & _ & _ & _ & _ & _ & Hq & Hkeep & _)
+      ]]]]]]; rewrite HL' in HtL.
+    - apply rank_pt_eq; [rewrite Hq; simpl; rewrite lookup_insert_ne; set_solver|].
+      by destruct (Hkeep t) as [-> _].
+    - apply rank_pt_eq; [rewrite Hq; simpl; rewrite lookup_insert_ne; set_solver|].
+      destruct (Hkeep t) as [-> _]; set_solver.
+    - assert (t ≠ j) by (intros ->; congruence).
+      apply rank_pt_eq; [rewrite Hq; simpl; rewrite !lookup_insert_ne; set_solver|].
+      destruct (Hkeep t) as [-> _]; set_solver.
+    - (* a link renames *)
+      assert (t ≠ i) as Hti by set_solver.
+      assert ((ac_q (aupd ω N (arun k) (l k) (r (S k)))).2 !! t = Some (chsubst ro oo e)) as He'.
+      { simpl. rewrite Hq. simpl. rewrite lookup_fmap, lookup_insert_ne by done. by rewrite He. }
+      assert (act (chsubst ro oo e) = Some (amap (csub ro oo) b)) as Hb' by (by rewrite act_chsubst, Hb).
+      pose proof (rchan_amap (csub ro oo) b c Hr) as Hr'.
+      unfold rank_pt. rewrite (rchan_of_eq _ t _ _ _ He' Hb' Hr'), (rchan_of_eq _ t e b c He Hb Hr).
+      rewrite (Hren t Hti).
+      destruct (c_one W HW Hwf _ Hc t e b c He Hb Hr) as [x Hx].
+      unfold csub. destruct (decide (c = ro)) as [->|Hcr].
+      + unfold tenv_rename. rewrite Hx. unfold tenv_union. rewrite lookup_union_with.
+        destruct (decide (oo = ro)) as [->|Hor].
+        * by rewrite lookup_delete_eq, lookup_singleton_eq.
+        * rewrite lookup_delete_ne, lookup_singleton_eq by done.
+          destruct (ac_env (arun k) t !! oo) as [o'|] eqn:Ho'; simpl; [|done].
+          exfalso.
+          assert (∃ z1 z2, tenv_rename ro oo (ac_env (arun k) t) !! oo = Some (Both z1 z2)) as (z1 & z2 & Hz).
+          { unfold tenv_rename. rewrite Hx. unfold tenv_union. rewrite lookup_union_with.
+            rewrite lookup_delete_ne, lookup_singleton_eq, Ho' by done. simpl. destruct o'; eauto. }
+          rewrite <-(Hren t Hti) in Hz.
+          pose proof (rchan_amap (csub ro oo) b ro Hr) as Hr2. unfold csub in Hr2.
+          rewrite decide_True in Hr2 by done.
+          exact (both_false W HW Hwf _ Hc' t _ _ oo z1 z2 He' Hb' Hr2 Hz).
+      + destruct (decide (c = oo)) as [->|Hco]; [|by rewrite (lookup_tenv_rename_ne ro oo)].
+        unfold tenv_rename. destruct (ac_env (arun k) t !! ro) as [y|] eqn:Hy; [|done].
+        unfold tenv_union. rewrite lookup_union_with, lookup_delete_ne, lookup_singleton_eq, Hx
+          by done.
+        simpl. by destruct y.
+    - apply rank_pt_eq; [rewrite Hq; simpl; rewrite !lookup_insert_ne; set_solver|].
+      destruct (Hkeep t) as [-> _]; set_solver.
+    - apply rank_pt_eq; [rewrite Hq; simpl; rewrite !lookup_insert_ne; set_solver|].
+      destruct (Hkeep t) as [-> _]; set_solver.
+    - apply rank_pt_eq; [rewrite Hq; simpl; rewrite !lookup_insert_ne; set_solver|].
+      destruct (Hkeep t) as [-> _]; set_solver.
   Qed.
 End run.
