@@ -189,53 +189,53 @@ Definition lp_srv : expr :=
 Definition lp_cli : expr := App EClos (App ESel1 (App ESend (Pair EUnit (App ESel2 (Var 1))))).
 
 Definition lp_go : expr :=
-  LetP (Pair lp lp) (let_new_pair (LetU (App ESpawn (Lam lp_srv)) lp_cli)).
+  LetP (Pair lp lp) (let_new_pair_at (EPt (pconst 0)) (LetU (App ESpawn (Lam lp_srv)) lp_cli)).
 
 (** The client's walk: select₂, send, select₁. *)
 Definition lp_cw : list (option bool) := [Some true; None; Some false].
 Definition lpp (k : nat) : point :=
-  pt_polar (negb (wpol (take k lp_cw))) (pwalk (pv 0 0) (take k lp_cw)).
+  pt_polar (negb (wpol (take k lp_cw))) (pwalk (pc 0 0) (take k lp_cw)).
 
 Lemma lp_go_typed : styped ∅ tca_Ψ [] (∅, None) lp_go TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold lp_go, tca_Ψ.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold lp_go, let_new_pair_at, tca_Ψ.
   tstep.
   { tstep; apply typed_hyps_wk; [exact HWs|apply lp_typed, HW|exact HWs|apply lp_typed, HW]. }
-  cbn. new_top HWs LpC (pvar 0).
+  cbn. new_top HWs LpC (pconst 0).
   fresh_clean.
-  set (Ψ := [(top_C0, [pvar 1]); (BCs [pvar 1] send_P, [pvar 0])]).
-  assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)) as Haz.
-  { intros w c. eapply (sl_hyp W Ψ [pvar 1] send_P [pvar 0] (FLt (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)));
+  set (Ψ := [(top_C0, [pconst 1]); (BCs [pconst 1] send_P, [pconst 0])]).
+  assert (∀ w c, slt W Ψ (pt_polar c (pwalk (pc 0 0) w)) (pc 1 0)) as Haz.
+  { intros w c. eapply (sl_hyp W Ψ [pconst 1] send_P [pconst 0] (FLt (pt_polar c (pwalk (pv 0 0) w)) (pv 1 0)));
       [inlist|exists w, c, true; by left|fscp|fmwp]. }
-  assert (∀ w i c c', slt W Ψ (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 0 0) w) (Some i)))) as Haa.
-  { intros w i c c'. eapply (sl_hyp W Ψ [pvar 1] send_P [pvar 0]
+  assert (∀ w i c c', slt W Ψ (pt_polar c (pwalk (pc 0 0) w)) (pt_polar c' (wstep (pwalk (pc 0 0) w) (Some i)))) as Haa.
+  { intros w i c c'. eapply (sl_hyp W Ψ [pconst 1] send_P [pconst 0]
                           (FLt (pt_polar c (pwalk (pv 0 0) w)) (pt_polar c' (wstep (pwalk (pv 0 0) w) (Some i)))));
       [inlist|exists w, c, c'; right; by exists i|fscp|fmwp]. }
   cbn. tstep.
   { (* the loop *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 1 0)) (Some (pv 0 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 1 0)) (Some (pc 0 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     unfold lp_srv. cbn. tstep; [tstep|]. cbn.
-    set (RD := TEx (LPt (pt_dual (pv 0 0))) 1 (BCs [pt_dual (pv 0 0); pv 1 0] after_P) (TSess SEnd (pv 0 0))).
-    eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 0)) None RD); [reflexivity| | |].
-    - eapply (tv_lam W HW _ _ _ _ _ RD _ (Some (pv 1 0)) None 1); [set_solver|cbn; set_solver|].
-      cbn. eapply (tv_open W _ _ _ _ _ 0 (LPt (pt_dual (pv 0 0))) 1 (BCs [pt_dual (pv 0 0); pv 1 0] after_P)
+    set (RD := TEx (LPt (pt_dual (pc 0 0))) 1 (BCs [pt_dual (pc 0 0); pc 1 0] after_P) (TSess SEnd (pv 0 0))).
+    eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 1 0)) None RD); [reflexivity| | |].
+    - eapply (tv_lam W HW _ _ _ _ _ RD _ (Some (pc 1 0)) None 1); [set_solver|cbn; set_solver|].
+      cbn. eapply (tv_open W _ _ _ _ _ 0 (LPt (pt_dual (pc 0 0))) 1 (BCs [pt_dual (pc 0 0); pc 1 0] after_P)
                   (TSess SEnd (pv 0 0)) _
-                  (<[1:=Some (pv 2 0)]> (<[0:=Some (pv 2 0)]> ∅))
-                  [(top_C0, [pvar 2]); (BCs [pvar 2] send_P, [pvar 1]); (BCs [pt_dual (pv 1 0); pv 2 0] after_P, [pv 0 0])]
+                  (<[1:=Some (pc 1 0)]> (<[0:=Some (pc 1 0)]> ∅))
+                  [(top_C0, [pconst 1]); (BCs [pconst 1] send_P, [pconst 0]); (BCs [pt_dual (pc 0 0); pc 1 0] after_P, [pv 0 0])]
                   _ (∅, Some (FVar 1)) TUnit);
         [reflexivity|intros []|reflexivity|reflexivity|reflexivity|apply sf_pinst_empty|reflexivity|].
       eapply (tv_appk W HW _ _ _ _ KClos _ (Some (pv 0 0)) (TSess SEnd (pv 0 0))); [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 2 0). split; [done|]. right.
-      eapply (sl_hyp W _ [pt_dual (pv 1 0); pv 2 0] after_P [pv 0 0] (FLt (pv 0 0) (pv 2 0)));
+      exists (pc 1 0). split; [done|]. right.
+      eapply (sl_hyp W _ [pt_dual (pc 0 0); pc 1 0] after_P [pv 0 0] (FLt (pv 0 0) (pv 2 0)));
         [inlist|right; exists [], true, true; by left|fsc|reflexivity].
-    - eapply (tv_app W HW _ _ _ _ _ _ (Some (pv 1 0)) None (TSess (LpI SEnd) (pt_dual (pv 0 0))) RD);
+    - eapply (tv_app W HW _ _ _ _ _ _ (Some (pc 1 0)) None (TSess (LpI SEnd) (pt_dual (pc 0 0))) RD);
         [reflexivity| | |].
-      + unfold RD. rewrite <-(lp_inst (pt_dual (pv 0 0)) (pv 1 0) SEnd).
-        apply (typed_force W _ _ _ _ _ _ 2 1 send_C None lp_body [pt_dual (pv 0 0); pv 1 0] [SEnd]);
+      + unfold RD. rewrite <-(lp_inst (pt_dual (pc 0 0)) (pc 1 0) SEnd).
+        apply (typed_force W _ _ _ _ _ _ 2 1 send_C None lp_body [pt_dual (pc 0 0); pc 1 0] [SEnd]);
           [done|done| | |done| |apply ubs_none|tstep].
         * apply bcs_hold_intro. intros g (w & c & c' & [-> | (i & ->)]) _; cbn [fact_map fact_holds];
             pnorm; [eapply Haz|eapply Haa].
@@ -244,9 +244,9 @@ Proof.
         * apply Forall_singleton, hcontractive_end.
       + rewrite <-dual_LpC. tstep.
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pv 1 0). split; [done|]. apply sle_refl, HW.
+        exists (pc 1 0). split; [done|]. apply sle_refl, HW.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 1 0). split; [done|]. apply sle_refl, HW. }
+      exists (pc 1 0). split; [done|]. apply sle_refl, HW. }
   (* the client *)
   unfold lp_cli. cbn.
   eapply (tv_appk W HW _ _ _ _ KClos _ (Some (lpp 3)) (TSess SEnd (lpp 3)));
@@ -260,7 +260,7 @@ Proof.
     [|apply (KTSend _ _ _ 0 TUnit LpC (lpp 1)); cbn; set_solver
      |kscope|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
   tstep; [|tstep].
-  eapply (tv_appk W HW _ _ _ _ KSel2 _ (Some (pv 0 0)) (TSess (SPlus SEnd (SSeq (SSnd 0 TUnit) LpC)) (pv 0 0)));
+  eapply (tv_appk W HW _ _ _ _ KSel2 _ (Some (pc 0 0)) (TSess (SPlus SEnd (SSeq (SSnd 0 TUnit) LpC)) (pc 0 0)));
     [|apply KTSel2, (Haa [] true true true)|done|apply ubs_intro; [intros y Hy; mem_cases Hy|done]].
   eapply t_conv; [|tstep]. apply teq_steq. split; [done|apply LpC_unroll].
 Qed.
