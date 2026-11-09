@@ -11,15 +11,17 @@ From LRGV Require Export lang.Syntax.
 
 (** ** Labels *)
 
-(** Session labels σ ::= c?v | c!v | c! | c↔d | c◁i | c▷i *)
+(** Session labels σ ::= o?v | o!v | o! | o↔o' | o◁i | o▷i. Every
+    subject is an end o = (c, b), the channel c and the polarity bit b
+    of the end's point (syntactic points, sharp edges 173). *)
 Inductive slabel :=
-  | SRecv (c : chan) (v : expr)    (* c?v : receiving value v on c *)
-  | SSend (c : chan) (v : expr)    (* c!v : sending value v on c *)
-  | SClos (c : chan)               (* c!  : closing c *)
-  | SLink (cd : gset chan)         (* ↔{c,d} : request to forward the pair *)
-  | SSel (c : chan) (b : bool)     (* c◁i : selecting branch i on c,
+  | SRecv (c : cend) (v : expr)    (* o?v : receiving value v on o *)
+  | SSend (c : cend) (v : expr)    (* o!v : sending value v on o *)
+  | SClos (c : cend)               (* o!  : closing o *)
+  | SLink (cd : gset cend)         (* ↔{o,o'} : request to forward the pair *)
+  | SSel (c : cend) (b : bool)     (* o◁i : selecting branch i on o,
                                       i = 1 for false, i = 2 for true (K4) *)
-  | SBra (c : chan) (b : bool).    (* c▷i : branching on c, branch i taken *)
+  | SBra (c : cend) (b : bool).    (* o▷i : branching on o, branch i taken *)
 
 (** The injection of a branch: inj₁ for false, inj₂ for true. *)
 Definition inj_of (b : bool) (e : expr) : expr := if b then Inj2 e else Inj1 e.
@@ -35,7 +37,7 @@ Definition inj_of (b : bool) (e : expr) : expr := if b then Inj2 e else Inj1 e.
 Inductive tlabel :=
   | LBeta
   | LSess (σ : slabel)
-  | LNew (c : chan)                (* (νc) : creation of channel c *)
+  | LNew (c : chan) (x : point)    (* (νc)@x : creation of channel c at x *)
   | LSpawn (v : expr).             (* ⇑v   : spawning thread v ∗ *)
 
 (** ** Head steps
@@ -57,28 +59,35 @@ Inductive head_step : expr → tlabel → expr → Prop :=
   | HeadLetP u v e :                                    (* T-Act-LetPair *)
       is_val u → is_val v →
       head_step (LetP (Pair u v) e) LBeta (subst2 u v e)
-  | HeadNew c :                                         (* T-Act-New *)
-      (* both ends of a channel carry the one name c *)
-      head_step (App ENew EUnit) (LNew c) (Pair (Chan c) (Chan c))
+  | HeadNew c x :                                       (* T-Act-New *)
+      (* both ends of a channel carry the one name c, and their bits
+         are the polarities of x and x̄ *)
+      head_step (App ENew (EPt x)) (LNew c x)
+        (Pair (Chan c (pt_pol x)) (Chan c (negb (pt_pol x))))
+  | HeadPay i x :                                       (* T-Act-Pay *)
+      head_step (App (Konst (KPay i)) (EPt x)) LBeta (EPt (pt_payload x i))
+  | HeadSucc x :                                        (* T-Act-Succ *)
+      head_step (App (Konst KSucc) (EPt x)) LBeta (EPt (pt_shift 1 x))
   | HeadSpawn v :                                       (* T-Act-Spawn *)
       is_val v →
       head_step (App ESpawn v) (LSpawn v) EUnit
-  | HeadRecv c v :                                      (* T-Act-Recv *)
+  | HeadRecv c β v :                                    (* T-Act-Recv *)
       is_val v →
-      head_step (App ERecv (Chan c)) (LSess (SRecv c v)) (Pair v (Chan c))
-  | HeadSend v c :                                      (* T-Act-Send *)
+      head_step (App ERecv (Chan c β)) (LSess (SRecv (c, β) v)) (Pair v (Chan c β))
+  | HeadSend v c β :                                    (* T-Act-Send *)
       is_val v →
-      head_step (App ESend (Pair v (Chan c))) (LSess (SSend c v)) (Chan c)
-  | HeadClos c :                                        (* T-Act-Close *)
-      head_step (App EClos (Chan c)) (LSess (SClos c)) EUnit
-  | HeadSel1 c :                                        (* T-Act-Select₁ *)
-      head_step (App ESel1 (Chan c)) (LSess (SSel c false)) (Chan c)
-  | HeadSel2 c :                                        (* T-Act-Select₂ *)
-      head_step (App ESel2 (Chan c)) (LSess (SSel c true)) (Chan c)
-  | HeadBra c b :                                       (* T-Act-Branch *)
+      head_step (App ESend (Pair v (Chan c β))) (LSess (SSend (c, β) v)) (Chan c β)
+  | HeadClos c β :                                      (* T-Act-Close *)
+      head_step (App EClos (Chan c β)) (LSess (SClos (c, β))) EUnit
+  | HeadSel1 c β :                                      (* T-Act-Select₁ *)
+      (* the selecting end continues at a negative point (sel_pt) *)
+      head_step (App ESel1 (Chan c β)) (LSess (SSel (c, β) false)) (Chan c false)
+  | HeadSel2 c β :                                      (* T-Act-Select₂ *)
+      head_step (App ESel2 (Chan c β)) (LSess (SSel (c, β) true)) (Chan c false)
+  | HeadBra c β b :                                     (* T-Act-Branch *)
       (* branch waits for either pick and returns the channel in the
-         injection of the branch taken *)
-      head_step (App EBra (Chan c)) (LSess (SBra c b)) (inj_of b (Chan c))
+         injection of the branch taken, at a positive point (bra_pt) *)
+      head_step (App EBra (Chan c β)) (LSess (SBra (c, β) b)) (inj_of b (Chan c true))
   | HeadCase1 v e1 e2 :                                 (* T-Act-Case-Inl *)
       is_val v →
       head_step (Case (Inj1 v) e1 e2) LBeta (subst1 v e1)
@@ -93,14 +102,14 @@ Inductive head_step : expr → tlabel → expr → Prop :=
          step of the recursion, so !e is Lily's fix (§4.2) and
          replicating it re-runs the suspended computation *)
       head_step (App EForce (EBox e)) LBeta (subst1 (EBox e) e)
-  | HeadLink c d :                                      (* T-Act-Link *)
-      (* The label ↔{c,d} is a set, so the order of c and d does not
+  | HeadLink c bc d bd :                                (* T-Act-Link *)
+      (* The label ↔{o,o'} is a set, so the order of the ends does not
          matter. The ends need not be distinct. A self-forwarding steps
-         with the label {[c]}, which the link clause of the relation
+         with the label {[o]}, which the link clause of the relation
          rejects, so a stuck self-link can never hide in a related
          configuration. Typed terms never build one. *)
-      head_step (App ELink (Pair (Chan c) (Chan d)))
-        (LSess (SLink {[c; d]})) EUnit.
+      head_step (App ELink (Pair (Chan c bc) (Chan d bd)))
+        (LSess (SLink {[(c, bc); (d, bd)]})) EUnit.
 
 (** ** Context closure (T-Act-Ctx)
 
@@ -142,27 +151,27 @@ Definition reduction (e e' : expr) : Prop := tstep e LBeta e'.
     displays, in one uninterrupted stretch. *)
 
 (** The paper's two-element sets, and their symmetry. *)
-Lemma upair_comm (c d : chan) : ({[c; d]} : gset chan) = {[d; c]}.
+Lemma upair_comm `{Countable A} (c d : A) : ({[c; d]} : gset A) = {[d; c]}.
 Proof. apply set_eq. set_solver. Qed.
 
-Lemma upair_eq_inv (a b c d : chan) :
-  ({[a; b]} : gset chan) = {[c; d]} → a ≠ b →
+Lemma upair_eq_inv `{Countable A} (a b c d : A) :
+  ({[a; b]} : gset A) = {[c; d]} → a ≠ b →
   (a = c ∧ b = d) ∨ (a = d ∧ b = c).
 Proof.
-  intros H Hab.
-  assert (a ∈ ({[c; d]} : gset chan)) as Ha by (rewrite <-H; set_solver).
-  assert (b ∈ ({[c; d]} : gset chan)) as Hb by (rewrite <-H; set_solver).
-  assert (c ∈ ({[a; b]} : gset chan)) as Hc by (rewrite H; set_solver).
-  assert (d ∈ ({[a; b]} : gset chan)) as Hd by (rewrite H; set_solver).
+  intros Hs Hab.
+  assert (a ∈ ({[c; d]} : gset A)) as Ha by (rewrite <-Hs; set_solver).
+  assert (b ∈ ({[c; d]} : gset A)) as Hb by (rewrite <-Hs; set_solver).
+  assert (c ∈ ({[a; b]} : gset A)) as Hc by (rewrite Hs; set_solver).
+  assert (d ∈ ({[a; b]} : gset A)) as Hd by (rewrite Hs; set_solver).
   set_solver.
 Qed.
 
-(** The subjects of a label: one channel for the point-to-point
-    actions, both ends for a forwarding offer. *)
+(** The subjects of a label, as channel names: one channel for the
+    point-to-point actions, both for a forwarding offer. *)
 Definition subjs (σ : slabel) : gset chan :=
   match σ with
-  | SRecv c _ | SSend c _ | SClos c | SSel c _ | SBra c _ => {[c]}
-  | SLink cd => cd
+  | SRecv c _ | SSend c _ | SClos c | SSel c _ | SBra c _ => {[c.1]}
+  | SLink cd => set_map fst cd
   end.
 
 (** Channels escaping the local scope due to a communication effect:
@@ -342,12 +351,12 @@ Proof. intros H. exact (tstep_label_val _ _ _ H). Qed.
 Definition lchans (α : tlabel) : gset chan :=
   match α with
   | LBeta => ∅
-  | LSess (SRecv c w) => {[c]} ∪ fchans w
-  | LSess (SSend c _) => {[c]}
-  | LSess (SClos c) => {[c]}
-  | LSess (SLink cd) => cd
-  | LSess (SSel c _) | LSess (SBra c _) => {[c]}
-  | LNew c => {[c]}
+  | LSess (SRecv c w) => {[c.1]} ∪ fchans w
+  | LSess (SSend c _) => {[c.1]}
+  | LSess (SClos c) => {[c.1]}
+  | LSess (SLink cd) => set_map fst cd
+  | LSess (SSel c _) | LSess (SBra c _) => {[c.1]}
+  | LNew c _ => {[c]}
   | LSpawn v => fchans v
   end.
 
@@ -372,7 +381,7 @@ Qed.
     term names one channel twice; that case is what the relation
     refutes rather than what the semantics forbids. *)
 Lemma tstep_link_shape e cd e' :
-  tstep e (LSess (SLink cd)) e' → ∃ c d, cd = {[c; d]}.
+  tstep e (LSess (SLink cd)) e' → ∃ c bc d bd, cd = {[(c, bc); (d, bd)]}.
 Proof.
   intros H. remember (LSess (SLink cd)) as α eqn:Hα.
   induction H; subst; try (by apply IHtstep).
@@ -447,8 +456,8 @@ Inductive proc_step : proc → plabel → proc → Prop :=
   | PStepBeta C E e e' :                               (* P-Act-Beta *)
       tstep e LBeta e' →
       proc_step (C, E ⊎ {[+ e +]}) PTau (C, E ⊎ {[+ e' +]})
-  | PStepNew C E e c e' :                              (* P-Act-New *)
-      tstep e (LNew c) e' →
+  | PStepNew C E e c x e' :                            (* P-Act-New *)
+      tstep e (LNew c x) e' →
       c ∉ C → c ∉ echans E → c ∉ fchans e →
       proc_step (C, E ⊎ {[+ e +]}) PTau
                 (C ∪ {[c]}, E ⊎ {[+ e' +]})
@@ -456,25 +465,27 @@ Inductive proc_step : proc → plabel → proc → Prop :=
       tstep e (LSpawn v) e' →
       proc_step (C, E ⊎ {[+ e +]}) PTau
                 (C, E ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]})
-  | PStepMsg C E c v e e' f f' :                       (* P-Act-Msg *)
-      tstep e (LSess (SSend c v)) e' →
-      tstep f (LSess (SRecv c v)) f' →
+  | PStepMsg C E c b v e e' f f' :                     (* P-Act-Msg *)
+      (* a send on one end meets a receive on the other *)
+      tstep e (LSess (SSend (c, b) v)) e' →
+      tstep f (LSess (SRecv (c, negb b) v)) f' →
       proc_step (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
                 (C, E ⊎ {[+ e' +]} ⊎ {[+ f' +]})
-  | PStepClose C E c e e' f f' :                       (* P-Act-Close *)
-      tstep e (LSess (SClos c)) e' →
-      tstep f (LSess (SClos c)) f' →
+  | PStepClose C E c b e e' f f' :                     (* P-Act-Close *)
+      tstep e (LSess (SClos (c, b))) e' →
+      tstep f (LSess (SClos (c, negb b))) f' →
       c ∈ C →
       proc_step (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
                 (C ∖ {[c]}, E ⊎ {[+ e' +]} ⊎ {[+ f' +]})
-  | PStepChoice C E c b e e' f f' :                    (* P-Act-Choice *)
-      (* a selection meets a branch on the same channel, like a message
-         without payload; the channel may be free or restricted *)
-      tstep e (LSess (SSel c b)) e' →
-      tstep f (LSess (SBra c b)) f' →
+  | PStepChoice C E c β b e e' f f' :                  (* P-Act-Choice *)
+      (* a selection meets a branch on the other end of the same
+         channel, like a message without payload; the channel may be
+         free or restricted *)
+      tstep e (LSess (SSel (c, β) b)) e' →
+      tstep f (LSess (SBra (c, negb β) b)) f' →
       proc_step (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau
                 (C, E ⊎ {[+ e' +]} ⊎ {[+ f' +]})
-  | PStepLink C E e c d e' :                           (* P-Act-Link *)
+  | PStepLink C E e c bc d bd e' :                     (* P-Act-Link *)
       (* The paper's rule. The removed end c must be restricted, and the
          whole resulting soup is substituted, the actor's continuation
          included, so c's peer is fused with whoever holds d. The label
@@ -482,7 +493,7 @@ Inductive proc_step : proc → plabel → proc → Prop :=
          ([upair_comm]). For c = d the substitution is the identity and
          the rule releases the name. An offer with both ends free is
          P-Act-Session. *)
-      tstep e (LSess (SLink {[c; d]})) e' →
+      tstep e (LSess (SLink {[(c, bc); (d, bd)]})) e' →
       c ∈ C →
       proc_step (C, E ⊎ {[+ e +]}) PTau
                 (C ∖ {[c]}, echsubst c d (E ⊎ {[+ e' +]})).

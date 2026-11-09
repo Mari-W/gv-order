@@ -9,19 +9,126 @@ From stdpp Require Import base strings gmap gmultiset countable.
 
 Definition chan := string.
 
+(** ** Points
+
+    One sort of names (decision N). A point (p, b) is a name p with an
+    offset b. A name is a point constant, a point variable (de Bruijn,
+    bound by ∀ under □ or by ∃ in a payload), or (p, b)[i], "the point
+    of the i-th channel carried by the message sent at (p, b)". The
+    channel continues at (p, b)[i] after branch i was picked at (p, b),
+    the same point the i-th channel of a message sent at (p, b) gets
+    (K11 of docs/extensions/context-free.md). Worlds and environments
+    use ground points (constants and their payload points), static
+    types also use variables. No point mentions a channel, so renaming channels
+    changes no type and no world.
+
+    The name of (p, b)[i] writes p and b unpacked, so that
+    names are not mutual with points. *)
+
+Inductive pname :=
+  | NConst (a : nat)
+  | NVar (a : nat)
+  | NPayload (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
+
+(** A point carries a polarity (end points, docs/extensions/end-points.md).
+    The two ends of a channel sit at dual points x and x̄, which share
+    name and offset and differ in [pt_pol]. [Pt p o] is the point of
+    positive polarity. *)
+Record point := MkPt { pt_name : pname; pt_pol : bool; pt_off : nat }.
+Abbreviation Pt p o := (MkPt p true o).
+
+Global Instance pname_eq_dec : EqDecision pname.
+Proof. solve_decision. Defined.
+
+Global Instance pname_countable : Countable pname.
+Proof.
+  set (enc := fix go p : gen_tree nat :=
+    match p with
+    | NConst a => GenNode 1 [GenLeaf a]
+    | NVar a => GenLeaf a
+    | NPayload p b i => GenNode 0 [go p; GenLeaf b; GenLeaf i]
+    end).
+  set (dec := fix go t : pname :=
+    match t with
+    | GenNode 1 [GenLeaf a] => NConst a
+    | GenLeaf a => NVar a
+    | GenNode 0 [t; GenLeaf b; GenLeaf i] => NPayload (go t) b i
+    | _ => NVar 0
+    end).
+  apply (inj_countable' enc dec).
+  intros p; induction p; simpl; congruence.
+Qed.
+
+Global Instance point_eq_dec : EqDecision point.
+Proof. solve_decision. Defined.
+
+Global Instance point_countable : Countable point.
+Proof.
+  apply (inj_countable' (λ x, (pt_name x, pt_pol x, pt_off x)) (λ '(p, q, b), MkPt p q b)).
+  by intros [].
+Qed.
+
+(** x + n, x[i], the variable a, and the constant a at offset 0. *)
+Definition pt_shift (n : nat) (x : point) : point :=
+  MkPt (pt_name x) (pt_pol x) (pt_off x + n).
+(** The payload point x[i] names the i-th carried end. It is the same
+    point from both ends of the carrier, so it ignores the polarity of
+    x and is positive itself: x̄[i] = x[i]. *)
+Definition pt_payload (x : point) (i : nat) : point :=
+  Pt (NPayload (pt_name x) (pt_off x) i) 0.
+(** The dual point x̄, the point of the other end. *)
+Definition pt_dual (x : point) : point :=
+  MkPt (pt_name x) (negb (pt_pol x)) (pt_off x).
+(** The point y read at polarity b: y itself for [true], ȳ for [false]. *)
+Definition pt_polar (b : bool) (y : point) : point := if b then y else pt_dual y.
+
+Lemma pt_dual_dual x : pt_dual (pt_dual x) = x.
+Proof. destruct x as [p b o]. unfold pt_dual. simpl. by rewrite negb_involutive. Qed.
+Lemma pt_dual_shift n x : pt_dual (pt_shift n x) = pt_shift n (pt_dual x).
+Proof. done. Qed.
+Lemma pt_payload_dual x i : pt_payload (pt_dual x) i = pt_payload x i.
+Proof. done. Qed.
+Lemma pt_dual_inj x y : pt_dual x = pt_dual y → x = y.
+Proof. intros H. by rewrite <-(pt_dual_dual x), H, pt_dual_dual. Qed.
+Lemma pt_dual_neq x : pt_dual x ≠ x.
+Proof. destruct x as [p [] o]; unfold pt_dual; simpl; congruence. Qed.
+Lemma pt_polar_shift b n y : pt_polar b (pt_shift n y) = pt_shift n (pt_polar b y).
+Proof. by destruct b. Qed.
+Lemma pt_polar_dual b y : pt_polar b (pt_dual y) = pt_dual (pt_polar b y).
+Proof. by destruct b. Qed.
+Lemma pt_polar_payload b y i : pt_payload (pt_polar b y) i = pt_payload y i.
+Proof. by destruct b. Qed.
+(** The payload point p[j] and the offset p + k, written x ·[ j ] and
+    x +ₚ k, the paper's p[j] and p+k. *)
+Notation "x ·[ j ]" := (pt_payload x j) (at level 2, j at level 200, left associativity, format "x ·[ j ]").
+Notation "x +ₚ k" := (pt_shift k x) (at level 50, left associativity).
+(** The index j of x[j] for branch i: x[0] for the first branch ([false]),
+    x[1] for the second ([true]) (K11). *)
+Definition bidx (i : bool) : nat := if i then 1 else 0.
+(** Where a choice continues (end points): the selecting end at
+    (x[i])‾, the branching end at x[i]. The two are dual. *)
+Definition sel_pt (x : point) (i : bool) : point := pt_dual (pt_payload x (bidx i)).
+Definition bra_pt (x : point) (i : bool) : point := pt_payload x (bidx i).
+
+Definition pvar (a : nat) : point := Pt (NVar a) 0.
+Definition pconst (a : nat) : point := Pt (NConst a) 0.
+
 (** Constants for the concurrency primitives. [new] creates a channel
     and returns both of its ends; [spawn] starts a thread running a
     thunk (they replace the paper's fork, which did both at once). *)
 Inductive konst :=
   | KNew | KSpawn | KRecv | KSend | KClos | KLink
   | KForce
-  | KSel1 | KSel2 | KBra.          (* select₁, select₂ and branch (K4) *)
+  | KSel1 | KSel2 | KBra          (* select₁, select₂ and branch (K4) *)
+  | KPay (i : nat)                 (* x ↦ x[i] on point values (syntactic points) *)
+  | KSucc.                         (* x ↦ x + 1 on point values *)
 
 Inductive expr :=
   | Var (x : nat)
   | EUnit                          (* the unit value ∗ *)
   | Konst (k : konst)
-  | Chan (c : chan)
+  | Chan (c : chan) (b : bool)     (* the end of c whose point has polarity b *)
+  | EPt (x : point)                (* a point value, of type TPt x *)
   | Lam (e : expr)                 (* λa.e — binds 1 *)
   | App (e1 e2 : expr)
   | Pair (e1 e2 : expr)            (* ⟨e1,e2⟩ *)
@@ -59,7 +166,7 @@ Definition ksel (b : bool) : konst := if b then KSel2 else KSel1.
 
 Fixpoint is_val (e : expr) : bool :=
   match e with
-  | EUnit | Konst _ | Chan _ | Lam _ | EBox _ => true
+  | EUnit | Konst _ | Chan _ _ | EPt _ | Lam _ | EBox _ => true
   | Pair e1 e2 => is_val e1 && is_val e2
   | Inj1 e | Inj2 e => is_val e
   | _ => false
@@ -77,12 +184,14 @@ Global Instance konst_countable : Countable konst.
 Proof.
   apply (inj_countable'
     (λ k, match k with
-          | KNew => 0 | KSpawn => 1 | KRecv => 2 | KSend => 3 | KClos => 4
-          | KLink => 5 | KForce => 6 | KSel1 => 7 | KSel2 => 8 | KBra => 9
+          | KNew => inl 0 | KSpawn => inl 1 | KRecv => inl 2 | KSend => inl 3 | KClos => inl 4
+          | KLink => inl 5 | KForce => inl 6 | KSel1 => inl 7 | KSel2 => inl 8 | KBra => inl 9
+          | KSucc => inl 10 | KPay i => inr i
           end)
     (λ n, match n with
-          | 0 => KNew | 1 => KSpawn | 2 => KRecv | 3 => KSend | 4 => KClos
-          | 5 => KLink | 6 => KForce | 7 => KSel1 | 8 => KSel2 | _ => KBra
+          | inl 0 => KNew | inl 1 => KSpawn | inl 2 => KRecv | inl 3 => KSend | inl 4 => KClos
+          | inl 5 => KLink | inl 6 => KForce | inl 7 => KSel1 | inl 8 => KSel2 | inl 9 => KBra
+          | inl _ => KSucc | inr i => KPay i
           end)).
   by intros [].
 Qed.
@@ -92,12 +201,13 @@ Proof. solve_decision. Defined.
 
 Global Instance expr_countable : Countable expr.
 Proof.
-  set (enc := fix go e : gen_tree (nat + konst + chan) :=
+  set (enc := fix go e : gen_tree (nat + konst + (chan * bool) + point) :=
     match e with
-    | Var x => GenLeaf (inl (inl x))
+    | Var x => GenLeaf (inl (inl (inl x)))
     | EUnit => GenNode 0 []
-    | Konst k => GenLeaf (inl (inr k))
-    | Chan c => GenLeaf (inr c)
+    | Konst k => GenLeaf (inl (inl (inr k)))
+    | Chan c b => GenLeaf (inl (inr (c, b)))
+    | EPt x => GenLeaf (inr x)
     | Lam e => GenNode 1 [go e]
     | App e1 e2 => GenNode 2 [go e1; go e2]
     | Pair e1 e2 => GenNode 3 [go e1; go e2]
@@ -110,10 +220,11 @@ Proof.
     end).
   set (dec := fix go t : expr :=
     match t with
-    | GenLeaf (inl (inl x)) => Var x
+    | GenLeaf (inl (inl (inl x))) => Var x
     | GenNode 0 [] => EUnit
-    | GenLeaf (inl (inr k)) => Konst k
-    | GenLeaf (inr c) => Chan c
+    | GenLeaf (inl (inl (inr k))) => Konst k
+    | GenLeaf (inl (inr (c, b))) => Chan c b
+    | GenLeaf (inr x) => EPt x
     | GenNode 1 [t] => Lam (go t)
     | GenNode 2 [t1; t2] => App (go t1) (go t2)
     | GenNode 3 [t1; t2] => Pair (go t1) (go t2)
@@ -140,7 +251,7 @@ Definition upren (r : nat → nat) : nat → nat := 0 .: (S ∘ r).
 Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   match e with
   | Var x => Var (r x)
-  | EUnit | Konst _ | Chan _ => e
+  | EUnit | Konst _ | Chan _ _ | EPt _ => e
   | Lam e => Lam (rename (upren r) e)
   | App e1 e2 => App (rename r e1) (rename r e2)
   | Pair e1 e2 => Pair (rename r e1) (rename r e2)
@@ -158,7 +269,7 @@ Definition up (σ : nat → expr) : nat → expr := Var 0 .: (rename S ∘ σ).
 Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   match e with
   | Var x => σ x
-  | EUnit | Konst _ | Chan _ => e
+  | EUnit | Konst _ | Chan _ _ | EPt _ => e
   | Lam e => Lam (subst (up σ) e)
   | App e1 e2 => App (subst σ e1) (subst σ e2)
   | Pair e1 e2 => Pair (subst σ e1) (subst σ e2)
@@ -177,24 +288,25 @@ Definition subst1 (v : expr) (e : expr) : expr := subst (v .: Var) e.
 Definition subst2 (u v : expr) (e : expr) : expr := subst (v .: u .: Var) e.
 
 (** The encoded let of new (sharp edges 99). The calculus has no let
-    of a single variable, so let p = new ∗ in let ⟨a, b⟩ = p in e is a
-    let pair on ⟨new ∗, ∗⟩ that drops the unit. p is variable 1 of the
-    middle body, and e sees a and b at 1 and 0 and the spent p and unit
-    at 3 and 2. *)
-Definition let_new (e : expr) : expr :=
-  LetP (Pair (App ENew EUnit) EUnit) (LetU (Var 0) (LetP (Var 1) e)).
+    of a single variable, so let p = new v in let ⟨a, b⟩ = p in e is a
+    let pair on ⟨new v, ∗⟩ that drops the unit. new takes the point
+    value v of the channel (syntactic points, sharp edges 173). p is
+    variable 1 of the middle body, and e sees a and b at 1 and 0 and
+    the spent p and unit at 3 and 2. *)
+Definition let_new_at (v e : expr) : expr :=
+  LetP (Pair (App ENew v) EUnit) (LetU (Var 0) (LetP (Var 1) e)).
 
 (** The same program with e indexed as the body of a let pair, a at 1,
     b at 0 and the outer variables from 2. The examples write this. *)
-Definition let_new_pair (e : expr) : expr :=
-  let_new (rename (upren (upren (λ x, 2 + x))) e).
+Definition let_new_pair_at (v e : expr) : expr :=
+  let_new_at v (rename (upren (upren (λ x, 2 + x))) e).
 
 (** ** Closedness and free channels *)
 
 Fixpoint closed_at (n : nat) (e : expr) : bool :=
   match e with
   | Var x => bool_decide (x < n)
-  | EUnit | Konst _ | Chan _ => true
+  | EUnit | Konst _ | Chan _ _ | EPt _ => true
   | Lam e => closed_at (S n) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => closed_at n e1 && closed_at n e2
   | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
@@ -206,12 +318,32 @@ Fixpoint closed_at (n : nat) (e : expr) : bool :=
 (** All channels in a term are considered free (terms only bind variables). *)
 Fixpoint fchans (e : expr) : gset chan :=
   match e with
-  | Var _ | EUnit | Konst _ => ∅
-  | Chan c => {[c]}
+  | Var _ | EUnit | Konst _ | EPt _ => ∅
+  | Chan c _ => {[c]}
   | Lam e | Inj1 e | Inj2 e | EBox e => fchans e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fchans e1 ∪ fchans e2
   | Case e e1 e2 => fchans e ∪ fchans e1 ∪ fchans e2
   end.
+
+(** The ends a term mentions. An end is a channel and the polarity bit
+    of its point (syntactic points, sharp edges 173). *)
+Notation cend := (chan * bool)%type.
+
+Fixpoint fends (e : expr) : gset cend :=
+  match e with
+  | Var _ | EUnit | Konst _ | EPt _ => ∅
+  | Chan c b => {[(c, b)]}
+  | Lam e | Inj1 e | Inj2 e | EBox e => fends e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fends e1 ∪ fends e2
+  | Case e e1 e2 => fends e ∪ fends e1 ∪ fends e2
+  end.
+
+Lemma fchans_fends e : fchans e = set_map fst (fends e).
+Proof.
+  induction e; simpl;
+    rewrite ?set_map_union_L, ?set_map_empty, ?set_map_singleton_L; try congruence.
+  all: try done. all: by rewrite IHe1, IHe2, IHe3.
+Qed.
 
 (** ** Basic lemmas about substitution *)
 
@@ -322,17 +454,17 @@ Qed.
 
 (** ** The encoded let of new under renaming and substitution *)
 
-Lemma rename_let_new_pair r e :
-  rename r (let_new_pair e) = let_new_pair (rename (upren (upren r)) e).
+Lemma rename_let_new_pair_at r v e :
+  rename r (let_new_pair_at v e) = let_new_pair_at (rename r v) (rename (upren (upren r)) e).
 Proof.
-  unfold let_new_pair, let_new. simpl. do 3 f_equal.
+  unfold let_new_pair_at, let_new_at. simpl. do 3 f_equal.
   rewrite !rename_rename. apply rename_ext. by intros [|[|x]].
 Qed.
 
-Lemma subst_let_new_pair σ e :
-  subst σ (let_new_pair e) = let_new_pair (subst (up (up σ)) e).
+Lemma subst_let_new_pair_at σ v e :
+  subst σ (let_new_pair_at v e) = let_new_pair_at (subst σ v) (subst (up (up σ)) e).
 Proof.
-  unfold let_new_pair, let_new. simpl. do 3 f_equal.
+  unfold let_new_pair_at, let_new_at. simpl. do 3 f_equal.
   rewrite subst_rename, rename_subst. apply subst_ext. intros [|[|x]]; simpl; [done..|].
   unfold compose. by rewrite !rename_rename.
 Qed.
@@ -355,7 +487,7 @@ Definition upP (P : nat → Prop) : nat → Prop :=
 Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   match e with
   | Var x => P x
-  | EUnit | Konst _ | Chan _ => True
+  | EUnit | Konst _ | Chan _ _ | EPt _ => True
   | Lam e => allfv (upP P) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
@@ -390,7 +522,7 @@ Qed.
 Fixpoint freevar (x : nat) (e : expr) : Prop :=
   match e with
   | Var y => x = y
-  | EUnit | Konst _ | Chan _ => False
+  | EUnit | Konst _ | Chan _ _ | EPt _ => False
   | Lam e => freevar (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
@@ -484,7 +616,7 @@ Lemma fchans_subst e : ∀ γ (D : gset chan),
   fchans (subst γ e) ⊆ fchans e ∪ D.
 Proof.
   induction e; simpl; intros γ D HP;
-    [set_solver|set_solver|set_solver|set_solver| | | | | | | | |];
+    [set_solver|set_solver|set_solver|set_solver|set_solver| | | | | | | | |];
     [|destruct HP as [H1 H2];
       specialize (IHe1 _ _ H1); specialize (IHe2 _ _ H2); set_solver ..| |set_solver|set_solver| | ].
   - (* Lam *)
@@ -546,7 +678,8 @@ Fixpoint eswap (a b : chan) (e : expr) : expr :=
   | Var x => Var x
   | EUnit => EUnit
   | Konst k => Konst k
-  | Chan c => Chan (cswap a b c)
+  | Chan c β => Chan (cswap a b c) β
+  | EPt x => EPt x
   | Lam e => Lam (eswap a b e)
   | App e1 e2 => App (eswap a b e1) (eswap a b e2)
   | Pair e1 e2 => Pair (eswap a b e1) (eswap a b e2)
@@ -580,7 +713,8 @@ Fixpoint chsubst (c d : chan) (e : expr) : expr :=
   | Var x => Var x
   | EUnit => EUnit
   | Konst k => Konst k
-  | Chan c' => Chan (if decide (c' = c) then d else c')
+  | Chan c' β => Chan (if decide (c' = c) then d else c') β
+  | EPt x => EPt x
   | Lam e => Lam (chsubst c d e)
   | App e1 e2 => App (chsubst c d e1) (chsubst c d e2)
   | Pair e1 e2 => Pair (chsubst c d e1) (chsubst c d e2)

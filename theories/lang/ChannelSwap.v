@@ -125,21 +125,43 @@ Qed.
 
 (** ** Labels *)
 
+(** The transposition of an end keeps its bit. *)
+Definition oswap (a b : chan) (o : cend) : cend := (cswap a b o.1, o.2).
+
+Definition goswap (a b : chan) (cd : gset cend) : gset cend := set_map (oswap a b) cd.
+
+Lemma goswap_upair a b c bc d bd :
+  goswap a b ({[(c, bc); (d, bd)]} : gset cend) = {[(cswap a b c, bc); (cswap a b d, bd)]}.
+Proof.
+  unfold goswap. by rewrite set_map_union_L, !set_map_singleton_L.
+Qed.
+
+Lemma goswap_fst a b cd : set_map fst (goswap a b cd) = gswap a b (set_map fst cd).
+Proof.
+  unfold goswap, gswap. apply set_eq. intros x. split.
+  - intros Hx. apply elem_of_map in Hx as (o & -> & Ho).
+    apply elem_of_map in Ho as (o' & -> & Ho').
+    apply elem_of_map. exists o'.1. split; [done|]. apply elem_of_map. by exists o'.
+  - intros Hx. apply elem_of_map in Hx as (y & -> & Hy).
+    apply elem_of_map in Hy as (o & -> & Ho).
+    apply elem_of_map. exists (oswap a b o). split; [done|]. apply elem_of_map. by exists o.
+Qed.
+
 Definition slswap (a b : chan) (σ : slabel) : slabel :=
   match σ with
-  | SRecv c v => SRecv (cswap a b c) (eswap a b v)
-  | SSend c v => SSend (cswap a b c) (eswap a b v)
-  | SClos c => SClos (cswap a b c)
-  | SLink cd => SLink (gswap a b cd)
-  | SSel c i => SSel (cswap a b c) i
-  | SBra c i => SBra (cswap a b c) i
+  | SRecv c v => SRecv (oswap a b c) (eswap a b v)
+  | SSend c v => SSend (oswap a b c) (eswap a b v)
+  | SClos c => SClos (oswap a b c)
+  | SLink cd => SLink (goswap a b cd)
+  | SSel c i => SSel (oswap a b c) i
+  | SBra c i => SBra (oswap a b c) i
   end.
 
 Definition tlswap (a b : chan) (α : tlabel) : tlabel :=
   match α with
   | LBeta => LBeta
   | LSess σ => LSess (slswap a b σ)
-  | LNew c => LNew (cswap a b c)
+  | LNew c x => LNew (cswap a b c) x
   | LSpawn v => LSpawn (eswap a b v)
   end.
 
@@ -150,7 +172,7 @@ Definition plswap (a b : chan) (π : plabel) : plabel :=
   end.
 
 Lemma subjs_sswap a b σ : subjs (slswap a b σ) = gswap a b (subjs σ).
-Proof. destruct σ; simpl; try (by rewrite gswap_singleton). done. Qed.
+Proof. destruct σ; simpl; try (by rewrite gswap_singleton). apply goswap_fst. Qed.
 
 Lemma sentc_sswap a b σ : sentc (slswap a b σ) = gswap a b (sentc σ).
 Proof. destruct σ; simpl; rewrite ?fchans_eswap, ?gswap_empty; done. Qed.
@@ -161,7 +183,7 @@ Lemma head_step_eswap a b e α e' :
   head_step e α e' →
   head_step (eswap a b e) (tlswap a b α) (eswap a b e').
 Proof.
-  destruct 1; simpl; rewrite ?eswap_subst1, ?eswap_subst2, ?gswap_upair;
+  destruct 1; simpl; rewrite ?eswap_subst1, ?eswap_subst2, ?goswap_upair;
     try (match goal with |- context [inj_of ?i] => destruct i; simpl; constructor; done end);
     constructor; rewrite ?is_val_eswap; done.
 Qed.
@@ -270,7 +292,7 @@ Proof.
   - (* new *)
     rewrite !msswap_disj_union, !msswap_singleton, gswap_union,
       gswap_singleton.
-    apply PStepNew.
+    eapply PStepNew.
     + by apply (tstep_eswap a b) in H.
     + by rewrite elem_of_gswap.
     + rewrite echans_msswap. by rewrite elem_of_gswap.
@@ -298,9 +320,9 @@ Proof.
   - (* link *)
     rewrite (msswap_disj_union a b E), msswap_singleton, gswap_difference,
       gswap_singleton, echsubst_msswap, msswap_disj_union, msswap_singleton.
-    apply PStepLink.
+    eapply PStepLink.
     + apply (tstep_eswap a b) in H. simpl in H.
-      by rewrite gswap_upair in H.
+      rewrite goswap_upair in H. exact H.
     + by rewrite elem_of_gswap.
 Qed.
 

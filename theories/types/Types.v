@@ -11,109 +11,6 @@
 From stdpp Require Import base strings gmap countable.
 From LRGV Require Export lang.Syntax.
 
-(** ** Points
-
-    One sort of names (decision N). A point (p, b) is a name p with an
-    offset b. A name is a point constant, a point variable (de Bruijn,
-    bound by ∀ under □ or by ∃ in a payload), or (p, b)[i], "the point
-    of the i-th channel carried by the message sent at (p, b)". The
-    channel continues at (p, b)[i] after branch i was picked at (p, b),
-    the same point the i-th channel of a message sent at (p, b) gets
-    (K11 of docs/extensions/context-free.md). Worlds and environments
-    use ground points (constants and their payload points), static
-    types also use variables. No point mentions a channel, so renaming channels
-    changes no type and no world.
-
-    The name of (p, b)[i] writes p and b unpacked, so that
-    names are not mutual with points. *)
-
-Inductive pname :=
-  | NConst (a : nat)
-  | NVar (a : nat)
-  | NPayload (p : pname) (b : nat) (i : nat).   (* (p, b)[i] *)
-
-(** A point carries a polarity (end points, docs/extensions/end-points.md).
-    The two ends of a channel sit at dual points x and x̄, which share
-    name and offset and differ in [pt_pol]. [Pt p o] is the point of
-    positive polarity. *)
-Record point := MkPt { pt_name : pname; pt_pol : bool; pt_off : nat }.
-Abbreviation Pt p o := (MkPt p true o).
-
-Global Instance pname_eq_dec : EqDecision pname.
-Proof. solve_decision. Defined.
-
-Global Instance pname_countable : Countable pname.
-Proof.
-  set (enc := fix go p : gen_tree nat :=
-    match p with
-    | NConst a => GenNode 1 [GenLeaf a]
-    | NVar a => GenLeaf a
-    | NPayload p b i => GenNode 0 [go p; GenLeaf b; GenLeaf i]
-    end).
-  set (dec := fix go t : pname :=
-    match t with
-    | GenNode 1 [GenLeaf a] => NConst a
-    | GenLeaf a => NVar a
-    | GenNode 0 [t; GenLeaf b; GenLeaf i] => NPayload (go t) b i
-    | _ => NVar 0
-    end).
-  apply (inj_countable' enc dec).
-  intros p; induction p; simpl; congruence.
-Qed.
-
-Global Instance point_eq_dec : EqDecision point.
-Proof. solve_decision. Defined.
-
-Global Instance point_countable : Countable point.
-Proof.
-  apply (inj_countable' (λ x, (pt_name x, pt_pol x, pt_off x)) (λ '(p, q, b), MkPt p q b)).
-  by intros [].
-Qed.
-
-(** x + n, x[i], the variable a, and the constant a at offset 0. *)
-Definition pt_shift (n : nat) (x : point) : point :=
-  MkPt (pt_name x) (pt_pol x) (pt_off x + n).
-(** The payload point x[i] names the i-th carried end. It is the same
-    point from both ends of the carrier, so it ignores the polarity of
-    x and is positive itself: x̄[i] = x[i]. *)
-Definition pt_payload (x : point) (i : nat) : point :=
-  Pt (NPayload (pt_name x) (pt_off x) i) 0.
-(** The dual point x̄, the point of the other end. *)
-Definition pt_dual (x : point) : point :=
-  MkPt (pt_name x) (negb (pt_pol x)) (pt_off x).
-(** The point y read at polarity b: y itself for [true], ȳ for [false]. *)
-Definition pt_polar (b : bool) (y : point) : point := if b then y else pt_dual y.
-
-Lemma pt_dual_dual x : pt_dual (pt_dual x) = x.
-Proof. destruct x as [p b o]. unfold pt_dual. simpl. by rewrite negb_involutive. Qed.
-Lemma pt_dual_shift n x : pt_dual (pt_shift n x) = pt_shift n (pt_dual x).
-Proof. done. Qed.
-Lemma pt_payload_dual x i : pt_payload (pt_dual x) i = pt_payload x i.
-Proof. done. Qed.
-Lemma pt_dual_inj x y : pt_dual x = pt_dual y → x = y.
-Proof. intros H. by rewrite <-(pt_dual_dual x), H, pt_dual_dual. Qed.
-Lemma pt_dual_neq x : pt_dual x ≠ x.
-Proof. destruct x as [p [] o]; unfold pt_dual; simpl; congruence. Qed.
-Lemma pt_polar_shift b n y : pt_polar b (pt_shift n y) = pt_shift n (pt_polar b y).
-Proof. by destruct b. Qed.
-Lemma pt_polar_dual b y : pt_polar b (pt_dual y) = pt_dual (pt_polar b y).
-Proof. by destruct b. Qed.
-Lemma pt_polar_payload b y i : pt_payload (pt_polar b y) i = pt_payload y i.
-Proof. by destruct b. Qed.
-(** The payload point p[j] and the offset p + k, written x ·[ j ] and
-    x +ₚ k, the paper's p[j] and p+k. *)
-Notation "x ·[ j ]" := (pt_payload x j) (at level 2, j at level 200, left associativity, format "x ·[ j ]").
-Notation "x +ₚ k" := (pt_shift k x) (at level 50, left associativity).
-(** The index j of x[j] for branch i: x[0] for the first branch ([false]),
-    x[1] for the second ([true]) (K11). *)
-Definition bidx (i : bool) : nat := if i then 1 else 0.
-(** Where a choice continues (end points): the selecting end at
-    (x[i])‾, the branching end at x[i]. The two are dual. *)
-Definition sel_pt (x : point) (i : bool) : point := pt_dual (pt_payload x (bidx i)).
-Definition bra_pt (x : point) (i : bool) : point := pt_payload x (bidx i).
-
-Definition pvar (a : nat) : point := Pt (NVar a) 0.
-Definition pconst (a : nat) : point := Pt (NConst a) 0.
 
 (** Instantiation of point variables. A name denotes the point at
     offset 0; the offset of a point adds on top. *)
@@ -237,6 +134,8 @@ Inductive ty :=
                                       instance meeting C, and its
                                       channels lie at or above the lower
                                       bound ℓ, which is absent, ⊥ or a point *)
+  | TPt (x : point)                (* the singleton type of the point value x
+                                      (syntactic points, sharp edges 173) *)
 with sty :=
   | SRcv (m : nat) (T : ty)        (* ?(∃ι₀ … ιₘ₋₁. T), no continuation *)
   | SSnd (m : nat) (T : ty)        (* !(∃ι₀ … ιₘ₋₁. T), no continuation *)
@@ -384,6 +283,7 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   | TSess s x => TSess s (pt_inst σ x)
   | TEx lb n C T1 =>
       TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
+  | TPt x => TPt (pt_inst σ x)
   end.
 
 (** T[xs/ιs]: instantiate the ∀ of a □ (or the ∃ of a payload) with a
@@ -490,7 +390,7 @@ Section tinst.
   Lemma tinst_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
   Proof.
     induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
-                   | lb n C T1 IH]; intros σ τ H; simpl.
+                   | lb n C T1 IH | x]; intros σ τ H; simpl.
     - done.
     - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_ext
                |destruct lb; simpl; f_equal; auto using tpt_inst_ext|auto|auto].
@@ -500,12 +400,13 @@ Section tinst.
     - f_equal. by apply tpt_inst_ext.
     - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_ext|by apply tbcs_ext|].
       apply IH. intros a. by apply tpup_ext.
+    - f_equal. by apply tpt_inst_ext.
   Qed.
 
   Lemma tinst_comp T : ∀ τ σ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
   Proof.
     induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
-                   | lb n C T1 IH]; intros τ σ; simpl.
+                   | lb n C T1 IH | x]; intros τ σ; simpl.
     - done.
     - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_comp
                |destruct lb; simpl; f_equal; auto using tpt_inst_comp|auto|auto].
@@ -515,12 +416,13 @@ Section tinst.
     - f_equal. apply tpt_inst_comp.
     - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_comp|apply tbcs_comp|].
       rewrite IH. apply tinst_ext. intros a. apply tpup_comp.
+    - f_equal. apply tpt_inst_comp.
   Qed.
 
   Lemma tinst_pvar T : pinst_ty pvar T = T.
   Proof.
     induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
-                   | lb n C T1 IH]; simpl.
+                   | lb n C T1 IH | x]; simpl.
     - done.
     - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_pvar
                |destruct lb; simpl; f_equal; auto using tpt_inst_pvar|auto|auto].
@@ -530,6 +432,7 @@ Section tinst.
     - f_equal. apply tpt_inst_pvar.
     - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_pvar|apply tbcs_pvar|].
       rewrite (tinst_ext _ _ pvar); [done|apply tpup_pvar].
+    - f_equal. apply tpt_inst_pvar.
   Qed.
 End tinst.
 
@@ -538,7 +441,7 @@ End tinst.
     existential at the instance of its witness. *)
 Fixpoint tsize (T : ty) : nat :=
   match T with
-  | TUnit | TSess _ _ => 1
+  | TUnit | TSess _ _ | TPt _ => 1
   | TLolli _ _ T1 U | TProd T1 U | TSum T1 U => S (tsize T1 + tsize U)
   | TBox _ _ _ T1 | TEx _ _ _ T1 => S (tsize T1)
   end.
@@ -554,9 +457,10 @@ Lemma ty_ind_ex (P : ty → Prop) :
   (∀ n k C T, P T → P (TBox n k C T)) →
   (∀ s x, P (TSess s x)) →
   (∀ lb n C T, (∀ σ, P (pinst_ty σ T)) → P (TEx lb n C T)) →
+  (∀ x, P (TPt x)) →
   ∀ T, P T.
 Proof.
-  intros H1 H2 H3 H4 H5 H6 H7.
+  intros H1 H2 H3 H4 H5 H6 H7 H8.
   enough (∀ m T, tsize T < m → P T) as H by (intros T; apply (H (S (tsize T))); lia).
   induction m as [|m IH]; intros T HT; [lia|].
   destruct T; simpl in HT.
@@ -567,6 +471,7 @@ Proof.
   - apply H5; apply IH; lia.
   - apply H6.
   - apply H7. intros σ. apply IH. rewrite tsize_pinst. lia.
+  - apply H8.
 Qed.
 
 (** ** Heads
@@ -586,7 +491,7 @@ Definition lb_heads (lb : lbound) : gset point :=
 
 Fixpoint heads (T : ty) : gset point :=
   match T with
-  | TUnit | TBox _ _ _ _ => ∅
+  | TUnit | TBox _ _ _ _ | TPt _ => ∅
   | TLolli _ lb _ _ => opt_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
   | TSess _ x => {[pt_dual x]}
@@ -626,6 +531,7 @@ Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   | TBox n k C T1 => TBox n k C (sren_ty (Nat.iter k upren r) T1)
   | TSess s x => TSess (sren r s) x
   | TEx lb n C T1 => TEx lb n C (sren_ty r T1)
+  | TPt x => TPt x
   end
 with sren (r : nat → nat) (s : sty) : sty :=
   match s with
@@ -658,6 +564,7 @@ Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   | TBox n kk C T1 => TBox n kk C (sflip_ty (kk + k) T1)
   | TSess s x => TSess (sflip k s) x
   | TEx lb n C T1 => TEx lb n C (sflip_ty k T1)
+  | TPt x => TPt x
   end
 with sflip (k : nat) (s : sty) : sty :=
   match s with
@@ -719,6 +626,7 @@ Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   | TBox n k C T1 => TBox n k C (sinst_ty (Nat.iter k sty_up σ) T1)
   | TSess s x => TSess (sinst σ s) x
   | TEx lb n C T1 => TEx lb n C (sinst_ty σ T1)
+  | TPt x => TPt x
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
   match s with
@@ -973,6 +881,7 @@ Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
   | TBox _ kk _ T1 => sclosed_ty (kk + k) T1
   | TSess s _ => sclosed k s
   | TEx _ _ _ T1 => sclosed_ty k T1
+  | TPt _ => True
   end
 with sclosed (k : nat) (s : sty) : Prop :=
   match s with
@@ -1285,7 +1194,7 @@ Inductive prim : ty → Prop :=
     one is a matter of extending the match below. *)
 
 Definition unlimited (T : ty) : Prop :=
-  match T with TBox _ _ _ _ => True | _ => False end.
+  match T with TBox _ _ _ _ | TPt _ => True | _ => False end.
 
 (** ** Session environments: finite maps from channels to session
     types at points, c : S@x, x the channel's current point. Each
@@ -1371,6 +1280,68 @@ Definition tenv_ext (Θ1 : tenv) (c : chan) (e : sty * point) (Θ : tenv)
 Definition tenv_hd (Θ : tenv) (c : chan) (u : sty) (k : point) (Θ1 : tenv)
     : Prop :=
   ∃ s, tenv_ext Θ1 c (s, k) Θ ∧ unfoldS s = u.
+
+(** The ends an environment holds (syntactic points, sharp edges 173):
+    the end of an entry c : S@x is (c, pt_pol x). The two ends of a
+    channel sit at dual points, so the polarity bit tells them apart
+    and the environment needs no key of its own for an end. *)
+Definition ends_ends (c : chan) (o : ends) : gset cend :=
+  match o with
+  | One e => {[(c, pt_pol e.2)]}
+  | Both e1 e2 => {[(c, pt_pol e1.2); (c, pt_pol e2.2)]}
+  end.
+
+Definition tenv_ends (Θ : tenv) : gset cend :=
+  map_fold (λ c o X, ends_ends c o ∪ X) ∅ Θ.
+
+Lemma elem_of_tenv_ends Θ o :
+  o ∈ tenv_ends Θ ↔ ∃ c eo, Θ !! c = Some eo ∧ o ∈ ends_ends c eo.
+Proof.
+  unfold tenv_ends. revert o.
+  apply (map_fold_weak_ind (λ r m, ∀ o, o ∈ r ↔ ∃ c eo, m !! c = Some eo ∧
+                                   o ∈ ends_ends c eo)).
+  - intros o. split; [set_solver|]. intros (c & eo & H & _).
+    by rewrite lookup_empty in H.
+  - intros i eo m r Hi IH o. rewrite elem_of_union, IH. split.
+    + intros [Ho|(c & eo' & Hc & Ho)].
+      * exists i, eo. by rewrite lookup_insert_eq.
+      * exists c, eo'. rewrite lookup_insert_ne; [done|]. intros ->. congruence.
+    + intros (c & eo' & Hc & Ho). destruct (decide (c = i)) as [->|Hne].
+      * rewrite lookup_insert_eq in Hc. injection Hc as ->. by left.
+      * right. rewrite lookup_insert_ne in Hc by done. eauto.
+Qed.
+
+Lemma elem_of_tenv_ends_entry Θ o :
+  o ∈ tenv_ends Θ ↔ ∃ k e, tenv_entry Θ k = Some e ∧ o = (k.1, pt_pol e.2).
+Proof.
+  rewrite elem_of_tenv_ends. split.
+  - intros (c & eo & Hc & Ho). destruct eo as [e|e1 e2]; simpl in Ho.
+    + apply elem_of_singleton in Ho as ->. exists (c, false), e.
+      unfold tenv_entry. simpl. by rewrite Hc.
+    + apply elem_of_union in Ho as [->%elem_of_singleton| ->%elem_of_singleton].
+      * exists (c, false), e1. unfold tenv_entry. simpl. by rewrite Hc.
+      * exists (c, true), e2. unfold tenv_entry. simpl. by rewrite Hc.
+  - intros ([c b] & e & He & ->). unfold tenv_entry in He. simpl in He.
+    destruct (Θ !! c) as [[f|f1 f2]|] eqn:Hc, b; simplify_eq; exists c; eexists;
+      (split; [done|]); simpl; set_solver.
+Qed.
+
+Lemma tenv_ends_empty : tenv_ends ∅ = ∅.
+Proof. apply set_eq. intros o. rewrite elem_of_tenv_ends. set_solver. Qed.
+
+Lemma tenv_ends_singleton_one c e : tenv_ends {[c := One e]} = {[(c, pt_pol e.2)]}.
+Proof.
+  apply set_eq. intros o. rewrite elem_of_tenv_ends. split.
+  - intros (c' & eo & Hc & Ho). apply lookup_singleton_Some in Hc as [<- <-]. done.
+  - intros Ho. exists c, (One e). by rewrite lookup_singleton_eq.
+Qed.
+
+(** Θ fits the term e (E-Fit, sharp edges 173): Θ holds exactly the ends
+    e mentions, and the two ends of a channel Θ holds both of differ in
+    polarity. *)
+Definition tenv_fit (Θ : tenv) (e : expr) : Prop :=
+  tenv_ends Θ = fends e ∧
+  ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → pt_pol e1.2 ≠ pt_pol e2.2.
 
 (** Θ = Θ1, Θ2: pointwise, and only defined where the overlap is one
     end on each side. *)
@@ -1773,11 +1744,15 @@ Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :
         (bcs_at C xs) xs.
 
 (** E-Const reads a constant at an instance whose constraint holds and
-    whose points are known. new is the one constant outside the
-    schemes. Under the constant world (sharp edges 172) it places the
-    channel at a point the order already knows:
+    whose points are known. new and the two point constants are outside
+    the schemes. Under the constant world (sharp edges 172) new places
+    the channel at a point the order already knows, and the program
+    names that point by a point value (syntactic points, sharp edges
+    173):
 
-    new@x  : ∗ ⊸ S@x ⊗ dual S@x̄                 x known
+    new    : pt x ⊸ S@x ⊗ dual S@x̄              x known
+    pay i  : pt x ⊸ pt x[i]                      x[i] known
+    succ   : pt x ⊸ pt (x + 1)                   x + 1 known
 
     The existential signature new : ∗ ⊸ ∃^⊥ι. C. S@ι ⊗ dual S@ῑ, which
     grew the world by a fresh point, is gone. A channel created at the
@@ -1797,7 +1772,13 @@ Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
   | KTNewAt S x :
       pk x →
       konst_ty peq plt pk KNew
-        (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) (pt_dual x)))).
+        (TLolli None None (TPt x) (TProd (TSess S x) (TSess (dual S) (pt_dual x))))
+  | KTPay i x :
+      pk (pt_payload x i) →
+      konst_ty peq plt pk (KPay i) (TLolli None None (TPt x) (TPt (pt_payload x i)))
+  | KTSucc x :
+      pk (pt_shift 1 x) →
+      konst_ty peq plt pk KSucc (TLolli None None (TPt x) (TPt (pt_shift 1 x))).
 
 (** The instances one constant at a time. *)
 Section konst_intro.
@@ -1887,11 +1868,14 @@ Lemma konst_ty_case (peq plt : point → point → Prop) (pk : point → Prop)
      length ss = k → Forall hcontractive ss →
      P KForce (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
                  (sinst_ty (slist ss) (ty_inst xs T)))) →
-  (∀ S x, pk x → P KNew (TLolli None None TUnit (TProd (TSess S x) (TSess (dual S) (pt_dual x))))) →
+  (∀ S x, pk x → P KNew (TLolli None None (TPt x) (TProd (TSess S x) (TSess (dual S) (pt_dual x))))) →
+  (∀ i x, pk (pt_payload x i) → P (KPay i) (TLolli None None (TPt x) (TPt (pt_payload x i)))) →
+  (∀ x, pk (pt_shift 1 x) → P KSucc (TLolli None None (TPt x) (TPt (pt_shift 1 x)))) →
   ∀ k T, konst_ty peq plt pk k T → P k T.
 Proof.
-  intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hna k T [k' T' G xs Hsig HG HK|S x Hx];
-    [|by apply Hna].
+  intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hna Hpy Hsc k T
+    [k' T' G xs Hsig HG HK|S x Hx|i x Hx|x Hx];
+    [|by apply Hna|by apply Hpy|by apply Hsc].
   destruct Hsig as [| m T0 S x Hb| | | | | | |n kk C ub T0 xs ss Hn Hk Hs]; auto.
   - apply Hsd. rewrite Hb. intros h Hh. apply (HG (FLt x h)). by exists h.
   - apply Hs1. by apply (HG (FLt _ _)).
