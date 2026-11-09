@@ -1328,3 +1328,378 @@ The cost is a component of the world and an index of `Ebody`. Ticking stays
 conservative inside the term relation, so the controller keeps needing the
 closed judgment of 16.5. This option is unverified, and tickets in session
 types are the syntactic alternative.
+
+## 17  One order, one fuel: the obligations view (design, 2026-11-09)
+
+This section tests the obligations view against the definitions and the
+examples. It changes no Rocq file. "Checked" marks a claim checked against a
+definition or a Rocq lemma, "argued" a claim argued on paper.
+
+Verdict. Addition (B) does not replace uniform placement. A height bound on
+the waited point helps only if the point is the same at every index, and
+O-New picks it per index. C1 is in the relation at every index in a world
+where every point has finite height (17.2). So the syntactic points of §16
+stay, and Rank stays `well_founded (w_lt W)`. Addition (A) holds after two
+corrections. Fuel must not burn on internal steps, and the payload bound
+belongs to the carrier's point, not to the payload type. As a predicate on
+threads with budgets per point, fuel composes. It replaces `fuel_run` of
+16.5, the run-level ticking of §7 and the N of §10.3 (17.3). The judgment
+then has one order (W with the gates), one fuel (per held end), the costs of
+the live relation for internal steps, and syntactic points for placement.
+The oracle is gone.
+
+### 17.1  Five ways to starve
+
+| Pattern | Programs | Handled by | Status |
+|---|---|---|---|
+| circular wait | Padovani's (1), the reversed Cycle | the gates (`below_rest`, `above_offered`) and local progress, unchanged | checked (deadlock freedom, LocalProgress.v) |
+| a chain of waits that grows over time | C1, C1′, KobForwarder | Rank on a placement that is the same at every index, that is `well_founded (w_lt W)` with syntactic points. (B) alone fails (17.2) | facts checked (`c1_rank_fails`, `kob_cworld_not_wf`), the rest argued |
+| holder postponement | the program of liveness.md §9, the first two lock-freedom rows of §8 | fuel. A held end's counter drops at every channel step of its holder on another end | argued |
+| endless delegation | the starving server, Padovani's (2), C3 | fuel. A message passes the counter minus one and asks a floor of the carrier's point. A link asks the peer's budget to lie below the counter | argued |
+| internal divergence | KobForwarder's τ loop, `div_main` | the least fixpoint of the live relation (`no_tau_divergence`), unchanged | checked (`live_adequacy`) |
+
+Internal steps stay out of the fuel. A thread that receives a closure and
+runs it before it acts on a held end takes a number of internal steps that
+the guard makes finite and nothing bounds, because O-Recv is universal over
+the payload. A fuel that burned on internal steps would reject such threads.
+`lf_criterion` does not need it either. Its admin measure (`thread_acc`,
+TauThread.v) orders the internal steps of a holder. (argued)
+
+### 17.2  (B) without uniform placement fails
+
+The claim was this. If a thread may block only at a point of height at most
+h, then at every index the chain of waiting threads below that point has at
+most h links, a bound that no index can move. The bound holds at each index.
+But the waited point is placed per index as well, so h depends on the index.
+
+**Counterexample, C1 without a ceiling.** W is `Wpo [a]`, program order on one
+constant a and no other fact. Main creates its own channel at run time.
+
+```
+main     = let (c0, c0′) = new in spawn (λ_. spawner c0′); recv c0      blocks forever
+spawner  = rec f. λprev. let (ck, ck′) = new in let (dk, dk′) = new in
+             spawn (λ_. recvclose ck; close prev);                      T_k blocks on ck
+             spawn (λ_. recvclose dk′); sendclose dk;                   one chatter step
+             f ck′
+```
+
+At index n, O-New places main's c0 at a+(2n+1), c_k at a+(2(n−k)+1) and d_k
+at a+2(n−k), for k ≤ n. T_k offers at a+(2(n−k)+1) and holds the partner end
+of c_{k−1}, whose dual point is a+(2(n−k+1)+1). The spawner offers d_k below
+the dual point of the c_k end it holds. Every gate is a program-order fact.
+Each round costs at least one, so index n ends before round n. Fuel 2
+suffices, because a blocked thread takes no step and the spawner hands each
+end on after one chatter step. Every point a+m has height m, so (B) holds at
+every index. W is well founded. Main starves in every fair run.
+
+Checked in Rocq, in a scratch file that compiles against this branch and is
+not committed (C1World.v, no axioms). The lemmas are `Wpo1_wf` (W is well founded), `Wpo_rank` (x ≺ y gives
+`pt_size x < pt_size y`), `Wpo_finite_height` (every x has height at most
+`pt_size x`) and `c1_gate` (both gates of round k at index n are facts of
+`Wpo [a]`). Argued, as in 14.1: the live relation accepts this placement at
+index n.
+
+The counterexample needs no ceiling. §14.1 used one only because main's
+channel was top level. So no condition on heights in W rejects C1 while O-New
+places per index. A condition read at index n sees fewer than n rounds,
+placed in an initial segment of program order, and every bound that may
+depend on n accepts that segment.
+
+**Uniform bounds do not help.** Three index-free bounds come from the
+obligations view, and each loses examples.
+- A constant H on the height of every waited point, Lawyer's finite set of
+  levels (namakonov2026lawyer, p8). Program order is part of every world
+  (`wf_lt_po`, a field of `world_wf`), so the point of a recursive server's
+  channel in round k has height at least k. H rejects every infinite server.
+  (checked against `world_wf`)
+- A separate level map with values below H that falls along every gate fact
+  in use. GrowRing uses the fact Y ≺ Y[0]‾ at every node (`rg_F`, first
+  disjunct), and the child pair (X[1], Y[0]‾) of `rr_r` makes Y[0]‾ the next
+  node's Y. The levels must then rise along the ancestry without bound.
+  Padovani types the ring with priorities that grow without bound, through
+  shifting (padovani2014deadlock, p6, p8). (argued from GrowRing.v)
+- A constant D on the length of the actual waiting chains. It is a fact of
+  each configuration, but it does not compose (14.3, option 4).
+
+Lawyer meets the same wall. Its levels and degrees must be finite sets,
+because otherwise the transitions that create signals and exchange fuel
+branch infinitely, and the step-indexed refinement needs finite branching
+(namakonov2026lawyer, p24). O-New picking a point per index is exactly such
+infinite branching. Fuel escapes it, rank does not. A cap on fuel bounds
+every value a per-index choice can take, so per-index choices cannot
+prolong a delegation chain past the cap. Ranks have no cap, because program
+order raises them along every recursive channel.
+
+**The criterion.** Per-index placement gives no stable `we`, so
+`rank_bound` cannot be instantiated from (B). A criterion by induction on
+the depth of the waiting chain is provable from the existing proof, but it
+needs a uniform depth bound, which (B) does not supply. With the placement of
+§16, `lf_criterion` applies unchanged, with R = `w_lt W` and `we k t` the
+point π_k of t's end (16.5). (argued)
+
+**(B) with uniform placement.** It would be sound, and it would let R be `<`
+on ℕ. But finite height is not preserved by the Kripke extensions of `Ebody`.
+`wext W W'` asks only inclusion and strictness, so W′ may put infinitely many
+points below a point of W. (checked against `wext`.) (B) would need a rank
+map in the world, `rk : point → option nat`, monotone on facts and kept by
+`wext` and `wjoin`, and a static premise "x is waitable" at every `new`. It
+buys nothing over `well_founded (w_lt W)`. We do not adopt it. Its one good
+idea, that an end nobody waits on needs no fuel, moves to budgets (17.3).
+
+### 17.3  Fuel as a predicate on threads
+
+Fuel becomes a second predicate on each thread of the soup, next to `LErel`.
+It needs no type, because §16 names ends in terms (`fends`, labels on ends)
+and fixes points outside the index (π). So `LiveRelation.v` keeps the form
+§16 gives it, and every liveness statement keeps its form.
+
+```
+Notation fuel := (option nat).                 (* None is ∞, the end carries no obligation *)
+Record budget := Budget {
+  b_bud : point → fuel;                        (* refill and cap of an end at this point *)
+  b_pay : point → nat;                         (* floor of an end that arrives on a carrier at this point *)
+  b_val : point → nat }.                       (* floor of an end passed to a received closure *)
+
+(* FuelE n B π φ e. π and φ map the ends of e (dom π = dom φ = fends e)
+   to their points and counters. Indexed by all steps, admin steps included. *)
+FuelE 0 B π φ e := True.
+FuelE (S n) B π φ e :=
+  (∀ o, o ∈ dom φ → φ o ≤ b_bud B (π o)) ∧                                  (* F-Cap *)
+  (∀ σ e', tstep e (LSess σ) e' → ¬ is_link σ →
+     b_bud B (pt_dual (π (aend σ))) ≠ None) ∧                               (* F-Wait *)
+  for every step e →α e', with the counters φ' of the successor:
+  - β: φ' = φ.
+  - new c at x: π gains (c, pt_pol x) ↦ x and (c, negb (pt_pol x)) ↦ pt_dual x,
+    φ gains their budgets.
+  - an action on end o other than a link (send, receive, close, choice):
+    every other o′ with φ o′ = Some m has m ≥ 1 and drops to m − 1 (F-Tick).
+    o refills to b_bud B of its next point.
+  - send on o at point k with payload w: every o₂ ∈ fends w has φ o₂ = None or
+    φ o₂ = Some m with m − 1 ≥ b_pay B k. The ends of w leave π and φ.
+  - receive on o at point k: for every value w and every π_in, φ_in on fends w
+    with b_pay B k ≤ φ_in o₂ ≤ b_bud B (π_in o₂) and Vfuel n B π_in φ_in w,
+    FuelE n B (π ∪ π_in) (φ' ∪ φ_in) e'.                                    (O-Recv stays universal)
+  - spawn w: the ends of w go to the child with counter − 1 ≥ 0, and
+    FuelE n B π_w φ_w (App w EUnit) holds for the child.
+  - link of (c, b) and (d, negb b): φ (c, b) = None or
+    b_bud B (pt_dual (π (d, negb b))) < φ (c, b), and the same with c and d
+    swapped. Both ends leave. The peers keep their counters.
+  and FuelE n B π' φ' e' for the successor.
+
+Vfuel n B π φ w : Prop      (* untyped. An end needs φ o ≥ b_val B (π o). A closure,
+                               applied at any j < n to arguments that satisfy Vfuel j,
+                               satisfies FuelE j. Pairs and sums componentwise. *)
+```
+
+The counters live per held end, in φ, beside the points in π. Both sit in
+the soup outside the index, as π does in 16.5.
+
+```
+Definition LFsoup n W B Σ T (π : gmap cend point) (φ : gmap cend fuel) (p : proc) : Prop :=
+  ∃ ts, (the soup clauses of 16.3) ∧
+        Forall (λ '(e, Θ, U), LErel n W Θ U ∅ e ∧ FuelE n B (π|e) (φ|e) e) ts.
+Definition LFP W B Σ T p : Prop :=
+  (∀ n, LPrel n W Σ T p) ∧ ∃ π φ, ∀ n, LFsoup n W B Σ T π φ p.
+```
+
+**What burns and what resets.** A channel step of the holder on another end
+burns one unit. Internal steps, `new`, spawn and links burn nothing. Acting
+on the end refills it to the budget of its next point. A message hands the
+end on with the counter minus one, a spawn the same. A link hands the
+obligation to the peer, whose own counter lies below the linker's by the link
+clause and F-Cap. At zero the holder can neither step on another end nor hand
+the end on, so its next channel step is on that end. (argued)
+
+**§7 is dropped and replaced by F-Wait.** A thread cannot see whether its
+partner offers, so the term level cannot tick "only while offered". Instead a
+thread may act on an end only where its partner's budget is finite. Ends with
+budget ∞ never tick, and nobody ever waits on their partner. In the
+controller, ctl and ctl′ get budget ∞ at both points. The waited ends have
+finite budgets, so the holder's counter is finite by F-Cap, and `fu` lands in
+ℕ. This is the useful half of (B), in the budgets instead of the order, where
+per-index placement cannot touch it because points are syntactic.
+
+**No global N.** The budgets replace it, for two reasons. The link clause
+reads the budget at the peer's point. With one constant N it would ask
+N < φ ≤ N, so no waitable end could be linked. And ∞ carries the exemption
+of §7. Budgets keyed by syntactic points are uniform. Without syntactic
+points a uniform cap would be needed instead, because a budget read at a
+point placed per index could be n at index n, and the postponement program
+would pass.
+
+**The payload bound sits on the carrier's point, not in the payload type.**
+A forwarded end keeps its point, and the bound must fall at every hop. In the
+Forwarder the end sits at ρ = (ι+k)[0] at both hops (Forwarder.v). So a floor
+keyed by the end's own point cannot fall. A floor keyed by the carrier's point
+k can, and a forward from carrier k to carrier m asks
+b_pay k ≥ b_pay m + s + 1, with s the holder's channel steps in between.
+Endless delegation asks this along infinitely many carrier points, an
+infinite descent in ℕ. Tickets in the payload type are the type-level
+alternative (padovani2014deadlock, p2, p7). They change `ty`, and higher-order
+payloads would need them on every channel type. We reject them.
+
+**The interfaces.** FuelE reads the thread's own term, so its own code has
+no interface. The relation is universal over incoming ends only at O-Recv
+(floor `b_pay`) and where a thread applies a value it received (floor
+`b_val`). First-order programs never do the latter, and the fragment sets
+`b_val` to 0. The fundamental theorem needs typed interfaces at λ and box
+arguments for its compatibility lemmas. Those floors are proof devices of the
+fragment (17.6), not clauses of the definition. (argued)
+
+**Adequacy.** `lf_criterion` is unchanged. The instantiation of 16.5 keeps
+placement and rank, and `fu k t` becomes φ_k of the partner of t's end, with
+φ_k computed along the run like π_k. The receiver takes the sender's counter
+minus one, a spawn does the same, a link leaves the peer's counter, and an
+action refills. F-Wait at t makes the partner's budget finite. Hfuel follows from
+F-Tick, the message and spawn clauses, and the link clause. The soup
+preservation `lfsoup_step` gains the fuel conjunct. In a message the
+receiver's O-Recv takes the sender's π and its counters minus one, which meet
+the floor by the sender's clause and the cap because the point does not
+change. (argued)
+
+```
+Theorem lf_adequacy W B T p :
+  world_wf W → well_founded (w_lt W) → LFP W B ∅ T p → lock_free p.
+Corollary lf_adequacy_ex W T p :
+  world_wf W → well_founded (w_lt W) → (∃ B, LFP W B ∅ T p) → lock_free p.
+Corollary lf_thread_progress W T p :
+  world_wf W → well_founded (w_lt W) → (∃ B, LFP W B ∅ T p) →
+  ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
+```
+
+### 17.4  Composition
+
+```
+Definition fsem B (π : gmap cend point) (t : expr) : Prop :=
+  ∀ n, FuelE n B π (b_bud B ∘ π) t.                         (* every held end starts full *)
+
+Theorem LFP_term W B Σ ΘB C0 t T :
+  prim T → strict W → dom ΘB = C0 → dom Σ ## C0 →
+  (∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2) → tenv_dual (w_eq W) ΘB →
+  lsem_typed W (tenv_of Σ ∪ ΘB) [] ∅ t T → tenv_fit (tenv_of Σ ∪ ΘB) t →
+  fsem B (tenv_points (tenv_of Σ ∪ ΘB)) t →
+  LFP W B Σ T (C0, {[+ t +]}).
+
+Theorem LFP_connect W1 W2 B Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :
+  (the hypotheses of LPrel_connect, with LPrel replaced by LFP W1 B and LFP W2 B) →
+  LFP (wjoin W1 W2) B (Σ1 ∪ Σ2) T (C1 ∪ C2 ∪ C0, E1 ⊎ E2).
+
+Theorem LFP_join W1 W2 B Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :
+  (the hypotheses of LPrel_join, with LPrel replaced by LFP W1 B and LFP W2 B) →
+  LFP (wjoin W1 W2) B (Σ1 ∪ Σ2) T (C1 ∪ C2 ∪ C0, E1 ⊎ E2).
+```
+
+The three keep the form of `LPrel_term`, `LPrel_connect` and `LPrel_join`.
+P-Connect and P-Join concatenate the soups and join π and φ, whose domains
+are disjoint ends. FuelE of each thread is untouched, because it meets the
+environment only through O-Recv, which is universal, and a link by another
+thread leaves its counters alone. The ends of the cut keep their counters on
+both sides. B is shared like T. It is not monotone (a larger `b_pay` helps
+the receiver and burdens the sender), so composition asks one B rather than
+a combination. The fundamental theorem computes B for the whole program, and
+a direct semantic proof picks B for the composite. (argued)
+
+**Approved statements that change form**, beyond 16.4.
+1. 16.4 item 6. The adequacy family takes `LFP W B ∅ T p` (or `∃ B`) instead
+   of `LFP W ∅ T p ∧ ∃ N, fuel_run N p`. `cnt`, `fuel_ok`, `fuel_run` and
+   `fuel_run_mono` go.
+2. 16.4 item 7. `LFP_term` gains `fsem`, and the three statements gain B.
+3. Nothing else. `ty`, `sty`, the typing rules, `payload_at`, `LVrel`,
+   `LErel` and `LPrel` (beyond §16), the live theorems, `lock_free`,
+   `lf_criterion` and `thread_progress` keep their statements. The world
+   record does not change, because B is a parameter of the fuel predicate.
+
+### 17.5  The examples
+
+Height is read in the world each example is typed in today
+(`cworld`, Fragment.v). "Waits at infinite height" asks whether some action
+happens at a point with infinitely long chains below it.
+
+| Example | Waits at infinite height | Verdict under §17 | Why |
+|---|---|---|---|
+| Forwarder | no, `fw_rank` is a rank into ℕ (`fw_wf`, checked) | in | one hop, b_pay k₁ ≥ b_pay k₂ + s + 1 |
+| TailCall | no, actions at ι+k and ῑ+k have finite height. The ceiling ι[0] has height ω and carries no channel (checked against `tc_C` and program order) | in | one channel, nothing ticks |
+| CfstScheduler | no, the rank 9⌊k/2⌋ + b is finite on every instant. The ceiling z carries no channel (checked against `sch_C`) | in | every end acted on in each round of 6 steps |
+| GrowRing | no, the rank 2·depth + offset is into ℕ (`rg0_rank`, checked) | in | z travels once, then is spawned (−1) into a call that receives on it first |
+| ABP | no, the ladder rank is finite on every instant, the ceiling θ carries no channel (`abp_wf`, checked) | in | every end acted on in each round |
+| ReceivedChain | no, the rank 2·depth + offset is into ℕ (checked against `ch_C`, `chs_C`) | in | the received end is acted on first by the spawned call |
+| controller (§7) | its gates put ctl's dual points above every point of r, so they have height ω. Nobody acts there | in, with budget ∞ at ctl's points | F-Wait holds, ctl never ticks. Outside the fragment (R2) |
+| postponement (liveness.md §9) | no, if the loop reuses one point (G3). C waits at a point of height 1 | out | fuel. A ticks on b at every round |
+| KobForwarder | yes, an infinite descending chain lies below each ι[0]ⁿ (`kob_cworld_not_wf`, checked) | out | Rank, and the guard |
+| C1 | yes with syntactic points (`c1_rank_fails`, checked). Never at a fixed point without them (17.2) | out with §16, in without it | Rank on a uniform placement |
+| C1′ | as C1 | out with §16 | Rank |
+| C3 | no | out | the link clause asks b_bud of b_k below the counter of y, which falls by one per round, an infinite descent |
+| starving server | no | out | b_pay must fall along the carrier's points forever |
+| Cycle, Sync | no recursion, finite heights | in | trivially |
+
+No lock-free example in the list needs a wait under a ceiling. Every ceiling
+(ι[0] in TailCall, z, θ, ζ) is an upper point of a future and carries no
+channel. TreeSum's opened point κ′ is a program-order successor of κ at run
+time, so its height is finite (argued). TreeSum stays outside the fragment by
+R1.
+
+### 17.6  The static fragment
+
+- **Rank.** `wf_world` stays, with the `cworld` rank lemmas.
+- **Hand-offs.** R4′ and the link clause of R2′ merge into one graph. A
+  forward adds the edge of R4′. A link of ends at types A and B adds edges
+  from A and from B to the types of the peers that take over. The graph must
+  be acyclic, with depth d. C3 closes a cycle (y hands over to b, which is
+  the next round's y). The starving server closes one through the fed slot.
+  The guard, R1 and R2-recv stay.
+- **Budgets.** b_bud x = (d − depth x + 1)·2L, with depth x the depth of the
+  type that the derivation gives the end at x, the minimum over all such
+  types when two channels share x. b_pay k = (d − depth k)·2L + L + 1 from
+  the carrier's payload type. b_val = 0. The fragment never uses ∞, so
+  F-Wait holds trivially. N = (d+1)·2L of §10.3 is the largest budget.
+  (argued)
+- **The fundamental theorem.**
+  `lf_fundamental : lfptyped W ∅ p T → ∃ B, LFP W B ∅ T p`. The live part is
+  P5 of 16.6. The fuel part is per thread. A typed fuel interpretation of
+  the guarded derivation sets floors by position. Box arguments are acted on
+  in the round (R2-recv), so they carry at least b_bud − L. Received payloads
+  carry at least b_pay. A round has at most L channel steps (guard and R1).
+  One compatibility lemma per typing rule gives `fsem B π t` for every
+  thread, then `LFP_term` per thread and `LFP_connect`/`LFP_join` along
+  `ptyped`. This replaces the preservation of a run budget in 16.6 P5 by a
+  compositional proof. (argued)
+
+### 17.7  Comparison and stages
+
+| | §15 oracle | §16 syntactic points | §17 |
+|---|---|---|---|
+| placement | ω on closed runs | in the syntax | as §16 |
+| rank | `well_founded (w_lt W)` | same | same |
+| fuel | counters on annotated runs, N | `fuel_run N p` on closed runs | FuelE per thread, budgets B |
+| composes | no | soup yes, fuel no | yes |
+| choice principle | countable choice for ω | none | none |
+| controller | no | closed judgment | compositional, budget ∞ |
+| type syntax | unchanged | Pt, EPt, `Chan c b` | as §16 |
+
+§17 is §16 with its open gap closed. (B) is rejected as a replacement for
+placement, and kept only as the budget exemption.
+
+Stages, one agent each, at most two at once.
+- **L1, L2.** §16 P1 and P2.
+- **L3a beside L3b.** §16 P3a and P3b.
+- **L4a beside L4b.** L4a is §16 P4 without fuel (LFSoup.v, `pupd`,
+  `lfsoup_step`, rank). L4b is the new file LFFuel.v with `budget`, `FuelE`,
+  `Vfuel`, `fsem`, monotonicity in n, the fuel update `fupd` along steps and
+  `lffuel_step`, the preservation of the fuel conjunct. L4b needs only P1.
+- **L5.** `LFP` with B, `lf_adequacy` from `LFsoup` and `fupd` (`fu`, Hfuel),
+  `LFP_term`, `LFP_connect`, `LFP_join`. The controller as a Rocq example,
+  semantic, with budget ∞ at ctl.
+- **L6.** The fragment. The hand-off graph, budgets from the derivation, the
+  typed fuel interpretation, `lf_fundamental`. Rejection lemmas for C3 and
+  the starving server by budgets, and for C1 with syntactic points, are
+  optional.
+- After L2 and after L5, a sharp edge and the update of gvsharp-orders.lagda.
+
+Kept. Criterion.v unchanged (`lf_criterion`, `rank_bound` with R = `w_lt W`).
+ThreadProgress.v unchanged. Fair.v, TauThread.v, Instr.v, Reach.v and
+LocalProgress.v as adapted in §16. LFRelation.v is deleted. `snd_next`,
+`rcv_next`, `sel_next` and `bra_next` move to LFSoup.v, `tick` to LFFuel.v.
+`link_fuel` goes, because the peers now keep their counters and the linker
+checks the peer's budget. LFAdequacy.v keeps the instantiation of the
+criterion (`holder_one`, `holder_exists`, `sync_partner`, `nonpart_terms`,
+`fuel_pos`, `c_waits_holder`, `rank_pt_eq`), moved to π_k and φ_k.
