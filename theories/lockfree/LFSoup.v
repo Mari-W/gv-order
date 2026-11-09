@@ -1986,11 +1986,12 @@ Section progress.
     offered_t (A t) e k → offered_t (A s) es k' →
     tenv_entry (A t) k = Some ek → tenv_entry (A s) k' = Some ek' →
     k'.1 = k.1 → (s, k') ≠ (t, k) → ek'.2 = pt_dual ek.2 →
-    enabled q t ∨ enabled q s.
+    enabled q t ∨ (enabled q s ∧ link_t es).
   Proof.
     intros He Hes (σ & e1 & Hst & Hsel) (σ' & es1 & Hst' & Hsel') Hk Hk' H1 Hne Hd.
     destruct (slabel_link_dec σ) as [[cd ->]|Hnl]; [left; apply (lp_link t e He); by exists cd, e1|].
-    destruct (slabel_link_dec σ') as [[cd ->]|Hnl']; [right; apply (lp_link s es Hes); by exists cd, es1|].
+    destruct (slabel_link_dec σ') as [[cd ->]|Hnl'].
+    { right. split; [apply (lp_link s es Hes)|]; by exists cd, es1. }
     destruct (sl_end_some σ Hnl) as [o Ho]. destruct (sl_end_some σ' Hnl') as [o' Ho'].
     destruct (selects_info _ _ _ _ _ Hsel Hk Ho) as (Ho1 & Ho2 & Hkd).
     destruct (selects_info _ _ _ _ _ Hsel' Hk' Ho') as (Ho1' & Ho2' & Hkd').
@@ -2058,7 +2059,8 @@ Section progress.
       intros [= -> ->]. rewrite Hk in Hk'. injection Hk' as ->.
       assert (pt_pol y.2 = negb (pt_pol y.2)) as Hp by (rewrite Hy2 at 1; apply pt_pol_dual).
       by destruct (pt_pol y.2).
-    - intros t e s es k ek k' ek' He Hes Ho Ho' Hk Hk' H1 Hne Hd. by eapply lp_meet.
+    - intros t e s es k ek k' ek' He Hes Ho Ho' Hk Hk' H1 Hne Hd.
+      destruct (lp_meet t e s es k ek k' ek') as [?|[? _]]; auto.
     - by apply lp_link.
   Qed.
 End progress.
