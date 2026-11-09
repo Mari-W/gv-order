@@ -2193,6 +2193,21 @@ Proof.
   - rewrite H, Hi, Hj. by right.
 Qed.
 
+Lemma fupd_act W σ π φ o k :
+  sl_end σ = Some o → mrem (sl_out σ) π !! o = Some k →
+  fupd W π φ (LSess σ) =
+    match sl_next σ k with
+    | None => (delete o (mrem (sl_out σ) π), ftick <$> delete o (mrem (sl_out σ) φ))
+    | Some (o', k') => (<[o' := k']> (delete o (mrem (sl_out σ) π)),
+                        <[o' := w_bud W k']> (ftick <$> delete o (mrem (sl_out σ) φ)))
+    end.
+Proof. intros Ho Hk. unfold fupd, LFFuel.fact. by rewrite Ho, Hk. Qed.
+
+Lemma f2_swap W P F i j σi σj :
+  i ≠ j → (∀ t, (f2 W P F i j σi σj).1 t = (f2 W P F j i σj σi).1 t) ∧
+          (∀ t, (f2 W P F i j σi σj).2 t = (f2 W P F j i σj σi).2 t).
+Proof. intros Hij. unfold f2, eupd. simpl. split; intros t; repeat case_decide; congruence. Qed.
+
 Section fuel.
   #[local] Set Default Proof Using "All".
   Context (n : nat) (W : world) (HW : strict W) (T : ty) (π : gmap cend point).
@@ -2321,5 +2336,117 @@ Section fuel.
         * rewrite dom_mres, H2, Hu. set_solver.
         * rewrite dom_fmap_L, dom_mres, H3, Hu. set_solver.
         * intros o Ho. rewrite lookup_mres, decide_True by set_solver. apply H4. set_solver.
+  Qed.
+  Lemma ff_pt t e o x : M !! t = Some e → tenv_end (A t) o = Some x → P t !! o = Some x.2.
+  Proof.
+    intros He Hx. destruct (ff t e He) as (_ & _ & _ & H4). rewrite H4.
+    - apply (lf_pt _ _ _ _ _ _ _ _ Hc t e o x He Hx).
+    - by apply (st_held n W HW T π C M A U Hc t e o x).
+  Qed.
+
+  (** A participant on one end, for close, select and branch. *)
+  Lemma fuel_one t e σ e' o k X :
+    M !! t = Some e → tstep e (LSess σ) e' → (∀ o0 w, σ ≠ SRecv o0 w) → sl_out σ = ∅ →
+    sl_end σ = Some o → tenv_end (A t) o = Some (X, k) →
+    fends e' = (match sl_next σ k with None => ∅ | Some (o', _) => {[o']} end) ∪ (fends e ∖ {[o]}) →
+    FuelE n W (fupd W (P t) (F t) (LSess σ)).1 (fupd W (P t) (F t) (LSess σ)).2 e' ∧
+    dom (fupd W (P t) (F t) (LSess σ)).1 = fends e' ∧ dom (fupd W (P t) (F t) (LSess σ)).2 = fends e' ∧
+    (∀ o', o' ∈ fends e ∖ {[o]} → (fupd W (P t) (F t) (LSess σ)).1 !! o' =
+       if decide (Some o' = (fst <$> sl_next σ k)) then snd <$> sl_next σ k else P t !! o').
+  Proof.
+    intros He Hst Hnr Hout Ho Hx Hends. destruct (ff t e He) as (H1 & H2 & H3 & H4).
+    assert (mrem (sl_out σ) (P t) !! o = Some k) as Hk.
+    { rewrite Hout, lookup_mrem, decide_False by set_solver. apply (ff_pt t e o (X, k) He Hx). }
+    pose proof (lffuel_step (S n) W (P t) (F t) e H1 _ e' Hst) as HE.
+    rewrite (fupd_act W σ (P t) (F t) o k Ho Hk) in HE |- *. rewrite ?Hout in HE. rewrite ?Hout.
+    assert (o ∈ fends e) as Hoe.
+    { rewrite <-H2. apply elem_of_dom. exists (X, k).2. apply (ff_pt t e o (X, k) He Hx). }
+    destruct (sl_next σ k) as [[o' k']|] eqn:Hn; simpl in *.
+    - split_and!.
+      + apply (FuelE_down n (S n)); [lia|]. apply HE. intros o0 w [= Heq]. by apply (Hnr o0 w).
+      + rewrite dom_insert_L, dom_delete_L, dom_mrem, H2, Hends. set_solver.
+      + rewrite dom_insert_L, dom_fmap_L, dom_delete_L, dom_mrem, H3, Hends. set_solver.
+      + intros o2 Ho2. destruct (decide (o2 = o')) as [->|Hne].
+        * rewrite lookup_insert_eq. by rewrite decide_True.
+        * rewrite lookup_insert_ne by done. rewrite decide_False by congruence.
+          rewrite lookup_delete_ne by set_solver. rewrite lookup_mrem, decide_False by set_solver. done.
+    - split_and!.
+      + apply (FuelE_down n (S n)); [lia|]. apply HE. intros o0 w [= Heq]. by apply (Hnr o0 w).
+      + rewrite dom_delete_L, dom_mrem, H2, Hends. set_solver.
+      + rewrite dom_fmap_L, dom_delete_L, dom_mrem, H3, Hends. set_solver.
+      + intros o2 Ho2. rewrite lookup_delete_ne by set_solver.
+        rewrite lookup_mrem, decide_False by set_solver. done.
+  Qed.
+  Lemma fuel_f2 (i j : nat) (e f e' f' : expr) (σi σj : slabel) (q' : config) (π' : gmap cend point) :
+    i ≠ j → M !! i = Some e → M !! j = Some f → q'.2 = <[j := f']> (<[i := e']> M) →
+    (let r := fupd W (P i) (F i) (LSess σi) in
+     FuelE n W r.1 r.2 e' ∧ dom r.1 = fends e' ∧ dom r.2 = fends e' ∧ ∀ o, o ∈ fends e' → r.1 !! o = π' !! o) →
+    (let r := fupd W (P j) (F j) (LSess σj) in
+     FuelE n W r.1 r.2 f' ∧ dom r.1 = fends f' ∧ dom r.2 = fends f' ∧ ∀ o, o ∈ fends f' → r.1 !! o = π' !! o) →
+    (∀ t g o, t ≠ i → t ≠ j → M !! t = Some g → o ∈ fends g → π' !! o = π !! o) →
+    lf_fuelc n W π' (f2 W P F i j σi σj).1 (f2 W P F i j σi σj).2 q'.
+  Proof.
+    intros Hij He Hf Hq Hi Hj Hπ. apply (ffr _ _ _ _ {[i; j]}).
+    - intros t Ht. rewrite Hq. unfold f2, eupd. simpl.
+      rewrite !lookup_insert_ne by set_solver. rewrite !decide_False by set_solver. done.
+    - intros t g o Ht Hg Ho. apply (Hπ t g o); [set_solver|set_solver|done|done].
+    - intros p g Hp Hg. rewrite Hq in Hg. unfold f2, eupd. simpl.
+      apply elem_of_union in Hp as [Hp|Hp]; apply elem_of_singleton in Hp as ->.
+      + rewrite lookup_insert_ne in Hg by done. rewrite lookup_insert_eq in Hg. injection Hg as <-.
+        destruct (decide (i = j)); [done|]. rewrite !decide_True by done. apply Hi.
+      + rewrite lookup_insert_eq in Hg. injection Hg as <-. rewrite !decide_True by done. apply Hj.
+  Qed.
+
+  Lemma fuel_close i j c b e e' f f' :
+    i ≠ j → M !! i = Some e → M !! j = Some f →
+    tstep e (LSess (SClos (c, b))) e' → tstep f (LSess (SClos (c, negb b))) f' → c ∈ C →
+    lf_fuelc n W (pupd π (C, M) {[i; j]} (C ∖ {[c]}, <[j := f']> (<[i := e']> M)))
+      (fstep W P F (C, M) {[i; j]} (C ∖ {[c]}, <[j := f']> (<[i := e']> M))).1
+      (fstep W P F (C, M) {[i; j]} (C ∖ {[c]}, <[j := f']> (<[i := e']> M))).2
+      (C ∖ {[c]}, <[j := f']> (<[i := e']> M)).
+  Proof.
+    intros Hij He Hf Hse Hsf HcC.
+    pose proof (st_sess n W HW T π C M A U Hc i e _ e' He Hse) as (Θ1 & k & Hhd & HE). simpl in HE.
+    pose proof (st_sess n W HW T π C M A U Hc j f _ f' Hf Hsf) as (Θ1j & kj & Hhdj & HEj). simpl in HEj.
+    destruct (st_rest n W HW T π C M A U Hc i e _ _ _ _ He Hhd) as (s & _ & _ & Hxi & Hoi & Hends & _).
+    destruct (st_rest n W HW T π C M A U Hc j f _ _ _ _ Hf Hhdj) as (sj & _ & _ & Hxj & Hoj & Hendsj & _).
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE) as Hfit. pose proof (LErel_S_fit _ _ _ _ _ _ HEj) as Hfitj.
+    rewrite (proj1 Hfit) in Hends. rewrite (proj1 Hfitj) in Hendsj.
+    pose proof (st_disj n W HW T π C M A U Hc i j e f Hij He Hf) as Hdisj.
+    assert (∀ o, o ∈ fends e' → o.1 ≠ c) as Hne.
+    { intros [c' b'] Ho' Heq. simpl in Heq. subst c'. rewrite Hends in Ho'.
+      destruct (decide (b' = b)) as [->|Hb]; [set_solver|].
+      assert (b' = negb b) as -> by (by destruct b, b'). apply (Hdisj (c, negb b)); set_solver. }
+    assert (∀ o, o ∈ fends f' → o.1 ≠ c) as Hnej.
+    { intros [c' b'] Ho' Heq. simpl in Heq. subst c'. rewrite Hendsj in Ho'.
+      destruct (decide (b' = negb b)) as [->|Hb]; [set_solver|].
+      assert (b' = b) as -> by (by destruct b, b'). apply (Hdisj (c, b)); set_solver. }
+    destruct (act_step _ _ _ Hse) as (a & Ha & Hoa). apply offers_clos in Hoa as ->.
+    destruct (act_step _ _ _ Hsf) as (a' & Ha' & Hoa'). apply offers_clos in Hoa' as ->.
+    assert (pupd π (C, M) {[i; j]} (C ∖ {[c]}, <[j:=f']> (<[i:=e']> M)) = delete (c, true) (delete (c, false) π))
+      as ->.
+    { unfold pupd. destruct (pev_of_pair (C, M) (C ∖ {[c]}, <[j:=f']> (<[i:=e']> M)) i j e f Hij He Hf)
+        as [-> | ->]; unfold pev2; by rewrite ?Ha, ?Ha'. }
+    assert (Hπ : ∀ o, o.1 ≠ c → delete (c, true) (delete (c, false) π) !! o = π !! o).
+    { intros o Ho. rewrite !lookup_delete_ne; [done| |]; intros <-; done. }
+    assert (Hmain : lf_fuelc n W (delete (c, true) (delete (c, false) π))
+      (f2 W P F i j (SClos (c, b)) (SClos (c, negb b))).1 (f2 W P F i j (SClos (c, b)) (SClos (c, negb b))).2
+      (C ∖ {[c]}, <[j:=f']> (<[i:=e']> M))).
+    { apply (fuel_f2 i j e f e' f'); try done.
+      - destruct (fuel_one i e _ e' _ k s He Hse ltac:(done) eq_refl eq_refl Hxi) as (H1 & H2 & H3 & H4).
+        { simpl. rewrite Hends. set_solver. }
+        split_and!; try done. intros o Ho. rewrite H4 by (rewrite <-Hends; done). simpl.
+        rewrite Hπ by (by apply Hne). apply (ff i e He). set_solver.
+      - destruct (fuel_one j f _ f' _ kj sj Hf Hsf ltac:(done) eq_refl eq_refl Hxj) as (H1 & H2 & H3 & H4).
+        { simpl. rewrite Hendsj. set_solver. }
+        split_and!; try done. intros o Ho. rewrite H4 by (rewrite <-Hendsj; done). simpl.
+        rewrite Hπ by (by apply Hnej). apply (ff j f Hf). set_solver.
+      - intros t g o Hti Htj Hg Ho. apply Hπ. intros Heq.
+        apply (st_cowner n W HW T π C M A U Hc i j e f c b t g He Hf Hoi Hoj Hti Htj Hg).
+        rewrite <-Heq. by apply fchans_of_fends. }
+    destruct (fstep_pair W P F (C, M) (C ∖ {[c]}, <[j:=f']> (<[i:=e']> M)) i j e f Hij He Hf) as [-> | ->];
+      unfold fpair; rewrite ?Ha, ?Ha'; [done|].
+    destruct (f2_swap W P F i j (SClos (c, b)) (SClos (c, negb b)) Hij) as [S1 S2].
+    by apply (lf_fuelc_ext _ _ _ _ _ _ _ _ S1 S2).
   Qed.
 End fuel.
