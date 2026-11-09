@@ -21,7 +21,7 @@
     [fupd] computes the counters of the successor from the label. *)
 
 From stdpp Require Import base gmap.
-From LRGV Require Import lang.Semantics relation.Worlds.
+From LRGV Require Import lang.Semantics relation.Worlds lockfree.Instr.
 
 (** ** Counters *)
 
@@ -212,6 +212,8 @@ Definition Fobl (E V : nat → fpred) (n' : nat) (W : world)
       | SSend o w =>
           (∀ k, π !! o = Some k → fhand (w_pay W k) (fends w) φ) ∧
           ftravel W π (fends w) ∧
+          (* the payload, at the counters the receiver gets (decision 2026-11-09) *)
+          V n' W (mres (fends w) π) (ftick <$> mres (fends w) φ) w ∧
           E n' W (fupd W π φ α).1 (fupd W π φ α).2 e'
       | SRecv o w =>
           (* the floor is keyed by the carrier's point at the sender,
@@ -227,10 +229,35 @@ Definition Fobl (E V : nat → fpred) (n' : nat) (W : world)
       end
   end.
 
+(** [renk g m m']: m' is m with every end (c, b) renamed to (g c, b).
+    Two ends with one image must carry one value. *)
+Definition renk {Y : Type} (g : chan → chan) (m m' : gmap cend Y) : Prop :=
+  (∀ o, m' !! (g o.1, o.2) = m !! o) ∧
+  (∀ o', is_Some (m' !! o') → ∃ o, o' = (g o.1, o.2) ∧ is_Some (m !! o)).
+
+Lemma renk_id {Y : Type} (m : gmap cend Y) : renk id m m.
+Proof. split; [by intros [c b]|]. intros [c b] H. by exists (c, b). Qed.
+
+Lemma renk_id_inv {Y : Type} (m m' : gmap cend Y) : renk id m m' → m' = m.
+Proof. intros [H _]. apply map_eq. intros [c b]. apply (H (c, b)). Qed.
+
+Lemma renk_compose {Y : Type} (g h : chan → chan) (m m1 m2 : gmap cend Y) :
+  renk h m m1 → renk g m1 m2 → renk (g ∘ h) m m2.
+Proof.
+  intros [H1 H2] [G1 G2]. split.
+  - intros o. rewrite <-H1. apply (G1 (h o.1, o.2)).
+  - intros o' Ho'. destruct (G2 o' Ho') as (o1 & -> & Ho1).
+    destruct (H2 o1 Ho1) as (o & -> & Ho). by exists o.
+Qed.
+
+(** FuelE is closed under the renaming of channels by definition: a link
+    renames the peer of the removed end in the whole soup (decision
+    2026-11-09, under delegation). *)
 Definition Fdef (E V : nat → fpred) (n' : nat) (W : world)
     (π : gmap cend point) (φ : gmap cend fuel) (e : expr) : Prop :=
-  fcap W π φ ∧ fwait W π e ∧
-  ∀ α e', tstep e α e' → Fobl E V n' W π φ α e'.
+  ∀ g π' φ', renk g π π' → renk g φ φ' →
+    fcap W π' φ' ∧ fwait W π' (emap g e) ∧
+    ∀ α e', tstep (emap g e) α e' → Fobl E V n' W π' φ' α e'.
 
 (** Values. An end, a unit, a constant and a point carry nothing (the
     floor [b_val] of §17.3 is 0, and §17.8 drops it). A closure applied
@@ -302,7 +329,7 @@ Proof.
   - apply HE'.
   - split; intros [H1 H2]; split; try done; intros k j πi φi Hk Hj Hd Hin Hv;
       apply (HE j Hj); apply (H2 k); try done; by apply (HV j Hj).
-  - by rewrite HE'.
+  - by rewrite HE', (HV n') by lia.
   - by rewrite HE'.
   - by rewrite HE'.
   - by rewrite HE'.
@@ -317,7 +344,8 @@ Lemma Fdef_ext (E1 V1 E2 V2 : nat → fpred) n' W π φ e :
   Fdef E1 V1 n' W π φ e ↔ Fdef E2 V2 n' W π φ e.
 Proof.
   intros HE HV. unfold Fdef.
-  split; intros (Hc & Hw & Hs); (split; [done|split; [done|]]);
+  split; intros H g π' φ' Hr1 Hr2; destruct (H g π' φ' Hr1 Hr2) as (Hc & Hw & Hs);
+    (split; [done|split; [done|]]);
     intros α e' Hst; specialize (Hs α e' Hst);
     [by rewrite <-(Fobl_ext E1 V1 E2 V2)|by rewrite (Fobl_ext E1 V1 E2 V2)].
 Qed.
@@ -358,16 +386,28 @@ Qed.
 
 (** ** Monotonicity in the index *)
 
+Lemma Vfuel_down m n W π φ w : m ≤ n → Vfuel n W π φ w → Vfuel m W π φ w.
+Proof.
+  intros Hmn. rewrite !Vfuel_eq. induction w in π, φ |- *; simpl; try done.
+  - intros H j v πa φa Hj. apply H. lia.
+  - intros [H1 H2]. auto.
+  - auto.
+  - auto.
+  - intros H j Hj. apply H. lia.
+Qed.
+
 Lemma FuelE_S_down n W π φ e : FuelE (S n) W π φ e → FuelE n W π φ e.
 Proof.
   revert W π φ e. induction n as [|n IH]; intros W π φ e H; [apply FuelE_0|].
-  apply FuelE_S. apply FuelE_S in H as (Hc & Hw & Hs).
+  apply FuelE_S. apply FuelE_S in H. intros g π' φ' Hr1 Hr2.
+  destruct (H g π' φ' Hr1 Hr2) as (Hc & Hw & Hs).
   split; [done|split; [done|]]. intros α e' Hst. specialize (Hs α e' Hst).
   destruct α as [|[o w|o w|o|cd|o b|o b]|c x|w]; simpl in *.
   - by apply IH.
   - destruct Hs as [H1 H2]. split; [done|].
     intros k j πi φi Hk Hj. apply (H2 k j πi φi Hk). lia.
-  - destruct Hs as (H1 & H2 & H3 & H4). auto.
+  - destruct Hs as (H1 & H2 & H3 & H4 & H5). split_and!; auto.
+    eapply Vfuel_down; [|exact H4]. lia.
   - destruct Hs as [H1 H2]. auto.
   - destruct Hs as (H1 & H2 & H3). auto.
   - destruct Hs as [H1 H2]. auto.
@@ -379,15 +419,16 @@ Qed.
 Lemma FuelE_down m n W π φ e : m ≤ n → FuelE n W π φ e → FuelE m W π φ e.
 Proof. induction 1; eauto using FuelE_S_down. Qed.
 
-Lemma Vfuel_down m n W π φ w : m ≤ n → Vfuel n W π φ w → Vfuel m W π φ w.
+(** ** Renaming of channels (a link renames the peer of its removed end) *)
+
+Lemma FuelE_rename n W π φ e (h : chan → chan) π1 φ1 :
+  renk h π π1 → renk h φ φ1 → FuelE n W π φ e → FuelE n W π1 φ1 (emap h e).
 Proof.
-  intros Hmn. rewrite !Vfuel_eq. induction w in π, φ |- *; simpl; try done.
-  - intros H j v πa φa Hj. apply H. lia.
-  - intros [H1 H2]. auto.
-  - auto.
-  - auto.
-  - intros H j Hj. apply H. lia.
+  destruct n as [|n]; [intros; apply FuelE_0|]. rewrite !FuelE_S.
+  intros H1 H2 HF g π' φ' G1 G2. rewrite emap_emap.
+  apply HF; eapply renk_compose; eauto.
 Qed.
+
 
 (** ** The clauses of a thread at index n + 1 *)
 
@@ -397,7 +438,9 @@ Section clauses.
 
   (** F-Cap: counters stay at or below the budget of their point. *)
   Lemma fuel_cap : fcap W π φ.
-  Proof. by apply FuelE_S in HF as (? & _ & _). Qed.
+  Proof.
+    apply FuelE_S in HF. by destruct (HF id π φ (renk_id π) (renk_id φ)) as (? & _ & _).
+  Qed.
 
   (** F-Wait: the partner of an end the thread acts on has a finite
       budget, and the end is held. *)
@@ -405,13 +448,17 @@ Section clauses.
     tstep e (LSess σ) e' → sl_end σ = Some o →
     ∃ k m, π !! o = Some k ∧ w_bud W (pt_dual k) = Some m.
   Proof.
-    intros Hst Ho. apply FuelE_S in HF as (_ & Hw & _).
+    intros Hst Ho. apply FuelE_S in HF.
+    destruct (HF id π φ (renk_id π) (renk_id φ)) as (_ & Hw & _). rewrite emap_id in Hw.
     destruct (Hw σ e' o Hst Ho) as (k & Hk & Hb).
     destruct (w_bud W (pt_dual k)) as [m|] eqn:E; [|done]. eauto.
   Qed.
 
   Lemma fuel_obl α e' : tstep e α e' → Fobl FuelE Vfuel n W π φ α e'.
-  Proof. intros Hst. apply FuelE_S in HF as (_ & _ & Hs). by apply Hs. Qed.
+  Proof.
+    intros Hst. apply FuelE_S in HF.
+    destruct (HF id π φ (renk_id π) (renk_id φ)) as (_ & _ & Hs). apply Hs. by rewrite emap_id.
+  Qed.
 
   (** F-Tick. *)
   Lemma fuel_tick σ e' o : tstep e (LSess σ) e' → sl_end σ = Some o → ftick_ok o φ.
@@ -425,6 +472,12 @@ Section clauses.
   (** The payload of a send has finite partner budgets. *)
   Lemma fuel_send_travel o w e' : tstep e (LSess (SSend o w)) e' → ftravel W π (fends w).
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & _ & H & _). Qed.
+
+  (** The payload of a send at the counters the receiver gets. *)
+  Lemma fuel_send_val o w e' :
+    tstep e (LSess (SSend o w)) e' →
+    Vfuel n W (mres (fends w) π) (ftick <$> mres (fends w) φ) w.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & _ & _ & H & _). Qed.
 
   (** The link clause. *)
   Lemma fuel_link cd e' : tstep e (LSess (SLink cd)) e' → flink W π φ cd.
@@ -445,7 +498,7 @@ Section clauses.
     destruct α as [|[o w|o w|o|cd|o b|o b]|c x|w]; simpl in H |- *.
     - done.
     - by destruct (Hr o w).
-    - by destruct H as (_ & _ & _ & H).
+    - by destruct H as (_ & _ & _ & _ & H).
     - by destruct H as [_ H].
     - by destruct H as (_ & _ & H).
     - by destruct H as [_ H].
