@@ -25,7 +25,7 @@ Local Set Warnings "-register-all".
 Fixpoint ok0 (x : nat) (e : expr) : bool :=
   match e with
   | Var y => negb (Nat.eqb x y)
-  | EUnit | Konst _ | Chan _ => true
+  | EUnit | Konst _ | Chan _ _ | EPt _ => true
   | Lam b | EBox b => negb (occurs (S x) b)
   | App (App (Konst KForce) (Var y)) e2 =>
       if Nat.eqb x y then gd e2 && ok0 x e2 else ok0 x e2
@@ -41,7 +41,7 @@ Fixpoint okv0 (x : nat) (e : expr) : bool :=
 
 Fixpoint gall0 (e : expr) : bool :=
   match e with
-  | Var _ | EUnit | Konst _ | Chan _ => true
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => true
   | EBox b => okv0 0 b && gall0 b
   | Lam e | Inj1 e | Inj2 e => gall0 e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => gall0 e1 && gall0 e2
@@ -53,14 +53,17 @@ Definition gptyped0 (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
 
 Definition cx_C : bcs := BCs [] (λ _, False).
 Definition cx_fty : ty := TLolli None None TUnit TUnit.
-Definition cx_bty : ty := TBox 1 0 cx_C (TLolli (Some (pv 0 1)) None TUnit cx_fty).
+Definition cx_bty : ty := TBox 1 0 cx_C (TLolli (Some (pc 0 1)) None TUnit cx_fty).
 
-(** A guarded unit term: a channel at the box variable ζ (new@ζ, the
-    constant world of sharp edges 172), one end closed by a spawned
-    thread, the other by the caller. The upper point of the box is
-    ζ+1, so that the close at ζ passes the gate. *)
+(** A guarded unit term: a channel at the constant 0 of the world, one
+    end closed by a spawned thread, the other by the caller. The upper
+    point of the box is 0+1, so that the close at 0 passes the gate.
+    Syntactic points (sharp edges 173): the body of the box has no λ
+    in front of the force of its self, so it cannot take a point
+    parameter, and a literal names the point of new instead. *)
 Definition cx_g : expr :=
-  let_new_pair (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1))))) (App EClos (Var 1))).
+  let_new_pair_at (EPt (pconst 0))
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1))))) (App EClos (Var 1))).
 
 Definition cx_body : expr := LetU (App (App EForce (Var 0)) cx_g) (Lam (Var 0)).
 Definition cx_bad : expr := EBox cx_body.
@@ -114,34 +117,33 @@ Qed.
 
 (** ** Typing *)
 
-Lemma cx_bad_typed W F : strict W → typed W ∅ [] ∅ [] F cx_bad cx_bty.
+Lemma cx_bad_typed W F : strict W → pt_known W (pconst 0) → typed W ∅ [] ∅ [] F cx_bad cx_bty.
 Proof.
-  intros HWs. pose proof (proj1 HWs) as HW. unfold cx_bad, cx_bty.
+  intros HWs Hk0. pose proof (proj1 HWs) as HW. unfold cx_bad, cx_bty.
   apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   change (bcs_inst (pshift 1) cx_C) with cx_C.
-  replace (pup 1 (pshift 1) 0 +ₚ 1) with (pv 0 1) by reflexivity.
   change (bcs_inst (pshift 1) cx_C) with cx_C.
   cbn. unfold cx_body. tstep.
   - eapply tv_app; [exact HW|reflexivity| | |apply ubs_none].
-    + apply (typed_force0 W _ _ _ _ _ _ 1 cx_C (Some (pv 0 1)) cx_fty [pvar 0]); [done|done| | | |tstep].
+    + apply (typed_force0 W _ _ _ _ _ _ 1 cx_C (Some (pc 0 1)) cx_fty [pvar 0]); [done|done| | | |tstep].
       * apply bcs_hold_intro. by intros g Hg.
       * apply Forall_singleton. eapply skn_inst; [by left|by left|done].
-      * apply ubs_intro; [intros y Hy; mem_cases Hy|]. exists (pv 0 1). split; [done|apply sle_refl, HW].
-    + cbn. unfold cx_g, let_new_pair.
-      apply (t_new_at W _ _ _ _ _ _ _ SEnd (pvar 0) HWs); [eapply skn_inst; [by left|by left|done]|].
+      * apply ubs_intro; [intros y Hy; mem_cases Hy|]. exists (pc 0 1). split; [done|apply sle_refl, HW].
+    + cbn. unfold cx_g, let_new_pair_at.
+      apply (t_new_at W _ _ _ _ _ _ _ SEnd (pconst 0) HWs); [ground|by left|].
       cbn. tstep.
       { tstep; [|apply KTSpawn|done|apply ubs_none].
-        eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 1).
+        eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 0))) (Some (pc 0 0)) 1).
         { set_solver. }
         { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
         cbn. tstep; [tstep|]. cbn.
         tstep; [tstep|apply KTClos|done|].
         apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pt_dual (pvar 0)). split; [done|]. apply sle_refl, HW. }
+        exists (pt_dual (pc 0 0)). split; [done|]. apply sle_refl, HW. }
       cbn. tstep; [tstep|apply KTClos|done|].
       apply ubs_intro; [intros y Hy; set_solver|].
-      cbn. exists (pv 0 1). split; [by rewrite lookup_insert_eq|].
-      right. apply (slt_po W _ (pvar 0) HW).
+      cbn. exists (pc 0 1). split; [by rewrite lookup_insert_eq|].
+      right. apply (slt_po W _ (pc 0 0) HW).
   - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit None None 1); [set_solver|done|tstep].
 Qed.
 
@@ -149,11 +151,11 @@ Lemma cx_main_typed : typed (Wpo [0]) ∅ [] ∅ [] (∅, None) cx_main TUnit.
 Proof.
   pose proof (proj1 (Wpo_strict [0])) as HW. unfold cx_main.
   eapply tv_app; [exact HW|reflexivity| | |apply ubs_none].
-  - apply (typed_force0 _ _ _ _ _ _ _ 1 cx_C (Some (pv 0 1)) cx_fty [pc 0 0]); [done|done| | | |].
+  - apply (typed_force0 _ _ _ _ _ _ _ 1 cx_C (Some (pc 0 1)) cx_fty [pc 0 0]); [done|done| | | |].
     + apply bcs_hold_intro. by intros g Hg.
     + apply Forall_singleton. left. unfold pt_known. simpl. set_solver.
     + apply ubs_intro; [intros y Hy; set_solver|done].
-    + apply cx_bad_typed, Wpo_strict.
+    + apply cx_bad_typed; [apply Wpo_strict|unfold pt_known; simpl; set_solver].
   - tstep.
 Qed.
 

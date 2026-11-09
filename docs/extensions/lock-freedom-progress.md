@@ -255,7 +255,11 @@ Updated after every stage and every agent result.
   `live_fundamental_false` keep their statements. The rejection theorems
   of ChoiceNegative, SemFlag and DataBranch stay commented out as the
   end-points port left them. ChoiceTranslate, ChoiceTranslateEx and
-  SegmentDeleg keep their marker.
+  SegmentDeleg keep their marker. In liveness/GuardCex.v the box body
+  forces its self with no λ in front, so it cannot take a point
+  parameter, and `cx_g` creates its channel at the literal of the
+  constant 0 with the box's upper point at 0+1 (`cx_bad_typed` asks
+  that the world knows 0).
 
 ## Decisions
 
