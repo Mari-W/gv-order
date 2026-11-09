@@ -1021,4 +1021,51 @@ Section run.
     - apply rank_pt_eq; [rewrite Hq; simpl; rewrite !lookup_insert_ne; set_solver|].
       destruct (Hkeep t) as [-> _]; set_solver.
   Qed.
+
+  (** The two outcomes of a step for the counter of t's partner. *)
+  Lemma fuel_eq_case k t e b c s es :
+    (ac_q (arun k)).2 !! t = Some e → act e = Some b → rchan b = Some c →
+    (ac_q (arun k)).2 !! s = Some es → s ≠ t → c ∈ dom (ac_env (arun k) s) →
+    rchan_of (arun (S k)) t = Some c →
+    (∃ es', (ac_q (arun (S k))).2 !! s = Some es') → c ∈ dom (ac_env (arun (S k)) s) →
+    ac_fuel (arun (S k)) s c = ac_fuel (arun k) s c →
+    (s ∈ l k → admin_at (r k) s) →
+    fu (S k) t = fu k t ∧ (∀ u, waits (r (S k)) t u ↔ waits (r k) t u) ∧
+    (∀ u, waits (r k) t u → u ∈ l k → admin_at (r k) u).
+  Proof.
+    intros He Hb Hr Hes Hst Hcs Hrt [es' Hes'] Hcs' Hfs Had.
+    pose proof (arun_conf k) as Hc. pose proof (arun_conf (S k)) as Hc'.
+    assert (c ∈ dom (ac_env (arun k) t)) as Hct.
+    { rewrite (c_dom W HW Hwf _ Hc t e He). by eapply (rchan_fchans W HW Hwf _ Hc). }
+    unfold rchan_of in Hrt.
+    destruct ((ac_q (arun (S k))).2 !! t) as [e''|] eqn:He''; [|done].
+    destruct (act e'') as [b''|] eqn:Hb''; [|done].
+    assert (c ∈ dom (ac_env (arun (S k)) t)) as Hct'.
+    { rewrite (c_dom W HW Hwf _ Hc' t e'' He''). by eapply (rchan_fchans W HW Hwf _ Hc'). }
+    unfold fu, partner_fuel. rewrite (rchan_of_eq _ t e b c He Hb Hr).
+    rewrite (rchan_of_eq _ t e'' b'' c He'' Hb'' Hrt).
+    rewrite (holder_fuel_spec W HW Hwf _ t e c s es Hc He Hct Hes Hst Hcs).
+    rewrite (holder_fuel_spec W HW Hwf _ t e'' c s es' Hc' He'' Hct' Hes' Hst Hcs').
+    split; [done|]. rewrite <-(arun_q k), <-(arun_q (S k)). split.
+    - intros u. rewrite (c_waits_holder W HW Hwf _ t e'' b'' c s es' Hc' He'' Hb'' Hrt Hes' Hst Hcs' u).
+      by rewrite (c_waits_holder W HW Hwf _ t e b c s es Hc He Hb Hr Hes Hst Hcs u).
+    - intros u Hw Hu. rewrite (c_waits_holder W HW Hwf _ t e b c s es Hc He Hb Hr Hes Hst Hcs u) in Hw.
+      subst u. rewrite arun_q. by apply Had.
+  Qed.
+
+  Lemma fuel_lt_case k t e b c s es c' :
+    (ac_q (arun k)).2 !! t = Some e → act e = Some b → rchan b = Some c →
+    (ac_q (arun k)).2 !! s = Some es → s ≠ t → c ∈ dom (ac_env (arun k) s) →
+    rchan_of (arun (S k)) t = Some c' → 0 < ac_fuel (arun k) s c →
+    (∀ u eu, (ac_q (arun (S k))).2 !! u = Some eu → u ≠ t → c' ∈ dom (ac_env (arun (S k)) u) →
+       ac_fuel (arun (S k)) u c' < ac_fuel (arun k) s c) →
+    fu (S k) t < fu k t.
+  Proof.
+    intros He Hb Hr Hes Hst Hcs Hrt Hpos Hlt. pose proof (arun_conf k) as Hc.
+    assert (c ∈ dom (ac_env (arun k) t)) as Hct.
+    { rewrite (c_dom W HW Hwf _ Hc t e He). by eapply (rchan_fchans W HW Hwf _ Hc). }
+    unfold fu, partner_fuel. rewrite (rchan_of_eq _ t e b c He Hb Hr), Hrt.
+    rewrite (holder_fuel_spec W HW Hwf _ t e c s es Hc He Hct Hes Hst Hcs).
+    by apply holder_fuel_lt.
+  Qed.
 End run.
