@@ -2797,3 +2797,78 @@ Proof.
     + exists A, U. eapply LFconf_down; [|exact Hc]. lia.
     + eapply lf_fuelc_down; [|exact HF]. lia.
 Qed.
+
+(** ** Relabelling the threads *)
+
+Lemma relabel_map (M1 M2 : gmap nat expr) :
+  soup M1 = soup M2 →
+  ∃ f : nat → nat, (∀ t e, M2 !! t = Some e → M1 !! f t = Some e) ∧
+    (∀ t t' e e', M2 !! t = Some e → M2 !! t' = Some e' → f t = f t' → t = t') ∧
+    (∀ s e, M1 !! s = Some e → ∃ t, f t = s ∧ M2 !! t = Some e).
+Proof.
+  revert M1. induction M2 as [|i e M2 Hi IH] using map_ind; intros M1 HM.
+  - rewrite soup_empty in HM. exists id. split_and!; [by intros ??; rewrite lookup_empty..|].
+    intros s e Hs. exfalso. assert (e ∈ soup M1) as Hin by (apply elem_of_soup; by exists s).
+    rewrite HM in Hin. multiset_solver.
+  - rewrite soup_insert in HM by done.
+    destruct (soup_extract M1 (soup M2) e HM) as (j & Hj & HMj).
+    destruct (IH (delete j M1) HMj) as (f & H1 & H2 & H3).
+    exists (λ t, if decide (t = i) then j else f t). split_and!.
+    + intros t e' Ht. destruct (decide (t = i)) as [->|Hti].
+      * rewrite lookup_insert_eq in Ht. by injection Ht as <-.
+      * rewrite lookup_insert_ne in Ht by done. pose proof (H1 t e' Ht) as H. by apply lookup_delete_Some in H as [_ ?].
+    + intros t t' e1 e2 Ht Ht' Hf.
+      destruct (decide (t = i)) as [->|Hti], (decide (t' = i)) as [->|Ht'i]; try done.
+      * exfalso. rewrite lookup_insert_ne in Ht' by done. pose proof (H1 t' e2 Ht') as H.
+        rewrite <-Hf, lookup_delete_eq in H. done.
+      * exfalso. rewrite lookup_insert_ne in Ht by done. pose proof (H1 t e1 Ht) as H.
+        rewrite Hf, lookup_delete_eq in H. done.
+      * rewrite lookup_insert_ne in Ht, Ht' by done. by apply (H2 t t' e1 e2).
+    + intros s e' Hs. destruct (decide (s = j)) as [->|Hsj].
+      * exists i. rewrite decide_True by done. rewrite lookup_insert_eq. split; [done|]. congruence.
+      * destruct (H3 s e') as (t & <- & Ht); [by rewrite lookup_delete_ne|].
+        exists t. assert (t ≠ i) by (intros ->; congruence).
+        rewrite decide_False by done. rewrite lookup_insert_ne by done. done.
+Qed.
+
+Lemma LFconf_relabel n W Σ T π C M1 M2 A U :
+  soup M1 = soup M2 → LFconf n W Σ T π (C, M1) A U →
+  ∃ A' U', LFconf n W Σ T π (C, M2) A' U'.
+Proof.
+  intros HM Hc. destruct (relabel_map M1 M2 HM) as (f & H1 & H2 & H3).
+  exists (A ∘ f), (U ∘ f). destruct Hc as [Hp Hr Hfit Hty Hpt Hd Hpair Hcl]. split; simpl in *.
+  - done.
+  - intros t e He. exact (Hr (f t) e (H1 t e He)).
+  - intros t e He. exact (Hfit (f t) e (H1 t e He)).
+  - intros t e He. exact (Hty (f t) e (H1 t e He)).
+  - intros t e o x He Hx. apply (Hpt (f t) e o x); [by apply H1|done].
+  - intros t s e es Hts He Hes. apply (Hd (f t) (f s)); [|by apply H1|by apply H1].
+    intros Heq. apply Hts. by apply (H2 t s e es).
+  - intros t e o x He Hx Ho. destruct (Hpair (f t) e o x (H1 t e He) Hx Ho) as (s & es & y & Hes & Hy & ?).
+    destruct (H3 s es Hes) as (t' & <- & Ht'). by exists t', es, y.
+  - intros t e He. exact (Hcl (f t) e (H1 t e He)).
+Qed.
+
+Lemma lf_fuel_relabel n W π φ C M1 M2 :
+  soup M1 = soup M2 → lf_fuel n W π φ (C, M1) → lf_fuel n W π φ (C, M2).
+Proof.
+  intros HM H t e He. destruct (relabel_map M1 M2 HM) as (f & H1 & _). apply (H (f t)). by apply H1.
+Qed.
+
+(** The counters of each thread at the start, read in φ. *)
+Definition pinit (π : gmap cend point) (q : config) : nat → gmap cend point :=
+  λ t, match q.2 !! t with Some e => mres (fends e) π | None => ∅ end.
+Definition finit (φ : gmap cend fuel) (q : config) : nat → gmap cend fuel :=
+  λ t, match q.2 !! t with Some e => mres (fends e) φ | None => ∅ end.
+
+Lemma lf_fuel_init n W T π φ q A U :
+  LFconf n W ∅ T π q A U → lf_fuel n W π φ q → lf_fuelc n W π (pinit π q) (finit φ q) q.
+Proof.
+  intros Hc HF t e He. unfold pinit, finit. rewrite He. destruct (HF t e He) as [H1 H2].
+  split_and!; [done| | |].
+  - rewrite dom_mres. apply set_eq. intros o. rewrite elem_of_intersection. split; [by intros []|].
+    intros Ho. split; [|done]. apply (lfc_held _ _ _ _ _ _ _ Hc t e o He) in Ho as [x Hx].
+    apply elem_of_dom. exists x.2. apply (lf_pt _ _ _ _ _ _ _ _ Hc t e o x He Hx).
+  - rewrite dom_mres. clear -H2. set_solver.
+  - intros o Ho. by rewrite lookup_mres, decide_True.
+Qed.
