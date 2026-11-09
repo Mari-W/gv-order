@@ -1535,3 +1535,98 @@ Proof.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply abp_wf.
 Qed.
+
+(** ** The budgets of the examples (plan §17.6, §17.8)
+
+    Each example world is [cworld Ψ] with the budgets of its hand-off
+    graph and of its round length L. Only the forwarder has an edge, so
+    d = 1 there. In the other examples d = 0, every end gets 2L and
+    every floor is L + 1. *)
+
+(** The forwarder. Its graph has the one edge from Si to the dual of So
+    and a round has 2 channel steps. fwd holds a at the positive points
+    of the constant 1 at Si and b at the positive points of 0 at So.
+    The producer holds the partner of a at the dual of Si, the consumer
+    the partner of b at the dual of So, and the payload ends are Close.
+    The end of the consumer sits at depth 1 and gets 2L = 4, every
+    other end gets 4L = 8. A payload sent by the producer arrives at
+    fwd with floor 2L + L + 1 = 7, and the same payload forwarded to
+    the consumer with floor L + 1 = 3. *)
+Definition fw_ty (x : point) : option sty :=
+  match pt_name x with
+  | NConst 1 => Some (if pt_pol x then Forwarder.Sfi else dual Forwarder.Sfi)
+  | NConst 0 => Some (if pt_pol x then Forwarder.Sfo else dual Forwarder.Sfo)
+  | NPayload _ _ _ => Some SEnd
+  | _ => None
+  end.
+
+Definition fw_W : world := with_budgets (cworld Forwarder.fw_Ψ) fw_E (round_len Forwarder.fw_main) fw_ty.
+
+Theorem fw_budgets :
+  strict fw_W ∧ lfptyped fw_W ∅ (∅, {[+ Forwarder.fw_main +]}) TUnit ∧
+  gdepth fw_E = 1 ∧ round_len Forwarder.fw_main = 2 ∧
+  (∀ k, w_bud fw_W (pc 1 k) = Some 8 ∧ w_bud fw_W (pt_dual (pc 1 k)) = Some 8 ∧
+        w_bud fw_W (pc 0 k) = Some 8 ∧ w_bud fw_W (pt_dual (pc 0 k)) = Some 4) ∧
+  (∀ k, w_pay fw_W (pt_dual (pc 1 k)) = 7 ∧ w_pay fw_W (pc 0 k) = 3).
+Proof.
+  destruct (lfsource_budgets _ _ _ fw_E (round_len Forwarder.fw_main) fw_ty fw_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|vm_compute; reflexivity| |];
+    intros k; split_and!; vm_compute; reflexivity.
+Qed.
+
+(** With no hand-off every end gets 2L and every floor is L + 1. *)
+Lemma budgets_flat W L ty_of x :
+  w_bud (with_budgets W [] L ty_of) x = Some (2 * L) ∧ w_pay (with_budgets W [] L ty_of) x = L + 1.
+Proof. unfold with_budgets, bud_at, pay_at. cbn. split; [f_equal|]; lia. Qed.
+
+Definition tc_W : world := with_budgets (cworld TailCall.tc_Ψ) [] (round_len TailCall.tc_main) (λ _, None).
+
+Theorem tc_budgets :
+  strict tc_W ∧ lfptyped tc_W ∅ (∅, {[+ TailCall.tc_main +]}) TUnit ∧
+  round_len TailCall.tc_main = 1 ∧ ∀ x, w_bud tc_W x = Some 2 ∧ w_pay tc_W x = 2.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len TailCall.tc_main) (λ _, None) tc_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 1 _ x).
+Qed.
+
+Definition sch_W : world :=
+  with_budgets (cworld (CfstScheduler.sch_Ψ 6)) [] (round_len CfstScheduler.sch_main) (λ _, None).
+
+Theorem sch_budgets :
+  strict sch_W ∧ lfptyped sch_W ∅ (∅, {[+ CfstScheduler.sch_main +]}) TUnit ∧
+  round_len CfstScheduler.sch_main = 6 ∧ ∀ x, w_bud sch_W x = Some 12 ∧ w_pay sch_W x = 7.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len CfstScheduler.sch_main) (λ _, None) sch_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 6 _ x).
+Qed.
+
+Definition rc_W : world :=
+  with_budgets (cworld ReceivedChain.ch_Ψ) [] (round_len ReceivedChain.ch_main) (λ _, None).
+
+Theorem rc_budgets :
+  strict rc_W ∧ lfptyped rc_W ∅ (∅, {[+ ReceivedChain.ch_main +]}) TUnit ∧
+  round_len ReceivedChain.ch_main = 2 ∧ ∀ x, w_bud rc_W x = Some 4 ∧ w_pay rc_W x = 3.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len ReceivedChain.ch_main) (λ _, None) rc_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 2 _ x).
+Qed.
+
+Definition rg_W : world := with_budgets (cworld GrowRing.rg_Ψ) [] (round_len GrowRing.rg_main) (λ _, None).
+
+Theorem rg_budgets :
+  strict rg_W ∧ lfptyped rg_W ∅ (∅, {[+ GrowRing.rg_main +]}) TUnit ∧
+  round_len GrowRing.rg_main = 4 ∧ ∀ x, w_bud rg_W x = Some 8 ∧ w_pay rg_W x = 5.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len GrowRing.rg_main) (λ _, None) rg_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 4 _ x).
+Qed.
+
+Definition abp_W : world := with_budgets (cworld ABP.abp_Ψ) [] (round_len ABP.abp_main) (λ _, None).
+
+Theorem abp_budgets :
+  strict abp_W ∧ lfptyped abp_W ∅ (∅, {[+ ABP.abp_main +]}) TUnit ∧
+  round_len ABP.abp_main = 4 ∧ ∀ x, w_bud abp_W x = Some 8 ∧ w_pay abp_W x = 5.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len ABP.abp_main) (λ _, None) abp_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 4 _ x).
+Qed.
