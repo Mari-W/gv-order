@@ -45,13 +45,14 @@ Proof.
   - apply ppo_size in Hp. destruct b, b'; unfold pt_size in Hp; simpl in Hp; lia.
 Qed.
 
-Lemma created_p W Ψ L H :
+Lemma created_p W Ψ L H a :
   created W Ψ → Forall (skn W Ψ) (L.*1 ++ H.*1) →
   (∀ l h b, (l, b) ∈ L → (h, b) ∈ H → slt W Ψ l h) →
-  created W (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) (freshp_bcs L H), ids 1)]).
+  ¬ skn W Ψ (pconst a) →
+  created W (Ψ ++ [(freshp_bcs L H, [pconst a])]).
 Proof.
-  intros HΨ HK Hbt.
-  apply (created_fresh W Ψ (freshp_bcs L H)); [done| |done|].
+  intros HΨ HK Hbt Ha.
+  apply (created_fresh W Ψ (freshp_bcs L H)); [done| |done| |done].
   - intros f Hf Hs. destruct Hf as [(i & l & b & Hi & ->)|(j & h & b & Hj & ->)].
     + left. eexists _, _. split; [done|]. split_and!; [left; by exists i, l, b|done|apply pt_root_polar0|done].
     + right. eexists _, _. split; [done|]. split_and!; [right; by exists j, h, b|done|apply pt_root_polar0|done].
@@ -71,7 +72,7 @@ Proof.
 Qed.
 
 (** The facts of the hypothesis, read at the instance x. *)
-Lemma slt_freshp_l W Ψ σ L H x l b :
+Lemma slt_freshp_l_inst W Ψ σ L H x l b :
   (bcs_inst σ (freshp_bcs L H), [x]) ∈ Ψ → (l, b) ∈ L → slt W Ψ (pt_inst σ l) (pt_polar b x).
 Proof.
   intros Hg Hl. apply sl_h. exists (bcs_inst σ (freshp_bcs L H)), [x]. split; [done|].
@@ -90,7 +91,7 @@ Proof.
   - cbn [fact_map]. rewrite !pt_inst_polar, pt_inst_open1_0, (pt_inst_open1 x env i _ He). done.
 Qed.
 
-Lemma slt_freshp_r W Ψ σ L H x h b :
+Lemma slt_freshp_r_inst W Ψ σ L H x h b :
   (bcs_inst σ (freshp_bcs L H), [x]) ∈ Ψ → (h, b) ∈ H → slt W Ψ (pt_polar b x) (pt_inst σ h).
 Proof.
   intros Hg Hh. apply sl_h. exists (bcs_inst σ (freshp_bcs L H)), [x]. split; [done|].
@@ -108,6 +109,27 @@ Proof.
       destruct b; cbn; rewrite ?length_fmap, ?length_app, ?length_fmap; lia.
     + done.
   - cbn [fact_map]. rewrite !pt_inst_polar, pt_inst_open1_0, (pt_inst_open1 x env _ _ He). done.
+Qed.
+
+(** The same for a hypothesis of [created], which no instance shifts. *)
+Lemma bcs_inst_pvar C : bcs_inst pvar C = C.
+Proof.
+  destruct C as [env f]. unfold bcs_inst. simpl. f_equal.
+  rewrite <-(list_fmap_id env) at 2. apply list_fmap_ext. intros j x _. apply pt_inst_pvar.
+Qed.
+
+Lemma slt_freshp_l W Ψ L H x l b :
+  (freshp_bcs L H, [x]) ∈ Ψ → (l, b) ∈ L → slt W Ψ l (pt_polar b x).
+Proof.
+  intros Hg Hl. rewrite <-(pt_inst_pvar l).
+  apply (slt_freshp_l_inst W Ψ pvar L H x l b); [by rewrite bcs_inst_pvar|done].
+Qed.
+
+Lemma slt_freshp_r W Ψ L H x h b :
+  (freshp_bcs L H, [x]) ∈ Ψ → (h, b) ∈ H → slt W Ψ (pt_polar b x) h.
+Proof.
+  intros Hg Hh. rewrite <-(pt_inst_pvar h).
+  apply (slt_freshp_r_inst W Ψ pvar L H x h b); [by rewrite bcs_inst_pvar|done].
 Qed.
 
 (** ** The two ends of one channel in order

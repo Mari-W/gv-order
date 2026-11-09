@@ -18,9 +18,10 @@
     bounds and argument type annotated, application, pairs, let, sums
     with the other arm annotated, case, and [new] with its session type
     and its point annotated (new@x, the constant world of sharp edges
-    172), encoded as [let_new]. No box, no force, no pack, no bare
-    constant. Channels created at the top level are point variables of
-    the program's creation constraint C₀ ([synth_deadlock_free]). Linear
+    172), encoded as [let_new_at] on the point literal of x, which must
+    be ground (syntactic points, sharp edges 173). No box, no force, no
+    pack, no bare constant. Channels created at the top level are
+    constants of the program's hypotheses ([synth_deadlock_free_created]). Linear
     environments split by occurrence ([lp], [sok] of
     examples/ExampleTools.v). Session types are compared on the nose
     ([sty_eqb]); the head of a session type is read through [hd], which
@@ -119,6 +120,7 @@ Fixpoint ty_eqb (T U : ty) : bool :=
   | TProd T1 T2, TProd U1 U2 => ty_eqb T1 U1 && ty_eqb T2 U2
   | TSum T1 T2, TSum U1 U2 => ty_eqb T1 U1 && ty_eqb T2 U2
   | TSess s x, TSess r y => sty_eqb s r && bool_decide (x = y)
+  | TPt x, TPt y => bool_decide (x = y)
   | _, _ => false
   end
 with sty_eqb (s r : sty) : bool :=
@@ -152,6 +154,7 @@ Proof.
   - intros s IH x [] H; simpl in H; try discriminate.
     apply andb_true_iff in H as [H1 H2]. apply bool_decide_eq_true in H2. subst. f_equal; auto.
   - intros lb n C T1 IH [] H; simpl in H; discriminate.
+  - intros x [] H; simpl in H; try discriminate. apply bool_decide_eq_true in H. by subst.
   - intros m T IH [] H; simpl in H; try discriminate.
     apply andb_true_iff in H as [H1 H2]. apply Nat.eqb_eq in H1. subst. f_equal; auto.
   - intros m T IH [] H; simpl in H; try discriminate.
@@ -248,8 +251,15 @@ Fixpoint erase (a : aexpr) : expr :=
   | AInj1 _ e => Inj1 (erase e)
   | AInj2 _ e => Inj2 (erase e)
   | ACase e e1 e2 => Case (erase e) (erase e1) (erase e2)
-  | ALetNew _ _ e => let_new (erase e)
+  | ALetNew _ x e => let_new_at (EPt x) (erase e)
   end.
+
+(** A point literal must be ground (E-Pt). *)
+Definition pt_groundb (x : point) : bool :=
+  match pn_root (pt_name x) with NConst _ => true | _ => false end.
+
+Lemma pt_groundb_sound x : pt_groundb x = true → pt_ground x.
+Proof. unfold pt_groundb, pt_ground. destruct (pn_root (pt_name x)); intros H; try discriminate H; by eexists. Qed.
 
 (** ** Decidable scoping of a payload (kscoped) *)
 
@@ -272,6 +282,7 @@ Fixpoint pscopedb (k : nat) (T : ty) : bool :=
   | TBox n _ C T1 => bcs_scopedb k C && pscopedb (n + k) T1
   | TSess _ x => pt_scopedb k x
   | TEx lb n C T1 => lb_scopedb k lb && bcs_scopedb k C && pscopedb (n + k) T1
+  | TPt x => pt_scopedb k x
   end.
 
 (** ** The constants applied to an argument of type A
@@ -438,9 +449,11 @@ Fixpoint synth (n : nat) (Φ : fhyps) (Δ : lenv) (F : sfuture) (a : aexpr) : op
         end
       else None
   | ALetNew s0 x e =>
+      if pt_groundb x then
       match synth n Φ
               (Some (TSess (dual s0) (pt_dual x)) :: Some (TSess s0 x) :: None :: None :: Δ) F e with
       | Some (T, c) => Some (T, cands [CAtom (AKnown x); c])
       | None => None
       end
+      else None
   end.

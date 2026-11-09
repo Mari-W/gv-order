@@ -5,7 +5,10 @@
     that no other thread can answer ([offers_stuck], examples/lit/LitLib.v).
     So none of them is deadlock free, and [soundness_source] rules out a
     whole-program [styped] derivation under every acyclic top-level
-    constraint. No inversion of typing derivations is needed.
+    constraint. No inversion of typing derivations is needed. Under
+    syntactic points the news name constants, and [soundness_created_s]
+    rules out a derivation under the hypotheses of every top-level
+    creation as well (the theorems *_untypable_created, sharp edges 173).
 
     - [pcx1_main], program 1 of docs/extensions/adequacy/pgv-counterexamples.txt.
       PGV as printed types it (its T-Pair does not compare the right
@@ -66,7 +69,7 @@ Definition pcx1_rest : expr :=
     (App (Lam (LetU (App EClos (Var 0)) (App EClos (Var 1)))) (App ESend (Pair EUnit (Var 1)))).
 
 Definition pcx1_main : expr :=
-  let_new_pair (let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 2))
     (LetU (App ESpawn pcx1_child1) (LetU (App ESpawn pcx1_child2) pcx1_rest)))).
 
 (** ** Program 2 of pgv-counterexamples.txt
@@ -95,7 +98,7 @@ Definition pcx2_rest : expr :=
     (App (Lam (LetU (App EClos (Var 1)) (App EClos (Var 0)))) (App ESend (Pair EUnit (Var 3))))).
 
 Definition pcx2_main : expr :=
-  let_new_pair (let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 2))
     (LetU (App ESpawn pcx2_child1) (LetU (App ESpawn pcx2_child2) pcx2_rest)))).
 
 (** ** Milner's scheduler with A_0 reversed
@@ -109,7 +112,7 @@ Definition msr_ag0 : expr :=
   LetU (recvclose (Var 2)) (LetU (sendclose (Var 11)) (sendclose (Var 1))).
 
 Definition msr_main : expr :=
-  let_new_pair (let_new_pair (let_new_pair (let_new_pair (let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 2)) (let_new_pair_at (EPt (pconst 3)) (let_new_pair_at (EPt (pconst 4)) (let_new_pair_at (EPt (pconst 5))
     (LetU (App ESpawn ms_ag1)
       (LetU (App ESpawn ms_ag2)
         (LetU (App ESpawn ms_col0)
@@ -143,10 +146,10 @@ Definition mcx2_child2 : expr :=
 
 Definition mcx2_rest : expr :=
   LetP (App ERecv (Var 2)) (LetU (Var 1) (LetU (App EClos (Var 0))
-    (let_new_pair (LetU (App ESpawn mcx2_child2) (App EClos (App (Var 4) (Var 1))))))).
+    (let_new_pair_at (EPt (pconst 2)) (LetU (App ESpawn mcx2_child2) (App EClos (App (Var 4) (Var 1))))))).
 
 Definition mcx2_main : expr :=
-  let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1))
     (LetU (App ESpawn mcx2_child1)
       (App (Lam mcx2_rest) (Lam (App ESend (Pair (Var 4) (Var 0))))))).
 
@@ -170,7 +173,7 @@ Definition mcx3_child2 : expr :=
              (App ESend (Pair EUnit (Var 1)))))))).
 
 Definition mcx3_main : expr :=
-  let_new_pair (let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 2))
     (LetU (App ESpawn pcx2_child1) (LetU (App ESpawn mcx3_child2) pcx2_rest)))).
 
 (** ** The runs *)
@@ -184,7 +187,7 @@ Ltac offers_done :=
 Lemma pcx1_not_deadlock_free : ¬ deadlock_free (∅, {[+ pcx1_main +]}).
 Proof.
   eapply not_df_of_stuck.
-  - rewrite ms_one_lit. unfold pcx1_main, let_new_pair, let_new.
+  - rewrite ms_one_lit. unfold pcx1_main, let_new_pair_at, let_new_at.
     pnew "c". pb. pb. pb. pnew "v". pb. pb. pb. pnew "w". pb. pb. pb.
     psp. pb. pb. rewrite ms_swap. pb. psp. pb. pb. rewrite ms_swap.
     pb. apply rtc_refl.
@@ -195,7 +198,7 @@ Qed.
 Lemma pcx2_not_deadlock_free : ¬ deadlock_free (∅, {[+ pcx2_main +]}).
 Proof.
   eapply not_df_of_stuck.
-  - rewrite ms_one_lit. unfold pcx2_main, let_new_pair, let_new.
+  - rewrite ms_one_lit. unfold pcx2_main, let_new_pair_at, let_new_at.
     pnew "c". pb. pb. pb. pnew "d". pb. pb. pb. pnew "e". pb. pb. pb.
     psp. pb. pb. rewrite ms_swap. pb. psp. pb. pb. rewrite ms_swap.
     pb. apply rtc_refl.
@@ -206,7 +209,7 @@ Qed.
 Lemma msr_not_deadlock_free : ¬ deadlock_free (∅, {[+ msr_main +]}).
 Proof.
   eapply not_df_of_stuck.
-  - rewrite ms_one_lit. unfold msr_main, let_new_pair, let_new.
+  - rewrite ms_one_lit. unfold msr_main, let_new_pair_at, let_new_at.
     pnew "r0". pb. pb. pb. pnew "s1". pb. pb. pb. pnew "r1". pb. pb. pb.
     pnew "s2". pb. pb. pb. pnew "r2". pb. pb. pb. pnew "s0". pb. pb. pb.
     psp. pb. pb. rewrite ms_swap. pb. psp. pb. pb. rewrite ms_swap. pb.
@@ -220,7 +223,7 @@ Qed.
 Lemma mcx2_not_deadlock_free : ¬ deadlock_free (∅, {[+ mcx2_main +]}).
 Proof.
   eapply not_df_of_stuck.
-  - rewrite ms_one_lit. unfold mcx2_main, let_new_pair, let_new.
+  - rewrite ms_one_lit. unfold mcx2_main, let_new_pair_at, let_new_at.
     pnew "x". pb. pb. pb. pnew "b". pb. pb. pb.
     psp. pb. pb. rewrite ms_swap. pb. pb. apply rtc_refl.
   - apply not_terminated_chan. set_solver.
@@ -230,7 +233,7 @@ Qed.
 Lemma mcx3_not_deadlock_free : ¬ deadlock_free (∅, {[+ mcx3_main +]}).
 Proof.
   eapply not_df_of_stuck.
-  - rewrite ms_one_lit. unfold mcx3_main, let_new_pair, let_new.
+  - rewrite ms_one_lit. unfold mcx3_main, let_new_pair_at, let_new_at.
     pnew "c". pb. pb. pb. pnew "d". pb. pb. pb. pnew "e". pb. pb. pb.
     psp. pb. pb. rewrite ms_swap. pb. psp. pb. pb. rewrite ms_swap.
     pb. apply rtc_refl.
@@ -256,6 +259,13 @@ Proof.
   exact (soundness_source n C0 _ T (c0_acyclic_creation _ _ HC) HT Ht).
 Qed.
 
+Theorem pcx1_untypable_created Ψ T :
+  created (Wpo []) Ψ → prim T → ¬ styped ∅ Ψ [] (∅, None) pcx1_main T.
+Proof.
+  intros HΨ HT Ht. apply pcx1_not_deadlock_free.
+  exact (soundness_created_s Ψ _ T HΨ HT Ht).
+Qed.
+
 Theorem pcx2_untypable T : prim T → ¬ styped ∅ [] [] (∅, None) pcx2_main T.
 Proof.
   intros HT Ht. apply pcx2_not_deadlock_free.
@@ -269,6 +279,13 @@ Proof.
   exact (soundness_source n C0 _ T (c0_acyclic_creation _ _ HC) HT Ht).
 Qed.
 
+Theorem pcx2_untypable_created Ψ T :
+  created (Wpo []) Ψ → prim T → ¬ styped ∅ Ψ [] (∅, None) pcx2_main T.
+Proof.
+  intros HΨ HT Ht. apply pcx2_not_deadlock_free.
+  exact (soundness_created_s Ψ _ T HΨ HT Ht).
+Qed.
+
 Theorem msr_untypable T : prim T → ¬ styped ∅ [] [] (∅, None) msr_main T.
 Proof.
   intros HT Ht. apply msr_not_deadlock_free.
@@ -280,6 +297,13 @@ Theorem msr_untypable_source n C0 T :
 Proof.
   intros HC HT Ht. apply msr_not_deadlock_free.
   exact (soundness_source n C0 _ T (c0_acyclic_creation _ _ HC) HT Ht).
+Qed.
+
+Theorem msr_untypable_created Ψ T :
+  created (Wpo []) Ψ → prim T → ¬ styped ∅ Ψ [] (∅, None) msr_main T.
+Proof.
+  intros HΨ HT Ht. apply msr_not_deadlock_free.
+  exact (soundness_created_s Ψ _ T HΨ HT Ht).
 Qed.
 
 
@@ -296,6 +320,13 @@ Proof.
   exact (soundness_source n C0 _ T (c0_acyclic_creation _ _ HC) HT Ht).
 Qed.
 
+Theorem mcx2_untypable_created Ψ T :
+  created (Wpo []) Ψ → prim T → ¬ styped ∅ Ψ [] (∅, None) mcx2_main T.
+Proof.
+  intros HΨ HT Ht. apply mcx2_not_deadlock_free.
+  exact (soundness_created_s Ψ _ T HΨ HT Ht).
+Qed.
+
 Theorem mcx3_untypable T : prim T → ¬ styped ∅ [] [] (∅, None) mcx3_main T.
 Proof.
   intros HT Ht. apply mcx3_not_deadlock_free.
@@ -307,4 +338,11 @@ Theorem mcx3_untypable_source n C0 T :
 Proof.
   intros HC HT Ht. apply mcx3_not_deadlock_free.
   exact (soundness_source n C0 _ T (c0_acyclic_creation _ _ HC) HT Ht).
+Qed.
+
+Theorem mcx3_untypable_created Ψ T :
+  created (Wpo []) Ψ → prim T → ¬ styped ∅ Ψ [] (∅, None) mcx3_main T.
+Proof.
+  intros HΨ HT Ht. apply mcx3_not_deadlock_free.
+  exact (soundness_created_s Ψ _ T HΨ HT Ht).
 Qed.

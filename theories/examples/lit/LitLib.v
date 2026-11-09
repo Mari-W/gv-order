@@ -31,7 +31,7 @@ Lemma typed_hyps_wk_lit W Ψ F e T : strict W → typed W ∅ [] ∅ [] F e T �
 Proof.
   intros HW H. pose proof (typed_pinst W _ _ _ _ _ _ _ HW H pvar Ψ) as H'.
   rewrite fhyps_pinst_empty, tenv_pinst_empty, sf_pinst_pvar, pinst_ty_pvar in H'.
-  apply H'. intros C xs Hm. by apply elem_of_nil in Hm.
+  apply H'; [|apply tenv_pol_empty]. intros C xs Hm. by apply elem_of_nil in Hm.
 Qed.
 
 Lemma styped_nil_hyps e T :
@@ -80,12 +80,13 @@ Ltac pp_gate0 HW := apply ubs_intro; [pp_future HW|done].
     [blocked_on e k c] says that every step of e is a send on c (k =
     true) or a receive on c (k = false). A configuration whose threads
     are listed with such an offer, and where two threads that offer on
-    one channel offer in one direction, makes no τ step. *)
+    one channel offer in one direction, makes no τ step. The offer
+    names an end (sharp edges 173). *)
 
-Definition blocked_on (e : expr) (k : bool) (c : chan) : Prop :=
+Definition blocked_on (e : expr) (k : bool) (c : cend) : Prop :=
   ∀ α e', tstep e α e' → ∃ v, α = LSess (if k then SSend c v else SRecv c v).
 
-Lemma blocked_recv c : blocked_on (App ERecv (Chan c)) false c.
+Lemma blocked_recv c b : blocked_on (App ERecv (Chan c b)) false (c, b).
 Proof.
   intros α e' H. apply tstep_app_inv in H as [(? & H & _)|[(_ & ? & H & _)|(_ & _ & H)]].
   - exfalso. by eapply val_no_tstep.
@@ -93,7 +94,7 @@ Proof.
   - inversion H; subst. by eexists.
 Qed.
 
-Lemma blocked_send v c : is_val v → blocked_on (App ESend (Pair v (Chan c))) true c.
+Lemma blocked_send v c b : is_val v → blocked_on (App ESend (Pair v (Chan c b))) true (c, b).
 Proof.
   intros Hv α e' H. apply tstep_app_inv in H as [(? & H & _)|[(_ & ? & H & _)|(_ & _ & H)]].
   - exfalso. by eapply val_no_tstep.
@@ -133,14 +134,14 @@ Ltac blocked :=
     | apply blocked_pairr; [done|done|]
     | apply blocked_pairl; [done|] ].
 
-Lemma offers_stuck C (L : list (expr * (bool * chan))) p' :
+Lemma offers_stuck C (L : list (expr * (bool * cend))) p' :
   Forall (λ t, blocked_on t.1 t.2.1 t.2.2) L →
-  (∀ t u, t ∈ L → u ∈ L → t.2.2 = u.2.2 → t.2.1 = u.2.1) →
+  (∀ t u, t ∈ L → u ∈ L → t.2.2.1 = u.2.2.1 → t.2.1 = u.2.1) →
   ¬ preduction (C, list_to_set_disj (fst <$> L)) p'.
 Proof.
   intros HB HD H.
   assert (∀ e α e', e ∈ (list_to_set_disj (fst <$> L) : gmultiset expr) → tstep e α e' →
-            ∃ (k : bool) (c : chan) (v : expr), (e, (k, c)) ∈ L ∧ α = LSess (if k then SSend c v else SRecv c v)) as HS.
+            ∃ (k : bool) (c : cend) (v : expr), (e, (k, c)) ∈ L ∧ α = LSess (if k then SSend c v else SRecv c v)) as HS.
   { intros e α e' He Ht. apply elem_of_list_to_set_disj, list_elem_of_fmap in He as ([e0 [k c]] & -> & Hin).
     rewrite Forall_forall in HB. destruct (HB _ Hin _ _ Ht) as [v ->]. by exists k, c, v. }
   inversion H; subst;
@@ -210,16 +211,16 @@ Ltac pb := eapply rtc_l; [apply PStepBeta; tsh|]; norml.
     thread exists. *)
 Ltac pnew s :=
   eapply rtc_l;
-  [apply (PStepNew _ _ _ s%string); [tsh|set_solver|unfold echans; rewrite gmultiset_elements_empty; set_solver|cbn; set_solver]|];
+  [eapply (PStepNew _ _ _ s%string); [tsh|set_solver|unfold echans; rewrite gmultiset_elements_empty; set_solver|cbn; set_solver]|];
   norml.
 
 (** A spawn of the last thread. *)
 Ltac psp := eapply rtc_l; [apply PStepSpawn; tsh|]; norml.
 
-Lemma offers_stuck_l C (L : list (expr * (bool * chan))) E p' :
+Lemma offers_stuck_l C (L : list (expr * (bool * cend))) E p' :
   Forall (λ t, blocked_on t.1 t.2.1 t.2.2) L →
   E = list_to_set_disj (fst <$> L) →
-  (∀ t u, t ∈ L → u ∈ L → t.2.2 = u.2.2 → t.2.1 = u.2.1) →
+  (∀ t u, t ∈ L → u ∈ L → t.2.2.1 = u.2.2.1 → t.2.1 = u.2.1) →
   ¬ preduction (C, E) p'.
 Proof. intros HB ->. by apply offers_stuck. Qed.
 
@@ -227,9 +228,9 @@ Proof. intros HB ->. by apply offers_stuck. Qed.
     each paired with an offer left open. *)
 Ltac mk_offers E :=
   lazymatch E with
-  | ∅ => open_constr:(@nil (expr * (bool * chan)))
+  | ∅ => open_constr:(@nil (expr * (bool * cend)))
   | ?E' ⊎ {[+ ?x +]} =>
-      let L := mk_offers E' in open_constr:((x, (_ : bool, _ : chan)) :: L)
+      let L := mk_offers E' in open_constr:((x, (_ : bool, _ : cend)) :: L)
   end.
 
 (** Close a goal ¬ preduction (C, E) p by the offers of the threads. *)

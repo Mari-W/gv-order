@@ -22,35 +22,35 @@ Definition sync_thunk : expr :=
   Lam (LetU (Var 0) (App EClos (App ESend (Pair EUnit (Var 2))))).
 
 Definition sync_main : expr :=
-  let_new_pair
+  let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn sync_thunk)
       (LetP (App ERecv (Var 0)) (LetU (Var 1) (App EClos (Var 0))))).
 
-Definition sync_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) (fresh_bcs [] []), ids 1)].
+Definition sync_Ψ : hyps := [] ++ [(fresh_bcs [] [], [pconst 0])].
 
 Lemma sync_created : created (Wpo []) sync_Ψ.
-Proof. apply created_lh; [constructor|constructor|set_solver]. Qed.
+Proof. apply created_lh; [constructor|constructor|set_solver|fresh_const]. Qed.
 
 Lemma sync_typed : styped ∅ sync_Ψ [] (∅, None) sync_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold sync_main, let_new_pair, sync_Ψ.
-  new_top HWs Ssync (pvar 0).
+  set (W := Wpo []) in *. unfold sync_main, let_new_pair_at, sync_Ψ.
+  new_top HWs Ssync (pconst 0).
   fresh_clean.
   tstep.
   { cbn. tstep.
-    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NVar 0) 1)) (Some (pt_dual (pvar 0))) 0); [set_solver| |].
+    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (Pt (NConst 0) 1)) (Some (pt_dual (pconst 0))) 0); [set_solver| |].
       { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
       cbn. tstep; [tstep|]. cbn.
       tstep.
-      + tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (pvar 0)); cbn; set_solver|done|].
+      + tstep; [|apply (KTSend _ _ _ 0 TUnit SEnd (pconst 0)); cbn; set_solver|done|].
         * tstep; tstep.
         * apply ubs_intro; [intros y Hy; mem_cases Hy|].
-          exists (Pt (NVar 0) 1). split; [done|]. right. apply (slt_po W _ (pvar 0) HW).
+          exists (Pt (NConst 0) 1). split; [done|]. right. apply (slt_po W _ (pconst 0) HW).
       + apply KTClos.
       + done.
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (Pt (NVar 0) 1). split; [done|]. apply sle_refl, HW.
+        exists (Pt (NConst 0) 1). split; [done|]. apply sle_refl, HW.
     - apply KTSpawn.
     - done.
     - apply ubs_none. }

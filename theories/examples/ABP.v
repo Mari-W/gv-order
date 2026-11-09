@@ -304,7 +304,7 @@ Qed.
 
 Definition abp_main : expr :=
   LetP (Pair bob (Pair alice0 alice1)) (LetP (Var 0)
-    (let_new_pair (let_new_pair (let_new_pair
+    (let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 2))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 10)) (Pair (Var 5) (Var 3))))))
       (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 7)) (Pair (Var 4) (Var 1))))))
         (App (App EForce (Var 7)) (Pair (Var 5) (Var 1))))))))).
@@ -312,15 +312,15 @@ Definition abp_main : expr :=
 (** Bob holds x′ at χ̄ and y′ at ῡ, Alice0 x at χ and z at ζ, Alice1 y at
     υ and z′ at ζ̄. *)
 Definition abp_inst : list (list (nat * nat * nat * nat) * list point) :=
-  [(fsB, [pt_dual (pv 0 0); pt_dual (pv 1 0); pv 3 0]);
-   (fsA, [pv 0 0; pv 2 0; pv 3 0]);
-   (fsC, [pv 1 0; pt_dual (pv 2 0); pv 3 0])].
+  [(fsB, [pt_dual (pc 0 0); pt_dual (pc 1 0); pc 3 0]);
+   (fsA, [pc 0 0; pc 2 0; pc 3 0]);
+   (fsC, [pc 1 0; pt_dual (pc 2 0); pc 3 0])].
 
 (** Besides the box facts at their instances, C₀ puts χ ≺ υ and ζ ≺ ῡ,
     so that the two spawned threads of main have a lower point. *)
 Definition abp0_P (g : fact) : Prop :=
   (∃ fs xs g0, (fs, xs) ∈ abp_inst ∧ abp_P fs g0 ∧ g = fact_map (pt_inst (plist xs)) g0) ∨
-  g = FLt (pv 0 0) (pv 1 0) ∨ g = FLt (pv 2 0) (pt_dual (pv 1 0)).
+  g = FLt (pc 0 0) (pc 1 0) ∨ g = FLt (pc 2 0) (pt_dual (pc 1 0)).
 Definition abp0_C : bcs := BCs [] abp0_P.
 
 (** ** The rank of the top-level constraint *)
@@ -397,146 +397,13 @@ Proof.
   destruct (decide (c < 4)); done.
 Qed.
 
-(** ** A ladder of creation constraints by rank (sharp edges 172)
+(** ** A ladder of creation constraints by rank (sharp edges 172, 173)
 
     The constant world asks main to create its channels one at a time
-    under creation constraints. [lad_Ψ rkf a] creates a ceiling z first,
-    then the channels 0, …, a-1. The constraint of channel a relates each
-    of its instants to each instant of every earlier channel b by the
-    rank rkf, and puts each of its instants below z. Under the binder of
-    channel a, channel b is the variable a - b and z is a + 1. This is
-    the construction of CfstScheduler.v ([sch_Ψ]) for any rank that
-    rises along offsets. *)
-Section ladder.
-  Context (rkf : nat → nat → nat) (Hrk : ∀ b k, rkf b k < rkf b (S k)).
-
-  Lemma lad_mono b k l : k < l → rkf b k < rkf b l.
-  Proof. intros H. induction H as [|l _ IH]; [apply Hrk|]. eapply Nat.lt_trans; [exact IH|apply Hrk]. Qed.
-
-  Lemma lad_lt_inv b k l : rkf b k < rkf b l → k < l.
-  Proof.
-    intros H. destruct (decide (k < l)) as [|Hn]; [done|].
-    destruct (decide (k = l)) as [->|Hne]; [lia|]. pose proof (lad_mono b l k ltac:(lia)). lia.
-  Qed.
-
-  Definition lad_P (a : nat) (g : fact) : Prop :=
-    (∃ b k j c c', b < a ∧ rkf b k < rkf a j ∧ g = FLt (pt_polar c (pv (a - b) k)) (pt_polar c' (pv 0 j))) ∨
-    (∃ b k j c c', b < a ∧ rkf a j < rkf b k ∧ g = FLt (pt_polar c (pv 0 j)) (pt_polar c' (pv (a - b) k))) ∨
-    (∃ j c, g = FLt (pt_polar c (pv 0 j)) (pv (S a) 0)).
-  Definition lad_C (a : nat) : bcs := BCs (ids (S a)) (lad_P a).
-
-  Fixpoint lad_Ψ (a : nat) : hyps :=
-    match a with
-    | 0 => [(top_C0, ids 1)]
-    | S a' => hyps_inst (pshift 1) (lad_Ψ a') ++ [(bcs_inst (pshift 1) (lad_C a'), ids 1)]
-    end.
-
-  Definition lad_inv (W : world) (a : nat) : Prop :=
-    (∀ b b' k l c c', b < a → b' < a → rkf b k < rkf b' l →
-       slt W (lad_Ψ a) (pt_polar c (pv (a - 1 - b) k)) (pt_polar c' (pv (a - 1 - b') l))) ∧
-    (∀ b k c, b < a → slt W (lad_Ψ a) (pt_polar c (pv (a - 1 - b) k)) (pv a 0)).
-
-  Definition lad_kn (a : nat) : Prop := ∀ v, v ≤ a → ∃ C, (C, [pvar v]) ∈ lad_Ψ a.
-
-  Lemma lad_ok W a : lad_inv W a → cc_ok (seqs W (lad_Ψ a)) (slt W (lad_Ψ a)) (lad_C a).
-  Proof.
-    intros [HR Hz].
-    apply (cc_ok_out _ _ (lad_C a) olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
-    - intros x y (f & Hf & _ & E). cbn [bc_facts bc_env] in *.
-      destruct Hf as [(b & k & j & [|] & [|] & Hb & _ & ->)|[(b & k & j & [|] & [|] & Hb & _ & ->)|(j & [|] & ->)]];
-        unfold lad_C in E; cbn [fact_map bc_env] in E; rewrite !CfstScheduler.open_ids in E by (cbn; lia);
-        injection E as -> ->; cbn.
-      all: first [right; left; split; [intros [=]; lia|done]|right; right; split; [done|intros [=]; lia]
-                 |right; right; split; [done|intros [=]]].
-    - intros u p q v (f & Hf & _ & E) (f' & Hf' & _ & E') Hu Hp Hq Hv Hpq. cbn [bc_facts bc_env] in *.
-      destruct Hf as [(b & k & j & c & c' & Hb & Hr & ->)|[(b & k & j & c & c' & Hb & Hr & ->)|(j & c & ->)]];
-        unfold lad_C in E; cbn [fact_map bc_env] in E;
-        rewrite !CfstScheduler.open_ids in E by (destruct c; try destruct c'; cbn; lia);
-        injection E as -> ->; destruct c; try destruct c'; cbn in Hu; try done.
-      all: destruct Hf' as [(b' & k' & j' & d & d' & Hb' & Hr' & ->)|[(b' & l & j' & d & d' & Hb' & Hr' & ->)|(j' & d & ->)]];
-        unfold lad_C in E'; cbn [fact_map bc_env] in E';
-        rewrite !CfstScheduler.open_ids in E' by (destruct d; try destruct d'; cbn; lia);
-        injection E' as -> ->; destruct d; try destruct d'; cbn in Hq, Hv; try done.
-      all: try (assert (j ≤ j') as Hj by (destruct Hpq as [Hpq|[Hpq1 Hpq]]; [injection Hpq; lia|cbn in *; lia]);
-        assert (rkf a j ≤ rkf a j') by (destruct (decide (j = j')) as [->|]; [lia|]; pose proof (lad_mono a j j'); lia)).
-      all: let solve_hr c0 c1 :=
-             pose proof (glt_up (seqs W (lad_Ψ a)) _ _ _ (HR b b' k l c0 c1 Hb Hb' ltac:(lia))) as G;
-             rewrite !CfstScheduler.pv_lift_polar in G;
-             replace (S (a - 1 - b)) with (a - b) in G by lia; replace (S (a - 1 - b')) with (a - b') in G by lia;
-             exact G in
-           let solve_z c0 :=
-             pose proof (glt_up (seqs W (lad_Ψ a)) _ _ _ (Hz b k c0 Hb)) as G;
-             rewrite CfstScheduler.pv_lift_polar, CfstScheduler.pv_lift in G;
-             replace (S (a - 1 - b)) with (a - b) in G by lia; exact G in
-           first [solve_hr true true|solve_hr true false|solve_hr false true|solve_hr false false
-                 |solve_z true|solve_z false].
-  Qed.
-
-  Lemma lad_inv_step W a : strict W → lad_inv W a → lad_inv W (S a).
-  Proof.
-    intros HW [HR Hz].
-    set (env := pt_inst (pshift 1) <$> ids (S a)).
-    assert ((BCs env (lad_P a), [pvar 0]) ∈ lad_Ψ (S a)) as Hm.
-    { cbn [lad_Ψ]. apply elem_of_app. right. by left. }
-    assert (∀ x y, lad_P a (FLt x y) → fact_scoped (S (S a)) (FLt x y) → slt W (lad_Ψ (S a)) x y) as Hn.
-    { intros x y Hf Hs. eapply (sl_hyp W _ env (lad_P a) [pvar 0] (FLt x y)); [exact Hm|exact Hf| |].
-      - unfold env. cbn [length]. by rewrite length_fmap, CfstScheduler.length_ids.
-      - cbn [fact_map app]. unfold env. rewrite CfstScheduler.ids_shift. destruct Hs as [Hx Hy].
-        by rewrite !pt_inst_ids. }
-    split.
-    - intros b b' k l c c' Hb Hb' Hr.
-      destruct (decide (b = a)) as [->|Hba]; destruct (decide (b' = a)) as [->|Hba'].
-      + replace (S a - 1 - a) with 0 by lia. apply CfstScheduler.slt_ofs_any; [exact (proj1 HW)|]. by eapply lad_lt_inv.
-      + replace (S a - 1 - a) with 0 by lia. replace (S a - 1 - b') with (a - b') by lia.
-        apply Hn; [right; left; exists b', l, k, c, c'; split_and!; [lia|done|done]|destruct c, c'; cbn; lia].
-      + replace (S a - 1 - a) with 0 by lia. replace (S a - 1 - b) with (a - b) by lia.
-        apply Hn; [left; exists b, k, l, c, c'; split_and!; [lia|done|done]|destruct c, c'; cbn; lia].
-      + pose proof (CfstScheduler.slt_shift W (lad_Ψ a) [(bcs_inst (pshift 1) (lad_C a), ids 1)] _ _ HW
-                      (HR b b' k l c c' ltac:(lia) ltac:(lia) Hr)) as G.
-        rewrite !CfstScheduler.pv_shift_polar in G. by replace (S a - 1 - b) with (S (a - 1 - b)) by lia;
-          replace (S a - 1 - b') with (S (a - 1 - b')) by lia.
-    - intros b k c Hb. destruct (decide (b = a)) as [->|Hba].
-      + replace (S a - 1 - a) with 0 by lia. apply Hn; [right; right; by exists k, c|destruct c; cbn; lia].
-      + pose proof (CfstScheduler.slt_shift W (lad_Ψ a) [(bcs_inst (pshift 1) (lad_C a), ids 1)] _ _ HW
-                      (Hz b k c ltac:(lia))) as G.
-        rewrite CfstScheduler.pv_shift_polar, CfstScheduler.pv_shift in G.
-        by replace (S a - 1 - b) with (S (a - 1 - b)) by lia.
-  Qed.
-
-  Lemma lad_inv_all W a : strict W → lad_inv W a.
-  Proof. intros HW. induction a; [split; intros; lia|by apply lad_inv_step]. Qed.
-
-  Lemma lad_kn_all a : lad_kn a.
-  Proof.
-    induction a as [|a H].
-    - intros v Hv. assert (v = 0) as -> by lia. exists top_C0. by left.
-    - intros [|v] Hv.
-      + eexists. cbn [lad_Ψ]. apply elem_of_app. right. by left.
-      + destruct (H v ltac:(lia)) as (C & HC). exists (bcs_inst (pshift 1) C). cbn [lad_Ψ].
-        apply elem_of_app. left. unfold hyps_inst. apply list_elem_of_fmap. exists (C, [pvar v]).
-        split; [|done]. cbn. unfold pt_inst, pshift. cbn. by rewrite Nat.add_1_r.
-  Qed.
-
-  Lemma lad_skn W a x : pt_root x = NVar 0 ∨ (∃ v, v ≤ a ∧ pt_root x = NVar v) → skn W (lad_Ψ a) x.
-  Proof.
-    intros [Hx|(v & Hv & Hx)].
-    - destruct (lad_kn_all a 0 ltac:(lia)) as (C & HC). eapply skn_inst; [exact HC|by left|done].
-    - destruct (lad_kn_all a v Hv) as (C & HC). eapply skn_inst; [exact HC|by left|done].
-  Qed.
-
-  Lemma lad_env W a : Forall (skn W (lad_Ψ a)) (bc_env (lad_C a)).
-  Proof.
-    apply Forall_forall. intros x Hx. unfold lad_C in Hx. cbn [bc_env] in Hx. unfold ids in Hx.
-    apply list_elem_of_fmap in Hx as (v & -> & Hv). apply elem_of_seq in Hv.
-    apply (lad_skn W a). right. exists v. split; [lia|done].
-  Qed.
-
-  Lemma lad_created a : created (Wpo []) (lad_Ψ a).
-  Proof.
-    pose proof Wpo_nil_strict' as HWs. induction a as [|a IH]; [apply top_created|].
-    apply created_snoc; [done|apply lad_ok, lad_inv_all, HWs|apply lad_env].
-  Qed.
-End ladder.
+    under creation constraints. The ladder [cl_Ψ] of
+    examples/cfst/CfstTools.v creates a ceiling z first, then the
+    channels 0, …, a-1, each related to the earlier ones by a rank. Under
+    syntactic points z and the channels are constants. *)
 
 (** ** The top-level channels of main (sharp edges 172)
 
@@ -552,13 +419,13 @@ Definition rkc (b k : nat) : nat := rk (2 - b) k.
 Lemma rkc_S b k : rkc b k < rkc b (S k).
 Proof. apply rk_S. Qed.
 
-Definition abp_Ψ : hyps := lad_Ψ rkc 3.
+Definition abp_Ψ : hyps := cl_Ψ rkc 3 3.
 
 Lemma abp_created : created (Wpo []) abp_Ψ.
-Proof. apply (lad_created rkc rkc_S). Qed.
+Proof. apply (cl_created rkc rkc_S 3 3). lia. Qed.
 
 Lemma abp0_names x y : abp0_P (FLt x y) →
-  (∃ v, v < 3 ∧ pt_name x = NVar v) ∧ ((∃ w, w < 3 ∧ pt_name y = NVar w) ∨ y = pv 3 0).
+  (∃ v, v < 3 ∧ pt_name x = NConst v) ∧ ((∃ w, w < 3 ∧ pt_name y = NConst w) ∨ y = pc 3 0).
 Proof.
   intros [(fs & xs & g0 & Hin & HP & E)|[E|E]].
   2,3: injection E as -> ->; split; [eexists; split; [|reflexivity]; lia|left; eexists; split; [|reflexivity]; lia].
@@ -572,8 +439,8 @@ Proof.
 Qed.
 
 Lemma abp0_shape x y : abp0_P (FLt x y) →
-  ∃ v k c, v < 3 ∧ x = pt_polar c (pv v k) ∧
-    ((∃ w l c', w < 3 ∧ y = pt_polar c' (pv w l) ∧ rk v k < rk w l) ∨ y = pv 3 0).
+  ∃ v k c, v < 3 ∧ x = pt_polar c (pc v k) ∧
+    ((∃ w l c', w < 3 ∧ y = pt_polar c' (pc w l) ∧ rk v k < rk w l) ∨ y = pc 3 0).
 Proof.
   intros H. pose proof (abp_rank_facts x y H) as Hr. destruct (abp0_names x y H) as [(v & Hv & Hx) Hy].
   destruct x as [px cx kx]. cbn in Hx. subst px.
@@ -586,7 +453,7 @@ Qed.
 
 Lemma abp0_hyp W x y : strict W → abp0_P (FLt x y) → slt W abp_Ψ x y.
 Proof.
-  intros HW H. destruct (lad_inv_all rkc rkc_S W 3 HW) as [HR Hz].
+  intros HW H. destruct (cl_inv_all rkc rkc_S 3 W 3 HW ltac:(lia)) as [HR Hz].
   destruct (abp0_shape x y H) as (v & k & c & Hv & -> & [(w & l & c' & Hw & -> & Hr)| ->]).
   - pose proof (HR (2 - v) (2 - w) k l c c' ltac:(lia) ltac:(lia)) as G. unfold rkc in G.
     replace (2 - (2 - v)) with v in G by lia. replace (2 - (2 - w)) with w in G by lia.
@@ -607,45 +474,45 @@ Qed.
 Lemma abp_typed : styped ∅ abp_Ψ [] (∅, None) abp_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold abp_main.
-  assert (∀ a, a < 4 → skn W abp_Ψ (pv a 0)) as Hkn.
-  { intros a Ha. apply (lad_skn rkc rkc_S W 3). right. exists a. split; [lia|done]. }
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold abp_main, let_new_pair_at.
+  assert (∀ a, a < 4 → skn W abp_Ψ (pc a 0)) as Hkn.
+  { intros a Ha. apply (cl_skn rkc rkc_S 3 W 3 _ (3 - a)); [lia|lia|cbn; f_equal; lia]. }
   tstep.
   { tstep; [tstep; apply typed_hyps_wk; [exact HWs|apply alice1_typed, HW|exact HWs|apply alice0_typed, HW]|].
     apply typed_hyps_wk; [exact HWs|apply bob_typed, HW]. }
   cbn. tstep; [tstep|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ AB (pv 0 0) HWs); [apply Hkn; lia|].
-  apply (t_new_at W _ _ _ _ _ _ _ AB (pv 1 0) HWs); [apply Hkn; lia|].
-  apply (t_new_at W _ _ _ _ _ _ _ AB (pv 2 0) HWs); [apply Hkn; lia|].
+  apply (t_new_at W _ _ _ _ _ _ _ AB (pc 0 0) HWs); [ground|apply Hkn; lia|].
+  apply (t_new_at W _ _ _ _ _ _ _ AB (pc 1 0) HWs); [ground|apply Hkn; lia|].
+  apply (t_new_at W _ _ _ _ _ _ _ AB (pc 2 0) HWs); [ground|apply Hkn; lia|].
   cbn. tstep.
   { (* Bob at (χ̄, ῡ, θ) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 3 0)) (Some (pv 0 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 3 0)) (Some (pc 0 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy;
         first [apply sle_refl, HW|right; apply (abp0_hyp W _ _ HWs); right; left; reflexivity]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 3 (abp_C fsB) None bob_body [pt_dual (pv 0 0); pt_dual (pv 1 0); pv 3 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 3 (abp_C fsB) None bob_body [pt_dual (pc 0 0); pt_dual (pc 1 0); pc 3 0]);
         [done|done|apply abp_force; [exact HWs|by left]|constructor; [|constructor; [|constructor; [|constructor]]]; apply Hkn; lia|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 3 0). split; [done|]. apply sle_refl, HW. }
+      exists (pc 3 0). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { (* Alice1 at (υ, ζ̄, θ) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 3 0)) (Some (pv 2 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 3 0)) (Some (pc 2 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy;
         first [apply sle_refl, HW|right; apply (abp0_hyp W _ _ HWs); right; right; reflexivity]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 3 (abp_C fsC) None al1_body [pv 1 0; pt_dual (pv 2 0); pv 3 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 3 (abp_C fsC) None al1_body [pc 1 0; pt_dual (pc 2 0); pc 3 0]);
         [done|done|apply abp_force; [exact HWs|by right; right; left]|constructor; [|constructor; [|constructor; [|constructor]]]; apply Hkn; lia|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pv 3 0). split; [done|]. apply sle_refl, HW. }
+      exists (pc 3 0). split; [done|]. apply sle_refl, HW. }
   (* Alice0 at (χ, ζ, θ) *)
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 3 (abp_C fsA) None al0_body [pv 0 0; pv 2 0; pv 3 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 3 (abp_C fsA) None al0_body [pc 0 0; pc 2 0; pc 3 0]);
       [done|done|apply abp_force; [exact HWs|by right; left]|constructor; [|constructor; [|constructor; [|constructor]]]; apply Hkn; lia|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

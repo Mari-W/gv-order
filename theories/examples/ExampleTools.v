@@ -7,9 +7,11 @@
     strict world, and [soundness] gives [*_deadlock_free].
 
     A program text let (c, d) = new ∗ in t in a comment stands for the
-    encoded let of new, [let_new_pair t] (sharp edges 99, 104). A
-    channel at a known point x is typed by [t_new_at], new at the
-    constraint {ι ≡ x}. The typing lemmas take a strict world, because
+    encoded let of new, [let_new_pair_at (EPt x) t] (sharp edges 99,
+    104, 173). A top-level new names a constant x of the hypotheses
+    ([created]). A box that creates a channel takes its point as a
+    parameter of type [TPt ι] and passes [let_new_pair_at v t] a
+    computed point v ([t_new_v]). The typing lemmas take a strict world, because
     [t_new_at] instantiates the body past ι.
 
     This file holds what several examples share. Strict worlds come from
@@ -277,7 +279,7 @@ Proof. intros Hk. specialize (Hk (pt_name x)). unfold prank, pt_shift. simpl. ni
 Fixpoint occ (x : nat) (e : expr) : bool :=
   match e with
   | Var y => Nat.eqb x y
-  | EUnit | Konst _ | Chan _ => false
+  | EUnit | Konst _ | Chan _ _ | EPt _ => false
   | Lam e | EBox e => occ (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => occ x e1 || occ x e2
   | LetP e1 e2 => occ x e1 || occ (S (S x)) e2
@@ -285,7 +287,7 @@ Fixpoint occ (x : nat) (e : expr) : bool :=
   | Case e e1 e2 => occ x e || occ (S x) e1 || occ (S x) e2
   end.
 
-Definition unlb (T : ty) : bool := match T with TBox _ _ _ _ => true | _ => false end.
+Definition unlb (T : ty) : bool := match T with TBox _ _ _ _ | TPt _ => true | _ => false end.
 
 Lemma unlb_unl T : unlb T = true → unlimited T.
 Proof. by destruct T. Qed.
@@ -388,6 +390,13 @@ Section rules.
 
   Lemma tv_unit Φ Ψ Δ F : allunl Δ = true → typed W Φ Ψ ∅ Δ F EUnit TUnit.
   Proof. intros H. eapply t_weak; [by apply nones_wk|]. apply t_unit, lenv_empty_nones. Qed.
+
+  (** A point literal (E-Pt). *)
+  Lemma tv_pt Φ Ψ Δ F x :
+    allunl Δ = true → pt_ground x → skn W Ψ x → typed W Φ Ψ ∅ Δ F (EPt x) (TPt x).
+  Proof.
+    intros H Hg Hk. eapply t_weak; [by apply nones_wk|]. apply t_pt; [apply lenv_empty_nones|done|done].
+  Qed.
 
   Lemma tv_app Φ Ψ Δ F e1 e2 ub lb T U :
     sok e1 0 e2 0 Δ && negb (lenv_bot (lp e2 0 Δ)) = true →
@@ -558,6 +567,7 @@ Ltac tstep :=
   match goal with
   | |- typed _ _ _ _ _ _ (Var _) _ => apply tv_var; [assumption|done|reflexivity]
   | |- typed _ _ _ _ _ _ EUnit _ => apply tv_unit; [assumption|reflexivity]
+  | |- typed _ _ _ _ _ _ (EPt _) _ => apply tv_pt; [assumption|reflexivity|eexists; reflexivity|]
   | |- typed _ _ _ _ _ _ (LetU _ _) _ => apply tv_letu; [assumption|reflexivity| |]
   | |- typed _ _ _ _ _ _ (LetP _ _) _ => eapply tv_letp; [assumption|reflexivity| |]
   | |- typed _ _ _ _ _ _ (Pair _ _) _ => eapply tv_pair; [assumption|reflexivity| |]
@@ -743,7 +753,7 @@ Proof.
   assert (fhyps_pinst pvar Φ = Φ) as E.
   { unfold fhyps_pinst. rewrite <-(map_fmap_id Φ) at 2. apply map_fmap_ext.
     intros φ [u|] _; simpl; [by rewrite pt_inst_pvar|done]. }
-  rewrite E in H. apply H. intros C xs Hin. by apply elem_of_nil in Hin.
+  rewrite E in H. apply H; [|apply tenv_pol_pvar]. intros C xs Hin. by apply elem_of_nil in Hin.
 Qed.
 
 (** The process of such a program is typed by P-Term in the world
@@ -758,20 +768,99 @@ Proof.
   exists W1, σ. split; [done|]. apply ptyped_closed; [by apply prim_pinst|].
   pose proof (typed_pinst W1 ∅ Ψ ∅ [] (∅, None) t T HS (styped_typed W1 _ _ _ _ _ _ Ht) σ []) as H.
   rewrite tenv_pinst_empty in H. unfold fhyps_pinst, sf_pinst in H. cbn in H.
-  rewrite fmap_empty, set_map_empty in H. apply H.
+  rewrite fmap_empty, set_map_empty in H. apply H; [|apply tenv_pol_empty].
   apply (hyps_hold_mono (w_eq W1) _ (w_lt W1) _ (pt_known W1)); [| | |exact Hh].
   - intros ? ? ?. by apply se_w.
   - intros ? ? ?. by apply sl_w.
   - intros ? ?. by left.
 Qed.
 
-(** A top-level channel at the point variable k is known. *)
-Ltac skn_top :=
-  eapply skn_hyp; cbn; repeat (first [left; reflexivity|right]).
+(** A constant that neither the empty world nor the hypotheses know,
+    for [created_snoc]. *)
+Lemma not_skn_Wpo Ψ a :
+  NConst a ∉ (Ψ ≫= (λ g, pt_root <$> g.2)) → ¬ skn (Wpo []) Ψ (pconst a).
+Proof.
+  intros H [Hk|(C & xs & y & Hin & Hy & E)].
+  - unfold pt_known in Hk. cbn in Hk. set_solver.
+  - apply H. apply list_elem_of_bind. exists (C, xs). split; [|done].
+    apply list_elem_of_fmap. exists y. split; [by rewrite <-E|done].
+Qed.
 
-(** new@x at a top-level point variable, in a strict world HWs. *)
+Ltac fresh_const := apply not_skn_Wpo; cbn; set_solver.
+
+(** A top-level channel at the constant a (or the point variable k)
+    is known. *)
+Ltac skn_top :=
+  first [eapply skn_hyp_const|eapply skn_hyp]; cbn; repeat (first [left; reflexivity|right]).
+
+(** A literal over a constant is ground. *)
+Ltac ground := eexists; reflexivity.
+
+(** new@x at a top-level constant, in a strict world HWs. *)
 Ltac new_top HWs S x :=
-  apply (t_new_at _ _ _ _ _ _ _ _ S x HWs); [skn_top|].
+  apply (t_new_at _ _ _ _ _ _ _ _ S x HWs); [ground|skn_top|].
+
+(** new at a computed point (syntactic points). The point value v is
+    typed from the unlimited bindings of Δ, for instance a box
+    parameter of type [TPt ι] or [KPay i] applied to it. *)
+Definition lkeepu (Δ : lenv) : lenv :=
+  (λ o, match o with Some T => if unlb T then Some T else None | None => None end) <$> Δ.
+
+Lemma lkeepu_split Δ : lenv_split Δ (lkeepu Δ) Δ.
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; [constructor| |by constructor].
+  destruct (unlb T) eqn:Hu; [apply lsplit_unl; [by apply unlb_unl|done]|by apply lsplit_r].
+Qed.
+
+Lemma lkeepu_split_l Δ : lenv_split (lkeepu Δ) (lkeepu Δ) (lenv_nones Δ).
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; [constructor| |by constructor].
+  destruct (unlb T); by constructor.
+Qed.
+
+Lemma lkeepu_split_r Δ : lenv_split (lkeepu Δ) (lenv_nones Δ) (lkeepu Δ).
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; [constructor| |by constructor].
+  destruct (unlb T); by constructor.
+Qed.
+
+Lemma t_new_v W Φ Ψ Θ Δ F e T S x v :
+  strict W →
+  (∀ F', typed W Φ Ψ ∅ (lkeepu Δ) F' v (TPt x)) → skn W Ψ x →
+  typed W Φ Ψ Θ (Some (TSess (dual S) (pt_dual x)) :: Some (TSess S x) :: None :: None :: Δ) F e T →
+  typed W Φ Ψ Θ Δ F (let_new_at v e) T.
+Proof.
+  intros HW Hv Hx Hb. unfold let_new_at.
+  set (X := TProd (TSess S x) (TSess (dual S) (pt_dual x))).
+  apply (t_letpair W Φ Ψ Θ ∅ Θ Δ (lkeepu Δ) Δ F _ _ X TUnit).
+  { apply tenv_comp_empty_l, se_dsym. }
+  { apply lkeepu_split. }
+  { apply (t_pair W Φ Ψ ∅ ∅ ∅ (lkeepu Δ) (lkeepu Δ) (lenv_nones Δ)).
+    - apply tenv_comp_empty_r.
+    - apply lkeepu_split_l.
+    - eapply (t_app W Φ Ψ ∅ ∅ ∅ _ (lenv_nones Δ) (lkeepu Δ) _ _ _ None None (TPt x)).
+      + apply tenv_comp_empty_r.
+      + apply lkeepu_split_r.
+      + done.
+      + apply t_const; [apply lenv_empty_nones| |done]. by apply KTNewAt.
+      + apply Hv.
+    - apply t_unit. apply lenv_empty_nones. }
+  apply (t_letstar W Φ Ψ Θ ∅ Θ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
+  { apply tenv_comp_empty_l, se_dsym. }
+  { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
+  { apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [by simplify_eq|done|].
+    exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
+    apply fmap_Some in Hy as (? & _ & ?). congruence. }
+  apply (t_letpair W _ _ _ ∅ Θ _
+           (None :: Some X :: lenv_nones Δ) (None :: None :: Δ)
+           _ _ _ (TSess S x) (TSess (dual S) (pt_dual x))).
+  - apply tenv_comp_empty_l, se_dsym.
+  - apply lsplit_none, lsplit_l, lenv_split_nones_l.
+  - apply t_var. split; [done|]. intros [|[|y]] T' Hy; simpl in Hy; [done|by simplify_eq|].
+    exfalso. unfold lenv_nones in Hy. rewrite list_lookup_fmap in Hy.
+    apply fmap_Some in Hy as (? & _ & ?). congruence.
+  - exact Hb.
+Qed.
 
 Lemma sf_pinst_none σ : sf_pinst σ (∅, None) = ((∅ : gset point), (None : option futrest)).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.

@@ -87,7 +87,8 @@ Definition ms_ag0 : expr :=
   LetU (sendclose (Var 11)) (LetU (recvclose (Var 2)) (sendclose (Var 1))).
 
 Definition ms_main : expr :=
-  let_new_pair (let_new_pair (let_new_pair (let_new_pair (let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pc 0 2)) (let_new_pair_at (EPt (pc 0 4))
+  (let_new_pair_at (EPt (pc 0 6)) (let_new_pair_at (EPt (pc 0 8)) (let_new_pair_at (EPt (pc 0 10))
     (LetU (App ESpawn ms_ag1)
       (LetU (App ESpawn ms_ag2)
         (LetU (App ESpawn ms_col0)
@@ -125,11 +126,11 @@ Ltac ms_gate0 HW := apply ubs_intro; [ms_future HW|done].
     point is (0, u). *)
 Ltac ms_send HW j u :=
   unfold sendclose; tstep;
-  [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 j)); cbn; set_solver|done|];
-    ms_gate HW (pv 0 u)
+  [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pc 0 j)); cbn; set_solver|done|];
+    ms_gate HW (pc 0 u)
   | apply KTClos
   | done
-  | ms_gate HW (pv 0 u) ].
+  | ms_gate HW (pc 0 u) ].
 
 (** A receive and a close on one channel, inside such a λ. *)
 Ltac ms_recv HW U :=
@@ -138,62 +139,62 @@ Ltac ms_recv HW U :=
   | cbn; tstep; [tstep|]; cbn; tstep; [tstep|apply KTClos|done|];
     ms_gate HW U ].
 
-Definition ms_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) (fresh_bcs [] []), ids 1)].
+Definition ms_Ψ : hyps := [] ++ [(fresh_bcs [] [], [pconst 0])].
 
 Lemma ms_created : created (Wpo []) ms_Ψ.
-Proof. apply created_lh; [constructor|constructor|set_solver]. Qed.
+Proof. apply created_lh; [constructor|constructor|set_solver|fresh_const]. Qed.
 
 Lemma ms_typed : styped ∅ ms_Ψ [] (∅, None) ms_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ms_main, ms_Ψ.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ms_main, let_new_pair_at, ms_Ψ.
   (* the ring channel of A_0 at the top-level ι, then five channels at ι+2k *)
-  new_top HWs Sd (pvar 0).
+  new_top HWs Sd (pconst 0).
   fresh_clean.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 2) HWs);
-    [eapply skn_inst; [by left|by left|done]|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 4) HWs);
-    [eapply skn_inst; [by left|by left|done]|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 6) HWs);
-    [eapply skn_inst; [by left|by left|done]|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 8) HWs);
-    [eapply skn_inst; [by left|by left|done]|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pv 0 10) HWs);
-    [eapply skn_inst; [by left|by left|done]|]. cbn.
+  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 2) HWs);
+    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
+  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 4) HWs);
+    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
+  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 6) HWs);
+    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
+  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 8) HWs);
+    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
+  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 10) HWs);
+    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
   (* A_1: recv d_1 at ι, send a_1 at ι+2, send c_1 at ι+4 *)
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 5)) (Some (pv 0 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 5)) (Some (pc 0 0)) 0);
       [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW (pv 0 5)|].
+    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW (pc 0 5)|].
     cbn. tstep; [ms_send HW 2 5|ms_send HW 4 5]. }
   (* A_2: recv d_2 at ι+4, send a_2 at ι+6, send c_2 at ι+8 *)
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pv 0 9)) (Some (pv 0 4)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 9)) (Some (pc 0 4)) 0);
       [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW (pv 0 9)|].
+    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW (pc 0 9)|].
     cbn. tstep; [ms_send HW 6 9|ms_send HW 8 9]. }
   (* the collectors: recv b_i *)
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 11))) (Some (pv 0 10)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 11))) (Some (pc 0 10)) 0);
       [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pv 0 11)). }
+    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pc 0 11)). }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 3))) (Some (pv 0 2)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 3))) (Some (pc 0 2)) 0);
       [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pv 0 3)). }
+    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pc 0 3)). }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 7))) (Some (pv 0 6)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 7))) (Some (pc 0 6)) 0);
       [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pv 0 7)). }
+    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pc 0 7)). }
   (* A_0: send c_0 at ι, recv d_0 at ι+8, send a_0 at ι+10 *)
   cbn. unfold ms_ag0. tstep.
   { unfold sendclose. tstep.
-    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 0)); cbn; set_solver|done|].
+    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pc 0 0)); cbn; set_solver|done|].
       ms_gate0 HW.
     - apply KTClos.
     - done.
@@ -203,7 +204,7 @@ Proof.
     - tstep; [tstep|apply KTRecv|kscope|]. ms_gate0 HW.
     - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|]. ms_gate0 HW. }
   cbn. unfold sendclose. tstep.
-  - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pv 0 10)); cbn; set_solver|done|].
+  - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pc 0 10)); cbn; set_solver|done|].
     ms_gate0 HW.
   - apply KTClos.
   - done.
