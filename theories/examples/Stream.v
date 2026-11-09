@@ -67,7 +67,11 @@ Definition st_P (g : fact) : Prop :=
 Definition st_C : bcs := BCs [] st_P.
 
 Definition stc_body : ty := TLolli (Some (pv 0 1)) None (TSess Sst (pv 0 0)) TUnit.
-Definition stp_body : ty := TLolli (Some (pv 0 1)) None (TSess (dual Sst) (pv 0 0)) TUnit.
+(** Under syntactic points the producer takes the partner point ῑ as a
+    parameter π, creates e by new (π[0]) at ι[0], because x̄[0] = x[0],
+    and calls itself at ι[0]‾ with π[0] (sharp edges 173). *)
+Definition stp_body : ty :=
+  TLolli None None (TPt (pt_dual (pv 0 0))) (TLolli (Some (pv 0 1)) None (TSess (dual Sst) (pv 0 0)) TUnit).
 
 Definition stcons : expr :=
   EBox (Lam (LetP (App ERecv (Var 0))
@@ -76,14 +80,15 @@ Definition stcons : expr :=
         (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Var 1)))))))))).
 
 Definition stprod : expr :=
-  EBox (Lam (let_new_pair
+  EBox (Lam (Lam (let_new_pair_at (App (Konst (KPay 0)) (Var 1))
     (LetP (Pair (App ESend (Pair (Pair EUnit (Var 1)) (Var 2))) EUnit) (LetU (Var 0)
       (LetU (App EClos (Var 1))
-        (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Var 3)))))))))).
+        (App ESpawn (Lam (LetU (Var 0)
+          (App (App (App EForce (Var 7)) (App (Konst (KPay 0)) (Var 6))) (Var 3))))))))))).
 
 Definition st_main : expr :=
-  LetP (Pair stcons stprod) (let_new_pair
-    (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
+  LetP (Pair stcons stprod) (let_new_pair_at (EPt (pconst 0))
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App (App (App EForce (Var 3)) (EPt (pconst 0))) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 
 Lemma st_inst_polar σ c x : pt_inst σ (pt_polar c x) = pt_polar c (pt_inst σ x).
@@ -133,6 +138,33 @@ Proof.
   intros Hg. apply bcs_hold_self; [done|destruct d; vb_list|].
   intros g (n & c & c' & ->) _. cbn [fact_map]. rewrite !st_inst_polar, !st_inst_root, !st_polar_polar.
   by eexists n, _, _.
+Qed.
+
+(** The same at the constant of main. *)
+Lemma payloadv_vb n : pn_vb 1 (payloadv n).
+Proof. induction n as [|n IH]; simpl; [lia|done]. Qed.
+
+Lemma st_name_polar b x : pt_name (pt_polar b x) = pt_name x.
+Proof. by destruct b. Qed.
+
+Lemma st_inst_root_c d n k :
+  pt_inst (plist [pt_polar d (pconst 0)]) (Pt (payloadv n) k) =
+  pt_polar (match n with 0 => d | _ => true end) (pt_inst (plist [pconst 0]) (Pt (payloadv n) k)).
+Proof.
+  destruct n as [|n]; [by destruct d|].
+  assert (∀ m, pn_inst (plist [pt_polar d (pconst 0)]) (payloadv (S m)) = pn_inst (plist [pconst 0]) (payloadv (S m))) as H.
+  { induction m as [|m IH]; [by destruct d|].
+    change (payloadv (S (S m))) with (NPayload (payloadv (S m)) 0 0). cbn [pn_inst]. by rewrite IH. }
+  unfold pt_inst. cbn [pt_name pt_off pt_pol pt_polar]. by rewrite H.
+Qed.
+
+Lemma st_root_c W Ψ d : (st_C, [pconst 0]) ∈ Ψ → bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pt_polar d (pconst 0)].
+Proof.
+  intros Hg. apply bcs_hold_intro. intros g (n & c & c' & ->) _. cbn [fact_map fact_holds].
+  rewrite !st_inst_polar, !st_inst_root_c, !st_polar_polar, <-!st_inst_polar.
+  eapply (sl_hyp0 _ _ _ _ (pt_polar _ (Pt (payloadv n) 1)) (pt_polar _ (Pt (payloadv (S n)) 0)));
+    [exact Hg|by eexists n, _, _| |reflexivity|reflexivity].
+  split; rewrite st_name_polar; apply payloadv_vb.
 Qed.
 
 Lemma st_ok peq plt : cc_ok peq plt st_C.
@@ -190,14 +222,19 @@ Proof.
   intros HWs. pose proof (proj1 HWs) as HW. unfold stprod.
   apply (t_exp W _ _ _ _ _ _ _ _ _ _ 0); [by intros o Ho; apply elem_of_nil in Ho|set_solver|box_k0].
   box_open1 st_C stp_body. cbn. unfold stp_body.
-  eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 1); [set_solver|cbn; set_solver|].
+  eapply (tv_lam W HW _ _ _ _ _ _ _ None None 1); [set_solver|cbn; set_solver|].
+  cbn. eapply (tv_lam W HW _ _ _ _ _ _ _ _ None 2); [set_solver|cbn; set_solver|].
+  assert (∀ Ψ, (st_C, [pvar 0]) ∈ Ψ → skn W Ψ pcr) as Hkr.
+  { intros Ψ Hg. right; eexists _, _, (pvar 0); split_and!; [exact Hg|by left|done]. }
   assert (∀ Ψ c, (st_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 1) (pt_polar c pcr)) as Hlt1.
   { intros Ψ c Hg. eapply (sl_hyp0 _ _ _ _ (pv 0 1) (pt_polar c (Pt (payloadv 1) 0)));
       [exact Hg|by exists 0, true, c|destruct c; cbn; lia|reflexivity|by destruct c]. }
   assert (∀ Ψ c, (st_C, [pvar 0]) ∈ Ψ → slt W Ψ (pv 0 0) (pt_polar c pcr)) as Hlt.
   { intros Ψ c Hg. apply (sl_trans _ _ _ (pv 0 1)); [apply (slt_po W _ (pv 0 0) HW)|by apply Hlt1]. }
-  cbn. apply (t_new_at W _ _ _ _ _ _ _ Sst pcr HWs).
-  { right; eexists _, _, (pvar 0); split_and!; [by left|by left|done]. }
+  cbn. unfold let_new_pair_at. apply (t_new_v W _ _ _ _ _ _ _ Sst pcr _ HWs); [| |].
+  { intros F'. cbn. eapply (tv_appk W HW _ _ _ _ (KPay 0) _ None (TPt (pt_dual (pv 0 0))));
+      [tstep|apply KTPay, Hkr; by left|done|apply ubs_none]. }
+  { apply Hkr. by left. }
   cbn. tstep.
   { tstep; [tstep|].
     eapply (tv_appk W HW _ _ _ _ KSend _ (Some (pv 0 0))
@@ -215,56 +252,59 @@ Proof.
     apply ubs_intro; [intros y Hy; mem_cases Hy; first [apply (Hlt1 _ true); by left|apply (Hlt1 _ false); by left]|].
     exists (pv 0 1). split; [done|]. apply sle_refl, HW. }
   tstep; [|apply KTSpawn|done|apply ubs_none].
-  eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 (pt_dual pcr))) (Some pcr) 2);
+  eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_shift 1 (pt_dual pcr))) (Some pcr) 3);
     [set_solver| |].
   { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
   cbn. tstep; [tstep|]. cbn.
   eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stp_body [pt_dual pcr]);
-      [done|done| | |apply ubs_none|tstep].
-    + apply (st_call _ _ false). by left.
-    + apply (skn_st W _ (pt_dual pcr)); [by left|done].
+  - eapply (tv_app W HW _ _ _ _ _ _ None None (TPt pcr)); [reflexivity| | |apply ubs_none].
+    + apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stp_body [pt_dual pcr]);
+        [done|done| | |apply ubs_none|tstep].
+      * apply (st_call _ _ false). by left.
+      * apply (skn_st W _ (pt_dual pcr)); [by left|done].
+    + eapply (tv_appk W HW _ _ _ _ (KPay 0) _ None (TPt (pt_dual (pv 0 0))));
+        [tstep|apply KTPay, Hkr; by left|done|apply ubs_none].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|].
     exists (pt_shift 1 (pt_dual pcr)). split; [done|]. apply sle_refl, HW.
 Qed.
 
-Definition st_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) st_C, ids 1)].
+Definition st_Ψ : hyps := [] ++ [(st_C, [pconst 0])].
 
 Lemma st_created : created (Wpo []) st_Ψ.
-Proof. apply created_snoc; [constructor|apply st_ok|constructor]. Qed.
+Proof. apply created_snoc; [constructor|apply st_ok|constructor|fresh_const]. Qed.
 
 Lemma st_typed : styped ∅ st_Ψ [] (∅, None) st_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main, st_Ψ.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold st_main, let_new_pair_at, st_Ψ.
   tstep.
   { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply stprod_typed, HWs|apply stcons_typed, HW]. }
-  cbn. new_top HWs Sst (pvar 0).
+  cbn. new_top HWs Sst (pconst 0).
   fresh_clean.
-  set (Ψ := [(st_C, [pvar 0])]).
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pvar 0]) as HC.
-  { apply bcs_hold_self; [by left|vb_list|]. intros g Hg Hs.
-    change (plist [pvar 0]) with (plist (ids 1)).
-    destruct g as [x y]; destruct Hs as [Hx Hy]; simpl; by rewrite !pt_inst_ids. }
-  assert (Forall (skn W Ψ) [pvar 0]) as HK.
+  set (Ψ := [(st_C, [pconst 0])]).
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) st_C [pconst 0]) as HC.
+  { apply hyp_in_fact. by left. }
+  assert (Forall (skn W Ψ) [pconst 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
-  assert (Forall (skn W Ψ) [pt_dual (pvar 0)]) as HK'.
+  assert (Forall (skn W Ψ) [pt_dual (pconst 0)]) as HK'.
   { constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 1))) (Some (pv 0 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 1))) (Some (pc 0 0)) 0);
       [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stp_body [pt_dual (pvar 0)]);
-        [done|done|apply (st_root W Ψ false); by left|exact HK'|apply ubs_none|tstep].
+    - eapply (tv_app W HW _ _ _ _ _ _ None None (TPt (pconst 0))); [reflexivity| | |apply ubs_none].
+      + apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stp_body [pt_dual (pconst 0)]);
+          [done|done|apply (st_root_c W Ψ false); by left|exact HK'|apply ubs_none|tstep].
+      + tstep. eapply skn_inst; [by left|by left|done].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pc 0 1)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stc_body [pvar 0]);
+  - apply (typed_force0 W _ _ _ _ _ _ 1 st_C None stc_body [pconst 0]);
       [done|done|exact HC|exact HK|apply ubs_none|tstep].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
