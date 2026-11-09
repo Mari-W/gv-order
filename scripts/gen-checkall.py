@@ -43,6 +43,8 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/Instr.v', 'istep_erase'), ('lockfree/Instr.v', 'preduction_lift'),
         ('lockfree/Instr.v', 'pred_star_lift'), ('lockfree/TauThread.v', 'thread_acc'),
         ('lockfree/Criterion.v', 'lf_criterion'), ('lockfree/LocalProgress.v', 'local_progress_ready'),
+        ('lockfree/ThreadProgress.v', 'thread_progress'), ('lockfree/ThreadProgress.v', 'thread_progress_val'),
+        ('lockfree/ThreadProgress.v', 'stopped_forever'), ('lockfree/Reach.v', 'lock_free_reach_of'),
         ('lockfree/Fragment.v', 'lfptyped_gptyped'), ('lockfree/Fragment.v', 'fw_lfptyped'),
         ('lockfree/Fragment.v', 'tc_lfptyped'), ('lockfree/Fragment.v', 'sch_lfsource'),
         ('lockfree/Fragment.v', 'kob_checks'), ('lockfree/Fragment.v', 'kob_not_lfptyped'),
