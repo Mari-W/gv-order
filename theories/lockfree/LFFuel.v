@@ -348,3 +348,261 @@ Proof.
   apply Vfdef_ext; intros j Hj W' π' φ' e'; unfold FuelE, Vfuel;
     by rewrite flevels_at by lia.
 Qed.
+
+(** ** Monotonicity in the index *)
+
+Lemma FuelE_S_down n W π φ e : FuelE (S n) W π φ e → FuelE n W π φ e.
+Proof.
+  revert W π φ e. induction n as [|n IH]; intros W π φ e H; [apply FuelE_0|].
+  apply FuelE_S. apply FuelE_S in H as (Hc & Hw & Hs).
+  split; [done|split; [done|]]. intros α e' Hst. specialize (Hs α e' Hst).
+  destruct α as [|[o w|o w|o|cd|o b|o b]|c x|w]; simpl in *.
+  - by apply IH.
+  - destruct Hs as [H1 H2]. split; [done|].
+    intros k j πi φi Hk Hj. apply (H2 k j πi φi Hk). lia.
+  - destruct Hs as (H1 & H2 & H3). auto.
+  - destruct Hs as [H1 H2]. auto.
+  - destruct Hs as (H1 & H2 & H3). auto.
+  - destruct Hs as [H1 H2]. auto.
+  - destruct Hs as [H1 H2]. auto.
+  - by apply IH.
+  - destruct Hs as (H1 & H2 & H3). auto.
+Qed.
+
+Lemma FuelE_down m n W π φ e : m ≤ n → FuelE n W π φ e → FuelE m W π φ e.
+Proof. induction 1; eauto using FuelE_S_down. Qed.
+
+Lemma Vfuel_down m n W π φ w : m ≤ n → Vfuel n W π φ w → Vfuel m W π φ w.
+Proof.
+  intros Hmn. rewrite !Vfuel_eq. induction w in π, φ |- *; simpl; try done.
+  - intros H j v πa φa Hj. apply H. lia.
+  - intros [H1 H2]. auto.
+  - auto.
+  - auto.
+  - intros H j Hj. apply H. lia.
+Qed.
+
+(** ** The clauses of a thread at index n + 1 *)
+
+Section clauses.
+  Context (n : nat) (W : world) (π : gmap cend point) (φ : gmap cend fuel) (e : expr).
+  Context (HF : FuelE (S n) W π φ e).
+
+  (** F-Cap: counters stay at or below the budget of their point. *)
+  Lemma fuel_cap : fcap W π φ.
+  Proof. by apply FuelE_S in HF as (? & _ & _). Qed.
+
+  (** F-Wait: the partner of an end the thread acts on has a finite
+      budget, and the end is held. *)
+  Lemma fuel_wait σ e' o :
+    tstep e (LSess σ) e' → sl_end σ = Some o →
+    ∃ k m, π !! o = Some k ∧ w_bud W (pt_dual k) = Some m.
+  Proof.
+    intros Hst Ho. apply FuelE_S in HF as (_ & Hw & _).
+    destruct (Hw σ e' o Hst Ho) as (k & Hk & Hb).
+    destruct (w_bud W (pt_dual k)) as [m|] eqn:E; [|done]. eauto.
+  Qed.
+
+  Lemma fuel_obl α e' : tstep e α e' → Fobl FuelE Vfuel n W π φ α e'.
+  Proof. intros Hst. apply FuelE_S in HF as (_ & _ & Hs). by apply Hs. Qed.
+
+  (** F-Tick. *)
+  Lemma fuel_tick σ e' o : tstep e (LSess σ) e' → sl_end σ = Some o → ftick_ok o φ.
+  Proof. intros Hst Ho. pose proof (fuel_obl _ _ Hst) as H. simpl in H. by apply H. Qed.
+
+  (** The floor of a send, at the point of the carrier. *)
+  Lemma fuel_send_floor o w e' k :
+    tstep e (LSess (SSend o w)) e' → π !! o = Some k → fhand (w_pay W k) (fends w) φ.
+  Proof. intros Hst Hk. pose proof (fuel_obl _ _ Hst) as (_ & H & _). by apply H. Qed.
+
+  (** The link clause. *)
+  Lemma fuel_link cd e' : tstep e (LSess (SLink cd)) e' → flink W π φ cd.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H & _). Qed.
+
+  (** The ends a spawn hands to the child have a unit to spare. *)
+  Lemma fuel_spawn_hand w e' : tstep e (LSpawn w) e' → fhand 0 (fends w) φ.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H & _ & _). Qed.
+
+  (** ** lffuel_step: the successor at the updated counters *)
+
+  (** Every step but a receive. *)
+  Lemma lffuel_step α e' :
+    tstep e α e' → (∀ o w, α ≠ LSess (SRecv o w)) →
+    FuelE n W (fupd W π φ α).1 (fupd W π φ α).2 e'.
+  Proof.
+    intros Hst Hr. pose proof (fuel_obl _ _ Hst) as H.
+    destruct α as [|[o w|o w|o|cd|o b|o b]|c x|w]; simpl in H |- *.
+    - done.
+    - by destruct (Hr o w).
+    - by destruct H as (_ & _ & H).
+    - by destruct H as [_ H].
+    - by destruct H as (_ & _ & H).
+    - by destruct H as [_ H].
+    - by destruct H as [_ H].
+    - done.
+    - by destruct H as (_ & _ & H).
+  Qed.
+
+  (** Receive: the receiver continues for every incoming value whose
+      ends meet the floor of the carrier and the cap. *)
+  Lemma lffuel_recv o w e' k j πi φi :
+    tstep e (LSess (SRecv o w)) e' → π !! o = Some k → j ≤ n →
+    dom πi ## dom (fupd W π φ (LSess (SRecv o w))).1 →
+    fin_ok W (w_pay W (pt_dual k)) w πi φi → Vfuel j W πi φi w →
+    FuelE j W ((fupd W π φ (LSess (SRecv o w))).1 ∪ πi)
+      ((fupd W π φ (LSess (SRecv o w))).2 ∪ φi) e'.
+  Proof.
+    intros Hst Hk Hj Hd Hin Hv. pose proof (fuel_obl _ _ Hst) as [_ H]. eauto.
+  Qed.
+
+  (** Spawn: the child at the handed-on counters, the parent without them. *)
+  Lemma lffuel_spawn w e' :
+    tstep e (LSpawn w) e' →
+    FuelE n W (fchild π φ w).1 (fchild π φ w).2 (App w EUnit) ∧
+    FuelE n W (fupd W π φ (LSpawn w)).1 (fupd W π φ (LSpawn w)).2 e'.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H1 & H2). Qed.
+
+  (** ** At counter 0 *)
+
+  (** The holder's next channel step is on the end at 0. *)
+  Lemma fuel_zero_act o σ e' o' :
+    φ !! o = Some (Some 0) → tstep e (LSess σ) e' → sl_end σ = Some o' → o' = o.
+  Proof.
+    intros H0 Hst Ho'. destruct (decide (o = o')) as [|Hne]; [done|].
+    pose proof (fuel_tick _ _ _ Hst Ho' o 0 Hne H0). lia.
+  Qed.
+
+  (** It does not send the end at 0. *)
+  Lemma fuel_zero_nosend o o' w e' :
+    φ !! o = Some (Some 0) → tstep e (LSess (SSend o' w)) e' → o ∉ fends w.
+  Proof.
+    intros H0 Hst Hin. destruct (fuel_wait _ _ o' Hst eq_refl) as (k & m & Hk & _).
+    pose proof (fuel_send_floor _ _ _ _ Hst Hk o 0 Hin H0). lia.
+  Qed.
+
+  (** It does not spawn the end at 0 away. *)
+  Lemma fuel_zero_nospawn o w e' :
+    φ !! o = Some (Some 0) → tstep e (LSpawn w) e' → o ∉ fends w.
+  Proof.
+    intros H0 Hst Hin. pose proof (fuel_spawn_hand _ _ Hst o 0 Hin H0). lia.
+  Qed.
+
+  (** It does not link the end at 0 to another end. *)
+  Lemma fuel_zero_nolink o o2 e' :
+    φ !! o = Some (Some 0) → tstep e (LSess (SLink {[o; o2]})) e' → o2 = o.
+  Proof.
+    intros H0 Hst. destruct (decide (o2 = o)) as [|Hne]; [done|].
+    destruct (fuel_link _ _ Hst o o2 eq_refl (not_eq_sym Hne) 0 H0)
+      as (k2 & m' & _ & _ & Hlt). lia.
+  Qed.
+End clauses.
+
+(** ** Counters stay at or below the cap along fupd *)
+
+Lemma fcap_mrem (W : world) (X : gset cend) π φ : fcap W π φ → fcap W (mrem X π) (mrem X φ).
+Proof.
+  intros H o f Hf. apply lookup_mrem_Some in Hf as [Hf Hx].
+  destruct (H o f Hf) as (k & Hk & Hle). exists k. by rewrite lookup_mrem_Some.
+Qed.
+
+Lemma fcap_mres (W : world) (X : gset cend) π φ : fcap W π φ → fcap W (mres X π) (mres X φ).
+Proof.
+  intros H o f Hf. apply lookup_mres_Some in Hf as [Hf Hx].
+  destruct (H o f Hf) as (k & Hk & Hle). exists k. by rewrite lookup_mres_Some.
+Qed.
+
+Lemma fcap_delete (W : world) π φ o : fcap W π φ → fcap W (delete o π) (delete o φ).
+Proof.
+  intros H o' f Hf. apply lookup_delete_Some in Hf as [Hne Hf].
+  destruct (H o' f Hf) as (k & Hk & Hle). exists k. by rewrite lookup_delete_ne.
+Qed.
+
+Lemma fcap_tick (W : world) π φ : fcap W π φ → fcap W π (ftick <$> φ).
+Proof.
+  intros H o f Hf. apply lookup_fmap_Some in Hf as (f0 & <- & Hf).
+  destruct (H o f0 Hf) as (k & Hk & Hle). exists k. split; [done|]. by apply fle_tick.
+Qed.
+
+Lemma fcap_insert (W : world) π φ o k : fcap W π φ → fcap W (<[o := k]> π) (<[o := w_bud W k]> φ).
+Proof.
+  intros H o' f Hf. destruct (decide (o = o')) as [<-|Hne].
+  - rewrite lookup_insert_eq in Hf. simplify_eq. exists k.
+    rewrite lookup_insert_eq. split; [done|apply fle_refl].
+  - rewrite lookup_insert_ne in Hf by done.
+    destruct (H o' f Hf) as (k' & Hk & Hle). exists k'. by rewrite lookup_insert_ne.
+Qed.
+
+Lemma fcap_union (W : world) π1 φ1 π2 φ2 :
+  fcap W π1 φ1 → fcap W π2 φ2 → dom π1 ## dom π2 → fcap W (π1 ∪ π2) (φ1 ∪ φ2).
+Proof.
+  intros H1 H2 Hd o f Hf. apply lookup_union_Some_raw in Hf as [Hf|[_ Hf]].
+  - destruct (H1 o f Hf) as (k & Hk & Hle). exists k. split; [|done].
+    by apply lookup_union_Some_l.
+  - destruct (H2 o f Hf) as (k & Hk & Hle). exists k. split; [|done].
+    rewrite lookup_union_r; [done|]. apply not_elem_of_dom. intros Hin.
+    apply (Hd o Hin). apply elem_of_dom. eauto.
+Qed.
+
+Lemma fact_cap (W : world) σ π φ : fcap W π φ → fcap W (fact W σ π φ).1 (fact W σ π φ).2.
+Proof.
+  intros H. unfold fact. destruct (sl_end σ) as [o|]; [|done].
+  destruct (π !! o) as [k|]; [|done].
+  destruct (sl_next σ k) as [[o' k']|]; simpl.
+  - apply fcap_insert, fcap_tick, fcap_delete, H.
+  - apply fcap_tick, fcap_delete, H.
+Qed.
+
+(** The successor's counters stay at or below the cap, for every label. *)
+Lemma fupd_cap (W : world) π φ α : fcap W π φ → fcap W (fupd W π φ α).1 (fupd W π φ α).2.
+Proof.
+  intros H. destruct α as [|σ|c x|w]; simpl.
+  - done.
+  - by apply fact_cap, fcap_mrem.
+  - by apply fcap_insert, fcap_insert.
+  - by apply fcap_mrem.
+Qed.
+
+(** ** Handing ends on *)
+
+(** The ends handed on by a send at floor [w_pay W k], or by a spawn at
+    floor 0, are admissible incoming ends for the receiver or the child.
+    A receiver at the dual point pt_dual k reads the floor
+    [w_pay W (pt_dual (pt_dual k))], which is [w_pay W k] by
+    [pt_dual_dual]. *)
+Lemma fhand_fin_ok (W : world) fl π φ w :
+  fcap W π φ → dom φ = dom π → fends w ⊆ dom π → fhand fl (fends w) φ →
+  fin_ok W fl w (fchild π φ w).1 (fchild π φ w).2.
+Proof.
+  intros Hc Hdom Hsub Hh. unfold fchild; simpl. split_and!.
+  - rewrite dom_mres. set_solver.
+  - rewrite dom_fmap_L, dom_mres, Hdom. set_solver.
+  - by apply fcap_tick, fcap_mres.
+  - intros o f Hf. apply lookup_fmap_Some in Hf as (f0 & <- & Hf).
+    apply lookup_mres_Some in Hf as [Hf Hx].
+    destruct f0 as [m|]; simpl; [|done].
+    pose proof (Hh o m Hx Hf). lia.
+Qed.
+
+(** ** Finite counters *)
+
+(** A counter under a finite budget is finite. With F-Wait this bounds
+    the counter of the partner a thread waits on. *)
+Lemma fcap_finite (W : world) π φ o k b f :
+  fcap W π φ → π !! o = Some k → w_bud W k = Some b → φ !! o = Some f →
+  ∃ m, f = Some m ∧ m ≤ b.
+Proof.
+  intros H Hk Hb Hf. destruct (H o f Hf) as (k' & Hk' & Hle).
+  rewrite Hk in Hk'. simplify_eq. rewrite Hb in Hle.
+  destruct f as [m|]; simpl in Hle; [eauto|done].
+Qed.
+
+(** ** Full counters *)
+
+Lemma fsem_cap (W : world) π : fcap W π (w_bud W <$> π).
+Proof.
+  intros o f Hf. apply lookup_fmap_Some in Hf as (k & <- & Hk).
+  exists k. split; [done|apply fle_refl].
+Qed.
+
+Lemma fsem_FuelE (W : world) π t n : fsem W π t → FuelE n W π (w_bud W <$> π) t.
+Proof. intros H. apply H. Qed.
