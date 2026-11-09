@@ -1955,4 +1955,90 @@ Section progress.
     apply (lp_closed t e He). apply fchans_of_fends.
     apply (act_aends_fends e (ALink c d) {[c; d]} Ha eq_refl). set_solver.
   Qed.
+  Lemma offers_same_end a σ σ' :
+    offers a (LSess σ) → offers a (LSess σ') → (∀ cd, σ ≠ SLink cd) → sl_end σ = sl_end σ'.
+  Proof.
+    intros H1 H2 Hnl. destruct a, σ, σ'; simpl in *; try done; destruct_and?; subst; try done.
+  Qed.
+
+  Lemma lp_meet t e s es k ek k' ek' :
+    q.2 !! t = Some e → q.2 !! s = Some es →
+    offered_t (A t) e k → offered_t (A s) es k' →
+    tenv_entry (A t) k = Some ek → tenv_entry (A s) k' = Some ek' →
+    k'.1 = k.1 → (s, k') ≠ (t, k) → ek'.2 = pt_dual ek.2 →
+    enabled q t ∨ enabled q s.
+  Proof.
+    intros He Hes (σ & e1 & Hst & Hsel) (σ' & es1 & Hst' & Hsel') Hk Hk' H1 Hne Hd.
+    destruct (slabel_link_dec σ) as [[cd ->]|Hnl]; [left; apply (lp_link t e He); by exists cd, e1|].
+    destruct (slabel_link_dec σ') as [[cd ->]|Hnl']; [right; apply (lp_link s es Hes); by exists cd, es1|].
+    destruct (sl_end_some σ Hnl) as [o Ho]. destruct (sl_end_some σ' Hnl') as [o' Ho'].
+    destruct (selects_info _ _ _ _ _ Hsel Hk Ho) as (Ho1 & Ho2 & Hkd).
+    destruct (selects_info _ _ _ _ _ Hsel' Hk' Ho') as (Ho1' & Ho2' & Hkd').
+    assert (o' = cdual o) as Ho'o.
+    { destruct o as [c β], o' as [c' β']. unfold cdual. simpl in *. f_equal; [congruence|].
+      by rewrite <-Ho2', <-Ho2, Hd, pt_pol_dual. }
+    destruct (decide (s = t)) as [->|Hst_].
+    { exfalso. rewrite He in Hes. injection Hes as <-.
+      destruct (act_step _ _ _ Hst) as (a & Ha & Hoa). destruct (act_step _ _ _ Hst') as (a' & Ha' & Hoa').
+      rewrite Ha in Ha'. injection Ha' as <-. pose proof (offers_same_end a σ σ' Hoa Hoa' Hnl) as Hse.
+      rewrite Ho, Ho', Ho'o in Hse. injection Hse as Hse. by apply (cdual_ne o). }
+    pose proof (lfc_bipol _ _ _ _ _ _ _ Hc t e He) as Hbt. pose proof (lfc_bipol _ _ _ _ _ _ _ Hc s es Hes) as Hbs.
+    pose proof (tenv_end_entry _ _ _ Hbt Hk) as Het. pose proof (tenv_end_entry _ _ _ Hbs Hk') as Hes'.
+    assert ((k'.1, pt_pol ek'.2) = cdual (k.1, pt_pol ek.2)) as Hcd.
+    { unfold cdual. simpl. by rewrite H1, Hd, pt_pol_dual. }
+    rewrite Hcd in Hes'.
+    destruct (lfc_partner_at _ _ _ _ _ _ _ Hc t e _ _ s es _ He Het Hes Hes') as [_ Hsd].
+    pose proof (sdual_kind _ _ Hsd) as Hkk. rewrite Hkd, Hkd' in Hkk.
+    pose proof (lp_closed t e He) as Hcl.
+    destruct q as [C Mq]. simpl in *. left.
+    destruct o as [c β]. subst o'. unfold cdual in *; simpl in *.
+    destruct σ as [o0 w|o0 w|o0|cd|o0 bb|o0 bb]; destruct σ' as [o1 w'|o1 w'|o1|cd'|o1 bb'|o1 bb'];
+      simpl in Hkk, Ho, Ho'; try discriminate; try (by destruct (Hnl cd)); try (by destruct (Hnl' cd'));
+      injection Ho as ->; injection Ho' as ->.
+    - (* t receives, s sends *)
+      destruct (recv_retarget e _ w e1 w' Hst (tstep_send_val _ _ _ _ Hst')) as [e2 He2].
+      eexists _, _. split; [eapply (IMsg C Mq s t c (negb β) w'); [done|done|done|exact Hst'|]|set_solver].
+      by rewrite negb_involutive.
+    - (* t sends, s receives *)
+      destruct (recv_retarget es _ w' es1 w Hst' (tstep_send_val _ _ _ _ Hst)) as [es2 Hes2].
+      eexists _, _. split; [eapply (IMsg C Mq t s c β w); [done|done|done|exact Hst|exact Hes2]|set_solver].
+    - (* close *)
+      eexists _, _. split; [eapply (IClose C Mq t s c β); [done|done|done|exact Hst|exact Hst'|]|set_solver].
+      apply Hcl. apply fchans_of_fends with (o := (c, β)).
+      destruct (act_step _ _ _ Hst) as (a & Ha & Hoa). apply offers_clos in Hoa as ->.
+      apply (act_aends_fends e (AClos (c, β)) {[(c, β)]} Ha eq_refl). set_solver.
+    - (* t selects, s branches *)
+      destruct (bra_retarget es _ bb' es1 bb Hst') as [es2 Hes2].
+      eexists _, _. split; [eapply (IChoice C Mq t s c β bb); [done|done|done|exact Hst|exact Hes2]|set_solver].
+    - (* t branches, s selects *)
+      destruct (bra_retarget e _ bb e1 bb' Hst) as [e2 He2].
+      eexists _, _. split; [eapply (IChoice C Mq s t c (negb β) bb'); [done|done|done|exact Hst'|]|set_solver].
+      by rewrite negb_involutive.
+  Qed.
+
+  Theorem lfc_local_progress : local_progress q.
+  Proof.
+    apply (local_progress_ready q W A (λ _, ∅) HW).
+    - intros t e He Hnirr. apply (LErel_S_ready n W (A t) (U t) ∅ e); [|done].
+      apply (lf_rel _ _ _ _ _ _ _ _ Hc t e He).
+    - intros t e k ek He Hk Hirr.
+      pose proof (LErel_S_stop n W (A t) (U t) ∅ e (lf_rel _ _ _ _ _ _ _ _ Hc t e He) Hirr) as HV.
+      assert (A t = ∅) as HA.
+      { destruct (lf_ty _ _ _ _ _ _ _ _ Hc t e He) as [HU|HU]; rewrite HU in HV.
+        - eapply LVrel_prim_empty; [apply (lf_prim _ _ _ _ _ _ _ _ Hc)|exact HV].
+        - by apply LVrel_unit_iff in HV as [-> _]. }
+      rewrite HA in Hk. unfold tenv_entry in Hk. rewrite lookup_empty in Hk. by destruct k.2.
+    - intros t e k ek He Hk. apply (lfc_held _ _ _ _ _ _ _ Hc t e _ He).
+      exists ek. by apply tenv_end_entry; [apply (lfc_bipol _ _ _ _ _ _ _ Hc t e He)|].
+    - intros t e k ek He Hk.
+      pose proof (tenv_end_entry _ _ _ (lfc_bipol _ _ _ _ _ _ _ Hc t e He) Hk) as Hx.
+      destruct (lfc_partner _ _ _ _ _ _ _ Hc t e _ _ He Hx) as (s & es & y & Hes & Hy & Hy2 & _).
+      destruct (tenv_end_entry_inv _ _ _ Hy) as (k' & Hk' & Hk1).
+      exists s, es, k', y. split_and!; [done|done|done| |done].
+      intros [= -> ->]. rewrite Hk in Hk'. injection Hk' as ->.
+      assert (pt_pol y.2 = negb (pt_pol y.2)) as Hp by (rewrite Hy2 at 1; apply pt_pol_dual).
+      by destruct (pt_pol y.2).
+    - intros t e s es k ek k' ek' He Hes Ho Ho' Hk Hk' H1 Hne Hd. by eapply lp_meet.
+    - by apply lp_link.
+  Qed.
 End progress.
