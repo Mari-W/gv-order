@@ -397,14 +397,16 @@ Proof. apply (cc_ok_inner peq plt _ olt); [apply olt_trans|apply olt_irrefl|intr
 
 (** z is the first top-level point of a program ([created], sharp
     edges 172). The channels a program creates at its top level are
-    the next ones. *)
-Lemma top_created : created (Wpo []) [(top_C0, ids 1)].
-Proof. apply (created_snoc (Wpo []) [] top_C0); [constructor|apply top_ok|constructor]. Qed.
+    the next ones. Under syntactic points z is a constant, and a
+    program picks its name ([fresh_const], sharp edges 173). *)
+Lemma top_created z : created (Wpo []) [(top_C0, [pconst z])].
+Proof. apply (created_snoc (Wpo []) [] top_C0 z); [constructor|apply top_ok|constructor|fresh_const]. Qed.
 
-(** The first channel a of a lockstep pair, created under z = 1 with
-    a+k ≺ z and ā+k ≺ z for every k. *)
+(** The first channel a of a lockstep pair, created under z with
+    a+k ≺ z and ā+k ≺ z for every k. In [ls_Ψ] z is the constant 2, a
+    is 1 and b is 0. *)
 Definition lsa_P (g : fact) : Prop := ∃ k c, g = FLt (pt_polar c (pv 0 k)) (pv 1 0).
-Definition lsa_C : bcs := BCs [pvar 0] lsa_P.
+Definition lsa_C : bcs := BCs [pconst 2] lsa_P.
 
 Lemma lsa_ok peq plt : cc_ok peq plt lsa_C.
 Proof.
@@ -419,9 +421,9 @@ Qed.
 Definition lsb_P (g : fact) : Prop :=
   ∃ k c c', g = FLt (pt_polar c (pv 1 k)) (pt_polar c' (pv 0 k)) ∨
             g = FLt (pt_polar c (pv 0 k)) (pt_polar c' (pv 1 (S k))) ∨ g = FLt (pt_polar c (pv 0 k)) (pv 2 0).
-Definition lsb_C : bcs := BCs [pvar 0; pvar 1] lsb_P.
+Definition lsb_C : bcs := BCs [pconst 1; pconst 2] lsb_P.
 
-Lemma lsb_ok W Ψ : (BCs [pvar 1] lsa_P, [pvar 0]) ∈ Ψ → cc_ok (seqs W Ψ) (slt W Ψ) lsb_C.
+Lemma lsb_ok W Ψ : (lsa_C, [pconst 1]) ∈ Ψ → cc_ok (seqs W Ψ) (slt W Ψ) lsb_C.
 Proof.
   intros Hg.
   apply (cc_ok_out _ _ lsb_C olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
@@ -432,29 +434,29 @@ Proof.
       destruct Hpq as [Hpq|[_ Hpq]]; vm_compute in Hpq;
       try (match type of Hpq with _ = _ => inversion Hpq; subst end); cbn in *;
       first [apply glt_ofs_pol|apply (glt_ofs_dual _ _ _ true)|apply (glt_ofs_dual _ _ _ false)
-            |apply (glt_up _ _ (pv 0 j) (pv 1 0));
-             eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pv 0 j) (pv 1 0))); [done|by exists j, true|fsc|reflexivity]
-            |apply (glt_up _ _ (pt_dual (pv 0 j)) (pv 1 0));
-             eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pt_dual (pv 0 j)) (pv 1 0))); [done|by exists j, false|fsc|reflexivity]
-            |apply (glt_up _ _ (pv 0 k) (pv 1 0));
-             eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pv 0 k) (pv 1 0))); [done|by exists k, true|fsc|reflexivity]
-            |apply (glt_up _ _ (pt_dual (pv 0 k)) (pv 1 0));
-             eapply (sl_hyp W Ψ [pvar 1] lsa_P [pvar 0] (FLt (pt_dual (pv 0 k)) (pv 1 0))); [done|by exists k, false|fsc|reflexivity]];
+            |apply (glt_up _ _ (pc 1 j) (pc 2 0));
+             eapply (sl_hyp W Ψ [pconst 2] lsa_P [pconst 1] (FLt (pv 0 j) (pv 1 0))); [done|by exists j, true|fsc|reflexivity]
+            |apply (glt_up _ _ (pt_dual (pc 1 j)) (pc 2 0));
+             eapply (sl_hyp W Ψ [pconst 2] lsa_P [pconst 1] (FLt (pt_dual (pv 0 j)) (pv 1 0))); [done|by exists j, false|fsc|reflexivity]
+            |apply (glt_up _ _ (pc 1 k) (pc 2 0));
+             eapply (sl_hyp W Ψ [pconst 2] lsa_P [pconst 1] (FLt (pv 0 k) (pv 1 0))); [done|by exists k, true|fsc|reflexivity]
+            |apply (glt_up _ _ (pt_dual (pc 1 k)) (pc 2 0));
+             eapply (sl_hyp W Ψ [pconst 2] lsa_P [pconst 1] (FLt (pt_dual (pv 0 k)) (pv 1 0))); [done|by exists k, false|fsc|reflexivity]];
       unfold pt_shift in *; cbn in *; lia.
 Qed.
 
 (** The hypotheses of a program that creates the lockstep pair at its
     top level under z, and their creation (sharp edges 172). *)
 Definition ls_Ψ : hyps :=
-  hyps_inst (pshift 1) (hyps_inst (pshift 1) [(top_C0, ids 1)] ++ [(bcs_inst (pshift 1) lsa_C, ids 1)]) ++
-    [(bcs_inst (pshift 1) lsb_C, ids 1)].
+  ([(top_C0, [pconst 2])] ++ [(lsa_C, [pconst 1])]) ++ [(lsb_C, [pconst 0])].
 
 Lemma ls_created : created (Wpo []) ls_Ψ.
 Proof.
   apply created_snoc.
-  - apply created_snoc; [apply top_created|apply lsa_ok|].
+  - apply created_snoc; [apply top_created|apply lsa_ok| |fresh_const].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor].
   - apply lsb_ok. cbn. by right; left.
   - cbn. constructor; [eapply skn_inst; [by right; left|by left|done]|].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor].
+  - fresh_const.
 Qed.
