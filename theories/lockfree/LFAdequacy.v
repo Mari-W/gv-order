@@ -897,4 +897,60 @@ Section fuel_exists.
       + rewrite lookup_insert_ne in Hes' by done. pose proof (fe_uniq s' es' Hes' Hso') as Es. subst s'.
         rewrite eupd_ne by done. rewrite Hm. right. split_and!; [done|done|]. set_solver.
   Qed.
+  Lemma fe_holder_of x ex : M !! x = Some ex → x ≠ t → (cdual o).1 ∈ fchans ex → x = s.
+  Proof.
+    intros Hx Hxt Hm'. apply fends_of_fchans in Hm' as [b' Hb'].
+    destruct (decide (((cdual o).1, b') = o)) as [Heq|Hneq].
+    - exfalso. rewrite Heq in Hb'. apply (st_disj (S n) W HW T π C M A U Hc x t ex e Hxt Hx He o); [done|].
+      apply (s_held (S (S n)) W HW T π (C, M) A U Hc t e a o He Ha Ho).
+    - apply (fe_uniq x ex Hx). assert (((cdual o).1, b') = cdual o) as <-; [|done].
+      destruct o as [c0 β0]. unfold cdual in *. simpl in *. f_equal.
+      destruct b', β0; simpl; try done; exfalso; by apply Hneq.
+  Qed.
+
+  (** Close and choice: both participants act on c, which is not t's channel. *)
+  Lemma fe_two i j ei ei' f f' σi σj c :
+    i ≠ j → M !! i = Some ei → M !! j = Some f → t ≠ i → t ≠ j →
+    tstep ei (LSess σi) ei' → tstep f (LSess σj) f' → o.1 ≠ c →
+    (∃ bi, sl_end σi = Some (c, bi)) → (∃ bj, sl_end σj = Some (c, bj)) →
+    sl_out σi = ∅ → sl_out σj = ∅ → (∀ o0 w, σi ≠ SRecv o0 w) → (∀ o0 w, σj ≠ SRecv o0 w) →
+    (∀ k y, sl_next σi k = Some y → y.1.1 = c) → (∀ k y, sl_next σj k = Some y → y.1.1 = c) →
+    ∀ (q' : config) A' U', q'.2 = <[j := f']> (<[i := ei']> M) →
+      LFconf (S n) W ∅ T (pupd π (C, M) {[i; j]} q') q' A' U' →
+      fgoal (C, M) q' (f2 W P F i j σi σj).2 {[i; j]} t o s m.
+  Proof.
+    intros Hij Hi Hj Hti Htj Hsi Hsj Hoc [bi Hbi] [bj Hbj] Hout1 Hout2 Hr1 Hr2 Hn1 Hn2 q' A' U' Hq Hc'.
+    destruct (HF i ei Hi) as (H1i & H2i & H3i & H4i). destruct (HF j f Hj) as (H1j & H2j & H3j & H4j).
+    pose proof (tstep_end_fends _ _ _ _ Hsi Hbi) as Hci. pose proof (tstep_end_fends _ _ _ _ Hsj Hbj) as Hcj.
+    assert (is_Some (P i !! (c, bi))) as [ki Hki] by (apply elem_of_dom; by rewrite H2i).
+    assert (is_Some (P j !! (c, bj))) as [kj Hkj] by (apply elem_of_dom; by rewrite H2j).
+    assert (Hne : ∀ b', cdual o ≠ (c, b')) by (intros b' Heq; apply Hoc; by rewrite <-(cdual_fst o), Heq).
+    assert (q'.2 !! t = Some e) as He' by (rewrite Hq; by rewrite !lookup_insert_ne).
+    destruct (s_partner n W HW T _ _ A' U' Hc' t e a o He' Ha Ho) as (s' & es' & Hs't & Hes' & Hso').
+    exists s', es'. split_and!; [done|done|done|]. rewrite Hq in Hes'. unfold f2, fval. cbn [fst snd].
+    assert (Hlch : ∀ ex σ ex', tstep ex (LSess σ) ex' → (∃ bx, sl_end σ = Some (c, bx)) →
+              (∀ o0 w, σ ≠ SRecv o0 w) → cdual o ∈ fends ex' → (cdual o).1 ∈ fchans ex).
+    { intros ex σ ex' Hs [bx Hbx] Hnr Hin. pose proof (tstep_fchans _ _ _ Hs) as Hsub.
+      assert ((cdual o).1 ∈ fchans ex') as Hin' by (by apply fchans_of_fends).
+      apply Hsub in Hin'. apply elem_of_union in Hin' as [?|Hl]; [done|]. exfalso.
+      destruct σ; simpl in *; try done; try (by destruct (Hnr c0 v)); injection Hbx as ->; simpl in Hl;
+        apply elem_of_singleton in Hl; apply Hoc; rewrite <-Hl; reflexivity. }
+    destruct (decide (s' = j)) as [->|Hs'j].
+    - rewrite lookup_insert_eq in Hes'. injection Hes' as <-. rewrite eupd_eq. left.
+      pose proof (fe_holder_of j f Hj (not_eq_sym Htj) (Hlch f σj f' Hsj (ex_intro _ bj Hbj) Hr2 Hso')) as Ejs.
+      subst j. rewrite (fe_val_act s σj (c, bj) kj Hbj); [rewrite Hm; simpl| |by rewrite Hout2|apply Hne|].
+      + pose proof (fe_tick f σj f' (c, bj) Hj Hsj Hbj ltac:(apply not_eq_sym, Hne)). lia.
+      + by rewrite Hout2, lookup_mrem, decide_False by set_solver.
+      + intros y Hy Heq. apply Hoc. rewrite <-(Hn2 kj y Hy), Heq. reflexivity.
+    - rewrite lookup_insert_ne in Hes' by done. rewrite eupd_ne by done.
+      destruct (decide (s' = i)) as [->|Hs'i].
+      + rewrite lookup_insert_eq in Hes'. injection Hes' as <-. rewrite eupd_eq. left.
+        pose proof (fe_holder_of i ei Hi (not_eq_sym Hti) (Hlch ei σi ei' Hsi (ex_intro _ bi Hbi) Hr1 Hso')) as Eis.
+        subst i. rewrite (fe_val_act s σi (c, bi) ki Hbi); [rewrite Hm; simpl| |by rewrite Hout1|apply Hne|].
+        * pose proof (fe_tick ei σi ei' (c, bi) Hi Hsi Hbi ltac:(apply not_eq_sym, Hne)). lia.
+        * by rewrite Hout1, lookup_mrem, decide_False by set_solver.
+        * intros y Hy Heq. apply Hoc. rewrite <-(Hn1 ki y Hy), Heq. reflexivity.
+      + rewrite lookup_insert_ne in Hes' by done. pose proof (fe_uniq s' es' Hes' Hso') as Es. subst s'.
+        rewrite eupd_ne by done. rewrite Hm. right. split_and!; [done|done|]. set_solver.
+  Qed.
 End fuel_exists.
