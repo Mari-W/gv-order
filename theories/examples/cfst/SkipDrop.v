@@ -27,7 +27,7 @@ From LRGV Require Export examples.cfst.CfstDeadlock.
 Set Default Proof Using "All".
 
 Definition sd_main : expr :=
-  let_new_pair
+  let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (Lam EUnit) (App ESend (Pair EUnit (Var 2)))))))
       (LetP (App ERecv (Var 0)) EUnit)).
 
@@ -57,7 +57,7 @@ Proof.
   2: { exact (Hs (Hdf p' Hp)). }
   eexists. split.
   - rewrite ms_one. unfold sd_main.
-    eapply rtc_l; [apply (PStepNew _ _ _ "a"%string); [apply TStepLetP, TStepPairL, TStepHead, HeadNew|set_solver|
+    eapply rtc_l; [eapply (PStepNew _ _ _ "a"%string); [apply TStepLetP, TStepPairL, TStepHead, HeadNew|set_solver|
       unfold echans; rewrite gmultiset_elements_empty; set_solver|cbn; set_solver]|].
     pbeta; [apply TStepHead, HeadLetP; done|].
     pbeta; [apply TStepHead, HeadLetU|].
@@ -69,7 +69,7 @@ Proof.
       replace ((∅ ⊎ {[+ m +]}) ⊎ {[+ t +]}) with ((∅ ⊎ {[+ t +]}) ⊎ {[+ m +]} : gmultiset expr)
         by multiset_solver end.
     pbeta; [apply TStepHead, HeadLetU|].
-    eapply rtc_l; [eapply (PStepMsg _ _ "a"%string EUnit);
+    eapply rtc_l; [eapply (PStepMsg _ _ "a"%string _ EUnit);
       [apply TStepAppR; [done|]; apply TStepHead, HeadSend; done
       |apply TStepLetP, TStepHead, HeadRecv; done]|].
     pbeta; [apply TStepHead, HeadLetP; done|].
