@@ -271,6 +271,11 @@ Updated after every stage and every agent result.
   ask `tenv_fit Θ eb` (ends and the polarity condition `tenv_bipol`), not
   only `fends eb = tenv_ends Θ` as §16.3 had it. `LVrel_LErel` needs it for
   E-Fit, and typing supplies `tenv_bipol`.
+- 2026-11-09, under delegation. Fuel receive clause (L4b obstacle): only
+  ends whose partner budget is finite travel in a message (`ftravel`, and a
+  conjunct of `fin_ok`). Acting on an end whose partner budget is ∞ can
+  starve the actor, which F-Wait forbids anyway, and idle ends are never
+  delegated. The receive clause stays universal.
 
 ## Related work hooks
 
