@@ -176,6 +176,10 @@ Updated after every stage and every agent result.
   Every later point of its ends follows (shifts, payload fields). Points in
   the syntax (`new@x` read off the term) stay a possible later extension,
   which would make ω disappear.
+- 2026-11-09, author. Syntactic points replace the oracle ω (after the
+  stage 2b findings: the ω layer is not compositional, and ω cannot be read
+  off a Prop derivation constructively). Design first as plan §16, then
+  implementation.
 
 ## Related work hooks
 
