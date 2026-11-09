@@ -859,3 +859,472 @@ A semantic composition of the layer would need runs with external
 actions, so that each component's layer covers the interactions across
 the cut. Its P-Connect statement would combine the oracles by the side
 that holds the thread, which needs `or_pick` to see more than (Θ, e).
+
+## 16  Syntactic points (design, 2026-11-09)
+
+The author replaced the oracle of §15 by syntactic points (453a4c2). This
+section is the design. It changes no Rocq file. The program names the point
+of every `new`, and the two ends of a channel carry different names. Then
+every point the live relation places is a function of the run, the same at
+every index, and the closed-run layer of §15 goes away for placement and
+rank. Lock freedom becomes a judgment over thread soups that composes like
+the live relation, plus one clause on fuel. Fuel is the one part that stays a
+property of closed runs (16.5). Section 16.8 sketches how to close that gap.
+
+### 16.1  Choices inside a level
+
+Rank reads the point of the end that a pending thread offers and the gate of
+the holder of the partner end (`rank_bound`, 15.5). Fuel reads counters
+along the run. A choice inside a level matters for lock freedom exactly when
+it can move the point of some entry, or the holder of some end, between two
+indices or between a state and its successor. The table lists every
+existential of `Ebody`, `LEobl`, `LElink`, `Vspawn`, `LVdef` and `Pbody`
+(theories/liveness/LiveRelation.v). `Eobl` and `Vdef` of the base relation
+(theories/relation/LogicalRelation.v) have the same ones. Deadlock freedom
+never needed a uniform placement, so the base relation changes only because
+the syntax does.
+
+| Choice | Clause | Matters | Fixed by |
+|---|---|---|---|
+| point x of the channel | O-New, `∃ x s s'` | yes, it is C1 with a ceiling (14.1) | the term names x and the label `LNew c x` carries it |
+| session types s, s′ | O-New | no | stays an existential per index. Gates and rank read points and the end named by the label, and a wrong type at that end fails the obligation of the next action |
+| which end of c goes to the closure | O-Spawn, `∃ Θ1 Θ2` | yes, when the thread holds both ends of c | end names. `Vspawn` asks `fends eb = tenv_ends Θ1`, so Θ1 holds exactly the ends the closure mentions |
+| bounds ub, lb of the closure | O-Spawn | no | they only constrain. The soup starts a spawned thread with F = ∅ |
+| which entries travel with the payload | O-Send, `tenv_comp (w_eq W) Θr Θ1 Θ2` | yes, Chan c with both ends held, and the Close/Close case of §15.2 | end names. V at the payload type forces `tenv_ends Θ2 = fends w` |
+| m, U, s, k, Θ′ of O-Send | O-Send | no | forced by `tenv_hd` once the label names the end |
+| received entries | O-Recv | no | universal. A received entry keeps the sender's point, because `payload_at` reads only fields and `payload_pts_dual` holds |
+| the entry acted on | O-Close, O-Select, O-Branch, `selects` | yes, `selects` picks the first Close entry by side | the end bit of the label |
+| the two linked entries | O-Link, `LElink` | no once the label names ends | the peer of the removed end is renamed and keeps its point (16.5) |
+| split of a pair | `LVdef` at `TProd` | yes, `Pair (Chan c) (Chan c)` right after new | end names. V at `TSess s x` asks `pt_pol kk = b` |
+| witnesses xs | `LVdef` at `TEx` | no | entry points come from Θ, xs only instantiate the type |
+| the constant | `LVdef` and `Vspawn`, `∃ kc T0` | no | holds no channel |
+| side bits of a `Both` | `below_rest`, `above_offered` | no | both quantify over all keys. With `selects` reading the end bit, the offered entries are fixed by points |
+| future worlds | `Ebody` `∀ W1`, O-Recv `∀ W' j` | no | universal |
+| successors | Q-Admin, `Psend_case`, `Plink_case`, `recv_back` | no | process level. The lock-free judgment reads threads and uses `LPrel` only for `no_tau_divergence` |
+| fuel counters | none | no | a function of the run and N |
+
+### 16.2  The syntax
+
+**Option (a), point expressions in terms.** A term embeds a `point` at `new`
+and at force. Its point variables are bound by the enclosing boxes, force
+carries the instance list, and the force step substitutes it (a new
+traversal `pinst_expr` beside `subst`). Three costs follow. Every force site
+writes its instance, and boxes or force occur on 453 lines in 83 files.
+E-Open places the opened variables at 0 by `pshift m`, so a term point under
+an opened existential refers to a different variable in the premise of
+`t_open`, and the premise must type a shifted term. An opened existential
+has no runtime witness, so `new@ι` at an opened ι leaves a free point
+variable at runtime. An atom pt(a) for the current point of a held end,
+resolved through Θ, repairs the last cost but mentions a linear variable
+without consuming it.
+
+**Option (b), points as values.** A point value `EPt x` has the singleton type
+`TPt x`. `new` takes its point as its argument, `App ENew v` with
+`v : TPt x`. Two constants compute points, `KPay i` for x[i] and `KSucc` for
+x + 1. A literal is ground (no `NVar` in it), so every point substitution
+fixes it and E-Exp, E-Open and `PointSubst.v` stay as they are. A box whose
+body creates a channel at a box variable ι takes a parameter of type
+`TPt ι`, and value substitution instantiates it. Boxes, force and
+existentials stay Curry style. The relation forces the runtime point to
+equal the typing instance, because V at `TPt x` asks `v = EPt x`. The costs
+are one type, one value, two constants, a parameter on the four boxes that
+create channels (FactoryEx, FreshBetween, FreshMany, GuardCex), and a
+`TPt ι` in the package of any existential that is opened to create a channel
+at ι. SegmentInterleave is the only known case, and it left the build under
+sharp edge 172.
+
+We choose (b). It touches the sites that create channels and nothing else,
+and it keeps box instantiation in typing.
+
+**No session types on `new`.** O-New keeps `∃ s s'`. The gates and the rank
+never read a session type, the end an action uses comes from the label, and
+`selects` checks the type only to reject an ill-typed action, which the next
+obligation rejects anyway.
+
+**Ends.** A channel value carries its end, `Chan c b`, where b is the
+polarity of the end's current point. The two ends of a channel sit at x and
+x̄, which differ exactly in `pt_pol`, so the bit names the end and the
+environment needs no new key. `tenv` stays `gmap chan ends`, and the end of
+an entry e at c is `(c, pt_pol e.2)`. The bit moves with the point. `new`
+at x returns `Pair (Chan c (pt_pol x)) (Chan c (negb (pt_pol x)))`. Send and
+receive keep it, because `pt_shift` keeps polarity. Select returns
+`Chan c false` and branch returns `Chan c true`, because `sel_pt` is negative
+and `bra_pt` is positive. A link renames `Chan c β` to `Chan d β` and keeps
+the bit, which is correct because `w_eq W kc (pt_dual kd)` makes the bits of
+the two linked ends differ. The alternative, an annotation on spawn and send
+naming the ends handed on, needs a set of ends per step for nested values and
+closures, and it leaves the split of `Pair (Chan c) (Chan c)` free. We reject
+it.
+
+**Top-level channels.** A ground literal cannot name a point variable of the
+hypotheses Ψ. `created` therefore introduces a fresh constant per top-level
+channel instead of a variable, `created_snoc` appends
+`(bcs_inst (plist [pconst a]) C, [pconst a])` for an a outside `w_names W`
+and the earlier constants, and nothing shifts. A top-level `new` writes
+`EPt (pconst a)`. `soundness_created` keeps its statement, and its world
+places a by `wext_cc` at that very name.
+
+### 16.3  Rule changes
+
+Syntax and steps (theories/lang).
+
+```
+Inductive konst := … | KPay (i : nat) | KSucc.
+Inductive expr := … | Chan (c : chan) (b : bool) | EPt (x : point).   (* is_val (EPt x) *)
+Notation cend := (chan * bool).
+Fixpoint fends (e : expr) : gset cend.                 (* fchans e = set_map fst (fends e) *)
+Definition let_new_at (v e : expr) : expr :=
+  LetP (Pair (App ENew v) EUnit) (LetU (Var 0) (LetP (Var 1) e)).
+
+Inductive slabel :=                                     (* every subject is an end *)
+  | SRecv (c : cend) (v : expr) | SSend (c : cend) (v : expr) | SClos (c : cend)
+  | SLink (cd : gset cend) | SSel (c : cend) (b : bool) | SBra (c : cend) (b : bool).
+Inductive tlabel := LBeta | LSess (σ : slabel) | LNew (c : chan) (x : point) | LSpawn (v : expr).
+
+| HeadNew c x  : head_step (App ENew (EPt x)) (LNew c x)
+                   (Pair (Chan c (pt_pol x)) (Chan c (negb (pt_pol x))))
+| HeadPay i x  : head_step (App (Konst (KPay i)) (EPt x)) LBeta (EPt (pt_payload x i))
+| HeadSucc x   : head_step (App (Konst KSucc) (EPt x)) LBeta (EPt (pt_shift 1 x))
+| HeadSel1 c b : head_step (App ESel1 (Chan c b)) (LSess (SSel (c, b) false)) (Chan c false)
+| HeadBra c b i : head_step (App EBra (Chan c b)) (LSess (SBra (c, b) i)) (inj_of i (Chan c true))
+```
+
+Send, receive, close and link carry `(c, b)` in their labels the same way.
+In `proc_step`, P-Act-Msg, P-Act-Close and P-Act-Choice pair an action on
+`(c, b)` with one on `(c, negb b)`. P-Act-Link keeps `echsubst c d`, which
+keeps bits. `subjs` and `sentc` return channel names, so `C : gset chan` and
+the freshness side conditions of P-Act-New stay. `eswap`, `chsubst` and
+`fchans` keep their meaning.
+
+Types and typing (theories/types, theories/static).
+
+```
+Inductive ty := … | TPt (x : point).          (* unlimited, heads ∅, tsize 1 *)
+
+| KTNewAt S x : pk x → konst_ty peq plt pk KNew
+    (TLolli None None (TPt x) (TProd (TSess S x) (TSess (dual S) (pt_dual x))))
+| KTPay i x : pk (pt_payload x i) → konst_ty peq plt pk (KPay i)
+    (TLolli None None (TPt x) (TPt (pt_payload x i)))
+| KTSucc x : pk (pt_shift 1 x) → konst_ty peq plt pk KSucc
+    (TLolli None None (TPt x) (TPt (pt_shift 1 x)))
+
+| t_pt Φ Ψ Δ F x :                             (* E-Pt *)
+    lenv_empty Δ → pt_ground x → skn W Ψ x → typed W Φ Ψ ∅ Δ F (EPt x) (TPt x)
+| t_ch Φ Ψ Δ F c b s k s' y :                  (* E-Ch, one premise more *)
+    lenv_empty Δ → seq s s' → seqs W Ψ k y → pt_pol k = b →
+    typed W Φ Ψ {[c := One (s, k)]} Δ F (Chan c b) (TSess s' y)
+```
+
+E-Force (`typed_force`, `KTForce`) is unchanged. `pinst_ty`, `sren_ty`,
+`sflip_ty`, `sinst_ty`, `heads`, `hbot`, `tsize`, `unlimited` and `steq` get
+a `TPt` case. `created` changes as in 16.2.
+
+Base relation (theories/relation/LogicalRelation.v, Readiness.v).
+
+```
+Vdef at TSess s x : ∃ c b s0 kk, v = Chan c b ∧ Θ = {[c := One (s0, kk)]} ∧ seq s0 s ∧
+                      w_eq W kk x ∧ pt_pol kk = b
+Vdef at TPt x     : Θ = ∅ ∧ v = EPt x ∧ pt_known W x
+Vdef at TLolli    : fends eb = tenv_ends Θ   (was fchans eb = dom Θ)
+O-New             : c ∉ dom Θ → pt_known W x ∧
+                      ∃ s s', sdual s s' ∧ at_cost … W (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e'
+O-σ               : tenv_hd_end Θ (c, b) u k Θ1 := tenv_hd Θ c u k Θ1 ∧ pt_pol k = b
+O-Link            : cd = {[(c, bc); (d, bd)]} with pt_pol kc = bc and pt_pol kd = bd
+selects Θ σ k     : the entry at k has pt_pol = the bit of σ's end, the type check stays
+```
+
+`tenv_ends Θ` is the set of `(c, pt_pol e.2)` over the entries e of Θ.
+
+Live relation (theories/liveness/LiveRelation.v). The same changes to
+`LVdef`, `LEobl`, `LElink` and O-New, `Vspawn` asks
+`fends eb = tenv_ends Θ`, and `Ebody` gains one clause.
+
+```
+Definition tenv_fit (Θ : tenv) (e : expr) : Prop :=
+  tenv_ends Θ = fends e ∧ ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → pt_pol e1.2 ≠ pt_pol e2.2.
+
+Definition Ebody … : Prop :=
+  tenv_fit Θ e ∧                                                    (* E-Fit *)
+  ∀ W1, wext_r W W1 → … (E-Stop, E-Step, O-Beta, O-New as above, O-Spawn, O-σ, O-Link).
+```
+
+E-Fit makes the holder of an end the unique thread whose term mentions it.
+`Huniq` and local progress read holders off terms (`waits`, Fair.v), and a
+dead mention of a handed-on end would give a second holder. An untyped
+term can mention one end both in a spawned closure and in its continuation.
+`Vspawn` gives the end to the closure, and the continuation keeps a mention
+that no index observes when it is dead code. So the clause has to sit in the
+relation and not in the soup.
+
+The lock-free judgment (theories/lockfree, new file LFSoup.v).
+
+```
+(* a closed or open soup of threads, each in the live relation *)
+Definition soup_ok W (Σ : senv) (T : ty) (π : gmap cend point) (C : gset chan)
+    (ts : list (expr * tenv * ty)) : Prop :=
+  (one entry has type T, every other entry has TUnit) ∧
+  (the environments are disjoint per end, and together they hold both ends of
+   every c ∈ C and the one end of every c ∈ dom Σ, at Σ's entry) ∧
+  (every entry of end o has point π !! o) ∧
+  (the two ends of every c ∈ C have dual session types).
+
+Definition LFsoup (n : nat) W Σ T (π : gmap cend point) (p : proc) : Prop :=
+  ∃ ts, p.2 = list_to_set_disj ((λ t, t.1.1) <$> ts) ∧ soup_ok W Σ T π p.1 ts ∧
+        Forall (λ '(e, Θ, U), LErel n W Θ U ∅ e) ts.
+
+Definition LFP W Σ T (p : proc) : Prop :=
+  (∀ n, LPrel n W Σ T p) ∧ ∃ π, ∀ n, LFsoup n W Σ T π p.
+
+(* counters along a run, ticking only while the partner end is offered (§7) *)
+Fixpoint cnt (N : nat) (r : nat → config) (l : nat → gset nat) (k : nat) : cend → nat.
+Definition fuel_ok (q : config) (φ : cend → nat) : Prop :=
+  ∀ s es o, q.2 !! s = Some es → o ∈ fends es → offered_end q (cdual o) → φ o = 0 →
+    ∃ a, act es = Some a ∧ ¬ is_admin a ∧ aend a = Some o.
+Definition fuel_run (N : nat) (p : proc) : Prop :=
+  ∀ r l k, erase (r 0) = p → (∀ j, j < k → istep (r j) (l j) (r (S j))) →
+    fuel_ok (r k) (cnt N r l k).
+(* cdual (c, b) = (c, negb b). offered_end q o: some thread's redex is a session
+   action on o other than a link. aend a: the end that action a acts on. *)
+```
+
+`cnt` sets an end to N while its partner is not offered and when the holder
+acts on it. While the partner is offered it drops by one at every
+non-administrative step of the holder on another end and at every hand-over
+by send or spawn. A link moves counters as in the table of 15.3. π fixes the
+points of the ends present at the start, once, outside the index. Session
+types stay inside the index.
+
+Algorithmic checker (theories/algorithmic). `ALetNew S x e` erases to
+`let_new_at (EPt x) (erase e)` and its check asks `pt_ground x` beside
+`AKnown x`. The guard and the fragment (Guard.v, Fragment.v) treat `EPt`,
+`KPay` and `KSucc` as values and β constants that pay for nothing, and R2′
+counts a point value as fresh.
+
+### 16.4  Files, sizes, and statements that change
+
+| Group | Change | Size (changed lines) |
+|---|---|---|
+| lang (Syntax, Semantics, ChannelSwap, Harmony, Safety, ThreadSim, 2.7k lines) | `Chan c b`, `EPt`, `KPay`, `KSucc`, labels on ends, `HeadNew`, `fends`, `let_new_at`, swaps keep bits | 400 to 600 |
+| types (Types, SessionEquiv, LinearEnv) | `TPt` in every fixpoint, three `konst_ty` cases, `tenv_ends`, `tenv_fit` | 150 to 250 |
+| static (Typing, PointSubst, FactTheory, Source, SourceRules, Mixed, Fundamental) | `t_pt`, `t_ch`, `created` over constants, `soundness_created` | 300 to 500 |
+| relation and rules (LogicalRelation, Readiness, Worlds, BranchWorlds, rules/) | V clauses, O-New, `tenv_hd_end`, `selects`, link clause | 400 to 600 |
+| invariance (7.1k lines) | renaming and junk renaming keep bits, labels on ends | 300 to 500 |
+| composition (ConnectCut, ConnectSteps, Internalize, PConnect, PConnectN, PTerm, ReadyChain) | labels on ends, cut ends paired by bit | 300 to 500 |
+| liveness (12k lines) | as the base relation, plus E-Fit in every construction of `Eind` (LiveTermRules, LiveBind, LiveConsts, LiveUnfold, LiveConv, LiveEconv, LiveGuardRules, LivePTerm, LiveInternalize, LiveJunk, LiveRenaming) | 1000 to 1500, the largest and riskiest group |
+| lockfree (5.1k lines) | `waits` by ends, labels in Instr, Reach, TauThread, LocalProgress. LFRelation.v deleted, LFSoup.v new, LFAdequacy.v rewritten | about 1700 deleted, 1200 new or adapted |
+| examples (about 70 files with `new`) | a literal at each top-level `new`, `created` over constants, a point parameter in four boxes | 600 to 900 |
+| algorithmic | erasure of `ALetNew`, ground check | 50 |
+| pgv, pn, mp (in the build) | see 16.7 | out of the build until revisited |
+
+Statements the author approved that change in form.
+
+1. The calculus. `Chan c b`, `EPt x`, `KPay i`, `KSucc`, the labels name ends,
+   `LNew c x`, `HeadNew c x`, and P-Act-Msg, P-Act-Close and P-Act-Choice
+   pair dual ends. Terms are Curry style except that `new` names its point.
+2. `KTNewAt` takes `TPt x` instead of `TUnit`. `typed` gains `t_pt`, and
+   `t_ch` gains `pt_pol k = b`.
+3. `created` introduces constants. `soundness_created`, `soundness` and
+   `soundness_source` keep their statements. Example typing lemmas keep the
+   form `styped ∅ X_Ψ …` with X_Ψ over constants, and their deadlock freedom
+   theorems keep their form over the changed terms.
+4. `LVrel`, `LErel` and `LPrel` change by definition (E-Fit, O-New, V at
+   `TSess` and `TPt`, `fends` in the arrow and `Vspawn`). `live_adequacy`,
+   `live_fundamental_guarded`, `live_soundness`, `LPrel_connect`,
+   `LPrel_join` and `LPrel_term` keep their statements.
+5. `waits` (Fair.v) reads ends. `lock_free`, `local_progress` and
+   `lf_criterion` keep their statements.
+6. `lf_adequacy`, `lf_adequacy_ex` and `lf_thread_progress` replace the
+   hypothesis `∃ N ω, ∀ n, LFPrel N ω n W ∅ T p` by
+   `LFP W ∅ T p ∧ ∃ N, fuel_run N p`. `LFPrel_down` and `LFPrel_fuel` become
+   `LFsoup_down` and `fuel_run_mono`. The statements of 15.7 give way to
+   `lf_fundamental` (16.6).
+7. New. `LFP_term`, `LFP_connect` and `LFP_join` with the hypotheses of
+   `LPrel_term`, `LPrel_connect` and `LPrel_join`.
+
+### 16.5  Placement, rank and composition without a run layer
+
+**Points are a function of the run.** Let `pupd π q L q'` update a point map
+along one step. New sets `(c, pt_pol x)` to x and the other end to x̄, read
+off the label. A message shifts both ends by one. A choice moves the
+selecting end to `(c, false)` at `sel_pt k i` and the branching end to
+`(c, true)` at `bra_pt k i`. Close removes both ends. A link on
+`(c, b)` and `(d, negb b)` removes them and moves the point of `(c, negb b)`
+to `(d, negb b)`. That point was x̄_c = x_d before, so the peer keeps its
+point. β, spawn and the transfer of a payload change nothing. The key lemma
+is preservation of the soup.
+
+```
+Lemma lfsoup_step n W T π q L q' :
+  world_wf W → LFsoup (S (S n)) W ∅ T π (erase q) → istep q L q' →
+  LFsoup n W ∅ T (pupd π q L q') (erase q').
+```
+
+Each case reads the clause of the stepping thread at its environment, and
+every environment of the successor is forced. O-New names x. In O-Spawn,
+`Vspawn` fixes Θ1 to the ends of the closure and E-Fit leaves the rest to
+the continuation, and the child is `Etop` at level n with Θ′ = ∅. In a
+message, V at the payload type fixes the travelling entries. The receiver
+chooses nothing, and its `∀ W' j Θ2` takes W′ = W (`wext_refl`), j = pred n,
+and the sender's Θ2, which has the right type because `payload_at m U k`
+equals `payload_at m U (pt_dual k)` and the paired types are dual. Close,
+select and branch take the entry the label names. A link renames the peer
+by `LiveRenaming.v` and keeps its point. Threads that do not step keep their
+relation, and `LErel_down` brings everything to the index of the slowest
+thread. Session types are chosen again at each index, which nothing reads.
+
+**One placement for every index.** Fix a run r with `erase (r 0) = p` and
+`LFP W ∅ T p`, and take the π of the judgment. Let π₀ = π and
+π_{k+1} = `pupd` π_k (r k) (l k) (r (S k)). π_k does not depend on n, and
+induction on k with `lfsoup_step` gives `∀ n, LFsoup n W ∅ T π_k (erase (r k))`.
+So at every position each thread sits in the live relation at every index,
+at an environment whose points are π_k. This is what §14 found missing.
+
+**The criterion applies.** `lf_criterion` is instantiated as in 15.5 with
+the annotation replaced by π_k and `cnt`.
+- `we k t` is π_k of the end that t offers, and R is `w_lt W`, well founded
+  by hypothesis. A thread that does not step keeps its end, and π_{k+1}
+  agrees with π_k on it up to the renaming of a link, so `Hstab` holds.
+- `Hrank`. Let s hold the partner ō of t's end o, with s pending. If s
+  offers ō, then t is enabled. Otherwise s is stable, and `ready_t` from
+  `LFsoup 1` at s gives `below_rest`. The entry s offers lies below
+  `pt_dual (π_k ō) = π_k o`, so `w_lt W (we k s) (we k t)`.
+- `Huniq` and `Hpers` follow from E-Fit and disjointness of the soup.
+  Local progress and `links_restricted` are facts of one soup at index 1,
+  as in LocalProgress.v. `no_tau_divergence` comes from `live_adequacy`
+  through the first conjunct of `LFP`.
+- `fu k t` is `cnt N r l k` at the partner of t's end, and `fuel_run N p`
+  gives `Hfuel`. While t is pending its partner end is offered, so the
+  counter ticks at every step of the holder on another end and at every
+  hand-over, and `fuel_ok` stops it at 0.
+
+So `lf_adequacy` needs no closed-run layer for placement or rank, no oracle,
+and no choice principle. π is a finite map in a Prop existential and `pupd`
+is a function.
+
+**Composition.** `LFP_term` takes `lsem_typed W (tenv_of Σ ∪ ΘB) [] ∅ t T`,
+as `LPrel_term` does, with π the points of `tenv_of Σ ∪ ΘB`. E-Fit for t
+holds because Θ is fixed outside n. `LFP_connect` and `LFP_join` concatenate
+the two soups and join the two point maps. The cut ends are paired by the
+side condition of P-Connect, and `LErel` moves to `wjoin W1 W2` by
+`wext_join_l'` and `wext_join_r'`. The `LPrel` conjuncts compose by the
+existing theorems. All three keep the form of `ptyped`'s rules. The soup is
+flat, so a cyclic topology that arises at runtime needs no tree structure,
+and the order of W carries the argument as before.
+
+**C1 with a ceiling is rejected.** Round k creates c_k with
+`new (EPt y_k)`, where y_k is the value the round computed, for example by
+`KPay 0` from the round's parameter. The ceiling placement ι+(n−k) of 14.1
+would need a point that depends on n, which no term can write. When T_k
+blocks, it offers its end of c_k at y_k and holds the partner end of
+c_{k−1} at ȳ_{k−1}. Its gate at index 1 gives y_k ≺ y_{k−1}, and every
+such position lies on the fair run where every round fires. So any W in
+which the gates hold has the chain y_0 ≻ y_1 ≻ … and is not well founded.
+
+**The controller is accepted by the closed judgment.** The soup holds by
+the guarded core typing, which §7 implies when it names R2 as the rule that
+rejects the controller.
+`fuel_run` holds for every N ≥ 1 by a direct proof. Nobody ever offers on ctl or
+ctl′, so their counters stay at N, and every end of r is acted on in each
+round. This replaces the process-level semantic proof that §7 asked for.
+The conservative fuel of 15.4 is gone, because `cnt` ticks only while the
+partner is offered.
+
+**What remains is fuel.** `fuel_run` quantifies over runs of the closed
+program, so it does not compose over a cut. It cannot move into the term
+relation as it stands. The receiver of an end gets its counter from the
+sender, and O-Recv is universal over what the environment sends. A
+receiver that must cope with every counter must act on a received end
+before any other channel step, because the counter may be 0. That rejects
+the Forwarder, which receives an end and sends it on, and any fixed lower
+bound on received counters fails the same way one hop later. A bound that
+works must decrease along a chain of forwards, so it needs information that
+sender and receiver share. Unlike the layer of §15, `fuel_run` involves no
+choice and no index. It is a property of the untyped runs of p, close to
+the `fuel_bound` hypothesis of the criterion, and the fragment proves it
+from typing by preservation of a budget (16.6). 16.8 gives the way to make
+it compositional.
+
+**Risks.** E-Fit has to be proved wherever an `Eind` is built. In LiveBind
+the evaluation context's ends are known from the continuation only at
+inhabited value types. If that fails, the bind lemma takes `fends K` as a
+hypothesis, which typing supplies, or `waits` moves to holders read off the
+soup's environments, which changes the hypotheses of `lf_criterion`.
+
+### 16.6  Stages
+
+Each stage is one agent. At most two run at once, P3a beside P3b.
+
+- **P1, lang and types.** `Chan c b`, `EPt`, `KPay`, `KSucc`, labels on
+  ends, `HeadNew c x`, `fends`, `let_new_at`, `TPt`, `konst_ty`,
+  `tenv_ends`, `tenv_fit`. Builds through theories/types.
+- **P2, static, base relation, rules, invariance.** `t_pt`, `t_ch`,
+  `created` over constants, `soundness_created`, the V clauses, O-New,
+  `tenv_hd_end`, `selects`. Builds through theories/invariance and
+  theories/static.
+- **P3a, composition and liveness.** Labels on ends, E-Fit, `fends` in
+  `Vspawn` and the arrow. `live_adequacy`, `live_fundamental_guarded`,
+  `LPrel_connect`, `LPrel_term` rebuilt with unchanged statements.
+- **P3b, examples and algorithmic, beside P3a.** Literals at top-level
+  `new`, `created` over constants, point parameters in FactoryEx,
+  FreshBetween, FreshMany and GuardCex, erasure of `ALetNew`. The live
+  example theorems wait for P3a.
+- **P4, lock-free relation.** `waits` by ends, labels in Instr, Reach,
+  TauThread and LocalProgress. LFSoup.v with `LFsoup`, `LFP`, `pupd`, `cnt`,
+  `fuel_run`, `LFsoup_down`, `fuel_run_mono`, `LFP_term`, `LFP_connect`,
+  `LFP_join`. LFAdequacy.v rewritten around `lfsoup_step`.
+- **P5, fundamental theorem.** Fragment.v traversals, and
+  `lf_fundamental : lfptyped W ∅ p T → LFP W ∅ T p ∧ ∃ N, fuel_run N p`.
+  The soup comes from `live_fundamental_guarded` and a lemma
+  `typed_fit` (a closed typed term fits its environment). `fuel_run` comes
+  from preservation along runs of a typed invariant whose counters are at
+  least the remaining budget, with N = (d+1)·2L computed from the text. This
+  is the stage 3 of 15.7 without the oracle. The controller (16.5) and C1
+  as Rocq lemmas are optional here.
+- **P6, optional, for the author.** Budgets in the world (16.8).
+- After P2 and after P4, a sharp edge (173, syntactic points) and the
+  update of gvsharp-orders.lagda.
+
+Stage 2b, kept, adapted or deleted.
+
+| File | Fate |
+|---|---|
+| Criterion.v, `lf_criterion` | kept. Statement unchanged, `waits` changes underneath |
+| Fair.v | `waits` reads ends, the rest kept |
+| ThreadProgress.v, `thread_progress` | kept |
+| TauThread.v, Instr.v, Reach.v, LocalProgress.v | adapted to labels on ends and `selects` by bit |
+| LFRelation.v | deleted (`placement`, `oracle`, `aconf`, `aupd`, `areach`, `LFconf`, `LFPrel`). `snd_next`, `rcv_next`, `sel_next`, `bra_next`, `tick` and `link_fuel` move into LFSoup.v for `pupd` and `cnt` |
+| LFAdequacy.v | the instantiation of the criterion is kept and moved from annotations to π_k and `cnt` (`holder_one`, `holder_exists`, `sync_partner`, `nonpart_terms`, `fuel_pos`, `c_waits_holder`, `rank_pt_eq`). `areach_isteps` and everything about ω go. `lfsoup_step` replaces the preservation of annotations |
+
+### 16.7  Translations and paper
+
+PGV, PN and MP share `expr`, so `Chan c b` and the labels reach their
+sources too (MP2Semantics.v, PNSemantics.v). PN and MP translate typing
+derivations (`pn_typed Γ e s τ e'`) and can write the point of each `new`
+from the level or priority of its derivation. A level-polymorphic PN
+function needs a point parameter, which (b) supplies. PGV translates the
+constant `new` to a fixed term (`new_tr`, PGVTranslate.v), so its
+translation has to become type directed, or PGV's `new` has to carry its
+priority. The three stay out of the build until the translations resume.
+
+The paper says that terms carry no types or points. After this change a
+term carries the point of each `new`, as a value of type Pt(ι), and boxes
+stay Curry style. The two ends of a channel get names c⁺ and c⁻. Lock freedom reads as the live relation on
+thread soups plus a fuel condition on runs, and the composition rules of
+the paper keep their form.
+
+### 16.8  Closing the fuel gap (for the author)
+
+Fuel composes if the shared world carries the bound that 16.5 found
+missing. Let W carry budgets β from points to ℕ below N, and let the term
+relation carry counters φ for held ends that tick at every step of the
+holder on another end. O-Recv quantifies over received counters
+φ_in(o) ≥ β k for the carrier point k, and O-Send asks φ(o) − 1 ≥ β k for
+every end it hands on at k. Acting refills to N. A forward from carrier k
+to carrier m then needs β k > β m, so endless delegation needs an infinite
+descent in ℕ and fails, while the Forwarder passes with β k ≥ β m + L + 1.
+P-Connect and P-Join see one W, so budgets need no combining. The fragment
+sets β k from the R4′ depth of the session type at k, (d − depth + 1)·2L.
+The cost is a component of the world and an index of `Ebody`. Ticking stays
+conservative inside the term relation, so the controller keeps needing the
+closed judgment of 16.5. This option is unverified, and tickets in session
+types are the syntactic alternative.
