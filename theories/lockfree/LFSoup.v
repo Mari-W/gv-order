@@ -1132,4 +1132,71 @@ Section step.
       + exists j, f'. rewrite HM', HA', !decide_True by done. done.
   Qed.
 
+  Lemma st_held t e o x : M !! t = Some e → tenv_end (A t) o = Some x → o ∈ fends e.
+  Proof. intros He Hx. apply (lfc_held _ _ _ _ _ _ _ Hc t e o He). by eexists. Qed.
+
+  (** The rest of an environment after the action on o, and the ends
+      of the continuation. *)
+  Lemma st_rest t e o u k Θ1 :
+    M !! t = Some e → tenv_hd_end (A t) o u k Θ1 →
+    ∃ s, unfoldS s = u ∧ tenv_ext Θ1 o.1 (s, k) (A t) ∧ tenv_end (A t) o = Some (s, k) ∧
+      o ∈ fends e ∧ tenv_ends Θ1 = fends e ∖ {[o]} ∧
+      (∀ o', o' ≠ o → tenv_end (A t) o' = tenv_end Θ1 o').
+  Proof.
+    intros He Hhd. destruct (hd_end _ _ _ _ _ Hhd (st_bipol t e He)) as (s & Hu & Hext & Ho & Hn & Hr).
+    exists s. split_and!; try done.
+    - by apply (st_held t e o (s, k)).
+    - destruct Hhd as [_ Hp]. destruct o as [c b]. simpl in *. subst b.
+      destruct (tenv_ends_ext _ _ _ _ Hext (st_bipol t e He)) as [H1 H2].
+      rewrite (st_ends t e He), H1. set_solver.
+  Qed.
+
+  Lemma fchans_not e c : (∀ b, (c, b) ∉ fends e) → c ∉ fchans e.
+  Proof. intros H Hc'. apply fends_of_fchans in Hc' as [b Hb]. by apply (H b). Qed.
+
+  (** ** close *)
+  Lemma step_close i j c b e e' f f' :
+    i ≠ j → M !! i = Some e → M !! j = Some f →
+    tstep e (LSess (SClos (c, b))) e' → tstep f (LSess (SClos (c, negb b))) f' → c ∈ C →
+    ∃ A', LFconf n W ∅ T (pupd π (C, M) {[i; j]} (C ∖ {[c]}, <[j := f']> (<[i := e']> M)))
+      (C ∖ {[c]}, <[j := f']> (<[i := e']> M)) A' U.
+  Proof.
+    intros Hij He Hf Hse Hsf HcC.
+    pose proof (st_sess i e _ e' He Hse) as (Θ1 & k & Hhd & HE). simpl in HE.
+    pose proof (st_sess j f _ f' Hf Hsf) as (Θ1j & kj & Hhdj & HEj). simpl in HEj.
+    destruct (st_rest i e _ _ _ _ He Hhd) as (s & _ & _ & Hxi & Hoi & Hends & Hri).
+    destruct (st_rest j f _ _ _ _ Hf Hhdj) as (sj & _ & _ & Hxj & Hoj & Hendsj & Hrj).
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE) as Hfit. pose proof (LErel_S_fit _ _ _ _ _ _ HEj) as Hfitj.
+    rewrite (proj1 Hfit) in Hends. rewrite (proj1 Hfitj) in Hendsj.
+    pose proof (st_disj i j e f Hij He Hf) as Hdisj.
+    assert (∀ b', (c, b') ∉ fends e') as Hne.
+    { intros b' Hb'. rewrite Hends in Hb'. destruct (decide (b' = b)) as [->|Hb]; [set_solver|].
+      assert (b' = negb b) as -> by (by destruct b, b').
+      apply (Hdisj (c, negb b)); [set_solver|done]. }
+    assert (∀ b', (c, b') ∉ fends f') as Hnej.
+    { intros b' Hb'. rewrite Hendsj in Hb'. destruct (decide (b' = negb b)) as [->|Hb]; [set_solver|].
+      assert (b' = b) as -> by (by destruct b, b').
+      apply (Hdisj (c, b)); [done|set_solver]. }
+    exists (eupd (eupd A i Θ1) j Θ1j).
+    eapply (two_frame i j e f e' f' Θ1 Θ1j c); try done.
+    - eapply LErel_down; [|exact HE]. lia.
+    - eapply LErel_down; [|exact HEj]. lia.
+    - rewrite Hends, Hendsj. set_solver.
+    - rewrite Hends, Hendsj. set_solver.
+    - right. split_and!; [done|by apply fchans_not|by apply fchans_not].
+    - intros t g Hti Htj Hg. by apply (st_cowner i j e f c b t g).
+    - intros o x Ho. rewrite (Hri o), (Hrj o); [done| |]; intros ->; by apply Ho.
+    - intros o Ho. unfold pupd.
+      destruct (act_step _ _ _ Hse) as (a & Ha & Hoa). apply offers_clos in Hoa as ->.
+      destruct (act_step _ _ _ Hsf) as (a' & Ha' & Hoa'). apply offers_clos in Hoa' as ->.
+      destruct (pev_of_pair (C, M) (C ∖ {[c]}, <[j:=f']> (<[i:=e']> M)) i j e f Hij He Hf) as [-> | ->];
+        unfold pev2; rewrite ?Ha, ?Ha'; simpl; rewrite !lookup_delete_ne; try done;
+        intros Heq; apply Ho; by rewrite <-Heq.
+    - intros o x Ho [Hx|Hx]; exfalso.
+      + assert (o ∈ tenv_ends Θ1) as Hin by (apply tenv_ends_end; by eexists).
+        rewrite (proj1 Hfit) in Hin. destruct o as [c' b']. simpl in Ho. subst c'. by apply (Hne b').
+      + assert (o ∈ tenv_ends Θ1j) as Hin by (apply tenv_ends_end; by eexists).
+        rewrite (proj1 Hfitj) in Hin. destruct o as [c' b']. simpl in Ho. subst c'. by apply (Hnej b').
+  Qed.
+
 End step.
