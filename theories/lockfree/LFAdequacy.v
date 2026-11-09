@@ -820,3 +820,113 @@ Proof.
       pose proof (act_asubjs_fchans e (ALink c1 d0) _ Hb eq_refl) as Hsub. rewrite <-Ho in Hsub.
       unfold csub. case_decide; [subst; set_solver|done].
 Qed.
+
+(** ** The annotated run *)
+
+Section run.
+  #[local] Set Default Proof Using "All".
+  Context (ω : oracle) (N : nat) (W : world) (HW : world_wf W) (Hwf : well_founded (w_lt W)).
+  Context (r : nat → config) (l : nat → gset nat) (Hmax : maximal r l).
+  Context (HL : ∀ a, areach ω N (ainit ω N (r 0)) a → LFconf 1 W ∅ a).
+
+  Fixpoint arun (k : nat) : aconf :=
+    match k with 0 => ainit ω N (r 0) | S k' => aupd ω N (arun k') (l k') (r (S k')) end.
+
+  Lemma arun_q k : ac_q (arun k) = r k.
+  Proof. by destruct k. Qed.
+
+  Lemma arun_stuck k : r (S k) = r k → l k = ∅ → arun (S k) = arun k.
+  Proof.
+    intros Hr Hl. simpl. rewrite Hl, Hr. unfold aupd, pick1, pick2. rewrite elements_empty.
+    simpl. pose proof (arun_q k) as Hq. destruct (arun k) as [q A Φ]. simpl in *. by subst.
+  Qed.
+
+  Lemma arun_reach k : areach ω N (ainit ω N (r 0)) (arun k).
+  Proof.
+    induction k as [|k IH]; [done|].
+    destruct (Hmax k) as [Hs|(_ & Hr & Hl)].
+    - eapply rtc_r; [exact IH|]. exists (l k), (r (S k)). rewrite arun_q. by split.
+    - by rewrite arun_stuck.
+  Qed.
+
+  Lemma arun_conf k : LFconf 1 W ∅ (arun k).
+  Proof. apply HL, arun_reach. Qed.
+
+  Definition fu (k t : nat) : nat := partner_fuel (arun k) t.
+  Definition we (k t : nat) : point := rank_pt (arun k) t.
+
+  Lemma npend_arun k t : npend (r k) t →
+    ∃ e b c, (ac_q (arun k)).2 !! t = Some e ∧ act e = Some b ∧ rchan b = Some c ∧ ¬ is_admin b.
+  Proof. rewrite <-(arun_q k). apply npend_rchan. Qed.
+
+  (** Uniqueness of the holder, and the rank clause. *)
+  Lemma run_uniq k t s s' : npend (r k) t → waits (r k) t s → waits (r k) t s' → s = s'.
+  Proof.
+    intros Hp Hw Hw'. destruct (npend_arun k t Hp) as (e & b & c & He & Hb & Hr & _).
+    rewrite <-(arun_q k) in Hw, Hw'.
+    destruct (proj1 (c_waits W HW Hwf _ (arun_conf k) t e b c s He Hb Hr) Hw) as (Hst & es & Hes & Hcs).
+    symmetry. by apply (c_waits_holder W HW Hwf _ t e b c s es (arun_conf k) He Hb Hr Hes Hst Hcs s').
+  Qed.
+
+  Lemma run_rank k t s : npend (r k) t → waits (r k) t s → npend (r k) s →
+    enabled (r k) t ∨ w_lt W (we k s) (we k t).
+  Proof.
+    intros Hp Hw Hps. destruct (npend_arun k t Hp) as (e & b & c & He & Hb & Hr & _).
+    destruct (npend_arun k s Hps) as (es & b' & d & Hes & Hb' & Hr' & _).
+    rewrite <-(arun_q k) in Hw |- *.
+    destruct (proj1 (c_waits W HW Hwf _ (arun_conf k) t e b c s He Hb Hr) Hw) as (Hst & es0 & Hes0 & Hcs).
+    unfold we, rank_pt. rewrite (rchan_of_eq _ t e b c He Hb Hr), (rchan_of_eq _ s es b' d Hes Hb' Hr').
+    exact (c_rank W HW Hwf _ (arun_conf k) t e b c s es b' d He Hb Hr Hes Hb' Hr' Hst Hcs).
+  Qed.
+
+  (** An enabled blocked thread stays enabled while it does not step:
+      its partner offers the dual action and cannot step without it. *)
+  Lemma run_pers k t : npend (r k) t → enabled (r k) t → t ∉ l k → enabled (r (S k)) t.
+  Proof.
+    intros Hp Hen HtL. destruct (npend_arun k t Hp) as (e & b & c & He & Hb & Hr & Hna).
+    destruct (Hmax k) as [Hst|(_ & Heq & _)]; [|by rewrite Heq].
+    pose proof (arun_conf k) as Hc. pose proof (arun_conf (S k)) as Hc'.
+    rewrite <-(arun_q k) in Hen, Hst. rewrite <-(arun_q (S k)).
+    destruct Hen as (L0 & q0 & Hst0 & HtL0).
+    destruct (sync_partner _ L0 q0 t e b c Hst0 HtL0 He Hb Hr) as (p & ep & bp & _ & Hpt & Hep & Hbp & Hrp).
+    assert (c ∈ dom (ac_env (arun k) t)) as Hct.
+    { rewrite (c_dom W HW Hwf _ Hc t e He). by eapply (rchan_fchans W HW Hwf _ Hc). }
+    assert (c ∈ dom (ac_env (arun k) p)) as Hcp.
+    { rewrite (c_dom W HW Hwf _ Hc p ep Hep). by eapply (rchan_fchans W HW Hwf _ Hc). }
+    (* no participant of the actual step mentions c *)
+    assert (∀ u eu, u ∈ l k → (ac_q (arun k)).2 !! u = Some eu → c ∉ fchans eu) as Hnm.
+    { intros u eu Hu Heu Hcu. rewrite <-(c_dom W HW Hwf _ Hc u eu Heu) in Hcu.
+      assert (u ≠ t) as Hut by (intros ->; done).
+      destruct (decide (u = p)) as [->|Hup].
+      - destruct (sync_partner _ (l k) (r (S k)) p ep bp c Hst Hu Hep Hbp Hrp)
+          as (u' & eu' & bu' & Hu'L & Hu'p & Heu' & Hbu' & Hru').
+        assert (c ∈ dom (ac_env (arun k) u')) as Hcu'.
+        { rewrite (c_dom W HW Hwf _ Hc u' eu' Heu'). exact (rchan_fchans W HW Hwf _ Hc eu' bu' c Hbu' Hru'). }
+        assert (u' ≠ t) by (intros ->; done).
+        by apply Hu'p, (c_uniq W HW Hwf _ Hc t e u' eu' p ep c).
+      - by apply Hup, (c_uniq W HW Hwf _ Hc t e u eu p ep c). }
+    assert (p ∉ l k) as HpL.
+    { intros HpL. by apply (Hnm p ep HpL Hep), (rchan_fchans W HW Hwf _ Hc ep bp c). }
+    destruct (nonpart_terms _ _ _ Hst) as (g & Hg & Hgc).
+    pose proof (Hgc c Hnm) as Hgc'.
+    pose proof (Hg t e HtL He) as He'. pose proof (Hg p ep HpL Hep) as Hep'.
+    rewrite <-(arun_q (S k)) in He', Hep'.
+    assert (act (emap g e) = Some (amap g b)) as Hb2 by (by rewrite act_emap, Hb).
+    assert (act (emap g ep) = Some (amap g bp)) as Hbp2 by (by rewrite act_emap, Hbp).
+    pose proof (rchan_amap g b c Hr) as Hr2. pose proof (rchan_amap g bp c Hrp) as Hrp2.
+    rewrite Hgc' in Hr2, Hrp2.
+    destruct (c_offered W HW Hwf _ Hc' t _ _ c He' Hb2 Hr2) as (kt & ekt & Hot & Hkt & Ht0 & _).
+    destruct (c_offered W HW Hwf _ Hc' p _ _ c Hep' Hbp2 Hrp2) as (kp & ekp & Hop & Hkp & Hp0 & _).
+    destruct (c_one W HW Hwf _ Hc' t _ _ c He' Hb2 Hr2) as [x Hx].
+    destruct (c_one W HW Hwf _ Hc' p _ _ c Hep' Hbp2 Hrp2) as [y Hy].
+    destruct (entry_one _ c x kt ekt Hx Hkt Ht0) as [-> ->].
+    destruct (entry_one _ c y kp ekp Hy Hkp Hp0) as [-> ->].
+    destruct (c_partner_of W HW Hwf _ Hc' t _ (c, false) x p _ (c, false) y He' Hkt Hep' Hkp)
+      as [_ Hsd]; [done|congruence|].
+    destruct (meet_step W HW Hwf _ Hc' t _ p _ (c, false) (c, false) x y (λ H, Hpt (eq_sym H))
+      He' Hep') as (L & q' & Hst' & HtL' & _); try done.
+    - intros c' d' Hl. rewrite Hb2 in Hl. injection Hl as Hl. rewrite Hl in Hr2. done.
+    - intros c' d' Hl. rewrite Hbp2 in Hl. injection Hl as Hl. rewrite Hl in Hrp2. done.
+    - by exists L, q'.
+  Qed.
+End run.
