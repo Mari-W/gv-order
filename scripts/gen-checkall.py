@@ -59,7 +59,10 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/Fragment.v', 'abp_wf'), ('lockfree/Fragment.v', 'abp_lfsource'),
         ('lockfree/Fragment.v', 'cworld_hold'), ('lockfree/Fragment.v', 'lfsource_lfptyped'),
         ('lockfree/Fragment.v', 'fw_lfsource'), ('lockfree/Fragment.v', 'tc_lfsource'),
-        ('lockfree/Fragment.v', 'rc_lfsource'), ('lockfree/Fragment.v', 'kob_cworld_not_wf')]
+        ('lockfree/Fragment.v', 'rc_lfsource'), ('lockfree/Fragment.v', 'kob_cworld_not_wf'),
+        ('lockfree/LFRelation.v', 'LFPrel_down'), ('lockfree/LFRelation.v', 'LFPrel_fuel'),
+        ('lockfree/LFAdequacy.v', 'lf_adequacy'), ('lockfree/LFAdequacy.v', 'lf_adequacy_ex'),
+        ('lockfree/LFAdequacy.v', 'lf_thread_progress')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):

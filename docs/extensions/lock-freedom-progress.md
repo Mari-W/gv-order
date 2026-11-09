@@ -9,7 +9,7 @@ Updated after every stage and every agent result.
 | 1  Fair semantics, lock_free, local_progress, lf_criterion | done (f99a2bd) | theories/lockfree/Instr.v (istep_erase, preduction_lift, pred_star_lift), Fair.v (wfair, lock_free, lock_free_reach), TauThread.v (thread_acc), LocalProgress.v (local_progress_ready), Criterion.v (lf_criterion) | passes | 0, no axioms | see log: LPrel alone does not give local progress; linearity facts must come from typing; links still channel steps |
 | 2a Link τ costs 0 (relation, guard, liveness proofs, TauThread) | done on the liveness side (31c95da), lockfree widening folded into 2b-core | LiveRelation.v (PALink, LElink, Q-Link), Guard.v (KLink out), LiveGuard.v, LiveBind.v, Internalize, LiveConnect.v (lsteps_link), P-Term | passes | 0, no axioms | thread_acc needs the premise "every link redex has a restricted end" |
 | 2b-core Constant world in the core (base and live relation, typing without KTNewEx, examples retyped) | done (de6e13c..6540027) | Typing.v (created), Fundamental.v (created_world, soundness_created), base and live relation (O-New at a known point, Q-Admin and process τ keep W), TauThread.v (links_restricted) | passes, 255 closed | 0, no axioms | SegmentInterleave not retyped (needs a stronger TreeSum box type, author); paper cites t_new_open and si_deadlock_free |
-| 2b Rank and fuel in the relation (well-founded W, fuel constant N, per-thread invariant) | running with the placement oracle ω (author, 2026-11-09) | none | n/a | n/a | rank needs a placement that is uniform over indices. C1 with a ceiling is in `∃ N, ∀ n, LPrel N n` and not lock free |
+| 2b Rank and fuel in the relation (well-founded W, fuel constant N, per-thread invariant) | done with the placement oracle ω (plan §15) | theories/lockfree/LFRelation.v (oracle, aupd, LFErel, LFconf, LFPrel, LFPrel_down, LFPrel_fuel), LFAdequacy.v (lf_adequacy, lf_adequacy_ex, lf_thread_progress); lf_criterion over npend threads | passes, CheckAll closed | 0, no axioms | the layer is closed-world, stage 3 proves it by typed preservation; or_pick from Prop typings needs computable picks (plan §15.7); controller not done |
 | 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | done (4d74f15, merge into lock-freedom after 2a) | theories/lockfree/Fragment.v: lfptyped, lfsource, fw_lfptyped, tc_lfptyped, sch_lfsource, kob/c1/c3 rejections, tsum_r1_fails | passes, 267 closed | 0, no axioms | Rank on W catches chains only under the constant world; R4′ needs a typing annotation |
 | 3  Fundamental theorem, lf_soundness, thread_progress, examples | thread_progress and lock_free_reach_of done (lf-fuel, type-free), the rest waits on plan §14 | ThreadProgress.v (thread_progress, thread_progress_val, stopped_forever), Reach.v (lock_free_reach_of) | passes | 0, no axioms | converse of lock_free_reach_of fails untyped; typed case open |
 | 3c Coverage of the literature (plan §12) | done (cc300ce on lf-rules) | Fragment.v (lf_r2r, starve_not_lfptyped, rc_lfptyped, abp_lfsource, rg_lfsource, wgen_rank_wf), examples/ABP.v, examples/GrowRing.v | passes | 0, no axioms | none. The ring gap is closed | | | | author's acceptance criterion |
@@ -135,6 +135,23 @@ Updated after every stage and every agent result.
   builds a fair run with a computable round-robin scheduler. The converse
   fails untyped (a race of two senders on a free channel). For typed
   processes it is open. Both constructive, no axiom.
+
+- 2026-11-09. Stage 2b done with the oracle (plan §15). `LFPrel N ω n` is
+  the live relation plus a layer over annotated runs. ω gives the starting
+  environments, the point and types at new, and the entries a spawn or a
+  send hands over. The splits are a real choice, because Close/Close ends
+  differ only in their point. `aupd` computes every successor annotation,
+  so the annotation is the same at every index, and every reachable
+  annotated configuration satisfies `LFconf n` (live term relation per
+  thread, linearity, pairing, at most two entries per channel, a counter at
+  0 forces an action on its channel). `lf_adequacy` gives lock freedom in a
+  well-founded world, `lf_thread_progress` individual progress. Both are
+  closed under the global context. `lf_criterion` now asks its clauses of
+  `npend` threads only and local progress at run positions, and
+  `local_progress_ready` lets meeting offers enable either side. C1 with a
+  ceiling is rejected on paper (§15.6). Stage 3 must prove the layer by
+  preservation from typing, and `or_pick` needs picks computable from the
+  term, or the relational form of §14.3 option 2 (§15.7).
 
 ## Decisions
 
