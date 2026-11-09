@@ -12,7 +12,7 @@ Set Default Proof Using "All".
 
 (** [sync_main] with c bound by the encoded let of new. *)
 Definition sync_main_ex : expr :=
-  let_new_pair
+  let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn sync_thunk)
       (LetP (App ERecv (Var 0)) (LetU (Var 1) (App EClos (Var 0))))).
 
