@@ -15,7 +15,7 @@ Set Default Proof Using "All".
 (** [sched_main] with r₂ bound by the encoded let of new (sharp
     edges 99). *)
 Definition sched_main_ex : expr :=
-  let_new_pair (let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn ag1_thunk) (LetU (App ESpawn ag2_thunk) ag0)))).
 
 Lemma sched_typed_fresh : styped ∅ sched_Ψ [] (∅, None) sched_main_ex TUnit.

@@ -18,7 +18,7 @@ Set Default Proof Using "All".
 (** [rr_main] with b bound by the encoded let of new (sharp edges
     99). *)
 Definition rr_main_ex : expr :=
-  LetP (Pair srv cli) (let_new_pair (let_new_pair
+  LetP (Pair srv cli) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 

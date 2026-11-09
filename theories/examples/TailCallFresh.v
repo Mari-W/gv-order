@@ -13,7 +13,7 @@ Set Default Proof Using "All".
 
 (** [tc_main] with c bound by the encoded let of new. *)
 Definition tc_main_ex : expr :=
-  LetP (Pair tcs tcr) (let_new_pair
+  LetP (Pair tcs tcr) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 

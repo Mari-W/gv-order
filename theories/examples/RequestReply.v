@@ -53,7 +53,7 @@ Definition cli : expr :=
       (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 8)) (Pair (Var 4) (Var 1)))))))))))).
 
 Definition rr_main : expr :=
-  LetP (Pair srv cli) (let_new_pair (let_new_pair
+  LetP (Pair srv cli) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 6)) (Pair (Var 4) (Var 2))))))
       (App (App EForce (Var 4)) (Pair (Var 2) (Var 0)))))).
 
@@ -142,17 +142,16 @@ Qed.
 Definition rrf_facts (g : fact) : Prop :=
   ∃ k, g = FLt (pv 1 k) (pt_dual (pv 0 k)) ∨ g = FLt (pv 0 k) (pt_dual (pv 1 (S k))) ∨
        g = FLt (pt_dual (pv 1 k)) (pv 0 k) ∨ g = FLt (pt_dual (pv 0 k)) (pv 1 (S k)).
-Definition rrf_C : bcs := BCs [pvar 0] rrf_facts.
+Definition rrf_C : bcs := BCs [pconst 1] rrf_facts.
 
 Definition rr_Ψ : hyps :=
-  hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) ccd_C, ids 1)]) ++
-    [(bcs_inst (pshift 1) rrf_C, ids 1)].
+  ([] ++ [(ccd_C, [pconst 1])]) ++ [(rrf_C, [pconst 0])].
 
 Lemma rr_created : created (Wpo []) rr_Ψ.
 Proof.
   pose proof (proj1 Wpo_nil_strict') as HW.
-  refine (created_fresh (Wpo []) _ rrf_C _ _ _ _).
-  { apply created_snoc; [constructor|apply ccd_ok|constructor]. }
+  refine (created_fresh (Wpo []) _ rrf_C 0 _ _ _ _ _); [|fresh_const].
+  { apply created_snoc; [constructor|apply ccd_ok|constructor|fresh_const]. }
   { intros f [k [-> | [-> | [-> | ->]]]] Hs.
     - left. eexists _, _. split; [done|]. split_and!; [exists k; by left|done|done|done].
     - right. eexists _, _. split; [done|]. split_and!; [exists k; by right; left|done|done|done].
@@ -169,54 +168,54 @@ Qed.
 Lemma rr_typed : styped ∅ rr_Ψ [] (∅, None) rr_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold rr_main, rr_Ψ.
+  set (W := Wpo []) in *. unfold rr_main, let_new_pair_at, rr_Ψ.
   tstep.
   { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply cli_typed, HW|apply srv_typed, HW]. }
   cbn.
-  new_top HWs Sa (pvar 1). new_top HWs Sb (pvar 0).
+  new_top HWs Sa (pconst 1). new_top HWs Sb (pconst 0).
   fresh_clean.
-  set (Ψ := [(ccd_C, [pvar 1]); (bcs_inst (pshift 1) rrf_C, [pvar 0])]).
-  assert (slt W Ψ (pvar 1) (pt_dual (pvar 1))) as Hcc by (apply slt_ccd; by left).
-  assert (∀ k, slt W Ψ (pv 1 k) (pt_dual (pv 0 k))) as Hlo.
-  { intros k. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) rrf_C) (pvar 0) (pv 1 k) (pt_dual (pv 0 k)));
+  set (Ψ := [(ccd_C, [pconst 1]); (rrf_C, [pconst 0])]).
+  assert (slt W Ψ (pconst 1) (pt_dual (pconst 1))) as Hcc by (apply slt_ccd; by left).
+  assert (∀ k, slt W Ψ (pc 1 k) (pt_dual (pc 0 k))) as Hlo.
+  { intros k. apply (slt_hyp_fresh W Ψ rrf_C (pconst 0) (pv 1 k) (pt_dual (pv 0 k)));
       [by right; left|exists k; by left|cbn; lia]. }
-  assert (∀ k, slt W Ψ (pv 0 k) (pt_dual (pv 1 (S k)))) as Hhi.
-  { intros k. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) rrf_C) (pvar 0) (pv 0 k) (pt_dual (pv 1 (S k))));
+  assert (∀ k, slt W Ψ (pc 0 k) (pt_dual (pc 1 (S k)))) as Hhi.
+  { intros k. apply (slt_hyp_fresh W Ψ rrf_C (pconst 0) (pv 0 k) (pt_dual (pv 1 (S k))));
       [by right; left|exists k; by right; left|cbn; lia]. }
-  assert (∀ k, slt W Ψ (pt_dual (pv 1 k)) (pv 0 k)) as Hlo'.
-  { intros k. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) rrf_C) (pvar 0) (pt_dual (pv 1 k)) (pv 0 k));
+  assert (∀ k, slt W Ψ (pt_dual (pc 1 k)) (pc 0 k)) as Hlo'.
+  { intros k. apply (slt_hyp_fresh W Ψ rrf_C (pconst 0) (pt_dual (pv 1 k)) (pv 0 k));
       [by right; left|exists k; by right; right; left|cbn; lia]. }
-  assert (∀ k, slt W Ψ (pt_dual (pv 0 k)) (pv 1 (S k))) as Hhi'.
-  { intros k. apply (slt_hyp_fresh W Ψ (bcs_inst (pshift 1) rrf_C) (pvar 0) (pt_dual (pv 0 k)) (pv 1 (S k)));
+  assert (∀ k, slt W Ψ (pt_dual (pc 0 k)) (pc 1 (S k))) as Hhi'.
+  { intros k. apply (slt_hyp_fresh W Ψ rrf_C (pconst 0) (pt_dual (pv 0 k)) (pv 1 (S k)));
       [by right; left|exists k; by right; right; right|cbn; lia]. }
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) rq_C [pvar 1; pvar 0]) as HC.
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) rq_C [pconst 1; pconst 0]) as HC.
   { apply bcs_hold_intro. intros g (k & [-> | ->]) _; cbn; [apply Hlo|apply Hhi]. }
-  assert (bcs_hold (seqs W Ψ) (slt W Ψ) rq_C [pt_dual (pvar 1); pt_dual (pvar 0)]) as HC'.
+  assert (bcs_hold (seqs W Ψ) (slt W Ψ) rq_C [pt_dual (pconst 1); pt_dual (pconst 0)]) as HC'.
   { apply bcs_hold_intro. intros g (k & [-> | ->]) _; cbn; [exact (Hlo' k)|exact (Hhi' k)]. }
-  assert (Forall (skn W Ψ) [pvar 1; pvar 0]) as HK.
+  assert (Forall (skn W Ψ) [pconst 1; pconst 0]) as HK.
   { constructor; [eapply skn_inst; [by left|by left|done]|].
     constructor; [eapply skn_inst; [by right; left|by left|done]|constructor]. }
-  assert (Forall (skn W Ψ) [pt_dual (pvar 1); pt_dual (pvar 0)]) as HK'.
+  assert (Forall (skn W Ψ) [pt_dual (pconst 1); pt_dual (pconst 0)]) as HK'.
   { constructor; [eapply skn_inst; [by left|by left|done]|].
     constructor; [eapply skn_inst; [by right; left|by left|done]|constructor]. }
   match goal with |- typed _ _ _ _ [Some ?A; Some ?B; None; None; Some ?A'; Some ?B'; None; None; Some ?D; Some ?E] _ _ _ =>
-    change A with (TSess (dual Sb) (pt_dual (pvar 0))); change B with (TSess Sb (pvar 0));
-    change A' with (TSess (dual Sa) (pt_dual (pvar 1))); change B' with (TSess Sa (pvar 1));
+    change A with (TSess (dual Sb) (pt_dual (pconst 0))); change B with (TSess Sb (pconst 0));
+    change A' with (TSess (dual Sa) (pt_dual (pconst 1))); change B' with (TSess Sa (pconst 1));
     change D with (TBox 2 0 rq_C (TLolli None None TUnit cli_body));
     change E with (TBox 2 0 rq_C (TLolli None None TUnit srv_body)) end.
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 1))) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 1))) (Some (pconst 1)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy; first [right; exact Hcc|right; apply (Hlo 0)]. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None srv_body [pvar 1; pvar 0]);
+    - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None srv_body [pconst 1; pconst 0]);
         [done|done|exact HC|exact HK|apply ubs_none|tstep].
     - tstep; tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW. }
+      exists (pt_dual (pc 0 1)). split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None cli_body [pt_dual (pvar 1); pt_dual (pvar 0)]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 rq_C None cli_body [pt_dual (pconst 1); pt_dual (pconst 0)]);
       [done|done|exact HC'|exact HK'|apply ubs_none|tstep].
   - tstep; tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].

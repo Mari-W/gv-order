@@ -37,7 +37,7 @@ Definition tcr : expr :=
   EBox (Lam (LetP (App ERecv (Var 0)) (LetU (Var 1) (App (App EForce (Var 3)) (Var 0))))).
 
 Definition tc_main : expr :=
-  LetP (Pair tcs tcr) (let_new_pair
+  LetP (Pair tcs tcr) (let_new_pair_at (EPt (pconst 0))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App (App EForce (Var 3)) (Var 1)))))
       (App (App EForce (Var 3)) (Var 1)))).
 
@@ -115,44 +115,47 @@ Proof.
   - intros [n pb o] _. unfold lexlt, tcc_rank, pt_shift, pt_dual. simpl. right. split; [done|lia].
 Qed.
 
-Definition tc_Ψ : hyps := hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) tcc_C, ids 1)].
+Definition tc_Ψ : hyps := [] ++ [(tcc_C, [pconst 0])].
+
+(** The ceiling at the constant of c. *)
+Abbreviation tczc := (Pt (NPayload (NConst 0) 0 0) 0).
 
 Lemma tc_created : created (Wpo []) tc_Ψ.
-Proof. apply created_snoc; [constructor|apply tcc_ok|constructor]. Qed.
+Proof. apply created_snoc; [constructor|apply tcc_ok|constructor|fresh_const]. Qed.
 
 Lemma tc_typed : styped ∅ tc_Ψ [] (∅, None) tc_main TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tc_main, tc_Ψ.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold tc_main, let_new_pair_at, tc_Ψ.
   tstep.
   { tstep; (apply typed_hyps_nil; [exact HWs|]); [apply tcr_typed, HW|apply tcs_typed, HW]. }
-  cbn. new_top HWs Sb (pvar 0).
+  cbn. new_top HWs Sb (pconst 0).
   fresh_clean.
-  set (Ψ := [(tcc_C, [pvar 0])]).
-  assert (∀ b, bcs_hold (seqs W Ψ) (slt W Ψ) tc_C [pt_polar b (pvar 0); tcz]) as HC.
+  set (Ψ := [(tcc_C, [pconst 0])]).
+  assert (∀ b, bcs_hold (seqs W Ψ) (slt W Ψ) tc_C [pt_polar b (pconst 0); tczc]) as HC.
   { intros b. apply bcs_hold_intro. intros g (k & ->) _. cbn.
     eapply (sl_hyp0 _ _ _ _ (pt_polar b (pv 0 k)) tcz);
       [by left|by exists k, b|destruct b; cbn; lia|destruct b; reflexivity|reflexivity]. }
-  assert (∀ b, Forall (skn W Ψ) [pt_polar b (pvar 0); tcz]) as HK.
+  assert (∀ b, Forall (skn W Ψ) [pt_polar b (pconst 0); tczc]) as HK.
   { intros b. constructor; [eapply skn_inst; [by left|by left|by destruct b]|].
     constructor; [eapply skn_inst; [by left|by left|done]|constructor]. }
   match goal with |- typed _ _ _ _ [Some ?A; _; None; None; Some ?B; Some ?D] _ _ _ =>
-    change A with (TSess (dual Sb) (pt_dual (pvar 0)));
+    change A with (TSess (dual Sb) (pt_dual (pconst 0)));
     change B with (TBox 2 0 tc_C (TLolli None None TUnit tcr_body));
     change D with (TBox 2 0 tc_C (TLolli None None TUnit tcs_body)) end.
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some tcz) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some tczc) (Some (pconst 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn.
     eapply tv_app; [exact HW|reflexivity| | |].
-    - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcr_body [pt_dual (pvar 0); tcz]);
+    - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcr_body [pt_dual (pconst 0); tczc]);
         [done|done|exact (HC false)|exact (HK false)|apply ubs_none|tstep].
     - tstep.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists tcz. split; [done|]. apply sle_refl, HW. }
+      exists tczc. split; [done|]. apply sle_refl, HW. }
   cbn. eapply tv_app; [exact HW|reflexivity| | |].
-  - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcs_body [pvar 0; tcz]);
+  - apply (typed_force0 W _ _ _ _ _ _ 2 tc_C None tcs_body [pconst 0; tczc]);
       [done|done|exact (HC true)|exact (HK true)|apply ubs_none|tstep].
   - tstep.
   - apply ubs_intro; [intros y Hy; mem_cases Hy|done].
