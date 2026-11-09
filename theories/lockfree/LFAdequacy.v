@@ -311,3 +311,73 @@ Proof.
       by rewrite Hys2, Hdx, pt_dual_dual.
     + rewrite !lookup_delete_ne; [done| |]; intros [=]; congruence.
 Qed.
+
+(** ** An enabled pending thread stays enabled while it does not step *)
+
+(** Two threads ready to synchronize on the end o of t and its partner. *)
+Definition synced (q : config) (t p : nat) (o : cend) : Prop :=
+  ∃ e f, q.2 !! t = Some e ∧ q.2 !! p = Some f ∧ t ≠ p ∧
+    ((∃ v e' f', tstep e (LSess (SSend o v)) e' ∧ tstep f (LSess (SRecv (cdual o) v)) f') ∨
+     (∃ v e' f', tstep f (LSess (SSend (cdual o) v)) f' ∧ tstep e (LSess (SRecv o v)) e') ∨
+     (∃ e' f', tstep e (LSess (SClos o)) e' ∧ tstep f (LSess (SClos (cdual o))) f' ∧ o.1 ∈ q.1) ∨
+     (∃ b e' f', tstep e (LSess (SSel o b)) e' ∧ tstep f (LSess (SBra (cdual o) b)) f') ∨
+     (∃ b e' f', tstep f (LSess (SSel (cdual o) b)) f' ∧ tstep e (LSess (SBra o b)) e')).
+
+Lemma synced_enabled q t p o : synced q t p o → enabled q t.
+Proof.
+  destruct q as [C M]. destruct o as [c β]. unfold cdual. simpl.
+  intros (e & f & He & Hf & Htp & H).
+  destruct H as [(v & e' & f' & H1 & H2)|[(v & e' & f' & H1 & H2)|[(e' & f' & H1 & H2 & HC)
+    |[(b & e' & f' & H1 & H2)|(b & e' & f' & H1 & H2)]]]].
+  - eexists _, _. split; [by eapply (IMsg C M t p c β v e e' f f')|set_solver].
+  - eexists _, _. split; [eapply (IMsg C M p t c (negb β) v f f' e e'); [done|done|done|done|]|set_solver].
+    by rewrite negb_involutive.
+  - eexists _, _. split; [by eapply (IClose C M t p c β e e' f f')|set_solver].
+  - eexists _, _. split; [by eapply (IChoice C M t p c β b e e' f f')|set_solver].
+  - eexists _, _. split; [eapply (IChoice C M p t c (negb β) b f f' e e'); [done|done|done|done|]|set_solver].
+    by rewrite negb_involutive.
+Qed.
+
+Lemma admin_lbl_offers a α o : offers a α → admin_lbl α → aend1 a = Some o → False.
+Proof. destruct a, α; simpl; try done; destruct σ; simpl; try done; intros; done. Qed.
+
+Lemma enabled_synced q t e a o :
+  q.2 !! t = Some e → act e = Some a → aend1 a = Some o → enabled q t →
+  ∃ p f, synced q t p o ∧ q.2 !! p = Some f ∧ cdual o ∈ fends f.
+Proof.
+  intros He Ha Ho (L & q' & Hst & HtL). destruct q as [C M]. simpl in He.
+  assert (Hlbl : ∀ α e', tstep e α e' → offers a α) by
+    (intros α e' Hs; destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoa); congruence).
+  inversion Hst as [C0 M0 i ei ei' Hi Hs|C0 M0 i ei c x ei' Hi Hs HC Hcs|C0 M0 i j ei v ei' Hi Hs Hj
+    |C0 M0 i j c b v ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i j c b ei ei' f f' Hij Hi Hj He0 Hf HC
+    |C0 M0 i j c β b ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i ei c bc d bd ei' Hi Hs HC]; subst;
+    try (apply elem_of_singleton in HtL as ->; rewrite He in Hi; injection Hi as <-;
+         exfalso; eapply admin_lbl_offers; [by apply (Hlbl _ _ Hs)|done|exact Ho]).
+  all: apply elem_of_union in HtL as [HtL|HtL]; apply elem_of_singleton in HtL as ->.
+  all: try (rewrite He in Hi; injection Hi as <-).
+  all: try (rewrite He in Hj; injection Hj as <-).
+  - pose proof (Hlbl _ _ He0) as Hoa. apply offers_send in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists j, f. split_and!; [|done|apply (tstep_end_fends _ _ _ _ Hf eq_refl)].
+    exists e, f. split_and!; [done|done|done|]. left. by eexists _, _, _.
+  - pose proof (Hlbl _ _ Hf) as Hoa. apply offers_recv in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists i, ei. split_and!; [| done |].
+    + exists e, ei. split_and!; [done|done|by apply not_eq_sym|]. right; left.
+      eexists _, _, _. unfold cdual. simpl. rewrite negb_involutive. split; [exact He0|exact Hf].
+    + unfold cdual. simpl. rewrite negb_involutive. apply (tstep_end_fends _ _ _ _ He0 eq_refl).
+  - pose proof (Hlbl _ _ He0) as Hoa. apply offers_clos in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists j, f. split_and!; [|done|apply (tstep_end_fends _ _ _ _ Hf eq_refl)].
+    exists e, f. split_and!; [done|done|done|]. right; right; left. by eexists _, _.
+  - pose proof (Hlbl _ _ Hf) as Hoa. apply offers_clos in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists i, ei. split_and!; [| done |].
+    + exists e, ei. split_and!; [done|done|by apply not_eq_sym|]. right; right; left.
+      eexists _, _. unfold cdual. simpl. rewrite negb_involutive. split_and!; [exact Hf|exact He0|done].
+    + unfold cdual. simpl. rewrite negb_involutive. apply (tstep_end_fends _ _ _ _ He0 eq_refl).
+  - pose proof (Hlbl _ _ He0) as Hoa. apply offers_sel in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists j, f. split_and!; [|done|apply (tstep_end_fends _ _ _ _ Hf eq_refl)].
+    exists e, f. split_and!; [done|done|done|]. right; right; right; left. by eexists _, _, _.
+  - pose proof (Hlbl _ _ Hf) as Hoa. apply offers_bra in Hoa as ->. simpl in Ho. injection Ho as <-.
+    exists i, ei. split_and!; [| done |].
+    + exists e, ei. split_and!; [done|done|by apply not_eq_sym|]. right; right; right; right.
+      eexists _, _, _. unfold cdual. simpl. rewrite negb_involutive. split; [exact He0|exact Hf].
+    + unfold cdual. simpl. rewrite negb_involutive. apply (tstep_end_fends _ _ _ _ He0 eq_refl).
+Qed.
