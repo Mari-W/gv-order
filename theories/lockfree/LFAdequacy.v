@@ -646,3 +646,37 @@ Proof.
     destruct Hw as (_ & ex & Hex & Hxo).
     assert (x = s) as -> by (by apply (s_uniq n W HW T π q A U Hc x s ex es (cdual o))). by apply Had.
 Qed.
+
+(** The goal of a step for the counter of t's partner, given the
+    partner end o' of t after the step. *)
+Definition fgoal (q q' : config) (F' : nat → gmap cend fuel) (L : gset nat) (t : nat)
+    (o' : cend) (s : nat) (m : nat) : Prop :=
+  ∃ s' es', q'.2 !! s' = Some es' ∧ s' ≠ t ∧ cdual o' ∈ fends es' ∧
+    (fval F' s' (cdual o') < m ∨ (fval F' s' (cdual o') = m ∧ s' = s ∧ (s ∈ L → admin_at q s))).
+
+(** The partner holder after the step, when it is still s. *)
+Lemma fgoal_same (n' : nat) (W : world) (HW : strict W) (T : ty) (π' : gmap cend point) (q' : config)
+    (A' : nat → tenv) (U' : nat → ty) (F' : nat → gmap cend fuel) (q : config) (L : gset nat) (t : nat)
+    (e2 : expr) (a : action) (o : cend) (s : nat) (es2 : expr) (m : nat) :
+  LFconf (S n') W ∅ T π' q' A' U' → q'.2 !! t = Some e2 → act e2 = Some a → aend1 a = Some o →
+  q'.2 !! s = Some es2 → s ≠ t → cdual o ∈ fends es2 →
+  fval F' s (cdual o) = m → (s ∈ L → admin_at q s) → fgoal q q' F' L t o s m.
+Proof. intros Hc' He2 Ha Ho Hs Hst Hso Hv Had. exists s, es2. split_and!; try done. right. done. Qed.
+
+(** A bound by the cap of the new holder. *)
+Lemma fgoal_cap (n' : nat) (W : world) (HW : strict W) (T : ty) (π' : gmap cend point) (q' : config)
+    (A' : nat → tenv) (U' : nat → ty) (P' : nat → gmap cend point) (F' : nat → gmap cend fuel)
+    (q : config) (L : gset nat) (t : nat) (e2 : expr) (a : action) (o : cend) (s m m' : nat) :
+  LFconf (S n') W ∅ T π' q' A' U' → lf_fuelc (S n') W π' P' F' q' →
+  q'.2 !! t = Some e2 → act e2 = Some a → aend1 a = Some o →
+  (∀ k, π' !! cdual o = Some k → w_bud W k = Some m') → m' < m → fgoal q q' F' L t o s m.
+Proof.
+  intros Hc' HF' He2 Ha Ho Hb Hlt.
+  destruct (s_partner n' W HW T π' q' A' U' Hc' t e2 a o He2 Ha Ho) as (s' & es' & Hst' & Hes' & Hso').
+  exists s', es'. split_and!; [done|done|done|]. left.
+  destruct (HF' s' es' Hes') as (H1 & H2 & H3 & H4).
+  assert (is_Some (F' s' !! cdual o)) as [f Hf] by (apply elem_of_dom; by rewrite H3).
+  destruct (fuel_cap n' W (P' s') (F' s') es' H1 (cdual o) f Hf) as (k & Hk & Hle).
+  rewrite H4 in Hk by done. rewrite (Hb k Hk) in Hle. unfold fval. rewrite Hf.
+  destruct f as [m''|]; simpl in Hle; [lia|done].
+Qed.
