@@ -208,3 +208,106 @@ Proof.
   intros He He'. unfold rend. rewrite He, He', act_emap.
   destruct (act e) as [a|]; [|done]. simpl. by destruct a.
 Qed.
+
+Lemma tstep_end_fends e σ e' o : tstep e (LSess σ) e' → sl_end σ = Some o → o ∈ fends e.
+Proof.
+  intros Hst Ho. destruct (act_step _ _ _ Hst) as (a & Ha & Hoa).
+  assert (aend1 a = Some o) as Ha1.
+  { destruct a, σ; simpl in *; try done; destruct_and?; simplify_eq; done. }
+  apply (act_aends_fends e a _ Ha (aend1_aends a o Ha1)). set_solver.
+Qed.
+
+Lemma rend_some q t o :
+  rend q t = Some o → ∃ e a, q.2 !! t = Some e ∧ act e = Some a ∧ aend1 a = Some o.
+Proof.
+  unfold rend. destruct (q.2 !! t) as [e|] eqn:He; [|done]. destruct (act e) as [a|] eqn:Ha; [|done].
+  intros H. by exists e, a.
+Qed.
+
+(** ** A thread that does not step keeps the point of its end *)
+Lemma stab_step n W T π q A U L q' t o :
+  strict W → LFconf (S (S n)) W ∅ T π q A U → istep q L q' → t ∉ L → rend q t = Some o →
+  ∃ o', rend q' t = Some o' ∧ pupd π q L q' !! o' = π !! o.
+Proof.
+  intros HW Hc Hst Ht Ho. destruct q as [C M].
+  destruct (rend_some _ _ _ Ho) as (e & a & He & Ha & Ha1). simpl in He.
+  pose proof (act_aends_fends e a _ Ha (aend1_aends a o Ha1) o ltac:(set_solver)) as Hoe.
+  (* the channel of a synchronization between i and j is not t's *)
+  assert (Hsync : ∀ i j ei ej σi σj ei' ej' c b,
+            i ≠ t → j ≠ t → M !! i = Some ei → M !! j = Some ej →
+            tstep ei (LSess σi) ei' → sl_end σi = Some (c, b) →
+            tstep ej (LSess σj) ej' → sl_end σj = Some (c, negb b) → o.1 ≠ c).
+  { intros i j ei ej σi σj ei' ej' c b Hit Hjt Hi Hj Hsi Hei Hsj Hej Hoc.
+    pose proof (tstep_end_fends _ _ _ _ Hsi Hei) as H1. pose proof (tstep_end_fends _ _ _ _ Hsj Hej) as H2.
+    apply (st_cowner n W HW T π C M A U Hc i j ei ej c b t e Hi Hj H1 H2 (not_eq_sym Hit) (not_eq_sym Hjt) He).
+    rewrite <-Hoc. by apply fchans_of_fends. }
+  inversion Hst as [C0 M0 i ei ei' Hi Hs|C0 M0 i ei c x ei' Hi Hs HC Hcs|C0 M0 i j ei v ei' Hi Hs Hj
+    |C0 M0 i j c b v ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i j c b ei ei' f f' Hij Hi Hj He0 Hf HC
+    |C0 M0 i j c β b ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i ei c bc d bd ei' Hi Hs HC]; subst; simpl in Ht.
+  - exists o. unfold rend. simpl. rewrite lookup_insert_ne by set_solver. rewrite He, Ha. split; [done|].
+    unfold pupd. rewrite pev_of_single. simpl. rewrite Hi. unfold pev1.
+    destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho'). rewrite Ha'. by apply offers_beta in Ho' as ->.
+  - exists o. unfold rend. simpl. rewrite lookup_insert_ne by set_solver. rewrite He, Ha. split; [done|].
+    unfold pupd. rewrite pev_of_single. simpl. rewrite Hi. unfold pev1.
+    destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho'). rewrite Ha'. apply offers_new in Ho' as ->. simpl.
+    assert ((C ∪ {[c]}) ∖ C = {[c]}) as -> by (clear -HC; set_solver). rewrite elements_singleton. simpl.
+    assert (o.1 ≠ c) as Hoc.
+    { intros Heq. apply (st_fresh_mention n W HW T π C M A U Hc c t e Hcs He). rewrite <-Heq.
+      by apply fchans_of_fends. }
+    rewrite !lookup_insert_ne; [done| |]; intros Heq; subst o; simpl in Hoc; congruence.
+  - exists o. unfold rend. simpl. assert (t ≠ j) by (intros ->; congruence).
+    rewrite !lookup_insert_ne by set_solver. rewrite He, Ha. split; [done|].
+    unfold pupd. rewrite pev_of_single. simpl. rewrite Hi. unfold pev1.
+    destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho'). rewrite Ha'. by apply offers_spawn in Ho' as ->.
+  - exists o. unfold rend. simpl. rewrite !lookup_insert_ne by set_solver. rewrite He, Ha. split; [done|].
+    pose proof (Hsync i j _ _ _ _ _ _ c b ltac:(set_solver) ltac:(set_solver) Hi Hj He0 eq_refl Hf eq_refl) as Hoc.
+    unfold pupd. destruct (act_step _ _ _ He0) as (a1 & Ha1' & Ho1). apply offers_send in Ho1 as ->.
+    destruct (act_step _ _ _ Hf) as (a2 & Ha2 & Ho2). apply offers_recv in Ho2 as ->.
+    destruct (pev_of_pair (C, M) (C, <[j:=f']> (<[i:=ei']> M)) i j ei f Hij Hi Hj) as [-> | ->];
+      unfold pev2; rewrite ?Ha1', ?Ha2; simpl; rewrite !lookup_alter_ne; try done; intros Heq; subst o; simpl in Hoc; congruence.
+  - exists o. unfold rend. simpl. rewrite !lookup_insert_ne by set_solver. rewrite He, Ha. split; [done|].
+    pose proof (Hsync i j _ _ _ _ _ _ c b ltac:(set_solver) ltac:(set_solver) Hi Hj He0 eq_refl Hf eq_refl) as Hoc.
+    unfold pupd. destruct (act_step _ _ _ He0) as (a1 & Ha1' & Ho1). apply offers_clos in Ho1 as ->.
+    destruct (act_step _ _ _ Hf) as (a2 & Ha2 & Ho2). apply offers_clos in Ho2 as ->.
+    destruct (pev_of_pair (C, M) (C ∖ {[c]}, <[j:=f']> (<[i:=ei']> M)) i j ei f Hij Hi Hj) as [-> | ->];
+      unfold pev2; rewrite ?Ha1', ?Ha2; simpl; rewrite !lookup_delete_ne; try done; intros Heq; subst o; simpl in Hoc; congruence.
+  - exists o. unfold rend. simpl. rewrite !lookup_insert_ne by set_solver. rewrite He, Ha. split; [done|].
+    pose proof (Hsync i j _ _ _ _ _ _ c β ltac:(set_solver) ltac:(set_solver) Hi Hj He0 eq_refl Hf eq_refl) as Hoc.
+    unfold pupd. destruct (act_step _ _ _ He0) as (a1 & Ha1' & Ho1). apply offers_sel in Ho1 as ->.
+    destruct (act_step _ _ _ Hf) as (a2 & Ha2 & Ho2). apply offers_bra in Ho2 as ->.
+    assert (pev_of (C, M) {[i; j]} (C, <[j:=f']> (<[i:=ei']> M)) = PChoice (c, β) b) as ->.
+    { destruct (pev_of_pair (C, M) (C, <[j:=f']> (<[i:=ei']> M)) i j ei f Hij Hi Hj) as [-> | ->];
+        unfold pev2; by rewrite ?Ha1', ?Ha2. }
+    simpl. destruct (π !! (c, β)); [|done]. rewrite !lookup_insert_ne; try done; intros Heq; subst o; simpl in Hoc; congruence.
+  - (* link *)
+    assert (t ≠ i) as Hti by set_solver.
+    assert (rend (C ∖ {[c]}, chsubst c d <$> <[i:=ei']> M) t = Some (Instr.csub c d o.1, o.2)) as Hr'.
+    { rewrite (rend_emap (C, M) _ t e (Instr.csub c d) He); [by rewrite Ho|].
+      simpl. rewrite lookup_fmap, lookup_insert_ne, He by done. simpl. by rewrite chsubst_emap. }
+    exists (Instr.csub c d o.1, o.2). split; [done|].
+    assert (pupd π (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i:=ei']> M) =
+            delete (c, true) (delete (c, false) π)) as ->.
+    { unfold pupd. rewrite pev_of_single. simpl. rewrite Hi. unfold pev1.
+      destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho'). rewrite Ha'. apply offers_link in Ho' as (o1 & o2 & -> & _).
+      simpl. assert (C ∖ (C ∖ {[c]}) = {[c]}) as ->.
+      { apply set_eq. intros y. destruct (decide (y = c)) as [->|Hy]; [clear -HC|clear -HC Hy]; set_solver. }
+      by rewrite elements_singleton. }
+    destruct (st_link_data n W HW T π C M A U Hc i ei c bc d bd ei' Hi Hs)
+      as (Θ1 & xc & xd & Hne & Hxc & Hxd & Hdx & _ & _ & _ & _ & _ & _).
+    pose proof (tenv_end_pol _ _ _ Hxc) as Hpc. pose proof (tenv_end_pol _ _ _ Hxd) as Hpd. simpl in Hpc, Hpd.
+    assert (bd = negb bc) as Hbd by (rewrite <-Hpc, <-Hpd, Hdx, pt_pol_dual; by destruct (pt_pol xd.2)).
+    pose proof (st_held n W HW T π C M A U Hc i ei _ _ Hi Hxc) as Hci.
+    pose proof (st_held n W HW T π C M A U Hc i ei _ _ Hi Hxd) as Hdi.
+    pose proof (st_disj n W HW T π C M A U Hc t i e ei Hti He Hi) as Hd0.
+    destruct o as [c0 b0]. unfold Instr.csub. simpl. destruct (decide (c0 = c)) as [->|Hc0].
+    + assert (b0 = negb bc) as ->.
+      { destruct (decide (b0 = bc)) as [->|Hb]; [by destruct (Hd0 (c, bc))|]. by destruct b0, bc. }
+      destruct (decide (c = d)) as [<-|Hcd].
+      { exfalso. rewrite Hbd in Hdi. by apply (Hd0 (c, negb bc)). }
+      rewrite !lookup_delete_ne by (intros [=]; congruence).
+      destruct (lfc_partner _ _ _ _ _ _ _ Hc i ei _ _ Hi Hxc) as (s & gs & ys & Hgs & Hys & Hys2 & _).
+      change (c, negb bc) with (cdual (c, bc)).
+      rewrite (lf_pt _ _ _ _ _ _ _ _ Hc s gs _ _ Hgs Hys), <-Hbd, (lf_pt _ _ _ _ _ _ _ _ Hc i ei _ _ Hi Hxd).
+      by rewrite Hys2, Hdx, pt_dual_dual.
+    + rewrite !lookup_delete_ne; [done| |]; intros [=]; congruence.
+Qed.
