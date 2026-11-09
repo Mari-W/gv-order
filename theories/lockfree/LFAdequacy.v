@@ -491,3 +491,180 @@ Definition rank_pt (a : aconf) (t : nat) : point :=
 Lemma rchan_of_eq a t e b c :
   (ac_q a).2 !! t = Some e → act e = Some b → rchan b = Some c → rchan_of a t = Some c.
 Proof. intros He Hb Hr. unfold rchan_of. by rewrite He, Hb. Qed.
+
+(** ** What an update does, step by step *)
+
+Lemma pick1_singleton i : pick1 {[i]} = Some i.
+Proof. unfold pick1. by rewrite elements_singleton. Qed.
+
+Lemma elements_pair (i j : nat) : i ≠ j → elements ({[i; j]} : gset nat) = [i; j] ∨ elements ({[i; j]} : gset nat) = [j; i].
+Proof.
+  intros Hij. apply Permutation_length_2_inv. symmetry.
+  rewrite elements_union_singleton by set_solver. by rewrite elements_singleton.
+Qed.
+
+Lemma pick1_pair i j : i ≠ j → pick1 {[i; j]} = None.
+Proof. intros Hij. unfold pick1. by destruct (elements_pair i j Hij) as [->| ->]. Qed.
+
+Lemma pick2_pair i j : i ≠ j → pick2 {[i; j]} = Some (i, j) ∨ pick2 {[i; j]} = Some (j, i).
+Proof. intros Hij. unfold pick2. destruct (elements_pair i j Hij) as [->| ->]; auto. Qed.
+
+Lemma pair_set_eq (a b c d : chan) : ({[a; b]} : gset chan) = {[c; d]} → (a = c ∧ b = d) ∨ (a = d ∧ b = c).
+Proof.
+  intros H.
+  assert (a ∈ ({[c; d]} : gset chan)) as Ha by (rewrite <-H; set_solver).
+  assert (b ∈ ({[c; d]} : gset chan)) as Hb by (rewrite <-H; set_solver).
+  assert (c ∈ ({[a; b]} : gset chan)) as Hc by (rewrite H; set_solver).
+  assert (d ∈ ({[a; b]} : gset chan)) as Hd by (rewrite H; set_solver).
+  set_unfold. naive_solver.
+Qed.
+
+Definition keep (a a' : aconf) (u : nat) : Prop :=
+  ac_env a' u = ac_env a u ∧ ∀ x, ac_fuel a' u x = ac_fuel a u x.
+
+Definition msg_fuel (N : nat) (A : nat → tenv) (Φ : nat → chan → nat) (s t : nat) (c : chan)
+    (give : tenv) (x : chan) : nat :=
+  if decide (x = c) then N
+  else if decide (x ∈ dom give) then
+    (if decide (x ∈ dom (A t)) then min (pred (Φ t x)) (pred (Φ s x)) else pred (Φ s x))
+  else pred (Φ t x).
+
+Section cases.
+  Context (ω : oracle) (N : nat) (a : aconf) (L : gset nat) (q' : config).
+  Context (Hst : istep (ac_q a) L q').
+  Abbreviation C := (ac_q a).1.
+  Abbreviation M := (ac_q a).2.
+  Abbreviation A := (ac_env a).
+  Abbreviation Φ := (ac_fuel a).
+  Abbreviation a' := (aupd ω N a L q').
+
+  Lemma act_of e α e' : tstep e α e' → ∃ b, act e = Some b ∧ offers b α.
+  Proof. apply act_step. Qed.
+
+  Lemma aupd_cases :
+    (∃ i e e', L = {[i]} ∧ M !! i = Some e ∧ act e = Some ABeta ∧ tstep e LBeta e' ∧
+       q' = (C, <[i := e']> M) ∧ ∀ u, keep a a' u) ∨
+    (∃ i e c e', L = {[i]} ∧ M !! i = Some e ∧ act e = Some ANew ∧ tstep e (LNew c) e' ∧
+       (c ∉ C) ∧ q' = (C ∪ {[c]}, <[i := e']> M) ∧ (∀ u, u ≠ i → keep a a' u) ∧
+       ac_env a' i = <[c := Both (pl_s (or_pick ω (A i) e), pl_pt (or_pick ω (A i) e))
+                             (pl_s' (or_pick ω (A i) e), pt_dual (pl_pt (or_pick ω (A i) e)))]> (A i) ∧
+       ∀ x, ac_fuel a' i x = if decide (x = c) then N else Φ i x) ∨
+    (∃ i j e v e', L = {[i]} ∧ M !! i = Some e ∧ act e = Some (ASpawn v) ∧ tstep e (LSpawn v) e' ∧
+       M !! j = None ∧ q' = (C, <[j := App v EUnit]> (<[i := e']> M)) ∧
+       (∀ u, u ≠ i → u ≠ j → keep a a' u) ∧
+       ac_env a' i = tenv_minus (A i) (pl_give (or_pick ω (A i) e)) ∧
+       ac_env a' j = pl_give (or_pick ω (A i) e) ∧
+       (∀ x, ac_fuel a' i x = Φ i x) ∧ (∀ x, ac_fuel a' j x = pred (Φ i x))) ∨
+    (∃ i e r o e', L = {[i]} ∧ M !! i = Some e ∧ (act e = Some (ALink r o) ∨ act e = Some (ALink o r)) ∧
+       tstep e (LSess (SLink {[r; o]})) e' ∧ r ∈ C ∧
+       q' = (C ∖ {[r]}, chsubst r o <$> <[i := e']> M) ∧
+       ac_env a' i = delete r (delete o (A i)) ∧ (∀ u, u ≠ i → ac_env a' u = tenv_rename r o (A u)) ∧
+       ∀ u x, ac_fuel a' u x = link_fuel A Φ i r o u x) ∨
+    (∃ s t c v es es' et et', s ≠ t ∧ L = {[s; t]} ∧ M !! s = Some es ∧ M !! t = Some et ∧
+       act es = Some (ASend c v) ∧ act et = Some (ARecv c) ∧
+       tstep es (LSess (SSend c v)) es' ∧ tstep et (LSess (SRecv c v)) et' ∧
+       q' = (C, <[t := et']> (<[s := es']> M)) ∧ (∀ u, u ≠ s → u ≠ t → keep a a' u) ∧
+       ac_env a' s = step_entry snd_next c (tenv_minus (A s) (pl_give (or_pick ω (A s) es))) ∧
+       ac_env a' t = tenv_union (step_entry rcv_next c (A t)) (pl_give (or_pick ω (A s) es)) ∧
+       (∀ x, ac_fuel a' s x = tick N c (Φ s) x) ∧
+       (∀ x, ac_fuel a' t x = msg_fuel N A Φ s t c (pl_give (or_pick ω (A s) es)) x)) ∨
+    (∃ s t c es es' et et', s ≠ t ∧ L = {[s; t]} ∧ M !! s = Some es ∧ M !! t = Some et ∧
+       act es = Some (AClos c) ∧ act et = Some (AClos c) ∧
+       tstep es (LSess (SClos c)) es' ∧ tstep et (LSess (SClos c)) et' ∧ c ∈ C ∧
+       q' = (C ∖ {[c]}, <[t := et']> (<[s := es']> M)) ∧ (∀ u, u ≠ s → u ≠ t → keep a a' u) ∧
+       ac_env a' s = delete c (A s) ∧ ac_env a' t = delete c (A t) ∧
+       (∀ x, ac_fuel a' s x = tick N c (Φ s) x) ∧ (∀ x, ac_fuel a' t x = tick N c (Φ t) x)) ∨
+    (∃ s t c b es es' et et', s ≠ t ∧ L = {[s; t]} ∧ M !! s = Some es ∧ M !! t = Some et ∧
+       act es = Some (ASel c b) ∧ act et = Some (ABra c) ∧
+       tstep es (LSess (SSel c b)) es' ∧ tstep et (LSess (SBra c b)) et' ∧
+       q' = (C, <[t := et']> (<[s := es']> M)) ∧ (∀ u, u ≠ s → u ≠ t → keep a a' u) ∧
+       ac_env a' s = step_entry (sel_next b) c (A s) ∧ ac_env a' t = step_entry (bra_next b) c (A t) ∧
+       (∀ x, ac_fuel a' s x = tick N c (Φ s) x) ∧ (∀ x, ac_fuel a' t x = tick N c (Φ t) x)).
+  Proof.
+    destruct a as [[C0 M0] A0 Φ0]. simpl in *. unfold keep, aupd. simpl.
+    remember (C0, M0) as q0 eqn:Hq0.
+    destruct Hst as [C M i e e' Hi Hs|C M i e c e' Hi Hs HC Hc|C M i j e v e' Hi Hs Hj
+      |C M i j c v e e' f f' Hij Hi Hj He Hf|C M i j c e e' f f' Hij Hi Hj He Hf HC
+      |C M i j c b e e' f f' Hij Hi Hj He Hf|C M i e c d e' Hi Hs HC]; injection Hq0 as <- <-.
+    - (* β *)
+      destruct (act_of _ _ _ Hs) as (b & Hb & Ho). destruct b; simpl in Ho; try done.
+      left. exists i, e, e'. split_and!; try done. rewrite pick1_singleton. unfold upd1.
+      rewrite Hi, Hb. simpl. done.
+    - (* new *)
+      destruct (act_of _ _ _ Hs) as (b & Hb & Ho). destruct b; simpl in Ho; try done.
+      right; left. exists i, e, c, e'. rewrite pick1_singleton. unfold upd1. rewrite Hi, Hb. simpl.
+      assert ((C ∪ {[c]}) ∖ C = {[c]}) as -> by set_solver.
+      rewrite elements_singleton. simpl. unfold eupd, fupd.
+      split_and!; try done.
+      + intros u Hu. by rewrite !decide_False.
+      + by rewrite decide_True.
+      + intros x. by rewrite decide_True.
+    - (* spawn *)
+      destruct (act_of _ _ _ Hs) as (b & Hb & Ho). destruct b; simpl in Ho; try done. subst v0.
+      assert (i ≠ j) as Hij by (intros ->; congruence).
+      right; right; left. exists i, j, e, v, e'. rewrite pick1_singleton. unfold upd1. rewrite Hi, Hb. simpl.
+      assert (dom (<[j:=App v EUnit]> (<[i:=e']> M)) ∖ dom M = {[j]}) as ->.
+      { rewrite !dom_insert_L. apply elem_of_dom_2 in Hi. apply not_elem_of_dom in Hj. set_solver. }
+      rewrite elements_singleton. simpl. unfold eupd, fupd.
+      split_and!; try done.
+      + intros u Hu Hu'. by rewrite !decide_False.
+      + rewrite decide_False by done. by rewrite decide_True.
+      + by rewrite decide_True.
+      + intros x. by rewrite decide_False.
+      + intros x. by rewrite decide_True.
+    - (* message *)
+      destruct (act_of _ _ _ He) as (b & Hb & Ho). destruct b; simpl in Ho; try done.
+      destruct Ho as [-> ->].
+      destruct (act_of _ _ _ Hf) as (b' & Hb' & Ho'). destruct b'; simpl in Ho'; try done.
+      destruct Ho' as [-> _].
+      do 4 right; left. exists i, j, c, v, e, e', f, f'.
+      rewrite pick1_pair by done. unfold eupd, fupd, sync_msg, msg_fuel.
+      split_and!; try done; destruct (pick2_pair i j Hij) as [->| ->]; unfold upd2;
+        rewrite ?Hi, ?Hj, ?Hb, ?Hb'; simpl; unfold eupd, fupd.
+      all: try (intros u Hu Hu'; by rewrite !decide_False).
+      all: try (by rewrite decide_False, decide_True by done).
+      all: try (by rewrite decide_True).
+      all: try (intros x; by rewrite decide_False, decide_True by done).
+      all: try (intros x; by rewrite decide_True).
+    - (* close *)
+      destruct (act_of _ _ _ He) as (b & Hb & Ho). destruct b; simpl in Ho; try done. subst c0.
+      destruct (act_of _ _ _ Hf) as (b' & Hb' & Ho'). destruct b'; simpl in Ho'; try done. subst c0.
+      do 5 right; left. exists i, j, c, e, e', f, f'.
+      rewrite pick1_pair by done.
+      split_and!; try done; destruct (pick2_pair i j Hij) as [->| ->]; unfold upd2;
+        rewrite ?Hi, ?Hj, ?Hb, ?Hb'; simpl; unfold eupd, fupd.
+      all: try (intros u Hu Hu'; by rewrite !decide_False).
+      all: try (by rewrite decide_False, decide_True by done).
+      all: try (by rewrite decide_True).
+      all: try (intros x; by rewrite decide_False, decide_True by done).
+      all: try (intros x; by rewrite decide_True).
+    - (* choice *)
+      destruct (act_of _ _ _ He) as (bb & Hb & Ho). destruct bb; simpl in Ho; try done.
+      destruct Ho as [-> ->].
+      destruct (act_of _ _ _ Hf) as (bb' & Hb' & Ho'). destruct bb'; simpl in Ho'; try done. subst c0.
+      do 6 right. exists i, j, c, b, e, e', f, f'.
+      rewrite pick1_pair by done.
+      split_and!; try done; destruct (pick2_pair i j Hij) as [->| ->]; unfold upd2;
+        rewrite ?Hi, ?Hj, ?Hb, ?Hb'; simpl; unfold eupd, fupd.
+      all: try (intros u Hu Hu'; by rewrite !decide_False).
+      all: try (by rewrite decide_False, decide_True by done).
+      all: try (by rewrite decide_True).
+      all: try (intros x; by rewrite decide_False, decide_True by done).
+      all: try (intros x; by rewrite decide_True).
+    - (* link *)
+      destruct (act_of _ _ _ Hs) as (b & Hb & Ho). destruct b; simpl in Ho; try done.
+      rename c0 into c1, d0 into d1.
+      do 3 right; left. exists i, e, c, d, e'.
+      assert ((if bool_decide (c1 ∈ C ∧ c1 ∉ C ∖ {[c]}) then c1 else d1) = c ∧
+              (if bool_decide (c1 ∈ C ∧ c1 ∉ C ∖ {[c]}) then d1 else c1) = d) as [Hr Ho2].
+      { destruct (pair_set_eq c d c1 d1 Ho) as [[<- <-]|[<- <-]].
+        - rewrite bool_decide_true by set_solver. done.
+        - destruct (decide (d = c)) as [->|Hdc]; [by case_bool_decide|].
+          rewrite bool_decide_false by set_solver. done. }
+      rewrite pick1_singleton. unfold upd1. rewrite Hi, Hb. simpl. rewrite Hr, Ho2.
+      split_and!; try done.
+      + destruct (pair_set_eq c d c1 d1 Ho) as [[<- <-]|[<- <-]]; auto.
+      + by rewrite decide_True.
+      + intros u Hu. by rewrite decide_False.
+  Qed.
+End cases.
