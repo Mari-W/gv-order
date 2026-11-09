@@ -37,6 +37,7 @@ Proof.
     case_match; [eauto|congruence].
   - destruct H1 as [? ?], H2 as [<- ?]. split; [done|]. by eapply seq_trans.
   - destruct H1 as (? & -> & ? & ?), H2 as (<- & <- & <- & ?). split_and!; eauto.
+  - by subst.
 Qed.
 
 (** The two halves have to be proved together: see the header. *)
@@ -67,7 +68,7 @@ Proof.
   assert (∀ W Θ T T' v, teq T T' → Vrel n W Θ T v → Vrel n W Θ T' v) as HV.
   { intros W Θ T. revert W Θ.
     induction T as [|ub lb T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2|T1 IHT1 T2 IHT2
-                   |m kk C0 T1 IHT1|s x|lb m C0 T1 IHT1] using ty_ind_ex;
+                   |m kk C0 T1 IHT1|s x|lb m C0 T1 IHT1|x] using ty_ind_ex;
       intros W Θ T' v Hteq HVv; destruct T'; unfold teq in Hteq; simpl in Hteq; try done.
     - by eapply Hfun.
     - (* ⊗ *)
@@ -87,14 +88,15 @@ Proof.
       destruct ss; [|done]. rewrite !sinst_slist_nil. by apply teq_ty_inst.
     - (* session: the protocol is stored up to ≈ already *)
       destruct Hteq as [<- Hs].
-      apply Vrel_sess_iff in HVv as (c & s0 & k & -> & -> & Hs0 & Hx).
-      apply Vrel_sess_iff. exists c, s0, k. split_and!; [done|done| |done].
+      apply Vrel_sess_iff in HVv as (c & bb & s0 & k & -> & -> & Hs0 & Hx & Hp).
+      apply Vrel_sess_iff. exists c, bb, s0, k. split_and!; [done|done| |done|done].
       by eapply seq_trans.
     - (* ∃ *)
       destruct Hteq as (<- & <- & <- & Hteq).
       apply Vrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
       apply Vrel_ex_iff. split; [done|]. exists xs. split_and!; [done..|].
-      eapply (IHT1 (plist xs)); [|exact H]. by apply teq_ty_inst. }
+      eapply (IHT1 (plist xs)); [|exact H]. by apply teq_ty_inst.
+    - (* point *) by subst. }
   split; [exact HV|].
   destruct n as [|n']; [intros; apply Erel_0|].
   intros W Θ T T' F e HW Hteq HE. revert T' HW Hteq.
@@ -106,7 +108,7 @@ Proof.
   apply Erel_S_iff. split_and!; [|done|].
   { intros Hirr. eapply HV; [exact Hteq|]. by apply Hval. }
   intros α e' Hst. specialize (Hstep α e' Hst).
-  destruct α as [|[c w|c w|c|cd|c i|c i]|c|w]; simpl in Hstep |- *.
+  destruct α as [|[c w|c w|c|cd|c i|c i]|c x|w]; simpl in Hstep |- *.
   - eapply HEj; [lia|done|exact Hteq|exact Hstep].
   - destruct Hstep as (Θ1 & m & U & s & k & Hhd & H).
     exists Θ1, m, U, s, k. split; [done|].
@@ -130,8 +132,8 @@ Proof.
     exists Θr, s1, s2, k, Θ'. split_and!; [done|done|].
     eapply HEj; [lia|done|exact Hteq|exact HE'].
   - (* O-New *)
-    intros Hc. destruct (Hstep Hc) as (x & s & s' & Hx & Hdu & HE').
-    exists x, s, s'. split_and!; [done|done|]. eapply HEj; [lia|done|exact Hteq|exact HE'].
+    intros Hc. destruct (Hstep Hc) as (Hx & s & s' & Hdu & HE').
+    split; [done|]. exists s, s'. split; [done|]. eapply HEj; [lia|done|exact Hteq|exact HE'].
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|].
     eapply HEj; [lia|done|exact Hteq|exact HE'].

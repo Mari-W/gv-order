@@ -392,7 +392,7 @@ Definition Psend_case (Vn : world → tenv → ty → expr → Prop)
     (W : world) (Σ : senv) (T : ty) (p : proc) (o : cend) (w : expr) (p' : proc)
     : Prop :=
   ∃ Σ0 Σv m U s k (Σe : senv) (Θe : tenv),
-    senv_hd Σ o.1 (SSeq (SSnd m U) s) k (Σ0 ∪ Σv) ∧ pt_pol k = o.2 ∧
+    senv_hd Σ o.1 (SSeq (SSnd m U) s) k (Σ0 ∪ Σv) ∧
     Σ0 ##ₘ Σv ∧ o.1 ∉ dom Σ0 ∧ o.1 ∉ dom Σv ∧
     dom Θe = fchans w ∩ p.1 ∧ send_split W Σe Θe ∧
     dom Θe ## dom Σ ∧
@@ -401,7 +401,7 @@ Definition Psend_case (Vn : world → tenv → ty → expr → Prop)
 
 Definition Pclos_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (o : cend) (p' : proc) : Prop :=
-  ∃ Σ1 k, senv_hd Σ o.1 SEnd k Σ1 ∧ pt_pol k = o.2 ∧ o.1 ∉ dom Σ1 ∧ X W Σ1 T p'.
+  ∃ Σ1 k, senv_hd Σ o.1 SEnd k Σ1 ∧ o.1 ∉ dom Σ1 ∧ X W Σ1 T p'.
 
 (** Q-Select (u = ⊕, tgt = [sel_pt]) and Q-Branch (u = &, tgt =
     [bra_pt]): the entry of c moves to the branch b, at (k[b])‾ for the
@@ -409,7 +409,7 @@ Definition Pclos_case (X : world → senv → ty → proc → Prop)
 Definition Pchoice_case (X : world → senv → ty → proc → Prop)
     (W : world) (Σ : senv) (T : ty) (o : cend) (b : bool)
     (u : sty → sty → sty) (tgt : point → bool → point) (p' : proc) : Prop :=
-  ∃ Σ1 s1 s2 k, senv_hd Σ o.1 (u s1 s2) k Σ1 ∧ pt_pol k = o.2 ∧ o.1 ∉ dom Σ1 ∧
+  ∃ Σ1 s1 s2 k, senv_hd Σ o.1 (u s1 s2) k Σ1 ∧ o.1 ∉ dom Σ1 ∧
     X W (<[o.1 := (sbranch b s1 s2, tgt k b)]> Σ1) T p'.
 
 (** c = d cannot reach the interface: Σ holds one end per channel. *)
@@ -452,7 +452,7 @@ Definition Pobl (Vlow : nat → world → tenv → ty → expr → Prop)
       (ptau_link p p' → Plinktau_case Pn W Σ T p')
   | PSess (SRecv c w) =>                               (* Q-Recv *)
       ∃ Σ1 m U s k,
-        senv_hd Σ c.1 (SSeq (SRcv m U) s) k Σ1 ∧ c.1 ∉ dom Σ1 ∧ pt_pol k = c.2 ∧
+        senv_hd Σ c.1 (SSeq (SRcv m U) s) k Σ1 ∧ c.1 ∉ dom Σ1 ∧
         ∀ W' j Θ2, wext W W' → j ≤ nlower n (pcost π) → dom Θ2 ## p.1 →
           recv_ok W' (<[c.1 := (s, pt_shift 1 k)]> Σ1) Θ2 →
           Vlow j W' Θ2 (payload_at m U k) w →
@@ -858,19 +858,19 @@ Proof.
   - intros [H1 H2]. split.
     + intros Hd. apply HPl; [lia|exact (H1 Hd)].
     + intros Hl Hd. apply HP; [by right|]. exact (H2 Hl Hd).
-  - intros (Σ1 & m & U & s & k & Hhd & Hc & Hpol & H). exists Σ1, m, U, s, k.
-    split_and!; [done|done|done|]. intros W' j Θ2 HW Hj Hfr Hdu HV'.
+  - intros (Σ1 & m & U & s & k & Hhd & Hc & H). exists Σ1, m, U, s, k.
+    split_and!; [done|done|]. intros W' j Θ2 HW Hj Hfr Hdu HV'.
     apply HPl; [lia|]. apply (H W' j Θ2); try done. apply HVl; [lia|done].
-  - intros (Σ0&Σv&m&U&s&k&Σe&Θe&?&?&?&?&?&?&?&?&?&HX).
+  - intros (Σ0&Σv&m&U&s&k&Σe&Θe&?&?&?&?&?&?&?&?&HX).
     exists Σ0, Σv, m, U, s, k, Σe, Θe.
     split_and!; try done; first [apply HP; [by left|exact HX]|auto].
-  - intros (Σ1&k&?&?&?&HX). exists Σ1, k. split_and!; try done; first [apply HP; [by left|exact HX]|auto].
+  - intros (Σ1&k&?&?&HX). exists Σ1, k. split_and!; try done; first [apply HP; [by left|exact HX]|auto].
   - intros (c&d&Σ1&sc&sd&kc&kd&?&?&?&?&?&?&?&HX).
     exists c, d, Σ1, sc, sd, kc, kd.
     split_and!; try done; first [apply HP; [by left|exact HX]|auto].
-  - intros (Σ1&s1&s2&k&?&?&?&HX). exists Σ1, s1, s2, k.
+  - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k.
     split_and!; try done. apply HP; [by left|exact HX].
-  - intros (Σ1&s1&s2&k&?&?&?&HX). exists Σ1, s1, s2, k.
+  - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k.
     split_and!; try done. apply HPl; [lia|exact HX].
 Qed.
 
@@ -1274,22 +1274,22 @@ Proof.
     + destruct H2 as [H2 Hl]. split.
       * intros Hd. eapply IH; [|exact (H2 Hd)]. lia.
       * intros Hlk. eapply Plinktau_case_mono; [|exact (Hl Hlk)]. by intros ? ? ? ? [_ ?].
-    + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & Hpol & H2).
-      eexists _, _, _, _, _. split_and!; [done|done|done|].
+    + destruct H2 as (Σ1 & m & U & s & k & Hhd & Hc & H2).
+      eexists _, _, _, _, _. split_and!; [done|done|].
       intros W' j Θ2 HW Hj Hfr Hdu HV. apply (H2 W' j Θ2); auto. lia.
     + destruct H2 as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
-                      ? & ? & ? & ? & ? & ? & ? & HV & HP0).
+                      ? & ? & ? & ? & ? & ? & HV & HP0).
       eexists _, _, _, _, _, _, _, _. split_and!; eauto.
       * eapply Vrel_down; [|exact HV]. lia.
       * exact (proj2 HP0).
-    + destruct H2 as (Σ1 & k & Hhd & ? & ? & HP').
+    + destruct H2 as (Σ1 & k & Hhd & ? & HP').
       eexists _, _. split_and!; eauto. exact (proj2 HP').
     + destruct H2 as (c & d & Σ1 & sc & sd & kc & kd &
                       -> & ? & -> & ? & ? & ? & ? & HP').
       eexists _, _, _, _, _, _, _. split_and!; [done..|]. exact (proj2 HP').
-    + destruct H2 as (Σ1 & s1 & s2 & k & ? & ? & ? & HP').
+    + destruct H2 as (Σ1 & s1 & s2 & k & ? & ? & HP').
       eexists _, _, _, _. split_and!; [done..|]. exact (proj2 HP').
-    + destruct H2 as (Σ1 & s1 & s2 & k & ? & ? & ? & HP').
+    + destruct H2 as (Σ1 & s1 & s2 & k & ? & ? & HP').
       eexists _, _, _, _. split_and!; [done..|]. eapply IH; [|done]. lia.
 Qed.
 

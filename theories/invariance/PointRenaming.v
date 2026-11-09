@@ -1787,12 +1787,11 @@ Proof.
       pose proof (ptau_link_ppsw a b p _ Hl) as Hl'. rewrite ppsw_involutive in Hl'.
       exact (proj2 (Hlink Hl' Hd) W' HS).
     + (* recv *)
-      destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & Hp & H).
+      destruct Hstep as (Σ1 & m & U & s & k & Hhd & Hc & H).
       exists (senvsw a b Σ1), m, (tysw a b U), (stysw a b s), (ptsw a b k).
       split_and!.
       * by apply (senv_hd_sw a b _ _ (SSeq (SRcv m U) s)).
       * by rewrite dom_senvsw.
-      * done.
       * intros W'' j Θ2 Hx Hj Hfr Hok HVw.
         assert (wext W (wsw a b W'')) as Hx' by (by eapply wext_swap_back).
         assert (dom (tenvsw a b Θ2) ## p.1) as Hfr' by (by rewrite dom_tenvsw).
@@ -1811,13 +1810,12 @@ Proof.
         unfold esw in H. simpl in H. rewrite ptsw_shift in H.
         exact H.
     + (* send *)
-      destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd & Hp &
+      destruct Hstep as (Σ0 & Σv & m & U & s & k & Σe & Θe & Hhd &
                          Hd0v & Hc0 & Hcv & Hdom & Hsplit & HdΣ & HVw & HP').
       exists (senvsw a b Σ0), (senvsw a b Σv), m, (tysw a b U),
         (stysw a b s), (ptsw a b k), (senvsw a b Σe), (tenvsw a b Θe).
       split_and!.
       * rewrite <-senvsw_union. by apply (senv_hd_sw a b _ _ (SSeq (SSnd m U) s)).
-      * done.
       * by apply senvsw_disjoint.
       * by rewrite dom_senvsw.
       * by rewrite dom_senvsw.
@@ -1829,10 +1827,9 @@ Proof.
       * apply (proj2 HP' W') in HS.
         by rewrite senvsw_insert, senvsw_union in HS.
     + (* close *)
-      destruct Hstep as (Σ1 & k & Hhd & Hp & Hc & HP').
+      destruct Hstep as (Σ1 & k & Hhd & Hc & HP').
       exists (senvsw a b Σ1), (ptsw a b k). split_and!.
       * by apply (senv_hd_sw a b _ _ SEnd).
-      * done.
       * by rewrite dom_senvsw.
       * by apply (proj2 HP').
     + (* link *)
@@ -1850,17 +1847,15 @@ Proof.
       * destruct HS as (_ & He & _). apply He. rewrite <-ptsw_dual. by apply wsw_eq.
       * by apply (proj2 HP').
     + (* select *)
-      destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hp & Hc & HP').
+      destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc & HP').
       exists (senvsw a b Σ1), (stysw a b s1), (stysw a b s2), (ptsw a b k). split_and!.
       * by apply (senv_hd_sw a b _ _ (SPlus s1 s2)).
-      * done.
       * by rewrite dom_senvsw.
       * apply (proj2 HP' W') in HS. rewrite senvsw_insert in HS. unfold esw in HS; simpl in HS. by rewrite sbranch_map in HS.
     + (* branch *)
-      destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hp & Hc & HP').
+      destruct Hstep as (Σ1 & s1 & s2 & k & Hhd & Hc & HP').
       exists (senvsw a b Σ1), (stysw a b s1), (stysw a b s2), (ptsw a b k). split_and!.
       * by apply (senv_hd_sw a b _ _ (SWith s1 s2)).
-      * done.
       * by rewrite dom_senvsw.
       * apply (IHP n' ltac:(lia) W W') in HP'; [|done].
         rewrite senvsw_insert in HP'. unfold esw in HP'; simpl in HP'. by rewrite sbranch_map in HP'.
