@@ -1837,3 +1837,52 @@ Section step.
   Qed.
 
 End step.
+
+(** ** Preservation of the soup along a step *)
+
+Theorem lfconf_step n W T π q A U L q' :
+  strict W → LFconf (S (S n)) W ∅ T π q A U → istep q L q' →
+  ∃ A' U', LFconf n W ∅ T (pupd π q L q') q' A' U'.
+Proof.
+  intros HW Hc Hst. destruct q as [C M].
+  inversion Hst as [C0 M0 i e e' Hi Hs|C0 M0 i e c x e' Hi Hs HC Hcs|C0 M0 i j e v e' Hi Hs Hj
+    |C0 M0 i j c b v e e' f f' Hij Hi Hj He Hf|C0 M0 i j c b e e' f f' Hij Hi Hj He Hf HC
+    |C0 M0 i j c β b e e' f f' Hij Hi Hj He Hf|C0 M0 i e c bc d bd e' Hi Hs HC]; subst.
+  - exists A, U. by apply (step_beta n W HW T π C M A U Hc i e e').
+  - destruct (step_new n W HW T π C M A U Hc i e c x e' Hi Hs HC Hcs) as [A' ?]. by exists A', U.
+  - by apply (step_spawn n W HW T π C M A U Hc i j e v e').
+  - destruct (step_msg n W HW T π C M A U Hc i j c b v e e' f f') as [A' ?]; try done. by exists A', U.
+  - destruct (step_close n W HW T π C M A U Hc i j c b e e' f f') as [A' ?]; try done. by exists A', U.
+  - destruct (step_choice n W HW T π C M A U Hc i j c β b e e' f f') as [A' ?]; try done.
+    by exists A', U.
+  - destruct (decide (c = d)) as [<-|Hcd].
+    + destruct (step_link_self n W HW T π C M A U Hc i e c bc bd e') as [A' ?]; try done.
+      by exists A', U.
+    + destruct (step_link_ne n W HW T π C M A U Hc i e c bc d bd e') as [A' ?]; try done.
+      by exists A', U.
+Qed.
+
+(** ** One placement for every index (§16.5)
+
+    Along a run, π_k is computed from π by [pupd] at every step. It does
+    not depend on the index, and every position of the run carries the
+    soup at every index, at π_k. *)
+
+Fixpoint prun (π : gmap cend point) (r : nat → config) (l : nat → gset nat) (k : nat)
+    : gmap cend point :=
+  match k with 0 => π | S k' => pupd (prun π r l k') (r k') (l k') (r (S k')) end.
+
+Lemma pupd_stuck π q : pupd π q ∅ q = π.
+Proof. unfold pupd, pev_of. by rewrite elements_empty. Qed.
+
+Theorem lfconf_run W T π r l :
+  strict W → maximal r l →
+  (∀ n, ∃ A U, LFconf n W ∅ T π (r 0) A U) →
+  ∀ k n, ∃ A U, LFconf n W ∅ T (prun π r l k) (r k) A U.
+Proof.
+  intros HW Hmax H0 k. induction k as [|k IH]; [done|]. intros n. simpl.
+  destruct (IH (S (S n))) as (A & U & Hc).
+  destruct (Hmax k) as [Hst|(_ & Heq & Hl)].
+  - by apply (lfconf_step n W T _ (r k) A U (l k)).
+  - rewrite Heq, Hl, pupd_stuck. exists A, U. eapply LFconf_down; [|exact Hc]. lia.
+Qed.
