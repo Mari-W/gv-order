@@ -105,7 +105,8 @@ Definition db_spawns (b : bool) (rest : expr) : expr :=
     rest)).
 
 Definition db_main (b : bool) : expr :=
-  let_new_pair (let_new_pair (let_new_pair (db_spawns b (db_tail 6 4 4 6)))).
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 2))
+    (db_spawns b (db_tail 6 4 4 6)))).
 
 (** ** Keeping one branch of every case
 
@@ -119,7 +120,8 @@ Fixpoint keep (b : bool) (e : expr) : expr :=
   | Var x => Var x
   | EUnit => EUnit
   | Konst k => Konst k
-  | Chan c => Chan c
+  | Chan c β => Chan c β
+  | EPt x => EPt x
   | Lam e => Lam (keep b e)
   | App e1 e2 => App (keep b e1) (keep b e2)
   | Pair e1 e2 => Pair (keep b e1) (keep b e2)
@@ -134,7 +136,7 @@ Fixpoint keep (b : bool) (e : expr) : expr :=
 
 Fixpoint okb (b : bool) (e : expr) : Prop :=
   match e with
-  | Var _ | EUnit | Chan _ => True
+  | Var _ | EUnit | Chan _ _ | EPt _ => True
   | Konst k => k ≠ KBra
   | Lam e | EBox e => okb b e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => okb b e1 ∧ okb b e2
@@ -258,6 +260,8 @@ Proof.
     + constructor.
     + rewrite keep_subst2. constructor; by rewrite is_val_keep.
     + constructor.
+    + constructor.
+    + constructor.
     + constructor. by rewrite is_val_keep.
     + constructor. by rewrite is_val_keep.
     + constructor. by rewrite is_val_keep.
@@ -283,7 +287,9 @@ Qed.
 (** Shapes of keep. *)
 Lemma keep_inv_konst b e k : keep b e = Konst k → e = Konst k.
 Proof. destruct e; simpl; congruence. Qed.
-Lemma keep_inv_chan b e c : keep b e = Chan c → e = Chan c.
+Lemma keep_inv_chan b e c β : keep b e = Chan c β → e = Chan c β.
+Proof. destruct e; simpl; congruence. Qed.
+Lemma keep_inv_pt b e x : keep b e = EPt x → e = EPt x.
 Proof. destruct e; simpl; congruence. Qed.
 Lemma keep_inv_unit b e : keep b e = EUnit → e = EUnit.
 Proof. destruct e; simpl; congruence. Qed.
@@ -301,13 +307,15 @@ Proof. destruct e; simpl; try congruence. eauto. Qed.
 Ltac kinv :=
   repeat match goal with
   | H : Konst _ = keep _ _ |- _ => symmetry in H
-  | H : Chan _ = keep _ _ |- _ => symmetry in H
+  | H : Chan _ _ = keep _ _ |- _ => symmetry in H
+  | H : EPt _ = keep _ _ |- _ => symmetry in H
   | H : EUnit = keep _ _ |- _ => symmetry in H
   | H : Lam _ = keep _ _ |- _ => symmetry in H
   | H : EBox _ = keep _ _ |- _ => symmetry in H
   | H : Pair _ _ = keep _ _ |- _ => symmetry in H
   | H : keep _ _ = Konst _ |- _ => apply keep_inv_konst in H; subst
-  | H : keep _ _ = Chan _ |- _ => apply keep_inv_chan in H; subst
+  | H : keep _ _ = Chan _ _ |- _ => apply keep_inv_chan in H; subst
+  | H : keep _ _ = EPt _ |- _ => apply keep_inv_pt in H; subst
   | H : keep _ _ = EUnit |- _ => apply keep_inv_unit in H; subst
   | H : keep _ _ = Lam _ |- _ => destruct (keep_inv_lam _ _ _ H) as [? ->]; clear H
   | H : keep _ _ = EBox _ |- _ => destruct (keep_inv_box _ _ _ H) as [? ->]; clear H
@@ -337,6 +345,7 @@ Proof.
   - inversion Hst; subst. inversion H.
   - inversion Hst; subst. inversion H.
   - inversion Hst; subst. inversion H.
+  - inversion Hst; subst. inversion H.
   - apply tstep_app_inv in Hst as [(e1' & Hs & ->)|[(Hv & e2' & Hs & ->)|(Hv1 & Hv2 & Hh)]].
     + destruct (IHe1 _ _ Hs) as (α' & e' & ? & ? & ?). eexists _, _. split; [by apply TStepAppL|done].
     + rewrite is_val_keep in Hv. destruct (IHe2 _ _ Hs) as (α' & e' & ? & ? & ?).
@@ -345,8 +354,10 @@ Proof.
       * eexists _, _. split; [apply TStepHead; constructor; by rewrite <-(is_val_keep b)|].
         split; [done|]. intros; discriminate.
       * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
+      * eexists _, _. split; [apply TStepHead; constructor|]. split; [done|]. intros; discriminate.
       * eexists _, _. split; [apply TStepHead; by constructor|]. split; [done|]. intros; discriminate.
-      * eexists _, _. split; [apply TStepHead; apply (HeadRecv _ EUnit); done|]. split; [done|].
+      * eexists _, _. split; [apply TStepHead; apply (HeadRecv _ _ EUnit); done|]. split; [done|].
         intros; discriminate.
       * simpl in Hv2. apply andb_True in Hv2 as [Hv2 _].
         eexists _, _. split; [apply TStepHead; by constructor|]. split; [done|].
@@ -386,9 +397,9 @@ Proof.
 Qed.
 
 (** new can pick any name. *)
-Lemma new_retarget e c e' c' : tstep e (LNew c) e' → ∃ e'', tstep e (LNew c') e''.
+Lemma new_retarget e c x e' c' : tstep e (LNew c x) e' → ∃ e'', tstep e (LNew c' x) e''.
 Proof.
-  intros H. remember (LNew c) as α eqn:Hα.
+  intros H. remember (LNew c x) as α eqn:Hα.
   induction H; subst; try discriminate.
   - inversion H; simplify_eq. eexists. apply TStepHead. apply HeadNew.
   - destruct (IHtstep eq_refl) as [e'' ?]. eexists. by apply TStepAppL.
@@ -432,12 +443,12 @@ Proof.
   destruct p as [C Es], q as [C' Et]. intros [HC Hm] Hst. simpl in HC, Hm. subst C'.
   inversion Hst as
     [|C0 E e e' Hs E1 E2
-     |C0 E e c e' Hs Hc1 Hc2 Hc3 E1 E2
+     |C0 E e c x e' Hs Hc1 Hc2 Hc3 E1 E2
      |C0 E e v e' Hs E1 E2
-     |C0 E c v e e' f f' He Hf E1 E2
-     |C0 E c e e' f f' He Hf Hc E1 E2
-     |C0 E c bb e e' f f' He Hf E1 E2
-     |C0 E e c d e' Hs Hc E1 E2]; subst.
+     |C0 E c β0 v e e' f f' He Hf E1 E2
+     |C0 E c β0 e e' f f' He Hf Hc E1 E2
+     |C0 E c β0 bb e e' f f' He Hf E1 E2
+     |C0 E e c bc d bd e' Hs Hc E1 E2]; subst.
   - (* β *)
     kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hs Hok) as [Hc _].
     eexists. split; [apply PStepBeta, (keep_step _ _ _ _ Hs Hok)|].
@@ -445,7 +456,7 @@ Proof.
   - (* new *)
     kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hs Hok) as [Hk _].
     eexists. split.
-    + apply PStepNew; [apply (keep_step _ _ _ _ Hs Hok)|done| |].
+    + eapply PStepNew; [apply (keep_step _ _ _ _ Hs Hok)|done| |].
       * intros Hin. apply Hc2. by apply (mrel_echans _ _ _ (kthr_fchans b) Hm1).
       * intros Hin. apply Hc3. by apply (fchans_keep b e).
     + split; [done|]. simpl. apply mrel_snoc; [|done]. split; [by apply Hk|done].
@@ -460,7 +471,7 @@ Proof.
     destruct (okb_step _ _ _ _ He Hok) as [Hke Hv].
     destruct (okb_step _ _ _ _ Hf Hokf) as [Hkf _].
     eexists. split.
-    + apply (PStepMsg _ _ c (keep b v)); [apply (keep_step _ _ _ _ He Hok)|apply (keep_step _ _ _ _ Hf Hokf)].
+    + apply (PStepMsg _ _ c β0 (keep b v)); [apply (keep_step _ _ _ _ He Hok)|apply (keep_step _ _ _ _ Hf Hokf)].
     + split; [done|]. simpl. apply mrel_snoc; [|apply mrel_snoc; [|done]].
       * split; [by apply Hkf|done].
       * split; [by apply Hke|done].
@@ -469,7 +480,7 @@ Proof.
     destruct (okb_step _ _ _ _ He Hok) as [Hke _].
     destruct (okb_step _ _ _ _ Hf Hokf) as [Hkf _].
     eexists. split.
-    + apply PStepClose; [apply (keep_step _ _ _ _ He Hok)|apply (keep_step _ _ _ _ Hf Hokf)|done].
+    + eapply PStepClose; [apply (keep_step _ _ _ _ He Hok)|apply (keep_step _ _ _ _ Hf Hokf)|done].
     + split; [done|]. simpl. apply mrel_snoc; [|apply mrel_snoc; [|done]].
       * split; [by apply Hkf|done].
       * split; [by apply Hke|done].
@@ -477,7 +488,7 @@ Proof.
     kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hf Hok) as [_ []].
   - (* link *)
     kextract Hm Hok Hm1. destruct (okb_step _ _ _ _ Hs Hok) as [Hk _].
-    eexists. split; [apply PStepLink; [apply (keep_step _ _ _ _ Hs Hok)|done]|].
+    eexists. split; [eapply PStepLink; [apply (keep_step _ _ _ _ Hs Hok)|done]|].
     split; [done|]. simpl. apply mrel_echsubst, mrel_snoc; [|done]. split; [by apply Hk|done].
 Qed.
 
@@ -509,12 +520,12 @@ Proof.
   destruct p as [C Es], q as [C' Et]. intros [HC Hm] Hst. simpl in HC, Hm. subst C'.
   inversion Hst as
     [|C0 E e e' Hs E1 E2
-     |C0 E e c e' Hs Hc1 Hc2 Hc3 E1 E2
+     |C0 E e c x e' Hs Hc1 Hc2 Hc3 E1 E2
      |C0 E e v e' Hs E1 E2
-     |C0 E c v e e' f f' He Hf E1 E2
-     |C0 E c e e' f f' He Hf Hc E1 E2
-     |C0 E c bb e e' f f' He Hf E1 E2
-     |C0 E e c d e' Hs Hc E1 E2]; subst.
+     |C0 E c β0 v e e' f f' He Hf E1 E2
+     |C0 E c β0 e e' f f' He Hf Hc E1 E2
+     |C0 E c β0 bb e e' f f' He Hf E1 E2
+     |C0 E e c bc d bd e' Hs Hc E1 E2]; subst.
   - destruct (mrel_extract _ _ _ _ Hm) as (Es0 & s & -> & [_ ->] & _).
     destruct (kreflect _ _ _ _ Hs) as (α' & s' & Hs' & Hl & _). lshape_inv Hl.
     eexists. by apply PStepBeta.
@@ -522,15 +533,15 @@ Proof.
     destruct (kreflect _ _ _ _ Hs) as (α' & s' & Hs' & Hl & _). lshape_inv Hl.
     set (c' := fresh (C ∪ echans Es0 ∪ fchans s)).
     assert (c' ∉ C ∪ echans Es0 ∪ fchans s) as Hc' by apply is_fresh.
-    destruct (new_retarget _ _ _ c' Hs') as [s'' Hs''].
-    eexists. apply (PStepNew _ _ _ c' s''); [done|set_solver|set_solver|set_solver].
+    destruct (new_retarget _ _ _ _ c' Hs') as [s'' Hs''].
+    eexists. apply (PStepNew _ _ _ c' x s''); [done|set_solver|set_solver|set_solver].
   - destruct (mrel_extract _ _ _ _ Hm) as (Es0 & s & -> & [_ ->] & _).
     destruct (kreflect _ _ _ _ Hs) as (α' & s' & Hs' & Hl & _). lshape_inv Hl.
     eexists. by eapply PStepSpawn.
   - destruct (mrel_extract _ _ _ _ Hm) as (Es1 & sf & -> & [_ ->] & Hm1).
     destruct (mrel_extract _ _ _ _ Hm1) as (Es0 & se & -> & [_ ->] & _).
     destruct (kreflect _ _ _ _ He) as (α1 & se' & Hse & _ & Hsnd).
-    destruct (Hsnd c v eq_refl) as (v' & -> & _).
+    destruct (Hsnd (c, β0) v eq_refl) as (v' & -> & _).
     destruct (kreflect _ _ _ _ Hf) as (α2 & sf' & Hsf & Hl & _). lshape_inv Hl.
     destruct (recv_retarget _ _ _ _ v' Hsf (tstep_send_val _ _ _ _ Hse)) as [sf'' Hsf''].
     eexists. by eapply PStepMsg.
@@ -603,8 +614,10 @@ Definition chd : chan := "d".
 Definition db_Θ (x y : point) : tenv :=
   <[chd := One (SEnd, y)]> {[chc := One (SEnd, x)]}.
 
-Definition db_γ (b : bool) : nat → expr :=
-  λ i, match i with 1 => bit b | 3 => Chan chd | 7 => Chan chc | _ => EUnit end.
+(** Syntactic points (sharp edges 173): a channel value names its end
+    by the polarity of the end's point. *)
+Definition db_γ (b : bool) (x y : point) : nat → expr :=
+  λ i, match i with 1 => bit b | 3 => Chan chd (pt_pol y) | 7 => Chan chc (pt_pol x) | _ => EUnit end.
 
 Lemma db_comp_cd R x y :
   tenv_comp R (db_Θ x y) {[chd := One (SEnd, y)]} {[chc := One (SEnd, x)]}.
@@ -630,20 +643,21 @@ Lemma db_ground n W b x y k :
   world_wf W →
   grounding n W (db_Θ x y)
     ([None; Some (TSum TUnit TUnit); None; Some (TSess SEnd y); None; None; None;
-      Some (TSess SEnd x)] ++ replicate k None) (db_γ b).
+      Some (TSess SEnd x)] ++ replicate k None) (db_γ b x y).
 Proof.
   intros HW. cbn [grounding app].
   exists ∅, (db_Θ x y). split; [apply tenv_comp_empty_l, (wf_rdsym _ HW)|]. split.
   { apply Vrel_sum_iff. destruct b; [right|left]; eexists; (split; [done|]); by apply Vrel_unit_iff. }
   exists {[chd := One (SEnd, y)]}, {[chc := One (SEnd, x)]}. split; [apply db_comp_cd|]. split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   exists {[chc := One (SEnd, x)]}, ∅. split; [apply tenv_comp_empty_r|]. split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   apply grounding_nones.
 Qed.
 
-(** [cc2 i j] steps only by closing i. *)
-Definition cc2 (i j : chan) : expr := LetU (App EClos (Chan i)) (App EClos (Chan j)).
+(** [cc2 i j] steps only by closing i. The ends i and j name their
+    channels and polarities. *)
+Definition cc2 (i j : cend) : expr := LetU (App EClos (Chan i.1 i.2)) (App EClos (Chan j.1 j.2)).
 
 Lemma cc2_step i j α t : tstep (cc2 i j) α t → α = LSess (SClos i).
 Proof.
@@ -651,40 +665,42 @@ Proof.
   apply tstep_app_inv in Hs as [(? & Hs & _)|[(_ & ? & Hs & _)|(_ & _ & Hh)]].
   - inversion Hs; subst. inversion H.
   - inversion Hs; subst. inversion H.
-  - by inversion Hh.
+  - inversion Hh; subst. by destruct i.
 Qed.
 
-Lemma cc2_can i j : tstep (cc2 i j) (LSess (SClos i)) (LetU EUnit (App EClos (Chan j))).
-Proof. apply TStepLetU, TStepHead, HeadClos. Qed.
+Lemma cc2_can i j : tstep (cc2 i j) (LSess (SClos i)) (LetU EUnit (App EClos (Chan j.1 j.2))).
+Proof. destruct i. apply TStepLetU, TStepHead, HeadClos. Qed.
 
 (** Readiness of [cc2 i j], holding i at x and j at y, gives x ≺ ȳ, the
     partner point of j (end points). *)
 Lemma cc2_ready W F i j x y :
-  i ≠ j →
-  ready_t W (<[j := One (SEnd, y)]> {[i := One (SEnd, x)]}) F (cc2 i j) → w_lt W x (pt_dual y).
+  i.1 ≠ j.1 → pt_pol x = i.2 →
+  ready_t W (<[j.1 := One (SEnd, y)]> {[i.1 := One (SEnd, x)]}) F (cc2 i j) → w_lt W x (pt_dual y).
 Proof.
-  intros Hij Hr. set (Θ := <[j := One (SEnd, y)]> {[i := One (SEnd, x)]}) in *.
-  assert (Θ !! i = Some (One (SEnd, x))) as Hi.
+  intros Hij Hxi Hr. set (Θ := <[j.1 := One (SEnd, y)]> {[i.1 := One (SEnd, x)]}) in *.
+  assert (Θ !! i.1 = Some (One (SEnd, x))) as Hi.
   { unfold Θ. rewrite lookup_insert_ne by done. apply lookup_singleton_eq. }
-  assert (Θ !! j = Some (One (SEnd, y))) as Hj.
+  assert (Θ !! j.1 = Some (One (SEnd, y))) as Hj.
   { unfold Θ. apply lookup_insert_eq. }
   destruct Hr as [_ [Hl|Hb]].
   { intros α t Hs. by rewrite (cc2_step _ _ _ _ Hs). }
   { destruct Hl as (cd & t & Hs). apply cc2_step in Hs. discriminate. }
-  assert (offered_t Θ (cc2 i j) (i, false)) as Hoff.
-  { exists (SClos i), (LetU EUnit (App EClos (Chan j))). split; [apply cc2_can|]. simpl. split; [done|].
-    exists (SEnd, x). unfold tenv_entry. simpl. rewrite Hi. split_and!; [done|done|discriminate]. }
-  destruct (Hb (i, false) (SEnd, x) Hoff) as [H1 _].
+  assert (offered_t Θ (cc2 i j) (i.1, false)) as Hoff.
+  { exists (SClos i), (LetU EUnit (App EClos (Chan j.1 j.2))). split; [apply cc2_can|]. simpl. split; [done|].
+    exists (SEnd, x). unfold tenv_entry. simpl. rewrite Hi. split_and!; [done|done|done|discriminate]. }
+  destruct (Hb (i.1, false) (SEnd, x) Hoff) as [H1 _].
   { unfold tenv_entry. simpl. by rewrite Hi. }
-  apply (H1 (j, false) (SEnd, y)).
+  apply (H1 (j.1, false) (SEnd, y)).
   - unfold tenv_entry. simpl. by rewrite Hj.
   - intros (σ & t & Hs & Hsel). apply cc2_step in Hs. injection Hs as ->.
-    destruct Hsel as [Hc _]. simpl in Hc. by subst.
+    destruct Hsel as [Hc _]. simpl in Hc. by apply Hij.
 Qed.
 
 (** One run of the related case at the bit b reaches a ready check. *)
-Lemma db_case_subst b :
-  subst (db_γ b) db_case = Case (bit b) (LetU (Var 0) (cc2 chc chd)) (LetU (Var 0) (cc2 chd chc)).
+Lemma db_case_subst b x y :
+  subst (db_γ b x y) db_case =
+    Case (bit b) (LetU (Var 0) (cc2 (chc, pt_pol x) (chd, pt_pol y)))
+      (LetU (Var 0) (cc2 (chd, pt_pol y) (chc, pt_pol x))).
 Proof. by destruct b. Qed.
 
 Lemma db_Θ_swap x y : db_Θ x y = <[chc := One (SEnd, x)]> {[chd := One (SEnd, y)]}.
@@ -701,21 +717,23 @@ Ltac ebeta HE st :=
   cbn [Ecase_gen Eobl at_cost tcost nlower pred] in HE.
 
 Lemma db_case_lt W T F b x y :
-  Erel 3 W (db_Θ x y) T F (subst (db_γ b) db_case) →
+  Erel 3 W (db_Θ x y) T F (subst (db_γ b x y) db_case) →
   if b then w_lt W y (pt_dual x) else w_lt W x (pt_dual y).
 Proof.
   intros HE. rewrite db_case_subst in HE. destruct b.
-  - ebeta HE ltac:(by apply HeadCase2). change (subst1 EUnit (LetU (Var 0) (cc2 chd chc)))
-      with (LetU EUnit (cc2 chd chc)) in HE.
+  - ebeta HE ltac:(by apply HeadCase2).
+    change (subst1 EUnit (LetU (Var 0) (cc2 (chd, pt_pol y) (chc, pt_pol x))))
+      with (LetU EUnit (cc2 (chd, pt_pol y) (chc, pt_pol x))) in HE.
     ebeta HE ltac:(apply HeadLetU).
     apply Erel_S_iff in HE as (_ & HR & _).
-    rewrite db_Θ_swap in HR. apply (cc2_ready W F chd chc y x); [done|]. apply HR.
+    rewrite db_Θ_swap in HR. apply (cc2_ready W F (chd, pt_pol y) (chc, pt_pol x) y x); [done|done|]. apply HR.
     intros Hirr. apply (Hirr _ _ (cc2_can _ _)).
-  - ebeta HE ltac:(by apply HeadCase1). change (subst1 EUnit (LetU (Var 0) (cc2 chc chd)))
-      with (LetU EUnit (cc2 chc chd)) in HE.
+  - ebeta HE ltac:(by apply HeadCase1).
+    change (subst1 EUnit (LetU (Var 0) (cc2 (chc, pt_pol x) (chd, pt_pol y))))
+      with (LetU EUnit (cc2 (chc, pt_pol x) (chd, pt_pol y))) in HE.
     ebeta HE ltac:(apply HeadLetU).
     apply Erel_S_iff in HE as (_ & HR & _).
-    apply (cc2_ready W F chc chd x y); [done|]. apply HR.
+    apply (cc2_ready W F (chc, pt_pol x) (chd, pt_pol y) x y); [done|done|]. apply HR.
     intros Hirr. apply (Hirr _ _ (cc2_can _ _)).
 Qed.
 
@@ -766,7 +784,7 @@ Lemma db_ground2 n W b C1 C2 x y k :
   world_wf W → bcs_hold (w_eq W) (w_lt W) C1 [] → bcs_hold (w_eq W) (w_lt W) C2 [] →
   grounding n W (db_Θ x y)
     ([None; Some (TSum (TEx LNone 0 C1 TUnit) (TEx LNone 0 C2 TUnit)); None;
-      Some (TSess SEnd y); None; None; None; Some (TSess SEnd x)] ++ replicate k None) (db_γ b).
+      Some (TSess SEnd y); None; None; None; Some (TSess SEnd x)] ++ replicate k None) (db_γ b x y).
 Proof.
   intros HW H1 H2. cbn [grounding app].
   exists ∅, (db_Θ x y). split; [apply tenv_comp_empty_l, (wf_rdsym _ HW)|]. split.
@@ -774,9 +792,9 @@ Proof.
       apply Vrel_ex_iff; (split; [rewrite tenv_heads_nil; by split|]);
       exists []; split_and!; first [done|by apply Forall_nil|by apply Vrel_unit_iff]. }
   exists {[chd := One (SEnd, y)]}, {[chc := One (SEnd, x)]}. split; [apply db_comp_cd|]. split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   exists {[chc := One (SEnd, x)]}, ∅. split; [apply tenv_comp_empty_r|]. split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   apply grounding_nones.
 Qed.
 
@@ -872,21 +890,24 @@ Proof.
   apply fresh_open. right. by exists h.
 Qed.
 
-Definition dbf_Lc : list (point * bool) := [(pv 0 1, false); (sl0 0 1, false)].
-Definition dbf_Ld : list (point * bool) := [(pv 1 1, false); (pvar 0, false)].
-Definition dbf_Hd : list (point * bool) := [(sl0 1 5, true)].
+(** Syntactic points (sharp edges 173): z, x and y are the constants 0,
+    1 and 2 of the hypotheses, and z[0]+k is [zl0 k]. *)
+Abbreviation zl0 k := (Pt (NPayload (NConst 0) 0 0) k).
+
+Definition dbf_Lc : list (point * bool) := [(pc 0 1, false); (zl0 1, false)].
+Definition dbf_Ld : list (point * bool) := [(pc 0 1, false); (pc 1 0, false)].
+Definition dbf_Hd : list (point * bool) := [(zl0 5, true)].
 
 Definition dbf_Ψ : hyps :=
-  hyps_inst (pshift 1) (hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) Ce, ids 1)]) ++
-    [(bcs_inst (pshift 1) (freshp_bcs dbf_Lc []), ids 1)]) ++
-    [(bcs_inst (pshift 1) (freshp_bcs dbf_Ld dbf_Hd), ids 1)].
+  (([] ++ [(Ce, [pconst 0])]) ++ [(freshp_bcs dbf_Lc [], [pconst 1])]) ++
+    [(freshp_bcs dbf_Ld dbf_Hd, [pconst 2])].
 
 Lemma dbf_created : created (Wpo []) dbf_Ψ.
 Proof.
   unfold dbf_Ψ, dbf_Lc, dbf_Ld, dbf_Hd.
-  set (Lc := [(pv 0 1, false); (sl0 0 1, false)]).
-  set (Ld := [(pv 1 1, false); (pvar 0, false)]). set (Hd := [(sl0 1 5, true)]).
-  apply created_p; [apply created_p; [apply created_snoc; [constructor|apply Ce_ok|constructor]| |]| |].
+  set (Lc := [(pc 0 1, false); (zl0 1, false)]).
+  set (Ld := [(pc 0 1, false); (pc 1 0, false)]). set (Hd := [(zl0 5, true)]).
+  apply created_p; [apply created_p; [apply created_snoc; [constructor|apply Ce_ok|constructor|fresh_const]| | |fresh_const]| | |fresh_const].
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done);
       (eapply skn_inst; [by left|by left|done]). }
   { intros l h b' _ Hh. by apply elem_of_nil in Hh. }
@@ -903,62 +924,60 @@ Qed.
 Lemma db_typed_false : styped ∅ dbf_Ψ [] (∅, None) (db_main false) TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold db_main, let_new_pair, dbf_Ψ.
-  new_top HWs Se (pvar 2). new_top HWs SEnd (pvar 1). new_top HWs SEnd (pvar 0).
+  set (W := Wpo []) in *. unfold db_main, let_new_pair_at, dbf_Ψ.
+  new_top HWs Se (pc 0 0). new_top HWs SEnd (pc 1 0). new_top HWs SEnd (pc 2 0).
   set (Lc := dbf_Lc). set (Ld := dbf_Ld). set (Hd := dbf_Hd).
-  fresh_clean.
-  change (bcs_inst (pshift 1) (bcs_inst (pshift 1) (bcs_inst (pshift 1) Ce))) with Ce.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
-  assert ((bcs_inst (pshift 2) (freshp_bcs Lc []), [pvar 1]) ∈ Ψ) as HgC by (right; left; reflexivity).
-  assert ((bcs_inst (pshift 1) (freshp_bcs Ld Hd), [pvar 0]) ∈ Ψ) as HgD by (right; right; left; reflexivity).
-  assert (slt W Ψ (pv 2 1) (pt_dual (pvar 1))) as Hz1x.
-  { apply (slt_freshp_l W Ψ (pshift 2) Lc [] (pvar 1) (pv 0 1) false); [exact HgC|by left]. }
-  assert (slt W Ψ (pv 2 1) (pt_dual (pvar 0))) as Hz1y.
-  { apply (slt_freshp_l W Ψ (pshift 1) Ld Hd (pvar 0) (pv 1 1) false); [exact HgD|by left]. }
-  assert (slt W Ψ (pvar 1) (pt_dual (pvar 0))) as Hxy.
-  { apply (slt_freshp_l W Ψ (pshift 1) Ld Hd (pvar 0) (pvar 0) false); [exact HgD|by right; left]. }
-  assert (slt W Ψ (pvar 2) (pt_dual (pvar 1))) as Hzx.
-  { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1x]. }
-  assert (slt W Ψ (pvar 2) (pt_dual (pvar 0))) as Hzy.
-  { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1y]. }
-  tstep.
+  assert ((freshp_bcs Lc [], [pconst 1]) ∈ Ψ) as HgC by (right; left; reflexivity).
+  assert ((freshp_bcs Ld Hd, [pconst 2]) ∈ Ψ) as HgD by (right; right; left; reflexivity).
+  assert (slt W Ψ (pc 0 1) (pt_dual (pc 1 0))) as Hz1x.
+  { apply (slt_freshp_l W Ψ Lc [] (pconst 1) (pc 0 1) false); [exact HgC|by left]. }
+  assert (slt W Ψ (pc 0 1) (pt_dual (pc 2 0))) as Hz1y.
+  { apply (slt_freshp_l W Ψ Ld Hd (pconst 2) (pc 0 1) false); [exact HgD|by left]. }
+  assert (slt W Ψ (pc 1 0) (pt_dual (pc 2 0))) as Hxy.
+  { apply (slt_freshp_l W Ψ Ld Hd (pconst 2) (pc 1 0) false); [exact HgD|by right; left]. }
+  assert (slt W Ψ (pc 0 0) (pt_dual (pc 1 0))) as Hzx.
+  { eapply sl_trans; [apply (slt_po W _ (pc 0 0) HW)|exact Hz1x]. }
+  assert (slt W Ψ (pc 0 0) (pt_dual (pc 2 0))) as Hzy.
+  { eapply sl_trans; [apply (slt_po W _ (pc 0 0) HW)|exact Hz1y]. }
+  cbn. tstep.
   { (* spawn (λu. let () = u in close c′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 1))) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 1 0))) (Some (pc 1 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (pvar 1)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual (pc 1 0)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* spawn (λu. let () = u in close d′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 2 0))) (Some (pc 2 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (pvar 0)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual (pc 2 0)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* spawn the sender of inl ∗ *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 2 1))) (Some (pvar 2)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 1))) (Some (pc 0 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep.
-    - tstep; [|apply (KTSend _ _ _ 1 Tz SEnd (pt_dual (pvar 2))); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
+    - tstep; [|apply (KTSend _ _ _ 1 Tz SEnd (pt_dual (pc 0 0))); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
       + tstep; first [tstep|cbn; apply t_inj1, (tv_unit W HW); reflexivity].
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pt_dual (pv 2 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pvar 2)) HW).
+        exists (pt_dual (pc 0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pc 0 0)) HW).
     - apply KTClos.
     - done.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pt_dual (pv 2 1)). split; [done|]. apply sle_refl, HW. }
-  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (payload_at 1 Tz (pvar 2)) (TSess SEnd (pv 2 1)));
+      exists (pt_dual (pc 0 1)). split; [done|]. apply sle_refl, HW. }
+  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (payload_at 1 Tz (pc 0 0)) (TSess SEnd (pc 0 1)));
     [reflexivity| |].
   { tstep; [tstep|apply KTRecv|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
   cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
-  cbn. set (Cd := bcs_inst (plist [pt_payload (pvar 2) 0]) Cdead).
+  cbn. set (Cd := bcs_inst (plist [pt_payload (pc 0 0) 0]) Cdead).
   eapply (tv_case W _ _ _ _ _ _ _ TUnit (TEx LNone 0 Cd TUnit) TUnit); [exact HW|reflexivity|tstep| |].
   - (* inl closes c, then d *)
     cbn. tstep; [tstep|]. cbn. tstep.
@@ -973,22 +992,22 @@ Proof.
     change (pinst_ty (pshift 0) TUnit) with TUnit.
     replace (lenv_pinst (pshift 0) _) with
       [Some (TEx LNone 0 Cd TUnit); None; None; None;
-           Some (TSess SEnd (pvar 0)); None; None; None;
-           Some (TSess SEnd (pvar 1)); None; None; None; None; None; None] by reflexivity.
+           Some (TSess SEnd (pc 2 0)); None; None; None;
+           Some (TSess SEnd (pc 1 0)); None; None; None; None; None; None] by reflexivity.
     cbn [insert list_insert].
     set (Ψ' := Ψ ++ [(bcs_inst (pshift 0) Cd, ids 0)]).
-    assert (slt W Ψ' (sl0 2 5) (sl0 2 1)) as Hdead.
+    assert (slt W Ψ' (zl0 5) (zl0 1)) as Hdead.
     { apply sl_h. exists (bcs_inst (pshift 0) Cd), []. split.
       { unfold Ψ'. apply elem_of_app. right. by left. }
-      exists (FLt (sl0 2 5) (sl0 2 1)). split; [|reflexivity].
+      exists (FLt (zl0 5) (zl0 1)). split; [|reflexivity].
       exists (FLt (pv 0 5) (pv 0 1)). split_and!; [done| |reflexivity].
       cbn. lia. }
-    assert (slt W Ψ' (pvar 0) (pt_dual (pvar 1))) as Hyx.
+    assert (slt W Ψ' (pc 2 0) (pt_dual (pc 1 0))) as Hyx.
     { eapply sl_trans.
-      { apply (slt_freshp_r W Ψ' (pshift 1) Ld Hd (pvar 0) (sl0 1 5) true); [|by left].
+      { apply (slt_freshp_r W Ψ' Ld Hd (pconst 2) (zl0 5) true); [|by left].
         apply elem_of_app. left. exact HgD. }
       eapply sl_trans; [exact Hdead|].
-      apply (slt_freshp_l W Ψ' (pshift 2) Lc [] (pvar 1) (sl0 0 1) false); [|by right; left].
+      apply (slt_freshp_l W Ψ' Lc [] (pconst 1) (zl0 1) false); [|by right; left].
       apply elem_of_app. left. exact HgC. }
     tstep; [tstep|]. cbn. tstep.
     + tstep; [tstep|apply KTClos|done|].
@@ -997,22 +1016,21 @@ Proof.
       apply ubs_intro; [intros y Hy; mem_cases Hy|done].
 Qed.
 
-Definition dbt_Lc : list (point * bool) := [(pv 0 1, false)].
-Definition dbt_Hc : list (point * bool) := [(sl0 0 5, true)].
-Definition dbt_Ld : list (point * bool) := [(pv 1 1, false); (sl0 1 1, false)].
-Definition dbt_Hd : list (point * bool) := [(pt_dual (pvar 0), true)].
+Definition dbt_Lc : list (point * bool) := [(pc 0 1, false)].
+Definition dbt_Hc : list (point * bool) := [(zl0 5, true)].
+Definition dbt_Ld : list (point * bool) := [(pc 0 1, false); (zl0 1, false)].
+Definition dbt_Hd : list (point * bool) := [(pt_dual (pc 1 0), true)].
 
 Definition dbt_Ψ : hyps :=
-  hyps_inst (pshift 1) (hyps_inst (pshift 1) (hyps_inst (pshift 1) [] ++ [(bcs_inst (pshift 1) Ce, ids 1)]) ++
-    [(bcs_inst (pshift 1) (freshp_bcs dbt_Lc dbt_Hc), ids 1)]) ++
-    [(bcs_inst (pshift 1) (freshp_bcs dbt_Ld dbt_Hd), ids 1)].
+  (([] ++ [(Ce, [pconst 0])]) ++ [(freshp_bcs dbt_Lc dbt_Hc, [pconst 1])]) ++
+    [(freshp_bcs dbt_Ld dbt_Hd, [pconst 2])].
 
 Lemma dbt_created : created (Wpo []) dbt_Ψ.
 Proof.
   unfold dbt_Ψ, dbt_Lc, dbt_Hc, dbt_Ld, dbt_Hd.
-  set (Lc := [(pv 0 1, false)]). set (Hc := [(sl0 0 5, true)]).
-  set (Ld := [(pv 1 1, false); (sl0 1 1, false)]). set (Hd := [(pt_dual (pvar 0), true)]).
-  apply created_p; [apply created_p; [apply created_snoc; [constructor|apply Ce_ok|constructor]| |]| |].
+  set (Lc := [(pc 0 1, false)]). set (Hc := [(zl0 5, true)]).
+  set (Ld := [(pc 0 1, false); (zl0 1, false)]). set (Hd := [(pt_dual (pc 1 0), true)]).
+  apply created_p; [apply created_p; [apply created_snoc; [constructor|apply Ce_ok|constructor|fresh_const]| | |fresh_const]| | |fresh_const].
   { cbn. repeat (apply Forall_cons; split); try (apply Forall_nil; done);
       (eapply skn_inst; [by left|by left|done]). }
   { intros l h b' Hl Hh. unfold Lc, Hc in *.
@@ -1031,62 +1049,60 @@ Qed.
 Lemma db_typed_true : styped ∅ dbt_Ψ [] (∅, None) (db_main true) TUnit.
 Proof.
   apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold db_main, let_new_pair, dbt_Ψ.
-  new_top HWs Se_t (pvar 2). new_top HWs SEnd (pvar 1). new_top HWs SEnd (pvar 0).
+  set (W := Wpo []) in *. unfold db_main, let_new_pair_at, dbt_Ψ.
+  new_top HWs Se_t (pc 0 0). new_top HWs SEnd (pc 1 0). new_top HWs SEnd (pc 2 0).
   set (Lc := dbt_Lc). set (Hc := dbt_Hc). set (Ld := dbt_Ld). set (Hd := dbt_Hd).
-  fresh_clean.
-  change (bcs_inst (pshift 1) (bcs_inst (pshift 1) (bcs_inst (pshift 1) Ce))) with Ce.
   match goal with |- typed _ _ ?Q _ _ _ _ _ => set (Ψ := Q) end.
-  assert ((bcs_inst (pshift 2) (freshp_bcs Lc Hc), [pvar 1]) ∈ Ψ) as HgC by (right; left; reflexivity).
-  assert ((bcs_inst (pshift 1) (freshp_bcs Ld Hd), [pvar 0]) ∈ Ψ) as HgD by (right; right; left; reflexivity).
-  assert (slt W Ψ (pv 2 1) (pt_dual (pvar 1))) as Hz1x.
-  { apply (slt_freshp_l W Ψ (pshift 2) Lc Hc (pvar 1) (pv 0 1) false); [exact HgC|by left]. }
-  assert (slt W Ψ (pv 2 1) (pt_dual (pvar 0))) as Hz1y.
-  { apply (slt_freshp_l W Ψ (pshift 1) Ld Hd (pvar 0) (pv 1 1) false); [exact HgD|by left]. }
-  assert (slt W Ψ (pvar 0) (pt_dual (pvar 1))) as Hyx.
-  { apply (slt_freshp_r W Ψ (pshift 1) Ld Hd (pvar 0) (pt_dual (pvar 0)) true); [exact HgD|by left]. }
-  assert (slt W Ψ (pvar 2) (pt_dual (pvar 1))) as Hzx.
-  { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1x]. }
-  assert (slt W Ψ (pvar 2) (pt_dual (pvar 0))) as Hzy.
-  { eapply sl_trans; [apply (slt_po W _ (pvar 2) HW)|exact Hz1y]. }
-  tstep.
+  assert ((freshp_bcs Lc Hc, [pconst 1]) ∈ Ψ) as HgC by (right; left; reflexivity).
+  assert ((freshp_bcs Ld Hd, [pconst 2]) ∈ Ψ) as HgD by (right; right; left; reflexivity).
+  assert (slt W Ψ (pc 0 1) (pt_dual (pc 1 0))) as Hz1x.
+  { apply (slt_freshp_l W Ψ Lc Hc (pconst 1) (pc 0 1) false); [exact HgC|by left]. }
+  assert (slt W Ψ (pc 0 1) (pt_dual (pc 2 0))) as Hz1y.
+  { apply (slt_freshp_l W Ψ Ld Hd (pconst 2) (pc 0 1) false); [exact HgD|by left]. }
+  assert (slt W Ψ (pc 2 0) (pt_dual (pc 1 0))) as Hyx.
+  { apply (slt_freshp_r W Ψ Ld Hd (pconst 2) (pt_dual (pc 1 0)) true); [exact HgD|by left]. }
+  assert (slt W Ψ (pc 0 0) (pt_dual (pc 1 0))) as Hzx.
+  { eapply sl_trans; [apply (slt_po W _ (pc 0 0) HW)|exact Hz1x]. }
+  assert (slt W Ψ (pc 0 0) (pt_dual (pc 2 0))) as Hzy.
+  { eapply sl_trans; [apply (slt_po W _ (pc 0 0) HW)|exact Hz1y]. }
+  cbn. tstep.
   { (* spawn (λu. let () = u in close c′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 1))) (Some (pvar 1)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 1 0))) (Some (pc 1 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (pvar 1)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual (pc 1 0)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* spawn (λu. let () = u in close d′) *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pvar 0))) (Some (pvar 0)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 2 0))) (Some (pc 2 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy|].
-    exists (pt_dual (pvar 0)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
+    exists (pt_dual (pc 2 0)). split; [by rewrite lookup_insert_eq|apply sle_refl, HW]. }
   cbn. tstep.
   { (* spawn the sender of inr ∗ *)
     tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 2 1))) (Some (pvar 2)) 0); [set_solver| |].
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 1))) (Some (pc 0 0)) 0); [set_solver| |].
     { intros y Hy. mem_cases Hy. apply sle_refl, HW. }
     cbn. tstep; [tstep|]. cbn. tstep.
-    - tstep; [|apply (KTSend _ _ _ 1 Tz_t SEnd (pt_dual (pvar 2))); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
+    - tstep; [|apply (KTSend _ _ _ 1 Tz_t SEnd (pt_dual (pc 0 0))); cbn; set_solver|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
       + tstep; first [tstep|cbn; apply t_inj2, (tv_unit W HW); reflexivity].
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pt_dual (pv 2 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pvar 2)) HW).
+        exists (pt_dual (pc 0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pc 0 0)) HW).
     - apply KTClos.
     - done.
     - apply ubs_intro; [intros y Hy; mem_cases Hy|].
-      exists (pt_dual (pv 2 1)). split; [done|]. apply sle_refl, HW. }
-  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (payload_at 1 Tz_t (pvar 2)) (TSess SEnd (pv 2 1)));
+      exists (pt_dual (pc 0 1)). split; [done|]. apply sle_refl, HW. }
+  cbn. eapply (tv_letp W HW _ _ _ _ _ _ (payload_at 1 Tz_t (pc 0 0)) (TSess SEnd (pc 0 1)));
     [reflexivity| |].
   { tstep; [tstep|apply KTRecv|cbn; repeat split; apply Forall_singleton; intros ? Hv; injection Hv; lia|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
   cbn. tstep.
   { tstep; [tstep|apply KTClos|done|].
     apply ubs_intro; [intros y Hy; mem_cases Hy; done|done]. }
-  cbn. set (Cd := bcs_inst (plist [pt_payload (pvar 2) 0]) Cdead).
+  cbn. set (Cd := bcs_inst (plist [pt_payload (pc 0 0) 0]) Cdead).
   eapply (tv_case W _ _ _ _ _ _ _ (TEx LNone 0 Cd TUnit) TUnit TUnit); [exact HW|reflexivity|tstep| |].
   - (* inl opens the payload, which states z[0]+5 ≺ z[0]+1 *)
     cbn. apply (t_open W _ _ _ _ _ _ 0 LNone 0 Cd TUnit TUnit); [done|intros Hu; exact Hu|].
@@ -1095,22 +1111,22 @@ Proof.
     change (pinst_ty (pshift 0) TUnit) with TUnit.
     replace (lenv_pinst (pshift 0) _) with
       [Some (TEx LNone 0 Cd TUnit); None; None; None;
-           Some (TSess SEnd (pvar 0)); None; None; None;
-           Some (TSess SEnd (pvar 1)); None; None; None; None; None; None] by reflexivity.
+           Some (TSess SEnd (pc 2 0)); None; None; None;
+           Some (TSess SEnd (pc 1 0)); None; None; None; None; None; None] by reflexivity.
     cbn [insert list_insert].
     set (Ψ' := Ψ ++ [(bcs_inst (pshift 0) Cd, ids 0)]).
-    assert (slt W Ψ' (sl0 2 5) (sl0 2 1)) as Hdead.
+    assert (slt W Ψ' (zl0 5) (zl0 1)) as Hdead.
     { apply sl_h. exists (bcs_inst (pshift 0) Cd), []. split.
       { unfold Ψ'. apply elem_of_app. right. by left. }
-      exists (FLt (sl0 2 5) (sl0 2 1)). split; [|reflexivity].
+      exists (FLt (zl0 5) (zl0 1)). split; [|reflexivity].
       exists (FLt (pv 0 5) (pv 0 1)). split_and!; [done| |reflexivity].
       cbn. lia. }
-    assert (slt W Ψ' (pvar 1) (pt_dual (pvar 0))) as Hxy.
+    assert (slt W Ψ' (pc 1 0) (pt_dual (pc 2 0))) as Hxy.
     { eapply sl_trans.
-      { apply (slt_freshp_r W Ψ' (pshift 2) Lc Hc (pvar 1) (sl0 0 5) true); [|by left].
+      { apply (slt_freshp_r W Ψ' Lc Hc (pconst 1) (zl0 5) true); [|by left].
         apply elem_of_app. left. exact HgC. }
       eapply sl_trans; [exact Hdead|].
-      apply (slt_freshp_l W Ψ' (pshift 1) Ld Hd (pvar 0) (sl0 1 1) false); [|by right; left].
+      apply (slt_freshp_l W Ψ' Ld Hd (pconst 2) (zl0 1) false); [|by right; left].
       apply elem_of_app. left. exact HgD. }
     tstep; [tstep|]. cbn. tstep.
     + tstep; [tstep|apply KTClos|done|].
@@ -1162,8 +1178,10 @@ Definition che : chan := "e".
 Definition db_Θ3 (x y z : point) : tenv :=
   <[chd := One (SEnd, y)]> (<[chc := One (SEnd, x)]> {[che := One (Se0, z)]}).
 
-Definition db_ρ : nat → expr :=
-  λ i, match i with 1 => Chan chd | 5 => Chan chc | 9 => Chan che | _ => EUnit end.
+Definition db_ρ (x y z : point) : nat → expr :=
+  λ i, match i with
+       | 1 => Chan chd (pt_pol y) | 5 => Chan chc (pt_pol x) | 9 => Chan che (pt_pol z) | _ => EUnit
+       end.
 
 Lemma tenv_comp_insert1 R Θ c a :
   Θ !! c = None → tenv_comp R (<[c := One a]> Θ) {[c := One a]} Θ.
@@ -1179,17 +1197,17 @@ Lemma db_rground n W x y z k :
   world_wf W →
   grounding n W (db_Θ3 x y z)
     ([None; Some (TSess SEnd y); None; None; None; Some (TSess SEnd x); None; None; None;
-      Some (TSess Se0 z)] ++ replicate k None) db_ρ.
+      Some (TSess Se0 z)] ++ replicate k None) (db_ρ x y z).
 Proof.
   intros HW. cbn [grounding app].
   exists {[chd := One (SEnd, y)]}, (<[chc := One (SEnd, x)]> {[che := One (Se0, z)]}).
   split; [apply tenv_comp_insert1; by rewrite lookup_insert_ne, lookup_singleton_ne|]. split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   exists {[chc := One (SEnd, x)]}, {[che := One (Se0, z)]}.
   split; [apply tenv_comp_insert1; by rewrite lookup_singleton_ne|]. split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   exists {[che := One (Se0, z)]}, ∅. split; [apply tenv_comp_empty_r|]. split.
-  { apply Vrel_sess_iff. eexists _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)]. }
+  { apply Vrel_sess_iff. eexists _, _, _, _. split_and!; [done|done|apply seq_refl|apply (wf_eq_refl _ HW)|done]. }
   apply grounding_nones.
 Qed.
 
@@ -1220,27 +1238,28 @@ Proof.
     by rewrite lookup_insert_ne, !lookup_singleton_ne.
 Qed.
 
-Lemma db_rnode_subst :
-  subst db_ρ db_rnode =
-    LetP (App ERecv (Chan che)) (subst (up (up db_ρ)) (LetU (App EClos (Var 0)) db_case)).
+Lemma db_rnode_subst x y z :
+  subst (db_ρ x y z) db_rnode =
+    LetP (App ERecv (Chan che (pt_pol z)))
+      (subst (up (up (db_ρ x y z))) (LetU (App EClos (Var 0)) db_case)).
 Proof. done. Qed.
 
-Lemma db_rnode_body b :
-  subst2 (bit b) (Chan che) (subst (up (up db_ρ)) (LetU (App EClos (Var 0)) db_case)) =
-    LetU (App EClos (Chan che)) (subst (db_γ b) db_case).
+Lemma db_rnode_body b x y z :
+  subst2 (bit b) (Chan che (pt_pol z)) (subst (up (up (db_ρ x y z))) (LetU (App EClos (Var 0)) db_case)) =
+    LetU (App EClos (Chan che (pt_pol z))) (subst (db_γ b x y) db_case).
 Proof. by destruct b. Qed.
 
 Lemma db_rnode_lt W T F (b : bool) x y z :
   strict W →
-  Erel 6 W (db_Θ3 x y z) T F (subst db_ρ db_rnode) →
+  Erel 6 W (db_Θ3 x y z) T F (subst (db_ρ x y z) db_rnode) →
   if b then w_lt W y (pt_dual x) else w_lt W x (pt_dual y).
 Proof.
   intros HWs HE. rewrite db_rnode_subst in HE.
   (* the receive, at the payload bit b *)
   eapply Erel_S_step in HE;
-    [|apply TStepLetP, TStepHead, (HeadRecv che (bit b)); by destruct b].
+    [|apply TStepLetP, TStepHead, (HeadRecv che (pt_pol z) (bit b)); by destruct b].
   cbn [Ecase_gen Eobl] in HE. destruct HE as (Θ1 & m & U & s & k & Hhd & HE).
-  destruct (tenv_hd_one _ _ _ _ _ _ _ Hhd (db_Θ3_e x y z)) as (-> & -> & Hu).
+  destruct (tenv_hd_one _ _ _ _ _ _ _ (proj1 Hhd) (db_Θ3_e x y z)) as (-> & -> & Hu).
   rewrite db_Θ3_del in HE. cbn in Hu. injection Hu as <- <- <-.
   assert (db_Θ x y !! che = None) as Hn.
   { unfold db_Θ. by rewrite lookup_insert_ne, lookup_singleton_ne. }
@@ -1257,7 +1276,7 @@ Proof.
   (* the close of e, a giving step at the same index *)
   eapply Erel_S_step in HE; [|apply TStepLetU, TStepHead, HeadClos].
   cbn [Ecase_gen Eobl at_cost tcost scost] in HE. destruct HE as (Θ2 & k2 & Hhd2 & HE).
-  destruct (tenv_hd_one _ _ _ _ _ _ _ Hhd2 (lookup_insert_eq _ _ _)) as (-> & _ & _).
+  destruct (tenv_hd_one _ _ _ _ _ _ _ (proj1 Hhd2) (lookup_insert_eq _ _ _)) as (-> & _ & _).
   unfold Θe in HE. rewrite delete_insert_eq, delete_id in HE by done.
   (* the β step of let () *)
   eapply Erel_S_step in HE; [|apply TStepHead, HeadLetU].
@@ -1306,7 +1325,7 @@ Qed.
 (** db_rnode is the tail of db_main after the three lets of new and the
     three spawns. *)
 Lemma db_main_shape b :
-  db_main b = let_new (let_new (let_new
+  db_main b = let_new_at (EPt (pconst 0)) (let_new_at (EPt (pconst 1)) (let_new_at (EPt (pconst 2))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 5)))))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (Var 1)))))
     (LetU (App ESpawn (Lam (LetU (Var 0) (App EClos (App ESend (Pair (bit b) (Var 9)))))))

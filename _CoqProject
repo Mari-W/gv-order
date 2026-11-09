@@ -119,7 +119,7 @@ theories/examples/LitTools.v
 theories/examples/MilnerSched.v
 theories/examples/KobForwarder.v
 theories/examples/FactServer.v
-# SYNTACTIC-POINTS: example port pending theories/examples/DataBranch.v
+theories/examples/DataBranch.v
 # SYNTACTIC-POINTS: example port pending theories/examples/DataAlternate.v
 # SYNTACTIC-POINTS: example port pending theories/examples/GrowDeadlock.v
 theories/examples/Stream.v
