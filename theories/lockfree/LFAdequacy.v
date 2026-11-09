@@ -615,3 +615,34 @@ Section counters.
     - intros s' es' Hes' Hso'. by apply (s_uniq (S n) W HW T π q A U Hc s' s es' es (cdual o)).
   Qed.
 End counters.
+
+Lemma fuel_reduce (n : nat) (W : world) (HW : strict W) (T : ty) (π : gmap cend point) (q : config)
+    (A : nat → tenv) (U : nat → ty) (n' : nat) (π' : gmap cend point) (q' : config) (A' : nat → tenv)
+    (U' : nat → ty) (F F' : nat → gmap cend fuel) (L : gset nat) (t : nat) (e : expr) (a : action)
+    (o : cend) (e' : expr) (a' : action) (o' : cend) (s : nat) (es : expr) (m : nat) :
+  LFconf (S n) W ∅ T π q A U → LFconf (S n') W ∅ T π' q' A' U' →
+  q.2 !! t = Some e → act e = Some a → aend1 a = Some o →
+  q.2 !! s = Some es → s ≠ t → cdual o ∈ fends es → fu_at q F t = m →
+  q'.2 !! t = Some e' → act e' = Some a' → aend1 a' = Some o' →
+  (∃ s' es', q'.2 !! s' = Some es' ∧ s' ≠ t ∧ cdual o' ∈ fends es' ∧
+     (fval F' s' (cdual o') < m ∨ (fval F' s' (cdual o') = m ∧ s' = s ∧ (s ∈ L → admin_at q s)))) →
+  fu_at q' F' t < fu_at q F t ∨
+  (fu_at q' F' t = fu_at q F t ∧ (∀ x, waits q' t x ↔ waits q t x) ∧ ∀ x, waits q t x → x ∈ L → admin_at q x).
+Proof.
+  intros Hc Hc' He Ha Ho Hes Hst Hso Hm He' Ha' Ho' (s' & es' & Hes' & Hst' & Hso' & Hor).
+  assert (fu_at q' F' t = fval F' s' (cdual o')) as Hfu'.
+  { unfold fu_at, rend. rewrite He', Ha', Ho'.
+    rewrite (holder_spec q' (cdual o') s' es' Hes' Hso'); [done|].
+    intros x ex Hx Hxo. by apply (s_uniq n' W HW T π' q' A' U' Hc' x s' ex es' (cdual o')). }
+  rewrite Hfu', Hm. destruct Hor as [Hlt|(Heq & -> & Had)]; [by left|right].
+  split_and!; [done| |].
+  - intros x. rewrite (s_waits n' W HW T π' q' A' U' Hc' t e' a' o' x He' Ha' Ho').
+    rewrite (s_waits n W HW T π q A U Hc t e a o x He Ha Ho). split.
+    + intros (Hxt & ex & Hx & Hxo). split; [done|]. exists es.
+      assert (x = s) as -> by (by apply (s_uniq n' W HW T π' q' A' U' Hc' x s ex es' (cdual o'))). done.
+    + intros (Hxt & ex & Hx & Hxo). split; [done|]. exists es'.
+      assert (x = s) as -> by (by apply (s_uniq n W HW T π q A U Hc x s ex es (cdual o))). done.
+  - intros x Hw Hx. rewrite (s_waits n W HW T π q A U Hc t e a o x He Ha Ho) in Hw.
+    destruct Hw as (_ & ex & Hex & Hxo).
+    assert (x = s) as -> by (by apply (s_uniq n W HW T π q A U Hc x s ex es (cdual o))). by apply Had.
+Qed.
