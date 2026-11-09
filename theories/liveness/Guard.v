@@ -38,7 +38,7 @@ Fixpoint gd (e : expr) : bool :=
 Fixpoint occurs (x : nat) (e : expr) : bool :=
   match e with
   | Var y => Nat.eqb x y
-  | EUnit | Konst _ | Chan _ => false
+  | EUnit | Konst _ | Chan _ _ | EPt _ => false
   | Lam e | EBox e => occurs (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => occurs x e1 || occurs x e2
   | LetP e1 e2 => occurs x e1 || occurs (S (S x)) e2
@@ -54,7 +54,7 @@ Fixpoint occurs (x : nat) (e : expr) : bool :=
 Fixpoint ok (f : bool) (x : nat) (e : expr) : bool :=
   match e with
   | Var y => negb (Nat.eqb x y)
-  | EUnit | Konst _ | Chan _ => true
+  | EUnit | Konst _ | Chan _ _ | EPt _ => true
   | Lam b | EBox b => negb (occurs (S x) b)
   | App (App (Konst KForce) (Var y)) e2 =>
       if Nat.eqb x y then f && gd e2 && ok f x e2 else ok f x e2
@@ -77,7 +77,7 @@ Fixpoint okv (f : bool) (x : nat) (e : expr) : bool :=
 (** Every box of the term is guarded. *)
 Fixpoint gall (e : expr) : bool :=
   match e with
-  | Var _ | EUnit | Konst _ | Chan _ => true
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => true
   | EBox b => okv false 0 b && gall b
   | Lam e | Inj1 e | Inj2 e => gall e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => gall e1 && gall e2

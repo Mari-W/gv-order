@@ -42,7 +42,7 @@ Proof. intros Hj. by rewrite llevels_at. Qed.
     fuel of the recursive calls. *)
 Lemma LVdef_S_lolli below n k W Θ ub lb T1 U v :
   LVdef below n (S k) W Θ (TLolli ub lb T1 U) v ↔
-  (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
+  (∃ eb, v = Lam eb ∧ tenv_fit Θ eb ∧ lb_below W lb (tenv_heads Θ) ∧
      ∀ W' j Θ' Θ'' w F, wext W W' → j ≤ n →
        tenv_comp (w_eq W') Θ'' Θ Θ' → ub_below W' ub F →
        (j < n → lvV (below j) W' Θ' T1 w → lvE (below j) W' Θ'' U F (subst1 w eb)) ∧
@@ -87,7 +87,10 @@ Proof. by rewrite LVrel_eq. Qed.
 
 Lemma LVrel_sess_iff n W Θ s x v :
   LVrel n W Θ (TSess s x) v ↔
-  ∃ c s0 k, v = Chan c ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧ w_eq W k x.
+  ∃ c b s0 k, v = Chan c b ∧ Θ = {[c := One (s0, k)]} ∧ seq s0 s ∧ w_eq W k x ∧ pt_pol k = b.
+Proof. by rewrite LVrel_eq. Qed.
+
+Lemma LVrel_pt_iff n W Θ x v : LVrel n W Θ (TPt x) v ↔ Θ = ∅ ∧ v = EPt x ∧ pt_known W x.
 Proof. by rewrite LVrel_eq. Qed.
 
 Lemma LVrel_prod_iff n W Θ T U v :
@@ -143,7 +146,7 @@ Qed.
 (** The arrow reads argument and body at every j ≤ n. *)
 Lemma LVrel_lolli_iff n W Θ ub lb T U v :
   LVrel n W Θ (TLolli ub lb T U) v ↔
-  (∃ eb, v = Lam eb ∧ fchans eb = dom Θ ∧ lb_below W lb (tenv_heads Θ) ∧
+  (∃ eb, v = Lam eb ∧ tenv_fit Θ eb ∧ lb_below W lb (tenv_heads Θ) ∧
      ∀ W' j Θ' Θ'' w F, wext W W' → j ≤ n →
        tenv_comp (w_eq W') Θ'' Θ Θ' → ub_below W' ub F →
        LVrel j W' Θ' T w → LErel j W' Θ'' U F (subst1 w eb))
@@ -204,12 +207,13 @@ Qed.
 
 Definition LEstep (X : world → tenv → ty → gset point → expr → Prop) (n : nat)
     (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr) : Prop :=
+  tenv_fit Θ e ∧
   ∀ W1, wext_r W W1 →
     (irred e → LVrel (S n) W1 Θ T e) ∧
     (¬ irred e → ready_t W1 Θ F e) ∧
     (∀ e', tstep e LBeta e' → X W1 Θ T F e') ∧
-    (∀ c e', tstep e (LNew c) e' → c ∉ dom Θ →
-       ∃ x s s', pt_known W1 x ∧
+    (∀ c x e', tstep e (LNew c x) e' → c ∉ dom Θ →
+       pt_known W1 x ∧ ∃ s s',
          sdual s s' ∧
          X W1 (<[c := Both (s, x) (s', pt_dual x)]> Θ) T F e') ∧
     (∀ w e', tstep e (LSpawn w) e' →
@@ -223,11 +227,12 @@ Lemma LEstep_mono (X Y : world → tenv → ty → gset point → expr → Prop)
   (∀ W Θ T F e, X W Θ T F e → Y W Θ T F e) →
   LEstep X n W Θ T F e → LEstep Y n W Θ T F e.
 Proof.
-  intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  intros HXY [Hfit H]. split; [exact Hfit|].
+  intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [done|done| | | |done|].
   - intros e' Hst. auto.
-  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & ?).
-    exists a, s, s'. auto.
+  - intros c x e' Hst Hc. destruct (Hn c x e' Hst Hc) as (? & s & s' & ? & ?).
+    split; [done|]. exists s, s'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
     eapply Vspawn_mono; [|exact Hv]. auto.
@@ -243,12 +248,13 @@ Lemma Ebody_LEstep n (X : (world → tenv → expr → Prop) → ty → world �
   Ebody (llevels (S n)) (S n) X VT T W Θ F e →
   LEstep Y n W Θ T F e.
 Proof.
-  intros HV HX HXu H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  intros HV HX HXu [Hfit H]. split; [exact Hfit|].
+  intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [|done| | | | |].
   - intros Hirr. auto.
   - intros e' Hst. auto.
-  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & ?).
-    exists a, s, s'. auto.
+  - intros c x e' Hst Hc. destruct (Hn c x e' Hst Hc) as (? & s & s' & ? & ?).
+    split; [done|]. exists s, s'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
     eapply Vspawn_ext; [..|exact Hv]; [| |auto].
@@ -267,12 +273,13 @@ Lemma LEstep_Ebody n (X : (world → tenv → expr → Prop) → ty → world �
   LEstep Y n W Θ T F e →
   Ebody (llevels (S n)) (S n) X (lVtop (llevels (S n)) (S n) T) T W Θ F e.
 Proof.
-  intros HX HXu H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  intros HX HXu [Hfit H]. split; [exact Hfit|].
+  intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [|done| | | | |].
   - intros Hirr. apply LVrel_eq. auto.
   - intros e' Hst. auto.
-  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & ?).
-    exists a, s, s'. auto.
+  - intros c x e' Hst Hc. destruct (Hn c x e' Hst Hc) as (? & s & s' & ? & ?).
+    split; [done|]. exists s, s'. auto.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & ?).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |auto].
     eapply Vspawn_ext; [..|exact Hv]; [| |auto].
@@ -404,7 +411,7 @@ Proof.
   assert (∀ k W Θ T v, tsize T < k →
             LVdef (llevels n) n k W Θ T v → LVdef (llevels m) m k W Θ T v) as Hk.
   { induction k as [|k IH]; intros W0 Θ0 T0 v0 Hk H; [done|].
-    destruct T0 as [|ub lb T1 U|T1 U|T1 U|mm kk C T1|s x|lb mm C T1]; cbn [tsize] in Hk.
+    destruct T0 as [|ub lb T1 U|T1 U|T1 U|mm kk C T1|s x|lb mm C T1|x]; cbn [tsize] in Hk.
     - done.
     - apply LVdef_S_lolli in H. apply LVdef_S_lolli.
       destruct H as [(eb & -> & Hfc & Hlb & H)|Hkc]; [left|by right].
@@ -430,7 +437,8 @@ Proof.
     - done.
     - apply LVdef_S_ex in H as (Hlb & xs & ? & ? & ? & H). apply LVdef_S_ex.
       split; [done|]. exists xs. split_and!; [done..|].
-      apply IH; [unfold ty_inst; rewrite tsize_pinst; lia|done]. }
+      apply IH; [unfold ty_inst; rewrite tsize_pinst; lia|done].
+    - done. }
   apply Hk. lia.
 Qed.
 
@@ -482,13 +490,14 @@ Proof.
   destruct m as [|m']; [apply LErel_0|].
   destruct n as [|n']; [lia|].
   destruct (decide (m' = n')) as [->|Hne]; [done|].
-  revert W Θ T F e HE. apply (LErel_S_ind n'). intros W Θ T F e H.
-  apply LErel_S_iff. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  revert W Θ T F e HE. apply (LErel_S_ind n'). intros W Θ T F e [Hfit H].
+  apply LErel_S_iff. split; [exact Hfit|].
+  intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [| done | | | | | ].
   - intros Hirr. eapply LVrel_down; [|by apply Hs]. lia.
   - intros e' Hst. by apply (Hb e' Hst).
-  - intros c e' Hst Hc. destruct (Hn c e' Hst Hc) as (a & s & s' & ? & ? & _ & HX).
-    exists a, s, s'. by split_and!.
+  - intros c x e' Hst Hc. destruct (Hn c x e' Hst Hc) as (? & s & s' & ? & _ & HX).
+    split; [done|]. exists s, s'. by split_and!.
   - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
     exists Θ1, Θ2, ub, lb. split_and!; [done| |done].
     destruct Hv as [(eb & -> & ? & ? & Hv)|Hk]; [left|by right]. exists eb.
@@ -528,15 +537,16 @@ Qed.
 Lemma LVdef_val below n k W Θ T v : LVdef below n k W Θ T v → is_val v.
 Proof.
   revert W Θ T v. induction k as [|k IH]; intros W Θ T v H; [done|].
-  destruct T as [|ub lb T1 U|T1 U|T1 U|m kk C T1|s x|lb m C T1].
+  destruct T as [|ub lb T1 U|T1 U|T1 U|m kk C T1|s x|lb m C T1|x].
   - by destruct H as [_ ->].
   - apply LVdef_S_lolli in H. by destruct H as [(eb & -> & _)|(kc & T0 & -> & _)].
   - apply LVdef_S_prod in H as (v1 & v2 & Θ1 & Θ2 & -> & _ & H1 & H2).
     simpl. apply andb_True. eauto.
   - apply LVdef_S_sum in H as [(v' & -> & H)|(v' & -> & H)]; simpl; eauto.
   - apply LVdef_S_box in H as (_ & eb & -> & _). done.
-  - by destruct H as (c & s0 & kk & -> & _).
+  - by destruct H as (c & b & s0 & kk & -> & _).
   - apply LVdef_S_ex in H as (_ & xs & _ & _ & _ & H). eauto.
+  - by destruct H as (_ & -> & _).
 Qed.
 
 Lemma LVrel_val n W Θ T v : LVrel n W Θ T v → is_val v.
@@ -546,7 +556,7 @@ Lemma LVdef_mono below n k W W' Θ T v :
   wext W W' → LVdef below n k W Θ T v → LVdef below n k W' Θ T v.
 Proof.
   intros HWW'. revert W' HWW' Θ T v. induction k as [|k IH]; intros W' HWW' Θ T v H; [done|].
-  destruct T as [|ub lb T1 U|T1 U|T1 U|m kk C T1|s x|lb m C T1].
+  destruct T as [|ub lb T1 U|T1 U|T1 U|m kk C T1|s x|lb m C T1|x].
   - done.
   - apply LVdef_S_lolli in H. apply LVdef_S_lolli.
     destruct H as [(eb & -> & Hfc & Hlb & H)|(kc & T0 & -> & -> & Hk & Ht)].
@@ -563,13 +573,15 @@ Proof.
   - apply LVdef_S_box in H as (-> & eb & -> & Hfc & H). apply LVdef_S_box.
     split; [done|]. exists eb. split_and!; [done|done|].
     intros W'' xs ss HW. apply H. by eapply wext_trans.
-  - destruct H as (c & s0 & kk & -> & -> & Hs & Hx). exists c, s0, kk. split_and!; [done..|].
-    destruct HWW' as (_ & He & _). auto.
+  - destruct H as (c & b & s0 & kk & -> & -> & Hs & Hx & Hb). exists c, b, s0, kk.
+    split_and!; [done..| |done]. destruct HWW' as (_ & He & _). auto.
   - apply LVdef_S_ex in H as (Hlb & xs & Hxs & HK & HC & H). apply LVdef_S_ex.
     split; [by eapply lbx_below_mono|]. exists xs. split_and!; [done| | |by apply IH].
     + eapply Forall_impl; [exact HK|]. destruct HWW' as (Hn & _). unfold pt_known.
       intros x Hx. by apply Hn.
     + eapply bcs_hold_mono; [| |exact HC]; by destruct HWW' as (_ & ? & ? & _).
+  - destruct H as (-> & -> & Hx). split_and!; [done|done|].
+    destruct HWW' as (Hn & _). by apply Hn.
 Qed.
 
 Lemma LVrel_mono n W W' Θ T v : wext W W' → LVrel n W Θ T v → LVrel n W' Θ T v.
@@ -589,16 +601,43 @@ Proof.
   by apply Pind_mono_world.
 Qed.
 
+(** A value fits its environment. *)
+Lemma LVdef_fit below n k W Θ T v : LVdef below n k W Θ T v → tenv_fit Θ v.
+Proof.
+  revert W Θ T v. induction k as [|k IH]; intros W Θ T v H; [done|].
+  destruct T as [|ub lb T1 U|T1 U|T1 U|m kk C T1|s x|lb m C T1|x].
+  - destruct H as [-> ->]. split; [apply tenv_ends_empty|apply tenv_bipol_empty].
+  - apply LVdef_S_lolli in H. destruct H as [(eb & -> & Hfit & _)|(kc & T0 & -> & -> & _)].
+    + exact Hfit.
+    + split; [apply tenv_ends_empty|apply tenv_bipol_empty].
+  - apply LVdef_S_prod in H as (v1 & v2 & Θ1 & Θ2 & -> & Hc & H1 & H2).
+    destruct (IH _ _ _ _ H1) as [E1 B1]. destruct (IH _ _ _ _ H2) as [E2 B2].
+    split; [|by eapply tenv_bipol_comp]. simpl. by rewrite (tenv_join_ends _ _ _ (proj1 Hc)), E1, E2.
+  - apply LVdef_S_sum in H as [(v' & -> & H)|(v' & -> & H)]; exact (IH _ _ _ _ H).
+  - apply LVdef_S_box in H as (-> & eb & -> & Hfc & _).
+    split; [|apply tenv_bipol_empty]. rewrite tenv_ends_empty. simpl.
+    apply set_eq. intros o. split; [set_solver|]. intros Ho.
+    assert (o.1 ∈ fchans eb) as Hc by (rewrite fchans_fends; apply elem_of_map; eauto).
+    rewrite Hfc in Hc. set_solver.
+  - destruct H as (c & b & s0 & kk & -> & -> & _ & _ & <-).
+    split; [by rewrite tenv_ends_singleton_one|apply tenv_bipol_singleton_one].
+  - apply LVdef_S_ex in H as (_ & xs & _ & _ & _ & H). exact (IH _ _ _ _ H).
+  - destruct H as (-> & -> & _). split; [apply tenv_ends_empty|apply tenv_bipol_empty].
+Qed.
+
+Lemma LVrel_fit n W Θ T v : LVrel n W Θ T v → tenv_fit Θ v.
+Proof. rewrite LVrel_eq. apply LVdef_fit. Qed.
+
 (** E at level n holds the values of V at level n. *)
 Lemma LVrel_LErel n W Θ T F v : LVrel n W Θ T v → LErel n W Θ T F v.
 Proof.
   intros HV. assert (is_val v) as Hv by by eapply LVrel_val.
   destruct n as [|n']; [apply LErel_0|].
-  apply LErel_S_iff. intros W1 HW1. split_and!.
+  apply LErel_S_iff. split; [by eapply LVrel_fit|]. intros W1 HW1. split_and!.
   - intros _. by eapply LVrel_mono_r.
   - intros Hirr. exfalso. by apply Hirr, val_irred.
   - intros e' Hst. exfalso. eauto using val_no_tstep.
-  - intros c e' Hst. exfalso. eauto using val_no_tstep.
+  - intros c x e' Hst. exfalso. eauto using val_no_tstep.
   - intros w e' Hst. exfalso. eauto using val_no_tstep.
   - intros σ e' Hst. exfalso. eauto using val_no_tstep.
   - intros cd e' Hst. exfalso. eauto using val_no_tstep.
