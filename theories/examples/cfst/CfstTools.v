@@ -460,3 +460,215 @@ Proof.
     constructor; [eapply skn_inst; [by left|by left|done]|constructor].
   - fresh_const.
 Qed.
+
+(** ** A ladder of creation constraints over constants (syntactic points)
+
+    The ceiling z is the constant N and channel b < N is the constant
+    N - 1 - b (sharp edges 173). [cl_Ψ a] creates z, then the channels
+    0, …, a-1. The constraint of channel a relates each of its instants
+    to each instant of every earlier channel b by the rank rkf, and puts
+    each of its instants below z. Under the binder of channel a, channel
+    b is the variable a - b and z is a + 1, and the environment of the
+    constraint reads them as their constants. After N channels the
+    constants are the variables of the construction before syntactic
+    points. CfstScheduler.v and ABP.v use it. *)
+Section cladder.
+  Context (rkf : nat → nat → nat) (Hrk : ∀ b k, rkf b k < rkf b (S k)) (N : nat).
+
+  Lemma cl_mono b k l : k < l → rkf b k < rkf b l.
+  Proof. intros H. induction H as [|l _ IH]; [apply Hrk|]. eapply Nat.lt_trans; [exact IH|apply Hrk]. Qed.
+
+  Lemma cl_lt_inv b k l : rkf b k < rkf b l → k < l.
+  Proof.
+    intros H. destruct (decide (k < l)) as [|Hn]; [done|].
+    destruct (decide (k = l)) as [->|Hne]; [lia|]. pose proof (cl_mono b l k ltac:(lia)). lia.
+  Qed.
+
+  Definition cl_P (a : nat) (g : fact) : Prop :=
+    (∃ b k j c c', b < a ∧ rkf b k < rkf a j ∧ g = FLt (pt_polar c (pv (a - b) k)) (pt_polar c' (pv 0 j))) ∨
+    (∃ b k j c c', b < a ∧ rkf a j < rkf b k ∧ g = FLt (pt_polar c (pv 0 j)) (pt_polar c' (pv (a - b) k))) ∨
+    (∃ j c, g = FLt (pt_polar c (pv 0 j)) (pv (S a) 0)).
+  Definition cl_env (a : nat) : list point := (λ i, pconst (N - a + i)) <$> List.seq 0 (S a).
+  Definition cl_C (a : nat) : bcs := BCs (cl_env a) (cl_P a).
+
+  Fixpoint cl_Ψ (a : nat) : hyps :=
+    match a with
+    | 0 => [(top_C0, [pconst N])]
+    | S a' => cl_Ψ a' ++ [(cl_C a', [pconst (N - 1 - a')])]
+    end.
+
+  Definition cl_inv (W : world) (a : nat) : Prop :=
+    (∀ b b' k l c c', b < a → b' < a → rkf b k < rkf b' l →
+       slt W (cl_Ψ a) (pt_polar c (pc (N - 1 - b) k)) (pt_polar c' (pc (N - 1 - b') l))) ∧
+    (∀ b k c, b < a → slt W (cl_Ψ a) (pt_polar c (pc (N - 1 - b) k)) (pc N 0)).
+
+  Lemma cl_env_lookup a i : i ≤ a → cl_env a !! i = Some (pconst (N - a + i)).
+  Proof. intros H. unfold cl_env. rewrite list_lookup_fmap, lookup_seq_lt by lia. done. Qed.
+
+  Lemma cl_open a v c k : 1 ≤ v → v ≤ S a →
+    pt_inst (pup 1 (plist (cl_env a))) (MkPt (NVar v) c k) = MkPt (NConst (N - a + (v - 1))) c k.
+  Proof.
+    intros H1 H2. unfold pt_inst. cbn [pt_name pt_pol pt_off pn_inst]. unfold pup.
+    rewrite decide_False by lia. unfold plist. rewrite cl_env_lookup by lia.
+    destruct c; reflexivity.
+  Qed.
+
+  Lemma cl_open0 σ c k : pt_inst (pup 1 σ) (MkPt (NVar 0) c k) = MkPt (NVar 0) c k.
+  Proof. unfold pt_inst. cbn [pt_name pt_pol pt_off pn_inst]. unfold pup. rewrite decide_True by lia. by destruct c. Qed.
+
+  Lemma cl_inst0 a c k :
+    pt_inst (plist (pconst (N - 1 - a) :: cl_env a)) (MkPt (NVar 0) c k) = MkPt (NConst (N - 1 - a)) c k.
+  Proof. unfold pt_inst. cbn [pt_name pt_pol pt_off pn_inst]. unfold plist. by destruct c. Qed.
+
+  Lemma cl_instS a i c k : i ≤ a →
+    pt_inst (plist (pconst (N - 1 - a) :: cl_env a)) (MkPt (NVar (Datatypes.S i)) c k) = MkPt (NConst (N - a + i)) c k.
+  Proof.
+    intros Hi. unfold pt_inst. cbn [pt_name pt_pol pt_off pn_inst]. unfold plist.
+    change ((pconst (N - 1 - a) :: cl_env a) !! Datatypes.S i) with (cl_env a !! i).
+    rewrite cl_env_lookup by lia. by destruct c.
+  Qed.
+
+  Lemma cl_up c n k : pt_inst (λ a, pvar (a + 1)) (MkPt (NConst n) c k) = MkPt (NConst n) c k.
+  Proof. by destruct c. Qed.
+
+  Lemma cl_slt_app W Ψ L x y : strict W → slt W Ψ x y → slt W (Ψ ++ L) x y.
+  Proof.
+    intros HW H. rewrite <-(pt_inst_pvar x), <-(pt_inst_pvar y).
+    apply (slt_pinst_s W W pvar (proj1 HW) (wext_refl _ HW) Ψ); [|exact H].
+    apply hyps_hold_sub. intros g Hg. rewrite hyps_inst_pvar in Hg. apply elem_of_app. by left.
+  Qed.
+
+  Lemma cl_ok W a : a ≤ N → cl_inv W a → cc_ok (seqs W (cl_Ψ a)) (slt W (cl_Ψ a)) (cl_C a).
+  Proof.
+    intros Ha [HR Hz].
+    apply (cc_ok_out _ _ (cl_C a) olt); [exact olt_trans|exact olt_irrefl|intros x _; apply olt_po|intros x _; apply olt_dpo| |].
+    - intros x y (f & Hf & _ & E). cbn [bc_facts bc_env] in *.
+      destruct Hf as [(b & k & j & [|] & [|] & Hb & _ & ->)|[(b & k & j & [|] & [|] & Hb & _ & ->)|(j & [|] & ->)]];
+        unfold cl_C in E; cbn [fact_map bc_env pt_polar] in E; try unfold pt_dual in E; cbn [pt_name pt_pol pt_off negb] in E;
+        rewrite ?cl_open0 in E; rewrite ?cl_open in E by lia; injection E as -> ->.
+      all: cbn; first [right; left; split; [intros [=]|done]|right; right; split; [done|intros [=]]].
+    - intros u p q v (f & Hf & _ & E) (f' & Hf' & _ & E') Hu Hp Hq Hv Hpq. cbn [bc_facts bc_env] in *.
+      destruct Hf as [(b & k & j & [|] & [|] & Hb & Hr & ->)|[(b & k & j & [|] & [|] & Hb & Hr & ->)|(j & [|] & ->)]];
+        unfold cl_C in E; cbn [fact_map bc_env pt_polar] in E; try unfold pt_dual in E; cbn [pt_name pt_pol pt_off negb] in E;
+        rewrite ?cl_open0 in E; rewrite ?cl_open in E by lia; injection E as -> ->; cbn in Hu, Hp; try done.
+      all: destruct Hf' as [(b' & k' & j' & [|] & [|] & Hb' & Hr' & ->)|[(b' & l & j' & [|] & [|] & Hb' & Hr' & ->)|(j' & [|] & ->)]];
+        unfold cl_C in E'; cbn [fact_map bc_env pt_polar] in E'; try unfold pt_dual in E'; cbn [pt_name pt_pol pt_off negb] in E';
+        rewrite ?cl_open0 in E'; rewrite ?cl_open in E' by lia; injection E' as -> ->; cbn in Hq, Hv; try done.
+      all: assert (j ≤ j') as Hj by (destruct Hpq as [Hpq|[Hpq1 Hpq]]; [injection Hpq; lia|cbn in *; lia]).
+      all: assert (rkf a j ≤ rkf a j') by (destruct (decide (j = j')) as [->|]; [lia|]; pose proof (cl_mono a j j'); lia).
+      all: first
+        [ replace (N - a + (a - b - 1)) with (N - 1 - b) by lia;
+          replace (N - a + (a - b' - 1)) with (N - 1 - b') by lia;
+          match goal with |- glt _ _ (MkPt _ ?c0 _) (MkPt _ ?c1 _) =>
+            pose proof (glt_up (seqs W (cl_Ψ a)) _ _ _ (HR b b' k l c0 c1 Hb Hb' ltac:(lia))) as G end;
+          cbn [pt_polar] in G; try unfold pt_dual in G; cbn [pt_name pt_pol pt_off negb] in G; rewrite !cl_up in G; exact G
+        | replace (N - a + (a - b - 1)) with (N - 1 - b) by lia;
+          replace (N - a + (S a - 1)) with N by lia; replace (N - a + (a - 0)) with N by lia;
+          match goal with |- glt _ _ (MkPt _ ?c0 _) _ =>
+            pose proof (glt_up (seqs W (cl_Ψ a)) _ _ _ (Hz b k c0 Hb)) as G end;
+          cbn [pt_polar] in G; try unfold pt_dual in G; cbn [pt_name pt_pol pt_off negb] in G; rewrite !cl_up in G; exact G ].
+  Qed.
+
+  Lemma cl_slt_ofs W Ψ n c c' k l : world_wf W → k < l →
+    slt W Ψ (pt_polar c (MkPt n true k)) (pt_polar c' (MkPt n true l)).
+  Proof.
+    intros HW H.
+    assert (∀ m d d', slt W Ψ (pt_polar d (MkPt n true m)) (pt_polar d' (MkPt n true (Datatypes.S m)))) as Hs.
+    { intros m [] [];
+        [pose proof (slt_po W Ψ (MkPt n true m) HW) as G|pose proof (sl_dpo W Ψ (MkPt n true m)) as G
+        |pose proof (sl_dpo W Ψ (pt_dual (MkPt n true m))) as G|pose proof (slt_po W Ψ (pt_dual (MkPt n true m)) HW) as G];
+        unfold pt_shift, pt_dual in G; simpl in G; rewrite Nat.add_1_r in G; exact G. }
+    revert c'. induction H as [|l _ IH]; intros c'; [apply Hs|].
+    eapply sl_trans; [apply (IH true)|apply Hs].
+  Qed.
+
+  Ltac cl_norm H :=
+    cbn [pt_polar] in H; try unfold pt_dual in H; cbn [pt_name pt_pol pt_off negb] in H.
+
+  Lemma cl_inv_step W a : strict W → Datatypes.S a ≤ N → cl_inv W a → cl_inv W (Datatypes.S a).
+  Proof.
+    intros HW HaN [HR Hz].
+    assert ((cl_C a, [pconst (N - 1 - a)]) ∈ cl_Ψ (Datatypes.S a)) as Hm.
+    { cbn [cl_Ψ]. apply elem_of_app. right. by left. }
+    assert (∀ x y, cl_P a (FLt x y) → fact_scoped (Datatypes.S (Datatypes.S a)) (FLt x y) →
+              slt W (cl_Ψ (Datatypes.S a)) (pt_inst (plist (pconst (N - 1 - a) :: cl_env a)) x)
+                (pt_inst (plist (pconst (N - 1 - a) :: cl_env a)) y)) as Hn.
+    { intros x y Hf Hs. eapply (sl_hyp W _ (cl_env a) (cl_P a) [pconst (N - 1 - a)] (FLt x y)); [exact Hm|exact Hf| |].
+      - unfold cl_env. cbn [length]. rewrite length_fmap, length_seq. exact Hs.
+      - done. }
+    split.
+    - intros b b' k l c c' Hb Hb' Hr.
+      destruct (decide (b = a)) as [->|Hba]; destruct (decide (b' = a)) as [->|Hba'].
+      + apply cl_slt_ofs; [exact (proj1 HW)|]. by eapply cl_lt_inv.
+      + pose proof (Hn (pt_polar c (pv 0 k)) (pt_polar c' (pv (a - b') l))
+          ltac:(right; left; exists b', l, k, c, c'; split_and!; [lia|done|done])
+          ltac:(destruct c, c'; cbn; split; lia)) as G.
+        destruct c, c'; cl_norm G; rewrite cl_inst0 in G;
+          replace (a - b') with (Datatypes.S (a - b' - 1)) in G by lia; rewrite cl_instS in G by lia;
+          replace (N - a + (a - b' - 1)) with (N - 1 - b') in G by lia; exact G.
+      + pose proof (Hn (pt_polar c (pv (a - b) k)) (pt_polar c' (pv 0 l))
+          ltac:(left; exists b, k, l, c, c'; split_and!; [lia|done|done])
+          ltac:(destruct c, c'; cbn; split; lia)) as G.
+        destruct c, c'; cl_norm G; rewrite cl_inst0 in G;
+          replace (a - b) with (Datatypes.S (a - b - 1)) in G by lia; rewrite cl_instS in G by lia;
+          replace (N - a + (a - b - 1)) with (N - 1 - b) in G by lia; exact G.
+      + apply cl_slt_app; [done|]. apply HR; [lia|lia|done].
+    - intros b k c Hb. destruct (decide (b = a)) as [->|Hba].
+      + pose proof (Hn (pt_polar c (pv 0 k)) (pv (Datatypes.S a) 0)
+          ltac:(right; right; by exists k, c) ltac:(destruct c; cbn; split; lia)) as G.
+        destruct c; cl_norm G; rewrite cl_inst0 in G; rewrite cl_instS in G by lia;
+          replace (N - a + a) with N in G by lia; exact G.
+      + apply cl_slt_app; [done|]. apply Hz. lia.
+  Qed.
+
+  Lemma cl_inv_all W a : strict W → a ≤ N → cl_inv W a.
+  Proof. intros HW. induction a as [|a IH]; intros Ha; [split; intros; lia|apply cl_inv_step; [done|done|apply IH; lia]]. Qed.
+
+  Lemma cl_kn a v : v ≤ a → a ≤ N → ∃ C, (C, [pconst (N - v)]) ∈ cl_Ψ a.
+  Proof.
+    revert v. induction a as [|a IH]; intros v Hv HaN.
+    - assert (v = 0) as -> by lia. exists top_C0. rewrite Nat.sub_0_r. by left.
+    - destruct (decide (v = Datatypes.S a)) as [->|Hne].
+      + exists (cl_C a). cbn [cl_Ψ]. apply elem_of_app. right.
+        replace (N - Datatypes.S a) with (N - 1 - a) by lia. by left.
+      + destruct (IH v ltac:(lia) ltac:(lia)) as (C & HC). exists C. cbn [cl_Ψ]. apply elem_of_app. by left.
+  Qed.
+
+  Lemma cl_skn W a x v : v ≤ a → a ≤ N → pt_root x = NConst (N - v) → skn W (cl_Ψ a) x.
+  Proof.
+    intros Hv HaN Hx. destruct (cl_kn a v Hv HaN) as (C & HC). eapply skn_inst; [exact HC|by left|done].
+  Qed.
+
+  Lemma cl_env_skn W a : a ≤ N → Forall (skn W (cl_Ψ a)) (bc_env (cl_C a)).
+  Proof.
+    intros HaN. apply Forall_forall. intros x Hx. unfold cl_C, cl_env in Hx. cbn [bc_env] in Hx.
+    apply list_elem_of_fmap in Hx as (i & -> & Hi). apply elem_of_seq in Hi.
+    apply (cl_skn W a _ (a - i)); [lia|done|]. cbn. f_equal. lia.
+  Qed.
+
+  (** The roots of the hypotheses are the constants N - v for v ≤ a. *)
+  Lemma cl_roots a C xs y : a ≤ N → (C, xs) ∈ cl_Ψ a → y ∈ xs → ∃ v, v ≤ a ∧ y = pconst (N - v).
+  Proof.
+    revert C xs. induction a as [|a IH]; intros C xs HaN Hin Hy; cbn [cl_Ψ] in Hin.
+    - apply list_elem_of_singleton in Hin. injection Hin as -> ->. apply list_elem_of_singleton in Hy as ->.
+      exists 0. split; [lia|by rewrite Nat.sub_0_r].
+    - apply elem_of_app in Hin as [Hin|Hin].
+      + destruct (IH C xs ltac:(lia) Hin Hy) as (v & Hv & ->). exists v. split; [lia|done].
+      + apply list_elem_of_singleton in Hin. injection Hin as -> ->. apply list_elem_of_singleton in Hy as ->.
+        exists (Datatypes.S a). split; [lia|]. f_equal. lia.
+  Qed.
+
+  Lemma cl_fresh a : Datatypes.S a ≤ N → ¬ skn (Wpo []) (cl_Ψ a) (pconst (N - 1 - a)).
+  Proof.
+    intros HaN [Hk|(C & xs & y & Hin & Hy & E)].
+    - unfold pt_known in Hk. cbn in Hk. set_solver.
+    - destruct (cl_roots a C xs y ltac:(lia) Hin Hy) as (v & Hv & ->). cbn in E. injection E. lia.
+  Qed.
+
+  Lemma cl_created a : a ≤ N → created (Wpo []) (cl_Ψ a).
+  Proof.
+    pose proof Wpo_nil_strict' as HWs. induction a as [|a IH]; intros HaN; [apply top_created|].
+    apply created_snoc; [apply IH; lia|apply cl_ok; [lia|apply cl_inv_all; [done|lia]]|apply cl_env_skn; lia
+      |apply cl_fresh; lia].
+  Qed.
+End cladder.
