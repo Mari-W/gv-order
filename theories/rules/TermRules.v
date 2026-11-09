@@ -820,7 +820,7 @@ Proof.
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SPlus S1 S2) x ∧
             B = TSess (sbranch b S1 S2) (sel_pt x b)) as (S1 & S2 & x & -> & -> & ->).
-  { destruct b; simpl in Hk; inversion Hk as [kq Tq Gq xq Hsig|]; subst; inversion Hsig; subst; eauto 10. }
+  { destruct b; simpl in Hk; inversion Hk as [kq Tq Gq xq Hsig| | |]; subst; inversion Hsig; subst; eauto 10. }
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   destruct (seq_plus_inv _ _ _ _ Hs0 (unfoldS_plus _ _)) as (s1 & s2 & Hu0 & Hs1 & Hs2).
@@ -858,7 +858,7 @@ Proof.
   assert (∃ S1 S2 x, ub0 = Some x ∧ A = TSess (SWith S1 S2) x ∧
             B = TSum (TSess S1 (pt_payload x (bidx false))) (TSess S2 (pt_payload x (bidx true))))
     as (S1 & S2 & x & -> & -> & ->)
-    by (inversion Hk as [kq Tq Gq xq Hsig|]; subst; inversion Hsig; subst; eauto 10).
+    by (inversion Hk as [kq Tq Gq xq Hsig| | |]; subst; inversion Hsig; subst; eauto 10).
   pose proof (ub_some_below _ _ _ _ HWf Hub Hub0) as Hxl.
   apply Vrel_sess_iff in HV as (c & s0 & k & -> & -> & Hs0 & <-).
   destruct (seq_with_inv _ _ _ _ Hs0 (unfoldS_with _ _)) as (s1 & s2 & Hu0 & Hs1 & Hs2).
