@@ -16,12 +16,12 @@ Set Default Proof Using "All".
 
 (** ** Steps and environments *)
 
-Lemma tstep_chsubst_new_same x b e c f' :
-  tstep (chsubst x b e) (LNew c) f' → c ≠ x → ∃ f, tstep e (LNew c) f ∧ f' = chsubst x b f.
+Lemma tstep_chsubst_new_same x b e c y f' :
+  tstep (chsubst x b e) (LNew c y) f' → c ≠ x → ∃ f, tstep e (LNew c y) f ∧ f' = chsubst x b f.
 Proof.
   intros Hst Hcx.
   destruct (exist_fresh (fchans e ∪ {[x; b; c]})) as [c0 Hc0].
-  destruct (tstep_chsubst_new_inv x b e c f' Hst c0) as (f0 & Hf0 & ->); [set_solver..|].
+  destruct (tstep_chsubst_new_inv x b e c y f' Hst c0) as (f0 & Hf0 & ->); [set_solver..|].
   exists (chsubst c0 c f0). split.
   - apply (tstep_chsubst c0 c) in Hf0. simpl in Hf0.
     rewrite (chsubst_id c0 c e), csub_hit in Hf0 by set_solver. exact Hf0.
@@ -41,6 +41,28 @@ Proof.
   - intros k Hkc Hkd. rewrite !lookup_insert_ne by done. by apply Ho.
   - rewrite lookup_insert_ne by done. rewrite !lookup_insert_eq, Hc. constructor.
   - intros e1 e2 H1 _. rewrite lookup_insert_ne in H1 by done. congruence.
+Qed.
+
+(** A move keeps the fit of a term (E-Fit). *)
+Lemma tenv_bipol_move W c d Θ Θ' :
+  c ≠ d → tenv_move W c d Θ Θ' → tenv_bipol Θ → tenv_bipol Θ'.
+Proof.
+  intros Hcd (Hc' & Ho & Hj & Hdd) HB y e1 e2 Hy.
+  destruct (decide (y = c)) as [->|Hyc]; [by rewrite Hc' in Hy|].
+  destruct (decide (y = d)) as [->|Hyd].
+  - rewrite Hy in Hj.
+    destruct (Θ !! c) as [oc|] eqn:Ec, (Θ !! d) as [od|] eqn:Ed; inversion Hj; subst.
+    all: first [by apply (HB c)|by apply (HB d)|
+      (destruct (Hdd _ _ eq_refl eq_refl) as [Hx _]; rewrite Hx, pt_pol_dual;
+       first [by destruct (pt_pol e2.2)|by destruct (pt_pol e1.2)])].
+  - rewrite Ho in Hy by done. by apply (HB y).
+Qed.
+
+Lemma tenv_fit_move W c d Θ Θ' e :
+  c ≠ d → tenv_move W c d Θ Θ' → tenv_fit Θ e → tenv_fit Θ' (chsubst c d e).
+Proof.
+  intros Hcd Hm [Hf HB]. split; [|by eapply tenv_bipol_move].
+  symmetry. apply (fends_move W c d Θ Θ' e Hcd Hm). by symmetry.
 Qed.
 
 Lemma LVrel_move_empty n W Θ' T v c d :
@@ -66,7 +88,8 @@ Lemma LErel_fusion_exclusion n W Θ T F e c d e1 e2 σ e' :
   (c ∈ subjs σ ∨ d ∈ subjs σ) → ∃ cd, σ = SLink cd.
 Proof.
   intros [HWf Hirr] HE Hc Hd Hx Hcd Hst Hsub.
-  destruct σ as [c0 w|c0 w|c0|cd|c0 i|c0 i]; [exfalso|exfalso|exfalso|by eexists|exfalso|exfalso].
+  destruct σ as [[c0 β0] w|[c0 β0] w|[c0 β0]|cd|[c0 β0] i|[c0 β0] i];
+    [exfalso|exfalso|exfalso|by eexists|exfalso|exfalso].
   all: assert (stable_t e) as Hs by (intros α f Hf;
          destruct (tstep_same_act _ _ _ _ _ Hst Hf) as (a & Ha & Ha');
          destruct a, α; simpl in *; done).
@@ -78,7 +101,7 @@ Proof.
   all: assert (∀ k, offered_t Θ e k → k.1 = c0) as Hsame
          by (intros k (σ' & f & Hf & Hsel); apply selects_subj in Hsel;
              destruct (tstep_same_act _ _ _ _ _ Hst Hf) as (a & Ha1 & Ha2);
-             destruct a, σ'; simpl in *; try done; set_solver).
+             destruct a, σ'; simpl in *; try done; destruct_and?; simplify_eq; set_solver).
   all: simpl in Hsub; assert (c0 = c ∨ c0 = d) as [->| ->] by set_solver.
   all: pose proof (Hsame _ Hk0) as Hk0c; destruct k0 as [k1 b0]; simpl in Hk0c; subst k1.
   all: pose proof Hk0 as (σ1 & t1 & _ & Hsel1); destruct (selects_entry _ _ _ Hsel1) as [f Hf].
@@ -181,7 +204,8 @@ Section fuse.
          LVrel (S n') W Θ T v → LVrel (S n') W Θ' T (chsubst c d v)) →
       ∀ Θ', strict W → tenv_move W c d Θ Θ' → LErel (S n') W Θ' T F (chsubst c d e)) _).
     intros W0 Θ T F e H HVT Θ' HW0 Hm0.
-    apply LErel_S_iff. intros W HW1.
+    apply LErel_S_iff. split; [exact (tenv_fit_move _ _ _ _ _ _ Hcd Hm0 (proj1 H))|].
+    intros W HW1.
     assert (strict W) as HW.
     { destruct HW1 as [->|HW1]; [done|by destruct HW1 as (_ & _ & _ & ?)]. }
     assert (tenv_move W c d Θ Θ') as Hm.
@@ -190,7 +214,7 @@ Section fuse.
     assert (HE0 : LErel (S n') W Θ T F e).
     { eapply LErel_mono; [exact HW1|]. apply LErel_S_iff.
       eapply LEstep_mono; [|exact H]. by intros ? ? ? ? ? [? _]. }
-    destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
+    destruct (proj2 H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
     clear H HW0 Hm0 HW1.
     pose proof (proj1 HW) as HWf.
     assert (Hexcl : fused c d Θ → ∀ σ f, tstep e (LSess σ) f → (c ∈ subjs σ ∨ d ∈ subjs σ) →
@@ -203,6 +227,9 @@ Section fuse.
     assert (Hok : ∀ σ f c0, tstep e (LSess σ) f → (∀ cd, σ ≠ SLink cd) → c0 ∈ subjs σ →
                     move_ok c d Θ c0)
       by (intros; eapply step_move_ok; eassumption).
+    assert (Hlnk : ∀ cd f, tstep e (LSess (SLink cd)) f → ∀ y b, (y, b) ∈ cd →
+                 ∃ k e0, k.1 = y ∧ tenv_entry Θ k = Some e0 ∧ pt_pol e0.2 = b)
+      by (intros cd f Hf; exact (LErel_link_ends _ _ _ _ _ _ _ _ HE0 Hf)).
     destruct (move_keys_csub W c d Hcd Θ Θ' Hm) as (κ & Hκ1 & Hκ2 & Hκ3 & Hκ4 & Hκ5).
     assert (Hfwd : ∀ k, offered_t Θ e k → offered_t Θ' (chsubst c d e) (κ k))
       by (intros; eapply fused_offer_fwd; eassumption).
@@ -223,7 +250,7 @@ Section fuse.
       + intros Hno. rewrite is_val_chsubst. apply Hv. intros k Hk. apply (Hno (κ k)).
         by apply Hfwd.
       + destruct Ha as [(cd & f & Hf)|Ha].
-        { left. exists (gsub c d cd), (chsubst c d f). by apply (tstep_chsubst c d) in Hf. }
+        { left. exists (gosub c d cd), (chsubst c d f). by apply (tstep_chsubst c d) in Hf. }
         right. intros k' e' Ho He'.
         destruct (Hback k' e' Ho He' Ha) as (k & e0 & Ho0 & He0 & Heq).
         destruct (Ha k e0 Ho0 He0) as [H1 H2]. split.
@@ -239,30 +266,30 @@ Section fuse.
       apply eq_sym, lsub_beta in Hα as ->.
       destruct (Hb _ Hf) as [_ HΦ]. by apply HΦ.
     - (* new *)
-      intros c' f' Hst Hc'.
+      intros c' y' f' Hst Hc'.
       assert (c ∉ dom Θ') as HcΘ' by (pose proof Hm as (Hc0 & _); by apply not_elem_of_dom).
       destruct (decide (c' = c)) as [->|Hc'c].
       + destruct (exist_fresh (fchans e ∪ dom Θ ∪ dom Θ' ∪ {[c; d]})) as [c0 Hc0].
-        destruct (tstep_chsubst_new_inv c d e c f' Hst c0) as (f & Hf & ->); [set_solver..|].
-        destruct (Hnew _ _ Hf ltac:(set_solver)) as (x & s & s' & Hpl & Hdu & _ & HΦ).
-        exists x, s, s'. split_and!; [done|done|].
-        pose proof (HΦ HVT (<[c0 := Both (s, x) (s', pt_dual x)]> Θ') HW) as HE1.
-        assert (LErel (S n') W (<[c0 := Both (s, x) (s', pt_dual x)]> Θ') T F (chsubst c d f))
+        destruct (tstep_chsubst_new_inv c d e c y' f' Hst c0) as (f & Hf & ->); [set_solver..|].
+        destruct (Hnew _ _ _ Hf ltac:(set_solver)) as (Hpl & s & s' & Hdu & _ & HΦ).
+        split; [done|]. exists s, s'. split; [done|].
+        pose proof (HΦ HVT (<[c0 := Both (s, y') (s', pt_dual y')]> Θ') HW) as HE1.
+        assert (LErel (S n') W (<[c0 := Both (s, y') (s', pt_dual y')]> Θ') T F (chsubst c d f))
           as HE2.
         { apply HE1. apply move_insert; [set_solver|set_solver|done]. }
         apply (LErel_swap c0 c) in HE2.
         rewrite tenvswap_insert, cswap_l, tenvswap_fix in HE2 by set_solver.
         rewrite eswap_chsubst_absent in HE2; [done|].
         by apply fchans_chsubst_notin.
-      + destruct (tstep_chsubst_new_same c d e c' f' Hst Hc'c) as (f & Hf & ->).
+      + destruct (tstep_chsubst_new_same c d e c' y' f' Hst Hc'c) as (f & Hf & ->).
         assert (c' ∉ dom Θ) as Hc'0.
         { destruct (decide (c' = d)) as [->|Hc'd].
           - apply not_elem_of_dom. apply not_elem_of_dom in Hc'.
             exact (proj2 (move_none_d W c d Θ Θ' Hm Hc')).
           - pose proof Hm as (_ & Ho & _). apply not_elem_of_dom. apply not_elem_of_dom in Hc'.
             by rewrite <-(Ho c' Hc'c Hc'd). }
-        destruct (Hnew _ _ Hf Hc'0) as (x & s & s' & Hpl & Hdu & _ & HΦ).
-        exists x, s, s'. split_and!; [done|done|].
+        destruct (Hnew _ _ _ Hf Hc'0) as (Hpl & s & s' & Hdu & _ & HΦ).
+        split; [done|]. exists s, s'. split; [done|].
         apply (HΦ HVT); [done|].
         destruct (decide (c' = d)) as [->|Hc'd].
         * apply not_elem_of_dom in Hc'.
@@ -278,7 +305,7 @@ Section fuse.
         as (Θ1' & Θ2' & Hm1 & Hm2 & Hc').
       exists Θ1', Θ2', ub, lb. split_and!; [done| |by apply HΦ].
       destruct Hv as [(eb & -> & Hfc & Hlb & HL)|(k & T0 & -> & -> & Hk & Ht)].
-      + left. exists (chsubst c d eb). split_and!; [done|exact (fchans_move W c d Hcd Θ1 Θ1' eb Hm1 Hfc)
+      + left. exists (chsubst c d eb). split_and!; [done|exact (tenv_fit_move W c d Θ1 Θ1' eb Hcd Hm1 Hfc)
           |by rewrite (move_heads W c d Hcd Θ1 Θ1' Hm1)|].
         pose proof (lam_move (Vsp_u (S n'))
                       (Esp_u (S n') (λ W Θ F e, LErel (S n') W Θ TUnit F e ∧
@@ -331,20 +358,21 @@ Section fuse.
                           (or_intror (conj Hjn (conj eq_refl eq_refl)))) Hjn).
       + right. exists k, T0. rewrite (move_empty W c d Θ1' Hm1). split_and!; done.
     - (* session steps *)
-      intros σ' f' Hst. destruct σ' as [c' w'|c' w'|c'|cd'|c' i'|c' i'].
+      intros σ' f' Hst. destruct σ' as [[c' β'] w'|[c' β'] w'|[c' β']|cd'|[c' β'] i'|[c' β'] i'].
       + (* receive: freshen the payload's c through z *)
         destruct (exist_fresh (fchans w' ∪ fchans e ∪ dom Θ ∪ dom Θ' ∪ {[c; d]})) as [z Hz].
-        destruct (tstep_chsubst_recv_inv_swap c d z e c' w' f')
-          as (c0 & f & Hc0 & Hf & ->); [done|set_solver|set_solver|set_solver|done|set_solver|].
+        destruct (tstep_chsubst_recv_inv_swap c d z e (c', β') w' f')
+          as ([c0 β0] & f & Hc0 & Hf & ->); [done|set_solver|set_solver|set_solver|done|set_solver|].
+        unfold osub in Hc0; simpl in Hc0. injection Hc0 as Hc0 <-.
         assert (Hok0 : move_ok c d Θ c0)
           by (eapply Hok; [exact Hf|intros ? [=]|simpl; by apply elem_of_singleton]).
         pose proof (Hσ _ _ Hf) as Hc1. cbn [LEobl pred] in Hc1 |- *.
-        destruct Hc1 as (Θ1 & m & U & s & k & Hhd & H).
+        destruct Hc1 as (Θ1 & m & U & s & k & [Hhd Hp] & H).
         assert (Hok1 : move_ok c d Θ1 c0)
           by (destruct Hhd as (? & Hx0 & _); exact (move_ok_ext c d Θ1 c0 _ Θ Hcd Hx0 Hok0)).
         destruct (move_hd W c d Hcd Θ Θ' c0 _ k Θ1 Hm Hhd Hok0) as (Θ1' & Hhd' & Hm1).
         rewrite Hc0 in Hhd'.
-        exists Θ1', m, U, s, k. split; [done|].
+        exists Θ1', m, U, s, k. split; [by split|].
         intros W' j Θ2 Θ1c' Θ'' HW' Hj Hext Hcomp HVw.
         assert (strict W') as HW'' by (by destruct HW' as (_ & _ & _ & ?)).
         destruct (move_ext_given_ok W c d Θ1 Θ1' c0 _ Θ1c' Hcd Hm1 Hok1
@@ -371,12 +399,12 @@ Section fuse.
         apply (LErel_swap c z) in HE1. rewrite tenvswap_involutive in HE1. exact HE1.
       + (* send *)
         apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-        destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc0 Hw0. subst c' w'.
+        destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc0 Hb0 Hw0. subst c' β' w'.
         assert (Hok0 : move_ok c d Θ c0)
           by (eapply Hok; [exact Hf|intros ? [=]|simpl; by apply elem_of_singleton]).
         pose proof (Hσ _ _ Hf) as Hc1. cbn [LEobl pred] in Hc1 |- *.
-        destruct Hc1 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ'' & Hhd & Hsp' & HVw & Hext & HE').
+        destruct Hc1 as (Θr & Θ1 & Θ2 & m & U & s & k & Θ'' & [Hhd Hp] & Hsp' & HVw & Hext & HE').
         assert (Hokr : move_ok c d Θr c0)
           by (destruct Hhd as (? & Hx0 & _); exact (move_ok_ext c d Θr c0 _ Θ Hcd Hx0 Hok0)).
         destruct (move_hd W c d Hcd Θ Θ' c0 _ k Θr Hm Hhd Hok0) as (Θr' & Hhd' & Hmr).
@@ -384,59 +412,59 @@ Section fuse.
           as (Θ1' & Θ2' & Hm1 & Hm2 & Hsp'').
         destruct (move_ext W c d Hcd Θ1 Θ1' c0 _ Θ'' Hm1 Hext
                     (move_ok_comp c d _ Θr Θ1 Θ2 c0 Hsp' Hokr)) as (Θ3 & Hext' & Hm3).
-        exists Θr', Θ1', Θ2', m, U, s, k, Θ3. split_and!; [done|done| |done|].
+        exists Θr', Θ1', Θ2', m, U, s, k, Θ3. split_and!; [by split|done| |done|].
         * exact (IHV n' ltac:(lia) W Θ2 Θ2' _ w0 HW Hm2 HVw).
         * exact (IHE n' ltac:(lia) W _ _ T F f HW Hm3 HE').
       + (* close *)
         apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-        destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc0. subst c'.
+        destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc0 Hb0. subst c' β'.
         assert (Hok0 : move_ok c d Θ c0)
           by (eapply Hok; [exact Hf|intros ? [=]|simpl; by apply elem_of_singleton]).
         pose proof (Hσ _ _ Hf) as Hc1. cbn [LEobl pred] in Hc1 |- *.
-        destruct Hc1 as (Θ1 & k & Hhd & HE').
+        destruct Hc1 as (Θ1 & k & [Hhd Hp] & HE').
         destruct (move_hd W c d Hcd Θ Θ' c0 _ k Θ1 Hm Hhd Hok0) as (Θ1' & Hhd' & Hm1).
-        exists Θ1', k. split; [done|]. exact (IHE n' ltac:(lia) W _ _ T F f HW Hm1 HE').
+        exists Θ1', k. split; [by split|]. exact (IHE n' ltac:(lia) W _ _ T F f HW Hm1 HE').
       + (* link: O-Link below *)
         exact I.
       + (* select *)
         apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-        destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc0 Hi0. subst c' i'.
+        destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc0 Hb0 Hi0. subst c' β' i'.
         assert (Hok0 : move_ok c d Θ c0)
           by (eapply Hok; [exact Hf|intros ? [=]|simpl; by apply elem_of_singleton]).
         pose proof (Hσ _ _ Hf) as Hc1. cbn [LEobl pred] in Hc1 |- *.
-        destruct Hc1 as (Θr & s1 & s2 & k & Θ'' & Hhd & Hext & HE').
+        destruct Hc1 as (Θr & s1 & s2 & k & Θ'' & [Hhd Hp] & Hext & HE').
         assert (Hokr : move_ok c d Θr c0)
           by (destruct Hhd as (? & Hx0 & _); exact (move_ok_ext c d Θr c0 _ Θ Hcd Hx0 Hok0)).
         destruct (move_hd W c d Hcd Θ Θ' c0 _ k Θr Hm Hhd Hok0) as (Θr' & Hhd' & Hmr).
         destruct (move_ext W c d Hcd Θr Θr' c0 _ Θ'' Hmr Hext Hokr) as (Θ3 & Hext' & Hm3).
-        exists Θr', s1, s2, k, Θ3. split_and!; [done|done|].
+        exists Θr', s1, s2, k, Θ3. split_and!; [by split|done|].
         exact (IHE n' ltac:(lia) W _ _ T F f HW Hm3 HE').
       + (* branch *)
         apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-        destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
-        injection Hα as Hc0 Hi0. subst c' i'.
+        destruct α as [|[[c0 β0] w0|[c0 β0] w0|[c0 β0]|cd0|[c0 β0] i0|[c0 β0] i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
+        injection Hα as Hc0 Hb0 Hi0. subst c' β' i'.
         assert (Hok0 : move_ok c d Θ c0)
           by (eapply Hok; [exact Hf|intros ? [=]|simpl; by apply elem_of_singleton]).
         pose proof (Hσ _ _ Hf) as Hc1. cbn [LEobl pred] in Hc1 |- *.
-        destruct Hc1 as (Θr & s1 & s2 & k & Θ'' & Hhd & Hext & HE').
+        destruct Hc1 as (Θr & s1 & s2 & k & Θ'' & [Hhd Hp] & Hext & HE').
         assert (Hokr : move_ok c d Θr c0)
           by (destruct Hhd as (? & Hx0 & _); exact (move_ok_ext c d Θr c0 _ Θ Hcd Hx0 Hok0)).
         destruct (move_hd W c d Hcd Θ Θ' c0 _ k Θr Hm Hhd Hok0) as (Θr' & Hhd' & Hmr).
         destruct (move_ext W c d Hcd Θr Θr' c0 _ Θ'' Hmr Hext Hokr) as (Θ3 & Hext' & Hm3).
-        exists Θr', s1, s2, k, Θ3. split_and!; [done|done|].
+        exists Θr', s1, s2, k, Θ3. split_and!; [by split|done|].
         exact (IHE n' ltac:(lia) W _ _ T F f HW Hm3 HE').
     - (* O-Link, at the index *)
       intros cd' f' Hst.
       apply tstep_chsubst_det_inv in Hst as (α & f & Hf & Hα & ->); [|done].
-      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; simpl in Hα; try discriminate.
+      destruct α as [|[c0 w0|c0 w0|c0|cd0|c0 i0|c0 i0]| |]; cbn [lsub ssub] in Hα; try discriminate.
       injection Hα as Hcd'. subst cd'.
       destruct (Hlk _ _ Hf) as (c1 & d1 & Θ1 & Θm & sc & sd & kc & kd & -> & H1 & H2 & Hdu & Hal & [_ HΦ]).
       destruct (move_unext_any W c d Θ Θ' c1 _ Θm Hcd Hm H2) as (Θm' & H2' & Hmm).
       destruct (move_unext_any W c d Θm Θm' d1 _ Θ1 Hcd Hmm H1) as (Θ1' & H1' & Hm1).
       exists (csub c d c1), (csub c d d1), Θ1', Θm', sc, sd, kc, kd. split_and!; [|done..|].
-      * unfold gsub. by rewrite set_map_union_L, !set_map_singleton_L.
+      * apply gosub_upair.
       * exact (HΦ HVT Θ1' HW Hm1).
   Qed.
 
@@ -450,13 +478,13 @@ Section fuse.
               LErel n W Θ T F e → LErel n W Θ' T F (chsubst c d e)) as HE.
     { intros W0 Θ0 Θ0' T0 F e Hs. apply LErel_fuse_at.
       intros W1 Θ1 Θ1' v1. apply (IHk (tsize T0)); [lia|lia]. }
-    destruct T as [|ub lb T1 U|T1 U|T1 U|m kk C0 T1|s x|lb m C0 T1]; simpl in Hk.
+    destruct T as [|ub lb T1 U|T1 U|T1 U|m kk C0 T1|s x|lb m C0 T1|x]; simpl in Hk.
     - pose proof HVv as [-> _]%LVrel_unit_iff. by apply (LVrel_move_empty n W Θ').
     - pose proof HVv as [(eb & -> & Hfc & Hlb & HL)|(kc & T0 & -> & -> & _)]%LVrel_lolli_iff;
         [|by apply (LVrel_move_empty n W Θ')].
       apply LVrel_lolli_iff. left. exists (chsubst c d eb). split_and!.
       + done.
-      + exact (fchans_move W c d Hcd Θ Θ' eb Hm Hfc).
+      + exact (tenv_fit_move W c d Θ Θ' eb Hcd Hm Hfc).
       + by rewrite (move_heads W c d Hcd Θ Θ' Hm).
       + apply (lam_move (λ j W Θ w, LVrel j W Θ T1 w) (λ j W Θ F e, LErel j W Θ U F e)
                  (λ j W Θ F e, LErel j W Θ U F e) n W Θ Θ' eb c d ub Hcd HW Hm).
@@ -478,15 +506,16 @@ Section fuse.
       + eapply (IHk (tsize T1)); [lia|lia|done|exact Hm|exact H].
       + eapply (IHk (tsize U)); [lia|lia|done|exact Hm|exact H].
     - pose proof HVv as [-> _]%LVrel_box_iff. by apply (LVrel_move_empty n W Θ').
-    - apply LVrel_sess_iff in HVv as (c0 & s0 & kk & -> & -> & Hs & Hkk).
-      rewrite chsubst_chan. apply LVrel_sess_iff. exists (csub c d c0), s0, kk.
-      split_and!; [done| |done|done].
+    - apply LVrel_sess_iff in HVv as (c0 & bb & s0 & kk & -> & -> & Hs & Hkk & Hp).
+      rewrite chsubst_chan. apply LVrel_sess_iff. exists (csub c d c0), bb, s0, kk.
+      split_and!; [done| |done|done|done].
       destruct (move_singleton W c d Hcd c0 _ Θ' Hm) as [[-> ->]|[Hne ->]];
         [by rewrite csub_hit|by rewrite csub_ne].
     - apply LVrel_ex_iff in HVv as [Hlb (xs & Hxs & HK & HC & H)].
       apply LVrel_ex_iff. split; [by rewrite (move_heads W c d Hcd Θ Θ' Hm)|].
       exists xs. split_and!; [done..|].
       eapply (IHk (tsize T1)); [lia|unfold ty_inst; rewrite tsize_pinst; lia|done|exact Hm|exact H].
+    - pose proof HVv as [-> _]%LVrel_pt_iff. by apply (LVrel_move_empty n W Θ').
   Qed.
 End fuse.
 
