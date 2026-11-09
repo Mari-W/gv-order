@@ -726,4 +726,86 @@ Section fuel_exists.
     - rewrite lookup_insert_ne in Hes' by done. pose proof (fe_uniq s' es' Hes' Hso') as Es. subst s'.
       unfold fval. cbn [snd]. rewrite Hm. split_and!; [done|done|]. intros ->%elem_of_singleton. done.
   Qed.
+  Lemma fe_new i ei c x ei' :
+    M !! i = Some ei → tstep ei (LNew c x) ei' → c ∉ C → c ∉ echans (soup M) → t ≠ i →
+    fgoal (C, M) (C ∪ {[c]}, <[i := ei']> M)
+      (fstep W P F (C, M) {[i]} (C ∪ {[c]}, <[i := ei']> M)).2 {[i]} t o s m.
+  Proof.
+    intros Hi Hs HC Hcs Hti.
+    destruct (lfsoup_conf_step (S n) W T π P F (C, M) A U {[i]} _ HW Hc HF (INew C M i ei c x ei' Hi Hs HC Hcs))
+      as [(A' & U' & Hc') _].
+    assert (∀ t0 f0, M !! t0 = Some f0 → c ∉ fchans f0) as Hnm
+      by (intros t0 f0 Hf0; by eapply (st_fresh_mention (S n) W HW T π C M A U Hc)).
+    assert (c ∉ dom (A i)) as Hci by (rewrite (lfc_dom _ _ _ _ _ _ _ Hc i ei Hi); by apply (Hnm i)).
+    destruct (st_new (S n) W HW T π C M A U Hc i ei c x ei' Hi Hs Hci) as (s1 & s1' & _ & HE').
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE') as Hfit'.
+    assert (fends ei' = fends ei ∪ cends c) as Hends.
+    { rewrite (st_ends (S n) W HW T π C M A U Hc i ei Hi), <-(proj1 Hfit'). rewrite tenv_ends_new.
+      unfold cends. destruct (pt_pol x); clear; set_solver. }
+    assert ((cdual o).1 ≠ c) as Hoc.
+    { intros Heq. apply (Hnm s es Hes). rewrite <-Heq. by apply fchans_of_fends. }
+    destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoa). apply offers_new in Hoa as ->.
+    assert ((fstep W P F (C, M) {[i]} (C ∪ {[c]}, <[i:=ei']> M)).2 =
+            eupd F i (<[(c, pt_pol x) := w_bud W x]> (<[(c, negb (pt_pol x)) := w_bud W (pt_dual x)]> (F i))))
+      as ->.
+    { rewrite fstep_single. simpl. rewrite Hi. unfold fsingle. rewrite Ha'. simpl.
+      assert ((C ∪ {[c]}) ∖ C = {[c]}) as -> by (clear -HC; set_solver). by rewrite elements_singleton. }
+    assert ((C ∪ {[c]}, <[i:=ei']> M).2 !! t = Some e) as He' by (simpl; by rewrite lookup_insert_ne).
+    destruct (s_partner n W HW T _ _ A' U' Hc' t e a o He' Ha Ho) as (s' & es' & Hs't & Hes' & Hso').
+    exists s', es'. split_and!; [done|done|done|]. right. simpl in Hes'.
+    destruct (decide (s' = i)) as [->|Hs'i].
+    - rewrite lookup_insert_eq in Hes'. injection Hes' as <-. rewrite Hends in Hso'.
+      apply elem_of_union in Hso' as [Hso'|Hso']; [|by apply elem_of_cends in Hso'].
+      pose proof (fe_uniq i ei Hi Hso') as Eis. subst i. unfold fval. rewrite eupd_eq.
+      rewrite !lookup_insert_ne by (intros Heq; apply Hoc; rewrite <-Heq; done). rewrite Hm.
+      split_and!; [done|done|]. intros _. exists ei, (ANew x). split_and!; done.
+    - rewrite lookup_insert_ne in Hes' by done. pose proof (fe_uniq s' es' Hes' Hso') as Es. subst s'.
+      unfold fval. rewrite eupd_ne by done. rewrite Hm. split_and!; [done|done|].
+      intros ->%elem_of_singleton. done.
+  Qed.
+
+  Lemma fe_spawn i j ei w ei' :
+    M !! i = Some ei → tstep ei (LSpawn w) ei' → M !! j = None → t ≠ i →
+    fgoal (C, M) (C, <[j := App w EUnit]> (<[i := ei']> M))
+      (fstep W P F (C, M) {[i]} (C, <[j := App w EUnit]> (<[i := ei']> M))).2 {[i]} t o s m.
+  Proof.
+    intros Hi Hs Hj Hti. assert (i ≠ j) as Hij by (intros ->; congruence).
+    assert (t ≠ j) as Htj by (intros ->; congruence). assert (s ≠ j) as Hsj by (intros ->; congruence).
+    destruct (lfsoup_conf_step (S n) W T π P F (C, M) A U {[i]} _ HW Hc HF (ISpawn C M i j ei w ei' Hi Hs Hj))
+      as [(A' & U' & Hc') _].
+    destruct (st_spawn (S n) W HW T π C M A U Hc i ei w ei' Hi Hs) as (Θ1 & Θ2 & Hcomp & HE1 & HE2).
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE1) as Hfit1. pose proof (LErel_S_fit _ _ _ _ _ _ HE2) as Hfit2.
+    destruct (tenv_ends_comp _ _ _ Hcomp (st_bipol (S n) W HW T π C M A U Hc i ei Hi)) as [Hu Hd].
+    rewrite (proj1 Hfit1), (proj1 Hfit2) in Hu, Hd. rewrite <-(st_ends (S n) W HW T π C M A U Hc i ei Hi) in Hu.
+    simpl in Hu, Hd. rewrite union_empty_r_L in Hu, Hd.
+    destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoa). apply offers_spawn in Hoa as ->.
+    assert ((fstep W P F (C, M) {[i]} (C, <[j:=App w EUnit]> (<[i:=ei']> M))).2 =
+            eupd (eupd F i (mrem (fends w) (F i))) j (ftick <$> mres (fends w) (F i))) as ->.
+    { rewrite fstep_single. simpl. rewrite Hi. unfold fsingle. rewrite Ha'. simpl.
+      assert (dom (<[j:=App w EUnit]> (<[i:=ei']> M)) ∖ dom M = {[j]}) as ->.
+      { rewrite !dom_insert_L. apply elem_of_dom_2 in Hi. apply not_elem_of_dom in Hj. clear -Hi Hj. set_solver. }
+      by rewrite elements_singleton. }
+    assert ((C, <[j:=App w EUnit]> (<[i:=ei']> M)).2 !! t = Some e) as He'
+      by (simpl; by rewrite !lookup_insert_ne).
+    destruct (s_partner n W HW T _ _ A' U' Hc' t e a o He' Ha Ho) as (s' & es' & Hs't & Hes' & Hso').
+    exists s', es'. split_and!; [done|done|done|]. simpl in Hes'.
+    destruct (decide (s' = j)) as [->|Hs'j].
+    - rewrite lookup_insert_eq in Hes'. injection Hes' as <-. simpl in Hso'. rewrite union_empty_r_L in Hso'.
+      assert (cdual o ∈ fends ei) as Hoi by (rewrite Hu; clear -Hso'; set_solver).
+      pose proof (fe_uniq i ei Hi Hoi) as Eis. subst i. rewrite Hes in Hi. injection Hi as <-.
+      left. unfold fval. rewrite eupd_eq.
+      rewrite lookup_fmap, lookup_mres, decide_True by done. rewrite Hm. simpl.
+      destruct (HF s es Hes) as (H1 & _).
+      pose proof (fuel_spawn_hand (S (S n)) W (P s) (F s) es H1 w ei' Hs (cdual o) m Hso' Hm). lia.
+    - rewrite lookup_insert_ne in Hes' by done. right.
+      destruct (decide (s' = i)) as [->|Hs'i].
+      + rewrite lookup_insert_eq in Hes'. injection Hes' as <-.
+        assert (cdual o ∈ fends ei) as Hoi by (rewrite Hu; clear -Hso'; set_solver).
+        pose proof (fe_uniq i ei Hi Hoi) as Eis. subst i. unfold fval.
+        rewrite eupd_ne, eupd_eq by done. rewrite lookup_mrem, decide_False by (clear -Hd Hso'; set_solver).
+        rewrite Hm. split_and!; [done|done|]. intros _. exists ei, (ASpawn w). split_and!; done.
+      + rewrite lookup_insert_ne in Hes' by done. pose proof (fe_uniq s' es' Hes' Hso') as Es. subst s'.
+        unfold fval. rewrite !eupd_ne by done. rewrite Hm. split_and!; [done|done|].
+        intros ->%elem_of_singleton. done.
+  Qed.
 End fuel_exists.
