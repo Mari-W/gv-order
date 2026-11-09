@@ -31,9 +31,6 @@ Definition chan_part (r : nat → config) (l : nat → gset nat) (j t : nat) : P
 Definition thread_progress_run (r : nat → config) (l : nat → gset nat) : Prop :=
   ∀ i t e, (r i).2 !! t = Some e → ∃ j, i ≤ j ∧ (stopped (r j) t ∨ chan_part r l j t).
 
-Lemma is_admin_dec a : {is_admin a} + {¬ is_admin a}.
-Proof. destruct a; simpl; auto. Defined.
-
 Lemma not_admin_sess a : ¬ is_admin a → is_sess a.
 Proof. destruct a; simpl; unfold is_sess; simpl; try (intros _; by eexists); done. Qed.
 
