@@ -50,7 +50,7 @@ theories/lockfree/LocalProgress.v
 theories/lockfree/ThreadProgress.v
 theories/lockfree/Reach.v
 theories/lockfree/Fragment.v
-theories/lockfree/LFRelation.v
+theories/lockfree/LFSoup.v
 theories/lockfree/LFAdequacy.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
