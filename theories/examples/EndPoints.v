@@ -22,6 +22,7 @@
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.LitTools.
+From LRGV Require Import examples.FreshTools.
 
 Set Default Proof Using "All".
 
@@ -39,7 +40,7 @@ Definition bit_arm1 : expr := LetU (Var 0) (LetU (App EClos (Var 6)) (App EClos 
 Definition bit_arm2 : expr := LetU (Var 0) (LetU (App EClos (Var 4)) (App EClos (Var 6))).
 
 Definition bit_main : expr :=
-  let_new_pair (let_new_pair (let_new_pair
+  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 2))
     (LetU (App ESpawn bit_sender)
       (LetU (App ESpawn (bit_closer 3))
         (LetU (App ESpawn (bit_closer 1))
@@ -105,52 +106,85 @@ Section facts.
   Qed.
 End facts.
 
-Lemma bit_typed : styped ∅ [(bit_C0, ids 3)] [] (∅, None) bit_main TUnit.
+(** ** Syntactic points (sharp edges 173)
+
+    A term names the point of new as a ground value, so ε, γ and δ are
+    the constants 0, 1 and 2 of the hypotheses [bit_Ψ], one created
+    channel at a time: ε without facts, γ with ε+1 ≺ γ̄, and δ with
+    ε+1 ≺ δ̄, γ ≺ δ̄ and δ ≺ γ̄. These are the four facts of C₀. *)
+Definition bit_Lg : list (point * bool) := [(pc 0 1, false)].
+Definition bit_Ld : list (point * bool) := [(pc 0 1, false); (pc 1 0, false)].
+Definition bit_Hd : list (point * bool) := [(pt_dual (pc 1 0), true)].
+
+Definition bit_Ψ : hyps :=
+  (([] ++ [(fresh_bcs [] [], [pconst 0])]) ++ [(freshp_bcs bit_Lg [], [pconst 1])]) ++
+    [(freshp_bcs bit_Ld bit_Hd, [pconst 2])].
+
+Lemma bit_created : created (Wpo []) bit_Ψ.
 Proof.
-  apply styped_wnil. pose proof wnil_strict as HWs.
-  pose proof (proj1 HWs) as HW. set (W := wnil) in *. unfold bit_main.
-  assert (slt W [(bit_C0, ids 3)] (pv 0 1) (pt_dual (pv 1 0))) as H1
-    by (apply (bit_hyp W HW); [by left|cbn; lia]).
-  assert (slt W [(bit_C0, ids 3)] (pv 0 1) (pt_dual (pv 2 0))) as H2
-    by (apply (bit_hyp W HW); [by right; left|cbn; lia]).
-  assert (slt W [(bit_C0, ids 3)] (pv 1 0) (pt_dual (pv 2 0))) as H3
-    by (apply (bit_hyp W HW); [by right; right; left|cbn; lia]).
-  assert (slt W [(bit_C0, ids 3)] (pv 2 0) (pt_dual (pv 1 0))) as H4
-    by (apply (bit_hyp W HW); [by right; right; right|cbn; lia]).
-  assert (slt W [(bit_C0, ids 3)] (pv 0 0) (pt_dual (pv 1 0))) as H5
-    by (eapply sl_trans; [apply (slt_po W _ (pv 0 0) HW)|exact H1]).
-  assert (slt W [(bit_C0, ids 3)] (pv 0 0) (pt_dual (pv 2 0))) as H6
-    by (eapply sl_trans; [apply (slt_po W _ (pv 0 0) HW)|exact H2]).
-  apply (t_new_at W _ _ _ _ _ _ _ Sbit (pv 0 0) HWs); [apply (bit_known W HW); lia|].
-  apply (t_new_at W _ _ _ _ _ _ _ SEnd (pv 1 0) HWs); [apply (bit_known W HW); lia|].
-  apply (t_new_at W _ _ _ _ _ _ _ SEnd (pv 2 0) HWs); [apply (bit_known W HW); lia|].
+  apply created_p; [apply created_p; [apply created_lh; [constructor|constructor|set_solver|fresh_const]| | |fresh_const]| | |fresh_const].
+  - cbn. repeat (apply Forall_cons; split; [eapply skn_inst; [by left|by left|done]|]). by apply Forall_nil.
+  - intros l h b _ Hh. by apply elem_of_nil in Hh.
+  - cbn. repeat (apply Forall_cons; split;
+      [first [eapply skn_inst; [by left|by left|done]|eapply skn_inst; [by right; left|by left|done]]|]).
+    by apply Forall_nil.
+  - intros l h b Hl Hh. apply list_elem_of_singleton in Hh. injection Hh as -> ->.
+    unfold bit_Ld in Hl. repeat apply elem_of_cons in Hl as [Hl|Hl]; try discriminate Hl.
+    by apply elem_of_nil in Hl.
+Qed.
+
+Lemma bit_typed : styped ∅ bit_Ψ [] (∅, None) bit_main TUnit.
+Proof.
+  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
+  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold bit_main, let_new_pair_at, bit_Ψ.
+  match goal with |- typed _ _ ?Ψ0 _ _ _ _ _ => set (Ψ := Ψ0) end.
+  assert (slt W Ψ (pc 0 1) (pt_dual (pc 1 0))) as H1.
+  { apply (slt_freshp_l W Ψ bit_Lg [] (pconst 1) (pc 0 1) false); [by right; left|by left]. }
+  assert (slt W Ψ (pc 0 1) (pt_dual (pc 2 0))) as H2.
+  { apply (slt_freshp_l W Ψ bit_Ld bit_Hd (pconst 2) (pc 0 1) false); [by right; right; left|by left]. }
+  assert (slt W Ψ (pc 1 0) (pt_dual (pc 2 0))) as H3.
+  { apply (slt_freshp_l W Ψ bit_Ld bit_Hd (pconst 2) (pc 1 0) false); [by right; right; left|by right; left]. }
+  assert (slt W Ψ (pc 2 0) (pt_dual (pc 1 0))) as H4.
+  { apply (slt_freshp_r W Ψ bit_Ld bit_Hd (pconst 2) (pt_dual (pc 1 0)) true); [by right; right; left|by left]. }
+  assert (slt W Ψ (pc 0 0) (pt_dual (pc 1 0))) as H5
+    by (eapply sl_trans; [apply (slt_po W _ (pc 0 0) HW)|exact H1]).
+  assert (slt W Ψ (pc 0 0) (pt_dual (pc 2 0))) as H6
+    by (eapply sl_trans; [apply (slt_po W _ (pc 0 0) HW)|exact H2]).
+  assert (∀ a, a < 3 → skn W Ψ (pc a 0)) as Hk.
+  { intros [|[|[|a]]] Ha; [| | |lia].
+    - eapply skn_inst; [by left|by left|done].
+    - eapply skn_inst; [by right; left|by left|done].
+    - eapply skn_inst; [by right; right; left|by left|done]. }
+  apply (t_new_at W _ _ _ _ _ _ _ Sbit (pc 0 0) HWs); [ground|apply Hk; lia|].
+  apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 1 0) HWs); [ground|apply Hk; lia|].
+  apply (t_new_at W _ _ _ _ _ _ _ SEnd (pc 2 0) HWs); [ground|apply Hk; lia|].
   cbn.
   (* spawn the sender of the bit, which holds e′ at ε̄ *)
   tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 0 1))) (Some (pv 0 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 1))) (Some (pc 0 0)) 0);
       [set_solver|intros y Hy; mem_cases Hy; apply sle_refl, HW|].
     cbn. tstep; [tstep|]. cbn.
     tstep; [|apply KTClos|done|apply ubs_intro; [intros y Hy; mem_cases Hy|]].
-    - tstep; [|apply (KTSend _ _ _ 0 (TSum TUnit TUnit) SEnd (pt_dual (pv 0 0))); cbn; set_solver|kscope|].
+    - tstep; [|apply (KTSend _ _ _ 0 (TSum TUnit TUnit) SEnd (pt_dual (pc 0 0))); cbn; set_solver|kscope|].
       + tstep; [tstep|apply t_inj1; tstep].
       + apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pt_dual (pv 0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pv 0 0)) HW).
-    - exists (pt_dual (pv 0 1)). split; [done|]. apply sle_refl, HW. }
+        exists (pt_dual (pc 0 1)). split; [done|]. right. apply (slt_po W _ (pt_dual (pc 0 0)) HW).
+    - exists (pt_dual (pc 0 1)). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 1 0))) (Some (pv 1 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 1 0))) (Some (pc 1 0)) 0);
       [set_solver|intros y Hy; mem_cases Hy; apply sle_refl, HW|].
     cbn. tstep; [tstep|]. cbn.
     tstep; [tstep|apply KTClos|done|apply ubs_intro; [intros y Hy; mem_cases Hy|]].
-    exists (pt_dual (pv 1 0)). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (pc 1 0)). split; [done|]. apply sle_refl, HW. }
   cbn. tstep.
   { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pv 2 0))) (Some (pv 2 0)) 0);
+    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 2 0))) (Some (pc 2 0)) 0);
       [set_solver|intros y Hy; mem_cases Hy; apply sle_refl, HW|].
     cbn. tstep; [tstep|]. cbn.
     tstep; [tstep|apply KTClos|done|apply ubs_intro; [intros y Hy; mem_cases Hy|]].
-    exists (pt_dual (pv 2 0)). split; [done|]. apply sle_refl, HW. }
+    exists (pt_dual (pc 2 0)). split; [done|]. apply sle_refl, HW. }
   (* the main thread: receive the bit, close e, close c and d in the order it picks *)
   cbn. tstep.
   { tstep; [tstep|apply KTRecv|kscope|].
@@ -170,10 +204,7 @@ Proof.
 Qed.
 
 Theorem bit_deadlock_free : deadlock_free (∅, {[+ bit_main +]}).
-Proof.
-  apply (soundness_source 3 bit_C0 _ TUnit (c0_acyclic_creation _ _ bit_C0_acyclic));
-    [constructor|apply bit_typed].
-Qed.
+Proof. apply (soundness_created_s bit_Ψ _ TUnit bit_created); [constructor|apply bit_typed]. Qed.
 
 (** ** The collapsed reading
 
