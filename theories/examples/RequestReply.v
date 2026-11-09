@@ -150,7 +150,7 @@ Definition rr_Ψ : hyps :=
 Lemma rr_created : created (Wpo []) rr_Ψ.
 Proof.
   pose proof (proj1 Wpo_nil_strict') as HW.
-  refine (created_fresh (Wpo []) _ rrf_C 0 _ _ _ _ _); [|fresh_const].
+  refine (created_fresh (Wpo []) ([] ++ [(ccd_C, [pconst 1])]) rrf_C 0 _ _ _ _ ltac:(fresh_const)).
   { apply created_snoc; [constructor|apply ccd_ok|constructor|fresh_const]. }
   { intros f [k [-> | [-> | [-> | ->]]]] Hs.
     - left. eexists _, _. split; [done|]. split_and!; [exists k; by left|done|done|done].
