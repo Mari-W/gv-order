@@ -33,14 +33,15 @@ Qed.
 (** ** sync
 
     The channel is the top-level point ι = 0, created by new@ι under the
-    creation constraint without facts (sharp edges 172). The thunk is
+    creation constraint without facts (sharp edges 172). Under syntactic
+    points ι is the constant 0 of [sync_Ψ] (sharp edges 173). The thunk is
     annotated with its upper point ι+1 and its lower point ι. The
     channel c is at index 1 of the body and d at index 0, as in
     [let_new]. *)
 Definition sync_a : aexpr :=
-  ALetNew Ssync (pvar 0)
+  ALetNew Ssync (pconst 0)
     (ALetU (AApp (AKonst KSpawn)
-              (ALam (Some (pv 0 1)) (Some (pt_dual (pv 0 0))) TUnit
+              (ALam (Some (pc 0 1)) (Some (pt_dual (pc 0 0))) TUnit
                  (ALetU (AVar 0) (AApp (AKonst KClos) (AApp (AKonst KSend) (APair AUnit (AVar 2)))))))
        (ALetP (AApp (AKonst KRecv) (AVar 0)) (ALetU (AVar 1) (AApp (AKonst KClos) (AVar 0))))).
 
@@ -54,7 +55,7 @@ Proof. vm_compute. reflexivity. Qed.
 Lemma sync_a_deadlock_free : deadlock_free (∅, {[+ sync_main +]}).
 Proof.
   rewrite <-sync_a_erase.
-  eapply (synth_deadlock_free 1 nofacts sync_a TUnit); [exact c0_nofacts|constructor|cbn; reflexivity|].
+  eapply (synth_deadlock_free_created sync_Ψ sync_a TUnit); [exact sync_created|constructor|cbn; reflexivity|].
   cbn. rewrite !lookup_insert_eq. cbn.
   split_and!; try done.
   all: try (eexists _, _, _; split_and!; [by left|by left|done]).
@@ -74,11 +75,29 @@ Qed.
 Definition cycle_P (g : fact) : Prop := ∃ b c, g = FLt (pt_polar b (pvar 1)) (pt_polar c (pvar 0)).
 Definition cycle_C0 : bcs := BCs [] cycle_P.
 
+(** Under syntactic points γ and ε are the constants 1 and 0 of
+    [acy_Ψ]. γ is created without facts and ε with the four facts of
+    C₀, whose outer point γ is the constant 1 (sharp edges 173). *)
+Definition acy_C : bcs := BCs [pconst 1] cycle_P.
+
+Definition acy_Ψ : hyps := ([] ++ [(fresh_bcs [] [], [pconst 1])]) ++ [(acy_C, [pconst 0])].
+
+Lemma acy_created : created (Wpo []) acy_Ψ.
+Proof.
+  apply created_fresh; [apply created_lh; [constructor|constructor|set_solver|fresh_const]| | | |fresh_const].
+  - intros f (b & c & ->) Hs. left. eexists _, _. split; [done|].
+    split_and!; [by exists b, c|done|by destruct c|by destruct b].
+  - cbn. constructor; [|constructor].
+    right. exists (fresh_bcs [] []), [pconst 1], (pconst 1). split_and!; [by left|by left|done].
+  - intros u p q v _ (Hf & _ & Hq & Hv) _.
+    destruct Hf as (b & c & E). injection E as -> ->. by destruct b.
+Qed.
+
 Definition cycle_a : aexpr :=
-  ALetNew SEnd (pvar 1)
-    (ALetNew SEnd (pvar 0)
+  ALetNew SEnd (pconst 1)
+    (ALetNew SEnd (pconst 0)
        (ALetU (AApp (AKonst KSpawn)
-                 (ALam (Some (pt_dual (pvar 0))) (Some (pvar 1)) TUnit
+                 (ALam (Some (pt_dual (pconst 0))) (Some (pconst 1)) TUnit
                     (ALetU (AVar 0) (ALetU (AApp (AKonst KClos) (AVar 5)) (AApp (AKonst KClos) (AVar 1))))))
           (ALetU (AApp (AKonst KClos) (AVar 5)) (AApp (AKonst KClos) (AVar 1))))).
 
@@ -102,14 +121,15 @@ Qed.
 Lemma cycle_a_deadlock_free : deadlock_free (∅, {[+ cycle_main +]}).
 Proof.
   rewrite <-cycle_a_erase.
-  eapply (synth_deadlock_free 2 cycle_C0 cycle_a TUnit); [exact cycle_C0_ok|constructor|cbn; reflexivity|].
+  eapply (synth_deadlock_free_created acy_Ψ cycle_a TUnit); [exact acy_created|constructor|cbn; reflexivity|].
   cbn. rewrite !lookup_insert_eq. cbn.
-  set (Ψ := [(cycle_C0, ids 2)]).
-  assert (∀ b c, hlt Ψ (pt_polar b (pvar 1)) (pt_polar c (pvar 0))) as Hγε.
-  { intros b c. apply (hl_h Ψ ∅). exists cycle_C0, (ids 2).
-    split; [by left|].
-    exists (FLt (pt_polar b (pvar 1)) (pt_polar c (pvar 0))). split.
-    - apply bcs_open_nil. split; [by exists b, c|destruct b, c; cbn; split; lia].
+  set (Ψ := acy_Ψ).
+  assert (∀ b c, hlt Ψ (pt_polar b (pconst 1)) (pt_polar c (pconst 0))) as Hγε.
+  { intros b c. apply (hl_h Ψ ∅). exists acy_C, [pconst 0].
+    split; [by right; left|].
+    exists (FLt (pt_polar b (pconst 1)) (pt_polar c (pvar 0))). split.
+    - exists (FLt (pt_polar b (pvar 1)) (pt_polar c (pvar 0))).
+      split_and!; [by exists b, c|destruct b, c; cbn; split; lia|destruct b, c; reflexivity].
     - destruct b, c; reflexivity. }
   pose proof (Hγε false false) as H1. pose proof (Hγε false true) as H2.
   pose proof (Hγε true false) as H3. pose proof (Hγε true true) as H4. cbn [pt_polar] in *.
@@ -119,7 +139,8 @@ Proof.
   all: try (left; apply he_refl).
   all: try (right; done).
   all: try (intros y Hy; mem_cases Hy; rewrite ?pt_dual_dual;
-            first [right; exact H4|left; exact (he_refl _ (pvar 1))]).
+            first [right; exact H4|left; exact (he_refl _ (pconst 1))]).
   all: try done.
-  eexists _, _, (pvar 1); split_and!; [by left|by right; left|done].
+  all: first [eexists _, _, _; split_and!; [by left|by left|done]
+             |eexists _, _, _; split_and!; [by right; left|by left|done]].
 Qed.

@@ -57,7 +57,7 @@ Qed.
 
 Lemma tmatch_sound Ψ T : ∀ U c, tmatch T U = Some c → csat Ψ c → hsteq Ψ T U.
 Proof.
-  induction T as [| ub lb T1 IH1 T2 IH2 | T1 IH1 T2 IH2 | T1 IH1 T2 IH2 | | s x | ];
+  induction T as [| ub lb T1 IH1 T2 IH2 | T1 IH1 T2 IH2 | T1 IH1 T2 IH2 | | s x | | x];
     intros [] c H Hc; simpl in H; try discriminate.
   - by injection H as <-.
   - destruct (omatch ub ub0) as [c0|] eqn:H0; [|discriminate].
@@ -98,7 +98,7 @@ Qed.
 
 Lemma pscopedb_sound T : ∀ k, pscopedb k T = true → pscoped k T.
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n kk C T1 IH | s x | lb n C T1 IH];
+  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n kk C T1 IH | s x | lb n C T1 IH | x];
     intros k H; simpl in *.
   - done.
   - apply andb_true_iff in H as [[[H1 H2]%andb_true_iff H3]%andb_true_iff H4].
@@ -109,6 +109,7 @@ Proof.
   - by apply pt_scopedb_sound.
   - apply andb_true_iff in H as [[H1 H2]%andb_true_iff H3].
     split_and!; [by apply lb_scopedb_sound|by apply bcs_scopedb_sound|auto].
+  - by apply pt_scopedb_sound.
 Qed.
 
 (** ** The head of a session type is bisimilar to it *)
@@ -142,17 +143,17 @@ Lemma konst_app_sound Φ Ψ Δ F k A U c e2 :
 Proof.
   intros Hk Hc He. destruct k; simpl in Hk; try discriminate.
   - (* spawn *)
-    destruct A as [| ub lb [] []| | | | |]; try discriminate. injection Hk as <- <-.
+    destruct A as [| ub lb [] []| | | | | |]; try discriminate. injection Hk as <- <-.
     eapply st_app_konst; [apply KTSpawn|done|done| |exact He]. apply teq_hsteq. cbn. split_and!; done.
   - (* recv *)
-    destruct A as [| | | | | s x|]; try discriminate.
+    destruct A as [| | | | | s x| |]; try discriminate.
     destruct (hd s) as [|m T s'| | | | | | |] eqn:Hhd; try discriminate.
     destruct (pscopedb m T) eqn:Hps; [|discriminate]. simpl in Hk. injection Hk as <- <-.
     eapply (st_app_konst _ _ _ _ _ _ (Some x) (TSess (SSeq (SRcv m T) s') x));
       [apply KTRecv|by apply pscopedb_sound|by apply ub_constr_sound| |exact He].
     simpl. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
   - (* send *)
-    destruct A as [| | P [| | | | | s x|]| | | |]; try discriminate.
+    destruct A as [| | P [| | | | | s x| |]| | | | |]; try discriminate.
     destruct (hd s) as [| |m T s'| | | | | |] eqn:Hhd; try discriminate.
     destruct (hbot T) eqn:Hb; [discriminate|]. destruct (pscopedb m T) eqn:Hps; [|discriminate].
     simpl in Hk. destruct (tmatch P (payload_at m T x)) as [c0|] eqn:Hm; [|discriminate].
@@ -163,13 +164,13 @@ Proof.
       [apply KTSend; rewrite Hb; exact Hc1|by apply pscopedb_sound|by apply ub_constr_sound| |exact He].
     simpl. split; [by eapply tmatch_sound|]. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
   - (* close *)
-    destruct A as [| | | | | s x|]; try discriminate.
+    destruct A as [| | | | | s x| |]; try discriminate.
     destruct (hd s) as [| | | | | | | |] eqn:Hhd; try discriminate. injection Hk as <- <-.
     eapply (st_app_konst _ _ _ _ _ _ (Some x) (TSess SEnd x));
       [apply KTClos|done|by apply ub_constr_sound| |exact He].
     simpl. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
   - (* link *)
-    destruct A as [| | [| | | | | s x|] [| | | | | r y|]| | | |]; try discriminate.
+    destruct A as [| | [| | | | | s x| |] [| | | | | r y| |]| | | | |]; try discriminate.
     destruct (sty_eqb r (dual s)) eqn:Hd; [|discriminate].
     destruct (bool_decide (y = pt_dual x)) eqn:Hy; [|discriminate]. injection Hk as <- <-.
     apply sty_eqb_sound in Hd as ->. apply bool_decide_eq_true in Hy as ->.
@@ -177,21 +178,21 @@ Proof.
       [by apply KTLink|done|done| |exact He].
     apply teq_hsteq. cbn. split_and!; [done|apply seq_refl|done|apply seq_refl].
   - (* select₁ *)
-    destruct A as [| | | | | s x|]; try discriminate.
+    destruct A as [| | | | | s x| |]; try discriminate.
     destruct (hd s) as [| | | | |s1 s2| | |] eqn:Hhd; try discriminate. injection Hk as <- <-.
     destruct Hc as [Hc1 Hc2].
     eapply (st_app_konst _ _ _ _ _ _ (Some x) (TSess (SPlus s1 s2) x));
       [by apply KTSel1|done|by apply ub_constr_sound| |exact He].
     simpl. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
   - (* select₂ *)
-    destruct A as [| | | | | s x|]; try discriminate.
+    destruct A as [| | | | | s x| |]; try discriminate.
     destruct (hd s) as [| | | | |s1 s2| | |] eqn:Hhd; try discriminate. injection Hk as <- <-.
     destruct Hc as [Hc1 Hc2].
     eapply (st_app_konst _ _ _ _ _ _ (Some x) (TSess (SPlus s1 s2) x));
       [by apply KTSel2|done|by apply ub_constr_sound| |exact He].
     simpl. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
   - (* branch *)
-    destruct A as [| | | | | s x|]; try discriminate.
+    destruct A as [| | | | | s x| |]; try discriminate.
     destruct (hd s) as [| | | | | |s1 s2| |] eqn:Hhd; try discriminate. injection Hk as <- <-.
     simpl in Hc. destruct Hc as (Hc0 & Hc1 & Hc2 & _).
     eapply (st_app_konst _ _ _ _ _ _ (Some x) (TSess (SWith s1 s2) x));
@@ -199,24 +200,24 @@ Proof.
     simpl. split; [apply he_refl|exact (hd_seq _ _ Hhd)].
 Qed.
 
-(** ** new@x, encoded as let_new, in the source judgment (static/Fundamental.v, t_new_at) *)
+(** ** new@x, encoded as let_new_at, in the source judgment (static/Fundamental.v, t_new_at) *)
 
 Lemma st_new_at Φ Ψ Δ F e T S x :
-  hyp_known Ψ x →
+  pt_ground x → hyp_known Ψ x →
   styped Φ Ψ (Some (TSess (dual S) (pt_dual x)) :: Some (TSess S x) :: None :: None :: Δ) F e T →
-  styped Φ Ψ Δ F (let_new e) T.
+  styped Φ Ψ Δ F (let_new_at (EPt x) e) T.
 Proof.
-  intros HK Hb. unfold let_new.
+  intros Hg HK Hb. unfold let_new_at.
   set (X := TProd (TSess S x) (TSess (dual S) (pt_dual x))).
   apply (st_letp Φ Ψ Δ (lenv_nones Δ) Δ F _ _ X TUnit).
   { apply lenv_split_nones_l. }
   { apply (st_pair Φ Ψ (lenv_nones Δ) (lenv_nones Δ) (lenv_nones Δ)).
     - apply lenv_split_nones_nones.
-    - eapply (st_app Φ Ψ _ _ _ _ _ _ None None TUnit).
+    - eapply (st_app Φ Ψ _ _ _ _ _ _ None None (TPt x)).
       + apply lenv_split_nones_l.
       + done.
       + apply st_konst; [apply lenv_empty_nones| |done]. by apply KTNewAt.
-      + apply st_unit. apply lenv_empty_nones.
+      + apply st_pt; [apply lenv_empty_nones|done|done].
     - apply st_unit. apply lenv_empty_nones. }
   apply (st_letu Φ Ψ _ (Some TUnit :: None :: lenv_nones Δ) (None :: Some X :: Δ)).
   { apply lsplit_l, lsplit_r, lenv_split_nones_l. }
@@ -249,7 +250,7 @@ Ltac app_gen_case IH1 IH2 Hn H Hc :=
   let Hsok := fresh "Hsok" in
   let H1 := fresh "H1" in let H2 := fresh "H2" in let H3 := fresh "H3" in
   destruct (sok _ 0 _ 0 _) eqn:Hsok in H; [|discriminate];
-  destruct (synth _ _ (lp _ 0 _) _ _) as [[[| ubf lbf Tf Uf| | | | |] c1]|] eqn:H1 in H; try discriminate;
+  destruct (synth _ _ (lp _ 0 _) _ _) as [[[| ubf lbf Tf Uf| | | | | |] c1]|] eqn:H1 in H; try discriminate;
   destruct (synth _ _ (lp _ 0 _) _ _) as [[T' c2]|] eqn:H2 in H; [|discriminate];
   destruct (tmatch T' Tf) as [c3|] eqn:H3 in H; [|discriminate];
   injection H as <- <-;
@@ -295,13 +296,13 @@ Proof.
     eapply st_pair; [apply lp_split, Hsok|by eapply IH1|by eapply IH2].
   - (* let () *)
     destruct (sok _ 0 _ 0 _) eqn:Hsok in H; [|discriminate].
-    destruct (synth _ _ (lp _ 0 _) _ a1) as [[[| | | | | |] c1]|] eqn:H1 in H; try discriminate.
+    destruct (synth _ _ (lp _ 0 _) _ a1) as [[[| | | | | | |] c1]|] eqn:H1 in H; try discriminate.
     destruct (synth _ _ (lp _ 0 _) _ a2) as [[T2 c2]|] eqn:H2 in H; [|discriminate].
     injection H as <- <-. destruct Hc as [Hc1 Hc2].
     eapply st_letu; [apply lp_split, Hsok|by eapply IH1|by eapply IH2].
   - (* let pair *)
     destruct (sok _ 0 _ 2 _) eqn:Hsok in H; [|discriminate].
-    destruct (synth _ _ (lp _ 0 _) _ a1) as [[[| |T1 T2| | | |] c1]|] eqn:H1 in H; try discriminate.
+    destruct (synth _ _ (lp _ 0 _) _ a1) as [[[| |T1 T2| | | | |] c1]|] eqn:H1 in H; try discriminate.
     destruct (synth _ _ (Some T2 :: Some T1 :: lp _ 2 _) _ a2) as [[T' c2]|] eqn:H2 in H; [|discriminate].
     injection H as <- <-. destruct Hc as [Hc1 Hc2].
     eapply st_letp; [apply lp_split, Hsok|by eapply IH1|by eapply IH2].
@@ -313,7 +314,7 @@ Proof.
     apply st_inj2. by eapply IH.
   - (* case *)
     destruct (sok _ 0 _ 0 _) eqn:Hsok in H; [|discriminate].
-    destruct (synth _ _ (lp _ 0 _) _ a) as [[[| | |T1 T2| | |] c0]|] eqn:H0 in H; try discriminate.
+    destruct (synth _ _ (lp _ 0 _) _ a) as [[[| | |T1 T2| | | |] c0]|] eqn:H0 in H; try discriminate.
     destruct (synth _ _ (Some T1 :: lp _ 0 _) _ a1) as [[T' c1]|] eqn:H1 in H; [|discriminate].
     destruct (synth _ _ (Some T2 :: lp _ 0 _) _ a2) as [[T'' c2]|] eqn:H2 in H; [|discriminate].
     destruct (tmatch T'' T') as [c3|] eqn:H3 in H; [|discriminate].
@@ -322,9 +323,10 @@ Proof.
     eapply st_case; [apply lp_split, Hsok|by eapply IH|by eapply IH1|].
     eapply st_conv; [by eapply tmatch_sound|by eapply IH2].
   - (* new@x *)
+    destruct (pt_groundb C) eqn:Hg; [|discriminate].
     destruct (synth n Φ _ F a) as [[T' c']|] eqn:H1; [|discriminate].
     injection H as <- <-. simpl in Hc. destruct Hc as (HK & Hb & _).
-    apply (st_new_at _ _ _ _ _ _ s0 C); [exact HK|].
+    apply (st_new_at _ _ _ _ _ _ s0 C); [by apply pt_groundb_sound|exact HK|].
     eapply IH; [exact Hn|exact H1|exact Hb].
 Qed.
 
@@ -336,5 +338,17 @@ Theorem synth_deadlock_free m C0 a T c :
   deadlock_free (∅, {[+ erase a +]}).
 Proof.
   intros HC HT Hs Hc. apply (soundness_source m C0 _ T HC HT).
+  eapply synth_sound; [|exact Hs|exact Hc]. intros φ Hφ. by rewrite dom_empty_L in Hφ.
+Qed.
+
+(** Under syntactic points a program that creates a channel names a
+    ground point, so its hypotheses are those of [created] over
+    constants (sharp edges 173). *)
+Theorem synth_deadlock_free_created Ψ a T c :
+  created (Wpo []) Ψ → prim T →
+  synth 0 ∅ [] (∅, None) a = Some (T, c) → csat Ψ c →
+  deadlock_free (∅, {[+ erase a +]}).
+Proof.
+  intros HΨ HT Hs Hc. apply (soundness_created_s Ψ _ T HΨ HT).
   eapply synth_sound; [|exact Hs|exact Hc]. intros φ Hφ. by rewrite dom_empty_L in Hφ.
 Qed.
