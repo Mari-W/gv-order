@@ -41,6 +41,7 @@ theories/liveness/LiveInternalize.v
 theories/liveness/LiveConnect.v
 theories/liveness/LivePConnect.v
 theories/liveness/LivePTerm.v
+theories/lockfree/LFFuel.v
 theories/lockfree/Instr.v
 theories/lockfree/Fair.v
 theories/lockfree/TauThread.v
