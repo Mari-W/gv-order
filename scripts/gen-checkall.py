@@ -60,7 +60,8 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/Fragment.v', 'cworld_hold'), ('lockfree/Fragment.v', 'lfsource_lfptyped'),
         ('lockfree/Fragment.v', 'fw_lfsource'), ('lockfree/Fragment.v', 'tc_lfsource'),
         ('lockfree/Fragment.v', 'rc_lfsource'), ('lockfree/Fragment.v', 'kob_cworld_not_wf'),
-        ('lockfree/LFRelation.v', 'LFPrel_down'), ('lockfree/LFRelation.v', 'LFPrel_fuel'),
+        ('lockfree/LFSoup.v', 'LFsoup_down'), ('lockfree/LFSoup.v', 'lfconf_step'),
+        ('lockfree/LFSoup.v', 'lfconf_run'), ('lockfree/LFSoup.v', 'lfc_local_progress'),
         ('lockfree/LFAdequacy.v', 'lf_adequacy'), ('lockfree/LFAdequacy.v', 'lf_adequacy_ex'),
         ('lockfree/LFAdequacy.v', 'lf_thread_progress'),
         ('lockfree/LFFuel.v', 'FuelE_down'), ('lockfree/LFFuel.v', 'Vfuel_down'),
@@ -107,7 +108,14 @@ synpts = {mod(pathlib.Path(l[len(SP):].strip()).relative_to('theories'))
 SPE = '# SYNTACTIC-POINTS: example port pending '
 synexs = {mod(pathlib.Path(l[len(SPE):].strip()).relative_to('theories'))
           for l in lines if l.startswith(SPE)}
+# Lock-freedom files taken out of the build for syntactic points: the
+# adequacy (stage L5, fuel) by a marker, the fragment (stage L6) by hand.
+SPL = '# SYNTACTIC-POINTS: lockfree port pending '
+synlf = {mod(pathlib.Path(l[len(SPL):].strip()).relative_to('theories'))
+         for l in lines if l.startswith(SPL)} | {'LRGV.lockfree.Fragment'}
+built -= {'LRGV.lockfree.Fragment'}
 def why(m):
+    if m in synlf: return 'SYNTACTIC-POINTS: lockfree port pending'
     if m in const_world: return 'CONST-WORLD: retyping pending'
     if m in synpts:
         return 'SYNTACTIC-POINTS: translation port pending'
