@@ -173,6 +173,32 @@ Updated after every stage and every agent result.
   creates no channel. Programs that create channels go through `created`
   and `soundness_created`. Sharp edge 173.
 
+- 2026-11-09. Stage L3b of the syntactic points (plan §16.6 P3b, branch
+  sp-examples). theories/algorithmic and 53 example files build with no
+  Admitted and no axiom. Every top-level `new` names a constant of the
+  hypotheses, and `created` adds one constant per channel. A box that
+  creates a channel takes its point as a λ-parameter of type `TPt ι`
+  and computes the points of its news and of its recursive calls with
+  `KPay i` and `KSucc`. Relay, KobForwarder, FactServer, Stream,
+  Forwarder, FreshBetween, FreshMany, GrowRing and the box of Factory.v
+  take ι, and ReceivedChain, Stream and GrowRing also take a partner
+  point ῑ, because x̄[i] = x[i] and no constant computes x̄. FactoryEx
+  packs the point value of the hidden point with the handle. The
+  ladders of CfstScheduler.v and ABP.v share one ladder over constants
+  in CfstTools.v. `ALetNew S x e` erases to `let_new_at (EPt x)` and the
+  checker asks x ground. The theorems over a C₀ of point variables
+  (`soundness_source`) stay true but say nothing about a program that
+  creates a channel, so the examples use `soundness_created`, and the
+  rejections of LitRejected.v and CfstDeadlock.v gain a version under
+  created hypotheses. Ten files are out of the build with the marker
+  `# SYNTACTIC-POINTS: example port pending`. ChoiceTranslate.v and
+  ChoiceTranslateEx.v translate `select` into a send that creates a
+  channel at the point of the carrier, which the source term does not
+  name. SegmentDeleg.v creates a channel at an opened existential, so
+  the result of the box tsum needs a `TPt` in its package. ChoiceEnc.v,
+  ChoiceNegative.v, DataBranch.v, DataAlternate.v, GrowDeadlock.v,
+  SemFlag.v and SemRounds.v were not reached.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
