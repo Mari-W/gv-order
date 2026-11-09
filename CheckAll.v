@@ -74,7 +74,7 @@ Require LRGV.liveness.LiveRenaming.
 Require LRGV.liveness.LiveRules.
 Require LRGV.liveness.LiveTermRules.
 Require LRGV.lockfree.Criterion.
-(* SYNTACTIC-POINTS: lockfree port pending  Require LRGV.lockfree.Fragment. *)
+Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
 (* SYNTACTIC-POINTS: lockfree port pending  Require LRGV.lockfree.LFAdequacy. *)
 Require LRGV.lockfree.LFFuel.
@@ -178,36 +178,45 @@ Print Assumptions LRGV.lockfree.ThreadProgress.thread_progress.
 Print Assumptions LRGV.lockfree.ThreadProgress.thread_progress_val.
 Print Assumptions LRGV.lockfree.ThreadProgress.stopped_forever.
 Print Assumptions LRGV.lockfree.Reach.lock_free_reach_of.
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.lfptyped_gptyped. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.fw_lfptyped. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.tc_lfptyped. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.sch_lfsource. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.kob_checks. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.kob_not_lfptyped. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.kob_rank_fails. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.c1_checks. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.c1_rank_fails. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.c3_checks. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.c3_not_lfptyped. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.tsum_r1_fails. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.starve_checks. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.starve_feds. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.starve_not_lfptyped. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.r2r_earlier. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.rc_r2_fails. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.rc_lfptyped. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.rg_r2_fails. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.rg_wf. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.rg_lfsource. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.abp_r2. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.abp_wf. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.abp_lfsource. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.cworld_hold. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.lfsource_lfptyped. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.fw_lfsource. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.tc_lfsource. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.rc_lfsource. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.kob_cworld_not_wf. *)
+Print Assumptions LRGV.lockfree.Fragment.lfptyped_gptyped.
+Print Assumptions LRGV.lockfree.Fragment.fw_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.tc_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.sch_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.kob_checks.
+Print Assumptions LRGV.lockfree.Fragment.kob_not_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.kob_rank_fails.
+Print Assumptions LRGV.lockfree.Fragment.c1_checks.
+Print Assumptions LRGV.lockfree.Fragment.c1_rank_fails.
+Print Assumptions LRGV.lockfree.Fragment.c3_checks.
+Print Assumptions LRGV.lockfree.Fragment.c3_not_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.tsum_r1_fails.
+Print Assumptions LRGV.lockfree.Fragment.starve_checks.
+Print Assumptions LRGV.lockfree.Fragment.starve_feds.
+Print Assumptions LRGV.lockfree.Fragment.starve_not_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.r2r_earlier.
+Print Assumptions LRGV.lockfree.Fragment.rc_r2_fails.
+Print Assumptions LRGV.lockfree.Fragment.rc_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.rg_r2_fails.
+Print Assumptions LRGV.lockfree.Fragment.rg_wf.
+Print Assumptions LRGV.lockfree.Fragment.rg_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.abp_r2.
+Print Assumptions LRGV.lockfree.Fragment.abp_wf.
+Print Assumptions LRGV.lockfree.Fragment.abp_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.cworld_hold.
+Print Assumptions LRGV.lockfree.Fragment.lfsource_lfptyped.
+Print Assumptions LRGV.lockfree.Fragment.fw_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.tc_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.rc_lfsource.
+Print Assumptions LRGV.lockfree.Fragment.kob_cworld_not_wf.
+Print Assumptions LRGV.lockfree.Fragment.lfsource_lfptyped_at.
+Print Assumptions LRGV.lockfree.Fragment.lfsource_budgets.
+Print Assumptions LRGV.lockfree.Fragment.c3_r2h.
+Print Assumptions LRGV.lockfree.Fragment.fw_budgets.
+Print Assumptions LRGV.lockfree.Fragment.tc_budgets.
+Print Assumptions LRGV.lockfree.Fragment.sch_budgets.
+Print Assumptions LRGV.lockfree.Fragment.rc_budgets.
+Print Assumptions LRGV.lockfree.Fragment.rg_budgets.
+Print Assumptions LRGV.lockfree.Fragment.abp_budgets.
 Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down.
 Print Assumptions LRGV.lockfree.LFSoup.lfconf_step.
 Print Assumptions LRGV.lockfree.LFSoup.lfconf_run.

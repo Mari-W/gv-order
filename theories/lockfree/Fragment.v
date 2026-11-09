@@ -8,7 +8,8 @@
       variable, a parameter, a received box).
     - R1 ([r1]): a potentially recursive call sits in tail position of
       its thread. Threads are the root term, the body of a spawned λ and
-      the body of a box under its one λ. Let, let pair and case pass
+      the body of a box under its λs. A call is force f applied to the
+      point values of the box and then to its argument ([fhead]). Let, let pair and case pass
       tail position to their continuation and branches, and an applied
       λ passes it to its body. Every other frame is a frame that still
       holds or uses something, the call's results included, so the call
@@ -17,8 +18,9 @@
       potentially recursive call and of every link is fresh. Fresh
       means built from variables that the round bound to the result of
       an action or of new, from send, select, branch, new, unit,
-      constants and boxes. The parameter, the self and a received
-      payload are not fresh.
+      constants, boxes and point values. The point parameters of a box
+      are fresh. The parameter, the self and a received payload are
+      not.
     - R4′ ([r4_ok]): a forwarding hop is a send, inside a box body, of a
       payload received in the same body and not acted on. Its two
       carriers are traced back to the box parameter as paths into its
@@ -28,13 +30,24 @@
       carrier's type, both with points and constraints erased. The
       graph of all hops is acyclic. Expressions carry no types, so this
       rule reads its types off typings of the boxes, not off the term.
+      Under §17.6 a link inside a box body adds edges to the same graph,
+      the hand-off graph, and replaces the link clause of R2′.
     - Rank ([wf_world]): ≺ of the world is well founded.
     - R2-recv ([r2r], stage 3c, plan §13) replaces R2′ in the fragment.
       A received payload passed to a call of the self counts as
       advanced, and every slot it feeds must be acted on before the
-      round passes it on. [r2] stays as the stricter rule.
+      round passes it on. [r2] stays as the stricter rule. The fragment
+      asks [lf_r2h], R2-recv without the link clause.
+    - Budgets ([with_budgets], plan §17.6, §17.8): the refill w_bud and
+      the floor w_pay of the world come from the depths of the hand-off
+      graph and from the length of a round.
 
-    [lfptyped] is [gptyped] with R1, R2-recv, R4′ and Rank. [lfsource] is
+    Syntactic points (sharp edges 173): a box that creates a channel
+    takes its points as leading λs, the checks read those λs as point
+    parameters, and the hypotheses of a closed program name constants.
+
+    [lfptyped] is [gptyped] with R1, R2-recv, the hand-off graph and
+    Rank. [lfsource] is
     the same for a closed source program over the hypotheses of its
     top-level channels, the form in which the examples are typed under
     the constant world (sharp edges 172). Its Rank is asked of the world
