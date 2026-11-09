@@ -833,4 +833,68 @@ Section fuel_exists.
       rewrite lookup_fmap, lookup_delete_ne by done. rewrite lookup_mrem, decide_False by done. done.
     - rewrite lookup_fmap, lookup_delete_ne by done. rewrite lookup_mrem, decide_False by done. done.
   Qed.
+  Lemma fe_msg i j c b v ei ei' f f' :
+    i ≠ j → M !! i = Some ei → M !! j = Some f →
+    tstep ei (LSess (SSend (c, b) v)) ei' → tstep f (LSess (SRecv (c, negb b) v)) f' → t ≠ i → t ≠ j →
+    fgoal (C, M) (C, <[j := f']> (<[i := ei']> M))
+      (fstep W P F (C, M) {[i; j]} (C, <[j := f']> (<[i := ei']> M))).2 {[i; j]} t o s m.
+  Proof.
+    intros Hij Hi Hj Hse Hsf Hti Htj.
+    pose proof (fe_chan i j ei f _ _ ei' f' c b (not_eq_sym Hti) (not_eq_sym Htj) Hi Hj Hse eq_refl Hsf eq_refl) as Hoc.
+    destruct (step_msg (S n) W HW T π C M A U Hc i j c b v ei ei' f f' Hij Hi Hj Hse Hsf)
+      as [_ (Hee & Hff & Hve & Hcbv)].
+    destruct (lfsoup_conf_step (S n) W T π P F (C, M) A U {[i; j]} _ HW Hc HF
+      (IMsg C M i j c b v ei ei' f f' Hij Hi Hj Hse Hsf)) as [(A' & U' & Hc') _].
+    destruct (act_step _ _ _ Hse) as (a1 & Ha1 & Ho1). apply offers_send in Ho1 as ->.
+    destruct (act_step _ _ _ Hsf) as (a2 & Ha2 & Ho2). apply offers_recv in Ho2 as ->.
+    assert ((fstep W P F (C, M) {[i; j]} (C, <[j:=f']> (<[i:=ei']> M))).2 =
+            (fmsg W P F i j (c, b) (c, negb b) v).2) as ->.
+    { destruct (fstep_pair W P F (C, M) (C, <[j:=f']> (<[i:=ei']> M)) i j ei f Hij Hi Hj) as [-> | ->];
+        unfold fpair; by rewrite ?Ha1, ?Ha2. }
+    destruct (HF i ei Hi) as (H1i & H2i & H3i & H4i). destruct (HF j f Hj) as (H1j & H2j & H3j & H4j).
+    pose proof (tstep_end_fends _ _ _ _ Hse eq_refl) as Hcb. pose proof (tstep_end_fends _ _ _ _ Hsf eq_refl) as Hcnb.
+    assert (is_Some (P i !! (c, b))) as [ki Hki] by (apply elem_of_dom; by rewrite H2i).
+    assert (is_Some (P j !! (c, negb b))) as [kj Hkj] by (apply elem_of_dom; by rewrite H2j).
+    assert ((cdual o).1 ≠ c) as Hoc' by done.
+    assert (Hne : ∀ b', cdual o ≠ (c, b')) by (intros b' Heq; apply Hoc'; by rewrite Heq).
+    assert ((C, <[j:=f']> (<[i:=ei']> M)).2 !! t = Some e) as He' by (simpl; by rewrite !lookup_insert_ne).
+    destruct (s_partner n W HW T _ _ A' U' Hc' t e a o He' Ha Ho) as (s' & es' & Hs't & Hes' & Hso').
+    exists s', es'. split_and!; [done|done|done|]. simpl in Hes'. unfold fmsg, fval. cbn [fst snd].
+    destruct (decide (s' = j)) as [->|Hs'j].
+    - rewrite lookup_insert_eq in Hes'. injection Hes' as <-. rewrite eupd_eq. left. rewrite Hff in Hso'.
+      apply elem_of_union in Hso' as [Hso'|Hso'].
+      + pose proof (fe_uniq j f Hj Hso') as Ejs. subst j.
+        rewrite lookup_union_l'.
+        2:{ rewrite (fe_val_act s (SRecv (c, negb b) v) (c, negb b) kj eq_refl); [rewrite Hm; by eexists| |set_solver|apply Hne|].
+            - simpl. by rewrite lookup_mrem, decide_False by set_solver.
+            - simpl. intros y [= <-]. simpl. apply not_eq_sym, Hne. }
+        rewrite (fe_val_act s (SRecv (c, negb b) v) (c, negb b) kj eq_refl); [rewrite Hm; simpl| |set_solver|apply Hne|].
+        * pose proof (fe_tick f _ f' (c, negb b) Hj Hsf eq_refl ltac:(apply not_eq_sym, Hne)). lia.
+        * simpl. by rewrite lookup_mrem, decide_False by set_solver.
+        * simpl. intros y [= <-]. simpl. apply not_eq_sym, Hne.
+      + assert (cdual o ∈ fends ei) as Hoi by (by apply Hve).
+        pose proof (fe_uniq i ei Hi Hoi) as Eis. subst i.
+        rewrite lookup_union_r.
+        2:{ rewrite (fupd_act W (SRecv (c, negb b) v) (P j) (F j) (c, negb b) kj eq_refl).
+            2:{ simpl. by rewrite lookup_mrem, decide_False by set_solver. }
+            simpl. rewrite lookup_insert_ne by (apply not_eq_sym, Hne).
+            rewrite lookup_fmap, lookup_delete_ne by (apply not_eq_sym, Hne).
+            rewrite lookup_mrem, decide_False by set_solver.
+            assert (cdual o ∉ fends f) as Hnf.
+            { intros Hin. apply (st_disj (S n) W HW T π C M A U Hc s j es f Hij Hes Hj (cdual o)); done. }
+            rewrite <-H3j in Hnf. apply not_elem_of_dom in Hnf. by rewrite Hnf. }
+        rewrite lookup_fmap, lookup_mres, decide_True by done. rewrite Hm. simpl.
+        pose proof (fe_tick ei _ ei' (c, b) Hi Hse eq_refl ltac:(apply not_eq_sym, Hne)). lia.
+    - rewrite lookup_insert_ne in Hes' by done. rewrite eupd_ne by done.
+      destruct (decide (s' = i)) as [->|Hs'i].
+      + rewrite lookup_insert_eq in Hes'. injection Hes' as <-. rewrite Hee in Hso'.
+        assert (cdual o ∈ fends ei) as Hoi by set_solver.
+        pose proof (fe_uniq i ei Hi Hoi) as Eis. subst i. rewrite eupd_eq. left.
+        rewrite (fe_val_act s (SSend (c, b) v) (c, b) ki eq_refl); [rewrite Hm; simpl| |set_solver|apply Hne|].
+        * pose proof (fe_tick ei _ ei' (c, b) Hi Hse eq_refl ltac:(apply not_eq_sym, Hne)). lia.
+        * simpl. by rewrite lookup_mrem, decide_False.
+        * simpl. intros y [= <-]. simpl. apply not_eq_sym, Hne.
+      + rewrite lookup_insert_ne in Hes' by done. pose proof (fe_uniq s' es' Hes' Hso') as Es. subst s'.
+        rewrite eupd_ne by done. rewrite Hm. right. split_and!; [done|done|]. set_solver.
+  Qed.
 End fuel_exists.
