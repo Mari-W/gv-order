@@ -26,7 +26,7 @@ Proof.
   intros HW HV1 HV2 Hub.
   destruct (konst_app_inv _ _ _ _ _ _ _ _ _ _ (proj1 HW) HV1 HV2)
     as (_ & ub0 & lb0 & A & B & Hk & Hu & HB & HV).
-  inversion Hk as [kq Tq Gq xs Hsig HC1 HK1|]; subst.
+  inversion Hk as [kq Tq Gq xs Hsig HC1 HK1| | |]; subst.
   inversion Hsig as [| | | | | | | |m kk C1 ub1 T1 ? ss Hxs Hss Hsc]; subst.
   apply facts_hold_bcs_at in HC1.
   apply Vrel_box_thunk_iff in HV as (-> & eb & -> & Hfc & HK).
@@ -160,7 +160,8 @@ Proof.
     { apply fchans_subst. eapply allfv_mono; [|exact Hfv]. intros [|x]; simpl.
       - intros _. set_solver.
       - intros (T' & Hx). unfold compose. rewrite fchans_rename. by eapply grounding_fchans. }
-    rewrite Hfc, dom_empty_L in Hsub. set_solver. }
+    assert (fchans e = ∅) as Hfc0 by (rewrite fchans_fends, Hfc, tenv_ends_empty; set_solver).
+    rewrite Hfc0, dom_empty_L in Hsub. set_solver. }
   assert (∀ j W2, j ≤ n → wext W' W2 →
             Vrel j W2 ∅ (TBox m k C (TLolli ub None TUnit T)) (EBox (subst (up γ) e))) as Hbox.
   { induction j as [j IHj] using lt_wf_ind. intros W2 Hj HW2.

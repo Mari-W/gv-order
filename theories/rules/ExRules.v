@@ -52,8 +52,8 @@ Proof.
     exists Θr, s1, s2, k, Θ'. split_and!; [done..|].
     eapply HEj; [lia|by apply wext_refl|exact HE'].
   - (* O-New *)
-    intros Hc. destruct (Hstep Hc) as (x & s & s' & Hx & Hdu & HE').
-    exists x, s, s'. split_and!; [done|done|]. eapply HEj; [lia|by apply wext_refl|exact HE'].
+    intros Hc. destruct (Hstep Hc) as (Hx & s & s' & Hdu & HE').
+    split; [done|]. exists s, s'. split; [done|]. eapply HEj; [lia|by apply wext_refl|exact HE'].
   - destruct Hstep as (Θ1 & Θ2 & ub & lb & ? & HVw & HE').
     exists Θ1, Θ2, ub, lb. split_and!; [done|done|].
     eapply HEj; [lia|by apply wext_refl|exact HE'].

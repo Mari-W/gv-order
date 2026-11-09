@@ -31,9 +31,12 @@ Inductive sem_rules (W : world) : tenv → lenv → gset point → expr → ty �
   | sr_var Δ F x T :                                     (* E-LVar *)
       lenv_only Δ x T →
       sem_rules W ∅ Δ F (Var x) T
-  | sr_chan Δ F c s k s' y :                             (* E-Ch, ι′ ≡_G ι *)
-      lenv_empty Δ → seq s s' → w_eq W k y →
-      sem_rules W {[c := One (s, k)]} Δ F (Chan c) (TSess s' y)
+  | sr_chan Δ F c b s k s' y :                           (* E-Ch, ι′ ≡_G ι *)
+      lenv_empty Δ → seq s s' → w_eq W k y → pt_pol k = b →
+      sem_rules W {[c := One (s, k)]} Δ F (Chan c b) (TSess s' y)
+  | sr_pt Δ F x :                                        (* E-Pt (§16.4) *)
+      lenv_empty Δ → pt_known W x →
+      sem_rules W ∅ Δ F (EPt x) (TPt x)
   | sr_lam Θ Δ F e T U ub lb :                           (* E-Abs *)
       term_wf Θ (Some T :: Δ) e → lenv_bot Δ = false → lb_below W lb (tenv_heads Θ ∪ lenv_heads Δ) →
       (∀ W1 F', wext W W1 → ub_below W1 ub F' → sem_rules W1 Θ (Some T :: Δ) F' e U) →
@@ -122,7 +125,8 @@ Proof.
     [W Δ F HΔ
     |W Δ F k T HΔ Hk
     |W Δ F x T Ho
-    |W Δ F c s k s' y HΔ Hs Hk
+    |W Δ F c b s k s' y HΔ Hs Hk Hb
+    |W Δ F x HΔ Hx
     |W Θ Δ F e T U ub lb Hwf Hbot Hlb Hb IH
     |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U HΘ HΔ Hub H1 IH1 H2 IH2
     |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U HΘ HΔ H1 IH1 H2 IH2
@@ -141,6 +145,7 @@ Proof.
   - by apply sem_typed_konst.
   - by apply sem_typed_var.
   - by apply sem_typed_chan.
+  - by apply sem_typed_pt.
   - apply sem_typed_lam; [done|done|done|].
     + intros W1 F' HW1 Hub'. apply IH; [done|done| |apply HW1]. by apply Hb.
   - eapply sem_typed_app; [done|done|done|by apply IH1|by apply IH2].

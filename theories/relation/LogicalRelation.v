@@ -1098,8 +1098,8 @@ Lemma lenv_avail_lin_avail Δ x :
   lenv_avail_lin Δ x → lenv_avail Δ x.
 Proof. intros (T & ? & _). by exists T. Qed.
 
-(** Syntactic well-formedness of e against Θ; Δ: the channels of e are
-    exactly dom Θ, the free variables of e are available in Δ, and —
+(** Syntactic well-formedness of e against Θ; Δ: the ends of e are
+    exactly the ends of Θ ([tenv_ends], §16.4), the free variables of e are available in Δ, and —
     relevance, i.e. absence of weakening — every linearly available
     variable of Δ occurs in e.
 
@@ -1108,13 +1108,13 @@ Proof. intros (T & ? & _). by exists T. Qed.
     for syntactically typed terms ([typed_term_wf_s]) and consumed
     as an explicit premise by exactly the two rules that build a
     suspended computation, whose V-clauses demand channel ownership:
-    E-Abs needs all three (the ⊸-clause asks for [fchans eb = dom Θ],
+    E-Abs needs all three (the ⊸-clause asks for [fends eb = tenv_ends Θ],
     ⊆ from the first two, ⊇ from relevance) and E-Box needs the first
     two (the □-clause asks for [fchans eb = ∅]; relevance is vacuous
     there, the environment being unlimited). The elimination rules
     need none of it: E constrains environments, not term channels. *)
 Definition term_wf (Θ : tenv) (Δ : lenv) (e : expr) : Prop :=
-  fchans e = dom Θ ∧
+  fends e = tenv_ends Θ ∧
   allfv (lenv_avail Δ) e ∧
   (∀ x, lenv_avail_lin Δ x → freevar x e).
 
