@@ -2501,6 +2501,29 @@ annotates new with its point. Fresh extension stays as a world construction
 (`wext_fresh`, `wext_cc`, relation/BranchWorlds.v) and leaves the relations (stage
 2b-core, see the lock-freedom plan).
 
+**173. Syntactic points (author's decision, 2026-11-09, branch lock-freedom, stages L1 and L2 by Claude).**
+A term names the point at which it creates a channel, and a channel value names its end
+(lock-freedom plan §16). The point value `EPt x` has the singleton type `TPt x`, `new`
+takes it as argument (`KTNewAt`), and `KPay i` and `KSucc` compute x[i] and x + 1. A
+channel value is `Chan c b`, where b is the polarity of its end's point, so the two ends
+of c differ in b and labels name ends (`cend`). `LNew c x` carries the point, and O-New
+reads it off the label, which replaces the placement oracle of plan §15. A literal is
+ground, so point substitution fixes it. A top-level channel therefore sits at a fresh
+constant of Ψ (`created_snoc` adds `(C, [pconst a])` under `¬ skn W Ψ (pconst a)`), and
+nothing shifts. The world carries the budgets `w_bud` and `w_pay` of §17.8, which the base
+relation ignores. Three edges came up. First, `pt_inst σ` keeps the polarity of a point
+only when σ sends its root to a positive point, and the bit of `Chan c b` stays put. So
+`typed_sem_rules` and `typed_pinst` take the premise `tenv_pol σ Θ`, which holds for
+`pvar`, for shifts and for Θ = ∅, the only cases that occur. Second, `wext` does not yet
+keep the budgets. As a conjunct of `wext` the clause `wext_bud` would ask the two
+components of `Prel_connect` and `fundamental_join` to agree on the budgets of the cut,
+and those statements are fixed. L3 places that agreement. Third, `soundness_source`
+keeps its statement, but a source program over the point variables of its C₀ names no
+point and creates no channel. Programs that create channels use `created` and
+`soundness_created`. `term_wf` asks `fends e = tenv_ends Θ`, which E-Abs needs for the
+arrow clause `fends eb = tenv_ends Θ`. The translations of PGV, PN and MP left the build
+until their port (`# SYNTACTIC-POINTS: translation port pending` in _CoqProject).
+
 ## From the earlier abandoned mechanization (spec §15)
 
 

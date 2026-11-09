@@ -13,6 +13,7 @@ Updated after every stage and every agent result.
 | 3a Fragment checks R1, R2′, R4′, wf_world, lfptyped (branch lf-rules) | done (4d74f15, merge into lock-freedom after 2a) | theories/lockfree/Fragment.v: lfptyped, lfsource, fw_lfptyped, tc_lfptyped, sch_lfsource, kob/c1/c3 rejections, tsum_r1_fails | passes, 267 closed | 0, no axioms | Rank on W catches chains only under the constant world; R4′ needs a typing annotation |
 | 3  Fundamental theorem, lf_soundness, thread_progress, examples | thread_progress and lock_free_reach_of done (lf-fuel, type-free), the rest waits on plan §14 | ThreadProgress.v (thread_progress, thread_progress_val, stopped_forever), Reach.v (lock_free_reach_of) | passes | 0, no axioms | converse of lock_free_reach_of fails untyped; typed case open |
 | 3c Coverage of the literature (plan §12) | done (cc300ce on lf-rules) | Fragment.v (lf_r2r, starve_not_lfptyped, rc_lfptyped, abp_lfsource, rg_lfsource, wgen_rank_wf), examples/ABP.v, examples/GrowRing.v | passes | 0, no axioms | none. The ring gap is closed | | | | author's acceptance criterion |
+| L1, L2 Syntactic points (plan §16.6 P1, P2, world fields of §17.8) | done (e767283..b5849ec) | lang (`Chan c b`, `EPt`, `KPay`, `KSucc`, labels on ends, `HeadNew c x`, `fends`, `let_new_at`), types (`TPt`, `konst_ty`, `tenv_ends`, `tenv_fit`), relation (`w_bud`, `w_pay`, V at `TSess` and `TPt`, `fends` in the arrow, O-New at the label's point, `tenv_hd_end`, `selects`), rules (`sem_typed_pt`, `Erel_app_pay`, `Erel_app_succ`), static (`t_pt`, `t_ch`, `created` over constants, `tenv_pol`) | lang to static pass, liveness, lockfree, examples, algorithmic broken until L3 and L4 | 0, no axioms | `wext` does not keep budgets yet (`wext_bud` apart), translations out of the build |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -152,6 +153,25 @@ Updated after every stage and every agent result.
   ceiling is rejected on paper (§15.6). Stage 3 must prove the layer by
   preservation from typing, and `or_pick` needs picks computable from the
   term, or the relational form of §14.3 option 2 (§15.7).
+
+- 2026-11-09. Stages L1 and L2 of the syntactic points (plan §16.6 P1, P2)
+  build through theories/static with no Admitted and no axiom.
+  `soundness`, `soundness_source`, `soundness_created`, `fundamental`,
+  `adequacy`, `Prel_connect`, `fundamental_join` and `Prel_term` keep their
+  statements. Four things differ from §16. `wext` does not keep the budgets.
+  The clause `wext_bud` exists on its own, because as a conjunct of `wext`
+  it puts an agreement premise on the cut into `Prel_connect` and
+  `fundamental_join`, and L3 has to choose where that premise lives.
+  `typed_sem_rules` and `typed_pinst` gain the premise `tenv_pol σ Θ`,
+  because `pt_inst σ` flips the polarity of a point whose root σ sends to a
+  negative point, and the bit of `Chan c b` does not move. Every call with
+  Θ ≠ ∅ uses `pvar` or a shift. `created_snoc` adds `(C, [pconst a])` under
+  `¬ skn W Ψ (pconst a)`, which equals the plan's
+  `bcs_inst (plist [pconst a]) C` because every outer point of C is known
+  and so ground. `term_wf` asks `fends e = tenv_ends Θ`. A source program
+  over the point variables of `soundness_source` names no point and so
+  creates no channel. Programs that create channels go through `created`
+  and `soundness_created`. Sharp edge 173.
 
 ## Decisions
 
