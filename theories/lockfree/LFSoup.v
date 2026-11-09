@@ -2654,4 +2654,100 @@ Section fuel.
     destruct (fstep_pair W P F (C, M) (C, <[j:=f']> (<[i:=e']> M)) i j e f Hij He Hf) as [-> | ->];
       unfold fpair; rewrite ?Ha, ?Ha'; done.
   Qed.
+  Lemma fuel_link i e c bc d bd e' :
+    M !! i = Some e → tstep e (LSess (SLink {[(c, bc); (d, bd)]})) e' → c ∈ C →
+    lf_fuelc n W (pupd π (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := e']> M))
+      (fstep W P F (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := e']> M)).1
+      (fstep W P F (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := e']> M)).2
+      (C ∖ {[c]}, chsubst c d <$> <[i := e']> M).
+  Proof.
+    intros He Hst HcC.
+    destruct (st_link_data n W HW T π C M A U Hc i e c bc d bd e' He Hst)
+      as (Θ1 & xc & xd & Hne & Hxc & Hxd & Hdx & Hsx & Hn1 & Hn2 & Hr & Hends & HE).
+    pose proof (LErel_S_fit _ _ _ _ _ _ HE) as Hfit.
+    assert (fends e' = fends e ∖ {[(c, bc); (d, bd)]}) as Hee by (by rewrite <-(proj1 Hfit), Hends).
+    pose proof (tenv_end_pol _ _ _ Hxc) as Hpc. pose proof (tenv_end_pol _ _ _ Hxd) as Hpd. simpl in Hpc, Hpd.
+    assert (bd = negb bc) as Hbd by (rewrite <-Hpc, <-Hpd, Hdx, pt_pol_dual; by destruct (pt_pol xd.2)).
+    pose proof (st_held n W HW T π C M A U Hc i e _ _ He Hxc) as Hci.
+    pose proof (st_held n W HW T π C M A U Hc i e _ _ He Hxd) as Hdi.
+    destruct (act_step _ _ _ Hst) as (a & Ha & Hoa). apply offers_link in Hoa as (o1 & o2 & -> & Hcd).
+    assert (C ∖ (C ∖ {[c]}) = {[c]}) as HCc.
+    { apply set_eq. intros x. destruct (decide (x = c)) as [->|Hx]; [clear -HcC|clear -HcC Hx]; set_solver. }
+    assert ((if decide (o1.1 = c) then o2.1 else o1.1) = d) as Hd'.
+    { destruct (upair_eq_inv _ _ _ _ Hcd Hne) as [[<- <-]|[<- <-]]; simpl.
+      - by rewrite decide_True.
+      - destruct (decide (d = c)) as [->|]; done. }
+    rewrite fstep_single. unfold pupd. rewrite pev_of_single. simpl. rewrite He. unfold fsingle, pev1.
+    rewrite Ha. simpl. rewrite HCc, elements_singleton. simpl. rewrite Hd'.
+    rewrite <-Hcd.
+    (* the base maps, before the renaming *)
+    set (M'' := <[i := e']> M).
+    set (BP := eupd P i (mrem {[(c, bc); (d, bd)]} (P i))).
+    set (BF := eupd F i (mrem {[(c, bc); (d, bd)]} (F i))).
+    assert (Hbase : ∀ t g, M'' !! t = Some g →
+              FuelE (S n) W (BP t) (BF t) g ∧ dom (BP t) = fends g ∧ dom (BF t) = fends g ∧
+              (∀ o, o ∈ fends g → BP t !! o = π !! o) ∧ (c, bc) ∉ fends g ∧ (d, bd) ∉ fends g ∧
+              ∃ g0, M !! t = Some g0 ∧ fends g ⊆ fends g0).
+    { intros t g Hg. unfold M'' in Hg. unfold BP, BF, eupd. destruct (decide (t = i)) as [->|Hti].
+      - rewrite lookup_insert_eq in Hg. injection Hg as <-. destruct (ff i e He) as (H1 & H2 & H3 & H4).
+        pose proof (lffuel_step (S n) W (P i) (F i) e H1 _ e' Hst ltac:(done)) as H. simpl in H.
+        unfold LFFuel.fact in H. simpl in H.
+        split_and!; [done|by rewrite dom_mrem, H2, Hee|by rewrite dom_mrem, H3, Hee
+          | |rewrite Hee; clear; set_solver|rewrite Hee; clear; set_solver|].
+        + intros o Ho. rewrite Hee in Ho. rewrite lookup_mrem, decide_False by (clear -Ho; set_solver).
+          apply H4. clear -Ho. set_solver.
+        + exists e. split; [done|]. rewrite Hee. clear. set_solver.
+      - rewrite lookup_insert_ne in Hg by done. destruct (ff t g Hg) as (H1 & H2 & H3 & H4).
+        pose proof (st_disj n W HW T π C M A U Hc t i g e Hti Hg He) as Hd0.
+        split_and!; try done; [apply (FuelE_down (S n) (S (S n))); [lia|done]|clear -Hd0 Hci; set_solver
+          |clear -Hd0 Hdi; set_solver|].
+        by exists g. }
+    assert (Hcend : ∀ t g β, M'' !! t = Some g → (c, β) ∈ fends g → c ≠ d → β = bd).
+    { intros t g β Hg Hin Hcd'. destruct (Hbase t g Hg) as (_ & _ & _ & _ & Hn & _).
+      destruct (decide (β = bc)) as [->|Hb]; [done|]. rewrite Hbd. by destruct β, bc. }
+    assert (Hkinj : ∀ t g, M'' !! t = Some g → kinj (csub c d) (BP t) ∧ kinj (csub c d) (BF t)).
+    { intros t g Hg. destruct (Hbase t g Hg) as (_ & H2 & H3 & _ & Hn1' & Hn2' & _).
+      assert (∀ o, o ∈ fends g → ∀ o2, o2 ∈ fends g → (csub c d o.1, o.2) = (csub c d o2.1, o2.2) → o = o2)
+        as Hi.
+      { intros [c1 b1] Ho [c2 b2] Ho2 Heq.
+        pose proof (f_equal fst Heq) as Hc12. pose proof (f_equal snd Heq) as Hb12.
+        unfold csub in Hc12. simpl in Hc12, Hb12. subst b2.
+        destruct (decide (c1 = c)) as [->|Hq1], (decide (c2 = c)) as [->|Hq2]; try (by subst).
+        - subst c2. exfalso. assert (c ≠ d) as Hcd' by congruence.
+          pose proof (Hcend t g _ Hg Ho Hcd'). subst. by apply Hn2'.
+        - subst c1. exfalso. assert (c ≠ d) as Hcd' by congruence.
+          pose proof (Hcend t g _ Hg Ho2 Hcd'). subst. by apply Hn2'. }
+      split; intros o1' o2' v1 v2 Hv1 Hv2 Heq; apply Hi; try done.
+      - rewrite <-H2. by apply elem_of_dom_2 in Hv1.
+      - rewrite <-H2. by apply elem_of_dom_2 in Hv2.
+      - rewrite <-H3. by apply elem_of_dom_2 in Hv1.
+      - rewrite <-H3. by apply elem_of_dom_2 in Hv2. }
+    assert (Hpc' : π !! (c, negb bc) = π !! (d, bd)).
+    { destruct (lfc_partner _ _ _ _ _ _ _ Hc i e _ _ He Hxc) as (s & gs & ys & Hgs & Hys & Hys2 & _).
+      change (c, negb bc) with (cdual (c, bc)).
+      rewrite (lf_pt _ _ _ _ _ _ _ _ Hc s gs _ _ Hgs Hys), (lf_pt _ _ _ _ _ _ _ _ Hc i e _ _ He Hxd).
+      by rewrite Hys2, Hdx, pt_dual_dual. }
+    intros t g' Hg'. simpl in Hg'. rewrite lookup_fmap in Hg'.
+    destruct (M'' !! t) as [g|] eqn:Hg; [|done]. simpl in Hg'. injection Hg' as <-.
+    destruct (Hbase t g Hg) as (H1 & H2 & H3 & H4 & Hn1' & Hn2' & g0 & Hg0 & Hsub).
+    destruct (Hkinj t g Hg) as [Hk1 Hk2].
+    rewrite chsubst_emap. split_and!.
+    - apply (FuelE_down n (S n)); [lia|]. apply (FuelE_rename _ _ (BP t) (BF t) g); [| |done].
+      + by apply renk_kren.
+      + by apply renk_kren.
+    - rewrite kren_dom, H2 by done. rewrite <-chsubst_emap, fends_chsubst. unfold osub. done.
+    - rewrite kren_dom, H3 by done. rewrite <-chsubst_emap, fends_chsubst. unfold osub. done.
+    - intros o' Ho'. rewrite <-chsubst_emap, fends_chsubst in Ho'.
+      apply elem_of_map in Ho' as (o0 & -> & Ho0).
+      assert (is_Some (BP t !! o0)) as [v Hv] by (apply elem_of_dom; by rewrite H2).
+      unfold osub. rewrite (kren_lookup _ _ o0 v Hk1 Hv). rewrite <-Hv, H4 by done.
+      destruct o0 as [c0 b0]. unfold csub. simpl. destruct (decide (c0 = c)) as [->|Hc0].
+      + destruct (decide (c = d)) as [<-|Hcd'].
+        * exfalso. destruct (decide (b0 = bc)) as [->|Hb]; [done|].
+          assert (b0 = bd) as -> by (rewrite Hbd; by destruct b0, bc). done.
+        * pose proof (Hcend t g b0 Hg Ho0 Hcd') as ->. rewrite lookup_delete_ne by (intros [=]; congruence).
+          rewrite lookup_delete_ne by (intros [=]; congruence). rewrite Hbd. by rewrite Hpc', Hbd.
+      + rewrite !lookup_delete_ne; [done| |]; intros [=]; congruence.
+  Qed.
+
 End fuel.
