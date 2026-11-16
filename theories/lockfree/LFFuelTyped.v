@@ -1,32 +1,28 @@
-(** * The typed fuel interpretation (lock-freedom plan §17.6, stage L6a)
+(** * The typed fuel interpretation (lock-freedom plan §17.6, stage L6)
 
-    Stage L6a asks that every thread of a program in the static
-    lock-free fragment satisfy [fsem] at the budgets that
-    [with_budgets] computes. The statement was false for two
-    reasons. The first stands under the link rule of this branch.
+    Stage L6 asks that every thread of a program in the static
+    lock-free fragment satisfy [fsem] at the budgets of [src_world].
+    The lemmas of stage L6a on the old link rule are gone with that
+    rule (decision 2026-11-16, links: option 2). This file keeps the
+    tactics that step a thread under FuelE, the fragment facts of the
+    scheduler and of sync, and their budgets.
 
-    - [lf_fuel_fundamental_false]. No world at all gives a program
-      of the fragment [fsem]. The scheduler of examples/Scheduler.v
-      is in the fragment ([sched_lfsource]) and links two ends.
-      KTLink types link ⟨u, v⟩ at u : S@k and v : S̄@k̄, so the
-      partner of v sits at k, the point of u. The link clause of
-      FuelE asks the budget of that partner to lie below the counter
-      of u, and F-Cap bounds the counter by the same budget, so only
-      ∞ passes ([fuel_link_inf]). The scheduler also sends on the
-      partner of v, and F-Wait asks a finite budget at k̄ for that
-      ([sched_not_fsem]). The hand-off graph rejects every link
-      inside a box (its edge from the type of u to the type of the
-      partner of v is a self-loop), and it does not look at links
-      outside boxes.
-    - The old [round_len] counted channel steps inside box bodies
-      only, so sync (examples/Sync.v) got budget 0 and its spawn
-      failed. The stretch bound [stretch_len] of Fragment.v counts
-      the code of every thread. sync and the scheduler now get
-      budgets 20 and 44 ([sync_budgets], [sched_budgets]). *)
+    Under option 2 the statement of stage L6 is false
+    ([lf_fuel_fundamental_fails]). The forwarder of
+    examples/Forwarder.v is in the fragment ([fw_lfsource]), and its
+    single thread meets [fsem] in no world whose floors are keyed on
+    roots ([fw_not_fsem_roots]), [src_world] among them
+    ([fw_not_fsem]). The producer creates e at the payload point
+    γ̄[0] of its carrier a′ at γ̄ and sends e along a′. The
+    replacement clause of FuelE lets a link of another thread lower
+    the counter of e to the minimum [w_pay W γ̄[0]] right after the
+    new, and the send clause then asks [w_pay W γ̄ + 1] of that
+    counter ([fw_fuel_floor]). The two points share the root 1, so
+    their floors agree and the send fails. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Import lockfree.LFFuel lockfree.Fragment.
-From LRGV Require examples.Sync examples.Scheduler.
+From LRGV Require examples.Sync examples.Scheduler examples.Forwarder.
 
 Set Default Proof Using "All".
 
@@ -45,7 +41,7 @@ Proof. intros H Hs. exact (fuel_obl _ _ _ _ _ H _ _ Hs). Qed.
 Ltac tsolve :=
   first
     [ apply TStepHead; econstructor; reflexivity
-    | apply TStepHead; constructor
+    | apply TStepHead; constructor; reflexivity
     | apply TStepLetP; tsolve
     | apply TStepLetU; tsolve
     | apply TStepPairL; tsolve
@@ -66,28 +62,7 @@ Ltac fnew H c x := match type of H with FuelE (S ?n) ?W ?π ?φ ?e =>
   let Hs := fresh in eassert (Hs : tstep e (LNew c x) _) by tsolve;
   apply (fstep_new n W π φ e _ c x H) in Hs; clear H; rename Hs into H; fnorm H end.
 
-(** ** A typed link needs budget ∞ at both of its points
-
-    KTLink types link ⟨u, v⟩ with u : S@k and v : S̄@k̄, so the partner
-    of v sits at k, the point of u. The link clause of FuelE asks the
-    budget of the partner of v to lie below the counter of u, and F-Cap
-    bounds that counter by the budget at k, the same budget. Only ∞
-    passes. *)
-Lemma fuel_link_inf n W π φ e e' o1 o2 k :
-  FuelE (S n) W π φ e → tstep e (LSess (SLink {[o1; o2]})) e' → o1 ≠ o2 →
-  π !! o1 = Some k → π !! o2 = Some (pt_dual k) → is_Some (φ !! o1) →
-  w_bud W k = None.
-Proof.
-  intros H Hs Hne H1 H2 [f Hf].
-  destruct (fuel_cap _ _ _ _ _ H o1 f Hf) as (k' & Hk' & Hle).
-  rewrite H1 in Hk'. injection Hk' as <-.
-  destruct f as [m|]; [|by destruct (w_bud W k)].
-  destruct (fuel_link _ _ _ _ _ H _ _ Hs o1 o2 eq_refl Hne m Hf) as (k2 & m' & Hk2 & Hb & Hlt).
-  rewrite H2 in Hk2. injection Hk2 as <-. rewrite pt_dual_dual in Hb.
-  rewrite Hb in Hle. simpl in Hle. lia.
-Qed.
-
-(** ** The scheduler: in the fragment, and in fsem at no world *)
+(** ** The scheduler is in the fragment *)
 
 (** Rank for the scheduler's world. Its facts are γ ≺ γ̄, γ+1 ≺ ε and
     γ̄+1 ≺ ε̄, with γ the constant 1 and ε the constant 0. *)
@@ -126,45 +101,6 @@ Proof.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply sched_wf.
   - apply root_ok_intro. vm_compute. reflexivity.
-Qed.
-
-(** main creates a and b at γ and c at ε, spawns ag₁ = link ⟨b, ā⟩ and
-    ag₂, and sends on a. ag₁ forces budget ∞ at γ̄, the point of ā,
-    and F-Wait at the send on a asks a finite budget there. *)
-Theorem sched_not_fsem W : ¬ fsem W ∅ Scheduler.sched_main.
-Proof.
-  intros Hf. pose proof (Hf 40) as H. rewrite fmap_empty in H. fnorm H.
-  fnew H "a"%string (pconst 1). fbeta H. fbeta H. fbeta H.
-  fnew H "b"%string (pconst 1). fbeta H. fbeta H. fbeta H.
-  fnew H "c"%string (pconst 0). fbeta H. fbeta H. fbeta H.
-  match type of H with FuelE _ _ ?π ?φ _ => set (P := π) in H; set (F := φ) in H end.
-  match type of H with FuelE _ _ _ _ ?e => eassert (Hs : tstep e (LSpawn _) _) by tsolve end.
-  destruct (fuel_obl _ _ _ _ _ H _ _ Hs) as (_ & Hc & Hp). clear Hs.
-  (* ag₁ links b with ā *)
-  fbeta Hc. fbeta Hc.
-  match type of Hc with FuelE _ _ _ _ ?e =>
-    eassert (Hl : tstep e (LSess (SLink _)) _) by tsolve end.
-  rewrite upair_comm in Hl.
-  assert (Hinf : w_bud W (pt_dual (pconst 1)) = None).
-  { eapply (fuel_link_inf _ _ _ _ _ _ ("a", false) ("b", true) (pt_dual (pconst 1)) Hc Hl);
-      [done|vm_compute; reflexivity|rewrite pt_dual_dual; vm_compute; reflexivity|].
-    vm_compute. eexists. reflexivity. }
-  (* main spawns ag₂ and sends on a at γ *)
-  clear Hc. fbeta Hp.
-  match type of Hp with FuelE _ _ ?π ?φ _ => set (P2 := π) in Hp; set (F2 := φ) in Hp end.
-  match type of Hp with FuelE _ _ _ _ ?e => eassert (Hs : tstep e (LSpawn _) _) by tsolve end.
-  destruct (fuel_obl _ _ _ _ _ Hp _ _ Hs) as (_ & _ & H2). clear Hs. fbeta H2.
-  match type of H2 with FuelE _ _ _ _ ?e =>
-    eassert (Hs : tstep e (LSess (SSend ("a", true) EUnit)) _) by tsolve end.
-  destruct (fuel_wait _ _ _ _ _ H2 _ _ _ Hs eq_refl) as (k & m & Hk & Hb).
-  vm_compute in Hk. injection Hk as <-. unfold pconst in Hinf. congruence.
-Qed.
-
-(** Stage L6a as stated has no proof: a program of the fragment whose
-    single thread meets fuel in no world. *)
-Theorem lf_fuel_fundamental_false : ¬ ∀ Ψ t T, lfsource Ψ t T → ∃ W, fsem W ∅ t.
-Proof.
-  intros H. destruct (H _ _ _ sched_lfsource) as [W HW]. exact (sched_not_fsem W HW).
 Qed.
 
 (** ** Budgets of sync and of the scheduler
@@ -217,3 +153,74 @@ Proof.
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
   intros x. apply (src_flat _ _ 22 x); vm_compute; reflexivity.
 Qed.
+
+(** ** The forwarder violates FuelE at floors keyed on roots
+
+    main creates a at γ = 1 and b at ε = 0 and spawns the producer at
+    γ̄ with a′. The producer creates e at γ̄[0], so e holds its
+    counter at the point γ̄[0], and sends e along a′ at γ̄. Right after
+    the new the replacement clause lowers the counter of e to
+    [w_pay W γ̄[0]], one level down, and the send clause asks that
+    value to exceed [w_pay W γ̄]. Between the new and the send the
+    producer takes only internal steps, so no tick intervenes. *)
+
+Theorem fw_fuel_floor W :
+  fle (Some (w_pay W (pt_payload (pt_dual (pconst 1)) 0))) (w_bud W (pt_payload (pt_dual (pconst 1)) 0)) →
+  fsem W ∅ Forwarder.fw_main →
+  w_pay W (pt_dual (pconst 1)) + 1 ≤ w_pay W (pt_payload (pt_dual (pconst 1)) 0).
+Proof.
+  intros Hbud Hf. pose proof (Hf 80) as H. rewrite fmap_empty in H. fnorm H.
+  fbeta H. fbeta H.
+  fnew H "a"%string (pconst 1). fbeta H. fbeta H. fbeta H.
+  fnew H "b"%string (pconst 0). fbeta H. fbeta H. fbeta H.
+  match type of H with FuelE _ _ ?π ?φ _ => set (P := π) in H; set (F := φ) in H end.
+  match type of H with FuelE _ _ _ _ ?e => eassert (Hs : tstep e (LSpawn _) _) by tsolve end.
+  (* the producer, spawned with a′ *)
+  destruct (fuel_obl _ _ _ _ _ H _ _ Hs) as (_ & Hc & _). clear Hs H.
+  fnorm Hc. fbeta Hc. fbeta Hc. fbeta Hc. fbeta Hc. fbeta Hc. fbeta Hc.
+  fnew Hc "e"%string (pt_payload (pt_dual (pconst 1)) 0). fbeta Hc. fbeta Hc. fbeta Hc.
+  match type of Hc with FuelE _ _ ?π ?φ _ => set (P1 := π) in Hc; set (F1 := φ) in Hc end.
+  set (ke := pt_payload (pt_dual (pconst 1)) 0) in *.
+  assert (Hk : P1 !! ("e", true)%string = Some ke) by (vm_compute; reflexivity).
+  assert (Hc0 : P1 !! ("a", false)%string = Some (pt_dual (pconst 1))) by (vm_compute; reflexivity).
+  assert (He : is_Some (F1 !! ("e", true)%string)) by (vm_compute; eexists; reflexivity).
+  (* another thread's link lowers the counter of e to the minimum at its point *)
+  pose (F2 := <[("e", true)%string := Some (w_pay W ke)]> F1).
+  assert (Hr : frep W P1 F1 F2).
+  { intros o. destruct (decide (o = ("e", true)%string)) as [->|Hne].
+    - right. exists ke, (Some (w_pay W ke)).
+      split_and!; [exact Hk|exact He|unfold F2; by rewrite lookup_insert_eq|simpl; lia|exact Hbud].
+    - left. unfold F2. by rewrite lookup_insert_ne. }
+  apply (fuel_rep _ _ _ _ _ Hc) in Hr.
+  (* the send of e along a′ *)
+  match type of Hr with FuelE _ _ _ _ ?e =>
+    eassert (Hs : tstep e (LSess (SSend ("a", false)%string (Chan "e" true))) _) by tsolve end.
+  destruct (fuel_obl _ _ _ _ _ Hr _ _ Hs) as (_ & Hh & _).
+  apply (Hh _ Hc0 ("e", true)%string (w_pay W ke)); [vm_compute; set_solver|].
+  unfold F2. by rewrite lookup_insert_eq.
+Qed.
+
+(** No world whose floors depend on the root of the point alone gives
+    the forwarder fuel. Every world of [with_budgets] is one. *)
+Theorem fw_not_fsem_roots W :
+  (∀ k k', pt_root k = pt_root k' → w_pay W k = w_pay W k') →
+  fle (Some (w_pay W (pt_payload (pt_dual (pconst 1)) 0))) (w_bud W (pt_payload (pt_dual (pconst 1)) 0)) →
+  ¬ fsem W ∅ Forwarder.fw_main.
+Proof.
+  intros Hroot Hbud Hf. pose proof (fw_fuel_floor W Hbud Hf) as Hle.
+  rewrite (Hroot (pt_payload (pt_dual (pconst 1)) 0) (pt_dual (pconst 1))) in Hle;
+    [lia|vm_compute; reflexivity].
+Qed.
+
+Theorem fw_not_fsem : ¬ fsem (src_world Forwarder.fw_Ψ Forwarder.fw_main) ∅ Forwarder.fw_main.
+Proof.
+  destruct fw_budgets as (_ & _ & _ & _ & Hb & H1 & _).
+  apply fw_not_fsem_roots.
+  - intros k k' Hk. unfold src_world. by rewrite !with_budgets_pay, Hk.
+  - change (src_world Forwarder.fw_Ψ Forwarder.fw_main) with fw_W.
+    rewrite Hb, H1 by (vm_compute; reflexivity). simpl. lia.
+Qed.
+
+(** Stage L6 as stated has no proof under option 2. *)
+Theorem lf_fuel_fundamental_fails : ¬ ∀ Ψ t T, lfsource Ψ t T → fsem (src_world Ψ t) ∅ t.
+Proof. intros H. exact (fw_not_fsem (H _ _ _ fw_lfsource)). Qed.
