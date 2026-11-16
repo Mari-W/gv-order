@@ -77,14 +77,14 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/LFFuel.v', 'lffuel_step'), ('lockfree/LFFuel.v', 'lffuel_recv'),
         ('lockfree/LFFuel.v', 'lffuel_spawn'), ('lockfree/LFFuel.v', 'fuel_zero_act'),
         ('lockfree/LFFuel.v', 'fuel_zero_nosend'), ('lockfree/LFFuel.v', 'fuel_zero_nospawn'),
-        ('lockfree/LFFuel.v', 'fuel_zero_nolink'), ('lockfree/LFFuel.v', 'fupd_cap'),
+        ('lockfree/LFFuel.v', 'fupd_cap'), ('lockfree/LFFuel.v', 'FuelE_tk_mono'),
+        ('lockfree/LFFuel.v', 'Vfuel_tk_mono'), ('lockfree/LFFuel.v', 'link_tickets_fall'),
+        ('lockfree/LFAdequacy.v', 'ksum_step'),
         ('lockfree/LFFuel.v', 'fhand_fin_ok'), ('lockfree/LFFuel.v', 'fcap_finite'),
         ('lockfree/LFFuel.v', 'fuel_send_travel'),
         ('lockfree/LFFuelTyped.v', 'sched_lfsource'),
         ('lockfree/LFFuelTyped.v', 'sync_lfsource'), ('lockfree/LFFuelTyped.v', 'sync_budgets'),
-        ('lockfree/LFFuelTyped.v', 'sched_budgets'), ('lockfree/LFFuelTyped.v', 'fw_fuel_floor'),
-        ('lockfree/LFFuelTyped.v', 'fw_not_fsem_roots'), ('lockfree/LFFuelTyped.v', 'fw_not_fsem'),
-        ('lockfree/LFFuelTyped.v', 'lf_fuel_fundamental_fails')]
+        ('lockfree/LFFuelTyped.v', 'sched_budgets')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):

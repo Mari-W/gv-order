@@ -242,8 +242,11 @@ Print Assumptions LRGV.lockfree.LFFuel.lffuel_spawn.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_act.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nosend.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nospawn.
-Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nolink.
 Print Assumptions LRGV.lockfree.LFFuel.fupd_cap.
+Print Assumptions LRGV.lockfree.LFFuel.FuelE_tk_mono.
+Print Assumptions LRGV.lockfree.LFFuel.Vfuel_tk_mono.
+Print Assumptions LRGV.lockfree.LFFuel.link_tickets_fall.
+Print Assumptions LRGV.lockfree.LFAdequacy.ksum_step.
 Print Assumptions LRGV.lockfree.LFFuel.fhand_fin_ok.
 Print Assumptions LRGV.lockfree.LFFuel.fcap_finite.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_send_travel.
@@ -251,10 +254,6 @@ Print Assumptions LRGV.lockfree.LFFuelTyped.sched_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_budgets.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sched_budgets.
-Print Assumptions LRGV.lockfree.LFFuelTyped.fw_fuel_floor.
-Print Assumptions LRGV.lockfree.LFFuelTyped.fw_not_fsem_roots.
-Print Assumptions LRGV.lockfree.LFFuelTyped.fw_not_fsem.
-Print Assumptions LRGV.lockfree.LFFuelTyped.lf_fuel_fundamental_fails.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.
