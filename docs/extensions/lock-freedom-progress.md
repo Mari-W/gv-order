@@ -457,6 +457,12 @@ Updated after every stage and every agent result.
   environments, `tenv_bipol (A t)`, fuel over the ends of `A t`), and
   "held and waited on implies named" is derived in adequacy from fuel and
   liveness across all indices.
+- 2026-11-16, author. Accepted: `LFP` fixes the configuration and the
+  per-thread point and counter maps (P, F) outside the index
+  (`∃ q π P F, erase q = p ∧ ∀ n, LFsoup …`), and adequacy goes through
+  `lf_run_criterion` with the ownership dependency `hwaits`; `lf_criterion`
+  stays as its instance at `waits`. Next: L5 (composition) and L6
+  (`lf_fundamental`).
 
 ## Related work hooks
 
