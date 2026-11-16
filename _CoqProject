@@ -29,6 +29,7 @@ theories/liveness/LiveConv.v
 theories/liveness/LiveConsts.v
 theories/liveness/LiveTermRules.v
 theories/liveness/GuardMarks.v
+theories/liveness/GuardRules.v
 theories/liveness/LiveGuard.v
 theories/liveness/LiveGuardRules.v
 theories/liveness/LiveGuardFund.v
