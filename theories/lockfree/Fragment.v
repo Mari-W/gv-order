@@ -1291,14 +1291,15 @@ Proof. intros H. exact (lfsource_lfptyped_at Ψ t T (λ _, None) (λ _, 0) H). Q
     from the moment the end arrives (by new, by an action on it that
     refills it, by a receive, or as an argument) up to the action on it
     or the hand-over that ends it, with the hand-over counted. Each
-    channel step on another end burns one unit (F-Tick), and a send, a
-    spawn and a link cost the handed end one unit. L bounds the units
-    of every stretch.
+    channel step on another end burns one unit (F-Tick), and a send and
+    a spawn cost the handed end one unit. A link costs nothing. Under
+    link tickets it spends a ticket of the linker, hands no counter on
+    and ticks no other end. L bounds the units of every stretch.
 
     A segment of a thread is its code up to its tail call, or a round
     of a box up to its tail call. [scost] counts the units on the
-    longest path of a segment. A channel step, a spawn and a link cost
-    one. A spawned or applied λ counts with the code that builds it, so
+    longest path of a segment. A channel step and a spawn cost one, a
+    link costs nothing. A spawned or applied λ counts with the code that builds it, so
     a stretch that follows an end into a spawned thread stays inside
     the segment. A box literal forced in place whose body never forces
     runs inline and costs its body at each force. Any other force is a
@@ -1335,8 +1336,9 @@ Definition depth {A} `{EqDecision A} (E : list (A * A)) (x : A) : nat := indepth
 
 Definition gdepth {A} `{EqDecision A} (E : list (A * A)) : nat := foldr max 0 ((λ ab, depth E ab.2) <$> E).
 
-(** The constants that hand an end over without a channel step. *)
-Definition hand_konst (k : konst) : bool := match k with KSpawn | KLink => true | _ => false end.
+(** The constants that hand an end over without a channel step. A link
+    hands no counter on (plan §18). *)
+Definition hand_konst (k : konst) : bool := match k with KSpawn => true | _ => false end.
 
 (** Units on the longest path through a segment. *)
 Fixpoint scost (e : expr) : nat :=
@@ -1390,6 +1392,86 @@ Definition src_world (Ψ : hyps) (t : expr) : world :=
 Theorem lfsource_budgets Ψ t T :
   lfsource Ψ t T → strict (src_world Ψ t) ∧ lfptyped (src_world Ψ t) ∅ (∅, {[+ t +]}) T.
 Proof. apply lfsource_lfptyped_at. Qed.
+
+(** ** Tickets (plan §18.3, §18.5)
+
+    A thread holds a count tk of link tickets outside the step index. A
+    link needs one and spends it. A spawn gives ⌈tk/2⌉ to the child and
+    ⌊tk/2⌋ to the parent. The premise [fsem W π t] hides the count a
+    thread starts with, and a program of the fragment starts with
+    [src_tickets t] = 2^s · ℓ, where s counts the spawn sites of t and
+    ℓ its link sites.
+
+    Why that suffices. Say tk covers (r, m) when 2^r · m ≤ tk
+    ([tk_cover]). A thread is fine when tk covers (r, m) for m the link
+    steps that it and the threads it spawns still take, and r the spawns
+    on any line of descent before its last link. A link keeps the cover
+    with m − 1 ([cover_link]), a spawn keeps it with r − 1 for both
+    threads ([cover_spawn]), and every other step keeps tk. Once m is 0
+    every count covers ([cover_zero]), so the spawns of a thread that no
+    longer links cost nothing, those of a box among them. The box check
+    puts every link site outside boxes ([lfsource_links_outside]). Code
+    outside boxes is linear, so each of its link sites runs at most once
+    and m ≤ ℓ. A line of descent meets each spawn site at most once
+    before its last link, because a round of a box links only through a
+    closure that came in from outside, and R2-recv keeps such a closure
+    from reaching a second round. So r ≤ s, and [src_tickets t] covers
+    (s, ℓ) ([src_cover]). [FuelE_tk_mono] (LFFuel.v) absorbs the slack.
+    The count is a function of the program, like the budgets, and the
+    world is untouched. *)
+
+(** Occurrences of a constant, in boxes and λs included. *)
+Fixpoint nkonst (k : konst) (e : expr) : nat :=
+  match e with
+  | Konst k' => if bool_decide (k' = k) then 1 else 0
+  | Var _ | EUnit | Chan _ _ | EPt _ => 0
+  | Lam e | EBox e | Inj1 e | Inj2 e => nkonst k e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => nkonst k e1 + nkonst k e2
+  | Case e e1 e2 => nkonst k e + nkonst k e1 + nkonst k e2
+  end.
+
+Definition src_tickets (t : expr) : nat := 2 ^ nkonst KSpawn t * nkonst KLink t.
+
+Definition tk_cover (r m tk : nat) : Prop := 2 ^ r * m ≤ tk.
+
+Lemma src_cover t : tk_cover (nkonst KSpawn t) (nkonst KLink t) (src_tickets t).
+Proof. unfold tk_cover, src_tickets. lia. Qed.
+
+Lemma cover_zero r tk : tk_cover r 0 tk.
+Proof. unfold tk_cover. lia. Qed.
+
+Lemma cover_mono r r' m m' tk tk' :
+  r' ≤ r → m' ≤ m → tk ≤ tk' → tk_cover r m tk → tk_cover r' m' tk'.
+Proof.
+  unfold tk_cover. intros Hr Hm Ht H. transitivity (2 ^ r * m); [|lia].
+  apply Nat.mul_le_mono; [apply Nat.pow_le_mono_r; lia|done].
+Qed.
+
+Lemma cover_link r m tk : tk_cover r (S m) tk → 1 ≤ tk ∧ tk_cover r m (tk - 1).
+Proof.
+  unfold tk_cover. rewrite Nat.mul_succ_r. intros H.
+  pose proof (Nat.pow_nonzero 2 r ltac:(lia)). lia.
+Qed.
+
+Lemma cover_spawn r m tk :
+  tk_cover (S r) m tk → tk_cover r m (Nat.div2 (S tk)) ∧ tk_cover r m (Nat.div2 tk).
+Proof.
+  unfold tk_cover. rewrite Nat.pow_succ_r', <- Nat.mul_assoc. intros H.
+  destruct (Nat.Even_or_Odd tk) as [[k ->]|[k ->]].
+  - rewrite Nat.div2_succ_double, Nat.div2_double. lia.
+  - replace (S (2 * k + 1)) with (2 * S k) by lia. replace (2 * k + 1) with (S (2 * k)) by lia.
+    rewrite Nat.div2_succ_double, Nat.div2_double. lia.
+Qed.
+
+(** The box check of the fragment puts every link outside boxes. *)
+Lemma lfsource_links_outside Ψ t T :
+  lfsource Ψ t T → ∀ b, EBox b ∈ boxes t → has_link b = false.
+Proof.
+  intros (_ & _ & _ & _ & _ & _ & Hr) b Hb. pose proof (root_ok_boxes t Hr) as H.
+  rewrite forallb_forall in H. specialize (H _ (proj1 (list_elem_of_In _ _) Hb)). cbn in H.
+  by destruct (has_link b).
+Qed.
+
 (** ** Examples *)
 
 Lemma elem_of_single (e t : expr) : e ∈ ({[+ t +]} : gmultiset expr) → e = t.

@@ -106,8 +106,9 @@ Qed.
     The stretch bound now counts the code of every thread (Fragment.v,
     [stretch_len]). sync has 5 units (spawn, send, close, receive,
     close), so L = 10, every end gets 2L = 20 and every floor is L. The
-    scheduler has 11 units, the spawns and the link included, so
-    L = 22. Neither has a root edge. *)
+    scheduler has 10 units, the spawns included. Its link costs none
+    under link tickets (plan §18), so L = 20. Neither has a root
+    edge. *)
 
 Theorem sync_lfsource : lfsource Sync.sync_Ψ Sync.sync_main TUnit.
 Proof.
@@ -139,11 +140,11 @@ Definition sched_W : world := src_world Scheduler.sched_Ψ Scheduler.sched_main.
 
 Theorem sched_budgets :
   strict sched_W ∧ lfptyped sched_W ∅ (∅, {[+ Scheduler.sched_main +]}) TUnit ∧
-  stretch_len Scheduler.sched_main = 22 ∧ ∀ x, w_bud sched_W x = Some 44 ∧ w_pay sched_W x = 22.
+  stretch_len Scheduler.sched_main = 20 ∧ ∀ x, w_bud sched_W x = Some 40 ∧ w_pay sched_W x = 20.
 Proof.
   destruct (lfsource_budgets _ _ _ sched_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
-  intros x. apply (src_flat _ _ 22 x); vm_compute; reflexivity.
+  intros x. apply (src_flat _ _ 20 x); vm_compute; reflexivity.
 Qed.
 
 (** ** The forwarder violates FuelE at floors keyed on roots
