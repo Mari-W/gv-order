@@ -68,7 +68,7 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/LFSoup.v', 'LFsoup_down'), ('lockfree/LFSoup.v', 'lfsoup_step'),
         ('lockfree/LFSoup.v', 'lfsoup_run'), ('lockfree/LFSoup.v', 'lfc_local_progress'),
         ('lockfree/LFAdequacy.v', 'lf_adequacy'), ('lockfree/LFAdequacy.v', 'lf_adequacy_ex'),
-        ('lockfree/LFAdequacy.v', 'lf_thread_progress'),
+        ('lockfree/LFAdequacy.v', 'lf_thread_progress'), ('lockfree/LFCompose.v', 'LFP_term'),
         ('lockfree/LFFuel.v', 'FuelE_down'), ('lockfree/LFFuel.v', 'Vfuel_down'),
         ('lockfree/LFFuel.v', 'fuel_cap'), ('lockfree/LFFuel.v', 'fuel_wait'),
         ('lockfree/LFFuel.v', 'lffuel_step'), ('lockfree/LFFuel.v', 'lffuel_recv'),

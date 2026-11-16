@@ -52,6 +52,7 @@ theories/lockfree/Reach.v
 theories/lockfree/Fragment.v
 theories/lockfree/LFSoup.v
 theories/lockfree/LFAdequacy.v
+theories/lockfree/LFCompose.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v
