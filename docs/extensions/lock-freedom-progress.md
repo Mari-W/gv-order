@@ -18,6 +18,7 @@ Updated after every stage and every agent result.
 | L4a Lock-free soup on syntactic points (plan §16.5, §17.3) | done (ac909ce..1512312), the soup reads environments only | Criterion.v (`lf_run_criterion` over a dependency relation, `lf_criterion` as its instance), LocalProgress.v (`local_progress_gen`), LFSoup.v (`LFconf`, `lf_fuelc`, `LFsoup`, `LFP`, `pupd`, `fstep`, `lfsoup_step`, `lfsoup_run`, `lfsoup_isteps`, `LFP_soup`, `hwaits`, `lfc_local_progress`), LFAdequacy.v (`lf_adequacy`, `lf_adequacy_ex`, `lf_thread_progress`) | passes, CheckAll closed | 0, no axioms | `LFP_term`, `LFP_connect`, `LFP_join` (next stage) |
 | L5 Composition of LFP (plan §17.4) | done. `LFP_term` (fdd919e), then FuelE closed under `wbext`, the Σ conjuncts of `LFconf`, `LFP_connect` and `LFP_join` | LFCompose.v (`LFP_term`, `LFP_connect`, `LFP_join`, `wbud_agree`, `mcat`, `tsel`, `held`), LFFuel.v (`wbext`, `FuelE_wbext`, `fsem_wbext`), LFSoup.v (`lf_sig`, `lf_own`) | passes, CheckAll closed | 0, no axioms | none. LFCompose.v takes about 4 minutes, most of it in `set_solver` |
 | L6b Links accounted like sends (option 2) | done | LFFuel.v (`flink1` at `w_pay`, `frep`, replacement clause in `Fdef`, `fuel_rep`), LFSoup.v (`flr`, `fuel_link`, `ppts`, `LFsoupAt`, `LFsoupAt_ppts`, `LFP` without π), LFAdequacy.v (`fe_link` through the handed counter), LFCompose.v (`LFP_term` at `tenv_points`) | passes, CheckAll closed | 0, no axioms | C3 argued, no lemma |
+| L6 Typed fuel interpretation and `lf_fundamental` | stopped on a counterexample. Stage L6 as stated is false under option 2 | LFFuelTyped.v (L6a lemmas on the old link rule removed; `fw_fuel_floor`, `fw_not_fsem_roots`, `fw_not_fsem`, `lf_fuel_fundamental_fails`) | passes, CheckAll closed | 0, no axioms | the replacement minimum and the send floor coincide at a payload point of its carrier. `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -519,6 +520,31 @@ Updated after every stage and every agent result.
   argued in the header of LFFuel.v. The new partner's counter falls by one
   per link and one more per chatter step, nothing refills it, and
   replacement makes FuelE hold at the minimum itself. No lemma for it.
+
+- 2026-11-16. Stage L6 stopped on a counterexample. The lemmas of stage
+  L6a on the old link rule (`fuel_link_inf`, `sched_not_fsem`,
+  `lf_fuel_fundamental_false`) are gone with their CheckAll entries. The
+  forwarder is in the fragment (`fw_lfsource`), and its thread meets
+  `fsem` in no world whose floors depend on the root of the point alone
+  (`fw_not_fsem_roots`). `src_world` is such a world (`fw_not_fsem`), so
+  `lf_fuel_fundamental_fails : ¬ ∀ Ψ t T, lfsource Ψ t T → fsem
+  (src_world Ψ t) ∅ t`. The producer creates e by new at γ̄[0], the
+  payload point of its carrier a′ at γ̄, and sends e along a′ with only
+  internal steps in between. The replacement clause lets a link of
+  another thread lower the counter of e to `w_pay W γ̄[0]`, and the send
+  clause then asks `w_pay W γ̄ + 1 ≤ w_pay W γ̄[0]` (`fw_fuel_floor`, at
+  every world whose floor at γ̄[0] lies under its budget). Both points
+  have the root 1, so the floors agree and the send fails. The gap is
+  between the minimum of replacement, the floor at the end's own point,
+  and the floor of the send, which sits at the carrier's point. Under
+  floors keyed on roots the two agree whenever a payload sits at a
+  payload point of its carrier, which is how delegation is typed. No
+  choice of L or of the depths repairs it. A repair changes the
+  minimum of the link rule (the question the stage L6b log left open) or
+  the floors, and that is the author's decision. `lf_fundamental`,
+  `lf_soundness` and the example theorems are not started. `tsolve`
+  now closes head steps with premises, which a let pair of a non-value
+  pair needed.
 
 ## Decisions
 
