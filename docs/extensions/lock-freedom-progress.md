@@ -759,6 +759,11 @@ Updated after every stage and every agent result.
   counter overwrite at a link and the link floor go. Adequacy measures
   (total tickets, fuel) lexicographically. Links on waited-on ends stay
   allowed; option 1 (links only on idle ends) is not taken.
+- 2026-11-17, author. Lock freedom must cover every program, higher-order
+  included, never a first-order restriction. Cost-annotated arrows (and
+  boxes) are to be tried now, with costs inferred rather than written by the
+  programmer. The fuel fix (receive only at points the world knows) goes in
+  too. The author delegated all decisions overnight.
 
 ## Related work hooks
 
