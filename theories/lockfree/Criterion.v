@@ -3,16 +3,20 @@
     [lf_criterion] derives [lock_free] from four hypotheses: local
     progress in every reachable state, [no_tau_divergence], and the two
     bounds [fuel_bound] and [rank_bound] on runs. The bounds are
-    abstract. Stage 2 instantiates them from the budgeted relation.
+    abstract. [lf_criterion] reads the fuel as a natural number.
+    [lf_run_criterion] takes any measure under a well-founded decidable
+    order, and adequacy (LFAdequacy.v) instantiates it with the pair of
+    the tickets left in the configuration and the fuel, ordered
+    lexicographically ([lexlt], plan §18.4).
 
     Proof. For a thread t pending on an end of rank e, by well-founded
-    induction on e, then by induction on the fuel of the partner end,
-    then by induction on the admin measure of its holder s
+    induction on e, then by well-founded induction on the measure of the
+    partner end, then by induction on the admin measure of its holder s
     (TauThread.v). Local progress gives the holder. The holder takes
-    part in a later step: by weak fairness when its redex is
+    part in a later step, by weak fairness when its redex is
     administrative, and by the rank hypothesis and the outer induction
-    when it is blocked. A step of the holder lowers the fuel, unless it
-    is administrative, and then it lowers the admin measure. When t
+    when it is blocked. A step of the holder lowers the measure, unless
+    it is administrative, and then it lowers the admin measure. When t
     itself is enabled, its offer persists and weak fairness fires it. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
@@ -85,6 +89,26 @@ Proof.
       destruct (decide (m' = k)) as [->|Hne]; [done|]. apply Hf. lia.
 Qed.
 
+(** ** Measures
+
+    A well-founded order is irreflexive. The lexicographic order on pairs
+    of naturals is well founded and decidable. *)
+
+Lemma wf_irrefl {A : Type} (R : A → A → Prop) : well_founded R → ∀ x, ¬ R x x.
+Proof. intros H x. induction (H x) as [x _ IH]. intros Hx. exact (IH x Hx Hx). Qed.
+
+Definition lexlt (x y : nat * nat) : Prop := x.1 < y.1 ∨ (x.1 = y.1 ∧ x.2 < y.2).
+
+Global Instance lexlt_dec x y : Decision (lexlt x y).
+Proof. unfold lexlt. apply _. Defined.
+
+Lemma lexlt_wf : well_founded lexlt.
+Proof.
+  intros [a b]. revert b. induction a as [a IHa] using lt_wf_ind.
+  intros b. induction b as [b IHb] using lt_wf_ind.
+  constructor. intros [c d] [Hlt|[Heq Hlt]]; simpl in *; [by apply IHa|subst c; by apply IHb].
+Qed.
+
 (** The proof reads the dependency of a pending thread on another one
     only through a relation [wt k t s] at each position k: t is pending,
     s is a thread, the chain of dependencies from t reaches an enabled
@@ -100,11 +124,12 @@ Section criterion.
   Context (Hwt_holder : ∀ k t s, wt k t s → ∃ es, (r k).2 !! s = Some es).
   Context (HLP : ∀ k t, pend (r k) t → ∃ s, rtc (wt k) t s ∧ enabled (r k) s).
   Context (Hnd : no_tau_divergence p) (Hlr : links_restricted p).
-  Context (fu : nat → nat → nat).
+  Context (M : Type) (Rm : M → M → Prop) (fu : nat → nat → M).
+  Context (HRm : well_founded Rm) (HRm_dec : ∀ x y, Decision (Rm x y)).
   Context (Huniq : ∀ k t s s', npend (r k) t → wt k t s → wt k t s' → s = s').
   Context (Hpers : ∀ k t, npend (r k) t → enabled (r k) t → t ∉ l k → enabled (r (S k)) t).
   Context (Hfuel : ∀ k t, npend (r k) t → t ∉ l k →
-       fu (S k) t < fu k t ∨
+       Rm (fu (S k) t) (fu k t) ∨
        (fu (S k) t = fu k t ∧ (∀ s, wt (S k) t s ↔ wt k t s) ∧
         ∀ s, wt k t s → s ∈ l k → admin_at (r k) s)).
   Context (E : Type) (R : E → E → Prop) (we : nat → nat → E) (HR : well_founded R).
@@ -193,15 +218,15 @@ Section criterion.
       + congruence.
   Qed.
 
-  (** The core: induction on the fuel and on the admin measure of the
-      holder, for a fixed rank. *)
+  (** The core: well-founded induction on the measure and induction on
+      the admin measure of the holder, for a fixed rank. *)
   Lemma core e
       (IHr : ∀ e', R e' e → ∀ k s, we k s = e' → npend (r k) s → ∃ j, k ≤ j ∧ s ∈ l j) :
     ∀ n k t, fu k t = n → we k t = e → npend (r k) t → ∃ j, k ≤ j ∧ t ∈ l j.
   Proof.
-    intros n. induction n as [n IHn] using lt_wf_ind. intros k0 t Hfu0 Hwe0 Hp0.
-    (* a fuel drop at any later position closes the goal *)
-    assert (∀ m, k0 ≤ m → npend (r m) t → we m t = e → t ∉ l m → fu (S m) t < n →
+    intros n. induction n as [n IHn] using (well_founded_ind HRm). intros k0 t Hfu0 Hwe0 Hp0.
+    (* a drop of the measure at any later position closes the goal *)
+    assert (∀ m, k0 ≤ m → npend (r m) t → we m t = e → t ∉ l m → Rm (fu (S m) t) n →
               ∃ j, k0 ≤ j ∧ t ∈ l j) as Hdrop.
     { intros m Hm Hpm Hwm Ht Hlt.
       destruct (IHn (fu (S m) t) Hlt (S m) t eq_refl) as (j & Hj & Htj).
@@ -220,7 +245,7 @@ Section criterion.
     induction 1 as [x _ IHx]. intros k Hk Hfu Hwe Hp Hw es Hes Hx.
     destruct (holder_moves e IHr k t s Hwe Hp Hw) as [(j & Hj & Htj)|(j1 & Hj1 & Hsj1)].
     { exists j. split; [lia|done]. }
-    set (Q := λ m, t ∈ l m ∨ fu (S m) t < fu m t ∨ s ∈ l m).
+    set (Q := λ m, t ∈ l m ∨ Rm (fu (S m) t) (fu m t) ∨ s ∈ l m).
     assert (∀ m, Decision (Q m)) by (intros m; unfold Q; apply _).
     destruct (first_hit Q k j1 Hj1 (or_intror (or_intror Hsj1))) as (m & Hm & HQm & Hfirst).
     (* the invariant up to m *)
@@ -238,21 +263,21 @@ Section criterion.
         split_and!.
         + by apply run_npend.
         + by rewrite Hstab.
-        + lia.
+        + congruence.
         + by apply Hwiff.
         + destruct (run_other r l Hmax m' s es' Hsm Hes') as [g Hg].
           exists (emap g es'). split; [done|]. by rewrite cerase_emap. }
     destruct (Hinv m ltac:(lia) (Nat.le_refl _)) as (Hpm & Hwm & Hfm & Hwsm & es' & Hes' & Hx').
     destruct (decide (t ∈ l m)) as [Htm|Htm]; [exists m; split; [lia|done]|].
     destruct (Hfuel m t Hpm Htm) as [Hlt|(Hfeq & Hwiff & Hadm)].
-    { apply (Hdrop m); [lia|done|done|done|lia]. }
-    destruct HQm as [?|[Hlt|Hsm]]; [done|lia|].
+    { apply (Hdrop m); [lia|done|done|done|by rewrite <-Hfm]. }
+    destruct HQm as [?|[Hlt|Hsm]]; [done|rewrite Hfeq in Hlt; by destruct (wf_irrefl Rm HRm _ Hlt)|].
     destruct (Hadm s Hwsm Hsm) as (es'' & a & Hes'' & Ha & Had).
     rewrite Hes' in Hes''. injection Hes'' as <-.
     destruct (run_admin_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & g & Hα & Hst2 & He2).
     assert (tR (cerase (emap g e2)) x) as HtR
       by (rewrite cerase_emap, <-Hx'; by eapply tR_step).
-    assert (fu (S m) t = n) as Hfn by lia.
+    assert (fu (S m) t = n) as Hfn by congruence.
     assert (we (S m) t = e) as Hwn by (by rewrite Hstab).
     assert (npend (r (S m)) t) as Hpn by (by apply run_npend).
     assert (wt (S m) t s) as Hwsn by (by apply Hwiff).
@@ -283,8 +308,10 @@ Proof.
   intros HLP Hnd Hlr Hfb Hrb r l Hr0 Hmax Hfair.
   destruct (Hfb r l Hr0 Hmax) as (fu & Huniq & Hpers & Hfuel).
   destruct (Hrb r l Hr0 Hmax) as (E & R & we & HR & Hstab & Hrank).
-  apply (lf_run_criterion p r l Hr0 Hmax Hfair (λ k, waits (r k))) with fu E R we; try done.
+  apply (lf_run_criterion p r l Hr0 Hmax Hfair (λ k, waits (r k)))
+    with (M := nat) (Rm := lt) (fu := fu) (E := E) (R := R) (we := we); try done.
   - intros k t s Hw. by eapply waits_pend.
   - intros k t s (_ & _ & _ & _ & _ & es & _ & _ & _ & _ & Hes & _). by exists es.
   - intros k t Hp. by apply (HLP r l Hr0 Hmax k).
+  - exact lt_wf.
 Qed.
