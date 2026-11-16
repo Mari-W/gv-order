@@ -73,8 +73,8 @@ Proof.
   - intros x. unfold sched_rank, pt_shift, pt_dual. cbn. destruct (pt_pol x); cbn; lia.
 Qed.
 
-(** The scheduler has no box, so R1, R2-recv and the hand-off graph
-    hold trivially. *)
+(** The scheduler has no box, so R1, R2-recv and the box check hold
+    trivially. *)
 Theorem sched_lfsource : lfsource Scheduler.sched_Ψ Scheduler.sched_main TUnit.
 Proof.
   split_and!.
@@ -83,10 +83,6 @@ Proof.
   - split; [apply Scheduler.sched_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply sched_wf.
   - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
@@ -98,8 +94,9 @@ Qed.
     The stretch bound now counts the code of every thread (Fragment.v,
     [stretch_len]). sync has 5 units (spawn, send, close, receive,
     close), so L = 10, every end gets 2L = 20 and every floor is L. The
-    scheduler has 11 units, the spawns and the link included, so
-    L = 22. Neither has a root edge. *)
+    scheduler has 10 units, the spawns included. Its link costs none
+    under link tickets (plan §18), so L = 20. Neither has a root
+    edge. *)
 
 Theorem sync_lfsource : lfsource Sync.sync_Ψ Sync.sync_main TUnit.
 Proof.
@@ -109,10 +106,6 @@ Proof.
   - split; [apply Sync.sync_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply cworld_depth_wf. intros x y (C & xs & Hin & g0 & (f & Hf & Hs & ->) & E).
     unfold Sync.sync_Ψ in Hin. rewrite elem_of_app, list_elem_of_singleton in Hin.
     destruct Hin as [Hin|Hin]; [by apply elem_of_nil in Hin|]. injection Hin as -> ->.
@@ -135,9 +128,9 @@ Definition sched_W : world := src_world Scheduler.sched_Ψ Scheduler.sched_main.
 
 Theorem sched_budgets :
   strict sched_W ∧ lfptyped sched_W ∅ (∅, {[+ Scheduler.sched_main +]}) TUnit ∧
-  stretch_len Scheduler.sched_main = 22 ∧ ∀ x, w_bud sched_W x = Some 44 ∧ w_pay sched_W x = 22.
+  stretch_len Scheduler.sched_main = 20 ∧ ∀ x, w_bud sched_W x = Some 40 ∧ w_pay sched_W x = 20.
 Proof.
   destruct (lfsource_budgets _ _ _ sched_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
-  intros x. apply (src_flat _ _ 22 x); vm_compute; reflexivity.
+  intros x. apply (src_flat _ _ 20 x); vm_compute; reflexivity.
 Qed.

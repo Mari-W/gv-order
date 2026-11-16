@@ -221,6 +221,13 @@ Print Assumptions LRGV.lockfree.Fragment.rg_budgets.
 Print Assumptions LRGV.lockfree.Fragment.abp_budgets.
 Print Assumptions LRGV.lockfree.Fragment.lc_r2_fails.
 Print Assumptions LRGV.lockfree.Fragment.relay_roots.
+Print Assumptions LRGV.lockfree.Fragment.root_ok_boxes.
+Print Assumptions LRGV.lockfree.Fragment.src_cover.
+Print Assumptions LRGV.lockfree.Fragment.cover_zero.
+Print Assumptions LRGV.lockfree.Fragment.cover_mono.
+Print Assumptions LRGV.lockfree.Fragment.cover_link.
+Print Assumptions LRGV.lockfree.Fragment.cover_spawn.
+Print Assumptions LRGV.lockfree.Fragment.lfsource_links_outside.
 Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down.
 Print Assumptions LRGV.lockfree.LFSoup.lfsoup_step.
 Print Assumptions LRGV.lockfree.LFSoup.lfsoup_run.

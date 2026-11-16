@@ -580,6 +580,24 @@ Updated after every stage and every agent result.
   in LFSoup.v and LFAdequacy.v are left as they were. LFSoup.v compiles
   in about 105 s and LFAdequacy.v in about 62 s.
 
+- 2026-11-16. The fragment adapted to link tickets (branch
+  lf-tickets-frag, Fragment.v). `troots` gives a link no edge, and a
+  linked end counts as acted on. `box_ok` bans links inside box bodies
+  directly (`has_link`). The hand-off graph over session types (`er_ty`,
+  `item_edges`, `box_edges`, `thread_edges`, `r4_ok`, `lf_r4`) is gone.
+  Without link edges it only restated the forwards that the root graph
+  keys on roots, and the budgets never read it. `lfsource` drops `r4_ok`,
+  and `lfptyped` asks `lf_boxes` (every box passes `box_ok`) in place of
+  `lf_r4`. Remaining checks are the guard, R1, R2-recv, Rank and the root
+  graph with its box check. `src_tickets t = 2^s · ℓ` for s spawn sites
+  and ℓ link sites, with `tk_cover r m tk := 2^r · m ≤ tk` and
+  `cover_link`, `cover_spawn`, `cover_zero`, `cover_mono`, `src_cover`,
+  `lfsource_links_outside` for L6. A link costs no unit in `scost`, so
+  the scheduler's L falls from 22 to 20. The other budgets are unchanged.
+  `kob_checks`, `c1_checks` and `starve_checks` state the box check in
+  place of `thread_edges`, and `c3_not_lfptyped` follows from it. All
+  Fragment and LFFuelTyped entries are closed.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
