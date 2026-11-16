@@ -220,6 +220,7 @@ Print Assumptions LRGV.lockfree.Fragment.rc_budgets.
 Print Assumptions LRGV.lockfree.Fragment.rg_budgets.
 Print Assumptions LRGV.lockfree.Fragment.abp_budgets.
 Print Assumptions LRGV.lockfree.Fragment.lc_r2_fails.
+Print Assumptions LRGV.lockfree.Fragment.relay_roots.
 Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down.
 Print Assumptions LRGV.lockfree.LFSoup.lfsoup_step.
 Print Assumptions LRGV.lockfree.LFSoup.lfsoup_run.
@@ -251,7 +252,8 @@ Print Assumptions LRGV.lockfree.LFFuelTyped.sched_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sched_not_fsem.
 Print Assumptions LRGV.lockfree.LFFuelTyped.lf_fuel_fundamental_false.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.
-Print Assumptions LRGV.lockfree.LFFuelTyped.sync_not_fsem.
+Print Assumptions LRGV.lockfree.LFFuelTyped.sync_budgets.
+Print Assumptions LRGV.lockfree.LFFuelTyped.sched_budgets.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.
