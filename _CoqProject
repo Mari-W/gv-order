@@ -10,6 +10,7 @@ theories/types/Types.v
 theories/types/SessionEquiv.v
 theories/types/LinearEnv.v
 theories/types/SinstFusion.v
+theories/relation/CostTypes.v
 theories/relation/Worlds.v
 theories/relation/Creation.v
 theories/relation/Readiness.v
