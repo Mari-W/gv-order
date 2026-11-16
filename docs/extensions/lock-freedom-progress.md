@@ -783,6 +783,12 @@ Updated after every stage and every agent result.
   boxes) are to be tried now, with costs inferred rather than written by the
   programmer. The fuel fix (receive only at points the world knows) goes in
   too. The author delegated all decisions overnight.
+- 2026-11-17, under overnight delegation. Plan §19 accepted: costs in a
+  separate cost judgment with local rules (not in `ty`); the world's
+  `w_pay` becomes `w_pc` (payload cost type per carrier point); FuelE gets
+  injective renamings only (`kinj`) and `new` fresh against the thread's own
+  map; FuelE/Vfuel indexed by cost types. Fragment.v shrinks to Rank; the
+  guard becomes typing rules (T1). Stages H1 and T1 start in parallel.
 
 ## Related work hooks
 
