@@ -15,7 +15,7 @@ Updated after every stage and every agent result.
 | 3c Coverage of the literature (plan §12) | done (cc300ce on lf-rules) | Fragment.v (lf_r2r, starve_not_lfptyped, rc_lfptyped, abp_lfsource, rg_lfsource, wgen_rank_wf), examples/ABP.v, examples/GrowRing.v | passes | 0, no axioms | none. The ring gap is closed | | | | author's acceptance criterion |
 | L1, L2 Syntactic points (plan §16.6 P1, P2, world fields of §17.8) | done (e767283..b5849ec) | lang (`Chan c b`, `EPt`, `KPay`, `KSucc`, labels on ends, `HeadNew c x`, `fends`, `let_new_at`), types (`TPt`, `konst_ty`, `tenv_ends`, `tenv_fit`), relation (`w_bud`, `w_pay`, V at `TSess` and `TPt`, `fends` in the arrow, O-New at the label's point, `tenv_hd_end`, `selects`), rules (`sem_typed_pt`, `Erel_app_pay`, `Erel_app_succ`), static (`t_pt`, `t_ch`, `created` over constants, `tenv_pol`) | lang to static pass, liveness, lockfree, examples, algorithmic broken until L3 and L4 | 0, no axioms | `wext` does not keep budgets yet (`wext_bud` apart), translations out of the build |
 | L3a Syntactic points in the live relation (plan §16.6 P3a) | done (ecd1872..0db07a9) | liveness: labels on ends, E-Fit (`tenv_fit Θ e` in `Ebody` and `LEstep`), O-New at the label's point, `tenv_fit Θ eb` in the arrow and in `Vspawn`, `tenv_hd_end`, V at `TSess` with the bit and at `TPt`, `LErel_app_pay`, `LErel_app_succ`, `lsem_typed_pt`. The twelve listed statements keep their text | liveness passes except GuardEx, GuardCex, LiveKob, LiveGuardFund, LiveGuardProc, which wait on examples (ExampleTools, Forwarder, KobForwarder); LiveGuardFund and LiveGuardProc checked against a stub of `Wpo` | 0, no axioms (stub aside) | lockfree waits on L4 |
-| L4a Lock-free soup on syntactic points (plan §16.5, §17.3) | live part done (0c99ff2..6a1bb82), fuel part and adequacy blocked | Instr, Fair (`waits` reads ends), TauThread, LocalProgress, Reach on labels on ends; LFSoup.v (`LFconf`, `LFsoup`, `LFP`, `pupd`, `lfconf_step`, `lfconf_run`, `LFsoup_down`, `lfc_local_progress`); LFRelation.v deleted | lockfree passes except Fragment (L6) and LFAdequacy (out of the build, L5) | 0, no axioms | FuelE's send clause promises no Vfuel of the payload, so the fuel conjunct is not preserved at a message; FuelE needs a renaming lemma for links; `lf_adequacy` waits on both |
+| L4a Lock-free soup on syntactic points (plan §16.5, §17.3) | done (ac909ce..1512312), the soup reads environments only | Criterion.v (`lf_run_criterion` over a dependency relation, `lf_criterion` as its instance), LocalProgress.v (`local_progress_gen`), LFSoup.v (`LFconf`, `lf_fuelc`, `LFsoup`, `LFP`, `pupd`, `fstep`, `lfsoup_step`, `lfsoup_run`, `lfsoup_isteps`, `LFP_soup`, `hwaits`, `lfc_local_progress`), LFAdequacy.v (`lf_adequacy`, `lf_adequacy_ex`, `lf_thread_progress`) | passes, CheckAll closed | 0, no axioms | `LFP_term`, `LFP_connect`, `LFP_join` (next stage) |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -349,6 +349,56 @@ Updated after every stage and every agent result.
   box type of a typed annotation says TPt (`box_npt`, `r2h_ok`), no
   example needs that annotation, and `lc_r2_fails` shows that a box
   passing a leading channel parameter on unacted is rejected otherwise.
+
+- 2026-11-16. The lock-free soup on environments, and lock-free adequacy
+  (L4a). LFSoup.v and LFAdequacy.v are back in the build with no
+  Admitted and no axiom, and `lf_adequacy` is closed under the global
+  context. The soup reads environments only. `LFconf` asks `tenv_bipol
+  (A t)`, disjoint `tenv_ends` of distinct threads, `dom (A t) ⊆ q.1 ∪
+  dom Σ`, the points of held ends and a partner for every internal end.
+  The fuel conjunct `lf_fuelc` holds FuelE at points `P t` and counters
+  `F t` of each thread, whose domains are `tenv_ends (A t)`. `LFP`
+  changes form. It fixes the configuration, π, P and F outside the index
+  (`∃ q π P F, erase q = p ∧ ∀ n, LFsoup n W Σ T π P F q`), and the
+  environments and session types stay per index. The criterion needs one
+  holder per end at each position of a run, and its counter `fu` is a
+  function. With ownership chosen per index, two indices may put an end
+  in different threads, and no proof without choice reads a function off
+  them. P outside the index fixes the ends of each thread at every
+  index, because `fstep` moves them as the relation moves environments
+  (the payload by V, the closure by `Vspawn`, both conditions on values).
+  `lfsoup_step` is stated over the configuration, `LFsoup (S (S n)) W ∅
+  T π P F q → istep q L q' → LFsoup n W ∅ T (pupd π q L q') (fstep W P F
+  q L q').1 (fstep W P F q L q').2 q'`. A link renames every thread by
+  `LErel_fuse` and `FuelE_rename`, also a thread that names the removed
+  channel in code it never runs.
+  `lf_criterion` keeps its statement but no longer fits the judgment. Its
+  uniqueness clause reads `waits`, which reads the ends a term names. A
+  thread that names the partner end in a discarded argument, as in
+  `(λ_. ()) (λ_. close c)`, waits beside the real holder, and the clause
+  fails. `lf_run_criterion` now takes the dependency as a relation, and
+  `lf_criterion` is its instance at `waits`. Adequacy takes `hwaits`, the
+  thread whose points hold the partner end. `local_progress_gen` does
+  the same for `local_progress_ready`, whose statement is unchanged.
+  `lfc_local_progress` changes form and concludes a chain of `hwaits`.
+  The lemma that a held and waited end is named is not needed, because
+  no clause of the instantiation reads names. The earlier counterexample
+  fails along the run. There s holds o′ at index 1 only, closes n
+  channels and goes quiet. Under `LFP` s holds o′ at every index, because
+  P lies outside the index, and the criterion follows s. Every channel
+  step of s on another end burns the counter of o′, which F-Wait at the
+  waiting thread and F-Cap bound by a finite budget. After finitely many
+  steps FuelE at a large index allows s no channel step but one on o′.
+  If s then blocks on another end, its gate at index 1 puts that end
+  below the waited point, and the well-founded order applies. If s ends
+  as a value, V at unit asks an empty environment. Internal divergence
+  is excluded by `no_tau_divergence`.
+  `lf_adequacy W T p : world_wf W → well_founded (w_lt W) → LFP W ∅ T p →
+  lock_free p` needs no `strict W`, which follows from its hypotheses.
+  `lf_adequacy_ex` quantifies the world, `(∃ W, world_wf W ∧ well_founded
+  (w_lt W) ∧ LFP W ∅ T p) → lock_free p`, because §17.8 moved the budgets
+  into W. `lf_thread_progress` takes the hypotheses of `lf_adequacy`.
+  `LFP_term`, `LFP_connect` and `LFP_join` come next.
 
 ## Decisions
 

@@ -76,9 +76,9 @@ Require LRGV.liveness.LiveTermRules.
 Require LRGV.lockfree.Criterion.
 Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
-(* SYNTACTIC-POINTS: lockfree port pending  Require LRGV.lockfree.LFAdequacy. *)
+Require LRGV.lockfree.LFAdequacy.
 Require LRGV.lockfree.LFFuel.
-(* SYNTACTIC-POINTS: lockfree port pending  Require LRGV.lockfree.LFSoup. *)
+Require LRGV.lockfree.LFSoup.
 Require LRGV.lockfree.LocalProgress.
 Require LRGV.lockfree.Reach.
 Require LRGV.lockfree.TauThread.
@@ -218,13 +218,13 @@ Print Assumptions LRGV.lockfree.Fragment.rc_budgets.
 Print Assumptions LRGV.lockfree.Fragment.rg_budgets.
 Print Assumptions LRGV.lockfree.Fragment.abp_budgets.
 Print Assumptions LRGV.lockfree.Fragment.lc_r2_fails.
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFSoup.lfconf_step. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFSoup.lfconf_run. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFSoup.lfc_local_progress. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy_ex. *)
-(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFAdequacy.lf_thread_progress. *)
+Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down.
+Print Assumptions LRGV.lockfree.LFSoup.lfsoup_step.
+Print Assumptions LRGV.lockfree.LFSoup.lfsoup_run.
+Print Assumptions LRGV.lockfree.LFSoup.lfc_local_progress.
+Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy.
+Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy_ex.
+Print Assumptions LRGV.lockfree.LFAdequacy.lf_thread_progress.
 Print Assumptions LRGV.lockfree.LFFuel.FuelE_down.
 Print Assumptions LRGV.lockfree.LFFuel.Vfuel_down.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_cap.

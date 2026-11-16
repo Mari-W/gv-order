@@ -3,26 +3,25 @@
     A configuration is a soup of threads. [LFconf n W Σ T π q A U] says
     that every thread t of q is in the live term relation at index n
     under its environment [A t] and its type [U t], that the
-    environments fit the terms (E-Fit) and hold pairwise disjoint ends,
-    that every held end sits at the point π gives it, and that every end
-    of an internal channel has a partner end, held by some thread, at
-    the dual point and with a dual session type. The point map π lies
-    outside the index: the environments and the session types are
-    chosen again at every index, the points are not, because the
-    program names the point of every [new] (sharp edges 173).
+    environments are polarized and hold pairwise disjoint ends, that
+    every held end sits at the point π gives it, and that every end of an
+    internal channel has a partner end, held by some thread, at the dual
+    point and with a dual session type. The soup reads environments only,
+    never the term of a thread (decision of 2026-11-16). The point map π
+    lies outside the index, because the program names the point of every
+    [new] (sharp edges 173).
 
-    [pupd] moves π along one step. It reads the step off the redexes of
-    the participants, so it is a function of the run. [lfconf_step] is
-    the preservation of the soup along a step at a fixed π: the soup at
-    index n + 2 steps to the soup at index n at [pupd π]. Every
-    environment of the successor is the one the clause of the stepping
-    thread gives. A thread that does not take part keeps its
-    environment, up to the renaming of a link ([LErel_fuse]).
+    [LFsoup] adds the fuel conjunct of §17.3. Each thread carries its own
+    points [P t] and counters [F t] on exactly the ends of its
+    environment, and FuelE holds at them. [LFP] fixes the threads, π, P
+    and F outside the index, so a thread holds the same ends at every
+    index.
 
-    [LFsoup] adds the fuel conjunct of §17.3 (FuelE at the thread's ends,
-    with counters φ outside the index), and [LFP] is the judgment of
-    §17.8. The preservation of the fuel conjunct is open (see the
-    progress log, stage L4a). *)
+    [pupd] moves π and [fstep] moves P and F along one step. Both read
+    the step off the redexes of the participants, so they are functions
+    of the run. [lfsoup_step] preserves the soup from index n + 2 to
+    index n. A thread that does not take part keeps its environment, up
+    to the renaming of a link ([LErel_fuse]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export lockfree.Criterion lockfree.LocalProgress.

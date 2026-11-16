@@ -2523,6 +2523,11 @@ point and creates no channel. Programs that create channels use `created` and
 `soundness_created`. `term_wf` asks `fends e = tenv_ends Θ`, which E-Abs needs for the
 arrow clause `fends eb = tenv_ends Θ`. The translations of PGV, PN and MP left the build
 until their port (`# SYNTACTIC-POINTS: translation port pending` in _CoqProject).
+Expressions no longer fit their environments (E-Fit is gone since 2026-11-16), so a term
+may name an end in code it never runs. The lock-free soup therefore reads ownership off
+the environments, with the points and counters of each thread fixed outside the index
+(LFSoup.v), and adequacy takes the dependency of a pending thread from the holder of the
+partner end (`hwaits`, LFAdequacy.v) instead of `waits`, which reads names.
 
 ## From the earlier abandoned mechanization (spec §15)
 

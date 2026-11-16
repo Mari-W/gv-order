@@ -50,8 +50,8 @@ theories/lockfree/LocalProgress.v
 theories/lockfree/ThreadProgress.v
 theories/lockfree/Reach.v
 theories/lockfree/Fragment.v
-# SYNTACTIC-POINTS: lockfree port pending theories/lockfree/LFSoup.v
-# SYNTACTIC-POINTS: lockfree port pending theories/lockfree/LFAdequacy.v
+theories/lockfree/LFSoup.v
+theories/lockfree/LFAdequacy.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v
