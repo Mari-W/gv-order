@@ -400,6 +400,29 @@ Updated after every stage and every agent result.
   into W. `lf_thread_progress` takes the hypotheses of `lf_adequacy`.
   `LFP_term`, `LFP_connect` and `LFP_join` come next.
 
+- 2026-11-16. Stage L6a stopped on two counterexamples (branch
+  lf-fueltyped, theories/lockfree/LFFuelTyped.v, no Admitted, no axiom,
+  6 CheckAll entries closed). The typed fuel interpretation has no proof
+  as stated. `lf_fuel_fundamental_false : ¬ ∀ Ψ t T, lfsource Ψ t T →
+  ∃ W, fsem W ∅ t`. The scheduler (examples/Scheduler.v) is in the
+  fragment (`sched_lfsource`, no box) and in fsem at no world
+  (`sched_not_fsem`). KTLink types link ⟨u, v⟩ at u : S@k and
+  v : S̄@k̄, so the partner of v sits at k. The link clause asks the
+  budget there to lie below the counter of u, and F-Cap bounds that
+  counter by the same budget, so only ∞ passes (`fuel_link_inf`). ag₁
+  links b with ā and forces ∞ at γ̄, and main's send on a at γ then
+  breaks F-Wait. Inside a box the hand-off graph already rejects every
+  link, because the edge from the type of u to the type of the partner
+  of v is a self-loop. Outside boxes nothing looks at links. Second,
+  `round_len` counts steps inside box bodies only. sync
+  (`sync_lfsource`) has no box, gets budget 0 everywhere, and its spawn
+  needs a counter of 1 (`sync_not_fsem`, for every graph and every
+  `ty_of`). The same count misses top-level code and the bodies of
+  non-recursive boxes forced inside a round (argued). Both need the
+  author: links need a new link clause in FuelE or a fragment without
+  links, and L must count every stretch of a thread between two actions
+  on one end.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
