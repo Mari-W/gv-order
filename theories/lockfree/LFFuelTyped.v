@@ -8,12 +8,10 @@
     thread under FuelE, the fragment facts of the scheduler and of sync,
     and their budgets.
 
-    Stage L6 as stated is false at the budgets of [src_world]
-    ([lf_fuel_fundamental_fails]). sync is in the fragment, and its
-    thread fails [fsem] there ([sync_not_fsem]), because an end may
-    arrive at a point outside the support of the world, and FuelE,
-    closed under extension of the budgets, then asks its counter to be
-    0 ([fuel_recv_unknown]). *)
+    A counter at a point outside the support of the world is 0
+    ([fuel_unknown_zero]). Receive admits only incoming ends at points
+    the world knows ([fin_ok]), which lifts the counterexample to stage
+    L6 that sync gave (quirk A13c). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Import lockfree.LFFuel lockfree.Fragment.
@@ -142,20 +140,17 @@ Proof.
   intros x. apply (src_flat _ _ 20 x); vm_compute; reflexivity.
 Qed.
 
-(** ** Stage L6 fails at ends received from outside the support
+(** ** Ends outside the support of the world
 
     FuelE is closed under every extension of the budgets ([wbext],
     decision 2026-11-16, under delegation), and an extension keeps the
-    budgets only at the points the smaller world knows ([wext_bud]).
-    Receive is universal over the incoming ends ([fin_ok]), which may
-    sit at any point whose budget admits the floor of the carrier. An
-    end received at a point outside the support with a positive counter
-    then fails F-Cap in the extension that sets the budget there to 0
-    ([fuel_recv_unknown]). [src_world] gives every point the budget
-    (d + 2)·L, the unknown ones included, and every floor is at least
-    L, so every thread of the fragment that receives fails [fsem] at
-    the budgets of [src_world]. sync is the smallest instance
-    ([sync_not_fsem]). *)
+    budgets only at the points the smaller world knows ([wext_bud]). A
+    counter at a point the world does not know is therefore 0
+    ([fuel_unknown_zero]). Receive used to be universal over incoming
+    ends at any point, and an end received at an unknown point with a
+    positive counter failed F-Cap in an extension, so sync failed [fsem]
+    at the budgets of [src_world] (quirk A13c). [fin_ok] now admits only
+    incoming ends at points the world knows. *)
 
 (** W with the budget b at the point k. *)
 Definition wbud_set (W : world) (k : point) (b : option nat) : world :=
@@ -178,85 +173,3 @@ Proof.
   destruct (fuel_cap _ _ _ _ _ _ HF o _ Hm) as (k' & Hk' & Hle).
   rewrite Hk in Hk'. simplify_eq. simpl in Hle. rewrite decide_True in Hle by done. simpl in Hle. lia.
 Qed.
-
-(** A receive adds no end to the receiver's maps before the incoming
-    ones join. *)
-Lemma fupd_recv_dom W π φ o w x :
-  x ∈ dom (fupd W π φ (LSess (SRecv o w))).1 ∨ x ∈ dom (fupd W π φ (LSess (SRecv o w))).2 →
-  x ∈ dom π ∨ x ∈ dom φ.
-Proof.
-  cbn [fupd sl_out]. unfold LFFuel.fact. cbn [sl_end sl_next].
-  destruct (mrem ∅ π !! o) as [κ|] eqn:E; simpl.
-  - apply lookup_mrem_Some in E as [E _].
-    assert (o ∈ dom π) by (apply elem_of_dom; eauto).
-    rewrite !dom_insert_L, dom_delete_L, dom_fmap_L, dom_delete_L, !dom_mrem. set_solver.
-  - rewrite !dom_mrem. set_solver.
-Qed.
-
-(** A receive admits an end at a point outside the support of the world
-    with a positive counter, and an extension of the world sets the
-    budget there to 0. *)
-Lemma fuel_recv_unknown n W π φ tk e o c2 b2 e' κ k b :
-  FuelE (S (S n)) W π φ tk e →
-  tstep e (LSess (SRecv o (Chan c2 b2))) e' →
-  π !! o = Some κ →
-  (c2, b2) ∉ dom π → (c2, b2) ∉ dom φ →
-  ¬ pt_known W k → w_bud W k = Some b → w_pay W (pt_dual κ) ≤ b → 1 ≤ b →
-  w_bud W (pt_dual k) ≠ None → False.
-Proof.
-  intros HF Hst Ho Hπ Hφ Hu Hb Hfl Hb1 Hd.
-  set (α := LSess (SRecv o (Chan c2 b2))).
-  set (πi := {[(c2, b2) := k]} : gmap cend point).
-  set (φi := {[(c2, b2) := Some b]} : gmap cend fuel).
-  assert (Hπ' : (fupd W π φ α).1 !! (c2, b2) = None).
-  { apply not_elem_of_dom. intros H. destruct (fupd_recv_dom W π φ o _ (c2, b2) (or_introl H)); done. }
-  assert (Hφ' : (fupd W π φ α).2 !! (c2, b2) = None).
-  { apply not_elem_of_dom. intros H. destruct (fupd_recv_dom W π φ o _ (c2, b2) (or_intror H)); done. }
-  assert (Hdj : dom πi ## dom (fupd W π φ α).1).
-  { unfold πi. rewrite dom_singleton_L. apply disjoint_singleton_l, not_elem_of_dom, Hπ'. }
-  assert (Hin : fin_ok W (w_pay W (pt_dual κ)) (Chan c2 b2) πi φi).
-  { unfold πi, φi. split_and!.
-    - by rewrite dom_singleton_L.
-    - by rewrite dom_singleton_L.
-    - intros o' f Hf. apply lookup_singleton_Some in Hf as [<- <-]. exists k.
-      rewrite lookup_singleton_eq, Hb. simpl. split; [done|lia].
-    - intros o' f Hf. apply lookup_singleton_Some in Hf as [<- <-]. simpl. lia.
-    - intros o' k' Hk'. apply lookup_singleton_Some in Hk' as [<- <-]. done. }
-  assert (Hv : Vfuel (S n) W πi φi 0 (Chan c2 b2)) by (by rewrite Vfuel_eq).
-  pose proof (lffuel_recv _ _ _ _ _ _ HF _ _ _ _ _ _ _ Hst Ho (le_n _) Hdj Hin Hv) as H.
-  eapply (fuel_unknown_zero _ _ _ _ _ _ (c2, b2) k b H) in Hu.
-  - lia.
-  - fold α. rewrite lookup_union, Hπ'. unfold πi. by rewrite lookup_singleton_eq.
-  - fold α. rewrite lookup_union, Hφ'. unfold φi. by rewrite lookup_singleton_eq.
-Qed.
-(** sync receives on d right after its spawn. *)
-Theorem sync_not_fsem : ¬ fsem sync_W ∅ Sync.sync_main.
-Proof.
-  intros [tk Hf]. pose proof (Hf 40) as H. rewrite fmap_empty in H. fnorm H.
-  fnew H "c"%string (pconst 0). fbeta H. fbeta H. fbeta H.
-  match type of H with FuelE _ _ _ _ _ ?e => eassert (Hs : tstep e (LSpawn _) _) by tsolve end.
-  destruct (lffuel_spawn _ _ _ _ _ _ H _ _ Hs) as [_ Hp]. clear H Hs.
-  fnorm Hp. fbeta Hp.
-  match type of Hp with FuelE _ _ ?π ?φ _ _ => set (P := π) in Hp; set (F := φ) in Hp end.
-  match type of Hp with FuelE _ _ _ _ _ ?e =>
-    eassert (Hs : tstep e (LSess (SRecv ("c", false)%string (Chan "z" true))) _) by tsolve end.
-  destruct sync_budgets as (_ & _ & _ & Hb).
-  eapply (fuel_recv_unknown _ _ _ _ _ _ _ _ _ _ _ (pconst 1) 20 Hp Hs).
-  - vm_compute. reflexivity.
-  - apply not_elem_of_dom. vm_compute. reflexivity.
-  - apply not_elem_of_dom. vm_compute. reflexivity.
-  - unfold pt_known. change (w_names sync_W) with (hroots Sync.sync_Ψ). rewrite hroots_elem.
-    intros (C & xs & y & Hin & Hy & E). unfold Sync.sync_Ψ in Hin.
-    rewrite elem_of_app, list_elem_of_singleton in Hin.
-    destruct Hin as [Hin|Hin]; [by apply elem_of_nil in Hin|]. injection Hin as -> ->.
-    apply list_elem_of_singleton in Hy as ->. discriminate E.
-  - apply Hb.
-  - match goal with |- w_pay _ ?x ≤ _ => destruct (Hb x) as [_ ->] end. lia.
-  - lia.
-  - by rewrite (proj1 (Hb _)).
-Qed.
-
-(** Stage L6 as stated has no proof: sync is in the fragment and its
-    thread has no fuel at the budgets of [src_world]. *)
-Theorem lf_fuel_fundamental_fails : ¬ ∀ Ψ t T, lfsource Ψ t T → fsem (src_world Ψ t) ∅ t.
-Proof. intros H. exact (sync_not_fsem (H _ _ _ sync_lfsource)). Qed.

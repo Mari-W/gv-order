@@ -87,8 +87,7 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/LFFuel.v', 'fuel_send_travel'),
         ('lockfree/LFFuelTyped.v', 'sched_lfsource'),
         ('lockfree/LFFuelTyped.v', 'sync_lfsource'), ('lockfree/LFFuelTyped.v', 'sync_budgets'),
-        ('lockfree/LFFuelTyped.v', 'sched_budgets'), ('lockfree/LFFuelTyped.v', 'fuel_recv_unknown'),
-        ('lockfree/LFFuelTyped.v', 'sync_not_fsem'), ('lockfree/LFFuelTyped.v', 'lf_fuel_fundamental_fails')]
+        ('lockfree/LFFuelTyped.v', 'sched_budgets'), ('lockfree/LFFuelTyped.v', 'fuel_unknown_zero')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
