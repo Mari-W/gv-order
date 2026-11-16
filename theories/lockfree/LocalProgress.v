@@ -385,3 +385,86 @@ Section local_progress.
     exact (chain_from ek.2 t e k ek He Ho Hek eq_refl).
   Qed.
 End local_progress.
+
+(** ** Local progress along any relation that holds between a thread and
+    the holder of the partner of the entry it offers
+
+    [local_progress_ready] reads the dependency in the terms ([waits]),
+    so it asks that a thread names every end its environment holds
+    ([Hmention]). [local_progress_gen] reads it in the environments: wt t s
+    holds whenever s holds the partner entry of an entry t offers. *)
+Section local_progress_gen.
+  Context (q : config) (W : world) (Θ : nat → tenv) (F : nat → gset point).
+  Context (HW : strict W).
+  Context (wt : nat → nat → Prop).
+  Context (Hready : ∀ t e, q.2 !! t = Some e → ¬ irred e → ready_t W (Θ t) (F t) e).
+  Context (Hirr : ∀ t e k ek, q.2 !! t = Some e → tenv_entry (Θ t) k = Some ek → ¬ irred e).
+  Context (Hwt : ∀ t e k ek s es k' ek', q.2 !! t = Some e → offered_t (Θ t) e k →
+             tenv_entry (Θ t) k = Some ek → q.2 !! s = Some es → tenv_entry (Θ s) k' = Some ek' →
+             k'.1 = k.1 → ek'.2 = pt_dual ek.2 → s ≠ t → wt t s).
+  Context (Hpartner : ∀ t e k ek, q.2 !! t = Some e → tenv_entry (Θ t) k = Some ek →
+             ∃ s es k' ek', q.2 !! s = Some es ∧ tenv_entry (Θ s) k' = Some ek' ∧
+               k'.1 = k.1 ∧ (s, k') ≠ (t, k) ∧ ek'.2 = pt_dual ek.2).
+  Context (Hmeet : ∀ t e s es k ek k' ek', q.2 !! t = Some e → q.2 !! s = Some es →
+             offered_t (Θ t) e k → offered_t (Θ s) es k' →
+             tenv_entry (Θ t) k = Some ek → tenv_entry (Θ s) k' = Some ek' →
+             k'.1 = k.1 → (s, k') ≠ (t, k) → ek'.2 = pt_dual ek.2 →
+             enabled q t ∨ enabled q s).
+  Context (Hlink : ∀ t e, q.2 !! t = Some e → link_t e → enabled q t).
+
+  Lemma chain_from_gen x :
+    ∀ t e k ek, q.2 !! t = Some e → offered_t (Θ t) e k → tenv_entry (Θ t) k = Some ek →
+      ek.2 = x → ∃ u, rtc wt t u ∧ enabled q u.
+  Proof.
+    destruct HW as [HWwf Hirrefl].
+    induction (strict_finite_acc (w_lt W) (all_pts q Θ) (wf_lt_trans W HWwf) Hirrefl x)
+      as [x _ IH].
+    intros t e k ek He Ho Hk Hx.
+    destruct (Hpartner t e k ek He Hk) as (s & es & k' & ek' & Hes & Hk' & Hk1 & Hne & Hd).
+    assert (∀ u, rtc wt s u → enabled q u → ∃ u, rtc wt t u ∧ enabled q u) as Hvia.
+    { intros u Hsu Hu. destruct (decide (s = t)) as [->|Hst]; [by exists u|].
+      exists u. split; [|done]. eapply rtc_l; [|exact Hsu].
+      by apply (Hwt t e k ek s es k' ek'). }
+    destruct (decide (offered_t (Θ s) es k')) as [Ho'|Hno'].
+    { destruct (Hmeet t e s es k ek k' ek') as [Ht|Hs]; try done.
+      - exists t. by split.
+      - by apply (Hvia s). }
+    destruct (act es) as [a|] eqn:Ha.
+    - destruct (admin_or_sess a) as [Had|Hse].
+      + apply (Hvia s); [done|]. destruct Had as [Had Hns].
+        apply (admin_enabled q s es a Hes Ha Had). intros c d ->. exfalso. apply Hns.
+        unfold is_sess. simpl. by eexists.
+      + pose proof (Hirr s es k' ek' Hes Hk') as Hnirr.
+        destruct (Hready s es Hes Hnirr (sess_stable es a Ha Hse)) as [_ [Hl|Hbr]].
+        { apply (Hvia s); [done|]. by apply (Hlink s es). }
+        destruct (offered_exists W (Θ s) (F s) es (Hready s es Hes Hnirr)
+          (sess_stable es a Ha Hse) (λ Hv, Hnirr (val_irred es Hv))) as [k0 Ho0].
+        destruct Ho0 as (σ0 & e0 & Hst0 & Hsel0) eqn:Ho0'.
+        destruct (selects_entry _ _ _ Hsel0) as [ek0 Hek0].
+        assert (w_lt W ek0.2 x) as Hlt.
+        { destruct (Hbr k0 ek0 (ex_intro _ σ0 (ex_intro _ e0 (conj Hst0 Hsel0))) Hek0)
+            as [Hb _].
+          specialize (Hb k' ek' Hk' Hno'). unfold entry_head in Hb.
+          by rewrite Hd, pt_dual_dual, Hx in Hb. }
+        destruct (IH ek0.2 (conj (all_pts_entry q Θ s es k0 ek0 Hes Hek0) Hlt) s es k0 ek0 Hes
+          (ex_intro _ σ0 (ex_intro _ e0 (conj Hst0 Hsel0))) Hek0 eq_refl) as (u & Hsu & Hu).
+        by apply (Hvia u).
+    - exfalso. apply (Hirr s es k' ek' Hes Hk'). by apply act_None_irred.
+  Qed.
+
+  Theorem local_progress_gen t : pend q t → ∃ s, rtc wt t s ∧ enabled q s.
+  Proof.
+    intros (e & a & He & Ha & Hse). simpl in He.
+    assert (¬ irred e) as Hnirr.
+    { intros Hirr'. destruct (sess_stable_step e a Ha Hse) as (σ & e' & Hst).
+      by apply (Hirr' _ _ Hst). }
+    destruct (Hready t e He Hnirr (sess_stable e a Ha Hse)) as [_ [Hl|_]].
+    { exists t. split; [done|]. by apply (Hlink t e). }
+    assert (¬ is_val e) as Hv by (intros Hv; rewrite act_val in Ha; done).
+    destruct (offered_exists W (Θ t) (F t) e (Hready t e He Hnirr) (sess_stable e a Ha Hse) Hv)
+      as [k Ho].
+    destruct Ho as (σ & e' & Hst & Hsel) eqn:Ho'.
+    destruct (selects_entry _ _ _ Hsel) as [ek Hek].
+    exact (chain_from_gen ek.2 t e k ek He Ho Hek eq_refl).
+  Qed.
+End local_progress_gen.
