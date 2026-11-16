@@ -121,16 +121,122 @@ discipline becomes future work.
 - The translations PGV, PN and MP need the port to syntactic points.
 - SemFlag's underivability is open since the end-points port.
 
+## Part 4. Proof engineering (audit, 2026-11-16)
+
+From the read-only audit at d91fa5c (quirks F to J). No item changes a
+protected statement unless it says so. Each names what it removes, its
+risk, and when to do it.
+
+**P1. Dead code and stale headers.** Delete the 34 unreferenced names of
+quirk F9 and rewrite the six stale headers of J1. Removes about 150
+lines and every comment that still describes the old link rule, the
+oracle relation or link cost one. Risk none. First, in one commit.
+
+**P2. Compile time.** Replace the six `set_solver` calls of `LFP_connect`
+by one lemma "a channel held on both sides lies in C0" with only its
+premises, split the slow call in `two_frame` (LFSoup.v line 1478), and
+replace `try set_solver` after `eapply fe_two` (LFAdequacy.v line 1246) by
+calls on the goals that need it. Removes about 280 of the 410 s that
+theories/lockfree takes (193 s in LFCompose.v alone). Risk low. First,
+with P1. Then add `Arguments FuelE : simpl never` and the same for
+`Vfuel` (H4).
+
+**P3. Drop the global point map π.** `lf_pt` reads `P t`, and π, `pupd`,
+`pev`, `pev_upd`, `pev1`, `pev2`, `pev_of`, `LFsoupAt`, `ppts`,
+`ppts_lookup`, `lf_ppts`, `LFsoupAt_ppts`, `pcat_l`, `pcat_r` go (F1).
+`LFP` keeps its text, because it already quantifies over P and F. Risk
+medium. It touches every step lemma of LFSoup.v, `stab_step`,
+`fuel_step` and `LFP_connect`, all mechanically. Before R1, because R1
+rewrites the same lemmas and is smaller without π.
+
+**P4. One hand-over clause and `Fobl` as a product.** Restate `Fobl` as a
+side condition per label, the continuation for every label but receive,
+and the receive clause (F5). Replace `fhand` at send, `fhand 0` at spawn
+and `flink` by one clause over a hand-out set and a floor per label, and
+`fmsg`, `fchild` and `flr` by one update that moves an end with its
+counter minus one (F6, I3). Removes the nine-way case splits of
+`Fobl_ext`, `FuelE_S_down` and `lffuel_step`, folds the four `fuel_zero_*`
+into one lemma, and shares the moving branches of `fe_msg`, `fe_spawn`
+and `fe_link`. Risk medium. FuelE is not protected. Do it inside R1,
+because R1 replaces the link update anyway and obligations make the
+hand-out set the natural unit.
+
+**P5. Prove FuelE monotone in the counters (G3).** If it holds, the
+replacement clause becomes FuelE at one map (F7). Cheap, and it sharpens
+the choice between the quick patch of §18 and R1. Risk low (a failed
+attempt costs an afternoon). Before R1.
+
+**P6. Event labels for the instrumented semantics.** Let `istep` carry the
+event (F2) and keep `istep q L q'` as the projection `∃ ev, iev q ev q' ∧
+parts ev = L`, so `lock_free`, `wfair` and `enabled` keep their text.
+Removes the defaults `""` and 0, the re-reading of `act e` in `fstep`,
+`fsingle`, `fpair` and `pev_of`, `fstep_pair`, `pev_of_pair` and
+`f2_swap`. Risk medium. Instr.v, Fair.v, Reach.v and ThreadProgress.v
+read labels. After P3, before or with R1.
+
+**P7. Merge duplicated proofs.** Make `local_progress_ready` an instance of
+`local_progress_gen` and `act_offer` a corollary of `act_offer_sig`
+(H3). Removes about 180 lines. Risk low. Both statements stay. Any time,
+best with P1.
+
+**P8. One renaming.** Move `emap` and one `csub` to lang/Syntax.v, define
+`chsubst` from them, delete `JunkRenaming.csub`, and define `kren` by
+`kmap` (F4). Removes the second `csub`, `kinj`, `kren_lookup_safe` and
+`renk_kren`. Risk low, but it touches invariance/JunkRenaming.v and
+needs a full build. Any time after P1.
+
+**P9. Generic soup lemmas.** Group `LFconf` into per-thread, pairwise and
+global fields (I4) and prove framing, relabelling and the disjoint union
+once. `LFP_connect` shrinks from 171 lines to the cut argument,
+`LFsoupAt_relabel` to a line. Risk medium. After P3.
+
+**P10. Budgets out of the world.** Make the budgets a parameter β of
+FuelE, `fsem` and `LFP` instead of fields of `world` (F8). Removes
+`wjoin_bud`, `wext_bud`, `wbext`, `wbud_agree`, `strict_budgets` and the
+world rebuilds of `with_budgets`. **Changes the protected `LFP_term`,
+`LFP_connect`, `LFP_join` and `lf_adequacy`.** Needs the author. With R4.
+
+**P11. Missing lemmas.** The soup gives the live process relation (G1),
+then drop the first conjunct of `LFP` (A6). The live relation is
+included in the base one (G2), for the paper. Risk high for G1 (it needs
+P-Term and P-Connect over the pairing clause), low for G2. After R1 and
+R3, because R3 may make G1 easier.
+
+**P12. Names.** `wf_world` to `rank_wf`, `LFFuel.fact` to `fuel_act`, the
+soup updates without the f prefix, one `is_rcv`, and "field" for "slot"
+and "payload" with `pt_field`, `KField` and x⁺ for `pt_shift 1` (J2, J3,
+A14). Risk low but wide. With R2, which renames ends anyway.
+
+**P13. The fragment file.** Move the examples' fragment facts out of
+Fragment.v and LFFuelTyped.v into examples/LockFree.v (B9). Merge the two
+carrier analyses into one over roots and drop `lf_r2`, `lf_r2r` and the
+self-loop rule for links (B7, B8, B5). Risk low for the move, medium for
+the merge. Only if T2 is rejected. With T2 the analyses go altogether.
+
+**P14. Leftovers of no-eq.** Replace `w_eq` by `=` in `LFP_term`,
+`LFP_connect`, `LFP_join` and `st_spawn`, drop the alias argument of
+`wjoin` and the eight trivial `wf_eq_*` lemmas (G5). **Touches protected
+statements (cosmetically).** Ask the author. Any time.
+
+**P15. One step-indexed fixpoint.** A generic `sfix` with one unfolding
+lemma for the base, live and fuel relations (H5). Removes three copies of
+`levels` and their extensionality lemmas. Risk high, because it touches
+the base relation. Optional, with R6.
+
 ## Suggested order
 
+0. P1, P2 and P7 (dead code, stale headers, compile time, duplicated
+   proofs). Then P5, which informs step 1.
 1. Finish §18 (replacement against the send floor) only as far as needed to
    decide between a quick patch and R1. Prefer R1.
-2. R1, then L6 (`lf_fundamental`) on the current fragment, so a complete
-   result exists.
-3. R2 and R3 as separate stages, each with a full build and CheckAll.
+2. P3, then R1 with P4 and P6 folded in, then L6 (`lf_fundamental`) on the
+   current fragment, so a complete result exists. P9 after R1.
+3. R2 with P12, and R3 as separate stages, each with a full build and
+   CheckAll. P8 any time in between.
 4. T1 and T2 after the author decides on budget atoms. Then retire the old
-   analyses in Fragment.v.
-5. R4, R5, then R6 if wanted.
+   analyses in Fragment.v (or P13 if T2 is rejected).
+5. R4 with P10, R5, P11, then R6 with P15 if wanted. P14 whenever the
+   author agrees.
 
 Acceptance for every stage: full build, no Admitted, no axioms, CheckAll
 regenerated with every active entry closed, protected statements diffed
