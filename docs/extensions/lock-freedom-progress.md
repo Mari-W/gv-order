@@ -655,6 +655,18 @@ Updated after every stage and every agent result.
   The gap after (a) for received closures stays argued, and no positive
   check of sync at `src_world` was attempted.
 
+- 2026-11-17. Stage T1 done on branch lf-guardrules. liveness/GuardRules.v
+  writes the guard as rules. `glive L e` has one rule per term form plus an
+  `_acts` variant for each sequencing form, whose continuation is checked
+  under `noL` once the first part acts (`acts`, the rules of `gd`).
+  `nolater` (the rules of `occursM`) keeps a later variable out of closures,
+  `glive_force` forces a later variable only after an action and only with a
+  `Some true` mark, and `gbody` makes the self forceable under the λs of a
+  box body. Both directions hold. `okM_iff : glive L e ↔ okM L e = true ∧
+  gall e = true`, `gbody_iff` for `okv`, and `guarded_iff : guarded e ↔
+  glive noL e`, so `gtyped_iff` and `gptyped_iff` restate the guarded
+  judgments with the rules and no protected statement changes. All closed.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
