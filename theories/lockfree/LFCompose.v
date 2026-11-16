@@ -29,15 +29,18 @@ Proof.
 Qed.
 
 (** P-Term (§11) for the lock-free judgment. Over [LPrel_term] it asks
-    full counters at the points of the ends of the typing environment. *)
+    full counters at the points of the ends of the typing environment,
+    and that W knows those points (the soup keeps every held point known,
+    [lf_known]). *)
 Theorem LFP_term (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr) (T : ty) :
   prim T → strict W → dom ΘB = C0 → dom Σ ## C0 →
   (∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2) → tenv_dual (w_eq W) ΘB →
   lsem_typed W (tenv_of Σ ∪ ΘB) [] ∅ t T →
+  (∀ o x, tenv_points (tenv_of Σ ∪ ΘB) !! o = Some x → pt_known W x) →
   fsem W (tenv_points (tenv_of Σ ∪ ΘB)) t →
   LFP W Σ T (C0, {[+ t +]}).
 Proof.
-  intros HT HW Hd Hdj Hb Hdu Ht [tk Hf]. split.
+  intros HT HW Hd Hdj Hb Hdu Ht Hkn [tk Hf]. split.
   { by apply (LPrel_term W Σ ΘB C0 t T). }
   set (Θ := tenv_of Σ ∪ ΘB). set (π := tenv_points Θ).
   assert (Hdπ : dom π = tenv_ends Θ) by apply dom_tenv_points.
@@ -98,6 +101,7 @@ Proof.
   - intros c x Hx. exists 0, t. split; [by rewrite lookup_singleton_eq|].
     unfold tenv_end. simpl. destruct (HΘ c) as [H|[H _]]; [|congruence].
     rewrite H, Hx. simpl. by rewrite bool_decide_true.
+  - intros s e o x _ Hx. apply (Hkn o). by apply Hπ.
   - intros s e Hs. simpl in Hs. apply lookup_singleton_Some in Hs as [_ <-].
     split_and!; [apply Hf|done|by rewrite dom_fmap_L|done].
 Qed.
@@ -397,6 +401,12 @@ Proof.
     + rewrite (ulook_r _ _ _ HΣ1c) in Hx.
       destruct (lf_own _ _ _ _ _ _ _ _ Hc2 c x (ulook_l _ _ _ _ Hx)) as (b & e & Hb & Hy).
       exists (rthr b), e. by rewrite mcat_r, tsel_r.
+  - intros t e o x He Hx. destruct (mcat_lookup _ _ _ _ He) as [(a & -> & Ha)|(b & -> & Hb)];
+      rewrite ?tsel_l, ?tsel_r in Hx.
+    + pose proof (lf_known _ _ _ _ _ _ _ _ Hc1 a e o x Ha Hx) as H.
+      unfold pt_known in *. simpl. set_solver.
+    + pose proof (lf_known _ _ _ _ _ _ _ _ Hc2 b e o x Hb Hx) as H.
+      unfold pt_known in *. simpl. set_solver.
   - intros t e He. destruct (mcat_lookup _ _ _ _ He) as [(a & -> & Ha)|(b & -> & Hb)];
       rewrite ?tsel_l, ?tsel_r.
     + destruct (HF1 a e Ha) as (Hf & Hp & Hq & Ho). split_and!; [|done|done|].

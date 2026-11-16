@@ -19,7 +19,8 @@
     count a value runs with, and a message carries its payload at 0
     tickets. A thread acts only on ends whose partner has a finite budget (F-Wait),
     and no counter exceeds its budget (F-Cap). Receive is universal over
-    the incoming ends. No clause writes the counters of another thread.
+    the incoming ends at points the world knows ([fin_ok]), and so is
+    the argument of a closure. No clause writes the counters of another thread.
 
     A link loop (C3 of the plan, §10.1) spends a ticket per round, so it
     has no fuel at any finite ticket count ([link_tickets_fall]).
@@ -177,12 +178,18 @@ Definition ftravel (W : world) (π : gmap cend point) (X : gset cend) : Prop :=
   ∀ o k, o ∈ X → π !! o = Some k → w_bud W (pt_dual k) ≠ None.
 
 (** Incoming ends: points and counters on exactly the ends of w, under
-    the cap and at or above the floor fl. *)
+    the cap and at or above the floor fl, at points the world W knows.
+    An extension of W keeps the budgets only at the points W knows
+    ([wext_bud]), so an incoming end at an unknown point could see its
+    budget drop below the floor (quirk A13c). In the live relation a
+    received end sits at a field of the carrier's point, which the
+    world knows. *)
 Definition fin_ok (W : world) (fl : nat) (w : expr)
     (πi : gmap cend point) (φi : gmap cend fuel) : Prop :=
   dom πi = fends w ∧ dom φi = fends w ∧ fcap W πi φi ∧
   (∀ o f, φi !! o = Some f → fle (Some fl) f) ∧
-  ∀ o k, πi !! o = Some k → w_bud W (pt_dual k) ≠ None.
+  (∀ o k, πi !! o = Some k → w_bud W (pt_dual k) ≠ None) ∧
+  ∀ o k, πi !! o = Some k → pt_known W k.
 
 (** ** The predicates, level by level *)
 
@@ -268,8 +275,8 @@ Definition Fdef (E : nat → fpred) (V : nat → fpred) (n' : nat) (W : world)
 (** Values. An end, a unit, a constant and a point carry nothing (the
     floor [b_val] of §17.3 is 0, and §17.8 drops it). A value at tk
     tickets runs in a thread that has tk tickets. A closure applied at a
-    lower level to an argument in Vfuel at 0 tickets satisfies FuelE at
-    tk, and so does a forced box. A spawned closure thus runs at the
+    lower level to an argument in Vfuel at 0 tickets, whose ends sit at
+    points W knows ([fin_ok]), satisfies FuelE at tk, and so does a forced box. A spawned closure thus runs at the
     tickets the spawn hands to the child. A message carries its payload
     at 0 tickets (plan §18.3). Pairs and injections componentwise. *)
 Fixpoint Vfdef (E V : nat → fpred) (n : nat) (W : world)
@@ -701,13 +708,13 @@ Qed.
     floor 0, are admissible incoming ends for the receiver or the child.
     A receiver at the dual point pt_dual k reads the floor
     [w_pay W (pt_dual (pt_dual k))], which is [w_pay W k] by
-    [pt_dual_dual]. *)
+    [pt_dual_dual]. The ends handed on sit at points W knows. *)
 Lemma fhand_fin_ok (W : world) fl π φ w :
   fcap W π φ → dom φ = dom π → fends w ⊆ dom π → fhand fl (fends w) φ →
-  ftravel W π (fends w) →
+  ftravel W π (fends w) → (∀ o k, o ∈ fends w → π !! o = Some k → pt_known W k) →
   fin_ok W fl w (fchild π φ w).1 (fchild π φ w).2.
 Proof.
-  intros Hc Hdom Hsub Hh Ht. unfold fchild; simpl. split_and!.
+  intros Hc Hdom Hsub Hh Ht Hk0. unfold fchild; simpl. split_and!.
   - rewrite dom_mres. set_solver.
   - rewrite dom_fmap_L, dom_mres, Hdom. set_solver.
   - by apply fcap_tick, fcap_mres.
@@ -716,6 +723,7 @@ Proof.
     destruct f0 as [m|]; simpl; [|done].
     pose proof (Hh o m Hx Hf). lia.
   - intros o k Hk. apply lookup_mres_Some in Hk as [Hk Hx]. by apply (Ht o k).
+  - intros o k Hk. apply lookup_mres_Some in Hk as [Hk Hx]. by apply (Hk0 o k).
 Qed.
 
 (** ** Finite counters *)
