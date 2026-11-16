@@ -255,14 +255,29 @@ Proof.
     destruct (H2 o1 v Ho1) as (o & -> & Ho). by exists o.
 Qed.
 
+(** W′ extends W on budgets: it knows the names of W and keeps their
+    budgets and floors. The inclusion of names makes the relation
+    transitive. *)
+Definition wbext (W W' : world) : Prop := w_names W ⊆ w_names W' ∧ wext_bud W W'.
+
+Lemma wbext_refl W : wbext W W.
+Proof. done. Qed.
+
+Lemma wbext_trans W1 W2 W3 : wbext W1 W2 → wbext W2 W3 → wbext W1 W3.
+Proof.
+  intros [H12 B12] [H23 B23]. split; [set_solver|]. by apply (wext_bud_trans W1 W2 W3).
+Qed.
+
 (** FuelE is closed under the renaming of channels by definition: a link
     renames the peer of the removed end in the whole soup (decision
-    2026-11-09, under delegation). *)
+    2026-11-09, under delegation). It is also closed under every
+    extension of the budgets ([wbext]), so that a thread keeps its fuel
+    in a joined world (decision 2026-11-16, under delegation). *)
 Definition Fdef (E V : nat → fpred) (n' : nat) (W : world)
     (π : gmap cend point) (φ : gmap cend fuel) (e : expr) : Prop :=
-  ∀ g π' φ', renk g π π' → renk g φ φ' →
-    fcap W π' φ' ∧ fwait W π' (emap g e) ∧
-    ∀ α e', tstep (emap g e) α e' → Fobl E V n' W π' φ' α e'.
+  ∀ W' g π' φ', wbext W W' → renk g π π' → renk g φ φ' →
+    fcap W' π' φ' ∧ fwait W' π' (emap g e) ∧
+    ∀ α e', tstep (emap g e) α e' → Fobl E V n' W' π' φ' α e'.
 
 (** Values. An end, a unit, a constant and a point carry nothing (the
     floor [b_val] of §17.3 is 0, and §17.8 drops it). A closure applied
@@ -349,7 +364,7 @@ Lemma Fdef_ext (E1 V1 E2 V2 : nat → fpred) n' W π φ e :
   Fdef E1 V1 n' W π φ e ↔ Fdef E2 V2 n' W π φ e.
 Proof.
   intros HE HV. unfold Fdef.
-  split; intros H g π' φ' Hr1 Hr2; destruct (H g π' φ' Hr1 Hr2) as (Hc & Hw & Hs);
+  split; intros H W' g π' φ' Hb Hr1 Hr2; destruct (H W' g π' φ' Hb Hr1 Hr2) as (Hc & Hw & Hs);
     (split; [done|split; [done|]]);
     intros α e' Hst; specialize (Hs α e' Hst);
     [by rewrite <-(Fobl_ext E1 V1 E2 V2)|by rewrite (Fobl_ext E1 V1 E2 V2)].
@@ -404,8 +419,8 @@ Qed.
 Lemma FuelE_S_down n W π φ e : FuelE (S n) W π φ e → FuelE n W π φ e.
 Proof.
   revert W π φ e. induction n as [|n IH]; intros W π φ e H; [apply FuelE_0|].
-  apply FuelE_S. apply FuelE_S in H. intros g π' φ' Hr1 Hr2.
-  destruct (H g π' φ' Hr1 Hr2) as (Hc & Hw & Hs).
+  apply FuelE_S. apply FuelE_S in H. intros W' g π' φ' Hb Hr1 Hr2.
+  destruct (H W' g π' φ' Hb Hr1 Hr2) as (Hc & Hw & Hs).
   split; [done|split; [done|]]. intros α e' Hst. specialize (Hs α e' Hst).
   destruct α as [|[o w|o w|o|cd|o b|o b]|c x|w]; simpl in *.
   - by apply IH.
@@ -430,8 +445,26 @@ Lemma FuelE_rename n W π φ e (h : chan → chan) π1 φ1 :
   renk h π π1 → renk h φ φ1 → FuelE n W π φ e → FuelE n W π1 φ1 (emap h e).
 Proof.
   destruct n as [|n]; [intros; apply FuelE_0|]. rewrite !FuelE_S.
-  intros H1 H2 HF g π' φ' G1 G2. rewrite emap_emap.
-  apply HF; eapply renk_compose; eauto.
+  intros H1 H2 HF W' g π' φ' Hb G1 G2. rewrite emap_emap.
+  apply HF; [done| |]; eapply renk_compose; eauto.
+Qed.
+
+(** ** Extension of the budgets *)
+
+Lemma FuelE_wbext n W W' π φ e : wbext W W' → FuelE n W π φ e → FuelE n W' π φ e.
+Proof.
+  destruct n as [|n]; [intros; apply FuelE_0|]. rewrite !FuelE_S.
+  intros Hb HF W'' g π' φ' Hb' G1 G2. apply HF; [|done|done].
+  by apply (wbext_trans W W' W'').
+Qed.
+
+Lemma fsem_wbext W W' π t :
+  wbext W W' → (∀ o k, π !! o = Some k → pt_known W k) → fsem W π t → fsem W' π t.
+Proof.
+  intros Hb Hk H n. apply (FuelE_wbext n W W'); [done|].
+  assert ((w_bud W' <$> π) = (w_bud W <$> π)) as ->; [|apply H].
+  apply map_eq. intros o. rewrite !lookup_fmap. destruct (π !! o) as [k|] eqn:Ho; [|done].
+  simpl. f_equal. apply (proj2 Hb). by apply (Hk o).
 Qed.
 
 
@@ -444,7 +477,7 @@ Section clauses.
   (** F-Cap: counters stay at or below the budget of their point. *)
   Lemma fuel_cap : fcap W π φ.
   Proof.
-    apply FuelE_S in HF. by destruct (HF id π φ (renk_id π) (renk_id φ)) as (? & _ & _).
+    apply FuelE_S in HF. by destruct (HF W id π φ (wbext_refl W) (renk_id π) (renk_id φ)) as (? & _ & _).
   Qed.
 
   (** F-Wait: the partner of an end the thread acts on has a finite
@@ -454,7 +487,7 @@ Section clauses.
     ∃ k m, π !! o = Some k ∧ w_bud W (pt_dual k) = Some m.
   Proof.
     intros Hst Ho. apply FuelE_S in HF.
-    destruct (HF id π φ (renk_id π) (renk_id φ)) as (_ & Hw & _). rewrite emap_id in Hw.
+    destruct (HF W id π φ (wbext_refl W) (renk_id π) (renk_id φ)) as (_ & Hw & _). rewrite emap_id in Hw.
     destruct (Hw σ e' o Hst Ho) as (k & Hk & Hb).
     destruct (w_bud W (pt_dual k)) as [m|] eqn:E; [|done]. eauto.
   Qed.
@@ -462,7 +495,7 @@ Section clauses.
   Lemma fuel_obl α e' : tstep e α e' → Fobl FuelE Vfuel n W π φ α e'.
   Proof.
     intros Hst. apply FuelE_S in HF.
-    destruct (HF id π φ (renk_id π) (renk_id φ)) as (_ & _ & Hs). apply Hs. by rewrite emap_id.
+    destruct (HF W id π φ (wbext_refl W) (renk_id π) (renk_id φ)) as (_ & _ & Hs). apply Hs. by rewrite emap_id.
   Qed.
 
   (** F-Tick. *)
