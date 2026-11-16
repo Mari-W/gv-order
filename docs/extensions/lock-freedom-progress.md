@@ -19,6 +19,7 @@ Updated after every stage and every agent result.
 | L5 Composition of LFP (plan §17.4) | done. `LFP_term` (fdd919e), then FuelE closed under `wbext`, the Σ conjuncts of `LFconf`, `LFP_connect` and `LFP_join` | LFCompose.v (`LFP_term`, `LFP_connect`, `LFP_join`, `wbud_agree`, `mcat`, `tsel`, `held`), LFFuel.v (`wbext`, `FuelE_wbext`, `fsem_wbext`), LFSoup.v (`lf_sig`, `lf_own`) | passes, CheckAll closed | 0, no axioms | none. LFCompose.v takes about 4 minutes, most of it in `set_solver` |
 | L6b Links accounted like sends (option 2) | done | LFFuel.v (`flink1` at `w_pay`, `frep`, replacement clause in `Fdef`, `fuel_rep`), LFSoup.v (`flr`, `fuel_link`, `ppts`, `LFsoupAt`, `LFsoupAt_ppts`, `LFP` without π), LFAdequacy.v (`fe_link` through the handed counter), LFCompose.v (`LFP_term` at `tenv_points`) | passes, CheckAll closed | 0, no axioms | C3 argued, no lemma |
 | L6 Typed fuel interpretation and `lf_fundamental` | stopped on a counterexample. Stage L6 as stated is false under option 2 | LFFuelTyped.v (L6a lemmas on the old link rule removed; `fw_fuel_floor`, `fw_not_fsem_roots`, `fw_not_fsem`, `lf_fuel_fundamental_fails`) | passes, CheckAll closed | 0, no axioms | the replacement minimum and the send floor coincide at a payload point of its carrier. `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
+| L6c Link tickets replace the hand-over at links (plan §18) | done | LFFuel.v (`FuelE n W π φ tk e`, `Vfuel n W π φ tk w`, `tkupd`, `fsem` with ∃ tk, `FuelE_tk_mono`, `Vfuel_tk_mono`, `link_tickets_fall`; `flink`, `flink1`, `frep`, `fuel_rep`, `fuel_zero_nolink` gone), LFSoup.v (ticket family K in `lf_fuelc`, `LFsoupAt`, `LFsoup`, `LFP`; `ksingle`, `kstep`, `kstep_one`, `kstep_pair`, `krun`; `flr` gone), Criterion.v (`lf_run_criterion` over a measure with a well-founded decidable order, `lexlt`, `lexlt_wf`), LFAdequacy.v (`ksum`, `ksum_step`, measure (tickets, fuel); `fe_link`, `fgoal_cap` gone), LFCompose.v, LFFuelTyped.v (option-2 counterexamples gone) | passes, CheckAll closed | 0, no axioms | protected statements unchanged; FuelE not monotone in the counters (renaming) |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -545,6 +546,39 @@ Updated after every stage and every agent result.
   `lf_soundness` and the example theorems are not started. `tsolve`
   now closes head steps with premises, which a let pair of a non-value
   pair needed.
+- 2026-11-16. Stage L6c, link tickets (plan §18, decision of the same
+  day). `FuelE n W π φ tk e` carries the thread's ticket count. The link
+  clause asks `1 ≤ tk` and continues at `tk - 1`, the spawn clause gives
+  `Nat.div2 (S tk)` to the child and `Nat.div2 tk` to the parent, and
+  every other clause keeps tk. On the coordinator's request `Vfuel` also
+  carries a ticket count, the one a value runs with. A closure applied at
+  tk runs at tk, a forced box too, and a message carries its payload at 0
+  tickets. A spawned λ that links (ag₁ of the scheduler) can then get the
+  child's FuelE from Vfuel at the child's share. `fsem W π t` is `∃ tk, ∀
+  n, FuelE n W π (w_bud W <$> π) tk t`. The replacement clause, `frep`,
+  `fuel_rep`, `flink`, `flink1` and `fuel_zero_nolink` are gone. The soup
+  carries a family K beside P and F. `kstep` spends the linker's ticket
+  at a link, splits at a spawn and keeps K otherwise, and no step writes
+  another thread's counters, so `flr` is gone. The soup step still goes
+  from n + 2 to n, which the live relation needs. `lf_run_criterion`
+  takes a measure under a well-founded decidable order, and
+  `lf_criterion` instantiates it with `<` on nat, its statement
+  unchanged. Adequacy uses the pair (`ksum`, `fu_at`) under `lexlt`.
+  `ksum_step` shows that a link lowers the total and every other step
+  keeps it, so `fe_link` is gone and `fuel_step` treats the other steps
+  as before. `link_tickets_fall` states that a family of states which
+  link and stay in the family has no fuel at tk tickets and index
+  tk + 1. `FuelE_tk_mono` and `Vfuel_tk_mono` hold. Monotonicity in the
+  counters (cleanup P5) is not cheap, because `Fdef` quantifies over
+  renamings and a smaller map can be one no renaming accepts. The
+  option-2 counterexamples of LFFuelTyped.v are deleted, with their
+  CheckAll entries. Every protected statement keeps its text against
+  9270515. Dead code of quirk F9 in LFFuel.v, LFSoup.v and LFAdequacy.v
+  is deleted, and the headers of the touched files describe tickets.
+  Cleanup P2 for `LFP_connect` only. Scoping its five slow `set_solver`
+  calls with `clear` takes LFCompose.v from 203 s to 12 s. The hot spots
+  in LFSoup.v and LFAdequacy.v are left as they were. LFSoup.v compiles
+  in about 105 s and LFAdequacy.v in about 62 s.
 
 ## Decisions
 

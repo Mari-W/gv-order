@@ -82,6 +82,9 @@ side conditions, yet they make the definition longer than its idea.
 
 **A9. Index loss.** A soup step goes from index n + 2 to n, and the
 replacement clause costs one more level. Harmless for `∀ n`, ugly to state.
+Partly lifted (2026-11-16, link tickets). The replacement clause is gone,
+and with it the extra level of `fuel_link`. The two levels of the soup
+step stay, because the live relation needs them.
 
 **A10. Fuel sits on ends, not on obligations.** The idea is that a counter
 belongs to an obligation ("someone waits for this end"), and every hand-over
@@ -89,12 +92,16 @@ belongs to an obligation ("someone waits for this end"), and every hand-over
 end, so a link *overwrites* the peer's counter, and every end at point k has
 to tolerate such an overwrite down to `w_pay W k` (`frep`). Lift: make
 obligations explicit in the soup (waiter, serving end, counter), with the
-per-thread predicate reading them.
+per-thread predicate reading them. Lifted for links (2026-11-16, link
+tickets, plan §18). A link no longer hands a counter on. It spends a
+ticket of the linker, and only the holder of an end moves its counter.
+Counters still sit on ends for send and spawn.
 
 **A11. Two budget maps, one keyed oddly.** The world has `w_bud` (cap and
 refill) and `w_pay` (floor of a delegated end). The floor is read at the
 *sender's* point, because sender and receiver sit at dual points. The link
-minimum reuses it at u's point. Lift: key the floor on the carrier channel's
+minimum reused it at u's point until link tickets removed that minimum
+(2026-11-16). Lift: key the floor on the carrier channel's
 identity rather than on a point, if the world can speak about it, or fold
 both maps into one budget per root.
 
@@ -128,6 +135,10 @@ in LFFuelTyped.v). Two candidate repairs. Exempt from replacement every end
 whose partner the same thread holds, because no other thread can link it
 (environment-level). Let floors grow along payload fields, so a payload's
 own floor exceeds its carrier's (fragment budgets). Not decided.
+Lifted (2026-11-16, link tickets, plan §18). Plan §18.1 shows that no
+minimum repairs option 2 (the scheduler fails in every world). The
+replacement clause is gone, `fw_not_fsem` and
+`lf_fuel_fundamental_fails` with it.
 
 **A14. `well_founded (w_lt W)` beside `world_wf W`.** Two premises about the
 world, one structural and one for rank. Could be one record field of a
@@ -301,10 +312,11 @@ E n' (fupd α) e') ∧ Frecv α`, with the label analysis in `Fside` only.
 
 **F6. Three hand-over clauses for one rule (audit).** A send asks `fhand
 (w_pay W k) (fends w)` at the carrier's point k, a spawn `fhand 0`, and a
-link `flink1` at the linked end's own point. The soup has three matching
+link `flink1` at the linked end's own point (gone with link tickets,
+2026-11-16, so two clauses remain). The soup has three matching
 updates, `fmsg` (the receiver gets `ftick <$> mres (fends w) (F s)`),
 `fchild`, and `flr` (the partner of the other end gets the linker's
-counter minus one). LFFuel.v proves the consequence four times
+counter minus one, gone with link tickets). LFFuel.v proves the consequence four times
 (`fuel_zero_nosend`, `fuel_zero_nospawn`, `fuel_zero_nolink`,
 `fuel_zero_act`), and no proof uses any of the four. Lift: a hand-out set
 `hout α` and a floor `hfloor W π α o` per label, one `Fobl` clause, and
@@ -320,6 +332,8 @@ applies to an end whose partner the same thread holds, which no other
 thread can link. That is the root of A13b, and `fw_fuel_floor` uses
 exactly such an end. Neither the definition nor any world axiom asks
 `w_pay W k ≤ w_bud W k`, so `fw_fuel_floor` takes it as a premise.
+Lifted (2026-11-16, link tickets). `frep`, `fuel_rep` and
+`fw_fuel_floor` are gone.
 
 **F8. Budgets live in the core world (audit).** `w_bud` and `w_pay` are
 fields of `world`, which the base and live relations never read. They
@@ -365,7 +379,13 @@ on it. Live adequacy proves deadlock freedom separately.
 `φ ≤ φ'` pointwise under the cap should give FuelE at φ'. Every clause
 asks lower bounds of counters, and receive and replacement are universal.
 With it `frep` collapses to one map (F7) and the fuel parts of `fe_*`
-need fewer exact counter computations.
+need fewer exact counter computations. Addition (2026-11-16, link
+tickets). `frep` is gone, so nothing needs G3 now. It is also not cheap.
+`Fdef` quantifies over every renaming of φ, and a map below φ may give two
+ends with one image different values where φ gives them equal ones, so
+FuelE at the smaller map holds vacuously for that renaming and at φ it
+does not. FuelE is monotone in the tickets (`FuelE_tk_mono`,
+`Vfuel_tk_mono`).
 
 **G4. One index serves two clocks (audit).** The live index counts
 observations, so a β leaves it unchanged. The fuel index counts every
@@ -534,7 +554,8 @@ and `KPay` stand for the field notation `!^{ƛξ}(A).S`, and `pt_shift 1`
 - `csub` twice (F4), `is_rcv` twice (on session types in
   LocalProgress.v, on carriers in Fragment.v), `world_wf` and `wf_world`
   (A14).
-- `f2`, `fmsg`, `fpair`, `fsingle`, `flr`, `flr1` name soup updates with
+- `f2`, `fmsg`, `fpair`, `fsingle` (and `flr`, `flr1` until link tickets)
+  name soup updates with
   the prefix f, which elsewhere marks fuel clauses (`fcap`, `fwait`,
   `fhand`).
 
