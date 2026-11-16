@@ -227,6 +227,9 @@ Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy.
 Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy_ex.
 Print Assumptions LRGV.lockfree.LFAdequacy.lf_thread_progress.
 Print Assumptions LRGV.lockfree.LFCompose.LFP_term.
+Print Assumptions LRGV.lockfree.LFCompose.LFP_connect.
+Print Assumptions LRGV.lockfree.LFCompose.LFP_join.
+Print Assumptions LRGV.lockfree.LFFuel.FuelE_wbext.
 Print Assumptions LRGV.lockfree.LFFuel.FuelE_down.
 Print Assumptions LRGV.lockfree.LFFuel.Vfuel_down.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_cap.
