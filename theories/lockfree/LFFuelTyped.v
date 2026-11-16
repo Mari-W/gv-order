@@ -2,8 +2,8 @@
 
     Stage L6a asks that every thread of a program in the static
     lock-free fragment satisfy [fsem] at the budgets that
-    [with_budgets] computes. The statement is false, for two
-    reasons, and this file proves both.
+    [with_budgets] computes. The statement was false for two
+    reasons. The first stands under the link rule of this branch.
 
     - [lf_fuel_fundamental_false]. No world at all gives a program
       of the fragment [fsem]. The scheduler of examples/Scheduler.v
@@ -18,11 +18,11 @@
       inside a box (its edge from the type of u to the type of the
       partner of v is a self-loop), and it does not look at links
       outside boxes.
-    - [sync_not_fsem]. [round_len] counts channel steps inside box
-      bodies only. A program without boxes gets L = 0 and budget 0
-      at every point, and sync (examples/Sync.v), which is in the
-      fragment ([sync_lfsource]), spawns a thread with an end, which
-      needs a counter of at least 1. *)
+    - The old [round_len] counted channel steps inside box bodies
+      only, so sync (examples/Sync.v) got budget 0 and its spawn
+      failed. The stretch bound [stretch_len] of Fragment.v counts
+      the code of every thread. sync and the scheduler now get
+      budgets 20 and 44 ([sync_budgets], [sched_budgets]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Import lockfree.LFFuel lockfree.Fragment.
@@ -125,6 +125,7 @@ Proof.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply sched_wf.
+  - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
 (** main creates a and b at γ and c at ε, spawns ag₁ = link ⟨b, ā⟩ and
@@ -166,10 +167,15 @@ Proof.
   intros H. destruct (H _ _ _ sched_lfsource) as [W HW]. exact (sched_not_fsem W HW).
 Qed.
 
-(** ** sync: budgets 0 without boxes *)
+(** ** Budgets of sync and of the scheduler
 
-Lemma sync_round_len : round_len Sync.sync_main = 0.
-Proof. vm_compute. reflexivity. Qed.
+    Stage L6a found that sync, which has no box, got L = 0 and budget 0
+    at every point, and that its spawn, which hands c on, then fails.
+    The stretch bound now counts the code of every thread (Fragment.v,
+    [stretch_len]). sync has 5 units (spawn, send, close, receive,
+    close), so L = 10, every end gets 2L = 20 and every floor is L. The
+    scheduler has 11 units, the spawns and the link included, so
+    L = 22. Neither has a root edge. *)
 
 Theorem sync_lfsource : lfsource Sync.sync_Ψ Sync.sync_main TUnit.
 Proof.
@@ -187,21 +193,27 @@ Proof.
     unfold Sync.sync_Ψ in Hin. rewrite elem_of_app, list_elem_of_singleton in Hin.
     destruct Hin as [Hin|Hin]; [by apply elem_of_nil in Hin|]. injection Hin as -> ->.
     destruct Hf as [(i & Hi & _)|(j & Hj & _)]; cbn in *; lia.
+  - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
-(** sync creates c and d at ι and spawns a thread with c. At budget 0
-    the spawn cannot hand c on, whatever graph and session types the
-    budgets read. *)
-Theorem sync_not_fsem E ty_of :
-  ¬ fsem (with_budgets (cworld Sync.sync_Ψ) E (round_len Sync.sync_main) ty_of) ∅ Sync.sync_main.
+Definition sync_W : world := src_world Sync.sync_Ψ Sync.sync_main.
+
+Theorem sync_budgets :
+  strict sync_W ∧ lfptyped sync_W ∅ (∅, {[+ Sync.sync_main +]}) TUnit ∧
+  stretch_len Sync.sync_main = 10 ∧ ∀ x, w_bud sync_W x = Some 20 ∧ w_pay sync_W x = 10.
 Proof.
-  set (W := with_budgets _ _ _ _). intros Hf. pose proof (Hf 10) as H. rewrite fmap_empty in H.
-  fnorm H. fnew H "a"%string (pconst 0). fbeta H. fbeta H. fbeta H.
-  match type of H with FuelE _ _ _ _ ?e => eassert (Hs : tstep e (LSpawn _) _) by tsolve end.
-  destruct (fuel_obl _ _ _ _ _ H _ _ Hs) as (Hh & _ & _).
-  specialize (Hh ("a", true)%string ((gdepth E - sdep E (ty_of (pconst 0)) + 1) * (2 * round_len Sync.sync_main))).
-  rewrite sync_round_len in Hh.
-  assert (0 + 1 ≤ (gdepth E - sdep E (ty_of (pconst 0)) + 1) * (2 * 0)) as Hc
-    by (apply Hh; [vm_compute; set_solver|unfold W; vm_compute; reflexivity]).
-  lia.
+  destruct (lfsource_budgets _ _ _ sync_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
+  intros x. apply (src_flat _ _ 10 x); vm_compute; reflexivity.
+Qed.
+
+Definition sched_W : world := src_world Scheduler.sched_Ψ Scheduler.sched_main.
+
+Theorem sched_budgets :
+  strict sched_W ∧ lfptyped sched_W ∅ (∅, {[+ Scheduler.sched_main +]}) TUnit ∧
+  stretch_len Scheduler.sched_main = 22 ∧ ∀ x, w_bud sched_W x = Some 44 ∧ w_pay sched_W x = 22.
+Proof.
+  destruct (lfsource_budgets _ _ _ sched_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
+  intros x. apply (src_flat _ _ 22 x); vm_compute; reflexivity.
 Qed.
