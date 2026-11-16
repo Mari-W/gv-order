@@ -261,9 +261,7 @@ Print Assumptions LRGV.lockfree.LFFuelTyped.sched_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_budgets.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sched_budgets.
-Print Assumptions LRGV.lockfree.LFFuelTyped.fuel_recv_unknown.
-Print Assumptions LRGV.lockfree.LFFuelTyped.sync_not_fsem.
-Print Assumptions LRGV.lockfree.LFFuelTyped.lf_fuel_fundamental_fails.
+Print Assumptions LRGV.lockfree.LFFuelTyped.fuel_unknown_zero.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.
