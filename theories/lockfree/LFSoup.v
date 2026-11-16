@@ -273,8 +273,10 @@ Proof. intros H. rewrite <-(cdual_cdual o), <-(cdual_cdual o'). by rewrite H. Qe
     hold disjoint ends, every channel of an environment is a channel of
     the configuration or of Σ, and every end of an internal channel has
     a partner end, held by some thread, at the dual point and with a
-    dual session type. Nothing reads the term of a thread except the
-    live relation [lf_rel]. *)
+    dual session type. An end of an external channel, one of Σ, is held
+    at the entry of Σ, and every entry of Σ is held by some thread
+    (decision 2026-11-16, under delegation). Nothing reads the term of a
+    thread except the live relation [lf_rel]. *)
 Record LFconf (n : nat) (W : world) (Σ : senv) (T : ty) (π : gmap cend point)
     (q : config) (A : nat → tenv) (U : nat → ty) : Prop := LFConf {
   lf_prim : prim T;
@@ -287,7 +289,11 @@ Record LFconf (n : nat) (W : world) (Σ : senv) (T : ty) (π : gmap cend point)
   lf_pair t e o x : q.2 !! t = Some e → tenv_end (A t) o = Some x → o.1 ∉ dom Σ →
     ∃ s es y, q.2 !! s = Some es ∧ tenv_end (A s) (cdual o) = Some y ∧
       y.2 = pt_dual x.2 ∧ sdual x.1 y.1;
-  lf_closed t e : q.2 !! t = Some e → dom (A t) ⊆ q.1 ∪ dom Σ
+  lf_closed t e : q.2 !! t = Some e → dom (A t) ⊆ q.1 ∪ dom Σ;
+  lf_sig t e o x : q.2 !! t = Some e → tenv_end (A t) o = Some x → o.1 ∈ dom Σ →
+    Σ !! o.1 = Some x;
+  lf_own c x : Σ !! c = Some x →
+    ∃ t e, q.2 !! t = Some e ∧ tenv_end (A t) (c, pt_pol x.2) = Some x
 }.
 
 (** The fuel conjunct (§17.3). Each thread t carries its own points
@@ -314,7 +320,7 @@ Definition LFP (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
 
 Lemma LFconf_down n m W Σ T π q A U : m ≤ n → LFconf n W Σ T π q A U → LFconf m W Σ T π q A U.
 Proof.
-  intros Hmn [? Hr ? ? ? ? ? ?]. split; try done.
+  intros Hmn [? Hr ? ? ? ? ? ? ? ?]. split; try done.
   intros t e He. eapply LErel_down; [done|]. by apply Hr.
 Qed.
 
@@ -2702,7 +2708,7 @@ Lemma LFsoup_relabel n W Σ T π P F C M1 M2 (f : nat → nat) :
   LFsoup n W Σ T π P F (C, M1) → LFsoup n W Σ T π (P ∘ f) (F ∘ f) (C, M2).
 Proof.
   intros H1 H2 H3 (A & U & Hc & HF). exists (A ∘ f), (U ∘ f).
-  destruct Hc as [Hp Hr Hb Hty Hpt Hd Hpair Hcl]. split; [split|]; simpl in *.
+  destruct Hc as [Hp Hr Hb Hty Hpt Hd Hpair Hcl Hsig Hown]. split; [split|]; simpl in *.
   - done.
   - intros t e He. exact (Hr (f t) e (H1 t e He)).
   - intros t e He. exact (Hb (f t) e (H1 t e He)).
@@ -2713,6 +2719,9 @@ Proof.
   - intros t e o x He Hx Ho. destruct (Hpair (f t) e o x (H1 t e He) Hx Ho) as (s & es & y & Hes & Hy & ?).
     destruct (H3 s es Hes) as (t' & <- & Ht'). by exists t', es, y.
   - intros t e He. exact (Hcl (f t) e (H1 t e He)).
+  - intros t e o x He. exact (Hsig (f t) e o x (H1 t e He)).
+  - intros c x Hx. destruct (Hown c x Hx) as (s & es & Hes & Hy).
+    destruct (H3 s es Hes) as (t' & <- & Ht'). by exists t', es.
   - intros t e He. exact (HF (f t) e (H1 t e He)).
 Qed.
 

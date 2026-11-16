@@ -16,6 +16,7 @@ Updated after every stage and every agent result.
 | L1, L2 Syntactic points (plan §16.6 P1, P2, world fields of §17.8) | done (e767283..b5849ec) | lang (`Chan c b`, `EPt`, `KPay`, `KSucc`, labels on ends, `HeadNew c x`, `fends`, `let_new_at`), types (`TPt`, `konst_ty`, `tenv_ends`, `tenv_fit`), relation (`w_bud`, `w_pay`, V at `TSess` and `TPt`, `fends` in the arrow, O-New at the label's point, `tenv_hd_end`, `selects`), rules (`sem_typed_pt`, `Erel_app_pay`, `Erel_app_succ`), static (`t_pt`, `t_ch`, `created` over constants, `tenv_pol`) | lang to static pass, liveness, lockfree, examples, algorithmic broken until L3 and L4 | 0, no axioms | `wext` does not keep budgets yet (`wext_bud` apart), translations out of the build |
 | L3a Syntactic points in the live relation (plan §16.6 P3a) | done (ecd1872..0db07a9) | liveness: labels on ends, E-Fit (`tenv_fit Θ e` in `Ebody` and `LEstep`), O-New at the label's point, `tenv_fit Θ eb` in the arrow and in `Vspawn`, `tenv_hd_end`, V at `TSess` with the bit and at `TPt`, `LErel_app_pay`, `LErel_app_succ`, `lsem_typed_pt`. The twelve listed statements keep their text | liveness passes except GuardEx, GuardCex, LiveKob, LiveGuardFund, LiveGuardProc, which wait on examples (ExampleTools, Forwarder, KobForwarder); LiveGuardFund and LiveGuardProc checked against a stub of `Wpo` | 0, no axioms (stub aside) | lockfree waits on L4 |
 | L4a Lock-free soup on syntactic points (plan §16.5, §17.3) | done (ac909ce..1512312), the soup reads environments only | Criterion.v (`lf_run_criterion` over a dependency relation, `lf_criterion` as its instance), LocalProgress.v (`local_progress_gen`), LFSoup.v (`LFconf`, `lf_fuelc`, `LFsoup`, `LFP`, `pupd`, `fstep`, `lfsoup_step`, `lfsoup_run`, `lfsoup_isteps`, `LFP_soup`, `hwaits`, `lfc_local_progress`), LFAdequacy.v (`lf_adequacy`, `lf_adequacy_ex`, `lf_thread_progress`) | passes, CheckAll closed | 0, no axioms | `LFP_term`, `LFP_connect`, `LFP_join` (next stage) |
+| L5 Composition of LFP (plan §17.4) | done. `LFP_term` (fdd919e), then FuelE closed under `wbext`, the Σ conjuncts of `LFconf`, `LFP_connect` and `LFP_join` | LFCompose.v (`LFP_term`, `LFP_connect`, `LFP_join`, `wbud_agree`, `mcat`, `tsel`, `held`), LFFuel.v (`wbext`, `FuelE_wbext`, `fsem_wbext`), LFSoup.v (`lf_sig`, `lf_own`) | passes, CheckAll closed | 0, no axioms | none. LFCompose.v takes about 4 minutes, most of it in `set_solver` |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -423,6 +424,70 @@ Updated after every stage and every agent result.
   links, and L must count every stretch of a thread between two actions
   on one end.
 
+- 2026-11-16. Stage L5, composition (LFCompose.v). `LFP_term` is closed
+  under the global context. It has the hypotheses of `LPrel_term` and
+  three more, all on the environment `Θ = tenv_of Σ ∪ ΘB` of the typing.
+  A map π holds the points of exactly the ends of Θ (`dom π = tenv_ends
+  Θ` and `tenv_end Θ o = Some x → π !! o = Some x.2`), and `fsem W π t`.
+  The soup is thread 0 with environment Θ, points π and counters
+  `w_bud W <$> π`. A channel of ΘB is its own partner, read off
+  `tenv_dual`. `LFP_connect` and `LFP_join` stopped on two gaps, and
+  neither is proved. First, the fuel conjunct does not move to the joined
+  world. FuelE reads W at every point it meets, through `w_bud` and
+  `w_pay`. These are the points of `new@x`, the points of incoming ends in
+  the universal receive clause (`fin_ok`) and the floors at carriers, and
+  none of them is restricted to the names of W. `wjoin W1 W2` takes the
+  budgets of W1 on the names of W1 and those of W2 elsewhere. A thread of
+  the left soup therefore needs `w_bud W1 = w_bud W2` off the names of W1,
+  and a thread of the right soup needs it on the names of W1. Agreement at
+  the cut gives neither. The thread `new@x; close c` with the root of x
+  outside W1 shows it. Under W1 with `w_bud W1 x = None` the new counters
+  are ∞ and FuelE holds at every index. Under the join with `w_bud W2 x =
+  Some 0` the close fails F-Tick. The live relation reads no budgets, so
+  `lf_rel` cannot rule this out, and FuelE has to hold on its own. Two
+  repairs would work. Global budgets (`w_bud W1 = w_bud W2` and `w_pay W1
+  = w_pay W2`) change the form of the statement. A FuelE closed under
+  `wext_bud` by definition, the way `Fdef` is closed under renaming, keeps
+  the form, because `wext_bud W1 (wjoin W1 W2)` is `wext_bud_join_l` and
+  `wext_bud W2 (wjoin W1 W2)` is agreement on the names W1 and W2 share.
+  That second repair changes LFFuel.v and what `fsem` asks. Second,
+  `LFconf` does not tie the environments to Σ. A thread of the left soup
+  may hold either end of a cut channel c, and nothing makes the right soup
+  hold the other one. So the joined soup fails `lf_disj` (both soups may
+  hold one end) and `lf_pair` (the partner of a cut end may be missing). Two
+  conjuncts on environments would close it, `tenv_end (A t) o = Some x →
+  o.1 ∈ dom Σ → Σ !! o.1 = Some x` and `Σ !! c = Some x → ∃ t e, q.2 !! t
+  = Some e ∧ tenv_end (A t) (c, pt_pol x.2) = Some x`. Both are trivial at
+  Σ = ∅, where `lfsoup_step` and adequacy work, and `LFP_term` meets them.
+  The fixed configuration outside the index is no obstacle. The two
+  configurations join after shifting the thread ids of the right one, P
+  and F join by thread, and π joins on the held ends. Both gaps wait on
+  the author.
+
+- 2026-11-16. Stage L5 closed after the two decisions below.
+  `LFP_connect` and `LFP_join` are closed under the global context. Their
+  one extra hypothesis over `LPrel_connect` and `LPrel_join` is
+  `wbud_agree W1 W2`, the agreement of `w_bud` and `w_pay` at every point
+  whose root both worlds know. FuelE is now closed under `wbext` by
+  definition. `wbext W W'` asks `w_names W ⊆ w_names W'` and `wext_bud W
+  W'`. Without the inclusion of names the relation is not transitive, and
+  then `FuelE_wbext` fails. `wbext W1 (wjoin W1 W2)` holds always
+  (`wbext_join_l`), and `wbext W2 (wjoin W1 W2)` holds under
+  `wbud_agree` (`wbext_join_r`). Only the clause lemmas of LFFuel.v unfold
+  `Fdef`, and they take W′ = W, so LFSoup.v and LFAdequacy.v need no
+  change for it. `fsem` keeps its text and asks more through FuelE.
+  `LFconf` gains `lf_sig` and `lf_own`. Both are trivial at Σ = ∅, and
+  `lfsoup_step`, `lfsoup_run` and adequacy keep their statements and
+  proofs except for the two new fields in `LFconf_down` and
+  `LFsoup_relabel`. `LFP_term` keeps its statement. In the proof of
+  `LFP_connect` the left threads sit at even ids and the right ones at odd
+  ids (`mcat`), and A, U, P and F join by parity (`tsel`). The point map
+  is `mrem (held M2 P2) π1 ∪ π2`, so an end held on the right reads π2.
+  It lies outside the index because P2 does. A cut end held on the left
+  sits at its entry of ΣC by `lf_sig`, and the right soup holds the dual
+  entry of ΣC′ by `lf_own`. So the two sides hold different ends of a cut
+  channel, and each finds its partner on the other side.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
@@ -486,6 +551,23 @@ Updated after every stage and every agent result.
   `lf_run_criterion` with the ownership dependency `hwaits`; `lf_criterion`
   stays as its instance at `waits`. Next: L5 (composition) and L6
   (`lf_fundamental`).
+- 2026-11-16, under delegation. FuelE is closed under extension of the
+  budgets (`wbext`: names included, budgets and floors kept on the known
+  names), the way `Fdef` is closed under renaming. `LFP_connect` and
+  `LFP_join` take `wbud_agree W1 W2` (agreement on `w_bud` and `w_pay` at
+  every point whose root both worlds know) in place of agreement at the
+  cut. Global budgets are not used.
+- 2026-11-16, under delegation. `LFconf` gains two conjuncts on
+  environments. An end held of a channel of Σ sits at the entry of Σ
+  (`lf_sig`), and every entry of Σ is held by some thread (`lf_own`).
+- 2026-11-16, author. Links: option 2. A link is accounted like sending u
+  along v. Fuel counters belong to obligations: every hand-over of an
+  obligation (send, spawn, link) costs one, only acting refills. The link
+  rule becomes "counter(u) − 1 ≥ the minimum at k", the peer's counter for
+  v̄ is replaced by counter(u) − 1, and FuelE gains a replacement clause: a
+  held end at point k tolerates its counter being lowered by another
+  thread's link, down to the minimum at k. Replaces the impossible rule
+  "peer budget < counter" (L6a: sched_not_fsem, lf_fuel_fundamental_false).
 
 ## Related work hooks
 
