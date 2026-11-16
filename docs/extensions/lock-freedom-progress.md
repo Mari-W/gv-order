@@ -317,6 +317,39 @@ Updated after every stage and every agent result.
   `lf_disj`, which reads terms and fails at a spawn whose context names
   an end of the closure. Both wait on the author.
 
+- 2026-11-09. The fragment on syntactic points and §17.6 (branch
+  lf-fragment, stage L6 without `lf_fundamental`). Fragment.v builds
+  with no Admitted and no axiom, and its 39 CheckAll entries close.
+  `cworld Ψ` is generated over the constants of Ψ (`hroots`) with
+  exactly the facts of Ψ (`hyps_lt`), and no instantiation sits in
+  between. `lfsource_lfptyped` concludes at T instead of
+  `pinst_ty (cst 0) T`, and `rg_wf` and `rg_lfsource` read
+  `GrowRing.rg_Ψ`. The checks read the leading λs of a box as point
+  parameters, a call as force applied to point values and then to its
+  argument (`fhead`), and a point value as fresh. R4′ and the link
+  clause of R2′ are one hand-off graph (`hops` with `HFwd`, `HLink` and
+  `HBind`, then `box_edges`). A link ⟨u, v⟩ adds edges from the type of
+  u to the type of the partner of v and from the type of v to the type
+  of the partner of u. An end of a new takes its type from the slot of
+  the next round that receives it or its partner. The fragment asks
+  `lf_r2h`, R2-recv without the link clause, and `c3_not_lfptyped`
+  follows from a self-loop at every annotation of the box
+  (`c3_items`). Budgets come from depth (`with_budgets W E L ty_of`
+  with `depth`, `gdepth` and `round_len`), and `fw_budgets` to
+  `abp_budgets` show that the example worlds carry them. The forwarder
+  has d = 1 and L = 2, so the consumer's end gets 4 and every other end
+  8, and a payload arrives at fwd with floor 7 and at the consumer with
+  floor 3. The ladder of CfstScheduler and ABP is `CfstTools.cl_Ψ`
+  (`ladder_wf`). Every rejection keeps its statement. C1 and C3 now
+  take their chatter step before the call, because the guard asks the
+  first argument of a forced self to perform a primitive and a point
+  value performs none. The session type at each point (`ty_of`) is an
+  input of the budgets and is not checked against the derivation.
+  A leading λ of a box counts as a fresh point parameter only when the
+  box type of a typed annotation says TPt (`box_npt`, `r2h_ok`), no
+  example needs that annotation, and `lc_r2_fails` shows that a box
+  passing a leading channel parameter on unacted is rejected otherwise.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as

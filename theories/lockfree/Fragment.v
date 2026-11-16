@@ -8,7 +8,8 @@
       variable, a parameter, a received box).
     - R1 ([r1]): a potentially recursive call sits in tail position of
       its thread. Threads are the root term, the body of a spawned λ and
-      the body of a box under its one λ. Let, let pair and case pass
+      the body of a box under its λs. A call is force f applied to the
+      point values of the box and then to its argument ([fhead]). Let, let pair and case pass
       tail position to their continuation and branches, and an applied
       λ passes it to its body. Every other frame is a frame that still
       holds or uses something, the call's results included, so the call
@@ -17,8 +18,9 @@
       potentially recursive call and of every link is fresh. Fresh
       means built from variables that the round bound to the result of
       an action or of new, from send, select, branch, new, unit,
-      constants and boxes. The parameter, the self and a received
-      payload are not fresh.
+      constants, boxes and point values. The point parameters of a box
+      are fresh. The parameter, the self and a received payload are
+      not.
     - R4′ ([r4_ok]): a forwarding hop is a send, inside a box body, of a
       payload received in the same body and not acted on. Its two
       carriers are traced back to the box parameter as paths into its
@@ -28,13 +30,25 @@
       carrier's type, both with points and constraints erased. The
       graph of all hops is acyclic. Expressions carry no types, so this
       rule reads its types off typings of the boxes, not off the term.
+      Under §17.6 a link inside a box body adds edges to the same graph,
+      the hand-off graph, and replaces the link clause of R2′.
     - Rank ([wf_world]): ≺ of the world is well founded.
     - R2-recv ([r2r], stage 3c, plan §13) replaces R2′ in the fragment.
       A received payload passed to a call of the self counts as
       advanced, and every slot it feeds must be acted on before the
-      round passes it on. [r2] stays as the stricter rule.
+      round passes it on. [r2] stays as the stricter rule. The fragment
+      asks [lf_r2h], R2-recv without the link clause.
+    - Budgets ([with_budgets], plan §17.6, §17.8): the refill w_bud and
+      the floor w_pay of the world come from the depths of the hand-off
+      graph and from the length of a round.
 
-    [lfptyped] is [gptyped] with R1, R2-recv, R4′ and Rank. [lfsource] is
+    Syntactic points (sharp edges 173): a box that creates a channel
+    takes its points as leading λs, and the hypotheses of a closed
+    program name constants. R2-recv reads a leading λ as a point
+    parameter only when the box type in its annotation says TPt.
+
+    [lfptyped] is [gptyped] with R1, R2-recv, the hand-off graph and
+    Rank. [lfsource] is
     the same for a closed source program over the hypotheses of its
     top-level channels, the form in which the examples are typed under
     the constant world (sharp edges 172). Its Rank is asked of the world
@@ -52,7 +66,7 @@ From LRGV Require examples.Forwarder examples.TailCall examples.KobForwarder
 Fixpoint has_force (e : expr) : bool :=
   match e with
   | Konst KForce => true
-  | Var _ | EUnit | Konst _ | Chan _ => false
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => false
   | Lam e | EBox e | Inj1 e | Inj2 e => has_force e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => has_force e1 || has_force e2
   | Case e e1 e2 => has_force e || has_force e1 || has_force e2
@@ -63,32 +77,53 @@ Fixpoint has_force (e : expr) : bool :=
 Definition pcall_target (f : expr) : bool :=
   match f with EBox b => has_force b | _ => true end.
 
+(** The forced value of a force applied to any number of arguments. A
+    box that creates a channel takes its point values first and its
+    channels last (sharp edges 173), so a call is force f applied to
+    the point values and then to the channel argument. *)
+Fixpoint fhead (e : expr) : option expr :=
+  match e with
+  | App (Konst KForce) f => Some f
+  | App e1 _ => fhead e1
+  | _ => None
+  end.
+
 (** The term is a potentially recursive call, applied or not. *)
 Definition pcall (e : expr) : bool :=
-  match e with
-  | App (App (Konst KForce) f) _ => pcall_target f
-  | App (Konst KForce) f => pcall_target f
-  | _ => false
-  end.
+  match fhead e with Some f => pcall_target f | None => false end.
 
 (** ** R1, empty future at a potentially recursive call
 
-    [tl] holds when the subterm is in tail position of its thread. *)
+    [tl] holds when the subterm is in tail position of its thread. The
+    forced value and every argument of a call are checked outside tail
+    position, and the leading λs of a box, which take point values,
+    keep the tail position for the body. *)
 Fixpoint r1 (tl : bool) (e : expr) : bool :=
   match e with
-  | App (App (Konst KForce) f) a => (negb (pcall_target f) || tl) && r1 false f && r1 false a
-  | App (Konst KForce) f => (negb (pcall_target f) || tl) && r1 false f
-  | App (Konst KSpawn) (Lam b) => r1 true b
-  | App (Lam b) a => r1 false a && r1 tl b
-  | App e1 e2 => r1 false e1 && r1 false e2
+  | App e1 e2 =>
+      match fhead e with
+      | Some f =>
+          (negb (pcall_target f) || tl) &&
+          (fix sp (a : expr) : bool := match a with App a1 a2 => sp a1 && r1 false a2 | _ => true end) e1 &&
+          r1 false e2
+      | None =>
+          match e1, e2 with
+          | Konst KSpawn, Lam b => r1 true b
+          | Lam b, _ => r1 false e2 && r1 tl b
+          | _, _ => r1 false e1 && r1 false e2
+          end
+      end
   | Lam b => r1 false b
-  | EBox (Lam b) => r1 true b
-  | EBox b => r1 false b
+  | EBox b =>
+      match b with
+      | Lam _ => (fix lams (a : expr) : bool := match a with Lam a' => lams a' | _ => r1 true a end) b
+      | _ => r1 false b
+      end
   | LetU e1 e2 | LetP e1 e2 => r1 false e1 && r1 tl e2
   | Case e e1 e2 => r1 false e && r1 tl e1 && r1 tl e2
   | Pair e1 e2 => r1 false e1 && r1 false e2
   | Inj1 e | Inj2 e => r1 false e
-  | Var _ | EUnit | Konst _ | Chan _ => true
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => true
   end.
 
 Definition lf_r1 (e : expr) : bool := r1 true e.
@@ -96,19 +131,20 @@ Definition lf_r1 (e : expr) : bool := r1 true e.
 (** ** R2′, advance before recursion and before link *)
 
 (** The result of these constants is fresh: the continuation of an end
-    acted on, a pair of new ends, or unit. *)
+    acted on, a pair of new ends, unit, or a point value. *)
 Definition kfresh (k : konst) : bool :=
   match k with
-  | KSend | KSel1 | KSel2 | KBra | KNew | KClos | KLink | KSpawn => true
+  | KSend | KSel1 | KSel2 | KBra | KNew | KClos | KLink | KSpawn | KPay _ | KSucc => true
   | KRecv | KForce => false
   end.
 
 (** [S !! x = Some true]: the variable x was bound in this round to
-    something acted on or created. *)
+    something acted on or created, or it is a point parameter of the
+    round's box. A point value holds no channel and counts as fresh. *)
 Fixpoint fresh (S : list bool) (e : expr) : bool :=
   match e with
   | Var x => default false (S !! x)
-  | EUnit | Konst _ | EBox _ => true
+  | EUnit | Konst _ | EBox _ | EPt _ => true
   | Pair a b => fresh S a && fresh S b
   | Inj1 a | Inj2 a => fresh S a
   | App (Konst k) _ => kfresh k
@@ -125,27 +161,55 @@ Definition pfresh (S : list bool) (e : expr) : list bool :=
   end.
 
 (** [rnd] holds inside a box body. A box starts a new round in which no
-    outer variable, no parameter and not the self is fresh. *)
+    outer variable, no parameter and not the self is fresh. The leading
+    λs of a box are parameters as well. A point value built by EPt,
+    KPay or KSucc is fresh, a point parameter passed on unchanged is
+    not, because [r2] reads no type that would tell a point parameter
+    from a channel. Every argument of a
+    potentially recursive call is checked, the point values and the
+    parameter, because a call applied to k arguments contains the call
+    applied to the first k - 1. *)
 Fixpoint r2 (rnd : bool) (S : list bool) (e : expr) : bool :=
   match e with
-  | App (App (Konst KForce) f) a =>
-      (negb rnd || negb (pcall_target f) || fresh S a) && r2 rnd S f && r2 rnd S a
-  | App (Konst KLink) a => (negb rnd || fresh S a) && r2 rnd S a
-  | App (Lam b) a => r2 rnd S a && r2 rnd (fresh S a :: S) b
-  | App e1 e2 => r2 rnd S e1 && r2 rnd S e2
+  | App e1 e2 =>
+      match fhead e, e1 with
+      | Some _, Konst _ => r2 rnd S e2
+      | Some f, _ => (negb rnd || negb (pcall_target f) || fresh S e2) && r2 rnd S e1 && r2 rnd S e2
+      | None, Konst KLink => (negb rnd || fresh S e2) && r2 rnd S e2
+      | None, Lam b => r2 rnd S e2 && r2 rnd (fresh S e2 :: S) b
+      | None, _ => r2 rnd S e1 && r2 rnd S e2
+      end
   | Lam b => r2 rnd (false :: S) b
-  | EBox b => r2 true [] b
+  | EBox b =>
+      (fix lams (S' : list bool) (a : expr) : bool :=
+         match a with
+         | Lam a' => lams (false :: S') a'
+         | _ => r2 true S' a
+         end) [] b
   | LetU e1 e2 => r2 rnd S e1 && r2 rnd S e2
   | LetP e1 e2 => r2 rnd S e1 && r2 rnd (pfresh S e1 ++ S) e2
   | Case e e1 e2 => r2 rnd S e && r2 rnd (fresh S e :: S) e1 && r2 rnd (fresh S e :: S) e2
   | Pair e1 e2 => r2 rnd S e1 && r2 rnd S e2
   | Inj1 e | Inj2 e => r2 rnd S e
-  | Var _ | EUnit | Konst _ | Chan _ => true
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => true
   end.
-
 Definition lf_r2 (e : expr) : bool := r2 false [] e.
 
-(** ** R4′, bounded forwarding *)
+(** ** The hand-off graph: R4′ and the link clause of R2′ (plan §17.6)
+
+    R4′ bounded forwarding by a graph over session types up to points,
+    and R2′ asked the arguments of a link inside a round to be fresh.
+    Under §17.6 both are edges of one graph, the hand-off graph, which
+    must be acyclic. Its nodes are session types up to points. A
+    forward, a send inside a box body of a payload received in the same
+    body and not acted on, adds the edge of R4′, from the type of the
+    receiving carrier to the dual of the type of the sending carrier. A
+    link ⟨u, v⟩ inside a box body hands the partner of u over to the
+    partner of v and the partner of v over to the partner of u. It adds
+    edges from the type of u to the type of the partner of v, and from
+    the type of v to the type of the partner of u. C3 closes a cycle in
+    one round: y is linked to a fresh a, and b, the partner of a, is
+    the next round's y. *)
 
 (** Session types up to points, as words. Points, bounds and
     constraints are dropped, and every constructor has a fixed arity, so
@@ -160,6 +224,7 @@ Fixpoint er_ty (T : ty) : list nat :=
   | TBox n k _ T => 4 :: n :: k :: er_ty T
   | TSess s _ => 5 :: er_sty s
   | TEx _ n _ T => 6 :: n :: er_ty T
+  | TPt _ => [7]
   end
 with er_sty (s : sty) : list nat :=
   match s with
@@ -175,17 +240,24 @@ with er_sty (s : sty) : list nat :=
   | SWith s1 s2 => 19 :: er_sty s1 ++ er_sty s2
   end.
 
-(** What a variable of a box body is, for forwarding: a carrier that
+(** What a variable of a box body is, for hand-offs: a carrier that
     descends from the parameter at a path into its product type (false
     for the left component), a payload received on such a carrier and
-    not acted on (None when the carrier is unknown), or neither. *)
-Inductive car := CNo | CPar (π : list bool) | CRcv (o : option (list bool)).
+    not acted on (None when the carrier is unknown), the pair that the
+    new with id i returned, one end of it (false for the first
+    component), the self, or none of these. The id of a new is the
+    length of the environment where its pair is bound, so two news on
+    one path have different ids. *)
+Inductive car := CNo | CPar (π : list bool) | CRcv (o : option (list bool))
+  | CNewP (i : nat) | CNew (i : nat) (s : bool) | CSelf.
 
 Definition car_of (G : list car) (x : nat) : car := default CNo (G !! x).
 
 Definition is_rcv (c : car) : bool := match c with CRcv _ => true | _ => false end.
 
-Definition keep_par (c : car) : car := match c with CPar π => CPar π | _ => CNo end.
+(** An action keeps the carrier it acts on. *)
+Definition keep_par (c : car) : car :=
+  match c with CPar π => CPar π | CNew i s => CNew i s | _ => CNo end.
 
 (** The carrier an expression denotes. Send and select continue their
     carrier. *)
@@ -194,6 +266,7 @@ Fixpoint ecar (G : list car) (e : expr) : car :=
   | Var x => car_of G x
   | App (Konst KSend) (Pair _ c) => keep_par (ecar G c)
   | App (Konst KSel1) c | App (Konst KSel2) c => keep_par (ecar G c)
+  | App (Konst KNew) _ => CNewP (length G)
   | _ => CNo
   end.
 
@@ -201,12 +274,17 @@ Fixpoint ecar (G : list car) (e : expr) : car :=
 Definition pcar (G : list car) (e : expr) : list car :=
   match e with
   | App (Konst KRecv) c =>
-      match ecar G c with CPar π => [CPar π; CRcv (Some π)] | _ => [CNo; CRcv None] end
+      match ecar G c with
+      | CPar π => [CPar π; CRcv (Some π)]
+      | CNew i s => [CNew i s; CRcv None]
+      | _ => [CNo; CRcv None]
+      end
   | Var x =>
       match car_of G x with
       | CPar π => [CPar (π ++ [true]); CPar (π ++ [false])]
       | CRcv o => [CRcv o; CRcv o]
-      | CNo => [CNo; CNo]
+      | CNewP i => [CNew i true; CNew i false]
+      | _ => [CNo; CNo]
       end
   | Pair a b => [ecar G b; ecar G a]
   | _ => [CNo; CNo]
@@ -224,7 +302,7 @@ Definition ccar (G : list car) (e : expr) : car :=
 Fixpoint mentions (G : list car) (e : expr) : bool :=
   match e with
   | Var x => is_rcv (car_of G x)
-  | EUnit | Konst _ | Chan _ => false
+  | EUnit | Konst _ | Chan _ _ | EPt _ => false
   | Lam b | EBox b => mentions (CNo :: G) b
   | App a b | Pair a b | LetU a b => mentions G a || mentions G b
   | LetP a b => mentions G a || mentions (CNo :: CNo :: G) b
@@ -235,37 +313,85 @@ Fixpoint mentions (G : list car) (e : expr) : bool :=
 Definition ocat {A} (a b : option (list A)) : option (list A) :=
   match a, b with Some x, Some y => Some (x ++ y) | _, _ => None end.
 
-(** The hops of a box body, as pairs of carrier paths (receiving,
-    sending). None when a received payload is sent in a form whose
-    carriers cannot be traced. Nested boxes are boxes of their own. *)
-Fixpoint hops (G : list car) (e : expr) : option (list (list bool * list bool)) :=
+(** An end that a link names: a parameter slot, or an end of a new. *)
+Inductive ref := RPar (π : list bool) | RNew (i : nat) (s : bool).
+
+Definition ref_of (c : car) : option ref :=
+  match c with CPar π => Some (RPar π) | CNew i s => Some (RNew i s) | _ => None end.
+
+(** The items of a box body: a forward between two carrier paths
+    (receiving, sending), a link of two ends, and an end s of the new i
+    passed to the self at the parameter slot π. *)
+Inductive hitem :=
+  | HFwd (π1 π2 : list bool)
+  | HLink (r1 r2 : ref)
+  | HBind (i : nat) (s : bool) (π : list bool).
+
+Definition handoff (h : hitem) : bool := match h with HBind _ _ _ => false | _ => true end.
+
+(** The ends of news that an argument of the self passes at slots. *)
+Fixpoint binds (G : list car) (π : list bool) (e : expr) : list hitem :=
   match e with
-  | Var _ | EUnit | Konst _ | Chan _ | EBox _ => Some []
+  | Pair a b => binds G (π ++ [false]) a ++ binds G (π ++ [true]) b
+  | _ => match ecar G e with CNew i s => [HBind i s π] | _ => [] end
+  end.
+
+Definition is_self (G : list car) (f : expr) : bool :=
+  match f with Var x => match car_of G x with CSelf => true | _ => false end | _ => false end.
+
+(** The items of a box body. None when a received payload is sent in a
+    form whose carriers cannot be traced, or when a link names an end
+    that is neither a parameter slot nor an end of a new. Nested boxes
+    are boxes of their own. *)
+Fixpoint hops (G : list car) (e : expr) : option (list hitem) :=
+  match e with
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ | EBox _ => Some []
   | App (Konst KSend) (Pair p c) =>
       let rest := ocat (hops G p) (hops G c) in
       if mentions G p then
         match ecar G p, ecar G c with
-        | CRcv (Some π1), CPar π2 => ocat (Some [(π1, π2)]) rest
+        | CRcv (Some π1), CPar π2 => ocat (Some [HFwd π1 π2]) rest
         | _, _ => None
         end
       else rest
+  | App (Konst KLink) (Pair u v) =>
+      match ref_of (ecar G u), ref_of (ecar G v) with
+      | Some r1, Some r2 => ocat (Some [HLink r1 r2]) (ocat (hops G u) (hops G v))
+      | _, _ => None
+      end
+  | App (Konst KLink) _ => None
   | Lam b => hops (CNo :: G) b
   | App (Lam b) a => ocat (hops G a) (hops (ecar G a :: G) b)
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => ocat (hops G e1) (hops G e2)
+  | App e1 e2 =>
+      let bd := match fhead e, e1 with
+                | Some f, App _ _ => if is_self G f then binds G [] e2 else []
+                | _, _ => []
+                end in
+      ocat (Some bd) (ocat (hops G e1) (hops G e2))
+  | Pair e1 e2 | LetU e1 e2 => ocat (hops G e1) (hops G e2)
   | LetP e1 e2 => ocat (hops G e1) (hops (pcar G e1 ++ G) e2)
   | Inj1 e | Inj2 e => hops G e
   | Case e e1 e2 =>
       ocat (hops G e) (ocat (hops (ccar G e :: G) e1) (hops (ccar G e :: G) e2))
   end.
 
-(** In EBox (Lam b) the parameter is variable 0 of b and the self is 1. *)
-Definition box_hops (b : expr) : option (list (list bool * list bool)) :=
-  match b with Lam b' => hops [CPar []; CNo] b' | _ => hops [CNo] b end.
+(** A box body sits under the λs of the box. The leading λs take point
+    values and the innermost takes the parameter (sharp edges 173). The
+    environment of the body has the parameter at 0, the point
+    parameters above it and the self last. *)
+Fixpoint nlams (e : expr) : nat := match e with Lam e' => S (nlams e') | _ => 0 end.
+Fixpoint bbody (e : expr) : expr := match e with Lam e' => bbody e' | _ => e end.
+
+Definition benv {A} (par pt self : A) (n : nat) : list A :=
+  match n with 0 => [self] | S m => par :: repeat pt m ++ [self] end.
+
+Definition box_hops (b : expr) : option (list hitem) :=
+  hops (benv (CPar []) CNo CSelf (nlams b)) (bbody b).
 
 (** The box literals of a term, nested ones included. *)
 Fixpoint boxes (e : expr) : list expr :=
   match e with
-  | Var _ | EUnit | Konst _ | Chan _ => []
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => []
   | EBox b => EBox b :: boxes b
   | Lam b | Inj1 b | Inj2 b => boxes b
   | App a b | Pair a b | LetU a b | LetP a b => boxes a ++ boxes b
@@ -282,17 +408,50 @@ Fixpoint ty_at (π : list bool) (T : ty) : option ty :=
 
 Definition node := list nat.
 
-(** The edge of a hop in a box whose parameter has type P. *)
-Definition edge_of (P : ty) (h : list bool * list bool) : option (node * node) :=
-  match ty_at h.1 P, ty_at h.2 P with
-  | Some (TSess s1 _), Some (TSess s2 _) => Some (er_sty s1, er_sty (dual s2))
-  | _, _ => None
-  end.
+(** The node of the session type at path π of the parameter type P,
+    dualized when d holds. *)
+Definition node_at (P : ty) (π : list bool) (d : bool) : option node :=
+  match ty_at π P with Some (TSess s _) => Some (er_sty (if d then dual s else s)) | _ => None end.
 
 Fixpoint omap {A B} (f : A → option B) (l : list A) : option (list B) :=
   match l with
   | [] => Some []
   | x :: l => match f x, omap f l with Some y, Some ys => Some (y :: ys) | _, _ => None end
+  end.
+
+(** The slots at which the next round holds the end s of the new i, with
+    true when the slot holds its partner, so that its type is the dual. *)
+Definition new_slots (hs : list hitem) (i : nat) (s : bool) : list (list bool * bool) :=
+  hs ≫= (λ h, match h with
+              | HBind j t π => if bool_decide (j = i) then [(π, negb (Bool.eqb t s))] else []
+              | _ => []
+              end).
+
+(** The slots that give the type of an end and of its partner. *)
+Definition ref_slots (hs : list hitem) (r : ref) : list (list bool * bool) :=
+  match r with RPar π => [(π, false)] | RNew i s => new_slots hs i s end.
+Definition peer_slots (hs : list hitem) (r : ref) : list (list bool * bool) :=
+  match r with RPar π => [(π, true)] | RNew i s => new_slots hs i (negb s) end.
+
+(** The types at the slots. An end that reaches no slot has no type the
+    check can read, and the box is rejected. *)
+Definition nodes_of (P : ty) (sl : list (list bool * bool)) : option (list node) :=
+  match sl with [] => None | _ => omap (λ pd, node_at P pd.1 pd.2) sl end.
+
+Definition pairs {A} (xs ys : list A) : list (A * A) := xs ≫= (λ x, (λ y, (x, y)) <$> ys).
+
+(** The edges of one item in a box whose parameter has type P. *)
+Definition item_edges (P : ty) (hs : list hitem) (h : hitem) : option (list (node * node)) :=
+  match h with
+  | HFwd π1 π2 =>
+      match node_at P π1 false, node_at P π2 true with Some a, Some b => Some [(a, b)] | _, _ => None end
+  | HLink r1 r2 =>
+      match nodes_of P (ref_slots hs r1), nodes_of P (peer_slots hs r2),
+            nodes_of P (ref_slots hs r2), nodes_of P (peer_slots hs r1) with
+      | Some a1, Some b2, Some a2, Some b1 => Some (pairs a1 b2 ++ pairs a2 b1)
+      | _, _, _, _ => None
+      end
+  | HBind _ _ _ => Some []
   end.
 
 Fixpoint ann_lookup (b : expr) (ann : list (expr * ty)) : option ty :=
@@ -301,20 +460,33 @@ Fixpoint ann_lookup (b : expr) (ann : list (expr * ty)) : option ty :=
   | (b', T) :: ann => if bool_decide (b = b') then Some T else ann_lookup b ann
   end.
 
-(** The edges of one box. A box with hops needs a type in [ann] without
-    session variables, so that erased types are not instances of one
-    another. *)
+(** The parameter type under n point parameters. *)
+Fixpoint peel (n : nat) (T : ty) : option ty :=
+  match n, T with
+  | 0, TLolli _ _ P _ => Some P
+  | S n', TLolli _ _ (TPt _) T' => peel n' T'
+  | _, _ => None
+  end.
+
+(** The edges of one box. A box with hand-offs needs a type in [ann]
+    without session variables, so that erased types are not instances
+    of one another. *)
 Definition box_edges (ann : list (expr * ty)) (e : expr) : option (list (node * node)) :=
   match e with
   | EBox b =>
       match box_hops b with
       | None => None
-      | Some [] => Some []
       | Some hs =>
-          match ann_lookup e ann with
-          | Some (TBox _ 0 _ (TLolli _ _ _ (TLolli _ _ P _))) => omap (edge_of P) hs
-          | _ => None
-          end
+          if existsb handoff hs then
+            match ann_lookup e ann, nlams b with
+            | Some (TBox _ 0 _ (TLolli _ _ _ T)), S n =>
+                match peel n T with
+                | Some P => match omap (item_edges P hs) hs with Some ls => Some (concat ls) | None => None end
+                | None => None
+                end
+            | _, _ => None
+            end
+          else Some []
       end
   | _ => Some []
   end.
@@ -332,7 +504,8 @@ Fixpoint reach (n : nat) (E : list (node * node)) (x y : node) : bool :=
 Definition acyclic (E : list (node * node)) : bool :=
   forallb (λ ab, negb (bool_decide (ab.1 = ab.2) || reach (length E) E ab.2 ab.1)) E.
 
-(** R4′ for the threads [ts], with box types derived by [tyd]. *)
+(** The hand-off graph of the threads [ts] is acyclic, with box types
+    derived by [tyd]. The name stays from R4′. *)
 Definition r4_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
   ∃ (ann : list (expr * ty)) (E : list (node * node)),
     (∀ b T, (b, T) ∈ ann → tyd b T) ∧ acyclic E = true ∧
@@ -343,9 +516,12 @@ Definition r4_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
     R2-recv relaxes R2′ for received payloads. Inside a round, the
     argument of a potentially recursive call is advanced when every
     component of its pair structure is fresh, or is a received payload
-    not acted on and the call forces the self of the round's box. A
-    link still asks a fresh argument, so a received payload counts as
-    advanced when it goes to recursion and not when it is linked.
+    not acted on and the call forces the self of the round's box. The
+    point values a call takes before its argument are fresh. In [r2r]
+    a link still asks a fresh argument, so a received payload counts as
+    advanced when it goes to recursion and not when it is linked. Under
+    §17.6 the link clause moves into the hand-off graph, and the
+    fragment asks [lf_r2h], R2-recv without it.
 
     A received payload that goes to the self lands in a parameter slot
     of the next round, a path into the parameter's product type. These
@@ -357,10 +533,13 @@ Definition r4_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
     path is a prefix of a fed path, or extends one, counts as fed.
 
     The environment records for each variable whether it is fresh, its
-    carrier ([car], shared with R4′), and whether it is the self. In
-    EBox (Lam b) the parameter is variable 0 of b, at slot path [], and
-    the self is variable 1. The flag [ff] switches the fed-slot clause
-    on. Without it the starving server below passes. *)
+    carrier ([car], shared with the hand-off graph), and whether it is
+    the self. In a box body the parameter is variable 0, at slot path
+    [], the other leading λs follow, and the self is last
+    ([bbox_envk]). A leading λ is a point parameter, and fresh, only
+    when the box type says that it takes TPt ([box_npt]). The flag [ff] switches the fed-slot clause on.
+    Without it the starving server below passes. The flag [lk]
+    switches the link clause on. *)
 
 Record rent := RE { re_fr : bool; re_car : car; re_self : bool }.
 
@@ -398,15 +577,22 @@ Definition rbindc (G : list rent) (e : expr) : rent := RE (fresh (rfr G) e) (cca
 (** The fed slots of a box body. Nested boxes are boxes of their own. *)
 Fixpoint feds (G : list rent) (e : expr) : list (list bool) :=
   match e with
-  | App (App (Konst KForce) f) a => (if rself G f then fedp G [] a else []) ++ feds G f ++ feds G a
-  | App (Lam b) a => feds G a ++ feds (rbind1 G a :: G) b
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => feds G e1 ++ feds G e2
+  | App e1 e2 =>
+      match fhead e, e1 with
+      | Some f, App _ _ => if rself G f then fedp G [] e2 else []
+      | _, _ => []
+      end ++
+      match e1 with
+      | Lam b => feds G e2 ++ feds (rbind1 G e2 :: G) b
+      | _ => feds G e1 ++ feds G e2
+      end
+  | Pair e1 e2 | LetU e1 e2 => feds G e1 ++ feds G e2
   | Lam b => feds (rno :: G) b
   | EBox _ => []
   | LetP e1 e2 => feds G e1 ++ feds (rbindp G e1 ++ G) e2
   | Case e e1 e2 => feds G e ++ feds (rbindc G e :: G) e1 ++ feds (rbindc G e :: G) e2
   | Inj1 e | Inj2 e => feds G e
-  | Var _ | EUnit | Konst _ | Chan _ => []
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => []
   end.
 
 Fixpoint pref (π ρ : list bool) : bool :=
@@ -425,46 +611,78 @@ Definition rfed (fd : list (list bool)) (r : rent) : bool :=
 Definition act_konst (k : konst) : bool :=
   match k with KRecv | KClos | KSel1 | KSel2 | KBra => true | _ => false end.
 
-Definition bbox_env (b : expr) : list rent :=
-  match b with
-  | Lam _ => [RE false (CPar []) false; RE false CNo true]
-  | _ => [RE false CNo true]
+(** The environment of a box body whose k outermost λs take point
+    values. Those are fresh. The other leading λs are ordinary
+    parameters and are not fresh. *)
+Definition bbox_envk (k : nat) (b : expr) : list rent :=
+  match nlams b with
+  | 0 => [RE false CNo true]
+  | S m => RE false (CPar []) false :: repeat rno (m - k) ++ repeat (RE true CNo false) k ++ [RE false CNo true]
   end.
 
-Definition bbox_body (b : expr) : expr := match b with Lam b' => b' | _ => b end.
+Definition bbox_env (b : expr) : list rent := bbox_envk 0 b.
 
-Fixpoint r2r (ff rnd : bool) (fd : list (list bool)) (G : list rent) (e : expr) : bool :=
+(** The number of leading point parameters that a box type states:
+    □(∀…. ∗ ⊸ TPt x₁ ⊸ … ⊸ TPt xₖ ⊸ …). *)
+Fixpoint npt (T : ty) : nat := match T with TLolli _ _ (TPt _) T' => S (npt T') | _ => 0 end.
+
+Definition box_npt (ann : list (expr * ty)) (e : expr) : nat :=
+  match ann_lookup e ann with Some (TBox _ _ _ (TLolli _ _ _ T)) => npt T | _ => 0 end.
+
+Definition bbox_body (b : expr) : expr := bbody b.
+
+Fixpoint r2x (lk : bool) (pts : expr → nat) (ff rnd : bool) (fd : list (list bool)) (G : list rent) (e : expr) : bool :=
   match e with
   | Var x => negb (ff && rnd && rfed fd (rget G x))
-  | App (App (Konst KForce) f) a =>
-      (negb rnd || negb (pcall_target f) || fresh (rfr G) a || (rself G f && adv G a)) &&
-      r2r ff rnd fd G f && r2r ff rnd fd G a
-  | App (Konst k) a =>
-      (negb rnd || negb (bool_decide (k = KLink)) || fresh (rfr G) a) &&
-      match a with
-      | Var _ => act_konst k || r2r ff rnd fd G a
-      | Pair p (Var _) => if bool_decide (k = KSend) then r2r ff rnd fd G p else r2r ff rnd fd G a
-      | _ => r2r ff rnd fd G a
+  | App e1 e2 =>
+      match fhead e, e1 with
+      | Some f, App _ _ =>
+          (negb rnd || negb (pcall_target f) || fresh (rfr G) e2 || (rself G f && adv G e2)) &&
+          r2x lk pts ff rnd fd G e1 && r2x lk pts ff rnd fd G e2
+      | _, Konst k =>
+          (negb rnd || negb lk || negb (bool_decide (k = KLink)) || fresh (rfr G) e2) &&
+          match e2 with
+          | Var _ => act_konst k || r2x lk pts ff rnd fd G e2
+          | Pair p (Var _) => if bool_decide (k = KSend) then r2x lk pts ff rnd fd G p else r2x lk pts ff rnd fd G e2
+          | _ => r2x lk pts ff rnd fd G e2
+          end
+      | _, Lam b =>
+          match e2 with Var _ => true | _ => r2x lk pts ff rnd fd G e2 end &&
+          r2x lk pts ff rnd fd (rbind1 G e2 :: G) b
+      | _, _ => r2x lk pts ff rnd fd G e1 && r2x lk pts ff rnd fd G e2
       end
-  | App (Lam b) a =>
-      match a with Var _ => true | _ => r2r ff rnd fd G a end &&
-      r2r ff rnd fd (rbind1 G a :: G) b
-  | App e1 e2 => r2r ff rnd fd G e1 && r2r ff rnd fd G e2
-  | Lam b => r2r ff rnd fd (rno :: G) b
+  | Lam b => r2x lk pts ff rnd fd (rno :: G) b
   | EBox b =>
-      let G' := bbox_env b in let b' := bbox_body b in r2r ff true (feds G' b') G' b'
-  | LetU e1 e2 => r2r ff rnd fd G e1 && r2r ff rnd fd G e2
+      let k := match nlams b with 0 => 0 | S m => Nat.min m (pts (EBox b)) end in
+      let G' := bbox_envk k b in
+      (fix lams (a : expr) : bool :=
+         match a with Lam a' => lams a' | _ => r2x lk pts ff true (feds G' a) G' a end) b
+  | LetU e1 e2 => r2x lk pts ff rnd fd G e1 && r2x lk pts ff rnd fd G e2
   | LetP e1 e2 =>
-      match e1 with Var _ => true | _ => r2r ff rnd fd G e1 end &&
-      r2r ff rnd fd (rbindp G e1 ++ G) e2
+      match e1 with Var _ => true | _ => r2x lk pts ff rnd fd G e1 end &&
+      r2x lk pts ff rnd fd (rbindp G e1 ++ G) e2
   | Case e e1 e2 =>
-      r2r ff rnd fd G e && r2r ff rnd fd (rbindc G e :: G) e1 && r2r ff rnd fd (rbindc G e :: G) e2
-  | Pair e1 e2 => r2r ff rnd fd G e1 && r2r ff rnd fd G e2
-  | Inj1 e | Inj2 e => r2r ff rnd fd G e
-  | EUnit | Konst _ | Chan _ => true
+      r2x lk pts ff rnd fd G e && r2x lk pts ff rnd fd (rbindc G e :: G) e1 && r2x lk pts ff rnd fd (rbindc G e :: G) e2
+  | Pair e1 e2 => r2x lk pts ff rnd fd G e1 && r2x lk pts ff rnd fd G e2
+  | Inj1 e | Inj2 e => r2x lk pts ff rnd fd G e
+  | EUnit | Konst _ | Chan _ _ | EPt _ => true
   end.
 
+(** R2-recv with the link clause, as stage 3c stated it. *)
+Definition r2r (ff rnd : bool) (fd : list (list bool)) (G : list rent) (e : expr) : bool :=
+  r2x true (λ _, 0) ff rnd fd G e.
+
 Definition lf_r2r (e : expr) : bool := r2r true false [] [] e.
+
+(** R2-recv without the link clause, which the hand-off graph replaces
+    (plan §17.6). A leading λ of a box counts as a point parameter, and
+    so as fresh, only when the box type in the annotation [ann] says
+    that its argument is TPt. *)
+Definition lf_r2h (ann : list (expr * ty)) (e : expr) : bool := r2x false (box_npt ann) true false [] [] e.
+
+(** R2-recv for the threads [ts], with box types derived by [tyd]. *)
+Definition r2h_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
+  ∃ ann : list (expr * ty), (∀ b T, (b, T) ∈ ann → tyd b T) ∧ ∀ e, ts e → lf_r2h ann e = true.
 
 (** ** Rank *)
 
@@ -475,8 +693,11 @@ Definition wf_world (W : world) : Prop := well_founded (w_lt W).
 Definition lf_r4 (W : world) (p : proc) : Prop :=
   r4_ok (λ b T, ∃ Φ Ψ Δ F, typed W Φ Ψ ∅ Δ F b T) (λ e, e ∈ p.2).
 
+Definition lf_r2w (W : world) (p : proc) : Prop :=
+  r2h_ok (λ b T, ∃ Φ Ψ Δ F, typed W Φ Ψ ∅ Δ F b T) (λ e, e ∈ p.2).
+
 Definition lfptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  gptyped W Σ p T ∧ (∀ e, e ∈ p.2 → lf_r1 e = true) ∧ (∀ e, e ∈ p.2 → lf_r2r e = true) ∧
+  gptyped W Σ p T ∧ (∀ e, e ∈ p.2 → lf_r1 e = true) ∧ lf_r2w W p ∧
   lf_r4 W p ∧ wf_world W.
 
 Lemma lfptyped_gptyped W Σ p T : lfptyped W Σ p T → gptyped W Σ p T.
@@ -552,66 +773,40 @@ Proof.
   exact (H (f 0) (Hwf (f 0)) 0 eq_refl).
 Qed.
 
-(** ** Rank under the constant world (sharp edges 172)
+(** ** Rank under the constant world (sharp edges 172, 173)
 
-    A closed program creates its channels at its top level, so they are
-    the point variables of its hypotheses Ψ ([created]). Its run starts
-    in [cworld Ψ], which places variable k at the constant k and has
-    exactly the facts of Ψ there, closed under program order. The
-    creation facts are facts of this world, and Rank asks that its ≺ be
-    well founded. A descending chain in a creation constraint, as in
-    Kobayashi's forwarder, refutes it ([kob_cworld_not_wf]). *)
-
-Definition cst (b : nat) : nat → point := λ k, pconst (k + b).
+    A closed program creates its channels at its top level, at the
+    constants of its hypotheses Ψ ([created]). Its run starts in
+    [cworld Ψ], which supports these constants and has exactly the
+    facts of Ψ, closed under program order. The creation facts are
+    facts of this world, and Rank asks that its ≺ be well founded. A
+    descending chain in a creation constraint, as in Kobayashi's
+    forwarder, refutes it ([kob_cworld_not_wf]). Under syntactic points
+    the hypotheses name constants already, so no instantiation sits
+    between Ψ and the world. *)
 
 (** The ≺ facts that the hypotheses Ψ state at their instances. *)
-Definition hyps_lt (Ψ : hyps) : prel :=
-  λ x y, ∃ C xs g, (C, xs) ∈ Ψ ∧ bcs_open (length xs) C g ∧ fact_map (pt_inst (plist xs)) g = FLt x y.
+Definition hyps_lt (Ψ : hyps) : prel := λ x y, hyp_fact Ψ (FLt x y).
 
-Definition cnames (b n : nat) : gset pname := list_to_set (NConst <$> List.seq b n).
+(** The root names of the instances of Ψ. *)
+Definition hroots (Ψ : hyps) : gset pname := list_to_set (Ψ ≫= (λ g, pt_root <$> g.2)).
 
-Definition cworld (Ψ : hyps) : world :=
-  wgen (cnames 0 (length Ψ)) (λ _ _, False) (hyps_lt (hyps_inst (cst 0) Ψ)).
+Definition cworld (Ψ : hyps) : world := wgen (hroots Ψ) (λ _ _, False) (hyps_lt Ψ).
 
-Lemma cnames_fresh b n : NConst b ∉ cnames (S b) n.
+Lemma hroots_elem Ψ p : p ∈ hroots Ψ ↔ ∃ C xs y, (C, xs) ∈ Ψ ∧ y ∈ xs ∧ p = pt_root y.
 Proof.
-  unfold cnames. intros Hin. apply elem_of_list_to_set, list_elem_of_fmap in Hin as (c & Ec & Hc).
-  apply elem_of_seq in Hc. injection Ec as ->. lia.
+  unfold hroots. rewrite elem_of_list_to_set, list_elem_of_bind. split.
+  - intros ([C xs] & Hp & Hin). apply list_elem_of_fmap in Hp as (y & -> & Hy). by exists C, xs, y.
+  - intros (C & xs & y & Hin & Hy & ->). exists (C, xs). split; [|done]. apply list_elem_of_fmap. by exists y.
 Qed.
 
-(** The world of [created_world] at the constants b, b+1, …, read off
-    the hypotheses one channel at a time. *)
-Lemma created_cst Ψ : created (Wpo []) Ψ → ∀ b, ∃ W1,
-  wext (Wpo []) W1 ∧ w_names W1 = cnames b (length Ψ) ∧
-  hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst (cst b) Ψ).
+(** The instances of created hypotheses are constants. *)
+Lemma created_consts W Ψ : created W Ψ → ∀ C xs y, (C, xs) ∈ Ψ → y ∈ xs → ∃ a, y = pconst a.
 Proof.
-  pose proof Wpo_nil_strict' as HW. induction 1 as [|Ψ C HΨ IH HC HK]; intros b.
-  - exists (Wpo []). split_and!; [by apply wext_refl|done|]. intros C xs Hin. by apply elem_of_nil in Hin.
-  - destruct (IH (S b)) as (W1 & HW1 & HN1 & Hh).
-    pose proof (proj1 HW) as Hwf.
-    assert (cc_ok (w_eq W1) (w_lt W1) (bcs_inst (cst (S b)) C)) as HC1.
-    { apply (cc_ok_pinst (cst (S b)) (seqs (Wpo []) Ψ) (slt (Wpo []) Ψ)); [| |done].
-      - intros x y H. by apply (seqs_pinst (Wpo []) W1 (cst (S b)) Hwf HW1 Ψ).
-      - intros x y H. by apply (slt_pinst (Wpo []) W1 (cst (S b)) Hwf HW1 Ψ). }
-    assert (Forall (pt_known W1) (bc_env (bcs_inst (cst (S b)) C))) as HK1.
-    { simpl. apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx.
-      by apply (skn_pinst_known (Wpo []) W1 (cst (S b)) Hwf HW1 Ψ). }
-    assert (NConst b ∉ w_names W1) as Ha by (rewrite HN1; apply cnames_fresh).
-    destruct (wext_cc W1 b (bcs_inst (cst (S b)) C) (proj2 (proj2 (proj2 HW1))) HC1 HK1 Ha)
-      as (W2 & Hfr & HCa).
-    exists W2. split_and!.
-    + by eapply wext_trans; [exact HW1|exact (proj1 Hfr)].
-    + pose proof Hfr as (_ & _ & -> & _). rewrite HN1, length_app. unfold hyps_inst.
-      rewrite length_fmap. cbn [length]. rewrite Nat.add_1_r. unfold cnames. cbn. set_solver.
-    + assert (∀ k, pt_inst (cst b) (pshift 1 k) = cst (S b) k) as Hs.
-      { intros k. unfold pshift, cst. rewrite pt_inst_pvar_at. f_equal. lia. }
-      rewrite hyps_inst_app, hyps_comp, (hyps_inst_ext _ (cst (S b))) by (intros k; apply Hs).
-      apply hyps_hold_app; [apply (hyps_hold_wext W1); [exact (proj1 Hfr)|exact Hh]|].
-      rewrite hyps_inst_single, bcs_comp, (bcs_inst_ext _ (cst (S b))) by (intros k; apply Hs).
-      intros C' xs Hin. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
-      split; [exact HCa|].
-      apply Forall_singleton. unfold pt_known. pose proof Hfr as (_ & _ & -> & _).
-      unfold pt_root, cst, pconst. simpl. set_solver.
+  induction 1 as [|Ψ C a HΨ IH _ _ _]; intros C' xs y Hin Hy; [by apply elem_of_nil in Hin|].
+  apply elem_of_app in Hin as [Hin|Hin]; [by eapply IH|].
+  apply list_elem_of_singleton in Hin. injection Hin as -> ->. apply list_elem_of_singleton in Hy as ->.
+  by exists a.
 Qed.
 
 (** A world contains the world its facts generate. *)
@@ -629,219 +824,230 @@ Proof.
   - apply (wf_lt_dpo _ HW).
 Qed.
 
-(** [cworld Ψ] is strict and realizes Ψ at the constants. *)
+(** [cworld Ψ] is strict and realizes Ψ. *)
 Lemma cworld_hold Ψ : created (Wpo []) Ψ →
-  strict (cworld Ψ) ∧ hyps_hold (w_eq (cworld Ψ)) (w_lt (cworld Ψ)) (pt_known (cworld Ψ)) (hyps_inst (cst 0) Ψ).
+  strict (cworld Ψ) ∧ hyps_hold (w_eq (cworld Ψ)) (w_lt (cworld Ψ)) (pt_known (cworld Ψ)) Ψ.
 Proof.
-  intros HΨ. destruct (created_cst Ψ HΨ 0) as (W1 & HW1 & HN & Hh).
+  intros HΨ. destruct (created_world_names (Wpo []) Ψ Wpo_nil_strict' HΨ) as (W1 & HW1 & Hh & Hkn).
   destruct (proj2 (proj2 (proj2 HW1))) as [HW1wf HW1irr].
-  assert (∀ x y, hyps_lt (hyps_inst (cst 0) Ψ) x y → w_lt W1 x y) as HL.
-  { intros x y (C & xs & g & Hin & Hg & E). destruct (Hh C xs Hin) as [Hb _].
-    specialize (Hb g Hg). rewrite E in Hb. exact Hb. }
+  assert (∀ x y, hyps_lt Ψ x y → w_lt W1 x y) as HL.
+  { intros x y (C & xs & Hin & g & Hg & E). destruct (Hh C xs Hin) as [Hb _].
+    specialize (Hb g Hg). rewrite <-E in Hb. exact Hb. }
+  assert (w_names W1 ⊆ hroots Ψ) as HN.
+  { intros p Hp. destruct (wf_names_const _ HW1wf p Hp) as [a ->].
+    destruct (Hkn (pconst a) Hp) as [Hk|(C & xs & y & Hin & Hy & E)].
+    - unfold pt_known in Hk. rewrite Wpo_nil_names in Hk. set_solver.
+    - apply hroots_elem. exists C, xs, y. split_and!; [done|done|]. by rewrite <-E. }
   pose proof (glt_into W1 _ HW1wf HL) as Hin.
   split; [split|].
   - apply wgen_wf.
-    + intros p Hp. unfold cnames in Hp. apply elem_of_list_to_set, list_elem_of_fmap in Hp as (a & -> & _).
-      by exists a.
+    + intros p Hp. apply hroots_elem in Hp as (C & xs & y & HC & Hy & ->).
+      destruct (created_consts _ _ HΨ C xs y HC Hy) as [a ->]. by exists a.
     + by intros ? ? [].
-    + intros x y H. rewrite <-HN. apply (wf_lt_supp _ HW1wf). by apply HL.
+    + intros x y H. destruct (wf_lt_supp _ HW1wf x y (HL x y H)) as [Hp|[Hx Hy]]; [by left|].
+      right. split; by apply HN.
   - intros x Hx. apply (HW1irr x). by apply Hin.
   - intros C xs Hc. split.
     + intros g Hg. destruct (fact_map (pt_inst (plist xs)) g) as [x y] eqn:E. cbn [fact_holds].
-      apply glt_base. by exists C, xs, g.
+      apply glt_base. exists C, xs. split; [done|]. exists g. split; [done|]. by rewrite E.
     + destruct (Hh C xs Hc) as [_ Hk]. eapply Forall_impl; [exact Hk|]. intros x Hx.
-      unfold pt_known in *. simpl. by rewrite <-HN.
+      unfold pt_known in *. apply HN. exact Hx.
 Qed.
 
-(** The process of a closed program over Ψ is typed in [cworld Ψ]. *)
-Lemma cworld_ptyped Ψ t T :
-  created (Wpo []) Ψ → prim T → styped ∅ Ψ [] (∅, None) t T →
-  ptyped (cworld Ψ) ∅ (∅, {[+ t +]}) (pinst_ty (cst 0) T).
+(** The process of a closed program over Ψ is typed in every strict
+    world that realizes Ψ. *)
+Lemma world_ptyped W Ψ t T :
+  strict W → hyps_hold (w_eq W) (w_lt W) (pt_known W) Ψ → prim T →
+  styped ∅ Ψ [] (∅, None) t T → ptyped W ∅ (∅, {[+ t +]}) T.
 Proof.
-  intros HΨ HT Ht. destruct (cworld_hold Ψ HΨ) as [HS Hh].
-  apply ptyped_closed; [by apply prim_pinst|].
-  pose proof (typed_pinst (cworld Ψ) ∅ Ψ ∅ [] (∅, None) t T HS (styped_typed (cworld Ψ) _ _ _ _ _ _ Ht) (cst 0) []) as H.
-  rewrite tenv_pinst_empty in H. unfold fhyps_pinst, sf_pinst in H. cbn in H.
-  rewrite fmap_empty, set_map_empty in H. apply H.
-  apply (hyps_hold_mono (w_eq (cworld Ψ)) _ (w_lt (cworld Ψ)) _ (pt_known (cworld Ψ))); [| | |exact Hh].
+  intros HS Hh HT Ht. apply ptyped_closed; [done|].
+  pose proof (typed_pinst W ∅ Ψ ∅ [] (∅, None) t T HS (styped_typed W _ _ _ _ _ _ Ht) pvar []) as H.
+  rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
+  unfold fhyps_pinst in H. rewrite fmap_empty in H. apply H; [|apply tenv_pol_pvar].
+  rewrite hyps_inst_pvar.
+  apply (hyps_hold_mono (w_eq W) _ (w_lt W) _ (pt_known W)); [| | |exact Hh].
   - intros ? ? ?. by apply se_w.
   - intros ? ? ?. by apply sl_w.
   - intros ? ?. by left.
 Qed.
 
-(** *** The facts of Ψ *)
+Lemma cworld_ptyped Ψ t T :
+  created (Wpo []) Ψ → prim T → styped ∅ Ψ [] (∅, None) t T →
+  ptyped (cworld Ψ) ∅ (∅, {[+ t +]}) T.
+Proof. intros HΨ. destruct (cworld_hold Ψ HΨ) as [HS Hh]. by apply world_ptyped. Qed.
 
-Lemma hyps_lt_inst σ Ψ x y :
-  hyps_lt (hyps_inst σ Ψ) x y → ∃ x0 y0, hyps_lt Ψ x0 y0 ∧ x = pt_inst σ x0 ∧ y = pt_inst σ y0.
-Proof.
-  intros (C & xs & g & Hin & Hg & E).
-  unfold hyps_inst in Hin. apply list_elem_of_fmap in Hin as ([C0 xs0] & Eg & Hin). injection Eg as -> ->.
-  rewrite length_fmap in Hg. apply bcs_open_inst in Hg as (g0 & Hg0 & ->).
-  destruct (fact_map (pt_inst (plist xs0)) g0) as [x1 y1] eqn:E0.
-  exists x1, y1. split; [by exists C0, xs0, g0|].
-  destruct g0 as [u v]. cbn [fact_map] in E, E0. injection E0 as <- <-. injection E as <- <-.
-  by rewrite !plist_pup_inst.
-Qed.
+(** *** The facts of Ψ
 
-Lemma hyps_lt_intro σ Ψ x y : hyps_lt Ψ x y → hyps_lt (hyps_inst σ Ψ) (pt_inst σ x) (pt_inst σ y).
-Proof.
-  intros (C & xs & g & Hin & Hg & E).
-  exists (bcs_inst σ C), (pt_inst σ <$> xs), (fact_map (pt_inst (pup (length xs) σ)) g). split_and!.
-  - unfold hyps_inst. apply list_elem_of_fmap. by exists (C, xs).
-  - rewrite length_fmap. apply bcs_open_inst. by exists g.
-  - destruct g as [u v]. cbn [fact_map] in *. injection E as <- <-. by rewrite !plist_pup_inst.
-Qed.
+    A hypothesis (C, [a]) whose constraint has constants as outer
+    points states its facts at the constants. The variable 0 becomes a
+    and the variable j + 1 the j-th outer point ([pt_open]). *)
 
-(** After one step of [created] whose constraint has the outer points
-    ids m, the facts are the earlier facts shifted and the facts of the
-    constraint as they stand. *)
-Lemma hyps_lt_snoc Ψ C m x y :
-  bc_env C = ids m →
-  hyps_lt (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]) x y →
-  (∃ x0 y0, hyps_lt Ψ x0 y0 ∧ x = pt_inst (pshift 1) x0 ∧ y = pt_inst (pshift 1) y0) ∨
-  (bc_facts C (FLt x y) ∧ fact_scoped (S m) (FLt x y)).
-Proof.
-  intros Henv (C' & xs & g & Hin & Hg & E). apply elem_of_app in Hin as [Hin|Hin].
-  - left. apply (hyps_lt_inst (pshift 1) Ψ). by exists C', xs, g.
-  - right. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
-    destruct C as [env P]. cbn [bc_env] in Henv. subst env.
-    destruct Hg as (f & Hf & Hs & ->). unfold bcs_inst in Hf, Hs, E. cbn [bc_facts bc_env length] in Hf, Hs, E.
-    change (ids 1) with [pvar 0] in E. rewrite open1_comp, CfstScheduler.ids_shift in E.
-    destruct f as [u v]. destruct Hs as [Hu Hv]. cbn [fact_map] in E.
-    assert (length (ids m) = m) as Hl by (unfold ids; by rewrite length_fmap, length_seq).
-    rewrite length_fmap in Hu, Hv. rewrite Hl in Hu, Hv.
-    rewrite !pt_inst_ids in E by done. injection E as -> ->. by split; [|split].
-Qed.
-
-Lemma hyps_lt_snoc_intro Ψ C m x y :
-  bc_env C = ids m → bc_facts C (FLt x y) → fact_scoped (S m) (FLt x y) →
-  hyps_lt (hyps_inst (pshift 1) Ψ ++ [(bcs_inst (pshift 1) C, ids 1)]) x y.
-Proof.
-  intros Henv Hf Hs. exists (bcs_inst (pshift 1) C), (ids 1), (fact_map (pt_inst (pup 1 (plist (bc_env (bcs_inst (pshift 1) C))))) (FLt x y)).
-  split_and!.
-  - apply elem_of_app. right. by left.
-  - exists (FLt x y). split_and!; [by destruct C|..|done].
-    destruct C as [env P]. cbn [bc_env] in Henv. subst env. unfold bcs_inst. cbn [bc_env length].
-    rewrite length_fmap. replace (length (ids 1) + length (ids m)) with (S m); [done|].
-    unfold ids. rewrite !length_fmap, !length_seq. lia.
-  - change (ids 1) with [pvar 0]. rewrite open1_comp.
-    destruct C as [env P]. cbn [bc_env] in Henv. subst env. unfold bcs_inst. cbn [bc_env].
-    rewrite CfstScheduler.ids_shift.
-    destruct Hs as [Hx Hy]. cbn [fact_map]. by rewrite !pt_inst_ids.
-Qed.
-
-(** *** Ranks
-
-    Variable k becomes the constant k, at the same polarity and offset. *)
-Fixpoint pn_cst (p : pname) : pname :=
+Fixpoint pn_open (xs : list point) (p : pname) : pname :=
   match p with
-  | NVar a | NConst a => NConst a
-  | NPayload q b i => NPayload (pn_cst q) b i
+  | NVar j => match xs !! j with Some z => pt_name z | None => NVar j end
+  | NConst a => NConst a
+  | NPayload q b i => NPayload (pn_open xs q) b i
   end.
 
-Lemma pt_inst_cst x : pt_inst (cst 0) x = MkPt (pn_cst (pt_name x)) (pt_pol x) (pt_off x).
+Definition pt_open (xs : list point) (x : point) : point :=
+  MkPt (pn_open xs (pt_name x)) (pt_pol x) (pt_off x).
+
+Lemma pn_inst_open σ xs p :
+  (∀ a, pn_root p = NVar a → ∃ c, xs !! a = Some (pconst c) ∧ σ a = pconst c) →
+  pn_inst σ p = Pt (pn_open xs p) 0.
 Proof.
-  assert (∀ p, pn_inst (cst 0) p = Pt (pn_cst p) 0) as E.
-  { induction p as [a|a|q IH b i]; cbn [pn_inst pn_cst]; [done| |].
-    - unfold cst, pconst. by rewrite Nat.add_0_r.
-    - rewrite IH. done. }
-  destruct x as [p c o]. unfold pt_inst. cbn [pt_name pt_pol pt_off]. rewrite E. by destruct c.
+  induction p as [a|a|q IH b i]; intros H; cbn [pn_inst pn_open].
+  - done.
+  - destruct (H a eq_refl) as (c & -> & ->). done.
+  - rewrite IH by exact H. unfold pt_payload, pt_shift. done.
 Qed.
 
-Lemma sdepth_cst p : sdepth (pn_cst p) = sdepth p.
-Proof. induction p as [a|a|q IH b i]; cbn; [done|done|by rewrite IH]. Qed.
+Lemma pt_inst_open σ xs x :
+  (∀ a, pt_root x = NVar a → ∃ c, xs !! a = Some (pconst c) ∧ σ a = pconst c) →
+  pt_inst σ x = pt_open xs x.
+Proof.
+  intros H. destruct x as [p b o]. unfold pt_inst, pt_open. cbn [pt_name pt_pol pt_off].
+  rewrite (pn_inst_open σ xs p H). destruct b; unfold pt_polar, pt_shift, pt_dual; done.
+Qed.
+
+Definition all_const (env : list point) : Prop := Forall (λ z, ∃ c, z = pconst c) env.
+
+Lemma open_sub a env j :
+  all_const env → j < S (length env) →
+  ∃ c, (pconst a :: env) !! j = Some (pconst c) ∧
+    (pt_inst (plist [pconst a]) ∘ pup 1 (plist env)) j = pconst c.
+Proof.
+  intros Henv Hj. destruct j as [|j].
+  - exists a. split; [done|]. unfold compose, pup. rewrite decide_True by lia. done.
+  - destruct (lookup_lt_is_Some_2 env j) as [z Hz]; [lia|].
+    destruct (proj1 (Forall_lookup _ _) Henv j z Hz) as [c ->]. exists c. split; [done|].
+    unfold compose, pup. rewrite decide_False by lia. cbn. unfold plist at 2. rewrite Nat.sub_0_r, Hz. done.
+Qed.
+
+Lemma hyps_lt_nil x y : ¬ hyps_lt [] x y.
+Proof. intros (C & xs & Hin & _). by apply elem_of_nil in Hin. Qed.
+
+Lemma hyps_lt_snoc Ψ env P a x y :
+  all_const env → hyps_lt (Ψ ++ [(BCs env P, [pconst a])]) x y →
+  hyps_lt Ψ x y ∨ ∃ x0 y0, P (FLt x0 y0) ∧ fact_scoped (S (length env)) (FLt x0 y0) ∧
+    x = pt_open (pconst a :: env) x0 ∧ y = pt_open (pconst a :: env) y0.
+Proof.
+  intros Henv (C & xs & Hin & g & Hg & E). apply elem_of_app in Hin as [Hin|Hin].
+  - left. exists C, xs. split; [done|]. by exists g.
+  - right. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+    destruct Hg as (f & Hf & Hs & ->). destruct f as [x0 y0]. cbn [bc_facts bc_env length] in Hf, Hs, E.
+    cbn [fact_map] in E. injection E as -> ->. exists x0, y0. split_and!; [done|done| |];
+      rewrite pt_inst_comp; apply pt_inst_open; intros j Hj; apply open_sub; [done| |done|];
+      destruct Hs as [Hx Hy]; [exact (pn_vb_root _ _ _ Hx Hj)|exact (pn_vb_root _ _ _ Hy Hj)].
+Qed.
+
+Lemma hyps_lt_snoc_intro Ψ env P a x0 y0 :
+  all_const env → P (FLt x0 y0) → fact_scoped (S (length env)) (FLt x0 y0) →
+  hyps_lt (Ψ ++ [(BCs env P, [pconst a])]) (pt_open (pconst a :: env) x0) (pt_open (pconst a :: env) y0).
+Proof.
+  intros Henv Hf Hs. exists (BCs env P), [pconst a]. split; [apply elem_of_app; right; by left|].
+  exists (FLt (pt_inst (pup 1 (plist env)) x0) (pt_inst (pup 1 (plist env)) y0)). split.
+  - exists (FLt x0 y0). split_and!; [done|exact Hs|done].
+  - cbn [fact_map]. destruct Hs as [Hx Hy]. rewrite !pt_inst_comp.
+    f_equal; symmetry; apply pt_inst_open; intros j Hj; apply open_sub;
+      [done|exact (pn_vb_root _ _ _ Hx Hj)|done|exact (pn_vb_root _ _ _ Hy Hj)].
+Qed.
+
+(** *** Ranks *)
 
 (** Rank holds when a rank into a well-founded order rises along program
-    order, along x ≺ x̄+1 and along the facts of Ψ at the constants. *)
+    order, along x ≺ x̄+1 and along the facts of Ψ. *)
 Lemma cworld_rank_wf {A} (R : A → A → Prop) Ψ (r : point → A) :
   well_founded R → (∀ a b c, R a b → R b c → R a c) →
-  (∀ x y, hyps_lt Ψ x y → R (r (pt_inst (cst 0) x)) (r (pt_inst (cst 0) y))) →
+  (∀ x y, hyps_lt Ψ x y → R (r x) (r y)) →
   (∀ x, R (r x) (r (pt_shift 1 x))) → (∀ x, R (r x) (r (pt_shift 1 (pt_dual x)))) →
   wf_world (cworld Ψ).
-Proof.
-  intros Hwf Htr HL Hs Hd. apply (wgen_rank_wf R _ _ _ r Hwf Htr); [by intros ? ? []| |done|done].
-  intros x y H. destruct (hyps_lt_inst _ _ _ _ H) as (x0 & y0 & H0 & -> & ->). by apply HL.
-Qed.
+Proof. intros Hwf Htr HL Hs Hd. apply (wgen_rank_wf R _ _ _ r Hwf Htr); [by intros ? ? []|done|done|done]. Qed.
 
 (** The rank of depth and offset, read lexicographically. *)
 Definition drank (x : point) : nat * nat := (sdepth (pt_name x), pt_off x).
 
 Lemma cworld_depth_wf Ψ : (∀ x y, hyps_lt Ψ x y → lexlt (drank x) (drank y)) → wf_world (cworld Ψ).
 Proof.
-  intros HL. apply (cworld_rank_wf lexlt Ψ drank lexlt_wf); [unfold lexlt; intros ? ? ?; lia| | |].
-  - intros x y H. rewrite !pt_inst_cst. unfold drank in *. cbn [pt_name pt_off]. rewrite !sdepth_cst.
-    by apply HL.
+  intros HL. apply (cworld_rank_wf lexlt Ψ drank lexlt_wf); [unfold lexlt; intros ? ? ?; lia|done| |].
   - intros x. unfold drank, lexlt, pt_shift. cbn. lia.
   - intros x. unfold drank, lexlt, pt_shift. cbn. lia.
 Qed.
 
-(** *** A ladder of rank constraints
+(** *** The shared constant ladder
 
-    CfstScheduler.v and ABP.v create a ceiling z without facts, then
-    channels 0, …, a-1. The constraint of channel a relates
-    its instants to those of each earlier channel by a rank rkf and puts
-    them below z. The world is well founded under the rank that reads
-    channel b at rkf b and puts z above all of them. *)
+    CfstScheduler.v and ABP.v create a ceiling z = N without facts,
+    then channels 0, …, a-1, channel b at the constant N - 1 - b
+    ([CfstTools.cl_Ψ]). The constraint of channel a relates its instants
+    to those of each earlier channel by a rank rkf and puts them below
+    z. The world is well founded under the rank that reads channel b at
+    rkf b and puts z above all of them. *)
 Section ladder_rank.
-  Context (rkf : nat → nat → nat) (Hrk : ∀ b k, rkf b k < rkf b (S k)) (C : nat → bcs).
-  Context (Henv : ∀ a, bc_env (C a) = ids (S a)).
-  Context (HC : ∀ a x y, bc_facts (C a) (FLt x y) →
-    (∃ b k j c c', b < a ∧ rkf b k < rkf a j ∧ x = pt_polar c (pv (a - b) k) ∧ y = pt_polar c' (pv 0 j)) ∨
-    (∃ b k j c c', b < a ∧ rkf a j < rkf b k ∧ x = pt_polar c (pv 0 j) ∧ y = pt_polar c' (pv (a - b) k)) ∨
-    (∃ j c, x = pt_polar c (pv 0 j) ∧ y = pv (S a) 0)).
-
-  Fixpoint ladder (a : nat) : hyps :=
-    match a with
-    | 0 => [(CfstTools.top_C0, ids 1)]
-    | S a' => hyps_inst (pshift 1) (ladder a') ++ [(bcs_inst (pshift 1) (C a'), ids 1)]
-    end.
+  Context (rkf : nat → nat → nat) (Hrk : ∀ b k, rkf b k < rkf b (S k)) (N : nat).
 
   Definition lad_rel (a : nat) (x y : point) : Prop :=
-    ∃ v k c, v < a ∧ x = pt_polar c (pv v k) ∧
-      ((∃ w l c', w < a ∧ y = pt_polar c' (pv w l) ∧ rkf (a - 1 - v) k < rkf (a - 1 - w) l) ∨ y = pv a 0).
+    ∃ v, v < a ∧ pt_name x = NConst (N - 1 - v) ∧
+      ((∃ w, w < a ∧ pt_name y = NConst (N - 1 - w) ∧ rkf v (pt_off x) < rkf w (pt_off y)) ∨
+       pt_name y = NConst N).
 
-  Lemma ladder_lt a x y : hyps_lt (ladder a) x y → lad_rel a x y.
+  Lemma cl_env_const a : all_const (CfstTools.cl_env N a).
+  Proof. unfold CfstTools.cl_env. apply Forall_fmap, Forall_forall. intros i _. by eexists. Qed.
+
+  Lemma cl_open_name a v x : pt_name x = NVar (S v) → v ≤ a →
+    pt_name (pt_open (pconst (N - 1 - a) :: CfstTools.cl_env N a) x) = NConst (N - a + v).
   Proof.
-    revert x y. induction a as [|a IH]; intros x y H.
-    - destruct H as (C' & xs & g & Hin & Hg & _). apply list_elem_of_singleton in Hin.
-      injection Hin as -> ->. destruct Hg as (f & Hf & _). destruct Hf.
-    - destruct (hyps_lt_snoc (ladder a) (C a) (S a) x y (Henv a) H) as [(x0 & y0 & H0 & -> & ->)|[Hf _]].
-      + destruct (IH x0 y0 H0) as (v & k & c & Hv & -> & Hy).
-        exists (S v), k, c. split; [lia|]. split; [by rewrite CfstScheduler.pv_shift_polar|].
-        destruct Hy as [(w & l & c' & Hw & -> & Hr)| ->].
-        * left. exists (S w), l, c'. split; [lia|]. split; [by rewrite CfstScheduler.pv_shift_polar|].
-          by replace (S a - 1 - S v) with (a - 1 - v) by lia; replace (S a - 1 - S w) with (a - 1 - w) by lia.
-        * right. by rewrite CfstScheduler.pv_shift.
-      + destruct (HC a x y Hf) as [(b & k & j & c & c' & Hb & Hr & -> & ->)
-                                  |[(b & k & j & c & c' & Hb & Hr & -> & ->)|(j & c & -> & ->)]].
-        * exists (a - b), k, c. split; [lia|]. split; [done|]. left. exists 0, j, c'. split; [lia|]. split; [done|].
-          by replace (S a - 1 - (a - b)) with b by lia; replace (S a - 1 - 0) with a by lia.
-        * exists 0, j, c. split; [lia|]. split; [done|]. left. exists (a - b), k, c'. split; [lia|]. split; [done|].
-          by replace (S a - 1 - (a - b)) with b by lia; replace (S a - 1 - 0) with a by lia.
-        * exists 0, j, c. split; [lia|]. split; [done|]. by right.
+    intros Hx Hv. unfold pt_open. cbn [pt_name]. rewrite Hx. cbn [pn_open].
+    change ((pconst (N - 1 - a) :: CfstTools.cl_env N a) !! S v) with (CfstTools.cl_env N a !! v).
+    rewrite (CfstTools.cl_env_lookup rkf Hrk) by lia. done.
   Qed.
 
-  Definition lad_rank (n : nat) (x : point) : nat * nat :=
+  Lemma ladder_lt a x y : a ≤ N → hyps_lt (CfstTools.cl_Ψ rkf N a) x y → lad_rel a x y.
+  Proof.
+    revert x y. induction a as [|a IH]; intros x y Ha H.
+    - destruct H as (C & xs & Hin & g & Hg & _). apply list_elem_of_singleton in Hin.
+      injection Hin as -> ->. destruct Hg as (f & Hf & _). destruct Hf.
+    - cbn [CfstTools.cl_Ψ] in H. unfold CfstTools.cl_C in H.
+      destruct (hyps_lt_snoc _ _ _ _ x y (cl_env_const a) H) as [H0|(x0 & y0 & Hf & _ & -> & ->)].
+      + destruct (IH x y ltac:(lia) H0) as (v & Hv & Hx & Hy). exists v. split; [lia|]. split; [done|].
+        destruct Hy as [(w & Hw & Hy & Hr)|Hy]; [left; exists w; split_and!; [lia|done|done]|by right].
+      + destruct Hf as [(b & k & j & c & c' & Hb & Hr & E)|[(b & k & j & c & c' & Hb & Hr & E)|(j & c & E)]];
+          injection E as -> ->.
+        * exists b. split; [lia|]. split.
+          -- rewrite (cl_open_name a (a - b - 1)); [f_equal; lia| |lia].
+             destruct c; cbn; f_equal; lia.
+          -- left. exists a. split; [lia|]. split; [by destruct c'|].
+             replace (a - b) with (S (a - b - 1)) by lia. destruct c, c'; exact Hr.
+        * exists a. split; [lia|]. split; [by destruct c|].
+          left. exists b. split; [lia|]. split.
+          -- rewrite (cl_open_name a (a - b - 1)); [f_equal; lia| |lia].
+             destruct c'; cbn; f_equal; lia.
+          -- destruct c, c'; exact Hr.
+        * exists a. split; [lia|]. split; [by destruct c|]. right.
+          rewrite (cl_open_name a a); [f_equal; lia|done|lia].
+  Qed.
+
+  Definition lad_rank (x : point) : nat * nat :=
     match pt_name x with
-    | NConst v => if decide (v < n) then (0, rkf (n - 1 - v) (pt_off x))
-                  else if decide (v = n) then (1, pt_off x) else (0, pt_off x)
+    | NConst v => if decide (v < N) then (0, rkf (N - 1 - v) (pt_off x))
+                  else if decide (v = N) then (1, pt_off x) else (0, pt_off x)
     | _ => (0, pt_off x)
     end.
 
-  Lemma lad_rank_shift n x : lexlt (lad_rank n x) (lad_rank n (pt_shift 1 x)).
+  Lemma lad_rank_shift x : lexlt (lad_rank x) (lad_rank (pt_shift 1 x)).
   Proof.
     unfold lad_rank, lexlt, pt_shift. cbn [pt_name pt_off].
     destruct (pt_name x) as [v|v|q b i]; [|cbn; lia|cbn; lia].
     repeat case_decide; cbn; try lia. right. split; [done|]. rewrite Nat.add_1_r. apply Hrk.
   Qed.
 
-  Lemma ladder_wf n : wf_world (cworld (ladder n)).
+  Lemma ladder_wf a : a ≤ N → wf_world (cworld (CfstTools.cl_Ψ rkf N a)).
   Proof.
-    apply (cworld_rank_wf lexlt _ (lad_rank n) lexlt_wf); [unfold lexlt; intros ? ? ?; lia| |apply lad_rank_shift|].
-    - intros x y H. destruct (ladder_lt n x y H) as (v & k & c & Hv & -> & [(w & l & c' & Hw & -> & Hr)| ->]);
-        rewrite !pt_inst_cst; destruct c; try destruct c'; unfold lad_rank, lexlt; cbn [pt_name pt_off pt_polar pt_dual pn_cst];
-        repeat case_decide; cbn; lia.
-    - intros x. exact (lad_rank_shift n (pt_dual x)).
+    intros Ha. apply (cworld_rank_wf lexlt _ lad_rank lexlt_wf); [unfold lexlt; intros ? ? ?; lia| |apply lad_rank_shift|].
+    - intros x y H. destruct (ladder_lt a x y Ha H) as (v & Hv & Hx & [(w & Hw & Hy & Hr)|Hy]);
+        unfold lad_rank, lexlt; rewrite Hx, Hy; repeat case_decide; cbn; try lia.
+      right. split; [done|].
+      replace (N - 1 - (N - 1 - v)) with v by lia. replace (N - 1 - (N - 1 - w)) with w by lia. exact Hr.
+    - intros x. exact (lad_rank_shift (pt_dual x)).
   Qed.
 End ladder_rank.
 
@@ -851,29 +1057,117 @@ End ladder_rank.
     that world. *)
 Definition lfsource (Ψ : hyps) (t : expr) (T : ty) : Prop :=
   created (Wpo []) Ψ ∧ prim T ∧
-  gstyped ∅ Ψ [] (∅, None) t T ∧ lf_r1 t = true ∧ lf_r2r t = true ∧
+  gstyped ∅ Ψ [] (∅, None) t T ∧ lf_r1 t = true ∧
+  r2h_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧
   r4_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧ wf_world (cworld Ψ).
 
 Lemma lfsource_gstyped Ψ t T : lfsource Ψ t T → gstyped ∅ Ψ [] (∅, None) t T.
 Proof. by intros (_ & _ & ? & _). Qed.
 
-(** The process of such a program is in the fragment, in the world
-    where its run starts. *)
-Theorem lfsource_lfptyped Ψ t T :
-  lfsource Ψ t T → strict (cworld Ψ) ∧ lfptyped (cworld Ψ) ∅ (∅, {[+ t +]}) (pinst_ty (cst 0) T).
+(** Budgets do not enter strictness. *)
+Lemma strict_budgets W B P : strict W → strict (World (w_names W) (w_lt W) B P).
+Proof. intros [[Ht Hp Hs Hn Hd] Hi]. split; [split|]; cbn; auto. Qed.
+
+(** The process of such a program is in the fragment, in every world
+    with the support and the order of the world where its run starts,
+    whatever its budgets. *)
+Theorem lfsource_lfptyped_at Ψ t T B P :
+  lfsource Ψ t T →
+  strict (World (hroots Ψ) (w_lt (cworld Ψ)) B P) ∧
+  lfptyped (World (hroots Ψ) (w_lt (cworld Ψ)) B P) ∅ (∅, {[+ t +]}) T.
 Proof.
-  intros (HΨ & HT & [Ht Hg] & H1 & H2 & (ann & E & Hann & Hac & Hts) & Hwf).
-  split; [exact (proj1 (cworld_hold Ψ HΨ))|]. split_and!.
-  - split; [by apply cworld_ptyped|]. by intros e ->%gmultiset_elem_of_singleton.
+  intros (HΨ & HT & [Ht Hg] & H1 & (ann2 & Hann2 & H2) & (ann & E & Hann & Hac & Hts) & Hwf).
+  destruct (cworld_hold Ψ HΨ) as [HS Hh].
+  pose proof (strict_budgets (cworld Ψ) B P HS) as HS'.
+  split; [exact HS'|]. split_and!.
+  - split; [by apply (world_ptyped _ Ψ)|]. by intros e ->%gmultiset_elem_of_singleton.
   - by intros e ->%gmultiset_elem_of_singleton.
-  - by intros e ->%gmultiset_elem_of_singleton.
+  - exists ann2. split.
+    + intros b U Hin. destruct (Hann2 b U Hin) as (Φ & Ψ' & Δ & F & Hb). exists Φ, Ψ', Δ, F.
+      by apply styped_typed.
+    + intros e ->%gmultiset_elem_of_singleton. by apply H2.
   - exists ann, E. split_and!; [|done|].
     + intros b U Hin. destruct (Hann b U Hin) as (Φ & Ψ' & Δ & F & Hb). exists Φ, Ψ', Δ, F.
       by apply styped_typed.
     + intros e ->%gmultiset_elem_of_singleton. by apply Hts.
-  - done.
+  - exact Hwf.
 Qed.
 
+(** The world where the run starts, with its default budgets. *)
+Theorem lfsource_lfptyped Ψ t T :
+  lfsource Ψ t T → strict (cworld Ψ) ∧ lfptyped (cworld Ψ) ∅ (∅, {[+ t +]}) T.
+Proof. intros H. exact (lfsource_lfptyped_at Ψ t T (λ _, None) (λ _, 0) H). Qed.
+
+(** ** Budgets from depth (plan §17.6, §17.8)
+
+    The budgets of the fragment come from the hand-off graph E and the
+    length L of a round. The depth of a node is the length of the
+    longest path of E that ends in it, and d is the largest depth. An
+    end at x whose session type has depth k gets the refill and cap
+    w_bud x = (d − k + 1)·2L. An end that arrives on a carrier is
+    floored by w_pay, read at the sender's point k. Its receiving
+    carrier has the dual of the sender's type, and with depth k′ of
+    that dual type w_pay k = (d − k′)·2L + L + 1. Along a hand-off the
+    depth grows, so budgets and floors shrink, and the largest budget
+    is N = (d + 1)·2L of §10.3. The fragment never uses ∞. The session
+    type at each point is the one the derivation gives the end there.
+    The world takes it as a map [ty_of], so that each component brings
+    its own budgets with its own constants. *)
+
+Fixpoint indepth (n : nat) (E : list (node * node)) (x : node) : nat :=
+  match n with
+  | 0 => 0
+  | S n' => foldr max 0 ((λ ab, if bool_decide (ab.2 = x) then S (indepth n' E ab.1) else 0) <$> E)
+  end.
+
+(** In an acyclic graph a path has at most [length E] edges. *)
+Definition depth (E : list (node * node)) (x : node) : nat := indepth (length E) E x.
+
+Definition gdepth (E : list (node * node)) : nat := foldr max 0 ((λ ab, depth E ab.2) <$> E).
+
+(** Channel steps on the longest path through a term. A link costs
+    nothing (plan §6.1), new and the point constants are β steps, and
+    a λ, spawned or applied, counts with the round that builds it. *)
+Fixpoint rsteps (e : expr) : nat :=
+  match e with
+  | App (Konst k) a => (if prim_konst k then 1 else 0) + rsteps a
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => rsteps e1 + rsteps e2
+  | Lam b => rsteps b
+  | Case e e1 e2 => rsteps e + max (rsteps e1) (rsteps e2)
+  | Inj1 e | Inj2 e => rsteps e
+  | EBox _ | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => 0
+  end.
+
+(** L, the most channel steps in a round of a box of the term. *)
+Definition round_len (e : expr) : nat :=
+  foldr max 0 ((λ b, match b with EBox b' => rsteps (bbody b') | _ => 0 end) <$> boxes e).
+
+Definition sdep (E : list (node * node)) (o : option sty) : nat :=
+  match o with Some s => depth E (er_sty s) | None => 0 end.
+
+Definition bud_at (E : list (node * node)) (L : nat) (ty_of : point → option sty) (x : point) : option nat :=
+  Some ((gdepth E - sdep E (ty_of x) + 1) * (2 * L)).
+
+Definition pay_at (E : list (node * node)) (L : nat) (ty_of : point → option sty) (k : point) : nat :=
+  (gdepth E - sdep E (dual <$> ty_of k)) * (2 * L) + L + 1.
+
+(** The world W with the budgets of the graph E, the round length L
+    and the session types ty_of. *)
+Definition with_budgets (W : world) (E : list (node * node)) (L : nat) (ty_of : point → option sty) : world :=
+  World (w_names W) (w_lt W) (bud_at E L ty_of) (pay_at E L ty_of).
+
+Lemma with_budgets_strict W E L ty_of : strict W → strict (with_budgets W E L ty_of).
+Proof. apply strict_budgets. Qed.
+
+Lemma with_budgets_wf W E L ty_of : wf_world W → wf_world (with_budgets W E L ty_of).
+Proof. done. Qed.
+
+(** A program of the fragment is in the fragment at its budgets. *)
+Theorem lfsource_budgets Ψ t T E L ty_of :
+  lfsource Ψ t T →
+  strict (with_budgets (cworld Ψ) E L ty_of) ∧
+  lfptyped (with_budgets (cworld Ψ) E L ty_of) ∅ (∅, {[+ t +]}) T.
+Proof. apply lfsource_lfptyped_at. Qed.
 (** ** Examples *)
 
 Lemma elem_of_single (e t : expr) : e ∈ ({[+ t +]} : gmultiset expr) → e = t.
@@ -912,9 +1206,10 @@ Lemma fw_wf : wf_world (cworld Forwarder.fw_Ψ).
 Proof.
   apply (cworld_rank_wf lt _ fw_rank Wf_nat.lt_wf); [intros ? ? ?; lia| | |].
   - intros x y H.
-    destruct (hyps_lt_snoc _ Forwarder.fwb_C 1 x y eq_refl H) as [(x0 & y0 & H0 & -> & ->)|[Hf _]].
-    + destruct (hyps_lt_snoc [] Forwarder.fpa_C 0 x0 y0 eq_refl H0) as [(? & ? & (? & ? & ? & Hn & _) & _)|[Hf _]];
-        [by apply elem_of_nil in Hn|].
+    destruct (hyps_lt_snoc ([] ++ [(Forwarder.fpa_C, [pconst 1])]) [pconst 1] Forwarder.fwb_P 0 x y
+      ltac:(by repeat econstructor) H) as [H0|(x0 & y0 & Hf & _ & -> & ->)].
+    + destruct (hyps_lt_snoc [] [] Forwarder.fpa_P 1 x y ltac:(constructor) H0) as [Hn|(x0 & y0 & Hf & _ & -> & ->)];
+        [by apply hyps_lt_nil in Hn|].
       destruct Hf as (k & b & b' & [E|E]); injection E as -> ->; destruct b, b'; cbn; lia.
     + destruct Hf as (k & E); repeat destruct E as [E|E]; injection E as -> ->; cbn; lia.
   - intros x. unfold fw_rank, pt_shift. cbn. lia.
@@ -928,7 +1223,7 @@ Proof.
   - constructor.
   - split; [apply Forwarder.fw_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists fw_ann, fw_E. split_and!.
     + intros b T Hin. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
       exists ∅, [], [], (∅, None). apply Forwarder.fwd_typed, (proj1 wnil_strict).
@@ -948,14 +1243,14 @@ Proof.
   - constructor.
   - split; [apply TailCall.tc_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply cworld_depth_wf. intros x y H.
-    destruct (hyps_lt_snoc [] TailCall.tcc_C 0 x y eq_refl H) as [(? & ? & (? & ? & ? & Hn & _) & _)|[Hf _]];
-      [by apply elem_of_nil in Hn|].
+    destruct (hyps_lt_snoc [] [] TailCall.tcc_P 0 x y ltac:(constructor) H) as [Hn|(x0 & y0 & Hf & _ & -> & ->)];
+      [by apply hyps_lt_nil in Hn|].
     destruct Hf as (k & b & E). injection E as -> ->. destruct b; unfold drank, lexlt; cbn; lia.
 Qed.
 
@@ -965,26 +1260,21 @@ Proof. exists (cworld TailCall.tc_Ψ). exact (lfsource_lfptyped _ _ _ tc_lfsourc
 (** The recursive CFST scheduler, over its seven top-level points, the
     ceiling and the six channels of the ring. Rounds of six steps, every
     end passed on is acted on in the round, no hop. Its world is the
-    ladder of rank constraints. *)
-Lemma sch_ladder a : CfstScheduler.sch_Ψ a = ladder CfstScheduler.sch_C a.
-Proof. induction a as [|a IH]; [done|]. cbn [CfstScheduler.sch_Ψ ladder]. by rewrite IH. Qed.
+    shared constant ladder. *)
 
 Theorem sch_lfsource : lfsource (CfstScheduler.sch_Ψ 6) CfstScheduler.sch_main TUnit.
 Proof.
   split_and!.
-  - apply CfstScheduler.sch_created.
+  - apply CfstScheduler.sch_created. lia.
   - constructor.
   - split; [apply CfstScheduler.sch_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
-  - rewrite sch_ladder. apply (ladder_wf CfstScheduler.rk CfstScheduler.rk_S); [intros a; reflexivity|].
-    intros a x y [(b & k & j & c & c' & Hb & Hr & E)|[(b & k & j & c & c' & Hb & Hr & E)|(j & c & E)]];
-      injection E as -> ->;
-      [left; by exists b, k, j, c, c'|right; left; by exists b, k, j, c, c'|right; right; by exists j, c].
+  - apply (ladder_wf CfstScheduler.rk CfstScheduler.rk_S 6 6). lia.
 Qed.
 
 (** Kobayashi's forwarder server. The guard rejects it. R1, R2′ and R4′
@@ -1018,26 +1308,32 @@ Proof. induction n as [|n IH]; cbn; [lia|done]. Qed.
 
 Theorem kob_cworld_not_wf : ¬ wf_world (cworld KobForwarder.kfw_Ψ).
 Proof.
-  apply (chain_not_wf _ (λ n, pt_inst (cst 0) (Pt (payloadv n) 0))). intros n.
-  apply glt_base. apply hyps_lt_intro. apply (hyps_lt_snoc_intro [] KobForwarder.fw_C 0); [reflexivity| |].
+  apply (chain_not_wf _ (λ n, pt_open [pconst 0] (Pt (payloadv n) 0))). intros n.
+  apply glt_base. apply (hyps_lt_snoc_intro [] [] KobForwarder.fw_P 0); [constructor| |].
   - exists n, true, true. by left.
   - split; apply payloadv_vb.
 Qed.
 
 (** C1 of plan §10.1, the spawner chain.
 
-      c1 = !(f = λ⟨prev, chat⟩. let (a, b) = new ∗ in
+      c1 = !(f = λπ. λ⟨prev, chat⟩. let chat′ = send ⟨∗, chat⟩ in let (a, b) = new (π[0]) in
                  let () = spawn (λw. let () = w in let () = recvclose a in close prev) in
-                 (force f) ⟨b, send ⟨∗, chat⟩⟩)
+                 (force f) (π[0]) ⟨b, chat′⟩)
 
-    a and b are created at κ[0] when prev sits at κ, and the call is at
-    κ[0]. The spawned thread blocks on a while it holds prev. *)
+    Under syntactic points the box takes the point κ of prev as π, and
+    a and b are created at κ[0], where the call places the next round.
+    The chatter step comes first, because the call applies the forced
+    self to a point value, which performs no primitive (Guard.v). The
+    spawned thread blocks on a while it holds prev. *)
 Definition c1_box : expr :=
-  EBox (Lam (LetP (Var 0) (let_new_pair
-    (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (recvclose (Var 2)) (App EClos (Var 4))))))
-      (App (App EForce (Var 5)) (Pair (Var 0) (App ESend (Pair EUnit (Var 2))))))))).
+  EBox (Lam (Lam (LetP (Var 0) (App (Lam (let_new_pair_at (App (Konst (KPay 0)) (Var 4))
+    (LetU (App ESpawn (Lam (LetU (Var 0) (LetU (recvclose (Var 2)) (App EClos (Var 5))))))
+      (App (App (App EForce (Var 7)) (App (Konst (KPay 0)) (Var 6))) (Pair (Var 0) (Var 2))))))
+    (App ESend (Pair EUnit (Var 0))))))).
 
-(** C1 passes the guard, R1, R2′ and R4′. The body is harmless. *)
+(** C1 passes the guard, R1, R2′ and the hand-off graph. The body is
+    harmless. *)
+
 Theorem c1_checks :
   guarded c1_box ∧ lf_r1 c1_box = true ∧ lf_r2 c1_box = true ∧ thread_edges [] c1_box = Some [].
 Proof. unfold guarded. vm_compute. auto. Qed.
@@ -1057,26 +1353,80 @@ Qed.
 
 (** C3 of plan §10.1, link refresh with a chatter step.
 
-      c3 = !(f = λ⟨y, d⟩. let (a, b) = new ∗ in let () = link ⟨y, a⟩ in
-                 (force f) ⟨b, send ⟨∗, d⟩⟩)
+      c3 = !(f = λπ. λ⟨y, d⟩. let d′ = send ⟨∗, d⟩ in let (a, b) = new (π[0]) in
+                 let () = link ⟨y, a⟩ in (force f) (π[0]) ⟨b, d′⟩)
 
     y holds the partner of C. Every round links it to a fresh end and
-    goes on with the other fresh end b, so C is never served. *)
+    goes on with the other fresh end b, so C is never served. The
+    chatter step comes first, as in C1. *)
 Definition c3_box : expr :=
-  EBox (Lam (LetP (Var 0) (let_new_pair
-    (LetU (App ELink (Pair (Var 3) (Var 1)))
-      (App (App EForce (Var 5)) (Pair (Var 0) (App ESend (Pair EUnit (Var 2))))))))).
+  EBox (Lam (Lam (LetP (Var 0) (App (Lam (let_new_pair_at (App (Konst (KPay 0)) (Var 4))
+    (LetU (App ELink (Pair (Var 4) (Var 1)))
+      (App (App (App EForce (Var 7)) (App (Konst (KPay 0)) (Var 6))) (Pair (Var 0) (Var 2))))))
+    (App ESend (Pair EUnit (Var 0))))))).
 
 (** The guard and R1 accept C3. R2′ rejects it, because y is linked
     before the round acts on it. *)
 Theorem c3_checks : guarded c3_box ∧ lf_r1 c3_box = true ∧ lf_r2 c3_box = false.
 Proof. unfold guarded. vm_compute. auto. Qed.
 
+(** A self-loop refutes acyclicity. *)
+Lemma acyclic_loop E n : acyclic E = true → (n, n) ∈ E → False.
+Proof.
+  unfold acyclic. intros H Hin. rewrite forallb_forall in H.
+  specialize (H _ (proj1 (list_elem_of_In _ _) Hin)). cbn in H.
+  rewrite bool_decide_true in H by done. discriminate.
+Qed.
+
+(** A box whose items give a self-loop at every parameter type has a
+    self-loop in its edges, whatever type the annotation gives it. *)
+Lemma box_loop ann b hs E :
+  box_hops b = Some hs → existsb handoff hs = true →
+  (∀ P ls, omap (item_edges P hs) hs = Some ls → ∃ n, (n, n) ∈ concat ls) →
+  box_edges ann (EBox b) = Some E → ∃ n, (n, n) ∈ E.
+Proof.
+  intros Hb Hh Hl. unfold box_edges. rewrite Hb, Hh.
+  repeat case_match; try discriminate. intros [= <-]. eapply Hl. eassumption.
+Qed.
+
+Lemma thread_loop ann b E' :
+  boxes b = [] → (∀ E, box_edges ann (EBox b) = Some E → ∃ n, (n, n) ∈ E) →
+  thread_edges ann (EBox b) = Some E' → ∃ n, (n, n) ∈ E'.
+Proof.
+  intros Hb H. unfold thread_edges. cbn [boxes]. rewrite Hb. cbn [foldr].
+  destruct (box_edges ann (EBox b)) as [E|] eqn:HE; [|done]. cbn. rewrite app_nil_r.
+  intros [= <-]. by apply H.
+Qed.
+
+Definition c3_body : expr := match c3_box with EBox b => b | _ => EUnit end.
+Definition c3_hs : list hitem := default [] (box_hops c3_body).
+
+(** The link of y to a hands the partner of y over to b, which sits at
+    the slot of y in the next round. Both edges of the link are
+    self-loops, at the type of y and at its dual. *)
+Lemma c3_items P ls : omap (item_edges P c3_hs) c3_hs = Some ls → ∃ n, (n, n) ∈ concat ls.
+Proof.
+  assert (c3_hs = [HLink (RPar [false]) (RNew 6 false); HBind 6 true [false]]) as -> by (vm_compute; reflexivity).
+  intros H. cbn in H. unfold node_at in H.
+  destruct (ty_at [false] P) as [[]|] eqn:Hty; try discriminate H.
+  rewrite !bool_decide_true in H by done. cbn in H. unfold node_at in H. rewrite Hty in H.
+  injection H as <-. eexists. cbn. left.
+Qed.
+
+(** Under §17.6 C3 passes R2-recv without the link clause, and the
+    hand-off graph rejects it, at every annotation. *)
 Theorem c3_not_lfptyped W Σ T : ¬ lfptyped W Σ (∅, {[+ c3_box +]}) T.
 Proof.
-  intros (_ & _ & H2 & _). specialize (H2 _ (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)).
-  revert H2. vm_compute. discriminate.
+  intros (_ & _ & _ & (ann & E & _ & Hac & Hts) & _).
+  destruct (Hts c3_box (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)) as (E' & HE' & Hsub).
+  destruct (thread_loop ann c3_body E' ltac:(vm_compute; reflexivity)
+    (λ E0, box_loop ann c3_body c3_hs E0 ltac:(vm_compute; reflexivity) ltac:(vm_compute; reflexivity) c3_items)
+    HE') as [n Hn].
+  exact (acyclic_loop E n Hac (Hsub _ Hn)).
 Qed.
+
+Theorem c3_r2h : lf_r2h [] c3_box = true.
+Proof. vm_compute. reflexivity. Qed.
 
 (** TreeSum (plan §10.5): R1 rejects it, because the left call's result
     is still used by the frame of the right call. *)
@@ -1113,9 +1463,32 @@ Proof. vm_compute. reflexivity. Qed.
 
 Theorem starve_not_lfptyped W Σ T : ¬ lfptyped W Σ (∅, {[+ starve_box +]}) T.
 Proof.
-  intros (_ & _ & H2 & _). specialize (H2 _ (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)).
+  intros (_ & _ & (ann & _ & H2) & _). specialize (H2 _ (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)).
   revert H2. vm_compute. discriminate.
 Qed.
+
+(** A box whose leading λ takes a channel c and passes it on unacted.
+
+      lc = !(f = λc. λd. let d′ = send ⟨∗, d⟩ in (force f) c d′)
+
+    Read as a point parameter c would count as fresh, and R2 would let
+    the round hand c on forever. Only an annotation whose box type says
+    TPt for c makes R2-recv accept it, and the typing premise of
+    [lfptyped] asks a derivation of that type. Without an annotation,
+    or with a channel type for c, R2-recv rejects it, and so does R2′. *)
+Definition lc_box : expr :=
+  EBox (Lam (Lam (App (Lam (App (App (App EForce (Var 3)) (Var 2)) (Var 0)))
+    (App ESend (Pair EUnit (Var 0)))))).
+
+Definition lc_ty (A : ty) : ty :=
+  TBox 0 0 (BCs [] (λ _, False))
+    (TLolli None None TUnit (TLolli None None A (TLolli None None (TSess SEnd (pvar 0)) TUnit))).
+
+Theorem lc_r2_fails :
+  guarded lc_box ∧ lf_r1 lc_box = true ∧ lf_r2 lc_box = false ∧ lf_r2h [] lc_box = false ∧
+  lf_r2h [(lc_box, lc_ty (TSess SEnd (pvar 0)))] lc_box = false ∧
+  lf_r2h [(lc_box, lc_ty (TPt (pvar 0)))] lc_box = true.
+Proof. unfold guarded. split_and!; vm_compute; reflexivity. Qed.
 
 (** R2-recv on the earlier examples. Kobayashi's forwarder and C1 pass
     it and stay out by the guard and by Rank. C3 still fails it, by the
@@ -1135,6 +1508,14 @@ Proof. vm_compute. reflexivity. Qed.
 Lemma sdepth_chv n : sdepth (ReceivedChain.chv n) = n.
 Proof. induction n as [|n IH]; [done|]. cbn. by rewrite IH. Qed.
 
+(** Opening at constants keeps the depth of a name. *)
+Lemma sdepth_open xs p : all_const xs → sdepth (pn_open xs p) = sdepth p.
+Proof.
+  intros Hxs. induction p as [a|a|q IH b i]; cbn [pn_open sdepth]; [done| |by rewrite IH].
+  destruct (xs !! a) as [z|] eqn:E; [|done].
+  by destruct (proj1 (Forall_lookup _ _) Hxs a z E) as [c ->].
+Qed.
+
 Theorem rc_lfsource : lfsource ReceivedChain.ch_Ψ ReceivedChain.ch_main TUnit.
 Proof.
   split_and!.
@@ -1142,15 +1523,16 @@ Proof.
   - constructor.
   - split; [apply ReceivedChain.ch_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply cworld_depth_wf. intros x y H.
-    destruct (hyps_lt_snoc [] ReceivedChain.chc_C 0 x y eq_refl H) as [(? & ? & (? & ? & ? & Hn & _) & _)|[Hf _]];
-      [by apply elem_of_nil in Hn|].
-    destruct Hf as [(n & E)|(n & [E|E])]; injection E as -> ->; unfold drank, lexlt;
+    destruct (hyps_lt_snoc [] [] ReceivedChain.chc_P 0 x y ltac:(constructor) H) as [Hn|(x0 & y0 & Hf & _ & -> & ->)];
+      [by apply hyps_lt_nil in Hn|].
+    unfold drank. cbn [pt_open pt_name pt_off]. rewrite !sdepth_open by (repeat econstructor).
+    destruct Hf as [(n & E)|(n & [E|E])]; injection E as -> ->; unfold lexlt;
       cbn [pt_name pt_off fst snd ReceivedChain.chv sdepth]; rewrite ?sdepth_chv; lia.
 Qed.
 
@@ -1164,29 +1546,33 @@ Proof. exists (cworld ReceivedChain.ch_Ψ). exact (lfsource_lfptyped _ _ _ rc_lf
 Theorem rg_r2_fails : lf_r2 GrowRing.rg_main = false.
 Proof. vm_compute. reflexivity. Qed.
 
-Lemma pdepth_cst p : GrowRing.pdepth (pn_cst p) = GrowRing.pdepth p.
-Proof. induction p as [a|a|q IH b i]; cbn; [done|done|by rewrite IH]. Qed.
+Lemma pdepth_open xs p : all_const xs → GrowRing.pdepth (pn_open xs p) = GrowRing.pdepth p.
+Proof.
+  intros Hxs. induction p as [a|a|q IH b i]; cbn [pn_open GrowRing.pdepth]; [done| |by rewrite IH].
+  destruct (xs !! a) as [z|] eqn:E; [|done].
+  by destruct (proj1 (Forall_lookup _ _) Hxs a z E) as [c ->].
+Qed.
 
-Lemma rg_wf : wf_world (cworld [(GrowRing.rg0_C, ids 1)]).
+Lemma rg_wf : wf_world (cworld GrowRing.rg_Ψ).
 Proof.
   apply (cworld_rank_wf lt _ GrowRing.rg_rank Wf_nat.lt_wf); [intros a b c; lia| | |].
   - intros x y H.
-    destruct (hyps_lt_snoc [] GrowRing.rg0_C 0 x y eq_refl H) as [(? & ? & (? & ? & ? & Hn & _) & _)|[Hf _]];
-      [by apply elem_of_nil in Hn|].
-    pose proof (GrowRing.rg0_rank x y Hf) as Hr. rewrite !pt_inst_cst. unfold GrowRing.rg_rank in *.
-    cbn [pt_name pt_off]. by rewrite !pdepth_cst.
+    destruct (hyps_lt_snoc [] [] GrowRing.rg0_P 0 x y ltac:(constructor) H) as [Hn|(x0 & y0 & Hf & _ & -> & ->)];
+      [by apply hyps_lt_nil in Hn|].
+    pose proof (GrowRing.rg0_rank x0 y0 Hf) as Hr. unfold GrowRing.rg_rank in *.
+    cbn [pt_open pt_name pt_off]. by rewrite !pdepth_open by (repeat econstructor).
   - intros x. unfold GrowRing.rg_rank, pt_shift. cbn. lia.
   - intros x. unfold GrowRing.rg_rank, pt_shift, pt_dual. cbn. lia.
 Qed.
 
-Theorem rg_lfsource : lfsource [(GrowRing.rg0_C, ids 1)] GrowRing.rg_main TUnit.
+Theorem rg_lfsource : lfsource GrowRing.rg_Ψ GrowRing.rg_main TUnit.
 Proof.
   split_and!.
   - apply GrowRing.rg_created.
   - constructor.
   - split; [apply GrowRing.rg_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
@@ -1201,16 +1587,8 @@ Qed.
 Theorem abp_r2 : lf_r2 ABP.abp_main = true.
 Proof. vm_compute. reflexivity. Qed.
 
-Lemma abp_ladder a : ABP.lad_Ψ ABP.rkc a = ladder (ABP.lad_C ABP.rkc) a.
-Proof. induction a as [|a IH]; [done|]. cbn [ABP.lad_Ψ ladder]. by rewrite IH. Qed.
-
 Lemma abp_wf : wf_world (cworld ABP.abp_Ψ).
-Proof.
-  unfold ABP.abp_Ψ. rewrite abp_ladder. apply (ladder_wf ABP.rkc ABP.rkc_S); [intros a; reflexivity|].
-  intros a x y [(b & k & j & c & c' & Hb & Hr & E)|[(b & k & j & c & c' & Hb & Hr & E)|(j & c & E)]];
-    injection E as -> ->;
-    [left; by exists b, k, j, c, c'|right; left; by exists b, k, j, c, c'|right; right; by exists j, c].
-Qed.
+Proof. unfold ABP.abp_Ψ. apply (ladder_wf ABP.rkc ABP.rkc_S 3 3). lia. Qed.
 
 Theorem abp_lfsource : lfsource ABP.abp_Ψ ABP.abp_main TUnit.
 Proof.
@@ -1219,10 +1597,105 @@ Proof.
   - constructor.
   - split; [apply ABP.abp_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
-  - vm_compute. reflexivity.
+  - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
   - exists [], []. split_and!.
     + intros b T Hin. by apply elem_of_nil in Hin.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply abp_wf.
+Qed.
+
+(** ** The budgets of the examples (plan §17.6, §17.8)
+
+    Each example world is [cworld Ψ] with the budgets of its hand-off
+    graph and of its round length L. Only the forwarder has an edge, so
+    d = 1 there. In the other examples d = 0, every end gets 2L and
+    every floor is L + 1. *)
+
+(** The forwarder. Its graph has the one edge from Si to the dual of So
+    and a round has 2 channel steps. fwd holds a at the positive points
+    of the constant 1 at Si and b at the positive points of 0 at So.
+    The producer holds the partner of a at the dual of Si, the consumer
+    the partner of b at the dual of So, and the payload ends are Close.
+    The end of the consumer sits at depth 1 and gets 2L = 4, every
+    other end gets 4L = 8. A payload sent by the producer arrives at
+    fwd with floor 2L + L + 1 = 7, and the same payload forwarded to
+    the consumer with floor L + 1 = 3. *)
+Definition fw_ty (x : point) : option sty :=
+  match pt_name x with
+  | NConst 1 => Some (if pt_pol x then Forwarder.Sfi else dual Forwarder.Sfi)
+  | NConst 0 => Some (if pt_pol x then Forwarder.Sfo else dual Forwarder.Sfo)
+  | NPayload _ _ _ => Some SEnd
+  | _ => None
+  end.
+
+Definition fw_W : world := with_budgets (cworld Forwarder.fw_Ψ) fw_E (round_len Forwarder.fw_main) fw_ty.
+
+Theorem fw_budgets :
+  strict fw_W ∧ lfptyped fw_W ∅ (∅, {[+ Forwarder.fw_main +]}) TUnit ∧
+  gdepth fw_E = 1 ∧ round_len Forwarder.fw_main = 2 ∧
+  (∀ k, w_bud fw_W (pc 1 k) = Some 8 ∧ w_bud fw_W (pt_dual (pc 1 k)) = Some 8 ∧
+        w_bud fw_W (pc 0 k) = Some 8 ∧ w_bud fw_W (pt_dual (pc 0 k)) = Some 4) ∧
+  (∀ k, w_pay fw_W (pt_dual (pc 1 k)) = 7 ∧ w_pay fw_W (pc 0 k) = 3).
+Proof.
+  destruct (lfsource_budgets _ _ _ fw_E (round_len Forwarder.fw_main) fw_ty fw_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|vm_compute; reflexivity| |];
+    intros k; split_and!; vm_compute; reflexivity.
+Qed.
+
+(** With no hand-off every end gets 2L and every floor is L + 1. *)
+Lemma budgets_flat W L ty_of x :
+  w_bud (with_budgets W [] L ty_of) x = Some (2 * L) ∧ w_pay (with_budgets W [] L ty_of) x = L + 1.
+Proof. unfold with_budgets, bud_at, pay_at. cbn. split; [f_equal|]; lia. Qed.
+
+Definition tc_W : world := with_budgets (cworld TailCall.tc_Ψ) [] (round_len TailCall.tc_main) (λ _, None).
+
+Theorem tc_budgets :
+  strict tc_W ∧ lfptyped tc_W ∅ (∅, {[+ TailCall.tc_main +]}) TUnit ∧
+  round_len TailCall.tc_main = 1 ∧ ∀ x, w_bud tc_W x = Some 2 ∧ w_pay tc_W x = 2.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len TailCall.tc_main) (λ _, None) tc_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 1 _ x).
+Qed.
+
+Definition sch_W : world :=
+  with_budgets (cworld (CfstScheduler.sch_Ψ 6)) [] (round_len CfstScheduler.sch_main) (λ _, None).
+
+Theorem sch_budgets :
+  strict sch_W ∧ lfptyped sch_W ∅ (∅, {[+ CfstScheduler.sch_main +]}) TUnit ∧
+  round_len CfstScheduler.sch_main = 6 ∧ ∀ x, w_bud sch_W x = Some 12 ∧ w_pay sch_W x = 7.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len CfstScheduler.sch_main) (λ _, None) sch_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 6 _ x).
+Qed.
+
+Definition rc_W : world :=
+  with_budgets (cworld ReceivedChain.ch_Ψ) [] (round_len ReceivedChain.ch_main) (λ _, None).
+
+Theorem rc_budgets :
+  strict rc_W ∧ lfptyped rc_W ∅ (∅, {[+ ReceivedChain.ch_main +]}) TUnit ∧
+  round_len ReceivedChain.ch_main = 2 ∧ ∀ x, w_bud rc_W x = Some 4 ∧ w_pay rc_W x = 3.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len ReceivedChain.ch_main) (λ _, None) rc_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 2 _ x).
+Qed.
+
+Definition rg_W : world := with_budgets (cworld GrowRing.rg_Ψ) [] (round_len GrowRing.rg_main) (λ _, None).
+
+Theorem rg_budgets :
+  strict rg_W ∧ lfptyped rg_W ∅ (∅, {[+ GrowRing.rg_main +]}) TUnit ∧
+  round_len GrowRing.rg_main = 4 ∧ ∀ x, w_bud rg_W x = Some 8 ∧ w_pay rg_W x = 5.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len GrowRing.rg_main) (λ _, None) rg_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 4 _ x).
+Qed.
+
+Definition abp_W : world := with_budgets (cworld ABP.abp_Ψ) [] (round_len ABP.abp_main) (λ _, None).
+
+Theorem abp_budgets :
+  strict abp_W ∧ lfptyped abp_W ∅ (∅, {[+ ABP.abp_main +]}) TUnit ∧
+  round_len ABP.abp_main = 4 ∧ ∀ x, w_bud abp_W x = Some 8 ∧ w_pay abp_W x = 5.
+Proof.
+  destruct (lfsource_budgets _ _ _ [] (round_len ABP.abp_main) (λ _, None) abp_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 4 _ x).
 Qed.
