@@ -85,8 +85,8 @@ Proof.
   - intros x. unfold sched_rank, pt_shift, pt_dual. cbn. destruct (pt_pol x); cbn; lia.
 Qed.
 
-(** The scheduler has no box, so R1, R2-recv and the hand-off graph
-    hold trivially. *)
+(** The scheduler has no box, so R1, R2-recv and the box check hold
+    trivially. *)
 Theorem sched_lfsource : lfsource Scheduler.sched_Ψ Scheduler.sched_main TUnit.
 Proof.
   split_and!.
@@ -95,10 +95,6 @@ Proof.
   - split; [apply Scheduler.sched_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply sched_wf.
   - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
@@ -121,10 +117,6 @@ Proof.
   - split; [apply Sync.sync_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply cworld_depth_wf. intros x y (C & xs & Hin & g0 & (f & Hf & Hs & ->) & E).
     unfold Sync.sync_Ψ in Hin. rewrite elem_of_app, list_elem_of_singleton in Hin.
     destruct Hin as [Hin|Hin]; [by apply elem_of_nil in Hin|]. injection Hin as -> ->.

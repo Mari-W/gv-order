@@ -21,23 +21,20 @@
       constants, boxes and point values. The point parameters of a box
       are fresh. The parameter, the self and a received payload are
       not.
-    - R4′ ([r4_ok]): a forwarding hop is a send, inside a box body, of a
-      payload received in the same body and not acted on. Its two
-      carriers are traced back to the box parameter as paths into its
-      product type. The session types at those paths come from a type
-      of the box that the typing judgment derives ([ann]), and an edge
-      runs from the receiving carrier's type to the dual of the sending
-      carrier's type, both with points and constraints erased. The
-      graph of all hops is acyclic. Expressions carry no types, so this
-      rule reads its types off typings of the boxes, not off the term.
-      Under §17.6 a link inside a box body adds edges to the same graph,
-      the hand-off graph, and replaces the link clause of R2′.
+    - The box check ([box_ok]): a box body links nowhere, its forwards
+      (sends of a payload received in the same body and not acted on)
+      can be traced to parameter slots ([hops]), and no received
+      payload escapes it ([bleak]). This replaces R4′ and the hand-off
+      graph over session types, whose forward edges the root graph
+      restates over roots and whose link edges link tickets made
+      unnecessary (plan §18).
     - Rank ([wf_world]): ≺ of the world is well founded.
     - R2-recv ([r2r], stage 3c, plan §13) replaces R2′ in the fragment.
       A received payload passed to a call of the self counts as
       advanced, and every slot it feeds must be acted on before the
       round passes it on. [r2] stays as the stricter rule. The fragment
-      asks [lf_r2h], R2-recv without the link clause.
+      asks [lf_r2h], R2-recv without the link clause, which the box
+      check makes void.
     - Budgets ([with_budgets], [src_world], plan §17.6, §17.8, revised
       after stage L6a). The refill w_bud and the floor w_pay of the
       world come from the root graph ([root_edges]) and from the
@@ -46,19 +43,24 @@
       boxes and outside, and it is read off the term. No session type
       enters the budgets, so there is no map from points to types to
       check.
+    - Tickets ([src_tickets], plan §18.5). A thread spends a ticket at
+      each link and splits its tickets at each spawn. A program starts
+      with 2^s · ℓ tickets, for s spawn sites and ℓ link sites, all
+      outside boxes by the box check.
 
     Syntactic points (sharp edges 173): a box that creates a channel
     takes its points as leading λs, and the hypotheses of a closed
     program name constants. R2-recv reads a leading λ as a point
     parameter only when the box type in its annotation says TPt.
 
-    [lfptyped] is [gptyped] with R1, R2-recv, the hand-off graph and
+    [lfptyped] is [gptyped] with R1, R2-recv, the box check and
     Rank. [lfsource] is
     the same for a closed source program over the hypotheses of its
     top-level channels, the form in which the examples are typed under
     the constant world (sharp edges 172). Its Rank is asked of the world
     where the run starts, which has the creation facts ([cworld]), and
-    it asks an acyclic root graph ([root_ok]). *)
+    it asks an acyclic root graph ([root_ok]), which includes the box
+    check. *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard.
@@ -201,50 +203,20 @@ Fixpoint r2 (rnd : bool) (S : list bool) (e : expr) : bool :=
   end.
 Definition lf_r2 (e : expr) : bool := r2 false [] e.
 
-(** ** The hand-off graph: R4′ and the link clause of R2′ (plan §17.6)
+(** ** Carriers in a box body and its forwards
 
-    R4′ bounded forwarding by a graph over session types up to points,
-    and R2′ asked the arguments of a link inside a round to be fresh.
-    Under §17.6 both are edges of one graph, the hand-off graph, which
-    must be acyclic. Its nodes are session types up to points. A
-    forward, a send inside a box body of a payload received in the same
-    body and not acted on, adds the edge of R4′, from the type of the
-    receiving carrier to the dual of the type of the sending carrier. A
-    link ⟨u, v⟩ inside a box body hands the partner of u over to the
-    partner of v and the partner of v over to the partner of u. It adds
-    edges from the type of u to the type of the partner of v, and from
-    the type of v to the type of the partner of u. C3 closes a cycle in
-    one round: y is linked to a fresh a, and b, the partner of a, is
-    the next round's y. *)
-
-(** Session types up to points, as words. Points, bounds and
-    constraints are dropped, and every constructor has a fixed arity, so
-    two erased types are equal exactly when the types agree up to
-    points and constraints. *)
-Fixpoint er_ty (T : ty) : list nat :=
-  match T with
-  | TUnit => [0]
-  | TLolli _ _ T U => 1 :: er_ty T ++ er_ty U
-  | TProd T U => 2 :: er_ty T ++ er_ty U
-  | TSum T U => 3 :: er_ty T ++ er_ty U
-  | TBox n k _ T => 4 :: n :: k :: er_ty T
-  | TSess s _ => 5 :: er_sty s
-  | TEx _ n _ T => 6 :: n :: er_ty T
-  | TPt _ => [7]
-  end
-with er_sty (s : sty) : list nat :=
-  match s with
-  | SRcv m T => 10 :: m :: er_ty T
-  | SSnd m T => 11 :: m :: er_ty T
-  | SEnd => [12]
-  | SMu s => 13 :: er_sty s
-  | SVar a => [14; a]
-  | SVarD a => [15; a]
-  | SSkip => [16]
-  | SSeq s1 s2 => 17 :: er_sty s1 ++ er_sty s2
-  | SPlus s1 s2 => 18 :: er_sty s1 ++ er_sty s2
-  | SWith s1 s2 => 19 :: er_sty s1 ++ er_sty s2
-  end.
+    The root graph below bounds the forwards of the box bodies. A
+    forward is a send, inside a box body, of a payload received in the
+    same body and not acted on. Its two carriers are traced back to the
+    box parameter as paths into its product type. A link inside a box
+    body is rejected outright ([has_link], [box_ok]). Under link
+    tickets (plan §18) a link hands no counter on, so links add no edge
+    to any graph. Each link site outside boxes runs at most once, which
+    bounds the tickets a program starts with ([src_tickets]). The
+    hand-off graph over session types up to points, which held the
+    edges of R4′ and of links inside boxes, is gone. Without link
+    edges it only restated the forwards that the root graph keys on
+    roots, and the budgets never read it. *)
 
 (** What a variable of a box body is, for hand-offs: a carrier that
     descends from the parameter at a path into its product type (false
@@ -319,36 +291,16 @@ Fixpoint mentions (G : list car) (e : expr) : bool :=
 Definition ocat {A} (a b : option (list A)) : option (list A) :=
   match a, b with Some x, Some y => Some (x ++ y) | _, _ => None end.
 
-(** An end that a link names: a parameter slot, or an end of a new. *)
-Inductive ref := RPar (π : list bool) | RNew (i : nat) (s : bool).
-
-Definition ref_of (c : car) : option ref :=
-  match c with CPar π => Some (RPar π) | CNew i s => Some (RNew i s) | _ => None end.
-
-(** The items of a box body: a forward between two carrier paths
-    (receiving, sending), a link of two ends, and an end s of the new i
-    passed to the self at the parameter slot π. *)
-Inductive hitem :=
-  | HFwd (π1 π2 : list bool)
-  | HLink (r1 r2 : ref)
-  | HBind (i : nat) (s : bool) (π : list bool).
-
-Definition handoff (h : hitem) : bool := match h with HBind _ _ _ => false | _ => true end.
-
-(** The ends of news that an argument of the self passes at slots. *)
-Fixpoint binds (G : list car) (π : list bool) (e : expr) : list hitem :=
-  match e with
-  | Pair a b => binds G (π ++ [false]) a ++ binds G (π ++ [true]) b
-  | _ => match ecar G e with CNew i s => [HBind i s π] | _ => [] end
-  end.
+(** A forward of a box body, between two carrier paths (receiving,
+    sending). *)
+Inductive hitem := HFwd (π1 π2 : list bool).
 
 Definition is_self (G : list car) (f : expr) : bool :=
   match f with Var x => match car_of G x with CSelf => true | _ => false end | _ => false end.
 
-(** The items of a box body. None when a received payload is sent in a
-    form whose carriers cannot be traced, or when a link names an end
-    that is neither a parameter slot nor an end of a new. Nested boxes
-    are boxes of their own. *)
+(** The forwards of a box body. None when a received payload is sent
+    in a form whose carriers cannot be traced. Nested boxes are boxes of
+    their own. *)
 Fixpoint hops (G : list car) (e : expr) : option (list hitem) :=
   match e with
   | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ | EBox _ => Some []
@@ -360,21 +312,9 @@ Fixpoint hops (G : list car) (e : expr) : option (list hitem) :=
         | _, _ => None
         end
       else rest
-  | App (Konst KLink) (Pair u v) =>
-      match ref_of (ecar G u), ref_of (ecar G v) with
-      | Some r1, Some r2 => ocat (Some [HLink r1 r2]) (ocat (hops G u) (hops G v))
-      | _, _ => None
-      end
-  | App (Konst KLink) _ => None
   | Lam b => hops (CNo :: G) b
   | App (Lam b) a => ocat (hops G a) (hops (ecar G a :: G) b)
-  | App e1 e2 =>
-      let bd := match fhead e, e1 with
-                | Some f, App _ _ => if is_self G f then binds G [] e2 else []
-                | _, _ => []
-                end in
-      ocat (Some bd) (ocat (hops G e1) (hops G e2))
-  | Pair e1 e2 | LetU e1 e2 => ocat (hops G e1) (hops G e2)
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => ocat (hops G e1) (hops G e2)
   | LetP e1 e2 => ocat (hops G e1) (hops (pcar G e1 ++ G) e2)
   | Inj1 e | Inj2 e => hops G e
   | Case e e1 e2 =>
@@ -404,60 +344,21 @@ Fixpoint boxes (e : expr) : list expr :=
   | Case a b c => boxes a ++ boxes b ++ boxes c
   end.
 
-Fixpoint ty_at (π : list bool) (T : ty) : option ty :=
-  match π, T with
-  | [], _ => Some T
-  | false :: π', TProd T1 _ => ty_at π' T1
-  | true :: π', TProd _ T2 => ty_at π' T2
-  | _, _ => None
+(** A link occurs, in a spawned or applied λ and in a nested box
+    included. *)
+Fixpoint has_link (e : expr) : bool :=
+  match e with
+  | Konst KLink => true
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => false
+  | Lam e | EBox e | Inj1 e | Inj2 e => has_link e
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => has_link e1 || has_link e2
+  | Case e e1 e2 => has_link e || has_link e1 || has_link e2
   end.
-
-Definition node := list nat.
-
-(** The node of the session type at path π of the parameter type P,
-    dualized when d holds. *)
-Definition node_at (P : ty) (π : list bool) (d : bool) : option node :=
-  match ty_at π P with Some (TSess s _) => Some (er_sty (if d then dual s else s)) | _ => None end.
 
 Fixpoint omap {A B} (f : A → option B) (l : list A) : option (list B) :=
   match l with
   | [] => Some []
   | x :: l => match f x, omap f l with Some y, Some ys => Some (y :: ys) | _, _ => None end
-  end.
-
-(** The slots at which the next round holds the end s of the new i, with
-    true when the slot holds its partner, so that its type is the dual. *)
-Definition new_slots (hs : list hitem) (i : nat) (s : bool) : list (list bool * bool) :=
-  hs ≫= (λ h, match h with
-              | HBind j t π => if bool_decide (j = i) then [(π, negb (Bool.eqb t s))] else []
-              | _ => []
-              end).
-
-(** The slots that give the type of an end and of its partner. *)
-Definition ref_slots (hs : list hitem) (r : ref) : list (list bool * bool) :=
-  match r with RPar π => [(π, false)] | RNew i s => new_slots hs i s end.
-Definition peer_slots (hs : list hitem) (r : ref) : list (list bool * bool) :=
-  match r with RPar π => [(π, true)] | RNew i s => new_slots hs i (negb s) end.
-
-(** The types at the slots. An end that reaches no slot has no type the
-    check can read, and the box is rejected. *)
-Definition nodes_of (P : ty) (sl : list (list bool * bool)) : option (list node) :=
-  match sl with [] => None | _ => omap (λ pd, node_at P pd.1 pd.2) sl end.
-
-Definition pairs {A} (xs ys : list A) : list (A * A) := xs ≫= (λ x, (λ y, (x, y)) <$> ys).
-
-(** The edges of one item in a box whose parameter has type P. *)
-Definition item_edges (P : ty) (hs : list hitem) (h : hitem) : option (list (node * node)) :=
-  match h with
-  | HFwd π1 π2 =>
-      match node_at P π1 false, node_at P π2 true with Some a, Some b => Some [(a, b)] | _, _ => None end
-  | HLink r1 r2 =>
-      match nodes_of P (ref_slots hs r1), nodes_of P (peer_slots hs r2),
-            nodes_of P (ref_slots hs r2), nodes_of P (peer_slots hs r1) with
-      | Some a1, Some b2, Some a2, Some b1 => Some (pairs a1 b2 ++ pairs a2 b1)
-      | _, _, _, _ => None
-      end
-  | HBind _ _ _ => Some []
   end.
 
 Fixpoint ann_lookup (b : expr) (ann : list (expr * ty)) : option ty :=
@@ -466,43 +367,8 @@ Fixpoint ann_lookup (b : expr) (ann : list (expr * ty)) : option ty :=
   | (b', T) :: ann => if bool_decide (b = b') then Some T else ann_lookup b ann
   end.
 
-(** The parameter type under n point parameters. *)
-Fixpoint peel (n : nat) (T : ty) : option ty :=
-  match n, T with
-  | 0, TLolli _ _ P _ => Some P
-  | S n', TLolli _ _ (TPt _) T' => peel n' T'
-  | _, _ => None
-  end.
-
-(** The edges of one box. A box with hand-offs needs a type in [ann]
-    without session variables, so that erased types are not instances
-    of one another. *)
-Definition box_edges (ann : list (expr * ty)) (e : expr) : option (list (node * node)) :=
-  match e with
-  | EBox b =>
-      match box_hops b with
-      | None => None
-      | Some hs =>
-          if existsb handoff hs then
-            match ann_lookup e ann, nlams b with
-            | Some (TBox _ 0 _ (TLolli _ _ _ T)), S n =>
-                match peel n T with
-                | Some P => match omap (item_edges P hs) hs with Some ls => Some (concat ls) | None => None end
-                | None => None
-                end
-            | _, _ => None
-            end
-          else Some []
-      end
-  | _ => Some []
-  end.
-
-Definition thread_edges (ann : list (expr * ty)) (e : expr) : option (list (node * node)) :=
-  foldr (λ b acc, ocat (box_edges ann b) acc) (Some []) (boxes e).
-
 (** A path of 1 to n edges from x to y. Graphs are over any type with
-    decidable equality. Here the nodes are session types up to points,
-    and in the budgets below they are root names. *)
+    decidable equality. The root graph below has root names as nodes. *)
 Fixpoint reach {A} `{EqDecision A} (n : nat) (E : list (A * A)) (x y : A) : bool :=
   match n with
   | 0 => false
@@ -512,13 +378,6 @@ Fixpoint reach {A} `{EqDecision A} (n : nat) (E : list (A * A)) (x y : A) : bool
 Definition acyclic {A} `{EqDecision A} (E : list (A * A)) : bool :=
   forallb (λ ab, negb (bool_decide (ab.1 = ab.2) || reach (length E) E ab.2 ab.1)) E.
 
-(** The hand-off graph of the threads [ts] is acyclic, with box types
-    derived by [tyd]. The name stays from R4′. *)
-Definition r4_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
-  ∃ (ann : list (expr * ty)) (E : list (node * node)),
-    (∀ b T, (b, T) ∈ ann → tyd b T) ∧ acyclic E = true ∧
-    ∀ e, ts e → ∃ E', thread_edges ann e = Some E' ∧ ∀ ab, ab ∈ E' → ab ∈ E.
-
 (** ** R2-recv, advance with fed slots (plan §13)
 
     R2-recv relaxes R2′ for received payloads. Inside a round, the
@@ -527,9 +386,9 @@ Definition r4_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
     not acted on and the call forces the self of the round's box. The
     point values a call takes before its argument are fresh. In [r2r]
     a link still asks a fresh argument, so a received payload counts as
-    advanced when it goes to recursion and not when it is linked. Under
-    §17.6 the link clause moves into the hand-off graph, and the
-    fragment asks [lf_r2h], R2-recv without it.
+    advanced when it goes to recursion and not when it is linked. The
+    fragment rejects every link inside a box ([box_ok]), so it asks
+    [lf_r2h], R2-recv without the link clause.
 
     A received payload that goes to the self lands in a parameter slot
     of the next round, a path into the parameter's product type. These
@@ -541,7 +400,7 @@ Definition r4_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
     path is a prefix of a fed path, or extends one, counts as fed.
 
     The environment records for each variable whether it is fresh, its
-    carrier ([car], shared with the hand-off graph), and whether it is
+    carrier ([car], shared with the forwards of [hops]), and whether it is
     the self. In a box body the parameter is variable 0, at slot path
     [], the other leading λs follow, and the self is last
     ([bbox_envk]). A leading λ is a point parameter, and fresh, only
@@ -682,8 +541,8 @@ Definition r2r (ff rnd : bool) (fd : list (list bool)) (G : list rent) (e : expr
 
 Definition lf_r2r (e : expr) : bool := r2r true false [] [] e.
 
-(** R2-recv without the link clause, which the hand-off graph replaces
-    (plan §17.6). A leading λ of a box counts as a point parameter, and
+(** R2-recv without the link clause, which the ban on links inside
+    boxes replaces ([box_ok]). A leading λ of a box counts as a point parameter, and
     so as fresh, only when the box type in the annotation [ann] says
     that its argument is TPt. *)
 Definition lf_r2h (ann : list (expr * ty)) (e : expr) : bool := r2x false (box_npt ann) true false [] [] e.
@@ -708,7 +567,7 @@ Definition r2h_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
     graph that bounds the hand-offs is a graph over roots.
 
     An edge r₁ → r₂ means that a payload received on a carrier with root
-    r₁ is passed on, not acted on, along a carrier with root r₂. Three
+    r₁ is passed on, not acted on, along a carrier with root r₂. Two
     kinds of hand-off give edges.
     - A forward inside a box body ([HFwd] of [hops]) between two
       parameter slots. Every call of the box from outside a box must
@@ -719,17 +578,16 @@ Definition r2h_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
     - A forward outside boxes, in the code of a thread ([troots]): a
       send of a received payload, not acted on, along an end of a
       top-level new.
-    - A link outside boxes of a received payload, not acted on, with an
-      end of a top-level new. A link is accounted like a send of the
-      one end along the other (decision of 2026-11-16).
-    A received payload not acted on may occur only as the payload of a
-    send, as the carrier of an action, as the value a let, a let pair, a
-    case or an applied λ binds, inside a spawned or applied λ, and,
-    inside a box, as a component of the argument of the self (R2-recv).
-    Any other occurrence would hand it on along a path the graph does
-    not see, and the program is rejected ([troots], [bleak]). Links
-    inside boxes stay with the hand-off graph above, whose link edges
-    are self-loops. Links outside boxes are not rejected. *)
+    A link gives no edge. Under link tickets (plan §18) it spends a
+    ticket of the linker and hands no counter on, so outside boxes a
+    linked end counts as acted on. A received payload not acted on may
+    occur only as the payload of a send, as the carrier of an action or
+    of a link, as the value a let, a let pair, a case or an applied λ
+    binds, inside a spawned or applied λ, and, inside a box, as a
+    component of the argument of the self (R2-recv). Any other
+    occurrence would hand it on along a path the graph does not see,
+    and the program is rejected ([troots], [bleak]). Links inside boxes
+    are rejected ([box_ok]). *)
 
 (** The root of a point value. *)
 Fixpoint proot (e : expr) : option pname :=
@@ -839,25 +697,8 @@ Fixpoint troots (G : list tcar) (e : expr) : tres :=
          end)
         (match c with Var _ => Some ([], []) | _ => troots G c end)
   | App (Konst KLink) (Pair u v) =>
-      oapp
-        (match u with
-         | Var x =>
-             match tcar_of G x, tecar G v with
-             | TCRcv (Some r1), TCEnd r2 => Some ([(r1, r2)], [])
-             | TCRcv _, _ => None
-             | _, _ => Some ([], [])
-             end
-         | _ => troots G u
-         end)
-        (match v with
-         | Var x =>
-             match tcar_of G x, tecar G u with
-             | TCRcv (Some r1), TCEnd r2 => Some ([(r1, r2)], [])
-             | TCRcv _, _ => None
-             | _, _ => Some ([], [])
-             end
-         | _ => troots G v
-         end)
+      oapp (match u with Var _ => Some ([], []) | _ => troots G u end)
+        (match v with Var _ => Some ([], []) | _ => troots G v end)
   | App (Konst KForce) f => if tmentions G f then None else Some ([], [(None, TCNo)])
   | App (Konst k) a =>
       if act_konst k then match a with Var _ => Some ([], []) | _ => troots G a end else troots G a
@@ -964,8 +805,6 @@ Fixpoint slot_root (c : tcar) (π : list bool) : option pname :=
 
 Definition box_env (b : expr) : list car := benv (CPar []) CNo CSelf (nlams b).
 
-Definition is_fwd (h : hitem) : bool := match h with HFwd _ _ => true | _ => false end.
-
 (** The edges of the forward h of the box B, one per call site of B. *)
 Definition fwd_edges (sites : list (option expr * tcar)) (B : expr) (h : hitem) : option (list (pname * pname)) :=
   match B, h with
@@ -980,9 +819,13 @@ Definition fwd_edges (sites : list (option expr * tcar)) (B : expr) (h : hitem) 
   | _, _ => Some []
   end.
 
+(** A box literal of the fragment. Its body links nowhere, its
+    forwards can be traced, and no received payload escapes it. *)
 Definition box_ok (B : expr) : bool :=
   match B with
-  | EBox b => match box_hops b with Some _ => negb (bleak (box_env b) (bbody b)) | None => false end
+  | EBox b =>
+      negb (has_link b) &&
+      match box_hops b with Some _ => negb (bleak (box_env b) (bbody b)) | None => false end
   | _ => true
   end.
 
@@ -998,7 +841,7 @@ Definition root_edges (t : expr) : option (list (pname * pname)) :=
   | Some (Et, sites) =>
       let bs := boxes t in
       let fw := bs ≫= (λ B, match B with
-                            | EBox b => (λ h, (B, h)) <$> filter (λ h, is_fwd h = true) (default [] (box_hops b))
+                            | EBox b => (λ h, (B, h)) <$> default [] (box_hops b)
                             | _ => []
                             end) in
       if forallb box_ok bs &&
@@ -1018,21 +861,33 @@ Lemma root_ok_intro t :
   match root_edges t with Some E => acyclic E | None => false end = true → root_ok t.
 Proof. destruct (root_edges t) as [E|] eqn:H; [|done]. intros Ha. by exists E. Qed.
 
+(** A program with a root graph has only boxes of the fragment. *)
+Lemma root_edges_boxes t E : root_edges t = Some E → forallb box_ok (boxes t) = true.
+Proof.
+  unfold root_edges. destruct (troots [] t) as [[Et sites]|]; [|done]. cbv zeta.
+  destruct (forallb box_ok (boxes t)); [done|]. cbn. discriminate.
+Qed.
+
+Lemma root_ok_boxes t : root_ok t → forallb box_ok (boxes t) = true.
+Proof. intros (E & HE & _). exact (root_edges_boxes t E HE). Qed.
+
 (** ** Rank *)
 
 Definition wf_world (W : world) : Prop := well_founded (w_lt W).
 
 (** ** The lock-free fragment *)
 
-Definition lf_r4 (W : world) (p : proc) : Prop :=
-  r4_ok (λ b T, ∃ Φ Ψ Δ F, typed W Φ Ψ ∅ Δ F b T) (λ e, e ∈ p.2).
-
 Definition lf_r2w (W : world) (p : proc) : Prop :=
   r2h_ok (λ b T, ∃ Φ Ψ Δ F, typed W Φ Ψ ∅ Δ F b T) (λ e, e ∈ p.2).
 
+(** The boxes of the threads of p are boxes of the fragment. Their
+    bodies do not link, their forwards can be traced, and no received
+    payload escapes them. *)
+Definition lf_boxes (p : proc) : Prop := ∀ e, e ∈ p.2 → forallb box_ok (boxes e) = true.
+
 Definition lfptyped (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
   gptyped W Σ p T ∧ (∀ e, e ∈ p.2 → lf_r1 e = true) ∧ lf_r2w W p ∧
-  lf_r4 W p ∧ wf_world W.
+  lf_boxes p ∧ wf_world W.
 
 Lemma lfptyped_gptyped W Σ p T : lfptyped W Σ p T → gptyped W Σ p T.
 Proof. by intros [? _]. Qed.
@@ -1389,13 +1244,12 @@ End ladder_rank.
     channels (the premises of [soundness_created_s]), with the checks of
     the fragment. Its run starts in [cworld Ψ], and Rank is asked of
     that world. The root graph, from which its floors come, must
-    exist and be acyclic. *)
+    exist and be acyclic. It also bans links inside boxes ([box_ok]). *)
 Definition lfsource (Ψ : hyps) (t : expr) (T : ty) : Prop :=
   created (Wpo []) Ψ ∧ prim T ∧
   gstyped ∅ Ψ [] (∅, None) t T ∧ lf_r1 t = true ∧
   r2h_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧
-  r4_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧ wf_world (cworld Ψ) ∧
-  root_ok t.
+  wf_world (cworld Ψ) ∧ root_ok t.
 
 Lemma lfsource_gstyped Ψ t T : lfsource Ψ t T → gstyped ∅ Ψ [] (∅, None) t T.
 Proof. by intros (_ & _ & ? & _). Qed.
@@ -1412,7 +1266,7 @@ Theorem lfsource_lfptyped_at Ψ t T B P :
   strict (World (hroots Ψ) (w_lt (cworld Ψ)) B P) ∧
   lfptyped (World (hroots Ψ) (w_lt (cworld Ψ)) B P) ∅ (∅, {[+ t +]}) T.
 Proof.
-  intros (HΨ & HT & [Ht Hg] & H1 & (ann2 & Hann2 & H2) & (ann & E & Hann & Hac & Hts) & Hwf & _).
+  intros (HΨ & HT & [Ht Hg] & H1 & (ann2 & Hann2 & H2) & Hwf & Hr).
   destruct (cworld_hold Ψ HΨ) as [HS Hh].
   pose proof (strict_budgets (cworld Ψ) B P HS) as HS'.
   split; [exact HS'|]. split_and!.
@@ -1422,10 +1276,7 @@ Proof.
     + intros b U Hin. destruct (Hann2 b U Hin) as (Φ & Ψ' & Δ & F & Hb). exists Φ, Ψ', Δ, F.
       by apply styped_typed.
     + intros e ->%gmultiset_elem_of_singleton. by apply H2.
-  - exists ann, E. split_and!; [|done|].
-    + intros b U Hin. destruct (Hann b U Hin) as (Φ & Ψ' & Δ & F & Hb). exists Φ, Ψ', Δ, F.
-      by apply styped_typed.
-    + intros e ->%gmultiset_elem_of_singleton. by apply Hts.
+  - intros e ->%gmultiset_elem_of_singleton. by apply root_ok_boxes.
   - exact Hwf.
 Qed.
 
@@ -1545,17 +1396,10 @@ Lemma elem_of_single (e t : expr) : e ∈ ({[+ t +]} : gmultiset expr) → e = t
 Proof. apply gmultiset_elem_of_singleton. Qed.
 
 (** The forwarder. fwd forwards the payload it receives on a (Si) to b
-    (So), one hop, from Si to the dual of So, which no hop leaves. *)
-Definition fw_ann : list (expr * ty) :=
-  [(Forwarder.fwd, TBox 2 0 Forwarder.fw_C (TLolli None None TUnit Forwarder.fwd_body))].
+    (So), one hop. Its root graph is the one edge from the root of a to
+    the root of b ([fw_budgets]).
 
-Definition fw_E : list (node * node) :=
-  default [] (thread_edges fw_ann Forwarder.fw_main).
-
-Lemma fw_E_one : length fw_E = 1.
-Proof. vm_compute. reflexivity. Qed.
-
-(** In the world of the forwarder (Forwarder.v) a is the constant 1 and
+    In the world of the forwarder (Forwarder.v) a is the constant 1 and
     b the constant 0. Round k of both sits at 6k, a at 6k, b at 6k+1, and
     the payload points a[k], b[k] in between, at 6k+2 or 6k+3 by
     polarity. *)
@@ -1595,11 +1439,6 @@ Proof.
   - split; [apply Forwarder.fw_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists fw_ann, fw_E. split_and!.
-    + intros b T Hin. apply list_elem_of_singleton in Hin. injection Hin as -> ->.
-      exists ∅, [], [], (∅, None). apply Forwarder.fwd_typed, (proj1 wnil_strict).
-    + vm_compute. reflexivity.
-    + intros e ->. exists fw_E. split; [vm_compute; reflexivity|done].
   - apply fw_wf.
   - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
@@ -1616,10 +1455,6 @@ Proof.
   - split; [apply TailCall.tc_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply cworld_depth_wf. intros x y H.
     destruct (hyps_lt_snoc [] [] TailCall.tcc_P 0 x y ltac:(constructor) H) as [Hn|(x0 & y0 & Hf & _ & -> & ->)];
       [by apply hyps_lt_nil in Hn|].
@@ -1643,19 +1478,15 @@ Proof.
   - split; [apply CfstScheduler.sch_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply (ladder_wf CfstScheduler.rk CfstScheduler.rk_S 6 6). lia.
   - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
-(** Kobayashi's forwarder server. The guard rejects it. R1, R2′ and R4′
-    accept it, because the spawned call takes the fresh end p. *)
+(** Kobayashi's forwarder server. The guard rejects it. R1, R2′ and the
+    box check accept it, because the spawned call takes the fresh end p. *)
 Theorem kob_checks :
   lf_r1 KobForwarder.fw_main = true ∧ lf_r2 KobForwarder.fw_main = true ∧
-  thread_edges [] KobForwarder.fw_main = Some [].
+  forallb box_ok (boxes KobForwarder.fw_main) = true.
 Proof. vm_compute. auto. Qed.
 
 Theorem kob_not_lfptyped W Σ T : ¬ lfptyped W Σ (∅, {[+ KobForwarder.fw_main +]}) T.
@@ -1705,11 +1536,11 @@ Definition c1_box : expr :=
       (App (App (App EForce (Var 7)) (App (Konst (KPay 0)) (Var 6))) (Pair (Var 0) (Var 2))))))
     (App ESend (Pair EUnit (Var 0))))))).
 
-(** C1 passes the guard, R1, R2′ and the hand-off graph. The body is
+(** C1 passes the guard, R1, R2′ and the box check. The body is
     harmless. *)
 
 Theorem c1_checks :
-  guarded c1_box ∧ lf_r1 c1_box = true ∧ lf_r2 c1_box = true ∧ thread_edges [] c1_box = Some [].
+  guarded c1_box ∧ lf_r1 c1_box = true ∧ lf_r2 c1_box = true ∧ forallb box_ok (boxes c1_box) = true.
 Proof. unfold guarded. vm_compute. auto. Qed.
 
 (** The gate of C1 needs κ[0]ⁿ⁺¹ ≺ κ[0]ⁿ for every n. *)
@@ -1744,59 +1575,13 @@ Definition c3_box : expr :=
 Theorem c3_checks : guarded c3_box ∧ lf_r1 c3_box = true ∧ lf_r2 c3_box = false.
 Proof. unfold guarded. vm_compute. auto. Qed.
 
-(** A self-loop refutes acyclicity. *)
-Lemma acyclic_loop (E : list (node * node)) n : acyclic E = true → (n, n) ∈ E → False.
-Proof.
-  unfold acyclic. intros H Hin. rewrite forallb_forall in H.
-  specialize (H _ (proj1 (list_elem_of_In _ _) Hin)). cbn in H.
-  rewrite bool_decide_true in H by done. discriminate.
-Qed.
-
-(** A box whose items give a self-loop at every parameter type has a
-    self-loop in its edges, whatever type the annotation gives it. *)
-Lemma box_loop ann b hs E :
-  box_hops b = Some hs → existsb handoff hs = true →
-  (∀ P ls, omap (item_edges P hs) hs = Some ls → ∃ n, (n, n) ∈ concat ls) →
-  box_edges ann (EBox b) = Some E → ∃ n, (n, n) ∈ E.
-Proof.
-  intros Hb Hh Hl. unfold box_edges. rewrite Hb, Hh.
-  repeat case_match; try discriminate. intros [= <-]. eapply Hl. eassumption.
-Qed.
-
-Lemma thread_loop ann b E' :
-  boxes b = [] → (∀ E, box_edges ann (EBox b) = Some E → ∃ n, (n, n) ∈ E) →
-  thread_edges ann (EBox b) = Some E' → ∃ n, (n, n) ∈ E'.
-Proof.
-  intros Hb H. unfold thread_edges. cbn [boxes]. rewrite Hb. cbn [foldr].
-  destruct (box_edges ann (EBox b)) as [E|] eqn:HE; [|done]. cbn. rewrite app_nil_r.
-  intros [= <-]. by apply H.
-Qed.
-
-Definition c3_body : expr := match c3_box with EBox b => b | _ => EUnit end.
-Definition c3_hs : list hitem := default [] (box_hops c3_body).
-
-(** The link of y to a hands the partner of y over to b, which sits at
-    the slot of y in the next round. Both edges of the link are
-    self-loops, at the type of y and at its dual. *)
-Lemma c3_items P ls : omap (item_edges P c3_hs) c3_hs = Some ls → ∃ n, (n, n) ∈ concat ls.
-Proof.
-  assert (c3_hs = [HLink (RPar [false]) (RNew 6 false); HBind 6 true [false]]) as -> by (vm_compute; reflexivity).
-  intros H. cbn in H. unfold node_at in H.
-  destruct (ty_at [false] P) as [[]|] eqn:Hty; try discriminate H.
-  rewrite !bool_decide_true in H by done. cbn in H. unfold node_at in H. rewrite Hty in H.
-  injection H as <-. eexists. cbn. left.
-Qed.
-
-(** Under §17.6 C3 passes R2-recv without the link clause, and the
-    hand-off graph rejects it, at every annotation. *)
+(** C3 links y inside the box, so the box check rejects it. Under link
+    tickets the relation excludes it as well, because each round spends
+    a ticket and a thread starts with finitely many (plan §18.4). *)
 Theorem c3_not_lfptyped W Σ T : ¬ lfptyped W Σ (∅, {[+ c3_box +]}) T.
 Proof.
-  intros (_ & _ & _ & (ann & E & _ & Hac & Hts) & _).
-  destruct (Hts c3_box (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)) as (E' & HE' & Hsub).
-  destruct (thread_loop ann c3_body E' ltac:(vm_compute; reflexivity)
-    (λ E0, box_loop ann c3_body c3_hs E0 ltac:(vm_compute; reflexivity) ltac:(vm_compute; reflexivity) c3_items)
-    HE') as [n Hn].
-  exact (acyclic_loop E n Hac (Hsub _ Hn)).
+  intros (_ & _ & _ & Hb & _). specialize (Hb _ (proj2 (gmultiset_elem_of_singleton _ _) eq_refl)).
+  revert Hb. vm_compute. discriminate.
 Qed.
 
 Theorem c3_r2h : lf_r2h [] c3_box = true.
@@ -1817,7 +1602,7 @@ Proof. vm_compute. reflexivity. Qed.
 
     x feeds the slot of h, and the next round sends h on before it acts
     on it. An end can bounce between the server and a client forever,
-    and its partner waits. The guard, R1 and R4′ accept it, and so does
+    and its partner waits. The guard, R1 and the box check accept it, and so does
     R2-recv without the fed-slot clause. With the clause it fails. *)
 Definition starve_body : expr :=
   LetP (Var 0) (LetP (App ERecv (Var 1))
@@ -1827,7 +1612,7 @@ Definition starve_body : expr :=
 Definition starve_box : expr := EBox (Lam starve_body).
 
 Theorem starve_checks :
-  guarded starve_box ∧ lf_r1 starve_box = true ∧ thread_edges [] starve_box = Some [] ∧
+  guarded starve_box ∧ lf_r1 starve_box = true ∧ forallb box_ok (boxes starve_box) = true ∧
   r2r false false [] [] starve_box = true ∧ lf_r2r starve_box = false ∧ lf_r2 starve_box = false.
 Proof. unfold guarded. split_and!; vm_compute; reflexivity. Qed.
 
@@ -1898,10 +1683,6 @@ Proof.
   - split; [apply ReceivedChain.ch_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply cworld_depth_wf. intros x y H.
     destruct (hyps_lt_snoc [] [] ReceivedChain.chc_P 0 x y ltac:(constructor) H) as [Hn|(x0 & y0 & Hf & _ & -> & ->)];
       [by apply hyps_lt_nil in Hn|].
@@ -1948,10 +1729,6 @@ Proof.
   - split; [apply GrowRing.rg_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply rg_wf.
   - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
@@ -1974,10 +1751,6 @@ Proof.
   - split; [apply ABP.abp_typed|vm_compute; reflexivity].
   - vm_compute. reflexivity.
   - exists []. split; [intros b T Hin; by apply elem_of_nil in Hin|intros e ->; vm_compute; reflexivity].
-  - exists [], []. split_and!.
-    + intros b T Hin. by apply elem_of_nil in Hin.
-    + reflexivity.
-    + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply abp_wf.
   - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
