@@ -3,8 +3,8 @@
     [lf_adequacy] proves that a process in [LFP] is lock free when the
     order of the world is well founded. The proof instantiates the
     criterion ([lf_run_criterion]) along a run, with the soup at every
-    position and every index, and the points and counters of every
-    thread ([frun]). The points of the held ends are the union of the
+    position and every index, the points and counters of every thread
+    ([frun]) and its tickets ([krun]). The points of the held ends are the union of the
     per-thread maps ([ppts]).
 
     A pending thread depends on the thread whose environment holds the
@@ -17,10 +17,13 @@
     - [we k t] is the point π_k of the end t acts on, ordered by [w_lt W].
       A thread that does not step keeps it ([stab_step]). A blocked holder
       of the partner end acts on an end below it ([s_rank]).
-    - [fu k t] is the counter of the partner end in its holder's counters
-      ([fu_at]). A channel step of the holder on another end ticks it,
-      handing the end on passes the counter minus one, and a link hands
-      the obligation to a peer whose budget lies below it ([fuel_step]).
+    - The measure of t at k is the pair of the tickets left in the
+      configuration ([ksum]) and the counter of the partner end in its
+      holder's counters ([fu_at]), ordered lexicographically ([lexlt],
+      plan §18.4). A link lowers the tickets and keeps nothing else in
+      check ([ksum_step]). At every other step the tickets stay, a channel
+      step of the holder on another end ticks the counter, and handing the
+      end on passes the counter minus one ([fuel_step]).
     - [no_tau_divergence] comes from the live relation
       ([live_no_tau_divergence]) and [links_restricted] from the soup
       ([lf_links_restricted]). *)
@@ -300,8 +303,8 @@ Proof.
 Qed.
 
 (** ** A thread that does not step keeps the point of its end *)
-Lemma stab_step n W T π P F q A U L q' t o :
-  strict W → LFconf (S (S n)) W ∅ T π q A U → lf_fuelc (S (S n)) W π P F A q →
+Lemma stab_step n W T π P F K q A U L q' t o :
+  strict W → LFconf (S (S n)) W ∅ T π q A U → lf_fuelc (S (S n)) W π P F K A q →
   istep q L q' → t ∉ L → rend q t = Some o →
   ∃ o', rend q' t = Some o' ∧ pupd π q L q' !! o' = π !! o.
 Proof.
@@ -317,7 +320,7 @@ Proof.
   { intros i j ei ej σi σj ei' ej' c b Hit Hjt Hi Hj Hsi Hei Hsj Hej Hoc'.
     pose proof (act_held _ _ _ _ _ _ _ Hc i ei _ _ _ Hi Hsi Hei) as H1.
     pose proof (act_held _ _ _ _ _ _ _ Hc j ej _ _ _ Hj Hsj Hej) as H2.
-    apply (st_cowner n W HW T π C M A U Hc P F HF i j ei ej c b t e Hi Hj H1 H2
+    apply (st_cowner n W HW T π C M A U Hc P F K HF i j ei ej c b t e Hi Hj H1 H2
       (not_eq_sym Hit) (not_eq_sym Hjt) He).
     by rewrite <-Hoc'. }
   inversion Hst as [C0 M0 i ei ei' Hi Hs|C0 M0 i ei c x ei' Hi Hs HC Hcs|C0 M0 i j ei v ei' Hi Hs Hj
@@ -331,7 +334,7 @@ Proof.
     destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho'). rewrite Ha'. apply offers_new in Ho' as ->. simpl.
     assert ((C ∪ {[c]}) ∖ C = {[c]}) as -> by (clear -HC; set_solver). rewrite elements_singleton. simpl.
     assert (o.1 ≠ c) as Hoc'.
-    { intros Heq. apply HC. rewrite <-Heq. by apply (st_closed n W HW T π C M A U Hc P F HF t e He). }
+    { intros Heq. apply HC. rewrite <-Heq. by apply (st_closed n W HW T π C M A U Hc P F K HF t e He). }
     rewrite !lookup_insert_ne; [done| |]; intros Heq; subst o; simpl in Hoc'; congruence.
   - exists o. unfold rend. simpl. assert (t ≠ j) by (intros ->; congruence).
     rewrite !lookup_insert_ne by set_solver. rewrite He, Ha. split; [done|].
@@ -370,12 +373,12 @@ Proof.
       simpl. assert (C ∖ (C ∖ {[c]}) = {[c]}) as ->.
       { apply set_eq. intros y. destruct (decide (y = c)) as [->|Hy]; [clear -HC|clear -HC Hy]; set_solver. }
       by rewrite elements_singleton. }
-    destruct (st_link_data n W HW T π C M A U Hc P F HF i ei c bc d bd ei' Hi Hs)
+    destruct (st_link_data n W HW T π C M A U Hc P F K HF i ei c bc d bd ei' Hi Hs)
       as (Θ1 & xc & xd & Hne & Hxc & Hxd & Hdx & _ & _ & _ & _ & _ & _ & _).
     pose proof (tenv_end_pol _ _ _ Hxc) as Hpc. pose proof (tenv_end_pol _ _ _ Hxd) as Hpd. simpl in Hpc, Hpd.
     assert (bd = negb bc) as Hbd by (rewrite <-Hpc, <-Hpd, Hdx, pt_pol_dual; by destruct (pt_pol xd.2)).
     pose proof (tenv_end_ends _ _ _ Hxc) as Hci. pose proof (tenv_end_ends _ _ _ Hxd) as Hdi.
-    pose proof (st_disj n W HW T π C M A U Hc P F HF t i e ei Hti He Hi) as Hd0.
+    pose proof (st_disj n W HW T π C M A U Hc P F K HF t i e ei Hti He Hi) as Hd0.
     destruct o as [c0 b0]. unfold Instr.csub. simpl. destruct (decide (c0 = c)) as [->|Hc0].
     + assert (b0 = negb bc) as ->.
       { destruct (decide (b0 = bc)) as [->|Hb]; [by destruct (Hd0 (c, bc))|]. by destruct b0, bc. }
@@ -572,9 +575,9 @@ Lemma lf_links_restricted W T p :
 Proof.
   intros HW HP q E e c d Hq HE Ha.
   destruct (erase_surj p) as [q0 Hq0].
-  destruct (LFP_soup W ∅ T p q0 HP Hq0) as (P & F & Hs0).
+  destruct (LFP_soup W ∅ T p q0 HP Hq0) as (P & F & K & Hs0).
   rewrite <-Hq0 in Hq. destruct (pred_star_lift q0 q Hq) as (q1 & Hq1 & <-).
-  destruct (lfsoup_isteps W T P F q0 q1 HW Hq1 Hs0) as (P' & F' & Hs1).
+  destruct (lfsoup_isteps W T P F K q0 q1 HW Hq1 Hs0) as (P' & F' & K' & Hs1).
   destruct (Hs1 1) as (A & U & Hc & _). simpl in HE.
   assert (e ∈ soup q1.2) as He by (rewrite HE; multiset_solver).
   apply elem_of_soup in He as [t Ht].
@@ -616,8 +619,8 @@ Definition fu_at (q : config) (P : nat → gmap cend point) (F : nat → gmap ce
   end.
 
 (** Distinct threads hold distinct ends. *)
-Lemma P_uniq n W Σ T π q A U P F x y ex ey o :
-  LFconf n W Σ T π q A U → lf_fuelc n W π P F A q →
+Lemma P_uniq n W Σ T π q A U P F K x y ex ey o :
+  LFconf n W Σ T π q A U → lf_fuelc n W π P F K A q →
   q.2 !! x = Some ex → q.2 !! y = Some ey → o ∈ dom (P x) → o ∈ dom (P y) → x = y.
 Proof.
   intros Hc HF Hx Hy Hox Hoy. destruct (decide (x = y)) as [|Hne]; [done|]. exfalso.
@@ -642,7 +645,8 @@ Section counters.
   #[local] Set Default Proof Using "All".
   Context (n : nat) (W : world) (HW : strict W) (T : ty) (π : gmap cend point).
   Context (q : config) (A : nat → tenv) (U : nat → ty) (P : nat → gmap cend point) (F : nat → gmap cend fuel).
-  Context (Hc : LFconf (S (S n)) W ∅ T π q A U) (HF : lf_fuelc (S (S n)) W π P F A q).
+  Context (K : nat → nat).
+  Context (Hc : LFconf (S (S n)) W ∅ T π q A U) (HF : lf_fuelc (S (S n)) W π P F K A q).
 
   (** The partner end of a pending thread has a finite counter. *)
   Lemma holder_fin t e a o s es :
@@ -653,7 +657,7 @@ Section counters.
     intros He Ha Ho Hes Hst Hso.
     destruct (HF t e He) as (H1t & H2t & H3t & H4t). destruct (HF s es Hes) as (H1s & H2s & H3s & H4s).
     destruct (sess_end_step e a o Ha Ho) as (σ & e1 & Hst1 & Hσ).
-    destruct (fuel_wait (S n) W (P t) (F t) e H1t σ e1 o Hst1 Hσ) as (k & mb & Hk & Hb).
+    destruct (fuel_wait (S n) W (P t) (F t) (K t) e H1t σ e1 o Hst1 Hσ) as (k & mb & Hk & Hb).
     pose proof (s_held (S n) W HW T π q A U Hc t e a o He Ha Ho) as Hto.
     destruct (proj1 (tenv_ends_end (A t) o) Hto) as [x Hx].
     destruct (proj1 (tenv_ends_end (A s) (cdual o)) Hso) as [y Hy].
@@ -662,12 +666,12 @@ Section counters.
     { rewrite H4s by done. rewrite (lf_pt _ _ _ _ _ _ _ _ Hc s es _ _ Hes Hy), Hy2.
       rewrite H4t in Hk by done. rewrite (lf_pt _ _ _ _ _ _ _ _ Hc t e _ _ He Hx) in Hk. by injection Hk as ->. }
     assert (is_Some (F s !! cdual o)) as [f Hf] by (apply elem_of_dom; by rewrite H3s).
-    destruct (fuel_cap (S n) W (P s) (F s) es H1s (cdual o) f Hf) as (k' & Hk' & Hle).
+    destruct (fuel_cap (S n) W (P s) (F s) (K s) es H1s (cdual o) f Hf) as (k' & Hk' & Hle).
     rewrite Hks in Hk'. injection Hk' as <-. rewrite Hb in Hle. destruct f as [m|]; [|done].
     exists m. split; [done|]. unfold fu_at. unfold rend. rewrite He, Ha, Ho.
     rewrite (holder_spec P q (cdual o) s es Hes); [|by rewrite H2s|].
     - unfold fval. by rewrite Hf.
-    - intros s' es' Hes' Hso'. apply (P_uniq _ _ _ _ _ _ _ _ _ _ s' s es' es (cdual o) Hc HF Hes' Hes Hso').
+    - intros s' es' Hes' Hso'. apply (P_uniq _ _ _ _ _ _ _ _ _ _ _ s' s es' es (cdual o) Hc HF Hes' Hes Hso').
       by rewrite H2s.
   Qed.
 End counters.
@@ -679,9 +683,9 @@ Definition fgoal (q q' : config) (P' : nat → gmap cend point) (F' : nat → gm
   ∃ s', is_Some (q'.2 !! s') ∧ s' ≠ t ∧ cdual o' ∈ dom (P' s') ∧
     (fval F' s' (cdual o') < m ∨ (fval F' s' (cdual o') = m ∧ s' = s ∧ (s ∈ L → admin_at q s))).
 
-Lemma fuel_reduce n W T π q A U P F n' π' q' A' U' P' F' L t e a o e' a' o' s es m :
-  LFconf n W ∅ T π q A U → lf_fuelc n W π P F A q →
-  LFconf n' W ∅ T π' q' A' U' → lf_fuelc n' W π' P' F' A' q' →
+Lemma fuel_reduce n W T π q A U P F K n' π' q' A' U' P' F' K' L t e a o e' a' o' s es m :
+  LFconf n W ∅ T π q A U → lf_fuelc n W π P F K A q →
+  LFconf n' W ∅ T π' q' A' U' → lf_fuelc n' W π' P' F' K' A' q' →
   q.2 !! t = Some e → act e = Some a → aend1 a = Some o →
   q.2 !! s = Some es → s ≠ t → cdual o ∈ dom (P s) → fu_at q P F t = m →
   q'.2 !! t = Some e' → act e' = Some a' → aend1 a' = Some o' →
@@ -694,39 +698,23 @@ Proof.
   assert (fu_at q' P' F' t = fval F' s' (cdual o')) as Hfu'.
   { unfold fu_at, rend. rewrite He', Ha', Ho'.
     rewrite (holder_spec P' q' (cdual o') s' es' Hes' Hso'); [done|].
-    intros x ex Hx Hxo. by apply (P_uniq _ _ _ _ _ _ _ _ _ _ x s' ex es' (cdual o') Hc' HF' Hx Hes'). }
+    intros x ex Hx Hxo. by apply (P_uniq _ _ _ _ _ _ _ _ _ _ _ x s' ex es' (cdual o') Hc' HF' Hx Hes'). }
   rewrite Hfu', Hm. destruct Hor as [Hlt|(Heq & -> & Had)]; [by left|right].
   split_and!; [done| |].
   - intros x. rewrite (hwaits_end P' q' t e' a' o' x He' Ha' Ho'), (hwaits_end P q t e a o x He Ha Ho).
     split.
     + intros (Hxt & [ex Hx] & Hxo). split_and!; [done| |].
-      * assert (x = s) as -> by (by apply (P_uniq _ _ _ _ _ _ _ _ _ _ x s ex es' (cdual o') Hc' HF' Hx Hes')).
+      * assert (x = s) as -> by (by apply (P_uniq _ _ _ _ _ _ _ _ _ _ _ x s ex es' (cdual o') Hc' HF' Hx Hes')).
         by eexists.
-      * assert (x = s) as -> by (by apply (P_uniq _ _ _ _ _ _ _ _ _ _ x s ex es' (cdual o') Hc' HF' Hx Hes')).
+      * assert (x = s) as -> by (by apply (P_uniq _ _ _ _ _ _ _ _ _ _ _ x s ex es' (cdual o') Hc' HF' Hx Hes')).
         done.
     + intros (Hxt & [ex Hx] & Hxo).
-      assert (x = s) as -> by (by apply (P_uniq _ _ _ _ _ _ _ _ _ _ x s ex es (cdual o) Hc HF Hx Hes)).
+      assert (x = s) as -> by (by apply (P_uniq _ _ _ _ _ _ _ _ _ _ _ x s ex es (cdual o) Hc HF Hx Hes)).
       split_and!; [done|by eexists|done].
   - intros x Hw Hx. rewrite (hwaits_end P q t e a o x He Ha Ho) in Hw.
     destruct Hw as (_ & [ex Hex] & Hxo).
-    assert (x = s) as -> by (by apply (P_uniq _ _ _ _ _ _ _ _ _ _ x s ex es (cdual o) Hc HF Hex Hes)).
+    assert (x = s) as -> by (by apply (P_uniq _ _ _ _ _ _ _ _ _ _ _ x s ex es (cdual o) Hc HF Hex Hes)).
     by apply Had.
-Qed.
-
-(** A bound by the cap of the new holder. *)
-Lemma fgoal_cap n' W (HW : strict W) T π' q' A' U' P' F' q L t e2 a o s m m' :
-  LFconf (S n') W ∅ T π' q' A' U' → lf_fuelc (S n') W π' P' F' A' q' →
-  q'.2 !! t = Some e2 → act e2 = Some a → aend1 a = Some o →
-  (∀ k, π' !! cdual o = Some k → w_bud W k = Some m') → m' < m → fgoal q q' P' F' L t o s m.
-Proof.
-  intros Hc' HF' He2 Ha Ho Hb Hlt.
-  destruct (s_partner n' W HW T π' q' A' U' Hc' t e2 a o He2 Ha Ho) as (s' & es' & Hst' & Hes' & Hso').
-  destruct (HF' s' es' Hes') as (H1 & H2 & H3 & H4).
-  exists s'. split_and!; [by eexists|done|by rewrite H2|]. left.
-  assert (is_Some (F' s' !! cdual o)) as [f Hf] by (apply elem_of_dom; by rewrite H3).
-  destruct (fuel_cap n' W (P' s') (F' s') es' H1 (cdual o) f Hf) as (k & Hk & Hle).
-  rewrite H4 in Hk by done. rewrite (Hb k Hk) in Hle. unfold fval. rewrite Hf.
-  destruct f as [m''|]; simpl in Hle; [lia|done].
 Qed.
 
 (** ** The counter of the partner end along one step *)
@@ -735,8 +723,8 @@ Section fuel_exists.
   #[local] Set Default Proof Using "All".
   Context (n : nat) (W : world) (HW : strict W) (T : ty) (π : gmap cend point).
   Context (C : gset chan) (M : gmap nat expr) (A : nat → tenv) (U : nat → ty).
-  Context (P : nat → gmap cend point) (F : nat → gmap cend fuel).
-  Context (Hc : LFconf (S (S (S n))) W ∅ T π (C, M) A U) (HF : lf_fuelc (S (S (S n))) W π P F A (C, M)).
+  Context (P : nat → gmap cend point) (F : nat → gmap cend fuel) (K : nat → nat).
+  Context (Hc : LFconf (S (S (S n))) W ∅ T π (C, M) A U) (HF : lf_fuelc (S (S (S n))) W π P F K A (C, M)).
   Context (t : nat) (e : expr) (a : action) (o : cend) (He : M !! t = Some e) (Ha : act e = Some a)
     (Ho : aend1 a = Some o).
   Context (s : nat) (es : expr) (Hes : M !! s = Some es) (Hst : s ≠ t) (Hso : cdual o ∈ tenv_ends (A s)).
@@ -761,7 +749,7 @@ Section fuel_exists.
     M !! s = Some y → tstep y (LSess σ) y' → sl_end σ = Some oy → oy ≠ cdual o → 1 ≤ m.
   Proof.
     intros Hy Hs Hoy Hne. rewrite Hes in Hy. injection Hy as <-. destruct (HF s es Hes) as (H1 & _).
-    apply (fuel_tick (S (S n)) W (P s) (F s) es H1 σ y' oy Hs Hoy (cdual o) m); [done|done].
+    apply (fuel_tick (S (S n)) W (P s) (F s) (K s) es H1 σ y' oy Hs Hoy (cdual o) m); [done|done].
   Qed.
 
   (** The counter of an end other than the acted one, after the action. *)
@@ -813,7 +801,7 @@ Section fuel_exists.
     pose proof fe_Pso as HPso0. pose proof fe_dom as Hdom. pose proof fe_domF as HdomF.
     intros Hi Hs HC Hti.
     assert ((cdual o).1 ≠ c) as Hoc.
-    { intros Heq. apply HC. rewrite <-Heq. apply (st_closed (S n) W HW T π C M A U Hc P F HF s es Hes).
+    { intros Heq. apply HC. rewrite <-Heq. apply (st_closed (S n) W HW T π C M A U Hc P F K HF s es Hes).
       apply dom_tenv_ends. exists (cdual o).2. by destruct (cdual o). }
     destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoa). apply offers_new in Hoa as ->.
     assert (fstep W P F (C, M) {[i]} (C ∪ {[c]}, <[i:=ei']> M) =
@@ -857,7 +845,7 @@ Section fuel_exists.
       + rewrite eupd_eq, dom_mres. set_solver.
       + left. unfold fval. rewrite eupd_eq, lookup_fmap, lookup_mres, decide_True by done. rewrite Hm. simpl.
         rewrite Hes in Hi. injection Hi as <-. destruct (HF i es Hes) as (H1 & _).
-        pose proof (fuel_spawn_hand (S (S n)) W (P i) (F i) es H1 w ei' Hs (cdual o) m Hw Hm). lia.
+        pose proof (fuel_spawn_hand (S (S n)) W (P i) (F i) (K i) es H1 w ei' Hs (cdual o) m Hw Hm). lia.
     - exists s. split_and!.
       + rewrite lookup_insert_ne by done. apply lookup_insert_is_Some'. right. by eexists.
       + done.
@@ -878,7 +866,7 @@ Section fuel_exists.
     intros Hit Hjt Hi Hj Hsi Hei Hsj Hej Hoc.
     pose proof (act_held _ _ _ _ _ _ _ Hc i ei _ _ _ Hi Hsi Hei) as H1.
     pose proof (act_held _ _ _ _ _ _ _ Hc j ej _ _ _ Hj Hsj Hej) as H2.
-    apply (st_cowner (S n) W HW T π C M A U Hc P F HF i j ei ej c b t e Hi Hj H1 H2
+    apply (st_cowner (S n) W HW T π C M A U Hc P F K HF i j ei ej c b t e Hi Hj H1 H2
       (not_eq_sym Hit) (not_eq_sym Hjt) He).
     pose proof fe_to as Hto. apply dom_tenv_ends. exists o.2. rewrite <-Hoc. by destruct o.
   Qed.
@@ -913,9 +901,9 @@ Section fuel_exists.
     { simpl. rewrite lookup_mrem, decide_False; [done|].
       intros Hin.
       assert (fends v ⊆ tenv_ends (A i) ∖ {[(c, b)]}) as Hsub.
-      { pose proof (st_sess (S n) W HW T π C M A U Hc P F HF i ei _ ei' Hi Hse)
+      { pose proof (st_sess (S n) W HW T π C M A U Hc P F K HF i ei _ ei' Hi Hse)
           as (Θr & Θ1 & Θ2 & m0 & Uu & s0 & k0 & Θ' & Hhd & Hcomp & HV & _).
-        destruct (st_rest (S n) W HW T π C M A U Hc P F HF i ei _ _ _ _ Hi Hhd) as (? & _ & _ & _ & _ & Hends & Hbr & _).
+        destruct (st_rest (S n) W HW T π C M A U Hc P F K HF i ei _ _ _ _ Hi Hhd) as (? & _ & _ & _ & _ & Hends & Hbr & _).
         destruct (tenv_ends_comp _ _ _ Hcomp Hbr) as [Hu12 _].
         destruct (LVrel_fit _ _ _ _ _ HV) as [HΘ2 _]. rewrite <-HΘ2, <-Hends, Hu12. set_solver. }
       set_solver. }
@@ -942,7 +930,7 @@ Section fuel_exists.
                  rewrite lookup_fmap, lookup_delete_ne by (apply not_eq_sym, Hne).
                  rewrite lookup_mrem, decide_False by set_solver.
                  assert (cdual o ∉ tenv_ends (A j)) as Hnf.
-                 { intros Hin. apply (st_disj (S n) W HW T π C M A U Hc P F HF i j es f Hij Hes Hj (cdual o));
+                 { intros Hin. apply (st_disj (S n) W HW T π C M A U Hc P F K HF i j es f Hij Hes Hj (cdual o));
                      done. }
                  rewrite <-(HdomF j f Hj) in Hnf. apply not_elem_of_dom in Hnf. by rewrite Hnf. }
              rewrite lookup_fmap, lookup_mres, decide_True by done. rewrite Hm. simpl.
@@ -1002,208 +990,119 @@ Section fuel_exists.
         * right. rewrite Hm. split_and!; [done|done|]. set_solver.
   Qed.
 
-  Lemma kren_keep {Y : Type} (c d : chan) (mm : gmap cend Y) (o0 : cend) (v : Y) :
-    o0.1 ≠ c → o0.1 ≠ d → mm !! o0 = Some v → kren (JunkRenaming.csub c d) mm !! o0 = Some v.
-  Proof.
-    intros Hc0 Hd0 Hmm.
-    replace o0 with (JunkRenaming.csub c d o0.1, o0.2) at 1 by (unfold JunkRenaming.csub; rewrite decide_False by done; by destruct o0).
-    apply kren_lookup_safe; [|done]. intros [c3 b3] v3 _ Heq. destruct o0 as [c0 b0].
-    unfold JunkRenaming.csub in Heq. simpl in *. rewrite (decide_False _ _ Hc0) in Heq.
-    destruct (decide (c3 = c)) as [->|Hc3]; injection Heq as Hq1 Hq2; subst; done.
-  Qed.
-
-  Lemma fe_link i ei c bc d bd ei' A' U' :
-    M !! i = Some ei → tstep ei (LSess (SLink {[(c, bc); (d, bd)]})) ei' → c ∈ C → t ≠ i →
-    LFconf (S n) W ∅ T (pupd π (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M))
-      (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M) A' U' →
-    lf_fuelc (S n) W (pupd π (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M))
-      (fstep W P F (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M)).1
-      (fstep W P F (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M)).2 A'
-      (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M) →
-    ∃ o', rend (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M) t = Some o' ∧
-      fgoal (C, M) (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M)
-        (fstep W P F (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M)).1
-        (fstep W P F (C, M) {[i]} (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M)).2 {[i]} t o' s m.
-  Proof.
-    intros Hi Hs HC Hti Hc' HF'.
-    set (q' := (C ∖ {[c]}, chsubst c d <$> <[i := ei']> M)). fold q' in Hc', HF' |- *.
-    destruct (st_link_data (S n) W HW T π C M A U Hc P F HF i ei c bc d bd ei' Hi Hs)
-      as (Θ1 & xc & xd & Hne & Hxc & Hxd & Hdx & Hsx & Hn1 & Hn2 & Hr & Hends & Hb1 & HE).
-    pose proof (tenv_end_pol _ _ _ Hxc) as Hpc. pose proof (tenv_end_pol _ _ _ Hxd) as Hpd. simpl in Hpc, Hpd.
-    assert (bd = negb bc) as Hbd by (rewrite <-Hpc, <-Hpd, Hdx, pt_pol_dual; by destruct (pt_pol xd.2)).
-    pose proof (tenv_end_ends _ _ _ Hxc) as Hci. pose proof (tenv_end_ends _ _ _ Hxd) as Hdi.
-    pose proof fe_to as Hto.
-    pose proof (st_disj (S n) W HW T π C M A U Hc P F HF t i e ei Hti He Hi) as Hdti.
-    destruct (HF i ei Hi) as (H1i & H2i & H3i & H4i).
-    assert (q'.2 !! t = Some (emap (Instr.csub c d) e)) as He'.
-    { unfold q'. simpl. rewrite lookup_fmap, lookup_insert_ne, He by done. simpl. by rewrite chsubst_emap. }
-    assert (act (emap (Instr.csub c d) e) = Some (amap (Instr.csub c d) a)) as Ha' by (by rewrite act_emap, Ha).
-    set (o' := (Instr.csub c d o.1, o.2)).
-    assert (aend1 (amap (Instr.csub c d) a) = Some o') as Ho' by (destruct a; simpl in *; by simplify_eq).
-    assert (rend q' t = Some o') as Hro by (unfold rend; by rewrite He', Ha').
-    exists o'. split; [done|].
-    destruct (act_step _ _ _ Hs) as (al & Hal & Hoal). apply offers_link in Hoal as (o1 & o2 & -> & Hcd).
-    assert (P i !! (c, bc) = Some xc.2) as Pc
-      by (rewrite H4i by done; apply (lf_pt _ _ _ _ _ _ _ _ Hc i ei _ _ Hi Hxc)).
-    assert (P i !! (d, bd) = Some xd.2) as Pd
-      by (rewrite H4i by done; apply (lf_pt _ _ _ _ _ _ _ _ Hc i ei _ _ Hi Hxd)).
-    pose proof (fuel_link (S (S n)) W (P i) (F i) ei H1i _ ei' Hs) as Hfl.
-    assert (C ∖ (C ∖ {[c]}) = {[c]}) as HCc.
-    { apply set_eq. intros y. destruct (decide (y = c)) as [->|Hy]; [clear -HC|clear -HC Hy]; set_solver. }
-    assert (pupd π (C, M) {[i]} q' = delete (c, true) (delete (c, false) π)) as Hpu.
-    { unfold pupd. rewrite pev_of_single. simpl. rewrite Hi. unfold pev1. rewrite Hal. simpl.
-      by rewrite HCc, elements_singleton. }
-    rewrite Hpu in Hc', HF'.
-    assert ((if decide (o1.1 = c) then o2.1 else o1.1) = d) as Hd'.
-    { destruct (upair_eq_inv _ _ _ _ Hcd Hne) as [[<- <-]|[<- <-]]; simpl.
-      - by rewrite decide_True.
-      - destruct (decide (d = c)) as [->|]; done. }
-    assert (Hflr : ∀ φ, flr (F i) o1 o2 φ = flr (F i) (c, bc) (d, bd) φ).
-    { intros φ. destruct (upair_eq_inv _ _ _ _ Hcd Hne) as [[E1 E2]|[E1 E2]];
-        rewrite <-E1, <-E2; [done|]. by apply flr_comm. }
-    assert (fstep W P F (C, M) {[i]} q' =
-            (λ x, kren (JunkRenaming.csub c d) (eupd P i (mrem {[(c, bc); (d, bd)]} (P i)) x),
-             λ x, kren (JunkRenaming.csub c d)
-                    (flr (F i) o1 o2 (eupd F i (mrem {[(c, bc); (d, bd)]} (F i)) x)))) as Hfs.
-    { unfold q'. rewrite fstep_single. simpl. rewrite Hi. unfold fsingle. rewrite Hal. simpl.
-      rewrite HCc, elements_singleton. simpl. rewrite Hd'. by rewrite <-Hcd. }
-    rewrite Hfs in HF' |- *. unfold fgoal, fval. cbn [fst snd]. setoid_rewrite Hflr.
-    (* a counter of the successor comes from a counter before the link, never
-       from an end the linker gave up *)
-    assert (Hsrc : ∀ x ex ok v, q'.2 !! x = Some ex →
-              kren (JunkRenaming.csub c d) (flr (F i) (c, bc) (d, bd)
-                (eupd F i (mrem {[(c, bc); (d, bd)]} (F i)) x)) !! ok = Some v →
-              ∃ o0 f0, ok = (JunkRenaming.csub c d o0.1, o0.2) ∧
-                eupd F i (mrem {[(c, bc); (d, bd)]} (F i)) x !! o0 = Some f0 ∧
-                (o0 ∉ ({[(c, bc); (d, bd)]} : gset cend)) ∧ v = flr1 (F i) (c, bc) (d, bd) o0 f0).
-    { intros x ex ok v Hx Hv. apply kren_lookup_any in Hv as (o0 & -> & Hv).
-      rewrite lookup_flr in Hv.
-      destruct (eupd F i (mrem {[(c, bc); (d, bd)]} (F i)) x !! o0) as [f0|] eqn:E0; [|done].
-      injection Hv as <-. exists o0, f0. split_and!; [done|done| |done].
-      unfold eupd in E0. destruct (decide (x = i)) as [->|Hxi].
-      - rewrite lookup_mrem in E0. by case_decide.
-      - unfold q' in Hx. simpl in Hx. rewrite lookup_fmap, lookup_insert_ne in Hx by done.
-        destruct (M !! x) as [gx|] eqn:Hgx; [|done].
-        assert (o0 ∈ tenv_ends (A x)) as Hox by (rewrite <-(fe_domF x gx Hgx); by apply elem_of_dom_2 in E0).
-        pose proof (st_disj (S n) W HW T π C M A U Hc P F HF x i gx ei Hxi Hgx Hi) as Hd0.
-        clear -Hd0 Hox Hci Hdi. set_solver. }
-    (* the partner after the link, when t waited on the linker *)
-    assert (Hnew : ∀ ob, ob ∈ ({[(c, bc); (d, bd)]} : gset cend) → cdual o = ob → i = s →
-              ∀ s' es', q'.2 !! s' = Some es' → cdual o' ∈ tenv_ends (A' s') →
-              ∃ o0 f0, cdual o' = (JunkRenaming.csub c d o0.1, o0.2) ∧
-                eupd F i (mrem {[(c, bc); (d, bd)]} (F i)) s' !! o0 = Some f0 ∧
-                (o0 ∉ ({[(c, bc); (d, bd)]} : gset cend)) ∧
-                kren (JunkRenaming.csub c d) (flr (F i) (c, bc) (d, bd)
-                  (eupd F i (mrem {[(c, bc); (d, bd)]} (F i)) s')) !! cdual o' =
-                Some (flr1 (F i) (c, bc) (d, bd) o0 f0)).
-    { intros ob Hob Hoo Eis s' es' Hes' Hso'.
-      destruct (HF' s' es' Hes') as (_ & _ & HdF & _). cbn [snd] in HdF. rewrite Hflr in HdF.
-      assert (cdual o' ∈ dom (kren (JunkRenaming.csub c d) (flr (F i) (c, bc) (d, bd)
-                (eupd F i (mrem {[(c, bc); (d, bd)]} (F i)) s')))) as [v Hv]%elem_of_dom.
-      { by rewrite HdF. }
-      destruct (Hsrc s' es' _ v Hes' Hv) as (o0 & f0 & Heq & E0 & Hn0 & ->).
-      exists o0, f0. split_and!; done. }
-    destruct (decide (cdual o = (c, bc))) as [Ho1|Ho1].
-    { (* t holds the peer of the removed end *)
-      assert (i = s) as Eis by (apply (fe_uniq i ei Hi); by rewrite Ho1). subst i.
-      assert (o = (c, negb bc)) as Eo by (rewrite <-(cdual_cdual o), Ho1; done).
-      assert (c ≠ d) as Hcd'.
-      { intros <-. apply (Hdti o); [done|]. rewrite Eo, <-Hbd. done. }
-      assert (1 ≤ m) as Hm1.
-      { rewrite Ho1 in Hm. pose proof (Hfl (c, bc) (d, bd) eq_refl Hne xc.2 m Pc Hm). lia. }
-      destruct (s_partner n W HW T _ q' A' U' Hc' t _ _ o' He' Ha' Ho') as (s' & es' & Hst'' & Hes' & Hso').
-      destruct (Hnew (c, bc) ltac:(set_solver) Ho1 eq_refl s' es' Hes' Hso')
-        as (o0 & f0 & Heq & E0 & Hn0 & Hv).
-      exists s'. split_and!; [by eexists|done| |].
-      - destruct (HF' s' es' Hes') as (_ & HdP & _). cbn [fst] in HdP. by rewrite HdP.
-      - left. rewrite Hv.
-        assert (o0 = cdual (d, bd)) as ->.
-        { destruct o0 as [c0 b0]. unfold o' in Heq. rewrite Eo in Heq.
-          assert (Instr.csub c d c = d) as Hcc by (unfold Instr.csub; by rewrite decide_True).
-          unfold cdual in Heq. cbn [fst snd] in Heq. rewrite Hcc in Heq.
-          injection Heq as Hc0 Hb0.
-          destruct (decide (c0 = c)) as [->|Hc0'].
-          - exfalso. apply Hn0. rewrite <-Hb0, Hbd. destruct bc; simpl; set_solver.
-          - unfold JunkRenaming.csub in Hc0. rewrite decide_False in Hc0 by done.
-            rewrite <-Hc0, <-Hb0, Hbd. unfold cdual. simpl. by destruct bc. }
-        unfold flr1. rewrite decide_True by done. rewrite <-Ho1, Hm. simpl. lia. }
-    destruct (decide (cdual o = (d, bd))) as [Ho2|Ho2].
-    { (* t holds the peer of the linker's end of d *)
-      assert (i = s) as Eis by (apply (fe_uniq i ei Hi); by rewrite Ho2). subst i.
-      assert (o = (d, negb bd)) as Eo by (rewrite <-(cdual_cdual o), Ho2; done).
-      assert (c ≠ d) as Hcd'.
-      { intros <-. apply (Hdti o); [done|]. rewrite Eo, Hbd, negb_involutive. done. }
-      assert (1 ≤ m) as Hm1.
-      { rewrite Ho2 in Hm.
-        pose proof (Hfl (d, bd) (c, bc) ltac:(by rewrite upair_comm) (not_eq_sym Hne) xd.2 m Pd Hm). lia. }
-      destruct (s_partner n W HW T _ q' A' U' Hc' t _ _ o' He' Ha' Ho') as (s' & es' & Hst'' & Hes' & Hso').
-      destruct (Hnew (d, bd) ltac:(set_solver) Ho2 eq_refl s' es' Hes' Hso')
-        as (o0 & f0 & Heq & E0 & Hn0 & Hv).
-      exists s'. split_and!; [by eexists|done| |].
-      - destruct (HF' s' es' Hes') as (_ & HdP & _). cbn [fst] in HdP. by rewrite HdP.
-      - left. rewrite Hv.
-        assert (o0 = cdual (c, bc)) as ->.
-        { destruct o0 as [c0 b0]. unfold o' in Heq. rewrite Eo in Heq.
-          assert (Instr.csub c d d = d) as Hcc by (unfold Instr.csub; rewrite decide_False; congruence).
-          unfold cdual in Heq. cbn [fst snd] in Heq. rewrite Hcc in Heq.
-          injection Heq as Hc0 Hb0.
-          destruct (decide (c0 = c)) as [->|Hc0'].
-          - rewrite <-Hb0, Hbd. unfold cdual. simpl. by destruct bc.
-          - unfold JunkRenaming.csub in Hc0. rewrite decide_False in Hc0 by done.
-            exfalso. apply Hn0. rewrite <-Hc0, <-Hb0, Hbd. destruct bc; simpl; set_solver. }
-        unfold flr1. rewrite decide_False.
-        2:{ intros Heq'. apply Hcd'. unfold cdual in Heq'. by injection Heq'. }
-        rewrite decide_True by done. rewrite <-Ho2, Hm. simpl. lia. }
-    (* otherwise the partner end is on neither channel *)
-    assert ((cdual o).1 ≠ c ∧ (cdual o).1 ≠ d) as [Hoc Hod].
-    { split; intros Heq; destruct (cdual o) as [c0 b0] eqn:Eo; simpl in Heq; subst c0.
-      - destruct (decide (b0 = bc)) as [->|Hb]; [done|].
-        apply (Hdti o); [done|]. rewrite <-(cdual_cdual o), Eo. unfold cdual. simpl.
-        assert (negb b0 = bc) as -> by (by destruct b0, bc). done.
-      - destruct (decide (b0 = bd)) as [->|Hb]; [done|].
-        apply (Hdti o); [done|]. rewrite <-(cdual_cdual o), Eo. unfold cdual. simpl.
-        assert (negb b0 = bd) as -> by (by destruct b0, bd). done. }
-    assert (o' = o) as Eo'.
-    { unfold o', Instr.csub. rewrite decide_False by (rewrite <-(cdual_fst o); done). by destruct o. }
-    rewrite Eo'. pose proof fe_Pso as HPso.
-    assert (Hnot : cdual o ∉ ({[(c, bc); (d, bd)]} : gset cend)) by set_solver.
-    assert (is_Some (P s !! cdual o)) as [ks Hks] by (by apply elem_of_dom).
-    assert (eupd P i (mrem {[(c, bc); (d, bd)]} (P i)) s !! cdual o = Some ks) as HPs.
-    { unfold eupd. destruct (decide (s = i)) as [->|]; [|done]. by rewrite lookup_mrem, decide_False. }
-    assert (flr (F i) (c, bc) (d, bd) (eupd F i (mrem {[(c, bc); (d, bd)]} (F i)) s) !! cdual o
-              = Some (Some m)) as HFs.
-    { rewrite lookup_flr. unfold eupd. destruct (decide (s = i)) as [->|].
-      - rewrite lookup_mrem, decide_False, Hm by done. simpl. unfold flr1.
-        rewrite !decide_False; [done| |]; intros Heq; [apply Hoc|apply Hod]; rewrite Heq; done.
-      - rewrite Hm. simpl. unfold flr1.
-        rewrite !decide_False; [done| |]; intros Heq; [apply Hoc|apply Hod]; rewrite Heq; done. }
-    exists s. split_and!.
-    - unfold q'. simpl. rewrite lookup_fmap. destruct (decide (s = i)) as [->|Hsi];
-        [rewrite lookup_insert_eq|rewrite lookup_insert_ne, Hes by done]; by eexists.
-    - done.
-    - apply elem_of_dom. eexists. by apply kren_keep.
-    - right. rewrite (kren_keep c d _ _ _ Hoc Hod HFs). split_and!; [done|done|].
-      intros ->%elem_of_singleton. rewrite Hes in Hi. injection Hi as <-. by exists es, (ALink o1 o2).
-  Qed.
 End fuel_exists.
+
+(** ** The tickets of a configuration (plan §18.4)
+
+    [ksum K q] is the total of the tickets of the threads of q. A link
+    lowers it by one, and every other step keeps it ([ksum_step]). *)
+
+Definition kset (K : nat → nat) (X : gset nat) : nat := sum_list_with K (elements X).
+Definition ksum (K : nat → nat) (q : config) : nat := kset K (dom q.2).
+
+Lemma kset_ext K K' X : (∀ t, t ∈ X → K t = K' t) → kset K X = kset K' X.
+Proof.
+  intros H. unfold kset.
+  assert (H' : ∀ t, t ∈ elements X → K t = K' t) by (intros t Ht; apply H; by apply elem_of_elements).
+  clear H. induction (elements X) as [|t l IH]; simpl; [done|].
+  rewrite (H' t) by (by left). rewrite IH; [done|]. intros u Hu. apply H'. by right.
+Qed.
+
+Lemma kset_add K X t : t ∉ X → kset K ({[t]} ∪ X) = K t + kset K X.
+Proof. intros Ht. unfold kset. by rewrite elements_union_singleton. Qed.
+
+Lemma kset_split K X t : t ∈ X → kset K X = K t + kset K (X ∖ {[t]}).
+Proof.
+  intros Ht. rewrite <-kset_add by set_solver. f_equal. apply set_eq. intros u.
+  destruct (decide (u = t)) as [->|]; set_solver.
+Qed.
+
+Lemma div2_split x : Nat.div2 (S x) + Nat.div2 x = x.
+Proof.
+  induction x as [x IH] using lt_wf_ind. destruct x as [|[|x]]; [done|done|].
+  specialize (IH x ltac:(lia)). simpl in *. lia.
+Qed.
+
+(** A step that is not a link of one thread. *)
+Definition nolink (q : config) (L : gset nat) : Prop :=
+  ∀ i e, L = {[i]} → q.2 !! i = Some e → ¬ link_t e.
+
+Lemma nolink_one (M : gmap nat expr) C i e α e' :
+  M !! i = Some e → tstep e α e' → (∀ cd, α ≠ LSess (SLink cd)) → nolink (C, M) {[i]}.
+Proof.
+  intros Hi Hs Hα i0 e0 HL He0 (cd & e2 & Hl).
+  assert (i0 = i) as ->.
+  { assert (i0 ∈ ({[i]} : gset nat)) as H%elem_of_singleton by (rewrite HL; set_solver). done. }
+  simpl in He0. rewrite Hi in He0. injection He0 as <-.
+  destruct (act_step _ _ _ Hs) as (a & Ha & Ho). destruct (act_step _ _ _ Hl) as (a2 & Ha2 & Ho2).
+  rewrite Ha in Ha2. injection Ha2 as <-. apply offers_link in Ho2 as (c & d & -> & _).
+  destruct α as [|[o w|o w|o|cd0|o b|o b]|c' x|w]; simpl in Ho; try done. by destruct (Hα cd0).
+Qed.
+
+Lemma nolink_two q i j : i ≠ j → nolink q {[i; j]}.
+Proof.
+  intros Hij i0 e0 HL. exfalso. apply Hij.
+  assert (i ∈ ({[i0]} : gset nat)) as ->%elem_of_singleton by (rewrite <-HL; set_solver).
+  assert (j ∈ ({[i0]} : gset nat)) as ->%elem_of_singleton by (rewrite <-HL; set_solver). done.
+Qed.
+
+Lemma ksum_step n W π P F K A q L q' :
+  lf_fuelc (S n) W π P F K A q → istep q L q' →
+  ksum (kstep K q L q') q' < ksum K q ∨ (ksum (kstep K q L q') q' = ksum K q ∧ nolink q L).
+Proof.
+  intros HF Hst. destruct q as [C M]. unfold ksum.
+  inversion Hst as [C0 M0 i e e' Hi Hs|C0 M0 i e c x e' Hi Hs HC Hcs|C0 M0 i j e v e' Hi Hs Hj
+    |C0 M0 i j c b v e e' f f' Hij Hi Hj He Hf|C0 M0 i j c b e e' f f' Hij Hi Hj He Hf HC
+    |C0 M0 i j c β b e e' f f' Hij Hi Hj He Hf|C0 M0 i e c bc d bd e' Hi Hs HC]; subst;
+    try (rewrite (kstep_one K (C, M) _ i _ _ _ Hi Hs); cbv beta iota);
+    try (rewrite (kstep_pair K _ _ i j Hij)); cbn [fst snd].
+  - right. rewrite dom_insert_lookup_L by eauto. split; [done|]. by apply (nolink_one M C i e _ e' Hi Hs).
+  - right. rewrite dom_insert_lookup_L by eauto. split; [done|]. by apply (nolink_one M C i e _ e' Hi Hs).
+  - right. split; [|by apply (nolink_one M C i e _ e' Hi Hs)].
+    assert (dom (<[j:=App v EUnit]> (<[i:=e']> M)) ∖ dom M = {[j]}) as ->.
+    { rewrite !dom_insert_L. apply elem_of_dom_2 in Hi. apply not_elem_of_dom in Hj. set_solver. }
+    rewrite elements_singleton. change (default 0 (head [j])) with j.
+    apply elem_of_dom_2 in Hi as Hid. apply not_elem_of_dom in Hj as Hjd.
+    rewrite dom_insert_L, (dom_insert_lookup_L _ i) by eauto.
+    rewrite kset_add by done. unfold eupd at 1. rewrite decide_True by done.
+    rewrite (kset_split _ (dom M) i Hid), (kset_split K (dom M) i Hid).
+    rewrite (kset_ext _ K (dom M ∖ {[i]})).
+    2:{ intros t Ht. unfold eupd. rewrite !decide_False; [done| |]; set_solver. }
+    unfold eupd. rewrite decide_False by set_solver. rewrite decide_True by done.
+    pose proof (div2_split (K i)). lia.
+  - right. rewrite !dom_insert_lookup_L by (rewrite ?lookup_insert_ne by done; eauto).
+    split; [done|]. by apply nolink_two.
+  - right. rewrite !dom_insert_lookup_L by (rewrite ?lookup_insert_ne by done; eauto).
+    split; [done|]. by apply nolink_two.
+  - right. rewrite !dom_insert_lookup_L by (rewrite ?lookup_insert_ne by done; eauto).
+    split; [done|]. by apply nolink_two.
+  - left. rewrite dom_fmap_L, dom_insert_lookup_L by eauto.
+    destruct (HF i e Hi) as (H1 & _).
+    pose proof (fuel_link n W _ _ _ e H1 _ e' Hs) as Hk.
+    apply elem_of_dom_2 in Hi as Hid.
+    rewrite (kset_split _ (dom M) i Hid), (kset_split K (dom M) i Hid).
+    rewrite (kset_ext _ K (dom M ∖ {[i]})).
+    2:{ intros t Ht. unfold eupd. rewrite decide_False; [done|]. set_solver. }
+    unfold eupd. rewrite decide_True by done. lia.
+Qed.
 
 (** ** The counter of the partner end along one step *)
 
-Lemma fuel_step n W T π P F q A U L q' A' U' t :
-  strict W → LFconf (S (S (S n))) W ∅ T π q A U → lf_fuelc (S (S (S n))) W π P F A q →
-  istep q L q' →
+Lemma fuel_step n W T π P F K q A U L q' A' U' t :
+  strict W → LFconf (S (S (S n))) W ∅ T π q A U → lf_fuelc (S (S (S n))) W π P F K A q →
+  istep q L q' → nolink q L →
   LFconf (S n) W ∅ T (pupd π q L q') q' A' U' →
-  lf_fuelc (S n) W (pupd π q L q') (fstep W P F q L q').1 (fstep W P F q L q').2 A' q' →
+  lf_fuelc (S n) W (pupd π q L q') (fstep W P F q L q').1 (fstep W P F q L q').2 (kstep K q L q') A' q' →
   t ∉ L → npend q t →
   fu_at q' (fstep W P F q L q').1 (fstep W P F q L q').2 t < fu_at q P F t ∨
   (fu_at q' (fstep W P F q L q').1 (fstep W P F q L q').2 t = fu_at q P F t ∧
    (∀ x, hwaits (fstep W P F q L q').1 q' t x ↔ hwaits P q t x) ∧
    ∀ x, hwaits P q t x → x ∈ L → admin_at q x).
 Proof.
-  intros HW Hc HF Hst Hc' HF' Ht Hp.
+  intros HW Hc HF Hst Hnl Hc' HF' Ht Hp.
   destruct (npend_end q t Hp) as (e & a & o & He & Ha & Ho & _).
   destruct (s_partner (S (S n)) W HW T π q A U Hc t e a o He Ha Ho) as (s & es & Hst' & Hes & Hso).
-  destruct (holder_fin (S n) W HW T π q A U P F Hc HF t e a o s es He Ha Ho Hes Hst' Hso) as (m & Hm & Hfu).
+  destruct (holder_fin (S n) W HW T π q A U P F K Hc HF t e a o s es He Ha Ho Hes Hst' Hso) as (m & Hm & Hfu).
   assert (cdual o ∈ dom (P s)) as HPso by (by destruct (HF s es Hes) as (_ & -> & _)).
   (* the end of t after the step, and the fuel goal *)
   assert (∃ e2 a2 o2, q'.2 !! t = Some e2 ∧ act e2 = Some a2 ∧ aend1 a2 = Some o2 ∧
@@ -1214,17 +1113,17 @@ Proof.
       |C0 M0 i j c β b ei ei' f f' Hij Hi Hj He0 Hf|C0 M0 i ei c bc d bd ei' Hi Hs HC]; subst;
       simpl in Ht.
     - exists e, a, o. split_and!; [simpl; rewrite lookup_insert_ne; [done|set_solver]|done|done|].
-      apply (fe_beta n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i ei ei' Hi Hs).
+      apply (fe_beta n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i ei ei' Hi Hs).
       set_solver.
     - exists e, a, o. split_and!; [simpl; rewrite lookup_insert_ne; [done|set_solver]|done|done|].
-      apply (fe_new n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i ei c x ei' Hi Hs HC).
+      apply (fe_new n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i ei c x ei' Hi Hs HC).
       set_solver.
     - assert (t ≠ j) by (intros ->; congruence).
       exists e, a, o. split_and!; [simpl; rewrite !lookup_insert_ne; [done|set_solver|done]|done|done|].
-      apply (fe_spawn n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j ei v ei' Hi Hs Hj).
+      apply (fe_spawn n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j ei v ei' Hi Hs Hj).
       set_solver.
     - exists e, a, o. split_and!; [simpl; rewrite !lookup_insert_ne; [done|set_solver|set_solver]|done|done|].
-      apply (fe_msg n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j c b v ei ei' f f');
+      apply (fe_msg n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j c b v ei ei' f f');
         try done; set_solver.
     - exists e, a, o. split_and!; [simpl; rewrite !lookup_insert_ne; [done|set_solver|set_solver]|done|done|].
       destruct (act_step _ _ _ He0) as (a1 & Ha1 & Ho1). apply offers_clos in Ho1 as ->.
@@ -1235,15 +1134,15 @@ Proof.
               f2 W P F j i (SClos (c, negb b)) (SClos (c, b))) as Hfs.
       { destruct (fstep_pair W P F (C, M) (C ∖ {[c]}, <[j:=f']> (<[i:=ei']> M)) i j ei f Hij Hi Hj) as [-> | ->];
           unfold fpair; rewrite ?Ha1, ?Ha3; [by left|by right]. }
-      pose proof (fe_chan n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm
+      pose proof (fe_chan n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm
         i j ei f _ _ ei' f' c b ltac:(set_solver) ltac:(set_solver) Hi Hj He0 eq_refl Hf eq_refl) as Hoc.
       assert ((cdual o).1 ≠ c) as Hoc' by done.
       destruct Hfs as [-> | ->].
-      + eapply (fe_two n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j ei ei' f f');
+      + eapply (fe_two n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j ei ei' f f');
           try done; try set_solver; try (by eexists).
         all: intros ? ? [=]; done.
       + rewrite (union_comm_L {[i]} {[j]}).
-        eapply (fe_two n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm j i f f' ei ei');
+        eapply (fe_two n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm j i f f' ei ei');
           try done; try set_solver; try (by eexists).
         all: try (intros ? ? [=]; done).
         all: simpl; rewrite insert_insert_ne by done; done.
@@ -1254,17 +1153,15 @@ Proof.
               f2 W P F i j (SSel (c, β) b) (SBra (c, negb β) b)) as ->.
       { destruct (fstep_pair W P F (C, M) (C, <[j:=f']> (<[i:=ei']> M)) i j ei f Hij Hi Hj) as [-> | ->];
           unfold fpair; by rewrite ?Ha1, ?Ha3. }
-      pose proof (fe_chan n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm
+      pose proof (fe_chan n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm
         i j ei f _ _ ei' f' c β ltac:(set_solver) ltac:(set_solver) Hi Hj He0 eq_refl Hf eq_refl) as Hoc.
       assert ((cdual o).1 ≠ c) as Hoc' by done.
-      eapply (fe_two n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j ei ei' f f');
+      eapply (fe_two n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j ei ei' f f');
         try done; try set_solver; try (by eexists).
       all: intros k y [= <-]; done.
-    - destruct (fe_link n W HW T π C M A U P F Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm
-        i ei c bc d bd ei' A' U' Hi Hs HC ltac:(set_solver) Hc' HF') as (o' & Hro & Hg).
-      destruct (rend_some _ _ _ Hro) as (e2 & a2 & He2 & Ha2 & Ho2).
-      exists e2, a2, o'. split_and!; done. }
-  by apply (fuel_reduce _ W T π q A U P F _ _ q' A' U' _ _ L t e a o e2 a2 o2 s es m Hc HF Hc' HF').
+    - (* a link lowers the tickets instead *)
+      exfalso. by apply (Hnl i ei eq_refl Hi); eexists _, _. }
+  by apply (fuel_reduce _ W T π q A U P F K _ _ q' A' U' _ _ _ L t e a o e2 a2 o2 s es m Hc HF Hc' HF').
 Qed.
 
 (** ** Adequacy *)
@@ -1276,48 +1173,56 @@ Proof.
   pose proof (live_no_tau_divergence W T p (proj1 HP)) as Hnd.
   pose proof (lf_links_restricted W T p HW HP) as Hlr.
   intros r l Hr0 Hmax Hfair.
-  destruct (LFP_soup W ∅ T p (r 0) HP Hr0) as (P & F & Hs0).
-  pose proof (lfsoup_run W T P F r l HW Hmax Hs0) as Hrun.
+  destruct (LFP_soup W ∅ T p (r 0) HP Hr0) as (P & F & K & Hs0).
+  pose proof (lfsoup_run W T P F K r l HW Hmax Hs0) as Hrun.
   set (Pk := λ k, (frun W P F r l k).1). set (Fk := λ k, (frun W P F r l k).2).
-  apply (lf_run_criterion p r l Hr0 Hmax Hfair (λ k, hwaits (Pk k) (r k))) with
-    (fu := λ k t, fu_at (r k) (Pk k) (Fk k) t) (E := point) (R := w_lt W)
-    (we := λ k t, match rend (r k) t with Some o => pt_of (ppts (Pk k) (r k)) o | None => pvar 0 end).
+  set (Kk := λ k, krun K r l k).
+  refine (lf_run_criterion p r l Hr0 Hmax Hfair (λ k, hwaits (Pk k) (r k)) _ _ _ Hnd Hlr
+    (nat * nat) lexlt (λ k t, (ksum (Kk k) (r k), fu_at (r k) (Pk k) (Fk k) t)) lexlt_wf _ _ _
+    point (w_lt W)
+    (λ k t, match rend (r k) t with Some o => pt_of (ppts (Pk k) (r k)) o | None => pvar 0 end)
+    Hwfo _ _).
   - intros k t s (_ & e & a & S & o & He & Ha & HS & _). exists e, a. split_and!; [done|done|].
     unfold is_sess. apply aends_asubjs. by rewrite HS.
   - intros k t s (_ & _ & _ & _ & _ & _ & _ & _ & _ & [es Hes] & _). by exists es.
   - intros k t Hp. destruct (Hrun k 1) as (A & U & Hc & HF).
     apply (lfc_local_progress 0 W HW T _ _ A U Hc); [|done].
     intros t' e' He'. by destruct (HF t' e' He') as (_ & ? & _).
-  - exact Hnd.
-  - exact Hlr.
   - intros k t s s' Hp Hw Hw'. destruct (Hrun k 0) as (A & U & Hc & HF).
     destruct (npend_end _ _ Hp) as (e & a & o & He & Ha & Ho & _).
     apply (hwaits_end _ _ _ _ _ _ _ He Ha Ho) in Hw as (_ & [es Hes] & Hso).
     apply (hwaits_end _ _ _ _ _ _ _ He Ha Ho) in Hw' as (_ & [es' Hes'] & Hso').
-    by apply (P_uniq _ _ _ _ _ _ _ _ _ _ s s' es es' (cdual o) Hc HF).
+    by apply (P_uniq _ _ _ _ _ _ _ _ _ _ _ s s' es es' (cdual o) Hc HF).
   - intros k t Hp Hen Ht. destruct (Hmax k) as [Hst|(_ & Heq & _)]; [|by rewrite Heq].
     destruct (Hrun k 1) as (A & U & Hc & _).
     by apply (pers_step 0 W T (ppts (frun W P F r l k).1 (r k)) (r k) A U (l k) (r (S k))).
-  - intros k t Hp Ht. destruct (Hmax k) as [Hst|(_ & Heq & Hl)].
+  - (* the measure: tickets first, then the counter of the partner end *)
+    intros k t Hp Ht. cbv beta. unfold lexlt. cbn [fst snd].
+    destruct (Hmax k) as [Hst|(_ & Heq & Hl)].
     + destruct (Hrun k 3) as (A & U & Hc & HF).
-      destruct (lfsoup_conf_step 1 W T _ _ _ (r k) A U (l k) (r (S k)) HW Hc HF Hst) as (A' & U' & Hc' & HF').
-      exact (fuel_step 0 W T _ _ _ (r k) A U (l k) (r (S k)) A' U' t HW Hc HF Hst Hc' HF' Ht Hp).
-    + right. unfold Pk, Fk.
+      destruct (ksum_step 2 W _ _ _ _ _ (r k) (l k) (r (S k)) HF Hst) as [Hlt|[HΛ Hnl]].
+      { left. left. exact Hlt. }
+      destruct (lfsoup_conf_step 1 W T _ _ _ _ (r k) A U (l k) (r (S k)) HW Hc HF Hst) as (A' & U' & Hc' & HF').
+      destruct (fuel_step 0 W T _ _ _ _ (r k) A U (l k) (r (S k)) A' U' t HW Hc HF Hst Hnl Hc' HF' Ht Hp)
+        as [Hlt|(Hfe & Hw & Had)].
+      * left. right. split; [exact HΛ|exact Hlt].
+      * right. split_and!; [f_equal; [exact HΛ|exact Hfe]|exact Hw|exact Had].
+    + right. unfold Pk, Fk, Kk.
       change (frun W P F r l (S k)) with
         (fstep W (frun W P F r l k).1 (frun W P F r l k).2 (r k) (l k) (r (S k))).
-      rewrite Heq, Hl, fstep_stuck. split_and!; [done|done|set_solver].
-  - exact Hwfo.
+      change (krun K r l (S k)) with (kstep (krun K r l k) (r k) (l k) (r (S k))).
+      rewrite Heq, Hl, fstep_stuck, kstep_stuck. split_and!; [done|done|set_solver].
   - intros k t Hp Ht. destruct (npend_end _ _ Hp) as (e & a & o & He & Ha & Ho & Hr).
     cbv beta. rewrite Hr. destruct (Hmax k) as [Hst|(_ & Heq & Hl)].
     + destruct (Hrun k 3) as (A & U & Hc & HF).
-      destruct (stab_step 1 W T _ _ _ (r k) A U (l k) (r (S k)) t o HW Hc HF Hst Ht Hr) as (o' & Hr' & Hπ').
-      destruct (lfsoup_conf_step 1 W T _ _ _ (r k) A U (l k) (r (S k)) HW Hc HF Hst) as (A' & U' & Hc' & HF').
+      destruct (stab_step 1 W T _ _ _ _ (r k) A U (l k) (r (S k)) t o HW Hc HF Hst Ht Hr) as (o' & Hr' & Hπ').
+      destruct (lfsoup_conf_step 1 W T _ _ _ _ (r k) A U (l k) (r (S k)) HW Hc HF Hst) as (A' & U' & Hc' & HF').
       destruct (rend_some _ _ _ Hr') as (e2 & a2 & He2 & Ha2 & Ho2).
       pose proof (s_held 0 W HW T _ _ A' U' Hc' t e2 a2 o' He2 Ha2 Ho2) as Hheld.
       rewrite Hr'. unfold pt_of.
       assert (ppts (Pk (S k)) (r (S k)) !! o' = ppts (Pk k) (r k) !! o) as ->; [|done].
       transitivity (pupd (ppts (Pk k) (r k)) (r k) (l k) (r (S k)) !! o'); [|exact Hπ'].
-      exact (lf_ppts _ _ _ _ _ _ _ _ _ _ t e2 o' Hc' HF' He2 Hheld).
+      exact (lf_ppts _ _ _ _ _ _ _ _ _ _ _ t e2 o' Hc' HF' He2 Hheld).
     + unfold Pk. change (frun W P F r l (S k)) with
         (fstep W (frun W P F r l k).1 (frun W P F r l k).2 (r k) (l k) (r (S k))).
       rewrite Heq, Hl, fstep_stuck. by rewrite Hr.
