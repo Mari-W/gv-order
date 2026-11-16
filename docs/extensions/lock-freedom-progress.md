@@ -402,6 +402,29 @@ Updated after every stage and every agent result.
   into W. `lf_thread_progress` takes the hypotheses of `lf_adequacy`.
   `LFP_term`, `LFP_connect` and `LFP_join` come next.
 
+- 2026-11-16. Stage L6a stopped on two counterexamples (branch
+  lf-fueltyped, theories/lockfree/LFFuelTyped.v, no Admitted, no axiom,
+  6 CheckAll entries closed). The typed fuel interpretation has no proof
+  as stated. `lf_fuel_fundamental_false : ¬ ∀ Ψ t T, lfsource Ψ t T →
+  ∃ W, fsem W ∅ t`. The scheduler (examples/Scheduler.v) is in the
+  fragment (`sched_lfsource`, no box) and in fsem at no world
+  (`sched_not_fsem`). KTLink types link ⟨u, v⟩ at u : S@k and
+  v : S̄@k̄, so the partner of v sits at k. The link clause asks the
+  budget there to lie below the counter of u, and F-Cap bounds that
+  counter by the same budget, so only ∞ passes (`fuel_link_inf`). ag₁
+  links b with ā and forces ∞ at γ̄, and main's send on a at γ then
+  breaks F-Wait. Inside a box the hand-off graph already rejects every
+  link, because the edge from the type of u to the type of the partner
+  of v is a self-loop. Outside boxes nothing looks at links. Second,
+  `round_len` counts steps inside box bodies only. sync
+  (`sync_lfsource`) has no box, gets budget 0 everywhere, and its spawn
+  needs a counter of 1 (`sync_not_fsem`, for every graph and every
+  `ty_of`). The same count misses top-level code and the bodies of
+  non-recursive boxes forced inside a round (argued). Both need the
+  author: links need a new link clause in FuelE or a fragment without
+  links, and L must count every stretch of a thread between two actions
+  on one end.
+
 - 2026-11-16. Stage L5, composition (LFCompose.v). `LFP_term` is closed
   under the global context. It has the hypotheses of `LPrel_term` and
   three more, all on the environment `Θ = tenv_of Σ ∪ ΘB` of the typing.
@@ -577,6 +600,42 @@ Updated after every stage and every agent result.
   held end at point k tolerates its counter being lowered by another
   thread's link, down to the minimum at k. Replaces the impossible rule
   "peer budget < counter" (L6a: sched_not_fsem, lf_fuel_fundamental_false).
+- 2026-11-16, under delegation. The budgets of the fragment are repaired
+  (branch lf-fueltyped, Fragment.v and LFFuelTyped.v, no Admitted, no
+  axiom, the 48 entries of both files closed). L bounds every stretch of
+  an end, from its arrival to the action or hand-over that ends it.
+  `scost` counts the units on the longest path of a segment, which is
+  the code of a thread up to its tail call or a round of a box. A
+  channel step, a spawn and a link cost one, a spawned or applied λ
+  counts with the code that builds it, and a forced box literal whose
+  body never forces costs its body at each force. A stretch spans at
+  most two segments (R1, R2-recv, argued), so L = `stretch_len` = 2 ·
+  `seg_len`. Every end gets B = (d + 2)·L and the floor at k is (d −
+  depth (root k) + 1)·L. The depth of §17.6 at the session type of the
+  end fails when a payload of a deep type travels along a carrier of a
+  shallow one, so B is uniform. The floors are keyed on roots, not on
+  session types. A map from points to types cannot be checked against
+  the derivation, because the derivation instantiates the points of a
+  box at its calls and the term does not record the instances. Under
+  syntactic points the term records the root of every point, and
+  `root_edges` reads the graph off the term. It has an edge from the
+  root of the receiving carrier to the root of the sending carrier for
+  every forward of a box (both slots keep their root from round to
+  round, `stab`, and every call from outside boxes passes ends of
+  top-level news there), every forward outside boxes and every link
+  outside boxes of a received payload (option 2). A received payload
+  that goes anywhere else, into a call or an unknown application, has
+  no root graph (`troots`, `bleak`, `relay_roots`). `lfsource` asks an
+  acyclic root graph (`root_ok`), and `src_world Ψ t` is the world with
+  these budgets, so `ty_of` is gone. `lfsource_budgets` and the
+  `*_budgets` facts change form. The forwarder has the edge from 1 to 0
+  and L = 6, so every end gets 18, payloads along a get floor 12 and
+  along b floor 6. sync gets L = 10 and the scheduler L = 22.
+  `sync_not_fsem` goes with the old `round_len`. Links inside boxes
+  still close a self-loop of the hand-off graph, so C3 stays rejected
+  and every link inside a box with it. Open: `lf_fundamental`, and the
+  minimum of the new link rule, which this account takes to be the
+  floor at the point of the end.
 
 ## Related work hooks
 

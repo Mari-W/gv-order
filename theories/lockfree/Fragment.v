@@ -38,9 +38,14 @@
       advanced, and every slot it feeds must be acted on before the
       round passes it on. [r2] stays as the stricter rule. The fragment
       asks [lf_r2h], R2-recv without the link clause.
-    - Budgets ([with_budgets], plan §17.6, §17.8): the refill w_bud and
-      the floor w_pay of the world come from the depths of the hand-off
-      graph and from the length of a round.
+    - Budgets ([with_budgets], [src_world], plan §17.6, §17.8, revised
+      after stage L6a). The refill w_bud and the floor w_pay of the
+      world come from the root graph ([root_edges]) and from the
+      stretch bound L ([stretch_len]). The root graph bounds the
+      hand-offs of payloads by the roots of their carriers, inside
+      boxes and outside, and it is read off the term. No session type
+      enters the budgets, so there is no map from points to types to
+      check.
 
     Syntactic points (sharp edges 173): a box that creates a channel
     takes its points as leading λs, and the hypotheses of a closed
@@ -52,7 +57,8 @@
     the same for a closed source program over the hypotheses of its
     top-level channels, the form in which the examples are typed under
     the constant world (sharp edges 172). Its Rank is asked of the world
-    where the run starts, which has the creation facts ([cworld]). *)
+    where the run starts, which has the creation facts ([cworld]), and
+    it asks an acyclic root graph ([root_ok]). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard.
@@ -494,14 +500,16 @@ Definition box_edges (ann : list (expr * ty)) (e : expr) : option (list (node * 
 Definition thread_edges (ann : list (expr * ty)) (e : expr) : option (list (node * node)) :=
   foldr (λ b acc, ocat (box_edges ann b) acc) (Some []) (boxes e).
 
-(** A path of 1 to n edges from x to y. *)
-Fixpoint reach (n : nat) (E : list (node * node)) (x y : node) : bool :=
+(** A path of 1 to n edges from x to y. Graphs are over any type with
+    decidable equality. Here the nodes are session types up to points,
+    and in the budgets below they are root names. *)
+Fixpoint reach {A} `{EqDecision A} (n : nat) (E : list (A * A)) (x y : A) : bool :=
   match n with
   | 0 => false
   | S n' => existsb (λ ab, bool_decide (ab.1 = x) && (bool_decide (ab.2 = y) || reach n' E ab.2 y)) E
   end.
 
-Definition acyclic (E : list (node * node)) : bool :=
+Definition acyclic {A} `{EqDecision A} (E : list (A * A)) : bool :=
   forallb (λ ab, negb (bool_decide (ab.1 = ab.2) || reach (length E) E ab.2 ab.1)) E.
 
 (** The hand-off graph of the threads [ts] is acyclic, with box types
@@ -683,6 +691,332 @@ Definition lf_r2h (ann : list (expr * ty)) (e : expr) : bool := r2x false (box_n
 (** R2-recv for the threads [ts], with box types derived by [tyd]. *)
 Definition r2h_ok (tyd : expr → ty → Prop) (ts : expr → Prop) : Prop :=
   ∃ ann : list (expr * ty), (∀ b T, (b, T) ∈ ann → tyd b T) ∧ ∀ e, ts e → lf_r2h ann e = true.
+
+(** ** The root graph (stage L6a, the floors of the budgets)
+
+    The floor w_pay k must drop by a stretch at every hand-off of a
+    payload that its receiver passes on without acting on it, and it
+    must not drop elsewhere. §17.6 read the floor off the session type
+    of the end at k, given as a map from points to types. That map is
+    not checked, and no check can read it off a derivation, because the
+    derivation instantiates the points of a box at its calls and the
+    term does not record the instances. Under syntactic points the term
+    records the root of every point instead. A new takes a point value
+    built from literals by x ↦ x[i] and x ↦ x + 1, and every point a run
+    reaches has the root of a literal (shift, payload, select, branch
+    and dual keep the root). So the floors are keyed on roots, and the
+    graph that bounds the hand-offs is a graph over roots.
+
+    An edge r₁ → r₂ means that a payload received on a carrier with root
+    r₁ is passed on, not acted on, along a carrier with root r₂. Three
+    kinds of hand-off give edges.
+    - A forward inside a box body ([HFwd] of [hops]) between two
+      parameter slots. Every call of the box from outside a box must
+      pass ends of top-level news at both slots, and every call of the
+      self must pass at each of the two slots the continuation of the
+      same slot ([stab]), so that the slot keeps its root from round to
+      round. One edge per call site.
+    - A forward outside boxes, in the code of a thread ([troots]): a
+      send of a received payload, not acted on, along an end of a
+      top-level new.
+    - A link outside boxes of a received payload, not acted on, with an
+      end of a top-level new. A link is accounted like a send of the
+      one end along the other (decision of 2026-11-16).
+    A received payload not acted on may occur only as the payload of a
+    send, as the carrier of an action, as the value a let, a let pair, a
+    case or an applied λ binds, inside a spawned or applied λ, and,
+    inside a box, as a component of the argument of the self (R2-recv).
+    Any other occurrence would hand it on along a path the graph does
+    not see, and the program is rejected ([troots], [bleak]). Links
+    inside boxes stay with the hand-off graph above, whose link edges
+    are self-loops. Links outside boxes are not rejected. *)
+
+(** The root of a point value. *)
+Fixpoint proot (e : expr) : option pname :=
+  match e with
+  | EPt x => Some (pt_root x)
+  | App (Konst (KPay _)) a | App (Konst KSucc) a => proot a
+  | _ => None
+  end.
+
+(** What a variable of the code of a thread denotes. It is a box
+    literal, the pair of a top-level new with its root, an end of one, a
+    payload received and not acted on (with the root of its carrier when
+    known), a pair of these, or none of these. *)
+Inductive tcar := TCNo | TCBox (b : expr) | TCNewP (r : pname) | TCEnd (r : pname)
+  | TCRcv (o : option pname) | TCPair (c1 c2 : tcar).
+
+Definition tcar_of (G : list tcar) (x : nat) : tcar := default TCNo (G !! x).
+Definition tc_rcv (c : tcar) : bool := match c with TCRcv _ => true | _ => false end.
+Definition tc_keep (c : tcar) : tcar := match c with TCEnd r => TCEnd r | _ => TCNo end.
+
+Fixpoint tecar (G : list tcar) (e : expr) : tcar :=
+  match e with
+  | Var x => tcar_of G x
+  | EBox _ => TCBox e
+  | Pair a b => TCPair (tecar G a) (tecar G b)
+  | App (Konst KSend) (Pair _ c) => tc_keep (tecar G c)
+  | App (Konst KSel1) c | App (Konst KSel2) c => tc_keep (tecar G c)
+  | App (Konst KNew) v => match proot v with Some r => TCNewP r | None => TCNo end
+  | _ => TCNo
+  end.
+
+(** The carriers a let pair binds, index 0 first. *)
+Definition tpcar (G : list tcar) (e : expr) : list tcar :=
+  match e with
+  | App (Konst KRecv) c =>
+      match tecar G c with TCEnd r => [TCEnd r; TCRcv (Some r)] | _ => [TCNo; TCRcv None] end
+  | _ =>
+      match tecar G e with
+      | TCPair c1 c2 => [c2; c1]
+      | TCNewP r => [TCEnd r; TCEnd r]
+      | TCRcv o => [TCRcv o; TCRcv o]
+      | _ => [TCNo; TCNo]
+      end
+  end.
+
+Definition tccar (G : list tcar) (e : expr) : tcar :=
+  match e with
+  | App (Konst KBra) c => tc_keep (tecar G c)
+  | Var x => match tcar_of G x with TCRcv o => TCRcv o | _ => TCNo end
+  | _ => TCNo
+  end.
+
+Fixpoint tmentions (G : list tcar) (e : expr) : bool :=
+  match e with
+  | Var x => tc_rcv (tcar_of G x)
+  | EUnit | Konst _ | Chan _ _ | EPt _ | EBox _ => false
+  | Lam b => tmentions (TCNo :: G) b
+  | App a b | Pair a b | LetU a b => tmentions G a || tmentions G b
+  | LetP a b => tmentions G a || tmentions (TCNo :: TCNo :: G) b
+  | Inj1 a | Inj2 a => tmentions G a
+  | Case a b c => tmentions G a || tmentions (TCNo :: G) b || tmentions (TCNo :: G) c
+  end.
+
+(** A call is force f applied to its arguments, the point values first. *)
+Fixpoint spine (e : expr) : option (expr * list expr) :=
+  match e with
+  | App (Konst KForce) f => Some (f, [])
+  | App e1 e2 => match spine e1 with Some (f, args) => Some (f, args ++ [e2]) | None => None end
+  | _ => None
+  end.
+
+(** The call site of a call is the box it forces with the carrier of
+    its argument, or an unknown box. *)
+Definition call_site (G : list tcar) (f : expr) (args : list expr) : list (option expr * tcar) :=
+  match tecar G f with
+  | TCBox (EBox b) =>
+      if bool_decide (length args = nlams b) then [(Some (EBox b), default TCNo (tecar G <$> last args))]
+      else [(None, TCNo)]
+  | _ => [(None, TCNo)]
+  end.
+
+Abbreviation tres := (option (list (pname * pname) * list (option expr * tcar))).
+
+Definition oapp (a b : tres) : tres :=
+  match a, b with Some (x1, y1), Some (x2, y2) => Some (x1 ++ x2, y1 ++ y2) | _, _ => None end.
+
+(** The root edges and the call sites of the code of a thread. Box
+    bodies are left to [hops]. A spawned or applied λ is code of the
+    same thread. *)
+Fixpoint troots (G : list tcar) (e : expr) : tres :=
+  match e with
+  | Var x => if tc_rcv (tcar_of G x) then None else Some ([], [])
+  | EUnit | Konst _ | Chan _ _ | EPt _ | EBox _ => Some ([], [])
+  | Lam b => troots (TCNo :: G) b
+  | App (Lam b) a =>
+      oapp (match a with Var _ => Some ([], []) | _ => troots G a end) (troots (tecar G a :: G) b)
+  | App (Konst KSend) (Pair p c) =>
+      oapp
+        (match p with
+         | Var x =>
+             match tcar_of G x, tecar G c with
+             | TCRcv (Some r1), TCEnd r2 => Some ([(r1, r2)], [])
+             | TCRcv _, _ => None
+             | _, _ => Some ([], [])
+             end
+         | _ => troots G p
+         end)
+        (match c with Var _ => Some ([], []) | _ => troots G c end)
+  | App (Konst KLink) (Pair u v) =>
+      oapp
+        (match u with
+         | Var x =>
+             match tcar_of G x, tecar G v with
+             | TCRcv (Some r1), TCEnd r2 => Some ([(r1, r2)], [])
+             | TCRcv _, _ => None
+             | _, _ => Some ([], [])
+             end
+         | _ => troots G u
+         end)
+        (match v with
+         | Var x =>
+             match tcar_of G x, tecar G u with
+             | TCRcv (Some r1), TCEnd r2 => Some ([(r1, r2)], [])
+             | TCRcv _, _ => None
+             | _, _ => Some ([], [])
+             end
+         | _ => troots G v
+         end)
+  | App (Konst KForce) f => if tmentions G f then None else Some ([], [(None, TCNo)])
+  | App (Konst k) a =>
+      if act_konst k then match a with Var _ => Some ([], []) | _ => troots G a end else troots G a
+  | App e1 e2 =>
+      match spine e with
+      | Some (f, args) =>
+          if tmentions G e then None else
+          oapp (Some ([], call_site G f args))
+            (oapp ((fix sp (a : expr) : tres :=
+                      match a with App a1 a2 => oapp (sp a1) (troots G a2) | _ => Some ([], []) end) e1)
+                  (troots G e2))
+      | None => oapp (troots G e1) (troots G e2)
+      end
+  | Pair e1 e2 => oapp (troots G e1) (troots G e2)
+  | LetU e1 e2 => oapp (match e1 with Var _ => Some ([], []) | _ => troots G e1 end) (troots G e2)
+  | LetP e1 e2 =>
+      oapp (match e1 with Var _ => Some ([], []) | _ => troots G e1 end) (troots (tpcar G e1 ++ G) e2)
+  | Inj1 e | Inj2 e => troots G e
+  | Case e e1 e2 =>
+      oapp (match e with Var _ => Some ([], []) | _ => troots G e end)
+        (oapp (troots (tccar G e :: G) e1) (troots (tccar G e :: G) e2))
+  end.
+
+(** Inside a box body, a received payload not acted on escapes. A
+    component of the argument of the self is allowed (R2-recv), and so
+    are the forms that [hops] traces. *)
+Fixpoint bleak (G : list car) (e : expr) : bool :=
+  match e with
+  | Var x => is_rcv (car_of G x)
+  | EUnit | Konst _ | Chan _ _ | EPt _ | EBox _ => false
+  | Lam b => bleak (CNo :: G) b
+  | App (Lam b) a => (match a with Var _ => false | _ => bleak G a end) || bleak (ecar G a :: G) b
+  | App (Konst KSend) (Pair p c) =>
+      (match p with Var _ => false | _ => bleak G p end) || (match c with Var _ => false | _ => bleak G c end)
+  | App (Konst k) a => if act_konst k then match a with Var _ => false | _ => bleak G a end else bleak G a
+  | App e1 e2 =>
+      match spine e with
+      | Some (f, _) =>
+          if is_self G f then
+            (fix sp (a : expr) : bool := match a with App a1 a2 => sp a1 || bleak G a2 | _ => false end) e1 ||
+            (fix adl (a : expr) : bool :=
+               match a with Pair a1 a2 => adl a1 || adl a2 | Var _ => false | _ => bleak G a end) e2
+          else bleak G e1 || bleak G e2
+      | None => bleak G e1 || bleak G e2
+      end
+  | Pair e1 e2 => bleak G e1 || bleak G e2
+  | LetU e1 e2 => (match e1 with Var _ => false | _ => bleak G e1 end) || bleak G e2
+  | LetP e1 e2 => (match e1 with Var _ => false | _ => bleak G e1 end) || bleak (pcar G e1 ++ G) e2
+  | Inj1 e | Inj2 e => bleak G e
+  | Case e e1 e2 =>
+      (match e with Var _ => false | _ => bleak G e end) || bleak (ccar G e :: G) e1 || bleak (ccar G e :: G) e2
+  end.
+
+(** A force inside a box body whose target is not the self. *)
+Fixpoint foreign (G : list car) (e : expr) : bool :=
+  match e with
+  | App (Konst KForce) f => negb (is_self G f)
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ | EBox _ => false
+  | Lam b => foreign (CNo :: G) b
+  | App (Lam b) a => foreign G a || foreign (ecar G a :: G) b
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => foreign G e1 || foreign G e2
+  | LetP e1 e2 => foreign G e1 || foreign (pcar G e1 ++ G) e2
+  | Inj1 e | Inj2 e => foreign G e
+  | Case e e1 e2 => foreign G e || foreign (ccar G e :: G) e1 || foreign (ccar G e :: G) e2
+  end.
+
+(** The carrier at slot π of the argument of a call. *)
+Fixpoint arg_at (G : list car) (π : list bool) (e : expr) {struct e} : car :=
+  match π, e with
+  | b :: π', Pair e1 e2 => arg_at G π' (if b then e2 else e1)
+  | _, _ => match ecar G e with CPar ρ => CPar (ρ ++ π) | c => if bool_decide (π = []) then c else CNo end
+  end.
+
+Definition stable_arg (G : list car) (π : list bool) (e : expr) : bool :=
+  match arg_at G π e with CPar ρ => bool_decide (ρ = π) | _ => false end.
+
+(** Every call of the self, with n arguments, passes at slot π the
+    continuation of slot π. *)
+Fixpoint stab (n : nat) (π : list bool) (G : list car) (e : expr) : bool :=
+  match e with
+  | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ | EBox _ => true
+  | Lam b => stab n π (CNo :: G) b
+  | App (Lam b) a => stab n π G a && stab n π (ecar G a :: G) b
+  | App e1 e2 =>
+      match spine e with
+      | Some (f, args) =>
+          (negb (is_self G f) || (bool_decide (length args = n) && stable_arg G π e2)) &&
+          (fix sp (a : expr) : bool := match a with App a1 a2 => sp a1 && stab n π G a2 | _ => true end) e1 &&
+          stab n π G e2
+      | None => stab n π G e1 && stab n π G e2
+      end
+  | Pair e1 e2 | LetU e1 e2 => stab n π G e1 && stab n π G e2
+  | LetP e1 e2 => stab n π G e1 && stab n π (pcar G e1 ++ G) e2
+  | Inj1 e | Inj2 e => stab n π G e
+  | Case e e1 e2 => stab n π G e && stab n π (ccar G e :: G) e1 && stab n π (ccar G e :: G) e2
+  end.
+
+Fixpoint slot_root (c : tcar) (π : list bool) : option pname :=
+  match π, c with
+  | [], TCEnd r => Some r
+  | b :: π', TCPair c1 c2 => slot_root (if b then c2 else c1) π'
+  | _, _ => None
+  end.
+
+Definition box_env (b : expr) : list car := benv (CPar []) CNo CSelf (nlams b).
+
+Definition is_fwd (h : hitem) : bool := match h with HFwd _ _ => true | _ => false end.
+
+(** The edges of the forward h of the box B, one per call site of B. *)
+Definition fwd_edges (sites : list (option expr * tcar)) (B : expr) (h : hitem) : option (list (pname * pname)) :=
+  match B, h with
+  | EBox b, HFwd π1 π2 =>
+      if stab (nlams b) π1 (box_env b) (bbody b) && stab (nlams b) π2 (box_env b) (bbody b) then
+        omap (λ s, match slot_root s.2 π1, slot_root s.2 π2 with
+                   | Some r1, Some r2 => Some (r1, r2)
+                   | _, _ => None
+                   end)
+          (filter (λ s : option expr * tcar, s.1 = Some B) sites)
+      else None
+  | _, _ => Some []
+  end.
+
+Definition box_ok (B : expr) : bool :=
+  match B with
+  | EBox b => match box_hops b with Some _ => negb (bleak (box_env b) (bbody b)) | None => false end
+  | _ => true
+  end.
+
+Definition box_local (B : expr) : bool :=
+  match B with EBox b => negb (foreign (box_env b) (bbody b)) | _ => true end.
+
+(** The root graph of a closed program. None when a payload is handed on
+    along a path the graph does not see, or when a box that forwards has
+    a call site whose roots are not known. *)
+Definition root_edges (t : expr) : option (list (pname * pname)) :=
+  match troots [] t with
+  | None => None
+  | Some (Et, sites) =>
+      let bs := boxes t in
+      let fw := bs ≫= (λ B, match B with
+                            | EBox b => (λ h, (B, h)) <$> filter (λ h, is_fwd h = true) (default [] (box_hops b))
+                            | _ => []
+                            end) in
+      if forallb box_ok bs &&
+         (bool_decide (fw = []) ||
+          (forallb box_local bs && forallb (λ s, match s.1 with Some _ => true | None => false end) sites))
+      then match omap (λ Bh, fwd_edges sites Bh.1 Bh.2) fw with
+           | Some ls => Some (concat ls ++ Et)
+           | None => None
+           end
+      else None
+  end.
+
+(** The root graph exists and is acyclic. *)
+Definition root_ok (t : expr) : Prop := ∃ E, root_edges t = Some E ∧ acyclic E = true.
+
+Lemma root_ok_intro t :
+  match root_edges t with Some E => acyclic E | None => false end = true → root_ok t.
+Proof. destruct (root_edges t) as [E|] eqn:H; [|done]. intros Ha. by exists E. Qed.
 
 (** ** Rank *)
 
@@ -1054,12 +1388,14 @@ End ladder_rank.
 (** A closed source program over the hypotheses Ψ of its top-level
     channels (the premises of [soundness_created_s]), with the checks of
     the fragment. Its run starts in [cworld Ψ], and Rank is asked of
-    that world. *)
+    that world. The root graph, from which its floors come, must
+    exist and be acyclic. *)
 Definition lfsource (Ψ : hyps) (t : expr) (T : ty) : Prop :=
   created (Wpo []) Ψ ∧ prim T ∧
   gstyped ∅ Ψ [] (∅, None) t T ∧ lf_r1 t = true ∧
   r2h_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧
-  r4_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧ wf_world (cworld Ψ).
+  r4_ok (λ b T, ∃ Φ Ψ Δ F, styped Φ Ψ Δ F b T) (λ e, e = t) ∧ wf_world (cworld Ψ) ∧
+  root_ok t.
 
 Lemma lfsource_gstyped Ψ t T : lfsource Ψ t T → gstyped ∅ Ψ [] (∅, None) t T.
 Proof. by intros (_ & _ & ? & _). Qed.
@@ -1076,7 +1412,7 @@ Theorem lfsource_lfptyped_at Ψ t T B P :
   strict (World (hroots Ψ) (w_lt (cworld Ψ)) B P) ∧
   lfptyped (World (hroots Ψ) (w_lt (cworld Ψ)) B P) ∅ (∅, {[+ t +]}) T.
 Proof.
-  intros (HΨ & HT & [Ht Hg] & H1 & (ann2 & Hann2 & H2) & (ann & E & Hann & Hac & Hts) & Hwf).
+  intros (HΨ & HT & [Ht Hg] & H1 & (ann2 & Hann2 & H2) & (ann & E & Hann & Hac & Hts) & Hwf & _).
   destruct (cworld_hold Ψ HΨ) as [HS Hh].
   pose proof (strict_budgets (cworld Ψ) B P HS) as HS'.
   split; [exact HS'|]. split_and!.
@@ -1098,75 +1434,110 @@ Theorem lfsource_lfptyped Ψ t T :
   lfsource Ψ t T → strict (cworld Ψ) ∧ lfptyped (cworld Ψ) ∅ (∅, {[+ t +]}) T.
 Proof. intros H. exact (lfsource_lfptyped_at Ψ t T (λ _, None) (λ _, 0) H). Qed.
 
-(** ** Budgets from depth (plan §17.6, §17.8)
+(** ** Budgets (plan §17.6, §17.8, revised after stage L6a)
 
-    The budgets of the fragment come from the hand-off graph E and the
-    length L of a round. The depth of a node is the length of the
-    longest path of E that ends in it, and d is the largest depth. An
-    end at x whose session type has depth k gets the refill and cap
-    w_bud x = (d − k + 1)·2L. An end that arrives on a carrier is
-    floored by w_pay, read at the sender's point k. Its receiving
-    carrier has the dual of the sender's type, and with depth k′ of
-    that dual type w_pay k = (d − k′)·2L + L + 1. Along a hand-off the
-    depth grows, so budgets and floors shrink, and the largest budget
-    is N = (d + 1)·2L of §10.3. The fragment never uses ∞. The session
-    type at each point is the one the derivation gives the end there.
-    The world takes it as a map [ty_of], so that each component brings
-    its own budgets with its own constants. *)
+    The stretch bound L. A stretch of an end is the run of its holder
+    from the moment the end arrives (by new, by an action on it that
+    refills it, by a receive, or as an argument) up to the action on it
+    or the hand-over that ends it, with the hand-over counted. Each
+    channel step on another end burns one unit (F-Tick), and a send, a
+    spawn and a link cost the handed end one unit. L bounds the units
+    of every stretch.
 
-Fixpoint indepth (n : nat) (E : list (node * node)) (x : node) : nat :=
+    A segment of a thread is its code up to its tail call, or a round
+    of a box up to its tail call. [scost] counts the units on the
+    longest path of a segment. A channel step, a spawn and a link cost
+    one. A spawned or applied λ counts with the code that builds it, so
+    a stretch that follows an end into a spawned thread stays inside
+    the segment. A box literal forced in place whose body never forces
+    runs inline and costs its body at each force. Any other force is a
+    potentially recursive call (R1 puts it in tail position) and ends
+    the segment. A stretch spans at most two segments. An end that a
+    round holds at its start came in the argument, and R2-recv makes
+    the round act on it or hand it over. Inside a round only fresh
+    ends and fed slots go to a call, so the end does not reach a third
+    segment. A thread's own code passes its ends to its first call,
+    whose round is the second segment. Hence L = 2 · [seg_len].
+
+    The budgets. d is the largest depth of the root graph, and the
+    depth of a root is the length of the longest path that ends in it.
+    Every end gets the refill and cap B = (d + 2)·L. A payload sent
+    along a carrier at the point k is floored by
+    w_pay k = (d − depth (root k) + 1)·L. The receiver of a payload with
+    counter c ≥ w_pay k acts on it within its stretch (L ≤ c), or
+    passes it on along a carrier of a root deeper by one at least, which
+    asks c − L ≥ the next floor, true because the floors drop by L per
+    level. A fresh end meets every floor, B − L = (d + 1)·L is the
+    largest one. §17.6 had b_bud = (d − depth + 1)·2L, read at the
+    session type of the end. A payload of a deep type sent along a
+    carrier of a shallow type then misses the floor, so B is uniform.
+    The fragment never uses ∞. *)
+
+Fixpoint indepth {A} `{EqDecision A} (n : nat) (E : list (A * A)) (x : A) : nat :=
   match n with
   | 0 => 0
   | S n' => foldr max 0 ((λ ab, if bool_decide (ab.2 = x) then S (indepth n' E ab.1) else 0) <$> E)
   end.
 
 (** In an acyclic graph a path has at most [length E] edges. *)
-Definition depth (E : list (node * node)) (x : node) : nat := indepth (length E) E x.
+Definition depth {A} `{EqDecision A} (E : list (A * A)) (x : A) : nat := indepth (length E) E x.
 
-Definition gdepth (E : list (node * node)) : nat := foldr max 0 ((λ ab, depth E ab.2) <$> E).
+Definition gdepth {A} `{EqDecision A} (E : list (A * A)) : nat := foldr max 0 ((λ ab, depth E ab.2) <$> E).
 
-(** Channel steps on the longest path through a term. A link costs
-    nothing (plan §6.1), new and the point constants are β steps, and
-    a λ, spawned or applied, counts with the round that builds it. *)
-Fixpoint rsteps (e : expr) : nat :=
+(** The constants that hand an end over without a channel step. *)
+Definition hand_konst (k : konst) : bool := match k with KSpawn | KLink => true | _ => false end.
+
+(** Units on the longest path through a segment. *)
+Fixpoint scost (e : expr) : nat :=
   match e with
-  | App (Konst k) a => (if prim_konst k then 1 else 0) + rsteps a
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => rsteps e1 + rsteps e2
-  | Lam b => rsteps b
-  | Case e e1 e2 => rsteps e + max (rsteps e1) (rsteps e2)
-  | Inj1 e | Inj2 e => rsteps e
+  | App (Konst KForce) (EBox b) => if has_force b then 0 else scost b
+  | App (Konst k) a => (if prim_konst k || hand_konst k then 1 else 0) + scost a
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => scost e1 + scost e2
+  | Lam b => scost b
+  | Case e e1 e2 => scost e + max (scost e1) (scost e2)
+  | Inj1 e | Inj2 e => scost e
   | EBox _ | Var _ | EUnit | Konst _ | Chan _ _ | EPt _ => 0
   end.
 
-(** L, the most channel steps in a round of a box of the term. *)
-Definition round_len (e : expr) : nat :=
-  foldr max 0 ((λ b, match b with EBox b' => rsteps (bbody b') | _ => 0 end) <$> boxes e).
+(** The longest segment, in the code of the thread or in a round of a box. *)
+Definition seg_len (e : expr) : nat :=
+  foldr max (scost e) ((λ b, match b with EBox b' => scost b' | _ => 0 end) <$> boxes e).
 
-Definition sdep (E : list (node * node)) (o : option sty) : nat :=
-  match o with Some s => depth E (er_sty s) | None => 0 end.
+(** L. *)
+Definition stretch_len (e : expr) : nat := 2 * seg_len e.
 
-Definition bud_at (E : list (node * node)) (L : nat) (ty_of : point → option sty) (x : point) : option nat :=
-  Some ((gdepth E - sdep E (ty_of x) + 1) * (2 * L)).
+Definition bud_at (E : list (pname * pname)) (L : nat) (x : point) : option nat :=
+  Some ((gdepth E + 2) * L).
 
-Definition pay_at (E : list (node * node)) (L : nat) (ty_of : point → option sty) (k : point) : nat :=
-  (gdepth E - sdep E (dual <$> ty_of k)) * (2 * L) + L + 1.
+Definition pay_at (E : list (pname * pname)) (L : nat) (k : point) : nat :=
+  (gdepth E - depth E (pt_root k) + 1) * L.
 
-(** The world W with the budgets of the graph E, the round length L
-    and the session types ty_of. *)
-Definition with_budgets (W : world) (E : list (node * node)) (L : nat) (ty_of : point → option sty) : world :=
-  World (w_names W) (w_lt W) (bud_at E L ty_of) (pay_at E L ty_of).
+(** The world W with the budgets of the root graph E and the stretch
+    bound L. *)
+Definition with_budgets (W : world) (E : list (pname * pname)) (L : nat) : world :=
+  World (w_names W) (w_lt W) (bud_at E L) (pay_at E L).
 
-Lemma with_budgets_strict W E L ty_of : strict W → strict (with_budgets W E L ty_of).
+Lemma with_budgets_strict W E L : strict W → strict (with_budgets W E L).
 Proof. apply strict_budgets. Qed.
 
-Lemma with_budgets_wf W E L ty_of : wf_world W → wf_world (with_budgets W E L ty_of).
+Lemma with_budgets_wf W E L : wf_world W → wf_world (with_budgets W E L).
 Proof. done. Qed.
 
+Lemma with_budgets_bud W E L x : w_bud (with_budgets W E L) x = Some ((gdepth E + 2) * L).
+Proof. done. Qed.
+
+Lemma with_budgets_pay W E L k : w_pay (with_budgets W E L) k = (gdepth E - depth E (pt_root k) + 1) * L.
+Proof. done. Qed.
+
+(** The world where the run of a closed program starts, with the
+    budgets of its root graph and of its stretch bound. The budgets are
+    a function of the program, and no session type enters them. *)
+Definition src_world (Ψ : hyps) (t : expr) : world :=
+  with_budgets (cworld Ψ) (default [] (root_edges t)) (stretch_len t).
+
 (** A program of the fragment is in the fragment at its budgets. *)
-Theorem lfsource_budgets Ψ t T E L ty_of :
-  lfsource Ψ t T →
-  strict (with_budgets (cworld Ψ) E L ty_of) ∧
-  lfptyped (with_budgets (cworld Ψ) E L ty_of) ∅ (∅, {[+ t +]}) T.
+Theorem lfsource_budgets Ψ t T :
+  lfsource Ψ t T → strict (src_world Ψ t) ∧ lfptyped (src_world Ψ t) ∅ (∅, {[+ t +]}) T.
 Proof. apply lfsource_lfptyped_at. Qed.
 (** ** Examples *)
 
@@ -1230,6 +1601,7 @@ Proof.
     + vm_compute. reflexivity.
     + intros e ->. exists fw_E. split; [vm_compute; reflexivity|done].
   - apply fw_wf.
+  - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
 Theorem fw_lfptyped : ∃ W, strict W ∧ lfptyped W ∅ (∅, {[+ Forwarder.fw_main +]}) TUnit.
@@ -1252,6 +1624,7 @@ Proof.
     destruct (hyps_lt_snoc [] [] TailCall.tcc_P 0 x y ltac:(constructor) H) as [Hn|(x0 & y0 & Hf & _ & -> & ->)];
       [by apply hyps_lt_nil in Hn|].
     destruct Hf as (k & b & E). injection E as -> ->. destruct b; unfold drank, lexlt; cbn; lia.
+  - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
 Theorem tc_lfptyped : ∃ W, strict W ∧ lfptyped W ∅ (∅, {[+ TailCall.tc_main +]}) TUnit.
@@ -1275,6 +1648,7 @@ Proof.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply (ladder_wf CfstScheduler.rk CfstScheduler.rk_S 6 6). lia.
+  - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
 (** Kobayashi's forwarder server. The guard rejects it. R1, R2′ and R4′
@@ -1371,7 +1745,7 @@ Theorem c3_checks : guarded c3_box ∧ lf_r1 c3_box = true ∧ lf_r2 c3_box = fa
 Proof. unfold guarded. vm_compute. auto. Qed.
 
 (** A self-loop refutes acyclicity. *)
-Lemma acyclic_loop E n : acyclic E = true → (n, n) ∈ E → False.
+Lemma acyclic_loop (E : list (node * node)) n : acyclic E = true → (n, n) ∈ E → False.
 Proof.
   unfold acyclic. intros H Hin. rewrite forallb_forall in H.
   specialize (H _ (proj1 (list_elem_of_In _ _) Hin)). cbn in H.
@@ -1534,6 +1908,7 @@ Proof.
     unfold drank. cbn [pt_open pt_name pt_off]. rewrite !sdepth_open by (repeat econstructor).
     destruct Hf as [(n & E)|(n & [E|E])]; injection E as -> ->; unfold lexlt;
       cbn [pt_name pt_off fst snd ReceivedChain.chv sdepth]; rewrite ?sdepth_chv; lia.
+  - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
 Theorem rc_lfptyped : ∃ W, strict W ∧ lfptyped W ∅ (∅, {[+ ReceivedChain.ch_main +]}) TUnit.
@@ -1578,6 +1953,7 @@ Proof.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply rg_wf.
+  - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
 (** The alternating bit protocol (ABP.v, Padovani III.8). No end
@@ -1603,99 +1979,124 @@ Proof.
     + reflexivity.
     + intros e ->. exists []. split; [vm_compute; reflexivity|done].
   - apply abp_wf.
+  - apply root_ok_intro. vm_compute. reflexivity.
 Qed.
 
 (** ** The budgets of the examples (plan §17.6, §17.8)
 
-    Each example world is [cworld Ψ] with the budgets of its hand-off
-    graph and of its round length L. Only the forwarder has an edge, so
-    d = 1 there. In the other examples d = 0, every end gets 2L and
-    every floor is L + 1. *)
+    Each example world is [src_world Ψ t], [cworld Ψ] with the budgets
+    of the root graph and of the stretch bound of t. Only the forwarder
+    has an edge, so d = 1 there. In the other examples d = 0, every end
+    gets 2L and every floor is L. *)
 
-(** The forwarder. Its graph has the one edge from Si to the dual of So
-    and a round has 2 channel steps. fwd holds a at the positive points
-    of the constant 1 at Si and b at the positive points of 0 at So.
-    The producer holds the partner of a at the dual of Si, the consumer
-    the partner of b at the dual of So, and the payload ends are Close.
-    The end of the consumer sits at depth 1 and gets 2L = 4, every
-    other end gets 4L = 8. A payload sent by the producer arrives at
-    fwd with floor 2L + L + 1 = 7, and the same payload forwarded to
-    the consumer with floor L + 1 = 3. *)
-Definition fw_ty (x : point) : option sty :=
-  match pt_name x with
-  | NConst 1 => Some (if pt_pol x then Forwarder.Sfi else dual Forwarder.Sfi)
-  | NConst 0 => Some (if pt_pol x then Forwarder.Sfo else dual Forwarder.Sfo)
-  | NPayload _ _ _ => Some SEnd
-  | _ => None
-  end.
+(** With no root edge every end gets 2L and every floor is L. *)
+Lemma budgets_flat W L x :
+  w_bud (with_budgets W [] L) x = Some (2 * L) ∧ w_pay (with_budgets W [] L) x = L.
+Proof. rewrite with_budgets_bud, with_budgets_pay. cbn. split; [f_equal|]; lia. Qed.
 
-Definition fw_W : world := with_budgets (cworld Forwarder.fw_Ψ) fw_E (round_len Forwarder.fw_main) fw_ty.
+(** The forwarder. fwd receives on its slot [false], which main fills
+    with a at the constant 1, and forwards along its slot [true], which
+    main fills with b at the constant 0. Both slots keep their roots from
+    round to round, and the root graph is the one edge from 1 to 0.
+    A round has 3 units (fwd receives, sends and spawns), so L = 6.
+    Every end gets 3L = 18. A payload sent along a carrier of root 1 (by
+    the producer) arrives with floor 2L = 12, and the same payload
+    forwarded along b with floor L = 6. *)
+Definition fw_W : world := src_world Forwarder.fw_Ψ Forwarder.fw_main.
 
 Theorem fw_budgets :
   strict fw_W ∧ lfptyped fw_W ∅ (∅, {[+ Forwarder.fw_main +]}) TUnit ∧
-  gdepth fw_E = 1 ∧ round_len Forwarder.fw_main = 2 ∧
-  (∀ k, w_bud fw_W (pc 1 k) = Some 8 ∧ w_bud fw_W (pt_dual (pc 1 k)) = Some 8 ∧
-        w_bud fw_W (pc 0 k) = Some 8 ∧ w_bud fw_W (pt_dual (pc 0 k)) = Some 4) ∧
-  (∀ k, w_pay fw_W (pt_dual (pc 1 k)) = 7 ∧ w_pay fw_W (pc 0 k) = 3).
+  root_edges Forwarder.fw_main = Some [(NConst 1, NConst 0)] ∧ stretch_len Forwarder.fw_main = 6 ∧
+  (∀ x, w_bud fw_W x = Some 18) ∧
+  (∀ k, pt_root k = NConst 1 → w_pay fw_W k = 12) ∧
+  (∀ k, pt_root k = NConst 0 → w_pay fw_W k = 6).
 Proof.
-  destruct (lfsource_budgets _ _ _ fw_E (round_len Forwarder.fw_main) fw_ty fw_lfsource) as [HS HL].
-  split_and!; [exact HS|exact HL|vm_compute; reflexivity|vm_compute; reflexivity| |];
-    intros k; split_and!; vm_compute; reflexivity.
+  destruct (lfsource_budgets _ _ _ fw_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|vm_compute; reflexivity| | |].
+  - intros x. unfold fw_W, src_world. rewrite with_budgets_bud. vm_compute. reflexivity.
+  - intros k Hk. unfold fw_W, src_world. rewrite with_budgets_pay, Hk. vm_compute. reflexivity.
+  - intros k Hk. unfold fw_W, src_world. rewrite with_budgets_pay, Hk. vm_compute. reflexivity.
 Qed.
 
-(** With no hand-off every end gets 2L and every floor is L + 1. *)
-Lemma budgets_flat W L ty_of x :
-  w_bud (with_budgets W [] L ty_of) x = Some (2 * L) ∧ w_pay (with_budgets W [] L ty_of) x = L + 1.
-Proof. unfold with_budgets, bud_at, pay_at. cbn. split; [f_equal|]; lia. Qed.
+(** The examples without a root edge. *)
+Lemma src_flat Ψ t L x :
+  root_edges t = Some [] → stretch_len t = L →
+  w_bud (src_world Ψ t) x = Some (2 * L) ∧ w_pay (src_world Ψ t) x = L.
+Proof. intros HE HL. unfold src_world. rewrite HE, HL. apply budgets_flat. Qed.
 
-Definition tc_W : world := with_budgets (cworld TailCall.tc_Ψ) [] (round_len TailCall.tc_main) (λ _, None).
+Definition tc_W : world := src_world TailCall.tc_Ψ TailCall.tc_main.
 
 Theorem tc_budgets :
   strict tc_W ∧ lfptyped tc_W ∅ (∅, {[+ TailCall.tc_main +]}) TUnit ∧
-  round_len TailCall.tc_main = 1 ∧ ∀ x, w_bud tc_W x = Some 2 ∧ w_pay tc_W x = 2.
+  stretch_len TailCall.tc_main = 2 ∧ ∀ x, w_bud tc_W x = Some 4 ∧ w_pay tc_W x = 2.
 Proof.
-  destruct (lfsource_budgets _ _ _ [] (round_len TailCall.tc_main) (λ _, None) tc_lfsource) as [HS HL].
-  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 1 _ x).
+  destruct (lfsource_budgets _ _ _ tc_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
+  intros x. apply (src_flat _ _ 2 x); vm_compute; reflexivity.
 Qed.
 
-Definition sch_W : world :=
-  with_budgets (cworld (CfstScheduler.sch_Ψ 6)) [] (round_len CfstScheduler.sch_main) (λ _, None).
+(** The CFST scheduler. Its main spawns the six agents of the ring,
+    whose top-level code counts with main, so a segment has 9 units. *)
+Definition sch_W : world := src_world (CfstScheduler.sch_Ψ 6) CfstScheduler.sch_main.
 
 Theorem sch_budgets :
   strict sch_W ∧ lfptyped sch_W ∅ (∅, {[+ CfstScheduler.sch_main +]}) TUnit ∧
-  round_len CfstScheduler.sch_main = 6 ∧ ∀ x, w_bud sch_W x = Some 12 ∧ w_pay sch_W x = 7.
+  stretch_len CfstScheduler.sch_main = 18 ∧ ∀ x, w_bud sch_W x = Some 36 ∧ w_pay sch_W x = 18.
 Proof.
-  destruct (lfsource_budgets _ _ _ [] (round_len CfstScheduler.sch_main) (λ _, None) sch_lfsource) as [HS HL].
-  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 6 _ x).
+  destruct (lfsource_budgets _ _ _ sch_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
+  intros x. apply (src_flat _ _ 18 x); vm_compute; reflexivity.
 Qed.
 
-Definition rc_W : world :=
-  with_budgets (cworld ReceivedChain.ch_Ψ) [] (round_len ReceivedChain.ch_main) (λ _, None).
+Definition rc_W : world := src_world ReceivedChain.ch_Ψ ReceivedChain.ch_main.
 
 Theorem rc_budgets :
   strict rc_W ∧ lfptyped rc_W ∅ (∅, {[+ ReceivedChain.ch_main +]}) TUnit ∧
-  round_len ReceivedChain.ch_main = 2 ∧ ∀ x, w_bud rc_W x = Some 4 ∧ w_pay rc_W x = 3.
+  stretch_len ReceivedChain.ch_main = 6 ∧ ∀ x, w_bud rc_W x = Some 12 ∧ w_pay rc_W x = 6.
 Proof.
-  destruct (lfsource_budgets _ _ _ [] (round_len ReceivedChain.ch_main) (λ _, None) rc_lfsource) as [HS HL].
-  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 2 _ x).
+  destruct (lfsource_budgets _ _ _ rc_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
+  intros x. apply (src_flat _ _ 6 x); vm_compute; reflexivity.
 Qed.
 
-Definition rg_W : world := with_budgets (cworld GrowRing.rg_Ψ) [] (round_len GrowRing.rg_main) (λ _, None).
+Definition rg_W : world := src_world GrowRing.rg_Ψ GrowRing.rg_main.
 
 Theorem rg_budgets :
   strict rg_W ∧ lfptyped rg_W ∅ (∅, {[+ GrowRing.rg_main +]}) TUnit ∧
-  round_len GrowRing.rg_main = 4 ∧ ∀ x, w_bud rg_W x = Some 8 ∧ w_pay rg_W x = 5.
+  stretch_len GrowRing.rg_main = 14 ∧ ∀ x, w_bud rg_W x = Some 28 ∧ w_pay rg_W x = 14.
 Proof.
-  destruct (lfsource_budgets _ _ _ [] (round_len GrowRing.rg_main) (λ _, None) rg_lfsource) as [HS HL].
-  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 4 _ x).
+  destruct (lfsource_budgets _ _ _ rg_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
+  intros x. apply (src_flat _ _ 14 x); vm_compute; reflexivity.
 Qed.
 
-Definition abp_W : world := with_budgets (cworld ABP.abp_Ψ) [] (round_len ABP.abp_main) (λ _, None).
+Definition abp_W : world := src_world ABP.abp_Ψ ABP.abp_main.
 
 Theorem abp_budgets :
   strict abp_W ∧ lfptyped abp_W ∅ (∅, {[+ ABP.abp_main +]}) TUnit ∧
-  round_len ABP.abp_main = 4 ∧ ∀ x, w_bud abp_W x = Some 8 ∧ w_pay abp_W x = 5.
+  stretch_len ABP.abp_main = 8 ∧ ∀ x, w_bud abp_W x = Some 16 ∧ w_pay abp_W x = 8.
 Proof.
-  destruct (lfsource_budgets _ _ _ [] (round_len ABP.abp_main) (λ _, None) abp_lfsource) as [HS HL].
-  split_and!; [exact HS|exact HL|vm_compute; reflexivity|]. intros x. exact (budgets_flat _ 4 _ x).
+  destruct (lfsource_budgets _ _ _ abp_lfsource) as [HS HL].
+  split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
+  intros x. apply (src_flat _ _ 8 x); vm_compute; reflexivity.
 Qed.
+
+(** A forward outside boxes (stage L6a). The term creates a at the
+    constant 1 and b at the constant 0, receives d on a and sends it on
+    along b.
+    The root graph has the edge from 1 to 0, so the floor along b lies
+    a stretch below the floor along a. Passing d to a box instead hands
+    it on along a path the graph does not see, and the term has no root
+    graph. *)
+Definition relay_main : expr :=
+  let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
+    (LetP (App ERecv (Var 3))
+      (App EClos (App ESend (Pair (Var 1) (Var 3)))))).
+
+Definition relay_call : expr :=
+  let_new_pair_at (EPt (pconst 1))
+    (LetP (App ERecv (Var 1)) (App (App EForce (EBox (Lam (App EClos (Var 0))))) (Var 1))).
+
+Theorem relay_roots :
+  root_edges relay_main = Some [(NConst 1, NConst 0)] ∧ root_edges relay_call = None.
+Proof. split; vm_compute; reflexivity. Qed.

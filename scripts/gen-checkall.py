@@ -65,6 +65,7 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/Fragment.v', 'tc_budgets'), ('lockfree/Fragment.v', 'sch_budgets'),
         ('lockfree/Fragment.v', 'rc_budgets'), ('lockfree/Fragment.v', 'rg_budgets'),
         ('lockfree/Fragment.v', 'abp_budgets'), ('lockfree/Fragment.v', 'lc_r2_fails'),
+        ('lockfree/Fragment.v', 'relay_roots'),
         ('lockfree/LFSoup.v', 'LFsoup_down'), ('lockfree/LFSoup.v', 'lfsoup_step'),
         ('lockfree/LFSoup.v', 'lfsoup_run'), ('lockfree/LFSoup.v', 'lfc_local_progress'),
         ('lockfree/LFAdequacy.v', 'lf_adequacy'), ('lockfree/LFAdequacy.v', 'lf_adequacy_ex'),
@@ -78,7 +79,11 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/LFFuel.v', 'fuel_zero_nosend'), ('lockfree/LFFuel.v', 'fuel_zero_nospawn'),
         ('lockfree/LFFuel.v', 'fuel_zero_nolink'), ('lockfree/LFFuel.v', 'fupd_cap'),
         ('lockfree/LFFuel.v', 'fhand_fin_ok'), ('lockfree/LFFuel.v', 'fcap_finite'),
-        ('lockfree/LFFuel.v', 'fuel_send_travel')]
+        ('lockfree/LFFuel.v', 'fuel_send_travel'),
+        ('lockfree/LFFuelTyped.v', 'fuel_link_inf'), ('lockfree/LFFuelTyped.v', 'sched_lfsource'),
+        ('lockfree/LFFuelTyped.v', 'sched_not_fsem'), ('lockfree/LFFuelTyped.v', 'lf_fuel_fundamental_false'),
+        ('lockfree/LFFuelTyped.v', 'sync_lfsource'), ('lockfree/LFFuelTyped.v', 'sync_budgets'),
+        ('lockfree/LFFuelTyped.v', 'sched_budgets')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
