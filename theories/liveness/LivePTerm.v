@@ -424,7 +424,7 @@ Proof.
   pose proof (tok_mono_r _ _ _ _ _ HW1 Hok0) as Hok.
   assert (HE : LErel (S n') W (tenv_of Σ ∪ ΘB) T ∅ t) by (by eapply LErel_mono).
   pose proof (tok_strict _ _ _ _ Hok) as HWs.
-  destruct (proj2 H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
+  destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
   clear H HE0 Hok0.
   assert (Hlk' : ∀ cd t', tstep t (LSess (SLink cd)) t' →
             LElink (lt_cont n' T) W (tenv_of Σ ∪ ΘB) ∅ cd t').

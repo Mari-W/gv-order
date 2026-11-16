@@ -49,11 +49,11 @@ Section conv.
     refine (LErel_S_ind n' (λ W Θ T F e, world_wf W → teqW W T T' →
               (∀ W Θ v, world_wf W → teqW W T T' → LVrel (S n') W Θ T v → LVrel (S n') W Θ T' v) →
               LErel (S n') W Θ T' F e) _).
-    intros W Θ T F e H HW Ht HVT. apply LErel_S_iff. split; [exact (proj1 H)|]. intros W1 HW1.
+    intros W Θ T F e H HW Ht HVT. apply LErel_S_iff. intros W1 HW1.
     assert (world_wf W1) as HW1f by (destruct HW1 as [->|HW1]; [done|by eapply wext_wf]).
     assert (teqW W1 T T') as Ht1.
     { eapply teqW_mono; [|exact Ht]. intros. by eapply wext_r_eq'. }
-    destruct (proj2 H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
+    destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
     split_and!.
     - intros Hirr. by apply HVT, Hs.
     - done.

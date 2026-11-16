@@ -207,7 +207,6 @@ Qed.
 
 Definition LEstep (X : world → tenv → ty → gset point → expr → Prop) (n : nat)
     (W : world) (Θ : tenv) (T : ty) (F : gset point) (e : expr) : Prop :=
-  tenv_fit Θ e ∧
   ∀ W1, wext_r W W1 →
     (irred e → LVrel (S n) W1 Θ T e) ∧
     (¬ irred e → ready_t W1 Θ F e) ∧
@@ -227,8 +226,7 @@ Lemma LEstep_mono (X Y : world → tenv → ty → gset point → expr → Prop)
   (∀ W Θ T F e, X W Θ T F e → Y W Θ T F e) →
   LEstep X n W Θ T F e → LEstep Y n W Θ T F e.
 Proof.
-  intros HXY [Hfit H]. split; [exact Hfit|].
-  intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  intros HXY H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [done|done| | | |done|].
   - intros e' Hst. auto.
   - intros c x e' Hst Hc. destruct (Hn c x e' Hst Hc) as (? & s & s' & ? & ?).
@@ -248,8 +246,7 @@ Lemma Ebody_LEstep n (X : (world → tenv → expr → Prop) → ty → world �
   Ebody (llevels (S n)) (S n) X VT T W Θ F e →
   LEstep Y n W Θ T F e.
 Proof.
-  intros HV HX HXu [Hfit H]. split; [exact Hfit|].
-  intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  intros HV HX HXu H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [|done| | | | |].
   - intros Hirr. auto.
   - intros e' Hst. auto.
@@ -273,8 +270,7 @@ Lemma LEstep_Ebody n (X : (world → tenv → expr → Prop) → ty → world �
   LEstep Y n W Θ T F e →
   Ebody (llevels (S n)) (S n) X (lVtop (llevels (S n)) (S n) T) T W Θ F e.
 Proof.
-  intros HX HXu [Hfit H]. split; [exact Hfit|].
-  intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  intros HX HXu H W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [|done| | | | |].
   - intros Hirr. apply LVrel_eq. auto.
   - intros e' Hst. auto.
@@ -490,8 +486,8 @@ Proof.
   destruct m as [|m']; [apply LErel_0|].
   destruct n as [|n']; [lia|].
   destruct (decide (m' = n')) as [->|Hne]; [done|].
-  revert W Θ T F e HE. apply (LErel_S_ind n'). intros W Θ T F e [Hfit H].
-  apply LErel_S_iff. split; [exact Hfit|].
+  revert W Θ T F e HE. apply (LErel_S_ind n'). intros W Θ T F e H.
+  apply LErel_S_iff.
   intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [| done | | | | | ].
   - intros Hirr. eapply LVrel_down; [|by apply Hs]. lia.
@@ -633,7 +629,7 @@ Lemma LVrel_LErel n W Θ T F v : LVrel n W Θ T v → LErel n W Θ T F v.
 Proof.
   intros HV. assert (is_val v) as Hv by by eapply LVrel_val.
   destruct n as [|n']; [apply LErel_0|].
-  apply LErel_S_iff. split; [by eapply LVrel_fit|]. intros W1 HW1. split_and!.
+  apply LErel_S_iff. intros W1 HW1. split_and!.
   - intros _. by eapply LVrel_mono_r.
   - intros Hirr. exfalso. by apply Hirr, val_irred.
   - intros e' Hst. exfalso. eauto using val_no_tstep.
@@ -643,7 +639,7 @@ Proof.
   - intros cd e' Hst. exfalso. eauto using val_no_tstep.
 Qed.
 
-(** ** Fitting environments (E-Fit) *)
+(** ** Fitting environments (closures and payloads) *)
 
 Lemma fends_empty_of_fchans e : fchans e = ∅ → fends e = ∅.
 Proof.
@@ -665,9 +661,6 @@ Qed.
 
 Lemma tenv_fit_ends Θ e e' : fends e' = fends e → tenv_fit Θ e → tenv_fit Θ e'.
 Proof. intros He [H1 H2]. split; [by rewrite He|done]. Qed.
-
-Lemma LErel_S_fit n W Θ T F e : LErel (S n) W Θ T F e → tenv_fit Θ e.
-Proof. intros H%LErel_S_iff. apply H. Qed.
 
 Lemma fends_fill_frame f e : fends (fill_frame f e) = fends (fill_frame f EUnit) ∪ fends e.
 Proof. destruct f; simpl; set_solver. Qed.

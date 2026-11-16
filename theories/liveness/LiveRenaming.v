@@ -125,9 +125,8 @@ Section swap.
     refine (LErel_S_ind n' (λ W Θ T F e,
               (∀ W Θ v, LVrel (S n') W Θ T v → LVrel (S n') W (tenvswap a b Θ) T (eswap a b v)) →
               LErel (S n') W (tenvswap a b Θ) T F (eswap a b e)) _).
-    intros W Θ T F e H HVT. apply LErel_S_iff. split; [exact (tenv_fit_swap a b _ _ (proj1 H))|].
-    intros W1 HW1.
-    destruct (proj2 H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
+    intros W Θ T F e H HVT. apply LErel_S_iff. intros W1 HW1.
+    destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
     assert (HVu : ∀ W Θ v, LVrel (S n') W Θ TUnit v →
               LVrel (S n') W (tenvswap a b Θ) TUnit (eswap a b v)).
     { intros W0 Θ0 v0 [-> ->]%LVrel_unit_iff. apply LVrel_unit_iff. by rewrite tenvswap_empty. }

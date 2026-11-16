@@ -39,7 +39,7 @@ Proof. intros HW [->|H]; [done|by eapply wext_wf]. Qed.
 Lemma wext_r_eq W W1 x y : wext_r W W1 → w_eq W x y → w_eq W1 x y.
 Proof. intros [->|H] Hxy; [done|by eapply wext_eq]. Qed.
 
-(** ≈_W keeps the fit of a term (E-Fit). *)
+(** ≈_W keeps the fit of a closure body. *)
 Lemma tenv_bipol_tconv W Θ Θ' : tconv W Θ Θ' → tenv_bipol Θ → tenv_bipol Θ'.
 Proof.
   intros Hc HB c e1' e2' He'. pose proof (Hc c) as Hcc. rewrite He' in Hcc.
@@ -76,11 +76,11 @@ Section econv.
       (∀ W Θ Θ' v, world_wf W → tconv W Θ Θ' → LVrel (S n') W Θ T v → LVrel (S n') W Θ' T v) →
       ∀ Θ', world_wf W → tconv W Θ Θ' → LErel (S n') W Θ' T F e) _).
     intros W0 Θ T F e H HVT Θ' HW0 Hc0.
-    apply LErel_S_iff. split; [exact (tenv_fit_tconv _ _ _ _ Hc0 (proj1 H))|]. intros W HW1.
+    apply LErel_S_iff. intros W HW1.
     assert (world_wf W) as HW by (by eapply wext_r_wf).
     assert (tconv W Θ Θ') as Hc.
     { eapply tconv_mono; [|exact Hc0]. intros. by eapply wext_r_eq. }
-    destruct (proj2 H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
+    destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
     clear H HW0 Hc0 HW1.
     assert (HVu : ∀ W Θ Θ' v, world_wf W → tconv W Θ Θ' →
               LVrel (S n') W Θ TUnit v → LVrel (S n') W Θ' TUnit v).

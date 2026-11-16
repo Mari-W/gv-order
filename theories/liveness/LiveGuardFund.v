@@ -14,7 +14,7 @@ From LRGV Require Export liveness.LiveGuardRules liveness.GuardMarks static.Fund
 Set Default Proof Using "All".
 Local Set Warnings "-register-all".
 
-(** ** Typing environments fit their terms (E-Fit) *)
+(** ** Typing environments fit their terms (the closure of E-Abs) *)
 
 Lemma tenv_bipol_pinst σ Θ : tenv_pol σ Θ → tenv_bipol (tenv_pinst σ Θ) ↔ tenv_bipol Θ.
 Proof.
@@ -38,17 +38,6 @@ Proof.
     try (by eapply tenv_bipol_comp).
   match goal with H : tenv_bipol (tenv_pinst (pshift ?m) ?Θ) |- tenv_bipol ?Θ =>
     by apply (tenv_bipol_pinst (pshift m)); [apply tenv_pol_pshift|] end.
-Qed.
-
-Lemma typed_wf_inst W Φ Ψ Θ Δ F e T σ :
-  typed W Φ Ψ Θ Δ F e T → tenv_pol σ Θ →
-  term_wf (tenv_pinst σ Θ) (lenv_pinst σ Δ) e ∧ tenv_bipol (tenv_pinst σ Θ).
-Proof.
-  intros Ht Hp. split.
-  - pose proof (typed_term_wf_s _ _ _ _ _ _ _ _ Ht) as Hwf.
-    apply (proj2 (term_wf_lenv_pinst σ Θ Δ e)) in Hwf. destruct Hwf as (Hfe & Hrest).
-    split; [by rewrite tenv_ends_pinst|exact Hrest].
-  - apply tenv_bipol_pinst; [done|]. by eapply typed_bipol.
 Qed.
 
 Lemma typed_live W Φ Ψ Θ Δ F e T :
@@ -129,7 +118,6 @@ Proof.
     simpl in Hgall. apply andb_true_iff in Hgall as [Hg1 Hg2].
     destruct (IH1 Hg1 W1 ρ σ HW HW1 Hρ HΨ Hp1) as [IH1l IH1v].
     destruct (IH2 Hg2 W1 ρ σ HW HW1 Hρ HΨ Hp2) as [IH2l IH2v].
-    pose proof (typed_wf_inst _ _ _ _ _ _ _ _ σ H2 Hp2) as [Hwf2 HB2].
     assert (tenv_comp (w_eq W1) (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2)) as Hc'
       by (by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ)).
     assert (lenv_split (lenv_pinst σ Δ) (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)) as Hsp' by (by apply lenv_split_pinst).
@@ -155,7 +143,7 @@ Proof.
         { future_pinst. apply lsem_later_now, IH1l, okR_noL. }
         { future_pinst. apply IH2l, okM_okR, Hok2. }
       * eapply (lsem_later_app W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
-                  _ _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)); [done|done|done| | |done|done].
+                  _ _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)); [done|done|done| | ].
         { future_pinst. apply IH1l. rewrite okR_eq. simpl. unfold marked. by rewrite HLy. }
         { future_pinst. apply IH2l, okM_okR, Hok. }
     + destruct (is_lam e1) eqn:Hil.
@@ -168,68 +156,65 @@ Proof.
           - by apply IH1v.
           - future_pinst. apply IH2l, okM_okR, Hok2. }
         eapply (lsem_later_app W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
-                  _ _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)); [done|done|done| | |done|done].
+                  _ _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)); [done|done|done| | ].
         { future_pinst. apply IH1l. rewrite okR_eq. apply orb_true_iff. right. simpl. by apply okM_okR. }
         { future_pinst. apply IH2l, okM_okR, Hok2. }
       * rewrite okM_app_gen in Hok; [|done|done].
         apply andb_true_iff in Hok as [Hok1 Hok2]. apply orb_true_iff in Hok2 as [Hgd|Hok2].
         { apply (lsem_later_app_g W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
-                   _ _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)); [done|done|done|done| | |done|done].
+                   _ _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)); [done|done|done|done| | ].
           - future_pinst. apply IH1l, okM_okR, Hok1.
           - future_pinst. apply lsem_later_now, IH2l, okR_noL. }
         eapply (lsem_later_app W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
-                  _ _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)); [done|done|done| | |done|done].
+                  _ _ _ _ (pt_inst σ <$> ub) (pt_inst σ <$> lb) (pinst_ty σ T)); [done|done|done| | ].
         { future_pinst. apply IH1l, okM_okR, Hok1. }
         { future_pinst. apply IH2l, okM_okR, Hok2. }
   - (* E-Pair *)
     simpl in Hgall. apply andb_true_iff in Hgall as [Hg1 Hg2].
     destruct (IH1 Hg1 W1 ρ σ HW HW1 Hρ HΨ Hp1) as [IH1l IH1v].
     destruct (IH2 Hg2 W1 ρ σ HW HW1 Hρ HΨ Hp2) as [IH2l IH2v].
-    pose proof (typed_wf_inst _ _ _ _ _ _ _ _ σ H2 Hp2) as [Hwf2 HB2].
     assert (tenv_comp (w_eq W1) (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2)) as Hc'
       by (by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ)).
     assert (lenv_split (lenv_pinst σ Δ) (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)) as Hsp' by (by apply lenv_split_pinst).
     split; [intros Lm Hok|done].
     change (okM Lm (Pair e1 e2) || false = true) in Hok. rewrite orb_false_r in Hok.
     apply andb_true_iff in Hok as [Hok1 Hok2]. apply orb_true_iff in Hok2 as [Hgd|Hok2].
-    + apply (lsem_later_pair_g W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)); [done|done|done| | |done|done].
+    + apply (lsem_later_pair_g W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)); [done|done|done| | ].
       * future_pinst. apply IH1l, okM_okR, Hok1.
       * future_pinst. apply lsem_later_now, IH2l, okR_noL.
-    + eapply (lsem_later_pair W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)); [done|done| | |done|done].
+    + eapply (lsem_later_pair W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)); [done|done| | ].
       * future_pinst. apply IH1l, okM_okR, Hok1.
       * future_pinst. apply IH2l, okM_okR, Hok2.
   - (* E-Let* *)
     simpl in Hgall. apply andb_true_iff in Hgall as [Hg1 Hg2].
     destruct (IH1 Hg1 W1 ρ σ HW HW1 Hρ HΨ Hp1) as [IH1l IH1v].
     destruct (IH2 Hg2 W1 ρ σ HW HW1 Hρ HΨ Hp2) as [IH2l IH2v].
-    pose proof (typed_wf_inst _ _ _ _ _ _ _ _ σ H2 Hp2) as [Hwf2 HB2].
     assert (tenv_comp (w_eq W1) (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2)) as Hc'
       by (by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ)).
     assert (lenv_split (lenv_pinst σ Δ) (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)) as Hsp' by (by apply lenv_split_pinst).
     split; [intros Lm Hok|done].
     change (okM Lm (LetU e1 e2) || false = true) in Hok. rewrite orb_false_r in Hok.
     apply andb_true_iff in Hok as [Hok1 Hok2]. apply orb_true_iff in Hok2 as [Hgd|Hok2].
-    + apply (lsem_later_letu_g W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)); [done|done|done| | |done|done].
+    + apply (lsem_later_letu_g W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)); [done|done|done| | ].
       * future_pinst. apply IH1l, okM_okR, Hok1.
       * apply lsem_later_now, IH2l, okR_noL.
-    + eapply (lsem_later_letu W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)); [done|done| | |done|done].
+    + eapply (lsem_later_letu W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)); [done|done| | ].
       * future_pinst. apply IH1l, okM_okR, Hok1.
       * apply IH2l, okM_okR, Hok2.
   - (* E-LetPair *)
     simpl in Hgall. apply andb_true_iff in Hgall as [Hg1 Hg2].
     destruct (IH1 Hg1 W1 ρ σ HW HW1 Hρ HΨ Hp1) as [IH1l IH1v].
     destruct (IH2 Hg2 W1 ρ σ HW HW1 Hρ HΨ Hp2) as [IH2l IH2v].
-    pose proof (typed_wf_inst _ _ _ _ _ _ _ _ σ H2 Hp2) as [Hwf2 HB2].
     assert (tenv_comp (w_eq W1) (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2)) as Hc'
       by (by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ)).
     assert (lenv_split (lenv_pinst σ Δ) (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)) as Hsp' by (by apply lenv_split_pinst).
     split; [intros Lm Hok|done].
     change (okM Lm (LetP e1 e2) || false = true) in Hok. rewrite orb_false_r in Hok.
     apply andb_true_iff in Hok as [Hok1 Hok2]. apply orb_true_iff in Hok2 as [Hgd|Hok2].
-    + apply (lsem_later_letp_g W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2) _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)); [done|done|done| | |done|done].
+    + apply (lsem_later_letp_g W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2) _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)); [done|done|done| | ].
       * future_pinst. apply IH1l, okM_okR, Hok1.
       * apply lsem_later_now, IH2l, okR_noL.
-    + eapply (lsem_later_letp W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2) _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)); [done|done| | |done|done].
+    + eapply (lsem_later_letp W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2) _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)); [done|done| | ].
       * future_pinst. apply IH1l, okM_okR, Hok1.
       * apply IH2l, okM_okR, Hok2.
   - cbn [pinst_ty]. destruct (IH Hgall W1 ρ σ HW HW1 Hρ HΨ Hpol) as [IHl _]. split; [intros Lm Hok|done].
@@ -241,8 +226,6 @@ Proof.
     destruct (IH0 Hg0 W1 ρ σ HW HW1 Hρ HΨ Hp1) as [IH0l IH0v].
     destruct (IH1 Hg1 W1 ρ σ HW HW1 Hρ HΨ Hp2) as [IH1l IH1v].
     destruct (IH2 Hg2 W1 ρ σ HW HW1 Hρ HΨ Hp2) as [IH2l IH2v].
-    pose proof (typed_wf_inst _ _ _ _ _ _ _ _ σ H1 Hp2) as [Hwf1 HB2].
-    pose proof (typed_wf_inst _ _ _ _ _ _ _ _ σ H2 Hp2) as [Hwf2 _].
     assert (tenv_comp (w_eq W1) (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2)) as Hc'
       by (by apply (tenv_comp_pinst_g W W1 σ HW HW1 Ψ)).
     assert (lenv_split (lenv_pinst σ Δ) (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)) as Hsp' by (by apply lenv_split_pinst).
@@ -250,13 +233,13 @@ Proof.
     change (okM Lm (Case e e1 e2) || false = true) in Hok. rewrite orb_false_r in Hok.
     apply andb_true_iff in Hok as [Hok0 Hok12]. apply orb_true_iff in Hok12 as [Hgd|Hok12].
     + apply (lsem_later_case_g W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
-               _ _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)); [done|done|done| | | |done|done|done].
+               _ _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)); [done|done|done| | | ].
       * future_pinst. apply IH0l, okM_okR, Hok0.
       * apply lsem_later_now, IH1l, okR_noL.
       * apply lsem_later_now, IH2l, okR_noL.
     + apply andb_true_iff in Hok12 as [Hok1 Hok2].
       eapply (lsem_later_case W1 _ (tenv_pinst σ Θ1) (tenv_pinst σ Θ2) _ (lenv_pinst σ Δ1) (lenv_pinst σ Δ2)
-                _ _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)); [done|done| | | |done|done|done].
+                _ _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2)); [done|done| | | ].
       * future_pinst. apply IH0l, okM_okR, Hok0.
       * apply IH1l, okM_okR, Hok1.
       * apply IH2l, okM_okR, Hok2.

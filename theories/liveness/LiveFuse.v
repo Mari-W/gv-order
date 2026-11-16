@@ -43,7 +43,7 @@ Proof.
   - intros e1 e2 H1 _. rewrite lookup_insert_ne in H1 by done. congruence.
 Qed.
 
-(** A move keeps the fit of a term (E-Fit). *)
+(** A move keeps the fit of a closure body. *)
 Lemma tenv_bipol_move W c d Θ Θ' :
   c ≠ d → tenv_move W c d Θ Θ' → tenv_bipol Θ → tenv_bipol Θ'.
 Proof.
@@ -204,8 +204,7 @@ Section fuse.
          LVrel (S n') W Θ T v → LVrel (S n') W Θ' T (chsubst c d v)) →
       ∀ Θ', strict W → tenv_move W c d Θ Θ' → LErel (S n') W Θ' T F (chsubst c d e)) _).
     intros W0 Θ T F e H HVT Θ' HW0 Hm0.
-    apply LErel_S_iff. split; [exact (tenv_fit_move _ _ _ _ _ _ Hcd Hm0 (proj1 H))|].
-    intros W HW1.
+    apply LErel_S_iff. intros W HW1.
     assert (strict W) as HW.
     { destruct HW1 as [->|HW1]; [done|by destruct HW1 as (_ & _ & _ & ?)]. }
     assert (tenv_move W c d Θ Θ') as Hm.
@@ -214,7 +213,7 @@ Section fuse.
     assert (HE0 : LErel (S n') W Θ T F e).
     { eapply LErel_mono; [exact HW1|]. apply LErel_S_iff.
       eapply LEstep_mono; [|exact H]. by intros ? ? ? ? ? [? _]. }
-    destruct (proj2 H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
+    destruct (H W HW1) as (Hval & Hrdy & Hb & Hnew & Hsp & Hσ & Hlk).
     clear H HW0 Hm0 HW1.
     pose proof (proj1 HW) as HWf.
     assert (Hexcl : fused c d Θ → ∀ σ f, tstep e (LSess σ) f → (c ∈ subjs σ ∨ d ∈ subjs σ) →

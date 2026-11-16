@@ -15,24 +15,24 @@ Lemma LErel_S_step n W Θ T F e σ e' :
   LErel (S n) W Θ T F e → tstep e (LSess σ) e' → LEobl LVrel LErel (S n) W Θ T F σ e'.
 Proof.
   intros HE Hst. apply LErel_S_iff in HE.
-  destruct (proj2 HE W (wext_r_refl W)) as (_ & _ & _ & _ & _ & Hσ & _). by apply Hσ.
+  destruct (HE W (wext_r_refl W)) as (_ & _ & _ & _ & _ & Hσ & _). by apply Hσ.
 Qed.
 
 Lemma LErel_S_link n W Θ T F e cd e' :
   LErel (S n) W Θ T F e → tstep e (LSess (SLink cd)) e' → LElink (λ W Θ F e, LErel (S n) W Θ T F e) W Θ F cd e'.
 Proof.
   intros HE Hst. apply LErel_S_iff in HE.
-  destruct (proj2 HE W (wext_r_refl W)) as (_ & _ & _ & _ & _ & _ & Hl). by apply Hl.
+  destruct (HE W (wext_r_refl W)) as (_ & _ & _ & _ & _ & _ & Hl). by apply Hl.
 Qed.
 
 Lemma LErel_S_ready n W Θ T F e : LErel (S n) W Θ T F e → ¬ irred e → ready_t W Θ F e.
 Proof.
-  intros HE. apply LErel_S_iff in HE. by destruct (proj2 HE W (wext_r_refl W)) as (_ & ? & _).
+  intros HE. apply LErel_S_iff in HE. by destruct (HE W (wext_r_refl W)) as (_ & ? & _).
 Qed.
 
 Lemma LErel_S_stop n W Θ T F e : LErel (S n) W Θ T F e → irred e → LVrel (S n) W Θ T e.
 Proof.
-  intros HE. apply LErel_S_iff in HE. by destruct (proj2 HE W (wext_r_refl W)) as (? & _).
+  intros HE. apply LErel_S_iff in HE. by destruct (HE W (wext_r_refl W)) as (? & _).
 Qed.
 
 Lemma LErel_subjs n W Θ T F e σ e' :
@@ -295,14 +295,13 @@ Proof. intros _ [->|HW] HW'; [done|by eapply wext_trans]. Qed.
 
 Lemma LErel_bind n : ∀ f W Θ Θ1 Θ2 Th T F H e,
   frame_val f → strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → heads_above_x W H Θ2 →
-  tenv_fit Θ2 (fill_frame f EUnit) →
   LErel n W Θ1 Th (F ∪ H) e →
   (∀ W' j Θ1' Θ' v, wext W W' → j ≤ n → tenv_comp (w_eq W') Θ' Θ1' Θ2 →
      LVrel j W' Θ1' Th v → LErel j W' Θ' T F (fill_frame f v)) →
   LErel n W Θ T F (fill_frame f e).
 Proof.
   induction n as [n IHn] using lt_wf_ind.
-  intros f W Θ Θ1 Θ2 Th T F H e Hf HW Hc Hh Hfit2 HE HK.
+  intros f W Θ Θ1 Θ2 Th T F H e Hf HW Hc Hh HE HK.
   destruct n as [|n']; [apply LErel_0|].
   remember (F ∪ H) as FH eqn:HFH.
   revert Θ Hc HK Hh HW HFH.
@@ -320,10 +319,7 @@ Proof.
   { apply (HK W (S n') Θ1 Θ e); [by apply wext_refl|lia|done|].
     apply (LErel_S_stop _ _ _ _ _ _ HE), val_irred. by rewrite Hv. }
   assert (¬ is_val e) as Hnv by (rewrite Hv; intros []).
-  apply LErel_S_iff. split.
-  { eapply (tenv_fit_join Θ Θ1 Θ2 e (fill_frame f EUnit)); [exact Hc|exact (proj1 Hstep)|exact Hfit2|].
-    rewrite fends_fill_frame. set_solver. }
-  intros W1 HW1.
+  apply LErel_S_iff. intros W1 HW1.
   pose proof (wext_r_strict _ _ HW HW1) as HW1s.
   assert (tenv_comp (w_eq W1) Θ Θ1 Θ2) as Hc1.
   { exact Hc. }
@@ -334,7 +330,7 @@ Proof.
             LVrel j W' Θ1' Th v → LErel j W' Θ' T F (fill_frame f v)) as HK1.
   { intros W' j Θ1' Θ' v HW' Hj Hc' HV'. apply (HK W' j Θ1' Θ' v); [|done..].
     by eapply wext_r_wext. }
-  destruct (proj2 Hstep W1 HW1) as (Hval & Hrdy & Hbeta & Hnew & Hsp & Hσ & Hlk).
+  destruct (Hstep W1 HW1) as (Hval & Hrdy & Hbeta & Hnew & Hsp & Hσ & Hlk).
   assert (∀ W' j, wext W1 W' → j ≤ n' →
             ∀ W'' j' Θ1' Θ' v, wext W' W'' → j' ≤ j → tenv_comp (w_eq W'') Θ' Θ1' Θ2 →
               LVrel j' W'' Θ1' Th v → LErel j' W'' Θ' T F (fill_frame f v)) as HKd.
@@ -379,7 +375,7 @@ Proof.
       destruct (comp_ext_back _ _ _ _ _ c _ Hcr' H2c Hextc) as [Hc1' Hext1].
       destruct (comp_assoc _ _ _ _ _ _ Hsym' Hcomp' Hc1') as [HX1 HX2].
       pose proof (Hcont W' j Θp _ _ HW' Hj Hext1 HX1 HV) as HEj.
-      eapply (IHn j); [lia|done|done|exact HX2|by eapply heads_above_x_mono|exact Hfit2|exact HEj|].
+      eapply (IHn j); [lia|done|done|exact HX2|by eapply heads_above_x_mono|exact HEj|].
       apply (HKd W' j); [done|done].
     + (* send *)
       assert (Θ2 !! c = None) as H2c.
@@ -396,7 +392,7 @@ Proof.
         intros y Hy. by rewrite lookup_partial_alter_ne.
       * pose proof (comp_set _ _ _ _ c (Θ1' !! c) HX1 H2c) as Hcs.
         rewrite (palter_eq A Θ1' c) in Hcs; [|intros y Hy; by apply (ext_off _ _ _ _ _ Hext')].
-        eapply (IHn n'); [lia|done|done|exact Hcs|done|exact Hfit2|exact HE'|].
+        eapply (IHn n'); [lia|done|done|exact Hcs|done|exact HE'|].
         apply (HKd W1 n'); [by apply wext_refl|done].
     + (* close *)
       assert (Θ2 !! c = None) as H2c.
@@ -404,7 +400,7 @@ Proof.
       destruct Hcase as (Θ1' & k & ((s0 & Hext & Hu) & Hp) & HE').
       destruct (comp_ext _ _ _ _ _ c _ Hc1 H2c Hext) as [Hcr Hextr].
       exists (partial_alter (λ _, Θ1' !! c) c Θ), k. split; [split; [by exists s0|done]|].
-      eapply (IHn n'); [lia|done|done|exact Hcr|done|exact Hfit2|exact HE'|].
+      eapply (IHn n'); [lia|done|done|exact Hcr|done|exact HE'|].
       apply (HKd W1 n'); [by apply wext_refl|done].
     + (* link: O-Link below *)
       done.
@@ -421,7 +417,7 @@ Proof.
       * eapply ext_transfer; [exact Hext'|by rewrite lookup_partial_alter_eq|
           by rewrite lookup_partial_alter_eq|].
         intros y Hy. by rewrite !lookup_partial_alter_ne by congruence.
-      * eapply (IHn n'); [lia|done|done|exact Hcs|done|exact Hfit2|exact HE'|].
+      * eapply (IHn n'); [lia|done|done|exact Hcs|done|exact HE'|].
         apply (HKd W1 n'); [by apply wext_refl|done].
     + (* branch *)
       assert (Θ2 !! c = None) as H2c.
@@ -436,7 +432,7 @@ Proof.
       * eapply ext_transfer; [exact Hext'|by rewrite lookup_partial_alter_eq|
           by rewrite lookup_partial_alter_eq|].
         intros y Hy. by rewrite !lookup_partial_alter_ne by congruence.
-      * eapply (IHn n'); [lia|done|done|exact Hcs|done|exact Hfit2|exact HE'|].
+      * eapply (IHn n'); [lia|done|done|exact Hcs|done|exact HE'|].
         apply (HKd W1 n'); [by apply wext_refl|done].
   - (* O-Link: a τ of the hole, at the index *)
     intros cd E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
@@ -464,14 +460,13 @@ Inductive tadmin : expr → expr → Prop :=
 Lemma LErel_bind_R n : ∀ (R : expr → Prop) f W Θ Θ1 Θ2 Th T F H e,
   (∀ e e', R e → tadmin e e' → R e') → R e →
   frame_val f → strict W → tenv_comp (w_eq W) Θ Θ1 Θ2 → heads_above_x W H Θ2 →
-  tenv_fit Θ2 (fill_frame f EUnit) →
   LErel n W Θ1 Th (F ∪ H) e →
   (∀ W' j Θ1' Θ' v, wext W W' → j ≤ n → (j = n → R v) → tenv_comp (w_eq W') Θ' Θ1' Θ2 →
      LVrel j W' Θ1' Th v → LErel j W' Θ' T F (fill_frame f v)) →
   LErel n W Θ T F (fill_frame f e).
 Proof.
   induction n as [n IHn] using lt_wf_ind.
-  intros R f W Θ Θ1 Θ2 Th T F H e HRc HRe Hf HW Hc Hh Hfit2 HE HK.
+  intros R f W Θ Θ1 Θ2 Th T F H e HRc HRe Hf HW Hc Hh HE HK.
   destruct n as [|n']; [apply LErel_0|].
   remember (F ∪ H) as FH eqn:HFH.
   revert Θ Hc HK Hh HW HFH HRe.
@@ -490,10 +485,7 @@ Proof.
   { apply (HK W (S n') Θ1 Θ e); [by apply wext_refl|lia|done|done|].
     apply (LErel_S_stop _ _ _ _ _ _ HE), val_irred. by rewrite Hv. }
   assert (¬ is_val e) as Hnv by (rewrite Hv; intros []).
-  apply LErel_S_iff. split.
-  { eapply (tenv_fit_join Θ Θ1 Θ2 e (fill_frame f EUnit)); [exact Hc|exact (proj1 Hstep)|exact Hfit2|].
-    rewrite fends_fill_frame. set_solver. }
-  intros W1 HW1.
+  apply LErel_S_iff. intros W1 HW1.
   pose proof (wext_r_strict _ _ HW HW1) as HW1s.
   assert (tenv_comp (w_eq W1) Θ Θ1 Θ2) as Hc1.
   { exact Hc. }
@@ -505,7 +497,7 @@ Proof.
             LVrel j W' Θ1' Th v → LErel j W' Θ' T F (fill_frame f v)) as HK1.
   { intros W' j Θ1' Θ' v HW' Hj HRv Hc' HV'. apply (HK W' j Θ1' Θ' v); [|done..].
     by eapply wext_r_wext. }
-  destruct (proj2 Hstep W1 HW1) as (Hval & Hrdy & Hbeta & Hnew & Hsp & Hσ & Hlk).
+  destruct (Hstep W1 HW1) as (Hval & Hrdy & Hbeta & Hnew & Hsp & Hσ & Hlk).
   assert (∀ W' j, wext W1 W' → j ≤ n' →
             ∀ W'' j' Θ1' Θ' v, wext W' W'' → j' ≤ j → (j' = j → True) →
               tenv_comp (w_eq W'') Θ' Θ1' Θ2 →
@@ -551,7 +543,7 @@ Proof.
       destruct (comp_ext_back _ _ _ _ _ c _ Hcr' H2c Hextc) as [Hc1' Hext1].
       destruct (comp_assoc _ _ _ _ _ _ Hsym' Hcomp' Hc1') as [HX1 HX2].
       pose proof (Hcont W' j Θp _ _ HW' Hj Hext1 HX1 HV) as HEj.
-      eapply (IHn j ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact HX2|by eapply heads_above_x_mono|exact Hfit2|exact HEj|].
+      eapply (IHn j ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact HX2|by eapply heads_above_x_mono|exact HEj|].
       apply (HKd W' j); [done|done].
     + (* send *)
       assert (Θ2 !! c = None) as H2c.
@@ -568,7 +560,7 @@ Proof.
         intros y Hy. by rewrite lookup_partial_alter_ne.
       * pose proof (comp_set _ _ _ _ c (Θ1' !! c) HX1 H2c) as Hcs.
         rewrite (palter_eq A Θ1' c) in Hcs; [|intros y Hy; by apply (ext_off _ _ _ _ _ Hext')].
-        eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcs|done|exact Hfit2|exact HE'|].
+        eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcs|done|exact HE'|].
         apply (HKd W1 n'); [by apply wext_refl|done].
     + (* close *)
       assert (Θ2 !! c = None) as H2c.
@@ -576,7 +568,7 @@ Proof.
       destruct Hcase as (Θ1' & k & ((s0 & Hext & Hu) & Hp) & HE').
       destruct (comp_ext _ _ _ _ _ c _ Hc1 H2c Hext) as [Hcr Hextr].
       exists (partial_alter (λ _, Θ1' !! c) c Θ), k. split; [split; [by exists s0|done]|].
-      eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcr|done|exact Hfit2|exact HE'|].
+      eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcr|done|exact HE'|].
       apply (HKd W1 n'); [by apply wext_refl|done].
     + (* link: O-Link below *)
       done.
@@ -593,7 +585,7 @@ Proof.
       * eapply ext_transfer; [exact Hext'|by rewrite lookup_partial_alter_eq|
           by rewrite lookup_partial_alter_eq|].
         intros y Hy. by rewrite !lookup_partial_alter_ne by congruence.
-      * eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcs|done|exact Hfit2|exact HE'|].
+      * eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcs|done|exact HE'|].
         apply (HKd W1 n'); [by apply wext_refl|done].
     + (* branch *)
       assert (Θ2 !! c = None) as H2c.
@@ -608,7 +600,7 @@ Proof.
       * eapply ext_transfer; [exact Hext'|by rewrite lookup_partial_alter_eq|
           by rewrite lookup_partial_alter_eq|].
         intros y Hy. by rewrite !lookup_partial_alter_ne by congruence.
-      * eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcs|done|exact Hfit2|exact HE'|].
+      * eapply (IHn n' ltac:(lia) (λ _, True)); [intros; done|done|done|done|exact Hcs|done|exact HE'|].
         apply (HKd W1 n'); [by apply wext_refl|done].
   - (* O-Link: a τ of the hole, at the index *)
     intros cd E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).

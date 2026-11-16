@@ -112,7 +112,7 @@ Proof.
     + exists ∅, Θ2. split_and!; [by apply tenv_comp_empty_l|done|done].
 Qed.
 
-(** ** Ends of a grounding (E-Fit) *)
+(** ** Ends of a grounding (the closure of E-Abs) *)
 
 Lemma lgrounding_fends n W Θ Δ γ x T :
   lgrounding n W Θ Δ γ → Δ !! x = Some (Some T) → fends (γ x) ⊆ tenv_ends Θ.
@@ -204,14 +204,12 @@ Lemma lsem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 Th T (f : (nat → expr) → frame)
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → (∀ γ, frame_val (f γ)) →
   lsem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 Th →
   (∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' → lgrounding n W' Θ' Δ2 γ →
-     tenv_fit Θ'' (fill_frame (f γ) EUnit)) →
-  (∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' → lgrounding n W' Θ' Δ2 γ →
      ∀ W'' j Θ1' Θ3 v, wext W' W'' → j ≤ n → tenv_comp (w_eq W'') Θ3 Θ1' Θ'' →
        LVrel j W'' Θ1' Th v → LErel j W'' Θ3 T F (fill_frame (f γ) v)) →
   ∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ Θ' → lgrounding n W' Θ' Δ γ →
     LErel n W' Θ'' T F (fill_frame (f γ) (subst γ e1)).
 Proof.
-  intros Hc Hsp Hf He1 Hfr HK n W' Θ' Θ'' γ HW Hc'' Hg.
+  intros Hc Hsp Hf He1 HK n W' Θ' Θ'' γ HW Hc'' Hg.
   pose proof (wext_wf _ _ HW) as HW'. pose proof eq_rdsym as Hs.
   destruct (lgrounding_split _ _ _ _ _ _ _ Hsp Hg) as (Θ'1 & Θ'2 & Hc' & Hg1 & Hg2).
   destruct (comp_swap4 _ _ _ _ _ _ _ _ Hs Hc'' Hc Hc') as (A & B & HAB & HA & HB).
@@ -221,7 +219,6 @@ Proof.
   - done.
   - apply heads_above_x_bot. intros Hb.
     eapply heads_above_comp; [exact HB|by apply heads_above_self|by eapply lgrounding_heads].
-  - by apply (Hfr n W' Θ'2 B γ).
   - by apply (He1 n W' Θ'1 A γ).
   - intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. by eapply (HK n W' Θ'2 B γ).
 Qed.
@@ -234,7 +231,7 @@ Proof.
   intros He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   change (Inj1 (subst γ e)) with (fill_frame FInj1 (subst γ e)).
   eapply (LErel_bind n FInj1 W' Θ'' Θ'' ∅ T _ F ∅); [done|apply HW|apply tenv_comp_empty_r|
-    left; apply heads_above_empty|by apply tenv_fit_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
+    left; apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
   intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
   apply tenv_comp_empty_r_inv in Hc3 as ->. apply LVrel_LErel. simpl.
   apply LVrel_sum_iff. left. eauto.
@@ -246,7 +243,7 @@ Proof.
   intros He n W' Θ' Θ'' γ HW Hc Hg. simpl.
   change (Inj2 (subst γ e)) with (fill_frame FInj2 (subst γ e)).
   eapply (LErel_bind n FInj2 W' Θ'' Θ'' ∅ U _ F ∅); [done|apply HW|apply tenv_comp_empty_r|
-    left; apply heads_above_empty|by apply tenv_fit_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
+    left; apply heads_above_empty|rewrite (right_id_L ∅ (∪)); by eapply He|].
   intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
   apply tenv_comp_empty_r_inv in Hc3 as ->. apply LVrel_LErel. simpl.
   apply LVrel_sum_iff. right. eauto.
@@ -268,23 +265,18 @@ Qed.
 Lemma lsem_typed_letu W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
   lsem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 TUnit →
-  lsem_typed W Θ2 Δ2 F e2 T → term_wf Θ2 Δ2 e2 → tenv_bipol Θ2 →
+  lsem_typed W Θ2 Δ2 F e2 T →
   lsem_typed W Θ Δ F (LetU e1 e2) T.
 Proof.
-  intros Hc Hsp He1 He2 Hwf2 HB2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
   change (LetU (subst γ e1) (subst γ e2)) with (fill_frame (FLetU (subst γ e2)) (subst γ e1)).
-  assert (∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' → lgrounding n W' Θ' Δ2 γ →
-            tenv_fit Θ'' (fill_frame (FLetU (subst γ e2)) EUnit)) as Hfr.
-  { intros n0 W0 Θ0 Θ0' γ0 _ Hc0 Hg0. eapply tenv_fit_ends; [|exact (lsubst_fit _ _ _ _ _ _ _ _ Hwf2 HB2 Hc0 Hg0)].
-    simpl. set_solver. }
   eapply (lsem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 TUnit T (λ γ, FLetU (subst γ e2)));
-    [done|done|done|done|exact Hfr| |done|done|done].
+    [done|done|done|done| |done|done|done].
   clear dependent Θ' Θ'' n γ W'.
   intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. simpl.
   apply LVrel_unit_iff in HV as [-> ->].
   apply (tenv_comp_empty_l_inv _ _ _ eq_rdsym) in Hc3 as ->.
   apply (LErel_det_beta _ _ _ _ _ _ (subst γ e2)).
-  - exact (Hfr _ _ _ _ _ HW Hc' Hg).
   - apply TStepHead, HeadLetU.
   - intros α e'' Hst. apply tstep_letu_inv in Hst as [(e1' & Hst & _)|(_ & -> & ->)]; [|done].
     exfalso. by eapply val_no_tstep.
@@ -297,29 +289,20 @@ Lemma lsem_typed_letp W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
   lsem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TProd T1 T2) →
   lsem_typed W Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
-  term_wf Θ2 (Some T2 :: Some T1 :: Δ2) e2 → tenv_bipol Θ2 →
   lsem_typed W Θ Δ F (LetP e1 e2) T.
 Proof.
-  intros Hc Hsp He1 He2 Hwf2 HB2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
   change (LetP (subst γ e1) (subst (up (up γ)) e2))
     with (fill_frame (FLetP (subst (up (up γ)) e2)) (subst γ e1)).
-  assert (∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' → lgrounding n W' Θ' Δ2 γ →
-            tenv_fit Θ'' (fill_frame (FLetP (subst (up (up γ)) e2)) EUnit)) as Hfr.
-  { intros n0 W0 Θ0 Θ0' γ0 _ Hc0 Hg0. eapply tenv_fit_ends;
-      [|eapply (lsubst_fit_g _ _ _ _ _ _ Hwf2 HB2 (lgrounding_bipol _ _ _ _ _ Hg0) Hc0);
-        by do 2 apply gends_up; eapply lgrounding_gends].
-    simpl. set_solver. }
   eapply (lsem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 (TProd T1 T2) T (λ γ, FLetP (subst (up (up γ)) e2)));
-    [done|done|done|done|exact Hfr| |done|done|done].
+    [done|done|done|done| |done|done|done].
   clear dependent Θ' Θ'' n γ W'.
   intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. simpl.
   pose proof (wext_trans _ _ _ HW HW'') as HW2.
-  pose proof (LVrel_fit _ _ _ _ _ HV) as HfV.
   apply LVrel_prod_iff in HV as (v1 & v2 & Θa & Θb & -> & Hcab & HV1 & HV2).
   pose proof (LVrel_val _ _ _ _ _ HV1) as Hv1. pose proof (LVrel_val _ _ _ _ _ HV2) as Hv2.
   destruct (comp_bind2 _ _ _ _ _ _ _ _ eq_rdsym Hc3 Hcab Hc') as (X & A & HX & HXA & HA).
   apply (LErel_det_beta _ _ _ _ _ _ (subst2 v1 v2 (subst (up (up γ)) e2))).
-  - eapply tenv_fit_join; [exact Hc3|exact HfV|exact (Hfr _ _ _ _ _ HW Hc' Hg)|]. simpl. set_solver.
   - by apply TStepHead, HeadLetP.
   - intros α e'' Hst. apply tstep_letp_inv in Hst as [(e1' & Hst & _)|(u & w & Heq & _ & _ & -> & ->)].
     + exfalso. eapply val_no_tstep; [exact Hst|]. simpl. by apply andb_True.
@@ -339,32 +322,17 @@ Lemma lsem_typed_case W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T :
   lsem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e (TSum T1 T2) →
   lsem_typed W Θ2 (Some T1 :: Δ2) F e1 T →
   lsem_typed W Θ2 (Some T2 :: Δ2) F e2 T →
-  term_wf Θ2 (Some T1 :: Δ2) e1 → term_wf Θ2 (Some T2 :: Δ2) e2 → tenv_bipol Θ2 →
   lsem_typed W Θ Δ F (Case e e1 e2) T.
 Proof.
-  intros Hc Hsp He He1 He2 Hwf1 Hwf2 HB2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  intros Hc Hsp He He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
   change (Case (subst γ e) (subst (up γ) e1) (subst (up γ) e2))
     with (fill_frame (FCase (subst (up γ) e1) (subst (up γ) e2)) (subst γ e)).
-  assert (∀ n W' Θ' Θ'' γ, wext W W' → tenv_comp (w_eq W') Θ'' Θ2 Θ' → lgrounding n W' Θ' Δ2 γ →
-            tenv_fit Θ'' (fill_frame (FCase (subst (up γ) e1) (subst (up γ) e2)) EUnit)) as Hfr.
-  { intros n0 W0 Θ0 Θ0' γ0 _ Hc0 Hg0.
-    pose proof (gends_up _ _ _ (Some T1) (lgrounding_gends _ _ _ _ _ Hg0)) as Hu1.
-    pose proof (gends_up _ _ _ (Some T2) (lgrounding_gends _ _ _ _ _ Hg0)) as Hu2.
-    pose proof (lgrounding_bipol _ _ _ _ _ Hg0) as HB0.
-    pose proof (lsubst_fit_g _ _ _ _ _ _ Hwf1 HB2 HB0 Hc0 Hu1) as [F1 B1].
-    pose proof (lsubst_fit_g _ _ _ _ _ _ Hwf2 HB2 HB0 Hc0 Hu2) as [F2 B2].
-    split; [|done]. simpl. rewrite <-F1, <-F2. set_solver. }
   eapply (lsem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e (TSum T1 T2) T
             (λ γ, FCase (subst (up γ) e1) (subst (up γ) e2)));
-    [done|done|done|done|exact Hfr| |done|done|done].
+    [done|done|done|done| |done|done|done].
   clear dependent Θ' Θ'' n γ W'.
   intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v HW'' Hj Hc3 HV. simpl.
   pose proof (wext_trans _ _ _ HW HW'') as HW2. pose proof eq_rdsym as Hs.
-  pose proof (LVrel_fit _ _ _ _ _ HV) as HfV.
-  assert (∀ w', fends v = fends w' →
-            tenv_fit Θ3 (Case w' (subst (up γ) e1) (subst (up γ) e2))) as Hfit3.
-  { intros w' Hw'. eapply tenv_fit_join; [exact Hc3|exact HfV|exact (Hfr _ _ _ _ _ HW Hc' Hg)|].
-    simpl. rewrite Hw'. set_solver. }
   destruct (comp_assoc _ _ _ _ _ _ Hs (comp_comm _ _ _ _ Hs Hc3) (comp_comm _ _ _ _ Hs Hc'))
     as [HX HY].
   assert (lgrounding j W'' Θ' Δ2 γ) as Hg'.
@@ -372,7 +340,6 @@ Proof.
   apply LVrel_sum_iff in HV as [(w & -> & HVw)|(w & -> & HVw)];
     pose proof (LVrel_val _ _ _ _ _ HVw) as Hw.
   - apply (LErel_det_beta _ _ _ _ _ _ (subst1 w (subst (up γ) e1))).
-    + by apply Hfit3.
     + by apply TStepHead, HeadCase1.
     + intros α e'' Hst. apply tstep_case_inv in Hst
         as [(e' & Hst & _)|[(u & Heq & _ & -> & ->)|(u & Heq & _)]]; [|by injection Heq as ->|done].
@@ -381,7 +348,6 @@ Proof.
       exists Θ1', Θ'. split_and!; [by apply comp_comm|done|].
       eapply lgrounding_ext; [|exact Hg']. done.
   - apply (LErel_det_beta _ _ _ _ _ _ (subst1 w (subst (up γ) e2))).
-    + by apply Hfit3.
     + by apply TStepHead, HeadCase2.
     + intros α e'' Hst. apply tstep_case_inv in Hst
         as [(e' & Hst & _)|[(u & Heq & _)|(u & Heq & _ & -> & ->)]]; [|done|by injection Heq as ->].
@@ -397,15 +363,12 @@ Lemma lsem_typed_pair W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
   lsem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 T →
   lsem_typed W Θ2 Δ2 (F ∪ (heads T ∪ bot_pts (hbot T))) e2 U →
-  term_wf Θ2 Δ2 e2 → tenv_bipol Θ2 →
   lsem_typed W Θ Δ F (Pair e1 e2) (TProd T U).
 Proof.
-  intros Hc Hsp He1 He2 Hwf2 HB2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  intros Hc Hsp He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
   change (Pair (subst γ e1) (subst γ e2)) with (fill_frame (FPairL (subst γ e2)) (subst γ e1)).
   eapply (lsem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 T (TProd T U) (λ γ, FPairL (subst γ e2)));
-    [done|done|done|done| | |done|done|done].
-  { intros n0 W0 Θ0 Θ0' γ0 _ Hc0 Hg0. eapply tenv_fit_ends; [|exact (lsubst_fit _ _ _ _ _ _ _ _ Hwf2 HB2 Hc0 Hg0)].
-    simpl. set_solver. }
+    [done|done|done|done| |done|done|done].
   clear dependent Θ' Θ'' n γ W'.
   intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v1 HW'' Hj Hc3 HV1. simpl.
   pose proof (wext_trans _ _ _ HW HW'') as HW2. pose proof eq_rdsym as Hs.
@@ -416,7 +379,6 @@ Proof.
   - apply HW''.
   - by apply comp_comm.
   - apply heads_above_x_bot. intros Hb. eapply LVrel_heads_above; [exact (wext_wf _ _ HW2)|exact Hb|exact HV1].
-  - eapply tenv_fit_ends; [|exact (LVrel_fit _ _ _ _ _ HV1)]. simpl. set_solver.
   - exact (lsem_typed_later _ _ _ _ _ _ n W' Θ' Θ'' γ W'' j He2 HW Hc' Hg HW'' Hj).
   - intros W3 j' Θ2' Θ4 v2 HW3 Hj' Hc4 HV2. apply LVrel_LErel. simpl.
     apply LVrel_prod_iff. exists v1, v2, Θ1', Θ2'. split_and!; [done| | |done].
@@ -530,15 +492,12 @@ Lemma lsem_typed_app W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U :
   tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
   lsem_typed W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TLolli ub lb T U) →
   lsem_typed W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
-  term_wf Θ2 Δ2 e2 → tenv_bipol Θ2 →
   lsem_typed W Θ Δ F (App e1 e2) U.
 Proof.
-  intros Hc Hsp Hub He1 He2 Hwf2 HB2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
+  intros Hc Hsp Hub He1 He2 n W' Θ' Θ'' γ HW Hc'' Hg. simpl.
   change (App (subst γ e1) (subst γ e2)) with (fill_frame (FAppL (subst γ e2)) (subst γ e1)).
   eapply (lsem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 (TLolli ub lb T U) U (λ γ, FAppL (subst γ e2)));
-    [done|done|done|done| | |done|done|done].
-  { intros n0 W0 Θ0 Θ0' γ0 _ Hc0 Hg0. eapply tenv_fit_ends; [|exact (lsubst_fit _ _ _ _ _ _ _ _ Hwf2 HB2 Hc0 Hg0)].
-    simpl. set_solver. }
+    [done|done|done|done| |done|done|done].
   clear dependent Θ' Θ'' n γ W'.
   intros n W' Θ' Θ'' γ HW Hc' Hg W'' j Θ1' Θ3 v1 HW'' Hj Hc3 HV1. simpl.
   pose proof (wext_trans _ _ _ HW HW'') as HW2. pose proof eq_rdsym as Hs.
@@ -549,7 +508,6 @@ Proof.
   - apply HW''.
   - by apply comp_comm.
   - left. eapply (LVrel_heads_above _ _ _ (TLolli ub lb T U)); [exact (wext_wf _ _ HW2)|done|exact HV1].
-  - eapply tenv_fit_ends; [|exact (LVrel_fit _ _ _ _ _ HV1)]. simpl. set_solver.
   - exact (lsem_typed_later _ _ _ _ _ _ n W' Θ' Θ'' γ W'' j He2 HW Hc' Hg HW'' Hj).
   - intros W3 j' Θ2' Θ4 v2 HW3 Hj' Hc4 HV2.
     pose proof (wext_trans _ _ _ HW2 HW3) as HW4.
@@ -695,7 +653,7 @@ Proof.
   intros HW Hxs HC HK Hss Hsc Hub He n W' Θ' Θ'' γ HW' Hc Hg. simpl.
   change (App EForce (subst γ e)) with (fill_frame (FAppR EForce) (subst γ e)).
   eapply (LErel_bind n (FAppR EForce) W' Θ'' Θ'' ∅ _ _ F ∅);
-    [done|apply HW'|apply tenv_comp_empty_r|left; apply heads_above_empty|by apply tenv_fit_empty|
+    [done|apply HW'|apply tenv_comp_empty_r|left; apply heads_above_empty|
      rewrite (right_id_L ∅ (∪)); by eapply He|].
   intros W'' j Θ1' Θ3 v HW'' Hj Hc3 HV.
   apply tenv_comp_empty_r_inv in Hc3 as ->.
@@ -724,7 +682,7 @@ Proof.
   refine (LErel_S_ind n' (λ W Θ T F e, ∀ T',
             (∀ j W' Θ' v, j ≤ S n' → wext_r W W' → LVrel j W' Θ' T v → LVrel j W' Θ' T' v) →
             LErel (S n') W Θ T' F e) _).
-  intros W Θ T F e H T' HV. apply LErel_S_iff. split; [exact (proj1 H)|]. intros W1 HW1.
+  intros W Θ T F e H T' HV. apply LErel_S_iff. intros W1 HW1.
   assert (∀ W2, wext_r W1 W2 →
             ∀ j W' Θ' v, j ≤ S n' → wext_r W2 W' → LVrel j W' Θ' T v → LVrel j W' Θ' T' v) as HV2.
   { intros W2 HW2 j W' Θ' v Hj HW' HVv. apply HV; [done| |done].
@@ -733,7 +691,7 @@ Proof.
             LErel j W0 Θ0 T F0 e0 → LErel j W0 Θ0 T' F0 e0) as HEj.
   { intros j W0 Θ0 F0 e0 Hj HW0. apply (IHn j ltac:(lia)).
     intros i W' Θ' v Hi HW'. apply (HV2 W0 HW0); [lia|done]. }
-  destruct (proj2 H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
+  destruct (H W1 HW1) as (Hs & Hr & Hb & Hnew & Hsp & Hσ & Hlk).
   split_and!.
   - intros Hirr. apply (HV2 W1 (wext_r_refl _)); [lia|apply wext_r_refl|by apply Hs].
   - done.
@@ -855,25 +813,21 @@ Inductive lsem_rules (W : world) : tenv → lenv → gset point → expr → ty 
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below W ub F →
       lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TLolli ub lb T U) →
       lsem_rules W Θ2 Δ2 (F ∪ opt_heads lb) e2 T →
-      term_wf Θ2 Δ2 e2 → tenv_bipol Θ2 →
       lsem_rules W Θ Δ F (App e1 e2) U
   | lsr_pair Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U :                (* E-Pair *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
       lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 T →
       lsem_rules W Θ2 Δ2 (F ∪ (heads T ∪ bot_pts (hbot T))) e2 U →
-      term_wf Θ2 Δ2 e2 → tenv_bipol Θ2 →
       lsem_rules W Θ Δ F (Pair e1 e2) (TProd T U)
   | lsr_letu Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T :                  (* E-Let* *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
       lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 TUnit →
       lsem_rules W Θ2 Δ2 F e2 T →
-      term_wf Θ2 Δ2 e2 → tenv_bipol Θ2 →
       lsem_rules W Θ Δ F (LetU e1 e2) T
   | lsr_letp Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T :            (* E-LetPair *)
       tenv_comp (w_eq W) Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
       lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e1 (TProd T1 T2) →
       lsem_rules W Θ2 (Some T2 :: Some T1 :: Δ2) F e2 T →
-      term_wf Θ2 (Some T2 :: Some T1 :: Δ2) e2 → tenv_bipol Θ2 →
       lsem_rules W Θ Δ F (LetP e1 e2) T
   | lsr_inj1 Θ Δ F e T U :                                (* E-Inj *)
       lsem_rules W Θ Δ F e T → lsem_rules W Θ Δ F (Inj1 e) (TSum T U)
@@ -884,7 +838,6 @@ Inductive lsem_rules (W : world) : tenv → lenv → gset point → expr → ty 
       lsem_rules W Θ1 Δ1 (F ∪ (tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ bot_pts (lenv_bot Δ2))) e (TSum T1 T2) →
       lsem_rules W Θ2 (Some T1 :: Δ2) F e1 T →
       lsem_rules W Θ2 (Some T2 :: Δ2) F e2 T →
-      term_wf Θ2 (Some T1 :: Δ2) e1 → term_wf Θ2 (Some T2 :: Δ2) e2 → tenv_bipol Θ2 →
       lsem_rules W Θ Δ F (Case e e1 e2) T
   | lsr_wk
  Θ Δ' Δ F e T :                                 (* E-Weak *)
@@ -917,13 +870,13 @@ Proof.
     |W Δ F c b s k s' y HΔ Hs Hk Hb
     |W Δ F x HΔ Hx
     |W Θ Δ F e T U ub lb Hwf HB Hbot Hlb Hb IH
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U HΘ HΔ Hub H1 IH1 H2 IH2 Hw2 HB2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U HΘ HΔ H1 IH1 H2 IH2 Hw2 HB2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T HΘ HΔ H1 IH1 H2 IH2 Hw2 HB2
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T HΘ HΔ H1 IH1 H2 IH2 Hw2 HB2
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 ub lb T U HΘ HΔ Hub H1 IH1 H2 IH2
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T U HΘ HΔ H1 IH1 H2 IH2
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T HΘ HΔ H1 IH1 H2 IH2
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 T2 T HΘ HΔ H1 IH1 H2 IH2
     |W Θ Δ F e T U H IH
     |W Θ Δ F e T U H IH
-    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ H0 IH0 H1 IH1 H2 IH2 Hw1 Hw2 HB2
+    |W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 T2 T HΘ HΔ H0 IH0 H1 IH1 H2 IH2
     |W Θ Δ' Δ F e T Hwk H IH
     |W Θ Δ U F e T Hu H IH
     |W Θ Δ F e T T' Hteq H IH
@@ -936,13 +889,13 @@ Proof.
   - by apply lsem_typed_pt.
   - apply lsem_typed_lam; [done|done|done|done|].
     intros W1 F' HW1 Hub'. apply IH; [done|done|apply HW1].
-  - eapply lsem_typed_app; [done|done|done|by apply IH1|by apply IH2|done|done].
-  - eapply lsem_typed_pair; [done|done|by apply IH1|by apply IH2|done|done].
-  - eapply lsem_typed_letu; [done|done|by apply IH1|by apply IH2|done|done].
-  - eapply lsem_typed_letp; [done|done|by apply IH1|by apply IH2|done|done].
+  - eapply lsem_typed_app; [done|done|done|by apply IH1|by apply IH2].
+  - eapply lsem_typed_pair; [done|done|by apply IH1|by apply IH2].
+  - eapply lsem_typed_letu; [done|done|by apply IH1|by apply IH2].
+  - eapply lsem_typed_letp; [done|done|by apply IH1|by apply IH2].
   - apply lsem_typed_inj1. by apply IH.
   - apply lsem_typed_inj2. by apply IH.
-  - eapply lsem_typed_case; [done|done|by apply IH0|by apply IH1|by apply IH2|done|done|done].
+  - eapply lsem_typed_case; [done|done|by apply IH0|by apply IH1|by apply IH2].
   - eapply lsem_typed_wk; [done|by apply IH].
   - apply lsem_typed_contract; [done|by apply IH].
   - eapply lsem_typed_conv; [done|by apply IH].

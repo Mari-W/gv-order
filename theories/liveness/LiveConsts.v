@@ -31,12 +31,10 @@ Definition LEnow (n : nat) (W : world) (Θ : tenv) (T : ty) (F : gset point) (e 
   ∀ α e', tstep e α e' → LEcase n W Θ T F α e'.
 
 Lemma LErel_intro n W Θ T F e :
-  tenv_fit Θ e →
   (∀ W1, wext_r W W1 → match n with 0 => True | S n' => LEnow n' W1 Θ T F e end) →
   LErel n W Θ T F e.
 Proof.
-  destruct n as [|n']; intros Hfit H; [apply LErel_0|]. apply LErel_S_iff. split; [exact Hfit|].
-  intros W1 HW1.
+  destruct n as [|n']; intros H; [apply LErel_0|]. apply LErel_S_iff. intros W1 HW1.
   destruct (H W1 HW1) as (Hs & Hr & Hst). split_and!; [done|done| | | | |].
   - intros e' He. exact (Hst _ _ He).
   - intros c x e' He. exact (Hst _ _ He).
@@ -71,7 +69,6 @@ Ltac lmove :=
   match goal with
   | HW : strict ?W, HV1 : LVrel _ ?W _ _ _, HV2 : LVrel _ ?W _ _ _ |- LErel _ ?W _ _ _ _ =>
     apply LErel_intro;
-      [eapply tenv_fit_ends; [|exact (LVrel_fit _ _ _ _ _ HV2)]; simpl; set_solver|];
     let W1 := fresh "W1" in let HW1 := fresh "HW1" in intros W1 HW1;
     let HV1' := fresh in let HV2' := fresh in let HW' := fresh in
     pose proof (LVrel_mono_r _ _ _ _ _ _ HW1 HV1) as HV1';
@@ -175,7 +172,7 @@ Proof.
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [kq Tq Gq xq Hsig| |i0 x Hx|]; subst; [inversion Hsig|].
   apply LVrel_pt_iff in HV as (-> & -> & Hkx).
-  eapply LErel_det_beta; [by apply tenv_fit_empty|by apply TStepHead, HeadPay| |].
+  eapply LErel_det_beta; [by apply TStepHead, HeadPay| |].
   - intros α e'' Hst. apply app_val_step in Hst; [|done|done]. by inversion Hst.
   - apply LVrel_LErel. eapply LVrel_tconv; [exact (proj1 HW)|exact HB|].
     apply LVrel_pt_iff. split_and!; [done|done|]. exact Hx.
@@ -190,7 +187,7 @@ Proof.
     as (_ & ub0 & lb0 & A & B & Hk & Hub & HB & HV).
   inversion Hk as [kq Tq Gq xq Hsig| | |x Hx]; subst; [inversion Hsig|].
   apply LVrel_pt_iff in HV as (-> & -> & Hkx).
-  eapply LErel_det_beta; [by apply tenv_fit_empty|by apply TStepHead, HeadSucc| |].
+  eapply LErel_det_beta; [by apply TStepHead, HeadSucc| |].
   - intros α e'' Hst. apply app_val_step in Hst; [|done|done]. by inversion Hst.
   - apply LVrel_LErel. eapply LVrel_tconv; [exact (proj1 HW)|exact HB|].
     apply LVrel_pt_iff. split_and!; [done|done|]. exact Hx.

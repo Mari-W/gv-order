@@ -108,11 +108,14 @@ Proof. intros H. apply ptau_classify. by left. Qed.
 Lemma pchan_step p p' : pchan p p' → preduction p p'.
 Proof. intros H. apply ptau_classify. by right. Qed.
 
-(** ** Environments that fit a term (E-Fit, sharp edges 173)
+(** ** Environments that fit a value (sharp edges 173)
 
     [tenv_bipol Θ]: the two entries of a channel Θ holds both ends of
     sit at points of different polarity, so they are two ends.
-    [tenv_fit Θ e] (types/Types.v) is [tenv_ends Θ = fends e] and this. *)
+    [tenv_fit Θ e] (types/Types.v) is [tenv_ends Θ = fends e] and this.
+    Only values ask it: the body of a closure (the arrow, [Vspawn]),
+    because the semantics moves exactly the ends a value holds. The
+    term relation asks nothing of the syntax of its term. *)
 
 Definition tenv_bipol (Θ : tenv) : Prop :=
   ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → pt_pol e1.2 ≠ pt_pol e2.2.
@@ -271,7 +274,6 @@ Definition Ebody (below : nat → llevel) (n : nat)
     (X : (world → tenv → expr → Prop) → ty → world → tenv → gset point → expr → Prop)
     (VT : world → tenv → expr → Prop) (T : ty)
     (W : world) (Θ : tenv) (F : gset point) (e : expr) : Prop :=
-  tenv_fit Θ e ∧                                                    (* E-Fit *)
   ∀ W1, wext_r W W1 →
     (irred e → VT W1 Θ e) ∧                                        (* E-Stop *)
     (¬ irred e → ready_t W1 Θ F e) ∧                              (* E-Step *)
@@ -410,7 +412,7 @@ Definition Ebody_mono below n
     (f : ∀ VT T W Θ F e, X VT T W Θ F e → Y VT T W Θ F e) VT T W Θ F e :
   Ebody below n X VT T W Θ F e → Ebody below n Y VT T W Θ F e.
 Proof.
-  intros [Hfit H]. split; [exact Hfit|]. intros W1 HW. destruct (H W1 HW) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
+  intros H W1 HW. destruct (H W1 HW) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split; [exact Hs|]. split; [exact Hr|]. split.
   { intros e' Hst. exact (f _ _ _ _ _ _ (Hb e' Hst)). }
   split.
@@ -476,7 +478,7 @@ Proof. by destruct 1. Qed.
 Lemma Eind_mono_world below n VT T W W' Θ F e :
   wext_r W W' → Eind below n VT T W Θ F e → Eind below n VT T W' Θ F e.
 Proof.
-  intros HW [Hfit H]%Eind_inv. constructor. split; [exact Hfit|]. intros W1 HW1. apply H. by eapply wext_r_trans.
+  intros HW H%Eind_inv. constructor. intros W1 HW1. apply H. by eapply wext_r_trans.
 Qed.
 
 Lemma Pind_mono_world below n VT T W W' Σ p :
@@ -502,7 +504,7 @@ Lemma Eind_VT_mono below n VT1 VT2 T W Θ F e :
 Proof.
   intros HV H. revert VT2 HV.
   induction H as [VT T W Θ F e H] using Eind_ind'. intros VT2 HV.
-  constructor. destruct H as [Hfit H]. split; [exact Hfit|].
+  constructor.
   intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hb & Hn & Hsp & Hσ & Hlk).
   split_and!; [auto|done| | | |done|].
   - intros e' Hst. by apply (Hb e' Hst).
@@ -598,7 +600,7 @@ Lemma Eind_below below1 below2 n VT T W Θ F e :
   Eind below1 n VT T W Θ F e → Eind below2 n VT T W Θ F e.
 Proof.
   intros Hn Hb H. induction H as [VT T W Θ F e H] using Eind_ind'.
-  constructor. destruct H as [Hfit H]. split; [exact Hfit|].
+  constructor.
   intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hbeta & Hnew & Hsp & Hσ & Hlk).
   split_and!; [done|done| | | | |].
   - intros e' Hst. by apply (Hbeta e' Hst).
