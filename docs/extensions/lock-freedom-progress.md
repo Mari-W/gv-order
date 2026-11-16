@@ -17,6 +17,7 @@ Updated after every stage and every agent result.
 | L3a Syntactic points in the live relation (plan §16.6 P3a) | done (ecd1872..0db07a9) | liveness: labels on ends, E-Fit (`tenv_fit Θ e` in `Ebody` and `LEstep`), O-New at the label's point, `tenv_fit Θ eb` in the arrow and in `Vspawn`, `tenv_hd_end`, V at `TSess` with the bit and at `TPt`, `LErel_app_pay`, `LErel_app_succ`, `lsem_typed_pt`. The twelve listed statements keep their text | liveness passes except GuardEx, GuardCex, LiveKob, LiveGuardFund, LiveGuardProc, which wait on examples (ExampleTools, Forwarder, KobForwarder); LiveGuardFund and LiveGuardProc checked against a stub of `Wpo` | 0, no axioms (stub aside) | lockfree waits on L4 |
 | L4a Lock-free soup on syntactic points (plan §16.5, §17.3) | done (ac909ce..1512312), the soup reads environments only | Criterion.v (`lf_run_criterion` over a dependency relation, `lf_criterion` as its instance), LocalProgress.v (`local_progress_gen`), LFSoup.v (`LFconf`, `lf_fuelc`, `LFsoup`, `LFP`, `pupd`, `fstep`, `lfsoup_step`, `lfsoup_run`, `lfsoup_isteps`, `LFP_soup`, `hwaits`, `lfc_local_progress`), LFAdequacy.v (`lf_adequacy`, `lf_adequacy_ex`, `lf_thread_progress`) | passes, CheckAll closed | 0, no axioms | `LFP_term`, `LFP_connect`, `LFP_join` (next stage) |
 | L5 Composition of LFP (plan §17.4) | done. `LFP_term` (fdd919e), then FuelE closed under `wbext`, the Σ conjuncts of `LFconf`, `LFP_connect` and `LFP_join` | LFCompose.v (`LFP_term`, `LFP_connect`, `LFP_join`, `wbud_agree`, `mcat`, `tsel`, `held`), LFFuel.v (`wbext`, `FuelE_wbext`, `fsem_wbext`), LFSoup.v (`lf_sig`, `lf_own`) | passes, CheckAll closed | 0, no axioms | none. LFCompose.v takes about 4 minutes, most of it in `set_solver` |
+| L6b Links accounted like sends (option 2) | done | LFFuel.v (`flink1` at `w_pay`, `frep`, replacement clause in `Fdef`, `fuel_rep`), LFSoup.v (`flr`, `fuel_link`, `ppts`, `LFsoupAt`, `LFsoupAt_ppts`, `LFP` without π), LFAdequacy.v (`fe_link` through the handed counter), LFCompose.v (`LFP_term` at `tenv_points`) | passes, CheckAll closed | 0, no axioms | C3 argued, no lemma |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -464,6 +465,37 @@ Updated after every stage and every agent result.
   sits at its entry of ΣC by `lf_sig`, and the right soup holds the dual
   entry of ΣC′ by `lf_own`. So the two sides hold different ends of a cut
   channel, and each finds its partner on the other side.
+
+- 2026-11-16. Links accounted like sends (option 2), stage L6b. The link
+  clause of `Fobl` is `flink1 W π φ o1 := ∀ k m, π !! o1 = Some k → φ !!
+  o1 = Some (Some m) → w_pay W k + 1 ≤ m`, for both ends of the label. So
+  the minimum at a point k is `w_pay W k`, and no world field is added.
+  `Fdef` gains the replacement clause `∀ φ1, frep W' π' φ' φ1 → E n' W'
+  π' φ1 (emap g e)`. `frep W π φ φ1` lets every counter of φ1 either keep
+  its value or lie between `w_pay W k` and `w_bud W k` at the point k of
+  its end. The clause is universal over counters and reads no term. It
+  costs one level, which the soup affords, because a step goes from index
+  n + 2 to n. `fuel_rep` is the clause lemma. `FuelE_S_down`,
+  `FuelE_wbext`, `FuelE_rename` and `lffuel_step` keep their statements.
+  `fsingle` now replaces, before the renaming, the counter of the partner
+  of o2 by the linker's counter of o1 minus one, and the partner of o1
+  symmetrically (`flr`). In the soup the partner of o2 sits at the point
+  of o1 by `lf_pair` and the point equation of `LElink`, so the link
+  clause and F-Cap at the linker give exactly the range of `frep`.
+  `fuel_link` (LFSoup.v) moves every thread one level down by `fuel_rep`
+  and renames at index n. In adequacy, a waiter whose partner the linker
+  held now waits on the holder of the other peer, whose counter is m − 1
+  (`fe_link`). The bound comes from the link clause, not from the budget.
+  `LFP` drops π, `LFP W Σ T p := (∀ n, LPrel n W Σ T p) ∧ ∃ q P F, erase q
+  = p ∧ ∀ n, LFsoup n W Σ T P F q`. `LFsoup` takes for π the union of the
+  per-thread maps (`ppts`), and `LFsoupAt` is the old soup at a given π.
+  `LFsoupAt_ppts` turns a soup at any π into one at `ppts`, because the
+  soup reads π only at held ends, where it agrees with P. `prun` is gone,
+  and adequacy reads the waited point in `ppts`. `LFP_term` drops the two
+  π hypotheses and asks `fsem W (tenv_points (tenv_of Σ ∪ ΘB)) t`. C3 is
+  argued in the header of LFFuel.v. The new partner's counter falls by one
+  per link and one more per chatter step, nothing refills it, and
+  replacement makes FuelE hold at the minimum itself. No lemma for it.
 
 ## Decisions
 
