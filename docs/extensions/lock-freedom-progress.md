@@ -18,7 +18,7 @@ Updated after every stage and every agent result.
 | L4a Lock-free soup on syntactic points (plan §16.5, §17.3) | done (ac909ce..1512312), the soup reads environments only | Criterion.v (`lf_run_criterion` over a dependency relation, `lf_criterion` as its instance), LocalProgress.v (`local_progress_gen`), LFSoup.v (`LFconf`, `lf_fuelc`, `LFsoup`, `LFP`, `pupd`, `fstep`, `lfsoup_step`, `lfsoup_run`, `lfsoup_isteps`, `LFP_soup`, `hwaits`, `lfc_local_progress`), LFAdequacy.v (`lf_adequacy`, `lf_adequacy_ex`, `lf_thread_progress`) | passes, CheckAll closed | 0, no axioms | `LFP_term`, `LFP_connect`, `LFP_join` (next stage) |
 | L5 Composition of LFP (plan §17.4) | done. `LFP_term` (fdd919e), then FuelE closed under `wbext`, the Σ conjuncts of `LFconf`, `LFP_connect` and `LFP_join` | LFCompose.v (`LFP_term`, `LFP_connect`, `LFP_join`, `wbud_agree`, `mcat`, `tsel`, `held`), LFFuel.v (`wbext`, `FuelE_wbext`, `fsem_wbext`), LFSoup.v (`lf_sig`, `lf_own`) | passes, CheckAll closed | 0, no axioms | none. LFCompose.v takes about 4 minutes, most of it in `set_solver` |
 | L6b Links accounted like sends (option 2) | done | LFFuel.v (`flink1` at `w_pay`, `frep`, replacement clause in `Fdef`, `fuel_rep`), LFSoup.v (`flr`, `fuel_link`, `ppts`, `LFsoupAt`, `LFsoupAt_ppts`, `LFP` without π), LFAdequacy.v (`fe_link` through the handed counter), LFCompose.v (`LFP_term` at `tenv_points`) | passes, CheckAll closed | 0, no axioms | C3 argued, no lemma |
-| L6 Typed fuel interpretation and `lf_fundamental` | stopped twice on a counterexample. Under option 2 at the forwarder, and on link tickets at sync: stage L6 as stated is false at the budgets of `src_world` | LFFuelTyped.v (`wbud_set`, `wbud_set_ext`, `fuel_unknown_zero`, `fupd_recv_dom`, `fuel_recv_unknown`, `sync_not_fsem`, `lf_fuel_fundamental_fails`; the option-2 lemmas went with L6c) | passes, CheckAll closed | 0, no axioms | an end received at a point outside the support of the world fails F-Cap in an extension (quirk A13c). `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
+| L6 Typed fuel interpretation and `lf_fundamental` | stopped twice on a counterexample, under option 2 at the forwarder and on link tickets at sync. The sync counterexample is lifted (A13c, 2026-11-17) | LFFuelTyped.v (`wbud_set`, `wbud_set_ext`, `fuel_unknown_zero`; the option-2 lemmas went with L6c, the A13c lemmas with the fix), LFFuel.v (`fin_ok` at known points), LFSoup.v (`lf_known`) | passes, CheckAll closed | 0, no axioms | `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
 | L6c Link tickets replace the hand-over at links (plan §18) | done | LFFuel.v (`FuelE n W π φ tk e`, `Vfuel n W π φ tk w`, `tkupd`, `fsem` with ∃ tk, `FuelE_tk_mono`, `Vfuel_tk_mono`, `link_tickets_fall`; `flink`, `flink1`, `frep`, `fuel_rep`, `fuel_zero_nolink` gone), LFSoup.v (ticket family K in `lf_fuelc`, `LFsoupAt`, `LFsoup`, `LFP`; `ksingle`, `kstep`, `kstep_one`, `kstep_pair`, `krun`; `flr` gone), Criterion.v (`lf_run_criterion` over a measure with a well-founded decidable order, `lexlt`, `lexlt_wf`), LFAdequacy.v (`ksum`, `ksum_step`, measure (tickets, fuel); `fe_link`, `fgoal_cap` gone), LFCompose.v, LFFuelTyped.v (option-2 counterexamples gone) | passes, CheckAll closed | 0, no axioms | protected statements unchanged; FuelE not monotone in the counters (renaming) |
 | 4  Paper section | not started | | | | |
 
@@ -635,6 +635,25 @@ Updated after every stage and every agent result.
   let (f, d) = recv d in let () = f ∗ in close d`. The examples of the
   plan are first order, so a fragment rule that keeps received closures
   from running while their receiver holds an end costs none of them.
+
+- 2026-11-17. Repair (a) for quirk A13c, the receive clause. `fin_ok`
+  gains the conjunct `∀ o k, πi !! o = Some k → pt_known W k`. Under
+  `Fdef` it is read at the extension at hand, and the argument of a
+  closure in `Vfuel` passes through the same `fin_ok`. `fhand_fin_ok`
+  asks the handed ends at known points. `LFconf` gains `lf_known`, every
+  point of a held end is known to W. O-New supplies it at new
+  (`st_new` now returns `pt_known W x`). A received end comes from the
+  sender's environment, so it is known already. Close, choice, send and
+  link move points by shifts and payload fields, which keep the root.
+  `LFconf_frame` and `two_frame` take one more premise for the changed
+  ends. `step_msg` reads the new conjunct of `fin_ok` off `lf_known`.
+  `LFP_term` asks that W know the points of `tenv_points (tenv_of Σ ∪ ΘB)`,
+  because `lsem_typed` does not give it. `LFP_connect` and `LFP_join` keep
+  their form. `fupd_recv_dom`, `fuel_recv_unknown`, `sync_not_fsem` and
+  `lf_fuel_fundamental_fails` are deleted. `fuel_unknown_zero` stays and
+  explains the new conjunct. The other protected statements are unchanged.
+  The gap after (a) for received closures stays argued, and no positive
+  check of sync at `src_world` was attempted.
 
 ## Decisions
 

@@ -124,7 +124,7 @@ Bare budget agreement is not transitive. Composition then asks `wbud_agree
 W1 W2` on *every shared name*, not only at the cut. Lift: if FuelE only ever
 reads budgets at points the world knows, agreement at the cut suffices.
 
-**A13c. Incoming ends outside the support (open, 2026-11-16).** The Kripke
+**A13c. Incoming ends outside the support (lifted, 2026-11-17).** The Kripke
 closure of A13 meets the receive clause. `fin_ok` admits an incoming end at
 any point whose budget admits the floor of the carrier, unknown points
 included, and an extension may set the budget at an unknown point to 0. F-Cap
@@ -136,6 +136,15 @@ floor (`fuel_recv_unknown`). `src_world` does, and sync fails `fsem` there
 F-Wait for counter 0 (argued). Lift: `fin_ok` asks the incoming points to be
 known in the world, a condition on the world and not on syntax. This is the
 same lift A13 proposes.
+Lifted 2026-11-17. `fin_ok W fl w πi φi` asks `pt_known W k` for every
+incoming point k, and the argument of a closure in `Vfuel` goes through the
+same `fin_ok`. Under `Fdef` the clause is read at the extension at hand. The
+soup keeps every held point known (`lf_known` in `LFconf`). O-New gives the
+point of a new channel, a received end comes from the sender's environment,
+and the other steps move points along shifts and payload fields, which keep
+the root. `LFP_term` asks that W know the points of its environment, because
+`lsem_typed` does not give it. `fuel_recv_unknown`, `sync_not_fsem` and
+`lf_fuel_fundamental_fails` are gone. `fuel_unknown_zero` stays.
 
 **A13b. Replacement minimum against the send floor (open, 2026-11-16).**
 The replacement clause lets another thread's link lower a counter to the
@@ -189,7 +198,8 @@ of the root graph. Correction (audit). L6 stopped on the forwarder
 counterexample (`lf_fuel_fundamental_fails`), so the factor 2 is still
 only argued. No lemma relates `scost` to the steps of a thread.
 Not lifted on link tickets either. L6 stopped again on A13c before any
-compatibility lemma, so the factor 2 and the two ticket obligations of
+compatibility lemma. A13c is lifted (2026-11-17), but no compatibility
+lemma exists yet, so the factor 2 and the two ticket obligations of
 Fragment.v (each link site outside boxes runs once, each spawn site meets a
 line of descent once before its last link) remain argued.
 
