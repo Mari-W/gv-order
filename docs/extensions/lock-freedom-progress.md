@@ -662,6 +662,13 @@ Updated after every stage and every agent result.
   and every link inside a box with it. Open: `lf_fundamental`, and the
   minimum of the new link rule, which this account takes to be the
   floor at the point of the end.
+- 2026-11-16, author. Link tickets (plan §18) replace the counter hand-over
+  of option 2. Each thread carries a ticket count outside the index; a link
+  needs one ticket and spends it, a spawn splits the tickets (child
+  ⌈tk/2⌉, parent ⌊tk/2⌋), values carry none. The replacement clause, the
+  counter overwrite at a link and the link floor go. Adequacy measures
+  (total tickets, fuel) lexicographically. Links on waited-on ends stay
+  allowed; option 1 (links only on idle ends) is not taken.
 
 ## Related work hooks
 

@@ -242,3 +242,11 @@ Acceptance for every stage: full build, no Admitted, no axioms, CheckAll
 regenerated with every active entry closed, protected statements diffed
 against the stage's base commit, one log bullet in the progress file, and
 quirks file updated (remove what was lifted).
+
+## Addendum 2026-11-16: link tickets
+
+The author chose link tickets (plan §18) over option 2's counter hand-over.
+R1 (explicit obligations) no longer carries the link rule: links are paid by
+per-thread tickets, so R1 is only a readability item now. Under T2 the
+tickets become part of the typing context (a link costs one, a spawn
+splits), which removes the static count 2^s·ℓ of initial tickets.
