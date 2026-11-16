@@ -203,39 +203,39 @@ Definition credit_ok (τ : cty) (a : fuel) (τ' : cty) (a' : fuel) : Prop :=
   | _, _ => fle a' a
   end.
 
-CoInductive csub_ty : cty → cty → Prop :=
-  | SAny τ : csub_ty τ CAny
-  | SVal : csub_ty CVal CVal
-  | SPt ρ ρ' : csub_prof ρ ρ' → csub_ty (CPt ρ) (CPt ρ')
-  | SEnd P P' : csub_pro P P' → csub_ty (CEnd P) (CEnd P')
-  | SArr c t h σ1 σ2 c' t' h' σ1' σ2' :
-      fle c c' → tle t t' → h ≤ h' → csub σ1' σ1 → csub σ2 σ2' →
-      csub_ty (CArr c t h σ1 σ2) (CArr c' t' h' σ1' σ2')
-  | SBox c t σ c' t' σ' :
-      fle c c' → tle t t' → csub σ σ' → csub_ty (CBox c t σ) (CBox c' t' σ')
-  | SProd σ1 σ2 σ1' σ2' : csub σ1 σ1' → csub σ2 σ2' → csub_ty (CProd σ1 σ2) (CProd σ1' σ2')
-  | SSum σ1 σ2 σ1' σ2' : csub σ1 σ1' → csub σ2 σ2' → csub_ty (CSum σ1 σ2) (CSum σ1' σ2')
-with csub : cta → cta → Prop :=
-  | STa τ a τ' a' : csub_ty τ τ' → credit_ok τ a τ' a' → csub (CTa τ a) (CTa τ' a')
-with csub_pro : cpro → cpro → Prop :=
-  | SPTop P : csub_pro P PTop
-  | SPNode n b n' b' : n' ≤ n → csub_body b b' → csub_pro (PNode n b) (PNode n' b')
-with csub_body : cbody → cbody → Prop :=
-  | SBSnd σ P σ' P' : csub σ' σ → csub_pro P P' → csub_body (PSnd σ P) (PSnd σ' P')
-  | SBRcv σ P σ' P' : csub σ σ' → csub_pro P P' → csub_body (PRcv σ P) (PRcv σ' P')
-  | SBSel P1 P2 P1' P2' : csub_pro P1 P1' → csub_pro P2 P2' → csub_body (PSel P1 P2) (PSel P1' P2')
-  | SBBra P1 P2 P1' P2' : csub_pro P1 P1' → csub_pro P2 P2' → csub_body (PBra P1 P2) (PBra P1' P2')
-  | SBCls : csub_body PCls PCls
-with csub_prof : cprof → cprof → Prop :=
-  | SRTop ρ : csub_prof ρ PrTop
-  | SRProf P Q f s P' Q' f' s' :
-      csub_pro P P' → csub_pro Q Q' → (∀ i, csub_prof (f i) (f' i)) → csub_prof s s' →
-      csub_prof (Prof P Q f s) (Prof P' Q' f' s').
+CoInductive cst_ty : cty → cty → Prop :=
+  | CsAny τ : cst_ty τ CAny
+  | CsVal : cst_ty CVal CVal
+  | CsPt ρ ρ' : cst_prof ρ ρ' → cst_ty (CPt ρ) (CPt ρ')
+  | CsEnd P P' : cst_pro P P' → cst_ty (CEnd P) (CEnd P')
+  | CsArr c t h σ1 σ2 c' t' h' σ1' σ2' :
+      fle c c' → tle t t' → h ≤ h' → cst σ1' σ1 → cst σ2 σ2' →
+      cst_ty (CArr c t h σ1 σ2) (CArr c' t' h' σ1' σ2')
+  | CsBox c t σ c' t' σ' :
+      fle c c' → tle t t' → cst σ σ' → cst_ty (CBox c t σ) (CBox c' t' σ')
+  | CsProd σ1 σ2 σ1' σ2' : cst σ1 σ1' → cst σ2 σ2' → cst_ty (CProd σ1 σ2) (CProd σ1' σ2')
+  | CsSum σ1 σ2 σ1' σ2' : cst σ1 σ1' → cst σ2 σ2' → cst_ty (CSum σ1 σ2) (CSum σ1' σ2')
+with cst : cta → cta → Prop :=
+  | CsTa τ a τ' a' : cst_ty τ τ' → credit_ok τ a τ' a' → cst (CTa τ a) (CTa τ' a')
+with cst_pro : cpro → cpro → Prop :=
+  | CsPTop P : cst_pro P PTop
+  | CsPNode n b n' b' : n' ≤ n → cst_body b b' → cst_pro (PNode n b) (PNode n' b')
+with cst_body : cbody → cbody → Prop :=
+  | CsBSnd σ P σ' P' : cst σ' σ → cst_pro P P' → cst_body (PSnd σ P) (PSnd σ' P')
+  | CsBRcv σ P σ' P' : cst σ σ' → cst_pro P P' → cst_body (PRcv σ P) (PRcv σ' P')
+  | CsBSel P1 P2 P1' P2' : cst_pro P1 P1' → cst_pro P2 P2' → cst_body (PSel P1 P2) (PSel P1' P2')
+  | CsBBra P1 P2 P1' P2' : cst_pro P1 P1' → cst_pro P2 P2' → cst_body (PBra P1 P2) (PBra P1' P2')
+  | CsBCls : cst_body PCls PCls
+with cst_prof : cprof → cprof → Prop :=
+  | CsRTop ρ : cst_prof ρ PrTop
+  | CsRProf P Q f s P' Q' f' s' :
+      cst_pro P P' → cst_pro Q Q' → (∀ i, cst_prof (f i) (f' i)) → cst_prof s s' →
+      cst_prof (Prof P Q f s) (Prof P' Q' f' s').
 
-Notation "σ ⊑c σ'" := (csub σ σ') (at level 70).
+Notation "σ ⊑c σ'" := (cst σ σ') (at level 70).
 
 (** Everything is below the thread type. *)
-Lemma csub_any σ : σ ⊑c cany.
+Lemma cst_any σ : σ ⊑c cany.
 Proof. destruct σ as [τ a]. constructor; [constructor|done]. Qed.
 
 (** ** Aging (Γ − c of §19.4)
@@ -244,11 +244,11 @@ Proof. destruct σ as [τ a]. constructor; [constructor|done]. Qed.
     needs credit at least c and loses c of it. At c = ∞ it needs credit
     ∞. [cfree] is finite evidence that a type holds no end. *)
 Inductive cfree : cty → Prop :=
-  | FrVal : cfree CVal
-  | FrPt ρ : cfree (CPt ρ)
-  | FrBox c t σ : cfree (CBox c t σ)
-  | FrProd τ1 a1 τ2 a2 : cfree τ1 → cfree τ2 → cfree (CProd (CTa τ1 a1) (CTa τ2 a2))
-  | FrSum τ1 a1 τ2 a2 : cfree τ1 → cfree τ2 → cfree (CSum (CTa τ1 a1) (CTa τ2 a2)).
+  | CfVal : cfree CVal
+  | CfPt ρ : cfree (CPt ρ)
+  | CfBox c t σ : cfree (CBox c t σ)
+  | CfProd τ1 a1 τ2 a2 : cfree τ1 → cfree τ2 → cfree (CProd (CTa τ1 a1) (CTa τ2 a2))
+  | CfSum τ1 a1 τ2 a2 : cfree τ1 → cfree τ2 → cfree (CSum (CTa τ1 a1) (CTa τ2 a2)).
 
 Inductive cage (c : fuel) : cta → cta → Prop :=
   | AgeFree τ a : cfree τ → cage c (CTa τ a) (CTa τ a)
@@ -267,22 +267,22 @@ Section fits.
   Context (kn : point → Prop) (bud : point → fuel) (pc : point → cta).
 
   CoInductive pfits_at : point → cpro → Prop :=
-    | FTop x : pfits_at x PTop
-    | FNode x n b :
+    | PfTop x : pfits_at x PTop
+    | PfNode x n b :
         kn x → fle (Some n) (bud x) → bud (pt_dual x) ≠ None → pfits_body x b →
         pfits_at x (PNode n b)
   with pfits_body : point → cbody → Prop :=
-    | FSnd x σ P : σ ⊑c pc x → pfits_at (pt_shift 1 x) P → pfits_body x (PSnd σ P)
-    | FRcv x σ P : pc (pt_dual x) ⊑c σ → pfits_at (pt_shift 1 x) P → pfits_body x (PRcv σ P)
-    | FSel x P1 P2 :
+    | PfSnd x σ P : σ ⊑c pc x → pfits_at (pt_shift 1 x) P → pfits_body x (PSnd σ P)
+    | PfRcv x σ P : pc (pt_dual x) ⊑c σ → pfits_at (pt_shift 1 x) P → pfits_body x (PRcv σ P)
+    | PfSel x P1 P2 :
         pfits_at (sel_pt x false) P1 → pfits_at (sel_pt x true) P2 → pfits_body x (PSel P1 P2)
-    | FBra x P1 P2 :
+    | PfBra x P1 P2 :
         pfits_at (bra_pt x false) P1 → pfits_at (bra_pt x true) P2 → pfits_body x (PBra P1 P2)
-    | FCls x : pfits_body x PCls.
+    | PfCls x : pfits_body x PCls.
 
   CoInductive pfitpt_at : point → cprof → Prop :=
-    | FPrTop x : pfitpt_at x PrTop
-    | FProf x P Q f s :
+    | PfPrTop x : pfitpt_at x PrTop
+    | PfProf x P Q f s :
         pfits_at x P → pfits_at (pt_dual x) Q →
         (∀ i, pfitpt_at (pt_payload x i) (f i)) → pfitpt_at (pt_shift 1 x) s →
         pfitpt_at x (Prof P Q f s).

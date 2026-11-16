@@ -18,18 +18,20 @@
 
 From stdpp Require Import base gmap relations.
 From LRGV Require Export types.Types.
+From LRGV Require Import relation.CostTypes.
 
 Notation prel := (point → point → Prop).
 
 (** A world also carries budgets (lock-freedom plan §17.8): [w_bud x]
     is the refill and cap of an end at x ([None] is ∞, nobody waits on
-    its partner), and [w_pay x] the floor of an end that arrives on a
-    carrier at x. The base and live relations do not read them. *)
+    its partner), and [w_pc x] the cost type of a payload sent on a
+    carrier at x (plan §19.3, relation/CostTypes.v), which subsumes the
+    floor of §17.8. The base and live relations do not read them. *)
 Record world := World {
   w_names : gset pname;
   w_lt : prel;
   w_bud : point → option nat;
-  w_pay : point → nat
+  w_pc : point → cta
 }.
 
 (** Branch no-eq (sharp edges 159): a world has no aliases. Two points
@@ -210,12 +212,12 @@ Lemma geq_eq (E : prel) x y : (∀ x y, E x y → x = y) → geq E x y → x = y
 Proof. intros HE. induction 1; subst; auto; congruence. Qed.
 
 Definition wgen_b (N : gset pname) (E L : prel)
-    (B : point → option nat) (P : point → nat) : world :=
+    (B : point → option nat) (P : point → cta) : world :=
   World N (glt E L) B P.
 
 (** The generated world with the default budgets: every end ∞, every
-    floor 0. *)
-Abbreviation wgen N E L := (wgen_b N E L (λ _, None) (λ _, 0)).
+    payload of cost type [cany], which constrains nothing. *)
+Abbreviation wgen N E L := (wgen_b N E L (λ _, None) (λ _, cany)).
 
 Lemma geq_supp N E x y :
   (∀ x y, E x y → eq_or_supp N x y) → geq E x y → eq_or_supp N x y.
@@ -288,17 +290,17 @@ Definition wjoin (W1 W2 : world) : world :=
   wgen_b (w_names W1 ∪ w_names W2)
     (λ x y, w_eq W1 x y ∨ w_eq W2 x y)
     (λ x y, w_lt W1 x y ∨ w_lt W2 x y)
-    (wjoin_bud W1 W2 w_bud) (wjoin_bud W1 W2 w_pay).
+    (wjoin_bud W1 W2 w_bud) (wjoin_bud W1 W2 w_pc).
 
 (** W|_A. *)
 Definition wrestrict (W : world) (A : gset pname) : world :=
   World (w_names W ∩ A)
-    (λ x y, w_lt W x y ∧ po_or_supp A x y) (w_bud W) (w_pay W).
+    (λ x y, w_lt W x y ∧ po_or_supp A x y) (w_bud W) (w_pc W).
 
 (** W′ keeps the budgets of W on the support of W (§17.8). Not yet a
     conjunct of [wext]: see sharp edges 173. *)
 Definition wext_bud (W W' : world) : Prop :=
-  ∀ x, pt_known W x → w_bud W' x = w_bud W x ∧ w_pay W' x = w_pay W x.
+  ∀ x, pt_known W x → w_bud W' x = w_bud W x ∧ w_pc W' x = w_pc W x.
 
 Lemma wext_bud_refl W : wext_bud W W.
 Proof. done. Qed.

@@ -503,7 +503,7 @@ Qed.
 Definition wsw (a b : nat) (W : world) : world :=
   World (set_map (pnsw a b) (w_names W))
     (λ x y, w_lt W (ptsw a b x) (ptsw a b y))
-    (λ x, w_bud W (ptsw a b x)) (λ x, w_pay W (ptsw a b x)).
+    (λ x, w_bud W (ptsw a b x)) (λ x, w_pc W (ptsw a b x)).
 
 Section wsw.
   Context (a b : nat).

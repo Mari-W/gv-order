@@ -45,7 +45,7 @@ Definition pick (P : list pchoice) (ch : list bool) : prel :=
   λ x y, ∃ i c b, P !! i = Some c ∧ ch !! i = Some b ∧ side c b x y.
 
 Definition at_choice (W : world) (P : list pchoice) (ch : list bool) : world :=
-  wgen_b (w_names W) (w_eq W) (λ x y, w_lt W x y ∨ pick P ch x y) (w_bud W) (w_pay W).
+  wgen_b (w_names W) (w_eq W) (λ x y, w_lt W x y ∨ pick P ch x y) (w_bud W) (w_pc W).
 
 (** Every alternative relates known points only. *)
 Definition supported (N : gset pname) (P : list pchoice) : Prop :=
@@ -105,7 +105,7 @@ Proof. intros HW HE HL x y H. exact H. Qed.
 
 Definition resolve (W : world) (P : list pchoice) (i : nat) (b : bool) : world :=
   wgen_b (w_names W) (w_eq W)
-    (λ x y, w_lt W x y ∨ ∃ c, P !! i = Some c ∧ side c b x y) (w_bud W) (w_pay W).
+    (λ x y, w_lt W x y ∨ ∃ c, P !! i = Some c ∧ side c b x y) (w_bud W) (w_pc W).
 
 Definition resolve_P (P : list pchoice) (i : nat) (b : bool) : list pchoice :=
   match P !! i with
@@ -489,7 +489,7 @@ Definition Dlt (a : nat) (C : bcs) : prel :=
     x = pt_inst (plist [pconst a]) x0 ∧ y = pt_inst (plist [pconst a]) y0.
 
 Definition Wnew (W : world) (a : nat) : world :=
-  wgen_b (w_names W ∪ {[NConst a]}) (w_eq W) (w_lt W) (w_bud W) (w_pay W).
+  wgen_b (w_names W ∪ {[NConst a]}) (w_eq W) (w_lt W) (w_bud W) (w_pc W).
 
 Lemma pn_root_inst' σ p :
   pt_root (pn_inst σ p) = match pn_root p with NVar a => pt_root (σ a) | q => q end.
