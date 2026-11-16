@@ -295,6 +295,28 @@ Updated after every stage and every agent result.
   constant 0 with the box's upper point at 0+1 (`cx_bad_typed` asks
   that the world knows 0).
 
+- 2026-11-16. No expression syntax in the relations. E-Fit is gone from
+  `Ebody` and `LEstep`, and with it `LErel_S_fit`, the frame fit of
+  `LErel_bind`, `LErel_bind_R` and `LErel_bind_guarded`, the fit premise
+  of `LErel_det_beta` and `LErel_intro`, `lfr`, and the `term_wf` and
+  `tenv_bipol` premises on the continuations of the elimination rules
+  (`lsem_elim`, `lsem_later_elim`, `lsem_later_elim_guarded`, the
+  `lsem_typed_*`, `lsem_later_*` and `lsr_*` rules of let, let-pair,
+  case, pair and application, `typed_wf_inst`). Values keep their
+  conditions. The arrow and `Vspawn` ask `tenv_fit Θ eb`, V at `TSess`
+  names the end, and E-Abs keeps `term_wf` of its body for the arrow.
+  theories/liveness builds with no Admitted and no axiom, and the twelve
+  listed statements keep their text. LFSoup.v leaves the build with
+  LFAdequacy.v (`# SYNTACTIC-POINTS: lockfree port pending`), unchanged.
+  Without `lf_fit` the theorem `lfc_local_progress` is false. `waits`
+  reads the ends a term names, so `local_progress_ready` asks that a
+  thread names every end its environment holds (`Hmention`), and the
+  live relation no longer gives that. At index 1 a thread may hold an end
+  it never names and close another channel, and the partner of the
+  unnamed end then waits on no thread. `lfconf_step` also loses
+  `lf_disj`, which reads terms and fails at a spawn whose context names
+  an end of the closure. Both wait on the author.
+
 ## Decisions
 
 - 2026-11-08, author. Links: the link τ costs 0, so link loops count as
@@ -343,6 +365,8 @@ Updated after every stage and every agent result.
   closure travels (L4a obstacle). The section hypothesis of
   `local_progress_ready` reading ends follows from the approved change to
   `waits` and is accepted.
+- 2026-11-16, author. No syntactic conditions in the relations except on
+  values (what the semantics moves). E-Fit removed from expressions.
 
 ## Related work hooks
 
