@@ -125,7 +125,7 @@ Section criterion.
   Context (HLP : ∀ k t, pend (r k) t → ∃ s, rtc (wt k) t s ∧ enabled (r k) s).
   Context (Hnd : no_tau_divergence p) (Hlr : links_restricted p).
   Context (M : Type) (Rm : M → M → Prop) (fu : nat → nat → M).
-  Context (HRm : well_founded Rm) (HRm_dec : ∀ x y, Decision (Rm x y)).
+  Context (HRm : well_founded Rm) `{HRm_dec : ∀ x y, Decision (Rm x y)}.
   Context (Huniq : ∀ k t s s', npend (r k) t → wt k t s → wt k t s' → s = s').
   Context (Hpers : ∀ k t, npend (r k) t → enabled (r k) t → t ∉ l k → enabled (r (S k)) t).
   Context (Hfuel : ∀ k t, npend (r k) t → t ∉ l k →
@@ -308,10 +308,9 @@ Proof.
   intros HLP Hnd Hlr Hfb Hrb r l Hr0 Hmax Hfair.
   destruct (Hfb r l Hr0 Hmax) as (fu & Huniq & Hpers & Hfuel).
   destruct (Hrb r l Hr0 Hmax) as (E & R & we & HR & Hstab & Hrank).
-  apply (lf_run_criterion p r l Hr0 Hmax Hfair (λ k, waits (r k)))
-    with (M := nat) (Rm := lt) (fu := fu) (E := E) (R := R) (we := we); try done.
+  refine (lf_run_criterion p r l Hr0 Hmax Hfair (λ k, waits (r k)) _ _ _ Hnd Hlr
+    nat lt fu lt_wf Huniq Hpers Hfuel E R we HR Hstab Hrank).
   - intros k t s Hw. by eapply waits_pend.
   - intros k t s (_ & _ & _ & _ & _ & es & _ & _ & _ & _ & Hes & _). by exists es.
   - intros k t Hp. by apply (HLP r l Hr0 Hmax k).
-  - exact lt_wf.
 Qed.
