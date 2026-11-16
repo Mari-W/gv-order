@@ -77,6 +77,7 @@ Require LRGV.lockfree.Criterion.
 Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
 Require LRGV.lockfree.LFAdequacy.
+Require LRGV.lockfree.LFCompose.
 Require LRGV.lockfree.LFFuel.
 Require LRGV.lockfree.LFSoup.
 Require LRGV.lockfree.LocalProgress.
@@ -225,6 +226,7 @@ Print Assumptions LRGV.lockfree.LFSoup.lfc_local_progress.
 Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy.
 Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy_ex.
 Print Assumptions LRGV.lockfree.LFAdequacy.lf_thread_progress.
+Print Assumptions LRGV.lockfree.LFCompose.LFP_term.
 Print Assumptions LRGV.lockfree.LFFuel.FuelE_down.
 Print Assumptions LRGV.lockfree.LFFuel.Vfuel_down.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_cap.
