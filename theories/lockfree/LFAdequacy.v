@@ -523,9 +523,6 @@ Proof.
   - destruct (act_step _ _ _ H1) as (ap & Hap & Hoa). apply offers_sel in Hoa as ->. by eexists _, _, _.
 Qed.
 
-Lemma synced_sym_t q t p o : synced q t p o → t ≠ p.
-Proof. by intros (_ & _ & _ & _ & ? & _). Qed.
-
 Lemma pers_step n W T π q A U L q' t :
   strict W → LFconf (S n) W ∅ T π q A U → istep q L q' → t ∉ L → npend q t → enabled q t → enabled q' t.
 Proof.

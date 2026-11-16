@@ -272,10 +272,10 @@ Proof.
   (* the cut: a channel of both sides is a channel of C0 *)
   assert (Hcl1 : ∀ a e, M1 !! a = Some e → dom (A1 a) ⊆ C1 ∪ dom Σ1 ∪ C0).
   { intros a e Ha. pose proof (lf_closed _ _ _ _ _ _ _ _ Hc1 a e Ha) as H. simpl in H.
-    rewrite HΣ1C in H. set_solver. }
+    rewrite HΣ1C in H. clear -H. set_solver. }
   assert (Hcl2 : ∀ b f, M2 !! b = Some f → dom (A2 b) ⊆ C2 ∪ dom Σ2 ∪ C0).
   { intros b f Hb. pose proof (lf_closed _ _ _ _ _ _ _ _ Hc2 b f Hb) as H. simpl in H.
-    rewrite HΣ2C in H. set_solver. }
+    rewrite HΣ2C in H. clear -H. set_solver. }
   (* an end of a cut channel held on the left is at the entry of ΣC *)
   assert (Hsig1 : ∀ a e o x, M1 !! a = Some e → tenv_end (A1 a) o = Some x → o.1 ∈ C0 →
             ΣC !! o.1 = Some x).
@@ -293,8 +293,9 @@ Proof.
             o ∈ tenv_ends (A1 a) → o ∈ tenv_ends (A2 b) → False).
   { intros a e b f o Ha Hb [x Hx]%tenv_ends_end [y Hy]%tenv_ends_end.
     assert (o.1 ∈ C0) as Ho.
-    { pose proof (tenv_end_dom _ _ _ Hx). pose proof (tenv_end_dom _ _ _ Hy).
-      pose proof (Hcl1 a e Ha). pose proof (Hcl2 b f Hb). set_solver. }
+    { pose proof (tenv_end_dom _ _ _ Hx) as H1. pose proof (tenv_end_dom _ _ _ Hy) as H2.
+      pose proof (Hcl1 a e Ha) as H3. pose proof (Hcl2 b f Hb) as H4.
+      clear -H1 H2 H3 H4 HC12 HC1Σ2 HC2Σ1 Hd12'. set_solver. }
     destruct (Hcut o.1 x y (Hsig1 a e o x Ha Hx Ho) (Hsig2 b f o y Hb Hy Ho)) as [Hxy _].
     pose proof (tenv_end_pol _ _ _ Hx) as Px. pose proof (tenv_end_pol _ _ _ Hy) as Py.
     rewrite Hxy, pt_pol_dual, Py in Px. by destruct o.2. }
@@ -369,8 +370,8 @@ Proof.
         exists (rthr s), es, y. by rewrite mcat_r, tsel_r.
   - intros t e He. rewrite dom_union_L.
     destruct (mcat_lookup _ _ _ _ He) as [(a & -> & Ha)|(b & -> & Hb)]; rewrite ?tsel_l, ?tsel_r.
-    + pose proof (Hcl1 a e Ha). set_solver.
-    + pose proof (Hcl2 b e Hb). set_solver.
+    + pose proof (Hcl1 a e Ha) as H. clear -H. set_solver.
+    + pose proof (Hcl2 b e Hb) as H. clear -H. set_solver.
   - intros t e o x He Hx Ho. rewrite dom_union_L in Ho.
     destruct (mcat_lookup _ _ _ _ He) as [(a & -> & Ha)|(b & -> & Hb)];
       rewrite ?tsel_l, ?tsel_r in Hx.
@@ -382,7 +383,8 @@ Proof.
         rewrite HΣ1C. apply elem_of_union_l, elem_of_dom. eauto. }
       rewrite (ulook_l _ _ _ _ Hz) in H. apply ulook_l. congruence.
     + assert (o.1 ∈ dom Σ2 ∧ o.1 ∉ dom Σ1) as [Ho2 Ho1].
-      { pose proof (tenv_end_dom _ _ _ Hx). pose proof (Hcl2 b e Hb). set_solver. }
+      { pose proof (tenv_end_dom _ _ _ Hx) as H1. pose proof (Hcl2 b e Hb) as H2.
+        clear -H1 H2 Ho HC2Σ1 HC2Σ2 Hd1' Hd2' Hd12'. set_solver. }
       apply elem_of_dom in Ho2 as [z Hz].
       assert ((Σ2 ∪ ΣC') !! o.1 = Some x) as H.
       { apply (lf_sig _ _ _ _ _ _ _ _ Hc2 b e o x Hb Hx).

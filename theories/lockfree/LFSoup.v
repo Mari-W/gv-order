@@ -33,17 +33,6 @@ From LRGV Require Export liveness.LiveAdequacy liveness.LiveFuse liveness.LiveTe
 
 Set Default Proof Using "Type".
 
-(** ** The entry after an action, as in O-Send, O-Recv, O-Select and O-Branch *)
-
-Definition snd_next (e : sty * point) : sty * point :=
-  match unfoldS e.1 with SSeq (SSnd _ _) s => (s, pt_shift 1 e.2) | _ => e end.
-Definition rcv_next (e : sty * point) : sty * point :=
-  match unfoldS e.1 with SSeq (SRcv _ _) s => (s, pt_shift 1 e.2) | _ => e end.
-Definition sel_next (b : bool) (e : sty * point) : sty * point :=
-  match unfoldS e.1 with SPlus s1 s2 => (sbranch b s1 s2, sel_pt e.2 b) | _ => e end.
-Definition bra_next (b : bool) (e : sty * point) : sty * point :=
-  match unfoldS e.1 with SWith s1 s2 => (sbranch b s1 s2, bra_pt e.2 b) | _ => e end.
-
 (** ** The entry of an end
 
     The end o = (c, b) of an environment is the entry of c whose point
@@ -131,29 +120,11 @@ Proof.
   - exists (o.1, true). simpl. by rewrite Hc.
 Qed.
 
-(** Two entries of one end are one entry. *)
-Lemma tenv_entry_end_inj Θ k k' ek ek' :
-  tenv_bipol Θ → tenv_entry Θ k = Some ek → tenv_entry Θ k' = Some ek' →
-  k.1 = k'.1 → pt_pol ek.2 = pt_pol ek'.2 → k = k' ∧ ek = ek'.
-Proof.
-  intros Hb. destruct k as [c b], k' as [c' b']; simpl. intros H H' <- Hp.
-  unfold tenv_entry in H, H'. simpl in *.
-  destruct (Θ !! c) as [[e|e1 e2]|] eqn:Hc; [| |done].
-  - destruct b, b'; simplify_eq; done.
-  - pose proof (Hb c e1 e2 Hc). destruct b, b'; simplify_eq; done.
-Qed.
-
-Lemma tenv_end_empty o : tenv_end ∅ o = None.
-Proof. unfold tenv_end. by rewrite lookup_empty. Qed.
-
 Lemma tenv_end_insert_ne Θ c eo o : o.1 ≠ c → tenv_end (<[c := eo]> Θ) o = tenv_end Θ o.
 Proof. intros H. unfold tenv_end. by rewrite lookup_insert_ne by done. Qed.
 
 Lemma tenv_end_delete_ne Θ c o : o.1 ≠ c → tenv_end (delete c Θ) o = tenv_end Θ o.
 Proof. intros H. unfold tenv_end. by rewrite lookup_delete_ne by done. Qed.
-
-Lemma tenv_end_delete_eq Θ c o : o.1 = c → tenv_end (delete c Θ) o = None.
-Proof. intros <-. unfold tenv_end. by rewrite lookup_delete_eq. Qed.
 
 (** Θ = Θ1, c : e. *)
 Lemma tenv_end_ext Θ1 c e Θ o :
@@ -269,18 +240,7 @@ Qed.
 
 (** ** The partner end and the ends of a term *)
 
-Lemma fchans_of_fends e o : o ∈ fends e → o.1 ∈ fchans e.
-Proof. intros H. rewrite fchans_fends. apply elem_of_map. by exists o. Qed.
-
-Lemma fends_of_fchans e c : c ∈ fchans e → ∃ b, (c, b) ∈ fends e.
-Proof.
-  rewrite fchans_fends. intros ([c' b] & -> & H)%elem_of_map. by exists b.
-Qed.
-
 Lemma cdual_fst o : (cdual o).1 = o.1.
-Proof. done. Qed.
-
-Lemma cdual_snd o : (cdual o).2 = negb o.2.
 Proof. done. Qed.
 
 Lemma cdual_inj o o' : cdual o = cdual o' → o = o'.
@@ -519,11 +479,6 @@ Proof. destruct o as [c' []]; unfold cends; set_solver. Qed.
 
 Lemma cends_cdual c o : o ∈ cends c ↔ cdual o ∈ cends c.
 Proof. rewrite !elem_of_cends. done. Qed.
-
-(** A channel has two ends: a thread holding one end and a thread
-    holding the other differ in that end. *)
-Lemma cend_two o1 o2 : o1.1 = o2.1 → o1 ≠ o2 → o2 = cdual o1.
-Proof. destruct o1 as [c []], o2 as [c' []]; unfold cdual; simpl; intros <- H; congruence. Qed.
 
 (** ** Channels and ends of an environment *)
 
@@ -776,9 +731,6 @@ Proof. unfold eupd. by rewrite decide_True. Qed.
 
 Lemma eupd_ne {X : Type} (A : nat → X) t x u : u ≠ t → eupd A t x u = A u.
 Proof. intros H. unfold eupd. by rewrite decide_False. Qed.
-
-Lemma fchans_eq_fends e e' : fends e' = fends e → fchans e' = fchans e.
-Proof. intros H. by rewrite !fchans_fends, H. Qed.
 
 Lemma pev_of_single q q' i : pev_of q {[i]} q' = match q.2 !! i with Some e => pev1 q q' e | None => PNone end.
 Proof. unfold pev_of. by rewrite elements_singleton. Qed.
@@ -1039,17 +991,6 @@ Lemma f2_swap W P F i j σi σj :
   i ≠ j → (∀ t, (f2 W P F i j σi σj).1 t = (f2 W P F j i σj σi).1 t) ∧
           (∀ t, (f2 W P F i j σi σj).2 t = (f2 W P F j i σj σi).2 t).
 Proof. intros Hij. unfold f2, eupd. simpl. split; intros t; repeat case_decide; congruence. Qed.
-
-Lemma kren_lookup_safe {Y : Type} (g : chan → chan) (m : gmap cend Y) o v :
-  (∀ o2 v2, m !! o2 = Some v2 → (g o2.1, o2.2) = (g o.1, o.2) → o2 = o) →
-  m !! o = Some v → kren g m !! (g o.1, o.2) = Some v.
-Proof.
-  intros Hi Ho. unfold kren. apply elem_of_list_to_map_1'.
-  - intros y ([o2 v2] & Heq & Hov)%list_elem_of_fmap. apply elem_of_map_to_list in Hov.
-    simpl in Heq. assert (o2 = o) as -> by (apply (Hi o2 v2 Hov); by inversion Heq).
-    rewrite Ho in Hov. injection Hov as ->. by inversion Heq.
-  - apply list_elem_of_fmap. exists (o, v). split; [done|]. by apply elem_of_map_to_list.
-Qed.
 
 (** ** One step of a soup
 
@@ -2675,28 +2616,6 @@ Qed.
 
 Lemma sl_end_some σ : (∀ cd, σ ≠ SLink cd) → ∃ o, sl_end σ = Some o.
 Proof. destruct σ; simpl; try (intros; by eexists). intros H. by destruct (H cd). Qed.
-
-(** The ends a redex acts on are ends of the term. *)
-Lemma act_aends_fends e a S : act e = Some a → aends a = Some S → S ⊆ fends e.
-Proof.
-  induction e as [| | |c b|x|e IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
-    |e IH|e IH|e IH e1 IH1 e2 IH2|e IH]; simpl; intros Ha HS; try discriminate.
-  - destruct (is_val e1); [destruct (is_val e2)|].
-    + repeat (case_match; simplify_eq/=); set_solver.
-    + specialize (IH2 Ha HS). set_solver.
-    + specialize (IH1 Ha HS). set_solver.
-  - destruct (is_val e1).
-    + specialize (IH2 Ha HS). set_solver.
-    + specialize (IH1 Ha HS). set_solver.
-  - destruct (is_val e1); [repeat (case_match; simplify_eq/=); done|].
-    specialize (IH1 Ha HS). set_solver.
-  - destruct (is_val e1); [repeat (case_match; simplify_eq/=); done|].
-    specialize (IH1 Ha HS). set_solver.
-  - by apply IH.
-  - by apply IH.
-  - destruct (is_val e); [repeat (case_match; simplify_eq/=); done|].
-    specialize (IH Ha HS). set_solver.
-Qed.
 
 Section progress.
   #[local] Set Default Proof Using "All".
