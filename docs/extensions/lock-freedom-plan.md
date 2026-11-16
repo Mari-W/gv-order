@@ -1737,3 +1737,211 @@ The world record changes form, an approved statement (item 3 of 17.4 is
 superseded). Every lemma about worlds that builds a world (`wext_cc`,
 `wjoin`, `cworld`, `Wpo`, `wgen`, BranchWorlds) gains the two fields. The
 base and live relations ignore them. Stage L2 adds the fields.
+
+## 18  Replacement against the send floor (design check, 2026-11-16)
+
+No repair of the floors or of the replacement minimum saves option 2. The
+mismatch of quirk A13b is one face of a deeper clash. The replacement clause
+lets another thread lower the counter of any held end to the minimum, and
+the link clause asks the linker for one unit more than that minimum on the
+end it links. So a thread that links an end whose partner another thread
+holds fails FuelE, whatever the budgets. The scheduler is such a thread, so
+it fails `fsem` in every world. The repair recommended here drops
+replacement and pays for links with a per-thread count of link tickets,
+which only the linking thread spends. The fuel measure of adequacy becomes
+the pair (tickets left in the configuration, counter), ordered
+lexicographically. Scratch proofs are in
+`/tmp/claude-1000/-home-mari-proglang-research-rocq-spo-lr-df/7697b606-e2a0-4025-b152-57610f751662/scratchpad/repcheck/RepCheck.v`,
+compiled against HEAD 75ae03d, all closed under the global context.
+
+### 18.1  The scheduler fails under option 2 in every world
+
+`link_after_rep_absurd` takes a thread at `FuelE (S (S n))` whose next step
+links o1 with o2, o1 at k with a counter. If `w_pay W k` lies under
+`w_bud W k`, `frep` lowers the counter of o1 to `w_pay W k`, and `flink1`
+then asks `w_pay W k + 1 ≤ w_pay W k`. `link_cap_absurd` covers the other
+case. There F-Cap keeps the counter at or below a budget that lies under
+the floor, and `flink1` fails again. ag₁ of the scheduler links r₁ at γ
+with r₀′ at γ̄, so
+
+```
+Theorem sched_not_fsem_all W : ¬ fsem W ∅ Scheduler.sched_main.
+Corollary sched_not_fsem_src : ¬ fsem (src_world Scheduler.sched_Ψ Scheduler.sched_main) ∅ Scheduler.sched_main.
+```
+
+The forwarder counterexample (`fw_not_fsem_roots`) needs floors keyed on
+roots. This one needs nothing about the world. Stage L6 is false under
+option 2 for the scheduler as well as for the forwarder.
+
+The clash is arithmetic and holds for any minimum that depends on the point
+or the world alone. Let R(k) be the least value replacement may write at k,
+and let the link clause ask m ≥ X(k) of the linker's counter m on an end at
+k. The soup hands m − 1 to the peer, and `fuel_link` needs that value inside
+the range of replacement, so X(k) − 1 ≥ R(k). The linker's own end is
+replaceable down to R(k), because its partner sits in another thread, and
+it must still link. So R(k) ≥ X(k), a contradiction. The same argument
+applies when the counter is replaced by a per-end link ticket, because the
+linker's ticket is then replaceable in the same way.
+
+### 18.2  The three candidates
+
+Candidate 1 (exempt ends whose partner the holder holds) is sound for the
+soup. At a link of i, the replaced end cdual o1 sits in the map `BP t` of
+`fuel_link` before the renaming. For t ≠ i its partner o1 is in `A i`,
+disjoint from `A t` by `lf_disj`. For t = i the linker's map has dropped o1
+by `mrem`. So the soup never replaces an end whose partner the holder holds,
+and the exemption costs `fuel_link` nothing. It reads only `dom π`. It fixes
+the forwarder as written, because the producer holds e′ until after the
+send. It fails the form where the producer spawns e′ away before the send,
+because a link of e′ in the child can then lower e to `w_pay W γ̄[0]`. It
+fails the scheduler, because r₁ has its partner r₁′ in ag₂, so
+`sched_not_fsem_all` goes through unchanged.
+
+Candidate 2 (floors that grow along payload fields) cannot help, because
+`sched_not_fsem_all` holds at every world. It has two problems of its own.
+A box may recur on π[0] and reach unbounded field depth, so a uniform B
+needs a syntactic bound on that depth. An existential payload, as in fwd,
+sits at a point unrelated to its carrier's, and a deep own root under a
+shallow carrier breaks the order of the floors again.
+
+Candidate 3 (a different minimum or a stronger link clause) is the case of
+18.1. The floor at the carrier of the linked obligation is not visible to
+FuelE, and any point-keyed or world-keyed choice meets the contradiction
+there.
+
+### 18.3  The repair: link tickets
+
+What a link consumes has to be something no other thread can lower. Each
+thread carries a ticket count tk, outside the index like its counters. A
+link needs tk ≥ 1 and spends one. A spawn splits the count between parent
+and child, and values carry none. Nothing writes into another thread's
+counters, so the replacement clause, `frep`, `flink1`, `flr` and `fuel_rep`
+go. A waiter whose partner the linker held now waits on the holder of the
+other peer at that holder's own counter, which F-Tick bounds there. The
+counter may rise at the link. The total of tickets in the configuration
+falls by one at the same step, and nothing ever raises it.
+
+```
+(* LFFuel.v. V keeps the old fpred. E gains the ticket count. *)
+Abbreviation epred := (world → gmap cend point → gmap cend fuel → nat → expr → Prop).
+
+Definition Fobl (E : nat → epred) (V : nat → fpred) (n' : nat) (W : world)
+    (π : gmap cend point) (φ : gmap cend fuel) (tk : nat) (α : tlabel) (e' : expr) : Prop :=
+  match α with
+  | LBeta | LNew _ _ => E n' W (fupd W π φ α).1 (fupd W π φ α).2 tk e'
+  | LSpawn w =>
+      fhand 0 (fends w) φ ∧
+      E n' W (fchild π φ w).1 (fchild π φ w).2 (Nat.div2 (S tk)) (App w EUnit) ∧
+      E n' W (fupd W π φ α).1 (fupd W π φ α).2 (Nat.div2 tk) e'
+  | LSess σ =>
+      (∀ o, sl_end σ = Some o → ftick_ok o φ) ∧
+      match σ with
+      | SSend o w =>
+          (∀ k, π !! o = Some k → fhand (w_pay W k) (fends w) φ) ∧
+          ftravel W π (fends w) ∧
+          V n' W (mres (fends w) π) (ftick <$> mres (fends w) φ) w ∧
+          E n' W (fupd W π φ α).1 (fupd W π φ α).2 tk e'
+      | SRecv o w =>
+          ∀ k j πi φi, π !! o = Some k → j ≤ n' →
+            dom πi ## dom (fupd W π φ α).1 →
+            fin_ok W (w_pay W (pt_dual k)) w πi φi →
+            V j W πi φi w →
+            E j W ((fupd W π φ α).1 ∪ πi) ((fupd W π φ α).2 ∪ φi) tk e'
+      | SLink _ => 1 ≤ tk ∧ E n' W (fupd W π φ α).1 (fupd W π φ α).2 (tk - 1) e'
+      | _ => E n' W (fupd W π φ α).1 (fupd W π φ α).2 tk e'
+      end
+  end.
+
+Definition Fdef (E : nat → epred) (V : nat → fpred) (n' : nat) (W : world)
+    (π : gmap cend point) (φ : gmap cend fuel) (tk : nat) (e : expr) : Prop :=
+  ∀ W' g π' φ', wbext W W' → renk g π π' → renk g φ φ' →
+    fcap W' π' φ' ∧ fwait W' π' (emap g e) ∧
+    ∀ α e', tstep (emap g e) α e' → Fobl E V n' W' π' φ' tk α e'.
+
+(* Vfdef: the two clauses that call E run the value at 0 tickets. *)
+  | Lam eb =>
+      ∀ j v πa φa, j < n → dom πa ## dom π → fin_ok W 0 v πa φa → V j W πa φa v →
+        E j W (π ∪ πa) (φ ∪ φa) 0 (App (Lam eb) v)
+  | EBox eb => ∀ j, j < n → E j W π φ 0 (App EForce (EBox eb))
+
+Definition fsem (W : world) (π : gmap cend point) (t : expr) : Prop :=
+  ∃ tk, ∀ n, FuelE n W π (w_bud W <$> π) tk t.
+
+Lemma FuelE_tk_mono n W π φ tk tk' e : tk ≤ tk' → FuelE n W π φ tk e → FuelE n W π φ tk' e.
+```
+
+The split at a spawn is fixed, ⌈tk/2⌉ to the child and ⌊tk/2⌋ to the
+parent, and the two add up to tk. An existential split would let the
+witness depend on the index, and the soup fixes the counts of every thread
+outside the index. Recovering one witness for all indices is a pigeonhole
+over a finite range, which is classical. `FuelE_tk_mono` holds because
+`div2` is monotone, and it lets a received value that runs at 0 tickets
+run inside a thread that has more.
+
+In the soup, `lf_fuelc` and `fstep` carry a third family `K : nat → nat`
+beside P and F, and `lf_fuelc` asks `FuelE n W (P t) (F t) (K t) e`. A link
+sets `K i` to `K i − 1` and leaves every counter except the linker's own
+unchanged before `kren`. A spawn gives `div2 (S (K i))` to the child and
+`div2 (K i)` to the parent. Every other step keeps K.
+
+### 18.4  Checks
+
+The forwarder passes in all three forms, because without replacement only
+the holder moves its counters. Right after the new, e holds B, and after at
+most L − 1 ticks it still has (d + 1)·L + 1, which meets every floor. That
+holds whether e′ stays with the producer or has been spawned away. A
+received end arrives at the floor of its carrier and is passed on along a
+deeper root, as Fragment.v argues. The scheduler links once, in ag₁. main
+starts with one ticket, and the first spawn hands it to ag₁.
+
+C3 stays excluded, now by the relation. A link loop takes one ticket per
+round, so FuelE fails at every finite tk once the index passes tk rounds,
+and `fsem` asks for a finite tk. The variant where two threads take turns
+linking the waiter's end is excluded too. Tickets are conserved at spawns
+and spent at links, so a run performs at most as many links as the
+configuration held tickets at its start.
+
+Adequacy. `fu_at` stays. The criterion reads the pair `(Λ k, fu k t)` with
+`Λ k` the sum of `K_k t` over the threads of `r k`. Λ never rises. A link
+lowers it by one, and a thread that ends takes its tickets with it. At every
+other step Λ stays or falls and the old analysis of fu applies unchanged.
+`core` in Criterion.v inducts on fu with `lt_wf_ind`. The same induction
+works for any well-founded order on the measure, here the lexicographic order on
+pairs of naturals, and `Hdrop` and `Hfuel` keep their shape with that order
+in place of `<`. `fe_link` shrinks to the fact that Λ falls.
+
+Composition. Tickets live in the threads, not in the world, so `wbud_agree`
+and the world record are untouched. `LFP_connect` and `LFP_join` take the
+union of the per-thread families K as they do for P and F. `LFP_term` asks
+`fsem`, which now hides the initial ticket count of the thread.
+
+Semantics. The ticket count is thread state like the counters. The link
+clause reads tk and nothing else, and no clause reads a term. The fragment
+loses its link edges, because links no longer hand counters on.
+
+Counterexample. None exists for soundness. Λ is conserved by every step
+except links and the end of a thread, where it falls, and every clause that
+fu relied on is unchanged at steps other than links. The repair costs
+completeness at two places. A received closure that links fails, because
+values run at 0 tickets. A box that links once per round fails, which the
+fragment rejects already by its link self-loop.
+
+### 18.5  What L6 then needs
+
+- Fragment.v. Drop the link edges of `troots` and keep links out of boxes,
+  stated as such rather than as a self-loop. A thread's ticket count bounds
+  the link sites it can still run. Outside boxes every site runs at most
+  once, so main starts with 2^s · ℓ tickets, with s the spawn sites and ℓ
+  the link sites outside boxes, and `FuelE_tk_mono` absorbs the slack. A
+  link may stop costing a unit in `scost`, which shortens L.
+- LFFuel.v, LFSoup.v, LFAdequacy.v, Criterion.v, LFCompose.v as in 18.3 and
+  18.4. `fuel_link` loses its replacement step and its level, so a link goes
+  from index n + 1 to n like any other step.
+- LFFuelTyped.v. `fw_fuel_floor`, `fw_not_fsem_roots`, `fw_not_fsem` and
+  `lf_fuel_fundamental_fails` concern `frep` and go with it. The typed fuel
+  interpretation proves `fsem (src_world Ψ t) ∅ t` with the ticket count of
+  the fragment. Its send case needs the floor argument of Fragment.v for
+  fresh, refilled and received ends, and its link case needs only tk ≥ 1.
+- Decision for the author. This reverses the part of option 2 that hands
+  counters on at a link. Links still move the obligation, and the bound on
+  how often they do comes from tickets.
