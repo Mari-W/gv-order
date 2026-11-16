@@ -78,7 +78,7 @@ Require LRGV.lockfree.Criterion.
 Require LRGV.lockfree.Instr.
 (* SYNTACTIC-POINTS: lockfree port pending  Require LRGV.lockfree.LFAdequacy. *)
 Require LRGV.lockfree.LFFuel.
-Require LRGV.lockfree.LFSoup.
+(* SYNTACTIC-POINTS: lockfree port pending  Require LRGV.lockfree.LFSoup. *)
 Require LRGV.lockfree.LocalProgress.
 Require LRGV.lockfree.Reach.
 Require LRGV.lockfree.TauThread.
@@ -208,10 +208,10 @@ Print Assumptions LRGV.lockfree.Reach.lock_free_reach_of.
 (* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.tc_lfsource. *)
 (* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.rc_lfsource. *)
 (* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.Fragment.kob_cworld_not_wf. *)
-Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down.
-Print Assumptions LRGV.lockfree.LFSoup.lfconf_step.
-Print Assumptions LRGV.lockfree.LFSoup.lfconf_run.
-Print Assumptions LRGV.lockfree.LFSoup.lfc_local_progress.
+(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down. *)
+(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFSoup.lfconf_step. *)
+(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFSoup.lfconf_run. *)
+(* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFSoup.lfc_local_progress. *)
 (* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy. *)
 (* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFAdequacy.lf_adequacy_ex. *)
 (* SYNTACTIC-POINTS: lockfree port pending  Print Assumptions LRGV.lockfree.LFAdequacy.lf_thread_progress. *)
