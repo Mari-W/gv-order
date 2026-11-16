@@ -13,10 +13,23 @@
     refills it to the budget of its next point. A send hands its payload
     on with the counter minus one, which must meet the floor of the
     carrier, and a spawn hands the ends of the closure to the child with
-    the counter minus one. A link asks that the budget of the peer lie
-    below the linker's counter. A thread acts only on ends whose partner
-    has a finite budget (F-Wait), and no counter exceeds its budget
-    (F-Cap). Receive is universal over the incoming ends.
+    the counter minus one. A link hands the obligation of each linked end
+    to the holder of the partner of the other end, which then holds the
+    counter minus one, and that value must meet the minimum [w_pay W k]
+    at the point k of the end (decision 2026-11-16, links: option 2). A
+    thread acts only on ends whose partner has a finite budget (F-Wait),
+    and no counter exceeds its budget (F-Cap). Receive is universal over
+    the incoming ends, and replacement is universal over the counters a
+    link of another thread may write, between the minimum and the cap.
+
+    A link loop with chatter (C3 of the plan, §10.1) has no fuel at
+    finite budgets. Its holder links the end y it owes the waiter to a
+    fresh end each round and keeps the new partner, whose counter
+    becomes counter(y) − 1 and drops by one more at the chatter step. It
+    never acts on that end, so nothing refills it, and after finitely
+    many rounds the next link asks counter − 1 ≥ w_pay W k of a counter
+    at the minimum. Replacement is universal, so FuelE has to hold at the
+    minimum itself, and the descent cannot start higher.
 
     [fupd] computes the counters of the successor from the label. *)
 
@@ -170,19 +183,32 @@ Definition fhand (fl : nat) (X : gset cend) (φ : gmap cend fuel) : Prop :=
 Definition ftravel (W : world) (π : gmap cend point) (X : gset cend) : Prop :=
   ∀ o k, o ∈ X → π !! o = Some k → w_bud W (pt_dual k) ≠ None.
 
-(** A link of o1 with o2 hands the obligation of o1 to the partner of
-    o2, whose budget must lie below the counter of o1. *)
-Definition flink1 (W : world) (π : gmap cend point) (φ : gmap cend fuel) (o1 o2 : cend)
-    : Prop :=
-  ∀ m, φ !! o1 = Some (Some m) →
-    ∃ k2 m', π !! o2 = Some k2 ∧ w_bud W (pt_dual k2) = Some m' ∧ m' < m.
+(** A link of o1 with o2 hands the obligation of o1 over, like a send
+    (decision 2026-11-16, links: option 2). The partner of o2 sits at
+    the point k of o1, and its counter becomes the counter of o1 minus
+    one. That value has to meet the minimum at k, which is [w_pay W k],
+    the floor that FuelE's replacement clause tolerates at k. *)
+Definition flink1 (W : world) (π : gmap cend point) (φ : gmap cend fuel) (o1 : cend) : Prop :=
+  ∀ k m, π !! o1 = Some k → φ !! o1 = Some (Some m) → w_pay W k + 1 ≤ m.
 
 (** The link clause, for both ends of a link label (the set is
     unordered, so this covers both directions). A self-link has no
     clause. The relation rejects it. *)
 Definition flink (W : world) (π : gmap cend point) (φ : gmap cend fuel) (cd : gset cend)
     : Prop :=
-  ∀ o1 o2, cd = {[o1; o2]} → o1 ≠ o2 → flink1 W π φ o1 o2.
+  ∀ o1 o2, cd = {[o1; o2]} → o1 ≠ o2 → flink1 W π φ o1.
+
+(** Replacement. φ' is φ with some counters replaced by values between
+    the minimum [w_pay W k] and the cap [w_bud W k] at the point k of
+    their end. Another thread's link replaces the counter of an end in
+    this way, so FuelE tolerates every such replacement. *)
+Definition frep (W : world) (π : gmap cend point) (φ φ' : gmap cend fuel) : Prop :=
+  ∀ o, φ' !! o = φ !! o ∨
+    ∃ k f, π !! o = Some k ∧ is_Some (φ !! o) ∧ φ' !! o = Some f ∧
+      fle (Some (w_pay W k)) f ∧ fle f (w_bud W k).
+
+Lemma frep_refl W π φ : frep W π φ φ.
+Proof. intros o. by left. Qed.
 
 (** Incoming ends: points and counters on exactly the ends of w, under
     the cap and at or above the floor fl. *)
@@ -272,11 +298,17 @@ Qed.
     renames the peer of the removed end in the whole soup (decision
     2026-11-09, under delegation). It is also closed under every
     extension of the budgets ([wbext]), so that a thread keeps its fuel
-    in a joined world (decision 2026-11-16, under delegation). *)
+    in a joined world (decision 2026-11-16, under delegation). The
+    replacement clause says that the thread goes on, one level down,
+    when another thread's link replaces some of its counters by values
+    between the minimum and the cap at their points ([frep]). It is
+    universal over the new counters, like the receive clause, and reads
+    no term (decision 2026-11-16, links: option 2). *)
 Definition Fdef (E V : nat → fpred) (n' : nat) (W : world)
     (π : gmap cend point) (φ : gmap cend fuel) (e : expr) : Prop :=
   ∀ W' g π' φ', wbext W W' → renk g π π' → renk g φ φ' →
     fcap W' π' φ' ∧ fwait W' π' (emap g e) ∧
+    (∀ φ1, frep W' π' φ' φ1 → E n' W' π' φ1 (emap g e)) ∧
     ∀ α e', tstep (emap g e) α e' → Fobl E V n' W' π' φ' α e'.
 
 (** Values. An end, a unit, a constant and a point carry nothing (the
@@ -364,8 +396,9 @@ Lemma Fdef_ext (E1 V1 E2 V2 : nat → fpred) n' W π φ e :
   Fdef E1 V1 n' W π φ e ↔ Fdef E2 V2 n' W π φ e.
 Proof.
   intros HE HV. unfold Fdef.
-  split; intros H W' g π' φ' Hb Hr1 Hr2; destruct (H W' g π' φ' Hb Hr1 Hr2) as (Hc & Hw & Hs);
-    (split; [done|split; [done|]]);
+  assert (HE' : ∀ W π φ e, E1 n' W π φ e ↔ E2 n' W π φ e) by (apply HE; lia).
+  split; intros H W' g π' φ' Hb Hr1 Hr2; destruct (H W' g π' φ' Hb Hr1 Hr2) as (Hc & Hw & Hp & Hs);
+    (split; [done|split; [done|split; [intros φ1 Hφ1; apply HE'; by apply Hp|]]]);
     intros α e' Hst; specialize (Hs α e' Hst);
     [by rewrite <-(Fobl_ext E1 V1 E2 V2)|by rewrite (Fobl_ext E1 V1 E2 V2)].
 Qed.
@@ -420,8 +453,9 @@ Lemma FuelE_S_down n W π φ e : FuelE (S n) W π φ e → FuelE n W π φ e.
 Proof.
   revert W π φ e. induction n as [|n IH]; intros W π φ e H; [apply FuelE_0|].
   apply FuelE_S. apply FuelE_S in H. intros W' g π' φ' Hb Hr1 Hr2.
-  destruct (H W' g π' φ' Hb Hr1 Hr2) as (Hc & Hw & Hs).
-  split; [done|split; [done|]]. intros α e' Hst. specialize (Hs α e' Hst).
+  destruct (H W' g π' φ' Hb Hr1 Hr2) as (Hc & Hw & Hp & Hs).
+  split; [done|split; [done|split; [intros φ1 Hφ1; apply IH; by apply Hp|]]].
+  intros α e' Hst. specialize (Hs α e' Hst).
   destruct α as [|[o w|o w|o|cd|o b|o b]|c x|w]; simpl in *.
   - by apply IH.
   - destruct Hs as [H1 H2]. split; [done|].
@@ -495,7 +529,16 @@ Section clauses.
   Lemma fuel_obl α e' : tstep e α e' → Fobl FuelE Vfuel n W π φ α e'.
   Proof.
     intros Hst. apply FuelE_S in HF.
-    destruct (HF W id π φ (wbext_refl W) (renk_id π) (renk_id φ)) as (_ & _ & Hs). apply Hs. by rewrite emap_id.
+    destruct (HF W id π φ (wbext_refl W) (renk_id π) (renk_id φ)) as (_ & _ & _ & Hs). apply Hs. by rewrite emap_id.
+  Qed.
+
+  (** Replacement: the thread goes on, one level down, at counters that
+      another thread's link replaced within the minimum and the cap. *)
+  Lemma fuel_rep φ1 : frep W π φ φ1 → FuelE n W π φ1 e.
+  Proof.
+    intros Hr. apply FuelE_S in HF.
+    destruct (HF W id π φ (wbext_refl W) (renk_id π) (renk_id φ)) as (_ & _ & Hp & _).
+    rewrite <-(emap_id e). by apply Hp.
   Qed.
 
   (** F-Tick. *)
@@ -594,8 +637,8 @@ Section clauses.
     φ !! o = Some (Some 0) → tstep e (LSess (SLink {[o; o2]})) e' → o2 = o.
   Proof.
     intros H0 Hst. destruct (decide (o2 = o)) as [|Hne]; [done|].
-    destruct (fuel_link _ _ Hst o o2 eq_refl (not_eq_sym Hne) 0 H0)
-      as (k2 & m' & _ & _ & Hlt). lia.
+    destruct (fuel_cap o _ H0) as (k & Hk & _).
+    pose proof (fuel_link _ _ Hst o o2 eq_refl (not_eq_sym Hne) k 0 Hk H0). lia.
   Qed.
 End clauses.
 
