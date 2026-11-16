@@ -18,7 +18,7 @@ Updated after every stage and every agent result.
 | L4a Lock-free soup on syntactic points (plan §16.5, §17.3) | done (ac909ce..1512312), the soup reads environments only | Criterion.v (`lf_run_criterion` over a dependency relation, `lf_criterion` as its instance), LocalProgress.v (`local_progress_gen`), LFSoup.v (`LFconf`, `lf_fuelc`, `LFsoup`, `LFP`, `pupd`, `fstep`, `lfsoup_step`, `lfsoup_run`, `lfsoup_isteps`, `LFP_soup`, `hwaits`, `lfc_local_progress`), LFAdequacy.v (`lf_adequacy`, `lf_adequacy_ex`, `lf_thread_progress`) | passes, CheckAll closed | 0, no axioms | `LFP_term`, `LFP_connect`, `LFP_join` (next stage) |
 | L5 Composition of LFP (plan §17.4) | done. `LFP_term` (fdd919e), then FuelE closed under `wbext`, the Σ conjuncts of `LFconf`, `LFP_connect` and `LFP_join` | LFCompose.v (`LFP_term`, `LFP_connect`, `LFP_join`, `wbud_agree`, `mcat`, `tsel`, `held`), LFFuel.v (`wbext`, `FuelE_wbext`, `fsem_wbext`), LFSoup.v (`lf_sig`, `lf_own`) | passes, CheckAll closed | 0, no axioms | none. LFCompose.v takes about 4 minutes, most of it in `set_solver` |
 | L6b Links accounted like sends (option 2) | done | LFFuel.v (`flink1` at `w_pay`, `frep`, replacement clause in `Fdef`, `fuel_rep`), LFSoup.v (`flr`, `fuel_link`, `ppts`, `LFsoupAt`, `LFsoupAt_ppts`, `LFP` without π), LFAdequacy.v (`fe_link` through the handed counter), LFCompose.v (`LFP_term` at `tenv_points`) | passes, CheckAll closed | 0, no axioms | C3 argued, no lemma |
-| L6 Typed fuel interpretation and `lf_fundamental` | stopped on a counterexample. Stage L6 as stated is false under option 2 | LFFuelTyped.v (L6a lemmas on the old link rule removed; `fw_fuel_floor`, `fw_not_fsem_roots`, `fw_not_fsem`, `lf_fuel_fundamental_fails`) | passes, CheckAll closed | 0, no axioms | the replacement minimum and the send floor coincide at a payload point of its carrier. `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
+| L6 Typed fuel interpretation and `lf_fundamental` | stopped twice on a counterexample. Under option 2 at the forwarder, and on link tickets at sync: stage L6 as stated is false at the budgets of `src_world` | LFFuelTyped.v (`wbud_set`, `wbud_set_ext`, `fuel_unknown_zero`, `fupd_recv_dom`, `fuel_recv_unknown`, `sync_not_fsem`, `lf_fuel_fundamental_fails`; the option-2 lemmas went with L6c) | passes, CheckAll closed | 0, no axioms | an end received at a point outside the support of the world fails F-Cap in an extension (quirk A13c). `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
 | L6c Link tickets replace the hand-over at links (plan §18) | done | LFFuel.v (`FuelE n W π φ tk e`, `Vfuel n W π φ tk w`, `tkupd`, `fsem` with ∃ tk, `FuelE_tk_mono`, `Vfuel_tk_mono`, `link_tickets_fall`; `flink`, `flink1`, `frep`, `fuel_rep`, `fuel_zero_nolink` gone), LFSoup.v (ticket family K in `lf_fuelc`, `LFsoupAt`, `LFsoup`, `LFP`; `ksingle`, `kstep`, `kstep_one`, `kstep_pair`, `krun`; `flr` gone), Criterion.v (`lf_run_criterion` over a measure with a well-founded decidable order, `lexlt`, `lexlt_wf`), LFAdequacy.v (`ksum`, `ksum_step`, measure (tickets, fuel); `fe_link`, `fgoal_cap` gone), LFCompose.v, LFFuelTyped.v (option-2 counterexamples gone) | passes, CheckAll closed | 0, no axioms | protected statements unchanged; FuelE not monotone in the counters (renaming) |
 | 4  Paper section | not started | | | | |
 
@@ -597,6 +597,44 @@ Updated after every stage and every agent result.
   `kob_checks`, `c1_checks` and `starve_checks` state the box check in
   place of `thread_edges`, and `c3_not_lfptyped` follows from it. All
   Fragment and LFFuelTyped entries are closed.
+
+- 2026-11-16. Stage L6 on link tickets stopped on a counterexample
+  (LFFuelTyped.v). sync is in the fragment (`sync_lfsource`), and its
+  thread fails `fsem` at the budgets of `src_world` (`sync_not_fsem`).
+  `lf_fuel_fundamental_fails` states that stage L6 as stated has no
+  proof. The cause is the receive clause together with the closure of
+  FuelE under `wbext`. `fin_ok` admits an incoming end at any point whose
+  budget admits the floor of the carrier, points outside the support of
+  the world included. An extension keeps budgets only at known points
+  (`wext_bud`), so one extension (`wbud_set`) sets the budget at the
+  incoming point to 0, and F-Cap then asks the counter to be 0
+  (`fuel_unknown_zero`). The floor is positive, so no counter fits
+  (`fuel_recv_unknown`). `src_world` gives every point the budget
+  (d + 2)·L, unknown points included. sync receives on d with floor 10
+  and budget 20, and the incoming end sits at pconst 1, which sync_Ψ
+  does not name. Every receiving program of the fragment fails the same
+  way (argued). The argument of a closure in `Vfuel` (floor 0) has the
+  same hole, through F-Cap for a positive counter and through F-Wait for
+  counter 0 once an extension sets the partner's budget to ∞. A closure
+  that acts on its argument then has no `Vfuel` at high index, and
+  neither does a thread that sends one (argued). No relation, no
+  protected statement and no other Rocq file changed. Repairs for the
+  author, in the order recommended. (a) `fin_ok` asks the incoming points
+  to be known in the world (`pt_known`), a condition on the world and not
+  on syntax. Adequacy then needs the points of every held end known,
+  which typing in the world should supply. (b) `wext_bud` keeps the
+  budgets at every point. `wjoin` is then no extension, and `LFP_connect`
+  needs another route. (c) Fragment.v alone. `src_world` gives budget 0
+  outside its support. The positive floors then exclude unknown points
+  at receive, but the closure argument (floor 0) keeps its hole. After
+  (a) one gap stays (argued). A thread that applies a received closure
+  while it holds an end fails F-Tick for the incoming closure that runs
+  more sends on its own end than the budget of the held end, and `Vfuel`
+  admits that closure. Example, not checked against `lfsource`:
+  `let (c, d) = new ∗ in spawn (λu. let () = u in close (send ⟨λy. let () = y in ∗, c⟩));
+  let (f, d) = recv d in let () = f ∗ in close d`. The examples of the
+  plan are first order, so a fragment rule that keeps received closures
+  from running while their receiver holds an end costs none of them.
 
 ## Decisions
 

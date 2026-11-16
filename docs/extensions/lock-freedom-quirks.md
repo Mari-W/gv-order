@@ -124,6 +124,19 @@ Bare budget agreement is not transitive. Composition then asks `wbud_agree
 W1 W2` on *every shared name*, not only at the cut. Lift: if FuelE only ever
 reads budgets at points the world knows, agreement at the cut suffices.
 
+**A13c. Incoming ends outside the support (open, 2026-11-16).** The Kripke
+closure of A13 meets the receive clause. `fin_ok` admits an incoming end at
+any point whose budget admits the floor of the carrier, unknown points
+included, and an extension may set the budget at an unknown point to 0. F-Cap
+then asks the counter to be 0, below the floor, so a receiver has no fuel
+whenever the world gives an unknown point a budget at or above a positive
+floor (`fuel_recv_unknown`). `src_world` does, and sync fails `fsem` there
+(`sync_not_fsem`, LFFuelTyped.v). The argument of a closure in `Vfuel`
+(floor 0) has the same hole, through F-Cap for a positive counter and through
+F-Wait for counter 0 (argued). Lift: `fin_ok` asks the incoming points to be
+known in the world, a condition on the world and not on syntax. This is the
+same lift A13 proposes.
+
 **A13b. Replacement minimum against the send floor (open, 2026-11-16).**
 The replacement clause lets another thread's link lower a counter to the
 floor at the end's *own* point, while a send asks counter − 1 ≥ the floor
@@ -175,6 +188,10 @@ Budgets are uniform, (d + 2)·L for every end, and floors fall by L per level
 of the root graph. Correction (audit). L6 stopped on the forwarder
 counterexample (`lf_fuel_fundamental_fails`), so the factor 2 is still
 only argued. No lemma relates `scost` to the steps of a thread.
+Not lifted on link tickets either. L6 stopped again on A13c before any
+compatibility lemma, so the factor 2 and the two ticket obligations of
+Fragment.v (each link site outside boxes runs once, each spawn site meets a
+line of descent once before its last link) remain argued.
 
 **B7. Two graphs over the same hand-offs (audit).** `lfptyped` asks the
 hand-off graph (`lf_r4`, `r4_ok`), whose nodes are erased session types
