@@ -1945,3 +1945,564 @@ fragment rejects already by its link self-loop.
 - Decision for the author. This reverses the part of option 2 that hands
   counters on at a link. Links still move the obligation, and the bound on
   how often they do comes from tickets.
+
+## 19  Higher-order lock freedom: cost-annotated arrows (design, 2026-11-17)
+
+This section designs lock freedom for every program the static system
+accepts, higher-order programs included, and gives the paper proof of
+the fundamental theorem. It changes no Rocq file. "Checked" marks a claim
+checked against a definition at d9e6ceb or in a scratch file, "argued" a
+claim argued on paper. The scratch files are in
+`/tmp/claude-1000/-home-mari-proglang-research-rocq-spo-lr-df/7697b606-e2a0-4025-b152-57610f751662/scratchpad/cost/`
+(Tix.v and Frame.v stand alone, Merge.v and Collide.v compile against
+d9e6ceb). All their lemmas are closed under the global context.
+
+Verdict. The cost lives in a separate cost judgment over terms, not in
+`ty`. Its types (`cty`) record what FuelE can observe. They give a
+closure a bound on its channel actions before it returns, a ticket
+transformer, and a floor for the counters it captures. They give an end
+a protocol of payload cost types and budget bounds along its points.
+FuelE gains three arguments, a result type, a ticket reserve and a
+frame, and `Vfuel` becomes indexed by cost types. At the thread level
+the three arguments are fixed, so `fsem`, `LFP` and every protected
+statement keep their text. The world field `w_pay : point → nat` becomes
+`w_pc : point → cta`, the payload cost type at a carrier point, which
+subsumes the floor. The fundamental theorem is one compatibility lemma
+per rule plus a bind lemma. Two holes in the current FuelE block any
+bind lemma, and both are checked in Rocq. `Fdef` closes FuelE under
+renamings that merge two held ends (Merge.v), and the new clause of
+`Fobl` holds for names of held ends (Collide.v). The repairs are an
+injectivity premise on renamings and a freshness premise on the new
+label, both conditions on labels or renamings. Every check of
+Fragment.v except Rank and the guard becomes a local rule or goes.
+
+### 19.1  The problem
+
+A thread holds an end o whose partner waits, receives a closure f, and
+applies it. Every channel action of f's body is an action of the
+thread, so it ticks o (F-Tick). The receive clause of `Fobl` is
+universal over the incoming value, and `Vfuel` at a λ asks only that the
+application satisfy FuelE on the closure's own ends and its argument.
+It bounds nothing about the caller. For every counter m of o there is a
+closure in `Vfuel` whose body acts m + 1 times on its own end before it
+returns, so the receiving thread fails F-Tick at a high enough index and
+has no `fsem`. This is the gap the progress log of 2026-11-17 leaves
+argued, with the example
+`let (c, d) = new ∗ in spawn (λu. let () = u in close (send ⟨λy. let () = y in ∗, c⟩)); let (f, d) = recv d in let () = f ∗ in close d`
+once the closure acts on an end of its own. The same gap appears without
+any message. A λ-bound argument `λf. … f ∗ …` applied while the body
+holds an end has no bound either, and the compatibility lemma of E-Abs
+needs one. (argued. Frame.v checks the composite failure in a toy model,
+`bind_needs_bound`.)
+
+No first-order restriction is acceptable (author, 2026-11-17). The
+literature handles the case in three ways, none of which is lock freedom
+for a higher-order session calculus by typing.
+- Padovani's lock-free system is for the linear π-calculus. Messages are
+  integers, names, pairs and injections, so no received code ever runs
+  (padovani2014deadlock, p3). Tickets bound how often a channel travels,
+  priorities order its use, and lock freedom needs both (p2, p7).
+- Padovani and Novara port the deadlock-free system to a higher-order
+  language with an effect system. An arrow t →^{ρ,σ} s carries the
+  latent effect σ, the levels of the channels the function uses when
+  applied (padovani2015types, p7, p8). A function with latent effect ⊤,
+  like their pipe, can be used only in tail position (p13). The result
+  is deadlock freedom (p14), not lock freedom. The cost of §19.3 is the
+  quantitative counterpart of σ, and cost ∞ in tail position is their
+  ⊤ in tail position.
+- PGV puts a pair of priority bounds on the arrow, T ⊸^{p,q} U
+  (kokke2021prioritise, p10), and proves no lock-freedom theorem (p24).
+- Program logics state liveness of higher-order code in specifications.
+  Lawyer keeps obligations with finite sets of levels and degrees in a
+  logical transition system (namakonov2026lawyer, p8) and inherits a
+  finiteness restriction from step-indexing (p24). Lilo avoids
+  step-indexing altogether (lee2025lilo, p18). D'Osualdo et al. name a
+  semantic, compositional logical relation for lock freedom an open
+  problem (dosualdo2026logical, p24).
+
+### 19.2  Where the cost lives
+
+Two placements were compared.
+
+(A) `ty` gains a cost on `TLolli` and `TBox`. `TLolli` and `TBox` occur
+710 times in 77 files (checked by grep at d9e6ceb). Every function on
+types, every typing rule, the base and live relations, the translations
+and the examples change, although only the fuel layer reads the cost.
+FuelE would also need the session type of each held end, because a
+received closure's cost sits in the payload type of the carrier. FuelE
+reads no type today (§17.3), and the soup would have to carry typing
+environments into it.
+
+(B) A separate cost judgment over terms, with its own cost types. FuelE
+already observes only points, counters, tickets and world data keyed by
+points. A cost type records exactly that, so the cost judgment needs no
+session type and no point variable. It needs the positions of an end relative to
+its current point, which the primitive fixes (send and receive shift,
+select and branch move to fields). `ty`, `typed`, the base and live
+relations are untouched. The checker builds a cost derivation by walking
+the typing derivation, which supplies the shapes, and solves for the
+numbers (§19.6). Soundness never relates the two derivations.
+
+We take (B). The price is a second description of protocols, the cost
+protocols of §19.3, which mirror session types with numbers in place of
+types. The world record changes one field (19.10).
+
+### 19.3  Cost types and the semantic clauses
+
+```
+(* relation/CostTypes.v, before Worlds.v. Coinductive, because protocols
+   are infinite. Vfuel recurses on the value, never on the type, and the
+   checker represents the types as regular trees. *)
+Abbreviation tix := (fuel * nat).     (* (s, b) is r ↦ 2^s·r + b, s = None is ∞ with ∞·0 = 0 *)
+CoInductive cty :=
+  | CAny                                   (* any value, the result of a thread *)
+  | CVal                                   (* the unit *)
+  | CPt  (ρ : cprof)                       (* a point value whose point fits ρ *)
+  | CEnd (P : cpro)                        (* an end whose positions fit P *)
+  | CArr (c : fuel) (t : tix) (h : nat) (σ1 σ2 : cta)
+  | CBox (c : fuel) (t : tix) (σ : cta)
+  | CProd (σ1 σ2 : cta) | CSum (σ1 σ2 : cta)
+with cta := CTa (τ : cty) (a : fuel)      (* τ^a: a is the credit *)
+with cpro :=                              (* a protocol node at the current position x *)
+  | PNode (n : nat) (b : cbody) | PTop
+with cbody :=
+  | PSnd (σ : cta) (P : cpro) | PRcv (σ : cta) (P : cpro)
+  | PSel (P1 P2 : cpro) | PBra (P1 P2 : cpro) | PCls
+with cprof := Prof (P Q : cpro) (fld : nat → cprof) (suc : cprof) | PrTop.
+```
+
+A closure of type `CArr c t h σ1 σ2`, applied to an argument at σ1,
+performs at most c channel actions before it returns a value at σ2, it
+runs at every ticket count tk ≥ t(r) and returns with at least r
+tickets, and it works for every counter of its captured ends at or above
+the floor h. A box of type `CBox c t σ` does the same per force. The
+credit a of σ^a is how far the counters of the ends inside lie above
+their floors. An end at floor 0 and credit a has counter at least a, a
+closure at credit a has captured counters at least h + a. A node
+`PNode n b` at position x says that the budget at x is at least n, that
+the partner's budget is finite, and what the action at x does. A send
+or receive moves to x + 1, select and branch to `sel_pt x i` and
+`bra_pt x i`. A point profile `Prof P Q fld suc` gives the protocols at
+x and at x̄, and the profiles at x[i] and at x + 1, for `new`, `KPay`
+and `KSucc`.
+
+```
+(* relation/Worlds.v. w_pay is replaced. *)
+Record world := World { w_names : gset pname; w_lt : prel;
+                        w_bud : point → option nat; w_pc : point → cta }.
+
+(* pfits W x P at every depth. *)
+pfits W x PTop := True.
+pfits W x (PNode n b) := pt_known W x ∧ fle (Some n) (w_bud W x) ∧ w_bud W (pt_dual x) ≠ None ∧
+  match b with
+  | PSnd σ P => σ ⊑ w_pc W x ∧ pfits W (pt_shift 1 x) P              (* the sender's floor, at x *)
+  | PRcv σ P => w_pc W (pt_dual x) ⊑ σ ∧ pfits W (pt_shift 1 x) P    (* read at the sender's point *)
+  | PSel P1 P2 => pfits W (sel_pt x false) P1 ∧ pfits W (sel_pt x true) P2
+  | PBra P1 P2 => pfits W (bra_pt x false) P1 ∧ pfits W (bra_pt x true) P2
+  | PCls => True end.
+```
+
+`⊑` is subtyping. On arrows c, t and h are covariant, the argument is
+contravariant and the result covariant. On credits, σ^a ⊑ σ'^a' asks
+the current lower bound not to rise (h + a ≥ h' + a' at a closure) and
+the floor h not to fall. pfits reads only data at points with the root
+of x, so it is stable under `wbext` once x is known. (argued)
+
+**FuelE.** Three new arguments. σ is the type of the value the term
+returns, r the tickets it must still hold then, d the frame, the channel
+actions it may still perform before it returns (None is ∞).
+
+```
+FuelE n W σ r π φ tk d e.
+Fdef … := ∀ W' g π' φ', wbext W W' → kinj g π → renk g π π' → renk g φ φ' →    (* kinj is new, 19.8 *)
+  fcap W' π' φ' ∧ fwait W' π' (emap g e) ∧
+  (is_val (emap g e) → r ≤ tk ∧ Vfdef below (S n') W' σ π' φ' (emap g e)) ∧    (* value clause, this level *)
+  ∀ α e', tstep (emap g e) α e' → Fobl … n' W' σ r π' φ' tk d α e'.
+Fobl changes against LFFuel.v:
+  - an action (sl_end σ = Some o): also fle (Some 1) d, and every continuation at ftick d.
+  - LNew c x: only when (c, true), (c, false) ∉ dom π (19.8).
+  - SSend o w at k: Vfuel n' W (w_pc W k) (mres (fends w) π) (ftick <$> mres (fends w) φ) w.
+    fhand goes, its floor is inside Vfuel. ftravel stays.
+  - SRecv o w at k: fin_ok without its floor, then Vfuel j W (w_pc W (pt_dual k)) πi φi w.
+  - LSpawn w: the child at (CAny, ∞), r = 0, frame None, Nat.div2 (S tk) tickets, as now.
+  - SLink: as now. Every other continuation keeps σ, r and d.
+fsem W π t := ∃ tk, ∀ n, FuelE n W (CTa CAny None) 0 π (w_bud W <$> π) tk None t.
+```
+
+**Vfuel.** By recursion on the value, with `below` for the levels
+under n. `Vfuel n W σ π φ w` at σ = τ^a.
+
+```
+CAny       True.
+CVal       w = EUnit ∧ π = ∅.
+CPt ρ      w = EPt x ∧ π = ∅ ∧ pt_known W x ∧ pfitpt W x ρ.
+CEnd P     w = Chan c b ∧ π = {[(c,b) := x]} ∧ pfitp W x P ∧ fle a (φ (c,b))  (* counter ≥ credit *)
+CArr c t h σ1 σ2
+           (w = Lam eb ∨ konst_cost k (CArr c t h σ1 σ2) ∧ w = Konst k ∧ π = ∅) ∧ dom π = fends w ∧
+           (∀ o, o ∈ dom φ → fle (h + a) (φ o)) ∧
+           ∀ W' j φ' v πa φa, wbext W W' → j < n → dom φ' = dom π → fcap W' π φ' →
+             (∀ o, o ∈ dom φ' → fle (Some h) (φ' o)) →                   (* every counter above the floor *)
+             dom πa ## dom π → fin_ok W' v πa φa → Vfuel j W' σ1 πa φa v →
+             ∀ r tk, meets t r tk → FuelE j W' σ2 r (π ∪ πa) (φ' ∪ φa) tk c (subst1 v eb)
+CBox c t σ w = EBox eb ∧ π = ∅ ∧ ∀ W' j r tk, wbext W W' → j < n → meets t r tk →
+             FuelE j W' σ r ∅ ∅ tk c (subst1 (EBox eb) eb)
+CProd σ1 σ2  w = Pair u v, the maps split along fends, credit a added to both.
+CSum σ1 σ2   w = Inj1 u at σ1 or Inj2 u at σ2.
+```
+
+The arrow and box clauses read the body after the β step, as `Vfun` and
+V-Box of the base relation do (LogicalRelation.v, checked), and a
+primitive constant is in `Vfuel` at its cost signature, as `Vfun` treats
+`Konst`. The closure clause quantifies over every counter φ' above the
+floor and ignores the actual φ beyond the floor check. So `Vfuel` stays
+true when the counters fall, as long as they stay above h + (new credit).
+This is the property the context needs when it holds a closure while
+other code runs (`Vfuel_recount`, 19.7). The Kripke quantifier in the
+arrow and box clauses makes `Vfuel` monotone under `wbext` (argued).
+
+**How the soup uses it.** Every thread runs at `(CTa CAny None)`, r = 0,
+d = None, so F-Tick, F-Cap, F-Wait, the spawn split and the link ticket
+are the clauses the soup reads today. `step_msg` takes the payload
+from the sender's send clause at `w_pc W k` and hands it to the
+receiver's receive clause at `w_pc W (pt_dual (pt_dual k))`, which is the
+same type (`pt_dual_dual`). The floor of `fin_ok` and `fuel_send_floor`
+drop out of `step_msg`, and adequacy never read the floor. (argued
+against LFSoup.v lines 2016 to 2050, checked that the floor enters only
+there.)
+
+### 19.4  The cost judgment (T2)
+
+`Θ; Γ ⊢_W0 e : σ ▷ c ; t`, indexed by a world W0 like `typed`. Θ maps
+the ends of channel constants in e to `CTa (CEnd P) (Some a)`, Γ is a de
+Bruijn list of `option cta`. c is the bound on channel actions before e
+returns, t its ticket transformer. An entry whose type holds no end is
+unlimited. The notation is as follows.
+- Γ − c ages every entry by c. An entry τ^a with possible ends needs
+  a ≥ c and becomes τ^(a − c). At c = ∞ it needs a = ∞. Entries without
+  ends (boxes, points, the unit) are unchanged.
+- t1 ∘ t2 runs t1 first, so a composite needs t1 (t2 r). It is defined
+  when t1 has a finite slope or t2 (0) = 0 (`tseq`, `seq_sound`, Tix.v,
+  checked).
+- 1̂ = (Some 0, 0) is the identity, ⊕ is pointwise max.
+- low(σ) is the least current lower bound of the ends in σ, ∞ if none.
+
+```
+C-Unit     ⊢ EUnit : CVal^∞ ▷ 0 ; 1̂
+C-Pt       pt_known W0 x, pfitpt W0 x ρ  ⟹  ⊢ EPt x : (CPt ρ)^∞ ▷ 0 ; 1̂
+C-Var      x : σ ⊢ Var x : σ ▷ 0 ; 1̂
+C-Ch       o : σ ⊢ Chan o : σ ▷ 0 ; 1̂
+C-Abs      Θ^h ; Γ^h, σ1 ⊢ e : σ2 ▷ c ; t,   h ≤ low of every entry,   a = min (low(Θ, Γ)) − h
+           ⟹  Θ ; Γ ⊢ Lam e : (CArr c t h σ1 σ2)^a ▷ 0 ; 1̂
+           (·)^h restates every captured entry with current lower bound exactly h
+C-App      Θ1;Γ1 ⊢ e1 : (CArr c t h σ1 σ2)^a1 ▷ c1 ; t1
+           Θ2−c1 ; Γ2−c1 ⊢ e2 : σ1 ▷ c2 ; t2,   a1 ≥ c2
+           ⟹  Θ1⊎Θ2 ; Γ1⊎Γ2 ⊢ App e1 e2 : σ2 ▷ c1 + c2 + c ; t1 ∘ t2 ∘ t
+C-Pair, C-LetU, C-LetP
+           the second part is typed under the context aged by the cost of the first,
+           the first result is aged by the cost of the second, costs add, transformers compose
+C-Inj      as the operand
+C-Case     Θ1;Γ1 ⊢ e : (CSum σa σb)^· ▷ c0 ; t0,   Θ2−c0 ; Γ2−c0, σa ⊢ e1 : σ ▷ c1 ; t1,  (same, σb, e2, c2, t2)
+           ⟹  ⊢ Case e e1 e2 : σ ▷ c0 + max c1 c2 ; t0 ∘ (t1 ⊕ t2)
+C-Box      Γ unlimited, Θ = ∅,   Γ, (CBox c t σ)^∞ ⊢ e : σ ▷ c ; t   ⟹  Γ ⊢ EBox e : (CBox c t σ)^∞ ▷ 0 ; 1̂
+C-Force    ⊢ e : (CBox c t σ)^· ▷ c0 ; t0  ⟹  ⊢ App EForce e : σ ▷ c0 + c ; t0 ∘ t
+C-New      ⊢ e : (CPt (Prof P Q _ _))^· ▷ c0 ; t0,   P = PNode n _,  Q = PNode n' _
+           ⟹  ⊢ App ENew e : (CProd (CEnd P)^n (CEnd Q)^n')^∞ ▷ c0 ; t0
+C-Pay      ⊢ e : (CPt ρ)^· ▷ c0 ; t0  ⟹  ⊢ App (KPay i) e : (CPt (fld ρ i))^∞ ▷ c0 ; t0
+C-Succ     the same with suc ρ
+C-Send     ⊢ e : (CProd σp (CEnd (PNode _ (PSnd σ P')))^·)^· ▷ c0 ; t0,
+           σp ⊑ σ with one unit of credit to spare,   P' = PNode n' _
+           ⟹  ⊢ App ESend e : (CEnd P')^n' ▷ c0 + 1 ; t0
+C-Recv     ⊢ e : (CEnd (PNode _ (PRcv σ P')))^· ▷ c0 ; t0,   P' = PNode n' _
+           ⟹  ⊢ App ERecv e : (CProd σ (CEnd P')^n')^∞ ▷ c0 + 1 ; t0
+C-Close    PCls  ⟹  CVal^∞ ▷ c0 + 1 ; t0
+C-Sel_i    PSel P1 P2  ⟹  (CEnd P_i)^(n_i) ▷ c0 + 1 ; t0
+C-Bra      PBra P1 P2  ⟹  (CSum (CEnd P1)^n1 (CEnd P2)^n2)^∞ ▷ c0 + 1 ; t0
+C-Link     ⊢ e : (CProd (CEnd _)^· (CEnd _)^·)^· ▷ c0 ; t0  ⟹  ⊢ App ELink e : CVal^∞ ▷ c0 ; t0 ∘ (Some 0, 1)
+C-Spawn    ⊢ e : (CArr c' t' h CVal^· σ')^a ▷ c0 ; t0,   a ≥ 1
+           ⟹  ⊢ App ESpawn e : CVal^∞ ▷ c0 ; t0 ∘ tspawn (t' 0) 1̂
+C-Konst    a primitive constant as a value, at its cost signature (KForce at CArr c t 0 (CBox c t σ) σ)
+C-Sub      σ ⊑ σ', c ≤ c', t ≤ t'
+C-Weak, C-Contract   on unlimited entries only
+```
+
+The rules carry what T2 asked for. The bound per held end is the credit
+of its entry. Acting resets it to the budget bound n of the next node,
+every other action ages it by one, which is Γ − 1 at the redex and the
+cost of a subterm in the rules that sequence. A hand-over checks the
+floor and one unit to spare (C-Send, C-Spawn), a link spends a ticket
+(C-Link) and a spawn splits them (C-Spawn, `tspawn`, Tix.v). Application
+charges the arrow's cost to everything the context holds (C-App and the
+aging of the enclosing rule), λ computes it (C-Abs). A box type carries
+its cost per force, its transformer, and the profiles its point
+arguments need, through `CArr c t h (CPt ρ) …` for the leading λs that
+take points. Recursion goes through C-Box. The self has the box's own
+type, so a self call in tail position has cost c = ∞ and needs a context
+that holds nothing (Γ − ∞), and a self call with a finite c is allowed
+only with no actions around it. Existentials have no rule. The cost
+judgment carries no points, and a received existential end brings its
+protocol in the payload cost type of its carrier.
+
+**T1, liveness.** The guard stays what it is, a condition on boxes, but
+written as rules. `glive L e` mirrors `okM` constructor by constructor.
+The mark context L holds the later variables, a self is later, a
+subterm that performs a primitive before it returns (`gd`) clears the
+marks for what follows it, and a later variable may be forced only
+after that. `okM_iff : okM L e = true ↔ glive L e` makes `guarded`
+(Guard.v) its instance at the root, so `gtyped`, `gptyped`,
+`live_fundamental_guarded` and `live_fundamental_proc` keep their text
+and `typed_live` its proof. The guard cannot move into the cost
+judgment. The live relation needs `noret` of the subterm (LiveGuard.v),
+and a lower bound on the actions of a received closure would have to sit
+in `LVrel`, which is protected and reads no cost. (argued)
+
+### 19.5  What happens to the checks of Fragment.v
+
+| Check | Replaced by | Why it closes the same counterexamples |
+|---|---|---|
+| R1, recursion in tail position | aging by ∞ at a call of cost ∞ (C-App) | a call that never returns may hold nothing whose partner waits |
+| R2-recv and fed slots | the argument floor of the self call (C-App with σ1 of the box's arrow) | an end passed to the next round must have been acted on, or its credit falls below the floor |
+| hand-off graph, root graph, `stab`, `foreign`, `bleak`, `troots` | floors inside `w_pc` and the check of C-Send | a forward from carrier k to carrier m asks floor(k) ≥ floor(m) + steps + 1 locally, and a loop over the same position asks f ≥ f + 1 |
+| stretch bound `scost`, `seg_len`, `stretch_len` | the credits of the context | the bound is the cost of the code between two actions, read off the rules |
+| annotation `ann` and its derivations | the cost derivation itself | |
+| leading `TPt` count | `CPt` arguments | a point argument is an argument |
+| box check (no links in boxes) | ticket transformers (C-Link, C-Box) | a box that links per round has no transformer (`link_loop_no_tix`, Tix.v, checked) |
+| `src_tickets` = 2^s·ℓ | t(0) of the main thread | |
+| Rank, `wf_world (cworld Ψ)` | stays (T3) | placement per index is outside fuel (17.2) |
+| guard | stays, as rules (T1) | τ-divergence is outside fuel (17.1) |
+
+Rank stays because it is a property of the world and not of code. The
+guard stays because fuel ignores internal steps on purpose (17.1).
+
+### 19.6  Inference
+
+The checker walks the typing derivation and emits the cost derivation
+with unknowns. The shapes come from the types, the protocols from the
+session types (regular, so finitely many nodes per box), the points from
+the syntactic points. The unknowns are the costs c ∈ ℕ ∪ {∞}, the slopes
+s ∈ ℕ ∪ {∞} and offsets b of transformers, the budget bounds n of
+protocol nodes, the floors h and the credits a.
+
+- Costs. Sequencing adds, branches take the max, a call adds the arrow's
+  cost, a box's cost appears in its own body. These are inequalities
+  c_i ≥ max_j (c_j + w_ij) over (ℕ ∪ {∞}, max, +). The least solution is
+  computed by Bellman–Ford. A cycle of positive weight, a recursion that
+  acts before its self call, gets ∞. Payload costs in `w_pc` are the max
+  over the senders, the least solution again, because a smaller cost
+  helps every receiver.
+- Transformers. Slopes add along sequencing and take the max over
+  branches, the same max-plus system. With the slopes fixed, the offsets
+  satisfy b ≥ 2^{s1}·b2 + b1 and b ≥ max (2b, 2b_c − 1) at spawns, linear
+  with known coefficients. A recursion that spawns gets slope ∞ and needs
+  offset 0 (`spawn_loop_no_finite`, `spawn_loop_tix`), a recursion that
+  links has no solution (`link_loop_no_tix`). (checked in Tix.v)
+- Budgets, floors, credits. With the costs fixed, every remaining
+  constraint has the form x ≥ y + k or x ≥ k with integer k, plus the
+  side condition a = ∞ where the cost is ∞. That is a system of
+  difference constraints, feasible iff its constraint graph has no
+  negative cycle, again Bellman–Ford. The world data at constants are
+  then read off the solution.
+
+All three phases are decidable and polynomial in the size of the
+derivation (argued). Padovani reduces reconstruction for priorities and
+tickets to integer programming (padovani2014deadlock, p11). Fixing
+costs first keeps our system out of general integer programming. Costs
+are monomorphic per box. A box called at two points with different
+budgets needs one bound valid at both, which every example meets
+(argued).
+
+### 19.7  The fundamental theorem
+
+**Semantic judgment.** `Θ; Γ ⊨_W0 e : σ ▷ c ; t` holds when for every
+n, every W with `wbext W0 W`, every substitution γ of values for Γ and
+every injective choice of points π and counters φ for the ends of Θ and
+γ, such that every value is in `Vfuel n W` at its entry, every end of Θ
+fits its protocol, the counters meet the credits and the cap, and the
+maps are disjoint, we have for every r and tk with `meets t r tk`
+
+```
+FuelE n W σ r π φ tk c (subst γ e).
+```
+
+**Lemmas.** All argued, F1 checked in the toy model.
+- F1 `FuelE_bind`. For an evaluation context K holding πK, φK disjoint
+  from the hole, if the hole satisfies FuelE at frame `Some c1` and
+  result type σ1 with reserve r1, every counter of φK is at least c1,
+  `fle (Some c1) d`, and for every i ≤ c1, every value v at σ1 and every
+  tk' ≥ r1 the continuation K[v] satisfies FuelE at counters
+  `φv ∪ ftick^i φK` and frame d − i, then K[e] satisfies FuelE at frame
+  d. The hole's steps are the composite's steps. Its actions tick the
+  context's counters once each, which stay positive because the frame
+  bounds them by c1. Tickets flow unchanged, a spawn's child is the
+  hole's child, a receive adds ends to the hole. The proof is induction
+  on n. `FuelE_bind` and `bind_needs_bound` in Frame.v check the
+  arithmetic of frames and context ticks for deterministic threads
+  without values or renaming (checked in the toy). The real lemma needs
+  the two repairs of 19.8.
+- F2 `FuelE_val`. A value in `Vfuel n W σ` satisfies FuelE at σ, every
+  r ≤ tk and every frame.
+- F3 `FuelE_beta`. If e has exactly one step, a β, to e', then FuelE j e'
+  gives FuelE (S j) e. Head β redexes are deterministic in `tstep`.
+- F4 monotonicity. In the frame (`fle d d'`), the result type (⊑), the
+  reserve (smaller r), the tickets (`FuelE_tk_mono`), and the index
+  (`FuelE_down`).
+- F5 for `Vfuel`. Subsumption (⊑), `Vfuel_wbext`, `Vfuel_down`,
+  `Vfuel_rename` under injective renaming, and `Vfuel_recount`. Counters
+  may change to any φ' above floor plus a smaller credit, because only
+  the floor check reads φ.
+- F6 `pfits` moves. A node gives the profile of its successor, and the
+  refill at the successor position meets its bound n.
+
+**Cases.** One per rule, each by F1 to F6 over the interpretation.
+
+| Rule | Proof | Verdict |
+|---|---|---|
+| C-Unit, C-Var, C-Ch, C-Pt | F2. C-Pt reads `pfitpt` in W0, stable under `wbext` at a known point | holds (argued) |
+| C-Abs | Floors from the captured credits, a ≤ low − h. For W' ⊒ W, j < n, counters φ' ≥ h and an argument at σ1, the body's interpretation at index j with γ extended by v gives FuelE j of `subst1 v eb`. The captured values meet their entries at φ' by F5 (`Vfuel_recount`), because Θ^h, Γ^h assume exactly the lower bound h | holds (argued) |
+| C-App, closure | F1 with K = App [] e2, then F1 with K = App v1 [] and v1's ends as the context (a1 ≥ c2 keeps them positive), then the redex App v1 v2. Its Vfuel at the remaining index m gives FuelE (m − 1) of the body at the actual counters of v1, which lie above h by a1 − i2 ≥ 0. F3 lifts to m. Frames add up to c1 + c2 + c, tickets by `seq_sound` | holds (argued) |
+| C-App, received closure while holding ends | the same case. The held ends are in the context of the enclosing rule, which ages them by c1 + c2 + c, so F1 there asks their credit to be at least that sum. The receive clause gives the closure at `w_pc`, whose cost is c | holds (argued) |
+| C-App, primitive value | the per-constant lemma at `konst_cost`, as `Vfun` treats `Konst` | holds (argued) |
+| C-Pair, C-LetU, C-LetP, C-Inj, C-Case | F1 for the first part, F3 for the β of let and case, the branch interpretations at the same index. Case takes max cost and ⊕ of transformers by F4 | holds (argued) |
+| C-Box | Löb by induction on n. For j < n the body's interpretation at j with the self at `Vfuel j` (induction hypothesis) gives FuelE j of `subst1 (EBox eb) eb`, which is what the box clause asks | holds (argued) |
+| C-Force | F1 for e, then the redex App EForce v. The box clause at the remaining index gives FuelE of the body one index lower, F3 lifts it | holds (argued) |
+| C-New | F1 for e, then the new step with a fresh c (19.8). F2 on the pair of ends. Their counters are `w_bud W x` and `w_bud W x̄`, at least n and n' by pfits, points known by pfits | holds after the freshness repair (argued). Without it the case fails, Collide.v |
+| C-Send | F1 for e, then the redex. F-Tick for the payload ends by the spare unit. The frame of the redex is 1. The payload at the ticked counters is in `Vfuel` at σ by F5 and at `w_pc W k` by pfits (σ ⊑ w_pc W k). F-Wait from the finite partner budget in the node. The end at x + 1 refilled to `w_bud W (x+1)` ≥ n', F2 | holds (argued) |
+| C-Send of a closure | the same case. The closure's captured counters lose one unit at the hand-over, which the spare credit covers, and the receiver gets them at `w_pc W k` | holds (argued) |
+| C-Recv | F1, then the receive clause. For every incoming value at `w_pc W (pt_dual k)`, which is ⊑ σ by pfits, and every index j ≤ n', the result pair is a value at (σ, CEnd P'^n') by F2 and F5 | holds (argued) |
+| C-Close, C-Sel, C-Bra | as C-Send without payload. Branch by the generic clause of `Fobl` | holds (argued) |
+| C-Link | F1, then the link clause. `link_split` (Tix.v) gives 1 ≤ tk and the reserve at tk − 1 | holds (argued, arithmetic checked) |
+| C-Spawn of a closure | F1, then the spawn clause. `fhand 0` by credit a ≥ 1. The child at ⌈tk/2⌉ ≥ t'(0) by `spawn_split` (Tix.v). Its FuelE at index n' comes from the closure's Vfuel at the current index, the body at counters φ − 1 ≥ h, lifted by F3, its frame weakened from c' to None and its result type to CAny by F4. The parent at ⌊tk/2⌋ meets the reserve | holds (argued, arithmetic checked) |
+| C-Pay, C-Succ | F3 on the β step, F2 with the field or successor profile | holds (argued) |
+| C-Konst | the per-constant lemma, each primitive one redex | holds (argued) |
+| C-Sub, C-Weak, C-Contract | F4, F5. Unlimited entries carry no ends, so duplicating or dropping them changes no map | holds (argued) |
+| existentials | no rule. The payload's protocol is in its carrier's `w_pc` | nothing to check |
+
+**Assembly.** `ctyped_fsem`. From `Θ; [] ⊢_W0 t : σ ▷ c ; t0` and a world
+W ⊒ W0 in which the ends of Θ sit at known points that fit their
+protocols, with credits at most the budgets, the semantic judgment at
+γ = id, r = 0 and the full counters `w_bud W <$> π` gives FuelE at frame
+c, result σ and tk = t0(0). F4 weakens to frame None and result CAny,
+which is `fsem W π t`. Then
+
+```
+Inductive lfptyped : world → senv → proc → ty → Prop :=
+  | lf_term W Σ ΘB C0 t T Θc σ c t0 :
+      (the premises of pt_term) → guarded t →
+      ctyped W Θc [] t σ c t0 → cfits W Θc (tenv_points (tenv_of Σ ∪ ΘB)) →
+      lfptyped W Σ (C0, {[+ t +]}) T
+  | lf_connect … (the premises of pt_connect over lfptyped)
+  | lf_join …    (the premises of pt_join over lfptyped) → wbud_agree W1 W2 → lfptyped (wjoin W1 W2) …
+Theorem lf_fundamental W Σ p T : lfptyped W Σ p T → strict W → LFP W Σ T p.
+Theorem lf_soundness W T p : lfptyped W ∅ p T → world_wf W → well_founded (w_lt W) → lock_free p.
+```
+
+`lf_fundamental` is induction on `lfptyped`. `lf_term` gives `LFP_term`
+with `lsem_typed` from `live_fundamental_guarded`, the known points from
+`cfits`, and `fsem` from `ctyped_fsem`. `lf_connect` and `lf_join` give
+`LFP_connect` and `LFP_join`. `lf_soundness` is `lf_fundamental` and
+`lf_adequacy`. (argued)
+
+### 19.8  Holes found
+
+1. **Merging renamings (checked, Merge.v).** `renk g π π'` lets g send
+   two held ends with the same bit, point and counter to one name. `Fdef`
+   then asks FuelE of the merged thread, which acts twice on one end and
+   so reads world data at x + 1 that the thread never reads.
+   `merge_no_fuel` shows a thread that holds c1 and c2 at x and sends a
+   payload on each has no fuel at any index from 2 on whenever
+   `w_pay W (x+1) ≥ 4`.
+   Its own runs read only `w_pay W x`. Each half of that thread is the
+   hole or the continuation of the other, so no bind lemma holds for the
+   current `Fdef`. The soup renames only injectively (`kinj`, LFSoup.v,
+   checked). Repair. `Fdef` quantifies over g with `kinj g π`.
+   `FuelE_rename` gains that premise, which the soup's only use already
+   supplies.
+2. **New with a held name (checked, Collide.v).** `Fobl` at `LNew c x`
+   holds for every c, also a c the thread already holds. The fresh end
+   then overwrites the held one in π, and a later action on the held end
+   reads the data at x. `collide_no_fuel` shows a thread that holds
+   (c, pt_pol x) at y and runs new@x before a send on it has no fuel
+   whenever `w_pay W x ≥ 5`. The C-New case of 19.7 fails without a
+   repair. The soup creates only fresh channels. Repair. The new clause
+   asks `(c, true) ∉ dom π ∧ (c, false) ∉ dom π`, a condition on the label
+   against the thread's own map. The soup's freshness gives it, through
+   `lf_closed` and the side condition of the process rule for new
+   (argued, to be confirmed in stage H1).
+3. **Off by one at the value and the call (argued).** The value clause
+   must read `Vfuel` at the level of the expression, not one below, or
+   F1 loses an index each time a hole returns. The arrow and box clauses
+   must give FuelE of the body after the β step, or C-App and C-Force
+   lose an index at each call. Both are definitional, 19.3 fixes them,
+   and the base relation already has the second form.
+
+Hole 1 and 2 are in today's LFFuel.v, independent of costs. Any
+compositional proof of stage L6 meets them.
+
+### 19.9  The examples
+
+Costs as the rules compute them, at budgets uniform per program. B is
+the least uniform budget bound, f the floors in `w_pc`, tk the main
+thread's tickets t(0). Not checked against Rocq, read off the example
+headers and the rules.
+
+| Example | Costs | Verdict | Rule |
+|---|---|---|---|
+| Forwarder | boxes `fwd`, `fprod`, `fcons` have arrows of cost ∞, called by spawn in tail position. B = 2, f = 1 on a, f = 0 on b | types | the forward on b asks 1 − 1 ≥ 0 at C-Send |
+| TailCall | both boxes cost ∞, tail calls, no other held end. B = 1, no floors | types | |
+| CfstScheduler | each end is acted on within a round of 6 actions (17.5). B = 6 | types | |
+| Scheduler (links) | ag₁ is a spawned λ with transformer (Some 0, 1). main's need is tspawn 1 (tspawn 0 1̂) at 0, which is 1 ticket. ag₂ holds r₂ across two actions on r₁ after a hand-over, B = 3 | types | C-Link, C-Spawn |
+| ABP | three boxes of cost ∞, tail calls. bob's second end waits two actions, so its argument floor is 2, and main hands it over once, B = 3 | types | |
+| GrowRing | ring calls are spawned, cost ∞. z arrives at the floor, is ticked by the close of x and handed to a call that receives on it first, so f = 2. a waits one hand-over and its own send, B = 4 | types | |
+| ReceivedChain | the received end is ticked by the close of c and spawned into a call that acts on it first, f = 2. The sender's e′ waits two actions and a hand-over, B = 3 | types | |
+| callback server | `srv = !(f = λc. let (cb, c) = recv c in let () = cb ∗ in (force f) c)`, clients send `λu. let () = u in close (send ⟨∗, k⟩)` with k fresh. The callback has cost 2, floor 0, sent at credit 1. srv's c is refilled at the receive and aged by 2 before the next round, B = 2 | types | C-App charges 2 to c |
+| server running a callback of cost ∞ | the same server with `w_pc` at cost ∞ | rejected | aging by ∞ at C-App. Spawning the callback types |
+| Sync | one receive, one spawned send. B = 1 | types | |
+| controller (§7) | budget ∞ at ctl, semantic proof only | outside the static system, as today | |
+| KobForwarder | | rejected | Rank (`kob_cworld_not_wf`) and the guard |
+| C1, C1′ | | rejected | Rank on syntactic points (`c1_rank_fails`) |
+| C3 | a link per round | rejected | no transformer (`link_loop_no_tix`) |
+| starving server | the same end forwarded every round along the same position of one carrier | rejected | C-Send asks f ≥ f + 1 at that position |
+| postponement (liveness.md §9) | A acts on b every round and holds a | rejected | a passed to the self call loses credit every round below the argument floor, or, held across a call of cost ∞, fails aging by ∞ |
+
+### 19.10  Stages and statements
+
+One agent per stage, at most two at once.
+
+- **H1, definitions (one agent).** relation/CostTypes.v (`cty`, `cta`,
+  `cpro`, `cprof`, `tix`, `meets`, `tseq`, `tspawn`, ⊑, aging, `pfits`,
+  `pfitpt`). In Worlds.v `w_pay` becomes `w_pc`, `wext_bud` and `wbext`
+  keep `w_pc` on known names, and the world builders in BranchWorlds.v,
+  Creation.v, PointRenaming.v, PNWorld.v, DropCounter.v change one
+  argument (about 50 lines, checked by grep). In LFFuel.v, FuelE with σ, r,
+  d, `kinj` in `Fdef`, freshness at new, the value clause at its level,
+  `Vfuel` typed with the clauses of 19.3, the old lemmas restated.
+  LFSoup.v, LFAdequacy.v, LFCompose.v at σ = CAny, r = 0, d = None,
+  `step_msg` without the floor, `wbud_agree` over `w_pc`.
+- **H2, the cost judgment, beside H1 once CostTypes.v is fixed.**
+  static/CostTyping.v (`ctyped`, the rules of 19.4), the cost
+  derivations of the examples of 19.9 in examples/LockFree.v, and the
+  rejections of C3 and the starving server as non-derivability lemmas.
+- **H3, the semantic lemmas.** lockfree/LFFuelBind.v with F1 to F6.
+- **H4, the compatibility lemmas, beside T1.** lockfree/CostFund.v, one
+  lemma per rule of the table in 19.7, and `ctyped_fsem`.
+- **T1, beside H4.** liveness/GuardRules.v with `glive` and `okM_iff`.
+- **H5, assembly.** lockfree/LFTyped.v with `lfptyped`, `lf_fundamental`,
+  `lf_soundness`, the example theorems. Fragment.v keeps only `cworld`,
+  `wf_world` and the rank lemmas (`kob_cworld_not_wf`, `c1_rank_fails`),
+  moved to lockfree/Rank.v. The rest of Fragment.v goes (`pcall`, `r1`,
+  `r2x` and its three instances, `box_ok`, `hops`, `bleak`, the root
+  graph, `scost`, `seg_len`, `stretch_len`, `with_budgets`, `src_world`,
+  `src_tickets`, `tk_cover`, `ann`, `lfsource`, the old `lfptyped`), and
+  LFFuelTyped.v goes whole.
+- **H6, optional.** The checker of 19.6 in theories/algorithmic.
+
+Protected statements. None changes its text. `lf_adequacy`, `LFP_term`
+(as at d9e6ceb, with the known-points premise), `LFP_connect`,
+`LFP_join`, `lf_criterion`, `lock_free`, `thread_progress`, the live
+theorems, `fundamental`, `adequacy` and the soundness family stay as
+they are. What changes under them is the world record (`w_pay : point →
+nat` becomes `w_pc : point → cta`, as 17.8 changed it before), the
+meaning of `wbext`, `wext_bud` and `wbud_agree` (they also keep `w_pc`),
+and the definitions of FuelE, `Vfuel` and `fsem`, whose types stay the
+same at the thread level. `lf_fundamental` and `lf_soundness` are new.
+Decision for the author. The world field, and the two repairs of 19.8,
+which are conditions on renamings and labels and read no syntax.
