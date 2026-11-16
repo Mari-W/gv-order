@@ -537,6 +537,14 @@ Updated after every stage and every agent result.
 - 2026-11-16, under delegation. `LFconf` gains two conjuncts on
   environments. An end held of a channel of Σ sits at the entry of Σ
   (`lf_sig`), and every entry of Σ is held by some thread (`lf_own`).
+- 2026-11-16, author. Links: option 2. A link is accounted like sending u
+  along v. Fuel counters belong to obligations: every hand-over of an
+  obligation (send, spawn, link) costs one, only acting refills. The link
+  rule becomes "counter(u) − 1 ≥ the minimum at k", the peer's counter for
+  v̄ is replaced by counter(u) − 1, and FuelE gains a replacement clause: a
+  held end at point k tolerates its counter being lowered by another
+  thread's link, down to the minimum at k. Replaces the impossible rule
+  "peer budget < counter" (L6a: sched_not_fsem, lf_fuel_fundamental_false).
 
 ## Related work hooks
 
