@@ -78,6 +78,7 @@ Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
 Require LRGV.lockfree.LFAdequacy.
 Require LRGV.lockfree.LFFuel.
+Require LRGV.lockfree.LFFuelTyped.
 Require LRGV.lockfree.LFSoup.
 Require LRGV.lockfree.LocalProgress.
 Require LRGV.lockfree.Reach.
@@ -240,6 +241,12 @@ Print Assumptions LRGV.lockfree.LFFuel.fupd_cap.
 Print Assumptions LRGV.lockfree.LFFuel.fhand_fin_ok.
 Print Assumptions LRGV.lockfree.LFFuel.fcap_finite.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_send_travel.
+Print Assumptions LRGV.lockfree.LFFuelTyped.fuel_link_inf.
+Print Assumptions LRGV.lockfree.LFFuelTyped.sched_lfsource.
+Print Assumptions LRGV.lockfree.LFFuelTyped.sched_not_fsem.
+Print Assumptions LRGV.lockfree.LFFuelTyped.lf_fuel_fundamental_false.
+Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.
+Print Assumptions LRGV.lockfree.LFFuelTyped.sync_not_fsem.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.
