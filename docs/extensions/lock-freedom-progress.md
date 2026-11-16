@@ -367,6 +367,13 @@ Updated after every stage and every agent result.
   `waits` and is accepted.
 - 2026-11-16, author. No syntactic conditions in the relations except on
   values (what the semantics moves). E-Fit removed from expressions.
+- 2026-11-16, author. The property definitions over the untyped semantics
+  (`waits`, `pending`, `lock_free`) may read which ends a term names, as
+  `sentc` does. The relation may not. The soup's term-reading conjuncts get
+  environment-level replacements (`dom (A t) ⊆ q.1 ∪ dom Σ`, disjoint
+  environments, `tenv_bipol (A t)`, fuel over the ends of `A t`), and
+  "held and waited on implies named" is derived in adequacy from fuel and
+  liveness across all indices.
 
 ## Related work hooks
 
