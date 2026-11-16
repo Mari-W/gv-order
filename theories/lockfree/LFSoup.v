@@ -7,15 +7,15 @@
     every held end sits at the point π gives it, and that every end of an
     internal channel has a partner end, held by some thread, at the dual
     point and with a dual session type. The soup reads environments only,
-    never the term of a thread (decision of 2026-11-16). The point map π
-    lies outside the index, because the program names the point of every
-    [new] (sharp edges 173).
+    never the term of a thread (decision of 2026-11-16).
 
-    [LFsoup] adds the fuel conjunct of §17.3. Each thread carries its own
+    [LFsoupAt] adds the fuel conjunct of §17.3. Each thread carries its own
     points [P t] and counters [F t] on exactly the ends of its
-    environment, and FuelE holds at them. [LFP] fixes the threads, π, P
-    and F outside the index, so a thread holds the same ends at every
-    index.
+    environment, and FuelE holds at them. [LFsoup] takes for π the union
+    of the maps [P t] ([ppts]). [LFP] fixes the threads, P and F outside
+    the index, so a thread holds the same ends at every index, and the
+    points lie outside the index because the program names the point of
+    every [new] (sharp edges 173).
 
     [pupd] moves π and [fstep] moves P and F along one step. Both read
     the step off the redexes of the participants, so they are functions
@@ -89,6 +89,24 @@ Proof.
       rewrite !bool_decide_false in H by done. by destruct H.
 Qed.
 
+
+(** The points of the ends of an environment. *)
+Definition tenv_points (Θ : tenv) : gmap cend point :=
+  map_imap (λ o (_ : unit), snd <$> tenv_end Θ o) (gset_to_gmap () (tenv_ends Θ)).
+
+Lemma lookup_tenv_points Θ o : tenv_points Θ !! o = snd <$> tenv_end Θ o.
+Proof.
+  unfold tenv_points. rewrite map_lookup_imap.
+  destruct (decide (o ∈ tenv_ends Θ)) as [Ho|Ho].
+  - rewrite (proj2 (lookup_gset_to_gmap_Some _ _ _ _) (conj Ho eq_refl)). done.
+  - rewrite (proj2 (lookup_gset_to_gmap_None _ _ _) Ho). simpl.
+    destruct (tenv_end Θ o) eqn:E; [|done]. exfalso. apply Ho, tenv_ends_end. by eexists.
+Qed.
+
+Lemma dom_tenv_points Θ : dom (tenv_points Θ) = tenv_ends Θ.
+Proof.
+  apply set_eq. intros o. by rewrite elem_of_dom, lookup_tenv_points, fmap_is_Some, tenv_ends_end.
+Qed.
 
 Lemma tenv_end_entry Θ k ek :
   tenv_bipol Θ → tenv_entry Θ k = Some ek → tenv_end Θ (k.1, pt_pol ek.2) = Some ek.
@@ -306,15 +324,67 @@ Definition lf_fuelc (n : nat) (W : world) (π : gmap cend point) (P : nat → gm
     FuelE n W (P t) (F t) e ∧ dom (P t) = tenv_ends (A t) ∧ dom (F t) = tenv_ends (A t) ∧
     ∀ o, o ∈ tenv_ends (A t) → P t !! o = π !! o.
 
-Definition LFsoup (n : nat) (W : world) (Σ : senv) (T : ty) (π : gmap cend point)
+Definition LFsoupAt (n : nat) (W : world) (Σ : senv) (T : ty) (π : gmap cend point)
     (P : nat → gmap cend point) (F : nat → gmap cend fuel) (q : config) : Prop :=
   ∃ A U, LFconf n W Σ T π q A U ∧ lf_fuelc n W π P F A q.
 
+(** The points of the held ends, the union of the per-thread point maps. *)
+Definition ppts (P : nat → gmap cend point) (q : config) : gmap cend point :=
+  foldr (λ t acc, P t ∪ acc) ∅ (elements (dom q.2)).
+
+(** The soup with the points read off the per-thread maps P. *)
+Definition LFsoup (n : nat) (W : world) (Σ : senv) (T : ty)
+    (P : nat → gmap cend point) (F : nat → gmap cend fuel) (q : config) : Prop :=
+  LFsoupAt n W Σ T (ppts P q) P F q.
+
 (** The lock-free judgment (§17.8). The budgets are read in W. The
     threads, their points and their counters are fixed outside the index,
-    the environments and the session types are chosen at each index. *)
+    the environments and the session types are chosen at each index. The
+    points of the held ends are the union of the per-thread maps P. *)
 Definition LFP (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
-  (∀ n, LPrel n W Σ T p) ∧ ∃ q π P F, erase q = p ∧ ∀ n, LFsoup n W Σ T π P F q.
+  (∀ n, LPrel n W Σ T p) ∧ ∃ q P F, erase q = p ∧ ∀ n, LFsoup n W Σ T P F q.
+
+Lemma ppts_lookup P q t e o v :
+  q.2 !! t = Some e → P t !! o = Some v →
+  (∀ s es, q.2 !! s = Some es → s ≠ t → P s !! o = None) → ppts P q !! o = Some v.
+Proof.
+  intros He Hv Hu. unfold ppts.
+  assert (t ∈ elements (dom q.2)) as Ht by (apply elem_of_elements, elem_of_dom; eauto).
+  assert (∀ s, s ∈ elements (dom q.2) → s ≠ t → P s !! o = None) as Hu'.
+  { intros s' Hs' Hne. apply elem_of_elements, elem_of_dom in Hs' as [es Hes]. by apply (Hu s' es). }
+  clear He Hu. revert Ht Hu'. generalize (elements (dom q.2)) as l.
+  induction l as [|s' l IH]; intros Ht Hu'; [by apply not_elem_of_nil in Ht|].
+  simpl. destruct (decide (s' = t)) as [->|Hne].
+  - by apply lookup_union_Some_l.
+  - rewrite lookup_union_r by (apply Hu'; [left|done]). apply IH.
+    + by apply elem_of_cons in Ht as [?|?].
+    + intros s'' Hs'' Hne'. apply Hu'; [by right|done].
+Qed.
+
+(** On the held ends, the union of the point maps is the point map of
+    the soup. *)
+Lemma lf_ppts n W Σ T π q A U P F t e o :
+  LFconf n W Σ T π q A U → lf_fuelc n W π P F A q →
+  q.2 !! t = Some e → o ∈ tenv_ends (A t) → ppts P q !! o = π !! o.
+Proof.
+  intros Hc HF He Ho. destruct (HF t e He) as (_ & HdP & _ & Hpt).
+  assert (is_Some (P t !! o)) as [v Hv] by (apply elem_of_dom; by rewrite HdP).
+  rewrite <-Hpt, Hv by done. apply (ppts_lookup P q t e); [done|done|].
+  intros s es Hes Hst. apply not_elem_of_dom. destruct (HF s es Hes) as (_ & HdPs & _). rewrite HdPs.
+  intros Hos. by apply (lf_disj _ _ _ _ _ _ _ _ Hc s t es e Hst Hes He o).
+Qed.
+
+(** A soup at any point map π is a soup at the union of its point maps. *)
+Lemma LFsoupAt_ppts n W Σ T π P F q : LFsoupAt n W Σ T π P F q → LFsoup n W Σ T P F q.
+Proof.
+  intros (A & U & Hc & HF).
+  pose proof (λ t e o, lf_ppts n W Σ T π q A U P F t e o Hc HF) as Hpp.
+  exists A, U. destruct Hc as [Hp Hr Hb Hty Hpt Hd Hpair Hcl Hsig Hown].
+  split; [split|]; try done.
+  - intros t e o x He Hx. rewrite (Hpp t e o He) by (apply tenv_ends_end; by eexists). by apply (Hpt t e).
+  - intros t e He. destruct (HF t e He) as (H1 & H2 & H3 & H4). split_and!; try done.
+    intros o Ho. rewrite (Hpp t e o He Ho). by apply H4.
+Qed.
 
 (** ** Monotonicity in the index *)
 
@@ -329,12 +399,16 @@ Proof.
   intros Hmn H t e He. destruct (H t e He) as (H1 & H2). split; [|done]. by apply (FuelE_down m n).
 Qed.
 
-Theorem LFsoup_down n m W Σ T π P F q : m ≤ n → LFsoup n W Σ T π P F q → LFsoup m W Σ T π P F q.
+Lemma LFsoupAt_down n m W Σ T π P F q :
+  m ≤ n → LFsoupAt n W Σ T π P F q → LFsoupAt m W Σ T π P F q.
 Proof.
   intros Hmn (A & U & Hc & Hf). exists A, U. split.
   - by eapply LFconf_down.
   - by eapply lf_fuelc_down.
 Qed.
+
+Theorem LFsoup_down n m W Σ T P F q : m ≤ n → LFsoup n W Σ T P F q → LFsoup m W Σ T P F q.
+Proof. apply LFsoupAt_down. Qed.
 
 (** ** The points along a step
 
@@ -765,7 +839,36 @@ Qed.
     index, as π is. [fstep] is the update: the participants move by
     [fupd], a spawned thread gets [fchild], a receiver adds the sender's
     payload at its counters minus one, and a link renames the peer of the
-    removed end in every map ([kren]). *)
+    removed end in every map ([kren]). Before the renaming, a link
+    replaces the counter of the partner of each linked end by the
+    linker's counter of the other linked end minus one ([flr]), in
+    whichever thread holds that partner (decision 2026-11-16, links:
+    option 2). *)
+
+(** The counter of o after a link of o1 and o2 whose linker had the
+    counters φi: the partner of o2 takes over the obligation of o1, and
+    the partner of o1 that of o2. *)
+Definition flr1 (φi : gmap cend fuel) (o1 o2 o : cend) (f : fuel) : fuel :=
+  if decide (o = cdual o2) then default f (ftick <$> φi !! o1)
+  else if decide (o = cdual o1) then default f (ftick <$> φi !! o2) else f.
+
+Definition flr (φi : gmap cend fuel) (o1 o2 : cend) (φ : gmap cend fuel) : gmap cend fuel :=
+  map_imap (λ o f, Some (flr1 φi o1 o2 o f)) φ.
+
+Lemma lookup_flr φi o1 o2 φ o : flr φi o1 o2 φ !! o = flr1 φi o1 o2 o <$> φ !! o.
+Proof. unfold flr. rewrite map_lookup_imap. by destruct (φ !! o). Qed.
+
+Lemma dom_flr φi o1 o2 φ : dom (flr φi o1 o2 φ) = dom φ.
+Proof.
+  apply set_eq. intros o. rewrite !elem_of_dom, lookup_flr. by destruct (φ !! o).
+Qed.
+
+Lemma flr_comm φi o1 o2 φ : o1 ≠ o2 → flr φi o1 o2 φ = flr φi o2 o1 φ.
+Proof.
+  intros Hne. apply map_eq. intros o. rewrite !lookup_flr. destruct (φ !! o) as [f|]; [|done].
+  simpl. f_equal. unfold flr1. repeat case_decide; subst; try done.
+  exfalso. apply Hne. by apply cdual_inj.
+Qed.
 
 Definition kren {Y : Type} (g : chan → chan) (m : gmap cend Y) : gmap cend Y :=
   list_to_map ((λ ov : cend * Y, ((g ov.1.1, ov.1.2), ov.2)) <$> map_to_list m).
@@ -809,7 +912,8 @@ Definition fsingle (W : world) (P : nat → gmap cend point) (F : nat → gmap c
       let c := default "" (head (elements (q.1 ∖ q'.1))) in
       let d := if decide (o1.1 = c) then o2.1 else o1.1 in
       let r := fupd W (P i) (F i) (LSess (SLink {[o1; o2]})) in
-      (λ t, kren (csub c d) (eupd P i r.1 t), λ t, kren (csub c d) (eupd F i r.2 t))
+      (λ t, kren (csub c d) (eupd P i r.1 t),
+       λ t, kren (csub c d) (flr (F i) o1 o2 (eupd F i r.2 t)))
   | _ => (P, F)
   end.
 
@@ -846,6 +950,15 @@ Proof. intros Hi Ho. by apply (renk_kren g m Hi). Qed.
 Lemma kren_lookup_inv {Y : Type} (g : chan → chan) (m : gmap cend Y) o' v :
   kinj g m → kren g m !! o' = Some v → ∃ o, o' = (g o.1, o.2) ∧ m !! o = Some v.
 Proof. intros Hi Ho. by apply (renk_kren g m Hi). Qed.
+
+(** Every entry of a renamed map comes from an entry of the map. *)
+Lemma kren_lookup_any {Y : Type} (g : chan → chan) (m : gmap cend Y) o' v :
+  kren g m !! o' = Some v → ∃ o, o' = (g o.1, o.2) ∧ m !! o = Some v.
+Proof.
+  intros Ho'. unfold kren in Ho'. apply elem_of_list_to_map_2 in Ho'.
+  apply list_elem_of_fmap in Ho' as ([o v'] & Heq & Hov). apply elem_of_map_to_list in Hov.
+  simpl in Heq. injection Heq as -> ->. by exists o.
+Qed.
 
 Lemma kren_dom {Y : Type} (g : chan → chan) (m : gmap cend Y) :
   kinj g m → dom (kren g m) = set_map (λ o : cend, (g o.1, o.2)) (dom m).
@@ -2030,18 +2143,22 @@ Section step.
     { destruct (upair_eq_inv _ _ _ _ Hcd Hne) as [[<- <-]|[<- <-]]; simpl.
       - by rewrite decide_True.
       - destruct (decide (d = c)) as [->|]; done. }
+    assert (Hflr : ∀ φ, flr (F i) o1 o2 φ = flr (F i) (c, bc) (d, bd) φ).
+    { intros φ. destruct (upair_eq_inv _ _ _ _ Hcd Hne) as [[E1 E2]|[E1 E2]];
+        rewrite <-E1, <-E2; [done|]. by apply flr_comm. }
     rewrite fstep_single. unfold pupd. rewrite pev_of_single. simpl. rewrite He. unfold fsingle, pev1.
     rewrite Ha. simpl. rewrite HCc, elements_singleton. simpl. rewrite Hd'.
     rewrite <-Hcd.
     set (M'' := <[i := e']> M). set (A'' := eupd A i Θ1).
     set (BP := eupd P i (mrem {[(c, bc); (d, bd)]} (P i))).
-    set (BF := eupd F i (mrem {[(c, bc); (d, bd)]} (F i))).
-    assert (Hbase : ∀ t g, M'' !! t = Some g →
-              FuelE (S n) W (BP t) (BF t) g ∧ dom (BP t) = tenv_ends (A'' t) ∧
-              dom (BF t) = tenv_ends (A'' t) ∧
+    set (BF0 := eupd F i (mrem {[(c, bc); (d, bd)]} (F i))).
+    set (BF := λ t, flr (F i) (c, bc) (d, bd) (BF0 t)).
+    assert (Hbase0 : ∀ t g, M'' !! t = Some g →
+              FuelE (S n) W (BP t) (BF0 t) g ∧ dom (BP t) = tenv_ends (A'' t) ∧
+              dom (BF0 t) = tenv_ends (A'' t) ∧
               (∀ o, o ∈ tenv_ends (A'' t) → BP t !! o = π !! o) ∧
               ((c, bc) ∉ tenv_ends (A'' t)) ∧ ((d, bd) ∉ tenv_ends (A'' t))).
-    { intros t g Hg. unfold M'' in Hg. unfold BP, BF, A'', eupd. destruct (decide (t = i)) as [->|Hti].
+    { intros t g Hg. unfold M'' in Hg. unfold BP, BF0, A'', eupd. destruct (decide (t = i)) as [->|Hti].
       - rewrite lookup_insert_eq in Hg. injection Hg as <-. destruct (ff i e He) as (H1 & H2 & H3 & H4).
         pose proof (lffuel_step (S n) W (P i) (F i) e H1 _ e' Hst ltac:(done)) as H. simpl in H.
         unfold LFFuel.fact in H. simpl in H.
@@ -2053,6 +2170,49 @@ Section step.
         pose proof (st_disj t i g e Hti Hg He) as Hd0.
         split_and!; try done; [apply (FuelE_down (S n) (S (S n))); [lia|done]|clear -Hd0 Hci; set_solver
           |clear -Hd0 Hdi; set_solver]. }
+    (* the linker's counters and points at the linked ends *)
+    destruct (ff i e He) as (H1i & _ & H3i & _).
+    assert (P i !! (c, bc) = Some xc.2) as Pc by (by apply (ff_pt i e)).
+    assert (P i !! (d, bd) = Some xd.2) as Pd by (by apply (ff_pt i e)).
+    pose proof (LFFuel.fuel_link (S n) W (P i) (F i) e H1i _ e' Hst) as Hfl.
+    assert (Hπc : π !! cdual (c, bc) = Some xd.2).
+    { destruct (lfc_partner _ _ _ _ _ _ _ Hc i e _ _ He Hxc) as (s & gs & ys & Hgs & Hys & Hys2 & _).
+      rewrite (lf_pt _ _ _ _ _ _ _ _ Hc s gs _ _ Hgs Hys), Hys2, Hdx, pt_dual_dual. done. }
+    assert (Hπd : π !! cdual (d, bd) = Some xc.2).
+    { destruct (lfc_partner _ _ _ _ _ _ _ Hc i e _ _ He Hxd) as (s & gs & ys & Hgs & Hys & Hys2 & _).
+      rewrite (lf_pt _ _ _ _ _ _ _ _ Hc s gs _ _ Hgs Hys), Hys2, Hdx. done. }
+    (* the counter handed over meets the minimum and the cap at the point of the partner *)
+    assert (Hhand : ∀ o1' o2' k, {[(c, bc); (d, bd)]} = ({[o1'; o2']} : gset cend) → o1' ≠ o2' →
+              P i !! o1' = Some k → ∃ f, F i !! o1' = Some f ∧
+              fle (Some (w_pay W k)) (ftick f) ∧ fle (ftick f) (w_bud W k)).
+    { intros o1' o2' k Hcd1 Hne1 Hk.
+      assert (o1' ∈ dom (F i)) as [f Hf]%elem_of_dom.
+      { rewrite H3i. apply elem_of_dom_2 in Hk. by destruct (ff i e He) as (_ & <- & _). }
+      exists f. split; [done|].
+      destruct (fuel_cap (S n) W (P i) (F i) e H1i o1' f Hf) as (k' & Hk' & Hle).
+      rewrite Hk in Hk'. injection Hk' as <-. split; [|by apply fle_tick].
+      destruct f as [m|]; simpl; [|done].
+      pose proof (Hfl o1' o2' Hcd1 Hne1 k m Hk Hf). lia. }
+    (* every thread goes on at the replaced counters, one level down *)
+    assert (Hbase : ∀ t g, M'' !! t = Some g →
+              FuelE n W (BP t) (BF t) g ∧ dom (BP t) = tenv_ends (A'' t) ∧
+              dom (BF t) = tenv_ends (A'' t) ∧
+              (∀ o, o ∈ tenv_ends (A'' t) → BP t !! o = π !! o) ∧
+              ((c, bc) ∉ tenv_ends (A'' t)) ∧ ((d, bd) ∉ tenv_ends (A'' t))).
+    { intros t g Hg. destruct (Hbase0 t g Hg) as (H1 & H2 & H3 & H4 & H5 & H6).
+      unfold BF. rewrite dom_flr. split_and!; try done.
+      apply (fuel_rep n W (BP t) (BF0 t) g H1). intros o. rewrite lookup_flr.
+      destruct (BF0 t !! o) as [f0|] eqn:Ef0; [|by left]. simpl.
+      assert (o ∈ tenv_ends (A'' t)) as Ho by (rewrite <-H3; by apply elem_of_dom_2 in Ef0).
+      unfold flr1. destruct (decide (o = cdual (d, bd))) as [->|Hod].
+      - destruct (Hhand (c, bc) (d, bd) xc.2 eq_refl Hne Pc) as (f & Hf & Hlo & Hhi).
+        rewrite Hf. simpl. right. exists xc.2, (ftick f). rewrite H4, Hπd by done.
+        split_and!; done.
+      - destruct (decide (o = cdual (c, bc))) as [->|Hoc]; [|by left].
+        destruct (Hhand (d, bd) (c, bc) xd.2 (upair_comm _ _) (not_eq_sym Hne) Pd)
+          as (f & Hf & Hlo & Hhi).
+        rewrite Hf. simpl. right. exists xd.2, (ftick f). rewrite H4, Hπc by done.
+        split_and!; done. }
     assert (Hcend : ∀ t g β, M'' !! t = Some g → (c, β) ∈ tenv_ends (A'' t) → c ≠ d → β = bd).
     { intros t g β Hg Hin Hcd'. destruct (Hbase t g Hg) as (_ & _ & _ & _ & Hn & _).
       destruct (decide (β = bc)) as [->|Hb]; [done|]. rewrite Hbd. by destruct β, bc. }
@@ -2083,8 +2243,9 @@ Section step.
     destruct (M'' !! t) as [g|] eqn:Hg; [|done]. simpl in Hg'. injection Hg' as <-.
     destruct (Hbase t g Hg) as (H1 & H2 & H3 & H4 & Hn1' & Hn2').
     destruct (Hkinj t g Hg) as [Hk1 Hk2].
+    rewrite Hflr. change (flr (F i) (c, bc) (d, bd) (BF0 t)) with (BF t).
     rewrite chsubst_emap. split_and!.
-    - apply (FuelE_down n (S n)); [lia|]. apply (FuelE_rename _ _ (BP t) (BF t) g); [| |done].
+    - apply (FuelE_rename _ _ (BP t) (BF t) g); [| |done].
       + by apply renk_kren.
       + by apply renk_kren.
     - rewrite kren_dom, H2 by done. rewrite HAt. unfold osub. done.
@@ -2438,23 +2599,19 @@ Proof.
 Qed.
 
 (** The soup steps: the key lemma of §16.5 with the fuel conjunct of §17.3. *)
-Theorem lfsoup_step n W T π P F q L q' :
-  strict W → LFsoup (S (S n)) W ∅ T π P F q → istep q L q' →
-  LFsoup n W ∅ T (pupd π q L q') (fstep W P F q L q').1 (fstep W P F q L q').2 q'.
+Theorem lfsoup_step n W T P F q L q' :
+  strict W → LFsoup (S (S n)) W ∅ T P F q → istep q L q' →
+  LFsoup n W ∅ T (fstep W P F q L q').1 (fstep W P F q L q').2 q'.
 Proof.
-  intros HW (A & U & Hc & HF) Hst. by apply (lfsoup_conf_step n W T π P F q A U L q').
+  intros HW (A & U & Hc & HF) Hst. apply (LFsoupAt_ppts n W ∅ T (pupd (ppts P q) q L q')).
+  by apply (lfsoup_conf_step n W T (ppts P q) P F q A U L q').
 Qed.
 
 (** ** One placement for every index (§16.5)
 
-    Along a run, π_k is computed from π by [pupd] at every step, and the
-    points and counters of every thread by [fstep]. They do not depend
-    on the index, and every position of the run carries the soup at
-    every index. *)
-
-Fixpoint prun (π : gmap cend point) (r : nat → config) (l : nat → gset nat) (k : nat)
-    : gmap cend point :=
-  match k with 0 => π | S k' => pupd (prun π r l k') (r k') (l k') (r (S k')) end.
+    Along a run, the points and counters of every thread are computed by
+    [fstep] at every step. They do not depend on the index, and every
+    position of the run carries the soup at every index. *)
 
 Lemma pupd_stuck π q : pupd π q ∅ q = π.
 Proof. unfold pupd, pev_of. by rewrite elements_empty. Qed.
@@ -2469,25 +2626,25 @@ Fixpoint frun (W : world) (P : nat → gmap cend point) (F : nat → gmap cend f
 Lemma fstep_stuck W P F q : fstep W P F q ∅ q = (P, F).
 Proof. unfold fstep. by rewrite elements_empty. Qed.
 
-Theorem lfsoup_run W T π P F r l :
-  strict W → maximal r l → (∀ n, LFsoup n W ∅ T π P F (r 0)) →
-  ∀ k n, LFsoup n W ∅ T (prun π r l k) (frun W P F r l k).1 (frun W P F r l k).2 (r k).
+Theorem lfsoup_run W T P F r l :
+  strict W → maximal r l → (∀ n, LFsoup n W ∅ T P F (r 0)) →
+  ∀ k n, LFsoup n W ∅ T (frun W P F r l k).1 (frun W P F r l k).2 (r k).
 Proof.
   intros HW Hmax H0 k. induction k as [|k IH]; [done|]. intros n. simpl.
   destruct (Hmax k) as [Hst|(_ & Heq & Hl)].
-  - by apply (lfsoup_step n W T _ _ _ (r k) (l k)); [|apply IH|].
-  - rewrite Heq, Hl, pupd_stuck, fstep_stuck. eapply LFsoup_down; [|apply (IH (S n))]. lia.
+  - by apply (lfsoup_step n W T _ _ (r k) (l k)); [|apply IH|].
+  - rewrite Heq, Hl, fstep_stuck. eapply LFsoup_down; [|apply (IH (S n))]. lia.
 Qed.
 
 (** Along any sequence of steps. *)
-Lemma lfsoup_isteps W T π P F q0 q1 :
-  strict W → isteps q0 q1 → (∀ n, LFsoup n W ∅ T π P F q0) →
-  ∃ π' P' F', ∀ n, LFsoup n W ∅ T π' P' F' q1.
+Lemma lfsoup_isteps W T P F q0 q1 :
+  strict W → isteps q0 q1 → (∀ n, LFsoup n W ∅ T P F q0) →
+  ∃ P' F', ∀ n, LFsoup n W ∅ T P' F' q1.
 Proof.
-  intros HW Hs. revert π P F. induction Hs as [q|q q2 q3 [L Hst] _ IH]; intros π P F H0.
-  { by exists π, P, F. }
-  apply (IH (pupd π q L q2) (fstep W P F q L q2).1 (fstep W P F q L q2).2). intros n.
-  by apply (lfsoup_step n W T π P F q L q2).
+  intros HW Hs. revert P F. induction Hs as [q|q q2 q3 [L Hst] _ IH]; intros P F H0.
+  { by exists P, F. }
+  apply (IH (fstep W P F q L q2).1 (fstep W P F q L q2).2). intros n.
+  by apply (lfsoup_step n W T P F q L q2).
 Qed.
 (** ** Local progress of one soup
 
@@ -2701,11 +2858,11 @@ Proof.
         rewrite decide_False by done. rewrite lookup_insert_ne by done. done.
 Qed.
 
-Lemma LFsoup_relabel n W Σ T π P F C M1 M2 (f : nat → nat) :
+Lemma LFsoupAt_relabel n W Σ T π P F C M1 M2 (f : nat → nat) :
   (∀ t e, M2 !! t = Some e → M1 !! f t = Some e) →
   (∀ t t' e e', M2 !! t = Some e → M2 !! t' = Some e' → f t = f t' → t = t') →
   (∀ s e, M1 !! s = Some e → ∃ t, f t = s ∧ M2 !! t = Some e) →
-  LFsoup n W Σ T π P F (C, M1) → LFsoup n W Σ T π (P ∘ f) (F ∘ f) (C, M2).
+  LFsoupAt n W Σ T π P F (C, M1) → LFsoupAt n W Σ T π (P ∘ f) (F ∘ f) (C, M2).
 Proof.
   intros H1 H2 H3 (A & U & Hc & HF). exists (A ∘ f), (U ∘ f).
   destruct Hc as [Hp Hr Hb Hty Hpt Hd Hpair Hcl Hsig Hown]. split; [split|]; simpl in *.
@@ -2727,10 +2884,11 @@ Qed.
 
 (** The soup of a judgment, at any lifting of the process. *)
 Lemma LFP_soup W Σ T p q :
-  LFP W Σ T p → erase q = p → ∃ π P F, ∀ n, LFsoup n W Σ T π P F q.
+  LFP W Σ T p → erase q = p → ∃ P F, ∀ n, LFsoup n W Σ T P F q.
 Proof.
-  intros [_ (q0 & π & P & F & Hq0 & HS)] Hq. destruct q as [C M], q0 as [C0 M0].
+  intros [_ (q0 & P & F & Hq0 & HS)] Hq. destruct q as [C M], q0 as [C0 M0].
   unfold erase in Hq, Hq0. simpl in *. rewrite <-Hq in Hq0. injection Hq0 as -> HM.
   destruct (relabel_map M0 M HM) as (f & H1 & H2 & H3).
-  exists π, (P ∘ f), (F ∘ f). intros n. by apply (LFsoup_relabel n W Σ T π P F C M0 M f).
+  exists (P ∘ f), (F ∘ f). intros n. apply (LFsoupAt_ppts n W Σ T (ppts P (C, M0))).
+  apply (LFsoupAt_relabel n W Σ T _ P F C M0 M f); [done|done|done|apply HS].
 Qed.

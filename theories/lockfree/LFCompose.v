@@ -2,8 +2,8 @@
 
     [LFP_term] is P-Term for [LFP]. The live part is [LPrel_term]. The
     soup has one thread, thread 0, whose environment is the one of the
-    typing, [tenv_of Σ ∪ ΘB]. Its points are a map π on exactly the
-    ends of that environment, and its counters start full ([fsem]).
+    typing, [tenv_of Σ ∪ ΘB]. Its points are the points of the ends of
+    that environment ([tenv_points]), and its counters start full ([fsem]).
 
     [LFP_connect] is P-Connect for [LFP], and [LFP_join] P-Join. The
     live part is [LPrel_connect]. The two configurations join with the
@@ -28,20 +28,20 @@ Proof.
 Qed.
 
 (** P-Term (§11) for the lock-free judgment. Over [LPrel_term] it asks
-    the points π of the held ends and full counters at them. *)
-Theorem LFP_term (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr) (T : ty)
-    (π : gmap cend point) :
+    full counters at the points of the ends of the typing environment. *)
+Theorem LFP_term (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr) (T : ty) :
   prim T → strict W → dom ΘB = C0 → dom Σ ## C0 →
   (∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2) → tenv_dual (w_eq W) ΘB →
   lsem_typed W (tenv_of Σ ∪ ΘB) [] ∅ t T →
-  dom π = tenv_ends (tenv_of Σ ∪ ΘB) →
-  (∀ o x, tenv_end (tenv_of Σ ∪ ΘB) o = Some x → π !! o = Some x.2) →
-  fsem W π t →
+  fsem W (tenv_points (tenv_of Σ ∪ ΘB)) t →
   LFP W Σ T (C0, {[+ t +]}).
 Proof.
-  intros HT HW Hd Hdj Hb Hdu Ht Hdπ Hπ Hf. split.
+  intros HT HW Hd Hdj Hb Hdu Ht Hf. split.
   { by apply (LPrel_term W Σ ΘB C0 t T). }
-  set (Θ := tenv_of Σ ∪ ΘB).
+  set (Θ := tenv_of Σ ∪ ΘB). set (π := tenv_points Θ).
+  assert (Hdπ : dom π = tenv_ends Θ) by apply dom_tenv_points.
+  assert (Hπ : ∀ o x, tenv_end Θ o = Some x → π !! o = Some x.2).
+  { intros o x Hx. unfold π. by rewrite lookup_tenv_points, Hx. }
   (* a channel of Θ is a channel of Σ, with one entry, or of ΘB, with two *)
   assert (HΘ : ∀ c, Θ !! c = (One <$> Σ !! c) ∨ (Σ !! c = None ∧ Θ !! c = ΘB !! c)).
   { intros c. unfold Θ. rewrite lookup_union, lookup_tenv_of.
@@ -54,9 +54,10 @@ Proof.
   { intros c e1 e2 Hc. destruct (HΘ c) as [H|[_ H]]; rewrite H in Hc.
     - by destruct (Σ !! c).
     - destruct (Hdu c e1 e2 Hc) as [He _]. rewrite He, pt_pol_dual. by destruct (pt_pol e2.2). }
-  exists (C0, {[0 := t]}), π, (λ _, π), (λ _, w_bud W <$> π). split.
+  exists (C0, {[0 := t]}), (λ _, π), (λ _, w_bud W <$> π). split.
   { unfold erase. simpl. by rewrite soup_singleton_map. }
-  intros n. exists (λ _, Θ), (λ _, T). simpl. split; [split|]; simpl.
+  intros n. apply (LFsoupAt_ppts n W Σ T π).
+  exists (λ _, Θ), (λ _, T). simpl. split; [split|]; simpl.
   - done.
   - intros s e Hs. apply lookup_singleton_Some in Hs as [_ <-].
     pose proof (Ht n W ∅ _ Var (wext_refl W HW) (tenv_comp_empty_r _ _) eq_refl) as H.
@@ -248,12 +249,13 @@ Theorem LFP_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :
   wbud_agree W1 W2 →
   LFP (wjoin W1 W2) (Σ1 ∪ Σ2) T (C1 ∪ C2 ∪ C0, E1 ⊎ E2).
 Proof.
-  intros HT [HL1 (q1 & π1 & P1 & F1 & Hq1 & HS1)] [HL2 (q2 & π2 & P2 & F2 & Hq2 & HS2)]
+  intros HT [HL1 (q1 & P1 & F1 & Hq1 & HS1)] [HL2 (q2 & P2 & F2 & Hq2 & HS2)]
     HC0 HC0' Hcut HC1Σ2 HC2Σ1 HW HW1 HW2 Hd1 Hd2 Hd12 HC1Σ1 HC2Σ2 HC10 HC20 HC12 Hag.
   split.
   { by apply (LPrel_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T). }
   destruct q1 as [C1' M1], q2 as [C2' M2]. unfold erase in Hq1, Hq2. simpl in Hq1, Hq2.
   injection Hq1 as -> HM1. injection Hq2 as -> HM2.
+  set (π1 := ppts P1 (C1, M1)). set (π2 := ppts P2 (C2, M2)).
   (* the channels *)
   pose proof (map_disjoint_dom_1 _ _ Hd1) as Hd1'. pose proof (map_disjoint_dom_1 _ _ Hd2) as Hd2'.
   pose proof (map_disjoint_dom_1 _ _ Hd12) as Hd12'.
@@ -261,9 +263,9 @@ Proof.
   assert (HΣ1C : dom (Σ1 ∪ ΣC) = dom Σ1 ∪ C0) by (by rewrite dom_union_L, HC0).
   assert (HΣ2C : dom (Σ2 ∪ ΣC') = dom Σ2 ∪ C0) by (by rewrite dom_union_L, HC0').
   set (π := mrem (held M2 P2) π1 ∪ π2).
-  exists (C1 ∪ C2 ∪ C0, mcat M1 M2), π, (tsel P1 P2), (tsel F1 F2). split.
+  exists (C1 ∪ C2 ∪ C0, mcat M1 M2), (tsel P1 P2), (tsel F1 F2). split.
   { unfold erase. simpl. by rewrite mcat_soup, HM1, HM2. }
-  intros n.
+  intros n. apply (LFsoupAt_ppts n _ _ _ π).
   destruct (HS1 n) as (A1 & U1 & Hc1 & HF1). destruct (HS2 n) as (A2 & U2 & Hc2 & HF2).
   simpl in HF1, HF2.
   (* the cut: a channel of both sides is a channel of C0 *)
