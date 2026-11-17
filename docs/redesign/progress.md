@@ -58,3 +58,10 @@ The old development in theories/ stays untouched.
   `act_offer` as its corollary, `act_step`, `tstep_progress`,
   `istep_progress`, `proc_progress`, and `itstep_closed` (closed threads
   stay closed).
+- S1.5. Harmony (v2/lang/Harmony.v). A reduction semantics `red` on soups
+  with evaluation contexts, defined without labels, and
+  `harmony : red p p' ↔ preduction p p'`.
+- S1.6. Thread simulation tools (v2/lang/ThreadSim.v) and channel
+  renamings (v2/lang/ChannelSwap.v): `tstep_cmap` for every renaming of
+  names, `pstep_pswap` and `safe_pswap_iff` for transpositions, and
+  `oswap_csub`, the link substitution commuting with a transposition.

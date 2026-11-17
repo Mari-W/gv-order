@@ -8,3 +8,6 @@ test/LangNotations.v
 lang/Semantics.v
 lang/Process.v
 lang/Safety.v
+lang/Harmony.v
+lang/ThreadSim.v
+lang/ChannelSwap.v

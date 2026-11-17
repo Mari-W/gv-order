@@ -86,6 +86,15 @@ Proof.
     rewrite delete_delete. multiset_solver.
 Qed.
 
+(** Splitting a soup. *)
+Lemma gmultiset_split1 (E : gmultiset expr) e :
+  e ∈ E → ∃ E0, E = E0 ⊎ {[+ e +]}.
+Proof. intros. exists (E ∖ {[+ e +]}). multiset_solver. Qed.
+
+Lemma gmultiset_split2 (E : gmultiset expr) e f :
+  e ∈ E → f ∈ E ∖ {[+ e +]} → ∃ E0, E = E0 ⊎ {[+ e +]} ⊎ {[+ f +]}.
+Proof. intros. exists (E ∖ {[+ e +]} ∖ {[+ f +]}). multiset_solver. Qed.
+
 (** Every soup has a lifting. *)
 Lemma soup_surj (E : gmultiset expr) : ∃ M, soup M = E.
 Proof.
