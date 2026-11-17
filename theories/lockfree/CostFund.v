@@ -1945,3 +1945,154 @@ Proof.
       rewrite (mrem_all _ φ') by (by rewrite Hdφ', Hdom').
       apply sem_val; [done|done|apply fcap_ext_empty|apply Vfuel_unit].
 Qed.
+
+(** ** The syntactic facts of a derivation *)
+
+Lemma freevar_rename_inv e : ∀ x (r : nat → nat), freevar x (rename r e) → ∃ y, freevar y e ∧ r y = x.
+Proof.
+  induction e; intros y r H; simpl in *; try done.
+  - subst. by eexists.
+  - destruct (IHe (S y) (upren r) H) as ([|z] & Hz & E); [done|]. simpl in E. injection E as <-. by exists z.
+  - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?)|destruct (IHe2 y r H) as (z & ? & ?)]; exists z; tauto.
+  - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?)|destruct (IHe2 y r H) as (z & ? & ?)]; exists z; tauto.
+  - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?)|destruct (IHe2 y r H) as (z & ? & ?)]; exists z; tauto.
+  - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?); exists z; tauto|].
+    destruct (IHe2 (S (S y)) (upren (upren r)) H) as ([|[|z]] & Hz & E); try done. simpl in E.
+    injection E as <-. exists z. tauto.
+  - destruct (IHe y r H) as (z & ? & ?). by exists z.
+  - destruct (IHe y r H) as (z & ? & ?). by exists z.
+  - destruct H as [H|[H|H]]; [destruct (IHe1 y r H) as (z & ? & ?); exists z; tauto| |].
+    + destruct (IHe2 (S y) (upren r) H) as ([|z] & Hz & E); [done|]. simpl in E. injection E as <-. exists z. tauto.
+    + destruct (IHe3 (S y) (upren r) H) as ([|z] & Hz & E); [done|]. simpl in E. injection E as <-. exists z. tauto.
+  - destruct (IHe (S y) (upren r) H) as ([|z] & Hz & E); [done|]. simpl in E. injection E as <-. by exists z.
+Qed.
+
+Lemma csplit_l Γ Γ1 Γ2 x σ : csplit Γ Γ1 Γ2 → Γ1 !! x = Some (Some σ) → Γ !! x = Some (Some σ).
+Proof. intros Hs. revert x. induction Hs; intros [|x] Hx; simpl in *; try done; auto. Qed.
+
+Lemma csplit_r Γ Γ1 Γ2 x σ : csplit Γ Γ1 Γ2 → Γ2 !! x = Some (Some σ) → Γ !! x = Some (Some σ).
+Proof. intros Hs. revert x. induction Hs; intros [|x] Hx; simpl in *; try done; auto. Qed.
+
+Lemma csplit_inv Γ Γ1 Γ2 x σ : csplit Γ Γ1 Γ2 → Γ !! x = Some (Some σ) →
+  Γ1 !! x = Some (Some σ) ∨ Γ2 !! x = Some (Some σ).
+Proof. intros Hs. revert x. induction Hs; intros [|x] Hx; simpl in *; try done; auto. Qed.
+
+Lemma cage_env_back c Γ Γ' x σ' : cage_env c Γ Γ' → Γ' !! x = Some (Some σ') → ∃ σ, Γ !! x = Some (Some σ).
+Proof. intros Hc. revert x. induction Hc; intros [|x] Hx; simpl in *; try done; eauto. Qed.
+
+Lemma cagex_ty c σ σ' : cagex c σ σ' → cta_ty σ' = cta_ty σ.
+Proof. by intros [[] _]. Qed.
+
+Lemma ccap_env_back h a Γ Γ' x σ' : ccap_env h a Γ Γ' → Γ' !! x = Some (Some σ') → ∃ σ, Γ !! x = Some (Some σ).
+Proof. intros Hc. revert x. induction Hc; intros [|x] Hx; simpl in *; try done; eauto. Qed.
+
+Lemma cwk_back Γ' Γ x σ : cwk Γ' Γ → Γ' !! x = Some (Some σ) → Γ !! x = Some (Some σ).
+Proof. intros Hc. revert x. induction Hc; intros [|x] Hx; simpl in *; try done; auto. Qed.
+
+Lemma cwk_fwd Γ' Γ x σ : cwk Γ' Γ → Γ !! x = Some (Some σ) → ¬ cfree (cta_ty σ) → Γ' !! x = Some (Some σ).
+Proof.
+  intros Hc. revert x. induction Hc; intros [|x] Hx Hn; simpl in *; try done; auto.
+  injection Hx as <-. done.
+Qed.
+
+Lemma cunlenv_lookup Γ x σ : cunlenv Γ → Γ !! x = Some (Some σ) → cfree (cta_ty σ).
+Proof. revert x. induction Γ as [|[σ0|] Γ IH]; intros [|x] Hu Hx; simpl in *; try done; first [injection Hx as <-; apply Hu|exact (IH x (proj2 Hu) Hx)|exact (IH x Hu Hx)]. Qed.
+
+Lemma conly_lookup Γ x σ y σ' : conly Γ x σ → Γ !! y = Some (Some σ') → ¬ cfree (cta_ty σ') → y = x.
+Proof.
+  intros [Hx Hu] Hy Hn. destruct (decide (y = x)) as [|Hne]; [done|]. exfalso. apply Hn.
+  apply (cunlenv_lookup _ y _ Hu). rewrite list_lookup_insert_ne by done. done.
+Qed.
+
+Ltac cf_dom := repeat match reverse goal with H : cfacts _ _ _ |- _ => destruct H as (? & ? & ?) end.
+
+Lemma ctyped_cfacts W Θ Γ e σ c t : ctyped W Θ Γ e σ c t → cfacts Θ Γ e.
+Proof.
+  induction 1 as [Γ Hu|Γ x ρ Hu _ _|Γ x σ Ho|Γ c b σ Hu
+    |Θ Θh Γ Γh e c t h a σ1 σ2 HcT HcG _ IH
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 c t h σ1 σ2 a1 c1 t1 c2 t2 [_ ->] Hs _ IH1 HaT HaG _ IH2 _ _ _
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 σ1 σ1' σ2 c1 t1 c2 t2 [_ ->] Hs _ IH1 HaT HaG _ IH2 _ _
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 a σ c1 t1 c2 t2 [_ ->] Hs _ IH1 HaT HaG _ IH2 _
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 σa σb a σ c1 t1 c2 t2 [_ ->] Hs _ IH1 HaT HaG _ IH2 _
+    |Θ Γ e σ1 σ2 c t _ IH|Θ Γ e σ1 σ2 c t _ IH
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e e1 e2 σa σb a σ c0 t0 c1 t1 c2 t2 [_ ->] Hs _ IH0 HaT HaG _ IH1 _ IH2 _
+    |Γ e c t σ Hu _ IH
+    |Θ Γ e c t σ a c0 t0 _ IH _|Θ Γ e ρ a c0 t0 P Q n b n' b' _ IH _ _ _|Θ Γ e i ρ a c0 t0 _ IH|Θ Γ e ρ a c0 t0 _ IH
+    |Θ Γ e σp σp' a a0 P n σ P' n' b' c0 t0 _ IH _ _ _ _|Θ Γ e a P n σ P' n' b' c0 t0 _ IH _ _
+    |Θ Γ e a P n c0 t0 _ IH _|s Θ Γ e a P n P1 P2 n' b' c0 t0 _ IH _ _
+    |Θ Γ e a P n P1 P2 n1 b1 n2 b2 c0 t0 _ IH _ _ _|Θ Γ e P1 a1 P2 a2 a0 c0 t0 _ IH _
+    |Θ Γ e c' t' h a1 σ' a c0 t0 _ IH _ _
+    |Θ Θ' Γ Γ' e a1 σ' c' t' HaT HaG _ IH
+    |Θ Γ e σ σ' c c' t t' _ IH _ _ _|Θ Γ' Γ e σ c t Hw _ IH|Θ Γ σ e σ' c t Hf _ IH]; cf_dom.
+  - split_and!; [by rewrite dom_empty_L|done|intros x σ Hx Hn; exfalso; apply Hn; by apply (cunlenv_lookup Γ x)].
+  - split_and!; [by rewrite dom_empty_L|done|intros y σ Hx Hn; exfalso; apply Hn; by apply (cunlenv_lookup Γ y)].
+  - split_and!; [by rewrite dom_empty_L|intros y ->; exists σ; apply Ho|intros y σ' Hy Hn; simpl; by apply (conly_lookup Γ x σ y σ')].
+  - split_and!; [by rewrite dom_singleton_L|done|intros y σ' Hx Hn; exfalso; apply Hn; by apply (cunlenv_lookup Γ y)].
+  - split_and!; simpl.
+    + by rewrite (ccap_th_dom _ _ _ _ HcT) in H.
+    + intros x Hx. destruct (H0 (S x) Hx) as [σ Hσ]. simpl in Hσ. by apply (ccap_env_back _ _ _ _ _ _ HcG Hσ).
+    + intros x σ Hx Hn. destruct (ccap_env_lookup _ _ _ _ _ _ HcG Hx) as (σ' & Hx' & Hc).
+      apply (H1 (S x) σ'); [done|]. intros Hf. by apply Hn, (ccap_cfree _ _ _ _ Hc).
+  - split_and!; simpl.
+    + rewrite dom_union_L, H, H2, (cage_th_dom _ _ _ HaT). done.
+    + intros x [Hx|Hx]; [destruct (H0 x Hx) as [σ Hσ]; exists σ; by apply (csplit_l _ _ _ _ _ Hs)|].
+      destruct (H3 x Hx) as [σ Hσ]. destruct (cage_env_back _ _ _ _ _ HaG Hσ) as [σ0 Hσ0]. exists σ0. by apply (csplit_r _ _ _ _ _ Hs).
+    + intros x σ Hx Hn. destruct (csplit_inv _ _ _ _ _ Hs Hx) as [Hx'|Hx']; [left; by apply (H1 x σ)|right].
+      destruct (cage_env_lookup _ _ _ _ _ HaG Hx') as (σ' & Hx'' & Hc). apply (H4 x σ'); [done|]. by rewrite (cagex_ty _ _ _ Hc).
+  - split_and!; simpl.
+    + rewrite dom_union_L, H, H2, (cage_th_dom _ _ _ HaT). done.
+    + intros x [Hx|Hx]; [destruct (H0 x Hx) as [σ Hσ]; exists σ; by apply (csplit_l _ _ _ _ _ Hs)|].
+      destruct (H3 x Hx) as [σ Hσ]. destruct (cage_env_back _ _ _ _ _ HaG Hσ) as [σ0 Hσ0]. exists σ0. by apply (csplit_r _ _ _ _ _ Hs).
+    + intros x σ Hx Hn. destruct (csplit_inv _ _ _ _ _ Hs Hx) as [Hx'|Hx']; [left; by apply (H1 x σ)|right].
+      destruct (cage_env_lookup _ _ _ _ _ HaG Hx') as (σ' & Hx'' & Hc). apply (H4 x σ'); [done|]. by rewrite (cagex_ty _ _ _ Hc).
+  - split_and!; simpl.
+    + rewrite dom_union_L, H, H2, (cage_th_dom _ _ _ HaT). done.
+    + intros x [Hx|Hx]; [destruct (H0 x Hx) as [σ0 Hσ]; exists σ0; by apply (csplit_l _ _ _ _ _ Hs)|].
+      destruct (H3 x Hx) as [σ0 Hσ]. destruct (cage_env_back _ _ _ _ _ HaG Hσ) as [σ1 Hσ1]. exists σ1. by apply (csplit_r _ _ _ _ _ Hs).
+    + intros x σ0 Hx Hn. destruct (csplit_inv _ _ _ _ _ Hs Hx) as [Hx'|Hx']; [left; by apply (H1 x σ0)|right].
+      destruct (cage_env_lookup _ _ _ _ _ HaG Hx') as (σ' & Hx'' & Hc). apply (H4 x σ'); [done|]. by rewrite (cagex_ty _ _ _ Hc).
+  - split_and!; simpl.
+    + rewrite dom_union_L, H, H2, (cage_th_dom _ _ _ HaT). done.
+    + intros x [Hx|Hx]; [destruct (H0 x Hx) as [σ0 Hσ]; exists σ0; by apply (csplit_l _ _ _ _ _ Hs)|].
+      destruct (H3 (S (S x)) Hx) as [σ0 Hσ]. destruct (cage_env_back _ _ _ _ _ HaG Hσ) as [σ1 Hσ1]. exists σ1. by apply (csplit_r _ _ _ _ _ Hs).
+    + intros x σ0 Hx Hn. destruct (csplit_inv _ _ _ _ _ Hs Hx) as [Hx'|Hx']; [left; by apply (H1 x σ0)|right].
+      destruct (cage_env_lookup _ _ _ _ _ HaG Hx') as (σ' & Hx'' & Hc). apply (H4 (S (S x)) σ'); [done|]. by rewrite (cagex_ty _ _ _ Hc).
+  - done.
+  - done.
+  - split_and!; simpl.
+    + rewrite !dom_union_L, H, H2, H5, (cage_th_dom _ _ _ HaT). set_solver.
+    + intros x [Hx|[Hx|Hx]]; [destruct (H0 x Hx) as [σ0 Hσ]; exists σ0; by apply (csplit_l _ _ _ _ _ Hs)| |].
+      * destruct (H3 (S x) Hx) as [σ0 Hσ]. destruct (cage_env_back _ _ _ _ _ HaG Hσ) as [σ1 Hσ1]. exists σ1. by apply (csplit_r _ _ _ _ _ Hs).
+      * destruct (H6 (S x) Hx) as [σ0 Hσ]. destruct (cage_env_back _ _ _ _ _ HaG Hσ) as [σ1 Hσ1]. exists σ1. by apply (csplit_r _ _ _ _ _ Hs).
+    + intros x σ0 Hx Hn. destruct (csplit_inv _ _ _ _ _ Hs Hx) as [Hx'|Hx']; [left; by apply (H1 x σ0)|right; left].
+      destruct (cage_env_lookup _ _ _ _ _ HaG Hx') as (σ' & Hx'' & Hc). apply (H4 (S x) σ'); [done|]. by rewrite (cagex_ty _ _ _ Hc).
+  - split_and!; simpl.
+    + done.
+    + intros x Hx. destruct (H0 (S x) Hx) as [σ0 Hσ]. by exists σ0.
+    + intros x σ0 Hx Hn. exfalso. apply Hn. by apply (cunlenv_lookup Γ x).
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl; [by rewrite H, (left_id_L ∅ (∪))|intros x [[]|Hx]; by apply H0|intros x σ0 Hx Hn; right; by apply (H1 x σ0)].
+  - split_and!; simpl.
+    + rewrite H, (left_id_L ∅ (∪)). by rewrite (cage_th_dom _ _ _ HaT).
+    + intros x [[]|Hx]. destruct (H0 (S x) Hx) as [σ0 Hσ]. simpl in Hσ. by apply (cage_env_back _ _ _ _ _ HaG Hσ).
+    + intros x σ0 Hx Hn. right. destruct (cage_env_lookup _ _ _ _ _ HaG Hx) as (σ1 & Hx' & Hc).
+      apply (H1 (S x) σ1); [done|]. by rewrite (cagex_ty _ _ _ Hc).
+  - done.
+  - split_and!; [done|intros x Hx; destruct (H0 x Hx) as [σ0 Hσ]; exists σ0; by apply (cwk_back _ _ _ _ Hw)|].
+    intros x σ0 Hx Hn. apply (H1 x σ0); [by apply (cwk_fwd _ _ _ _ Hw)|done].
+  - split_and!.
+    + by rewrite fends_rename.
+    + intros x Hx. destruct (freevar_rename_inv e x pred Hx) as (y & Hy & <-). destruct (H0 y Hy) as [σ0 Hσ].
+      destruct y as [|[|y]]; simpl in *; by eexists.
+    + intros [|x] σ0 Hx Hn; simpl in Hx; [injection Hx as <-; done|].
+      apply (freevar_rename e (S (S x)) pred). by apply (H1 (S (S x)) σ0).
+Qed.
