@@ -1125,6 +1125,12 @@ first, in stage S2.
   τ step replaces the S2 rule that typed the redex (λx. e2) e1 as a let.
   A let is not a closure, so E-Let carries no lower point and captures
   every end of its context. No typing rule matches a redex shape.
+- Q14 (2026-11-17, after S4.3). V at a λ asks dom Θ = the ends v mentions,
+  and V at a box asks that v mentions no end. The author agreed to this
+  syntactic clause explicitly. It is the clause V already has at a channel
+  value. Without it Q3 is unsound, see `send_gap` (v2/compat/SendGap.v): a
+  closure that mentions an end only in dead code is in V, and no send can
+  hand it on. Q3 stays.
 - The remaining questions take the recommendations of §5: Q1 (a), Q4 (a),
   Q6 (a), Q7 (a), Q8 (a), Q9 (a), Q10 (a) if the bind lemma survives it,
   Q12 as stated.
