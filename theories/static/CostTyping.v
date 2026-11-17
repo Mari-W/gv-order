@@ -385,6 +385,14 @@ Inductive ctyped (W : world) : cthe → cenv → expr → cta → fuel → tix �
       ctyped W Θ Γ e (CTa (CArr c' t' h (CTa CVal a1) σ') a) c0 t0 →
       fle (Some 1) a → tok t0 (tspawn (snd t') tid) →
       ctyped W Θ Γ (App ESpawn e) (CTa CVal None) c0 (tseq t0 (tspawn (snd t') tid))
+  (* C-SpawnLam (plan §19.12): a literal λ under spawn. The child runs
+     the body at the counters of the hand-over, one below the parent's,
+     so the body is typed under the context aged by one, with no closure
+     type and no common capture floor. *)
+  | C_SpawnLam Θ Θ' Γ Γ' e a1 σ' c' t' :
+      cage_th (Some 1) Θ Θ' → cage_env (Some 1) Γ Γ' →
+      ctyped W Θ' (Some (CTa CVal a1) :: Γ') e σ' c' t' →
+      ctyped W Θ Γ (App ESpawn (Lam e)) (CTa CVal None) (Some 0) (tspawn (snd t') tid)
   | C_Konst Γ k τ :
       cunlenv Γ → konst_cost k τ →
       ctyped W ∅ Γ (Konst k) (CTa τ None) (Some 0) tid
@@ -643,4 +651,12 @@ Ltac ct0 := ct spawn_hint.
 Ltac ct_prep :=
   lazymatch goal with
   | |- ctyped ?W ?Θ ?Γ ?e ?σ ?c ?t => let e' := eval cbn in e in change (ctyped W Θ Γ e' σ c t)
+  end.
+
+(** C-SpawnLam at a spawned λ, as a hint (the default tactic keeps
+    C-Spawn, so the derivations that use it stay as they are). *)
+Ltac spawnlam_hint k :=
+  lazymatch goal with
+  | |- ctyped _ _ _ (App (Konst KSpawn) (Lam _)) _ _ _ =>
+      eapply C_SpawnLam with (a1 := None); [age_tac|age_tac|k]
   end.

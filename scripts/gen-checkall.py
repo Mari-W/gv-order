@@ -98,6 +98,7 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('examples/CostEx.v', 'fw_ctyped'), ('examples/CostEx.v', 'rc_ctyped'),
         ('examples/CostEx.v', 'abp_ctyped'), ('examples/CostEx.v', 'cs_ctyped'),
         ('examples/CostEx.v', 'sched_ctyped'), ('examples/CostEx.v', 'cb_ctyped'),
+        ('examples/CostEx.v', 'ring_ctyped'), ('examples/CostEx.v', 'rg_ctyped'),
         ('lockfree/LFFuel.v', 'fuel_send_travel'),
         ('lockfree/LFFuelTyped.v', 'sched_lfsource'),
         ('lockfree/LFFuelTyped.v', 'sync_lfsource'), ('lockfree/LFFuelTyped.v', 'sync_budgets'),

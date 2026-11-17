@@ -10,7 +10,7 @@
 
 From stdpp Require Import base strings gmap.
 From LRGV Require Import static.CostTyping.
-From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain examples.ABP examples.cfst.CfstScheduler examples.Scheduler.
+From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain examples.ABP examples.cfst.CfstScheduler examples.Scheduler examples.GrowRing.
 
 Set Default Proof Using "All".
 
@@ -341,6 +341,41 @@ Lemma cb_ctyped :
   ctyped W ∅ [] cb_main (CTa CVal None) None (Some 1, 0).
 Proof.
   intros. unfold cb_main, let_new_pair_at, let_new_at. ct_prep. ct1 cb_hint.
+Qed.
+
+(** ** growing ring, by C-SpawnLam
+
+    Under C-Spawn the ring does not type: the second call captures the
+    received z with the fresh b′ at one floor (plan §19.12). C-SpawnLam
+    types each spawned thunk under its context aged by one. The first
+    thunk hands a on y at credit B − 2 ≥ fs = 2, y needs floor 1, and
+    the third thunk gets a′ after recv, close and the hand-over, B − 3.
+    So B = 4, fd = fs = 2, floors 0 and 1. The parent calls nothing
+    itself, so the transformer stays finite. *)
+CoFixpoint rg_Px : cpro := PNode 4 (PRcv (CTa (CEnd rg_Px) (Some 2)) (PNode 4 PCls)).
+Definition rg_Py : cpro := PNode 4 (PSnd (CTa (CEnd rg_Px) (Some 2)) (PNode 4 PCls)).
+CoFixpoint rg_ρ : cprof := Prof rg_Px rg_Py (λ _, rg_ρ) rg_ρ.
+
+Definition ring_cty : cta :=
+  CTa (CBox (Some 0) tid (CTa (CArr (Some 0) tid 0 (CTa (CPt rg_ρ) None)
+    (CTa (CArr (Some 0) tid 0 (CTa (CPt rg_ρ) None)
+      (CTa (CArr None (Some 3, 0) 0
+        (CTa (CProd (CTa (CEnd rg_Px) (Some 0)) (CTa (CEnd rg_Py) (Some 1))) (Some 0))
+        (CTa CVal None)) None)) None)) None)) None.
+
+Lemma ring_ctyped : ctyped W ∅ [] ring ring_cty (Some 0) tid.
+Proof. unfold ring, ring_cty, let_new_pair_at, let_new_at. ct_prep. ct spawnlam_hint. Qed.
+
+Ltac rg_hint k :=
+  lazymatch goal with
+  | |- ctyped _ _ [] ring _ _ _ => apply ring_ctyped
+  end.
+
+Lemma rg_ctyped :
+  pt_known W (pconst 0) → cpfitpt W (pconst 0) rg_ρ →
+  ctyped W ∅ [] rg_main (CTa CVal None) None (Some 3, 0).
+Proof.
+  intros. unfold rg_main, let_new_pair_at, let_new_at. ct_prep. ct1 rg_hint.
 Qed.
 
 (** ** Rejections, at the rule that rejects

@@ -285,6 +285,8 @@ Print Assumptions LRGV.examples.CostEx.abp_ctyped.
 Print Assumptions LRGV.examples.CostEx.cs_ctyped.
 Print Assumptions LRGV.examples.CostEx.sched_ctyped.
 Print Assumptions LRGV.examples.CostEx.cb_ctyped.
+Print Assumptions LRGV.examples.CostEx.ring_ctyped.
+Print Assumptions LRGV.examples.CostEx.rg_ctyped.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_send_travel.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sched_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.

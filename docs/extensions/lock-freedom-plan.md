@@ -2619,6 +2619,7 @@ C-Pt. The numbers differ from the estimates of 19.9 in two places.
 | cyclic scheduler (CFST) | `cs_ctyped` | ∞, (5, 0) | B = 6 (5 suffices), follower floors 0, 2, 3 |
 | scheduler with a link | `sched_ctyped` | 4, (2, 1) | B = 3, main needs 1 ticket |
 | callback server | `cb_ctyped` | ∞, (1, 0) | B = 2, client transformer (∞, 0) |
+| GrowRing, by C-SpawnLam | `rg_ctyped` | ∞, (3, 0) | B = 4, payload floor 2, floors 0 and 1 |
 
 The forwarder needs B = 3, not 2. Its spawned call captures a after one
 action and b just refilled at a single floor, B − 2, and the next round
@@ -2627,7 +2628,7 @@ before its tail call, so its transformer has slope ∞ and offset 0, as
 19.6 predicts for a recursion that spawns. The callback server is new,
 `cb_main` in CostEx.v. It has no ordinary typing derivation yet.
 
-**GrowRing does not type.** This is structural. A closure has one floor
+**GrowRing does not type under C-Spawn.** This is structural. A closure has one floor
 h for every end it captures (`farr`, 19.3), and inside its body each
 captured end has credit exactly h. The second spawned call of `ring`
 captures z, received at the payload floor fd and aged by the close of
@@ -2636,10 +2637,33 @@ floor fy of the y argument is at most fd − 2. The first spawned thunk
 captures the fresh a with y and sends a on y, so fy ≥ fs + 2, where fs
 is the payload credit of the send. `pfits` gives fd ≤ fs. Together
 fy ≤ fs − 2 < fs + 2 ≤ fy. Every end of the ring acts, so no budget is
-∞ and no credit escapes the arithmetic. A repair is a decision for the
-author. Two candidates are a rule C-SpawnLam that types the body of a
-spawned λ directly under its context aged by one, without a closure
-type, and per-end floors in the arrow, which `farr` would have to read.
+∞ and no credit escapes the arithmetic.
+
+**Decision, C-SpawnLam (2026-11-17, under the author's overnight
+delegation).** A literal λ under spawn gets its own rule beside C-Spawn.
+
+```
+C-SpawnLam   Θ − 1 ; (Γ − 1), CVal^a ⊢ e : σ′ ▷ c′ ; t′
+             ⟹  Θ ; Γ ⊢ App ESpawn (Lam e) : CVal^∞ ▷ 0 ; tspawn (t′(0)) 1̂
+```
+
+The rule is `C_SpawnLam` in CostTyping.v. Its premises read the body of
+the λ and the context only. The child runs the body at the counters of
+the hand-over, one below the parent's (`fchild`), so the body sees each
+end at its own credit minus one and no common capture floor arises.
+Aging by one also gives `fhand 0`. C-Spawn stays for spawned values of
+arrow type, and the derivations of the other examples keep it. GrowRing
+types with it (`rg_ctyped`, B = 4 as 19.9 estimated). Per-end floors on
+arrows are the general alternative, for closures that are stored or
+sent before they run. They are left for later.
+
+**Obligations of H4 from H2.** H4 proves the compatibility lemma of
+C-SpawnLam. The child's FuelE at index n′ is built from the derivation
+of the body at the ticked counters, lifted over the β step of
+`App (Lam e) EUnit` by F3, weakened to frame None and result `cany` by
+F4. H4 also handles deviation 4. An entry that may hold a `CAny` value
+ages only by 0 (`cheld` in `cagex`), and the compatibility lemmas of
+the sequencing rules rely on that condition.
 
 **Rejections.** Non-derivability of a whole term needs inversion
 modulo C-Sub, C-Weak and C-Contract, which H2 does not prove. The
