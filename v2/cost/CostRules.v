@@ -453,3 +453,87 @@ Proof.
     apply envf_cons; [(eapply envf_down; [|exact HE']; lia)|(eapply Vfuel_down; [|exact HV']; lia)
                      |by apply map_disjoint_sym|by apply map_disjoint_sym].
 Qed.
+
+(** ** Closures and boxes *)
+
+Lemma cost_e_abs N Θ Θh Δ Δh e T aT U aU ub lb c t h a :
+  tfacts Θ Δ (Lam e) → thcap h a Θ Θh → lcap h a Δ Δh →
+  csem N Θh (Some (T, aT) :: Δh) e U aU c t →
+  csem N Θ Δ (Lam e) (TLolli ub lb c t h T aT U aU) a (Some 0) tid.
+Proof.
+  intros Hf HcT HcD Hcs N' n g γ Π φ r tk HN HE Hm.
+  pose proof (envf_exact _ _ _ _ _ _ _ _ _ Hf HE) as Hx. simpl in Hx |- *.
+  apply FuelE_val; [done|by apply (proj1 (meets_tid _ _))|]. apply Vfuel_eq. simpl.
+  exists (subst (up γ) (emap g e)). split_and!.
+  - done.
+  - done.
+  - by eapply envf_dom.
+  - eapply envf_cap_above; [exact HcT|exact HcD|exact HE].
+  - intros N'' j φ' Πu φu u r' tk' HN' Hj Hdφ' Hh HdΠ Hdφ Hu Hm'. rewrite subst1_subst.
+    apply Hcs; [by eapply rle_trans| |done].
+    apply envf_cons; [|done|done|done].
+    apply (envf_mono N' N'' n j _ _ _ _ _ φ'); [exact HN'|lia|apply cle_refl|].
+    by eapply envf_cap.
+Qed.
+
+Lemma cost_e_box N Δ e m k C ub c t U aU :
+  tfacts ∅ Δ (EBox e) → lenv_unl Δ →
+  (∀ ss, length ss = k → sinsts N ss →
+     csem N ∅ (lenv_pinst (pshift m) (Some (TBox m k C ub c t U aU, None) :: Δ)) e (sinst_ty (slist ss) U) aU c t) →
+  csem N ∅ Δ (EBox e) (TBox m k C ub c t U aU) None (Some 0) tid.
+Proof.
+  intros Hf Hu Hcs N' n g γ Π φ r tk HN HE Hm.
+  pose proof (envf_exact _ _ _ _ _ _ _ _ _ Hf HE) as Hx.
+  destruct (envf_unl _ _ _ _ _ _ _ Hu HE) as [-> ->]. simpl in Hx |- *. rewrite dom_empty_L in Hx.
+  set (eb := subst (up γ) (emap g e)). fold eb in Hx.
+  apply FuelE_val; [done|by apply (proj1 (meets_tid _ _))|].
+  assert (Hlob : ∀ j, j ≤ n → ∀ N1, rle N' N1 → EBox eb ∈ FV^N1 _ j⟦RTy (TBox m k C ub c t U aU) None⟧(∅, ∅)).
+  { induction j as [j IH] using lt_wf_ind. intros Hj N1 HN1. apply Vfuel_eq. simpl.
+    exists eb. split_and!; [done|done|done|done|].
+    intros N2 j' ss r' tk' HN2 Hj' Hl Hss Hm'. unfold eb. rewrite subst1_subst.
+    rewrite <-(map_empty_union (∅ : penv)), <-(map_empty_union (∅ : cenv)).
+    assert (rle N N2) as HN2' by (eapply rle_trans; [exact HN|]; by eapply rle_trans).
+    apply (Hcs ss Hl (rle_sinsts _ _ _ HN2' Hss) N2 j' g (EBox eb .: γ)); [exact HN2'| |exact Hm'].
+    assert (envf N2 j' ∅ (Some (TBox m k C ub c t U aU, None) :: Δ) g (EBox eb .: γ) (∅ ∪ ∅) (∅ ∪ ∅)) as H.
+    { apply envf_cons; [|apply IH; [lia|lia|by eapply rle_trans]|apply map_disjoint_empty_l|apply map_disjoint_empty_l].
+      apply (envf_mono N' N2 n j' _ _ _ _ _ ∅ ∅); [by eapply rle_trans|lia|apply cle_refl|exact HE]. }
+    apply (envf_pinst _ _ (pshift m)) in H. unfold tenv_pinst in H. rewrite fmap_empty in H. exact H. }
+  apply Hlob; [lia|apply rle_refl].
+Qed.
+
+Lemma cost_e_spawn_lam N Θ Θ' Δ Δ' e a1 aU c' t' :
+  tfacts Θ Δ (Lam e) → thage (Some 1) Θ Θ' → lage (Some 1) Δ Δ' →
+  csem N Θ' (Some (TUnit, a1) :: Δ') e TUnit aU c' t' →
+  csem N Θ Δ (ESpawn (Lam e)) TUnit None (Some 0) (tspawn (tapp t' 0) tid).
+Proof.
+  intros Hf HaT HaD Hcs N' n g γ Π φ r tk HN HE Hm.
+  destruct (spawn_split_tid _ _ _ Hm) as (Hpar & b & Hb & Hch).
+  pose proof (envf_exact _ _ _ _ _ _ _ _ _ Hf HE) as Hx. simpl in Hx |- *.
+  pose proof (envf_dom _ _ _ _ _ _ _ _ HE) as Hd.
+  pose proof (envf_age_above _ _ _ _ _ _ _ _ _ _ _ HaT HaD HE) as Hab.
+  destruct n as [|n]; [apply FuelE_0|].
+  apply FuelE_S. intros N'' g' Π' φ' HN' Hk1 Hk2 R1 R2. split; [intros Hv; done|].
+  intros α e' Hst. cbn [emap] in Hst. apply op_head_only' in Hst; [|done].
+  inversion Hst; subst. cbn [Fobl]. unfold f_spawn.
+  rewrite emap_subst_up. set (eb := subst (up (λ x, emap g' (γ x))) (emap (g' ∘ g) e)).
+  assert (fends (Lam eb) = dom Π') as HM.
+  { unfold eb. rewrite <-emap_subst_up. simpl. rewrite fends_emap, Hx. symmetry. by apply renk_dom. }
+  assert (dom Π' = dom φ') as Hd'.
+  { rewrite (renk_dom _ _ _ R1), (renk_dom _ _ _ R2). by rewrite Hd. }
+  rewrite HM. split_and!.
+  - by rewrite Hd'.
+  - intros o f _ Ho _. destruct (proj2 R2 o f Ho) as (o0 & -> & Ho0). exact (Hab o0 f Ho0).
+  - rewrite mres_self. unfold fhand. rewrite Hd', mres_self.
+    destruct n as [|n]; [apply FuelE_0|].
+    apply (FuelE_beta _ _ _ _ _ _ _ _ [] _ (subst1 EUnit eb)); [constructor|by constructor|]. simpl.
+    unfold eb. rewrite subst1_subst.
+    rewrite <-(map_union_empty Π'), <-(map_union_empty (ftick <$> φ')).
+    eapply FuelE_thread; [constructor|].
+    apply (Hcs N'' n (g' ∘ g) (EUnit .: (λ x, emap g' (γ x))) _ _ 0 (Nat.div2 (S tk)));
+      [by eapply rle_trans| |unfold meets; by rewrite Hb].
+    apply envf_cons; [|apply Vfuel_unit|apply map_disjoint_empty_r|apply map_disjoint_empty_r].
+    rewrite ftick_fminus. apply (envf_age _ _ _ _ _ _ _ _ _ _ _ HaT HaD).
+    apply (envf_mono N'' N'' (S (S n)) n _ _ _ _ _ φ'); [apply rle_refl|lia|apply cle_refl|].
+    apply (envf_mono N' N'' (S (S n)) (S (S n)) _ _ _ _ _ φ'); [exact HN'|lia|apply cle_refl|by eapply envf_rename].
+  - rewrite mrem_self, Hd', mrem_self. apply FuelE_val; [done|done|apply Vfuel_unit].
+Qed.
