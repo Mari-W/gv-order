@@ -11,7 +11,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
 From GV Require Import fuel.FuelSub.
-From GV Require Import cost.Transformers cost.FuelGap.
+From GV Require Import cost.Transformers cost.Forwarder.
 From GV Require Import compat.Rules compat.LiveDF compat.Swap.
 
 (** Language: the redex once, progress, preservation. *)
@@ -137,10 +137,11 @@ Print Assumptions Vfuel_pair.
 (** S6. F1 bind, link loops. *)
 Print Assumptions FuelE_bind.
 Print Assumptions link_tickets_fall.
-(** S7. Sequencing of transformers, and the report on F-Send and F-Spawn. *)
+(** S7. Sequencing of transformers, exact values (Q15), the forwarder. *)
 Print Assumptions seq_sound.
-Print Assumptions fuel_send_gap.
-Print Assumptions fw_counterexample.
+Print Assumptions Vfuel_exact.
+Print Assumptions dead_thunk_rejected.
+Print Assumptions fw_ptyped.
 (** S4. The bind lemma, blindness, groundings. *)
 Print Assumptions Erel_sends.
 Print Assumptions Erel_bind.

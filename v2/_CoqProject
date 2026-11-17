@@ -49,7 +49,7 @@ fuel/FuelBind.v
 fuel/FuelSub.v
 test/FuelNotations.v
 cost/Transformers.v
-cost/FuelGap.v
+cost/Forwarder.v
 compat/Bind.v
 compat/Blind.v
 compat/SemTyped.v
