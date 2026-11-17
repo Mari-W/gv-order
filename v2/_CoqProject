@@ -32,4 +32,6 @@ relation/Sfix.v
 relation/CostTable.v
 relation/Readiness.v
 relation/Relation.v
+relation/Closure.v
+relation/Adequacy.v
 CheckAll.v
