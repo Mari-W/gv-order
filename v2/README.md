@@ -132,3 +132,27 @@ exact (`Vfuel_exact`).
 | cost/CostRules.v | one lemma `cost_e_*` per typing rule |
 | cost/CostFund.v | `cost_fundamental`, `fsem_of_cost`, `fw_fsem` |
 | test/CostNotations.v | the S7 notation |
+
+## Stage S5, static fundamental theorems (term part)
+
+One induction on DF derivations instantiates the point variables of Γ
+by σ and its future variables by ρ, in any world where the instantiated
+hypotheses hold (`hsat`), and reads the ⊥ flag as any set B. Each case
+is a `gen_e_*` rule. The live theorem runs the same induction with the
+guard's marks: a marked variable is the self of a box, held by the
+grounding only below the current level (`GrelL`, `sem_later`). D-SpawnLam
+has no semantic counterpart for the relation as defined (S5.1 in
+docs/redesign/progress.md), so both theorems are proved from the
+semantic E-SpawnLam rule as a premise.
+
+| File | Content |
+|---|---|
+| compat/EFacts.v | E is closed upwards in its future (`Erel_cover`) and monotone in its type above a world (`Erel_ty_mono`) |
+| compat/TermRules.v | groundings at heads, ends and entries (`Grel_heads`, `Grel_fends`, `Grel_pick`), V along subtyping (`Vrel_tsub`), the structural rules `gen_e_unit` … `gen_e_pack`, E-Box at a positive cost of β |
+| compat/SpawnGap.v | `spawn_gap`: a D-SpawnLam derivation whose spawn is in E at no positive level |
+| compat/BindActs.v | the bind lemma for a hole that acts before it returns (`Erel_bind_acts`) |
+| compat/LiveRules.v | groundings with marks `GrelL`, `sem_later`, every rule with marks, the box that marks its self (`later_box`), frames that clear the marks (`later_bind_acts`) |
+| static/Guard.v | `acts`, the guard `glive` and `guarded`, renaming of marks |
+| static/Fundamental.v | `hsat`, instances under binders (`pclose`), `dftyped_sem`, `fundamental_of_spawn_lam` |
+| static/LiveFundamental.v | `dftyped_later`, `live_fundamental_of_spawn_lam` |
+| examples/GuardEx.v | the guard against Appendix B #12 to #15 and #40, and the C2 stage of B.1 #4 |

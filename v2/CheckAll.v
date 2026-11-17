@@ -1,7 +1,7 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1, S2, S3 and S6, and the part of S4 done so far
-    (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
+    Stages S1, S2, S3, S6 and S7, the part of S4 done so far and the
+    term part of S5 (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
@@ -13,6 +13,7 @@ From GV Require Import relation.Adequacy.
 From GV Require Import fuel.FuelSub.
 From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
 From GV Require Import compat.Rules compat.LiveDF compat.Swap.
+From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -208,3 +209,36 @@ Print Assumptions sequiv_dual.
 Print Assumptions live_sub_df.
 Print Assumptions Vrel_swap.
 Print Assumptions Erel_swap.
+(** S5: two facts about E, the structural rules, the E-SpawnLam gap. *)
+Print Assumptions Erel_cover.
+Print Assumptions Erel_ty_mono.
+Print Assumptions Vrel_tsub.
+Print Assumptions gen_e_abs.
+Print Assumptions gen_e_box.
+Print Assumptions gen_e_app.
+Print Assumptions gen_e_conv.
+Print Assumptions gen_e_pack.
+Print Assumptions gap_typed.
+Print Assumptions gap_not_E.
+Print Assumptions spawn_gap.
+Print Assumptions spawn_gap_live.
+(** S5: the fundamental theorem for terms, from the semantic E-SpawnLam. *)
+Print Assumptions dftyped_sem.
+Print Assumptions fundamental_of_spawn_lam.
+Print Assumptions fundamental_typed_of_spawn_lam.
+(** S5: the guard, the rules with marks, the live fundamental theorem. *)
+Print Assumptions glive_rename.
+Print Assumptions acts_stable.
+Print Assumptions Erel_bind_acts.
+Print Assumptions sem_later_noL.
+Print Assumptions later_bind_acts.
+Print Assumptions later_box.
+Print Assumptions dftyped_later.
+Print Assumptions live_fundamental_of_spawn_lam.
+Print Assumptions live_fundamental_typed_of_spawn_lam.
+Print Assumptions div_not_guarded.
+Print Assumptions pn_fix_not_guarded.
+Print Assumptions cx_not_guarded.
+Print Assumptions spawn_loop_not_guarded.
+Print Assumptions loop_guarded.
+Print Assumptions stage_guarded.

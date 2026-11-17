@@ -11,7 +11,7 @@ The old development in theories/ stays untouched.
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
 | S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
-| S5 | static fundamental theorems | open |
+| S5 | static fundamental theorems | stopped at E-SpawnLam (S5.1): term theorems proved from the semantic E-SpawnLam rule, process theorems wait on S4 |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
 | S8 | soup and adequacy | open |
@@ -331,6 +331,85 @@ The old development in theories/ stays untouched.
   Θ and a ticket count that meets ϑ at reserve 0. P-Term gives credit N
   to every end. The session types of `fsem` are those of Θ (`te_sty`).
 
+- S5, E-SpawnLam (stop). The semantic rule E-SpawnLam is false for the
+  relation as defined, at every cost table. O-Spawn reads the thunk in V
+  at an arrow 1 ⊸^u_l 1 for some u and l (`o_spawn`), and V at an arrow
+  asks l ≼ heads Θ_M, a lower point of the heads of the ends the thunk
+  takes along. D-SpawnLam (and E-SpawnLam of the merged judgment, Q8)
+  asks no lower bound of a spawned λ. Counterexample in Rocq
+  (v2/compat/SpawnGap.v). W has the constants 1, 2 and the one fact
+  1 ≺ (2)‾ (`strict_gap`). The thread holds a⁺ : end@1 and b⁺ : end@2 and
+  runs spawn (λ_. let ∗ = _ in let ∗ = close a⁺ in close b⁺), typed by
+  D-SpawnLam (`gap_typed`). The heads (1)‾ and (2)‾ have no common lower
+  point in W (`gap_no_lower`), so the spawn is in E at no positive level
+  (`gap_not_E`), and `fundamental` of A.3 fails for it (`spawn_gap`,
+  `spawn_gap_live`). The old development had no T-SpawnLam, only spawn
+  of a value typed by T-Abs, which checks the lower bound. Repairs, each
+  needing the author. (a) O-Spawn reads the thunk without the lower
+  bound, Varr minus `lb_le`. The lower bound orders the heads of a
+  closure against the ends of the term that holds it, and a spawned
+  thunk leaves the parent, so the parent's readiness never reads it.
+  `Varr_spawn_iff` changes, `Erel_spawn` keeps its text. (b) E-SpawnLam
+  asks the lower-bound premise of E-Abs, which rejects a spawned thread
+  that captures ends at unrelated points and may break `rg_typed` and
+  `rg_ctyped`. Recommended (a). Until then the term theorems carry the
+  semantic rule as a premise, `spawn_lam_rule κ_DF` and
+  `spawn_lam_later κ_L` (v2/static/Fundamental.v, LiveRules.v), and are
+  named `fundamental_of_spawn_lam` and `live_fundamental_of_spawn_lam`.
+  The names `fundamental` and `live_fundamental` of A.3 wait for the
+  repair, which then only has to prove the premise.
+- S5, futures upwards. A value of a grounding holds its ends at or above
+  the static heads of its type (`Vrel_heads`), while the bind lemma puts
+  the heads of the frame's environment itself into the hole's future. E
+  is closed upwards in its future (`Erel_cover`): a point at or above a
+  point of F asks less of a blocked end. A new fact about E, in
+  v2/compat/EFacts.v, proved like `Erel_weaken`.
+- S5, D-Conv. Subtyping of erasures is not ≈ (an existential drops
+  facts, an arrow is contravariant in its argument), so blindness alone
+  does not give D-Conv. V is monotone along `tsub` (`Vrel_tsub`), and E
+  reads its type only through V. `Erel_teq_1` asks the inclusion in every
+  world, which E-Pack cannot give, because the facts of its constraint
+  hold above W only. `Erel_ty_mono` (EFacts.v) asks it above W.
+- S5, the hypotheses of Γ. The induction is on DF derivations. Γ is read
+  through `hsat W1 σ ρ Γ`: every fact of an instantiated box constraint
+  holds in W1, and every future variable φ stands for a set ρ φ above
+  σ(u) when Γ has u ≺ φ. D-Box and D-Open close the m point variables of
+  the box or the existential with the instance xs of the relation,
+  `pclose xs m σ`. The merged judgment of Q11 enters by `typed_dftyped`,
+  so `fundamental_typed_of_spawn_lam` concludes at `tenv_df Θ`,
+  `lenv_df Δ`, `ty_df T`. Δ and T could be read at their own annotations
+  by blindness. Θ could not, because E is not shown blind in its
+  environment.
+- S5, D-Box. V at a box quantifies over every hereditarily contractive
+  session instance, D-Box over the instances of N = ∞ only. The proof
+  takes the erased instance `sty_df <$> ss` and moves back by blindness
+  (`ty_df_sinst_map`). E-Box at κ_DF uses the positive cost of β
+  (`gen_e_box`). The box rule with marks (`later_box`) needs no cost of
+  β and holds at every table.
+- S5, the guard. Port of theories/liveness/GuardRules.v as rules only
+  (v2/static/Guard.v), with two simplifications. Marks propagate into λ
+  bodies, where the old guard asked that a λ capture no marked variable
+  (`nolater`). A body under a λ runs at a level at or below the level of
+  the λ value, where a marked value is still in V below the level. The
+  forceable marks under the λs of a box body and the rule (force f) e2
+  for an acting e2 are gone. Their semantic proof needs the box body to
+  be a λ, which V does not record, and no example of Appendix B needs
+  them. The guard reads no syntax of the relation: `guarded t` is a
+  premise of the theorem, beside the typing derivation.
+- S5, marks in the relation. The judgment with marks `sem_later` reads a
+  grounding `GrelL` that holds a marked variable as an unlimited value
+  that mentions no end and is in V at every level below the current
+  one. It is a definition over V and E, not a clause of either. At no
+  marks it is `sem_typed_at` (`sem_later_noL`). The frame of an acting
+  hole meets the value below the level (`Erel_bind_acts`, a new fact
+  about E in v2/compat/BindActs.v), which asks every give and take to
+  cost one or more, true of κ_L.
+- S5, duplication. v2/compat/LiveRules.v repeats the rules of
+  compat/TermRules.v and compat/Rules.v with marks. TermRules is the
+  content of LiveRules at no marks, kept so that the DF theorem uses the
+  S4 judgment `sem_typed_at` directly. A cleanup can derive the one from
+  the other.
+
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -593,3 +672,39 @@ The old development in theories/ stays untouched.
   (v2/cost/CostFund.v), notation test v2/test/CostNotations.v, README
   section. CheckAll lists 173 results, all closed. No `Admitted` and no
   axiom. S7 done.
+- S5.1. Two facts about E (v2/compat/EFacts.v), `Erel_cover` and
+  `Erel_ty_mono`. The structural rules over every cost table
+  (v2/compat/TermRules.v): groundings at heads, ends and entries,
+  `Vrel_tsub`, `gen_e_unit` to `gen_e_pack`, E-Box at a positive cost
+  of β. Stop at E-SpawnLam, with the counterexample in Rocq
+  (v2/compat/SpawnGap.v, deviation "S5, E-SpawnLam").
+- S5.2. `dftyped_sem` and `fundamental_of_spawn_lam`
+  (v2/static/Fundamental.v): one induction on DF derivations through
+  `hsat` and `pclose`, every rule but D-SpawnLam by a `gen_e_*` rule,
+  D-SpawnLam by the premise `spawn_lam_rule κ_DF`.
+  `fundamental_typed_of_spawn_lam` for the merged judgment.
+- S5.3. The guard `glive` and `guarded` (v2/static/Guard.v),
+  `Erel_bind_acts` (v2/compat/BindActs.v), the groundings with marks and
+  every rule with marks (v2/compat/LiveRules.v).
+- S5.4. `dftyped_later` and `live_fundamental_of_spawn_lam`
+  (v2/static/LiveFundamental.v) at every table where give costs one or
+  more, κ_L among them. The guard against Appendix B
+  (v2/examples/GuardEx.v): `div_not_guarded` (#14), `pn_fix_not_guarded`
+  (#13), `cx_not_guarded` (#15, the box of GuardCex), the spawn loop
+  (`spawn_loop_not_guarded`, #12 and #40 in shape), and the accepted
+  `loop_guarded` and `stage_guarded` (the stage of B.1 #4).
+- S5.5. Targets for the process level, not proved, because they need
+  P-Term and P-Connect of S4 and the repair of E-SpawnLam.
+  `fundamental_proc : strict W → Σ ⊢_W p : T → Σ ⊨_W p : T` by induction
+  on `ptyped`: P-Term from `fundamental` and `sem_p_term`, P-Connect and
+  P-Join from `sem_p_connect` (P-Join through `p_join_iff_connect`).
+  `soundness : strict W → ∅ ⊢_W p : T → deadlock_free p` is `adequacy`
+  after `fundamental_proc`. `live_fundamental_proc` asks every thread of
+  p guarded, and `live_soundness : strict W → ∅ ⊢_W p : T → guarded p →
+  deadlock_free p ∧ no_tau_divergence p` is `live_adequacy` after it.
+  `soundness_source : strict W → prim T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T
+  → deadlock_free (∅, {[+ t +]})` is P-Term at C0 = ∅ and Σ = ∅, with
+  no creation constraint. A.3 writes `soundness_source` without
+  strictness of W, which `fundamental` needs: the laws of the families
+  of W must be acyclic, so the statement keeps `strict W`. CheckAll
+  lists 203 results, all closed. No `Admitted` and no axiom.
