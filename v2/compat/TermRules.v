@@ -28,8 +28,10 @@
     in V by induction on the level. The live table κ_L has β free, and
     there the box needs the guard (compat/LiveRules.v).
 
-    E-SpawnLam has no rule here. Its semantic form is false for the
-    relation of stage S3 (compat/SpawnGap.v). *)
+    E-SpawnLam has no rule here. Its semantic form is false while
+    O-Spawn reads the thunk's body at every future above an upper point,
+    and the body of D-SpawnLam is typed at the empty future only
+    (docs/redesign/progress.md, S5.6). *)
 
 From GV Require Export compat.Rules compat.EFacts cost.Exact.
 

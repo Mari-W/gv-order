@@ -12,7 +12,7 @@
     table where send, select and close cost one or more, and κ_L is one.
 
     D-SpawnLam has no semantic counterpart here either
-    (compat/SpawnGap.v), and the theorem is proved from the semantic
+    (docs/redesign/progress.md, S5.6), and the theorem is proved from the semantic
     rule with marks as a premise ([spawn_lam_later]). *)
 
 From GV Require Export static.Fundamental compat.LiveRules.

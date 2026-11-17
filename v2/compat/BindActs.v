@@ -91,13 +91,13 @@ Section bind_acts.
       apply map_disjoint_insert_l. split; [apply not_elem_of_dom; set_solver|done].
     - (* O-Spawn *)
       intros M v E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
-      destruct (H4 M v e' Hst') as (ΘM & Θr & ub & lb & A1 & -> & A3 & A4 & A5).
+      destruct (H4 M v e' Hst') as (ΘM & Θr & ub & A1 & -> & A3 & A4 & A5).
       apply map_disjoint_union_l in Hd as [HdM Hdr].
-      exists ΘM, (Θr ∪ Θ2), ub, lb. split_and!.
+      exists ΘM, (Θr ∪ Θ2), ub. split_and!.
       + by apply map_disjoint_union_r.
       + by rewrite map_union_assoc.
       + done.
-      + revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
+      + revert A4. apply Vthunk_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
       + apply Hac; [done|intros Hc0; exact (HPs _ _ _ HPe Hst' Hc0)|exact A5].
     - (* O-Send *)
       intros o M w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).

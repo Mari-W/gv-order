@@ -23,10 +23,10 @@
 
     D-SpawnLam is the one rule without a semantic counterpart, because
     its semantic form is false for the relation as defined
-    (compat/SpawnGap.v). The theorem is proved from the semantic rule
-    E-SpawnLam as a premise ([spawn_lam_rule]). *)
+    (docs/redesign/progress.md, S5.1 and S5.6). The theorem is proved
+    from the semantic rule E-SpawnLam as a premise ([spawn_lam_rule]). *)
 
-From GV Require Export compat.TermRules compat.SpawnGap static.Conservativity.
+From GV Require Export compat.TermRules static.Conservativity.
 
 (** ** Facts of a DF derivation *)
 

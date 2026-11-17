@@ -209,7 +209,7 @@ Print Assumptions sequiv_dual.
 Print Assumptions live_sub_df.
 Print Assumptions Vrel_swap.
 Print Assumptions Erel_swap.
-(** S5: two facts about E, the structural rules, the E-SpawnLam gap. *)
+(** S5: two facts about E, the structural rules. *)
 Print Assumptions Erel_cover.
 Print Assumptions Erel_ty_mono.
 Print Assumptions Vrel_tsub.
@@ -218,10 +218,6 @@ Print Assumptions gen_e_box.
 Print Assumptions gen_e_app.
 Print Assumptions gen_e_conv.
 Print Assumptions gen_e_pack.
-Print Assumptions gap_typed.
-Print Assumptions gap_not_E.
-Print Assumptions spawn_gap.
-Print Assumptions spawn_gap_live.
 (** S5: the fundamental theorem for terms, from the semantic E-SpawnLam. *)
 Print Assumptions dftyped_sem.
 Print Assumptions fundamental_of_spawn_lam.

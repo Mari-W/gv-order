@@ -11,7 +11,7 @@ The old development in theories/ stays untouched.
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
 | S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
-| S5 | static fundamental theorems | stopped at E-SpawnLam (S5.1): term theorems proved from the semantic E-SpawnLam rule, process theorems wait on S4 |
+| S5 | static fundamental theorems | stopped at E-SpawnLam (S5.6): O-Spawn without the lower point done, the thunk's future still open; term theorems proved from the semantic E-SpawnLam rule, process theorems wait on S4 |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
 | S8 | soup and adequacy | open |
@@ -410,6 +410,17 @@ The old development in theories/ stays untouched.
   S4 judgment `sem_typed_at` directly. A cleanup can derive the one from
   the other.
 
+- S5, O-Spawn without the lower point (decision after S5.5, 39814d3 on
+  redesign). O-Spawn reads the thunk as `Vthunk` (v2/relation/Relation.v),
+  the arrow 1 ⊸^ub 1 without the lower point and with no type
+  arguments. `o_spawn` quantifies over ΘM, Θr and ub only. `Varr` and V
+  at an arrow keep the lower point. `Varr_thunk` drops it, and
+  `Varr_spawn_iff` now asks a lower point below the heads of Θ for the
+  converse. Downstream only the destruct patterns of the spawn case and
+  `Vthunk_mono` for `Varr_mono` change (Closure, Blind, Bind, Swap,
+  Redex, EFacts, BindActs). On redesign-s4, compat/Conv.v and
+  compat/Rename.v destruct `o_spawn` in the same way and need the same
+  change at the merge.
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -708,3 +719,30 @@ The old development in theories/ stays untouched.
   strictness of W, which `fundamental` needs: the laws of the families
   of W must be acyclic, so the statement keeps `strict W`. CheckAll
   lists 203 results, all closed. No `Admitted` and no axiom.
+- S5.6. O-Spawn without the lower point, as decided (deviation "S5,
+  O-Spawn without the lower point"). `spawn_gap` and v2/compat/SpawnGap.v
+  are deleted, because the decision makes them false: under the new
+  O-Spawn the thread of S5.1 is in E, with upper point (2)‾⁺, above both
+  blocking points 1 and 2 (argued, not in Rocq). Stop: E-SpawnLam is
+  still false. The thunk clause reads the body at every future F above
+  its upper point u (`ub_lt W' ub F`), as V at an arrow does, while
+  D-SpawnLam types the body at the empty future only. A body may create
+  a channel at a fresh root g and block on it, and O-New picks g after F
+  and u are fixed, so no u puts g below F. Counterexample on paper, not
+  in Rocq: spawn (λ_. let ⟨c, c′⟩ = new_ℓ in let ∗ = spawn (λ_. close c)
+  in close c′), typed by D-SpawnLam at Θ = ∅. For any u take F = {u⁺}
+  and g a root other than the root of u. The body reaches close c′,
+  blocked at g‾, and g‾ ≺ u⁺ fails, so the body is not ready at F and
+  not in E at a positive level, and neither is the spawn.
+  Proposed repair, needing a decision: the thunk clause reads the body
+  at the empty future only, Vthunk without ub and with F = ∅. The
+  spawned thread starts with no context, so nothing it could wait for
+  lies in a future. `Erel_spawn` still holds, because V at an arrow
+  gives the body at F = ∅ for every upper point. E-SpawnLam then follows
+  from the body at the empty future (`spawn_lam_rule` and
+  `spawn_lam_later` become provable), and P-Term of S4 must spawn
+  threads at the empty future, which it does if it reads `fundamental`
+  at F = ∅. Not done: `spawn_lam_rule`, `spawn_lam_later`, the
+  unconditional `fundamental` and `live_fundamental`, and E blind in its
+  environment. CheckAll lists 199 results, all closed. No `Admitted` and
+  no axiom.

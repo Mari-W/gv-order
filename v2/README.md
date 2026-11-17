@@ -149,7 +149,6 @@ semantic E-SpawnLam rule as a premise.
 |---|---|
 | compat/EFacts.v | E is closed upwards in its future (`Erel_cover`) and monotone in its type above a world (`Erel_ty_mono`) |
 | compat/TermRules.v | groundings at heads, ends and entries (`Grel_heads`, `Grel_fends`, `Grel_pick`), V along subtyping (`Vrel_tsub`), the structural rules `gen_e_unit` … `gen_e_pack`, E-Box at a positive cost of β |
-| compat/SpawnGap.v | `spawn_gap`: a D-SpawnLam derivation whose spawn is in E at no positive level |
 | compat/BindActs.v | the bind lemma for a hole that acts before it returns (`Erel_bind_acts`) |
 | compat/LiveRules.v | groundings with marks `GrelL`, `sem_later`, every rule with marks, the box that marks its self (`later_box`), frames that clear the marks (`later_bind_acts`) |
 | static/Guard.v | `acts`, the guard `glive` and `guarded`, renaming of marks |
