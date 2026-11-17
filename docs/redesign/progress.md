@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | stopped at S4.3, report on O-Send (see S4.3) |
+| S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | open |
 | S7 | cost judgment | open |
@@ -213,6 +213,27 @@ The old development in theories/ stays untouched.
   with S' ≈ S up to annotations only, and the obligations read the
   head of S' (`seqv_unfold_snd` and its siblings).
 
+- S4, Q14. V at a λ asks `dom Θ = fends e` and V at a box `fends e = ∅`
+  (decision Q14), as conjuncts of `Varr` and of the box clause of
+  `Vbody`. The thunk of O-Spawn reads `Varr` too, so it asks the same,
+  which O-Spawn's `dom Θ_M = M` already gave. The clause at a box is
+  implied by the clause at its thunk, and is kept because Q14 states it.
+- S4, `send_gap` is gone. Its positive form is `Erel_send`: a send of a
+  pair in V at the payload and session types is in E, because the
+  payload's environment is exactly its ends (`Vrel_exact`).
+- S4, duality. O-Link compares the two ends by `sdual` up to erasure,
+  and V gives each end's type only up to ≈. The link redex needs ≈ to be
+  a congruence for `dual`. v2 had no such lemma, so types/Duality.v
+  ports the flip algebra, `dual_unfoldS` and `sequiv_dual` from
+  theories/types/Types.v and SessionEquiv.v.
+- S4, the operator rules are stated at the set form `sem_typed_at`, with
+  the facts of the typing rule read in W (`gen_e_*`, instances
+  `sem_e_*`, `live_e_*`). The static facts Γ ⊢ x ≺ y and the static
+  future reach this form only after S5 instantiates the hypotheses of Γ.
+  E-New reads its constraint at the laws of the world of the judgment,
+  so the redex is stated for every subset of the laws of a later world
+  (`Erel_new_sub`).
+
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -337,3 +358,45 @@ The old development in theories/ stays untouched.
   on the repair as long as O-Send keeps an exact `Θ_M`, so they can
   start once the author decides. CheckAll lists 87 results, all
   closed. No `Admitted` and no axiom.
+- S4.4. Decision Q14 in v2/relation/Relation.v, S3's closure and
+  characteristic lemmas follow. types/Duality.v. v2/compat/Redex.v: the
+  exact ends and the heads of values, the β redexes, the redex of every
+  operator and of `new_ℓ`. v2/compat/Rules.v: the operator rules over
+  every cost table and their DF and live instances.
+- S4.5. live ⊆ DF (v2/compat/LiveDF.v). `live_sub_df : tshape T →
+  ∅ ⊫_W p : T → ∅ ⊨_W p : T`, for a closed process at a first-order T
+  (∗, S@x, ⊗, ⊕, ∃, no arrow and no box). V at such a T reads no E and
+  is the same for both tables (`Vrel_shape`). A closed process takes τ
+  steps only, each at least as costly in κ_DF as in κ_L except a link,
+  which costs 0 in both and is read inside the level by induction on the
+  size of the soup (`psize_link`). What this argument does not give.
+  (1) A higher-order T or an open interface. V of κ_DF must then be read
+  in a negative position (an arrow's argument, a received payload), and
+  V of κ_DF is not included in V of κ_L: λ_. Ω is in V of κ_DF at
+  ∗ ⊸ ∗ and not in V of κ_L. No counterexample to the inclusion itself
+  is known; it needs an argument relating the two relations (a binary
+  relation or parametricity), not an induction on levels. (2) An open
+  interface also lets each level pick its own environment Θe of
+  extruded ends in Q-Send, while the conclusion needs one environment at
+  every level. Blindness of P in its environment up to ≈ would repair
+  (2), not (1).
+- S4.6. Renaming (v2/compat/Swap.v). V and E are invariant under a
+  transposition of channel names, for every cost table (`Vrel_swap`,
+  `Erel_swap`). P is not done: it needs the transposition on
+  configurations with thread identifiers (only the erased `pstep_pswap`
+  exists) and the transport of `send_split`, `recv_ok`, `recv_env` and
+  `recv_back`.
+- S4.7. Open: P-Term, Internalize, P-Connect with the external Q-Send
+  and Q-Recv clauses, P-Join, and renaming of P. The plan: P-Join
+  follows from P-Connect by R7 (`p_join_iff_connect`). P-Connect is
+  induction on the level and, inside it, on the least fixpoints of the
+  two components. Cross-cut communication is a Q-Send of one side
+  against a Q-Recv of the other at cost κ(send) + κ(recv) ≥ 1. A link
+  that involves a cut end renames the other component (renaming of P).
+  Readiness of the composite is a chain of cut ends that strictly
+  descends in W1 ⊔ W2 and so ends at an offered interface end by
+  strictness. P-Term is P-Connect of the spawned threads. In size it
+  matches theories/liveness/LiveConnect.v, LivePConnect.v, LivePTerm.v
+  and composition/ReadyChain.v (about 3500 lines), and it is not
+  started. CheckAll lists 125 results, all closed. No `Admitted` and no
+  axiom.

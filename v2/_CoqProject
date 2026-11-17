@@ -48,5 +48,6 @@ compat/SemTyped.v
 compat/Redex.v
 compat/Rules.v
 compat/LiveDF.v
+compat/Swap.v
 test/CompatNotations.v
 CheckAll.v

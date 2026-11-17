@@ -82,12 +82,14 @@ environment of the live relation at the same index.
 
 ## Stage S4, generic compatibility (in progress)
 
-Stopped after S4.3 with a report on O-Send, see docs/redesign/progress.md.
-
 | File | Content |
 |---|---|
+| types/Duality.v | duality commutes with unfolding (`dual_unfoldS`), ≈ is a congruence for `dual` (`sequiv_dual`), ported |
 | compat/Bind.v | `Erel_sends`, readiness under a frame, the bind lemma `Erel_bind` for every cost table |
 | compat/Blind.v | heads of session types up to ≈ (`seqv_unfold_*`), V, E and P agree at types whose erasures are ≈ (`Vrel_teq`, `Erel_teq_ty`, `Prel_teq`), the blindness lemma `Vrel_blind`, `Erel_blind` |
 | compat/SemTyped.v | groundings `Grel`, the judgment at a set of points `sem_typed_at`, static futures `sf_den`, `Θ ; Δ ⊨^F _ W t : T` and `Θ ; Δ ⊫^F _ W t : T` (`sem_typed κ`) |
-| compat/SendGap.v | `send_gap`: a value in V that no send can hand over |
+| compat/Redex.v | exact ends and heads of values (`Vrel_exact`, `Vrel_heads`), the β redexes and the redex of every operator (`Erel_send` … `Erel_force`, `Erel_new`) |
+| compat/Rules.v | the operator rules over every cost table (`gen_e_*`) and their instances `sem_e_*`, `live_e_*` |
+| compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a first-order T |
+| compat/Swap.v | V and E are invariant under a transposition of channel names (`Vrel_swap`, `Erel_swap`) |
 | test/CompatNotations.v | the S4 notations |
