@@ -10,7 +10,7 @@
 
 From stdpp Require Import base strings gmap.
 From LRGV Require Import static.CostTyping.
-From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain.
+From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain examples.ABP.
 
 Set Default Proof Using "All".
 
@@ -162,6 +162,45 @@ Lemma rc_ctyped :
   ctyped W ∅ [] ch_main (CTa CVal None) None (Some 2, 0).
 Proof.
   intros. unfold ch_main, let_new_pair_at, let_new_at. ct_prep. ct1 rc_hint.
+Qed.
+
+(** ** alternating bit protocol
+
+    Three boxes of cost ∞ with tail calls, B = 3. Bob holds his second
+    end across two actions on the first, so its argument floor is 2,
+    and main hands it over once. *)
+CoFixpoint ab_P : cpro := PNode 3 (PSnd (CTa CVal None) (PNode 3 (PRcv (CTa CVal None) ab_P))).
+CoFixpoint ab_Pd : cpro := PNode 3 (PRcv (CTa CVal None) (PNode 3 (PSnd (CTa CVal None) ab_Pd))).
+Definition ab_ρ : cprof := Prof ab_P ab_Pd (λ _, PrTop) PrTop.
+
+Definition ab_box (P1 : cpro) (f1 : nat) (P2 : cpro) (f2 : nat) : cta :=
+  CTa (CBox (Some 0) tid (CTa (CArr None tid 0
+    (CTa (CProd (CTa (CEnd P1) (Some f1)) (CTa (CEnd P2) (Some f2))) (Some 0))
+    (CTa CVal None)) None)) None.
+
+Lemma bob_ctyped : ctyped W ∅ [] bob (ab_box ab_Pd 0 ab_Pd 2) (Some 0) tid.
+Proof. unfold bob, ab_box. ct0. Qed.
+
+Lemma alice0_ctyped : ctyped W ∅ [] alice0 (ab_box ab_P 0 ab_P 1) (Some 0) tid.
+Proof. unfold alice0, ab_box. ct0. Qed.
+
+Lemma alice1_ctyped : ctyped W ∅ [] alice1 (ab_box ab_P 1 ab_Pd 0) (Some 0) tid.
+Proof. unfold alice1, ab_box. ct0. Qed.
+
+Ltac ab_hint k :=
+  lazymatch goal with
+  | |- ctyped _ _ [] bob _ _ _ => apply bob_ctyped
+  | |- ctyped _ _ [] alice0 _ _ _ => apply alice0_ctyped
+  | |- ctyped _ _ [] alice1 _ _ _ => apply alice1_ctyped
+  end.
+
+Lemma abp_ctyped :
+  pt_known W (pconst 0) → cpfitpt W (pconst 0) ab_ρ →
+  pt_known W (pconst 1) → cpfitpt W (pconst 1) ab_ρ →
+  pt_known W (pconst 2) → cpfitpt W (pconst 2) ab_ρ →
+  ctyped W ∅ [] abp_main (CTa CVal None) None (Some 2, 0).
+Proof.
+  intros. unfold abp_main, let_new_pair_at, let_new_at. ct_prep. ct1 ab_hint.
 Qed.
 
 End examples.
