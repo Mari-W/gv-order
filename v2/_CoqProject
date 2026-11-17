@@ -47,4 +47,6 @@ fuel/FuelValues.v
 fuel/FuelBind.v
 fuel/FuelSub.v
 test/FuelNotations.v
+cost/Transformers.v
+cost/FuelGap.v
 CheckAll.v

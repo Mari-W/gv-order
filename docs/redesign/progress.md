@@ -13,7 +13,7 @@ The old development in theories/ stays untouched.
 | S4 | generic compatibility | open |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
-| S7 | cost judgment | open |
+| S7 | cost judgment | stopped at S7.1, report on F-Send and F-Spawn (see S7.1) |
 | S8 | soup and adequacy | open |
 | S9 | lock-free composition and soundness | open |
 | S10 | paper | open |
@@ -237,6 +237,19 @@ The old development in theories/ stays untouched.
 - S6, deferred. `seq_sound` with offset ∞ is not used by the bind lemma.
   S7 proves it with the cost half of the judgment.
 
+- S7, transformers. `seq_sound` asks `tok t1 t2`, the side condition the
+  rules already carry, and covers offset ∞ (v2/cost/Transformers.v). A
+  transformer with offset ∞ is met nowhere, so those cases hold
+  vacuously.
+- S7, fuel exactness. F-Send and F-Spawn read the transfer set M off the
+  label and ask M ⊆ dom φ with the payload in `Vfuel` at `mres M Π`.
+  No clause of `Vfuel` relates the ends a value mentions to its map Π,
+  so `Vfuel` holds closures that no send and no spawn can hand on. This
+  is the fuel form of `send_gap` (stage S4), which decision Q14 repaired
+  for V and not for `Vfuel`. `fw_counterexample`
+  (v2/cost/FuelGap.v) shows that `fsem_of_cost` of A.3 is false for the
+  definitions of S6. See S7.1.
+
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -326,4 +339,35 @@ The old development in theories/ stays untouched.
 - S6.5. `Vfuel_teq`, `Vfuel_sub`, `FuelE_sub` (v2/fuel/FuelSub.v).
 - S6.6. Notation test v2/test/FuelNotations.v, README section, CheckAll
   lists 105 results, all closed. No `Admitted` and no axiom. S6 done.
+- S7.0. `seq_sound`, `meets_mono` and `meets_tid` (v2/cost/Transformers.v).
+- S7.1. Stop. `fsem_of_cost` (old `ctyped_fsem`) fails for a thread that
+  P-Term types at every refill N. The thread is
+  fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w, with
+  o : ?(∗ ⊸ ∗)^2.end. Its transformer is met at reserve 0 by every
+  ticket count (`fw_ptyped`, `fw_tix_met`). F-Recv quantifies over every
+  incoming value of `Vfuel`. The closure
+  `dead_thunk o` = λ_. let ∗ = Ω in close o holds nothing and is in
+  `Vfuel` at every level and refill, because its body only takes β
+  steps (`Vfuel_dead`). After fw receives it and closes o, the spawn
+  label moves {o}, and F-Spawn asks {o} ⊆ dom φ, which fails. So fw is
+  not in `FuelT` at level 5 for any counters and tickets, and not in
+  `fsem N` (`fw_not_fsem`). The same closure breaks the compatibility
+  lemma of E-Send over groundings in `Vfuel` (`fuel_send_gap`). The pair
+  ⟨dead_thunk q, d⟩ is in `Vfuel` at the payload type of d at every
+  level, and its send is not in `FuelE` at level 1. Every repair needs
+  the author, because each reads syntax in the fuel layer. (a) Q14 for
+  `Vfuel`, so a closure asks dom Π = the ends it mentions and a box
+  mentions no end. Every value of `Vfuel` is then exact, F-Recv and the
+  arrow quantify only over exact values, and the compatibility lemmas of
+  E-Abs, E-Box and E-SpawnLam need the typing lemma that the ends of a
+  grounded term are those of Θ and of the grounding, as the old
+  `cfacts` gave. The S6 lemmas on `Vfuel` keep v and Π or rename both,
+  so they adapt with small changes. (b) F-Recv and the arrow read a
+  transfer set at every incoming value, which amounts to (a). (c)
+  F-Send and F-Spawn split Π by an existential with no M, which loses
+  the index-free ownership that the soup of S8 pairs with O-Send and
+  O-Spawn of the relation. Recommended (a), the clause Q14 already
+  added to V. Not done. `csem`, the compatibility lemmas and
+  `cost_fundamental`, which all depend on the choice. CheckAll lists
+  108 results, all closed. No `Admitted` and no axiom.
 

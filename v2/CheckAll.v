@@ -1,6 +1,6 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1, S2, S3 and S6. [make check] compiles this file and fails if any line below
+    Stages S1, S2, S3, S6 and S7. [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
@@ -10,6 +10,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
 From GV Require Import fuel.FuelSub.
+From GV Require Import cost.Transformers cost.FuelGap.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -134,3 +135,7 @@ Print Assumptions Vfuel_pair.
 (** S6. F1 bind, link loops. *)
 Print Assumptions FuelE_bind.
 Print Assumptions link_tickets_fall.
+(** S7. Sequencing of transformers, and the report on F-Send and F-Spawn. *)
+Print Assumptions seq_sound.
+Print Assumptions fuel_send_gap.
+Print Assumptions fw_counterexample.
