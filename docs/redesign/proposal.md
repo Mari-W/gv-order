@@ -1188,6 +1188,12 @@ first, in stage S2.
   (`spawn_gap`, v2/compat/SpawnGap.v on redesign-s5): a thread holding
   ends at unrelated points 1 and 2 spawns a thunk that closes both. Every
   value of V at the arrow still satisfies the weaker clause.
+  Refined after S5.6 (delegated): O-Spawn reads the thunk body at the
+  empty future only, with no upper point. A spawned thread starts with no
+  context, so nothing it waits for lies in a future. Reading every F
+  above u fails for a body that creates a channel at a fresh root and
+  blocks on it. V at an arrow gives the body at F = ∅, so `Erel_spawn`
+  stays, and P-Term spawns threads at the empty future.
 
 ## 5  Open decisions for the author
 
