@@ -10,7 +10,7 @@
 
 From stdpp Require Import base strings gmap.
 From LRGV Require Import static.CostTyping.
-From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder.
+From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain.
 
 Set Default Proof Using "All".
 
@@ -126,6 +126,42 @@ Lemma fw_ctyped :
   ctyped W ∅ [] fw_main (CTa CVal None) None (Some 3, 0).
 Proof.
   intros. unfold fw_main, let_new_pair_at, let_new_at. ct_prep. ct1 fw_hint.
+Qed.
+
+(** ** received chain
+
+    The receiver gets d at the payload floor 2, closes c, which ages d
+    to 1, and spawns the call on d at floor 0 and credit 1. The sender
+    creates e at budget 3 and hands it over at credit 2. *)
+CoFixpoint rc_P : cpro := PNode 3 (PRcv (CTa (CEnd rc_P) (Some 2)) (PNode 3 PCls)).
+Definition rc_Ps : cpro := PNode 3 (PSnd (CTa (CEnd rc_P) (Some 2)) (PNode 3 PCls)).
+(** At every point the receiver end and the sender end, and the same at
+    every payload point. *)
+CoFixpoint rc_ρ : cprof := Prof rc_P rc_Ps (λ _, rc_ρ) rc_ρ.
+
+Definition rch_cty : cta :=
+  CTa (CBox (Some 0) tid (CTa (CArr None fw_tix 0 (CTa (CEnd rc_P) (Some 0)) (CTa CVal None)) None)) None.
+Definition sch_cty : cta :=
+  CTa (CBox (Some 0) tid (CTa (CArr (Some 0) tid 0 (CTa (CPt rc_ρ) None)
+    (CTa (CArr None fw_tix 0 (CTa (CEnd rc_Ps) (Some 0)) (CTa CVal None)) None)) None)) None.
+
+Lemma rch_ctyped : ctyped W ∅ [] rch rch_cty (Some 0) tid.
+Proof. unfold rch, rch_cty. ct0. Qed.
+
+Lemma sch_ctyped : ctyped W ∅ [] sch sch_cty (Some 0) tid.
+Proof. unfold sch, sch_cty, let_new_pair_at, let_new_at. ct_prep. ct0. Qed.
+
+Ltac rc_hint k :=
+  lazymatch goal with
+  | |- ctyped _ _ [] rch _ _ _ => apply rch_ctyped
+  | |- ctyped _ _ [] sch _ _ _ => apply sch_ctyped
+  end.
+
+Lemma rc_ctyped :
+  pt_known W (pconst 0) → cpfitpt W (pconst 0) rc_ρ →
+  ctyped W ∅ [] ch_main (CTa CVal None) None (Some 2, 0).
+Proof.
+  intros. unfold ch_main, let_new_pair_at, let_new_at. ct_prep. ct1 rc_hint.
 Qed.
 
 End examples.
