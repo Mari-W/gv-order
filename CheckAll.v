@@ -4,6 +4,7 @@ Require LRGV.examples.ChoiceEnc.
 (* SYNTACTIC-POINTS: example port pending  Require LRGV.examples.ChoiceTranslate. *)
 (* SYNTACTIC-POINTS: example port pending  Require LRGV.examples.ChoiceTranslateEx. *)
 Require LRGV.examples.Congruence.
+Require LRGV.examples.CostEx.
 Require LRGV.examples.Cycle.
 Require LRGV.examples.CycleFresh.
 Require LRGV.examples.DataAlternate.
@@ -108,6 +109,7 @@ Require LRGV.lockfree.ThreadProgress.
 Require LRGV.relation.CostTypes.
 Require LRGV.relation.LogicalRelation.
 Require LRGV.rules.SemanticRules.
+Require LRGV.static.CostTyping.
 Require LRGV.static.Fundamental.
 Print Assumptions LRGV.static.Fundamental.soundness.
 Print Assumptions LRGV.static.Fundamental.soundness_source.
@@ -271,6 +273,21 @@ Print Assumptions LRGV.relation.CostTypes.link_split.
 Print Assumptions LRGV.relation.CostTypes.seq_sound.
 Print Assumptions LRGV.relation.CostTypes.link_loop_no_tix.
 Print Assumptions LRGV.relation.CostTypes.cst_any.
+Print Assumptions LRGV.static.CostTyping.tle_check.
+Print Assumptions LRGV.static.CostTyping.cst_refl.
+Print Assumptions LRGV.static.CostTyping.ctyped_mono.
+Print Assumptions LRGV.static.CostTyping.cagex_zero.
+Print Assumptions LRGV.static.CostTyping.cage_env_zero.
+Print Assumptions LRGV.examples.CostEx.sync_ctyped.
+Print Assumptions LRGV.examples.CostEx.tc_ctyped.
+Print Assumptions LRGV.examples.CostEx.fw_ctyped.
+Print Assumptions LRGV.examples.CostEx.rc_ctyped.
+Print Assumptions LRGV.examples.CostEx.abp_ctyped.
+Print Assumptions LRGV.examples.CostEx.cs_ctyped.
+Print Assumptions LRGV.examples.CostEx.sched_ctyped.
+Print Assumptions LRGV.examples.CostEx.cb_ctyped.
+Print Assumptions LRGV.examples.CostEx.ring_ctyped.
+Print Assumptions LRGV.examples.CostEx.rg_ctyped.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_send_travel.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sched_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.
@@ -336,6 +353,9 @@ Print Assumptions LRGV.examples.ChoiceEnc.loop_deadlock_free.
 Print Assumptions LRGV.examples.Congruence.cgbox_typed.
 Print Assumptions LRGV.examples.Congruence.cg_typed.
 Print Assumptions LRGV.examples.Congruence.cg_deadlock_free.
+Print Assumptions LRGV.examples.CostEx.c3_link_loop_not_tix.
+Print Assumptions LRGV.examples.CostEx.cb_inf_not_aged.
+Print Assumptions LRGV.examples.CostEx.starve_not_spare.
 Print Assumptions LRGV.examples.Cycle.cycle_typed.
 Print Assumptions LRGV.examples.Cycle.cycle_deadlock_free.
 Print Assumptions LRGV.examples.CycleFresh.cycle_typed_fresh.

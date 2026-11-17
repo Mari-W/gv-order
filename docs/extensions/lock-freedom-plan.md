@@ -2555,6 +2555,125 @@ follows.
    `src_pay` where they stated `w_pay`. These parts go in H5.
    LFFuelTyped.v builds with the new arities.
 
+### 19.12  Deviations (H2)
+
+Stage H2 states the cost judgment of 19.4 in static/CostTyping.v and
+the derivations of 19.9 in examples/CostEx.v. The judgment is
+`ctyped W Θ Γ e σ c t`, with Θ a `gmap cend cta`, Γ a `list (option
+cta)`, c a `fuel` and t a `tix`. It has one constructor per rule,
+named `C_Unit` to `C_Contract`. Where the text of 19.4 does not
+typecheck or leaves a choice open, the Rocq file decides as follows.
+
+1. **Leaves and structure.** C-Unit, C-Pt, C-Var, C-Ch, C-Konst and
+   C-Box allow unlimited entries beside the ones they read, which is
+   weakening at the leaves. A split may send an unlimited entry to both
+   sides, as `lenv_split` of Typing.v does. C-Weak and C-Contract stay
+   as rules.
+2. **Capture.** "h ≤ low of every entry, a = min low − h" and the
+   restatement (·)^h are one relation `ccap h a σ σ'`. It asks h + a
+   to lie below the current lower bound of σ and restates σ at lower
+   bound h. An end gets credit h, a closure with floor h0 ≤ h gets
+   credit h − h0, a pair restates its components. a is any credit with
+   h + a below every lower bound, not the largest one, because C-Sub
+   lowers it anyway. There is no function low. The cost types are
+   coinductive, so `ccap` recurses on the finite top of a type.
+3. **Credits of results.** C-Pair, C-Inj, C-New, C-Recv and C-Bra give
+   their product or sum the credit 0, not ∞. The credit of a pair is
+   added to both components (`cadd`, the pair clause of `Vfuel`), so ∞
+   there would give the ends credit ∞.
+4. **Aging and CAny.** Γ − c is `cage_env`, built from `cagex`, which
+   is `cage` of CostTypes.v plus one condition. An entry whose type may
+   hold a `CAny` value ages only by 0 (`cheld`). `Vfuel` at `CAny` is
+   `True`, so the credit of such an entry bounds no counter, and `cage`
+   alone would let a context hold it across an action. H4 meets this
+   hole if the condition goes.
+5. **Composition.** Every rule that composes transformers carries
+   `tok t1 t2`, the premise of `seq_sound`. `tseq` is total, and it is
+   sound only there. C-Case uses `fmax` for the costs and `tmax` for ⊕.
+6. **Nodes and profiles.** The rules read a protocol node by
+   `pnode P = Some (n, b)` and a profile by `pprof`, `pfld` and `psuc`.
+   An equation P = PNode n b does not follow by computation for a
+   cofixpoint constant, and `pnode` unfolds it. C-Pay and C-Succ at
+   `PrTop` give `PrTop`.
+7. **Small choices.** C-Spawn reads t′(0) as `snd t′`, which is the
+   need at 0 for every transformer. C-Sel is one constructor over the
+   bit, C-Inj two. C-Pt reads `cpfitpt W`, which is `pfitpt W` of
+   LFFuel.v by definition, so that CostTyping.v does not import the fuel
+   layer. `konst_cost` is a relation from constants to arrow types, one
+   constructor per constant, with the conditions of the matching rule.
+   C-Konst gives a constant credit ∞. C-Force and the other rules for an
+   applied constant stay beside C-Konst and C-App.
+
+**Examples.** The derivations are built by the tactic `ct` from the box
+types and the protocols. Each lemma takes as hypotheses that the world
+knows each point literal and that it fits its profile, the premise of
+C-Pt. The numbers differ from the estimates of 19.9 in two places.
+
+| Example | Lemma | c, t of main | Budgets |
+|---|---|---|---|
+| sync | `sync_ctyped` | 2, (1, 0) | 1 |
+| tail call | `tc_ctyped` | ∞, (1, 0) | 1 |
+| forwarder | `fw_ctyped` | ∞, (3, 0) | B = 3, payload channel 2, floors 1 and 0 |
+| received chain | `rc_ctyped` | ∞, (2, 0) | B = 3, floor 2 |
+| ABP | `abp_ctyped` | ∞, (2, 0) | B = 3, bob's floors 0 and 2 |
+| cyclic scheduler (CFST) | `cs_ctyped` | ∞, (5, 0) | B = 6 (5 suffices), follower floors 0, 2, 3 |
+| scheduler with a link | `sched_ctyped` | 4, (2, 1) | B = 3, main needs 1 ticket |
+| callback server | `cb_ctyped` | ∞, (1, 0) | B = 2, client transformer (∞, 0) |
+| GrowRing, by C-SpawnLam | `rg_ctyped` | ∞, (3, 0) | B = 4, payload floor 2, floors 0 and 1 |
+
+The forwarder needs B = 3, not 2. Its spawned call captures a after one
+action and b just refilled at a single floor, B − 2, and the next round
+needs b at credit 1 for the receive on a. The callback client spawns
+before its tail call, so its transformer has slope ∞ and offset 0, as
+19.6 predicts for a recursion that spawns. The callback server is new,
+`cb_main` in CostEx.v. It has no ordinary typing derivation yet.
+
+**GrowRing does not type under C-Spawn.** This is structural. A closure has one floor
+h for every end it captures (`farr`, 19.3), and inside its body each
+captured end has credit exactly h. The second spawned call of `ring`
+captures z, received at the payload floor fd and aged by the close of
+x, together with the fresh b′, and passes b′ as the next y. So the
+floor fy of the y argument is at most fd − 2. The first spawned thunk
+captures the fresh a with y and sends a on y, so fy ≥ fs + 2, where fs
+is the payload credit of the send. `pfits` gives fd ≤ fs. Together
+fy ≤ fs − 2 < fs + 2 ≤ fy. Every end of the ring acts, so no budget is
+∞ and no credit escapes the arithmetic.
+
+**Decision, C-SpawnLam (2026-11-17, under the author's overnight
+delegation).** A literal λ under spawn gets its own rule beside C-Spawn.
+
+```
+C-SpawnLam   Θ − 1 ; (Γ − 1), CVal^a ⊢ e : σ′ ▷ c′ ; t′
+             ⟹  Θ ; Γ ⊢ App ESpawn (Lam e) : CVal^∞ ▷ 0 ; tspawn (t′(0)) 1̂
+```
+
+The rule is `C_SpawnLam` in CostTyping.v. Its premises read the body of
+the λ and the context only. The child runs the body at the counters of
+the hand-over, one below the parent's (`fchild`), so the body sees each
+end at its own credit minus one and no common capture floor arises.
+Aging by one also gives `fhand 0`. C-Spawn stays for spawned values of
+arrow type, and the derivations of the other examples keep it. GrowRing
+types with it (`rg_ctyped`, B = 4 as 19.9 estimated). Per-end floors on
+arrows are the general alternative, for closures that are stored or
+sent before they run. They are left for later.
+
+**Obligations of H4 from H2.** H4 proves the compatibility lemma of
+C-SpawnLam. The child's FuelE at index n′ is built from the derivation
+of the body at the ticked counters, lifted over the β step of
+`App (Lam e) EUnit` by F3, weakened to frame None and result `cany` by
+F4. H4 also handles deviation 4. An entry that may hold a `CAny` value
+ages only by 0 (`cheld` in `cagex`), and the compatibility lemmas of
+the sequencing rules rely on that condition.
+
+**Rejections.** Non-derivability of a whole term needs inversion
+modulo C-Sub, C-Weak and C-Contract, which H2 does not prove. The
+lemmas state the rejection at the rule that rejects.
+`c3_link_loop_not_tix` shows that no transformer t with
+link ∘ t ≤ t has a finite need at 0 (C3). `cb_inf_not_aged` shows that
+no end with finite credit ages by ∞ (the server running a callback of
+cost ∞). `starve_not_spare` shows that C-Send cannot hand an end on at
+the floor it arrived at (the starving server).
+
 ### 19.13  Deviations (H3)
 
 Stage H3 proves F1 to F6 in lockfree/LFFuelBind.v. F1 is false for the

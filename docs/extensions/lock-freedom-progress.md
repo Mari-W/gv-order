@@ -22,6 +22,8 @@ Updated after every stage and every agent result.
 | L6c Link tickets replace the hand-over at links (plan §18) | done | LFFuel.v (`FuelE n W π φ tk e`, `Vfuel n W π φ tk w`, `tkupd`, `fsem` with ∃ tk, `FuelE_tk_mono`, `Vfuel_tk_mono`, `link_tickets_fall`; `flink`, `flink1`, `frep`, `fuel_rep`, `fuel_zero_nolink` gone), LFSoup.v (ticket family K in `lf_fuelc`, `LFsoupAt`, `LFsoup`, `LFP`; `ksingle`, `kstep`, `kstep_one`, `kstep_pair`, `krun`; `flr` gone), Criterion.v (`lf_run_criterion` over a measure with a well-founded decidable order, `lexlt`, `lexlt_wf`), LFAdequacy.v (`ksum`, `ksum_step`, measure (tickets, fuel); `fe_link`, `fgoal_cap` gone), LFCompose.v, LFFuelTyped.v (option-2 counterexamples gone) | passes, CheckAll closed | 0, no axioms | protected statements unchanged; FuelE not monotone in the counters (renaming) |
 | H1 Cost types, `w_pc`, FuelE and Vfuel by cost types (plan §19.3, §19.10) | done | relation/CostTypes.v (`cty`, `cta`, `cpro`, `cprof`, `tix`, `meets`, `tseq`, `tspawn`, `cst`, `cage`, `pfits_at`, `pfitpt_at`), Worlds.v (`w_pc`), LFFuel.v (`FuelE n W σ r π φ tk d e`, `Vfuel n W σ π φ w`, `farr`, `kinj` in `Fdef`, fresh new, value clause, `FuelT`, `fsem` at `cany`), LFSoup.v (`step_msg` without floor, freshness from `Hnm`), LFCompose.v (`wbud_agree` over `w_pc`) | passes, CheckAll closed | 0, no axioms | deviations in plan §19.11; protected statements unchanged against 7d0920c |
 | H3 Semantic lemmas F1 to F6 of FuelE (plan §19.7, §19.13) | done | lockfree/LFFuelBind.v (`FuelE_bind`, `Fobl_bind`, `fkont`, `FuelE_val`, `FuelE_beta`, `FuelE_mono`, `Vfuel_sub`, `Vfuel_wbext`, `Vfuel_rename`, `Vfuel_recount`, `clow`, `Vfuel_minus`, `pfits_wbext`, `pfits_node`, `pfits_snd`, `pfits_rcv`, `pfits_sel`, `pfits_bra`, `Vfuel_refill`, `Vfuel_pair`), CostTypes.v (`cst_refl`, `cst_trans`, `cst_cadd`, `pfits_at_mono`, `pfits_at_cst`), LFFuel.v (held ends at send, spawn and link, `fsolo` at select and branch, pair clause split), LFSoup.v (`fsolo` from `st_disj`) | passes, CheckAll closed | 0, no axioms | four repairs in plan §19.13; protected statements unchanged against c26c125 |
+
+| H2 Cost judgment and the examples' derivations (plan §19.4, §19.9) | done, GrowRing by C-SpawnLam | static/CostTyping.v (`ctyped W Θ Γ e σ c t`, rules `C_Unit` to `C_Contract`, `konst_cost`, `ccap`, `cage_env`, `csplit`, `cst_refl`, `tle_check`, tactic `ct`), examples/CostEx.v (`sync_ctyped`, `tc_ctyped`, `fw_ctyped`, `rc_ctyped`, `abp_ctyped`, `cs_ctyped`, `sched_ctyped`, `cb_ctyped`, `rg_ctyped`, rejections at the rule), `C_SpawnLam` | passes, CheckAll closed | 0, no axioms | H4 proves C-SpawnLam and keeps the `cheld` condition (plan §19.12); per-end floors on arrows later |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -832,6 +834,32 @@ Updated after every stage and every agent result.
   F1 asks its continuation under every injective renaming of the
   context, so H4's semantic judgment must be closed under renamings.
   Protected statements are unchanged against c26c125.
+
+- 2026-11-17. Stage H2 done on branch lf-costtyping, except GrowRing.
+  static/CostTyping.v states the cost judgment with one constructor per
+  rule of plan §19.4 and the cost signatures of the constants as the
+  relation `konst_cost`. examples/CostEx.v derives sync, tail call,
+  forwarder, received chain, ABP, the CFST cyclic scheduler, the
+  scheduler with a link and a new higher-order callback server. The
+  forwarder needs B = 3 where §19.9 estimated 2, checked by failing
+  derivations at B = 2. GrowRing does not type for a structural reason.
+  A closure has one floor for all the ends it captures, and the ring's
+  second spawned call captures a received end at the payload floor with
+  a fresh end that must carry a floor above it. The grid of numbers
+  probed in Rocq agrees with the paper argument of plan §19.12.
+  Rejections of C3, the callback of cost ∞ and the starving server are
+  stated at the rule that rejects, not as non-derivability of the term.
+  Choices taken under delegation, all in plan §19.12: credit 0 on
+  results that are pairs, `ccap` in place of low, aging that refuses
+  `CAny` entries, `tok` premises, `pnode` equations, weakening at the
+  leaves. No change to Typing.v, the relations or protected statements.
+  Later the same day, under the author's overnight delegation, the
+  coordinator decided on the rule C-SpawnLam. A literal λ under spawn
+  types its body under the context aged by one, with no closure type.
+  GrowRing then types (`rg_ctyped`, B = 4). The other derivations keep
+  C-Spawn. H4 owes the compatibility lemma of C-SpawnLam and keeps the
+  `cheld` condition on aging. Per-end floors on arrows stay the general
+  alternative.
 
 ## Related work hooks
 
