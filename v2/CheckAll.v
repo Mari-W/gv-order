@@ -12,7 +12,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
 From GV Require Import relation.Adequacy.
 From GV Require Import fuel.FuelSub.
 From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
-From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap.
+From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -227,3 +227,6 @@ Print Assumptions recv_back_swap.
 Print Assumptions ready_p_swap.
 Print Assumptions Prel_swap.
 Print Assumptions csub_fuses.
+Print Assumptions Vrel_conv.
+Print Assumptions Erel_conv.
+Print Assumptions Prel_conv.

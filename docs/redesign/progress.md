@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: P Kripke over strict worlds (S4.16), composition open |
+| S4 | generic compatibility | stopped (S4.18): the clause (rename) of P makes P-Connect and P-Term false, repair needs the author |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
@@ -872,3 +872,51 @@ The old development in theories/ stays untouched.
   lockfree/TauThread.v, so that `strict` is the world's and not stdpp's.
   test/RelationNotations.expected follows. CheckAll lists 190 results,
   all closed.
+- S4.17. compat/Conv.v. Environments up to ≈ (`senv_eqv`: the same
+  ends at the same points, session types ≈ after erasure). V, E and P
+  transport along them for every cost table (`Vrel_conv`, `Erel_conv`,
+  `Prel_conv`). Composition needs it at a link of a cut end o1 with an
+  interface end o2: the holder of o1‾ then holds o2 at the type of o1‾,
+  and the interface keeps o2 at its own type, which Q-Link gives only
+  up to ≈. CheckAll lists 193 results, all closed.
+- S4.18. Stop. The clause (rename) of `Pbody` (S4.13) makes P-Connect
+  false, even with an empty cut, and P-Term with it. `pren_ok h Σ p`
+  asks h injective on the held ends only, so h may map two unrelated
+  interface ends to the two ends of one channel. The renamed process
+  then has a τ message on that free channel, and Q-Admin and Q-Comm
+  (`q_tau`) keep the interface, so the continuation must be in P at the
+  old, unadvanced types. S4.12 (1) named the condition ("create no new
+  pair of partners in Σ"), and S4.13 left it out.
+  Counterexample on paper, not in Rocq. t1 = close (send ⟨∗, d⁺⟩) with
+  Σ1 = d⁺ : !1.end, t2 = let ⟨u, y⟩ = recv e⁺ in close y with
+  Σ2 = e⁺ : ?1.end. Each single thread is in P at every level. P-Connect
+  with ΣC = ∅ gives p = (∅, {t1, t2}) ∈ P⟦d⁺, e⁺ ⊢ 1⟧. Take h with
+  d± ↦ c±, e⁺ ↦ c⁻, e⁻ ↦ c⁺, the identity elsewhere. It commutes with
+  duality and is injective on {d⁺, e⁺}, so (rename) asks P of
+  (∅, {t1[c⁺], t2[c⁻]}) at c⁺ : !1.end, c⁻ : ?1.end. That process takes
+  a τ message on c, and `q_tau` asks the continuation in P at the same
+  interface. The continuation closes c⁺ externally while the interface
+  still says !1.end, so Q-Close fails and it is not in P at level 1.
+  Hence p is not in P at level c_give + c_take + 1. A spawn reaches the
+  same pair of threads, so P-Term fails as well, and with it
+  `fundamental_proc`.
+  Two repairs. (A) Ask h injective on every end of a held channel
+  (which forbids new partner pairs). `Prel_rename` stays a projection,
+  but the link case of P-Connect needs P of the other component after
+  `csub o1 o2` when it holds o1‾ and o2‾, a renaming that does create a
+  pair and so has to be internalized at once. That fusion lemma is then
+  neither a projection nor reachable by the forward simulation (S4.12
+  (2)). (B) Replace (rename) by a clause (fuse): every unfolding of P
+  holds for sdrop D (kren h Σ) and (set_map (gch h) p.1 ∪ D, emapE h p.2)
+  for every h that commutes with duality, is injective on the held
+  ends, and creates new partner pairs only on the channels D, which h
+  makes dual pairs at dual points of the interface, disjoint from the
+  renamed restricted channels. D = ∅ is (A)'s renaming, h = id
+  internalizes pairs of Σ. Internalize, the link case of P-Connect and
+  `Prel_rename` are then projections, and a composite of fusions is a
+  fusion. P-Connect and P-Term must establish (fuse) for their
+  composites. A fusion of a composite is a composite of the fused
+  components over a larger cut, so a lemma stated for every cut covers
+  it, as (rename) was covered for renamed components. I recommend (B).
+  Not started: Internalize, P-Connect, P-Join, P-Term. CheckAll lists
+  193 results, all closed. No `Admitted` and no axiom.

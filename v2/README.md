@@ -111,6 +111,7 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/Swap.v | the transposition of channel names on environments (`sswap`) and readiness |
 | compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`), P by projection of its clause (rename) (`Prel_rename`), the transpositions as instances (`Vrel_swap`, `Erel_swap`), the link substitution as a renaming of the other component (`pren_ok_csub`) |
 | compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`, an instance of `Prel_rename`) |
+| compat/Conv.v | environments up to ≈ (`senv_eqv`): V, E and P transport along them (`Vrel_conv`, `Erel_conv`, `Prel_conv`) |
 | test/CompatNotations.v | the S4 notations |
 
 ## Stage S7, cost half of the merged judgment
