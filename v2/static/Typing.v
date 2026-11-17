@@ -277,8 +277,8 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
       dftyped W Θ Γ Δ F e (TSess S0 x) →
       dftyped W Θ Γ Δ F (ENewAt κ e)
         (TProd (TSess S0 x) a (TProd (TSess S (x·κ)) a1 (TSess (dual S) (x·κ)‾) a2) a3)
-  | d_conv Θ Γ Δ F e T T' :
-      teq (ty_df T) (ty_df T') → dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F e T'
+  | d_conv Θ Γ Δ F e T T' a a' :
+      tsub (ty_df T) a (ty_df T') a' → dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F e T'
   | d_weak Θ Γ Δ' Δ F e T :
       lenv_wk Δ' Δ → dftyped W Θ Γ Δ' F e T → dftyped W Θ Γ Δ F e T
   | d_contract Θ Γ Δ U aU F e T :

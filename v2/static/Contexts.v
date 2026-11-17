@@ -259,7 +259,7 @@ Definition thcap (h a : fuel) (Θ Θ' : tenv) : Prop :=
     contravariant, results covariant, sessions up to ≈. A credit may
     fall. At an arrow the current lower bound h + a may not rise. A
     product, a sum and an existential compare their parts after adding
-    their credits. *)
+    their credits. An existential may drop facts of its constraint. *)
 Inductive tsub : ty → fuel → ty → fuel → Prop :=
   | sub_unit a a' : fle a' a → tsub TUnit a TUnit a'
   | sub_arr ub lb c t h T1 a1 U a2 c' t' h' T1' a1' U' a2' a a' :
@@ -277,8 +277,9 @@ Inductive tsub : ty → fuel → ty → fuel → Prop :=
       tsub (TBox n k C ub c t U aU) a (TBox n k C ub c' t' U' aU) a'
   | sub_sess s s' x a a' :
       sequiv s s' → fle a' a → tsub (TSess s x) a (TSess s' x) a'
-  | sub_ex lb n C T T' aT aT' a a' :
-      teq T T' → fle (fadd a' aT') (fadd a aT) → tsub (TEx lb n C T aT) a (TEx lb n C T' aT') a'.
+  | sub_ex lb n C C' T T' aT aT' a a' :
+      bc_env C = bc_env C' → (∀ g, bc_facts C' g → bc_facts C g) →
+      teq T T' → fle (fadd a' aT') (fadd a aT) → tsub (TEx lb n C T aT) a (TEx lb n C' T' aT') a'.
 
 (** ** Instances of session variables
 

@@ -170,39 +170,22 @@ Proof.
   - apply sub_sum; auto.
   - apply sub_box; [apply fle_refl|apply tle_refl|]. destruct k; [apply teq_refl|done].
   - apply sub_sess; [apply sequiv_refl|apply fle_refl].
-  - apply sub_ex; [apply teq_refl|apply fle_refl].
+  - apply sub_ex; [done|done|apply teq_refl|apply fle_refl].
 Qed.
 
-Lemma teq_tsub T : ∀ T', teq T T' → ∀ a, tsub T a T' a ∧ tsub T' a T a.
+Lemma tsub_df T a T' a' : tsub T a T' a' → tsub (ty_df T) (cr_df T) (ty_df T') (cr_df T').
 Proof.
-  unfold teq. induction T; intros T' H aa; destruct T'; simpl in H; try done; destruct_and?; subst.
-  all: repeat match goal with
-    | IH : ∀ T', eqT sequiv ?X T' → _, H : eqT sequiv ?X ?Y |- _ =>
-        let h := fresh "h" in pose proof (λ a, IH Y H a) as h; clear IH
-    end.
-  all: split; constructor; auto using fle_refl, tle_refl, sequiv_sym.
-  all: repeat match goal with
-    | h : ∀ a, tsub _ a _ a ∧ tsub _ a _ a |- tsub _ _ _ _ =>
-        first [apply (proj1 (h _)) | apply (proj2 (h _))]
-    end.
-  all: repeat case_match; subst; try done.
-  all: unfold teq; first [done|by apply eqT_sym; [apply sequiv_sym|]].
-Qed.
-
-Lemma tsub_teq_df T a T' a' : tsub T a T' a' → teq (ty_df T) (ty_df T').
-Proof.
-  induction 1; simpl; unfold teq in *; simpl; split_and?; try done.
-  all: try (by apply eqT_sym; [apply sequiv_sym|]).
-  all: try (rewrite <-(cr_df_df T1), <-(cr_df_df T1'); symmetry; by eapply eqT_cr_df).
-  all: try (rewrite <-(cr_df_df U), <-(cr_df_df U'); by eapply eqT_cr_df).
-  all: try (rewrite <-(cr_df_df T1), <-(cr_df_df T1'); by eapply eqT_cr_df).
-  all: try (by apply sequiv_df).
-  all: try (destruct k; [|by subst]; rewrite <-(cr_df_df U), <-(cr_df_df U'); eapply eqT_cr_df;
-            by apply teq_df).
-  all: try (destruct k; [by apply teq_df|by subst]).
-  all: try apply eqT_refl, sequiv_refl.
-  all: try (by eapply eqT_cr_df).
-  all: by apply teq_df.
+  induction 1; cbn [ty_df cr_df].
+  - apply sub_unit, fle_refl.
+  - apply sub_arr; auto using fle_refl, tle_refl.
+  - apply sub_prod; by rewrite !fadd_0_l.
+  - apply sub_sum; by rewrite !fadd_0_l.
+  - assert (cr_df U = cr_df U') as ->.
+    { destruct k; [by eapply eqT_cr_df|by subst]. }
+    apply sub_box; [apply fle_refl|apply tle_refl|]. destruct k; [by apply teq_df|by subst].
+  - apply sub_sess; [by apply sequiv_df|apply fle_refl].
+  - apply sub_ex; [done|done|by apply teq_df|].
+    rewrite (eqT_cr_df _ _ _ H1). apply fle_refl.
 Qed.
 
 (** ** Instances of session variables *)
@@ -306,10 +289,8 @@ Proof.
   - eapply e_spawn; [exact IHdftyped|done|apply tok_inf].
   - rewrite sty_df_dual. eapply e_new; [by apply lenv_empty_df|done].
   - rewrite sty_df_dual. eapply e_new_at, IHdftyped.
-  - assert (cr_df T = cr_df T') as Ec.
-    { rewrite <-(cr_df_df T), <-(cr_df_df T'). by eapply eqT_cr_df. }
-    eapply e_sub; [exact IHdftyped| |apply fle_refl|apply tle_refl].
-    rewrite <-Ec. apply (teq_tsub _ _ H).
+  - eapply e_sub; [exact IHdftyped| |apply fle_refl|apply tle_refl].
+    apply tsub_df in H. by rewrite !ty_df_idem, !cr_df_df in H.
   - eapply e_weak; [by apply lenv_wk_df|exact IHdftyped].
   - eapply e_contract; [by apply unlimited_df|exact IHdftyped].
   - eapply e_pack; [done|done| |].
@@ -429,7 +410,7 @@ Proof.
   - eapply d_spawn, IHtyped.
   - rewrite sty_df_dual. eapply d_new; [by apply lenv_empty_df|done].
   - rewrite sty_df_dual. eapply d_new_at, IHtyped.
-  - eapply d_conv; [|exact IHtyped]. rewrite !ty_df_idem. by eapply tsub_teq_df.
+  - eapply (d_conv _ _ _ _ _ _ _ _ (cr_df T) (cr_df T')); [|exact IHtyped]. rewrite !ty_df_idem. by eapply tsub_df.
   - eapply d_weak; [by apply lenv_wk_df|exact IHtyped].
   - eapply d_contract; [by apply unlimited_df|exact IHtyped].
   - eapply d_pack; [done|done| |].
