@@ -1128,6 +1128,13 @@ first, in stage S2.
 - The remaining questions take the recommendations of §5: Q1 (a), Q4 (a),
   Q6 (a), Q7 (a), Q8 (a), Q9 (a), Q10 (a) if the bind lemma survives it,
   Q12 as stated.
+- Q10 resolved as (b) (delegated, after S6). Every fuel step costs one
+  level. The bind lemma survives one clock, but E-Box does not: the box
+  !(f = force f) types at cost 0 and only takes β steps, so one clock
+  would need a `guarded e` premise in `cost_fundamental`.
+- Fuel is Kripke in the refill (delegated, after S6). FuelE and the
+  closure and box clauses of Vfuel quantify over every N′ ≥ N, the role
+  `wbext` played before. Plain monotonicity in N fails at receive.
 
 ## 5  Open decisions for the author
 
