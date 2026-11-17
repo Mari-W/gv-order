@@ -605,8 +605,9 @@ The old development in theories/ stays untouched.
   fixing every other end. h commutes with duality and is injective on
   c⁺ and c⁻. The original link turns the third thread into
   (λx. ∗) ⟨z⁺, z⁺⟩. The renamed link is the self link of c⁺, which
-  flips c, and turns it into (λx. ∗) ⟨c⁺, c⁻⟩. Both processes are in P,
-  but no map of ends takes the first term to the second. The term-level
+  flips c, and turns it into (λx. ∗) ⟨c⁺, c⁻⟩. Both processes are in P
+  at every level (argued, not in Rocq), but no map of ends takes the
+  first term to the second. The term-level
   proof never meets this, because O-Link reads both ends from Θ.
   (3) A condition on h alone repairs (2) only for one step. If h maps
   no end outside the restricted channels onto a restricted channel
@@ -623,4 +624,5 @@ The old development in theories/ stays untouched.
   simulation up to dead code, a relation between terms that agree up to
   h on every end the term will act on. It is semantic and I see no
   finite form of it. I recommend (a). Not started: P-Term, Internalize,
-  P-Connect, P-Join, all of which wait on this.
+  P-Connect, P-Join, all of which wait on this. CheckAll lists 169
+  results, all closed. No `Admitted` and no axiom.

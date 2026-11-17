@@ -108,6 +108,7 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/Redex.v | exact ends and heads of values (`Vrel_exact`, `Vrel_heads`), the β redexes and the redex of every operator (`Erel_send` … `Erel_force`, `Erel_new`) |
 | compat/Rules.v | the operator rules over every cost table (`gen_e_*`) and their instances `sem_e_*`, `live_e_*` |
 | compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a first-order T |
-| compat/Swap.v | V and E are invariant under a transposition of channel names (`Vrel_swap`, `Erel_swap`) |
+| compat/Swap.v | the transposition of channel names on environments (`sswap`) and readiness |
+| compat/Rename.v | decision Q16 for terms: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`, renamed environment `kren`), with the transpositions as instances (`Vrel_swap`, `Erel_swap`) |
 | compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`) |
 | test/CompatNotations.v | the S4 notations |
