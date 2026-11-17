@@ -67,6 +67,9 @@ compat/Swap.v
 compat/EFacts.v
 compat/TermRules.v
 compat/SpawnGap.v
+compat/BindActs.v
 static/Fundamental.v
+static/Guard.v
+compat/LiveRules.v
 test/CompatNotations.v
 CheckAll.v
