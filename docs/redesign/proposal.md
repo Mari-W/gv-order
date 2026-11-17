@@ -357,6 +357,36 @@ call instantiates at (ι⁺, κ⁺), where C and C′ reappear shifted.
   two `new`s become process-level restrictions.
 - (d) family laws, proposed. As (a), with `new_ℓ` and the laws Λ_ℓ of that
   family. The same typing, and composition renames ℓ apart (§2.4).
+
+**What `new_ℓ` writes into a program.** `new_ℓ` adds one label ℓ, drawn from
+a finite set of names, to an anchorless `new`. It is no point, no offset and
+no field, and it never appears in a type as a point. The runtime erases it,
+because the step of `new_ℓ` is the step of `new`. The label is read by the
+typing rule E-New, which opens the fresh root ρ with the hypotheses Λ_ℓ(ρ),
+and by the relation, which places the channel at a root of G_ℓ. The closest
+relative is a select label. The difference is that the runtime reads a
+select label to pick a branch and never reads ℓ. A program with
+one family writes plain `new`, so ℓ appears only in programs that need two
+families with different laws. Q2 (c) writes no label at all, and in exchange
+the channels whose facts relate them to one another are created by the
+process syntax, as restricted names of the initial configuration, whose
+points the derivation picks. Side by side, for the client and server cycle:
+
+```
+(d) families                                   (c) restrictions at constants
+main = let (a, a') = new_ℓ in                  ({a, b},
+       let (a, ⟨b, b'⟩) = new_κ a in             { cli a b,
+       let () = spawn (λ_. srv a' b') in          srv a' b' })
+       cli a b
+W :  Λ_ℓ(r) = { r̂+i ≺ (r.κ)^+i ≺ r̂+i+1 | i }    W :  constants α, β with
+                                                    { α̂+i ≺ β̂+i ≺ α̂+i+1 | i }
+points:  a at a fresh ρ ∈ G_ℓ, b at ρ.κ          points:  a at α, b at β, fixed once in P0
+```
+
+The program text of (d) differs from today's source program only in the
+anchor of b. The text of (c) is no longer an expression but a configuration.
+A factory that creates related channels at run time, with no end to anchor
+at, has no form under (c) (FactoryEx, Appendix B.1).
 ### 2.6  Readiness and futures
 
 **Job.** Readiness, ready_W, excludes circular waiting.
@@ -754,7 +784,7 @@ one judgment (costs). It changes no definition of the layers below it.
   protocols and the inference walk of plan §19.6 disappear. DF typing is the
   instance N = ∞ with every annotation ∞. Fresh ends get credit ∞, aging by
   ∞ keeps ∞ and a hand-over at ∞ meets its floor, so every DF derivation
-  annotates (argued, unchecked). The price is annotations on every type
+  annotates (checked on paper in §2.17). The price is annotations on every type
   constructor, which the paper hides as the default ∞, and FuelE then reads
   the live environments, so stage S6 waits for S3. Plan §19.2 chose a
   separate judgment because `TLolli` and `TBox` occur 710 times, a cost of
@@ -767,6 +797,88 @@ one judgment (costs). It changes no definition of the layers below it.
   paper presents one concept, the future, with arrows that bound their
   caller's future. The lower point l bounds the held heads (l ≼ heads Θ). F
   is a set and u a point, so the two stay distinct in Rocq.
+
+### 2.17  The merged judgment of Q11, checked on paper
+
+Types carry credits, T^a, and the arrow and the box carry a cost c, a
+ticket transformer ϑ and, for the arrow, a floor h. A session payload
+carries its credit, !(∃ῑ. T^b).S. The judgment is
+
+```
+Θ ; Γ ; Δ ⊢^F_{W,N} e : T^a ▷ c ; ϑ
+```
+
+with the readiness and future premises of today's rules unchanged and the
+cost premises of static/CostTyping.v added. Γ − c ages every entry that
+holds an end by c. The rules for send, receive, λ, application, spawn and
+the two forms of `new` follow.
+
+```
+E-Send    ⊢ e : (T^a ⊗ (!(T'^b).S)@x) ▷ c ; ϑ       T ⊑ T'    a ≥ b + 1
+          ──────────────────────────────────────────
+          ⊢ send e : (S@x⁺)^N ▷ c + 1 ; ϑ
+
+E-Recv    ⊢ e : (?(T^b).S@x) ▷ c ; ϑ
+          ──────────────────────────────────────────
+          ⊢ recv e : (T^b ⊗ (S@x⁺)^N)^0 ▷ c + 1 ; ϑ
+
+E-Abs     Θ^h ; Γ ; Δ^h, x : T ⊢^{φ}_{W,N} e : U ▷ c ; ϑ    h + a ≤ every captured credit
+          ──────────────────────────────────────────
+          Θ ; Γ ; Δ ⊢^F_{W,N} λe : (T ⊸^u_l[c ; ϑ ; h] U)^a ▷ 0 ; 1̂
+
+E-App     ⊢ e1 : (T ⊸^u_l[c ; ϑ ; h] U)^{a1} ▷ c1 ; ϑ1    (context − c1) ⊢ e2 : T ▷ c2 ; ϑ2    a1 ≥ c2
+          ──────────────────────────────────────────
+          ⊢ e1 e2 : U ▷ c1 + c2 + c ; ϑ1 ∘ ϑ2 ∘ ϑ
+
+E-Spawn   Θ − 1 ; Γ ; Δ − 1 ⊢ e : 1 ▷ c' ; ϑ'
+          ──────────────────────────────────────────            (C-SpawnLam)
+          Θ ; Γ ; Δ ⊢ spawn (λ_. e) : 1^∞ ▷ 0 ; tspawn(ϑ'(0)) 1̂
+
+          ⊢ e : (1 ⊸[c' ; ϑ' ; h] 1)^a ▷ c0 ; ϑ0    a ≥ 1
+          ──────────────────────────────────────────            (C-Spawn)
+          ⊢ spawn e : 1^∞ ▷ c0 ; ϑ0 ∘ tspawn(ϑ'(0)) 1̂
+
+E-New     ⊢ new_ℓ : (∃ρ. Λ_ℓ(ρ). (S@ρ)^N ⊗ (S̄@ρ̄)^N)^0 ▷ 0 ; 1̂
+
+E-NewAt   ⊢ e : (S0@x)^a ▷ c ; ϑ
+          ──────────────────────────────────────────
+          ⊢ new_κ e : ((S0@x)^a ⊗ ((S@x.κ)^N ⊗ (S̄@(x.κ)‾)^N)^0)^0 ▷ c ; ϑ
+```
+
+The counterexamples it touches.
+
+- `cb_inf_not_aged`. A server that runs a callback of cost ∞ while it holds
+  its client end ages that end by ∞ at E-App, and an end created by E-New or
+  refilled after an action has credit N, finite for lock freedom. Rejected,
+  by the same lemma on aging.
+- `c3_link_loop_not_tix`. Transformers and their composition are unchanged,
+  so a box that links once per round has no transformer with a finite need
+  at 0. Rejected.
+- `starve_not_spare`. E-Send asks a ≥ b + 1 between the credit of the
+  payload and the floor b in the carrier's session type. An end that arrived
+  at floor b and is forwarded at the same position asks b ≥ b + 1. Rejected.
+- GrowRing with one floor per closure. E-Spawn keeps the C-SpawnLam form,
+  so the derivation of `rg_ctyped` carries over. Types.
+- The constant at arrow type of plan §19.14.4. `send` is λx. send x and E-Abs
+  types it at its true result type, an end, so the substitution of the
+  counterexample is ill-typed, and the semantic side is §3.2. Rejected.
+
+**DF typing is the instance N = ∞.** Annotate a DF derivation with N = ∞,
+every credit ∞, every cost ∞, floor 0 and every transformer (∞, ∞). Each cost
+premise holds. Aging by ∞ keeps ∞, a ≥ b + 1 holds at ∞, a1 ≥ c2 holds at ∞,
+E-Abs takes h = 0 and a = ∞. One change to the transformer domain is needed.
+The offset of a transformer ranges over ℕ ∪ {∞} as its slope already does,
+and `tok` holds when the first offset is ∞, which is sound because a need of
+∞ is met at no finite ticket count. Without it, E-Link's ϑ ∘ (0, 1) violates
+`tok` at slope ∞. Erasing the annotations of any derivation gives a DF
+derivation. So the merged judgment is conservative over DF typing. Cycle.v
+types this way, its two channels created by `new` and `new_κ` (Appendix
+B.1), with every annotation ∞. GrowRing types this way after the reordering
+of B.1. Both argued, no Rocq.
+
+**Verdict.** Recommended. It replaces two judgments and the cost protocols Π
+by one judgment whose DF instance is today's typing. It needs offset ∞ in
+transformers and a conservativity lemma in S2.
 
 ## 3  Quirks and deviations
 
@@ -997,7 +1109,12 @@ first, in stage S2.
 
 **Q1. Placement.** (a) O3 anchors and generated roots. (b) O2 box-bound
 point expressions with instances at force. (c) Keep point values.
-Recommended (a).
+Recommended (a). **Checked.** Index-free placement (§4), C1 (B #1-3), the
+client and server cycle (§2.5), Cycle.v and the choice encoding with anchors
+(B.1), FactoryEx with two variants of mk (B.1), the C2 pipeline (B.1),
+GrowRing after one reordering (B.1), all on paper. **Not checked.** FreshMany,
+GuardCex and SegmentInterleave, which create at a box parameter that no held
+end carries, and every derivation in Rocq.
 
 **Q2. Laws of generated roots** (§2.4, §2.5, review point 3). (a) One global
 Λ, as in version 1. (b) Only the built-in laws x ≺ x⁺ and x ≺ x̄⁺. (c) No
@@ -1009,9 +1126,11 @@ Recommended (d). (a) makes joins fail for components whose laws contradict.
 (b) cannot type the client and server cycle created by main (§2.5). (c)
 needs no laws and no label but turns main's top-level `new`s into
 restrictions in about 34 example files (plan §10.4). The family label is a
-label like κ or a branch label and never names a point. Unchecked under (d)
-and (c) are FactoryEx, FreshMany, GuardCex and SegmentInterleave, which create
-at a box parameter that no held end carries.
+label like κ or a branch label and never names a point (§2.5). **Checked.**
+The client and server cycle under all four options (§2.5), FactoryEx under
+(d), where it types, and under (c), where it fails (B.1), strictness of joins
+under (d) (§2.4). **Not checked.** The renaming lemma for family labels,
+FreshMany, GuardCex and SegmentInterleave.
 
 **Q3. The transfer condition** (§2.7, review point 7). The relation reads
 the ends a step moves. At a send this is the syntax the author already
@@ -1029,10 +1148,18 @@ against GrowRing and every example that spawns a closure over ends). (c)
 The relation reads `fends w` at the same clauses, which is (a) without the
 label. Recommended (a), with the spawn half subject to the author's
 agreement, (b) as the fallback that reads no syntax at a spawn.
+**Checked.** The argument that a spawn needs an index-free split, and the list
+of conditions the transfer sets replace (§2.7). **Not checked.** Option (b)
+against GrowRing and every example that spawns a closure over ends, and the
+claim that a closure owning an end it does not mention is rejected by the
+relation alone.
 
 **Q4. Budgets.** (a) One refill N per judgment, maximum at composition.
 (b) A refill per thread, fixed in the soup. (c) Budgets per point in the
-world (today). Recommended (a).
+world (today). Recommended (a). **Checked.** Every derivation of CostEx.v uses
+one budget per program, and adequacy reads counters and tickets only (§4.1,
+§4.4). **Not checked.** FuelE monotone in the counters and in N, which the
+maximum at composition needs.
 
 **Q5. Ends nobody waits on** (review point 4). What (a) loses is the class
 of plan §7. A thread holds an end forever while it loops, and nobody ever
@@ -1052,51 +1179,66 @@ hand-over's "≥ 1" are not asked of an idle end, and no thread may act on an
 idle end (F-Wait). Adequacy reads the checks only for the partner ō of an
 end o that a pending thread waits on. That thread acts on o at every index
 the proof reads, so F-Wait makes o non-idle there, and pairing makes ō
-non-idle at the same index. φ stays index-free (argued, unchecked).
-Recommended (a) now, (b) as an extension with that proof obligation.
+non-idle at the same index. φ stays index-free. Recommended (a) now, (b) as
+an extension. **Checked.** No example or test needs (b) (grep), and the
+adequacy argument for the corrected (b) on paper (B.1, #44). **Not checked.**
+A Rocq proof, and a typing of the controller.
 
 **Q6. One relation.** (a) R^κ with a cost table for DF and Live.
 (b) Two copies as today (decision 2026-11-16 for the current development).
 Recommended (a) for the rewrite, because the copies are an artefact of
 Rocq (quirk A4) and the paper already presents liveness as the DF relation
-with the τ clause made inductive.
+with the τ clause made inductive. **Checked.** The two cost tables reproduce
+today's costs, and the arrow and the bind lemma read the same for both
+(§2.8). **Not checked.** Internalize over κ and `live ⊆ DF`.
 
 **Q7. Constants.** (a) Saturated operators, constants as derived λ-values.
 (b) Constants as values with a β-like step `App k v → op v`. (c) Today's
 η-restriction. Recommended (a). (b) is the same up to one definition.
+**Checked.** The counterexample of plan §19.14.4 has no form under (a)
+(§3.2). **Not checked.** Nothing beyond the port.
 
 **Q8. Spawn in the cost judgment.** (a) C-SpawnLam and C-Spawn both.
 (b) Per-end floors on arrows, so C-Spawn alone types GrowRing. (c) Only
 C-SpawnLam, with `spawn v` sugar for `spawn (λ_. v ∗)`. Recommended (a).
+**Checked.** GrowRing types by C-SpawnLam (`rg_ctyped`, Rocq). **Not
+checked.** Per-end floors.
 
 **Q9. Kripke quantifier in E.** (a) In every unfolding, as the live relation
 does. (b) Only at receive, with monotonicity as a lemma, as the base
 relation does. Recommended (a), because it costs nothing in a least fixpoint
-and gives monotonicity by definition.
+and gives monotonicity by definition. **Checked.** The live relation uses (a)
+today. **Not checked.** The base proofs under (a).
 
 **Q10. One clock.** (a) FuelE reads β at the same level, cost table κ_L.
 (b) Every step costs one in FuelE. Recommended (a) if the bind lemma F1
-survives it, otherwise (b).
+survives it, otherwise (b). **Checked.** Nothing. **Not checked.** F1 with β
+at the same level.
 
 **Q11. One static judgment for types and costs** (§2.16). (a) Types carry
 cost annotations, DF typing is the instance N = ∞, FuelE reads protocols
 from the session types of the soup. (b) A separate cost judgment, as plan
-§19.2. Recommended (a), unchecked (conservativity at N = ∞).
+§19.2. Recommended (a), with offset ∞ in transformers. **Checked.** On paper,
+the rules (§2.17), the five counterexamples it touches, and conservativity
+at N = ∞ with Cycle.v and GrowRing. **Not checked.** A Rocq conservativity
+lemma, and FuelE reading session types from the soup's environments.
 
 **Q12. The process conjunct of LF.** Not a choice now. LF keeps
 the live process conjunct until `soup_no_tau_divergence` is proved (§2.12).
+**Checked.** The infinite spawn chain is rejected per thread (§2.12). **Not
+checked.** `soup_no_tau_divergence`.
 
 **Simplifications with unchecked entries in Appendix B.** Each needs its
 check before it is adopted.
 
 | Simplification | Unchecked entry |
 |---|---|
-| anchors and families instead of point values (Q1, Q2) | FactoryEx, FreshMany, GuardCex, SegmentInterleave, ChoiceNegative under the new placement |
+| anchors and families instead of point values (Q1, Q2) | FreshMany, GuardCex, SegmentInterleave (FactoryEx, ChoiceNegative, Cycle, GrowRing, C2 now checked on paper) |
 | one refill N (Q4) | monotonicity of FuelE in counters and N (G3) |
-| idle protocols (Q5 b) | index-free counters with idle checks |
+| idle protocols (Q5 b) | the controller (#20). Index-free counters checked on paper |
 | send-only transfers (Q3 b) | GrowRing and every spawn of a closure over ends |
 | dropping the process conjunct of LF | `soup_no_tau_divergence` |
-| one judgment (Q11 a) | conservativity at N = ∞ |
+| one judgment (Q11 a) | Rocq conservativity lemma. Checked on paper |
 | one relation R^κ (Q6) | `live ⊆ DF`, Internalize over κ |
 | derived constants (Q7) | none, §3.2 |
 
@@ -1247,7 +1389,7 @@ gone. **U** unchecked.
 | 1 | C1 with a ceiling | plan §14.1 | rank on index-free placement, `c1_rank_fails` for the world facts | R |
 | 2 | C1 without a ceiling | plan §17.2, scratch C1World.v | rank on index-free placement (§4.2) | D |
 | 3 | C1′, points shifted upward | plan §10.1 | rank | D |
-| 4 | C2 pipeline, lock free, rejected by the old R3 | plan §10.1 | should type, no derivation exists | U |
+| 4 | C2 pipeline, lock free, rejected by the old R3 | plan §10.1 | types under the design (B.1) | D |
 | 5 | C3 link refresh with a chatter step | plan §10.1 | tickets, `c3_link_loop_not_tix` | R |
 | 6 | C4, R4 rejected the Forwarder | plan §10.1 | the Forwarder types, `fw_ctyped` | R |
 | 7 | postponement, a holder loops and never serves | plan §8, liveness.md §9 | F-Tick, aging in the cost judgment | D |
@@ -1287,14 +1429,14 @@ gone. **U** unchecked.
 | 41 | a generated root reused after a link renamed its channel | this document, §2.5 | roots from a supply separate from channel names | D |
 | 42 | two components with contradicting laws | review point 3 | families renamed apart (§2.4) | D |
 | 43 | a created end and a carried end at one point | review point 2 | harmless under readiness and strictness (§2.3) | D |
-| 44 | idleness changes counters per index | review point 4 | idleness removes checks only (Q5) | U |
+| 44 | idleness changes counters per index | review point 4 | idleness removes checks only, adequacy proof on paper (B.1) | D |
 | 45 | dropping a fresh conservative extension fails at V-Const | counterexamples/DropCounter.v, `force_notin_Wb` | no V-Const, no extension with chosen facts | M |
 | 46 | one round is not enough, relay with one round | Rejected.v, `rr_call_underivable` | readiness unchanged | R |
 | 47 | a box needs its constraint | Rejected.v, `ord_no_constraint` | readiness unchanged | R |
 | 48 | reversed agents, a cyclic forwarding | Rejected.v, `sched_rev_underivable`, `ms_rev_underivable`, `badlink_underivable` | readiness unchanged | R |
-| 49 | the negative control of the choice encoding | ChoiceNegative.v, `t2_underivable` and others | depends on the new placement | U |
-| 50 | one payload point needs two contradicting facts | ChoiceEnc.v, `same_payload_not_acyclic` | stated over creation constraints, which go | U |
-| 51 | a box with a point of the first call | FactoryEx.v, `fx_no_first_call` | fresh roots of a family | U |
+| 49 | the negative control of the choice encoding | ChoiceNegative.v, `t2_underivable` and others | independent of placement, open since end points. The encoding itself types with anchors (B.1) | M |
+| 50 | one payload point needs two contradicting facts | ChoiceEnc.v, `same_payload_not_acyclic` | restated over W it is `same_payload_cycle`, void since end points (B.1) | M |
+| 51 | a box with a point of the first call | FactoryEx.v, `fx_no_first_call` | the first call needs no point. FactoryEx types with an anchorless and an anchored variant of mk (B.1) | D |
 | 52 | no point between two box points | FreshBetween.v, `fb_between_underivable` | the box anchors at the end at ι | D |
 | 53 | data branch without a derivation | DataBranch.v, `db_typed_false` | readiness unchanged | R |
 | 54 | SemFlag underivable | SemFlag.v, `sf_underivable` | open since end points, outside this proposal | U |
@@ -1303,6 +1445,106 @@ gone. **U** unchecked.
 | 57 | translations | mp/MPRounds.v `p8_not_mtyped`, pgv/PGVExamples.v `cx1_rejected`, `cx2_rejected` | out of the build | U |
 | 58 | a chain descending in W | Rank.v, `chain_not_wf` | rank | R |
 
-Totals. 58 entries. 20 R, 23 D, 7 M, 8 U. The unchecked ones are 4, 20,
-44, 49, 50, 51, 54 and 57, and 54 and 57 lie outside this proposal. The
-simplifications they touch are flagged in §5.
+Totals. 58 entries. 20 R, 26 D, 9 M, 3 U, 0 fails. The unchecked ones are
+20 (the controller, which depends on Q5), 54 (SemFlag) and 57 (the
+translations), and 54 and 57 lie outside this proposal.
+
+### B.1  The closed checks
+
+**#4, the C2 pipeline.** Each stage receives on its input, creates a channel,
+spawns the next stage on one end and sends on the other (plan §10.1).
+
+```
+stage = !(f = λin. let ⟨v, in⟩ = recv in in let () = close in in
+                  let (a, b) = new in
+                  let () = spawn (λ_. (force f) b) in
+                  close (send ⟨v, a⟩))
+in : ?∗.Close@ι      a : !∗.Close@ρ,  b : ?∗.Close@ρ̄,  ρ a fresh root
+```
+
+Readiness. A stage blocks on `in` while it holds nothing and on a while it
+holds nothing, because b left with the child, so it needs no fact, and the
+fresh root needs no law. Rank. The stage blocked on a waits on its child,
+which is enabled at its receive, so no chain of waits grows. Fuel. b is
+handed to the child at N − 1 ≥ 1 (N ≥ 2), a is acted on next, no other end is
+held. Guard. The receive precedes the force of the self. Costs. The box has
+cost 4 per force, the self is forced only inside the spawned thunk, typed by
+C-SpawnLam with b at credit N − 1, and the transformer of a recursion that
+spawns is (∞, 0) with no link. Types (argued). A streaming stage that keeps
+`in` while it sends needs a below the partner of `in`, so it creates
+a by `new_κ in` and states {x.κ+i ≺ x̄+i+1 | i} in its box constraint, the
+pattern of the client and server cycle.
+
+**#44, idle counters in the corrected form.** Counters evolve by the
+index-free update, idleness removes F-Tick's "≥ 1" and the hand-over's "≥ 1"
+for an idle end at that index, and F-Wait forbids acting on an idle end.
+Adequacy instantiates `Hfuel` at a position k for a thread t pending on o,
+whose partner ō the thread s holds, and reads the soup at index 3
+(LFAdequacy.v, `fuel_step` from `Hrun k 3`). At index 3 the FuelE of t sees
+its next step, the action on o, so F-Wait makes Π_3(o) non-idle, and the
+soup's pairing at index 3 makes Π_3(ō) non-idle. So at index 3 s's F-Tick
+asks φ(ō) ≥ 1 whenever s acts on another end, and a hand-over of ō asks
+φ(ō) ≥ 1, and the index-free counter drops by one in both cases. That is the
+first disjunct of `Hfuel`. Links lower the tickets as before. The proof
+never compares idleness across indices, because it reads every position at
+one fixed index. Handled (argued). The controller (#20) types under Q5 (b)
+with both ends of ctl idle, and stays outside Q5 (a).
+
+**#49, the negative control of the choice encoding.** The encoding first.
+sel₁ creates (k, k′) at the carrier's payload field x[0], today by
+`new` at a point value (ChoiceEnc.v:721), under the design by `new_0 c` on
+the carrier c, which places the channel at x.0 = x[0] (fields ignore
+polarity, so the dual carrier point gives the same field). sel₂ uses
+`new_1 c`. The sent end k′ arrives at x[i], where V at the payload type
+expects it. So `sel1_typed`, `sel2_typed` and `branch_typed` carry over with
+the anchor in place of the point value. The negative control asks whether
+T2 types when both arms share x[0]. With end points the two arms ask
+δ ≺ x[0]‾ and x[0] ≺ δ̄, four distinct points and no cycle, which is why the
+theorems are commented out (ChoiceNegative.v:404-577, "END POINTS: open").
+Placement changes neither the points nor the facts of this question. Moot
+for the proposal. It remains the open question of the end-points port.
+
+**#50, `same_payload_not_acyclic`.** The lemma says that no top-level
+creation constraint accepted by `soundness_source` contains δ ≺ a[0] and
+a[0] ≺ δ (ChoiceEnc.v:479). Creation constraints go. Restated over the new
+placement it reads "no strict world contains both facts", which is
+`same_payload_cycle` (ChoiceEnc.v:472) at W, true by strictness. Its use, to
+reject the shared-point program, is void since end points for the reason of
+#49. Moot.
+
+**#51, `fx_no_first_call`.** The lemma says that in the empty world no
+instance exists for the first force of a box whose result names the box
+variable (FactoryEx.v:258). Under the design the first call needs no point,
+because mk creates at a fresh root. The second call must place q relative to
+p, because main closes p while it holds q, and two generated roots are never
+ordered (§2.4). Today the program already passes that information as a
+point value derived from p (FactoryEx.v:59-60). Under the design it passes p
+itself as the anchor.
+
+```
+mk₀ = !(f = λu. let () = u in let (c, c′) = new_ℓ in
+              let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
+mk₁ = !(f = λp. let (p, ⟨c, c′⟩) = new_κ p in
+              let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)
+main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
+       let () = recvclose p in recvclose q
+Λ_ℓ(r) = { r̄ ≺ r.κ, r̄⁺ ≺ r.κ }     mk₁ : □∀ζ. {ζ ≺ ζ.κ, ζ⁺ ≺ ζ.κ}. (?∗.Close)@ζ ⊸ …
+```
+
+Main receives and closes on p at ῑ_p and ῑ_p⁺ while it holds q at
+(ῑ_p.κ)‾, and the facts come from the constraint of mk₁ at ζ = ῑ_p, the facts
+Tmk1 states today. Handled (argued), at the price of two variants of mk
+where today one term carries two types. Under Q2 (c) the factory fails,
+because it creates related channels at run time with no law and no anchor
+for the first call.
+
+**GrowRing, found while checking Q11.** The ring creates b at X[1] after it
+has closed x, so no end at X is held at that moment, and `new_κ` has no
+anchor (GrowRing.v, `ring`). Moving `let (b, b′) = new_1 x` before
+`recv x` anchors b at X[1] while x is held at X. The ring then holds b across
+the receive and the close of x, which asks X ≺ X[1], X[1]‾ and
+X+1 ≺ X[1], X[1]‾, and the constraint Cr already gives both (the last row of
+Cr and X ≺ X+1). The credit of b falls by two before the hand-over, so the
+budget may rise above `rg_ctyped`'s B = 4. Handled after the reordering
+(argued). The design point involved is that anchored creation needs the
+anchor held at the moment of creation.
