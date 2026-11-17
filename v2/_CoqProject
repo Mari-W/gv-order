@@ -66,5 +66,6 @@ compat/LiveDF.v
 compat/Swap.v
 compat/Rename.v
 compat/PSwap.v
+compat/Conv.v
 test/CompatNotations.v
 CheckAll.v
