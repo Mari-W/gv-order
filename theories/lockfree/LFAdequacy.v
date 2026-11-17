@@ -733,9 +733,6 @@ Section fuel_exists.
   Lemma fe_domF x ex : M !! x = Some ex → dom (F x) = tenv_ends (A x).
   Proof. intros Hx. by destruct (HF x ex Hx) as (_ & _ & ? & _). Qed.
 
-  Lemma fe_uniq x ex : M !! x = Some ex → cdual o ∈ tenv_ends (A x) → x = s.
-  Proof. intros Hx Hxo. by apply (s_uniq (S (S n)) W HW T π (C, M) A U Hc x s ex es (cdual o)). Qed.
-
   Lemma fe_to : o ∈ tenv_ends (A t).
   Proof. apply (s_held (S (S n)) W HW T π (C, M) A U Hc t e a o He Ha Ho). Qed.
 

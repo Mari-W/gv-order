@@ -1,9 +1,9 @@
 (** * The live logical relation (docs/extensions/liveness.md)
 
     V^W_n, E^W_n and P^W_n as in relation/LogicalRelation.v, with other
-    costs. Every channel step costs one index step, send, select, close
-    and link included. A synchronization of two threads costs two. Every
-    τ (β, new, spawn) costs nothing and is read inductively: inside a
+    costs. Every channel step costs one index step, send, select and
+    close included. A synchronization of two threads costs two. Every
+    τ (β, new, spawn, link) costs nothing and is read inductively: inside a
     level, E and P are least fixpoints over τ steps ([Eind], [Pind]).
     The index therefore counts observations, and inside every prefix of
     n observations no infinite τ sequence exists.
@@ -28,9 +28,6 @@ Local Set Warnings "-register-all".
     [tsize] (types/Types.v) counts the type constructors outside session
     types. Instantiation keeps it. *)
 
-Lemma tsize_pos T : 0 < tsize T.
-Proof. destruct T; simpl; lia. Qed.
-
 Lemma tsize_sinst σ T : tsize (sinst_ty σ T) = tsize T.
 Proof. induction T in σ |- *; simpl; auto. Qed.
 
@@ -45,9 +42,6 @@ Lemma wext_r_trans W1 W2 W3 : wext_r W1 W2 → wext_r W2 W3 → wext_r W1 W3.
 Proof.
   intros [->|H1] [->|H2]; [by left|by right|by right|right; by eapply wext_trans].
 Qed.
-
-Lemma wext_wext_r W W' : wext W W' → wext_r W W'.
-Proof. by right. Qed.
 
 (** ** Process τ steps, classified
 
@@ -105,9 +99,6 @@ Qed.
 Lemma padmin_step p p' : padmin p p' → preduction p p'.
 Proof. intros H. apply ptau_classify. by left. Qed.
 
-Lemma pchan_step p p' : pchan p p' → preduction p p'.
-Proof. intros H. apply ptau_classify. by right. Qed.
-
 (** ** Environments that fit a value (sharp edges 173)
 
     [tenv_bipol Θ]: the two entries of a channel Θ holds both ends of
@@ -119,9 +110,6 @@ Proof. intros H. apply ptau_classify. by right. Qed.
 
 Definition tenv_bipol (Θ : tenv) : Prop :=
   ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → pt_pol e1.2 ≠ pt_pol e2.2.
-
-Lemma tenv_fit_iff Θ e : tenv_fit Θ e ↔ tenv_ends Θ = fends e ∧ tenv_bipol Θ.
-Proof. done. Qed.
 
 Lemma pt_pol_dual y : pt_pol (pt_dual y) = negb (pt_pol y).
 Proof. done. Qed.
@@ -527,19 +515,6 @@ Lemma Etop_VT_iff below n VT1 VT2 T W Θ F e :
   Etop below n VT1 T W Θ F e ↔ Etop below n VT2 T W Θ F e.
 Proof. intros HV. destruct n; [done|]. by apply Eind_VT_iff. Qed.
 
-Lemma Pind_VT_mono below n VT1 VT2 T W Σ p :
-  (∀ W Θ v, VT1 W Θ v → VT2 W Θ v) →
-  Pind below n VT1 T W Σ p → Pind below n VT2 T W Σ p.
-Proof.
-  intros HV H. induction H as [W Σ p H] using Pind_ind'.
-  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
-  split_and!; [|done| |done| |done].
-  - intros Hirr. destruct (Hs Hirr) as (v & E & ? & ? & ? & ?). exists v, E. auto.
-  - intros p' Hst Hd. by destruct (Ha p' Hst Hd) as [_ HX].
-  - intros cd p' Hst. destruct (Hl cd p' Hst) as (c & d & Σ1 & sc & sd & kc & kd & ? & ? & ? & ? & ? & ? & ? & _ & HX).
-    exists c, d, Σ1, sc, sd, kc, kd. by split_and!.
-Qed.
-
 (** ** Obligations, monotone in the lower levels *)
 
 Lemma LEobl_mono Vl1 Vl2 El1 El2 n W Θ T F σ e' :
@@ -592,46 +567,6 @@ Proof.
   - done.
   - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k. split_and!; try done. by apply HP.
   - intros (Σ1&s1&s2&k&?&?&HX). exists Σ1, s1, s2, k. split_and!; try done. by apply HP.
-Qed.
-
-(** The relation at level n reads the levels below n only. *)
-Lemma Eind_below below1 below2 n VT T W Θ F e :
-  0 < n → (∀ j, j < n → below1 j = below2 j) →
-  Eind below1 n VT T W Θ F e → Eind below2 n VT T W Θ F e.
-Proof.
-  intros Hn Hb H. induction H as [VT T W Θ F e H] using Eind_ind'.
-  constructor.
-  intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Hbeta & Hnew & Hsp & Hσ & Hlk).
-  split_and!; [done|done| | | | |].
-  - intros e' Hst. by apply (Hbeta e' Hst).
-  - intros c x e' Hst Hc. destruct (Hnew c x e' Hst Hc) as (? & s & s' & ? & _ & HX).
-    split; [done|]. exists s, s'. by split_and!.
-  - intros w e' Hst. destruct (Hsp w e' Hst) as (Θ1 & Θ2 & ub & lb & ? & Hv & _ & HX).
-    exists Θ1, Θ2, ub, lb. split_and!; [done| |done].
-    destruct Hv as [(eb & -> & ? & ? & Hv)|Hk]; [left|by right]. exists eb.
-    split_and!; [done..|]. intros W' j Θ' Θ'' w' F' HW Hj Hc Hub.
-    destruct (Hv W' j Θ' Θ'' w' F' HW Hj Hc Hub) as [K1 K2]. split.
-    + intros Hjn. rewrite <-(Hb j Hjn). by apply K1.
-    + intros ? ? ?. by apply K2.
-  - intros σ e' Hst. eapply LEobl_mono; [..|exact (Hσ σ e' Hst)].
-    + intros j Hj W' Θ' T' v. cbv beta. rewrite (Hb j) by lia. done.
-    + intros j Hj W' Θ' T' F'. cbv beta. rewrite (Hb j) by lia. done.
-  - intros cd e' Hst. eapply LElink_mono; [|exact (Hlk cd e' Hst)]. by intros ? [_ ?].
-Qed.
-
-Lemma Pind_below below1 below2 n VT T W Σ p :
-  0 < n → (∀ j, j < n → below1 j = below2 j) →
-  Pind below1 n VT T W Σ p → Pind below2 n VT T W Σ p.
-Proof.
-  intros Hn Hb H. induction H as [W Σ p H] using Pind_ind'.
-  constructor. intros W1 HW1. destruct (H W1 HW1) as (Hs & Hr & Ha & Hc & Hl & Hσ).
-  split_and!; [done|done| | | |].
-  - intros p' Hst Hd. by destruct (Ha p' Hst Hd) as [_ HX].
-  - intros p' Hst. rewrite <-(Hb (pred (pred n))) by lia. auto.
-  - intros cd p' Hst. eapply Plink_case_mono; [|exact (Hl cd p' Hst)]. by intros ? [_ ?].
-  - intros σ p' Hst. eapply LPobl_mono; [..|exact (Hσ σ p' Hst)].
-    + intros j Hj W' Θ' T' v. cbv beta. rewrite (Hb j) by lia. done.
-    + intros j Hj W' Σ' T' q. cbv beta. rewrite (Hb j) by lia. done.
 Qed.
 
 (** ** Levels *)

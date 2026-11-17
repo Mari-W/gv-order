@@ -53,9 +53,6 @@ Section swap_steps.
   Lemma pcomm_pswap_inv p q : pcomm (pswap a b p) q → pcomm p (pswap a b q).
   Proof. intros H. apply (pcomm_pswap) in H. by rewrite pswap_involutive in H. Qed.
 
-  Lemma ptau_link_pswap_inv p q : ptau_link (pswap a b p) q → ptau_link p (pswap a b q).
-  Proof. intros H. apply (ptau_link_pswap a b) in H. by rewrite pswap_involutive in H. Qed.
-
   Lemma disj_pswap (p : proc) Σ : (pswap a b p).1 ## dom (senvswap a b Σ) → p.1 ## dom Σ.
   Proof.
     destruct p as [C E]; simpl. rewrite dom_senvswap. by apply gswap_disjoint_iff.

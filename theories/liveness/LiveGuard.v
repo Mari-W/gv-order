@@ -297,11 +297,6 @@ Proof.
     + intros i W4 Hi HW4. apply IH; [lia|lia|]. by eapply wext_trans.
 Qed.
 
-Lemma lgrounding_unl n W Θ Δ γ : lenv_unl Δ → lgrounding n W Θ Δ γ → Θ = ∅.
-Proof.
-  intros Hu Hg. apply (lgroundingL_unl n W Θ Δ noL γ Hu). by apply lgroundingL_none.
-Qed.
-
 (** E-Exp-Live with later variables around the box. The body sees the
     self as one more later variable, and the variables later outside
     stay later inside. *)

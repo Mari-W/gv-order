@@ -140,12 +140,6 @@ Proof.
     by eapply PStepLink.
 Qed.
 
-Corollary isteps_erase q q' : isteps q q' → pred_star (erase q) (erase q').
-Proof.
-  induction 1 as [|q1 q2 q3 [L H] _ IH]; [done|].
-  eapply rtc_l; [|exact IH]. by eapply istep_erase.
-Qed.
-
 (** ** Simulation, plain to instrumented *)
 
 Theorem preduction_lift q p' :
@@ -276,9 +270,6 @@ Proof.
   - destruct (is_val e); [|done]. by destruct e.
 Qed.
 
-Lemma act_chsubst c d e : act (chsubst c d e) = amap (csub c d) <$> act e.
-Proof. rewrite chsubst_emap. apply act_emap. Qed.
-
 (** ** Kinds of actions *)
 
 (** A link costs nothing (sharp edges 171), so its redex is
@@ -294,9 +285,6 @@ Proof.
   destruct a; simpl; unfold is_sess; simpl; try (right; by eexists).
   all: left; split; [done|by intros [? ?]].
 Qed.
-
-Lemma admin_sess_link a : is_admin a → is_sess a → ∃ c d, a = ALink c d.
-Proof. destruct a; simpl; unfold is_sess; simpl; try done; try (by intros _ [? ?]); eauto. Qed.
 
 Lemma amap_admin g a : is_admin (amap g a) ↔ is_admin a.
 Proof. by destruct a. Qed.

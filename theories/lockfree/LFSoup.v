@@ -240,12 +240,6 @@ Qed.
 
 (** ** The partner end and the ends of a term *)
 
-Lemma cdual_fst o : (cdual o).1 = o.1.
-Proof. done. Qed.
-
-Lemma cdual_inj o o' : cdual o = cdual o' → o = o'.
-Proof. intros H. rewrite <-(cdual_cdual o), <-(cdual_cdual o'). by rewrite H. Qed.
-
 (** ** The soup *)
 
 (** The soup reads environments only (decision of 2026-11-16). A thread
@@ -902,15 +896,6 @@ Proof. intros Hi Ho. by apply (renk_kren g m Hi). Qed.
 Lemma kren_lookup_inv {Y : Type} (g : chan → chan) (m : gmap cend Y) o' v :
   kinj g m → kren g m !! o' = Some v → ∃ o, o' = (g o.1, o.2) ∧ m !! o = Some v.
 Proof. intros Hi Ho. by apply (renk_kren g m Hi). Qed.
-
-(** Every entry of a renamed map comes from an entry of the map. *)
-Lemma kren_lookup_any {Y : Type} (g : chan → chan) (m : gmap cend Y) o' v :
-  kren g m !! o' = Some v → ∃ o, o' = (g o.1, o.2) ∧ m !! o = Some v.
-Proof.
-  intros Ho'. unfold kren in Ho'. apply elem_of_list_to_map_2 in Ho'.
-  apply list_elem_of_fmap in Ho' as ([o v'] & Heq & Hov). apply elem_of_map_to_list in Hov.
-  simpl in Heq. injection Heq as -> ->. by exists o.
-Qed.
 
 Lemma kren_dom {Y : Type} (g : chan → chan) (m : gmap cend Y) :
   kinj g m → dom (kren g m) = set_map (λ o : cend, (g o.1, o.2)) (dom m).

@@ -112,8 +112,6 @@ Context (W : world) (Σ1 Σ2 ΣC ΣC' : senv) (C0 C1 C2 : gset chan)
 
   Lemma lc_HW : strict W.
   Proof. apply Hok. Qed.
-  Lemma lc_HWf : world_wf W.
-  Proof. apply lc_HW. Qed.
 
   Lemma lc_Σ2C : Σ2 ##ₘ ΣC.
   Proof.
@@ -588,9 +586,6 @@ Section lsteps2.
 
   Local Notation C := (C1 ∪ C2 ∪ C0).
   Local Notation Σ := (Σ1 ∪ Σ2).
-
-  Lemma lc2_HW2 : strict W.
-  Proof. apply Hok. Qed.
 
 
   (** The composite in a larger world, components at level j ≤ n'. *)
