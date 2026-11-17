@@ -1182,6 +1182,18 @@ first, in stage S2.
   unrelated interface ends into one channel (S4.18). One renaming
   concept now covers renaming, Internalize and the link case of
   P-Connect. Cost tables ask c_give ≤ c_take, which κ_DF and κ_L meet.
+- O-Spawn reads the thunk at an arrow without the lower point
+  (delegated, after S5.5). The thunk leaves the parent, so no readiness
+  of the parent reads its heads. With the lower point E-SpawnLam fails
+  (`spawn_gap`, v2/compat/SpawnGap.v on redesign-s5): a thread holding
+  ends at unrelated points 1 and 2 spawns a thunk that closes both. Every
+  value of V at the arrow still satisfies the weaker clause.
+  Refined after S5.6 (delegated): O-Spawn reads the thunk body at the
+  empty future only, with no upper point. A spawned thread starts with no
+  context, so nothing it waits for lies in a future. Reading every F
+  above u fails for a body that creates a channel at a fresh root and
+  blocks on it. V at an arrow gives the body at F = ∅, so `Erel_spawn`
+  stays, and P-Term spawns threads at the empty future.
 
 ## 5  Open decisions for the author
 

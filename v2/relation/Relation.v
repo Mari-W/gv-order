@@ -262,6 +262,19 @@ Section bodies.
         (j < n → Vl j W' Θ' T1 w → El j W' (Θ ∪ Θ') U F (subst1 w e)) ∧
         (j = n → VNa W' Θ' w → ENb W' (Θ ∪ Θ') F (subst1 w e)).
 
+  (** The thunk of O-Spawn, a λ whose body is read at the empty future,
+      with no lower and no upper point. The thunk leaves the parent and
+      starts a thread with no context, so no readiness of the parent
+      reads its heads and nothing it waits for lies in a future
+      (delegated decisions after S5.5 and S5.6). *)
+  Definition Vthunk (n : nat) (Vl : nat → vrel) (El : nat → erel)
+      (VNa : world → senv → expr → Prop) (ENb : world → senv → gset point → expr → Prop)
+      (W : world) (Θ : senv) (v : expr) : Prop :=
+    ∃ e, v = Lam e ∧ dom Θ = fends e ∧
+      ∀ W' j Θ' w, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' →
+        (j < n → Vl j W' Θ' TUnit w → El j W' (Θ ∪ Θ') TUnit ∅ (subst1 w e)) ∧
+        (j = n → VNa W' Θ' w → ENb W' (Θ ∪ Θ') ∅ (subst1 w e)).
+
   (** ** The obligations of the steps of a term (§2.8)
 
       One per label, at level n, for the step e --α--> e' in Θ with
@@ -282,9 +295,9 @@ Section bodies.
         ∃ S, at_cost_E n (c_new κ) El X W (new_env c S (x·κf) Θ) T F e'.
 
     Definition o_spawn (M : gset cend) (v e' : expr) : Prop :=
-      ∃ ΘM Θr ub lb, ΘM ##ₘ Θr ∧ Θ = ΘM ∪ Θr ∧ dom ΘM = M ∧
-        Varr n Vl El (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, X W' Θ' TUnit F' e0)
-          TUnit TUnit ub lb W ΘM v ∧
+      ∃ ΘM Θr, ΘM ##ₘ Θr ∧ Θ = ΘM ∪ Θr ∧ dom ΘM = M ∧
+        Vthunk n Vl El (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, X W' Θ' TUnit F' e0)
+          W ΘM v ∧
         at_cost_E n (c_spawn κ) El X W Θr T F e'.
 
     Definition o_send (o : cend) (M : gset cend) (w e' : expr) : Prop :=
@@ -576,6 +589,15 @@ Section maps.
     split; [exact H1|]. intros Hjn Hw. exact (f _ _ _ _ (H2 Hjn Hw)).
   Defined.
 
+  Definition Vthunk_mapB n Vl El VNa (B1 B2 : world → senv → gset point → expr → Prop)
+      (f : ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) W Θ v :
+    Vthunk κ n Vl El VNa B1 W Θ v → Vthunk κ n Vl El VNa B2 W Θ v.
+  Proof.
+    intros (e & Hv & Hfe & H). exists e. split; [exact Hv|]. split; [exact Hfe|].
+    intros W' j Θ' w HW Hj Hd. destruct (H W' j Θ' w HW Hj Hd) as [H1 H2].
+    split; [exact H1|]. intros Hjn Hw. exact (f _ _ _ _ (H2 Hjn Hw)).
+  Defined.
+
   Definition at_cost_E_map n c El (X1 X2 : erel) W Θ T F e
       (f : X1 W Θ T F e → X2 W Θ T F e) :
     at_cost_E n c El X1 W Θ T F e → at_cost_E n c El X2 W Θ T F e.
@@ -600,9 +622,9 @@ Section maps.
       exists S0, x. split; [exact Ho|]. exists S.
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) HS). }
     split.
-    { intros M v e' Hs. destruct (H4 M v e' Hs) as (ΘM & Θr & ub & lb & A1 & A2 & A3 & A4 & A5).
-      exists ΘM, Θr, ub, lb. split; [exact A1|]. split; [exact A2|]. split; [exact A3|].
-      split; [exact (Varr_mapB _ _ _ _ _ _ (λ W Θ F e, f W Θ TUnit F e) _ _ _ _ _ _ _ A4)|].
+    { intros M v e' Hs. destruct (H4 M v e' Hs) as (ΘM & Θr & A1 & A2 & A3 & A4 & A5).
+      exists ΘM, Θr. split; [exact A1|]. split; [exact A2|]. split; [exact A3|].
+      split; [exact (Vthunk_mapB _ _ _ _ _ _ (λ W Θ F e, f W Θ TUnit F e) _ _ _ A4)|].
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) A5). }
     split.
     { intros o M w e' Hs.
@@ -731,6 +753,31 @@ Section mono.
       apply HB; [done|]. apply H2; [done|]. by apply HVa.
   Qed.
 
+  Lemma Vthunk_mono n Vl1 Vl2 El1 El2 VNa1 VNa2 (B1 B2 : world → senv → gset point → expr → Prop)
+      W Θ v :
+    (∀ j, j < n → ∀ W Θ T v, Vl2 j W Θ T v → Vl1 j W Θ T v) →
+    (∀ j, j < n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
+    (c_beta κ = 0 → ∀ W Θ w, VNa2 W Θ w → VNa1 W Θ w) →
+    (c_beta κ = 0 → ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) →
+    Vthunk κ n Vl1 El1 VNa1 B1 W Θ v → Vthunk κ n Vl2 El2 VNa2 B2 W Θ v.
+  Proof.
+    intros HVl HEl HVa HB (e & -> & Hfe & H). exists e. split_and!; [done|done|].
+    intros W' j Θ' w HW Hj Hd. destruct (H W' j Θ' w HW Hj Hd) as [H1 H2].
+    split.
+    - intros Hjn Hw. apply HEl; [done|]. apply H1; [done|]. by apply HVl.
+    - intros -> Hw. assert (c_beta κ = 0) as Hb by lia.
+      apply HB; [done|]. apply H2; [done|]. by apply HVa.
+  Qed.
+
+  (** The arrow gives the thunk: drop the lower point and read the body
+      at the empty future, above every upper point. *)
+  Lemma Varr_thunk n Vl El VNa ENb ub lb W Θ v :
+    Varr κ n Vl El VNa ENb TUnit TUnit ub lb W Θ v → Vthunk κ n Vl El VNa ENb W Θ v.
+  Proof.
+    intros (e & -> & Hfe & _ & H). exists e. split_and!; [done|done|].
+    intros W' j Θ' w HW Hj Hd. apply H; [done|done|done|]. destruct ub; simpl; [set_solver|done].
+  Qed.
+
   Lemma at_cost_E_mono n c El1 El2 X1 X2 W Θ T F e :
     n ≠ 0 → (∀ j, j < n → El1 j W Θ T F e → El2 j W Θ T F e) →
     (X1 W Θ T F e → X2 W Θ T F e) →
@@ -766,9 +813,9 @@ Section mono.
     - intros ℓ c e' Hs Hc g Hg. destruct (H2 ℓ c e' Hs Hc g Hg) as [S HS]. exists S. by apply Hac.
     - intros κf o c e' Hs Hc. destruct (H3 κf o c e' Hs Hc) as (S0 & x & Ho & S & HS).
       exists S0, x. split; [done|]. exists S. by apply Hac.
-    - intros M v e' Hs. destruct (H4 M v e' Hs) as (ΘM & Θr & ub & lb & A1 & A2 & A3 & A4 & A5).
-      exists ΘM, Θr, ub, lb. split_and!; [done|done|done| |by apply Hac].
-      revert A4. apply Varr_mono.
+    - intros M v e' Hs. destruct (H4 M v e' Hs) as (ΘM & Θr & A1 & A2 & A3 & A4 & A5).
+      exists ΘM, Θr. split_and!; [done|done|done| |by apply Hac].
+      revert A4. apply Vthunk_mono.
       + intros j Hj W0 Θ0 T0 v0. by apply HVl.
       + intros j Hj. by apply HEl.
       + by intros.

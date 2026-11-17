@@ -376,6 +376,14 @@ Section redex.
         apply at_cost_val. by apply Vrel_unit_iff.
   Qed.
 
+  Lemma Vthunk_of_Vrel n W Θ ub lb c t h a1 aU v :
+    Vrel κ n W Θ (TLolli ub lb c t h TUnit a1 TUnit aU) v →
+    Vthunk κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) W Θ v.
+  Proof.
+    intros HV. apply (Vrel_thunk κ _ _ _ ub lb).
+    eapply (Vrel_blind κ); [|exact HV]. done.
+  Qed.
   Lemma Erel_spawn n W Θ ub lb c t h a1 aU F v :
     Vrel κ n W Θ (TLolli ub lb c t h TUnit a1 TUnit aU) v → Erel κ n W Θ TUnit F (ESpawn v).
   Proof.
@@ -388,12 +396,11 @@ Section redex.
     - intros Hi. exact (Hi _ _ Hst).
     - intros W1 _. eapply ready_tau; [exact Hst|done].
     - intros W1 α e' HW1 Hs. destruct (Hdet _ _ Hs) as [-> ->]. simpl.
-      exists Θ, ∅, ub, lb. split_and!.
+      exists Θ, ∅. split_and!.
       + apply map_disjoint_empty_r.
       + by rewrite map_union_empty.
       + by apply (Vrel_exact κ _ _ _ _ _ HV).
-      + apply Varr_spawn_iff. eapply (Vrel_blind κ); [|eapply Vrel_mono; [exact HW1|exact HV]].
-        done.
+      + eapply Vthunk_of_Vrel, Vrel_mono; [exact HW1|exact HV].
       + apply at_cost_val. by apply Vrel_unit_iff.
   Qed.
 

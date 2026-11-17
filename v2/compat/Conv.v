@@ -303,14 +303,14 @@ Section rel.
     - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst (senv_eqv_cfresh _ _ _ HΘ Hc)) as (S0 & x & Ho & S & HS).
       destruct (senv_eqv_lookup _ _ _ _ _ HΘ Ho) as (S0' & Ho' & _).
       exists S0', x. split; [done|]. exists S. eapply Hac; [|exact HS]. by apply senv_eqv_new_env.
-    - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & ub & lb & A1 & -> & A3 & A4 & A5).
+    - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & A1 & -> & A3 & A4 & A5).
       destruct (senv_eqv_split _ _ _ HΘ A1) as (ΘM' & Θr' & -> & Hd' & EM & Er).
-      exists ΘM', Θr', ub, lb. split_and!; [done|done|by rewrite <-(senv_eqv_dom _ _ EM)| |by eapply Hac].
-      destruct A4 as (e1 & -> & Hfe & Hlb & HA). exists e1.
-      split_and!; [done|by rewrite <-(senv_eqv_dom _ _ EM)|by rewrite <-(senv_eqv_heads _ _ EM)|].
-      intros W' j Θ0 w F' HW Hj Hd Hub.
+      exists ΘM', Θr'. split_and!; [done|done|by rewrite <-(senv_eqv_dom _ _ EM)| |by eapply Hac].
+      destruct A4 as (e1 & -> & Hfe & HA). exists e1.
+      split_and!; [done|by rewrite <-(senv_eqv_dom _ _ EM)|].
+      intros W' j Θ0 w HW Hj Hd.
       assert (ΘM ##ₘ Θ0) as Hd0 by (rewrite map_disjoint_dom in Hd |- *; by rewrite (senv_eqv_dom _ _ EM)).
-      destruct (HA W' j Θ0 w F' HW Hj Hd0 Hub) as [B1 B2]. split.
+      destruct (HA W' j Θ0 w HW Hj Hd0) as [B1 B2]. split.
       + intros Hjn Hw. apply (proj2 (IHl j Hjn TUnit) _ (ΘM ∪ Θ0)).
         * apply senv_eqv_union; [done|apply senv_eqv_refl].
         * by apply B1.

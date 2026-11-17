@@ -68,5 +68,13 @@ compat/Rename.v
 compat/PSwap.v
 compat/Conv.v
 compat/Connect.v
+compat/EFacts.v
+compat/TermRules.v
+compat/BindActs.v
+static/Fundamental.v
+static/Guard.v
+compat/LiveRules.v
+static/LiveFundamental.v
+examples/GuardEx.v
 test/CompatNotations.v
 CheckAll.v
