@@ -1,6 +1,7 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1, S2, S3 and S6. [make check] compiles this file and fails if any line below
+    Stages S1, S2, S3 and S6, and the part of S4 done so far
+    (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
@@ -10,6 +11,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
 From GV Require Import fuel.FuelSub.
+From GV Require Import compat.Rules compat.LiveDF compat.Swap.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -134,3 +136,54 @@ Print Assumptions Vfuel_pair.
 (** S6. F1 bind, link loops. *)
 Print Assumptions FuelE_bind.
 Print Assumptions link_tickets_fall.
+(** S4. The bind lemma, blindness, groundings. *)
+Print Assumptions Erel_sends.
+Print Assumptions Erel_bind.
+Print Assumptions Vrel_teq.
+Print Assumptions Erel_teq_ty.
+Print Assumptions Prel_teq.
+Print Assumptions Vrel_blind.
+Print Assumptions Erel_blind.
+Print Assumptions Grel_split.
+Print Assumptions sf_den_unionb.
+Print Assumptions sem_typed_points.
+(** S4. Decision Q14, operator redexes and rules, live ⊆ DF, renaming. *)
+Print Assumptions Vrel_exact.
+Print Assumptions Vrel_heads.
+Print Assumptions Erel_beta.
+Print Assumptions Erel_app.
+Print Assumptions Erel_send.
+Print Assumptions Erel_recv.
+Print Assumptions Erel_close.
+Print Assumptions Erel_select.
+Print Assumptions Erel_branch.
+Print Assumptions Erel_link.
+Print Assumptions Erel_spawn.
+Print Assumptions Erel_new_at.
+Print Assumptions Erel_new.
+Print Assumptions Erel_force.
+Print Assumptions sem_e_send.
+Print Assumptions sem_e_recv.
+Print Assumptions sem_e_close.
+Print Assumptions sem_e_select.
+Print Assumptions sem_e_branch.
+Print Assumptions sem_e_link.
+Print Assumptions sem_e_spawn.
+Print Assumptions sem_e_new_at.
+Print Assumptions sem_e_force.
+Print Assumptions sem_e_new.
+Print Assumptions live_e_send.
+Print Assumptions live_e_recv.
+Print Assumptions live_e_close.
+Print Assumptions live_e_select.
+Print Assumptions live_e_branch.
+Print Assumptions live_e_link.
+Print Assumptions live_e_spawn.
+Print Assumptions live_e_new_at.
+Print Assumptions live_e_force.
+Print Assumptions live_e_new.
+Print Assumptions dual_unfoldS.
+Print Assumptions sequiv_dual.
+Print Assumptions live_sub_df.
+Print Assumptions Vrel_swap.
+Print Assumptions Erel_swap.

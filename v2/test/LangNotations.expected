@@ -6,3 +6,5 @@
      : cend → Prop
 λ c : chan, Pair (Chan c⁺) (Chan c⁻)
      : chan → expr
+λ c : chan, ELet (Chan c⁺) (Pair (Var 0) (Chan c⁻))
+     : chan → expr

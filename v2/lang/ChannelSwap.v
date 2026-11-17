@@ -57,6 +57,7 @@ Proof.
                     | FAppL e2 => FAppL (emap (cmap h) e2) | FAppR v => FAppR (emap (cmap h) v)
                     | FPairL e2 => FPairL (emap (cmap h) e2) | FPairR v => FPairR (emap (cmap h) v)
                     | FLetU e2 => FLetU (emap (cmap h) e2) | FLetP e2 => FLetP (emap (cmap h) e2)
+                    | FLet e2 => FLet (emap (cmap h) e2)
                     | FInj1 => FInj1 | FInj2 => FInj2
                     | FCase e1 e2 => FCase (emap (cmap h) e1) (emap (cmap h) e2)
                     | FOp k => FOp k end) (emap (cmap h) e0)) as Hfill

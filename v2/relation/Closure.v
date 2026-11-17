@@ -49,15 +49,15 @@ Section closure.
     intros HW. revert W W' HW Θ v. induction T as [T IH] using tsize_ind. intros W W' HW Θ v.
     destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x|lb m C T1 a].
     - by rewrite !Vrel_unit_iff.
-    - rewrite !Vrel_lolli_iff. intros (e & -> & Hlb & H). exists e.
-      split_and!; [done|by eapply lb_le_mono|]. intros W'' j Θ' w F HW'' Hj Hd Hub Hw.
+    - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e.
+      split_and!; [done|done|by eapply lb_le_mono|]. intros W'' j Θ' w F HW'' Hj Hd Hub Hw.
       apply H; [by eapply wext_trans|done..].
     - rewrite !Vrel_prod_iff. intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2).
       exists v1, v2, Θ1, Θ2. split_and!; [done|done|done| |];
         [eapply (IH T1)|eapply (IH U)]; eauto; simpl; lia.
     - rewrite !Vrel_sum_iff. intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; exists v';
         (split; [done|]); [eapply (IH T1)|eapply (IH U)]; eauto; simpl; lia.
-    - rewrite !Vrel_box_iff. intros (-> & e & -> & H). split; [done|]. exists e.
+    - rewrite !Vrel_box_iff. intros (-> & e & -> & Hfe & H). split; [done|]. exists e. split; [done|].
       split; [done|]. intros W'' xs ss HW'' Hxs Hss Hsc HC. apply H; [by eapply wext_trans|done..].
     - by rewrite !Vrel_sess_iff.
     - rewrite !Vrel_ex_iff. intros (Hlb & xs & Hxs & HC & H). split; [by eapply lbx_le_mono|].
@@ -94,14 +94,14 @@ Section closure.
     intros Hmn. revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
     destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m' kk C ub c t U a|s x|lb m' C T1 a].
     - by rewrite !Vrel_unit_iff.
-    - rewrite !Vrel_lolli_iff. intros (e & -> & Hlb & H). exists e.
-      split_and!; [done|done|]. intros W' j Θ' w F HW Hj Hd Hub Hw. apply H; [done|lia|done..].
+    - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e.
+      split_and!; [done|done|done|]. intros W' j Θ' w F HW Hj Hd Hub Hw. apply H; [done|lia|done..].
     - rewrite !Vrel_prod_iff. intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2).
       exists v1, v2, Θ1, Θ2. split_and!; [done|done|done| |];
         [eapply (IH T1)|eapply (IH U)]; eauto; simpl; lia.
     - rewrite !Vrel_sum_iff. intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; exists v';
         (split; [done|]); [eapply (IH T1)|eapply (IH U)]; eauto; simpl; lia.
-    - rewrite !Vrel_box_iff. intros (-> & e & -> & H). split; [done|]. exists e.
+    - rewrite !Vrel_box_iff. intros (-> & e & -> & Hfe & H). split; [done|]. exists e. split; [done|].
       split; [done|]. intros W' xs ss HW Hxs Hss Hsc HC. eapply IH; [|by apply H].
       rewrite tsize_tthunk. unfold ty_inst. rewrite tsize_sinst, tsize_pinst. simpl. lia.
     - by rewrite !Vrel_sess_iff.
@@ -145,7 +145,7 @@ Section closure.
       exists S0, x. split; [done|]. exists S. eapply Hac; [done|exact HS].
     - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & ub & lb & A1 & A2 & A3 & A4 & A5).
       exists ΘM, Θr, ub, lb. split_and!; [done|done|done| |eapply Hac; [done|exact A5]].
-      destruct A4 as (eb & -> & Hlb & A4). exists eb. split_and!; [done|done|].
+      destruct A4 as (eb & -> & Hfe & Hlb & A4). exists eb. split_and!; [done|done|done|].
       intros W' j Θ' w F0 HW Hj Hd Hub. destruct (A4 W' j Θ' w F0 HW ltac:(lia) Hd Hub) as [B1 B2].
       split; [intros Hjm; apply B1; lia|].
       intros -> [-> ->]. destruct (decide (m = n)) as [->|Hne].

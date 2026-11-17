@@ -19,6 +19,7 @@ types/Worlds.v
 types/Costs.v
 types/Types.v
 types/Erasure.v
+types/Duality.v
 static/Contexts.v
 static/Typing.v
 static/Conservativity.v
@@ -47,4 +48,12 @@ fuel/FuelValues.v
 fuel/FuelBind.v
 fuel/FuelSub.v
 test/FuelNotations.v
+compat/Bind.v
+compat/Blind.v
+compat/SemTyped.v
+compat/Redex.v
+compat/Rules.v
+compat/LiveDF.v
+compat/Swap.v
+test/CompatNotations.v
 CheckAll.v

@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | open |
+| S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | open |
@@ -97,7 +97,7 @@ The old development in theories/ stays untouched.
   typing that captures more than one end, because E-Abs bounds all
   captured heads by one lower point.
   Superseded by decision Q13: S4 adds a primitive let and E-Let types
-  it, so no rule matches the redex shape.
+  it, so no rule matches the redex shape. Done in S4.0.
 - S2, points in session types. Point instantiation leaves session types
   alone, and E-Send and E-Recv ask the payload point-closed below its own
   binder (`pscoped m T`), as the old development scoped payloads. The
@@ -236,6 +236,55 @@ The old development in theories/ stays untouched.
   not channels.
 - S6, deferred. `seq_sound` with offset ∞ is not used by the bind lemma.
   S7 proves it with the cost half of the judgment.
+- S4, static futures. `Θ ; Δ ⊨^F _ W t : T` takes the static future F
+  of S2 and reads it through `sf_den ρ B F`: the future variable stands
+  for an arbitrary set ρ φ and the ⊥ flag for an arbitrary set B, both
+  universally quantified. The proposal's `pbot` (W8) is not used. A
+  point that no world orders below anything does not survive the
+  Kripke quantifier of E, whose later worlds need not be well formed.
+  A term typed under the ⊥ flag performs no session action (every
+  action asks `ub_below_s`, which asks the flag off), so it is ready
+  under every future, and the universal reading is the one S5 can
+  establish. The judgment at a set of points is `sem_typed_at`, the
+  form the old semantic rules used. A body under a future hypothesis
+  u ≺ φ (E-Abs, E-Box) is stated in that form over every future above
+  u. With Γ = ∅, as in `fundamental` of A.3, both readings agree.
+- S4, groundings. `Grel κ n W Θ Δ γ` splits Θ among the variables of Δ,
+  one value of V per entry, as the old `grounding` did. It has no
+  notation, because Appendix A gives none.
+- S4, bind. `Erel_bind` asks no strictness of W and no bound on the
+  heads of the frame. The future of the hole holds the heads of the
+  frame's environment itself (`F ∪ senv_heads Θ2`), which S5 reaches
+  from the static heads of E-App and its siblings. The ends a step of
+  the hole acts on are held by the hole (`Erel_sends`), because every
+  obligation reads the subject's entry, so a frame's ends are never
+  touched and the old `Lsubjs_free` goes.
+- S4, blindness. V, E and P agree at T and T' whenever
+  `teq (ty_df T) (ty_df T')`, more than ty_df T = ty_df T'. The
+  operator redexes need it, because V at S@x holds the end at an S'
+  with S' ≈ S up to annotations only, and the obligations read the
+  head of S' (`seqv_unfold_snd` and its siblings).
+
+- S4, Q14. V at a λ asks `dom Θ = fends e` and V at a box `fends e = ∅`
+  (decision Q14), as conjuncts of `Varr` and of the box clause of
+  `Vbody`. The thunk of O-Spawn reads `Varr` too, so it asks the same,
+  which O-Spawn's `dom Θ_M = M` already gave. The clause at a box is
+  implied by the clause at its thunk, and is kept because Q14 states it.
+- S4, `send_gap` is gone. Its positive form is `Erel_send`: a send of a
+  pair in V at the payload and session types is in E, because the
+  payload's environment is exactly its ends (`Vrel_exact`).
+- S4, duality. O-Link compares the two ends by `sdual` up to erasure,
+  and V gives each end's type only up to ≈. The link redex needs ≈ to be
+  a congruence for `dual`. v2 had no such lemma, so types/Duality.v
+  ports the flip algebra, `dual_unfoldS` and `sequiv_dual` from
+  theories/types/Types.v and SessionEquiv.v.
+- S4, the operator rules are stated at the set form `sem_typed_at`, with
+  the facts of the typing rule read in W (`gen_e_*`, instances
+  `sem_e_*`, `live_e_*`). The static facts Γ ⊢ x ≺ y and the static
+  future reach this form only after S5 instantiates the hypotheses of Γ.
+  E-New reads its constraint at the laws of the world of the judgment,
+  so the redex is stated for every subset of the laws of a later world
+  (`Erel_new_sub`).
 
 ## Log
 
@@ -327,3 +376,95 @@ The old development in theories/ stays untouched.
 - S6.6. Notation test v2/test/FuelNotations.v, README section, CheckAll
   lists 105 results, all closed. No `Admitted` and no axiom. S6 done.
 
+- S4.0. Decision Q13. The term former `ELet e1 e2` (let x = e1 in e2,
+  binding 1 in e2) with the frame `FLet` and the head step `t_act_let`,
+  `ELet v e --β--> e[v/x]`. The step carries the label β, so it costs
+  κ(β) and the relation needs no new clause: O-Beta reads it. E-Let
+  (`e_let`) and D-Let (`d_let`) type `ELet e1 e2` with the premises of
+  the S2 rule, no lower point. `let_new` and `elet` of examples/Tools.v
+  build the new former, so the examples keep their derivations.
+  Safety (`act`, `act_offer_sig`, closedness), harmony (`HRedLet`),
+  `act_emap`, the frame maps of ChannelSwap.v and TauThread.v, `relabel`
+  and the notation test follow. Conservativity, renaming, weakening and
+  point substitution needed no change beyond the rule's subject.
+- S4.1. The bind lemma `Erel_bind` over every cost table
+  (v2/compat/Bind.v) and blindness (v2/compat/Blind.v): `Vrel_teq`,
+  `Erel_teq_ty`, `Prel_teq`, `Vrel_blind`, `Erel_blind`.
+- S4.2. The semantic term judgment (v2/compat/SemTyped.v): `Grel`,
+  `sem_typed_at`, `sf_den`, `sem_typed κ`, the notations `⊨` and `⊫`
+  (test/CompatNotations.v), `Grel_split` for `lenv_split`, and the
+  world, level and future lemmas.
+- S4.3. Stop. O-Send asks `dom Θ_M = M` with M the ends the payload
+  mentions (Q3), and after B5 and B6 no V clause relates the ends of a
+  value to its environment (§2.7). So V holds values that no send can
+  hand over. `send_gap` (v2/compat/SendGap.v) proves it in Rocq: the
+  closure w' = λ_. let ∗ = Ω in close q⁺ mentions q⁺, owns nothing and
+  is in `V^W _ n⟦∅ ⊢ ∗ ⊸ ∗⟧` at every n (its body only takes β steps),
+  the pair ⟨w', d⁺⟩ is in V at the payload type of d⁺ at every n, and
+  `send ⟨w', d⁺⟩` is not in E at level 1, because its label moves {q⁺}
+  and the sender holds no q⁺. So the semantic E-Send rule is false over
+  groundings in V. It is not an artefact of the rule's form. O-Recv,
+  Q-Recv and the arrow quantify over every value of V, so the typable
+  forwarder `let ⟨w, c⟩ = recv c in let ∗ = close c in close (send ⟨w, d⟩)`
+  with c : ?(∗ ⊸ ∗).end, d : !(∗ ⊸ ∗).end, after receiving w' at Θin = ∅,
+  reaches the same send at a positive level whenever n is large enough
+  to pay for the receive, the close and the β steps before it (n ≥ 4 in
+  κ_DF, n ≥ 3 in κ_L), so it is in neither E, and `fundamental` and `live_fundamental` of A.3 fail for it. The
+  same holds for the closure λw. send ⟨w, d⟩ (E-Abs) and for a box that
+  mentions an end in dead code (B.1 #32 argued it handled). The
+  argument of §2.7 ("a closure that owns an end it does not mention
+  cannot act on it, so the relation rejects it by itself") does not
+  hold: V does not reject it, and every receiver must accept it.
+  Repairs, each needing the author: (a) restore exactness in V,
+  `dom Θ = fends v` at λ and box (B5, B6), a syntactic clause; (b) read
+  a transfer set at every incoming value as well (O-Recv, Q-Recv and
+  the arrow's argument, with E returning only exact values), which
+  amounts to (a); (c) an existential split at O-Send and O-Spawn with
+  no M, which loses the index-free ownership §2.7 wants for lock
+  freedom. Not done: operator redexes, P-Term, Internalize, P-Connect,
+  P-Join, renaming, `live ⊆ DF`. The composition lemmas do not depend
+  on the repair as long as O-Send keeps an exact `Θ_M`, so they can
+  start once the author decides. CheckAll lists 87 results, all
+  closed. No `Admitted` and no axiom.
+- S4.4. Decision Q14 in v2/relation/Relation.v, S3's closure and
+  characteristic lemmas follow. types/Duality.v. v2/compat/Redex.v: the
+  exact ends and the heads of values, the β redexes, the redex of every
+  operator and of `new_ℓ`. v2/compat/Rules.v: the operator rules over
+  every cost table and their DF and live instances.
+- S4.5. live ⊆ DF (v2/compat/LiveDF.v). `live_sub_df : tshape T →
+  ∅ ⊫_W p : T → ∅ ⊨_W p : T`, for a closed process at a first-order T
+  (∗, S@x, ⊗, ⊕, ∃, no arrow and no box). V at such a T reads no E and
+  is the same for both tables (`Vrel_shape`). A closed process takes τ
+  steps only, each at least as costly in κ_DF as in κ_L except a link,
+  which costs 0 in both and is read inside the level by induction on the
+  size of the soup (`psize_link`). What this argument does not give.
+  (1) A higher-order T or an open interface. V of κ_DF must then be read
+  in a negative position (an arrow's argument, a received payload), and
+  V of κ_DF is not included in V of κ_L: λ_. Ω is in V of κ_DF at
+  ∗ ⊸ ∗ and not in V of κ_L. No counterexample to the inclusion itself
+  is known; it needs an argument relating the two relations (a binary
+  relation or parametricity), not an induction on levels. (2) An open
+  interface also lets each level pick its own environment Θe of
+  extruded ends in Q-Send, while the conclusion needs one environment at
+  every level. Blindness of P in its environment up to ≈ would repair
+  (2), not (1).
+- S4.6. Renaming (v2/compat/Swap.v). V and E are invariant under a
+  transposition of channel names, for every cost table (`Vrel_swap`,
+  `Erel_swap`). P is not done: it needs the transposition on
+  configurations with thread identifiers (only the erased `pstep_pswap`
+  exists) and the transport of `send_split`, `recv_ok`, `recv_env` and
+  `recv_back`.
+- S4.7. Open: P-Term, Internalize, P-Connect with the external Q-Send
+  and Q-Recv clauses, P-Join, and renaming of P. The plan: P-Join
+  follows from P-Connect by R7 (`p_join_iff_connect`). P-Connect is
+  induction on the level and, inside it, on the least fixpoints of the
+  two components. Cross-cut communication is a Q-Send of one side
+  against a Q-Recv of the other at cost κ(send) + κ(recv) ≥ 1. A link
+  that involves a cut end renames the other component (renaming of P).
+  Readiness of the composite is a chain of cut ends that strictly
+  descends in W1 ⊔ W2 and so ends at an offered interface end by
+  strictness. P-Term is P-Connect of the spawned threads. In size it
+  matches theories/liveness/LiveConnect.v, LivePConnect.v, LivePTerm.v
+  and composition/ReadyChain.v (about 3500 lines), and it is not
+  started. CheckAll lists 125 results, all closed. No `Admitted` and no
+  axiom.

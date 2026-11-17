@@ -97,3 +97,16 @@ reads no point, no world and no relation. Every step costs one level.
 | fuel/FuelBind.v | `FuelE_bind` (F1) and `link_tickets_fall` |
 | fuel/FuelSub.v | `Vfuel_teq`, `Vfuel_sub`, `FuelE_sub` along the subtyping of the merged judgment |
 | test/FuelNotations.v | the S6 notations |
+## Stage S4, generic compatibility (in progress)
+
+| File | Content |
+|---|---|
+| types/Duality.v | duality commutes with unfolding (`dual_unfoldS`), ≈ is a congruence for `dual` (`sequiv_dual`), ported |
+| compat/Bind.v | `Erel_sends`, readiness under a frame, the bind lemma `Erel_bind` for every cost table |
+| compat/Blind.v | heads of session types up to ≈ (`seqv_unfold_*`), V, E and P agree at types whose erasures are ≈ (`Vrel_teq`, `Erel_teq_ty`, `Prel_teq`), the blindness lemma `Vrel_blind`, `Erel_blind` |
+| compat/SemTyped.v | groundings `Grel`, the judgment at a set of points `sem_typed_at`, static futures `sf_den`, `Θ ; Δ ⊨^F _ W t : T` and `Θ ; Δ ⊫^F _ W t : T` (`sem_typed κ`) |
+| compat/Redex.v | exact ends and heads of values (`Vrel_exact`, `Vrel_heads`), the β redexes and the redex of every operator (`Erel_send` … `Erel_force`, `Erel_new`) |
+| compat/Rules.v | the operator rules over every cost table (`gen_e_*`) and their instances `sem_e_*`, `live_e_*` |
+| compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a first-order T |
+| compat/Swap.v | V and E are invariant under a transposition of channel names (`Vrel_swap`, `Erel_swap`) |
+| test/CompatNotations.v | the S4 notations |

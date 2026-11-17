@@ -373,6 +373,7 @@ Definition frame_emap (g : cend → cend) (f : frame) : frame :=
   | FPairR v1 => FPairR (emap g v1)
   | FLetU e2 => FLetU (emap g e2)
   | FLetP e2 => FLetP (emap g e2)
+  | FLet e2 => FLet (emap g e2)
   | FInj1 => FInj1
   | FInj2 => FInj2
   | FCase e1 e2 => FCase (emap g e1) (emap g e2)
@@ -421,13 +422,8 @@ Qed.
 Lemma head_beta_emap (g : cend → cend) e e' :
   head_step e LBeta e' → head_step (emap g e) LBeta (emap g e').
 Proof.
-  inversion 1; subst; simpl.
-  - rewrite emap_subst1. constructor. by rewrite is_val_emap.
-  - constructor.
-  - rewrite emap_subst2. constructor; by rewrite is_val_emap.
-  - rewrite emap_subst1. constructor. by rewrite is_val_emap.
-  - rewrite emap_subst1. constructor. by rewrite is_val_emap.
-  - rewrite emap_subst1. simpl. constructor.
+  inversion 1; subst; simpl; rewrite ?emap_subst1, ?emap_subst2; simpl;
+    constructor; by rewrite ?is_val_emap.
 Qed.
 
 (** A head β redex has one step. *)
