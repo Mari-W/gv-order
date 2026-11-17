@@ -50,6 +50,7 @@ fuel/FuelSub.v
 test/FuelNotations.v
 cost/Transformers.v
 cost/Forwarder.v
+cost/Exact.v
 compat/Bind.v
 compat/Blind.v
 compat/SemTyped.v
