@@ -11,3 +11,7 @@ lang/Safety.v
 lang/Harmony.v
 lang/ThreadSim.v
 lang/ChannelSwap.v
+lockfree/Fair.v
+lockfree/Reach.v
+lockfree/TauThread.v
+CheckAll.v

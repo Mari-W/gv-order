@@ -25,9 +25,9 @@ Module Ends.
   Arguments EPos {_} _. Arguments ENeg {_} _.
   Definition edual {C} (o : cend C) : cend C :=
     match o with EPos c => ENeg c | ENeg c => EPos c end.
-  Notation "c ⁺" := (EPos c) (at level 1, format "c ⁺").
-  Notation "c ⁻" := (ENeg c) (at level 1, format "c ⁻").
-  Notation "o ‾" := (edual o) (at level 1, format "o ‾").
+  Notation "c ⁺" := (EPos c) (at level 1, left associativity, format "c ⁺").
+  Notation "c ⁻" := (ENeg c) (at level 1, left associativity, format "c ⁻").
+  Notation "o ‾" := (edual o) (at level 1, left associativity, format "o ‾").
   Check (λ c : nat, (c⁺, c⁻, (c⁺)‾)).
 End Ends.
 
@@ -38,9 +38,9 @@ Section judgments.
   Definition pshift (x : A) : A := x.
   Definition pfield (x κ : A) : A := x.
   Definition pdual (x : A) : A := x.
-  Local Notation "x ⁺" := (pshift x) (at level 1, format "x ⁺").
+  Local Notation "x ⁺" := (pshift x) (at level 1, left associativity, format "x ⁺").
   Local Notation "x · κ" := (pfield x κ) (at level 2, left associativity, format "x · κ").
-  Local Notation "x ‾" := (pdual x) (at level 1, format "x ‾").
+  Local Notation "x ‾" := (pdual x) (at level 1, left associativity, format "x ‾").
   Check (λ x κ : A, ((x⁺)·κ)‾).
 
   (** Session type at a point, S@x. *)

@@ -7,3 +7,12 @@ test: test/Lexer.vo test/LangNotations.vo
 	"$(COQBIN)rocq" c $(COQMF_COQLIBS_NOML) test/Lexer.v 2>/dev/null | diff -u test/Lexer.expected -
 	"$(COQBIN)rocq" c $(COQMF_COQLIBS_NOML) test/LangNotations.v 2>/dev/null | diff -u test/LangNotations.expected -
 	@echo "notation tests: printed forms match test/*.expected"
+
+# Every result listed in CheckAll.v is closed under the global context.
+.PHONY: check
+check: CheckAll.vo
+	@out=$$("$(COQBIN)rocq" c $(COQMF_COQLIBS_NOML) CheckAll.v 2>/dev/null); \
+	n=$$(printf '%s\n' "$$out" | grep -c 'Closed under the global context'); \
+	m=$$(grep -c '^Print Assumptions' CheckAll.v); \
+	echo "CheckAll: $$n of $$m results closed under the global context"; \
+	test "$$n" = "$$m"

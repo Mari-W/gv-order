@@ -1,4 +1,4 @@
-λ c : nat, (c⁺, c⁻, (c⁺)‾)
+λ c : nat, (c⁺, c⁻, c⁺‾)
      : nat → cend nat * cend nat * cend nat
 λ x κ : A, (x⁺·κ)‾
      : A → A → A
