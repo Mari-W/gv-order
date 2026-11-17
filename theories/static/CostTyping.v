@@ -517,7 +517,7 @@ Ltac cst_tac :=
     [ apply cst_refl
     | apply cst_any
     | lazymatch goal with
-      | |- cst (CTa _ _) (CTa _ _) => apply CsTa; [cst_ty_tac|cbn [credit_ok fadd fle]; first [exact I|lia]]
+      | |- cst (CTa _ _) (CTa _ _) => apply CsTa; [cst_ty_tac|cbn [credit_ok fadd fsub fle]; first [exact I|lia]]
       end ]
 with cst_ty_tac :=
   first
