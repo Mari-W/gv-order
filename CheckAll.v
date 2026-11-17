@@ -80,6 +80,7 @@ Require LRGV.lockfree.Instr.
 Require LRGV.lockfree.LFAdequacy.
 Require LRGV.lockfree.LFCompose.
 Require LRGV.lockfree.LFFuel.
+Require LRGV.lockfree.LFFuelBind.
 Require LRGV.lockfree.LFFuelTyped.
 Require LRGV.lockfree.LFSoup.
 Require LRGV.lockfree.LocalProgress.
@@ -276,6 +277,45 @@ Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_budgets.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sched_budgets.
 Print Assumptions LRGV.lockfree.LFFuelTyped.fuel_unknown_zero.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_send_held.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_spawn_held.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_link_held.
+Print Assumptions LRGV.relation.CostTypes.cst_refl.
+Print Assumptions LRGV.relation.CostTypes.cst_trans.
+Print Assumptions LRGV.relation.CostTypes.cst_cadd.
+Print Assumptions LRGV.relation.CostTypes.pfits_at_mono.
+Print Assumptions LRGV.relation.CostTypes.pfits_at_cst.
+Print Assumptions LRGV.relation.CostTypes.pfitpt_at_cst.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_bind.
+Print Assumptions LRGV.lockfree.LFFuelBind.Fobl_bind.
+Print Assumptions LRGV.lockfree.LFFuelBind.fkont_tick.
+Print Assumptions LRGV.lockfree.LFFuelBind.fkont_rename.
+Print Assumptions LRGV.lockfree.LFFuelBind.fupd_union.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_val.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_beta.
+Print Assumptions LRGV.lockfree.LFFuelBind.head_beta_det.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_mono.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_frame_mono.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_reserve_mono.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_ty_mono.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_thread.
+Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_sub.
+Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_wbext.
+Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_rename.
+Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_recount.
+Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_minus.
+Print Assumptions LRGV.lockfree.LFFuelBind.pfits_wbext.
+Print Assumptions LRGV.lockfree.LFFuelBind.pfitpt_wbext.
+Print Assumptions LRGV.lockfree.LFFuelBind.pfits_node.
+Print Assumptions LRGV.lockfree.LFFuelBind.pfits_snd.
+Print Assumptions LRGV.lockfree.LFFuelBind.pfits_rcv.
+Print Assumptions LRGV.lockfree.LFFuelBind.pfits_sel.
+Print Assumptions LRGV.lockfree.LFFuelBind.pfits_bra.
+Print Assumptions LRGV.lockfree.LFFuelBind.pfits_sub.
+Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_refill.
+Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_pair.
+Print Assumptions LRGV.lockfree.LFFuelBind.renk_union_split.
+Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_fcap_ext.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.

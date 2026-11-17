@@ -94,7 +94,11 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/LFFuel.v', 'fuel_send_travel'),
         ('lockfree/LFFuelTyped.v', 'sched_lfsource'),
         ('lockfree/LFFuelTyped.v', 'sync_lfsource'), ('lockfree/LFFuelTyped.v', 'sync_budgets'),
-        ('lockfree/LFFuelTyped.v', 'sched_budgets'), ('lockfree/LFFuelTyped.v', 'fuel_unknown_zero')]
+        ('lockfree/LFFuelTyped.v', 'sched_budgets'), ('lockfree/LFFuelTyped.v', 'fuel_unknown_zero'),
+        ('lockfree/LFFuel.v', 'fuel_send_held'), ('lockfree/LFFuel.v', 'fuel_spawn_held'),
+        ('lockfree/LFFuel.v', 'fuel_link_held'),
+        ('relation/CostTypes.v', 'cst_refl'), ('relation/CostTypes.v', 'cst_trans'), ('relation/CostTypes.v', 'cst_cadd'), ('relation/CostTypes.v', 'pfits_at_mono'), ('relation/CostTypes.v', 'pfits_at_cst'), ('relation/CostTypes.v', 'pfitpt_at_cst'),
+        ('lockfree/LFFuelBind.v', 'FuelE_bind'), ('lockfree/LFFuelBind.v', 'Fobl_bind'), ('lockfree/LFFuelBind.v', 'fkont_tick'), ('lockfree/LFFuelBind.v', 'fkont_rename'), ('lockfree/LFFuelBind.v', 'fupd_union'), ('lockfree/LFFuelBind.v', 'FuelE_val'), ('lockfree/LFFuelBind.v', 'FuelE_beta'), ('lockfree/LFFuelBind.v', 'head_beta_det'), ('lockfree/LFFuelBind.v', 'FuelE_mono'), ('lockfree/LFFuelBind.v', 'FuelE_frame_mono'), ('lockfree/LFFuelBind.v', 'FuelE_reserve_mono'), ('lockfree/LFFuelBind.v', 'FuelE_ty_mono'), ('lockfree/LFFuelBind.v', 'FuelE_thread'), ('lockfree/LFFuelBind.v', 'Vfuel_sub'), ('lockfree/LFFuelBind.v', 'Vfuel_wbext'), ('lockfree/LFFuelBind.v', 'Vfuel_rename'), ('lockfree/LFFuelBind.v', 'Vfuel_recount'), ('lockfree/LFFuelBind.v', 'Vfuel_minus'), ('lockfree/LFFuelBind.v', 'pfits_wbext'), ('lockfree/LFFuelBind.v', 'pfitpt_wbext'), ('lockfree/LFFuelBind.v', 'pfits_node'), ('lockfree/LFFuelBind.v', 'pfits_snd'), ('lockfree/LFFuelBind.v', 'pfits_rcv'), ('lockfree/LFFuelBind.v', 'pfits_sel'), ('lockfree/LFFuelBind.v', 'pfits_bra'), ('lockfree/LFFuelBind.v', 'pfits_sub'), ('lockfree/LFFuelBind.v', 'Vfuel_refill'), ('lockfree/LFFuelBind.v', 'Vfuel_pair'), ('lockfree/LFFuelBind.v', 'renk_union_split'), ('lockfree/LFFuelBind.v', 'FuelE_fcap_ext')]
 items = []
 def mod(p): return 'LRGV.' + str(p.with_suffix('')).replace('/', '.')
 def strip_comments(t):
