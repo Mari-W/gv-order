@@ -54,6 +54,7 @@ cost/Exact.v
 cost/CostSem.v
 cost/CostBind.v
 cost/CostRedex.v
+cost/CostRules.v
 compat/Bind.v
 compat/Blind.v
 compat/SemTyped.v
