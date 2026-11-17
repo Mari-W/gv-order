@@ -83,6 +83,14 @@ Section judgments.
      format "Σ  ⊢_ W  p  :  T").
   Check (λ Σ W p T, Σ ⊢_W p : T).
 
+  (** the merged judgment of decision Q11, two subscripts in braces *)
+  Definition mtyped (W N Θ Γ Δ F e T a c ϑ : A) : Prop := True.
+  Local Notation "Θ ; Γ ; Δ ⊢^ F '_{' W , N '}' e : T ^ a ▷ c ; ϑ" := (mtyped W N Θ Γ Δ F e T a c ϑ)
+    (at level 74, Γ at level 60, Δ at level 60, F at level 0, W at level 0, N at level 0,
+     e at level 60, T at level 29, a at level 0, c at level 60, ϑ at level 60,
+     format "Θ  ;  Γ  ;  Δ  ⊢^ F  '_{' W , N '}'  e  :  T ^ a  ▷  c  ;  ϑ").
+  Check (λ W N Θ Γ Δ F e T a c ϑ, Θ ; Γ ; Δ ⊢^F _{W,N} e : T^a ▷ c ; ϑ).
+
   (** cost typing and lock-free process typing *)
   Definition ctyped (Θ Γ N e σ c t : A) : Prop := True.
   Local Notation "Θ ; Γ ⊩^ N e : σ ▷ c ; t" := (ctyped Θ Γ N e σ c t)

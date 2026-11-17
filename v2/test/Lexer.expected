@@ -18,6 +18,8 @@
      : A → A → A → A → A → A → A → Prop
 λ Σ W p T : A, Σ ⊢_W p : T
      : A → A → A → A → Prop
+λ W N Θ Γ Δ F e T a c ϑ : A, Θ ; Γ ; Δ ⊢^F _{W,N} e : T^a ▷ c ; ϑ
+     : A → A → A → A → A → A → A → A → A → A → A → Prop
 λ Θ Γ N e σ c t : A, Θ ; Γ ⊩^N e : σ ▷ c ; t
      : A → A → A → A → A → A → A → Prop
 λ Σ N W p T : A, Σ ⊩^N _ W p : T

@@ -1,0 +1,22 @@
+λ (c : chan) (x : point) (κ : field), (Chan c⁺, SEnd@(x⁺·κ)‾)
+     : chan → point → field → expr * ty
+λ (o : cend) (x : point), (o‾%cend, x‾)
+     : cend → point → cend * point
+λ (W : world) (x y : point), W ⊢ x ≺ y⁺
+     : world → point → point → Prop
+λ W1 W2 : world, W1 ⊑ W1 ⊔ W2
+     : world → world → Prop
+λ (S : sty) (x : point), S@x‾
+     : sty → point → ty
+λ (W : world) (N : fuel) (Θ : tenv) (Γ : hctx) (Δ : lenv) 
+  (F : sfuture) (e : expr) (T : ty) (a c : fuel) (ϑ : tix),
+  Θ ; Γ ; Δ ⊢^F _{W,N} e : T^a ▷ c ; ϑ
+     : world
+       → fuel
+         → tenv
+           → hctx → lenv → sfuture → expr → ty → fuel → fuel → tix → Prop
+λ (W : world) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture) 
+  (e : expr) (T : ty), Θ ; Γ ; Δ ⊢^F _ W e : T
+     : world → tenv → hctx → lenv → sfuture → expr → ty → Prop
+λ (W : world) (Σ : senv) (p : proc) (T : ty), Σ ⊢_W p : T
+     : world → senv → proc → ty → Prop

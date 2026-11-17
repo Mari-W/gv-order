@@ -14,4 +14,11 @@ lang/ChannelSwap.v
 lockfree/Fair.v
 lockfree/Reach.v
 lockfree/TauThread.v
+types/Points.v
+types/Worlds.v
+types/Costs.v
+types/Types.v
+static/Contexts.v
+static/Typing.v
+test/TypeNotations.v
 CheckAll.v
