@@ -24,7 +24,7 @@ FuelE_mono
      : ∀ (n : nat) (N N' : fuel) (σ : rty) (d d' : fuel) 
          (r r' : nat) (Π : penv) (φ φ' : cenv) (tk tk' : nat) 
          (e : expr),
-         fle N N'
+         rle N N'
          → cle φ φ'
            → fle d d'
              → r' ≤ r

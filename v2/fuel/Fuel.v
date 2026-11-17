@@ -43,7 +43,12 @@
     floor h and argument in [Vfuel] at T, its body satisfies [FuelE] at U
     with frame c and every reserve and ticket count that meet ϑ. A box
     does the same per force, for every session instance of its
-    variables. *)
+    variables.
+
+    Decision Q15 adds the clause of Q14 in V. A closure holds exactly the
+    ends its body mentions (dom Π = fends v), and a box mentions no end.
+    So every value of [Vfuel] is exact ([Vfuel_exact]), and the ends a
+    send or a spawn reads off its label are the ends of its map. *)
 
 From GV Require Export lang.Semantics static.Contexts relation.Sfix.
 
@@ -110,6 +115,36 @@ Proof.
   intros [H1 _] Hh Hg o1 o2 v1 v2 Ho1 Ho2 Heq. apply (Hh o1 o2 v1 v2 Ho1 Ho2).
   apply (Hg (h o1) (h o2) v1 v2); [by apply H1|by apply H1|exact Heq].
 Qed.
+
+(** ** The order on refills
+
+    Finite refills are ordered by ≤, and ∞ lies above ∞ only. FuelE and
+    the closure and box clauses of [Vfuel] hold at every refill above N
+    in this order. Under the order of ℕ ∪ {∞} a finite refill could jump
+    to ∞, where a box promises its body only at the instances with the
+    annotations of N = ∞ ([sinsts None]), and E-Force at a finite N has
+    no instance to force (docs/redesign/progress.md, S7.5). *)
+Definition rle (N N' : fuel) : Prop :=
+  match N, N' with
+  | Some m, Some m' => m ≤ m'
+  | None, None => True
+  | _, _ => False
+  end.
+
+Lemma rle_refl N : rle N N.
+Proof. destruct N; simpl; lia. Qed.
+
+Lemma rle_trans N1 N2 N3 : rle N1 N2 → rle N2 N3 → rle N1 N3.
+Proof. destruct N1, N2, N3; simpl; lia || done. Qed.
+
+Lemma rle_fle N N' : rle N N' → fle N N'.
+Proof. destruct N, N'; simpl; lia || done. Qed.
+
+Lemma rle_inf_r N : rle N None → N = None.
+Proof. by destruct N. Qed.
+
+Lemma rle_sinsts N N' ss : rle N N' → sinsts N' ss → sinsts N ss.
+Proof. intros H [H1 H2]. split; [done|]. intros ->. destruct N'; [done|]. by apply H2. Qed.
 
 (** ** Counters, idle ends and the update *)
 
@@ -238,8 +273,8 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
   | TSess s _ =>
       ∃ o S' f, v = Chan o ∧ Π = {[o := S']} ∧ φ = {[o := f]} ∧ sequiv S' s ∧ fle a f
   | TLolli _ _ c t h T1 a1 U a2 =>
-      ∃ e, v = Lam e ∧ dom Π = dom φ ∧ (∀ o f, φ !! o = Some f → fle (fadd h a) f) ∧
-        ∀ N' j φ' Πu φu u r tk, fle N N' → j < n → dom φ' = dom φ →
+      ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧ (∀ o f, φ !! o = Some f → fle (fadd h a) f) ∧
+        ∀ N' j φ' Πu φu u r tk, rle N N' → j < n → dom φ' = dom φ →
           (∀ o f, φ' !! o = Some f → fle h f) → Π ##ₘ Πu → φ' ##ₘ φu →
           Vl j N' (RTy T1 a1) Πu φu u → meets t r tk →
           El j N' (RTy U a2) c r (Π ∪ Πu) (φ' ∪ φu) tk (subst1 u e)
@@ -251,8 +286,8 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
       (∃ v', v = Inj1 v' ∧ Vty N El Vl n T1 (fadd a a1) Π φ v') ∨
       (∃ v', v = Inj2 v' ∧ Vty N El Vl n T2 (fadd a a2) Π φ v')
   | TBox _ k _ _ c t U aU =>
-      ∃ e, v = EBox e ∧ Π = ∅ ∧ φ = ∅ ∧
-        ∀ N' j ss r tk, fle N N' → j < n → length ss = k → sinsts N' ss → meets t r tk →
+      ∃ e, v = EBox e ∧ fends e = ∅ ∧ Π = ∅ ∧ φ = ∅ ∧
+        ∀ N' j ss r tk, rle N N' → j < n → length ss = k → sinsts N' ss → meets t r tk →
           El j N' (RTy (sinst_ty (slist ss) U) aU) c r ∅ ∅ tk (subst1 (EBox e) e)
   | TEx _ _ _ T1 aT => Vty N El Vl n T1 (fadd a aT) Π φ v
   end.
@@ -271,7 +306,7 @@ Definition Vres (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
     reserve (val), and every step meets its obligation (step). *)
 Definition Fdef (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n' : nat)
     (σ : rty) (d : fuel) (r : nat) (Π : penv) (φ : cenv) (tk : nat) (e : expr) : Prop :=
-  ∀ N' g Π' φ', fle N N' → kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' →
+  ∀ N' g Π' φ', rle N N' → kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' →
     (is_val (emap g e) → r ≤ tk ∧ Vres N' El Vl (S n') σ Π' φ' (emap g e)) ∧    (* (val) *)
     ∀ α e', tstep (emap g e) α e' → Fobl N' El Vl n' σ d r Π' φ' tk α e'.        (* (step) *)
 
@@ -351,13 +386,13 @@ Section ext.
     induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
                    |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
       intros a Π φ v; simpl; try done.
-    - intros (e & -> & Hd & Hf & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ' Πu φu u r tk HN Hj Hd' Hh HΠ Hφ Hu Ht.
       apply HE; [done|]. apply H; try done. by apply HV.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
     - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
-    - intros (e & -> & -> & -> & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
       intros N' j ss r tk HN Hj Hl Hs Ht. apply HE; [done|]. by apply H.
     - auto.
   Qed.

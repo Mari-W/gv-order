@@ -236,11 +236,11 @@ Section rename.
       renamed back by [eunfix]. *)
   Lemma Vty_arr_rename N c t h T1 a1 U a2 e (Π : penv) (φ : cenv) (g : cend → cend) (Π' : penv) (φ' : cenv) :
     kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' → dom Π = dom φ →
-    (∀ N' j φ1 Πu φu u r tk, fle N N' → j < n → dom φ1 = dom φ →
+    (∀ N' j φ1 Πu φu u r tk, rle N N' → j < n → dom φ1 = dom φ →
        (∀ o f, φ1 !! o = Some f → fle h f) → Π ##ₘ Πu → φ1 ##ₘ φu →
        u ∈ FV^N' _ j⟦RTy T1 a1⟧(Πu, φu) → meets t r tk →
        subst1 u e ∈ F^N' _ j⟦RTy U a2 ▷ c ; r⟧(Π ∪ Πu, φ1 ∪ φu, tk)) →
-    ∀ N' j φ1 Πu φu u r tk, fle N N' → j < n → dom φ1 = dom φ' →
+    ∀ N' j φ1 Πu φu u r tk, rle N N' → j < n → dom φ1 = dom φ' →
       (∀ o f, φ1 !! o = Some f → fle h f) → Π' ##ₘ Πu → φ1 ##ₘ φu →
       u ∈ FV^N' _ j⟦RTy T1 a1⟧(Πu, φu) → meets t r tk →
       subst1 u (emap g e) ∈ F^N' _ j⟦RTy U a2 ▷ c ; r⟧(Π' ∪ Πu, φ1 ∪ φu, tk).
@@ -307,7 +307,7 @@ Section rename.
                    |m k C ub c t U IHU aU|s x|lb m C T1 IHT aT];
       intros a Π φ v Π' φ' Hk1 Hk2 HΠ Hφ; simpl.
     - intros (-> & -> & ->). split_and!; [done|by apply (renk_empty g)|by apply (renk_empty g)].
-    - intros (e & -> & Hd & Hf & H). exists (emap g e). split_and!; [done| | |].
+    - intros (e & -> & Hx & Hd & Hf & H). exists (emap g e). split_and!; [done|by rewrite fends_emap, Hx, (renk_dom _ _ _ HΠ)| | |].
       + by rewrite (renk_dom _ _ _ HΠ), (renk_dom _ _ _ Hφ), Hd.
       + intros o' f Ho'. destruct (proj2 Hφ o' f Ho') as (o & -> & Ho). by apply (Hf o).
       + intros N' j φ1 Πu φu u r tk HN Hj Hd1.
@@ -324,8 +324,8 @@ Section rename.
         * apply (kinj_dom g (φ1 ∪ φ2)); [rewrite dom_union_L; set_solver|done].
     - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; exists (emap g v'); split; try done;
         [by apply (IH1 _ Π φ)|by apply (IH2 _ Π φ)].
-    - intros (e & -> & -> & -> & H). rewrite (renk_empty g Π'), (renk_empty g φ') by done.
-      exists (emap g e). split_and!; [done|done|done|].
+    - intros (e & -> & Hx & -> & -> & H). rewrite (renk_empty g Π'), (renk_empty g φ') by done.
+      exists (emap g e). split_and!; [done|by rewrite fends_emap, Hx, set_map_empty|done|done|].
       intros N' j ss r tk HN Hj Hl Hs Ht. specialize (H N' j ss r tk HN Hj Hl Hs Ht).
       pose proof (FuelE_rename _ _ _ _ _ _ _ _ _ g ∅ ∅ (kinj_nil g) (kinj_nil g)
         (renk_nil g) (renk_nil g) H) as HR.
@@ -476,7 +476,7 @@ Section credits.
     induction 1 as [| m k C ub c t U aU|T1 a1 T2 a2 H1 IH1 H2 IH2|T1 a1 T2 a2 H1 IH1 H2 IH2];
       intros a Π φ v; simpl.
     - intros (-> & -> & ->). split_and!; [done|done|]. intros; by split_and!.
-    - intros (e & -> & -> & -> & H). split_and!; [done|done|]. intros a'. exists e. by split_and!.
+    - intros (e & -> & Hx & -> & -> & H). split_and!; [done|done|]. intros a'. exists e. by split_and!.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HdΠ & Hdφ & -> & -> & Hv1 & Hv2).
       destruct (IH1 _ _ _ _ Hv1) as (-> & -> & Hv1'). destruct (IH2 _ _ _ _ Hv2) as (-> & -> & Hv2').
       rewrite !map_empty_union. split_and!; [done|done|]. intros a'.
@@ -528,7 +528,7 @@ Section credits.
         apply map_eq. intros o'. destruct (decide (o = o')) as [<-|Hne]; [by rewrite lookup_singleton_eq|].
         rewrite lookup_singleton_ne by done. apply not_elem_of_dom. set_solver. }
       exists o, S', f'. split_and!; try done. apply (Hh o). by rewrite lookup_singleton_eq.
-    - intros (e & -> & HdΠ & Hf & H). exists e. split_and!; [done|by rewrite Hd| |].
+    - intros (e & -> & Hx & HdΠ & Hf & H). exists e. split_and!; [done|done|by rewrite Hd| |].
       + intros o f Ho. eapply fle_trans; [|exact (Hh o f Ho)].
         destruct h, h0; simpl in *; try done; lia.
       + intros N' j φ1 Πu φu u r tk HN Hj Hd1. apply H; [done|done|by rewrite Hd1, Hd].
@@ -566,7 +566,7 @@ Section credits.
                    |m k C ub c0 t U IHU aU|s x|lb m C T1 IHT aT];
       intros a c Π φ v Hca; simpl.
     - intros (-> & -> & ->). by rewrite fmap_empty.
-    - intros (e & -> & Hd & Hf & H). exists e. split_and!; [done|by rewrite dom_fmap_L| |].
+    - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|by rewrite dom_fmap_L| |].
       + intros o f Ho. apply lookup_fmap_Some in Ho as (f0 & <- & Ho).
         apply fle_fsub_add; [done|]. by apply (Hf o).
       + intros N' j φ1 Πu φu u r tk HN Hj Hd1. apply H; [done|done|by rewrite Hd1, dom_fmap_L].
@@ -578,7 +578,7 @@ Section credits.
       + rewrite <-fsub_fadd by done. apply IH2; [by apply fle_fadd_r|done].
     - intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]; exists v'; split; try done;
         rewrite <-fsub_fadd by done; [apply IH1|apply IH2]; try done; by apply fle_fadd_r.
-    - intros (e & -> & -> & -> & H). rewrite fmap_empty. exists e. by split_and!.
+    - intros (e & -> & Hx & -> & -> & H). rewrite fmap_empty. exists e. by split_and!.
     - intros (o & S' & f & -> & -> & -> & Hs & Hf). exists o, S', (fminus c f).
       split_and!; try done; [by rewrite map_fmap_singleton|by apply fle_fsub_mono].
     - intros Hv. rewrite <-fsub_fadd by done. apply IHT; [by apply fle_fadd_r|done].
@@ -694,7 +694,7 @@ Proof. induction 1; constructor; auto. Qed.
 Lemma FuelE_thread N n T a d r Π φ tk e :
   prim T → e ∈ F^N _ n⟦RTy T a ▷ d ; r⟧(Π, φ, tk) → FuelT N n Π φ tk e.
 Proof.
-  intros Hp H. eapply FuelE_res_mono; [|eapply FuelE_mono; [apply fle_refl|apply cle_refl|apply fle_inf|lia|done|exact H]].
+  intros Hp H. eapply FuelE_res_mono; [|eapply FuelE_mono; [apply rle_refl|apply cle_refl|apply fle_inf|lia|done|exact H]].
   intros N' m Π0 φ0 v _. rewrite !Vfuel_eq. simpl. intros Hv.
   by destruct (Vty_tfree _ _ _ _ _ (prim_tfree _ Hp) _ _ _ _ Hv) as (-> & -> & _).
 Qed.
@@ -723,7 +723,7 @@ Section pinst.
     induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
                    |m k C ub c t U IHU aU|s x|lb m C T1 IHT aT];
       intros ρ a Π φ v; simpl; try done.
-    - split; intros (e & -> & Hd & Hf & H); exists e; split_and!; try done;
+    - split; intros (e & -> & Hx & Hd & Hf & H); exists e; split_and!; try done;
         intros N' j φ1 Πu φu u r tk HN Hj Hd1 Hh HΠ Hφ Hu Ht.
       + apply (FuelE_pinst_below j N' ρ U); [done|]. apply H; try done.
         by apply (proj2 (IH j Hj N' ρ T1 a1 Πu φu u)).
@@ -735,7 +735,7 @@ Section pinst.
     - split; intros [(v' & -> & H)|(v' & -> & H)];
         first [left; exists v'; split; [done|]; by apply (IH1 ρ)
               |right; exists v'; split; [done|]; by apply (IH2 ρ)].
-    - split; intros (e & -> & -> & -> & H); exists e; split_and!; try done;
+    - split; intros (e & -> & Hx & -> & -> & H); exists e; split_and!; try done;
         intros N' j ss r tk HN Hj Hl Hs Ht; specialize (H N' j ss r tk HN Hj Hl Hs Ht);
         [rewrite <-pinst_sinst_comm in H|rewrite <-pinst_sinst_comm];
         by apply (FuelE_pinst_below j N' (pup m ρ)).

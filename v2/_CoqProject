@@ -48,6 +48,15 @@ fuel/FuelValues.v
 fuel/FuelBind.v
 fuel/FuelSub.v
 test/FuelNotations.v
+cost/Transformers.v
+cost/Forwarder.v
+cost/Exact.v
+cost/CostSem.v
+cost/CostBind.v
+cost/CostRedex.v
+cost/CostRules.v
+cost/CostFund.v
+test/CostNotations.v
 compat/Bind.v
 compat/Blind.v
 compat/SemTyped.v

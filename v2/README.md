@@ -110,3 +110,25 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a first-order T |
 | compat/Swap.v | V and E are invariant under a transposition of channel names (`Vrel_swap`, `Erel_swap`) |
 | test/CompatNotations.v | the S4 notations |
+
+## Stage S7, cost half of the merged judgment
+
+`Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ` (`csem`) holds when every grounded instance
+of e is in FuelE at every refill above N, in the order `rle` (finite
+refills by ≤, ∞ only above ∞). Θ is grounded by a renaming of its ends
+(`thfuel`), Δ by values of `Vfuel` (`gfuel`). `cost_fundamental` proves
+it for every derivation of the merged judgment, and `fsem_of_cost` turns
+a closed thread into `fsem`. Decision Q15 makes every value of `Vfuel`
+exact (`Vfuel_exact`).
+
+| File | Content |
+|---|---|
+| cost/Transformers.v | `seq_sound` with offset ∞ |
+| cost/Exact.v | `typed_tfacts`, the ends and free variables of a typed term, `fends_subst_eq` |
+| cost/Forwarder.v | the forwarder of S7.1, `dead_thunk_rejected` under Q15, `fw_typed` |
+| cost/CostSem.v | `thfuel`, `gfuel`, `envf`, `csem` and their structural lemmas, `envf_exact` |
+| cost/CostBind.v | `csem_bind0`, `csem_bind1`, `csem_bind2` on top of `FuelE_bind` |
+| cost/CostRedex.v | FuelE of the application of a closure and of every operator |
+| cost/CostRules.v | one lemma `cost_e_*` per typing rule |
+| cost/CostFund.v | `cost_fundamental`, `fsem_of_cost`, `fw_fsem` |
+| test/CostNotations.v | the S7 notation |

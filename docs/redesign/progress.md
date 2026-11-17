@@ -13,7 +13,7 @@ The old development in theories/ stays untouched.
 | S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
-| S7 | cost judgment | open |
+| S7 | cost judgment | done |
 | S8 | soup and adequacy | open |
 | S9 | lock-free composition and soundness | open |
 | S10 | paper | open |
@@ -286,6 +286,51 @@ The old development in theories/ stays untouched.
   so the redex is stated for every subset of the laws of a later world
   (`Erel_new_sub`).
 
+- S7, transformers. `seq_sound` asks `tok t1 t2`, the side condition the
+  rules already carry, and covers offset ∞ (v2/cost/Transformers.v). A
+  transformer with offset ∞ is met nowhere, so those cases hold
+  vacuously.
+- S7, fuel exactness. F-Send and F-Spawn read the transfer set M off the
+  label and ask M ⊆ dom φ with the payload in `Vfuel` at `mres M Π`.
+  No clause of `Vfuel` relates the ends a value mentions to its map Π,
+  so `Vfuel` holds closures that no send and no spawn can hand on. This
+  is the fuel form of `send_gap` (stage S4), which decision Q14 repaired
+  for V and not for `Vfuel`. `fw_counterexample`
+  (v2/cost/FuelGap.v) shows that `fsem_of_cost` of A.3 is false for the
+  definitions of S6. See S7.1. Repaired by decision Q15. The
+  counterexample file is now v2/cost/Forwarder.v, which keeps the
+  typing of the forwarder and checks that Q15 rejects `dead_thunk`
+  (`dead_thunk_rejected`). `fuel_send_gap`, `fw_not_fsem` and
+  `fw_counterexample` are deleted, because Q15 makes them false.
+- S7, Q15. The closure clause of `Vty` asks `fends e = dom Π` and the
+  box clause `fends e = ∅`, each as the second conjunct. The S6 lemmas
+  change only in their destruct patterns, except `Vty_rename`, which
+  shows the clause for the renamed body by `fends_emap` and `renk_dom`.
+  `Vfuel_exact` states that every value of `Vfuel` is exact.
+- S7, the facts of a derivation. `typed_tfacts` (v2/cost/Exact.v) gives
+  `fends e = dom Θ`, an entry of Δ for every free variable, and an
+  occurrence of every entry that is not unlimited. Weakening drops only
+  unlimited entries, and a value at an unlimited type is a box, which
+  holds no end. So a grounding of exact values gives the ends of the
+  instance by `fends_subst_eq`.
+- S7, refills (S7.6). FuelE, the closure and box clauses of `Vty`,
+  `FuelE_mono` and `Vfuel_mono` quantify over refills in the order
+  `rle`, finite refills by ≤ and ∞ above ∞ only, as the coordinator
+  decided after S7.5. `FuelE_mono` changes its premise from `fle N N'`
+  to `rle N N'`, and test/FuelNotations.expected changes with it.
+- S7, the semantic judgment. `csem` has no hypothesis context Γ, no world
+  and no future, because FuelE reads none of them. Its notation is
+  `Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ`, the merged form of A.2's
+  `Θ ; Γ ⊨^N e : σ ▷ c ; t`, where Γ named the term context. Θ enters
+  through a renaming g injective on its ends, with the session type of
+  Θ exactly and a counter at or above its credit (`thfuel`). The frame
+  of FuelE is the cost c.
+- S7, the forwarder. `fw_fsem` gets the `fsem` of the S7.1 thread from
+  `fsem_of_cost`. The paper counterexample of S7.5 is not in Rocq.
+- S7, fsem_of_cost. The statement asks credits at most N on the ends of
+  Θ and a ticket count that meets ϑ at reserve 0. P-Term gives credit N
+  to every end. The session types of `fsem` are those of Θ (`te_sty`).
+
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -375,6 +420,37 @@ The old development in theories/ stays untouched.
 - S6.5. `Vfuel_teq`, `Vfuel_sub`, `FuelE_sub` (v2/fuel/FuelSub.v).
 - S6.6. Notation test v2/test/FuelNotations.v, README section, CheckAll
   lists 105 results, all closed. No `Admitted` and no axiom. S6 done.
+- S7.0. `seq_sound`, `meets_mono` and `meets_tid` (v2/cost/Transformers.v).
+- S7.1. Stop. `fsem_of_cost` (old `ctyped_fsem`) fails for a thread that
+  P-Term types at every refill N. The thread is
+  fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w, with
+  o : ?(∗ ⊸ ∗)^2.end. Its transformer is met at reserve 0 by every
+  ticket count (`fw_ptyped`, `fw_tix_met`). F-Recv quantifies over every
+  incoming value of `Vfuel`. The closure
+  `dead_thunk o` = λ_. let ∗ = Ω in close o holds nothing and is in
+  `Vfuel` at every level and refill, because its body only takes β
+  steps (`Vfuel_dead`). After fw receives it and closes o, the spawn
+  label moves {o}, and F-Spawn asks {o} ⊆ dom φ, which fails. So fw is
+  not in `FuelT` at level 5 for any counters and tickets, and not in
+  `fsem N` (`fw_not_fsem`). The same closure breaks the compatibility
+  lemma of E-Send over groundings in `Vfuel` (`fuel_send_gap`). The pair
+  ⟨dead_thunk q, d⟩ is in `Vfuel` at the payload type of d at every
+  level, and its send is not in `FuelE` at level 1. Every repair needs
+  the author, because each reads syntax in the fuel layer. (a) Q14 for
+  `Vfuel`, so a closure asks dom Π = the ends it mentions and a box
+  mentions no end. Every value of `Vfuel` is then exact, F-Recv and the
+  arrow quantify only over exact values, and the compatibility lemmas of
+  E-Abs, E-Box and E-SpawnLam need the typing lemma that the ends of a
+  grounded term are those of Θ and of the grounding, as the old
+  `cfacts` gave. The S6 lemmas on `Vfuel` keep v and Π or rename both,
+  so they adapt with small changes. (b) F-Recv and the arrow read a
+  transfer set at every incoming value, which amounts to (a). (c)
+  F-Send and F-Spawn split Π by an existential with no M, which loses
+  the index-free ownership that the soup of S8 pairs with O-Send and
+  O-Spawn of the relation. Recommended (a), the clause Q14 already
+  added to V. Not done. `csem`, the compatibility lemmas and
+  `cost_fundamental`, which all depend on the choice. CheckAll lists
+  108 results, all closed. No `Admitted` and no axiom.
 
 - S4.0. Decision Q13. The term former `ELet e1 e2` (let x = e1 in e2,
   binding 1 in e2) with the frame `FLet` and the head step `t_act_let`,
@@ -468,3 +544,52 @@ The old development in theories/ stays untouched.
   and composition/ReadyChain.v (about 3500 lines), and it is not
   started. CheckAll lists 125 results, all closed. No `Admitted` and no
   axiom.
+- S7.2. Decision Q15 in v2/fuel/Fuel.v, the S6 lemmas adapted,
+  `Vty_exact` and `Vfuel_exact` (v2/fuel/FuelMono.v).
+- S7.3. v2/cost/FuelGap.v becomes v2/cost/Forwarder.v with
+  `dead_thunk_rejected`, `fw_typed` and `fw_ptyped`.
+- S7.4. `typed_tfacts`, `fends_subst_eq` and the renaming facts of
+  free variables (v2/cost/Exact.v).
+- S7.5. Stop. E-Force has no compatibility lemma under the decision
+  "fuel is Kripke in the refill" together with the S2 deviation on
+  session instances. FuelE^N and the box clause of `Vfuel` hold at every
+  N′ ≥ N, and the order on ℕ ∪ {∞} puts ∞ above every finite N. A box in
+  `Vfuel` at refill ∞ promises its body only at the instances
+  `sinsts None ss`, the session types with the annotations of N = ∞
+  (S2, session instances). A thread typed at a finite N forces a box at
+  any hcontractive instance (E-Force with `sinsts N ss`). Fdef lets the
+  refill of every step jump from N to ∞, so the thread must run at
+  refill ∞, where a box it received or got from a grounding promises
+  nothing at its finite instance. Counterexample on paper, not in Rocq.
+  A thread typed at N = 2 receives a box !λx. let ⟨y, x′⟩ = recv x in
+  e, at the instance s = ?(?S)^0.end of its session variable, forces it
+  and runs the closure on an end at s. At refill ∞ the received box
+  need only work at the instance ?(?S)^∞.end. There the received y
+  carries credit ∞, every counter is ∞, and the body may act on x′
+  while it holds y. At s the incoming y may arrive with counter 0, so
+  the same action breaks F-Tick, and `fsem_of_cost` fails for the
+  thread. Proposed repair, needing a decision. Order the refills by
+  kind, N ≤ N′ within ℕ and ∞ only above ∞ (`rle`), in Fdef, in the
+  closure and box clauses of `Vty`, and in `FuelE_mono` and
+  `Vfuel_mono`. Composition takes the maximum of finite refills
+  (Q4), and the DF instance N = ∞ stays its own, so S8 and S9 lose
+  nothing. With `rle` the box at refill N″ has N″ = ∞ exactly when
+  N = ∞, and E-Force gets its instance from `sinsts N ss`. The
+  alternative, letting E-Box at N = ∞ type the body at every instance,
+  undoes the S2 deviation. Not done. `csem`, the compatibility lemmas,
+  `cost_fundamental` and `fsem_of_cost`. CheckAll lists 160 results,
+  all closed. No `Admitted` and no axiom.
+- S7.6. Refills ordered by kind (`rle`) in v2/fuel/, the S6 lemmas
+  adapted.
+- S7.7. `thfuel`, `gfuel`, `envf`, `csem` and their structural lemmas,
+  `envf_exact` (v2/cost/CostSem.v).
+- S7.8. `csem_bind0`, `csem_bind1`, `csem_bind2` (v2/cost/CostBind.v)
+  and the redexes of the application and of every operator
+  (v2/cost/CostRedex.v).
+- S7.9 to S7.11. One lemma per typing rule, `cost_e_unit` to
+  `cost_e_open`, `cost_e_let` on the primitive let of Q13, E-Box by
+  induction on the level (v2/cost/CostRules.v).
+- S7.12. `cost_fundamental`, `fsem_of_cost`, `fw_fsem`
+  (v2/cost/CostFund.v), notation test v2/test/CostNotations.v, README
+  section. CheckAll lists 173 results, all closed. No `Admitted` and no
+  axiom. S7 done.
