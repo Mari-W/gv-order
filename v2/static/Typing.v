@@ -99,7 +99,7 @@ Inductive typed (W : world) (N : fuel) :
       tok t0 t →
       typed W N Θ Γ Δ F (EForce e) (sinst_ty (slist ss) (ty_inst xs U)) aU (fadd c0 c) (tseq t0 t)
   | e_send Θ Γ Δ F e S0 x m T b S ap aS a0 Tp' ap' c0 t0 :
-      unfoldS S0 = SSeq (SSnd m T b) S → hbot T = false →
+      unfoldS S0 = SSeq (SSnd m T b) S → pscoped m T → hbot T = false →
       (∀ y, y ∈ heads (payload_at m T x) → slt W Γ x y) →
       ub_below_s W Γ (Some x) F →
       typed W N Θ Γ Δ F e (TProd (payload_at m T x) ap (TSess S0 x) aS) a0 c0 t0 →
@@ -107,7 +107,7 @@ Inductive typed (W : world) (N : fuel) :
       tsub Tp' ap' (payload_at m T x) b →
       typed W N Θ Γ Δ F (ESend e) (TSess S x⁺) N (fadd c0 (Some 1)) t0
   | e_recv Θ Γ Δ F e S0 x m T b S a c0 t0 :
-      unfoldS S0 = SSeq (SRcv m T b) S →
+      unfoldS S0 = SSeq (SRcv m T b) S → pscoped m T →
       ub_below_s W Γ (Some x) F →
       typed W N Θ Γ Δ F e (TSess S0 x) a c0 t0 →
       typed W N Θ Γ Δ F (ERecv e) (TProd (payload_at m T x) b (TSess S x⁺) N) (Some 0)
@@ -236,13 +236,13 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
       dftyped W Θ Γ Δ F e (TBox m k C ub c t U aU) →
       dftyped W Θ Γ Δ F (EForce e) (sinst_ty (slist ss) (ty_inst xs U))
   | d_send Θ Γ Δ F e S0 x m T b S ap aS :
-      unfoldS S0 = SSeq (SSnd m T b) S → hbot T = false →
+      unfoldS S0 = SSeq (SSnd m T b) S → pscoped m T → hbot T = false →
       (∀ y, y ∈ heads (payload_at m T x) → slt W Γ x y) →
       ub_below_s W Γ (Some x) F →
       dftyped W Θ Γ Δ F e (TProd (payload_at m T x) ap (TSess S0 x) aS) →
       dftyped W Θ Γ Δ F (ESend e) (TSess S x⁺)
   | d_recv Θ Γ Δ F e S0 x m T b S b' a' :
-      unfoldS S0 = SSeq (SRcv m T b) S →
+      unfoldS S0 = SSeq (SRcv m T b) S → pscoped m T →
       ub_below_s W Γ (Some x) F →
       dftyped W Θ Γ Δ F e (TSess S0 x) →
       dftyped W Θ Γ Δ F (ERecv e) (TProd (payload_at m T x) b' (TSess S x⁺) a')

@@ -43,13 +43,22 @@ Lemma df_pinst_mut :
   (∀ T σ, ty_df (pinst_ty σ T) = pinst_ty σ (ty_df T)) ∧
   (∀ s σ, sty_df (pinst_sty σ s) = pinst_sty σ (sty_df s)).
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; rewrite ?cr_df_pinst; try congruence.
+  split; [|done]. intros T. induction T; intros σ; simpl; rewrite ?cr_df_pinst; congruence.
 Qed.
 
 Lemma ty_df_pinst σ T : ty_df (pinst_ty σ T) = pinst_ty σ (ty_df T).
 Proof. apply df_pinst_mut. Qed.
 Lemma sty_df_pinst σ s : sty_df (pinst_sty σ s) = pinst_sty σ (sty_df s).
 Proof. apply df_pinst_mut. Qed.
+
+Lemma df_pscoped_mut :
+  (∀ T k, pscoped k (ty_df T) ↔ pscoped k T) ∧ (∀ s, sscoped (sty_df s) ↔ sscoped s).
+Proof.
+  apply ty_sty_mut_ind; intros; simpl; try done; naive_solver.
+Qed.
+
+Lemma pscoped_df k T : pscoped k (ty_df T) ↔ pscoped k T.
+Proof. apply df_pscoped_mut. Qed.
 
 Lemma payload_at_df m T x : payload_at m (ty_df T) x = ty_df (payload_at m T x).
 Proof. unfold payload_at, ty_inst. by rewrite ty_df_pinst. Qed.

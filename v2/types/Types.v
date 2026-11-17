@@ -52,8 +52,7 @@ Notation "S @ x" := (TSess S x) (at level 20, format "S @ x").
 
 (** ** Point instantiation
 
-    Session types are instantiated too, because a payload ∃ιs.T may
-    mention outer points. *)
+    Session types carry no free point variable (see [pinst_sty]). *)
 
 Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   match T with
@@ -64,20 +63,17 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   | TSum T1 a1 U a2 => TSum (pinst_ty σ T1) a1 (pinst_ty σ U) a2
   | TBox n k C ub c t U a =>
       TBox n k (bcs_inst σ C) (pt_inst (pup n σ) <$> ub) c t (pinst_ty (pup n σ) U) a
-  | TSess s x => TSess (pinst_sty σ s) (pt_inst σ x)
+  | TSess s x => TSess s (pt_inst σ x)
   | TEx lb n C T1 a =>
       TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1) a
-  end
-with pinst_sty (σ : nat → point) (s : sty) : sty :=
-  match s with
-  | SRcv m T b => SRcv m (pinst_ty (pup m σ) T) b
-  | SSnd m T b => SSnd m (pinst_ty (pup m σ) T) b
-  | SMu s' => SMu (pinst_sty σ s')
-  | SSeq s1 s2 => SSeq (pinst_sty σ s1) (pinst_sty σ s2)
-  | SPlus s1 s2 => SPlus (pinst_sty σ s1) (pinst_sty σ s2)
-  | SWith s1 s2 => SWith (pinst_sty σ s1) (pinst_sty σ s2)
-  | s => s
   end.
+
+(** Point instantiation leaves session types alone. A payload ∃ιs.T is
+    point-closed below its own binder ([sscoped], checked where a payload
+    is read, at E-Send and E-Recv), so no outer point occurs in a session
+    type. Instantiation then commutes with unfolding and with session
+    substitution, which pass no point binder. *)
+Definition pinst_sty (σ : nat → point) (s : sty) : sty := s.
 
 (** T[xs/ιs]. *)
 Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
@@ -89,91 +85,88 @@ Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
 Lemma payload_at_dual m T x : payload_at m T x‾ = payload_at m T x.
 Proof. done. Qed.
 
-Lemma pinst_mut_ext :
-  (∀ T σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T) ∧
-  (∀ s σ τ, (∀ a, σ a = τ a) → pinst_sty σ s = pinst_sty τ s).
+Lemma pinst_ty_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; try done.
-  - rewrite (H σ τ), (H0 σ τ) by done.
+  induction T; intros σ τ H1; simpl; try done.
+  - rewrite (IHT1 σ τ), (IHT2 σ τ) by done.
     rewrite !(option_fmap_ext (pt_inst σ) (pt_inst τ)) by (intros; by apply pt_inst_ext). done.
-  - by rewrite (H σ τ), (H0 σ τ).
-  - by rewrite (H σ τ), (H0 σ τ).
-  - rewrite (H (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
+  - by rewrite (IHT1 σ τ), (IHT2 σ τ).
+  - by rewrite (IHT1 σ τ), (IHT2 σ τ).
+  - rewrite (IHT (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
     rewrite (bcs_inst_ext σ τ) by done.
     rewrite !(option_fmap_ext (pt_inst (pup n σ)) (pt_inst (pup n τ)))
       by (intros; apply pt_inst_ext; intros; by apply pup_ext). done.
-  - by rewrite (H σ τ), (pt_inst_ext σ τ).
-  - rewrite (H (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
+  - by rewrite (pt_inst_ext σ τ).
+  - rewrite (IHT (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
     rewrite (bcs_inst_ext σ τ), (lb_map_ext _ (pt_inst τ)) by first [done|intros; by apply pt_inst_ext]. done.
-  - by rewrite (H (pup m σ) (pup m τ)) by (intros; by apply pup_ext).
-  - by rewrite (H (pup m σ) (pup m τ)) by (intros; by apply pup_ext).
-  - by rewrite (H σ τ).
-  - by rewrite (H σ τ), (H0 σ τ).
-  - by rewrite (H σ τ), (H0 σ τ).
-  - by rewrite (H σ τ), (H0 σ τ).
 Qed.
-
-Lemma pinst_ty_ext T σ τ : (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
-Proof. apply pinst_mut_ext. Qed.
 Lemma pinst_sty_ext s σ τ : (∀ a, σ a = τ a) → pinst_sty σ s = pinst_sty τ s.
-Proof. apply pinst_mut_ext. Qed.
+Proof. done. Qed.
 
-Lemma pinst_mut_comp :
-  (∀ T σ τ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T) ∧
-  (∀ s σ τ, pinst_sty τ (pinst_sty σ s) = pinst_sty (pt_inst τ ∘ σ) s).
+Lemma pinst_ty_comp T : ∀ σ τ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; try done.
-  - rewrite H, H0, <-!option_fmap_compose.
+  induction T; intros σ τ; simpl; try done.
+  - rewrite IHT1, IHT2, <-!option_fmap_compose.
     rewrite !(option_fmap_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ)))
       by (intros; apply pt_inst_comp). done.
-  - by rewrite H, H0.
-  - by rewrite H, H0.
-  - rewrite H, bcs_inst_comp, <-option_fmap_compose.
-    rewrite (pinst_ty_ext U _ (pup n (pt_inst τ ∘ σ))) by (intros; apply pup_comp).
+  - by rewrite IHT1, IHT2.
+  - by rewrite IHT1, IHT2.
+  - rewrite IHT, bcs_inst_comp, <-option_fmap_compose.
+    rewrite (pinst_ty_ext T _ (pup n (pt_inst τ ∘ σ))) by (intros; apply pup_comp).
     rewrite (option_fmap_ext (pt_inst (pup n τ) ∘ pt_inst (pup n σ)) (pt_inst (pup n (pt_inst τ ∘ σ))))
       by (intros; simpl; rewrite pt_inst_comp; apply pt_inst_ext; intros; apply pup_comp). done.
-  - by rewrite H, pt_inst_comp.
-  - rewrite H, bcs_inst_comp, lb_map_comp.
+  - by rewrite pt_inst_comp.
+  - rewrite IHT, bcs_inst_comp, lb_map_comp.
     rewrite (pinst_ty_ext T _ (pup n (pt_inst τ ∘ σ))) by (intros; apply pup_comp).
     rewrite (lb_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ))) by (intros; apply pt_inst_comp).
     done.
-  - rewrite H. by rewrite (pinst_ty_ext T _ (pup m (pt_inst τ ∘ σ))) by (intros; apply pup_comp).
-  - rewrite H. by rewrite (pinst_ty_ext T _ (pup m (pt_inst τ ∘ σ))) by (intros; apply pup_comp).
-  - by rewrite H.
-  - by rewrite H, H0.
-  - by rewrite H, H0.
-  - by rewrite H, H0.
 Qed.
-
-Lemma pinst_ty_comp T σ τ : pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
-Proof. apply pinst_mut_comp. Qed.
 Lemma pinst_sty_comp s σ τ : pinst_sty τ (pinst_sty σ s) = pinst_sty (pt_inst τ ∘ σ) s.
-Proof. apply pinst_mut_comp. Qed.
-
-Lemma pinst_mut_pvar :
-  (∀ T, pinst_ty pvar T = T) ∧ (∀ s, pinst_sty pvar s = s).
-Proof.
-  apply ty_sty_mut_ind; intros; simpl; try done.
-  - rewrite H, H0. destruct ub, lb; simpl; by rewrite ?pt_inst_pvar.
-  - by rewrite H, H0.
-  - by rewrite H, H0.
-  - rewrite (pinst_ty_ext U _ pvar), H by apply pup_pvar. rewrite bcs_inst_pvar.
-    destruct ub; simpl; [|done]. rewrite (pt_inst_ext _ pvar), pt_inst_pvar by apply pup_pvar. done.
-  - by rewrite H, pt_inst_pvar.
-  - rewrite (pinst_ty_ext T _ pvar), H by apply pup_pvar. rewrite bcs_inst_pvar.
-    by rewrite lb_map_id by apply pt_inst_pvar.
-  - by rewrite (pinst_ty_ext T _ pvar), H by apply pup_pvar.
-  - by rewrite (pinst_ty_ext T _ pvar), H by apply pup_pvar.
-  - by rewrite H.
-  - by rewrite H, H0.
-  - by rewrite H, H0.
-  - by rewrite H, H0.
-Qed.
+Proof. done. Qed.
 
 Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
-Proof. apply pinst_mut_pvar. Qed.
+Proof.
+  induction T; simpl; try done.
+  - rewrite IHT1, IHT2. destruct ub, lb; simpl; by rewrite ?pt_inst_pvar.
+  - by rewrite IHT1, IHT2.
+  - by rewrite IHT1, IHT2.
+  - rewrite (pinst_ty_ext T _ pvar), IHT by apply pup_pvar. rewrite bcs_inst_pvar.
+    destruct ub; simpl; [|done]. rewrite (pt_inst_ext _ pvar), pt_inst_pvar by apply pup_pvar. done.
+  - by rewrite pt_inst_pvar.
+  - rewrite (pinst_ty_ext T _ pvar), IHT by apply pup_pvar. rewrite bcs_inst_pvar.
+    by rewrite lb_map_id by apply pt_inst_pvar.
+Qed.
 Lemma pinst_sty_pvar s : pinst_sty pvar s = s.
-Proof. apply pinst_mut_pvar. Qed.
+Proof. done. Qed.
+
+(** ** Point-closed payloads
+
+    [pscoped k T]: every point variable of T is below k (binders of T
+    raise k), and every payload of every session type in T is
+    point-closed below its own binder. *)
+Definition pt_pscoped (k : nat) (x : point) : Prop :=
+  ∀ a, pt_root x = NVar a → a < k.
+
+Fixpoint pscoped (k : nat) (T : ty) : Prop :=
+  match T with
+  | TUnit => True
+  | TLolli ub lb _ _ _ T1 _ U _ =>
+      (∀ x, ub = Some x → pt_pscoped k x) ∧ (∀ x, lb = Some x → pt_pscoped k x) ∧
+      pscoped k T1 ∧ pscoped k U
+  | TProd T1 _ U _ | TSum T1 _ U _ => pscoped k T1 ∧ pscoped k U
+  | TBox n _ C ub _ _ U _ =>
+      Forall (pt_pscoped k) (bc_env C) ∧ (∀ x, ub = Some x → pt_pscoped (n + k) x) ∧ pscoped (n + k) U
+  | TSess s x => sscoped s ∧ pt_pscoped k x
+  | TEx lb n C T1 _ =>
+      (∀ x, lb = LPt x → pt_pscoped k x) ∧ Forall (pt_pscoped k) (bc_env C) ∧ pscoped (n + k) T1
+  end
+with sscoped (s : sty) : Prop :=
+  match s with
+  | SRcv m T _ | SSnd m T _ => pscoped m T
+  | SMu s' => sscoped s'
+  | SSeq s1 s2 | SPlus s1 s2 | SWith s1 s2 => sscoped s1 ∧ sscoped s2
+  | _ => True
+  end.
 
 (** ** Heads and the ⊥ flag
 

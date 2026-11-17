@@ -22,5 +22,6 @@ types/Erasure.v
 static/Contexts.v
 static/Typing.v
 static/Conservativity.v
+static/Weakening.v
 test/TypeNotations.v
 CheckAll.v

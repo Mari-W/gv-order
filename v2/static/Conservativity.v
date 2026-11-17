@@ -271,12 +271,12 @@ Proof.
     unfold ty_inst. rewrite cr_df_pinst.
     eapply e_force; [done|done|done|exact H2|done|exact IHdftyped|apply tok_inf].
   - eapply e_send with (T := ty_df T) (m := m) (S := sty_df S);
-      [by rewrite unfoldS_df, H|by rewrite hbot_df|by rewrite payload_at_df, heads_df|done| | |].
+      [by rewrite unfoldS_df, H|by apply pscoped_df|by rewrite hbot_df|by rewrite payload_at_df, heads_df|done| | |].
     + rewrite payload_at_df. exact IHdftyped.
     + rewrite payload_at_df, fadd_0_l. apply tage_df.
     + rewrite payload_at_df. unfold payload_at at 2, ty_inst. rewrite cr_df_pinst. apply tsub_refl.
   - rewrite <-payload_at_df. unfold payload_at at 2, ty_inst. rewrite cr_df_pinst.
-    eapply e_recv; [by rewrite unfoldS_df, H|done|exact IHdftyped].
+    eapply e_recv; [by rewrite unfoldS_df, H|by apply pscoped_df|done|exact IHdftyped].
   - eapply e_close; [by rewrite unfoldS_df, H|done|exact IHdftyped].
   - assert (sty_df (if i then S2 else S1) = if i then sty_df S2 else sty_df S1) as -> by (by destruct i).
     eapply e_select; [by rewrite unfoldS_df, H| |done|exact IHdftyped]. done.
@@ -394,10 +394,10 @@ Proof.
   - rewrite ty_df_sinst_map, <-ty_inst_df.
     eapply d_force; [done|done|by rewrite length_fmap|by eapply sinsts_df|done|exact IHtyped].
   - eapply d_send with (T := ty_df T) (S := sty_df S);
-      [by rewrite unfoldS_df, H|by rewrite hbot_df|by rewrite payload_at_df, heads_df|done|].
+      [by rewrite unfoldS_df, H|by apply pscoped_df|by rewrite hbot_df|by rewrite payload_at_df, heads_df|done|].
     rewrite payload_at_df. exact IHtyped.
   - rewrite <-payload_at_df.
-    eapply d_recv with (T := ty_df T); [by rewrite unfoldS_df, H|done|exact IHtyped].
+    eapply d_recv with (T := ty_df T); [by rewrite unfoldS_df, H|by apply pscoped_df|done|exact IHtyped].
   - eapply d_close; [by rewrite unfoldS_df, H|done|exact IHtyped].
   - rewrite ty_df_if. eapply d_select; [by rewrite unfoldS_df, H|done|done|exact IHtyped].
   - eapply d_branch; [by rewrite unfoldS_df, H|done|done|done|exact IHtyped].
