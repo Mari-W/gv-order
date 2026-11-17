@@ -13,7 +13,7 @@ The old development in theories/ stays untouched.
 | S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
-| S7 | cost judgment | stopped at S7.1, report on F-Send and F-Spawn (see S7.1) |
+| S7 | cost judgment | stopped at S7.5, report on the refill of boxes (see S7.5) |
 | S8 | soup and adequacy | open |
 | S9 | lock-free composition and soundness | open |
 | S10 | paper | open |
@@ -297,7 +297,22 @@ The old development in theories/ stays untouched.
   is the fuel form of `send_gap` (stage S4), which decision Q14 repaired
   for V and not for `Vfuel`. `fw_counterexample`
   (v2/cost/FuelGap.v) shows that `fsem_of_cost` of A.3 is false for the
-  definitions of S6. See S7.1.
+  definitions of S6. See S7.1. Repaired by decision Q15. The
+  counterexample file is now v2/cost/Forwarder.v, which keeps the
+  typing of the forwarder and checks that Q15 rejects `dead_thunk`
+  (`dead_thunk_rejected`). `fuel_send_gap`, `fw_not_fsem` and
+  `fw_counterexample` are deleted, because Q15 makes them false.
+- S7, Q15. The closure clause of `Vty` asks `fends e = dom Π` and the
+  box clause `fends e = ∅`, each as the second conjunct. The S6 lemmas
+  change only in their destruct patterns, except `Vty_rename`, which
+  shows the clause for the renamed body by `fends_emap` and `renk_dom`.
+  `Vfuel_exact` states that every value of `Vfuel` is exact.
+- S7, the facts of a derivation. `typed_tfacts` (v2/cost/Exact.v) gives
+  `fends e = dom Θ`, an entry of Δ for every free variable, and an
+  occurrence of every entry that is not unlimited. Weakening drops only
+  unlimited entries, and a value at an unlimited type is a box, which
+  holds no end. So a grounding of exact values gives the ends of the
+  instance by `fends_subst_eq`.
 
 ## Log
 
@@ -512,3 +527,38 @@ The old development in theories/ stays untouched.
   and composition/ReadyChain.v (about 3500 lines), and it is not
   started. CheckAll lists 125 results, all closed. No `Admitted` and no
   axiom.
+- S7.2. Decision Q15 in v2/fuel/Fuel.v, the S6 lemmas adapted,
+  `Vty_exact` and `Vfuel_exact` (v2/fuel/FuelMono.v).
+- S7.3. v2/cost/FuelGap.v becomes v2/cost/Forwarder.v with
+  `dead_thunk_rejected`, `fw_typed` and `fw_ptyped`.
+- S7.4. `typed_tfacts`, `fends_subst_eq` and the renaming facts of
+  free variables (v2/cost/Exact.v).
+- S7.5. Stop. E-Force has no compatibility lemma under the decision
+  "fuel is Kripke in the refill" together with the S2 deviation on
+  session instances. FuelE^N and the box clause of `Vfuel` hold at every
+  N′ ≥ N, and the order on ℕ ∪ {∞} puts ∞ above every finite N. A box in
+  `Vfuel` at refill ∞ promises its body only at the instances
+  `sinsts None ss`, the session types with the annotations of N = ∞
+  (S2, session instances). A thread typed at a finite N forces a box at
+  any hcontractive instance (E-Force with `sinsts N ss`). Fdef lets the
+  refill of every step jump from N to ∞, so the thread must run at
+  refill ∞, where a box it received or got from a grounding promises
+  nothing at its finite instance. Counterexample on paper, not in Rocq.
+  A thread typed at N = 2 receives a box !λx. let ⟨y, x′⟩ = recv x in
+  e, at the instance s = ?(?S)^0.end of its session variable, forces it
+  and runs the closure on an end at s. At refill ∞ the received box
+  need only work at the instance ?(?S)^∞.end. There the received y
+  carries credit ∞, every counter is ∞, and the body may act on x′
+  while it holds y. At s the incoming y may arrive with counter 0, so
+  the same action breaks F-Tick, and `fsem_of_cost` fails for the
+  thread. Proposed repair, needing a decision. Order the refills by
+  kind, N ≤ N′ within ℕ and ∞ only above ∞ (`rle`), in Fdef, in the
+  closure and box clauses of `Vty`, and in `FuelE_mono` and
+  `Vfuel_mono`. Composition takes the maximum of finite refills
+  (Q4), and the DF instance N = ∞ stays its own, so S8 and S9 lose
+  nothing. With `rle` the box at refill N″ has N″ = ∞ exactly when
+  N = ∞, and E-Force gets its instance from `sinsts N ss`. The
+  alternative, letting E-Box at N = ∞ type the body at every instance,
+  undoes the S2 deviation. Not done. `csem`, the compatibility lemmas,
+  `cost_fundamental` and `fsem_of_cost`. CheckAll lists 160 results,
+  all closed. No `Admitted` and no axiom.
