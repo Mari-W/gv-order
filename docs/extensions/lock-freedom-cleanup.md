@@ -62,6 +62,16 @@ points the world knows. Remove lemma premises that only served E-Fit.
 the live copy (quirk A4). Only if the paper presents them as one relation or
 the duplication blocks further work.
 
+**R7. State connect by the interface order (author, 2026-11-17).**
+`Prel_connect`, `LFP_connect` and their N-ary forms ask `strict (wjoin W1
+W2)`, a condition on the whole join. Each Wᵢ is strict, so a cycle in the
+join crosses between the worlds only at shared names, possibly passing
+private names on the way (W₁ ⊢ a ≺ p ≺ b, W₂ ⊢ b ≺ a). Prove that the join
+is strict iff the two orders, each closed transitively and restricted to the
+shared names (`wrestrict`), are acyclic together, and restate the connect
+hypotheses in that form. The check then reads only the interface. No lemma
+states this yet.
+
 ## Part 2. Replace the static fragment by typing rules
 
 Today `lfptyped` and `lfsource` are the typing judgment plus a list of
