@@ -861,3 +861,35 @@ Proof.
   rewrite (kren_kren_ok g h Σ p Hh Hg), (pmap_pmap g h p (proj1 Hg)).
   apply HP; [done|]. by apply pren_ok_compose.
 Qed.
+
+(** ** The link substitution renames the other component (P-Connect)
+
+    When a component links o1 with o2 and the other component holds o1‾
+    but neither o1 nor o2, [csub o1 o2] is a renaming of the held ends of
+    the other component, even when it holds o2‾. *)
+
+Lemma csub_dcomm o1 o2 : ech o2 ≠ ech o1 → dcomm (csub o1 o2).
+Proof.
+  intros Hne o. unfold csub.
+  destruct (decide (o = edual o1)) as [->|N1].
+  - rewrite edual_edual, decide_False by (intros H; by apply (edual_ne o1)). rewrite decide_True by done. done.
+  - destruct (decide (o = o1)) as [->|N2].
+    + rewrite decide_True by done. by rewrite edual_edual.
+    + rewrite decide_False by (intros H; apply N2; by apply edual_inj in H).
+      rewrite decide_False; [done|]. intros H. apply N1. by rewrite <-H, edual_edual.
+Qed.
+
+Lemma pren_ok_csub o1 o2 Σ p :
+  ech o2 ≠ ech o1 → ¬ pheld Σ p o1 → ¬ pheld Σ p o2 → pren_ok (csub o1 o2) Σ p.
+Proof.
+  intros Hne H1 H2. split; [by apply csub_dcomm|].
+  assert (∀ o, pheld Σ p o → csub o1 o2 o = o ∨ (o = edual o1 ∧ csub o1 o2 o = o2)) as Hc.
+  { intros o Ho. unfold csub. destruct (decide (o = edual o1)) as [->|N1]; [by right|].
+    rewrite decide_False; [by left|]. intros ->. done. }
+  intros oa ob Ha Hb Heq.
+  destruct (Hc oa Ha) as [Ea|[-> Ea]], (Hc ob Hb) as [Eb|[-> Eb]]; rewrite ?Ea, ?Eb in Heq.
+  - done.
+  - subst oa. by exfalso.
+  - subst ob. by exfalso.
+  - done.
+Qed.

@@ -647,3 +647,47 @@ The old development in theories/ stays untouched.
   instance of it, and the induction of compat/PSwap.v is gone. Adequacy
   is unchanged, because it reads the clauses at the identity. CheckAll
   lists 170 results, all closed.
+- S4.14. Checked against P-Connect, not proved. The clause (rename)
+  breaks no decided point and not adequacy (adequacy reads the identity).
+  `pren_ok_csub` (v2/compat/Rename.v): when one component links o1 with
+  o2 and the other holds o1‾ but neither o1 nor o2 (as an interface end
+  or a restricted end), `csub o1 o2` commutes with duality and is
+  injective on the held ends of the other, also when it holds o2‾. So
+  the link case of P-Connect gets P of the renamed component from
+  `Prel_rename`. The plan for the rest, for a successor.
+  (1) Internalize. If Σ holds o at (S, x) and o‾ at (S', x‾) with
+  `sdual S S'` and ech o ∉ p.1, then p ∈ P⟦Σ ⊢ T⟧ gives
+  (p.1 ∪ {ech o}, p.2) ∈ P⟦delete o (delete o‾ Σ) ⊢ T⟧. An internal
+  message on the new channel costs `c_give κ + c_take κ` (`ev_cost` of
+  `EvMsg`), and the original pays the same by Q-Send on o and then
+  Q-Recv on o‾ with Θ2 the ends that leave (Σv ∪ Θe). Close and choice
+  likewise, a link on it by Q-Link. Readiness: an end of the channel
+  waits on its partner, which lies below by `sdual` at dual points.
+  The clause (rename) of the result comes from the clause of p at the
+  same h, because a held-ends renaming of the result is one of p.
+  (2) P-Connect, two worlds. p1 ∈ P^{W1}⟦Σ1 ∪ ΣC ⊢ T⟧,
+  p2 ∈ P^{W2}⟦Σ2 ∪ Σ̄C ⊢ 1⟧, ΣC and Σ̄C dual entry by entry, all domains
+  and restricted sets disjoint, strict (W1 ⊔ W2) give
+  (p1.1 ∪ p2.1 ∪ chans ΣC, p1.2 ⊎ p2.2) ∈ P^{W1 ⊔ W2}⟦Σ1 ∪ Σ2 ⊢ T⟧.
+  Induction on the level, inside it on both least fixpoints. Steps: one
+  side alone (its Q-clauses for its interface, τ otherwise), a message
+  across the cut (Q-Send of one, Q-Recv of the other, cost
+  κ(send) + κ(recv) ≥ 1, so the level drops), a link with a cut end
+  (q_link of the linking side, `Prel_rename` with `pren_ok_csub` on the
+  other, then Internalize when the other held o2‾). Readiness of the
+  composite: a stuck cut end points to its partner's offer below it,
+  a chain that strictly descends in W1 ⊔ W2 and ends at an interface
+  offer by strictness. The clause (rename) for the composite: a
+  held-ends renaming h of the composite restricts to one of each
+  component (cut channels are restricted, so both ends are held), and
+  pmap h of the composite is the composite of pmap h p1 and pmap h p2,
+  so the case is the same statement for the renamed components
+  (`Prel_rename`), which the induction covers if the lemma is stated
+  for all p1 and p2.
+  (3) P-Join by `p_join_iff_connect`. (4) P-Term: a thread in
+  E⟦Θ_B ∪ Σ ⊢ T⟧ with Θ_B the paired dual ends of C0 gives
+  (C0, {t}) ∈ P, by P-Connect of the parent and each spawned thread,
+  with `Erel_rename` for its clause (rename).
+  Not started in Rocq. In size this is theories/liveness/LiveInternalize.v,
+  LiveConnect.v, LivePConnect.v, LivePTerm.v and composition/ReadyChain.v,
+  about 4700 lines.
