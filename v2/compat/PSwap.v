@@ -325,3 +325,15 @@ Section prel.
     rewrite <-(sswap_inv a b Σ), <-(pswap_involutive a b p). by apply Prel_swap_1.
   Qed.
 End prel.
+
+(** ** The link substitution is no bijection
+
+    [csub o1 o2] sends o1‾ and o2 to o2. A thread that holds o1‾ may
+    still mention o2 in code it never runs, so the renaming of the other
+    component at a link is not the restriction of a bijection of ends to
+    the ends that component mentions (docs/redesign/progress.md, S4.10). *)
+Lemma csub_fuses o1 o2 : o2 ≠ o1 → o2 ≠ o1‾ → csub o1 o2 o1‾ = csub o1 o2 o2 ∧ o1‾ ≠ o2.
+Proof.
+  intros H1 H2. unfold csub. rewrite decide_True by done.
+  rewrite decide_False by done. rewrite decide_False by done. by split.
+Qed.

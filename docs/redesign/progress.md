@@ -506,3 +506,54 @@ The old development in theories/ stays untouched.
   channels, as typing gives), or a renaming lemma over dual-commuting
   bijections with fresh names chosen per creation. The rest of the plan
   of S4.7 stands. CheckAll lists 162 results, all closed.
+- S4.10. Decision Q16 (21989f4 on redesign), worked out before
+  proving. Q16 asks invariance under every end bijection that commutes
+  with duality. That lemma is plausible, but it is not the renaming
+  P-Connect needs, and it is not provable by moving each obligation
+  along one bijection. The step that P-Connect needs, and its proof, is
+  the following.
+  (1) The link renaming of the other component is no bijection on the
+  ends it mentions. `csub o1 o2` sends o1‾ and o2 to o2 (`csub_fuses`,
+  v2/compat/PSwap.v). The holder of o1‾ may mention o2 in code it never
+  runs, so after the link two ends of its term are one. No bijection
+  restricted to the mentioned ends gives this term.
+  (2) Re-choosing the fresh name does not save the bijection form. Let
+  g flip the channel c (g c⁺ = c⁻). The renamed term may create c while
+  it mentions c⁺ in code it never runs (O-New asks freshness only for
+  Θ). The renamed continuation then holds the new c⁺ at the place of the
+  old mention. The original continuation, for any name c'' it creates,
+  has the mention g⁻¹(c⁺) apart from the new ends, so the renamed
+  continuation is the image of an original continuation only under a
+  map that sends two ends to c⁺.
+  (3) The sound form is an argument about held ends. Let h be a map of
+  ends that commutes with duality (h ō = (h o)‾) and is injective on the
+  ends of Θ, arbitrary elsewhere. Claim: e ∈ E⟦Θ ⊢ T⟧^F implies
+  emap h e ∈ E⟦kmap h Θ ⊢ T⟧^F, and the same for V and P (for P,
+  injective on the ends of Σ). Why the mentions that h merges do not
+  matter: emap h keeps the shape of a term, so every step of emap h e
+  sits at the place of a step of e, and every action of e is on a held
+  end, because each obligation reads the subject's entry in Θ. A
+  mention that e does not hold is never acted on, sent or spawned on any
+  path, and E quantifies over every received value and every created
+  name, so this holds for every future. The renamed term therefore acts
+  only on images of held ends, where h is injective. Steps with a free
+  choice move by extending h: a creation of c by emap h e is matched by
+  e creating a name c'' fresh for Θ and for the ends e mentions, with h
+  extended by c''± ↦ c± (polarity kept). A received value w with Θin is
+  matched by w' = emap k w with k a right inverse of the extended h that
+  keeps duality and avoids the ends of Θ (k sends the partner of a held
+  end to that held end's partner). The arrow's argument is handled in
+  the same way. A P-Act-Link of o1, o2 is matched by the link of
+  the preimages, with h replaced by h2 ∘ csub = csub' ∘ h, which is
+  defined on the image of csub because h is injective on the two held
+  linked channels. The bijections of Q16 are a special case, so (3) is
+  stronger than Q16 and gives the renaming of the other component at a
+  link directly: csub restricted to the holder's held ends is injective.
+  It also needs Internalize, because after a link the other component
+  may hold both ends of a channel.
+  (4) Nothing found contradicts Q16 or (3). (3) is not proved yet. It
+  replaces the involution argument of compat/Swap.v and PSwap.v by a
+  forward simulation that extends h at every choice. By size it is the
+  largest single lemma of S4. I stopped here so the author can confirm
+  that (3) is acceptable as the form of Q16: maps that commute with
+  duality and are injective on held ends, not bijections of all ends.
