@@ -443,7 +443,7 @@ Fixpoint fvb (i : nat) (e : expr) : bool :=
 
 Ltac cfree_tac := cbn [cta_ty cadd]; solve [repeat constructor].
 
-Ltac fle_tac := cbn [fle fadd fsub fmax cta_cr cadd]; first [exact I | lia].
+Ltac fle_tac := first [apply fle_refl | cbn [fle fadd fsub fmax cta_cr cadd]; first [exact I | lia]].
 
 Ltac tle_tac := first [apply tle_refl | apply tle_check; vm_compute; reflexivity].
 
