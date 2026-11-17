@@ -84,7 +84,6 @@ theories/static/Fundamental.v
 theories/static/Mixed.v
 theories/examples/ExampleTools.v
 theories/examples/Sync.v
-theories/examples/CostEx.v
 theories/examples/Cycle.v
 theories/examples/Delegation.v
 theories/examples/Scheduler.v
@@ -121,6 +120,7 @@ theories/examples/cfst/SkipDrop.v
 # SYNTACTIC-POINTS: example port pending theories/examples/cfst/SegmentDeleg.v
 theories/examples/cfst/FirstAction.v
 theories/examples/cfst/MuVar.v
+theories/examples/CostEx.v
 theories/examples/LitTools.v
 theories/examples/MilnerSched.v
 theories/examples/KobForwarder.v
