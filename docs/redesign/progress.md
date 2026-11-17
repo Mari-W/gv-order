@@ -8,7 +8,7 @@ The old development in theories/ stays untouched.
 | Stage | Content | Status |
 |---|---|---|
 | S1 | language | done |
-| S2 | points, worlds, types | open |
+| S2 | points, worlds, types | in progress (examples open) |
 | S3 | generic relation | open |
 | S4 | generic compatibility | open |
 | S5 | static fundamental theorems | open |
@@ -152,3 +152,17 @@ The old development in theories/ stays untouched.
   `thread_acc`. v2/CheckAll.v lists 22 results, and `make check` reports
   all 22 closed under the global context. No `Admitted` and no axiom.
   v2/README.md says what v2 holds and how to build it. S1 done.
+- S2.1 to S2.4. Points with generated roots, fields and duals
+  (v2/types/Points.v), worlds with family laws, the join, the restriction
+  and R7 as `strict_join_iff` (v2/types/Worlds.v), credits and
+  transformers (v2/types/Costs.v), credited types (v2/types/Types.v), the
+  merged judgment `typed`, its DF projection `dftyped` and process typing
+  `ptyped` (v2/static/Typing.v).
+- S2.5. Conservativity in both directions (v2/static/Conservativity.v),
+  `typed_dftyped` and `dftyped_typed`.
+- S2.6 and S2.7. World extension, term-variable renaming, channel
+  renaming, renaming of families and generated roots, point substitution
+  (v2/static/Weakening.v, Renaming.v, PointSubst.v).
+- S2.8. The client and server cycle of §2.5 types with family laws
+  (v2/examples/ClientServer.v, `cs_typed`). CheckAll lists 38 results,
+  all closed.
