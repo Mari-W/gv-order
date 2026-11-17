@@ -2742,3 +2742,88 @@ body there and renames it back with `FuelE_rename`. F4 and the
 subsumption half of F5 are one induction on the index (`sub_mono`),
 because the closure clause reads FuelE below its level and the value
 clause of FuelE reads `Vfuel` at its own level.
+
+### 19.14  Deviations (H4)
+
+Stage H4 proves the fundamental theorem of the cost judgment in
+lockfree/CostFund.v. The semantic judgment is `csem W Θ Γ e σ c t`. It
+holds when FuelE n holds of `subst γ (emap g e)` at result σ, frame c
+and every reserve and ticket count that meet t. This must hold for
+every index n, every W′ ⊒ W, every renaming g of channels injective on
+the ends of Θ, every substitution γ, and all points and counters that
+fit Θ and Γ. The ends of Θ fit by `thsem`, which places each renamed end
+at one point in `Vfuel` at its entry. The values of Γ fit by `gsem`,
+with one disjoint part of the points per entry and the counters of that
+part. The counters cover exactly the points and lie under the cap in
+every extension. Five changes to H1 to H3 and one removal from H2 make
+the case lemmas hold. A lemma that is false, or that has no proof,
+forced each of them.
+
+1. **Closure arguments and captures (relation).** `farr` asked `fin_ok`
+   of the argument and `fcap` of the captured counters. An application
+   cannot supply `fin_ok`. The value a hole returns comes with `Vfuel`
+   only, with neither its points known nor its map equal to its ends.
+   The body's FuelE needs the cap in every extension, and `fcap` at one
+   world does not give it. The arrow clause now asks `farg`, a value
+   with counters on exactly its points under the cap in every
+   extension, and `fcap_ext` of the captured counters. Both premises
+   are what a caller holds. `fcap_ext` moved from LFFuelBind.v to
+   LFFuel.v.
+2. **Ends at known points (relation).** The send clause asks
+   `ftravel`, finite partner budgets for the ends of the payload. An end
+   at protocol `PTop` and the ends a closure captures carried no such
+   fact. `Vfuel` at an end and at a closure now asks `fpts W π`, every
+   held end at a known point whose partner has a finite budget. New,
+   receive and the refill after an action provide it. `Vfuel_end` gains
+   the two premises.
+3. **Boxes hold no end (relation).** C-Abs must show that the map of a
+   closure is its ends, and a captured box could hide channel constants
+   under its empty map. The box clause now asks `fends eb = ∅` beside
+   `π = ∅`, as the closure clause asks `dom π = fends w`. Typed boxes
+   hold no channel constant, because C-Box types the body with Θ = ∅.
+4. **No constant at an arrow type (relation and typing).** The constant
+   clause of 19.11 item 3 gave the redex `App (Konst k) v` FuelE only
+   below the level of the value, one index short of what an application
+   needs, and C-App is false for it. Take Γ with x at an arrow to `CVal`
+   of cost 1 and y at a pair of the unit and a sending end. The
+   substitution x ↦ send meets `Vfuel 2`, while `App send y` has no
+   `FuelE 2`, because the end it returns is no unit. Reading the redex
+   one step later fails for force, whose box argument then sits one
+   level too low. So `Vfuel` holds no constant at an arrow type, and
+   C-Konst and `konst_cost` go. A constant passed as a function is
+   written λx. k x and typed by C-Abs over the rule of k, so no program
+   is lost up to η. There are no per-constant soundness lemmas. The
+   redex of each constant has its own lemma (`send_redex`, `recv_redex`
+   and so on), which the rules for applied constants share.
+5. **The continuation of F1 gets the cap in every extension (lemma).**
+   `fkont` gave the returned value `fcap` at one world, and the
+   continuation must prove FuelE, which asks the cap in every extension.
+   `FuelE_bind` supplies `fcap_ext` from the hole's FuelE, and `fkont`
+   now asks for it. No file outside LFFuelBind.v reads `fkont`.
+6. **Syntactic facts at C-Abs, C-Box and C-SpawnLam (proof).** The map
+   of a closure or a box must equal its ends, and `csem` cannot see
+   them, because it reads no term. The three lemmas take
+   `cfacts Θ Γ e`. The ends of e are those of Θ, its free variables have
+   entries, and every entry that may hold an end occurs. Every
+   derivation gives these facts (`ctyped_cfacts`), and `csem` stays free
+   of syntax.
+
+The proof follows 19.7. Three bind lemmas carry the sequencing.
+`sem_bind0` runs a hole that holds the whole environment, `sem_bind1` a
+hole beside the rest of the environment, which ages by the hole's cost,
+and `sem_bind2` a hole beside a value an earlier hole returned. Each is
+F1 with the context renamed, moved to the later world and aged
+(`env_cont`). A value whose type has no `CAny` at its top holds exactly
+its ends, at known points, with counters at least its credit
+(`Vfuel_held`). This is where the `cheld` condition of 19.12 item 4
+enters. C-Box is Löb by induction on the index. C-SpawnLam builds the
+child from the body's judgment at the ticked counters, lifts it over the
+β step and weakens it to frame ∞ and result `cany`, as 19.12 asked.
+
+`ctyped_fsem W0 Θ e σ c t W π` turns `ctyped W0 Θ [] e σ c t`,
+`wbext W0 W` and `cfits W Θ π` into `fsem W π e`. `cfits` asks that π
+covers Θ and that every end, refilled to its budget, is in `Vfuel` at
+its type at every index. `cfits_end` derives it for an end whose
+protocol fits at a known point with credit at most the budget.
+examples/CostFsem.v gives sync and the callback server `fsem W ∅` from
+their derivations (`sync_fsem`, `cb_fsem`).

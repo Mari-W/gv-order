@@ -5,6 +5,7 @@ Require LRGV.examples.ChoiceEnc.
 (* SYNTACTIC-POINTS: example port pending  Require LRGV.examples.ChoiceTranslateEx. *)
 Require LRGV.examples.Congruence.
 Require LRGV.examples.CostEx.
+Require LRGV.examples.CostFsem.
 Require LRGV.examples.Cycle.
 Require LRGV.examples.CycleFresh.
 Require LRGV.examples.DataAlternate.
@@ -75,6 +76,7 @@ Require LRGV.liveness.LivePTerm.
 Require LRGV.liveness.LiveRenaming.
 Require LRGV.liveness.LiveRules.
 Require LRGV.liveness.LiveTermRules.
+Require LRGV.lockfree.CostFund.
 Require LRGV.lockfree.Criterion.
 Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
@@ -333,6 +335,42 @@ Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_refill.
 Print Assumptions LRGV.lockfree.LFFuelBind.Vfuel_pair.
 Print Assumptions LRGV.lockfree.LFFuelBind.renk_union_split.
 Print Assumptions LRGV.lockfree.LFFuelBind.FuelE_fcap_ext.
+Print Assumptions LRGV.lockfree.CostFund.ctyped_csem.
+Print Assumptions LRGV.lockfree.CostFund.ctyped_fsem.
+Print Assumptions LRGV.lockfree.CostFund.ctyped_cfacts.
+Print Assumptions LRGV.lockfree.CostFund.sem_bind0.
+Print Assumptions LRGV.lockfree.CostFund.sem_bind1.
+Print Assumptions LRGV.lockfree.CostFund.sem_bind2.
+Print Assumptions LRGV.lockfree.CostFund.c_unit_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_pt_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_var_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_ch_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_abs_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_app_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_pair_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_letu_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_letp_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_inj1_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_inj2_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_case_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_box_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_force_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_new_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_pay_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_succ_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_send_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_recv_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_close_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_sel_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_bra_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_link_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_spawn_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_spawnlam_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_sub_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_weak_sem.
+Print Assumptions LRGV.lockfree.CostFund.c_contract_sem.
+Print Assumptions LRGV.examples.CostFsem.sync_fsem.
+Print Assumptions LRGV.examples.CostFsem.cb_fsem.
 Print Assumptions LRGV.examples.ABP.bob_typed.
 Print Assumptions LRGV.examples.ABP.alice0_typed.
 Print Assumptions LRGV.examples.ABP.alice1_typed.
