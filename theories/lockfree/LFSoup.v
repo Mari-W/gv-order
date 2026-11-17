@@ -1147,7 +1147,7 @@ Section step.
       + intros p f Hp Hf. apply elem_of_singleton in Hp as ->. simpl in Hf.
         rewrite lookup_insert_eq in Hf. injection Hf as <-.
         destruct (ff i e He) as (H1 & H2 & H3 & H4). split_and!; [|done|done|done].
-        pose proof (lffuel_step (S n) W (P i) (F i) (K i) e H1 LBeta e' Hst ltac:(done) ltac:(done)) as H. simpl in H.
+        pose proof (lffuel_step (S n) W (P i) (F i) (K i) e H1 LBeta e' Hst ltac:(done) ltac:(done) ltac:(by intros ? ? [?|?])) as H. simpl in H.
         apply (FuelE_down n (S n)); [lia|done].
   Qed.
 
@@ -1267,7 +1267,7 @@ Section step.
         assert (Hfr : ∀ c0 x0, LNew c x = LNew c0 x0 →
                   ((c0, true) ∉ dom (P i)) ∧ ((c0, false) ∉ dom (P i))).
         { intros c0 x0 [= <- <-]. rewrite H2. split; apply (Hnm i e _ He). }
-        pose proof (lffuel_step (S n) W (P i) (F i) (K i) e H1 _ e' Hst ltac:(done) Hfr) as H. simpl in H.
+        pose proof (lffuel_step (S n) W (P i) (F i) (K i) e H1 _ e' Hst ltac:(done) Hfr ltac:(by intros ? ? [?|?])) as H. simpl in H.
         split_and!.
         * apply (FuelE_down n (S n)); [lia|done].
         * rewrite Hends, !dom_insert_L, H2. unfold cends. destruct (pt_pol x); set_solver.
@@ -1538,17 +1538,20 @@ Section step.
     sl_end σ = Some o → tenv_end (A t) o = Some (X, k) →
     tenv_ends Θ' = (match sl_next σ k with None => ∅ | Some (o', _) => {[o']} end) ∪
                    (tenv_ends (A t) ∖ {[o]}) →
+    (∀ o0 b0, σ = SSel o0 b0 ∨ σ = SBra o0 b0 → fsolo (P t) o0) →
     FuelT n W (fupd W (P t) (F t) (LSess σ)).1 (fupd W (P t) (F t) (LSess σ)).2 (K t) e' ∧
     dom (fupd W (P t) (F t) (LSess σ)).1 = tenv_ends Θ' ∧
     dom (fupd W (P t) (F t) (LSess σ)).2 = tenv_ends Θ' ∧
     (∀ o', o' ∈ tenv_ends Θ' → (fupd W (P t) (F t) (LSess σ)).1 !! o' =
        if decide (Some o' = (fst <$> sl_next σ k)) then snd <$> sl_next σ k else P t !! o').
   Proof.
-    intros He Hst Hnr Hout Ho Hx Hends. destruct (ff t e He) as (H1 & H2 & H3 & H4).
+    intros He Hst Hnr Hout Ho Hx Hends Hso. destruct (ff t e He) as (H1 & H2 & H3 & H4).
+    assert (Hso' : ∀ o0 b0, LSess σ = LSess (SSel o0 b0) ∨ LSess σ = LSess (SBra o0 b0) → fsolo (P t) o0).
+    { intros o0 b0 [[= Hs]|[= Hs]]; apply (Hso o0 b0); auto. }
     assert (mrem (sl_out σ) (P t) !! o = Some k) as Hk.
     { rewrite Hout, lookup_mrem, decide_False by set_solver. apply (ff_pt t e o (X, k) He Hx). }
     assert (Hnr' : ∀ o0 w, LSess σ ≠ LSess (SRecv o0 w)) by (intros o0 w [= Heq]; by apply (Hnr o0 w)).
-    pose proof (lffuel_step (S n) W (P t) (F t) (K t) e H1 _ e' Hst Hnr' ltac:(done)) as HE.
+    pose proof (lffuel_step (S n) W (P t) (F t) (K t) e H1 _ e' Hst Hnr' ltac:(done) Hso') as HE.
     rewrite dupd_None in HE. rewrite (tkupd_act _ _ _ Ho) in HE.
     rewrite (fupd_act W σ (P t) (F t) o k Ho Hk) in HE |- *. rewrite ?Hout in HE. rewrite ?Hout.
     assert (o ∈ tenv_ends (A t)) as Hoe by (by eapply tenv_end_ends).
@@ -1648,10 +1651,12 @@ Section step.
       { apply (fuel_f2 i j e f e' f'); try done.
         - destruct (fuel_one i e _ e' _ k s Θ1 He Hse ltac:(done) eq_refl eq_refl Hxi) as (H1 & H2 & H3 & H4).
           { simpl. rewrite Hends. set_solver. }
+          { by intros ? ? [?|?]. }
           split_and!; try done. intros o Ho. rewrite H4 by done. simpl.
           rewrite Hπ by (by apply (Hoc _ o Hne)). apply (ff i e He). rewrite Hends in Ho. set_solver.
         - destruct (fuel_one j f _ f' _ kj sj Θ1j Hf Hsf ltac:(done) eq_refl eq_refl Hxj) as (H1 & H2 & H3 & H4).
           { simpl. rewrite Hendsj. set_solver. }
+          { by intros ? ? [?|?]. }
           split_and!; try done. intros o Ho. rewrite H4 by done. simpl.
           rewrite Hπ by (by apply (Hoc _ o Hnej)). apply (ff j f Hf). rewrite Hendsj in Ho. set_solver.
         - intros t g o Hti Htj Hg Ho. apply Hπ. intros Heq.
@@ -1764,6 +1769,10 @@ Section step.
       { apply (fuel_f2 i j e f e' f'); try done.
         - destruct (fuel_one i e _ e' _ k s0 Θ' He Hse ltac:(done) eq_refl eq_refl Hxi) as (H1 & H2 & H3 & H4).
           { simpl. rewrite He1, Hends, ?Hps. set_solver. }
+          { intros o0 b0 [[= <- _]|?]; [|done]. intros b' Hbs. simpl in Hbs |- *.
+            destruct (ff i e He) as (_ & Hd & _). rewrite Hd in Hbs.
+            destruct (decide (b' = β)) as [->|Hb]; [done|]. exfalso. apply (Hnr b').
+            rewrite Hends. set_solver. }
           split_and!; try done. intros o Ho. rewrite H4 by done. simpl.
           destruct (decide (o = (c, false))) as [->|Hno].
           + rewrite decide_True by done. by rewrite lookup_insert_eq.
@@ -1772,6 +1781,10 @@ Section step.
             rewrite Hπo by (by apply (Hoc _ o Hnr)). apply (ff i e He). rewrite Hends in Ho'. set_solver.
         - destruct (fuel_one j f _ f' _ (pt_dual k) r0 Θ'' Hf Hsf ltac:(done) eq_refl eq_refl Hxj) as (H1 & H2 & H3 & H4).
           { simpl. rewrite He2, Hendsj, ?Hpb. set_solver. }
+          { intros o0 b0 [?|[= <- _]]; [done|]. intros b' Hbs. simpl in Hbs |- *.
+            destruct (ff j f Hf) as (_ & Hd & _). rewrite Hd in Hbs.
+            destruct (decide (b' = negb β)) as [->|Hb]; [done|]. exfalso. apply (Hnr' b').
+            rewrite Hendsj. set_solver. }
           split_and!; try done. intros o Ho. rewrite H4 by done. simpl.
           destruct (decide (o = (c, true))) as [->|Hno].
           + rewrite decide_True by done. rewrite lookup_insert_ne by done. by rewrite lookup_insert_eq.
@@ -2001,7 +2014,7 @@ Section step.
             destruct (decide (i = j)); [done|]. rewrite !decide_True by done.
             assert (mrem (sl_out (SSend (c, b) v)) (P i) !! (c, b) = Some k) as Hk.
             { simpl. by rewrite lookup_mrem, decide_False. }
-            pose proof (lffuel_step (S n) W (P i) (F i) (K i) e H1i _ e' Hse ltac:(done) ltac:(done)) as HEf.
+            pose proof (lffuel_step (S n) W (P i) (F i) (K i) e H1i _ e' Hse ltac:(done) ltac:(done) ltac:(by intros ? ? [?|?])) as HEf.
             rewrite (fupd_act W (SSend (c, b) v) (P i) (F i) (c, b) k eq_refl Hk) in HEf |- *. simpl in HEf |- *.
             split_and!.
             * apply (FuelE_down n (S n)); [lia|done].
@@ -2167,7 +2180,7 @@ Section step.
               ((c, bc) ∉ tenv_ends (A'' t)) ∧ ((d, bd) ∉ tenv_ends (A'' t))).
     { intros t g Hg. unfold M'' in Hg. unfold BP, BF0, BK, A'', eupd. destruct (decide (t = i)) as [->|Hti].
       - rewrite lookup_insert_eq in Hg. injection Hg as <-. destruct (ff i e He) as (H1 & H2 & H3 & H4).
-        pose proof (lffuel_step (S n) W (P i) (F i) (K i) e H1 _ e' Hst ltac:(done) ltac:(done)) as H. simpl in H.
+        pose proof (lffuel_step (S n) W (P i) (F i) (K i) e H1 _ e' Hst ltac:(done) ltac:(done) ltac:(by intros ? ? [?|?])) as H. simpl in H.
         unfold LFFuel.fact in H. simpl in H.
         split_and!; [done|by rewrite dom_mrem, H2, Hends|by rewrite dom_mrem, H3, Hends
           | |rewrite Hends; clear; set_solver|rewrite Hends; clear; set_solver].

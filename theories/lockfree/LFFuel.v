@@ -206,12 +206,21 @@ Definition dupd (d : fuel) (α : tlabel) : fuel :=
   | _ => d
   end.
 
+(** The thread holds no other end of the channel of o. A select or a
+    branch changes the bit of its end, and the partner of a select or
+    branch is never the same thread (plan §19.13). *)
+Definition fsolo (π : gmap cend point) (o : cend) : Prop :=
+  ∀ b, (o.1, b) ∈ dom π → (o.1, b) = o.
+
 (** The obligation of a step e --α--> e' at index n' + 1, given the
     predicates E and V at the levels up to n'. An action needs a unit
     of the frame. A link needs a ticket and spends it. A spawn splits
     the tickets, ⌈tk/2⌉ to the child and ⌊tk/2⌋ to the parent (plan
     §18.3); the child runs as a thread. The new clause holds only for a
-    channel the thread does not hold (plan §19.8). *)
+    channel the thread does not hold (plan §19.8). A send, a spawn and a
+    link hand on only ends the thread holds, a send not its own subject,
+    and a select or branch continues only when the thread holds no other
+    end of its channel (plan §19.13). *)
 Definition Fobl (E : nat → epred) (V : nat → vpred) (n' : nat) (W : world) (σ : cta) (r : nat)
     (π : gmap cend point) (φ : gmap cend fuel) (tk : nat) (d : fuel) (α : tlabel) (e' : expr)
     : Prop :=
@@ -221,6 +230,7 @@ Definition Fobl (E : nat → epred) (V : nat → vpred) (n' : nat) (W : world) (
       (c, true) ∉ dom π → (c, false) ∉ dom π →
       E n' W σ r (fupd W π φ α).1 (fupd W π φ α).2 tk d e'
   | LSpawn w =>
+      fends w ⊆ dom π ∧
       fhand 0 (fends w) φ ∧
       E n' W cany 0 (fchild π φ w).1 (fchild π φ w).2 (Nat.div2 (S tk)) None (App w EUnit) ∧
       E n' W σ r (fupd W π φ α).1 (fupd W π φ α).2 (Nat.div2 tk) d e'
@@ -228,6 +238,9 @@ Definition Fobl (E : nat → epred) (V : nat → vpred) (n' : nat) (W : world) (
       (∀ o, sl_end s = Some o → ftick_ok o φ ∧ fle (Some 1) d) ∧
       match s with
       | SSend o w =>
+          (* the thread holds what it sends, and not the end it sends on
+             (plan §19.13) *)
+          fends w ⊆ dom π ∖ {[o]} ∧
           ftravel W π (fends w) ∧
           (* the payload, at the counters the receiver gets (decision 2026-11-09),
              at the payload cost type of the carrier *)
@@ -242,8 +255,11 @@ Definition Fobl (E : nat → epred) (V : nat → vpred) (n' : nat) (W : world) (
             fin_ok W w πi φi →
             V j W (w_pc W (pt_dual k)) πi φi w →
             E j W σ r ((fupd W π φ α).1 ∪ πi) ((fupd W π φ α).2 ∪ φi) tk (ftick d) e'
-      | SLink _ => 1 ≤ tk ∧ E n' W σ r (fupd W π φ α).1 (fupd W π φ α).2 (tk - 1) d e'
-      | _ => E n' W σ r (fupd W π φ α).1 (fupd W π φ α).2 tk (ftick d) e'
+      | SLink cd => cd ⊆ dom π ∧ 1 ≤ tk ∧ E n' W σ r (fupd W π φ α).1 (fupd W π φ α).2 (tk - 1) d e'
+      | SSel o _ | SBra o _ =>
+          (* only when the partner is not this thread (plan §19.13) *)
+          fsolo π o → E n' W σ r (fupd W π φ α).1 (fupd W π φ α).2 tk (ftick d) e'
+      | SClos _ => E n' W σ r (fupd W π φ α).1 (fupd W π φ α).2 tk (ftick d) e'
       end
   end.
 
@@ -310,7 +326,8 @@ Definition farr (E : nat → epred) (V : nat → vpred) (n : nat) (W : world)
 
 (** Values at a cost type, by recursion on the value (plan §19.3). A
     primitive constant at an arrow type runs its own redex. A pair adds
-    its credit to both components. *)
+    its credit to both components and splits its points into two
+    disjoint parts, one per component (plan §19.13). *)
 Fixpoint Vfdef (E : nat → epred) (V : nat → vpred) (n : nat) (W : world) (σ : cta)
     (π : gmap cend point) (φ : gmap cend fuel) (w : expr) {struct w} : Prop :=
   match σ with
@@ -338,8 +355,11 @@ Fixpoint Vfdef (E : nat → epred) (V : nat → vpred) (n : nat) (W : world) (σ
       | CProd σ1 σ2 =>
           match w with
           | Pair u v =>
-              Vfdef E V n W (cadd a σ1) (mres (fends u) π) (mres (fends u) φ) u ∧
-              Vfdef E V n W (cadd a σ2) (mres (fends v) π) (mres (fends v) φ) v
+              (* the points split into two disjoint parts, the counters
+                 follow them (plan §19.13) *)
+              ∃ π1 π2, π = π1 ∪ π2 ∧ dom π1 ## dom π2 ∧
+                Vfdef E V n W (cadd a σ1) π1 (mres (dom π1) φ) u ∧
+                Vfdef E V n W (cadd a σ2) π2 (mres (dom π2) φ) v
           | _ => False
           end
       | CSum σ1 σ2 =>
@@ -424,7 +444,7 @@ Proof.
   - apply HE'.
   - split; intros [H1 H2]; split; try done; intros k j πi φi Hk Hj Hd Hin Hv;
       apply (HE j Hj); apply (H2 k); try done; by apply (HV j Hj).
-  - split; intros (H1 & H2 & H3 & H4); split_and!; try done;
+  - split; intros (H1 & H0 & H2 & H3 & H4); split_and!; try done;
       first [intros k Hk; apply HV'; by apply H3|by apply HE'].
   - by rewrite HE'.
   - by rewrite HE'.
@@ -453,7 +473,9 @@ Lemma Vfdef_ext (E1 E2 : nat → epred) (V1 V2 : nat → vpred) n W σ π φ w :
 Proof.
   intros HE HV.
   induction w in σ, π, φ |- *; destruct σ as [τ a]; destruct τ; simpl; try done;
-    try (by rewrite (farr_ext E1 E2 V1 V2)); try (by rewrite IHw1, IHw2); try (by rewrite IHw).
+    try (by rewrite (farr_ext E1 E2 V1 V2)); try (by rewrite IHw);
+    try (split; intros (π1 & π2 & Hπ & Hd & H1 & H2); exists π1, π2; split_and!; try done;
+         first [by apply IHw1|by apply IHw2]).
   all: split; intros [Hp H]; split; try done; intros W' j r0 tk0 Hb Hj Hm;
     [rewrite <-HE by done|rewrite HE by done]; auto.
 Qed.
@@ -505,7 +527,7 @@ Proof.
   intros Hmn. rewrite !Vfuel_eq.
   induction w in σ, π, φ |- *; destruct σ as [τ a]; destruct τ; simpl; try done;
     try (intros [Hp Hf]; split; [done|]; by apply (farr_down _ _ m n));
-    try (intros [H1 H2]; split; auto; fail); auto.
+    try (intros (π1 & π2 & Hπ & Hd & H1 & H2); exists π1, π2; split_and!; auto; fail); auto.
   all: intros [Hp H]; split; [done|]; intros W' j r0 tk0 Hb Hj; apply H; [done|lia].
 Qed.
 
@@ -523,14 +545,14 @@ Proof.
   - by apply IH.
   - destruct Hs as [H1 H2]. split; [done|].
     intros k j πi φi Hk' Hj. apply (H2 k j πi φi Hk'). lia.
-  - destruct Hs as (H1 & H2 & H3 & H4). split_and!; [done|done| |by apply IH].
+  - destruct Hs as (H1 & H0 & H2 & H3 & H4). split_and!; [done|done|done| |by apply IH].
     intros k Hk'. eapply Vfuel_down; [|exact (H3 k Hk')]. lia.
   - destruct Hs as [H1 H2]. auto.
-  - destruct Hs as (H1 & H2 & H3). auto.
-  - destruct Hs as [H1 H2]. auto.
-  - destruct Hs as [H1 H2]. auto.
+  - destruct Hs as (H1 & H0 & H2 & H3). auto.
+  - destruct Hs as [H1 H2]. split; [done|]. intros Hso. apply IH. by apply H2.
+  - destruct Hs as [H1 H2]. split; [done|]. intros Hso. apply IH. by apply H2.
   - intros Hc1 Hc2. apply IH. by apply Hs.
-  - destruct Hs as (H1 & H2 & H3). auto.
+  - destruct Hs as (H0 & H1 & H2 & H3). auto.
 Qed.
 
 Lemma FuelE_down m n W σ r π φ tk d e :
@@ -561,14 +583,14 @@ Proof.
   - destruct Hs as [H1 H2]. split; [done|].
     intros k j πi φi Hk' Hj Hd Hin Hv0. apply (IH j ltac:(lia) _ _ _ _ _ tk); [done|].
     by apply (H2 k).
-  - destruct Hs as (H1 & H2 & H3 & H4). split_and!; try done. by apply (IHn _ _ _ _ _ tk).
+  - destruct Hs as (H1 & H0 & H2 & H3 & H4). split_and!; try done. by apply (IHn _ _ _ _ _ tk).
   - destruct Hs as [H1 H2]. split; [done|]. by apply (IHn _ _ _ _ _ tk).
-  - destruct Hs as (H1 & H2 & H3). split_and!; [done|lia|].
+  - destruct Hs as (H1 & H0 & H2 & H3). split_and!; [done|done|lia|].
     apply (IHn _ _ _ _ _ (tk - 1)); [lia|done].
-  - destruct Hs as [H1 H2]. split; [done|]. by apply (IHn _ _ _ _ _ tk).
-  - destruct Hs as [H1 H2]. split; [done|]. by apply (IHn _ _ _ _ _ tk).
+  - destruct Hs as [H1 H2]. split; [done|]. intros Hso. apply (IHn _ _ _ _ _ tk); [done|by apply H2].
+  - destruct Hs as [H1 H2]. split; [done|]. intros Hso. apply (IHn _ _ _ _ _ tk); [done|by apply H2].
   - intros Hc1 Hc2. apply (IHn _ _ _ _ _ tk); [done|]. by apply Hs.
-  - destruct Hs as (H1 & H2 & H3). split_and!; [done| |].
+  - destruct Hs as (H0 & H1 & H2 & H3). split_and!; [done|done| |].
     + apply (IHn _ _ _ _ _ (Nat.div2 (S tk))); [apply (div2_mono (S tk) (S tk')); lia|exact H2].
     + apply (IHn _ _ _ _ _ (Nat.div2 tk)); [by apply div2_mono|done].
 Qed.
@@ -671,6 +693,10 @@ Section clauses.
 
   (** The payload of a send has finite partner budgets. *)
   Lemma fuel_send_travel o w e' : tstep e (LSess (SSend o w)) e' → ftravel W π (fends w).
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & _ & H & _). Qed.
+
+  (** The thread holds the ends it sends, and not the end it sends on. *)
+  Lemma fuel_send_held o w e' : tstep e (LSess (SSend o w)) e' → fends w ⊆ dom π ∖ {[o]}.
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H & _). Qed.
 
   (** The payload of a send at the counters the receiver gets, at the
@@ -678,36 +704,46 @@ Section clauses.
   Lemma fuel_send_val o w e' k :
     tstep e (LSess (SSend o w)) e' → π !! o = Some k →
     Vfuel n W (w_pc W k) (mres (fends w) π) (ftick <$> mres (fends w) φ) w.
-  Proof. intros Hst Hk. pose proof (fuel_obl _ _ Hst) as (_ & _ & H & _). by apply H. Qed.
+  Proof. intros Hst Hk. pose proof (fuel_obl _ _ Hst) as (_ & _ & _ & H & _). by apply H. Qed.
 
   (** A link needs a ticket. *)
   Lemma fuel_link cd e' : tstep e (LSess (SLink cd)) e' → 1 ≤ tk.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & _ & H & _). Qed.
+
+  (** A link forwards ends the thread holds. *)
+  Lemma fuel_link_held cd e' : tstep e (LSess (SLink cd)) e' → cd ⊆ dom π.
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H & _). Qed.
+
+  (** A spawn hands on ends the thread holds. *)
+  Lemma fuel_spawn_held w e' : tstep e (LSpawn w) e' → fends w ⊆ dom π.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H & _ & _). Qed.
 
   (** The ends a spawn hands to the child have a unit to spare. *)
   Lemma fuel_spawn_hand w e' : tstep e (LSpawn w) e' → fhand 0 (fends w) φ.
-  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H & _ & _). Qed.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H & _ & _). Qed.
 
   (** ** lffuel_step: the successor at the updated counters, tickets and frame *)
 
   (** Every step but a receive. A new step needs a channel the thread
-      does not hold. *)
+      does not hold, a select or branch a thread that holds no other end
+      of its channel. *)
   Lemma lffuel_step α e' :
     tstep e α e' → (∀ o w, α ≠ LSess (SRecv o w)) →
     (∀ c x, α = LNew c x → ((c, true) ∉ dom π) ∧ ((c, false) ∉ dom π)) →
+    (∀ o b, α = LSess (SSel o b) ∨ α = LSess (SBra o b) → fsolo π o) →
     FuelE n W sg r (fupd W π φ α).1 (fupd W π φ α).2 (tkupd tk α) (dupd d α) e'.
   Proof.
-    intros Hst Hr Hn. pose proof (fuel_obl _ _ Hst) as H.
+    intros Hst Hr Hn Hso. pose proof (fuel_obl _ _ Hst) as H.
     destruct α as [|[o w|o w|o|cd|o b|o b]|c x|w]; simpl in H |- *.
     - done.
     - by destruct (Hr o w).
+    - by destruct H as (_ & _ & _ & _ & H).
+    - by destruct H as [_ H].
     - by destruct H as (_ & _ & _ & H).
-    - by destruct H as [_ H].
-    - by destruct H as (_ & _ & H).
-    - by destruct H as [_ H].
-    - by destruct H as [_ H].
+    - destruct H as [_ H]. apply H, (Hso o b). by left.
+    - destruct H as [_ H]. apply H, (Hso o b). by right.
     - destruct (Hn c x eq_refl) as [H1 H2]. by apply H.
-    - by destruct H as (_ & _ & H).
+    - by destruct H as (_ & _ & _ & H).
   Qed.
 
   (** Receive: the receiver continues for every incoming value at the
@@ -729,7 +765,7 @@ Section clauses.
     tstep e (LSpawn w) e' →
     FuelE n W cany 0 (fchild π φ w).1 (fchild π φ w).2 (Nat.div2 (S tk)) None (App w EUnit) ∧
     FuelE n W sg r (fupd W π φ (LSpawn w)).1 (fupd W π φ (LSpawn w)).2 (Nat.div2 tk) d e'.
-  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H1 & H2). Qed.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & _ & H1 & H2). Qed.
 
   (** ** At counter 0 *)
 
@@ -763,7 +799,7 @@ Lemma link_tickets_fall (W : world) (σ : cta) (r : nat) (d : fuel)
 Proof.
   intros HQ tk. induction tk as [|tk IH]; intros π φ e Hq HF;
     destruct (HQ π φ e Hq) as (cd & e' & Hst & Hq');
-    pose proof (fuel_obl _ _ _ _ _ _ HF _ _ Hst) as (_ & H1 & H2); [lia|].
+    pose proof (fuel_obl _ _ _ _ _ _ HF _ _ Hst) as (_ & _ & H1 & H2); [lia|].
   simpl in H2. rewrite Nat.sub_0_r in H2. exact (IH _ _ _ Hq' H2).
 Qed.
 
