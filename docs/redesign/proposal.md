@@ -1,14 +1,17 @@
 # Redesign proposal: deadlock and lock freedom from one order and one fuel
 
-State read on 2026-11-17, branch `lock-freedom` at f3dd2fa with LFTyped.v
-and Rank.v from lf-h5prep. This document changes no Rocq file. It is the
+Version 2. State read on 2026-11-17, branch `lock-freedom` at f3dd2fa with
+LFTyped.v and Rank.v from lf-h5prep. Version 1 is commit ee664e2. This document changes no Rocq file. It is the
 basis for a rewrite from the ground up. "Checked" marks a claim checked
 against a definition or a Rocq lemma of that state, "argued" a claim argued
 on paper here or in the plan, "to prove" a lemma the rewrite has to supply.
 
 Notation. Ends c⁺ and c⁻ of a channel c. Points x, the dual point x̄, the
-shift x⁺, the field x.κ. World W with order ≺_W. Term environment Θ,
-process interface Σ, future F. N is the refill of the fuel layer.
+shift x⁺, the field x.κ. World
+W with order ≺_W. Term environment Θ, process interface Σ, future F. N is
+the refill of the fuel layer. Appendix A fixes the notation of every judgment
+and theorem for Rocq and the paper alike, and Appendix B lists every known
+counterexample with the part of the design that handles it.
 
 ## 0  The proposal in brief
 
@@ -23,17 +26,19 @@ The redesign keeps the two devices and cuts every coupling between them.
 
 1. Points carry the order and nothing else. Budgets leave the world. The
    fuel layer reads no point and no world.
-2. Programs never mention a point. A `new` either creates at a fresh
-   generated root, whose facts are the fixed laws of the world, or creates
-   at a field x.κ of the point x of an end the thread holds (anchored
-   creation). Placement is a function of the run, so it is the same at every
+2. Programs never mention a point. A `new_ℓ` creates at a fresh generated
+   root of the family ℓ, whose facts are the fixed laws Λ_ℓ of the world, and
+   a `new_κ o` creates at the field x.κ of the point x of an end o
+   the thread holds (anchored creation). ℓ and κ are labels, like a branch
+   label. Placement is a function of the run, so it is the same at every
    step index, which is what lock freedom needs (§4).
 3. Channels and points are disconnected. A channel has two named ends c⁺ and
    c⁻. The environment maps an end to a session type at a point. `new` is the
    only place where an end receives a point.
 4. The relation reads no syntax except one fact about steps. The operational
    semantics labels a send and a spawn with the set of ends the step moves.
-   Every other syntactic clause goes, and with it the constant cases of V.
+   The spawn half of this needs the author's explicit agreement (Q3). Every
+   other syntactic clause goes, and with it the constant cases of V.
    Constants are derived λ-values, so a constant passes as a function.
 5. One generic relation, parametric in a cost table, gives both the
    deadlock-freedom relation and the live relation.
@@ -41,9 +46,12 @@ The redesign keeps the two devices and cuts every coupling between them.
    counters, per-thread link tickets, and cost protocols that carry the
    payload floors. Cost protocols are chosen per index like session types,
    because adequacy never reads them.
-7. The lock-free judgment is a soup of threads, each in the live relation
-   and in the fuel predicate, with ownership, points, counters and tickets
-   fixed outside the index. Adequacy is the existing type-free criterion.
+7. The lock-free judgment mirrors deadlock freedom. It is the live process
+   relation together with a soup of threads, each in the live relation and
+   in the fuel predicate, with ownership, points, counters and tickets fixed
+   outside the index. Adequacy is the existing type-free criterion.
+8. The Rocq statements read as the paper's statements, with the same
+   judgment forms, notation and names (Appendix A).
 
 ## 1  Inventory of decisions
 
@@ -68,11 +76,11 @@ theories/ unless they name docs/.
 
 | # | Decision | Where | Verdict |
 |---|---|---|---|
-| W1 | End points. Each end has its own point, x and x̄, and the gate asks u ≺ v̄ | lang/Syntax.v:33-37, relation/Readiness.v:79-92 | E |
+| W1 | End points. Each end has its own point, x and x̄, and readiness asks u ≺ v̄ | lang/Syntax.v:33-37, relation/Readiness.v:79-92 | E |
 | W2 | No aliases (no-eq). `w_eq` is equality | relation/Worlds.v:41 | E. The abbreviation and the eight `wf_eq_*` lemmas go (quirk G5) |
-| W3 | Points are roots with offsets and fields, (p,b)[i] | lang/Syntax.v:28-37 | E. Fields are labelled x.κ |
+| W3 | Points are roots with offsets and fields, (p,b)[i]. A payload field and the continuation of choice i share x.κ_i by design (K11) | lang/Syntax.v:28-37, 112-117 | E. Fields are labelled x.κ. Anchored creation uses the same fields on purpose (§2.3) |
 | W4 | A world is a support of root names and a transitive order containing x ≺ x⁺ and x ≺ x̄⁺ | relation/Worlds.v:30, 106 | E |
-| W5 | Constant world. O-New never extends W | plan §6.4, decision 2026-11-08 | C(F5). Kept in spirit. Generated roots are known up front through laws (§2.4) |
+| W5 | Constant world. O-New never extends W | plan §6.4, decision 2026-11-08 | C(F5). Kept in spirit. Generated roots are known up front through family laws (§2.4) |
 | W6 | Budgets `w_bud` and payload cost types `w_pc` live in the world | relation/Worlds.v:30-35, plan §17.8, §19.3 | C(F10). Remove. N and cost protocols replace them |
 | W7 | Two-world composition, result in W1 ⊔ W2, `strict (wjoin W1 W2)` | composition/, LFCompose.v:245 | E (author 2026-11-17). Restate strictness by the interface (cleanup R7) |
 | W8 | `pbot`, a point no world knows, stands for the ⊥ flag of futures | relation/Worlds.v:189 | E as a proof device |
@@ -96,7 +104,7 @@ theories/ unless they name docs/.
 | # | Decision | Where | Verdict |
 |---|---|---|---|
 | B1 | V, E, P step-indexed by course-of-values levels | relation/LogicalRelation.v:510-531 | E. One generic `sfix` for every fixpoint (cleanup P15) |
-| B2 | Readiness and future as one gate, `ready_t`, `ready_p` | relation/Readiness.v:100-108 | E |
+| B2 | Readiness and future as one condition, `ready_t`, `ready_p` | relation/Readiness.v:100-108 | E |
 | B3 | Giving steps (send, select, close, link) cost 0 and recur on term size | relation/LogicalRelation.v:180-245, 318 | E as a cost table entry. The size recursion becomes the least fixpoint of the generic relation |
 | B4 | V-Const reads `konst_ty` and `teqW` inside V | relation/LogicalRelation.v:132-133 | C(K2). Remove |
 | B5 | V at ⊸ asks `fends eb = tenv_ends Θ` | relation/LogicalRelation.v:123 | C(ownership at transfers). Move to transfer sets |
@@ -143,7 +151,7 @@ theories/ unless they name docs/.
 | F18 | `fsolo` at select and branch | plan §19.13.3, LFFuel.v:212 | C(K3). Remove |
 | F19 | A pair splits its points into disjoint parts | plan §19.13.4 | E |
 | F20 | Soup fixes q, P, F, K outside the index, environments and types inside | LFSoup.v:306 | E. P becomes derived (determinism, cleanup R3) |
-| F21 | `LFP` has a first conjunct `∀ n, LPrel n` | LFSoup.v:306-307, quirk A6 | Q. Derive no τ-divergence per thread |
+| F21 | `LFP` has a first conjunct `∀ n, LPrel n` | LFSoup.v:306-307, quirk A6 | E for now. It mirrors "DF = process relation" (author, 2026-11-16). Dropped only once `soup_no_tau_divergence` is proved (§2.12) |
 | F22 | `prim T`, `lf_sig`, `lf_own` | LFSoup.v:257-279 | E (honest side conditions) |
 | F23 | `lf_known`, and the premise of `LFP_term` that W knows the environment's points | LFSoup.v:279, decision 2026-11-17 | C(W6). Remove |
 | F24 | `wbud_agree W1 W2` in `LFP_connect` and `LFP_join` | decision 2026-11-16 | C(W6). Remove |
@@ -153,7 +161,7 @@ theories/ unless they name docs/.
 
 | # | Decision | Where | Verdict |
 |---|---|---|---|
-| T1 | A separate cost judgment, not costs in `ty` | plan §19.2 | E |
+| T1 | A separate cost judgment, not costs in `ty` | plan §19.2, decided under overnight delegation | open again (Q11, §2.16) |
 | T2 | Arrow `CArr c t h σ1 σ2` with cost, ticket transformer and floor, box `CBox c t σ`, credits | relation/CostTypes.v:156 | E |
 | T3 | Cost protocols with a budget per node, point profiles `CPt`, `pfits` against the world | CostTypes.v:156-181, LFFuel.v:191 | C(W6, K4). Protocols keep only payload cost types |
 | T4 | `CAny` with the aging condition `cheld` | CostTypes.v:157, static/CostTyping.v:169-180 | Q (plan §19.12.4). Remove `CAny` |
@@ -171,7 +179,7 @@ theories/ unless they name docs/.
 ```
   semantics       ends c⁺ c⁻, events with transfer sets, thread ids, weak fairness
       │
-  points, worlds  roots (constants, generated), x⁺, x.κ, x̄, order ≺_W, laws Λ
+  points, worlds  roots (constants, generated), x⁺, x.κ, x̄, order ≺_W, laws Λ_ℓ
       │
   environments    Θ : end ⇀ S@x        placement at new        readiness, futures
       │
@@ -181,7 +189,7 @@ theories/ unless they name docs/.
                     │
   fuel            FuelE^N  per thread, counters, tickets, cost protocols, no points
       │
-  soup            ∀ thread: R^{κ_L} ∧ FuelE^N, ownership and points fixed outside the index
+  LF              Live process relation ∧ soup (∀ thread: R^{κ_L} ∧ FuelE^N), ownership fixed outside the index
       │
   rank            well_founded ≺_W         criterion → lock freedom
 ```
@@ -205,33 +213,68 @@ runtime reads no point at all.
 
 ```
 root   r ::= a            a constant, known to W with its own facts
-           | g            a generated root, from an infinite supply G
+           | g_ℓ          a generated root of family ℓ, from an infinite supply G_ℓ
 point  x ::= r | x⁺ | x.κ | x̄
 ```
 
-`x̄` flips the polarity, fields ignore it (x̄.κ = x.κ), shift keeps it. An
-action moves an end from x to x⁺, select to (x.κ_i)‾, branch to x.κ_i, and
-the channels a message carries sit at the fields x.κ of the carrier's point.
-These laws exist today (lang/Syntax.v:72-117). Point variables exist only in
-types, bound by □ ∀ and by payload ∃.
+`x̄` flips the polarity, fields ignore it (x̄.κ = x.κ),
+shift keeps it. An action moves an end from x to x⁺, select to (x.κ_i)‾,
+branch to x.κ_i, and the channels a message carries sit at the fields x.κ of
+the carrier's point. These laws exist today (lang/Syntax.v:72-117). Point
+variables exist only in types, bound by □ ∀ and by payload ∃.
+
+**Anchored creation shares the payload fields, on purpose.** x.κ names the
+channels a message on x carries and the continuation of choice i, and the
+two share a point by design (K11). `new_κ o` creates at the same x.κ. That
+is what the common pattern needs. A channel created to be sent on o must sit
+at the payload field of o's point, because V at the payload type places a
+carried end at x.κ (`payload_at`). The reply channel of a request and reply,
+the reply channel of KobForwarder, and the channel ChoiceTranslate creates
+at the carrier's point (quirk C3) all follow this pattern. A separate field
+sort, considered in review, would place those channels away from the field
+where the message has to deliver them and lose these programs. A created end
+and an unrelated carried end at one point are harmless. Points need not be
+linear (plan §2, G3), and readiness between two ends at one point fails,
+because x ≺ x̄ is no fact and ≺_W is strict. So a coincidence costs at most a
+typing, never soundness, and it touches no counterexample of Appendix B.
+
+**Two creations at one anchor and one label.** Two `new_κ o` before o acts
+give two channels at x.κ. Typing admits it, for the reason above, and then
+no thread may wait on one of the two while it holds the other. No example
+of CostEx.v or of the deadlock-freedom examples needs this (to confirm in
+S2). Distinct labels, or an action on the anchor in between, give distinct
+points.
 
 ### 2.4  Worlds
 
 **Job.** The order. Nothing else.
 
 ```
-W = (A, ≺_A, Λ)
+W = (A, ≺_A, (Λ_ℓ)_{ℓ ∈ L})
   A       finite set of constants
   ≺_A     facts between points with constant roots
-  Λ(r)    laws, facts between points with the root variable r and constants
-≺_W = transitive closure of  ≺_A ∪ ⋃_{g ∈ G} Λ(g) ∪ { x ≺ x⁺ } ∪ { x ≺ x̄⁺ }
+  L       finite set of family labels
+  Λ_ℓ(r)  laws of family ℓ, facts between points whose root is the variable r
+≺_W = transitive closure of  ≺_A ∪ ⋃_{ℓ, g ∈ G_ℓ} Λ_ℓ(g) ∪ { x ≺ x⁺ } ∪ { x ≺ x̄⁺ }
 ```
 
-Every generated root is known and obeys the same laws, so W is constant along
-every run although runs create roots. `world_wf` keeps the fields of
-relation/Worlds.v:106. `strict W` asks ≺_W irreflexive. The lock-free world
-asks in addition `well_founded ≺_W`, one record instead of three names
-(quirk A14). The join W1 ⊔ W2 unions constants, facts and laws.
+Every generated root is known and obeys the laws of its family, so W is
+constant along every run although runs create roots. `world_wf` keeps the
+fields of relation/Worlds.v:106. `strict W` asks ≺_W irreflexive. The
+lock-free world asks in addition `well_founded ≺_W`, one record instead of
+three names (quirk A14).
+
+**Laws per family, not per program.** A law speaks of one root variable and
+of nothing else, so two generated roots are never ordered against each
+other, and a law never meets a constant. Then ≺_W restricted to generated
+roots is the disjoint union of the families, and W is strict (well founded)
+iff ≺_A and every Λ_ℓ are. The join W1 ⊔ W2 unions constants, facts and
+families after renaming the families of one side apart. Family labels never
+reach the runtime, so relabelling a component is a renaming lemma like the
+one for channel names (to prove). Two components whose laws contradict
+therefore never meet in one family, and P-Connect asks only the strictness
+of the constant part at the interface (cleanup R7). Version 1 had one global
+Λ, under which such a pair made every join non-strict (review point 3).
 
 No budget, no payload cost type and no alias relation sits in W (removes
 W6, quirks A11, A13, A13c, F8, G5).
@@ -249,21 +292,22 @@ W6, quirks A11, A13, A13c, F8, G5).
 function of the step and of Θ.
 
 ```
-new          →  c⁺ : S@g,    c⁻ : S̄@ḡ       g a generated root fresh for Θ
+new_ℓ        →  c⁺ : S@g,    c⁻ : S̄@ḡ       g ∈ G_ℓ a generated root fresh for Θ
 new_κ o      →  o unchanged, c⁺ : S@x.κ, c⁻ : S̄@(x.κ)‾      where Θ(o) = _@x
 ```
 
 `new_κ o` is anchored creation. It takes a held end o, returns it untouched,
-and creates the channel at the field κ of o's point. The anchor is threaded
-linearly, so the term mentions o and gives it back, and no point occurs in
-the program. κ is a label like a branch label. The static types are
+and creates the channel at the field κ of o's point. The anchor
+is threaded linearly, so the term mentions o and gives it back, and no point
+occurs in the program. ℓ and κ are labels like a branch label. A program
+with one family writes `new` for `new_ℓ`. The static types are
 
 ```
-new   : 1 ⊸ ∃ρ. Λ(ρ). (S@ρ ⊗ S̄@ρ̄)
+new_ℓ : 1 ⊸ ∃ρ. Λ_ℓ(ρ). (S@ρ ⊗ S̄@ρ̄)
 new_κ : S0@x ⊸ S0@x ⊗ (S@x.κ ⊗ S̄@(x.κ)‾)
 ```
 
-A fresh root needs facts only from the laws. A channel that must sit below
+A fresh root needs facts only from the laws of its family. A channel that must sit below
 or above a held end is created at a field of that end, and the box
 constraint or W supplies the facts about x.κ. This covers every current use
 of `new (EPt x)`. A box parameter `TPt ι` disappears, because the box
@@ -280,9 +324,42 @@ position of a run is a function of the initial points and the run, the same
 at every index. This is what lock freedom needs (§4) and what syntactic
 points provided.
 
+**A cycle created by main, under each option of Q2.** The client sends on a
+and then receives on b, the server receives on a and then sends on b, both
+forever.
+
+```
+main   = let (a, a') = new in let (b, b') = new in spawn (λ_. srv a' b'); cli a b
+cli    = !(f = λa b. let a = send ⟨∗, a⟩ in let (_, b) = recv b in (force f) a b)
+srv    = !(g = λa b. let (_, a) = recv a in let b = send ⟨∗, b⟩ in (force g) a b)
+```
+
+Round i of the client blocks on b at β + i while it holds a at α + i + 1.
+Round i of the server blocks on a at α + i while it holds b at β + i. In the
+hat shorthand (every polarity combination) readiness needs
+α̂ + i ≺ β̂ + i ≺ α̂ + i + 1 for every i. The boxes are
+`cli : □∀ι κ. C(ι,κ). S@ι ⊸ S'@κ ⊸ ∗` with C(ι,κ) = {κ̂+i ≺ ι̂+i+1 | i} and
+`srv : □∀ι κ. C'(ι,κ). …` with C'(ι,κ) = {ι̂+i ≺ κ̂+i | i}, and each self
+call instantiates at (ι⁺, κ⁺), where C and C′ reappear shifted.
+
+- (a) global laws, version 1. main writes `new` and then `new_κ a`, so b sits
+  at ρ.κ with Λ(r) = {r̂+i ≺ (r.κ)^+i ≺ r̂+i+1 | i}. Opening `new`
+  gives ρ with Λ(ρ), and the forces at (ρ, ρ.κ) meet C and C′ from Λ(ρ).
+  It types, but Λ holds for every generated root of the whole program and
+  of every component it is joined with.
+- (b) built-in laws only. ρ and ρ.κ are related by nothing beyond
+  x ≺ x⁺ and x ≺ x̄⁺, so C(ρ, ρ.κ) fails. A plain second `new` gives a
+  second root, and two roots are never ordered. Does not type.
+- (c) anchors only, top-level channels as restrictions at constants. The
+  program is written as the configuration ({a, b}, {cli a b, srv a' b'}),
+  the derivation places a at α and b at β with the facts above in W, and
+  the soup fixes these points once outside the index (P0). Types, but main's
+  two `new`s become process-level restrictions.
+- (d) family laws, proposed. As (a), with `new_ℓ` and the laws Λ_ℓ of that
+  family. The same typing, and composition renames ℓ apart (§2.4).
 ### 2.6  Readiness and futures
 
-**Job.** The gate that excludes circular waiting.
+**Job.** Readiness, ready_W, excludes circular waiting.
 
 Unchanged from relation/Readiness.v. A term with future F that is stable and
 reducible offers some held ends, every offered end lies below the partner
@@ -300,7 +377,36 @@ ends the step physically moves.
 The semantics labels `spawn w` and `send o w` with the transfer set
 M = ends(w), the ends that leave the thread with w. It already computes the
 same set for scope extrusion (`sentc`). The relation reads M from the label
-at three clauses (O-Spawn, O-Send, Q-Send) and nowhere else. Ownership has to
+at three clauses (O-Spawn, O-Send, Q-Send) and nowhere else.
+
+**What the author has agreed to, and what not.** The author allowed syntax
+in the relation at a send, where the semantics extrudes scope by syntax
+(decision 2026-11-16). The transfer set at a spawn is a new syntactic fact
+read by the relation. Under the standing rule it needs the author's explicit
+agreement, and this proposal asks for it (Q3). It replaces `tenv_fit` in
+`Vspawn`, which reads the closure's ends today (LiveRelation.v:246), so the
+amount of syntax read at a spawn does not grow. It reads the label instead
+of the term.
+
+**Why a spawn needs it.** The soup fixes which thread owns which end outside
+the index (§2.12), because the rank and the counters of adequacy are read
+off owners. O-Spawn splits Θ into the child's part and the parent's part.
+Without a fact that fixes the split, the split is an existential inside each
+index, and a thread that holds an end that neither the child nor the parent
+mentions can give it to either side at different indices. Then no ownership
+is the same at every index (the problem of §4.2, for owners instead of
+points). The transfer set is the one index-free source of the split.
+
+**An alternative without it, and why it is worse.** A spawn moves no
+ownership. The typing rule of `spawn` asks a thunk that holds no end, and a
+thread hands ends to a child by a message on a fresh channel, `spawn⟨X⟩ e`
+being sugar for `let (c, d) = new in spawn (λ_. let ⟨X, _⟩ = recv d in e);
+send ⟨X, c⟩`. Only the send reads its transfer set. The price is one
+channel and one synchronization per spawn, a counter unit per handed end,
+and readiness facts for the parent's send on c against every end it keeps,
+which a fresh root cannot supply without an anchor. GrowRing and every
+example that spawns a closure over ends would change. Unchecked against the
+examples. Ownership has to
 follow M, because lock freedom reads the holder of an end as the thread that
 will act on it, and only the thread whose term holds the end can act on it.
 The split at a hand-over must also be the same at every index, and M is the
@@ -312,6 +418,14 @@ cannot hand it over, so the relation rejects it by itself (argued). The
 compatibility lemmas of C-Send and C-Spawn use the typing fact that a typed
 value's ends are its environment's ends, as a lemma about derivations
 (`ctyped_cfacts` today), not as a premise of any relation.
+
+What the transfer sets replace. `fends eb = tenv_ends Θ` of the base arrow
+(LogicalRelation.v:123), `tenv_fit` and `tenv_bipol` of the live arrow and
+`Vspawn` (LiveRelation.v:246, 343), `fchans eb = ∅` of V-Box
+(LogicalRelation.v:160), `dom π = fends w` and `fends eb = ∅` of `Vfuel`
+(LFFuel.v:360, 366), the reading of `fends w` in `fchild` and in the spawn
+and send clauses of `Fobl` (LFFuel.v:149, 233, 243), `term_wf` (LogicalRelation.v:1116),
+and the `cfacts` premises of C-Abs, C-Box and C-SpawnLam (plan §19.14.6).
 
 ### 2.8  The base relation R^κ
 
@@ -347,19 +461,41 @@ V_n⟦□∀ῑ.C.T⟧(Θ, v)      ⇔ Θ = ∅ ∧ v = !e ∧ ∀ W' ⊒ W, ins
 V_n⟦∃^ℓ ῑ.C.T⟧(Θ, v)    ⇔ ℓ ≼ heads Θ ∧ some known instance xs meets C ∧ v ∈ V_n⟦T[xs]⟧(Θ)
 ```
 
-The live arrow reads levels j ≤ n, so a β is free
-(liveness/LiveRelation.v:343-348). That is the κ_L instance of "body at the level after the β step".
-There is no constant case, because constants are λ-values (§3.2).
+**One arrow for both tables.** The arrow reads its body at every level
+j ≤ n − κ(β). κ_DF gives j < n, today's base arrow
+(LogicalRelation.v:119-131). κ_L gives j ≤ n, today's live arrow
+(LiveRelation.v:343-348). At j = n the argument and the result are read at
+the current level, so V_n recurses on the size of the type inside a level,
+as `LVdef` does with its fuel on `tsize` (instantiation keeps the size,
+`tsize_sinst`, so the box clause stays inside the recursion). The generic V
+recurses on the pair (n, size T) for both tables, and for κ_DF the second
+component is never needed. There is no constant case, because constants are
+λ-values (§3.2).
+
+**The bind lemma, once.** For an evaluation context K,
+
+```
+e ∈ E_n⟦T ≺ F ∪ F_K⟧(Θ1)
+∀ W' ⊒ W, j ≤ n, Θv, v ∈ V_j⟦T⟧_{W'}(Θv).  K[v] ∈ E_j⟦U ≺ F⟧_{W'}(Θv ⊎ Θ2)
+───────────────────────────────────────────────────────────────────────────
+K[e] ∈ E_n⟦U ≺ F⟧(Θ1 ⊎ Θ2)
+```
+
+with F_K the heads of Θ2. It holds for every κ, because a step of the hole
+is a step of K[e] at the same cost, so the levels the hole reaches are the
+levels the composite reaches, and a value of the hole arrives at some level
+j ≤ n. The proof is induction on n and, inside it, on the least fixpoint.
+`LErel_bind` (liveness/LiveBind.v) is this lemma at κ_L.
 
 E at level n is the least X such that for every W′ ⊒ W (decision Q9)
 
 ```
 (stop)  e irreducible  ⇒ e ∈ V_n⟦T⟧(Θ)
-(gate)  e reducible    ⇒ ready_{W'}(Θ | F, e)
+(ready) e reducible    ⇒ ready_{W'}(Θ | F, e)
 (step)  e →α e'        ⇒ Obl_α,  where "e' at Θ'" means X(Θ', e') if κ(α) = 0
                                           and e' ∈ E_{n−κ(α)}(Θ') otherwise
 Obl β, force        e' at Θ
-Obl new             ∀ g ∈ G fresh for Θ. ∃ S S' dual. e' at Θ, c⁺ : S@g, c⁻ : S'@ḡ
+Obl new_ℓ           ∀ g ∈ G_ℓ fresh for Θ. ∃ S S' dual. e' at Θ, c⁺ : S@g, c⁻ : S'@ḡ
 Obl new_κ o         Θ(o) = _@x, ∃ S S' dual. e' at Θ, c⁺ : S@x.κ, c⁻ : S'@(x.κ)‾
 Obl spawn w, M      Θ = Θ_M ⊎ Θ_r, ends Θ_M = M, w ∈ V_n⟦1 ⊸ 1⟧(Θ_M), e' at Θ_r
 Obl send o w, M     Θ = o : !P.S@x ⊎ Θ_M ⊎ Θ_r, ends Θ_M = M,
@@ -407,11 +543,11 @@ FuelE^N_{n+1}⟦σ, r, d⟧(Π, φ, tk, e)  ⇔  for every renaming g injective 
   (val)   e value ⇒ r ≤ tk ∧ e ∈ Vfuel^N_{n+1}⟦σ⟧(Π, φ)
   (step)  for every e →α e'
     β, force     e' at the same state, level n
-    new          ∃ P Q dual. e' at Π + {c⁺ ↦ P, c⁻ ↦ Q}, φ + {c± ↦ N}
+    new_ℓ        ∃ P Q dual. e' at Π + {c⁺ ↦ P, c⁻ ↦ Q}, φ + {c± ↦ N}
     new_κ o      the same
     act on o     (F-Tick) every other counter ≥ 1 and d ≥ 1.
                  e' at φ' = (φ − 1 off o)[o ↦ N], Π advanced at o, frame d − 1
-    send o w, M  M ⊆ dom φ ∖ {o}, w ∈ Vfuel^N_n⟦pay(Π o)⟧(Π|M, (φ − 1)|M),
+    send o w, M  M ⊆ dom φ ∖ {o}, φ|M ≥ 1, w ∈ Vfuel^N_n⟦pay(Π o)⟧(Π|M, (φ − 1)|M),
                  e' without M, plus the tick of "act on o"
     recv o w     ∀ j ≤ n, Π_in, φ_in, w ∈ Vfuel^N_j⟦pay(Π o)⟧(Π_in, φ_in).
                  e' at level j with Π_in and φ_in added, plus the tick
@@ -421,7 +557,19 @@ FuelE^N_{n+1}⟦σ, r, d⟧(Π, φ, tk, e)  ⇔  for every renaming g injective 
 fsem^N(φ0, e) ⇔ ∃ tk, ∀ n, ∃ Π. FuelE^N_n⟦thread⟧(Π, φ0, tk, e)
 ```
 
-`act on o` covers send, receive, close, select and branch. `⟦thread⟧` is the
+`act on o` covers send, receive, close, select and branch.
+
+**No hand-over at counter 0.** Subtraction on ℕ truncates, so a hop at 0
+would pass 0 again for free, and an end could travel forever while its
+partner waits (endless delegation, plan §1 pattern 2, Padovani's Example (2),
+`starve_not_spare`). The send clause therefore states φ|M ≥ 1. It is implied
+by F-Tick, because a send is an action on o and M ⊆ dom φ ∖ {o}, so the
+clause that enforces it is F-Tick, and the explicit conjunct only makes the
+hand-over rule read the same at send and at spawn. A spawn is no action, so
+there the conjunct φ|M ≥ 1 is the only enforcement. A link hands on no
+counter (it spends a ticket). Every counter passed on is therefore the
+holder's counter minus one with no truncation, which is what `fuel_step` of
+adequacy uses (LFAdequacy.v). `⟦thread⟧` is the
 result of a thread, reserve 0, frame ∞, holding no end at the end (this
 replaces `CAny`). Ticket counts and counters are functions of the run.
 Session-type-like protocols are chosen per index, which adequacy never reads
@@ -498,16 +646,46 @@ Soup^N_n(W, Σ, T, a)  ⇔ ∃ A, U, Π per thread (chosen at this index) such t
   interface         an end of Σ is held at Σ's entry, every entry of Σ is held
   result            prim T
 
-LF(W, Σ, T, p)  ⇔  ∃ N a. erase q = p ∧ ∀ n, Soup^N_n(W, Σ, T, a)
+LF(W, Σ, T, p)  ⇔  (∀ n, p ∈ P[live]^W_n⟦Σ ⊢ T⟧)  ∧  ∃ N a. erase q = p ∧ ∀ n, Soup^N_n(W, Σ, T, a)
 ```
 
 Along a run, P, φ and K follow the events deterministically. Placement gives
 new points, actions move points, transfers move entries with counter − 1,
 links spend a ticket and rename. The preservation lemma is today's
-`lfsoup_step` (LFSoup.v:2592). The first conjunct `∀ n, LPrel n` of today's
-`LFP` goes. No τ-divergence follows from the per-thread least fixpoints,
-because a spawned thread's τ prefix belongs to its parent's fixpoint
-(`Vspawn`, LiveRelation.v:242-252, to prove as `soup_no_tau_divergence`).
+`lfsoup_step` (LFSoup.v:2592).
+
+**The process conjunct stays.** LF is the live process relation and the fuel
+soup, the structure the author approved (2026-11-16), so lock freedom reads
+as deadlock freedom plus a per-thread view. Adequacy takes no τ-divergence
+from the first conjunct (`live_no_tau_divergence`, as today) and
+composition composes it by the live P-Connect and P-Join. The conjunct may
+go only when a Rocq proof of
+
+```
+soup_no_tau_divergence : (∀ n, Soup^N_n(W, ∅, T, a)) → no_tau_divergence (erase q)
+```
+
+exists. The argument for it is that a spawned thread's τ prefix belongs to
+its parent's least fixpoint (`Vspawn` reads the child at the parent's level,
+LiveRelation.v:242-252), so the τ steps between two channel steps of the
+soup form a finite tree. Until then the design keeps both conjuncts.
+
+**The infinite spawn chain.** Each thread creates a channel, spawns a child
+that does the same, and waits.
+
+```
+f = !(f = λu. let (c, d) = new in spawn (λ_. let () = (force f) ∗ in close d); close c)
+```
+
+The run is new, spawn, β, new, spawn, β, … with no channel step, and main
+waits on c forever. The live relation rejects it at the first thread. O-Spawn
+asks the child at the parent's level inside the parent's least fixpoint, and
+the child asks its own child there too, so no finite derivation exists at any
+level n ≥ 1. This is `kob_not_live` and `kob_tau_diverges` for
+KobForwarder (liveness/LiveKob.v), which has this shape. The soup's
+per-thread conjunct rejects it the same way, so the example does not need
+the process conjunct. Fuel and rank play no part, because no thread that
+holds a waited end is ever pending.
 
 ### 2.13  Rank and adequacy
 
@@ -535,7 +713,9 @@ LF        LF-Term : the P-Term premises ∧ fsem^N(N on the ends, t)
           LF-Connect, LF-Join : LF in W1 and LF in W2, the same cut ⇒ LF in W1 ⊔ W2
 ```
 
-The soups concatenate, P0, φ0, K0 union, and N is the larger of the two.
+The live process conjuncts compose by the live P-Connect and P-Join, the
+soups concatenate, P0, φ0, K0 union, families are renamed apart, and N is
+the larger of the two.
 No budget agreement is asked. The strictness of the join is stated by the
 interface orders (cleanup R7).
 
@@ -554,6 +734,40 @@ interface orders (cleanup R7).
 Lock freedom adds three definitions (FuelE, the soup, the rank premise) and
 one judgment (costs). It changes no definition of the layers below it.
 
+### 2.16  Merges considered
+
+- **The guard as an instance of the cost judgment. Rejected.** The guard asks
+  a lower bound, at least one channel action of a round before the self is
+  forced, and its soundness lands in the live relation (`noret`,
+  liveness/LiveGuard.v). The cost judgment carries upper bounds, at most c
+  actions before a return, read only by FuelE. A merged judgment would carry
+  both bounds, and the live fundamental theorem would then read cost
+  derivations, so the live layer would depend on the lock-freedom layer.
+  The bound for a received closure would also have to sit in the live value
+  relation, which reads no cost (plan §19.4, T1).
+- **Cost protocols as session types with credits, one judgment. Open (Q11),
+  recommended.** Types carry the cost annotations (credits, the arrow's c, t
+  and h, credits on payloads), and one judgment Θ ; Γ ; Δ ⊢^F t : T ▷ c ; t
+  replaces typing and the cost judgment. DF and live ignore the annotations.
+  FuelE then reads each end's protocol from the session type that the soup's
+  environment A_t already gives it at that index, so Π, the pairing of cost
+  protocols and the inference walk of plan §19.6 disappear. DF typing is the
+  instance N = ∞ with every annotation ∞. Fresh ends get credit ∞, aging by
+  ∞ keeps ∞ and a hand-over at ∞ meets its floor, so every DF derivation
+  annotates (argued, unchecked). The price is annotations on every type
+  constructor, which the paper hides as the default ∞, and FuelE then reads
+  the live environments, so stage S6 waits for S3. Plan §19.2 chose a
+  separate judgment because `TLolli` and `TBox` occur 710 times, a cost of
+  porting that a rewrite does not pay.
+- **Futures and the arrow's upper point as one concept. Adopted as
+  presentation.** A future F is the set of points the context still acts on
+  after the term. The upper point u of T ⊸^u U is a lower bound on the
+  futures under which the closure may run (u ≺ F, `ub_below`), and the static
+  system already names that future by a variable φ with u ≺ φ (E-Abs). The
+  paper presents one concept, the future, with arrows that bound their
+  caller's future. The lower point l bounds the held heads (l ≼ heads Θ). F
+  is a set and u a point, so the two stay distinct in Rocq.
+
 ## 3  Quirks and deviations
 
 ### 3.1  Quirks of docs/extensions/lock-freedom-quirks.md
@@ -565,7 +779,7 @@ one judgment (costs). It changes no definition of the layers below it.
 | A3 two kinds of waiting | removed | only `lf_run_criterion` with ownership |
 | A4 base and live are copies | removed | R^κ (§2.8) |
 | A5 links cost 0 | stays | one entry of κ_L, a decision of the author |
-| A6 `LFP` has two conjuncts | removed | `soup_no_tau_divergence` (§2.12) |
+| A6 `LFP` has two conjuncts | stays for now | kept as the author's structure. Dropped once `soup_no_tau_divergence` is proved (§2.12) |
 | A7 q, P, F fixed before the index | reduced | P and φ follow the run from P0, φ0. q with ids stays, fairness names threads |
 | A8 `prim T`, `lf_sig`, `lf_own` | stays | honest interface conditions, grouped (I4) |
 | A9 index loss | reduced | optional single clock (§2.10) |
@@ -594,7 +808,7 @@ one judgment (costs). It changes no definition of the layers below it.
 | F7 `frep` | gone | |
 | F8 budgets in the world | removed | |
 | F9 dead code | gone | rewrite |
-| G1 soup to `LPrel` | replaced | per-thread no τ-divergence |
+| G1 soup to `LPrel` | open | either this lemma or `soup_no_tau_divergence` lets A6 go |
 | G2 live ⊆ base | to prove | one lemma over cost tables |
 | G3 monotone in counters | to prove | needed for N by maximum, unblocked by `kinj` |
 | G4 two clocks | optional | §2.10 |
@@ -690,7 +904,7 @@ of it (Criterion.v:136-138).
 
 Adequacy takes we(k, t) = π_k(o_t), the point of the end t offers at
 position k, and R = `w_lt W` (LFAdequacy.v:1173-1177). `Hrank` comes from the
-gate of s at position k read at index 1 (`s_rank`, LFAdequacy.v:229).
+readiness of s at position k, read at index 1 (`s_rank`, LFAdequacy.v:229).
 `Hstab` comes from the soup step at index 3 (`stab_step`, LFAdequacy.v:306).
 The measure reads the counters φ_k and the tickets K_k. Nothing reads a
 budget, a floor or a cost protocol (checked, plan §19.3 notes that the floor
@@ -705,7 +919,7 @@ per index n, and different n give different sequences. Plan §17.2 shows that
 no index-dependent placement can be repaired by a condition on W. In C1
 without a ceiling (W = program order on one constant a), index n places
 main's channel at a + (2n + 1) and round k's channels at a + (2(n − k) + 1)
-and a + 2(n − k). Every gate holds in program order, W is well founded,
+and a + 2(n − k). Every readiness fact holds in program order, W is well founded,
 every point has finite height, fuel 2 suffices, and main starves in every
 fair run (world facts checked in the scratch file C1World.v, the placement
 argued). So the rank of every end that a pending thread offers must be fixed
@@ -723,8 +937,8 @@ with R the union, provided that
 Condition 2 is not local in general. Facts chosen at a step for a fresh
 point can descend forever (C1 again, now as a growing world). It becomes
 local when a fresh point receives only instances of fixed laws. Then the
-union is W_0 plus the laws at every generated root, which is well founded iff
-the laws and W_0 are. Such a world is constant in effect, because it knows
+union is W_0 plus the laws of its family at every generated root, which is
+well founded iff W_0 and every family's laws are. Such a world is constant in effect, because it knows
 every generated root up front (§2.4). So points can be runtime-fresh names.
 What may not be chosen at run time is a fresh point's position in the order,
 that is, its facts. The proposal fixes it by laws (generated roots) or by
@@ -756,7 +970,7 @@ by laws and anchors provides.
 | index-free placement | yes | yes | yes | no | yes, classically | yes |
 | lock freedom | sound | sound | sound | unsound (C1) | sound with an axiom | closed runs only (plan §15.7) |
 | DF expressiveness against today | same | same | same, plus creation without hypotheses (C2) and ChoiceTranslate (C3) | more (facts chosen freely) | less (bounded ranks) | same |
-| extra concepts | point type, values, two constants | point expressions, instances at every force (453 lines in 83 files, plan §16.2), runtime point variables under E-Open | laws Λ, one anchored primitive | none | ranks, König | ω, preservation |
+| extra concepts | point type, values, two constants | point expressions, instances at every force (453 lines in 83 files, plan §16.2), runtime point variables under E-Open | family laws Λ_ℓ, a family label on `new`, one anchored primitive | none | ranks, König | ω, preservation |
 | author's constraints | violates (point values) | acceptable (box-bound), syntactic at force | met | met, but unsound | axiom | rejected 2026-11-09 |
 
 Two further shapes were considered and fold into these. Ranks separate from
@@ -767,13 +981,14 @@ It needs a lexical rule for closures that are spawned, which makes it O2.
 
 ### 4.6  Recommendation
 
-O3. Fresh generated roots with laws, and anchored creation at fields of held
-ends. It keeps every program point-free, makes placement a function of the
+O3. Fresh generated roots with family laws, and anchored creation at fields
+of held ends. It keeps every program point-free, makes placement a function of the
 run, removes the point type, the point values, the creation hypotheses and
 the box point parameters, and restores ChoiceTranslate and source-level
 creation. Lock freedom keeps `well_founded ≺_W` as its only premise on W. DF
 loses nothing against today's constant world. The cost is one primitive
-variant and the law component of W. Four box types that create at a
+variant, a family label on anchorless `new`, and the law component of W.
+Four box types that create at a
 parameter point (FactoryEx, FreshBetween, FreshMany, GuardCex) have to
 anchor at an end or use a fresh root, and their typings are to be checked
 first, in stage S2.
@@ -784,26 +999,61 @@ first, in stage S2.
 point expressions with instances at force. (c) Keep point values.
 Recommended (a).
 
-**Q2. Laws of generated roots.** (a) W carries laws Λ(r), one family for all
-generated roots. (b) Only the built-in laws x ≺ x⁺ and x ≺ x̄⁺, so every fact
-about a fresh channel comes through an anchor. (c) No generated roots, every
-runtime `new` is anchored and top-level channels are process-level
-restrictions at constants. Recommended (a). (b) cannot type a cycle created
-by main, (c) changes how examples are written.
+**Q2. Laws of generated roots** (§2.4, §2.5, review point 3). (a) One global
+Λ, as in version 1. (b) Only the built-in laws x ≺ x⁺ and x ≺ x̄⁺. (c) No
+laws, every runtime `new` that must be related to something is anchored, and
+top-level channels are process-level restrictions whose points the
+derivation picks and the soup fixes once (P0). (d) Laws per family, with a
+family label on anchorless `new`, families renamed apart at composition.
+Recommended (d). (a) makes joins fail for components whose laws contradict.
+(b) cannot type the client and server cycle created by main (§2.5). (c)
+needs no laws and no label but turns main's top-level `new`s into
+restrictions in about 34 example files (plan §10.4). The family label is a
+label like κ or a branch label and never names a point. Unchecked under (d)
+and (c) are FactoryEx, FreshMany, GuardCex and SegmentInterleave, which create
+at a box parameter that no held end carries.
 
-**Q3. The transfer condition.** (a) Transfer sets in the labels of spawn and
-send (§2.7). (b) The relation reads `fends w` at the same two clauses. (c)
-Drop C from the semantics and keep scope only in the relation (quirk A1),
-which still needs (a) for lock freedom. Recommended (a).
+**Q3. The transfer condition** (§2.7, review point 7). The relation reads
+the ends a step moves. At a send this is the syntax the author already
+allowed for scope extrusion. At a spawn it is new syntax in the relation,
+and the standing rule asks for the author's explicit agreement, which this
+proposal does not assume. It replaces `tenv_fit` in `Vspawn` and in the
+arrow, `fends eb = tenv_ends Θ`, `fchans eb = ∅` of V-Box, the `fends` reads
+of `Vfuel` and `Fobl`, `term_wf` and three `cfacts` premises. A spawn needs
+some such fact, because without it the split of O-Spawn is a choice per
+index and ownership is not index-free. Options. (a) Transfer sets in the
+labels of send and spawn. (b) Send only. A spawned thunk holds no end, and a
+parent hands ends to a child by a message on a fresh channel, at the cost of
+a channel, a synchronization and readiness facts per spawn (unchecked
+against GrowRing and every example that spawns a closure over ends). (c)
+The relation reads `fends w` at the same clauses, which is (a) without the
+label. Recommended (a), with the spawn half subject to the author's
+agreement, (b) as the fallback that reads no syntax at a spawn.
 
 **Q4. Budgets.** (a) One refill N per judgment, maximum at composition.
 (b) A refill per thread, fixed in the soup. (c) Budgets per point in the
 world (today). Recommended (a).
 
-**Q5. Ends nobody waits on (the controller of plan §7).** (a) Drop, as no
-proved result uses ∞ today. (b) Idle cost protocols. An idle end does not
-tick and may not be acted on, and pairing makes both views agree at each
-index. Recommended (a) now, (b) as an extension.
+**Q5. Ends nobody waits on** (review point 4). What (a) loses is the class
+of plan §7. A thread holds an end forever while it loops, and nobody ever
+waits on its partner, as in the controller, where server and client each
+hold one end of ctl and never use it. Under (a) the holder's counter of ctl
+reaches 0 and F-Tick stops it. No current example or test has this shape.
+`ctl` and "controller" occur in no file of theories/ (checked by grep), and
+CostEx.v, ChoiceEnc.v and Ordered.v contain no end held forever. The
+controller was never proved (quirk A12). Options. (a) Drop. (b) Idle cost
+protocols. If idleness changed how a counter evolves, the counters would
+depend on the index, because protocols are chosen per index (§4.4), and (b)
+would be unsound. (b) is sound only in this form. Every counter evolves
+the same way at every index (refill N at an action, minus one at every
+other action of its holder, minus one at a hand-over, truncated at 0), and
+idleness only removes checks at that index. F-Tick's "≥ 1" and the
+hand-over's "≥ 1" are not asked of an idle end, and no thread may act on an
+idle end (F-Wait). Adequacy reads the checks only for the partner ō of an
+end o that a pending thread waits on. That thread acts on o at every index
+the proof reads, so F-Wait makes o non-idle there, and pairing makes ō
+non-idle at the same index. φ stays index-free (argued, unchecked).
+Recommended (a) now, (b) as an extension with that proof obligation.
 
 **Q6. One relation.** (a) R^κ with a cost table for DF and Live.
 (b) Two copies as today (decision 2026-11-16 for the current development).
@@ -828,31 +1078,231 @@ and gives monotonicity by definition.
 (b) Every step costs one in FuelE. Recommended (a) if the bind lemma F1
 survives it, otherwise (b).
 
+**Q11. One static judgment for types and costs** (§2.16). (a) Types carry
+cost annotations, DF typing is the instance N = ∞, FuelE reads protocols
+from the session types of the soup. (b) A separate cost judgment, as plan
+§19.2. Recommended (a), unchecked (conservativity at N = ∞).
+
+**Q12. The process conjunct of LF.** Not a choice now. LF keeps
+the live process conjunct until `soup_no_tau_divergence` is proved (§2.12).
+
+**Simplifications with unchecked entries in Appendix B.** Each needs its
+check before it is adopted.
+
+| Simplification | Unchecked entry |
+|---|---|
+| anchors and families instead of point values (Q1, Q2) | FactoryEx, FreshMany, GuardCex, SegmentInterleave, ChoiceNegative under the new placement |
+| one refill N (Q4) | monotonicity of FuelE in counters and N (G3) |
+| idle protocols (Q5 b) | index-free counters with idle checks |
+| send-only transfers (Q3 b) | GrowRing and every spawn of a closure over ends |
+| dropping the process conjunct of LF | `soup_no_tau_divergence` |
+| one judgment (Q11 a) | conservativity at N = ∞ |
+| one relation R^κ (Q6) | `live ⊆ DF`, Internalize over κ |
+| derived constants (Q7) | none, §3.2 |
+
 ## 6  Rewrite plan
 
 Each stage ends with a full build, no `Admitted`, no axiom and a regenerated
-CheckAll. At most two stages run at once.
+CheckAll. At most two stages run at once. Each stage delivers the notations
+and names of Appendix A for what it defines, in its own `Notations` module,
+and states every theorem in them from the first commit. No notation is added
+afterwards.
 
 | Stage | Content | Proves | Reuse |
 |---|---|---|---|
-| S1 language | ends c⁺ c⁻, saturated operators, derived constants, `new`, `new_κ`, events with transfer sets and thread ids as one semantics with erasure, one `emap` and `csub` | safety, harmony, thread simulation, `act_offer` once | lang/ (Syntax, Semantics, Safety, Harmony, ThreadSim, ChannelSwap), lockfree/Instr.v, Fair.v, Reach.v, TauThread.v |
-| S2 points, worlds, types | point algebra with generated roots, worlds with laws, join, restriction, amalgamation, interface strictness (R7), `ty` without `TPt`, typing with E-New, E-NewAt, E-Op, two-world `ptyped`. Check FactoryEx, FreshBetween, FreshMany, GuardCex, SegmentInterleave | world lemmas, `PointSubst` without `TPt`, renaming of generated roots | relation/Worlds.v without budgets, Creation.v reduced to the laws, types/, static/Typing.v, PointSubst.v, FactTheory.v |
-| S3 generic relation | `sfix`, cost tables, V, E, P of §2.8, readiness | `adequacy` (DF), `live_adequacy`, downward closure, monotonicity | LogicalRelation.v and LiveRelation.v as templates, Readiness.v unchanged |
-| S4 generic compatibility | bind, operator redexes, Internalize, P-Connect, P-Term, P-Join, renaming, all over κ | the composition lemmas for both instances, `live ⊆ DF` | liveness/Live*.v (the newer proofs) as the template, composition/ for the base specifics |
+| S1 language | a lexer test of every token of Appendix A first, then ends c⁺ c⁻, saturated operators, derived constants, `new_ℓ`, `new_κ`, events with transfer sets and thread ids as one semantics with erasure, one `emap` and `csub`, constructors named after the T-Act and P-Act rules | safety, harmony, thread simulation, `act_offer` once | lang/ (Syntax, Semantics, Safety, Harmony, ThreadSim, ChannelSwap), lockfree/Instr.v, Fair.v, Reach.v, TauThread.v |
+| S2 points, worlds, types | point algebra with generated roots of families, worlds with family laws, join with renaming apart, restriction, amalgamation, interface strictness (R7), `ty` without `TPt`, typing `Θ ; Γ ; Δ ⊢^F_W t : T` with E-New, E-NewAt, E-Op, two-world `Σ ⊢_W p : T`. Check FactoryEx, FreshBetween, FreshMany, GuardCex, SegmentInterleave, ChoiceNegative and the client and server cycle of §2.5 | world lemmas, `PointSubst` without `TPt`, renaming of generated roots and of families | relation/Worlds.v without budgets, Creation.v reduced to the laws, types/, static/Typing.v, PointSubst.v, FactTheory.v |
+| S3 generic relation | `sfix`, cost tables, `V[κ]^W_n⟦Θ ⊢ T⟧`, `E[κ]^W_n⟦Θ ⊢ T⟧^F`, `P[κ]^W_n⟦Σ ⊢ T⟧`, readiness `ready_W` | `adequacy` (DF), `live_adequacy`, downward closure, monotonicity | LogicalRelation.v and LiveRelation.v as templates, Readiness.v unchanged |
+| S4 generic compatibility | bind, operator redexes, Internalize, P-Connect, P-Term, P-Join, renaming, all over κ, named `sem_<rule>` and `live_<rule>` | the composition lemmas for both instances, `live ⊆ DF` | liveness/Live*.v (the newer proofs) as the template, composition/ for the base specifics |
 | S5 static fundamental theorems | E-rules into R^{κ_DF}, guarded rules into R^{κ_L} | `fundamental`, `live_fundamental_guarded`, `soundness`, `live_soundness`, source soundness with creation | static/Fundamental.v, liveness/GuardRules.v, LiveGuardFund.v |
 | S6 fuel | FuelE^N, Vfuel by cost types, F1 to F6, monotonicity in counters and N, renaming | `FuelE_bind`, `Vfuel_recount`, `FuelE_mono` | lockfree/LFFuel.v and LFFuelBind.v minus points, caps and `wbext` |
 | S7 cost judgment | rules of §2.11, compatibility per rule | `ctyped_fsem` | static/CostTyping.v, lockfree/CostFund.v minus C-Pt, C-Pay, C-Succ, C-Konst, `pfits` |
 | S8 soup and adequacy | `Soup^N`, the deterministic update, `lfsoup_step`, `soup_no_tau_divergence` | `lf_adequacy`, `lf_thread_progress` | Criterion.v unchanged, LFSoup.v and LFAdequacy.v without π, `pupd`, `pev`, `fsolo` |
-| S9 lock-free composition and soundness | LF-Term, LF-Connect, LF-Join, `lfptyped` | `lf_fundamental`, `lf_soundness`, examples | LFCompose.v, LFTyped.v, examples/CostEx.v and CostFsem.v, Rank.v |
-| S10 paper | one relation, two cost tables, a fuel layer and a soup | | paper/ |
+| S9 lock-free composition and soundness | `lf_p_term`, `lf_p_connect`, `lf_p_join`, the judgment `Σ ⊩^N_W p : T` | `lf_fundamental`, `lf_soundness`, examples | LFCompose.v, LFTyped.v, examples/CostEx.v and CostFsem.v, Rank.v |
+| S10 paper | one relation, two cost tables, a fuel layer and a soup, every statement in the strings of Appendix A, checked by paper/rocqrefs.py against `Check` output | | paper/ |
 
 Ordering. S1 and S2 first, alone. S3 and S6 can run in parallel, because
 fuel reads no relation. S4 and S7 in parallel. S5 after S4. S8 after S5 and
 S6. S9 last. Translations (PGV, PN, MP) stay out until S5 and need only the
 removal of point values from their targets.
 
-Statements that change form, for the author's approval. `LFP` loses its first
-conjunct and gains N. `LFP_connect` and `LFP_join` lose `wbud_agree`.
-`LFP_term` loses the known-points premise. `lf_criterion` goes, and
-`lf_run_criterion` keeps its text. Every typing lemma of an example loses
-`created` and point literals.
+Statements that change form, for the author's approval. `LFP` keeps its
+first conjunct and gains N. `LFP_connect` and `LFP_join` lose `wbud_agree`
+and gain renaming apart of families. `LFP_term` loses the known-points
+premise. `lf_criterion` goes, and `lf_run_criterion` keeps its text. Every
+typing lemma of an example loses `created` and point literals. Every
+statement takes the notation and name of Appendix A.
+
+## Appendix A  Notation and statements
+
+The Rocq statements read as the paper's statements. Both use the strings of
+this appendix.
+
+### A.1  Spelling rule
+
+A Rocq notation is the paper's LaTeX with `^` for a superscript, `_` for a
+subscript and no braces. The paper typesets that same string. A
+multi-character index sits in brackets in both (`V[live]`). Every token is
+checked by a lexer test at the start of stage S1. A token that Rocq cannot
+lex is replaced in both places at once, never in one.
+
+### A.2  Judgments
+
+| Judgment | Paper and Rocq notation | Rocq definition |
+|---|---|---|
+| order fact | `W ⊢ x ≺ y` | `w_lt W x y` |
+| world extension, join | `W ⊑ W'`, `W1 ⊔ W2` | `wext`, `wjoin` |
+| lock-free world | `lfworld W` (strict and well founded) | `lfworld` |
+| readiness | `ready_W(Θ ∣ F, t)`, `ready_W(Σ, p)` | `ready_t`, `ready_p` |
+| static term typing | `Θ ; Γ ; Δ ⊢^F_W t : T` | `typed` (Γ the facts and future hypotheses) |
+| static process typing | `Σ ⊢_W p : T` | `ptyped` |
+| guard | `guarded t` | `guarded` (rules `glive`) |
+| cost typing | `Θ ; Γ ⊩^N e : σ ▷ c ; t` | `ctyped` |
+| lock-free process typing | `Σ ⊩^N_W p : T` | `lfptyped` |
+| value relation | `v ∈ V[κ]^W_n⟦Θ ⊢ T⟧`, `[κ]` omitted for κ_DF | `Vrel κ n W Θ T v` |
+| term relation | `e ∈ E[κ]^W_n⟦Θ ⊢ T⟧^F` | `Erel` |
+| process relation | `p ∈ P[κ]^W_n⟦Σ ⊢ T⟧` | `Prel` |
+| semantic term typing | `Θ ; Δ ⊨^F_W t : T` (DF), `Θ ; Δ ⊫^F_W t : T` (live) | `sem_typed κ` |
+| semantic process typing | `Σ ⊨_W p : T` (DF), `Σ ⊫_W p : T` (live), `Σ ⊪_W p : T` (lock-free) | `sem_ptyped κ`, `lf_sem` |
+| fuel | `e ∈ F^N_n⟦σ ▷ c ; r⟧(Π, φ, tk)`, `v ∈ FV^N_n⟦σ⟧(Π, φ)` | `FuelE`, `Vfuel` |
+| semantic cost typing | `Θ ; Γ ⊨^N e : σ ▷ c ; t` | `csem` |
+| soup | `a ∈ S^{N,W}_n⟦Σ ⊢ T⟧` | `Soup` |
+
+### A.3  Theorems
+
+| Paper statement | Rocq name |
+|---|---|
+| `∅ ⊨_W p : T  ⟹  deadlock_free p` | `adequacy` |
+| `∅ ⊫_W p : T  ⟹  deadlock_free p ∧ no_tau_divergence p` | `live_adequacy` |
+| `strict W ∧ Θ ; ∅ ; Δ ⊢^F_W t : T  ⟹  Θ ; Δ ⊨^F_W t : T` | `fundamental` |
+| `strict W ∧ Σ ⊢_W p : T  ⟹  Σ ⊨_W p : T` | `fundamental_proc` |
+| `… ∧ guarded t  ⟹  Θ ; Δ ⊫^F_W t : T`, and for processes | `live_fundamental`, `live_fundamental_proc` |
+| `strict W ∧ ∅ ⊢_W p : T  ⟹  deadlock_free p` | `soundness` |
+| `strict W ∧ ∅ ⊢_W p : T ∧ guarded p  ⟹  deadlock_free p ∧ no_tau_divergence p` | `live_soundness` |
+| `prim T ∧ ∅ ; ∅ ; ∅ ⊢^∅_W t : T  ⟹  (∅, {t}) deadlock free`, no creation constraint | `soundness_source` |
+| `Θ ; Γ ⊩^N e : σ ▷ c ; t  ⟹  Θ ; Γ ⊨^N e : σ ▷ c ; t` | `cost_fundamental` |
+| `lfworld W ∧ ∅ ⊪_W p : T  ⟹  lock_free p` | `lf_adequacy` |
+| `lfworld W ∧ ∅ ⊪_W p : T  ⟹  every weakly fair maximal run makes every thread progress` | `lf_thread_progress` |
+| `strict W ∧ Σ ⊩^N_W p : T  ⟹  Σ ⊪_W p : T` | `lf_fundamental` |
+| `lfworld W ∧ ∅ ⊩^N_W p : T  ⟹  lock_free p` | `lf_soundness` |
+
+The composition rules are rules of `⊢_W` and `⊩^N_W`, and each is valid for
+the three semantic process judgments.
+
+```
+P-Term     Θ_B, Σ ; ∅ ; ∅ ⊢^∅_W t : T    dom Θ_B = C0, the ends of Θ_B paired and dual
+           ──────────────────────────────────────────────
+           Σ ⊢_W (C0, {t}) : T
+
+P-Connect  Σ1, Σ_C ⊢_{W1} p1 : T    Σ2, Σ̄_C ⊢_{W2} p2 : 1    strict (W1 ⊔ W2)
+           ──────────────────────────────────────────────
+           Σ1, Σ2 ⊢_{W1 ⊔ W2} (C1 ∪ C2 ∪ dom Σ_C, p1 ∥ p2) : T
+
+P-Join     as P-Connect, with strict (W1 ⊔ W2) replaced by the strictness of the
+           join of the two worlds restricted to their shared names
+```
+
+The lock-free rules `⊩^N_W` add `fsem^N` to P-Term and nothing to P-Connect
+and P-Join beyond renaming families apart.
+
+### A.4  Naming rules
+
+- A paper rule R-Name is the Rocq constructor `r_name`, lower case with
+  hyphens as underscores. E-Abs is `e_abs`, P-Connect `p_connect`, C-Send
+  `c_send`, T-Act-New `t_act_new`, P-Act-Msg `p_act_msg`, O-Po `o_po`.
+- The lemma that validates rule R for the semantic judgment J is `J_r_name`,
+  with J one of `sem`, `live`, `lf`, `cost`. Examples are `sem_e_abs`,
+  `live_p_connect`, `lf_p_term`, `cost_c_send`.
+- Clauses of a relation carry the paper's labels in comments, (stop),
+  (ready), (step), O-Send, Q-Recv.
+- A definition carries the paper's word. `ready`, `future`, `world`,
+  `strict`, `lfworld`, `fuel`, `soup`, `lock_free`, `deadlock_free`.
+  Readiness keeps its name everywhere, and fields are never called slots.
+
+### A.5  Statements that read differently today
+
+| Today | Difference | The rewrite |
+|---|---|---|
+| `typed W Φ Ψ Θ Δ F e T` | two hypothesis contexts Φ, Ψ, where the paper writes one Γ, and the world in a different position | one Γ, notation `Θ ; Γ ; Δ ⊢^F_W t : T` |
+| `sem_typed W Θ Δ F e T` with `term_wf` at E-Abs, E-Box | the paper states the side predicate wf(Θ ; Δ, t) | no `term_wf` (§2.7), the paper drops wf |
+| `Prel_connect`, `conn_all` | lands in `wjoin W1 W2`, the paper rule P-Connect is one-world and its proof returns by monotonicity | P-Connect is two-world in both |
+| `pt_term`, `pt_connect`, `lf_term`, `lf_connect` (the latter in P-Join form, LFTyped.v) | names and forms differ from P-Term, P-Connect | `p_term`, `p_connect`, `p_join` in `⊢_W` and `⊩^N_W` |
+| `Prel_term`, `LPrel_term`, `LFP_term`, `LFP_connect`, `LFP_join` | names | `sem_p_term`, `live_p_term`, `lf_p_term`, `lf_p_connect`, `lf_p_join` |
+| `LFP_term` premises `lsem_typed`, `tenv_dual (w_eq W) ΘB`, known points | not the premises of P-Term | the premises of P-Term plus `fsem^N` |
+| `soundness_created`, `soundness_source` with a creation constraint | two theorems, a constraint the paper explains at length | one `soundness_source` without a constraint |
+| `live_fundamental_guarded` over `gtyped` | name and an extra judgment | `live_fundamental` over `⊢_W` and `guarded` |
+| `lf_adequacy` premises `world_wf W`, `well_founded (w_lt W)` | two premises | `lfworld W` |
+| `ctyped_csem`, `ctyped_fsem` | names | `cost_fundamental`, `fsem_of_cost` |
+| `w_eq` and `tenv_comp (w_eq W)` in statements | no-eq leftovers | `=` and `Θ = Θ1 · Θ2` |
+| liveness and lock freedom | no paper statement yet | the forms of A.2 and A.3 enter the paper in S10 |
+
+## Appendix B  Counterexamples and rejections
+
+Status. **R** handled, with a Rocq lemma today that the rewrite ports.
+**D** handled by the design, argued. **M** moot, the mechanism it attacked is
+gone. **U** unchecked.
+
+| # | Counterexample or rejection | Source | Handled by | Status |
+|---|---|---|---|---|
+| 1 | C1 with a ceiling | plan §14.1 | rank on index-free placement, `c1_rank_fails` for the world facts | R |
+| 2 | C1 without a ceiling | plan §17.2, scratch C1World.v | rank on index-free placement (§4.2) | D |
+| 3 | C1′, points shifted upward | plan §10.1 | rank | D |
+| 4 | C2 pipeline, lock free, rejected by the old R3 | plan §10.1 | should type, no derivation exists | U |
+| 5 | C3 link refresh with a chatter step | plan §10.1 | tickets, `c3_link_loop_not_tix` | R |
+| 6 | C4, R4 rejected the Forwarder | plan §10.1 | the Forwarder types, `fw_ctyped` | R |
+| 7 | postponement, a holder loops and never serves | plan §8, liveness.md §9 | F-Tick, aging in the cost judgment | D |
+| 8 | endless delegation, Padovani's Example (2), the starving server | plan §1, §8 | send asks φ|M ≥ 1 (F-Tick), floors, `starve_not_spare` | R |
+| 9 | hop at counter 0 under truncation | review point 1 | φ|M ≥ 1 at send and spawn (§2.10) | D |
+| 10 | growing chain with a chatterbox | plan §8 | rank | D |
+| 11 | link loop `rec f. new; link; f ()` | plan §8 | link costs 0, τ-divergence in κ_L | D |
+| 12 | KobForwarder | LiveKob.v, GuardEx.v, Rank.v | `kob_tau_diverges`, `kob_not_live`, `kob_not_guarded`, `kob_cworld_not_wf`, `kob_rank_fails` | R |
+| 13 | PN's `⟨fix λx.x⟩` | GuardEx.v | `pn_div_not_guarded`, DF keeps its typing | R |
+| 14 | the unguarded system types a τ-divergent program | LiveKob.v | `live_fundamental_false`, guard | R |
+| 15 | the unrepaired guard | GuardCex.v | `cx_tau_diverges`, `cx_not_guarded`, `live_guarded_unrepaired_false`, guard rule L7 | R |
+| 16 | index halving at a synchronization | sharp edge 44 | κ_L charges 2 | D |
+| 17 | an end held across an infinite call | plan §8, R1 | aging by ∞ at C-App, `cb_inf_not_aged` | R |
+| 18 | a server that serves b only on a's request | plan §8, R2 | credits fall below the argument floor | D |
+| 19 | main returns an end | plan §8 | `prim T` | D |
+| 20 | the controller | plan §7 | lost under Q5 (a), typed under Q5 (b) | U |
+| 21 | C1 against the oracle on closed runs | plan §15.6 | no oracle | M |
+| 22 | replacement against the send floor, Forwarder | quirk A13b, `fw_not_fsem` (deleted) | link tickets, no replacement | D |
+| 23 | the Scheduler fails option 2 in every world | plan §18.1, `sched_not_fsem_all` (scratch) | link tickets, `sched_ctyped` | R |
+| 24 | receive at unknown points | quirk A13c, `fuel_recv_unknown`, `sync_not_fsem` (deleted) | no budgets at points | M |
+| 25 | merge of renamings | plan §19.8.1, Merge.v | `kinj` in FuelE | D |
+| 26 | `new` reusing a held name | plan §19.8.2, Collide.v | new fresh against the thread's own ends | D |
+| 27 | off by one at the value and the call | plan §19.8.3 | value clause at its level, body after β | D |
+| 28 | context ticks without a frame | Frame.v, `bind_needs_bound` | the frame d | D |
+| 29 | a received closure acts m + 1 times | plan §19.1 | arrow cost c, `cb_ctyped` | R |
+| 30 | GrowRing with one floor per closure | plan §19.12 | C-SpawnLam, `rg_ctyped` (Q8) | R |
+| 31 | a constant at arrow type | plan §19.14.4 | constants are λ-values (§3.2) | M |
+| 32 | a box hides channel constants under an empty map | plan §19.14.3 | no V clause reads a term, a send of the box needs M ⊆ held | D |
+| 33 | closure arguments without `fin_ok`, `fkont` without the cap | plan §19.14.1, 19.14.5 | no caps | M |
+| 34 | a hole sends an end its context holds, or its own subject | plan §19.13.1 | M ⊆ dom φ ∖ {o} | D |
+| 35 | select renames onto the partner's entry | plan §19.13.3 | end names | M |
+| 36 | a renaming pushes a held end into a box inside a pair | plan §19.13.4 | disjoint split | D |
+| 37 | `CAny` lets a context hold ends across an action | plan §19.12.4 | no `CAny` | M |
+| 38 | link loop and spawn loop transformers | scratch Tix.v | transformers 2^s·r + b | D |
+| 39 | two threads take turns linking the waiter's end | plan §18.4 | tickets are conserved and spent | D |
+| 40 | infinite spawn chain | review point 5 | live relation per thread (§2.12), `kob_not_live` | R |
+| 41 | a generated root reused after a link renamed its channel | this document, §2.5 | roots from a supply separate from channel names | D |
+| 42 | two components with contradicting laws | review point 3 | families renamed apart (§2.4) | D |
+| 43 | a created end and a carried end at one point | review point 2 | harmless under readiness and strictness (§2.3) | D |
+| 44 | idleness changes counters per index | review point 4 | idleness removes checks only (Q5) | U |
+| 45 | dropping a fresh conservative extension fails at V-Const | counterexamples/DropCounter.v, `force_notin_Wb` | no V-Const, no extension with chosen facts | M |
+| 46 | one round is not enough, relay with one round | Rejected.v, `rr_call_underivable` | readiness unchanged | R |
+| 47 | a box needs its constraint | Rejected.v, `ord_no_constraint` | readiness unchanged | R |
+| 48 | reversed agents, a cyclic forwarding | Rejected.v, `sched_rev_underivable`, `ms_rev_underivable`, `badlink_underivable` | readiness unchanged | R |
+| 49 | the negative control of the choice encoding | ChoiceNegative.v, `t2_underivable` and others | depends on the new placement | U |
+| 50 | one payload point needs two contradicting facts | ChoiceEnc.v, `same_payload_not_acyclic` | stated over creation constraints, which go | U |
+| 51 | a box with a point of the first call | FactoryEx.v, `fx_no_first_call` | fresh roots of a family | U |
+| 52 | no point between two box points | FreshBetween.v, `fb_between_underivable` | the box anchors at the end at ι | D |
+| 53 | data branch without a derivation | DataBranch.v, `db_typed_false` | readiness unchanged | R |
+| 54 | SemFlag underivable | SemFlag.v, `sf_underivable` | open since end points, outside this proposal | U |
+| 55 | semantic deadlocks | GrowDeadlock.v `grow_not_df`, cfst/CfstDeadlock.v `dl_not_deadlock_free`, cfst/SkipDrop.v `sd_not_deadlock_free`, lit/LitRejected.v `pcx1`, `pcx2`, `msr`, `mcx2`, `mcx3` | facts of the untyped semantics, unchanged | R |
+| 56 | rounds not eventually periodic | SemRounds.v, `rdfirst_not_periodic` | a fact of the program, unchanged | R |
+| 57 | translations | mp/MPRounds.v `p8_not_mtyped`, pgv/PGVExamples.v `cx1_rejected`, `cx2_rejected` | out of the build | U |
+| 58 | a chain descending in W | Rank.v, `chain_not_wf` | rank | R |
+
+Totals. 58 entries. 20 R, 23 D, 7 M, 8 U. The unchecked ones are 4, 20,
+44, 49, 50, 51, 54 and 57, and 54 and 57 lie outside this proposal. The
+simplifications they touch are flagged in §5.
