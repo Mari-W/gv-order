@@ -20,6 +20,7 @@ Updated after every stage and every agent result.
 | L6b Links accounted like sends (option 2) | done | LFFuel.v (`flink1` at `w_pay`, `frep`, replacement clause in `Fdef`, `fuel_rep`), LFSoup.v (`flr`, `fuel_link`, `ppts`, `LFsoupAt`, `LFsoupAt_ppts`, `LFP` without π), LFAdequacy.v (`fe_link` through the handed counter), LFCompose.v (`LFP_term` at `tenv_points`) | passes, CheckAll closed | 0, no axioms | C3 argued, no lemma |
 | L6 Typed fuel interpretation and `lf_fundamental` | stopped twice on a counterexample, under option 2 at the forwarder and on link tickets at sync. The sync counterexample is lifted (A13c, 2026-11-17) | LFFuelTyped.v (`wbud_set`, `wbud_set_ext`, `fuel_unknown_zero`; the option-2 lemmas went with L6c, the A13c lemmas with the fix), LFFuel.v (`fin_ok` at known points), LFSoup.v (`lf_known`) | passes, CheckAll closed | 0, no axioms | `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
 | L6c Link tickets replace the hand-over at links (plan §18) | done | LFFuel.v (`FuelE n W π φ tk e`, `Vfuel n W π φ tk w`, `tkupd`, `fsem` with ∃ tk, `FuelE_tk_mono`, `Vfuel_tk_mono`, `link_tickets_fall`; `flink`, `flink1`, `frep`, `fuel_rep`, `fuel_zero_nolink` gone), LFSoup.v (ticket family K in `lf_fuelc`, `LFsoupAt`, `LFsoup`, `LFP`; `ksingle`, `kstep`, `kstep_one`, `kstep_pair`, `krun`; `flr` gone), Criterion.v (`lf_run_criterion` over a measure with a well-founded decidable order, `lexlt`, `lexlt_wf`), LFAdequacy.v (`ksum`, `ksum_step`, measure (tickets, fuel); `fe_link`, `fgoal_cap` gone), LFCompose.v, LFFuelTyped.v (option-2 counterexamples gone) | passes, CheckAll closed | 0, no axioms | protected statements unchanged; FuelE not monotone in the counters (renaming) |
+| H1 Cost types, `w_pc`, FuelE and Vfuel by cost types (plan §19.3, §19.10) | done | relation/CostTypes.v (`cty`, `cta`, `cpro`, `cprof`, `tix`, `meets`, `tseq`, `tspawn`, `cst`, `cage`, `pfits_at`, `pfitpt_at`), Worlds.v (`w_pc`), LFFuel.v (`FuelE n W σ r π φ tk d e`, `Vfuel n W σ π φ w`, `farr`, `kinj` in `Fdef`, fresh new, value clause, `FuelT`, `fsem` at `cany`), LFSoup.v (`step_msg` without floor, freshness from `Hnm`), LFCompose.v (`wbud_agree` over `w_pc`) | passes, CheckAll closed | 0, no axioms | deviations in plan §19.11; protected statements unchanged against 7d0920c |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -789,6 +790,22 @@ Updated after every stage and every agent result.
   injective renamings only (`kinj`) and `new` fresh against the thread's own
   map; FuelE/Vfuel indexed by cost types. Fragment.v shrinks to Rank; the
   guard becomes typing rules (T1). Stages H1 and T1 start in parallel.
+- 2026-11-17. Stage H1 done. relation/CostTypes.v holds the cost types,
+  credits, ticket transformers (the lemmas of Tix.v), subtyping `cst`,
+  aging `cage` and `pfits_at`. The world field `w_pay` is now `w_pc`.
+  FuelE takes a result type, a reserve and a frame, `Vfuel` recurses on
+  the value and reads the cost type, and `Fdef` quantifies over injective
+  renamings only. The new clause asks a channel the thread does not hold.
+  The soup supplies that freshness from its invariant that no thread
+  holds an end of a channel outside `C` (19.8 hole 2 confirmed). Threads
+  run at `cany`, reserve 0, frame ∞, so soup, adequacy and composition
+  keep their proofs up to arities. `step_msg` lost the floor. Decisions
+  taken under delegation, all recorded in plan §19.11: `pfits_at` is
+  stated over the three world functions because CostTypes.v precedes
+  Worlds.v, a constant at an arrow type runs its own redex in place of a
+  `konst_cost` table, `fuel_zero_nosend` goes, and Fragment.v keeps the
+  old floors as `src_pay` outside the world until H5. No protected
+  statement changed its text.
 
 ## Related work hooks
 

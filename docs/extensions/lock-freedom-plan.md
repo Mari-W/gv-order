@@ -2506,3 +2506,51 @@ and the definitions of FuelE, `Vfuel` and `fsem`, whose types stay the
 same at the thread level. `lf_fundamental` and `lf_soundness` are new.
 Decision for the author. The world field, and the two repairs of 19.8,
 which are conditions on renamings and labels and read no syntax.
+
+### 19.11  Deviations (H1)
+
+Stage H1 states the definitions of 19.3 in Rocq. Where the text above
+does not typecheck or leaves a choice open, the Rocq files decide as
+follows.
+
+1. **Where pfits lives.** relation/CostTypes.v comes before Worlds.v,
+   because the world record holds a `cta`. It cannot mention a world,
+   so it states `pfits_at kn bud pc` and `pfitpt_at` over the three
+   functions they read. LFFuel.v instantiates them as `pfits W` and
+   `pfitpt W` with `pt_known W`, `w_bud W` and `w_pc W`.
+2. **Subtyping.** ⊑ is `cst` (notation `⊑c`), coinductive and mutual
+   with `cst_ty`, `cst_pro`, `cst_body` and `cst_prof`. The name `csub`
+   is taken by Instr.v. Credits follow 19.3. A target `CAny` ignores
+   the credit, an arrow asks h ≤ h' and h' + a' ≤ h + a, every other
+   type asks a' ≤ a. On protocols the budget bound of a node may fall,
+   a send payload is contravariant and a receive payload covariant.
+   Aging is the relation `cage c σ σ'`, with `cfree τ` as finite
+   evidence that τ holds no end.
+3. **Constants.** `Vfuel` reads no `konst_cost` table. A constant is in
+   `Vfuel` at an arrow type when its map is empty and the arrow clause
+   holds for the redex `App (Konst k) v`, its own step, in place of the
+   body after a β. The cost signature of each constant is then a lemma
+   of H4, not a syntactic premise of the relation.
+4. **Shape of the clauses.** `Vfuel` has no ticket argument. The end
+   clause reads `φ !! (c, b) = Some f ∧ fle a f`. The send clause of
+   `Fobl` reads `∀ k, π !! o = Some k → Vfuel n' W (w_pc W k) …`. The
+   frame check sits with F-Tick, `ftick_ok o φ ∧ fle (Some 1) d`, and
+   `dupd d α` is the frame after a step. The value clause is
+   `is_val (emap g e) = true → r ≤ tk ∧ Vfdef … (S n') …`. The new
+   clause is an implication with the two freshness premises.
+5. **Thread level.** `FuelT n W π φ tk e` abbreviates
+   `FuelE n W cany 0 π φ tk None e`, with `cany = CTa CAny None`. The
+   default `w_pc` of `wgen` is `cany`, which constrains no payload.
+6. **Soup.** The freshness of the new clause comes from the soup's
+   invariant that no thread holds an end of a channel outside `C`
+   (`Hnm`, from `lf_closed`), confirming 19.8 hole 2. `step_msg` reads
+   the payload at `w_pc W k` from the sender and hands it to the
+   receiver at `w_pc W (pt_dual (pt_dual k))` by `pt_dual_dual`.
+   `fhand_fin_ok` becomes `fchild_fin_ok` without a floor.
+   `fuel_zero_nosend` goes. It read the send floor, and F-Tick alone
+   does not exclude an end at 0 sent on itself. Nothing used it.
+7. **Fragment.v and LFFuelTyped.v.** `with_budgets` sets `w_pc` to
+   `cany`. The floor of 17.6 stays a function of the program,
+   `src_pay t k`, and the budget theorems of the examples state
+   `src_pay` where they stated `w_pay`. These parts go in H5.
+   LFFuelTyped.v builds with the new arities.
