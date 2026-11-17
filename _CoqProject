@@ -52,11 +52,10 @@ theories/lockfree/Criterion.v
 theories/lockfree/LocalProgress.v
 theories/lockfree/ThreadProgress.v
 theories/lockfree/Reach.v
-theories/lockfree/Fragment.v
+theories/lockfree/Rank.v
 theories/lockfree/LFSoup.v
 theories/lockfree/LFAdequacy.v
 theories/lockfree/LFCompose.v
-theories/lockfree/LFFuelTyped.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v
