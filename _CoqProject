@@ -123,6 +123,7 @@ theories/examples/cfst/SkipDrop.v
 theories/examples/cfst/FirstAction.v
 theories/examples/cfst/MuVar.v
 theories/examples/CostEx.v
+theories/examples/CostFsem.v
 theories/examples/LitTools.v
 theories/examples/MilnerSched.v
 theories/examples/KobForwarder.v
