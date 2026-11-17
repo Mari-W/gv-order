@@ -21,6 +21,7 @@ Updated after every stage and every agent result.
 | L6 Typed fuel interpretation and `lf_fundamental` | stopped twice on a counterexample, under option 2 at the forwarder and on link tickets at sync. The sync counterexample is lifted (A13c, 2026-11-17) | LFFuelTyped.v (`wbud_set`, `wbud_set_ext`, `fuel_unknown_zero`; the option-2 lemmas went with L6c, the A13c lemmas with the fix), LFFuel.v (`fin_ok` at known points), LFSoup.v (`lf_known`) | passes, CheckAll closed | 0, no axioms | `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
 | L6c Link tickets replace the hand-over at links (plan §18) | done | LFFuel.v (`FuelE n W π φ tk e`, `Vfuel n W π φ tk w`, `tkupd`, `fsem` with ∃ tk, `FuelE_tk_mono`, `Vfuel_tk_mono`, `link_tickets_fall`; `flink`, `flink1`, `frep`, `fuel_rep`, `fuel_zero_nolink` gone), LFSoup.v (ticket family K in `lf_fuelc`, `LFsoupAt`, `LFsoup`, `LFP`; `ksingle`, `kstep`, `kstep_one`, `kstep_pair`, `krun`; `flr` gone), Criterion.v (`lf_run_criterion` over a measure with a well-founded decidable order, `lexlt`, `lexlt_wf`), LFAdequacy.v (`ksum`, `ksum_step`, measure (tickets, fuel); `fe_link`, `fgoal_cap` gone), LFCompose.v, LFFuelTyped.v (option-2 counterexamples gone) | passes, CheckAll closed | 0, no axioms | protected statements unchanged; FuelE not monotone in the counters (renaming) |
 | H1 Cost types, `w_pc`, FuelE and Vfuel by cost types (plan §19.3, §19.10) | done | relation/CostTypes.v (`cty`, `cta`, `cpro`, `cprof`, `tix`, `meets`, `tseq`, `tspawn`, `cst`, `cage`, `pfits_at`, `pfitpt_at`), Worlds.v (`w_pc`), LFFuel.v (`FuelE n W σ r π φ tk d e`, `Vfuel n W σ π φ w`, `farr`, `kinj` in `Fdef`, fresh new, value clause, `FuelT`, `fsem` at `cany`), LFSoup.v (`step_msg` without floor, freshness from `Hnm`), LFCompose.v (`wbud_agree` over `w_pc`) | passes, CheckAll closed | 0, no axioms | deviations in plan §19.11; protected statements unchanged against 7d0920c |
+| H2 Cost judgment and the examples' derivations (plan §19.4, §19.9) | done, GrowRing does not type | static/CostTyping.v (`ctyped W Θ Γ e σ c t`, rules `C_Unit` to `C_Contract`, `konst_cost`, `ccap`, `cage_env`, `csplit`, `cst_refl`, `tle_check`, tactic `ct`), examples/CostEx.v (`sync_ctyped`, `tc_ctyped`, `fw_ctyped`, `rc_ctyped`, `abp_ctyped`, `cs_ctyped`, `sched_ctyped`, `cb_ctyped`, rejections at the rule) | passes, CheckAll closed | 0, no axioms | GrowRing needs per-end floors or a spawn rule for λ (plan §19.12), author |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -818,6 +819,24 @@ Updated after every stage and every agent result.
   `konst_cost` table, `fuel_zero_nosend` goes, and Fragment.v keeps the
   old floors as `src_pay` outside the world until H5. No protected
   statement changed its text.
+- 2026-11-17. Stage H2 done on branch lf-costtyping, except GrowRing.
+  static/CostTyping.v states the cost judgment with one constructor per
+  rule of plan §19.4 and the cost signatures of the constants as the
+  relation `konst_cost`. examples/CostEx.v derives sync, tail call,
+  forwarder, received chain, ABP, the CFST cyclic scheduler, the
+  scheduler with a link and a new higher-order callback server. The
+  forwarder needs B = 3 where §19.9 estimated 2, checked by failing
+  derivations at B = 2. GrowRing does not type for a structural reason.
+  A closure has one floor for all the ends it captures, and the ring's
+  second spawned call captures a received end at the payload floor with
+  a fresh end that must carry a floor above it. The grid of numbers
+  probed in Rocq agrees with the paper argument of plan §19.12.
+  Rejections of C3, the callback of cost ∞ and the starving server are
+  stated at the rule that rejects, not as non-derivability of the term.
+  Choices taken under delegation, all in plan §19.12: credit 0 on
+  results that are pairs, `ccap` in place of low, aging that refuses
+  `CAny` entries, `tok` premises, `pnode` equations, weakening at the
+  leaves. No change to Typing.v, the relations or protected statements.
 
 ## Related work hooks
 
