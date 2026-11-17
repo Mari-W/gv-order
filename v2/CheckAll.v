@@ -10,7 +10,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
-From GV Require Import compat.Redex.
+From GV Require Import compat.Rules.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
