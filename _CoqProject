@@ -56,6 +56,7 @@ theories/lockfree/Rank.v
 theories/lockfree/LFSoup.v
 theories/lockfree/LFAdequacy.v
 theories/lockfree/LFCompose.v
+theories/lockfree/LFTyped.v
 theories/invariance/PointRenaming.v
 theories/invariance/EquivInvariance.v
 theories/invariance/Monotonicity.v
