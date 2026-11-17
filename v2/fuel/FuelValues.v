@@ -236,11 +236,11 @@ Section rename.
       renamed back by [eunfix]. *)
   Lemma Vty_arr_rename N c t h T1 a1 U a2 e (Π : penv) (φ : cenv) (g : cend → cend) (Π' : penv) (φ' : cenv) :
     kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' → dom Π = dom φ →
-    (∀ N' j φ1 Πu φu u r tk, fle N N' → j < n → dom φ1 = dom φ →
+    (∀ N' j φ1 Πu φu u r tk, rle N N' → j < n → dom φ1 = dom φ →
        (∀ o f, φ1 !! o = Some f → fle h f) → Π ##ₘ Πu → φ1 ##ₘ φu →
        u ∈ FV^N' _ j⟦RTy T1 a1⟧(Πu, φu) → meets t r tk →
        subst1 u e ∈ F^N' _ j⟦RTy U a2 ▷ c ; r⟧(Π ∪ Πu, φ1 ∪ φu, tk)) →
-    ∀ N' j φ1 Πu φu u r tk, fle N N' → j < n → dom φ1 = dom φ' →
+    ∀ N' j φ1 Πu φu u r tk, rle N N' → j < n → dom φ1 = dom φ' →
       (∀ o f, φ1 !! o = Some f → fle h f) → Π' ##ₘ Πu → φ1 ##ₘ φu →
       u ∈ FV^N' _ j⟦RTy T1 a1⟧(Πu, φu) → meets t r tk →
       subst1 u (emap g e) ∈ F^N' _ j⟦RTy U a2 ▷ c ; r⟧(Π' ∪ Πu, φ1 ∪ φu, tk).
@@ -694,7 +694,7 @@ Proof. induction 1; constructor; auto. Qed.
 Lemma FuelE_thread N n T a d r Π φ tk e :
   prim T → e ∈ F^N _ n⟦RTy T a ▷ d ; r⟧(Π, φ, tk) → FuelT N n Π φ tk e.
 Proof.
-  intros Hp H. eapply FuelE_res_mono; [|eapply FuelE_mono; [apply fle_refl|apply cle_refl|apply fle_inf|lia|done|exact H]].
+  intros Hp H. eapply FuelE_res_mono; [|eapply FuelE_mono; [apply rle_refl|apply cle_refl|apply fle_inf|lia|done|exact H]].
   intros N' m Π0 φ0 v _. rewrite !Vfuel_eq. simpl. intros Hv.
   by destruct (Vty_tfree _ _ _ _ _ (prim_tfree _ Hp) _ _ _ _ Hv) as (-> & -> & _).
 Qed.

@@ -125,7 +125,7 @@ Proof. unfold fminus, ftick. destruct f; simpl; [f_equal; lia|done]. Qed.
 Definition fkont (n : nat) (N : fuel) (σ1 : rty) (r1 : nat) (σ : rty) (r : nat) (c1 d : fuel)
     (ΠK : penv) (φK : cenv) (K : ectx) : Prop :=
   ∀ N' (g : cend → cend) ΠK' φK' i j v Π1 φ1 tk,
-    fle N N' → kinj g ΠK → kinj g φK → renk g ΠK ΠK' → renk g φK φK' →
+    rle N N' → kinj g ΠK → kinj g φK → renk g ΠK ΠK' → renk g φK φK' →
     fle (Some i) c1 → j ≤ n → is_val v → r1 ≤ tk →
     Π1 ##ₘ ΠK' → φ1 ##ₘ φK' → v ∈ FV^N' _ j⟦σ1⟧(Π1, φ1) →
     efill (kemap g K) v ∈ F^N' _ j⟦σ ▷ fsub d (Some i) ; r⟧(Π1 ∪ ΠK', φ1 ∪ (fminus (Some i) <$> φK'), tk).
@@ -135,12 +135,12 @@ Lemma fkont_down m n N σ1 r1 σ r c1 d ΠK φK K :
 Proof. intros Hmn H N' g ΠK' φK' i j v Π1 φ1 tk HN Hk1 Hk2 H1 H2 Hi Hj. apply H; try done. lia. Qed.
 
 Lemma fkont_rename n N σ1 r1 σ r c1 d ΠK φK K N0 (g : cend → cend) ΠK0 φK0 :
-  fle N N0 → kinj g ΠK → kinj g φK → renk g ΠK ΠK0 → renk g φK φK0 →
+  rle N N0 → kinj g ΠK → kinj g φK → renk g ΠK ΠK0 → renk g φK φK0 →
   fkont n N σ1 r1 σ r c1 d ΠK φK K → fkont n N0 σ1 r1 σ r c1 d ΠK0 φK0 (kemap g K).
 Proof.
   intros HN Hk1 Hk2 HΠ Hφ H N' g' ΠK' φK' i j v Π1 φ1 tk HN' Hk1' Hk2' HΠ' Hφ'.
   rewrite kemap_kemap. apply (H N' (g' ∘ g) ΠK' φK').
-  - by eapply fle_trans.
+  - by eapply rle_trans.
   - by apply (kinj_compose g' g ΠK ΠK0).
   - by apply (kinj_compose g' g φK φK0).
   - by apply (renk_compose g' g ΠK ΠK0 ΠK').
@@ -349,12 +349,12 @@ Proof.
   destruct Hdec as [Hve|Hve'].
   - (* the hole returned: the continuation after no action *)
     destruct (Hv1 Hve) as [Hr1 HV1].
-    pose proof (Hkont' N' id ΠK' φK' 0 (S n) (emap g e) Π1' φ1' tk (fle_refl N')
+    pose proof (Hkont' N' id ΠK' φK' 0 (S n) (emap g e) Π1' φ1' tk (rle_refl N')
       (kinj_id _) (kinj_id _) (renk_id _) (renk_id _) ltac:(by destruct c1; simpl; lia) ltac:(lia)
       Hve Hr1 HdΠ' Hdφ' ltac:(by apply Vfuel_eq)) as HC.
     rewrite kemap_id, fminus_0_map, fsub_0 in HC.
     apply FuelE_S in HC.
-    pose proof (HC N' id _ _ (fle_refl N') (kinj_id _) (kinj_id _) (renk_id _) (renk_id _)) as HC'.
+    pose proof (HC N' id _ _ (rle_refl N') (kinj_id _) (kinj_id _) (renk_id _) (renk_id _)) as HC'.
     by rewrite emap_id in HC'.
   - split.
     + intros Hv. exfalso. exact (efill_not_val _ _ Hve' Hv).

@@ -116,6 +116,36 @@ Proof.
   apply (Hg (h o1) (h o2) v1 v2); [by apply H1|by apply H1|exact Heq].
 Qed.
 
+(** ** The order on refills
+
+    Finite refills are ordered by ≤, and ∞ lies above ∞ only. FuelE and
+    the closure and box clauses of [Vfuel] hold at every refill above N
+    in this order. Under the order of ℕ ∪ {∞} a finite refill could jump
+    to ∞, where a box promises its body only at the instances with the
+    annotations of N = ∞ ([sinsts None]), and E-Force at a finite N has
+    no instance to force (docs/redesign/progress.md, S7.5). *)
+Definition rle (N N' : fuel) : Prop :=
+  match N, N' with
+  | Some m, Some m' => m ≤ m'
+  | None, None => True
+  | _, _ => False
+  end.
+
+Lemma rle_refl N : rle N N.
+Proof. destruct N; simpl; lia. Qed.
+
+Lemma rle_trans N1 N2 N3 : rle N1 N2 → rle N2 N3 → rle N1 N3.
+Proof. destruct N1, N2, N3; simpl; lia || done. Qed.
+
+Lemma rle_rle N N' : rle N N' → rle N N'.
+Proof. destruct N, N'; simpl; lia || done. Qed.
+
+Lemma rle_inf_r N : rle N None → N = None.
+Proof. by destruct N. Qed.
+
+Lemma rle_sinsts N N' ss : rle N N' → sinsts N' ss → sinsts N ss.
+Proof. intros H [H1 H2]. split; [done|]. intros ->. destruct N'; [done|]. by apply H2. Qed.
+
 (** ** Counters, idle ends and the update *)
 
 (** One unit less, truncated at 0. ∞ stays ∞. *)
@@ -244,7 +274,7 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
       ∃ o S' f, v = Chan o ∧ Π = {[o := S']} ∧ φ = {[o := f]} ∧ sequiv S' s ∧ fle a f
   | TLolli _ _ c t h T1 a1 U a2 =>
       ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧ (∀ o f, φ !! o = Some f → fle (fadd h a) f) ∧
-        ∀ N' j φ' Πu φu u r tk, fle N N' → j < n → dom φ' = dom φ →
+        ∀ N' j φ' Πu φu u r tk, rle N N' → j < n → dom φ' = dom φ →
           (∀ o f, φ' !! o = Some f → fle h f) → Π ##ₘ Πu → φ' ##ₘ φu →
           Vl j N' (RTy T1 a1) Πu φu u → meets t r tk →
           El j N' (RTy U a2) c r (Π ∪ Πu) (φ' ∪ φu) tk (subst1 u e)
@@ -257,7 +287,7 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
       (∃ v', v = Inj2 v' ∧ Vty N El Vl n T2 (fadd a a2) Π φ v')
   | TBox _ k _ _ c t U aU =>
       ∃ e, v = EBox e ∧ fends e = ∅ ∧ Π = ∅ ∧ φ = ∅ ∧
-        ∀ N' j ss r tk, fle N N' → j < n → length ss = k → sinsts N' ss → meets t r tk →
+        ∀ N' j ss r tk, rle N N' → j < n → length ss = k → sinsts N' ss → meets t r tk →
           El j N' (RTy (sinst_ty (slist ss) U) aU) c r ∅ ∅ tk (subst1 (EBox e) e)
   | TEx _ _ _ T1 aT => Vty N El Vl n T1 (fadd a aT) Π φ v
   end.
@@ -276,7 +306,7 @@ Definition Vres (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
     reserve (val), and every step meets its obligation (step). *)
 Definition Fdef (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n' : nat)
     (σ : rty) (d : fuel) (r : nat) (Π : penv) (φ : cenv) (tk : nat) (e : expr) : Prop :=
-  ∀ N' g Π' φ', fle N N' → kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' →
+  ∀ N' g Π' φ', rle N N' → kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' →
     (is_val (emap g e) → r ≤ tk ∧ Vres N' El Vl (S n') σ Π' φ' (emap g e)) ∧    (* (val) *)
     ∀ α e', tstep (emap g e) α e' → Fobl N' El Vl n' σ d r Π' φ' tk α e'.        (* (step) *)
 
