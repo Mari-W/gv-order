@@ -287,3 +287,128 @@ Section fits.
         (∀ i, pfitpt_at (pt_payload x i) (f i)) → pfitpt_at (pt_shift 1 x) s →
         pfitpt_at x (Prof P Q f s).
 End fits.
+
+(** ** Facts on transformers, credits and subtyping (stage H3) *)
+
+Lemma tle_refl t : tle t t.
+Proof. by intros r tk. Qed.
+
+Lemma tle_trans t1 t2 t3 : tle t1 t2 → tle t2 t3 → tle t1 t3.
+Proof. intros H12 H23 r tk H. by apply H12, H23. Qed.
+
+Lemma credit_ok_refl τ a : credit_ok τ a τ a.
+Proof. destruct τ; simpl; try done; apply fle_refl. Qed.
+
+Lemma credit_ok_trans τ1 a1 τ2 a2 τ3 a3 :
+  cst_ty τ1 τ2 → cst_ty τ2 τ3 → credit_ok τ1 a1 τ2 a2 → credit_ok τ2 a2 τ3 a3 →
+  credit_ok τ1 a1 τ3 a3.
+Proof.
+  intros H12 H23 C12 C23. destruct τ3; [done|..];
+    inversion H23; subst; inversion H12; subst; simpl in *; eauto using fle_trans.
+Qed.
+
+Lemma cst_ty_refl τ : cst_ty τ τ
+with cst_refl σ : σ ⊑c σ
+with cst_pro_refl P : cst_pro P P
+with cst_body_refl b : cst_body b b
+with cst_prof_refl ρ : cst_prof ρ ρ.
+Proof.
+  - destruct τ; constructor; try apply fle_refl; try apply tle_refl; try lia; auto.
+  - destruct σ as [τ a]. constructor; [apply cst_ty_refl|apply credit_ok_refl].
+  - destruct P; constructor; [lia|apply cst_body_refl].
+  - destruct b; constructor; auto.
+  - destruct ρ; constructor; auto.
+Qed.
+
+Lemma cst_ty_trans τ1 τ2 τ3 : cst_ty τ1 τ2 → cst_ty τ2 τ3 → cst_ty τ1 τ3
+with cst_trans σ1 σ2 σ3 : σ1 ⊑c σ2 → σ2 ⊑c σ3 → σ1 ⊑c σ3
+with cst_pro_trans P1 P2 P3 : cst_pro P1 P2 → cst_pro P2 P3 → cst_pro P1 P3
+with cst_body_trans b1 b2 b3 : cst_body b1 b2 → cst_body b2 b3 → cst_body b1 b3
+with cst_prof_trans ρ1 ρ2 ρ3 : cst_prof ρ1 ρ2 → cst_prof ρ2 ρ3 → cst_prof ρ1 ρ3.
+Proof.
+  - intros H12 H23. destruct H23.
+    + constructor.
+    + inversion H12; subst. constructor.
+    + inversion H12; subst. constructor. eauto.
+    + inversion H12; subst. constructor. eauto.
+    + inversion H12; subst. constructor; [eauto using fle_trans|eauto using tle_trans|lia|eauto|eauto].
+    + inversion H12; subst. constructor; [eauto using fle_trans|eauto using tle_trans|eauto].
+    + inversion H12; subst. constructor; eauto.
+    + inversion H12; subst. constructor; eauto.
+  - intros H12 H23. destruct H23 as [τ2 a2 τ3 a3 T23 C23]. inversion H12 as [τ1 a1 ? ? T12 C12]; subst.
+    constructor; [eauto|eapply credit_ok_trans; eauto].
+  - intros H12 H23. destruct H23.
+    + constructor.
+    + inversion H12; subst. constructor; [lia|eauto].
+  - intros H12 H23. destruct H23; inversion H12; subst; constructor; eauto.
+  - intros H12 H23. destruct H23.
+    + constructor.
+    + inversion H12; subst. constructor; eauto.
+Qed.
+
+Lemma cadd_0 σ : cadd (Some 0) σ = σ.
+Proof. destruct σ as [τ [a|]]; done. Qed.
+
+(** Adding credits keeps subtyping when the source gets at least as much. *)
+Lemma cst_cadd a a' σ σ' : σ ⊑c σ' → fle a' a → cadd a σ ⊑c cadd a' σ'.
+Proof.
+  intros H Ha. destruct H as [τ b τ' b' T C]. simpl. constructor; [done|].
+  destruct τ'; simpl in *; try done; inversion T; subst; simpl in *;
+    destruct a as [a|], a' as [a'|], b as [b|], b' as [b'|]; simpl in *; lia.
+Qed.
+
+(** ** Fitting along changed world functions, and along subtyping *)
+Section fits_mono.
+  Context (kn kn' : point → Prop) (bud bud' : point → fuel) (pc pc' : point → cta).
+  Context (Hk : ∀ y, kn y → kn' y ∧ bud' y = bud y ∧ bud' (pt_dual y) = bud (pt_dual y) ∧
+                       pc' y = pc y ∧ pc' (pt_dual y) = pc (pt_dual y)).
+
+  Lemma pfits_at_mono x P : pfits_at kn bud pc x P → pfits_at kn' bud' pc' x P
+  with pfits_body_mono x b : kn x → pfits_body kn bud pc x b → pfits_body kn' bud' pc' x b.
+  Proof.
+    - intros H. destruct H as [x|x n b Hx Hn Hd Hb]; [constructor|].
+      destruct (Hk x Hx) as (Hx' & E1 & E2 & _ & _). constructor.
+      + done.
+      + by rewrite E1.
+      + by rewrite E2.
+      + by apply pfits_body_mono.
+    - intros Hx H. destruct (Hk x Hx) as (_ & _ & _ & E3 & E4).
+      destruct H; constructor; try (by apply pfits_at_mono).
+      + by rewrite E3.
+      + by rewrite E4.
+  Qed.
+
+  Lemma pfitpt_at_mono x ρ : pfitpt_at kn bud pc x ρ → pfitpt_at kn' bud' pc' x ρ.
+  Proof.
+    revert x ρ. cofix IH. intros x ρ H. destruct H as [x|x P Q f s HP HQ Hf Hs]; [constructor|].
+    constructor.
+    - by apply pfits_at_mono.
+    - by apply pfits_at_mono.
+    - intros i. apply IH, Hf.
+    - apply IH, Hs.
+  Qed.
+End fits_mono.
+
+Section fits_cst.
+  Context (kn : point → Prop) (bud : point → fuel) (pc : point → cta).
+
+  Lemma pfits_at_cst x P P' : pfits_at kn bud pc x P → cst_pro P P' → pfits_at kn bud pc x P'
+  with pfits_body_cst x b b' : pfits_body kn bud pc x b → cst_body b b' → pfits_body kn bud pc x b'.
+  Proof.
+    - intros H Hc. destruct Hc as [P|n b n' b' Hn Hb]; [constructor|].
+      inversion H as [|? ? ? Hx Hle Hd Hbd]; subst. constructor; [done| |done|eauto].
+      eapply fle_trans; [|exact Hle]. simpl. lia.
+    - intros H Hc. destruct Hc; inversion H; subst; constructor; eauto using cst_trans.
+  Qed.
+
+  Lemma pfitpt_at_cst x ρ ρ' : pfitpt_at kn bud pc x ρ → cst_prof ρ ρ' → pfitpt_at kn bud pc x ρ'.
+  Proof.
+    revert x ρ ρ'. cofix IH. intros x ρ ρ' H Hc. destruct Hc as [ρ|P Q f s P' Q' f' s' HP HQ Hf Hs];
+      [constructor|].
+    inversion H as [|? ? ? ? ? HP0 HQ0 Hf0 Hs0]; subst. constructor.
+    - eapply pfits_at_cst; eauto.
+    - eapply pfits_at_cst; eauto.
+    - intros i. eapply IH; [apply Hf0|apply Hf].
+    - eapply IH; eauto.
+  Qed.
+End fits_cst.
