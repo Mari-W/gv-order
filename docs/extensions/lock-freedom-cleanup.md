@@ -131,6 +131,8 @@ risk, and when to do it.
 quirk F9 and rewrite the six stale headers of J1. Removes about 150
 lines and every comment that still describes the old link rule, the
 oracle relation or link cost one. Risk none. First, in one commit.
+*Done outside H4's files (2026-11-17, lf-h5prep).* Quirks F9 and J1
+say what went.
 
 **P2. Compile time.** Replace the six `set_solver` calls of `LFP_connect`
 by one lemma "a channel held on both sides lies in C0" with only its
@@ -140,6 +142,9 @@ calls on the goals that need it. Removes about 280 of the 410 s that
 theories/lockfree takes (193 s in LFCompose.v alone). Risk low. First,
 with P1. Then add `Arguments FuelE : simpl never` and the same for
 `Vfuel` (H4).
+*Done for `two_frame` and the `fe_two` calls (2026-11-17, lf-h5prep).*
+LFSoup.v falls from 118 s to 78 s and LFAdequacy.v from 73 s to 22 s.
+The `Arguments … : simpl never` part belongs to H4's files.
 
 **P3. Drop the global point map π.** `lf_pt` reads `P t`, and π, `pupd`,
 `pev`, `pev_upd`, `pev1`, `pev2`, `pev_of`, `LFsoupAt`, `ppts`,
@@ -212,6 +217,9 @@ Fragment.v and LFFuelTyped.v into examples/LockFree.v (B9). Merge the two
 carrier analyses into one over roots and drop `lf_r2`, `lf_r2r` and the
 self-loop rule for links (B7, B8, B5). Risk low for the move, medium for
 the merge. Only if T2 is rejected. With T2 the analyses go altogether.
+*Superseded (2026-11-17, lf-h5prep).* The cost judgment replaced the
+analyses (T2). Fragment.v and LFFuelTyped.v are deleted, and Rank with
+the examples' worlds lives in lockfree/Rank.v.
 
 **P14. Leftovers of no-eq.** Replace `w_eq` by `=` in `LFP_term`,
 `LFP_connect`, `LFP_join` and `st_spawn`, drop the alias argument of

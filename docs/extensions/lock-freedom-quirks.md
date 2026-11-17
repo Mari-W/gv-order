@@ -173,6 +173,15 @@ step lemmas take `strict`. Rename `wf_world` to `rank_wf` at least.
 
 ## B. The static fragment
 
+*Lifted (2026-11-17, branch lf-h5prep).* Fragment.v and LFFuelTyped.v are
+deleted. The cost judgment (static/CostTyping.v) replaces R1, R2-recv, the
+box check, the root graph, the stretch bound and the annotation, and the
+guard is the rules of liveness/GuardRules.v. What survives is Rank, in
+lockfree/Rank.v (`cworld`, `wf_world`, the rank lemmas, the examples'
+worlds, `kob_cworld_not_wf`, `c1_rank_fails`). B1 to B5 and B7 to B9
+describe code that no longer exists. B6 is a property of the guard and
+stays.
+
 **B1. A pile of syntactic checks.** The guard, R1 (recursion in tail
 position), R2-recv (ends passed to a call were acted on in the round or
 are fed slots), the hand-off graph (forwards and links), the root graph,
@@ -387,6 +396,16 @@ Ten more are reached only from CheckAll.v, namely the four `fuel_zero_*`,
 `rank_bound`, `tsum_r1_fails`, and `lock_free_reach_of`. The last ones are
 results, the rest is scaffolding. theories/lockfree/open/LocalProgressLR.v
 is outside the build and records a false statement.
+*Lifted (2026-11-17, lf-h5prep).* The names left outside LFFuel.v,
+LFFuelBind.v and CostFund.v are deleted (`isteps_erase`, `act_chsubst`,
+`admin_sess_link`, `offered_pend`), with the Fragment.v names that went
+with the file. A second sweep deleted `cdual_fst`, `cdual_inj`,
+`kren_lookup_any`, `fe_uniq` and, in theories/liveness, `lc_HWf`,
+`lc2_HW2`, `lgrounding_unl`, `tsize_pos`, `wext_wext_r`, `pchan_step`,
+`tenv_fit_iff`, `Pind_VT_mono`, `Eind_below`, `Pind_below`,
+`ptau_link_pswap_inv`, `lsubst_fit`, `lgrounding_dom`, `tenv_fit_join`,
+`tenv_fit_ends` and `fends_fill_frame`. `fcap_union` is used now
+(LFFuelBind.v).
 
 ## G. Statements (audit)
 
@@ -562,6 +581,10 @@ framing and the disjoint union are generic in the per-thread part.
   replacing "the link clause of R2′". The fragment asks `lf_r2h`, the
   hand-off graph and, for sources, the root graph.
 - LFSoup.v says that "[pupd] moves π". π is derived (F1).
+*Lifted (2026-11-17, lf-h5prep).* LiveRelation.v counts a link among the
+free τ steps, ThreadProgress.v takes `lock_free` from `lf_adequacy`, and
+Fragment.v is gone. The LFAdequacy.v, Criterion.v and LFSoup.v headers
+were already rewritten for link tickets.
 
 **J2. Terminology.** The code says "slot" 53 times (fed slots,
 `new_slots`, `ref_slots`, `peer_slots`, `slot_root`) and "payload" 61
@@ -569,6 +592,11 @@ times in theories/lockfree, against the decision of 2026-11-07 (fields
 σ.κ, never "slot"). B1 and B2 of this file follow the code. `pt_payload`
 and `KPay` stand for the field notation `!^{ƛξ}(A).S`, and `pt_shift 1`
 (21 times) and `KSucc` for x⁺. Rename together with R2.
+*Partly lifted (2026-11-17, lf-h5prep).* Every "slot" was in Fragment.v
+and LFFuelTyped.v and went with them. The remaining "payload" mostly
+names the value of a message. The field sense survives in the global
+names `pt_payload`, `NPayload`, `KPay`, `payload_at` and `payloadv`,
+which H4's files use, so their renaming waits for R2.
 
 **J3. Name clashes.**
 - π is the per-thread point map in LFFuel.v, the global point map in

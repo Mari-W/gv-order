@@ -24,6 +24,7 @@ Updated after every stage and every agent result.
 | H3 Semantic lemmas F1 to F6 of FuelE (plan §19.7, §19.13) | done | lockfree/LFFuelBind.v (`FuelE_bind`, `Fobl_bind`, `fkont`, `FuelE_val`, `FuelE_beta`, `FuelE_mono`, `Vfuel_sub`, `Vfuel_wbext`, `Vfuel_rename`, `Vfuel_recount`, `clow`, `Vfuel_minus`, `pfits_wbext`, `pfits_node`, `pfits_snd`, `pfits_rcv`, `pfits_sel`, `pfits_bra`, `Vfuel_refill`, `Vfuel_pair`), CostTypes.v (`cst_refl`, `cst_trans`, `cst_cadd`, `pfits_at_mono`, `pfits_at_cst`), LFFuel.v (held ends at send, spawn and link, `fsolo` at select and branch, pair clause split), LFSoup.v (`fsolo` from `st_disj`) | passes, CheckAll closed | 0, no axioms | four repairs in plan §19.13; protected statements unchanged against c26c125 |
 
 | H2 Cost judgment and the examples' derivations (plan §19.4, §19.9) | done, GrowRing by C-SpawnLam | static/CostTyping.v (`ctyped W Θ Γ e σ c t`, rules `C_Unit` to `C_Contract`, `konst_cost`, `ccap`, `cage_env`, `csplit`, `cst_refl`, `tle_check`, tactic `ct`), examples/CostEx.v (`sync_ctyped`, `tc_ctyped`, `fw_ctyped`, `rc_ctyped`, `abp_ctyped`, `cs_ctyped`, `sched_ctyped`, `cb_ctyped`, `rg_ctyped`, rejections at the rule), `C_SpawnLam` | passes, CheckAll closed | 0, no axioms | H4 proves C-SpawnLam and keeps the `cheld` condition (plan §19.12); per-end floors on arrows later |
+| H5 prep Rank.v, LFTyped.v skeleton, cleanup P1, P2 (plan §19.10) | done on branch lf-h5prep | lockfree/Rank.v (`cworld`, `wf_world`, `cworld_hold`, `wgen_rank_wf`, `cworld_rank_wf`, `chain_not_wf`, `ladder_wf`, `fw_wf` to `sync_wf`, `kob_cworld_not_wf`, `c1_rank_fails`), lockfree/LFTyped.v (`cfits`, `lfptyped`, `lfptyped_join`, `lf_fundamental`, `lf_soundness` over the section hypothesis `ctyped_fsem`, `fuel_unknown_zero`); Fragment.v and LFFuelTyped.v deleted | passes, CheckAll 377 closed | 0, no axioms | `ctyped_fsem` owed by H4 |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -860,6 +861,42 @@ Updated after every stage and every agent result.
   C-Spawn. H4 owes the compatibility lemma of C-SpawnLam and keeps the
   `cheld` condition on aging. Per-end floors on arrows stay the general
   alternative.
+
+- 2026-11-17. Preparation of stage H5 on branch lf-h5prep, beside H4.
+  lockfree/Rank.v keeps what plan §19.10 saves of Fragment.v. It holds
+  `wf_world`, `cworld` with `cworld_hold` and `world_ptyped`, the rank
+  lemmas (`wgen_rank_wf`, `cworld_rank_wf`, `cworld_depth_wf`,
+  `chain_not_wf`, the constant ladder), `strict_budgets`, the
+  well-founded worlds of the examples (`fw_wf`, `tc_wf`, `cs_wf`,
+  `rc_wf`, `rg_wf`, `abp_wf`, `sched_wf`, `sync_wf`) and the rejections
+  `kob_rank_fails`, `kob_cworld_not_wf` and `c1_rank_fails`. Fragment.v
+  and LFFuelTyped.v are deleted, and nothing in the build reads the old
+  analyses. lockfree/LFTyped.v defines `cfits W Θc π` (the cost
+  environment covers exactly the held ends, each at an end type whose
+  protocol its point fits, with credit at most the budget) and
+  `lfptyped` with two rules. `lf_term` asks the premises of P-Term, the
+  guard as `glive noL t`, a derivation `ctyped W Θc [] t σ c t0`, the
+  points of the environment known, and `cfits`. `lf_connect` asks the
+  premises of `LFP_connect`. `lf_fundamental : lfptyped W Σ p T →
+  strict W → LFP W Σ T p` and `lf_soundness : lfptyped W ∅ p T →
+  world_wf W → well_founded (w_lt W) → lock_free p` are proved inside a
+  section over the hypothesis `ctyped_fsem : ctyped_fsem_stmt`, which
+  states the expected `ctyped_fsem` with the premises `strict W`, the
+  derivation, `cfits` and known points. Outside the section both take it
+  as their first argument, and Print Assumptions inside the section
+  shows only it. One deviation from plan §19.7. P-Connect in one world
+  has no counterpart, because `LFP_connect` lands in `wjoin W1 W2` and
+  `LFP` has no lemma from `wjoin W W` back to W. `lf_connect` therefore
+  takes the two-world form of P-Join with `wbud_agree`, and
+  `lfptyped_join` restates it with the premises of `LFP_join`. Cleanup
+  P1 outside H4's files deleted 26 unreferenced lemmas (quirk F9), and
+  Rank.v did not take over `Wpo_wf` and `cworld_ptyped`. It also
+  fixed the stale headers of LiveRelation.v and ThreadProgress.v (J1).
+  Every "slot" went with Fragment.v (J2). P2 scoped the slow
+  `set_solver` of `two_frame` and ran the cheap tactics before
+  `set_solver` at the `fe_two` calls. LFSoup.v falls from 118 s to 78 s
+  and LFAdequacy.v from 73 s to 22 s. Every protected statement keeps
+  its text against 2fe11c6.
 
 ## Related work hooks
 
