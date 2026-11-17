@@ -33,7 +33,8 @@ From LRGV Require Import lang.Semantics relation.Worlds lockfree.Instr lockfree.
 From LRGV Require Export lockfree.LFFuelBind static.CostTyping.
 
 Implicit Types (W : world) (π : gmap cend point) (φ : gmap cend fuel) (n m i j r tk : nat)
-  (Γ : cenv) (Θ : cthe) (σ : cta) (τ : cty) (γ : nat → expr) (c d : fuel) (t : tix) (o : cend).
+  (Γ : cenv) (Θ : cthe) (σ : cta) (τ : cty) (γ : nat → expr) (c d : fuel) (t : tix) (o : cend)
+  (a : fuel) (h : nat) (e v w : expr).
 
 (** ** The semantic judgment *)
 
@@ -886,4 +887,154 @@ Proof.
     + apply (thsem_local _ _ _ _ _ φ); [|done]. intros o Ho. apply lookup_mres_in. unfold π1. rewrite dom_union_L. set_solver.
     + apply (gsem_local _ _ _ _ _ φ); [|done]. intros o Ho. apply lookup_mres_in. unfold π1. rewrite dom_union_L. set_solver.
     + by apply (fcap_ext_part W π1 πv φ).
+Qed.
+
+(** ** Helpers for redexes *)
+
+Lemma mrem_none {Y : Type} (X : gset cend) (m : gmap cend Y) : dom m ## X → mrem X m = m.
+Proof.
+  intros H. apply map_eq. intros o. destruct (m !! o) eqn:E.
+  - apply lookup_mrem_Some. split; [done|]. intros Hx. apply (H o); [by eapply elem_of_dom_2|done].
+  - destruct (mrem X m !! o) eqn:E'; [|done]. apply lookup_mrem_Some in E' as [? _]. congruence.
+Qed.
+
+Lemma mrem_all {Y : Type} (X : gset cend) (m : gmap cend Y) : dom m ⊆ X → mrem X m = ∅.
+Proof.
+  intros H. apply map_eq. intros o. rewrite lookup_empty. destruct (mrem X m !! o) eqn:E; [|done].
+  apply lookup_mrem_Some in E as [E Hx]. exfalso. apply Hx, H. by eapply elem_of_dom_2.
+Qed.
+
+Lemma mrem_disj_l {Y Z : Type} (m1 m2 : gmap cend Y) (π : gmap cend Z) :
+  dom m1 = dom π → dom m2 ## dom π → mrem (dom π) (m1 ∪ m2) = m2.
+Proof.
+  intros H1 H2. apply map_eq. intros o. destruct (decide (o ∈ dom π)) as [Ho|Ho].
+  - destruct (mrem (dom π) (m1 ∪ m2) !! o) eqn:E; [apply lookup_mrem_Some in E as [_ ?]; done|].
+    symmetry. apply not_elem_of_dom. intros Hin. by apply (H2 o).
+  - destruct (m2 !! o) eqn:E.
+    + apply lookup_mrem_Some. split; [|done]. apply lookup_union_Some_raw. right. split; [|done].
+      apply not_elem_of_dom. by rewrite H1.
+    + destruct (mrem (dom π) (m1 ∪ m2) !! o) eqn:E'; [|done]. apply lookup_mrem_Some in E' as [E' _].
+      apply lookup_union_Some_raw in E' as [E'|[_ E']]; [|congruence].
+      exfalso. apply Ho. rewrite <-H1. by eapply elem_of_dom_2.
+Qed.
+
+Lemma dom_single_inv {Y : Type} (m : gmap cend Y) o : dom m = {[o]} → ∃ y, m = {[o := y]}.
+Proof.
+  intros H. assert (o ∈ dom m) as [y Hy]%elem_of_dom by set_solver. exists y.
+  apply map_eq. intros o'. destruct (decide (o' = o)) as [->|Hne]; [by rewrite lookup_singleton_eq|].
+  rewrite lookup_singleton_ne by done. apply not_elem_of_dom. set_solver.
+Qed.
+
+(** An action on the only end held: the end moves to its next point and
+    refills, or goes. *)
+Lemma fact_single W (s : slabel) o (x : point) (φ1 : gmap cend fuel) :
+  sl_end s = Some o → dom φ1 = {[o]} →
+  fact W s {[o := x]} φ1 =
+    match sl_next s x with
+    | Some (o', k') => ({[o' := k']}, {[o' := w_bud W k']})
+    | None => (∅, ∅)
+    end.
+Proof.
+  intros He Hd. destruct (dom_single_inv φ1 o Hd) as [y ->]. unfold fact. rewrite He, lookup_singleton_eq.
+  destruct (sl_next s x) as [[o' k']|]; rewrite !delete_singleton, !decide_True, fmap_empty by done; [|done].
+  by rewrite !insert_empty.
+Qed.
+
+Lemma fcap_ext_single W o (x : point) : pt_known W x → fcap_ext W {[o := x]} {[o := w_bud W x]}.
+Proof.
+  intros Hk. apply fcap_ext_known.
+  - intros o' f Hf. apply lookup_singleton_Some in Hf as [<- <-]. exists x. rewrite lookup_singleton_eq. split; [done|apply fle_refl].
+  - intros o' k Hk'. by apply lookup_singleton_Some in Hk' as [_ <-].
+Qed.
+
+Lemma pt_known_shift W (x : point) n : pt_known W (pt_shift n x) ↔ pt_known W x.
+Proof. done. Qed.
+
+Lemma pt_known_payload W (x : point) i : pt_known W (pt_payload x i) ↔ pt_known W x.
+Proof. done. Qed.
+
+Lemma tstep_app_val v1 v2 α e' : is_val v1 = true → is_val v2 = true → tstep (App v1 v2) α e' → head_step (App v1 v2) α e'.
+Proof.
+  intros H1 H2 Hst. apply tstep_app_inv in Hst as [(e1' & S1 & _)|[(_ & e2' & S2 & _)|(_ & _ & Hh)]].
+  - exfalso. eapply val_no_tstep; [exact S1|by rewrite H1].
+  - exfalso. eapply val_no_tstep; [exact S2|by rewrite H2].
+  - done.
+Qed.
+
+Lemma Vfuel_move n W W' σ π φ v (g : chan → chan) π' φ' :
+  wbext W W' → kinj g π → dom φ ⊆ dom π → renk g π π' → renk g φ φ' →
+  Vfuel n W σ π φ v → Vfuel n W' σ π' φ' (emap g v).
+Proof. intros Hb Hk Hd R1 R2 HV. apply (Vfuel_wbext _ W); [done|]. by apply (Vfuel_rename n W σ π φ v g). Qed.
+
+(** FuelE of a term that is no value, from its clauses under every
+    renaming and extension. *)
+Lemma FuelE_redex n W σ r π φ tk d e :
+  is_val e = false → fcap_ext W π φ →
+  (∀ W' (g : chan → chan) π' φ', wbext W W' → kinj g π → renk g π π' → renk g φ φ' →
+     fwait W' π' (emap g e) ∧ ∀ α e', tstep (emap g e) α e' → Fobl FuelE Vfuel n W' σ r π' φ' tk d α e') →
+  FuelE (S n) W σ r π φ tk d e.
+Proof.
+  intros Hv Hc H. apply FuelE_S. intros W' g π' φ' Hb Hk R1 R2.
+  destruct (H W' g π' φ' Hb Hk R1 R2) as [Hw Hs]. split_and!; [eapply renk_fcap; [apply Hc, Hb|done|done]|done| |done].
+  intros Hv'. by rewrite is_val_emap, Hv in Hv'.
+Qed.
+
+Lemma sem_val n W σ r π φ tk d v :
+  is_val v = true → meets tid r tk → fcap_ext W π φ → Vfuel n W σ π φ v → FuelE n W σ r π φ tk d v.
+Proof. intros Hv Hm. apply FuelE_val; [done|by apply meets_tid]. Qed.
+
+(** ** Leaves and structure *)
+
+Lemma c_unit_sem W0 Γ : cunlenv Γ → csem W0 ∅ Γ EUnit (CTa CVal None) (Some 0) tid.
+Proof.
+  intros Hu n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  rewrite (thsem_empty _ _ _ _ _ HT), (gsem_unl _ _ _ _ _ _ Hu HG), map_empty_union in *. simpl.
+  apply sem_val; [done|done|done|apply Vfuel_unit].
+Qed.
+
+Lemma c_pt_sem W0 Γ x ρ :
+  cunlenv Γ → pt_known W0 x → cpfitpt W0 x ρ → csem W0 ∅ Γ (EPt x) (CTa (CPt ρ) None) (Some 0) tid.
+Proof.
+  intros Hu Hk Hf n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  rewrite (thsem_empty _ _ _ _ _ HT), (gsem_unl _ _ _ _ _ _ Hu HG), map_empty_union in *. simpl.
+  apply sem_val; [done|done|done|]. apply Vfuel_eq. simpl. exists x. split_and!; [done|done| |].
+  - by apply (wbext_known W0).
+  - by apply (pfitpt_wbext W0).
+Qed.
+
+Lemma c_var_sem W0 Γ x σ : conly Γ x σ → csem W0 ∅ Γ (Var x) σ (Some 0) tid.
+Proof.
+  intros Ho n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  rewrite (thsem_empty _ _ _ _ _ HT), map_empty_union in *. simpl.
+  destruct (gsem_conly _ _ _ _ _ _ _ _ Ho HG) as [Hv HV]. rewrite (mres_dom_eq πΓ φ Hdφ) in HV.
+  by apply sem_val.
+Qed.
+
+Lemma c_ch_sem W0 Γ (c : chan) (b : bool) σ : cunlenv Γ → csem W0 {[(c, b) := σ]} Γ (Chan c b) σ (Some 0) tid.
+Proof.
+  intros Hu n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  rewrite (gsem_unl _ _ _ _ _ _ Hu HG), map_union_empty in *. simpl.
+  destruct (thsem_single _ _ _ _ _ _ _ _ HT) as (x & -> & HV).
+  rewrite <-(dom_singleton_L (g c, b) x), (mres_dom_eq _ φ Hdφ) in HV.
+  by apply sem_val.
+Qed.
+
+Lemma c_sub_sem W0 Θ Γ e σ σ' c c' t t' :
+  csem W0 Θ Γ e σ c t → σ ⊑c σ' → fle c c' → tle t t' → csem W0 Θ Γ e σ' c' t'.
+Proof.
+  intros Hcs Hs Hc Ht n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hcap r tk Hm.
+  apply (FuelE_mono n W σ σ' r r _ _ tk tk c c'); [done|lia|lia|done|]. apply Hcs; try done. by apply Ht.
+Qed.
+
+Lemma c_weak_sem W0 Θ Γ' Γ e σ c t : cwk Γ' Γ → csem W0 Θ Γ' e σ c t → csem W0 Θ Γ e σ c t.
+Proof.
+  intros Hw Hcs n W g γ πΘ πΓ φ Hb HT HG. apply Hcs; [done|done|]. by apply (gsem_wk _ _ _ Γ).
+Qed.
+
+Lemma c_contract_sem W0 Θ Γ σ e σ' c t :
+  cfree (cta_ty σ) → csem W0 Θ (Some σ :: Some σ :: Γ) e σ' c t → csem W0 Θ (Some σ :: Γ) (rename pred e) σ' c t.
+Proof.
+  intros Hf Hcs n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  rewrite emap_rename, subst_rename. apply (Hcs n W g (λ x, γ (pred x))); try done.
+  by apply gsem_contract.
 Qed.
