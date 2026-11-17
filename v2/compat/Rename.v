@@ -630,22 +630,22 @@ Section rel.
       assert (lmap h (LSpawn (fends v) v) = LSpawn (fends (emap h v)) (emap h v)) as Hl
         by (simpl; by rewrite fends_emap).
       rewrite (tstep_emap_back h h e _ x _ e0 Hst He0 I Hl eq_refl).
-      destruct (H4 _ _ _ He0) as (ΘM & Θr & ub & lb & A1 & -> & A3 & A4 & A5).
+      destruct (H4 _ _ _ He0) as (ΘM & Θr & A1 & -> & A3 & A4 & A5).
       assert (kinj h ΘM) as KM by (eapply kinj_sub; [|exact Hk]; rewrite dom_union_L; set_solver).
       assert (kinj h Θr) as Kr by (eapply kinj_sub; [|exact Hk]; rewrite dom_union_L; set_solver).
-      exists (kren h ΘM), (kren h Θr), ub, lb. split_and!.
+      exists (kren h ΘM), (kren h Θr). split_and!.
       + by apply kren_disjoint.
       + by apply kren_union.
       + by rewrite kren_dom, A3, fends_emap.
-      + destruct A4 as (e1 & -> & Hfe & Hlb & HA). exists (emap h e1).
-        split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|by rewrite kren_heads|].
-        intros W' j Θ' w' F' HW Hj Hd Hub. split.
+      + destruct A4 as (e1 & -> & Hfe & HA). exists (emap h e1).
+        split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|].
+        intros W' j Θ' w' HW Hj Hd. split.
         * intros Hjn [-> ->]%Vrel_unit_iff. rewrite map_union_empty.
-          destruct (HA W' j ∅ EUnit F' HW Hj (map_disjoint_empty_r _) Hub) as [B1 _].
+          destruct (HA W' j ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [B1 _].
           rewrite map_union_empty in B1. change EUnit with (emap h EUnit). rewrite <-emap_subst1.
           apply (proj2 (IHl j Hjn TUnit)); [done|]. apply B1; [done|by apply Vrel_unit_iff].
         * intros -> [-> ->]. rewrite map_union_empty.
-          destruct (HA W' (S n) ∅ EUnit F' HW Hj (map_disjoint_empty_r _) Hub) as [_ B2].
+          destruct (HA W' (S n) ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [_ B2].
           destruct (B2 eq_refl (conj eq_refl eq_refl)) as [_ B3]. rewrite map_union_empty in B3.
           change EUnit with (emap h EUnit). rewrite <-emap_subst1. apply B3; [by right|done].
       + by apply Hac.

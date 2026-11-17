@@ -1,7 +1,7 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1, S2, S3 and S6, and the part of S4 done so far
-    (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
+    Stages S1, S2, S3, S6 and S7, the part of S4 done so far and the
+    term part of S5 (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
@@ -13,6 +13,7 @@ From GV Require Import relation.Adequacy.
 From GV Require Import fuel.FuelSub.
 From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
 From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap.
+From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -87,7 +88,7 @@ Print Assumptions Prel_S_iff.
 Print Assumptions Prel_S_ind.
 Print Assumptions Erel_S_step.
 Print Assumptions Prel_S_step.
-Print Assumptions Varr_spawn_iff.
+Print Assumptions Vrel_thunk.
 (** S3. Downward closure and monotonicity. *)
 Print Assumptions Vrel_val.
 Print Assumptions Vrel_Erel.
@@ -227,3 +228,34 @@ Print Assumptions recv_back_swap.
 Print Assumptions ready_p_swap.
 Print Assumptions Prel_swap.
 Print Assumptions csub_fuses.
+(** S5: two facts about E, the structural rules. *)
+Print Assumptions Erel_cover.
+Print Assumptions Erel_ty_mono.
+Print Assumptions Vrel_tsub.
+Print Assumptions gen_e_abs.
+Print Assumptions gen_e_box.
+Print Assumptions gen_e_app.
+Print Assumptions gen_e_conv.
+Print Assumptions gen_e_pack.
+(** S5: the fundamental theorem for terms. *)
+Print Assumptions gen_e_spawn_lam.
+Print Assumptions later_spawn_lam.
+Print Assumptions dftyped_sem.
+Print Assumptions fundamental.
+Print Assumptions fundamental_typed.
+(** S5: the guard, the rules with marks, the live fundamental theorem. *)
+Print Assumptions glive_rename.
+Print Assumptions acts_stable.
+Print Assumptions Erel_bind_acts.
+Print Assumptions sem_later_noL.
+Print Assumptions later_bind_acts.
+Print Assumptions later_box.
+Print Assumptions dftyped_later.
+Print Assumptions live_fundamental.
+Print Assumptions live_fundamental_typed.
+Print Assumptions div_not_guarded.
+Print Assumptions pn_fix_not_guarded.
+Print Assumptions cx_not_guarded.
+Print Assumptions spawn_loop_not_guarded.
+Print Assumptions loop_guarded.
+Print Assumptions stage_guarded.

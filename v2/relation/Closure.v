@@ -143,10 +143,10 @@ Section closure.
       exists S. eapply Hac; [done|exact HS].
     - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst Hc) as (S0 & x & Ho & S & HS).
       exists S0, x. split; [done|]. exists S. eapply Hac; [done|exact HS].
-    - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & ub & lb & A1 & A2 & A3 & A4 & A5).
-      exists ΘM, Θr, ub, lb. split_and!; [done|done|done| |eapply Hac; [done|exact A5]].
-      destruct A4 as (eb & -> & Hfe & Hlb & A4). exists eb. split_and!; [done|done|done|].
-      intros W' j Θ' w F0 HW Hj Hd Hub. destruct (A4 W' j Θ' w F0 HW ltac:(lia) Hd Hub) as [B1 B2].
+    - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & A1 & A2 & A3 & A4 & A5).
+      exists ΘM, Θr. split_and!; [done|done|done| |eapply Hac; [done|exact A5]].
+      destruct A4 as (eb & -> & Hfe & A4). exists eb. split_and!; [done|done|].
+      intros W' j Θ' w HW Hj Hd. destruct (A4 W' j Θ' w HW ltac:(lia) Hd) as [B1 B2].
       split; [intros Hjm; apply B1; lia|].
       intros -> [-> ->]. destruct (decide (m = n)) as [->|Hne].
       + by apply B2.
@@ -231,15 +231,18 @@ Section closure.
     exact (proj1 (Psteps_iff _ _ _ _ _ _ _ _ _ _) H q ev q' eq_refl Hst).
   Qed.
 
-  (** The thunk of O-Spawn is a value at 1 ⊸^ub_lb 1, read at the level
-      of the parent, inside the fixpoint when β is free. *)
-  Lemma Varr_spawn_iff n W Θ ub lb v :
-    Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
-      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit ub lb W Θ v ↔
-    Vrel κ n W Θ (TLolli ub lb None tinf None TUnit None TUnit None) v.
+  (** The thunk of O-Spawn is read at the level of the parent, inside
+      the fixpoint when β is free. A value at 1 ⊸^ub_lb 1 is a thunk: its
+      body is read at the empty future, above every upper point, and
+      the lower point is dropped. *)
+  Lemma Vrel_thunk n W Θ ub lb v :
+    Vrel κ n W Θ (TLolli ub lb None tinf None TUnit None TUnit None) v →
+    Vthunk κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) W Θ v.
   Proof.
-    rewrite Vrel_lolli_iff, <-Varr_rel_iff.
-    split; (apply Varr_mono; [intros; done|intros; done| |intros; done]);
-      intros _ W0 Θ0 w; by rewrite Vrel_unit_iff.
+    rewrite Vrel_lolli_iff, <-Varr_rel_iff. intros HV. apply Varr_thunk in HV. revert HV.
+    apply Vthunk_mono; [intros; done|intros; done| |intros; done].
+    intros _ W0 Θ0 w. by rewrite Vrel_unit_iff.
   Qed.
+
 End closure.
