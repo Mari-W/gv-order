@@ -1,0 +1,157 @@
+(** * live ⊆ DF for closed processes (stage S4, quirk G2)
+
+      ∅ ⊫_W p : T  ⟹  ∅ ⊨_W p : T        when T is first order
+
+    [live_sub_df]. T is first order ([tshape]) when it is built from ∗,
+    S@x, ⊗, ⊕ and ∃, with no arrow and no box. For such T the value
+    relation reads no E, so V at T is the same for both cost tables and
+    every level ([Vrel_shape]). A closed process takes τ steps only, so
+    the proof reads no value from outside. A τ step costs at least as
+    much in κ_DF as in κ_L, except a link, which costs 0 in both and is
+    read inside the level of κ_DF by induction on the size of the soup
+    ([psize_link]).
+
+    What does not hold by this argument (docs/redesign/progress.md,
+    S4.7). For an open interface or a higher-order T, V of κ_DF must be
+    read at the argument of an arrow and at a received payload, in a
+    negative position, and V of κ_DF is not included in V of κ_L (a
+    divergent closure is in the first only). *)
+
+From GV Require Export relation.Adequacy compat.Blind.
+
+(** ** Sizes *)
+
+Fixpoint esize (e : expr) : nat :=
+  match e with
+  | Var _ | EUnit | Chan _ | ENew _ => 1
+  | Lam e | Inj1 e | Inj2 e | EBox e | Op _ e => S (esize e)
+  | App a b | Pair a b | LetU a b | LetP a b | ELet a b => S (esize a + esize b)
+  | Case a b c => S (esize a + esize b + esize c)
+  end.
+
+Lemma esize_emap g e : esize (emap g e) = esize e.
+Proof. induction e; simpl; lia. Qed.
+
+Lemma tstep_link_size e os e' : tstep e (LSess (SLink os)) e' → esize e' < esize e.
+Proof.
+  remember (LSess (SLink os)) as α eqn:Hα. induction 1 as [e α e' Hh|f e α e' Hf Hs IH]; subst.
+  - inversion Hh; subst; simpl; lia.
+  - specialize (IH eq_refl). destruct f; simpl; lia.
+Qed.
+
+Definition msize (E : gmultiset expr) : nat := sum_list_with esize (elements E).
+
+Lemma sum_list_with_perm (l k : list expr) : l ≡ₚ k → sum_list_with esize l = sum_list_with esize k.
+Proof. induction 1; simpl; lia. Qed.
+
+Lemma msize_disj_union X Y : msize (X ⊎ Y) = msize X + msize Y.
+Proof.
+  unfold msize. rewrite (sum_list_with_perm _ _ (gmultiset_elements_disj_union X Y)).
+  apply sum_list_with_app.
+Qed.
+
+Lemma msize_singleton e : msize {[+ e +]} = esize e.
+Proof. unfold msize. rewrite gmultiset_elements_singleton. simpl. lia. Qed.
+
+Lemma msize_emap g E : msize (gmultiset_map (emap g) E) = msize E.
+Proof.
+  induction E as [|e E IH] using gmultiset_ind; [done|].
+  rewrite gmultiset_map_disj_union, gmultiset_map_singleton, !msize_disj_union, !msize_singleton.
+  by rewrite esize_emap, IH.
+Qed.
+
+Definition psize (p : proc) : nat := msize p.2.
+
+(** A link step makes the soup smaller. *)
+Lemma psize_link q i o1 o2 q' : istep q (EvLink i o1 o2) q' → psize (erase q') < psize (erase q).
+Proof.
+  intros Hst. inversion Hst as [| | | | | | |C M i' e o1' o2' e' Hi Hs HC| ]; subst.
+  unfold psize, erase. simpl. rewrite soup_fmap, msize_emap.
+  rewrite (soup_update _ _ _ _ Hi), (soup_delete _ _ _ Hi), !msize_disj_union, !msize_singleton.
+  apply tstep_link_size in Hs. lia.
+Qed.
+
+(** ** First-order types *)
+
+Fixpoint tshape (T : ty) : Prop :=
+  match T with
+  | TUnit | TSess _ _ => True
+  | TProd A _ B _ | TSum A _ B _ => tshape A ∧ tshape B
+  | TEx _ _ _ A _ => tshape A
+  | _ => False
+  end.
+
+Lemma tshape_pinst σ T : tshape (pinst_ty σ T) ↔ tshape T.
+Proof. induction T in σ |- *; simpl; try done; by rewrite ?IHT1, ?IHT2, ?IHT. Qed.
+
+Lemma Vrel_shape κ κ' T : tshape T → ∀ n n' W Θ v, Vrel κ n W Θ T v ↔ Vrel κ' n' W Θ T v.
+Proof.
+  induction T as [T IH] using tsize_ind. intros Hs n n' W Θ v.
+  destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x|lb m C T1 a];
+    simpl in Hs; try done.
+  - by rewrite !Vrel_unit_iff.
+  - destruct Hs. rewrite !Vrel_prod_iff.
+    setoid_rewrite (IH T1 ltac:(simpl; lia) ltac:(done) n n').
+    by setoid_rewrite (IH U ltac:(simpl; lia) ltac:(done) n n').
+  - destruct Hs. rewrite !Vrel_sum_iff.
+    setoid_rewrite (IH T1 ltac:(simpl; lia) ltac:(done) n n').
+    by setoid_rewrite (IH U ltac:(simpl; lia) ltac:(done) n n').
+  - by rewrite !Vrel_sess_iff.
+  - rewrite !Vrel_ex_iff.
+    assert (∀ xs W Θ v, Vrel κ n W Θ (ty_inst xs T1) v ↔ Vrel κ' n' W Θ (ty_inst xs T1) v) as E.
+    { intros xs. apply IH; [unfold ty_inst; rewrite tsize_pinst; simpl; lia|].
+      unfold ty_inst. by apply tshape_pinst. }
+    by setoid_rewrite E.
+Qed.
+
+(** ** The inclusion *)
+
+(** A step of cost c at every level gives every level. *)
+Lemma at_cost_all κ c W Σ T p :
+  (∀ m, at_cost_P (S m) c (Prel κ) (Prel κ (S m)) W Σ T p) → ∀ m, Prel κ m W Σ T p.
+Proof.
+  intros H m. destruct (H (m + c)) as [H1 H2]. destruct (decide (c = 0)) as [->|Hc].
+  - eapply Prel_down; [|exact (H1 eq_refl)]. lia.
+  - eapply Prel_down; [|exact (H2 Hc)]. lia.
+Qed.
+
+Lemma live_sub_df_n n : ∀ W T p, tshape T → (∀ m, Prel κ_L m W ∅ T p) → Prel κ_DF n W ∅ T p.
+Proof.
+  induction n as [n IHn] using lt_wf_ind. intros W T p HT.
+  destruct n as [|n]; [intros; apply Prel_0|]. revert W.
+  induction p as [p IHp] using (well_founded_induction (well_founded_ltof _ psize)).
+  intros W HL. apply Prel_S_iff. intros W1 HW1.
+  assert (∀ m, Pbody κ_L (S m) (Vrel κ_L) (Prel κ_L) (Vrel κ_L (S m)) (Prel κ_L (S m)) W ∅ T p) as HB
+    by (intros m; apply Prel_S_iff, HL).
+  destruct (HB 0 W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+  split; [|split; [|unfold Psteps; split_and!]].
+  - intros Hirr. destruct (Hs Hirr) as (v & E & -> & Hv & HE). exists v, E.
+    split_and!; [done| |done]. by apply (Vrel_shape κ_L κ_DF T HT 1 (S n)).
+  - done.
+  - intros q ev q' Hq Hst Hτ Hd.
+    assert (∀ m, Prel κ_L m W1 ∅ T (erase q')) as HL'.
+    { apply (at_cost_all κ_L (ev_cost κ_L ev)). intros m.
+      destruct (HB m W1 HW1) as (_ & _ & A & _). exact (A q ev q' Hq Hst Hτ Hd). }
+    split.
+    + intros Hc. assert (∃ i o1 o2, ev = EvLink i o1 o2) as (i & o1 & o2 & ->).
+      { destruct ev; simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
+      apply (IHp (erase q')); [unfold ltof; rewrite <-Hq; by eapply psize_link|]. exact HL'.
+    + intros Hc. eapply (IHn (S n - _)); [lia|done|]. intros m. apply HL'.
+  - intros q i o M w q' Hq Hst. exfalso.
+    destruct (H2 q i o M w q' Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
+    by rewrite lookup_empty in A.
+  - intros q i o w q' Hq Hst. exfalso.
+    destruct (H3 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & ? & A & _). by rewrite lookup_empty in A.
+  - intros q i o q' Hq Hst. exfalso.
+    destruct (H4 q i o q' Hq Hst) as (? & ? & A & _). by rewrite lookup_empty in A.
+  - intros q i o b q' Hq Hst. exfalso.
+    destruct (H5 q i o b q' Hq Hst) as (? & ? & ? & ? & A & _). by rewrite lookup_empty in A.
+  - intros q i o b q' Hq Hst. exfalso.
+    destruct (H6 q i o b q' Hq Hst) as (? & ? & ? & ? & A & _). by rewrite lookup_empty in A.
+  - intros q i os q' Hq Hst. exfalso.
+    destruct (H7 q i os q' Hq Hst) as (? & ? & ? & ? & ? & _ & _ & A & _). by rewrite lookup_empty in A.
+Qed.
+
+(** live ⊆ DF, for a closed process at a first-order type. *)
+Theorem live_sub_df W T p : tshape T → ∅ ⊫_W p : T → ∅ ⊨_W p : T.
+Proof. intros HT HL n. by apply live_sub_df_n. Qed.
