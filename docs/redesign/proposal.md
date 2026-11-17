@@ -1145,6 +1145,16 @@ first, in stage S2.
 - Fuel is Kripke in the refill (delegated, after S6). FuelE and the
   closure and box clauses of Vfuel quantify over every N′ ≥ N, the role
   `wbext` played before. Plain monotonicity in N fails at receive.
+  Refined after S7.5 (delegated): the quantifier ranges over N′ above N
+  in the order `rle`, which orders finite refills by ≤ and puts ∞ above
+  ∞ only. With ≥ on ℕ ∪ {∞} a box received at refill ∞ promises its body
+  only at the instances of N = ∞, and E-Force at a finite N needs every
+  instance (S7.5). DF (N = ∞) and LF (finite N) stay separate instances.
+- Q16 (2026-11-17, after S4.9). P-Connect gets the full renaming lemma:
+  the relation is invariant under every end bijection that commutes with
+  duality, which covers the polarity flip of a link, with fresh names
+  re-chosen at each creation. No syntactic premise. The author chose this
+  over Q14 for terms and over a premise on P-Connect.
 
 ## 5  Open decisions for the author
 
