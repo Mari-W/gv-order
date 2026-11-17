@@ -43,7 +43,12 @@
     floor h and argument in [Vfuel] at T, its body satisfies [FuelE] at U
     with frame c and every reserve and ticket count that meet ϑ. A box
     does the same per force, for every session instance of its
-    variables. *)
+    variables.
+
+    Decision Q15 adds the clause of Q14 in V. A closure holds exactly the
+    ends its body mentions (dom Π = fends v), and a box mentions no end.
+    So every value of [Vfuel] is exact ([Vfuel_exact]), and the ends a
+    send or a spawn reads off its label are the ends of its map. *)
 
 From GV Require Export lang.Semantics static.Contexts relation.Sfix.
 
@@ -238,7 +243,7 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
   | TSess s _ =>
       ∃ o S' f, v = Chan o ∧ Π = {[o := S']} ∧ φ = {[o := f]} ∧ sequiv S' s ∧ fle a f
   | TLolli _ _ c t h T1 a1 U a2 =>
-      ∃ e, v = Lam e ∧ dom Π = dom φ ∧ (∀ o f, φ !! o = Some f → fle (fadd h a) f) ∧
+      ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧ (∀ o f, φ !! o = Some f → fle (fadd h a) f) ∧
         ∀ N' j φ' Πu φu u r tk, fle N N' → j < n → dom φ' = dom φ →
           (∀ o f, φ' !! o = Some f → fle h f) → Π ##ₘ Πu → φ' ##ₘ φu →
           Vl j N' (RTy T1 a1) Πu φu u → meets t r tk →
@@ -251,7 +256,7 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
       (∃ v', v = Inj1 v' ∧ Vty N El Vl n T1 (fadd a a1) Π φ v') ∨
       (∃ v', v = Inj2 v' ∧ Vty N El Vl n T2 (fadd a a2) Π φ v')
   | TBox _ k _ _ c t U aU =>
-      ∃ e, v = EBox e ∧ Π = ∅ ∧ φ = ∅ ∧
+      ∃ e, v = EBox e ∧ fends e = ∅ ∧ Π = ∅ ∧ φ = ∅ ∧
         ∀ N' j ss r tk, fle N N' → j < n → length ss = k → sinsts N' ss → meets t r tk →
           El j N' (RTy (sinst_ty (slist ss) U) aU) c r ∅ ∅ tk (subst1 (EBox e) e)
   | TEx _ _ _ T1 aT => Vty N El Vl n T1 (fadd a aT) Π φ v
@@ -351,13 +356,13 @@ Section ext.
     induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
                    |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
       intros a Π φ v; simpl; try done.
-    - intros (e & -> & Hd & Hf & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ' Πu φu u r tk HN Hj Hd' Hh HΠ Hφ Hu Ht.
       apply HE; [done|]. apply H; try done. by apply HV.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
     - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
-    - intros (e & -> & -> & -> & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
       intros N' j ss r tk HN Hj Hl Hs Ht. apply HE; [done|]. by apply H.
     - auto.
   Qed.

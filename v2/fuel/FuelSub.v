@@ -46,7 +46,7 @@ Section teq.
       try contradiction.
     - done.
     - destruct Ht as (<- & <- & <- & <- & <- & <- & <- & H1 & H2).
-      intros (e & -> & Hd & Hf & H). exists e. split_and!; [done|done|done|].
+      intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ1 Πu φu u r tk HN Hj Hd1 Hh HΠ Hφ Hu Hm.
       apply (FuelE_teq_below j N' U); [done|done|]. apply H; try done.
       apply (IH j Hj N' T1 T1'); [done|]. done.
@@ -57,7 +57,7 @@ Section teq.
       intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]; exists v'; split; try done;
         [by apply (IH1 T1')|by apply (IH2 T2')].
     - destruct Ht as (<- & <- & <- & <- & <- & <- & <- & HU).
-      intros (e & -> & -> & -> & H). exists e. split_and!; [done|done|done|].
+      intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
       intros N' j ss r tk HN Hj Hl Hs Hm. specialize (H N' j ss r tk HN Hj Hl Hs Hm).
       destruct k as [|k].
       + destruct ss; [|done]. rewrite !sinst_slist_nil in H |- *.
@@ -102,7 +102,7 @@ Section sub.
                     |lb m C C' T T' aT aT' a a' HC HC' HT Ha];
       intros Π φ v; simpl.
     - done.
-    - intros (e & -> & Hd & Hf & H). exists e. split_and!; [done|done| |].
+    - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done| |].
       + intros o f Ho. eapply fle_trans; [exact Ha|]. by apply (Hf o).
       + intros N' j φ1 Πu φu u r tk HN Hj Hd1 Hh1 HΠ Hφ Hu Hm.
         eapply FuelE_res_mono; [|eapply FuelE_frame_mono; [exact Hc|]].
@@ -114,7 +114,7 @@ Section sub.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & Hv1 & Hv2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
     - intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]; exists v'; split; auto.
-    - intros (e & -> & -> & -> & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
       intros N' j ss r tk HN Hj Hl Hss Hm.
       eapply FuelE_frame_mono; [exact Hc|].
       specialize (H N' j ss r tk HN Hj Hl Hss (Ht r tk Hm)).

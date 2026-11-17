@@ -209,11 +209,11 @@ Section vty.
                    |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
       intros a0 Π φ v; simpl.
     - intros (_ & -> & ->). by rewrite !dom_empty_L.
-    - by intros (e & _ & Hd & _).
+    - by intros (e & _ & _ & Hd & _).
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & _ & _ & _ & -> & -> & H1 & H2).
       rewrite !dom_union_L. by erewrite IH1, IH2.
     - intros [(v' & _ & H)|(v' & _ & H)]; eauto.
-    - intros (e & _ & -> & -> & _). by rewrite !dom_empty_L.
+    - intros (e & _ & _ & -> & -> & _). by rewrite !dom_empty_L.
     - intros (o & S' & f & _ & -> & -> & _). by rewrite !dom_singleton_L.
     - eauto.
   Qed.
@@ -226,7 +226,7 @@ Section vty.
                    |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
       intros a a' Π φ φ' v Ha Hc; simpl.
     - intros (-> & -> & ->). by rewrite (cle_empty_l _ Hc).
-    - intros (e & -> & Hd & Hf & H). exists e. split_and!; [done|by rewrite <-(cle_dom _ _ Hc)| |].
+    - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|by rewrite <-(cle_dom _ _ Hc)| |].
       + intros o f' Ho. destruct (cle_lookup_r _ _ _ _ Hc Ho) as (f & Hf' & Hle).
         eapply fle_trans; [|exact Hle]. eapply fle_trans; [|exact (Hf o f Hf')].
         destruct h, a, a'; simpl in *; lia.
@@ -239,7 +239,7 @@ Section vty.
     - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; exists v'; split; try done.
       + eapply IH1; [|exact Hc|exact H]. destruct a, a', a1; simpl in *; lia.
       + eapply IH2; [|exact Hc|exact H]. destruct a, a', a2; simpl in *; lia.
-    - intros (e & -> & -> & -> & H). rewrite (cle_empty_l _ Hc). exists e. by split_and!.
+    - intros (e & -> & Hx & -> & -> & H). rewrite (cle_empty_l _ Hc). exists e. by split_and!.
     - intros (o & S' & f & -> & -> & -> & Hs & Hf).
       destruct (cle_lookup _ _ o f Hc ltac:(by rewrite lookup_singleton_eq)) as (f' & Hf' & Hle).
       exists o, S', f'. split_and!; try done.
@@ -257,12 +257,12 @@ Section vty.
     induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
                    |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
       intros a Π φ v; simpl; try done.
-    - intros (e & -> & Hd & Hf & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ' Πu φu u r tk HN'. apply H. by eapply fle_trans.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
     - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
-    - intros (e & -> & -> & -> & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
       intros N' j ss r tk HN'. apply H. by eapply fle_trans.
     - auto.
   Qed.
@@ -274,12 +274,12 @@ Section vty.
     induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
                    |k0 k C ub c t U IH aU|s x|lb k0 C T1 IH aT];
       intros a Π φ v; simpl; try done.
-    - intros (e & -> & Hd & Hf & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ' Πu φu u r tk HN' Hj. apply H; [done|lia].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
     - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
-    - intros (e & -> & -> & -> & H). exists e. split_and!; [done|done|done|].
+    - intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
       intros N' j ss r tk HN' Hj. apply H; [done|lia].
     - auto.
   Qed.
@@ -299,6 +299,23 @@ Section vty.
     - by intros (o & S' & f & -> & _).
     - eauto.
   Qed.
+
+  (** Q15. A value of [Vfuel] mentions exactly the ends of its map. *)
+  Lemma Vty_exact N n T a Π φ v : Vty N El Vl n T a Π φ v → fends v = dom Π.
+  Proof.
+    revert a Π φ v.
+    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
+                   |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
+      intros a0 Π φ v; simpl.
+    - intros (-> & -> & _). by rewrite dom_empty_L.
+    - by intros (e & -> & Hx & _).
+    - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & _ & _ & -> & _ & H1 & H2). simpl.
+      rewrite dom_union_L. by erewrite IH1, IH2.
+    - intros [(v' & -> & H)|(v' & -> & H)]; simpl; eauto.
+    - intros (e & -> & Hx & -> & _). simpl. by rewrite Hx, dom_empty_L.
+    - intros (o & S' & f & -> & -> & _). simpl. by rewrite dom_singleton_L.
+    - eauto.
+  Qed.
 End vty.
 
 Lemma Vfuel_dom N n T a Π φ v : v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → dom Π = dom φ.
@@ -306,6 +323,9 @@ Proof. rewrite Vfuel_eq. apply Vty_dom. Qed.
 
 Lemma Vfuel_val N n T a Π φ v : v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → is_val v.
 Proof. rewrite Vfuel_eq. apply Vty_val. Qed.
+
+Lemma Vfuel_exact N n T a Π φ v : v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → fends v = dom Π.
+Proof. rewrite Vfuel_eq. apply Vty_exact. Qed.
 
 (** F5, monotonicity of values: a larger refill, larger counters, a
     smaller credit. *)
