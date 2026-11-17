@@ -13,7 +13,7 @@ The old development in theories/ stays untouched.
 | S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
-| S7 | cost judgment | stopped at S7.5, report on the refill of boxes (see S7.5) |
+| S7 | cost judgment | done |
 | S8 | soup and adequacy | open |
 | S9 | lock-free composition and soundness | open |
 | S10 | paper | open |
@@ -313,6 +313,23 @@ The old development in theories/ stays untouched.
   unlimited entries, and a value at an unlimited type is a box, which
   holds no end. So a grounding of exact values gives the ends of the
   instance by `fends_subst_eq`.
+- S7, refills (S7.6). FuelE, the closure and box clauses of `Vty`,
+  `FuelE_mono` and `Vfuel_mono` quantify over refills in the order
+  `rle`, finite refills by ≤ and ∞ above ∞ only, as the coordinator
+  decided after S7.5. `FuelE_mono` changes its premise from `fle N N'`
+  to `rle N N'`, and test/FuelNotations.expected changes with it.
+- S7, the semantic judgment. `csem` has no hypothesis context Γ, no world
+  and no future, because FuelE reads none of them. Its notation is
+  `Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ`, the merged form of A.2's
+  `Θ ; Γ ⊨^N e : σ ▷ c ; t`, where Γ named the term context. Θ enters
+  through a renaming g injective on its ends, with the session type of
+  Θ exactly and a counter at or above its credit (`thfuel`). The frame
+  of FuelE is the cost c.
+- S7, the forwarder. `fw_fsem` gets the `fsem` of the S7.1 thread from
+  `fsem_of_cost`. The paper counterexample of S7.5 is not in Rocq.
+- S7, fsem_of_cost. The statement asks credits at most N on the ends of
+  Θ and a ticket count that meets ϑ at reserve 0. P-Term gives credit N
+  to every end. The session types of `fsem` are those of Θ (`te_sty`).
 
 ## Log
 
@@ -562,3 +579,17 @@ The old development in theories/ stays untouched.
   undoes the S2 deviation. Not done. `csem`, the compatibility lemmas,
   `cost_fundamental` and `fsem_of_cost`. CheckAll lists 160 results,
   all closed. No `Admitted` and no axiom.
+- S7.6. Refills ordered by kind (`rle`) in v2/fuel/, the S6 lemmas
+  adapted.
+- S7.7. `thfuel`, `gfuel`, `envf`, `csem` and their structural lemmas,
+  `envf_exact` (v2/cost/CostSem.v).
+- S7.8. `csem_bind0`, `csem_bind1`, `csem_bind2` (v2/cost/CostBind.v)
+  and the redexes of the application and of every operator
+  (v2/cost/CostRedex.v).
+- S7.9 to S7.11. One lemma per typing rule, `cost_e_unit` to
+  `cost_e_open`, `cost_e_let` on the primitive let of Q13, E-Box by
+  induction on the level (v2/cost/CostRules.v).
+- S7.12. `cost_fundamental`, `fsem_of_cost`, `fw_fsem`
+  (v2/cost/CostFund.v), notation test v2/test/CostNotations.v, README
+  section. CheckAll lists 173 results, all closed. No `Admitted` and no
+  axiom. S7 done.
