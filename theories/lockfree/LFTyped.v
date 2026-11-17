@@ -2,22 +2,20 @@
 
     [lfptyped W Σ p T] is [ptyped] with each thread also guarded
     ([glive], liveness/GuardRules.v) and cost typed ([ctyped],
-    static/CostTyping.v). The ends a thread holds sit at points the
-    world knows, and each one fits the cost type the thread's derivation
-    gives it ([cfits]). Rank, a well-founded ≺, is a premise of
+    static/CostTyping.v). The ends a thread holds fit the cost types the
+    thread's derivation gives them ([cfits], lockfree/CostFund.v). Each
+    sits at a point the world knows and is in [Vfuel] at its type at
+    every index. [cfits_pf_cfits] derives this from a protocol that fits
+    at the point ([cfits_pf]). Rank, a well-founded ≺, is a premise of
     [lf_soundness], as strictness is of [live_soundness].
 
     [lf_fundamental] is induction on [lfptyped]. A thread goes through
     [LFP_term]. Its live part comes from [live_fundamental_guarded], its
-    fuel from [ctyped_fsem], the fundamental theorem of the cost
-    judgment. Composition goes through [LFP_connect], and [lfptyped_join]
-    restates the rule with the premises of [LFP_join]. [lf_soundness] is
+    fuel from [ctyped_fsem] (lockfree/CostFund.v), the fundamental
+    theorem of the cost judgment, in the world the thread is typed in.
+    Composition goes through [LFP_connect], and [lfptyped_join] restates
+    the rule with the premises of [LFP_join]. [lf_soundness] is
     [lf_fundamental] with [lf_adequacy].
-
-    Stage H4 proves [ctyped_fsem] in lockfree/CostFund.v. Until then it
-    is the hypothesis of the section below, stated as [ctyped_fsem_stmt],
-    and the theorems take it as an explicit premise once the section
-    closes.
 
     Deviation from plan §19.7. P-Connect of [ptyped] composes two
     processes in one world W. [LFP_connect] lands in [wjoin W1 W2], and
@@ -29,20 +27,32 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Import lockfree.Rank.
 From LRGV Require Import liveness.LiveGuardFund liveness.GuardRules static.CostTyping.
-From LRGV Require Import lockfree.LFFuel lockfree.LFCompose lockfree.LFAdequacy.
+From LRGV Require Import lockfree.LFFuel lockfree.LFCompose lockfree.LFAdequacy lockfree.CostFund.
 
 Set Default Proof Using "All".
 
 (** ** Ends that fit their cost types *)
 
-(** The cost environment Θc of a thread speaks of exactly the ends at the
-    points π. Each end has an end type whose protocol its point fits, at
-    a credit no larger than the budget at the point, the counter it
-    starts with. *)
-Definition cfits (W : world) (Θc : cthe) (π : gmap cend point) : Prop :=
+(** The protocol form of [cfits]. The cost environment Θc of a thread
+    speaks of exactly the ends at the points π. Each end has an end type
+    whose protocol its point fits, at a credit no larger than the budget
+    at the point, the counter it starts with. The partner of the point
+    has a finite budget. [pfits] gives this only below a node, and
+    [Vfuel] asks it of every end ([fpts]). *)
+Definition cfits_pf (W : world) (Θc : cthe) (π : gmap cend point) : Prop :=
   dom Θc = dom π ∧
   ∀ o σ, Θc !! o = Some σ → ∃ x P a, π !! o = Some x ∧ σ = CTa (CEnd P) a ∧
-    pfits W x P ∧ fle a (w_bud W x).
+    pfits W x P ∧ w_bud W (pt_dual x) ≠ None ∧ fle a (w_bud W x).
+
+(** Ends of the protocol form at known points fit their cost types. *)
+Lemma cfits_pf_cfits W Θc π :
+  cfits_pf W Θc π → (∀ o x, π !! o = Some x → pt_known W x) → cfits W Θc π.
+Proof.
+  intros [Hd Hf] Hk. split; [done|]. intros o σ x Hσ Hx.
+  destruct (Hf o σ Hσ) as (x' & P & a & Hx' & -> & Hp & Hpd & Ha).
+  rewrite Hx in Hx'. simplify_eq. split; [by apply (Hk o)|].
+  apply cfits_end; [done|by apply (Hk o)|done|done].
+Qed.
 
 (** ** The judgment *)
 
@@ -51,9 +61,7 @@ Inductive lfptyped : world → senv → proc → ty → Prop :=
       prim T → dom ΘB = C0 → dom Σ ## C0 →
       (∀ c o, ΘB !! c = Some o → ∃ e1 e2, o = Both e1 e2) → tenv_dual (w_eq W) ΘB →
       typed W ∅ [] (tenv_of Σ ∪ ΘB) [] (∅, None) t T → glive noL t →
-      ctyped W Θc [] t σ c t0 →
-      (∀ o x, tenv_points (tenv_of Σ ∪ ΘB) !! o = Some x → pt_known W x) →
-      cfits W Θc (tenv_points (tenv_of Σ ∪ ΘB)) →
+      ctyped W Θc [] t σ c t0 → cfits W Θc (tenv_points (tenv_of Σ ∪ ΘB)) →
       lfptyped W Σ (C0, {[+ t +]}) T
   | lf_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T :         (* P-Join *)
       lfptyped W1 (Σ1 ∪ ΣC) (C1, E1) T → lfptyped W2 (Σ2 ∪ ΣC') (C2, E2) TUnit →
@@ -103,42 +111,34 @@ Qed.
 
 (** ** The fundamental theorem *)
 
-(** The fundamental theorem of the cost judgment for a closed thread, as
-    [LFP_term] reads it. Stage H4 proves it (lockfree/CostFund.v). *)
-Definition ctyped_fsem_stmt : Prop :=
-  ∀ W Θc π t σ c t0,
-    strict W → ctyped W Θc [] t σ c t0 → cfits W Θc π →
-    (∀ o x, π !! o = Some x → pt_known W x) → fsem W π t.
+Theorem lf_fundamental W Σ p T : lfptyped W Σ p T → strict W → LFP W Σ T p.
+Proof.
+  induction 1 as [W Σ ΘB C0 t T Θc σ c t0 HT Hd Hdj Hb Hdu Ht Hg Hc Hfit
+                 |W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T H1 IH1 H2 IH2 HdC HdC' Hcut
+                    ? ? ? ? ? ? ? ? ? ? HW1 HW2 HJ Hag]; intros HW.
+  - apply (LFP_term W Σ ΘB C0); try done.
+    + apply live_fundamental_guarded; [|done]. split; [done|]. by apply guarded_iff.
+    + intros o x Ho. destruct Hfit as [Hdom Hf].
+      assert (o ∈ dom Θc) as [σ0 Hσ0]%elem_of_dom by (rewrite <-Hdom; by eapply elem_of_dom_2).
+      by destruct (Hf o σ0 x Hσ0 Ho).
+    + exact (ctyped_fsem W Θc t σ c t0 W _ Hc (wbext_refl W) Hfit).
+  - assert (strict W1) as HS1.
+    { split; [done|]. intros x Hx. apply (proj2 HJ x), (proj2 (wjoin_l W1 W2)), Hx. }
+    assert (strict W2) as HS2.
+    { split; [done|]. intros x Hx. apply (proj2 HJ x), (proj2 (wjoin_r W1 W2)), Hx. }
+    apply (LFP_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T); try done.
+    + exact (lfptyped_prim _ _ _ _ H1).
+    + by apply IH1.
+    + by apply IH2.
+Qed.
 
-Section fundamental.
-  Hypothesis ctyped_fsem : ctyped_fsem_stmt.
-
-  Theorem lf_fundamental W Σ p T : lfptyped W Σ p T → strict W → LFP W Σ T p.
-  Proof.
-    induction 1 as [W Σ ΘB C0 t T Θc σ c t0 HT Hd Hdj Hb Hdu Ht Hg Hc Hkn Hfit
-                   |W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T H1 IH1 H2 IH2 HdC HdC' Hcut
-                      ? ? ? ? ? ? ? ? ? ? HW1 HW2 HJ Hag]; intros HW.
-    - apply (LFP_term W Σ ΘB C0); try done.
-      + apply live_fundamental_guarded; [|done]. split; [done|]. by apply guarded_iff.
-      + by apply (ctyped_fsem W Θc _ t σ c t0).
-    - assert (strict W1) as HS1.
-      { split; [done|]. intros x Hx. apply (proj2 HJ x), (proj2 (wjoin_l W1 W2)), Hx. }
-      assert (strict W2) as HS2.
-      { split; [done|]. intros x Hx. apply (proj2 HJ x), (proj2 (wjoin_r W1 W2)), Hx. }
-      apply (LFP_connect W1 W2 Σ1 Σ2 ΣC ΣC' C0 C1 C2 E1 E2 T); try done.
-      + exact (lfptyped_prim _ _ _ _ H1).
-      + by apply IH1.
-      + by apply IH2.
-  Qed.
-
-  (** A closed process of the judgment in a world with Rank is lock free. *)
-  Theorem lf_soundness W T p :
-    lfptyped W ∅ p T → world_wf W → well_founded (w_lt W) → lock_free p.
-  Proof.
-    intros Hp Hwf Hwfo. apply (lf_adequacy W T p Hwf Hwfo).
-    apply lf_fundamental; [done|]. by apply strict_of.
-  Qed.
-End fundamental.
+(** A closed process of the judgment in a world with Rank is lock free. *)
+Theorem lf_soundness W T p :
+  lfptyped W ∅ p T → world_wf W → well_founded (w_lt W) → lock_free p.
+Proof.
+  intros Hp Hwf Hwfo. apply (lf_adequacy W T p Hwf Hwfo).
+  apply lf_fundamental; [done|]. by apply strict_of.
+Qed.
 
 (** ** Ends outside the support of the world
 
