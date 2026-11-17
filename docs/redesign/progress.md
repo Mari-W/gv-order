@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
+| S4 | generic compatibility | in progress: renaming done, composition open (see S4.9) |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | open |
@@ -468,3 +468,41 @@ The old development in theories/ stays untouched.
   and composition/ReadyChain.v (about 3500 lines), and it is not
   started. CheckAll lists 125 results, all closed. No `Admitted` and no
   axiom.
+- S4.8. Renaming of P (v2/compat/PSwap.v). The transposition a ↔ b on
+  configurations with thread identifiers (`qswap`) and on events
+  (`evswap`). `istep_qswap`: a step of a configuration is the renamed
+  step of the renamed configuration, every rule P-Act-* included, the
+  link through `eswap_csub`. `erase_qswap` relates it to `pswap`. The
+  external clauses move along it (`send_split_swap`, `recv_ok_swap`,
+  `recv_env_swap`, `recv_back_swap`, `chans_of_swap`), and so does
+  readiness (`ready_p_swap`). `Prel_swap`: P is invariant, for every
+  cost table.
+- S4.9. Not done: P-Term, Internalize, P-Connect, P-Join. Found while
+  planning them: the transpositions of S4.6 and S4.8 are not the
+  renaming P-Connect needs. A link P-Act-Link renames every thread by
+  `csub o1 o2`, which sends ō1 to o2 and o1 to ō2, so a link of c⁺ with
+  d⁺ turns the partner's c⁻ into d⁺ (S1 deviation "link"). When o1 is a
+  cut end, the other component is renamed by a map that flips the
+  polarity of a channel, and P-Connect needs P of that renamed
+  component. Two obstacles block a renaming lemma for such maps. (1) A
+  map that flips the polarity of c sends the new pair ⟨c⁺, c⁻⟩ of a
+  creation to ⟨c'⁻, c'⁺⟩, so it commutes with T-Act-New only after the
+  fresh name is chosen anew per step. The renaming lemma has to range
+  over all bijections of ends that commute with the partner map (not
+  only transpositions), with a fresh-name argument at every creation.
+  At the process level the global freshness of P-Act-New gives the
+  fresh name. At the term level O-New asks freshness only for Θ, and a
+  term may mention a fresh name in code it never runs. (2) The relation
+  asks no correspondence between the ends a term mentions and the ends
+  it holds, except at values (Q14). The other component may mention, in
+  code it never runs, an end the link substitution then identifies with
+  one it holds. Such a renaming is not injective on the term, and a
+  proof needs either an invariant that every thread mentions only ends
+  it holds or restricts (typed processes keep it, the relation does
+  not: after a send a term may still mention a sent end), or a
+  simulation argument for code a term never runs. Before this proof
+  goes further, the author should decide which of these to use: a
+  syntactic premise on P-Connect (each component mentions only its own
+  channels, as typing gives), or a renaming lemma over dual-commuting
+  bijections with fresh names chosen per creation. The rest of the plan
+  of S4.7 stands. CheckAll lists 162 results, all closed.

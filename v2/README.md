@@ -109,4 +109,5 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/Rules.v | the operator rules over every cost table (`gen_e_*`) and their instances `sem_e_*`, `live_e_*` |
 | compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a first-order T |
 | compat/Swap.v | V and E are invariant under a transposition of channel names (`Vrel_swap`, `Erel_swap`) |
+| compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`) |
 | test/CompatNotations.v | the S4 notations |

@@ -11,7 +11,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
 From GV Require Import fuel.FuelSub.
-From GV Require Import compat.Rules compat.LiveDF compat.Swap.
+From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.PSwap.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -187,3 +187,12 @@ Print Assumptions sequiv_dual.
 Print Assumptions live_sub_df.
 Print Assumptions Vrel_swap.
 Print Assumptions Erel_swap.
+(** S4. Renaming of P. *)
+Print Assumptions istep_qswap.
+Print Assumptions erase_qswap.
+Print Assumptions send_split_swap.
+Print Assumptions recv_ok_swap.
+Print Assumptions recv_env_swap.
+Print Assumptions recv_back_swap.
+Print Assumptions ready_p_swap.
+Print Assumptions Prel_swap.

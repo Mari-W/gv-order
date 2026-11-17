@@ -55,5 +55,6 @@ compat/Redex.v
 compat/Rules.v
 compat/LiveDF.v
 compat/Swap.v
+compat/PSwap.v
 test/CompatNotations.v
 CheckAll.v
