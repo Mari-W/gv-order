@@ -137,7 +137,7 @@ Proof. destruct N; simpl; lia. Qed.
 Lemma rle_trans N1 N2 N3 : rle N1 N2 → rle N2 N3 → rle N1 N3.
 Proof. destruct N1, N2, N3; simpl; lia || done. Qed.
 
-Lemma rle_rle N N' : rle N N' → rle N N'.
+Lemma rle_fle N N' : rle N N' → fle N N'.
 Proof. destruct N, N'; simpl; lia || done. Qed.
 
 Lemma rle_inf_r N : rle N None → N = None.
