@@ -1444,9 +1444,9 @@ Section step.
       + intros t Ht. simpl. rewrite HA', !decide_False by set_solver. done.
       + intros p g t h Hp Ht Hg Hh. simpl.
         assert (t ≠ i ∧ t ≠ j) as [Hti Htj] by set_solver.
-        pose proof (st_disj i t e h ltac:(done) He Hh).
-        pose proof (st_disj j t f h ltac:(done) Hf Hh).
-        pose proof (Hsub' p ltac:(set_solver)). set_solver.
+        pose proof (st_disj i t e h ltac:(done) He Hh) as Di.
+        pose proof (st_disj j t f h ltac:(done) Hf Hh) as Dj.
+        pose proof (Hsub' p ltac:(set_solver)) as Dp. clear - Di Dj Dp. set_solver.
       + intros p p' g g' Hp Hp' Hpp _ _. simpl. rewrite !HA'.
         apply elem_of_union in Hp as [Hp|Hp]; apply elem_of_singleton in Hp as ->;
           apply elem_of_union in Hp' as [Hp'|Hp']; apply elem_of_singleton in Hp' as ->; try done.

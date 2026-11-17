@@ -1133,13 +1133,12 @@ Proof.
       assert ((cdual o).1 ≠ c) as Hoc' by done.
       destruct Hfs as [-> | ->].
       + eapply (fe_two n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j ei ei' f f');
-          try done; try set_solver; try (by eexists).
-        all: intros ? ? [=]; done.
+          try done; try (by eexists); try (intros ? ? [=]; done).
+        all: set_solver.
       + rewrite (union_comm_L {[i]} {[j]}).
         eapply (fe_two n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm j i f f' ei ei');
-          try done; try set_solver; try (by eexists).
-        all: try (intros ? ? [=]; done).
-        all: simpl; rewrite insert_insert_ne by done; done.
+          try done; try (by eexists); try (intros ? ? [=]; done).
+        all: first [simpl; rewrite insert_insert_ne by done; done|set_solver].
     - exists e, a, o. split_and!; [simpl; rewrite !lookup_insert_ne; [done|set_solver|set_solver]|done|done|].
       destruct (act_step _ _ _ He0) as (a1 & Ha1 & Ho1). apply offers_sel in Ho1 as ->.
       destruct (act_step _ _ _ Hf) as (a3 & Ha3 & Ho3). apply offers_bra in Ho3 as ->.
@@ -1151,8 +1150,8 @@ Proof.
         i j ei f _ _ ei' f' c β ltac:(set_solver) ltac:(set_solver) Hi Hj He0 eq_refl Hf eq_refl) as Hoc.
       assert ((cdual o).1 ≠ c) as Hoc' by done.
       eapply (fe_two n W HW T π C M A U P F K Hc HF t e a o He Ha Ho s es Hes Hst' Hso m Hm i j ei ei' f f');
-        try done; try set_solver; try (by eexists).
-      all: intros k y [= <-]; done.
+        try done; try (by eexists); try (intros k y [= <-]; done).
+      all: set_solver.
     - (* a link lowers the tickets instead *)
       exfalso. by apply (Hnl i ei eq_refl Hi); eexists _, _. }
   by apply (fuel_reduce _ W T π q A U P F K _ _ q' A' U' _ _ _ L t e a o e2 a2 o2 s es m Hc HF Hc' HF').
