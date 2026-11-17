@@ -8,7 +8,9 @@
     it ([send_split_swap], [recv_ok_swap], [recv_env_swap],
     [recv_back_swap]). So P is invariant ([Prel_swap]). *)
 
-From GV Require Export compat.Swap.
+From GV Require Export compat.Rename.
+(* lang.ChannelSwap again, so that its [sren] shadows the one of types/Types.v *)
+From GV Require Export lang.ChannelSwap.
 
 Section qswap.
   Context (a b : chan).

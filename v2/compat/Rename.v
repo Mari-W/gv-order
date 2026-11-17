@@ -26,7 +26,8 @@
     The transpositions of compat/Swap.v are the special case of an
     involution ([Vrel_swap_rename], [Erel_swap_rename]). *)
 
-From GV Require Export compat.Bind compat.Redex compat.PSwap relation.Adequacy fuel.FuelMono.
+From GV Require Export compat.Bind compat.Redex compat.Swap relation.Adequacy.
+From GV Require Import fuel.FuelMono.
 
 (** ** Labels under a map of ends *)
 
@@ -778,3 +779,41 @@ Proof. intros Hk Hv. by apply (rename_level κ n T). Qed.
 Theorem Erel_rename κ n W Θ T F e h :
   kinj h Θ → e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F → emap h e ∈ E[κ]^W _ n⟦kren h Θ ⊢ T⟧^F.
 Proof. intros Hk He. by apply (rename_level κ n T). Qed.
+
+(** ** The transpositions of compat/Swap.v, as instances *)
+
+Lemma kren_kmap (h : cend → cend) `{!Inj eq eq h} (Θ : senv) : kren h Θ = kmap h Θ.
+Proof.
+  assert (kinj h Θ) as Hk by (intros o1 o2 v1 v2 _ _ Heq; by apply (inj h)).
+  apply renk_kren; [done|]. split.
+  - intros o v Ho. by rewrite lookup_kmap.
+  - intros o' v Ho'. apply lookup_kmap_Some in Ho' as (o & -> & Ho); [|apply _]. eauto.
+Qed.
+
+Lemma Vrel_swap_rename κ a b n W Θ T v :
+  v ∈ V[κ]^W _ n⟦Θ ⊢ T⟧ → eswap a b v ∈ V[κ]^W _ n⟦sswap a b Θ ⊢ T⟧.
+Proof.
+  intros Hv. unfold sswap. rewrite <-kren_kmap by apply _.
+  apply Vrel_rename; [|done]. intros o1 o2 v1 v2 _ _. apply oswap_inj.
+Qed.
+
+Lemma Erel_swap_rename κ a b n W Θ T F e :
+  e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F → eswap a b e ∈ E[κ]^W _ n⟦sswap a b Θ ⊢ T⟧^F.
+Proof.
+  intros He. unfold sswap. rewrite <-kren_kmap by apply _.
+  apply Erel_rename; [|done]. intros o1 o2 v1 v2 _ _. apply oswap_inj.
+Qed.
+
+Lemma Vrel_swap κ a b n W Θ T v :
+  Vrel κ n W Θ T v ↔ Vrel κ n W (sswap a b Θ) T (eswap a b v).
+Proof.
+  split; [apply Vrel_swap_rename|]. intros H.
+  rewrite <-(sswap_inv a b Θ), <-(eswap_involutive a b v). by apply Vrel_swap_rename.
+Qed.
+
+Lemma Erel_swap κ a b n W Θ T F e :
+  Erel κ n W Θ T F e ↔ Erel κ n W (sswap a b Θ) T F (eswap a b e).
+Proof.
+  split; [apply Erel_swap_rename|]. intros H.
+  rewrite <-(sswap_inv a b Θ), <-(eswap_involutive a b e). by apply Erel_swap_rename.
+Qed.
