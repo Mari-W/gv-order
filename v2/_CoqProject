@@ -28,4 +28,8 @@ static/PointSubst.v
 test/TypeNotations.v
 examples/Tools.v
 examples/ClientServer.v
+relation/Sfix.v
+relation/CostTable.v
+relation/Readiness.v
+relation/Relation.v
 CheckAll.v
