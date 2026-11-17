@@ -9,9 +9,9 @@
     thread stays stopped, and [thread_progress_val] turns stopping into
     reaching a value for a process whose stopped threads are values.
 
-    The hypotheses are those that stage 3 supplies anyway: [lock_free]
-    from [lf_criterion], [no_tau_divergence] from [live_adequacy], and
-    [links_restricted] from typing (as for [lf_criterion]).
+    The hypotheses are those that adequacy supplies anyway. [lock_free]
+    comes from [lf_adequacy], [no_tau_divergence] from [live_adequacy],
+    and [links_restricted] from the soup ([lf_links_restricted]).
 
     Proof. A thread at a non-administrative redex is pending, so lock
     freedom makes it take part, and at its first step it still has that

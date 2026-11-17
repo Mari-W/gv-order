@@ -35,11 +35,11 @@
       Ȳ ≺ Y[0]‾          the lower point Ȳ of the y-thread
       X+1 ≺ X[1], X[1]‾  the lower point X+1 of the two call threads
 
-    Every fact climbs one payload level, and along a reachable pair X
+    Every fact climbs one field level, and along a reachable pair X
     is never deeper than Y. So the rank 2·depth + offset rises along
     every fact ([rg0_rank]). Under the constant world the creation
     facts of e are facts of W, and the same rank makes W well founded
-    (lockfree/Fragment.v). *)
+    ([rg_wf] in lockfree/Rank.v). *)
 
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export examples.ExampleTools.

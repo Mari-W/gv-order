@@ -650,17 +650,3 @@ Qed.
 
 Lemma tenv_fit_empty e : fends e = ∅ → tenv_fit ∅ e.
 Proof. intros H. split; [by rewrite tenv_ends_empty|apply tenv_bipol_empty]. Qed.
-
-Lemma tenv_fit_join Θ Θ1 Θ2 e1 e2 e :
-  tenv_comp (@eq point) Θ Θ1 Θ2 → tenv_fit Θ1 e1 → tenv_fit Θ2 e2 →
-  fends e = fends e1 ∪ fends e2 → tenv_fit Θ e.
-Proof.
-  intros Hc [E1 B1] [E2 B2] He. split; [|by eapply tenv_bipol_comp].
-  by rewrite (tenv_join_ends _ _ _ (proj1 Hc)), E1, E2, He.
-Qed.
-
-Lemma tenv_fit_ends Θ e e' : fends e' = fends e → tenv_fit Θ e → tenv_fit Θ e'.
-Proof. intros He [H1 H2]. split; [by rewrite He|done]. Qed.
-
-Lemma fends_fill_frame f e : fends (fill_frame f e) = fends (fill_frame f EUnit) ∪ fends e.
-Proof. destruct f; simpl; set_solver. Qed.

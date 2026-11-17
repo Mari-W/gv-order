@@ -190,14 +190,6 @@ Proof.
   rewrite (subst_fends_wf _ _ _ _ _ Hwf Hg). exact (tenv_join_ends _ _ _ (proj1 Hc)).
 Qed.
 
-Lemma lsubst_fit n W Θ Θ' Θ'' Δ γ e :
-  term_wf Θ Δ e → tenv_bipol Θ → tenv_comp (w_eq W) Θ'' Θ Θ' →
-  lgrounding n W Θ' Δ γ → tenv_fit Θ'' (subst γ e).
-Proof.
-  intros Hwf HB Hc Hg. eapply lsubst_fit_g; [exact Hwf|exact HB|by eapply lgrounding_bipol|exact Hc|].
-  by eapply lgrounding_gends.
-Qed.
-
 (** ** The elimination skeleton *)
 
 Lemma lsem_elim W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 Th T (f : (nat → expr) → frame) :
@@ -397,21 +389,6 @@ Proof.
     + rewrite (LVrel_fchans _ _ _ _ _ HV). set_solver.
     + pose proof (IH _ _ _ Hg Hx). set_solver.
   - destruct x as [|x]; simpl in Hx; [done|]. exact (IH _ _ _ Hg Hx).
-Qed.
-
-Lemma lgrounding_dom n W Θ Δ γ ch :
-  lgrounding n W Θ Δ γ → ch ∈ dom Θ →
-  ∃ x T, Δ !! x = Some (Some T) ∧ ¬ unlimited T ∧ ch ∈ fchans (γ x).
-Proof.
-  revert Θ γ. induction Δ as [|[T0|] Δ IH]; intros Θ γ Hg Hch; simpl in *.
-  - subst. rewrite dom_empty_L in Hch. set_solver.
-  - destruct Hg as (Θ1 & Θ2 & [Hj _] & HV & Hg). rewrite (tenv_join_dom _ _ _ Hj) in Hch.
-    apply elem_of_union in Hch as [Hch|Hch].
-    + exists 0, T0. split_and!; [done| |].
-      * intros Hu. rewrite (LVrel_unl_empty _ _ _ _ _ Hu HV), dom_empty_L in Hch. set_solver.
-      * by rewrite (LVrel_fchans _ _ _ _ _ HV).
-    + destruct (IH _ _ Hg Hch) as (x & T & ? & ? & ?). by exists (S x), T.
-  - destruct (IH _ _ Hg Hch) as (x & T & ? & ? & ?). by exists (S x), T.
 Qed.
 
 (** ** E-Abs

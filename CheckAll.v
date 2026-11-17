@@ -78,15 +78,15 @@ Require LRGV.liveness.LiveRules.
 Require LRGV.liveness.LiveTermRules.
 Require LRGV.lockfree.CostFund.
 Require LRGV.lockfree.Criterion.
-Require LRGV.lockfree.Fragment.
 Require LRGV.lockfree.Instr.
 Require LRGV.lockfree.LFAdequacy.
 Require LRGV.lockfree.LFCompose.
 Require LRGV.lockfree.LFFuel.
 Require LRGV.lockfree.LFFuelBind.
-Require LRGV.lockfree.LFFuelTyped.
 Require LRGV.lockfree.LFSoup.
+Require LRGV.lockfree.LFTyped.
 Require LRGV.lockfree.LocalProgress.
+Require LRGV.lockfree.Rank.
 Require LRGV.lockfree.Reach.
 Require LRGV.lockfree.TauThread.
 Require LRGV.lockfree.ThreadProgress.
@@ -192,54 +192,23 @@ Print Assumptions LRGV.lockfree.ThreadProgress.thread_progress.
 Print Assumptions LRGV.lockfree.ThreadProgress.thread_progress_val.
 Print Assumptions LRGV.lockfree.ThreadProgress.stopped_forever.
 Print Assumptions LRGV.lockfree.Reach.lock_free_reach_of.
-Print Assumptions LRGV.lockfree.Fragment.lfptyped_gptyped.
-Print Assumptions LRGV.lockfree.Fragment.fw_lfptyped.
-Print Assumptions LRGV.lockfree.Fragment.tc_lfptyped.
-Print Assumptions LRGV.lockfree.Fragment.sch_lfsource.
-Print Assumptions LRGV.lockfree.Fragment.kob_checks.
-Print Assumptions LRGV.lockfree.Fragment.kob_not_lfptyped.
-Print Assumptions LRGV.lockfree.Fragment.kob_rank_fails.
-Print Assumptions LRGV.lockfree.Fragment.c1_checks.
-Print Assumptions LRGV.lockfree.Fragment.c1_rank_fails.
-Print Assumptions LRGV.lockfree.Fragment.c3_checks.
-Print Assumptions LRGV.lockfree.Fragment.c3_not_lfptyped.
-Print Assumptions LRGV.lockfree.Fragment.tsum_r1_fails.
-Print Assumptions LRGV.lockfree.Fragment.starve_checks.
-Print Assumptions LRGV.lockfree.Fragment.starve_feds.
-Print Assumptions LRGV.lockfree.Fragment.starve_not_lfptyped.
-Print Assumptions LRGV.lockfree.Fragment.r2r_earlier.
-Print Assumptions LRGV.lockfree.Fragment.rc_r2_fails.
-Print Assumptions LRGV.lockfree.Fragment.rc_lfptyped.
-Print Assumptions LRGV.lockfree.Fragment.rg_r2_fails.
-Print Assumptions LRGV.lockfree.Fragment.rg_wf.
-Print Assumptions LRGV.lockfree.Fragment.rg_lfsource.
-Print Assumptions LRGV.lockfree.Fragment.abp_r2.
-Print Assumptions LRGV.lockfree.Fragment.abp_wf.
-Print Assumptions LRGV.lockfree.Fragment.abp_lfsource.
-Print Assumptions LRGV.lockfree.Fragment.cworld_hold.
-Print Assumptions LRGV.lockfree.Fragment.lfsource_lfptyped.
-Print Assumptions LRGV.lockfree.Fragment.fw_lfsource.
-Print Assumptions LRGV.lockfree.Fragment.tc_lfsource.
-Print Assumptions LRGV.lockfree.Fragment.rc_lfsource.
-Print Assumptions LRGV.lockfree.Fragment.kob_cworld_not_wf.
-Print Assumptions LRGV.lockfree.Fragment.lfsource_lfptyped_at.
-Print Assumptions LRGV.lockfree.Fragment.lfsource_budgets.
-Print Assumptions LRGV.lockfree.Fragment.c3_r2h.
-Print Assumptions LRGV.lockfree.Fragment.fw_budgets.
-Print Assumptions LRGV.lockfree.Fragment.tc_budgets.
-Print Assumptions LRGV.lockfree.Fragment.sch_budgets.
-Print Assumptions LRGV.lockfree.Fragment.rc_budgets.
-Print Assumptions LRGV.lockfree.Fragment.rg_budgets.
-Print Assumptions LRGV.lockfree.Fragment.abp_budgets.
-Print Assumptions LRGV.lockfree.Fragment.lc_r2_fails.
-Print Assumptions LRGV.lockfree.Fragment.relay_roots.
-Print Assumptions LRGV.lockfree.Fragment.root_ok_boxes.
-Print Assumptions LRGV.lockfree.Fragment.src_cover.
-Print Assumptions LRGV.lockfree.Fragment.cover_zero.
-Print Assumptions LRGV.lockfree.Fragment.cover_mono.
-Print Assumptions LRGV.lockfree.Fragment.cover_link.
-Print Assumptions LRGV.lockfree.Fragment.cover_spawn.
-Print Assumptions LRGV.lockfree.Fragment.lfsource_links_outside.
+Print Assumptions LRGV.lockfree.Rank.cworld_hold.
+Print Assumptions LRGV.lockfree.Rank.kob_cworld_not_wf.
+Print Assumptions LRGV.lockfree.Rank.kob_rank_fails.
+Print Assumptions LRGV.lockfree.Rank.c1_rank_fails.
+Print Assumptions LRGV.lockfree.Rank.fw_wf.
+Print Assumptions LRGV.lockfree.Rank.tc_wf.
+Print Assumptions LRGV.lockfree.Rank.cs_wf.
+Print Assumptions LRGV.lockfree.Rank.rc_wf.
+Print Assumptions LRGV.lockfree.Rank.rg_wf.
+Print Assumptions LRGV.lockfree.Rank.abp_wf.
+Print Assumptions LRGV.lockfree.Rank.sched_wf.
+Print Assumptions LRGV.lockfree.Rank.sync_wf.
+Print Assumptions LRGV.lockfree.LFTyped.lf_fundamental.
+Print Assumptions LRGV.lockfree.LFTyped.lf_soundness.
+Print Assumptions LRGV.lockfree.LFTyped.lfptyped_gptyped.
+Print Assumptions LRGV.lockfree.LFTyped.lfptyped_join.
+Print Assumptions LRGV.lockfree.LFTyped.fuel_unknown_zero.
 Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down.
 Print Assumptions LRGV.lockfree.LFSoup.lfsoup_step.
 Print Assumptions LRGV.lockfree.LFSoup.lfsoup_run.
@@ -291,11 +260,6 @@ Print Assumptions LRGV.examples.CostEx.cb_ctyped.
 Print Assumptions LRGV.examples.CostEx.ring_ctyped.
 Print Assumptions LRGV.examples.CostEx.rg_ctyped.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_send_travel.
-Print Assumptions LRGV.lockfree.LFFuelTyped.sched_lfsource.
-Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.
-Print Assumptions LRGV.lockfree.LFFuelTyped.sync_budgets.
-Print Assumptions LRGV.lockfree.LFFuelTyped.sched_budgets.
-Print Assumptions LRGV.lockfree.LFFuelTyped.fuel_unknown_zero.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_send_held.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_spawn_held.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_link_held.

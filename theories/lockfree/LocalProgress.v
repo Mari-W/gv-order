@@ -201,12 +201,6 @@ Proof.
   - destruct (act_offer e (ABra c) (LSess (SBra c false)) Ha) as [e' He']; [done|]. eauto.
 Qed.
 
-Lemma offered_pend Θ e k : offered_t Θ e k → ∃ a S, act e = Some a ∧ asubjs a = Some S ∧ k.1 ∈ S.
-Proof.
-  intros (σ & e' & Hst & Hsel). destruct (act_step _ _ _ Hst) as (a & Ha & Ho).
-  exists a, (subjs σ). split_and!; [done|by apply offers_asubjs|by apply (selects_subj Θ)].
-Qed.
-
 (** The end of an offered entry is an end of the redex. *)
 Lemma offered_aends Θ e k ek :
   offered_t Θ e k → tenv_entry Θ k = Some ek →
