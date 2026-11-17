@@ -708,3 +708,182 @@ Proof.
   - rewrite lookup_singleton_ne by done. apply not_elem_of_dom. rewrite Hdom, dom_singleton_L.
     unfold kimg. rewrite set_map_singleton_L. set_solver.
 Qed.
+
+(** ** Sequencing: F1 over the environment *)
+
+Lemma mres_disj_l {Y Z : Type} (m1 m2 : gmap cend Y) (π : gmap cend Z) :
+  dom m1 = dom π → dom m2 ## dom π → mres (dom π) (m1 ∪ m2) = m1.
+Proof.
+  intros H1 H2. apply map_eq. intros o. destruct (decide (o ∈ dom π)) as [Ho|Ho].
+  - rewrite lookup_mres_in by done. rewrite <-H1 in Ho. apply elem_of_dom in Ho as [y Hy].
+    rewrite Hy. by apply lookup_union_Some_l.
+  - destruct (mres (dom π) (m1 ∪ m2) !! o) eqn:E; [apply lookup_mres_Some in E as [_ ?]; done|].
+    symmetry. apply not_elem_of_dom. by rewrite H1.
+Qed.
+
+Lemma mres_disj_r {Y Z : Type} (m1 m2 : gmap cend Y) (π : gmap cend Z) :
+  dom m2 = dom π → dom m1 ## dom π → mres (dom π) (m1 ∪ m2) = m2.
+Proof.
+  intros H1 H2. rewrite union_comm_d by (rewrite H1; set_solver). by apply mres_disj_l.
+Qed.
+
+Lemma dom_mres_of {Y Z : Type} (m : gmap cend Y) (π1 π2 : gmap cend Z) :
+  dom m = dom (π1 ∪ π2) → dom (mres (dom π1) m) = dom π1.
+Proof. intros H. rewrite dom_mres, H, dom_union_L. set_solver. Qed.
+
+Lemma dom_mres_of_r {Y Z : Type} (m : gmap cend Y) (π1 π2 : gmap cend Z) :
+  dom m = dom (π1 ∪ π2) → dom (mres (dom π2) m) = dom π2.
+Proof. intros H. rewrite dom_mres, H, dom_union_L. set_solver. Qed.
+
+Lemma fcap_ext_part W π1 π2 φ : dom π1 ## dom π2 → fcap_ext W (π1 ∪ π2) φ → fcap_ext W π1 (mres (dom π1) φ).
+Proof.
+  intros Hd H. rewrite <-(mres_disj_l π1 π2 π1) at 1 by (done||set_solver). by apply fcap_ext_mres.
+Qed.
+
+Lemma fcap_ext_part_r W π1 π2 φ : dom π1 ## dom π2 → fcap_ext W (π1 ∪ π2) φ → fcap_ext W π2 (mres (dom π2) φ).
+Proof.
+  intros Hd H. rewrite <-(mres_disj_r π1 π2 π2) at 1 by (done||set_solver). by apply fcap_ext_mres.
+Qed.
+
+(** The continuation's environment: the context renamed by g′, moved to
+    W′ and aged by i. *)
+Lemma env_cont n j W W' Θ Θ' Γ Γ' c i g g' γ πΘ πΓ πK' φK φK' φ' :
+  j ≤ n → wbext W W' → cage_th c Θ Θ' → cage_env c Γ Γ' → fle (Some i) c →
+  thsem n W Θ g πΘ φK → gsem n W Γ γ πΓ φK → dom πΘ ## dom πΓ → dom φK = dom (πΘ ∪ πΓ) →
+  kinj g' (πΘ ∪ πΓ) → renk g' (πΘ ∪ πΓ) πK' → renk g' φK φK' →
+  (∀ o, o ∈ dom πK' → φ' !! o = (fminus i <$> φK') !! o) →
+  ∃ πΘ' πΓ', πK' = πΘ' ∪ πΓ' ∧ dom πΘ' ## dom πΓ' ∧
+    thsem j W' Θ' (g' ∘ g) πΘ' φ' ∧ gsem j W' Γ' (λ x, emap g' (γ x)) πΓ' φ'.
+Proof.
+  intros Hj Hb HaT HaG Hi HT HG Hd HdK Hk Rπ Rφ Hag.
+  destruct (renk_union_split g' πΘ πΓ πK' Hk Hd Rπ) as (πΘ' & πΓ' & -> & R1 & R2 & Hd').
+  exists πΘ', πΓ'. split_and!; [done|done| |].
+  - apply (thsem_local _ _ _ _ _ (fminus i <$> φK')); [intros o Ho; apply Hag; rewrite dom_union_L; set_solver|].
+    apply (thsem_mono j n W W'); [done|done|]. apply (thsem_age n W c i Θ); [done|done|].
+    apply (thsem_rename n W Θ g g' (πΘ ∪ πΓ) πΘ πΘ' φK φK'); [done|rewrite HdK; done|rewrite dom_union_L; set_solver|done|done|done].
+  - apply (gsem_local _ _ _ _ _ (fminus i <$> φK')); [intros o Ho; apply Hag; rewrite dom_union_L; set_solver|].
+    apply (gsem_mono j n W W'); [done|done|]. apply (gsem_age n W c i Γ); [done|done|].
+    apply (gsem_rename n W Γ γ g' (πΘ ∪ πΓ) πΓ πΓ' φK φK'); [done|rewrite HdK; done|rewrite dom_union_L; set_solver|done|done|done].
+Qed.
+
+(** A hole that holds the whole environment, in a context that holds
+    nothing. *)
+Lemma sem_bind0 W0 Θ Γ e σ1 c1 t1 (K : ectx) σ r d n W g γ πΘ πΓ φ tk r1 :
+  ectx_ok K → (∀ g' : chan → chan, kemap g' K = K) → csem W0 Θ Γ e σ1 c1 t1 → fle c1 d → wbext W0 W →
+  thsem n W Θ g πΘ φ → gsem n W Γ γ πΓ φ → dom πΘ ## dom πΓ →
+  dom φ = dom (πΘ ∪ πΓ) → fcap_ext W (πΘ ∪ πΓ) φ → meets t1 r1 tk →
+  (∀ j W' i v πv φv tk', j ≤ n → wbext W0 W' → fle (Some i) c1 → is_val v = true → r1 ≤ tk' →
+     dom φv = dom πv → fcap_ext W' πv φv → Vfuel j W' σ1 πv φv v →
+     FuelE j W' σ r πv φv tk' (fminus i d) (efill K v)) →
+  FuelE n W σ r (πΘ ∪ πΓ) φ tk d (efill K (subst γ (emap g e))).
+Proof.
+  intros HK HKe Hcs Hcd Hb HT HG Hd Hdφ Hc Hm Hk.
+  rewrite <-(map_union_empty (πΘ ∪ πΓ)), <-(map_union_empty φ).
+  apply (FuelE_bind n W σ1 r1 σ r (πΘ ∪ πΓ) φ ∅ ∅ tk c1 d K);
+    [done|done|by rewrite !dom_empty_L|rewrite dom_empty_L; set_solver|apply fcap_ext_empty
+    |intros o f; by rewrite lookup_empty|done| |].
+  - intros W' g' πK' φK' i j v π1 φ1 tk' Hb' Hk' R1 R2 Hi Hj Hv Hr Hdis Hd1 Hc1 HV.
+    rewrite (renk_empty g' πK' R1), (renk_empty g' φK' R2), fmap_empty, !map_union_empty, HKe.
+    apply Hk; try done. by eapply wbext_trans.
+  - apply Hcs; try done.
+Qed.
+
+(** A hole beside the rest of the environment, which ages by the
+    hole's cost. *)
+Lemma sem_bind1 W0 Θ1 Γ1 e1 σ1 c1 t1 Θ2 Θ2' Γ2 Γ2' (fr : (nat → expr) → (chan → chan) → frame)
+    σ r d n W g γ πΘ1 πΓ1 πΘ2 πΓ2 φ tk r1 :
+  (∀ (g' : chan → chan) γ (g : chan → chan), frame_emap g' (fr γ g) = fr (λ x, emap g' (γ x)) (g' ∘ g)) →
+  (∀ γ (g : chan → chan), frame_val (fr γ g)) →
+  csem W0 Θ1 Γ1 e1 σ1 c1 t1 → cage_th c1 Θ2 Θ2' → cage_env c1 Γ2 Γ2' → fle c1 d → wbext W0 W →
+  thsem n W Θ1 g πΘ1 φ → gsem n W Γ1 γ πΓ1 φ → thsem n W Θ2 g πΘ2 φ → gsem n W Γ2 γ πΓ2 φ →
+  dom πΘ1 ## dom πΓ1 → dom πΘ2 ## dom πΓ2 → dom (πΘ1 ∪ πΓ1) ## dom (πΘ2 ∪ πΓ2) →
+  dom φ = dom ((πΘ1 ∪ πΓ1) ∪ (πΘ2 ∪ πΓ2)) → fcap_ext W ((πΘ1 ∪ πΓ1) ∪ (πΘ2 ∪ πΓ2)) φ → meets t1 r1 tk →
+  (∀ j W' (g' : chan → chan) γ' πΘ' πΓ' φ' i v πv tk', j ≤ n → wbext W0 W' → fle (Some i) c1 →
+     is_val v = true → r1 ≤ tk' →
+     thsem j W' Θ2' g' πΘ' φ' → gsem j W' Γ2' γ' πΓ' φ' → Vfuel j W' σ1 πv (mres (dom πv) φ') v →
+     dom πΘ' ## dom πΓ' → dom πv ## dom (πΘ' ∪ πΓ') →
+     dom φ' = dom (πv ∪ (πΘ' ∪ πΓ')) → fcap_ext W' (πv ∪ (πΘ' ∪ πΓ')) φ' →
+     FuelE j W' σ r (πv ∪ (πΘ' ∪ πΓ')) φ' tk' (fminus i d) (fill_frame (fr γ' g') v)) →
+  FuelE n W σ r ((πΘ1 ∪ πΓ1) ∪ (πΘ2 ∪ πΓ2)) φ tk d (fill_frame (fr γ g) (subst γ (emap g e1))).
+Proof.
+  intros Hfe Hfv Hcs HaT HaG Hcd Hb HT1 HG1 HT2 HG2 Hd1 Hd2 Hd Hdφ Hc Hm Hk.
+  set (π1 := πΘ1 ∪ πΓ1). set (πK := πΘ2 ∪ πΓ2).
+  rewrite (union_dom_disj π1 πK φ Hdφ).
+  change (fill_frame (fr γ g) (subst γ (emap g e1))) with (efill [fr γ g] (subst γ (emap g e1))).
+  assert (Hdφ1 : dom (mres (dom π1) φ) = dom π1) by (by eapply dom_mres_of).
+  assert (HdφK : dom (mres (dom πK) φ) = dom πK) by (by eapply dom_mres_of_r).
+  apply (FuelE_bind n W σ1 r1 σ r π1 (mres (dom π1) φ) πK (mres (dom πK) φ) tk c1 d [fr γ g]);
+    [|done|done|done| | |done| |].
+  - constructor; [apply Hfv|constructor].
+  - by apply (fcap_ext_part_r W π1 πK φ).
+  - intros o f Hf. apply lookup_mres_Some in Hf as [Hf Ho]. unfold πK in Ho. rewrite dom_union_L in Ho.
+    apply elem_of_union in Ho as [Ho|Ho]; [exact (thsem_above _ _ _ _ _ _ _ _ HaT HT2 o f Ho Hf)
+                                          |exact (gsem_above _ _ _ _ _ _ _ _ HaG HG2 o f Ho Hf)].
+  - intros W' g' πK' φK' i j v πv φv tk' Hb' Hk' Rπ Rφ Hi Hj Hv Hr Hdis Hdv Hcv HV. simpl. rewrite Hfe.
+    destruct (env_cont n j W W' Θ2 Θ2' Γ2 Γ2' c1 i g g' γ πΘ2 πΓ2 πK' (mres (dom πK) φ) φK' (φv ∪ (fminus i <$> φK'))
+      Hj Hb' HaT HaG Hi) as (πΘ' & πΓ' & -> & Hd' & HT' & HG').
+    { apply (thsem_local _ _ _ _ _ φ); [|done]. intros o Ho. apply lookup_mres_in. unfold πK. rewrite dom_union_L. set_solver. }
+    { apply (gsem_local _ _ _ _ _ φ); [|done]. intros o Ho. apply lookup_mres_in. unfold πK. rewrite dom_union_L. set_solver. }
+    { done. }
+    { done. }
+    { done. }
+    { done. }
+    { done. }
+    { intros o Ho. apply lookup_union_r. apply not_elem_of_dom. rewrite Hdv. set_solver. }
+    assert (HdK' : dom φK' = dom (πΘ' ∪ πΓ')) by (eapply renk_dom_eq; [exact HdφK|exact Rπ|exact Rφ]).
+    apply (Hk j W' (g' ∘ g) (λ x, emap g' (γ x)) πΘ' πΓ' (φv ∪ (fminus i <$> φK')) i v πv tk');
+      [done|by eapply wbext_trans|done|done|done|done|done| |done|done| |].
+    + rewrite (mres_disj_l φv (fminus i <$> φK') πv); [done|done|]. rewrite dom_fmap_L, HdK'. done.
+    + rewrite !dom_union_L, dom_fmap_L, HdK', Hdv, dom_union_L. done.
+    + apply fcap_ext_union; [done| |done]. apply (fcap_ext_fmap W' _ _ (fminus i)); [apply fminus_le|].
+      apply (fcap_ext_wbext W); [done|]. eapply fcap_ext_rename; [|exact Rπ|exact Rφ]. by apply (fcap_ext_part_r W π1 πK φ).
+  - apply Hcs; try done.
+    + apply (thsem_local _ _ _ _ _ φ); [|done]. intros o Ho. apply lookup_mres_in. unfold π1. rewrite dom_union_L. set_solver.
+    + apply (gsem_local _ _ _ _ _ φ); [|done]. intros o Ho. apply lookup_mres_in. unfold π1. rewrite dom_union_L. set_solver.
+    + by apply (fcap_ext_part W π1 πK φ).
+Qed.
+
+(** A hole beside a value an earlier hole returned. The value ages by
+    the hole's cost. *)
+Lemma sem_bind2 W0 Θ Γ e σ2 c2 t2 σv σv' (fr : expr → frame) σ r d n W g γ πΘ πΓ v πv φ tk r2 :
+  (∀ (g' : chan → chan) v, frame_emap g' (fr v) = fr (emap g' v)) → (∀ v, is_val v = true → frame_val (fr v)) →
+  csem W0 Θ Γ e σ2 c2 t2 → cagex c2 σv σv' → fle c2 d → wbext W0 W → is_val v = true →
+  thsem n W Θ g πΘ φ → gsem n W Γ γ πΓ φ → Vfuel n W σv πv (mres (dom πv) φ) v →
+  dom πΘ ## dom πΓ → dom (πΘ ∪ πΓ) ## dom πv →
+  dom φ = dom ((πΘ ∪ πΓ) ∪ πv) → fcap_ext W ((πΘ ∪ πΓ) ∪ πv) φ → meets t2 r2 tk →
+  (∀ j W' v' πv' v2 π2 φ' i tk', j ≤ n → wbext W0 W' → fle (Some i) c2 → is_val v2 = true → r2 ≤ tk' →
+     is_val v' = true →
+     Vfuel j W' σv' πv' (mres (dom πv') φ') v' → Vfuel j W' σ2 π2 (mres (dom π2) φ') v2 →
+     dom π2 ## dom πv' → dom φ' = dom (π2 ∪ πv') → fcap_ext W' (π2 ∪ πv') φ' →
+     FuelE j W' σ r (π2 ∪ πv') φ' tk' (fminus i d) (fill_frame (fr v') v2)) →
+  FuelE n W σ r ((πΘ ∪ πΓ) ∪ πv) φ tk d (fill_frame (fr v) (subst γ (emap g e))).
+Proof.
+  intros Hfe Hfv Hcs Hs Hcd Hb Hvv HT HG HV Hd1 Hd Hdφ Hc Hm Hk.
+  set (π1 := πΘ ∪ πΓ).
+  rewrite (union_dom_disj π1 πv φ Hdφ).
+  change (fill_frame (fr v) (subst γ (emap g e))) with (efill [fr v] (subst γ (emap g e))).
+  assert (Hdφ1 : dom (mres (dom π1) φ) = dom π1) by (by eapply dom_mres_of).
+  assert (HdφK : dom (mres (dom πv) φ) = dom πv) by (by eapply dom_mres_of_r).
+  apply (FuelE_bind n W σ2 r2 σ r π1 (mres (dom π1) φ) πv (mres (dom πv) φ) tk c2 d [fr v]);
+    [|done|done|done| | |done| |].
+  - constructor; [by apply Hfv|constructor].
+  - by apply (fcap_ext_part_r W π1 πv φ).
+  - intros o f Hf. pose proof Hf as Hf'. apply lookup_mres_Some in Hf' as [_ Ho].
+    exact (Vfuel_age_above n W c2 σv σv' πv _ v Hs HV o f Ho Hf).
+  - intros W' g' πK' φK' i j v2 π2 φ2 tk' Hb' Hk' Rπ Rφ Hi Hj Hv Hr Hdis Hd2 Hc2 HV2. simpl. rewrite Hfe.
+    assert (HdK' : dom φK' = dom πK') by (eapply renk_dom_eq; [exact HdφK|exact Rπ|exact Rφ]).
+    apply (Hk j W' (emap g' v) πK' v2 π2 (φ2 ∪ (fminus i <$> φK')) i tk');
+      [done|by eapply wbext_trans|done|done|done|by rewrite is_val_emap| | |done| |].
+    + rewrite (mres_disj_r φ2 (fminus i <$> φK') πK'); [|by rewrite dom_fmap_L|by rewrite Hd2].
+      apply (Vfuel_age j W' c2 i σv σv'); [done|done|].
+      apply (Vfuel_wbext _ W); [done|]. apply (Vfuel_down _ n); [lia|].
+      apply (Vfuel_rename n W σv πv (mres (dom πv) φ) v g'); [done|apply dom_mres_sub|done|done|done].
+    + rewrite (mres_disj_l φ2 (fminus i <$> φK') π2); [done|done|]. rewrite dom_fmap_L, HdK'. done.
+    + rewrite !dom_union_L, dom_fmap_L, HdK', Hd2. done.
+    + apply fcap_ext_union; [done| |done]. apply (fcap_ext_fmap W' _ _ (fminus i)); [apply fminus_le|].
+      apply (fcap_ext_wbext W); [done|]. eapply fcap_ext_rename; [|exact Rπ|exact Rφ]. by apply (fcap_ext_part_r W π1 πv φ).
+  - apply Hcs; try done.
+    + apply (thsem_local _ _ _ _ _ φ); [|done]. intros o Ho. apply lookup_mres_in. unfold π1. rewrite dom_union_L. set_solver.
+    + apply (gsem_local _ _ _ _ _ φ); [|done]. intros o Ho. apply lookup_mres_in. unfold π1. rewrite dom_union_L. set_solver.
+    + by apply (fcap_ext_part W π1 πv φ).
+Qed.
