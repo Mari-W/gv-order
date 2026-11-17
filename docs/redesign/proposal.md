@@ -1155,6 +1155,12 @@ first, in stage S2.
   duality, which covers the polarity flip of a link, with fresh names
   re-chosen at each creation. No syntactic premise. The author chose this
   over Q14 for terms and over a premise on P-Connect.
+  Stated after S4.10 (delegated, within the author's choice): the lemma
+  ranges over maps h of ends that commute with duality and are injective
+  on the held ends, with no condition elsewhere. Bijections are a special
+  case. The link renaming `csub` fuses o1‾ and o2 (`csub_fuses`), so no
+  bijection covers it, while it is injective on the other component's
+  held ends. An end a term mentions but does not hold is never acted on.
 
 ## 5  Open decisions for the author
 
