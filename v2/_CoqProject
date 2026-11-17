@@ -44,4 +44,5 @@ test/RelationNotations.v
 fuel/Fuel.v
 fuel/FuelMono.v
 fuel/FuelValues.v
+fuel/FuelBind.v
 CheckAll.v
