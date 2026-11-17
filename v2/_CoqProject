@@ -23,5 +23,7 @@ static/Contexts.v
 static/Typing.v
 static/Conservativity.v
 static/Weakening.v
+static/Renaming.v
+static/PointSubst.v
 test/TypeNotations.v
 CheckAll.v

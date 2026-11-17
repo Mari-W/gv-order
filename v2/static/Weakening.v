@@ -70,6 +70,7 @@ Proof.
   - eapply e_pair; eauto.
   - eapply e_letu; eauto.
   - eapply e_letp; eauto.
+  - eapply e_let; eauto.
   - by eapply e_inj1.
   - by eapply e_inj2.
   - eapply e_case; eauto.
@@ -691,6 +692,11 @@ Proof.
     eapply e_letp; [done|exact Hs| |done|exact Ha| |done].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
     + by apply IHtyped2, lren_up, lren_up.
+  - (* E-Let *)
+    ren_split Hr.
+    eapply e_let; [done|exact Hs| |done|exact Ha| |done].
+    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
+    + by apply IHtyped2, lren_up.
   - by eapply e_inj1, IHtyped.
   - by eapply e_inj2, IHtyped.
   - ren_split Hr.

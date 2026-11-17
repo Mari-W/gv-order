@@ -18,7 +18,8 @@
 
     [dftyped] is the deadlock-freedom projection, Θ ; Γ ; Δ ⊢^F_W e : T,
     the same rules without the cost premises and without aging and
-    capture. [ptyped] is process typing with P-Term, P-Connect and P-Join
+    capture. E-Let types the redex (λx. e2) e1 as let x = e1 in e2, so
+    a let captures nothing and needs no lower point. [ptyped] is process typing with P-Term, P-Connect and P-Join
     in the two-world form. *)
 
 From GV Require Export static.Contexts.
@@ -70,6 +71,13 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ2' Γ (Some (T2, fadd a a2) :: Some (T1, fadd a a1) :: Δ2') F e2 T aT c2 t2 →
       tok t1 t2 →
       typed W N Θ Γ Δ F (LetP e1 e2) T aT (fadd c1 c2) (tseq t1 t2)
+  | e_let Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 a1 T aT c1 t1 c2 t2 :
+      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+      typed W N Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 a1 c1 t1 →
+      thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
+      typed W N Θ2' Γ (Some (T1, a1) :: Δ2') F e2 T aT c2 t2 →
+      tok t1 t2 →
+      typed W N Θ Γ Δ F (App (Lam e2) e1) T aT (fadd c1 c2) (tseq t1 t2)
   | e_inj1 Θ Γ Δ F e T a U b c t :
       typed W N Θ Γ Δ F e T a c t →
       typed W N Θ Γ Δ F (Inj1 e) (TSum T a U b) (Some 0) c t
@@ -212,6 +220,11 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
         (TProd T1 a1 T2 a2) →
       dftyped W Θ2 Γ (Some (T2, b2) :: Some (T1, b1) :: Δ2) F e2 T →
       dftyped W Θ Γ Δ F (LetP e1 e2) T
+  | d_let Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 b1 T :
+      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+      dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 →
+      dftyped W Θ2 Γ (Some (T1, b1) :: Δ2) F e2 T →
+      dftyped W Θ Γ Δ F (App (Lam e2) e1) T
   | d_inj1 Θ Γ Δ F e T a U b :
       dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F (Inj1 e) (TSum T a U b)
   | d_inj2 Θ Γ Δ F e T a U b :
