@@ -181,8 +181,8 @@ Section closure.
     destruct m as [|m]; [apply Prel_0|]. destruct n as [|n]; [lia|].
     revert W Σ T p HP.
     refine (Prel_S_ind κ n (λ W Σ T p, Prel κ (S m) W Σ T p) _).
-    intros W Σ T p H. apply Prel_S_iff. intros W1 HW1 h Hh.
-    destruct (H W1 HW1 h Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+    intros W Σ T p H. apply Prel_S_iff. intros W1 HW1 HS1 h Hh.
+    destruct (H W1 HW1 HS1 h Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (∀ c W Σ T0 p', at_cost_P (S n) c (Prel κ)
         (λ W Σ T p, Prel κ (S n) W Σ T p ∧ Prel κ (S m) W Σ T p) W Σ T0 p' →
       at_cost_P (S m) c (Prel κ) (Prel κ (S m)) W Σ T0 p') as Hac.
@@ -224,10 +224,10 @@ Section closure.
   Qed.
 
   Lemma Prel_S_step n W W1 Σ T q ev q' :
-    Prel κ (S n) W Σ T (erase q) → W ⊑ W1 → istep q ev q' →
+    Prel κ (S n) W Σ T (erase q) → W ⊑ W1 → strict W1 → istep q ev q' →
     Pobl κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 Σ T (erase q) ev (erase q').
   Proof.
-    intros HP HW Hst. destruct (Prel_S_clauses κ n _ _ _ _ HP W1 HW) as (_ & _ & H).
+    intros HP HW HS Hst. destruct (Prel_S_clauses κ n _ _ _ _ HP W1 HW HS) as (_ & _ & H).
     exact (proj1 (Psteps_iff _ _ _ _ _ _ _ _ _ _) H q ev q' eq_refl Hst).
   Qed.
 

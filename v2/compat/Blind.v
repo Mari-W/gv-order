@@ -253,8 +253,8 @@ Section blind.
     revert W Σ p HP.
     cut (∀ W Σ T0 p, Prel κ (S n) W Σ T0 p → T0 = T → Prel κ (S n) W Σ T' p).
     { intros H W Σ p HP. by eapply H. }
-    refine (Prel_S_ind κ n _ _). intros W Σ T0 p H ->. apply Prel_S_iff. intros W1 HW1 h Hh.
-    destruct (H W1 HW1 h Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+    refine (Prel_S_ind κ n _ _). intros W Σ T0 p H ->. apply Prel_S_iff. intros W1 HW1 HS1 h Hh.
+    destruct (H W1 HW1 HS1 h Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (∀ c W Σ p',
       at_cost_P (S n) c (Prel κ) (λ W Σ T0 p, Prel κ (S n) W Σ T0 p ∧
                                      (T0 = T → Prel κ (S n) W Σ T' p)) W Σ T p' →

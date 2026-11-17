@@ -857,9 +857,9 @@ Theorem Prel_rename κ n W Σ T p h :
   pren_ok h Σ p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pmap h p ∈ P[κ]^W _ n⟦kren h Σ ⊢ T⟧.
 Proof.
   intros Hh HP. destruct n as [|n]; [apply Prel_0|].
-  apply Prel_S_iff in HP. apply Prel_S_iff. intros W1 HW1 g Hg.
+  apply Prel_S_iff in HP. apply Prel_S_iff. intros W1 HW1 HS1 g Hg.
   rewrite (kren_kren_ok g h Σ p Hh Hg), (pmap_pmap g h p (proj1 Hg)).
-  apply HP; [done|]. by apply pren_ok_compose.
+  apply HP; [done|done|]. by apply pren_ok_compose.
 Qed.
 
 (** ** The link substitution renames the other component (P-Connect)

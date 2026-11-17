@@ -26,7 +26,8 @@
 λ (W : world) (Σ : senv) (p : proc) (T : ty), Σ ⊫_W p : T
      : world → senv → proc → ty → Prop
 adequacy
-     : ∀ (W : world) (T : ty) (p : proc), ∅ ⊨_W p : T → deadlock_free p
+     : ∀ (W : world) (T : ty) (p : proc),
+         strict W → ∅ ⊨_W p : T → deadlock_free p
 live_adequacy
      : ∀ (W : world) (T : ty) (p : proc),
-         ∅ ⊫_W p : T → deadlock_free p ∧ no_tau_divergence p
+         strict W → ∅ ⊫_W p : T → deadlock_free p ∧ no_tau_divergence p

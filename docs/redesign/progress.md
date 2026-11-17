@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | stopped (S4.15): Internalize and P-Connect are false under the Kripke quantifier of P, repair needs the author |
+| S4 | generic compatibility | in progress: P Kripke over strict worlds (S4.16), composition open |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
@@ -296,6 +296,10 @@ The old development in theories/ stays untouched.
   keep the polarity by construction (`fresh_pull`). The condition is
   needed only for P, where the restricted channels and the partners of
   Q-Send and Q-Recv enter.
+- S4, strict worlds (decision 4c077dc, after S4.15). The Kripke
+  quantifier of `Pbody` ranges over strict worlds, ∀ W1, W ⊑ W1 →
+  strict W1 → … . V and E keep theirs. `adequacy` and `live_adequacy`
+  ask `strict W`, because P at a non-strict world is vacuous.
 - S4, Q16 for P (decision after S4.12). The clause (rename) is a
   quantifier of `Pbody`, inside the fixpoint. Every unfolding of P holds
   for `kren h Σ` and `pmap h p` for every h with `pren_ok h Σ p`: h
@@ -861,3 +865,10 @@ The old development in theories/ stays untouched.
   assumes strict W. Not applied, because it changes the relation and A.3.
   Not started: Internalize, P-Connect, P-Join, P-Term. CheckAll lists
   190 results, all closed. No `Admitted` and no axiom.
+- S4.16. The repair of S4.15 (decision 4c077dc). `Pbody` asks
+  `strict W1`, and `Pbody_id`, `Prel_S_clauses` and `Prel_S_step` with
+  it. `adequacy`, `live_adequacy` and the lemmas behind them ask
+  `strict W`. relation/Adequacy.v exports types/Worlds.v again after
+  lockfree/TauThread.v, so that `strict` is the world's and not stdpp's.
+  test/RelationNotations.expected follows. CheckAll lists 190 results,
+  all closed.

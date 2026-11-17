@@ -18,8 +18,9 @@
     type ([Vbody]). The step index itself is one generic course-of-values
     fixpoint ([sfix], relation/Sfix.v).
 
-    Every unfolding of E and P holds in every world W1 ⊒ W (decision Q9),
-    so E and P are monotone in the world by definition.
+    Every unfolding of E holds in every world W1 ⊒ W, and every unfolding
+    of P in every strict world W1 ⊒ W (decision Q9, and S4.16), so E and P
+    are monotone in the world by definition.
 
     The relation reads no syntax of a term but the labels of its steps,
     and from a label only the transfer set M of a send and a spawn
@@ -453,11 +454,13 @@ Section bodies.
     (¬ pirred p → ready _ W1(Σ, p)) ∧                           (* P-Ready *)
     Psteps n Vl Pl VN X W1 Σ T p.                               (* P-Step *)
 
-  (** One unfolding of P at level n, in every W1 ⊒ W and under every
-      renaming of the held ends (decision Q16). *)
+  (** One unfolding of P at level n, in every strict W1 ⊒ W and under
+      every renaming of the held ends (decision Q16). A later world with
+      a cycle would let Q-Recv bring ends that only a cyclic order
+      accepts, and composition would fail (progress.md, S4.15). *)
   Definition Pbody (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
       (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
-    ∀ W1, W ⊑ W1 → ∀ h, pren_ok h Σ p →                        (* (rename) *)
+    ∀ W1, W ⊑ W1 → strict W1 → ∀ h, pren_ok h Σ p →           (* (rename) *)
       Pclauses n Vl Pl VN X W1 (kren h Σ) T (pmap h p).
 
   Inductive Pind (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) : prel :=
@@ -636,7 +639,7 @@ Section maps.
       (f : ∀ W Σ T p, X1 W Σ T p → X2 W Σ T p) W Σ T p :
     Pbody κ n Vl Pl VN X1 W Σ T p → Pbody κ n Vl Pl VN X2 W Σ T p.
   Proof.
-    intros H W1 HW h Hh. destruct (H W1 HW h Hh) as (A & B & C).
+    intros H W1 HW HS h Hh. destruct (H W1 HW HS h Hh) as (A & B & C).
     split; [exact A|]. split; [exact B|].
     exact (Psteps_mapX n Vl Pl VN X1 X2 f W1 (kren h Σ) T (pmap h p) C).
   Defined.
@@ -796,7 +799,7 @@ Section mono.
     (∀ W Σ p, X1 W Σ T p → X2 W Σ T p) →
     Pbody κ n Vl1 Pl1 VN1 X1 W Σ T p → Pbody κ n Vl2 Pl2 VN2 X2 W Σ T p.
   Proof.
-    intros Hn HVl HPl HVN HX H W1 HW h Hh. destruct (H W1 HW h Hh) as (A & B & C).
+    intros Hn HVl HPl HVN HX H W1 HW HS h Hh. destruct (H W1 HW HS h Hh) as (A & B & C).
     split_and!; [|done|by eapply Psteps_mono].
     intros Hirr. destruct (A Hirr) as (v & E & Hp & Hv & HE).
     exists v, E. split_and!; [done|by apply HVN|done].
@@ -1135,14 +1138,14 @@ Section equations.
   Qed.
   (** The clauses at the identity renaming. *)
   Lemma Pbody_id n Vl Pl VN X W Σ T p :
-    Pbody κ n Vl Pl VN X W Σ T p → ∀ W1, W ⊑ W1 → Pclauses κ n Vl Pl VN X W1 Σ T p.
+    Pbody κ n Vl Pl VN X W Σ T p → ∀ W1, W ⊑ W1 → strict W1 → Pclauses κ n Vl Pl VN X W1 Σ T p.
   Proof.
-    intros H W1 HW. pose proof (H W1 HW id (pren_ok_id Σ p)) as H'.
+    intros H W1 HW HS. pose proof (H W1 HW HS id (pren_ok_id Σ p)) as H'.
     by rewrite kren_id_map, pmap_id in H'.
   Qed.
 
   Lemma Prel_S_clauses n W Σ T p :
-    Prel κ (S n) W Σ T p → ∀ W1, W ⊑ W1 →
+    Prel κ (S n) W Σ T p → ∀ W1, W ⊑ W1 → strict W1 →
     Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 Σ T p.
   Proof. intros H. apply Pbody_id. by apply Prel_S_iff. Qed.
 End equations.
