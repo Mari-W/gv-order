@@ -318,9 +318,9 @@ The old development in theories/ stays untouched.
   Q-Recv and the arrow quantify over every value of V, so the typable
   forwarder `let ⟨w, c⟩ = recv c in let ∗ = close c in close (send ⟨w, d⟩)`
   with c : ?(∗ ⊸ ∗).end, d : !(∗ ⊸ ∗).end, after receiving w' at Θin = ∅,
-  reaches the same send at a positive level (at level n ≥ 5 in κ_DF,
-  where each β costs 1, and at every n ≥ 2 in κ_L), so it is in neither
-  E, and `fundamental` and `live_fundamental` of A.3 fail for it. The
+  reaches the same send at a positive level whenever n is large enough
+  to pay for the receive, the close and the β steps before it (n ≥ 4 in
+  κ_DF, n ≥ 3 in κ_L), so it is in neither E, and `fundamental` and `live_fundamental` of A.3 fail for it. The
   same holds for the closure λw. send ⟨w, d⟩ (E-Abs) and for a box that
   mentions an end in dead code (B.1 #32 argued it handled). The
   argument of §2.7 ("a closure that owns an end it does not mention
