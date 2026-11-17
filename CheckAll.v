@@ -103,6 +103,7 @@ Require LRGV.lockfree.ThreadProgress.
 (* SYNTACTIC-POINTS: translation port pending  Require LRGV.pn.PNSemantics. *)
 (* NO-EQ: translation pending  Require LRGV.pn.PNSimulation. *)
 (* NO-EQ: translation pending  Require LRGV.pn.PNTranslate. *)
+Require LRGV.relation.CostTypes.
 Require LRGV.relation.LogicalRelation.
 Require LRGV.rules.SemanticRules.
 Require LRGV.static.Fundamental.
@@ -247,15 +248,22 @@ Print Assumptions LRGV.lockfree.LFFuel.lffuel_step.
 Print Assumptions LRGV.lockfree.LFFuel.lffuel_recv.
 Print Assumptions LRGV.lockfree.LFFuel.lffuel_spawn.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_act.
-Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nosend.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_zero_nospawn.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_val.
 Print Assumptions LRGV.lockfree.LFFuel.fupd_cap.
 Print Assumptions LRGV.lockfree.LFFuel.FuelE_tk_mono.
-Print Assumptions LRGV.lockfree.LFFuel.Vfuel_tk_mono.
+Print Assumptions LRGV.lockfree.LFFuel.FuelE_rename.
 Print Assumptions LRGV.lockfree.LFFuel.link_tickets_fall.
 Print Assumptions LRGV.lockfree.LFAdequacy.ksum_step.
-Print Assumptions LRGV.lockfree.LFFuel.fhand_fin_ok.
+Print Assumptions LRGV.lockfree.LFFuel.fchild_fin_ok.
 Print Assumptions LRGV.lockfree.LFFuel.fcap_finite.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_send_val.
+Print Assumptions LRGV.lockfree.LFFuel.fuel_frame.
+Print Assumptions LRGV.relation.CostTypes.spawn_split.
+Print Assumptions LRGV.relation.CostTypes.link_split.
+Print Assumptions LRGV.relation.CostTypes.seq_sound.
+Print Assumptions LRGV.relation.CostTypes.link_loop_no_tix.
+Print Assumptions LRGV.relation.CostTypes.cst_any.
 Print Assumptions LRGV.lockfree.LFFuel.fuel_send_travel.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sched_lfsource.
 Print Assumptions LRGV.lockfree.LFFuelTyped.sync_lfsource.
