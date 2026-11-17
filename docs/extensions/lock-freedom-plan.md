@@ -2554,3 +2554,72 @@ follows.
    `src_pay t k`, and the budget theorems of the examples state
    `src_pay` where they stated `w_pay`. These parts go in H5.
    LFFuelTyped.v builds with the new arities.
+
+### 19.13  Deviations (H3)
+
+Stage H3 proves F1 to F6 in lockfree/LFFuelBind.v. F1 is false for the
+definitions of H1, and so is `Vfuel_rename`, on which F2 rests. Four
+repairs make them hold. Each is a condition on a step label or on the
+value a label carries, read against the thread's own map, and none
+reads a type or a term.
+
+1. **A send hands on held ends and not its subject.** The send clause
+   of `Fobl` gains `fends w ⊆ dom π ∖ {[o]}`. Without it a hole may send
+   an end that its context holds and its own map does not. The
+   composite drops that end from its map, and the continuation acts on
+   an end it no longer holds. A send of the subject on itself makes
+   `fact` skip the tick of the other counters while the frame still
+   falls, so the context's counters would no longer match the ticks the
+   continuation is given. Linearity excludes both in typed programs.
+2. **A spawn and a link hand on held ends.** The spawn clause gains
+   `fends w ⊆ dom π` and the link clause `cd ⊆ dom π`, for the same
+   reason.
+3. **Select and branch need `fsolo`.** The continuation of a select or
+   branch on o is asked only when the thread holds no other end of the
+   channel of o (`fsolo π o`), a premise like the freshness of new.
+   Select moves its end to bit false and branch to bit true. When the
+   context holds the partner end, the moved end takes the partner's
+   name and overwrites its entry in the map. A select or branch never
+   synchronises with its own thread, so the soup supplies the premise
+   from `st_disj`. `lffuel_step` and `fuel_one` gain the hypothesis,
+   `step_sel` proves it in four lines per side.
+4. **A pair splits its points.** The pair clause of `Vfuel` gave the
+   components `mres (fends u) π`. A renaming injective on the held ends
+   may map an unheld end inside a box onto a held end of the other
+   component. The box then receives a nonempty map and fails `π = ∅`,
+   so `Vfuel_rename` fails. The clause now splits π into disjoint parts
+   `π1 ∪ π2`, one per component, and restricts the counters to each
+   part (`mres (dom π1) φ`). H4 builds pairs with `Vfuel_pair`.
+
+The H1 lemmas keep their statements except `lffuel_step`. New in
+LFFuel.v are `fsolo`, `fuel_send_held`, `fuel_spawn_held` and
+`fuel_link_held`. In CostTypes.v H3 adds `cst_refl`, `cst_trans`,
+`tle_refl`, `tle_trans`, `cst_cadd`, `pfits_at_mono`, `pfitpt_at_mono`,
+`pfits_at_cst` and `pfitpt_at_cst`.
+
+Three choices of form matter for H4.
+
+- **The continuation of F1 is closed under renamings.** FuelE
+  quantifies over renamings injective on the held ends, so `fkont`
+  asks the continuation for every such renaming of the context,
+  `efill (kemap g K) v`. The semantic judgment of H4 should therefore
+  quantify over injective renamings of the ends of Θ, or be proved
+  closed under them, so that the continuation of each rule meets
+  `fkont`.
+- **Recount is a relation.** `Vfuel_recount` restates a value at a
+  lower bound m through `clow m σ σ'`, which sets an end's credit to m,
+  a closure's credit to m − h, and leaves types without ends alone. It
+  is the restating Θ^h of C-Abs. `Vfuel_minus` pays i ticks of the
+  counters from i units of credit, for the spare unit of C-Send and
+  C-Spawn.
+- **F3 is stated for head β steps in a context.** `FuelE_beta` lifts
+  FuelE of `efill K e'` at n to `efill K e` at n + 1 when e head-steps
+  by β to e′, and `head_beta_det` shows that such a redex has exactly
+  this step under every renaming.
+
+`Vfuel_rename` at a closure renames the argument out of the way of the
+closure's channels by a fresh prefix (`sprefix`, `sunfix`), runs the
+body there and renames it back with `FuelE_rename`. F4 and the
+subsumption half of F5 are one induction on the index (`sub_mono`),
+because the closure clause reads FuelE below its level and the value
+clause of FuelE reads `Vfuel` at its own level.

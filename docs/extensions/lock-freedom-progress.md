@@ -21,6 +21,7 @@ Updated after every stage and every agent result.
 | L6 Typed fuel interpretation and `lf_fundamental` | stopped twice on a counterexample, under option 2 at the forwarder and on link tickets at sync. The sync counterexample is lifted (A13c, 2026-11-17) | LFFuelTyped.v (`wbud_set`, `wbud_set_ext`, `fuel_unknown_zero`; the option-2 lemmas went with L6c, the A13c lemmas with the fix), LFFuel.v (`fin_ok` at known points), LFSoup.v (`lf_known`) | passes, CheckAll closed | 0, no axioms | `lf_fundamental`, `lf_soundness` and the example theorems wait on the author |
 | L6c Link tickets replace the hand-over at links (plan §18) | done | LFFuel.v (`FuelE n W π φ tk e`, `Vfuel n W π φ tk w`, `tkupd`, `fsem` with ∃ tk, `FuelE_tk_mono`, `Vfuel_tk_mono`, `link_tickets_fall`; `flink`, `flink1`, `frep`, `fuel_rep`, `fuel_zero_nolink` gone), LFSoup.v (ticket family K in `lf_fuelc`, `LFsoupAt`, `LFsoup`, `LFP`; `ksingle`, `kstep`, `kstep_one`, `kstep_pair`, `krun`; `flr` gone), Criterion.v (`lf_run_criterion` over a measure with a well-founded decidable order, `lexlt`, `lexlt_wf`), LFAdequacy.v (`ksum`, `ksum_step`, measure (tickets, fuel); `fe_link`, `fgoal_cap` gone), LFCompose.v, LFFuelTyped.v (option-2 counterexamples gone) | passes, CheckAll closed | 0, no axioms | protected statements unchanged; FuelE not monotone in the counters (renaming) |
 | H1 Cost types, `w_pc`, FuelE and Vfuel by cost types (plan §19.3, §19.10) | done | relation/CostTypes.v (`cty`, `cta`, `cpro`, `cprof`, `tix`, `meets`, `tseq`, `tspawn`, `cst`, `cage`, `pfits_at`, `pfitpt_at`), Worlds.v (`w_pc`), LFFuel.v (`FuelE n W σ r π φ tk d e`, `Vfuel n W σ π φ w`, `farr`, `kinj` in `Fdef`, fresh new, value clause, `FuelT`, `fsem` at `cany`), LFSoup.v (`step_msg` without floor, freshness from `Hnm`), LFCompose.v (`wbud_agree` over `w_pc`) | passes, CheckAll closed | 0, no axioms | deviations in plan §19.11; protected statements unchanged against 7d0920c |
+| H3 Semantic lemmas F1 to F6 of FuelE (plan §19.7, §19.13) | done | lockfree/LFFuelBind.v (`FuelE_bind`, `Fobl_bind`, `fkont`, `FuelE_val`, `FuelE_beta`, `FuelE_mono`, `Vfuel_sub`, `Vfuel_wbext`, `Vfuel_rename`, `Vfuel_recount`, `clow`, `Vfuel_minus`, `pfits_wbext`, `pfits_node`, `pfits_snd`, `pfits_rcv`, `pfits_sel`, `pfits_bra`, `Vfuel_refill`, `Vfuel_pair`), CostTypes.v (`cst_refl`, `cst_trans`, `cst_cadd`, `pfits_at_mono`, `pfits_at_cst`), LFFuel.v (held ends at send, spawn and link, `fsolo` at select and branch, pair clause split), LFSoup.v (`fsolo` from `st_disj`) | passes, CheckAll closed | 0, no axioms | four repairs in plan §19.13; protected statements unchanged against c26c125 |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -818,6 +819,19 @@ Updated after every stage and every agent result.
   `konst_cost` table, `fuel_zero_nosend` goes, and Fragment.v keeps the
   old floors as `src_pay` outside the world until H5. No protected
   statement changed its text.
+- 2026-11-17. Stage H3 done. lockfree/LFFuelBind.v proves F1 to F6
+  without admits. F1 failed for the H1 definitions in three ways, and
+  `Vfuel_rename` in a fourth. A hole could send, spawn or link an end its
+  context holds, a send of its own subject skipped the context's tick, a
+  select or branch could rename its end onto the context's partner end,
+  and a renaming could push a held end into the map of a box inside a
+  pair. The repairs, recorded in plan §19.13, are conditions on labels
+  against the thread's own map (held ends at send, spawn and link,
+  `fsolo` at select and branch) and a disjoint split of the points in
+  the pair clause of `Vfuel`. The soup proves `fsolo` from `st_disj`.
+  F1 asks its continuation under every injective renaming of the
+  context, so H4's semantic judgment must be closed under renamings.
+  Protected statements are unchanged against c26c125.
 
 ## Related work hooks
 
