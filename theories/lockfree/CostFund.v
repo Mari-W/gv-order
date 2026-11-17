@@ -1173,3 +1173,233 @@ Proof.
     + apply Vfuel_inj2. rewrite cadd_0. apply (Vfuel_refill j W' n2 b2 (g c) true (bra_pt x' true)); [done|by rewrite lookup_singleton_eq].
     + apply Vfuel_inj1. rewrite cadd_0. apply (Vfuel_refill j W' n1 b1 (g c) true (bra_pt x' false)); [done|by rewrite lookup_singleton_eq].
 Qed.
+
+Lemma Vfuel_pair_inv n W σ1 σ2 a π φ v :
+  Vfuel n W (CTa (CProd σ1 σ2) a) π φ v →
+  ∃ u w π1 π2, v = Pair u w ∧ π = π1 ∪ π2 ∧ dom π1 ## dom π2 ∧
+    Vfuel n W (cadd a σ1) π1 (mres (dom π1) φ) u ∧ Vfuel n W (cadd a σ2) π2 (mres (dom π2) φ) w.
+Proof.
+  rewrite Vfuel_eq. destruct v; simpl; try done. intros (π1 & π2 & -> & Hd & H1 & H2).
+  exists v1, v2, π1, π2. rewrite !Vfuel_eq. done.
+Qed.
+
+Lemma Vfuel_pt_inv n W ρ a π φ v :
+  Vfuel n W (CTa (CPt ρ) a) π φ v → ∃ x, v = EPt x ∧ π = ∅ ∧ pt_known W x ∧ pfitpt W x ρ.
+Proof. rewrite Vfuel_eq. destruct v; simpl; try done; intros (?&H&_); discriminate H. Qed.
+
+Lemma Vfuel_arr_inv n W c t h σ1 σ2 a π φ v :
+  Vfuel n W (CTa (CArr c t h σ1 σ2) a) π φ v →
+  ∃ eb, v = Lam eb ∧ dom π = fends v ∧ fpts W π ∧ farr FuelE Vfuel n W c t h σ1 σ2 a π φ (λ u, subst1 u eb).
+Proof. rewrite Vfuel_eq. destruct v; simpl; try done. intros H. by exists v. Qed.
+
+Lemma Vfuel_box_inv n W c t σ a π φ v :
+  Vfuel n W (CTa (CBox c t σ) a) π φ v →
+  ∃ eb, v = EBox eb ∧ π = ∅ ∧ fends eb = ∅ ∧
+    ∀ W' j r tk, wbext W W' → j < n → meets t r tk → FuelE j W' σ r ∅ ∅ tk c (subst1 (EBox eb) eb).
+Proof. rewrite Vfuel_eq. destruct v; simpl; try done. intros H. by exists v. Qed.
+
+Lemma dom_empty_map {Y Z : Type} (m : gmap cend Y) (π : gmap cend Z) : dom m = dom π → π = ∅ → m = ∅.
+Proof. intros H ->. rewrite dom_empty_L in H. by apply dom_empty_inv_L. Qed.
+
+Lemma send_redex j W σp σp' a a0 P n σ P' n' b' π φ tk d r v :
+  pnode P = Some (n, PSnd σ P') → pnode P' = Some (n', b') →
+  cagex (Some 1) (cadd a0 σp) σp' → σp' ⊑c σ → is_val v = true →
+  Vfuel j W (CTa (CProd σp (CTa (CEnd P) a)) a0) π φ v → dom φ = dom π → fcap_ext W π φ →
+  fle (Some 1) d → r ≤ tk → FuelE j W (CTa (CEnd P') (Some n')) r π φ tk d (App ESend v).
+Proof.
+  intros HP HP' Hs Hσ Hv HV Hd Hc H1 Hr. destruct j as [|j]; [apply FuelE_0|].
+  apply pnode_inv in HP as ->. apply pnode_inv in HP' as ->.
+  assert (Hh : cheld (cta_ty (cadd a0 σp))) by exact (cagex_cheld _ _ _ Hs ltac:(done)).
+  apply FuelE_redex; [done|done|]. intros W' g π' φ' Hb Hk R1 R2. cbn [emap].
+  assert (Hdφ' : dom φ' = dom π') by (eapply renk_dom_eq; [exact Hd|exact R1|exact R2]).
+  pose proof (Vfuel_move _ _ _ _ _ _ _ g π' φ' Hb Hk ltac:(by rewrite Hd) R1 R2 HV) as HV'.
+  assert (Hv' : is_val (emap g v) = true) by by rewrite is_val_emap.
+  destruct (Vfuel_pair_inv _ _ _ _ _ _ _ _ HV') as (w & e2 & πw & πe & Heq & -> & Hdwe & HVw & HVe).
+  rewrite Heq in Hv' |- *. simpl in HVe.
+  destruct (Vfuel_end_inv _ _ _ _ _ _ _ HVe) as (c & b & x & f & -> & -> & Hp & _).
+  destruct σp as [τp ap]. simpl in Hh.
+  destruct (Vfuel_held _ _ _ _ _ _ _ Hh HVw) as (Dw & Pw & _).
+  assert (Habove := Vfuel_age_above _ _ _ _ _ _ _ _ Hs HVw).
+  destruct (pfits_snd _ _ _ _ _ Hp) as [Hpc Hp1].
+  assert (Hcx : (c, b) ∉ dom πw) by (rewrite dom_singleton_L in Hdwe; set_solver).
+  assert (Hπx : (πw ∪ {[(c, b) := x]}) !! (c, b) = Some x).
+  { apply lookup_union_Some_raw. right. split; [by apply not_elem_of_dom|by rewrite lookup_singleton_eq]. }
+  assert (Hvw : is_val w = true) by (simpl in Hv'; destruct (is_val w); done).
+  split.
+  - intros s0 e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst. simpl in Ho.
+    injection Ho as <-. exists x. split; [done|by eapply partner_fin].
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst.
+    unfold Fobl; cbv beta iota. split_and!.
+    + intros o [= <-]. split; [|done]. intros o' m Hne Hm. assert (Ho' : o' ∈ dom πw).
+      { apply elem_of_dom_2 in Hm. rewrite Hdφ', dom_union_L, dom_singleton_L in Hm. set_solver. }
+      apply (Habove o' (Some m) Ho'). by rewrite lookup_mres_in.
+    + rewrite <-Dw, dom_union_L, dom_singleton_L. set_solver.
+    + intros o k Ho Hk'. rewrite <-Dw in Ho. apply elem_of_dom in Ho as [k0 Hk0].
+      rewrite (lookup_union_Some_l _ _ _ _ Hk0) in Hk'. injection Hk' as <-. by apply (Pw o).
+    + intros k Hk'. rewrite Hπx in Hk'. injection Hk' as <-.
+      rewrite <-Dw, (mres_disj_l πw {[(c, b) := x]} πw) by (done || set_solver).
+      rewrite (map_fmap_ext ftick (fminus 1)) by (intros; apply ftick_fminus).
+      apply (Vfuel_down _ (S j)); [lia|]. eapply Vfuel_sub; [eapply cst_trans; [exact Hσ|exact Hpc]|].
+      apply (Vfuel_age _ _ (Some 1) 1 _ _ _ _ _ Hs); [apply fle_refl|exact HVw].
+    + assert (Hf : fupd W' (πw ∪ {[(c, b) := x]}) φ' (LSess (SSend (c, b) w)) =
+                   ({[(c, b) := pt_shift 1 x]}, {[(c, b) := w_bud W' (pt_shift 1 x)]})).
+      { unfold fupd. cbn [sl_out]. rewrite <-Dw, (mrem_disj_l πw {[(c, b) := x]} πw) by (done || set_solver).
+        apply fact_single; [done|]. rewrite dom_mrem, Hdφ', dom_union_L, dom_singleton_L. set_solver. }
+      rewrite Hf. cbn [fst snd]. apply sem_val; [done|by apply meets_tid| |].
+      * apply fcap_ext_single. by apply pt_known_shift, (pfits_node _ _ _ _ Hp).
+      * apply (Vfuel_refill j W' n' b' c b (pt_shift 1 x)); [done|by rewrite lookup_singleton_eq].
+Qed.
+
+Lemma link_redex j W P1 a1 P2 a2 a0 π φ tk d r v :
+  is_val v = true → Vfuel j W (CTa (CProd (CTa (CEnd P1) a1) (CTa (CEnd P2) a2)) a0) π φ v →
+  dom φ = dom π → fcap_ext W π φ → meets (tlink tid) r tk →
+  FuelE j W (CTa CVal None) r π φ tk d (App ELink v).
+Proof.
+  intros Hv HV Hd Hc Hm. destruct j as [|j]; [apply FuelE_0|].
+  apply FuelE_redex; [done|done|]. intros W' g π' φ' Hb Hk R1 R2. cbn [emap].
+  assert (Hdφ' : dom φ' = dom π') by (eapply renk_dom_eq; [exact Hd|exact R1|exact R2]).
+  pose proof (Vfuel_move _ _ _ _ _ _ _ g π' φ' Hb Hk ltac:(by rewrite Hd) R1 R2 HV) as HV'.
+  assert (Hv' : is_val (emap g v) = true) by by rewrite is_val_emap.
+  destruct (Vfuel_pair_inv _ _ _ _ _ _ _ _ HV') as (u & w & π1 & π2 & Heq & -> & Hd12 & HV1 & HV2).
+  simpl in HV1, HV2.
+  destruct (Vfuel_end_inv _ _ _ _ _ _ _ HV1) as (c1 & b1 & x1 & f1 & -> & -> & _).
+  destruct (Vfuel_end_inv _ _ _ _ _ _ _ HV2) as (c2 & b2 & x2 & f2 & -> & -> & _).
+  rewrite Heq. destruct (link_split _ _ _ Hm) as [Htk Hm'].
+  assert (Hdπ : dom ({[(c1, b1) := x1]} ∪ {[(c2, b2) := x2]} : gmap cend point) = {[(c1, b1); (c2, b2)]}).
+  { rewrite dom_union_L, !dom_singleton_L. done. }
+  split.
+  - intros s0 e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst. done.
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst.
+    unfold Fobl; cbv beta iota. split_and!; [intros o [=]|by rewrite Hdπ|done|].
+    unfold fupd, fact. cbn [sl_out sl_end fst snd].
+    rewrite (mrem_all _ ({[(c1, b1) := x1]} ∪ {[(c2, b2) := x2]})) by (by rewrite Hdπ).
+    rewrite (mrem_all _ φ') by (by rewrite Hdφ', Hdπ).
+    apply sem_val; [done|done|apply fcap_ext_empty|apply Vfuel_unit].
+Qed.
+
+Lemma new_redex j W ρ a P Q n b n' b' π φ tk d r v :
+  pprof ρ = Some (P, Q) → pnode P = Some (n, b) → pnode Q = Some (n', b') →
+  Vfuel j W (CTa (CPt ρ) a) π φ v → dom φ = dom π → r ≤ tk →
+  FuelE j W (CTa (CProd (CTa (CEnd P) (Some n)) (CTa (CEnd Q) (Some n'))) (Some 0)) r π φ tk d (App ENew v).
+Proof.
+  intros Hρ HP HQ HV Hd Hr. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_pt_inv _ _ _ _ _ _ _ HV) as (x & -> & -> & Hkx & Hfx).
+  pose proof (dom_empty_map φ ∅ Hd eq_refl) as ->.
+  destruct ρ as [P0 Q0 fl sc|]; [|done]. simpl in Hρ. injection Hρ as <- <-.
+  apply pnode_inv in HP as ->. apply pnode_inv in HQ as ->.
+  apply FuelE_redex; [done|apply fcap_ext_empty|]. intros W' g π' φ' Hb Hk R1 R2.
+  rewrite (renk_empty g π' R1), (renk_empty g φ' R2). cbn [emap].
+  assert (Hf' : pfitpt W' x (Prof (PNode n b) (PNode n' b') fl sc)) by (by apply (pfitpt_wbext W)).
+  inversion Hf' as [|? ? ? ? ? HpP HpQ _ _]; subst.
+  destruct (pfits_node _ _ _ _ HpP) as (Hk1 & Hn1 & [m1 Hm1] & _).
+  destruct (pfits_node _ _ _ _ HpQ) as (Hk2 & Hn2 & [m2 Hm2] & _). rewrite pt_dual_dual in Hm2.
+  split.
+  - intros s0 e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. inversion Hst.
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst.
+    unfold Fobl; cbv beta iota. intros _ _. cbn [fupd fst snd].
+    set (o1 := (c, pt_pol x)). set (o2 := (c, negb (pt_pol x))).
+    assert (Hne : o1 ≠ o2) by (unfold o1, o2; destruct (pt_pol x); done).
+    rewrite !insert_empty, !insert_union_singleton_l.
+    apply sem_val; [done|by apply meets_tid| |].
+    + apply fcap_ext_union; [apply fcap_ext_single; done|apply fcap_ext_single; done|].
+      rewrite !dom_singleton_L. set_solver.
+    + apply Vfuel_pair; [rewrite !dom_singleton_L; set_solver|by rewrite !dom_singleton_L|by rewrite !dom_singleton_L| |];
+        rewrite cadd_0.
+      * apply (Vfuel_end _ _ _ _ _ _ _ _ (w_bud W' x)); [done|done|by rewrite Hm1|by rewrite lookup_singleton_eq|done].
+      * apply (Vfuel_end _ _ _ _ _ _ _ _ (w_bud W' (pt_dual x))); [done|done|by rewrite pt_dual_dual, Hm2|by rewrite lookup_singleton_eq|done].
+Qed.
+
+Lemma pfitpt_fld W x ρ i : pfitpt W x ρ → pfitpt W (pt_payload x i) (pfld ρ i).
+Proof. intros H. destruct ρ; simpl; [|constructor]. inversion H as [|? ? ? ? ? _ _ Hf _]; subst. exact (Hf i). Qed.
+
+Lemma pfitpt_suc W x ρ : pfitpt W x ρ → pfitpt W (pt_shift 1 x) (psuc ρ).
+Proof. intros H. destruct ρ; simpl; [|constructor]. inversion H as [|? ? ? ? ? _ _ _ Hs]; subst. exact Hs. Qed.
+
+Lemma pay_redex j W ρ a i π φ tk d r v :
+  Vfuel j W (CTa (CPt ρ) a) π φ v → dom φ = dom π → r ≤ tk →
+  FuelE j W (CTa (CPt (pfld ρ i)) None) r π φ tk d (App (Konst (KPay i)) v).
+Proof.
+  intros HV Hd Hr. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_pt_inv _ _ _ _ _ _ _ HV) as (x & -> & -> & Hkx & Hfx).
+  pose proof (dom_empty_map φ ∅ Hd eq_refl) as ->.
+  apply (FuelE_beta j W _ r ∅ ∅ tk d [] _ (EPt (pt_payload x i))); [by apply Forall_nil|constructor|apply fcap_ext_empty|].
+  apply sem_val; [done|by apply meets_tid|apply fcap_ext_empty|]. apply Vfuel_eq. simpl.
+  exists (pt_payload x i). split_and!; [done|done|done|by apply pfitpt_fld].
+Qed.
+
+Lemma succ_redex j W ρ a π φ tk d r v :
+  Vfuel j W (CTa (CPt ρ) a) π φ v → dom φ = dom π → r ≤ tk →
+  FuelE j W (CTa (CPt (psuc ρ)) None) r π φ tk d (App (Konst KSucc) v).
+Proof.
+  intros HV Hd Hr. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_pt_inv _ _ _ _ _ _ _ HV) as (x & -> & -> & Hkx & Hfx).
+  pose proof (dom_empty_map φ ∅ Hd eq_refl) as ->.
+  apply (FuelE_beta j W _ r ∅ ∅ tk d [] _ (EPt (pt_shift 1 x))); [by apply Forall_nil|constructor|apply fcap_ext_empty|].
+  apply sem_val; [done|by apply meets_tid|apply fcap_ext_empty|]. apply Vfuel_eq. simpl.
+  exists (pt_shift 1 x). split_and!; [done|done|done|by apply pfitpt_suc].
+Qed.
+
+Lemma force_redex j W c t σ a π φ tk d r v :
+  Vfuel j W (CTa (CBox c t σ) a) π φ v → dom φ = dom π → meets t r tk → fle c d →
+  FuelE j W σ r π φ tk d (App EForce v).
+Proof.
+  intros HV Hd Hm Hcd. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_box_inv _ _ _ _ _ _ _ _ _ HV) as (eb & -> & -> & _ & HB).
+  pose proof (dom_empty_map φ ∅ Hd eq_refl) as ->.
+  apply (FuelE_beta j W _ r ∅ ∅ tk d [] _ (subst1 (EBox eb) eb)); [by apply Forall_nil|constructor|apply fcap_ext_empty|].
+  apply (FuelE_frame_mono _ _ _ _ _ _ _ c); [done|]. apply HB; [apply wbext_refl|lia|done].
+Qed.
+
+Lemma app_redex j W c t h σ1 σ2 a π1 φ1 π2 φ2 tk d r v1 v2 :
+  Vfuel j W (CTa (CArr c t h σ1 σ2) a) π1 φ1 v1 → Vfuel j W σ1 π2 φ2 v2 → is_val v2 = true →
+  dom π1 ## dom π2 → dom φ1 = dom π1 → dom φ2 = dom π2 → fcap_ext W π1 φ1 → fcap_ext W π2 φ2 →
+  meets t r tk → fle c d → FuelE j W σ2 r (π2 ∪ π1) (φ2 ∪ φ1) tk d (App v1 v2).
+Proof.
+  intros HV1 HV2 Hv Hd H1 H2 Hc1 Hc2 Hm Hcd. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_arr_inv _ _ _ _ _ _ _ _ _ _ _ HV1) as (eb & -> & _ & _ & Hfl & HF).
+  apply (FuelE_beta j W _ r _ _ tk d [] _ (subst1 v2 eb)); [by apply Forall_nil|apply HeadApp; by rewrite Hv|by apply fcap_ext_union|].
+  rewrite (union_comm_d π2 π1), (union_comm_d φ2 φ1) by (rewrite ?H1, ?H2; set_solver).
+  apply (FuelE_frame_mono _ _ _ _ _ _ _ c); [done|].
+  apply (HF W j φ1 v2 π2 φ2); [apply wbext_refl|lia|done|done| |set_solver| |apply (Vfuel_down _ (S j)); [lia|done]|done].
+  - intros o f Ho. eapply fle_trans; [apply fle_fadd_l|exact (Hfl o f Ho)].
+  - split_and!; done.
+Qed.
+
+Lemma spawn_redex j W c' t' h a1 σ' a π φ tk d r v :
+  Vfuel j W (CTa (CArr c' t' h (CTa CVal a1) σ') a) π φ v → fle (Some 1) a →
+  dom φ = dom π → fcap_ext W π φ → meets (tspawn (snd t') tid) r tk →
+  FuelE j W (CTa CVal None) r π φ tk d (App ESpawn v).
+Proof.
+  intros HV Ha Hd Hc Hm. destruct j as [|j]; [apply FuelE_0|].
+  destruct (spawn_split _ _ _ _ Hm) as [Hch Hpar].
+  destruct (Vfuel_arr_inv _ _ _ _ _ _ _ _ _ _ _ HV) as (eb & -> & _ & _ & _ & _).
+  apply FuelE_redex; [done|done|]. intros W' g π' φ' Hb Hk R1 R2. cbn [emap].
+  assert (Hdφ' : dom φ' = dom π') by (eapply renk_dom_eq; [exact Hd|exact R1|exact R2]).
+  assert (Hc' : fcap_ext W' π' φ') by (apply (fcap_ext_wbext W); [done|]; eapply fcap_ext_rename; eauto).
+  pose proof (Vfuel_move _ _ _ _ _ _ _ g π' φ' Hb Hk ltac:(by rewrite Hd) R1 R2 HV) as HV'.
+  destruct (Vfuel_arr_inv _ _ _ _ _ _ _ _ _ _ _ HV') as (eb' & Heq & Hdom' & _ & Hfl' & HF').
+  cbn [emap] in Heq, Hdom'. rewrite Heq in Hdom' |- *. clear Heq.
+  assert (Hab : ∀ o f, φ' !! o = Some f → fle (Some (S h)) f).
+  { intros o f Ho. eapply fle_trans; [|exact (Hfl' o f Ho)]. destruct a as [a|]; simpl in *; lia. }
+  split.
+  - intros s0 e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. inversion Hst.
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst.
+    unfold Fobl; cbv beta iota. split_and!.
+    + by rewrite <-Hdom'.
+    + intros o m _ Hom. specialize (Hab o _ Hom). simpl in Hab. lia.
+    + unfold fchild. cbn [fst snd]. rewrite <-Hdom', mres_dom, (mres_dom_eq π' φ' Hdφ').
+      destruct j as [|j0]; [apply FuelE_0|].
+      apply (FuelE_beta j0 W' _ 0 π' (ftick <$> φ') (Nat.div2 (S tk)) None [] _ (subst1 EUnit eb')); [by apply Forall_nil|by apply HeadApp| |].
+      { apply (fcap_ext_fmap _ _ _ ftick); [apply ftick_le|done]. }
+      apply (FuelE_mono _ _ σ' cany 0 0 _ _ (Nat.div2 (S tk)) (Nat.div2 (S tk)) c' None); [apply cst_any|lia|lia|apply fle_None|].
+      rewrite <-(map_union_empty π'), <-(map_union_empty (ftick <$> φ')).
+      apply (HF' W' j0 (ftick <$> φ') EUnit ∅ ∅); [apply wbext_refl|lia|by rewrite dom_fmap_L| | |set_solver| |apply Vfuel_unit|].
+      * apply (fcap_ext_fmap _ _ _ ftick); [apply ftick_le|done].
+      * intros o f Ho. apply lookup_fmap_Some in Ho as (f0 & <- & Ho). specialize (Hab o f0 Ho).
+        destruct f0; simpl in *; lia.
+      * split_and!; [done|done|apply fcap_ext_empty].
+      * apply meets_zero. done.
+    + unfold fupd. cbn [fst snd]. rewrite (mrem_all _ π') by (by rewrite Hdom').
+      rewrite (mrem_all _ φ') by (by rewrite Hdφ', Hdom').
+      apply sem_val; [done|done|apply fcap_ext_empty|apply Vfuel_unit].
+Qed.
