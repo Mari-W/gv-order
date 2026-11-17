@@ -2827,3 +2827,24 @@ its type at every index. `cfits_end` derives it for an end whose
 protocol fits at a known point with credit at most the budget.
 examples/CostFsem.v gives sync and the callback server `fsem W ∅` from
 their derivations (`sync_fsem`, `cb_fsem`).
+
+### 19.15  Deviations (H5)
+
+1. **`lf_term` asks H4's `cfits` (premise).** The prep branch stated
+   `cfits` in protocol form. Each end has a type `CTa (CEnd P) a` whose
+   protocol fits at its point, with credit at most the budget. That form
+   misses the finite partner budget that `Vfuel` asks of every end
+   (`fpts`), because `pfits` gives it only below a node and `PTop` fits
+   everywhere. `lf_term` therefore asks `cfits` of lockfree/CostFund.v,
+   as 19.7 wrote it, and the separate premise of known points goes,
+   because `cfits` contains it. The protocol form is `cfits_pf`, with
+   `w_bud W (pt_dual x) ≠ None` added, and `cfits_pf_cfits` derives
+   `cfits` from it and known points through `cfits_end`.
+2. **Two-world composition only (rule).** As the prep branch recorded,
+   `lfptyped` has one composition rule, `lf_connect`, in the form of
+   P-Join with `wbud_agree`. `LFP_connect` lands in `wjoin W1 W2`, and
+   `LFP` has no lemma from `wjoin W W` back to W.
+
+`lf_fundamental` is induction on `lfptyped`, and `lf_soundness` is
+`lf_fundamental` with `lf_adequacy`, as 19.7 argued. Neither takes a
+hypothesis.

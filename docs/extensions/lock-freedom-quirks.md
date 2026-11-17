@@ -145,6 +145,9 @@ and the other steps move points along shifts and payload fields, which keep
 the root. `LFP_term` asks that W know the points of its environment, because
 `lsem_typed` does not give it. `fuel_recv_unknown`, `sync_not_fsem` and
 `lf_fuel_fundamental_fails` are gone. `fuel_unknown_zero` stays.
+*Lifted at the typed level (2026-11-17, H5).* `lfptyped` asks no separate
+premise of known points. `lf_term` reads them off H4's `cfits`, and
+`lf_fundamental` passes them to `LFP_term`.
 
 **A13b. Replacement minimum against the send floor (open, 2026-11-16).**
 The replacement clause lets another thread's link lower a counter to the

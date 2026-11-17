@@ -26,6 +26,7 @@ Updated after every stage and every agent result.
 
 | H2 Cost judgment and the examples' derivations (plan §19.4, §19.9) | done, GrowRing by C-SpawnLam | static/CostTyping.v (`ctyped W Θ Γ e σ c t`, rules `C_Unit` to `C_Contract`, `konst_cost`, `ccap`, `cage_env`, `csplit`, `cst_refl`, `tle_check`, tactic `ct`), examples/CostEx.v (`sync_ctyped`, `tc_ctyped`, `fw_ctyped`, `rc_ctyped`, `abp_ctyped`, `cs_ctyped`, `sched_ctyped`, `cb_ctyped`, `rg_ctyped`, rejections at the rule), `C_SpawnLam` | passes, CheckAll closed | 0, no axioms | H4 proves C-SpawnLam and keeps the `cheld` condition (plan §19.12); per-end floors on arrows later |
 | H5 prep Rank.v, LFTyped.v skeleton, cleanup P1, P2 (plan §19.10) | done on branch lf-h5prep | lockfree/Rank.v (`cworld`, `wf_world`, `cworld_hold`, `wgen_rank_wf`, `cworld_rank_wf`, `chain_not_wf`, `ladder_wf`, `fw_wf` to `sync_wf`, `kob_cworld_not_wf`, `c1_rank_fails`), lockfree/LFTyped.v (`cfits`, `lfptyped`, `lfptyped_join`, `lf_fundamental`, `lf_soundness` over the section hypothesis `ctyped_fsem`, `fuel_unknown_zero`); Fragment.v and LFFuelTyped.v deleted | passes, CheckAll 377 closed | 0, no axioms | `ctyped_fsem` owed by H4 |
+| H5 Assembly: `lf_fundamental`, `lf_soundness` (plan §19.7, §19.15) | done | lockfree/LFTyped.v (`lfptyped` with `lf_term` over H4's `cfits`, `cfits_pf`, `cfits_pf_cfits`, `lf_fundamental`, `lf_soundness` with no hypothesis) | passes, CheckAll 414 closed | 0, no axioms | none |
 | 4  Paper section | not started | | | | |
 
 ## Log
@@ -916,6 +917,22 @@ Updated after every stage and every agent result.
   `set_solver` at the `fe_two` calls. LFSoup.v falls from 118 s to 78 s
   and LFAdequacy.v from 73 s to 22 s. Every protected statement keeps
   its text against 2fe11c6.
+
+- 2026-11-17. Stage H5 done. lf-h5prep is merged into lock-freedom, and
+  the merge built without changes. `lf_fundamental : lfptyped W Σ p T →
+  strict W → LFP W Σ T p` and `lf_soundness : lfptyped W ∅ p T →
+  world_wf W → well_founded (w_lt W) → lock_free p` are closed under the
+  global context, with no hypothesis left. `lf_term` gets its fuel from
+  H4's `ctyped_fsem` at W0 = W. The prep form of `cfits` did not give
+  the partner budgets. `pfits` gives a finite partner budget only below
+  a node, and `PTop` fits at every point, while `Vfuel` asks it of every
+  end (`fpts`). So `lf_term` now asks H4's `cfits` directly, as plan
+  §19.7 wrote it, and drops the premise of known points, which `cfits`
+  contains. The protocol form stays as `cfits_pf`, with the partner
+  budget finite as one more conjunct, and `cfits_pf_cfits` turns it with
+  known points into `cfits` (plan §19.15). CheckAll has 414 active
+  entries, all closed. Protected statements are unchanged against
+  053740d.
 
 ## Related work hooks
 

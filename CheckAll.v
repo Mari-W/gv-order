@@ -209,6 +209,7 @@ Print Assumptions LRGV.lockfree.LFTyped.lf_soundness.
 Print Assumptions LRGV.lockfree.LFTyped.lfptyped_gptyped.
 Print Assumptions LRGV.lockfree.LFTyped.lfptyped_join.
 Print Assumptions LRGV.lockfree.LFTyped.fuel_unknown_zero.
+Print Assumptions LRGV.lockfree.LFTyped.cfits_pf_cfits.
 Print Assumptions LRGV.lockfree.LFSoup.LFsoup_down.
 Print Assumptions LRGV.lockfree.LFSoup.lfsoup_step.
 Print Assumptions LRGV.lockfree.LFSoup.lfsoup_run.

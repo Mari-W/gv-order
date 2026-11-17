@@ -55,7 +55,7 @@ main = [('static/Fundamental.v', 'soundness'), ('static/Fundamental.v', 'soundne
         ('lockfree/Rank.v', 'sched_wf'), ('lockfree/Rank.v', 'sync_wf'),
         ('lockfree/LFTyped.v', 'lf_fundamental'), ('lockfree/LFTyped.v', 'lf_soundness'),
         ('lockfree/LFTyped.v', 'lfptyped_gptyped'), ('lockfree/LFTyped.v', 'lfptyped_join'),
-        ('lockfree/LFTyped.v', 'fuel_unknown_zero'),
+        ('lockfree/LFTyped.v', 'fuel_unknown_zero'), ('lockfree/LFTyped.v', 'cfits_pf_cfits'),
         ('lockfree/LFSoup.v', 'LFsoup_down'), ('lockfree/LFSoup.v', 'lfsoup_step'),
         ('lockfree/LFSoup.v', 'lfsoup_run'), ('lockfree/LFSoup.v', 'lfc_local_progress'),
         ('lockfree/LFAdequacy.v', 'lf_adequacy'), ('lockfree/LFAdequacy.v', 'lf_adequacy_ex'),
