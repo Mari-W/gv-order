@@ -41,4 +41,5 @@ relation/Relation.v
 relation/Closure.v
 relation/Adequacy.v
 test/RelationNotations.v
+fuel/Fuel.v
 CheckAll.v
