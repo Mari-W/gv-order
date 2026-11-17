@@ -21,14 +21,16 @@ Set Default Proof Using "All".
 
 (** ** Stepping a thread under FuelE *)
 
-Lemma fstep_beta n W π φ tk e e' :
-  FuelE (S n) W π φ tk e → tstep e LBeta e' → FuelE n W π φ tk e'.
+Lemma fstep_beta n W σ r π φ tk d e e' :
+  FuelE (S n) W σ r π φ tk d e → tstep e LBeta e' → FuelE n W σ r π φ tk d e'.
 Proof. intros H Hs. exact (fuel_obl _ _ _ _ _ _ H _ _ Hs). Qed.
 
-Lemma fstep_new n W π φ tk e e' c x :
-  FuelE (S n) W π φ tk e → tstep e (LNew c x) e' →
-  FuelE n W (<[(c, pt_pol x) := x]> (<[(c, negb (pt_pol x)) := pt_dual x]> π))
-    (<[(c, pt_pol x) := w_bud W x]> (<[(c, negb (pt_pol x)) := w_bud W (pt_dual x)]> φ)) tk e'.
+(** A new step with a channel the thread does not hold (plan §19.8). *)
+Lemma fstep_new n W σ r π φ tk d e e' c x :
+  FuelE (S n) W σ r π φ tk d e → tstep e (LNew c x) e' →
+  (c, true) ∉ dom π → (c, false) ∉ dom π →
+  FuelE n W σ r (<[(c, pt_pol x) := x]> (<[(c, negb (pt_pol x)) := pt_dual x]> π))
+    (<[(c, pt_pol x) := w_bud W x]> (<[(c, negb (pt_pol x)) := w_bud W (pt_dual x)]> φ)) tk d e'.
 Proof. intros H Hs. exact (fuel_obl _ _ _ _ _ _ H _ _ Hs). Qed.
 
 Ltac tsolve :=
@@ -44,16 +46,17 @@ Ltac tsolve :=
 
 (** The term of H in normal form. The maps keep their shape: [simpl]
     or [cbn] on them, or on FuelE, runs out of stack. *)
-Ltac fnorm H := match type of H with FuelE ?n ?W ?π ?φ ?tk ?e =>
-  let e2 := eval vm_compute in e in change (FuelE n W π φ tk e2) in H end.
+Ltac fnorm H := match type of H with FuelE ?n ?W ?σ ?r ?π ?φ ?tk ?d ?e =>
+  let e2 := eval vm_compute in e in change (FuelE n W σ r π φ tk d e2) in H end.
 
-Ltac fbeta H := match type of H with FuelE (S ?n) ?W ?π ?φ ?tk ?e =>
+Ltac fbeta H := match type of H with FuelE (S ?n) ?W ?σ ?r ?π ?φ ?tk ?d ?e =>
   let Hs := fresh in eassert (Hs : tstep e LBeta _) by tsolve;
-  apply (fstep_beta n W π φ tk e _ H) in Hs; clear H; rename Hs into H; fnorm H end.
+  apply (fstep_beta n W σ r π φ tk d e _ H) in Hs; clear H; rename Hs into H; fnorm H end.
 
-Ltac fnew H c x := match type of H with FuelE (S ?n) ?W ?π ?φ ?tk ?e =>
+(** The freshness premises of [fstep_new] are left as goals. *)
+Ltac fnew H c x := match type of H with FuelE (S ?n) ?W ?σ ?r ?π ?φ ?tk ?d ?e =>
   let Hs := fresh in eassert (Hs : tstep e (LNew c x) _) by tsolve;
-  apply (fstep_new n W π φ tk e _ c x H) in Hs; clear H; rename Hs into H; fnorm H end.
+  apply (fstep_new n W σ r π φ tk d e _ c x H) in Hs; clear H; rename Hs into H; [fnorm H| |] end.
 
 (** ** The scheduler is in the fragment *)
 
@@ -122,7 +125,7 @@ Definition sync_W : world := src_world Sync.sync_Ψ Sync.sync_main.
 
 Theorem sync_budgets :
   strict sync_W ∧ lfptyped sync_W ∅ (∅, {[+ Sync.sync_main +]}) TUnit ∧
-  stretch_len Sync.sync_main = 10 ∧ ∀ x, w_bud sync_W x = Some 20 ∧ w_pay sync_W x = 10.
+  stretch_len Sync.sync_main = 10 ∧ ∀ x, w_bud sync_W x = Some 20 ∧ src_pay Sync.sync_main x = 10.
 Proof.
   destruct (lfsource_budgets _ _ _ sync_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
@@ -133,7 +136,7 @@ Definition sched_W : world := src_world Scheduler.sched_Ψ Scheduler.sched_main.
 
 Theorem sched_budgets :
   strict sched_W ∧ lfptyped sched_W ∅ (∅, {[+ Scheduler.sched_main +]}) TUnit ∧
-  stretch_len Scheduler.sched_main = 20 ∧ ∀ x, w_bud sched_W x = Some 40 ∧ w_pay sched_W x = 20.
+  stretch_len Scheduler.sched_main = 20 ∧ ∀ x, w_bud sched_W x = Some 40 ∧ src_pay Scheduler.sched_main x = 20.
 Proof.
   destruct (lfsource_budgets _ _ _ sched_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
@@ -154,7 +157,7 @@ Qed.
 
 (** W with the budget b at the point k. *)
 Definition wbud_set (W : world) (k : point) (b : option nat) : world :=
-  World (w_names W) (w_lt W) (λ x, if decide (x = k) then b else w_bud W x) (w_pay W).
+  World (w_names W) (w_lt W) (λ x, if decide (x = k) then b else w_bud W x) (w_pc W).
 
 (** Outside the support, that is an extension. *)
 Lemma wbud_set_ext W k b : ¬ pt_known W k → wbext W (wbud_set W k b).
@@ -165,8 +168,8 @@ Qed.
 
 (** A counter at a point outside the support is 0 at every index
     above 0. *)
-Lemma fuel_unknown_zero n W π φ tk e o k m :
-  FuelE (S n) W π φ tk e → π !! o = Some k → φ !! o = Some (Some m) → ¬ pt_known W k → m = 0.
+Lemma fuel_unknown_zero n W σ r π φ tk d e o k m :
+  FuelE (S n) W σ r π φ tk d e → π !! o = Some k → φ !! o = Some (Some m) → ¬ pt_known W k → m = 0.
 Proof.
   intros HF Hk Hm Hu.
   apply (FuelE_wbext _ _ (wbud_set W k (Some 0))) in HF; [|by apply wbud_set_ext].

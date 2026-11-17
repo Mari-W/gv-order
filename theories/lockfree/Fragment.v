@@ -65,6 +65,7 @@
 From stdpp Require Import base strings gmap gmultiset relations.
 From LRGV Require Export liveness.Guard.
 From LRGV Require Import static.Fundamental examples.ExampleTools examples.LitTools.
+From LRGV Require Import relation.CostTypes.
 From LRGV Require examples.Forwarder examples.TailCall examples.KobForwarder
   examples.cfst.CfstTools examples.cfst.CfstScheduler examples.cfst.TreeSum
   examples.ReceivedChain examples.GrowRing examples.ABP.
@@ -1283,7 +1284,7 @@ Qed.
 (** The world where the run starts, with its default budgets. *)
 Theorem lfsource_lfptyped Ψ t T :
   lfsource Ψ t T → strict (cworld Ψ) ∧ lfptyped (cworld Ψ) ∅ (∅, {[+ t +]}) T.
-Proof. intros H. exact (lfsource_lfptyped_at Ψ t T (λ _, None) (λ _, 0) H). Qed.
+Proof. intros H. exact (lfsource_lfptyped_at Ψ t T (λ _, None) (λ _, cany) H). Qed.
 
 (** ** Budgets (plan §17.6, §17.8, revised after stage L6a)
 
@@ -1315,7 +1316,10 @@ Proof. intros H. exact (lfsource_lfptyped_at Ψ t T (λ _, None) (λ _, 0) H). Q
     depth of a root is the length of the longest path that ends in it.
     Every end gets the refill and cap B = (d + 2)·L. A payload sent
     along a carrier at the point k is floored by
-    w_pay k = (d − depth (root k) + 1)·L. The receiver of a payload with
+    [pay_at] k = (d − depth (root k) + 1)·L. Since stage H1 (plan §19)
+    the world keeps a payload cost type [w_pc] instead of a floor, so
+    [with_budgets] sets it to [cany] and the floor stays a function of
+    the fragment ([src_pay]), until stage H5 removes this part. The receiver of a payload with
     counter c ≥ w_pay k acts on it within its stretch (L ≤ c), or
     passes it on along a carrier of a root deeper by one at least, which
     asks c − L ≥ the next floor, true because the floors drop by L per
@@ -1368,7 +1372,7 @@ Definition pay_at (E : list (pname * pname)) (L : nat) (k : point) : nat :=
 (** The world W with the budgets of the root graph E and the stretch
     bound L. *)
 Definition with_budgets (W : world) (E : list (pname * pname)) (L : nat) : world :=
-  World (w_names W) (w_lt W) (bud_at E L) (pay_at E L).
+  World (w_names W) (w_lt W) (bud_at E L) (λ _, cany).
 
 Lemma with_budgets_strict W E L : strict W → strict (with_budgets W E L).
 Proof. apply strict_budgets. Qed.
@@ -1379,14 +1383,16 @@ Proof. done. Qed.
 Lemma with_budgets_bud W E L x : w_bud (with_budgets W E L) x = Some ((gdepth E + 2) * L).
 Proof. done. Qed.
 
-Lemma with_budgets_pay W E L k : w_pay (with_budgets W E L) k = (gdepth E - depth E (pt_root k) + 1) * L.
-Proof. done. Qed.
 
 (** The world where the run of a closed program starts, with the
     budgets of its root graph and of its stretch bound. The budgets are
     a function of the program, and no session type enters them. *)
 Definition src_world (Ψ : hyps) (t : expr) : world :=
   with_budgets (cworld Ψ) (default [] (root_edges t)) (stretch_len t).
+
+(** The floor of a payload sent on a carrier at k, in the run of t. *)
+Definition src_pay (t : expr) (k : point) : nat :=
+  pay_at (default [] (root_edges t)) (stretch_len t) k.
 
 (** A program of the fragment is in the fragment at its budgets. *)
 Theorem lfsource_budgets Ψ t T :
@@ -1846,8 +1852,8 @@ Qed.
 
 (** With no root edge every end gets 2L and every floor is L. *)
 Lemma budgets_flat W L x :
-  w_bud (with_budgets W [] L) x = Some (2 * L) ∧ w_pay (with_budgets W [] L) x = L.
-Proof. rewrite with_budgets_bud, with_budgets_pay. cbn. split; [f_equal|]; lia. Qed.
+  w_bud (with_budgets W [] L) x = Some (2 * L) ∧ pay_at [] L x = L.
+Proof. rewrite with_budgets_bud. unfold pay_at. cbn. split; [f_equal|]; lia. Qed.
 
 (** The forwarder. fwd receives on its slot [false], which main fills
     with a at the constant 1, and forwards along its slot [true], which
@@ -1863,27 +1869,27 @@ Theorem fw_budgets :
   strict fw_W ∧ lfptyped fw_W ∅ (∅, {[+ Forwarder.fw_main +]}) TUnit ∧
   root_edges Forwarder.fw_main = Some [(NConst 1, NConst 0)] ∧ stretch_len Forwarder.fw_main = 6 ∧
   (∀ x, w_bud fw_W x = Some 18) ∧
-  (∀ k, pt_root k = NConst 1 → w_pay fw_W k = 12) ∧
-  (∀ k, pt_root k = NConst 0 → w_pay fw_W k = 6).
+  (∀ k, pt_root k = NConst 1 → src_pay Forwarder.fw_main k = 12) ∧
+  (∀ k, pt_root k = NConst 0 → src_pay Forwarder.fw_main k = 6).
 Proof.
   destruct (lfsource_budgets _ _ _ fw_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|vm_compute; reflexivity| | |].
   - intros x. unfold fw_W, src_world. rewrite with_budgets_bud. vm_compute. reflexivity.
-  - intros k Hk. unfold fw_W, src_world. rewrite with_budgets_pay, Hk. vm_compute. reflexivity.
-  - intros k Hk. unfold fw_W, src_world. rewrite with_budgets_pay, Hk. vm_compute. reflexivity.
+  - intros k Hk. unfold src_pay, pay_at. rewrite Hk. vm_compute. reflexivity.
+  - intros k Hk. unfold src_pay, pay_at. rewrite Hk. vm_compute. reflexivity.
 Qed.
 
 (** The examples without a root edge. *)
 Lemma src_flat Ψ t L x :
   root_edges t = Some [] → stretch_len t = L →
-  w_bud (src_world Ψ t) x = Some (2 * L) ∧ w_pay (src_world Ψ t) x = L.
-Proof. intros HE HL. unfold src_world. rewrite HE, HL. apply budgets_flat. Qed.
+  w_bud (src_world Ψ t) x = Some (2 * L) ∧ src_pay t x = L.
+Proof. intros HE HL. unfold src_world, src_pay. rewrite HE, HL. apply budgets_flat. Qed.
 
 Definition tc_W : world := src_world TailCall.tc_Ψ TailCall.tc_main.
 
 Theorem tc_budgets :
   strict tc_W ∧ lfptyped tc_W ∅ (∅, {[+ TailCall.tc_main +]}) TUnit ∧
-  stretch_len TailCall.tc_main = 2 ∧ ∀ x, w_bud tc_W x = Some 4 ∧ w_pay tc_W x = 2.
+  stretch_len TailCall.tc_main = 2 ∧ ∀ x, w_bud tc_W x = Some 4 ∧ src_pay TailCall.tc_main x = 2.
 Proof.
   destruct (lfsource_budgets _ _ _ tc_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
@@ -1896,7 +1902,7 @@ Definition sch_W : world := src_world (CfstScheduler.sch_Ψ 6) CfstScheduler.sch
 
 Theorem sch_budgets :
   strict sch_W ∧ lfptyped sch_W ∅ (∅, {[+ CfstScheduler.sch_main +]}) TUnit ∧
-  stretch_len CfstScheduler.sch_main = 18 ∧ ∀ x, w_bud sch_W x = Some 36 ∧ w_pay sch_W x = 18.
+  stretch_len CfstScheduler.sch_main = 18 ∧ ∀ x, w_bud sch_W x = Some 36 ∧ src_pay CfstScheduler.sch_main x = 18.
 Proof.
   destruct (lfsource_budgets _ _ _ sch_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
@@ -1907,7 +1913,7 @@ Definition rc_W : world := src_world ReceivedChain.ch_Ψ ReceivedChain.ch_main.
 
 Theorem rc_budgets :
   strict rc_W ∧ lfptyped rc_W ∅ (∅, {[+ ReceivedChain.ch_main +]}) TUnit ∧
-  stretch_len ReceivedChain.ch_main = 6 ∧ ∀ x, w_bud rc_W x = Some 12 ∧ w_pay rc_W x = 6.
+  stretch_len ReceivedChain.ch_main = 6 ∧ ∀ x, w_bud rc_W x = Some 12 ∧ src_pay ReceivedChain.ch_main x = 6.
 Proof.
   destruct (lfsource_budgets _ _ _ rc_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
@@ -1918,7 +1924,7 @@ Definition rg_W : world := src_world GrowRing.rg_Ψ GrowRing.rg_main.
 
 Theorem rg_budgets :
   strict rg_W ∧ lfptyped rg_W ∅ (∅, {[+ GrowRing.rg_main +]}) TUnit ∧
-  stretch_len GrowRing.rg_main = 14 ∧ ∀ x, w_bud rg_W x = Some 28 ∧ w_pay rg_W x = 14.
+  stretch_len GrowRing.rg_main = 14 ∧ ∀ x, w_bud rg_W x = Some 28 ∧ src_pay GrowRing.rg_main x = 14.
 Proof.
   destruct (lfsource_budgets _ _ _ rg_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].
@@ -1929,7 +1935,7 @@ Definition abp_W : world := src_world ABP.abp_Ψ ABP.abp_main.
 
 Theorem abp_budgets :
   strict abp_W ∧ lfptyped abp_W ∅ (∅, {[+ ABP.abp_main +]}) TUnit ∧
-  stretch_len ABP.abp_main = 8 ∧ ∀ x, w_bud abp_W x = Some 16 ∧ w_pay abp_W x = 8.
+  stretch_len ABP.abp_main = 8 ∧ ∀ x, w_bud abp_W x = Some 16 ∧ src_pay ABP.abp_main x = 8.
 Proof.
   destruct (lfsource_budgets _ _ _ abp_lfsource) as [HS HL].
   split_and!; [exact HS|exact HL|vm_compute; reflexivity|].

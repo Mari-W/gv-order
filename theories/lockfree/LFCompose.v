@@ -224,10 +224,11 @@ Proof. intros H. rewrite lookup_union, H. by destruct (m2 !! c). Qed.
 Lemma ulook_r (m1 m2 : senv) c : m1 !! c = None → (m1 ∪ m2) !! c = m2 !! c.
 Proof. intros H. rewrite lookup_union, H. by destruct (m2 !! c). Qed.
 
-(** W1 and W2 agree on budgets and floors at the names they share. *)
+(** W1 and W2 agree on budgets and payload cost types at the names they
+    share. *)
 Definition wbud_agree (W1 W2 : world) : Prop :=
   ∀ x, pt_root x ∈ w_names W1 → pt_root x ∈ w_names W2 →
-    w_bud W1 x = w_bud W2 x ∧ w_pay W1 x = w_pay W2 x.
+    w_bud W1 x = w_bud W2 x ∧ w_pc W1 x = w_pc W2 x.
 
 Lemma wbext_join_l W1 W2 : wbext W1 (wjoin W1 W2).
 Proof. split; [simpl; set_solver|apply wext_bud_join_l]. Qed.

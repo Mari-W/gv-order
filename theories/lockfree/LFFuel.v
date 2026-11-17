@@ -395,6 +395,9 @@ Definition Vfuel (n : nat) : vpred := fV (flevel_at n).
 Definition fsem (W : world) (π : gmap cend point) (t : expr) : Prop :=
   ∃ tk, ∀ n, FuelE n W cany 0 π (w_bud W <$> π) tk None t.
 
+(** FuelE of a thread: result [cany], reserve 0, frame ∞. *)
+Abbreviation FuelT n W π φ tk e := (FuelE n W cany 0 π φ tk None e).
+
 (** ** Unfolding *)
 
 Lemma flevel_at_eq n : flevel_at n = mk_flevel (flevels n) n.

@@ -87,12 +87,12 @@ Proof. intros HW1 [_ Hi] Hl. split; [done|]. intros x Hx. by apply (Hi x), Hl. Q
 
 (** A generated world lies in a well-formed world that contains its
     generators. *)
-Lemma wgen_into N E L (B : point → option nat) (P : point → nat) W :
+Lemma wgen_into N E L (B : point → option nat) (P : point → CostTypes.cta) W :
   world_wf W → (∀ x y, E x y → w_eq W x y) → (∀ x y, L x y → w_lt W x y) →
   ∀ x y, w_lt (wgen_b N E L B P) x y → w_lt W x y.
 Proof. intros HW HE HL. apply (wgen_in_world W E L HW HE HL). Qed.
 
-Lemma wgen_into_eq (N : gset pname) (E L : prel) (B : point → option nat) (P : point → nat) W :
+Lemma wgen_into_eq (N : gset pname) (E L : prel) (B : point → option nat) (P : point → CostTypes.cta) W :
   world_wf W → (∀ x y, E x y → w_eq W x y) → (∀ x y, L x y → w_lt W x y) →
   ∀ x y, w_eq (wgen_b N E L B P) x y → w_eq W x y.
 Proof. intros HW HE HL x y H. exact H. Qed.
