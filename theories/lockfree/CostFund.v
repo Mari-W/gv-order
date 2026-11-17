@@ -1038,3 +1038,83 @@ Proof.
   rewrite emap_rename, subst_rename. apply (Hcs n W g (λ x, γ (pred x))); try done.
   by apply gsem_contract.
 Qed.
+
+(** ** Redexes of the primitive constants *)
+
+Lemma Vfuel_end_inv n W P a π φ v :
+  Vfuel n W (CTa (CEnd P) a) π φ v →
+  ∃ (c : chan) (b : bool) (x : point) f, v = Chan c b ∧ π = {[(c, b) := x]} ∧ pfits W x P ∧
+    φ !! (c, b) = Some f ∧ fle a f ∧ fpts W π.
+Proof. rewrite Vfuel_eq. destruct v; simpl; try done; intros (?&?&?&?&H&_); discriminate H. Qed.
+
+Lemma pnode_inv P n bd : pnode P = Some (n, bd) → P = PNode n bd.
+Proof. destruct P; simpl; [by intros [= -> ->]|done]. Qed.
+
+(** An end, renamed and moved to a later world. *)
+Lemma end_setup j W W' P a π φ (c : chan) (b : bool) (g : chan → chan) π' φ' :
+  Vfuel j W (CTa (CEnd P) a) π φ (Chan c b) → dom φ = dom π → wbext W W' → renk g π π' → renk g φ φ' →
+  ∃ x, π = {[(c, b) := x]} ∧ π' = {[(g c, b) := x]} ∧ dom φ' = {[(g c, b)]} ∧ pfits W' x P.
+Proof.
+  intros HV Hd Hb R1 R2. destruct (Vfuel_end_inv _ _ _ _ _ _ _ HV) as (c' & b' & x & f & [= <- <-] & -> & Hp & _).
+  exists x. pose proof (renk_singleton g (c, b) x π' R1) as ->. split_and!; [done|done| |by apply (pfits_wbext W)].
+  rewrite (renk_dom_eq g _ _ _ _ Hd R1 R2). by rewrite dom_singleton_L.
+Qed.
+
+Lemma ftick_ok_single o (φ : gmap cend fuel) : dom φ = {[o]} → ftick_ok o φ.
+Proof. intros Hd o' m Hne Hm. apply elem_of_dom_2 in Hm. rewrite Hd in Hm. set_solver. Qed.
+
+Lemma partner_fin W x n bd : pfits W x (PNode n bd) → w_bud W (pt_dual x) ≠ None.
+Proof. intros Hp. destruct (pfits_node _ _ _ _ Hp) as (_ & _ & [m Hm] & _). by rewrite Hm. Qed.
+
+Lemma close_redex j W P a n π φ tk d r v :
+  pnode P = Some (n, PCls) → Vfuel j W (CTa (CEnd P) a) π φ v → dom φ = dom π → fcap_ext W π φ →
+  fle (Some 1) d → r ≤ tk → FuelE j W (CTa CVal None) r π φ tk d (App EClos v).
+Proof.
+  intros HP HV Hd Hc H1 Hr. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_end_inv _ _ _ _ _ _ _ HV) as (c & b & x & f & -> & _). apply pnode_inv in HP as ->.
+  apply FuelE_redex; [done|done|]. intros W' g π' φ' Hb Hk R1 R2.
+  destruct (end_setup _ _ _ _ _ _ _ _ _ _ _ _ HV Hd Hb R1 R2) as (x' & -> & -> & Hdφ' & Hp). cbn [emap].
+  split.
+  - intros s e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst. simpl in Ho.
+    injection Ho as <-. exists x'. rewrite lookup_singleton_eq. split; [done|by eapply partner_fin].
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst.
+    unfold Fobl; cbv beta iota. split; [intros o [= <-]; split; [by apply ftick_ok_single|done]|].
+    assert (Hf : fupd W' {[(g c, b) := x']} φ' (LSess (SClos (g c, b))) = (∅, ∅)).
+    { unfold fupd. cbn [sl_out]. rewrite !mrem_none by set_solver. by rewrite fact_single. }
+    rewrite Hf. cbn [fst snd]. apply sem_val; [done|by apply meets_tid|apply fcap_ext_empty|apply Vfuel_unit].
+Qed.
+
+Lemma recv_redex j W P a n σ P' n' b' π φ tk d r v :
+  pnode P = Some (n, PRcv σ P') → pnode P' = Some (n', b') →
+  Vfuel j W (CTa (CEnd P) a) π φ v → dom φ = dom π → fcap_ext W π φ →
+  fle (Some 1) d → r ≤ tk → FuelE j W (CTa (CProd σ (CTa (CEnd P') (Some n'))) (Some 0)) r π φ tk d (App ERecv v).
+Proof.
+  intros HP HP' HV Hd Hc H1 Hr. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_end_inv _ _ _ _ _ _ _ HV) as (c & b & x & f & -> & _).
+  apply pnode_inv in HP as ->. apply pnode_inv in HP' as ->.
+  apply FuelE_redex; [done|done|]. intros W' g π' φ' Hb Hk R1 R2.
+  destruct (end_setup _ _ _ _ _ _ _ _ _ _ _ _ HV Hd Hb R1 R2) as (x' & -> & -> & Hdφ' & Hp). cbn [emap].
+  destruct (pfits_rcv _ _ _ _ _ Hp) as [Hpc Hp1].
+  split.
+  - intros s e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst. simpl in Ho.
+    injection Ho as <-. exists x'. rewrite lookup_singleton_eq. split; [done|by eapply partner_fin].
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done].
+    pose proof (head_step_label_val _ _ _ Hst) as Hlv. inversion Hst; subst. simpl in Hlv.
+    unfold Fobl; cbv beta iota. split; [intros o [= <-]; split; [by apply ftick_ok_single|done]|].
+    assert (Hf : fupd W' {[(g c, b) := x']} φ' (LSess (SRecv (g c, b) v)) =
+                 ({[(g c, b) := pt_shift 1 x']}, {[(g c, b) := w_bud W' (pt_shift 1 x')]})).
+    { unfold fupd. cbn [sl_out]. rewrite !mrem_none by set_solver. by rewrite fact_single. }
+    rewrite Hf. cbn [fst snd]. intros k j' πi φi Hk' Hj' Hdi Hin HVi.
+    rewrite lookup_singleton_eq in Hk'. injection Hk' as <-.
+    destruct Hin as (Dπ & Dφ & Hci & Hfin & Hkn).
+    assert (Hdisj : dom πi ## dom ({[(g c, b) := pt_shift 1 x']} : gmap cend point)) by done.
+    rewrite (union_comm_d {[(g c, b) := pt_shift 1 x']} πi) by set_solver.
+    rewrite (union_comm_d {[(g c, b) := w_bud W' (pt_shift 1 x')]} φi)
+      by (rewrite Dφ, <-Dπ, dom_singleton_L; rewrite dom_singleton_L in Hdisj; set_solver).
+    apply sem_val; [simpl; destruct (is_val v); done|by apply meets_tid| |].
+    + apply fcap_ext_union; [|apply fcap_ext_single; by apply pt_known_shift, (pfits_node _ _ _ _ Hp)|set_solver].
+      by apply fcap_ext_known.
+    + apply Vfuel_pair; [set_solver|by rewrite Dφ, Dπ|by rewrite !dom_singleton_L| |].
+      * rewrite cadd_0. by apply (Vfuel_sub _ _ (w_pc W' (pt_dual x'))).
+      * apply (Vfuel_refill j' W' n' b' (g c) b (pt_shift 1 x')); [done|by rewrite lookup_singleton_eq].
+Qed.
