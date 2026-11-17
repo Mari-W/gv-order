@@ -79,3 +79,15 @@ session type at a point, with no credit (`tenv_erase` drops the credits
 of a typing environment). The session types keep their annotations, so
 the fuel layer of stage S6 reads each end's cost protocol off the
 environment of the live relation at the same index.
+
+## Stage S4, generic compatibility (in progress)
+
+Stopped after S4.3 with a report on O-Send, see docs/redesign/progress.md.
+
+| File | Content |
+|---|---|
+| compat/Bind.v | `Erel_sends`, readiness under a frame, the bind lemma `Erel_bind` for every cost table |
+| compat/Blind.v | heads of session types up to ≈ (`seqv_unfold_*`), V, E and P agree at types whose erasures are ≈ (`Vrel_teq`, `Erel_teq_ty`, `Prel_teq`), the blindness lemma `Vrel_blind`, `Erel_blind` |
+| compat/SemTyped.v | groundings `Grel`, the judgment at a set of points `sem_typed_at`, static futures `sf_den`, `Θ ; Δ ⊨^F _ W t : T` and `Θ ; Δ ⊫^F _ W t : T` (`sem_typed κ`) |
+| compat/SendGap.v | `send_gap`: a value in V that no send can hand over |
+| test/CompatNotations.v | the S4 notations |

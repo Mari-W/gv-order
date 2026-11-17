@@ -43,4 +43,7 @@ relation/Adequacy.v
 test/RelationNotations.v
 compat/Bind.v
 compat/Blind.v
+compat/SemTyped.v
+compat/SendGap.v
+test/CompatNotations.v
 CheckAll.v

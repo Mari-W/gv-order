@@ -1,6 +1,7 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1, S2 and S3. [make check] compiles this file and fails if any line below
+    Stages S1, S2 and S3, and the part of S4 done before the report on
+    O-Send (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
@@ -9,6 +10,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
+From GV Require Import compat.SendGap.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -100,3 +102,16 @@ Print Assumptions adequacy.
 Print Assumptions live_adequacy.
 Print Assumptions Prel_done.
 Print Assumptions Erel_beta_unit.
+(** S4. The bind lemma, blindness, groundings. *)
+Print Assumptions Erel_sends.
+Print Assumptions Erel_bind.
+Print Assumptions Vrel_teq.
+Print Assumptions Erel_teq_ty.
+Print Assumptions Prel_teq.
+Print Assumptions Vrel_blind.
+Print Assumptions Erel_blind.
+Print Assumptions Grel_split.
+Print Assumptions sf_den_unionb.
+Print Assumptions sem_typed_points.
+(** S4. The semantic E-Send rule fails under exact transfer sets. *)
+Print Assumptions send_gap.

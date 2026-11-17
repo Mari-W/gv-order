@@ -13,7 +13,7 @@
     type through these lemmas, because V at S@x holds the end at a type
     S' with S' ≈ S only. *)
 
-From GV Require Export relation.Closure types.Erasure static.PointSubst.
+From GV Require Export types.Erasure static.PointSubst relation.Closure.
 
 (** ** Session types up to annotations *)
 

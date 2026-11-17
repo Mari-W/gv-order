@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress |
+| S4 | generic compatibility | stopped at S4.3, report on O-Send (see S4.3) |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | open |
 | S7 | cost judgment | open |
@@ -184,6 +184,35 @@ The old development in theories/ stays untouched.
   proofs write `pose proof t as H` and `(exists a); tac`. stdpp's `∉`
   sits at level 80, so `x ∉ X ∧ P` is written `(x ∉ X) ∧ P`.
 
+- S4, static futures. `Θ ; Δ ⊨^F _ W t : T` takes the static future F
+  of S2 and reads it through `sf_den ρ B F`: the future variable stands
+  for an arbitrary set ρ φ and the ⊥ flag for an arbitrary set B, both
+  universally quantified. The proposal's `pbot` (W8) is not used. A
+  point that no world orders below anything does not survive the
+  Kripke quantifier of E, whose later worlds need not be well formed.
+  A term typed under the ⊥ flag performs no session action (every
+  action asks `ub_below_s`, which asks the flag off), so it is ready
+  under every future, and the universal reading is the one S5 can
+  establish. The judgment at a set of points is `sem_typed_at`, the
+  form the old semantic rules used. A body under a future hypothesis
+  u ≺ φ (E-Abs, E-Box) is stated in that form over every future above
+  u. With Γ = ∅, as in `fundamental` of A.3, both readings agree.
+- S4, groundings. `Grel κ n W Θ Δ γ` splits Θ among the variables of Δ,
+  one value of V per entry, as the old `grounding` did. It has no
+  notation, because Appendix A gives none.
+- S4, bind. `Erel_bind` asks no strictness of W and no bound on the
+  heads of the frame. The future of the hole holds the heads of the
+  frame's environment itself (`F ∪ senv_heads Θ2`), which S5 reaches
+  from the static heads of E-App and its siblings. The ends a step of
+  the hole acts on are held by the hole (`Erel_sends`), because every
+  obligation reads the subject's entry, so a frame's ends are never
+  touched and the old `Lsubjs_free` goes.
+- S4, blindness. V, E and P agree at T and T' whenever
+  `teq (ty_df T) (ty_df T')`, more than ty_df T = ty_df T'. The
+  operator redexes need it, because V at S@x holds the end at an S'
+  with S' ≈ S up to annotations only, and the obligations read the
+  head of S' (`seqv_unfold_snd` and its siblings).
+
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -269,3 +298,42 @@ The old development in theories/ stays untouched.
   `act_emap`, the frame maps of ChannelSwap.v and TauThread.v, `relabel`
   and the notation test follow. Conservativity, renaming, weakening and
   point substitution needed no change beyond the rule's subject.
+- S4.1. The bind lemma `Erel_bind` over every cost table
+  (v2/compat/Bind.v) and blindness (v2/compat/Blind.v): `Vrel_teq`,
+  `Erel_teq_ty`, `Prel_teq`, `Vrel_blind`, `Erel_blind`.
+- S4.2. The semantic term judgment (v2/compat/SemTyped.v): `Grel`,
+  `sem_typed_at`, `sf_den`, `sem_typed κ`, the notations `⊨` and `⊫`
+  (test/CompatNotations.v), `Grel_split` for `lenv_split`, and the
+  world, level and future lemmas.
+- S4.3. Stop. O-Send asks `dom Θ_M = M` with M the ends the payload
+  mentions (Q3), and after B5 and B6 no V clause relates the ends of a
+  value to its environment (§2.7). So V holds values that no send can
+  hand over. `send_gap` (v2/compat/SendGap.v) proves it in Rocq: the
+  closure w' = λ_. let ∗ = Ω in close q⁺ mentions q⁺, owns nothing and
+  is in `V^W _ n⟦∅ ⊢ ∗ ⊸ ∗⟧` at every n (its body only takes β steps),
+  the pair ⟨w', d⁺⟩ is in V at the payload type of d⁺ at every n, and
+  `send ⟨w', d⁺⟩` is not in E at level 1, because its label moves {q⁺}
+  and the sender holds no q⁺. So the semantic E-Send rule is false over
+  groundings in V. It is not an artefact of the rule's form. O-Recv,
+  Q-Recv and the arrow quantify over every value of V, so the typable
+  forwarder `let ⟨w, c⟩ = recv c in let ∗ = close c in close (send ⟨w, d⟩)`
+  with c : ?(∗ ⊸ ∗).end, d : !(∗ ⊸ ∗).end, after receiving w' at Θin = ∅,
+  reaches the same send at a positive level (at level n ≥ 5 in κ_DF,
+  where each β costs 1, and at every n ≥ 2 in κ_L), so it is in neither
+  E, and `fundamental` and `live_fundamental` of A.3 fail for it. The
+  same holds for the closure λw. send ⟨w, d⟩ (E-Abs) and for a box that
+  mentions an end in dead code (B.1 #32 argued it handled). The
+  argument of §2.7 ("a closure that owns an end it does not mention
+  cannot act on it, so the relation rejects it by itself") does not
+  hold: V does not reject it, and every receiver must accept it.
+  Repairs, each needing the author: (a) restore exactness in V,
+  `dom Θ = fends v` at λ and box (B5, B6), a syntactic clause; (b) read
+  a transfer set at every incoming value as well (O-Recv, Q-Recv and
+  the arrow's argument, with E returning only exact values), which
+  amounts to (a); (c) an existential split at O-Send and O-Spawn with
+  no M, which loses the index-free ownership §2.7 wants for lock
+  freedom. Not done: operator redexes, P-Term, Internalize, P-Connect,
+  P-Join, renaming, `live ⊆ DF`. The composition lemmas do not depend
+  on the repair as long as O-Send keeps an exact `Θ_M`, so they can
+  start once the author decides. CheckAll lists 87 results, all
+  closed. No `Admitted` and no axiom.

@@ -1,0 +1,21 @@
+λ (W : world) (Θ : tenv) (Δ : lenv) (F : sfuture) (t : expr) (T : ty),
+  Θ ; Δ ⊨^F _ W t : T
+     : world → tenv → lenv → sfuture → expr → ty → Prop
+λ (W : world) (Θ : tenv) (Δ : lenv) (F : sfuture) (t : expr) (T : ty),
+  Θ ; Δ ⊫^F _ W t : T
+     : world → tenv → lenv → sfuture → expr → ty → Prop
+Erel_bind
+     : ∀ (κ : ctable) (n : nat) (f : frame) (W : world) 
+         (Θ1 Θ2 : senv) (T U : ty) (F : gset point) 
+         (e : expr),
+         frame_val f
+         → Θ1 ##ₘ Θ2
+           → e ∈ E[κ]^W _ n⟦Θ1 ⊢ T⟧^(F ∪ senv_heads Θ2)
+             → (∀ (W' : world) (j : nat) (Θv : senv) (v : expr),
+                  W ⊑ W'
+                  → j ≤ n
+                    → Θv ##ₘ Θ2
+                      → v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧
+                        → fill_frame f v ∈ E[κ]^W' _ j⟦
+                        Θv ∪ Θ2 ⊢ U⟧^F)
+               → fill_frame f e ∈ E[κ]^W _ n⟦Θ1 ∪ Θ2 ⊢ U⟧^F
