@@ -90,11 +90,11 @@ The old development in theories/ stays untouched.
   with evaluation contexts, defined without labels, and
   `harmony : red p p' ↔ preduction p p'`.
 - S1.6. Thread simulation tools (v2/lang/ThreadSim.v) and channel
-  renamings (v2/lang/ChannelSwap.v): `tstep_cmap` for every renaming of
+  renamings (v2/lang/ChannelSwap.v) with `tstep_cmap` for every renaming of
   names, `pstep_pswap` and `safe_pswap_iff` for transpositions, and
   `oswap_csub`, the link substitution commuting with a transposition.
 - S1.7. Runs and lock freedom over the new semantics (v2/lockfree/Fair.v,
-  Reach.v, TauThread.v): `wfair`, `lf_run`, `lock_free`,
+  Reach.v, TauThread.v) with `wfair`, `lf_run`, `lock_free`,
   `lock_free_reach`, `lock_free_reach_of`, `no_tau_divergence` and
   `thread_acc`. v2/CheckAll.v lists 22 results, and `make check` reports
   all 22 closed under the global context. No `Admitted` and no axiom.

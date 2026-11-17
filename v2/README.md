@@ -1,4 +1,4 @@
-# v2: the rewrite of docs/redesign/proposal.md
+# v2, the rewrite of docs/redesign/proposal.md
 
 v2 is a new Rocq library with the logical name `GV`. It rebuilds the
 mechanization from the ground up after docs/redesign/proposal.md, stage by
@@ -20,7 +20,7 @@ Tested with Rocq 9.2 and stdpp 1.13. If Makefile.conf is missing, `make` regener
 it from _CoqProject. If `make` stops with Error 139, run `ulimit -s 1000000`
 and run `make` again. The root build of theories/ ignores v2.
 
-## Stage S1: the language
+## Stage S1, the language
 
 | File | Content |
 |---|---|
@@ -31,7 +31,7 @@ and run `make` again. The root build of theories/ ignores v2.
 | lang/Process.v | the one instrumented semantics `istep` (thread ids, events, rules `p_act_*`), its erasure `pstep`, the multiset view `pspec` |
 | lang/Safety.v | `act`, `act_offer_sig` once, progress for terms and configurations, closedness preserved |
 | lang/Harmony.v | a label-free reduction semantics and `harmony` |
-| lang/ThreadSim.v | tools for simulations: β runs, contexts, threads related one to one |
+| lang/ThreadSim.v | tools for simulations, with β runs, contexts and threads related one to one |
 | lang/ChannelSwap.v | renamings of channel names and transpositions in thread and process steps |
 | lockfree/Fair.v | runs, weak fairness, `lock_free`, `lock_free_reach`, waiting |
 | lockfree/Reach.v | `lock_free_reach_of`, a fair scheduler |
