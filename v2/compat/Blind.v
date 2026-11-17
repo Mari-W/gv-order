@@ -214,7 +214,7 @@ Section blind.
         - destruct ss; [|done]. rewrite !sinst_ty_slist_nil, <-!ty_inst_df. by apply teq_pinst.
         - rewrite !ty_df_sinst, <-!ty_inst_df. match goal with H : ty_df U = ty_df U' |- _ => rewrite H end.
           apply teq_refl. }
-      split; intros (-> & e & -> & H); (split; [done|]); exists e; (split; [done|]);
+      split; intros (-> & e & -> & Hfe & H); (split; [done|]); exists e; (split; [done|]); (split; [done|]);
         intros W' xs ss HW Hxs Hss Hsc HC; specialize (H W' xs ss HW Hxs Hss Hsc HC);
         by apply E.
     - rewrite !Vrel_sess_iff. split; intros (o & s0 & -> & -> & Hs); exists o, s0;

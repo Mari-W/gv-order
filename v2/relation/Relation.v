@@ -152,11 +152,12 @@ Section bodies.
 
   (** The arrow T1 ⊸^ub_lb U at level n. Its body is read at every level
       j with j + κ(β) ≤ n, below n through [Vl] and [El], at n itself
-      through [VNa] and [ENb]. *)
+      through [VNa] and [ENb]. The environment holds exactly the ends
+      the λ mentions (decision Q14). *)
   Definition Varr (n : nat) (Vl : nat → vrel) (El : nat → erel)
       (VNa : world → senv → expr → Prop) (ENb : world → senv → gset point → expr → Prop)
       (T1 U : ty) (ub lb : option point) (W : world) (Θ : senv) (v : expr) : Prop :=
-    ∃ e, v = Lam e ∧ lb_le W lb (senv_heads Θ) ∧
+    ∃ e, v = Lam e ∧ dom Θ = fends e ∧ lb_le W lb (senv_heads Θ) ∧
       ∀ W' j Θ' w F, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' → ub_lt W' ub F →
         (j < n → Vl j W' Θ' T1 w → El j W' (Θ ∪ Θ') U F (subst1 w e)) ∧
         (j = n → VNa W' Θ' w → ENb W' (Θ ∪ Θ') F (subst1 w e)).
@@ -288,7 +289,7 @@ Section bodies.
           (∃ v', v = Inj1 v' ∧ Vbody n Vl El k' W Θ T1 v') ∨
           (∃ v', v = Inj2 v' ∧ Vbody n Vl El k' W Θ U v')
       | TBox m kk C ub _ _ U _ =>
-          Θ = ∅ ∧ ∃ e, v = EBox e ∧
+          Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧                 (* Q14 *)
             ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall hcontractive ss →
               wholds W' C xs →
               Vbody n Vl El k' W' ∅
@@ -462,7 +463,7 @@ Section maps.
       (f : ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) T1 U ub lb W Θ v :
     Varr κ n Vl El VNa B1 T1 U ub lb W Θ v → Varr κ n Vl El VNa B2 T1 U ub lb W Θ v.
   Proof.
-    intros (e & Hv & Hlb & H). exists e. split; [exact Hv|]. split; [exact Hlb|].
+    intros (e & Hv & Hfe & Hlb & H). exists e. split; [exact Hv|]. split; [exact Hfe|]. split; [exact Hlb|].
     intros W' j Θ' w F HW Hj Hd Hub. destruct (H W' j Θ' w F HW Hj Hd Hub) as [H1 H2].
     split; [exact H1|]. intros Hjn Hw. exact (f _ _ _ _ (H2 Hjn Hw)).
   Defined.
@@ -613,7 +614,7 @@ Section mono.
     (c_beta κ = 0 → ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) →
     Varr κ n Vl1 El1 VNa1 B1 T1 U ub lb W Θ v → Varr κ n Vl2 El2 VNa2 B2 T1 U ub lb W Θ v.
   Proof.
-    intros HVl HEl HVa HB (e & -> & Hlb & H). exists e. split_and!; [done|done|].
+    intros HVl HEl HVa HB (e & -> & Hfe & Hlb & H). exists e. split_and!; [done|done|done|].
     intros W' j Θ' w F HW Hj Hd Hub. destruct (H W' j Θ' w F HW Hj Hd Hub) as [H1 H2].
     split.
     - intros Hjn Hw. apply HEl; [done|]. apply H1; [done|]. by apply HVl.
@@ -817,7 +818,7 @@ Section fuel.
     - assert (∀ xs ss, tsize (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U)))
                 = 2 + tsize U) as Hts.
       { intros xs ss. rewrite tsize_tthunk. unfold ty_inst. by rewrite tsize_sinst, tsize_pinst. }
-      split; intros (-> & e & -> & H); split; try done; (exists e); split; try done;
+      split; intros (-> & e & -> & Hfe & H); split; try done; (exists e); split_and!; try done;
         intros W' xs ss HW Hxs Hss Hsc HC; specialize (H W' xs ss HW Hxs Hss Hsc HC);
         (eapply IH; [..|exact H]); rewrite Hts; lia.
     - done.
@@ -950,7 +951,7 @@ Section equations.
   (** The arrow reads its body at every level j with j + κ(β) ≤ n. *)
   Definition Varr_rel (n : nat) (T1 U : ty) (ub lb : option point) (W : world) (Θ : senv)
       (v : expr) : Prop :=
-    ∃ e, v = Lam e ∧ lb_le W lb (senv_heads Θ) ∧
+    ∃ e, v = Lam e ∧ dom Θ = fends e ∧ lb_le W lb (senv_heads Θ) ∧
       ∀ W' j Θ' w F, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' → ub_lt W' ub F →
         Vrel κ j W' Θ' T1 w → Erel κ j W' (Θ ∪ Θ') U F (subst1 w e).
 
@@ -958,7 +959,7 @@ Section equations.
     Varr κ n (Vrel κ) (Erel κ) (λ W Θ w, Vrel κ n W Θ T1 w) (λ W Θ F e, Erel κ n W Θ U F e)
       T1 U ub lb W Θ v ↔ Varr_rel n T1 U ub lb W Θ v.
   Proof.
-    split; intros (e & -> & Hlb & H); exists e; (split; [done|]); (split; [done|]).
+    split; intros (e & -> & Hfe & Hlb & H); exists e; (split; [done|]); (split; [done|]); (split; [done|]).
     - intros W' j Θ' w F HW Hj Hd Hub Hw. destruct (H W' j Θ' w F HW Hj Hd Hub) as [H1 H2].
       destruct (decide (j < n)); [by apply H1|]. assert (j = n) as -> by lia. by apply H2.
     - intros W' j Θ' w F HW Hj Hd Hub. split; [intros Hjn Hw; by apply H|]. intros -> Hw. by apply H.
@@ -986,7 +987,7 @@ Section equations.
 
   Lemma Vrel_box_iff n W Θ m kk C ub c t U a v :
     Vrel κ n W Θ (TBox m kk C ub c t U a) v ↔
-    Θ = ∅ ∧ ∃ e, v = EBox e ∧
+    Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧
       ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall hcontractive ss →
         wholds W' C xs →
         Vrel κ n W' ∅ (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U)))

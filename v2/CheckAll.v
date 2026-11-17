@@ -10,7 +10,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
-From GV Require Import compat.SendGap.
+From GV Require Import compat.Redex.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -113,5 +113,3 @@ Print Assumptions Erel_blind.
 Print Assumptions Grel_split.
 Print Assumptions sf_den_unionb.
 Print Assumptions sem_typed_points.
-(** S4. The semantic E-Send rule fails under exact transfer sets. *)
-Print Assumptions send_gap.
