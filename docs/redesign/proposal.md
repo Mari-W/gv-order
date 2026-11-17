@@ -1161,6 +1161,12 @@ first, in stage S2.
   case. The link renaming `csub` fuses o1‾ and o2 (`csub_fuses`), so no
   bijection covers it, while it is injective on the other component's
   held ends. An end a term mentions but does not hold is never acted on.
+  For P, after S4.12 (delegated): E and P are closed under held-ends
+  renamings by definition, as FuelE already is (`Fdef` quantifies over
+  every g with `kinj`). The renaming of P is then a projection, and
+  P-Connect proves the clause for the composite. A forward simulation
+  breaks at P-Act-Link, whose partner end comes from the term. V and E
+  have the lemma as a theorem (`Vrel_rename`, `Erel_rename`).
 
 ## 5  Open decisions for the author
 
