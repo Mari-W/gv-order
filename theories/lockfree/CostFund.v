@@ -1118,3 +1118,58 @@ Proof.
       * rewrite cadd_0. by apply (Vfuel_sub _ _ (w_pc W' (pt_dual x'))).
       * apply (Vfuel_refill j' W' n' b' (g c) b (pt_shift 1 x')); [done|by rewrite lookup_singleton_eq].
 Qed.
+
+Lemma sel_redex j W (s : bool) P a n P1 P2 n' b' π φ tk d r v :
+  pnode P = Some (n, PSel P1 P2) → pnode (if s then P2 else P1) = Some (n', b') →
+  Vfuel j W (CTa (CEnd P) a) π φ v → dom φ = dom π → fcap_ext W π φ →
+  fle (Some 1) d → r ≤ tk →
+  FuelE j W (CTa (CEnd (if s then P2 else P1)) (Some n')) r π φ tk d (App (Konst (ksel s)) v).
+Proof.
+  intros HP HP' HV Hd Hc H1 Hr. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_end_inv _ _ _ _ _ _ _ HV) as (c & b & x & f & -> & _). apply pnode_inv in HP as ->.
+  apply FuelE_redex; [done|done|]. intros W' g π' φ' Hb Hk R1 R2.
+  destruct (end_setup _ _ _ _ _ _ _ _ _ _ _ _ HV Hd Hb R1 R2) as (x' & -> & -> & Hdφ' & Hp). cbn [emap].
+  pose proof (pfits_sel _ _ _ _ _ s Hp) as Hps. rewrite (pnode_inv _ _ _ HP') in Hps |- *.
+  split.
+  - intros s0 e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. destruct s; inversion Hst; subst; simpl in Ho;
+      injection Ho as <-; exists x'; rewrite lookup_singleton_eq; (split; [done|by eapply partner_fin]).
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done].
+    assert (∃ s', α = LSess (SSel (g c, b) s') ∧ e' = Chan (g c) false ∧ s' = s) as (s' & -> & -> & ->)
+      by (destruct s; inversion Hst; subst; eauto).
+    unfold Fobl; cbv beta iota. split; [intros o [= <-]; split; [by apply ftick_ok_single|done]|]. intros _.
+    assert (Hf : fupd W' {[(g c, b) := x']} φ' (LSess (SSel (g c, b) s)) =
+                 ({[(g c, false) := sel_pt x' s]}, {[(g c, false) := w_bud W' (sel_pt x' s)]})).
+    { unfold fupd. cbn [sl_out]. rewrite !mrem_none by set_solver. by rewrite fact_single. }
+    rewrite Hf. cbn [fst snd]. apply sem_val; [done|by apply meets_tid| |].
+    + apply fcap_ext_single. by apply (pfits_node _ _ _ _ Hps).
+    + apply (Vfuel_refill j W' n' b' (g c) false (sel_pt x' s)); [done|by rewrite lookup_singleton_eq].
+Qed.
+
+Lemma bra_redex j W P a n P1 P2 n1 b1 n2 b2 π φ tk d r v :
+  pnode P = Some (n, PBra P1 P2) → pnode P1 = Some (n1, b1) → pnode P2 = Some (n2, b2) →
+  Vfuel j W (CTa (CEnd P) a) π φ v → dom φ = dom π → fcap_ext W π φ →
+  fle (Some 1) d → r ≤ tk →
+  FuelE j W (CTa (CSum (CTa (CEnd P1) (Some n1)) (CTa (CEnd P2) (Some n2))) (Some 0)) r π φ tk d (App EBra v).
+Proof.
+  intros HP HP1 HP2 HV Hd Hc H1 Hr. destruct j as [|j]; [apply FuelE_0|].
+  destruct (Vfuel_end_inv _ _ _ _ _ _ _ HV) as (c & b & x & f & -> & _). apply pnode_inv in HP as ->.
+  apply pnode_inv in HP1 as ->. apply pnode_inv in HP2 as ->.
+  apply FuelE_redex; [done|done|]. intros W' g π' φ' Hb Hk R1 R2.
+  destruct (end_setup _ _ _ _ _ _ _ _ _ _ _ _ HV Hd Hb R1 R2) as (x' & -> & -> & Hdφ' & Hp). cbn [emap].
+  split.
+  - intros s0 e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. inversion Hst; subst; simpl in Ho.
+    injection Ho as <-. exists x'. rewrite lookup_singleton_eq. split; [done|by eapply partner_fin].
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done].
+    assert (∃ s, α = LSess (SBra (g c, b) s) ∧ e' = inj_of s (Chan (g c) true)) as (s & -> & ->)
+      by (inversion Hst; subst; eauto).
+    unfold Fobl; cbv beta iota. split; [intros o [= <-]; split; [by apply ftick_ok_single|done]|]. intros _.
+    pose proof (pfits_bra _ _ _ _ _ s Hp) as Hps.
+    assert (Hf : fupd W' {[(g c, b) := x']} φ' (LSess (SBra (g c, b) s)) =
+                 ({[(g c, true) := bra_pt x' s]}, {[(g c, true) := w_bud W' (bra_pt x' s)]})).
+    { unfold fupd. cbn [sl_out]. rewrite !mrem_none by set_solver. by rewrite fact_single. }
+    rewrite Hf. cbn [fst snd].
+    apply sem_val; [by destruct s|by apply meets_tid|apply fcap_ext_single; destruct s; by apply (pfits_node _ _ _ _ Hps)|].
+    destruct s; simpl.
+    + apply Vfuel_inj2. rewrite cadd_0. apply (Vfuel_refill j W' n2 b2 (g c) true (bra_pt x' true)); [done|by rewrite lookup_singleton_eq].
+    + apply Vfuel_inj1. rewrite cadd_0. apply (Vfuel_refill j W' n1 b1 (g c) true (bra_pt x' false)); [done|by rewrite lookup_singleton_eq].
+Qed.
