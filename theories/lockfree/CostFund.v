@@ -1403,3 +1403,142 @@ Proof.
       rewrite (mrem_all _ φ') by (by rewrite Hdφ', Hdom').
       apply sem_val; [done|done|apply fcap_ext_empty|apply Vfuel_unit].
 Qed.
+
+(** ** Rules over one subterm *)
+
+Lemma ectx_ok_konst (k : konst) : ectx_ok [FAppR (Konst k)].
+Proof. constructor; [done|by apply Forall_nil]. Qed.
+
+Ltac bind0 K r1 :=
+  lazymatch goal with
+  | Hcs : csem ?W0 ?Θ ?Γ ?e ?s1 ?c1 ?t1, Hb : wbext ?W0 ?W, HT : thsem ?n ?W ?Θ ?g ?πΘ ?φ, HG : gsem ?n ?W ?Γ ?γ ?πΓ ?φ
+    |- FuelE _ _ ?σ ?r _ _ ?tk ?d _ =>
+      apply (sem_bind0 W0 Θ Γ e s1 c1 t1 K σ r d n W g γ πΘ πΓ φ tk r1);
+        [first [apply ectx_ok_konst|constructor; [done|by apply Forall_nil]]|intros ?; reflexivity|exact Hcs| |done|done|done|done|done|done| |];
+        [|done|intros j W' i v πv φv tk' Hj Hb' Hi Hv Hr Hdv Hcv HV]
+  end.
+
+Lemma c_inj1_sem W0 Θ Γ e σ1 σ2 c t :
+  csem W0 Θ Γ e σ1 c t → csem W0 Θ Γ (Inj1 e) (CTa (CSum σ1 σ2) (Some 0)) c t.
+Proof.
+  intros Hcs n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FInj1] r; [apply fle_refl|]. simpl.
+  apply FuelE_val; [done|done|done|]. apply Vfuel_inj1. by rewrite cadd_0.
+Qed.
+
+Lemma c_inj2_sem W0 Θ Γ e σ1 σ2 c t :
+  csem W0 Θ Γ e σ2 c t → csem W0 Θ Γ (Inj2 e) (CTa (CSum σ1 σ2) (Some 0)) c t.
+Proof.
+  intros Hcs n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FInj2] r; [apply fle_refl|]. simpl.
+  apply FuelE_val; [done|done|done|]. apply Vfuel_inj2. by rewrite cadd_0.
+Qed.
+
+Lemma c_force_sem W0 Θ Γ e c t σ a c0 t0 :
+  csem W0 Θ Γ e (CTa (CBox c t σ) a) c0 t0 → tok t0 t →
+  csem W0 Θ Γ (App EForce e) σ (fadd c0 c) (tseq t0 t).
+Proof.
+  intros Hcs Hok n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (tseq_split _ _ _ _ Hok Hm) as (r' & Hm1 & Hm2).
+  bind0 [FAppR EForce] r'; [apply fle_fadd_l|]. simpl.
+  apply (force_redex _ _ _ _ _ _ _ _ _ _ _ _ HV Hdv); [by apply (meets_mono _ _ r')|by apply fle_fminus_fadd].
+Qed.
+
+Lemma c_new_sem W0 Θ Γ e ρ a c0 t0 P Q n b n' b' :
+  csem W0 Θ Γ e (CTa (CPt ρ) a) c0 t0 →
+  pprof ρ = Some (P, Q) → pnode P = Some (n, b) → pnode Q = Some (n', b') →
+  csem W0 Θ Γ (App ENew e) (CTa (CProd (CTa (CEnd P) (Some n)) (CTa (CEnd Q) (Some n'))) (Some 0)) c0 t0.
+Proof.
+  intros Hcs Hρ HP HQ n0 W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FAppR ENew] r; [apply fle_refl|]. simpl.
+  by apply (new_redex _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hρ HP HQ HV Hdv).
+Qed.
+
+Lemma c_pay_sem W0 Θ Γ e (ip : nat) ρ a c0 t0 :
+  csem W0 Θ Γ e (CTa (CPt ρ) a) c0 t0 →
+  csem W0 Θ Γ (App (Konst (KPay ip)) e) (CTa (CPt (pfld ρ ip)) None) c0 t0.
+Proof.
+  intros Hcs n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FAppR (Konst (KPay ip))] r; [apply fle_refl|]. simpl.
+  by apply (pay_redex _ _ _ _ _ _ _ _ _ _ _ HV Hdv).
+Qed.
+
+Lemma c_succ_sem W0 Θ Γ e ρ a c0 t0 :
+  csem W0 Θ Γ e (CTa (CPt ρ) a) c0 t0 →
+  csem W0 Θ Γ (App (Konst KSucc) e) (CTa (CPt (psuc ρ)) None) c0 t0.
+Proof.
+  intros Hcs n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FAppR (Konst KSucc)] r; [apply fle_refl|]. simpl.
+  by apply (succ_redex _ _ _ _ _ _ _ _ _ _ HV Hdv).
+Qed.
+
+Lemma c_send_sem W0 Θ Γ e σp σp' a a0 P n σ P' n' b' c0 t0 :
+  csem W0 Θ Γ e (CTa (CProd σp (CTa (CEnd P) a)) a0) c0 t0 →
+  pnode P = Some (n, PSnd σ P') → pnode P' = Some (n', b') →
+  cagex (Some 1) (cadd a0 σp) σp' → σp' ⊑c σ →
+  csem W0 Θ Γ (App ESend e) (CTa (CEnd P') (Some n')) (fadd c0 (Some 1)) t0.
+Proof.
+  intros Hcs HP HP' Hs Hσ n0 W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FAppR ESend] r; [apply fle_fadd_l|]. simpl.
+  apply (send_redex _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HP HP' Hs Hσ Hv HV Hdv Hcv); [by apply fle_fminus_fadd|done].
+Qed.
+
+Lemma c_recv_sem W0 Θ Γ e a P n σ P' n' b' c0 t0 :
+  csem W0 Θ Γ e (CTa (CEnd P) a) c0 t0 → pnode P = Some (n, PRcv σ P') → pnode P' = Some (n', b') →
+  csem W0 Θ Γ (App ERecv e) (CTa (CProd σ (CTa (CEnd P') (Some n'))) (Some 0)) (fadd c0 (Some 1)) t0.
+Proof.
+  intros Hcs HP HP' n0 W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FAppR ERecv] r; [apply fle_fadd_l|]. simpl.
+  apply (recv_redex _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HP HP' HV Hdv Hcv); [by apply fle_fminus_fadd|done].
+Qed.
+
+Lemma c_close_sem W0 Θ Γ e a P n c0 t0 :
+  csem W0 Θ Γ e (CTa (CEnd P) a) c0 t0 → pnode P = Some (n, PCls) →
+  csem W0 Θ Γ (App EClos e) (CTa CVal None) (fadd c0 (Some 1)) t0.
+Proof.
+  intros Hcs HP n0 W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FAppR EClos] r; [apply fle_fadd_l|]. simpl.
+  apply (close_redex _ _ _ _ _ _ _ _ _ _ _ HP HV Hdv Hcv); [by apply fle_fminus_fadd|done].
+Qed.
+
+Lemma c_sel_sem W0 (s : bool) Θ Γ e a P n P1 P2 n' b' c0 t0 :
+  csem W0 Θ Γ e (CTa (CEnd P) a) c0 t0 →
+  pnode P = Some (n, PSel P1 P2) → pnode (if s then P2 else P1) = Some (n', b') →
+  csem W0 Θ Γ (App (Konst (ksel s)) e) (CTa (CEnd (if s then P2 else P1)) (Some n')) (fadd c0 (Some 1)) t0.
+Proof.
+  intros Hcs HP HP' n0 W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FAppR (Konst (ksel s))] r; [apply fle_fadd_l|]. simpl.
+  apply (sel_redex _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HP HP' HV Hdv Hcv); [by apply fle_fminus_fadd|done].
+Qed.
+
+Lemma c_bra_sem W0 Θ Γ e a P n P1 P2 n1 b1 n2 b2 c0 t0 :
+  csem W0 Θ Γ e (CTa (CEnd P) a) c0 t0 →
+  pnode P = Some (n, PBra P1 P2) → pnode P1 = Some (n1, b1) → pnode P2 = Some (n2, b2) →
+  csem W0 Θ Γ (App EBra e) (CTa (CSum (CTa (CEnd P1) (Some n1)) (CTa (CEnd P2) (Some n2))) (Some 0))
+    (fadd c0 (Some 1)) t0.
+Proof.
+  intros Hcs HP HP1 HP2 n0 W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  bind0 [FAppR EBra] r; [apply fle_fadd_l|]. simpl.
+  apply (bra_redex _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HP HP1 HP2 HV Hdv Hcv); [by apply fle_fminus_fadd|done].
+Qed.
+
+Lemma c_link_sem W0 Θ Γ e P1 a1 P2 a2 a0 c0 t0 :
+  csem W0 Θ Γ e (CTa (CProd (CTa (CEnd P1) a1) (CTa (CEnd P2) a2)) a0) c0 t0 → tok t0 (tlink tid) →
+  csem W0 Θ Γ (App ELink e) (CTa CVal None) c0 (tseq t0 (tlink tid)).
+Proof.
+  intros Hcs Hok n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (tseq_split _ _ _ _ Hok Hm) as (r' & Hm1 & Hm2).
+  bind0 [FAppR ELink] r'; [apply fle_refl|]. simpl.
+  apply (link_redex _ _ _ _ _ _ _ _ _ _ _ _ _ Hv HV Hdv Hcv). by apply (meets_mono _ _ r').
+Qed.
+
+Lemma c_spawn_sem W0 Θ Γ e c' t' h a1 σ' a c0 t0 :
+  csem W0 Θ Γ e (CTa (CArr c' t' h (CTa CVal a1) σ') a) c0 t0 →
+  fle (Some 1) a → tok t0 (tspawn (snd t') tid) →
+  csem W0 Θ Γ (App ESpawn e) (CTa CVal None) c0 (tseq t0 (tspawn (snd t') tid)).
+Proof.
+  intros Hcs Ha Hok n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (tseq_split _ _ _ _ Hok Hm) as (r' & Hm1 & Hm2).
+  bind0 [FAppR ESpawn] r'; [apply fle_refl|]. simpl.
+  apply (spawn_redex _ _ _ _ _ _ _ _ _ _ _ _ _ _ HV Ha Hdv Hcv). by apply (meets_mono _ _ r').
+Qed.
