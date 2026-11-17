@@ -365,8 +365,8 @@ Section offers.
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
   Context (H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1).
   Context (H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2).
-  Local Notation K := (chans_of ΣC).
-  Local Notation pc := (pconn q1 q2 K).
+  Local Abbreviation K := (chans_of ΣC).
+  Local Abbreviation pc := (pconn q1 q2 K).
 
   Lemma conn_not2 o : o ∈ dom Σ1 → o ∉ dom (Σ2 ∪ ΣD).
   Proof.
@@ -447,3 +447,83 @@ Section offers.
         pose proof (elem_of_chans_of _ _ HoΣ) as Hco; set_solver.
   Qed.
 End offers.
+
+Lemma ssubj_sends σ o : ssubj σ = Some o → sends σ = {[o]}.
+Proof. by destruct σ; simpl; intros [= ->]. Qed.
+
+Lemma sends_ssubj σ o : o ∈ sends σ → (∃ os, σ = SLink os) ∨ ssubj σ = Some o.
+Proof. destruct σ; simpl; try (intros ->%elem_of_singleton; by right). eauto. Qed.
+
+Lemma disj_lookup {A} (m1 m2 : gmap cend A) i x y : m1 ##ₘ m2 → m1 !! i = Some x → m2 !! i = Some y → False.
+Proof. intros Hd H1 H2. exact (proj1 (map_disjoint_spec m1 m2) Hd i x y H1 H2). Qed.
+
+Lemma disj_lookup_n {A} (m1 m2 : gmap nat A) i x y : m1 ##ₘ m2 → m1 !! i = Some x → m2 !! i = Some y → False.
+Proof. intros Hd H1 H2. exact (proj1 (map_disjoint_spec m1 m2) Hd i x y H1 H2). Qed.
+
+(** An offer on a cut end and an offer on its partner meet. *)
+Lemma dual_offers κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 o :
+  conn Σ1 ΣC q1.1 Σ2 ΣD q2.1 →
+  Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1 →
+  Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2 →
+  o ∈ dom ΣC → offered_p (Σ1 ∪ ΣC) q1 o → offered_p (Σ2 ∪ ΣD) q2 (edual o) →
+  ¬ stable_p (pconn q1 q2 (chans_of ΣC)).
+Proof.
+  intros Hc H1 H2 HoC [_ (σ1 & p1' & Hs1 & Ho1)] [_ (σ2 & p2' & Hs2 & Ho2)] Hstab.
+  set (K := chans_of ΣC).
+  assert (ech o ∈ K) as HoK by (by apply elem_of_chans_of).
+  destruct (erase_surj (pconn q1 q2 K)) as [q Hq]. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
+  destruct (pstep_lift (q1.1, M1) (PSess σ1) p1') as (ev1 & r1 & Hi1 & Hl1 & _).
+  { unfold erase. simpl. rewrite HM1. by destruct q1. }
+  destruct (pstep_lift (q2.1, M2) (PSess σ2) p2') as (ev2 & r2 & Hi2 & Hl2 & _).
+  { unfold erase. simpl. rewrite HM2. by destruct q2. }
+  destruct ev1; try discriminate. injection Hl1 as ->. destruct ev2; try discriminate. injection Hl2 as ->.
+  rename i into i1, i0 into i2.
+  (* links meet a restricted channel *)
+  destruct (sends_ssubj _ _ Ho1) as [[os ->]|E1].
+  { apply (link_tau κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2 M1 M2 i1 os r1 Hd HM1 HM2 Hi1); [|done].
+    intros Hs. apply (Hs (ech o)); [|set_solver]. simpl. apply elem_of_map. by exists o. }
+  destruct (sends_ssubj _ _ Ho2) as [[os ->]|E2].
+  { pose proof (conn_sym _ _ _ _ _ _ Hc) as Hc'. rewrite pconn_sym in Hstab.
+    rewrite <-(cut_dual_chans ΣC ΣD) in Hstab by (by destruct Hc).
+    apply (link_tau κ n W1 T2 T1 X2 X1 Σ2 ΣD Σ1 ΣC q2 q1 Hc' H2 H1 M2 M1 i2 os r2 (map_disjoint_sym _ _ Hd) HM2 HM1 Hi2);
+      [|by rewrite (cut_dual_chans ΣC ΣD) in Hstab |- * by (by destruct Hc)].
+    intros Hs. apply (Hs (ech o)); [|rewrite (cut_dual_chans ΣC ΣD) by (by destruct Hc); set_solver].
+    simpl. apply elem_of_map. exists (edual o). by rewrite ech_edual. }
+  assert (erase (q1.1, M1) = q1) as Hq1e by (unfold erase; simpl; rewrite HM1; by destruct q1).
+  assert (erase (q2.1, M2) = q2) as Hq2e by (unfold erase; simpl; rewrite HM2; by destruct q2).
+  destruct (Psteps_head κ _ _ _ _ _ _ _ _ _ (proj2 (proj2 H1)) _ _ _ _ o Hq1e Hi1 E1) as (S0 & x & L1 & D1).
+  destruct (Psteps_head κ _ _ _ _ _ _ _ _ _ (proj2 (proj2 H2)) _ _ _ _ (edual o) Hq2e Hi2 E2) as (S0' & x' & L2 & D2).
+  destruct Hc as [Hd1 Hd2 [Hcd Hct] ? ? HfC ? ? ? ? ? ?].
+  assert (ΣC !! o = Some (S0, x)) as L1'.
+  { rewrite lookup_union_r in L1; [done|]. apply eq_None_not_Some. intros [? ?].
+    apply elem_of_dom in HoC as [? ?]. eapply (disj_lookup Σ1 ΣC); eassumption. }
+  destruct (Hct _ _ _ L1') as (S'' & L3 & Hdu).
+  assert (ΣD !! edual o = Some (S0', x')) as L2'.
+  { rewrite lookup_union_r in L2; [done|]. apply eq_None_not_Some. intros [? ?].
+    assert (edual o ∈ dom ΣD) as [? ?]%elem_of_dom by (apply Hcd; by rewrite edual_edual).
+    eapply (disj_lookup Σ2 ΣD); eassumption. }
+  rewrite L2' in L3. injection L3 as -> ->.
+  assert (sync σ1 σ2) as Hsy by (eapply hd_ok_sync; [exact Hdu|exact D1|exact D2|congruence|congruence]).
+  assert (∀ ev q', istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) ev q' → ev_tau ev → False) as Hno.
+  { intros ev q' Hst Hτ. apply (Hstab (erase q')). unfold preduction. rewrite <-(pc_erase ΣC q1 q2 M1 M2) by done.
+    rewrite <-Hτ. by exists (q1.1 ∪ q2.1 ∪ chans_of ΣC, M1 ∪ M2), ev, q'. }
+  inversion Hi1 as [| | | | | | | |C0 M0 j e σ e1 Hj He HsC]; subst.
+  inversion Hi2 as [| | | | | | | |C0' M0' j' f σ' f1 Hj' Hf HsC']; subst.
+  assert ((M1 ∪ M2) !! i1 = Some e) as Hl1 by (by apply lookup_union_Some_l).
+  assert ((M1 ∪ M2) !! i2 = Some f) as Hl2 by (by apply lookup_union_Some_r).
+  assert (i1 ≠ i2) as Hne by (intros ->; eapply (disj_lookup_n M1 M2); eassumption).
+  assert (ech o ∈ q1.1 ∪ q2.1 ∪ K) as HoC' by set_solver.
+  destruct σ1 as [o1 M w|o1 w|o1|o1 b|o1 b|os], σ2 as [o2 M' w'|o2 w'|o2|o2 b'|o2 b'|os'];
+    simpl in Hsy; try done; simpl in E1, E2; injection E1 as ->; injection E2 as ->.
+  - pose proof (tstep_label_val _ _ _ He) as Hw. destruct (recv_retarget _ _ _ _ w Hf Hw) as [f2 Hf2].
+    eapply (Hno (EvMsg i1 i2 o M)); [|done]. by eapply p_act_msg.
+  - pose proof (tstep_label_val _ _ _ Hf) as Hw. destruct (recv_retarget _ _ _ _ w' He Hw) as [e2 He2].
+    eapply (Hno (EvMsg i2 i1 (edual o) M')); [|done]. eapply p_act_msg; [done|done|done|done|].
+    by rewrite edual_edual.
+  - eapply (Hno (EvClose i1 i2 o)); [|done]. by eapply p_act_close.
+  - destruct (bra_retarget _ _ _ _ b Hf) as [f2 Hf2].
+    eapply (Hno (EvChoice i1 i2 o b)); [|done]. by eapply p_act_choice.
+  - destruct (bra_retarget _ _ _ _ b' He) as [e2 He2].
+    eapply (Hno (EvChoice i2 i1 (edual o) b')); [|done]. eapply p_act_choice; [done|done|done|done|].
+    by rewrite edual_edual.
+Qed.
