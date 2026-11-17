@@ -269,4 +269,78 @@ Proof.
   ct_prep. ct0.
 Qed.
 
+(** ** higher-order callback server (plan §19.9)
+
+      srv = !(f = λc. let (cb, c) = recv c in let () = cb ∗ in (force f) c)
+      cli = !(g = λπ. λd. let (k, k′) = new (π[0]) in
+                 let (d, u) = ⟨send ⟨λu. let () = u in close (send ⟨∗, k⟩), d⟩, ∗⟩ in
+                 let () = u in let () = spawn (λw. let () = w in recvclose k′) in
+                 (force g) (succ π) d)
+      cb_main = let (s, l) = ⟨srv, cli⟩ in let (c, c′) = new@γ ∗ in
+                let () = spawn (λw. let () = w in (force l) δ c′) in (force s) c
+
+    The server runs every received callback. The callback acts twice on
+    its own end k, so it has cost 2, floor 0, and it is sent at credit 1.
+    The server's c is refilled at the receive and aged by 2 at the call
+    of the callback before the next round, B = 2. The client spawns
+    before its tail call, so its transformer has slope ∞ and offset 0. *)
+Definition cb_srv : expr :=
+  EBox (Lam (LetP (App ERecv (Var 0)) (LetU (App (Var 1) EUnit) (App (App EForce (Var 3)) (Var 0))))).
+
+Definition cb_fn : expr := Lam (LetU (Var 0) (App EClos (App ESend (Pair EUnit (Var 2))))).
+
+Definition cb_cli : expr :=
+  EBox (Lam (Lam (let_new_pair_at (App (Konst (KPay 0)) (Var 1))
+    (LetP (Pair (App ESend (Pair cb_fn (Var 2))) EUnit)
+      (LetU (Var 0)
+        (LetU (App ESpawn (Lam (LetU (Var 0) (LetP (App ERecv (Var 3)) (LetU (Var 1) (App EClos (Var 0)))))))
+          (App (App (App EForce (Var 6)) (App (Konst KSucc) (Var 5))) (Var 1)))))))).
+
+Definition cb_main : expr :=
+  LetP (Pair cb_srv cb_cli) (let_new_pair_at (EPt (pconst 0))
+    (LetU (App ESpawn (Lam (LetU (Var 0) (App (App (App EForce (Var 3)) (EPt (pconst 1))) (Var 1)))))
+      (App (App EForce (Var 3)) (Var 1)))).
+
+Definition cb_σ : cta := CTa (CArr (Some 2) tid 0 (CTa CVal None) (CTa CVal None)) (Some 0).
+CoFixpoint cb_Ps : cpro := PNode 2 (PRcv cb_σ cb_Ps).
+CoFixpoint cb_Pc : cpro := PNode 2 (PSnd cb_σ cb_Pc).
+Definition cb_Pk : cpro := PNode 2 (PSnd (CTa CVal None) (PNode 2 PCls)).
+Definition cb_Pkd : cpro := PNode 2 (PRcv (CTa CVal None) (PNode 2 PCls)).
+Definition cb_ρ : cprof := Prof cb_Ps cb_Pc (λ _, PrTop) PrTop.
+Definition cb_ρk : cprof := Prof cb_Pk cb_Pkd (λ _, PrTop) PrTop.
+CoFixpoint cb_ρl : cprof := Prof PTop PTop (λ _, cb_ρk) cb_ρl.
+
+Definition cb_srv_cty : cta :=
+  CTa (CBox (Some 0) tid (CTa (CArr None tid 0 (CTa (CEnd cb_Ps) (Some 0)) (CTa CVal None)) None)) None.
+Definition cb_cli_cty : cta :=
+  CTa (CBox (Some 0) tid (CTa (CArr (Some 0) tid 0 (CTa (CPt cb_ρl) None)
+    (CTa (CArr None (None, 0) 0 (CTa (CEnd cb_Pc) (Some 0)) (CTa CVal None)) None)) None)) None.
+
+Lemma cb_srv_ctyped : ctyped W ∅ [] cb_srv cb_srv_cty (Some 0) tid.
+Proof. unfold cb_srv, cb_srv_cty. ct0. Qed.
+
+(** The callback, in inference mode, is captured at floor 0 and credit 1. *)
+Ltac cb_fn_hint k :=
+  lazymatch goal with
+  | |- ctyped _ _ _ (Lam (LetU (Var 0) (App EClos (App ESend (Pair EUnit (Var 2)))))) ?σ _ _ =>
+      is_evar σ; ct_abs 0 (Some 1) (CTa CVal None) k
+  end.
+
+Lemma cb_cli_ctyped : ctyped W ∅ [] cb_cli cb_cli_cty (Some 0) tid.
+Proof. unfold cb_cli, cb_cli_cty, let_new_pair_at, let_new_at. ct_prep. ct1 cb_fn_hint. Qed.
+
+Ltac cb_hint k :=
+  lazymatch goal with
+  | |- ctyped _ _ [] cb_srv _ _ _ => apply cb_srv_ctyped
+  | |- ctyped _ _ [] cb_cli _ _ _ => apply cb_cli_ctyped
+  end.
+
+Lemma cb_ctyped :
+  pt_known W (pconst 0) → cpfitpt W (pconst 0) cb_ρ →
+  pt_known W (pconst 1) → cpfitpt W (pconst 1) cb_ρl →
+  ctyped W ∅ [] cb_main (CTa CVal None) None (Some 1, 0).
+Proof.
+  intros. unfold cb_main, let_new_pair_at, let_new_at. ct_prep. ct1 cb_hint.
+Qed.
+
 End examples.
