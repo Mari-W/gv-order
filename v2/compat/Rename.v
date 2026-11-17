@@ -41,9 +41,6 @@ Definition smap (g : cend → cend) (σ : slabel) : slabel :=
   | SLink os => SLink (set_map g os)
   end.
 
-(** The channel of the image of c⁺. *)
-Definition gch (g : cend → cend) (c : chan) : chan := ech (g (EPos c)).
-
 Definition lmap (g : cend → cend) (α : tlabel) : tlabel :=
   match α with
   | LBeta => LBeta
@@ -59,9 +56,6 @@ Definition gpol (g : cend → cend) (c : chan) : Prop :=
 
 Definition lnew_ok (g : cend → cend) (α : tlabel) : Prop :=
   match α with LNew _ c | LNewAt _ _ c => gpol g c | _ => True end.
-
-(** g commutes with duality. *)
-Definition dcomm (g : cend → cend) : Prop := ∀ o, g (edual o) = edual (g o).
 
 Lemma sends_smap g σ : sends (smap g σ) = set_map g (sends σ).
 Proof. destruct σ; simpl; set_solver. Qed.
@@ -181,9 +175,6 @@ Qed.
 
 (** ** Renamed environments *)
 
-Definition kren (h : cend → cend) (Θ : senv) : senv :=
-  list_to_map ((λ p : cend * (sty * point), (h p.1, p.2)) <$> map_to_list Θ).
-
 Section kren.
   Implicit Types (h g : cend → cend) (Θ : senv).
 
@@ -231,9 +222,6 @@ Section kren.
 
   Lemma kinj_empty h : kinj h (∅ : senv).
   Proof. intros ? ? ? ? H. by rewrite lookup_empty in H. Qed.
-
-  Lemma kren_empty h : kren h ∅ = (∅ : senv).
-  Proof. unfold kren. by rewrite map_to_list_empty. Qed.
 
   Lemma kren_singleton h o v : kren h {[o := v]} = {[h o := v]}.
   Proof.
@@ -816,4 +804,60 @@ Lemma Erel_swap κ a b n W Θ T F e :
 Proof.
   split; [apply Erel_swap_rename|]. intros H.
   rewrite <-(sswap_inv a b Θ), <-(eswap_involutive a b e). by apply Erel_swap_rename.
+Qed.
+
+(** ** P under a renaming: a projection of the clause (rename) *)
+
+Lemma ech_gch h o : dcomm h → ech (h o) = gch h (ech o).
+Proof.
+  intros Hd. destruct o as [c|c]; [done|]. unfold gch.
+  change (ENeg c) with (edual (EPos c)). by rewrite Hd, ech_edual.
+Qed.
+
+Lemma gch_compose g h c : dcomm g → gch g (gch h c) = gch (g ∘ h) c.
+Proof. intros Hd. unfold gch at 2 3. simpl. symmetry. by apply ech_gch. Qed.
+
+Lemma pmap_pmap g h p : dcomm g → pmap g (pmap h p) = pmap (g ∘ h) p.
+Proof.
+  intros Hd. destruct p as [C E]. unfold pmap. simpl. rewrite emapE_emapE. f_equal.
+  apply set_eq. intros c. rewrite !elem_of_map. split.
+  - intros (c1 & -> & (c2 & -> & Hc2)%elem_of_map). exists c2. split; [|done].
+    by rewrite gch_compose.
+  - intros (c2 & -> & Hc2). exists (gch h c2). split; [|apply elem_of_map; by exists c2].
+    by rewrite gch_compose.
+Qed.
+
+Lemma pren_ok_kinj h Σ p : pren_ok h Σ p → kinj h Σ.
+Proof.
+  intros [_ Hi] o1 o2 v1 v2 H1 H2. apply Hi; left; by eapply elem_of_dom_2.
+Qed.
+
+Lemma pheld_map h Σ p o : pren_ok h Σ p → pheld Σ p o → pheld (kren h Σ) (pmap h p) (h o).
+Proof.
+  intros Hok [Ho|Ho]; [left|right].
+  - rewrite kren_dom by (by eapply pren_ok_kinj). apply elem_of_map. by exists o.
+  - unfold pmap. simpl. rewrite ech_gch by apply Hok. apply elem_of_map. by exists (ech o).
+Qed.
+
+Lemma pren_ok_compose g h Σ p :
+  pren_ok h Σ p → pren_ok g (kren h Σ) (pmap h p) → pren_ok (g ∘ h) Σ p.
+Proof.
+  intros Hh Hg. split.
+  - intros o. simpl. by rewrite (proj1 Hh), (proj1 Hg).
+  - intros o1 o2 H1 H2 Heq. apply (proj2 Hh); [done|done|].
+    apply (proj2 Hg); [by apply pheld_map|by apply pheld_map|done].
+Qed.
+
+Lemma kren_kren_ok g h Σ p :
+  pren_ok h Σ p → pren_ok g (kren h Σ) (pmap h p) → kren g (kren h Σ) = kren (g ∘ h) Σ.
+Proof. intros Hh Hg. apply kren_kren; [by eapply pren_ok_kinj|by eapply pren_ok_kinj]. Qed.
+
+(** Decision Q16 for P: a projection of the clause (rename). *)
+Theorem Prel_rename κ n W Σ T p h :
+  pren_ok h Σ p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pmap h p ∈ P[κ]^W _ n⟦kren h Σ ⊢ T⟧.
+Proof.
+  intros Hh HP. destruct n as [|n]; [apply Prel_0|].
+  apply Prel_S_iff in HP. apply Prel_S_iff. intros W1 HW1 g Hg.
+  rewrite (kren_kren_ok g h Σ p Hh Hg), (pmap_pmap g h p (proj1 Hg)).
+  apply HP; [done|]. by apply pren_ok_compose.
 Qed.

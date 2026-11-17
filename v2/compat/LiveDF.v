@@ -120,10 +120,11 @@ Proof.
   induction n as [n IHn] using lt_wf_ind. intros W T p HT.
   destruct n as [|n]; [intros; apply Prel_0|]. revert W.
   induction p as [p IHp] using (well_founded_induction (well_founded_ltof _ psize)).
-  intros W HL. apply Prel_S_iff. intros W1 HW1.
+  intros W HL. apply Prel_S_iff. intros W1 HW1 h Hh.
   assert (∀ m, Pbody κ_L (S m) (Vrel κ_L) (Prel κ_L) (Vrel κ_L (S m)) (Prel κ_L (S m)) W ∅ T p) as HB
     by (intros m; apply Prel_S_iff, HL).
-  destruct (HB 0 W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+  pose proof (λ m, HB m W1 HW1 h Hh) as HC. rewrite kren_empty in HC |- *.
+  destruct (HC 0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
   split; [|split; [|unfold Psteps; split_and!]].
   - intros Hirr. destruct (Hs Hirr) as (v & E & -> & Hv & HE). exists v, E.
     split_and!; [done| |done]. by apply (Vrel_shape κ_L κ_DF T HT 1 (S n)).
@@ -131,11 +132,13 @@ Proof.
   - intros q ev q' Hq Hst Hτ Hd.
     assert (∀ m, Prel κ_L m W1 ∅ T (erase q')) as HL'.
     { apply (at_cost_all κ_L (ev_cost κ_L ev)). intros m.
-      destruct (HB m W1 HW1) as (_ & _ & A & _). exact (A q ev q' Hq Hst Hτ Hd). }
+      destruct (HC m) as (_ & _ & A & _). exact (A q ev q' Hq Hst Hτ Hd). }
     split.
     + intros Hc. assert (∃ i o1 o2, ev = EvLink i o1 o2) as (i & o1 & o2 & ->).
       { destruct ev; simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
-      apply (IHp (erase q')); [unfold ltof; rewrite <-Hq; by eapply psize_link|]. exact HL'.
+      apply (IHp (erase q')); [|exact HL'].
+      unfold ltof. replace (psize p) with (psize (pmap h p)) by (unfold psize, pmap, emapE; simpl; apply msize_emap).
+      rewrite <-Hq. by eapply psize_link.
     + intros Hc. eapply (IHn (S n - _)); [lia|done|]. intros m. apply HL'.
   - intros q i o M w q' Hq Hst. exfalso.
     destruct (H2 q i o M w q' Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).

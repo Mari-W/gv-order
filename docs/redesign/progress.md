@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: Q16 for V and E done (S4.11), stop at Q16 for P (S4.12) |
+| S4 | generic compatibility | in progress: Q16 done for V, E, P (S4.11, S4.13), composition open |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | open |
@@ -296,6 +296,16 @@ The old development in theories/ stays untouched.
   keep the polarity by construction (`fresh_pull`). The condition is
   needed only for P, where the restricted channels and the partners of
   Q-Send and Q-Recv enter.
+- S4, Q16 for P (decision after S4.12). The clause (rename) is a
+  quantifier of `Pbody`, inside the fixpoint. Every unfolding of P holds
+  for `kren h Σ` and `pmap h p` for every h with `pren_ok h Σ p`: h
+  commutes with duality and is injective on the held ends, the ends of Σ
+  and both ends of every restricted channel. `pmap` renames the
+  restricted channels by `gch h`. E carries no such quantifier. Its
+  closure is the theorem `Erel_rename`, so the quantifier would be
+  redundant there, and adding it would make every E lemma re-prove it.
+  The decision text on redesign says the same ("V and E have the lemma
+  as a theorem").
 
 ## Log
 
@@ -626,3 +636,14 @@ The old development in theories/ stays untouched.
   finite form of it. I recommend (a). Not started: P-Term, Internalize,
   P-Connect, P-Join, all of which wait on this. CheckAll lists 169
   results, all closed. No `Admitted` and no axiom.
+- S4.13. The clause (rename) in `Pbody` (v2/relation/Relation.v),
+  with `gch`, `dcomm`, `kren`, `pmap`, `pheld`, `pren_ok` moved there
+  from compat/Rename.v. The clauses at one renaming are `Pclauses`, and
+  `Pbody_id` and `Prel_S_clauses` read them at the identity. Closure,
+  adequacy, blindness and `live_sub_df` follow with small changes.
+  `Prel_rename` is the projection: h with `pren_ok h Σ p` gives
+  pmap h p ∈ P⟦kren h Σ ⊢ T⟧, because a renaming of a renaming is the
+  composite (`pmap_pmap`, `pren_ok_compose`). `Prel_swap` is now an
+  instance of it, and the induction of compat/PSwap.v is gone. Adequacy
+  is unchanged, because it reads the clauses at the identity. CheckAll
+  lists 170 results, all closed.

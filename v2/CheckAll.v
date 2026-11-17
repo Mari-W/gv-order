@@ -194,6 +194,7 @@ Print Assumptions fresh_pull.
 Print Assumptions ready_rename.
 Print Assumptions Vrel_rename.
 Print Assumptions Erel_rename.
+Print Assumptions Prel_rename.
 (** S4. Renaming of P. *)
 Print Assumptions istep_qswap.
 Print Assumptions erase_qswap.

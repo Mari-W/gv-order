@@ -6,7 +6,8 @@
     renamed configuration ([istep_qswap]), the erasure commutes with the
     renaming ([erase_qswap]), and the external clauses of P move along
     it ([send_split_swap], [recv_ok_swap], [recv_env_swap],
-    [recv_back_swap]). So P is invariant ([Prel_swap]). *)
+    [recv_back_swap]). P is invariant ([Prel_swap]), an instance of
+    [Prel_rename]. *)
 
 From GV Require Export compat.Rename.
 (* lang.ChannelSwap again, so that its [sren] shadows the one of types/Types.v *)
@@ -209,124 +210,27 @@ Section readiness.
   Qed.
 End readiness.
 
-(** ** P along a transposition *)
+(** ** P along a transposition
 
-Section prel.
-  Context (κ : ctable) (a b : chan).
-  Local Abbreviation ow := (oswap a b).
-  Local Abbreviation sw := (sswap a b).
-  Local Abbreviation pw := (pswap a b).
-  Local Abbreviation ew := (eswap a b).
+    A transposition commutes with duality and is injective, so P is
+    invariant by the clause (rename) ([Prel_rename]). *)
 
-  Lemma Prel_swap_1 n : ∀ W Σ T p, Prel κ n W Σ T p → Prel κ n W (sw Σ) T (pw p).
-  Proof.
-    induction n as [n IHn] using lt_wf_ind. destruct n as [|n]; [intros; apply Prel_0|].
-    refine (Prel_S_ind κ n _ _). intros W Σ T p Hb. apply Prel_S_iff. intros W1 HW1.
-    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
-    assert (∀ c Σ' p',
-      at_cost_P (S n) c (Prel κ) (λ W Σ T p, Prel κ (S n) W Σ T p ∧
-          Prel κ (S n) W (sw Σ) T (pw p)) W1 Σ' T (pw p') →
-      at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W1 (sw Σ') T p') as Hac.
-    { intros c Σ' p' [A1 A2]. rewrite <-(pswap_involutive a b p'). split.
-      - intros Hc. by apply A1.
-      - intros Hc. apply (IHn (S n - c) ltac:(lia)). by apply A2. }
-    split; [|split; [|unfold Psteps; split_and!]].
-    - intros Hirr. destruct (Hs (pirred_unswap a b _ Hirr)) as (v & E & -> & Hv & HE).
-      exists (ew v), E. split_and!; [|by apply Vrel_swap|done].
-      unfold pswap. simpl. rewrite gswap_empty, emapE_disj_union, emapE_singleton. f_equal. f_equal.
-      clear -HE. induction E as [|e E IH] using gmultiset_ind; [by rewrite emapE_empty|].
-      rewrite emapE_disj_union, emapE_singleton, IH by multiset_solver.
-      by rewrite (HE e) by multiset_solver.
-    - intros Hni. apply (ready_p_swap a b), Hr. intros Hi. apply Hni, (pirred_unswap a b). by rewrite pswap_involutive.
-    - intros q ev q' Hq Hst Hτ Hd.
-      assert (erase (qswap a b q) = p) as Hq0 by (by rewrite (erase_qswap a b), Hq, pswap_involutive).
-      apply (istep_qswap a b) in Hst. rewrite <-(ev_cost_swap a b).
-      apply Hac. rewrite <-(erase_qswap a b). apply (H1 _ _ _ Hq0 Hst); [by apply (ev_tau_swap a b)|].
-      rewrite (erase_qswap a b). simpl. rewrite <-(gswap_involutive a b (chans_of Σ)), <-(chans_of_swap a b).
-      by apply gswap_disjoint_iff.
-    - intros q i o M w q' Hq Hst.
-      assert (erase (qswap a b q) = p) as Hq0 by (by rewrite (erase_qswap a b), Hq, pswap_involutive).
-      apply (istep_qswap a b) in Hst. simpl in Hst.
-      destruct (H2 _ _ _ _ _ _ Hq0 Hst)
-        as (S0 & x & m' & U & b' & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
-      exists S0, x, m', U, b', S, (sw Σv), (sw Σr), (sw Θe), (sw Σe). split_and!.
-      + by rewrite sswap_lookup'.
-      + done.
-      + by apply sswap_disjoint.
-      + by rewrite <-sswap_union, <-A4, sswap_delete, oswap_involutive.
-      + intros o'. rewrite dom_swap_elem', A5. simpl.
-        rewrite elem_of_gswap', ech_cmap. split; intros [Hm Hc]; split; try done.
-        * apply elem_of_map in Hm as (o'' & Heq & Hm). by apply oswap_inj in Heq as ->.
-        * by apply elem_of_map_2.
-      + apply (f_equal (set_map (D:=gset cend) ow)) in A6.
-        rewrite set_map_oswap_inv, set_map_union_L in A6. by rewrite A6, !sswap_dom.
-      + by apply (send_split_swap a b).
-      + destruct A8 as [B1 B2]. rewrite <-sswap_union. split.
-        * intros Hc. rewrite <-(eswap_involutive a b w). by apply Vrel_swap, B1.
-        * intros Hc. rewrite <-(eswap_involutive a b w). by apply Vrel_swap, B2.
-      + rewrite <-(oswap_involutive a b o) at 1. rewrite <-sswap_union, <-sswap_insert.
-        apply Hac. by rewrite <-(erase_qswap a b).
-    - intros q i o w q' Hq Hst.
-      assert (erase (qswap a b q) = p) as Hq0 by (by rewrite (erase_qswap a b), Hq, pswap_involutive).
-      apply (istep_qswap a b) in Hst. simpl in Hst.
-      destruct (H3 _ _ _ _ _ Hq0 Hst) as (S0 & x & m' & U & b' & S & A1 & A2 & A3).
-      exists S0, x, m', U, b', S. split_and!; [by rewrite sswap_lookup'|done|].
-      intros j Θ2 Hj Hd Hok Hw. pose proof (c_take_pos κ).
-      rewrite <-(oswap_involutive a b o), <-sswap_insert in Hok |- *.
-      set (X := <[ow o:=(S, (x⁺)%pt)]> Σ) in *.
-      assert (recv_ok X (sw Θ2)) as Hok'.
-      { rewrite <-(sswap_inv a b X). by apply (recv_ok_swap a b). }
-      apply (Vrel_swap κ a b) in Hw.
-      assert (set_map ech (dom (sw Θ2)) ## p.1) as Hd'.
-      { rewrite sswap_dom, set_map_ech_oswap. unfold pswap in Hd. simpl in Hd.
-        rewrite <-(gswap_involutive a b p.1). by apply gswap_disjoint_iff. }
-      pose proof (A3 j (sw Θ2) ltac:(lia) Hd' Hok' Hw) as HP.
-      apply (IHn j ltac:(lia)) in HP. rewrite <-(recv_env_swap a b), sswap_inv in HP.
-      revert HP. rewrite (erase_qswap a b). unfold pswap. simpl.
-      rewrite gswap_union, gswap_involutive, <-(recv_back_swap a b), sswap_inv.
-      rewrite emapE_emapE, (emapE_ext _ id) by apply oswap_involutive. rewrite emapE_id.
-      by destruct (erase q').
-    - intros q i o q' Hq Hst.
-      assert (erase (qswap a b q) = p) as Hq0 by (by rewrite (erase_qswap a b), Hq, pswap_involutive).
-      apply (istep_qswap a b) in Hst. simpl in Hst.
-      destruct (H4 _ _ _ _ Hq0 Hst) as (S0 & x & A1 & A2 & A3).
-      exists S0, x. split_and!; [by rewrite sswap_lookup'|done|].
-      rewrite <-(oswap_involutive a b o) at 1. rewrite <-sswap_delete.
-      apply Hac. by rewrite <-(erase_qswap a b).
-    - intros q i o bb q' Hq Hst.
-      assert (erase (qswap a b q) = p) as Hq0 by (by rewrite (erase_qswap a b), Hq, pswap_involutive).
-      apply (istep_qswap a b) in Hst. simpl in Hst.
-      destruct (H5 _ _ _ _ _ Hq0 Hst) as (S0 & x & S1 & S2 & A1 & A2 & A3).
-      exists S0, x, S1, S2. split_and!; [by rewrite sswap_lookup'|done|].
-      rewrite <-(oswap_involutive a b o) at 1. rewrite <-sswap_insert.
-      apply Hac. by rewrite <-(erase_qswap a b).
-    - intros q i o bb q' Hq Hst.
-      assert (erase (qswap a b q) = p) as Hq0 by (by rewrite (erase_qswap a b), Hq, pswap_involutive).
-      apply (istep_qswap a b) in Hst. simpl in Hst.
-      destruct (H6 _ _ _ _ _ Hq0 Hst) as (S0 & x & S1 & S2 & A1 & A2 & A3).
-      exists S0, x, S1, S2. split_and!; [by rewrite sswap_lookup'|done|].
-      rewrite <-(oswap_involutive a b o) at 1. rewrite <-sswap_insert.
-      apply Hac. by rewrite <-(erase_qswap a b).
-    - intros q i os q' Hq Hst.
-      assert (erase (qswap a b q) = p) as Hq0 by (by rewrite (erase_qswap a b), Hq, pswap_involutive).
-      apply (istep_qswap a b) in Hst. simpl in Hst.
-      destruct (H7 _ _ _ _ Hq0 Hst) as (o1 & o2 & S1 & S2 & x & A1 & A2 & A3 & A4 & A5 & A6).
-      exists (ow o1), (ow o2), S1, S2, x. split_and!.
-      + apply (f_equal (set_map (D:=gset cend) ow)) in A1. rewrite set_map_oswap_inv in A1.
-        by rewrite A1, set_map_union_L, !set_map_singleton_L.
-      + by intros ?%oswap_inj.
-      + by rewrite sswap_lookup', oswap_involutive.
-      + by rewrite sswap_lookup', oswap_involutive.
-      + done.
-      + rewrite <-!sswap_delete. apply Hac. by rewrite <-(erase_qswap a b).
-  Qed.
+Lemma pswap_pmap a b p : pswap a b p = pmap (oswap a b) p.
+Proof.
+  destruct p as [C E]. unfold pswap, pmap, gswap. simpl. done.
+Qed.
 
-  Lemma Prel_swap n W Σ T p : Prel κ n W Σ T p ↔ Prel κ n W (sw Σ) T (pw p).
-  Proof.
-    split; [apply Prel_swap_1|]. intros H.
-    rewrite <-(sswap_inv a b Σ), <-(pswap_involutive a b p). by apply Prel_swap_1.
-  Qed.
-End prel.
+Lemma pren_ok_swap a b Σ p : pren_ok (oswap a b) Σ p.
+Proof. split; [intros o; apply cmap_edual|]. intros o1 o2 _ _. apply oswap_inj. Qed.
+
+Lemma Prel_swap κ a b n W Σ T p : Prel κ n W Σ T p ↔ Prel κ n W (sswap a b Σ) T (pswap a b p).
+Proof.
+  assert (∀ Σ p, Prel κ n W Σ T p → Prel κ n W (sswap a b Σ) T (pswap a b p)) as H1.
+  { intros Σ0 p0 H. unfold sswap. rewrite <-kren_kmap by apply _. rewrite pswap_pmap.
+    by apply Prel_rename; [apply pren_ok_swap|]. }
+  split; [apply H1|]. intros H.
+  rewrite <-(sswap_inv a b Σ), <-(pswap_involutive a b p). by apply H1.
+Qed.
 
 (** ** The link substitution is no bijection
 
