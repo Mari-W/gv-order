@@ -56,6 +56,7 @@ Require LRGV.examples.lit.LitRejected.
 Require LRGV.liveness.GuardCex.
 Require LRGV.liveness.GuardEx.
 Require LRGV.liveness.GuardMarks.
+Require LRGV.liveness.GuardRules.
 Require LRGV.liveness.LiveAdequacy.
 Require LRGV.liveness.LiveBind.
 Require LRGV.liveness.LiveConsts.
@@ -143,6 +144,11 @@ Print Assumptions LRGV.liveness.GuardCex.guarded_examples.
 Print Assumptions LRGV.liveness.LiveGuard.lsem_later_box_live.
 Print Assumptions LRGV.liveness.GuardMarks.okv_okR.
 Print Assumptions LRGV.liveness.GuardMarks.okR_rename.
+Print Assumptions LRGV.liveness.GuardRules.okM_iff.
+Print Assumptions LRGV.liveness.GuardRules.gbody_iff.
+Print Assumptions LRGV.liveness.GuardRules.guarded_iff.
+Print Assumptions LRGV.liveness.GuardRules.gtyped_iff.
+Print Assumptions LRGV.liveness.GuardRules.gptyped_iff.
 Print Assumptions LRGV.liveness.LiveGuardRules.lsem_later_lam.
 Print Assumptions LRGV.liveness.LiveGuardRules.lsem_later_app_lam.
 Print Assumptions LRGV.liveness.LiveGuardRules.lsem_later_app_force.
