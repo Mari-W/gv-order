@@ -64,6 +64,59 @@ The old development in theories/ stays untouched.
 - S1, toolchain. The opam switch has Rocq 9.2, so v2 is built and tested
   with 9.2.
 
+- S2, scopes. The tokens ⁺ and ‾ serve ends and points. The end notations
+  live in `cend_scope` (key `cend`), the point notations in `point_scope`
+  (key `pt`), each bound to its type. A list literal `[a; b]` clashes
+  with the `;` of the typing notations inside a statement, so statements
+  write `a :: b :: []`.
+- S2, the merged judgment. The judgment of Q11 is `typed W N Θ Γ Δ F e T
+  a c ϑ`, notation `Θ ; Γ ; Δ ⊢^F _{W,N} e : T^a ▷ c ; ϑ`. The paper
+  string keeps the braces of the two-letter subscript, as the soup does.
+  The DF judgment `Θ ; Γ ; Δ ⊢^F _ W t : T` of A.2 is `dftyped`, the same
+  rules without cost premises, aging and capture.
+- S2, floors. The floor h of an arrow ranges over ℕ ∪ {∞}, not ℕ. E-Abs
+  restates a captured end at credit h, and §2.17's choice h = 0 then
+  leaves the body unable to age the end by ∞. The DF instance takes
+  h = ∞. A floor ∞ is met only by counters ∞.
+- S2, credits of aggregates. A credit on a product, a sum or an
+  existential is added to its parts. Aging, capture and subtyping push
+  it inward, and the rules build aggregates at credit 0. E-Send checks
+  the payload by aging it by one and subtyping it to the floor, as the
+  old C-Send did, not by the literal a ≥ b + 1 of §2.17, which fails for
+  a pair payload at N = ∞.
+- S2, session instances. At N = ∞ a box body and a force see only
+  session instances with the annotations of N = ∞ (`sinsts`). Without
+  this, a box body typed at N = ∞ would have to type at instances with
+  finite payload credits, where an end received at a finite credit
+  cannot be aged by ∞.
+- S2, subtyping. An existential may drop facts of its constraint under
+  subtyping, so world extension preserves E-New, whose result names the
+  laws of W. The DF judgment converts by subtyping of erased types.
+- S2, E-Let. A rule types the redex (λx. e2) e1 as let x = e1 in e2,
+  shaped like E-Let∗. Without it `let (a, a′) = new_ℓ in e` has no
+  typing that captures more than one end, because E-Abs bounds all
+  captured heads by one lower point.
+- S2, points in session types. Point instantiation leaves session types
+  alone, and E-Send and E-Recv ask the payload point-closed below its own
+  binder (`pscoped m T`), as the old development scoped payloads. The
+  first port instantiated inside payloads, and then instantiation did
+  not commute with unfolding (a free point variable of a µ-body is
+  captured on unrolling), so point substitution failed.
+- S2, knownness. No premise asks a point known to W. Generated roots are
+  known by construction and the budgets that read knownness are gone.
+- S2, process typing. `ptyped N W Σ p T` carries the refill N, and
+  `Σ ⊢_W p : T` is the instance N = ∞. P-Term asks the ends of Θ_B dual
+  by the syntactic `dual` at dual points, with credit N. P-Connect and
+  P-Join ask `w_fams W1 ## w_fams W2`. Renaming apart is the lemma
+  `typed_gmap` applied before the join, and it needs a permutation of
+  families (a right inverse of the root renaming), because E-Box
+  quantifies over every session instance.
+- S2, structural lemmas. `typed_pinst` and `typed_gmap` assume
+  `world_wf W`. The future-variable domain of the target context of
+  `typed_pinst` is a subset of the source's.
+- S2, deferred. `seq_sound` for transformers with offset ∞ is stated in
+  §2.17 but not used before S7, and S2 does not prove it.
+
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of

@@ -37,3 +37,21 @@ and run `make` again. The root build of theories/ ignores v2.
 | lockfree/Reach.v | `lock_free_reach_of`, a fair scheduler |
 | lockfree/TauThread.v | `no_tau_divergence` and its thread-wise form `thread_acc` |
 | CheckAll.v | `Print Assumptions` of the main results of the stage |
+
+## Stage S2, points, worlds and the typing judgment
+
+| File | Content |
+|---|---|
+| types/Points.v | roots (constants, generated roots `NGen ℓ g`, variables), points with the shift `x⁺`, the field `x·κ` and the dual `x‾`, instantiation, renaming of generated roots, facts, box constraints |
+| types/Worlds.v | worlds `(A, ≺_A, L, Λ)`, the order `W ⊢ x ≺ y`, `world_wf`, `strict`, `lfworld`, `⊑`, the join `⊔`, `wrestrict`, R7 `strict_join_iff`, renaming families apart |
+| types/Costs.v | credits and costs in ℕ ∪ {∞}, ticket transformers with offsets in ℕ ∪ {∞} |
+| types/Types.v | context-free session types and types with credits, costs, transformers and floors, duality, unfolding, ≈, the annotations of N = ∞ (`ty_df`) |
+| types/Erasure.v | `ty_df` commutes with the type operations and preserves ≈ |
+| static/Contexts.v | Θ, Γ, Δ, futures, the fact theory `slt`, aging, capture, subtyping |
+| static/Typing.v | the merged judgment `typed` (rules `e_*`), its DF projection `dftyped` (rules `d_*`), process typing `ptyped` (`p_term`, `p_connect`, `p_join`) |
+| static/Conservativity.v | `typed_dftyped`, `dftyped_typed`, `conservative` |
+| static/Weakening.v | world extension, term-variable renaming and weakening |
+| static/Renaming.v | channel renaming, renaming of families and generated roots |
+| static/PointSubst.v | point substitution `typed_pinst` |
+| examples/ | the S2 examples, typed in `dftyped` and lifted to N = ∞ |
+| test/TypeNotations.v | the S2 notations, ends and points side by side |
