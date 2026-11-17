@@ -64,5 +64,8 @@ compat/Redex.v
 compat/Rules.v
 compat/LiveDF.v
 compat/Swap.v
+compat/EFacts.v
+compat/TermRules.v
+compat/SpawnGap.v
 test/CompatNotations.v
 CheckAll.v
