@@ -1125,6 +1125,16 @@ first, in stage S2.
   τ step replaces the S2 rule that typed the redex (λx. e2) e1 as a let.
   A let is not a closure, so E-Let carries no lower point and captures
   every end of its context. No typing rule matches a redex shape.
+- Q14 (2026-11-17, after S4.3). V at a λ asks dom Θ = the ends v mentions,
+  and V at a box asks that v mentions no end. The author agreed to this
+  syntactic clause explicitly. It is the clause V already has at a channel
+  value. Without it Q3 is unsound, see `send_gap` (v2/compat/SendGap.v): a
+  closure that mentions an end only in dead code is in V, and no send can
+  hand it on. Q3 stays.
+- Q15 (2026-11-17, after S7.1). Vfuel takes the clause of Q14 too: at a λ
+  dom Π = the ends v mentions, at a box no end. The author agreed
+  explicitly. Without it `fsem_of_cost` is false, see `fw_counterexample`
+  (v2/cost/FuelGap.v on redesign-s7).
 - The remaining questions take the recommendations of §5: Q1 (a), Q4 (a),
   Q6 (a), Q7 (a), Q8 (a), Q9 (a), Q10 (a) if the bind lemma survives it,
   Q12 as stated.

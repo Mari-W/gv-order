@@ -71,6 +71,7 @@ Fixpoint act (e : expr) : option action :=
   | LetP e1 _ =>
       if is_val e1 then match e1 with Pair _ _ => Some ABeta | _ => None end
       else act e1
+  | ELet e1 _ => if is_val e1 then Some ABeta else act e1
   | Inj1 e1 | Inj2 e1 => act e1
   | Case e1 _ _ =>
       if is_val e1 then match e1 with Inj1 _ | Inj2 _ => Some ABeta | _ => None end
@@ -160,7 +161,7 @@ Lemma act_offer_sig e a α : act e = Some a → offers a α → {e' | tstep e α
 Proof.
   revert a α.
   induction e as [x| |o|e0 IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
-                 |e1 IH1 e2 IH2|e1 IH|e1 IH|e0 IH0 e1 IH1 e2 IH2|e1 IH|ℓ|k e1 IH];
+                 |e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH|e1 IH|e0 IH0 e1 IH1 e2 IH2|e1 IH|ℓ|k e1 IH];
     simpl; intros a α Ha Hoff; try discriminate.
   - (* application *)
     destruct (is_val e1) eqn:Hb1;
@@ -187,11 +188,17 @@ Proof.
     destruct (is_val e1) eqn:Hb1;
       [|destruct (IH1 _ _ Ha Hoff) as [e1' Hst]; exists (LetP e1' e2);
         by apply (t_act_ctx (FLetP e2))].
-    destruct e1 as [| | | | |u w| | | | | | | |]; try discriminate.
+    destruct e1 as [| | | | |u w| | | | | | | | |]; try discriminate.
     injection Ha as <-. destruct α; try done.
     pose proof (is_val_of_true _ Hb1) as Hv1. simpl in Hv1.
     apply andb_True in Hv1 as [Hu Hw].
     eexists. by apply tstep_head, t_act_let_pair.
+  - (* let *)
+    destruct (is_val e1) eqn:Hb1;
+      [|destruct (IH1 _ _ Ha Hoff) as [e1' Hst]; exists (ELet e1' e2);
+        by apply (t_act_ctx (FLet e2))].
+    injection Ha as <-. destruct α; try done.
+    eexists. apply tstep_head, t_act_let. by rewrite Hb1.
   - (* inl *)
     destruct (IH _ _ Ha Hoff) as [e1' Hst]. exists (Inj1 e1'). by apply (t_act_ctx FInj1).
   - (* inr *)
@@ -200,7 +207,7 @@ Proof.
     destruct (is_val e0) eqn:Hb0;
       [|destruct (IH0 _ _ Ha Hoff) as [e0' Hst]; exists (Case e0' e1 e2);
         by apply (t_act_ctx (FCase e1 e2))].
-    destruct e0 as [| | | | | | | |v|v| | | |]; try discriminate;
+    destruct e0 as [| | | | | | | | |v|v| | | |]; try discriminate;
       injection Ha as <-; destruct α; try done; simpl in Hb0.
     + eexists. apply tstep_head, t_act_case_inl. by rewrite Hb0.
     + eexists. apply tstep_head, t_act_case_inr. by rewrite Hb0.
@@ -629,6 +636,7 @@ Lemma head_step_closed e α e' :
 Proof.
   destruct 1; simpl; intros Hc Hr; rewrite ?andb_True in Hc |- *; destruct_and?;
     split_and?; auto.
+  - by apply closed_subst1.
   - by apply closed_subst1.
   - by apply closed_subst2.
   - by apply closed_subst1.
