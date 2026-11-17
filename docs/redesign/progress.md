@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | open |
+| S4 | generic compatibility | in progress |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | open |
 | S7 | cost judgment | open |
@@ -97,7 +97,7 @@ The old development in theories/ stays untouched.
   typing that captures more than one end, because E-Abs bounds all
   captured heads by one lower point.
   Superseded by decision Q13: S4 adds a primitive let and E-Let types
-  it, so no rule matches the redex shape.
+  it, so no rule matches the redex shape. Done in S4.0.
 - S2, points in session types. Point instantiation leaves session types
   alone, and E-Send and E-Recv ask the payload point-closed below its own
   binder (`pscoped m T`), as the old development scoped payloads. The
@@ -258,3 +258,14 @@ The old development in theories/ stays untouched.
   with two sanity checks, `Prel_done` and `Erel_beta_unit`.
 - S3.4. Notation test v2/test/RelationNotations.v, README section,
   CheckAll lists 71 results, all closed. No `Admitted` and no axiom.
+- S4.0. Decision Q13. The term former `ELet e1 e2` (let x = e1 in e2,
+  binding 1 in e2) with the frame `FLet` and the head step `t_act_let`,
+  `ELet v e --β--> e[v/x]`. The step carries the label β, so it costs
+  κ(β) and the relation needs no new clause: O-Beta reads it. E-Let
+  (`e_let`) and D-Let (`d_let`) type `ELet e1 e2` with the premises of
+  the S2 rule, no lower point. `let_new` and `elet` of examples/Tools.v
+  build the new former, so the examples keep their derivations.
+  Safety (`act`, `act_offer_sig`, closedness), harmony (`HRedLet`),
+  `act_emap`, the frame maps of ChannelSwap.v and TauThread.v, `relabel`
+  and the notation test follow. Conservativity, renaming, weakening and
+  point substitution needed no change beyond the rule's subject.

@@ -153,6 +153,7 @@ Definition frame_emap (g : cend → cend) (f : frame) : frame :=
   | FAppL e2 => FAppL (emap g e2) | FAppR v => FAppR (emap g v)
   | FPairL e2 => FPairL (emap g e2) | FPairR v => FPairR (emap g v)
   | FLetU e2 => FLetU (emap g e2) | FLetP e2 => FLetP (emap g e2)
+  | FLet e2 => FLet (emap g e2)
   | FInj1 => FInj1 | FInj2 => FInj2
   | FCase e1 e2 => FCase (emap g e1) (emap g e2)
   | FOp k => FOp k
