@@ -1,0 +1,54 @@
+λ c : nat, (c⁺, c⁻, (c⁺)‾)
+     : nat → cend nat * cend nat * cend nat
+λ x κ : A, (x⁺·κ)‾
+     : A → A → A
+λ S x : A, S@x
+     : A → A → A
+λ W x y : A, W ⊢ x ≺ y
+     : A → A → A → Prop
+λ W W' : A, W ⊑ W'
+     : A → A → Prop
+λ W1 W2 : A, W1 ⊔ W2
+     : A → A → A
+λ W Θ F t : A, ready _ W(Θ ∣ F, t)
+     : A → A → A → A → Prop
+λ W Σ p : A, ready _ W(Σ, p)
+     : A → A → A → Prop
+λ Θ Γ Δ F W t T : A, Θ ; Γ ; Δ ⊢^F _ W t : T
+     : A → A → A → A → A → A → A → Prop
+λ Σ W p T : A, Σ ⊢_W p : T
+     : A → A → A → A → Prop
+λ Θ Γ N e σ c t : A, Θ ; Γ ⊩^N e : σ ▷ c ; t
+     : A → A → A → A → A → A → A → Prop
+λ Σ N W p T : A, Σ ⊩^N _ W p : T
+     : A → A → A → A → A → Prop
+λ κ n W Θ T v : A, v ∈ V[κ]^W _ n⟦Θ ⊢ T⟧
+     : A → A → A → A → A → A → Prop
+λ κ n W Θ T F e : A, e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F
+     : A → A → A → A → A → A → A → Prop
+λ κ n W Σ T p : A, p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧
+     : A → A → A → A → A → A → Prop
+λ n W Θ T v : A, v ∈ V^W _ n⟦Θ ⊢ T⟧
+     : A → A → A → A → A → Prop
+λ Θ Δ F W t T : A, Θ ; Δ ⊨^F _ W t : T
+     : A → A → A → A → A → A → Prop
+λ Θ Δ F W t T : A, Θ ; Δ ⊫^F _ W t : T
+     : A → A → A → A → A → A → Prop
+λ Σ W p T : A, Σ ⊨_W p : T
+     : A → A → A → A → Prop
+λ Σ W p T : A, Σ ⊫_W p : T
+     : A → A → A → A → Prop
+λ Σ W p T : A, Σ ⊪_W p : T
+     : A → A → A → A → Prop
+λ N n σ c r Π φ tk e : A, e ∈ F^N _ n⟦σ ▷ c ; r⟧(Π, φ, tk)
+     : A → A → A → A → A → A → A → A → A → Prop
+λ N n σ Π φ v : A, v ∈ FV^N _ n⟦σ⟧(Π, φ)
+     : A → A → A → A → A → A → Prop
+λ Θ Γ N e σ c t : A, Θ ; Γ ⊨^N e : σ ▷ c ; t
+     : A → A → A → A → A → A → A → Prop
+λ N W n Σ T a : A, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧
+     : A → A → A → A → A → A → Prop
+λ W Σ p T : A, lfworld W ∧ strict W ∧ Σ ⊪_W p : T → lock_free p
+     : A → A → A → A → Prop
+λ Σ W p T : A, Σ ⊫_W p : T → deadlock_free p ∧ no_tau_divergence p
+     : A → A → A → A → Prop

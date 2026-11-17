@@ -1,0 +1,4 @@
+-R . GV
+-arg -w -arg -notation-overridden
+-arg -w -arg -postfix-notation-not-level-1
+test/Lexer.v

@@ -1,0 +1,8 @@
+# Hooks into the generated Makefile (included by it).
+
+# The lexer test of Appendix A: every token parses (checked by the build)
+# and prints as written (checked here against test/Lexer.expected).
+.PHONY: test
+test: test/Lexer.vo
+	"$(COQBIN)rocq" c $(COQMF_COQLIBS_NOML) test/Lexer.v 2>/dev/null | diff -u test/Lexer.expected -
+	@echo "lexer test: printed forms match test/Lexer.expected"
