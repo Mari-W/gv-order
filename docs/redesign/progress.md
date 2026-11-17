@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: renaming done, composition open (see S4.9) |
+| S4 | generic compatibility | in progress: Q16 for V and E done (S4.11), P and composition open |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | open |
@@ -285,6 +285,17 @@ The old development in theories/ stays untouched.
   E-New reads its constraint at the laws of the world of the judgment,
   so the redex is stated for every subset of the laws of a later world
   (`Erel_new_sub`).
+- S4, Q16 environments. The renamed environment is `kren h Θ`, the
+  map of the paper's `kmap h Θ`. stdpp's `kmap` asks h injective on all
+  ends, and Q16 asks it only on the ends of Θ. `kren` agrees with `kmap`
+  for an injective h (`kren_kmap`). Injectivity on the held ends is the
+  fuel layer's `kinj h Θ`.
+- S4, Q16 for terms. `Vrel_rename` and `Erel_rename` ask no duality
+  condition of h. A term's obligations never compare an end with its
+  partner, and the fresh names at a creation and at an incoming value
+  keep the polarity by construction (`fresh_pull`). The condition is
+  needed only for P, where the restricted channels and the partners of
+  Q-Send and Q-Recv enter.
 
 ## Log
 
@@ -557,3 +568,18 @@ The old development in theories/ stays untouched.
   largest single lemma of S4. I stopped here so the author can confirm
   that (3) is acceptable as the form of Q16: maps that commute with
   duality and are injective on held ends, not bijections of all ends.
+- S4.11. Decision Q16 for V and E, in the held-ends form of S4.10
+  (v2/compat/Rename.v). `Vrel_rename` and `Erel_rename`: for every map
+  h of ends injective on the ends of Θ and every cost table,
+  v ∈ V⟦Θ ⊢ T⟧ gives emap h v ∈ V⟦kren h Θ ⊢ T⟧, and the same for E at
+  every future. The proof is the forward simulation of S4.10 (3). A
+  step of emap h e comes from the redex of e (`act_emap`), and thread
+  steps are deterministic for a fixed label (`tstep_det`), so the two
+  continuations agree up to an extension of h (`tstep_emap_back`). A
+  creation and an incoming value (O-Recv, the argument of a λ) pick
+  fresh channels and extend h to send them back (`fresh_pull`,
+  `pull_value`). Readiness moves along h because every session step of
+  a term in E is on a held end (`Erel_sends`, `ready_rename`). The
+  transposition lemmas `Vrel_swap` and `Erel_swap` are now instances
+  (`Vrel_swap_rename`), and compat/Swap.v keeps only the transposition
+  on environments. No `Admitted` and no axiom.
