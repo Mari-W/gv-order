@@ -79,6 +79,7 @@ theories/static/FactTheory.v
 theories/static/PointSubst.v
 theories/static/Typing.v
 theories/static/CostTyping.v
+theories/lockfree/CostFund.v
 theories/static/Source.v
 theories/static/SourceRules.v
 theories/static/Fundamental.v
