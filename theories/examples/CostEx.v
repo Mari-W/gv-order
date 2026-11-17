@@ -343,4 +343,33 @@ Proof.
   intros. unfold cb_main, let_new_pair_at, let_new_at. ct_prep. ct1 cb_hint.
 Qed.
 
+(** ** Rejections, at the rule that rejects
+
+    C3 links once per round and calls itself in tail position. The body
+    of its box then has the transformer link ∘ t, and C-Box with C-Sub
+    asks it to lie below t. No such t has a finite need at 0. *)
+Lemma c3_link_loop_not_tix (t : tix) :
+  tle (tseq (tlink tid) t) t → ∀ tk, ¬ meets t 0 tk.
+Proof.
+  intros Ht. apply link_loop_no_tix. intros tk Hm. specialize (Ht 0 tk Hm).
+  destruct t as [[s|] b]; unfold meets, tapp, tseq, tlink in *; simpl in *; lia.
+Qed.
+
+(** The server that runs a callback of cost ∞ while it holds c: C-App
+    has cost ∞, the enclosing let ages c by ∞, and an end with a finite
+    credit cannot be aged by ∞. Spawning the callback instead types,
+    because C-Spawn charges nothing. *)
+Lemma cb_inf_not_aged P n σ' : ¬ cagex None (CTa (CEnd P) (Some n)) σ'.
+Proof. intros [Hc _]. inversion Hc as [? ? Hf|? ? Hf]; [inversion Hf|done]. Qed.
+
+(** The starving server forwards the same end along the same position
+    of one carrier every round. C-Send then asks the payload floor f at
+    that position to lie one unit below itself. *)
+Lemma starve_not_spare P f σ' :
+  cagex (Some 1) (CTa (CEnd P) (Some f)) σ' → ¬ σ' ⊑c CTa (CEnd P) (Some f).
+Proof.
+  intros [Hc _] Hs. inversion Hc as [? ? Hf|? ? Hf]; subst; [inversion Hf|].
+  inversion Hs as [? ? ? ? _ Hcr]; subst. simpl in *. lia.
+Qed.
+
 End examples.
