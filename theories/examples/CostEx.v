@@ -10,7 +10,7 @@
 
 From stdpp Require Import base strings gmap.
 From LRGV Require Import static.CostTyping.
-From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain examples.ABP examples.cfst.CfstScheduler.
+From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain examples.ABP examples.cfst.CfstScheduler examples.Scheduler.
 
 Set Default Proof Using "All".
 
@@ -248,6 +248,25 @@ Lemma cs_ctyped :
   ctyped W ∅ [] sch_main (CTa CVal None) None (Some 5, 0).
 Proof.
   intros. unfold sch_main, leader, let_new_pair_at, let_new_at. ct_prep. ct1 cs_hint.
+Qed.
+
+(** ** scheduler with a link
+
+    ag₁ links two ends and needs one ticket, so its thunk has the
+    transformer (0, 1), and the spawn makes main's need tspawn 1 at 0,
+    one ticket. ag₂ holds r₂ across the two actions on r₁ after the
+    spawn at floor B − 1, so B = 3. *)
+Definition sd_P : cpro := PNode 3 (PSnd (CTa CVal None) (PNode 3 PCls)).
+Definition sd_Pd : cpro := PNode 3 (PRcv (CTa CVal None) (PNode 3 PCls)).
+Definition sd_ρ : cprof := Prof sd_P sd_Pd (λ _, PrTop) PrTop.
+
+Lemma sched_ctyped :
+  pt_known W (pconst 1) → cpfitpt W (pconst 1) sd_ρ →
+  pt_known W (pconst 0) → cpfitpt W (pconst 0) sd_ρ →
+  ctyped W ∅ [] sched_main (CTa CVal None) (Some 4) (Some 2, 1).
+Proof.
+  intros. unfold sched_main, ag0, ag1_thunk, ag2_thunk, sendclose, recvclose, let_new_pair_at, let_new_at.
+  ct_prep. ct0.
 Qed.
 
 End examples.
