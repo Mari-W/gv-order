@@ -77,12 +77,14 @@ theories/rules/SemanticRules.v
 theories/static/FactTheory.v
 theories/static/PointSubst.v
 theories/static/Typing.v
+theories/static/CostTyping.v
 theories/static/Source.v
 theories/static/SourceRules.v
 theories/static/Fundamental.v
 theories/static/Mixed.v
 theories/examples/ExampleTools.v
 theories/examples/Sync.v
+theories/examples/CostEx.v
 theories/examples/Cycle.v
 theories/examples/Delegation.v
 theories/examples/Scheduler.v
