@@ -10,7 +10,7 @@
 
 From stdpp Require Import base strings gmap.
 From LRGV Require Import static.CostTyping.
-From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain examples.ABP.
+From LRGV Require Import examples.Sync examples.TailCall examples.Forwarder examples.ReceivedChain examples.ABP examples.cfst.CfstScheduler.
 
 Set Default Proof Using "All".
 
@@ -201,6 +201,53 @@ Lemma abp_ctyped :
   ctyped W ∅ [] abp_main (CTa CVal None) None (Some 2, 0).
 Proof.
   intros. unfold abp_main, let_new_pair_at, let_new_at. ct_prep. ct1 ab_hint.
+Qed.
+
+(** ** Milner's cyclic scheduler (CFST)
+
+    Two boxes of cost ∞ with tail calls. A follower holds wk across
+    one action and succ across two before it acts on them, so their
+    argument floors are 2 and 3. The leader acts four times on its
+    three ends before it calls the follower with prev, after a spawn
+    at floor B − 1, which gives B ≥ 5. We take B = 6, the length of a
+    round (plan §19.9). *)
+CoFixpoint cs_Pwk : cpro := PNode 6 (PSnd (CTa CVal None) (PNode 6 (PRcv (CTa CVal None) cs_Pwk))).
+CoFixpoint cs_Pwkd : cpro := PNode 6 (PRcv (CTa CVal None) (PNode 6 (PSnd (CTa CVal None) cs_Pwkd))).
+CoFixpoint cs_Psc : cpro := PNode 6 (PSnd (CTa CVal None) (PNode 6 (PSnd (CTa CVal None) cs_Psc))).
+CoFixpoint cs_Pscd : cpro := PNode 6 (PRcv (CTa CVal None) (PNode 6 (PRcv (CTa CVal None) cs_Pscd))).
+Definition cs_ρwk : cprof := Prof cs_Pwk cs_Pwkd (λ _, PrTop) PrTop.
+Definition cs_ρsc : cprof := Prof cs_Psc cs_Pscd (λ _, PrTop) PrTop.
+
+Definition follower_cty : cta :=
+  CTa (CBox (Some 0) tid (CTa (CArr None tid 0
+    (CTa (CProd (CTa (CEnd cs_Pscd) (Some 0))
+       (CTa (CProd (CTa (CEnd cs_Pwk) (Some 2)) (CTa (CEnd cs_Psc) (Some 3))) (Some 0))) (Some 0))
+    (CTa CVal None)) None)) None.
+Definition worker_cty : cta :=
+  CTa (CBox (Some 0) tid (CTa (CArr None tid 0 (CTa (CEnd cs_Pwkd) (Some 0)) (CTa CVal None)) None)) None.
+
+Lemma follower_ctyped : ctyped W ∅ [] follower follower_cty (Some 0) tid.
+Proof. unfold follower, follower_cty. ct0. Qed.
+
+Lemma worker_ctyped : ctyped W ∅ [] worker worker_cty (Some 0) tid.
+Proof. unfold worker, worker_cty. ct0. Qed.
+
+Ltac cs_hint k :=
+  lazymatch goal with
+  | |- ctyped _ _ [] follower _ _ _ => apply follower_ctyped
+  | |- ctyped _ _ [] worker _ _ _ => apply worker_ctyped
+  end.
+
+Lemma cs_ctyped :
+  pt_known W (pconst 0) → cpfitpt W (pconst 0) cs_ρsc →
+  pt_known W (pconst 1) → cpfitpt W (pconst 1) cs_ρsc →
+  pt_known W (pconst 2) → cpfitpt W (pconst 2) cs_ρsc →
+  pt_known W (pconst 3) → cpfitpt W (pconst 3) cs_ρwk →
+  pt_known W (pconst 4) → cpfitpt W (pconst 4) cs_ρwk →
+  pt_known W (pconst 5) → cpfitpt W (pconst 5) cs_ρwk →
+  ctyped W ∅ [] sch_main (CTa CVal None) None (Some 5, 0).
+Proof.
+  intros. unfold sch_main, leader, let_new_pair_at, let_new_at. ct_prep. ct1 cs_hint.
 Qed.
 
 End examples.
