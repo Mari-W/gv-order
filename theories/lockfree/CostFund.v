@@ -1542,3 +1542,208 @@ Proof.
   bind0 [FAppR ESpawn] r'; [apply fle_refl|]. simpl.
   apply (spawn_redex _ _ _ _ _ _ _ _ _ _ _ _ _ _ HV Ha Hdv Hcv). by apply (meets_mono _ _ r').
 Qed.
+
+(** ** Rules that sequence two subterms *)
+
+Lemma union_swap4 {Y : Type} (m1 m2 m3 m4 : gmap cend Y) :
+  dom m2 ## dom m3 → (m1 ∪ m2) ∪ (m3 ∪ m4) = (m1 ∪ m3) ∪ (m2 ∪ m4).
+Proof.
+  intros H. rewrite <-!map_union_assoc. f_equal. rewrite !map_union_assoc. f_equal. by apply union_comm_d.
+Qed.
+
+Lemma union_lcomm {Y : Type} (m1 m2 m3 : gmap cend Y) : dom m1 ## dom m2 → m1 ∪ (m2 ∪ m3) = m2 ∪ (m1 ∪ m3).
+Proof. intros H. rewrite !map_union_assoc. f_equal. by apply union_comm_d. Qed.
+
+Lemma fle_frame3 i i2 c1 c2 c : fle (Some i) c1 → fle (Some i2) c2 → fle c (fminus i2 (fminus i (fadd c1 (fadd c2 c)))).
+Proof. destruct c1, c2, c; simpl; lia. Qed.
+
+Lemma fle_frame_max i c0 c1 c2 : fle (Some i) c0 → fle c1 (fminus i (fadd c0 (fmax c1 c2))) ∧ fle c2 (fminus i (fadd c0 (fmax c1 c2))).
+Proof. destruct c0, c1, c2; simpl; lia. Qed.
+
+Lemma emap_subst_up (g : chan → chan) γ e : emap g (subst (up γ) e) = subst (up (λ x, emap g (γ x))) (emap g e).
+Proof. rewrite emap_subst. apply subst_ext. intros x. apply emap_up. Qed.
+
+Lemma emap_subst_up2 (g : chan → chan) γ e :
+  emap g (subst (up (up γ)) e) = subst (up (up (λ x, emap g (γ x)))) (emap g e).
+Proof.
+  rewrite emap_subst. apply subst_ext. intros x. rewrite emap_up. apply up_ext. intros y. apply emap_up.
+Qed.
+
+Lemma Vfuel_sum_inv n W σ1 σ2 a π φ v :
+  Vfuel n W (CTa (CSum σ1 σ2) a) π φ v →
+  (∃ u, v = Inj1 u ∧ Vfuel n W (cadd a σ1) π φ u) ∨ (∃ u, v = Inj2 u ∧ Vfuel n W (cadd a σ2) π φ u).
+Proof. rewrite Vfuel_eq. destruct v; simpl; try done; intros H; [left|right]; exists v; by rewrite Vfuel_eq. Qed.
+
+Lemma Vfuel_unit_inv n W a π φ v : Vfuel n W (CTa CVal a) π φ v → v = EUnit ∧ π = ∅.
+Proof. rewrite Vfuel_eq. destruct v; simpl; intros [H1 H2]; done. Qed.
+
+(** The split of the environment for a rule over two subterms. *)
+Ltac split_env :=
+  lazymatch goal with
+  | HsT : thsplit ?Θ _ _, HT : thsem _ _ ?Θ _ _ _, HsG : csplit ?Γ _ _, HG : gsem _ _ ?Γ _ _ _ |- _ =>
+      destruct (thsem_split _ _ _ _ _ _ _ _ HsT HT) as (πΘ1 & πΘ2 & -> & HdT & HT1 & HT2);
+      destruct (gsem_split _ _ _ _ _ _ _ _ HsG HG) as (πΓ1 & πΓ2 & -> & HdG & HG1 & HG2);
+      rewrite union_swap4 in * by (rewrite !dom_union_L in *; set_solver)
+  end.
+
+Lemma c_app_sem W0 Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 c t h σ1 σ2 a1 c1 t1 c2 t2 :
+  thsplit Θ Θ1 Θ2 → csplit Γ Γ1 Γ2 →
+  csem W0 Θ1 Γ1 e1 (CTa (CArr c t h σ1 σ2) a1) c1 t1 →
+  cage_th c1 Θ2 Θ2' → cage_env c1 Γ2 Γ2' →
+  csem W0 Θ2' Γ2' e2 σ1 c2 t2 →
+  fle c2 a1 → tok t2 t → tok t1 (tseq t2 t) →
+  csem W0 Θ Γ (App e1 e2) σ2 (fadd c1 (fadd c2 c)) (tseq t1 (tseq t2 t)).
+Proof.
+  intros HsT HsG Hc1 HaT HaG Hc2 Ha Hok2 Hok1 n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (tseq_split _ _ _ _ Hok1 Hm) as (r1 & Hm1 & Hm2).
+  destruct (tseq_split _ _ _ _ Hok2 Hm2) as (r2 & Hm21 & Hm22).
+  split_env.
+  change (subst γ (emap g (App e1 e2))) with (fill_frame ((λ γ g, FAppL (subst γ (emap g e2))) γ g) (subst γ (emap g e1))).
+  apply (sem_bind1 W0 Θ1 Γ1 e1 (CTa (CArr c t h σ1 σ2) a1) c1 t1 Θ2 Θ2' Γ2 Γ2' (λ γ g, FAppL (subst γ (emap g e2))) σ2 r _ n W g γ πΘ1 πΓ1 πΘ2 πΓ2 φ tk r1);
+    [intros g' γ0 g0; simpl; by rewrite emap_subst, emap_emap|done|done|done|done|apply fle_fadd_l|done|done|done|done|done
+    |rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver
+    |done|done|done|].
+  intros j W' g' γ' πΘ' πΓ' φ' i v πv tk' Hj Hb' Hi Hv Hr HT' HG' HV Hd' Hdv Hdφ' Hc'. simpl.
+  rewrite (union_comm_d πv) in Hdφ', Hc' |- * by done.
+  change (App v (subst γ' (emap g' e2))) with (fill_frame (FAppR v) (subst γ' (emap g' e2))).
+  apply (sem_bind2 W0 Θ2' Γ2' e2 σ1 c2 t2 (CTa (CArr c t h σ1 σ2) a1) (CTa (CArr c t h σ1 σ2) (fsub a1 c2)) FAppR σ2 r (fminus i (fadd c1 (fadd c2 c))) j W' g' γ' πΘ' πΓ' v πv φ' tk' r2);
+    [done|intros v0 Hv0; simpl; by rewrite Hv0|done| | |done|done|done|done|done|done|set_solver|done|done|by apply (meets_mono _ _ r1)|].
+  { split; [by constructor|right; constructor]. }
+  { eapply fle_trans; [apply (fle_fadd_l c2 c)|by apply fle_fminus_fadd]. }
+  intros j2 W2 v' πv' v2 π2 φ2 i2 tk2 Hj2 Hb2 Hi2 Hv2 Hr2 Hvv' HV' HV2 Hd2 Hdφ2 Hc2'. simpl.
+  rewrite (union_dom_disj π2 πv' φ2 Hdφ2).
+  apply (app_redex j2 W2 c t h σ1 σ2 (fsub a1 c2)); [done|done|done|set_solver|by eapply dom_mres_of_r|by eapply dom_mres_of
+    |by apply (fcap_ext_part_r W2 π2)|by apply (fcap_ext_part W2 π2 πv')|by apply (meets_mono _ _ r2)|].
+  rewrite fminus_fminus. pose proof (fle_frame3 i i2 c1 c2 c Hi Hi2) as H. by rewrite fminus_fminus in H.
+Qed.
+
+Lemma c_pair_sem W0 Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 σ1 σ1' σ2 c1 t1 c2 t2 :
+  thsplit Θ Θ1 Θ2 → csplit Γ Γ1 Γ2 →
+  csem W0 Θ1 Γ1 e1 σ1 c1 t1 →
+  cage_th c1 Θ2 Θ2' → cage_env c1 Γ2 Γ2' →
+  csem W0 Θ2' Γ2' e2 σ2 c2 t2 →
+  cagex c2 σ1 σ1' → tok t1 t2 →
+  csem W0 Θ Γ (Pair e1 e2) (CTa (CProd σ1' σ2) (Some 0)) (fadd c1 c2) (tseq t1 t2).
+Proof.
+  intros HsT HsG Hc1 HaT HaG Hc2 Hs Hok n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (tseq_split _ _ _ _ Hok Hm) as (r1 & Hm1 & Hm2).
+  split_env.
+  change (subst γ (emap g (Pair e1 e2))) with (fill_frame ((λ γ g, FPairL (subst γ (emap g e2))) γ g) (subst γ (emap g e1))).
+  apply (sem_bind1 W0 Θ1 Γ1 e1 σ1 c1 t1 Θ2 Θ2' Γ2 Γ2' (λ γ g, FPairL (subst γ (emap g e2))) _ r _ n W g γ πΘ1 πΓ1 πΘ2 πΓ2 φ tk r1);
+    [intros g' γ0 g0; simpl; by rewrite emap_subst, emap_emap|done|done|done|done|apply fle_fadd_l|done|done|done|done|done
+    |rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver
+    |done|done|done|].
+  intros j W' g' γ' πΘ' πΓ' φ' i v πv tk' Hj Hb' Hi Hv Hr HT' HG' HV Hd' Hdv Hdφ' Hc'. simpl.
+  rewrite (union_comm_d πv) in Hdφ', Hc' |- * by done.
+  change (Pair v (subst γ' (emap g' e2))) with (fill_frame (FPairR v) (subst γ' (emap g' e2))).
+  apply (sem_bind2 W0 Θ2' Γ2' e2 σ2 c2 t2 σ1 σ1' FPairR (CTa (CProd σ1' σ2) (Some 0)) r (fminus i (fadd c1 c2)) j W' g' γ' πΘ' πΓ' v πv φ' tk' r);
+    [done|intros v0 Hv0; simpl; by rewrite Hv0|done|done| |done|done|done|done|done|done|set_solver|done|done
+    |by apply (meets_mono _ _ r1)|].
+  { by apply fle_fminus_fadd. }
+  intros j2 W2 v' πv' v2 π2 φ2 i2 tk2 Hj2 Hb2 Hi2 Hv2 Hr2 Hvv' HV' HV2 Hd2 Hdφ2 Hc2'. simpl.
+  rewrite (union_comm_d π2 πv') in Hc2' |- * by done.
+  apply FuelE_val; [simpl; by rewrite Hvv', Hv2|done|done|].
+  rewrite (union_dom_disj πv' π2 φ2) by (rewrite Hdφ2, !dom_union_L; set_solver).
+  apply Vfuel_pair; [set_solver|by apply (dom_mres_of φ2 πv' π2); rewrite Hdφ2, !dom_union_L; set_solver
+    |by apply (dom_mres_of_r φ2 πv' π2); rewrite Hdφ2, !dom_union_L; set_solver|by rewrite cadd_0|by rewrite cadd_0].
+Qed.
+
+Lemma c_letu_sem W0 Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 a σ c1 t1 c2 t2 :
+  thsplit Θ Θ1 Θ2 → csplit Γ Γ1 Γ2 →
+  csem W0 Θ1 Γ1 e1 (CTa CVal a) c1 t1 →
+  cage_th c1 Θ2 Θ2' → cage_env c1 Γ2 Γ2' →
+  csem W0 Θ2' Γ2' e2 σ c2 t2 →
+  tok t1 t2 →
+  csem W0 Θ Γ (LetU e1 e2) σ (fadd c1 c2) (tseq t1 t2).
+Proof.
+  intros HsT HsG Hc1 HaT HaG Hc2 Hok n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (tseq_split _ _ _ _ Hok Hm) as (r1 & Hm1 & Hm2).
+  split_env.
+  change (subst γ (emap g (LetU e1 e2))) with (fill_frame ((λ γ g, FLetU (subst γ (emap g e2))) γ g) (subst γ (emap g e1))).
+  apply (sem_bind1 W0 Θ1 Γ1 e1 (CTa CVal a) c1 t1 Θ2 Θ2' Γ2 Γ2' (λ γ g, FLetU (subst γ (emap g e2))) σ r _ n W g γ πΘ1 πΓ1 πΘ2 πΓ2 φ tk r1);
+    [intros g' γ0 g0; simpl; by rewrite emap_subst, emap_emap|done|done|done|done|apply fle_fadd_l|done|done|done|done|done
+    |rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver
+    |done|done|done|].
+  intros j W' g' γ' πΘ' πΓ' φ' i v πv tk' Hj Hb' Hi Hv Hr HT' HG' HV Hd' Hdv Hdφ' Hc'. simpl.
+  destruct (Vfuel_unit_inv _ _ _ _ _ _ HV) as [-> ->]. rewrite map_empty_union in Hdφ', Hc' |- *.
+  destruct j as [|j]; [apply FuelE_0|].
+  apply (FuelE_beta j W' σ r _ φ' tk' _ [] _ (subst γ' (emap g' e2))); [by apply Forall_nil|constructor|done|].
+  apply (FuelE_frame_mono _ _ _ _ _ _ _ c2); [by apply fle_fminus_fadd|].
+  apply Hc2; [done|apply (thsem_mono _ (S j) W' W'); [lia|apply wbext_refl|done]|apply (gsem_mono _ (S j) W' W'); [lia|apply wbext_refl|done]|done|done|done|].
+  by apply (meets_mono _ _ r1).
+Qed.
+
+Lemma c_letp_sem W0 Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 σa σb a σ c1 t1 c2 t2 :
+  thsplit Θ Θ1 Θ2 → csplit Γ Γ1 Γ2 →
+  csem W0 Θ1 Γ1 e1 (CTa (CProd σa σb) a) c1 t1 →
+  cage_th c1 Θ2 Θ2' → cage_env c1 Γ2 Γ2' →
+  csem W0 Θ2' (Some (cadd a σb) :: Some (cadd a σa) :: Γ2') e2 σ c2 t2 →
+  tok t1 t2 →
+  csem W0 Θ Γ (LetP e1 e2) σ (fadd c1 c2) (tseq t1 t2).
+Proof.
+  intros HsT HsG Hc1 HaT HaG Hc2 Hok n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (tseq_split _ _ _ _ Hok Hm) as (r1 & Hm1 & Hm2).
+  split_env.
+  change (subst γ (emap g (LetP e1 e2))) with
+    (fill_frame ((λ γ g, FLetP (subst (up (up γ)) (emap g e2))) γ g) (subst γ (emap g e1))).
+  apply (sem_bind1 W0 Θ1 Γ1 e1 (CTa (CProd σa σb) a) c1 t1 Θ2 Θ2' Γ2 Γ2' (λ γ g, FLetP (subst (up (up γ)) (emap g e2))) σ r _ n W g γ πΘ1 πΓ1 πΘ2 πΓ2 φ tk r1);
+    [intros g' γ0 g0; simpl; by rewrite emap_subst_up2, emap_emap|done|done|done|done|apply fle_fadd_l|done|done|done|done|done
+    |rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver
+    |done|done|done|].
+  intros j W' g' γ' πΘ' πΓ' φ' i v πv tk' Hj Hb' Hi Hv Hr HT' HG' HV Hd' Hdv Hdφ' Hc'. simpl.
+  destruct (Vfuel_pair_inv _ _ _ _ _ _ _ _ HV) as (u & w & πu & πw & -> & -> & Huw & HVu & HVw).
+  simpl in Hv. assert (is_val u = true ∧ is_val w = true) as [Hu Hw] by (destruct (is_val u), (is_val w); done).
+  destruct j as [|j]; [apply FuelE_0|].
+  apply (FuelE_beta j W' σ r _ φ' tk' _ [] _ (subst2 u w (subst (up (up γ')) (emap g' e2))));
+    [by apply Forall_nil|constructor; by rewrite ?Hu, ?Hw|done|].
+  rewrite subst2_subst. rewrite dom_union_L in Hdv.
+  assert (Heq : (πu ∪ πw) ∪ (πΘ' ∪ πΓ') = πΘ' ∪ (πw ∪ (πu ∪ πΓ'))).
+  { rewrite (union_lcomm (πu ∪ πw) πΘ') by (rewrite dom_union_L; set_solver). f_equal.
+    rewrite (union_comm_d πu πw) by done. by rewrite map_union_assoc. }
+  rewrite Heq in Hdφ', Hc' |- *.
+  apply (FuelE_frame_mono _ _ _ _ _ _ _ c2); [by apply fle_fminus_fadd|].
+  apply Hc2; [done|apply (thsem_mono _ (S j) W' W'); [lia|apply wbext_refl|done]| |rewrite !dom_union_L; set_solver|done|done|by apply (meets_mono _ _ r1)].
+  exists πw, (πu ∪ πΓ'). split_and!; [done|rewrite dom_union_L; set_solver|done| |].
+  - apply (Vfuel_down _ (S j)); [lia|]. rewrite (mres_mres (dom πw) (dom (πu ∪ πw))) in HVw by (rewrite dom_union_L; set_solver).
+    done.
+  - exists πu, πΓ'. split_and!; [done|set_solver|done| |apply (gsem_mono _ (S j) W' W'); [lia|apply wbext_refl|done]].
+    apply (Vfuel_down _ (S j)); [lia|]. rewrite (mres_mres (dom πu) (dom (πu ∪ πw))) in HVu by (rewrite dom_union_L; set_solver).
+    done.
+Qed.
+
+Lemma c_case_sem W0 Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e e1 e2 σa σb a σ c0 t0 c1 t1 c2 t2 :
+  thsplit Θ Θ1 Θ2 → csplit Γ Γ1 Γ2 →
+  csem W0 Θ1 Γ1 e (CTa (CSum σa σb) a) c0 t0 →
+  cage_th c0 Θ2 Θ2' → cage_env c0 Γ2 Γ2' →
+  csem W0 Θ2' (Some (cadd a σa) :: Γ2') e1 σ c1 t1 →
+  csem W0 Θ2' (Some (cadd a σb) :: Γ2') e2 σ c2 t2 →
+  tok t0 (tmax t1 t2) →
+  csem W0 Θ Γ (Case e e1 e2) σ (fadd c0 (fmax c1 c2)) (tseq t0 (tmax t1 t2)).
+Proof.
+  intros HsT HsG Hc0 HaT HaG Hc1 Hc2 Hok n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (tseq_split _ _ _ _ Hok Hm) as (r1 & Hm1 & Hm2). destruct (meets_tmax _ _ _ _ Hm2) as [Hm21 Hm22].
+  split_env.
+  change (subst γ (emap g (Case e e1 e2))) with
+    (fill_frame ((λ γ g, FCase (subst (up γ) (emap g e1)) (subst (up γ) (emap g e2))) γ g) (subst γ (emap g e))).
+  apply (sem_bind1 W0 Θ1 Γ1 e (CTa (CSum σa σb) a) c0 t0 Θ2 Θ2' Γ2 Γ2' (λ γ g, FCase (subst (up γ) (emap g e1)) (subst (up γ) (emap g e2))) σ r _ n W g γ πΘ1 πΓ1 πΘ2 πΓ2 φ tk r1);
+    [intros g' γ0 g0; simpl; by rewrite !emap_subst_up, !emap_emap|done|done|done|done|apply fle_fadd_l|done|done|done|done|done
+    |rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver|rewrite !dom_union_L in *; set_solver
+    |done|done|done|].
+  intros j W' g' γ' πΘ' πΓ' φ' i v πv tk' Hj Hb' Hi Hv Hr HT' HG' HV Hd' Hdv Hdφ' Hc'. simpl.
+  destruct (fle_frame_max i c0 c1 c2 Hi) as [Hf1 Hf2].
+  destruct j as [|j]; [apply FuelE_0|].
+  rewrite (union_lcomm πv πΘ') in Hdφ', Hc' |- * by (rewrite dom_union_L in Hdv; set_solver).
+  assert (Hgs : ∀ σ0 u, is_val u = true → Vfuel (S j) W' σ0 πv (mres (dom πv) φ') u →
+     gsem j W' (Some σ0 :: Γ2') (u .: γ') (πv ∪ πΓ') φ').
+  { intros σ0 u Hu HVu. exists πv, πΓ'. split_and!; [done|rewrite dom_union_L in Hdv; set_solver|done| |apply (gsem_mono _ (S j) W' W'); [lia|apply wbext_refl|done]].
+    apply (Vfuel_down _ (S j)); [lia|done]. }
+  destruct (Vfuel_sum_inv _ _ _ _ _ _ _ _ HV) as [(u & -> & HVu)|(u & -> & HVu)]; simpl in Hv.
+  - apply (FuelE_beta j W' σ r _ φ' tk' _ [] _ (subst1 u (subst (up γ') (emap g' e1)))); [by apply Forall_nil|apply HeadCase1; by rewrite Hv|done|].
+    rewrite subst1_subst. apply (FuelE_frame_mono _ _ _ _ _ _ _ c1); [done|].
+    apply Hc1; [done|apply (thsem_mono _ (S j) W' W'); [lia|apply wbext_refl|done]|by apply Hgs|rewrite dom_union_L in *; set_solver|done|done
+               |by apply (meets_mono _ _ r1)].
+  - apply (FuelE_beta j W' σ r _ φ' tk' _ [] _ (subst1 u (subst (up γ') (emap g' e2)))); [by apply Forall_nil|apply HeadCase2; by rewrite Hv|done|].
+    rewrite subst1_subst. apply (FuelE_frame_mono _ _ _ _ _ _ _ c2); [done|].
+    apply Hc2; [done|apply (thsem_mono _ (S j) W' W'); [lia|apply wbext_refl|done]|by apply Hgs|rewrite dom_union_L in *; set_solver|done|done
+               |by apply (meets_mono _ _ r1)].
+Qed.
