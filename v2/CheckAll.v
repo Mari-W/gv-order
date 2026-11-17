@@ -6,7 +6,8 @@
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
   lockfree.Reach lockfree.TauThread.
 From GV Require Import static.Conservativity static.Weakening static.Renaming static.PointSubst
-  examples.ClientServer.
+  examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany
+  examples.FactoryEx examples.GrowRing.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -55,3 +56,8 @@ Print Assumptions typed_grename.
 Print Assumptions typed_pinst.
 (** S2. Examples. *)
 Print Assumptions cs_typed.
+Print Assumptions cy_typed.
+Print Assumptions fb_typed.
+Print Assumptions fm_typed.
+Print Assumptions fx_typed.
+Print Assumptions rg_typed.

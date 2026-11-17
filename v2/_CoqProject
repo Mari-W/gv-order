@@ -28,4 +28,10 @@ static/PointSubst.v
 test/TypeNotations.v
 examples/Tools.v
 examples/ClientServer.v
+examples/Tools2.v
+examples/Cycle.v
+examples/FreshBetween.v
+examples/FreshMany.v
+examples/FactoryEx.v
+examples/GrowRing.v
 CheckAll.v

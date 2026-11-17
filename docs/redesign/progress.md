@@ -8,7 +8,7 @@ The old development in theories/ stays untouched.
 | Stage | Content | Status |
 |---|---|---|
 | S1 | language | done |
-| S2 | points, worlds, types | in progress (examples open) |
+| S2 | points, worlds, types | done |
 | S3 | generic relation | open |
 | S4 | generic compatibility | open |
 | S5 | static fundamental theorems | open |
@@ -166,3 +166,11 @@ The old development in theories/ stays untouched.
 - S2.8. The client and server cycle of §2.5 types with family laws
   (v2/examples/ClientServer.v, `cs_typed`). CheckAll lists 38 results,
   all closed.
+- S2.9. Cycle, FreshBetween, FreshMany, FactoryEx (two factories, B.1
+  #51) and GrowRing (after the reordering of B.1) type with anchors and
+  family laws (v2/examples/, `cy_typed`, `fb_typed`, `fm_typed`,
+  `fx_typed`, `rg_typed`). GuardCex as written is rejected (argued): its
+  box body blocks on a channel created at a fresh root while the
+  caller's future is abstract, and it holds no end to anchor at.
+  SegmentInterleave and ChoiceNegative are not ported. CheckAll lists 43
+  results, all closed. S2 done.
