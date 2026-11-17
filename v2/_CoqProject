@@ -51,6 +51,7 @@ test/FuelNotations.v
 cost/Transformers.v
 cost/Forwarder.v
 cost/Exact.v
+cost/CostSem.v
 compat/Bind.v
 compat/Blind.v
 compat/SemTyped.v
