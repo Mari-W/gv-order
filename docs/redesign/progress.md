@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: Q16 for V and E done (S4.11), P and composition open |
+| S4 | generic compatibility | in progress: Q16 for V and E done (S4.11), stop at Q16 for P (S4.12) |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | open |
@@ -583,3 +583,44 @@ The old development in theories/ stays untouched.
   transposition lemmas `Vrel_swap` and `Erel_swap` are now instances
   (`Vrel_swap_rename`), and compat/Swap.v keeps only the transposition
   on environments. No `Admitted` and no axiom.
+- S4.12. Stop at Q16 for P. The renaming of P is not proved, and the
+  route of S4.10 does not reach it. Nothing found makes the lemma
+  false. What breaks is the proof by a forward simulation, which needs
+  the renamed configuration to be the image of the original under one
+  map of ends after every step.
+  (1) For P the held ends are the ends of Σ and both ends of every
+  restricted channel. h has to be injective on all of them, because a
+  τ step meets two threads by the names of their ends. It also has to
+  create no new pair of partners in Σ (o, p in Σ with h p = (h o)‾ only
+  when p = o‾). Otherwise the renamed process has internal steps whose
+  original is a Q-Send followed by a Q-Recv, which is Internalize, not
+  renaming. The link of P-Connect between two cut ends creates such a
+  pair (p2 holds o1‾ and o2‾, and csub sends o1‾ to o2), so that case
+  needs Internalize after the renaming, as S4.10 said.
+  (2) P-Act-Link fixes the link partner o2 from the term, and o2 need
+  not be held. The original links a restricted end with an end it
+  neither holds nor restricts, and h may send that end onto the
+  restricted channel. Example, in v2 terms. C = {c}, Σ = ∅, threads
+  ∗, link ⟨c⁺, z⁺⟩ and (λx. ∗) ⟨c⁻, z⁺⟩, with h sending z± to c± and
+  fixing every other end. h commutes with duality and is injective on
+  c⁺ and c⁻. The original link turns the third thread into
+  (λx. ∗) ⟨z⁺, z⁺⟩. The renamed link is the self link of c⁺, which
+  flips c, and turns it into (λx. ∗) ⟨c⁺, c⁻⟩. Both processes are in P,
+  but no map of ends takes the first term to the second. The term-level
+  proof never meets this, because O-Link reads both ends from Θ.
+  (3) A condition on h alone repairs (2) only for one step. If h maps
+  no end outside the restricted channels onto a restricted channel
+  (reflection), the h2 of S4.10 exists at every link. Reflection is not
+  preserved by Q-Recv. The renamed process may receive both ends of a
+  channel d that h already uses as the image of an end the original
+  mentions in dead code, and after the receive d is restricted while
+  that end is not.
+  Two ways on, each needing the author. (a) Make E and P closed under
+  held-ends renamings by definition, as FuelE is (F15, `Fdef`
+  quantifies over every g with `kinj`). The renaming lemma is then a
+  projection, and P-Connect has to establish the clause for the
+  composite, by the induction hypothesis on renamed components. (b) A
+  simulation up to dead code, a relation between terms that agree up to
+  h on every end the term will act on. It is semantic and I see no
+  finite form of it. I recommend (a). Not started: P-Term, Internalize,
+  P-Connect, P-Join, all of which wait on this.
