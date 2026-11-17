@@ -21,10 +21,9 @@
       ([sem_typed_at_blind]).
     - D-Conv is subtyping of the erasures ([gen_e_conv]).
 
-    D-SpawnLam is the one rule without a semantic counterpart, because
-    its semantic form is false for the relation as defined
-    (docs/redesign/progress.md, S5.1 and S5.6). The theorem is proved
-    from the semantic rule E-SpawnLam as a premise ([spawn_lam_rule]). *)
+    D-SpawnLam is the rule E-SpawnLam ([spawn_lam_rule], valid at every
+    cost table by [gen_e_spawn_lam]). The induction takes it as a
+    parameter, so that the cases read the same for both tables. *)
 
 From GV Require Export compat.TermRules static.Conservativity.
 
@@ -307,6 +306,9 @@ Definition spawn_lam_rule (κ : ctable) : Prop :=
     (∀ W1, W ⊑ W1 → sem_typed_at κ W1 Θ (Some (TUnit, a1) :: Δ) ∅ e TUnit) →
     sem_typed_at κ W Θ Δ F (ESpawn (Lam e)) TUnit.
 
+Lemma spawn_lam_valid κ : spawn_lam_rule κ.
+Proof. intros W Θ Δ F e a1. apply gen_e_spawn_lam. Qed.
+
 (** ** The induction *)
 
 Section fund.
@@ -502,18 +504,17 @@ End fund.
 
 (** ** The theorems *)
 
-(** The fundamental theorem, from the semantic rule E-SpawnLam. *)
-Theorem fundamental_of_spawn_lam W Θ Δ F t T :
-  spawn_lam_rule κ_DF → strict W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → Θ ; Δ ⊨^F _ W t : T.
+Theorem fundamental W Θ Δ F t T :
+  strict W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → Θ ; Δ ⊨^F _ W t : T.
 Proof.
-  intros Hsl HW Ht ρ B.
-  pose proof (dftyped_sem κ_DF ltac:(simpl; lia) Hsl W Θ hc_empty Δ F t T (proj1 HW) Ht W pvar ρ B
-                (wext_refl _) (hsat_empty _ _ _)) as H.
+  intros HW Ht ρ B.
+  pose proof (dftyped_sem κ_DF ltac:(simpl; lia) (spawn_lam_valid κ_DF) W Θ hc_empty Δ F t T
+                (proj1 HW) Ht W pvar ρ B (wext_refl _) (hsat_empty _ _ _)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H. exact H.
 Qed.
 
 (** The merged judgment at any refill, through its DF erasure. *)
-Theorem fundamental_typed_of_spawn_lam W N Θ Δ F t T a c ϑ :
-  spawn_lam_rule κ_DF → strict W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ^ a ▷ c ; ϑ →
+Theorem fundamental_typed W N Θ Δ F t T a c ϑ :
+  strict W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ^ a ▷ c ; ϑ →
   tenv_df Θ ; lenv_df Δ ⊨^F _ W t : ty_df T.
-Proof. intros Hsl HW Ht. apply fundamental_of_spawn_lam; [done|done|]. exact (typed_dftyped _ _ _ _ _ _ _ _ _ _ _ Ht). Qed.
+Proof. intros HW Ht. apply fundamental; [done|]. exact (typed_dftyped _ _ _ _ _ _ _ _ _ _ _ Ht). Qed.

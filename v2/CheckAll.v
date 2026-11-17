@@ -88,7 +88,7 @@ Print Assumptions Prel_S_iff.
 Print Assumptions Prel_S_ind.
 Print Assumptions Erel_S_step.
 Print Assumptions Prel_S_step.
-Print Assumptions Varr_spawn_iff.
+Print Assumptions Vrel_thunk.
 (** S3. Downward closure and monotonicity. *)
 Print Assumptions Vrel_val.
 Print Assumptions Vrel_Erel.
@@ -218,10 +218,12 @@ Print Assumptions gen_e_box.
 Print Assumptions gen_e_app.
 Print Assumptions gen_e_conv.
 Print Assumptions gen_e_pack.
-(** S5: the fundamental theorem for terms, from the semantic E-SpawnLam. *)
+(** S5: the fundamental theorem for terms. *)
+Print Assumptions gen_e_spawn_lam.
+Print Assumptions later_spawn_lam.
 Print Assumptions dftyped_sem.
-Print Assumptions fundamental_of_spawn_lam.
-Print Assumptions fundamental_typed_of_spawn_lam.
+Print Assumptions fundamental.
+Print Assumptions fundamental_typed.
 (** S5: the guard, the rules with marks, the live fundamental theorem. *)
 Print Assumptions glive_rename.
 Print Assumptions acts_stable.
@@ -230,8 +232,8 @@ Print Assumptions sem_later_noL.
 Print Assumptions later_bind_acts.
 Print Assumptions later_box.
 Print Assumptions dftyped_later.
-Print Assumptions live_fundamental_of_spawn_lam.
-Print Assumptions live_fundamental_typed_of_spawn_lam.
+Print Assumptions live_fundamental.
+Print Assumptions live_fundamental_typed.
 Print Assumptions div_not_guarded.
 Print Assumptions pn_fix_not_guarded.
 Print Assumptions cx_not_guarded.

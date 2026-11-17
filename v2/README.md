@@ -140,18 +140,17 @@ by σ and its future variables by ρ, in any world where the instantiated
 hypotheses hold (`hsat`), and reads the ⊥ flag as any set B. Each case
 is a `gen_e_*` rule. The live theorem runs the same induction with the
 guard's marks: a marked variable is the self of a box, held by the
-grounding only below the current level (`GrelL`, `sem_later`). D-SpawnLam
-has no semantic counterpart for the relation as defined (S5.1 in
-docs/redesign/progress.md), so both theorems are proved from the
-semantic E-SpawnLam rule as a premise.
+grounding only below the current level (`GrelL`, `sem_later`). O-Spawn
+reads the thunk at the empty future with no lower or upper point
+(`Vthunk`), which D-SpawnLam meets (`gen_e_spawn_lam`).
 
 | File | Content |
 |---|---|
 | compat/EFacts.v | E is closed upwards in its future (`Erel_cover`) and monotone in its type above a world (`Erel_ty_mono`) |
-| compat/TermRules.v | groundings at heads, ends and entries (`Grel_heads`, `Grel_fends`, `Grel_pick`), V along subtyping (`Vrel_tsub`), the structural rules `gen_e_unit` … `gen_e_pack`, E-Box at a positive cost of β |
+| compat/TermRules.v | groundings at heads, ends and entries (`Grel_heads`, `Grel_fends`, `Grel_pick`), V along subtyping (`Vrel_tsub`), the structural rules `gen_e_unit` … `gen_e_pack`, E-Box at a positive cost of β, E-SpawnLam (`gen_e_spawn_lam`) |
 | compat/BindActs.v | the bind lemma for a hole that acts before it returns (`Erel_bind_acts`) |
 | compat/LiveRules.v | groundings with marks `GrelL`, `sem_later`, every rule with marks, the box that marks its self (`later_box`), frames that clear the marks (`later_bind_acts`) |
 | static/Guard.v | `acts`, the guard `glive` and `guarded`, renaming of marks |
-| static/Fundamental.v | `hsat`, instances under binders (`pclose`), `dftyped_sem`, `fundamental_of_spawn_lam` |
-| static/LiveFundamental.v | `dftyped_later`, `live_fundamental_of_spawn_lam` |
+| static/Fundamental.v | `hsat`, instances under binders (`pclose`), `dftyped_sem`, `spawn_lam_valid`, `fundamental`, `fundamental_typed` |
+| static/LiveFundamental.v | `dftyped_later`, `spawn_lam_later_valid`, `live_fundamental`, `live_fundamental_typed` |
 | examples/GuardEx.v | the guard against Appendix B #12 to #15 and #40, and the C2 stage of B.1 #4 |

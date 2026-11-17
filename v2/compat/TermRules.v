@@ -28,10 +28,9 @@
     in V by induction on the level. The live table κ_L has β free, and
     there the box needs the guard (compat/LiveRules.v).
 
-    E-SpawnLam has no rule here. Its semantic form is false while
-    O-Spawn reads the thunk's body at every future above an upper point,
-    and the body of D-SpawnLam is typed at the empty future only
-    (docs/redesign/progress.md, S5.6). *)
+    E-SpawnLam builds the thunk of O-Spawn, which reads the body at the
+    empty future, the future of D-SpawnLam's premise
+    ([gen_e_spawn_lam], decisions after S5.5 and S5.6). *)
 
 From GV Require Export compat.Rules compat.EFacts cost.Exact.
 
@@ -349,6 +348,55 @@ Section rules.
                       ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
         by rewrite tenv_erase_empty, map_union_empty in Hb. }
     apply Hlob; [lia|apply wext_refl].
+  Qed.
+
+  (** A spawn of a thunk, in every later world. *)
+  Lemma Erel_spawn_thunk n W Θ F v :
+    is_val v →
+    (∀ W1, W ⊑ W1 → Vthunk κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+                      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) W1 Θ v) →
+    Erel κ n W Θ TUnit F (ESpawn v).
+  Proof.
+    intros Hv HT. destruct n as [|n]; [apply Erel_0|].
+    assert (tstep (ESpawn v) (LSpawn (fends v) v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
+    assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn (fends v) v ∧ e' = EUnit) as Hdet.
+    { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst. }
+    apply Erel_S_intro.
+    - intros Hi. exact (Hi _ _ Hst).
+    - intros W1 _. eapply ready_tau; [exact Hst|done].
+    - intros W1 α e' HW1 Hs. destruct (Hdet _ _ Hs) as [-> ->]. simpl.
+      pose proof (HT W1 HW1) as HT1.
+      exists Θ, ∅. split_and!.
+      + apply map_disjoint_empty_r.
+      + by rewrite map_union_empty.
+      + by destruct HT1 as (e & -> & Hfe & _).
+      + exact HT1.
+      + apply at_cost_val. by apply Vrel_unit_iff.
+  Qed.
+
+  (** E-SpawnLam: the body at the empty future. *)
+  Lemma gen_e_spawn_lam W Θ Δ F e a1 :
+    tfacts Θ Δ (Lam e) →
+    (∀ W1, W ⊑ W1 → sem_typed_at κ W1 Θ (Some (TUnit, a1) :: Δ) ∅ e TUnit) →
+    sem_typed_at κ W Θ Δ F (ESpawn (Lam e)) TUnit.
+  Proof.
+    intros Htf Hbody n W' Θ' γ HW Hd HG. simpl. apply Erel_spawn_thunk; [done|].
+    intros W1 HW1. exists (subst (up γ) e). split_and!.
+    - done.
+    - pose proof (Grel_fends κ _ _ _ _ _ _ _ Htf HG) as Hx. simpl in Hx.
+      by rewrite Hx, dom_union_L, dom_tenv_erase.
+    - intros W'' j Θ'' w HW'' Hj Hd''.
+      assert (Θ'' = ∅ ∧ w = EUnit → Erel κ j W'' ((tenv_erase Θ ∪ Θ') ∪ Θ'') TUnit ∅
+                (subst1 w (subst (up γ) e))) as Hcase.
+      { intros [-> ->]. rewrite map_union_empty, subst1_subst.
+        rewrite <-(map_empty_union Θ') at 1.
+        apply (Hbody W'' (wext_trans _ _ _ HW (wext_trans _ _ _ HW1 HW'')) j W'' (∅ ∪ Θ') (EUnit .: γ)
+                 (wext_refl _)); [by rewrite map_empty_union|].
+        exists ∅, Θ'. split_and!; [apply map_disjoint_empty_l|done|by apply Vrel_unit_iff|].
+        eapply Grel_down; [|eapply Grel_mono; [eapply wext_trans; [exact HW1|exact HW'']|exact HG]]. lia. }
+      split.
+      + intros _ Hw. apply Hcase. by apply Vrel_unit_iff in Hw.
+      + intros -> Hw. by apply Hcase.
   Qed.
 
   (** *** Frames *)

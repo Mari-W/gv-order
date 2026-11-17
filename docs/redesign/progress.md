@@ -11,7 +11,7 @@ The old development in theories/ stays untouched.
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
 | S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
-| S5 | static fundamental theorems | stopped at E-SpawnLam (S5.6): O-Spawn without the lower point done, the thunk's future still open; term theorems proved from the semantic E-SpawnLam rule, process theorems wait on S4 |
+| S5 | static fundamental theorems | term part done (S5.7): `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed`; process theorems wait on S4 (targets in S5.5) |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
 | S8 | soup and adequacy | open |
@@ -357,7 +357,9 @@ The old development in theories/ stays untouched.
   `spawn_lam_later κ_L` (v2/static/Fundamental.v, LiveRules.v), and are
   named `fundamental_of_spawn_lam` and `live_fundamental_of_spawn_lam`.
   The names `fundamental` and `live_fundamental` of A.3 wait for the
-  repair, which then only has to prove the premise.
+  repair, which then only has to prove the premise. Resolved in S5.7,
+  after the decisions on O-Spawn (deviation "S5, O-Spawn without the
+  lower point").
 - S5, futures upwards. A value of a grounding holds its ends at or above
   the static heads of its type (`Vrel_heads`), while the bind lemma puts
   the heads of the frame's environment itself into the hole's future. E
@@ -376,7 +378,7 @@ The old development in theories/ stays untouched.
   σ(u) when Γ has u ≺ φ. D-Box and D-Open close the m point variables of
   the box or the existential with the instance xs of the relation,
   `pclose xs m σ`. The merged judgment of Q11 enters by `typed_dftyped`,
-  so `fundamental_typed_of_spawn_lam` concludes at `tenv_df Θ`,
+  so `fundamental_typed` concludes at `tenv_df Θ`,
   `lenv_df Δ`, `ty_df T`. Δ and T could be read at their own annotations
   by blindness. Θ could not, because E is not shown blind in its
   environment.
@@ -410,17 +412,33 @@ The old development in theories/ stays untouched.
   S4 judgment `sem_typed_at` directly. A cleanup can derive the one from
   the other.
 
-- S5, O-Spawn without the lower point (decision after S5.5, 39814d3 on
-  redesign). O-Spawn reads the thunk as `Vthunk` (v2/relation/Relation.v),
-  the arrow 1 ⊸^ub 1 without the lower point and with no type
-  arguments. `o_spawn` quantifies over ΘM, Θr and ub only. `Varr` and V
-  at an arrow keep the lower point. `Varr_thunk` drops it, and
-  `Varr_spawn_iff` now asks a lower point below the heads of Θ for the
-  converse. Downstream only the destruct patterns of the spawn case and
-  `Vthunk_mono` for `Varr_mono` change (Closure, Blind, Bind, Swap,
-  Redex, EFacts, BindActs). On redesign-s4, compat/Conv.v and
-  compat/Rename.v destruct `o_spawn` in the same way and need the same
-  change at the merge.
+- S5, O-Spawn without the lower point and at the empty future
+  (decisions after S5.5 and S5.6, on redesign under the O-Spawn entry).
+  O-Spawn reads the thunk as `Vthunk` (v2/relation/Relation.v), a λ that
+  holds exactly the ends it mentions and whose body is read at the
+  empty future, with no lower and no upper point and no type arguments.
+  `o_spawn` quantifies over ΘM and Θr only. `Varr` and V at an arrow are
+  unchanged. `Varr_thunk` turns an arrow 1 ⊸^ub_lb 1 into a thunk, and
+  `Vrel_thunk` (Closure.v) replaces `Varr_spawn_iff`, which no longer
+  holds as an equivalence. `Vthunk_of_Vrel` (Redex.v) gives `Erel_spawn`
+  its old text.
+- S5, E blind in its environment (item 4 of the coordinator). Not done
+  on redesign-s5: redesign-s4 has V, E and P along environments up to ≈
+  (compat/Conv.v, S4.17). After the merge, `fundamental_typed` and
+  `live_fundamental_typed` can conclude at Θ and Δ themselves through it.
+- S4 merge needs (from S5). (1) `o_spawn` lost its upper and lower point:
+  every destruct of the spawn case reads `(ΘM & Θr & A1 & …)` and every
+  construction `exists ΘM, Θr`, and `Varr_mono` on the thunk becomes
+  `Vthunk_mono`. On redesign-s4 this concerns compat/Conv.v:306 and
+  compat/Rename.v:633 besides the files S5 changed (relation/Closure.v,
+  compat/Blind.v, Bind.v, Swap.v, Redex.v). The thunk's body is read at
+  the empty future, with no `ub_lt`, so the renaming and conversion
+  proofs of the thunk lose their F and Hub arguments. (2) `Varr_spawn_iff`
+  is gone, replaced by `Vrel_thunk`. (3) EFacts.v and BindActs.v unfold E
+  by `Erel_S_ind` and `Erel_S_iff` and must be re-proved for the new
+  definition of E, as Blind.v and Closure.v are. (4) P-Term must start a
+  spawned thread at the empty future, which `fundamental` gives at
+  F = (∅, None).
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -746,3 +764,14 @@ The old development in theories/ stays untouched.
   unconditional `fundamental` and `live_fundamental`, and E blind in its
   environment. CheckAll lists 199 results, all closed. No `Admitted` and
   no axiom.
+- S5.7. The thunk of O-Spawn at the empty future, as decided after
+  S5.6. `Vthunk` without the upper point, `Vrel_thunk` for
+  `Varr_spawn_iff`. `Erel_spawn_thunk` and `gen_e_spawn_lam`
+  (v2/compat/TermRules.v), `later_spawn_lam` (LiveRules.v), so
+  `spawn_lam_rule κ` and `spawn_lam_later κ` hold at every table
+  (`spawn_lam_valid`, `spawn_lam_later_valid`). The theorems of A.3
+  without premises: `fundamental`, `fundamental_typed`
+  (v2/static/Fundamental.v), `live_fundamental`, `live_fundamental_typed`
+  (v2/static/LiveFundamental.v). E blind in its environment is left to
+  compat/Conv.v of S4 (deviation "S5, E blind in its environment").
+  CheckAll lists 201 results, all closed. No `Admitted` and no axiom.

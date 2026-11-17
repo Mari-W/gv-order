@@ -207,22 +207,22 @@ Section rel.
       exists S0, x. split; [by rewrite sswap_lookup'|]. exists S.
       rewrite <-(cswap_involutive a b c) at 1. rewrite <-sswap_new_env. by apply Hac.
     - intros M v e' Hst. apply tstep_unswap in Hst. simpl in Hst.
-      destruct (H4 _ _ _ Hst) as (ΘM & Θr & ub & A1 & -> & A3 & A4 & A5).
-      exists (sw ΘM), (sw Θr), ub. split_and!.
+      destruct (H4 _ _ _ Hst) as (ΘM & Θr & A1 & -> & A3 & A4 & A5).
+      exists (sw ΘM), (sw Θr). split_and!.
       + by apply sswap_disjoint.
       + by rewrite sswap_union.
       + by rewrite sswap_dom, A3, set_map_oswap_inv.
       + destruct A4 as (e0 & Hv & Hfe & H).
         apply (f_equal ew) in Hv. rewrite eswap_involutive in Hv. subst v.
         exists (ew e0). split_and!; [done|by rewrite sswap_dom, fends_eswap, Hfe|].
-        intros W' j Θ' w F' HW Hj Hd Hub. split.
+        intros W' j Θ' w HW Hj Hd. split.
         * intros Hjn [-> ->]%Vrel_unit_iff. rewrite map_union_empty.
-          destruct (H W' j ∅ EUnit F' HW Hj (map_disjoint_empty_r _) Hub) as [B1 _].
+          destruct (H W' j ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [B1 _].
           rewrite <-(map_union_empty (sw ΘM)), <-(sswap_empty a b), <-sswap_union.
           change EUnit with (ew EUnit). rewrite <-eswap_subst1.
           apply (proj2 (IHl j Hjn TUnit)). apply B1; [done|by apply Vrel_unit_iff].
         * intros -> [-> ->]. rewrite map_union_empty.
-          destruct (H W' (S n) ∅ EUnit F' HW Hj (map_disjoint_empty_r _) Hub) as [_ B2].
+          destruct (H W' (S n) ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [_ B2].
           destruct (B2 eq_refl (conj eq_refl eq_refl)) as [_ B3].
           rewrite <-(map_union_empty (sw ΘM)), <-(sswap_empty a b), <-sswap_union.
           change EUnit with (ew EUnit). rewrite <-eswap_subst1. by apply B3; right.

@@ -11,9 +11,8 @@
     contraction renames the marks. The proof is generic over a cost
     table where send, select and close cost one or more, and κ_L is one.
 
-    D-SpawnLam has no semantic counterpart here either
-    (docs/redesign/progress.md, S5.6), and the theorem is proved from the semantic
-    rule with marks as a premise ([spawn_lam_later]). *)
+    D-SpawnLam is the rule with marks [spawn_lam_later], valid at every
+    cost table by [later_spawn_lam]. *)
 
 From GV Require Export static.Fundamental compat.LiveRules.
 
@@ -237,22 +236,23 @@ End live.
 
 (** ** The theorems *)
 
-(** The live fundamental theorem, from the semantic rule E-SpawnLam
-    with marks. *)
-Theorem live_fundamental_of_spawn_lam W Θ Δ F t T :
-  spawn_lam_later κ_L → strict W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → guarded t →
-  Θ ; Δ ⊫^F _ W t : T.
+Lemma spawn_lam_later_valid κ : spawn_lam_later κ.
+Proof. intros W Θ Δ L F e a1. apply later_spawn_lam. Qed.
+
+Theorem live_fundamental W Θ Δ F t T :
+  strict W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → guarded t → Θ ; Δ ⊫^F _ W t : T.
 Proof.
-  intros Hsl HW Ht Hgd ρ B. apply sem_later_noL.
-  pose proof (dftyped_later κ_L ltac:(simpl; lia) Hsl W Θ hc_empty Δ F t T (proj1 HW) Ht noL Hgd
+  intros HW Ht Hgd ρ B. apply sem_later_noL.
+  pose proof (dftyped_later κ_L ltac:(simpl; lia) (spawn_lam_later_valid κ_L) W Θ hc_empty Δ F t T
+                (proj1 HW) Ht noL Hgd
                 W pvar ρ B (wext_refl _) (hsat_empty _ _ _)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H. exact H.
 Qed.
 
-Theorem live_fundamental_typed_of_spawn_lam W N Θ Δ F t T a c ϑ :
-  spawn_lam_later κ_L → strict W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ^ a ▷ c ; ϑ → guarded t →
+Theorem live_fundamental_typed W N Θ Δ F t T a c ϑ :
+  strict W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ^ a ▷ c ; ϑ → guarded t →
   tenv_df Θ ; lenv_df Δ ⊫^F _ W t : ty_df T.
 Proof.
-  intros Hsl HW Ht Hgd. apply live_fundamental_of_spawn_lam; [done|done| |done].
+  intros HW Ht Hgd. apply live_fundamental; [done| |done].
   exact (typed_dftyped _ _ _ _ _ _ _ _ _ _ _ Ht).
 Qed.

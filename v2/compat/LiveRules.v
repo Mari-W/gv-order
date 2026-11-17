@@ -827,6 +827,30 @@ Section later.
     - by eapply wholds_mono.
     - by eapply ub_lt_mono.
   Qed.
+
+  Lemma later_spawn_lam W Θ Δ L F e a1 :
+    tfacts Θ Δ (Lam e) →
+    (∀ W1, W ⊑ W1 → sem_later κ W1 Θ (Some (TUnit, a1) :: Δ) (false .: L) ∅ e TUnit) →
+    sem_later κ W Θ Δ L F (ESpawn (Lam e)) TUnit.
+  Proof.
+    intros Htf Hbody n W' Θ' γ HW Hd HG. simpl. apply Erel_spawn_thunk; [done|].
+    intros W1 HW1. exists (subst (up γ) e). split_and!.
+    - done.
+    - pose proof (GrelL_fends κ _ _ _ _ _ _ _ _ Htf HG) as Hx. simpl in Hx.
+      by rewrite Hx, dom_union_L, dom_tenv_erase.
+    - intros W'' j Θ'' w HW'' Hj Hd''.
+      assert (Θ'' = ∅ ∧ w = EUnit → Erel κ j W'' ((tenv_erase Θ ∪ Θ') ∪ Θ'') TUnit ∅
+                (subst1 w (subst (up γ) e))) as Hcase.
+      { intros [-> ->]. rewrite map_union_empty, subst1_subst.
+        rewrite <-(map_empty_union Θ') at 1.
+        apply (Hbody W'' (wext_trans _ _ _ HW (wext_trans _ _ _ HW1 HW'')) j W'' (∅ ∪ Θ') (EUnit .: γ)
+                 (wext_refl _)); [by rewrite map_empty_union|].
+        simpl. exists ∅, Θ'. split_and!; [apply map_disjoint_empty_l|done|by apply Vrel_unit_iff|].
+        eapply GrelL_down; [|eapply GrelL_mono; [eapply wext_trans; [exact HW1|exact HW'']|exact HG]]. lia. }
+      split.
+      + intros _ Hw. apply Hcase. by apply Vrel_unit_iff in Hw.
+      + intros -> Hw. by apply Hcase.
+  Qed.
 End later.
 
 (** The semantic rule E-SpawnLam with marks. *)
