@@ -1173,6 +1173,15 @@ first, in stage S2.
   ready round the cycle, and P-Connect and Internalize fail (S4.15).
   V and E keep their quantifiers. `adequacy` and `live_adequacy` gain
   `strict W`, which `soundness` of A.3 already assumes.
+- P is closed under fusion by definition (delegated, after S4.18). The
+  clause (fuse) replaces (rename): every unfolding of P holds after a map
+  h of ends that commutes with duality, is injective on the held ends,
+  and creates partner pairs only on channels D, which become restricted
+  (D dual at dual points of the interface). D = ∅ is renaming, h = id is
+  Internalize. With (rename) alone P-Connect fails: h may join two
+  unrelated interface ends into one channel (S4.18). One renaming
+  concept now covers renaming, Internalize and the link case of
+  P-Connect. Cost tables ask c_give ≤ c_take, which κ_DF and κ_L meet.
 
 ## 5  Open decisions for the author
 
