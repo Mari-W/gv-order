@@ -71,5 +71,6 @@ compat/BindActs.v
 static/Fundamental.v
 static/Guard.v
 compat/LiveRules.v
+static/LiveFundamental.v
 test/CompatNotations.v
 CheckAll.v
