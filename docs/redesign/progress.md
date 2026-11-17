@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: Q16 done for V, E, P (S4.11, S4.13), composition open |
+| S4 | generic compatibility | stopped (S4.15): Internalize and P-Connect are false under the Kripke quantifier of P, repair needs the author |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
@@ -816,3 +816,48 @@ The old development in theories/ stays untouched.
   Not started in Rocq. In size this is theories/liveness/LiveInternalize.v,
   LiveConnect.v, LivePConnect.v, LivePTerm.v and composition/ReadyChain.v,
   about 4700 lines.
+- S4.15. Stop. Internalize and P-Connect are false for the relation
+  as defined, for every cost table. P quantifies over every W1 ⊒ W
+  (`Pbody`), and ⊑ does not keep strictness. Q-Recv reads the incoming
+  value in V at W1, so a later world W1 with a cycle can deliver ends at
+  points that only a cyclic order accepts. A component is ready in such
+  a W1 by a chain through the cycle. The composite after the message is
+  deadlocked. Counterexample on paper, not in Rocq.
+  W has constant points x, z, r with the facts z ≺ x and r ≺ x‾, and is
+  strict. p1 holds r⁺ : ?(∃α [x ≺ α‾]. end@α).end at r and the cut end
+  a⁺ : ?1.end at x, and runs
+  let ⟨y, r'⟩ = recv r⁺ in let ∗ = close r' in
+  let ⟨u, a'⟩ = recv a⁺ in let ∗ = close a' in close y.
+  p2 holds a⁻ : !1.end at x‾ and d⁺ : end at z, and runs
+  let ∗ = close d⁺ in close (send ⟨∗, a⁻⟩).
+  Both are in P at W at every level (argued). p1 waits on r⁺ below
+  x‾ (r ≺ x‾), then on a⁺ below the partner point of the received end,
+  which the constraint gives in every later world. p2 waits on d⁺ below
+  x (z ≺ x). The cut is dual at dual points and W ⊔ W = W is strict, so
+  P-Connect gives the composite (a, p1 | p2) in P at W with interface
+  r⁺, d⁺. Take W' = W plus the fact x ≺ z, and receive Chan d⁻ on r⁺
+  with α := z‾. The value is in V at W' (x ≺ (z‾)‾ = z holds in W'),
+  and `recv_ok` holds, because the composite holds d⁺ at z. The
+  composite then restricts d, closes r' and is stuck: p1 waits on a⁺,
+  p2 on d⁺, and p1 closes d⁻ only after a. Its interface is empty and it
+  is not terminated, so it is not ready, and it is not in P at level 4
+  or above. The same example refutes Internalize: p1 | p2 with
+  interface r⁺, a⁺, a⁻, d⁺ is in P (after the message it is ready in W'
+  because W' ⊢ x ≺ z ≺ x), and internalizing a gives the composite.
+  Cause. The old live relation, which decision Q9 (a) names ("as the
+  live relation does"), quantified over `wext_r`, whose extensions are
+  strict (theories/relation/Worlds.v, `wext`). S3 dropped strictness
+  from ⊑. Proposed repair: the Kripke quantifier of `Pbody` ranges over
+  strict worlds, ∀ W1, W ⊑ W1 → strict W1 → ∀ h, pren_ok h Σ p → …
+  V and E keep theirs. Then every chain of P-Connect and Internalize
+  descends in a strict world and stops. Tried in a copy of v2: about
+  45 changed lines in relation/Relation.v (`Pbody`, its maps,
+  `Pbody_id`, `Prel_S_clauses`), relation/Closure.v (`Prel_down`,
+  `Prel_S_step`), relation/Adequacy.v, compat/Blind.v, compat/LiveDF.v,
+  compat/Rename.v. It builds, CheckAll keeps 190 of 190 closed, and
+  `adequacy` and `live_adequacy` gain the premise `strict W`
+  (test/RelationNotations.expected changes). P at a non-strict world
+  becomes vacuous, so adequacy needs it. `soundness` of A.3 already
+  assumes strict W. Not applied, because it changes the relation and A.3.
+  Not started: Internalize, P-Connect, P-Join, P-Term. CheckAll lists
+  190 results, all closed. No `Admitted` and no axiom.
